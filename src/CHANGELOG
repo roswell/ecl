@@ -622,8 +622,8 @@ ECLS 0.1a
 * SETF revised. Now it, and all accessors are implemented as macros
   with no special support from the interpreter.
 
-ECLS 0.1b
-=========
+ECLS 0.2
+========
 
 * Due to human errors, the bytecompiler shipped with 0.1a was not the
   finished version. In 0.1b we shipped a more polished files. Some of
