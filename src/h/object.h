@@ -157,9 +157,11 @@ struct ecl_complex {
 };
 
 enum ecl_stype {		/*  symbol type  */
-	stp_ordinary,		/*  ordinary  */
-	stp_constant,		/*  constant  */
-        stp_special		/*  special  */
+	stp_ordinary = 0,
+	stp_constant = 1,
+        stp_special = 2,
+	stp_macro = 4,
+	stp_special_form = 8
 };
 
 #define	Cnil			((cl_object)cl_symbols)

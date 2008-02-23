@@ -559,7 +559,7 @@ interpret_msetq(cl_object bytecodes, cl_opcode *vector)
 			ecl_lex_env_set_var(var, value);
 		else {
 			cl_object name = bytecodes->bytecodes.data[-1-var];
-			if (name->symbol.stype == stp_constant)
+			if (name->symbol.stype & stp_constant)
 				FEassignment_to_constant(name);
 			else
 				ECL_SETQ(name, value);
@@ -953,7 +953,8 @@ ecl_interpret(cl_object bytecodes, void *pc) {
 	}
 	case OP_SETQS: {
 		cl_object var = GET_DATA(vector, bytecodes);
-		if (var->symbol.stype == stp_constant)
+		/* INV: Not NIL, and of type t_symbol */
+		if (var->symbol.stype & stp_constant)
 			FEassignment_to_constant(var);
 		ECL_SETQ(var, reg0);
 		break;
@@ -965,7 +966,8 @@ ecl_interpret(cl_object bytecodes, void *pc) {
 	}
 	case OP_PSETQS: {
 		cl_object var = GET_DATA(vector, bytecodes);
-		if (var->symbol.stype == stp_constant)
+		/* INV: Not NIL, and of type t_symbol */
+		if (var->symbol.stype & stp_constant)
 			FEassignment_to_constant(var);
 		ECL_SETQ(var, cl_stack_pop());
 		break;

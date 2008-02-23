@@ -523,7 +523,7 @@ c_var_ref(cl_object var, int allow_symbol_macro, bool ensure_defined)
 static bool
 c_declared_special(register cl_object var, register cl_object specials)
 {
-	return ((var->symbol.stype == stp_special) || ecl_member_eq(var, specials));
+	return ((ecl_symbol_type(var) & stp_special) || ecl_member_eq(var, specials));
 }
 
 static void
@@ -616,7 +616,7 @@ compile_setq(int op, cl_object var)
 		FEillegal_variable_name(var);
 	ndx = c_var_ref(var,0,TRUE);
 	if (ndx < 0) { /* Not a lexical variable */
-		if (var->symbol.stype == stp_constant) {
+		if (ecl_symbol_type(var) & stp_constant) {
 			FEassignment_to_constant(var);
 		}
 		ndx = c_register_constant(var);
@@ -1491,7 +1491,7 @@ c_multiple_value_setq(cl_object orig_args, int flags) {
 		cl_object var = pop(&vars);
 		cl_fixnum ndx = c_var_ref(var,0,TRUE);
 		if (ndx < 0) { /* Global variable */
-			if (var->symbol.stype == stp_constant)
+			if (ecl_symbol_type(var) & stp_constant)
 				FEassignment_to_constant(var);
 			ndx = -1-c_register_constant(var);
 		}
@@ -1724,7 +1724,7 @@ c_symbol_macrolet(cl_object args, int flags)
 		cl_object expansion = pop(&definition);
 		cl_object arglist = cl_list(2, @gensym(0), @gensym(0));
 		cl_object function;
-		if (name->symbol.stype != stp_ordinary ||
+		if ((ecl_symbol_type(name) & (stp_special | stp_constant)) ||
 		    c_var_ref(name,1,FALSE) == -2)
 		{
 			FEprogram_error("SYMBOL-MACROLET: Symbol ~A cannot be \
@@ -1942,7 +1942,7 @@ compile_form(cl_object stmt, int flags) {
 			goto BEGIN;
 		}
 	}
-	if (function->symbol.isform)
+	if (ecl_symbol_type(function) & stp_special_form)
 		FEprogram_error("BYTECOMPILE-FORM: Found no macroexpander \
 for special form ~S.", 1, function);
  ORDINARY_CALL:
@@ -2047,8 +2047,7 @@ compile_body(cl_object body, int flags) {
 #define push(v,l) l = CONS(v, l)
 #define push_var(v, list) \
 	if (context == @'function') { \
-		assert_type_symbol(v); \
-		if (v->symbol.stype == stp_constant) \
+		if (ecl_symbol_type(v) & stp_constant)	\
 			FEillegal_variable_name(v); } \
 	push(v, list)
 
@@ -2320,7 +2319,7 @@ ILLEGAL_LAMBDA:
 static cl_object
 c_default(cl_index base_pc, cl_object deflt) {
 	cl_type t = type_of(deflt);
-	if (((t == t_symbol) && (deflt->symbol.stype == stp_constant) &&
+	if (((t == t_symbol) && (ecl_symbol_type(deflt) & stp_constant) &&
 	     !FIXNUMP(SYM_VAL(deflt)))) {
 		/* FIXME! Shouldn't this happen only in unsafe mode */
 		deflt = SYM_VAL(deflt);
@@ -2345,13 +2344,17 @@ c_register_var2(register cl_object var, register cl_object *specials)
 		return;
 	if (ecl_member_eq(var, *specials))
 		c_register_var(var, TRUE, TRUE);
-	else if (var->symbol.stype == stp_special) {
-		*specials = CONS(var, *specials);
-		c_register_var(var, TRUE, TRUE);
-	} else if (var->symbol.stype == stp_constant)
-		FEassignment_to_constant(var);
-	else
-		c_register_var(var, FALSE, TRUE);
+	else {
+		int type = ecl_symbol_type(var);
+		if (type & stp_special) {
+			*specials = CONS(var, *specials);
+			c_register_var(var, TRUE, TRUE);
+		} else if (type & stp_constant) {
+			FEassignment_to_constant(var);
+		} else {
+			c_register_var(var, FALSE, TRUE);
+		}
+	}
 }
 
 cl_object

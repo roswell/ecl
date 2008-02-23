@@ -189,14 +189,11 @@ make_this_symbol(int i, cl_object s, int code, const char *name,
 	}
 	s->symbol.t = t_symbol;
 	s->symbol.dynamic = 0;
-	s->symbol.mflag = FALSE;
 	ECL_SET(s, OBJNULL);
 	SYM_FUN(s) = Cnil;
 	s->symbol.plist = Cnil;
 	s->symbol.hpack = Cnil;
 	s->symbol.stype = stp;
-	s->symbol.mflag = FALSE;
-	s->symbol.isform = FALSE;
 	s->symbol.hpack = package;
 	s->symbol.name = make_constant_base_string(name);
 	if (package == cl_core.keyword_package) {
@@ -207,7 +204,9 @@ make_this_symbol(int i, cl_object s, int code, const char *name,
 		cl_import2(s, package);
 		cl_export2(s, package);
 	}
-	if (!(s->symbol.isform = form) && fun) {
+	if (form) {
+		s->symbol.stype |= stp_special_form;
+	} else if (fun) {
 		cl_object f = cl_make_cfun_va(fun, s, NULL);
 		SYM_FUN(s) = f;
 		f->cfun.narg = narg;

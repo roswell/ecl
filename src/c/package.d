@@ -334,7 +334,7 @@ ecl_intern(cl_object name, cl_object p, int *intern_flag)
 	s->symbol.hpack = p;
 	*intern_flag = 0;
 	if (p == cl_core.keyword_package) {
-		s->symbol.stype = stp_constant;
+		ecl_symbol_type_set(s, ecl_symbol_type(s) | stp_constant);
 		ECL_SET(s, s);
 		ecl_sethash(name, p->pack.external, s);
 	} else {

@@ -1394,6 +1394,8 @@ extern void cl_defvar(cl_object s, cl_object v);
 extern void cl_defparameter(cl_object s, cl_object v);
 extern cl_object ecl_make_keyword(const char *s);
 extern cl_object ecl_symbol_value(cl_object s);
+extern int ecl_symbol_type(cl_object s);
+extern void ecl_symbol_type_set(cl_object s, int t);
 extern cl_object ecl_getf(cl_object place, cl_object indicator, cl_object deflt);
 extern cl_object ecl_get(cl_object s, cl_object p, cl_object d);
 extern bool ecl_keywordp(cl_object s);

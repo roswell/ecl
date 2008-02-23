@@ -22,8 +22,7 @@
 cl_object
 si_specialp(cl_object sym)
 {
-	@(return ((SYMBOLP(sym) && sym->symbol.stype == stp_special) ?
-		   Ct : Cnil))
+	@(return ((ecl_symbol_type(sym) & stp_special)? Ct : Cnil))
 }
 
 cl_fixnum

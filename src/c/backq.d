@@ -34,11 +34,10 @@ static cl_object
 kwote(cl_object x)
 {
 	cl_type t = type_of(x);
-	if ((t == t_symbol &&
-	     ((enum ecl_stype)x->symbol.stype != stp_constant || SYM_VAL(x) != x))
-	    || t == t_cons || t == t_vector)
-	   return(CONS(@'quote', CONS(x, Cnil)));
-	else return(x);
+	if ((t == t_symbol && !Null(x) && !ecl_keywordp(x)) ||
+	    t == t_cons || t == t_vector)
+		x = CONS(@'quote', CONS(x, Cnil));
+	return x;
 }
 
 /*

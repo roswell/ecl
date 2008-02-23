@@ -28,16 +28,16 @@ cl_object
 cl_symbol_function(cl_object sym)
 {
 	cl_object output;
-
-	sym = ecl_check_cl_type(@'symbol-function',sym,t_symbol);
-	if (sym->symbol.isform)
+	int type = ecl_symbol_type(sym);
+	if (type & stp_special_form) {
 		output = @'special';
-	else if (SYM_FUN(sym) == Cnil)
+	} else if (SYM_FUN(sym) == Cnil) {
 		FEundefined_function(sym);
-	else if (sym->symbol.mflag)
+	} else if (type & stp_macro) {
 		output = CONS(@'si::macro', SYM_FUN(sym));
-	else
+	} else {
 		output = SYM_FUN(sym);
+	}
 	@(return output)
 }
 
@@ -50,8 +50,11 @@ cl_fdefinition(cl_object fname)
 cl_object
 cl_fboundp(cl_object fname)
 {
-	if (SYMBOLP(fname)) {
-		@(return ((fname->symbol.isform || SYM_FUN(fname) != Cnil)? Ct : Cnil))
+	if (Null(fname)) {
+		@(return Cnil);
+	} else if (SYMBOLP(fname)) {
+		@(return (((fname->symbol.stype & stp_special_form)
+			   || SYM_FUN(fname) != Cnil)? Ct : Cnil))
 	} else if (CONSP(fname)) {
 		if (CAR(fname) == @'setf') {
 			cl_object sym = CDR(fname);
@@ -75,7 +78,7 @@ ecl_fdefinition(cl_object fun)
 		output = SYM_FUN(fun);
 		if (output == Cnil)
 			FEundefined_function(fun);
-		if (fun->symbol.isform || fun->symbol.mflag)
+		if (fun->symbol.stype & (stp_macro | stp_special_form))
 			FEundefined_function(fun);
 	} else if (t == t_cons) {
 		cl_object sym = CDR(fun);
@@ -138,7 +141,6 @@ cl_boundp(cl_object sym)
 cl_object
 cl_special_operator_p(cl_object form)
 {
-	if (!SYMBOLP(form))
-		FEtype_error_symbol(form);
-	@(return (form->symbol.isform? Ct : Cnil))
+	int special = ecl_symbol_type(form) & stp_special_form;
+	@(return (special? Ct : Cnil))
 }

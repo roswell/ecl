@@ -215,9 +215,7 @@ cl_boot(int argc, char **argv)
 	Cnil->symbol.gfdef = Cnil;
 	Cnil->symbol.plist = Cnil;
 	Cnil->symbol.hpack = Cnil;
-	Cnil->symbol.stype = (short)stp_constant;
-	Cnil->symbol.mflag = FALSE;
-	Cnil->symbol.isform = FALSE;
+	Cnil->symbol.stype = stp_constant;
 	cl_num_symbols_in_core=1;
 
 	Ct->symbol.t = (short)t_symbol;
@@ -227,9 +225,7 @@ cl_boot(int argc, char **argv)
 	Ct->symbol.gfdef = Cnil;
 	Ct->symbol.plist = Cnil;
 	Ct->symbol.hpack = Cnil;
-	Ct->symbol.stype = (short)stp_constant;
-	Ct->symbol.mflag = FALSE;
-	Ct->symbol.isform = FALSE;
+	Ct->symbol.stype = stp_constant;
 	cl_num_symbols_in_core=2;
 
 #ifdef NO_PATH_MAX

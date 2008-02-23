@@ -20,6 +20,30 @@
 /******************************* ------- ******************************/
 /* FIXME! CURRENTLY SYMBOLS ARE RESTRICTED TO HAVE NON-UNICODE NAMES */
 
+int
+ecl_symbol_type(cl_object s)
+{
+	do {
+		if (Null(s) || type_of(s) == t_symbol)
+			return s->symbol.stype;
+		s = ecl_type_error(@'symbol-name', "symbol", s, @'symbol');
+	} while(1);
+}
+
+void
+ecl_symbol_type_set(cl_object s, int type)
+{
+	do {
+		if (Null(s) || type_of(s) == t_symbol) {
+			s->symbol.stype = type;
+			return;
+		}
+		s = ecl_type_error(@'symbol-name', "symbol", s, @'symbol');
+	} while(1);
+}
+
+/**********************************************************************/
+
 static void FEtype_error_plist(cl_object x) /*__attribute__((noreturn))*/;
 
 cl_object
@@ -53,8 +77,6 @@ cl_make_symbol(cl_object str)
 	x->symbol.plist = Cnil;
 	x->symbol.hpack = Cnil;
 	x->symbol.stype = stp_ordinary;
-	x->symbol.mflag = FALSE;
-	x->symbol.isform = FALSE;
 	@(return x)
 }
 
@@ -243,15 +265,12 @@ cl_symbol_name(cl_object x)
 @
 	sym = ecl_check_cl_type(@'copy-symbol', sym, t_symbol);
 	x = cl_make_symbol(sym->symbol.name);
-	if (Null(cp))
-		@(return x)
-	x->symbol.stype = sym->symbol.stype;
-	x->symbol.dynamic = 0;
-	ECL_SET(x, SYM_VAL(sym));
-	x->symbol.mflag = sym->symbol.mflag;
-	SYM_FUN(x) = SYM_FUN(sym);
-	x->symbol.plist = cl_copy_list(sym->symbol.plist);
-	/* FIXME!!! We should also copy the system property list */
+	if (!Null(cp)) {
+		x->symbol = sym->symbol;
+		x->symbol.dynamic = 0;
+		x->symbol.plist = cl_copy_list(sym->symbol.plist);
+		/* FIXME!!! We should also copy the system property list */
+	}
 	@(return x)
 @)
 
@@ -366,10 +385,10 @@ si_putprop(cl_object sym, cl_object value, cl_object indicator)
 cl_object
 @si::*make_special(cl_object sym)
 {
-	sym = ecl_check_cl_type(@'defvar', sym, t_symbol);
-	if ((enum ecl_stype)sym->symbol.stype == stp_constant)
+	int type = ecl_symbol_type(sym);
+	if (type & stp_constant)
 		FEerror("~S is a constant.", 1, sym);
-	sym->symbol.stype = (short)stp_special;
+	ecl_symbol_type_set(sym, type | stp_special);
 	cl_remprop(sym, @'si::symbol-macro');
 	@(return sym)
 }
@@ -377,12 +396,11 @@ cl_object
 cl_object
 @si::*make_constant(cl_object sym, cl_object val)
 {
-	sym = ecl_check_cl_type(@'defconstant', sym, t_symbol);
-	if ((enum ecl_stype)sym->symbol.stype == stp_special)
-		FEerror(
-		 "The argument ~S to DEFCONSTANT is a special variable.",
-		 1, sym);
-	sym->symbol.stype = (short)stp_constant;
+	int type = ecl_symbol_type(sym);
+	if (type & stp_special)
+		FEerror("The argument ~S to DEFCONSTANT is a special variable.",
+			1, sym);
+	ecl_symbol_type_set(sym, type | stp_constant);
 	ECL_SET(sym, val);
 	@(return sym)
 }
