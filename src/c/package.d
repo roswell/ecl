@@ -402,19 +402,18 @@ ecl_unintern(cl_object s, cl_object p)
 {
 	cl_object x, y, l, hash;
 	bool output = FALSE;
-
-	s = ecl_check_cl_type(@'unintern', s, t_symbol);
+	cl_object name = ecl_symbol_name(s);
 
 	p = si_coerce_to_package(p);
 
  TRY_AGAIN_LABEL:
 	PACKAGE_LOCK(p);
 	hash = p->pack.internal;
-	x = ecl_gethash_safe(s->symbol.name, hash, OBJNULL);
+	x = ecl_gethash_safe(name, hash, OBJNULL);
 	if (x == s)
 		goto UNINTERN;
 	hash = p->pack.external;
-	x = ecl_gethash_safe(s->symbol.name, hash, OBJNULL);
+	x = ecl_gethash_safe(name, hash, OBJNULL);
 	if (x != s)
 		goto OUTPUT;
  UNINTERN:
@@ -428,7 +427,7 @@ ecl_unintern(cl_object s, cl_object p)
 		goto NOT_SHADOW;
 	x = OBJNULL;
 	for (l = p->pack.uses; CONSP(l); l = CDR(l)) {
-		y = ecl_gethash_safe(s->symbol.name, CAR(l)->pack.external, OBJNULL);
+		y = ecl_gethash_safe(name, CAR(l)->pack.external, OBJNULL);
 		if (y != OBJNULL) {
 			if (x == OBJNULL)
 				x = y;
@@ -443,7 +442,7 @@ ecl_unintern(cl_object s, cl_object p)
 	}
 	p->pack.shadowings = ecl_remove_eq(s, p->pack.shadowings);
  NOT_SHADOW:
-	ecl_remhash(s->symbol.name, hash);
+	ecl_remhash(name, hash);
 	if (s->symbol.hpack == p)
 		s->symbol.hpack = Cnil;
 	output = TRUE;
@@ -457,15 +456,13 @@ cl_export2(cl_object s, cl_object p)
 {
 	cl_object x, l, hash = OBJNULL;
 	int intern_flag;
-
-	s = ecl_check_cl_type(@'export', s, t_symbol);
+	cl_object name = ecl_symbol_name(s);
 	p = si_coerce_to_package(p);
-
 	if (p->pack.locked)
 		CEpackage_error("Cannot export symbol ~S from locked package ~S.",
 				"Ignore lock and proceed", p, 2, s, p);
 	PACKAGE_LOCK(p);
-	x = ecl_find_symbol_nolock(s->symbol.name, p, &intern_flag);
+	x = ecl_find_symbol_nolock(name, p, &intern_flag);
 	if (!intern_flag) {
 		PACKAGE_UNLOCK(p);
 		CEpackage_error("The symbol ~S is not accessible from ~S and cannot be exported.",
@@ -483,7 +480,7 @@ cl_export2(cl_object s, cl_object p)
 	if (intern_flag == INTERNAL)
 		hash = p->pack.internal;
 	for (l = p->pack.usedby; CONSP(l); l = CDR(l)) {
-		x = ecl_find_symbol_nolock(s->symbol.name, CAR(l), &intern_flag);
+		x = ecl_find_symbol_nolock(name, CAR(l), &intern_flag);
 		if (intern_flag && s != x &&
 		    !ecl_member_eq(x, CAR(l)->pack.shadowings)) {
 			PACKAGE_UNLOCK(p);
@@ -494,8 +491,8 @@ cl_export2(cl_object s, cl_object p)
 		}
 	}
 	if (hash != OBJNULL)
-		ecl_remhash(s->symbol.name, hash);
-	ecl_sethash(s->symbol.name, p->pack.external, s);
+		ecl_remhash(name, hash);
+	ecl_sethash(name, p->pack.external, s);
  OUTPUT:
 	PACKAGE_UNLOCK(p);
 }
@@ -561,8 +558,7 @@ cl_unexport2(cl_object s, cl_object p)
 {
 	int intern_flag;
 	cl_object x;
-
-	s = ecl_check_cl_type(@'unexport', s, t_symbol);
+	cl_object name = ecl_symbol_name(s);
 	p = si_coerce_to_package(p);
 	if (p == cl_core.keyword_package)
 		FEpackage_error("Cannot unexport a symbol from the keyword package.",
@@ -571,7 +567,7 @@ cl_unexport2(cl_object s, cl_object p)
 		CEpackage_error("Cannot unexport symbol ~S from locked package ~S.",
 				"Ignore lock and proceed", p, 2, s, p);
 	PACKAGE_LOCK(p);
-	x = ecl_find_symbol_nolock(s->symbol.name, p, &intern_flag);
+	x = ecl_find_symbol_nolock(name, p, &intern_flag);
 	if (intern_flag == 0) {
 		PACKAGE_UNLOCK(p);
 		FEpackage_error("Cannot unexport ~S because it does not belong to package ~S.",
@@ -582,8 +578,8 @@ cl_unexport2(cl_object s, cl_object p)
 		   ignored in unexport */
 		(void)0;
 	} else {
-		ecl_remhash(s->symbol.name, p->pack.external);
-		ecl_sethash(s->symbol.name, p->pack.internal, s);
+		ecl_remhash(name, p->pack.external);
+		ecl_sethash(name, p->pack.internal, s);
 	}
 	PACKAGE_UNLOCK(p);
 }
@@ -593,14 +589,13 @@ cl_import2(cl_object s, cl_object p)
 {
 	int intern_flag;
 	cl_object x;
-
-	s = ecl_check_cl_type(@'import', s, t_symbol);
+	cl_object name = ecl_symbol_name(s);
 	p = si_coerce_to_package(p);
 	if (p->pack.locked)
 		CEpackage_error("Cannot import symbol ~S into locked package ~S.",
 				"Ignore lock and proceed", p, 2, s, p);
 	PACKAGE_LOCK(p);
-	x = ecl_find_symbol_nolock(s->symbol.name, p, &intern_flag);
+	x = ecl_find_symbol_nolock(name, p, &intern_flag);
 	if (intern_flag) {
 		if (x != s) {
 			PACKAGE_UNLOCK(p);
@@ -613,7 +608,7 @@ cl_import2(cl_object s, cl_object p)
 		if (intern_flag == INTERNAL || intern_flag == EXTERNAL)
 			goto OUTPUT;
 	}
-	ecl_sethash(s->symbol.name, p->pack.internal, s);
+	ecl_sethash(name, p->pack.internal, s);
 	if (Null(s->symbol.hpack))
 		s->symbol.hpack = p;
  OUTPUT:
@@ -625,15 +620,14 @@ ecl_shadowing_import(cl_object s, cl_object p)
 {
 	int intern_flag;
 	cl_object x;
-
-	s = ecl_check_cl_type(@'shadowing-import', s, t_symbol);
+	cl_object name = ecl_symbol_name(s);
 	p = si_coerce_to_package(p);
 	if (p->pack.locked)
 		CEpackage_error("Cannot shadowing-import symbol ~S into locked package ~S.",
 				"Ignore lock and proceed", p, 2, s, p);
 
 	PACKAGE_LOCK(p);
-	x = ecl_find_symbol_nolock(s->symbol.name, p, &intern_flag);
+	x = ecl_find_symbol_nolock(name, p, &intern_flag);
 	if (intern_flag && intern_flag != INHERITED) {
 		if (x == s) {
 			if (!ecl_member_eq(x, p->pack.shadowings))
@@ -644,14 +638,14 @@ ecl_shadowing_import(cl_object s, cl_object p)
 		if(ecl_member_eq(x, p->pack.shadowings))
 			p->pack.shadowings = ecl_remove_eq(x, p->pack.shadowings);
 		if (intern_flag == INTERNAL)
-			ecl_remhash(x->symbol.name, p->pack.internal);
+			ecl_remhash(name, p->pack.internal);
 		else
-			ecl_remhash(x->symbol.name, p->pack.external);
+			ecl_remhash(name, p->pack.external);
 		if (x->symbol.hpack == p)
 			x->symbol.hpack = Cnil;
 	}
 	p->pack.shadowings = CONS(s, p->pack.shadowings);
-	ecl_sethash(s->symbol.name, p->pack.internal, s);
+	ecl_sethash(name, p->pack.internal, s);
  OUTPUT:
 	PACKAGE_UNLOCK(p);
 }
@@ -672,7 +666,7 @@ ecl_shadow(cl_object s, cl_object p)
 	x = ecl_find_symbol_nolock(s, p, &intern_flag);
 	if (intern_flag != INTERNAL && intern_flag != EXTERNAL) {
 		x = cl_make_symbol(s);
-		ecl_sethash(x->symbol.name, p->pack.internal, x);
+		ecl_sethash(s, p->pack.internal, x);
 		x->symbol.hpack = p;
 	}
 	p->pack.shadowings = CONS(x, p->pack.shadowings);
@@ -708,7 +702,8 @@ ecl_use_package(cl_object x, cl_object p)
 	for (i = 0;  i < hash_length;  i++)
 		if (hash_entries[i].key != OBJNULL) {
 			cl_object here = hash_entries[i].value;
-			cl_object there = ecl_find_symbol_nolock(here->symbol.name, p, &intern_flag);
+			cl_object name = ecl_symbol_name(here);
+			cl_object there = ecl_find_symbol_nolock(name, p, &intern_flag);
 			if (intern_flag && here != there
 			    && ! ecl_member_eq(there, p->pack.shadowings)) {
 				PACKAGE_UNLOCK(x);

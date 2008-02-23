@@ -946,7 +946,7 @@ NO_DIRECTORY:
 			if (y == @':wild') {
 				writestr_stream("*", buffer);
 			} else if (y == @':newest') {
-				si_do_write_sequence(y->symbol.name, buffer,
+				si_do_write_sequence(ecl_symbol_name(y), buffer,
 						     MAKE_FIXNUM(0), Cnil);
 			} else {
 				/* Since the printer is not reentrant,

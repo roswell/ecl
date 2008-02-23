@@ -2272,8 +2272,8 @@ REST:		if (stage >= AT_REST)
 			assert_type_symbol(key);
 		} else {
 			int intern_flag;
-			assert_type_symbol(v);
-			key = ecl_intern(v->symbol.name, cl_core.keyword_package, &intern_flag);
+			key = ecl_intern(ecl_symbol_name(v), cl_core.keyword_package,
+					 &intern_flag);
 		}
 		nkey++;
 		push(key, keys);

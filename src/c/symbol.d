@@ -42,6 +42,16 @@ ecl_symbol_type_set(cl_object s, int type)
 	} while(1);
 }
 
+cl_object
+ecl_symbol_name(cl_object s)
+{
+	do {
+		if (Null(s) || type_of(s) == t_symbol)
+			return s->symbol.name;
+		s = ecl_type_error(@'symbol-name', "symbol", s, @'symbol');
+	} while(1);
+}
+
 /**********************************************************************/
 
 static void FEtype_error_plist(cl_object x) /*__attribute__((noreturn))*/;
@@ -257,17 +267,17 @@ cl_get_properties(cl_object place, cl_object indicator_list)
 cl_object
 cl_symbol_name(cl_object x)
 {
-	x = ecl_check_cl_type(@'symbol-name', x, t_symbol);
-	@(return x->symbol.name)
+	@(return ecl_symbol_name(x))
 }
 
 @(defun copy_symbol (sym &optional cp &aux x)
 @
-	sym = ecl_check_cl_type(@'copy-symbol', sym, t_symbol);
-	x = cl_make_symbol(sym->symbol.name);
+	x = cl_make_symbol(ecl_symbol_name(sym));
 	if (!Null(cp)) {
-		x->symbol = sym->symbol;
 		x->symbol.dynamic = 0;
+		x->symbol.stype = sym->symbol.stype;
+		x->symbol.value = SYM_VAL(sym);
+		x->symbol.gfdef = SYM_FUN(sym);
 		x->symbol.plist = cl_copy_list(sym->symbol.plist);
 		/* FIXME!!! We should also copy the system property list */
 	}

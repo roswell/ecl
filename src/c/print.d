@@ -822,7 +822,7 @@ write_symbol(cl_object x, cl_object stream)
 	cl_object readtable = ecl_current_readtable();
 	cl_object print_case = ecl_print_case();
 	cl_object package = x->symbol.hpack;
-	cl_object name = x->symbol.name;
+	cl_object name = ecl_symbol_name(x);
 	int intern_flag;
 	bool print_readably = ecl_print_readably();
 

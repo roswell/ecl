@@ -1234,7 +1234,7 @@ type_of(#0)==t_bitvector")
 (proclaim-function getf (t t *) t)
 (proclaim-function get-properties (t t) *)
 (proclaim-function symbol-name (symbol) string :no-side-effects t)
-(def-inline symbol-name :always (symbol) t "((#0)->symbol.name)")
+(def-inline symbol-name :always (t) string "ecl_symbol_name(#0)")
 
 (proclaim-function make-symbol (string) symbol)
 (proclaim-function copy-symbol (symbol *) symbol)

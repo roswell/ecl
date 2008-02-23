@@ -98,7 +98,7 @@ mangle_name(cl_object output, char *source, int l)
 			found = Ct;
 			output = cl_format(4, Cnil,
 					   make_constant_base_string("ECL_SYM(~S,~D)"),
-					   symbol->symbol.name, MAKE_FIXNUM(p));
+					   ecl_symbol_name(symbol), MAKE_FIXNUM(p));
 			@(return found output maxarg)
 		}
 	} else {
@@ -129,7 +129,7 @@ mangle_name(cl_object output, char *source, int l)
 		package = Cnil;
 	else
 		package = package->pack.name;
-	symbol = symbol->symbol.name;
+	symbol = ecl_symbol_name(symbol);
 	l      = symbol->base_string.fillp;
 	source = symbol->base_string.self;
 	output = cl_alloc_simple_base_string(ecl_length(package) + l + 1);
