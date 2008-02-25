@@ -27,13 +27,14 @@ cl_set(cl_object var, cl_object val)
 }
 
 @(defun si::fset (fname def &optional macro pprint)
-	cl_object sym = si_function_block_name(fname);
+	cl_object pack, sym = si_function_block_name(fname);
 	bool mflag;
 	int type;
 @
 	if (Null(cl_functionp(def)))
 		FEinvalid_function(def);
-	if (sym->symbol.hpack != Cnil && sym->symbol.hpack->pack.locked) {
+	pack = ecl_symbol_package(sym);
+	if (pack != Cnil && pack->pack.locked) {
 		CEpackage_error("Attempt to redefine function ~S in locked package.",
 				"Ignore lock and proceed", fname->symbol.hpack, 1, fname);
 	}
@@ -84,10 +85,10 @@ cl_object
 cl_fmakunbound(cl_object fname)
 {
 	cl_object sym = si_function_block_name(fname);
-
-	if (sym->symbol.hpack != Cnil && sym->symbol.hpack->pack.locked) {
+	cl_object pack = ecl_symbol_package(sym);
+	if (pack != Cnil && pack->pack.locked) {
 		CEpackage_error("Attempt to remove definition of function ~S in locked package.",
-				"Ignore lock and proceed", fname->symbol.hpack, 1, fname);
+				"Ignore lock and proceed", pack, 1, fname);
 	}
 	if (SYMBOLP(fname)) {
 		ecl_clear_compiler_properties(sym);

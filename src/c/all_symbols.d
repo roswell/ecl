@@ -120,7 +120,7 @@ mangle_name(cl_object output, char *source, int l)
 			}
 		}
 	}
-	package= symbol->symbol.hpack;
+	package= ecl_symbol_package(symbol);
 	if (package == cl_core.lisp_package)
 		package = make_constant_base_string("cl");
 	else if (package == cl_core.system_package)
@@ -192,7 +192,6 @@ make_this_symbol(int i, cl_object s, int code, const char *name,
 	ECL_SET(s, OBJNULL);
 	SYM_FUN(s) = Cnil;
 	s->symbol.plist = Cnil;
-	s->symbol.hpack = Cnil;
 	s->symbol.stype = stp;
 	s->symbol.hpack = package;
 	s->symbol.name = make_constant_base_string(name);

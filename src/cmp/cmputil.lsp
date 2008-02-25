@@ -96,7 +96,9 @@
   (let* ((name (fun-name f)))
     (unless name
       (setf name (fun-description f)))
-    (when (and name (symbol-package name) (not *suppress-compiler-notes*))
+    (when (and name
+	       (or (not (symbolp name)) (symbol-package name))
+	       (not *suppress-compiler-notes*))
       (format t "~&;;; Emitting code for ~s.~%" name))))
 
 (defun undefined-variable (sym &aux (*print-case* :upcase))

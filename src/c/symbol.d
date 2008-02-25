@@ -43,6 +43,16 @@ ecl_symbol_type_set(cl_object s, int type)
 }
 
 cl_object
+ecl_symbol_package(cl_object s)
+{
+	do {
+		if (Null(s) || type_of(s) == t_symbol)
+			return s->symbol.hpack;
+		s = ecl_type_error(@'symbol-package', "symbol", s, @'symbol');
+	} while(1);
+}
+
+cl_object
 ecl_symbol_name(cl_object s)
 {
 	do {
@@ -337,14 +347,13 @@ ONCE_MORE:
 cl_object
 cl_symbol_package(cl_object sym)
 {
-	sym = ecl_check_cl_type(@'symbol-package', sym, t_symbol);
-	@(return sym->symbol.hpack)
+	@(return ecl_symbol_package(sym))
 }
 
 cl_object
 cl_keywordp(cl_object sym)
 {
-	@(return ((SYMBOLP(sym) && ecl_keywordp(sym))? Ct: Cnil))
+	@(return (ecl_keywordp(sym)? Ct: Cnil))
 }
 
 /*

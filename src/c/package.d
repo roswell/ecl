@@ -331,7 +331,7 @@ ecl_intern(cl_object name, cl_object p, int *intern_flag)
 		goto TRY_AGAIN_LABEL;
 	}
 	s = cl_make_symbol(name);
-	s->symbol.hpack = p;
+	s->symbol.hpack = p; /* INV: it is of type t_symbol */
 	*intern_flag = 0;
 	if (p == cl_core.keyword_package) {
 		ecl_symbol_type_set(s, ecl_symbol_type(s) | stp_constant);
@@ -397,15 +397,27 @@ ecl_find_symbol(cl_object n, cl_object p, int *intern_flag)
 	return n;
 }
 
+static void
+symbol_remove_package(cl_object s, cl_object p)
+{
+	if (s->symbol.hpack == p)
+		s->symbol.hpack = Cnil;
+}
+
+static void
+symbol_add_package(cl_object s, cl_object p)
+{
+	if (Null(s->symbol.hpack))
+		s->symbol.hpack = p;
+}
+
 bool
 ecl_unintern(cl_object s, cl_object p)
 {
 	cl_object x, y, l, hash;
 	bool output = FALSE;
 	cl_object name = ecl_symbol_name(s);
-
 	p = si_coerce_to_package(p);
-
  TRY_AGAIN_LABEL:
 	PACKAGE_LOCK(p);
 	hash = p->pack.internal;
@@ -443,8 +455,7 @@ ecl_unintern(cl_object s, cl_object p)
 	p->pack.shadowings = ecl_remove_eq(s, p->pack.shadowings);
  NOT_SHADOW:
 	ecl_remhash(name, hash);
-	if (s->symbol.hpack == p)
-		s->symbol.hpack = Cnil;
+	symbol_remove_package(s, p);
 	output = TRUE;
  OUTPUT:
 	PACKAGE_UNLOCK(p);
@@ -531,15 +542,13 @@ cl_delete_package(cl_object p)
 	for (hash = p->pack.internal, i = 0; i < hash->hash.size; i++)
 		if (hash->hash.data[i].key != OBJNULL) {
 			cl_object s = hash->hash.data[i].value;
-			if (s->symbol.hpack == p)
-				s->symbol.hpack = Cnil;
+			symbol_remove_package(s, p);
 		}
 	cl_clrhash(p->pack.internal);
 	for (hash = p->pack.external, i = 0; i < hash->hash.size; i++)
 		if (hash->hash.data[i].key != OBJNULL) {
 			cl_object s = hash->hash.data[i].value;
-			if (s->symbol.hpack == p)
-				s->symbol.hpack = Cnil;
+			symbol_remove_package(s, p);
 		}
 	cl_clrhash(p->pack.external);
 	p->pack.shadowings = Cnil;
@@ -609,8 +618,7 @@ cl_import2(cl_object s, cl_object p)
 			goto OUTPUT;
 	}
 	ecl_sethash(name, p->pack.internal, s);
-	if (Null(s->symbol.hpack))
-		s->symbol.hpack = p;
+	symbol_add_package(s, p);
  OUTPUT:
 	PACKAGE_UNLOCK(p);
 }
@@ -641,8 +649,7 @@ ecl_shadowing_import(cl_object s, cl_object p)
 			ecl_remhash(name, p->pack.internal);
 		else
 			ecl_remhash(name, p->pack.external);
-		if (x->symbol.hpack == p)
-			x->symbol.hpack = Cnil;
+		symbol_remove_package(s, p);
 	}
 	p->pack.shadowings = CONS(s, p->pack.shadowings);
 	ecl_sethash(name, p->pack.internal, s);
@@ -666,8 +673,8 @@ ecl_shadow(cl_object s, cl_object p)
 	x = ecl_find_symbol_nolock(s, p, &intern_flag);
 	if (intern_flag != INTERNAL && intern_flag != EXTERNAL) {
 		x = cl_make_symbol(s);
-		ecl_sethash(s, p->pack.internal, x);
 		x->symbol.hpack = p;
+		ecl_sethash(s, p->pack.internal, x);
 	}
 	p->pack.shadowings = CONS(x, p->pack.shadowings);
 	PACKAGE_UNLOCK(p);
