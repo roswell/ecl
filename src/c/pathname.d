@@ -155,15 +155,13 @@ ecl_make_pathname(cl_object host, cl_object device, cl_object directory,
 		directory = cl_list(2, @':absolute', directory);
 		break;
 	case t_symbol:
-		if (directory == Cnil)
-			break;
 		if (directory == @':wild') {
 			directory = cl_list(2, @':absolute', @':wild-inferiors');
 			break;
 		}
 		component = @':directory';
 		goto ERROR;
-	case t_cons:
+	case t_list:
 		directory = cl_copy_list(directory);
 		break;
 	default:
@@ -424,7 +422,7 @@ parse_directories(cl_object s, int flags, cl_index start, cl_index end,
 			part = (flags & WORD_LOGICAL) ? @':relative' : @':absolute';
 		}
 		*end_of_dir = i;
-		plast = &CDR(*plast = CONS(part, Cnil));
+		plast = &CDR(*plast = ecl_list1(part));
 	}
 	return path;
 }
@@ -1150,7 +1148,7 @@ cl_host_namestring(cl_object pname)
 	pathdir = path->pathname.directory;
 	defaultdir = defaults->pathname.directory;
 	if (Null(pathdir)) {
-		pathdir = CONS(@':relative', Cnil);
+		pathdir = ecl_list1(@':relative');
 	} else if (Null(defaultdir)) {
 		/* The defaults pathname does not have a directory. */
 	} else if (CAR(pathdir) == @':relative') {
@@ -1353,7 +1351,7 @@ find_wilds(cl_object l, cl_object source, cl_object match)
 	cl_index i, j, k, ls, lm;
 
 	if (match == @':wild')
-		return CONS(source, Cnil);
+		return ecl_list1(source);
 	if (!ecl_stringp(match) || !ecl_stringp(source)) {
 		if (match != source)
 			return @':error';

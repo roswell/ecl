@@ -83,12 +83,12 @@ mangle_name(cl_object output, char *source, int l)
 	cl_object maxarg = MAKE_FIXNUM(CALL_ARGUMENTS_LIMIT);
 	cl_object minarg = MAKE_FIXNUM(0);
 	bool is_symbol;
+	cl_object name;
 @
-	symbol = ecl_check_cl_type(@'si::mangle-name', symbol, t_symbol);
+	name = ecl_symbol_name(symbol);
 	is_symbol = Null(as_function);
 	if (is_symbol) {
 		cl_fixnum p;
-
 		if (symbol == Cnil)
 			@(return Ct make_constant_base_string("Cnil"))
 		else if (symbol == Ct)
@@ -98,10 +98,10 @@ mangle_name(cl_object output, char *source, int l)
 			found = Ct;
 			output = cl_format(4, Cnil,
 					   make_constant_base_string("ECL_SYM(~S,~D)"),
-					   ecl_symbol_name(symbol), MAKE_FIXNUM(p));
+					   name, MAKE_FIXNUM(p));
 			@(return found output maxarg)
 		}
-	} else {
+	} else if (!Null(symbol)) {
 		cl_object fun;
 		fun = symbol->symbol.gfdef;
 		if (fun != OBJNULL && type_of(fun) == t_cfun &&
@@ -120,7 +120,7 @@ mangle_name(cl_object output, char *source, int l)
 			}
 		}
 	}
-	package= ecl_symbol_package(symbol);
+	package = ecl_symbol_package(symbol);
 	if (package == cl_core.lisp_package)
 		package = make_constant_base_string("cl");
 	else if (package == cl_core.system_package)
@@ -192,6 +192,7 @@ make_this_symbol(int i, cl_object s, int code, const char *name,
 	ECL_SET(s, OBJNULL);
 	SYM_FUN(s) = Cnil;
 	s->symbol.plist = Cnil;
+	s->symbol.hpack = Cnil;
 	s->symbol.stype = stp;
 	s->symbol.hpack = package;
 	s->symbol.name = make_constant_base_string(name);

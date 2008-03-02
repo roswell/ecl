@@ -138,6 +138,8 @@ extern struct cl_env_struct cl_env;
  */
 
 struct cl_core_struct {
+	struct ecl_list nil[1];
+
 	cl_object packages;
 	cl_object lisp_package;
 	cl_object user_package;
@@ -203,6 +205,7 @@ extern struct cl_core_struct cl_core;
 extern cl_object cl_alloc_object(cl_type t);
 extern cl_object cl_alloc_instance(cl_index slots);
 extern cl_object ecl_cons(cl_object a, cl_object d);
+extern cl_object ecl_list1(cl_object a);
 extern void cl_dealloc(void *p, cl_index s);
 #ifdef GBC_BOEHM
 extern cl_object si_gc(cl_object area);
@@ -1395,9 +1398,9 @@ extern void cl_defparameter(cl_object s, cl_object v);
 extern cl_object ecl_make_keyword(const char *s);
 extern cl_object ecl_symbol_value(cl_object s);
 extern cl_object ecl_symbol_name(cl_object s);
+extern cl_object ecl_symbol_package(cl_object s);
 extern int ecl_symbol_type(cl_object s);
 extern void ecl_symbol_type_set(cl_object s, int t);
-extern cl_object ecl_symbol_package(cl_object s);
 extern cl_object ecl_getf(cl_object place, cl_object indicator, cl_object deflt);
 extern cl_object ecl_get(cl_object s, cl_object p, cl_object d);
 extern bool ecl_keywordp(cl_object s);

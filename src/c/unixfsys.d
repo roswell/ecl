@@ -648,7 +648,7 @@ list_current_directory(const char *mask, bool only_dir)
 			continue;
 		if (mask && !string_match(text, mask))
 			continue;
-		*out_cdr = CONS(make_base_string_copy(text), Cnil);
+		*out_cdr = ecl_list1(make_base_string_copy(text));
 		out_cdr = &CDR(*out_cdr);
 	}
 #ifdef HAVE_DIRENT_H

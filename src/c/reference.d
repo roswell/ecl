@@ -55,7 +55,7 @@ cl_fboundp(cl_object fname)
 	} else if (SYMBOLP(fname)) {
 		@(return (((fname->symbol.stype & stp_special_form)
 			   || SYM_FUN(fname) != Cnil)? Ct : Cnil))
-	} else if (CONSP(fname)) {
+	} else if (LISTP(fname)) {
 		if (CAR(fname) == @'setf') {
 			cl_object sym = CDR(fname);
 			if (CONSP(sym) && CDR(sym) == Cnil) {
@@ -80,7 +80,9 @@ ecl_fdefinition(cl_object fun)
 			FEundefined_function(fun);
 		if (fun->symbol.stype & (stp_macro | stp_special_form))
 			FEundefined_function(fun);
-	} else if (t == t_cons) {
+	} else if (Null(fun)) {
+		FEundefined_function(fun);
+	} else if (t == t_list) {
 		cl_object sym = CDR(fun);
 		if (!CONSP(sym))
 			FEinvalid_function_name(fun);

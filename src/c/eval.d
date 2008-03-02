@@ -267,8 +267,14 @@ cl_eval(cl_object form)
 	cl_object flag;
 @
 	switch (type_of(arg)) {
-	case t_cons:
-		flag = (CAR(arg) == @'quote') ? Ct : Cnil;
+	case t_list:
+		if (Null(arg)) {
+			flag = Ct;
+		} else if (CAR(arg) == @'quote') {
+			flag = Ct;
+		} else {
+			flag = Cnil;
+		}
 		break;
 	case t_symbol:
 		flag = (arg->symbol.stype & stp_constant) ? Ct : Cnil;

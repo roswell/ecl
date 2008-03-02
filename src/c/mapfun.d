@@ -52,7 +52,7 @@ prepare_map(cl_va_list lists, cl_object cdrs_frame, cl_object cars_frame)
 			ecl_stack_frame_elt_set(cars_frame, i, CAR(cdr));
 			ecl_stack_frame_elt_set(cdrs_frame, i, CDR(cdr));
 		}
-		*val = CONS(ecl_apply_from_stack_frame(cars_frame, fun), Cnil);
+		*val = ecl_list1(ecl_apply_from_stack_frame(cars_frame, fun));
 		val = &CDR(*val);
 	}
 } @)
@@ -76,7 +76,7 @@ prepare_map(cl_va_list lists, cl_object cdrs_frame, cl_object cars_frame)
 			ecl_stack_frame_elt_set(cars_frame, i, cdr);
 			ecl_stack_frame_elt_set(cdrs_frame, i, CDR(cdr));
 		}
-		*val = CONS(ecl_apply_from_stack_frame(cars_frame, fun), Cnil);
+		*val = ecl_list1(ecl_apply_from_stack_frame(cars_frame, fun));
 		val = &CDR(*val);
 	}
 } @)

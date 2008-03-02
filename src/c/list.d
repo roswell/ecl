@@ -176,9 +176,9 @@ cl_cdr(cl_object x)
 	cl_object list = Cnil, z;
 @
 	if (narg-- != 0) {
-		list = z = CONS(cl_va_arg(args), Cnil);
+		list = z = ecl_list1(cl_va_arg(args));
 		while (narg-- > 0) 
-			z = CDR(z) = CONS(cl_va_arg(args), Cnil);
+			z = CDR(z) = ecl_list1(cl_va_arg(args));
 		}
 	@(return list)
 @)
@@ -189,7 +189,7 @@ cl_cdr(cl_object x)
 	if (narg == 0)
 		FEwrong_num_arguments(@'list*');
 	while (--narg > 0)
-		z = &CDR( *z = CONS(cl_va_arg(args), Cnil));
+		z = &CDR( *z = ecl_list1(cl_va_arg(args)));
 	*z = cl_va_arg(args);
 	@(return p)
 @)
@@ -201,7 +201,7 @@ copy_list_to(cl_object x, cl_object **z)
 
 	y = *z;
 	loop_for_in(x) {
-		y = &CDR(*y = CONS(CAR(x), Cnil));
+		y = &CDR(*y = ecl_list1(CAR(x)));
 	} end_loop_for_in;
 	*z = y;
 }
@@ -438,7 +438,7 @@ cl_copy_list(cl_object x)
 	cl_object *y = &copy;
 
 	loop_for_on(x) {
-		y = &CDR(*y = CONS(CAR(x), Cnil));
+		y = &CDR(*y = ecl_list1(CAR(x)));
 	} end_loop_for_on;
 	*y = x;
 	@(return copy);
@@ -454,7 +454,7 @@ cl_copy_alist(cl_object x)
 		cl_object pair = CAR(x);
 		if (CONSP(pair))
 			pair = CONS(CAR(pair), CDR(pair));
-		*y = CONS(pair, Cnil);
+		*y = ecl_list1(pair);
 		y = &CDR(*y);
 	} end_loop_for_in;
 	*y = x;
@@ -549,7 +549,7 @@ cl_nreconc(cl_object l, cl_object y)
 		if (delay)
 			delay--;
 		else {
-			fill = &CDR(*fill = CONS(CAR(r), Cnil));
+			fill = &CDR(*fill = ecl_list1(CAR(r)));
 			r = CDR(r);
 		}
 	} end_loop_for_on;
@@ -588,7 +588,7 @@ cl_ldiff(cl_object x, cl_object y)
 		if (ecl_eql(x, y))
 			@(return res)
 		else
-			fill = &CDR(*fill = CONS(CAR(x), Cnil));
+			fill = &CDR(*fill = ecl_list1(CAR(x)));
 	} end_loop_for_on;
 	/* INV: At the end of a loop_for_on(x), x has the CDR of the last cons
 	   in the list. When Y was not a member of the list, LDIFF must set

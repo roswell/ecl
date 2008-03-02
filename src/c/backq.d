@@ -35,8 +35,8 @@ kwote(cl_object x)
 {
 	cl_type t = type_of(x);
 	if ((t == t_symbol && !Null(x) && !ecl_keywordp(x)) ||
-	    t == t_cons || t == t_vector)
-		x = CONS(@'quote', CONS(x, Cnil));
+	    t == t_list || t == t_vector)
+		x = CONS(@'quote', ecl_list1(x));
 	return x;
 }
 
@@ -77,10 +77,10 @@ _cl_backq_cdr(cl_object *px)
 			if (Null(dx)) {
 				out = LIST;
 			} else if (CONSP(dx) && Null(CDR(dx))) {
-				dx = CONS(kwote(CAR(dx)), Cnil);
+				dx = ecl_list1(kwote(CAR(dx)));
 				out = LIST;
 			} else {
-				dx = CONS(kwote(dx), Cnil);
+				dx = ecl_list1(kwote(dx));
 				out = LISTX;
 			}
 			break;
@@ -90,7 +90,7 @@ _cl_backq_cdr(cl_object *px)
 				*px = ax;
 				return EVAL;
 			} else {
-				dx = CONS(kwote(dx), Cnil);
+				dx = ecl_list1(kwote(dx));
 				out = a;
 			}
 			break;
@@ -101,16 +101,16 @@ _cl_backq_cdr(cl_object *px)
 		switch (a) {
 		case QUOTE:
 			ax = kwote(ax);
-			dx = CONS(dx, Cnil);
+			dx = ecl_list1(dx);
 			out = LISTX;
 			break;
 		case EVAL:
-			dx = CONS(dx, Cnil);
+			dx = ecl_list1(dx);
 			out = LISTX;
 			break;
 		case APPEND:
 		case NCONC:
-			dx = CONS(dx, Cnil);
+			dx = ecl_list1(dx);
 			out = a;
 			break;
 		default:
@@ -154,16 +154,16 @@ _cl_backq_cdr(cl_object *px)
 		switch (a) {
 		case QUOTE:
 			ax = kwote(ax);
-			dx = CONS(dx, Cnil);
+			dx = ecl_list1(dx);
 			out = LISTX;
 			break;
 		case EVAL:
-			dx = CONS(dx, Cnil);
+			dx = ecl_list1(dx);
 			out = LISTX;
 			break;
 		case APPEND:
 		case NCONC:
-			dx = CONS(dx, Cnil);
+			dx = ecl_list1(dx);
 			out = a;
 			break;
 		default:

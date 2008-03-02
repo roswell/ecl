@@ -559,7 +559,7 @@ interpret_msetq(cl_object bytecodes, cl_opcode *vector)
 			ecl_lex_env_set_var(var, value);
 		else {
 			cl_object name = bytecodes->bytecodes.data[-1-var];
-			if (name->symbol.stype & stp_constant)
+			if (Null(name) || (name->symbol.stype & stp_constant))
 				FEassignment_to_constant(name);
 			else
 				ECL_SETQ(name, value);

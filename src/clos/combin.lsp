@@ -100,7 +100,6 @@
   *next-methods*)
 
 (define-compiler-macro call-next-method (&rest args)
-  (print 'call-next-method)
   `(if *next-methods*
        (funcall (car *next-methods*) ,(if args `(list ,@args) '.combined-method-args.)
 		(rest *next-methods*))

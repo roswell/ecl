@@ -72,6 +72,28 @@ member_string_eq(cl_object x, cl_object l)
 	return(FALSE);
 }
 
+#if defined(__cplusplus) || defined(__GNUC__)
+#define INLINE inline
+#endif
+
+static INLINE
+symbol_remove_package(cl_object s, cl_object p)
+{
+	if (Null(s))
+		s = Cnil_symbol;
+	if (s->symbol.hpack == p)
+		s->symbol.hpack = Cnil;
+}
+
+static INLINE
+symbol_add_package(cl_object s, cl_object p)
+{
+	if (Null(s))
+		s = Cnil_symbol;
+	if (s->symbol.hpack == Cnil)
+		s->symbol.hpack = p;
+}
+
 /*
 	ecl_make_package(n, ns, ul) makes a package with name n,
 	which must be a string or a symbol,
@@ -331,7 +353,7 @@ ecl_intern(cl_object name, cl_object p, int *intern_flag)
 		goto TRY_AGAIN_LABEL;
 	}
 	s = cl_make_symbol(name);
-	s->symbol.hpack = p; /* INV: it is of type t_symbol */
+	s->symbol.hpack = p;
 	*intern_flag = 0;
 	if (p == cl_core.keyword_package) {
 		ecl_symbol_type_set(s, ecl_symbol_type(s) | stp_constant);
@@ -397,27 +419,15 @@ ecl_find_symbol(cl_object n, cl_object p, int *intern_flag)
 	return n;
 }
 
-static void
-symbol_remove_package(cl_object s, cl_object p)
-{
-	if (s->symbol.hpack == p)
-		s->symbol.hpack = Cnil;
-}
-
-static void
-symbol_add_package(cl_object s, cl_object p)
-{
-	if (Null(s->symbol.hpack))
-		s->symbol.hpack = p;
-}
-
 bool
 ecl_unintern(cl_object s, cl_object p)
 {
 	cl_object x, y, l, hash;
 	bool output = FALSE;
 	cl_object name = ecl_symbol_name(s);
+
 	p = si_coerce_to_package(p);
+
  TRY_AGAIN_LABEL:
 	PACKAGE_LOCK(p);
 	hash = p->pack.internal;
@@ -649,7 +659,7 @@ ecl_shadowing_import(cl_object s, cl_object p)
 			ecl_remhash(name, p->pack.internal);
 		else
 			ecl_remhash(name, p->pack.external);
-		symbol_remove_package(s, p);
+		symbol_remove_package(x, p);
 	}
 	p->pack.shadowings = CONS(s, p->pack.shadowings);
 	ecl_sethash(name, p->pack.internal, s);
@@ -673,8 +683,8 @@ ecl_shadow(cl_object s, cl_object p)
 	x = ecl_find_symbol_nolock(s, p, &intern_flag);
 	if (intern_flag != INTERNAL && intern_flag != EXTERNAL) {
 		x = cl_make_symbol(s);
-		x->symbol.hpack = p;
 		ecl_sethash(s, p->pack.internal, x);
+		x->symbol.hpack = p;
 	}
 	p->pack.shadowings = CONS(x, p->pack.shadowings);
 	PACKAGE_UNLOCK(p);
@@ -855,12 +865,12 @@ cl_list_all_packages()
 BEGIN:
 	switch (type_of(symbols)) {
 	case t_symbol:
-		if (Null(symbols))
-			break;
 		cl_export2(symbols, pack);
 		break;
 
-	case t_cons:
+	case t_list:
+		if (Null(symbols))
+			break;
 		pack = si_coerce_to_package(pack);
 		for (l = symbols;  !ecl_endp(l);  l = CDR(l))
 			cl_export2(CAR(l), pack);
@@ -880,12 +890,12 @@ BEGIN:
 BEGIN:
 	switch (type_of(symbols)) {
 	case t_symbol:
-		if (Null(symbols))
-			break;
 		cl_unexport2(symbols, pack);
 		break;
 
-	case t_cons:
+	case t_list:
+		if (Null(symbols))
+			break;
 		pack = si_coerce_to_package(pack);
 		for (l = symbols;  !ecl_endp(l);  l = CDR(l))
 			cl_unexport2(CAR(l), pack);
@@ -905,12 +915,12 @@ BEGIN:
 BEGIN:
 	switch (type_of(symbols)) {
 	case t_symbol:
-		if (Null(symbols))
-			break;
 		cl_import2(symbols, pack);
 		break;
 
-	case t_cons:
+	case t_list:
+		if (Null(symbols))
+			break;
 		pack = si_coerce_to_package(pack);
 		for (l = symbols;  !ecl_endp(l);  l = CDR(l))
 			cl_import2(CAR(l), pack);
@@ -930,12 +940,12 @@ BEGIN:
 BEGIN:
 	switch (type_of(symbols)) {
 	case t_symbol:
-		if (Null(symbols))
-			break;
 		ecl_shadowing_import(symbols, pack);
 		break;
 
-	case t_cons:
+	case t_list:
+		if (Null(symbols))
+			break;
 		pack = si_coerce_to_package(pack);
 		for (l = symbols;  !ecl_endp(l);  l = CDR(l))
 			ecl_shadowing_import(CAR(l), pack);
@@ -961,12 +971,12 @@ BEGIN:
 	case t_symbol:
 	case t_character:
 		/* Arguments to SHADOW may be: string designators ... */
-		if (Null(symbols))
-			break;
 		ecl_shadow(symbols, pack);
 		break;
-	case t_cons:
+	case t_list:
 		/* ... or lists of string designators */
+		if (Null(symbols))
+			break;
 		pack = si_coerce_to_package(pack);
 		for (l = symbols;  !ecl_endp(l);  l = CDR(l))
 			ecl_shadow(CAR(l), pack);
@@ -985,15 +995,15 @@ BEGIN:
 BEGIN:
 	switch (type_of(pack)) {
 	case t_symbol:
-		if (Null(pack))
-			break;
 	case t_character:
 	case t_base_string:
 	case t_package:
 		ecl_use_package(pack, pa);
 		break;
 
-	case t_cons:
+	case t_list:
+		if (Null(pack))
+			break;
 		pa = si_coerce_to_package(pa);
 		for (l = pack;  !ecl_endp(l);  l = CDR(l))
 			ecl_use_package(CAR(l), pa);
@@ -1012,15 +1022,15 @@ BEGIN:
 BEGIN:
 	switch (type_of(pack)) {
 	case t_symbol:
-		if (Null(pack))
-			break;
 	case t_character:
 	case t_base_string:
 	case t_package:
 		ecl_unuse_package(pack, pa);
 		break;
 
-	case t_cons:
+	case t_list:
+		if (Null(pack))
+			break;
 		pa = si_coerce_to_package(pa);
 		for (l = pack;  !ecl_endp(l);  l = CDR(l))
 			ecl_unuse_package(CAR(l), pa);

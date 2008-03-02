@@ -20,11 +20,25 @@
 /******************************* ------- ******************************/
 /* FIXME! CURRENTLY SYMBOLS ARE RESTRICTED TO HAVE NON-UNICODE NAMES */
 
+cl_object
+ecl_symbol_package(cl_object s)
+{
+	do {
+		if (Null(s))
+			return Cnil_symbol->symbol.hpack;
+		if (type_of(s) == t_symbol)
+			return s->symbol.hpack;
+		s = ecl_type_error(@'symbol-package', "symbol", s, @'symbol');
+	} while(1);
+}
+
 int
 ecl_symbol_type(cl_object s)
 {
 	do {
-		if (Null(s) || type_of(s) == t_symbol)
+		if (Null(s))
+			return Cnil_symbol->symbol.stype;
+		if (type_of(s) == t_symbol)
 			return s->symbol.stype;
 		s = ecl_type_error(@'symbol-name', "symbol", s, @'symbol');
 	} while(1);
@@ -34,7 +48,11 @@ void
 ecl_symbol_type_set(cl_object s, int type)
 {
 	do {
-		if (Null(s) || type_of(s) == t_symbol) {
+		if (Null(s)) {
+			Cnil_symbol->symbol.stype = type;
+			return;
+		}
+		if (type_of(s) == t_symbol) {
 			s->symbol.stype = type;
 			return;
 		}
@@ -43,22 +61,30 @@ ecl_symbol_type_set(cl_object s, int type)
 }
 
 cl_object
-ecl_symbol_package(cl_object s)
-{
-	do {
-		if (Null(s) || type_of(s) == t_symbol)
-			return s->symbol.hpack;
-		s = ecl_type_error(@'symbol-package', "symbol", s, @'symbol');
-	} while(1);
-}
-
-cl_object
 ecl_symbol_name(cl_object s)
 {
 	do {
-		if (Null(s) || type_of(s) == t_symbol)
+		if (Null(s)) {
+			return Cnil_symbol->symbol.name;
+		}
+		if (type_of(s) == t_symbol) {
 			return s->symbol.name;
+		}
 		s = ecl_type_error(@'symbol-name', "symbol", s, @'symbol');
+	} while(1);
+}
+
+static cl_object *
+ecl_symbol_plist(cl_object s)
+{
+	do {
+		if (Null(s)) {
+			return &Cnil_symbol->symbol.plist;
+		}
+		if (type_of(s) == t_symbol) {
+			return &s->symbol.plist;
+		}
+		s = ecl_type_error(@'symbol-plist', "symbol", s, @'symbol');
 	} while(1);
 }
 
@@ -155,9 +181,7 @@ ecl_getf(cl_object place, cl_object indicator, cl_object deflt)
 cl_object
 ecl_get(cl_object s, cl_object p, cl_object d)
 {
-	if (!SYMBOLP(s))
-		FEtype_error_symbol(s);
-	return ecl_getf(s->symbol.plist, p, d);
+	return ecl_getf(*ecl_symbol_plist(s), p, d);
 }
 
 /*
@@ -225,27 +249,26 @@ remf(cl_object *place, cl_object indicator)
 bool
 ecl_keywordp(cl_object s)
 {
-	return (SYMBOLP(s) && s->symbol.hpack == cl_core.keyword_package);
+	return (type_of(s) == t_symbol) && (s->symbol.hpack == cl_core.keyword_package);
 }
 
 @(defun get (sym indicator &optional deflt)
 @
-	sym = ecl_check_cl_type(@'get', sym, t_symbol);
-	@(return ecl_getf(sym->symbol.plist, indicator, deflt))
+	cl_object *plist = ecl_symbol_plist(sym);
+	@(return ecl_getf(*plist, indicator, deflt))
 @)
 
 cl_object
 cl_remprop(cl_object sym, cl_object prop)
 {
-	sym = ecl_check_cl_type(@'remprop', sym, t_symbol);
-	@(return (remf(&sym->symbol.plist, prop)? Ct: Cnil))
+	cl_object *plist = ecl_symbol_plist(sym);
+	@(return (remf(plist, prop)? Ct: Cnil))
 }
 
 cl_object
 cl_symbol_plist(cl_object sym)
 {
-	sym = ecl_check_cl_type(@'symbol-plist', sym, t_symbol);
-	@(return sym->symbol.plist)
+	@(return *ecl_symbol_plist(sym))
 }
 
 @(defun getf (place indicator &optional deflt)
@@ -377,16 +400,15 @@ si_rem_f(cl_object plist, cl_object indicator)
 cl_object
 si_set_symbol_plist(cl_object sym, cl_object plist)
 {
-	sym = ecl_check_cl_type(@'si::set-symbol-plist', sym, t_symbol);
-	sym->symbol.plist = plist;
+	*ecl_symbol_plist(sym) = plist;
 	@(return plist)
 }
 
 cl_object
 si_putprop(cl_object sym, cl_object value, cl_object indicator)
 {
-	sym = ecl_check_cl_type(@'si::putprop', sym, t_symbol);
-	sym->symbol.plist = si_put_f(sym->symbol.plist, value, indicator);
+	cl_object *plist = ecl_symbol_plist(sym);
+	*plist = si_put_f(*plist, value, indicator);
 	@(return value)
 }
 

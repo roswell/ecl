@@ -164,7 +164,8 @@ enum ecl_stype {		/*  symbol type  */
 	stp_special_form = 8
 };
 
-#define	Cnil			((cl_object)cl_symbols)
+#define	Cnil			((cl_object)cl_core.nil)
+#define	Cnil_symbol		((cl_object)cl_symbols)
 #define	Ct			((cl_object)(cl_symbols+1))
 #define ECL_UNBOUND		((cl_object)(cl_symbols+2))
 #define ECL_PROTECT_TAG		((cl_object)(cl_symbols+3))
@@ -209,11 +210,12 @@ struct ecl_package {
 #define	EXTERNAL	2
 #define	INHERITED	3
 
-#define LISTP(x)	(x == Cnil || CONSP(x))
-#define CONSP(x)	((IMMEDIATE(x) == 0) && ((x)->d.t == t_cons))
-#define ATOM(x)		((IMMEDIATE(x) != 0) || ((x)->d.t != t_cons))
-#define SYMBOLP(x)	((IMMEDIATE(x) == 0) && ((x)->d.t == t_symbol))
-struct ecl_cons {
+#define LISTP(x)	((IMMEDIATE(x) == 0) && ((x)->d.t == t_list))
+#define CONSP(x)	(LISTP(x) && ((x) != Cnil))
+#define ATOM(x)		(((x) == Cnil) || !LISTP(x))
+#define SYMBOLP(x)	(Null(x) || ((IMMEDIATE(x) == 0) && ((x)->d.t == t_symbol)))
+
+struct ecl_list {
 	HEADER;
 	cl_object cdr;		/*  cdr  */
 	cl_object car;		/*  car  */
@@ -562,7 +564,7 @@ union cl_lispunion {
 	struct ecl_complex	complex;	/*  complex number  */
 	struct ecl_symbol	symbol;		/*  symbol  */
 	struct ecl_package	pack;		/*  package  */
-	struct ecl_cons		cons;		/*  cons  */
+	struct ecl_list		cons;		/*  cons  */
 	struct ecl_hashtable	hash;		/*  hash table  */
 	struct ecl_array	array;		/*  array  */
 	struct ecl_vector	vector;		/*  vector  */
@@ -598,7 +600,7 @@ union cl_lispunion {
 	Implementation types.
 */
 typedef enum {
-	t_cons = 0,
+	t_list = 0,
 	t_start = 0,
 	/* The most specific numeric types come first. Assumed by
 	   some routines, like cl_expt */

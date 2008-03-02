@@ -24,6 +24,8 @@
 
 static void corrupted_hash(cl_object hashtable) /*__attribute__((noreturn))*/;
 
+#define SYMBOL_NAME(x) (Null(x)? Cnil_symbol->symbol.name : (x)->symbol.name)
+
 static void
 corrupted_hash(cl_object hashtable)
 {
@@ -75,7 +77,10 @@ static cl_hashkey
 _hash_equal(int depth, cl_hashkey h, cl_object x)
 {
 	switch (type_of(x)) {
-	case t_cons:
+	case t_list:
+		if (Null(x)) {
+			return _hash_equal(depth, h, Cnil_symbol);
+		}
 		if (depth++ > 3) {
 			return 0;
 		}
@@ -120,7 +125,10 @@ _hash_equalp(int depth, cl_hashkey h, cl_object x)
 	switch (type_of(x)) {
 	case t_character:
 		return hash_word(h, toupper(CHAR_CODE(x)));
-	case t_cons:
+	case t_list:
+		if (Null(x)) {
+			return _hash_equalp(depth, h, Cnil_symbol);
+		}
 		if (depth++ > 3) {
 			return 0;
 		}
@@ -225,7 +233,7 @@ ecl_search_hash(cl_object key, cl_object hashtable)
 		case htt_eql:	b = ecl_eql(key, hkey); break;
 		case htt_equal: b = ecl_equal(key, hkey); break;
 		case htt_equalp:b = ecl_equalp(key, hkey); break;
-		case htt_pack:	b = (ho==hkey) && ecl_string_eq(key,e->value->symbol.name);
+		case htt_pack:	b = (ho==hkey) && ecl_string_eq(key,SYMBOL_NAME(e->value));
 				break;
 		}
 		if (b)
@@ -353,7 +361,7 @@ ecl_extend_hashtable(cl_object hashtable)
 	for (i = 0;  i < old_size;  i++)
 		if ((key = old->hash.data[i].key) != OBJNULL) {
 			if (hashtable->hash.test == htt_pack)
-				key = old->hash.data[i].value->symbol.name;
+				key = SYMBOL_NAME(old->hash.data[i].value);
 			add_new_to_hash(key, hashtable, old->hash.data[i].value);
 		}
 }

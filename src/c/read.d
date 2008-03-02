@@ -739,7 +739,7 @@ sharp_C_reader(cl_object in, cl_object c, cl_object d)
 		FEend_of_file(in);
 	if (read_suppress)
 		@(return Cnil);
-	if (type_of(x) != t_cons || ecl_length(x) != 2)
+	if (Null(x) || type_of(x) != t_list || ecl_length(x) != 2)
 		FEreader_error("Reader macro #C should be followed by a list",
 			       in, 0);
 	real = CAR(x);
@@ -820,7 +820,7 @@ sharp_Y_reader(cl_object in, cl_object c, cl_object d)
 		FEend_of_file(in);
 	if (read_suppress)
 		@(return Cnil);
-	if (type_of(x) != t_cons || ecl_length(x) != 6)
+	if (Null(x) || type_of(x) != t_list || ecl_length(x) != 6)
 		FEreader_error("Reader macro #Y should be followed by a list",
 			       in, 0);
 
@@ -1122,7 +1122,7 @@ sharp_eq_reader(cl_object in, cl_object c, cl_object d)
 		FEreader_error("The #= readmacro requires an argument.", in, 0);
 	if (ecl_assql(d, sharp_eq_context) != Cnil)
 		FEreader_error("Duplicate definitions for #~D=.", in, 1, d);
-	pair = CONS(d, Cnil);
+	pair = ecl_list1(d);
 	ECL_SETQ(@'si::*sharp-eq-context*', CONS(pair, sharp_eq_context));
 	value = ecl_read_object(in);
 	if (value == pair)
@@ -1148,9 +1148,11 @@ static cl_object
 do_patch_sharp(cl_object x)
 {
 	switch (type_of(x)) {
-	case t_cons: {
+	case t_list: {
 	  	cl_object y = x;
 		cl_object *place = &x;
+		if (Null(x))
+			break;
 		do {
 			/* This was the result of a #d# */
 			if (CAR(y) == OBJNULL) {
@@ -1470,7 +1472,7 @@ do_read_delimited_list(int d, cl_object in, bool proper_list)
 			}
 			*p = x;
 		} else if (!suppress) {
-			*p = CONS(x, Cnil);
+			*p = ecl_list1(x);
 			p = &(CDR(*p));
 		}
 	} while (1);

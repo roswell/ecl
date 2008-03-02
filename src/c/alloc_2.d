@@ -125,11 +125,21 @@ ecl_cons(cl_object a, cl_object d)
 {
 	cl_object obj;
 
-	obj = (cl_object)GC_MALLOC(sizeof(struct ecl_cons));
-	obj->d.t = (short)t_cons;
+	obj = (cl_object)GC_MALLOC(sizeof(struct ecl_list));
+	obj->d.t = (short)t_list;
 	CAR(obj) = a;
 	CDR(obj) = d;
 
+	return obj;
+}
+
+cl_object
+ecl_list1(cl_object a)
+{
+	cl_object obj = (cl_object)GC_MALLOC(sizeof(struct ecl_list));
+	obj->d.t = (short)t_list;
+	CAR(obj) = a;
+	CDR(obj) = Cnil;
 	return obj;
 }
 
@@ -183,7 +193,7 @@ init_alloc(void)
 	}
 	init_tm(t_singlefloat, "SINGLE-FLOAT", /* 8 */
 		sizeof(struct ecl_singlefloat));
-	init_tm(t_cons, "CONS", sizeof(struct ecl_cons)); /* 12 */
+	init_tm(t_list, "CONS", sizeof(struct ecl_list)); /* 12 */
 	init_tm(t_doublefloat, "DOUBLE-FLOAT", /* 16 */
 		sizeof(struct ecl_doublefloat));
 	init_tm(t_bytecodes, "BYTECODES", sizeof(struct ecl_bytecodes));

@@ -7,6 +7,7 @@ EXPORTS
 	cl_alloc_object
 	cl_alloc_instance
 	ecl_cons
+	ecl_list1
 	si_gc
 	si_gc_dump
 	si_set_finalizer

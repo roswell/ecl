@@ -192,7 +192,7 @@ asm_op2(register int code, register int n) {
 static void
 asm_constant(cl_object c)
 {
-	ENV->constants = ecl_nconc(ENV->constants, CONS(c, Cnil));
+	ENV->constants = ecl_nconc(ENV->constants, ecl_list1(c));
 }
 
 static cl_index
@@ -2325,7 +2325,7 @@ c_default(cl_index base_pc, cl_object deflt) {
 		deflt = SYM_VAL(deflt);
 	} else if (CONSP(deflt) && (CAR(deflt) == @'quote') && !FIXNUMP(CADR(deflt))) {
 		deflt = CADR(deflt);
-	} else if ((t == t_symbol) || (t == t_cons) || (t == t_fixnum)) {
+	} else if ((t == t_symbol) || (t == t_list) || (t == t_fixnum)) {
 		cl_index pc = current_pc()-base_pc;
 		compile_form(deflt, FLAG_VALUES);
 		asm_op(OP_EXIT);
