@@ -523,6 +523,7 @@ EXPORTS
 	ecl_assqlp
 	ecl_remove_eq
 	ecl_delete_eq
+	ecl_last
 
 
 	; load.c

@@ -586,9 +586,10 @@
 (def-inline nthcdr :unsafe (fixnum t) t "ecl_nthcdr(#0,#1)")
 
 (proclaim-function last (list) t)
+(def-inline last :always (t) t "ecl_last(#0,1)")
 (proclaim-function list (*) list :no-side-effects t)
 (def-inline list :always nil t "Cnil")
-(def-inline list :always (t) t "CONS(#0,Cnil)")
+(def-inline list :always (t) t "ecl_list1(#0)")
 
 (proclaim-function list* (t *) list :no-side-effects t)
 (def-inline list* :always (t) t "#0")

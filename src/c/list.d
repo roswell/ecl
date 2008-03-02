@@ -409,16 +409,41 @@ ecl_nthcdr(cl_fixnum n, cl_object x)
 	return(x);
 }
 
+cl_object
+ecl_last(cl_object l, cl_index n)
+{
+	/* The algorithm is very simple. We run over the list with
+	 * two pointers, "l" and "r". The separation between both
+	 * must be "n", so that when "l" finds no more conses, "r"
+	 * contains the output. */
+	cl_object r;
+	for (r = l; n && CONSP(r); n--, r = CDR(r))
+		;
+	/* If "l" has not moved, we have to ensure that it is a list */
+	if (r == l) {
+		if (!LISTP(r)) FEtype_error_list(l);
+		while (CONSP(r)) {
+			r = CDR(r);
+		}
+		return r;
+	} else if (n == 0) {
+		while (CONSP(r)) {
+			r = CDR(r);
+			l = CDR(l);
+		}
+		return l;
+	} else {
+		return l;
+	}
+}
+
 @(defun last (l &optional (k MAKE_FIXNUM(1)))
 	cl_object r;
 	cl_fixnum n;
 @
-	n = fixnnint(k);
-	r = l;
-	loop_for_on(l) {
-		if (n) n--; else r = CDR(r);
-	} end_loop_for_on;
-	@(return r)
+	if (type_of(k) == t_bignum)
+		@(return l)
+	@(return ecl_last(l, fixnnint(k)))
 @)
 
 @(defun make_list (size &key initial_element &aux x)

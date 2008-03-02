@@ -796,6 +796,7 @@ extern cl_object cl_pairlis _ARGS((cl_narg narg, cl_object keys, cl_object data,
 extern cl_object cl_rassoc _ARGS((cl_narg narg, cl_object item, cl_object alist, ...));
 extern cl_object cl_assoc _ARGS((cl_narg narg, cl_object item, cl_object alist, ...));
 
+extern cl_object ecl_last(cl_object x, cl_index n);
 extern cl_object ecl_list_length(cl_object x);
 extern cl_object ecl_append(cl_object x, cl_object y);
 extern bool ecl_endp(cl_object x);
