@@ -506,20 +506,35 @@ cl_copy_list(cl_object x)
 	@(return copy);
 }
 
+static cl_object
+duplicate_pairs(cl_object x)
+{
+	cl_object p = CAR(x);
+	if (CONSP(p))
+		p = CONS(CAR(p), CDR(p));
+	return ecl_list1(p);
+}
+
 cl_object
 cl_copy_alist(cl_object x)
 {
 	cl_object copy;
-	cl_object *y = &copy;
-
-	loop_for_in(x) {
-		cl_object pair = CAR(x);
-		if (CONSP(pair))
-			pair = CONS(CAR(pair), CDR(pair));
-		*y = ecl_list1(pair);
-		y = &CDR(*y);
-	} end_loop_for_in;
-	*y = x;
+	if (!LISTP(x)) {
+		FEtype_error_list(x);
+	}
+	copy = Cnil;
+	if (!Null(x)) {
+		cl_object tail = copy = duplicate_pairs(x);
+		while (x = CDR(x), x != Cnil) {
+			if (!LISTP(x)) {
+				FEtype_error_list(x);
+			} else {
+				cl_object cons = duplicate_pairs(x);
+				tail = ECL_RPLACD(tail, cons);
+				tail = cons;
+			}
+		}
+	}
 	@(return copy);
 }
 
