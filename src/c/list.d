@@ -490,12 +490,19 @@ cl_object
 cl_copy_list(cl_object x)
 {
 	cl_object copy;
-	cl_object *y = &copy;
-
-	loop_for_on(x) {
-		y = &CDR(*y = ecl_cons(CAR(x), Cnil));
-	} end_loop_for_on;
-	*y = x;
+	if (!LISTP(x)) {
+		FEtype_error_list(x);
+	}
+	copy = Cnil;
+	if (!Null(x)) {
+		cl_object tail = copy = ecl_list1(CAR(x));
+		while (x = CDR(x), CONSP(x)) {
+			cl_object cons = ecl_list1(CAR(x));
+			ECL_RPLACD(tail, cons);
+			tail = cons;
+		}
+		ECL_RPLACD(tail, x);
+	}
 	@(return copy);
 }
 
