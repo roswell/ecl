@@ -173,38 +173,36 @@ cl_cdr(cl_object x)
 }
 
 @(defun list (&rest args)
-	cl_object list = Cnil, z;
+	cl_object head = Cnil;
 @
-	if (narg-- != 0) {
-		list = z = ecl_list1(cl_va_arg(args));
-		while (narg-- > 0) 
-			z = CDR(z) = ecl_list1(cl_va_arg(args));
+	if (narg--) {
+		cl_object tail = head = ecl_list1(cl_va_arg(args));
+		while (narg--) {
+			cl_object cons = ecl_list1(cl_va_arg(args));
+			ECL_RPLACD(tail, cons);
+			tail = cons;
 		}
-	@(return list)
+	}
+	@(return head)
 @)
 
 @(defun list* (&rest args)
-	cl_object p = Cnil, *z=&p;
+	cl_object head;
 @
 	if (narg == 0)
 		FEwrong_num_arguments(@'list*');
-	while (--narg > 0)
-		z = &CDR( *z = ecl_list1(cl_va_arg(args)));
-	*z = cl_va_arg(args);
-	@(return p)
+	head = cl_va_arg(args);
+	if (--narg) {
+		cl_object tail = head = ecl_list1(head);
+		while (--narg) {
+			cl_object cons = ecl_list1(cl_va_arg(args));
+			ECL_RPLACD(tail, cons);
+			tail = cons;
+		}
+		ECL_RPLACD(tail, cl_va_arg(args));
+	}
+	@(return head)
 @)
-
-static void
-copy_list_to(cl_object x, cl_object **z)
-{
-	cl_object *y;
-
-	y = *z;
-	loop_for_in(x) {
-		y = &CDR(*y = ecl_list1(CAR(x)));
-	} end_loop_for_in;
-	*z = y;
-}
 
 static cl_object
 append_into(cl_object tail, cl_object l)
