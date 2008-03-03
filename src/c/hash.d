@@ -79,7 +79,7 @@ _hash_equal(int depth, cl_hashkey h, cl_object x)
 	switch (type_of(x)) {
 	case t_list:
 		if (Null(x)) {
-			return _hash_equal(depth, h, Cnil_symbol);
+			return _hash_equal(depth, h, Cnil_symbol->symbol.name);
 		}
 		if (depth++ > 3) {
 			return 0;
@@ -127,7 +127,7 @@ _hash_equalp(int depth, cl_hashkey h, cl_object x)
 		return hash_word(h, toupper(CHAR_CODE(x)));
 	case t_list:
 		if (Null(x)) {
-			return _hash_equalp(depth, h, Cnil_symbol);
+			return _hash_equalp(depth, h, Cnil_symbol->symbol.name);
 		}
 		if (depth++ > 3) {
 			return 0;

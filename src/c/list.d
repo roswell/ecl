@@ -463,7 +463,7 @@ cl_copy_list(cl_object x)
 	cl_object *y = &copy;
 
 	loop_for_on(x) {
-		y = &CDR(*y = ecl_list1(CAR(x)));
+		y = &CDR(*y = ecl_cons(CAR(x), Cnil));
 	} end_loop_for_on;
 	*y = x;
 	@(return copy);

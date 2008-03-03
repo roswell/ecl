@@ -164,7 +164,7 @@ enum ecl_stype {		/*  symbol type  */
 	stp_special_form = 8
 };
 
-#define	Cnil			((cl_object)cl_core.nil)
+#define	Cnil			((cl_object)cl_symbols)
 #define	Cnil_symbol		((cl_object)cl_symbols)
 #define	Ct			((cl_object)(cl_symbols+1))
 #define ECL_UNBOUND		((cl_object)(cl_symbols+2))

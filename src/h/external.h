@@ -138,8 +138,6 @@ extern struct cl_env_struct cl_env;
  */
 
 struct cl_core_struct {
-	struct ecl_list nil[1];
-
 	cl_object packages;
 	cl_object lisp_package;
 	cl_object user_package;

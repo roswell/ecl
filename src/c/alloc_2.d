@@ -126,6 +126,7 @@ ecl_cons(cl_object a, cl_object d)
 	cl_object obj;
 
 	obj = (cl_object)GC_MALLOC(sizeof(struct ecl_list));
+	/* *(cl_index*)obj = 0; /* Eliminate garbage from object header */
 	obj->d.t = (short)t_list;
 	CAR(obj) = a;
 	CDR(obj) = d;
@@ -137,6 +138,7 @@ cl_object
 ecl_list1(cl_object a)
 {
 	cl_object obj = (cl_object)GC_MALLOC(sizeof(struct ecl_list));
+	/* *(cl_index*)obj = 0; /* Eliminate garbage from object header */
 	obj->d.t = (short)t_list;
 	CAR(obj) = a;
 	CDR(obj) = Cnil;
