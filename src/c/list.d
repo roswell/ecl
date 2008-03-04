@@ -564,11 +564,13 @@ cl_revappend(cl_object x, cl_object y)
 @	
 	while (narg--) {
 		cl_object new_tail, other = cl_va_arg(lists);
-		if (LISTP(other)) {
+		if (Null(other)) {
+			new_tail = tail;
+		} else if (LISTP(other)) {
 			new_tail = ecl_last(other, 1);
 		} else {
+			if (narg) FEtype_error_list(other);
 			new_tail = tail;
-			if (!Null(other) && narg) FEtype_error_list(other);
 		}
 		if (Null(head)) {
 			head = other;
