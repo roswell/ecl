@@ -560,34 +560,39 @@ cl_revappend(cl_object x, cl_object y)
 }
 
 @(defun nconc (&rest lists)
-	cl_object x, l,*lastcdr;
+	cl_object head = Cnil, tail;
 @	
-	if (narg < 1)
-		@(return Cnil)
-	lastcdr = &x;
-	while (narg-- > 1) {
-		*lastcdr = l = cl_va_arg(lists);
-		loop_for_on(l) {
-			lastcdr = &CDR(l);
-		} end_loop_for_on;
+	while (narg--) {
+		cl_object other = cl_va_arg(lists);
+		if (!LISTP(other)) {
+			if (narg) FEtype_error_list(other);
+			if (Null(tail))
+				head = other;
+			else
+				ECL_RPLACD(tail, other);
+			break;
+		}
+		if (Null(other))
+			continue;
+		if (Null(head)) {
+			head = other;
+		} else {
+			ECL_RPLACD(tail, other);
+		}
+		tail = ecl_last(other, 1);
 	}
-	*lastcdr = cl_va_arg(lists);
-	@(return x)
+	@(return head)
 @)
 
 cl_object
 ecl_nconc(cl_object l, cl_object y)
 {
-	cl_object x = l, x1;
-
-	if (x == Cnil)
+	if (Null(l)) {
 		return y;
-	/* INV: This loop is run at least once */
-	loop_for_on(x) {
-		x1 = x;
-	} end_loop_for_on;
-	CDR(x1) = y;
-	return l;
+	} else {
+		ECL_RPLACD(ecl_last(l, 1), y);
+		return l;
+	}
 }
 
 cl_object
