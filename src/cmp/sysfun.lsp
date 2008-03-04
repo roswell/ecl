@@ -608,7 +608,9 @@
 
 (proclaim-function nreconc (list t) t)
 (proclaim-function butlast (list *) list)
+(def-inline butlast :always (t) t "ecl_butlast(#0,1)")
 (proclaim-function nbutlast (list *) list)
+(def-inline nbutlast :always (t) t "ecl_nbutlast(#0,1)")
 (proclaim-function ldiff (list t) list)
 (proclaim-function rplaca (cons t) cons)
 (proclaim-function rplacd (cons t) cons)

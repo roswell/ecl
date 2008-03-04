@@ -612,49 +612,72 @@ cl_nreconc(cl_object l, cl_object y)
 	@(return y)
 }
 
-/* CONTINUE HERE!!!! */
+cl_object
+ecl_butlast(cl_object l, cl_index n)
+{
+	/* See LAST for details on this algorithm */
+	cl_object r;
+	for (r = l; n && CONSP(r); n--, r = CDR(r))
+		;
+	if (Null(r)) {
+		return Cnil;
+	} else if (!LISTP(r)) {
+		/* We reach here either because l is shorter than n conses,
+		 * or because it is not a list */
+		if (r == l) FEtype_error_list(r);
+		return Cnil;
+	} else {
+		/* We reach here because l has at least n conses and
+		 * thus we can take CAR(l) */
+		cl_object head, tail;
+		head = tail = ecl_list1(CAR(l));
+		while (l = CDR(l), r = CDR(r), CONSP(r)) {
+			cl_object cons = ecl_list1(CAR(l));
+			ECL_RPLACD(tail, cons);
+			tail = cons;
+		}
+		return head;
+	}
+}
+
 @(defun butlast (lis &optional (nn MAKE_FIXNUM(1)))
 	cl_object r, res = Cnil, *fill = &res;
 	cl_fixnum delay;
 @
 	/* INV: No list has more than MOST_POSITIVE_FIXNUM elements */
 	if (type_of(nn) == t_bignum)
-		@(return Cnil)
+		@(return Cnil);
 	/* INV: fixnnint() signas a type-error if NN is not an integer >=0 */
-	delay = fixnnint(nn);
-	r = lis;
-	loop_for_on(lis) {
-		if (delay)
-			delay--;
-		else {
-			fill = &CDR(*fill = ecl_list1(CAR(r)));
-			r = CDR(r);
-		}
-	} end_loop_for_on;
-	@(return res)
+	@(return ecl_butlast(lis, fixnnint(nn)))
 @)
 
+cl_object
+ecl_nbutlast(cl_object l, cl_index n)
+{
+	cl_object r;
+	if (!LISTP(l))
+		FEtype_error_list(l);
+	for (n++, r = l; n && CONSP(r); n--, r = CDR(r))
+		;
+	if (n == 0) {
+		cl_object tail = l;
+		while (CONSP(r)) {
+			tail = CDR(tail);
+			r = CDR(r);
+		}
+		ECL_RPLACD(tail, Cnil);
+		return l;
+	}
+	return Cnil;
+}
+
 @(defun nbutlast (lis &optional (nn MAKE_FIXNUM(1)))
-	cl_fixnum delay;
-	cl_object x, r;
 @
 	/* INV: No list has more than MOST_POSITIVE_FIXNUM elements */
 	if (type_of(nn) == t_bignum)
 		@(return Cnil)
 	/* INV: fixnnint() signas a type-error if NN is not an integer >=0 */
-	/* We add 1 because at the end `r' must point to the
-	   cons that must be modified */
-	delay = fixnnint(nn)+1;
-	r = x = lis;
-	loop_for_on(x) {
-		if (delay) delay--; else r = CDR(r);
-	} end_loop_for_on;
-	if (delay > 0)
-		/* nn > ecl_length(lis) */
-		lis = Cnil;
-	else
-		CDR(r) = Cnil;
-	@(return lis)
+	@(return ecl_nbutlast(lis, fixnnint(nn)))
 @)
 
 cl_object

@@ -516,6 +516,8 @@ EXPORTS
 	ecl_remove_eq
 	ecl_delete_eq
 	ecl_last
+	ecl_butlast
+	ecl_nbutlast
 
 
 	; load.c

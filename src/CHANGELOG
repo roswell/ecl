@@ -55,6 +55,8 @@ ECL 0.9k:
 
  - Ported CMUCL's profiler as a contributed package.
 
+ - LAST, BUTLAST, NBUTLAST and COPY-LIST no longer detect circularities.
+
 * CLOS:
 
  - When caching generic function calls, ECL now uses a thread-local hash table
