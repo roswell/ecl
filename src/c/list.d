@@ -560,26 +560,22 @@ cl_revappend(cl_object x, cl_object y)
 }
 
 @(defun nconc (&rest lists)
-	cl_object head = Cnil, tail;
+	cl_object head = Cnil, tail = Cnil;
 @	
 	while (narg--) {
-		cl_object other = cl_va_arg(lists);
-		if (!LISTP(other)) {
-			if (narg) FEtype_error_list(other);
-			if (Null(tail))
-				head = other;
-			else
-				ECL_RPLACD(tail, other);
-			break;
+		cl_object new_tail, other = cl_va_arg(lists);
+		if (LISTP(other)) {
+			new_tail = ecl_last(other, 1);
+		} else {
+			new_tail = tail;
+			if (!Null(other) && narg) FEtype_error_list(other);
 		}
-		if (Null(other))
-			continue;
 		if (Null(head)) {
 			head = other;
 		} else {
 			ECL_RPLACD(tail, other);
 		}
-		tail = ecl_last(other, 1);
+		tail = new_tail;
 	}
 	@(return head)
 @)
