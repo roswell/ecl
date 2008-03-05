@@ -683,21 +683,31 @@ ecl_nbutlast(cl_object l, cl_index n)
 cl_object
 cl_ldiff(cl_object x, cl_object y)
 {
-	cl_object res = Cnil, *fill = &res;
-
-	loop_for_on(x) {
-		if (ecl_eql(x, y))
-			@(return res)
-		else
-			fill = &CDR(*fill = ecl_list1(CAR(x)));
-	} end_loop_for_on;
-	/* INV: At the end of a loop_for_on(x), x has the CDR of the last cons
-	   in the list. When Y was not a member of the list, LDIFF must set
-	   this value in the output, because it produces an exact copy of the
-	   dotted list. */
-	if (!ecl_eql(x, y))
-		*fill = x;
-	@(return res)
+	cl_object head = Cnil;
+	if (!LISTP(x)) {
+		FEtype_error_list(x);
+	}
+	/* Here we use that, if X or Y are CONS, then (EQL X Y)
+	 * only when X == Y */
+	if (!Null(x) && (x != y)) {
+		cl_object tail = head = ecl_list1(CAR(x));
+		while (1) {
+			x = CDR(x);
+			if (!CONSP(x)) {
+				if (!ecl_eql(x, y)) {
+					ECL_RPLACD(tail, x);
+				}
+				break;
+			} else if (x == y) {
+				break;
+			} else {
+				cl_object cons = ecl_list1(CAR(x));
+				ECL_RPLACD(tail, cons);
+				tail = cons;
+			}
+		}
+	}
+	@(return head)
 }
 
 cl_object
