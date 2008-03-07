@@ -811,7 +811,6 @@ extern cl_object ecl_assql(cl_object x, cl_object l);
 extern cl_object ecl_assoc(cl_object x, cl_object l);
 extern cl_object ecl_assqlp(cl_object x, cl_object l);
 extern cl_object ecl_remove_eq(cl_object x, cl_object l);
-extern void ecl_delete_eq(cl_object x, cl_object *l);
 
 
 /* load.c */

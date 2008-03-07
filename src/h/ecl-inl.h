@@ -1,5 +1,6 @@
 /* -*- mode: c; c-basic-offset: 8 -*- */
 #define ECL_RPLACD(c,t) ((c)->cons.cdr=(t))
+#define ECL_RPLACA(c,t) ((c)->cons.car=(t))
 
 /*
  * Loops over a proper list

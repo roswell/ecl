@@ -31,7 +31,7 @@ struct cl_test {
 };
 
 static cl_object subst(struct cl_test *t, cl_object new_obj, cl_object tree);
-static void nsubst(struct cl_test *t, cl_object new_obj, cl_object *tree);
+static cl_object nsubst(struct cl_test *t, cl_object new_obj, cl_object tree);
 static cl_object sublis(struct cl_test *t, cl_object alist, cl_object tree);
 static void nsublis(struct cl_test *t, cl_object alist, cl_object *treep);
 
@@ -737,20 +737,30 @@ cl_rplacd(cl_object x, cl_object v)
 @)
 
 
-/*
-	Subst(new, tree) returns
-	the result of substituting new in tree.
-*/
 static cl_object
 subst(struct cl_test *t, cl_object new_obj, cl_object tree)
 {
 	if (TEST(t, tree)) {
 		return new_obj;
-	} else if (CONSP(tree)) {
-		return CONS(subst(t, new_obj, CAR(tree)),
-			    subst(t, new_obj, CDR(tree)));
-	} else {
+	} else if (ATOM(tree)) {
 		return tree;
+	} else {
+		cl_object head, tail = Cnil;
+		do {
+			cl_object cons = subst(t, new_obj, CAR(tree));
+			cons = ecl_cons(cons, tree = CDR(tree));
+			if (Null(tail)) {
+				head = cons;
+			} else {
+				ECL_RPLACD(tail, cons);
+			}
+			tail = cons;
+			if (TEST(t, tree)) {
+				ECL_RPLACD(tail, new_obj);
+				return head;
+			}
+		} while (CONSP(tree));
+		return head;
 	}
 }
 
@@ -758,25 +768,40 @@ subst(struct cl_test *t, cl_object new_obj, cl_object tree)
 	struct cl_test t;
 @
 	setup_test(&t, old_obj, test, test_not, key);
-	nsubst(&t, new_obj, &tree);
+	tree = nsubst(&t, new_obj, tree);
 	close_test(&t);
 	@(return tree)
 @)
 
-/*
-	Nsubst(new, treep) stores
-	the result of nsubstituting new in *treep
-	to *treep.
-*/
-static void
-nsubst(struct cl_test *t, cl_object new_obj, cl_object *treep)
+static cl_object
+nsubst_cons(struct cl_test *t, cl_object new_obj, cl_object tree)
 {
-	if (TEST(t, *treep)) {
-		*treep = new_obj;
-	} else if (CONSP(*treep)) {
-		nsubst(t, new_obj, &CAR(*treep));
-		nsubst(t, new_obj, &CDR(*treep));
-	}
+	cl_object l = tree;
+	do {
+		cl_object o = CAR(l);
+		if (TEST(t, o)) {
+			ECL_RPLACA(l, new_obj);
+		} else if (CONSP(o)) {
+			nsubst_cons(t, new_obj, o);
+		}
+		o = CDR(l);
+		if (TEST(t, o)) {
+			ECL_RPLACD(l, new_obj);
+			return tree;
+		}
+		l = o;
+	} while (CONSP(l));
+	return tree;
+}
+
+static cl_object
+nsubst(struct cl_test *t, cl_object new_obj, cl_object tree)
+{
+	if (TEST(t, tree))
+		return new_obj;
+	if (CONSP(tree))
+		return nsubst_cons(t, new_obj, tree);
+	return tree;
 }
 
 @(defun sublis (alist tree &key test test_not key)
@@ -1008,25 +1033,24 @@ error:	    FEerror("The keys ~S and the data ~S are not of the same length",
 	@(return a_list)
 @)
 
-void
-ecl_delete_eq(cl_object x, cl_object *lp)
-{
-	for (;  CONSP(*lp);  lp = &CDR((*lp)))
-		if (CAR((*lp)) == x) {
-			*lp = CDR((*lp));
-			return;
-		}
-}
-
 cl_object
 ecl_remove_eq(cl_object x, cl_object l)
 {
-	l = cl_copy_list(l);
-	ecl_delete_eq(x, &l);
-	return l;
+	cl_object head = Cnil, tail = Cnil;
+	for (; CONSP(l); l = CDR(l)) {
+		if (CAR(l) != x) {
+			cl_object cons = ecl_list1(CAR(l));
+			if (Null(tail)) {
+				head = tail = cons;
+			} else {
+				ECL_RPLACD(tail, cons);
+				tail = cons;
+			}
+		}
+	}
+	return head;
 }
 
-/* Added for use by the compiler, instead of open coding them. Beppe */
 /* Added for use by the compiler, instead of open coding them. Beppe */
 cl_object
 ecl_assq(cl_object x, cl_object l)
