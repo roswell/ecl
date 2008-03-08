@@ -203,7 +203,7 @@ cl_grab_rest_args(cl_va_list args)
 	cl_object *r = &rest;
 	while (args[0].narg) {
 		*r = ecl_list1(cl_va_arg(args));
-		r = &CDR(*r);
+		r = &ECL_CONS_CDR(*r);
 	}
 	return rest;
 }
@@ -234,8 +234,8 @@ cl_parse_key(
     if (!SYMBOLP(keyword))
       FEprogram_error("LAMBDA: Keyword expected, got ~S.", 1, keyword);
     if (rest != NULL) {
-      rest = &CDR(*rest = ecl_list1(keyword));
-      rest = &CDR(*rest = ecl_list1(value));
+      rest = &ECL_CONS_CDR(*rest = ecl_list1(keyword));
+      rest = &ECL_CONS_CDR(*rest = ecl_list1(value));
     }
     for (i = 0; i < nkey; i++) {
       if (keys[i] == keyword) {

@@ -67,10 +67,11 @@ static bool
 member_string_eq(cl_object x, cl_object l)
 {
 	/* INV: l is a proper list */
-	for (;  CONSP(l);  l = CDR(l))
-		if (ecl_string_eq(x, CAR(l)))
-			return(TRUE);
-	return(FALSE);
+	loop_for_on_unsafe(l) {
+		if (ecl_string_eq(x, ECL_CONS_CAR(l)))
+			return TRUE;
+	} end_loop_for_on;
+	return FALSE;
 }
 
 #if defined(__cplusplus) || defined(__GNUC__)
@@ -138,14 +139,14 @@ ecl_make_package(cl_object name, cl_object nicknames, cl_object use_list)
 		cl_object l = cl_core.packages_to_be_created;
 		cl_object tail = l;
 		while (CONSP(l)) {
-			cl_object pair = CAR(l);
-			cl_object other_name = CAR(pair);
+			cl_object pair = ECL_CONS_CAR(l);
+			cl_object other_name = ECL_CONS_CAR(pair);
 			if (ecl_equal(other_name, name) ||
 			    funcall(5, @'member', other_name, nicknames,
 				    @':test', @'string=') != Cnil)
 			{
-				x = CDR(pair);
-				pair = CDR(l);
+				x = ECL_CONS_CDR(pair);
+				pair = ECL_CONS_CDR(l);
 				if (l == tail) {
 					cl_core.packages_to_be_created = pair;
 				} else {
@@ -154,7 +155,7 @@ ecl_make_package(cl_object name, cl_object nicknames, cl_object use_list)
 				goto INTERN;
 			}
 			tail = l;
-			l = CDR(l);
+			l = ECL_CONS_CDR(l);
 		}
 	}
 
@@ -189,19 +190,19 @@ ecl_make_package(cl_object name, cl_object nicknames, cl_object use_list)
 	x->pack.uses = Cnil;
 	x->pack.usedby = Cnil;
 	x->pack.locked = FALSE;
-	for (;  !ecl_endp(nicknames);  nicknames = CDR(nicknames)) {
-		cl_object nick = cl_string(CAR(nicknames));
+	loop_for_in(nicknames) {
+		cl_object nick = cl_string(ECL_CONS_CAR(nicknames));
 		if ((other = ecl_find_package_nolock(nick)) != Cnil) {
 			name = nick;
 			goto ERROR;
 		}
 		x->pack.nicknames = CONS(nick, x->pack.nicknames);
-	}
-	for (;  !ecl_endp(use_list);  use_list = CDR(use_list)) {
-		y = si_coerce_to_package(CAR(use_list));
+	} end_loop_for_in;
+	loop_for_in(use_list) {
+		y = si_coerce_to_package(ECL_CONS_CAR(use_list));
 		x->pack.uses = CONS(y, x->pack.uses);
 		y->pack.usedby = CONS(x, y->pack.usedby);
-	}
+	} end_loop_for_in;
 
 	/* 3) Finally, add it to the list of packages */
 	cl_core.packages = CONS(x, cl_core.packages);
@@ -227,23 +228,22 @@ ecl_rename_package(cl_object x, cl_object name, cl_object nicknames)
 		FEpackage_error("A package with name ~S already exists.", x,
 				1, name);
 	}
-
 	x->pack.name = name;
 	x->pack.nicknames = Cnil;
-	assert_type_proper_list(nicknames);
-	for (;  !ecl_endp(nicknames);  nicknames = CDR(nicknames)) {
-		cl_object nick = CAR(nicknames);
-		y = ecl_find_package_nolock(nick);
-		if (x == y)
-			continue;
-		if (y != Cnil) {
-			name = nick;
-			goto ERROR;
+	while (!Null(nicknames)) {
+		cl_object nick;
+		if (!CONSP(nicknames)) {
+			PACKAGE_OP_UNLOCK();
+			FEtype_error_list(nicknames);
 		}
-		x->pack.nicknames = CONS(cl_string(nick), x->pack.nicknames);
+		nick = ECL_CONS_CAR(nicknames);
+		y = ecl_find_package_nolock(nick);
+		if (ecl_find_package_nolock(nick) != x)
+			x->pack.nicknames = CONS(cl_string(nick), x->pack.nicknames);
+		nicknames = ECL_CONS_CDR(nicknames);
 	}
 	PACKAGE_OP_UNLOCK();
-	return(x);
+	return x;
 }
 
 /*
@@ -265,14 +265,14 @@ ecl_find_package_nolock(cl_object name)
 	if (type_of(name) == t_package)
 		return name;
 	name = cl_string(name);
-	/* INV: cl_core.packages is a proper list */
-	for (l = cl_core.packages; CONSP(l); l = CDR(l)) {
-		p = CAR(l);
+	l = cl_core.packages;
+	loop_for_on_unsafe(l) {
+		p = ECL_CONS_CAR(l);
 		if (ecl_string_eq(name, p->pack.name))
 			return p;
 		if (member_string_eq(name, p->pack.nicknames))
 			return p;
-	}
+	} end_loop_for_on;
 #ifdef ECL_RELATIVE_PACKAGE_NAMES
 	/* Note that this function may actually be called _before_ symbols are set up
 	 * and bound! */
@@ -346,13 +346,14 @@ ecl_intern(cl_object name, cl_object p, int *intern_flag)
 		*intern_flag = INTERNAL;
 		goto OUTPUT;
 	}
-	for (ul=p->pack.uses; CONSP(ul); ul = CDR(ul)) {
-		s = ecl_gethash_safe(name, CAR(ul)->pack.external, OBJNULL);
+	ul = p->pack.uses;
+	loop_for_on_unsafe(ul) {
+		s = ecl_gethash_safe(name, ECL_CONS_CAR(ul)->pack.external, OBJNULL);
 		if (s != OBJNULL) {
 			*intern_flag = INHERITED;
 			goto OUTPUT;
 		}
-	}
+	} end_loop_for_on;
  INTERN:
 	if (p->pack.locked) {
 		PACKAGE_UNLOCK(p);
@@ -402,13 +403,14 @@ ecl_find_symbol_nolock(cl_object name, cl_object p, int *intern_flag)
 		*intern_flag = INTERNAL;
 		goto OUTPUT;
 	}
-	for (ul=p->pack.uses; CONSP(ul); ul = CDR(ul)) {
-		s = ecl_gethash_safe(name, CAR(ul)->pack.external, OBJNULL);
+	ul = p->pack.uses;
+	loop_for_on_unsafe(ul) {
+		s = ecl_gethash_safe(name, ECL_CONS_CAR(ul)->pack.external, OBJNULL);
 		if (s != OBJNULL) {
 			*intern_flag = INHERITED;
 			goto OUTPUT;
 		}
-	}
+	} end_loop_for_on;
  NOTHING:
 	*intern_flag = 0;
 	s = Cnil;
@@ -456,8 +458,9 @@ ecl_unintern(cl_object s, cl_object p)
 	if (!ecl_member_eq(s, p->pack.shadowings))
 		goto NOT_SHADOW;
 	x = OBJNULL;
-	for (l = p->pack.uses; CONSP(l); l = CDR(l)) {
-		y = ecl_gethash_safe(name, CAR(l)->pack.external, OBJNULL);
+	l = p->pack.uses;
+	loop_for_on_unsafe(l) {
+		y = ecl_gethash_safe(name, ECL_CONS_CAR(l)->pack.external, OBJNULL);
 		if (y != OBJNULL) {
 			if (x == OBJNULL)
 				x = y;
@@ -469,7 +472,7 @@ ecl_unintern(cl_object s, cl_object p)
 						"a name conflict.", p, 4, s, p, x, y);
 			}
 		}
-	}
+	} end_loop_for_on;
 	p->pack.shadowings = ecl_remove_eq(s, p->pack.shadowings);
  NOT_SHADOW:
 	ecl_remhash(name, hash);
@@ -508,8 +511,9 @@ cl_export2(cl_object s, cl_object p)
 		goto OUTPUT;
 	if (intern_flag == INTERNAL)
 		hash = p->pack.internal;
-	for (l = p->pack.usedby; CONSP(l); l = CDR(l)) {
-		x = ecl_find_symbol_nolock(name, CAR(l), &intern_flag);
+	l = p->pack.usedby;
+	loop_for_on_unsafe(l) {
+		x = ecl_find_symbol_nolock(name, ECL_CONS_CAR(l), &intern_flag);
 		if (intern_flag && s != x &&
 		    !ecl_member_eq(x, CAR(l)->pack.shadowings)) {
 			PACKAGE_UNLOCK(p);
@@ -518,7 +522,7 @@ cl_export2(cl_object s, cl_object p)
 					"because it will cause a name conflict~%"
 					"in ~S.", p, 3, s, p, CAR(l));
 		}
-	}
+	} end_loop_for_on;
 	if (hash != OBJNULL)
 		ecl_remhash(name, hash);
 	ecl_sethash(name, p->pack.external, s);
@@ -552,10 +556,14 @@ cl_delete_package(cl_object p)
 	if (Null(p->pack.name)) {
 		@(return Cnil)
 	}
-	for (list = p->pack.uses; !ecl_endp(list); list = CDR(list))
-		ecl_unuse_package(CAR(list), p);
-	for (list = p->pack.usedby; !ecl_endp(list); list = CDR(list))
-		ecl_unuse_package(p, CAR(list));
+	list = p->pack.uses;
+	loop_for_on_unsafe(list) {
+		ecl_unuse_package(ECL_CONS_CAR(list), p);
+	} end_loop_for_on;
+	list = p->pack.usedby;
+	loop_for_on_unsafe(list) {
+		ecl_unuse_package(p, ECL_CONS_CAR(list));
+	} end_loop_for_on;
 	PACKAGE_LOCK(p);
 	for (hash = p->pack.internal, i = 0; i < hash->hash.size; i++)
 		if (hash->hash.data[i].key != OBJNULL) {
@@ -868,7 +876,6 @@ cl_list_all_packages()
 @)
 
 @(defun export (symbols &o (pack ecl_current_package()))
-	cl_object l;
 @
 BEGIN:
 	switch (type_of(symbols)) {
@@ -877,11 +884,10 @@ BEGIN:
 		break;
 
 	case t_list:
-		if (Null(symbols))
-			break;
 		pack = si_coerce_to_package(pack);
-		for (l = symbols;  !ecl_endp(l);  l = CDR(l))
-			cl_export2(CAR(l), pack);
+		loop_for_in(symbols) {
+			cl_export2(ECL_CONS_CAR(symbols), pack);
+		} end_loop_for_in;
 		break;
 
 	default:
@@ -893,7 +899,6 @@ BEGIN:
 @)
 
 @(defun unexport (symbols &o (pack ecl_current_package()))
-	cl_object l;
 @
 BEGIN:
 	switch (type_of(symbols)) {
@@ -902,11 +907,10 @@ BEGIN:
 		break;
 
 	case t_list:
-		if (Null(symbols))
-			break;
 		pack = si_coerce_to_package(pack);
-		for (l = symbols;  !ecl_endp(l);  l = CDR(l))
-			cl_unexport2(CAR(l), pack);
+		loop_for_in(symbols) {
+			cl_unexport2(ECL_CONS_CAR(symbols), pack);
+		} end_loop_for_in;
 		break;
 
 	default:
@@ -918,7 +922,6 @@ BEGIN:
 @)
 
 @(defun import (symbols &o (pack ecl_current_package()))
-	cl_object l;
 @
 BEGIN:
 	switch (type_of(symbols)) {
@@ -927,11 +930,10 @@ BEGIN:
 		break;
 
 	case t_list:
-		if (Null(symbols))
-			break;
 		pack = si_coerce_to_package(pack);
-		for (l = symbols;  !ecl_endp(l);  l = CDR(l))
-			cl_import2(CAR(l), pack);
+		loop_for_in(symbols) {
+			cl_import2(ECL_CONS_CAR(symbols), pack);
+		} end_loop_for_in;
 		break;
 
 	default:
@@ -943,7 +945,6 @@ BEGIN:
 @)
 
 @(defun shadowing_import (symbols &o (pack ecl_current_package()))
-	cl_object l;
 @
 BEGIN:
 	switch (type_of(symbols)) {
@@ -952,11 +953,10 @@ BEGIN:
 		break;
 
 	case t_list:
-		if (Null(symbols))
-			break;
 		pack = si_coerce_to_package(pack);
-		for (l = symbols;  !ecl_endp(l);  l = CDR(l))
-			ecl_shadowing_import(CAR(l), pack);
+		loop_for_in(symbols) {
+			ecl_shadowing_import(ECL_CONS_CAR(symbols), pack);
+		} end_loop_for_in;
 		break;
 
 	default:
@@ -968,7 +968,6 @@ BEGIN:
 @)
 
 @(defun shadow (symbols &o (pack ecl_current_package()))
-	cl_object l;
 @
 BEGIN:
 	switch (type_of(symbols)) {
@@ -983,11 +982,10 @@ BEGIN:
 		break;
 	case t_list:
 		/* ... or lists of string designators */
-		if (Null(symbols))
-			break;
 		pack = si_coerce_to_package(pack);
-		for (l = symbols;  !ecl_endp(l);  l = CDR(l))
-			ecl_shadow(CAR(l), pack);
+		loop_for_in(symbols) {
+			ecl_shadow(ECL_CONS_CAR(symbols), pack);
+		} end_loop_for_in;
 		break;
 	default:
 		symbols = ecl_type_error(@'shadow',"",symbols,
@@ -998,7 +996,6 @@ BEGIN:
 @)
 
 @(defun use_package (pack &o (pa ecl_current_package()))
-	cl_object l;
 @
 BEGIN:
 	switch (type_of(pack)) {
@@ -1010,11 +1007,10 @@ BEGIN:
 		break;
 
 	case t_list:
-		if (Null(pack))
-			break;
 		pa = si_coerce_to_package(pa);
-		for (l = pack;  !ecl_endp(l);  l = CDR(l))
-			ecl_use_package(CAR(l), pa);
+		loop_for_in(pack) {
+			ecl_use_package(ECL_CONS_CAR(pack), pa);
+		} end_loop_for_in;
 		break;
 
 	default:
@@ -1025,7 +1021,6 @@ BEGIN:
 @)
 
 @(defun unuse_package (pack &o (pa ecl_current_package()))
-	cl_object l;
 @
 BEGIN:
 	switch (type_of(pack)) {
@@ -1037,11 +1032,10 @@ BEGIN:
 		break;
 
 	case t_list:
-		if (Null(pack))
-			break;
 		pa = si_coerce_to_package(pa);
-		for (l = pack;  !ecl_endp(l);  l = CDR(l))
-			ecl_unuse_package(CAR(l), pa);
+		loop_for_in(pack) {
+			ecl_unuse_package(ECL_CONS_CAR(pack), pa);
+		} end_loop_for_in;
 		break;
 
 	default:

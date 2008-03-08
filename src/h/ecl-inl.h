@@ -1,49 +1,60 @@
 /* -*- mode: c; c-basic-offset: 8 -*- */
 #define ECL_RPLACD(c,t) ((c)->cons.cdr=(t))
 #define ECL_RPLACA(c,t) ((c)->cons.car=(t))
+#define ECL_CONS_CDR(c) ((c)->cons.cdr)
+#define ECL_CONS_CAR(c) ((c)->cons.car)
+
+/*
+ * Loops over a proper list. Complains on circularity
+ */
+#define loop_for_in_no_circle(list) { \
+  cl_object __slow; \
+  bool __flag = TRUE; \
+  for (__slow = list; !ecl_endp(list); list = ECL_CONS_CDR(list)) { \
+    if ((__flag = !__flag)) { \
+      if (__slow == list) FEcircular_list(list); \
+      __slow = ECL_CONS_CDR(__slow); \
+    }
 
 /*
  * Loops over a proper list
  */
-#ifdef ECL_SAFE
-#define loop_for_in(list) { \
-  cl_object __slow; \
-  bool __flag = TRUE; \
-  for (__slow = list; !ecl_endp(list); list = CDR(list)) { \
-    if ((__flag = !__flag)) { \
-      if (__slow == list) FEcircular_list(list); \
-      __slow = CDR(__slow); \
-    }
-#else
 #define loop_for_in(list) { \
   const cl_object l0 = list; \
-  for (; list != Cnil; list = CDR(list)) { \
+  for (; list != Cnil; list = ECL_CONS_CDR(list)) { \
     if (!CONSP(list)) FEtype_error_proper_list(l0);
-#endif
+
 #define end_loop_for_in }}
 
 /*
- * Loops over a dotted list
+ * Loops over a dotted list. Complains on circularity.
  */
-#ifdef ECL_SAFE
-#define loop_for_on(list) \
+#define loop_for_on_no_circle(list) \
   if (!CONSP(list)) { \
     if (list != Cnil) FEtype_error_list(list); \
   }else { \
     cl_object __slow; \
     bool __flag = TRUE; \
-    for (__slow = list; CONSP(list); list = CDR(list)) { \
+    for (__slow = list; CONSP(list); list = ECL_CONS_CDR(list)) { \
       if ((__flag = !__flag)) { \
         if (__slow == list) FEcircular_list(list); \
         __slow = CDR(__slow); \
       }
-#else
+
+/*
+ * Loops over a list. Ignores errors.
+ */
+#define loop_for_on_unsafe(list) { \
+  for (; CONSP(list); list = ECL_CONS_CDR(list)) {
+
+/*
+ * Loops over a dotted list
+ */
 #define loop_for_on(list) \
   if (!CONSP(list)) { \
     if (list != Cnil) FEtype_error_list(list); \
-  else { \
-    for (; CONSP(list); list = CDR(list)) {
-#endif
+  } else {					\
+    for (; CONSP(list); list = ECL_CONS_CDR(list)) {
 #define end_loop_for_on }}
 
 /* The following is unused */

@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <ecl/ecl-inl.h>
 #include <ecl/internal.h>
 #include "newhash.h"
 
@@ -84,8 +85,8 @@ _hash_equal(int depth, cl_hashkey h, cl_object x)
 		if (depth++ > 3) {
 			return 0;
 		}
-		h = _hash_equal(depth, h, CAR(x));
-		return _hash_equal(depth, h, CDR(x));
+		h = _hash_equal(depth, h, ECL_CONS_CAR(x));
+		return _hash_equal(depth, h, ECL_CONS_CDR(x));
 	case t_symbol:
 		x = x->symbol.name;
 #ifdef ECL_UNICODE
@@ -132,8 +133,8 @@ _hash_equalp(int depth, cl_hashkey h, cl_object x)
 		if (depth++ > 3) {
 			return 0;
 		}
-		h = _hash_equalp(depth, h, CAR(x));
-		return _hash_equalp(depth, h, CDR(x));
+		h = _hash_equalp(depth, h, ECL_CONS_CAR(x));
+		return _hash_equalp(depth, h, ECL_CONS_CDR(x));
 #ifdef ECL_UNICODE
 	case t_string:
 #endif

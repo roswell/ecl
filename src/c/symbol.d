@@ -167,12 +167,12 @@ ecl_getf(cl_object place, cl_object indicator, cl_object deflt)
 	assert_type_proper_list(place);
 #endif
 	for (l = place; CONSP(l); ) {
-		cl_object cdr_l = CDR(l);
+		cl_object cdr_l = ECL_CONS_CDR(l);
 		if (!CONSP(cdr_l))
 			break;
-		if (CAR(l) == indicator)
-			return CAR(cdr_l);
-		l = CDR(cdr_l);
+		if (ECL_CONS_CAR(l) == indicator)
+			return ECL_CONS_CAR(cdr_l);
+		l = ECL_CONS_CDR(cdr_l);
 	}
 	if (l != Cnil)
 		FEtype_error_plist(place);
@@ -200,14 +200,14 @@ si_put_f(cl_object place, cl_object value, cl_object indicator)
 #endif
 	/* This loop guarantees finishing for circular lists */
 	for (l = place; CONSP(l); ) {
-		cl_object cdr_l = CDR(l);
+		cl_object cdr_l = ECL_CONS_CDR(l);
 		if (!CONSP(cdr_l))
 			break;
-		if (CAR(l) == indicator) {
-			CAR(cdr_l) = value;
+		if (ECL_CONS_CAR(l) == indicator) {
+			ECL_RPLACA(cdr_l, value);
 			@(return place);
 		}
-		l = CDR(cdr_l);
+		l = ECL_CONS_CDR(cdr_l);
 	}
 	if (l != Cnil)
 		FEtype_error_plist(place);
@@ -232,12 +232,12 @@ remf(cl_object *place, cl_object indicator)
 		cl_object ind;
 		if (!LISTP(l))
 			FEtype_error_plist(*place);
-		ind = CAR(l);
-		l = CDR(l);
+		ind = ECL_CONS_CAR(l);
+		l = ECL_CONS_CDR(l);
 		if (!CONSP(l))
 			FEtype_error_plist(*place);
 		if (ind == indicator) {
-			l = CDR(l);
+			l = ECL_CONS_CDR(l);
 			if (Null(tail))
 				*place = l;
 			else
@@ -245,7 +245,7 @@ remf(cl_object *place, cl_object indicator)
 			return TRUE;
 		}
 		tail = l;
-		l = CDR(l);
+		l = ECL_CONS_CDR(l);
 	}
 	return FALSE;
 }
@@ -289,12 +289,12 @@ cl_get_properties(cl_object place, cl_object indicator_list)
 	assert_type_proper_list(place);
 #endif
 	for (l = place;  CONSP(l); ) {
-		cl_object cdr_l = CDR(l);
+		cl_object cdr_l = ECL_CONS_CDR(l);
 		if (!CONSP(cdr_l))
 			break;
-		if (ecl_member_eq(CAR(l), indicator_list))
-			@(return CAR(l) CADR(l) l)
-		l = CDR(cdr_l);
+		if (ecl_member_eq(ECL_CONS_CAR(l), indicator_list))
+			@(return ECL_CONS_CAR(l) ECL_CONS_CAR(cdr_l) l)
+		l = ECL_CONS_CDR(cdr_l);
 	}
 	if (l != Cnil)
 		FEtype_error_plist(place);

@@ -169,7 +169,7 @@ cl_cdr(cl_object x)
 	if (Null(x))
 		return1(x);
 	if (CONSP(x))
-		return1(CDR(x));
+		return1(ECL_CONS_CDR(x));
 	FEtype_error_list(x);
 }
 
@@ -208,15 +208,15 @@ cl_cdr(cl_object x)
 static cl_object
 append_into(cl_object tail, cl_object l)
 {
-	if (!LISTP(CDR(tail))) {
+	if (!LISTP(ECL_CONS_CDR(tail))) {
 		/* (APPEND '(1 . 2) 3) */
 		FEtype_error_proper_list(tail);
 	}
 	while (CONSP(l)) {
-		cl_object cons = ecl_list1(CAR(l));
+		cl_object cons = ecl_list1(ECL_CONS_CAR(l));
 		ECL_RPLACD(tail, cons);
 		tail = cons;
-		l = CDR(l);
+		l = ECL_CONS_CDR(l);
 	}
 	ECL_RPLACD(tail, l);
 	return tail;
@@ -239,8 +239,8 @@ append_into(cl_object tail, cl_object l)
 			}
 			if (Null(head))
 				continue;
-			other = CDR(head);
-			tail = head = ecl_list1(CAR(head));
+			other = ECL_CONS_CDR(head);
+			tail = head = ecl_list1(ECL_CONS_CAR(head));
 		}
 		tail = append_into(tail, other);
 	}
@@ -255,8 +255,8 @@ ecl_append(cl_object x, cl_object y)
 		return y;
 	if (!LISTP(x))
 		FEtype_error_list(x);
-	head = tail = ecl_list1(CAR(x));
-	append_into(append_into(tail, CDR(x)), y);
+	head = tail = ecl_list1(ECL_CONS_CAR(x));
+	append_into(append_into(tail, ECL_CONS_CDR(x)), y);
 	return head;
 }
 
@@ -265,7 +265,7 @@ ecl_append(cl_object x, cl_object y)
 	(void)foo; \
 	if (x != Cnil) { \
 	   if (CONSP(x)) \
-	     x = x->cons.car; \
+	     x = ECL_CONS_CAR(x); \
 	   else \
 	     goto E; \
 	}
@@ -273,7 +273,7 @@ ecl_append(cl_object x, cl_object y)
 	(void)foo; \
 	if (x != Cnil) { \
 	   if (CONSP(x)) \
-	     x = x->cons.cdr; \
+	     x = ECL_CONS_CDR(x); \
 	   else \
 	     goto E; \
 	}
@@ -331,9 +331,9 @@ tree_equal(struct cl_test *t, cl_object x, cl_object y)
 BEGIN:
 	if (CONSP(x)) {
 		if (CONSP(y)) {
-			if (tree_equal(t, CAR(x), CAR(y))) {
-				x = CDR(x);
-				y = CDR(y);
+			if (tree_equal(t, ECL_CONS_CAR(x), ECL_CONS_CAR(y))) {
+				x = ECL_CONS_CDR(x);
+				y = ECL_CONS_CDR(y);
 				goto BEGIN;
 			} else {
 				return(FALSE);
@@ -388,11 +388,11 @@ cl_list_length(cl_object x)
 
 	/* INV: A list's length always fits in a fixnum */
 	fast = slow = x;
-	for (n = 0; CONSP(fast); n++, fast = CDR(fast)) {
+	for (n = 0; CONSP(fast); n++, fast = ECL_CONS_CDR(fast)) {
 		if (n & 1) {
 			/* Circular list? */
 			if (slow == fast) return Cnil;
-			slow = CDR(slow);
+			slow = ECL_CONS_CDR(slow);
 		}
 	}
 	if (fast != Cnil)
@@ -414,11 +414,11 @@ ecl_nth(cl_fixnum n, cl_object x)
 	/* INV: No need to check for circularity since we visit
 	   at most `n' conses */
 	for (; n > 0 && CONSP(x); n--)
-		x = CDR(x);
+		x = ECL_CONS_CDR(x);
 	if (x == Cnil)
 		return Cnil;
 	if (CONSP(x))
-		return CAR(x);
+		return ECL_CONS_CAR(x);
 	FEtype_error_list(x);
 }
 
@@ -433,9 +433,11 @@ ecl_nthcdr(cl_fixnum n, cl_object x)
 {
 	if (n < 0)
 		FEtype_error_index(x, MAKE_FIXNUM(n));
-	while (n-- > 0 && !ecl_endp(x))
-		x = CDR(x);
-	return(x);
+	while (n-- > 0 && !Null(x)) {
+		if (!CONSP(x)) FEtype_error_list(x);
+		x = ECL_CONS_CDR(x);
+	}
+	return x;
 }
 
 cl_object
@@ -446,19 +448,19 @@ ecl_last(cl_object l, cl_index n)
 	 * must be "n", so that when "l" finds no more conses, "r"
 	 * contains the output. */
 	cl_object r;
-	for (r = l; n && CONSP(r); n--, r = CDR(r))
+	for (r = l; n && CONSP(r); n--, r = ECL_CONS_CDR(r))
 		;
 	/* If "l" has not moved, we have to ensure that it is a list */
 	if (r == l) {
 		if (!LISTP(r)) FEtype_error_list(l);
 		while (CONSP(r)) {
-			r = CDR(r);
+			r = ECL_CONS_CDR(r);
 		}
 		return r;
 	} else if (n == 0) {
 		while (CONSP(r)) {
-			r = CDR(r);
-			l = CDR(l);
+			r = ECL_CONS_CDR(r);
+			l = ECL_CONS_CDR(l);
 		}
 		return l;
 	} else {
@@ -495,8 +497,8 @@ cl_copy_list(cl_object x)
 	copy = Cnil;
 	if (!Null(x)) {
 		cl_object tail = copy = ecl_list1(CAR(x));
-		while (x = CDR(x), CONSP(x)) {
-			cl_object cons = ecl_list1(CAR(x));
+		while (x = ECL_CONS_CDR(x), CONSP(x)) {
+			cl_object cons = ecl_list1(ECL_CONS_CAR(x));
 			ECL_RPLACD(tail, cons);
 			tail = cons;
 		}
@@ -508,9 +510,9 @@ cl_copy_list(cl_object x)
 static cl_object
 duplicate_pairs(cl_object x)
 {
-	cl_object p = CAR(x);
+	cl_object p = ECL_CONS_CAR(x);
 	if (CONSP(p))
-		p = CONS(CAR(p), CDR(p));
+		p = CONS(ECL_CONS_CAR(p), ECL_CONS_CDR(p));
 	return ecl_list1(p);
 }
 
@@ -524,7 +526,7 @@ cl_copy_alist(cl_object x)
 	copy = Cnil;
 	if (!Null(x)) {
 		cl_object tail = copy = duplicate_pairs(x);
-		while (x = CDR(x), x != Cnil) {
+		while (x = ECL_CONS_CDR(x), x != Cnil) {
 			if (!LISTP(x)) {
 				FEtype_error_list(x);
 			} else {
@@ -540,9 +542,11 @@ cl_copy_alist(cl_object x)
 static cl_object
 do_copy_tree(cl_object x)
 {
-	if (ATOM(x))
-		return x;
-	return CONS(do_copy_tree(CAR(x)), do_copy_tree(CDR(x)));
+	if (CONSP(x)) {
+		x = CONS(do_copy_tree(ECL_CONS_CAR(x)),
+			 do_copy_tree(ECL_CONS_CDR(x)));
+	}
+	return x;
 }
 
 cl_object
@@ -603,9 +607,9 @@ cl_nreconc(cl_object l, cl_object y)
 	   slow pointer */
 	for (x = l; CONSP(x); ) {
 		z = x;
-		x = CDR(x);
+		x = ECL_CONS_CDR(x);
 		if (x == l) FEcircular_list(l);
-		CDR(z) = y;
+		ECL_RPLACD(z, y);
 		y = z;
 	}
 	if (x != Cnil)
@@ -618,7 +622,7 @@ ecl_butlast(cl_object l, cl_index n)
 {
 	/* See LAST for details on this algorithm */
 	cl_object r;
-	for (r = l; n && CONSP(r); n--, r = CDR(r))
+	for (r = l; n && CONSP(r); n--, r = ECL_CONS_CDR(r))
 		;
 	if (Null(r)) {
 		return Cnil;
@@ -632,8 +636,8 @@ ecl_butlast(cl_object l, cl_index n)
 		 * thus we can take CAR(l) */
 		cl_object head, tail;
 		head = tail = ecl_list1(CAR(l));
-		while (l = CDR(l), r = CDR(r), CONSP(r)) {
-			cl_object cons = ecl_list1(CAR(l));
+		while (l = ECL_CONS_CDR(l), r = ECL_CONS_CDR(r), CONSP(r)) {
+			cl_object cons = ecl_list1(ECL_CONS_CAR(l));
 			ECL_RPLACD(tail, cons);
 			tail = cons;
 		}
@@ -658,13 +662,13 @@ ecl_nbutlast(cl_object l, cl_index n)
 	cl_object r;
 	if (!LISTP(l))
 		FEtype_error_list(l);
-	for (n++, r = l; n && CONSP(r); n--, r = CDR(r))
+	for (n++, r = l; n && CONSP(r); n--, r = ECL_CONS_CDR(r))
 		;
 	if (n == 0) {
 		cl_object tail = l;
 		while (CONSP(r)) {
-			tail = CDR(tail);
-			r = CDR(r);
+			tail = ECL_CONS_CDR(tail);
+			r = ECL_CONS_CDR(r);
 		}
 		ECL_RPLACD(tail, Cnil);
 		return l;
@@ -693,7 +697,7 @@ cl_ldiff(cl_object x, cl_object y)
 	if (!Null(x) && (x != y)) {
 		cl_object tail = head = ecl_list1(CAR(x));
 		while (1) {
-			x = CDR(x);
+			x = ECL_CONS_CDR(x);
 			if (!CONSP(x)) {
 				if (!ecl_eql(x, y)) {
 					ECL_RPLACD(tail, x);
@@ -702,7 +706,7 @@ cl_ldiff(cl_object x, cl_object y)
 			} else if (x == y) {
 				break;
 			} else {
-				cl_object cons = ecl_list1(CAR(x));
+				cl_object cons = ecl_list1(ECL_CONS_CAR(x));
 				ECL_RPLACD(tail, cons);
 				tail = cons;
 			}
@@ -715,7 +719,7 @@ cl_object
 cl_rplaca(cl_object x, cl_object v)
 {
 	assert_type_cons(x);
-	CAR(x) = v;
+	ECL_RPLACA(x, v);
 	@(return x)
 }
 
@@ -723,7 +727,7 @@ cl_object
 cl_rplacd(cl_object x, cl_object v)
 {
 	assert_type_cons(x);
-	CDR(x) = v;
+	ECL_RPLACD(x, v);
 	@(return x)
 }
 
@@ -748,8 +752,8 @@ subst(struct cl_test *t, cl_object new_obj, cl_object tree)
 	} else {
 		cl_object head, tail = Cnil;
 		do {
-			cl_object cons = subst(t, new_obj, CAR(tree));
-			cons = ecl_cons(cons, tree = CDR(tree));
+			cl_object cons = subst(t, new_obj, ECL_CONS_CAR(tree));
+			cons = ecl_cons(cons, tree = ECL_CONS_CDR(tree));
 			if (Null(tail)) {
 				head = cons;
 			} else {
@@ -779,13 +783,13 @@ nsubst_cons(struct cl_test *t, cl_object new_obj, cl_object tree)
 {
 	cl_object l = tree;
 	do {
-		cl_object o = CAR(l);
+		cl_object o = ECL_CONS_CAR(l);
 		if (TEST(t, o)) {
 			ECL_RPLACA(l, new_obj);
 		} else if (CONSP(o)) {
 			nsubst_cons(t, new_obj, o);
 		}
-		o = CDR(l);
+		o = ECL_CONS_CDR(l);
 		if (TEST(t, o)) {
 			ECL_RPLACD(l, new_obj);
 			return tree;
@@ -834,8 +838,8 @@ sublis(struct cl_test *t, cl_object alist, cl_object tree)
 		return CDR(node);
 	}
 	if (CONSP(tree)) {
-		tree = CONS(sublis(t, alist, CAR(tree)),
-			    sublis(t, alist, CDR(tree)));
+		tree = CONS(sublis(t, alist, ECL_CONS_CAR(tree)),
+			    sublis(t, alist, ECL_CONS_CDR(tree)));
 	}
 	return tree;
 }
@@ -867,11 +871,11 @@ nsublis(struct cl_test *t, cl_object alist, cl_object tree)
 	t[1].item_compared = (t[0].key_c_function)(t, tree);
 	node = do_assoc(t+1, alist);
 	if (!Null(node)) {
-		return CDR(node);
+		return ECL_CONS_CDR(node);
 	}
 	if (CONSP(tree)) {
-		ECL_RPLACA(tree, nsublis(t, alist, CAR(tree)));
-		ECL_RPLACD(tree, nsublis(t, alist, CDR(tree)));
+		ECL_RPLACA(tree, nsublis(t, alist, ECL_CONS_CAR(tree)));
+		ECL_RPLACD(tree, nsublis(t, alist, ECL_CONS_CDR(tree)));
 	}
 	return tree;
 }
@@ -881,7 +885,7 @@ nsublis(struct cl_test *t, cl_object alist, cl_object tree)
 @
 	setup_test(&t, item, test, test_not, key);
 	loop_for_in(list) {
-		if (TEST(&t, CAR(list)))
+		if (TEST(&t, ECL_CONS_CAR(list)))
 			break;
 	} end_loop_for_in;
 	close_test(&t);
@@ -892,7 +896,7 @@ bool
 ecl_member_eq(cl_object x, cl_object l)
 {
 	loop_for_in(l) {
-		if (x == CAR(l))
+		if (x == ECL_CONS_CAR(l))
 			return(TRUE);
 	} end_loop_for_in;
 	return(FALSE);
@@ -902,7 +906,7 @@ cl_object
 si_memq(cl_object x, cl_object l)
 {
 	loop_for_in(l) {
-		if (x == CAR(l))
+		if (x == ECL_CONS_CAR(l))
 			@(return l)
 	} end_loop_for_in;
 	@(return Cnil)
@@ -913,7 +917,7 @@ cl_object
 ecl_memql(cl_object x, cl_object l)
 {
 	loop_for_in(l) {
-		if (ecl_eql(x, CAR(l)))
+		if (ecl_eql(x, ECL_CONS_CAR(l)))
 			return(l);
 	} end_loop_for_in;
 	return(Cnil);
@@ -923,7 +927,7 @@ cl_object
 ecl_member(cl_object x, cl_object l)
 {
 	loop_for_in(l) {
-		if (ecl_equal(x, CAR(l)))
+		if (ecl_equal(x, ECL_CONS_CAR(l)))
 			return(l);
 	} end_loop_for_in;
 	return(Cnil);
@@ -939,7 +943,7 @@ si_member1(cl_object item, cl_object list, cl_object test, cl_object test_not, c
 		item = funcall(2, key, item);
 	setup_test(&t, item, test, test_not, key);
 	loop_for_in(list) {
-		if (TEST(&t, CAR(list)))
+		if (TEST(&t, ECL_CONS_CAR(list)))
 			break;
 	} end_loop_for_in;
 	close_test(&t);
@@ -989,7 +993,7 @@ cl_acons(cl_object x, cl_object y, cl_object z)
 	loop_for_in(k) {
 		if (ecl_endp(d))
 			goto error;
-		a_list = CONS(CONS(CAR(k), CAR(d)), a_list);
+		a_list = CONS(CONS(ECL_CONS_CAR(k), ECL_CONS_CAR(d)), a_list);
 		d = CDR(d);
 	} end_loop_for_in;
 	if (!ecl_endp(d))
@@ -1011,18 +1015,18 @@ error:	    FEerror("The keys ~S and the data ~S are not of the same length",
 static cl_object
 do_assoc(struct cl_test *t, cl_object a_list)
 {
-	for (; !Null(a_list); a_list = CDR(a_list)) {
+	loop_for_in(a_list) {
 		cl_object pair;
 		if (!LISTP(a_list)) {
 			FEtype_error_list(a_list);
 		}
-		pair = CAR(a_list);
+		pair = ECL_CONS_CAR(a_list);
 		if (!LISTP(pair)) {
 			FEtype_error_list(pair);
-		} else if (!Null(pair) && TEST(t, CAR(pair))) {
+		} else if (!Null(pair) && TEST(t, ECL_CONS_CAR(pair))) {
 			return pair;
 		}
-	}
+	} end_loop_for_in;
 	return Cnil;
 }
 
@@ -1030,18 +1034,18 @@ do_assoc(struct cl_test *t, cl_object a_list)
 	struct cl_test t;
 @
 	setup_test(&t, item, test, test_not, key);
-	for (; !Null(a_list); a_list = CDR(a_list)) {
+	loop_for_in(a_list) {
 		cl_object pair;
 		if (!LISTP(a_list))
 			FEtype_error_list(a_list);
-		pair = CAR(a_list);
+		pair = ECL_CONS_CAR(a_list);
 		if (!LISTP(pair))
 			FEtype_error_list(pair);
-		if (!Null(pair) && TEST(&t, CDR(pair))) {
+		if (!Null(pair) && TEST(&t, ECL_CONS_CDR(pair))) {
 			a_list = CAR(a_list);
 			break;
 		}
-	}
+	} end_loop_for_in;
 	close_test(&t);
 	@(return a_list)
 @)
@@ -1050,9 +1054,9 @@ cl_object
 ecl_remove_eq(cl_object x, cl_object l)
 {
 	cl_object head = Cnil, tail = Cnil;
-	for (; CONSP(l); l = CDR(l)) {
-		if (CAR(l) != x) {
-			cl_object cons = ecl_list1(CAR(l));
+	loop_for_on_unsafe(l) {
+		if (ECL_CONS_CAR(l) != x) {
+			cl_object cons = ecl_list1(ECL_CONS_CAR(l));
 			if (Null(tail)) {
 				head = tail = cons;
 			} else {
@@ -1060,7 +1064,7 @@ ecl_remove_eq(cl_object x, cl_object l)
 				tail = cons;
 			}
 		}
-	}
+	} end_loop_for_on;
 	return head;
 }
 
@@ -1069,8 +1073,9 @@ cl_object
 ecl_assq(cl_object x, cl_object l)
 {
 	loop_for_in(l) {
-		if (x == CAAR(l))
-			return(CAR(l));
+		cl_object pair = ECL_CONS_CAR(l);
+		if (x == CAR(pair))
+			return pair;
 	} end_loop_for_in;
 	return(Cnil);
 }
@@ -1079,8 +1084,9 @@ cl_object
 ecl_assql(cl_object x, cl_object l)
 {
 	loop_for_in(l) {
-		if (ecl_eql(x, CAAR(l)))
-			return(CAR(l));
+		cl_object pair = ECL_CONS_CAR(l);
+		if (ecl_eql(x, CAR(pair)))
+			return pair;
 	} end_loop_for_in;
 	return(Cnil);
 }
@@ -1089,8 +1095,9 @@ cl_object
 ecl_assoc(cl_object x, cl_object l)
 {
 	loop_for_in(l) {
-		if (ecl_equal(x, CAAR(l)))
-			return(CAR(l));
+		cl_object pair = ECL_CONS_CAR(l);
+		if (ecl_equal(x, CAR(pair)))
+			return pair;
 	} end_loop_for_in;
 	return(Cnil);
 }
@@ -1099,8 +1106,9 @@ cl_object
 ecl_assqlp(cl_object x, cl_object l)
 {
 	loop_for_in(l) {
-		if (ecl_equalp(x, CAR(CAR(l))))
-			return(CAR(l));
+		cl_object pair = ECL_CONS_CAR(l);
+		if (ecl_equalp(x, CAR(pair)))
+			return pair;
 	} end_loop_for_in;
 	return(Cnil);
 }

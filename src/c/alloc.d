@@ -292,8 +292,8 @@ ONCE_MORE:
 	  obj->pack.external = OBJNULL;
 	  break;
 	case t_cons:
-	  CAR(obj) = OBJNULL;
-	  CDR(obj) = OBJNULL;
+	  obj->cons.car = OBJNULL;
+	  obj->cons.cdr = OBJNULL;
 	  break;
 	case t_hashtable:
 	  obj->hash.rehash_size = OBJNULL;
@@ -470,8 +470,8 @@ ONCE_MORE:
 	(tm->tm_nused)++;
 	obj->d.t = (short)t_cons;
 	obj->d.m = FALSE;
-	CAR(obj) = a;
-	CDR(obj) = d;
+	obj->cons.car = a;
+	obj->cons.cdr = d;
 
 	end_critical_section();
 	return(obj);

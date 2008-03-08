@@ -16,22 +16,29 @@
 */
 
 #include <ecl/ecl.h>
+#include <ecl/ecl-inl.h>
 #include <string.h>
+
+#ifndef CLOS
+#error "Needs to define CLOS"
+#endif
 
 /******************************* ------- ******************************/
 
 #ifdef CLOS
 static bool
 structure_subtypep(cl_object x, cl_object y)
-{ cl_object superiors;
-  if (CLASS_NAME(x) == y)
-    return(TRUE);
-  for (superiors=CLASS_SUPERIORS(x); superiors!=Cnil;
-       superiors=CDR(superiors)) {
-    if (structure_subtypep(CAR(superiors), y))
-      return(TRUE);
-  }
-  return(FALSE);
+{
+	if (CLASS_NAME(x) == y) {
+		return TRUE;
+	} else {
+		cl_object superiors = CLASS_SUPERIORS(x);
+		loop_for_on_unsafe(superiors) {
+			if (structure_subtypep(ECL_CONS_CAR(superiors), y))
+				return TRUE;
+		} end_loop_for_on;
+		return FALSE;
+	}
 }
 #else
 static bool
@@ -54,24 +61,6 @@ si_structure_subtype_p(cl_object x, cl_object y)
 	@(return ((type_of(x) == T_STRUCTURE
 		     && structure_subtypep(STYPE(x), y)) ? Ct : Cnil))
 }
-
-#ifndef CLOS
-/* This is only used for printing. Should not cons!! */ 
-cl_object
-structure_to_list(cl_object x)
-{
-	cl_object *p, r, s;
-	int i, n;
-
-	s = si_get_sysprop(SNAME(x), @'si::structure-slot-descriptions');
-	p = &CDR(r = ecl_list1(SNAME(x)));
-	for (i=0, n=SLENGTH(x);  !ecl_endp(s) && i<n;  s=CDR(s), i++) {
-		p = &(CDR(*p = ecl_list1(cl_car(CAR(s)))));
-		p = &(CDR(*p = ecl_list1(SLOT(x, i))));
-	}
-	return(r);
-}
-#endif /* CLOS */
 
 @(defun si::make_structure (type &rest args)
 	cl_object x;

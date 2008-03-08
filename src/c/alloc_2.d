@@ -18,6 +18,7 @@
 #endif
 #include <stdio.h>
 #include <ecl/ecl.h>
+#include <ecl/ecl-inl.h>
 #include <ecl/internal.h>
 #include <ecl/page.h>
 #ifdef ECL_WSOCK
@@ -140,8 +141,8 @@ ecl_list1(cl_object a)
 	cl_object obj = (cl_object)GC_MALLOC(sizeof(struct ecl_list));
 	/* *(cl_index*)obj = 0; /* Eliminate garbage from object header */
 	obj->d.t = (short)t_list;
-	CAR(obj) = a;
-	CDR(obj) = Cnil;
+	obj->cons.car = a;
+	obj->cons.cdr = Cnil;
 	return obj;
 }
 
@@ -282,16 +283,16 @@ static void
 group_finalizer(cl_object l, cl_object no_data)
 {
 	CL_NEWENV_BEGIN {
-		do {
-			cl_object record = CAR(l);
-			cl_object o = CAR(record);
-			cl_object procedure = CDR(record);
-			l = CDR(l);
+		while (CONSP(l)) {
+			cl_object record = ECL_CONS_CAR(l);
+			cl_object o = ECL_CONS_CAR(record);
+			cl_object procedure = ECL_CONS_CDR(record);
+			l = ECL_CONS_CDR(l);
 			if (procedure != Ct) {
 				funcall(2, procedure, o);
 			}
 			standard_finalizer(o);
-		} while (l != Cnil);
+		}
 	} CL_NEWENV_END;
 }
 
@@ -309,14 +310,14 @@ queueing_finalizer(cl_object o, cl_object finalizer)
 			   get executed as a consequence of these calls. */
 			volatile cl_object aux = ACONS(o, finalizer, Cnil);
 			cl_object l = cl_core.to_be_finalized;
-			if (l == Cnil) {
+			if (ATOM(l)) {
 				GC_finalization_proc ofn;
 				void *odata;
 				cl_core.to_be_finalized = aux;
 				GC_register_finalizer_no_order(aux, (GC_finalization_proc*)group_finalizer, NULL, &ofn, &odata);
 			} else {
-				CDR(aux) = CDR(l);
-				CDR(l) = aux;
+				ECL_RPLACD(aux, ECL_CONS_CDR(l));
+				ECL_RPLACD(l, aux);
 			}
 		}
 	}
@@ -480,11 +481,12 @@ stacks_scanner()
 	if (l == OBJNULL) {
 		ecl_mark_env(&cl_env);
 	} else {
-		for (l = cl_core.processes; l != Cnil; l = CDR(l)) {
-			cl_object process = CAR(l);
+		l = cl_core.processes;
+		loop_for_on_unsafe(l) {
+			cl_object process = ECL_CONS_CAR(l);
 			struct cl_env_struct *env = process->process.env;
 			ecl_mark_env(env);
-		}
+		} end_loop_for_on;
 	}
 #else
 	ecl_mark_env(&cl_env);
