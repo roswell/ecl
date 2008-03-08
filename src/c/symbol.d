@@ -16,6 +16,7 @@
 */
 
 #include <ecl/ecl.h>
+#include <ecl/ecl-inl.h>
 
 /******************************* ------- ******************************/
 /* FIXME! CURRENTLY SYMBOLS ARE RESTRICTED TO HAVE NON-UNICODE NAMES */
@@ -226,24 +227,27 @@ si_put_f(cl_object place, cl_object value, cl_object indicator)
 static bool
 remf(cl_object *place, cl_object indicator)
 {
-	cl_object *l;
-
-#ifdef ECL_SAFE
-	assert_type_proper_list(*place);
-#endif
-	for (l = place; CONSP(*l); ) {
-		cl_object cdr_l = CDR(*l);
-		if (!CONSP(cdr_l))
-			break;
-		if (CAR(*l) == indicator) {
-			*l = CDR(cdr_l);
+	cl_object l = *place, tail = Cnil;
+	while (!Null(l)) {
+		cl_object ind;
+		if (!LISTP(l))
+			FEtype_error_plist(*place);
+		ind = CAR(l);
+		l = CDR(l);
+		if (!CONSP(l))
+			FEtype_error_plist(*place);
+		if (ind == indicator) {
+			l = CDR(l);
+			if (Null(tail))
+				*place = l;
+			else
+				ECL_RPLACD(tail, l);
 			return TRUE;
 		}
-		l = &CDR(cdr_l);
+		tail = l;
+		l = CDR(l);
 	}
-	if (*l != Cnil)
-		FEtype_error_plist(*place);
-	return(FALSE);
+	return FALSE;
 }
 
 bool
