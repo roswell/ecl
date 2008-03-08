@@ -18,8 +18,10 @@
 
 #define CONS(a,d)	ecl_cons((a),(d))
 #define ACONS(a,b,c)	ecl_cons(ecl_cons((a),(b)),(c))
-#define CAR(x)		(x)->cons.car
-#define CDR(x)		(x)->cons.cdr
+#define CAR(x)		(Null(x)? (x) : (x)->cons.car)
+#define CDR(x)		(Null(x)? (x) : (x)->cons.cdr)
+#define ECL_CONS_CDR(c) ((c)->cons.cdr)
+#define ECL_CONS_CAR(c) ((c)->cons.car)
 
 #define CAAR(x)		CAR(CAR(x))
 #define CADR(x)		CAR(CDR(x))

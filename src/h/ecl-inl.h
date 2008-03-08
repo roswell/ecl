@@ -1,8 +1,6 @@
 /* -*- mode: c; c-basic-offset: 8 -*- */
 #define ECL_RPLACD(c,t) ((c)->cons.cdr=(t))
 #define ECL_RPLACA(c,t) ((c)->cons.car=(t))
-#define ECL_CONS_CDR(c) ((c)->cons.cdr)
-#define ECL_CONS_CAR(c) ((c)->cons.car)
 
 /*
  * Loops over a proper list. Complains on circularity

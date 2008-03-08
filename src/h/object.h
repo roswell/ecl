@@ -31,6 +31,68 @@ typedef int bool;
 #endif
 typedef unsigned char byte;
 
+#ifdef ECL_SHORT_FLOAT
+#undef ECL_SHORT_FLOAT
+#endif
+
+/*
+	Implementation types.
+*/
+typedef enum {
+	t_start = 0,
+	t_list = 1,
+	/* The most specific numeric types come first. Assumed by
+	   some routines, like cl_expt */
+	t_character = 2,	/* immediate character */
+	t_fixnum = 3,		/* immediate fixnum */
+#ifdef ECL_SHORT_FLOAT
+	t_shortfloat,
+#endif
+	t_bignum = 4,
+	t_ratio,
+	t_singlefloat,
+	t_doublefloat,
+#ifdef ECL_LONG_FLOAT
+	t_longfloat,
+#endif
+	t_complex,
+	t_symbol,
+	t_package,
+	t_hashtable,
+	t_array,
+	t_vector,
+#ifdef ECL_UNICODE
+	t_string,
+#endif
+	t_base_string,
+	t_bitvector,
+	t_stream,
+	t_random,
+	t_readtable,
+	t_pathname,
+	t_bytecodes,
+	t_cfun,
+	t_cclosure,
+#ifdef CLOS
+	t_instance,
+#else
+	t_structure,
+#endif /* CLOS */
+#ifdef ECL_THREADS
+	t_process,
+	t_lock,
+	t_condition_variable,
+#endif
+	t_codeblock,
+	t_foreign,
+	t_frame,
+	t_end,
+	t_other,
+	t_contiguous,		/*  contiguous block  */
+	FREE = 127		/*  free object  */
+} cl_type;
+
+
 /*
 	Definition of the type of LISP objects.
 */
@@ -50,20 +112,20 @@ typedef cl_object (*cl_objectfn_fixed)();
 	Definition of each implementation type.
 */
 
-#define IMMEDIATE(obje)		((cl_fixnum)(obje) & 3)
+#define IMMEDIATE(o)		((cl_fixnum)(o) & 3)
 #define IMMEDIATE_TAG		3
 
 /* Immediate fixnums:		*/
-#define FIXNUM_TAG		2
+#define FIXNUM_TAG		t_fixnum
 #define MAKE_FIXNUM(n)		((cl_object)(((cl_fixnum)(n) << 2) | FIXNUM_TAG))
 #define FIXNUM_MINUSP(n)	((cl_fixnum)(n) < 0)
 #define FIXNUM_PLUSP(n)		((cl_fixnum)(n) >= (cl_fixnum)MAKE_FIXNUM(0))
 #define	fix(obje)		(((cl_fixnum)(obje)) >> 2)
-#define FIXNUMP(obje)		(((cl_fixnum)(obje)) & FIXNUM_TAG)
+#define FIXNUMP(o)		(IMMEDIATE(o) == t_fixnum)
 
 /* Immediate characters:	*/
-#define CHARACTER_TAG		1
-#define CHARACTERP(obje)	(((cl_fixnum)(obje)) & CHARACTER_TAG)
+#define CHARACTER_TAG		t_character
+#define CHARACTERP(o)		(IMMEDIATE(o) == t_character)
 #ifdef ECL_UNICODE
 #define BASE_CHAR_P(obje)	((((cl_fixnum)(obje)) & 0xFFFFFC03) == CHARACTER_TAG)
 #define BASE_CHAR_CODE_P(x)	((x & ~((cl_fixnum)0xFF)) == 0)
@@ -85,13 +147,6 @@ typedef cl_object (*cl_objectfn_fixed)();
 #define HEADER2(field1,field2)	int8_t t, m, field1, field2
 #define HEADER3(field1,flag2,flag3) int8_t t, m, field1; uint8_t flag2:4, flag3:4
 #define HEADER4(field1,flag2,flag3,flag4) int8_t t, m, field1; uint8_t flag2:4, flag3:2, flag4:2
-
-#ifdef ECL_SHORT_FLOAT
-#undef FIXNUMP
-#define FIXNUMP(o)		(IMMEDIATE(o) == FIXNUM_TAG)
-#undef CHARACTERP
-#define CHARACTERP(o)		(IMMEDIATE(o) == CHARACTER_TAG)
-#endif
 
 struct ecl_singlefloat {
 	HEADER;
@@ -164,7 +219,7 @@ enum ecl_stype {		/*  symbol type  */
 	stp_special_form = 8
 };
 
-#define	Cnil			((cl_object)cl_symbols)
+#define	Cnil			((cl_object)t_list)
 #define	Cnil_symbol		((cl_object)cl_symbols)
 #define	Ct			((cl_object)(cl_symbols+1))
 #define ECL_UNBOUND		((cl_object)(cl_symbols+2))
@@ -210,9 +265,9 @@ struct ecl_package {
 #define	EXTERNAL	2
 #define	INHERITED	3
 
-#define LISTP(x)	((IMMEDIATE(x) == 0) && ((x)->d.t == t_list))
-#define CONSP(x)	(LISTP(x) && ((x) != Cnil))
-#define ATOM(x)		(((x) == Cnil) || !LISTP(x))
+#define CONSP(x)	((IMMEDIATE(x) == 0) && ((x)->d.t == t_list))
+#define LISTP(x)	(Null(x) || CONSP(x))
+#define ATOM(x)		!CONSP(x)
 #define SYMBOLP(x)	(Null(x) || ((IMMEDIATE(x) == 0) && ((x)->d.t == t_symbol)))
 
 struct ecl_list {
@@ -595,64 +650,6 @@ union cl_lispunion {
 	struct ecl_foreign	foreign; 	/*  user defined data type */
 	struct ecl_stack_frame	frame;		/*  stack frame  */
 };
-
-/*
-	Implementation types.
-*/
-typedef enum {
-	t_list = 0,
-	t_start = 0,
-	/* The most specific numeric types come first. Assumed by
-	   some routines, like cl_expt */
-	t_character,		/* immediate character */
-	t_fixnum,		/* immediate fixnum */
-#ifdef ECL_SHORT_FLOAT
-	t_shortfloat,
-#endif
-	t_bignum = 4,
-	t_ratio,
-	t_singlefloat,
-	t_doublefloat,
-#ifdef ECL_LONG_FLOAT
-	t_longfloat,
-#endif
-	t_complex,
-	t_symbol,
-	t_package,
-	t_hashtable,
-	t_array,
-	t_vector,
-#ifdef ECL_UNICODE
-	t_string,
-#endif
-	t_base_string,
-	t_bitvector,
-	t_stream,
-	t_random,
-	t_readtable,
-	t_pathname,
-	t_bytecodes,
-	t_cfun,
-	t_cclosure,
-#ifdef CLOS
-	t_instance,
-#else
-	t_structure,
-#endif /* CLOS */
-#ifdef ECL_THREADS
-	t_process,
-	t_lock,
-	t_condition_variable,
-#endif
-	t_codeblock,
-	t_foreign,
-	t_frame,
-	t_end,
-	t_other,
-	t_contiguous,		/*  contiguous block  */
-	FREE = 127		/*  free object  */
-} cl_type;
-
 
 /*
 	Type_of.

@@ -208,11 +208,7 @@ cl_boot(int argc, char **argv)
 	 * 1) Initialize symbols and packages
 	 */
 
-	Cnil->cons.t = t_list;
-	Cnil->cons.m = 0;
-	Cnil->cons.padding[0] = Cnil->cons.padding[1] = 0;
-	Cnil->cons.car = Cnil->cons.cdr = Cnil;
-
+	Cnil_symbol->symbol.t = t_symbol;
 	Cnil_symbol->symbol.dynamic = 0;
 	Cnil_symbol->symbol.value = Cnil;
 	Cnil_symbol->symbol.name = make_constant_base_string("NIL");

@@ -141,11 +141,15 @@ ecl_make_keyword(const char *s)
 cl_object
 ecl_symbol_value(cl_object s)
 {
-	/* FIXME: Should we check symbol type? */
-	cl_object value = SYM_VAL(s);
-	if (value == OBJNULL)
-		FEunbound_variable(s);
-	return value;
+	if (Null(s)) {
+		return s;
+	} else {
+		/* FIXME: Should we check symbol type? */
+		cl_object value = SYM_VAL(s);
+		if (value == OBJNULL)
+			FEunbound_variable(s);
+		return value;
+	}
 }
 
 static void
@@ -309,12 +313,14 @@ cl_symbol_name(cl_object x)
 
 @(defun copy_symbol (sym &optional cp &aux x)
 @
+	if (Null(sym))
+		sym = Cnil_symbol;
 	x = cl_make_symbol(ecl_symbol_name(sym));
 	if (!Null(cp)) {
 		x->symbol.dynamic = 0;
 		x->symbol.stype = sym->symbol.stype;
-		x->symbol.value = SYM_VAL(sym);
-		x->symbol.gfdef = SYM_FUN(sym);
+		x->symbol.value = sym->symbol.value;
+		x->symbol.gfdef = sym->symbol.gfdef;
 		x->symbol.plist = cl_copy_list(sym->symbol.plist);
 		/* FIXME!!! We should also copy the system property list */
 	}

@@ -121,7 +121,9 @@ mangle_name(cl_object output, char *source, int l)
 		}
 	}
 	package = ecl_symbol_package(symbol);
-	if (package == cl_core.lisp_package)
+	if (Null(package))
+		;
+	else if (package == cl_core.lisp_package)
 		package = make_constant_base_string("cl");
 	else if (package == cl_core.system_package)
 		package = make_constant_base_string("si");

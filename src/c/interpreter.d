@@ -271,10 +271,10 @@ ecl_lex_env_get_record(register int s) {
 	return CAR(x);
 }
 
-#define ecl_lex_env_get_var(x) CDR(ecl_lex_env_get_record(x))
-#define ecl_lex_env_set_var(x,v) (CDR(ecl_lex_env_get_record(x)) = (v))
-#define ecl_lex_env_get_fun(x) CAR(ecl_lex_env_get_record(x))
-#define ecl_lex_env_get_tag(x) CAR(ecl_lex_env_get_record(x))
+#define ecl_lex_env_get_var(x) ECL_CONS_CDR(ecl_lex_env_get_record(x))
+#define ecl_lex_env_set_var(x,v) ECL_RPLACD(ecl_lex_env_get_record(x),(v))
+#define ecl_lex_env_get_fun(x) ECL_CONS_CAR(ecl_lex_env_get_record(x))
+#define ecl_lex_env_get_tag(x) ECL_CONS_CAR(ecl_lex_env_get_record(x))
 
 /* -------------------- LAMBDA FUNCTIONS -------------------- */
 

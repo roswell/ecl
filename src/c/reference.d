@@ -125,19 +125,35 @@ si_coerce_to_function(cl_object fun)
 cl_object
 cl_symbol_value(cl_object sym)
 {
-	if (!SYMBOLP(sym))
-		FEtype_error_symbol(sym);
-	if (SYM_VAL(sym) == OBJNULL)
-		FEunbound_variable(sym);
-	@(return SYM_VAL(sym))
+	cl_object value;
+	if (Null(sym)) {
+		value = sym;
+	} else {
+		if (!SYMBOLP(sym)) {
+			FEtype_error_symbol(sym);
+		}
+		value = SYM_VAL(sym);
+		if (value == OBJNULL)
+			FEunbound_variable(sym);
+	}
+	@(return value)
 }
 
 cl_object
 cl_boundp(cl_object sym)
 {
-	if (!SYMBOLP(sym))
-		FEtype_error_symbol(sym);
-	@(return ((SYM_VAL(sym) == OBJNULL)? Cnil : Ct))
+	cl_object output;
+	if (Null(sym)) {
+		output = Ct;
+	} else {
+		if (!SYMBOLP(sym))
+			FEtype_error_symbol(sym);
+		if (SYM_VAL(sym) == OBJNULL)
+			output = Cnil;
+		else
+			output = Ct;
+	}
+	@(return output)
 }
 
 cl_object

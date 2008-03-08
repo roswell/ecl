@@ -182,7 +182,7 @@ E:
 		  for (i = 0;  i < e;  i++) {
 		    if (ATOM(sequence))
 		      goto ILLEGAL_START_END;
-		    z = &CDR(*z = ecl_list1(CAR(sequence)));
+		    z = &ECL_CONS_CDR(*z = ecl_list1(CAR(sequence)));
 		    sequence = CDR(sequence);
 		  }
 		}
