@@ -403,7 +403,6 @@ parse_directories(cl_object s, int flags, cl_index start, cl_index end,
 {
 	cl_index i, j;
 	cl_object path = Cnil;
-	cl_object *plast = &path;
 	delim_fn delim = (flags & WORD_LOGICAL) ? is_semicolon : is_slash;
 
 	flags |= WORD_INCLUDE_DELIM | WORD_ALLOW_ASTERISK;
@@ -422,9 +421,9 @@ parse_directories(cl_object s, int flags, cl_index start, cl_index end,
 			part = (flags & WORD_LOGICAL) ? @':relative' : @':absolute';
 		}
 		*end_of_dir = i;
-		plast = &CDR(*plast = ecl_list1(part));
+		path = ecl_cons(part, path);
 	}
-	return path;
+	return cl_nreverse(path);
 }
 
 bool
