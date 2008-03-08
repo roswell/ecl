@@ -208,7 +208,7 @@ cl_cdr(cl_object x)
 static cl_object
 append_into(cl_object tail, cl_object l)
 {
-	if (!LISTP(ECL_CONS_CDR(tail))) {
+	if (!Null(ECL_CONS_CDR(tail))) {
 		/* (APPEND '(1 . 2) 3) */
 		FEtype_error_proper_list(tail);
 	}
@@ -229,7 +229,9 @@ append_into(cl_object tail, cl_object l)
 		cl_object other = cl_va_arg(rest);
 		if (Null(head)) {
 			head = other;
-			if (!LISTP(head)) {
+			if (Null(head))
+				continue;
+			if (!CONSP(head)) {
 				if (narg) {
 					/* (APPEND atom whatever) */
 					FEtype_error_list(other);
@@ -237,8 +239,6 @@ append_into(cl_object tail, cl_object l)
 				/* (APPEND atom) */
 				break;
 			}
-			if (Null(head))
-				continue;
 			other = ECL_CONS_CDR(head);
 			tail = head = ecl_list1(ECL_CONS_CAR(head));
 		}
@@ -253,7 +253,7 @@ ecl_append(cl_object x, cl_object y)
 	cl_object head, tail;
 	if (Null(x))
 		return y;
-	if (!LISTP(x))
+	if (!CONSP(x))
 		FEtype_error_list(x);
 	head = tail = ecl_list1(ECL_CONS_CAR(x));
 	append_into(append_into(tail, ECL_CONS_CDR(x)), y);
@@ -571,7 +571,7 @@ cl_revappend(cl_object x, cl_object y)
 		cl_object new_tail, other = cl_va_arg(lists);
 		if (Null(other)) {
 			new_tail = tail;
-		} else if (LISTP(other)) {
+		} else if (CONSP(other)) {
 			new_tail = ecl_last(other, 1);
 		} else {
 			if (narg) FEtype_error_list(other);
@@ -626,7 +626,7 @@ ecl_butlast(cl_object l, cl_index n)
 		;
 	if (Null(r)) {
 		return Cnil;
-	} else if (!LISTP(r)) {
+	} else if (!CONSP(r)) {
 		/* We reach here either because l is shorter than n conses,
 		 * or because it is not a list */
 		if (r == l) FEtype_error_list(r);
@@ -1016,15 +1016,12 @@ static cl_object
 do_assoc(struct cl_test *t, cl_object a_list)
 {
 	loop_for_in(a_list) {
-		cl_object pair;
-		if (!LISTP(a_list)) {
-			FEtype_error_list(a_list);
-		}
-		pair = ECL_CONS_CAR(a_list);
-		if (!LISTP(pair)) {
-			FEtype_error_list(pair);
-		} else if (!Null(pair) && TEST(t, ECL_CONS_CAR(pair))) {
-			return pair;
+		cl_object pair = ECL_CONS_CAR(a_list);
+		if (!Null(pair)) {
+			if (!CONSP(pair))
+				FEtype_error_list(pair);
+			if (TEST(t, ECL_CONS_CAR(pair)))
+				return pair;
 		}
 	} end_loop_for_in;
 	return Cnil;
@@ -1035,15 +1032,14 @@ do_assoc(struct cl_test *t, cl_object a_list)
 @
 	setup_test(&t, item, test, test_not, key);
 	loop_for_in(a_list) {
-		cl_object pair;
-		if (!LISTP(a_list))
-			FEtype_error_list(a_list);
-		pair = ECL_CONS_CAR(a_list);
-		if (!LISTP(pair))
-			FEtype_error_list(pair);
-		if (!Null(pair) && TEST(&t, ECL_CONS_CDR(pair))) {
-			a_list = CAR(a_list);
-			break;
+		cl_object pair = ECL_CONS_CAR(a_list);
+		if (!Null(pair)) {
+			if (!CONSP(pair))
+				FEtype_error_list(pair);
+			if (TEST(&t, ECL_CONS_CDR(pair))) {
+				a_list = pair;
+				break;
+			}
 		}
 	} end_loop_for_in;
 	close_test(&t);

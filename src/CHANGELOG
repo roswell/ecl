@@ -1,6 +1,14 @@
 ECL 0.9k:
 =========
 
+* Implementation changes:
+
+ - NIL is now a fixed word, 0x03, and points to no memory. Hence, care should
+   be taken when manipulating lists and symbols, so as not to produce wrong
+   code. Instead of accessing directly the fields CAR, CDR, SYMBOL-NAME,
+   SYMBOL-PACKAGE..., it is recommended to use the high level functions and
+   macros ecl_car, ecl_cdr, ecl_symbol_name, etc.
+
 * Visible changes:
 
  - The documentation is slowly disappearing form this source tree, as there
