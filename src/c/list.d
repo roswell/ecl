@@ -33,7 +33,8 @@ struct cl_test {
 static cl_object subst(struct cl_test *t, cl_object new_obj, cl_object tree);
 static cl_object nsubst(struct cl_test *t, cl_object new_obj, cl_object tree);
 static cl_object sublis(struct cl_test *t, cl_object alist, cl_object tree);
-static void nsublis(struct cl_test *t, cl_object alist, cl_object *treep);
+static cl_object nsublis(struct cl_test *t, cl_object alist, cl_object tree);
+static cl_object do_assoc(struct cl_test *t, cl_object alist);
 
 #define TEST(t,k) ((t)->test_c_function)((t),(k))
 
@@ -805,11 +806,17 @@ nsubst(struct cl_test *t, cl_object new_obj, cl_object tree)
 }
 
 @(defun sublis (alist tree &key test test_not key)
-	struct cl_test t;
+	/* t[0] is the test for the objects in the tree, configured
+	   with test, test_not and key. t[1] is the test for searching
+	   in the association list.
+	 */
+	struct cl_test t[2];
 @
-	setup_test(&t, Cnil, test, test_not, key);
-	tree = sublis(&t, alist, tree);
-	close_test(&t);
+	setup_test(t, Cnil, Cnil, Cnil, key);
+	setup_test(t+1, Cnil, test, test_not, Cnil);
+	tree = sublis(t, alist, tree);
+	close_test(t+1);
+	close_test(t);
 	@(return tree)
 @)
 
@@ -820,30 +827,31 @@ nsubst(struct cl_test *t, cl_object new_obj, cl_object tree)
 static cl_object
 sublis(struct cl_test *t, cl_object alist, cl_object tree)
 {
-	cl_object x = alist;
-	struct cl_test local_t = *t;
-	local_t.key_c_function = key_identity;
-	local_t.item_compared = (t->key_c_function)(t, tree);
-	loop_for_in(x) {
-		cl_object node = CAR(x);
-		if (TEST(&local_t, cl_car(node))) {
-			return CDR(node);
-		}
-	} end_loop_for_in;
-	if (CONSP(tree)) {
-		return CONS(sublis(t, alist, CAR(tree)),
-			    sublis(t, alist, CDR(tree)));
-	} else {
-		return tree;
+	cl_object node;
+	t[1].item_compared = (t[0].key_c_function)(t, tree);
+	node = do_assoc(t+1, alist);
+	if (!Null(node)) {
+		return CDR(node);
 	}
+	if (CONSP(tree)) {
+		tree = CONS(sublis(t, alist, CAR(tree)),
+			    sublis(t, alist, CDR(tree)));
+	}
+	return tree;
 }
 
 @(defun nsublis (alist tree &key test test_not key)
-	struct cl_test t;
+	/* t[0] is the test for the objects in the tree, configured
+	   with test, test_not and key. t[1] is the test for searching
+	   in the association list.
+	 */
+	struct cl_test t[2];
 @
-	setup_test(&t, Cnil, test, test_not, key);
-	nsublis(&t, alist, &tree);
-	close_test(&t);
+	setup_test(t, Cnil, Cnil, Cnil, key);
+	setup_test(t+1, Cnil, test, test_not, Cnil);
+	tree = nsublis(t, alist, tree);
+	close_test(t+1);
+	close_test(t);
 	@(return tree)
 @)
 
@@ -852,24 +860,20 @@ sublis(struct cl_test *t, cl_object alist, cl_object tree)
 	the result of substiting *treep by alist
 	to *treep.
 */
-static void
-nsublis(struct cl_test *t, cl_object alist, cl_object *treep)
+static cl_object
+nsublis(struct cl_test *t, cl_object alist, cl_object tree)
 {
-	cl_object x = alist;
-	struct cl_test local_t = *t;
-	local_t.key_c_function = key_identity;
-	local_t.item_compared = (t->key_c_function)(t, *treep);
-	loop_for_in(x) {
-		cl_object node = CAR(x);
-		if (TEST(&local_t, cl_car(node))) {
-			*treep = CDR(node);
-			return;
-		}
-	} end_loop_for_in;
-	if (CONSP(*treep)) {
-		nsublis(t, alist, &CAR(*treep));
-		nsublis(t, alist, &CDR(*treep));
+	cl_object node;
+	t[1].item_compared = (t[0].key_c_function)(t, tree);
+	node = do_assoc(t+1, alist);
+	if (!Null(node)) {
+		return CDR(node);
 	}
+	if (CONSP(tree)) {
+		ECL_RPLACA(tree, nsublis(t, alist, CAR(tree)));
+		ECL_RPLACD(tree, nsublis(t, alist, CDR(tree)));
+	}
+	return tree;
 }
 
 @(defun member (item list &key test test_not key)
@@ -999,36 +1003,45 @@ error:	    FEerror("The keys ~S and the data ~S are not of the same length",
 	struct cl_test t;
 @
 	setup_test(&t, item, test, test_not, key);
-	loop_for_in(a_list) {
-		cl_object pair = CAR(a_list);
-		if (Null(pair)) {
-			;
-		} else if (ATOM(pair)) {
-			FEtype_error_alist(pair);
-		} else if (TEST(&t, CAAR(a_list))) {
-			a_list = CAR(a_list);
-			break;
-		}
-	} end_loop_for_in;
+	a_list = do_assoc(&t, a_list);
 	close_test(&t);
 	@(return a_list)
 @)
+
+static cl_object
+do_assoc(struct cl_test *t, cl_object a_list)
+{
+	for (; !Null(a_list); a_list = CDR(a_list)) {
+		cl_object pair;
+		if (!LISTP(a_list)) {
+			FEtype_error_list(a_list);
+		}
+		pair = CAR(a_list);
+		if (!LISTP(pair)) {
+			FEtype_error_list(pair);
+		} else if (!Null(pair) && TEST(t, CAR(pair))) {
+			return pair;
+		}
+	}
+	return Cnil;
+}
 
 @(defun rassoc (item a_list &key test test_not key)
 	struct cl_test t;
 @
 	setup_test(&t, item, test, test_not, key);
-	loop_for_in(a_list) {
-		cl_object pair = CAR(a_list);
-		if (Null(pair)) {
-			;
-		} else if (ATOM(pair)) {
-			FEtype_error_alist(pair);
-		} else if (TEST(&t, CDAR(a_list))) {
-				a_list = CAR(a_list);
-				break;
-			}
-	} end_loop_for_in;
+	for (; !Null(a_list); a_list = CDR(a_list)) {
+		cl_object pair;
+		if (!LISTP(a_list))
+			FEtype_error_list(a_list);
+		pair = CAR(a_list);
+		if (!LISTP(pair))
+			FEtype_error_list(pair);
+		if (!Null(pair) && TEST(&t, CDR(pair))) {
+			a_list = CAR(a_list);
+			break;
+		}
+	}
 	close_test(&t);
 	@(return a_list)
 @)
