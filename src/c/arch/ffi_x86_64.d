@@ -270,7 +270,7 @@ ARG_FROM_STACK:
 	case ECL_FFI_UNSIGNED_BYTE: i = output.ub; goto INT;
 #ifdef ecl_uint16_t
         case ECL_FFI_INT16_T: i = output.i16; goto INT;
-        case ECL_FFI_UINT16_T: i = output.u16; goto INT
+        case ECL_FFI_UINT16_T: i = output.u16; goto INT;
 #endif
 	case ECL_FFI_SHORT: i = output.s; goto INT;
 	case ECL_FFI_UNSIGNED_SHORT: i = output.us; goto INT;
