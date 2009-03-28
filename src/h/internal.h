@@ -108,8 +108,8 @@ typedef struct cl_compiler_env *cl_compiler_env_ptr;
 #else
 #define ECL_STACK_FRAME_FROM_VA_LIST(e,f,va) do {                       \
                 const cl_object __frame = (f);                          \
-                cl_index i, nargs = va[0].narg;                         \
-                ecl_stack_frame_open((e), __frame, nargs);              \
+                cl_index i, __nargs = va[0].narg;                       \
+                ecl_stack_frame_open((e), __frame, __nargs);            \
                 for (i = 0; i < __nargs; i++) {                         \
                         __frame->frame.base[i] = cl_va_arg(va);         \
                 }                                                       \
