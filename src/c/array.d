@@ -41,7 +41,7 @@ static const cl_index ecl_aet_size[] = {
   sizeof(ecl_int64_t),
 #endif
 #ifdef ECL_UNICODE
-  sizeof(cl_object),          /* aet_ch */
+  sizeof(ecl_character),      /* aet_ch */
 #endif
   sizeof(unsigned char)       /* aet_bc */
 };
