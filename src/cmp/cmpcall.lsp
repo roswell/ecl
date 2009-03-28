@@ -227,7 +227,7 @@
   (if env
       (progn
         (setf *aux-closure* t)
-        (wt "(aux_closure.env="env",cl_env_copy->function=(void*)&aux_closure,")
+        (wt "(aux_closure.env="env",cl_env_copy->function=(cl_object)&aux_closure,")
         (wt-call fun args)
         (wt ")"))
       (progn
