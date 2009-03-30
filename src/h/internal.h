@@ -335,30 +335,57 @@ typedef int fenv_t;
  */
 
 #ifndef HAVE_EXPF
+# ifdef expf
+#  undef expf
+# endif
 # define expf(x) exp((float)x)
 #endif
 #ifndef HAVE_LOGF
+# ifdef logf
+#  undef logf
+# endif
 # define logf(x) log((float)x)
 #endif
 #ifndef HAVE_SQRTF
+# ifdef sqrtf
+#  undef sqrtf
+# endif
 # define sqrtf(x) sqrt((float)x)
 #endif
 #ifndef HAVE_SINF
+# ifdef sinf
+#  undef sinf
+# endif
 # define sinf(x) sin((float)x)
 #endif
 #ifndef HAVE_COSF
+# ifdef cosf
+#  undef cosf
+# endif
 # define cosf(x) cos((float)x)
 #endif
 #ifndef HAVE_TANF
+# ifdef tanf
+#  undef tanf
+# endif
 # define tanf(x) tan((float)x)
 #endif
 #ifndef HAVE_SINHF
+# ifdef sinhf
+#  undef sinhf
+# endif
 # define sinhf(x) sinh((float)x)
 #endif
 #ifndef HAVE_COSHF
+# ifdef coshf
+#  undef coshf
+# endif
 # define coshf(x) cosh((float)x)
 #endif
 #ifndef HAVE_TANHF
+# ifdef tanhf
+#  undef tanhf
+# endif
 # define tanhf(x) tanh((float)x)
 #endif
 
@@ -366,6 +393,7 @@ typedef int fenv_t;
 # define ceilf(x) ceil((float)x)
 #endif
 #ifndef HAVE_FLOORF
+# error
 # define floorf(x) floor((float)x)
 #endif
 #ifndef HAVE_FABSF

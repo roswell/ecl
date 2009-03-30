@@ -254,8 +254,10 @@ ecl_library_symbol(cl_object block, const char *symbol, bool lock) {
 		p = dlsym(block->cblock.handle, symbol);
 #endif
 #if defined(mingw32) || defined(_MSC_VER)
-		HMODULE h = (HMODULE)(block->cblock.handle);
-		p = GetProcAddress(h, symbol);
+		{
+			HMODULE h = (HMODULE)(block->cblock.handle);
+			p = GetProcAddress(h, symbol);
+		}
 #endif
 #ifdef HAVE_MACH_O_DYLD_H
 		NSSymbol sym;

@@ -295,6 +295,24 @@ typedef unsigned int uint32_t;
 #define HAVE_LONG_LONG 1
 /* the tzset() function gets the current time zone			*/
 #define HAVE_TZSET 1
+/* several floating point functions (ISO C99)				*/
+#if 0
+#undef HAVE_EXPF
+#undef HAVE_LOGF
+#undef HAVE_SQRTF
+#undef HAVE_COSF
+#undef HAVE_SINF
+#undef HAVE_TANF
+#undef HAVE_SINHF
+#undef HAVE_COSHF
+#undef HAVE_TANHF
+#endif
+#define HAVE_FLOORF
+#define HAVE_CEILF
+#define HAVE_FABSF
+#define HAVE_FREXPF
+#define HAVE_LDEXPF
+#define HAVE_LOG1PL
 /* whether we have sched_yield() that gives priority to other threads	*/
 /* #undef HAVE_SCHED_YIELD */
 /* uname() for system identification					*/

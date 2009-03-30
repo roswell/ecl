@@ -137,7 +137,7 @@ struct cl_env_struct {
 #else
 # define cl_env (*cl_env_p)
 # define ecl_process_env() cl_env_p
-  extern cl_env_ptr cl_env_p;
+  extern ECL_API cl_env_ptr cl_env_p;
 #endif
 
 /*

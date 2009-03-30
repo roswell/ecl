@@ -81,7 +81,7 @@
 	else
 		output = Cnil;
 	ecl_enable_interrupts();
-	@(return output)
+	@(return) = output;
 }")
         (setf +wsock-initialized+ t)
 	(error "Unable to initialize Windows Socket library"))))

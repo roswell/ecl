@@ -11,6 +11,7 @@ srcdir	= ..\src
 SHORT_SITE_NAME   =
 LONG_SITE_NAME    =
 ECL_VERSION       = 9.3.0
+ECL_VERSION_NUMBER= 90300
 ARCHITECTURE      = PENTIUM4
 SOFTWARE_TYPE     = NT
 SOFTWARE_VERSION  = 5.0
@@ -295,7 +296,8 @@ ecl-cc.bat: util\ecl-cc.bat Makefile
 
 eclmin.lib: eclgmp.lib eclgc.lib lsp/config.lsp
 	cd c
-	$(MAKE) ECL_THREADS=$(ECL_THREADS) "ECL_CFLAGS=$(CFLAGS) -DGC_BUILD"
+	$(MAKE) ECL_VERSION_NUMBER=$(ECL_VERSION_NUMBER) \
+	        ECL_THREADS=$(ECL_THREADS) "ECL_CFLAGS=$(CFLAGS) -DGC_BUILD"
 	cd ..
 eclgc.lib:
 	cd gc

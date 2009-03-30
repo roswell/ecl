@@ -264,6 +264,7 @@ define_handler(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
 		}
 		ecl_internal_error("SIGSEGV without handler to jump to.");
 	}
+#ifdef SIGBUS
 	case SIGBUS: {
 		ecl_frame_ptr destination = frs_sch(OBJNULL);
 		if (destination) {
@@ -272,6 +273,7 @@ define_handler(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
 		}
 		ecl_internal_error("SIGSEGV without handler to jump to.");
 	}
+#endif
 	default:
 		FEerror("Serious signal ~D caught.", 1, MAKE_FIXNUM(sig));
 	}
@@ -406,7 +408,7 @@ define_handler(sigsegv_handler, int sig, siginfo_t *info, void *aux)
 	}
 	handle_signal_now(sig, info, aux);
 #else
-	reinstall_signal_handler(sig, sigsegv_signal_handler);
+	reinstall_signal(sig, sigsegv_handler);
 	/*
 	 * We cannot distinguish between a stack overflow and a simple
 	 * access violation. Thus we assume the worst case and jump to
@@ -416,6 +418,7 @@ define_handler(sigsegv_handler, int sig, siginfo_t *info, void *aux)
 #endif
 }
 
+#ifdef SIGBUS
 static void
 define_handler(sigbus_handler, int sig, siginfo_t *info, void *aux)
 {
@@ -435,6 +438,7 @@ define_handler(sigbus_handler, int sig, siginfo_t *info, void *aux)
 #endif
 	call_handler(handle_signal_now, sig, info, aux);
 }
+#endif
 
 cl_object
 si_check_pending_interrupts(void)
@@ -486,8 +490,10 @@ si_catch_signal(cl_object code, cl_object boolean)
 				mysignal(code_int, SIG_DFL);
 			else if (code_int == SIGSEGV)
 				mysignal(code_int, sigsegv_handler);
+#ifdef SIGBUS
 			else if (code_int == SIGBUS)
 				mysignal(code_int, sigbus_handler);
+#endif
 			else
 				mysignal(code_int, non_evil_signal_handler);
 			@(return Ct)

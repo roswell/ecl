@@ -131,7 +131,7 @@ not_binary_read_byte8(cl_object strm, unsigned char *c, cl_index n)
 static void
 not_output_write_byte(cl_object c, cl_object strm)
 {
-	return not_an_output_stream(strm);
+	not_an_output_stream(strm);
 }
 
 static cl_object
@@ -144,7 +144,7 @@ not_input_read_byte(cl_object strm)
 static void
 not_binary_write_byte(cl_object c, cl_object strm)
 {
-	return not_a_binary_stream(strm);
+	not_a_binary_stream(strm);
 }
 
 static cl_object
@@ -206,21 +206,18 @@ static void
 not_output_clear_output(cl_object strm)
 {
 	not_an_output_stream(strm);
-	return;
 }
 
 static void
 not_output_force_output(cl_object strm)
 {
 	not_an_output_stream(strm);
-	return;
 }
 
 static void
 not_output_finish_output(cl_object strm)
 {
 	not_an_output_stream(strm);
-	return;
 }
 
 static cl_object
@@ -245,18 +242,21 @@ static cl_index
 closed_stream_read_byte8(cl_object strm, unsigned char *c, cl_index n)
 {
 	FEclosed_stream(strm);
+	return 0;
 }
 
 static cl_index
 closed_stream_write_byte8(cl_object strm, unsigned char *c, cl_index n)
 {
 	FEclosed_stream(strm);
+	return 0;
 }
 
 static ecl_character
 closed_stream_read_char(cl_object strm)
 {
 	FEclosed_stream(strm);
+	return 0;
 }
 
 static ecl_character
@@ -276,6 +276,7 @@ static int
 closed_stream_listen(cl_object strm)
 {
 	FEclosed_stream(strm);
+	return 0;
 }
 
 static void
@@ -314,8 +315,9 @@ static cl_object
 generic_read_byte_unsigned8(cl_object strm)
 {
 	unsigned char c;
-	if (strm->stream.ops->read_byte8(strm, &c, 1) < 1)
+	if (strm->stream.ops->read_byte8(strm, &c, 1) < 1) {
 		return Cnil;
+	}
 	return MAKE_FIXNUM(c);
 }
 
@@ -1170,7 +1172,6 @@ static void
 clos_stream_write_byte(cl_object c, cl_object strm)
 {
 	funcall(3, @'gray::stream-write-byte', strm, c);
-	return;
 }
 
 static ecl_character
@@ -1205,7 +1206,6 @@ static void
 clos_stream_clear_input(cl_object strm)
 {
 	funcall(2, @'gray::stream-clear-input', strm);
-	return;
 }
 
 static void
@@ -1219,14 +1219,12 @@ static void
 clos_stream_force_output(cl_object strm)
 {
 	funcall(2, @'gray::stream-force-output', strm);
-	return;
 }
 
 static void
 clos_stream_finish_output(cl_object strm)
 {
 	funcall(2, @'gray::stream-finish-output', strm);
-	return;
 }
 
 static int
@@ -1687,7 +1685,7 @@ two_way_write_char(cl_object strm, ecl_character c)
 static void
 two_way_unread_char(cl_object strm, ecl_character c)
 {
-	return ecl_unread_char(c, TWO_WAY_STREAM_INPUT(strm));
+	ecl_unread_char(c, TWO_WAY_STREAM_INPUT(strm));
 }
 
 static ecl_character
@@ -1719,25 +1717,25 @@ two_way_listen(cl_object strm)
 static void
 two_way_clear_input(cl_object strm)
 {
-	return ecl_clear_input(TWO_WAY_STREAM_INPUT(strm));
+	ecl_clear_input(TWO_WAY_STREAM_INPUT(strm));
 }
 
 static void
 two_way_clear_output(cl_object strm)
 {
-	return ecl_clear_output(TWO_WAY_STREAM_OUTPUT(strm));
+	ecl_clear_output(TWO_WAY_STREAM_OUTPUT(strm));
 }
 
 static void
 two_way_force_output(cl_object strm)
 {
-	return ecl_force_output(TWO_WAY_STREAM_OUTPUT(strm));
+	ecl_force_output(TWO_WAY_STREAM_OUTPUT(strm));
 }
 
 static void
 two_way_finish_output(cl_object strm)
 {
-	return ecl_finish_output(TWO_WAY_STREAM_OUTPUT(strm));
+	ecl_finish_output(TWO_WAY_STREAM_OUTPUT(strm));
 }
 
 static int
@@ -2015,7 +2013,7 @@ echo_write_byte8(cl_object strm, unsigned char *c, cl_index n)
 static void
 echo_write_byte(cl_object c, cl_object strm)
 {
-	return ecl_write_byte(c, ECHO_STREAM_OUTPUT(strm));
+	ecl_write_byte(c, ECHO_STREAM_OUTPUT(strm));
 }
 
 static cl_object
@@ -2074,25 +2072,25 @@ echo_listen(cl_object strm)
 static void
 echo_clear_input(cl_object strm)
 {
-	return ecl_clear_input(ECHO_STREAM_INPUT(strm));
+	ecl_clear_input(ECHO_STREAM_INPUT(strm));
 }
 
 static void
 echo_clear_output(cl_object strm)
 {
-	return ecl_clear_output(ECHO_STREAM_OUTPUT(strm));
+	ecl_clear_output(ECHO_STREAM_OUTPUT(strm));
 }
 
 static void
 echo_force_output(cl_object strm)
 {
-	return ecl_force_output(ECHO_STREAM_OUTPUT(strm));
+	ecl_force_output(ECHO_STREAM_OUTPUT(strm));
 }
 
 static void
 echo_finish_output(cl_object strm)
 {
-	return ecl_finish_output(ECHO_STREAM_OUTPUT(strm));
+	ecl_finish_output(ECHO_STREAM_OUTPUT(strm));
 }
 
 static cl_object
@@ -2224,7 +2222,7 @@ concatenated_unread_char(cl_object strm, ecl_character c)
 	cl_object l = CONCATENATED_STREAM_LIST(strm);
 	if (Null(l))
 		unread_error(strm);
-	return ecl_unread_char(c, ECL_CONS_CAR(l));
+	ecl_unread_char(c, ECL_CONS_CAR(l));
 }
 
 static int
@@ -2326,7 +2324,7 @@ synonym_write_byte8(cl_object strm, unsigned char *c, cl_index n)
 static void
 synonym_write_byte(cl_object c, cl_object strm)
 {
-	return ecl_write_byte(c, SYNONYM_STREAM_STREAM(strm));
+	ecl_write_byte(c, SYNONYM_STREAM_STREAM(strm));
 }
 
 static cl_object
@@ -2350,7 +2348,7 @@ synonym_write_char(cl_object strm, ecl_character c)
 static void
 synonym_unread_char(cl_object strm, ecl_character c)
 {
-	return ecl_unread_char(c, SYNONYM_STREAM_STREAM(strm));
+	ecl_unread_char(c, SYNONYM_STREAM_STREAM(strm));
 }
 
 static ecl_character
@@ -2382,25 +2380,25 @@ synonym_listen(cl_object strm)
 static void
 synonym_clear_input(cl_object strm)
 {
-	return ecl_clear_input(SYNONYM_STREAM_STREAM(strm));
+	ecl_clear_input(SYNONYM_STREAM_STREAM(strm));
 }
 
 static void
 synonym_clear_output(cl_object strm)
 {
-	return ecl_clear_output(SYNONYM_STREAM_STREAM(strm));
+	ecl_clear_output(SYNONYM_STREAM_STREAM(strm));
 }
 
 static void
 synonym_force_output(cl_object strm)
 {
-	return ecl_force_output(SYNONYM_STREAM_STREAM(strm));
+	ecl_force_output(SYNONYM_STREAM_STREAM(strm));
 }
 
 static void
 synonym_finish_output(cl_object strm)
 {
-	return ecl_finish_output(SYNONYM_STREAM_STREAM(strm));
+	ecl_finish_output(SYNONYM_STREAM_STREAM(strm));
 }
 
 static int
@@ -3529,13 +3527,13 @@ ecl_make_stream_from_fd(cl_object fname, int fd, enum ecl_smmode smm,
 	FILE *fp;			/* file pointer */
 	switch(smm) {
 	case smm_input:
-		mode = "r";
+		mode = OPEN_R;
 		break;
 	case smm_output:
-		mode = "w";
+		mode = OPEN_W;
 		break;
 	case smm_io:
-		mode = "w+";
+		mode = OPEN_RW;
 		break;
 #if defined(ECL_WSOCK)
 	case smm_input_wsock:
@@ -3656,7 +3654,7 @@ ecl_read_byte(cl_object strm)
 void
 ecl_write_byte(cl_object c, cl_object strm)
 {
-	return stream_dispatch_table(strm)->write_byte(c, strm);
+	stream_dispatch_table(strm)->write_byte(c, strm);
 }
 
 ecl_character
@@ -3668,7 +3666,7 @@ ecl_write_char(ecl_character c, cl_object strm)
 void
 ecl_unread_char(ecl_character c, cl_object strm)
 {
-	return stream_dispatch_table(strm)->unread_char(strm, c);
+	stream_dispatch_table(strm)->unread_char(strm, c);
 }
 
 int
@@ -3680,19 +3678,19 @@ ecl_listen_stream(cl_object strm)
 void
 ecl_clear_input(cl_object strm)
 {
-	return stream_dispatch_table(strm)->clear_input(strm);
+	stream_dispatch_table(strm)->clear_input(strm);
 }
 
 void
 ecl_clear_output(cl_object strm)
 {
-	return stream_dispatch_table(strm)->clear_output(strm);
+	stream_dispatch_table(strm)->clear_output(strm);
 }
 
 void
 ecl_force_output(cl_object strm)
 {
-	return stream_dispatch_table(strm)->force_output(strm);
+	stream_dispatch_table(strm)->force_output(strm);
 }
 
 void
@@ -4173,10 +4171,11 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
 	ecl_enable_interrupts_env(the_env);
 	if (flags & ECL_STREAM_C_STREAM) {
 		FILE *fp;
+		close(f);
 		switch (smm) {
-		case smm_input:		fp = fdopen(f, OPEN_R); break;
-		case smm_output:	fp = fdopen(f, OPEN_W); break;
-		case smm_io:		fp = fdopen(f, OPEN_RW); break;
+		case smm_input: fp = fopen(fname, OPEN_R); break;
+		case smm_output: fp = fopen(fname, OPEN_W); break;
+		case smm_io: fp = fopen(fname, OPEN_RW); break;
 		}
 		x = ecl_make_stream_from_FILE(fn, fp, smm, byte_size, flags,
 					      external_format);
@@ -4216,7 +4215,7 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
 		   (if_exists Cnil iesp)
 		   (if_does_not_exist Cnil idnesp)
 	           (external_format @':default')
-		   (cstream Cnil)
+		   (cstream Ct)
 	      &aux strm)
 	enum ecl_smmode smm;
 	int flags = 0;
@@ -4489,11 +4488,11 @@ alloc_stream()
 static cl_object
 not_a_file_stream(cl_object strm)
 {
-	cl_error(9, @'simple-type-error', @':format-control',
-		 make_constant_base_string("~A is not an file stream"),
-		 @':format-arguments', cl_list(1, strm),
-		 @':expected-type', @'file-stream',
-		 @':datum', strm);
+	return cl_error(9, @'simple-type-error', @':format-control',
+			make_constant_base_string("~A is not an file stream"),
+			@':format-arguments', cl_list(1, strm),
+			@':expected-type', @'file-stream',
+			@':datum', strm);
 }
 
 static void
@@ -4502,7 +4501,8 @@ not_an_input_stream(cl_object strm)
 	cl_error(9, @'simple-type-error', @':format-control',
 		 make_constant_base_string("~A is not an input stream"),
 		 @':format-arguments', cl_list(1, strm),
-		 @':expected-type', cl_list(2, @'satisfies', @'input-stream-p'),
+		 @':expected-type',
+		 cl_list(2, @'satisfies', @'input-stream-p'),
 		 @':datum', strm);
 }
 

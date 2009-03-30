@@ -61,6 +61,7 @@ machine."
 
 (defun search-tag (stream tag)
   (declare (si::c-local))
+  (terpri)
   (do* ((eof nil)
 	(key (concatenate 'list tag ":"))
 	(string key))

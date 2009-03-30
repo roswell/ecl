@@ -238,7 +238,7 @@ close_around(cl_object fun, cl_object lex) {
 cl_object
 ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 {
-	ECL_OFFSET_TABLE;
+	ECL_OFFSET_TABLE
         const cl_env_ptr the_env = frame->frame.env;
         volatile cl_index frame_index = 0;
 	cl_opcode *vector = (cl_opcode*)bytecodes->bytecodes.code;
