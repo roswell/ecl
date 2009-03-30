@@ -291,7 +291,6 @@ case "${host_os}" in
 		thehost='mingw32'
 		clibs=''
 		shared='yes'
-		THREAD_OBJ='threads_win32'
 		THREAD_CFLAGS='-D_THREAD_SAFE'
 		THREAD_GC_FLAGS='--enable-threads=win32'
 		SHARED_LDFLAGS=''
