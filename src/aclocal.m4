@@ -53,6 +53,13 @@ AC_DEFUN([ECL_ADD_LISP_MODULE], [
 ])
 
 dnl --------------------------------------------------------------
+dnl Add lisp module and build it into the compiler.
+dnl
+AC_DEFUN([ECL_ADD_BUILTIN_MODULE], [
+  ECL_ADD_FEATURE([builtin-$1])
+])
+
+dnl --------------------------------------------------------------
 dnl Set up a configuration file for the case when we are cross-
 dnl compiling
 dnl

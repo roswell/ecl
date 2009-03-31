@@ -134,7 +134,8 @@
 
 #+WANTS-CMP
 (build-module "cmp" +cmp-module-files+ 
-              :dir "build:cmp;" :prefix "CMP" :additional-files '("sysfun.lsp"))
+              :dir "build:cmp;" :prefix "CMP" :additional-files '("sysfun.lsp")
+              :builtin #+:BUILTIN-CMP t #-:BUILTIN-CMP nil)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -148,7 +149,8 @@
 (build-module "defsystem"
               '("ext:defsystem;defsystem.lisp")
               :dir "build:ext;"
-              :prefix "EXT")
+              :prefix "EXT"
+              :builtin #+:BUILTIN-DEFSYSTEM t #-:BUILTIN-DEFSYSTEM nil)
 
 ;;;
 ;;; * ASDF
@@ -158,7 +160,8 @@
               '("ext:asdf;asdf.lisp"
 		"ext:asdf;asdf-ecl.lisp")
               :dir "build:ext;"
-              :prefix "EXT")
+              :prefix "EXT"
+              :builtin #+:BUILTIN-ASDF t #-:BUILTIN-ASDF nil)
 
 ;;;
 ;;; * PROFILE
@@ -167,7 +170,10 @@
 (build-module "profile"
               '("ext:profile;profile.lisp")
               :dir "build:ext;"
-              :prefix "EXT")
+              :prefix "EXT"
+              :builtin
+	      #+(or (NOT :WANTS-DLOPEN) :BUILTIN-PROFILE) t
+	      #-(or (NOT :WANTS-DLOPEN) :BUILTIN-PROFILE) nil)
 
 ;;;
 ;;; * Sockets library.
@@ -178,13 +184,19 @@
 	      '("ext:sockets;package.lisp"
 		"ext:sockets;sockets.lisp")
 	      :dir "build:ext;"
-	      :prefix "EXT")
+	      :prefix "EXT"
+              :builtin
+	      #+(or (NOT :WANTS-DLOPEN) :BUILTIN-SOCKETS) t
+	      #-(or (NOT :WANTS-DLOPEN) :BUILTIN-SOCKETS) nil)
 
 #+WANTS-SERVE-EVENT
 (build-module "serve-event"
 	      '("ext:serve-event;serve-event.lisp")
 	      :dir "build:ext;"
-	      :prefix "EXT")
+	      :prefix "EXT"
+              :builtin
+	      #+(or (NOT :WANTS-DLOPEN) :BUILTIN-SERVE-EVENT) t
+	      #-(or (NOT :WANTS-DLOPEN) :BUILTIN-SERVE-EVENT) nil)
 
 ;;;
 ;;; * Test suite
@@ -193,7 +205,8 @@
 (build-module "rt"
 	      '("ext:rt;rt.lisp")
 	      :dir "build:ext;"
-	      :prefix "EXT")
+	      :prefix "EXT"
+              :builtin #+:BUILTIN-RT t #-:BUILTIN-RT nil)
 
 ;;;
 ;;; * External formats
@@ -238,7 +251,10 @@
   (unless (find-package "SB-BSD-SOCKETS")
     (load "ext:sockets;package.lisp"))
   (mapcar #'load +clx-src-files+)
-  (build-module "clx" +clx-src-files+ :dir "build:clx;" :prefix "CLX"))
+  (build-module "clx" +clx-src-files+ :dir "build:clx;" :prefix "CLX"
+		:builtin
+		#+(OR (NOT :WANTS-DLOPEN) :BUILTIN-CLX) t
+		#-(OR (NOT :WANTS-DLOPEN) :BUILTIN-CLX) nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;

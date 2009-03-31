@@ -156,7 +156,7 @@ install-base:
 	   $(INSTALL_PROGRAM) $$i $(DESTDIR)$(libdir); \
 	  fi \
 	done
-	if [ "x@SONAME@" != "x" ]; then \
+	if [ "x@SONAME@" != "x" -a -f "@SONAME@" ]; then \
 	  ( cd $(DESTDIR)$(libdir) && rm -f @SONAME3@ @SONAME2@ @SONAME1@ && \
 	    mv @SONAME@ @SONAME3@ && \
 	    $(LN_S) @SONAME3@ @SONAME2@ && \

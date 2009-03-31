@@ -119,22 +119,22 @@ AC_ARG_WITH(cxx,
 
 AC_ARG_WITH(tcp,
   AS_HELP_STRING( [--with-tcp],
-                  [include socket interface (default=YES)]),
+                  [include socket interface (yes|builtin|no, default=YES)]),
   [], [with_tcp=yes])
 
 AC_ARG_WITH(serve_event,
   AS_HELP_STRING( [--with-serve-event],
-                  [include serve-event module (default=YES)]),
+                  [include serve-event module (yes|builtin|no, default=YES)]),
   [], [with_serve_event=${enable_shared}])
 
 AC_ARG_WITH(clx,
   AS_HELP_STRING( [--with-clx],
-                  [include CLX library (default=NO)]),
+                  [include CLX library (yes|builtin|no, default=NO)]),
   [], [with_clx=no])
 
 AC_ARG_WITH(clos-streams,
   AS_HELP_STRING( [--with-clos-streams],
-                  [user defined stream objects (default=YES)]),
+                  [user defined stream objects (yes|builtin|no, default=YES)]),
   [], [with_clos_streams=yes])
 
 AC_ARG_WITH(cmuformat,
@@ -145,13 +145,13 @@ AC_ARG_WITH(cmuformat,
 AC_ARG_WITH(asdf,
   AS_HELP_STRING( [--with-asdf],
                   [include ASDF building facility]
-                  [(default=YES if shared library support is on)]),
+                  [(yes|builtin|no, default=YES)]),
   [], [with_asdf=${enable_shared}])
 
 AC_ARG_WITH(defsystem,
   AS_HELP_STRING( [--with-defsystem],
                   [include DEFSYSTEM building facility]
-                  [(default=YES if shared library support is on)]),
+                  [(yes|builtin|no, default=YES)]),
   [], [with_defsystem=${enable_shared}])
 
 AC_ARG_WITH(cmp,
@@ -162,13 +162,13 @@ AC_ARG_WITH(cmp,
 AC_ARG_WITH(rt,
   AS_HELP_STRING( [--with-rt],
                   [include MIT-RT testing environment]
-                  [(default=YES)]),
+                  [(yes|builtin|no, default=YES)]),
   [], [with_rt=${enable_shared}])
 
 AC_ARG_WITH(profile,
   AS_HELP_STRING( [--with-profile],
                   [include CMUCL's simple profiler]
-                  [(default=YES if Boehm-Weiser garbage collector used)]),
+                  [(yes|builtin|no, default=YES if Boehm-Weiser garbage collector used)]),
   [], [with_profile=yes])
 
 AC_ARG_WITH(fpe,
@@ -587,11 +587,20 @@ if test "${with_clos_streams}" = "yes"; then
              [Allow STREAM operations to work on arbitrary objects])
 fi
 
+if test "${with_cmp}" = "builtin"; then
+  ECL_ADD_BUILTIN_MODULE([cmp])
+  with_cmp=yes
+fi
 if test "${with_cmp}" = "yes"; then
   ECL_ADD_LISP_MODULE([cmp])
 fi
 
 AC_SUBST(CLX_INFO)
+if test "${with_clx}" = "builtin"; then
+  ECL_ADD_BUILTIN_MODULE([clx])
+  ECL_ADD_BUILTIN_MODULE([sockets])
+  with_clx=yes
+fi
 if test ${with_clx} = "yes"; then
   tcp="yes"
   ECL_ADD_LISP_MODULE([clx])
@@ -607,6 +616,10 @@ if test "${with_tcp}" = "yes"; then
   LIBS="${LIBS} ${TCPLIBS}"
 fi
 
+if test "${with_serve_event}" = "builtin"; then
+  ECL_ADD_BUILTIN_MODULE([serve_event])
+  with_serve_event=yes
+fi
 if test "${with_serve_event}" = "yes"; then
   case "${host_os}" in
     mingw*|cygwin*) ;;
@@ -616,20 +629,36 @@ if test "${with_serve_event}" = "yes"; then
   esac
 fi
 
+if test "${with_asdf}" = "builtin"; then
+  ECL_ADD_BUILTIN_MODULE([asdf])
+  with_asdf=yes
+fi
 if test "${with_asdf}" = "yes"; then
   ECL_ADD_LISP_MODULE([asdf])
 fi
 
+if test "${with_defsystem}" = "builtin"; then
+  ECL_ADD_BUILTIN_MODULE([defsystem])
+  with_defsystem=yes
+fi
 if test "${with_defsystem}" = "yes"; then
   ECL_ADD_LISP_MODULE([defsystem])
 fi
 
+if test "${with_profile}" = "builtin"; then
+  ECL_ADD_BUILTIN_MODULE([profile])
+  with_profile=yes
+fi
 if test "${with_profile}" = "yes"; then
   if test "${enable_boehm}" != "no"; then
     ECL_ADD_LISP_MODULE([profile])
   fi
 fi
 
+if test "${with_rt}" = "builtin"; then
+  ECL_ADD_BUILTIN_MODULE([rt])
+  with_rt=yes
+fi
 if test "${with_rt}" = "yes"; then
   ECL_ADD_LISP_MODULE([rt])
 fi

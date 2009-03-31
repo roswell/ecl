@@ -605,15 +605,17 @@ cl_boot(int argc, char **argv)
 #endif
 	aux = cl_list(
 #ifdef ENABLE_DLOPEN
-		7,CONS(make_constant_base_string("fas"), @'si::load-binary'),
+		9,CONS(make_constant_base_string("fas"), @'si::load-binary'),
 		CONS(make_constant_base_string("fasl"), @'si::load-binary'),
 #else
-		5,
+		7,
 #endif
 		CONS(make_constant_base_string("lsp"), @'si::load-source'),
 		CONS(make_constant_base_string("lisp"), @'si::load-source'),
 		CONS(make_constant_base_string("LSP"), @'si::load-source'),
 		CONS(make_constant_base_string("LISP"), @'si::load-source'),
+		CONS(make_constant_base_string("fasb"), @'si::load-source'),
+		CONS(make_constant_base_string("FASB"), @'si::load-source'),
 		CONS(Cnil, @'si::load-source'));
 	ECL_SET(@'si::*load-hooks*', aux);
 	init_error();

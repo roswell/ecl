@@ -1479,19 +1479,23 @@ Optional Packages:
   --with-__thread         Enable __thread thread-local variables (supported by
                           NPTL-aware glibc and maybe Windows)
   --with-cxx              build ECL using C++ compiler (default=NO)
-  --with-tcp              include socket interface (default=YES)
-  --with-serve-event      include serve-event module (default=YES)
-  --with-clx              include CLX library (default=NO)
-  --with-clos-streams     user defined stream objects (default=YES)
+  --with-tcp              include socket interface (yes|builtin|no,
+                          default=YES)
+  --with-serve-event      include serve-event module (yes|builtin|no,
+                          default=YES)
+  --with-clx              include CLX library (yes|builtin|no, default=NO)
+  --with-clos-streams     user defined stream objects (yes|builtin|no,
+                          default=YES)
   --with-cmuformat        use CMUCL's FORMAT routine (default=YES)
-  --with-asdf             include ASDF building facility (default=YES if
-                          shared library support is on)
-  --with-defsystem        include DEFSYSTEM building facility (default=YES if
-                          shared library support is on)
+  --with-asdf             include ASDF building facility (yes|builtin|no,
+                          default=YES)
+  --with-defsystem        include DEFSYSTEM building facility (yes|builtin|no,
+                          default=YES)
   --with-cmp              build in the compiler (default=YES)
-  --with-rt               include MIT-RT testing environment (default=YES)
-  --with-profile          include CMUCL's simple profiler (default=YES if
-                          Boehm-Weiser garbage collector used)
+  --with-rt               include MIT-RT testing environment (yes|builtin|no,
+                          default=YES)
+  --with-profile          include CMUCL's simple profiler (yes|builtin|no,
+                          default=YES if Boehm-Weiser garbage collector used)
   --with-fpe              detect floating point exceptions (default=YES)
   --with-signed-zero={yes|no}
                           allow for IEEE signed zeros (default=YES).
@@ -12257,6 +12261,14 @@ _ACEOF
 
 fi
 
+if test "${with_cmp}" = "builtin"; then
+
+
+LSP_FEATURES="(cons :builtin-cmp ${LSP_FEATURES})"
+
+
+  with_cmp=yes
+fi
 if test "${with_cmp}" = "yes"; then
 
 
@@ -12266,6 +12278,19 @@ LSP_FEATURES="(cons :wants-cmp ${LSP_FEATURES})"
 fi
 
 
+if test "${with_clx}" = "builtin"; then
+
+
+LSP_FEATURES="(cons :builtin-clx ${LSP_FEATURES})"
+
+
+
+
+LSP_FEATURES="(cons :builtin-sockets ${LSP_FEATURES})"
+
+
+  with_clx=yes
+fi
 if test ${with_clx} = "yes"; then
   tcp="yes"
 
@@ -12293,6 +12318,14 @@ LSP_FEATURES="(cons :wants-sockets ${LSP_FEATURES})"
   LIBS="${LIBS} ${TCPLIBS}"
 fi
 
+if test "${with_serve_event}" = "builtin"; then
+
+
+LSP_FEATURES="(cons :builtin-serve_event ${LSP_FEATURES})"
+
+
+  with_serve_event=yes
+fi
 if test "${with_serve_event}" = "yes"; then
   case "${host_os}" in
     mingw*|cygwin*) ;;
@@ -12306,6 +12339,14 @@ LSP_FEATURES="(cons :wants-serve-event ${LSP_FEATURES})"
   esac
 fi
 
+if test "${with_asdf}" = "builtin"; then
+
+
+LSP_FEATURES="(cons :builtin-asdf ${LSP_FEATURES})"
+
+
+  with_asdf=yes
+fi
 if test "${with_asdf}" = "yes"; then
 
 
@@ -12314,6 +12355,14 @@ LSP_FEATURES="(cons :wants-asdf ${LSP_FEATURES})"
 
 fi
 
+if test "${with_defsystem}" = "builtin"; then
+
+
+LSP_FEATURES="(cons :builtin-defsystem ${LSP_FEATURES})"
+
+
+  with_defsystem=yes
+fi
 if test "${with_defsystem}" = "yes"; then
 
 
@@ -12322,6 +12371,14 @@ LSP_FEATURES="(cons :wants-defsystem ${LSP_FEATURES})"
 
 fi
 
+if test "${with_profile}" = "builtin"; then
+
+
+LSP_FEATURES="(cons :builtin-profile ${LSP_FEATURES})"
+
+
+  with_profile=yes
+fi
 if test "${with_profile}" = "yes"; then
   if test "${enable_boehm}" != "no"; then
 
@@ -12332,6 +12389,14 @@ LSP_FEATURES="(cons :wants-profile ${LSP_FEATURES})"
   fi
 fi
 
+if test "${with_rt}" = "builtin"; then
+
+
+LSP_FEATURES="(cons :builtin-rt ${LSP_FEATURES})"
+
+
+  with_rt=yes
+fi
 if test "${with_rt}" = "yes"; then
 
 
