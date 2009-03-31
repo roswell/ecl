@@ -1146,7 +1146,6 @@ type_of(#0)==t_bitvector")
 (def-inline char :unsafe (t t) t "CODE_CHAR((#0)->base_string.self[fix(#1)])")
 #-unicode
 (def-inline char :unsafe (t fixnum) :char "(#0)->base_string.self[#1]")
-(def-inline char :unsafe (base-string fixnum) :fixnum "(#0)->base_string.self[#1]")
 (def-inline char :unsafe (base-string fixnum) :unsigned-char "(#0)->base_string.self[#1]")
 #+unicode
 (def-inline char :unsafe (ext:extended-string fixnum) :wchar "(#0)->string.self[#1]")
@@ -1178,8 +1177,7 @@ type_of(#0)==t_bitvector")
 #-unicode
 (def-inline schar :unsafe (t t) :fixnum "(#0)->base_string.self[fix(#1)]")
 #-unicode
-(def-inline schar :unsafe (t fixnum) :fixnum "(#0)->base_string.self[#1]")
-(def-inline schar :unsafe (base-string fixnum) :fixnum "(#0)->base_string.self[#1]")
+(def-inline schar :unsafe (t fixnum) :char "(#0)->base_string.self[#1]")
 (def-inline schar :unsafe (base-string fixnum) :char "(#0)->base_string.self[#1]")
 #+unicode
 (def-inline schar :unsafe (ext:extended-string fixnum) :fixnum "(#0)->string.self[#1]")
