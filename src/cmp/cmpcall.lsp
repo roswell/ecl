@@ -135,7 +135,7 @@
 
      ;; Call to a global (SETF ...) function
      ((not (symbolp fname))
-      (call-unknown-global-loc fname fun args))
+      (call-unknown-global-loc fname nil args))
 
      ;; Call to a function whose C language function name is known,
      ;; either because it has been proclaimed so, or because it belongs
@@ -150,7 +150,7 @@
      ((multiple-value-setq (found fd minarg maxarg) (si::mangle-name fname t))
       (call-exported-function-loc fname args fd minarg maxarg t))
 
-     (t (call-unknown-global-loc fname fun args))))
+     (t (call-unknown-global-loc fname nil args))))
 
 (defun call-loc (fname fun args)
   `(CALL-NORMAL ,fun ,(coerce-locs args)))
