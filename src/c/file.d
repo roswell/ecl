@@ -4173,6 +4173,7 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
 		FILE *fp;
 		close(f);
 		switch (smm) {
+		case smm_probe:
 		case smm_input: fp = fopen(fname, OPEN_R); break;
 		case smm_output: fp = fopen(fname, OPEN_W); break;
 		case smm_io: fp = fopen(fname, OPEN_RW); break;
