@@ -200,7 +200,7 @@ extern void* ecl_dynamic_callback_make(cl_object data, enum ecl_ffi_calling_conv
  */
 #define OPEN_R	"rb"
 #define OPEN_W	"wb"
-#define OPEN_RW	"w+b"
+#define OPEN_RW	"r+b"
 #define OPEN_A	"ab"
 #define OPEN_RA	"a+b"
 
