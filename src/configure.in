@@ -168,7 +168,7 @@ AC_ARG_WITH(rt,
   AS_HELP_STRING( [--with-rt],
                   [include MIT-RT testing environment]
                   [(yes|builtin|no, default=YES)]),
-  [], [with_rt=${enable_shared}])
+  [], [with_rt=yes])
 
 AC_ARG_WITH(profile,
   AS_HELP_STRING( [--with-profile],
