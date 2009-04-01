@@ -151,8 +151,8 @@
               :dir "build:ext;"
               :prefix "EXT"
               :builtin
-	      #+:BUILTIN-PROFILE t
-	      #-:BUILTIN-PROFILE nil)
+	      #+:BUILTIN-BYTECMP t
+	      #-:BUILTIN-BYTECMP nil)
 
 ;;;
 ;;; * DEFSYSTEM
