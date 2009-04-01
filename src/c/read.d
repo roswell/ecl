@@ -1260,8 +1260,8 @@ do_patch_sharp(cl_object x)
                 break;
 	}
         case t_bclosure: {
-                x->bclosure.code = do_patch_sharp(x->bclosure.code);
-                x = x->bclosure.lex = do_patch_sharp(x->bclosure.lex);
+                x->bclosure.lex = do_patch_sharp(x->bclosure.lex);
+                x = x->bclosure.code = do_patch_sharp(x->bclosure.code);
         }
         case t_bytecodes: {
                 cl_index i = 0;
