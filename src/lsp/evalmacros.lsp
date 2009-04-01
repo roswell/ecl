@@ -12,6 +12,12 @@
 
 (in-package "SYSTEM")
 
+(defmacro unless (pred &rest body)
+  "Syntax: (unless test {form}*)
+If TEST evaluates to NIL, then evaluates FORMs and returns all values of the
+last FORM.  If not, simply returns NIL."
+  `(IF (NOT ,pred) (PROGN ,@body)))
+
 (defmacro defun (&whole whole name vl &body body &aux doc-string)
   "Syntax: (defun name lambda-list {decl | doc}* {form}*)
 Defines a global function named by NAME.
@@ -81,8 +87,9 @@ as a VARIABLE doc and can be retrieved by (documentation 'NAME 'variable)."
 	      (SETQ ,var ,form))))
     ,@(si::expand-set-documentation var 'variable doc-string)
     ,(ext:register-with-pde whole)
-    (eval-when (:compile-toplevel)
-      (si::register-global ',var))
+    ,(unless *bytecodes-compiler*
+       `(eval-when (:compile-toplevel)
+          (si::register-global ',var)))
     ',var))
 
 (defmacro defparameter (&whole whole var form &optional doc-string)
@@ -95,8 +102,9 @@ as a VARIABLE doc and can be retrieved by (documentation 'NAME 'variable)."
     (SETQ ,var ,form)
     ,@(si::expand-set-documentation var 'variable doc-string)
     ,(ext:register-with-pde whole)
-    (eval-when (:compile-toplevel)
-      (si::register-global ',var))
+    ,(unless *bytecodes-compiler*
+       `(eval-when (:compile-toplevel)
+          (si::register-global ',var)))
     ',var))
 
 (defmacro defconstant (&whole whole var form &optional doc-string)
@@ -109,8 +117,9 @@ VARIABLE doc and can be retrieved by (DOCUMENTATION 'SYMBOL 'VARIABLE)."
      (SYS:*MAKE-CONSTANT ',var ,form)
     ,@(si::expand-set-documentation var 'variable doc-string)
     ,(ext:register-with-pde whole)
-    (eval-when (:compile-toplevel)
-      (si::register-global ',var))
+    ,(unless *bytecodes-compiler*
+       `(eval-when (:compile-toplevel)
+          (si::register-global ',var)))
     ',var))
 
 ;;;
@@ -199,12 +208,6 @@ TESTs evaluates to non-NIL."
 			   `(IF ,(car l) ,(cadr l) ,form)
 			   `(IF ,(car l) (PROGN ,@(cdr l)) ,form))))))
   )
-
-(defmacro unless (pred &rest body)
-  "Syntax: (unless test {form}*)
-If TEST evaluates to NIL, then evaluates FORMs and returns all values of the
-last FORM.  If not, simply returns NIL."
-  `(IF (NOT ,pred) (PROGN ,@body)))
 
 ; program feature
 

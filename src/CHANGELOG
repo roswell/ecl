@@ -124,6 +124,13 @@ ECL 9.3.0:
    a greater granurality. The constant is a decimal number, yymmaa,
    matching the ECL versioning scheme.
 
+ - The function EXT:EVAL-WITH-ENV can be used to bytecompile a lisp form for
+   later evaluation. The bytecompiled form is compiled like a toplevel form,
+   so that EVAL-WHEN understands :COMPILE-TOPLEVEL and :LOAD-TOPLEVEL
+	(funcall (si::eval-with-env '(cos 1.0) nil nil nil nil))
+   This new feature is used by the module BYTECMP to implement a bytecodes
+   compiler that does not need the C compiler to be around.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

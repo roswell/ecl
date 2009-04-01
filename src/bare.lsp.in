@@ -72,14 +72,20 @@
 (defvar *module-files* nil)
 
 (defun build-fake-module (name lisp-files)
-  (let ((output (make-pathname :type "fasb" :defaults name)))
+  (let* ((output (make-pathname :type "fasb" :defaults name))
+         (pack *package*))
     (with-open-file (sout output :direction :output :if-exists :supersede
 			  :if-does-not-exist :create)
       (loop for file in lisp-files
-	    do (with-open-file (sin file :direction :input)
-		 (loop for line = (read-line sin nil nil)
-		       while line
-		       do (write-line line sout)))))
+         and *package* = pack
+         and si::*bytecodes-compiler* = t
+         do (with-open-file (sin file :direction :input)
+              (loop for form = (read sin nil :eof)
+                 until (eq form :eof)
+                 do (let ((bytecodes (ext::eval-with-env form nil nil nil nil)))
+                      (with-standard-io-syntax
+                        (write `(funcall ,bytecodes) :stream sout :circle t :escape t
+                               :readably t :pretty nil)))))))
     output))
 
 (defun build-module (name sources &key additional-files

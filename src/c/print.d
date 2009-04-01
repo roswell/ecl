@@ -1494,7 +1494,7 @@ si_write_ugly_object(cl_object x, cl_object stream)
 
                         write_str("#Y", stream);
                         si_write_ugly_object(
-			    cl_list(6, x->bytecodes.name, lex,
+			    cl_list(5, x->bytecodes.name, lex,
                                     Cnil /* x->bytecodes.definition */,
 				    code_l, data_l),
 			    stream);
@@ -1509,10 +1509,9 @@ si_write_ugly_object(cl_object x, cl_object stream)
                              code_l = ecl_cons(MAKE_FIXNUM(((cl_opcode*)(x->bytecodes.code))[i]), code_l);
                         for ( i=x->bytecodes.data_size-1 ; i<(cl_index)(-1l) ; i-- )
                              data_l = ecl_cons(x->bytecodes.data[i], data_l);
-
                         write_str("#Y", stream);
                         si_write_ugly_object(
-			    cl_list(6, x->bytecodes.name, lex,
+			    cl_list(5, x->bytecodes.name, lex,
 				    Cnil /* x->bytecodes.definition */,
 				    code_l, data_l),
 			    stream);

@@ -162,6 +162,7 @@
 ;;; other possible type checks.
 ;;;
 
+(eval-when (:load-toplevel)
 (defmacro dolist ((var expression &optional output-form) &body body &environment env)
   (multiple-value-bind (declarations body)
       (si:process-declarations body nil)
@@ -179,6 +180,7 @@
 	      (setq ,list-var (rest ,typed-var)))
 	   ,(when output-form `(setq ,var nil))
 	   ,output-form)))))
+)
 
 ;;;
 ;;; COERCE

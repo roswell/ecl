@@ -867,26 +867,34 @@ sharp_Y_reader(cl_object in, cl_object c, cl_object d)
 		FEend_of_file(in);
 	if (read_suppress)
 		@(return Cnil);
-	if (Null(x) || type_of(x) != t_list || ecl_length(x) != 6)
+	if (Null(x) || type_of(x) != t_list || ecl_length(x) != 5)
 		FEreader_error("Reader macro #Y should be followed by a list",
 			       in, 0);
 
         rv = ecl_alloc_object(t_bytecodes);
 
-        rv->bytecodes.name = CAR(x); x = CDR(x);
-        lex = CAR(x); x = CDR(x);
-        rv->bytecodes.definition = CAR(x); x = CDR(x);
+        rv->bytecodes.name = ECL_CONS_CAR(x);
+        x = ECL_CONS_CDR(x);
 
-        rv->bytecodes.code_size = fixint(cl_list_length(CAR(x)));
+        lex = ECL_CONS_CAR(x);
+        x = ECL_CONS_CDR(x);
+
+        rv->bytecodes.definition = ECL_CONS_CAR(x);
+        x = ECL_CONS_CDR(x);
+
+        nth = ECL_CONS_CAR(x);
+        x = ECL_CONS_CDR(x);
+        rv->bytecodes.code_size = fixint(cl_list_length(nth));
         rv->bytecodes.code = ecl_alloc_atomic(rv->bytecodes.code_size * sizeof(uint16_t));
-        for ( i=0, nth=CAR(x) ; !ecl_endp(nth) ; i++, nth=CDR(nth) )
-             ((cl_opcode*)(rv->bytecodes.code))[i] = fixint(CAR(nth));
-        x = CDR(x);
+        for ( i=0; !ecl_endp(nth) ; i++, nth=ECL_CONS_CDR(nth) )
+             ((cl_opcode*)(rv->bytecodes.code))[i] = fixint(ECL_CONS_CAR(nth));
 
-        rv->bytecodes.data_size = fixint(cl_list_length(CAR(x)));
+        nth = ECL_CONS_CAR(x);
+        x = ECL_CONS_CDR(x);
+        rv->bytecodes.data_size = fixint(cl_list_length(nth));
         rv->bytecodes.data = ecl_alloc(rv->bytecodes.data_size * sizeof(cl_object));
-        for ( i=0, nth=CAR(x) ; !ecl_endp(nth) ; i++, nth=CDR(nth) )
-             ((cl_object*)(rv->bytecodes.data))[i] = CAR(nth);
+        for ( i=0 ; !ecl_endp(nth) ; i++, nth=ECL_CONS_CDR(nth) )
+             ((cl_object*)(rv->bytecodes.data))[i] = ECL_CONS_CAR(nth);
 
         rv->bytecodes.entry = _ecl_bytecodes_dispatch_vararg;
 
@@ -1249,7 +1257,21 @@ do_patch_sharp(cl_object x)
 			cl_object c = ecl_make_complex(r, i);
 			x->complex = c->complex;
 		}
+                break;
 	}
+        case t_bclosure: {
+                x->bclosure.code = do_patch_sharp(x->bclosure.code);
+                x = x->bclosure.lex = do_patch_sharp(x->bclosure.lex);
+        }
+        case t_bytecodes: {
+                cl_index i = 0;
+                x->bytecodes.name = do_patch_sharp(x->bytecodes.name);
+                x->bytecodes.definition = do_patch_sharp(x->bytecodes.definition);
+                for (i = 0; i < x->bytecodes.data_size; i++) {
+                        x->bytecodes.data[i] = do_patch_sharp(x->bytecodes.data[i]);
+                }
+                break;
+        }
 	default:;
 	}
 	return(x);

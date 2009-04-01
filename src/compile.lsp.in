@@ -143,6 +143,18 @@
 ;;;
 
 ;;;
+;;; * BYTECMP
+;;;
+#+WANTS-BYTECMP
+(build-module "bytecmp"
+              '("ext:bytecmp;bytecmp.lsp")
+              :dir "build:ext;"
+              :prefix "EXT"
+              :builtin
+	      #+:BUILTIN-PROFILE t
+	      #-:BUILTIN-PROFILE nil)
+
+;;;
 ;;; * DEFSYSTEM
 ;;;
 #+WANTS-DEFSYSTEM

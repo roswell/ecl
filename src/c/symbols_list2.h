@@ -1773,5 +1773,7 @@ cl_symbols[] = {
 
 {EXT_ "+ECL-VERSION-NUMBER+",NULL},
 
+{EXT_ "*BYTECODES-COMPILER*",NULL},
+
 /* Tag for end of list */
 {NULL,NULL}};

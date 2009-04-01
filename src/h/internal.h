@@ -68,6 +68,7 @@ struct cl_compiler_env {
 	cl_object lex_env;		/* Lexical env. for eval-when */
 	cl_index env_depth;
 	cl_index env_size;
+        int mode;
 	bool coalesce;
 	bool stepping;
 };

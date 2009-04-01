@@ -156,8 +156,13 @@ AC_ARG_WITH(defsystem,
 
 AC_ARG_WITH(cmp,
   AS_HELP_STRING( [--with-cmp],
-                  [build in the compiler (default=YES)] ),
+                  [build the compiler (yes|builtin|no, default=YES)] ),
   [], [with_cmp=yes])
+
+AC_ARG_WITH(bytecmp,
+  AS_HELP_STRING( [--with-bytecmp],
+                  [build the bytecodes compiler (yes|builtin|no, default=YES)] ),
+  [], [with_bytecmp=yes])
 
 AC_ARG_WITH(rt,
   AS_HELP_STRING( [--with-rt],
@@ -653,6 +658,14 @@ if test "${with_profile}" = "yes"; then
   if test "${enable_boehm}" != "no"; then
     ECL_ADD_LISP_MODULE([profile])
   fi
+fi
+
+if test "${with_bytecmp}" = "builtin"; then
+  ECL_ADD_BUILTIN_MODULE([bytecmp])
+  with_bytecmp=yes
+fi
+if test "${with_bytecmp}" = "yes"; then
+  ECL_ADD_LISP_MODULE([bytecmp])
 fi
 
 if test "${with_rt}" = "builtin"; then

@@ -50,6 +50,11 @@
 #define FLAG_IGNORE		0
 #define FLAG_USEFUL		(FLAG_PUSH | FLAG_VALUES | FLAG_REG0)
 
+#define MODE_EXECUTE		0
+#define MODE_LOAD		1
+#define MODE_COMPILE		2
+#define MODE_ONLY_LOAD		3
+
 #define ENV_RECORD_LOCATION(r)	CADDDR(r)
 
 #define ECL_SPECIAL_VAR_REF	-2
@@ -108,6 +113,7 @@ static int c_throw(cl_env_ptr env, cl_object args, int flags);
 static int c_unwind_protect(cl_env_ptr env, cl_object args, int flags);
 static int c_while(cl_env_ptr env, cl_object args, int flags);
 static int c_until(cl_env_ptr env, cl_object args, int flags);
+static void eval_form(cl_env_ptr env, cl_object form);
 static int compile_body(cl_env_ptr env, cl_object args, int flags);
 static int compile_form(cl_env_ptr env, cl_object args, int push);
 
@@ -540,6 +546,7 @@ c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_object env,
 		new->env_depth = old->env_depth + 1;
 		new->coalesce = old->coalesce;
 		new->stepping = old->stepping;
+                new->mode = old->mode;
 	} else {
 		new->variables = CAR(env);
 		new->macros = CDR(env);
@@ -554,6 +561,7 @@ c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_object env,
 				break;
 			}
 		}
+                new->mode = MODE_EXECUTE;
 	}
 }
 
@@ -1184,13 +1192,56 @@ c_until(cl_env_ptr env, cl_object body, int flags) {
 }
 
 static int
+when_execute_p(cl_object situation)
+{
+        return ecl_member_eq(@'eval', situation) ||
+                ecl_member_eq(@':execute', situation);
+}
+
+static int
+when_compile_p(cl_object situation)
+{
+        return ecl_member_eq(@'compile', situation) ||
+                ecl_member_eq(@':compile-toplevel', situation);
+}
+
+static int
+when_load_p(cl_object situation)
+{
+        return ecl_member_eq(@'load', situation) ||
+                ecl_member_eq(@':load-toplevel', situation);
+}
+
+static int
 c_eval_when(cl_env_ptr env, cl_object args, int flags) {
 	cl_object situation = pop(&args);
-
-	if (ecl_member_eq(@'eval', situation) || ecl_member_eq(@':execute', situation))
-		return compile_body(env, args, flags);
-	else
-		return compile_body(env, Cnil, flags);
+        int mode = env->c_env->mode;
+        if (mode == MODE_EXECUTE) {
+                if (!when_execute_p(situation))
+                        args = Cnil;
+        } else if (mode == MODE_LOAD) {
+                if (when_compile_p(situation)) {
+                        env->c_env->mode = MODE_COMPILE;
+                        eval_form(env, CONS(@'progn', args));
+                        env->c_env->mode = MODE_LOAD;
+                        if (!when_load_p(situation))
+                                args = Cnil;
+                } else if (when_load_p(situation)) {
+                        env->c_env->mode = MODE_ONLY_LOAD;
+                        mode = compile_body(env, args, flags);
+                        env->c_env->mode = MODE_LOAD;
+                        return mode;
+                } else {
+                        args = Cnil;
+                }
+        } else if (mode == MODE_ONLY_LOAD) {
+                if (!when_load_p(situation))
+                        args = Cnil;
+        } else {
+                if (!when_execute_p(situation) && !when_compile_p(situation))
+                        args = Cnil;
+        }
+        return compile_body(env, args, flags);
 }
 
 
@@ -2149,48 +2200,59 @@ for special form ~S.", 1, function);
 	return flags;
 }
 
+static void
+eval_form(cl_env_ptr env, cl_object form) {
+        const cl_compiler_ptr old_c_env = env->c_env;
+        struct cl_compiler_env new_c_env = *old_c_env;
+        cl_index handle;
+        cl_object bytecodes;
+        struct ecl_stack_frame frame;
+        frame.t = t_frame;
+        frame.stack = frame.base = 0;
+        frame.size = 0;
+        frame.env = env;
+        env->c_env = &new_c_env;
+        handle = asm_begin(env);
+        compile_form(env, form, FLAG_VALUES);
+        asm_op(env, OP_EXIT);
+        VALUES(0) = Cnil;
+        NVALUES = 0;
+        bytecodes = asm_end(env, handle);
+        ecl_interpret((cl_object)&frame, new_c_env.lex_env, bytecodes);
+        asm_clear(env, handle);
+        env->c_env = old_c_env;
+#ifdef GBC_BOEHM
+        GC_free(bytecodes->bytecodes.code);
+        GC_free(bytecodes->bytecodes.data);
+        GC_free(bytecodes);
+#endif
+}
 
 static int
 compile_body(cl_env_ptr env, cl_object body, int flags) {
         const cl_compiler_ptr old_c_env = env->c_env;
-	if (old_c_env->lexical_level == 0 && !ecl_endp(body)) {
-                struct ecl_stack_frame frame;
-                frame.t = t_frame;
-                frame.stack = frame.base = 0;
-                frame.size = 0;
-                frame.env = env;
-		while (!ecl_endp(ECL_CONS_CDR(body))) {
-			struct cl_compiler_env new_c_env = *old_c_env;
-			cl_index handle;
-			cl_object bytecodes;
-			env->c_env = &new_c_env;
-			handle = asm_begin(env);
-			compile_form(env, ECL_CONS_CAR(body), FLAG_VALUES);
-			asm_op(env, OP_EXIT);
-			VALUES(0) = Cnil;
-			NVALUES = 0;
-			bytecodes = asm_end(env, handle);
-			ecl_interpret((cl_object)&frame, new_c_env.lex_env, bytecodes);
-			asm_clear(env, handle);
-			env->c_env = old_c_env;
-#ifdef GBC_BOEHM
-			GC_free(bytecodes->bytecodes.code);
-			GC_free(bytecodes->bytecodes.data);
-			GC_free(bytecodes);
-#endif
-			body = ECL_CONS_CDR(body);
-		}
-	}
 	if (ecl_endp(body)) {
 		return compile_form(env, Cnil, flags);
-	} else {
-		do {
-			if (ecl_endp(ECL_CONS_CDR(body)))
-				return compile_form(env, ECL_CONS_CAR(body), flags);
-			compile_form(env, ECL_CONS_CAR(body), FLAG_IGNORE);
-			body = ECL_CONS_CDR(body);
-		} while (1);
 	}
+        if ((old_c_env->lexical_level == 0) && (old_c_env->mode == MODE_EXECUTE)) {
+                do {
+                        cl_object form = ECL_CONS_CAR(body);
+                        body = ECL_CONS_CDR(body);
+                        if (ecl_endp(body)) {
+                                return compile_form(env, form, flags);
+                        }
+                        eval_form(env, form);
+                } while (1);
+        } else {
+                do {
+                        cl_object form = ECL_CONS_CAR(body);
+                        body = ECL_CONS_CDR(body);
+                        if (ecl_endp(body)) {
+                                return compile_form(env, form, flags);
+                        }
+                        compile_form(env, form, FLAG_IGNORE);
+                } while (1);
+        }
 }
 
 /* ------------------------ INLINED FUNCTIONS -------------------------------- */
@@ -2755,7 +2817,8 @@ si_make_lambda(cl_object name, cl_object rest)
 	@(return lambda)
 }
 
-@(defun si::eval-with-env (form &optional (env Cnil) (stepping Cnil) (compiler_env_p Cnil))
+@(defun si::eval-with-env (form &optional (env Cnil) (stepping Cnil)
+                           (compiler_env_p Cnil) (execute Ct))
 	volatile cl_compiler_env_ptr old_c_env;
 	struct cl_compiler_env new_c_env;
 	volatile cl_index handle;
@@ -2777,6 +2840,7 @@ si_make_lambda(cl_object name, cl_object rest)
 	guess_environment(the_env, interpreter_env);
 	new_c_env.lex_env = env;
 	new_c_env.stepping = stepping != Cnil;
+	new_c_env.mode = Null(execute)? MODE_LOAD : MODE_EXECUTE;
 	handle = asm_begin(the_env);
 	CL_UNWIND_PROTECT_BEGIN(the_env) {
 		compile_form(the_env, form, FLAG_VALUES);
@@ -2788,7 +2852,9 @@ si_make_lambda(cl_object name, cl_object rest)
 		the_env->c_env = old_c_env;
 		memset(&new_c_env, 0, sizeof(new_c_env));
 	} CL_UNWIND_PROTECT_END;
-
+	if (Null(execute)) {
+                @(return bytecodes);
+        }
 	/*
 	 * Interpret using the given lexical environment.
 	 */
