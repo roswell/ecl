@@ -4172,10 +4172,14 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
 	if (flags & ECL_STREAM_C_STREAM) {
 		FILE *fp;
 		close(f);
+		/* We do not use fdopen() because Windows seems to
+		 * have problems with the resulting streams. Furthermore, even for
+		 * output we open with w+ because we do not want to
+		 * overwrite the file. */
 		switch (smm) {
 		case smm_probe:
 		case smm_input: fp = fopen(fname, OPEN_R); break;
-		case smm_output: fp = fopen(fname, OPEN_W); break;
+		case smm_output:
 		case smm_io: fp = fopen(fname, OPEN_RW); break;
 		}
 		x = ecl_make_stream_from_FILE(fn, fp, smm, byte_size, flags,
