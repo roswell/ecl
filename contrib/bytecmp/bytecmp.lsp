@@ -46,10 +46,7 @@
     (case type
       ((:fasl :fas) (setf extension "fasb"))
       (t (error "In COMPILE-FILE-PATHNAME, the type ~A is unsupported." type)))
-    (if format
-        (merge-pathnames (format nil format (pathname-name output-file))
-                         output-file)
-        (make-pathname :type extension :defaults output-file))))
+    (make-pathname :type extension :defaults output-file)))
 
 (defun cl:compile-file (input-pathname
 			&key
@@ -80,5 +77,7 @@
   (values output-pathname nil nil))
 
 (ext::package-lock (find-package :cl) t)
+
+(pushnew :ecl-bytecmp *features*)
 
 (provide 'BYTECMP)
