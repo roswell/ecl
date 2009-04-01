@@ -394,7 +394,6 @@ typedef int fenv_t;
 # define ceilf(x) ceil((float)x)
 #endif
 #ifndef HAVE_FLOORF
-# error
 # define floorf(x) floor((float)x)
 #endif
 #ifndef HAVE_FABSF
