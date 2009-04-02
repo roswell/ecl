@@ -200,8 +200,8 @@ ecl_to_int32_t(cl_object x) {
         do {
                 if (FIXNUMP(x)) {
                         cl_fixnum y = fix(x);
-                        if (y >= -0x80000000 && y <= 0x7FFFFFFFL) {
-                                return (ecl_int16_t)y;
+                        if (y >= -0x80000000L && y <= 0x7FFFFFFFL) {
+                                return (ecl_int32_t)y;
                         }
                 }
 		x = ecl_type_error(@'coerce', "variable", x,
