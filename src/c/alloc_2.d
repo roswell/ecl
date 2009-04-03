@@ -531,7 +531,7 @@ finalize_queued()
 #if GBC_BOEHM == 0
 		mpz_add_ui(cl_core.bytes_consed->big.big_num,
 			   cl_core.bytes_consed->big.big_num,
-			   GC_words_allocd * sizeof(cl_index));
+			   GC_get_bytes_since_gc() * sizeof(cl_index));
 #else
 		/* This is not accurate and may wrap around. We try
 		   to detect this assuming that an overflow in an
