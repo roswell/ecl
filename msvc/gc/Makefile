@@ -10,10 +10,10 @@ srcdir=..\..\src\gc
 
 !if "$(ECL_THREADS)" != ""
 THREADS_OBJ= win32_threads.obj thread_local_alloc.obj
-THREADS_FLAGS= -DGC_DLL -DGC_BUILD -DGC_WIN32_THREADS -DTHREAD_LOCAL_ALLOC -DLARGE_CONFIG
+THREADS_FLAGS= -D_CRT_SECURE_NO_WARNINGS -DGC_DLL -DGC_BUILD -DGC_WIN32_THREADS -DTHREAD_LOCAL_ALLOC -DLARGE_CONFIG
 !else
 THREADS_OBJ=
-THREADS_FLAGS= -DGC_DLL -DGC_BUILD -DLARGE_CONFIG
+THREADS_FLAGS= -D_CRT_SECURE_NO_WARNINGS -DGC_DLL -DGC_BUILD -DLARGE_CONFIG
 !endif
 
 # Make sure that .cc is not viewed as a suffix.  It is for VC++2005, but
@@ -26,7 +26,7 @@ THREADS_FLAGS= -DGC_DLL -DGC_BUILD -DLARGE_CONFIG
 # We assume this was manually unpacked, since I'm not sure there is
 # a Windows standard command line tool to do this.
 AO_VERSION=1.2
-AO_SRC_DIR=libatomic_ops-$(AO_VERSION)/src
+AO_SRC_DIR=$(srcdir)/libatomic_ops-$(AO_VERSION)/src
 AO_INCLUDE_DIR=$(AO_SRC_DIR)
 
 OBJS= alloc.obj reclaim.obj allchblk.obj misc.obj mach_dep.obj os_dep.obj mark_rts.obj headers.obj mark.obj obj_map.obj blacklst.obj finalize.obj new_hblk.obj dbg_mlc.obj malloc.obj stubborn.obj dyn_load.obj typd_mlc.obj ptr_chck.obj gc_cpp.obj mallocx.obj win32_threads.obj msvc_dbg.obj thread_local_alloc.obj
@@ -34,13 +34,13 @@ OBJS= alloc.obj reclaim.obj allchblk.obj misc.obj mach_dep.obj os_dep.obj mark_r
 all: gc.lib
 
 {$(srcdir)}.c{}.obj:
-	$(cc) $(cdebug) $(cflags) $(cvarsmt) $(CFLAGS_CONFIG) -Iinclude -I$(AO_INCLUDE_DIR) $(THREAD_FLAGS) $*.c /Fo$*.obj
+	$(cc) $(cdebug) $(cflags) $(cvarsmt) $(CFLAGS_CONFIG) -Iinclude -I$(AO_INCLUDE_DIR) $(THREADS_FLAGS) -I$(srcdir)\include $< /Fo$*.obj
 
 {$(srcdir)\tests}.c{tests}.obj:
-	$(cc) $(cdebug) $(cflags) $(cvarsmt) $(CFLAGS_CONFIG) -Iinclude -I$(AO_INCLUDE_DIR) $(THREAD_FLAGS) $*.c /Fo$*.obj
+	$(cc) $(cdebug) $(cflags) $(cvarsmt) $(CFLAGS_CONFIG) -Iinclude -I$(AO_INCLUDE_DIR) $(THREADS_FLAGS) -I$(srcdir)\include $< /Fo$*.obj
 
 {$(srcdir)}.cpp{}.obj:
-	$(cc) $(cdebug) $(cflags) $(cvarsmt) $(CFLAGS_CONFIG) -Iinclude -I$(AO_INCLUDE_DIR) $(THREAD_FLAGS) $*.CPP /Fo$*.obj
+	$(cc) $(cdebug) $(cflags) $(cvarsmt) $(CFLAGS_CONFIG) -Iinclude -I$(AO_INCLUDE_DIR) $(THREADS_FLAGS) -I$(srcdir)\include $< /Fo$*.obj
 
 $(OBJS) tests\test.obj: $(srcdir)\include\private\gc_priv.h $(srcdir)\include\private\gc_hdrs.h $(srcdir)\include\gc.h $(srcdir)\include\private\gcconfig.h $(srcdir)\include\private\gc_locks.h $(srcdir)\include\private\gc_pmark.h $(srcdir)\include\gc_mark.h $(srcdir)\include\private\msvc_dbg.h
 

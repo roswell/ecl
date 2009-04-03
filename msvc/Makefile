@@ -89,7 +89,7 @@ SHARED_LDFLAGS = /LD
 GCFLAGS = nodebug=1
 !endif
 
-CFLAGS  = /EHsc /DGC_DLL /nologo /D_CRT_SECURE_NO_DEPRECATE $(CFLAGS_CONFIG)
+CFLAGS  = /EHsc /DGC_DLL /DGC_BUILD /nologo /D_CRT_SECURE_NO_DEPRECATE $(CFLAGS_CONFIG)
 LDFLAGS	= /link /nologo /verbose:lib /nodefaultlib:libcmt /nodefaultlib:libcmtd /nodefaultlib:libc /nodefaultlib:libcd $(LDFLAGS_CONFIG)
 
 
@@ -306,10 +306,12 @@ eclgc.lib:
 	cd ..
 	if not exist ecl\gc $(MKDIR) ecl\gc
 	if not exist ecl\gc\private $(MKDIR) ecl\gc\private
-	for %h in (gc.h gc_local_alloc.h gc_pthread_redirects.h \
+	for %h in (gc.h gc_version.h gc_local_alloc.h gc_pthread_redirects.h \
 	           gc_config_macros.h leak_detector.h gc_typed.h \
-	           private\gc_priv.h private\gcconfig.h gc_mark.h) \
+	           private\gc_priv.h private\gcconfig.h gc_mark.h \
+		   new_gc_alloc.h weakpointer.h gc_pthread_redirects.h) \
 	    do $(CP) $(srcdir)\gc\include\%h ecl\gc\%h
+	$(CP) $(srcdir)\gc\libatomic_ops-1.2\src\atomic_ops.h ecl\gc
 eclgmp.lib:
 	cd gmp
 	$(MAKE) "MPN_TYPE = $(GMP_TYPE)" "CFLAGS_CONFIG=$(CFLAGS_CONFIG)"

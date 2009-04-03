@@ -27,10 +27,6 @@
 
 #ifdef GBC_BOEHM
 
-#if GBC_BOEHM == 0
-#include <ecl/gc/private/gc_priv.h>
-#endif
-
 static void finalize_queued();
 
 /**********************************************************

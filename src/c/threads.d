@@ -16,7 +16,9 @@
  * IMPORTANT!!!! IF YOU EDIT THIS FILE, CHANGE ALSO threads_win32.d
  */
 
-#include <pthread.h>
+#if !defined(_MSC_VER) && !defined(mingw32)
+# include <pthread.h>
+#endif
 #include <errno.h>
 #include <math.h>
 #include <time.h>
@@ -31,29 +33,29 @@
 # include <sched.h>
 #endif
 
-#if defined(_MSVC) || defined(mingw32)
-#define ECL_WINDOWS_THREADS
+#if defined(_MSC_VER) || defined(mingw32)
+# define ECL_WINDOWS_THREADS
 /*
  * We have to put this explicit definition here because Boehm GC
  * is designed to produce a DLL and we rather want a static
  * reference
  */
-#include <windows.h>
-#include <gc.h>
+# include <windows.h>
+# include <gc.h>
 extern HANDLE WINAPI GC_CreateThread(
     LPSECURITY_ATTRIBUTES lpThreadAttributes, 
     DWORD dwStackSize, LPTHREAD_START_ROUTINE lpStartAddress, 
     LPVOID lpParameter, DWORD dwCreationFlags, LPDWORD lpThreadId );
-#ifndef WITH___THREAD
+# ifndef WITH___THREAD
 DWORD cl_env_key;
-#endif
+# endif
 static DWORD main_thread;
 #else
-#ifndef WITH___THREAD
+# ifndef WITH___THREAD
 static pthread_key_t cl_env_key;
-#endif
+# endif
 static pthread_t main_thread;
-#endif
+#endif /* _MSC_VER || mingw32 */
 
 extern void ecl_init_env(struct cl_env_struct *env);
 
@@ -124,13 +126,19 @@ thread_cleanup(void *env)
 	THREAD_OP_UNLOCK();
 }
 
+#ifdef ECL_WINDOWS_THREADS
+static DWORD WINAPI thread_entry_point(cl_object process)
+#else
 static void *
 thread_entry_point(cl_object process)
+#endif
 {
 	cl_env_ptr env = process->process.env;
 
 	/* 1) Setup the environment for the execution of the thread */
+#ifndef ECL_WINDOWS_THREADS
 	pthread_cleanup_push(thread_cleanup, (void *)env);
+#endif
 	ecl_init_env(env);
 	init_big_registers(env);
 	ecl_set_process_env(env);
@@ -237,6 +245,7 @@ mp_interrupt_process(cl_object process, cl_object function)
 	if (mp_process_active_p(process) == Cnil)
 		FEerror("Cannot interrupt the inactive process ~A", 1, process);
 #ifdef ECL_WINDOWS_THREADS
+	/*
 	{
 	CONTEXT context;
 	HANDLE thread = process->process.thread;
@@ -252,6 +261,7 @@ mp_interrupt_process(cl_object process, cl_object function)
 	if (ResumeThread(thread) == (DWORD)-1)
 		FEwin32_error("Cannot resume process ~A", 1, process);
 	}
+	*/
 #else
 	process->process.interrupt = function;
 	if ( pthread_kill(process->process.thread, SIGUSR1) )
@@ -272,7 +282,7 @@ mp_process_yield(void)
 #ifdef HAVE_SCHED_YIELD
 	sched_yield();
 #else
-# if defined(_MSVC) || defined(mingw32)
+# if defined(_MSC_VER) || defined(mingw32)
 	Sleep(0);
 # else
 	sleep(0); /* Use sleep(0) to yield to a >= priority thread */
@@ -396,7 +406,6 @@ mp_process_run_function(cl_narg narg, cl_object name, cl_object function, ...)
  */
 
 @(defun mp::make-lock (&key name ((:recursive recursive) Ct))
-	pthread_mutexattr_t attr;
 	cl_object output;
 @
 	output = ecl_alloc_object(t_lock);
@@ -407,6 +416,8 @@ mp_process_run_function(cl_narg narg, cl_object name, cl_object function, ...)
 	output->lock.counter = 0;
 	output->lock.recursive = (recursive != Cnil);
 #else
+	{
+	pthread_mutexattr_t attr;
 	pthread_mutexattr_init(&attr);
 	output->lock.name = name;
 	output->lock.holder = Cnil;
@@ -420,6 +431,7 @@ mp_process_run_function(cl_narg narg, cl_object name, cl_object function, ...)
 	}
 	pthread_mutex_init(&output->lock.mutex, &attr);
 	pthread_mutexattr_destroy(&attr);
+	}
 #endif
 	si_set_finalizer(output, Ct);
 	@(return output)
@@ -486,7 +498,7 @@ mp_giveup_lock(cl_object lock)
 #ifdef ECL_WINDOWS_THREADS
 	switch (WaitForSingleObject(lock->lock.mutex, (wait==Ct?INFINITE:0))) {
 		case WAIT_OBJECT_0:
-                        lock->lock.holder = env->own_process;
+                        lock->lock.holder = the_env->own_process;
 			lock->lock.counter++;
 			output = Ct;
 			break;
@@ -635,17 +647,17 @@ void
 init_threads(cl_env_ptr env)
 {
 	cl_object process;
-	pthread_mutexattr_t attr;
 
-	cl_core.processes = OBJNULL;
 #ifdef ECL_WINDOWS_THREADS
 	cl_core.global_lock = CreateMutex(NULL, FALSE, NULL);
 #else
+	pthread_mutexattr_t attr;
 	pthread_mutexattr_init(&attr);
 	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK_NP);
 	pthread_mutex_init(&cl_core.global_lock, &attr);
 	pthread_mutexattr_destroy(&attr);
 #endif
+	cl_core.processes = OBJNULL;
 
 	/* We have to set the environment before any allocation takes place,
 	 * so that the interrupt handling code works. */
@@ -658,21 +670,20 @@ init_threads(cl_env_ptr env)
 #endif
 	ecl_set_process_env(env);
 
-	process = ecl_alloc_object(t_process);
-	process->process.active = 1;
-	process->process.name = @'si::top-level';
-	process->process.function = Cnil;
-	process->process.args = Cnil;
-	process->process.thread = pthread_self();
-	process->process.env = env;
-
-	env->own_process = process;
-
-	cl_core.processes = ecl_list1(process);
-
 #ifdef ECL_WINDOWS_THREADS
 	main_thread = GetCurrentThreadId();
 #else
 	main_thread = pthread_self();
 #endif
+	process = ecl_alloc_object(t_process);
+	process->process.active = 1;
+	process->process.name = @'si::top-level';
+	process->process.function = Cnil;
+	process->process.args = Cnil;
+	process->process.thread = main_thread;
+	process->process.env = env;
+
+	env->own_process = process;
+
+	cl_core.processes = ecl_list1(process);
 }

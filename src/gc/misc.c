@@ -871,9 +871,11 @@ out:
       tmp = WriteFile(GC_stdout, buf, (DWORD)len, &written, NULL);
       if (!tmp)
 	  DebugBreak();
+      /* JJGR
 #     if defined(_MSC_VER) && defined(_DEBUG)
 	  _CrtDbgReport(_CRT_WARN, NULL, 0, NULL, "%.*s", len, buf);
 #     endif
+      */
       if (GC_need_to_lock) LeaveCriticalSection(&GC_write_cs);
       return tmp ? (int)written : -1;
   }
