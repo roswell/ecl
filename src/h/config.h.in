@@ -68,7 +68,9 @@
 #endif
 
 /* __thread thread-local variables?                                     */
+#ifndef openbsd
 #undef WITH___THREAD
+#endif
 
 /* Network streams							*/
 #undef TCP
