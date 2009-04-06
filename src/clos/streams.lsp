@@ -614,6 +614,7 @@
 				       cl:open-stream-p cl:output-stream-p cl:streamp)))
 
 (let ((p (find-package "GRAY")))
+  (export '(nil) p)
   (do-external-symbols (s (find-package "COMMON-LISP"))
     (unless (member s '#.+conflicting-symbols+)
       (export s p))))
