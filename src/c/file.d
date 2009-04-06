@@ -1177,7 +1177,7 @@ clos_stream_write_byte(cl_object c, cl_object strm)
 static ecl_character
 clos_stream_read_char(cl_object strm)
 {
-	cl_object output = funcall(3, @'gray::stream-read-char', strm);
+	cl_object output = funcall(2, @'gray::stream-read-char', strm);
 	return CHAR_CODE(output);
 }
 
@@ -1194,7 +1194,13 @@ clos_stream_unread_char(cl_object strm, ecl_character c)
 	funcall(3, @'gray::stream-unread-char', strm, CODE_CHAR(c));
 }
 
-#define clos_stream_peek_char generic_peek_char
+static int
+clos_stream_peek_char(cl_object strm)
+{
+	cl_object out = funcall(2, @'gray::stream-peek-char', strm);
+	if (out == @':eof') return EOF;
+	return ecl_char_code(out);
+}
 
 static int
 clos_stream_listen(cl_object strm)
