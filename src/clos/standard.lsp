@@ -319,7 +319,7 @@ because it contains a reference to the undefined class~%  ~A"
 				  :test-not #'eq))
 	      output)))))
 
-(defun slot-definition-to-list (slotd)
+(defun slot-definition-to-plist (slotd)
   (list :name (slot-definition-name slotd)
 	:initform (slot-definition-initform slotd)
 	:initfunction (slot-definition-initfunction slotd)
@@ -340,7 +340,7 @@ because it contains a reference to the undefined class~%  ~A"
   (flet ((direct-to-effective (old-slot)
 	   (if (consp old-slot)
 	       (copy-list old-slot)
-	       (let ((initargs (slot-definition-to-list old-slot)))
+	       (let ((initargs (slot-definition-to-plist old-slot)))
 		 (apply #'make-instance
 			(apply #'effective-slot-definition-class class initargs)
 			initargs))))

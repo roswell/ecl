@@ -33,13 +33,13 @@
 	  (loop for x in direct-slots
 		collect (if (consp x)
 			    (apply #'make-instance 'standard-direct-slot-definition
-				   (slot-definition-to-list x))
+				   (slot-definition-to-plist x))
 			    x)))
 	 (new-effective-slots
 	  (loop for x in effective-slots
 		collect (if (consp x)
 			    (apply #'make-instance 'standard-effective-slot-definition
-				   (slot-definition-to-list x))
+				   (slot-definition-to-plist x))
 			    x))))
     (map-into direct-slots #'identity new-direct-slots)
     (map-into effective-slots #'identity new-effective-slots)
