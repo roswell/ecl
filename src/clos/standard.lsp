@@ -92,7 +92,8 @@
 	    (setf last-location new-loc)))
      finally (return (max num-slots (1+ last-location)))))
 
-(defmethod allocate-instance ((class class) &key)
+(defmethod allocate-instance ((class class) &rest initargs)
+  (declare (ignore initargs))
   ;; FIXME! Inefficient! We should keep a list of dependent classes.
   (unless (class-finalized-p class)
     (finalize-inheritance class))
@@ -101,6 +102,9 @@
     x))
 
 (defmethod make-instance ((class class) &rest initargs)
+  ;; Without finalization we can not find initargs.
+  (unless (class-finalized-p class)
+    (finalize-inheritance class))
   ;; We add the default-initargs first, because one of these initargs might
   ;; be (:allow-other-keys t), which disables the checking of the arguments.
   ;; (Paul Dietz's ANSI test suite, test CLASS-24.4)
@@ -112,7 +116,7 @@
 			   #'initialize-instance (list (class-prototype class)))
 			  (compute-applicable-methods
 			   #'shared-initialize (list (class-prototype class) t))))
-  (let ((instance (allocate-instance class)))
+  (let ((instance (apply #'allocate-instance class initargs)))
     (apply #'initialize-instance instance initargs)
     instance))
 
@@ -680,7 +684,7 @@ because it contains a reference to the undefined class~%  ~A"
 
 (defun check-initargs (class initargs &optional methods
 		       (slots (class-slots class)))
-  ;; First get all initiargs which have been declared in the given
+  ;; First get all initargs which have been declared in the given
   ;; methods, then check the list of initargs declared in the slots
   ;; of the class.
   (multiple-value-bind (method-initargs allow-other-keys)
