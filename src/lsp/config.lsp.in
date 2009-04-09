@@ -121,6 +121,6 @@ Returns, as a string, the version of the software under which ECL runs."
 	      (probe-file x)))
 	((and (setf x (ext:getenv "TMP"))
 	      (probe-file x)))
-	(t (setf x "./")))
+	(t (setf x #+unix "/tmp" #-unix "./")))
   (si::pathname-translations "TMP"
      `(("**;*.*" ,(format nil "~A/**/*.*" x)))))
