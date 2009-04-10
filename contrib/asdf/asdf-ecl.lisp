@@ -22,14 +22,15 @@
   (setf (slot-value instance 'system-p) t))
 
 (defmethod output-files ((o compile-op) (c cl-source-file))
-  (list (compile-file-pathname (component-pathname c) :type :object)))
+  (list (compile-file-pathname (component-pathname c) :type :object)
+        (compile-file-pathname (component-pathname c) :type :fasl)))
 
 (defmethod perform :after ((o compile-op) (c cl-source-file))
   ;; Note how we use OUTPUT-FILES to find the binary locations
   ;; This allows the user to override the names.
   (let* ((input (output-files o c))
 	 (output (compile-file-pathname (first input) :type :fasl)))
-    (c:build-fasl output :lisp-files input)))
+    (c:build-fasl output :lisp-files (remove "fas" input :key #'pathname-type :test #'string=))))
 
 (defmethod perform ((o load-op) (c cl-source-file))
   (loop for i in (input-files o c)
