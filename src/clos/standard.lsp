@@ -145,23 +145,27 @@
 
 (defmethod initialize-instance ((class class) &rest initargs
 				&key sealedp direct-superclasses direct-slots)
+  ;; convert the slots from lists to direct slots
+  (setf direct-slots (loop for s in direct-slots
+                        collect (canonical-slot-to-direct-slot class s)))
 
-  ;; this sets up all the slots of the class
-  (call-next-method)
+  ;; verify that the inheritance list makes sense
+  (setf direct-superclasses
+        (check-direct-superclasses class direct-superclasses))
 
-  ;; the list of direct slots is converted to direct-slot-definitions
-  (setf (class-direct-slots class)
-	(loop for s in direct-slots
-	      collect (canonical-slot-to-direct-slot class s)))
+  (apply #'call-next-method class
+         :direct-slots direct-slots
+         :direct-superclasses direct-superclasses
+         initargs)
 
-  ;; set up inheritance checking that it makes sense
-  (dolist (l (setf (class-direct-superclasses class)
-		   (check-direct-superclasses class direct-superclasses)))
+  ;; record the inheritance in parents
+  (dolist (l (setf direct-superclasses (class-direct-superclasses class)))
     (add-direct-subclass l class))
-  (if (find-if #'forward-referenced-class-p (class-direct-superclasses class))
-      (find-if #'forward-referenced-class-p (class-direct-superclasses class))
+
+  (unless (find-if #'forward-referenced-class-p direct-superclasses)
       (finalize-inheritance class))
-)
+
+  class)
 
 (defmethod shared-initialize :after ((class standard-class) slot-names &rest initargs &key
 				     (optimize-slot-access (list *optimize-slot-access*))
