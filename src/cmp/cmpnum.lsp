@@ -35,7 +35,7 @@
 	   0)
 	  (t
 	   (error 'simple-program-error :format-error "Wrong number of arguments for operator ~a in ~a"
-		  :format-args (list operators (or whole (list* operator args))))))))
+		  :format-arguments (list operators (or whole (list* operator args))))))))
 
 (define-compiler-macro * (&whole all &rest args)
   (simplify-arithmetic '* args all))

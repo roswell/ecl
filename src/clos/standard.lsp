@@ -362,7 +362,7 @@ because it contains a reference to the undefined class~%  ~A"
 		   (unless (eql loc1 loc2)
 		     (error 'simple-error
 			    :format-control "You have specified two conflicting slot locations:~%~D and ~F~%for slot ~A"
-			    :format-args (list loc1 loc2 name)))
+			    :format-arguments (list loc1 loc2 name)))
 		   (progn
 		     #+(or)
 		     (format t "~%Assigning a default location ~D for ~A in ~A."
