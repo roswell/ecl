@@ -180,10 +180,10 @@
   t)
 
 (defmethod perform ((o bundle-op) (c system))
-  (let* ((object-files (input-files o c))
-	 (output (first (output-files o c))))
-    (ensure-directories-exist output)
-    (apply #'c::builder (bundle-op-type o) output :lisp-files object-files
+  (let* ((object-files (remove "fas" (input-files o c) :key #'pathname-type :test #'string=))
+	 (output (output-files o c)))
+    (ensure-directories-exist (first output))
+    (apply #'c::builder (bundle-op-type o) (first output) :lisp-files object-files
 	   (bundle-op-build-args o))))
 
 (defun select-operation (monolithic type)
