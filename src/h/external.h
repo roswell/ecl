@@ -228,6 +228,8 @@ extern ECL_API cl_object si_heap_size _ARGS((cl_narg narg, ...));
 extern ECL_API cl_object si_gc(cl_object area);
 extern ECL_API cl_object si_gc_dump(void);
 extern ECL_API cl_object si_gc_stats(cl_object enable);
+extern ECL_API void *ecl_alloc_unprotected(cl_index n);
+extern ECL_API void *ecl_alloc_atomic_unprotected(cl_index n);
 extern ECL_API void *ecl_alloc(cl_index n);
 extern ECL_API void *ecl_alloc_atomic(cl_index n);
 extern ECL_API void *ecl_alloc_uncollectable(size_t size);

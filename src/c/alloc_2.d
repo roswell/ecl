@@ -234,12 +234,24 @@ ecl_free_uncollectable(void *pointer)
 }
 
 void *
+ecl_alloc_unprotected(cl_index n)
+{
+	return GC_MALLOC_IGNORE_OFF_PAGE(n);
+}
+
+void *
+ecl_alloc_atomic_unprotected(cl_index n)
+{
+	return GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE(n);
+}
+
+void *
 ecl_alloc(cl_index n)
 {
 	const cl_env_ptr the_env = ecl_process_env();
 	void *output;
 	ecl_disable_interrupts_env(the_env);
-	output = GC_MALLOC_IGNORE_OFF_PAGE(n);
+	output = ecl_alloc_unprotected(n);
 	ecl_enable_interrupts_env(the_env);
 	if (output == NULL) out_of_memory(the_env);
 	return output;
@@ -251,7 +263,7 @@ ecl_alloc_atomic(cl_index n)
 	const cl_env_ptr the_env = ecl_process_env();
 	void *output;
 	ecl_disable_interrupts_env(the_env);
-	output = GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE(n);
+	output = ecl_alloc_atomic_unprotected(n);
 	ecl_enable_interrupts_env(the_env);
 	if (output == NULL) out_of_memory(the_env);
 	return output;
