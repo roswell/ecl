@@ -298,7 +298,7 @@ _ecl_alloc_env()
 		/* We have not set up any environment. Hence, we cannot call ecl_alloc()
 		 * because it will need to stop interrupts and currently we rely on
 		 * the environment for that */
-		output = GC_MALLOC_IGNORE_OFF_PAGE(sizeof(*output));
+		output = ecl_alloc_unprotected(sizeof(*output));
 	} else {
 		output = ecl_alloc(sizeof(*output));
 	}
