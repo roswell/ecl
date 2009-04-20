@@ -139,9 +139,9 @@ thread_entry_point(cl_object process)
 #ifndef ECL_WINDOWS_THREADS
 	pthread_cleanup_push(thread_cleanup, (void *)env);
 #endif
+	ecl_set_process_env(env);
 	ecl_init_env(env);
 	init_big_registers(env);
-	ecl_set_process_env(env);
 	ecl_enable_interrupts_env(env);
 
 	/* 2) Execute the code. The CATCH_ALL point is the destination
