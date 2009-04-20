@@ -575,7 +575,8 @@ compiled successfully, returns the pathname of the compiled file"
 					 (if system-p :object :fasl)))
       (compiler-pass2 c-pathname h-pathname data-pathname system-p
 		      init-name
-		      shared-data-file)
+		      shared-data-file
+                      :input-designator (namestring input-pathname))
     
       (if shared-data-file
 	  (data-dump shared-data-pathname t)
@@ -700,7 +701,8 @@ the environment variable TMPDIR to a different value." template)
       (cmpprogress "~&;;; End of Pass 1.")
       (let (#+(or mingw32 msvc cygwin)(*self-destructing-fasl* t))
 	(compiler-pass2 c-pathname h-pathname data-pathname nil
-			init-name nil))
+			init-name nil
+                        :input-designator (format nil "~A" def)))
       (setf *compiler-constants* (data-dump data-pathname))
 
       (compiler-cc c-pathname o-pathname)
@@ -796,10 +798,11 @@ from the C language code.  NIL means \"do not create the file\"."
   nil)
 
 (defun compiler-pass2 (c-pathname h-pathname data-pathname system-p init-name
-		       shared-data)
+		       shared-data &key input-designator)
   (with-open-file (*compiler-output1* c-pathname :direction :output)
     (with-open-file (*compiler-output2* h-pathname :direction :output)
       (wt-nl1 "#include " *cmpinclude*)
+      (format *compiler-output1* "~&/* input designator: ~A */~%" input-designator)
       (catch *cmperr-tag* (ctop-write init-name
 				      h-pathname
 				      data-pathname
