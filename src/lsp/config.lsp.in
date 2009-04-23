@@ -75,7 +75,10 @@ uname(2) where available."
   (or #+(or :mingw32 :msvc :cygwin)
       (ext:getenv "PROCESSOR_LEVEL")))
 
-(push :@thehost@ *features*)
+#-:mingw32
+(pushnew :@thehost@ *features*)
+#+(or :mingw32 :msvc)
+(pushnew :win32 *features*)
 
 (defun software-type ()
   "Args: ()
