@@ -124,6 +124,7 @@ static const char *feature_names[] = {
 #endif
 #ifdef mingw32
 	"MINGW32",
+        "WIN32",
 #endif
 #ifdef _MSC_VER
 	"MSVC",
