@@ -61,29 +61,6 @@ log1pl(long double x)
 }
 #endif
 
-#ifdef mingw32
-/*
- * Mingw32 does not implement asinh, acosh and atanh.
- */
-double
-asinh(double x)
-{
-	return log(x + sqrt(1.0 + x*x));
-}
-
-double
-acosh(double x)
-{
-	return log(x + sqrt((x-1)*(x+1)));
-}
-
-double
-atanh(double x)
-{
-	return log1p(2*x/(1-x))/2;
-}
-#endif /* mingw32 */
-
 cl_object
 ecl_abs(cl_object x)
 {
