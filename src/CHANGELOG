@@ -1,24 +1,10 @@
-ECL 9.4.2:
-==========
+ECL 9.5:
+========
 
 * MOP:
 
- - ALLOCATE-INSTANCE admits additional arguments which are the instance
-   initialization arguments.
-
- - MAKE-INSTANCE passes the completed initargs to ALLOCATE-INSTANCE.
-
- - MAKE-INSTANCE ensures that the class is finalized before allocating the
-   instance.
-
-ECL 9.4.1:
-==========
-
-* Bugs fixed:
-
- - Symbol NIL was not exported from the GRAY package.
-
- - GRAY:STREAM-PEEK-CHAR was not used at all by ECL.
+ - CALL-METHOD has only one required argument. Affects only calls to this
+   macro inside nonstandard method combinations.
 
 ;;; Local Variables: ***
 ;;; mode:text ***

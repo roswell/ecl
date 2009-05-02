@@ -87,10 +87,10 @@
       (declare (ignorable no-next-methods))
       (funcall method .combined-method-args. rest-methods)))
 
-(defmacro call-method (method rest-methods)
+(defmacro call-method (method &optional rest-methods)
   `(funcall ,(effective-method-function method)
 	    .combined-method-args.
-	    ',(mapcar #'effective-method-function rest-methods)))
+	    ',(and rest-methods (mapcar #'effective-method-function rest-methods))))
 
 (defun call-next-method (&rest args)
   (declare (special .combined-method-args. *next-methods*))
@@ -247,7 +247,8 @@
 	      (syntax-error))
 	  (let ((condition
 		(cond ((eql predicate '*) 'T)
-		      ((symbolp predicate) `(,predicate .METHOD-QUALIFIERS.))
+		      ((and predicate (symbolp predicate))
+                       `(,predicate .METHOD-QUALIFIERS.))
 		      ((and (listp predicate)
 			    (let* ((q (last predicate 0))
 				   (p (copy-list (butlast predicate 0))))
