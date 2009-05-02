@@ -800,9 +800,16 @@ from the C language code.  NIL means \"do not create the file\"."
 (defun compiler-pass2 (c-pathname h-pathname data-pathname system-p init-name
 		       shared-data &key input-designator)
   (with-open-file (*compiler-output1* c-pathname :direction :output)
+    #-ecl-min
+    (multiple-value-bind (second minute hour day month year)
+        (get-decoded-time)
+      (format *compiler-output1* "~&/*~% * Compiler: ~A ~A~% * Date: ~D/~D/~D ~2,'0D:~2,'0D (yyyy/mm/dd)~% * Machine: ~A ~A ~A ~% * Source: ~A~% */~%"
+              (lisp-implementation-type) (lisp-implementation-version)
+              year month day hour minute
+              (software-type) (software-version) (machine-type)
+              input-designator))
     (with-open-file (*compiler-output2* h-pathname :direction :output)
       (wt-nl1 "#include " *cmpinclude*)
-      (format *compiler-output1* "~&/* input designator: ~A */~%" input-designator)
       (catch *cmperr-tag* (ctop-write init-name
 				      h-pathname
 				      data-pathname
