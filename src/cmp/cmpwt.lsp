@@ -29,7 +29,7 @@
   (declare (string text))
   (if single-line
       (progn
-	(terpri stream)
+	(fresh-line stream)
 	(princ "/*	" stream))
       (format stream "~50T/*  "))
   (let* ((l (1- (length text))))
@@ -43,13 +43,21 @@
   (format stream "~70T*/")
   )
 
-(defun wt-comment (message &optional extra (single-line extra))
-  (when (and (symbolp message) (not (symbol-package message)))
-    ;; useless to show gensym's
-    (return-from wt-comment))
-  (wt-filtered-comment (format nil "~A~A" message (or extra ""))
-		       *compiler-output1*
-		       single-line))
+(defun do-wt-comment (message-or-format args single-line-p)
+  (unless (and (symbolp message-or-format) (not (symbol-package message-or-format)))
+    (wt-filtered-comment (if (stringp message-or-format)
+                             (if args
+                                 (apply #'format nil message-or-format args)
+                                 message-or-format)
+                             (princ-to-string message-or-format))
+                         *compiler-output1*
+                         single-line-p)))
+
+(defun wt-comment (message &rest extra)
+  (do-wt-comment message extra nil))
+
+(defun wt-comment-nl (message &rest extra)
+  (do-wt-comment message extra t))
 
 (defun wt1 (form)
   (typecase form

@@ -31,18 +31,18 @@
       (if (member new-destination '(TRASH VALUES))
 	  (progn
 	    (wt-nl "if (ecl_frs_push(cl_env_copy," 'VALUE0 ")==0) {")
-	    (wt-comment "BEGIN CATCH " code nil)
+	    (wt-comment "BEGIN CATCH ~A" code)
 	    (c2expr body)
 	    (wt-nl "}"))
 	  (progn
 	    (wt-nl "if (ecl_frs_push(cl_env_copy," 'VALUE0 ")) {")
-	    (wt-comment "BEGIN CATCH " code nil)
+	    (wt-comment "BEGIN CATCH ~A" code)
 	    (unwind-exit 'VALUES t)
 	    (wt-nl "}")
 	    (c2expr body)))
       (wt-label *exit*)
       (wt-nl "ecl_frs_pop(cl_env_copy);")
-      (wt-comment "END CATCH " code nil)
+      (wt-comment "END CATCH ~A" code)
       )
     (unwind-exit new-destination)))
 
