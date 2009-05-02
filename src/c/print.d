@@ -399,6 +399,44 @@ write_str(const char *s, cl_object stream)
 }
 
 static void
+write_readable_pathname(cl_object path, cl_object stream)
+{
+        cl_object l =
+                cl_list(15, @'make-pathname',
+                        @':host', path->pathname.host,
+                        @':device', path->pathname.device,
+                        @':directory',
+                        cl_funcall(2, @'ext::maybe-quote', path->pathname.directory),
+                        @':name', path->pathname.name,
+                        @':type', path->pathname.type,
+                        @':version', path->pathname.version,
+                        @':defaults', Cnil);
+        write_str("#.", stream);
+        si_write_object_recursive(l, stream);
+}
+
+static void
+write_pathname(cl_object path, cl_object stream)
+{
+        cl_object namestring = ecl_namestring(path, 0);
+        bool readably = ecl_print_readably();
+        if (namestring == Cnil) {
+                if (readably) {
+                        write_readable_pathname(path, stream);
+                        return;
+                }
+                namestring = ecl_namestring(path, 1);
+                if (namestring == Cnil) {
+                        write_str("#<Unprintable pathname>", stream);
+                        return;
+                }
+        }
+        if (readably || ecl_print_escape())
+                write_str("#P", stream);
+        si_write_ugly_object(namestring, stream);
+}
+
+static void
 write_positive_fixnum(cl_index i, int base, cl_index len, cl_object stream)
 {
 	/* The maximum number of digits is achieved for base 2 and it
@@ -1465,22 +1503,10 @@ si_write_ugly_object(cl_object x, cl_object stream)
 		write_ch('>', stream);
 		break;
 
-	case t_pathname: {
-		cl_object namestring = ecl_namestring(x, 0);
-		if (namestring == Cnil) {
-			if (ecl_print_readably())
-				FEprint_not_readable(x);
-			namestring = ecl_namestring(x, 1);
-			if (namestring == Cnil) {
-				write_str("#<Unprintable pathname>", stream);
-				break;
-			}
-		}
-		if (ecl_print_escape() || ecl_print_readably())
-			write_str("#P", stream);
-		si_write_ugly_object(namestring, stream);
-		break;
-	}
+	case t_pathname:
+                write_pathname(x, stream);
+                break;
+
 	case t_bclosure:
                 if ( ecl_print_readably() ) {
 	                cl_index i;

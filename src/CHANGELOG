@@ -6,6 +6,19 @@ ECL 9.5:
  - CALL-METHOD has only one required argument. Affects only calls to this
    macro inside nonstandard method combinations.
 
+* Visible changes:
+
+ - Physical pathnames do not always have a namestring from which they can be
+   reconstructed. This is the case of directory pathnames with version numbers,
+   for instance. Formerly ECL would refuse to print those pathnames if
+   *PRINT-READABLY* was true, but now it uses instead a #. form.
+    > (write (make-pathname :directory '(:relative)
+                            :name nil :type nil :version :newest)
+             :readably t))
+    #.(MAKE-PATHNAME :HOST NIL :DEVICE NIL :DIRECTORY '(:RELATIVE) :NAME NIL
+                     :TYPE NIL :VERSION :NEWEST :DEFAULTS NIL)
+
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
