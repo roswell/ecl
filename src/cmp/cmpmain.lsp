@@ -470,27 +470,32 @@ static cl_object VV[VM];
   #+dlopen
   (apply #'builder :shared-library args))
 
-(defvar *ignore-extensions* '())
+(defvar ext::*unknown-file-types* '())
 
 (defun ensure-valid-file-extension (pathname)
-  (force-output)
-  (let* ((type (pathname-type pathname)))
-    (cond ((null type)
-           (warn "The output from COMPILE-FILE, ~A has no extension. ECL will refuse to load it." pathname))
-          ((member type *ignore-extensions*))
-          ((null (assoc type ext::*load-hooks* :test #'string=))
-           (restart-case
-            (cerror "Ignore error and do not prompt again."
-"~%COMPILE-FILE has been invoked with a value of :OUTPUT-FILE
+  (flet ((register-extension (type)
+          (push (cons type #'si::load-binary) ext::*load-hooks*)))
+    (force-output)
+    (let* ((type (pathname-type pathname)))
+      (cond ((null type)
+             (warn "The output from COMPILE-FILE, ~A has no extension. ECL will refuse to load it." pathname))
+            ((eq ext::*unknown-file-types* :register)
+             (register-extension type))
+            ((member type ext::*unknown-file-types* :test #'string=))
+            ((null (assoc type ext::*load-hooks* :test #'string=))
+             (restart-case
+              (error "~%COMPILE-FILE has been invoked with a value of :OUTPUT-FILE
     ~A
 The file type is not a supported binary file type. If you do not register
 this file type with ECL, it will refuse to load this file. To permanently
 register this file type with ECL you can add
     (push '(~S . si::load-binary) ext::*load-hooks*)
 to your ~~/.eclrc file."
-                    pathname type type)
-            (register () :report "Register file type for later use with LOAD."
-              (push (cons type #'si::load-binary) ext::*load-hooks*)))))))
+                      pathname type type)
+              (continue () :report "Ignore error and do not prompt again."
+                        (push type ext::*unknown-file-types*))
+              (register () :report "Register file type for later use with LOAD."
+                        (register-extension type))))))))
 
 (defun compile-file (input-pathname &rest args
                       &key
