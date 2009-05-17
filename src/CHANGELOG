@@ -18,6 +18,9 @@ ECL 9.5:
     #.(MAKE-PATHNAME :HOST NIL :DEVICE NIL :DIRECTORY '(:RELATIVE) :NAME NIL
                      :TYPE NIL :VERSION :NEWEST :DEFAULTS NIL)
 
+ - WITH-CSTRING automatically coerces extended strings to base strings,
+   signalling an error when this is not possible.
+
 * Bugs:
 
  - Remove an obsolete #if statement for Solaris that broke current builds
