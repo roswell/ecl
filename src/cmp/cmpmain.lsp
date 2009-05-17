@@ -28,11 +28,11 @@
 	      string result))
     result))
 
-(defun compile-file-pathname (name &key (output-file name) (type nil type-supplied-p)
+(defun compile-file-pathname (name &key (output-file T) (type nil type-supplied-p)
                               verbose print c-file h-file data-file shared-data-file
                               system-p load)
-  (let ((format '())
-	(extension '()))
+  (let* ((format '())
+         (extension '()))
     (unless type-supplied-p
       (setf type (if system-p :object :fasl)))
     (case type
@@ -47,10 +47,15 @@
       #+msvc
       (:import-library (setf extension "implib"))
       ((:fasl :fas) (setf extension "fas")))
-    (if format
-	(merge-pathnames (format nil format (pathname-name output-file))
-			 output-file)
-	(make-pathname :type extension :defaults output-file))))
+    (let ((output (if format
+                      (merge-pathnames (format nil format (pathname-name name)) name)
+                      (make-pathname :type extension :defaults name))))
+      ;; If the user supplies an output file name, we have to let him/her
+      ;; override the file extensions. Not that it is imposed by the spec
+      ;; but people expect this.
+      (if (member output-file '(T NIL))
+          output
+          (merge-pathnames output-file output)))))
 
 #+msvc
 (defun delete-msvc-generated-files (output-pathname)
@@ -465,13 +470,26 @@ static cl_object VV[VM];
   #+dlopen
   (apply #'builder :shared-library args))
 
-(eval-when (compile eval)
-  (defmacro get-output-pathname (input-file output-file ext)
-    `(compile-file-pathname ,input-file
-      :output-file (if (member ,output-file '(T NIL)) ,input-file ,output-file)
-      :type ,ext)))
+(defvar *ignore-extensions* '())
 
-(defun compile-file (input-pathname
+(defun ensure-valid-file-extension (pathname)
+  (let ((type (pathname-type pathname)))
+    (cond ((null type)
+           (warn "The output from COMPILE-FILE, ~A has no extension. ECL will refuse to load it." pathname))
+          ((member type *ignore-extensions*))
+          ((null (assoc type ext::*load-hooks*))
+           (restart-case
+            (cerror "~
+COMPILE-FILE has been invoked with a value of :OUTPUT-FILE
+~T~A
+The file type ~A is not a supported binary file type. If you do not register
+this file type with ECL, it will refuse to load this file."
+                    pathname
+                    type)
+            (continue () (push type *ignore-extensions*))
+            (register () (push (cons type #'si::load-binary) ext::*load-hooks*)))))))
+
+(defun compile-file (input-pathname &rest args
                       &key
 		      ((:verbose *compile-verbose*) *compile-verbose*)
 		      ((:print *compile-print*) *compile-print*)
@@ -524,10 +542,9 @@ compiled successfully, returns the pathname of the compiled file"
 	  (setq *compile-file-pathname* (make-pathname :type ext :defaults input-pathname))
 	  (when (probe-file *compile-file-pathname*)
 	    (return)))))
-  (setq *compile-file-truename* (truename *compile-file-pathname*))
+  (setq input-file (truename *compile-file-pathname*)
+        *compile-file-truename* input-file)
 
-  (when (eq output-file 'T)
-    (setf output-file *compile-file-truename*))
   (when (and system-p load)
     (error "Cannot load system files."))
 
@@ -536,18 +553,22 @@ compiled successfully, returns the pathname of the compiled file"
   (let* ((eof '(NIL))
 	 (*compiler-in-use* *compiler-in-use*)
 	 (*load-time-values* nil) ;; Load time values are compiled
-	 (o-pathname (compile-file-pathname output-file :type :object))
-	 (so-pathname (compile-file-pathname output-file :type :fasl))
-         (c-pathname (get-output-pathname o-pathname c-file :c))
-         (h-pathname (get-output-pathname o-pathname h-file :h))
-         (data-pathname (get-output-pathname o-pathname data-file :data))
-	 (shared-data-pathname (get-output-pathname o-pathname shared-data-file
-						    :sdata))
-	 (compiler-conditions nil))
+         (output-file (apply #'compile-file-pathname input-file args))
+         (c-pathname (apply #'compile-file-pathname output-file :output-file c-file
+                            :type :c args))
+         (h-pathname (apply #'compile-file-pathname output-file :output-file h-file
+                            :type :h args))
+         (data-pathname (apply #'compile-file-pathname output-file
+                               :output-file data-file :type :data args))
+	 (shared-data-pathname (apply #'compile-file-pathname output-file
+                                      :output-file shared-data-file :type :sdata args))
+	 (compiler-conditions nil)
+         (to-delete (nconc (unless c-file (list c-pathname))
+                           (unless h-file (list h-pathname))
+                           (unless (or data-file shared-data-file)
+                             (list data-pathname)))))
 
     (with-compiler-env (compiler-conditions)
-
-      (setf output-file (if system-p o-pathname so-pathname))
 
       (print-compiler-info)
 
@@ -577,32 +598,34 @@ compiled successfully, returns the pathname of the compiled file"
 		      init-name
 		      shared-data-file
                       :input-designator (namestring input-pathname))
-    
+
       (if shared-data-file
 	  (data-dump shared-data-pathname t)
 	  (data-dump data-pathname))
-      
-      (when output-file
-	(compiler-cc c-pathname o-pathname)
-	#+dlopen
-	(unless system-p (bundle-cc (si::coerce-to-filename so-pathname)
-				    init-name
-				    (si::coerce-to-filename o-pathname)))
-	(unless (setf output-file (probe-file output-file))
-	  (cmperr "The C compiler failed to compile the intermediate file.")))
-      (cmpprogress "~&;;; Finished compiling ~a.~%" (namestring input-pathname))
+
+      (let ((o-pathname (if system-p
+                            output-file
+                            (compile-file-pathname output-file :type :object))))
+        (compiler-cc c-pathname o-pathname)
+        #+dlopen
+        (unless system-p
+          (push o-pathname to-delete)
+          (bundle-cc (si::coerce-to-filename output-file)
+                     init-name
+                     (si::coerce-to-filename o-pathname))
+          (ensure-valid-file-extension output-file)))
+
+      (if (setf output-file (probe-file output-file))
+          (cmpprogress "~&;;; Finished compiling ~a.~%" (namestring input-pathname))
+          (cmperr "The C compiler failed to compile the intermediate file."))
+
+      (mapc #'cmp-delete-file to-delete)
 
       (when (and load output-file (not system-p))
 	(load output-file :verbose *compile-verbose*))
 
       ) ; with-compiler-env
 
-    (unless c-file (cmp-delete-file c-pathname))
-    (unless h-file (cmp-delete-file h-pathname))
-    (unless (or data-file shared-data-file)
-      (cmp-delete-file data-pathname))
-    #+dlopen
-    (unless system-p (cmp-delete-file o-pathname))
     (compiler-output-values output-file compiler-conditions)))
 
 (defun compiler-output-values (main-value conditions)

@@ -26,6 +26,13 @@ ECL 9.5:
  - The mechanism for checking the existence of [u]int{16,32,64}_t or other
    replacement types was not used for [u]int8_t.
 
+ - When COMPILE-FILE is invoked with a non-nil value of :OUTPUT-FILE, ECL
+   now honors the file type supplied by the user, instead of overriding it
+   with "fas" or "fasl".
+
+ - When COMPILE-FILE finds that the value of :OUTPUT-FILE has an unsupported
+   file type, it allows the user to register it with LOAD as a valid binary
+   file extension.
 
 ;;; Local Variables: ***
 ;;; mode:text ***
