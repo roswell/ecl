@@ -485,7 +485,7 @@ static cl_object VV[VM];
     ~A
 The file type is not a supported binary file type. If you do not register
 this file type with ECL, it will refuse to load this file. To permanently
-register this file type with ECL permanently you can add
+register this file type with ECL you can add
     (push '(~S . si::load-binary) ext::*load-hooks*)
 to your ~~/.eclrc file."
                     pathname type type)
