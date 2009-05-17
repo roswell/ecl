@@ -25,18 +25,6 @@
 #include <stdarg.h> 		/* va_list */
 #include <setjmp.h> 		/* setjmp and buffers */
 #include <stdio.h>		/* FILE */
-#if !defined(_MSC_VER) && !defined(__sun)
-#include <stdint.h> 		/* int8_t and friends */
-#define ecl_int8_t int8_t
-#define ecl_uint8_t uint8_t
-#else
-#define ecl_uint8_t unsigned char
-#define ecl_int8_t char
-#define ecl_uint16_t unsigned short
-#define ecl_int16_t short
-#define ecl_uint32_t unsigned int
-#define ecl_int32_t int
-#endif
 /* Microsoft VC++ does not have va_copy() */
 #if defined(_MSC_VER) || !defined(va_copy)
 #define va_copy(dst, src) \

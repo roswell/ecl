@@ -18,6 +18,14 @@ ECL 9.5:
     #.(MAKE-PATHNAME :HOST NIL :DEVICE NIL :DIRECTORY '(:RELATIVE) :NAME NIL
                      :TYPE NIL :VERSION :NEWEST :DEFAULTS NIL)
 
+* Bugs:
+
+ - Remove an obsolete #if statement for Solaris that broke current builds
+   with Solaris 10.
+
+ - The mechanism for checking the existence of [u]int{16,32,64}_t or other
+   replacement types was not used for [u]int8_t.
+
 
 ;;; Local Variables: ***
 ;;; mode:text ***

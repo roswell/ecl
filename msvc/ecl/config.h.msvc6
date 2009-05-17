@@ -85,10 +85,12 @@
 /* #undef ECL_USE_MPROTECT */
 
 /* Integer types                        				*/
-/* #undef ecl_uint16_t */
-/* #undef ecl_int16_t */
-/* #undef ecl_uint32_t */
-/* #undef ecl_int32_t */
+#define ecl_uint8_t unsigned char
+#define ecl_int8_t char
+#define ecl_uint16_t unsigned short
+#define ecl_int16_t short
+#define ecl_uint32_t unsigned int
+#define ecl_int32_t int
 /* #undef ecl_uint64_t */
 /* #undef ecl_int64_t */
 /* #undef ecl_long_long_t */

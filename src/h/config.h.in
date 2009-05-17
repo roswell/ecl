@@ -91,6 +91,9 @@
 #undef ECL_USE_MPROTECT
 
 /* Integer types                        				*/
+@ECL_STDINT_HEADER@
+#undef ecl_uint8_t
+#undef ecl_int8_t
 #undef ecl_uint16_t
 #undef ecl_int16_t
 #undef ecl_uint32_t

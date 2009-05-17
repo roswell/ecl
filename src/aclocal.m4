@@ -405,15 +405,58 @@ dnl Check the existence of different integer types and that they
 dnl have the right size;
 dnl
 AC_DEFUN(ECL_INTEGER_TYPES,[
-AC_SUBST(ECL_HAVE_INT16_T)
+ECL_STDINT_HEADER=""
 ECL_UINT16_T=""
 ECL_UINT32_T=""
 ECL_UINT64_T=""
 ECL_INT16_T=""
 ECL_INT32_T=""
 ECL_INT64_T=""
-if test -z "${ECL_UINT16_T}"; then
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdint.h>]], [[
+AC_SUBST(ECL_STDINT_HEADER)
+AC_CHECK_HEADER([stdint.h],[ECL_STDINT_HEADER="#include <stdint.h>"],[])
+if test -z "${ECL_STDINT_HEADER}"; then
+AC_CHECK_HEADER([inttypes.h],[ECL_STDINT_HEADER="#include <inttypes.h>"],[])
+fi
+if test -n "${ECL_STDINT_HEADER}" -a -z "${ECL_UINT8_T}"; then
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#ifdef HAVE_STDINT_H
+#include <inttypes.h>
+#else
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
+#endif]], [[
+{
+  uint8_t i = 0x80;
+  if (i == 0)
+    return 0;
+  if ((i << 1))
+    return 0;
+  if ((i - 1) != 0x7F)
+    return 0;
+  return 1;
+}]])],[ECL_UINT8_T=uint8_t;ECL_INT8_T=int8_t],[])
+fi
+if test -z "${ECL_UINT8_T}"; then
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [[
+{
+  unsigned char c = 0x80;
+  if (i == 0)
+    return 0;
+  if ((i << 1))
+    return 0;
+  if ((i - 1) != 0x7F)
+    return 0;
+  return 1;
+}]])],[ECL_UINT8_T="unsigned char";ECL_INT8_T="signed char"],[])
+fi
+if test -n "${ECL_STDINT_HEADER}" -a -z "${ECL_UINT16_T}"; then
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#ifdef HAVE_STDINT_H
+#include <inttypes.h>
+#else
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
+#endif]], [[
 {
   uint16_t i = 0x8000UL;
   if (i == 0)
@@ -425,8 +468,14 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdint.h>]], [[
   return 1;
 }]])],[ECL_UINT16_T=uint16_t;ECL_INT16_T=int16_t],[])
 fi
-if test -z "${ECL_UINT32_T}"; then
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdint.h>]], [[
+if test -n "${ECL_STDINT_HEADER}" -a -z "${ECL_UINT32_T}"; then
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#ifdef HAVE_STDINT_H
+#include <inttypes.h>
+#else
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
+#endif]], [[
 {
   uint32_t i = 0x80000000UL;
   if (i == 0)
@@ -438,8 +487,14 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdint.h>]], [[
   return 1;
 }]])],[ECL_UINT32_T=uint32_t;ECL_INT32_T=int32_t],[])
 fi
-if test -z "${ECL_UINT64_T}"; then
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdint.h>]], [[
+if test -n "${ECL_STDINT_HEADER}" -a -z "${ECL_UINT64_T}"; then
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#ifdef HAVE_STDINT_H
+#include <inttypes.h>
+#else
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
+#endif]], [[
 {
   uint64_t i = 1;
   i <<= 63; if (i == 0) return 0;
@@ -458,6 +513,15 @@ fi
 if test "${ECL_UINT64_T}${CL_FIXNUM_BITS}" = "64"; then
   ECL_UINT64_T="cl_index"
   ECL_INT64_T="cl_fixnum"
+fi
+AC_MSG_CHECKING(uint8_t type)
+if test -n "${ECL_UINT8_T}"; then
+  AC_DEFINE_UNQUOTED([ecl_uint8_t],[$ECL_UINT8_T])
+  AC_DEFINE_UNQUOTED([ecl_int8_t],[$ECL_INT8_T])
+  AC_MSG_RESULT(${ECL_UINT8_T})
+else
+  AC_MSG_RESULT(none)
+  AC_MSG_ERROR(Can not build ECL without byte types)
 fi
 AC_MSG_CHECKING(uint16_t type)
 if test -n "${ECL_UINT16_T}"; then
