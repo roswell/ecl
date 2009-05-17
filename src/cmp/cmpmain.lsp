@@ -478,7 +478,7 @@ static cl_object VV[VM];
     (cond ((null type)
            (warn "The output from COMPILE-FILE, ~A has no extension. ECL will refuse to load it." pathname))
           ((member type *ignore-extensions*))
-          ((null (assoc type ext::*load-hooks*))
+          ((null (assoc type ext::*load-hooks* :test #'string=))
            (restart-case
             (cerror "Ignore error and do not prompt again."
 "~%COMPILE-FILE has been invoked with a value of :OUTPUT-FILE
