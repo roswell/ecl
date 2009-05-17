@@ -225,7 +225,7 @@ strings."
 		      (with-condition-restarts ,condition-var
 			(first *restart-clusters*)
 			,(if (eq name 'CERROR)
-			     `(cerror ,(second expression2) condition-var)
+			     `(cerror ,(second expression2) ,condition-var)
 			     (list name condition-var)))))
 	      ))))
       `(block ,block-tag

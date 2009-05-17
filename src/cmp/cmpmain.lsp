@@ -473,21 +473,24 @@ static cl_object VV[VM];
 (defvar *ignore-extensions* '())
 
 (defun ensure-valid-file-extension (pathname)
-  (let ((type (pathname-type pathname)))
+  (force-output)
+  (let* ((type (pathname-type pathname)))
     (cond ((null type)
            (warn "The output from COMPILE-FILE, ~A has no extension. ECL will refuse to load it." pathname))
           ((member type *ignore-extensions*))
           ((null (assoc type ext::*load-hooks*))
            (restart-case
-            (cerror "~
-COMPILE-FILE has been invoked with a value of :OUTPUT-FILE
-~T~A
-The file type ~A is not a supported binary file type. If you do not register
-this file type with ECL, it will refuse to load this file."
-                    pathname
-                    type)
-            (continue () (push type *ignore-extensions*))
-            (register () (push (cons type #'si::load-binary) ext::*load-hooks*)))))))
+            (cerror "Ignore error and do not prompt again."
+"~%COMPILE-FILE has been invoked with a value of :OUTPUT-FILE
+    ~A
+The file type is not a supported binary file type. If you do not register
+this file type with ECL, it will refuse to load this file. To permanently
+register this file type with ECL permanently you can add
+    (push '(~S . si::load-binary) ext::*load-hooks*)
+to your ~~/.eclrc file."
+                    pathname type type)
+            (register () :report "Register file type for later use with LOAD."
+              (push (cons type #'si::load-binary) ext::*load-hooks*)))))))
 
 (defun compile-file (input-pathname &rest args
                       &key
