@@ -21,7 +21,7 @@ ECL 9.5:
  - WITH-CSTRING automatically coerces extended strings to base strings,
    signalling an error when this is not possible.
 
-* Bugs:
+* Bugs fixed:
 
  - Remove an obsolete #if statement for Solaris that broke current builds
    with Solaris 10.
@@ -32,6 +32,9 @@ ECL 9.5:
  - When COMPILE-FILE is invoked with a non-nil value of :OUTPUT-FILE, ECL
    now honors the file type supplied by the user, instead of overriding it
    with "fas" or "fasl". The same applies to COMPILE-FILE-PATHNAME.
+
+ - When building ECL's C preprocessor (dpp), the value of CPPFLAGS was
+   not used.
 
 ;;; Local Variables: ***
 ;;; mode:text ***
