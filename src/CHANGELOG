@@ -31,11 +31,7 @@ ECL 9.5:
 
  - When COMPILE-FILE is invoked with a non-nil value of :OUTPUT-FILE, ECL
    now honors the file type supplied by the user, instead of overriding it
-   with "fas" or "fasl".
-
- - When COMPILE-FILE finds that the value of :OUTPUT-FILE has an unsupported
-   file type, it allows the user to register it with LOAD as a valid binary
-   file extension.
+   with "fas" or "fasl". The same applies to COMPILE-FILE-PATHNAME.
 
 ;;; Local Variables: ***
 ;;; mode:text ***

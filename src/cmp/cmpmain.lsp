@@ -47,15 +47,12 @@
       #+msvc
       (:import-library (setf extension "implib"))
       ((:fasl :fas) (setf extension "fas")))
-    (let ((output (if format
-                      (merge-pathnames (format nil format (pathname-name name)) name)
-                      (make-pathname :type extension :defaults name))))
-      ;; If the user supplies an output file name, we have to let him/her
-      ;; override the file extensions. Not that it is imposed by the spec
-      ;; but people expect this.
-      (if (member output-file '(T NIL))
-          output
-          (merge-pathnames output-file output)))))
+    (cond ((not (member output-file '(T NIL)))
+	   output-file)
+	  (format
+	   (merge-pathnames (format nil format (pathname-name name)) name))
+	  (t
+	   (make-pathname :type extension :defaults name)))))
 
 #+msvc
 (defun delete-msvc-generated-files (output-pathname)
@@ -470,33 +467,6 @@ static cl_object VV[VM];
   #+dlopen
   (apply #'builder :shared-library args))
 
-(defvar ext::*unknown-file-types* '())
-
-(defun ensure-valid-file-extension (pathname)
-  (flet ((register-extension (type)
-          (push (cons type #'si::load-binary) ext::*load-hooks*)))
-    (force-output)
-    (let* ((type (pathname-type pathname)))
-      (cond ((null type)
-             (warn "The output from COMPILE-FILE, ~A has no extension. ECL will refuse to load it." pathname))
-            ((eq ext::*unknown-file-types* :register)
-             (register-extension type))
-            ((member type ext::*unknown-file-types* :test #'string=))
-            ((null (assoc type ext::*load-hooks* :test #'string=))
-             (restart-case
-              (error "~%COMPILE-FILE has been invoked with a value of :OUTPUT-FILE
-    ~A
-The file type is not a supported binary file type. If you do not register
-this file type with ECL, it will refuse to load this file. To permanently
-register this file type with ECL you can add
-    (push '(~S . si::load-binary) ext::*load-hooks*)
-to your ~~/.eclrc file."
-                      pathname type type)
-              (continue () :report "Ignore error and do not prompt again."
-                        (push type ext::*unknown-file-types*))
-              (register () :report "Register file type for later use with LOAD."
-                        (register-extension type))))))))
-
 (defun compile-file (input-pathname &rest args
                       &key
 		      ((:verbose *compile-verbose*) *compile-verbose*)
@@ -507,7 +477,7 @@ to your ~~/.eclrc file."
 		      (shared-data-file nil)
 		      (system-p nil)
 		      (load nil)
-		      (output-file 'T output-file-p)
+		      output-file
                       &aux (*standard-output* *standard-output*)
                            (*error-output* *error-output*)
                            (*compiler-in-use* *compiler-in-use*)
@@ -541,7 +511,7 @@ compiled successfully, returns the pathname of the compiled file"
 ~%;;; Therefore, COMPILE-FILE without :SYSTEM-P T is unsupported.~
 ~%;;;"))
 
-  (setq *compile-file-pathname* input-pathname)
+  (setq *compile-file-pathname* (pathname (merge-pathnames input-pathname)))
   (unless (probe-file *compile-file-pathname*)
     (if (pathname-type input-pathname)
 	(error 'file-error :pathname input-pathname)
@@ -620,8 +590,7 @@ compiled successfully, returns the pathname of the compiled file"
           (push o-pathname to-delete)
           (bundle-cc (si::coerce-to-filename output-file)
                      init-name
-                     (si::coerce-to-filename o-pathname))
-          (ensure-valid-file-extension output-file)))
+                     (si::coerce-to-filename o-pathname))))
 
       (if (setf output-file (probe-file output-file))
           (cmpprogress "~&;;; Finished compiling ~a.~%" (namestring input-pathname))
