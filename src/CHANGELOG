@@ -21,6 +21,9 @@ ECL 9.5:
  - WITH-CSTRING automatically coerces extended strings to base strings,
    signalling an error when this is not possible.
 
+ - New command line arguments, --heap-size, --lisp-stack, --frame-stack and
+   --c-stack control the different memory limits.
+
 * Bugs fixed:
 
  - Remove an obsolete #if statement for Solaris that broke current builds
