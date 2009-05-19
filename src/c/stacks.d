@@ -486,10 +486,14 @@ si_set_limit(cl_object type, cl_object size)
 		cs_set_size(env, the_size);
 	} else if (type == @'ext::lisp-stack') {
 		ecl_stack_set_size(env, the_size);
-	} else {
+#ifdef GBC_BOEHM
+	} else if (type == @'ext::heap-size') {
+                si_heap_size(1, size);
+#endif
+        } else {
 		_ecl_set_max_heap_size(the_size);
 	}
-	@(return)
+        return si_get_limit(type);
 }
 
 cl_object
@@ -505,6 +509,10 @@ si_get_limit(cl_object type)
 		output = env->cs_size;
 	} else if (type == @'ext::lisp-stack') {
 		output = env->stack_size;
+#ifdef GBC_BOEHM
+	} else if (type == @'ext::heap-size') {
+                output = si_heap_size(0);
+#endif
 	} else {
 		output = cl_core.max_heap_size;
 	}

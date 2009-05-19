@@ -58,10 +58,10 @@ Usage: ecl [-? | --help]
     ("-load" 1 (load 1 :verbose verbose))
     ("-dir" 1 (setf (logical-pathname-translations "SYS")
 	       `(("**;*.*" ,(merge-pathnames "**/*.*" (truename 1))))))
-    ("--heap-size" 1 (ext:set-limit ext:heap-size 1))
-    ("--lisp-stack" 1 (ext:set-limit ext:lisp-stack 1))
-    ("--frame-stack" 1 (ext:set-limit ext:frame-stack 1))
-    ("--c-stack" 1 (ext:set-limit ext:c-stack 1))
+    ("--heap-size" 1 (ext:set-limit 'ext:heap-size (read-from-string 1)))
+    ("--lisp-stack" 1 (ext:set-limit 'ext:lisp-stack (read-from-string 1)))
+    ("--frame-stack" 1 (ext:set-limit 'ext:frame-stack (read-from-string 1)))
+    ("--c-stack" 1 (ext:set-limit 'ext:c-stack (read-from-string 1)))
     ("-compile" 1
      (progn
        (setq quit

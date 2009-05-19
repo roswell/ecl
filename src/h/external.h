@@ -66,9 +66,9 @@ struct cl_env_struct {
 	 * memory. They will eventually disappear, because most operating
 	 * systems already take care of this.
 	 */
-	cl_fixnum *cs_org;
-	cl_fixnum *cs_limit;
-	cl_fixnum *cs_barrier;
+	char *cs_org;
+	char *cs_limit;
+	char *cs_barrier;
 	cl_index cs_size;
 
 	/* Private variables used by different parts of ECL: */
