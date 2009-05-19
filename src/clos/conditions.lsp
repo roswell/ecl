@@ -557,7 +557,8 @@ or return to an outer frame, undoing all the function calls so far."
 (define-condition ext:storage-exhausted (storage-condition) ()
   (:REPORT
    (lambda (condition stream)
-     (format stream "Memory limit reached. Please jump to an outer point or quit program."))))
+     (format stream "Memory limit reached. Please jump to an outer pointer, quit program and enlarge the
+memory limits before executing the program again."))))
 
 (define-condition type-error (error)
   ((datum :INITARG :DATUM :READER type-error-datum)
