@@ -190,7 +190,6 @@ ecl_alloc_object(cl_type t)
 		ecl_enable_interrupts_env(the_env);
                 obj->d.t = t;
                 return obj;
-		break;
 	}
 	default:
 		printf("\ttype = %d\n", t);
