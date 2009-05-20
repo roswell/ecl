@@ -147,11 +147,8 @@ ecl_alloc_object(cl_type t)
 		ecl_disable_interrupts_env(the_env);
 		obj = (cl_object)GC_MALLOC_ATOMIC(type_size[t]);
 		ecl_enable_interrupts_env(the_env);
-		if (obj != NULL) {
-			obj->d.t = t;
-			return obj;
-		}
-		break;
+                obj->d.t = t;
+                return obj;
 	}
 	case t_bignum:
 	case t_ratio:
