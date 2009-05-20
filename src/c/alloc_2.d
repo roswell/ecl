@@ -197,10 +197,6 @@ ecl_alloc_object(cl_type t)
 	}
 }
 
-#ifdef make_cons
-#undef make_cons
-#endif
-
 cl_object
 ecl_cons(cl_object a, cl_object d)
 {
