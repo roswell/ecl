@@ -15,8 +15,8 @@
     See file '../Copyright' for full details.
 */
 
+#define ECL_INCLUDE_MATH_H
 #include <ecl/ecl.h>
-#include <math.h>
 
 cl_object
 cl_identity(cl_object x)

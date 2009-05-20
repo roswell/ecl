@@ -15,14 +15,11 @@
     See file '../Copyright' for full details.
 */
 
+#define ECL_INCLUDE_MATH_H
 #include <ecl/ecl.h>
 #include <stdio.h>
 #include <limits.h>
 #include <float.h>
-#include <math.h>
-#ifdef _MSC_VER
-# undef complex
-#endif
 #include <string.h>
 #include <stdlib.h>
 #include <ecl/internal.h>

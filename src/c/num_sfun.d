@@ -15,11 +15,8 @@
     See file '../Copyright' for full details.
 */
 
+#define ECL_INCLUDE_MATH_H
 #include <ecl/ecl.h>
-#include <math.h>
-#ifdef _MSC_VER
-# undef complex
-#endif
 #include "ecl/internal.h"
 
 #ifndef HAVE_LOG1P

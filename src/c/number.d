@@ -15,12 +15,9 @@
     See file '../Copyright' for full details.
 */
 
+#define ECL_INCLUDE_MATH_H
 #include <ecl/ecl.h>
 #include <float.h>
-#include <math.h>
-#ifdef _MSC_VER
-# undef complex
-#endif
 #include <ecl/internal.h>
 
 cl_fixnum

@@ -20,10 +20,10 @@
 # include <pthread.h>
 #endif
 #include <errno.h>
-#include <math.h>
 #include <time.h>
 #include <signal.h>
 #define GC_THREADS
+#define ECL_INCLUDE_MATH_H
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
 #ifdef HAVE_GETTIMEOFDAY
