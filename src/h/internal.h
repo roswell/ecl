@@ -281,6 +281,8 @@ extern void cl_write_object(cl_object x, cl_object stream);
 # define PACKAGE_UNLOCK(p) if (pthread_mutex_unlock(&(p)->pack.lock)) ecl_internal_error("")
 # define PACKAGE_OP_UNLOCK() if (pthread_mutex_unlock(&cl_core.global_lock)) ecl_internal_error("")
 # define THREAD_OP_UNLOCK() if (pthread_mutex_unlock(&cl_core.global_lock)) ecl_internal_error("")
+# define ERROR_HANDLER_LOCK() THREAD_OP_LOCK()
+# define ERROR_HANDLER_UNLOCK() THREAD_OP_UNLOCK()
 #else
 # define HASH_TABLE_LOCK(h)
 # define HASH_TABLE_UNLOCK(h)
@@ -288,6 +290,8 @@ extern void cl_write_object(cl_object x, cl_object stream);
 # define PACKAGE_UNLOCK(p)
 # define PACKAGE_OP_LOCK()
 # define PACKAGE_OP_UNLOCK()
+# define ERROR_HANDLER_LOCK()
+# define ERROR_HANDLER_UNLOCK()
 #endif /* ECL_THREADS */
 
 

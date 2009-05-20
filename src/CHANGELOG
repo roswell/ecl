@@ -24,6 +24,10 @@ ECL 9.5:
  - New command line arguments, --heap-size, --lisp-stack, --frame-stack and
    --c-stack control the different memory limits.
 
+ - The out of memory error (ext:storage-exhausted) can now be recovered.
+   By default a correctable error is signaled and the user is given the
+   chance to increase the heap size.
+
 * Bugs fixed:
 
  - Remove an obsolete #if statement for Solaris that broke current builds

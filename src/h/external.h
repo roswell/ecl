@@ -206,6 +206,9 @@ struct cl_core_struct {
 	cl_object gc_counter;
 	bool gc_stats;
 	int path_max;
+#ifdef GBC_BOEHM
+        char *safety_region;
+#endif
 
 #ifdef ECL_UNICODE
 	cl_object unicode_database;
@@ -224,7 +227,6 @@ extern ECL_API cl_object ecl_alloc_instance(cl_index slots);
 extern ECL_API cl_object ecl_cons(cl_object a, cl_object d);
 extern ECL_API cl_object ecl_list1(cl_object a);
 #ifdef GBC_BOEHM
-extern ECL_API cl_object si_heap_size _ARGS((cl_narg narg, ...));
 extern ECL_API cl_object si_gc(cl_object area);
 extern ECL_API cl_object si_gc_dump(void);
 extern ECL_API cl_object si_gc_stats(cl_object enable);

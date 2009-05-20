@@ -1717,6 +1717,7 @@ cl_symbols[] = {
 
 {EXT_ "INTERACTIVE-INTERRUPT",NULL},
 
+{EXT_ "STORAGE-EXHAUSTED",NULL},
 {EXT_ "STACK-OVERFLOW",NULL},
 {EXT_ "STACK-OVERFLOW-SIZE",NULL},
 {EXT_ "STACK-OVERFLOW-TYPE",NULL},
@@ -1724,6 +1725,7 @@ cl_symbols[] = {
 {EXT_ "FRAME-STACK",NULL},
 {EXT_ "LISP-STACK",NULL},
 {EXT_ "C-STACK",NULL},
+{EXT_ "HEAP-SIZE",NULL},
 {EXT_ "SET-LIMIT","si_set_limit"},
 {EXT_ "GET-LIMIT","si_get_limit"},
 {EXT_ "SEGMENTATION-VIOLATION",NULL},
@@ -1737,8 +1739,6 @@ cl_symbols[] = {
 {KEY_ "UTF-8",NULL},
 {KEY_ "UCS-2",NULL},
 {KEY_ "UCS-4",NULL},
-
-{EXT_ "STORAGE-EXHAUSTED",NULL},
 
 {EXT_ "CONSTANTLY-T",NULL},
 {EXT_ "CONSTANTLY-NIL",NULL},
@@ -1764,10 +1764,6 @@ cl_symbols[] = {
 {SYS_ "+UNICODE-DATABASE+",NULL},
 
 {SYS_ "COPY-FILE","si_copy_file"},
-
-#ifdef GBC_BOEHM
-{EXT_ "HEAP-SIZE","si_heap_size"},
-#endif
 
 {EXT_ "FILL-ARRAY-WITH-ELT","si_fill_array_with_elt"},
 
