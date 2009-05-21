@@ -411,14 +411,14 @@ typedef unsigned @CL_FIXNUM_TYPE@ cl_hashkey;
 #endif
 
 #ifdef ECL_INCLUDE_MATH_H
-#include <math.h>
-#ifdef _MSC_VER
-# undef complex
-#endif
-#ifndef isfinite
-# ifdef __sun
-#  include <ieefp.h>
+# include <math.h>
+# ifdef _MSC_VER
+#  undef complex
 # endif
-# define isfinite(x) finite(x)
-#endif
+# ifndef isfinite
+#  ifdef __sun
+#   include <ieeefp.h>
+#  endif
+#  define isfinite(x) finite(x)
+# endif
 #endif
