@@ -39,6 +39,13 @@ _ecl_set_max_heap_size(cl_index new_size)
 	const cl_env_ptr the_env = ecl_process_env();
 	ecl_disable_interrupts_env(the_env);
 	GC_set_max_heap_size(cl_core.max_heap_size = new_size);
+	if (new_size == 0) {
+		cl_index size = ecl_get_option(ECL_OPT_HEAP_SAFETY_AREA);
+		cl_core.safety_region = ecl_alloc_atomic_unprotected(size);
+	} else if (cl_core.safety_region) {
+		GC_FREE(cl_core.safety_region);
+		cl_core.safety_region = 0;
+	}
 	ecl_enable_interrupts_env(the_env);
 }
 
@@ -85,7 +92,7 @@ out_of_memory(size_t requested_bytes)
                  * not reached them. */
                 if (cl_core.safety_region) {
                         /* We can free some memory and try handling the error */
-                        GC_free(cl_core.safety_region);
+                        GC_FREE(cl_core.safety_region);
                         the_env->string_pool = Cnil;
                         cl_core.safety_region = 0;
                         method = 0;
@@ -349,6 +356,13 @@ init_alloc(void)
 	GC_clear_roots();
 	GC_disable();
 	GC_set_max_heap_size(cl_core.max_heap_size = ecl_get_option(ECL_OPT_HEAP_SIZE));
+        /* Save some memory for the case we get tight. */
+	if (cl_core.max_heap_size == 0) {
+		cl_index size = ecl_get_option(ECL_OPT_HEAP_SAFETY_AREA);
+		cl_core.safety_region = ecl_alloc_atomic_unprotected(size);
+	} else if (cl_core.safety_region) {
+		cl_core.safety_region = 0;
+	}
 
 #define init_tm(x,y,z) type_size[x] = (z)
 	for (i = 0; i < t_end; i++) {
@@ -397,9 +411,6 @@ init_alloc(void)
 #ifdef ECL_LONG_FLOAT
 	init_tm(t_longfloat, "LONG-FLOAT", sizeof(struct ecl_long_float));
 #endif
-
-        /* Save some memory for the case we get tight. */
-        cl_core.safety_region = ecl_alloc_atomic(sizeof(cl_fixnum)*1024);
 
 	old_GC_push_other_roots = GC_push_other_roots;
 	GC_push_other_roots = stacks_scanner;
