@@ -3808,16 +3808,13 @@ static kern_return_t GC_forward_exception(mach_port_t thread, mach_port_t task,
   behavior = GC_old_exc_ports.behaviors[i];
   flavor = GC_old_exc_ports.flavors[i];
 
-  if(behavior != EXCEPTION_DEFAULT) {
+  if (behavior == EXCEPTION_STATE || behavior == EXCEPTION_STATE_IDENTITY) {
     r = thread_get_state(thread, flavor, thread_state, &thread_state_count);
     if(r != KERN_SUCCESS)
       ABORT("thread_get_state failed in forward_exception");
-    }
+  }
 
   switch(behavior) {
-    case EXCEPTION_DEFAULT:
-      r = exception_raise(port, thread, task, exception, data, data_count);
-      break;
     case EXCEPTION_STATE:
       r = exception_raise_state(port, thread, task, exception, data, data_count,
 				&flavor, thread_state, thread_state_count,
@@ -3829,13 +3826,13 @@ static kern_return_t GC_forward_exception(mach_port_t thread, mach_port_t task,
 					 thread_state_count, thread_state,
 					 &thread_state_count);
       break;
-    default:
-      r = KERN_FAILURE; /* make gcc happy */
-      ABORT("forward_exception: unknown behavior");
+    case EXCEPTION_DEFAULT: /* default signal handlers */
+    default: /* user supplied signal handlers */
+      r = exception_raise(port, thread, task, exception, data, data_count);
       break;
   }
 
-  if(behavior != EXCEPTION_DEFAULT) {
+  if (behavior == EXCEPTION_STATE || behavior == EXCEPTION_STATE_IDENTITY) {
     r = thread_set_state(thread, flavor, thread_state, thread_state_count);
     if(r != KERN_SUCCESS)
       ABORT("thread_set_state failed in forward_exception");

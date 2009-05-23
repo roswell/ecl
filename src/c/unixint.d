@@ -256,23 +256,11 @@ handler_fn_protype(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
 		cl_error(1, condition);
 		break;
 	}
-	case SIGSEGV: {
-		ecl_frame_ptr destination = frs_sch(OBJNULL);
-		if (destination) {
-			the_env->nvalues = 0;
-			ecl_unwind(the_env, destination);
-		}
-		ecl_internal_error("SIGSEGV without handler to jump to.");
-	}
+	case SIGSEGV:
+                cl_error(1, @'ext::segmentation-violation');
 #ifdef SIGBUS
-	case SIGBUS: {
-		ecl_frame_ptr destination = frs_sch(OBJNULL);
-		if (destination) {
-			the_env->nvalues = 0;
-			ecl_unwind(the_env, destination);
-		}
-		ecl_internal_error("SIGBUS without handler to jump to.");
-	}
+	case SIGBUS:
+                cl_error(1, @'ext::segmentation-violation');
 #endif
 	default:
 		FEerror("Serious signal ~D caught.", 1, MAKE_FIXNUM(sig));

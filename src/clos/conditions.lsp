@@ -538,7 +538,11 @@ returns with NIL."
 
 (define-condition storage-condition (serious-condition) ())
 
-(define-condition ext:segmentation-violation (storage-condition) ())
+(define-condition ext:segmentation-violation (storage-condition)
+  ()
+  (:REPORT
+   (lambda (condition stream)
+     (format stream "Detected access to an invalid or protected memory address."))))
 
 (define-condition ext:stack-overflow (storage-condition)
   ((size :initarg :size :initform 0 :reader ext:stack-overflow-size)

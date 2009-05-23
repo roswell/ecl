@@ -4459,6 +4459,9 @@ case "${host_os}" in
 		else
 		  export ABI=mode32
 		fi
+                # The Boehm-Weiser GC library shipped with Fink does not work
+                # well with our signal handler.
+                enable_boehm=included
 		# ECL, due to some of the libraries, does not build on
 		# 64 bit mode on OSX. We prevent GMP using that mode.
 		SONAME="${SHAREDPREFIX}ecl.SOVERSION.${SHAREDEXT}"

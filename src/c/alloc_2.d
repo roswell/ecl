@@ -417,7 +417,7 @@ init_alloc(void)
 	GC_start_call_back = (void (*)())finalize_queued;
 	GC_java_finalization = 1;
         GC_oom_fn = out_of_memory;
-        GC_set_warn_proc(no_warnings);
+        /*GC_set_warn_proc(no_warnings);*/
 	GC_enable();
 }
 

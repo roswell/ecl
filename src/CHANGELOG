@@ -28,6 +28,13 @@ ECL 9.5:
    By default a correctable error is signaled and the user is given the
    chance to increase the heap size.
 
+ - Under Mac OS/X, ECL now uses its own modified version of the Boehm-Weiser
+   garbage collector that allows both --enable-gengc and our optimized
+   code for signal handling.
+
+ - New condition EXT:SEGMENTATION-VIOLATION signaled by SIGSEGV and SIGBUS
+   events.
+
 * Bugs fixed:
 
  - Remove an obsolete #if statement for Solaris that broke current builds
