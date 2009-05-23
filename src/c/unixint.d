@@ -271,7 +271,7 @@ define_handler(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
 			the_env->nvalues = 0;
 			ecl_unwind(the_env, destination);
 		}
-		ecl_internal_error("SIGSEGV without handler to jump to.");
+		ecl_internal_error("SIGBUS without handler to jump to.");
 	}
 #endif
 	default:
