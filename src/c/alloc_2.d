@@ -496,7 +496,7 @@ queueing_finalizer(cl_object o, cl_object finalizer)
 			   get executed as a consequence of these calls. */
 			volatile cl_object aux = ACONS(o, finalizer, Cnil);
 			cl_object l = cl_core.to_be_finalized;
-			if (NULL(l)) {
+			if (Null(l)) {
 				const cl_env_ptr the_env = ecl_process_env();
 				GC_finalization_proc ofn;
 				void *odata;
