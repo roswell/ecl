@@ -12881,7 +12881,7 @@ $as_echo "$as_me: Configuring included Boehm GC library:" >&6;}
       CC="${CC} ${PICFLAG}" CFLAGS="-DGC_BUILD ${CFLAGS}" LDFLAGS="${LDFLAGS}" \
         $srcdir/gc/configure --disable-shared --prefix=${destdir} \
 	--includedir=${destdir}/ecl/ --libdir=${destdir} --build=${build_alias} \
-	--host=${host_alias} ${boehm_configure_flags})
+	--host=${host_alias} --enable-large-config ${boehm_configure_flags})
       ECL_BOEHM_GC_HEADER='ecl/gc/gc.h'
     else
       { { $as_echo "$as_me:$LINENO: error: Unable to create 'gc' directory" >&5
