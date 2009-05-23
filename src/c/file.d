@@ -4562,7 +4562,7 @@ unread_twice(cl_object s)
 static void
 maybe_clearerr(cl_object strm)
 {
-	cl_type t = type_of(strm);
+	int t = strm->stream.mode;
 	if (t == smm_io || t == smm_output || t == smm_input) {
 		FILE *f = IO_STREAM_FILE(strm);
 		if (f != NULL) clearerr(f);
@@ -4577,7 +4577,7 @@ restartable_io_error(cl_object strm)
 	/* ecl_disable_interrupts(); ** done by caller */
 	maybe_clearerr(strm);
 	ecl_enable_interrupts_env(the_env);
-	if (errno == EINTR) {
+	if (old_errno == EINTR) {
 		return 1;
 	} else {
 		FElibc_error("Read or write operation to stream ~S signaled an error.",
