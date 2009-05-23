@@ -417,7 +417,7 @@ init_alloc(void)
 	GC_start_call_back = (void (*)())finalize_queued;
 	GC_java_finalization = 1;
         GC_oom_fn = out_of_memory;
-        /*GC_set_warn_proc(no_warnings);*/
+        GC_set_warn_proc(no_warnings);
 	GC_enable();
 }
 
@@ -496,7 +496,7 @@ queueing_finalizer(cl_object o, cl_object finalizer)
 			   get executed as a consequence of these calls. */
 			volatile cl_object aux = ACONS(o, finalizer, Cnil);
 			cl_object l = cl_core.to_be_finalized;
-			if (ATOM(l)) {
+			if (NULL(l)) {
 				const cl_env_ptr the_env = ecl_process_env();
 				GC_finalization_proc ofn;
 				void *odata;
@@ -505,7 +505,6 @@ queueing_finalizer(cl_object o, cl_object finalizer)
 				GC_register_finalizer_no_order(aux, (GC_finalization_proc*)group_finalizer, NULL, &ofn, &odata);
 				ecl_enable_interrupts_env(the_env);
 			} else {
-				ECL_RPLACD(aux, ECL_CONS_CDR(l));
 				ECL_RPLACD(l, aux);
 			}
 		}
@@ -581,7 +580,7 @@ si_gc_stats(cl_object enable)
 static void
 finalize_queued()
 {
-	cl_object l = cl_core.to_be_finalized;
+        cl_core.to_be_finalized = Cnil;
 	if (cl_core.gc_stats) {
 #ifdef WITH_GMP
 		/* Sorry, no gc stats if you do not use bignums */
@@ -612,9 +611,6 @@ finalize_queued()
 			   cl_core.gc_counter->big.big_num,
 			   1);
 #endif
-	}
-	if (l != Cnil) {
-		cl_core.to_be_finalized = Cnil;
 	}
 }
 
