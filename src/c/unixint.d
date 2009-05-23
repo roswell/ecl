@@ -160,7 +160,7 @@ static struct {
 /******************************* ------- ******************************/
 
 #ifdef HAVE_SIGPROCMASK
-# define define_handler(name, sig, info, aux) name(sig, info, aux)
+# define handler_fn_protype(name, sig, info, aux) name(sig, info, aux)
 # define call_handler(name, sig, info, aux) name(sig, info, aux)
 # define reinstall_signal(x,y)
 # define copy_siginfo(x,y) memcpy(x, y, sizeof(struct sigaction))
@@ -183,7 +183,7 @@ mysignal(int code, void *handler)
 	sigaction(code, &new_action, &old_action);
 }
 #else /* HAVE_SIGPROCMASK */
-# define define_handler(name, sig, info, aux) name(sig)
+# define handler_fn_protype(name, sig, info, aux) name(sig)
 # define call_handler(name, sig, info, aux) name(sig)
 # define mysignal(x,y) signal(x,y)
 # define reinstall_signal(x,y) signal(x,y)
@@ -215,7 +215,7 @@ jump_to_sigsegv_handler(cl_env_ptr the_env)
 }
 
 static void
-define_handler(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
+handler_fn_protype(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
 {
 	cl_env_ptr the_env = &cl_env;
 	switch (sig) {
@@ -299,7 +299,7 @@ unblock_signal(int signal)
 #endif
 
 static void
-define_handler(handle_signal_now, int sig, siginfo_t *info, void *aux)
+handler_fn_protype(handle_signal_now, int sig, siginfo_t *info, void *aux)
 {
 #if defined (_MSC_VER)
 	if (sig == SIGFPE) {
@@ -310,10 +310,10 @@ define_handler(handle_signal_now, int sig, siginfo_t *info, void *aux)
 	call_handler(lisp_signal_handler, sig, info, aux);
 }
 
-static void define_handler(sigsegv_handler, int sig, siginfo_t *info, void *aux);
+static void handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux);
 
 static void
-define_handler(non_evil_signal_handler, int sig, siginfo_t *siginfo, void *data)
+handler_fn_protype(non_evil_signal_handler, int sig, siginfo_t *siginfo, void *data)
 {
 	int old_errno = errno;
 	cl_env_ptr the_env;
@@ -368,7 +368,7 @@ define_handler(non_evil_signal_handler, int sig, siginfo_t *siginfo, void *data)
 }
 
 static void
-define_handler(sigsegv_handler, int sig, siginfo_t *info, void *aux)
+handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
 {
 	cl_env_ptr the_env = ecl_process_env();
 	if (!ecl_get_option(ECL_OPT_BOOTED)) {
@@ -420,7 +420,7 @@ define_handler(sigsegv_handler, int sig, siginfo_t *info, void *aux)
 
 #ifdef SIGBUS
 static void
-define_handler(sigbus_handler, int sig, siginfo_t *info, void *aux)
+handler_fn_protype(sigbus_handler, int sig, siginfo_t *info, void *aux)
 {
 	cl_env_ptr the_env = &cl_env;
 #if defined(SA_SIGINFO) && defined(ECL_USE_MPROTECT)
