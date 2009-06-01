@@ -59,6 +59,13 @@ ECL 9.5:
  - Removed a shell command from src/Makefile.in The command used braces {}
    which FreeBSD does not understand.
 
+ - Changed the way in which threads are created and registered with ECL to
+   avoid certain race conditions and data loss when it takes a long time
+   betwee calls to mp:make-proceess and mp:process-enable
+
+ - ecl_import_current_thread() now properly stores the thread handle in
+   the process object and can be called multiple times for the same thread.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

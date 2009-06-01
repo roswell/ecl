@@ -58,6 +58,7 @@ static pthread_t main_thread;
 #endif /* _MSC_VER || mingw32 */
 
 extern void ecl_init_env(struct cl_env_struct *env);
+static void initialize_process_bindings(cl_object process, cl_object bindings);
 
 #if !defined(WITH___THREAD)
 cl_env_ptr
@@ -108,7 +109,7 @@ assert_type_process(cl_object o)
 }
 
 static void
-thread_cleanup(void *env)
+thread_cleanup(void *aux)
 {
 	/* This routine performs some cleanup before a thread is completely
 	 * killed. For instance, it has to remove the associated process
@@ -120,10 +121,13 @@ thread_cleanup(void *env)
 	 * rather use the lisp functions mp_interrupt_process() and
 	 * mp_process_kill().
 	 */
+	cl_object process = (cl_object)aux;
 	THREAD_OP_LOCK();
-	cl_core.processes = ecl_remove_eq(mp_current_process(),
-					  cl_core.processes);
+	cl_core.processes = ecl_remove_eq(process, cl_core.processes);
 	THREAD_OP_UNLOCK();
+	_ecl_dealloc_env(process->process.env);
+	process->process.env = NULL;
+	process->process.active = 0;
 }
 
 #ifdef ECL_WINDOWS_THREADS
@@ -133,14 +137,20 @@ static void *
 thread_entry_point(cl_object process)
 #endif
 {
-	cl_env_ptr env = process->process.env;
+	cl_env_ptr env;
 
 	/* 1) Setup the environment for the execution of the thread */
 #ifndef ECL_WINDOWS_THREADS
-	pthread_cleanup_push(thread_cleanup, (void *)env);
+	pthread_cleanup_push(thread_cleanup, (void *)process);
 #endif
+	process->process.env = env = _ecl_alloc_env();
+	env->own_process = process;
 	ecl_set_process_env(env);
+	THREAD_OP_LOCK();
+	cl_core.processes = CONS(process, cl_core.processes);
+	THREAD_OP_UNLOCK();
 	ecl_init_env(env);
+	env->bindings_hash = process->process.initial_bindings;
 	init_big_registers(env);
 	ecl_enable_interrupts_env(env);
 
@@ -160,7 +170,7 @@ thread_entry_point(cl_object process)
 	 *    through this point. thread_cleanup is automatically invoked.
 	 */
 #ifdef ECL_WINDOWS_THREADS
-	thread_cleanup(env);
+	thread_cleanup(process);
 	return 1;
 #else
 	pthread_cleanup_pop(1);
@@ -169,7 +179,7 @@ thread_entry_point(cl_object process)
 }
 
 static cl_object
-alloc_process(cl_object name)
+alloc_process(cl_object name, cl_object initial_bindings)
 {
 	cl_object process = ecl_alloc_object(t_process);
 	process->process.active = 0;
@@ -177,38 +187,50 @@ alloc_process(cl_object name)
 	process->process.function = Cnil;
 	process->process.args = Cnil;
 	process->process.interrupt = Cnil;
-	process->process.env = _ecl_alloc_env();
-	process->process.env->own_process = process;
-	return process;
-}
-
-static void
-initialize_process_bindings(cl_object process, cl_object initial_bindings)
-{
-	const cl_env_ptr this_env = ecl_process_env();
-	cl_object hash;
-	/* FIXME! Here we should either use INITIAL-BINDINGS or copy lexical
-	 * bindings */
+	process->process.env = NULL;
 	if (initial_bindings != OBJNULL) {
-		hash = cl__make_hash_table(@'eq', MAKE_FIXNUM(1024),
-					   ecl_make_singlefloat(1.5),
-					   ecl_make_singlefloat(0.7),
-					   Cnil); /* no need for locking */
+		process->process.initial_bindings
+			= cl__make_hash_table(@'eq', MAKE_FIXNUM(1024),
+					      ecl_make_singlefloat(1.5),
+					      ecl_make_singlefloat(0.7),
+					      Cnil); /* no need for locking */
 	} else {
-		hash = si_copy_hash_table(this_env->bindings_hash);
+		cl_env_ptr this_env = ecl_process_env();
+		process->process.initial_bindings
+			= si_copy_hash_table(this_env->bindings_hash);
 	}
-	process->process.env->bindings_hash = hash;
+	return process;
 }
 
 void
 ecl_import_current_thread(cl_object name, cl_object bindings)
 {
-	cl_object process = alloc_process(name);
-	cl_env_ptr env = process->process.env;
-	initialize_process_bindings(process, bindings);
-	ecl_init_env(env);
-	init_big_registers(env);
+	cl_object process, l;
+	pthread_t current;
+	cl_env_ptr env;
+	process->process.active = 1;
+#ifdef ECL_WINDOWS_THREADS
+	current = GetCurrentThread();
+#else
+	current = pthread_self();
+#endif
+	for (l = cl_core.processes; l != Cnil; l = ECL_CONS_CDR(l)) {
+		cl_object p = ECL_CONS_CAR(l);
+		if (p->process.thread == current) {
+			return;
+		}
+	}
+	process = alloc_process(name, bindings);
+	process->process.active = 1;
+	process->process.thread = current;
+	env = process->process.env = _ecl_alloc_env();
+	THREAD_OP_LOCK();
+	cl_core.processes = CONS(process, cl_core.processes);
+	THREAD_OP_UNLOCK();
 	ecl_set_process_env(env);
+	ecl_init_env(env);
+	env->bindings_hash = process->process.initial_bindings;
+	init_big_registers(env);
 	ecl_enable_interrupts_env(env);
 }
 
@@ -221,8 +243,7 @@ ecl_release_current_thread(void)
 @(defun mp::make-process (&key name ((:initial-bindings initial_bindings) Ct))
 	cl_object process;
 @
-	process = alloc_process(name);
-	initialize_process_bindings(process, initial_bindings);
+	process = alloc_process(name, initial_bindings);
 	@(return process)
 @)
 
@@ -301,33 +322,16 @@ mp_process_enable(cl_object process)
 
 	if (mp_process_active_p(process) != Cnil)
 		FEerror("Cannot enable the running process ~A.", 1, process);
-	THREAD_OP_LOCK();
 	code = (HANDLE)CreateThread(NULL, 0, thread_entry_point, process, 0, &threadId);
-	if (code) {
-		/* If everything went ok, add the thread to the list. */
-		cl_core.processes = CONS(process, cl_core.processes);
-		output = process;
-	} else {
-		output = Cnil;
-	}
-	process->process.thread = code;
-	THREAD_OP_UNLOCK();
+	output = (process->process.thread = code)? process : Cnil;
 #else
 	pthread_t *posix_thread;
 	int code;
 
 	if (mp_process_active_p(process) != Cnil)
 		FEerror("Cannot enable the running process ~A.", 1, process);
-	THREAD_OP_LOCK();
 	code = pthread_create(&process->process.thread, NULL, thread_entry_point, process);
-	if (code) {
-		output = Cnil;
-	} else {
-		/* If everything went ok, add the thread to the list. */
-		cl_core.processes = CONS(process, cl_core.processes);
-		output = process;
-	} /* FIXME: how to do FElibc_error() without leaving a lock? */
-	THREAD_OP_UNLOCK();
+	output = (process->process.thread = code)? Cnil : process;
 #endif
 	@(return output)
 }

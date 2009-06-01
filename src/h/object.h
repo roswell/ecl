@@ -816,6 +816,7 @@ struct ecl_process {
 	/*cl_index stack_size;*/
 	void *altstack;
 	cl_index altstack_size;
+	cl_object initial_bindings;
 };
 
 struct ecl_lock {

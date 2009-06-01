@@ -279,6 +279,17 @@ static const struct {
 	{NULL, -1}
 };
 
+void
+_ecl_dealloc_env(cl_env_ptr env)
+{
+#if defined(ECL_USE_MPROTECT)
+	if (munmap(env, sizeof(*env)))
+		ecl_internal_error("Unable to deallocate environment structure.");
+#else
+	ecl_dealloc(env);
+#endif
+}
+
 cl_env_ptr
 _ecl_alloc_env()
 {
