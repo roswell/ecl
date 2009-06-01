@@ -53,6 +53,12 @@ ECL 9.5:
  - When building ECL's C preprocessor (dpp), the value of CPPFLAGS was
    not used.
 
+ - A wrong order in the list of libraries (-lpthread -lgc) prevented ECL
+   from having multithread support in FreeBSD, OpenBSD and NetBSD.
+
+ - Removed a shell command from src/Makefile.in The command used braces {}
+   which FreeBSD does not understand.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
