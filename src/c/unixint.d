@@ -233,14 +233,14 @@ handler_fn_protype(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
 		int bits = fetestexcept(FE_ALL_EXCEPT);
 		if (bits & FE_DIVBYZERO)
 			condition = @'division-by-zero';
-		if (bits & FE_OVERFLOW)
-			condition = @'floating-point-overflow';
-		if (bits & FE_UNDERFLOW)
-			condition = @'floating-point-underflow';
-		if (bits & FE_INEXACT)
-			condition = @'floating-point-inexact';
-		if (bits & FE_INVALID)
+		else if (bits & FE_INVALID)
 			condition = @'floating-point-invalid-operation';
+		else if (bits & FE_OVERFLOW)
+			condition = @'floating-point-overflow';
+		else if (bits & FE_UNDERFLOW)
+			condition = @'floating-point-underflow';
+		else if (bits & FE_INEXACT)
+			condition = @'floating-point-inexact';
 #endif
 #ifdef SA_SIGINFO
 		if (info) {
@@ -250,6 +250,10 @@ handler_fn_protype(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
 				condition = @'floating-point-overflow';
 			if (info->si_code == FPE_FLTUND)
 				condition = @'floating-point-underflow';
+			if (info->si_code == FPE_FLTRES)
+				condition = @'floating-point-inexact';
+			if (info->si_code == FPE_FLTINV)
+				condition = @'floating-point-invalid-operation';
 		}
 #endif
 		si_trap_fpe(@'last', Ct);
@@ -532,6 +536,9 @@ void handle_fpe_signal(int sig, int num)
 	cl_object condition = @'arithmetic-error';
 
 	switch (num) {
+	case _FPE_INVALID:
+		condition = @'floating-point-invalid-operation';
+		break;
 	case _FPE_OVERFLOW:
 		condition = @'floating-point-overflow';
 		break;
@@ -571,8 +578,12 @@ si_trap_fpe(cl_object condition, cl_object flag)
 		bits = FE_OVERFLOW;
 	else if (condition == @'floating-point-underflow')
 		bits = FE_UNDERFLOW;
+	else if (condition == @'floating-point-invalid-operation')
+		bits = FE_INVALID;
+	else if (condition == @'floating-point-inexact')
+		bits = FE_INEXACT;
 	else if (condition == Ct)
-		bits = FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW;
+		bits = FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW | FE_INVALID;
 	else if (condition == @'last')
 		bits = last_bits;
 #if defined(_MSC_VER) || defined(mingw32)

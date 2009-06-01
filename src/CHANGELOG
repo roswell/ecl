@@ -35,6 +35,9 @@ ECL 9.5:
  - New condition EXT:SEGMENTATION-VIOLATION signaled by SIGSEGV and SIGBUS
    events.
 
+ - Added support for the floating point exception FE_INVALID, which is
+   signalled when trying to do 0/0 or sqrt(-1) (A. Gavrilov)
+
 * Bugs fixed:
 
  - Remove an obsolete #if statement for Solaris that broke current builds

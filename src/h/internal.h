@@ -315,6 +315,8 @@ extern cl_fixnum ecl_runtime(void);
 #   define FE_DIVBYZERO EM_ZERODIVIDE
 #   define FE_OVERFLOW  EM_OVERFLOW
 #   define FE_UNDERFLOW EM_UNDERFLOW
+#   define FE_INVALID   EM_INVALID
+#   define FE_INEXACT   EM_INEXACT
 typedef int fenv_t;
 # else
 #   ifdef _MCW_EM
