@@ -68,27 +68,22 @@
 	(not (= (float 1 E) (- (float 1 E) E)))")))
 
 #+IEEE-FLOATING-POINT
-(progn
-  (defconstant short-float-positive-infinity
-    (let* ((bits (si::trap-fpe 'last nil)))
-      (/ (coerce 1 'short-float) (coerce 0.0 'short-float))
-      (si::trap-fpe bits t)))
-  (defconstant short-float-negative-infinity (- short-float-positive-infinity))
-  (defconstant single-float-positive-infinity
-    (let* ((bits (si::trap-fpe 'last nil)))
-      (/ (coerce 1 'single-float) (coerce 0.0 'single-float))
-      (si::trap-fpe bits t)))
-  (defconstant single-float-negative-infinity (- single-float-positive-infinity))
-  (defconstant double-float-positive-infinity
-    (let* ((bits (si::trap-fpe 'last nil)))
-      (/ 1 (coerce 0.0 'double-float))
-      (si::trap-fpe bits t)))
-  (defconstant double-float-negative-infinity (- double-float-positive-infinity))
-  (defconstant long-float-positive-infinity
-    (let* ((bits (si::trap-fpe 'last nil)))
-      (/ 1 (coerce 0.0 'long-float))
-      (si::trap-fpe bits t)))
-  (defconstant long-float-negative-infinity (- long-float-positive-infinity)))
+(locally
+ (declare (notinline -))
+ (let* ((bits (si::trap-fpe 'last nil)))
+   (let ((a (/ (coerce 1 'short-float) (coerce 0.0 'short-float))))
+     (defconstant short-float-positive-infinity a)
+     (defconstant short-float-negative-infinity (- a)))
+   (let ((a (/ (coerce 1 'single-float) (coerce 0.0 'single-float))))
+     (defconstant single-float-positive-infinity a)
+     (defconstant single-float-negative-infinity (- a)))
+   (let ((a (/ (coerce 1 'double-float) (coerce 0.0 'double-float))))
+     (defconstant double-float-positive-infinity a)
+     (defconstant double-float-negative-infinity (- a)))
+   (let ((a (/ (coerce 1 'long-float) (coerce 0.0 'long-float))))
+     (defconstant long-float-positive-infinity a)
+     (defconstant long-float-negative-infinity (- a)))
+   (si::trap-fpe bits t)))
 
 (defconstant imag-one #C(0.0 1.0))
 
