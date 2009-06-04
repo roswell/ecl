@@ -17,8 +17,45 @@
 
 #define ECL_INCLUDE_MATH_H
 #include <ecl/ecl.h>
+#ifdef HAVE_FENV_H
+# define _GNU_SOURCE
+# include <fenv.h>
+#endif
 #include <float.h>
+#define ECL_DEFINE_FENV_CONSTANTS
 #include <ecl/internal.h>
+
+#if defined(ECL_IEEE_FP) && defined(HAVE_FEENABLEEXCEPT)
+/*
+ * We are using IEEE arithmetics and can rely on FPE exceptions
+ * to be raised when invalid operations are performed.
+ */
+# define DO_DETECT_FPE(f) ecl_detect_fpe()
+#else
+/*
+ * Either we can not rely on C signals or we do not want IEEE NaNs and
+ * infinities. The first case typically happens for instance under OS
+ * X, where the status of the FPE control word is changed by
+ * printf. We have two alternatives.
+ */
+#  ifdef ECL_IEEE_FP
+#   define DO_DETECT_FPE(f)                                             \
+	if (isnan(f)) {                                                 \
+                if (ecl_process_env()->trap_fpe_bits & FE_INVALID)      \
+                        cl_error(1, @'floating-point-invalid-operation'); \
+	} else if (!isfinite(f)) {                                      \
+                if (ecl_process_env()->trap_fpe_bits & FE_DIVBYZERO)    \
+                        cl_error(1, @'division-by-zero');               \
+	}
+# else
+#  define DO_DETECT_FPE(f)                                              \
+	if (isnan(f)) {                                                 \
+                cl_error(1, @'floating-point-invalid-operation');       \
+	} else if (!isfinite(f)) {                                      \
+                cl_error(1, @'division-by-zero');                       \
+	}
+# endif
+#endif
 
 cl_fixnum
 fixint(cl_object x)
@@ -464,18 +501,12 @@ ecl_make_singlefloat(float f)
 {
 	cl_object x;
 
-	ecl_detect_fpe();
+	DO_DETECT_FPE(f);
 	if (f == (float)0.0) {
 #if defined(ECL_SIGNED_ZERO) && defined(signbit)
 		if (!signbit(f))
 #endif
 			return(cl_core.singlefloat_zero);
-	}
-	if (isnan(f)) {
-		cl_error(1, @'division-by-zero');
-	}
-	if (!isfinite(f)) {
-		cl_error(1, @'floating-point-overflow');
 	}
 	x = ecl_alloc_object(t_singlefloat);
 	sf(x) = f;
@@ -487,18 +518,12 @@ ecl_make_doublefloat(double f)
 {
 	cl_object x;
 
-	ecl_detect_fpe();
+	DO_DETECT_FPE(f);
 	if (f == (double)0.0) {
 #if defined(ECL_SIGNED_ZERO) && defined(signbit)
 		if (!signbit(f))
 #endif
 			return(cl_core.doublefloat_zero);
-	}
-	if (isnan(f)) {
-		cl_error(1, @'division-by-zero');
-	}
-	if (!isfinite(f)) {
-		cl_error(1, @'floating-point-overflow');
 	}
 	x = ecl_alloc_object(t_doublefloat);
 	df(x) = f;
@@ -507,22 +532,16 @@ ecl_make_doublefloat(double f)
 
 #ifdef ECL_LONG_FLOAT
 cl_object
-make_longfloat(long double f)
+ecl_make_longfloat(long double f)
 {
 	cl_object x;
 
-	ecl_detect_fpe();
+	DO_DETECT_FPE(f);
 	if (f == (long double)0.0) {
 #if defined(ECL_SIGNED_ZERO) && defined(signbit)
 		if (!signbit(f))
 #endif
 			return cl_core.longfloat_zero;
-	}
-	if (isnan(f)) {
-		cl_error(1, @'division-by-zero');
-	}
-	if (!isfinite(f)) {
-		cl_error(1, @'floating-point-overflow');
 	}
 	x = ecl_alloc_object(t_longfloat);
 	x->longfloat.value = f;
@@ -562,7 +581,7 @@ ecl_make_complex(cl_object r, cl_object i)
 			break;
 #ifdef ECL_LONG_FLOAT
 		case t_longfloat:
-			r = make_longfloat(ecl_to_double(r));
+			r = ecl_make_longfloat(ecl_to_double(r));
 			break;
 #endif
 		default:
@@ -587,7 +606,7 @@ ecl_make_complex(cl_object r, cl_object i)
 			break;
 #ifdef ECL_LONG_FLOAT
 		case t_longfloat:
-			r = make_longfloat((long double)ecl_short_float(r));
+			r = ecl_make_longfloat((long double)ecl_short_float(r));
 			break;
 #endif
 		default:
@@ -615,7 +634,7 @@ ecl_make_complex(cl_object r, cl_object i)
 			break;
 #ifdef ECL_LONG_FLOAT
 		case t_longfloat:
-			r = make_longfloat((long double)sf(r));
+			r = ecl_make_longfloat((long double)sf(r));
 			break;
 #endif
 		default:
@@ -637,7 +656,7 @@ ecl_make_complex(cl_object r, cl_object i)
 			break;
 #ifdef ECL_LONG_FLOAT
 		case t_longfloat:
-			r = make_longfloat((long double)df(r));
+			r = ecl_make_longfloat((long double)df(r));
 			break;
 #endif
 		default:
@@ -648,7 +667,7 @@ ecl_make_complex(cl_object r, cl_object i)
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
 		if (ti != t_longfloat)
-			i = make_longfloat((long double)ecl_to_double(i));
+			i = ecl_make_longfloat((long double)ecl_to_double(i));
 		break;
 #endif
 	default:
@@ -879,14 +898,14 @@ init_number(void)
 	num = ecl_make_doublefloat(DBL_MAX);
 	ECL_SET(@'MOST-POSITIVE-DOUBLE-FLOAT', num);
 #ifdef ECL_LONG_FLOAT
-	num = make_longfloat(LDBL_MAX);
+	num = ecl_make_longfloat(LDBL_MAX);
 #endif
 	ECL_SET(@'MOST-POSITIVE-LONG-FLOAT', num);
 
 	num = ecl_make_doublefloat(-DBL_MAX);
 	ECL_SET(@'MOST-NEGATIVE-DOUBLE-FLOAT', num);
 #ifdef ECL_LONG_FLOAT
-	num = make_longfloat(-LDBL_MAX);
+	num = ecl_make_longfloat(-LDBL_MAX);
 #endif
 	ECL_SET(@'MOST-NEGATIVE-LONG-FLOAT', num);
 
@@ -894,7 +913,7 @@ init_number(void)
 	ECL_SET(@'LEAST-POSITIVE-DOUBLE-FLOAT', num);
 	ECL_SET(@'LEAST-POSITIVE-NORMALIZED-DOUBLE-FLOAT', num);
 #ifdef ECL_LONG_FLOAT
-	num = make_longfloat(LDBL_MIN);
+	num = ecl_make_longfloat(LDBL_MIN);
 #endif
 	ECL_SET(@'LEAST-POSITIVE-LONG-FLOAT', num);
 	ECL_SET(@'LEAST-POSITIVE-NORMALIZED-LONG-FLOAT', num);
@@ -903,7 +922,7 @@ init_number(void)
 	ECL_SET(@'LEAST-NEGATIVE-DOUBLE-FLOAT', num);
 	ECL_SET(@'LEAST-NEGATIVE-NORMALIZED-DOUBLE-FLOAT', num);
 #ifdef ECL_LONG_FLOAT
-	num = make_longfloat(-LDBL_MIN);
+	num = ecl_make_longfloat(-LDBL_MIN);
 #endif
 	ECL_SET(@'LEAST-NEGATIVE-LONG-FLOAT', num);
 	ECL_SET(@'LEAST-NEGATIVE-NORMALIZED-LONG-FLOAT', num);
@@ -926,7 +945,7 @@ init_number(void)
 	    ecl_make_complex(ecl_make_singlefloat(0.0), ecl_make_singlefloat(2.0));
 
 #ifdef ECL_LONG_FLOAT
-	ECL_SET(@'pi', make_longfloat((long double)ECL_PI_L));
+	ECL_SET(@'pi', ecl_make_longfloat((long double)ECL_PI_L));
 #else
 	ECL_SET(@'pi', ecl_make_doublefloat((double)ECL_PI_D));
 #endif

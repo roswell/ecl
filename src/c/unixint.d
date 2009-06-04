@@ -22,21 +22,6 @@
 #if defined(HAVE_FENV_H) && !defined(ECL_AVOID_FENV_H)
 # define _GNU_SOURCE
 # include <fenv.h>
-# ifndef FE_UNDERFLOW
-#  define FE_UNDERFLOW 0
-# endif
-# ifndef FE_OVERFLOW
-#  define FE_OVERFLOW 0
-# endif
-# ifndef FE_INVALID
-#  define FE_INVALID 0
-# endif
-# ifndef FE_DIVBYZERO
-#  define FE_DIVBYZERO 0
-# endif
-# ifndef FE_INEXACT
-#  define FE_INEXACT 0
-# endif
 #endif
 #include <signal.h>
 #ifdef ECL_USE_MPROTECT
@@ -52,6 +37,7 @@ void handle_fpe_signal(int,int);
 #if !defined(_MSC_VER)
 # include <unistd.h>
 #endif
+#define ECL_DEFINE_FENV_CONSTANTS
 #include <ecl/internal.h>
 
 static struct {
@@ -370,13 +356,13 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
 	the_env = ecl_process_env();
 #ifdef HAVE_SIGPROCMASK
 # ifdef ECL_DOWN_STACK
-	if ((cl_fixnum*)info->si_addr > the_env->cs_barrier &&
-	    (cl_fixnum*)info->si_addr <= the_env->cs_org) {
+	if ((char*)info->si_addr > the_env->cs_barrier &&
+	    (char*)info->si_addr <= the_env->cs_org) {
 		return jump_to_sigsegv_handler(the_env);
 	}
 # else
-	if ((cl_fixnum*)info->si_addr < the_env->cs_barrier &&
-	    (cl_fixnum*)info->si_addr >= the_env->cs_org) {
+	if ((char*)info->si_addr < the_env->cs_barrier &&
+	    (char*)info->si_addr >= the_env->cs_org) {
 		return jump_to_sigsegv_handler(the_env);
 	}
 # endif
@@ -569,38 +555,44 @@ BOOL WINAPI W32_console_ctrl_handler(DWORD type)
 cl_object
 si_trap_fpe(cl_object condition, cl_object flag)
 {
-#if (defined(HAVE_FENV_H) && defined(HAVE_FEENABLEEXCEPT) && !defined(ECL_AVOID_FENV_H)) || defined(_MSC_VER) || defined(mingw32)
-	static int last_bits = 0;
+        cl_env_ptr the_env = ecl_process_env();
+        const int all = FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW | FE_INVALID;
 	int bits = 0;
-	if (condition == @'division-by-zero')
-		bits = FE_DIVBYZERO;
-	else if (condition == @'floating-point-overflow')
-		bits = FE_OVERFLOW;
-	else if (condition == @'floating-point-underflow')
-		bits = FE_UNDERFLOW;
-	else if (condition == @'floating-point-invalid-operation')
-		bits = FE_INVALID;
-	else if (condition == @'floating-point-inexact')
-		bits = FE_INEXACT;
-	else if (condition == Ct)
-		bits = FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW | FE_INVALID;
-	else if (condition == @'last')
-		bits = last_bits;
-#if defined(_MSC_VER) || defined(mingw32)
+        if (condition == @'last') {
+		bits = the_env->trap_fpe_bits;
+        } else {
+                if (condition == @'division-by-zero')
+                        bits = FE_DIVBYZERO;
+                else if (condition == @'floating-point-overflow')
+                        bits = FE_OVERFLOW;
+                else if (condition == @'floating-point-underflow')
+                        bits = FE_UNDERFLOW;
+                else if (condition == @'floating-point-invalid-operation')
+                        bits = FE_INVALID;
+                else if (condition == @'floating-point-inexact')
+                        bits = FE_INEXACT;
+                else if (condition == Ct)
+                        bits = FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW | FE_INVALID;
+		else if (FIXNUMP(condition))
+			bits = fix(condition) & all;
+                if (flag == Cnil) {
+                        bits = the_env->trap_fpe_bits & ~bits;
+                } else {
+                        bits = the_env->trap_fpe_bits | bits;
+                }
+        }
+#if !defined(ECL_AVOID_FPE_H)
+# if defined(_MSC_VER) || defined(mingw32)
 	_fpreset();
+# endif
+# ifdef HAVE_FEENABLEEXCEPT
+        fedisableexcept(all & ~bits);
+        feenableexcept(all & bits);
+# endif
 #endif
-	if (bits) {
-		if (flag == Cnil) {
-			fedisableexcept(bits);
-			last_bits &= ~bits;
-		} else {
-			feenableexcept(bits);
-			last_bits |= bits;
-		}
-	}
-#endif
-	@(return flag)
-}	
+        the_env->trap_fpe_bits = bits;
+	@(return MAKE_FIXNUM(bits))
+}
 
 void
 init_unixint(int pass)
@@ -641,6 +633,12 @@ init_unixint(int pass)
 		if (ecl_get_option(ECL_OPT_TRAP_SIGFPE)) {
 			mysignal(SIGFPE, non_evil_signal_handler);
 			si_trap_fpe(Ct, Ct);
+# ifdef ECL_IEEE_FP
+                        /* By default deactivate errors and accept
+                         * denormals in floating point computations */
+                        si_trap_fpe(@'floating-point-invalid-operation', Cnil);
+                        si_trap_fpe(@'division-by-zero', Cnil);
+# endif
 		}
 #endif
 		ecl_process_env()->disable_interrupts = 0;

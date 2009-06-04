@@ -156,7 +156,7 @@ rando(cl_object x, cl_object rs)
 		break;
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
-		z = make_longfloat(ecl_long_float(x) * (long double)d);
+		z = ecl_make_longfloat(ecl_long_float(x) * (long double)d);
 		break;
 #endif
 	default:

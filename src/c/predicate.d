@@ -64,8 +64,8 @@ cl_numberp(cl_object x)
 /*	Used in compiled code		*/
 bool ecl_numberp(cl_object x)
 {
-  cl_type t = type_of(x);
-  return ECL_NUMBER_TYPE_P(t);
+        cl_type t = type_of(x);
+        return ECL_NUMBER_TYPE_P(t);
 }
 
 cl_object
@@ -255,10 +255,46 @@ cl_eq(cl_object x, cl_object y)
 	@(return ((x == y) ? Ct : Cnil))
 }
 
-#if defined(ECL_SIGNED_ZERO) && defined(signbit)
-# define float_eql(a,b) (((a) == (b)) && (signbit((a)) == signbit((b))))
+/*
+ * Bit-wise comparison of two small objects. Inlined and fast.
+ */
+#define INLINE_BCMP(a,b)                                                \
+        if (sizeof(a) % sizeof(cl_fixnum) == 0) {                       \
+                INLINE_BCMP_INNER(a,b,cl_fixnum);                       \
+        } else if (sizeof(a) % sizeof(int) == 0) {                      \
+                INLINE_BCMP_INNER(a,b,int);                             \
+        } else if (sizeof(a) % sizeof(char) == 0) {                     \
+                INLINE_BCMP_INNER(a,b,char);                            \
+        }
+#define INLINE_BCMP_INNER(a,b,type) {                  \
+                const type *c = (type*)(&a);           \
+                const type *d = (type*)(&b);           \
+                switch (sizeof(a) / sizeof(type)) {    \
+                case 8: if (c[7] != d[7]) return 0;    \
+                case 7: if (c[6] != d[6]) return 0;    \
+                case 6: if (c[5] != d[5]) return 0;    \
+                case 5: if (c[4] != d[4]) return 0;    \
+                case 4: if (c[3] != d[3]) return 0;    \
+                case 3: if (c[1] != d[2]) return 0;    \
+                case 2: if (c[1] != d[1]) return 0;    \
+                default: return (c[0] == d[0]);        \
+                } }
+
+/*
+ * Bit-comparison of floats. If we are using signed zeros and NaNs,
+ * numeric comparison of floating points is not equivalent to bit-wise
+ * equality. In particular every two NaNs always give false
+ *	(= #1=(/ 0.0 0.0) #1#) => NIL
+ * and signed zeros always compare equal
+ *	(= 0 -0.0) => T
+ * which is not the same as what EQL should return
+ *	(EQL #1=(/ 0.0 0.0) #1#) => T
+ *	(EQL 0 -0.0) => NIL
+ */
+#if !defined(ECL_SIGNED_ZERO) && !defined(ECL_IEEE_FP)
+# define FLOAT_EQL(a,b) return (a) == (b)
 #else
-# define float_eql(a,b) (((a) == (b)))
+# define FLOAT_EQL(a,b) INLINE_BCMP(a,b)
 #endif
 
 bool
@@ -278,16 +314,19 @@ ecl_eql(cl_object x, cl_object y)
 		return (ecl_eql(x->ratio.num, y->ratio.num) &&
 			ecl_eql(x->ratio.den, y->ratio.den));
 #ifdef ECL_SHORT_FLOAT
-	case t_shortfloat:
-		return float_eql(ecl_short_float(x),ecl_short_float(y));
+	case t_shortfloat: {
+                float a = ecl_short_float(x);
+                float b = ecl_short_float(y);
+		FLOAT_EQL(a, b);
+        }
 #endif
 	case t_singlefloat:
-		return float_eql(sf(x),sf(y));
+		FLOAT_EQL(sf(x), sf(y));
 	case t_doublefloat:
-		return float_eql(df(x),df(y));
+		FLOAT_EQL(df(x), df(y));
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
-		return float_eql(ecl_long_float(x),ecl_long_float(y));
+		FLOAT_EQL(ecl_long_float(x), ecl_long_float(y));
 #endif
 	case t_complex:
 		return (ecl_eql(x->complex.real, y->complex.real) &&
@@ -336,17 +375,27 @@ BEGIN:
 		return (tx == ty) && ecl_eql(x->ratio.num, y->ratio.num) &&
 			ecl_eql(x->ratio.den, y->ratio.den);
 #ifdef ECL_SHORT_FLOAT
-	case t_shortfloat:
-		return (tx == ty) && (ecl_short_float(x) == ecl_short_float(y));
+	case t_shortfloat: {
+                float a, b;
+                if (tx != ty) return 0;
+                a = ecl_short_float(x);
+                b = ecl_short_float(y);
+                FLOAT_EQL(a, b);
+        }
 #endif
-	case t_singlefloat:
-		return (tx == ty) && (sf(x)==sf(y));
-
-	case t_doublefloat:
-		return (tx == ty) && (df(x)==df(y));
+	case t_singlefloat: {
+                if (tx != ty) return 0;
+                FLOAT_EQL(sf(x), sf(y));
+        }
+        case t_doublefloat: {
+                if (tx != ty) return 0;
+                FLOAT_EQL(df(x), df(y));
+        }
 #ifdef ECL_LONG_FLOAT
-	case t_longfloat:
-		return (tx == ty) && (ecl_long_float(x) == ecl_long_float(y));
+	case t_longfloat: {
+                if (tx != ty) return 0;
+                FLOAT_EQL(ecl_long_float(x), ecl_long_float(y));
+        }
 #endif
 	case t_complex:
 		return (tx == ty) && ecl_eql(x->complex.real, y->complex.real) &&
@@ -403,10 +452,9 @@ ecl_equalp(cl_object x, cl_object y)
 {
 	cl_type tx, ty;
 	cl_index j;
-
 BEGIN:
-	if (ecl_eql(x, y))
-		return(TRUE);
+        if (x == y)
+                return TRUE;
 	tx = type_of(x);
 	ty = type_of(y);
 
@@ -446,7 +494,8 @@ BEGIN:
 		if (x->array.rank > 1) {
 			cl_index i = 0;
 			for (i = 0; i < x->array.rank; i++)
-				if (x->array.dims[i] != y->array.dims[i]) return(FALSE);
+				if (x->array.dims[i] != y->array.dims[i])
+                                        return(FALSE);
 		}
 		if (x->array.dim != y->array.dim)
 			return(FALSE);
@@ -457,16 +506,11 @@ BEGIN:
 			if (!ecl_equalp(ecl_aref(x, i), ecl_aref(y, i)))
 				return(FALSE);
 		return(TRUE);
-	}
-	default:;
-	}
-	if (tx != ty)
-		return FALSE;
-	switch (tx) {
+                }
 	case t_character:
-		return ecl_char_equal(x, y);
+		return (ty == tx) && ecl_char_equal(x, y);
 	case t_list:
-		if (Null(x) || Null(y)) {
+		if ((tx != ty) || Null(x) || Null(y)) {
 			/* X is NIL but it is not EQ to Y */
 			return FALSE;
 		}
@@ -478,8 +522,7 @@ BEGIN:
 #ifdef CLOS
 	case t_instance: {
 		cl_index i;
-
-		if (CLASS_OF(x) != CLASS_OF(y))
+		if ((ty != tx) || (CLASS_OF(x) != CLASS_OF(y)))
 			return(FALSE);
 		for (i = 0;  i < x->instance.length;  i++)
 			if (!ecl_equalp(x->instance.slots[i], y->instance.slots[i]))
@@ -489,8 +532,7 @@ BEGIN:
 #else
 	case t_structure: {
 		cl_index i;
-
-		if (x->str.name != y->str.name)
+		if ((tx != ty) || (x->str.name != y->str.name))
 			return(FALSE);
 		for (i = 0;  i < x->str.length;  i++)
 			if (!ecl_equalp(x->str.self[i], y->str.self[i]))
@@ -499,12 +541,12 @@ BEGIN:
 	}
 #endif /* CLOS */
 	case t_pathname:
-		return ecl_equal(x, y);
+		return (tx == ty) && ecl_equal(x, y);
 	case t_hashtable: {
 		cl_index i;
 		struct ecl_hashtable_entry *ex, *ey;
-
-		if (x->hash.entries != y->hash.entries ||
+		if (tx != ty ||
+                    x->hash.entries != y->hash.entries ||
 		    x->hash.test != y->hash.test)
 			return(FALSE);
 		ex = x->hash.data;
@@ -518,9 +560,9 @@ BEGIN:
 		return TRUE;
 	}
 	case t_random:
-		return ecl_equalp(x->random.value, y->random.value);
+		return (tx == ty) && ecl_equalp(x->random.value, y->random.value);
 	default:
-		return FALSE;
+		return ecl_eql(x,y);
 	}
 }
 

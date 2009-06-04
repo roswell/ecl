@@ -153,6 +153,8 @@ thread_entry_point(cl_object process)
 	env->bindings_hash = process->process.initial_bindings;
 	init_big_registers(env);
 	ecl_enable_interrupts_env(env);
+        env->trap_fpe_bits = process->process.parent->process.env->trap_fpe_bits;
+        si_trap_fpe(@'last', Ct);
 
 	/* 2) Execute the code. The CATCH_ALL point is the destination
 	*     provides us with an elegant way to exit the thread: we just
@@ -323,6 +325,7 @@ mp_process_enable(cl_object process)
 	if (mp_process_active_p(process) != Cnil)
 		FEerror("Cannot enable the running process ~A.", 1, process);
 	code = (HANDLE)CreateThread(NULL, 0, thread_entry_point, process, 0, &threadId);
+        process->process.parent = mp_current_process();
 	output = (process->process.thread = code)? process : Cnil;
 #else
 	pthread_t *posix_thread;
@@ -331,6 +334,7 @@ mp_process_enable(cl_object process)
 	if (mp_process_active_p(process) != Cnil)
 		FEerror("Cannot enable the running process ~A.", 1, process);
 	code = pthread_create(&process->process.thread, NULL, thread_entry_point, process);
+        process->process.parent = mp_current_process();
 	output = (process->process.thread = code)? Cnil : process;
 #endif
 	@(return output)

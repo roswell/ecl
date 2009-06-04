@@ -132,7 +132,7 @@ cl_exp(cl_object x)
 		output = ecl_make_doublefloat(exp(df(x))); break;
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
-		output = make_longfloat(expl(ecl_long_float(x))); break;
+		output = ecl_make_longfloat(expl(ecl_long_float(x))); break;
 #endif
 	case t_complex: {
 		cl_object y, y1;
@@ -181,7 +181,7 @@ cl_expt(cl_object x, cl_object y)
 			z = ecl_make_doublefloat(1.0); break;
 #ifdef ECL_LONG_FLOAT
 		case t_longfloat:
-			z = make_longfloat(1.0); break;
+			z = ecl_make_longfloat(1.0); break;
 #endif
 		case t_complex:
 			z = cl_expt((tx == t_complex)? x->complex.real : x,
@@ -193,9 +193,9 @@ cl_expt(cl_object x, cl_object y)
 			(void)0;
 		}
 	} else if (ecl_zerop(x)) {
-		if (!ecl_plusp(ty==t_complex?y->complex.real:y))
-			FEerror("Cannot raise zero to the power ~S.", 1, y);
 		z = ecl_times(x, y);
+		if (!ecl_plusp(ty==t_complex?y->complex.real:y))
+			z = ecl_divide(MAKE_FIXNUM(1), z);
 	} else if (ty != t_fixnum && ty != t_bignum) {
 		z = ecl_log1(x);
 		z = ecl_times(z, y);
@@ -249,8 +249,6 @@ ecl_log1(cl_object x)
 	}
 	if (tx == t_complex) {
 		return ecl_log1_complex(x->complex.real, x->complex.imag);
-	} else if (ecl_zerop(x)) {
-		FEerror("Zero is the logarithmic singularity.", 0);
 	} else if (ecl_minusp(x)) {
 		return ecl_log1_complex(x, MAKE_FIXNUM(0));
 	} else switch (tx) {
@@ -273,7 +271,7 @@ ecl_log1(cl_object x)
 		return ecl_make_doublefloat(log(df(x)));
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
-		return make_longfloat(logl(ecl_long_float(x)));
+		return ecl_make_longfloat(logl(ecl_long_float(x)));
 #endif
 	default:
 		/* We do not reach here */
@@ -284,8 +282,6 @@ ecl_log1(cl_object x)
 cl_object
 ecl_log2(cl_object x, cl_object y)
 {
-	if (ecl_zerop(y))
-		FEerror("Zero is the logarithmic singularity.", 0);
 	return ecl_divide(ecl_log1(y), ecl_log1(x));
 }
 
@@ -319,7 +315,7 @@ ecl_log1p(cl_object x)
 		return ecl_make_doublefloat(log1p(df(x)));
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
-		return make_longfloat(log1pl(ecl_long_float(x)));
+		return ecl_make_longfloat(log1pl(ecl_long_float(x)));
 #endif
 	default:
 		/* We do not reach here */
@@ -364,7 +360,7 @@ cl_sqrt(cl_object x)
 		z = ecl_make_doublefloat(sqrt(df(x))); break;
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
-		z = make_longfloat(sqrtl(ecl_long_float(x))); break;
+		z = ecl_make_longfloat(sqrtl(ecl_long_float(x))); break;
 #endif
 	default:
 		/* Never reaches this */
@@ -388,7 +384,7 @@ ecl_atan2_double(double y, double x)
 		if (y > 0) {
 			return ECL_PI2_D;
 		} else if (y == 0) {
-			FEerror("Logarithmic singularity.", 0);
+                        return x / y;  /* Produces a NaN */
 		} else {
 			return -ECL_PI2_D;
 		}
@@ -419,7 +415,7 @@ ecl_atan2_long_double(long double y, long double x)
 		if (y > 0) {
 			return ECL_PI2_L;
 		} else if (y == 0) {
-			FEerror("Logarithmic singularity.", 0);
+			return x / y; /* Produces a NaN */
 		} else {
 			return -ECL_PI2_L;
 		}
@@ -444,8 +440,8 @@ ecl_atan2(cl_object y, cl_object x)
 	if (tx < ty)
 		tx = ty;
 	if (tx == t_longfloat) {
-		return make_longfloat(ecl_atan2_long_double(ecl_to_long_double(y),
-							    ecl_to_long_double(x)));
+		return ecl_make_longfloat(ecl_atan2_long_double(ecl_to_long_double(y),
+                                                                ecl_to_long_double(x)));
 	} else {
 		double dx = ecl_to_double(x);
 		double dy = ecl_to_double(y);
@@ -513,7 +509,7 @@ cl_sin(cl_object x)
 		output = ecl_make_doublefloat(sin(df(x))); break;
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
-		output = make_longfloat(sinl(ecl_long_float(x))); break;
+		output = ecl_make_longfloat(sinl(ecl_long_float(x))); break;
 #endif
 	case t_complex: {
 		/*
@@ -555,7 +551,7 @@ cl_cos(cl_object x)
 		output = ecl_make_doublefloat(cos(df(x))); break;
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
-		output = make_longfloat(cosl(ecl_long_float(x))); break;
+		output = ecl_make_longfloat(cosl(ecl_long_float(x))); break;
 #endif
 	case t_complex: {
 		/*
@@ -608,7 +604,7 @@ cl_tan(cl_object x)
 		output = ecl_make_doublefloat(tan(df(x))); break;
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
-		output = make_longfloat(tanl(ecl_long_float(x))); break;
+		output = ecl_make_longfloat(tanl(ecl_long_float(x))); break;
 #endif
 	case t_complex: {
 		cl_object a = cl_sin(x);
@@ -643,7 +639,7 @@ cl_sinh(cl_object x)
 		output = ecl_make_doublefloat(sinh(df(x))); break;
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
-		output = make_longfloat(sinhl(ecl_long_float(x))); break;
+		output = ecl_make_longfloat(sinhl(ecl_long_float(x))); break;
 #endif
 	case t_complex: {
 		/*
@@ -686,7 +682,7 @@ cl_cosh(cl_object x)
 		output = ecl_make_doublefloat(cosh(df(x))); break;
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
-		output = make_longfloat(coshl(ecl_long_float(x))); break;
+		output = ecl_make_longfloat(coshl(ecl_long_float(x))); break;
 #endif
 	case t_complex: {
 		/*
@@ -729,7 +725,7 @@ cl_tanh(cl_object x)
 		output = ecl_make_doublefloat(tanh(df(x))); break;
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
-		output = make_longfloat(tanhl(ecl_long_float(x))); break;
+		output = ecl_make_longfloat(tanhl(ecl_long_float(x))); break;
 #endif
 	case t_complex: {
 		cl_object a = cl_sinh(x);

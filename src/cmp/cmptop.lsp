@@ -403,7 +403,7 @@
                             (DOUBLE-FLOAT "ecl_make_doublefloat")
                             (SINGLE-FLOAT "ecl_make_singlefloat")
 			    #+long-float
-                            (LONG-FLOAT "make_longfloat")
+                            (LONG-FLOAT "ecl_make_longfloat")
                             (otherwise ""))
            "(LI" cfun "(")
     (do ((types arg-types (cdr types))

@@ -27,6 +27,7 @@
 #if defined(HAVE_FENV_H)
 # include <fenv.h>
 #endif
+#define ECL_DEFINE_FENV_CONSTANTS
 #include <ecl/internal.h>
 #include <ecl/bytecodes.h>
 
@@ -595,24 +596,43 @@ int edit_double(int n, DBL_TYPE d, int *sp, char *s, int *ep)
 	}
 	s[n] = '\0';
 #if defined(HAVE_FENV_H) || defined(_MSC_VER) || defined(mingw32)
-	fesetenv(&env);
+	feupdateenv(&env);
 #endif
 	return length;
 }
 
 static void
-write_double(DBL_TYPE d, int e, int n, cl_object stream)
+write_double(DBL_TYPE d, int e, int n, cl_object stream, const char *type_name)
 {
 	int exp;
 #if defined(HAVE_FENV_H) || defined(_MSC_VER) || defined(mingw32)
 	fenv_t env;
 	feholdexcept(&env);
 #endif
+        if (isnan(d)) {
+                if (ecl_print_readably())
+# ifdef ECL_LONG_FLOAT
+                        FEprint_not_readable(ecl_make_longfloat(d));
+# else
+	                FEprint_not_readable(ecl_make_doublefloat(d));
+# endif
+                write_str("#<", stream);
+                write_str(type_name, stream);
+                write_str(" quiet NaN>", stream);
+                return;
+        }
+        if (!isfinite(d)) {
+                write_str("#.EXT:", stream);
+                write_str(type_name, stream);
+                write_str(signbit(d)? "-NEGATIVE-INFINITY" : "-POSITIVE-INFINITY",
+                          stream);
+                return;
+        }
 	if (d < 0) {
 		write_ch('-', stream);
 		d = -d;
 	}
-	if (d == 0.0) {
+        if (d == 0.0) {
 #if defined(ECL_SIGNED_ZERO) && defined(signbit)
 		if (signbit(d))
 			write_str("-0.0", stream);
@@ -672,7 +692,7 @@ write_double(DBL_TYPE d, int e, int n, cl_object stream)
 		write_decimal(exp, stream);
 	}
 #if defined(HAVE_FENV_H) || defined(_MSC_VER) || defined(mingw32)
-	fesetenv(&env);
+	feupdateenv(&env);
 #endif
 }
 
@@ -1129,31 +1149,37 @@ si_write_ugly_object(cl_object x, cl_object stream)
 #ifdef ECL_SHORT_FLOAT
 	case t_shortfloat:
 		r = ecl_symbol_value(@'*read-default-float-format*');
-		write_double(ecl_short_float(x), (r == @'short-float')? 0 : 'f', FLT_SIG, stream);
+		write_double(ecl_short_float(x), (r == @'short-float')? 0 : 'f',
+                             FLT_SIG, stream, "SHORT-FLOAT");
 		break;
 	case t_singlefloat:
 		r = ecl_symbol_value(@'*read-default-float-format*');
-		write_double(sf(x), (r == @'single-float')? 0 : 's', FLT_SIG, stream);
+		write_double(sf(x), (r == @'single-float')? 0 : 's',
+                             FLT_SIG, stream, "SINGLE-FLOAT");
 		break;
 #else
 	case t_singlefloat:
 		r = ecl_symbol_value(@'*read-default-float-format*');
-		write_double(sf(x), (r == @'single-float' || r == @'short-float')? 0 : 's', FLT_SIG, stream);
+		write_double(sf(x), (r == @'single-float' || r == @'short-float')? 0 : 's',
+                             FLT_SIG, stream, "SINGLE-FLOAT");
 		break;
 #endif
 #ifdef ECL_LONG_FLOAT
 	case t_doublefloat:
 		r = ecl_symbol_value(@'*read-default-float-format*');
-		write_double(df(x), (r == @'double-float')? 0 : 'd', DBL_SIG, stream);
+		write_double(df(x), (r == @'double-float')? 0 : 'd', DBL_SIG, stream,
+                             "DOUBLE-FLOAT");
 		break;
 	case t_longfloat:
 		r = ecl_symbol_value(@'*read-default-float-format*');
-		write_double(ecl_long_float(x), (r == @'long-float')? 0 : 'l', LDBL_SIG, stream);
+		write_double(ecl_long_float(x), (r == @'long-float')? 0 : 'l',
+                             LDBL_SIG, stream, "LONG-FLOAT");
 		break;
 #else
 	case t_doublefloat:
 		r = ecl_symbol_value(@'*read-default-float-format*');
-		write_double(df(x), (r == @'double-float' || r == @'long-float')? 0 : 'd', DBL_SIG, stream);
+		write_double(df(x), (r == @'double-float' || r == @'long-float')? 0 : 'd',
+                             DBL_SIG, stream, "DOUBLE-FLOAT");
 		break;
 #endif
 	case t_complex:

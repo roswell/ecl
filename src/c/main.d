@@ -234,6 +234,8 @@ ecl_init_env(cl_env_ptr env)
 #endif
 #endif
 	init_stacks(env, &i);
+
+        env->trap_fpe_bits = 0;
 }
 
 static const struct {

@@ -791,6 +791,7 @@ with_rt
 with_profile
 with_fpe
 with_signed_zero
+with_ieee_fp
 enable_unicode
 enable_longdouble
 enable_c99complex
@@ -1502,6 +1503,8 @@ Optional Packages:
   --with-fpe              detect floating point exceptions (default=YES)
   --with-signed-zero={yes|no}
                           allow for IEEE signed zeros (default=YES).
+  --with-iee-fp={yes|no}  full IEEE floating point system, including denormals
+                          (default=YES). Implies signed-zero and fpe
   --with-x                use the X Window System
 
 Some influential environment variables:
@@ -2255,6 +2258,15 @@ if test "${with_signed_zero+set}" = set; then
   withval=$with_signed_zero;
 else
   with_signed_zero="yes"
+fi
+
+
+
+# Check whether --with-ieee-fp was given.
+if test "${with_ieee_fp+set}" = set; then
+  withval=$with_ieee_fp;
+else
+  with_ieee_fp="yes"
 fi
 
 
@@ -5215,6 +5227,14 @@ fi
 ECL_VERSION_NUMBER=$(($PACKAGE_MAJOR * 10000 + $PACKAGE_MINOR * 100 + $PACKAGE_LEAST))
 
 
+if test "${with_ieee_fp}" = yes; then
+   with_signed_zero="yes"
+   with_fpe="yes"
+   cat >>confdefs.h <<\_ACEOF
+#define ECL_IEEE_FP 1
+_ACEOF
+
+fi
 if test "${with_fpe}" != yes; then
    cat >>confdefs.h <<\_ACEOF
 #define ECL_AVOID_FPE_H 1

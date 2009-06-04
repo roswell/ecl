@@ -120,6 +120,9 @@ struct cl_env_struct {
 	/* Alternative stack for processing signals */
 	void *altstack;
 	cl_index altstack_size;
+
+        /* Floating point interrupts which are trapped */
+        int trap_fpe_bits;
 };
 
 #ifndef __GNUC__
@@ -999,12 +1002,12 @@ extern ECL_API cl_object cl_rational(cl_object x);
 extern ECL_API double ecl_to_double(cl_object x);
 #define number_to_float(x) ((float)ecl_to_double(x))
 #ifdef ECL_SHORT_FLOAT
-extern ECL_API cl_object make_shortfloat(float f);
+extern ECL_API cl_object ecl_make_shortfloat(float f);
 extern ECL_API float ecl_short_float(cl_object o);
 #endif
 #ifdef ECL_LONG_FLOAT
 extern ECL_API long double ecl_to_long_double(cl_object x);
-extern ECL_API cl_object make_longfloat(long double f);
+extern ECL_API cl_object ecl_make_longfloat(long double f);
 #endif
 extern ECL_API cl_object double_to_integer(double d);
 extern ECL_API cl_object float_to_integer(float d);
@@ -1108,12 +1111,16 @@ extern ECL_API cl_object cl_plusp(cl_object x);
 extern ECL_API cl_object cl_minusp(cl_object x);
 extern ECL_API cl_object cl_oddp(cl_object x);
 extern ECL_API cl_object cl_evenp(cl_object x);
+extern ECL_API cl_object si_float_nan_p(cl_object x);
+extern ECL_API cl_object si_float_infinity_p(cl_object x);
 
 extern ECL_API int ecl_zerop(cl_object x);
 extern ECL_API int ecl_plusp(cl_object x);
 extern ECL_API int ecl_minusp(cl_object x);
 extern ECL_API int ecl_oddp(cl_object x);
 extern ECL_API int ecl_evenp(cl_object x);
+extern ECL_API bool ecl_float_nan_p(cl_object x);
+extern ECL_API bool ecl_float_infinity_p(cl_object x);
 
 
 /* num_rand.c */
@@ -1876,6 +1883,11 @@ extern ECL_API cl_object clos_standard_instance_set _ARGS((cl_narg narg, cl_obje
 #endif
 
 #endif
+
+/*
+ * LEGACY
+ */
+#define make_shortfloat(x) ecl_make_shortfloat(x);
 
 #ifdef __cplusplus
 }

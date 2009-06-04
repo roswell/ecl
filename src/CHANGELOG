@@ -38,6 +38,33 @@ ECL 9.5:
  - Added support for the floating point exception FE_INVALID, which is
    signalled when trying to do 0/0 or sqrt(-1) (A. Gavrilov)
 
+ - Added a new section in external.h for defining compatibility macros
+   for functions that changed name.
+
+ - make_longfloat() is renamed ecl_make_longfloat().
+
+ - A new configuration flag --with-ieee-fp adds support for NaN's, infinities
+   and signed zeros, disabling certain floating point exceptions by default.
+   In addition, when this is set, functions like LOG or ATAN will not
+   signal errors when their arguments are not valid, but rather return NaN's
+   (LOG 0) => -infinity, (ATAN 0.0 0.0) => NaN
+
+ - A new command line option --trap-fpe / --no-trap-fpe tells whether ECL
+   should ignore floating point exceptions and produce NaNs and infinities
+   or either use the condition system to produce the associated errors.
+
+ - Two new functions, EXT:FLOAT-NAN-P and EXT:FLOAT-INFINITY-P.
+
+ - Eight new constants for the eight possible infinities
+   EXT:{SHORT,SINGLE,DOUBLE,LONG}-FLOAT-{POSITIVE,NEGATIVE}-INFINITY
+
+ - SI:TRAP-FPE always returns an integer denoting the new active / inactive
+   floating point traps. In particular, (SI:TRAP-FPE 'LAST T) returns the
+   currently active traps. This value can be passed to SI:TRAP-FPE as first
+   argument again. This is useful for performing a computation without traps
+	(let* (( (si::trap-fpe 'last nil)))
+	  (prog1 (/ 0.0 0.0) (si::trap-fpe bits t)))
+
 * Bugs fixed:
 
  - Remove an obsolete #if statement for Solaris that broke current builds

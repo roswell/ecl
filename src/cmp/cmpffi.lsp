@@ -219,7 +219,7 @@
 	   ((:long-double)
 	    (if (and (consp loc) (eq (first loc) 'LONG-FLOAT-VALUE))
 		(wt (third loc)) ;; VV index
-		(wt "make_longfloat(" loc ")")))
+		(wt "ecl_make_longfloat(" loc ")")))
 	   ((:bool)
 	    (wt "((" loc ")?Ct:Cnil)"))
 	   ((:char :unsigned-char :wchar)

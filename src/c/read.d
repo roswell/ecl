@@ -524,7 +524,7 @@ ecl_parse_number(cl_object str, cl_index start, cl_index end,
 			break;
 		case 'l':  case 'L':
 #ifdef ECL_LONG_FLOAT
-			output = make_longfloat(d);
+			output = ecl_make_longfloat(d);
 			break;
 #endif
 		case 'd':  case 'D':

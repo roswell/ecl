@@ -15,6 +15,7 @@
     See file '../Copyright' for full details.
 */
 
+#define ECL_INCLUDE_MATH_H
 #include <ecl/ecl.h>
 
 int
@@ -164,4 +165,43 @@ cl_object
 cl_evenp(cl_object x)
 {	/* INV: ecl_evenp() checks_type */
 	@(return (ecl_evenp(x) ? Ct : Cnil))
+}
+
+cl_object
+si_float_nan_p(cl_object x)
+{
+	@(return (ecl_float_nan_p(x)? Ct : Cnil))
+}
+
+cl_object
+si_float_infinity_p(cl_object x)
+{
+	@(return (ecl_float_infinity_p(x)? Ct : Cnil))
+}
+
+bool
+ecl_float_nan_p(cl_object x)
+{
+	return ecl_number_equalp(x,x);
+}
+
+bool
+ecl_float_infinity_p(cl_object x)
+{
+	switch (type_of(x)) {
+#ifdef ECL_SHORT_FLOAT
+	case t_shortfloat:
+		return !isifinite(ecl_short_float(x));
+#endif
+	case t_singlefloat:
+		return !isfinite(sf(x));
+	case t_doublefloat:
+		return !isfinite(df(x));
+#ifdef ECL_LONG_FLOAT
+	case t_longfloat:
+		return !is_finite(ecl_long_float(x));
+#endif
+	default:
+		return 0;
+	}
 }

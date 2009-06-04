@@ -62,6 +62,8 @@ Usage: ecl [-? | --help]
     ("--lisp-stack" 1 (ext:set-limit 'ext:lisp-stack (read-from-string 1)))
     ("--frame-stack" 1 (ext:set-limit 'ext:frame-stack (read-from-string 1)))
     ("--c-stack" 1 (ext:set-limit 'ext:c-stack (read-from-string 1)))
+    ("--trap-fpe" 0 (si::trap-fpe t t))
+    ("--no-trap-fpe" 0 (si::trap-fpe t nil))
     ("-compile" 1
      (progn
        (setq quit
