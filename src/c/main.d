@@ -80,6 +80,7 @@ static cl_fixnum option_values[ECL_OPT_LIMIT+1] = {
 	1,		/* ECL_OPT_SIGALTSTACK_SIZE */
 	256*1024*1024, 	/* ECL_OPT_HEAP_SIZE */
 	1024*1024, 	/* ECL_OPT_HEAP_SAFETY_AREA */
+        0,		/* ECL_OPT_THREAD_INTERRUPT_SIGNAL */
 	0};
 
 #if !defined(GBC_BOEHM)

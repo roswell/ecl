@@ -20,7 +20,9 @@
 #include <stdio.h>
 #include <ecl/ecl.h>
 #if defined(HAVE_FENV_H) && !defined(ECL_AVOID_FENV_H)
-# define _GNU_SOURCE
+# ifndef _GNU_SOURCE
+#  define _GNU_SOURCE
+# endif
 # include <fenv.h>
 #endif
 #include <signal.h>
@@ -204,12 +206,13 @@ static void
 handler_fn_protype(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
 {
 	cl_env_ptr the_env = &cl_env;
-	switch (sig) {
 #if defined(ECL_THREADS) && !defined(_MSC_VER) && !defined(mingw32)
-	case SIGUSR1:
+        if (sig == ecl_get_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL)) {
 		funcall(1, the_env->own_process->process.interrupt);
-		break;
+                return;
+        }
 #endif
+	switch (sig) {
 	case SIGINT:
 		funcall(2, @'si::terminal-interrupt', Ct);
 		break;
@@ -458,8 +461,9 @@ si_catch_signal(cl_object code, cl_object boolean)
 #endif
 #endif
 #if defined(ECL_THREADS) && !defined(_MSC_VER) && !defined(mingw32)
-	if (code_int == SIGUSR1) {
-		FEerror("It is not allowed to change the behavior of SIGUSR1", 0);
+	if (code_int == ecl_get_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL)) {
+		FEerror("It is not allowed to change the behavior of ~D", 1,
+                        MAKE_FIXNUM(code_int));
 	}
 #endif
 	for (i = 0; known_signals[i].code >= 0; i++) {
@@ -613,8 +617,21 @@ init_unixint(int pass)
 			mysignal(SIGINT, non_evil_signal_handler);
 		}
 #endif
+#ifdef SIGRTMIN
+# define DEFAULT_THREAD_INTERRUPT_SIGNAL SIGRTMIN + 2
+#else
+# define DEFAULT_THREAD_INTERRUPT_SIGNAL SIGUSR1
+#endif
 #if defined(ECL_THREADS) && !defined(_MSC_VER) && !defined(mingw32)
-		mysignal(SIGUSR1, non_evil_signal_handler);
+                {
+                        int signal = ecl_get_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL);
+                        if (signal == 0) {
+                                signal = DEFAULT_THREAD_INTERRUPT_SIGNAL;
+                                ecl_set_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL,
+                                               signal);
+                        }
+                        mysignal(signal, non_evil_signal_handler);
+                }
 #endif
 #ifdef _MSC_VER
 		SetUnhandledExceptionFilter(W32_exception_filter);

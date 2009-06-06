@@ -286,9 +286,12 @@ mp_interrupt_process(cl_object process, cl_object function)
 	}
 	*/
 #else
-	process->process.interrupt = function;
-	if ( pthread_kill(process->process.thread, SIGUSR1) )
-		FElibc_error("pthread_kill() failed.", 0);
+        {
+                int signal = ecl_get_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL);
+                process->process.interrupt = function;
+                if (pthread_kill(process->process.thread, signal))
+                        FElibc_error("pthread_kill() failed.", 0);
+        }
 #endif
 	@(return Ct)
 }

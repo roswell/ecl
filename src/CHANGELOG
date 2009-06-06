@@ -65,6 +65,9 @@ ECL 9.5:
 	(let* (( (si::trap-fpe 'last nil)))
 	  (prog1 (/ 0.0 0.0) (si::trap-fpe bits t)))
 
+ - A new configurable option ECL_OPT_THREAD_INTERRUPT_SIGNAL determines
+   which Unix interrupt type is used to communicate between threads.
+
 * Bugs fixed:
 
  - Remove an obsolete #if statement for Solaris that broke current builds
