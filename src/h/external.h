@@ -364,12 +364,13 @@ extern ECL_API cl_object si_compiled_function_name(cl_object fun);
 extern ECL_API cl_object si_compiled_function_block(cl_object fun);
 extern ECL_API cl_object cl_function_lambda_expression(cl_object fun);
 
-extern ECL_API cl_object cl_make_cfun(cl_objectfn_fixed c_function, cl_object name, cl_object block, int narg);
-extern ECL_API cl_object cl_make_cfun_va(cl_objectfn c_function, cl_object name, cl_object block);
-extern ECL_API cl_object cl_make_cclosure_va(cl_objectfn c_function, cl_object env, cl_object block);
-extern ECL_API void cl_def_c_function(cl_object sym, cl_objectfn_fixed c_function, int narg);
-extern ECL_API void cl_def_c_macro(cl_object sym, void *c_function, int narg);
-extern ECL_API void cl_def_c_function_va(cl_object sym, cl_objectfn c_function);
+extern ECL_API cl_object ecl_make_cfun(cl_objectfn_fixed c_function, cl_object name, cl_object block, int narg);
+extern ECL_API cl_object ecl_make_cfun_va(cl_objectfn c_function, cl_object name, cl_object block);
+extern ECL_API cl_object ecl_make_cclosure_va(cl_objectfn c_function, cl_object env, cl_object block);
+extern ECL_API void ecl_def_c_function(cl_object sym, cl_objectfn_fixed c_function, int narg);
+extern ECL_API void ecl_def_c_macro(cl_object sym, cl_objectfn_fixed c_function, int narg);
+extern ECL_API void ecl_def_c_macro_va(cl_object sym, cl_objectfn c_function);
+extern ECL_API void ecl_def_c_function_va(cl_object sym, cl_objectfn c_function);
 extern ECL_API void ecl_cmp_defmacro(cl_object data);
 extern ECL_API void ecl_cmp_defun(cl_object data);
 
@@ -1891,6 +1892,17 @@ extern ECL_API cl_object clos_standard_instance_set _ARGS((cl_narg narg, cl_obje
  * LEGACY
  */
 #define make_shortfloat(x) ecl_make_shortfloat(x);
+#define cl_def_c_function_va(sym,function) ecl_def_c_function_va(sym,function)
+#define cl_def_c_function(sym,function,narg) ecl_def_c_function(sym,function,narg)
+#define cl_def_c_macro(sym,function,narg) {                     \
+                int n = (narg);                                 \
+                if (n < 0)                                      \
+                        ecl_def_c_macro_va((sym),(function));   \
+                else                                            \
+                        ecl_def_c_macro((sym),(function),n); }
+#define cl_make_cfun(fun,name,block,narg) ecl_make_cfun(fun,name,block,narg)
+#define cl_make_cfun_va(fun,name,block) ecl_make_cfun_va(fun,name,block)
+#define cl_make_cclosure_va(fun,name,block) ecl_make_cclosure_va(fun,name,block)
 
 #ifdef __cplusplus
 }

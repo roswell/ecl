@@ -2063,8 +2063,8 @@ extra_argument(int c, cl_object stream, cl_object d)
 }
 
 
-#define	make_cf2(f)	cl_make_cfun((f), Cnil, NULL, 2)
-#define	make_cf3(f)	cl_make_cfun((f), Cnil, NULL, 3)
+#define	make_cf2(f)	ecl_make_cfun((f), Cnil, NULL, 2)
+#define	make_cf3(f)	ecl_make_cfun((f), Cnil, NULL, 3)
 
 void
 init_read(void)
@@ -2278,8 +2278,8 @@ read_VV(cl_object block, void (*entry_point)(cl_object))
 			cl_index location = fix(prototype->name);
 			int narg = prototype->narg;
 			VV[location] = narg<0?
-				cl_make_cfun_va(prototype->entry, fname, block) :
-				cl_make_cfun(prototype->entry, fname, block, narg);
+				ecl_make_cfun_va(prototype->entry, fname, block) :
+				ecl_make_cfun(prototype->entry, fname, block, narg);
 		}
 		/* Execute top-level code */
 		(*entry_point)(MAKE_FIXNUM(0));

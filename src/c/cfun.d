@@ -21,7 +21,7 @@
 #include "cfun_dispatch.d"
 
 cl_object
-cl_make_cfun(cl_objectfn_fixed c_function, cl_object name, cl_object cblock, int narg)
+ecl_make_cfun(cl_objectfn_fixed c_function, cl_object name, cl_object cblock, int narg)
 {
 	cl_object cf;
 
@@ -32,12 +32,12 @@ cl_make_cfun(cl_objectfn_fixed c_function, cl_object name, cl_object cblock, int
 	cf->cfunfixed.block = cblock;
 	cf->cfunfixed.narg = narg;
 	if (narg < 0 || narg > C_ARGUMENTS_LIMIT)
-	    FEprogram_error("cl_make_cfun: function requires too many arguments.",0);
+	    FEprogram_error("ecl_make_cfun: function requires too many arguments.",0);
 	return cf;
 }
 
 cl_object
-cl_make_cfun_va(cl_objectfn c_function, cl_object name, cl_object cblock)
+ecl_make_cfun_va(cl_objectfn c_function, cl_object name, cl_object cblock)
 {
 	cl_object cf;
 
@@ -50,7 +50,7 @@ cl_make_cfun_va(cl_objectfn c_function, cl_object name, cl_object cblock)
 }
 
 cl_object
-cl_make_cclosure_va(cl_objectfn c_function, cl_object env, cl_object block)
+ecl_make_cclosure_va(cl_objectfn c_function, cl_object env, cl_object block)
 {
 	cl_object cc;
 
@@ -62,27 +62,33 @@ cl_make_cclosure_va(cl_objectfn c_function, cl_object env, cl_object block)
 }
 
 void
-cl_def_c_function(cl_object sym, cl_objectfn_fixed c_function, int narg)
+ecl_def_c_function(cl_object sym, cl_objectfn_fixed c_function, int narg)
 {
 	si_fset(2, sym,
-		cl_make_cfun(c_function, sym, ecl_symbol_value(@'si::*cblock*'), narg));
+		ecl_make_cfun(c_function, sym, ecl_symbol_value(@'si::*cblock*'), narg));
 }
 
 void
-cl_def_c_macro(cl_object sym, void *c_function, int narg)
+ecl_def_c_macro(cl_object sym, cl_objectfn_fixed c_function, int narg)
 {
 	si_fset(3, sym,
-		(narg >= 0)?
-		cl_make_cfun(c_function, sym, ecl_symbol_value(@'si::*cblock*'), 2):
-		cl_make_cfun_va(c_function, sym, ecl_symbol_value(@'si::*cblock*')),
+		ecl_make_cfun(c_function, sym, ecl_symbol_value(@'si::*cblock*'), 2),
 		Ct);
 }
 
 void
-cl_def_c_function_va(cl_object sym, cl_objectfn c_function)
+ecl_def_c_macro_va(cl_object sym, cl_objectfn c_function)
+{
+	si_fset(3, sym,
+		ecl_make_cfun_va(c_function, sym, ecl_symbol_value(@'si::*cblock*')),
+		Ct);
+}
+
+void
+ecl_def_c_function_va(cl_object sym, cl_objectfn c_function)
 {
 	si_fset(2, sym,
-		cl_make_cfun_va(c_function, sym, ecl_symbol_value(@'si::*cblock*')));
+		ecl_make_cfun_va(c_function, sym, ecl_symbol_value(@'si::*cblock*')));
 }
 
 cl_object

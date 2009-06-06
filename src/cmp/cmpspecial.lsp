@@ -143,15 +143,15 @@
   (let* ((closure (fun-closure fun))
 	 narg)
     (cond ((eq closure 'CLOSURE)
-	   (wt "cl_make_cclosure_va((void*)" cfun ","
+	   (wt "ecl_make_cclosure_va((cl_objectfn)" cfun ","
 	       (environment-accessor fun)
 	       ",Cblock)"))
 	  ((eq closure 'LEXICAL)
 	   (baboon))
 	  ((setf narg (fun-fixed-narg fun)) ; empty environment fixed number of args
-	   (wt "cl_make_cfun((void*)" cfun ",Cnil,Cblock," narg ")"))
+	   (wt "ecl_make_cfun((cl_objectfn_fixed)" cfun ",Cnil,Cblock," narg ")"))
 	  (t ; empty environment variable number of args
-	   (wt "cl_make_cfun_va((void*)" cfun ",Cnil,Cblock)")))))
+	   (wt "ecl_make_cfun_va((cl_objectfn)" cfun ",Cnil,Cblock)")))))
 
 
 ;;; ----------------------------------------------------------------------

@@ -306,5 +306,5 @@ FEwin32_error(const char *msg, int narg, ...)
 void
 init_error(void)
 {
-	cl_def_c_function_va(@'si::universal-error-handler', universal_error_handler);
+	ecl_def_c_function_va(@'si::universal-error-handler', universal_error_handler);
 }

@@ -634,9 +634,9 @@ cl_object
 si_hash_table_iterator(cl_object ht)
 {
 	assert_type_hash_table(ht);
-	@(return cl_make_cclosure_va((cl_objectfn)si_hash_table_iterate,
-				     cl_list(2, MAKE_FIXNUM(-1), ht),
-				     @'si::hash-table-iterator'))
+	@(return ecl_make_cclosure_va((cl_objectfn)si_hash_table_iterate,
+                                      cl_list(2, MAKE_FIXNUM(-1), ht),
+                                      @'si::hash-table-iterator'))
 }
 
 cl_object
