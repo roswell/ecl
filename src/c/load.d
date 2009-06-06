@@ -17,9 +17,7 @@
 #include <ecl/ecl.h>
 #include <string.h>
 #include <stdio.h>
-#include <ecl/ecl-inl.h>
-#include <ecl/internal.h>
-
+#include <unistd.h>
 #ifdef ENABLE_DLOPEN
 # ifdef HAVE_DLFCN_H
 #  include <dlfcn.h>
@@ -47,6 +45,8 @@
 #  define INIT_PREFIX "init_fas_"
 # endif
 #endif
+#include <ecl/ecl-inl.h>
+#include <ecl/internal.h>
 
 #ifndef HAVE_LSTAT
 static void
@@ -59,7 +59,7 @@ static cl_object
 copy_object_file(cl_object original)
 {
 	int err;
-	cl_object s, copy = make_constant_base_string("TMP:ECL");
+	cl_object copy = make_constant_base_string("TMP:ECL");
 	copy = si_coerce_to_filename(si_mkstemp(copy));
 	ecl_disable_interrupts();
 #ifdef HAVE_LSTAT
@@ -112,7 +112,6 @@ cl_object
 ecl_library_open(cl_object filename, bool force_reload) {
 	cl_object block;
 	bool self_destruct = 0;
-	cl_index i;
 	char *filename_string;
 
 	/* Coerces to a file name but does not merge with cwd */
@@ -314,8 +313,6 @@ void
 ecl_library_close(cl_object block) {
 	const char *filename;
 	bool verbose = ecl_symbol_value(@'si::*gc-verbose*') != Cnil;
-	cl_object l;
-	int i;
 
 	if (Null(block->cblock.name))
 		filename = "<anonymous>";

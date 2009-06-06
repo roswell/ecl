@@ -150,8 +150,8 @@ typedef cl_object (*cl_objectfn_fixed)();
 #define HEADER			int8_t t, m, padding[2]
 #define HEADER1(field)		int8_t t, m, field, padding
 #define HEADER2(field1,field2)	int8_t t, m, field1, field2
-#define HEADER3(field1,flag2,flag3) int8_t t, m, field1; uint8_t flag2:4, flag3:4
-#define HEADER4(field1,flag2,flag3,flag4) int8_t t, m, field1; uint8_t flag2:4, flag3:2, flag4:2
+#define HEADER3(field1,flag2,flag3) int8_t t, m, field1; unsigned flag2:4, flag3:4
+#define HEADER4(field1,flag2,flag3,flag4) int8_t t, m, field1; unsigned flag2:4, flag3:2, flag4:2
 
 struct ecl_singlefloat {
 	HEADER;
@@ -590,7 +590,7 @@ struct ecl_stream {
 	cl_fixnum int0;		/*  some int  */
 	cl_fixnum int1;		/*  some int  */
 	cl_index byte_size;	/*  size of byte in binary streams  */
-	cl_index last_op;	/*  0: unknown, 1: reading, -1: writing */
+	cl_fixnum last_op;	/*  0: unknown, 1: reading, -1: writing */
 	char *buffer;		/*  buffer for FILE  */
 	cl_object format;	/*  external format  */
 	cl_eformat_encoder encoder;
@@ -622,7 +622,7 @@ enum ecl_readtable_case {
 	ecl_case_upcase,
 	ecl_case_downcase,
 	ecl_case_invert,
-	ecl_case_preserve,
+	ecl_case_preserve
 };
 
 struct ecl_readtable {		/*  read table  */

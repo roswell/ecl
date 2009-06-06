@@ -364,12 +364,12 @@ extern ECL_API cl_object si_compiled_function_name(cl_object fun);
 extern ECL_API cl_object si_compiled_function_block(cl_object fun);
 extern ECL_API cl_object cl_function_lambda_expression(cl_object fun);
 
-extern ECL_API cl_object cl_make_cfun(void *c_function, cl_object name, cl_object block, int narg);
-extern ECL_API cl_object cl_make_cfun_va(void *c_function, cl_object name, cl_object block);
-extern ECL_API cl_object cl_make_cclosure_va(void *c_function, cl_object env, cl_object block);
-extern ECL_API void cl_def_c_function(cl_object sym, void *c_function, int narg);
+extern ECL_API cl_object cl_make_cfun(cl_objectfn_fixed c_function, cl_object name, cl_object block, int narg);
+extern ECL_API cl_object cl_make_cfun_va(cl_objectfn c_function, cl_object name, cl_object block);
+extern ECL_API cl_object cl_make_cclosure_va(cl_objectfn c_function, cl_object env, cl_object block);
+extern ECL_API void cl_def_c_function(cl_object sym, cl_objectfn_fixed c_function, int narg);
 extern ECL_API void cl_def_c_macro(cl_object sym, void *c_function, int narg);
-extern ECL_API void cl_def_c_function_va(cl_object sym, void *c_function);
+extern ECL_API void cl_def_c_function_va(cl_object sym, cl_objectfn c_function);
 extern ECL_API void ecl_cmp_defmacro(cl_object data);
 extern ECL_API void ecl_cmp_defun(cl_object data);
 
@@ -406,6 +406,7 @@ extern ECL_API cl_object cl_lower_case_p(cl_object c);
 extern ECL_API cl_object cl_name_char(cl_object s);
 extern ECL_API cl_object cl_standard_char_p(cl_object c);
 extern ECL_API cl_object cl_upper_case_p(cl_object c);
+extern ECL_API int ecl_string_case(cl_object s);
 
 extern ECL_API bool ecl_alpha_char_p(ecl_character c);
 extern ECL_API bool ecl_alphanumericp(ecl_character c);
@@ -893,7 +894,7 @@ extern ECL_API const char *ecl_self;
 extern ECL_API void ecl_set_option(int option, cl_fixnum value);
 extern ECL_API cl_fixnum ecl_get_option(int option);
 extern ECL_API int cl_boot(int argc, char **argv);
-extern ECL_API int cl_shutdown(void);
+extern ECL_API void cl_shutdown(void);
 #if defined(_MSC_VER) || defined(mingw32)
 extern ECL_API void ecl_get_commandline_args(int* argc, char*** argv);
 #endif
@@ -1390,7 +1391,7 @@ extern ECL_API cl_fixnum ecl_length(cl_object x);
 
 /* stacks.c */
 
-extern ECL_API cl_object si_ihs_top(cl_object arg);
+extern ECL_API cl_object si_ihs_top(void);
 extern ECL_API cl_object si_ihs_fun(cl_object arg);
 extern ECL_API cl_object si_ihs_env(cl_object arg);
 extern ECL_API cl_object si_ihs_next(cl_object arg);
@@ -1549,6 +1550,7 @@ extern ECL_API cl_object mp_condition_variable_wait(cl_object cv, cl_object lock
 extern ECL_API cl_object mp_condition_variable_timedwait(cl_object cv, cl_object lock, cl_object seconds);
 extern ECL_API cl_object mp_condition_variable_signal(cl_object cv);
 extern ECL_API cl_object mp_condition_variable_broadcast(cl_object cv);
+extern ECL_API cl_object mp_current_process(void);
 
 extern ECL_API void ecl_import_current_thread(cl_object process_name, cl_object process_binding);
 extern ECL_API void ecl_release_current_thread(void);

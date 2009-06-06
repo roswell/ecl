@@ -36,7 +36,6 @@ corrupted_hash(cl_object hashtable)
 static cl_hashkey
 _hash_eql(cl_hashkey h, cl_object x)
 {
- BEGIN:
 	switch (type_of(x)) {
 	case t_bignum:
 #ifdef WITH_GMP
@@ -433,7 +432,6 @@ cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
 	int htt;
 	cl_index hsize;
 	cl_object h;
-	double factor;
 	/*
 	 * Argument checking
 	 */
@@ -640,6 +638,7 @@ si_hash_table_iterator(cl_object ht)
 				     cl_list(2, MAKE_FIXNUM(-1), ht),
 				     @'si::hash-table-iterator'))
 }
+
 cl_object
 cl_hash_table_rehash_size(cl_object ht)
 {

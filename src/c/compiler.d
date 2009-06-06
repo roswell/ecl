@@ -569,7 +569,7 @@ static cl_object
 c_tag_ref(cl_env_ptr env, cl_object the_tag, cl_object the_type)
 {
 	cl_fixnum n = 0;
-	cl_object l, type, name;
+	cl_object l;
         const cl_compiler_ptr c_env = env->c_env;
 	for (l = c_env->variables; CONSP(l); l = ECL_CONS_CDR(l)) {
 		cl_object type, name, record = ECL_CONS_CAR(l);
@@ -902,7 +902,6 @@ static int
 c_call(cl_env_ptr env, cl_object args, int flags) {
 	cl_object name;
 	cl_index nargs;
-	bool push = flags & FLAG_PUSH;
 
 	name = pop(&args);
 	nargs = c_arguments(env, args);
@@ -2260,7 +2259,6 @@ compile_body(cl_env_ptr env, cl_object body, int flags) {
 static int
 c_cons(cl_env_ptr env, cl_object args, int flags)
 {
-	cl_object car, cdr;
 	if (ecl_length(args) != 2) {
 		FEprogram_error("CONS: Wrong number of arguments", 0);
 	}
@@ -2657,7 +2655,6 @@ cl_object
 ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
 	cl_object reqs, opts, rest, key, keys, auxs, allow_other_keys;
 	cl_object specials, doc, decl, body, output;
-	int nopts, nkeys;
 	cl_index handle;
 	struct cl_compiler_env *old_c_env, new_c_env;
 
@@ -2822,7 +2819,6 @@ si_make_lambda(cl_object name, cl_object rest)
 	volatile cl_compiler_env_ptr old_c_env;
 	struct cl_compiler_env new_c_env;
 	volatile cl_index handle;
-	struct ihs_frame ihs;
 	cl_object bytecodes, interpreter_env, compiler_env;
 @
 	/*

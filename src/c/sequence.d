@@ -155,7 +155,7 @@ E:
 
 @(defun subseq (sequence start &optional end &aux x)
 	cl_fixnum s, e;
-	cl_fixnum i, j;
+	cl_fixnum i;
 @
 	s = fixnnint(start);
 	if (Null(end))

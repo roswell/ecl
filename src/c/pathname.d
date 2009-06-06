@@ -1181,7 +1181,6 @@ cl_host_namestring(cl_object pname)
 	} else {
 		/* The new pathname is an absolute one. We compare it with the defaults
 		   and if they have some common elements, we just output the remaining ones. */
-		cl_index begin;
 		cl_object dir_begin = funcall(5, @'mismatch', pathdir, defaultdir,
 					      @':test', @'equal');
 		if (dir_begin == Cnil) {
@@ -1213,7 +1212,6 @@ static bool
 do_path_item_match(cl_object s, cl_index j, cl_object p, cl_index i)
 {
 	cl_index ls = ecl_length(s), lp = ecl_length(p);
-	cl_index cp;
 	while (i < lp) {
 		cl_index cp = ecl_char(p, i);
 		if (cp == '*') {

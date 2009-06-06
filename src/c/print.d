@@ -540,7 +540,7 @@ extern long double strtold(const char *nptr, char **endptr);
 
 int edit_double(int n, DBL_TYPE d, int *sp, char *s, int *ep)
 {
-	char *exponent, *p, buff[DBL_SIZE + 1];
+	char *exponent, buff[DBL_SIZE + 1];
 	int length;
 #if defined(HAVE_FENV_H) || defined(_MSC_VER) || defined(mingw32)
 	fenv_t env;
@@ -800,7 +800,6 @@ static bool
 needs_to_be_escaped(cl_object s, cl_object readtable, cl_object print_case)
 {
 	int action = readtable->readtable.read_case;
-	bool all_dots;
 	cl_index i;
 	if (potential_number_p(s, ecl_print_base()))
 		return 1;
@@ -1078,7 +1077,7 @@ cl_object
 si_write_ugly_object(cl_object x, cl_object stream)
 {
 	cl_object r, y;
-	cl_fixnum i, j;
+	cl_fixnum i;
 	cl_index ndx, k;
 
 	if (x == OBJNULL) {
@@ -1684,7 +1683,6 @@ si_write_object_recursive(cl_object x, cl_object stream)
 	{
 		cl_object circle_counter;
 		cl_fixnum code;
-		bool print;
 		circle_counter = ecl_symbol_value(@'si::*circle-counter*');
 		if (circle_counter == Cnil) {
 			cl_env_ptr env = ecl_process_env();

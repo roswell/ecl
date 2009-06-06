@@ -76,7 +76,6 @@ ecl_apply_from_stack_frame(cl_object frame, cl_object x)
 	case t_bclosure:
 		return ecl_interpret(frame, fun->bclosure.lex, fun->bclosure.code);
 	default:
-	ERROR:
 		FEinvalid_function(x);
 	}
 }
@@ -115,7 +114,6 @@ ecl_function_dispatch(cl_env_ptr env, cl_object x)
 		env->function = fun;
                 return fun->bclosure.entry;
 	default:
-	ERROR:
 		FEinvalid_function(x);
 	}
 }
@@ -150,8 +148,6 @@ cl_funcall(cl_narg narg, cl_object function, ...)
 		}
 		if (type_of(lastarg) == t_frame) {
 			/* This could be replaced with a memcpy() */
-			cl_object *p = lastarg->frame.base;
-                        cl_index i;
                         for (i = 0; i < lastarg->frame.size; i++) {
 				ecl_stack_frame_push(frame, lastarg->frame.base[i]);
 			}

@@ -1136,12 +1136,11 @@ cl_float_precision(cl_object x)
 {
 	const cl_env_ptr the_env = ecl_process_env();
 	int precision;
-	float f; double d;
  AGAIN:
 	switch (type_of(x)) {
 #ifdef ECL_SHORT_FLOAT
 	case t_shortfloat: {
-		f = ecl_short_float(x);
+		float f = ecl_short_float(x);
 		if (f == 0.0) {
 			precision = 0;
 		} else {
@@ -1157,7 +1156,7 @@ cl_float_precision(cl_object x)
 	}
 #endif
 	case t_singlefloat: {
-		f = sf(x);
+		float f = sf(x);
 		if (f == 0.0) {
 			precision = 0;
 		} else {

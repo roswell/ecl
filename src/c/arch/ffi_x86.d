@@ -295,13 +295,13 @@ ecl_dynamic_callback_make(cl_object data, enum ecl_ffi_calling_convention cc_typ
 	*(char*) (buf+0)  = 0x54;
 	*(char*) (buf+1)  = 0x68;
 	*(long*) (buf+2)  = (long)data;
-	*(char*) (buf+6)  = 0xE8;
+	*(unsigned char*) (buf+6)  = 0xE8;
 	*(long*) (buf+7)  = (long)ecl_dynamic_callback_execute - (long)(buf+11);
 	*(char*) (buf+11) = 0x59;
 	*(char*) (buf+12) = 0x59;
 	if (cc_type == ECL_FFI_CC_CDECL) {
-		*(char*) (buf+13) = 0xc3;
-		*(short*)(buf+14) = 0x9090;
+		*(unsigned char*) (buf+13) = 0xc3;
+		*(unsigned short*)(buf+14) = 0x9090;
 	} else {
 		cl_object arg_types = CADDR(data);
 		int byte_size = 0;
@@ -313,8 +313,8 @@ ecl_dynamic_callback_make(cl_object data, enum ecl_ffi_calling_convention cc_typ
 			arg_types = CDR(arg_types);
 		}
 
-		*(char*) (buf+13) = 0xc2;
-		*(short*)(buf+14) = (short)byte_size;
+		*(unsigned char*) (buf+13) = 0xc2;
+		*(unsigned short*)(buf+14) = (unsigned short)byte_size;
 	}
 
 	return buf;

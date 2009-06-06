@@ -172,7 +172,6 @@ do_clear_method_hash(struct cl_env_struct *env, cl_object target)
 void
 _ecl_set_method_hash_size(struct cl_env_struct *env, cl_index size)
 {
-	cl_index i;
 	env->method_spec_vector =
 		si_make_vector(Ct, /* element type */
 			       MAKE_FIXNUM(64), /* Maximum size */

@@ -123,7 +123,6 @@ ecl_foreign_data_pointer_safe(cl_object f)
 char *
 ecl_base_string_pointer_safe(cl_object f)
 {
-	cl_index l;
 	unsigned char *s;
 	/* FIXME! Is there a better function name? */
 	f = ecl_check_cl_type(@'si::make-foreign-data-from-array', f, t_base_string);
@@ -255,7 +254,6 @@ si_foreign_data_set(cl_object f, cl_object andx, cl_object value)
 {
 	cl_index ndx = fixnnint(andx);
 	cl_index size, limit;
-	cl_object output;
 
 	if (type_of(f) != t_foreign) {
 		FEwrong_type_argument(@'si::foreign-data', f);
@@ -457,7 +455,6 @@ si_foreign_data_set_elt(cl_object f, cl_object andx, cl_object type, cl_object v
 {
 	cl_index ndx = fixnnint(andx);
 	cl_index limit = f->foreign.size;
-	void *p;
 	enum ecl_ffi_tag tag = ecl_foreign_type_code(type);
 	if (ndx >= limit || ndx + ecl_foreign_type_size[tag] > limit) {
 		FEerror("Out of bounds reference into foreign data type ~A.", 1, f);
@@ -500,33 +497,28 @@ si_load_foreign_module(cl_object filename)
 #if !defined(ENABLE_DLOPEN)
 	FEerror("SI:LOAD-FOREIGN-MODULE does not work when ECL is statically linked", 0);
 #else
-	cl_object libraries;
 	cl_object output;
-	int i;
 
-#ifdef ECL_THREADS
+# ifdef ECL_THREADS
 	mp_get_lock(1, ecl_symbol_value(@'mp::+load-compile-lock+'));
 	CL_UNWIND_PROTECT_BEGIN(ecl_process_env()) {
-#endif
+# endif
 	output = ecl_library_open(filename, 0);
-	if (output->cblock.handle == NULL)
-	{
+	if (output->cblock.handle == NULL) {
 		ecl_library_close(output);
 		output = ecl_library_error(output);
 	}
-OUTPUT:
-#ifdef ECL_THREADS
+# ifdef ECL_THREADS
 	(void)0; /* MSVC complains about missing ';' before '}' */
 	} CL_UNWIND_PROTECT_EXIT {
 	mp_giveup_lock(ecl_symbol_value(@'mp::+load-compile-lock+'));
 	} CL_UNWIND_PROTECT_END;
-#endif
-	if (type_of(output) == t_codeblock) {
-		output->cblock.locked |= 1;
-		@(return output)
-	} else {
+# endif
+	if (type_of(output) != t_codeblock) {
 		FEerror("LOAD-FOREIGN-MODULE: Could not load foreign module ~S (Error: ~S)", 2, filename, output);
-	}
+        }
+        output->cblock.locked |= 1;
+        @(return output)
 #endif
 }
 
@@ -550,10 +542,9 @@ si_find_foreign_symbol(cl_object var, cl_object module, cl_object type, cl_objec
 	}
 	output = ecl_make_foreign_data(type, ecl_to_fixnum(size), sym);
 OUTPUT:
-	if (type_of(output) == t_foreign)
-		@(return output)
-	else
+	if (type_of(output) != t_foreign)
 		FEerror("FIND-FOREIGN-SYMBOL: Could not load foreign symbol ~S from module ~S (Error: ~S)", 3, var, module, output);
+        @(return output)
 #endif
 }
 

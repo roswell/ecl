@@ -22,10 +22,13 @@
 #include <winsock.h>
 #else
 extern int errno;
-#include <netinet/in.h>
-#include <netdb.h> 
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <unistd.h>
 #endif
 #include <string.h>
 

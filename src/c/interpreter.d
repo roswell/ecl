@@ -680,7 +680,6 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 	*/
 	CASE(OP_LFUNCTION); {
 		int lex_env_index;
-		cl_object fun_record;
 		GET_OPARG(lex_env_index, vector);
 		reg0 = ecl_lex_env_get_fun(lex_env, lex_env_index);
 		THREAD_NEXT;
@@ -727,7 +726,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 	*/
 	CASE(OP_RETURN); {
 		int lex_env_index;
-		cl_object block_record, id, block_name;
+		cl_object block_record;
 		GET_OPARG(lex_env_index, vector);
 		/* record = (id . name) */
 		block_record = ecl_lex_env_get_record(lex_env, lex_env_index);
@@ -836,7 +835,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 		THREAD_NEXT;
 	}
 	CASE(OP_PBIND); {
-		cl_object var_name, value;
+		cl_object var_name;
 		GET_DATA(var_name, vector, data);
 		lex_env = bind_var(lex_env, var_name, ECL_STACK_POP_UNSAFE(the_env));
 		THREAD_NEXT;

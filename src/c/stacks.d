@@ -22,13 +22,14 @@
 # include <sys/time.h>
 # include <sys/resource.h>
 #endif
+#include <ecl/internal.h>
 
 /************************ C STACK ***************************/
 
 static void
 cs_set_size(cl_env_ptr env, cl_index new_size)
 {
-	volatile int foo = 0;
+	volatile char foo = 0;
 	cl_index safety_area = ecl_get_option(ECL_OPT_C_STACK_SAFETY_AREA);
 	new_size += 2*safety_area;
 #ifdef ECL_DOWN_STACK
@@ -87,7 +88,7 @@ ecl_bds_bind(cl_env_ptr env, cl_object s, cl_object value)
 	if (h->key == OBJNULL) {
 		/* The previous binding was at most global */
 		slot->symbol = s;
-		slot->value = OBJNULL;
+		slot->value = s->symbol.value;
 		ecl_sethash(s, env->bindings_hash, value);
 	} else {
 		/* We have to save a dynamic binding */
@@ -110,7 +111,7 @@ ecl_bds_push(cl_env_ptr env, cl_object s)
 	if (h->key == OBJNULL) {
 		/* The previous binding was at most global */
 		slot->symbol = s;
-		slot->value = OBJNULL;
+		slot->value = s->symbol.value;
 		ecl_sethash(s, env->bindings_hash, s->symbol.value);
 	} else {
 		/* We have to save a dynamic binding */
@@ -129,7 +130,7 @@ ecl_bds_unwind1(cl_env_ptr env)
 	if (slot->value == OBJNULL) {
 		/* We have deleted all dynamic bindings */
 		h->key = OBJNULL;
-		h->value = OBJNULL;
+		h->value = Cnil;
 		env->bindings_hash->hash.entries--;
 	} else {
 		/* We restore the previous dynamic binding */
@@ -307,7 +308,7 @@ ihs_top_function_name(void)
 }
 
 cl_object
-si_ihs_top(cl_object name)
+si_ihs_top(void)
 {
 	cl_env_ptr env = ecl_process_env();
 	@(return MAKE_FIXNUM(env->ihs_top->index))
@@ -512,7 +513,7 @@ si_get_limit(cl_object type)
 }
 
 void
-init_stacks(cl_env_ptr env, int *new_cs_org)
+init_stacks(cl_env_ptr env, char *new_cs_org)
 {
 	static struct ihs_frame ihs_org = { NULL, NULL, NULL, 0};
 	cl_index size, margin;
@@ -532,7 +533,7 @@ init_stacks(cl_env_ptr env, int *new_cs_org)
 	env->bds_limit = &env->bds_org[size - 2*margin];
 
 	env->ihs_top = &ihs_org;
-	ihs_org.function = @'si::top-level';
+	ihs_org.function = Cnil;
 	ihs_org.lex_env = Cnil;
 	ihs_org.index = 0;
 
@@ -545,7 +546,7 @@ init_stacks(cl_env_ptr env, int *new_cs_org)
 		getrlimit(RLIMIT_STACK, &rl);
 		if (rl.rlim_cur != RLIM_INFINITY) {
 			size = rl.rlim_cur / sizeof(cl_fixnum) / 2;
-			if (size > ecl_get_option(ECL_OPT_C_STACK_SIZE))
+			if (size > (cl_index)ecl_get_option(ECL_OPT_C_STACK_SIZE))
 				ecl_set_option(ECL_OPT_C_STACK_SIZE, size);
 #ifdef ECL_DOWN_STACK
 			env->cs_barrier = env->cs_org - rl.rlim_cur - 1024;

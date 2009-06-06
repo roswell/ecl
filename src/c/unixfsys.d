@@ -45,9 +45,7 @@
 # include <windows.h>
 # undef ERROR
 #endif
-#ifndef HAVE_MKSTEMP
-# include <fcntl.h>
-#endif
+#include <fcntl.h>
 #include <errno.h>
 
 static int
@@ -852,7 +850,7 @@ dir_recursive(cl_object pathname, cl_object directory)
 
 @(defun directory (mask &key &allow_other_keys)
 	cl_object prev_dir = Cnil;
-	cl_object output;
+	volatile cl_object output;
 @
 	CL_UNWIND_PROTECT_BEGIN(the_env) {
 		prev_dir = current_dir();

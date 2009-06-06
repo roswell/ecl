@@ -123,7 +123,6 @@ static void
 invert_buffer_case(cl_object x, cl_object escape_list, int sign)
 {
 	cl_fixnum high_limit, low_limit;
-	cl_object escape_interval;
 	cl_fixnum i = TOKEN_STRING_FILLP(x);
 	do {
 		if (escape_list != Cnil) {
@@ -806,7 +805,7 @@ static cl_object
 sharp_backslash_reader(cl_object in, cl_object c, cl_object d)
 {
 	const cl_env_ptr env = ecl_process_env();
-	cl_object nc, token;
+	cl_object token;
 	if (d != Cnil && !read_suppress)
 		if (!FIXNUMP(d) ||
 		    fix(d) != 0)
@@ -829,7 +828,6 @@ sharp_backslash_reader(cl_object in, cl_object c, cl_object d)
 		}
 		c = nc;
 	}
- OUTPUT:
 	si_put_buffer_string(token);
 	@(return c)
 }
@@ -1146,9 +1144,6 @@ sharp_O_reader(cl_object in, cl_object c, cl_object d)
 static cl_object
 sharp_X_reader(cl_object in, cl_object c, cl_object d)
 {
-	cl_index i;
-	cl_object x;
-
 	if(d != Cnil && !read_suppress)
 		extra_argument('X', in, d);
 	@(return (read_number(in, 16, CODE_CHAR('X'))))
@@ -1955,7 +1950,7 @@ ecl_invalid_character_p(int c)
 
 @(defun get_macro_character (c &optional readtable)
 	enum ecl_chattrib cat;
-	cl_object dispatch, non_terminating_p;
+	cl_object dispatch;
 @
 	if (Null(readtable))
 		readtable = cl_core.standard_readtable;
@@ -1969,7 +1964,7 @@ ecl_invalid_character_p(int c)
 	&optional non_terminating_p (readtable ecl_current_readtable()))
 	enum ecl_chattrib cat;
 	cl_object table;
-	int i, c;
+	int c;
 @
 	assert_type_readtable(readtable);
 	c = ecl_char_code(chr);

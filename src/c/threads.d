@@ -58,7 +58,6 @@ static pthread_t main_thread;
 #endif /* _MSC_VER || mingw32 */
 
 extern void ecl_init_env(struct cl_env_struct *env);
-static void initialize_process_bindings(cl_object process, cl_object bindings);
 
 #if !defined(WITH___THREAD)
 cl_env_ptr
@@ -131,12 +130,13 @@ thread_cleanup(void *aux)
 }
 
 #ifdef ECL_WINDOWS_THREADS
-static DWORD WINAPI thread_entry_point(cl_object process)
+static DWORD WINAPI thread_entry_point(void *arg)
 #else
 static void *
-thread_entry_point(cl_object process)
+thread_entry_point(void *arg)
 #endif
 {
+        cl_object process = (cl_object)arg;
 	cl_env_ptr env;
 
 	/* 1) Setup the environment for the execution of the thread */
@@ -210,7 +210,6 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
 	cl_object process, l;
 	pthread_t current;
 	cl_env_ptr env;
-	process->process.active = 1;
 #ifdef ECL_WINDOWS_THREADS
 	current = GetCurrentThread();
 #else
@@ -331,7 +330,6 @@ mp_process_enable(cl_object process)
         process->process.parent = mp_current_process();
 	output = (process->process.thread = code)? process : Cnil;
 #else
-	pthread_t *posix_thread;
 	int code;
 
 	if (mp_process_active_p(process) != Cnil)
@@ -476,7 +474,6 @@ cl_object
 mp_giveup_lock(cl_object lock)
 {
 	cl_object own_process = mp_current_process();
-	int code;
 	if (type_of(lock) != t_lock)
 		FEwrong_type_argument(@'mp::lock', lock);
 	if (lock->lock.holder != own_process) {
@@ -586,7 +583,6 @@ mp_condition_variable_timedwait(cl_object cv, cl_object lock, cl_object seconds)
 #ifdef ECL_WINDOWS_THREADS
 	FEerror("Condition variables are not supported under Windows.", 0);
 #else
-	int rc;
 	double r;
 	struct timespec   ts;
 	struct timeval    tp;

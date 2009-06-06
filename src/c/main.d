@@ -168,9 +168,8 @@ ecl_get_option(int option)
 {
 	if (option >= ECL_OPT_LIMIT || option < 0) {
 		FEerror("Invalid boot option ~D", 1, MAKE_FIXNUM(option));
-	} else {
-		return option_values[option];
 	}
+        return option_values[option];
 }
 
 void
@@ -191,7 +190,7 @@ ecl_set_option(int option, cl_fixnum value)
 void
 ecl_init_env(cl_env_ptr env)
 {
-	int i;
+	char i;
 
 	env->c_env = NULL;
 
@@ -326,10 +325,9 @@ _ecl_alloc_env()
 	return output;
 }
 
-int
+void
 cl_shutdown(void)
 {
-	const cl_env_ptr env = ecl_process_env();
 	if (ecl_get_option(ECL_OPT_BOOTED) > 0) {
 		cl_object l = ecl_symbol_value(@'si::*exit-hooks*');
 		cl_object form = cl_list(2, @'funcall', Cnil);
@@ -347,11 +345,10 @@ cl_shutdown(void)
 #endif
 	}
 	ecl_set_option(ECL_OPT_BOOTED, -1);
-	return 1;
 }
 
 #ifdef ECL_UNICODE
-static cl_object
+static void
 read_char_database()
 {
 	cl_object s = si_base_string_concatenate(2,
@@ -503,7 +500,7 @@ cl_boot(int argc, char **argv)
 	cl_export2(Ct, cl_core.lisp_package);
 
 	/* At exit, clean up */
-	atexit((void*)cl_shutdown);
+	atexit(cl_shutdown);
 
 	/* These must come _after_ the packages and NIL/T have been created */
 	init_all_symbols();

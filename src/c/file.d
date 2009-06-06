@@ -393,7 +393,6 @@ generic_read_byte(cl_object strm)
 	read_byte8 = strm->stream.ops->read_byte8;
 	bs = strm->stream.byte_size;
 	for (; bs >= 8; bs -= 8) {
-		cl_object aux;
 		if (read_byte8(strm, &c, 1) < 1)
 			return Cnil;
 		if (output) {
@@ -2187,7 +2186,6 @@ concatenated_read_byte8(cl_object strm, unsigned char *c, cl_index n)
 	cl_object l = CONCATENATED_STREAM_LIST(strm);
 	cl_index out = 0;
 	while (out < n && !Null(l)) {
-		cl_index left = n - out;
 		cl_index delta = ecl_read_byte8(ECL_CONS_CAR(l), c + out, n - out);
 		out += delta;
 		if (out == n) break;
@@ -2866,7 +2864,6 @@ const struct ecl_file_ops input_file_ops = {
 static int
 parse_external_format(cl_object stream, cl_object format, int flags)
 {
-	int aux;
 	if (CONSP(format)) {
 		flags = parse_external_format(stream, ECL_CONS_CDR(format), flags);
 		format = ECL_CONS_CAR(format);
@@ -3051,7 +3048,6 @@ set_stream_elt_type(cl_object stream, cl_fixnum byte_size, int flags,
 	t = @':LF';
 	if (stream->stream.ops->write_char == eformat_write_char &&
 	    (flags & ECL_STREAM_CR)) {
-		cl_object key;
 		if (flags & ECL_STREAM_LF) {
 			stream->stream.ops->read_char = eformat_read_char_crlf;
 			stream->stream.ops->write_char = eformat_write_char_crlf;
@@ -3968,7 +3964,6 @@ cl_file_length(cl_object strm)
 		}
 		output = ecl_file_position_set(file_stream, position);
 	}
-  OUTPUT:
 	@(return output)
 @)
 
@@ -4662,14 +4657,12 @@ wsock_error( const char *err_msg, cl_object strm )
 void
 init_file(void)
 {
-	const cl_env_ptr env = ecl_process_env();
 	int flags = ECL_STREAM_DEFAULT_FORMAT;
 	cl_object standard_input;
 	cl_object standard_output;
 	cl_object error_output;
 	cl_object aux;
 	cl_object null_stream;
-	cl_object x;
 #if defined(_MSVC)
 	flags |= ECL_STREAM_CRLF;
 #endif

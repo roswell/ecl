@@ -153,7 +153,7 @@ static struct {
 # define reinstall_signal(x,y)
 # define copy_siginfo(x,y) memcpy(x, y, sizeof(struct sigaction))
 static void
-mysignal(int code, void *handler)
+mysignal(int code, void (*handler)(int, siginfo_t *, void*))
 {
 	struct sigaction new_action, old_action;
 #ifdef SA_SIGINFO
@@ -361,12 +361,14 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
 # ifdef ECL_DOWN_STACK
 	if ((char*)info->si_addr > the_env->cs_barrier &&
 	    (char*)info->si_addr <= the_env->cs_org) {
-		return jump_to_sigsegv_handler(the_env);
+		jump_to_sigsegv_handler(the_env);
+                return;
 	}
 # else
 	if ((char*)info->si_addr < the_env->cs_barrier &&
 	    (char*)info->si_addr >= the_env->cs_org) {
-		return jump_to_sigsegv_handler(the_env);
+		jump_to_sigsegv_handler(the_env);
+                return;
 	}
 # endif
 	if (interrupts_disabled_by_lisp(the_env)) {
@@ -407,14 +409,15 @@ handler_fn_protype(sigbus_handler, int sig, siginfo_t *info, void *aux)
 #if defined(SA_SIGINFO) && defined(ECL_USE_MPROTECT)
 	/* We access the environment when it was protected. That
 	 * means there was a pending signal. */
-	if (the_env == info->si_addr) {
+	if ((void*)the_env == (void*)info->si_addr) {
 		int signal = the_env->interrupt_pending;
 		siginfo_t info = *(siginfo_t*)(the_env->interrupt_info);
 		mprotect(the_env, sizeof(*the_env), PROT_READ | PROT_WRITE);
 		the_env->interrupt_pending = 0;
 		the_env->disable_interrupts = 0;
 		unblock_signal(sig);
-		return handle_signal_now(signal, &info, aux);
+		handle_signal_now(signal, &info, aux);
+                return;
 	}
 #endif
 	call_handler(handle_signal_now, sig, info, aux);
@@ -448,17 +451,16 @@ si_catch_signal(cl_object code, cl_object boolean)
 	int code_int = fixnnint(code);
 	int i;
 #ifdef GBC_BOEHM
-	int error = 0;
-#ifdef SIGSEGV
+# ifdef SIGSEGV
 	if ((code_int == SIGSEGV) && ecl_get_option(ECL_OPT_INCREMENTAL_GC))
 		FEerror("It is not allowed to change the behavior of SIGSEGV.",
 			0);
-#endif
-#ifdef SIGBUS
+# endif
+# ifdef SIGBUS
 	if (code_int == SIGBUS)
 		FEerror("It is not allowed to change the behavior of SIGBUS.",
 			0);
-#endif
+# endif
 #endif
 #if defined(ECL_THREADS) && !defined(_MSC_VER) && !defined(mingw32)
 	if (code_int == ecl_get_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL)) {

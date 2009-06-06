@@ -21,7 +21,7 @@
 #include "cfun_dispatch.d"
 
 cl_object
-cl_make_cfun(void *c_function, cl_object name, cl_object cblock, int narg)
+cl_make_cfun(cl_objectfn_fixed c_function, cl_object name, cl_object cblock, int narg)
 {
 	cl_object cf;
 
@@ -37,7 +37,7 @@ cl_make_cfun(void *c_function, cl_object name, cl_object cblock, int narg)
 }
 
 cl_object
-cl_make_cfun_va(void *c_function, cl_object name, cl_object cblock)
+cl_make_cfun_va(cl_objectfn c_function, cl_object name, cl_object cblock)
 {
 	cl_object cf;
 
@@ -50,7 +50,7 @@ cl_make_cfun_va(void *c_function, cl_object name, cl_object cblock)
 }
 
 cl_object
-cl_make_cclosure_va(void *c_function, cl_object env, cl_object block)
+cl_make_cclosure_va(cl_objectfn c_function, cl_object env, cl_object block)
 {
 	cl_object cc;
 
@@ -62,7 +62,7 @@ cl_make_cclosure_va(void *c_function, cl_object env, cl_object block)
 }
 
 void
-cl_def_c_function(cl_object sym, void *c_function, int narg)
+cl_def_c_function(cl_object sym, cl_objectfn_fixed c_function, int narg)
 {
 	si_fset(2, sym,
 		cl_make_cfun(c_function, sym, ecl_symbol_value(@'si::*cblock*'), narg));
@@ -79,7 +79,7 @@ cl_def_c_macro(cl_object sym, void *c_function, int narg)
 }
 
 void
-cl_def_c_function_va(cl_object sym, void *c_function)
+cl_def_c_function_va(cl_object sym, cl_objectfn c_function)
 {
 	si_fset(2, sym,
 		cl_make_cfun_va(c_function, sym, ecl_symbol_value(@'si::*cblock*')));

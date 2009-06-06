@@ -122,7 +122,6 @@ ecl_runtime(void)
 cl_object
 cl_sleep(cl_object z)
 {
-	double r;
 #ifdef HAVE_NANOSLEEP
 	struct timespec tm;
 #endif
@@ -133,14 +132,18 @@ cl_sleep(cl_object z)
 			    @':format-arguments', cl_list(1, z),
 			    @':expected-type', @'real', @':datum', z);
 #ifdef HAVE_NANOSLEEP
-	r = ecl_to_double(z);
-	tm.tv_sec = (time_t)floor(r);
-	tm.tv_nsec = (long)((r - floor(r)) * 1e9);
-	nanosleep(&tm, NULL);
+        {
+                double r = ecl_to_double(z);
+                tm.tv_sec = (time_t)floor(r);
+                tm.tv_nsec = (long)((r - floor(r)) * 1e9);
+                nanosleep(&tm, NULL);
+        }
 #else
 #if defined (mingw32) || defined(_MSC_VER)
-	r = ecl_to_double(z) * 1000;
-	Sleep((long)r);
+        {
+                double r = ecl_to_double(z) * 1000;
+                Sleep((long)r);
+        }
 #else
 	z = ecl_round1(z);
 	if (FIXNUMP(z))

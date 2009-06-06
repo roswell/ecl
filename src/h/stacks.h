@@ -24,9 +24,9 @@ extern "C" {
  ***********/
 
 #ifdef ECL_DOWN_STACK
-#define ecl_cs_check(env,var) if ((int*)(&var) <= (env)->cs_limit) ecl_cs_overflow()
+#define ecl_cs_check(env,var) if ((char*)(&var) <= (env)->cs_limit) ecl_cs_overflow()
 #else
-#define ecl_cs_check(env,var) if ((int*)(&var) >= (env)->cs_limit) ecl_cs_overflow()
+#define ecl_cs_check(env,var) if ((char*)(&var) >= (env)->cs_limit) ecl_cs_overflow()
 #endif
 
 /**************

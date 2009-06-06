@@ -444,8 +444,6 @@ ecl_last(cl_object l, cl_index n)
 }
 
 @(defun last (l &optional (k MAKE_FIXNUM(1)))
-	cl_object r;
-	cl_fixnum n;
 @
 	if (type_of(k) == t_bignum)
 		@(return l)
@@ -620,13 +618,11 @@ ecl_butlast(cl_object l, cl_index n)
 }
 
 @(defun butlast (lis &optional (nn MAKE_FIXNUM(1)))
-	cl_object r, res = Cnil, *fill = &res;
-	cl_fixnum delay;
 @
 	/* INV: No list has more than MOST_POSITIVE_FIXNUM elements */
 	if (type_of(nn) == t_bignum)
 		@(return Cnil);
-	/* INV: fixnnint() signas a type-error if NN is not an integer >=0 */
+	/* INV: fixnnint() signals a type-error if NN is not an integer >=0 */
 	@(return ecl_butlast(lis, fixnnint(nn)))
 @)
 

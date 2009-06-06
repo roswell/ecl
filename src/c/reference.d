@@ -131,7 +131,6 @@ cl_symbol_value(cl_object sym)
 	if (Null(sym)) {
 		value = sym;
 	} else {
-		const cl_env_ptr env = ecl_process_env();
 		if (!SYMBOLP(sym)) {
 			FEtype_error_symbol(sym);
 		}

@@ -1125,7 +1125,7 @@ cl_symbols[] = {
 {SYS_ "IHS-FUN", SI_ORDINARY, si_ihs_fun, 1, OBJNULL},
 {SYS_ "IHS-NEXT", SI_ORDINARY, si_ihs_next, 1, OBJNULL},
 {SYS_ "IHS-PREV", SI_ORDINARY, si_ihs_prev, 1, OBJNULL},
-{SYS_ "IHS-TOP", SI_ORDINARY, si_ihs_top, 1, OBJNULL},
+{SYS_ "IHS-TOP", SI_ORDINARY, si_ihs_top, 0, OBJNULL},
 {SYS_ "INTERPRETER-STACK", SI_ORDINARY, si_interpreter_stack, -1, OBJNULL},
 {SYS_ "LINK-FROM", SI_ORDINARY, NULL, -1, OBJNULL},
 {SYS_ "LINK-TO", SI_ORDINARY, NULL, -1, OBJNULL},

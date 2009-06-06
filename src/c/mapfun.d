@@ -32,7 +32,6 @@
 
 @(defun mapcar (fun &rest lists)
 	cl_object res, *val = &res;
-	cl_index i;
 @ {
 	PREPARE_MAP(the_env, lists, cdrs_frame, cars_frame, narg);
 	res = Cnil;
