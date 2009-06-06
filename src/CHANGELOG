@@ -68,6 +68,9 @@ ECL 9.5:
  - A new configurable option ECL_OPT_THREAD_INTERRUPT_SIGNAL determines
    which Unix interrupt type is used to communicate between threads.
 
+ - Some functions got new names: ecl_make_cfun, ecl_make_cfun_va,
+   ecl_make_cclosure_va, ecl_def_c_function, ecl_def_c_function_va.
+
 * Bugs fixed:
 
  - Remove an obsolete #if statement for Solaris that broke current builds
