@@ -2858,7 +2858,6 @@ si_make_lambda(cl_object name, cl_object rest)
 	/*
 	 * Interpret using the given lexical environment.
 	 */
-	ecl_ihs_push(the_env, &ihs, bytecodes, Cnil);
 	VALUES(0) = Cnil;
 	NVALUES = 0;
 	{
@@ -2874,7 +2873,6 @@ si_make_lambda(cl_object name, cl_object rest)
                 GC_free(bytecodes->bytecodes.data);
                 GC_free(bytecodes);
 #endif
-                ecl_ihs_pop(the_env);
                 return output;
 	}
 @)
