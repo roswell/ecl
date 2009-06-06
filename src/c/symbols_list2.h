@@ -1705,7 +1705,8 @@ cl_symbols[] = {
 
 {"LOG1P","si_log1p"},
 
-{EXT_ "BC-FILE","si_bc_file"},
+{EXT_ "BC-FILE","si_compiled_function_file"},
+{EXT_ "COMPILED-FUNCTION-FILE","si_compiled_function_file"},
 
 {SYS_ "PROPERTY-LIST",NULL},
 

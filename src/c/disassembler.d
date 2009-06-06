@@ -631,17 +631,3 @@ si_bc_split(cl_object b)
 	data->vector.self.t = b->bytecodes.data;
 	@(return lex vector data)
 }
-
-cl_object
-si_bc_file(cl_object b)
-{
-	cl_env_ptr the_env = ecl_process_env();
-	if (type_of(b) == t_bclosure) {
-		b = b->bclosure.code;
-	}
-	if (type_of(b) != t_bytecodes) {
-		@(return Cnil Cnil);
-	} else {
-		@(return b->bytecodes.file b->bytecodes.file_position);
-	}
-}

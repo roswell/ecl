@@ -30,6 +30,8 @@ ecl_make_cfun(cl_objectfn_fixed c_function, cl_object name, cl_object cblock, in
 	cf->cfunfixed.entry_fixed = c_function;
 	cf->cfunfixed.name = name;
 	cf->cfunfixed.block = cblock;
+        cf->cfunfixed.file = Cnil;
+        cf->cfunfixed.file_position = MAKE_FIXNUM(-1);
 	cf->cfunfixed.narg = narg;
 	if (narg < 0 || narg > C_ARGUMENTS_LIMIT)
 	    FEprogram_error("ecl_make_cfun: function requires too many arguments.",0);
@@ -46,7 +48,9 @@ ecl_make_cfun_va(cl_objectfn c_function, cl_object name, cl_object cblock)
 	cf->cfun.name = name;
 	cf->cfun.block = cblock;
 	cf->cfun.narg = -1;
-	return(cf);
+        cf->cfun.file = Cnil;
+        cf->cfun.file_position = MAKE_FIXNUM(-1);
+	return cf;
 }
 
 cl_object
@@ -58,7 +62,9 @@ ecl_make_cclosure_va(cl_objectfn c_function, cl_object env, cl_object block)
 	cc->cclosure.entry = c_function;
 	cc->cclosure.env = env;
 	cc->cclosure.block = block;
-	return(cc);
+        cc->cclosure.file = Cnil;
+        cc->cclosure.file_position = MAKE_FIXNUM(-1);
+	return cc;
 }
 
 void
@@ -166,14 +172,67 @@ si_compiled_function_block(cl_object fun)
 
        switch(type_of(fun)) {
        case t_cfun:
-       case t_cfunfixed:
 	       output = fun->cfun.block; break;
+       case t_cfunfixed:
+	       output = fun->cfunfixed.block; break;
        case t_cclosure:
 	       output = fun->cclosure.block; break;
        default:
-	       FEerror("~S is not a compiled-function.", 1, fun);
+	       FEerror("~S is not a C compiled function.", 1, fun);
        }
        @(return output)
+}
+
+cl_object
+si_compiled_function_file(cl_object b)
+{
+	cl_env_ptr the_env = ecl_process_env();
+ BEGIN:
+        switch (type_of(b)) {
+        case t_bclosure:
+                b = b->bclosure.code;
+                goto BEGIN;
+        case t_bytecodes:
+		@(return b->bytecodes.file b->bytecodes.file_position);
+        case t_cfun:
+		@(return b->cfun.file b->cfun.file_position);
+        case t_cfunfixed:
+		@(return b->cfunfixed.file b->cfunfixed.file_position);
+        case t_cclosure:
+		@(return b->cclosure.file b->cclosure.file_position);
+        default:
+		@(return Cnil Cnil);
+	}
+}
+
+cl_object
+ecl_set_function_source_file_info(cl_object b, cl_object source, cl_object position)
+{
+	cl_env_ptr the_env = ecl_process_env();
+ BEGIN:
+        switch (type_of(b)) {
+        case t_bclosure:
+                b = b->bclosure.code;
+                goto BEGIN;
+        case t_bytecodes:
+                b->bytecodes.file = source;
+                b->bytecodes.file_position = position;
+                break;
+        case t_cfun:
+                b->cfun.file = source;
+                b->cfun.file_position = position;
+                break;
+        case t_cfunfixed:
+                b->cfunfixed.file = source;
+                b->cfunfixed.file_position = position;
+                break;
+        case t_cclosure:
+                b->cclosure.file = source;
+                b->cclosure.file_position = position;
+                break;
+        default:
+                FEerror("~S is not a compiled function.", 1, b);
+	}
 }
 
 void

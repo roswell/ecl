@@ -173,8 +173,6 @@ asm_end(cl_env_ptr env, cl_index beginning) {
 	bytecodes->bytecodes.data_size = data_size;
 	bytecodes->bytecodes.code = ecl_alloc_atomic(code_size * sizeof(cl_opcode));
 	bytecodes->bytecodes.data = (cl_object*)ecl_alloc(data_size * sizeof(cl_object));
-	bytecodes->bytecodes.file = (file == OBJNULL)? Cnil : file;
-	bytecodes->bytecodes.file_position = (position == OBJNULL)? Cnil : position;
 	for (i = 0, code = (cl_opcode *)bytecodes->bytecodes.code; i < code_size; i++) {
 		code[i] = (cl_opcode)(cl_fixnum)(env->stack[beginning+i]);
 	}
@@ -183,6 +181,8 @@ asm_end(cl_env_ptr env, cl_index beginning) {
 		c_env->constants = ECL_CONS_CDR(c_env->constants);
 	}
         bytecodes->bytecodes.entry =  _ecl_bytecodes_dispatch_vararg;
+        ecl_set_function_source_file_info(bytecodes, (file == OBJNULL)? Cnil : file,
+                                          (file == OBJNULL)? Cnil : position);
 	asm_clear(env, beginning);
 	return bytecodes;
 }

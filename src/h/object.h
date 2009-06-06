@@ -687,6 +687,8 @@ struct ecl_cfun {		/*  compiled function header  */
 	cl_object name;		/*  compiled function name  */
 	cl_object block;	/*  descriptor of C code block for GC  */
 	cl_objectfn entry;	/*  entry address  */
+	cl_object file;		/*  file where it was defined...  */
+	cl_object file_position;/*  and where it was created  */
 };
 
 struct ecl_cfunfixed {		/*  compiled function header  */
@@ -695,6 +697,8 @@ struct ecl_cfunfixed {		/*  compiled function header  */
 	cl_object block;	/*  descriptor of C code block for GC  */
 	cl_objectfn entry;	/*  entry address  */
 	cl_objectfn_fixed entry_fixed;	/*  entry address  */
+	cl_object file;		/*  file where it was defined...  */
+	cl_object file_position;/*  and where it was created  */
 };
 
 struct ecl_cclosure {		/*  compiled closure header  */
@@ -702,6 +706,8 @@ struct ecl_cclosure {		/*  compiled closure header  */
 	cl_object env;		/*  environment  */
 	cl_object block;	/*  descriptor of C code block for GC  */
 	cl_objectfn entry;	/*  entry address  */
+	cl_object file;		/*  file where it was defined...  */
+	cl_object file_position;/*  and where it was created  */
 };
 
 #define ECL_FFICALL_LIMIT 256

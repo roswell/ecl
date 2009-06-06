@@ -1705,7 +1705,8 @@ cl_symbols[] = {
 
 {"LOG1P", SI_ORDINARY, si_log1p, 1, OBJNULL},
 
-{EXT_ "BC-FILE", EXT_ORDINARY, si_bc_file, 1, Cnil},
+{EXT_ "BC-FILE", EXT_ORDINARY, si_compiled_function_file, 1, Cnil},
+{EXT_ "COMPILED-FUNCTION-FILE", EXT_ORDINARY, si_compiled_function_file, 1, Cnil},
 
 {SYS_ "PROPERTY-LIST", SI_ORDINARY, NULL, 1, OBJNULL},
 

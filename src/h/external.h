@@ -363,6 +363,7 @@ extern ECL_API double big_to_double(cl_object x);
 extern ECL_API cl_object si_compiled_function_name(cl_object fun);
 extern ECL_API cl_object si_compiled_function_block(cl_object fun);
 extern ECL_API cl_object cl_function_lambda_expression(cl_object fun);
+extern ECL_API cl_object si_compiled_function_file(cl_object fun);
 
 extern ECL_API cl_object ecl_make_cfun(cl_objectfn_fixed c_function, cl_object name, cl_object block, int narg);
 extern ECL_API cl_object ecl_make_cfun_va(cl_objectfn c_function, cl_object name, cl_object block);
@@ -371,6 +372,7 @@ extern ECL_API void ecl_def_c_function(cl_object sym, cl_objectfn_fixed c_functi
 extern ECL_API void ecl_def_c_macro(cl_object sym, cl_objectfn_fixed c_function, int narg);
 extern ECL_API void ecl_def_c_macro_va(cl_object sym, cl_objectfn c_function);
 extern ECL_API void ecl_def_c_function_va(cl_object sym, cl_objectfn c_function);
+extern ECL_API cl_object ecl_set_function_source_file_info(cl_object fun, cl_object source, cl_object position);
 extern ECL_API void ecl_cmp_defmacro(cl_object data);
 extern ECL_API void ecl_cmp_defun(cl_object data);
 
@@ -492,7 +494,6 @@ extern ECL_API cl_object _ecl_bclosure_dispatch(cl_narg narg, ...);
 
 extern ECL_API cl_object si_bc_disassemble(cl_object v);
 extern ECL_API cl_object si_bc_split(cl_object v);
-extern ECL_API cl_object si_bc_file(cl_object v);
 
 /* error.c */
 
@@ -1903,6 +1904,7 @@ extern ECL_API cl_object clos_standard_instance_set _ARGS((cl_narg narg, cl_obje
 #define cl_make_cfun(fun,name,block,narg) ecl_make_cfun(fun,name,block,narg)
 #define cl_make_cfun_va(fun,name,block) ecl_make_cfun_va(fun,name,block)
 #define cl_make_cclosure_va(fun,name,block) ecl_make_cclosure_va(fun,name,block)
+#define si_bc_file(o) si_compiled_function_file(o)
 
 #ifdef __cplusplus
 }
