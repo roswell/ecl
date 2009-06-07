@@ -148,6 +148,8 @@
       (wt-nl "flag->cblock.data_text_size = compiler_data_text_size;")
       (wt-nl "flag->cblock.cfuns_size = compiler_cfuns_size;")
       (wt-nl "flag->cblock.cfuns = compiler_cfuns;")
+      (wt-nl "flag->cblock.source = make_constant_base_string(\""
+             (namestring *compile-file-truename*) "\");")
       (wt-nl "return;}")
       (wt-nl "#ifdef ECL_DYNAMIC_VV")
       (wt-nl "VV = Cblock->cblock.data;")
@@ -168,6 +170,8 @@
     ;; useless in initialization.
     (dolist (form (nconc (nreverse *make-forms*) *top-level-forms*))
       (let ((*compile-to-linking-call* nil)
+            (*compile-file-pathname* (c1form-file form))
+            (*compile-file-position* (c1form-file-position form))
 	    (*env* 0) (*level* 0) (*temp* 0))
 	  (t2expr form))
       (let ((*compiler-output1* c-output-file))
@@ -704,9 +708,9 @@
                        (minarg (fun-minarg fun))
                        (maxarg (fun-maxarg fun))
                        (narg (if (= minarg maxarg) maxarg nil)))
-                  (format stream "~%{0,0,~D,0,MAKE_FIXNUM(~D),MAKE_FIXNUM(~D),(cl_objectfn)~A},"
+                  (format stream "~%{0,0,~D,0,MAKE_FIXNUM(~D),MAKE_FIXNUM(~D),(cl_objectfn)~A,Ct,MAKE_FIXNUM(~D)},"
                           (or narg -1) (second loc) (second fname-loc)
-                          cfun)))
+                          cfun (fun-file-position fun))))
           (format stream "~%};")))))
 
 ;;; ----------------------------------------------------------------------

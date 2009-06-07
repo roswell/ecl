@@ -2211,6 +2211,7 @@ read_VV(cl_object block, void (*entry_point)(cl_object))
 		block->cblock.links = Cnil;
 		block->cblock.cfuns_size = 0;
 		block->cblock.cfuns = NULL;
+                block->cblock.source = Cnil;
 		si_set_finalizer(block, Ct);
 	}
 	block->cblock.entry = entry_point;
@@ -2276,10 +2277,18 @@ read_VV(cl_object block, void (*entry_point)(cl_object))
 			cl_index fname_location = fix(prototype->block);
 			cl_object fname = VV[fname_location];
 			cl_index location = fix(prototype->name);
+                        cl_object source = prototype->file;
+                        cl_object position = prototype->file_position;
 			int narg = prototype->narg;
 			VV[location] = narg<0?
 				ecl_make_cfun_va(prototype->entry, fname, block) :
 				ecl_make_cfun(prototype->entry, fname, block, narg);
+                        /* Add source file info */
+                        if (position != MAKE_FIXNUM(-1)) {
+                                ecl_set_function_source_file_info(VV[location],
+                                                                  block->cblock.source,
+                                                                  position);
+                        }
 		}
 		/* Execute top-level code */
 		(*entry_point)(MAKE_FIXNUM(0));

@@ -162,6 +162,7 @@ ecl_library_open(cl_object filename, bool force_reload) {
 	block->cblock.links = Cnil;
 	block->cblock.cfuns_size = 0;
 	block->cblock.cfuns = NULL;
+        block->cblock.source = Cnil;
 	filename_string = (char*)filename->base_string.self;
 
 	ecl_disable_interrupts();

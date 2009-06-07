@@ -660,6 +660,7 @@ struct ecl_codeblock {
 	cl_object links;		/*  list of symbols with linking calls  */
 	cl_index cfuns_size;		/*  number of functions defined  */
 	const struct ecl_cfun *cfuns;
+        cl_object source;		/*  common debug information for this block  */
 };
 
 struct ecl_bytecodes {

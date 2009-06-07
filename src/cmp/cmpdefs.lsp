@@ -183,6 +183,10 @@
 			;;; We only register direct calls, not calls via object.
   (child-funs nil)	;;; List of local functions defined here.
   (debug 0)		;;; Debug quality
+  (file *compile-file-pathname*)
+			;;; Source file or NIL
+  (file-position *compile-file-position*)
+			;;; Top-level form number in source file
   )
 
 (defstruct (blk (:include ref))
@@ -260,7 +264,7 @@
 ;;; Variables and constants for error handling
 ;;;
 (defvar *current-form* '|compiler preprocess|)
-(defvar *compile-file-position* nil)
+(defvar *compile-file-position* -1)
 (defvar *first-error* t)
 (defconstant *cmperr-tag* (cons nil nil))
 

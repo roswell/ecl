@@ -77,7 +77,9 @@
 		   (:constructor do-make-c1form))
   (name nil)
   (parent nil)
-  (args '()))
+  (args '())
+  (file nil)
+  (file-position 0))
 
 (defun print-c1form (form stream)
   (format stream "#<form ~A ~X>" (c1form-name form) (ext::pointer form)))
@@ -86,7 +88,9 @@
   (let ((form (do-make-c1form :name name :args args
 			      :type (info-type subform)
 			      :sp-change (info-sp-change subform)
-			      :volatile (info-volatile subform))))
+			      :volatile (info-volatile subform)
+                              :file *compile-file-pathname*
+                              :file-position *compile-file-position*)))
     (c1form-add-info form args)
     form))
 
