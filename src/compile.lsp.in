@@ -11,7 +11,10 @@
 
 (progn
   (setq *package* (find-package "SYSTEM"))
-  (setq *features* @LSP_FEATURES@))
+  (setq *features* @LSP_FEATURES@)
+  ;;(setq *compile-verbose* nil) ;; This one muffles almost everything in the compiler.
+  (setq *compile-print* nil) ;; Set to t for a lot of quite useless verbiage.
+)
 
 ;;;
 ;;; * Ensure that we have the whole of Common-Lisp to compile

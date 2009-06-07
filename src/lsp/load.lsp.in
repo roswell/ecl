@@ -1,9 +1,19 @@
 ;;; @configure_input@
 
+(terpri)
+(princ ";;; Loading src:lsp;export.lsp")
 (load "src:lsp;export.lsp" :verbose nil)
+(terpri)
+(princ ";;; Loading src:lsp;defmacro.lsp")
 (load "src:lsp;defmacro.lsp" :verbose nil)
+(terpri)
+(princ ";;; Loading src:lsp;helpfile.lsp")
 (load "src:lsp;helpfile.lsp" :verbose nil)
+(terpri)
+(princ ";;; Loading src:lsp;evalmacros.lsp")
 (load "src:lsp;evalmacros.lsp" :verbose nil)
+(terpri)
+(princ ";;; Loading src:lsp;cmuutil.lsp")
 (load "src:lsp;cmuutil.lsp" :verbose nil)
 
 (sys:*make-constant '+lisp-module-files+
@@ -33,6 +43,8 @@
   "src:lsp;format.lsp"
   "src:lsp;defpackage.lsp"
   "src:lsp;ffi.lsp"
+#+threads
+  "src:lsp;mp.lsp"
 #+tk
   "src:lsp;tk-init.lsp"
   "build:lsp;config.lsp"
@@ -40,8 +52,11 @@
   "src:lsp;module.lsp"
   "src:lsp;cmdline.lsp"
   "src:lsp;top.lsp"
-#+threads
-  "src:lsp;mp.lsp"
 ))
 
-(mapc #'(lambda (x) (load x :verbose nil)) (cddddr +lisp-module-files+))
+(mapc #'(lambda (x)
+         (terpri)
+         (princ ";;; Loading ")
+         (princ x)
+         (load x :verbose nil))
+ (cddddr +lisp-module-files+))

@@ -9,6 +9,11 @@
 ;;; * By redefining "SYS:" ECL will be able to
 ;;;   find headers and libraries in the build directory.
 ;;;
+(princ "
+;;;
+;;; Welcome to bare.lsp. Let's bring this instance up!
+;;;")
+
 (si::pathname-translations "SRC" `(("**;*.*.*" "@true_srcdir@/**/*.*")))
 (si::pathname-translations "EXT" `(("**;*.*.*" "@true_srcdir@/../contrib/**/*.*")))
 (si::pathname-translations "BUILD" `(("**;*.*.*" "@true_builddir@/**/*.*")))
@@ -23,6 +28,11 @@
 ;;;
 ;;; * Load Common-Lisp base library
 ;;;
+(princ "
+;;;
+;;; About to load lsp/load.lsp
+;;; ")
+
 (if (or (member "ECL-MIN" *features* :test #'string-equal)
 	(member "CROSS" *features* :test #'string-equal))
   (load "lsp/load.lsp" :verbose nil))
@@ -34,9 +44,16 @@
 ;;;
 (setf sys::*gc-verbose* nil)
 #+(or ecl-min cross)
-(load "clos/load.lsp")
+(progn
+ (terpri)
+ (princ ";;; Loading clos/load.lsp")
+ (load "clos/load.lsp" :verbose nil))
+
 #+cmu-format
-(load "src:lsp;format.lsp" :verbose nil)
+(progn
+ (terpri)
+ (princ ";;; Loading lsp/format.lsp")
+ (load "src:lsp;format.lsp" :verbose nil))
 
 ;;;
 ;;; * Load the compiler.
@@ -45,6 +62,10 @@
 ;; Make sure compiler sees what it should see.
 #-:wants-dlopen (setq *features* (delete :dlopen *features*))
 #+:wants-dlopen (push :dlopen *features*)
+
+(terpri)
+(princ #+(or cross ecl-min) ";;; About to load cmp/load.lsp"
+       #-(or cross ecl-min) ";;; About to load cmp.so")
 
 (load #+(or cross ecl-min) "cmp/load.lsp"
       #-(or cross ecl-min) "cmp.so")
@@ -112,3 +133,9 @@
 ;;;
 #+ecl-min
 (setq *features* (cons :stage1 (remove :ecl-min *features*)))
+
+(terpri)
+(princ ";;;
+;;; Now we are in shape to do something useful.
+;;; End of bare.lsp")
+(terpri)
