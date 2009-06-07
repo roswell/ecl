@@ -72,10 +72,12 @@ ECL 9.5:
    ecl_make_cclosure_va, ecl_def_c_function, ecl_def_c_function_va.
 
  - Compiled functions now carry information about their source file
-   (based on patches by JC Beaudoin)
+   (based on patches by Jean-Claude Beaudoin)
 
  - The compiler can now generate some Lisp constants as static C expressions
-   (based on patches by JC Beaudoin)
+   (based on patches by JCB)
+
+ - The debugger is now fit for multithreaded environments (JCB)
 
 * Bugs fixed:
 

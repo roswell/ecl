@@ -21,6 +21,10 @@
 (defvar *old-print-length* nil)
 
 
+;; Either the inspector reads and writes everything on *standard-output*,
+;; or reads and writes everything on *query-io* but not a mix of each!
+;; If this rule is not followed only severe confusion can result. JCB
+
 (defun inspect-read-line ()
   (declare (si::c-local))
   (do ((char (read-char *query-io*) (read-char *query-io*)))
@@ -67,51 +71,75 @@
 
 (defun read-inspect-command (label object allow-recursive)
   (unless *inspect-mode*
+    ;; This is "describe" mode. So we stay non-interactive.
     (inspect-indent-1)
     (if allow-recursive
         (progn (princ label) (inspect-object object))
         (format t label object))
     (return-from read-inspect-command nil))
-  (loop
-    (inspect-indent-1)
-    (if allow-recursive
-        (progn (princ label)
-               (inspect-indent)
-               (prin1 object))
-        (format t label object))
-    (write-char #\Space)
-    (force-output)
-    (case (do ((char (read-char *query-io*) (read-char *query-io*)))
-              ((and (char/= char #\Space) (char/= #\Tab)) char))
-      ((#\Newline #\Return)
-       (when allow-recursive (inspect-object object))
-       (return nil))
-      ((#\n #\N)
-       (inspect-read-line)
-       (when allow-recursive (inspect-object object))
-       (return nil))
-      ((#\s #\S)
-       (inspect-read-line)
-       (return nil))
-      ((#\p #\P)
-       (inspect-read-line)
-       (select-P object))
-      ((#\a #\A)
-       (inspect-read-line)
-       (throw 'ABORT-INSPECT nil))
-      ((#\u #\U)
-       (return (values t (select-U))))
-      ((#\e #\E)
-       (select-E))
-      ((#\q #\Q)
-       (inspect-read-line)
-       (throw 'QUIT-INSPECT nil))
-      ((#\?)
-	(inspect-read-line)
-	(select-?))
-      (t
-        (inspect-read-line))
-      )))
+  (let* ((*quit-tags* (cons *quit-tag* *quit-tag*)) ;; as seen in top.lsp
+	 (*quit-tag* *quit-tags*))
+    (declare (special *quit-tags* *quit-tags*))
+    (loop
+       (when
+	   (catch *quit-tag* ;; as seen in top.lsp
+	     (with-simple-restart (inspect "Go back to inspector.")
+	       (inspect-indent-1)
+	       (if allow-recursive
+		   (progn (princ label)
+			  (inspect-indent)
+			  (prin1 object))
+		   (format t label object))
+	       (write-char #\Space) ;; Inspector prompt!?
+	       (princ " >> ")	    ;; This one is more suggestive.
+	       ;;(force-output) ;; not quite enough.
+	       (finish-output) ;; this one is stronger.
+	       (case (do ((char (read-char *query-io*) (read-char *query-io*)))
+			 ((and (char/= char #\Space) (char/= char #\Tab)) 
+			  (cond
+			    ((char= char #\Newline) char)
+			    ((char= char #\Return) char)
+			    ((alphanumericp (peek-char)) #\!) ;; Invalid command on purpose.
+			    (t char))
+			  ))
+		 ((#\Newline #\Return)
+		  (when allow-recursive (inspect-object object))
+		  (return nil))
+		 ((#\n #\N)
+		  (inspect-read-line)
+		  (when allow-recursive (inspect-object object))
+		  (return nil))
+		 ((#\s #\S)
+		  (inspect-read-line)
+		  (return nil))
+		 ((#\p #\P)
+		  (inspect-read-line)
+		  (select-P object))
+		 ((#\a #\A)
+		  (inspect-read-line)
+		  (throw 'ABORT-INSPECT nil))
+		 ((#\u #\U)
+		  (return (values t (select-U))))
+		 ((#\e #\E)
+		  (select-E))
+		 ((#\q #\Q)
+		  (inspect-read-line)
+		  (throw 'QUIT-INSPECT nil))
+		 ((#\?)
+		  (inspect-read-line)
+		  (select-?))
+		 (t
+		  (inspect-read-line)
+		  (inspect-indent)
+		  (format t "Unknown inspector command. ~
+                       Type ? followed by #\\Newline for help."))
+		 )
+	       )
+	     nil
+	     )
+	 (format t "~&Back to Inspection mode: ~
+                      Type ? followed by #\\Newline for help.~%")
+	 ))))
 
 #+ecl-min
 (defmacro inspect-recursively (label object &optional place)
@@ -162,14 +190,19 @@
                      (eq f :external))
                    (package-name p)))))
 
-  (when (boundp symbol)
+  (when (print-doc symbol t)
+        (format t "~&-----------------------------------------------------------------------------~%~%"))
+  
+  (if (or (eq t symbol) (eq nil symbol) (keywordp symbol))
+      (progn (inspect-indent-1) (format t "value: ~S" (symbol-value symbol)))
+      (when (boundp symbol)
         (if *inspect-mode*
             (inspect-recursively "value:"
                                  (symbol-value symbol)
                                  (symbol-value symbol))
             (inspect-print "value:~%   ~S"
                            (symbol-value symbol)
-                           (symbol-value symbol))))
+                           (symbol-value symbol)))))
 
   (do ((pl (symbol-plist symbol) (cddr pl)))
       ((endp pl))
@@ -184,8 +217,6 @@
                          (cadr pl)
                          (get symbol (car pl))))))
 
-  (when (print-doc symbol t)
-        (format t "~&-----------------------------------------------------------------------------~%"))
   )
 
 (defun inspect-package (package)
@@ -237,8 +268,12 @@
         (do ((i 0 (1+ i))
              (l cons (cdr l)))
             ((atom l)
-             (inspect-recursively (format nil "nthcdr ~D:" i)
-                                  l (cdr (nthcdr (1- i) cons))))
+             (case l
+	       ((t nil) ;; no point in inspecting recursively t nor nil.
+		(inspect-print (format nil "nthcdr ~D: ~~S" i) l))
+	       (t
+		(inspect-recursively (format nil "nthcdr ~D:" i)
+				     l (cdr (nthcdr (1- i) cons))))))
           (inspect-recursively (format nil "nth ~D:" i)
                                (car l) (nth i cons)))))
 
@@ -326,7 +361,7 @@
   (terpri)
   (format t
 	  "Inspect commands for hash tables:~%~
-n (or N or Newline):  inspects the keys/values of the hashtable (recursively).~%~
+n (or N or #\\Newline):  inspects the keys/values of the hashtable (recursively).~%~
 s (or S):             skips the field.~%~
 p (or P):             pretty-prints the field.~%~
 a (or A):             aborts the inspection of the rest of the fields.~%~
@@ -334,7 +369,7 @@ e (or E) form:        evaluates and prints the form.~%~
 l (or L):             show the keys of the hash table.~%~
 j (or J) key:         inspect the value associated to the key requested.~%~
 q (or Q):             quits the inspection.~%~
-?:                    prints this.~%~%"
+?:                    prints this help message.~%~%"
 	  ))
 
 (defun inspect-hashtable (hashtable)
@@ -344,7 +379,8 @@ q (or Q):             quits the inspection.~%~
 	(decf *inspect-level*)
         (loop
           (format t "~S - hash table: " hashtable)
-	  (force-output)
+	  ;;(force-output) ;; not quite enough.
+	  (finish-output) ;; this one is stronger.
           (case (do ((char (read-char *query-io*) (read-char *query-io*)))
 	            ((and (char/= char #\Space) (char/= #\Tab)) char))
 	        ((#\Newline #\Return)
@@ -420,6 +456,25 @@ q (or Q):             quits the inspection.~%~
                (t (format t "~S - ~S" object (type-of object))))))
 
 
+(defun inspect (object &aux (*inspect-mode* t)
+                            (*inspect-level* 0)
+                            (*inspect-history* nil)
+                            (*old-print-level* *print-level*)
+                            (*old-print-length* *print-length*)
+                            (*print-level* 3)
+                            (*print-length* 3))
+  "Args: (object)
+Shows the information about OBJECT interactively.  See the ECL Report for the
+inspect commands, or type '?' to the inspector."
+  ;;(read-line)
+  (terpri)
+  (princ "Inspection mode: Type ? followed by #\\Newline for help.")
+  (terpri)
+  (terpri)
+  (catch 'QUIT-INSPECT (inspect-object object))
+  (terpri)
+  (values))
+
 (defun describe (object &optional (stream *standard-output*)
 			&aux (*inspect-mode* nil)
                              (*inspect-level* 0)
@@ -434,23 +489,6 @@ q (or Q):             quits the inspection.~%~
 								:expected-type '(or stream t nil))))))
   "Args: (object &optional (stream *standard-output*))
 Prints information about OBJECT to STREAM."
-  (terpri)
-  (catch 'QUIT-INSPECT (inspect-object object))
-  (terpri)
-  (values))
-
-(defun inspect (object &aux (*inspect-mode* t)
-                            (*inspect-level* 0)
-                            (*inspect-history* nil)
-                            (*old-print-level* *print-level*)
-                            (*old-print-length* *print-length*)
-                            (*print-level* 3)
-                            (*print-length* 3))
-  "Args: (object)
-Shows the information about OBJECT interactively.  See the ECL Report for the
-inspect commands, or type '?' to the inspector."
-  (read-line)
-  (princ "Type ? and a newline for help.")
   (terpri)
   (catch 'QUIT-INSPECT (inspect-object object))
   (terpri)

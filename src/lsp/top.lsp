@@ -17,6 +17,7 @@
 ;;;;  Merged into new distribution Sept 1987, by Edward Wang.
 ;;;;  Reworked for Threads November 1988, by Giuseppe Attardi.
 ;;;;  Reworked for CLOS November 1988, by Giuseppe Attardi.
+;;;;  Updated May 2009, by Jean-Claude Beaudoin
 
 (in-package "SYSTEM")
 
@@ -174,10 +175,7 @@ rebinds this variable to NIL when control enters a break loop.")
 	in-line or explicitly hidden are not displayed.  Without an argument,~@
 	a concise backtrace is printed with the current function in upper~@
 	case.  With integer argument n, the n functions above and including~@
-	the current one are printed in a verbose format.  The current~@
-	function is indicated with a '@' at the beginning of the line.~@
-	With non-integer argument, all functions since the the previous break~@
-	level are printed verbosely.~@
+	the current one are printed in a verbose format.~@
 	~@
 	See also: :function, :previous, :next.~%")
       ((:f :function) tpl-print-current nil
@@ -200,6 +198,10 @@ rebinds this variable to NIL when control enters a break loop.")
  	It becomes the new current function.~@
 	~@
 	See also: :backtrace, :function, :go, :next.~%")
+      ((:d :down) tpl-previous nil
+       ":d(own)         Alias to :previous"
+       ""
+       )
       ((:n :next) tpl-next nil
        ":n(ext)		Go to next function"
        ":next &optional (n 1)				[Break command]~@
@@ -209,6 +211,10 @@ rebinds this variable to NIL when control enters a break loop.")
 	the new current function.~@
 	~@
 	See also: :backtrace, :function, :go, :previous.~%")
+      ((:u :up) tpl-next nil
+       ":u(p)           Alias to :next"
+       ""
+       )
       ((:g :go) tpl-go nil
        ":g(o)		Go to next function"
        ":go &optional (n 1)				[Break command]~@
@@ -234,10 +240,10 @@ rebinds this variable to NIL when control enters a break loop.")
 	The match is case insensitive.~@
 	~@
 	See also: :backtrace, :function, :previous.~%")
-      ((:d :disassemble) tpl-disassemble-command nil
-       ":d(isassemble)	Disassemble current function"
+      ((:disassemble) tpl-disassemble-command nil
+       ":disassemble	Disassemble current function"
        ":disassemble					[Break command]~@
-	:d						[Abbreviation]~@
+	:disassemble					[Abbreviation]~@
 	~@
 	Disassemble the current function. Currently, only interpreted functions~@
 	can be disassembled.~%")
@@ -328,6 +334,10 @@ rebinds this variable to NIL when control enters a break loop.")
 	Without an argument, show the entire binding stack since the previous~@
 	break level.  With a variable name, print nothing, but return the~@
 	value of the given variable on the binding stack.~%")
+      ((:frs :frame-stack) tpl-frs-command nil
+       ":frs            Show frame stack"
+       ""
+       )
       ((:m :message) tpl-print-message nil
        ":m(essage)      Show error message"
        ":message					[Break command]~@
@@ -340,6 +350,32 @@ rebinds this variable to NIL when control enters a break loop.")
 	:hs						[Abbrevation]~@
 	~@
 	Lists the functions to access the LISP system stacks.~%")
+      ((:i :inspect) tpl-inspect-command nil
+       ":i(nspect)      Inspect value of local variable"
+       ":inspect var-name                               [Break command]~@
+        :i var-name                                     [Abbreviation]~@
+        ~@
+        Inspect value of local variable named by var-name. Argument~@
+        var-name can be a string or a symbol whose name string will~@
+        then be used regardless of of the symbol's package.~@
+        ~@
+        See also: :variables.~%")
+      #+threads
+      ((:s :switch) tpl-switch-command nil
+       ":s(witch)       Switch to next process to debug"
+       ":switch debuggee                                [Break command]~@
+        :s debuggee                                     [Abbreviation]~@
+        ~@
+        Switch to next process in need to debugger attention. Argument~@
+        debuggee, when provided, must be an integer indicating the rank~@
+        of the process in the debugger waiting list.~%")
+      #+threads
+      ((:w :waiting) tpl-waiting-command nil
+       ":w(aiting)      Display debugger's waiting list"
+       ":waiting                                        [Break command]~@
+        :w                                              [Abbreviation]~@
+        ~@
+        Display debugger's waiting list.~%")
       )
   )
 
@@ -372,6 +408,9 @@ under certain conditions; see file 'Copyright' for details.")
 	    (*tpl-level* -1))
 	(tpl)))))
 
+(defvar *allow-recursive-debug* nil)
+(defvar *debug-status* nil)
+
 (defun terminal-interrupt (correctablep)
   (let ((*break-enable* t))
     (if correctablep
@@ -390,23 +429,61 @@ under certain conditions; see file 'Copyright' for details.")
 	 (*quit-tags* (cons *quit-tag* *quit-tags*))
 	 (*quit-tag* *quit-tags*)	; any unique new value
 	 (*tpl-level* (1+ *tpl-level*))
+	 (break-level *break-level*)
 	 values)
     (set-break-env)
     (set-current-ihs)
     (unless quiet
       (break-where))
-    (loop
-     (setq +++ ++ ++ + + -)
-     (when (catch *quit-tag*
-	     (tpl-prompt)
-	     (setq - (locally (declare (notinline tpl-read)) (tpl-read)))
-	     (setq values
-		   (multiple-value-list
-		    (eval-with-env - *break-env*)))
-	     (setq /// // // / / values *** ** ** * * (car /))
-	     (tpl-print values)
-	     nil)
-	   (break-where)))))
+    (flet ((rep ()
+		(handler-bind 
+		 ((condition
+		   (lambda (condition)
+		     (cond ((subtypep (type-of condition) 'warning)
+			    ;; We let warnings pass by this way "warn" does the work.
+			    )
+			   ((< break-level 1)
+			    ;; Toplevel should enter the debugger on any condition.
+			    )
+			   (*allow-recursive-debug*
+			    ;; We are told to let the debugger handle this.
+			    )
+			   (t
+			    (format t "~&Debugger received error: ~A~%~
+                                         Error flushed.~%" condition)
+			    (clear-input)
+			    (return-from rep t) ;; go back into the debugger loop.
+			    )
+			   )
+		     )))
+
+		 (tpl-prompt)
+		 (setq - (locally (declare (notinline tpl-read)) (tpl-read)))
+		 (setq values
+		       (multiple-value-list
+			(eval-with-env - *break-env*)))
+		 (setq /// // // / / values *** ** ** * * (car /))
+		 (tpl-print values)
+		 )
+		)
+	   )
+	  (loop
+	   (setq +++ ++ ++ + + -)
+	   (when
+	       (catch *quit-tag*
+		 (if (zerop break-level)
+		     (with-simple-restart 
+		      (restart-toplevel "Go back to Top-Level REPL.")
+		      (rep)
+		      )
+		   (with-simple-restart
+		    (restart-debugger "Go back to debugger level ~D." break-level)
+		    (rep)
+		    )
+		   )
+		 nil
+		 )
+	     (break-where))))))
 
 (defun tpl-prompt ()
   (typecase *tpl-prompt-hook*
@@ -454,6 +531,25 @@ under certain conditions; see file 'Copyright' for details.")
       (t
        (return (read))))))
 
+(defvar *debug-tpl-commands* nil)
+
+(defun harden-command (cmd-form)
+  `(block 
+    tpl-command
+    (handler-bind 
+     ((error (lambda (condition)
+	       (unless *debug-tpl-commands*
+		 (format t "~&Command aborted.~%Received condition: ~A" condition)
+		 (clear-input)
+		 (return-from tpl-command nil)
+		 )
+	       )
+	     ))
+     ,cmd-form
+     )
+    )
+  )
+
 (defun tpl-make-command (name line &aux (c nil))
   (dolist (commands *tpl-commands*)
     (when (setq c (assoc name (cdr commands) :test #'member))
@@ -463,15 +559,17 @@ under certain conditions; see file 'Copyright' for details.")
 	     nil
 	     `(tpl-unknown-command ',name)))
 	((eq (third c) :restart)
-	 `(invoke-restart-interactively ,(second c))) 
+	 `(progn
+	    ;;(format t "~&About to invoke restart: ~A.~%" ,(second c))
+	    (invoke-restart-interactively ,(second c))))
 	((eq (third c) :eval)
 	 `(,(second c) . ,(tpl-parse-forms line)))
 	((eq (third c) :string)
-	 `(,(second c) . ,(tpl-parse-strings line)))
+	 (harden-command `(,(second c) . ,(tpl-parse-strings line))))
 	((eq (third c) :constant)
-	 (second c))
+	 (harden-command (second c)))
 	(t
-	 `(,(second c) . ,(tpl-parse-forms line t)))))
+	 (harden-command `(,(second c) . ,(tpl-parse-forms line t))))))
 
 (defun tpl-parse-forms (line &optional quote)
   (with-input-from-string (stream line)
@@ -562,10 +660,10 @@ under certain conditions; see file 'Copyright' for details.")
     (values)))
 
 (defun tpl-lambda-expression-command (&optional no-values)
-  (let*((*print-level* 2)
-	(*print-length* 4)
-	(*print-pretty* t)
-	(*print-readably* nil)
+  (let*(;;(*print-level* 2)
+	;;(*print-length* 4)
+	;;(*print-pretty* t)
+	;;(*print-readably* nil)
 	(function (ihs-fun *ihs-current*))
 	(le (function-lambda-expression function)))
     (if le
@@ -642,7 +740,9 @@ under certain conditions; see file 'Copyright' for details.")
 	     (push (compiled-function-name record) functions))
 	    ((progn
 	       (setf record0 (car record) record1 (cdr record))
-	       (symbolp record0))
+	       (or (symbolp record0) (stringp record0)))
+	     (cond ((locativep record1) (setq record1 (deref record1)))
+		   ((unbound-value-p record1) (setq record1 "<unbound value>")))
 	     (setq variables (list* record0 record1 variables)))
 	    ((symbolp record1)
 	     (push record1 blocks))
@@ -650,10 +750,46 @@ under certain conditions; see file 'Copyright' for details.")
 	     )))
     (format t "~:[~;Local functions: ~:*~{~s~^, ~}.~%~]" functions)
     (format t "~:[~;Block names: ~:*~{~s~^, ~}.~%~]" blocks)
-    (format t "Local variables: ~:[~:[none~;~:*~{~s~1*~:@{, ~s~1*~}~}~]~;~
-				   ~:[none~;~:*~{~%  ~s: ~s~}~]~]~%"
-	    (not no-values) variables)
+
+    ;; This format is the what was in the orignal code.
+    ;; It simply does not work when no-values is t.
+    ;; If you care to debug this kind of conundrum then have fun!
+    ;;(format t "Local variables: ~:[~:[none~;~:*~{~a~1*~:@{, ~a~1*~}~}~]~;~
+    ;;                            ~:[none~;~:*~{~%  ~a: ~s~}~]~]~%"
+    ;;          (not no-values) variables)
+    (format t "Local variables: ")
+    (if variables
+	(if no-values
+	    (do ((vals variables (cddr vals)))
+		((endp vals))
+		(format t "~%  ~A" (car vals))
+		)
+	  (do ((vals variables (cddr vals)))
+	      ((endp vals))
+	      (format t "~%  ~A: ~S" (car vals) (cadr vals))
+	   )
+	  )
+      (format t "none")
+      )
+    (terpri)
     (values)))
+
+(defun tpl-inspect-command (var-name)
+  (when (symbolp var-name)
+    (setq var-name (symbol-name var-name)))
+  (let ((val-pair (assoc var-name *break-env* 
+			 :test #'(lambda (s1 s2)
+				   (when (symbolp s2) (setq s2 (symbol-name s2)))
+				   (if (stringp s2)
+				       (string-equal s1 s2)
+				     nil)))))
+    (when val-pair
+      (format t "~&In tpl-inspect-command: val-pair = ~S~%" val-pair)
+      (let ((val (cdr val-pair)))
+	(when (locativep val)
+	  (format 5 "In tpl-inspect-command: val is a locative!~%")
+	  (setq val (deref val)))
+	(inspect val)))))
 
 (defun tpl-bds-command (&optional var)
   (if var
@@ -663,7 +799,8 @@ under certain conditions; see file 'Copyright' for details.")
 	 (format t "Variable not found.~%")
 	 (values))
       (when (eq (bds-var bi) var)
-	(return (bds-val bi))))
+	(return (let ((val (bds-val bi)))
+		  (if (unbound-value-p val) "<unbound value>" val)))))
     (do ((bi (1+ (frs-bds (max 0 (1- *frs-base*)))) (1+ bi))
 	 (last (frs-bds (1+ *frs-top*)))
 	 (fi *frs-base*)
@@ -676,31 +813,74 @@ under certain conditions; see file 'Copyright' for details.")
 	(print-frs fi)
 	(incf fi))
       (format t "BDS[~d]: ~s = ~s~%"
-	      bi (bds-var bi) (bds-val bi)))))
+	      bi (bds-var bi)
+	      (let ((val (bds-val bi)))
+		(if (unbound-value-p val) "<unbound value>" val))))))
 
 (defun tpl-backtrace (&optional n)
-  (if (null n)
-      (let ((*print-pretty* nil))	; because CLOS allows (setf foo)
-					; as function names
-	(princ "Backtrace:")
-	(do ((i *ihs-top* (si::ihs-prev i))
-	     (b nil t))
-	    ((< i *ihs-base*))
-	  (when (ihs-visible i)
-	    (let ((*print-case* (if (= i *ihs-current*) :UPCASE :DOWNCASE)))
-	      (format t "~:[~; >~] ~S" b (ihs-fname i)))))
-	(terpri))
-      (do ((i *ihs-top* (si::ihs-prev i))
-	   (k (if (integerp n) n nil) (and k (1- k))))
-	  ((= k 0) (values))
-	(let*((j (or (sch-frs-base *frs-base* i) (1+ *frs-top*)))
-	      (*print-level* 2)
-	      (*print-length* 4)
-	      (*print-pretty* t))
-	  (do () ((or (> j *frs-top*) (> (frs-ihs j) i)))
+  (let ((*print-pretty* nil)	 ;; because CLOS allows (setf foo) as function names
+	(base *ihs-base*)
+	(top *ihs-top*))
+    (format t "~&Backtrace:~%")
+    (if (null n)
+	(do ((i top (si::ihs-prev i))
+	     ;;(b nil t)
+	     )
+	    ((< i base))
+	    (when (ihs-visible i)
+	      (let ((*print-case* (if (= i *ihs-current*) :UPCASE :DOWNCASE))
+		    (func-name (ihs-fname i)))
+		;;(format t "~:[~; >~] ~S" b (ihs-fname i)) ;; JCB
+		(format t "  > ~S" func-name)
+		(when (eq func-name 'si::bytecodes)
+		  (format t " [Evaluation of: ~S]"
+                          (function-lambda-expression (ihs-fun i))))
+		(terpri)
+		)))
+      (progn
+	(if (eq t n)
+	    (setq base 0)
+	  (progn
+	    (unless (integerp n)
+	      (error "Argument to command :backtrace must be an integer or t."))
+	    (setq top *ihs-current*)
+	    )
+	  )
+	(do ((i top (si::ihs-prev i))
+	     ;;(b nil t)
+	     (j 0 (1+ j))
+	     (max (if (eq t n) *ihs-top* n))
+	     )
+	    ((or (< i base) (>= j max))
+	     (when (zerop i) (format t "  > ---end-of-stack---~%"))
+	     )
+	    (when (or (ihs-visible i) (eq t n))
+	      (let ((*print-case* (if (= i *ihs-current*) :UPCASE :DOWNCASE))
+		    (func-name (ihs-fname i)))
+		;;(format t "~:[~; >~] ~S" b (ihs-fname i)) ;; JCB
+		(format t "  > ~S" (ihs-fname i))
+		(when (eq func-name 'si::bytecodes)
+		  (format t " [Evaluation of: ~S]" (function-lambda-expression (ihs-fun i))))
+		(terpri)
+		))))
+      )
+    (terpri))
+  (values))
+
+(defun tpl-frs-command (&optional n)
+  (unless n (setq n *ihs-top*))
+  (unless (integerp n)
+    (error "Argument to command :frs must be an integer."))
+  (do ((i *ihs-top* (si::ihs-prev i))
+       (k n (1- k)))
+      ((= k 0) (values))
+      (let*((j (or (sch-frs-base *frs-base* i) (1+ *frs-top*)))
+	    (*print-level* 2)
+	    (*print-length* 4)
+	    (*print-pretty* t))
+	(do () ((or (> j *frs-top*) (> (frs-ihs j) i)))
 	    (print-frs j)
 	    (incf j)))))
-  (values))
 
 (defun print-frs (i)
   (format *debug-io* "    FRS[~d]: ---> IHS[~d],BDS[~d]~%"
@@ -708,19 +888,25 @@ under certain conditions; see file 'Copyright' for details.")
 
 (defun break-where ()
   (if (<= *tpl-level* 0)
-    (format t "Top level.~%")
+      #-threads (format t "~&Top level.~%")
+      #+threads (format t "~&Top level in: ~S.~%" mp:*current-process*)
     (tpl-print-current)))
 
 (defun tpl-print-current ()
   (let ((name (ihs-fname *ihs-current*)))
-    (format t "Broken at ~:@(~S~)." name))
+    (format t "~&Broken at ~:@(~S~)." name)
+    (when (eq name 'si::bytecodes)
+      (format t " [Evaluation of: ~S]"
+              (function-lambda-expression (ihs-fun *ihs-current*)))))
+  #-threads (terpri)
+  #+threads (format t " In: ~S.~%" mp:*current-process*)
   (let ((fun (ihs-fun *ihs-current*)))
     (when (and (symbolp fun) (fboundp fun))
       (setf fun (fdefinition fun)))
     (multiple-value-bind (file position)
-	(si::bc-file fun)
+	(ext:compiled-function-file fun)
       (when file
-	(format t " File: ~S (Form #~D)" file position))))
+	(format t " File: ~S (Form #~D)~%" file position))))
   (values))
 
 (defun tpl-hide (fname)
@@ -876,14 +1062,16 @@ Use the following functions to directly access ECL stacks.
 
 Invocation History Stack:
 (sys:IHS-TOP)	Returns the index of the TOP of the IHS.
-(SYS:IHS-VS i)	Returns the VS index of the i-th entity in IHS.
 (SYS:IHS-FUN i)	Returns the function of the i-th entity in IHS.
+(SYS:IHS-ENV i)
+(SYS:IHS-PREV i)
+(SYS:IHS-NEXT i)
 
 Frame (catch, block) Stack:
 (sys:FRS-TOP)	Returns the index of the TOP of the FRS.
-(SYS:FRS-VS i)	Returns the VS index of the i-th entity in FRS.
 (SYS:FRS-BDS i)	Returns the BDS index of the i-th entity in FRS.
 (SYS:FRS-IHS i)	Returns the IHS index of the i-th entity in FRS.
+(SYS:FRS-TAG i)
 
 Binding Stack:
 (sys:BDS-TOP)	Returns the index of the TOP of the BDS.
@@ -894,52 +1082,207 @@ Note that these functions are named by external symbols in the SYSTEM
 package."
 ))
 
+(defun compute-restart-commands (condition &key display)
+  (let ((restarts (compute-restarts condition))
+	(restart-commands (list "Restart commands")))
+    (when display
+      (format display (if restarts
+			  "~&Available restarts:~2%" 
+			  "~&No restarts available.~%")))
+    (loop for restart in restarts
+       and i from 1
+       do (let ((user-command (format nil "r~D" i))
+		(name (format nil "~@[(~A)~]" (restart-name restart)))
+		(helpstring (princ-to-string restart)))
+	    (push (list
+		   (list (intern (string-upcase user-command) :keyword))
+		   restart :restart
+		   (format nil ":~A~16T~A~24T~A" user-command helpstring name)
+		   (format nil ":~A~48T~A~& ~&~A~A" (string-downcase user-command)
+                           "[Restart command]" name helpstring))
+		  restart-commands)
+	    (when display
+	      (format display "~D. ~A ~A~%" i name restart))))
+    (when display (terpri display))
+    (nreverse restart-commands)))
+
+(defun update-debug-commands (restart-commands)
+  (let ((commands (copy-list *tpl-commands*)))
+    (unless (member break-commands commands)
+      (setq commands (nconc commands (list break-commands)))
+      )
+    (delete-if
+     #'(lambda (x) (string= "Restart commands" (car x)))
+     commands)
+    (nconc commands (list restart-commands))))
+
+(defvar *default-debugger-maximum-depth* 16)
+
+(defun check-default-debugger-runaway ()
+  (when (< *default-debugger-maximum-depth* *break-level*)
+    #+threads 
+    (progn
+      (format *error-output*
+	      "~&Excessive debugger depth! Probable infinite recursion!~%~
+             Quitting process: ~S.~%" mp:*current-process*)
+      (when (< (+ *default-debugger-maximum-depth* 3) *break-level*)
+	;; we tried to be polite but it does not seem to work.
+	(quit -1))
+      (exit-process))
+    #-threads 
+    (progn
+      (format *error-output*
+	    "~&Excessive debugger depth! Probable infinite recursion!~%~
+             Quitting.~%")
+        (quit -1))))
+
+#+threads
+(progn
+  (defvar *debugger-waiting-list-lock* (mp:make-lock :name 'debugger-waiting-list))
+  (defvar *debugger-waiting-list* nil)
+  (defvar *debugger-lock* (mp:make-lock :name 'debugger))
+  (defvar *debuggee-elect* nil)
+  (defvar *debuggee* nil)
+  )
+
+#+threads
+(defun tpl-switch-command (&optional rank)
+  (when (integerp rank)
+    (let ((max (list-length *debugger-waiting-list*)))
+      (unless (and (< 0 rank) (<= rank max))
+	(error "Debugger switch command: Invalid argument value.")))
+    (let ((elect (car (last *debugger-waiting-list* rank))))
+      (when elect
+	(setq *debuggee-elect* elect))))
+  (invoke-restart 'suspend-debug)
+  (values))
+
+#+threads
+(defun tpl-waiting-command ()
+  (labels ((display-waitee (waiting-list)
+	     (unless waiting-list
+	       (return-from display-waitee 0))
+	     (let ((rank (1+ (display-waitee (cdr waiting-list)))))
+	       (format t "    ~D: ~s~%" rank (car waiting-list))
+	       rank)))
+    (format t "~&~%Debugger's waiting list:~2%")
+    (display-waitee *debugger-waiting-list*)
+    (terpri))
+  (values))
+
+#+threads
+(defun register-on-debugger-waiting-list (process)
+  (mp:with-lock
+   (*debugger-waiting-list-lock*)
+   (unless (find process *debugger-waiting-list*)
+     (push process *debugger-waiting-list*)
+     (format *error-output* "~&~2%Debugger called in: ~S.~2%" process)
+     (finish-output))))
+
+#+threads
+(defun remove-from-debugger-waiting-list (process)
+  (mp:with-lock
+   (*debugger-waiting-list-lock*)
+   (setq *debugger-waiting-list* (delete process *debugger-waiting-list*))))
+
+#+threads
+(defmacro with-debugger-lock (&body body)
+  `(mp:with-lock (*debugger-lock*)
+		 ,@body))
+
+#-threads
+(defmacro with-debugger-lock (&body body)
+  `(progn ,@body))
+
 (defun default-debugger (condition)
   (unless *break-enable*
     (throw *quit-tag* nil))
   (let*((*standard-input* *debug-io*)
 	(*standard-output* *debug-io*)
+	;;(*tpl-prompt-hook* "[dbg] ")
 	(*print-pretty* nil)
 	(*print-circle* t)
 	(*readtable* (or *break-readtable* *readtable*))
 	(*break-message* (format nil "~&~A~%" condition))
 	(*break-level* (1+ *break-level*))
+	(break-level *break-level*)
 	(*break-env* nil))
-    (when (listen *debug-io*)
-      (clear-input *debug-io*))
-    ;; Like in SBCL, the error message is output through *error-output*
-    ;; The rest of the interaction is performed through *debug-io*
-    (princ *break-message* *error-output*)
-    (tpl-print-current)
-    ;; Here we show a list of restarts and invoke the toplevel with
-    ;; an extended set of commands which includes invoking the associated
-    ;; restarts.
-    (let* ((restarts (compute-restarts condition))
-	   (restart-commands (list "Restart commands")))
-      (format t (if restarts "Available restarts:~%" "No restarts available.~%"))
-      (loop for restart in restarts
-	 and i from 1
-	 do (let ((user-command (format nil "r~D" i))
-		  (name (format nil "~@[(~A) ~]" (restart-name restart)))
-		  (helpstring (princ-to-string restart)))
-	      (push (list
-		     (list (intern (string-upcase user-command) :keyword))
-		     restart :restart
-		     (format nil ":~A~16T~A~24T~A" user-command helpstring name)
-		     (format nil ":~A~48T~A~& ~&~A~A" (string-downcase user-command) "[Restart command]" name helpstring))
-		    restart-commands)
-	      (format t "~D. ~A~A~%" i name restart)))
-      (tpl :commands
-	   (adjoin (nreverse restart-commands)
-		   (adjoin break-commands *tpl-commands*))))))
+    (check-default-debugger-runaway)
+    (tagbody
+     ;;debug
+     waiting-room
+     #+threads (register-on-debugger-waiting-list mp:*current-process*)
+     (with-debugger-lock
+      #+threads 
+      (progn
+	(when *debuggee-elect*
+	  (unless (eq *debuggee-elect* mp:*current-process*)
+	    (when (find *debuggee-elect* *debugger-waiting-list*)
+	      (when (mp:process-active-p *debuggee-elect*)
+		;; if *debuggee-elect* is dead we just pick-up the first comer.
+		(go waiting-room))))
+	  )
+	(setq *debuggee* mp:*current-process* *debuggee-elect* nil)
+	(remove-from-debugger-waiting-list mp:*current-process*))
+      (when (listen *debug-io*)
+	(clear-input *debug-io*))
+      ;; Like in SBCL, the error message is output through *error-output*
+      ;; The rest of the interaction is performed through *debug-io*
+      (finish-output)
+      (fresh-line *error-output*)
+      (terpri *error-output*)
+      (princ *break-message* *error-output*)
+      ;; Here we show a list of restarts and invoke the toplevel with
+      ;; an extended set of commands which includes invoking the associated
+      ;; restarts.
+      (restart-case
+       (let* ((restart-commands (compute-restart-commands condition :display t))
+	      (debug-commands 
+	       ;;(adjoin restart-commands (adjoin break-commands *tpl-commands*))
+	       (update-debug-commands restart-commands)
+	       ))
+	 (tpl :commands debug-commands)
+	 )
+       #+threads
+       (suspend-debug ()
+	 :report (lambda (s)
+		   (format s "Put this process back on debugger's waiting list."))
+	 (go waiting-room))
+       (quit-debugger ()
+	 :report (lambda (s)
+		   (format s "Quit debugger level ~D." break-level))
+	 (go quit)))
+      ) ; with-debugger-lock
+     quit
+     ;; (format *debug-io* "~&Leaving debugger level ~D.~%" break-level)
+     ;; As of ECL 9.4.1 making a normal function return from the debugger
+     ;; seems to be a very bad idea! Basically, it dumps core...
+     (throw *quit-tag* t)
+     ) ; tagbody
+    ))
 
 (defun invoke-debugger (condition)
   (when *debugger-hook*
     (let* ((old-hook *debugger-hook*)
 	   (*debugger-hook* nil))
       (funcall old-hook condition old-hook)))
-  (locally (declare (notinline default-debugger))
-    (default-debugger condition)))
+  (locally 
+    (declare (notinline default-debugger))
+    (if (<= 0 *tpl-level*) ;; Do we have a top-level REPL above us?
+        (default-debugger condition)
+        (let* (;; We do not have a si::top-level invocation above us
+               ;; so we have to provide the environment for interactive use.
+               (*break-enable* *break-enable*)
+               (*debugger-hook* *debugger-hook*)
+               (*quit-tags* (cons *quit-tag* *quit-tags*))
+               (*quit-tag* *quit-tags*)	; any unique new value
+               (*ihs-top* 0) ;; Or should it be 1?
+               (*tpl-level* (1+ *tpl-level*)) ;; Or should we simply say 0.
+               (*tpl-commands* *tpl-commands*)
+               + ++ +++ - * ** *** / // ///)
+          (catch *quit-tag*
+            (default-debugger condition)))))
+  (finish-output))
 
 (defun safe-eval (form env err-value)
   (catch 'si::protect-tag
