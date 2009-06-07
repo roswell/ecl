@@ -449,6 +449,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 		cl_object frame = (cl_object)&frame_aux;
 		frame_aux.size = narg;
 		frame_aux.base = the_env->stack_top - narg;
+		SETUP_ENV(the_env);
 	AGAIN:
 		if (reg0 == OBJNULL || reg0 == Cnil) {
 			FEundefined_function(x);

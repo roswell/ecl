@@ -105,6 +105,10 @@ ECL 9.5:
  - ecl_import_current_thread() now properly stores the thread handle in
    the process object and can be called multiple times for the same thread.
 
+ - When performing unoptimized function calls, the interpreter did not save
+   actual value of the lexical environment, thus preventing the debugger from
+   inspecting it (fixed by JCB).
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
