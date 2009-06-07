@@ -74,6 +74,9 @@ ECL 9.5:
  - Compiled functions now carry information about their source file
    (based on patches by JC Beaudoin)
 
+ - The compiler can now generate some Lisp constants as static C expressions
+   (based on patches by JC Beaudoin)
+
 * Bugs fixed:
 
  - Remove an obsolete #if statement for Solaris that broke current builds

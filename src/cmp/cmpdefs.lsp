@@ -183,7 +183,7 @@
 			;;; We only register direct calls, not calls via object.
   (child-funs nil)	;;; List of local functions defined here.
   (debug 0)		;;; Debug quality
-  (file *compile-file-pathname*)
+  (file *compile-file-truename*)
 			;;; Source file or NIL
   (file-position *compile-file-position*)
 			;;; Top-level form number in source file
@@ -508,6 +508,11 @@ lines are inserted, but the order is preserved")
 (defvar *load-time-values* nil)		; holds { ( vv-index form ) }*,
 ;;;  where each vv-index should be given an object before
 ;;;  defining the current function during loading process.
+
+(defvar *use-static-constants-p* nil)   ; T/NIL flag to determine whether one may
+                                        ; generate lisp constant values as C structs
+(defvar *static-constants* nil)		; constants that can be built as C values
+                                        ; holds { ( object c-variable constant ) }*
 
 (defvar *compiler-constants* nil)	; a vector with all constants
 					; only used in COMPILE

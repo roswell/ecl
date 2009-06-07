@@ -89,7 +89,7 @@
 			      :type (info-type subform)
 			      :sp-change (info-sp-change subform)
 			      :volatile (info-volatile subform)
-                              :file *compile-file-pathname*
+                              :file *compile-file-truename*
                               :file-position *compile-file-position*)))
     (c1form-add-info form args)
     form))

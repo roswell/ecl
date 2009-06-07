@@ -30,6 +30,7 @@
     (*last-label* 0)
     (*load-objects* (make-hash-table :size 128 :test #'equal))
     (*make-forms* nil)
+    (*static-constants* nil)
     (*permanent-objects* nil)
     (*temporary-objects* nil)
     (*local-funs* nil)

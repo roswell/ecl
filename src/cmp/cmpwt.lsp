@@ -86,11 +86,11 @@
 ;;; to split long lines using  the fact that multiple strings are joined
 ;;; together by the compiler.
 ;;;
-(defun wt-filtered-data (string stream)
+(defun wt-filtered-data (string stream &optional one-liner)
   (let ((N (length string))
 	(wt-data-column 80))
     (incf *wt-string-size* (1+ N)) ; 1+ accounts for a blank space
-    (format stream "~%\"")
+    (format stream (if one-liner "\"" "~%\""))
     (dotimes (i N)
       (decf wt-data-column)
       (when (< wt-data-column 0)
@@ -226,7 +226,8 @@
 		(find object array :test test :key #'first)))
 	 (next-ndx (length array))
 	 found)
-    (cond ((and x duplicate)
+    (cond ((add-static-constant object))
+          ((and x duplicate)
 	   (setq x (list vv next-ndx))
 	   (vector-push-extend (list object x next-ndx) array)
 	   x)
@@ -264,3 +265,45 @@
 	    (add-object (pop keywords) :duplicate t :permanent t)
 	  (dolist (k keywords)
 	    (add-object k :duplicate t :permanent t))))))
+
+;;; ======================================================================
+;;;
+;;; STATIC CONSTANTS
+;;;
+
+(defun static-base-string-builder (name value stream)
+  (format stream "ecl_def_ct_base_string(~A," name)
+  (wt-filtered-data value stream t)
+  (format stream ",~D,static,const);" (length value)))
+
+(defun static-single-float-builder (name value stream)
+  (let* ((*read-default-float-format* 'single-float)
+         (*print-readably* t))
+    (format stream "ecl_def_ct_single_float(~A,~S,static,const);" name value stream)))
+
+(defun static-double-float-builder (name value stream)
+  (let* ((*read-default-float-format* 'double-float)
+         (*print-readably* t))
+    (format stream "ecl_def_ct_single_float(~A,~S,static,const);" name value stream)))
+
+(defun static-constant-builder (format value)
+  (lambda (name stream)
+    (format stream format name value)))
+
+(defun static-constant-expression (object)
+  (typecase object
+    (base-string #'static-base-string-builder)
+    ;;(single-float #'static-single-float-builder)
+    ;;(double-float #'static-double-float-builder)
+    (t nil)))
+
+(defun add-static-constant (object)
+  (unless (or *compiler-constants* (not (listp *static-constants*)))
+    (let ((record (find object *static-constants* :key #'first :test #'equal)))
+      (if record
+          (second record)
+          (let ((builder (static-constant-expression object)))
+            (when builder
+              (let* ((c-name (format nil "_ecl_static_~D" (length *static-constants*))))
+                (push (list object c-name builder) *static-constants*)
+                `(VV ,c-name))))))))

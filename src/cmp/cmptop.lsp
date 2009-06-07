@@ -148,8 +148,9 @@
       (wt-nl "flag->cblock.data_text_size = compiler_data_text_size;")
       (wt-nl "flag->cblock.cfuns_size = compiler_cfuns_size;")
       (wt-nl "flag->cblock.cfuns = compiler_cfuns;")
-      (wt-nl "flag->cblock.source = make_constant_base_string(\""
-             (namestring *compile-file-truename*) "\");")
+      (when *compile-file-truename*
+        (wt-nl "flag->cblock.source = make_constant_base_string(\""
+               (namestring *compile-file-truename*) "\");"))
       (wt-nl "return;}")
       (wt-nl "#ifdef ECL_DYNAMIC_VV")
       (wt-nl "VV = Cblock->cblock.data;")
@@ -169,10 +170,10 @@
 
     ;; useless in initialization.
     (dolist (form (nconc (nreverse *make-forms*) *top-level-forms*))
-      (let ((*compile-to-linking-call* nil)
-            (*compile-file-pathname* (c1form-file form))
-            (*compile-file-position* (c1form-file-position form))
-	    (*env* 0) (*level* 0) (*temp* 0))
+      (let* ((*compile-to-linking-call* nil)
+             (*compile-file-truename* (and form (c1form-file form)))
+             (*compile-file-position* (and form (c1form-file-position form)))
+             (*env* 0) (*level* 0) (*temp* 0))
 	  (t2expr form))
       (let ((*compiler-output1* c-output-file))
 	(emit-local-funs)))
@@ -223,6 +224,15 @@
   (wt-nl-h "#ifdef __cplusplus")
   (wt-nl-h "}")
   (wt-nl-h "#endif")
+
+  (when (and (listp *static-constants*)
+             (setf *static-constants* (nreverse *static-constants*)))
+    (wt-nl-h "/*")
+    (wt-nl-h " * Statically defined constants")
+    (wt-nl-h " */")
+    (loop for (value name builder) in (reverse *static-constants*)
+          do (terpri *compiler-output2*)
+          do (funcall builder name value *compiler-output2*)))
 
   (output-cfuns *compiler-output2*)
 
@@ -697,6 +707,9 @@
 
 (defun output-cfuns (stream)
   (let ((n-cfuns (length *global-cfuns-array*)))
+    (wt-nl-h "/*")
+    (wt-nl-h " * Exported Lisp functions")
+    (wt-nl-h " */")
     (wt-nl-h "#define compiler_cfuns_size " n-cfuns)
     (if (zerop n-cfuns)
         (wt-nl-h "#define compiler_cfuns NULL")
@@ -704,13 +717,13 @@
           (format stream "~%static const struct ecl_cfun compiler_cfuns[] = {~
 ~%~t/*t,m,narg,padding,name,block,entry*/");
           (loop for (loc fname-loc fun) in (nreverse *global-cfuns-array*)
-             do (let* ((cfun (fun-cfun fun))
-                       (minarg (fun-minarg fun))
-                       (maxarg (fun-maxarg fun))
-                       (narg (if (= minarg maxarg) maxarg nil)))
-                  (format stream "~%{0,0,~D,0,MAKE_FIXNUM(~D),MAKE_FIXNUM(~D),(cl_objectfn)~A,Ct,MAKE_FIXNUM(~D)},"
-                          (or narg -1) (second loc) (second fname-loc)
-                          cfun (fun-file-position fun))))
+                do (let* ((cfun (fun-cfun fun))
+                          (minarg (fun-minarg fun))
+                          (maxarg (fun-maxarg fun))
+                          (narg (if (= minarg maxarg) maxarg nil)))
+                     (format stream "~%{0,0,~D,0,MAKE_FIXNUM(~D),MAKE_FIXNUM(~D),(cl_objectfn)~A,Ct,MAKE_FIXNUM(~D)},"
+                             (or narg -1) (second loc) (second fname-loc)
+                             cfun (fun-file-position fun))))
           (format stream "~%};")))))
 
 ;;; ----------------------------------------------------------------------
