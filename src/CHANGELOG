@@ -71,7 +71,8 @@ ECL 9.5:
  - Some functions got new names: ecl_make_cfun, ecl_make_cfun_va,
    ecl_make_cclosure_va, ecl_def_c_function, ecl_def_c_function_va.
 
- - Compiled functions now carry information about their source file.
+ - Compiled functions now carry information about their source file
+   (based on patches by JC Beaudoin)
 
 * Bugs fixed:
 
