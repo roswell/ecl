@@ -188,7 +188,7 @@ AC_ARG_WITH(signed-zero,
   [], [with_signed_zero="yes"])
 
 AC_ARG_WITH(ieee-fp,
-  AS_HELP_STRING( [--with-iee-fp={yes|no}],
+  AS_HELP_STRING( [--with-ieee-fp={yes|no}],
                   [full IEEE floating point system, including denormals (default=YES).]
                   [Implies signed-zero and fpe]),
   [], [with_ieee_fp="yes"])

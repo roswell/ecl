@@ -1503,7 +1503,7 @@ Optional Packages:
   --with-fpe              detect floating point exceptions (default=YES)
   --with-signed-zero={yes|no}
                           allow for IEEE signed zeros (default=YES).
-  --with-iee-fp={yes|no}  full IEEE floating point system, including denormals
+  --with-ieee-fp={yes|no} full IEEE floating point system, including denormals
                           (default=YES). Implies signed-zero and fpe
   --with-x                use the X Window System
 
