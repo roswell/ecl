@@ -1530,7 +1530,7 @@ si_write_ugly_object(cl_object x, cl_object stream)
                 break;
 
 	case t_bclosure:
-                if ( ecl_print_readably() ) {
+                if (ecl_print_readably()) {
 	                cl_index i;
 			cl_object lex = x->bclosure.lex;
                         cl_object code_l=Cnil, data_l=Cnil;
@@ -1547,7 +1547,16 @@ si_write_ugly_object(cl_object x, cl_object stream)
 				    code_l, data_l),
 			    stream);
 			break;
+                } else {
+                        cl_object name = x->bytecodes.name;
+                        write_str("#<bytecompiled-closure ", stream);
+                        if (name != Cnil)
+                             si_write_ugly_object(name, stream);
+                        else
+                             write_addr(x, stream);
+                        write_ch('>', stream);
                 }
+                break;
 	case t_bytecodes:
                 if ( ecl_print_readably() ) {
 	                cl_index i;
