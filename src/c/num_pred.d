@@ -199,7 +199,7 @@ ecl_float_infinity_p(cl_object x)
 		return !isfinite(df(x));
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
-		return !is_finite(ecl_long_float(x));
+		return !isfinite(ecl_long_float(x));
 #endif
 	default:
 		return 0;
