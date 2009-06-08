@@ -772,9 +772,6 @@ memory limits before executing the program again."))))
   (let ((restart (find-restart 'USE-VALUE c)))
     (and restart (invoke-restart restart value))))
 
-#-ecl-min
-(package-lock "COMMON-LISP" t)
-
 #|
 ;;; ----------------------------------------------------------------------
 ;;; Interface
