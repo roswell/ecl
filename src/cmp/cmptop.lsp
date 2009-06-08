@@ -527,6 +527,59 @@
           (t (cmperr "The C variable specification ~s is illegal." cvs))))
   )
 
+(defvar *debug-fun* nil)
+
+(defun locative-type-from-var-kind (kind)
+  (cdr (assoc kind
+              '((:object . "_ecl_object_loc")
+                (:fixnum . "_ecl_fixnum_loc")
+                (:char . "_ecl_base_char_loc")
+                (:float . "_ecl_float_loc")
+                (:double . "_ecl_double_loc")
+                ((special global closure replaced lexical) . NIL)))))
+
+(defun build-debug-lexical-env (var-locations &optional first)
+  (let* ((filtered-locations '())
+         (filtered-codes '()))
+    ;; Filter out variables that we know how to store in the
+    ;; debug information table. This excludes among other things
+    ;; closures and special variables.
+    (loop for var in var-locations
+          for name = (format nil "\"~A\"" (var-name var))
+          for code = (locative-type-from-var-kind (var-kind var))
+          for loc = (var-loc var)
+          when (and code (consp loc) (eq (first loc) 'LCL))
+          do (progn
+               (push (cons name code) filtered-codes)
+               (push (second loc) filtered-locations)))
+    ;; Generate two tables, a static one with information about the
+    ;; variables, including name and type, and dynamic one, which is
+    ;; a vector of pointer to the variables.
+    (when filtered-codes
+      (wt-nl "static const struct ecl_var_debug_info _ecl_descriptors[]={")
+      (loop for (name . code) in filtered-codes
+            for i from 0
+            do (wt-nl (if (zerop i) "{" ",{") name "," code "}"))
+      (wt "};")
+      (wt-nl "const cl_index _ecl_debug_info_raw[]={")
+      (wt-nl (if first "(cl_index)(Cnil)," "(cl_index)(_ecl_debug_env),")
+             "(cl_index)(_ecl_descriptors)")
+      (loop for var-loc in filtered-locations
+            do (wt ",(cl_index)(&" (lcl-name var-loc) ")"))
+      (wt "};")
+      (wt-nl "ecl_def_ct_vector(_ecl_debug_env,aet_index,_ecl_debug_info_raw,"
+             (+ 2 (length filtered-locations))
+             ",,);"))
+    (if first
+        (if (not filtered-codes)
+            (wt-nl "cl_object _ecl_debug_env = Cnil;"))
+        (if filtered-codes
+            (wt-nl "ihs.lex_env=_ecl_debug_env;")))
+    filtered-codes))
+
+(defun pop-debug-lexical-env ()
+  (wt-nl "ihs.lex_env=_ecl_debug_env;"))
+
 (defun t3local-fun (fun &aux  (lambda-expr (fun-lambda fun))
 			      (level (if (eq (fun-closure fun) 'LEXICAL)
 					 (fun-level fun)
@@ -539,7 +592,8 @@
 			      (*volatile* (c1form-volatile* lambda-expr))
 			      (*tail-recursion-info* fun)
                               (lambda-list (c1form-arg 0 lambda-expr))
-                              (requireds (car lambda-list)))
+                              (requireds (car lambda-list))
+                              (*debug-fun* *debug-fun*))
   (declare (fixnum level nenvs))
   (print-emitting fun)
   (wt-comment-nl (cond ((fun-global fun) "function definition for ~a")
@@ -596,6 +650,7 @@
       (wt "cl_object " *volatile* "env0 = cl_env_copy->function->cclosure.env;"))
     (wt-nl *volatile* "cl_object value0;")
     (when (>= (fun-debug fun) 2)
+      (setq *debug-fun* (fun-debug fun))
       (wt-nl "struct ihs_frame ihs;"))
     (when (policy-check-stack-overflow)
       (wt-nl "ecl_cs_check(cl_env_copy,value0);"))

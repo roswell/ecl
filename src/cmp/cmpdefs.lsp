@@ -346,6 +346,8 @@ progress. The default value is T.")
 (defvar *next-cmacro* 0)	; holds the last cmacro number used.
 (defvar *next-cfun* 0)		; holds the last cfun used.
 
+(defvar *debug-fun* 0)		; Level of debugging of functions
+
 ;;;
 ;;; *tail-recursion-info* holds NIL, if tail recursion is impossible.
 ;;; If possible, *tail-recursion-info* holds

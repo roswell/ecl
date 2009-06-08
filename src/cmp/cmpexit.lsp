@@ -27,8 +27,9 @@
 	(declare (fixnum n))
 	(wt-nl "ecl_bds_unwind1(cl_env_copy);"))
       (wt-nl "ecl_bds_unwind_n(cl_env_copy," bds-bind ");"))
-  (when ihs-p
-    (wt-nl "ecl_ihs_pop(cl_env_copy);")))
+  (case ihs-p
+    (IHS (wt-nl "ecl_ihs_pop(cl_env_copy);"))
+    (IHS-ENV (wt-nl "ihs.lex_env = _ecl_debug_env;"))))
 
 (defun unwind-exit (loc &optional (jump-p nil) &aux (bds-lcl nil) (bds-bind 0) (stack-frame nil) (ihs-p nil))
   (declare (fixnum bds-bind))
@@ -75,7 +76,8 @@
       ((numberp ue) (baboon)
        (setq bds-lcl ue bds-bind 0))
       (t (case ue
-	   (IHS (setf ihs-p t))
+	   (IHS (setf ihs-p ue))
+           (IHS-ENV (setf ihs-p (or ihs-p ue)))
 	   (BDS-BIND (incf bds-bind))
 	   (RETURN
 	     (unless (eq *exit* 'RETURN) (baboon))
@@ -154,6 +156,8 @@
         ;;; Never reached
         )
        ((eq ue 'JUMP))
+       ((eq ue 'IHS-ENV)
+        (setf ihs-p ue))
        (t (baboon))
        ))
   ;;; Never reached

@@ -79,6 +79,10 @@ ECL 9.5:
 
  - The debugger is now fit for multithreaded environments (JCB)
 
+ - Compiled functions with DEBUG=3 now produce information about their
+   arguments and variables, that can be inspected in the debugger
+   (evolved from patches by JCB).
+
 * Bugs fixed:
 
  - Remove an obsolete #if statement for Solaris that broke current builds

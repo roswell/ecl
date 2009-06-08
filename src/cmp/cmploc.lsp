@@ -146,6 +146,8 @@
 
 (defun wt-cadr (loc) (wt "CADR(" loc ")"))
 
+(defun lcl-name (lcl) (format nil "V~D" lcl))
+
 (defun wt-lcl (lcl) (unless (numberp lcl) (baboon)) (wt "V" lcl))
 
 (defun wt-vv (vv)

@@ -383,6 +383,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 	       (bind `(LCL ,reqi) var))
 	      ((unboxed var) ; create unboxed variable
 	       (setf (var-loc var) (wt-decl var)))))
+      #+nil ; jjgr debug
       (loop for req in requireds
             do (print (list local-entry-p req (var-loc req))))
       (when (and rest (< (var-ref rest) 1)) ; dont create rest if not used
@@ -410,10 +411,6 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 		 "cl_va_list args; cl_va_start(args,~a,narg,~d);")
 	     first-arg nreq))))
 
-    (when fname-in-ihs-p
-      (push 'IHS *unwind-exit*)
-      (wt-nl "ecl_ihs_push(cl_env_copy,&ihs," (add-symbol fname) ",Cnil);"))
-
     ;; Bind required parameters.
     (do ((reqs requireds (cdr reqs))
 	 (reqi (1+ req0) (1+ reqi)))	; to allow concurrent compilations
@@ -421,8 +418,19 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
       (declare (fixnum reqi) (type cons reqs))
       (bind `(LCL ,reqi) (first reqs)))
 
-    (setq *lcl* lcl)
-    )
+    (when fname-in-ihs-p
+      (wt-nl "{")
+      (push 'IHS *unwind-exit*)
+      (cond ((>= *debug-fun* 3)
+             (build-debug-lexical-env (reverse requireds) t)
+             (wt-nl "ecl_ihs_push(cl_env_copy,&ihs," (add-symbol fname)
+                    ",_ecl_debug_env);"))
+            (t
+             (wt-nl "ecl_ihs_push(cl_env_copy,&ihs," (add-symbol fname)
+                    ",Cnil);"))))
+
+    (setq *lcl* lcl))
+
   ;; Bind optional parameters as long as there remain arguments.
   (when optionals
     ;; When binding optional values, we use two calls to BIND. This means
@@ -506,6 +514,8 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
   (c2expr body)
 
   ;;; Closing braces is done i cmptop.lsp
+  (when fname-in-ihs-p
+    (wt-nl "}"))
   )
 
 (defun optimize-funcall/apply-lambda (lambda-form arguments apply-p
