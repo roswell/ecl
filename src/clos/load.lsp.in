@@ -26,7 +26,7 @@
 
 (mapc #'(lambda (x)
          (terpri)
-         (princ ";;; Loading")
+         (princ ";;; Loading ")
          (princ x)
          (load x :verbose nil))
  +clos-module-files+)
