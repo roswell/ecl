@@ -495,9 +495,11 @@ c_register_var(cl_env_ptr env, cl_object var, bool special, bool bound)
 	}
 }
 
-static cl_object
+static void
 guess_environment(cl_env_ptr env, cl_object interpreter_env)
 {
+        if (!LISTP(interpreter_env))
+                return;
 	/*
 	 * Given the environment of an interpreted function, we guess a
 	 * suitable compiler enviroment to compile forms that access the

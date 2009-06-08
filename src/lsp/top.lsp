@@ -463,26 +463,19 @@ under certain conditions; see file 'Copyright' for details.")
 		       (multiple-value-list
 			(eval-with-env - *break-env*)))
 		 (setq /// // // / / values *** ** ** * * (car /))
-		 (tpl-print values)
-		 )
-		)
-	   )
+		 (tpl-print values))))
 	  (loop
 	   (setq +++ ++ ++ + + -)
 	   (when
 	       (catch *quit-tag*
 		 (if (zerop break-level)
-		     (with-simple-restart 
-		      (restart-toplevel "Go back to Top-Level REPL.")
-		      (rep)
-		      )
+		   (with-simple-restart 
+                    (restart-toplevel "Go back to Top-Level REPL.")
+                    (rep))
 		   (with-simple-restart
 		    (restart-debugger "Go back to debugger level ~D." break-level)
-		    (rep)
-		    )
-		   )
-		 nil
-		 )
+		    (rep)))
+		 nil)
 	     (break-where))))))
 
 (defun tpl-prompt ()
@@ -726,6 +719,60 @@ under certain conditions; see file 'Copyright' for details.")
        (when bytecodes
 	 (reconstruct-bytecodes-lambda-list (coerce data 'list)))))))
 
+#-ecl-min
+(defun decode-env-elt (env ndx)
+  (ffi:c-inline (env ndx) (:object :fixnum) :object
+                "
+	cl_object v = #0;
+	cl_index ndx = #1;
+	typedef struct ecl_var_debug_info *pinfo;
+	pinfo d = (pinfo)(v->vector.self.t[1]) + ndx;
+	cl_object name = make_constant_base_string(d->name);
+	void *value = (void*)(v->vector.self.t[2+ndx]);
+	cl_object output;
+	switch (d->type) {
+	case _ecl_object_loc:
+		output = *((cl_object*)value);
+		break;
+	case _ecl_fixnum_loc: {
+		cl_fixnum *p = (cl_fixnum*)value;
+		output = ecl_make_integer(*p);
+		break;
+	}
+	case _ecl_float_loc: {
+		float *p = (float*)value;
+		output = ecl_make_singlefloat(*p);
+		break;
+	}
+	case _ecl_double_loc: {
+		float *p = (double*)value;
+		output = ecl_make_doublefloat(*p);
+		break;
+	}
+	default: {
+		ecl_base_char *p = (ecl_base_char*)value;
+		output = CODE_CHAR(*p);
+		break;
+	}
+	}
+	@(return) = CONS(name,output);
+" :one-liner nil))
+
+(defun decode-ihs-env (*break-env*)
+  (let ((env *break-env*))
+    (if (vectorp env)
+      #+ecl-min
+      nil
+      #-ecl-min
+      (let* ((next (decode-ihs-env
+                    (ffi:c-inline (env) (:object) :object
+                                  "(#0)->vector.self.t[0]" :one-liner t))))
+        (nreconc (loop with l = (- (length env) 2)
+                       for i from 0 below l
+                       do (push (decode-env-elt env i) next))
+                   next))
+      env)))
+
 (defun tpl-variables-command (&optional no-values)
   (let*((*print-level* 2)
 	(*print-length* 4)
@@ -735,14 +782,12 @@ under certain conditions; see file 'Copyright' for details.")
 	(blocks '())
 	(variables '())
 	record0 record1)
-    (dolist (record *break-env*)
+    (dolist (record (decode-ihs-env *break-env*))
       (cond ((atom record)
 	     (push (compiled-function-name record) functions))
 	    ((progn
 	       (setf record0 (car record) record1 (cdr record))
 	       (or (symbolp record0) (stringp record0)))
-	     (cond ((locativep record1) (setq record1 (deref record1)))
-		   ((unbound-value-p record1) (setq record1 "<unbound value>")))
 	     (setq variables (list* record0 record1 variables)))
 	    ((symbolp record1)
 	     (push record1 blocks))
@@ -777,7 +822,7 @@ under certain conditions; see file 'Copyright' for details.")
 (defun tpl-inspect-command (var-name)
   (when (symbolp var-name)
     (setq var-name (symbol-name var-name)))
-  (let ((val-pair (assoc var-name *break-env* 
+  (let ((val-pair (assoc var-name (decode-ihs-env *break-env*)
 			 :test #'(lambda (s1 s2)
 				   (when (symbolp s2) (setq s2 (symbol-name s2)))
 				   (if (stringp s2)
@@ -786,9 +831,6 @@ under certain conditions; see file 'Copyright' for details.")
     (when val-pair
       (format t "~&In tpl-inspect-command: val-pair = ~S~%" val-pair)
       (let ((val (cdr val-pair)))
-	(when (locativep val)
-	  (format 5 "In tpl-inspect-command: val is a locative!~%")
-	  (setq val (deref val)))
 	(inspect val)))))
 
 (defun tpl-bds-command (&optional var)
@@ -1291,3 +1333,6 @@ package."
 		(throw 'si::protect-tag condition))))
       (return-from safe-eval (eval-with-env form env))))
   err-value)
+
+#-ecl-min
+(package-lock "COMMON-LISP" t)

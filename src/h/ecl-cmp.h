@@ -44,3 +44,24 @@
                 (int8_t)t_doublefloat, 0, 0, 0,                 \
                 (double)(f) };                                  \
         static const cl_object name = (cl_object)(& name ## data)
+
+#define ecl_def_ct_vector(name,type,raw,len,static,const)               \
+        static const struct ecl_vector name ## data = {            \
+                (int8_t)t_vector, 0, FALSE, FALSE,                      \
+                Cnil, (cl_index)(len), (cl_index)(len),                 \
+                (ecl_base_char*)(raw), (type), 0 };                     \
+        static const cl_object name = (cl_object)(& name ## data)
+        
+enum ecl_locative_type {
+        _ecl_object_loc = 0,
+        _ecl_fixnum_loc,
+        _ecl_base_char_loc,
+        _ecl_uni_char_loc,
+        _ecl_float_loc,
+        _ecl_double_loc
+};
+
+struct ecl_var_debug_info {
+        const char *name;
+        uint8_t type;
+};

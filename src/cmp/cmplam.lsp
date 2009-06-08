@@ -383,6 +383,8 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 	       (bind `(LCL ,reqi) var))
 	      ((unboxed var) ; create unboxed variable
 	       (setf (var-loc var) (wt-decl var)))))
+      (loop for req in requireds
+            do (print (list local-entry-p req (var-loc req))))
       (when (and rest (< (var-ref rest) 1)) ; dont create rest if not used
 	(setq rest nil))
       (do ((opt optionals (cdddr opt)))
