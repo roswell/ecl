@@ -21,6 +21,7 @@
   #+cmu-format
   "src:lsp;pprint.lsp"
   "src:clos;conditions.lsp"
+  "src:lsp;top.lsp" ; Depends on conditions.lsp
   ))
 
 (mapc #'(lambda (x)

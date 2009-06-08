@@ -51,7 +51,6 @@
   "src:lsp;describe.lsp"
   "src:lsp;module.lsp"
   "src:lsp;cmdline.lsp"
-  "src:lsp;top.lsp"
 ))
 
 (mapc #'(lambda (x)
