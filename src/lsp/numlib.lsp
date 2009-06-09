@@ -34,6 +34,7 @@
        (epsilon- (x)
 	 (/= (float 1 x) (- (float 1 x) x))))
   `(eval-when (compile load eval)
+   (let ((bits (si::trap-fpe 'last nil)))
     (defconstant short-float-epsilon
       ,(binary-search #'epsilon+ (coerce 0 'short-float) (coerce 1 'short-float))
       "The smallest postive short-float E that satisfies
@@ -65,7 +66,8 @@
     (defconstant long-float-negative-epsilon
       ,(binary-search #'epsilon- (coerce 0 'long-float) (coerce 1 'long-float))
       "The smallest positive long-float E that satisfies
-	(not (= (float 1 E) (- (float 1 E) E)))")))
+	(not (= (float 1 E) (- (float 1 E) E)))")
+    (si::trap-fpe 'last nil))))
 
 #+IEEE-FLOATING-POINT
 (locally
