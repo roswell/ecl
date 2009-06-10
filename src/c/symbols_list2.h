@@ -1783,5 +1783,7 @@ cl_symbols[] = {
 {EXT_ "FLOAT-NAN-P","si_float_nan_p"},
 {EXT_ "FLOAT-INFINITY-P","si_float_infinity_p"},
 
+{SYS_ "READ-OBJECT-OR-IGNORE","si_read_object_or_ignore"},
+
 /* Tag for end of list */
 {NULL,NULL}};

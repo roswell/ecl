@@ -104,12 +104,10 @@
 			(warning #'handle-warning/error)
 			(compiler-error #'handle-warning/error))
 	   (handler-bind ((error #'handle-internal-error))
-	     (if *compiler-in-use*
-		 (error "The compiler was called recursively.")
-		 (with-lock (+load-compile-lock+)
-		   (let ,+init-env-form+
-		     (with-compilation-unit ()
-		     ,@body))))))
+             (with-lock (+load-compile-lock+)
+	        (let ,+init-env-form+
+                  (with-compilation-unit ()
+                     ,@body)))))
        (abort ()))
      (setf ,compiler-conditions *compiler-conditions*)))
 

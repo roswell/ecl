@@ -1349,6 +1349,7 @@ extern ECL_API cl_object cl_get_macro_character _ARGS((cl_narg narg, cl_object c
 extern ECL_API cl_object cl_make_dispatch_macro_character _ARGS((cl_narg narg, cl_object chr, ...));
 extern ECL_API cl_object cl_set_dispatch_macro_character _ARGS((cl_narg narg, cl_object dspchr, cl_object subchr, cl_object fnc, ...));
 extern ECL_API cl_object cl_get_dispatch_macro_character _ARGS((cl_narg narg, cl_object dspchr, cl_object subchr, ...));
+extern ECL_API cl_object si_read_object_or_ignore(cl_object stream, cl_object eof);
 
 extern ECL_API int ecl_readtable_get(cl_object rdtbl, int c, cl_object *macro);
 extern ECL_API void ecl_readtable_set(cl_object rdtbl, int c, enum ecl_chattrib cat, cl_object macro_or_table);

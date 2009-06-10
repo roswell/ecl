@@ -438,16 +438,18 @@ si_load_source(cl_object source, cl_object verbose, cl_object print)
 		cl_object location = CONS(source, form_index);
 		ecl_bds_bind(the_env, @'ext::*source-location*', location);
 		for (;;) {
-			x = cl_read(3, strm, Cnil, OBJNULL);
+                        form_index = ecl_file_position(strm);
+                        ECL_RPLACD(location, form_index);
+			x = si_read_object_or_ignore(strm, OBJNULL);
 			if (x == OBJNULL)
 				break;
-			si_eval_with_env(1, x);
-			if (print != Cnil) {
-				@write(1, x);
-				@terpri(0);
-			}
-			form_index = ecl_plus(MAKE_FIXNUM(1),form_index);
-			ECL_RPLACD(location, form_index);
+                        if (the_env->nvalues) {
+                                si_eval_with_env(1, x);
+                                if (print != Cnil) {
+                                        @write(1, x);
+                                        @terpri(0);
+                                }
+                        }
 		}
 		ecl_bds_unwind1(the_env);
 	} CL_UNWIND_PROTECT_EXIT {

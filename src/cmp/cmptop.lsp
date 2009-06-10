@@ -545,7 +545,8 @@
     ;; debug information table. This excludes among other things
     ;; closures and special variables.
     (loop for var in var-locations
-          for name = (format nil "\"~A\"" (var-name var))
+          for name = (let ((*package* (find-package "KEYWORD")))
+                       (format nil "\"~S\"" (var-name var)))
           for code = (locative-type-from-var-kind (var-kind var))
           for loc = (var-loc var)
           when (and code (consp loc) (eq (first loc) 'LCL))

@@ -28,20 +28,17 @@ ECL 9.6:
    By default a correctable error is signaled and the user is given the
    chance to increase the heap size.
 
- - Under Mac OS/X, ECL now uses its own modified version of the Boehm-Weiser
-   garbage collector that allows both --enable-gengc and our optimized
-   code for signal handling.
-
- - New condition EXT:SEGMENTATION-VIOLATION signaled by SIGSEGV and SIGBUS
-   events.
-
- - Added support for the floating point exception FE_INVALID, which is
-   signalled when trying to do 0/0 or sqrt(-1) (A. Gavrilov)
+* Function names:
 
  - Added a new section in external.h for defining compatibility macros
    for functions that changed name.
 
  - make_longfloat() is renamed ecl_make_longfloat().
+
+ - Some functions got new names: ecl_make_cfun, ecl_make_cfun_va,
+   ecl_make_cclosure_va, ecl_def_c_function, ecl_def_c_function_va.
+
+* Numerics:
 
  - A new configuration flag --with-ieee-fp adds support for NaN's, infinities
    and signed zeros, disabling certain floating point exceptions by default.
@@ -58,6 +55,18 @@ ECL 9.6:
  - Eight new constants for the eight possible infinities
    EXT:{SHORT,SINGLE,DOUBLE,LONG}-FLOAT-{POSITIVE,NEGATIVE}-INFINITY
 
+* Interrupt handling:
+
+ - Under Mac OS/X, ECL now uses its own modified version of the Boehm-Weiser
+   garbage collector that allows both --enable-gengc and our optimized
+   code for signal handling.
+
+ - New condition EXT:SEGMENTATION-VIOLATION signaled by SIGSEGV and SIGBUS
+   events.
+
+ - Added support for the floating point exception FE_INVALID, which is
+   signalled when trying to do 0/0 or sqrt(-1) (A. Gavrilov)
+
  - SI:TRAP-FPE always returns an integer denoting the new active / inactive
    floating point traps. In particular, (SI:TRAP-FPE 'LAST T) returns the
    currently active traps. This value can be passed to SI:TRAP-FPE as first
@@ -68,8 +77,7 @@ ECL 9.6:
  - A new configurable option ECL_OPT_THREAD_INTERRUPT_SIGNAL determines
    which Unix interrupt type is used to communicate between threads.
 
- - Some functions got new names: ecl_make_cfun, ecl_make_cfun_va,
-   ecl_make_cclosure_va, ecl_def_c_function, ecl_def_c_function_va.
+* Debugger:
 
  - Compiled functions now carry information about their source file
    (based on patches by Jean-Claude Beaudoin)
@@ -82,6 +90,9 @@ ECL 9.6:
  - Compiled functions with DEBUG=3 now produce information about their
    arguments and variables, that can be inspected in the debugger
    (evolved from patches by JCB).
+
+ - ECL records the file position of a compiled form / function instead of
+   the form number in that file.
 
 * Bugs fixed:
 

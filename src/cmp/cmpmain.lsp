@@ -561,13 +561,14 @@ compiled successfully, returns the pathname of the compiled file"
 	  (data-init))
 
       (with-open-file (*compiler-input* *compile-file-pathname*)
-	(do ((ext:*source-location* (cons *compile-file-pathname* 0))
-	     (form (read *compiler-input* nil eof)
-		   (read *compiler-input* nil eof))
-	     (*compile-file-position* 0 (1+ *compile-file-position*)))
+	(do* ((ext:*source-location* (cons *compile-file-pathname* 0))
+              (*compile-file-position* 0 (file-position *compiler-input*))
+              (form (si::read-object-or-ignore *compiler-input* eof)
+                    (si::read-object-or-ignore *compiler-input* eof)))
 	    ((eq form eof))
-	  (t1expr form)
-	  (incf (cdr ext:*source-location*))))
+          (when form
+            (setf (cdr ext:*source-location*) *compile-file-position*)
+            (t1expr form))))
 
       (cmpprogress "~&;;; End of Pass 1.")
       (setf init-name (compute-init-name output-file :kind

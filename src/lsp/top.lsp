@@ -948,7 +948,7 @@ under certain conditions; see file 'Copyright' for details.")
     (multiple-value-bind (file position)
 	(ext:compiled-function-file fun)
       (when file
-	(format t " File: ~S (Form #~D)~%" file position))))
+	(format t " File: ~S (Position #~D)~%" file position))))
   (values))
 
 (defun tpl-hide (fname)
