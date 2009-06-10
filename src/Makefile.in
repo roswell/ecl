@@ -36,6 +36,7 @@ SHELL = @SHELL@
 INSTALL	= @INSTALL@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
+INSTALL_LIBRARY = $(INSTALL_SCRIPT)
 INSTALL_DATA = @INSTALL_DATA@
 mkinstalldirs = $(SHELL) $(top_srcdir)/gc/mkinstalldirs
 
@@ -152,7 +153,7 @@ install-base:
 	done
 	for i in $(LSP_LIBRARIES) $(LIBRARIES); do \
 	  if test -s $$i ; then \
-	   $(INSTALL_PROGRAM) $$i $(DESTDIR)$(libdir); \
+	   $(INSTALL_LIBRARY) $$i $(DESTDIR)$(libdir); \
 	  fi \
 	done
 	if [ "x@SONAME@" != "x" -a -f "@SONAME@" ]; then \
