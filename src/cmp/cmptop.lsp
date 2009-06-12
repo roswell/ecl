@@ -777,7 +777,7 @@
                           (minarg (fun-minarg fun))
                           (maxarg (fun-maxarg fun))
                           (narg (if (= minarg maxarg) maxarg nil)))
-                     (format stream "~%{0,0,~D,0,MAKE_FIXNUM(~D),MAKE_FIXNUM(~D),(cl_objectfn)~A,Ct,MAKE_FIXNUM(~D)},"
+                     (format stream "~%{0,0,~D,0,MAKE_FIXNUM(~D),MAKE_FIXNUM(~D),(cl_objectfn)~A,Cnil,MAKE_FIXNUM(~D)},"
                              (or narg -1) (second loc) (second fname-loc)
                              cfun (fun-file-position fun))))
           (format stream "~%};")))))
