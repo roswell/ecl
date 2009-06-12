@@ -62,15 +62,16 @@ copy_object_file(cl_object original)
 	cl_object copy = make_constant_base_string("TMP:ECL");
 	copy = si_coerce_to_filename(si_mkstemp(copy));
 	ecl_disable_interrupts();
-#ifdef HAVE_LSTAT
-	err = unlink(copy->base_string.self) ||
-		symlink(original->base_string.self, copy->base_string.self);
-#else
+        /*
+         * We either have to make a full copy to convince the loader to load this object
+         * file again, or we want to retain the possibility of overwriting the object
+         * file we load later on (case of Windows, which locks files that are loaded).
+         * The symlinks do not seem to work in latest versions of Linux.
+         */
 #if defined(mingw32) || defined(_MSC_VER)
 	err = !CopyFile(original->base_string.self, copy->base_string.self, 0);
 #else
 	err = Null(si_copy_file(original, copy));
-#endif
 #endif
 	ecl_enable_interrupts();
 	if (err) {
