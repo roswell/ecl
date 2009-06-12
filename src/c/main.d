@@ -355,7 +355,7 @@ read_char_database()
 						 si_get_library_pathname(),
 						 make_constant_base_string("ucd.dat"));
 	cl_object output = Cnil;
-	FILE *f = fopen(s->base_string.self, "r");
+	FILE *f = fopen(s->base_string.self, "rb");
 	if (f) {
 		cl_index size;
 		if (!fseek(f, 0, SEEK_END)) {
