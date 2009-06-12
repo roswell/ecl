@@ -191,14 +191,17 @@ c\cut$(EXE): $(top_srcdir)\util\cut.c
 	cd ..
 
 $(TARGETS): ecl_min$(EXE) compile.lsp sysfun.lsp BUILD-STAMP
-	.\ecl_min < compile.lsp
+	ECLDIR=$(PWD) .\ecl_min < compile.lsp
 BUILD-STAMP: Makefile
 	date /t > $@
 
 ecl-static.lib: $(TARGETS)
 	link /lib /out:$@ eclmin.lib c\all_symbols2.obj lsp.lib eclgmp.lib eclgc.lib
 
-ecl_min$(EXE): $(LIBRARIES) eclmin.lib
+ucd.dat: $(top_srcdir)\..\contrib\unicode\ucd.dat
+	copy $(top_srcdir)\..\contrib\unicode\ucd.dat .
+
+ecl_min$(EXE): $(LIBRARIES) eclmin.lib ucd.dat
 	$(CC) /Fe$@ cinit.obj c\all_symbols.obj eclmin.lib $(LDFLAGS) $(LIBS)
 
 .gdbinit: $(srcdir)\util\gdbinit
@@ -327,7 +330,7 @@ rt.lisp:
 install:
 	IF NOT EXIST "$(prefix)" $(MKDIR) "$(prefix)"
 	IF NOT EXIST "$(bindir)" $(MKDIR) "$(bindir)"
-	for %i in ($(TARGETS) ecl.dll) do $(CP) %i "$(bindir)\%i"
+	for %i in ($(TARGETS) ecl.dll ucd.dat) do $(CP) %i "$(bindir)\%i"
 	IF EXIST "$(bindir)\ecl2$(EXE)" $(MV) "$(bindir)\ecl2$(EXE)" "$(bindir)\ecl$(EXE)"
 	IF EXIST ecl2$(EXE).manifest $(CP) ecl2$(EXE).manifest "$(bindir)\ecl$(EXE).manifest"
 	IF EXIST ecl.dll.manifest $(CP) ecl.dll.manifest "$(bindir)"
@@ -376,7 +379,7 @@ clean: clean_ecl clean_lisp
 	-$(RM) ecl\gmp.h
 clean_ecl:
 	-for %i in (eclgc.lib eclgmp.lib lsp\config.lsp compile.lsp bare.lsp \
-	            lsp\load.lsp clos\load.lsp cmp\load.lsp cmp\cmpdefs.lsp \
+	            lsp\load.lsp clos\load.lsp cmp\load.lsp cmp\cmpdefs.lsp ucd.dat \
 		    ecl.lib ecl.dll ecl_min$(EXE) eclmin.lib help.doc sysfun.lsp BUILD-STAMP \
 		    $(TARGETS) *.exp *.ilk *.manifest *.pdb *.c *.obj ecl-config.bat ecl-static.lib) \
 	     do $(RM) %i
