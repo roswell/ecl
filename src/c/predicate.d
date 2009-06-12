@@ -275,7 +275,7 @@ cl_eq(cl_object x, cl_object y)
                 case 6: if (c[5] != d[5]) return 0;    \
                 case 5: if (c[4] != d[4]) return 0;    \
                 case 4: if (c[3] != d[3]) return 0;    \
-                case 3: if (c[1] != d[2]) return 0;    \
+                case 3: if (c[2] != d[2]) return 0;    \
                 case 2: if (c[1] != d[1]) return 0;    \
                 default: return (c[0] == d[0]);        \
                 } }
