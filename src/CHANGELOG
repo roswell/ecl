@@ -24,6 +24,8 @@ ECL 9.6:
  - New command line arguments, --heap-size, --lisp-stack, --frame-stack and
    --c-stack control the different memory limits.
 
+ - The stack size is now measured in bytes, not in lisp words.
+
  - The out of memory error (ext:storage-exhausted) can now be recovered.
    By default a correctable error is signaled and the user is given the
    chance to increase the heap size.

@@ -545,7 +545,7 @@ init_stacks(cl_env_ptr env, char *new_cs_org)
 		cl_index size;
 		getrlimit(RLIMIT_STACK, &rl);
 		if (rl.rlim_cur != RLIM_INFINITY) {
-			size = rl.rlim_cur / sizeof(cl_fixnum) / 2;
+			size = rl.rlim_cur / 2;
 			if (size > (cl_index)ecl_get_option(ECL_OPT_C_STACK_SIZE))
 				ecl_set_option(ECL_OPT_C_STACK_SIZE, size);
 #ifdef ECL_DOWN_STACK
