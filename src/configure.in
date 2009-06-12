@@ -100,11 +100,11 @@ AC_ARG_WITH(__thread,
                   [(supported by NPTL-aware glibc and maybe Windows)] ),
   [], [with___thread=auto])
 
-AC_ARG_ENABLE(debug,
-  AS_HELP_STRING( [--enable-debug],
-                  [enable various debugging features]
-                  [(default=NO)]),
-  [DEBUG_CFLAGS="-g -O0"; CFLAGS="$CFLAGS -g -O0"],[])
+dnl AC_ARG_ENABLE(debug,
+dnl   AS_HELP_STRING( [--enable-debug],
+dnl                  [enable various debugging features]
+dnl                  [(default=NO)]),
+dnl  [DEBUG_CFLAGS="-g -O0"; CFLAGS="$CFLAGS -g -O0"],[])
 
 AC_ARG_ENABLE(opcode8,
   AS_HELP_STRING( [--enable-opcode8],

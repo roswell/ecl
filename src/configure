@@ -775,7 +775,6 @@ with_gmp_incdir
 with_gmp_libdir
 enable_local_gmp
 with___thread
-enable_debug
 enable_opcode8
 with_cxx
 with_tcp
@@ -1453,7 +1452,6 @@ Optional Features:
   --enable-soname         link and install the library using version numbers
                           (no|yes, default=yes)
   --enable-local-gmp      Deprecated! See --with-system-gmp
-  --enable-debug          enable various debugging features (default=NO)
   --enable-opcode8        interpreter uses 8-bit codes (default=NO, only works
                           on Intel)
   --enable-unicode        enable support for unicode (default=NO)
@@ -2122,11 +2120,6 @@ else
   with___thread=auto
 fi
 
-
-# Check whether --enable-debug was given.
-if test "${enable_debug+set}" = set; then
-  enableval=$enable_debug; DEBUG_CFLAGS="-g -O0"; CFLAGS="$CFLAGS -g -O0"
-fi
 
 
 # Check whether --enable-opcode8 was given.
