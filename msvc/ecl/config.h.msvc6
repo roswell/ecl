@@ -405,5 +405,6 @@ typedef unsigned int uint32_t;
 
 #include <math.h>
 #ifndef isfinite
-#define isfinite(x) (finite(x))
+# define isfinite(x) (finite(x))
+# define signbit(x) (_copysign(1.0,(x)))
 #endif
