@@ -59,7 +59,10 @@ _hash_eql(cl_hashkey h, cl_object x)
 		return hash_string(h, (unsigned char*)&df(x), sizeof(df(x)));
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat: {
-		long double d = ecl_long_float(x);
+                /* We coerce to double because long double has extra bits
+                 * that give rise to different hash key and are not
+                 * meaningful */
+		double d = ecl_long_float(x);
 		return hash_string(h, (unsigned char*)&d, sizeof(d));
 	}
 #endif
@@ -135,7 +138,10 @@ _hash_equal(int depth, cl_hashkey h, cl_object x)
 	}
 # ifdef ECL_LONG_FLOAT
 	case t_longfloat: {
-		long double f = ecl_long_float(x);
+                /* We coerce to double because long double has extra bits
+                 * that give rise to different hash key and are not
+                 * meaningful */
+		double f = ecl_long_float(x);
 		if (f == 0.0) f = 0.0;
 		return hash_string(h, (unsigned char*)&f, sizeof(f));
 	}
