@@ -6,6 +6,8 @@ ECL 9.6.2:
  - EXT:OUTPUT-FLOAT-NAN and EXT:OUTPUT-FLOAT-INFINITY can be redefined to
    customized how NaNs and infinities are output.
 
+ - RATIONAL works now more accurately with long-floats
+
 ECL 9.6:
 ========
 

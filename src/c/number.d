@@ -770,14 +770,15 @@ cl_rational(cl_object x)
 			d = frexp(d, &e);
 			e -= DBL_MANT_DIG;
 			x = double_to_integer(ldexp(d, DBL_MANT_DIG));
-			x = ecl_times(cl_expt(MAKE_FIXNUM(FLT_RADIX),
-						 MAKE_FIXNUM(e)),
-					 x);
+                        if (e != 0) {
+                                x = ecl_times(cl_expt(MAKE_FIXNUM(FLT_RADIX),
+                                                      MAKE_FIXNUM(e)),
+                                              x);
+                        }
 		}
 		break;
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat: {
-		/* Fixme! We need a long double -> integer conversion! */
 		long double d = ecl_long_float(x);
 		if (d == 0) {
 			x = MAKE_FIXNUM(0);
@@ -785,11 +786,11 @@ cl_rational(cl_object x)
 			int e;
 			d = frexpl(d, &e);
 			e -= LDBL_MANT_DIG;
-			x = double_to_integer(ldexp(d, LDBL_MANT_DIG));
+			x = long_double_to_integer(ldexpl(d, LDBL_MANT_DIG));
 			if (e != 0) {
 				x = ecl_times(cl_expt(MAKE_FIXNUM(FLT_RADIX),
 							 MAKE_FIXNUM(e)),
-						 x);
+                                              x);
 			}
 		}
 		break;
