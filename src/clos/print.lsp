@@ -154,6 +154,12 @@ printer and we should rather use MAKE-LOAD-FORM."
 	    (method-specializers m)))
   m)
 
+(defun ext::output-float-nan (x stream)
+  (format stream "#<~A quiet NaN>" (type-of x)))
+
+(defun ext::output-float-infinity (x stream)
+  (format stream "#.~A-~A-INFINITY" (type-of x)
+          (if (plusp x) "POSITIVE" "NEGATIVE")))
 
 ;;; ----------------------------------------------------------------------
 ;;; Describe

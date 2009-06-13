@@ -1785,5 +1785,8 @@ cl_symbols[] = {
 
 {SYS_ "READ-OBJECT-OR-IGNORE","si_read_object_or_ignore"},
 
+{EXT_ "OUTPUT-FLOAT-NAN",NULL},
+{EXT_ "OUTPUT-FLOAT-INFINITY",NULL},
+
 /* Tag for end of list */
 {NULL,NULL}};

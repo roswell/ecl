@@ -1,3 +1,11 @@
+ECL 9.6.2:
+==========
+
+* Numerics:
+
+ - EXT:OUTPUT-FLOAT-NAN and EXT:OUTPUT-FLOAT-INFINITY can be redefined to
+   customized how NaNs and infinities are output.
+
 ECL 9.6:
 ========
 

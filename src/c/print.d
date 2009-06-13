@@ -602,7 +602,7 @@ int edit_double(int n, DBL_TYPE d, int *sp, char *s, int *ep)
 }
 
 static void
-write_double(DBL_TYPE d, int e, int n, cl_object stream, const char *type_name)
+write_double(DBL_TYPE d, int e, int n, cl_object stream, cl_object o)
 {
 	int exp;
 #if defined(HAVE_FENV_H) || defined(_MSC_VER) || defined(mingw32)
@@ -616,16 +616,11 @@ write_double(DBL_TYPE d, int e, int n, cl_object stream, const char *type_name)
 # else
 	                FEprint_not_readable(ecl_make_doublefloat(d));
 # endif
-                write_str("#<", stream);
-                write_str(type_name, stream);
-                write_str(" quiet NaN>", stream);
+                funcall(3, @'ext::output-float-nan', o, stream);
                 return;
         }
         if (!isfinite(d)) {
-                write_str("#.EXT:", stream);
-                write_str(type_name, stream);
-                write_str(signbit(d)? "-NEGATIVE-INFINITY" : "-POSITIVE-INFINITY",
-                          stream);
+                funcall(3, @'ext::output-float-infinity', o, stream);
                 return;
         }
 	if (d < 0) {
@@ -1149,36 +1144,36 @@ si_write_ugly_object(cl_object x, cl_object stream)
 	case t_shortfloat:
 		r = ecl_symbol_value(@'*read-default-float-format*');
 		write_double(ecl_short_float(x), (r == @'short-float')? 0 : 'f',
-                             FLT_SIG, stream, "SHORT-FLOAT");
+                             FLT_SIG, stream, x);
 		break;
 	case t_singlefloat:
 		r = ecl_symbol_value(@'*read-default-float-format*');
 		write_double(sf(x), (r == @'single-float')? 0 : 's',
-                             FLT_SIG, stream, "SINGLE-FLOAT");
+                             FLT_SIG, stream, x);
 		break;
 #else
 	case t_singlefloat:
 		r = ecl_symbol_value(@'*read-default-float-format*');
 		write_double(sf(x), (r == @'single-float' || r == @'short-float')? 0 : 's',
-                             FLT_SIG, stream, "SINGLE-FLOAT");
+                             FLT_SIG, stream, x);
 		break;
 #endif
 #ifdef ECL_LONG_FLOAT
 	case t_doublefloat:
 		r = ecl_symbol_value(@'*read-default-float-format*');
 		write_double(df(x), (r == @'double-float')? 0 : 'd', DBL_SIG, stream,
-                             "DOUBLE-FLOAT");
+                             x);
 		break;
 	case t_longfloat:
 		r = ecl_symbol_value(@'*read-default-float-format*');
 		write_double(ecl_long_float(x), (r == @'long-float')? 0 : 'l',
-                             LDBL_SIG, stream, "LONG-FLOAT");
+                             LDBL_SIG, stream, x);
 		break;
 #else
 	case t_doublefloat:
 		r = ecl_symbol_value(@'*read-default-float-format*');
 		write_double(df(x), (r == @'double-float' || r == @'long-float')? 0 : 'd',
-                             DBL_SIG, stream, "DOUBLE-FLOAT");
+                             DBL_SIG, stream, x);
 		break;
 #endif
 	case t_complex:
