@@ -256,32 +256,7 @@ cl_eq(cl_object x, cl_object y)
 }
 
 /*
- * Bit-wise comparison of two small objects. Inlined and fast.
- */
-#define INLINE_BCMP(a,b)                                                \
-        if (sizeof(a) % sizeof(cl_fixnum) == 0) {                       \
-                INLINE_BCMP_INNER(a,b,cl_fixnum);                       \
-        } else if (sizeof(a) % sizeof(int) == 0) {                      \
-                INLINE_BCMP_INNER(a,b,int);                             \
-        } else if (sizeof(a) % sizeof(char) == 0) {                     \
-                INLINE_BCMP_INNER(a,b,char);                            \
-        }
-#define INLINE_BCMP_INNER(a,b,type) {                  \
-                const type *c = (type*)(&a);           \
-                const type *d = (type*)(&b);           \
-                switch (sizeof(a) / sizeof(type)) {    \
-                case 8: if (c[7] != d[7]) return 0;    \
-                case 7: if (c[6] != d[6]) return 0;    \
-                case 6: if (c[5] != d[5]) return 0;    \
-                case 5: if (c[4] != d[4]) return 0;    \
-                case 4: if (c[3] != d[3]) return 0;    \
-                case 3: if (c[2] != d[2]) return 0;    \
-                case 2: if (c[1] != d[1]) return 0;    \
-                default: return (c[0] == d[0]);        \
-                } }
-
-/*
- * Bit-comparison of floats. If we are using signed zeros and NaNs,
+ * EQL-comparison of floats. If we are using signed zeros and NaNs,
  * numeric comparison of floating points is not equivalent to bit-wise
  * equality. In particular every two NaNs always give false
  *	(= #1=(/ 0.0 0.0) #1#) => NIL
@@ -290,11 +265,22 @@ cl_eq(cl_object x, cl_object y)
  * which is not the same as what EQL should return
  *	(EQL #1=(/ 0.0 0.0) #1#) => T
  *	(EQL 0 -0.0) => NIL
+ *
+ * Furthermore, we can not use bit comparisons because in some platforms
+ * long double has unused bits that makes two long floats be = but not eql.
  */
 #if !defined(ECL_SIGNED_ZERO) && !defined(ECL_IEEE_FP)
-# define FLOAT_EQL(a,b) return (a) == (b)
+# define FLOAT_EQL(a,b,type) return (a) == (b)
 #else
-# define FLOAT_EQL(a,b) INLINE_BCMP(a,b)
+# define FLOAT_EQL(a,b,type) {                          \
+        type xa = (a), xb = (b);                        \
+        if (xa == xb) {                                 \
+                return signbit(xa) == signbit(xb);      \
+        } else if (isnan(xa) || isnan(xb)) {            \
+                return !memcmp(&xa, &xb, sizeof(type)); \
+        } else {                                        \
+                return 0;                               \
+        } }
 #endif
 
 bool
@@ -314,19 +300,16 @@ ecl_eql(cl_object x, cl_object y)
 		return (ecl_eql(x->ratio.num, y->ratio.num) &&
 			ecl_eql(x->ratio.den, y->ratio.den));
 #ifdef ECL_SHORT_FLOAT
-	case t_shortfloat: {
-                float a = ecl_short_float(x);
-                float b = ecl_short_float(y);
-		FLOAT_EQL(a, b);
-        }
+	case t_shortfloat:
+		FLOAT_EQL(ecl_short_float(x), ecl_short_float(y), float);
 #endif
 	case t_singlefloat:
-		FLOAT_EQL(sf(x), sf(y));
+		FLOAT_EQL(sf(x), sf(y), float);
 	case t_doublefloat:
-		FLOAT_EQL(df(x), df(y));
+		FLOAT_EQL(df(x), df(y), double);
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
-		FLOAT_EQL(ecl_long_float(x), ecl_long_float(y));
+		FLOAT_EQL(ecl_long_float(x), ecl_long_float(y), long double);
 #endif
 	case t_complex:
 		return (ecl_eql(x->complex.real, y->complex.real) &&
@@ -376,25 +359,22 @@ BEGIN:
 			ecl_eql(x->ratio.den, y->ratio.den);
 #ifdef ECL_SHORT_FLOAT
 	case t_shortfloat: {
-                float a, b;
                 if (tx != ty) return 0;
-                a = ecl_short_float(x);
-                b = ecl_short_float(y);
-                FLOAT_EQL(a, b);
+                FLOAT_EQL(ecl_short_float(x), ecl_short_float(y), float);
         }
 #endif
 	case t_singlefloat: {
                 if (tx != ty) return 0;
-                FLOAT_EQL(sf(x), sf(y));
+                FLOAT_EQL(sf(x), sf(y), float);
         }
         case t_doublefloat: {
                 if (tx != ty) return 0;
-                FLOAT_EQL(df(x), df(y));
+                FLOAT_EQL(df(x), df(y), double);
         }
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat: {
                 if (tx != ty) return 0;
-                FLOAT_EQL(ecl_long_float(x), ecl_long_float(y));
+                FLOAT_EQL(ecl_long_float(x), ecl_long_float(y), long double);
         }
 #endif
 	case t_complex:

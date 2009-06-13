@@ -503,7 +503,7 @@ ecl_make_singlefloat(float f)
 
 	DO_DETECT_FPE(f);
 	if (f == (float)0.0) {
-#if defined(ECL_SIGNED_ZERO) && defined(signbit)
+#if defined(ECL_SIGNED_ZERO)
 		if (!signbit(f))
 #endif
 			return(cl_core.singlefloat_zero);
@@ -520,7 +520,7 @@ ecl_make_doublefloat(double f)
 
 	DO_DETECT_FPE(f);
 	if (f == (double)0.0) {
-#if defined(ECL_SIGNED_ZERO) && defined(signbit)
+#if defined(ECL_SIGNED_ZERO)
 		if (!signbit(f))
 #endif
 			return(cl_core.doublefloat_zero);
@@ -538,7 +538,7 @@ ecl_make_longfloat(long double f)
 
 	DO_DETECT_FPE(f);
 	if (f == (long double)0.0) {
-#if defined(ECL_SIGNED_ZERO) && defined(signbit)
+#if defined(ECL_SIGNED_ZERO)
 		if (!signbit(f))
 #endif
 			return cl_core.longfloat_zero;

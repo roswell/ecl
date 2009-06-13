@@ -177,6 +177,9 @@ typedef unsigned @CL_FIXNUM_TYPE@ cl_hashkey;
 #undef HAVE_LONG_DOUBLE
 #ifdef HAVE_LONG_DOUBLE
 # define ECL_LONG_FLOAT
+# define ECL_LARGE_FLOAT long double
+#else
+# define ECL_LARGE_FLOAT double
 #endif
 /* compiler understands complex                                         */
 #undef HAVE_DOUBLE_COMPLEX
@@ -316,6 +319,9 @@ typedef unsigned @CL_FIXNUM_TYPE@ cl_hashkey;
 #undef HAVE_LOG1P
 #undef HAVE_LOG1PF
 #undef HAVE_LOG1PL
+#undef HAVE_COPYSIGNF
+#undef HAVE_COPYSIGN
+#undef HAVE_COPYSIGNL
 /* whether we have sched_yield() that gives priority to other threads	*/
 #undef HAVE_SCHED_YIELD
 /* uname() for system identification					*/
@@ -416,11 +422,23 @@ typedef unsigned @CL_FIXNUM_TYPE@ cl_hashkey;
 # include <math.h>
 # ifdef _MSC_VER
 #  undef complex
+#  define signbit(x) (copysign(1.0,(x)))
 # endif
 # ifndef isfinite
 #  ifdef __sun
 #   include <ieeefp.h>
 #  endif
 #  define isfinite(x) finite(x)
+# endif
+# ifndef signbit
+#  ifndef ECL_SIGNED_ZERO
+#   define signbit(x) ((x) < 0)
+#  else
+#   ifdef HAVE_COPYSIGN
+#    define signbit(x) (copysign(1.0,(x)) < 0)
+#   else 
+#    error "When using signed zeros we need also signbit() or copysign()"
+#   endif
+#  endif
 # endif
 #endif

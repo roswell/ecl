@@ -1044,10 +1044,6 @@ cl_float_radix(cl_object x)
 	@(return MAKE_FIXNUM(FLT_RADIX))
 }
 
-#if !defined(ECL_SIGNED_ZERO) || !defined(signbit)
-# define signbit(x) ((x) < 0)
-#endif
-
 @(defun float_sign (x &optional (y x yp))
 	int negativep;
 @
@@ -1076,24 +1072,24 @@ cl_float_radix(cl_object x)
 #ifdef ECL_SHORT_FLOAT
 	case t_shortfloat: {
 		float f = ecl_short_float(y);
-		x = make_shortfloat(negativep? -fabsf(f) : fabsf(f));
+                if (signbit(f) != negativep) x = make_shortfloat(-f);
 		break;
 	}
 #endif
 	case t_singlefloat: {
 		float f = sf(y);
-		x = ecl_make_singlefloat(negativep? -fabsf(f) : fabsf(f));
+                if (signbit(f) != negativep) x = ecl_make_singlefloat(-f);
 		break;
 	}
 	case t_doublefloat: {
 		double f = df(y);
-		x = ecl_make_doublefloat(negativep? -fabs(f) : fabs(f));
+                if (signbit(f) != negativep) x = ecl_make_doublefloat(-f);
 		break;
 	}
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat: {
 		long double f = ecl_long_float(y);
-		x = ecl_make_longfloat(negativep? -fabsl(f) : fabsl(f));
+                if (signbit(f) != negativep) x = ecl_make_longfloat(-f);
 		break;
 	}
 #endif
@@ -1213,24 +1209,21 @@ cl_object
 cl_integer_decode_float(cl_object x)
 {
 	const cl_env_ptr the_env = ecl_process_env();
-	int e, s;
+	int e, s = 1;
  AGAIN:
 	switch (type_of(x)) {
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat: {
 		long double d = ecl_long_float(x);
+                if (signbit(d)) {
+                        s = -1;
+                        d = -d;
+                }
 		if (d == 0.0) {
 			e = 0;
-			s = 1;
 			x = MAKE_FIXNUM(0);
 		} else {
-			if (d < 0.0) {
-				s = -1;
-				d = frexpl(-d, &e);
-			} else {
-				s = 1;
-				d = frexpl(d, &e);
-			}
+                        d = frexpl(d, &e);
 			/* FIXME! Loss of precision! */
 			x = double_to_integer(ldexpl(d, LDBL_MANT_DIG));
 			e -= LDBL_MANT_DIG;
@@ -1240,18 +1233,15 @@ cl_integer_decode_float(cl_object x)
 #endif
 	case t_doublefloat: {
 		double d = df(x);
+                if (signbit(d)) {
+                        s = -1;
+                        d = -d;
+                }
 		if (d == 0.0) {
 			e = 0;
-			s = 1;
 			x = MAKE_FIXNUM(0);
 		} else {
-			if (d < 0.0) {
-				s = -1;
-				d = frexp(-d, &e);
-			} else {
-				s = 1;
-				d = frexp(d, &e);
-			}
+                        d = frexp(d, &e);
 			x = double_to_integer(ldexp(d, DBL_MANT_DIG));
 			e -= DBL_MANT_DIG;
 		}
@@ -1259,18 +1249,15 @@ cl_integer_decode_float(cl_object x)
 	}
 	case t_singlefloat: {
 		float d = sf(x);
+                if (signbit(d)) {
+                        s = -1;
+                        d = -d;
+                }
 		if (d == 0.0) {
 			e = 0;
-			s = 1;
 			x = MAKE_FIXNUM(0);
 		} else {
-			if (d < 0.0) {
-				s = -1;
-				d = frexpf(-d, &e);
-			} else {
-				s = 1;
-				d = frexpf(d, &e);
-			}
+                        d = frexpf(d, &e);
 			x = double_to_integer(ldexp(d, FLT_MANT_DIG));
 			e -= FLT_MANT_DIG;
 		}
@@ -1279,18 +1266,15 @@ cl_integer_decode_float(cl_object x)
 #ifdef ECL_SHORT_FLOAT
 	case t_shortfloat: {
 		float d = ecl_short_float(x);
+                if (signbit(d)) {
+                        s = -1;
+                        d = -d;
+                }
 		if (d == 0.0) {
 			e = 0;
-			s = 1;
 			x = MAKE_FIXNUM(0);
 		} else {
-			if (d < 0.0) {
-				s = -1;
-				d = frexpf(-d, &e);
-			} else {
-				s = 1;
-				d = frexpf(d, &e);
-			}
+                        d = frexpf(d, &e);
 			x = double_to_integer(ldexp(d, FLT_MANT_DIG));
 			e -= FLT_MANT_DIG;
 		}
