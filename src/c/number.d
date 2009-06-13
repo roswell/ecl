@@ -685,10 +685,34 @@ ecl_make_complex(cl_object r, cl_object i)
 long double
 ecl_to_long_double(cl_object x)
 {
-	if (type_of(x) == t_longfloat) {
+	switch(type_of(x)) {
+	case t_fixnum:
+		return (long double)fix(x);
+	case t_bignum: {
+                long double output = 0;
+                int i, l = mpz_size(x->big.big_num), exp = 0;
+                for (i = 0; i < l; i++) {
+                        output += mpz_getlimbn(x->big.big_num, i);
+                        output = ldexpl(output, -GMP_LIMB_BITS);
+                }
+                output = ldexpl(output, l * GMP_LIMB_BITS);
+                return (mpz_sgn(x->big.big_num) < 0) ? -output : output;
+        }
+	case t_ratio:
+                return ecl_to_long_double(x->ratio.num) /
+                        ecl_to_long_double(x->ratio.den);
+#ifdef ECL_SHORT_FLOAT
+	case t_singlefloat:
+		return ecl_short_float(x);
+#endif
+	case t_singlefloat:
+		return (long double)sf(x);
+	case t_doublefloat:
+		return (long double)df(x);
+	case t_longfloat:
 		return ecl_long_float(x);
-	} else {
-		return ecl_to_double(x);
+	default:
+		FEtype_error_real(x);
 	}
 }
 #endif
@@ -786,10 +810,11 @@ cl_rational(cl_object x)
 			int e;
 			d = frexpl(d, &e);
 			e -= LDBL_MANT_DIG;
-			x = long_double_to_integer(ldexpl(d, LDBL_MANT_DIG));
+                        d = ldexpl(d, LDBL_MANT_DIG);
+			x = long_double_to_integer(d);
 			if (e != 0) {
 				x = ecl_times(cl_expt(MAKE_FIXNUM(FLT_RADIX),
-							 MAKE_FIXNUM(e)),
+                                                      MAKE_FIXNUM(e)),
                                               x);
 			}
 		}
@@ -805,37 +830,24 @@ cl_rational(cl_object x)
 
 #ifdef ECL_LONG_FLOAT
 cl_object
-long_double_to_integer(long double d)
+long_double_to_integer(long double d0)
 {
-	if (d <= MOST_POSITIVE_FIXNUM && d >= MOST_NEGATIVE_FIXNUM) {
-		return MAKE_FIXNUM((cl_fixnum)d);
-	} else if (-DBL_MAX <= d && d <= DBL_MAX) {
-		return double_to_integer(d);
-	} else {
-		extern long double sqrtl(long double x);
-		extern long double roundl(long double x);
-		long double d1, d2;
-		cl_object out;
-		int e = 0;
-		d = frexpl(d, &e);
-		if (e < 0) {
-			return MAKE_FIXNUM(0);
-		}
-		e -= LDBL_MANT_DIG;
-		d1 = floor(ldexp(d, LDBL_MANT_DIG/2));
-		d2 = ldexp(d, LDBL_MANT_DIG) - ldexp(d1, +LDBL_MANT_DIG/2);
-		out = ecl_plus(cl_ash(long_double_to_integer(d1), MAKE_FIXNUM(LDBL_MANT_DIG/2)),
-				  long_double_to_integer(d2));
-		if (e > 0) {
-			if (FLT_RADIX == 2) {
-				out = ecl_ash(out, e);
-			} else {
-				out = ecl_times(cl_expt(MAKE_FIXNUM(FLT_RADIX), MAKE_FIXNUM(e)),
-						   out);
-			}
-		}
-		return out;
-	}
+        const int fb = FIXNUM_BITS - 3;
+        int e;
+        long double d = frexpl(d0, &e);
+        if (e <= fb) {
+                return MAKE_FIXNUM((cl_fixnum)d0);
+        } else if (e > LDBL_MANT_DIG) {
+                return ecl_ash(long_double_to_integer(ldexp(d, LDBL_MANT_DIG)),
+                               e - LDBL_MANT_DIG);
+        } else {
+                long double d1 = floorl(d = ldexpl(d, fb));
+                int newe = e - fb;
+                cl_object o = ecl_ash(long_double_to_integer(d1), newe);
+                long double d2 = ldexpl(d - d1, newe);
+                if (d2) o = ecl_plus(o, long_double_to_integer(d2));
+                return o;
+        }
 }
 #endif
 
