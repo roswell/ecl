@@ -101,16 +101,16 @@ ecl_minusp(cl_object x)
 
 #ifdef ECL_SHORT_FLOAT
 	case t_shortfloat:
-		return signbit(ecl_short_float(x));
+		return ecl_short_float(x) < 0;
 #endif
 	case t_singlefloat:
-		return signbit(sf(x));
+		return sf(x) < 0;
 
 	case t_doublefloat:
-		return signbit(df(x));
+		return df(x) < 0;
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
-		return signbit(ecl_long_float(x));
+		return ecl_long_float(x) < 0;
 #endif
 	default:
 		FEtype_error_real(x);
