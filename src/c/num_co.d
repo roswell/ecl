@@ -1356,9 +1356,9 @@ cl_imagpart(cl_object x)
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
                 if (signbit(ecl_long_float(x)))
-                        x = cl_core.singlefloat_minus_zero;
+                        x = cl_core.longfloat_minus_zero;
                 else
-                        x = cl_core.singlefloat_zero;
+                        x = cl_core.longfloat_zero;
 		break;
 #endif
 	case t_complex:
