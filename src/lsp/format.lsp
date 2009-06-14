@@ -953,19 +953,17 @@
 	    (prin1 (next-arg) stream)
 	    (write-char (next-arg) stream)))))
 
-(defun format-print-named-character (char stream)
-  #-formatter
+;;; "printing" as defined in the ANSI CL glossary, which is normative.
+(defun char-printing-p (char)
   (declare (si::c-local))
-  (let* ((name (char-name char)))
-    (cond (name
-	   (write-string name stream))
-	  #-ecl
-	  ((<= 0 (char-code char) 31)
-	   ;; Print control characters as "^"<char>
-	   (write-char #\^ stream)
-	   (write-char (code-char (+ 64 (char-code char))) stream))
-	  (t
-	   (write-char char stream)))))
+  (and (not (eql char #\Space))
+       (graphic-char-p char)))
+
+(defun format-print-named-character (char stream)
+  (cond ((not (char-printing-p char))
+         (write-string (string-capitalize (char-name char)) stream))
+        (t
+         (write-char char stream))))
 
 (def-format-directive #\W (colonp atsignp params)
   (check-output-layout-mode 1)
