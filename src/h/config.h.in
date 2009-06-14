@@ -84,8 +84,17 @@
 /* Support for Unicode strings */
 #undef ECL_UNICODE
 
+/* Allow STREAM operations to work on arbitrary objects			*/
+#undef ECL_CLOS_STREAMS
+
 /* Stack grows downwards						*/
 #undef ECL_DOWN_STACK
+
+/* We have non-portable implementation of FFI calls			*/
+#undef ECL_DYNAMIC_FFI
+
+/* We use hierarchical package names, like in Allegro CL                */
+#undef ECL_RELATIVE_PACKAGE_NAMES
 
 /* Use mprotect for fast interrupt dispatch				*/
 #undef ECL_USE_MPROTECT
@@ -216,20 +225,11 @@ typedef unsigned @CL_FIXNUM_TYPE@ cl_hashkey;
 /* Undefine this if you do not want ECL to check for circular lists	*/
 #define ECL_SAFE
 
-/* Allow STREAM operations to work on arbitrary objects			*/
-#undef ECL_CLOS_STREAMS
-
 /* Use CMU Common-Lisp's FORMAT routine					*/
 #undef ECL_CMU_FORMAT
 
 /* Bytecodes and arguments are 8 and 16 bits large, respectively	*/
 #undef ECL_SMALL_BYTECODES
-
-/* We have non-portable implementation of FFI calls			*/
-#undef ECL_DYNAMIC_FFI
-
-/* We use hierarchical package names, like in Allegro CL                */
-#undef ECL_RELATIVE_PACKAGE_NAMES
 
 /* Assembler implementation of APPLY and friends			*/
 #undef ECL_ASM_APPLY
