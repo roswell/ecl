@@ -17,7 +17,6 @@
 #include <ecl/ecl.h>
 #include <string.h>
 #include <stdio.h>
-#include <unistd.h>
 #ifdef ENABLE_DLOPEN
 # ifdef HAVE_DLFCN_H
 #  include <dlfcn.h>
@@ -43,6 +42,8 @@
 #  include <winbase.h>
 #  include <tlhelp32.h>
 #  define INIT_PREFIX "init_fas_"
+# else
+#  include <unistd.h>
 # endif
 #endif
 #include <ecl/ecl-inl.h>
