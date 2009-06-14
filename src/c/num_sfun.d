@@ -429,19 +429,19 @@ ecl_atan2_long_double(long double y, long double x)
 {
         if (signbit(x)) {
                 if (signbit(y)) {
-			return -ECL_PI_D + atanl(-y / -x);
+			return -ECL_PI_L + atanl(-y / -x);
                 } else if (y == 0) {
-			return ECL_PI_D;
+			return ECL_PI_L;
                 } else {
-			return ECL_PI_D - atanl(y / -x);
+			return ECL_PI_L - atanl(y / -x);
 		}
 	} else if (x == 0) {
                 if (signbit(y)) {
-			return -ECL_PI2_D;
+			return -ECL_PI2_L;
                 } else if (y == 0) {
                         return x / y;  /* Produces a NaN */
 		} else {
-			return ECL_PI2_D;
+			return ECL_PI2_L;
 		}
 	} else {
                 if (signbit(y)) {
