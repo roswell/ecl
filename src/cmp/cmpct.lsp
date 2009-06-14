@@ -74,7 +74,7 @@
               (t
                (baboon)))
         +optimizable-constants+)))
-
+ (reverse
  '((MOST-POSITIVE-SHORT-FLOAT "FLT_MAX")
    (MOST-POSITIVE-SINGLE-FLOAT "FLT_MAX")
 
@@ -100,20 +100,23 @@
 
    ;; Order is important: on platforms where 0.0 and -0.0 are the same
    ;; the last one is prioritized.
-   (#.(coerce -0.0 'single-float) "cl_core.singlefloat_minus_zero")
-   (#.(coerce -0.0 'double-float) "cl_core.doublefloat_minus_zero")
    (#.(coerce 0 'single-float) "cl_core.singlefloat_zero")
    (#.(coerce 0 'double-float) "cl_core.doublefloat_zero")
+   (#.(coerce -0.0 'single-float) "cl_core.singlefloat_minus_zero")
+   (#.(coerce -0.0 'double-float) "cl_core.doublefloat_minus_zero")
 
-   . #+long-float NIL #-long-float
+   .
+   #-long-float
+   NIL
+   #+long-float
    (
-    (MOST-POSITIVE-LONG-FLOAT "DBL_MAX")
-    (MOST-NEGATIVE-LONG-FLOAT "-DBL_MAX")
-    (LEAST-POSITIVE-LONG-FLOAT "DBL_MIN")
-    (LEAST-POSITIVE-NORMALIZED-LONG-FLOAT" DBL_MIN")
-    (LEAST-NEGATIVE-LONG-FLOAT "-DBL_MIN")
-    (LEAST-NEGATIVE-NORMALIZED-LONG-FLOAT "-DBL_MIN")
+    (MOST-POSITIVE-LONG-FLOAT "LDBL_MAX")
+    (MOST-NEGATIVE-LONG-FLOAT "-LDBL_MAX")
+    (LEAST-POSITIVE-LONG-FLOAT "LDBL_MIN")
+    (LEAST-POSITIVE-NORMALIZED-LONG-FLOAT" LDBL_MIN")
+    (LEAST-NEGATIVE-LONG-FLOAT "-LDBL_MIN")
+    (LEAST-NEGATIVE-NORMALIZED-LONG-FLOAT "-LDBL_MIN")
     (#.(coerce -0.0 'long-float) "cl_core.longfloat_minus_zero")
     (#.(coerce 0 'long-float) "cl_core.longfloat_zero")
     )
-   ))
+   )))
