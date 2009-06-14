@@ -504,9 +504,10 @@ ecl_make_singlefloat(float f)
 	DO_DETECT_FPE(f);
 	if (f == (float)0.0) {
 #if defined(ECL_SIGNED_ZERO)
-		if (!signbit(f))
+		if (signbit(f))
+                        return cl_core.singlefloat_minus_zero;
 #endif
-			return(cl_core.singlefloat_zero);
+                return cl_core.singlefloat_zero;
 	}
 	x = ecl_alloc_object(t_singlefloat);
 	sf(x) = f;
@@ -521,9 +522,10 @@ ecl_make_doublefloat(double f)
 	DO_DETECT_FPE(f);
 	if (f == (double)0.0) {
 #if defined(ECL_SIGNED_ZERO)
-		if (!signbit(f))
+		if (signbit(f))
+                        return cl_core.doublefloat_minus_zero;
 #endif
-			return(cl_core.doublefloat_zero);
+                return cl_core.doublefloat_zero;
 	}
 	x = ecl_alloc_object(t_doublefloat);
 	df(x) = f;
@@ -539,9 +541,10 @@ ecl_make_longfloat(long double f)
 	DO_DETECT_FPE(f);
 	if (f == (long double)0.0) {
 #if defined(ECL_SIGNED_ZERO)
-		if (!signbit(f))
+		if (signbit(f))
+                        return cl_core.longfloat_minus_zero;
 #endif
-			return cl_core.longfloat_zero;
+                return cl_core.longfloat_zero;
 	}
 	x = ecl_alloc_object(t_longfloat);
 	x->longfloat.value = f;
@@ -947,6 +950,22 @@ init_number(void)
 #ifdef ECL_LONG_FLOAT
  	cl_core.longfloat_zero = ecl_alloc_object(t_longfloat);
  	cl_core.longfloat_zero->longfloat.value = (long double)0;
+#endif
+#ifdef ECL_SIGNED_ZERO
+ 	cl_core.singlefloat_minus_zero = ecl_alloc_object(t_singlefloat);
+ 	sf(cl_core.singlefloat_minus_zero) = (float)-0.0;
+ 	cl_core.doublefloat_minus_zero = ecl_alloc_object(t_doublefloat);
+ 	df(cl_core.doublefloat_minus_zero) = (double)-0.0;
+# ifdef ECL_LONG_FLOAT
+ 	cl_core.longfloat_minus_zero = ecl_alloc_object(t_longfloat);
+ 	cl_core.longfloat_minus_zero->longfloat.value = (long double)-0.0;
+# endif
+#else
+        cl_core.singlefloat_minus_zero = cl_core.singlefloat_zero;
+        cl_core.doublefloat_minus_zero = cl_core.doublefloat_zero;
+# ifdef ECL_LONG_FLOAT
+        cl_core.longfloat_minus_zero = cl_core.longfloat_zero;
+# endif
 #endif
 	cl_core.plus_half = ecl_make_ratio(MAKE_FIXNUM(1), MAKE_FIXNUM(2));
 	cl_core.minus_half = ecl_make_ratio(MAKE_FIXNUM(-1), MAKE_FIXNUM(2));

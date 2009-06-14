@@ -13,14 +13,17 @@
 
 (in-package "COMPILER")
 
-(defvar +optimizable-constant+ '())
+(defparameter +optimizable-constants+ '())
 
 (defun c1constant-value (val &key always only-small-values)
   (cond
-   ((let ((x (assoc val +optimizable-constant+)))
+   ((let ((x (assoc val +optimizable-constants+)))
       (when x
        (pushnew "#include <float.h>" *clines-string-list*)
-       (c1expr (cdr x)))))
+       (setf x (cdr x))
+       (if (listp x)
+           (c1expr x)
+           x))))
    ((eq val nil) (c1nil))
    ((eq val t) (c1t))
    ((sys::fixnump val)
@@ -45,17 +48,32 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
-;;; OPTIMIZABLE DOUBLE CONSTANTS
+;;; OPTIMIZABLE FLOAT CONSTANTS
 ;;;
 
 (mapc
  #'(lambda (record)
      (let* ((name (first record))
-	    (c-value (second record))
-	    (value (symbol-value name))
-	    (type (lisp-type->rep-type (type-of value))))
-       (push (cons value `(c-inline () () ,type ,c-value :one-liner t :side-effects nil))
-	     +optimizable-constant+)))
+	    (c-value (second record)))
+       (push 
+        (cond ((symbolp name)
+               (let* ((value (symbol-value name))
+                      (type (lisp-type->rep-type (type-of value))))
+                 (cons value `(c-inline () () ,type ,c-value
+                                        :one-liner t :side-effects nil))))
+              ((float name)
+               (let* ((value name)
+                      (type (type-of value))
+                      (loc-type (case type
+                                  (single-float 'single-float-value)
+                                  (double-float 'double-float-value)
+                                  (long-float 'long-float-value)))
+                      (location `(VV ,c-value)))
+                (cons value (make-c1form* 'LOCATION :type type
+                                          :args (list loc-type value location)))))
+              (t
+               (baboon)))
+        +optimizable-constants+)))
 
  '((MOST-POSITIVE-SHORT-FLOAT "FLT_MAX")
    (MOST-POSITIVE-SINGLE-FLOAT "FLT_MAX")
@@ -80,6 +98,13 @@
    (LEAST-NEGATIVE-DOUBLE-FLOAT "-DBL_MIN")
    (LEAST-NEGATIVE-NORMALIZED-DOUBLE-FLOAT "-DBL_MIN")
 
+   ;; Order is important: on platforms where 0.0 and -0.0 are the same
+   ;; the last one is prioritized.
+   (#.(coerce -0.0 'single-float) "cl_core.singlefloat_minus_zero")
+   (#.(coerce -0.0 'double-float) "cl_core.doublefloat_minus_zero")
+   (#.(coerce 0 'single-float) "cl_core.singlefloat_zero")
+   (#.(coerce 0 'double-float) "cl_core.doublefloat_zero")
+
    . #+long-float NIL #-long-float
    (
     (MOST-POSITIVE-LONG-FLOAT "DBL_MAX")
@@ -88,5 +113,7 @@
     (LEAST-POSITIVE-NORMALIZED-LONG-FLOAT" DBL_MIN")
     (LEAST-NEGATIVE-LONG-FLOAT "-DBL_MIN")
     (LEAST-NEGATIVE-NORMALIZED-LONG-FLOAT "-DBL_MIN")
+    (#.(coerce -0.0 'long-float) "cl_core.longfloat_minus_zero")
+    (#.(coerce 0 'long-float) "cl_core.longfloat_zero")
     )
    ))

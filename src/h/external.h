@@ -185,8 +185,11 @@ struct cl_core_struct {
 	cl_object imag_two;
 	cl_object singlefloat_zero;
 	cl_object doublefloat_zero;
+	cl_object singlefloat_minus_zero;
+	cl_object doublefloat_minus_zero;
 #ifdef ECL_LONG_FLOAT
 	cl_object longfloat_zero;
+	cl_object longfloat_minus_zero;
 #endif
 
 	cl_object gensym_prefix;

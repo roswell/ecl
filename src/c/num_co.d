@@ -1335,18 +1335,30 @@ cl_imagpart(cl_object x)
 		break;
 #ifdef ECL_SHORT_FLOAT
 	case t_shortfloat:
-		x = make_shortfloat(0.0);
+                if (signbit(ecl_short_float(x)))
+                        x = make_shortfloat(-0.0);
+                else
+                        x = make_shortfloat(0.0);
 		break;
 #endif
 	case t_singlefloat:
-		x = cl_core.singlefloat_zero;
+                if (signbit(sf(x)))
+                        x = cl_core.singlefloat_minus_zero;
+                else
+                        x = cl_core.singlefloat_zero;
 		break;
 	case t_doublefloat:
-		x = cl_core.doublefloat_zero;
+                if (signbit(df(x)))
+                        x = cl_core.doublefloat_minus_zero;
+                else
+                        x = cl_core.doublefloat_zero;
 		break;
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
-		x = cl_core.longfloat_zero;
+                if (signbit(ecl_long_float(x)))
+                        x = cl_core.singlefloat_minus_zero;
+                else
+                        x = cl_core.singlefloat_zero;
 		break;
 #endif
 	case t_complex:

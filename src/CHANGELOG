@@ -8,6 +8,15 @@ ECL 9.6.2:
 
  - RATIONAL and FLOAT work more accurately with long-floats.
 
+ - IMAGPART returns (* 0 x) when the argument X is a real. This follows the
+   ANSI specification, but has the (wrong?) side effect that the imaginary
+   part of -0.0 is -0.0, not 0.
+
+ - Three new C constants {single,double,long}float_minus_zero in cl_core
+   save memory when creating zeros.
+
+ - The constants in cl_core are now used in compiled code.
+
 ECL 9.6:
 ========
 
