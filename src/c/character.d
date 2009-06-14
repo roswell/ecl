@@ -454,14 +454,12 @@ cl_char_name(cl_object c)
 {
 	ecl_character code = ecl_char_code(c);
 	cl_object output;
-	if (ecl_graphic_char_p(code) && code != ' ') {
-		output = cl_string(c);
-	} else if (code > 127) {
+	if (code > 127) {
 		char name[20]; /* cleanup */
 		sprintf(name, "U%04x", code);
 		output = make_base_string_copy(name);
 	} else {
-		output = ecl_gethash_safe(c, cl_core.char_names, Cnil);
+		output = ecl_gethash_safe(MAKE_FIXNUM(code), cl_core.char_names, Cnil);
 	}
 	@(return output);
 }
@@ -473,7 +471,9 @@ cl_name_char(cl_object name)
 	cl_index l;
 	name = cl_string(name);
 	c = ecl_gethash_safe(name, cl_core.char_names, Cnil);
-	if (c == Cnil && ecl_stringp(name) && (l = ecl_length(name))) {
+        if (c != Cnil) {
+                c = CODE_CHAR(fix(c));
+        } else if (ecl_stringp(name) && (l = ecl_length(name))) {
 		c = cl_char(name, MAKE_FIXNUM(0));
 		if (l == 1) {
 			(void)0;

@@ -17,6 +17,10 @@ ECL 9.6.2:
 
  - The constants in cl_core are now used in compiled code.
 
+* Characters:
+
+ - ECL now uses ISO Latin names for the lowest part of the character set.
+
 ECL 9.6:
 ========
 

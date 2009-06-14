@@ -238,48 +238,7 @@ ecl_init_env(cl_env_ptr env)
         env->trap_fpe_bits = 0;
 }
 
-static const struct {
-	const char *name;
-	int code;
-} char_names[] = {
-	{"Null", 0},
-	{"Soh", 1},
-	{"Stx", 2},
-	{"Etx", 3},
-	{"Eot", 4},
-	{"Enq", 5},
-	{"Ack", 6},
-	{"Bell", 7},
-	{"Backspace", 8},
-	{"Tab", 9},
-	{"Linefeed", 10},
-	{"Newline", 10},
-	{"Vt", 11},
-	{"Page", 12},
-	{"Return", 13},
-	{"So", 14},
-	{"Si", 15},
-	{"Dle", 16},
-	{"Dc1", 17},
-	{"Dc2", 18},
-	{"Dc3", 19},
-	{"Dc4", 20},
-	{"Nak", 21},
-	{"Syn", 22},
-	{"Etb", 23},
-	{"Can", 24},
-	{"Em", 25},
-	{"Sub", 26},
-	{"Escape", 27},
-	{"Esc", 27},
-	{"Fs", 28},
-	{"Gs", 29},
-	{"Rs", 30},
-	{"Us", 31},
-	{"Space", 32},
-	{"Rubout", 127},
-	{NULL, -1}
-};
+#include "iso_latin_names.h"
 
 void
 _ecl_dealloc_env(cl_env_ptr env)
@@ -518,9 +477,9 @@ cl_boot(int argc, char **argv)
 				ecl_make_singlefloat(1.5f), /* rehash-size */
 				ecl_make_singlefloat(0.5f), /* rehash-threshold */
 				Cnil); /* thread-safe */
-	for (i = 0; char_names[i].code >= 0; i++) {
-		cl_object name = make_constant_base_string(char_names[i].name);
-		cl_object code = CODE_CHAR(char_names[i].code);
+	for (i = 0; char_names[i]; i++) {
+		cl_object name = make_constant_base_string(char_names[i]);
+		cl_object code = MAKE_FIXNUM(i);
 		ecl_sethash(name, aux, code);
 		ecl_sethash(code, aux, name);
 	}
