@@ -219,17 +219,17 @@ handler_fn_protype(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
 	case SIGFPE: {
 		cl_object condition = @'arithmetic-error';
 #if defined(HAVE_FENV_H) & !defined(ECL_AVOID_FENV_H)
-		int bits = fetestexcept(FE_ALL_EXCEPT);
-		if (bits & FE_DIVBYZERO)
+		if (fetestexcept(FE_DIVBYZERO))
 			condition = @'division-by-zero';
-		else if (bits & FE_INVALID)
+		else if (fetestexcept(FE_INVALID))
 			condition = @'floating-point-invalid-operation';
-		else if (bits & FE_OVERFLOW)
+		else if (fetestexcept(FE_OVERFLOW))
 			condition = @'floating-point-overflow';
-		else if (bits & FE_UNDERFLOW)
+		else if (fetestexcept(FE_UNDERFLOW))
 			condition = @'floating-point-underflow';
-		else if (bits & FE_INEXACT)
+		else if (fetestexcept(FE_INEXACT))
 			condition = @'floating-point-inexact';
+                feclearexcept(FE_ALL_EXCEPT);
 #endif
 #ifdef SA_SIGINFO
 		if (info) {

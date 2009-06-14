@@ -116,6 +116,7 @@ cl_object
 cl_exp(cl_object x)
 {
 	cl_object output;
+        ECL_MATHERR_CLEAR;
  AGAIN:
 	switch (type_of(x)) {
 	case t_fixnum:
@@ -149,6 +150,7 @@ cl_exp(cl_object x)
 		x = ecl_type_error(@'exp',"exponent",x,@'number');
 		goto AGAIN;
 	}
+        ECL_MATHERR_TEST;
 	@(return output)
 }
 
@@ -240,7 +242,9 @@ ecl_log1_complex(cl_object r, cl_object i)
 cl_object
 ecl_log1(cl_object x)
 {
+        cl_object output;
 	cl_type tx;
+        ECL_MATHERR_CLEAR;
  AGAIN:
 	tx = type_of(x);
 	if (!ECL_NUMBER_TYPE_P(tx)) {
@@ -248,35 +252,43 @@ ecl_log1(cl_object x)
 		goto AGAIN;
 	}
 	if (tx == t_complex) {
-		return ecl_log1_complex(x->complex.real, x->complex.imag);
+		output = ecl_log1_complex(x->complex.real, x->complex.imag);
 	} else if (ecl_minusp(x)) {
-		return ecl_log1_complex(x, MAKE_FIXNUM(0));
+		output = ecl_log1_complex(x, MAKE_FIXNUM(0));
 	} else switch (tx) {
 	case t_fixnum:
 	case t_ratio:
-		return ecl_make_singlefloat(logf(number_to_float(x)));
+		output = ecl_make_singlefloat(logf(number_to_float(x)));
+                break;
         case t_bignum: {
                 cl_fixnum l = fix(cl_integer_length(x)) - 1;
                 cl_object r = ecl_make_ratio(x, ecl_ash(MAKE_FIXNUM(1), l));
-                float output = logf(number_to_float(r)) + l * logf(2.0);
-                return ecl_make_singlefloat(output);
+                float d = logf(number_to_float(r)) + l * logf(2.0);
+                output = ecl_make_singlefloat(d);
+                break;
         }
 #ifdef ECL_SHORT_FLOAT
 	case t_shortfloat:
-		return make_shortfloat(logf(ecl_short_float(x)));
+		output = make_shortfloat(logf(ecl_short_float(x)));
+                break;
 #endif
 	case t_singlefloat:
-		return ecl_make_singlefloat(logf(sf(x)));
+		output = ecl_make_singlefloat(logf(sf(x)));
+                break;
 	case t_doublefloat:
-		return ecl_make_doublefloat(log(df(x)));
+		output = ecl_make_doublefloat(log(df(x)));
+                break;
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
-		return ecl_make_longfloat(logl(ecl_long_float(x)));
+		output = ecl_make_longfloat(logl(ecl_long_float(x)));
+                break;
 #endif
 	default:
 		/* We do not reach here */
 		(void)0;
 	}
+        ECL_MATHERR_TEST;
+        return output;
 }
 
 cl_object
@@ -288,7 +300,9 @@ ecl_log2(cl_object x, cl_object y)
 cl_object
 ecl_log1p(cl_object x)
 {
+        cl_object output;
 	cl_type tx;
+        ECL_MATHERR_CLEAR;
  AGAIN:
 	tx = type_of(x);
 	if (!ECL_NUMBER_TYPE_P(tx)) {
@@ -296,31 +310,39 @@ ecl_log1p(cl_object x)
 		goto AGAIN;
 	}
 	if (tx == t_complex) {
-		return ecl_log1(ecl_plus(MAKE_FIXNUM(1), x));
+		output = ecl_log1(ecl_plus(MAKE_FIXNUM(1), x));
 	} else if (ecl_number_compare(x, MAKE_FIXNUM(-1)) < 0) {
-		return ecl_log1p(ecl_make_complex(x, MAKE_FIXNUM(0)));
-	}
+		output = ecl_log1p(ecl_make_complex(x, MAKE_FIXNUM(0)));
+	} else {
 	switch (tx) {
 	case t_fixnum:
 	case t_bignum:
 	case t_ratio:
-		return ecl_make_singlefloat(log1pf(number_to_float(x)));
+		output = ecl_make_singlefloat(log1pf(number_to_float(x)));
+                break;
 #ifdef ECL_SHORT_FLOAT
 	case t_shortfloat:
-		return make_shortfloat(log1pf(ecl_short_float(x)));
+		output = make_shortfloat(log1pf(ecl_short_float(x)));
+                break;
 #endif
 	case t_singlefloat:
-		return ecl_make_singlefloat(log1pf(sf(x)));
+		output = ecl_make_singlefloat(log1pf(sf(x)));
+                break;
 	case t_doublefloat:
-		return ecl_make_doublefloat(log1p(df(x)));
+		output = ecl_make_doublefloat(log1p(df(x)));
+                break;
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
-		return ecl_make_longfloat(log1pl(ecl_long_float(x)));
+		output = ecl_make_longfloat(log1pl(ecl_long_float(x)));
+                break;
 #endif
 	default:
 		/* We do not reach here */
 		(void)0;
 	}
+        }
+        ECL_MATHERR_TEST;
+        return output;
 }
 
 cl_object
@@ -334,6 +356,7 @@ cl_sqrt(cl_object x)
 {
 	cl_object z;
 	cl_type tx;
+        ECL_MATHERR_CLEAR;
  AGAIN:
 	tx = type_of(x);
 	if (!ECL_NUMBER_TYPE_P(tx)) {
@@ -366,6 +389,7 @@ cl_sqrt(cl_object x)
 		/* Never reaches this */
 		(void)0;
 	}
+        ECL_MATHERR_TEST;
 	@(return z);
 }
 
@@ -434,22 +458,26 @@ ecl_atan2_long_double(long double y, long double x)
 cl_object
 ecl_atan2(cl_object y, cl_object x)
 {
+        cl_object output;
+        ECL_MATHERR_CLEAR;
+        {
 #ifdef ECL_LONG_FLOAT
 	int tx = type_of(x);
 	int ty = type_of(y);
 	if (tx < ty)
 		tx = ty;
 	if (tx == t_longfloat) {
-		return ecl_make_longfloat(ecl_atan2_long_double(ecl_to_long_double(y),
-                                                                ecl_to_long_double(x)));
+                long double d = ecl_atan2_long_double(ecl_to_long_double(y),
+                                                      ecl_to_long_double(x));
+		output = ecl_make_longfloat(d);
 	} else {
 		double dx = ecl_to_double(x);
 		double dy = ecl_to_double(y);
 		double dz = ecl_atan2_double(dy, dx);
 		if (tx == t_doublefloat) {
-			return ecl_make_doublefloat(dz);
+			output = ecl_make_doublefloat(dz);
 		} else {
-			return ecl_make_singlefloat(dz);
+			output = ecl_make_singlefloat(dz);
 		}
 	}
 #else
@@ -457,11 +485,14 @@ ecl_atan2(cl_object y, cl_object x)
 	double dx = ecl_to_double(x);
 	double dz = ecl_atan2_double(dy, dx);
 	if (type_of(x) == t_doublefloat || type_of(y) == t_doublefloat) {
-		return ecl_make_doublefloat(dz);
+		output = ecl_make_doublefloat(dz);
 	} else {
-		return ecl_make_singlefloat(dz);
+		output = ecl_make_singlefloat(dz);
 	}
 #endif
+        }
+        ECL_MATHERR_TEST;
+        return output;
 }
 
 cl_object
@@ -493,6 +524,7 @@ cl_object
 cl_sin(cl_object x)
 {
 	cl_object output;
+        ECL_MATHERR_CLEAR;
  AGAIN:
 	switch (type_of(x)) {
 	case t_fixnum:
@@ -528,6 +560,7 @@ cl_sin(cl_object x)
 		x = ecl_type_error(@'sin',"argument",x,@'number');
 		goto AGAIN;
 	}
+        ECL_MATHERR_TEST;
 	@(return output)
 }
 
@@ -535,6 +568,7 @@ cl_object
 cl_cos(cl_object x)
 {
 	cl_object output;
+        ECL_MATHERR_CLEAR;
  AGAIN:
 	switch (type_of(x)) {
 	case t_fixnum:
@@ -569,6 +603,7 @@ cl_cos(cl_object x)
 		x = ecl_type_error(@'cos',"argument",x,@'number');
 		goto AGAIN;
 	}
+        ECL_MATHERR_TEST;
 	@(return output)
 }
 
@@ -588,6 +623,7 @@ cl_object
 cl_tan(cl_object x)
 {
 	cl_object output;
+        ECL_MATHERR_CLEAR;
  AGAIN:
 	switch (type_of(x)) {
 	case t_fixnum:
@@ -616,6 +652,7 @@ cl_tan(cl_object x)
 		x = ecl_type_error(@'tan',"argument",x,@'number');
 		goto AGAIN;
 	}
+        ECL_MATHERR_TEST;
 	@(return output)
 }
 
@@ -623,6 +660,7 @@ cl_object
 cl_sinh(cl_object x)
 {
 	cl_object output;
+        ECL_MATHERR_CLEAR;
  AGAIN:
 	switch (type_of(x)) {
 	case t_fixnum:
@@ -659,6 +697,7 @@ cl_sinh(cl_object x)
 		x = ecl_type_error(@'sinh',"argument",x,@'number');
 		goto AGAIN;
 	}
+        ECL_MATHERR_TEST;
 	@(return output)
 }
 
@@ -666,6 +705,7 @@ cl_object
 cl_cosh(cl_object x)
 {
 	cl_object output;
+        ECL_MATHERR_CLEAR;
  AGAIN:
 	switch (type_of(x)) {
 	case t_fixnum:
@@ -702,6 +742,7 @@ cl_cosh(cl_object x)
 		x = ecl_type_error(@'cosh',"argument",x,@'number');
 		goto AGAIN;
 	}
+        ECL_MATHERR_TEST;
 	@(return output)
 }
 
@@ -709,6 +750,7 @@ cl_object
 cl_tanh(cl_object x)
 {
 	cl_object output;
+        ECL_MATHERR_CLEAR;
  AGAIN:
 	switch (type_of(x)) {
 	case t_fixnum:
@@ -737,6 +779,7 @@ cl_tanh(cl_object x)
 		x = ecl_type_error(@'tanh',"argument",x,@'number');
 		goto AGAIN;
 	}
+        ECL_MATHERR_TEST;
 	@(return output)
 }
 

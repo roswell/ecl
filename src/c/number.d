@@ -17,6 +17,7 @@
 
 #define ECL_INCLUDE_MATH_H
 #include <ecl/ecl.h>
+#include <signal.h>
 #ifdef HAVE_FENV_H
 # define _GNU_SOURCE
 # include <fenv.h>
@@ -38,7 +39,12 @@
  * X, where the status of the FPE control word is changed by
  * printf. We have two alternatives.
  */
-#  ifdef ECL_IEEE_FP
+# ifdef ECL_IEEE_FP
+#  if defined(HAVE_FENV_H) && !defined(ECL_AVOID_FENV_H)
+#   define DO_DETECT_FPE(f)                                             \
+        if (isnan(f) || !isfinite(f))                                   \
+                ecl_deliver_fpe();
+#  else
 #   define DO_DETECT_FPE(f)                                             \
 	if (isnan(f)) {                                                 \
                 if (ecl_process_env()->trap_fpe_bits & FE_INVALID)      \
@@ -47,6 +53,7 @@
                 if (ecl_process_env()->trap_fpe_bits & FE_DIVBYZERO)    \
                         cl_error(1, @'division-by-zero');               \
 	}
+#  endif
 # else
 #  define DO_DETECT_FPE(f)                                              \
 	if (isnan(f)) {                                                 \
@@ -495,6 +502,34 @@ ecl_make_ratio(cl_object num, cl_object den)
 	r->ratio.den = den;
 	return(r);
 }
+
+#if defined(HAVE_FENV_H) && !defined(ECL_AVOID_FENV_H)
+void
+ecl_deliver_fpe(void)
+{
+        cl_env_ptr env = ecl_process_env();
+        int bits = env->trap_fpe_bits;
+        if (fetestexcept(env->trap_fpe_bits)) {
+                cl_object condition;
+		if (fetestexcept(bits & FE_DIVBYZERO))
+			condition = @'division-by-zero';
+		else if (fetestexcept(bits & FE_INVALID))
+			condition = @'floating-point-invalid-operation';
+		else if (fetestexcept(bits & FE_OVERFLOW))
+			condition = @'floating-point-overflow';
+		else if (fetestexcept(bits & FE_UNDERFLOW))
+			condition = @'floating-point-underflow';
+		else if (fetestexcept(bits & FE_INEXACT))
+			condition = @'floating-point-inexact';
+                else
+                        condition = @'arithmetic-error';
+                cl_print(1,condition);
+                feclearexcept(FE_ALL_EXCEPT);
+		cl_error(1, condition);
+        }
+        feclearexcept(FE_ALL_EXCEPT);
+}
+#endif
 
 cl_object
 ecl_make_singlefloat(float f)

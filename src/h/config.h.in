@@ -441,4 +441,12 @@ typedef unsigned @CL_FIXNUM_TYPE@ cl_hashkey;
 #   endif
 #  endif
 # endif
+# if defined(HAVE_FENV_H) && !defined(HAVE_FEENABLEEXCEPT) && !defined(ECL_AVOID_FPE_H)
+#  include <fenv.h>
+#  define ECL_MATHERR_CLEAR feclearexcept(FE_ALL_EXCEPT)
+#  define ECL_MATHERR_TEST if (fetestexcept(FE_ALL_EXCEPT)) ecl_deliver_fpe();
+# else
+#  define ECL_MATHERR_CLEAR
+#  define ECL_MATHERR_TEST
+# endif
 #endif
