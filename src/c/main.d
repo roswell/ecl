@@ -485,6 +485,13 @@ cl_boot(int argc, char **argv)
 		ecl_sethash(name, aux, code);
 		ecl_sethash(code, aux, name);
 	}
+	{
+		/* Linefeed is redundant with one of the names
+		 * given in iso_latin_names.h */
+		cl_object name = make_constant_base_string("Linefeed");
+		ecl_sethash(name, aux, MAKE_FIXNUM(10));
+		ecl_sethash(MAKE_FIXNUM(10), aux, name);
+	}
 
 	/* LIBRARIES is an adjustable vector of objects. It behaves as
 	   a vector of weak pointers thanks to the magic in
