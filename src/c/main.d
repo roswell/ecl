@@ -90,7 +90,9 @@ static char stdout_buf[BUFSIZ];
 
 static const char *feature_names[] = {
         "ECL", "COMMON", ECL_ARCHITECTURE, "FFI", "PREFIXED-API",
+#ifdef ECL_IEEE_FP
         "IEEE-FLOATING-POINT",
+#endif
 #ifdef WITH_GMP
         "COMMON-LISP",
         "ANSI-CL",
