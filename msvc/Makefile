@@ -191,8 +191,8 @@ c\cut$(EXE): $(top_srcdir)\util\cut.c
 	$(MAKE) cut$(EXE)
 	cd ..
 
-$(TARGETS): ecl_min$(EXE) compile.lsp sysfun.lsp BUILD-STAMP
-	set ECLDIR=.
+$(TARGETS): $(UCDDAT) ecl_min$(EXE) compile.lsp sysfun.lsp BUILD-STAMP
+	set ECLDIR=./
 	ecl_min < compile.lsp
 BUILD-STAMP: Makefile
 	date /t > $@
