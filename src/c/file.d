@@ -4657,39 +4657,44 @@ wsock_error( const char *err_msg, cl_object strm )
 void
 init_file(void)
 {
-	int flags = ECL_STREAM_DEFAULT_FORMAT;
+	int flags;
 	cl_object standard_input;
 	cl_object standard_output;
 	cl_object error_output;
 	cl_object aux;
 	cl_object null_stream;
-#if defined(_MSVC)
-	flags |= ECL_STREAM_CRLF;
+	cl_object external_format = Cnil;
+#if defined(_MSC_VER) || defined(mingw32)
+	external_format = cl_list(2, @':us-ascii', @':crlf');
+	external_format = cl_list(2, @':latin-1', @':crlf');
+	flags = 0;
+#else
+	flags = ECL_STREAM_DEFAULT_FORMAT;
 #endif
 
 	null_stream = ecl_make_stream_from_FILE(make_constant_base_string("/dev/null"),
-						NULL, smm_io, 8, flags, Cnil);
+						NULL, smm_io, 8, flags, external_format);
 	generic_close(null_stream);
 	null_stream = cl_make_two_way_stream(null_stream, cl_make_broadcast_stream(0));
 	cl_core.null_stream = null_stream;
 
 #if 1
 	standard_input = ecl_make_stream_from_FILE(make_constant_base_string("stdin"),
-						   stdin, smm_input, 8, flags, Cnil);
+						   stdin, smm_input, 8, flags, external_format);
 	standard_output = ecl_make_stream_from_FILE(make_constant_base_string("stdout"),
-						    stdout, smm_output, 8, flags, Cnil);
+						    stdout, smm_output, 8, flags, external_format);
 	error_output = ecl_make_stream_from_FILE(make_constant_base_string("stderr"),
-						 stderr, smm_output, 8, flags, Cnil);
+						 stderr, smm_output, 8, flags, external_format);
 #else
 	standard_input = ecl_make_file_stream_from_fd(make_constant_base_string("stdin"),
 						      STDIN_FILENO, smm_input, 8, flags,
-						      Cnil);
+						      external_format);
 	standard_output = ecl_make_file_stream_from_fd(make_constant_base_string("stdout"),
 						       STDOUT_FILENO, smm_output, 8, flags,
-						       Cnil);
+						       external_format);
 	error_output = ecl_make_file_stream_from_fd(make_constant_base_string("stderr"),
 						    STDERR_FILENO, smm_output, 8, flags,
-						    Cnil);
+						    external_format);
 #endif
 	cl_core.standard_input = standard_input;
 	ECL_SET(@'*standard-input*', standard_input);
