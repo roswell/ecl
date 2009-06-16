@@ -408,7 +408,7 @@ typedef unsigned int uint32_t;
 #include <math.h>
 #ifndef isfinite
 # define isfinite(x) (finite(x))
-# define signbit(x) (_copysign(1.0,(x)))
+# define signbit(x) (_copysign(1.0,(x)) < 0)
 # define ECL_MATHERR_CLEAR
 # define ECL_MATHERR_TEST
 #endif
