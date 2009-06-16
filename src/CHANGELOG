@@ -1,6 +1,12 @@
 ECL 9.6.2:
 ==========
 
+* Bugs:
+
+ - Fixed a bug in the compiler that prevented building with MSVC
+
+ - Fixed a bug in src/clx/dependent.lisp that prevented compiling CLX.
+
 * Numerics:
 
  - EXT:OUTPUT-FLOAT-NAN and EXT:OUTPUT-FLOAT-INFINITY can be redefined to
