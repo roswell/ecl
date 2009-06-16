@@ -400,7 +400,6 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 
     (when varargs
       (let ((first-arg (cond ((plusp nreq) (format nil "V~d" (+ req0 nreq)))
-			     ((eq closure-type 'CLOSURE) "env0")
 			     ((eq closure-type 'LEXICAL) (format nil "lex~D" (1- *level*)))
 			     (t "narg"))))
 	(wt-nl
