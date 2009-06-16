@@ -1311,17 +1311,13 @@
 (defun current-process ()
   (minima:current-process))
 
-#+(and cmu mp)
+#+(or (and cmu mp) (and ecl threads))
 (defun current-process ()
   mp:*current-process*)
 
 #+sbcl
 (defun current-process ()
   sb-thread:*current-thread*)
-
-#+(and ecl threads)
-(defun current-process ()
-  (mp:current-process))
 
 ;;; WITHOUT-INTERRUPTS -- provide for atomic operations.
 
