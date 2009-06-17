@@ -270,16 +270,16 @@ cl_truename(cl_object orig_pathname)
                                         (2, filename,
                                          make_constant_base_string("/"));
                                 pathname = cl_pathname(pathname);
-                                cl_print(1,pathname);
                                 goto BEGIN;
-                        }                                                                			filename = OBJNULL;
+                        }
+                        filename = OBJNULL;
 		}
 		change_drive(pathname);
 		for (dir = pathname->pathname.directory;
 		     !Null(dir);
 		     dir = CDR(dir))
 		{
-			cl_object part = CAR(dir);
+			volatile cl_object part = CAR(dir);
 			if (type_of(part) == t_base_string) {
 				if (safe_chdir((char*)part->base_string.self) < 0) {
 ERROR:					FElibc_error("Can't change the current directory to ~S",
@@ -305,7 +305,23 @@ ERROR:					FElibc_error("Can't change the current directory to ~S",
 			goto BEGIN;
 		}
 #endif
-		pathname = ecl_merge_pathnames(si_getcwd(0), pathname, @':newest');
+                {
+                        /* ECL does not contemplate version numbers
+                           in directory pathnames */
+                        cl_object version = @':newest';
+                        if (pathname->pathname.name == Cnil &&
+                            pathname->pathname.type == Cnil) {
+                                version = Cnil;
+                                /* We have to destructively change the
+                                 * pathname version here. Otherwise
+                                 * merge_pathnames will not do it. It is
+                                 * safe because coerce_to_file_pathname
+                                 * created a copy. */
+                                pathname->pathname.version = version;
+                        }
+                        pathname = ecl_merge_pathnames(si_getcwd(0), pathname,
+                                                       version);
+                }
 	} CL_UNWIND_PROTECT_EXIT {
 		safe_chdir((char*)previous->base_string.self);
 	} CL_UNWIND_PROTECT_END;
@@ -897,10 +913,11 @@ si_get_library_pathname(void)
         }
 #if defined(_MSC_VER) || defined(mingw32)
 	{
-	cl_object s = cl_alloc_adjustable_base_string(cl_core.path_max);
-	char *buffer = (char*)s->base_string.self;
+        char *buffer;
 	HMODULE hnd;
 	cl_index len, ep;
+        s = cl_alloc_adjustable_base_string(cl_core.path_max);
+        buffer = (char*)s->base_string.self;
 	ecl_disable_interrupts();
 	hnd = GetModuleHandle("ecl.dll");
 	len = GetModuleFileName(hnd, buffer, cl_core.path_max-1);
@@ -925,7 +942,7 @@ si_get_library_pathname(void)
         s = cl_truename(s);
         /* Produce a string */
         s = ecl_namestring(s, 0);
-        return s;
+        @(return s);
 }
 
 @(defun ext::chdir (directory &optional (change_d_p_d Ct))

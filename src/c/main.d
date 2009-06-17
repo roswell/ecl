@@ -474,11 +474,34 @@ cl_boot(int argc, char **argv)
 
 	/* These must come _after_ the packages and NIL/T have been created */
 	init_all_symbols();
-	read_char_database();
 
 	/*
-	 * 2) Initialize constants (strings, numbers and time).
+	 * Initialize the per-thread data.
+	 * This cannot come later, because some routines need the
+	 * frame stack immediately (for instance SI:PATHNAME-TRANSLATIONS).
 	 */
+	ecl_init_env(env);
+#if !defined(GBC_BOEHM)
+	/* We need this because a lot of stuff is to be created */
+	init_GC();
+#endif
+	GC_enable();
+
+        /*
+         * Initialize default pathnames
+         */
+	cl_core.pathname_translations = Cnil;
+#if 1
+	ECL_SET(@'*default-pathname-defaults*', si_getcwd(0));
+#else
+	ECL_SET(@'*default-pathname-defaults*',
+		ecl_make_pathname(Cnil, Cnil, Cnil, Cnil, Cnil, Cnil));
+#endif
+
+        /*
+         * Initialize Unicode character database and character names.
+         */
+	read_char_database();
 
 	/* FIXME! This is a hack! We use EQUALP hashes because we know that
 	 * the characters in this table will not be alphanumeric.
@@ -501,6 +524,18 @@ cl_boot(int argc, char **argv)
 		ecl_sethash(name, aux, MAKE_FIXNUM(10));
 		ecl_sethash(MAKE_FIXNUM(10), aux, name);
 	}
+
+        /*
+         * Initialize logical pathname translations. This must come after
+         * the character database has been filled.
+         */
+	@si::pathname-translations(2,make_constant_base_string("SYS"),
+				   cl_list(1,cl_list(2,make_constant_base_string("*.*"),
+						     make_constant_base_string("./*.*"))));
+
+	/*
+	 * Initialize constants (strings, numbers and time).
+	 */
 
 	/* LIBRARIES is an adjustable vector of objects. It behaves as
 	   a vector of weak pointers thanks to the magic in
@@ -544,18 +579,6 @@ cl_boot(int argc, char **argv)
 	init_number();
 	init_unixtime();
 
-	/*
-	 * 3) Initialize the per-thread data.
-	 *    This cannot come later, because some routines need the
-	 *    frame stack immediately (for instance SI:PATHNAME-TRANSLATIONS).
-	 */
-	ecl_init_env(env);
-#if !defined(GBC_BOEHM)
-	/* We need this because a lot of stuff is to be created */
-	init_GC();
-#endif
-	GC_enable();
-
 #ifdef ECL_THREADS
 	env->bindings_hash = cl__make_hash_table(@'eq', MAKE_FIXNUM(1024),
 						   ecl_make_singlefloat(1.5f),
@@ -565,28 +588,15 @@ cl_boot(int argc, char **argv)
 #endif
 
 	/*
-	 * 4) Initialize I/O subsystem and pathnames.
+	 * Initialize I/O subsystem.
 	 */
-
 	init_file();
 	init_read();
 
 	ECL_SET(@'*print-case*', @':upcase');
 
-	cl_core.pathname_translations = Cnil;
-#if 1
-	ECL_SET(@'*default-pathname-defaults*', si_getcwd(0));
-#else
-	ECL_SET(@'*default-pathname-defaults*',
-		ecl_make_pathname(Cnil, Cnil, Cnil, Cnil, Cnil, Cnil));
-#endif
-
-	@si::pathname-translations(2,make_constant_base_string("SYS"),
-				   cl_list(1,cl_list(2,make_constant_base_string("*.*"),
-						     make_constant_base_string("./*.*"))));
-
 	/*
-	 * 5) Set up hooks for LOAD, errors and macros.
+	 * Set up hooks for LOAD, errors and macros.
 	 */
 #ifdef ECL_THREADS
 	ECL_SET(@'mp::+load-compile-lock+',
@@ -611,7 +621,7 @@ cl_boot(int argc, char **argv)
 	init_macros();
 
 	/*
-	 * 6) Set up infrastructure for CLOS.
+	 * Set up infrastructure for CLOS.
 	 */
 #ifdef CLOS
 	ECL_SET(@'si::*class-name-hash-table*',
@@ -622,7 +632,7 @@ cl_boot(int argc, char **argv)
 #endif
 
 	/*
-	 * 7) Features.
+	 * Features.
 	 */
 
 	ECL_SET(@'LAMBDA-LIST-KEYWORDS',
