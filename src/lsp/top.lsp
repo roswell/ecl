@@ -875,9 +875,8 @@ under certain conditions; see file 'Copyright' for details.")
 		;;(format t "~:[~; >~] ~S" b (ihs-fname i)) ;; JCB
 		(format t "  > ~S" func-name)
 		(when (eq func-name 'si::bytecodes)
-		  (multiple-value-bind (lform lex name def)
-                    (function-lambda-expression (ihs-fun i))
-		    (format t " [Evaluation of: ~S]" (if lform lform def))))
+		  (format t " [Evaluation of: ~S]"
+                          (function-lambda-expression (ihs-fun i))))
 		(terpri)
 		)))
       (progn
@@ -903,9 +902,8 @@ under certain conditions; see file 'Copyright' for details.")
 		;;(format t "~:[~; >~] ~S" b (ihs-fname i)) ;; JCB
 		(format t "  > ~S" (ihs-fname i))
 		(when (eq func-name 'si::bytecodes)
-		  (multiple-value-bind (lform lex name def)
-		    (function-lambda-expression (ihs-fun i))
-		    (format t " [Evaluation of: ~S]" (if lform lform def))))
+                  (format t " [Evaluation of: ~S]"
+                          (function-lambda-expression (ihs-fun i))))
 		(terpri)
 		))))
       )

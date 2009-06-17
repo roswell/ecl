@@ -905,11 +905,15 @@ dir_recursive(cl_object pathname, cl_object directory)
 cl_object
 si_get_library_pathname(void)
 {
-	const char *v = getenv("ECLDIR");
-        cl_object s;
-	if (v) {
-                s = make_constant_base_string(v);
-                goto OUTPUT;
+        cl_object s = cl_core.library_pathname;
+        if (!Null(s)) {
+                goto OUTPUT_UNCHANGED;
+        } else {
+                const char *v = getenv("ECLDIR");
+                if (v) {
+                        s = make_constant_base_string(v);
+                        goto OUTPUT;
+                }
         }
 #if defined(_MSC_VER) || defined(mingw32)
 	{
@@ -932,16 +936,21 @@ si_get_library_pathname(void)
         s = cl_make_pathname(6, @':name', Cnil, @':type', Cnil,
                              @':defaults', s);
         s = ecl_namestring(s, 0);
-        goto OUTPUT;
 	}
 #else
         s = make_constant_base_string(ECLDIR "/");
 #endif
  OUTPUT:
-        /* Reinterpret filenames as directories. For instance /lib -> /lib/ */
-        s = cl_truename(s);
-        /* Produce a string */
-        s = ecl_namestring(s, 0);
+        {
+                cl_object true_pathname = cl_probe_file(s);
+                if (Null(true_pathname)) {
+                        ecl_internal_error("Cannot find ECL's directory");
+                }
+                /* Produce a string */
+                s = ecl_namestring(s, 0);
+        }
+        cl_core.library_pathname = s;
+ OUTPUT_UNCHANGED:
         @(return s);
 }
 

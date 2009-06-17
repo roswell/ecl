@@ -491,6 +491,7 @@ cl_boot(int argc, char **argv)
          * Initialize default pathnames
          */
 	cl_core.pathname_translations = Cnil;
+        cl_core.library_pathname = Cnil;
 #if 1
 	ECL_SET(@'*default-pathname-defaults*', si_getcwd(0));
 #else

@@ -165,6 +165,7 @@ struct cl_core_struct {
 	cl_object packages_to_be_created;
 
 	cl_object pathname_translations;
+        cl_object library_pathname;
 
 	cl_object terminal_io;
 	cl_object null_stream;
