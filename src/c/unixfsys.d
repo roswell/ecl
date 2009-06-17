@@ -260,7 +260,19 @@ cl_truename(cl_object orig_pathname)
 									Cnil, Cnil, Cnil));
 #endif
 		} else {
-			filename = OBJNULL;
+                        /* If the pathname is a directory but we have supplied
+                           a file name, correct the type by appending a directory
+                           separator and re-parsing again the namestring */
+                        if (kind == @':directory' &&
+                            (pathname->pathname.name != Cnil ||
+                             pathname->pathname.type != Cnil)) {
+                                pathname = si_base_string_concatenate
+                                        (2, filename,
+                                         make_constant_base_string("/"));
+                                pathname = cl_pathname(pathname);
+                                cl_print(1,pathname);
+                                goto BEGIN;
+                        }                                                                			filename = OBJNULL;
 		}
 		change_drive(pathname);
 		for (dir = pathname->pathname.directory;

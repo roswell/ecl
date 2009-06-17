@@ -5,6 +5,10 @@ ECL 9.6.2:
 
  - Reimplemented winsock streams using the new file structures (D. Statyvka)
 
+ - TRUENAME now properly reinterprets file pathnames as directory pathnames
+   if the file system shows that the user supplied a wrong value. For instance
+   (TRUENAME "/tmp") => #P"/tmp/"
+
 * Bugs:
 
  - Fixed a bug in the compiler that prevented building with MSVC
@@ -18,6 +22,8 @@ ECL 9.6.2:
    previously unbound variable.
 
  - The command :bds no longer chokes when finding unbound special variables.
+
+ - Fixed a problem with SI:MKSTEMP under windows (DS).
 
 * Numerics:
 
