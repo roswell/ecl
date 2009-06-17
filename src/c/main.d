@@ -318,20 +318,23 @@ read_char_database()
 	cl_object output = Cnil;
 	FILE *f = fopen(s->base_string.self, "rb");
 	if (f) {
-		cl_index size;
+		cl_index size, read;
 		if (!fseek(f, 0, SEEK_END)) {
 			size = ftell(f);
 			fseek(f, 0, SEEK_SET);
 			output = si_make_vector(@'ext::byte8', MAKE_FIXNUM(size),
 						Cnil, Cnil, Cnil, Cnil);
-			if (fread(output->vector.self.b8, 1, size, f) < size) {
-				output = Cnil;
-			} else {
-				uint8_t *p = output->vector.self.b8;
-				cl_core.unicode_database = output;
-				cl_core.ucd_misc = p + 2;
-				cl_core.ucd_pages = cl_core.ucd_misc + (p[0] + (p[1]<<8));
-				cl_core.ucd_data = cl_core.ucd_pages + (0x110000 / 256);
+	    
+			read = 0;
+			while (read < size) {
+				cl_index res;
+				res = fread(output->vector.self.b8 + read, 1, size - read, f);
+				if (res > 0) {
+					read += res;
+                                } else {
+					output = Cnil;
+					break;
+				}
 			}
 		}
 		fclose(f);
@@ -339,6 +342,12 @@ read_char_database()
 	if (output == Cnil) {
 		printf("Unable to read Unicode database: %s\n", s->base_string.self);
 		abort();
+	} else {
+		uint8_t *p = output->vector.self.b8;
+		cl_core.unicode_database = output;
+		cl_core.ucd_misc = p + 2;
+		cl_core.ucd_pages = cl_core.ucd_misc + (p[0] + (p[1]<<8));
+		cl_core.ucd_data = cl_core.ucd_pages + (0x110000 / 256);
 	}
 	ECL_SET(@'si::+unicode-database+', output);
 }
