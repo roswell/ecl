@@ -100,6 +100,7 @@ si_make_pipe()
 		cl_format(4, Cnil,
 			  make_simple_base_string("~S~{ ~S~}"),
 			  command, argv);
+	command = si_copy_to_simple_base_string(command);
 	command = ecl_null_terminated_base_string(command);
 
 	attr.nLength = sizeof(SECURITY_ATTRIBUTES);
