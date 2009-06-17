@@ -1180,7 +1180,18 @@ static ecl_character
 clos_stream_read_char(cl_object strm)
 {
 	cl_object output = funcall(2, @'gray::stream-read-char', strm);
-	return CHAR_CODE(output);
+        cl_fixnum value;
+	if (CHARACTERP(output))
+                value = CHAR_CODE(output);
+        else if (FIXNUMP(output))
+                value = fix(output);
+	else if (output == Cnil)
+		return EOF;
+        else
+                value = -1;
+        if (value < 0 || value > CHAR_CODE_LIMIT)
+                FEerror("Unknown character ~A", 1, output);
+        return value;
 }
 
 static ecl_character
