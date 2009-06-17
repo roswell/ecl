@@ -966,7 +966,7 @@ si_mkstemp(cl_object template)
 	                       @':name', Cnil,
 	                       @':version', Cnil,
 	                       @':defaults', phys);
-	dir = cl_namestring(dir);
+	dir = si_coerce_to_filename(dir);
 	file = cl_file_namestring(phys);
 	
 	l = dir->base_string.fillp;
