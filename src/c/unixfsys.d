@@ -894,7 +894,11 @@ si_get_library_pathname(void)
 			1, MAKE_FIXNUM(GetLastError()));
 	}
 	s->base_string.fillp = len;
-	return ecl_parse_namestring(s, 0, len, &ep, Cnil);
+        /* GetModuleFileName returns a file name. We have to strip
+         * the directory component. */
+        s = cl_make_pathname(6, @':name', Cnil, @':type', Cnil,
+                             @':defaults', s);
+        s = ecl_namestring(s, 0);
 	}
 #else
 	return make_constant_base_string(ECLDIR "/");
