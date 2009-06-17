@@ -890,7 +890,11 @@ cl_object
 si_get_library_pathname(void)
 {
 	const char *v = getenv("ECLDIR");
-	if (v) return make_constant_base_string(v);
+        cl_object s;
+	if (v) {
+                s = make_constant_base_string(v);
+                goto OUTPUT;
+        }
 #if defined(_MSC_VER) || defined(mingw32)
 	{
 	cl_object s = cl_alloc_adjustable_base_string(cl_core.path_max);
@@ -911,10 +915,17 @@ si_get_library_pathname(void)
         s = cl_make_pathname(6, @':name', Cnil, @':type', Cnil,
                              @':defaults', s);
         s = ecl_namestring(s, 0);
+        goto OUTPUT;
 	}
 #else
-	return make_constant_base_string(ECLDIR "/");
+        s = make_constant_base_string(ECLDIR "/");
 #endif
+ OUTPUT:
+        /* Reinterpret filenames as directories. For instance /lib -> /lib/ */
+        s = cl_truename(s);
+        /* Produce a string */
+        s = ecl_namestring(s, 0);
+        return s;
 }
 
 @(defun ext::chdir (directory &optional (change_d_p_d Ct))
