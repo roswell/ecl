@@ -842,7 +842,7 @@ under certain conditions; see file 'Copyright' for details.")
 	 (values))
       (when (eq (bds-var bi) var)
 	(return (let ((val (bds-val bi)))
-		  (if (unbound-value-p val) "<unbound value>" val)))))
+		  (if (eq val si::unbound) "<unbound value>" val)))))
     (do ((bi (1+ (frs-bds (max 0 (1- *frs-base*)))) (1+ bi))
 	 (last (frs-bds (1+ *frs-top*)))
 	 (fi *frs-base*)
@@ -857,7 +857,7 @@ under certain conditions; see file 'Copyright' for details.")
       (format t "BDS[~d]: ~s = ~s~%"
 	      bi (bds-var bi)
 	      (let ((val (bds-val bi)))
-		(if (unbound-value-p val) "<unbound value>" val))))))
+		(if (eq val si::unbound) "<unbound value>" val))))))
 
 (defun tpl-backtrace (&optional n)
   (let ((*print-pretty* nil)	 ;; because CLOS allows (setf foo) as function names

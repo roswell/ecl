@@ -255,7 +255,8 @@ si_bds_var(cl_object arg)
 cl_object
 si_bds_val(cl_object arg)
 {
-	@(return get_bds_ptr(arg)->value)
+        cl_object v = get_bds_ptr(arg)->value;
+	@(return ((v == OBJNULL)? ECL_UNBOUND : v))
 }
 
 /******************** INVOCATION STACK **********************/
