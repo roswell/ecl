@@ -103,6 +103,9 @@ static void invalid_codepoint(cl_object strm, cl_fixnum c);
 #endif
 static void wrong_file_handler(cl_object strm);
 
+#if defined(ECL_WSOCK)
+static void wsock_error( const char *err_msg, cl_object strm );
+#endif
 /**********************************************************************
  * NOT IMPLEMENTED or NOT APPLICABLE OPERATIONS
  */
@@ -3459,6 +3462,226 @@ const struct ecl_file_ops input_stream_ops = {
 	io_stream_close
 };
 
+/**********************************************************************
+ * WINSOCK STREAMS  
+ */
+
+#if defined(ECL_WSOCK)
+
+#define winsock_stream_element_type io_file_element_type
+
+static cl_index
+winsock_stream_read_byte8(cl_object strm, unsigned char *c, cl_index n)
+{
+	cl_index out = 0;
+	cl_index len = 0;
+	cl_object l;
+
+	for(l = strm->stream.byte_stack; l != Cnil && n > 0; ++out, ++c, --n) {
+		*c = fix(ECL_CONS_CAR(l));
+		strm->stream.byte_stack = l = ECL_CONS_CDR(l);
+	}
+	
+	if(n > 0) {
+		SOCKET s = (SOCKET)IO_FILE_DESCRIPTOR(strm);
+		if(INVALID_SOCKET == s) {
+			wrong_file_handler(strm);
+		} else {
+			ecl_disable_interrupts();
+			len = recv(s, c, n, 0);
+			if (len == SOCKET_ERROR )
+				wsock_error( "Cannot read bytes from Windows socket ~S.~%~A", strm);
+			ecl_enable_interrupts();
+		}
+	}
+	return (out > 0) 
+		? (out + (len > 0 ? len : 0))
+		: (len > 0) ? len : EOF;
+}
+
+static cl_index
+winsock_stream_write_byte8(cl_object strm, unsigned char *c, cl_index n)
+{
+	cl_index out = 0;
+	unsigned char *endp;
+	unsigned char *p;
+	SOCKET s = (SOCKET)IO_FILE_DESCRIPTOR(strm);
+	if(INVALID_SOCKET == s) {
+		wrong_file_handler(strm);
+	} else {
+		ecl_disable_interrupts();
+		do {
+			cl_index res = send(s, c + out, n, 0);
+			if(res == SOCKET_ERROR) {
+				wsock_error("Cannot write bytes to Windows socket ~S.~%~A", strm);
+				break; /* stop writing */
+			} else {			
+				out += res;
+				n -= res;
+			}
+		} while (n > 0);
+		ecl_enable_interrupts();
+	}
+	return out;
+}
+
+static int
+winsock_stream_listen(cl_object strm) 
+{
+	cl_index out = 0;
+	unsigned char *endp;
+	unsigned char *p;
+
+	SOCKET s = (SOCKET)IO_FILE_DESCRIPTOR(strm);
+	if(INVALID_SOCKET == s) {
+		wrong_file_handler(strm);
+	} else {
+		if(CONSP(strm->stream.object0))
+			return ECL_LISTEN_AVAILABLE;
+		else {
+			struct timeval tv = { 0, 0 };
+			fd_set fds;
+			cl_index result;
+			
+			FD_ZERO( &fds );
+			FD_SET(s, &fds);
+			ecl_disable_interrupts();
+			result = select( 0, &fds, NULL, NULL,  &tv );
+			if ( result == SOCKET_ERROR )
+				wsock_error( "Cannot listen on Windows socket ~S.~%~A", strm );
+			ecl_enable_interrupts();
+			return ( result > 0 
+				 ? ECL_LISTEN_AVAILABLE 
+				 : ECL_LISTEN_NO_CHAR );
+		}
+	}
+}
+
+static void
+winsock_stream_clear_input(cl_object strm)
+{
+	while (winsock_stream_listen(strm) == ECL_LISTEN_AVAILABLE) {
+		eformat_read_char(strm);
+	}
+}
+
+static cl_object
+winsock_stream_close(cl_object strm)
+{
+	SOCKET s = (SOCKET) IO_FILE_DESCRIPTOR(strm);
+	int failed;
+	ecl_disable_interrupts();
+	failed = closesocket(s);
+	ecl_enable_interrupts();
+	if (failed < 0)
+		FElibc_error("Cannot close stream ~S.", 1, strm);
+	IO_FILE_DESCRIPTOR(strm) = (int)INVALID_SOCKET;
+	return generic_close(strm);
+}
+
+const struct ecl_file_ops winsock_stream_io_ops = {
+	winsock_stream_write_byte8,
+	winsock_stream_read_byte8,
+
+	generic_write_byte,
+	generic_read_byte,
+
+	eformat_read_char,
+	eformat_write_char,
+	eformat_unread_char,
+	generic_peek_char,
+
+	generic_read_vector,
+	generic_write_vector,
+
+	winsock_stream_listen,
+	winsock_stream_clear_input,
+	generic_void,
+	generic_void,
+	generic_void,
+
+	generic_always_true, /* input_p */
+	generic_always_true, /* output_p */
+	generic_always_false,
+	winsock_stream_element_type,
+
+	not_a_file_stream,
+	not_implemented_get_position,
+	not_implemented_set_position,
+	generic_column,
+
+	winsock_stream_close
+};
+
+const struct ecl_file_ops winsock_stream_output_ops = {
+	winsock_stream_write_byte8,
+	not_input_read_byte8,
+
+	generic_write_byte,
+	not_input_read_byte,
+
+	not_input_read_char,
+	eformat_write_char,
+	not_input_unread_char,
+	generic_peek_char,
+
+	generic_read_vector,
+	generic_write_vector,
+
+	not_input_listen,
+	not_input_clear_input,
+	generic_void,
+	generic_void,
+	generic_void,
+
+	generic_always_false, /* input_p */
+	generic_always_true, /* output_p */
+	generic_always_false,
+	winsock_stream_element_type,
+
+	not_a_file_stream,
+	not_implemented_get_position,
+	not_implemented_set_position,
+	generic_column,
+
+	winsock_stream_close
+};
+
+const struct ecl_file_ops winsock_stream_input_ops = {
+	not_output_write_byte8,
+	winsock_stream_read_byte8,
+
+	not_output_write_byte,
+	generic_read_byte,
+
+	eformat_read_char,
+	not_output_write_char,
+	eformat_unread_char,
+	generic_peek_char,
+
+	generic_read_vector,
+	generic_write_vector,
+
+	winsock_stream_listen,
+	winsock_stream_clear_input,
+	not_output_clear_output,
+	not_output_finish_output,
+	not_output_force_output,
+
+	generic_always_true, /* input_p */
+	generic_always_false, /* output_p */
+	generic_always_false,
+	winsock_stream_element_type,
+
+	not_a_file_stream,
+	not_implemented_get_position,
+	not_implemented_set_position,
+	generic_column,
+
+	winsock_stream_close
+};
+#endif
+
 cl_object
 si_set_buffering_mode(cl_object stream, cl_object buffer_mode_symbol)
 {
@@ -3509,6 +3732,17 @@ ecl_make_stream_from_FILE(cl_object fname, void *f, enum ecl_smmode smm,
 	case smm_output:
 		stream->stream.ops = duplicate_dispatch_table(&output_stream_ops);
 		break;
+#if defined(ECL_WSOCK)
+	case smm_input_wsock:
+		stream->stream.ops = duplicate_dispatch_table(&winsock_stream_input_ops);
+		break;
+	case smm_output_wsock:
+		stream->stream.ops = duplicate_dispatch_table(&winsock_stream_output_ops);
+		break;
+	case smm_io_wsock:
+		stream->stream.ops = duplicate_dispatch_table(&winsock_stream_io_ops);
+		break;
+#endif
 	default:
 		FEerror("Not a valid mode ~D for ecl_make_stream_from_FILE", 1, MAKE_FIXNUM(smm));
 	}

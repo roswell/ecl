@@ -1,6 +1,10 @@
 ECL 9.6.2:
 ==========
 
+* Visible changes:
+
+ - Reimplemented winsock streams using the new file structures (D. Statyvka)
+
 * Bugs:
 
  - Fixed a bug in the compiler that prevented building with MSVC
