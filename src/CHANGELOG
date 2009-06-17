@@ -7,6 +7,14 @@ ECL 9.6.2:
 
  - Fixed a bug in src/clx/dependent.lisp that prevented compiling CLX.
 
+ - si:unbound is now a self-referential constant (symbol-value 'si:unbound)
+   = si:unbound
+
+ - si:bds-value returns si:unbound when finding a binding for a
+   previously unbound variable.
+
+ - The command :bds no longer chokes when finding unbound special variables.
+
 * Numerics:
 
  - EXT:OUTPUT-FLOAT-NAN and EXT:OUTPUT-FLOAT-INFINITY can be redefined to
