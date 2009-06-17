@@ -123,7 +123,7 @@ cl_object
 cl_function_lambda_expression(cl_object fun)
 {
 	cl_env_ptr the_env = ecl_process_env();
-	cl_object output, name = Cnil, lex = Cnil;
+	cl_object output, name = Cnil, lex = Cnil, definition = Cnil;
 
 	switch(type_of(fun)) {
 	case t_bclosure:
@@ -133,7 +133,7 @@ cl_function_lambda_expression(cl_object fun)
 		name = fun->bytecodes.name;
 		output = fun->bytecodes.definition;
 		if (!CONSP(output))
-		    output = Cnil;
+		  { definition = output; output = Cnil; }
 		else if (name == Cnil)
 		    output = cl_cons(@'lambda', output);
 		else if (name != @'si::bytecodes')
@@ -162,7 +162,7 @@ cl_function_lambda_expression(cl_object fun)
 	default:
 		FEinvalid_function(fun);
 	}
-	@(return output lex name)
+	@(return output lex name definition)
 }
 
 cl_object

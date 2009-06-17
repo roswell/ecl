@@ -796,7 +796,7 @@ under certain conditions; see file 'Copyright' for details.")
     (format t "~:[~;Local functions: ~:*~{~s~^, ~}.~%~]" functions)
     (format t "~:[~;Block names: ~:*~{~s~^, ~}.~%~]" blocks)
 
-    ;; This format is the what was in the orignal code.
+    ;; This format is what was in the orignal code.
     ;; It simply does not work when no-values is t.
     ;; If you care to debug this kind of conundrum then have fun!
     ;;(format t "Local variables: ~:[~:[none~;~:*~{~a~1*~:@{, ~a~1*~}~}~]~;~
@@ -829,7 +829,7 @@ under certain conditions; see file 'Copyright' for details.")
 				       (string-equal s1 s2)
 				     nil)))))
     (when val-pair
-      (format t "~&In tpl-inspect-command: val-pair = ~S~%" val-pair)
+      ;;(format t "~&In tpl-inspect-command: val-pair = ~S~%" val-pair)
       (let ((val (cdr val-pair)))
 	(inspect val)))))
 
@@ -875,8 +875,9 @@ under certain conditions; see file 'Copyright' for details.")
 		;;(format t "~:[~; >~] ~S" b (ihs-fname i)) ;; JCB
 		(format t "  > ~S" func-name)
 		(when (eq func-name 'si::bytecodes)
-		  (format t " [Evaluation of: ~S]"
-                          (function-lambda-expression (ihs-fun i))))
+		  (multiple-value-bind (lform lex name def)
+                    (function-lambda-expression (ihs-fun i))
+		    (format t " [Evaluation of: ~S]" (if lform lform def))))
 		(terpri)
 		)))
       (progn
@@ -902,7 +903,9 @@ under certain conditions; see file 'Copyright' for details.")
 		;;(format t "~:[~; >~] ~S" b (ihs-fname i)) ;; JCB
 		(format t "  > ~S" (ihs-fname i))
 		(when (eq func-name 'si::bytecodes)
-		  (format t " [Evaluation of: ~S]" (function-lambda-expression (ihs-fun i))))
+		  (multiple-value-bind (lform lex name def)
+		    (function-lambda-expression (ihs-fun i))
+		    (format t " [Evaluation of: ~S]" (if lform lform def))))
 		(terpri)
 		))))
       )
