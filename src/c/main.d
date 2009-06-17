@@ -500,12 +500,14 @@ cl_boot(int argc, char **argv)
 #endif
 
         /*
-         * Initialize Unicode character database and character names.
+         * Initialize Unicode character database.
          */
 	read_char_database();
 
-	/* FIXME! This is a hack! We use EQUALP hashes because we know that
-	 * the characters in this table will not be alphanumeric.
+	/*
+         * Load character names. The following hash table is a map
+         * from names to character codes and viceversa. Note that we
+         * need EQUALP because it has to be case insensitive.
 	 */
 	cl_core.char_names = aux =
 	    cl__make_hash_table(@'equalp', MAKE_FIXNUM(128), /* size */
