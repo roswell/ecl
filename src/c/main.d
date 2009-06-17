@@ -519,11 +519,12 @@ cl_boot(int argc, char **argv)
 		ecl_sethash(code, aux, name);
 	}
 	{
-		/* Linefeed is redundant with one of the names
-		 * given in iso_latin_names.h */
+		/* Linefeed is redundant with one of the names given
+		 * in iso_latin_names.h, but it can not be associated
+		 * to the code 10, because the default name must be
+		 * Newline. */
 		cl_object name = make_constant_base_string("Linefeed");
 		ecl_sethash(name, aux, MAKE_FIXNUM(10));
-		ecl_sethash(MAKE_FIXNUM(10), aux, name);
 	}
 
         /*
