@@ -85,6 +85,8 @@
 	      (let ((object (merge-pathnames destdir (compile-file-pathname source :type :object))))
 		(unless (and (probe-file object)
 			     (>= (file-write-date object) (file-write-date source)))
+		  (format t "~&(compile-file ~S :output-file ~S~{ ~S~})~%"
+			  source object options)
 		  (apply #'compile-file source :output-file object options))
 		object))
 	  sources))

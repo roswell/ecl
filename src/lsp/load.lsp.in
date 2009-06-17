@@ -48,7 +48,6 @@
 #+tk
   "src:lsp;tk-init.lsp"
   "build:lsp;config.lsp"
-  "src:lsp;describe.lsp"
   "src:lsp;module.lsp"
   "src:lsp;cmdline.lsp"
 ))
