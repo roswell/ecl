@@ -745,7 +745,7 @@ under certain conditions; see file 'Copyright' for details.")
 		break;
 	}
 	case _ecl_double_loc: {
-		float *p = (double*)value;
+		double *p = (double*)value;
 		output = ecl_make_doublefloat(*p);
 		break;
 	}
