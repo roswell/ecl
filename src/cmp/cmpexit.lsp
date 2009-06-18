@@ -182,7 +182,7 @@
     (cond ((eq ue 'TAIL-RECURSION-MARK) (return t))
           ((or (numberp ue) (eq ue 'BDS-BIND) (eq ue 'FRAME))
            (return nil))
-          ((or (consp ue) (eq ue 'JUMP)))
+          ((or (consp ue) (eq ue 'JUMP) (eq ue 'IHS-ENV)))
           (t (baboon)))))
 
 (defun c2try-tail-recursive-call (fun args)
