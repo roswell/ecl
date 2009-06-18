@@ -158,8 +158,8 @@ printer and we should rather use MAKE-LOAD-FORM."
   (format stream "#<~A quiet NaN>" (type-of x)))
 
 (defun ext::output-float-infinity (x stream)
-  (format stream "#.~A-~A-INFINITY" (type-of x)
-          (if (plusp x) "POSITIVE" "NEGATIVE")))
+  (format stream "#.EXT::~A-~A-INFINITY" (symbol-name (type-of x))
+	  (if (plusp x) "POSITIVE" "NEGATIVE")))
 
 ;;; ----------------------------------------------------------------------
 ;;; Describe
