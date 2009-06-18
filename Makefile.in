@@ -143,10 +143,10 @@ rpmbuild=$(shell if [ -z `which rpmbuild` ]; then echo "rpm"; else echo "rpmbuil
 # 	rpm -ba $(rpmdir)/SPECS/ecl.spec
 
 $(TAR_DIR):
-	cvs -z3 -d:pserver:$(ADDRESS) co ecl && mv ecl $(TAR_DIR)
+	git clone .git $(TAR_DIR)
 $(TAR_DIR).tgz: $(TAR_DIR)
-	cd $(TAR_DIR) && cvs update -C -P -d
-	tar -cz --exclude '*~' --exclude '.#*' -f $(TAR_DIR).tgz $(TAR_DIR)
+	cd $(TAR_DIR) && git pull && git reset --hard
+	tar -cz --exclude .git -f $(TAR_DIR).tgz $(TAR_DIR)
 
 binary-dist: all
 	su -c "rm -rf tmp"
