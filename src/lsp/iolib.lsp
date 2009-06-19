@@ -250,14 +250,14 @@ is not given, ends the recording."
                        (*read-default-float-format* . 'single-float)
                        (*read-eval* . t)
                        (*read-suppress* . nil))
-                     (cons *package* #.(find-package :cl-user))
-                     (cons *readtable* #.(si::standard-readtable)))))
+                     (list (cons '*package* #.(find-package :cl-user))
+                           (cons '*readtable* #.(si::standard-readtable))))))
       (cons (mapcar #'car a)
             (mapcar #'cdr a))))
 
 (defmacro with-standard-io-syntax (&body body)
   "Syntax: ({forms}*)
-The forms of the body are executed in a print environment that corresponds to
+The forms of the body are executed in a print envirtoponment that corresponds to
 the one defined in the ANSI standard. *print-base* is 10, *print-array* is t,
 *package* is \"CL-USER\", etc."
   `(progv (car +io-syntax-progv-list+)
