@@ -8,6 +8,9 @@ ECL 9.6.3:
    either reads the state of this flag (if NEW-FLAG is missing) or
    also sets it.
 
+ - The compiler now uses cl_core to efficiently access certain lisp
+   constants (standard packages, standard readtables, etc)
+
 ECL 9.6.2:
 ==========
 

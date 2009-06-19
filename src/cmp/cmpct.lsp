@@ -61,7 +61,7 @@
                       (type (lisp-type->rep-type (type-of value))))
                  (cons value `(c-inline () () ,type ,c-value
                                         :one-liner t :side-effects nil))))
-              ((float name)
+              ((floatp name)
                (let* ((value name)
                       (type (type-of value))
                       (loc-type (case type
@@ -72,10 +72,11 @@
                 (cons value (make-c1form* 'LOCATION :type type
                                           :args (list loc-type value location)))))
               (t
-               (baboon)))
+               (cons name (make-c1form* 'LOCATION :type (type-of name)
+                                         :args `(VV ,c-value)))))
         +optimizable-constants+)))
  (reverse
- '((MOST-POSITIVE-SHORT-FLOAT "FLT_MAX")
+ `((MOST-POSITIVE-SHORT-FLOAT "FLT_MAX")
    (MOST-POSITIVE-SINGLE-FLOAT "FLT_MAX")
 
    (MOST-NEGATIVE-SHORT-FLOAT "-FLT_MAX")
@@ -105,11 +106,10 @@
    (#.(coerce -0.0 'single-float) "cl_core.singlefloat_minus_zero")
    (#.(coerce -0.0 'double-float) "cl_core.doublefloat_minus_zero")
 
-   .
-   #-long-float
-   NIL
+   (#.(si::standard-readtable) "cl_core.standard_readtable")
+
    #+long-float
-   (
+   ,@'(
     (MOST-POSITIVE-LONG-FLOAT "LDBL_MAX")
     (MOST-NEGATIVE-LONG-FLOAT "-LDBL_MAX")
     (LEAST-POSITIVE-LONG-FLOAT "LDBL_MIN")
