@@ -3007,7 +3007,7 @@ Returns a list of (host display-number screen protocol)."
 ;; WITH-STANDARD-IO-SYNTAX equivalent, used in (SETF WM-COMMAND)
 ;;-----------------------------------------------------------------------------
 
-#-(or clx-ansi-common-lisp Genera CMU sbcl)
+#-(or clx-ansi-common-lisp Genera CMU sbcl ecl)
 (defun with-standard-io-syntax-function (function)
   (declare #+lispm
 	   (sys:downward-funarg function))
@@ -3029,7 +3029,7 @@ Returns a list of (host display-number screen protocol)."
 	#+lucid (lucid::*print-structure* t))
     (funcall function)))
 
-#-(or clx-ansi-common-lisp Genera CMU sbcl)
+#-(or clx-ansi-common-lisp Genera CMU sbcl ecl)
 (defmacro with-standard-io-syntax (&body body)
   `(flet ((.with-standard-io-syntax-body. () ,@body))
      (with-standard-io-syntax-function #'.with-standard-io-syntax-body.)))

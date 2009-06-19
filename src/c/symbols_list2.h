@@ -1788,5 +1788,7 @@ cl_symbols[] = {
 {EXT_ "OUTPUT-FLOAT-NAN",NULL},
 {EXT_ "OUTPUT-FLOAT-INFINITY",NULL},
 
+{EXT_ "READTABLE-LOCK","si_readtable_lock"},
+
 /* Tag for end of list */
 {NULL,NULL}};

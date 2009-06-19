@@ -255,7 +255,7 @@ the one defined in the ANSI standard. *print-base* is 10, *print-array* is t,
 	 (*read-default-float-format* 'single-float)
 	 (*read-eval* t)
 	 (*read-suppress* nil)
-	 (*readtable* (copy-readtable (si::standard-readtable))))
+	 (*readtable* (si::standard-readtable)))
     ,@body))
 
 #-formatter

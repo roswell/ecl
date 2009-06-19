@@ -626,7 +626,7 @@ enum ecl_readtable_case {
 };
 
 struct ecl_readtable {		/*  read table  */
-	HEADER;
+	HEADER1(locked);
 	enum ecl_readtable_case read_case; /*  readtable-case  */
 	struct ecl_readtable_entry *table; /*  read table itself  */
 #ifdef ECL_UNICODE

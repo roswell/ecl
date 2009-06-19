@@ -1427,6 +1427,7 @@ ecl_copy_readtable(cl_object from, cl_object to)
 	 * at the end in a more or less "atomic" (meaning "fast") way.
 	 */
 	output = ecl_alloc_object(t_readtable);
+        output->readtable.locked = 0;
 	output->readtable.table = to_rtab = (struct ecl_readtable_entry *)
 		ecl_alloc_align(total_bytes, entry_bytes);
 	from_rtab = from->readtable.table;
@@ -1463,8 +1464,7 @@ ecl_current_readtable(void)
 	/* INV: *readtable* always has a value */
 	r = ECL_SYM_VAL(the_env, @'*readtable*');
 	if (type_of(r) != t_readtable) {
-		ECL_SETQ(the_env, @'*readtable*',
-			 ecl_copy_readtable(cl_core.standard_readtable, Cnil));
+		ECL_SETQ(the_env, @'*readtable*', cl_core.standard_readtable);
 		FEerror("The value of *READTABLE*, ~S, was not a readtable.",
 			1, r);
 	}
@@ -1867,10 +1867,22 @@ cl_readtable_case(cl_object r)
 	@(return r)
 }
 
+static void
+error_locked_readtable(cl_object r)
+{
+        cl_error(3,
+                 make_constant_base_string("Change readtable"),
+                 make_constant_base_string("Cannot modify locked readtable ~A."),
+                 r);
+}
+
 cl_object
 si_readtable_case_set(cl_object r, cl_object mode)
 {
 	assert_type_readtable(r);
+        if (r->readtable.locked) {
+                error_locked_readtable(r);
+        }
 	if (mode == @':upcase') {
 		r->readtable.read_case = ecl_case_upcase;
 	} else if (mode == @':downcase') {
@@ -1929,6 +1941,9 @@ void
 ecl_readtable_set(cl_object readtable, int c, enum ecl_chattrib cat,
 		   cl_object macro_or_table)
 {
+        if (readtable->readtable.locked) {
+                error_locked_readtable(readtable);
+        }
 #ifdef ECL_UNICODE
 	if (c >= RTABSIZE) {
 		cl_object hash = readtable->readtable.hash;
@@ -1962,6 +1977,9 @@ ecl_invalid_character_p(int c)
 	cl_object dispatch;
 	cl_fixnum fc, tc;
 @
+        if (tordtbl->readtable.locked) {
+                error_locked_readtable(tordtbl);
+        }
 	if (Null(fromrdtbl))
 		fromrdtbl = cl_core.standard_readtable;
 	assert_type_readtable(fromrdtbl);
@@ -2024,6 +2042,9 @@ ecl_invalid_character_p(int c)
 @
 	assert_type_readtable(readtable);
 	ecl_readtable_get(readtable, ecl_char_code(dspchr), &table);
+        if (readtable->readtable.locked) {
+                error_locked_readtable(readtable);
+        }
 	if (type_of(table) != t_hashtable) {
 		FEerror("~S is not a dispatch character.", 1, dspchr);
 	}
@@ -2095,6 +2116,17 @@ si_standard_readtable()
 	@(return cl_core.standard_readtable)
 }
 
+@(defun ext::readtable-lock (r &optional yesno)
+	cl_object output;
+@
+	assert_type_readtable(r);
+        output = (r->readtable.locked)? Ct : Cnil;
+	if (narg > 1) {
+                r->readtable.locked = !Null(yesno);
+        }
+        @(return output)
+@)
+
 static void
 extra_argument(int c, cl_object stream, cl_object d)
 {
@@ -2114,9 +2146,9 @@ init_read(void)
 	int i;
 
 	cl_core.standard_readtable = r = ecl_alloc_object(t_readtable);
-	cl_core.standard_readtable->readtable.read_case = ecl_case_upcase;
-	cl_core.standard_readtable->readtable.table
-	= rtab
+        r->readtable.locked = 0;
+	r->readtable.read_case = ecl_case_upcase;
+	r->readtable.table = rtab
 	= (struct ecl_readtable_entry *)
 		ecl_alloc(RTABSIZE * sizeof(struct ecl_readtable_entry));
 	for (i = 0;  i < RTABSIZE;  i++) {
@@ -2124,7 +2156,7 @@ init_read(void)
 		rtab[i].dispatch = Cnil;
 	}
 #ifdef ECL_UNICODE
-	cl_core.standard_readtable->readtable.hash = Cnil;
+	r->readtable.hash = Cnil;
 #endif
 
 	cl_core.dispatch_reader = make_cf2(dispatch_reader_fun);
@@ -2204,6 +2236,10 @@ init_read(void)
 	/*  This is specific to this implimentation  */
 	cl_set_dispatch_macro_character(4, CODE_CHAR('#'), CODE_CHAR('Y'),
 					make_cf3(sharp_Y_reader), r);
+
+        /* Lock the standard read table so that we do not have to make copies
+         * to keep it unchanged */
+        r->readtable.locked = 1;
 
 	init_backq();
 

@@ -173,8 +173,9 @@
 (defun sharp---reader (stream subchar arg)
   (do-read-feature stream subchar arg NIL))
 
+(si::readtable-lock (si::standard-readtable) nil)
 (set-dispatch-macro-character #\# #\+ 'sharp-+-reader)
 (set-dispatch-macro-character #\# #\+ 'sharp-+-reader (sys::standard-readtable))
-
 (set-dispatch-macro-character #\# #\- 'sharp---reader)
 (set-dispatch-macro-character #\# #\- 'sharp---reader (sys::standard-readtable))
+(si::readtable-lock (si::standard-readtable) t)

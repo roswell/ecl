@@ -1,3 +1,13 @@
+ECL 9.6.3:
+==========
+
+* Printer:
+
+ - Readtables have a new flag that makes them read-only. Function
+	(si::readtable-lock readtable &optional new-flag)
+   either reads the state of this flag (if NEW-FLAG is missing) or
+   also sets it.
+
 ECL 9.6.2:
 ==========
 
