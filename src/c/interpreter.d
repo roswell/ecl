@@ -1154,22 +1154,13 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 	CASE(OP_PROGV); {
 		cl_object values = reg0;
 		cl_object vars = ECL_STACK_POP_UNSAFE(the_env);
-		cl_index n;
-		for (n = 0; !ecl_endp(vars); n++, vars = ECL_CONS_CDR(vars)) {
-			cl_object var = ECL_CONS_CAR(vars);
-			if (values == Cnil) {
-				ecl_bds_bind(the_env, var, OBJNULL);
-			} else {
-				ecl_bds_bind(the_env, var, cl_car(values));
-				values = ECL_CONS_CDR(values);
-			}
-		}
+		cl_index n = ecl_progv(the_env, vars, values);
 		ECL_STACK_PUSH(the_env, MAKE_FIXNUM(n));
 		THREAD_NEXT;
 	}
 	CASE(OP_EXIT_PROGV); {
 		cl_index n = fix(ECL_STACK_POP_UNSAFE(the_env));
-		ecl_bds_unwind_n(the_env, n);
+		ecl_bds_unwind(the_env, n);
 		THREAD_NEXT;
 	}
 

@@ -329,34 +329,19 @@
     (make-c1form* 'PROGV :type (c1form-type forms)
 		  :args symbols values forms)))
 
-(defun c2progv (symbols values body
-                &aux (*unwind-exit* *unwind-exit*))
+(defun c2progv (symbols values body)
   (let* ((*lcl* *lcl*)
          (lcl (next-lcl))
          (sym-loc (make-lcl-var))
-         (val-loc (make-lcl-var)))
-    (wt-nl "{cl_object " sym-loc "," val-loc ";")
-    (wt-nl "cl_index " lcl " = cl_env_copy->bds_top - cl_env_copy->bds_org;")
-    (push lcl *unwind-exit*)
-    
+         (val-loc (make-lcl-var))
+         (*unwind-exit* (cons lcl *unwind-exit*)))
+    (wt-nl "{cl_object " sym-loc "," val-loc "; cl_index " lcl ";")
     (let ((*destination* sym-loc)) (c2expr* symbols))
-    
     (let ((*destination* val-loc)) (c2expr* values))
-    
-    (wt-nl "while(!ecl_endp(" sym-loc ")) {")
-    (when (safe-compile)
-      (wt-nl "if(type_of(CAR(" sym-loc "))!=t_symbol)")
-      (wt-nl
-       "FEinvalid_variable(\"~s is not a symbol.\",CAR(" sym-loc "));"))
-    (wt-nl "if(ecl_endp(" val-loc "))ecl_bds_bind(cl_env_copy,CAR(" sym-loc "),OBJNULL);")
-    (wt-nl "else{ecl_bds_bind(cl_env_copy,CAR(" sym-loc "),CAR(" val-loc "));")
-    (wt-nl val-loc "=CDR(" val-loc ");}")
-    (wt-nl sym-loc "=CDR(" sym-loc ");}")
-
+    (wt-nl lcl "= ecl_progv(cl_env_copy," sym-loc "," val-loc ");")
     (c2expr body)
     (wt "}")
-    )
-  )
+    ))
 
 (defun c1psetq (old-args &aux (args nil) (use-psetf nil))
   (do (var (l old-args (cddr l)))
