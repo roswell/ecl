@@ -1790,5 +1790,7 @@ cl_symbols[] = {
 
 {EXT_ "READTABLE-LOCK","si_readtable_lock"},
 
+{SYS_ "+IO-SYNTAX-PROGV-LIST+",NULL},
+
 /* Tag for end of list */
 {NULL,NULL}};
