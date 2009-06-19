@@ -48,7 +48,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
-;;; OPTIMIZABLE FLOAT CONSTANTS
+;;; KNOWN OPTIMIZABLE CONSTANTS
 ;;;
 
 (mapc
