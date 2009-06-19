@@ -108,6 +108,13 @@
 
    (#.(si::standard-readtable) "cl_core.standard_readtable")
 
+   (#.(find-package :cl) "cl_core.lisp_package")
+   (#.(find-package :cl-user) "cl_core.user_package")
+   (#.(find-package :keyword) "cl_core.keyword_package")
+   (#.(find-package :clos) "cl_core.clos_package")
+   #+threads
+   (#.(find-package :mp) "cl_core.mp_package")
+
    #+long-float
    ,@'(
     (MOST-POSITIVE-LONG-FLOAT "LDBL_MAX")
