@@ -155,11 +155,31 @@ printer and we should rather use MAKE-LOAD-FORM."
   m)
 
 (defun ext::output-float-nan (x stream)
-  (format stream "#<~A quiet NaN>" (type-of x)))
+  (print-unreadable-object (x stream :type t)
+    (princ "quiet NaN" stream)))
 
 (defun ext::output-float-infinity (x stream)
-  (format stream "#.EXT::~A-~A-INFINITY" (symbol-name (type-of x))
-	  (if (plusp x) "POSITIVE" "NEGATIVE")))
+  (when (and *print-readably* (null *read-eval*))
+    (error 'print-not-readable :object x))
+  (let ((*print-circle* nil)
+        (*print-package* #.(find-package :keyword))
+        (infinities '((#.ext::single-float-negative-infinity .
+                       ext::single-float-negative-infinity)
+                      (#.ext::double-float-negative-infinity .
+                       ext::double-float-negative-infinity)
+                      (#.ext::short-float-negative-infinity .
+                       ext::short-float-negative-infinity)
+                      (#.ext::long-float-negative-infinity .
+                       ext::long-float-negative-infinity)
+                      (#.ext::single-float-positive-infinity .
+                       ext::single-float-positive-infinity)
+                      (#.ext::double-float-positive-infinity .
+                       ext::double-float-positive-infinity)
+                      (#.ext::short-float-positive-infinity .
+                       ext::short-float-positive-infinity)
+                      (#.ext::long-float-positive-infinity .
+                       ext::long-float-positive-infinity))))
+    (format stream "#.~S" (cdr (assoc x infinities)))))
 
 ;;; ----------------------------------------------------------------------
 ;;; Describe

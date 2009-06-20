@@ -11,6 +11,8 @@ ECL 9.6.3:
  - The compiler now uses cl_core to efficiently access certain lisp
    constants (standard packages, standard readtables, etc)
 
+ - EXT:OUTPUT-FLOAT-INFINITY works now fine when *print-circle* is T.
+
 ECL 9.6.2:
 ==========
 
