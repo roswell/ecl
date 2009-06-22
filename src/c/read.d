@@ -2251,7 +2251,8 @@ init_read(void)
 
         {
                 cl_object var, val;
-                var = cl_list(22,
+                var = cl_list(23,
+                              @'*print-pprint-dispatch*', /* See end of pprint.lsp */
                               @'*print-array*',
                               @'*print-base*',
                               @'*print-case*',
@@ -2274,7 +2275,8 @@ init_read(void)
                               @'si::*print-package*',
                               @'si::*print-structure*',
                               @'si::*sharp-eq-context*');
-                val = cl_list(22,
+                val = cl_list(23,
+                              /**pprint-dispatch-table**/ Cnil,
                               /**print-array**/ Ct,
                               /**print-base**/ MAKE_FIXNUM(10),
                               /**print-case**/ @':downcase',
