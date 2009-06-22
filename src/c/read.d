@@ -2298,7 +2298,8 @@ init_read(void)
                               /*si::*print-structure**/ Ct,
                               /*si::*sharp-eq-context**/ Cnil);
                 ECL_SET(@'si::+ecl-syntax-progv-list+', CONS(var,val));
-                var = cl_list(20,
+                var = cl_list(21,
+                              @'*print-pprint-dispatch*', /* See end of pprint.lsp */
                               @'*print-array*',
                               @'*print-base*',
                               @'*print-case*',
@@ -2319,7 +2320,8 @@ init_read(void)
                               @'*read-suppress*',
                               @'*readtable*',
                               @'*package*');
-                val = cl_list(20,
+                val = cl_list(21,
+                              /**pprint-dispatch-table**/ Cnil,
                               /**print-array**/ Ct,
                               /**print-base**/ MAKE_FIXNUM(10),
                               /**print-case**/ @':upcase',

@@ -1575,5 +1575,6 @@
     (setf *initial-pprint-dispatch* *print-pprint-dispatch*)
     )
   (setf *print-pprint-dispatch* (copy-pprint-dispatch nil))
+  (setf (first (cdr si::+io-syntax-progv-list+)) *initial-pprint-dispatch*)
   #-ecl-min
   (setf *print-pretty* t))
