@@ -165,6 +165,7 @@
 	(*print-array* t)
 	(*print-readably* t)
 	(*read-default-float-format* 'single-float)
+        (*readtable* (si::standard-readtable))
 	(sys::*print-package* (find-package "CL"))
 	(sys::*print-structure* t)
 	(output nil))
