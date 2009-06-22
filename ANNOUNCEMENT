@@ -19,21 +19,8 @@ ECL is currently hosted at Common-Lisp.net and SourceForge. The home page of
 the project is http://ecls.sourceforge.net, and in it you will find source code
 releases, a CVS tree and some useful documentation.
 
-
-Notes for this release
-======================
-
-This release is the first one with a new design of ECL, which includes changes
-in the way streams are implemented, support for full Unicode character set,
-safety against interrupts and serious performance improvements.
-
-Known issues:
-
-+ Threads and Unicode currently do not work in the Windows port.
-
-
-Changes since 8.12.0
-====================
+Changes since last release
+==========================
 
 See file src/CHANGELOG or browse it online
 
