@@ -13,6 +13,12 @@ ECL 9.6.3:
 
  - EXT:OUTPUT-FLOAT-INFINITY works now fine when *print-circle* is T.
 
+* Compiler:
+
+ - When printing out data and reading it from a FASL file, the
+   compiler now uses more strict settings avoiding usual interferences
+   such as the user changing the readtable or the printing rules.
+
 ECL 9.6.2:
 ==========
 

@@ -154,37 +154,24 @@
 			:if-exists :supersede :external-format :default)
 	   must-close stream))
     (stream))
-  (let ((*print-radix* nil)
-	(*print-base* 10)
-	(*print-circle* t)
-	(*print-pretty* nil)
-	(*print-level* nil)
-	(*print-length* nil)
-	(*print-case* :downcase)
-	(*print-gensym* t)
-	(*print-array* t)
-	(*print-readably* t)
-	(*read-default-float-format* 'single-float)
-        (*readtable* (si::standard-readtable))
-	(sys::*print-package* (find-package "CL"))
-	(sys::*print-structure* t)
-	(output nil))
-    (cond (as-lisp-file
-	   (print *permanent-objects* stream)
-	   (print *temporary-objects* stream))
-	  (*compiler-constants*
-	   (format stream "~%#define compiler_data_text NULL~%#define compiler_data_text_size 0~%")
-	   (setf output (concatenate 'vector (data-get-all-objects))))
-	  ((plusp (data-size))
-	   (wt-data-begin stream)
-	   (wt-filtered-data
-	    (subseq (prin1-to-string (data-get-all-objects)) 1)
-	    stream)
-	   (wt-data-end stream)))
-    (when must-close
-      (close must-close))
-    (data-init)
-    output))
+  (si::with-ecl-io-syntax
+    (let ((output nil))
+      (cond (as-lisp-file
+             (print *permanent-objects* stream)
+             (print *temporary-objects* stream))
+            (*compiler-constants*
+             (format stream "~%#define compiler_data_text NULL~%#define compiler_data_text_size 0~%")
+             (setf output (concatenate 'vector (data-get-all-objects))))
+            ((plusp (data-size))
+             (wt-data-begin stream)
+             (wt-filtered-data
+              (subseq (prin1-to-string (data-get-all-objects)) 1)
+              stream)
+             (wt-data-end stream)))
+      (when must-close
+        (close must-close))
+      (data-init)
+      output)))
 
 (defun wt-data-begin (stream)
   (setq *wt-string-size* 0)

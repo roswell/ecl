@@ -231,30 +231,6 @@ is not given, ends the recording."
 
 ;(provide 'iolib)
 
-(defconstant +io-syntax-progv-list+
-    (let ((a (append '((*print-array* . t)
-                       (*print-base* . 10)
-                       (*print-case* . :upcase)
-                       (*print-circle* . nil)
-                       (*print-escape* . t)
-                       (*print-gensym* . t)
-                       (*print-length* . nil)
-                       (*print-level* . nil)
-                       (*print-lines* . nil)
-                       (*print-miser-width* . nil)
-                       (*print-pretty* . nil)
-                       (*print-radix* . nil)
-                       (*print-readably* . t)
-                       (*print-right-margin* . nil)
-                       (*read-base* . 10)
-                       (*read-default-float-format* . 'single-float)
-                       (*read-eval* . t)
-                       (*read-suppress* . nil))
-                     (list (cons '*package* #.(find-package :cl-user))
-                           (cons '*readtable* #.(si::standard-readtable))))))
-      (cons (mapcar #'car a)
-            (mapcar #'cdr a))))
-
 (defmacro with-standard-io-syntax (&body body)
   "Syntax: ({forms}*)
 The forms of the body are executed in a print envirtoponment that corresponds to
@@ -262,6 +238,14 @@ the one defined in the ANSI standard. *print-base* is 10, *print-array* is t,
 *package* is \"CL-USER\", etc."
   `(progv (car +io-syntax-progv-list+)
        (cdr +io-syntax-progv-list+)
+     ,@body))
+
+(defmacro with-ecl-io-syntax (&body body)
+  "Syntax: ({forms}*)
+The forms of the body are executed in a print envirtoponment that corresponds to
+the one used internally by ECL compiled files."
+  `(progv (car +ecl-syntax-progv-list+)
+       (cdr +ecl-syntax-progv-list+)
      ,@body))
 
 #-formatter

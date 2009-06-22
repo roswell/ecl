@@ -2248,6 +2248,100 @@ init_read(void)
 	cl_set_dispatch_macro_character(4, CODE_CHAR('#'), CODE_CHAR('!'),
 					Cnil, r);
 	ECL_SET(@'*read-default-float-format*', @'single-float');
+
+        {
+                cl_object var, val;
+                var = cl_list(22,
+                              @'*print-array*',
+                              @'*print-base*',
+                              @'*print-case*',
+                              @'*print-circle*',
+                              @'*print-escape*',
+                              @'*print-gensym*',
+                              @'*print-length*',
+                              @'*print-level*',
+                              @'*print-lines*',
+                              @'*print-miser-width*',
+                              @'*print-pretty*',
+                              @'*print-radix*',
+                              @'*print-readably*',
+                              @'*print-right-margin*',
+                              @'*read-base*',
+                              @'*read-default-float-format*',
+                              @'*read-eval*',
+                              @'*read-suppress*',
+                              @'*readtable*',
+                              @'si::*print-package*',
+                              @'si::*print-structure*',
+                              @'si::*sharp-eq-context*');
+                val = cl_list(22,
+                              /**print-array**/ Ct,
+                              /**print-base**/ MAKE_FIXNUM(10),
+                              /**print-case**/ @':downcase',
+                              /**print-circle**/ Ct,
+                              /**print-escape**/ Ct,
+                              /**print-gensym**/ Ct,
+                              /**print-length**/ Cnil,
+                              /**print-level**/ Cnil,
+                              /**print-lines**/ Cnil,
+                              /**print-miser-width**/ Cnil,
+                              /**print-pretty**/ Cnil,
+                              /**print-radix**/ Cnil,
+                              /**print-readably**/ Ct,
+                              /**print-right-margin**/ Cnil,
+                              /**read-base**/ MAKE_FIXNUM(10),
+                              /**read-default-float-format**/ @'single-float',
+                              /**read-eval**/ Ct,
+                              /**read-suppress**/ Cnil,
+                              /**readtable**/ cl_core.standard_readtable,
+                              /*si::*print-package**/ cl_core.lisp_package,
+                              /*si::*print-structure**/ Ct,
+                              /*si::*sharp-eq-context**/ Cnil);
+                ECL_SET(@'si::+ecl-syntax-progv-list+', CONS(var,val));
+                var = cl_list(20,
+                              @'*print-array*',
+                              @'*print-base*',
+                              @'*print-case*',
+                              @'*print-circle*',
+                              @'*print-escape*',
+                              @'*print-gensym*',
+                              @'*print-length*',
+                              @'*print-level*',
+                              @'*print-lines*',
+                              @'*print-miser-width*',
+                              @'*print-pretty*',
+                              @'*print-radix*',
+                              @'*print-readably*',
+                              @'*print-right-margin*',
+                              @'*read-base*',
+                              @'*read-default-float-format*',
+                              @'*read-eval*',
+                              @'*read-suppress*',
+                              @'*readtable*',
+                              @'*package*');
+                val = cl_list(20,
+                              /**print-array**/ Ct,
+                              /**print-base**/ MAKE_FIXNUM(10),
+                              /**print-case**/ @':upcase',
+                              /**print-circle**/ Cnil,
+                              /**print-escape**/ Ct,
+                              /**print-gensym**/ Ct,
+                              /**print-length**/ Cnil,
+                              /**print-level**/ Cnil,
+                              /**print-lines**/ Cnil,
+                              /**print-miser-width**/ Cnil,
+                              /**print-pretty**/ Cnil,
+                              /**print-radix**/ Cnil,
+                              /**print-readably**/ Ct,
+                              /**print-right-margin**/ Cnil,
+                              /**read-base**/ MAKE_FIXNUM(10),
+                              /**read-default-float-format**/ @'single-float',
+                              /**read-eval**/ Ct,
+                              /**read-suppress**/ Cnil,
+                              /**readtable**/ cl_core.standard_readtable,
+                              /**package**/ cl_core.lisp_package);
+                ECL_SET(@'si::+io-syntax-progv-list+', CONS(var,val));
+        }
 }
 
 /*
@@ -2294,6 +2388,9 @@ read_VV(cl_object block, void (*entry_point)(cl_object))
 
 	in = OBJNULL;
 	CL_UNWIND_PROTECT_BEGIN(env) {
+                cl_index bds_ndx;
+                cl_object progv_list;
+
 		ecl_bds_bind(env, @'si::*cblock*', block);
 		if (cl_core.packages_to_be_created == OBJNULL)
 			cl_core.packages_to_be_created = Cnil;
@@ -2320,12 +2417,9 @@ read_VV(cl_object block, void (*entry_point)(cl_object))
 		/* Read all data for the library */
 		in=ecl_make_string_input_stream(make_constant_base_string(block->cblock.data_text),
 						0, block->cblock.data_text_size);
-		ecl_bds_bind(env, @'*read-base*', MAKE_FIXNUM(10));
-		ecl_bds_bind(env, @'*read-default-float-format*', @'single-float');
-		ecl_bds_bind(env, @'*read-suppress*', Cnil);
-		ecl_bds_bind(env, @'*readtable*', cl_core.standard_readtable);
-		ecl_bds_bind(env, @'*package*', cl_core.lisp_package);
-		ecl_bds_bind(env, @'si::*sharp-eq-context*', Cnil);
+                progv_list = ECL_SYM_VAL(env, @'si::+ecl-syntax-progv-list+');
+                bds_ndx = ecl_progv(env, ECL_CONS_CAR(progv_list),
+                                    ECL_CONS_CDR(progv_list));
 		for (i = 0 ; i < len; i++) {
 			x = ecl_read_object(in);
 			if (x == OBJNULL)
@@ -2344,7 +2438,7 @@ read_VV(cl_object block, void (*entry_point)(cl_object))
 				}
 			}
 		}
-		ecl_bds_unwind_n(env, 6);
+                ecl_bds_unwind(env, bds_ndx);
 		if (i < len)
 			FEreader_error("Not enough data while loading binary file", in, 0);
 	NO_DATA_LABEL:
