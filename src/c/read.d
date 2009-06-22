@@ -2339,7 +2339,7 @@ init_read(void)
                               /**read-eval**/ Ct,
                               /**read-suppress**/ Cnil,
                               /**readtable**/ cl_core.standard_readtable,
-                              /**package**/ cl_core.lisp_package);
+                              /**package**/ cl_core.user_package);
                 ECL_SET(@'si::+io-syntax-progv-list+', CONS(var,val));
         }
 }
