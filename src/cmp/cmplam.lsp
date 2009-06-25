@@ -143,6 +143,10 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
       (new-defun fun (fun-no-entry fun))))
   fun)
 
+(defun cmp-process-lambda-list (list)
+  (handler-case (si::process-lambda-list list 'function)
+    (error (c) (cmperr "Illegal lambda list ~S" list))))
+
 (defun c1lambda-expr (lambda-expr
                       &optional (block-name nil)
                       &aux doc body ss is ts
@@ -164,7 +168,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 
   (multiple-value-bind (requireds optionals rest key-flag keywords
 			allow-other-keys aux-vars)
-      (si::process-lambda-list (car lambda-expr) 'function)
+      (cmp-process-lambda-list (car lambda-expr))
 
     (do ((specs (setq requireds (cdr requireds)) (cdr specs)))
 	((endp specs))
@@ -521,7 +525,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 				      let-vars extra-stmts all-keys)
   (multiple-value-bind (requireds optionals rest key-flag keywords
 				  allow-other-keys aux-vars)
-      (si::process-lambda-list (car lambda-form) 'function)
+      (cmp-process-lambda-list (car lambda-form))
     (when apply-p
       (setf apply-list (first (last arguments))
 	    apply-var (gensym)
