@@ -40,10 +40,10 @@
 (define-condition compiler-warning (compiler-message simple-condition style-warning)
   ((prefix :initform "Warning")))
 
-(define-condition compiler-error (compiler-message simple-error)
+(define-condition compiler-error (compiler-message)
   ((prefix :initform "Error")))
 
-(define-condition compiler-fatal-error (compiler-error) ())
+(define-condition compiler-fatal-error (compiler-message) ())
 
 (define-condition compiler-internal-error (compiler-fatal-error)
   ((prefix :initform "Internal error")))
@@ -59,14 +59,29 @@
   (unless (typep c *suppress-compiler-messages*)
     (format stream "~&~@<;;; ~@;~A~:>" c)))
 
-(defun handle-note (c)
+;;; A few notes about the following handlers. We want the user to be
+;;; able to capture, collect and perhaps abort on the different
+;;; conditions signaled by the compiler. Since the compiler uses
+;;; HANDLER-BIND, the only way to let this happen is either let the
+;;; handler return or use SIGNAL at the beginning of the handler and
+;;; let the outer handler intercept.
+;;;
+;;; In neither case do we want to enter the the debugger. That means
+;;; we can not derive the compiler conditions from SERIOUS-CONDITION.
+;;;
+(defun handle-compiler-note (c)
   nil)
 
-(defun handle-warning/error (c)
+(defun handle-compiler-warning (c)
   (push c *compiler-conditions*)
   nil)
 
-(defun handle-internal-error (c)
+(defun handle-compiler-error (c)
+  (signal c)
+  (push c *compiler-conditions*)
+  (abort))
+
+(defun handle-compiler-internal-error (c)
   (signal 'compiler-internal-error
           :format-control "~A"
           :format-arguments (list c))
@@ -98,10 +113,11 @@
   `(let ((*compiler-conditions* nil))
      (declare (special *compiler-conditions*))
      (restart-case
-	 (handler-bind ((compiler-note #'handle-note)
-			(warning #'handle-warning/error)
-			(compiler-error #'handle-warning/error)
-                        ((and error (not compiler-error)) #'handle-internal-error))
+	 (handler-bind ((compiler-note #'handle-compiler-note)
+			(warning #'handle-compiler-warning)
+			(compiler-error #'handle-compiler-error)
+                        (compiler-internal-error #'handle-compiler-internal-error)
+                        (serious-condition #'handle-compiler-internal-error))
            (with-lock (+load-compile-lock+)
              (let ,+init-env-form+
                (with-compilation-unit ()

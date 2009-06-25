@@ -289,7 +289,7 @@ progress. The default value is T.")
 (defvar *suppress-compiler-notes* nil) ; Deprecated
 (defvar *suppress-compiler-warnings* nil) ; Deprecated
 
-(defvar *compiler-break-enable* t)
+(defvar *compiler-break-enable* nil)
 
 (defvar *compiler-in-use* nil)
 (defvar *compiler-input*)
