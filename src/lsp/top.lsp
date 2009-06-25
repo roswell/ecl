@@ -436,13 +436,16 @@ under certain conditions; see file 'Copyright' for details.")
     (unless quiet
       (break-where))
     (flet ((rep ()
-		(handler-bind 
-		 ((condition
+             ;; We let warnings pass by this way "warn" does the
+             ;; work.  It is conventional not to trap anything
+             ;; that is not a SERIOUS-CONDITION. Otherwise we
+             ;; would be interferring the behavior of code that relies
+             ;; on conditions for communication (for instance our compiler)
+             ;; and which expect nothing to happen by default.
+             (handler-bind 
+                 ((serious-condition
 		   (lambda (condition)
-		     (cond ((subtypep (type-of condition) 'warning)
-			    ;; We let warnings pass by this way "warn" does the work.
-			    )
-			   ((< break-level 1)
+		     (cond ((< break-level 1)
 			    ;; Toplevel should enter the debugger on any condition.
 			    )
 			   (*allow-recursive-debug*
