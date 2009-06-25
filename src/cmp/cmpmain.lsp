@@ -532,6 +532,7 @@ compiled successfully, returns the pathname of the compiled file"
 	 (*compiler-in-use* *compiler-in-use*)
 	 (*load-time-values* nil) ;; Load time values are compiled
          (output-file (apply #'compile-file-pathname input-file args))
+         (true-output-file nil) ;; Will be set at the end
          (c-pathname (apply #'compile-file-pathname output-file :output-file c-file
                             :type :c args))
          (h-pathname (apply #'compile-file-pathname output-file :output-file h-file
@@ -593,18 +594,18 @@ compiled successfully, returns the pathname of the compiled file"
                      init-name
                      (si::coerce-to-filename o-pathname))))
 
-      (if (setf output-file (probe-file output-file))
+      (if (setf true-output-file (probe-file output-file))
           (cmpprogress "~&;;; Finished compiling ~a.~%" (namestring input-pathname))
           (cmperr "The C compiler failed to compile the intermediate file."))
 
       (mapc #'cmp-delete-file to-delete)
 
-      (when (and load output-file (not system-p))
-	(load output-file :verbose *compile-verbose*))
+      (when (and load true-output-file (not system-p))
+	(load true-output-file :verbose *compile-verbose*))
 
       ) ; with-compiler-env
 
-    (compiler-output-values output-file compiler-conditions)))
+    (compiler-output-values true-output-file compiler-conditions)))
 
 (defun compiler-output-values (main-value conditions)
   (loop for i in conditions
@@ -612,7 +613,7 @@ compiled successfully, returns the pathname of the compiled file"
      with failure-p = nil
      do (cond ((typep i 'style-warning)
 	       (setf warning-p t))
-	      ((typep i '(or error warning))
+	      ((typep i '(or compiler-error warning))
 	       (setf warning-p t failure-p t)))
      finally (return (values (and (not failure-p) main-value) warning-p failure-p))))
 
