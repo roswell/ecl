@@ -141,9 +141,8 @@
       ;; All external, non-global variables become of type closure
       (when (eq new-type 'CLOSURE)
 	(when (fun-global fun)
-	  (error "Function ~A is global but is closed over some variables.~%~
-~{~A ~}"
-	       (fun-name fun) (mapcar #'var-name (fun-referred-vars fun))))
+	  (cmperr "Function ~A is global but is closed over some variables.~%~{~A ~}"
+                  (fun-name fun) (mapcar #'var-name (fun-referred-vars fun))))
 	(dolist (var (fun-referred-local-vars fun))
 	  (setf (var-ref-clb var) nil
 		(var-ref-ccb var) t

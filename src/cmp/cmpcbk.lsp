@@ -66,7 +66,7 @@
 (defun foreign-elt-type-code (type)
   (let ((x (assoc type +foreign-elt-type-codes+)))
     (unless x
-      (error "~a is not a valid elementary FFI type" x))
+      (cmperr "~a is not a valid elementary FFI type" x))
     (cdr x)))
 
 (defun t3-defcallback (lisp-name c-name c-name-constant return-type

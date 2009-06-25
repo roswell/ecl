@@ -52,10 +52,10 @@
     (cond (output
            (if (eq rep-type :void) nil
 	     (or (first output)
-	         (error "Representation type ~S cannot be coerced to lisp"
-		        rep-type))))
+	         (cmperr "Representation type ~S cannot be coerced to lisp"
+                         rep-type))))
 	  ((lisp-type-p rep-type) rep-type)
-	  (t (error "Unknown representation type ~S" rep-type)))))
+	  (t (cmperr "Unknown representation type ~S" rep-type)))))
 
 (defun lisp-type->rep-type (type)
   (cond
@@ -72,7 +72,7 @@
 
 (defun rep-type-name (type)
   (or (second (getf +representation-types+ type))
-      (error "Not a valid type name ~S" type)))
+      (cmperr "Not a valid type name ~S" type)))
 
 (defun lisp-type-p (type)
   (subtypep type 'T))

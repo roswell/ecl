@@ -21,6 +21,9 @@ ECL 9.6.3:
    compiler now uses more strict settings avoiding usual interferences
    such as the user changing the readtable or the printing rules.
 
+ - The compiler no longer enters the debugger when it finds an error
+   in the code it compiles.
+
 ECL 9.6.2:
 ==========
 

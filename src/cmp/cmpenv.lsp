@@ -279,10 +279,10 @@
   (declare (si::c-local))
   (dolist (new-declaration names-list)
     (unless (symbolp new-declaration)
-      (funcall error "The declaration ~s is not a symbol" new-declaration))
+      (cmperr "The declaration ~s is not a symbol" new-declaration))
     (when (type-name-p new-declaration)
-      (funcall error "Symbol name ~S cannot be both the name of a type and of a declaration"
-	       new-declaration))
+      (cmperr "Symbol name ~S cannot be both the name of a type and of a declaration"
+              new-declaration))
     (pushnew new-declaration si:*alien-declarations*)))
 
 (defun proclaim-var (type vl)

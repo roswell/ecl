@@ -271,8 +271,8 @@
 		     (nth n *text-for-lexical-level*) x))
 	     (push x args))))))
     (unless (<= minarg narg maxarg)
-      (error "Wrong number of arguments for function ~S"
-	      (or fun-lisp-name 'ANONYMOUS)))
+      (cmperr "Wrong number of arguments for function ~S"
+              (or fun-lisp-name 'ANONYMOUS)))
     (when (fun-needs-narg fun)
       (push narg args))
     (wt-call fun-c-name args fun-lisp-name env)))

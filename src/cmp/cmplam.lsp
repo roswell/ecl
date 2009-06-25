@@ -138,9 +138,8 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
     (compute-fun-closure-type fun)
     (when global
       (when (fun-closure fun)
-	(error "Function ~A is global but is closed over some variables.~%~
-~{~A ~}"
-	       (fun-name fun) (mapcar #'var-name (fun-referred-vars fun))))
+	(cmperr "Function ~A is global but is closed over some variables.~%~{~A ~}"
+                (fun-name fun) (mapcar #'var-name (fun-referred-vars fun))))
       (new-defun fun (fun-no-entry fun))))
   fun)
 
@@ -546,9 +545,8 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 			   (pop ,apply-var)
 			   (si::dm-too-few-arguments)))
 			(t
-			 (error 'SIMPLE-PROGRAM-ERROR
-				:format-control "Too few arguments for lambda form ~S"
-				:format-arguments (cons 'LAMBDA lambda-form)))))
+			 (cmperr "Too few arguments for lambda form ~S"
+                                 (cons 'LAMBDA lambda-form)))))
 	    let-vars))
     (do ((scan (cdr optionals) (cdddr scan)))
 	((endp scan))

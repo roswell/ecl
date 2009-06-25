@@ -33,7 +33,7 @@
   `(if ,condition (cmperr ,string ,@args)))
 
 (defmacro cmpassert (condition string &rest args)
-  `(unless ,condition (error ,string ,@args)))
+  `(unless ,condition (cmperr ,string ,@args)))
 
 ;;; from cmpwt.lsp
 (defmacro wt (&rest forms &aux (fl nil))

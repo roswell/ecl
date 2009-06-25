@@ -67,13 +67,11 @@
   nil)
 
 (defun handle-internal-error (c)
-  (si::default-debugger c)
-  (unless (typep c 'compiler-error)
-    (signal 'compiler-internal-error
-	    :format-control "~A"
-	    :format-arguments (list c))
-    (print-compiler-message c t)
-    (abort)))
+  (signal 'compiler-internal-error
+          :format-control "~A"
+          :format-arguments (list c))
+  (print-compiler-message c t)
+  (abort))
 
 (defun do-compilation-unit (closure &key override)
   (cond (override
@@ -102,12 +100,12 @@
      (restart-case
 	 (handler-bind ((compiler-note #'handle-note)
 			(warning #'handle-warning/error)
-			(compiler-error #'handle-warning/error))
-	   (handler-bind ((error #'handle-internal-error))
-             (with-lock (+load-compile-lock+)
-	        (let ,+init-env-form+
-                  (with-compilation-unit ()
-                     ,@body)))))
+			(compiler-error #'handle-warning/error)
+                        ((and error (not compiler-error)) #'handle-internal-error))
+           (with-lock (+load-compile-lock+)
+             (let ,+init-env-form+
+               (with-compilation-unit ()
+                 ,@body))))
        (abort ()))
      (setf ,compiler-conditions *compiler-conditions*)))
 
