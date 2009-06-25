@@ -79,12 +79,14 @@
 (defun handle-compiler-error (c)
   (signal c)
   (push c *compiler-conditions*)
+  (print-compiler-message c t)
   (abort))
 
 (defun handle-compiler-internal-error (c)
-  (signal 'compiler-internal-error
-          :format-control "~A"
-          :format-arguments (list c))
+  (setf c (make-condition 'compiler-internal-error
+                          :format-control "~A"
+                          :format-arguments (list c)))
+  (signal c)
   (print-compiler-message c t)
   (abort))
 
@@ -225,23 +227,34 @@
        (when throw-flag ,error-form))))
 
 (defun cmp-eval (form)
-  (with-cmp-protection (eval form)
-    (cmperr "The form ~s was not evaluated successfully.~
-~&You are recommended to compile again."
-	    form)))
+  (handler-case (eval form)
+    (serious-condition (c)
+      (when *compiler-break-enable*
+        (invoke-debugger c))
+      (cmperr "The form ~s was not evaluated successfully.~%Error detected:~%~A"
+              form c)
+      nil)))
 
 (defun cmp-macroexpand (form &optional (env *cmp-env*))
-  (with-cmp-protection (macroexpand form env)
-    (cmperr "The macro form ~S was not expanded successfully.~
-~%You are recommended to compile again." form)))
+  (handler-case (macroexpand form env)
+    (serious-condition (c)
+      (when *compiler-break-enable*
+        (invoke-debugger c))
+      (cmperr "The macro form ~s was not expanded successfully.~%Error detected:~%~A"
+              form c)
+      nil)))
   
 (defun cmp-expand-macro (fd form &optional (env *cmp-env*))
-  (with-cmp-protection
-    (let ((new-form (funcall *macroexpand-hook* fd form env)))
-      (values new-form (not (eql new-form form))))
-    (cmperr "The macro form ~S was not expanded successfully.~
-~%You are recommended to compile again." form)))
-
+  (handler-case
+      (let ((new-form (funcall *macroexpand-hook* fd form env)))
+        (values new-form (not (eql new-form form))))
+    (serious-condition (c)
+      (when *compiler-break-enable*
+        (invoke-debugger c))
+      (cmperr "The macro form ~s was not expanded successfully.~%Error detected:~%~A"
+              form c)
+      (values nil nil))))
+  
 (defun si::compiler-clear-compiler-properties (symbol)
   #-:CCL
   ;(sys::unlink-symbol symbol)
