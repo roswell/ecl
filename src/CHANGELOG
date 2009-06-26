@@ -17,12 +17,26 @@ ECL 9.6.3:
 
 * Compiler:
 
- - When printing out data and reading it from a FASL file, the
-   compiler now uses more strict settings avoiding usual interferences
-   such as the user changing the readtable or the printing rules.
+ - When printing out data and reading it from a FASL file, the compiler now
+   uses more strict settings avoiding usual interferences such as the user
+   changing the readtable or the printing rules.
 
- - The compiler no longer enters the debugger when it finds an error
-   in the code it compiles.
+ - The compiler no longer enters the debugger when it finds an error in the
+   code it compiles.
+
+ - C:COMPILER-ERROR no longer derives from ERROR, but is rather a separate,
+   non-serious condition.
+
+ - Trapping of compiler conditions now works even for compiler errors.
+
+ - Handlers of compiler errors can now call (ABORT). COMPILE-FILE will
+   interrupt the compilation process, and the outputs values that signal
+   the failure to terminate.
+
+ - The compiler note for deleting unreachable code has been eliminated.
+
+ - Compiler messages no show the offending form and file position. Before this
+   information was not properly stored in the compiled code tree.
 
 * Visible changes:
 
