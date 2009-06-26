@@ -154,7 +154,6 @@
       ;; Since PROGN does not have tags, any transfer of control means
       ;; leaving the current PROGN statement.
       (when (or (eq name 'GO) (eq name 'RETURN-FROM))
-	(cmpnote "Eliminating unreachable code")
 	(return)))))
 
 (defun c1args* (forms)
