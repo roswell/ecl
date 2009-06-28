@@ -93,7 +93,7 @@
     `(progn
        ,@(loop
 	    for (lisp-name c-name) on args by #'cddr
-	    collect `(defconstant ,lisp-name (c-inline () () :int ,c-name :one-liner t)))))
+	    collect `(defparameter ,lisp-name (c-inline () () :int ,c-name :one-liner t)))))
   (defmacro c-constant (name)
     `(c-inline () () :int ,name :one-liner t)))
 
@@ -1254,7 +1254,7 @@ also known as unix-domain sockets."))
 
 (defmacro define-socket-condition (symbol name)
   `(progn
-     (defconstant ,symbol (c-constant ,(symbol-name symbol)))
+     (defparameter ,symbol (c-constant ,(symbol-name symbol)))
      (define-condition ,name (socket-error)
        ((symbol :reader socket-error-symbol :initform (quote ,symbol))))
      (export ',name)
@@ -1336,7 +1336,7 @@ GET-NAME-SERVICE-ERRNO")
 
 (defmacro define-name-service-condition (symbol name)
   `(progn
-     (defconstant ,symbol (c-constant ,(symbol-name symbol)))
+     (defparameter ,symbol (c-constant ,(symbol-name symbol)))
      (define-condition ,name (name-service-error)
        ((symbol :reader name-service-error-symbol :initform (quote ,symbol))))
      (push (cons ,symbol (quote ,name)) *conditions-for-name-service-errno*)
