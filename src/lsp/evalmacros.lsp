@@ -119,6 +119,7 @@ VARIABLE doc and can be retrieved by (DOCUMENTATION 'SYMBOL 'VARIABLE)."
     ,(ext:register-with-pde whole)
     ,(unless *bytecodes-compiler*
        `(eval-when (:compile-toplevel)
+          (sys:*make-constant ',var ,form)
           (si::register-global ',var)))
     ',var))
 

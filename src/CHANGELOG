@@ -38,6 +38,9 @@ ECL 9.6.3:
  - Compiler messages no show the offending form and file position. Before this
    information was not properly stored in the compiled code tree.
 
+ - DEFCONSTANT only had the expected compile-time side effects in the bytecodes
+   compiler, not in the lisp->C translator.
+
 * Visible changes:
 
  - The toplevel only traps SERIOUS-CONDITIONS.
