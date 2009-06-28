@@ -40,8 +40,10 @@
 extern ECL_API size_t GC_get_total_bytes();
 ")
 
-(defconstant +wrap+ (ffi:c-inline () () :object "ecl_make_unsigned_integer(~((size_t)0))"
-			     :one-liner t))
+(eval-when (:load-toplevel)
+  (defconstant +wrap+ (ffi:c-inline () () :object
+                                    "ecl_make_unsigned_integer(~((size_t)0))"
+                                    :one-liner t)))
 
 (defun get-bytes-consed (orig)
   (let ((bytes (ffi:c-inline () () :object "ecl_make_unsigned_integer(GC_get_total_bytes())"
