@@ -49,7 +49,7 @@
     `(progn
        ,@(loop
             for (lisp-name c-name) on args by #'cddr
-            collect `(defconstant ,lisp-name (c-inline () () :int ,c-name :one-liner t)))))
+            collect `(defparameter ,lisp-name (c-inline () () :int ,c-name :one-liner t)))))
   (defmacro c-constant (name)
     `(c-inline () () :int ,name :one-liner t)))
 
