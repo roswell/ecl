@@ -44,14 +44,14 @@
  "#include <errno.h>"
  "#include <sys/select.h>")
 
-(eval-when (:compile-toplevel :load-toplevel)
+(eval-when (:compile-toplevel :execute)
+  (defmacro c-constant (c-name)
+    `(c-inline () () :int ,c-name :one-liner t))
   (defmacro define-c-constants (&rest args)
-    `(progn
+    `(let ()
        ,@(loop
             for (lisp-name c-name) on args by #'cddr
-            collect `(defparameter ,lisp-name (c-inline () () :int ,c-name :one-liner t)))))
-  (defmacro c-constant (name)
-    `(c-inline () () :int ,name :one-liner t)))
+            collect `(defconstant ,lisp-name (c-constant ,c-name))))))
 
 (define-c-constants
     +eintr+ "EINTR")
