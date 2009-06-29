@@ -786,21 +786,21 @@
 
 ;;; Pass 1 top-levels.
 
-(put-sysprop 'COMPILER-LET 'T1 #'c1compiler-let)
-(put-sysprop 'EVAL-WHEN 'T1 #'c1eval-when)
-(put-sysprop 'PROGN 'T1 #'c1progn)
-(put-sysprop 'MACROLET 'T1 #'c1macrolet)
-(put-sysprop 'LOCALLY 'T1 #'c1locally)
-(put-sysprop 'SYMBOL-MACROLET 'T1 #'c1symbol-macrolet)
+(put-sysprop 'COMPILER-LET 'T1 'c1compiler-let)
+(put-sysprop 'EVAL-WHEN 'T1 'c1eval-when)
+(put-sysprop 'PROGN 'T1 'c1progn)
+(put-sysprop 'MACROLET 'T1 'c1macrolet)
+(put-sysprop 'LOCALLY 'T1 'c1locally)
+(put-sysprop 'SYMBOL-MACROLET 'T1 'c1symbol-macrolet)
 (put-sysprop 'LOAD-TIME-VALUE 'C1 'c1load-time-value)
 (put-sysprop 'SI:FSET 'C1 'c1fset)
 
 ;;; Pass 2 initializers.
 
-(put-sysprop 'COMPILER-LET 'T2 #'t2compiler-let)
-(put-sysprop 'DECL-BODY 't2 #'t2decl-body)
-(put-sysprop 'PROGN 'T2 #'t2progn)
-(put-sysprop 'ORDINARY 'T2 #'t2ordinary)
+(put-sysprop 'COMPILER-LET 'T2 't2compiler-let)
+(put-sysprop 'DECL-BODY 't2 't2decl-body)
+(put-sysprop 'PROGN 'T2 't2progn)
+(put-sysprop 'ORDINARY 'T2 't2ordinary)
 (put-sysprop 'LOAD-TIME-VALUE 'T2 't2load-time-value)
 (put-sysprop 'MAKE-FORM 'T2 't2make-form)
 (put-sysprop 'INIT-FORM 'T2 't2init-form)
