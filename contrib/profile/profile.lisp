@@ -232,7 +232,7 @@ extern ECL_API size_t GC_get_total_bytes();
        (legal-fun-name-or-type-error name)
        ;; Then we map onto it.
        (funcall function name))
-      (string (let ((package (find-undeleted-package-or-lose name)))
+      (string (let ((package (find-package name)))
                 (do-symbols (symbol package)
                   (when (eq (symbol-package symbol) package)
                     (when (and (fboundp symbol)
