@@ -111,7 +111,7 @@
 	  ((char= x #\")
 	   (princ "\\\"" stream))
 	  (t (princ x stream)))))
-    (princ (if one-liner #\"  " \"" stream))
+    (princ (if one-liner "\""  " \"") stream)
     string))
 
 ;;; ======================================================================
