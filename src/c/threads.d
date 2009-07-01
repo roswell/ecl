@@ -326,16 +326,16 @@ mp_process_enable(cl_object process)
 
 	if (mp_process_active_p(process) != Cnil)
 		FEerror("Cannot enable the running process ~A.", 1, process);
-	code = (HANDLE)CreateThread(NULL, 0, thread_entry_point, process, 0, &threadId);
         process->process.parent = mp_current_process();
+	code = (HANDLE)CreateThread(NULL, 0, thread_entry_point, process, 0, &threadId);
 	output = (process->process.thread = code)? process : Cnil;
 #else
 	int code;
 
 	if (mp_process_active_p(process) != Cnil)
 		FEerror("Cannot enable the running process ~A.", 1, process);
-	code = pthread_create(&process->process.thread, NULL, thread_entry_point, process);
         process->process.parent = mp_current_process();
+	code = pthread_create(&process->process.thread, NULL, thread_entry_point, process);
 	output = (process->process.thread = code)? Cnil : process;
 #endif
 	@(return output)
