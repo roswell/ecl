@@ -867,6 +867,7 @@ from the C language code.  NIL means \"do not create the file\"."
 (si::package-lock "CL" nil)
 
 #-ecl-min
-(load "sys:sysfun")
+(with-standard-io-syntax
+  (load "sys:sysfun"))
 
 (provide 'cmp)
