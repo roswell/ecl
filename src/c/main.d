@@ -530,10 +530,9 @@ cl_boot(int argc, char **argv)
                         int code;
                 } extra_names[] = { { "Null", 0 },
                                     { "Linefeed", 10 },
-                                    { "Ack", 1 },
                                     { "Bell", 7 },
                                     { "Escape", 27 } };
-                for (i = 0; i < 5; i++) {
+                for (i = 0; i < 4; i++) {
                         cl_object name = make_constant_base_string(extra_names[i].name);
                         ecl_sethash(name, aux, MAKE_FIXNUM(extra_names[i].code));
                 }
