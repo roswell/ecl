@@ -55,6 +55,8 @@ static DWORD main_thread;
 static pthread_key_t cl_env_key;
 # endif
 static pthread_t main_thread;
+static pthread_attr_t pthreadattr;
+static pthread_mutexattr_t mutexattr_error, mutexattr_recursive;
 #endif /* _MSC_VER || mingw32 */
 
 extern void ecl_init_env(struct cl_env_struct *env);
@@ -335,7 +337,7 @@ mp_process_enable(cl_object process)
 	if (mp_process_active_p(process) != Cnil)
 		FEerror("Cannot enable the running process ~A.", 1, process);
         process->process.parent = mp_current_process();
-	code = pthread_create(&process->process.thread, NULL, thread_entry_point, process);
+	code = pthread_create(&process->process.thread, &pthreadattr, thread_entry_point, process);
 	output = (process->process.thread = code)? Cnil : process;
 #endif
 	@(return output)
@@ -426,20 +428,16 @@ mp_process_run_function(cl_narg narg, cl_object name, cl_object function, ...)
 	output->lock.recursive = (recursive != Cnil);
 #else
 	{
-	pthread_mutexattr_t attr;
-	pthread_mutexattr_init(&attr);
 	output->lock.name = name;
 	output->lock.holder = Cnil;
 	output->lock.counter = 0;
 	if (recursive == Cnil) {
-		pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK_NP);
 		output->lock.recursive = 0;
+		pthread_mutex_init(&output->lock.mutex, &mutexattr_error);
 	} else {
-		pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE_NP);
 		output->lock.recursive = 1;
+		pthread_mutex_init(&output->lock.mutex, &mutexattr_recursive);
 	}
-	pthread_mutex_init(&output->lock.mutex, &attr);
-	pthread_mutexattr_destroy(&attr);
 	}
 #endif
 	si_set_finalizer(output, Ct);
@@ -548,13 +546,10 @@ mp_make_condition_variable(void)
 	FEerror("Condition variables are not supported under Windows.", 0);
 	@(return Cnil)
 #else
-	pthread_condattr_t attr;
 	cl_object output;
 
-	pthread_condattr_init(&attr);
 	output = ecl_alloc_object(t_condition_variable);
-	pthread_cond_init(&output->condition_variable.cv, &attr);
-	pthread_condattr_destroy(&attr);
+	pthread_cond_init(&output->condition_variable.cv, NULL);
 	si_set_finalizer(output, Ct);
 	@(return output)
 #endif
@@ -658,11 +653,13 @@ init_threads(cl_env_ptr env)
 #ifdef ECL_WINDOWS_THREADS
 	cl_core.global_lock = CreateMutex(NULL, FALSE, NULL);
 #else
-	pthread_mutexattr_t attr;
-	pthread_mutexattr_init(&attr);
-	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK_NP);
-	pthread_mutex_init(&cl_core.global_lock, &attr);
-	pthread_mutexattr_destroy(&attr);
+	pthread_mutexattr_init(&mutexattr_error);
+	pthread_mutexattr_settype(&mutexattr_error, PTHREAD_MUTEX_ERRORCHECK);
+	pthread_mutexattr_init(&mutexattr_recursive);
+	pthread_mutexattr_settype(&mutexattr_recursive, PTHREAD_MUTEX_RECURSIVE);
+	pthread_attr_init(&pthreadattr);
+	pthread_attr_setdetachstate(&pthreadattr, PTHREAD_CREATE_DETACHED);
+	pthread_mutex_init(&cl_core.global_lock, &mutexattr_error);
 #endif
 	cl_core.processes = OBJNULL;
 

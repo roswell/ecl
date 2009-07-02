@@ -17,6 +17,8 @@
 #ifndef ECL_H
 #define ECL_H
 
+#define _XOPEN_SOURCE 600	/* POSIX and XPG and later revisions */
+
 #include <sys/types.h>		/* size_t, pthread_t, pthread_mutex_t */
 #ifdef __OpenBSD__		/* same, but for OpenBSD (bug in OpenBSD!) */
 # include <pthread.h>
