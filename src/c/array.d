@@ -133,7 +133,7 @@ si_row_major_aset(cl_object x, cl_object indx, cl_object val)
 } @)
 
 static cl_object
-do_ecl_aref(cl_object x, cl_index index, cl_elttype type)
+do_ecl_aref(cl_object x, cl_index index)
 {
  AGAIN:
 	if (index >= x->array.dim) {
@@ -144,7 +144,7 @@ do_ecl_aref(cl_object x, cl_index index, cl_elttype type)
 		index = fix(i);
 		goto AGAIN;
 	}
-	switch (type) {
+	switch (x->array.elttype) {
 	case aet_object:
 		return x->array.self.t[index];
 	case aet_bc:
@@ -197,28 +197,19 @@ do_ecl_aref(cl_object x, cl_index index, cl_elttype type)
 cl_object
 ecl_aref(cl_object x, cl_index index)
 {
-        return do_ecl_aref(x, index, (cl_elttype)ecl_array_elttype(x));
+        while (!ECL_ARRAYP(x)) {
+		x = ecl_type_error(@'row-major-aref',"argument",x,@'array');
+        }
+        return do_ecl_aref(x, index);
 }
 
 cl_object
 ecl_aref1(cl_object v, cl_index index)
 {
- AGAIN:
-	switch (type_of(v)) {
-	case t_vector:
-                return do_ecl_aref(v, index, v->vector.elttype);
-	case t_bitvector:
-		return do_ecl_aref(v, index, aet_bit);
-	case t_base_string:
-		return do_ecl_aref(v, index, aet_bc);
-#ifdef ECL_UNICODE
-	case t_string:
-		return do_ecl_aref(v, index, aet_ch);
-#endif
-	default:
+        while (!ECL_VECTORP(v)) {
 		v = ecl_type_error(@'row-major-aref',"argument",v,@'vector');
-		goto AGAIN;
-	}
+        }
+        return do_ecl_aref(v, index);
 }
 
 /*
@@ -427,11 +418,14 @@ si_make_vector(cl_object etype, cl_object dim, cl_object adj,
 	d = ecl_fixnum_in_range(@'make-array',"dimension",dim,0,ADIMLIM);
 	if (aet == aet_bc) {
 		x = ecl_alloc_object(t_base_string);
+                x->base_string.elttype = (short)aet;
 	} else if (aet == aet_bit) {
 		x = ecl_alloc_object(t_bitvector);
+                x->vector.elttype = (short)aet;
 #ifdef ECL_UNICODE
 	} else if (aet == aet_ch) {
 		x = ecl_alloc_object(t_string);
+                x->string.elttype = (short)aet;
 #endif
 	} else {
 		x = ecl_alloc_object(t_vector);
@@ -468,7 +462,7 @@ si_make_vector(cl_object etype, cl_object dim, cl_object adj,
 void
 ecl_array_allocself(cl_object x)
 {
-        cl_elttype t = ecl_array_elttype(x);
+        cl_elttype t = x->array.elttype;
 	cl_index i, d = x->array.dim;
 	switch (t) {
 	/* assign self field only after it has been filled, for GC sake  */
@@ -641,7 +635,7 @@ address_inc(void *address, cl_fixnum inc, cl_elttype elt_type)
 static void *
 array_address(cl_object x, cl_index inc)
 {
-	return address_inc(x->array.self.t, inc, ecl_array_elttype(x));
+	return address_inc(x->array.self.t, inc, x->array.elttype);
 }
 
 cl_object
@@ -665,7 +659,7 @@ displace(cl_object from, cl_object to, cl_object offset)
 	cl_index j;
 	void *base;
 	cl_elttype totype, fromtype;
-	fromtype = ecl_array_elttype(from);
+	fromtype = from->array.elttype;
 	if (type_of(to) == t_foreign) {
 		if (fromtype == aet_bit || fromtype == aet_object) {
 			FEerror("Cannot displace arrays with element type T or BIT onto foreign data",0);
@@ -675,7 +669,7 @@ displace(cl_object from, cl_object to, cl_object offset)
 					0, MOST_POSITIVE_FIXNUM);
 		from->array.displaced = to;
 	} else {
-		totype = ecl_array_elttype(to);
+		totype = to->array.elttype;
 		if (totype != fromtype)
 			FEerror("Cannot displace the array,~%\
 because the element types don't match.", 0);
@@ -702,21 +696,9 @@ because the total size of the to-array is too small.", 0);
 cl_elttype
 ecl_array_elttype(cl_object x)
 {
-	switch(type_of(x)) {
-	case t_array:
-	case t_vector:
-		return((cl_elttype)x->array.elttype);
-#ifdef ECL_UNICODE
-	case t_string:
-		return(aet_ch);
-#endif
-	case t_base_string:
-		return(aet_bc);
-	case t_bitvector:
-		return(aet_bit);
-	default:
-		FEwrong_type_argument(@'array', x);
-	}
+        if (!ECL_ARRAYP(x))
+                FEwrong_type_argument(@'array', x);
+        return x->array.elttype;
 }
 
 cl_object
@@ -786,7 +768,7 @@ cl_array_displacement(cl_object a)
 	} else if (Null(to_array = CAR(a->array.displaced))) {
 		offset = 0;
 	} else {
-		switch (ecl_array_elttype(a)) {
+		switch (a->array.elttype) {
 		case aet_object:
 			offset = a->array.self.t - to_array->array.self.t;
 			break;

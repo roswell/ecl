@@ -1912,6 +1912,8 @@ extern ECL_API cl_object clos_standard_instance_set _ARGS((cl_narg narg, cl_obje
 #define cl_make_cfun_va(fun,name,block) ecl_make_cfun_va(fun,name,block)
 #define cl_make_cclosure_va(fun,name,block) ecl_make_cclosure_va(fun,name,block)
 #define si_bc_file(o) si_compiled_function_file(o)
+#define ARRAYP ECL_ARRAYP
+#define VECTORP ECL_VECTORP
 
 #ifdef __cplusplus
 }

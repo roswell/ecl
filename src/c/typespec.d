@@ -303,14 +303,14 @@ assert_type_hash_table(cl_object p)
 void
 assert_type_array(cl_object p)
 {
-	if (!ARRAYP(p))
+	if (!ECL_ARRAYP(p))
 		FEwrong_type_argument(@'array', p);
 }
 
 void
 assert_type_vector(cl_object p)
 {
-	if (!VECTORP(p))
+	if (!ECL_VECTORP(p))
 		FEwrong_type_argument(@'vector', p);
 }
 

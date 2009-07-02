@@ -42,6 +42,7 @@ ecl_alloc_simple_vector(cl_index l, cl_elttype aet)
 		x->vector.dim = x->vector.fillp = l;
 		x->vector.offset = 0;
 		x->vector.self.bit = NULL;
+                x->vector.elttype = aet;
 		break;
 	default:
 		x = ecl_alloc_object(t_vector);

@@ -144,8 +144,8 @@ typedef cl_object (*cl_objectfn_fixed)();
 #define ECL_NUMBER_TYPE_P(t)	(t >= t_fixnum && t <= t_complex)
 #define REAL_TYPE(t)		(t >= t_fixnum && t < t_complex)
 #define ARRAY_TYPE(t)		(t >= t_array && t <= t_bitvector)
-#define ARRAYP(x)		((IMMEDIATE(x) == 0) && (x)->d.t >= t_array && (x)->d.t <= t_bitvector)
-#define VECTORP(x)		((IMMEDIATE(x) == 0) && (x)->d.t >= t_vector && (x)->d.t <= t_bitvector)
+#define ECL_ARRAYP(x)		((IMMEDIATE(x) == 0) && (x)->d.t >= t_array && (x)->d.t <= t_bitvector)
+#define ECL_VECTORP(x)		((IMMEDIATE(x) == 0) && (x)->d.t >= t_vector && (x)->d.t <= t_bitvector)
 
 #define HEADER			int8_t t, m, padding[2]
 #define HEADER1(field)		int8_t t, m, field, padding
@@ -412,33 +412,32 @@ union ecl_array_data {
 struct ecl_array {		/*  array header  */
 				/*  adjustable flag  */
 				/*  has-fill-pointer flag  */
-	HEADER2(adjustable,rank);
+	HEADER2(elttype,adjustable);
 	cl_object displaced;	/*  displaced  */
 	cl_index dim;		/*  dimension  */
 	cl_index *dims;		/*  table of dimensions  */
 	union ecl_array_data self;	/*  pointer to the array  */
-	byte	elttype;	/*  element type  */
 	byte	offset;		/*  bitvector offset  */
+        byte    rank;		/*  rank of array = # of dimensions  */
 };
 
 struct ecl_vector {		/*  vector header  */
 				/*  adjustable flag  */
 				/*  has-fill-pointer flag  */
-	HEADER2(adjustable,hasfillp);
+	HEADER3(elttype,adjustable,hasfillp);
 	cl_object displaced;	/*  displaced  */
 	cl_index dim;		/*  dimension  */
 	cl_index fillp;		/*  fill pointer  */
 				/*  For simple vectors,  */
 				/*  v_fillp is equal to v_dim.  */
 	union ecl_array_data self;	/*  pointer to the vector  */
-	byte	elttype;	/*  element type  */
 	byte	offset;
 };
 
 struct ecl_base_string {	/*  string header  */
 				/*  adjustable flag  */
 				/*  has-fill-pointer flag  */
-	HEADER2(adjustable,hasfillp);
+	HEADER3(elttype,adjustable,hasfillp);
 	cl_object displaced;	/*  displaced  */
 	cl_index dim;       	/*  dimension  */
 				/*  string length  */
@@ -452,7 +451,7 @@ struct ecl_base_string {	/*  string header  */
 struct ecl_string {		/*  string header  */
 				/*  adjustable flag  */
 				/*  has-fill-pointer flag  */
-	HEADER2(adjustable,hasfillp);
+	HEADER3(elttype,adjustable,hasfillp);
 	cl_object displaced;	/*  displaced  */
 	cl_index dim;       	/*  dimension  */
 				/*  string length  */

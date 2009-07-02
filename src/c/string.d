@@ -78,6 +78,7 @@ cl_alloc_simple_base_string(cl_index length)
 	cl_object x;
 
 	x = ecl_alloc_object(t_base_string);
+        x->base_string.elttype      = aet_bc;
 	x->base_string.hasfillp     = FALSE;
 	x->base_string.adjustable   = FALSE;
 	x->base_string.displaced    = Cnil;
@@ -95,6 +96,7 @@ cl_alloc_simple_extended_string(cl_index length)
 
         /* should this call si_make_vector? */
 	x = ecl_alloc_object(t_string);
+        x->string.elttype    = aet_ch;
 	x->string.hasfillp   = FALSE;
 	x->string.adjustable = FALSE;
 	x->string.displaced  = Cnil;
@@ -143,6 +145,7 @@ make_simple_base_string(char *s)
 	cl_index l = strlen(s);
 
 	x = ecl_alloc_object(t_base_string);
+        x->base_string.elttype = aet_bc;
 	x->base_string.hasfillp = FALSE;
 	x->base_string.adjustable = FALSE;
 	x->base_string.displaced = Cnil;

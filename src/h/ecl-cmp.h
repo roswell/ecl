@@ -28,7 +28,7 @@
 
 #define ecl_def_ct_base_string(name,chars,len,static,const)     \
         static const struct ecl_base_string name ## data = {    \
-                (int8_t)t_base_string, 0, FALSE, FALSE,         \
+                (int8_t)t_base_string, 0, aet_bc, FALSE, FALSE, \
                 Cnil, (cl_index)(len), (cl_index)(len),         \
                 (ecl_base_char*)(chars) };                      \
         static const cl_object name = (cl_object)(& name ## data)
