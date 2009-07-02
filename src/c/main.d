@@ -524,9 +524,19 @@ cl_boot(int argc, char **argv)
 		/* Linefeed is redundant with one of the names given
 		 * in iso_latin_names.h, but it can not be associated
 		 * to the code 10, because the default name must be
-		 * Newline. */
-		cl_object name = make_constant_base_string("Linefeed");
-		ecl_sethash(name, aux, MAKE_FIXNUM(10));
+		 * Newline. Similar to the other codes. */
+                static struct {
+                        const char *name;
+                        int code;
+                } extra_names[] = { { "Null", 0 },
+                                    { "Linefeed", 10 },
+                                    { "Ack", 1 },
+                                    { "Bell", 7 },
+                                    { "Escape", 27 } };
+                for (i = 0; i < 5; i++) {
+                        cl_object name = make_constant_base_string(extra_names[i].name);
+                        ecl_sethash(name, aux, MAKE_FIXNUM(extra_names[i].code));
+                }
 	}
 
         /*
