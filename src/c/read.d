@@ -1005,11 +1005,11 @@ sharp_left_parenthesis_reader(cl_object in, cl_object c, cl_object d)
 			if (i >= dim) {
 				FEreader_error("Vector larger than specified length, ~D.", in, 1, d);
 			}
-			ecl_aset1(v, i, last = aux);
+			ecl_aset_unsafe(v, i, last = aux);
 		}
 		/* ... we fill the vector with the last element read (or NIL). */
 		for (; i < dim; i++) {
-			ecl_aset1(v, i, last);
+			ecl_aset_unsafe(v, i, last);
 		}
 	}
 	@(return v)

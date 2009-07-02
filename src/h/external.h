@@ -316,6 +316,8 @@ extern ECL_API cl_object si_make_pure_array(cl_object etype, cl_object dims, cl_
 extern ECL_API cl_object si_fill_array_with_elt(cl_object array, cl_object elt, cl_object start, cl_object end);
 
 extern ECL_API cl_index ecl_to_index(cl_object n);
+extern ECL_API cl_object ecl_aref_unsafe(cl_object x, cl_index index);
+extern ECL_API cl_object ecl_aset_unsafe(cl_object x, cl_index index, cl_object value);
 extern ECL_API cl_object ecl_aref(cl_object x, cl_index index);
 extern ECL_API cl_object ecl_aref1(cl_object v, cl_index index);
 extern ECL_API cl_object ecl_aset(cl_object x, cl_index index, cl_object value);

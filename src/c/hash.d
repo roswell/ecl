@@ -185,7 +185,7 @@ _hash_equalp(int depth, cl_hashkey h, cl_object x)
 		len = x->vector.dim;
 	SCAN:	if (--depth) {
 			for (i = 0; i < len; i++) {
-				h = _hash_equalp(depth, h, ecl_aref(x, i));
+				h = _hash_equalp(depth, h, ecl_aref_unsafe(x, i));
 			}
 		}
 		return h;

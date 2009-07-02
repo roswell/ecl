@@ -87,15 +87,8 @@ ecl_elt(cl_object seq, cl_fixnum index)
 #endif
 	case t_vector:
 	case t_bitvector:
-		if (index >= seq->vector.fillp)
-			goto E;
-		return(ecl_aref(seq, index));
-
 	case t_base_string:
-		if (index >= seq->base_string.fillp)
-			goto E;
-		return(CODE_CHAR(seq->base_string.self[index]));
-
+		return ecl_aref_unsafe(seq, index);
 	default:
         E0:
 		FEtype_error_sequence(seq);
@@ -135,16 +128,8 @@ ecl_elt_set(cl_object seq, cl_fixnum index, cl_object val)
 #endif
 	case t_vector:
 	case t_bitvector:
-		if (index >= seq->vector.fillp)
-			goto E;
-		return(ecl_aset(seq, index, val));
-
 	case t_base_string:
-		if (index >= seq->base_string.fillp)
-			goto E;
-		/* INV: ecl_char_code() checks the type of `val' */
-		seq->base_string.self[index] = ecl_char_code(val);
-		return(val);
+		return ecl_aset_unsafe(seq, index, val);
 
 	default:
         E0:

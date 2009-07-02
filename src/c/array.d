@@ -59,12 +59,14 @@ FEbad_aet()
 "passed the right value to the array creation routines.\n",0);
 }
 
-static cl_object
-ecl_out_of_bounds_error(cl_object fun, const char *place, cl_object value,
-			cl_object min, cl_object max)
+static cl_index
+out_of_bounds_error(cl_index ndx, cl_object x)
 {
-	cl_object type = cl_list(3, @'integer', min, max);
-	return ecl_type_error(fun, place, value, type);
+	cl_object type = cl_list(3, @'integer', MAKE_FIXNUM(0),
+                                 MAKE_FIXNUM(x->array.dim));
+	cl_object v = ecl_type_error(@'row-major-aref', "index", MAKE_FIXNUM(ndx),
+                                     type);
+        return fix(v);
 }
 
 cl_index
@@ -129,20 +131,14 @@ si_row_major_aset(cl_object x, cl_object indx, cl_object val)
 		x = ecl_type_error(@'aref',"argument",x,@'array');
 		goto AGAIN;
 	}
-	@(return ecl_aref(x, j));
+	@(return ecl_aref_unsafe(x, j));
 } @)
 
-static cl_object
-do_ecl_aref(cl_object x, cl_index index)
+cl_object
+ecl_aref_unsafe(cl_object x, cl_index index)
 {
- AGAIN:
-	if (index >= x->array.dim) {
-		cl_object i;
-		i = ecl_out_of_bounds_error(@'row-major-aref', "index",
-					    MAKE_FIXNUM(index), MAKE_FIXNUM(0),
-					    MAKE_FIXNUM(x->array.dim));
-		index = fix(i);
-		goto AGAIN;
+	while (index >= x->array.dim) {
+		index = out_of_bounds_error(index, x);
 	}
 	switch (x->array.elttype) {
 	case aet_object:
@@ -200,7 +196,7 @@ ecl_aref(cl_object x, cl_index index)
         while (!ECL_ARRAYP(x)) {
 		x = ecl_type_error(@'row-major-aref',"argument",x,@'array');
         }
-        return do_ecl_aref(x, index);
+        return ecl_aref_unsafe(x, index);
 }
 
 cl_object
@@ -209,7 +205,7 @@ ecl_aref1(cl_object v, cl_index index)
         while (!ECL_VECTORP(v)) {
 		v = ecl_type_error(@'row-major-aref',"argument",v,@'vector');
         }
-        return do_ecl_aref(v, index);
+        return ecl_aref_unsafe(v, index);
 }
 
 /*
@@ -248,14 +244,15 @@ ecl_aref1(cl_object v, cl_index index)
 		x = ecl_type_error(@'si::aset',"destination",v,@'array');
 		goto AGAIN;
 	}
-	@(return ecl_aset(x, j, v))
+	@(return ecl_aset_unsafe(x, j, v))
 } @)
 
 cl_object
-ecl_aset(cl_object x, cl_index index, cl_object value)
+ecl_aset_unsafe(cl_object x, cl_index index, cl_object value)
 {
-	if (index >= x->array.dim)
-		FEerror("The index, ~D, too large.", 1, MAKE_FIXNUM(index));
+	while (index >= x->array.dim) {
+		index = out_of_bounds_error(index, x);
+	}
 	switch (ecl_array_elttype(x)) {
 	case aet_object:
 		x->array.self.t[index] = value;
@@ -325,32 +322,21 @@ ecl_aset(cl_object x, cl_index index, cl_object value)
 }
 
 cl_object
+ecl_aset(cl_object x, cl_index index, cl_object value)
+{
+        while (!ECL_ARRAYP(x)) {
+		x = ecl_type_error(@'si::aset',"argument",x,@'vector');
+        }
+        return ecl_aset_unsafe(x, index, value);
+}
+
+cl_object
 ecl_aset1(cl_object v, cl_index index, cl_object val)
 {
- AGAIN:
-	switch (type_of(v)) {
-#ifdef ECL_UNICODE
-	case t_string:
-#endif
-	case t_vector:
-	case t_bitvector:
-		return(ecl_aset(v, index, val));
-	case t_base_string:
-		while (index >= v->base_string.dim) {
-			cl_object i = ecl_out_of_bounds_error(@'si::row-major-aset',
-							      "index",
-							      MAKE_FIXNUM(index),
-							      MAKE_FIXNUM(0),
-							      MAKE_FIXNUM(v->base_string.dim));
-			index = fix(i);
-		}
-		/* INV: ecl_char_code() checks the type of `val' */
-		v->base_string.self[index] = ecl_char_code(val);
-		return(val);
-	default:
-		v = ecl_type_error(@'row-major-aref',"argument",v,@'vector');
-		goto AGAIN;
-	}
+        while (!ECL_VECTORP(v)) {
+		v = ecl_type_error(@'si::aset',"argument",v,@'vector');
+        }
+        return ecl_aset_unsafe(v, index, val);
 }
 
 /*
@@ -979,7 +965,7 @@ ecl_copy_subarray(cl_object dest, cl_index i0, cl_object orig,
 	}
 	if (t != ecl_array_elttype(orig) || t == aet_bit) {
 		while (l--) {
-			ecl_aset(dest, i0++, ecl_aref(orig, i1++));
+			ecl_aset_unsafe(dest, i0++, ecl_aref_unsafe(orig, i1++));
 		}
 	} else if (t >= 0 && t <= aet_last_type) {
 		cl_index elt_size = ecl_aet_size[t];

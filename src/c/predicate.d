@@ -483,7 +483,7 @@ BEGIN:
 	ARRAY: {
 		cl_index i;
 		for (i = 0;  i < j;  i++)
-			if (!ecl_equalp(ecl_aref(x, i), ecl_aref(y, i)))
+			if (!ecl_equalp(ecl_aref_unsafe(x, i), ecl_aref_unsafe(y, i)))
 				return(FALSE);
 		return(TRUE);
                 }

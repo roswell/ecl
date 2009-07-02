@@ -1041,7 +1041,7 @@ write_array(bool vector, cl_object x, cl_object stream)
 		}
 		/* FIXME: This conses! */
 		if (print_level >= 0)
-			si_write_object_recursive(ecl_aref(x, m), stream);
+			si_write_object_recursive(ecl_aref_unsafe(x, m), stream);
 		else
 			write_ch('#', stream);
 		j = n-1;
