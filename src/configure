@@ -717,7 +717,6 @@ CORE_LIBS
 FASL_LIBS
 GMP_LDFLAGS
 GMP_CFLAGS
-DEBUG_CFLAGS
 ECL_CFLAGS
 buildir
 ecldir
@@ -798,6 +797,8 @@ enable_hpack
 enable_asmapply
 enable_smallcons
 enable_gengc
+with_debug_cflags
+with_profile_cflags
 with_x
 '
       ac_precious_vars='build_alias
@@ -1503,6 +1504,10 @@ Optional Packages:
                           allow for IEEE signed zeros (default=YES).
   --with-ieee-fp={yes|no} full IEEE floating point system, including denormals
                           (default=YES). Implies signed-zero and fpe
+  --with-debug-cflags     add debug flags to the compiler invocation
+                          (yes,no,actual flags,default=YES)
+  --with-profile-cflags   add profiling flags to the compiler invocation
+                          (yes,no,actual flags,default=NO)
   --with-x                use the X Window System
 
 Some influential environment variables:
@@ -2121,7 +2126,6 @@ else
 fi
 
 
-
 # Check whether --enable-opcode8 was given.
 if test "${enable_opcode8+set}" = set; then
   enableval=$enable_opcode8; opcode8=${enableval}
@@ -2321,6 +2325,25 @@ else
 fi
 
 
+
+
+# Check whether --with-debug-cflags was given.
+if test "${with_debug_cflags+set}" = set; then
+  withval=$with_debug_cflags;
+else
+  with_debug_cflags="no"
+fi
+
+
+
+# Check whether --with-profile-cflags was given.
+if test "${with_profile_cflags+set}" = set; then
+  withval=$with_profile_cflags;
+else
+  with_profile_cflags="no"
+fi
+
+
 ecldir="${libdir}/ecl-${PACKAGE_VERSION}"
 
 test -z "${docdir}" && docdir="${datadir}/doc/ecl-${PACKAGE_VERSION}"
@@ -2328,7 +2351,7 @@ test -z "${docdir}" && docdir="${datadir}/doc/ecl-${PACKAGE_VERSION}"
 
 boehm_configure_flags=""
 
-                            						                                                                                                                  TARGETS='bin/ecl$(EXE)'
+                            				                                                                                                                  TARGETS='bin/ecl$(EXE)'
 SUBDIRS=c
                             LSP_FEATURES='*features*'
 
@@ -4791,6 +4814,21 @@ if test "$ac_res" != no; then
 
 fi
 
+
+if test "$with_debug_cflags" = "yes"; then
+  with_debug_cflags="-g"
+fi
+if test "$with_debug_cflags" != "no"; then
+  CFLAGS="$with_debug_cflags $CFLAGS"
+  LDFLAGS="$with_debug_cflags $LDFLAGS"
+fi
+if test "$with_profile_cflags" = "yes"; then
+  with_profile_cflags="-pg"
+fi
+if test "$with_profile_cflags" != "no"; then
+  CFLAGS="$with_profile_cflags $CFLAGS"
+  LDFLAGS="$with_profile_cflags $LDFLAGS"
+fi
 
 if test "${enable_threads}" = "auto"; then
   { $as_echo "$as_me:$LINENO: checking for threads support" >&5
