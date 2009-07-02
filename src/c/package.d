@@ -15,6 +15,7 @@
     See file '../Copyright' for full details.
 */
 
+#define _XOPEN_SOURCE 600	/* For pthread mutex attributes */
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
 #include <ecl/ecl-inl.h>

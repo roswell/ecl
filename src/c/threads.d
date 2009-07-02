@@ -16,6 +16,7 @@
  * IMPORTANT!!!! IF YOU EDIT THIS FILE, CHANGE ALSO threads_win32.d
  */
 
+#define _XOPEN_SOURCE 600	/* For pthread mutex attributes */
 #if !defined(_MSC_VER) && !defined(mingw32)
 # include <pthread.h>
 #endif
