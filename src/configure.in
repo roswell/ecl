@@ -329,6 +329,7 @@ if test "$with_debug_cflags" = "yes"; then
 fi
 if test "$with_debug_cflags" != "no"; then
   CFLAGS="$with_debug_cflags $CFLAGS"
+  CXXFLAGS="$with_debug_cflags $CXXFLAGS"
   LDFLAGS="$with_debug_cflags $LDFLAGS"
 fi
 if test "$with_profile_cflags" = "yes"; then
@@ -336,6 +337,7 @@ if test "$with_profile_cflags" = "yes"; then
 fi
 if test "$with_profile_cflags" != "no"; then
   CFLAGS="$with_profile_cflags $CFLAGS"
+  CXXFLAGS="$with_profile_cflags $CFLAGS"
   LDFLAGS="$with_profile_cflags $LDFLAGS"
 fi
 
