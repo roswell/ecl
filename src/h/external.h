@@ -1605,6 +1605,8 @@ extern ECL_API void FEtype_error_sequence(cl_object x) /*__attribute__((noreturn
 extern ECL_API void FEtype_error_instance(cl_object x) /*__attribute__((noreturn))*/;
 extern ECL_API void FEcircular_list(cl_object x) /*__attribute__((noreturn))*/;
 extern ECL_API void FEtype_error_index(cl_object seq, cl_object ndx) /*__attribute__((noreturn))*/;
+extern ECL_API void FEtype_error_array(cl_object x) /*__attribute__((noreturn))*/;
+extern ECL_API void FEtype_error_vector(cl_object x) /*__attribute__((noreturn))*/;
 extern ECL_API void FEtype_error_string(cl_object x) /*__attribute__((noreturn))*/;
 extern ECL_API void FEdivision_by_zero(cl_object x, cl_object y) /*__attribute__((noreturn))*/;
 extern ECL_API cl_object ecl_type_error(cl_object function, const char *place, cl_object o, cl_object type);
