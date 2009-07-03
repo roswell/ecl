@@ -247,7 +247,7 @@ ecl_aref1(cl_object v, cl_index index)
 cl_object
 ecl_aset_unsafe(cl_object x, cl_index index, cl_object value)
 {
-	switch (ecl_array_elttype(x)) {
+	switch (x->array.elttype) {
 	case aet_object:
 		x->array.self.t[index] = value;
 		break;
@@ -261,7 +261,7 @@ ecl_aset_unsafe(cl_object x, cl_index index, cl_object value)
 		break;
 #endif
 	case aet_bit: {
-		cl_fixnum i = ecl_fixnum_in_range(@'si::aset',"bit",value,0,1);
+		cl_fixnum i = ecl_fixnum_in_range(Cnil,"ASET value",value,0,1);
 		index += x->vector.offset;
 		if (i == 0)
 			x->vector.self.bit[index/CHAR_BIT] &= ~(0200>>index%CHAR_BIT);
