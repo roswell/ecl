@@ -88,6 +88,7 @@ ecl_elt(cl_object seq, cl_fixnum index)
 	case t_vector:
 	case t_bitvector:
 	case t_base_string:
+                if (index >= seq->vector.fillp) goto E;
 		return ecl_aref_unsafe(seq, index);
 	default:
         E0:
@@ -129,8 +130,8 @@ ecl_elt_set(cl_object seq, cl_fixnum index, cl_object val)
 	case t_vector:
 	case t_bitvector:
 	case t_base_string:
+                if (index >= seq->vector.fillp) goto E;
 		return ecl_aset_unsafe(seq, index, val);
-
 	default:
         E0:
 		FEtype_error_sequence(seq);
