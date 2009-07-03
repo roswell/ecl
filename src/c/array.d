@@ -46,6 +46,33 @@ static const cl_index ecl_aet_size[] = {
   sizeof(unsigned char)       /* aet_bc */
 };
 
+static const cl_object ecl_aet_name[] = {
+        Ct,                   /* aet_object */
+        @'single-float',      /* aet_sf */
+        @'double-float',      /* aet_df */
+        @'bit',               /* aet_bit: cannot be handled with this code */
+        @'ext::cl-fixnum',    /* aet_fix */
+        @'ext::cl-index',     /* aet_index */
+        @'ext::byte8',        /* aet_b8 */
+        @'ext::integer8',     /* aet_i8 */
+#ifdef ecl_uint16_t
+        @'ext::byte16',
+        @'ext::integer16',
+#endif
+#ifdef ecl_uint32_t
+        @'ext::byte32',
+        @'ext::integer32',
+#endif
+#ifdef ecl_uint64_t
+        @'ext::byte64',
+        @'ext::integer64',
+#endif
+#ifdef ECL_UNICODE
+        @'character',         /* aet_ch */
+#endif
+        @'base-char'          /* aet_bc */
+};
+
 static void displace (cl_object from, cl_object to, cl_object offset);
 static void check_displaced (cl_object dlist, cl_object orig, cl_index newdim);
 
@@ -545,34 +572,7 @@ ecl_symbol_to_elttype(cl_object x)
 cl_object
 ecl_elttype_to_symbol(cl_elttype aet)
 {
-	cl_object output;
-	switch (aet) {
-	case aet_object:	output = Ct; break;
-#ifdef ECL_UNICODE
-	case aet_ch:		output = @'character'; break;
-#endif
-	case aet_bc:		output = @'base-char'; break;
-	case aet_bit:		output = @'bit'; break;
-	case aet_fix:		output = @'ext::cl-fixnum'; break;
-	case aet_index:		output = @'ext::cl-index'; break;
-	case aet_sf:		output = @'single-float'; break;
-	case aet_df:		output = @'double-float'; break;
-	case aet_b8:		output = @'ext::byte8'; break;
-	case aet_i8:		output = @'ext::integer8'; break;
-#ifdef ecl_uint16_t
-	case aet_b16:		output = @'ext::byte16'; break;
-	case aet_i16:		output = @'ext::integer16'; break;
-#endif
-#ifdef ecl_uint32_t
-	case aet_b32:		output = @'ext::byte32'; break;
-	case aet_i32:		output = @'ext::integer32'; break;
-#endif
-#ifdef ecl_uint64_t
-	case aet_b64:		output = @'ext::byte64'; break;
-	case aet_i64:		output = @'ext::integer64'; break;
-#endif
-	}
-	return output;
+        return ecl_aet_name[aet];
 }
 
 static void *
