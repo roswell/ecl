@@ -992,15 +992,7 @@
 (def-inline bit-vector-p :always (t) :bool "(type_of(#0)==t_bitvector)")
 
 (proclaim-function vectorp (t) t :predicate t :no-side-effects t)
-#-unicode
-(def-inline vectorp :always (t) :bool "@0;type_of(#0)==t_vector||
-type_of(#0)==t_base_string||
-type_of(#0)==t_bitvector")
-#+unicode
-(def-inline vectorp :always (t) :bool "@0;type_of(#0)==t_vector||
-type_of(#0)==t_base_string||
-type_of(#0)==t_string||
-type_of(#0)==t_bitvector")
+(def-inline vectorp :always (t) :bool "@0;ECL_VECTORP(#0)")
 
 (proclaim-function vector-push (t vector) (or fixnum null) :no-sp-change t)
 (proclaim-function vector-push-extend (t vector *) fixnum :no-sp-change t)
@@ -1008,7 +1000,7 @@ type_of(#0)==t_bitvector")
 (proclaim-function simple-bit-vector-p (t) t :predicate t)
 (proclaim-function simple-vector-p (t) t :predicate t)
 (proclaim-function arrayp (t) t :predicate t :no-side-effects t)
-(def-inline arrayp :always (t) :bool "@0;ARRAYP(#0)")
+(def-inline arrayp :always (t) :bool "@0;ECL_ARRAYP(#0)")
 
 (proclaim-function packagep (t) t :predicate t)
 (proclaim-function functionp (t) t :predicate t)
