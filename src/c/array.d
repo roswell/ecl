@@ -64,9 +64,7 @@ out_of_bounds_error(cl_index ndx, cl_object x)
 {
 	cl_object type = cl_list(3, @'integer', MAKE_FIXNUM(0),
                                  MAKE_FIXNUM(x->array.dim));
-	cl_object v = ecl_type_error(@'row-major-aref', "index", MAKE_FIXNUM(ndx),
-                                     type);
-        return fix(v);
+        FEwrong_type_argument(ecl_make_integer(ndx), type);
 }
 
 cl_index
@@ -137,9 +135,6 @@ si_row_major_aset(cl_object x, cl_object indx, cl_object val)
 cl_object
 ecl_aref_unsafe(cl_object x, cl_index index)
 {
-	while (index >= x->array.dim) {
-		index = out_of_bounds_error(index, x);
-	}
 	switch (x->array.elttype) {
 	case aet_object:
 		return x->array.self.t[index];
@@ -193,18 +188,20 @@ ecl_aref_unsafe(cl_object x, cl_index index)
 cl_object
 ecl_aref(cl_object x, cl_index index)
 {
-        while (!ECL_ARRAYP(x)) {
-		x = ecl_type_error(@'row-major-aref',"argument",x,@'array');
-        }
+        if (!ECL_ARRAYP(x))
+                FEtype_error_array(x);
+	if (index >= x->array.dim)
+		out_of_bounds_error(index, x);
         return ecl_aref_unsafe(x, index);
 }
 
 cl_object
 ecl_aref1(cl_object v, cl_index index)
 {
-        while (!ECL_VECTORP(v)) {
-		v = ecl_type_error(@'row-major-aref',"argument",v,@'vector');
-        }
+        if (!ECL_VECTORP(v))
+		FEtype_error_vector(v);
+	if (index >= v->array.dim)
+		out_of_bounds_error(index, v);
         return ecl_aref_unsafe(v, index);
 }
 
@@ -250,9 +247,6 @@ ecl_aref1(cl_object v, cl_index index)
 cl_object
 ecl_aset_unsafe(cl_object x, cl_index index, cl_object value)
 {
-	while (index >= x->array.dim) {
-		index = out_of_bounds_error(index, x);
-	}
 	switch (ecl_array_elttype(x)) {
 	case aet_object:
 		x->array.self.t[index] = value;
@@ -324,18 +318,20 @@ ecl_aset_unsafe(cl_object x, cl_index index, cl_object value)
 cl_object
 ecl_aset(cl_object x, cl_index index, cl_object value)
 {
-        while (!ECL_ARRAYP(x)) {
-		x = ecl_type_error(@'si::aset',"argument",x,@'vector');
-        }
+        if (!ECL_ARRAYP(x))
+                FEtype_error_array(x);
+	if (index >= x->array.dim)
+		out_of_bounds_error(index, x);
         return ecl_aset_unsafe(x, index, value);
 }
 
 cl_object
 ecl_aset1(cl_object v, cl_index index, cl_object val)
 {
-        while (!ECL_VECTORP(v)) {
-		v = ecl_type_error(@'si::aset',"argument",v,@'vector');
-        }
+        if (!ECL_VECTORP(v))
+		FEtype_error_vector(v);
+	if (index >= v->array.dim)
+		out_of_bounds_error(index, v);
         return ecl_aset_unsafe(v, index, val);
 }
 
