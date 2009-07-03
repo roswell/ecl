@@ -188,21 +188,25 @@ ecl_aref_unsafe(cl_object x, cl_index index)
 cl_object
 ecl_aref(cl_object x, cl_index index)
 {
-        if (!ECL_ARRAYP(x))
-                FEtype_error_array(x);
-	if (index >= x->array.dim)
+        if (ECL_ARRAYP(x)) {
+                if (index < x->array.dim) {
+                        return ecl_aref_unsafe(x, index);
+                }
 		out_of_bounds_error(index, x);
-        return ecl_aref_unsafe(x, index);
+        }
+        FEtype_error_array(x);
 }
 
 cl_object
-ecl_aref1(cl_object v, cl_index index)
+ecl_aref1(cl_object x, cl_index index)
 {
-        if (!ECL_VECTORP(v))
-		FEtype_error_vector(v);
-	if (index >= v->array.dim)
-		out_of_bounds_error(index, v);
-        return ecl_aref_unsafe(v, index);
+        if (ECL_VECTORP(x)) {
+                if (index < x->array.dim) {
+                        return ecl_aref_unsafe(x, index);
+                }
+		out_of_bounds_error(index, x);
+        }
+        FEtype_error_array(x);
 }
 
 /*
@@ -318,21 +322,23 @@ ecl_aset_unsafe(cl_object x, cl_index index, cl_object value)
 cl_object
 ecl_aset(cl_object x, cl_index index, cl_object value)
 {
-        if (!ECL_ARRAYP(x))
-                FEtype_error_array(x);
-	if (index >= x->array.dim)
+        if (ECL_ARRAYP(x)) {
+                if (index < x->array.dim)
+                        return ecl_aset_unsafe(x, index, value);
 		out_of_bounds_error(index, x);
-        return ecl_aset_unsafe(x, index, value);
+        }
+        FEtype_error_array(x);
 }
 
 cl_object
-ecl_aset1(cl_object v, cl_index index, cl_object val)
+ecl_aset1(cl_object x, cl_index index, cl_object value)
 {
-        if (!ECL_VECTORP(v))
-		FEtype_error_vector(v);
-	if (index >= v->array.dim)
-		out_of_bounds_error(index, v);
-        return ecl_aset_unsafe(v, index, val);
+        if (ECL_VECTORP(x)) {
+                if (index < x->array.dim)
+                        return ecl_aset_unsafe(x, index, value);
+		out_of_bounds_error(index, x);
+        }
+        FEtype_error_array(x);
 }
 
 /*
