@@ -117,7 +117,7 @@
 (proclaim-function aref (array *) t :no-side-effects t)
 
 (def-inline aref :unsafe (t t t) t
- "@0;ecl_aref(#0,fix(#1)*(#0)->array.dims[1]+fix(#2))")
+ "@0;ecl_aref_unsafe(#0,fix(#1)*(#0)->array.dims[1]+fix(#2))")
 (def-inline aref :unsafe ((array t) t t) t
  "@0;(#0)->array.self.t[fix(#1)*(#0)->array.dims[1]+fix(#2)]")
 (def-inline aref :unsafe ((array bit) t t) :fixnum
@@ -154,9 +154,9 @@
 
 (proclaim-function si:aset (t array *) nil)
 (def-inline si:aset :unsafe (t t t t) t
- "@0;ecl_aset(#1,fix(#2)*(#1)->array.dims[1]+fix(#3),#0)")
+ "@0;ecl_aset_unsafe(#1,fix(#2)*(#1)->array.dims[1]+fix(#3),#0)")
 (def-inline si:aset :unsafe (t t fixnum fixnum) t
- "@0;ecl_aset(#1,(#2)*(#1)->array.dims[1]+(#3),#0)")
+ "@0;ecl_aset_unsafe(#1,(#2)*(#1)->array.dims[1]+(#3),#0)")
 (def-inline si:aset :unsafe (t (array t) fixnum fixnum) t
  "@1;(#1)->array.self.t[#2*(#1)->array.dims[1]+#3]= #0")
 (def-inline si:aset :unsafe (t (array bit) fixnum fixnum) :fixnum
@@ -1110,15 +1110,38 @@
 ;; file sequence.d
 
 (proclaim-function elt (sequence fixnum) t :no-side-effects t)
-(def-inline elt :always (t t) t "ecl_elt(#0,fixint(#1))")
+(def-inline elt :always (t t) t "ecl_elt(#0,fix(#1))")
 (def-inline elt :always (t fixnum) t "ecl_elt(#0,#1)")
+(def-inline elt :always (vector t) t "ecl_aref1(#0,fix(#1))")
+(def-inline elt :always (vector fixnum) t "ecl_aref1(#0,#1)")
+
 (def-inline elt :unsafe (t t) t "ecl_elt(#0,fix(#1))")
 (def-inline elt :unsafe (t fixnum) t "ecl_elt(#0,#1)")
+(def-inline elt :unsafe (vector t) t "ecl_aref_unsafe(#0,fix(#1))")
+(def-inline elt :unsafe (vector fixnum) t "ecl_elt_unsafe(#0,#1)")
+(def-inline aref :unsafe ((array bit) t) :fixnum "ecl_aref_bv(#0,fix(#1))")
+(def-inline aref :unsafe ((array bit) fixnum) :fixnum "ecl_aref_bv(#0,#1)")
+#+unicode
+(def-inline aref :unsafe ((array character) fixnum) :wchar
+ "(#0)->string.self[#1]")
+(def-inline aref :unsafe ((array base-char) fixnum) :char
+ "(#0)->base_string.self[#1]")
+(def-inline aref :unsafe ((array double-float) fixnum) :double
+ "(#0)->array.self.df[#1]")
+(def-inline aref :unsafe ((array single-float) fixnum) :float
+ "(#0)->array.self.sf[#1]")
+(def-inline aref :unsafe ((array fixnum) fixnum) :fixnum
+ "(#0)->array.self.fix[#1]")
 
 (proclaim-function si:elt-set (sequence fixnum t) t)
 (def-inline si:elt-set :always (t t t) t "ecl_elt_set(#0,fixint(#1),#2)")
 (def-inline si:elt-set :always (t fixnum t) t "ecl_elt_set(#0,#1,#2)")
+(def-inline si:elt-set :always (vector t t) t "ecl_aset1(#0,fixint(#1),#2)")
+(def-inline si:elt-set :always (vector fixnum t) t "ecl_aset1(#0,#1,#2)")
+
 (def-inline si:elt-set :unsafe (t t t) t "ecl_elt_set(#0,fix(#1),#2)")
+(def-inline si:elt-set :unsafe (vector t t) t "ecl_aset1_unsafe(#0,fixint(#1),#2)")
+(def-inline si:elt-set :unsafe (vector fixnum t) t "ecl_aset1_unsafe(#0,#1,#2)")
 
 (proclaim-function subseq (sequence fixnum *) sequence)
 (proclaim-function copy-seq (sequence) sequence)
