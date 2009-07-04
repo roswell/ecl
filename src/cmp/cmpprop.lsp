@@ -40,13 +40,13 @@ compute it. This version only handles the simplest cases."
 
 (def-type-propagator si::aset (fname obj array &rest indices)
   (let* ((array-type (c1form-primary-type array))
-         (elt-type (or (type-from-array-elt array) t)))
+         (elt-type (or (type-from-array-elt array-type) t)))
     (values (list* elt-type array-type (make-list (length indices) :initial-element 'si::index))
             elt-type)))
 
 (def-type-propagator aref (fname array &rest indices)
   (let* ((array-type (c1form-primary-type array))
-         (elt-type (or (type-from-array-elt array) t)))
+         (elt-type (or (type-from-array-elt array-type) t)))
     (values (list* array-type (make-list (length indices) :initial-element 'si::index))
             elt-type)))
 
