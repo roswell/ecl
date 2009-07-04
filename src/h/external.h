@@ -315,6 +315,8 @@ extern ECL_API cl_object si_aset _ARGS((cl_narg narg, cl_object v, cl_object x, 
 extern ECL_API cl_object si_make_pure_array(cl_object etype, cl_object dims, cl_object adj, cl_object fillp, cl_object displ, cl_object disploff);
 extern ECL_API cl_object si_fill_array_with_elt(cl_object array, cl_object elt, cl_object start, cl_object end);
 
+extern ECL_API void FEwrong_dimensions(cl_object a, cl_index rank);
+extern ECL_API void FEwrong_index(cl_object a, cl_index ndx, cl_index upper);
 extern ECL_API cl_index ecl_to_index(cl_object n);
 extern ECL_API cl_object ecl_aref_unsafe(cl_object x, cl_index index);
 extern ECL_API cl_object ecl_aset_unsafe(cl_object x, cl_index index, cl_object value);

@@ -94,6 +94,29 @@ out_of_bounds_error(cl_index ndx, cl_object x)
         FEwrong_type_argument(ecl_make_integer(ndx), type);
 }
 
+void
+FEwrong_dimensions(cl_object a, cl_index rank)
+{
+        cl_object list = cl_make_list(rank, @':initial-element', @'*');
+        cl_object type = cl_list(3, @'array', @'*', list);
+        FEwrong_type_argument(type, a);
+}
+
+void
+FEwrong_index(cl_object a, cl_index ndx, cl_index upper)
+{
+        const char *message =
+                "~D is not a valid index into object ~A.~%"
+                "It should be non-negative and < ~D.";
+	cl_object type = cl_list(3, @'integer', MAKE_FIXNUM(0),
+                                 ecl_make_integer(upper));
+        cl_error(5, @'simple-type-error',
+                 @':format-control',
+                 make_constant_base_string(message),
+                 @':format-arguments',
+                 cl_list(3, ecl_make_integer(ndx), a, ecl_make_integer(upper)));
+}
+
 cl_index
 ecl_to_index(cl_object n)
 {
