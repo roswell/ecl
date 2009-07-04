@@ -113,6 +113,7 @@
   (let* ((*file* (c1form-file form))
          (*file-position* (c1form-file form))
          (*current-form* (c1form-form form))
+         (*current-c2form* form)
          (name (c1form-name form))
          (args (c1form-args form))
          (dispatch (get-sysprop name 'C2)))

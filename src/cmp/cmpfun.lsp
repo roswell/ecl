@@ -91,31 +91,35 @@
   (check-args-number 'RPLACA args 2 2)
   (make-c1form* 'RPLACA :args (c1args* args)))
 
-(defun c2rplaca (args &aux (*inline-blocks* 0) x y)
-  (setq args (coerce-locs (inline-args args))
-	x (first args)
-	y (second args))
-  (when (safe-compile)
-   (wt-nl "if(ATOM(" x "))"
-	  "FEtype_error_cons(" x ");"))
-  (wt-nl "ECL_CONS_CAR(" x ") = " y ";")
-  (unwind-exit x)
-  (close-inline-blocks))
+(defun c2rplaca (args)
+  (let* ((*inline-blocks* 0)
+         (*temp* *temp*)
+         (args (coerce-locs (inline-args args)))
+         (x (first args))
+         (y (second args)))
+    (when (safe-compile)
+      (wt-nl "if(ATOM(" x "))"
+             "FEtype_error_cons(" x ");"))
+    (wt-nl "ECL_CONS_CAR(" x ") = " y ";")
+    (unwind-exit x)
+    (close-inline-blocks)))
 
 (defun c1rplacd (args)
   (check-args-number 'RPLACD args 2 2)
   (make-c1form* 'RPLACD :args (c1args* args)))
 
-(defun c2rplacd (args &aux (*inline-blocks* 0) x y)
-  (setq args (coerce-locs (inline-args args))
-	x (first args)
-	y (second args))
-  (when (safe-compile)
-   (wt-nl "if(ATOM(" x "))"
-	  "FEtype_error_cons(" x ");"))
-  (wt-nl "ECL_CONS_CDR(" x ") = " y ";")
-  (unwind-exit x)
-  (close-inline-blocks))
+(defun c2rplacd (args)
+  (let* ((*inline-blocks* 0)
+         (*temp* *temp*)
+         (args (coerce-locs (inline-args args)))
+         (x (first args))
+         (y (second args)))
+    (when (safe-compile)
+      (wt-nl "if(ATOM(" x "))"
+             "FEtype_error_cons(" x ");"))
+    (wt-nl "ECL_CONS_CDR(" x ") = " y ";")
+    (unwind-exit x)
+    (close-inline-blocks)))
 
 (defun c1member (args)
   (check-args-number 'MEMBER args 2)
@@ -130,17 +134,18 @@
 	(t
 	 (c1call-global 'MEMBER args))))
 
-(defun c2member!2 (fun args
-		       &aux (*inline-blocks* 0))
-  (unwind-exit
-   (produce-inline-loc (inline-args args) '(T T) '(:object)
-	 (case fun
-	   (EQ "si_memq(#0,#1)")
-	   (EQL "ecl_memql(#0,#1)")
-	   (EQUAL "ecl_member(#0,#1)"))
-	 nil ; side effects?
-	 t)) ; one liner?
-  (close-inline-blocks))
+(defun c2member!2 (fun args)
+  (let ((*inline-blocks* 0)
+        (*temp* *temp*))
+    (unwind-exit
+     (produce-inline-loc (inline-args args) '(T T) '(:object)
+                         (case fun
+                           (EQ "si_memq(#0,#1)")
+                           (EQL "ecl_memql(#0,#1)")
+                           (EQUAL "ecl_member(#0,#1)"))
+                         nil ; side effects?
+                         t)) ; one liner?
+    (close-inline-blocks)))
 
 (defun c1assoc (args)
   (check-args-number 'ASSOC args 2)
@@ -156,19 +161,20 @@
 	(t
 	 (c1call-global 'ASSOC args))))
 
-(defun c2assoc!2 (fun args
-		      &aux (*inline-blocks* 0))
-  (unwind-exit
-   (produce-inline-loc (inline-args args) '(T T) '(:object)
-	 (case fun
-	   (eq "ecl_assq(#0,#1)")
-	   (eql "ecl_assql(#0,#1)")
-	   (equal "ecl_assoc(#0,#1)")
-	   (equalp "ecl_assqlp(#0,#1)"))
-	 nil ; side effects?
-	 t
-	 ))
-  (close-inline-blocks))
+(defun c2assoc!2 (fun args)
+  (let* ((*inline-blocks* 0)
+         (*temp* *temp*))
+    (unwind-exit
+     (produce-inline-loc (inline-args args) '(T T) '(:object)
+                         (case fun
+                           (eq "ecl_assq(#0,#1)")
+                           (eql "ecl_assql(#0,#1)")
+                           (equal "ecl_assoc(#0,#1)")
+                           (equalp "ecl_assqlp(#0,#1)"))
+                         nil ; side effects?
+                         t
+                         ))
+    (close-inline-blocks)))
 
 (defun co1nth (args)
   (and (not (endp args))

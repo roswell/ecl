@@ -632,6 +632,7 @@
     (wt ")"))
 
   (let* ((*lcl* 0) (*temp* 0) (*max-temp* 0)
+         (*last-label* 0)
 	 (*lex* 0) (*max-lex* 0)
 	 (*env* (fun-env fun))		; continue growing env
 	 (*max-env* *env*) (*env-lvl* 0)

@@ -31,6 +31,75 @@
 ;;; The forth element is T if and only if the result value is a new Lisp
 ;;; object, i.e., it must be explicitly protected against GBC.
 
+(defun make-inline-temp-var (expected-type value-type &optional loc)
+  (let ((out-rep-type (lisp-type->rep-type expected-type)))
+    (if (eq out-rep-type :object)
+        (make-temp-var)
+        (let ((var (make-lcl-var :rep-type out-rep-type
+                                 :type (type-and expected-type value-type))))
+          (if loc
+              (wt-nl "{" (rep-type-name out-rep-type) " " var "=" loc ";")
+              (wt-nl "{" (rep-type-name out-rep-type) " " var ";"))
+          (incf *inline-blocks*)
+          var))))
+
+(defun emit-inlined-variable (form expected-type rest-forms)
+  (let ((var (c1form-arg 0 form))
+        (value-type (c1form-primary-type form)))
+    (if (var-changed-in-form-list var rest-forms)
+        (let* ((temp (make-inline-temp-var expected-type value-type var)))
+          (let ((*destination* temp)) (set-loc var))
+          (list value-type temp))
+        (list value-type var))))
+
+(defun emit-inlined-setq (form expected-type rest-forms)
+  (let ((vref (c1form-arg 0 form))
+        (form1 (c1form-arg 1 form)))
+    (let ((*destination* vref)) (c2expr* form1))
+    (if (eq (c1form-name form1) 'LOCATION)
+        (list (c1form-primary-type form1) (c1form-arg 0 form1))
+        (emit-inlined-variable (make-c1form 'VAR form vref) expected-type rest-forms))))
+
+(defun emit-inlined-call-global (form expected-type)
+  (let* ((fname (c1form-arg 0 form))
+         (args (c1form-arg 1 form))
+         (return-type (c1form-primary-type form))
+         (loc (call-global-loc fname nil args return-type expected-type))
+         (type (loc-type loc))
+         (temp (make-inline-temp-var expected-type type))
+         (*destination* temp))
+    (set-loc loc)
+    (list type temp)))
+
+(defun emit-inlined-structure-ref (form expected-type rest-forms)
+  (let ((type (c1form-primary-type form)))
+    (if (args-cause-side-effect rest-forms)
+        (let* ((temp (make-inline-temp-var expected-type type))
+               (*destination* temp))
+          (c2expr* form)
+          (list type temp))
+        (list type
+              (list 'SYS:STRUCTURE-REF
+                    (first (coerce-locs
+                            (inline-args (list (c1form-arg 0 form)))))
+                    (c1form-arg 1 form)
+                    (c1form-arg 2 form)
+                    (c1form-arg 3 form))))))
+
+(defun emit-inlined-instance-ref (form expected-type rest-forms)
+  (let ((type (c1form-primary-type form)))
+    (if (args-cause-side-effect rest-forms)
+        (let* ((temp (make-inline-temp-var expected-type type))
+               (*destination* temp))
+          (c2expr* form)
+          (list type temp))
+        (list type
+              (list 'SYS:INSTANCE-REF
+                    (first (coerce-locs
+                            (inline-args (list (c1form-arg 0 form)))))
+                    (c1form-arg 1 form)
+                    #+nil (c1form-arg 2 form))))))
+
 ;;;
 ;;; inline-args:
 ;;;   returns a list of pairs (type loc)
@@ -40,116 +109,36 @@
 ;;; call close-inline-blocks
 ;;;
 (defun inline-args (forms &optional types)
-  (flet ((all-locations (args &aux (res t))
-	   (dolist (arg args res)
-	     (unless (member (c1form-name arg)
-			     '(LOCATION VAR SYS:STRUCTURE-REF
-			       #+clos SYS:INSTANCE-REF)
-			     :test #'eq)
-	       (setq res nil)))))
+  (do* ((forms forms)
+        (expected-type)
+        (form)
+        (locs '()))
+       ((endp forms) (nreverse locs))
+    (setq form (pop forms)
+          expected-type (if types (pop types) t))
+    (case (c1form-name form)
+      (LOCATION
+       (push (list (c1form-primary-type form) (c1form-arg 0 form)) locs))
+      (VAR
+       (push (emit-inlined-variable form expected-type forms) locs))
 
-    (do ((forms forms (cdr forms))
-	 (form) (locs))
-	((endp forms) (nreverse locs))
-      (setq form (car forms))
-      (case (c1form-name form)
-	(LOCATION
-	 (push (list (c1form-primary-type form) (c1form-arg 0 form)) locs))
-	(VAR
-	 (let ((var (c1form-arg 0 form)))
-	   (if (var-changed-in-form-list var (cdr forms))
-	       (let* ((var-rep-type (var-rep-type var))
-		      (lcl (make-lcl-var :rep-type var-rep-type :type (var-type var))))
-		 (wt-nl "{" (rep-type-name var-rep-type) " " lcl "= " var ";")
-		 (push (list (c1form-primary-type form) lcl) locs)
-		 (incf *inline-blocks*))
-	       (push (list (c1form-primary-type form) var) locs))))
+      (CALL-GLOBAL
+       (push (emit-inlined-call-global form expected-type) locs))
 
-	(CALL-GLOBAL
-	 (let* ((fname (c1form-arg 0 form))
-		(args (c1form-arg 1 form))
-		(return-type (c1form-primary-type form))
-		(arg-locs (inline-args args))
-		(loc (inline-function fname arg-locs return-type)))
-	   (if loc
-	       ;; If there are side effects, we may not move the C form
-	       ;; around and we have to save its value in a variable.
-	       ;; We use a variable of type out-type to save the value
-	       ;; if (return-type >= out-type)
-	       ;; then
-	       ;;   coerce the value to out-type
-	       ;; otherwise
-	       ;;   save the value without coercion and return the
-	       ;;   variable tagged with and-type,
-	       ;;   so that whoever uses it may coerce it to such type
-	       (let* ((and-type (type-and return-type (loc-type loc)))
-		      (out-rep-type (loc-representation-type loc))
-		      (var (make-lcl-var :rep-type out-rep-type :type and-type)))
-		 (wt-nl "{" (rep-type-name out-rep-type) " " var "= " loc ";")
-		 (incf *inline-blocks*)
-		 (setq loc var)
-		 (push (list (loc-type loc) loc) locs))
-	       (let* ((temp (make-temp-var)) ;; output value
-		      ;; bindings like c2expr*
-		      (*exit* (next-label))
-		      (*unwind-exit* (cons *exit* *unwind-exit*))
-		      (*lcl* *lcl*)
-		      (*temp* *temp*)
-		      (*destination* temp))
-		 (unwind-exit (call-global-loc fname nil arg-locs return-type :object))
-		 (wt-label *exit*)
-		 (push
-		  (list (if (subtypep 'T return-type)
-			    (or (get-return-type fname) 'T)
-			    return-type)
-			temp)
-		  locs)))))
+      (SYS:STRUCTURE-REF
+       (push (emit-inlined-structure-ref form expected-type forms) locs))
 
-	(SYS:STRUCTURE-REF
-	 (let ((type (c1form-primary-type form)))
-	   (if (args-cause-side-effect (cdr forms))
-	       (let* ((temp (make-temp-var))
-		      (*destination* temp))
-		 (c2expr* form)
-		 (push (list type temp) locs))
-	       (push (list type
-			   (list 'SYS:STRUCTURE-REF
-				 (first (coerce-locs
-					  (inline-args (list (c1form-arg 0 form)))))
-				 (c1form-arg 1 form)
-				 (c1form-arg 2 form)
-				 (c1form-arg 3 form)))
-		     locs))))
-	#+clos
-	(SYS:INSTANCE-REF
-	 (let ((type (c1form-primary-type form)))
-	   (if (args-cause-side-effect (cdr forms))
-	       (let* ((temp (make-temp-var))
-		      (*destination* temp))
-		 (c2expr* form)
-		 (push (list type temp) locs))
-	       (push (list type
-			   (list 'SYS:INSTANCE-REF
-				 (first (coerce-locs
-					  (inline-args (list (c1form-arg 0 form)))))
-				 (c1form-arg 1 form)
-				#+nil (c1form-arg 2 form))) ; JJGR
-		     locs))))
-	(SETQ
-	 (let ((vref (c1form-arg 0 form))
-	       (form1 (c1form-arg 1 form)))
-	   (let ((*destination* vref)) (c2expr* form1))
-	   (if (eq (c1form-name form1) 'LOCATION)
-	       (push (list (c1form-primary-type form1) (c1form-arg 0 form1)) locs)
-	       (setq forms (list* nil	; discarded at iteration
-				  (make-c1form 'VAR form vref)
-				  (cdr forms))
-		     ))))
+      #+clos
+      (SYS:INSTANCE-REF
+       (push (emit-inlined-instance-ref form expected-type forms) locs))
 
-	(t (let ((temp (make-temp-var)))
-	     (let ((*destination* temp)) (c2expr* form))
-	     (push (list (c1form-primary-type form) temp) locs))))))
-  )
+      (SETQ
+       (push (emit-inlined-setq form expected-type forms) locs))
+
+      (t (let* ((type (c1form-primary-type form))
+                (temp (make-inline-temp-var expected-type type)))
+           (let ((*destination* temp)) (c2expr* form))
+           (push (list type temp) locs))))))
 
 (defun destination-type ()
   (rep-type->lisp-type (loc-representation-type *destination*))
@@ -161,24 +150,25 @@
 ;;;   locs are typed locs as produced by inline-args
 ;;;   returns NIL if inline expansion of the function is not possible
 ;;;
-(defun inline-function (fname inlined-locs return-type &optional (return-rep-type 'any))
+(defun inline-function (fname arg-types return-type &optional (return-rep-type 'any))
   ;; Those functions that use INLINE-FUNCTION must rebind
   ;; the variable *INLINE-BLOCKS*.
   (and (inline-possible fname)
        (not (get-sysprop fname 'C2))
        (let* ((dest-rep-type (loc-representation-type *destination*))
               (dest-type (rep-type->lisp-type dest-rep-type))
-              (ii (get-inline-info fname (mapcar #'first inlined-locs)
-				   return-type return-rep-type)))
-	 (when ii
-	   (let* ((arg-types (inline-info-arg-types ii))
-		  (out-rep-type (inline-info-return-rep-type ii))
-		  (out-type (inline-info-return-type ii))
-		  (side-effects-p (function-may-have-side-effects fname))
-		  (fun (inline-info-expansion ii))
-		  (one-liner (inline-info-one-liner ii)))
-	     (produce-inline-loc inlined-locs arg-types (list out-rep-type)
-				 fun side-effects-p one-liner))))))
+              (ii (get-inline-info fname arg-types return-type return-rep-type)))
+         ii)))
+
+(defun apply-inline-info (ii inlined-locs)
+  (let* ((arg-types (inline-info-arg-types ii))
+         (out-rep-type (inline-info-return-rep-type ii))
+         (out-type (inline-info-return-type ii))
+         (side-effects-p (function-may-have-side-effects (inline-info-name ii)))
+         (fun (inline-info-expansion ii))
+         (one-liner (inline-info-one-liner ii)))
+    (produce-inline-loc inlined-locs arg-types (list out-rep-type)
+                        fun side-effects-p one-liner)))
 
 (defun choose-inline-info (ia ib return-type return-rep-type)
   (cond

@@ -83,7 +83,8 @@
     (setf return-rep-type :object))
   (let* ((return-type (rep-type->lisp-type return-rep-type))
          (inline-info
-          (make-inline-info :arg-rep-types arg-rep-types
+          (make-inline-info :name name
+                            :arg-rep-types arg-rep-types
                             :return-rep-type return-rep-type
                             :return-type (rep-type->lisp-type return-rep-type)
                             :arg-types arg-types
@@ -196,14 +197,58 @@
  "ecl_aset_bv(#1,#2,#0)")
 
 (proclaim-function row-major-aref (array fixnum) t :no-side-effects t)
-(def-inline row-major-aref :always (array fixnum) t "ecl_aref(#0,#1)")
+(def-inline row-major-aref :always (t t) t "ecl_aref(#0,fixint(#1))")
+(def-inline row-major-aref :always (t fixnum) t "ecl_aref(#0,#1)")
+(def-inline row-major-aref :unsafe (t t) t "ecl_aref_unsafe(#0,fix(#1))")
+(def-inline row-major-aref :unsafe (t fixnum) t "ecl_aref_unsafe(#0,#1)")
+(def-inline row-major-aref :unsafe ((array bit) t) :fixnum "ecl_aref_bv(#0,fix(#1))")
+(def-inline row-major-aref :unsafe ((array bit) fixnum) :fixnum "ecl_aref_bv(#0,#1)")
+#+unicode
+(def-inline row-major-aref :unsafe ((array character) fixnum) :wchar
+ "(#0)->string.self[#1]")
+(def-inline row-major-aref :unsafe ((array base-char) fixnum) :char
+ "(#0)->base_string.self[#1]")
+(def-inline row-major-aref :unsafe ((array double-float) fixnum) :double
+ "(#0)->array.self.df[#1]")
+(def-inline row-major-aref :unsafe ((array single-float) fixnum) :float
+ "(#0)->array.self.sf[#1]")
+(def-inline row-major-aref :unsafe ((array fixnum) fixnum) :fixnum
+ "(#0)->array.self.fix[#1]")
 
 (proclaim-function si:row-major-aset (array fixnum t) t)
-(def-inline si:row-major-aset :always (array fixnum t) t "ecl_aset(#0,#1,#2)")
+(def-inline si:row-major-aset :always (t t t) t "ecl_aset(#0,fixint(#1),#2)")
+(def-inline si:row-major-aset :always (t fixnum t) t "ecl_aset(#0,#1,#2)")
+(def-inline si:row-major-aset :unsafe (t t t) t "ecl_aset_unsafe(#0,fix(#1),#2)")
+(def-inline si:row-major-aset :unsafe (t fixnum t) t "ecl_aset_unsafe(#0,#1,#2)")
+(def-inline si:row-major-aset :unsafe ((array t) fixnum t) t
+ "(#0)->vector.self.t[#1]= #2")
+(def-inline si:row-major-aset :unsafe ((array bit) fixnum t) :fixnum
+ "ecl_aset_bv(#0,#1,fix(#2))")
+(def-inline si:row-major-aset :unsafe ((array bit) fixnum fixnum) :fixnum
+ "ecl_aset_bv(#0,#1,#2)")
+(def-inline si:row-major-aset :unsafe ((array base-char) fixnum base-char) :char
+ "(#0)->base_string.self[#1]= #2")
+#+unicode
+(def-inline si:row-major-aset :unsafe ((array character) fixnum character) :wchar
+ "(#0)->string.self[#1]= #2")
+(def-inline si:row-major-aset :unsafe ((array double-float) fixnum double-float) :double
+ "(#0)->array.self.df[#1]= #2")
+(def-inline si:row-major-aset :unsafe ((array single-float) fixnum single-float) :float
+ "(#0)->array.self.sf[#1]= #2")
+(def-inline si:row-major-aset :unsafe ((array fixnum) fixnum fixnum) :fixnum
+ "(#0)->array.self.fix[#1]= #2")
 
 (proclaim-function array-element-type (array) t)
 (proclaim-function array-rank (array) fixnum)
+(def-inline array-rank :unsafe (array) :fixnum
+ "(#0)->array.rank")
+
 (proclaim-function array-dimension (array fixnum) fixnum)
+(def-inline array-dimension :unsafe (array t) :fixnum
+ "(#0)->array.dims[fix(#1)]")
+(def-inline array-dimension :unsafe (array fixnum) :fixnum
+ "(#0)->array.dims[#1]")
+
 (proclaim-function array-total-size (array) t :no-side-effects t)
 (def-inline array-total-size :unsafe (t) :fixnum "((#0)->array.dim)")
 
@@ -769,18 +814,26 @@
 (proclaim-function < (t *) t :predicate t :no-side-effects t)
 (def-inline < :always (t t) :bool "ecl_number_compare(#0,#1)<0")
 (def-inline < :always (fixnum-float fixnum-float) :bool "(#0)<(#1)")
+(def-inline < :always (fixnum-float fixnum-float fixnum-float) :bool
+            "@012;((#0)<(#1) && (#1)<(#2))")
 
 (proclaim-function > (t *) t :predicate t :no-side-effects t)
 (def-inline > :always (t t) :bool "ecl_number_compare(#0,#1)>0")
 (def-inline > :always (fixnum-float fixnum-float) :bool "(#0)>(#1)")
+(def-inline > :always (fixnum-float fixnum-float fixnum-float) :bool
+            "@012;((#0)>(#1) && (#1)>(#2))")
 
 (proclaim-function <= (t *) t :predicate t :no-side-effects t)
 (def-inline <= :always (t t) :bool "ecl_number_compare(#0,#1)<=0")
 (def-inline <= :always (fixnum-float fixnum-float) :bool "(#0)<=(#1)")
+(def-inline <= :always (fixnum-float fixnum-float fixnum-float) :bool
+            "@012;((#0)<=(#1) && (#1)<=(#2))")
 
 (proclaim-function >= (t *) t :predicate t :no-side-effects t)
 (def-inline >= :always (t t) :bool "ecl_number_compare(#0,#1)>=0")
 (def-inline >= :always (fixnum-float fixnum-float) :bool "(#0)>=(#1)")
+(def-inline >= :always (fixnum-float fixnum-float fixnum-float) :bool
+            "@012;((#0)>=(#1) && (#1)>=(#2))")
 
 (proclaim-function max (t *) t :no-side-effects t)
 (def-inline max :always (t t) t "@01;(ecl_number_compare(#0,#1)>=0?#0:#1)")

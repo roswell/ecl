@@ -82,6 +82,7 @@
 
 (defun c2structure-ref (form name-vv index unsafe)
   (let* ((*inline-blocks* 0)
+         (*temp* *temp*)
 	 (loc (first (coerce-locs (inline-args (list form))))))
     (unwind-exit (list 'SYS:STRUCTURE-REF loc name-vv index unsafe))
     (close-inline-blocks)))
@@ -129,18 +130,19 @@
 			  &aux locs (*inline-blocks* 0))
   ;; the third argument here *c1t* is just a hack to ensure that
   ;; a variable is introduced for y if it is an expression with side effects
-  (setq locs (inline-args (list x y *c1t*)))
-  (setq x (second (first locs)))
-  (setq y `(coerce-loc :object ,(second (second locs))))
-  (if (safe-compile)
-      (wt-nl "ecl_structure_set(" x "," name-vv "," index "," y ");")
-      #+clos
-      (wt-nl "(" x ")->instance.slots[" index "]= " y ";")
-      #-clos
-      (wt-nl "(" x ")->str.self[" index "]= " y ";"))
-  (unwind-exit y)
-  (close-inline-blocks)
-  )
+  (let* ((*inline-blocks* 0)
+         (*temp* *temp*)
+         (locs (inline-args (list x y *c1t*)))
+         (x (second (first locs)))
+         (y `(coerce-loc :object ,(second (second locs)))))
+    (if (safe-compile)
+        (wt-nl "ecl_structure_set(" x "," name-vv "," index "," y ");")
+        #+clos
+        (wt-nl "(" x ")->instance.slots[" index "]= " y ";")
+        #-clos
+        (wt-nl "(" x ")->str.self[" index "]= " y ";"))
+    (unwind-exit y)
+    (close-inline-blocks)))
 
 (put-sysprop 'SYS:STRUCTURE-REF 'C1 'c1structure-ref)
 (put-sysprop 'SYS:STRUCTURE-REF 'C2 'c2structure-ref)

@@ -397,7 +397,8 @@
 	       'VALUES))))))
 
 (defun c2c-inline (arguments &rest rest)
-  (let ((*inline-blocks* 0))
+  (let ((*inline-blocks* 0)
+        (*temp* *temp*))
     (unwind-exit (apply #'produce-inline-loc (inline-args arguments) rest))
     (close-inline-blocks)))
 

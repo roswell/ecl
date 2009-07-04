@@ -251,7 +251,8 @@
 (defun c2call-local (fun args &optional narg)
   (declare (type fun fun))
   (unless (c2try-tail-recursive-call fun args)
-    (let ((*inline-blocks* 0))
+    (let ((*inline-blocks* 0)
+          (*temp* *temp*))
       (unwind-exit (list 'CALL-NORMAL fun (coerce-locs (inline-args args))))
       (close-inline-blocks))))
 

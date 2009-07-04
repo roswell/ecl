@@ -102,6 +102,7 @@
    (t
     (let* ((nv (length forms))
 	   (*inline-blocks* 0)
+           (*temp* *temp*)
 	   (forms (nreverse (coerce-locs (inline-args forms)))))
       ;; By inlining arguments we make sure that VL has no call to funct.
       ;; Reverse args to avoid clobbering VALUES(0)

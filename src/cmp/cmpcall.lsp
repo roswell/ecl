@@ -94,11 +94,9 @@
     (when (and fun (c2try-tail-recursive-call fun args))
       (return-from c2call-global))
     (let* ((*inline-blocks* 0)
-           (destination-rep-type (loc-representation-type *destination*))
-           (destination-type (loc-type *destination*)))
-      (unwind-exit (call-global-loc fname fun (inline-args args)
-                                    (type-and return-type destination-type)
-                                    destination-rep-type))
+           (*temp* *temp*))
+      (unwind-exit (call-global-loc fname fun args return-type
+                                    (loc-type *destination*)))
       (close-inline-blocks))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -112,45 +110,51 @@
 ;;;   ARGS: a list of typed locs with arguments
 ;;;   RETURN-TYPE: the type to which the output is coerced
 ;;;
-(defun call-global-loc (fname fun args return-type &optional (return-rep-type 'any)
-                        &aux loc found fd minarg maxarg)
-  (cond
-    ;; Check whether it is a global function that we cannot call directly.
-     ((and (or (null fun) (fun-global fun)) (not (inline-possible fname)))
-      (call-unknown-global-loc fname nil args))
+(defun call-global-loc (fname fun args return-type expected-type)
+  ;; Check whether it is a global function that we cannot call directly.
+  (when (and (or (null fun) (fun-global fun)) (not (inline-possible fname)))
+    (return-from call-global-loc
+      (call-unknown-global-loc fname nil (inline-args args))))
 
-     ;; Open-codable function call.
-     ((and (or (null fun) (fun-global fun))
-	   (setq loc (inline-function fname args return-type return-rep-type)))
-      loc)
+  ;; Open-codable function.
+  (let* ((arg-types (mapcar #'c1form-type args))
+         (ii (inline-function fname arg-types (type-and return-type expected-type))))
+    (setf args (inline-args args (and ii (inline-info-arg-types ii))))
+    (when ii
+      (return-from call-global-loc (apply-inline-info ii args))))
 
-     ;; Call to a function defined in the same file. Direct calls are
-     ;; only emitted for low or neutral values of DEBUG is >= 2.
-     ((and (<= (cmp-env-optimization 'debug) 1)
-	   (or (fun-p fun)
-	       (and (null fun)
-		    (setf fun (find fname *global-funs* :test #'same-fname-p
+  ;; Call to a function defined in the same file. Direct calls are
+  ;; only emitted for low or neutral values of DEBUG is >= 2.
+  (when (and (<= (cmp-env-optimization 'debug) 1)
+             (or (fun-p fun)
+                 (and (null fun)
+                      (setf fun (find fname *global-funs* :test #'same-fname-p
 				      :key #'fun-name)))))
-      (call-loc fname fun args))
+    (return-from call-global-loc (call-loc fname fun args)))
 
-     ;; Call to a global (SETF ...) function
-     ((not (symbolp fname))
-      (call-unknown-global-loc fname nil args))
+  ;; Call to a global (SETF ...) function
+  (when (not (symbolp fname))
+    (return-from call-global-loc (call-unknown-global-loc fname nil args)))
 
-     ;; Call to a function whose C language function name is known,
-     ;; either because it has been proclaimed so, or because it belongs
-     ;; to the runtime.
-     ((and (<= (cmp-env-optimization 'debug) 1)
-	   (setf fd (get-sysprop fname 'Lfun))
-	   (multiple-value-setq (minarg maxarg) (get-proclaimed-narg fname)))
-      (call-exported-function-loc fname args fd minarg maxarg
-				  #-ecl-min nil
-				  #+ecl-min (member fname *in-all-symbols-functions*)))
+  ;; Call to a function whose C language function name is known,
+  ;; either because it has been proclaimed so, or because it belongs
+  ;; to the runtime.
+  (when (and (<= (cmp-env-optimization 'debug) 1)
+             (setf fd (get-sysprop fname 'Lfun)))
+    (multiple-value-bind (minarg maxarg) (get-proclaimed-narg fname)
+      (return-from call-global-loc
+        (call-exported-function-loc
+         fname args fd minarg maxarg
+         #-ecl-min nil
+         #+ecl-min (member fname *in-all-symbols-functions*)))))
 
-     ((multiple-value-setq (found fd minarg maxarg) (si::mangle-name fname t))
-      (call-exported-function-loc fname args fd minarg maxarg t))
+  (multiple-value-bind (found fd minarg maxarg)
+      (si::mangle-name fname t)
+    (when found
+      (return-from call-global-loc
+        (call-exported-function-loc fname args fd minarg maxarg t))))
 
-     (t (call-unknown-global-loc fname nil args))))
+  (call-unknown-global-loc fname nil args))
 
 (defun call-loc (fname fun args)
   `(CALL-NORMAL ,fun ,(coerce-locs args)))
@@ -271,6 +275,7 @@
 		     (nth n *text-for-lexical-level*) x))
 	     (push x args))))))
     (unless (<= minarg narg maxarg)
+      (baboon)
       (cmperr "Wrong number of arguments for function ~S"
               (or fun-lisp-name 'ANONYMOUS)))
     (when (fun-needs-narg fun)

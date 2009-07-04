@@ -83,6 +83,8 @@
   (abort))
 
 (defun handle-compiler-internal-error (c)
+  (when *compiler-break-enable*
+    (si::default-debugger c))
   (setf c (make-condition 'compiler-internal-error
                           :format-control "~A"
                           :format-arguments (list c)))

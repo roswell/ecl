@@ -162,7 +162,7 @@
     (setq rep-type (if type (lisp-type->rep-type type) :object)))
   (unless type
     (setq type 'T))
-  (make-var :kind rep-type :type type :loc `(LCL ,(incf *lcl*))))
+  (make-var :kind rep-type :type type :loc (next-lcl)))
 
 (defun make-temp-var (&optional (type 'T))
   (make-var :kind :object :type type :loc `(TEMP ,(next-temp))))

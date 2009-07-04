@@ -230,6 +230,7 @@
   )
 
 (defstruct (inline-info)
+  name			;;; Function name
   arg-rep-types		;;; List of representation types for the arguments
   return-rep-type	;;; Representation type for the output
   arg-types		;;; List of lisp types for the arguments
@@ -264,6 +265,7 @@
 ;;; Variables and constants for error handling
 ;;;
 (defvar *current-form* '|compiler preprocess|)
+(defvar *current-c2form* nil)
 (defvar *compile-file-position* -1)
 (defvar *first-error* t)
 (defconstant *cmperr-tag* (cons nil nil))
