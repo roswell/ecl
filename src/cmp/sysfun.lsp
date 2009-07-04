@@ -244,10 +244,10 @@
  "(#0)->array.rank")
 
 (proclaim-function array-dimension (array fixnum) fixnum)
-(def-inline array-dimension :unsafe (array t) :fixnum
- "(#0)->array.dims[fix(#1)]")
-(def-inline array-dimension :unsafe (array fixnum) :fixnum
- "(#0)->array.dims[#1]")
+(def-inline array-dimension :always (t t) fixnum
+ "ecl_array_dimension(#0,fixint(#1))")
+(def-inline array-dimension :always (t fixnum) fixnum
+ "ecl_array_dimension(#0,#1)")
 
 (proclaim-function array-total-size (array) t :no-side-effects t)
 (def-inline array-total-size :unsafe (t) :fixnum "((#0)->array.dim)")
