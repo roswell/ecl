@@ -723,14 +723,16 @@ cl_array_rank(cl_object a)
 cl_object
 cl_array_dimension(cl_object a, cl_object index)
 {
-	cl_index dim;
- AGAIN:
+	@(return MAKE_FIXNUM(ecl_array_dimension(a, fixnnint(index))))
+}
+
+cl_index
+ecl_array_dimension(cl_object a, cl_index index)
+{
 	switch (type_of(a)) {
 	case t_array: {
-		int i = ecl_fixnum_in_range(@'array-dimension',"dimension",index,
-					    0,a->array.rank);
-		dim  = a->array.dims[i];
-		break;
+                if (index > a->array.rank) FEwrong_dimensions(a, index+1);
+		return a->array.dims[index];
 	}
 #ifdef ECL_UNICODE
 	case t_string:
@@ -738,14 +740,11 @@ cl_array_dimension(cl_object a, cl_object index)
 	case t_base_string:
 	case t_vector:
 	case t_bitvector:
-		ecl_fixnum_in_range(@'array-dimension',"dimension",index,0,0);
-		dim = a->vector.dim;
-		break;
+                if (index) FEwrong_dimensions(a, index+1);
+		return a->vector.dim;
 	default:
-		a = ecl_type_error(@'array-dimension',"argument",a,@'array');
-		goto AGAIN;
+		FEtype_error_array(a);
 	}
-	@(return MAKE_FIXNUM(dim))
 }
 
 cl_object
