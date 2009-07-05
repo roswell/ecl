@@ -141,16 +141,7 @@
 
 (defun c1form-primary-type (form)
   (let ((type (c1form-type form)))
-    (when (and (consp type) (eq (first type) 'VALUES))
-      (let ((subtype (second type)))
-	(when (or (eq subtype '&optional)	(eq subtype '&rest))
-	  (setf subtype (third (c1form-type form)))
-	  (when (eq subtype '&optional)
-	    (cmperr "Syntax error in type expression ~S" type)))
-	(when (eq subtype '&rest)
-	  (cmperr "Syntax error in type expression ~S" type))
-	(setf type subtype)))
-    type))
+    (values-type-primary-type type)))
 
 (defun find-node-in-list (home-node list)
   (flet ((parent-node-p (node presumed-child)
