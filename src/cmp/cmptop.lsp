@@ -166,10 +166,19 @@
       (wt-nl "memcpy(VV, data->vector.self.t, VM*sizeof(cl_object));}"))
     (wt-nl "VVtemp = Cblock->cblock.temp_data;")
 
+    ;; Type propagation phase
+
+    (when *do-type-propagation*
+      (setq *compiler-phase* 'p1propagate)
+      (dolist (form *top-level-forms*)
+        (p1propagate form nil))
+      (dolist (fun *local-funs*)
+        (p1propagate (fun-lambda fun) nil)))
+
     (setq *compiler-phase* 't2)
 
     ;; useless in initialization.
-    (dolist (form (nconc (nreverse *make-forms*) *top-level-forms*))
+    (dolist (form (nconc (reverse *make-forms*) *top-level-forms*))
       (let* ((*compile-to-linking-call* nil)
              (*compile-file-truename* (and form (c1form-file form)))
              (*compile-file-position* (and form (c1form-file-position form)))
@@ -450,6 +459,9 @@
   (let ((*compile-toplevel* nil)
 	(*compile-time-too* nil))
     (add-load-time-values (make-c1form* 'ORDINARY :args (c1expr form)))))
+
+(defun p1ordinary (c1form assumptions form)
+  (p1propagate form assumptions))
 
 (defun t2ordinary (form)
   (let* ((*exit* (next-label))
@@ -741,6 +753,9 @@
 				    (c1expr pprint))))))))
     (c1call-global 'SI:FSET (list fname def macro pprint))))
 
+(defun p1fset (c1form assumptions fun fname macro pprint c1forms)
+  (p1propagate (fun-lambda fun) assumptions))
+
 (defun c2fset (fun fname macro pprint c1forms)
   (when (fun-no-entry fun)
     (wt-nl "(void)0; /* No entry created for "
@@ -795,6 +810,11 @@
 (put-sysprop 'SYMBOL-MACROLET 'T1 'c1symbol-macrolet)
 (put-sysprop 'LOAD-TIME-VALUE 'C1 'c1load-time-value)
 (put-sysprop 'SI:FSET 'C1 'c1fset)
+
+;;; Pass 1 1/2 type propagation
+
+(put-sysprop 'ORDINARY 'P1PROPAGATE 'p1ordinary)
+(put-sysprop 'SI:FSET 'P1PROPAGATE 'p1fset)
 
 ;;; Pass 2 initializers.
 

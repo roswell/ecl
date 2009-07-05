@@ -488,6 +488,9 @@ coprocessor).")
 
 ;;; --cmptop.lsp--
 ;;;
+(defvar *do-type-propagation* nil
+  "Flag for switching on the type propagation phase. Use with care, experimental.")
+
 (defvar *compiler-phase* nil)
 
 (defvar *volatile*)
