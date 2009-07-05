@@ -81,6 +81,13 @@
 ;;;
 ;;;
 
+(defvar *type-propagation-messages* nil)
+
+(eval-when (eval compile)
+  (defmacro prop-message (&rest args)
+    `(when *type-propagation-messages*
+       (format t ,@args))))
+
 (defun p1propagate (form assumptions)
   (let* ((name (c1form-name form))
          (type (c1form-type form))
@@ -90,16 +97,16 @@
                   (record (assoc var assumptions)))
              (when record
                (setf type (type-and (cdr record) type)))
-             (format t "~&;;; Querying variable ~A gives ~A" (var-name var) type)
+             (prop-message "~&;;; Querying variable ~A gives ~A" (var-name var) type)
              (values (setf (c1form-type form) type) assumptions)))
           ((setf propagator (get-sysprop name 'p1propagate))
            (multiple-value-bind (type assumptions)
                (apply propagator form assumptions (c1form-args form))
-             (format t "~&;;; Propagating ~A gives type ~A" name type)
+             (prop-message "~&;;; Propagating ~A gives type ~A" name type)
              (values (setf (c1form-type form) (values-type-and (c1form-type form) type))
                      assumptions)))
           (t
-           (format t "~&;;; Refusing to propagate ~A" name type)
+           (prop-message "~&;;; Refusing to propagate ~A" name type)
            (values (c1form-type form) assumptions)))))
 
 (defun p1propagate-list (list assumptions)
@@ -110,11 +117,11 @@
 
 (defun print-assumptions (message assumptions &optional always-p)
   (when (and always-p (null assumptions))
-    (format t "~&;;; ~A: NIL" message))
+    (prop-message "~&;;; ~A: NIL" message))
   (when assumptions
-    (format t "~&;;; ~A:" message))
+    (prop-message "~&;;; ~A:" message))
     (dolist (record assumptions)
-      (format t "~&;;; ~A : ~A" (var-name (car record)) (cdr record))))
+      (prop-message "~&;;; ~A : ~A" (var-name (car record)) (cdr record))))
 
 (defun p1merge-branches (root chains)
   (let* ((all-new-variables (make-hash-table))
@@ -145,9 +152,9 @@
 
 (defun p1expand-assumptions (var type assumptions)
   (unless (member (var-kind var) '(LEXICAL CLOSURE SPECIAL GLOBAL REPLACED))
-    (format t "~&;;; Adding variable ~A with type ~A" (var-name var) type)
+    (prop-message "~&;;; Adding variable ~A with type ~A" (var-name var) type)
     (unless (var-functions-setting var)
-      (format t "~&;;; Changing type of read-only variable ~A" (var-name var))
+      (prop-message "~&;;; Changing type of read-only variable ~A" (var-name var))
       (setf (var-type var) type (var-kind var) (lisp-type->rep-type type)))
     (setf assumptions (acons var type assumptions))))
 
@@ -168,7 +175,7 @@
             (p1propagate v assumptions)
           (setf assumptions local-ass))
      finally (let ((type (propagate-types fname args nil)))
-               (format t "~&;;; Computing output of function ~A with args~&;;;  ~{ ~A~}~&;;; gives ~A, while before ~A"
+               (prop-message "~&;;; Computing output of function ~A with args~&;;;  ~{ ~A~}~&;;; gives ~A, while before ~A"
                        fname (mapcar #'c1form-type args) type (c1form-type c1form))
                (return (values type assumptions)))))
 
@@ -191,7 +198,7 @@
         (values (type-or t1 t2) (p1merge-branches assumptions (list a1 a2)))))))
 
 (defun p1lambda (c1form assumptions lambda-list doc body &rest not-used)
-  (format t "~&;;;~&;;; Propagating function~&;;;")
+  (prop-message "~&;;;~&;;; Propagating function~&;;;")
   (let ((type (p1propagate body assumptions)))
     (values type assumptions)))
 
