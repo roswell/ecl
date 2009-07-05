@@ -70,7 +70,7 @@
 ;;;	(ORDINARY	c1form)
 ;;;	(LOAD-TIME-VALUE dest-loc value-c1form)
 ;;;	(FSET		function-object vv-loc, macro-p pprint-p lambda-form)
-;;;	(MAKE-FORM	vv-loc value-c1form)
+;v;;	(MAKE-FORM	vv-loc value-c1form)
 ;;;	(INIT-FORM	vv-loc value-c1form)
 ;;;
 ;;;	body =		(c1form*)
@@ -82,7 +82,6 @@
 ;;;
 
 (defun p1propagate (form assumptions)
-  
   (let* ((name (c1form-name form))
          (type (c1form-type form))
          propagator)
@@ -108,6 +107,41 @@
      for f in list
      do (multiple-value-setq (final-type assumptions) (p1propagate f assumptions))
      finally (return (values final-type assumptions))))
+
+(defun print-assumptions (message assumptions &optional always-p)
+  (when (and always-p (null assumptions))
+    (format t "~&;;; ~A: NIL" message))
+  (when assumptions
+    (format t "~&;;; ~A:" message))
+    (dolist (record assumptions)
+      (format t "~&;;; ~A : ~A" (var-name (car record)) (cdr record))))
+
+(defun p1merge-branches (root chains)
+  (let* ((all-new-variables (make-hash-table))
+         (scanned (make-hash-table)))
+    (print-assumptions "Root branch" root t)
+    (dolist (l chains)
+      (print-assumptions "Extra branch" (ldiff l root)))
+    (loop for c in chains
+       do (clrhash scanned)
+       do (loop for list on c
+             for record = (first list)
+             until (eq list root)
+             do (let* ((var (car record))
+                       (type (cdr record)))
+                  (unless (gethash var scanned)
+                    (setf (gethash var scanned) type)
+                    (let ((other-type (gethash var all-new-variables :missing)))
+                      (unless (eq other-type :missing)
+                        (setf type (type-or type other-type)))
+                      (setf (gethash var all-new-variables) type))))))
+    (loop with new-root = root
+       for var being the hash-key in all-new-variables
+       using (hash-value type)
+       do (setf new-root (acons var type new-root))
+       finally (progn
+                 (print-assumptions "Output branch" (ldiff new-root root) t)
+                 (return new-root)))))
 
 (defun p1expand-assumptions (var type assumptions)
   (unless (member (var-kind var) '(LEXICAL CLOSURE SPECIAL GLOBAL REPLACED))
@@ -150,9 +184,11 @@
 (defun p1if (c1form assumptions fmla true-branch false-branch)
   (multiple-value-bind (fmla-type assumptions)
       (p1propagate fmla assumptions)
-    (let ((t1 (p1propagate true-branch assumptions))
-          (t2 (p1propagate false-branch assumptions)))
-      (values (type-or t1 t2) assumptions))))
+    (multiple-value-bind (t1 a1)
+        (p1propagate true-branch assumptions)
+      (multiple-value-bind (t2 a2)
+          (p1propagate false-branch assumptions)
+        (values (type-or t1 t2) (p1merge-branches assumptions (list a1 a2)))))))
 
 (defun p1lambda (c1form assumptions lambda-list doc body &rest not-used)
   (format t "~&;;;~&;;; Propagating function~&;;;")
@@ -198,11 +234,13 @@
 
 (defun p1tagbody (c1form assumptions tag-loc body)
   (loop with local-ass = assumptions
+     with ass-list = '()
      for f in body
      do (if (tag-p f)
-            (setf local-ass assumptions)
-            (multiple-value-setq (aux local-ass) (p1propagate f local-ass))))
-  (values 'null assumptions))
+            (setf ass-list (cons local-ass ass-list)
+                  local-ass assumptions)
+            (multiple-value-setq (aux local-ass) (p1propagate f local-ass)))
+     finally (return (values 'null (p1merge-branches assumptions ass-list)))))
 
 (defun p1unwind-protect (c1form assumptions form body)
   (multiple-value-bind (output-type assumptions)
