@@ -45,6 +45,10 @@ ECL 9.7.1:
 
  - The toplevel only traps SERIOUS-CONDITIONS.
 
+ - "make clean" now wipes out the entire content of the build directory. Please
+   use this before re-configuring again ECL so that header and configuration
+   files are properly updated.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
