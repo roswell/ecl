@@ -185,11 +185,13 @@ uninstall:
 doc: $(TARGETS)
 	cd doc; $(MAKE)
 
-clean: clean_lisp
+clean: mostlyclean
+	$(RM) -r *
+mostlyclean: clean_lisp
 	for i in $(SUBDIRS); do (cd $$i; $(MAKE) clean); done
 	$(RM) ecl_min$(EXE) bin/ecl$(EXE) help.doc core a.out
 	$(RM) config.version config.log config.cache
-	$(RM) *.c *.o *.a *.h *.data *.fas
+	$(RM) *.c *.o *.a *.h *.data *.fas *.dat *.la *.so *.dylib
 clean_lisp:
 	for i in lsp cmp clos clx tk ext; do $(RM) lib$$i.a $$i/?*.{o,data,c,sdat,h,fas}; done
 	$(RM) help.doc
