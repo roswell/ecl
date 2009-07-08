@@ -140,8 +140,7 @@
   (if (c1form-volatile form) "volatile " ""))
 
 (defun c1form-primary-type (form)
-  (let ((type (c1form-type form)))
-    (values-type-primary-type type)))
+  (values-type-primary-type (c1form-type form)))
 
 (defun find-node-in-list (home-node list)
   (flet ((parent-node-p (node presumed-child)

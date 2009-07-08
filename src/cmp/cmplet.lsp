@@ -125,7 +125,7 @@
 	((not (c1form-p x)))
 	((eq (c1form-name x) 'VAR)
 	 (when (eq var (c1form-arg 0 x))
-	   (setf (c1form-type x) (type-and (c1form-type x) type))))
+	   (setf (c1form-type x) (type-and (c1form-primary-type x) type))))
 	(t
 	 (update-var-type var type (c1form-args x)))))
 
