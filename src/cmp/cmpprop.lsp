@@ -81,12 +81,12 @@
 ;;;
 ;;;
 
-(defvar *type-propagation-messages* nil)
+(defvar *type-propagation-messages* t)
 
 (eval-when (eval compile)
   (defmacro prop-message (&rest args)
     `(when *type-propagation-messages*
-       (format t ,@args))))
+       (format *standard-output* ,@args))))
 
 (defun p1propagate (form assumptions)
   (let* ((name (c1form-name form))
@@ -100,6 +100,7 @@
              (prop-message "~&;;; Querying variable ~A gives ~A" (var-name var) type)
              (values (setf (c1form-type form) type) assumptions)))
           ((setf propagator (get-sysprop name 'p1propagate))
+           (prop-message "~&;;; Entering type propagation for ~A" name)
            (multiple-value-bind (type assumptions)
                (apply propagator form assumptions (c1form-args form))
              (prop-message "~&;;; Propagating ~A gives type ~A" name type)
@@ -124,6 +125,9 @@
       (prop-message "~&;;; ~A : ~A" (var-name (car record)) (cdr record))))
 
 (defun p1merge-branches (root chains)
+  (when (null (rest chains))
+    (print-assumptions "Only one branch" (first chains))
+    (return-from p1merge-branches (first chains)))
   (let* ((all-new-variables (make-hash-table))
          (scanned (make-hash-table)))
     (print-assumptions "Root branch" root t)
@@ -153,7 +157,7 @@
 (defun p1expand-assumptions (var type assumptions)
   (unless (member (var-kind var) '(LEXICAL CLOSURE SPECIAL GLOBAL REPLACED))
     (prop-message "~&;;; Adding variable ~A with type ~A" (var-name var) type)
-    (unless (var-functions-setting var)
+    (unless (or (var-set-nodes var) (var-functions-setting var))
       (prop-message "~&;;; Changing type of read-only variable ~A" (var-name var))
       (setf (var-type var) type (var-kind var) (lisp-type->rep-type type)))
     (setf assumptions (acons var type assumptions))))
@@ -169,7 +173,6 @@
             assumptions)))
 
 (defun p1call-global (c1form assumptions fname args &optional (return-type t))
-  (print args)
   (loop for v in args
      do (multiple-value-bind (arg-type local-ass)
             (p1propagate v assumptions)
@@ -239,15 +242,61 @@
     (let ((type (type-and (var-type var) value-type)))
       (values type (p1expand-assumptions var type assumptions)))))
 
+(defvar *tagbody-depth* -1
+  "If n > 0, limit the number of passes to converge tagbody forms. If
+-1, let the compiler do as many passes as it wishes. Complexity grows
+as 2^*tagbody-limit* in the worst cases.")
+
 (defun p1tagbody (c1form assumptions tag-loc body)
+  (let ((*tagbody-depth* *tagbody-depth*))
+    (cond ((zerop *tagbody-depth*)
+           (p1tagbody-simple c1form assumptions tag-loc body))
+          (t
+           (setf *tagbody-depth* (1- *tagbody-depth*))
+           (p1tagbody-many-passes c1form assumptions tag-loc body)))))
+
+(defun filter-only-declarations (assumptions)
+  nil)
+
+(defun p1tagbody-one-pass (c1form assumptions tag-loc body)
   (loop with local-ass = assumptions
      with ass-list = '()
      for f in body
      do (if (tag-p f)
-            (setf ass-list (cons local-ass ass-list)
-                  local-ass assumptions)
+            (let ((diff (ldiff local-ass assumptions)))
+              (when diff
+                (push diff ass-list))
+              (setf local-ass assumptions))
             (multiple-value-setq (aux local-ass) (p1propagate f local-ass)))
-     finally (return (values 'null (p1merge-branches assumptions ass-list)))))
+     finally (return
+               (let ((diff (ldiff local-ass assumptions)))
+                 (if diff
+                     (cons diff ass-list)
+                     ass-list)))))
+
+(defun p1tagbody-simple (c1form orig-assumptions tag-loc body)
+  (prop-message "~&;;; P1TAGBODY-SIMPLE pass")
+  (print-assumptions "Orig assumptions:" orig-assumptions)
+  (let* ((assumptions (filter-only-declarations orig-assumptions))
+         (ass-list (p1tagbody-one-pass c1form assumptions tag-loc body)))
+    (values 'null (append (p1merge-branches nil ass-list) orig-assumptions))))
+
+(defun p1tagbody-many-passes (c1form orig-assumptions tag-loc body)
+  (loop with orig-ass-list = '()
+     with assumptions = orig-assumptions
+     for i from 0 below 3
+     for foo = (prop-message "~&;;; P1TAGBODY-MANY-PASSES pass ~D" i)
+     for ass-list = (p1tagbody-one-pass c1form orig-assumptions tag-loc body)
+     for new-assumptions = (nconc (p1merge-branches nil ass-list)  orig-assumptions)
+     for end = (or (equalp assumptions (setf assumptions new-assumptions))
+                   (eql assumptions orig-assumptions))
+     until end
+     finally (cond (end
+                    (prop-message "~&;;; P1TAGBODY-MANY-PASSES exists at ~D" i)
+                    (return (values 'null assumptions)))
+                   (t
+                    (prop-message "~&;;; P1TAGBODY-MANY-PASSES refuses at ~D" i)
+                    (p1tagbody-simple c1form orig-assumptions tag-loc body)))))
 
 (defun p1unwind-protect (c1form assumptions form body)
   (multiple-value-bind (output-type assumptions)
