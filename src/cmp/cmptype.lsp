@@ -169,6 +169,27 @@
       (setf type subtype)))
   type)
 
+(defun values-type-to-n-types (type length)
+  (if (or (atom type) (not (eql (first type) 'values)))
+      (list* type (make-list (1- length) :initial-element 'NULL))
+      (do* ((l (rest type))
+            (output '())
+            (n length (1- n)))
+           ((or (null l) (zerop n)) (nreverse output))
+        (let ((t (pop l)))
+          (case t
+            (&optional
+             (when (null l)
+               (cmperr "Syntax error in type expression ~S" type))
+             (setf t (pop l)))
+            (&rest
+             (when (null l)
+               (cmperr "Syntax error in type expression ~S" type))
+             (setf t (pop l))
+             (return-from values-type-to-n-types
+               (nreconc output (make-list n :initial-element l)))))
+          (push t output)))))
+
 (defun values-type-and (t1 t2)
   (labels ((values-type-p (type)
              (and (consp type) (eq (first type) 'VALUES)))
