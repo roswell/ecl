@@ -750,7 +750,6 @@
 (def-inline / :always (fixnum-float fixnum-float) :float
  "(float)(#0)/(float)(#1)" :exact-return-type t)
 (def-inline / :always (fixnum fixnum) :fixnum "(#0)/(#1)" :exact-return-type t)
-(def-inline / :unsafe (integer integer) integer "ecl_integer_divide(#0,#1)")
 
 (proclaim-function 1+ (t) t :no-side-effects t)
 (def-inline 1+ :always (t) t "ecl_one_plus(#0)")
