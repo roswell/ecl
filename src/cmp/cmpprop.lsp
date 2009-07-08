@@ -162,6 +162,12 @@
       (setf (var-type var) type (var-kind var) (lisp-type->rep-type type)))
     (setf assumptions (acons var type assumptions))))
 
+(defun p1expand-many (var type assumptions)
+  (loop for v in var
+     for t in type
+     do (setf assumptions (p1expand-assumptions v t assumptions)))
+  assumptions)
+
 #+nil
 (trace c::p1propagate  c::p1progate-list c::p1expand-assumptions
        c::p1call-global)
@@ -232,6 +238,12 @@
   (loop for f in funs
      do (p1propagate funs assumptions))
   (p1propagate-list body assumptions))
+
+(defun p1multiple-value-bind (c1form assumptions vars-list init-c1form body)
+  (multiple-value-bind (init-form-type assumptions)
+      (p1propagate init-c1form assumptions)
+    (let ((new-types (values-type-to-n-types init-form-type (length vars-list))))
+      (p1propagate body (p1expand-many vars-list new-types assumptions)))))
 
 (defun p1progn (c1form assumptions forms)
   (p1propagate-list forms assumptions))
@@ -313,6 +325,7 @@ as 2^*tagbody-limit* in the worst cases.")
 (put-sysprop 'LET 'P1PROPAGATE 'p1let)
 (put-sysprop 'LET* 'P1PROPAGATE 'p1let*)
 (put-sysprop 'LOCALS 'p1propagate 'p1locals)
+(put-sysprop 'MULTIPLE-VALUE-BIND 'p1propagate 'p1multiple-value-bind)
 (put-sysprop 'PROGN 'P1PROPAGATE 'p1progn)
 (put-sysprop 'SETQ 'p1propagate 'p1setq)
 (put-sysprop 'tagbody 'p1propagate 'p1tagbody)
