@@ -183,19 +183,19 @@
             (output '())
             (n length (1- n)))
            ((or (null l) (zerop n)) (nreverse output))
-        (let ((t (pop l)))
-          (case t
+        (let ((type (pop l)))
+          (case type
             (&optional
              (when (null l)
                (cmperr "Syntax error in type expression ~S" type))
-             (setf t (pop l)))
+             (setf type (pop l)))
             (&rest
              (when (null l)
                (cmperr "Syntax error in type expression ~S" type))
-             (setf t (pop l))
+             (setf type (pop l))
              (return-from values-type-to-n-types
                (nreconc output (make-list n :initial-element l)))))
-          (push t output)))))
+          (push type output)))))
 
 (defun values-type-and (t1 t2)
   (labels ((values-type-p (type)
