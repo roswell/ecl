@@ -96,7 +96,7 @@
            (let* ((var (c1form-arg 0 form))
                   (record (assoc var assumptions)))
              (when record
-               (setf type (type-and (cdr record) type)))
+               (setf type (type-and (cdr record) (values-type-primary-type type))))
              (prop-message "~&;;; Querying variable ~A gives ~A" (var-name var) type)
              (values (setf (c1form-type form) type) assumptions)))
           ((setf propagator (get-sysprop name 'p1propagate))
@@ -116,7 +116,7 @@
      do (multiple-value-setq (final-type assumptions) (p1propagate f assumptions))
      finally (return (values final-type assumptions))))
 
-(defun print-assumptions (message assumptions &optional always-p)
+(defun print-assumptions (message assumptions &optional (always-p t))
   (when (and always-p (null assumptions))
     (prop-message "~&;;; ~A: NIL" message))
   (when assumptions
@@ -125,14 +125,24 @@
       (prop-message "~&;;; ~A : ~A" (var-name (car record)) (cdr record))))
 
 (defun p1merge-branches (root chains)
+  "ROOT is a list of assumptions, while CHAINS is list of extended versions of
+ROOT. This function takes all those extensions and makes a final list in which
+type assumptions have been merged, giving the variables the OR type of each
+of the occurrences in those lists."
+  ;; First the simple case in which we only have one list.
   (when (null (rest chains))
-    (print-assumptions "Only one branch" (first chains))
-    (return-from p1merge-branches (first chains)))
+    (setf root (first chains))
+    (print-assumptions "Only one branch" root)
+    (return-from p1merge-branches root))
+  ;; When we have to merge more than one list, we use a hash table in which
+  ;; we push all possible assumptions, merging the types with TYPE-OR.
   (let* ((all-new-variables (make-hash-table))
          (scanned (make-hash-table)))
     (print-assumptions "Root branch" root t)
     (dolist (l chains)
       (print-assumptions "Extra branch" (ldiff l root)))
+    ;; The first pass is filling the hash with unequal assumptions
+    ;; mergin the types
     (loop for c in chains
        do (clrhash scanned)
        do (loop for list on c
@@ -146,13 +156,35 @@
                       (unless (eq other-type :missing)
                         (setf type (type-or type other-type)))
                       (setf (gethash var all-new-variables) type))))))
+    ;; While the last pass is extending the list of assumptions with
+    ;; the merged ones.
     (loop with new-root = root
        for var being the hash-key in all-new-variables
        using (hash-value type)
        do (setf new-root (acons var type new-root))
        finally (progn
-                 (print-assumptions "Output branch" (ldiff new-root root) t)
+                 (print-assumptions "Output branch" new-root)
                  (return new-root)))))
+
+(defun revise-var-type (variable assumptions where-to-stop)
+  (unless (member (var-kind variable)
+                  '(LEXICAL CLOSURE SPECIAL GLOBAL REPLACED) :test #'eql)
+    (do* ((l assumptions (cdr l))
+          (variable-type nil))
+         ((or (null l) (eq l where-to-stop))
+          (prop-message "~&;;; Changing type of variable ~A to ~A"
+                        (var-name variable) variable-type)
+          (unless variable-type
+            (error "Variable ~A not found" (var-name variable)))
+          (setf (var-type variable) variable-type
+                (var-kind variable) (lisp-type->rep-type variable-type)))
+      (let ((record (first l)))
+        (print (list record (eql (car record) variable)))
+        (when (eql (car record) variable)
+          (let ((one-type (cdr record)))
+            (setf variable-type (if variable-type
+                                    (type-or variable-type one-type)
+                                    one-type))))))))
 
 (defun p1expand-assumptions (var type assumptions)
   (unless (member (var-kind var) '(LEXICAL CLOSURE SPECIAL GLOBAL REPLACED))
@@ -164,8 +196,8 @@
 
 (defun p1expand-many (var type assumptions)
   (loop for v in var
-     for t in type
-     do (setf assumptions (p1expand-assumptions v t assumptions)))
+     for v-t in type
+     do (setf assumptions (p1expand-assumptions v v-t assumptions)))
   assumptions)
 
 #+nil
@@ -198,41 +230,46 @@
   (p1propagate body assumptions))
 
 (defun p1if (c1form assumptions fmla true-branch false-branch)
-  (multiple-value-bind (fmla-type assumptions)
+  (multiple-value-bind (fmla-type base-assumptions)
       (p1propagate fmla assumptions)
     (multiple-value-bind (t1 a1)
-        (p1propagate true-branch assumptions)
+        (p1propagate true-branch base-assumptions)
       (multiple-value-bind (t2 a2)
-          (p1propagate false-branch assumptions)
-        (values (type-or t1 t2) (p1merge-branches assumptions (list a1 a2)))))))
+          (p1propagate false-branch base-assumptions)
+        (values (type-or t1 t2) (p1merge-branches base-assumptions (list a1 a2)))))))
 
 (defun p1lambda (c1form assumptions lambda-list doc body &rest not-used)
   (prop-message "~&;;;~&;;; Propagating function~&;;;")
   (let ((type (p1propagate body assumptions)))
     (values type assumptions)))
 
-(defun p1let (c1form assumptions vars forms body)
-  (let ((new-assumptions assumptions))
+(defun p1let (c1form base-assumptions vars forms body)
+  (let ((new-assumptions base-assumptions))
+    (loop for v in vars
+       for f in forms
+       do (multiple-value-bind (type ass)
+              (p1propagate f base-assumptions)
+            (setf new-assumptions (p1expand-assumptions v type new-assumptions))))
+    (multiple-value-bind (type assumptions)
+        (p1propagate body new-assumptions)
+      (loop for v in vars
+         do (revise-var-type v assumptions base-assumptions))
+      (values (setf (c1form-type c1form) type)
+              assumptions))))
+
+(defun p1let* (c1form base-assumptions vars forms body)
+  (let ((assumptions base-assumptions))
     (loop for v in vars
        for f in forms
        do (multiple-value-bind (type ass)
               (p1propagate f assumptions)
-            (setf new-assumptions (p1expand-assumptions v type new-assumptions))))
+            (setf assumptions (p1expand-assumptions v type assumptions))))
     (multiple-value-bind (type assumptions)
-        (p1propagate body new-assumptions)
+        (p1propagate body assumptions)
+      (loop for v in vars
+         do (revise-var-type v assumptions base-assumptions))
       (values (setf (c1form-type c1form) type)
               assumptions))))
-
-(defun p1let* (c1form assumptions vars forms body)
-  (loop for v in vars
-     for f in forms
-     do (multiple-value-bind (type ass)
-            (p1propagate f assumptions)
-          (setf assumptions (p1expand-assumptions v type assumptions))))
-  (multiple-value-bind (type assumptions)
-      (p1propagate body assumptions)
-    (values (setf (c1form-type c1form) type)
-            assumptions)))
 
 (defun p1locals (c1form assumptions funs body labels)
   (loop for f in funs
@@ -257,7 +294,7 @@
 (defun p1setq (c1form assumptions var c1form)
   (multiple-value-bind (value-type assumptions)
       (p1propagate c1form assumptions)
-    (let ((type (type-and (var-type var) value-type)))
+    (let ((type (type-and (var-type var) (values-type-primary-type value-type))))
       (values type (p1expand-assumptions var type assumptions)))))
 
 (defvar *tagbody-depth* -1
@@ -284,6 +321,7 @@ as 2^*tagbody-limit* in the worst cases.")
             (let ((diff (ldiff local-ass assumptions)))
               (when diff
                 (push diff ass-list))
+              (prop-message "~&;;; Label ~A found" (tag-name f))
               (setf local-ass assumptions))
             (multiple-value-setq (aux local-ass) (p1propagate f local-ass)))
      finally (return
@@ -304,10 +342,13 @@ as 2^*tagbody-limit* in the worst cases.")
      with assumptions = orig-assumptions
      for i from 0 below 3
      for foo = (prop-message "~&;;; P1TAGBODY-MANY-PASSES pass ~D" i)
-     for ass-list = (p1tagbody-one-pass c1form orig-assumptions tag-loc body)
-     for new-assumptions = (nconc (p1merge-branches nil ass-list)  orig-assumptions)
-     for end = (or (equalp assumptions (setf assumptions new-assumptions))
-                   (eql assumptions orig-assumptions))
+     for ass-list = (p1tagbody-one-pass c1form assumptions tag-loc body)
+     for faa = (progn
+                 (print-assumptions "Old tagbody assumptions" assumptions)
+                 (pprint ass-list))
+     for new-assumptions = (nconc (p1merge-branches nil ass-list) orig-assumptions)
+     for fee = (print-assumptions "New tagbody assumptions" new-assumptions)
+     for end = (equalp assumptions (setf assumptions new-assumptions))
      until end
      finally (cond (end
                     (prop-message "~&;;; P1TAGBODY-MANY-PASSES exists at ~D" i)
