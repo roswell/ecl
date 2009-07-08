@@ -275,7 +275,6 @@
 		     (nth n *text-for-lexical-level*) x))
 	     (push x args))))))
     (unless (<= minarg narg maxarg)
-      (baboon)
       (cmperr "Wrong number of arguments for function ~S"
               (or fun-lisp-name 'ANONYMOUS)))
     (when (fun-needs-narg fun)
