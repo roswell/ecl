@@ -791,16 +791,16 @@
 
 (proclaim-function ceiling (real *) (values integer real) :no-side-effects t)
 (def-inline ceiling :always (t) (values integer real) "ecl_ceiling1(#0)")
-(def-inline ceiling :always (t t) (values integer real) "ecl_ceiling2(#0)")
+(def-inline ceiling :always (t t) (values integer real) "ecl_ceiling2(#0,#1)")
 
 (proclaim-function truncate (real *) (values integer real) :no-side-effects t)
 (def-inline truncate :always (t) (values integer real) "ecl_truncate1(#0)")
-(def-inline truncate :always (t t) (values integer real) "ecl_truncate2(#0)")
+(def-inline truncate :always (t t) (values integer real) "ecl_truncate2(#0,#1)")
 (def-inline truncate :always (fixnum-float) :fixnum "(cl_fixnum)(#0)")
 
 (proclaim-function round (real *) (values integer real) :no-side-effects t)
 (def-inline round :always (t) (values integer real) "ecl_round1(#0)")
-(def-inline round :always (t t) (values integer real) "ecl_round2(#0)")
+(def-inline round :always (t t) (values integer real) "ecl_round2(#0,#1)")
 
 (proclaim-function mod (real real) real :no-side-effects t)
 (def-inline mod :always (t t) t "(ecl_floor2(#0,#1),cl_env_copy->values[1])")
@@ -952,7 +952,6 @@
 (def-inline expt :always ((integer 2 2) (integer 0 29)) :fixnum "(1<<(#1))")
 (def-inline expt :always ((integer 0 0) t) :fixnum "0")
 (def-inline expt :always ((integer 1 1) t) :fixnum "1")
-(def-inline expt :always (fixnum fixnum) integer "ecl_fixnum_expt(#0,#1)")
 
 (proclaim-function log (t *) t :no-side-effects t)
 (def-inline log :always (fixnum-float) :double "log((double)(#0))" :exact-return-type t)
@@ -1360,8 +1359,8 @@
 (proclaim-function gentemp (*) symbol)
 (proclaim-function symbol-package (symbol) t)
 (proclaim-function keywordp (t) t :predicate t)
-(proclaim-function si:put-f (*) (t t))
-(proclaim-function si:rem-f (*) (t t))
+(proclaim-function si:put-f (list t t) t)
+(proclaim-function si:rem-f (list t) boolean)
 (proclaim-function si:set-symbol-plist (symbol t) t)
 (proclaim-function si:putprop (t t t) t)
 (proclaim-function si:put-sysprop (t t t) t)
