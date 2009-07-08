@@ -950,10 +950,11 @@
 (proclaim-function random (t *) t)
 (proclaim-function make-random-state (*) t)
 (proclaim-function random-state-p (t) t :predicate t)
-(proclaim-function expt (t t) t :no-side-effects t)
+(proclaim-function expt (number number) number :no-side-effects t)
 (def-inline expt :always ((integer 2 2) (integer 0 29)) :fixnum "(1<<(#1))")
 (def-inline expt :always ((integer 0 0) t) :fixnum "0")
 (def-inline expt :always ((integer 1 1) t) :fixnum "1")
+(def-inline expt :always (fixnum fixnum) integer "ecl_fixnum_expt(#0,#1)")
 
 (proclaim-function log (t *) t :no-side-effects t)
 (def-inline log :always (fixnum-float) :double "log((double)(#0))" :exact-return-type t)
