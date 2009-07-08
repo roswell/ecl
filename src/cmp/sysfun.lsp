@@ -50,12 +50,9 @@
 			     &key no-sp-change predicate no-side-effects)
   (unless (or (null arg-types)
 	      (equal arg-types '(*)))
-    (put-sysprop name 'proclaimed-arg-types
-		 (mapcar #'(lambda (x) (if (eql x '*) '* (type-filter x)))
-			 arg-types)))
+    (put-sysprop name 'proclaimed-arg-types arg-types))
   (when (and return-type (not (eq 'T return-type)))
-    (put-sysprop name 'proclaimed-return-type
-		 (if (eql return-type '*) '* (type-filter return-type t))))
+    (put-sysprop name 'proclaimed-return-type return-type))
   (when no-sp-change
     (put-sysprop name 'no-sp-change t))
   (when predicate
@@ -789,7 +786,7 @@
 
 (proclaim-function floor (real *) (values integer real) :no-side-effects t)
 (def-inline floor :always (t) (values integer real) "ecl_floor1(#0)")
-(def-inline floor :always (t t) (values integer real) "ecl_floor2(#0)")
+(def-inline floor :always (t t) (values integer real) "ecl_floor2(#0,#1)")
 (def-inline floor :always (fixnum fixnum) :fixnum
  "@01;(#0>=0&&#1>0?(#0)/(#1):ecl_ifloor(#0,#1))")
 
