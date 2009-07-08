@@ -151,9 +151,13 @@
 	   (cmpwarn "Unsupported CONS type ~S. Replacing it with T." t2)
 	   t1)
 	  ((null tag1)
+           (setf c::*compiler-break-enable* t)
+           (error "foo")
 	   (cmpwarn "Unknown type ~S. Assuming it is T." t1)
 	   t2)
 	  (t
+           (setf c::*compiler-break-enable* t)
+           (error "foo")
 	   (cmpwarn "Unknown type ~S. Assuming it is T." t2)
 	   t1))))
 
@@ -161,11 +165,14 @@
   (when (and (consp type) (eq (first type) 'VALUES))
     (let ((subtype (second type)))
       (when (or (eq subtype '&optional) (eq subtype '&rest))
-        (setf subtype type)
-        (when (eq subtype '&optional)
-          (cmperr "Syntax error in type expression ~S" type)))
-      (when (eq subtype '&rest)
-        (cmperr "Syntax error in type expression ~S" type))
+        (setf type (cddr type))
+        (when (or (null type)
+                  (eq (setf subtype (first type)) '&optional)
+                  (eq subtype '&rest))
+          (cmperr "Syntax error in type expression ~S" type))
+        ;; An &optional or &rest output value might be missing
+        ;; If this is the case, the the value will be NIL.
+        (setf subtype (type-or 'null subtype)))
       (setf type subtype)))
   type)
 
