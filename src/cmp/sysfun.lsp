@@ -46,7 +46,7 @@
 
 (in-package "COMPILER")
 
-(defmacro proclaim-function (name arg-types return-type
+(defmacro proclaim-function (&whole form name arg-types return-type
 			     &key no-sp-change predicate no-side-effects)
   (unless (or (null arg-types)
 	      (equal arg-types '(*)))
@@ -81,6 +81,9 @@
 		arg-types))
   (when (eq return-rep-type t)
     (setf return-rep-type :object))
+  ;; HACK!
+  (when (and (consp return-rep-type) (eql (first return-rep-type) 'VALUES))
+    (setf return-rep-type (second return-rep-type)))
   (let* ((return-type (rep-type->lisp-type return-rep-type))
          (inline-info
           (make-inline-info :name name
@@ -750,6 +753,7 @@
 (def-inline / :always (fixnum-float fixnum-float) :float
  "(float)(#0)/(float)(#1)" :exact-return-type t)
 (def-inline / :always (fixnum fixnum) :fixnum "(#0)/(#1)" :exact-return-type t)
+(def-inline / :unsafe (integer integer) integer "ecl_integer_divide(#0,#1)")
 
 (proclaim-function 1+ (t) t :no-side-effects t)
 (def-inline 1+ :always (t) t "ecl_one_plus(#0)")
@@ -769,28 +773,44 @@
 
 ;; file num_co.d
 
-(proclaim-function float (t *) t :no-side-effects t)
+(proclaim-function float (real *) float :no-side-effects t)
 (def-inline float :always (t single-float) :float "ecl_to_float(#0)")
 (def-inline float :always (t double-float) :double "ecl_to_double(#0)")
 (def-inline float :always (fixnum-float) :double "((double)(#0))" :exact-return-type t)
 (def-inline float :always (fixnum-float) :float "((float)(#0))" :exact-return-type t)
 
-(proclaim-function numerator (t) t)
-(proclaim-function denominator (t) t)
-(proclaim-function floor (t *) (values t t) :no-side-effects t)
+(proclaim-function numerator (rational) integer :no-side-effects t)
+(def-inline numerator :unsafe (integer) integer "(#0)")
+(def-inline numerator :unsafe (ratio) integer "(#0)->ratio.num")
+
+(proclaim-function denominator (rational) integer :no-side-effects t)
+(def-inline denominator :unsafe (integer) integer "MAKE_FIXNUM(1)")
+(def-inline denominator :unsafe (ratio) integer "(#0)->ratio.den")
+
+(proclaim-function floor (real *) (values integer real) :no-side-effects t)
+(def-inline floor :always (t) (values integer real) "ecl_floor1(#0)")
+(def-inline floor :always (t t) (values integer real) "ecl_floor2(#0)")
 (def-inline floor :always (fixnum fixnum) :fixnum
  "@01;(#0>=0&&#1>0?(#0)/(#1):ecl_ifloor(#0,#1))")
 
-(proclaim-function ceiling (t *) (values t t))
-(proclaim-function truncate (t *) (values t t) :no-side-effects t)
+(proclaim-function ceiling (real *) (values integer real) :no-side-effects t)
+(def-inline ceiling :always (t) (values integer real) "ecl_ceiling1(#0)")
+(def-inline ceiling :always (t t) (values integer real) "ecl_ceiling2(#0)")
+
+(proclaim-function truncate (real *) (values integer real) :no-side-effects t)
+(def-inline truncate :always (t) (values integer real) "ecl_truncate1(#0)")
+(def-inline truncate :always (t t) (values integer real) "ecl_truncate2(#0)")
 (def-inline truncate :always (fixnum-float) :fixnum "(cl_fixnum)(#0)")
 
-(proclaim-function round (t *) (values t t))
-(proclaim-function mod (t t) t :no-side-effects t)
+(proclaim-function round (real *) (values integer real) :no-side-effects t)
+(def-inline round :always (t) (values integer real) "ecl_round1(#0)")
+(def-inline round :always (t t) (values integer real) "ecl_round2(#0)")
+
+(proclaim-function mod (real real) real :no-side-effects t)
 (def-inline mod :always (fixnum fixnum) :fixnum
  "@01;(#0>=0&&#1>0?(#0)%(#1):ecl_imod(#0,#1))")
 
-(proclaim-function rem (t t) t :no-side-effects t)
+(proclaim-function rem (real real) real :no-side-effects t)
 (def-inline rem :always (fixnum fixnum) :fixnum "(#0)%(#1)")
 
 (proclaim-function decode-float (t) (values t t t))
