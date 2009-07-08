@@ -803,10 +803,12 @@
 (def-inline round :always (t t) (values integer real) "ecl_round2(#0)")
 
 (proclaim-function mod (real real) real :no-side-effects t)
+(def-inline mod :always (t t) t "(ecl_floor2(#0,#1),cl_env_copy->values[1])")
 (def-inline mod :always (fixnum fixnum) :fixnum
  "@01;(#0>=0&&#1>0?(#0)%(#1):ecl_imod(#0,#1))")
 
 (proclaim-function rem (real real) real :no-side-effects t)
+(def-inline rem :always (t t) t "(ecl_truncate2(#0,#1),cl_env_copy->values[1])")
 (def-inline rem :always (fixnum fixnum) :fixnum "(#0)%(#1)")
 
 (proclaim-function decode-float (t) (values t t t))
