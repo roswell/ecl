@@ -1261,12 +1261,8 @@
 (def-inline schar :always (t fixnum) :wchar "ecl_char(#0,#1)")
 (def-inline schar :unsafe (base-string t) t "CODE_CHAR((#0)->base_string.self[fix(#1)])")
 #-unicode
-(def-inline schar :unsafe (t t) :fixnum "(#0)->base_string.self[fix(#1)]")
-#-unicode
 (def-inline schar :unsafe (t fixnum) :char "(#0)->base_string.self[#1]")
 (def-inline schar :unsafe (base-string fixnum) :char "(#0)->base_string.self[#1]")
-#+unicode
-(def-inline schar :unsafe (ext:extended-string fixnum) :fixnum "(#0)->string.self[#1]")
 #+unicode
 (def-inline schar :unsafe (ext:extended-string fixnum) :wchar "(#0)->string.self[#1]")
 
