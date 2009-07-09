@@ -67,24 +67,27 @@
     (TRASH 'TRASH)
     (T 'RETURN)))
 
-(defun set-loc (loc &aux fd
-		    (is-call (and (consp loc)
-				  (member (car loc) '(CALL CALL-NORMAL CALL-INDIRECT)
-                                          :test #'eq))))
+(defun uses-values (loc)
+  (and (consp loc)
+       (or (member (car loc) '(CALL CALL-NORMAL CALL-INDIRECT) :test #'eq)
+           (and (eq (car loc) 'C-INLINE)
+                (eq (sixth loc) 'VALUES)))))
+
+(defun set-loc (loc &aux fd)
   (when (eql *destination* loc)
     (return-from set-loc))
   (case *destination*
     (VALUES
-     (cond (is-call
+     (cond ((eq loc 'VALUES) (return-from set-loc))
+	   ((uses-values loc)
 	    (wt-nl "cl_env_copy->values[0]=") (wt-coerce-loc :object loc) (wt ";"))
-	   ((eq loc 'VALUES) (return-from set-loc))
 	   (t
 	    (wt-nl "cl_env_copy->values[0]=") (wt-coerce-loc :object loc)
 	    (wt "; cl_env_copy->nvalues=1;"))))
     (VALUE0
      (wt-nl "value0=") (wt-coerce-loc :object loc) (wt ";"))
     (RETURN
-     (cond ((or is-call (eq loc 'VALUES))
+     (cond ((or (eq loc 'VALUES) (uses-values loc))
 	    (wt-nl "value0=") (wt-coerce-loc :object loc) (wt ";"))
 	   ((eq loc 'VALUE0) (wt-nl "cl_env_copy->nvalues=1;"))
 	   ((eq loc 'RETURN) (return-from set-loc))
@@ -92,7 +95,7 @@
 	    (wt-nl "value0=") (wt-coerce-loc :object loc)
 	    (wt "; cl_env_copy->nvalues=1;"))))
     (TRASH
-     (cond (is-call (wt-nl "(void)" loc ";"))
+     (cond ((uses-values loc) (wt-nl "(void)" loc ";"))
 	   ((and (consp loc)
 		 (eq (first loc) 'C-INLINE)
 		 (fifth loc)) ; side effects?

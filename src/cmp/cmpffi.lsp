@@ -107,7 +107,9 @@
 	   (SINGLE-FLOAT-VALUE 'SINGLE-FLOAT)
 	   (LONG-FLOAT-VALUE 'LONG-FLOAT)
 	   (C-INLINE (let ((type (first (second loc))))
-		       (if (lisp-type-p type) type (rep-type->lisp-type type))))
+                       (cond ((and (consp type) (eq (first type) 'VALUES)) T)
+                             ((lisp-type-p type) type)
+                             (t (rep-type->lisp-type type)))))
 	   (BIND (var-type (second loc)))
 	   (LCL (or (third loc) T))
 	   (otherwise T)))))
@@ -126,7 +128,9 @@
 	   (SINGLE-FLOAT-VALUE :float)
 	   (LONG-FLOAT-VALUE :long-double)
 	   (C-INLINE (let ((type (first (second loc))))
-		       (if (lisp-type-p type) (lisp-type->rep-type type) type)))
+                       (cond ((and (consp type) (eq (first type) 'VALUES)) :object)
+                             ((lisp-type-p type) (lisp-type->rep-type type))
+                             (t type))))
 	   (BIND (var-rep-type (second loc)))
 	   (LCL (lisp-type->rep-type (or (third loc) T)))
 	   (otherwise :object)))))
@@ -291,7 +295,7 @@
 	     `(ffi::with-cstring (,var ,value)
 	       (c-inline ,arguments ,arg-types ,output-type ,c-expression
 		,@rest)))))))
-    ;; Find out the output types of the inline form. The syntax is rather relax
+    ;; Find out the output types of the inline form. The syntax is rather relaxed
     ;; 	output-type = lisp-type | c-type | (values {lisp-type | c-type}*)
     (flet ((produce-type-pair (type)
 	     (if (lisp-type-p type)
@@ -301,12 +305,8 @@
 	     (setf output-rep-type '()
 		   output-type 'NIL))
 	    ((equal output-type '(VALUES &REST t))
-	     (setf output-rep-type '(VALUES &REST t)))
+	     (setf output-rep-type '((VALUES &REST t))))
 	    ((and (consp output-type) (eql (first output-type) 'VALUES))
-	     (when one-liner
-	       (cmpwarn "A FFI:C-INLINE form cannot be :ONE-LINER and output more than one value: ~A"
-			args)
-	       (setf one-liner nil))
 	     (setf output-rep-type (mapcar #'cdr (mapcar #'produce-type-pair (rest output-type)))
 		   output-type 'T))
 	    (t
@@ -370,12 +370,15 @@
     ;; place where the value is used.
     (when one-liner
       (return-from produce-inline-loc
-	`(C-INLINE ,output-rep-type ,c-expression ,coerced-arguments ,side-effects NIL)))
+	`(C-INLINE ,output-rep-type ,c-expression ,coerced-arguments ,side-effects
+                   ,(if (equalp output-rep-type '((VALUES &REST T)))
+                        'VALUES NIL))))
 
     ;; If the output is a in the VALUES vector, just write down the form and output
     ;; the location of the data.
-    (when (equalp output-rep-type '(VALUES &REST T))
-      (wt-c-inline-loc output-rep-type c-expression coerced-arguments side-effects 'VALUES)
+    (when (equalp output-rep-type '((VALUES &REST T)))
+      (wt-c-inline-loc output-rep-type c-expression coerced-arguments side-effects
+                       'VALUES)
       (return-from produce-inline-loc 'VALUES))
 
     ;; Otherwise we have to set up variables for holding the output.
@@ -429,7 +432,7 @@
 
 (defun wt-c-inline-loc (output-rep-type c-expression coerced-arguments side-effects output-vars)
   (with-input-from-string (s c-expression)
-    (when output-vars
+    (when (and output-vars (not (eq output-vars 'VALUES)))
       (wt-nl))
     (do ((c (read-char s nil nil)
 	    (read-char s nil nil)))

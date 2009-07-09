@@ -78,15 +78,15 @@
 		arg-types))
   (when (eq return-rep-type t)
     (setf return-rep-type :object))
-  ;; HACK!
-  (when (and (consp return-rep-type) (eql (first return-rep-type) 'VALUES))
-    (setf return-rep-type (second return-rep-type)))
-  (let* ((return-type (rep-type->lisp-type return-rep-type))
+  (let* ((return-type (if (and (consp return-rep-type)
+                               (eq (first return-rep-type) 'values))
+                          t
+                          (rep-type->lisp-type return-rep-type)))
          (inline-info
           (make-inline-info :name name
                             :arg-rep-types arg-rep-types
                             :return-rep-type return-rep-type
-                            :return-type (rep-type->lisp-type return-rep-type)
+                            :return-type return-type
                             :arg-types arg-types
                             :exact-return-type exact-return-type
                             ;; :side-effects (not (get-sysprop name 'no-side-effects))
@@ -784,23 +784,23 @@
 (def-inline denominator :unsafe (ratio) integer "(#0)->ratio.den")
 
 (proclaim-function floor (real *) (values integer real) :no-side-effects t)
-(def-inline floor :always (t) (values integer real) "ecl_floor1(#0)")
-(def-inline floor :always (t t) (values integer real) "ecl_floor2(#0,#1)")
+(def-inline floor :always (t) (values &rest t) "ecl_floor1(#0)")
+(def-inline floor :always (t t) (values &rest t) "ecl_floor2(#0,#1)")
 (def-inline floor :always (fixnum fixnum) :fixnum
  "@01;(#0>=0&&#1>0?(#0)/(#1):ecl_ifloor(#0,#1))")
 
 (proclaim-function ceiling (real *) (values integer real) :no-side-effects t)
-(def-inline ceiling :always (t) (values integer real) "ecl_ceiling1(#0)")
-(def-inline ceiling :always (t t) (values integer real) "ecl_ceiling2(#0,#1)")
+(def-inline ceiling :always (t) (values &rest t) "ecl_ceiling1(#0)")
+(def-inline ceiling :always (t t) (values &rest t) "ecl_ceiling2(#0,#1)")
 
 (proclaim-function truncate (real *) (values integer real) :no-side-effects t)
-(def-inline truncate :always (t) (values integer real) "ecl_truncate1(#0)")
-(def-inline truncate :always (t t) (values integer real) "ecl_truncate2(#0,#1)")
+(def-inline truncate :always (t) (values &rest t) "ecl_truncate1(#0)")
+(def-inline truncate :always (t t) (values &rest t) "ecl_truncate2(#0,#1)")
 (def-inline truncate :always (fixnum-float) :fixnum "(cl_fixnum)(#0)")
 
 (proclaim-function round (real *) (values integer real) :no-side-effects t)
-(def-inline round :always (t) (values integer real) "ecl_round1(#0)")
-(def-inline round :always (t t) (values integer real) "ecl_round2(#0,#1)")
+(def-inline round :always (t) (values &rest t) "ecl_round1(#0)")
+(def-inline round :always (t t) (values &rest t) "ecl_round2(#0,#1)")
 
 (proclaim-function mod (real real) real :no-side-effects t)
 (def-inline mod :always (t t) t "(ecl_floor2(#0,#1),cl_env_copy->values[1])")
