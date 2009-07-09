@@ -123,6 +123,7 @@
 	  ((member first '(OR AND))
 	   (let ((var (gensym)))
 	     `(let ((,var ,object))
+                (declare (:read-only ,var))
 		(,first ,@(loop for type in rest
 			   collect `(typep ,var ',type))))))
 	  ;;
@@ -141,6 +142,7 @@
 			(subtypep type 'fixnum))
 	       (setf first 'fixnum))
 	     `(LET ((,var ,object))
+                (declare (:read-only ,var))
 		(AND (TYPEP ,var ',first)
 		     ,@(expand-in-interval-p `(the ,first ,var) rest)))))
 	  ;;
