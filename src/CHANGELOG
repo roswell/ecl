@@ -41,6 +41,14 @@ ECL 9.7.1:
  - DEFCONSTANT only had the expected compile-time side effects in the bytecodes
    compiler, not in the lisp->C translator.
 
+ - New type information propagators for AREF, ASET, +, *, / and - allow ECL to
+   produce better code even without an additional back-propagation phase.
+
+ - Code to perform a type inference pass, with which-way information has
+   been added to ECL. The code is still in a debug phase, with lots of debug
+   output printed and rather incomplete, but it is by default deactivated and
+   should not interfere with usual functioning.
+
 * Visible changes:
 
  - The toplevel only traps SERIOUS-CONDITIONS.
