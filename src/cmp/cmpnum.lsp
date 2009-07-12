@@ -183,7 +183,8 @@
             (if (type>= '(REAL 0 *) arg) output 'NUMBER))))
 
 (def-type-propagator isqrt (fname arg)
-  (if (type>= '#1=(integer 0 #.MOST-POSITIVE-FIXNUM) arg)
-      (values '(#1#) #1#)
-      (values '(#2=(integer 0 *)) #2#)))
+  (if (type>= '(integer 0 #.MOST-POSITIVE-FIXNUM) arg)
+      (values '((integer 0 #.MOST-POSITIVE-FIXNUM))
+              '(integer 0 #.MOST-POSITIVE-FIXNUM))
+      (values '((integer 0 *)) '(integer 0 *))))
 
