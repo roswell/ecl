@@ -519,17 +519,17 @@
 
 (in-package "COMPILER")
 
-(defun simple-type-propagator (fname &rest form-types)
+(defun simple-type-propagator (fname)
   (let ((arg-types (get-arg-types fname))
 	(return-type (or (get-return-type fname) '(VALUES &REST T))))
     (values arg-types return-type)))
 
 (defun propagate-types (fname forms lisp-forms)
   (multiple-value-bind (arg-types return-type)
-      (apply (or (get-sysprop fname 'C1TYPE-PROPAGATOR)
-		 #'simple-type-propagator)
-	     fname
-	     forms)
+      (let ((propagator (get-sysprop fname 'C1TYPE-PROPAGATOR)))
+        (if propagator
+            (apply propagator fname (mapcar #'c1form-primary-type forms))
+            (simple-type-propagator fname)))
     (when arg-types
       (do* ((types arg-types (rest types))
 	    (fl forms (rest fl))
@@ -564,8 +564,17 @@
     return-type))
 
 (defmacro def-type-propagator (fname lambda-list &body body)
-  `(put-sysprop ',fname 'C1TYPE-PROPAGATOR
-    #'(ext:lambda-block ,fname ,lambda-list ,@body)))
+  (unless (member '&rest lambda-list)
+    (let ((var (gensym)))
+      (setf lambda-list (append lambda-list (list '&rest var))
+            body (list* `(declare (ignorable ,var)) body)))
+    `(put-sysprop ',fname 'C1TYPE-PROPAGATOR
+                  #'(ext:lambda-block ,fname ,lambda-list ,@body))))
+
+(defun copy-type-propagator (orig dest-list)
+  (loop with function = (get-sysprop orig 'C1TYPE-PROPAGATOR)
+     for name in dest-list
+     do (put-sysprop name 'C1TYPE-PROPAGATOR function)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
