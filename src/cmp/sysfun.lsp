@@ -107,6 +107,7 @@
 ;;
 
 (deftype string-designator () '(or string symbol character))
+(deftype natural () '(integer 0 *))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -953,6 +954,8 @@
 (def-inline expt :always ((integer 0 0) t) :fixnum "0")
 (def-inline expt :always ((integer 1 1) t) :fixnum "1")
 
+(proclaim-function exp (number) number :no-side-effects t)
+
 (proclaim-function log (number &optional number) number :no-side-effects t)
 (def-inline log :always (fixnum-float) :double "log((double)(#0))" :exact-return-type t)
 (def-inline log :always (fixnum-float) :float "(float)log((double)(#0))" :exact-return-type t)
@@ -961,21 +964,45 @@
 (def-inline sqrt :always ((or (long-float 0.0 *) (double-float 0.0 *))) :double "sqrt((double)(#0))")
 (def-inline sqrt :always ((or (single-float 0.0 *) (short-float 0.0 *))) :float "(float)sqrt((double)(#0))")
 
+(proclaim-function isqrt (natural) natural :no-side-effects t)
+
 (proclaim-function sin (number) number :no-side-effects t)
 (def-inline sin :always (fixnum-float) :double "sin((double)(#0))" :exact-return-type t)
 (def-inline sin :always (fixnum-float) :float "(float)sin((double)(#0))" :exact-return-type t)
+
+(proclaim-function asin (number) number :no-side-effects t)
 
 (proclaim-function cos (number) number :no-side-effects t)
 (def-inline cos :always (fixnum-float) :double "cos((double)(#0))" :exact-return-type t)
 (def-inline cos :always (fixnum-float) :float "(float)cos((double)(#0))" :exact-return-type t)
 
+(proclaim-function acos (number) number :no-side-effects t)
+
 (proclaim-function tan (number) number :no-side-effects t)
 (def-inline tan :always (fixnum-float) :double "tan((double)(#0))" :exact-return-type t)
 (def-inline tan :always (fixnum-float) :float "(float)tan((double)(#0))" :exact-return-type t)
 
+(proclaim-function atan (number &optional number) number :no-side-effects t)
+
 (proclaim-function cis (real) complex :no-side-effects t)
 
-(proclaim-function atan (number &optional real) number :no-side-effects t)
+(proclaim-function sinh (number) number :no-side-effects t)
+(def-inline sin :always (fixnum-float) :double "sinh((double)(#0))" :exact-return-type t)
+(def-inline sin :always (fixnum-float) :float "(float)sinh((double)(#0))" :exact-return-type t)
+
+(proclaim-function asinh (number) number :no-side-effects t)
+
+(proclaim-function cosh (number) number :no-side-effects t)
+(def-inline cos :always (fixnum-float) :double "cosh((double)(#0))" :exact-return-type t)
+(def-inline cos :always (fixnum-float) :float "(float)cosh((double)(#0))" :exact-return-type t)
+
+(proclaim-function acosh (number) number :no-side-effects t)
+
+(proclaim-function tanh (number) number :no-side-effects t)
+(def-inline tan :always (fixnum-float) :double "tanh((double)(#0))" :exact-return-type t)
+(def-inline tan :always (fixnum-float) :float "(float)tanh((double)(#0))" :exact-return-type t)
+
+(proclaim-function atanh (number) number :no-side-effects t)
 
 ;; file package.d
 

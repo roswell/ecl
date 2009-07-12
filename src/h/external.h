@@ -1766,15 +1766,15 @@ extern ECL_API cl_object cl_require _ARGS((cl_narg narg, cl_object V1, ...));
 
 /* numlib.lsp */
 
-extern ECL_API cl_object cl_isqrt _ARGS((cl_narg narg, cl_object V1, ...));
+extern ECL_API cl_object cl_isqrt(cl_object V1);
 extern ECL_API cl_object cl_phase _ARGS((cl_narg narg, cl_object V1, ...));
 extern ECL_API cl_object cl_signum _ARGS((cl_narg narg, cl_object V1, ...));
-extern ECL_API cl_object cl_cis _ARGS((cl_narg narg, cl_object V1, ...));
-extern ECL_API cl_object cl_asin _ARGS((cl_narg narg, cl_object V1, ...));
-extern ECL_API cl_object cl_acos _ARGS((cl_narg narg, cl_object V1, ...));
-extern ECL_API cl_object cl_asinh _ARGS((cl_narg narg, cl_object V1, ...));
-extern ECL_API cl_object cl_acosh _ARGS((cl_narg narg, cl_object V1, ...));
-extern ECL_API cl_object cl_atanh _ARGS((cl_narg narg, cl_object V1, ...));
+extern ECL_API cl_object cl_cis(cl_object V1);
+extern ECL_API cl_object cl_asin(cl_object V1);
+extern ECL_API cl_object cl_acos(cl_object V1);
+extern ECL_API cl_object cl_asinh(cl_object V1);
+extern ECL_API cl_object cl_acosh(cl_object V1);
+extern ECL_API cl_object cl_atanh(cl_object V1);
 extern ECL_API cl_object cl_ffloor _ARGS((cl_narg narg, cl_object V1, ...));
 extern ECL_API cl_object cl_fceiling _ARGS((cl_narg narg, cl_object V1, ...));
 extern ECL_API cl_object cl_ftruncate _ARGS((cl_narg narg, cl_object V1, ...));
