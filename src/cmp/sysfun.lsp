@@ -953,7 +953,7 @@
 (def-inline expt :always ((integer 0 0) t) :fixnum "0")
 (def-inline expt :always ((integer 1 1) t) :fixnum "1")
 
-(proclaim-function log (t *) t :no-side-effects t)
+(proclaim-function log (number &optional number) number :no-side-effects t)
 (def-inline log :always (fixnum-float) :double "log((double)(#0))" :exact-return-type t)
 (def-inline log :always (fixnum-float) :float "(float)log((double)(#0))" :exact-return-type t)
 
@@ -973,7 +973,9 @@
 (def-inline tan :always (fixnum-float) :double "tan((double)(#0))" :exact-return-type t)
 (def-inline tan :always (fixnum-float) :float "(float)tan((double)(#0))" :exact-return-type t)
 
-(proclaim-function atan (t *) t)
+(proclaim-function cis (real) complex :no-side-effects t)
+
+(proclaim-function atan (number &optional real) number :no-side-effects t)
 
 ;; file package.d
 
