@@ -113,21 +113,32 @@ FEcontrol_error(const char *s, int narg, ...)
 void
 FEreader_error(const char *s, cl_object stream, int narg, ...)
 {
-        cl_object prefix = make_constant_base_string("Reader error in file ~S, "
-                                                     "position ~D:~%");
         cl_object message = make_constant_base_string(s);
-        cl_object args_list, position = cl_file_position(1, stream);
+        cl_object args_list;
 	cl_va_list args;
 	cl_va_start(args, narg, narg, 0);
         args_list = cl_grab_rest_args(args);
-        message = si_base_string_concatenate(2, prefix, message);
-        args_list = cl_listX(3, stream, position, args_list);
-	si_signal_simple_error(6,
-			       @'reader-error', /* condition name */
-			       Cnil, /* not correctable */
-			       message, /* format control */
-			       args_list, /* format args */
-                               @':stream', stream);
+        if (Null(stream)) {
+                /* Parser error */
+                si_signal_simple_error(4,
+                                       @'parse-error', /* condition name */
+                                       Cnil, /* not correctable */
+                                       message, /* format control */
+                                       args_list);
+        } else {
+                /* Actual reader error */
+                cl_object prefix = make_constant_base_string("Reader error in file ~S, "
+                                                             "position ~D:~%");
+                cl_object position = cl_file_position(1, stream);
+                message = si_base_string_concatenate(2, prefix, message);
+                args_list = cl_listX(3, stream, position, args_list);
+                si_signal_simple_error(6,
+                                       @'reader-error', /* condition name */
+                                       Cnil, /* not correctable */
+                                       message, /* format control */
+                                       args_list, /* format args */
+                                       @':stream', stream);
+        }
 }
 
 
