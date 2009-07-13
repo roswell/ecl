@@ -90,10 +90,10 @@
   (maximum-number-type general-type general-type))
 
 (defun ensure-nonrational-type (general-type)
-  (maximum-number-type 'single-float general-type))
+  (maximum-number-type general-type 'single-float))
 
 (defun ensure-real-type (general-type)
-  (maximum-number-type 'integer general-type :only-real))
+  (maximum-number-type general-type 'integer :only-real))
 
 (defun arithmetic-propagator (op1-type others integer-result)
   ;; Propagates types for an associative operator (we do not care which one).
@@ -179,6 +179,8 @@
 (def-type-propagator sqrt (fname arg)
   (multiple-value-bind (output arg)
       (ensure-nonrational-type arg)
+    (print arg)
+    (print (if (type>= '(REAL 0 *) arg) output 'NUMBER))
     (values (list arg)
             (if (type>= '(REAL 0 *) arg) output 'NUMBER))))
 
