@@ -117,7 +117,7 @@
       (call-unknown-global-loc fname nil (inline-args args))))
 
   ;; Open-codable function.
-  (let* ((arg-types (mapcar #'c1form-type args))
+  (let* ((arg-types (mapcar #'c1form-primary-type args))
          (ii (inline-function fname arg-types (type-and return-type expected-type))))
     (setf args (inline-args args (and ii (inline-info-arg-types ii))))
     (when ii
@@ -145,8 +145,7 @@
       (return-from call-global-loc
         (call-exported-function-loc
          fname args fd minarg maxarg
-         #-ecl-min nil
-         #+ecl-min (member fname *in-all-symbols-functions*)))))
+         (member fname *in-all-symbols-functions*)))))
 
   (multiple-value-bind (found fd minarg maxarg)
       (si::mangle-name fname t)
