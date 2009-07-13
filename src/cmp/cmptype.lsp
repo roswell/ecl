@@ -226,7 +226,6 @@
                            (eq i2 '&rest) (eq i2 '&optional))
                        (nreverse output)
                        nil))
-               (print (list i1 i2 t1 t2 phase1 phase2 phase3 output))
                (cond ((eq i1 '&optional)
                       (when phase1 (type-error t1-orig))
                       (setf phase1 '&optional)
