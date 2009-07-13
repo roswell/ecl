@@ -4433,11 +4433,11 @@ case "${host_os}" in
 	openbsd*)
 		thehost='openbsd'
 		THREAD_CFLAGS=''
-		THREAD_LIBS='-lpthread'
+		THREAD_LIBS=''
 		SHARED_LDFLAGS="-shared ${LDFLAGS}"
 		BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
 		LDRPATH="-Wl,--rpath,~A"
-		clibs=""
+		clibs="-lpthread -lm"
 		SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
 		SONAME_LDFLAGS="-Wl,-soname,SONAME"
 		;;
