@@ -24,8 +24,7 @@ ECL 9.7.1:
  - The compiler no longer enters the debugger when it finds an error in the
    code it compiles.
 
- - C:COMPILER-ERROR no longer derives from ERROR, but is rather a separate,
-   non-serious condition.
+ - C:COMPILER-ERROR no longer derives from ERROR or SERIOUS-CONDITION.
 
  - Trapping of compiler conditions now works even for compiler errors.
 
@@ -33,21 +32,33 @@ ECL 9.7.1:
    interrupt the compilation process, and the outputs values that signal
    the failure to terminate.
 
- - The compiler note for deleting unreachable code has been eliminated.
+ - ECL no longer emits compiler notes when deleting unreachable code.
 
- - Compiler messages no show the offending form and file position. Before this
-   information was not properly stored in the compiled code tree.
+ - Compiler messages now show the offending form and file position.
 
  - DEFCONSTANT only had the expected compile-time side effects in the bytecodes
    compiler, not in the lisp->C translator.
 
- - New type information propagators for AREF, ASET, +, *, / and - allow ECL to
-   produce better code even without an additional back-propagation phase.
+ - New type information propagators for AREF, ASET, +, *, /, -, COS, SIN, ACOS,
+   ASIN, COSH, ACOSH, ASINH, SINH, ATAN, ATANH, EXP, EXPT, CIS, SQRT, ISQRT and
+   ABS. allow ECL to produce better code even without an additional
+   back-propagation phase.
 
  - Code to perform a type inference pass, with which-way information has
    been added to ECL. The code is still in a debug phase, with lots of debug
    output printed and rather incomplete, but it is by default deactivated and
    should not interfere with usual functioning.
+
+ - The code for inlining functions has been improved. Some safe inline
+   expansions that were already available are now actively used thanks to these
+   fixes.
+
+ - Formerly, by historical reasons, many library functions that take a fixed
+   number of arguments were declared as functions with a variable number of
+   arguments. This slows down ECL and prevents detecting certain errors. In an
+   ongoing effort to solve this problem, the C prototypes of COSH, SINH, CIS,
+   ACOSH, ASINH and ISQRT now take only one argument (i.e. cl_cosh(cl_object x)
+   instead of cl_cosh(cl_narg narg, cl_object x, ...))
 
 * Visible changes:
 
