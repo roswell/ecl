@@ -179,8 +179,6 @@
 (def-type-propagator sqrt (fname arg)
   (multiple-value-bind (output arg)
       (ensure-nonrational-type arg)
-    (print arg)
-    (print (if (type>= '(REAL 0 *) arg) output 'NUMBER))
     (values (list arg)
             (if (type>= '(REAL 0 *) arg) output 'NUMBER))))
 
