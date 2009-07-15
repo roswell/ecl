@@ -1,3 +1,21 @@
+ECL 9.7.2:
+==========
+
+* Compiler:
+
+ - The compiler now understands FFI types :[u]int{8,16,32,64}-t.
+
+ - The FFI code emitted to convert from a lisp type to :uint or :unsigned-int
+   rejected bignum inputs, even if they were in the range from 0 to UINT_MAX.
+   Similar problem with :int
+
+* Visible changes:
+
+ - New functions ecl_make_[u]int(), ecl_make_[u]long(), ecl_to_[u]int(),
+   ecl_to_[u]long(), ecl_to_bool(), ecl_make_bool(), convert between C types
+   and cl_object.
+
+
 ECL 9.7.1:
 ==========
 

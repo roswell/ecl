@@ -17,33 +17,103 @@
 ;; REPRESENTATION TYPES
 ;;
 
+(defconstant +all-integer-rep-types+
+  '(:byte :unsigned-byte :short :unsigned-short :int :unsigned-int
+	  :long :unsigned-long :fixnum :cl-index
+	  :long-long :unsigned-long-long
+	  :int8-t :uint8-t :int16-t :uint16-t :int32-t :uint32-t
+	  :int64-t :uint64-t))
+
+(defconstant +all-number-rep-types+
+  (append +all-integer-rep-types+ '(:float :double :long-double)))
+
 (defconstant +representation-types+
   '(;; These types can be used by ECL to unbox data
     ;; They are sorted from the most specific, to the least specific one.
-    :byte ((signed-byte 8) "int8_t")
-    :unsigned-byte ((unsigned-byte 8) "uint8_t")
-    :fixnum (fixnum "cl_fixnum")
-    :int ((integer #.si:c-int-min #.si:c-int-max) "int")
-    :unsigned-int ((integer 0 #.si:c-uint-max) "unsigned int")
-    :long ((integer #.si:c-long-min #.si:c-long-max) "long")
-    :unsigned-long ((integer 0 #.si:c-ulong-max) "unsigned long")
-    :cl-index ((integer 0 #.most-positive-fixnum) "cl_index")
-    :float (single-float "float")
-    :double (double-float "double")
-    #+:long-float :long-double #+:long-float (long-float "long double")
-    :unsigned-char (base-char "char")
-    :char (base-char "char")
-    :wchar (character "ecl_character")
-    :object (t "cl_object")
-    :bool (t "bool")
+    :byte
+    #1=((signed-byte 8) "int8_t" "ecl_make_int8_t" "ecl_to_int8_t" "fix")
+    :unsigned-byte
+    #2=((unsigned-byte 8) "uint8_t" "ecl_make_uint8_t" "ecl_to_uint8_t" "fix")
+    :fixnum
+    (fixnum "cl_fixnum" "MAKE_FIXNUM" "ecl_to_fixnum" "fix")
+    :int
+    ((integer #.si:c-int-min #.si:c-int-max) "int"
+     "ecl_make_int" "ecl_to_int" "ecl_to_int")
+    :unsigned-int
+    ((integer 0 #.si:c-uint-max) "unsigned int"
+     "ecl_make_uint" "ecl_to_uint" "ecl_to_uint")
+    :long
+    ((integer #.si:c-long-min #.si:c-long-max) "long"
+     "ecl_make_long" "ecl_to_long" "ecl_to_long")
+    :unsigned-long
+    ((integer 0 #.si:c-ulong-max) "unsigned long"
+     "ecl_make_ulong" "ecl_to_ulong" "ecl_to_ulong")
+    :cl-index
+    ((integer 0 #.most-positive-fixnum) "cl_index"
+     "ecl_make_unsigned_integer" "fixnnint" "fix")
+    :float
+    (single-float "float" "ecl_make_singlefloat" "ecl_to_float" "ecl_to_float")
+    :double
+    (double-float "double" "ecl_make_doublefloat" "ecl_to_double" "ecl_to_double")
+    #+:long-float
+    :long-double
+    #+:long-float
+    (long-float "long double" "ecl_make_longfloat" "ecl_to_long_double"
+		"ecl_to_long_double")
+    :unsigned-char
+    (base-char "char" "CODE_CHAR" "ecl_base_char_code" "CHAR_CODE")
+    :char
+    (base-char "char" "CODE_CHAR" "ecl_base_char_code" "CHAR_CODE")
+    :wchar
+    (character "ecl_character" "CODE_CHAR" "ecl_char_code" "CHAR_CODE")
+    :object
+    (t "cl_object")
+    :bool
+    (t "bool" "ecl_make_bool" "ecl_to_bool" "ecl_to_bool")
     ;; These types are never selected to unbox data.
     ;; They are here, because we need to know how to print them.
-    :void (nil "void")
-    :pointer-void (si::foreign-data "void*")
-    :cstring (string "char*")
-    :char* (string "char*")
-    :short ((integer #.si:c-short-min #.si:c-short-max) "short")
-    :unsigned-short ((integer 0 #.si:c-ushort-max) "unsigned short")
+    :void
+    (nil "void")
+    :pointer-void
+    (si::foreign-data "void*" "ecl_make_pointer" "ecl_to_pointer" "ecl_to_pointer")
+    :cstring
+    (string "char*" "ecl_cstring_to_base_string_or_nil")
+    :char*
+    (string "char*")
+    :int8-t
+    #1#
+    :uint8-t
+    #2#
+    #+:uint16-t
+    :int16-t
+    #+:uint16-t
+    ((signed-byte 16) "ecl_int16_t" "ecl_make_int16_t" "ecl_to_int16_t" "fix")
+    #+:uint16-t
+    :uint16-t
+    #+:uint16-t
+    ((signed-byte 16) "ecl_uint16_t" "ecl_make_uint16_t" "ecl_to_uint16_t" "fix")
+    #+:uint32-t
+    :int32-t
+    #+:uint32-t
+    ((signed-byte 32) "ecl_int32_t" "ecl_make_int32_t" "ecl_to_int32_t" "fix")
+    #+:uint32-t
+    :uint32-t
+    #+:uint32-t
+    ((signed-byte 32) "ecl_uint32_t" "ecl_make_uint32_t" "ecl_to_uint32_t" "fix")
+    #+:uint64-t
+    :int64-t
+    #+:uint64-t
+    ((signed-byte 64) "ecl_int64_t" "ecl_make_int64_t" "ecl_to_int64_t" "fix")
+    #+:uint64-t
+    :uint64-t
+    #+:uint64-t
+    ((signed-byte 64) "ecl_uint64_t" "ecl_make_uint64_t" "ecl_to_uint64_t" "fix")
+    :short
+    ((integer #.si:c-short-min #.si:c-short-max) "short"
+     "ecl_make_short" "ecl_to_short" "fix")
+    :unsigned-short
+    ((integer 0 #.si:c-ushort-max) "unsigned short"
+     "ecl_make_ushort" "ecl_to_ushort" "fix")
     ))
 
 
@@ -77,6 +147,26 @@
 (defun lisp-type-p (type)
   (subtypep type 'T))
 
+(defun wt-to-object-conversion (loc-rep-type loc)
+  (when (and (consp loc) (member (first loc) '(single-float-value
+					       double-float-value
+					       long-float-value)))
+    (wt (third loc)) ;; VV index
+    (return-from wt-to-object-conversion))
+  (let ((x (caddr (getf +representation-types+ loc-rep-type))))
+    (unless x
+      (cmperr "Cannot coerce C variable of type ~A to lisp object" loc-rep-type))
+    (wt x "(" loc ")")))
+
+(defun wt-from-object-conversion (dest-type loc-type rep-type loc)
+  (let ((x (cdddr (getf +representation-types+ rep-type))))
+    (unless x
+      (cmperr "Cannot coerce lisp object to C type ~A" rep-type))
+    (wt (if (and (not (policy-check-all-arguments-p))
+		 (subtypep loc-type dest-type))
+	    (second x)
+	  (first x))
+	"(" loc ")")))
 
 ;; ----------------------------------------------------------------------
 ;; LOCATIONS and representation types
@@ -153,23 +243,13 @@
 	(wt loc)
 	(return-from wt-coerce-loc))
       (case dest-rep-type
-	((:byte :unsigned-byte :short :unsigned-short :int :unsigned-int
-	  :long :unsigned-long :fixnum :cl-index)
+	(#.+all-integer-rep-types+
 	 (case loc-rep-type
-	   (#1=(:byte :unsigned-byte :short :unsigned-short :int :unsigned-int
-		:long :unsigned-long :fixnum :cl-index
-		:float :double :long-double) ; number types
+	   (#.+all-number-rep-types+
 	    (wt "((" (rep-type-name dest-rep-type) ")" loc ")"))
 	   ((:object)
 	    (ensure-valid-object-type dest-type)
-	    (wt (cond ((or (subtypep (loc-type loc) 'fixnum)
-			(not (policy-check-all-arguments-p)))
-		       "fix(")
-		      ((member dest-rep-type '(:unsigned-short :unsigned-long :cl-index))
-		       "ecl_to_unsigned_integer(")
-		      (t
-		       "ecl_to_fixnum("))
-		loc ")"))
+	    (wt-from-object-conversion dest-type loc-type dest-rep-type loc))
 	   (otherwise
 	    (coercion-error))))
 	((:char :unsigned-char :wchar)
@@ -178,67 +258,34 @@
 	    (wt "((" (rep-type-name dest-rep-type) ")" loc ")"))
 	   ((:object)
 	    (ensure-valid-object-type dest-type)
-	    (wt "ecl_char_code(" loc ")"))
+	    (wt-from-object-conversion dest-type loc-type dest-rep-type loc))
 	   (otherwise
 	    (coercion-error))))
 	((:float :double :long-double)
 	 (case loc-rep-type
-	   (#1# ; number type
+	   (#.+all-number-rep-types+
 	    (wt "((" (rep-type-name dest-rep-type) ")" loc ")"))
 	   ((:object)
 	    ;; We relax the check a bit, because it is valid in C to coerce
 	    ;; between floats of different types.
 	    (ensure-valid-object-type 'FLOAT)
-	    (wt (ecase dest-rep-type
-		  (:float "ecl_to_float(")
-		  (:double "ecl_to_double(")
-		  (:long-double "ecl_to_long_double("))
-		loc ")"))
+	    (wt-from-object-conversion dest-type loc-type dest-rep-type loc))
 	   (otherwise
 	    (coercion-error))))
 	((:bool)
 	 (case loc-rep-type
-	   (#1# ; number type
+	   (#.+all-number-rep-types+ ; number type
 	    (wt "1"))
 	   ((:object)
 	    (wt "(" loc ")!=Cnil"))
 	   (otherwise
 	    (coercion-error))))
 	((:object)
-	 (case loc-rep-type
-	   ((:short :int :long)
-	    (wt "ecl_make_integer(" loc ")"))
-	   ((:unsigned-short :unsigned-int :unsigned-long)
-	    (wt "ecl_make_unsigned_integer(" loc ")"))
-	   ((:byte :unsigned-byte :fixnum)
-	    (wt "MAKE_FIXNUM(" loc ")"))
-	   ((:float)
-	    (if (and (consp loc) (eq (first loc) 'SINGLE-FLOAT-VALUE))
-		(wt (third loc)) ;; VV index
-		(wt "ecl_make_singlefloat(" loc ")")))
-	   ((:double)
-	    (if (and (consp loc) (eq (first loc) 'DOUBLE-FLOAT-VALUE))
-		(wt (third loc)) ;; VV index
-		(wt "ecl_make_doublefloat(" loc ")")))
-	   ((:long-double)
-	    (if (and (consp loc) (eq (first loc) 'LONG-FLOAT-VALUE))
-		(wt (third loc)) ;; VV index
-		(wt "ecl_make_longfloat(" loc ")")))
-	   ((:bool)
-	    (wt "((" loc ")?Ct:Cnil)"))
-	   ((:char :unsigned-char :wchar)
-	    (wt "CODE_CHAR(" loc ")"))
-	   ((:cstring)
-	    (wt "ecl_cstring_to_base_string_or_nil(" loc ")"))
-	   ((:pointer-void)
-	    (wt "ecl_make_foreign_data(Cnil, 0, " loc ")"))
-	   (otherwise
-	    (coercion-error))))
+	 (wt-to-object-conversion loc-rep-type loc))
 	((:pointer-void)
 	 (case loc-rep-type
 	   ((:object)
-	    ;; Only foreign data types can be coerced to a pointer
-	    (wt "ecl_foreign_data_pointer_safe(" loc ")"))
+	    (wt-from-object-conversion dest-type loc-type dest-rep-type loc))
 	   ((:cstring)
 	    (wt "(char *)(" loc ")"))
 	   (otherwise
