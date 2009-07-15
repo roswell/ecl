@@ -220,7 +220,7 @@ ecl_to_int16_t(cl_object x) {
 }
 #endif /* ecl_uint16_t */
 
-#if defined(ecl_uint32_t) && (FIXNUM_BITS != 32)
+#if defined(ecl_uint32_t) && (FIXNUM_BITS > 32)
 ecl_uint32_t
 ecl_to_uint32_t(cl_object x) {
         do {
@@ -254,12 +254,12 @@ ecl_to_int32_t(cl_object x) {
 #endif /* ecl_uint32_t */
 
 #if defined(ecl_uint64_t) && (FIXNUM_BITS < 64)
-ecl_uint64_t
-ecl_to_uint64_t(cl_object x) {
-        do {
 # if !defined(WITH_GMP) || FIXNUM_BITS != 32
 #  error "Cannot handle ecl_uint64_t without GMP or 32/64 bits integer"
 # endif
+ecl_uint64_t
+ecl_to_uint64_t(cl_object x) {
+        do {
                 if (!ecl_minusp(x)) {
                         if (FIXNUMP(x)) {
                                 return (ecl_uint64_t)fix(x);
@@ -287,9 +287,6 @@ ecl_to_uint64_t(cl_object x) {
 
 ecl_int64_t
 ecl_to_int64_t(cl_object x) {
-# if !defined(WITH_GMP) || FIXNUM_BITS != 32
-#  error "Cannot handle ecl_uint64_t without GMP or 32 bits fixnums"
-# endif
         do {
                 if (FIXNUMP(x)) {
                         return (ecl_int64_t)fix(x);
@@ -314,7 +311,6 @@ ecl_to_int64_t(cl_object x) {
         } while(1);
 }
 
-# if FIXNUM_BITS < 64
 cl_object
 ecl_make_uint64_t(ecl_uint64_t i)
 {
@@ -339,7 +335,6 @@ ecl_make_int64_t(ecl_int64_t i)
                 return cl_logior(2, ecl_ash(aux, 32), ecl_make_uint32_t((ecl_uint32_t)i));
         }
 }
-# endif /* FIXNUM_BITS < 64 */
 #endif /* ecl_uint64_t */
 
 #if defined(ecl_ulong_long_t)

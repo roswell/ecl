@@ -117,6 +117,9 @@ typedef cl_object (*cl_objectfn_fixed)();
 #define IMMEDIATE(o)		((cl_fixnum)(o) & 3)
 #define IMMEDIATE_TAG		3
 
+#define ecl_to_bool(x) ((x)!=Cnil)
+#define ecl_make_bool(x) ((x)? Ct : Cnil)
+
 /* Immediate fixnums:		*/
 #define FIXNUM_TAG		t_fixnum
 #define MAKE_FIXNUM(n)		((cl_object)(((cl_fixnum)(n) << 2) | FIXNUM_TAG))

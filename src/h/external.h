@@ -574,6 +574,9 @@ extern ECL_API cl_object si_find_foreign_symbol(cl_object var, cl_object module,
 extern ECL_API cl_object si_call_cfun(cl_narg, cl_object fun, cl_object return_type, cl_object arg_types, cl_object args, ...);
 extern ECL_API cl_object si_make_dynamic_callback(cl_narg, cl_object fun, cl_object sym, cl_object return_type, cl_object arg_types, ...);
 
+/* Only foreign data types can be coerced to a pointer */
+#define ecl_make_pointer(x) ecl_make_foreign_data(Cnil,0,(x))
+#define ecl_to_pointer(x) ecl_foreign_data_pointer_safe(x)
 extern ECL_API cl_object ecl_make_foreign_data(cl_object tag, cl_index size, void *data);
 extern ECL_API cl_object ecl_allocate_foreign_data(cl_object tag, cl_index size);
 extern ECL_API void *ecl_foreign_data_pointer_safe(cl_object f);
@@ -973,6 +976,10 @@ extern ECL_API ecl_int16_t ecl_to_int16_t(cl_object o);
 # define ecl_make_uint16_t(i) MAKE_FIXNUM(i)
 # define ecl_make_int16_t(i) MAKE_FIXNUM(i)
 #endif /* ecl_uint16_t */
+#define ecl_make_short(n) MAKE_FIXNUM(n)
+#define ecl_to_short(x) (short)fixint(n)
+#define ecl_make_ushort(n) MAKE_FIXNUM(n)
+#define ecl_to_ushort(x) (unsigned short)fixnnint(n)
 #ifdef ecl_uint32_t
 # if FIXNUM_BITS == 32
 #  define ecl_to_uint32_t fixnnint
@@ -999,6 +1006,36 @@ extern ECL_API cl_object ecl_make_uint64_t(ecl_uint64_t i);
 extern ECL_API cl_object ecl_make_int64_t(ecl_int64_t i);
 # endif
 #endif /* ecl_uint64_t */
+#if ECL_INT_BITS == 32
+# define ecl_to_uint ecl_to_uint32_t
+# define ecl_to_int ecl_to_int32_t
+# define ecl_make_uint ecl_make_uint32_t
+# define ecl_make_int ecl_make_int32_t
+#else
+#  if ECL_INT_BITS == 64
+#   define ecl_to_uint ecl_to_uint64_t
+#   define ecl_to_int ecl_to_int64_t
+#   define ecl_make_uint ecl_make_uint64_t
+#   define ecl_make_int ecl_make_int64_t
+#  else
+#   error "Currently ECL expects 'int' type to have 32 or 64 bits"
+#  endif
+#endif
+#if ECL_LONG_BITS == 32
+# define ecl_to_ulong ecl_to_uint32_t
+# define ecl_to_long ecl_to_int32_t
+# define ecl_make_ulong ecl_make_uint32_t
+# define ecl_make_long ecl_make_int32_t
+#else
+# if ECL_LONG_BITS == 64
+#  define ecl_to_ulong ecl_to_uint64_t
+#  define ecl_to_long ecl_to_int64_t
+#  define ecl_make_ulong ecl_make_uint64_t
+#  define ecl_make_long ecl_make_int64_t
+# else
+#   error "Currently ECL expects 'long' type to have 32 or 64 bits"
+# endif
+#endif
 #ifdef ecl_long_long_t
 extern ECL_API ecl_ulong_long_t ecl_to_unsigned_long_long(cl_object p);
 extern ECL_API ecl_long_long_t ecl_to_long_long(cl_object p);
