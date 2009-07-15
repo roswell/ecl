@@ -648,6 +648,8 @@ ECL_FILE_CNT
 ECL_LONGJMP
 ECL_SETJMP
 ECL_STDINT_HEADER
+CL_LONG_BITS
+CL_INT_BITS
 CL_FIXNUM_MIN
 CL_FIXNUM_MAX
 CL_FIXNUM_BITS
@@ -8023,6 +8025,8 @@ _ACEOF
 
 
 
+
+
 { $as_echo "$as_me:$LINENO: checking appropiate type for fixnums" >&5
 $as_echo_n "checking appropiate type for fixnums... " >&6; }
 if test -z "${CL_FIXNUM_TYPE}" ; then
@@ -8075,10 +8079,25 @@ int main() {
     fprintf(f,"CL_FIXNUM_MIN='%ld';",l);
     fprintf(f,"CL_FIXNUM_MAX='%ld';",-l);
 #endif
-  } else
+  } else {
     exit(1);
+  }
   fprintf(f,"CL_FIXNUM_TYPE='%s';",int_type);
-  fprintf(f,"CL_FIXNUM_BITS='%d'",bits);
+  fprintf(f,"CL_FIXNUM_BITS='%d';",bits);
+  {
+    unsigned int x = 1;
+    for (bits = 0; x; bits++) {
+      x <<= 1;
+    }
+    fprintf(f,"CL_INT_BITS='%d';",bits);
+  }
+  {
+    unsigned long x = 1;
+    for (bits = 0; x; bits++) {
+      x <<= 1;
+    }
+    fprintf(f,"CL_LONG_BITS='%d'",bits);
+  }
   exit(0);
 }
 _ACEOF

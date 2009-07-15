@@ -605,6 +605,8 @@ AC_SUBST(CL_FIXNUM_TYPE)
 AC_SUBST(CL_FIXNUM_BITS)
 AC_SUBST(CL_FIXNUM_MAX)
 AC_SUBST(CL_FIXNUM_MIN)
+AC_SUBST(CL_INT_BITS)
+AC_SUBST(CL_LONG_BITS)
 AC_MSG_CHECKING(appropiate type for fixnums)
 if test -z "${CL_FIXNUM_TYPE}" ; then
   AC_RUN_IFELSE([AC_LANG_SOURCE([[#include <stdio.h>
@@ -641,10 +643,25 @@ int main() {
     fprintf(f,"CL_FIXNUM_MIN='%ld';",l);
     fprintf(f,"CL_FIXNUM_MAX='%ld';",-l);
 #endif
-  } else
+  } else {
     exit(1);
+  }
   fprintf(f,"CL_FIXNUM_TYPE='%s';",int_type);
-  fprintf(f,"CL_FIXNUM_BITS='%d'",bits);
+  fprintf(f,"CL_FIXNUM_BITS='%d';",bits);
+  {
+    unsigned int x = 1;
+    for (bits = 0; x; bits++) {
+      x <<= 1;
+    }
+    fprintf(f,"CL_INT_BITS='%d';",bits);
+  }
+  {
+    unsigned long x = 1;
+    for (bits = 0; x; bits++) {
+      x <<= 1;
+    }
+    fprintf(f,"CL_LONG_BITS='%d'",bits);
+  }
   exit(0);
 }]])],[eval "`cat conftestval`"],[],[])
 fi

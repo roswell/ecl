@@ -123,6 +123,8 @@
  * but the required headers are not present in all systems. Hence we
  * use autoconf to guess the following values.
  */
+#define ECL_INT_BITS		@CL_INT_BITS@
+#define ECL_LONG_BITS		@CL_LONG_BITS@
 #define FIXNUM_BITS		@CL_FIXNUM_BITS@
 #define MOST_POSITIVE_FIXNUM	((cl_fixnum)@CL_FIXNUM_MAX@)
 #define MOST_NEGATIVE_FIXNUM	((cl_fixnum)@CL_FIXNUM_MIN@)
