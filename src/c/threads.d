@@ -224,14 +224,15 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
 			return;
 		}
 	}
+	env = _ecl_alloc_env();
+	ecl_set_process_env(env);
 	process = alloc_process(name, bindings);
 	process->process.active = 1;
 	process->process.thread = current;
-	env = process->process.env = _ecl_alloc_env();
+	process->process.env = env;
 	THREAD_OP_LOCK();
 	cl_core.processes = CONS(process, cl_core.processes);
 	THREAD_OP_UNLOCK();
-	ecl_set_process_env(env);
 	ecl_init_env(env);
 	env->bindings_hash = process->process.initial_bindings;
 	init_big_registers(env);
