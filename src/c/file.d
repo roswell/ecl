@@ -4910,9 +4910,13 @@ init_file(void)
 	cl_object null_stream;
 	cl_object external_format = Cnil;
 #if defined(_MSC_VER) || defined(mingw32)
-	external_format = cl_list(2, @':us-ascii', @':crlf');
+# ifdef ECL_UNICODE
 	external_format = cl_list(2, @':latin-1', @':crlf');
 	flags = 0;
+# else
+	external_format = @':crlf';
+	flags = ECL_STREAM_DEFAULT_FORMAT;
+# endif
 #else
 	flags = ECL_STREAM_DEFAULT_FORMAT;
 #endif
