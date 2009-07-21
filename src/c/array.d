@@ -421,6 +421,7 @@ si_make_pure_array(cl_object etype, cl_object dims, cl_object adj,
 	x->array.self.t = NULL;		/* for GC sake */
 	x->array.rank = r;
 	x->array.elttype = (short)ecl_symbol_to_elttype(etype);
+	x->array.hasfillp = 0;
 	x->array.dims = (cl_index *)ecl_alloc_atomic_align(sizeof(cl_index)*r, sizeof(cl_index));
 	for (i = 0, s = 1;  i < r;  i++, dims = ECL_CONS_CDR(dims)) {
 		j = ecl_fixnum_in_range(@'make-array', "dimension",
