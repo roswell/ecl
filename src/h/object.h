@@ -153,7 +153,7 @@ typedef cl_object (*cl_objectfn_fixed)();
 #define HEADER			int8_t t, m, padding[2]
 #define HEADER1(field)		int8_t t, m, field, padding
 #define HEADER2(field1,field2)	int8_t t, m, field1, field2
-#define HEADER3(field1,flag2,flag3) int8_t t, m, field1; unsigned flag2:4, flag3:4
+#define HEADER3(field1,flag2,flag3) int8_t t, m, field1; unsigned flag2:1, flag3:1
 #define HEADER4(field1,flag2,flag3,flag4) int8_t t, m, field1; unsigned flag2:4, flag3:2, flag4:2
 
 struct ecl_singlefloat {
@@ -415,7 +415,7 @@ union ecl_array_data {
 struct ecl_array {		/*  array header  */
 				/*  adjustable flag  */
 				/*  has-fill-pointer flag  */
-	HEADER2(elttype,adjustable);
+	HEADER3(elttype,adjustable,hasfillp);
 	cl_object displaced;	/*  displaced  */
 	cl_index dim;		/*  dimension  */
 	cl_index *dims;		/*  table of dimensions  */
