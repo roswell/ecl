@@ -50,23 +50,32 @@ OBJS	= main.o symbol.o package.o list.o\
 	structure.o load.o unixfsys.o unixsys.o \
 	ffi.o @EXTRA_OBJS@
 
-.SUFFIXES: .c .o .d
+.SUFFIXES: .c .o .d .s
 .PHONY: all
 
 all:	$(DPP) ../libeclmin.a ../cinit.o
 
-.c.s: $(HFILES)
+%.s: %.c $(HFILES)
 	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -S -o $@ $<
-.c.o: $(HFILES)
+%.o: %.c $(HFILES)
 	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -o $@ $<
-.d.c: $(DPP)
+%.c: %.d $(DPP)
 	if test -f ../CROSS-DPP ; then ../CROSS-DPP $< $@ ; else $(DPP) $< $@ ; fi
-apply_x86.c: arch/apply_x86.d $(DPP) $(HFILES)
-	if test -f ../CROSS-DPP ; then ../CROSS-DPP $< $@ ; else $(DPP) $< $@ ; fi
-ffi_x86.c: arch/ffi_x86.d $(DPP) $(HFILES)
-	if test -f ../CROSS-DPP ; then ../CROSS-DPP $< $@ ; else $(DPP) $< $@ ; fi
-ffi_x86_64.c: arch/ffi_x86_64.d $(DPP) $(HFILES)
-	if test -f ../CROSS-DPP ; then ../CROSS-DPP $< $@ ; else $(DPP) $< $@ ; fi
+apply_x86.c: $(srcdir)/arch/apply_x86.d $(DPP) $(HFILES)
+	if test -f ../CROSS-DPP ; then \
+	  ../CROSS-DPP $(srcdir)/arch/apply_x86.d $@ ; \
+	else $(DPP) $(srcdir)/arch/apply_x86.d  $@ ; \
+	fi
+ffi_x86.c: $(srcdir)/arch/ffi_x86.d $(DPP) $(HFILES)
+	if test -f ../CROSS-DPP ; then \
+	  ../CROSS-DPP $(srcdir)/arch/ffi_x86.d $@ ; \
+	else $(DPP) $(srcdir)/arch/ffi_x86.d  $@ ; \
+	fi
+ffi_x86_64.c: $(srcdir)/arch/ffi_x86_64.d $(DPP) $(HFILES)
+	if test -f ../CROSS-DPP ; then \
+	  ../CROSS-DPP $(srcdir)/arch/ffi_x86_64.d $@ ; \
+	else $(DPP) $(srcdir)/arch/ffi_x86_64.d  $@ ; \
+	fi
 
 ../libeclmin.a: $(OBJS) all_symbols.o all_symbols2.o
 	$(RM) $@
@@ -93,8 +102,6 @@ $(srcdir)/symbols_list2.h: $(srcdir)/symbols_list.h Makefile
 #
 gbc.o: gbc.c $(HFILES)
 	$(CC) $(CFLAGS) -O0 gbc.c -o $@
-ffi_x86.o: ffi_x86.c $(HFILES)
-	$(CC) $(CFLAGS) -O0 ffi_x86.c -o $@
 #
 # This reduces the overhead of jumping to other functions
 #
