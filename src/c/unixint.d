@@ -15,6 +15,7 @@
     See file '../Copyright' for full details.
 */
 
+#define _XOPEN_SOURCE 600 /* For SA_SIGINFO in Solaris */
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
