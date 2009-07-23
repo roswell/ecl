@@ -283,6 +283,7 @@ case "${host_os}" in
 		LDRPATH='-Wl,-R,~A'
 		TCPLIBS='-lsocket -lnsl -lintl'
 		clibs='-ldl'
+		CFLAGS="${CFLAGS} -std=gnu99"
 		;;
 	cygwin*)
 		thehost='cygwin'
