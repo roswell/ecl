@@ -55,12 +55,12 @@ OBJS	= main.o symbol.o package.o list.o\
 
 all:	$(DPP) ../libeclmin.a ../cinit.o
 
-%.s: %.c $(HFILES)
-	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -S -o $@ $<
-%.o: %.c $(HFILES)
-	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -o $@ $<
-%.c: %.d $(DPP)
+.d.c: $(DPP)
 	if test -f ../CROSS-DPP ; then ../CROSS-DPP $< $@ ; else $(DPP) $< $@ ; fi
+.c.s: $(HFILES)
+	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -S -o $@ $<
+.c.o: $(HFILES)
+	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -o $@ $<
 apply_x86.c: $(srcdir)/arch/apply_x86.d $(DPP) $(HFILES)
 	if test -f ../CROSS-DPP ; then \
 	  ../CROSS-DPP $(srcdir)/arch/apply_x86.d $@ ; \
