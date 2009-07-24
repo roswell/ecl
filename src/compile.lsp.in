@@ -178,7 +178,7 @@
 ;;;
 ;;; * PROFILE
 ;;;
-#+(and WANTS-PROFILE (not cygwin))
+#+(and WANTS-PROFILE (not (or cygwin mingw32)))
 (build-module "profile"
               '("ext:profile;profile.lisp")
               :dir "build:ext;"
