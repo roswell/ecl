@@ -153,7 +153,11 @@ install-base:
 	done
 	for i in $(LSP_LIBRARIES) $(LIBRARIES); do \
 	  if test -s $$i ; then \
-	   $(INSTALL_LIBRARY) $$i $(DESTDIR)$(libdir); \
+	   if echo $$i | grep dll; then \
+	    $(INSTALL_LIBRARY) $$i $(DESTDIR)$(bindir); \
+	   else \
+	    $(INSTALL_LIBRARY) $$i $(DESTDIR)$(libdir); \
+	   fi \
 	  fi \
 	done
 	if [ "x@SONAME@" != "x" -a -f "@SONAME@" ]; then \
