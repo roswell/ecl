@@ -295,7 +295,6 @@ case "${host_os}" in
 		SHAREDPREFIX=''
 		SHAREDEXT='dll'
 		PICFLAG=''
-		INSTALL_TARGET='flatinstall'
 		;;
 	mingw*)
 		thehost='mingw32'
