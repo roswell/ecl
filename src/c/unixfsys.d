@@ -937,9 +937,7 @@ si_get_library_pathname(void)
         s = cl_make_pathname(8, @':name', Cnil, @':type', Cnil,
 			     @':version', Cnil,
                              @':defaults', s);
-	cl_print(1,s);
         s = ecl_namestring(s, 0);
-	cl_print(1,s);
 	}
 #else
         s = make_constant_base_string(ECLDIR "/");
