@@ -90,7 +90,7 @@ GCFLAGS = nodebug=1
 !endif
 
 CFLAGS  = /EHsc /DGC_DLL /DGC_BUILD /nologo /D_CRT_SECURE_NO_DEPRECATE $(CFLAGS_CONFIG)
-LDFLAGS	= /link /nologo /verbose:lib /nodefaultlib:libcmt /nodefaultlib:libcmtd /nodefaultlib:libc /nodefaultlib:libcd $(LDFLAGS_CONFIG)
+LDFLAGS	= /link /nologo /nodefaultlib:libcmt /nodefaultlib:libcmtd /nodefaultlib:libc /nodefaultlib:libcd $(LDFLAGS_CONFIG)
 
 
 # Additional configuration for thread support
