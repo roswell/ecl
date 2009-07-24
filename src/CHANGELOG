@@ -11,6 +11,10 @@ ECL 9.7.2:
 
 * Visible changes:
 
+ - Cygwin now uses the 'flatinstall' model in which all ECL files are
+   stored in the same directory. This solves problems related to locating
+   the ECL.DLL library and other files.
+
  - New functions ecl_make_[u]int(), ecl_make_[u]long(), ecl_to_[u]int(),
    ecl_to_[u]long(), ecl_to_bool(), ecl_make_bool(), convert between C types
    and cl_object.
