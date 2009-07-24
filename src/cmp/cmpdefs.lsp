@@ -452,8 +452,8 @@ coprocessor).")
 (defvar *cc-optimize* #-msvc "-O"
                       #+msvc "@CFLAGS_OPTIMIZE@")
 
-(defvar *ld-format* #-msvc "~A -o ~S -L~S ~{~S ~} ~@?"
-                    #+msvc "~A -Fe~S~* ~{~S ~} ~@?")
+(defvar *ld-format* #-msvc "~A -o ~S -L~S ~{~S ~} ~A"
+                    #+msvc "~A -Fe~S~* ~{~S ~} ~A")
 
 (defvar *cc-format* #-msvc "~A ~A ~:[~*~;~A~] \"-I~A\" -w -c \"~A\" -o \"~A\""
                     #+msvc "~A ~A ~:[~*~;~A~] -I\"~A\" -w -c \"~A\" -Fo\"~A\"")
