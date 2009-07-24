@@ -286,6 +286,8 @@
     (t nil)))
 
 (defun add-static-constant (object)
+  #+msvc
+  nil
   #-:msvc
   ;; FIXME! The Microsoft compiler does not allow static initialization of bit fields.
   (unless (or *compiler-constants* (not (listp *static-constants*)))

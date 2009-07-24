@@ -551,6 +551,12 @@
                 ((special global closure replaced lexical) . NIL)))))
 
 (defun build-debug-lexical-env (var-locations &optional first)
+  #+:msvc
+  (if first
+      (wt-nl "cl_object _ecl_debug_env = Cnil;")
+    (wt-nl "ihs.lex_env = _ecl_debug_env = Cnil;"))
+
+  #-:msvc ;; FIXME! Problem with initialization of statically defined vectors
   (let* ((filtered-locations '())
          (filtered-codes '()))
     ;; Filter out variables that we know how to store in the
