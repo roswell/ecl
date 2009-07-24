@@ -1389,7 +1389,7 @@
 (proclaim-function si:set-symbol-plist (symbol t) t)
 (proclaim-function si:putprop (t t t) t)
 (proclaim-function si:put-sysprop (t t t) t)
-(proclaim-function si:get-sysprop (t t t) t)
+(proclaim-function si:get-sysprop (t t) t)
 (proclaim-function si:rem-sysprop (t t) t)
 
 ;; file tcp.d
