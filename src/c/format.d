@@ -2116,14 +2116,14 @@ DIRECTIVE:
 	}
 	if (ecl_stringp(strm)) {
 		output = strm;
-		if (!output->base_string.hasfillp) {
+		if (!ECL_ARRAY_HAS_FILL_POINTER_P(output)) {
 			cl_error(7, @'si::format-error',
 				 @':format-control',
 				 make_constant_base_string(
 "Cannot output to a non adjustable string."),
 				 @':control-string', string,
 				 @':offset', MAKE_FIXNUM(0));
-			}
+                }
 		strm = si_make_string_output_stream_from_string(strm);
 		if (null_strm == 0)
 			output = Cnil;

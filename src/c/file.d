@@ -1421,7 +1421,7 @@ cl_object
 si_make_string_output_stream_from_string(cl_object s)
 {
 	cl_object strm = alloc_stream();
-	if (!ecl_stringp(s) || !s->base_string.hasfillp)
+	if (!ecl_stringp(s) || !ECL_ARRAY_HAS_FILL_POINTER_P(s))
 		FEerror("~S is not a -string with a fill-pointer.", 1, s);
 	strm->stream.ops = duplicate_dispatch_table(&str_out_ops);
 	strm->stream.mode = (short)smm_string_output;

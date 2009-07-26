@@ -4912,7 +4912,7 @@ echo "$as_me: error: \"Pthreads not supported by the GC on this platform.\"" >&2
     cat >>confdefs.h <<\_ACEOF
 #define GC_WIN32_THREADS 1
 _ACEOF
-
+    win32_threads=1
         cat >>confdefs.h <<\_ACEOF
 #define NO_GETENV 1
 _ACEOF

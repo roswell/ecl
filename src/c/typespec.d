@@ -367,7 +367,7 @@ cl_type_of(cl_object x)
 			t = @'symbol';
 		break;
 	case t_array:
-		if (x->array.adjustable ||
+		if (ECL_ADJUSTABLE_ARRAY_P(x) ||
 		    !Null(CAR(x->array.displaced)))
 			t = @'array';
 		else
@@ -375,11 +375,11 @@ cl_type_of(cl_object x)
 		t = cl_list(3, t, ecl_elttype_to_symbol(ecl_array_elttype(x)), cl_array_dimensions(1, x));
 		break;
 	case t_vector:
-		if (x->vector.adjustable ||
+		if (ECL_ADJUSTABLE_ARRAY_P(x) ||
 		    !Null(CAR(x->vector.displaced))) {
 			t = cl_list(3, @'vector', ecl_elttype_to_symbol(ecl_array_elttype(x)),
 				    MAKE_FIXNUM(x->vector.dim));
-		} else if (x->vector.hasfillp ||
+		} else if (ECL_ARRAY_HAS_FILL_POINTER_P(x) ||
 			   (cl_elttype)x->vector.elttype != aet_object) {
 			t = cl_list(3, @'simple-array', ecl_elttype_to_symbol(ecl_array_elttype(x)),
 				    cl_array_dimensions(1, x));
@@ -389,8 +389,8 @@ cl_type_of(cl_object x)
 		break;
 #ifdef ECL_UNICODE
 	case t_string:
-		if (x->string.adjustable ||
-		    x->string.hasfillp ||
+		if (ECL_ADJUSTABLE_ARRAY_P(x) ||
+		    ECL_ARRAY_HAS_FILL_POINTER_P(x) ||
 		    !Null(CAR(x->string.displaced)))
 			t = @'array';
 		else
@@ -399,8 +399,8 @@ cl_type_of(cl_object x)
 		break;
 #endif
 	case t_base_string:
-		if (x->base_string.adjustable ||
-		    x->base_string.hasfillp ||
+		if (ECL_ADJUSTABLE_ARRAY_P(x) ||
+		    ECL_ARRAY_HAS_FILL_POINTER_P(x) ||
 		    !Null(CAR(x->base_string.displaced)))
 			t = @'array';
 		else
@@ -408,8 +408,8 @@ cl_type_of(cl_object x)
 		t = cl_list(3, t, @'base-char', cl_list(1, MAKE_FIXNUM(x->base_string.dim)));
 		break;
 	case t_bitvector:
-		if (x->vector.adjustable ||
-		    x->vector.hasfillp ||
+		if (ECL_ADJUSTABLE_ARRAY_P(x) ||
+		    ECL_ARRAY_HAS_FILL_POINTER_P(x) ||
 		    !Null(CAR(x->vector.displaced)))
 			t = @'array';
 		else

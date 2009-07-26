@@ -127,7 +127,7 @@ ecl_base_string_pointer_safe(cl_object f)
 	/* FIXME! Is there a better function name? */
 	f = ecl_check_cl_type(@'si::make-foreign-data-from-array', f, t_base_string);
 	s = f->base_string.self;
-	if (f->base_string.hasfillp && s[f->base_string.fillp] != 0) {
+	if (ECL_ARRAY_HAS_FILL_POINTER_P(f) && s[f->base_string.fillp] != 0) {
 		FEerror("Cannot coerce a string with fill pointer to (char *)", 0);
 	}
 	return (char *)s;
@@ -138,7 +138,8 @@ ecl_null_terminated_base_string(cl_object f)
 {
 	/* FIXME! Is there a better function name? */
 	f = ecl_check_cl_type(@'si::make-foreign-data-from-array', f, t_base_string);
-	if (f->base_string.hasfillp && f->base_string.self[f->base_string.fillp] != 0) {
+	if (ECL_ARRAY_HAS_FILL_POINTER_P(f) &&
+            f->base_string.self[f->base_string.fillp] != 0) {
 		return cl_copy_seq(f);
 	} else {
 		return f;

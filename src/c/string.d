@@ -79,8 +79,7 @@ cl_alloc_simple_base_string(cl_index length)
 
 	x = ecl_alloc_object(t_base_string);
         x->base_string.elttype      = aet_bc;
-	x->base_string.hasfillp     = FALSE;
-	x->base_string.adjustable   = FALSE;
+        x->base_string.flags        = 0; /* no fill pointer, no adjustable */
 	x->base_string.displaced    = Cnil;
 	x->base_string.dim          = (x->base_string.fillp = length);
 	x->base_string.self         = (ecl_base_char *)ecl_alloc_atomic(length+1);
@@ -97,8 +96,7 @@ cl_alloc_simple_extended_string(cl_index length)
         /* should this call si_make_vector? */
 	x = ecl_alloc_object(t_string);
         x->string.elttype    = aet_ch;
-	x->string.hasfillp   = FALSE;
-	x->string.adjustable = FALSE;
+        x->string.flags      = 0;  /* no fill pointer, no adjustable */
 	x->string.displaced  = Cnil;
 	x->string.dim        = x->string.fillp = length;
 	x->string.self       = (ecl_character *)
@@ -118,8 +116,7 @@ cl_alloc_adjustable_base_string(cl_index l)
 {
 	cl_object output = cl_alloc_simple_base_string(l);
 	output->base_string.fillp = 0;
-	output->base_string.hasfillp = TRUE;
- 	output->base_string.adjustable = TRUE;
+	output->base_string.flags = ECL_FLAG_HAS_FILL_POINTER | ECL_FLAG_ADJUSTABLE;
 	return output;
 }
 
@@ -128,9 +125,8 @@ cl_object
 ecl_alloc_adjustable_extended_string(cl_index l)
 {
 	cl_object output = cl_alloc_simple_extended_string(l);
-	output->base_string.fillp = 0;
-	output->base_string.hasfillp = TRUE;
- 	output->base_string.adjustable = TRUE;
+	output->string.fillp = 0;
+	output->string.flags = ECL_FLAG_HAS_FILL_POINTER | ECL_FLAG_ADJUSTABLE;
 	return output;
 }
 #endif
@@ -146,8 +142,7 @@ make_simple_base_string(char *s)
 
 	x = ecl_alloc_object(t_base_string);
         x->base_string.elttype = aet_bc;
-	x->base_string.hasfillp = FALSE;
-	x->base_string.adjustable = FALSE;
+        x->base_string.flags = 0; /* no fill pointer, no adjustable */
 	x->base_string.displaced = Cnil;
 	x->base_string.dim = (x->base_string.fillp = l);
 	x->base_string.self = (ecl_base_char *)s;
@@ -985,7 +980,7 @@ ecl_string_push_extend(cl_object s, ecl_character c)
 		if (s->base_string.fillp >= s->base_string.dim) {
 			cl_object other;
 			cl_index new_length;
-			if (!s->base_string.adjustable)
+			if (!ECL_ADJUSTABLE_ARRAY_P(s))
 				FEerror("string-push-extend: the string ~S is not adjustable.",
 					1, s);
 			if (s->base_string.dim >= ADIMLIM)

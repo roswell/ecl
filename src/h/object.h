@@ -153,7 +153,6 @@ typedef cl_object (*cl_objectfn_fixed)();
 #define HEADER			int8_t t, m, padding[2]
 #define HEADER1(field)		int8_t t, m, field, padding
 #define HEADER2(field1,field2)	int8_t t, m, field1, field2
-#define HEADER3(field1,flag2,flag3) int8_t t, m, field1; unsigned flag2:1, flag3:1
 #define HEADER4(field1,flag2,flag3,flag4) int8_t t, m, field1; unsigned flag2:4, flag3:2, flag4:2
 
 struct ecl_singlefloat {
@@ -412,10 +411,15 @@ union ecl_array_data {
 	byte          *bit;
 };
 
+#define ECL_FLAG_HAS_FILL_POINTER 1
+#define ECL_FLAG_ADJUSTABLE       2
+#define ECL_ADJUSTABLE_ARRAY_P(x) ((x)->array.flags & ECL_FLAG_ADJUSTABLE)
+#define ECL_ARRAY_HAS_FILL_POINTER_P(x) ((x)->array.flags & ECL_FLAG_HAS_FILL_POINTER)
+
 struct ecl_array {		/*  array header  */
 				/*  adjustable flag  */
 				/*  has-fill-pointer flag  */
-	HEADER3(elttype,adjustable,hasfillp);
+	HEADER2(elttype,flags);	/*  array element type, has fill ptr, adjustable-p */
 	cl_object displaced;	/*  displaced  */
 	cl_index dim;		/*  dimension  */
 	cl_index *dims;		/*  table of dimensions  */
@@ -427,7 +431,7 @@ struct ecl_array {		/*  array header  */
 struct ecl_vector {		/*  vector header  */
 				/*  adjustable flag  */
 				/*  has-fill-pointer flag  */
-	HEADER3(elttype,adjustable,hasfillp);
+	HEADER2(elttype,flags);	/*  array element type, has fill ptr, adjustable-p */
 	cl_object displaced;	/*  displaced  */
 	cl_index dim;		/*  dimension  */
 	cl_index fillp;		/*  fill pointer  */
@@ -440,7 +444,7 @@ struct ecl_vector {		/*  vector header  */
 struct ecl_base_string {	/*  string header  */
 				/*  adjustable flag  */
 				/*  has-fill-pointer flag  */
-	HEADER3(elttype,adjustable,hasfillp);
+	HEADER2(elttype,flags);	/*  array element type, has fill ptr, adjustable-p */
 	cl_object displaced;	/*  displaced  */
 	cl_index dim;       	/*  dimension  */
 				/*  string length  */
@@ -454,7 +458,7 @@ struct ecl_base_string {	/*  string header  */
 struct ecl_string {		/*  string header  */
 				/*  adjustable flag  */
 				/*  has-fill-pointer flag  */
-	HEADER3(elttype,adjustable,hasfillp);
+	HEADER2(elttype,flags);	/*  array element type, has fill ptr, adjustable-p */
 	cl_object displaced;	/*  displaced  */
 	cl_index dim;       	/*  dimension  */
 				/*  string length  */

@@ -169,14 +169,14 @@ cl_simple_string_p(cl_object x)
 #ifdef ECL_UNICODE
 	cl_type t = type_of(x);
 	@(return (((t == t_base_string || (t == t_string)) &&
-		     !x->string.adjustable &&
-		     !x->string.hasfillp &&
-		     Null(CAR(x->string.displaced))) ? Ct : Cnil))
+                   !ECL_ADJUSTABLE_ARRAY_P(x) &&
+                   !ECL_ARRAY_HAS_FILL_POINTER_P(x) &&
+                   Null(CAR(x->string.displaced))) ? Ct : Cnil))
 #else
 	@(return ((type_of(x) == t_base_string &&
-		     !x->base_string.adjustable &&
-		     !x->base_string.hasfillp &&
-		     Null(CAR(x->base_string.displaced))) ? Ct : Cnil))
+                   !ECL_ADJUSTABLE_ARRAY_P(x) &&
+                   !ECL_ARRAY_HAS_FILL_POINTER_P(x) &&
+                   Null(CAR(x->base_string.displaced))) ? Ct : Cnil))
 #endif
 
 }
@@ -193,9 +193,9 @@ cl_object
 cl_simple_bit_vector_p(cl_object x)
 {
 	@(return ((type_of(x) == t_bitvector &&
-		     !x->vector.adjustable &&
-		     !x->vector.hasfillp &&
-		     Null(CAR(x->vector.displaced))) ? Ct : Cnil))
+                   !ECL_ADJUSTABLE_ARRAY_P(x) &&
+                   !ECL_ARRAY_HAS_FILL_POINTER_P(x) &&
+                   Null(CAR(x->vector.displaced))) ? Ct : Cnil))
 }
 
 cl_object
@@ -203,10 +203,10 @@ cl_simple_vector_p(cl_object x)
 {
 	cl_type t = type_of(x);
 	@(return ((t == t_vector &&
-		     !x->vector.adjustable &&
-		     !x->vector.hasfillp &&
-		     Null(CAR(x->vector.displaced)) &&
-		     (cl_elttype)x->vector.elttype == aet_object) ? Ct : Cnil))
+                   !ECL_ADJUSTABLE_ARRAY_P(x) &&
+                   !ECL_ARRAY_HAS_FILL_POINTER_P(x) &&
+                   Null(CAR(x->vector.displaced)) &&
+                   (cl_elttype)x->vector.elttype == aet_object) ? Ct : Cnil))
 }
 
 cl_object

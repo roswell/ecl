@@ -421,7 +421,7 @@ si_make_pure_array(cl_object etype, cl_object dims, cl_object adj,
 	x->array.self.t = NULL;		/* for GC sake */
 	x->array.rank = r;
 	x->array.elttype = (short)ecl_symbol_to_elttype(etype);
-	x->array.hasfillp = 0;
+	x->array.flags = 0; /* no fill pointer, no adjustable */
 	x->array.dims = (cl_index *)ecl_alloc_atomic_align(sizeof(cl_index)*r, sizeof(cl_index));
 	for (i = 0, s = 1;  i < r;  i++, dims = ECL_CONS_CDR(dims)) {
 		j = ecl_fixnum_in_range(@'make-array', "dimension",
@@ -431,7 +431,9 @@ si_make_pure_array(cl_object etype, cl_object dims, cl_object adj,
 			FEerror("The array total size, ~D, is too large.", 1, MAKE_FIXNUM(s));
 	}
 	x->array.dim = s;
-	x->array.adjustable = adj != Cnil;
+        if (adj != Cnil) {
+                x->array.flags |= ECL_FLAG_ADJUSTABLE;
+        }
 	if (Null(displ))
 		ecl_array_allocself(x);
 	else
@@ -473,15 +475,17 @@ si_make_vector(cl_object etype, cl_object dim, cl_object adj,
 	x->vector.self.t = NULL;		/* for GC sake */
 	x->vector.displaced = Cnil;
 	x->vector.dim = d;
-	x->vector.adjustable = adj != Cnil;
+        x->vector.flags = 0;
+        if (adj != Cnil) {
+                x->vector.flags |= ECL_FLAG_ADJUSTABLE;
+        }
 	if (Null(fillp)) {
-		x->vector.hasfillp = FALSE;
 		f = d;
 	} else if (fillp == Ct) {
-		x->vector.hasfillp = TRUE;
+		x->vector.flags |= ECL_FLAG_HAS_FILL_POINTER;
 		f = d;
 	} else if (FIXNUMP(fillp) && ((f = fix(fillp)) <= d) && (f >= 0)) {
-		x->vector.hasfillp = TRUE;
+		x->vector.flags |= ECL_FLAG_HAS_FILL_POINTER;
 	} else {
 		fillp = ecl_type_error(@'make-array',"fill pointer",fillp,
 				       cl_list(3,@'or',cl_list(3,@'member',Cnil,Ct),
@@ -759,7 +763,7 @@ cl_object
 cl_adjustable_array_p(cl_object a)
 {
 	assert_type_array(a);
-	@(return (a->array.adjustable ? Ct : Cnil))
+	@(return (ECL_ADJUSTABLE_ARRAY_P(a) ? Ct : Cnil))
 }
 
 /*
@@ -844,8 +848,7 @@ cl_svref(cl_object x, cl_object index)
 	cl_index i;
 
 	while (type_of(x) != t_vector ||
-	       x->vector.adjustable ||
-	       x->vector.hasfillp ||
+	       (x->vector.flags & (ECL_FLAG_ADJUSTABLE | ECL_FLAG_HAS_FILL_POINTER)) ||
 	       CAR(x->vector.displaced) != Cnil ||
 	       (cl_elttype)x->vector.elttype != aet_object)
 	{
@@ -862,8 +865,7 @@ si_svset(cl_object x, cl_object index, cl_object v)
 	cl_index i;
 
 	while (type_of(x) != t_vector ||
-	       x->vector.adjustable ||
-	       x->vector.hasfillp ||
+	       (x->vector.flags & (ECL_FLAG_ADJUSTABLE | ECL_FLAG_HAS_FILL_POINTER)) ||
 	       CAR(x->vector.displaced) != Cnil ||
 	       (cl_elttype)x->vector.elttype != aet_object)
 	{
@@ -888,7 +890,7 @@ cl_array_has_fill_pointer_p(cl_object a)
 	case t_string:
 #endif
 	case t_base_string:
-		r = a->vector.hasfillp? Ct : Cnil;
+		r = ECL_ARRAY_HAS_FILL_POINTER_P(a)? Ct : Cnil;
 		break;
 	default:
 		a = ecl_type_error(@'array-has-fill-pointer-p',"argument",
@@ -903,7 +905,7 @@ cl_fill_pointer(cl_object a)
 {
 	const cl_env_ptr the_env = ecl_process_env();
 	assert_type_vector(a);
-	if (!a->vector.hasfillp) {
+	if (!ECL_ARRAY_HAS_FILL_POINTER_P(a)) {
 		a = ecl_type_error(@'fill-pointer', "argument",
 				   a, c_string_to_object("(AND VECTOR (SATISFIES ARRAY-HAS-FILL-POINTER-P))"));
 	}
@@ -918,8 +920,7 @@ si_fill_pointer_set(cl_object a, cl_object fp)
 {
 	const cl_env_ptr the_env = ecl_process_env();
 	assert_type_vector(a);
- AGAIN:
-	if (a->vector.hasfillp) {
+	if (ECL_ARRAY_HAS_FILL_POINTER_P(a)) {
 		a->vector.fillp = 
 			ecl_fixnum_in_range(@'adjust-array',"fill pointer",fp,
 					    0,a->vector.dim);
@@ -944,7 +945,7 @@ si_replace_array(cl_object olda, cl_object newa)
 	if (type_of(olda) != type_of(newa)
 	    || (type_of(olda) == t_array && olda->array.rank != newa->array.rank))
 		goto CANNOT;
-	if (!olda->array.adjustable) {
+	if (!ECL_ADJUSTABLE_ARRAY_P(olda)) {
 		/* When an array is not adjustable, we simply output the new array */
 		olda = newa;
 		goto OUTPUT;

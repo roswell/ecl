@@ -855,7 +855,7 @@ si_bit_array_op(cl_object o, cl_object x, cl_object y, cl_object r)
 		  r->array.dims = x->array.dims;
 		  r->array.elttype = aet_bit;
 		  r->array.dim = x->array.dim;
-		  r->array.adjustable = FALSE;
+		  r->array.flags = 0; /* no fill pointer, not adjustable */
 		  ecl_array_allocself(r);
 		}
 	}

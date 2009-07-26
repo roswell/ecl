@@ -36,8 +36,7 @@ ecl_alloc_simple_vector(cl_index l, cl_elttype aet)
 #endif
 	case aet_bit:
 		x = ecl_alloc_object(t_bitvector);
-		x->vector.hasfillp = FALSE;
-		x->vector.adjustable = FALSE;
+		x->vector.flags = 0; /* no fill pointer, not adjustable */
 		x->vector.displaced = Cnil;
 		x->vector.dim = x->vector.fillp = l;
 		x->vector.offset = 0;
@@ -46,8 +45,7 @@ ecl_alloc_simple_vector(cl_index l, cl_elttype aet)
 		break;
 	default:
 		x = ecl_alloc_object(t_vector);
-		x->vector.hasfillp = FALSE;
-		x->vector.adjustable = FALSE;
+		x->vector.flags = 0; /* no fill pointer, not adjustable */
 		x->vector.displaced = Cnil;
 		x->vector.dim = x->vector.fillp = l;
 		x->vector.self.t = NULL;

@@ -1,6 +1,16 @@
 ECL 9.7.2:
 ==========
 
+* Ports:
+
+ - The MSVC port now boots also when built without support for Unicode.
+
+ - The mingw32 port builds without threads. For multithreading, the user will
+   have to build version 7.2-alpha2 of the garbage collector manually.
+
+ - The NetBSD port builds with default values using the garbage collector
+   supplied with the pkgsrc distribution.
+
 * Compiler:
 
  - The compiler now understands FFI types :[u]int{8,16,32,64}-t.
@@ -11,13 +21,18 @@ ECL 9.7.2:
 
 * Visible changes:
 
- - Cygwin now uses the 'flatinstall' model in which all ECL files are
-   stored in the same directory. This solves problems related to locating
-   the ECL.DLL library and other files.
-
  - New functions ecl_make_[u]int(), ecl_make_[u]long(), ecl_to_[u]int(),
    ecl_to_[u]long(), ecl_to_bool(), ecl_make_bool(), convert between C types
    and cl_object.
+
+ - The C structures ecl_array, ecl_vector, ecl_base_string and ecl_string have
+   changed. Instead of using bitfields for hasfillp and adjustable we now
+   use a single integer field, and handle the bits manually. See the
+   new macros ECL_ADJUSTABLE_ARRAY_P and ECL_ARRAY_HAS_FILL_POINTER_P.
+
+* Bugs fixed:
+
+ - SI:GET-LIBRARY-PATHNAME did not work properly in Windows.
 
 
 ECL 9.7.1:

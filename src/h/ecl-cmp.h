@@ -28,7 +28,7 @@
 
 #define ecl_def_ct_base_string(name,chars,len,static,const)     \
         static const struct ecl_base_string name ## data = {    \
-                (int8_t)t_base_string, 0, aet_bc, FALSE, FALSE, \
+                (int8_t)t_base_string, 0, aet_bc, 0,            \
                 Cnil, (cl_index)(len), (cl_index)(len),         \
                 (ecl_base_char*)(chars) };                      \
         static const cl_object name = (cl_object)(& name ## data)
@@ -46,10 +46,10 @@
         static const cl_object name = (cl_object)(& name ## data)
 
 #define ecl_def_ct_vector(name,type,raw,len,static,const)               \
-        static const struct ecl_vector name ## data = {            \
-                (int8_t)t_vector, 0, FALSE, FALSE,                      \
+        static const struct ecl_vector name ## data = {                 \
+                (int8_t)t_vector, 0, (type), 0,                         \
                 Cnil, (cl_index)(len), (cl_index)(len),                 \
-                (ecl_base_char*)(raw), (type), 0 };                     \
+                (ecl_base_char*)(raw), 0 };                             \
         static const cl_object name = (cl_object)(& name ## data)
         
 enum ecl_locative_type {
