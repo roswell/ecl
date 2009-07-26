@@ -386,11 +386,10 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 	       (bind `(LCL ,reqi) var))
 	      ((unboxed var) ; create unboxed variable
 	       (setf (var-loc var) (wt-decl var)))))
-      #+nil ; jjgr debug
-      (loop for req in requireds
-            do (print (list local-entry-p req (var-loc req))))
-      (when (and rest (< (var-ref rest) 1)) ; dont create rest if not used
-	(setq rest nil))
+      ;; dont create rest or varargs if not used
+      (when (and rest (< (var-ref rest) 1))
+	(setq rest nil
+              varargs (or optionals keywords allow-other-keys)))
       (do ((opt optionals (cdddr opt)))
 	  ((endp opt))
         (do-decl (first opt))
@@ -415,7 +414,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 
     ;; Bind required parameters.
     (do ((reqs requireds (cdr reqs))
-	 (reqi (1+ req0) (1+ reqi)))	; to allow concurrent compilations
+	 (reqi (1+ req0) (1+ reqi)))
 	((or local-entry-p (endp reqs)))
       (declare (fixnum reqi) (type cons reqs))
       (bind `(LCL ,reqi) (first reqs)))
