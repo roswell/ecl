@@ -153,7 +153,6 @@ typedef cl_object (*cl_objectfn_fixed)();
 #define HEADER			int8_t t, m, padding[2]
 #define HEADER1(field)		int8_t t, m, field, padding
 #define HEADER2(field1,field2)	int8_t t, m, field1, field2
-#define HEADER4(field1,flag2,flag3,flag4) int8_t t, m, field1; unsigned flag2:4, flag3:2, flag4:2
 
 struct ecl_singlefloat {
 	HEADER;
@@ -231,9 +230,11 @@ enum ecl_stype {		/*  symbol type  */
 #define ECL_UNBOUND		((cl_object)(cl_symbols+2))
 #define ECL_PROTECT_TAG		((cl_object)(cl_symbols+3))
 
+#define ECL_FLAG_MACRO        1
+#define ECLF_LAG_SPECIAL_VAR  4
+
 struct ecl_symbol {
-	HEADER4(stype, mflag, isform, dynamic);
-				/*  symbol type and whether it names a macro */
+	HEADER2(stype, dynamic);/*  symbol type, special-variable-p */
 	cl_object value;	/*  global value of the symbol  */
 				/*  Coincides with cons.car  */
 	cl_object gfdef;	/*  global function definition  */
