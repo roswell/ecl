@@ -265,9 +265,11 @@ and is not adjustable."
 ;;************************************************************
 
 (defun constantly-t (&rest foo)
+  (declare (ignore foo))
   t)
 
 (defun constantly-nil (&rest foo)
+  (declare (ignore foo))
   nil)
 
 (defun simple-array-p (x)
