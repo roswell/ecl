@@ -9,7 +9,7 @@ ECL 9.7.2:
    have to build version 7.2-alpha2 of the garbage collector manually.
 
  - The NetBSD port builds with default values using the garbage collector
-   supplied with the pkgsrc distribution.
+   in the pkgsrc distribution.
 
 * Compiler:
 
