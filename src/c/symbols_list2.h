@@ -1794,5 +1794,7 @@ cl_symbols[] = {
 {SYS_ "+ECL-SYNTAX-PROGV-LIST+",NULL},
 {SYS_ "WITH-ECL-IO-SYNTAX",NULL},
 
+{SYS_ "STREAM-EXTERNAL-FORMAT-SET","si_stream_external_format_set"},
+
 /* Tag for end of list */
 {NULL,NULL}};

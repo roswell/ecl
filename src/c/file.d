@@ -3104,6 +3104,41 @@ set_stream_elt_type(cl_object stream, cl_fixnum byte_size, int flags,
 }
 
 cl_object
+si_stream_external_format_set(cl_object stream, cl_object format)
+{
+#ifdef ECL_CLOS_STREAMS
+        if (ECL_INSTANCEP(stream)) {
+                FEerror("Cannot change external format of stream ~A", 1, stream);
+        }
+#endif
+        switch (stream->stream.mode) {
+        case smm_input:
+        case smm_input_file:
+        case smm_output:
+        case smm_output_file:
+        case smm_io:
+        case smm_io_file:
+#ifdef ECL_WSOCK
+        case smm_input_wsock:
+        case smm_output_wsock:
+        case smm_io_wsock:
+#endif
+                {
+                        cl_object elt_type = ecl_stream_element_type(stream);
+                        if (elt_type != @'character' && elt_type != @'base-char')
+                                FEerror("Cannot change external format"
+                                        "of binary stream ~A", 1, stream);
+                        set_stream_elt_type(stream, stream->stream.byte_size,
+                                            stream->stream.flags, format);
+                }
+                break;
+        default:
+                FEerror("Cannot change external format of stream ~A", 1, stream);
+        }
+        @(return)
+}
+
+cl_object
 ecl_make_file_stream_from_fd(cl_object fname, int fd, enum ecl_smmode smm,
 			     cl_fixnum byte_size, int flags, cl_object external_format)
 {

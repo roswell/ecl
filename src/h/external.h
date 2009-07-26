@@ -625,6 +625,7 @@ extern ECL_API cl_object si_do_read_sequence(cl_object string, cl_object stream,
 extern ECL_API cl_object si_file_column(cl_object strm);
 extern ECL_API cl_object cl_interactive_stream_p(cl_object strm);
 extern ECL_API cl_object si_set_buffering_mode(cl_object strm, cl_object mode);
+extern ECL_API cl_object si_stream_external_format_set(cl_object strm, cl_object format);
 
 extern ECL_API bool ecl_input_stream_p(cl_object strm);
 extern ECL_API bool ecl_output_stream_p(cl_object strm);
