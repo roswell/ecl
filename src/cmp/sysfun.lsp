@@ -254,6 +254,9 @@
 (def-inline array-total-size :unsafe (t) :fixnum "((#0)->array.dim)")
 
 (proclaim-function adjustable-array-p (array) t :predicate t)
+(def-inline adjustable-array-p :always (t) :bool "@0;(ECL_ARRAYP(#0)? (void)0: FEtype_error_array(#0),ECL_ADJUSTABLE_ARRAY_P(#0))")
+(def-inline adjustable-array-p :unsafe (array) :bool "ECL_ADJUSTABLE_ARRAY_P(#0)")
+
 (proclaim-function array-displacement (array) (values t fixnum) :predicate t)
 (proclaim-function svref (simple-vector fixnum) t :no-side-effects t)
 (def-inline svref :always (t t) t "ecl_aref1(#0,fixint(#1))")
@@ -268,6 +271,8 @@
 (def-inline si:svset :unsafe (t fixnum t) t "(#0)->vector.self.t[#1]= #2")
 
 (proclaim-function array-has-fill-pointer-p (*) t :predicate t)
+(def-inline array-has-fill-pointer-p :always (t) :bool "@0;(ECL_ARRAYP(#0)?(void)0:FEtype_error_array(#0),ECL_ARRAY_HAS_FILL_POINTER_P(#0))")
+(def-inline array-has-fill-pointer-p :unsafe (array) :bool "ECL_ARRAY_HAS_FILL_POINTER_P(#0)")
 (proclaim-function fill-pointer (vector) fixnum :no-side-effects t)
 (def-inline fill-pointer :unsafe (t) :fixnum "((#0)->vector.fillp)")
 
