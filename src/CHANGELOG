@@ -30,6 +30,10 @@ ECL 9.7.2:
    use a single integer field, and handle the bits manually. See the
    new macros ECL_ADJUSTABLE_ARRAY_P and ECL_ARRAY_HAS_FILL_POINTER_P.
 
+ - Four new command-line arguments, --encoding, --input-encoding,
+   --output-encoding and --error-encoding, allow the user to change the 
+   external formats of the default streams.
+
 * Bugs fixed:
 
  - SI:GET-LIBRARY-PATHNAME did not work properly in Windows.

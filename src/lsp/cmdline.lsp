@@ -30,6 +30,8 @@ Usage: ecl [-? | --help]
            [[-o ofile] [-c [cfile]] [-h [hfile]] [-data [datafile]] [-s] [-q]
             -compile file]
            [[-o ofile] -link file+]
+           [--input-encoding external-format] [--output-encoding external-format]
+           [--error-encoding external-format] [--encoding external-format]
 "
  "Prints a help message about command line arguments of ECL")
 
@@ -64,6 +66,15 @@ Usage: ecl [-? | --help]
     ("--c-stack" 1 (ext:set-limit 'ext:c-stack (read-from-string 1)))
     ("--trap-fpe" 0 (si::trap-fpe t t))
     ("--no-trap-fpe" 0 (si::trap-fpe t nil))
+    ("--encoding" 1 (dolist (i (list *standard-input* *standard-output*
+                                     *error-output* *trace-output*))
+                      (si::stream-external-format-set i (read-from-string 1))))
+    ("--input-encoding" 1 (si::stream-external-format-set *standard-input*
+                           (read-from-string 1)))
+    ("--output-encoding" 1 (si::stream-external-format-set *standard-output*
+                            (read-from-string 1)))
+    ("--error-encoding" 1 (si::stream-external-format-set *error-output*
+                           (read-from-string 1)))
     ("-compile" 1
      (progn
        (setq quit
