@@ -189,7 +189,7 @@ Does not check if the third gang is a single-element list."
 (defsetf fdefinition sys:fset)
 (defsetf macro-function (s &optional env) (v) `(sys:fset ,s ,v t))
 (defsetf aref (a &rest il) (v) `(sys:aset ,v ,a ,@il))
-(defsetf row-major-aref (a i) (v) `(sys:row-major-aset ,a ,i ,v))
+(defsetf row-major-aref sys:row-major-aset)
 (defsetf get (s p &optional d) (v)
   (if d `(progn ,d (sys:putprop ,s ,v ,p)) `(sys:putprop ,s ,v ,p)))
 (defsetf get-sysprop put-sysprop)
@@ -202,13 +202,13 @@ Does not check if the third gang is a single-element list."
 (defsetf symbol-plist sys:set-symbol-plist)
 (defsetf gethash (k h &optional d) (v) `(sys:hash-set ,k ,h ,v))
 #-clos
-(defsetf documentation (s d) (v) `(sys::set-documentation ,s ,d ,v))
+(defsetf documentation sys::set-documentation)
 #+clos
 (defsetf sys:instance-ref sys:instance-set)
 (defsetf compiler-macro-function (fname) (function)
   `(sys::put-sysprop ,fname 'sys::compiler-macro ,function))
 (defsetf readtable-case sys:readtable-case-set)
-
+(defsetf stream-external-format sys::stream-external-format-set)
 
 (define-setf-expander getf (&environment env place indicator &optional default)
   (multiple-value-bind (vars vals stores store-form access-form)
@@ -303,16 +303,23 @@ Does not check if the third gang is a single-element list."
       (get-setf-expansion place env)
     (declare (ignore access-form))
     (let ((declaration `(declare (:read-only ,@(append vars stores)))))
-      (if (= (length stores) 1)
-	`(let* ,(mapcar #'list
-			(append vars stores)
-			(append vals (list newvalue)))
-	  ,declaration
-	  ,store-form)
-	`(let* ,(mapcar #'list vars vals)
-	  (multiple-value-bind ,stores ,newvalue
-	    ,declaration
-	    ,store-form))))))
+      (cond ((and (consp place)
+                  (let* ((name (first place))
+                         (inverse (get-sysprop name 'setf-update-fn)))
+                    (and inverse
+                         (consp store-form)
+                         (eq inverse (first store-form))
+                         `(,inverse ,@(rest place) ,newvalue)))))
+            ((= (length stores) 1)
+             `(let* ,(mapcar #'list
+                             (append vars stores)
+                             (append vals (list newvalue)))
+                ,declaration
+                ,store-form))
+            (t `(let* ,(mapcar #'list vars vals)
+                  (multiple-value-bind ,stores ,newvalue
+                    ,declaration
+                    ,store-form)))))))
 
 (defun setf-structure-access (struct type index newvalue)
   (declare (si::c-local))

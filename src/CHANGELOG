@@ -34,6 +34,9 @@ ECL 9.7.2:
    --output-encoding and --error-encoding, allow the user to change the 
    external formats of the default streams.
 
+ - For places defined with the simple form of DEFSETF, SETF now produces
+   a simpler expansion, without a surrounding LET* form.
+
 * Bugs fixed:
 
  - SI:GET-LIBRARY-PATHNAME did not work properly in Windows.
