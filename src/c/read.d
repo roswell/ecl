@@ -2406,14 +2406,31 @@ read_VV(cl_object block, void (*entry_point)(cl_object))
 		perm_len = block->cblock.data_size;
 		temp_len = block->cblock.temp_data_size;
 		len = perm_len + temp_len;
+
+                if (block->cblock.data_text == 0) {
+                        if (len) {
+                                /* Code from COMPILE uses data in *compiler-constants* */
+                                cl_object v = ECL_SYM_VAL(env,@'si::*compiler-constants*');
+                                if (type_of(v) != t_vector ||
+                                    v->vector.dim != len ||
+                                    v->vector.elttype != aet_object)
+                                        FEerror("Internal error: corrupted data in "
+                                                "si::*compiler-constants*", 0);
+                                VV = block->cblock.data = v->vector.self.t;
+                                VVtemp = block->cblock.temp_data = 0;
+                        }
+                        goto NO_DATA_LABEL;
+                }
+		if (len == 0) {
+                        VV = VVtemp = 0;
+                        goto NO_DATA_LABEL;
+                }
 #ifdef ECL_DYNAMIC_VV
 		VV = block->cblock.data = perm_len? (cl_object *)ecl_alloc(perm_len * sizeof(cl_object)) : NULL;
 #else
 		VV = block->cblock.data;
 #endif
 		memset(VV, 0, perm_len * sizeof(*VV));
-
-		if ((len == 0) || (block->cblock.data_text == 0)) goto NO_DATA_LABEL;
 
 		VVtemp = block->cblock.temp_data = temp_len? (cl_object *)ecl_alloc(temp_len * sizeof(cl_object)) : NULL;
 		memset(VVtemp, 0, temp_len * sizeof(*VVtemp));

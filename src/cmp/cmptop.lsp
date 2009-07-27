@@ -108,8 +108,6 @@
   (wt-nl-h "#ifdef __cplusplus")
   (wt-nl-h "extern \"C\" {")
   (wt-nl-h "#endif")
-  (when si::*compiler-constants*
-    (wt-nl-h "#include <string.h>"))
   ;;; Initialization function.
   (let* ((*lcl* 0) (*lex* 0) (*max-lex* 0) (*max-env* 0) (*max-temp* 0)
          (*aux-closure* nil)
@@ -159,11 +157,6 @@
       ;; and the initialization file
       (wt-nl "Cblock->cblock.data_text = \"" (init-name-tag name) "\";")
       )
-    (when si::*compiler-constants*
-      (wt-nl "{cl_object data = ecl_symbol_value("
-	     (nth-value 1 (si::mangle-name '*compiler-constants* nil))
-	     ");")
-      (wt-nl "memcpy(VV, data->vector.self.t, VM*sizeof(cl_object));}"))
     (wt-nl "VVtemp = Cblock->cblock.temp_data;")
 
     ;; Type propagation phase
