@@ -4892,15 +4892,18 @@ static void
 invalid_codepoint(cl_object stream, cl_fixnum c)
 {
 	FEerror("When reading stream ~A with external format ~A,~%"
-		"found an invalid character code, ~D.",
-		3, stream, cl_stream_external_format(stream), MAKE_FIXNUM(c));
+		"found an invalid character code, ~D~@@[, at file position ~D~].",
+		4, stream, cl_stream_external_format(stream), MAKE_FIXNUM(c),
+                ecl_file_position(stream));
 }
 
 static void
 malformed_character(cl_object stream)
 {
-	FEerror("Stream ~A with external format ~A contains an invalid octet sequence.",
-		2, stream, cl_stream_external_format(stream));
+	FEerror("Stream ~A,~&with external format ~A contains an invalid"
+                " octet sequence~@@[~&at file position ~D~].",
+		3, stream, cl_stream_external_format(stream),
+                ecl_file_position(stream));
 }
 
 static void
