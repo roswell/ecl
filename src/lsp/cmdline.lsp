@@ -68,12 +68,12 @@ Usage: ecl [-? | --help]
     ("--no-trap-fpe" 0 (si::trap-fpe t nil))
     ("--encoding" 1 (dolist (i (list *standard-input* *standard-output*
                                      *error-output* *trace-output*))
-                      (si::stream-external-format-set i (read-from-string 1))))
-    ("--input-encoding" 1 (si::stream-external-format-set *standard-input*
+                      (setf (stream-external-format i) (read-from-string 1))))
+    ("--input-encoding" 1 (setf (stream-external-format *standard-input*)
                            (read-from-string 1)))
-    ("--output-encoding" 1 (si::stream-external-format-set *standard-output*
+    ("--output-encoding" 1 (setf (stream-external-format *standard-output*)
                             (read-from-string 1)))
-    ("--error-encoding" 1 (si::stream-external-format-set *error-output*
+    ("--error-encoding" 1 (setf (stream-external-format *error-output*)
                            (read-from-string 1)))
     ("-compile" 1
      (progn
