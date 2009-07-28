@@ -912,7 +912,6 @@ c_call(cl_env_ptr env, cl_object args, int flags) {
 		 * calls: OP_STEPFCALL. */
 		asm_function(env, name, (flags & FLAG_GLOBAL) | FLAG_REG0);
 		asm_op2(env, OP_STEPCALL, nargs);
-		asm_op(env, OP_POP1);
 		flags = FLAG_VALUES;
 	} else if (SYMBOLP(name) &&
 		   ((flags & FLAG_GLOBAL) || Null(c_tag_ref(env, name, @':function'))))
