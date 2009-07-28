@@ -17,6 +17,8 @@
 #include <string.h>
 #include <ecl/internal.h>
 
+#if !defined(HAVE_LIBFFI)
+
 #define MAX_INT_REGISTERS 6
 #define MAX_FP_REGISTERS 8
 
@@ -347,3 +349,5 @@ ecl_dynamic_callback_make(cl_object data, enum ecl_ffi_calling_convention cc_typ
 
 	return buf;
 }
+
+#endif

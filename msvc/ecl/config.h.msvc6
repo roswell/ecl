@@ -84,6 +84,15 @@
 /* Stack grows downwards						*/
 #define ECL_DOWN_STACK 1
 
+/* We have libffi and can use it                                        */
+/*#undef HAVE_LIBFFI*/
+
+/* We have non-portable implementation of FFI calls			*/
+/* Only used as a last resort, when libffi is missin                    */
+#ifndef HAVE_LIBFFI
+#define ECL_DYNAMIC_FFI 1
+#endif
+
 /* We have non-portable implementation of FFI calls			*/
 #define ECL_DYNAMIC_FFI 1
 

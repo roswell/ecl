@@ -17,6 +17,8 @@
 #include <string.h>
 #include <ecl/internal.h>
 
+#if !defined(HAVE_LIBFFI)
+
 struct ecl_fficall_reg *
 ecl_fficall_prepare_extra(struct ecl_fficall_reg *registers)
 {
@@ -319,3 +321,5 @@ ecl_dynamic_callback_make(cl_object data, enum ecl_ffi_calling_convention cc_typ
 
 	return buf;
 }
+
+#endif

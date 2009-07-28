@@ -115,7 +115,15 @@ struct cl_env_struct {
 #endif
 
 	/* foreign function interface */
-	void *fficall;
+#ifdef HAVE_LIBFFI
+        cl_index ffi_args_limit;
+	struct _ffi_type **ffi_types;
+        union ecl_ffi_values *ffi_values;
+        union ecl_ffi_values **ffi_values_ptrs;
+#endif
+#ifdef ECL_DYNAMIC_FFI
+        void *fficall;
+#endif
 
 	/* Alternative stack for processing signals */
 	void *altstack;

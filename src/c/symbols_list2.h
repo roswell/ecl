@@ -1616,7 +1616,7 @@ cl_symbols[] = {
 
 {SYS_ "*CODE-WALKER*",NULL},
 
-#ifdef ECL_DYNAMIC_FFI
+#ifdef HAVE_LIBFFI
 {SYS_ "CALL-CFUN","si_call_cfun"},
 {KEY_ "CALLBACK",NULL},
 {SYS_ "MAKE-DYNAMIC-CALLBACK","si_make_dynamic_callback"},
@@ -1795,6 +1795,9 @@ cl_symbols[] = {
 {SYS_ "WITH-ECL-IO-SYNTAX",NULL},
 
 {SYS_ "STREAM-EXTERNAL-FORMAT-SET","si_stream_external_format_set"},
+
+{KEY_ "SYSV",NULL},
+{KEY_ "UNIX64",NULL},
 
 /* Tag for end of list */
 {NULL,NULL}};

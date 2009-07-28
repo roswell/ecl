@@ -16,6 +16,9 @@
 #include <string.h>
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
+#ifdef HAVE_LIBFFI
+# include <ffi/ffi.h>
+#endif
 
 static const cl_object ecl_foreign_type_table[] = {
 	@':char',
@@ -52,10 +55,12 @@ static const cl_object ecl_foreign_type_table[] = {
 	@':void'
 };
 
+#ifdef ECL_DYNAMIC_FFI
 static const cl_object ecl_foreign_cc_table[] = {
 	@':cdecl',
 	@':stdcall'
 };
+#endif
 
 static unsigned int ecl_foreign_type_size[] = {
 	sizeof(char),
@@ -91,6 +96,60 @@ static unsigned int ecl_foreign_type_size[] = {
 	sizeof(double),
 	0
 };
+
+#ifdef HAVE_LIBFFI
+static struct {
+        const cl_object symbol;
+        ffi_abi abi;
+} ecl_foreign_cc_table[] = {
+        {@':default', FFI_DEFAULT_ABI},
+#ifdef X86_WIN32
+	{@':cdecl', FFI_SYSV},
+	{@':sysv', FFI_SYSV},
+        {@':stdcall', FFI_STDCALL}
+#endif
+#if !defined(X86_WIN32) && (defined(__i386__) || defined(__x86_64__))
+	{@':cdecl', FFI_SYSV},
+	{@':sysv', FFI_SYSV},
+	{@':unix64', FFI_UNIX64}
+#endif
+};
+
+static ffi_type *ecl_type_to_libffi_type[] = {
+	&ffi_type_schar, /*@':char',*/
+	&ffi_type_uchar, /*@':unsigned-char',*/
+	&ffi_type_sint8, /*@':byte',*/
+	&ffi_type_uint8, /*@':unsigned-byte',*/
+	&ffi_type_sshort, /*@':short',*/
+	&ffi_type_ushort, /*@':unsigned-short',*/
+	&ffi_type_sint, /*@':int',*/
+	&ffi_type_uint, /*@':unsigned-int',*/
+	&ffi_type_slong, /*@':long',*/
+	&ffi_type_ulong, /*@':unsigned-long',*/
+#ifdef ecl_uint16_t
+        &ffi_type_sint16, /*@':int16-t',*/
+        &ffi_type_uint16, /*@':uint16-t',*/
+#endif
+#ifdef ecl_uint32_t
+        &ffi_type_sint32, /*@':int64-t',*/
+        &ffi_type_uint32, /*@':uint64-t',*/
+#endif
+#ifdef ecl_uint64_t
+        &ffi_type_sint64, /*@':int64-t',*/
+        &ffi_type_uint64, /*@':uint64-t',*/
+#endif
+#ifdef ecl_long_long_t
+        &ffi_type_sint64, /*@':long-long',*/ /*FIXME! libffi does not have long long */
+        &ffi_type_uint64, /*@':unsigned-long-long',*/
+#endif
+	&ffi_type_pointer, /*@':pointer-void',*/
+	&ffi_type_pointer, /*@':cstring',*/
+	&ffi_type_pointer, /*@':object',*/
+	&ffi_type_float, /*@':float',*/
+	&ffi_type_double, /*@':double',*/
+	&ffi_type_void /*@':void'*/
+};
+#endif /* HAVE_LIBFFI */
 
 cl_object
 ecl_make_foreign_data(cl_object tag, cl_index size, void *data)
@@ -283,6 +342,21 @@ ecl_foreign_type_code(cl_object type)
 	return ECL_FFI_VOID;
 }
 
+#ifdef HAVE_LIBFFI
+ffi_abi
+ecl_foreign_cc_code(cl_object cc)
+{
+	int i;
+	for (i = 0; i <= ECL_FFI_CC_STDCALL; i++) {
+		if (cc == ecl_foreign_cc_table[i].symbol)
+			return ecl_foreign_cc_table[i].abi;
+	}
+	FEerror("~A does no denote a valid calling convention.", 1, cc);
+	return ECL_FFI_CC_CDECL;
+}
+#endif
+
+#ifdef ECL_DYNAMIC_FFI
 enum ecl_ffi_calling_convention
 ecl_foreign_cc_code(cl_object cc)
 {
@@ -294,6 +368,7 @@ ecl_foreign_cc_code(cl_object cc)
 	FEerror("~A does no denote a valid calling convention.", 1, cc);
 	return ECL_FFI_CC_CDECL;
 }
+#endif
 
 cl_object
 ecl_foreign_data_ref_elt(void *p, enum ecl_ffi_tag tag)
@@ -550,7 +625,6 @@ OUTPUT:
 }
 
 #ifdef ECL_DYNAMIC_FFI
-
 static void
 ecl_fficall_overflow()
 {
@@ -649,6 +723,155 @@ ecl_fficall_align(int data)
 	si_put_sysprop(sym, @':callback', CONS(cbk, data));
 	@(return cbk)
 @)
-
-
 #endif /* ECL_DYNAMIC_FFI */
+
+
+#ifdef HAVE_LIBFFI
+static void
+resize_call_stack(cl_env_ptr env, cl_index new_size)
+{
+        cl_index i;
+        ffi_type **types =
+                ecl_alloc_atomic((new_size + 1) * sizeof(ffi_type*));
+        union ecl_ffi_values *values =
+                ecl_alloc_atomic((new_size + 1) * sizeof(union ecl_ffi_values));
+        union ecl_ffi_values **values_ptrs =
+                ecl_alloc_atomic(new_size * sizeof(union ecl_ffi_values *));
+        memcpy(types, env->ffi_types, env->ffi_args_limit * sizeof(ffi_type*));
+        memcpy(values, env->ffi_values, env->ffi_args_limit *
+               sizeof(union ecl_ffi_values));
+        for (i = 0; i < new_size; i++) {
+                values_ptrs[i] = (values + i + 1);
+        }
+        env->ffi_args_limit = new_size;
+        ecl_dealloc(env->ffi_types);
+        env->ffi_types = types;
+        ecl_dealloc(env->ffi_values);
+        env->ffi_values = values;
+        ecl_dealloc(env->ffi_values_ptrs);
+        env->ffi_values_ptrs = values_ptrs;
+}
+
+static int
+prepare_cif(cl_env_ptr the_env, ffi_cif *cif, cl_object return_type,
+            cl_object arg_types, cl_object args,
+            cl_object cc_type, ffi_type ***output_copy)
+{
+        int n, ok;
+        ffi_type **types;
+        enum ecl_ffi_tag type = ecl_foreign_type_code(return_type);
+        if (!the_env->ffi_args_limit)
+                resize_call_stack(the_env, 32);
+        the_env->ffi_types[0] = ecl_type_to_libffi_type[type];
+        for (n=0; !Null(arg_types); ) {
+                if (!LISTP(arg_types)) {
+                        FEerror("In CALL-CFUN, types lists is not a proper list", 0);
+                }
+                if (n >= the_env->ffi_args_limit) {
+                        resize_call_stack(the_env, n + 32);
+                }
+		type = ecl_foreign_type_code(ECL_CONS_CAR(arg_types));
+                arg_types = ECL_CONS_CDR(arg_types);
+                the_env->ffi_types[++n] = ecl_type_to_libffi_type[type];
+                if (CONSP(args)) {
+                        cl_object object = ECL_CONS_CAR(args);
+                        args = ECL_CONS_CDR(args);
+                        if (type == ECL_FFI_CSTRING) {
+                                object = ecl_null_terminated_base_string(CAR(args));
+                                if (ECL_CONS_CAR(args) != object) {
+                                        ECL_STACK_PUSH(the_env, object);
+                                }
+                        }
+                        ecl_foreign_data_set_elt(the_env->ffi_values + n, type, object);
+                }
+        }
+        if (output_copy) {
+                cl_index bytes = (n + 1) * sizeof(ffi_type*);
+                *output_copy = types = (ffi_type**)ecl_alloc_atomic(bytes);
+                memcpy(types, the_env->ffi_types, bytes);
+        } else {
+                types = the_env->ffi_types;
+        }
+        ok = ffi_prep_cif(cif, ecl_foreign_cc_code(cc_type), n, types[0], types + 1);
+        if (ok != FFI_OK) {
+                if (ok == FFI_BAD_ABI) {
+                        FEerror("In CALL-CFUN, not a valid ABI: ~A", 1,
+                                cc_type);
+                }
+                if (ok == FFI_BAD_TYPEDEF) {
+                        FEerror("In CALL-CFUN, wrong or malformed argument types", 0);
+                }
+        }
+        return n;
+}
+
+@(defun si::call-cfun (fun return_type arg_types args &optional (cc_type @':default'))
+	void *cfun = ecl_foreign_data_pointer_safe(fun);
+	cl_object object;
+        volatile cl_index sp;
+        ffi_cif cif;
+@
+{
+	sp = ECL_STACK_INDEX(the_env);
+	prepare_cif(the_env, &cif, return_type, arg_types, args, cc_type, NULL);
+        ffi_call(&cif, cfun, the_env->ffi_values, (void **)the_env->ffi_values_ptrs);
+	object = ecl_foreign_data_ref_elt(the_env->ffi_values,
+                                          ecl_foreign_type_code(return_type));
+	ECL_STACK_SET_INDEX(the_env, sp);
+	@(return object)
+}
+@)
+
+static void
+callback_executor(ffi_cif *cif, void *result, void **args, void *userdata)
+{
+        cl_object data = (cl_object)userdata;
+        cl_object fun = ECL_CONS_CAR(data);
+        cl_object ret_type = (data = ECL_CONS_CDR(data), ECL_CONS_CAR(data));
+        cl_object arg_types = (data = ECL_CONS_CDR(data), ECL_CONS_CAR(data));
+        cl_env_ptr the_env = ecl_process_env();
+        struct ecl_stack_frame frame_aux;
+        const cl_object frame = ecl_stack_frame_open(the_env, (cl_object)&frame_aux, 0);
+        cl_object x;
+        while (arg_types != Cnil) {
+                cl_object type = ECL_CONS_CAR(args);
+                enum ecl_ffi_tag tag = ecl_foreign_type_code(type);
+                x = ecl_foreign_data_ref_elt(*args, tag);
+                ecl_stack_frame_push(frame, x);
+                arg_types = ECL_CONS_CDR(arg_types);
+                args++;
+        }
+        x = ecl_apply_from_stack_frame(frame, fun);
+        ecl_stack_frame_close(frame);
+        ecl_foreign_data_set_elt(result, ecl_foreign_type_code(ret_type), x);
+}
+
+@(defun si::make-dynamic-callback (fun sym return_type arg_types
+                                   &optional (cc_type @':default'))
+@
+{
+        ffi_cif *cif = ecl_alloc(sizeof(ffi_cif));
+        ffi_type **types;
+        int n = prepare_cif(the_env, cif, return_type, arg_types, Cnil, cc_type,
+                            &types);
+        ffi_closure *closure = ecl_alloc_atomic(sizeof(ffi_closure));
+        cl_object closure_object = ecl_make_foreign_data(@':pointer-void',
+                                                         sizeof(ffi_closure),
+                                                         closure);
+        cl_object data = cl_list(6, return_type, arg_types, cc_type,
+                                 ecl_make_foreign_data(@':pointer-void',
+                                                       sizeof(*cif), cif),
+                                 ecl_make_foreign_data(@':pointer-void',
+                                                       (n + 1) * sizeof(ffi_type*),
+                                                       types),
+                                 closure_object);
+        int status = ffi_prep_closure(closure, cif, callback_executor, data);
+        if (status != FFI_OK) {
+                FEerror("Unable to build callback. libffi returns ~D", 1,
+                        MAKE_FIXNUM(status));
+        }
+	si_put_sysprop(sym, @':callback', data);
+        @(return closure_object);
+}
+@)
+#endif /* HAVE_LIBFFI */

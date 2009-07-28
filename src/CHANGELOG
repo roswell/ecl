@@ -37,6 +37,9 @@ ECL 9.7.2:
  - For places defined with the simple form of DEFSETF, SETF now produces
    a simpler expansion, without a surrounding LET* form.
 
+ - The dynamic FFI is now implemented using libffi. This extends the portability
+   and removes the previous, error prone implementation.
+
 * Bugs fixed:
 
  - SI:GET-LIBRARY-PATHNAME did not work properly in Windows.
