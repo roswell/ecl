@@ -742,7 +742,6 @@ AC_MSG_CHECKING([Using the GMP library to guess good compiler/linker flags])
  ${aux}/configure --srcdir=${aux} --prefix=${builddir} >/dev/null 2>&1)
 GMP_CFLAGS=`grep '^s,@CFLAGS@' tmp/config.status| sed 's&s,@CFLAGS@,\(.*\),;t t&\1&'`
 GMP_LDFLAGS=`grep '^s,@GMP_LDFLAGS@' tmp/config.status| sed 's&s,@GMP_LDFLAGS@,\(.*\),;t t&\1&'`;
-rm -rf tmp
 # Notice that GMP_LDFLAGS is designed to be passed to libtool, and therefore
 # some options could be prefixed by -Wc, which means "flag for the compiler".
 LDFLAGS=`grep '^s,@LDFLAGS@' config.status| sed 's&s,@LDFLAGS@,\(.*\),;t t&\1&'`;
