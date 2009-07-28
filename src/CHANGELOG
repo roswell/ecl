@@ -41,6 +41,9 @@ ECL 9.7.2:
 
  - SI:GET-LIBRARY-PATHNAME did not work properly in Windows.
 
+ - STEP did not work properly because the bytecompiler introduced an extra
+   opcode after STEPCALL.
+
 
 ECL 9.7.1:
 ==========
