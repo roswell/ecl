@@ -44,6 +44,7 @@ ECL 9.7.2:
  - STEP did not work properly because the bytecompiler introduced an extra
    opcode after STEPCALL.
 
+ - --enable-slow-config works again.
 
 ECL 9.7.1:
 ==========
