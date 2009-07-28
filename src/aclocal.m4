@@ -744,9 +744,10 @@ GMP_CFLAGS=`grep '^s,@CFLAGS@' tmp/config.status| sed 's&s,@CFLAGS@,\(.*\),;t t&
 GMP_LDFLAGS=`grep '^s,@GMP_LDFLAGS@' tmp/config.status| sed 's&s,@GMP_LDFLAGS@,\(.*\),;t t&\1&'`;
 # Notice that GMP_LDFLAGS is designed to be passed to libtool, and therefore
 # some options could be prefixed by -Wc, which means "flag for the compiler".
-LDFLAGS=`grep '^s,@LDFLAGS@' config.status| sed 's&s,@LDFLAGS@,\(.*\),;t t&\1&'`;
-LDFLAGS=`echo ${LDFLAGS} ${GMP_LDFLAGS} | sed 's%-Wc,%%'`
-CFLAGS="${CFLAGS} ${GMP_CFLAGS}"
+LDFLAGS=`echo ${LDFLAGS} ${GMP_LDFLAGS} | sed 's%-Wc,%%g'`
+CFLAGS=`echo ${CFLAGS} ${GMP_CFLAGS} | sed 's%-Wc,%%g'`
+GMP_CFLAGS=""
+GMP_LDFLAGS=""
 #host=`grep '^s,@host@' config.status | sed 's&s,@host@,\(.*\),;t t&\1&'`
 AC_MSG_CHECKING([C/C++ compiler flags])
 AC_MSG_RESULT([${CFLAGS}])
