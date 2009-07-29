@@ -138,7 +138,7 @@ static const char *feature_names[] = {
 #ifdef ECL_CLOS_STREAMS
 	"CLOS-STREAMS",
 #endif
-#ifdef ECL_DYNAMIC_FFI
+#if defined(ECL_DYNAMIC_FFI) || defined(HAVE_LIBFFI)
 	"DFFI",
 #endif
 #ifdef ECL_UNICODE
@@ -221,6 +221,12 @@ ecl_init_env(cl_env_ptr env)
 # endif /* THREADS */
 #endif /* !GBC_BOEHM */
 
+#ifdef HAVE_LIBFFI
+        env->ffi_args_limit = 0;
+        env->ffi_types = 0;
+        env->ffi_values = 0;
+        env->ffi_values_ptrs = 0;
+#endif
 #ifdef ECL_DYNAMIC_FFI
 	env->fficall = ecl_alloc(sizeof(struct ecl_fficall));
 	((struct ecl_fficall*)env->fficall)->registers = 0;
