@@ -834,7 +834,7 @@ callback_executor(ffi_cif *cif, void *result, void **args, void *userdata)
         const cl_object frame = ecl_stack_frame_open(the_env, (cl_object)&frame_aux, 0);
         cl_object x;
         while (arg_types != Cnil) {
-                cl_object type = ECL_CONS_CAR(args);
+                cl_object type = ECL_CONS_CAR(arg_types);
                 enum ecl_ffi_tag tag = ecl_foreign_type_code(type);
                 x = ecl_foreign_data_ref_elt(*args, tag);
                 ecl_stack_frame_push(frame, x);
@@ -858,14 +858,15 @@ callback_executor(ffi_cif *cif, void *result, void **args, void *userdata)
         cl_object closure_object = ecl_make_foreign_data(@':pointer-void',
                                                          sizeof(ffi_closure),
                                                          closure);
-        cl_object data = cl_list(6, return_type, arg_types, cc_type,
+        cl_object data = cl_list(6, closure_object,
+                                 fun, return_type, arg_types, cc_type,
                                  ecl_make_foreign_data(@':pointer-void',
                                                        sizeof(*cif), cif),
                                  ecl_make_foreign_data(@':pointer-void',
                                                        (n + 1) * sizeof(ffi_type*),
-                                                       types),
-                                 closure_object);
-        int status = ffi_prep_closure(closure, cif, callback_executor, data);
+                                                       types));
+        int status = ffi_prep_closure(closure, cif, callback_executor,
+                                      ECL_CONS_CDR(data));
         if (status != FFI_OK) {
                 FEerror("Unable to build callback. libffi returns ~D", 1,
                         MAKE_FIXNUM(status));
