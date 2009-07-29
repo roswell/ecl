@@ -158,7 +158,7 @@ containing the whole rest of the given `string', if any."
 (defmethod host-ent-address ((host-ent host-ent))
   (car (host-ent-addresses host-ent)))
 
-;; FIXME: Do we need to free the hostent structures?
+;; FIXME: We should move this to using getaddrinfo
 (defun get-host-by-name (host-name)
   "Returns a HOST-ENT instance for HOST-NAME or throws some kind of condition.
 HOST-NAME may also be an IP address in dotted quad notation or some other
