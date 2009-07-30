@@ -1616,7 +1616,7 @@ cl_symbols[] = {
 
 {SYS_ "*CODE-WALKER*", SI_SPECIAL, NULL, -1, OBJNULL},
 
-#ifdef HAVE_LIBFFI
+#if defined(HAVE_LIBFFI) || defined(ECL_DYNAMIC_FFI)
 {SYS_ "CALL-CFUN", SI_ORDINARY, si_call_cfun, -1, OBJNULL},
 {KEY_ "CALLBACK", KEYWORD, NULL, -1, OBJNULL},
 {SYS_ "MAKE-DYNAMIC-CALLBACK", SI_ORDINARY, si_make_dynamic_callback, -1, OBJNULL},
