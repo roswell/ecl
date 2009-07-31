@@ -46,10 +46,10 @@ ECL 9.8.1:
    to evaluate lisp forms in a safe way. If supplied three values, when an
    error happens, it returns ERROR-VALUE; otherwise it will invoke a debugger.
 
- - Two new functions, ecl_read_from_cstring(s) and ecl_read_from_cstring(s,v)
-   read an object from a C string (char *). The first one is unsafe and will
-   enter a debugger when there is a syntax error. The second one will return V
-   when an error happens.
+ - Two new functions, ecl_read_from_cstring(s) and
+   ecl_read_from_cstring_safe(s,v) read an object from a C string (char *). The
+   first one is unsafe and will enter a debugger when there is a syntax
+   error. The second one will return V when an error happens.
 
 * Bugs fixed:
 

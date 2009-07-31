@@ -1771,7 +1771,7 @@ extern ECL_API cl_object cl_prin1_to_string _ARGS((cl_narg narg, cl_object V1, .
 extern ECL_API cl_object cl_princ_to_string _ARGS((cl_narg narg, cl_object V1, ...));
 extern ECL_API cl_object cl_y_or_n_p _ARGS((cl_narg narg, ...));
 extern ECL_API cl_object cl_yes_or_no_p _ARGS((cl_narg narg, ...));
-extern ECL_API cl_object si_string_to_object _ARGS((cl_narg narg, cl_object str, ...);
+extern ECL_API cl_object si_string_to_object _ARGS((cl_narg narg, cl_object str, ...));
 
 /* listlib.lsp */
 

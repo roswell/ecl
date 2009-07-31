@@ -76,8 +76,10 @@ object's representation."
         (values (read stream eof-error-p eof-value)
                 (file-position stream)))))
 
-(defun si::string-to-object (string &rest args)
-  (apply #'si::safe-eval `(read-from-string ,string) nil args))
+(defun si::string-to-object (string &optional (err-value nil err-value-p))
+  (if err-value-p
+      (si::safe-eval `(read-from-string ,string) nil err-value)
+      (si::safe-eval `(read-from-string ,string) nil)))
 
 (defun write-to-string (object &rest rest
                         &aux (stream (make-string-output-stream)))

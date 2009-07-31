@@ -1197,7 +1197,7 @@
 (proclaim-function make-dispatch-macro-character (*) t)
 (proclaim-function set-dispatch-macro-character (*) t)
 (proclaim-function get-dispatch-macro-character (*) t)
-(proclaim-function si:string-to-object (t) t)
+(proclaim-function si:string-to-object (t &optional t) t)
 (proclaim-function si:standard-readtable (t) t)
 (proclaim-function symbol-function (t) t)
 (proclaim-function fboundp (symbol) t :predicate t)
@@ -1528,7 +1528,7 @@
     si::safe-eval
     ;; iolib.lsp
     read-from-string write-to-string prin1-to-string princ-to-string
-    y-or-n-p yes-or-no-p
+    y-or-n-p yes-or-no-p string-to-object
     ;; listlib.lsp
     union nunion intersection nintersection set-difference nset-difference
     set-exclusive-or nset-exclusive-or subsetp rassoc-if rassoc-if-not
