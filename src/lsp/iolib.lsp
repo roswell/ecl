@@ -76,6 +76,9 @@ object's representation."
         (values (read stream eof-error-p eof-value)
                 (file-position stream)))))
 
+(defun si::string-to-object (string &rest args)
+  (apply #'si::safe-eval `(read-from-string ,string) nil args))
+
 (defun write-to-string (object &rest rest
                         &aux (stream (make-string-output-stream)))
   "Args: (object &key (escape *print-escape*) (radix *print-radix*)
