@@ -2091,26 +2091,6 @@ ecl_invalid_character_p(int c)
 @)
 
 cl_object
-c_string_to_object(const char *s)
-{
-	return si_string_to_object(make_constant_base_string(s));
-}
-
-cl_object
-si_string_to_object(cl_object x)
-{
-	cl_object in;
-
-	/* FIXME! Restricted to base string */
-	x = ecl_check_cl_type(@'si::string-to-object', x, t_base_string);
-	in = ecl_make_string_input_stream(x, 0, TOKEN_STRING_FILLP(x));
-	x = ecl_read_object(in);
-	if (x == OBJNULL)
-		FEend_of_file(in);
-	@(return x)
-}
-
-cl_object
 si_standard_readtable()
 {
 	@(return cl_core.standard_readtable)

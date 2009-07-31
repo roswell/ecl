@@ -1330,13 +1330,20 @@ package."
             (default-debugger condition)))))
   (finish-output))
 
-(defun safe-eval (form env err-value)
-  (catch 'si::protect-tag
-    (let* ((*debugger-hook*
-	    #'(lambda (condition old-hooks)
-		(throw 'si::protect-tag condition))))
-      (return-from safe-eval (eval-with-env form env))))
-  err-value)
+(defun safe-eval (form env &optional (err-value nil err-value-p))
+  "Args: (FORM ENV &optional ERR-VALUE)
+Evaluates FORM in the given environment, which may be NIL. If the form
+signals an error, or tries to jump to an outer point, the function has two
+choices: by default, it will invoke a debugger, but if a third value is
+supplied, then SAFE-EVAL will not use a debugger but rather return that
+value."
+  (let ((output nil) (ok nil))
+    (unwind-protect
+         (handler-bind ((error (if err-value-p
+                                   #'(lambda (c) (return-from safe-eval c))
+                                   #'invoke-debugger)))
+           (setf output (si::eval-with-env form env) ok t))
+      (return-from safe-eval (if ok output err-value)))))
 
 #-ecl-min
 (package-lock "COMMON-LISP" t)

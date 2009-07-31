@@ -1,4 +1,4 @@
-ECL 9.7.2:
+ECL 9.8.1:
 ==========
 
 * Ports:
@@ -10,6 +10,8 @@ ECL 9.7.2:
 
  - The NetBSD port builds with default values using the garbage collector
    in the pkgsrc distribution.
+
+ - Solaris/Sparc now builds with the given libraries (GMP and Boehm).
 
 * Compiler:
 
@@ -40,6 +42,15 @@ ECL 9.7.2:
  - The dynamic FFI is now implemented using libffi. This extends the portability
    and removes the previous, error prone implementation.
 
+ - A new function, (SI:SAFE-EVAL form env &optional error-value), can be used
+   to evaluate lisp forms in a safe way. If supplied three values, when an
+   error happens, it returns ERROR-VALUE; otherwise it will invoke a debugger.
+
+ - Two new functions, ecl_read_from_cstring(s) and ecl_read_from_cstring(s,v)
+   read an object from a C string (char *). The first one is unsafe and will
+   enter a debugger when there is a syntax error. The second one will return V
+   when an error happens.
+
 * Bugs fixed:
 
  - SI:GET-LIBRARY-PATHNAME did not work properly in Windows.
@@ -48,76 +59,6 @@ ECL 9.7.2:
    opcode after STEPCALL.
 
  - --enable-slow-config works again.
-
-ECL 9.7.1:
-==========
-
-* Printer:
-
- - Readtables have a new flag that makes them read-only. Function
-	(si::readtable-lock readtable &optional new-flag)
-   either reads the state of this flag (if NEW-FLAG is missing) or
-   also sets it.
-
- - The compiler now uses cl_core to efficiently access certain lisp
-   constants (standard packages, standard readtables, etc)
-
- - EXT:OUTPUT-FLOAT-INFINITY works now fine when *print-circle* is T.
-
- - WITH-STANDARD-IO-SYNTAX now also rebinds *print-pprint-dispatch*.
-
-* Compiler:
-
- - When printing out data and reading it from a FASL file, the compiler now
-   uses more strict settings avoiding usual interferences such as the user
-   changing the readtable or the printing rules.
-
- - The compiler no longer enters the debugger when it finds an error in the
-   code it compiles.
-
- - C:COMPILER-ERROR no longer derives from ERROR or SERIOUS-CONDITION.
-
- - Trapping of compiler conditions now works even for compiler errors.
-
- - Handlers of compiler errors can now call (ABORT). COMPILE-FILE will
-   interrupt the compilation process, and the outputs values that signal
-   the failure to terminate.
-
- - ECL no longer emits compiler notes when deleting unreachable code.
-
- - Compiler messages now show the offending form and file position.
-
- - DEFCONSTANT only had the expected compile-time side effects in the bytecodes
-   compiler, not in the lisp->C translator.
-
- - New type information propagators for AREF, ASET, +, *, /, -, COS, SIN, ACOS,
-   ASIN, COSH, ACOSH, ASINH, SINH, ATAN, ATANH, EXP, EXPT, CIS, SQRT, ISQRT and
-   ABS. allow ECL to produce better code even without an additional
-   back-propagation phase.
-
- - Code to perform a type inference pass, with which-way information has
-   been added to ECL. The code is still in a debug phase, with lots of debug
-   output printed and rather incomplete, but it is by default deactivated and
-   should not interfere with usual functioning.
-
- - The code for inlining functions has been improved. Some safe inline
-   expansions that were already available are now actively used thanks to these
-   fixes.
-
- - Formerly, by historical reasons, many library functions that take a fixed
-   number of arguments were declared as functions with a variable number of
-   arguments. This slows down ECL and prevents detecting certain errors. In an
-   ongoing effort to solve this problem, the C prototypes of COSH, SINH, CIS,
-   ACOSH, ASINH and ISQRT now take only one argument (i.e. cl_cosh(cl_object x)
-   instead of cl_cosh(cl_narg narg, cl_object x, ...))
-
-* Visible changes:
-
- - The toplevel only traps SERIOUS-CONDITIONS.
-
- - "make clean" now wipes out the entire content of the build directory. Please
-   use this before re-configuring again ECL so that header and configuration
-   files are properly updated.
 
 ;;; Local Variables: ***
 ;;; mode:text ***

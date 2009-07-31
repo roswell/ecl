@@ -549,7 +549,7 @@ extern ECL_API void FEwin32_error(const char *msg, int narg, ...) /*__attribute_
 
 extern ECL_API cl_object cl_funcall _ARGS((cl_narg narg, cl_object fun, ...));
 extern ECL_API cl_object cl_apply _ARGS((cl_narg narg, cl_object fun, cl_object arg, ...));
-extern ECL_API cl_object si_safe_eval _ARGS((cl_narg narg, cl_object form, cl_object env, cl_object value, ...));
+extern ECL_API cl_object si_safe_eval _ARGS((cl_narg narg, cl_object form, cl_object env, ...));
 #define cl_safe_eval(form,env,value) si_safe_eval(3,form,env,value)
 extern ECL_API cl_object *_ecl_va_sp(cl_narg narg);
 extern ECL_API cl_object si_unlink_symbol(cl_object s);
@@ -1381,7 +1381,6 @@ extern ECL_API cl_object si_get_buffer_string();
 extern ECL_API cl_object si_put_buffer_string(cl_object string);
 extern ECL_API cl_object cl_read_sequence _ARGS((cl_narg narg, cl_object seq, cl_object stream, ...));
 extern ECL_API cl_object cl_readtablep(cl_object readtable);
-extern ECL_API cl_object si_string_to_object(cl_object str);
 extern ECL_API cl_object si_standard_readtable(void);
 extern ECL_API cl_object cl_read _ARGS((cl_narg narg, ...));
 extern ECL_API cl_object cl_read_preserving_whitespace _ARGS((cl_narg narg, ...));
@@ -1418,7 +1417,8 @@ extern ECL_API cl_object ecl_copy_readtable(cl_object from, cl_object to);
 extern ECL_API cl_object ecl_current_readtable(void);
 extern ECL_API int ecl_current_read_base(void);
 extern ECL_API char ecl_current_read_default_float_format(void);
-extern ECL_API cl_object c_string_to_object(const char *s);
+#define ecl_read_from_cstring(s) si_string_to_object(1,make_constant_base_string(s))
+#define ecl_read_from_cstring_safe(s,v) si_string_to_object(2,make_constant_base_string(s),(v))
 extern ECL_API cl_object read_VV(cl_object block, void (*entry)(cl_object));
 
 /* reference.c */
@@ -1771,6 +1771,7 @@ extern ECL_API cl_object cl_prin1_to_string _ARGS((cl_narg narg, cl_object V1, .
 extern ECL_API cl_object cl_princ_to_string _ARGS((cl_narg narg, cl_object V1, ...));
 extern ECL_API cl_object cl_y_or_n_p _ARGS((cl_narg narg, ...));
 extern ECL_API cl_object cl_yes_or_no_p _ARGS((cl_narg narg, ...));
+extern ECL_API cl_object si_string_to_object _ARGS((cl_narg narg, cl_object str, ...);
 
 /* listlib.lsp */
 
@@ -1967,6 +1968,7 @@ extern ECL_API cl_object clos_standard_instance_set _ARGS((cl_narg narg, cl_obje
 #define si_bc_file(o) si_compiled_function_file(o)
 #define ARRAYP ECL_ARRAYP
 #define VECTORP ECL_VECTORP
+#define c_string_to_object ecl_read_from_cstring
 
 #ifdef __cplusplus
 }
