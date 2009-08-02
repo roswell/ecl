@@ -319,8 +319,12 @@ dnl Checks for libraries
 
 LIBS="${LIBS} -lm"
 AC_CHECK_LIB(sun, getpwnam)         # on IRIX adds -lsun
-AC_CHECK_LIB(ffi, ffi_call)
+AC_CHECK_LIB( ffi, ffi_call, [has_ffi_lib=yes], [has_ffi_lib=no] )
+AC_CHECK_HEADER( [ffi/ffi.h], [has_ffi_h=$has_ffi_lib], [has_ffi_h=no] )
 AC_ISC_POSIX
+if test $has_ffi_h = "yes"; then
+  AC_DEFINE(HAVE_LIBFFI)
+fi
 
 dnl ----------------------------------------------------------------------
 dnl Profiling & debug flags

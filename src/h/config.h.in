@@ -56,9 +56,11 @@
 #endif
 
 /* Use GNU Multiple Precision library for bignums                       */
+#ifndef DPP
 #undef WITH_GMP
 #ifdef WITH_GMP
 #include "@ECL_GMP_HEADER@"
+#endif
 #endif
 
 /* Userland threads?							*/
