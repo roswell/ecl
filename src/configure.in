@@ -324,6 +324,7 @@ AC_CHECK_HEADER( [ffi/ffi.h], [has_ffi_h=$has_ffi_lib], [has_ffi_h=no] )
 AC_ISC_POSIX
 if test $has_ffi_h = "yes"; then
   AC_DEFINE(HAVE_LIBFFI)
+  LDFLAGS="$LDFLAGS -lffi"
 fi
 
 dnl ----------------------------------------------------------------------
