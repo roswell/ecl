@@ -406,7 +406,8 @@ under certain conditions; see file 'Copyright' for details.")
 
       (let ((*break-enable* t)
 	    (*tpl-level* -1))
-	(tpl)))))
+	(tpl))
+      0)))
 
 (defvar *allow-recursive-debug* nil)
 (defvar *debug-status* nil)
@@ -1339,10 +1340,12 @@ supplied, then SAFE-EVAL will not use a debugger but rather return that
 value."
   (let ((output nil) (ok nil))
     (unwind-protect
-         (handler-bind ((error (if err-value-p
-                                   #'(lambda (c) (return-from safe-eval c))
-                                   #'invoke-debugger)))
-           (setf output (si::eval-with-env form env) ok t))
+         (if err-value-p
+             (let ((*break-enable* nil))
+               (si::eval-with-env form env))
+             (handler-bind ((serious-condition #'invoke-debugger))
+               (setf output (si::eval-with-env form env)
+                     ok t)))
       (return-from safe-eval (if ok output err-value)))))
 
 #-ecl-min

@@ -339,10 +339,17 @@ filesystem or in the database of ASDF modules."
 		   (princ ";
 cl_object output;
 si_select_package(make_simple_base_string(\"CL-USER\"));
-output = cl_safe_eval(c_string_to_object(lisp_code), Cnil, OBJNULL);
+output = si_safe_eval(3, c_string_to_object(lisp_code), Cnil, OBJNULL);
 " stream)
 		   (when (eq target :program)
-		     (princ "cl_shutdown(); return (output != OBJNULL);" stream))
+		     (princ "
+cl_shutdown();
+if (FIXNUMP(output))
+	return fix(output);
+if (Null(output) || (output == OBJNULL))
+	return 1;
+return 0;"
+                            stream))
 		   (princ #\} stream)
 		   )))))
   ;;
