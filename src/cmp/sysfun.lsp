@@ -1223,7 +1223,7 @@
 (def-inline elt :unsafe (t t) t "ecl_elt(#0,fix(#1))")
 (def-inline elt :unsafe (t fixnum) t "ecl_elt(#0,#1)")
 (def-inline elt :unsafe (vector t) t "ecl_aref_unsafe(#0,fix(#1))")
-(def-inline elt :unsafe (vector fixnum) t "ecl_elt_unsafe(#0,#1)")
+(def-inline elt :unsafe (vector fixnum) t "ecl_aref_unsafe(#0,#1)")
 (def-inline aref :unsafe ((array bit) t) :fixnum "ecl_aref_bv(#0,fix(#1))")
 (def-inline aref :unsafe ((array bit) fixnum) :fixnum "ecl_aref_bv(#0,#1)")
 #+unicode
