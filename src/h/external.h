@@ -1291,6 +1291,8 @@ extern ECL_API cl_object ecl_make_pathname(cl_object host, cl_object device, cl_
 extern ECL_API cl_object ecl_parse_namestring(cl_object s, cl_index start, cl_index end, cl_index *ep, cl_object default_host);
 extern ECL_API cl_object coerce_to_physical_pathname(cl_object x);
 extern ECL_API cl_object coerce_to_file_pathname(cl_object pathname);
+#define ECL_NAMESTRING_TRUNCATE_IF_ERROR 1
+#define ECL_NAMESTRING_FORCE_BASE_STRING 2
 extern ECL_API cl_object ecl_namestring(cl_object pname, int truncate_if_impossible);
 extern ECL_API cl_object si_coerce_to_filename(cl_object pathname);
 extern ECL_API cl_object ecl_merge_pathnames(cl_object path, cl_object defaults, cl_object default_version);

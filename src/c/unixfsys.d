@@ -937,7 +937,7 @@ si_get_library_pathname(void)
         s = cl_make_pathname(8, @':name', Cnil, @':type', Cnil,
 			     @':version', Cnil,
                              @':defaults', s);
-        s = ecl_namestring(s, 0);
+        s = ecl_namestring(s, ECL_NAMESTRING_FORCE_BASE_STRING);
 	}
 #else
         s = make_constant_base_string(ECLDIR "/");
@@ -949,7 +949,7 @@ si_get_library_pathname(void)
                         ecl_internal_error("Cannot find ECL's directory");
                 }
                 /* Produce a string */
-                s = ecl_namestring(s, 0);
+                s = ecl_namestring(s, ECL_NAMESTRING_FORCE_BASE_STRING);
         }
         cl_core.library_pathname = s;
  OUTPUT_UNCHANGED:
@@ -965,7 +965,9 @@ si_get_library_pathname(void)
 	if (directory->pathname.name != Cnil ||
 	    directory->pathname.type != Cnil)
 		FEerror("~A is not a directory pathname.", 1, directory);
-	namestring = cl_namestring(directory);
+	namestring = ecl_namestring(directory,
+                                    ECL_NAMESTRING_TRUNCATE_IF_ERROR |
+                                    ECL_NAMESTRING_FORCE_BASE_STRING);
 	if (safe_chdir((char*)namestring->base_string.self) <0)
 		FElibc_error("Can't change the current directory to ~A",
 			     1, namestring);

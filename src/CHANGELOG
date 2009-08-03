@@ -1,6 +1,13 @@
 ECL 9.8.1:
 ==========
 
+* Important notes:
+
+ - The GMP library had to be patched to build with latest versions of GCC.
+   Since our patch only covers the main header and there might be some corners
+   left, it is recommended to build ECL against a better maintained version of
+   the library, such as MPIR or the versions supplied by your operating system.
+
 * Ports:
 
  - The MSVC port now boots also when built without support for Unicode.
@@ -11,7 +18,7 @@ ECL 9.8.1:
  - The NetBSD port builds with default values using the garbage collector
    in the pkgsrc distribution.
 
- - Solaris/Sparc now builds with the given libraries (GMP and Boehm).
+ - Solaris now builds with the given libraries (GMP and Boehm).
 
 * Compiler:
 
@@ -59,6 +66,8 @@ ECL 9.8.1:
    opcode after STEPCALL.
 
  - --enable-slow-config works again.
+
+ - EXT:CHDIR got broken when using Unicode.
 
 ;;; Local Variables: ***
 ;;; mode:text ***

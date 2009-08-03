@@ -795,7 +795,9 @@ si_coerce_to_filename(cl_object pathname_orig)
 	pathname = coerce_to_file_pathname(pathname_orig);
 	if (cl_wild_pathname_p(1,pathname) != Cnil)
 		cl_error(3, @'file-error', @':pathname', pathname_orig);
-	namestring = cl_namestring(pathname);
+	namestring = ecl_namestring(pathname,
+                                    ECL_NAMESTRING_TRUNCATE_IF_ERROR |
+                                    ECL_NAMESTRING_FORCE_BASE_STRING);
 	if (namestring == Cnil) {
 		FEerror("Pathname ~A does not have a physical namestring",
 			1, pathname_orig);
@@ -803,14 +805,6 @@ si_coerce_to_filename(cl_object pathname_orig)
 	if (cl_core.path_max != -1 &&
 	    ecl_length(namestring) >= cl_core.path_max - 16)
 		FEerror("Too long filename: ~S.", 1, namestring);
-#ifdef ECL_UNICODE
-	if (type_of(namestring) == t_string) {
-		if (!ecl_fits_in_base_string(namestring))
-			FEerror("The filesystem does not accept filenames with extended characters: ~S",
-				1, namestring);
-		namestring = si_copy_to_simple_base_string(namestring);
-	}
-#endif
 	return namestring;
 }
 
@@ -869,11 +863,12 @@ ecl_merge_pathnames(cl_object path, cl_object defaults, cl_object default_versio
 	produce a readable representation of the pathname, NIL is returned.
 */
 cl_object
-ecl_namestring(cl_object x, int truncate_if_unreadable)
+ecl_namestring(cl_object x, int flags)
 {
 	bool logical;
 	cl_object l, y;
 	cl_object buffer, host;
+        bool truncate_if_unreadable = flags & ECL_NAMESTRING_TRUNCATE_IF_ERROR;
 
 	x = cl_pathname(x);
 
@@ -995,13 +990,24 @@ NO_DIRECTORY:
 			return Cnil;
 		}
 	}
-	return cl_get_output_stream_string(buffer);
+        buffer = cl_get_output_stream_string(buffer);
+#ifdef ECL_UNICODE
+	if (type_of(buffer) == t_string &&
+            (flags & ECL_NAMESTRING_FORCE_BASE_STRING)) {
+		if (!ecl_fits_in_base_string(buffer))
+			FEerror("The filesystem does not accept filenames "
+                                "with extended characters: ~S",
+				1, buffer);
+		buffer = si_copy_to_simple_base_string(buffer);
+	}
+#endif
+	return buffer;
 }
 
 cl_object
 cl_namestring(cl_object x)
 {
-	@(return ecl_namestring(x, 1))
+	@(return ecl_namestring(x, ECL_NAMESTRING_TRUNCATE_IF_ERROR))
 }
 
 @(defun parse_namestring (thing
@@ -1138,7 +1144,7 @@ cl_file_namestring(cl_object pname)
 						  pname->pathname.name,
 						  pname->pathname.type,
 						  pname->pathname.version),
-				1))
+				ECL_NAMESTRING_TRUNCATE_IF_ERROR))
 }
 
 cl_object
@@ -1148,7 +1154,7 @@ cl_directory_namestring(cl_object pname)
 	@(return ecl_namestring(ecl_make_pathname(Cnil, Cnil,
 						  pname->pathname.directory,
 						  Cnil, Cnil, Cnil),
-				1))
+				ECL_NAMESTRING_TRUNCATE_IF_ERROR))
 }
 
 cl_object
@@ -1200,7 +1206,7 @@ cl_host_namestring(cl_object pname)
 			    EN_MATCH(path, defaults, type),
 			    EN_MATCH(path, defaults, version));
 	newpath->pathname.logical = path->pathname.logical;
-	@(return ecl_namestring(newpath, 1))
+	@(return ecl_namestring(newpath, ECL_NAMESTRING_TRUNCATE_IF_ERROR))
 @)
 #undef EN_MATCH
 
