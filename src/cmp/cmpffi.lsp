@@ -233,9 +233,9 @@
 	 (loc-type (loc-type loc))
 	 (loc-rep-type (loc-representation-type loc)))
     (labels ((coercion-error ()
-	       (cmperr "Unable to coerce lisp object from type (~S,~S)~%~
+	       (cmpwarn "Unable to coerce lisp object from type (~S,~S)~%~
 			to C/C++ type (~S,~S)"
-		       loc-type loc-rep-type dest-type dest-rep-type))
+                        loc-type loc-rep-type dest-type dest-rep-type))
 	     (ensure-valid-object-type (a-lisp-type)
 	       (when (subtypep `(AND ,loc-type ,a-lisp-type) NIL)
 		 (coercion-error))))
