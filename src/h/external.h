@@ -661,6 +661,7 @@ extern ECL_API cl_object ecl_file_length(cl_object strm);
 extern ECL_API int ecl_file_column(cl_object strm);
 extern ECL_API cl_object ecl_make_stream_from_fd(cl_object fname, int fd, enum ecl_smmode smm, cl_fixnum byte_size, int flags, cl_object external_format);
 extern ECL_API cl_object ecl_make_stream_from_FILE(cl_object fname, void *fd, enum ecl_smmode smm, cl_fixnum byte_size, int flags, cl_object external_format);
+extern ECL_API cl_object si_file_stream_fd(cl_object s);
 extern ECL_API int ecl_stream_to_handle(cl_object s, bool output);
 
 /* finalize.c */

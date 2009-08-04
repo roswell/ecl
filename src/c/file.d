@@ -3840,7 +3840,6 @@ ecl_make_stream_from_fd(cl_object fname, int fd, enum ecl_smmode smm,
 					 external_format);
 }
 
-
 int
 ecl_stream_to_handle(cl_object s, bool output)
 {
@@ -3873,6 +3872,31 @@ ecl_stream_to_handle(cl_object s, bool output)
 	default:
 		ecl_internal_error("illegal stream mode");
 	}
+}
+
+cl_object
+si_file_stream_fd(cl_object s)
+{
+        cl_object ret;
+
+	if (type_of(s) != t_stream)
+		FEerror("file_stream_fd: not a stream", 0);
+
+	switch ((enum ecl_smmode)s->stream.mode) {
+	case smm_input:
+	case smm_output:
+	case smm_io:
+                ret = MAKE_FIXNUM(fileno(IO_STREAM_FILE(s)));
+                break;
+	case smm_input_file:
+	case smm_output_file:
+	case smm_io_file:
+                ret = MAKE_FIXNUM(IO_FILE_DESCRIPTOR(s));
+                break;
+	default:
+		ecl_internal_error("not a file stream");
+	}
+        @(return ret);
 }
 
 /**********************************************************************
