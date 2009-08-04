@@ -106,7 +106,7 @@
 		   (notany #'(lambda (v) (var-referenced-in-form v form)) all-vars)
 		   (catch var
 		     (replaceable var body)))
-	  (cmpnote "Replacing variable ~A by its value ~A" (var-name var) form)
+	  (cmpdebug "Replacing variable ~A by its value ~A" (var-name var) form)
 	  (nsubst-var var form)
 	  (go continue))
 	)
@@ -350,7 +350,7 @@
 		       (not (args-cause-side-effect fs)))
 		   (catch var
 		     (replaceable var body)))
-	  (cmpnote "Replacing variable ~A by its value ~a" (var-name var) form)
+	  (cmpdebug "Replacing variable ~A by its value ~a" (var-name var) form)
 	  (nsubst-var var form)
 	  (go continue))
 	)
@@ -400,7 +400,7 @@
       (case (c1form-name form)
         (LOCATION
          (when (can-be-replaced* var body (cdr fl))
-	   (cmpnote "Replacing variable ~a by its value" (var-name var))
+	   (cmpdebug "Replacing variable ~a by its value" (var-name var))
            (setf (var-kind var) 'REPLACED
                  (var-loc var) (c1form-arg 0 form))))
         (VAR
@@ -413,7 +413,7 @@
 		      (can-be-replaced* var body (cdr fl))
 		      (not (var-changed-in-form-list var1 (rest fl)))
 		      (not (var-changed-in-form var1 body)))
-	     (cmpnote "Replacing variable ~a by its value" (var-name var))
+	     (cmpdebug "Replacing variable ~a by its value" (var-name var))
              (setf (var-kind var) 'REPLACED
                    (var-loc var) var1)))))
       (unless env-grows

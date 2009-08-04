@@ -285,7 +285,7 @@ each form it processes. The default value is NIL.")
   "This variable controls whether the compiler should display messages about its
 progress. The default value is T.")
 
-(defvar *suppress-compiler-messages* nil
+(defvar *suppress-compiler-messages* 'compiler-debug-note
   "A type denoting which compiler messages and conditions are _not_ displayed.")
 
 (defvar *suppress-compiler-notes* nil) ; Deprecated

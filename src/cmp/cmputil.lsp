@@ -23,19 +23,26 @@
    (form :initarg :form :initform *current-form* :accessor compiler-message-form))
   (:REPORT
    (lambda (c stream)
-     (let ((position (compiler-message-file-position c)))
-       (if position
-	   (let ((*print-length* 3)
-		 (*print-level* 2))
+     (let ((position (compiler-message-file-position c))
+           (prefix (compiler-message-prefix c))
+           (file (compiler-message-file c))
+           (form (compiler-message-form c)))
+       (if (and position
+                (not (minusp position))
+                (not (equalp form '|compiler preprocess|)))
+	   (let* ((*print-length* 3)
+                  (*print-level* 2))
+             (unless 
 	     (format stream "~A: in file ~A, position ~D, and form ~%  ~A~%"
-		     (compiler-message-prefix c)
-		     (compiler-message-file c) position (compiler-message-form c)))
-	   (format stream "~A: " (compiler-message-prefix c)))
+		     prefix file position form)))
+	   (format stream "~A: " prefix))
        (format stream "~?"
 	       (simple-condition-format-control c)
 	       (simple-condition-format-arguments c))))))
 
 (define-condition compiler-note (compiler-message) ())
+
+(define-condition compiler-debug-note (compiler-note) ())
 
 (define-condition compiler-warning (compiler-message simple-condition style-warning)
   ((prefix :initform "Warning")))
@@ -194,6 +201,9 @@
 
 (defun cmpnote (string &rest args)
   (do-cmpwarn 'compiler-note :format-control string :format-arguments args))
+
+(defun cmpdebug (string &rest args)
+  (do-cmpwarn 'compiler-debug-note :format-control string :format-arguments args))
 
 (defun print-current-form ()
   (when *compile-print*
