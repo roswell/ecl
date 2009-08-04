@@ -117,7 +117,10 @@ ecl_library_open(cl_object filename, bool force_reload) {
 	char *filename_string;
 
 	/* Coerces to a file name but does not merge with cwd */
-	filename = si_coerce_to_filename(filename);
+	filename = coerce_to_physical_pathname(filename);
+        filename = ecl_namestring(filename,
+                                  ECL_NAMESTRING_TRUNCATE_IF_ERROR |
+                                  ECL_NAMESTRING_FORCE_BASE_STRING);
 
 	if (!force_reload) {
 		/* When loading a foreign library, such as a dll or a
@@ -148,6 +151,7 @@ ecl_library_open(cl_object filename, bool force_reload) {
 		}
 #endif
 	}
+ DO_LOAD:
 	block = ecl_alloc_object(t_codeblock);
 	block->cblock.self_destruct = self_destruct;
 	block->cblock.locked = 0;
@@ -203,6 +207,11 @@ ecl_library_open(cl_object filename, bool force_reload) {
 	cl_object other = ecl_library_find_by_handle(block->cblock.handle);
 	if (other != Cnil) {
 		ecl_library_close(block);
+                if (force_reload) {
+                        filename = copy_object_file(filename);
+                        self_destruct = 1;
+                        goto DO_LOAD;
+                }
 		block = other;
 	} else {
 		si_set_finalizer(block, Ct);
