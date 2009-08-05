@@ -58,6 +58,9 @@ ECL 9.8.1:
    first one is unsafe and will enter a debugger when there is a syntax
    error. The second one will return V when an error happens.
 
+ - Modules which are loaded with REQUIRE, but which belong to ECL, are now
+   registered with ASDF and can be used in dependencies.
+
 * Bugs fixed:
 
  - SI:GET-LIBRARY-PATHNAME did not work properly in Windows.

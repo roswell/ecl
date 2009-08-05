@@ -1381,6 +1381,15 @@ output to *VERBOSE-OUT*.  Returns the shell's exit code."
 	(when system
 	  (asdf:operate *require-asdf-operator* name)
 	  t))))
+  (defun register-pre-built-system (name)
+    (register-system name (make-instance 'system :name name)))
+  (setf si::*module-provider-functions*
+        (loop for f in si::*module-provider-functions*
+           unless (eq f 'module-provide-asdf)
+           collect #'(lambda (name)
+                       (let ((l (multiple-value-list (funcall f name))))
+                         (and (first l) (register-pre-built-system name))
+                         (values-list l)))))
   #+win32 (push '("asd" . si::load-source) si::*load-hooks*)
   (pushnew 'module-provide-asdf ext:*module-provider-functions*))
 

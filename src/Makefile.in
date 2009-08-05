@@ -173,6 +173,7 @@ install-base:
 	    *) $(INSTALL_DATA) $$i $(DESTDIR)$(ecldir);; \
 	  esac \
 	done
+	for i in *.asd; do $(INSTALL_DATA) $$i $(DESTDIR)$(ecldir); done
 flatinstall: BUILD-STAMP
 	$(MAKE) DESTDIR=$(DESTDIR) bindir=$(prefix) libdir=$(prefix) \
 	  includedir=$(prefix) ecldir=$(prefix) install-base
