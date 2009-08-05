@@ -75,7 +75,8 @@
   ((type :initform :dll)))
 
 (defclass program-op (monolithic-bundle-op)
-  ((type :initform :program)))
+  ((type :initform :program)
+   (epilogue-code-arg :accessor program-op-epilogue-code-arg)))
 
 (defmethod initialize-instance :after ((instance bundle-op) &rest initargs
 				       &key (name-suffix nil name-suffix-p)
@@ -83,6 +84,10 @@
   (unless name-suffix-p
     (setf (slot-value instance 'name-suffix)
 	  (if (bundle-op-monolithic-p instance) "-mono" "")))
+  (when (typep instance 'program-op)
+    (destructuring-bind (&rest original-initargs &key epilogue-code &allow-other-keys) (slot-value instance 'original-initargs)
+      (setf (slot-value instance 'original-initargs) (remove-keys '(epilogue-code) original-initargs)
+            (program-op-epilogue-code-arg instance) epilogue-code)))
   (setf (bundle-op-build-args instance)
 	(remove-keys '(type monolithic name-suffix)
 		     (slot-value instance 'original-initargs))))
@@ -185,7 +190,10 @@
 	 (output (output-files o c)))
     (ensure-directories-exist (first output))
     (apply #'c::builder (bundle-op-type o) (first output) :lisp-files object-files
-	   (bundle-op-build-args o))))
+	   (append (bundle-op-build-args o)
+                   (when (and (typep o 'program-op)
+                              (program-op-epilogue-code-arg o))
+                     `(:epilogue-code ,(program-op-epilogue-code-arg o)))))))
 
 (defun select-operation (monolithic type)
   (ecase type
