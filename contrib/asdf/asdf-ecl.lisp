@@ -64,7 +64,7 @@
   ((type :initform :dll)))
 
 (defclass monolithic-bundle-op (bundle-op)
-  ((monlithic :initform t)))
+  ((monolithic :initform t)))
 
 (defclass monolithic-fasl-op (fasl-op monolithic-bundle-op) ())
 
