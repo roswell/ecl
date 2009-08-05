@@ -20,7 +20,7 @@
  |----------------------------------------------------------------------------|#
 
 (defpackage :sb-rt
-  (:nicknames :rt :regression-test)
+  (:nicknames :rt :regression-test :rtest)
   (:use #:cl)
   (:export #:*do-tests-when-defined* #:*test* #:continue-testing
 	   #:deftest #:do-test #:do-tests #:get-test #:pending-tests
