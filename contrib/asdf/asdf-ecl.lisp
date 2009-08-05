@@ -212,23 +212,29 @@
 
 (defclass load-fasl-op (operation) ())
 
+(defun trivial-system-p (c)
+  (every #'(lambda (c) (typep c 'ecl-binary-file)) (module-components c)))
+
 (defmethod component-depends-on ((o load-fasl-op) (c system))
-  (unless (every #'(lambda (c) (typep c 'ecl-binary-file)) (module-components c))
+  (unless (trivial-system-p c)
     (subst 'load-fasl-op 'load-op
            (subst 'fasl-op 'compile-op
                   (component-depends-on (make-instance 'load-op) c)))))
 
 (defmethod input-files ((o load-fasl-op) (c system))
-  (and (module-components c)
-       (output-files (make-instance 'fasl-op) c)))
+  (unless (trivial-system-p c)
+    (output-files (make-instance 'fasl-op) c)))
 
 (defmethod perform ((o load-fasl-op) (c t))
   nil)
 
 (defmethod perform ((o load-fasl-op) (c system))
-  (load (first (input-files o c)))
-  (loop for i in (module-components c)
-     do (setf (gethash 'load-op (component-operation-times i)) (get-universal-time))))
+  (let ((l (input-files o c)))
+    (and l
+         (load (first l))
+         (loop for i in (module-components c)
+            do (setf (gethash 'load-op (component-operation-times i))
+                     (get-universal-time))))))
 
 (export '(make-build load-fasl-op))
 (push '("fasb" . si::load-binary) si::*load-hooks*)
