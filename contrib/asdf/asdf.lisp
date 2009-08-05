@@ -1340,7 +1340,7 @@ output to *VERBOSE-OUT*.  Returns the shell's exit code."
              (system (asdf:find-system name nil)))
         (when system
           (asdf:operate 'asdf:load-op name)
-          t))))
+          (provide name)))))
 
   (defun contrib-sysdef-search (system)
     (let ((home (sb-ext:posix-getenv "SBCL_HOME")))

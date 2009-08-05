@@ -111,6 +111,12 @@
                                :readably t :pretty nil)))))))
     output))
 
+(defun build-fake-asdf (name)
+  (with-open-file (*standard-output* (make-pathname :name name :type "asd")
+                   :direction :output :if-exists :supersede :if-does-not-exist :create)
+    (print `(defsystem ,name
+               :components ((:ecl-binary-file ,(string name)))))))
+
 (defun build-module (name sources &key additional-files
                      (builtin nil) (dir "build:")
                      ((:prefix si::*init-function-prefix*) "EXT"))
@@ -118,6 +124,8 @@
   (let* ((name (string-downcase name)))
     (when additional-files
       (setf *module-files* (append additional-files *module-files*)))
+    (unless (equalp name "asdf")
+      (build-fake-asdf name))
     (if builtin
 	(let* ((objects (compile-if-old dir sources :system-p t :c-file t
 					:data-file t :h-file t)))

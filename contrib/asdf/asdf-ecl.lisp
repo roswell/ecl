@@ -213,9 +213,10 @@
 (defclass load-fasl-op (operation) ())
 
 (defmethod component-depends-on ((o load-fasl-op) (c system))
-  (subst 'load-fasl-op 'load-op
-	 (subst 'fasl-op 'compile-op
-		(component-depends-on (make-instance 'load-op) c))))
+  (unless (every #'(lambda (c) (typep c 'ecl-binary-file)) (module-components c))
+    (subst 'load-fasl-op 'load-op
+           (subst 'fasl-op 'compile-op
+                  (component-depends-on (make-instance 'load-op) c)))))
 
 (defmethod input-files ((o load-fasl-op) (c system))
   (and (module-components c)
@@ -243,6 +244,21 @@
       (when system
         (asdf:operate *require-asdf-operator* name)
         t))))
+
+(defclass ecl-binary-file (component) ())
+(defmethod component-pathname ((c ecl-binary-file))
+  (merge-pathnames (compile-file-pathname (string (component-name c)))
+                   "sys:"))
+(defmethod output-files (o (c ecl-binary-file))
+  nil)
+(defmethod input-files (o (c ecl-binary-file))
+  nil)
+(defmethod perform ((o load-op) (c ecl-binary-file))
+  (load (component-pathname c)))
+(defmethod perform ((o load-fasl-op) (c ecl-binary-file))
+  (load (component-pathname c)))
+(defmethod perform (o (c ecl-binary-file))
+  nil)
 
 (defun register-pre-built-system (name)
   (register-system name (make-instance 'system :name name)))

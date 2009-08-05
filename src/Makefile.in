@@ -167,6 +167,7 @@ install-base:
 	    $(LN_S) @SONAME3@ @SONAME1@ && \
 	    $(LN_S) @SONAME3@ @SONAME@ ) \
 	fi
+	-for i in *.asd; do $(INSTALL_DATA) $${i} $(DESTDIR)$(ecldir); done
 	for i in c/dpp$(EXE) ecl_min$(EXE) `cat MODULES`; do \
 	  case $$i in \
 	    *.fas) $(INSTALL_PROGRAM) $$i $(DESTDIR)$(ecldir);; \
