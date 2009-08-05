@@ -11,6 +11,7 @@
 ;;;
 
 (in-package :asdf)
+(require 'cmp)
 
 ;;;
 ;;; COMPILE-OP / LOAD-OP
@@ -217,7 +218,8 @@
 		(component-depends-on (make-instance 'load-op) c))))
 
 (defmethod input-files ((o load-fasl-op) (c system))
-  (output-files (make-instance 'fasl-op) c))
+  (and (module-components c)
+       (output-files (make-instance 'fasl-op) c)))
 
 (defmethod perform ((o load-fasl-op) (c t))
   nil)
@@ -229,3 +231,30 @@
 
 (export '(make-build load-fasl-op))
 (push '("fasb" . si::load-binary) si::*load-hooks*)
+
+;; Hook into ECL's require/provide
+(require 'cmp)
+(defvar *require-asdf-operator* 'load-op)
+
+(defun module-provide-asdf (name)
+  (handler-bind ((style-warning #'muffle-warning))
+    (let* ((*verbose-out* (make-broadcast-stream))
+           (system (asdf:find-system name nil)))
+      (when system
+        (asdf:operate *require-asdf-operator* name)
+        t))))
+
+(defun register-pre-built-system (name)
+  (register-system name (make-instance 'system :name name)))
+
+(setf si::*module-provider-functions*
+      (loop for f in si::*module-provider-functions*
+         unless (eq f 'module-provide-asdf)
+         collect #'(lambda (name)
+                     (let ((l (multiple-value-list (funcall f name))))
+                       (and (first l) (register-pre-built-system name))
+                       (values-list l)))))
+#+win32 (push '("asd" . si::load-source) si::*load-hooks*)
+(pushnew 'module-provide-asdf ext:*module-provider-functions*)
+
+(provide 'asdf)

@@ -362,6 +362,7 @@ and NIL NAME and TYPE components"
 
 (defvar *central-registry*
   '(*default-pathname-defaults*
+    "sys:"
     #+nil "/home/dan/src/sourceforge/cclan/asdf/systems/"
     #+nil "telent:asdf;systems;"))
 
@@ -1368,29 +1369,3 @@ output to *VERBOSE-OUT*.  Returns the shell's exit code."
 
   (pushnew 'module-provide-asdf sb-ext:*module-provider-functions*)
   (pushnew 'contrib-sysdef-search *system-definition-search-functions*))
-
-;; Hook into ECL's require/provide
-#+ecl
-(progn
-  (require 'cmp)
-  (defvar *require-asdf-operator* 'load-op)
-  (defun module-provide-asdf (name)
-    (handler-bind ((style-warning #'muffle-warning))
-      (let* ((*verbose-out* (make-broadcast-stream))
-	     (system (asdf:find-system name nil)))
-	(when system
-	  (asdf:operate *require-asdf-operator* name)
-	  t))))
-  (defun register-pre-built-system (name)
-    (register-system name (make-instance 'system :name name)))
-  (setf si::*module-provider-functions*
-        (loop for f in si::*module-provider-functions*
-           unless (eq f 'module-provide-asdf)
-           collect #'(lambda (name)
-                       (let ((l (multiple-value-list (funcall f name))))
-                         (and (first l) (register-pre-built-system name))
-                         (values-list l)))))
-  #+win32 (push '("asd" . si::load-source) si::*load-hooks*)
-  (pushnew 'module-provide-asdf ext:*module-provider-functions*))
-
-(provide 'asdf)
