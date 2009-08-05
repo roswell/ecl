@@ -118,8 +118,6 @@
   (let* ((name (string-downcase name)))
     (when additional-files
       (setf *module-files* (append additional-files *module-files*)))
-    (unless (equalp name "asdf")
-      (build-fake-asdf name))
     (if builtin
 	(let* ((objects (compile-if-old dir sources :system-p t :c-file t
 					:data-file t :h-file t)))
