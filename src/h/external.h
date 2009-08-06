@@ -987,9 +987,9 @@ extern ECL_API ecl_int16_t ecl_to_int16_t(cl_object o);
 # define ecl_make_int16_t(i) MAKE_FIXNUM(i)
 #endif /* ecl_uint16_t */
 #define ecl_make_short(n) MAKE_FIXNUM(n)
-#define ecl_to_short(x) (short)fixint(n)
+#define ecl_to_short(n) (short)fixint(n)
 #define ecl_make_ushort(n) MAKE_FIXNUM(n)
-#define ecl_to_ushort(x) (unsigned short)fixnnint(n)
+#define ecl_to_ushort(n) (unsigned short)fixnnint(n)
 #ifdef ecl_uint32_t
 # if FIXNUM_BITS == 32
 #  define ecl_to_uint32_t fixnnint
