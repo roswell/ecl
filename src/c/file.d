@@ -1167,7 +1167,9 @@ clos_stream_write_byte8(cl_object strm, unsigned char *c, cl_index n)
 static cl_object
 clos_stream_read_byte(cl_object strm)
 {
-	return funcall(2, @'gray::stream-read-byte', strm);
+	cl_object b = funcall(2, @'gray::stream-read-byte', strm);
+        if (b == @':eof') b = Cnil;
+        return b;
 }
 
 static void
@@ -1272,8 +1274,18 @@ clos_stream_element_type(cl_object strm)
 }
 
 #define clos_stream_length not_a_file_stream
-#define clos_stream_get_position not_implemented_get_position
-#define clos_stream_set_position not_implemented_set_position
+
+static cl_object
+clos_stream_get_position(cl_object strm)
+{
+	return funcall(2, @'gray::stream-file-position', strm);
+}
+
+static cl_object
+clos_stream_set_position(cl_object strm, cl_object pos)
+{
+	return funcall(3, @'gray::stream-file-position', strm, pos);
+}
 
 static int
 clos_stream_column(cl_object strm)
