@@ -1185,7 +1185,7 @@ clos_stream_read_char(cl_object strm)
                 value = CHAR_CODE(output);
         else if (FIXNUMP(output))
                 value = fix(output);
-	else if (output == Cnil)
+	else if (output == Cnil || output == @':eof')
 		return EOF;
         else
                 value = -1;
