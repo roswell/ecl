@@ -8,17 +8,27 @@ ECL 9.8.1:
    left, it is recommended to build ECL against a better maintained version of
    the library, such as MPIR or the versions supplied by your operating system.
 
+ - ECL now builds properly on a large number of platforms, including Windows
+   with and without Microsoft compilers. However, not always are all the
+   configuration options available or well supported. The fault is not always
+   ECL's, but also the libraries it depends on. Some of these problems are
+   detailed below, some are to be found. As a guide, the minimally supported
+   flags for each platform are those use for the automated testing process
+       http://ecls.sourceforge.net/logs.html
+
 * Ports:
 
- - The MSVC port now boots also when built without support for Unicode.
+ - The Windows/MSVC port now boots also when built without support for Unicode.
 
- - The mingw32 port builds without threads. For multithreading, the user will
-   have to build version 7.2-alpha2 of the garbage collector manually.
+ - The Windows/mingw32 port builds without threads. For multithreading, the
+   user will have to build version 7.2-alpha2 of the garbage collector
+   manually and build ECL with it.
 
  - The NetBSD port builds with default values using the garbage collector
    in the pkgsrc distribution.
 
- - Solaris now builds with the given libraries (GMP and Boehm).
+ - The Solaris port (Intel and Sparc) now builds with the given libraries (GMP
+   and Boehm).
 
 * Compiler:
 
