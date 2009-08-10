@@ -33,6 +33,12 @@ AC_ARG_ENABLE(shared,
                   [enable loading compiled files (default=YES)]),
   [], [enable_shared=yes])
 
+AC_ARG_ENABLE(rpath,
+  AS_HELP_STRING( [--enable-rpath],
+		  [hard-code the location of the ECL shared library.]
+		  [(no|yes, default=NO)]),
+  [], [enable_rpath=no] )
+
 AC_ARG_ENABLE(threads,
   AS_HELP_STRING( [--enable-threads],
                   [support for native threads (yes|no|auto, default=NO).]),
@@ -634,7 +640,11 @@ if test ${enable_shared} = "yes"; then
 else
   enable_soname=no
   LSP_LIBRARIES="${LIBPREFIX}ecl.${LIBEXT}"
-  LDRPATH='~*'
+  ECL_LDRPATH=''
+fi
+
+if test "x${enable_rpath}" = "xno"; then
+  ECL_LDRPATH=''
 fi
 
 if test "${with_cmuformat}" = "yes"; then

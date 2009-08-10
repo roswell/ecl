@@ -452,11 +452,11 @@ coprocessor).")
 (defvar *cc-optimize* #-msvc "-O"
                       #+msvc "@CFLAGS_OPTIMIZE@")
 
-(defvar *ld-format* #-msvc "~A -o ~S -L~S ~{~S ~} ~A"
-                    #+msvc "~A -Fe~S~* ~{~S ~} ~A")
+(defvar *ld-format* #-msvc "~A -o ~S -L~S ~{~S ~} ~@[~S~] ~A"
+                    #+msvc "~A -Fe~S~* ~{~S ~} ~@[~S~] ~A")
 
-(defvar *cc-format* #-msvc "~A ~A ~:[~*~;~A~] \"-I~A\" -w -c \"~A\" -o \"~A\""
-                    #+msvc "~A ~A ~:[~*~;~A~] -I\"~A\" -w -c \"~A\" -Fo\"~A\"")
+(defvar *cc-format* #-msvc "~A \"-I~A\" ~A ~:[~*~;~A~] -w -c \"~A\" -o \"~A\""
+                    #+msvc "~A -I\"~A\" ~A ~:[~*~;~A~] -w -c \"~A\" -Fo\"~A\"")
 
 #-dlopen
 (defvar *ld-flags* "@LDFLAGS@ -lecl @CORE_LIBS@ @FASL_LIBS@ @LIBS@")
@@ -481,6 +481,11 @@ coprocessor).")
 
 (defvar *ecl-include-directory* @includedir\@)
 (defvar *ecl-library-directory* @libdir\@)
+
+(defvar *ld-rpath*
+  (let ((x "@ECL_LDRPATH@"))
+    (and (plusp (length x))
+         (format nil x *ecl-library-directory*))))
 
 ;;;
 ;;; Compiler program and flags.

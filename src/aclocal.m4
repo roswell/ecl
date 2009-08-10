@@ -183,7 +183,7 @@ AC_SUBST(SOFTWARE_TYPE)dnl	Type of operating system
 AC_SUBST(SOFTWARE_VERSION)dnl	Version number of operating system
 AC_SUBST(MACHINE_VERSION)dnl	Version of the machine
 
-AC_SUBST(LDRPATH)dnl	Sometimes the path for finding DLLs must be hardcoded.
+AC_SUBST(ECL_LDRPATH)dnl	Sometimes the path for finding DLLs must be hardcoded.
 AC_SUBST(LIBPREFIX)dnl	Name components of a statically linked library
 AC_SUBST(LIBEXT)
 AC_SUBST(SHAREDEXT)dnl	Name components of a dynamically linked library
@@ -192,7 +192,7 @@ AC_SUBST(OBJEXT)dnl	These are set by autoconf
 AC_SUBST(EXEEXT)
 AC_SUBST(INSTALL_TARGET)dnl Which type of installation: flat directory or unix like.
 AC_SUBST(thehost)
-LDRPATH='~*'
+ECL_LDRPATH=''
 SHAREDEXT='so'
 SHAREDPREFIX='lib'
 LIBPREFIX='lib'
@@ -214,7 +214,7 @@ case "${host_os}" in
 		THREAD_LIBS='-lpthread'
 		SHARED_LDFLAGS="-shared ${LDFLAGS}"
 		BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
-		LDRPATH='-Wl,--rpath,~A'
+		ECL_LDRPATH='-Wl,--rpath,~A'
 		clibs="-ldl"
 		# Maybe CFLAGS="-D_ISOC99_SOURCE ${CFLAGS}" ???
 		CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 ${CFLAGS}"
@@ -227,7 +227,7 @@ case "${host_os}" in
 		THREAD_LIBS='-lpthread'
 		SHARED_LDFLAGS="-shared ${LDFLAGS}"
 		BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
-		LDRPATH='-Wl,--rpath,~A'
+		ECL_LDRPATH='-Wl,--rpath,~A'
 		clibs="-ldl"
 		CFLAGS="-D_GNU_SOURCE ${CFLAGS}"
 		SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
@@ -239,7 +239,7 @@ case "${host_os}" in
 		THREAD_LIBS='-lpthread'
 		SHARED_LDFLAGS="-shared ${LDFLAGS}"
 		BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
-		LDRPATH='-Wl,--rpath,~A'
+		ECL_LDRPATH='-Wl,--rpath,~A'
 		clibs="-ldl"
 		CFLAGS="-D_GNU_SOURCE ${CFLAGS}"
 		SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
@@ -250,7 +250,7 @@ case "${host_os}" in
 		THREAD_LIBS='-lpthread'
 		SHARED_LDFLAGS="-shared ${LDFLAGS}"
 		BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
-		LDRPATH="-Wl,--rpath,~A"
+		ECL_LDRPATH="-Wl,--rpath,~A"
 		clibs=""
 		SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
 		SONAME_LDFLAGS="-Wl,-soname,SONAME"
@@ -260,7 +260,7 @@ case "${host_os}" in
 		THREAD_LIBS='-lpthread'
 		SHARED_LDFLAGS="-shared ${LDFLAGS}"
 		BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
-		LDRPATH="-Wl,--rpath,~A"
+		ECL_LDRPATH="-Wl,--rpath,~A"
 		clibs=""
 		SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
 		SONAME_LDFLAGS="-Wl,-soname,SONAME"
@@ -271,7 +271,7 @@ case "${host_os}" in
 		THREAD_LIBS=''
 		SHARED_LDFLAGS="-shared ${LDFLAGS}"
 		BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
-		LDRPATH="-Wl,--rpath,~A"
+		ECL_LDRPATH="-Wl,--rpath,~A"
 		clibs="-lpthread -lm"
 		SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
 		SONAME_LDFLAGS="-Wl,-soname,SONAME"
@@ -280,7 +280,7 @@ case "${host_os}" in
 		thehost='sun4sol2'
 		SHARED_LDFLAGS="-dy -G ${LDFLAGS}"
 		BUNDLE_LDFLAGS="-dy -G ${LDFLAGS}"
-		LDRPATH='-Wl,-R,~A'
+		ECL_LDRPATH='-Wl,-R,~A'
 		TCPLIBS='-lsocket -lnsl -lintl'
 		clibs='-ldl'
 		CFLAGS="${CFLAGS} -std=gnu99"
@@ -317,7 +317,7 @@ case "${host_os}" in
 		PICFLAG='-fPIC -fno-common'
 		SHARED_LDFLAGS="-dynamiclib -flat_namespace -undefined suppress ${LDFLAGS}"
 		BUNDLE_LDFLAGS="-bundle ${LDFLAGS}"
-		LDRPATH=''
+		ECL_LDRPATH=''
 		THREAD_CFLAGS='-D_THREAD_SAFE'
 		THREAD_LIBS='-lpthread'
 		# The GMP library has not yet been ported to Intel-OSX
@@ -342,7 +342,7 @@ case "${host_os}" in
 		THREAD_CFLAGS='-spthread'
 		SHARED_LDFLAGS="-shared ${LDFLAGS}"
 		BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
-		LDRPATH='-Wld=\"-rld_l ~A\"'
+		ECL_LDRPATH='-Wld=\"-rld_l ~A\"'
 		clibs="-Wld=-lrld"
 		;;
 	*)

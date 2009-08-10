@@ -90,6 +90,7 @@
 	   (si::coerce-to-filename o-pathname)
 	   (fix-for-mingw (ecl-library-directory))
 	   options
+           *ld-rpath*
 	   *ld-flags*)))
 
 #+dlopen
@@ -102,15 +103,17 @@
 	   (si::coerce-to-filename o-pathname)
 	   (fix-for-mingw (ecl-library-directory))
 	   options
+           *ld-rpath*
 	   *ld-shared-flags*))
   #+(or mingw32)
   (let ((lib-file (compile-file-pathname o-pathname :type :lib)))
     (safe-system
      (format nil
-	     "gcc -shared -o ~S -L~S ~{~S ~} ~@?"
+	     "gcc -shared -o ~S -L~S ~{~S ~} ~@[~S~] ~@?"
 	     (si::coerce-to-filename o-pathname)
 	     (fix-for-mingw (ecl-library-directory))
 	     options
+             *ld-rpath*
 	     *ld-shared-flags*))))
 
 #+dlopen
@@ -123,6 +126,7 @@
 	   (si::coerce-to-filename o-pathname)
 	   (fix-for-mingw (ecl-library-directory))
 	   options
+           *ld-rpath*
 	   #-msvc *ld-bundle-flags*
 	   #+msvc (concatenate 'string *ld-bundle-flags*
 			       " /EXPORT:" init-name
@@ -134,10 +138,11 @@
   #+(or mingw32)
   (safe-system
    (format nil
-	   "gcc -shared -o ~A -Wl,--export-all-symbols -L~S ~{~S ~} ~A"
+	   "gcc -shared -o ~A -Wl,--export-all-symbols -L~S ~{~S ~} ~@[~S~] ~A"
 	   (si::coerce-to-filename o-pathname)
 	   (fix-for-mingw (ecl-library-directory))
 	   options
+           *ld-rpath*
 	   *ld-bundle-flags*)))
 
 (defconstant +lisp-program-header+ "
@@ -850,8 +855,9 @@ from the C language code.  NIL means \"do not create the file\"."
   (safe-system
    (format nil
 	   *cc-format*
-	   *cc* *cc-flags* (>= (cmp-env-optimization 'speed) 2) *cc-optimize*
-	   (fix-for-mingw (ecl-include-directory))
+	   *cc*
+           (fix-for-mingw (ecl-include-directory))
+	   *cc-flags* (>= (cmp-env-optimization 'speed) 2) *cc-optimize*
 	   (si::coerce-to-filename c-pathname)
 	   (si::coerce-to-filename o-pathname))
 ; Since the SUN4 assembler loops with big files, you might want to use this:

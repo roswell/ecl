@@ -6,6 +6,13 @@ ECL 9.8.2:
  - The C inline expansion for sin, cos, and tan were wrong due to three
    recently introduced typos.
 
+* Visible changes:
+
+ - A new configuration flag, --enable-rpath, allows hardcoding in ECL the
+   location of its shared library. This is not needed in Windows, it should
+   work on all supported platforms and its purpose is to simplify the
+   installation of ECL in nonstandard locations.
+
 
 ECL 9.8.1:
 ==========

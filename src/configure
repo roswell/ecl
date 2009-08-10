@@ -671,7 +671,7 @@ SHAREDPREFIX
 SHAREDEXT
 LIBEXT
 LIBPREFIX
-LDRPATH
+ECL_LDRPATH
 MACHINE_VERSION
 SOFTWARE_VERSION
 SOFTWARE_TYPE
@@ -764,6 +764,7 @@ ac_user_opts='
 enable_option_checking
 with_cross_config
 enable_shared
+enable_rpath
 enable_threads
 enable_boehm
 enable_slow_config
@@ -1446,6 +1447,8 @@ Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --enable-shared         enable loading compiled files (default=YES)
+  --enable-rpath          hard-code the location of the ECL shared library.
+                          (no|yes, default=NO)
   --enable-threads        support for native threads (yes|no|auto,
                           default=NO).
   --enable-boehm          use the Boehm-Weiser garbage collector
@@ -2028,6 +2031,14 @@ if test "${enable_shared+set}" = set; then
   enableval=$enable_shared;
 else
   enable_shared=yes
+fi
+
+
+# Check whether --enable-rpath was given.
+if test "${enable_rpath+set}" = set; then
+  enableval=$enable_rpath;
+else
+  enable_rpath=no
 fi
 
 
@@ -4359,7 +4370,7 @@ MV="mv"
 
 
 
-LDRPATH='~*'
+ECL_LDRPATH=''
 SHAREDEXT='so'
 SHAREDPREFIX='lib'
 LIBPREFIX='lib'
@@ -4381,7 +4392,7 @@ case "${host_os}" in
 		THREAD_LIBS='-lpthread'
 		SHARED_LDFLAGS="-shared ${LDFLAGS}"
 		BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
-		LDRPATH='-Wl,--rpath,~A'
+		ECL_LDRPATH='-Wl,--rpath,~A'
 		clibs="-ldl"
 		# Maybe CFLAGS="-D_ISOC99_SOURCE ${CFLAGS}" ???
 		CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 ${CFLAGS}"
@@ -4394,7 +4405,7 @@ case "${host_os}" in
 		THREAD_LIBS='-lpthread'
 		SHARED_LDFLAGS="-shared ${LDFLAGS}"
 		BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
-		LDRPATH='-Wl,--rpath,~A'
+		ECL_LDRPATH='-Wl,--rpath,~A'
 		clibs="-ldl"
 		CFLAGS="-D_GNU_SOURCE ${CFLAGS}"
 		SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
@@ -4406,7 +4417,7 @@ case "${host_os}" in
 		THREAD_LIBS='-lpthread'
 		SHARED_LDFLAGS="-shared ${LDFLAGS}"
 		BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
-		LDRPATH='-Wl,--rpath,~A'
+		ECL_LDRPATH='-Wl,--rpath,~A'
 		clibs="-ldl"
 		CFLAGS="-D_GNU_SOURCE ${CFLAGS}"
 		SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
@@ -4417,7 +4428,7 @@ case "${host_os}" in
 		THREAD_LIBS='-lpthread'
 		SHARED_LDFLAGS="-shared ${LDFLAGS}"
 		BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
-		LDRPATH="-Wl,--rpath,~A"
+		ECL_LDRPATH="-Wl,--rpath,~A"
 		clibs=""
 		SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
 		SONAME_LDFLAGS="-Wl,-soname,SONAME"
@@ -4427,7 +4438,7 @@ case "${host_os}" in
 		THREAD_LIBS='-lpthread'
 		SHARED_LDFLAGS="-shared ${LDFLAGS}"
 		BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
-		LDRPATH="-Wl,--rpath,~A"
+		ECL_LDRPATH="-Wl,--rpath,~A"
 		clibs=""
 		SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
 		SONAME_LDFLAGS="-Wl,-soname,SONAME"
@@ -4438,7 +4449,7 @@ case "${host_os}" in
 		THREAD_LIBS=''
 		SHARED_LDFLAGS="-shared ${LDFLAGS}"
 		BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
-		LDRPATH="-Wl,--rpath,~A"
+		ECL_LDRPATH="-Wl,--rpath,~A"
 		clibs="-lpthread -lm"
 		SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
 		SONAME_LDFLAGS="-Wl,-soname,SONAME"
@@ -4447,7 +4458,7 @@ case "${host_os}" in
 		thehost='sun4sol2'
 		SHARED_LDFLAGS="-dy -G ${LDFLAGS}"
 		BUNDLE_LDFLAGS="-dy -G ${LDFLAGS}"
-		LDRPATH='-Wl,-R,~A'
+		ECL_LDRPATH='-Wl,-R,~A'
 		TCPLIBS='-lsocket -lnsl -lintl'
 		clibs='-ldl'
 		CFLAGS="${CFLAGS} -std=gnu99"
@@ -4484,7 +4495,7 @@ case "${host_os}" in
 		PICFLAG='-fPIC -fno-common'
 		SHARED_LDFLAGS="-dynamiclib -flat_namespace -undefined suppress ${LDFLAGS}"
 		BUNDLE_LDFLAGS="-bundle ${LDFLAGS}"
-		LDRPATH=''
+		ECL_LDRPATH=''
 		THREAD_CFLAGS='-D_THREAD_SAFE'
 		THREAD_LIBS='-lpthread'
 		# The GMP library has not yet been ported to Intel-OSX
@@ -4509,7 +4520,7 @@ case "${host_os}" in
 		THREAD_CFLAGS='-spthread'
 		SHARED_LDFLAGS="-shared ${LDFLAGS}"
 		BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
-		LDRPATH='-Wld=\"-rld_l ~A\"'
+		ECL_LDRPATH='-Wld=\"-rld_l ~A\"'
 		clibs="-Wld=-lrld"
 		;;
 	*)
@@ -12972,7 +12983,11 @@ LSP_FEATURES="(cons :wants-dlopen ${LSP_FEATURES})"
 else
   enable_soname=no
   LSP_LIBRARIES="${LIBPREFIX}ecl.${LIBEXT}"
-  LDRPATH='~*'
+  ECL_LDRPATH=''
+fi
+
+if test "x${enable_rpath}" = "xno"; then
+  ECL_LDRPATH=''
 fi
 
 if test "${with_cmuformat}" = "yes"; then
