@@ -992,20 +992,20 @@
 (proclaim-function cis (real) complex :no-side-effects t)
 
 (proclaim-function sinh (number) number :no-side-effects t)
-(def-inline sin :always (fixnum-float) :double "sinh((double)(#0))" :exact-return-type t)
-(def-inline sin :always (fixnum-float) :float "(float)sinh((double)(#0))" :exact-return-type t)
+(def-inline sinh :always (fixnum-float) :double "sinh((double)(#0))" :exact-return-type t)
+(def-inline sinh :always (fixnum-float) :float "(float)sinh((double)(#0))" :exact-return-type t)
 
 (proclaim-function asinh (number) number :no-side-effects t)
 
 (proclaim-function cosh (number) number :no-side-effects t)
-(def-inline cos :always (fixnum-float) :double "cosh((double)(#0))" :exact-return-type t)
-(def-inline cos :always (fixnum-float) :float "(float)cosh((double)(#0))" :exact-return-type t)
+(def-inline cosh :always (fixnum-float) :double "cosh((double)(#0))" :exact-return-type t)
+(def-inline cosh :always (fixnum-float) :float "(float)cosh((double)(#0))" :exact-return-type t)
 
 (proclaim-function acosh (number) number :no-side-effects t)
 
 (proclaim-function tanh (number) number :no-side-effects t)
-(def-inline tan :always (fixnum-float) :double "tanh((double)(#0))" :exact-return-type t)
-(def-inline tan :always (fixnum-float) :float "(float)tanh((double)(#0))" :exact-return-type t)
+(def-inline tanh :always (fixnum-float) :double "tanh((double)(#0))" :exact-return-type t)
+(def-inline tanh :always (fixnum-float) :float "(float)tanh((double)(#0))" :exact-return-type t)
 
 (proclaim-function atanh (number) number :no-side-effects t)
 
