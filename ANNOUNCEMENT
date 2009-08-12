@@ -1,4 +1,4 @@
-Announcement of ECL v9.8.2
+Announcement of ECL v9.8.3
 ==========================
 
 ECL stands for Embeddable Common-Lisp. The ECL project aims to produce an
@@ -24,7 +24,7 @@ Changes since last release
 
 See file src/CHANGELOG or browse it online
 
-http://common-lisp.net/cgi-bin/viewcvs.cgi/ecl/src/CHANGELOG?root=ecl&view=markup
+http://ecls.cvs.sourceforge.net/viewvc/ecls/ecl/src/CHANGELOG?view=markup
 
 ;;; Local Variables: ***
 ;;; mode:text ***
