@@ -966,8 +966,10 @@
 (def-inline log :always (fixnum-float) :float "(float)log((double)(#0))" :exact-return-type t)
 
 (proclaim-function sqrt (number) number :no-side-effects t)
-(def-inline sqrt :always ((or (long-float 0.0 *) (double-float 0.0 *))) :double "sqrt((double)(#0))")
-(def-inline sqrt :always ((or (single-float 0.0 *) (short-float 0.0 *))) :float "(float)sqrt((double)(#0))")
+(def-inline sqrt :always ((long-float 0.0 *)) :double "sqrt((double)(#0))")
+(def-inline sqrt :always ((double-float 0.0 *)) :double "sqrt((double)(#0))")
+(def-inline sqrt :always ((single-float 0.0 *)) :float "(float)sqrt((double)(#0))")
+(def-inline sqrt :always ((short-float 0.0 *)) :float "(float)sqrt((double)(#0))")
 
 (proclaim-function isqrt (natural) natural :no-side-effects t)
 
