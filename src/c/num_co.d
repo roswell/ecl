@@ -1072,24 +1072,24 @@ cl_float_radix(cl_object x)
 #ifdef ECL_SHORT_FLOAT
 	case t_shortfloat: {
 		float f = ecl_short_float(y);
-                if (signbit(f) != negativep) x = make_shortfloat(-f);
+                if (signbit(f) != negativep) y = make_shortfloat(-f);
 		break;
 	}
 #endif
 	case t_singlefloat: {
 		float f = sf(y);
-                if (signbit(f) != negativep) x = ecl_make_singlefloat(-f);
+                if (signbit(f) != negativep) y = ecl_make_singlefloat(-f);
 		break;
 	}
 	case t_doublefloat: {
 		double f = df(y);
-                if (signbit(f) != negativep) x = ecl_make_doublefloat(-f);
+                if (signbit(f) != negativep) y = ecl_make_doublefloat(-f);
 		break;
 	}
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat: {
 		long double f = ecl_long_float(y);
-                if (signbit(f) != negativep) x = ecl_make_longfloat(-f);
+                if (signbit(f) != negativep) y = ecl_make_longfloat(-f);
 		break;
 	}
 #endif
@@ -1097,7 +1097,7 @@ cl_float_radix(cl_object x)
 		y = ecl_type_error(@'float-sign',"prototype",y,@'float');
 		goto AGAIN;
 	}
-	@(return x);
+	@(return y);
 @)
 
 cl_object

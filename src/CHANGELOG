@@ -1,3 +1,10 @@
+ECL 9.8.3:
+==========
+
+* Bugs fixed:
+
+ - FLOAT-SIGN ignored the second argument.
+
 ECL 9.8.2:
 ==========
 
