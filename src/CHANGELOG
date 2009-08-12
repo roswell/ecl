@@ -6,6 +6,13 @@ ECL 9.8.2:
  - The C inline expansion for sin, cos, and tan were wrong due to three
    recently introduced typos.
 
+ - The C inline form of SQRT did not work when ECL was built with
+   --enable-longdouble.
+
+ - When building FASL files, the output file name was not surrounded by
+   double quotes, thus breaking when the file name had spaces (only
+   mingw32).
+
 * Visible changes:
 
  - A new configuration flag, --enable-rpath, allows hardcoding in ECL the
