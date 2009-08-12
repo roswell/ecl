@@ -138,7 +138,7 @@
   #+(or mingw32)
   (safe-system
    (format nil
-	   "gcc -shared -o ~A -Wl,--export-all-symbols -L~S ~{~S ~} ~@[~S~] ~A"
+	   "gcc -shared -o ~S -Wl,--export-all-symbols -L~S ~{~S ~} ~@[~S~] ~A"
 	   (si::coerce-to-filename o-pathname)
 	   (fix-for-mingw (ecl-library-directory))
 	   options
