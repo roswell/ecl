@@ -1,3 +1,13 @@
+ECL 9.8.4:
+==========
+
+* Bugs fixed:
+
+ - si_{set,get}_finalizer were not exported from ecl.dll and thus the library
+   TRIVIAL-GARBAGE failed to build in Windows
+
+ - The MSVC port did not define @ECL_LDRPATH@ and failed to build ecl.dll
+
 ECL 9.8.3:
 ==========
 
