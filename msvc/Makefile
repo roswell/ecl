@@ -228,7 +228,7 @@ compile.lsp: bare.lsp $(srcdir)/compile.lsp.in Makefile
 	    "@CFLAGS@" "$(CFLAGS) -DGC_BUILD" \
 	    "@ECL_CFLAGS@" "" \
 	    "@CPPFLAGS@" "" \
-	    "@LDRPATH@" "" \
+	    "@ECL_LDRPATH@" "" \
 	    "@LDFLAGS@" "$(LDFLAGS)" \
 	    "@SHARED_LDFLAGS@" "$(SHARED_LDFLAGS)" \
 	    "@BUNDLE_LDFLAGS@" "$(SHARED_LDFLAGS)" \
@@ -262,10 +262,10 @@ cmp/load.lsp: $(srcdir)/cmp/load.lsp.in
 cmp/cmpdefs.lsp: $(srcdir)/cmp/cmpdefs.lsp Makefile
 	c\cut "@ECL_CC@" "$(CC)" \
 	    "@CFLAGS@" "$(CFLAGS)" \
-        "@CFLAGS_OPTIMIZE@" "$(CFLAGS_OPTIMIZE)" \
+	    "@CFLAGS_OPTIMIZE@" "$(CFLAGS_OPTIMIZE)" \
 	    "@ECL_CFLAGS@" "" \
 	    "@CPPFLAGS@" "" \
-	    "@LDRPATH@" "" \
+	    "@ECL_LDRPATH@" "" \
 	    "@LDFLAGS@" "$(LDFLAGS)" \
 	    "@SHARED_LDFLAGS@" "$(SHARED_LDFLAGS)" \
 	    "@BUNDLE_LDFLAGS@" "$(SHARED_LDFLAGS)" \
