@@ -8,6 +8,8 @@ ECL 9.8.4:
 
  - The MSVC port did not define @ECL_LDRPATH@ and failed to build ecl.dll
 
+ - The sequence functions did not understand the newest specialized array types.
+
 ECL 9.8.3:
 ==========
 

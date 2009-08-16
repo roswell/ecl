@@ -79,29 +79,10 @@
        ;; Furthermore, we also give up trying to find if the element
        ;; type is *. Instead we just compare with some specialized
        ;; types and otherwise fail.
-       (dolist (i '(
-		    (NIL . NIL)
+       (dolist (i '((NIL . NIL)
 		    (LIST . LIST)
-                    #-unicode
-                    (SIMPLE-STRING . BASE-CHAR)
-                    #-unicode
-		    (STRING . BASE-CHAR)
-                    #+unicode
-                    (SIMPLE-BASE-STRING . BASE-CHAR)
-                    #+unicode
-                    (BASE-STRING . BASE-CHAR)
-                    #+unicode
-                    (SIMPLE-STRING . CHARACTER)
-                    #+unicode
-                    (STRING . CHARACTER)
-		    (BIT-VECTOR . BIT)
-		    ((VECTOR EXT:BYTE8) . EXT:BYTE8)
-		    ((VECTOR EXT:INTEGER8) . EXT:INTEGER8)
-		    ((VECTOR EXT:CL-INDEX) . EXT:CL-INDEX)
-		    ((VECTOR FIXNUM) . FIXNUM)
-		    ((VECTOR SHORT-FLOAT) . SHORT-FLOAT)
-		    ((VECTOR LONG-FLOAT) . LONG-FLOAT)
-		    ((VECTOR T) . T))
+                    . #.(mapcar #'(lambda (i) `((VECTOR ,i) . ,i))
+                         +upgraded-array-element-types+))
 		(if (subtypep type 'vector)
 		    ;; Does this have to be a type-error?
 		    ;; 17.3 for MAKE-SEQUENCE says it should be an error,
