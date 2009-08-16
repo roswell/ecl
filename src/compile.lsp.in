@@ -200,6 +200,12 @@
               :builtin
 	      #+(or (NOT :WANTS-DLOPEN) :BUILTIN-SOCKETS) t
 	      #-(or (NOT :WANTS-DLOPEN) :BUILTIN-SOCKETS) nil)
+#+(and WANTS-SOCKETS WANTS-DLOPEN (not BUILTIN-SOCKETS))
+(build-module "sb-bsd-sockets"
+	      '("ext:sockets;sb-bsd-sockets.lisp")
+	      :dir "build:ext;"
+	      :prefix "EXT"
+              :builtin nil)
 
 #+WANTS-SERVE-EVENT
 (build-module "serve-event"

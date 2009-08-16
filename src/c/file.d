@@ -3749,24 +3749,26 @@ si_set_buffering_mode(cl_object stream, cl_object buffer_mode_symbol)
 	if (type_of(stream) != t_stream) {
 		FEerror("Cannot set buffer of ~A", 1, stream);
 	}
-	if (buffer_mode_symbol == Cnil) {
+
+	if (buffer_mode_symbol == @':none' || Null(buffer_mode_symbol))
 		buffer_mode = _IONBF;
-	} else if (buffer_mode_symbol == Ct || buffer_mode_symbol == @':fully-buffered') {
-		buffer_mode = _IOFBF;
-	} else if (buffer_mode_symbol == @':line-buffered') {
+	else if (buffer_mode_symbol == @':line' || buffer_mode_symbol == @':line-buffered')
 		buffer_mode = _IOLBF;
-	} else {
+	else if (buffer_mode_symbol == @':full' || buffer_mode_symbol == @':fully-buffered')
+		buffer_mode = _IOFBF;
+	else
 		FEerror("Not a valid buffering mode: ~A", 1, buffer_mode_symbol);
-	}
+
 	if (mode == smm_output || mode == smm_io || mode == smm_input) {
 		FILE *fp = IO_STREAM_FILE(stream);
-		setvbuf(fp, 0, _IONBF, 0);
+
 		if (buffer_mode != _IONBF) {
 			cl_index buffer_size = BUFSIZ;
 			char *new_buffer = ecl_alloc_atomic(buffer_size);
 			stream->stream.buffer = new_buffer;
 			setvbuf(fp, new_buffer, buffer_mode, buffer_size);
-		}
+		} else
+			setvbuf(fp, NULL, _IONBF, 0);
 	}
 	@(return stream)
 }
@@ -4501,7 +4503,7 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
 		}
 		x = ecl_make_stream_from_FILE(fn, fp, smm, byte_size, flags,
 					      external_format);
-		si_set_buffering_mode(x, byte_size? @':fully-buffered' : @':line-buffered');
+		si_set_buffering_mode(x, byte_size? @':full' : @':line');
 	} else {
 		x = ecl_make_file_stream_from_fd(fn, f, smm, byte_size, flags,
 						 external_format);

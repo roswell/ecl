@@ -16,6 +16,13 @@ ECL 9.8.4:
    platforms do not support it and GCC does not complain, making reliable
    detection impossible.
 
+ - For further compatibility with SBCL, ECL now supports two additional
+   buffer types :FULL and :LINE which are compatible with :FULLY-BUFFERED
+   and :LINE-BUFFERED (Thanks to Matthew Mondor)
+
+ - The sockets library can now be loaded using either (REQUIRE 'SOCKETS)
+   or (REQUIRE 'SB-BSD-SOCKETS).
+
 ECL 9.8.3:
 ==========
 
