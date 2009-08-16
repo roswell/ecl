@@ -10,6 +10,12 @@ ECL 9.8.4:
 
  - The sequence functions did not understand the newest specialized array types.
 
+* Visible changes:
+
+ - The configuration flag --with-__thread now defaults to NO because many
+   platforms do not support it and GCC does not complain, making reliable
+   detection impossible.
+
 ECL 9.8.3:
 ==========
 

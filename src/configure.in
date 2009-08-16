@@ -102,9 +102,9 @@ AC_ARG_ENABLE(local-gmp,
 
 AC_ARG_WITH(__thread,
   AS_HELP_STRING( [--with-__thread],
-                  [Enable __thread thread-local variables (yes|no|AUTO)]
+                  [Enable __thread thread-local variables (yes|NO|auto)]
                   [(supported by NPTL-aware glibc and maybe Windows)] ),
-  [], [with___thread=auto])
+  [], [with___thread=no])
 
 AC_ARG_ENABLE(opcode8,
   AS_HELP_STRING( [--enable-opcode8],
