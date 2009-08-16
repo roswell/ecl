@@ -81,6 +81,7 @@
        ;; types and otherwise fail.
        (dolist (i '((NIL . NIL)
 		    (LIST . LIST)
+                    (STRING . CHARACTER)
                     . #.(mapcar #'(lambda (i) `((VECTOR ,i) . ,i))
                          +upgraded-array-element-types+))
 		(if (subtypep type 'vector)
