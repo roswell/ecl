@@ -1173,7 +1173,7 @@ also known as unix-domain sockets."))
 	    "si_set_buffering_mode(ecl_make_stream_from_fd(#0,#1,(enum ecl_smmode)#2,8,ECL_STREAM_DEFAULT_FORMAT,Cnil), #3)"
 	    :one-liner t))
 
-(defmethod socket-make-stream ((socket socket)  &rest args &key (buffering :full))
+(defmethod socket-make-stream ((socket socket)  &rest args &key (buffering nil))
   (declare (ignore args))
   (let ((stream (and (slot-boundp socket 'stream)
 		     (slot-value socket 'stream))))
