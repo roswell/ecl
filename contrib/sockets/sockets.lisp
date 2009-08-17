@@ -1187,7 +1187,7 @@ also known as unix-domain sockets."))
     stream))
 
 #+:wsock
-(defmethod socket-make-stream ((socket named-pipe-socket) &rest args &key (buffering :full))
+(defmethod socket-make-stream ((socket named-pipe-socket) &rest args &key (buffering nil))
   (declare (ignore args))
   (let ((stream (and (slot-boundp socket 'stream)
 		     (slot-value socket 'stream))))
