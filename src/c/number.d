@@ -390,13 +390,13 @@ ecl_to_unsigned_long_long(cl_object x) {
                                 return (ecl_ulong_long_t)mpz_get_ui(x->big.big_num);
                         } else {
                                 cl_object copy = big_register0_get();
-                                int i = ECL_LONG_LONG_BITS - CL_FIXNUM_BITS;
+                                int i = ECL_LONG_LONG_BITS - FIXNUM_BITS;
                                 mpz_fdiv_q_2exp(copy->bit.big_num, x->big.big_num, i);
                                 if (mpz_fits_ulong_p(copy->big.big_num)) {
                                         volatile ecl_ulong_long_t output;
                                         output = mpz_get_ui(copy->big.big_num);
-                                        for (i -= CL_FIXNUM_BITS; i; i-= CL_FIXNUM_BITS) {
-                                                output = (output << CL_FIXNUM_BITS);
+                                        for (i -= FIXNUM_BITS; i; i-= FIXNUM_BITS) {
+                                                output = (output << FIXNUM_BITS);
                                                 output += mpz_get_ui(x->big.big_num);
                                         }
                                         return output;
@@ -422,13 +422,13 @@ ecl_to_long_long(cl_object x)
                         return (ecl_long_long_t)mpz_get_si(x->big.big_num);
                 } else {
                         cl_object copy = big_register0_get();
-                        int i = ECL_LONG_LONG_BITS - CL_FIXNUM_BITS;
+                        int i = ECL_LONG_LONG_BITS - FIXNUM_BITS;
                         mpz_fdiv_q_2exp(copy->bit.big_num, x->big.big_num, i);
                         if (mpz_fits_ulong_p(copy->big.big_num)) {
                                 volatile ecl_long_long_t output;
                                 output = mpz_get_si(copy->big.big_num);
-                                for (i -= CL_FIXNUM_BITS; i; i-= CL_FIXNUM_BITS) {
-                                        output = (output << CL_FIXNUM_BITS);
+                                for (i -= FIXNUM_BITS; i; i-= FIXNUM_BITS) {
+                                        output = (output << FIXNUM_BITS);
                                         output += mpz_get_ui(x->big.big_num);
                                 }
                                 return output;
