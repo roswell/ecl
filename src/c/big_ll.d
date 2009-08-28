@@ -47,20 +47,33 @@ big_alloc(int size)
 	return x;
 }
 
-cl_object
-bignum1(cl_fixnum val)
-{
-	volatile cl_object z = ecl_alloc_object(t_bignum);
-	z->big.big_num = val;
-	return(z);
-}
-
 static cl_object
 _ecl_big_copy(cl_object x)
 {
 	volatile cl_object y = ecl_alloc_object(t_bignum);
         y->big.big_num = x->big.big_num;
 	return y;
+}
+
+cl_object
+_ecl_big_gcd(cl_object gcd, cl_object x, cl_object y)
+{
+        big_num_t i = x->big.big_num, j = y->big.big_num;
+        while ( 1 ) {
+                big_num_t k;
+                if ( i<j ) {
+                        k = i;
+                        i = j;
+                        j = k;
+                }
+                if ( j == 0 ) {
+                        gcd->big.big_num = k;
+                        break;
+                }
+                k = i % j;
+                i = j;
+                j = k;
+        }
 }
 
 int

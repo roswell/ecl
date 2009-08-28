@@ -295,13 +295,8 @@ ecl_plus(cl_object x, cl_object y)
 	switch (type_of(x)) {
 	case t_fixnum:
 	        switch (type_of(y)) {
-		case t_fixnum: {
-			cl_fixnum k = fix(x) + fix(y);
-			if (k >= MOST_NEGATIVE_FIXNUM && k <= MOST_POSITIVE_FIXNUM)
-			  return(MAKE_FIXNUM(k));
-			else
-			  return(bignum1(k));
-		}
+		case t_fixnum:
+                        return ecl_make_integer(fix(x) + fix(y));
 		case t_bignum:
 			if ((i = fix(x)) == 0)
 				return(y);
@@ -310,13 +305,11 @@ ecl_plus(cl_object x, cl_object y)
                                 big_add_ui(z, y, i);
 			else
                                 big_sub_ui(z, y, -i);
-		  	z = _ecl_big_register_normalize(z);
-			return(z);
+		  	return _ecl_big_register_normalize(z);
 		case t_ratio:
 			z = ecl_times(x, y->ratio.den);
 			z = ecl_plus(z, y->ratio.num);
-			z = ecl_make_ratio(z, y->ratio.den);
-			return(z);
+			return ecl_make_ratio(z, y->ratio.den);
 #ifdef ECL_SHORT_FLOAT
 		case t_shortfloat:
 			return make_shortfloat(fix(x) + ecl_short_float(y));
@@ -534,11 +527,7 @@ ecl_minus(cl_object x, cl_object y)
 	case t_fixnum:
 		switch(type_of(y)) {
 		case t_fixnum:
-			if ((k = fix(x) - fix(y)) >= MOST_NEGATIVE_FIXNUM &&
-			    k <= MOST_POSITIVE_FIXNUM)
-                                return MAKE_FIXNUM(k);
-			else
-                                return bignum1(k);
+                        return ecl_make_integer(fix(x) - fix(y));
 		case t_bignum:
 			z = _ecl_big_register0();
 			i = fix(x);
@@ -776,17 +765,8 @@ ecl_negate(cl_object x)
 	cl_object z, z1;
 
 	switch (type_of(x)) {
-	case t_fixnum: {
-		cl_fixnum k = fix(x);
-		if (-MOST_NEGATIVE_FIXNUM > MOST_POSITIVE_FIXNUM) {
-		    if (k == MOST_NEGATIVE_FIXNUM)
-			return(bignum1(- MOST_NEGATIVE_FIXNUM));
-		    else
-			return(MAKE_FIXNUM(-k));
-		} else {
-		    return MAKE_FIXNUM(-k);
-		}
-	}
+	case t_fixnum:
+                return ecl_make_integer(-fix(x));
 	case t_bignum:
 		z = _ecl_big_register0();
                 big_complement(z, x);
@@ -1093,68 +1073,35 @@ ecl_integer_divide(cl_object x, cl_object y)
 cl_object
 ecl_gcd(cl_object x, cl_object y)
 {
-	cl_type tx = type_of(x);
-	cl_type ty = type_of(y);
-	cl_object gcd;
+	cl_object gcd, x_big, y_big;
 
-	switch (tx) {
+	switch (type_of(x)) {
 	case t_fixnum:
-		if (ty == t_fixnum) {
-			cl_fixnum i = fix(x);
-			cl_fixnum j = fix(y);
-			for (i = labs(i), j = labs(j); TRUE; ) {
-				cl_fixnum k;
-				if (i < j) {
-					k = i;
-					i = j;
-					j = k;
-				}
-				if (j == 0)
-					return(MAKE_FIXNUM(i));
-				k = i % j;
-				i = j;
-				j = k;
-			}
-		} else {
-			x = bignum1(fix(x));
-		}
+                x_big = _ecl_big_register0();
+                _ecl_big_set_fixnum(x_big, fix(x));
 		break;
 	case t_bignum:
+                x_big = x;
 		break;
 	default:
 		FEtype_error_integer(x);
 	}
-	switch (ty) {
+	switch (type_of(y)) {
 	case t_fixnum:
-		y = bignum1(fix(y));
+                y_big = _ecl_big_register1();
+                _ecl_big_set_fixnum(y_big, fix(y));
+                break;
 	case t_bignum:
-		gcd = _ecl_big_register0();
-#ifdef WITH_GMP
-                mpz_gcd(gcd->big.big_num, x->big.big_num, y->big.big_num); /* FIXME!!! */
-#else  /* WITH_GMP */
-                {
-                        big_num_t i = x->big.big_num, j = y->big.big_num;
-                        while ( 1 ) {
-                                big_num_t k;
-                                if ( i<j ) {
-                                        k = i;
-                                        i = j;
-                                        j = k;
-                                }
-                                if ( j == 0 ) {
-                                        gcd->big.big_num = k;
-                                        break;
-                                }
-                                k = i % j;
-                                i = j;
-                                j = k;
-                        }
-                }
-#endif /* WITH_GMP */
-		return _ecl_big_register_normalize(gcd);
+                y_big = y;
+                break;
 	default:
 		FEtype_error_integer(y);
-	}
+        }
+        gcd = _ecl_big_register2();
+        _ecl_big_gcd(gcd, x_big, y_big);
+        if (x != x_big) _ecl_big_register_free(x_big);
+        if (y != y_big) _ecl_big_register_free(y_big);
+        return _ecl_big_register_normalize(gcd);
 }
 
 /*  (1+ x)  */
@@ -1175,7 +1122,7 @@ ecl_one_plus(cl_object x)
 
 	case t_fixnum:
  		if (x == MAKE_FIXNUM(MOST_POSITIVE_FIXNUM))
-		  return(bignum1(MOST_POSITIVE_FIXNUM+1));
+                        return ecl_make_integer(MOST_POSITIVE_FIXNUM+1);
 		return (cl_object)((cl_fixnum)x + ((cl_fixnum)MAKE_FIXNUM(1) - FIXNUM_TAG));
 	case t_bignum:
 		return(ecl_plus(x, MAKE_FIXNUM(1)));
@@ -1228,7 +1175,7 @@ ecl_one_minus(cl_object x)
 
 	case t_fixnum:
  		if (x == MAKE_FIXNUM(MOST_NEGATIVE_FIXNUM))
-		  return(bignum1(MOST_NEGATIVE_FIXNUM-1));
+                        return ecl_make_integer(MOST_NEGATIVE_FIXNUM-1);
 		return (cl_object)((cl_fixnum)x - ((cl_fixnum)MAKE_FIXNUM(1) - FIXNUM_TAG));
 
 	case t_bignum:

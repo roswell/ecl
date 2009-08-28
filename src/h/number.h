@@ -15,6 +15,13 @@
 
 #define ECL_BIG_REGISTER_SIZE	32
 #ifdef WITH_GMP
+#if ECL_LONG_BITS >= FIXNUM_BITS
+#define _ecl_big_set_fixnum(x, f) mpz_set_si((x)->big.big_num,(f))
+#define _ecl_big_set_index(x, f) mpz_set_ui((x)->big.big_num,(f))
+#else
+extern ECL_API _ecl_big_set_fixnum(cl_object x, cl_fixnum f);
+extern ECL_API _ecl_big_set_fixnum(cl_object x, cl_index f);
+#endif
 #define big_init2(x,size)	mpz_init2((x)->big.big_num,(size)*GMP_LIMB_BITS)
 #define _ecl_big_clear(x)	mpz_clear((x)->big.big_num)
 #define big_set(x,y)		mpz_set((x)->big.big_num,(y)->big.big_num)
@@ -40,7 +47,12 @@
 #define big_tdiv_q(q, x, y)	mpz_tdiv_q((q)->big.big_num,(x)->big.big_num,(y)->big.big_num)
 #define big_tdiv_q_ui(q, x, y)	mpz_tdiv_q_ui((q)->big.big_num, (x)->big.big_num, (y))
 #define big_set_d(x, d)		mpz_set_d((x)->big.big_num, (d))
+#define _ecl_big_gcd(gcd, x, y)	mpz_gcd((gcd)->big.big_num, (x)->big.big_num, (y)->big.big_num)
+
 #else  /* WITH_GMP */
+
+#define _ecl_big_set_fixnum(x,f) ((x)->big.big_num=(f))
+#define _ecl_big_set_index(x,f) ((x)->big.big_num=(f))
 #define big_init2(x,size)	((x)->big.big_num=0)
 #define big_clear(x)		mpz_clear((x)->big.big_num)
 #define big_set(x,y)		((x)->big.big_num = (y)->big.big_num)
@@ -67,4 +79,5 @@ extern int _ecl_big_num_t_sgn(big_num_t x);
 #define big_tdiv_q(q, x, y)	((q)->big.big_num = (x)->big.big_num / (y)->big.big_num)
 #define big_tdiv_q_ui(q, x, y)	((q)->big.big_num = (x)->big.big_num / (y))
 #define big_set_d(x, d)		((x)->big.big_num = (big_num_t)(d))
+extern ECL_API _ecl_big_gcd(cl_object gcd, cl_object x, cl_object y);
 #endif /* WITH_GMP */

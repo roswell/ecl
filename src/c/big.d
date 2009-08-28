@@ -76,13 +76,42 @@ _ecl_big_register_normalize(cl_object x)
 	return _ecl_big_register_copy(x);
 }
 
+#if ECL_LONG_BITSS < FIXNUM_BITS
+# undef _ecl_big_set_fixnum
+# undef _ecl_big_set_index
+# if GMP_LIMB_BITS >= FIXNUM_BITS
 cl_object
-bignum1(cl_fixnum val)
+_ecl_big_set_fixnum(cl_object x, cl_fixnum f)
 {
-        cl_object aux = _ecl_big_register0();
-        mpz_init_set_si(aux->big.big_num, val);
-        return _ecl_big_register_copy(aux);
+        if (f == 0) {
+                mpz_set_si(x->big.big_num, 0);
+        } else if (f > 0) {
+                x->big.big_size = 1;
+                x->big.big_limbs[0] = f;
+        } else if (f < 0) {
+                x->big.big_size = -1;
+                x->big.big_limbs[0] = -f;
+        }
 }
+
+cl_object
+_ecl_big_set_index(cl_object x, cl_index f)
+{
+        if (f == 0) {
+                mpz_set_si(x->big.big_num, 0);
+        } else if (f > 0) {
+                x->big.big_size = 1;
+                x->big.big_limbs[0] = f;
+        } else if (f < 0) {
+                x->big.big_size = -1;
+                x->big.big_limbs[0] = -f;
+        }
+}
+
+# else
+#  error "ECL cannot build with GMP when both long and mp_limb_t are smaller than cl_fixnum"
+# endif
+#endif /* ECL_LONG_BITS >= FIXNUM_BITS */
 
 /*
 	big_zerop(x) tells whether bignum x is zero or not.
