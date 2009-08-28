@@ -154,7 +154,6 @@ thread_entry_point(void *arg)
 	THREAD_OP_UNLOCK();
 	ecl_init_env(env);
 	env->bindings_hash = process->process.initial_bindings;
-	init_big_registers(env);
 	ecl_enable_interrupts_env(env);
         env->trap_fpe_bits = process->process.parent->process.env->trap_fpe_bits;
         si_trap_fpe(@'last', Ct);

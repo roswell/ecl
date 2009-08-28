@@ -14,6 +14,8 @@
 */
 
 #ifdef WITH_GMP
+#define big_init2(x,size)	mpz_init2((x)->big.big_num,(size)*GMP_LIMB_BITS)
+#define big_clear(x)		mpz_clear((x)->big.big_num)
 #define big_set(x,y)		mpz_set((x)->big.big_num,(y)->big.big_num)
 #define big_odd_p(x)		((mpz_get_ui(x->big.big_num) & 1) != 0)
 #define big_even_p(x)		((mpz_get_ui(x->big.big_num) & 1) == 0)
@@ -38,6 +40,8 @@
 #define big_tdiv_q_ui(q, x, y)	mpz_tdiv_q_ui((q)->big.big_num, (x)->big.big_num, (y))
 #define big_set_d(x, d)		mpz_set_d((x)->big.big_num, (d))
 #else  /* WITH_GMP */
+#define big_init2(x,size)	((x)->big.big_num=0)
+#define big_clear(x)		mpz_clear((x)->big.big_num)
 #define big_set(x,y)		((x)->big.big_num = (y)->big.big_num)
 extern int big_num_t_sgn(big_num_t x);
 #define big_odd_p(x)		((int)((x)->big.big_num&1) != 0)

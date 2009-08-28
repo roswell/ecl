@@ -19,59 +19,48 @@
 #include <ecl/internal.h>
 
 /* 
- * Using GMP multiple precision integers:
- *
- * typedef struct
- * {
- *  long int alloc;		// Number of limbs allocated and pointed
- *				//   to by the D field.
- *  long int size;		// abs(SIZE) is the number of limbs
- *				//   the last field points to.  If SIZE
- *				//   is negative this is a negative number.
- *  unsigned long int *d;	// Pointer to the limbs,
- *				//   d[0] is the least significative.
- * } MP_INT;
- *
- * typedef unsigned long int	mp_limb_t;
- *
+ * Using GMP multiple precision integers.
  */
 
+/* FIXME! We could replace this with macros. The problem is that we now
+ * need big_set_ui() for some stupid code where the register is used
+ * uninitialized. */
+
+#ifdef BIGNUM_REGISTER_SIZE
+#undef BIGNUM_REGISTER_SIZE
+#endif
+#define BIGNUM_REGISTER_SIZE 64
+
 cl_object
-big_register0_get(void)
+big_register0_get()
 {
-        cl_object output = cl_env.big_register[0];
-        output->big.big_limbs = cl_env.big_register_limbs[0];
-	output->big.big_size = 0;
-        output->big.big_dim = BIGNUM_REGISTER_SIZE;
-	return output;
+        cl_object x = cl_env.big_register[0];
+        big_set_ui(x, 0);
+        return x;
 }
 
 cl_object
-big_register1_get(void)
+big_register1_get()
 {
-        cl_object output = cl_env.big_register[1];
-        output->big.big_limbs = cl_env.big_register_limbs[1];
-	output->big.big_size = 0;
-        output->big.big_dim = BIGNUM_REGISTER_SIZE;
-	return output;
+        cl_object x = cl_env.big_register[1];
+        big_set_ui(x, 0);
+        return x;
 }
 
 cl_object
-big_register2_get(void)
+big_register2_get()
 {
-        cl_object output = cl_env.big_register[2];
-        output->big.big_limbs = cl_env.big_register_limbs[2];
-	output->big.big_size = 0;
-        output->big.big_dim = BIGNUM_REGISTER_SIZE;
-	return output;
+        cl_object x = cl_env.big_register[2];
+        big_set_ui(x, 0);
+        return x;
 }
 
 void
 big_register_free(cl_object x)
 {
-        /* We only need to free the integer when it has been reallocated */
+        /* We only need to free the integer when it gets too large */
         if (x->big.big_dim > BIGNUM_REGISTER_SIZE) {
-                mpz_clear(x->big.big_num);
+                mpz_realloc2(x->big.big_num, BIGNUM_REGISTER_SIZE * GMP_LIMB_BITS);
         }
 }
 
@@ -79,9 +68,11 @@ cl_object
 big_copy(cl_object old)
 {
 	cl_object new_big = ecl_alloc_object(t_bignum);
-        cl_index dim, bytes;
-        new_big->big.big_size = old->big.big_size;
-        new_big->big.big_dim = dim = old->big.big_dim;
+        cl_fixnum dim, bytes;
+        dim = old->big.big_size;
+        new_big->big.big_size = dim;
+        if (dim < 0) dim = - dim;
+        new_big->big.big_dim = dim;
         bytes = dim * sizeof(mp_limb_t);
         new_big->big.big_limbs = ecl_alloc_atomic(bytes);
         memcpy(new_big->big.big_limbs, old->big.big_limbs, bytes);
@@ -157,30 +148,19 @@ mp_realloc(void *ptr, size_t osize, size_t nsize)
 {
 	void *p = ecl_alloc_atomic_align(nsize, sizeof(mp_limb_t));
 	memcpy(p, ptr, osize);
+        ecl_dealloc(ptr);
 	return p;
 }
 
 static void
 mp_free(void *ptr, size_t size)
 {
-	char *x = ptr;
-	if (x < (char *)(cl_env.big_register_limbs) ||
-	    x > (char *)(cl_env.big_register_limbs+2))
-		ecl_dealloc(x);
-}
-
-void init_big_registers(cl_env_ptr env)
-{
-	int i;
-	for (i = 0; i < 3; i++) {
-		env->big_register[i] = ecl_alloc_object(t_bignum);
-	}
+        ecl_dealloc(ptr);
 }
 
 void
-init_big(cl_env_ptr env)
+init_big()
 {
-	init_big_registers(env);
         if (ecl_get_option(ECL_OPT_SET_GMP_MEMORY_FUNCTIONS))
                 mp_set_memory_functions(mp_alloc, mp_realloc, mp_free);
 }

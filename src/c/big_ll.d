@@ -17,24 +17,27 @@
 #include <ecl/internal.h>
 
 cl_object
-big_register0_get(void)
+big_register0_get()
 {
-	cl_env.big_register[0]->big.big_num = 0ll;
-	return cl_env.big_register[0];
+        cl_object x = cl_env.big_register[0];
+        big_set_ui(x, 0);
+        return x;
 }
 
 cl_object
-big_register1_get(void)
+big_register1_get()
 {
-	cl_env.big_register[1]->big.big_num = 0ll;
-	return cl_env.big_register[1];
+        cl_object x = cl_env.big_register[1];
+        big_set_ui(x, 0);
+        return x;
 }
 
 cl_object
-big_register2_get(void)
+big_register2_get()
 {
-	cl_env.big_register[2]->big.big_num = 0ll;
-	return cl_env.big_register[2];
+        cl_object x = cl_env.big_register[2];
+        big_set_ui(x, 0);
+        return x;
 }
 
 void

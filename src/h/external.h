@@ -91,9 +91,6 @@ struct cl_env_struct {
 	/* Note: if you change the size of these registers, change also
 	   BIGNUM_REGISTER_SIZE in config.h */
 	cl_object big_register[3];
-#ifdef WITH_GMP
-	mp_limb_t big_register_limbs[3][16];
-#endif /* WITH_GMP */
 
 #ifdef ECL_THREADS
 	cl_object own_process;

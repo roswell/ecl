@@ -368,9 +368,6 @@ typedef unsigned @CL_FIXNUM_TYPE@ cl_hashkey;
 #define	LISP_PAGESIZE	2048	/* Page size in bytes			*/
 #define MAXPAGE	65536		/* Maximum Memory Size			*/
 
-/* We reserve these many bytes for computation with bignums registers	*/
-#define BIGNUM_REGISTER_SIZE 16
-
 /* We allocate a number of strings in a pool which is used to speed up reading */
 #define ECL_MAX_STRING_POOL_SIZE	10
 #define ECL_BUFFER_STRING_SIZE		128

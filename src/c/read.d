@@ -17,6 +17,7 @@
 
 #define ECL_INCLUDE_MATH_H
 #include <ecl/ecl.h>
+#include <ecl/number.h>
 #include <stdio.h>
 #include <limits.h>
 #include <float.h>
@@ -598,6 +599,7 @@ ecl_parse_integer(cl_object str, cl_index start, cl_index end,
 		start++;
 	}
 	integer_part = big_register0_get();
+        big_set_ui(integer_part, 0);
 	for (i = start; i < end; i++) {
 		c = ecl_char(str, i);
 		d = ecl_digitp(c, radix);

@@ -244,6 +244,15 @@ ecl_init_env(cl_env_ptr env)
 #endif
 	init_stacks(env, &i);
 
+        {
+	int i;
+	for (i = 0; i < 3; i++) {
+                cl_object x = ecl_alloc_object(t_bignum);
+                big_init2(x, 32);
+		env->big_register[i] = x;
+	}
+        }
+
         env->trap_fpe_bits = 0;
 }
 
@@ -252,6 +261,13 @@ ecl_init_env(cl_env_ptr env)
 void
 _ecl_dealloc_env(cl_env_ptr env)
 {
+        /*
+         * Environment cleanup
+         */
+        int i;
+        for (i = 0; i < 3; i++) {
+                big_clear(env->big_register[i]);
+        }
 #if defined(ECL_USE_MPROTECT)
 	if (munmap(env, sizeof(*env)))
 		ecl_internal_error("Unable to deallocate environment structure.");
@@ -487,6 +503,7 @@ cl_boot(int argc, char **argv)
 	 * This cannot come later, because some routines need the
 	 * frame stack immediately (for instance SI:PATHNAME-TRANSLATIONS).
 	 */
+        init_big();
 	ecl_init_env(env);
 #if !defined(GBC_BOEHM)
 	/* We need this because a lot of stuff is to be created */

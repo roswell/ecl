@@ -995,8 +995,5 @@ init_number(void)
 #else
 	ECL_SET(@'pi', ecl_make_doublefloat((double)ECL_PI_D));
 #endif
-
-	init_big(&cl_env);
-
         ECL_SET(@'*random-state*', ecl_make_random_state(Ct));
 }
