@@ -13,6 +13,10 @@
     See file '../Copyright' for full details.
 */
 
+#define ECL_BIG_REGISTER_SIZE	32
+#define big_register0_get()	ecl_process_env()->big_register[0]
+#define big_register1_get()	ecl_process_env()->big_register[1]
+#define big_register2_get()	ecl_process_env()->big_register[2]
 #ifdef WITH_GMP
 #define big_init2(x,size)	mpz_init2((x)->big.big_num,(size)*GMP_LIMB_BITS)
 #define big_clear(x)		mpz_clear((x)->big.big_num)

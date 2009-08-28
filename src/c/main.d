@@ -248,7 +248,7 @@ ecl_init_env(cl_env_ptr env)
 	int i;
 	for (i = 0; i < 3; i++) {
                 cl_object x = ecl_alloc_object(t_bignum);
-                big_init2(x, 32);
+                big_init2(x, ECL_BIG_REGISTER_SIZE);
 		env->big_register[i] = x;
 	}
         }

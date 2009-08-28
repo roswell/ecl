@@ -26,10 +26,10 @@
  * need big_set_ui() for some stupid code where the register is used
  * uninitialized. */
 
-#ifdef BIGNUM_REGISTER_SIZE
-#undef BIGNUM_REGISTER_SIZE
-#endif
-#define BIGNUM_REGISTER_SIZE 64
+#if 0
+#undef big_register0_get
+#undef big_register1_get
+#undef big_register2_get
 
 cl_object
 big_register0_get()
@@ -54,13 +54,14 @@ big_register2_get()
         big_set_ui(x, 0);
         return x;
 }
+#endif
 
 void
 big_register_free(cl_object x)
 {
         /* We only need to free the integer when it gets too large */
-        if (x->big.big_dim > BIGNUM_REGISTER_SIZE) {
-                mpz_realloc2(x->big.big_num, BIGNUM_REGISTER_SIZE * GMP_LIMB_BITS);
+        if (x->big.big_dim > 3 * ECL_BIG_REGISTER_SIZE) {
+                mpz_realloc2(x->big.big_num, ECL_BIG_REGISTER_SIZE * GMP_LIMB_BITS);
         }
 }
 
