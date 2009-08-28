@@ -129,7 +129,7 @@ ecl_make_integer(cl_fixnum l)
 {
 	if (l > MOST_POSITIVE_FIXNUM || l < MOST_NEGATIVE_FIXNUM) {
                 cl_object z = _ecl_big_register0();
-                big_set_si(z, l);
+                _ecl_big_set_si(z, l);
                 return _ecl_big_register_copy(z);
 	}
 	return MAKE_FIXNUM(l);
@@ -140,7 +140,7 @@ ecl_make_unsigned_integer(cl_index l)
 {
 	if (l > MOST_POSITIVE_FIXNUM) {
                 cl_object z = _ecl_big_register0();
-                big_set_ui(z, l);
+                _ecl_big_set_ui(z, l);
                 return _ecl_big_register_copy(z);
 	}
 	return MAKE_FIXNUM(l);
@@ -750,7 +750,7 @@ ecl_to_double(cl_object x)
 		return((double)(fix(x)));
 
 	case t_bignum:
-		return(big_to_double(x));
+		return(_ecl_big_to_double(x));
 
 	case t_ratio: {
 #ifdef WITH_GMP
@@ -883,7 +883,7 @@ double_to_integer(double d)
 		return MAKE_FIXNUM((cl_fixnum)d);
 	else {
                 cl_object z = _ecl_big_register0();
-                big_set_d(z, d);
+                _ecl_big_set_d(z, d);
                 return _ecl_big_register_copy(z);
 	}
 }
@@ -895,7 +895,7 @@ float_to_integer(float d)
 		return MAKE_FIXNUM((cl_fixnum)d);
 	else {
                 cl_object z = _ecl_big_register0();
-                big_set_d(z, d);
+                _ecl_big_set_d(z, d);
                 return _ecl_big_register_copy(z);
 	}
 }

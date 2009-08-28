@@ -295,7 +295,7 @@ ecl_eql(cl_object x, cl_object y)
 	case t_fixnum:
 		return FALSE;
 	case t_bignum:
-		return (big_compare(x, y) == 0);
+		return (_ecl_big_compare(x, y) == 0);
 	case t_ratio:
 		return (ecl_eql(x->ratio.num, y->ratio.num) &&
 			ecl_eql(x->ratio.den, y->ratio.den));
@@ -353,7 +353,7 @@ BEGIN:
 	case t_fixnum:
 		return FALSE;
 	case t_bignum:
-		return (tx == ty) && (big_compare(x,y) == 0);
+		return (tx == ty) && (_ecl_big_compare(x,y) == 0);
 	case t_ratio:
 		return (tx == ty) && ecl_eql(x->ratio.num, y->ratio.num) &&
 			ecl_eql(x->ratio.den, y->ratio.den);

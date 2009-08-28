@@ -22,10 +22,6 @@
  * Using GMP multiple precision integers.
  */
 
-/* FIXME! We could replace this with macros. The problem is that we now
- * need big_set_ui() for some stupid code where the register is used
- * uninitialized. */
-
 void
 _ecl_big_register_free(cl_object x)
 {
@@ -112,30 +108,6 @@ _ecl_big_set_index(cl_object x, cl_index f)
 #  error "ECL cannot build with GMP when both long and mp_limb_t are smaller than cl_fixnum"
 # endif
 #endif /* ECL_LONG_BITS >= FIXNUM_BITS */
-
-/*
-	big_zerop(x) tells whether bignum x is zero or not.
-
-#define big_zerop(x)	(mp_size(x->big.big_num) == 0)
-*/
-
-/*
-	big_sign(x) returns
-		something < 0	if x < 0
-		0		if x = 0
-		something > 0	if x > 0.
-
-#define big_sign(x)	(x->big.big_size)
-*/
-
-/*
-	big_compare(x, y) returns
-		-1	if x < y
-		0	if x = y
-		1	if x > y.
-
-#define big_compare(x, y)	mpz_cmp(x->big.big_num, y->big.big_num)
-*/
 
 static void *
 mp_alloc(size_t size)

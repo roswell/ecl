@@ -262,7 +262,7 @@ assert_type_non_negative_integer(cl_object p)
 		if (FIXNUM_PLUSP(p))
 			return;
 	} else if (t == t_bignum) {
-		if (big_sign(p) >= 0)
+		if (_ecl_big_sign(p) >= 0)
 			return;
 	}
 	FEwrong_type_argument(cl_list(3,@'integer',MAKE_FIXNUM(0),@'*'), p);

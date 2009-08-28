@@ -60,7 +60,7 @@ ecl_plusp(cl_object x)
 		return(fix(x) > 0);
 
 	case t_bignum:
-		return(big_sign(x) > 0);
+		return(_ecl_big_sign(x) > 0);
 
 	case t_ratio:
 		/* INV: rat_den is always positive */
@@ -92,7 +92,7 @@ ecl_minusp(cl_object x)
 		return(fix(x) < 0);
 
 	case t_bignum:
-		return(big_sign(x) < 0);
+		return(_ecl_big_sign(x) < 0);
 
 	case t_ratio:
 		/* INV: rat_den is always positive */
@@ -123,7 +123,7 @@ ecl_oddp(cl_object x)
 	if (FIXNUMP(x))
 		return fix(x) & 1;
 	if (type_of(x) == t_bignum)
-		return big_odd_p(x);
+		return _ecl_big_odd_p(x);
 	FEtype_error_integer(x);
 }
 
@@ -133,7 +133,7 @@ ecl_evenp(cl_object x)
 	if (FIXNUMP(x))
 		return ~fix(x) & 1;
 	if (type_of(x) == t_bignum)
-		return big_even_p(x);
+		return _ecl_big_even_p(x);
 	FEtype_error_integer(x);
 }
 

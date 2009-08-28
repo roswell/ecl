@@ -1114,9 +1114,9 @@ si_write_ugly_object(cl_object x, cl_object stream)
 #ifdef WITH_GMP
 		write_bignum(x, stream);
 #else  /* WITH_GMP */
-                if ( big_zerop(x) ) {
+                if (_ecl_big_zerop(x)) {
                         write_ch('0', stream);
-                } else if ( big_sign(x) < 0 ) {
+                } else if (_ecl_big_sign(x) < 0) {
                         write_ch('-', stream);
                         write_positive_bignum(-(x->big.big_num), stream);
                 } else {

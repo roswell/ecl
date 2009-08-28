@@ -354,7 +354,7 @@ ecl_boole(int op, cl_object x, cl_object y)
 		}
 		case t_bignum: {
                         cl_object x_copy = _ecl_big_register0();
-                        big_set_si(x_copy, fix(x));
+                        _ecl_big_set_si(x_copy, fix(x));
 			bignum_operations[op](x_copy, y);
                         return _ecl_big_register_normalize(x_copy);
 		}
@@ -364,11 +364,11 @@ ecl_boole(int op, cl_object x, cl_object y)
 		break;
 	case t_bignum: {
                 cl_object x_copy = _ecl_big_register0();
-                big_set(x_copy, x);
+                _ecl_big_set(x_copy, x);
 		switch (type_of(y)) {
 		case t_fixnum: {
 			cl_object z = _ecl_big_register1();
-                        big_set_si(z,fix(y));
+                        _ecl_big_set_si(z,fix(y));
 			bignum_operations[op](x_copy, z);
 			_ecl_big_register_free(z);
 			break;
@@ -408,7 +408,7 @@ count_bits(cl_object x)
 	}
 	case t_bignum:
 #ifdef WITH_GMP
-		if (big_sign(x) >= 0)
+		if (_ecl_big_sign(x) >= 0)
 			count = mpz_popcount(x->big.big_num);
 		else {
 			cl_object z = _ecl_big_register0();
@@ -608,7 +608,7 @@ cl_logbitp(cl_object p, cl_object x)
 		if (FIXNUMP(x))
 			i = (fix(x) < 0);
 		else
-			i = (big_sign(x) < 0);
+			i = (_ecl_big_sign(x) < 0);
 	}
 	@(return (i ? Ct : Cnil))
 }
@@ -637,8 +637,8 @@ cl_ash(cl_object x, cl_object y)
 	    else
 	      sign_x = 1;
 	  else
-	    sign_x = big_sign(x);
-	  if (big_sign(y) < 0)
+	    sign_x = _ecl_big_sign(x);
+	  if (_ecl_big_sign(y) < 0)
 	    if (sign_x < 0)
 	      r = MAKE_FIXNUM(-1);
 	    else
@@ -669,7 +669,7 @@ cl_integer_length(cl_object x)
 		count = ecl_fixnum_bit_length(i);
 		break;
 	case t_bignum:
-		if (big_sign(x) < 0)
+		if (_ecl_big_sign(x) < 0)
 			x = cl_lognot(x);
 #ifdef WITH_GMP
 		count = mpz_sizeinbase(x->big.big_num, 2);

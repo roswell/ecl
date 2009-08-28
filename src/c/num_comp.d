@@ -125,7 +125,7 @@ ecl_number_equalp(cl_object x, cl_object y)
 		case t_fixnum:
 			return 0;
 		case t_bignum:
-			return big_compare(x, y)==0;
+			return _ecl_big_compare(x, y)==0;
 		case t_ratio:
 			return 0;
 #ifdef ECL_SHORT_FLOAT
@@ -279,7 +279,7 @@ ecl_number_compare(cl_object x, cl_object y)
 			else return(ix != iy);
 		case t_bignum:
 			/* INV: (= x y) can't be zero since fixnum != bignum */
-			return big_sign(y) < 0? 1 : -1;
+			return _ecl_big_sign(y) < 0? 1 : -1;
 		case t_ratio:
 			x = ecl_times(x, y->ratio.den);
 			y = y->ratio.num;
@@ -302,9 +302,9 @@ ecl_number_compare(cl_object x, cl_object y)
 	case t_bignum:
 		switch (ty) {
 		case t_fixnum:
-			return big_sign(x) < 0 ? -1 : 1;
+			return _ecl_big_sign(x) < 0 ? -1 : 1;
 		case t_bignum:
-			return(big_compare(x, y));
+			return(_ecl_big_compare(x, y));
 		case t_ratio:
 			x = ecl_times(x, y->ratio.den);
 			y = y->ratio.num;

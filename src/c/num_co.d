@@ -321,7 +321,7 @@ ecl_floor2(cl_object x, cl_object y)
 #ifdef ECL_SHORT_FLOAT
 		case t_shortfloat: {	/* BIG / SF */
 		  float n = ecl_short_float(y);
-		  float p = big_to_double(x) / n;
+		  float p = _ecl_big_to_double(x) / n;
 		  float q = floorf(p);
 		  v0 = float_to_integer(q);
 		  v1 = make_shortfloat((p - q)*n);
@@ -330,7 +330,7 @@ ecl_floor2(cl_object x, cl_object y)
 #endif
 		case t_singlefloat: {	/* BIG / SF */
 		  float n = sf(y);
-		  float p = big_to_double(x) / n;
+		  float p = _ecl_big_to_double(x) / n;
 		  float q = floorf(p);
 		  v0 = float_to_integer(q);
 		  v1 = ecl_make_singlefloat((p - q)*n);
@@ -338,7 +338,7 @@ ecl_floor2(cl_object x, cl_object y)
 		}
 		case t_doublefloat: {	/* BIG / DF */
 		  double n = df(y);
-		  double p = big_to_double(x) / n;
+		  double p = _ecl_big_to_double(x) / n;
 		  double q = floor(p);
 		  v0 = double_to_integer(q);
 		  v1 = ecl_make_doublefloat((p - q)*n);
@@ -347,7 +347,7 @@ ecl_floor2(cl_object x, cl_object y)
 #ifdef ECL_LONG_FLOAT
 		case t_longfloat: {	/* BIG / LF */
 		  long double n = ecl_long_float(y);
-		  long double p = big_to_double(x) / n;
+		  long double p = _ecl_big_to_double(x) / n;
 		  long double q = floorl(p);
 		  v0 = long_double_to_integer(q);
 		  v1 = ecl_make_longfloat((p - q)*n);
@@ -606,7 +606,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 #ifdef ECL_SHORT_FLOAT
 		case t_shortfloat: {	/* BIG / SF */
 		  float n = ecl_short_float(y);
-		  float p = big_to_double(x)/n;
+		  float p = _ecl_big_to_double(x)/n;
 		  float q = ceilf(p);
 		  v0 = float_to_integer(q);
 		  v1 = make_shortfloat(p*n - q*n);
@@ -615,7 +615,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 #endif
 		case t_singlefloat: {	/* BIG / SF */
 		  float n = sf(y);
-		  float p = big_to_double(x)/n;
+		  float p = _ecl_big_to_double(x)/n;
 		  float q = ceilf(p);
 		  v0 = float_to_integer(q);
 		  v1 = ecl_make_singlefloat(p*n - q*n);
@@ -623,7 +623,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 		}
 		case t_doublefloat: {	/* BIG / DF */
 		  double n = df(y);
-		  double p = big_to_double(x)/n;
+		  double p = _ecl_big_to_double(x)/n;
 		  double q = ceil(p);
 		  v0 = double_to_integer(q);
 		  v1 = ecl_make_doublefloat(p*n - q*n);
@@ -632,7 +632,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 #ifdef ECL_LONG_FLOAT
 		case t_longfloat: {	/* BIG / LF */
 		  long double n = ecl_long_float(y);
-		  long double p = big_to_double(x)/n;
+		  long double p = _ecl_big_to_double(x)/n;
 		  long double q = ceill(p);
 		  v0 = long_double_to_integer(q);
 		  v1 = ecl_make_longfloat(p*n - q*n);
