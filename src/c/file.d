@@ -4731,7 +4731,7 @@ ecl_off_t_to_integer(ecl_off_t offset)
 	} else if (offset <= MOST_POSITIVE_FIXNUM) {
 		output = MAKE_FIXNUM((cl_fixnum)offset);
 	} else {
-		cl_object y = big_register0_get();
+		cl_object y = _ecl_big_register0();
 #ifdef WITH_GMP
 		if (sizeof(y->big.big_limbs[0]) == sizeof(cl_index)) {
 			y->big.big_limbs[0] = (cl_index)offset;
@@ -4745,7 +4745,7 @@ ecl_off_t_to_integer(ecl_off_t offset)
 #else
 		y->big.big_num = offset;
 #endif
-		output = big_register_normalize(y);
+		output = _ecl_big_register_normalize(y);
 	}
 	return output;
 }

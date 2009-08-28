@@ -128,9 +128,9 @@ cl_object
 ecl_make_integer(cl_fixnum l)
 {
 	if (l > MOST_POSITIVE_FIXNUM || l < MOST_NEGATIVE_FIXNUM) {
-                cl_object z = big_register0_get();
+                cl_object z = _ecl_big_register0();
                 big_set_si(z, l);
-                return big_register_copy(z);
+                return _ecl_big_register_copy(z);
 	}
 	return MAKE_FIXNUM(l);
 }
@@ -139,9 +139,9 @@ cl_object
 ecl_make_unsigned_integer(cl_index l)
 {
 	if (l > MOST_POSITIVE_FIXNUM) {
-                cl_object z = big_register0_get();
+                cl_object z = _ecl_big_register0();
                 big_set_ui(z, l);
-                return big_register_copy(z);
+                return _ecl_big_register_copy(z);
 	}
 	return MAKE_FIXNUM(l);
 }
@@ -260,7 +260,7 @@ ecl_to_uint64_t(cl_object x) {
                         } else if (mpz_fits_ulong_p(x->big.big_num)) {
                                 return (ecl_uint64_t)mpz_get_ui(x->big.big_num);
                         } else {
-                                cl_object copy = big_register0_get();
+                                cl_object copy = _ecl_big_register0();
                                 mpz_fdiv_q_2exp(copy->big.big_num, x->big.big_num, 32);
                                 if (mpz_fits_ulong_p(copy->big.big_num)) {
                                         volatile ecl_uint64_t output;
@@ -287,7 +287,7 @@ ecl_to_int64_t(cl_object x) {
                 } else if (mpz_fits_slong_p(x->big.big_num)) {
                         return (ecl_int64_t)mpz_get_si(x->big.big_num);
                 } else {
-                        cl_object copy = big_register0_get();
+                        cl_object copy = _ecl_big_register0();
                         mpz_fdiv_q_2exp(copy->big.big_num, x->big.big_num, 32);
                         if (mpz_fits_slong_p(copy->big.big_num)) {
                                 ecl_int64_t output;
@@ -381,7 +381,7 @@ ecl_to_unsigned_long_long(cl_object x) {
                         } else if (mpz_fits_ulong_p(x->big.big_num)) {
                                 return (ecl_ulong_long_t)mpz_get_ui(x->big.big_num);
                         } else {
-                                cl_object copy = big_register0_get();
+                                cl_object copy = _ecl_big_register0();
                                 int i = ECL_LONG_LONG_BITS - FIXNUM_BITS;
                                 mpz_fdiv_q_2exp(copy->bit.big_num, x->big.big_num, i);
                                 if (mpz_fits_ulong_p(copy->big.big_num)) {
@@ -413,7 +413,7 @@ ecl_to_long_long(cl_object x)
                 } else if (mpz_fits_slong_p(x->big.big_num)) {
                         return (ecl_long_long_t)mpz_get_si(x->big.big_num);
                 } else {
-                        cl_object copy = big_register0_get();
+                        cl_object copy = _ecl_big_register0();
                         int i = ECL_LONG_LONG_BITS - FIXNUM_BITS;
                         mpz_fdiv_q_2exp(copy->bit.big_num, x->big.big_num, i);
                         if (mpz_fits_ulong_p(copy->big.big_num)) {
@@ -882,9 +882,9 @@ double_to_integer(double d)
 	if (d <= MOST_POSITIVE_FIXNUM && d >= MOST_NEGATIVE_FIXNUM)
 		return MAKE_FIXNUM((cl_fixnum)d);
 	else {
-                cl_object z = big_register0_get();
+                cl_object z = _ecl_big_register0();
                 big_set_d(z, d);
-                return big_register_copy(z);
+                return _ecl_big_register_copy(z);
 	}
 }
 
@@ -894,9 +894,9 @@ float_to_integer(float d)
 	if (d <= MOST_POSITIVE_FIXNUM && d >= MOST_NEGATIVE_FIXNUM)
 		return MAKE_FIXNUM((cl_fixnum)d);
 	else {
-                cl_object z = big_register0_get();
+                cl_object z = _ecl_big_register0();
                 big_set_d(z, d);
-                return big_register_copy(z);
+                return _ecl_big_register_copy(z);
 	}
 }
 

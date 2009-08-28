@@ -566,8 +566,8 @@ si_gc_stats(cl_object enable)
 #endif
 	}
 	@(return
-	  big_register_normalize(cl_core.bytes_consed)
-	  big_register_normalize(cl_core.gc_counter)
+	  _ecl_big_register_normalize(cl_core.bytes_consed)
+	  _ecl_big_register_normalize(cl_core.gc_counter)
 	  old_status)
 }
 

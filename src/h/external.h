@@ -352,21 +352,13 @@ extern ECL_API void ecl_clear_compiler_properties(cl_object sym);
 
 /* big.c */
 
-extern ECL_API cl_object big_register0_get(void);
-extern ECL_API cl_object big_register1_get(void);
-extern ECL_API cl_object big_register2_get(void);
-extern ECL_API cl_object big_register_copy(cl_object x);
-extern ECL_API cl_object big_register_normalize(cl_object x);
-extern ECL_API void big_register_free(cl_object x);
+#define _ecl_big_register0()	ecl_process_env()->big_register[0]
+#define _ecl_big_register1()	ecl_process_env()->big_register[1]
+#define _ecl_big_register2()	ecl_process_env()->big_register[2]
+extern ECL_API cl_object _ecl_big_register_copy(cl_object x);
+extern ECL_API cl_object _ecl_big_register_normalize(cl_object x);
+extern ECL_API void _ecl_big_register_free(cl_object x);
 extern ECL_API cl_object bignum1(cl_fixnum val);
-#ifdef WITH_GMP
-extern ECL_API cl_object bignum2(mp_limb_t hi, mp_limb_t lo);
-#else  /* WITH_GMP */
-extern ECL_API cl_object bignum2(cl_fixnum hi, cl_fixnum lo);
-#endif /* WITH_GMP */
-extern ECL_API cl_object big_set_fixnum(cl_object x, cl_object fix);
-extern ECL_API cl_object big_copy(cl_object x);
-extern ECL_API double big_to_double(cl_object x);
 
 
 /* cfun.c */
@@ -1951,6 +1943,8 @@ extern ECL_API cl_object clos_standard_instance_set _ARGS((cl_narg narg, cl_obje
 /*
  * LEGACY
  */
+#ifndef ECL_NO_LEGACY
+
 #define make_shortfloat(x) ecl_make_shortfloat(x);
 #define cl_def_c_function_va(sym,function) ecl_def_c_function_va(sym,function)
 #define cl_def_c_function(sym,function,narg) ecl_def_c_function(sym,function,narg)
@@ -1967,6 +1961,17 @@ extern ECL_API cl_object clos_standard_instance_set _ARGS((cl_narg narg, cl_obje
 #define ARRAYP ECL_ARRAYP
 #define VECTORP ECL_VECTORP
 #define c_string_to_object ecl_read_from_cstring
+
+#define big_register0_get _ecl_big_register0
+#define big_register1_get _ecl_big_register1
+#define big_register2_get _ecl_big_register2
+#define big_register_free _ecl_big_register_free
+#define big_register_copy _ecl_big_register_copy
+#define big_register_normalize _ecl_big_register_normalize
+/* #define big_copy _ecl_big_copy  Has disappeared */
+/* #define big_to_double Has disappeared */
+
+#endif
 
 #ifdef __cplusplus
 }

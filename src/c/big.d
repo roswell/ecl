@@ -26,38 +26,8 @@
  * need big_set_ui() for some stupid code where the register is used
  * uninitialized. */
 
-#if 0
-#undef big_register0_get
-#undef big_register1_get
-#undef big_register2_get
-
-cl_object
-big_register0_get()
-{
-        cl_object x = cl_env.big_register[0];
-        big_set_ui(x, 0);
-        return x;
-}
-
-cl_object
-big_register1_get()
-{
-        cl_object x = cl_env.big_register[1];
-        big_set_ui(x, 0);
-        return x;
-}
-
-cl_object
-big_register2_get()
-{
-        cl_object x = cl_env.big_register[2];
-        big_set_ui(x, 0);
-        return x;
-}
-#endif
-
 void
-big_register_free(cl_object x)
+_ecl_big_register_free(cl_object x)
 {
         /* We only need to free the integer when it gets too large */
         if (x->big.big_dim > 3 * ECL_BIG_REGISTER_SIZE) {
@@ -65,8 +35,8 @@ big_register_free(cl_object x)
         }
 }
 
-cl_object
-big_copy(cl_object old)
+static cl_object
+_ecl_big_copy(cl_object old)
 {
 	cl_object new_big = ecl_alloc_object(t_bignum);
         cl_fixnum dim, bytes;
@@ -81,15 +51,15 @@ big_copy(cl_object old)
 }
 
 cl_object
-big_register_copy(cl_object old)
+_ecl_big_register_copy(cl_object old)
 {
-        cl_object new_big = big_copy(old);
-        big_register_free(old);
+        cl_object new_big = _ecl_big_copy(old);
+        _ecl_big_register_free(old);
 	return new_big;
 }
 
 cl_object
-big_register_normalize(cl_object x)
+_ecl_big_register_normalize(cl_object x)
 {
 	int s = x->big.big_size;
 	if (s == 0)
@@ -103,15 +73,15 @@ big_register_normalize(cl_object x)
                 if (y <= -MOST_NEGATIVE_FIXNUM)
                         return MAKE_FIXNUM(-y);
 	}
-	return big_register_copy(x);
+	return _ecl_big_register_copy(x);
 }
 
 cl_object
 bignum1(cl_fixnum val)
 {
-        cl_object aux = big_register0_get();
+        cl_object aux = _ecl_big_register0();
         mpz_init_set_si(aux->big.big_num, val);
-        return big_register_copy(aux);
+        return _ecl_big_register_copy(aux);
 }
 
 /*

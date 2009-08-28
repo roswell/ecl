@@ -598,7 +598,7 @@ ecl_parse_integer(cl_object str, cl_index start, cl_index end,
 		sign = -1;
 		start++;
 	}
-	integer_part = big_register0_get();
+	integer_part = _ecl_big_register0();
         big_set_ui(integer_part, 0);
 	for (i = start; i < end; i++) {
 		c = ecl_char(str, i);
@@ -612,7 +612,7 @@ ecl_parse_integer(cl_object str, cl_index start, cl_index end,
 	if (sign < 0) {
 		big_complement(integer_part, integer_part);
 	}
-	output = big_register_normalize(integer_part);
+	output = _ecl_big_register_normalize(integer_part);
 	*ep = i;
 	return (i == start)? OBJNULL : output;
 }

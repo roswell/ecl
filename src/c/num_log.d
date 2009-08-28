@@ -353,24 +353,24 @@ ecl_boole(int op, cl_object x, cl_object y)
 			return MAKE_FIXNUM(z);
 		}
 		case t_bignum: {
-                        cl_object x_copy = big_register0_get();
+                        cl_object x_copy = _ecl_big_register0();
                         big_set_si(x_copy, fix(x));
 			bignum_operations[op](x_copy, y);
-                        return big_register_normalize(x_copy);
+                        return _ecl_big_register_normalize(x_copy);
 		}
 		default:
 			FEtype_error_integer(y);
 		}
 		break;
 	case t_bignum: {
-                cl_object x_copy = big_register0_get();
+                cl_object x_copy = _ecl_big_register0();
                 big_set(x_copy, x);
 		switch (type_of(y)) {
 		case t_fixnum: {
-			cl_object z = big_register1_get();
+			cl_object z = _ecl_big_register1();
                         big_set_si(z,fix(y));
 			bignum_operations[op](x_copy, z);
-			big_register_free(z);
+			_ecl_big_register_free(z);
 			break;
 		}
 		case t_bignum:
@@ -379,7 +379,7 @@ ecl_boole(int op, cl_object x, cl_object y)
 		default:
 			FEtype_error_integer(y);
 		}
-                return big_register_normalize(x_copy);
+                return _ecl_big_register_normalize(x_copy);
 	}
 	default:
 		FEtype_error_integer(x);
@@ -411,10 +411,10 @@ count_bits(cl_object x)
 		if (big_sign(x) >= 0)
 			count = mpz_popcount(x->big.big_num);
 		else {
-			cl_object z = big_register0_get();
+			cl_object z = _ecl_big_register0();
 			mpz_com(z->big.big_num, x->big.big_num);
 			count = mpz_popcount(z->big.big_num);
-			big_register_free(z);
+			_ecl_big_register_free(z);
 		}
 #else  /* WITH_GMP */
                 {
@@ -442,7 +442,7 @@ ecl_ash(cl_object x, cl_fixnum w)
 
 	if (w == 0)
 		return(x);
-	y = big_register0_get();
+	y = _ecl_big_register0();
 	if (w < 0) {
 		cl_index bits = -w;
 		if (FIXNUMP(x)) {
@@ -478,7 +478,7 @@ ecl_ash(cl_object x, cl_fixnum w)
                 y->big.big_num <<= w;
 #endif /* WITH_GMP */
 	}
-	return big_register_normalize(y);
+	return _ecl_big_register_normalize(y);
 }
 
 int

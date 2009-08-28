@@ -266,7 +266,7 @@ _ecl_dealloc_env(cl_env_ptr env)
          */
         int i;
         for (i = 0; i < 3; i++) {
-                big_clear(env->big_register[i]);
+                _ecl_big_clear(env->big_register[i]);
         }
 #if defined(ECL_USE_MPROTECT)
 	if (munmap(env, sizeof(*env)))

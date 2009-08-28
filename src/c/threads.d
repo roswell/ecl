@@ -234,7 +234,6 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
 	THREAD_OP_UNLOCK();
 	ecl_init_env(env);
 	env->bindings_hash = process->process.initial_bindings;
-	init_big_registers(env);
 	ecl_enable_interrupts_env(env);
 }
 
