@@ -68,7 +68,6 @@ big_alloc(int size)
 	return x;
 }
 
-
 cl_object
 bignum1(cl_fixnum val)
 {
@@ -93,35 +92,6 @@ big_copy(cl_object x)
 	volatile cl_object y = ecl_alloc_object(t_bignum);
         y->big.big_num = x->big.big_num;
 	return(y);
-}
-
-/*
-	big_minus(x) returns the complement of bignum x.
-*/
-cl_object
-big_minus(cl_object x)
-{
-	volatile cl_object y = big_copy(x);
-        y->big.big_num = -x->big.big_num;
-	return y;
-}
-
-cl_object
-big_plus(cl_object x, cl_object y)
-{
-	volatile cl_object z = big_register0_get();
-        z->big.big_num = x->big.big_num + y->big.big_num;
-	return(big_register_copy(z));
-}
-
-cl_object
-big_normalize(cl_object x)
-{
-	if (x->big.big_num == 0ll)
-		return(MAKE_FIXNUM(0));
-	if (x->big.big_num <= MOST_POSITIVE_FIXNUM && x->big.big_num >= MOST_NEGATIVE_FIXNUM)
-		return(MAKE_FIXNUM(x->big.big_num));
-	return(x);
 }
 
 int big_num_t_sgn(big_num_t x)

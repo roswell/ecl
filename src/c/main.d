@@ -81,6 +81,7 @@ static cl_fixnum option_values[ECL_OPT_LIMIT+1] = {
 	256*1024*1024, 	/* ECL_OPT_HEAP_SIZE */
 	1024*1024, 	/* ECL_OPT_HEAP_SAFETY_AREA */
         0,		/* ECL_OPT_THREAD_INTERRUPT_SIGNAL */
+        1,		/* ECL_OPT_SET_GMP_MEMORY_FUNCTIONS */
 	0};
 
 #if !defined(GBC_BOEHM)
@@ -588,6 +589,8 @@ cl_boot(int argc, char **argv)
 	cl_core.gentemp_prefix = make_constant_base_string("T");
 	cl_core.gentemp_counter = MAKE_FIXNUM(0);
 
+	init_number();
+
 	ECL_SET(@'si::c-int-max', ecl_make_integer(INT_MAX));
 	ECL_SET(@'si::c-int-min', ecl_make_integer(INT_MIN));
 	ECL_SET(@'si::c-long-max', ecl_make_integer(LONG_MAX));
@@ -595,7 +598,6 @@ cl_boot(int argc, char **argv)
 	ECL_SET(@'si::c-uint-max', ecl_make_unsigned_integer(UINT_MAX));
 	ECL_SET(@'si::c-ulong-max', ecl_make_unsigned_integer(ULONG_MAX));
 
-	init_number();
 	init_unixtime();
 
 #ifdef ECL_THREADS

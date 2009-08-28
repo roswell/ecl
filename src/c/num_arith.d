@@ -15,6 +15,7 @@
 */
 
 #include <ecl/ecl.h>
+#include <ecl/number.h>
 #include <stdlib.h>
 
 #pragma fenv_access on
@@ -34,13 +35,8 @@ cl_object
 fixnum_times(cl_fixnum i, cl_fixnum j)
 {
 	cl_object x = big_register0_get();
-
-#ifdef WITH_GMP
-	mpz_set_si(x->big.big_num, i);
-	mpz_mul_si(x->big.big_num, x->big.big_num, (long int)j);
-#else  /* WITH_GMP */
-        x->big.big_num = (big_num_t)i * (big_num_t)j;
-#endif /* WITH_GMP */
+        big_set_si(x, i);
+        big_mul_si(x, x, j);
 	return big_register_normalize(x);
 }
 
@@ -50,17 +46,14 @@ big_times_fix(cl_object b, cl_fixnum i)
 	cl_object z;
 
 	if (i == 1)
-		return(b);
-	if (i == -1)
-		return(big_minus(b));
+		return b;
 	z = big_register0_get();
-#ifdef WITH_GMP
-	mpz_mul_si(z->big.big_num, b->big.big_num, (long int)i);
-#else  /* WITH_GMP */
-        z->big.big_num = b->big.big_num * i;
-#endif /* WITH_GMP */
-	z = big_register_normalize(z);
-	return(z);
+	if (i == -1) {
+                big_complement(z, b);
+        } else {
+                big_mul_si(z, b, i);
+        }
+	return big_register_normalize(z);
 }
 
 static cl_object
@@ -68,13 +61,8 @@ big_times_big(cl_object x, cl_object y)
 {
 	cl_object z;
 	z = big_register0_get();
-#ifdef WITH_GMP
-	mpz_mul(z->big.big_num, x->big.big_num, y->big.big_num);
-#else  /* WITH_GMP */
-        z->big.big_num = x->big.big_num * y->big.big_num;
-#endif /* WITH_GMP */
-	z = big_register_normalize(z);
-	return(z);
+        big_mul(z, x, y);
+	return big_register_normalize(z);
 }
 
 cl_object
@@ -91,8 +79,7 @@ ecl_times(cl_object x, cl_object y)
 			return big_times_fix(y, fix(x));
 		case t_ratio:
 			z = ecl_times(x, y->ratio.num);
-			z = ecl_make_ratio(z, y->ratio.den);
-			return(z);
+			return ecl_make_ratio(z, y->ratio.den);
 #ifdef ECL_SHORT_FLOAT
 		case t_shortfloat:
 			return make_shortfloat(fix(x) * ecl_short_float(y));
@@ -118,8 +105,7 @@ ecl_times(cl_object x, cl_object y)
 			return big_times_big(x, y);
 		case t_ratio:
 			z = ecl_times(x, y->ratio.num);
-			z = ecl_make_ratio(z, y->ratio.den);
-			return(z);
+			return ecl_make_ratio(z, y->ratio.den);
 #ifdef ECL_SHORT_FLOAT
 		case t_shortfloat:
 			return make_shortfloat(ecl_to_double(x) * ecl_short_float(y));
@@ -142,13 +128,11 @@ ecl_times(cl_object x, cl_object y)
 		case t_fixnum:
 		case t_bignum:
 			z = ecl_times(x->ratio.num, y);
-			z = ecl_make_ratio(z, x->ratio.den);
-			return(z);
+			return ecl_make_ratio(z, x->ratio.den);
 		case t_ratio:
 			z = ecl_times(x->ratio.num,y->ratio.num);
 			z1 = ecl_times(x->ratio.den,y->ratio.den);
-			z = ecl_make_ratio(z, z1);
-			return(z);
+			return ecl_make_ratio(z, z1);
 #ifdef ECL_SHORT_FLOAT
 		case t_shortfloat:
 			return make_shortfloat(ecl_to_double(x) * ecl_short_float(y));
@@ -240,7 +224,7 @@ ecl_times(cl_object x, cl_object y)
 		case t_complex: {
 		COMPLEX: /* INV: x is real, y is complex */
 			return ecl_make_complex(ecl_times(x, y->complex.real),
-					    ecl_times(x, y->complex.imag));
+                                                ecl_times(x, y->complex.imag));
 		}
 		default:
 			FEtype_error_number(y);
@@ -285,7 +269,7 @@ ecl_times(cl_object x, cl_object y)
 		z12 = ecl_times(x->complex.imag, y->complex.imag);
 		z21 = ecl_times(x->complex.imag, y->complex.real);
 		z22 = ecl_times(x->complex.real, y->complex.imag);
-		return(ecl_make_complex(ecl_minus(z11, z12), ecl_plus(z21, z22)));
+		return ecl_make_complex(ecl_minus(z11, z12), ecl_plus(z21, z22));
 	}
 	default:
 		FEtype_error_number(x);
@@ -322,14 +306,10 @@ ecl_plus(cl_object x, cl_object y)
 			if ((i = fix(x)) == 0)
 				return(y);
 			z = big_register0_get();
-#ifdef WITH_GMP
 			if (i > 0)
-				mpz_add_ui(z->big.big_num, y->big.big_num, (unsigned long)i);
+                                big_add_ui(z, y, i);
 			else
-				mpz_sub_ui(z->big.big_num, y->big.big_num, (unsigned long)(-i));
-#else  /* WITH_GMP */
-                        z->big.big_num = y->big.big_num + i;
-#endif /* WITH_GMP */
+                                big_sub_ui(z, y, -i);
 		  	z = big_register_normalize(z);
 			return(z);
 		case t_ratio:
@@ -362,25 +342,19 @@ ecl_plus(cl_object x, cl_object y)
 			if ((j = fix(y)) == 0)
 				return(x);
 			z = big_register0_get();
-#ifdef WITH_GMP
 			if (j > 0)
-				mpz_add_ui(z->big.big_num, x->big.big_num, (unsigned long)j);
+                                big_add_ui(z, x, j);
 			else
-				mpz_sub_ui(z->big.big_num, x->big.big_num, (unsigned long)(-j));
-#else  /* WITH_GMP */
-                        z->big.big_num = x->big.big_num + j;
-#endif /* WITH_GMP */
-			z = big_register_normalize(z);
-			return(z);
+                                big_sub_ui(z, x, (-j));
+			return big_register_normalize(z);
 		case t_bignum:
-			z = big_plus(x, y);
-			z = big_normalize(z);
-			return(z);
+                        z = big_register0_get();
+                        big_add(z, x, y);
+			return big_register_normalize(z);
 		case t_ratio:
 			z = ecl_times(x, y->ratio.den);
 			z = ecl_plus(z, y->ratio.num);
-			z = ecl_make_ratio(z, y->ratio.den);
-			return(z);
+			return ecl_make_ratio(z, y->ratio.den);
 #ifdef ECL_SHORT_FLOAT
 		case t_shortfloat:
 			return make_shortfloat(ecl_to_double(x) + ecl_short_float(y));
@@ -404,15 +378,13 @@ ecl_plus(cl_object x, cl_object y)
 		case t_bignum:
 			z = ecl_times(x->ratio.den, y);
 			z = ecl_plus(x->ratio.num, z);
-			z = ecl_make_ratio(z, x->ratio.den);
-			return(z);
+			return ecl_make_ratio(z, x->ratio.den);
 		case t_ratio:
 			z1 = ecl_times(x->ratio.num,y->ratio.den);
 			z = ecl_times(x->ratio.den,y->ratio.num);
 			z = ecl_plus(z1, z);
 			z1 = ecl_times(x->ratio.den,y->ratio.den);
-			z = ecl_make_ratio(z, z1);
-			return(z);
+			return ecl_make_ratio(z, z1);
 #ifdef ECL_SHORT_FLOAT
 		case t_shortfloat:
 			return make_shortfloat(ecl_to_double(x) + ecl_short_float(y));
@@ -534,8 +506,7 @@ ecl_plus(cl_object x, cl_object y)
 		}
 		z = ecl_plus(x->complex.real, y->complex.real);
 		z1 = ecl_plus(x->complex.imag, y->complex.imag);
-		z = ecl_make_complex(z, z1);
-		return(z);
+		return ecl_make_complex(z, z1);
 	default:
 		FEtype_error_number(x);
 	}
@@ -565,28 +536,22 @@ ecl_minus(cl_object x, cl_object y)
 		case t_fixnum:
 			if ((k = fix(x) - fix(y)) >= MOST_NEGATIVE_FIXNUM &&
 			    k <= MOST_POSITIVE_FIXNUM)
-			  return(MAKE_FIXNUM(k));
+                                return MAKE_FIXNUM(k);
 			else
-			  return(bignum1(k));
+                                return bignum1(k);
 		case t_bignum:
 			z = big_register0_get();
 			i = fix(x);
-#ifdef WITH_GMP
 			if (i > 0)
-				mpz_sub_ui(z->big.big_num, y->big.big_num, (unsigned long)i);
+                                big_sub_ui(z, y, i);
 			else
-				mpz_add_ui(z->big.big_num, y->big.big_num, (unsigned long)(-i));
-#else  /* WITH_GMP */
-                        z->big.big_num = (big_num_t)i - y->big.big_num;
-#endif /* WITH_GMP */
-			big_complement(z);
-			z = big_register_normalize(z);
-			return(z);
+                                big_add_ui(z, y, -i);
+			big_complement(z, z);
+			return big_register_normalize(z);
 		case t_ratio:
 			z = ecl_times(x, y->ratio.den);
 			z = ecl_minus(z, y->ratio.num);
-			z = ecl_make_ratio(z, y->ratio.den);
-			return(z);
+			return ecl_make_ratio(z, y->ratio.den);
 #ifdef ECL_SHORT_FLOAT
 		case t_shortfloat:
 			return make_shortfloat(fix(x) - ecl_short_float(y));
@@ -610,26 +575,19 @@ ecl_minus(cl_object x, cl_object y)
 			if ((j = fix(y)) == 0)
 				return(x);
 			z = big_register0_get();
-#ifdef WITH_GMP
 			if (j > 0)
-				mpz_sub_ui(z->big.big_num, x->big.big_num, (unsigned long)j);
+                                big_sub_ui(z, x, j);
 			else
-				mpz_add_ui(z->big.big_num, x->big.big_num, (unsigned long)(-j));
-#else  /* WITH_GMP */
-                        z->big.big_num = x->big.big_num - j;
-#endif /* WITH_GMP */
-			z = big_register_normalize(z);
-			return(z);
+                                big_add_ui(z, x, -j);
+			return big_register_normalize(z);
 		case t_bignum:
-			y = big_minus(y);
-			z = big_plus(x, y);
-			z = big_normalize(z);
-			return(z);
+                        z = big_register0_get();
+                        big_sub(z, x, y);
+                        return big_register_normalize(z);
 		case t_ratio:
 			z = ecl_times(x, y->ratio.den);
 			z = ecl_minus(z, y->ratio.num);
-			z = ecl_make_ratio(z, y->ratio.den);
-			return(z);
+			return ecl_make_ratio(z, y->ratio.den);
 #ifdef ECL_SHORT_FLOAT
 		case t_shortfloat:
 			return make_shortfloat(ecl_to_double(x) - ecl_short_float(y));
@@ -653,15 +611,13 @@ ecl_minus(cl_object x, cl_object y)
 		case t_bignum:
 			z = ecl_times(x->ratio.den, y);
 			z = ecl_minus(x->ratio.num, z);
-			z = ecl_make_ratio(z, x->ratio.den);
-			return(z);
+			return ecl_make_ratio(z, x->ratio.den);
 		case t_ratio:
 			z = ecl_times(x->ratio.num,y->ratio.den);
 			z1 = ecl_times(x->ratio.den,y->ratio.num);
 			z = ecl_minus(z, z1);
 			z1 = ecl_times(x->ratio.den,y->ratio.den);
-			z = ecl_make_ratio(z, z1);
-			return(z);
+			return ecl_make_ratio(z, z1);
 #ifdef ECL_SHORT_FLOAT
 		case t_shortfloat:
 			return make_shortfloat(ecl_to_double(x) - ecl_short_float(y));
@@ -777,7 +733,7 @@ ecl_minus(cl_object x, cl_object y)
 #endif
 	COMPLEX:
 		return ecl_make_complex(ecl_minus(x, y->complex.real),
-				    ecl_negate(y->complex.imag));
+                                        ecl_negate(y->complex.imag));
 	case t_complex:
 		if (type_of(y) != t_complex) {
 			z = ecl_minus(x->complex.real, y);
@@ -798,7 +754,7 @@ cl_conjugate(cl_object c)
 	switch (type_of(c)) {
 	case t_complex:
 		c = ecl_make_complex(c->complex.real,
-				 ecl_negate(c->complex.imag));
+                                     ecl_negate(c->complex.imag));
 	case t_fixnum:
 	case t_bignum:
 	case t_ratio:
@@ -833,11 +789,7 @@ ecl_negate(cl_object x)
 	}
 	case t_bignum:
 		z = big_register0_get();
-#ifdef WITH_GMP
-		mpz_neg(z->big.big_num, x->big.big_num);
-#else  /* WITH_GMP */
-                z->big.big_num = -(x->big.big_num);
-#endif /* WITH_GMP */
+                big_complement(z, x);
 		return big_register_normalize(z);
 
 	case t_ratio:
@@ -845,7 +797,7 @@ ecl_negate(cl_object x)
 		z = ecl_alloc_object(t_ratio);
 		z->ratio.num = z1;
 		z->ratio.den = x->ratio.den;
-		return(z);
+		return z;
 
 #ifdef ECL_SHORT_FLOAT
 	case t_shortfloat:
@@ -854,12 +806,12 @@ ecl_negate(cl_object x)
 	case t_singlefloat:
 		z = ecl_alloc_object(t_singlefloat);
 		sf(z) = -sf(x);
-		return(z);
+		return z;
 
 	case t_doublefloat:
 		z = ecl_alloc_object(t_doublefloat);
 		df(z) = -df(x);
-		return(z);
+		return z;
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
 		return ecl_make_longfloat(-ecl_long_float(x));
@@ -867,9 +819,7 @@ ecl_negate(cl_object x)
 	case t_complex:
 		z = ecl_negate(x->complex.real);
 		z1 = ecl_negate(x->complex.imag);
-		z = ecl_make_complex(z, z1);
-		return(z);
-
+		return ecl_make_complex(z, z1);
 	default:
 		FEtype_error_number(x);
 	}
@@ -905,12 +855,10 @@ ecl_divide(cl_object x, cl_object y)
 				x = ecl_negate(x);
 				y = ecl_negate(y);
 			}
-			z = ecl_make_ratio(x, y);
-			return(z);
+			return ecl_make_ratio(x, y);
 		case t_ratio:
 			z = ecl_times(x, y->ratio.den);
-			z = ecl_make_ratio(z, y->ratio.num);
-			return(z);
+			return ecl_make_ratio(z, y->ratio.num);
 #ifdef ECL_SHORT_FLAOT
 		case t_shortfloat:
 			return make_shortfloat(ecl_to_double(x) / ecl_short_float(y));
@@ -935,13 +883,11 @@ ecl_divide(cl_object x, cl_object y)
 				FEdivision_by_zero(x, y);
 		case t_bignum:
 			z = ecl_times(x->ratio.den, y);
-			z = ecl_make_ratio(x->ratio.num, z);
-			return(z);
+			return ecl_make_ratio(x->ratio.num, z);
 		case t_ratio:
 			z = ecl_times(x->ratio.num,y->ratio.den);
 			z1 = ecl_times(x->ratio.den,y->ratio.num);
-			z = ecl_make_ratio(z, z1);
-			return(z);
+			return ecl_make_ratio(z, z1);
 #ifdef ECL_SHORT_FLOAT
 		case t_shortfloat:
 			return make_shortfloat(ecl_to_double(x) / ecl_short_float(y));
@@ -1101,14 +1047,10 @@ ecl_integer_divide(cl_object x, cl_object y)
 			 * MOST_NEGATIVE_FIXNUM = - MOST_POSITIVE_FIXNUM.
 			 */
 			if (-MOST_NEGATIVE_FIXNUM > MOST_POSITIVE_FIXNUM) {
-#ifdef WITH_GMP
-				if (mpz_cmp_si(y->big.big_num, -fix(x)))
+				if (big_cmp_si(y, -fix(x)))
 					return MAKE_FIXNUM(0);
 				else
 					return MAKE_FIXNUM(-1);
-#else  /* WITH_GMP */
-                                return y->big.big_num != -fix(x) ? MAKE_FIXNUM(0) : MAKE_FIXNUM(-1);
-#endif /* WITH_GMP */
 			} else {
 				return MAKE_FIXNUM(0);
 			}
@@ -1118,20 +1060,12 @@ ecl_integer_divide(cl_object x, cl_object y)
 	if (tx == t_bignum) {
 		cl_object q = big_register0_get();
 		if (ty == t_bignum) {
-#ifdef WITH_GMP
-			mpz_tdiv_q(q->big.big_num, x->big.big_num, y->big.big_num);
-#else  /* WITH_GMP */
-                        q->big.big_num = x->big.big_num / y->big.big_num;
-#endif /* WITH_GMP */
+			big_tdiv_q(q, x, y);
 		} else if (ty == t_fixnum) {
 			long j = fix(y);
-#ifdef WITH_GMP
-			mpz_tdiv_q_ui(q->big.big_num, x->big.big_num, (unsigned long)labs(j));
+                        big_tdiv_q_ui(q, x, labs(j));
 			if (j < 0)
-				mpz_neg(q->big.big_num, q->big.big_num);
-#else  /* WITH_GMP */
-                        q->big.big_num = x->big.big_num / j;
-#endif /* WITH_GMP */
+				big_complement(q, q);
 		} else {
 			FEtype_error_integer(y);
 		}
@@ -1217,8 +1151,7 @@ ecl_gcd(cl_object x, cl_object y)
                         }
                 }
 #endif /* WITH_GMP */
-		gcd = big_register_normalize(gcd);
-		return(gcd);
+		return big_register_normalize(gcd);
 	default:
 		FEtype_error_integer(y);
 	}
@@ -1249,8 +1182,7 @@ ecl_one_plus(cl_object x)
 
 	case t_ratio:
 		z = ecl_plus(x->ratio.num, x->ratio.den);
-		z = ecl_make_ratio(z, x->ratio.den);
-		return(z);
+		return ecl_make_ratio(z, x->ratio.den);
 
 #ifdef ECL_SHORT_FLOAT
 	case t_shortfloat:
@@ -1273,8 +1205,7 @@ ecl_one_plus(cl_object x)
 
 	case t_complex:
 		z = ecl_one_plus(x->complex.real);
-		z = ecl_make_complex(z, x->complex.imag);
-		return(z);
+		return ecl_make_complex(z, x->complex.imag);
 
 	default:
 		FEtype_error_number(x);
@@ -1301,12 +1232,11 @@ ecl_one_minus(cl_object x)
 		return (cl_object)((cl_fixnum)x - ((cl_fixnum)MAKE_FIXNUM(1) - FIXNUM_TAG));
 
 	case t_bignum:
-		return(ecl_minus(x, MAKE_FIXNUM(1)));
+		return ecl_minus(x, MAKE_FIXNUM(1));
 
 	case t_ratio:
 		z = ecl_minus(x->ratio.num, x->ratio.den);
-		z = ecl_make_ratio(z, x->ratio.den);
-		return(z);
+		return ecl_make_ratio(z, x->ratio.den);
 
 #ifdef ECL_SHORT_FLOAT
 	case t_shortfloat:
@@ -1330,8 +1260,7 @@ ecl_one_minus(cl_object x)
 
 	case t_complex:
 		z = ecl_one_minus(x->complex.real);
-		z = ecl_make_complex(z, x->complex.imag);
-		return(z);
+		return ecl_make_complex(z, x->complex.imag);
 
 	default:
 		FEtype_error_real(x);

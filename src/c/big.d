@@ -39,54 +39,60 @@
 cl_object
 big_register0_get(void)
 {
-	cl_env.big_register[0]->big.big_size = 0;
-	return cl_env.big_register[0];
+        cl_object output = cl_env.big_register[0];
+        output->big.big_limbs = cl_env.big_register_limbs[0];
+	output->big.big_size = 0;
+        output->big.big_dim = BIGNUM_REGISTER_SIZE;
+	return output;
 }
 
 cl_object
 big_register1_get(void)
 {
-	cl_env.big_register[1]->big.big_size = 0;
-	return cl_env.big_register[1];
+        cl_object output = cl_env.big_register[1];
+        output->big.big_limbs = cl_env.big_register_limbs[1];
+	output->big.big_size = 0;
+        output->big.big_dim = BIGNUM_REGISTER_SIZE;
+	return output;
 }
 
 cl_object
 big_register2_get(void)
 {
-	cl_env.big_register[2]->big.big_size = 0;
-	return cl_env.big_register[2];
+        cl_object output = cl_env.big_register[2];
+        output->big.big_limbs = cl_env.big_register_limbs[2];
+	output->big.big_size = 0;
+        output->big.big_dim = BIGNUM_REGISTER_SIZE;
+	return output;
 }
 
 void
 big_register_free(cl_object x)
 {
-	/* FIXME! Is this thread safe? */
-	if (x == cl_env.big_register[0])
-	  x->big.big_limbs = cl_env.big_register_limbs[0];
-	else if (x == cl_env.big_register[1])
-	  x->big.big_limbs = cl_env.big_register_limbs[1];
-	else if (x == cl_env.big_register[2])
-	  x->big.big_limbs = cl_env.big_register_limbs[2];
-	else
-	  ecl_internal_error("big_register_free: unknown register");
-	x->big.big_size = 0;
-	x->big.big_dim = BIGNUM_REGISTER_SIZE;
+        /* We only need to free the integer when it has been reallocated */
+        if (x->big.big_dim > BIGNUM_REGISTER_SIZE) {
+                mpz_clear(x->big.big_num);
+        }
+}
+
+cl_object
+big_copy(cl_object old)
+{
+	cl_object new_big = ecl_alloc_object(t_bignum);
+        cl_index dim, bytes;
+        new_big->big.big_size = old->big.big_size;
+        new_big->big.big_dim = dim = old->big.big_dim;
+        bytes = dim * sizeof(mp_limb_t);
+        new_big->big.big_limbs = ecl_alloc_atomic(bytes);
+        memcpy(new_big->big.big_limbs, old->big.big_limbs, bytes);
+        return new_big;
 }
 
 cl_object
 big_register_copy(cl_object old)
 {
-	cl_object new_big = ecl_alloc_object(t_bignum);
-	if (old->big.big_dim > BIGNUM_REGISTER_SIZE) {
-	  /* The object already has suffered a mpz_realloc() so
-	     we can use the pointer */
-	  new_big->big = old->big;
-	  big_register_free(old);
-	} else {
-	  /* As the bignum points to the cl_env.big_register_limbs[] area
-	     we must duplicate its contents. */
-	  mpz_init_set(new_big->big.big_num,old->big.big_num);
-	}
+        cl_object new_big = big_copy(old);
+        big_register_free(old);
 	return new_big;
 }
 
@@ -94,62 +100,26 @@ cl_object
 big_register_normalize(cl_object x)
 {
 	int s = x->big.big_size;
-	mp_limb_t y;
 	if (s == 0)
-	  return(MAKE_FIXNUM(0));
-	y = x->big.big_limbs[0];
+                return(MAKE_FIXNUM(0));
 	if (s == 1) {
-	  if (y <= MOST_POSITIVE_FIXNUM)
-	    return(MAKE_FIXNUM(y));
+                mp_limb_t y = x->big.big_limbs[0];
+                if (y <= MOST_POSITIVE_FIXNUM)
+                        return MAKE_FIXNUM(y);
 	} else if (s == -1) {
-	  if (y <= -MOST_NEGATIVE_FIXNUM)
-	    return(MAKE_FIXNUM(-y));
+                mp_limb_t y = x->big.big_limbs[0];
+                if (y <= -MOST_NEGATIVE_FIXNUM)
+                        return MAKE_FIXNUM(-y);
 	}
 	return big_register_copy(x);
-}
-
-/*
- * Different from mpz_init since we initialize with NULL limbs
- */
-
-static cl_object
-big_alloc(int size)
-{
-  volatile cl_object x = ecl_alloc_object(t_bignum);
-  if (size <= 0)
-    ecl_internal_error("negative or zero size for bignum in big_alloc");
-  x->big.big_dim = size;
-  x->big.big_size = 0;
-  x->big.big_limbs = (mp_limb_t *)ecl_alloc_atomic_align(size * sizeof(mp_limb_t), sizeof(mp_limb_t));
-  return(x);
 }
 
 cl_object
 bignum1(cl_fixnum val)
 {
-  volatile cl_object z = ecl_alloc_object(t_bignum);
-  mpz_init_set_si(z->big.big_num, val);
-  return(z);
-}
-
-cl_object
-bignum2(mp_limb_t hi, mp_limb_t lo)
-{
-  cl_object z;
-
-  z = big_alloc(2);
-  z->big.big_size = 2;
-  z->big.big_limbs[0] = lo;
-  z->big.big_limbs[1] = hi;
-  return(z);
-}
-
-cl_object
-big_copy(cl_object x)
-{
-	volatile cl_object y = ecl_alloc_object(t_bignum);
-	mpz_init_set(y->big.big_num, x->big.big_num);
-	return(y);
+        cl_object aux = big_register0_get();
+        mpz_init_set_si(aux->big.big_num, val);
+        return big_register_copy(aux);
 }
 
 /*
@@ -175,88 +145,6 @@ big_copy(cl_object x)
 
 #define big_compare(x, y)	mpz_cmp(x->big.big_num, y->big.big_num)
 */
-
-/*
-	big_complement(x) destructively takes
-	the complement of bignum x.
-
-#define big_complement(x)	mpz_neg(x->big.big_num, x->big.num);
-*/
-
-/*
-	big_minus(x) returns the complement of bignum x.
-*/
-cl_object
-big_minus(cl_object x)
-{
-	volatile cl_object y = big_copy(x);
-	mpz_neg(y->big.big_num, y->big.big_num);
-	return y;
-}
-
-/*
-	big_add_ui(x, i) destructively adds non-negative int i
-	to bignum x.
-	I should be non-negative.
-
-	mpz_add_ui(x->big.big_num, x->big.big_num, i)
-*/
-
-/*
-	big_sub_ui(x, i) destructively subtracts non-negative int i
-	from bignum x.
-	I should be non-negative.
-
-	mpz_sub_ui(x->big.big_num, x->big.big_num, i)
-*/
-
-/*
-	big_mul_ui(x, i) destructively multiplies non-negative bignum x
-	by non-negative int i.
-	I should be non-negative.
-	X should be non-negative.
-
-	mpn_mul(&x->big.big_limbs, &x->big.big_limbs, x->big.big_size, &i, 1)
-*/
-
-/*
-	big_div_ui(x, i) destructively divides non-negative bignum x
-	by positive int i.
-	X will hold the remainder of the division.
-	div_int_big(i, x) returns the remainder of the division.
-	I should be positive.
-	X should be non-negative.
-
-	mp_limb_t q[x->big.big_size];
-	mpn_div(q, &x->big.big_limbs, &x->big.big_size, &i, 1), x
-*/
-
-/*
-	big_plus(x, y) returns the sum of bignum x and bignum y.
-	X and y may be any bignum.
-*/
-cl_object
-big_plus(cl_object x, cl_object y)
-{
-	volatile cl_object z = big_register0_get();
-	mpz_add(z->big.big_num, x->big.big_num, y->big.big_num);
-	return(big_register_copy(z));
-}
-
-cl_object
-big_normalize(cl_object x)
-{
-  int s = x->big.big_size;
-  mp_limb_t y;
-  if (s == 0)
-    return(MAKE_FIXNUM(0));
-  y = x->big.big_limbs[0];
-  if (s == 1 && y <= MOST_POSITIVE_FIXNUM)
-    return(MAKE_FIXNUM(y));
-  if (s == -1 && y <= -MOST_NEGATIVE_FIXNUM)
-    return(MAKE_FIXNUM(-y));
-  return(x);
-}
 
 static void *
 mp_alloc(size_t size)
@@ -286,7 +174,6 @@ void init_big_registers(cl_env_ptr env)
 	int i;
 	for (i = 0; i < 3; i++) {
 		env->big_register[i] = ecl_alloc_object(t_bignum);
-		big_register_free(env->big_register[i]);
 	}
 }
 
@@ -294,5 +181,6 @@ void
 init_big(cl_env_ptr env)
 {
 	init_big_registers(env);
-	mp_set_memory_functions(mp_alloc, mp_realloc, mp_free);
+        if (ecl_get_option(ECL_OPT_SET_GMP_MEMORY_FUNCTIONS))
+                mp_set_memory_functions(mp_alloc, mp_realloc, mp_free);
 }

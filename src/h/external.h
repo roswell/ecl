@@ -369,9 +369,6 @@ extern ECL_API cl_object bignum2(cl_fixnum hi, cl_fixnum lo);
 #endif /* WITH_GMP */
 extern ECL_API cl_object big_set_fixnum(cl_object x, cl_object fix);
 extern ECL_API cl_object big_copy(cl_object x);
-extern ECL_API cl_object big_minus(cl_object x);
-extern ECL_API cl_object big_plus(cl_object x, cl_object y);
-extern ECL_API cl_object big_normalize(cl_object x);
 extern ECL_API double big_to_double(cl_object x);
 
 
@@ -911,6 +908,7 @@ typedef enum {
 	ECL_OPT_HEAP_SIZE,
 	ECL_OPT_HEAP_SAFETY_AREA,
         ECL_OPT_THREAD_INTERRUPT_SIGNAL,
+        ECL_OPT_SET_GMP_MEMORY_FUNCTIONS,
 	ECL_OPT_LIMIT
 } ecl_option;
 

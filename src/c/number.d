@@ -128,13 +128,9 @@ cl_object
 ecl_make_integer(cl_fixnum l)
 {
 	if (l > MOST_POSITIVE_FIXNUM || l < MOST_NEGATIVE_FIXNUM) {
-		cl_object z = ecl_alloc_object(t_bignum);
-#ifdef WITH_GMP
-		mpz_init_set_si(z->big.big_num, l);
-#else  /* WITH_GMP */
-                z->big.big_num = l;
-#endif /* WITH_GMP */
-		return z;
+                cl_object z = big_register0_get();
+                big_set_si(z, l);
+                return big_register_copy(z);
 	}
 	return MAKE_FIXNUM(l);
 }
@@ -143,13 +139,9 @@ cl_object
 ecl_make_unsigned_integer(cl_index l)
 {
 	if (l > MOST_POSITIVE_FIXNUM) {
-		cl_object z = ecl_alloc_object(t_bignum);
-#ifdef WITH_GMP
-		mpz_init_set_ui(z->big.big_num, l);
-#else  /* WITH_GMP */
-                z->big.big_num = l;
-#endif /* WITH_GMP */
-		return z;
+                cl_object z = big_register0_get();
+                big_set_ui(z, l);
+                return big_register_copy(z);
 	}
 	return MAKE_FIXNUM(l);
 }
@@ -890,13 +882,9 @@ double_to_integer(double d)
 	if (d <= MOST_POSITIVE_FIXNUM && d >= MOST_NEGATIVE_FIXNUM)
 		return MAKE_FIXNUM((cl_fixnum)d);
 	else {
-		cl_object x = big_register0_get();
-#ifdef WITH_GMP
-		mpz_set_d(x->big.big_num, d);
-#else  /* WITH_GMP */
-                x->big.big_num = (big_num_t)d;
-#endif /* WITH_GMP */
-		return big_register_copy(x);
+                cl_object z = big_register0_get();
+                big_set_d(z, d);
+                return big_register_copy(z);
 	}
 }
 
@@ -906,13 +894,9 @@ float_to_integer(float d)
 	if (d <= MOST_POSITIVE_FIXNUM && d >= MOST_NEGATIVE_FIXNUM)
 		return MAKE_FIXNUM((cl_fixnum)d);
 	else {
-		cl_object x = big_register0_get();
-#ifdef WITH_GMP
-		mpz_set_d(x->big.big_num, d);
-#else  /* WITH_GMP */
-                x->big.big_num = (big_num_t)d;
-#endif /* WITH_GMP */
-		return big_register_copy(x);
+                cl_object z = big_register0_get();
+                big_set_d(z, d);
+                return big_register_copy(z);
 	}
 }
 

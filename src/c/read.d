@@ -604,11 +604,11 @@ ecl_parse_integer(cl_object str, cl_index start, cl_index end,
 		if (d < 0) {
 			break;
 		}
-		big_mul_ui(integer_part, radix);
-		big_add_ui(integer_part, d);
+		big_mul_ui(integer_part, integer_part, radix);
+		big_add_ui(integer_part, integer_part, d);
 	}
 	if (sign < 0) {
-		big_complement(integer_part);
+		big_complement(integer_part, integer_part);
 	}
 	output = big_register_normalize(integer_part);
 	*ep = i;

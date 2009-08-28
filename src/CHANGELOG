@@ -1,141 +1,20 @@
-ECL 9.8.4:
+ECL 9.9.1:
 ==========
-
-* Bugs fixed:
-
- - si_{set,get}_finalizer were not exported from ecl.dll and thus the library
-   TRIVIAL-GARBAGE failed to build in Windows
-
- - The MSVC port did not define @ECL_LDRPATH@ and failed to build ecl.dll
-
- - The sequence functions did not understand the newest specialized array types.
 
 * Visible changes:
 
- - The configuration flag --with-__thread now defaults to NO because many
-   platforms do not support it and GCC does not complain, making reliable
-   detection impossible.
+ - When embedded, ECL may coexist with code that uses the GMP library in
+   different ways, and sometimes that code may use different memory allocation
+   routines. In order to solve this problem ECL introduces a new option,
+   ECL_OPT_SET_GMP_MEMORY_FUNCTIONS, which determines whether GMP will use the
+   Boehm-Weiser garbage collector to allocate memory or not.
 
- - For further compatibility with SBCL, ECL now supports two additional
-   buffer types :FULL and :LINE which are compatible with :FULLY-BUFFERED
-   and :LINE-BUFFERED (Thanks to Matthew Mondor)
-
- - The sockets library can now be loaded using either (REQUIRE 'SOCKETS)
-   or (REQUIRE 'SB-BSD-SOCKETS).
-
-ECL 9.8.3:
-==========
-
-* Bugs fixed:
-
- - FLOAT-SIGN ignored the second argument.
-
-ECL 9.8.2:
-==========
-
-* Bugs fixed:
-
- - The C inline expansion for sin, cos, and tan were wrong due to three
-   recently introduced typos.
-
- - The C inline form of SQRT did not work when ECL was built with
-   --enable-longdouble.
-
- - When building FASL files, the output file name was not surrounded by
-   double quotes, thus breaking when the file name had spaces (only
-   mingw32).
-
-* Visible changes:
-
- - A new configuration flag, --enable-rpath, allows hardcoding in ECL the
-   location of its shared library. This is not needed in Windows, it should
-   work on all supported platforms and its purpose is to simplify the
-   installation of ECL in nonstandard locations.
-
-
-ECL 9.8.1:
-==========
-
-* Important notes:
-
- - The GMP library had to be patched to build with latest versions of GCC.
-   Since our patch only covers the main header and there might be some corners
-   left, it is recommended to build ECL against a better maintained version of
-   the library, such as MPIR or the versions supplied by your operating system.
-
- - ECL now builds properly on a large number of platforms, including Windows
-   with and without Microsoft compilers. However, not always are all the
-   configuration options available or well supported. The fault is not always
-   ECL's, but also the libraries it depends on. Some of these problems are
-   detailed below, some are to be found. As a guide, the minimally supported
-   flags for each platform are those use for the automated testing process
-       http://ecls.sourceforge.net/logs.html
-
-* Ports:
-
- - The Windows/MSVC port now boots also when built without support for Unicode.
-
- - The Windows/mingw32 port builds without threads. For multithreading, the
-   user will have to build version 7.2-alpha2 of the garbage collector
-   manually and build ECL with it.
-
- - The NetBSD port builds with default values using the garbage collector
-   in the pkgsrc distribution.
-
- - The Solaris port (Intel and Sparc) now builds with the given libraries (GMP
-   and Boehm).
-
-* Compiler:
-
- - The compiler now understands FFI types :[u]int{8,16,32,64}-t.
-
- - The FFI code emitted to convert from a lisp type to :uint or :unsigned-int
-   rejected bignum inputs, even if they were in the range from 0 to UINT_MAX.
-   Similar problem with :int
-
-* Visible changes:
-
- - New functions ecl_make_[u]int(), ecl_make_[u]long(), ecl_to_[u]int(),
-   ecl_to_[u]long(), ecl_to_bool(), ecl_make_bool(), convert between C types
-   and cl_object.
-
- - The C structures ecl_array, ecl_vector, ecl_base_string and ecl_string have
-   changed. Instead of using bitfields for hasfillp and adjustable we now
-   use a single integer field, and handle the bits manually. See the
-   new macros ECL_ADJUSTABLE_ARRAY_P and ECL_ARRAY_HAS_FILL_POINTER_P.
-
- - Four new command-line arguments, --encoding, --input-encoding,
-   --output-encoding and --error-encoding, allow the user to change the 
-   external formats of the default streams.
-
- - For places defined with the simple form of DEFSETF, SETF now produces
-   a simpler expansion, without a surrounding LET* form.
-
- - The dynamic FFI is now implemented using libffi. This extends the portability
-   and removes the previous, error prone implementation.
-
- - A new function, (SI:SAFE-EVAL form env &optional error-value), can be used
-   to evaluate lisp forms in a safe way. If supplied three values, when an
-   error happens, it returns ERROR-VALUE; otherwise it will invoke a debugger.
-
- - Two new functions, ecl_read_from_cstring(s) and
-   ecl_read_from_cstring_safe(s,v) read an object from a C string (char *). The
-   first one is unsafe and will enter a debugger when there is a syntax
-   error. The second one will return V when an error happens.
-
- - Modules which are loaded with REQUIRE, but which belong to ECL, are now
-   registered with ASDF and can be used in dependencies.
-
-* Bugs fixed:
-
- - SI:GET-LIBRARY-PATHNAME did not work properly in Windows.
-
- - STEP did not work properly because the bytecompiler introduced an extra
-   opcode after STEPCALL.
-
- - --enable-slow-config works again.
-
- - EXT:CHDIR got broken when using Unicode.
+ - The previous change also implies that ECL must do all bignum computations
+   using GMP-allocated numbers that are then automatically freed. More
+   precisely, this is done using big_register[0-2]_get() and
+   big_register_normalize() everywhere and operating destructively on those
+   numbers. These functions have been made aware of the fact that GMP may
+   use other allocation routines and always call mpz_clear() to free memory.
 
 ;;; Local Variables: ***
 ;;; mode:text ***

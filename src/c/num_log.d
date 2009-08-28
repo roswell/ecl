@@ -328,7 +328,6 @@ static bignum_bit_operator bignum_operations[16] = {
 static cl_object
 log_op(cl_narg narg, int op, cl_va_list ARGS)
 {
-#if 1
 	cl_object x, y;
 	/* FIXME! This can be optimized */
 	x = cl_va_arg(ARGS);
@@ -341,66 +340,6 @@ log_op(cl_narg narg, int op, cl_va_list ARGS)
 		} while (--narg);
 	}
 	return x;
-#else
-	cl_object x, numi;
-	bit_operator fix_log_op;
-	bignum_bit_operator big_log_op;
-	int i = 1;
-	cl_fixnum j;
-
-	x = cl_va_arg(ARGS);
-	switch (type_of(x)) {
-	    case t_fixnum:
-		break;
-	    case t_bignum:
-		x = big_copy(x);	/* since big_log_op clobbers it */
-		goto BIG_OP;
-	    default:
-		FEtype_error_integer(x);
-	}
-	if (narg == 1)
-		return x;
-	j = fix(x);
-	fix_log_op = fixnum_operations[op];
-	for (; i < narg; i++) {
-		numi = cl_va_arg(ARGS);
-		switch (type_of(numi)) {
-		    case t_fixnum:
-			j = (*fix_log_op)(j, fix(numi));
-			break;
-		    case t_bignum:
-			big_log_op = bignum_operations[op];
-			x = bignum1(j);
-			goto BIG_OP2;
-		    default:
-			FEtype_error_integer(numi);
-		}
-	}
-	return(MAKE_FIXNUM(j));
-
-BIG_OP:
-	if (narg == 1)
-		return x;
-	big_log_op = bignum_operations[op];
-	for (; i < narg; i++) {
-		numi = cl_va_arg(ARGS);
-		switch (type_of(numi)) {
-		    case t_fixnum: {
-			cl_object z = big_register1_get();
-			mpz_set_si(z->big.big_num, fix(numi));
-			(*big_log_op)(x, z);
-			big_register_free(z);
-			break;
-		    }
-		    case t_bignum: BIG_OP2:
-			(*big_log_op)(x, numi);
-			break;
-		    default:
-			FEtype_error_integer(numi);
-		}
-	}
-	return(big_normalize(x));
-#endif
 }
 
 cl_object
@@ -410,49 +349,42 @@ ecl_boole(int op, cl_object x, cl_object y)
 	case t_fixnum:
 		switch (type_of(y)) {
 		case t_fixnum: {
-			cl_fixnum (*fix_log_op)(cl_fixnum, cl_fixnum);
-			fix_log_op = fixnum_operations[op];
-			return MAKE_FIXNUM((*fix_log_op)(fix(x), fix(y)));
+			cl_fixnum z = fixnum_operations[op](fix(x), fix(y));
+			return MAKE_FIXNUM(z);
 		}
 		case t_bignum: {
-			void (*big_log_op)(cl_object, cl_object);
-			big_log_op = bignum_operations[op];
-			x = bignum1(fix(x));
-			(*big_log_op)(x, y);
-			break;
+                        cl_object x_copy = big_register0_get();
+                        big_set_si(x_copy, fix(x));
+			bignum_operations[op](x_copy, y);
+                        return big_register_normalize(x_copy);
 		}
 		default:
 			FEtype_error_integer(y);
 		}
 		break;
 	case t_bignum: {
-		void (*big_log_op)(cl_object, cl_object);
-		big_log_op = bignum_operations[op];
-		x = big_copy(x);
+                cl_object x_copy = big_register0_get();
+                big_set(x_copy, x);
 		switch (type_of(y)) {
 		case t_fixnum: {
 			cl_object z = big_register1_get();
-#ifdef WITH_GMP
-			mpz_set_si(z->big.big_num, fix(y));
-#else  /* WITH_GMP */
-                        z->big.big_num = fix(y);
-#endif /* WITH_GMP */
-			(*big_log_op)(x, z);
+                        big_set_si(z,fix(y));
+			bignum_operations[op](x_copy, z);
 			big_register_free(z);
 			break;
 		}
 		case t_bignum:
-			(*big_log_op)(x,y);
+			bignum_operations[op](x_copy, y);
 			break;
 		default:
 			FEtype_error_integer(y);
 		}
-		break;
+                return big_register_normalize(x_copy);
 	}
 	default:
 		FEtype_error_integer(x);
 	}
-	return big_normalize(x);
+	return x;
 }
 
 cl_object
@@ -546,7 +478,7 @@ ecl_ash(cl_object x, cl_fixnum w)
                 y->big.big_num <<= w;
 #endif /* WITH_GMP */
 	}
-	return(big_register_normalize(y));
+	return big_register_normalize(y);
 }
 
 int
