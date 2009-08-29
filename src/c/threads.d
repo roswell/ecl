@@ -338,7 +338,7 @@ mp_process_enable(cl_object process)
 		FEerror("Cannot enable the running process ~A.", 1, process);
         process->process.parent = mp_current_process();
 	code = pthread_create(&process->process.thread, &pthreadattr, thread_entry_point, process);
-	output = (process->process.thread = code)? Cnil : process;
+	output = code? Cnil : process;
 #endif
 	@(return output)
 }
