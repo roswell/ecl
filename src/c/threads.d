@@ -466,12 +466,12 @@ mp_get_sigmask(void)
 }
 
 static cl_object
-mp_set_sigmask(cl_object vector)
+mp_set_sigmask(cl_object data)
 {
         sigset_t *mask_ptr = (sigset_t*)data->vector.self.b8;
-        if (pthread_sigmask(SIG_SETMASK, &mask_ptr, NULL))
+        if (pthread_sigmask(SIG_SETMASK, mask_ptr, NULL))
                 FElibc_error("MP:SET-SIGMASK failed in a call to pthread_sigmask", 0);
-        @(return vector)
+        @(return data)
 }
 #endif
 
