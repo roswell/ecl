@@ -345,9 +345,7 @@ read_char_database()
 		if (!fseek(f, 0, SEEK_END)) {
 			size = ftell(f);
 			fseek(f, 0, SEEK_SET);
-			output = si_make_vector(@'ext::byte8', MAKE_FIXNUM(size),
-						Cnil, Cnil, Cnil, Cnil);
-	    
+			output = ecl_alloc_simple_vector(size, aet_b8);	    
 			read = 0;
 			while (read < size) {
 				cl_index res;
@@ -578,15 +576,6 @@ cl_boot(int argc, char **argv)
 	   a vector of weak pointers thanks to the magic in
 	   gbc.d/alloc_2.d */
 	cl_core.libraries = Cnil;
-#if 0
-	/* FINALIZERS and FINALIZABLE_OBJECTS are also like LIBRARIES */
-	cl_core.finalizable_objects = si_make_vector(@'t', MAKE_FIXNUM(512),
-						     @'t', MAKE_FIXNUM(0),
-						     @'nil', @'nil');
-	cl_core.finalizers = si_make_vector(@'t', MAKE_FIXNUM(512),
-					    @'t', MAKE_FIXNUM(0),
-					    @'nil', @'nil');
-#endif
 	cl_core.to_be_finalized = Cnil;
 	cl_core.bytes_consed = Cnil;
 	cl_core.gc_counter = Cnil;

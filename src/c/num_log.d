@@ -731,7 +731,7 @@ si_bit_array_op(cl_object o, cl_object x, cl_object y, cl_object r)
 		}
 	L1:
 		if (Null(r)) {
-			r = si_make_vector(@'bit', MAKE_FIXNUM(d), Cnil, Cnil, Cnil, Cnil);
+			r = ecl_alloc_simple_vector(d, aet_bit);
 		}
 	} else {
 		if (type_of(x) != t_array)
