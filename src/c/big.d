@@ -34,14 +34,20 @@ _ecl_big_register_free(cl_object x)
 static cl_object
 _ecl_big_copy(cl_object old)
 {
+        cl_fixnum size = old->big.big_size;
+        cl_index dim = (size < 0)? (-size) : size;
+        cl_index bytes = dim * sizeof(mp_limb_t);
+#ifdef GBC_BOEHM
+        char *data = ecl_alloc_atomic(bytes + sizeof(struct ecl_bignum));
+        cl_object new_big = (cl_object)data;
+        new_big->big.t = t_bignum;
+        new_big->big.big_limbs = ((char *)new_big) + sizeof(struct ecl_bignum);
+#else
 	cl_object new_big = ecl_alloc_object(t_bignum);
-        cl_fixnum dim, bytes;
-        dim = old->big.big_size;
-        new_big->big.big_size = dim;
-        if (dim < 0) dim = - dim;
-        new_big->big.big_dim = dim;
-        bytes = dim * sizeof(mp_limb_t);
         new_big->big.big_limbs = ecl_alloc_atomic(bytes);
+#endif
+        new_big->big.big_size = size;
+        new_big->big.big_dim = dim;
         memcpy(new_big->big.big_limbs, old->big.big_limbs, bytes);
         return new_big;
 }

@@ -24,6 +24,11 @@ ECL 9.9.1:
    macros and functions. Have a look at the end of src/h/external.h to see
    what functions are deprecated on each release -- typically they are functions
    that have been renamed with one of the prefixes, ecl_, cl_, si_, ext_ or _ecl.
+
+ - Bignums are now allocated as a compact IMMUTABLE unit that combines the lisp
+   object and the data for the GMP integer itself. Since it can be now
+   allocated as an atomic (i.e. pointerless) region of memory, the garbage
+   collector has to work less for marking and collecting them.
    
 
 ;;; Local Variables: ***
