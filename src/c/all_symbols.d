@@ -133,7 +133,7 @@ mangle_name(cl_object output, unsigned char *source, int l)
 	symbol = ecl_symbol_name(symbol);
 	l      = symbol->base_string.fillp;
 	source = symbol->base_string.self;
-	output = cl_alloc_simple_base_string(ecl_length(package) + l + 1);
+	output = ecl_alloc_simple_base_string(ecl_length(package) + l + 1);
 	if (is_symbol && source[0] == '*') {
 		if (l > 2 && source[l-1] == '*') l--;
 		c = 'V';

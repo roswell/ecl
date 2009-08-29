@@ -121,7 +121,7 @@ current_dir(void) {
 	cl_index size = 128;
 
 	do {
-		output = cl_alloc_adjustable_base_string(size);
+		output = ecl_alloc_adjustable_base_string(size);
 		ecl_disable_interrupts();
 		ok = getcwd((char*)output->base_string.self, size);
 		ecl_enable_interrupts();
@@ -130,7 +130,7 @@ current_dir(void) {
 	size = strlen((char*)output->base_string.self);
 	if ((size + 1 /* / */ + 1 /* 0 */) >= output->base_string.dim) {
 		/* Too large to host the trailing '/' */
-		cl_object other = cl_alloc_adjustable_base_string(size+2);
+		cl_object other = ecl_alloc_adjustable_base_string(size+2);
 		strcpy((char*)other->base_string.self, (char*)output->base_string.self);
 		output = other;
 	}
@@ -201,7 +201,7 @@ si_readlink(cl_object filename) {
 	cl_index size = 128, written;
 	cl_object output, kind;
 	do {
-		output = cl_alloc_adjustable_base_string(size);
+		output = ecl_alloc_adjustable_base_string(size);
 		ecl_disable_interrupts();
 		written = readlink((char*)filename->base_string.self,
 				   (char*)output->base_string.self, size);
@@ -920,7 +920,7 @@ si_get_library_pathname(void)
         char *buffer;
 	HMODULE hnd;
 	cl_index len, ep;
-        s = cl_alloc_adjustable_base_string(cl_core.path_max);
+        s = ecl_alloc_adjustable_base_string(cl_core.path_max);
         buffer = (char*)s->base_string.self;
 	ecl_disable_interrupts();
 	hnd = GetModuleHandle("ecl.dll");
@@ -1037,13 +1037,13 @@ si_mkstemp(cl_object template)
 		output = Cnil;
 	} else {
 		l = strlen(strTempFileName);
-		output = cl_alloc_simple_base_string(l);
+		output = ecl_alloc_simple_base_string(l);
 		memcpy(output->base_string.self, strTempFileName, l);
 	}
 #else
 	template = si_coerce_to_filename(template);
 	l = template->base_string.fillp;
-	output = cl_alloc_simple_base_string(l + 6);
+	output = ecl_alloc_simple_base_string(l + 6);
 	memcpy(output->base_string.self, template->base_string.self, l);
 	memcpy(output->base_string.self + l, "XXXXXX", 6);
 

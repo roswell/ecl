@@ -18,6 +18,7 @@
 #include <limits.h>
 #include <string.h>
 #include <ecl/ecl.h>
+#include <ecl/internal.h>
 
 static const cl_index ecl_aet_size[] = {
   sizeof(cl_object),          /* aet_object */
@@ -502,6 +503,16 @@ si_make_vector(cl_object etype, cl_object dim, cl_object adj,
 	@(return x)
 }
 
+cl_object *
+alloc_pointerfull_memory(cl_index l)
+{
+        cl_object *p = ecl_alloc_align(sizeof(cl_object) * l, sizeof(cl_object));
+        cl_index i;
+        for (i = 0; l--;)
+                p[i++] = Cnil;
+        return p;
+}
+
 void
 ecl_array_allocself(cl_object x)
 {
@@ -509,20 +520,14 @@ ecl_array_allocself(cl_object x)
 	cl_index i, d = x->array.dim;
 	switch (t) {
 	/* assign self field only after it has been filled, for GC sake  */
-	case aet_object: {
-		cl_object *elts;
-		elts = (cl_object *)ecl_alloc_align(sizeof(cl_object)*d, sizeof(cl_object));
-		for (i = 0; i < d;  i++)
-			elts[i] = Cnil;
-		x->array.self.t = elts;
+	case aet_object:
+		x->array.self.t = alloc_pointerfull_memory(d);
 		return;
-        }
 #ifdef ECL_UNICODE
 	case aet_ch: {
 		ecl_character *elts;
                 d *= sizeof(ecl_character);
 		elts = (ecl_character *)ecl_alloc_atomic_align(d, sizeof(ecl_character));
-                memset(elts, 0, d);
 		x->string.self = elts;
 		return;
         }
@@ -538,6 +543,51 @@ ecl_array_allocself(cl_object x)
                 x->vector.self.bc = (ecl_base_char *)ecl_alloc_atomic_align(d, elt_size);
         }
         }
+}
+
+cl_object
+ecl_alloc_simple_vector(cl_index l, cl_elttype aet)
+{
+	cl_object x;
+
+	switch (aet) {
+	case aet_bc:
+                x = ecl_alloc_compact_object(t_base_string, l+1);
+                x->base_string.self = ECL_COMPACT_OBJECT_EXTRA(x);
+                memset(x->base_string.self, 0, l+1);
+                break;
+#ifdef ECL_UNICODE
+	case aet_ch:
+                {
+                cl_index bytes = sizeof(ecl_character) * l;
+                x = ecl_alloc_compact_object(t_string, bytes);
+                x->string.self = ECL_COMPACT_OBJECT_EXTRA(x);
+                }
+                break;
+#endif
+	case aet_bit:
+                {
+                cl_index bytes = (l + (CHAR_BIT-1))/CHAR_BIT;
+                x = ecl_alloc_compact_object(t_bitvector, bytes);
+                x->vector.self.bit = ECL_COMPACT_OBJECT_EXTRA(x);
+		x->vector.offset = 0;
+                }
+		break;
+        case aet_object:
+                {
+		x = ecl_alloc_object(t_vector);
+                x->vector.self.t = alloc_pointerfull_memory(l);
+                }
+                break;
+	default:
+		x = ecl_alloc_compact_object(t_vector, l * ecl_aet_size[aet]);
+                x->vector.self.bc = ECL_COMPACT_OBJECT_EXTRA(x);
+	}
+        x->base_string.elttype = aet;
+        x->base_string.flags = 0; /* no fill pointer, not adjustable */
+        x->base_string.displaced = Cnil;
+        x->base_string.dim = x->base_string.fillp = l;
+	return x;
 }
 
 cl_elttype

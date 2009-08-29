@@ -19,42 +19,6 @@
 #include <limits.h>
 #include <ecl/ecl-inl.h>
 
-/*
-	I know the following name is not good.
-*/
-cl_object
-ecl_alloc_simple_vector(cl_index l, cl_elttype aet)
-{
-	cl_object x;
-
-	switch (aet) {
-	case aet_bc:
-		return cl_alloc_simple_base_string(l);
-#ifdef ECL_UNICODE
-	case aet_ch:
-		return cl_alloc_simple_extended_string(l);
-#endif
-	case aet_bit:
-		x = ecl_alloc_object(t_bitvector);
-		x->vector.flags = 0; /* no fill pointer, not adjustable */
-		x->vector.displaced = Cnil;
-		x->vector.dim = x->vector.fillp = l;
-		x->vector.offset = 0;
-		x->vector.self.bit = NULL;
-                x->vector.elttype = aet;
-		break;
-	default:
-		x = ecl_alloc_object(t_vector);
-		x->vector.flags = 0; /* no fill pointer, not adjustable */
-		x->vector.displaced = Cnil;
-		x->vector.dim = x->vector.fillp = l;
-		x->vector.self.t = NULL;
-		x->vector.elttype = (short)aet;
-	}
-	ecl_array_allocself(x);
-	return(x);
-}
-
 cl_object
 cl_elt(cl_object x, cl_object i)
 {

@@ -421,7 +421,7 @@
   (c-inline (foreign-string length) (t fixnum) string
        "{
 	cl_index length = #1;
-	cl_object output = cl_alloc_simple_base_string(length);
+	cl_object output = ecl_alloc_simple_base_string(length);
 	memcpy(output->base_string.self, (#0)->foreign.data, length);
 	@(return) = output;
 	}"

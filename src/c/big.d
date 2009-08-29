@@ -37,13 +37,8 @@ _ecl_big_copy(cl_object old)
         cl_fixnum size = old->big.big_size;
         cl_index dim = (size < 0)? (-size) : size;
         cl_index bytes = dim * sizeof(mp_limb_t);
-#ifdef ECL_COMPACT_OBJECT_EXTRA
         cl_object new_big = ecl_alloc_compact_object(t_bignum, bytes);
         new_big->big.big_limbs = ECL_COMPACT_OBJECT_EXTRA(new_big);
-#else
-	cl_object new_big = ecl_alloc_object(t_bignum);
-        new_big->big.big_limbs = ecl_alloc_atomic(bytes);
-#endif
         new_big->big.big_size = size;
         new_big->big.big_dim = dim;
         memcpy(new_big->big.big_limbs, old->big.big_limbs, bytes);

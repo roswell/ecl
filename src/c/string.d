@@ -25,7 +25,7 @@ typedef ecl_character (*ecl_casefun)(ecl_character, bool *);
 static cl_object
 do_make_base_string(cl_index s, ecl_base_char code)
 {
-	cl_object x = cl_alloc_simple_base_string(s);
+	cl_object x = ecl_alloc_simple_base_string(s);
 	cl_index i;
 	for (i = 0;  i < s;  i++)
 		x->base_string.self[i] = code;
@@ -36,7 +36,7 @@ do_make_base_string(cl_index s, ecl_base_char code)
 static cl_object
 do_make_string(cl_index s, ecl_character code)
 {
-	cl_object x = cl_alloc_simple_extended_string(s);
+	cl_object x = ecl_alloc_simple_extended_string(s);
 	cl_index i;
 	for (i = 0;  i < s;  i++)
 		x->string.self[i] = code;
@@ -72,51 +72,22 @@ do_make_string(cl_index s, ecl_character code)
 	@(return x)
 @)
 
-cl_object
-cl_alloc_simple_base_string(cl_index length)
-{
-	cl_object x;
-
-	x = ecl_alloc_object(t_base_string);
-        x->base_string.elttype      = aet_bc;
-        x->base_string.flags        = 0; /* no fill pointer, no adjustable */
-	x->base_string.displaced    = Cnil;
-	x->base_string.dim          = (x->base_string.fillp = length);
-	x->base_string.self         = (ecl_base_char *)ecl_alloc_atomic(length+1);
-	x->base_string.self[length] = x->base_string.self[0] = 0;
-	return x;
-}
-
-#ifdef ECL_UNICODE
-cl_object
-cl_alloc_simple_extended_string(cl_index length)
-{
-	cl_object x;
-
-        /* should this call si_make_vector? */
-	x = ecl_alloc_object(t_string);
-        x->string.elttype    = aet_ch;
-        x->string.flags      = 0;  /* no fill pointer, no adjustable */
-	x->string.displaced  = Cnil;
-	x->string.dim        = x->string.fillp = length;
-	x->string.self       = (ecl_character *)
-                ecl_alloc_align(sizeof(ecl_character)*length,
-                                sizeof(ecl_character));
-	return(x);
-}
-#endif
-
 /*
 	Make a string of a certain size, with some eading zeros to
 	keep C happy. The string must be adjustable, to allow further
 	growth. (See unixfsys.c for its use).
 */
 cl_object
-cl_alloc_adjustable_base_string(cl_index l)
+ecl_alloc_adjustable_base_string(cl_index l)
 {
-	cl_object output = cl_alloc_simple_base_string(l);
-	output->base_string.fillp = 0;
-	output->base_string.flags = ECL_FLAG_HAS_FILL_POINTER | ECL_FLAG_ADJUSTABLE;
+	cl_object output = ecl_alloc_object(t_base_string);
+	output->base_string.self       = (ecl_base_char *)ecl_alloc_atomic(l+1);
+        output->base_string.self[l]    = 0;
+	output->base_string.flags      = ECL_FLAG_HAS_FILL_POINTER | ECL_FLAG_ADJUSTABLE;
+        output->base_string.elttype    = aet_bc;
+	output->base_string.displaced  = Cnil;
+	output->base_string.dim        = l;
+	output->base_string.fillp      = 0;
 	return output;
 }
 
@@ -124,9 +95,14 @@ cl_alloc_adjustable_base_string(cl_index l)
 cl_object
 ecl_alloc_adjustable_extended_string(cl_index l)
 {
-	cl_object output = cl_alloc_simple_extended_string(l);
-	output->string.fillp = 0;
-	output->string.flags = ECL_FLAG_HAS_FILL_POINTER | ECL_FLAG_ADJUSTABLE;
+        cl_index bytes = sizeof(ecl_character) * l;
+	cl_object output = ecl_alloc_object(t_string);
+	output->string.self       = (ecl_character *)ecl_alloc_atomic(bytes);
+	output->string.flags      = ECL_FLAG_HAS_FILL_POINTER | ECL_FLAG_ADJUSTABLE;
+        output->string.elttype    = aet_ch;
+	output->string.displaced  = Cnil;
+	output->string.dim        = l;
+        output->string.fillp      = 0;
 	return output;
 }
 #endif
@@ -156,7 +132,7 @@ make_base_string_copy(const char *s)
 	cl_object x;
 	cl_index l = strlen(s);
 
-	x = cl_alloc_simple_base_string(l);
+	x = ecl_alloc_simple_base_string(l);
 	memcpy(x->base_string.self, s, l);
 	return x;
 }
@@ -208,7 +184,7 @@ si_copy_to_simple_base_string(cl_object x)
 #ifdef ECL_UNICODE
 	case t_string: {
 		cl_index index, length = x->string.fillp;
-		y = cl_alloc_simple_base_string(length);
+		y = ecl_alloc_simple_base_string(length);
 		for (index=0; index < length; index++) {
 			ecl_character c = x->string.self[index];
 			if (!BASE_CHAR_CODE_P(c))
@@ -220,7 +196,7 @@ si_copy_to_simple_base_string(cl_object x)
 #endif
 	case t_base_string: {
 		cl_index length = x->base_string.fillp;
-		y = cl_alloc_simple_base_string(length);
+		y = ecl_alloc_simple_base_string(length);
 		memcpy(y->base_string.self, x->base_string.self, length);
 		break;
 	}
@@ -249,16 +225,16 @@ cl_string(cl_object x)
                 ecl_character c = CHAR_CODE(x);
 #ifdef ECL_UNICODE
 		if (BASE_CHAR_CODE_P(c)) {
-			y = cl_alloc_simple_base_string(1);
+			y = ecl_alloc_simple_base_string(1);
 			y->base_string.self[0] = c;
 			x = y;
 		} else {
-			y = cl_alloc_simple_extended_string(1);
+			y = ecl_alloc_simple_extended_string(1);
 			y->string.self[0] = c;
 			x = y;
 		}
 #else
-		y = cl_alloc_simple_base_string(1);
+		y = ecl_alloc_simple_base_string(1);
 		y->base_string.self[0] = c;
 		x = y;
 		break;
@@ -301,12 +277,12 @@ AGAIN:
 		x = x->symbol.name;
 		goto AGAIN;
 	case t_character:
-		y = cl_alloc_simple_extended_string(1);
+		y = ecl_alloc_simple_extended_string(1);
 		y->string.self[0] = CHAR_CODE(x);
 		break;
 	case t_base_string: {
 		cl_index index, len = x->base_string.dim;
-		y = cl_alloc_simple_extended_string(x->base_string.fillp);
+		y = ecl_alloc_simple_extended_string(x->base_string.fillp);
 		for(index=0; index < len; index++) {
 			y->string.self[index] = x->base_string.self[index];
 		}
@@ -956,7 +932,7 @@ nstring_case(cl_narg narg, cl_object fun, ecl_casefun casefun, cl_va_list ARGS)
 		}
 	}
 	/* Do actual copying by recovering those strings */
-	output = cl_alloc_simple_base_string(l);
+	output = ecl_alloc_simple_base_string(l);
 	while (l) {
 		cl_object s = ECL_STACK_POP_UNSAFE(the_env);
 		size_t bytes = s->base_string.fillp;

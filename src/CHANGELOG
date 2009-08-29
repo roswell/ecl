@@ -29,7 +29,12 @@ ECL 9.9.1:
    object and the data for the GMP integer itself. Since it can be now
    allocated as an atomic (i.e. pointerless) region of memory, the garbage
    collector has to work less for marking and collecting them.
-   
+
+ - The function ecl_alloc_simple_vector() also creates arrays as a compact unit
+   with pointerfree memory whenever possible.
+
+ - The functions cl_alloc_simple_{base,extended}_string() now carry the prefix
+   ecl_ instead of cl_, and they are simple aliases for ecl_alloc_simple_vector.
 
 ;;; Local Variables: ***
 ;;; mode:text ***

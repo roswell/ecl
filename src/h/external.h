@@ -332,6 +332,7 @@ extern ECL_API cl_object ecl_aref1(cl_object v, cl_index index);
 extern ECL_API cl_object ecl_aset(cl_object x, cl_index index, cl_object value);
 extern ECL_API cl_object ecl_aset1(cl_object v, cl_index index, cl_object val);
 extern ECL_API void ecl_array_allocself(cl_object x);
+extern ECL_API cl_object ecl_alloc_simple_vector(cl_index l, cl_elttype aet);
 extern ECL_API cl_elttype ecl_array_elttype(cl_object x);
 extern ECL_API cl_elttype ecl_symbol_to_elttype(cl_object x);
 extern ECL_API cl_object ecl_elttype_to_symbol(cl_elttype aet);
@@ -1433,7 +1434,6 @@ extern ECL_API cl_object cl_reverse(cl_object x);
 extern ECL_API cl_object cl_nreverse(cl_object x);
 extern ECL_API cl_object cl_subseq _ARGS((cl_narg narg, cl_object sequence, cl_object start, ...));
 
-extern ECL_API cl_object ecl_alloc_simple_vector(cl_index l, cl_elttype aet);
 extern ECL_API cl_object ecl_elt(cl_object seq, cl_fixnum index);
 extern ECL_API cl_object ecl_elt_set(cl_object seq, cl_fixnum index, cl_object val);
 extern ECL_API cl_fixnum ecl_length(cl_object x);
@@ -1496,8 +1496,8 @@ extern ECL_API cl_object cl_nstring_capitalize _ARGS((cl_narg narg, ...));
 extern ECL_API cl_object si_base_string_concatenate _ARGS((cl_narg narg, ...));
 extern ECL_API cl_object si_copy_to_simple_base_string(cl_object s);
 
-extern ECL_API cl_object cl_alloc_simple_base_string(cl_index l);
-extern ECL_API cl_object cl_alloc_adjustable_base_string(cl_index l);
+#define ecl_alloc_simple_base_string(l) ecl_alloc_simple_vector((l),aet_bc)
+extern ECL_API cl_object ecl_alloc_adjustable_base_string(cl_index l);
 extern ECL_API cl_object make_simple_base_string(char *s);
 #define make_constant_base_string(s) (make_simple_base_string((char *)s))
 extern ECL_API cl_object make_base_string_copy(const char *s);
@@ -1715,7 +1715,7 @@ extern ECL_API cl_object si_base_char_p(cl_object x);
 extern ECL_API cl_object si_base_string_p(cl_object x);
 extern ECL_API cl_object si_coerce_to_base_string(cl_object x);
 extern ECL_API cl_object si_coerce_to_extended_string(cl_object x);
-extern ECL_API cl_object cl_alloc_simple_extended_string(cl_index l);
+#define ecl_alloc_simple_extended_string(l) ecl_alloc_simple_vector((l),aet_ch)
 extern ECL_API cl_object ecl_alloc_adjustable_extended_string(cl_index l);
 #else
 #define si_base_char_p cl_characterp
@@ -1944,7 +1944,7 @@ extern ECL_API cl_object clos_standard_instance_set _ARGS((cl_narg narg, cl_obje
 /*
  * LEGACY
  */
-#ifdef ECL_NO_LEGACY
+#ifndef ECL_NO_LEGACY
 
 #define make_shortfloat(x) ecl_make_shortfloat(x);
 #define cl_def_c_function_va(sym,function) ecl_def_c_function_va(sym,function)
@@ -1971,6 +1971,10 @@ extern ECL_API cl_object clos_standard_instance_set _ARGS((cl_narg narg, cl_obje
 #define big_register_normalize _ecl_big_register_normalize
 /* #define big_copy _ecl_big_copy  Has disappeared */
 /* #define big_to_double Has disappeared */
+
+#define cl_alloc_simple_base_string ecl_alloc_simple_base_string
+#define cl_alloc_adjustable_base_string ecl_alloc_adjustable_base_string
+#define cl_alloc_simple_extended_string ecl_alloc_simple_extended_string
 
 #endif
 

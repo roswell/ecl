@@ -1463,7 +1463,7 @@ ecl_make_string_output_stream(cl_index line_length, int extended)
 #ifdef ECL_UNICODE
 	cl_object s = extended?
 		ecl_alloc_adjustable_extended_string(line_length) :
-		cl_alloc_adjustable_base_string(line_length);
+		ecl_alloc_adjustable_base_string(line_length);
 #else
 	cl_object s = cl_alloc_adjustable_base_string(line_length);
 #endif
