@@ -37,11 +37,9 @@ _ecl_big_copy(cl_object old)
         cl_fixnum size = old->big.big_size;
         cl_index dim = (size < 0)? (-size) : size;
         cl_index bytes = dim * sizeof(mp_limb_t);
-#ifdef GBC_BOEHM
-        char *data = ecl_alloc_atomic(bytes + sizeof(struct ecl_bignum));
-        cl_object new_big = (cl_object)data;
-        new_big->big.t = t_bignum;
-        new_big->big.big_limbs = ((char *)new_big) + sizeof(struct ecl_bignum);
+#ifdef ECL_COMPACT_OBJECT_EXTRA
+        cl_object new_big = ecl_alloc_compact_object(t_bignum, bytes);
+        new_big->big.big_limbs = ECL_COMPACT_OBJECT_EXTRA(new_big);
 #else
 	cl_object new_big = ecl_alloc_object(t_bignum);
         new_big->big.big_limbs = ecl_alloc_atomic(bytes);

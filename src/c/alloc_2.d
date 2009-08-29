@@ -205,6 +205,20 @@ ecl_alloc_object(cl_type t)
 }
 
 cl_object
+ecl_alloc_compact_object(cl_type t, cl_index extra_space)
+{
+	const cl_env_ptr the_env = ecl_process_env();
+        cl_index size = type_size[t];
+        cl_object x;
+        ecl_disable_interrupts_env(the_env);
+        x = (cl_object)GC_MALLOC_ATOMIC(size + extra_space);
+        ecl_enable_interrupts_env(the_env);
+        x->array.t = t;
+        x->array.displaced = (void*)(((char*)x) + size);
+        return x;
+}
+
+cl_object
 ecl_cons(cl_object a, cl_object d)
 {
 	const cl_env_ptr the_env = ecl_process_env();

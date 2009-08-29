@@ -694,68 +694,15 @@ write_double(DBL_TYPE d, int e, int n, cl_object stream, cl_object o)
 
 #ifdef WITH_GMP
 
-struct powers {
-	cl_object number;
-	cl_index n_digits;
-	int base;
-};
-
-static void
-do_write_integer(cl_object x, struct powers *powers, cl_index len,
-		 cl_object stream)
-{
-	cl_object left;
-	do {
-		if (FIXNUMP(x)) {
-			write_positive_fixnum(fix(x), powers->base, len, stream);
-			return;
-		}
-		while (ecl_number_compare(x, powers->number) < 0) {
-			if (len)
-				write_positive_fixnum(0, powers->base, len, stream);
-			powers--;
-		}
-		left = ecl_floor2(x, powers->number);
-		x = VALUES(1);
-		if (len) len -= powers->n_digits;
-		do_write_integer(left, powers-1, len, stream);
-		len = powers->n_digits;
-		powers--;
-	} while(1);
-}
-
 static void
 write_bignum(cl_object x, cl_object stream)
 {
 	int base = ecl_print_base();
 	cl_index str_size = mpz_sizeinbase(x->big.big_num, base);
-	cl_fixnum num_powers = ecl_fixnum_bit_length(str_size-1);
-#ifdef __GNUC__
-	struct powers powers[num_powers];
-#else
-	struct powers *powers = (struct powers*)malloc(sizeof(struct powers)*num_powers);
-	CL_UNWIND_PROTECT_BEGIN(ecl_process_env()) {
-#endif
-		cl_object p;
-		cl_index i, n_digits;
-		powers[0].number = p = MAKE_FIXNUM(base);
-		powers[0].n_digits = n_digits = 1;
-		powers[0].base = base;
-		for (i = 1; i < num_powers; i++) {
-			powers[i].number = p = ecl_times(p, p);
-			powers[i].n_digits = n_digits = 2*n_digits;
-			powers[i].base = base;
-		}
-		if (ecl_minusp(x)) {
-			write_ch('-', stream);
-			x = ecl_negate(x);
-		}
-		do_write_integer(x, &powers[num_powers-1], 0, stream);
-#ifndef __GNUC__
-	} CL_UNWIND_PROTECT_EXIT {
-		free(powers);
-	} CL_UNWIND_PROTECT_END;
-#endif
+        char *txt = ecl_alloc_atomic(str_size + 1);
+        mpz_get_str(txt, base, x->big.big_num);
+        write_str(txt, stream);
+        ecl_dealloc(txt);
 }
 
 #else  /* WITH_GMP */
