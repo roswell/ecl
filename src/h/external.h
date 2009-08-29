@@ -1943,7 +1943,7 @@ extern ECL_API cl_object clos_standard_instance_set _ARGS((cl_narg narg, cl_obje
 /*
  * LEGACY
  */
-#ifndef ECL_NO_LEGACY
+#ifdef ECL_NO_LEGACY
 
 #define make_shortfloat(x) ecl_make_shortfloat(x);
 #define cl_def_c_function_va(sym,function) ecl_def_c_function_va(sym,function)
