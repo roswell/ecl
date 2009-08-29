@@ -409,6 +409,44 @@ under certain conditions; see file 'Copyright' for details.")
 	(tpl))
       0)))
 
+#+threads
+(progn
+  (defvar *console-lock* (mp:make-lock :name "Console lock"))
+  (defvar *condition-variable* #-:win32 (mp:make-condition-variable))
+  (defvar *console-owner* nil)
+)
+
+(defmacro with-grabbed-console (&rest body)
+  #-threads
+  `(progn ,@body)
+  #+(and threads :win32)
+  `(progn
+     (tagbody
+      again
+        (with-lock (*console-lock*)
+          (cond (*condition-variable*
+                 (sleep 0.1)
+                 (go again))
+                (t
+                 (setf *console-owner* mp:*current-process*
+                       *condition-variable* mp:*current-process*)))))
+     (unwind-protect
+          (progn ,@body)
+       (with-lock (*console-lock*)
+         (setf *console-owner* nil
+               *condition-variable* nil))))
+  #+(and threads (not :win32))
+  `(progn
+     (with-lock (*console-lock*)
+       (unless (eq *console-owner* mp:*current-process*)
+         (mp:condition-variable-wait *console-available* *console-lock*))
+       (setf *console-owner* mp:*current-process*))
+     (unwind-protect
+          (progn ,@body)
+       (with-lock (*console-lock*)
+         (setf *console-owner* nil)
+         (mp:condition-variable-signal *console-variable*)))))
+
 (defvar *allow-recursive-debug* nil)
 (defvar *debug-status* nil)
 
@@ -461,13 +499,16 @@ under certain conditions; see file 'Copyright' for details.")
 			   )
 		     )))
 
-		 (tpl-prompt)
-		 (setq - (locally (declare (notinline tpl-read)) (tpl-read)))
-		 (setq values
-		       (multiple-value-list
-			(eval-with-env - *break-env*)))
-		 (setq /// // // / / values *** ** ** * * (car /))
-		 (tpl-print values))))
+               (setq - (with-grabbed-console
+                           (locally
+                               (declare (notinline tpl-read))
+                             (tpl-prompt)
+                             (tpl-read))))
+               (setq values
+                     (multiple-value-list
+                      (eval-with-env - *break-env*)))
+               (setq /// // // / / values *** ** ** * * (car /))
+               (tpl-print values))))
 	  (loop
 	   (setq +++ ++ ++ + + -)
 	   (when
@@ -1232,13 +1273,11 @@ package."
    (*debugger-waiting-list-lock*)
    (setq *debugger-waiting-list* (delete process *debugger-waiting-list*))))
 
-#+threads
 (defmacro with-debugger-lock (&body body)
+  #+threads
   `(mp:with-lock (*debugger-lock*)
-		 ,@body))
-
-#-threads
-(defmacro with-debugger-lock (&body body)
+		 ,@body)
+  #-threads
   `(progn ,@body))
 
 (defun default-debugger (condition)

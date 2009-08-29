@@ -83,7 +83,7 @@ WITHOUT-INTERRUPTS in:
        (when si:*interrupts-enabled*
          (si::check-pending-interrupts)))))
 
-(defmacro with-lock ((lock-form) &body body)
+(defmacro with-lock ((lock &rest options) &body body)
   #-threads
   `(progn ,@body)
   ;; Why do we need %count? Even if get-lock succeeeds, an interrupt may
@@ -102,7 +102,7 @@ WITHOUT-INTERRUPTS in:
        (without-interrupts
            (unwind-protect
                 (with-restored-interrupts
-                    (mp::get-lock ,lock)
+                    (mp::get-lock ,lock, @options)
                   (locally ,@body))
              (when (> (mp:lock-count ,lock) ,count)
                (mp::giveup-lock ,lock)))))))

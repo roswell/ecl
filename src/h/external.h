@@ -1608,6 +1608,8 @@ extern ECL_API cl_object mp_condition_variable_timedwait(cl_object cv, cl_object
 extern ECL_API cl_object mp_condition_variable_signal(cl_object cv);
 extern ECL_API cl_object mp_condition_variable_broadcast(cl_object cv);
 extern ECL_API cl_object mp_current_process(void);
+extern ECL_API cl_object mp_block_signals(void);
+extern ECL_API cl_object mp_restore_signals(cl_object sigmask);
 
 extern ECL_API void ecl_import_current_thread(cl_object process_name, cl_object process_binding);
 extern ECL_API void ecl_release_current_thread(void);
