@@ -449,6 +449,64 @@ mp_process_run_function(cl_narg narg, cl_object name, cl_object function, ...)
 }
 
 /*----------------------------------------------------------------------
+ * INTERRUPTS
+ */
+
+#ifndef ECL_WINDOWS_THREADS
+static cl_object
+mp_get_sigmask(void)
+{
+        cl_object data = ecl_alloc_simple_vector(sizeof(sigset_t), aet_b8);
+        sigset_t *mask_ptr = (sigset_t*)data->vector.self.b8;
+        sigset_t no_signals;
+        sigemptyset(&no_signals);
+        if (pthread_sigmask(SIG_BLOCK, &no_signals, mask_ptr))
+                FElibc_error("MP:GET-SIGMASK failed in a call to pthread_sigmask", 0);
+        @(return data)
+}
+
+static cl_object
+mp_set_sigmask(cl_object vector)
+{
+        sigset_t *mask_ptr = (sigset_t*)data->vector.self.b8;
+        if (pthread_sigmask(SIG_SETMASK, &mask_ptr, NULL))
+                FElibc_error("MP:SET-SIGMASK failed in a call to pthread_sigmask", 0);
+        @(return vector)
+}
+#endif
+
+cl_object
+mp_block_signals(void)
+{
+#ifdef ECL_WINDOWS_THREADS
+        cl_env_ptr the_env = ecl_process_env();
+        cl_object previous = ecl_symbol_value(the_env, @'si::*interrupt-enable*');
+        ECL_SETQ(the_env, @'si::*interrupt-enable*', Cnil);
+        @(return previous)
+#else
+        cl_object previous = mp_get_sigmask();
+        sigset_t all_signals;
+        sigfillset(&all_signals);
+        if (pthread_sigmask(SIG_SETMASK, &all_signals, NULL))
+                FElibc_error("MP:BLOCK-SIGNALS failed in a call to pthread_sigmask",0);
+        @(return previous)
+#endif
+}
+
+cl_object
+mp_restore_signals(cl_object sigmask)
+{
+#ifdef ECL_WINDOWS_THREADS
+        cl_env_ptr the_env = ecl_process_env();
+        ECL_SETQ(the_env, @'si::*interrupt-enable*', sigmask);
+        ecl_check_pending_interrupts();
+        @(return sigmask)
+#else
+        return mp_set_sigmask(sigmask);
+#endif
+}
+
+/*----------------------------------------------------------------------
  * LOCKS or MUTEX
  */
 
