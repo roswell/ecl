@@ -38,7 +38,7 @@ _ecl_big_copy(cl_object old)
         cl_index dim = (size < 0)? (-size) : size;
         cl_index bytes = dim * sizeof(mp_limb_t);
 #ifdef ECL_COMPACT_OBJECT_EXTRA
-        cl_object new_big = ecl_alloc_compact_object(t_bignum, bytes+sizeof(mp_limb_t));
+        cl_object new_big = ecl_alloc_compact_object(t_bignum, bytes);
         new_big->big.big_limbs = ECL_COMPACT_OBJECT_EXTRA(new_big);
 #else
 	cl_object new_big = ecl_alloc_object(t_bignum);
@@ -47,7 +47,6 @@ _ecl_big_copy(cl_object old)
         new_big->big.big_size = size;
         new_big->big.big_dim = dim;
         memcpy(new_big->big.big_limbs, old->big.big_limbs, bytes);
-        new_big->big.big_limbs[dim] = 12;
         return new_big;
 }
 
@@ -117,25 +116,14 @@ _ecl_big_set_index(cl_object x, cl_index f)
 static void *
 mp_alloc(size_t size)
 {
-#if 1
-        mp_limb_t *p = ecl_alloc_atomic_align(size + sizeof(mp_limb_t),
-                                              sizeof(mp_limb_t));
-	p[size / sizeof(mp_limb_t)] = 14;
-#else
         return ecl_alloc_atomic_align(size, sizeof(mp_limb_t));
-#endif
 }
 
 static void *
 mp_realloc(void *ptr, size_t osize, size_t nsize)
 {
-	mp_limb_t *p = mp_alloc(nsize);
+	mp_limb_t *p = ecl_alloc_atomic_align(nsize, sizeof(mp_limb_t));
 	memcpy(p, ptr, (osize < nsize)? osize : nsize);
-        {
-                mp_limb_t *aux = ptr;
-                if (aux[osize / sizeof(mp_limb_t)] != 14)
-                        ecl_internal_error("baboon");
-        }
         ecl_dealloc(ptr);
 	return p;
 }
@@ -143,11 +131,6 @@ mp_realloc(void *ptr, size_t osize, size_t nsize)
 static void
 mp_free(void *ptr, size_t size)
 {
-        {
-                mp_limb_t *aux = ptr;
-                if (aux[size / sizeof(mp_limb_t)] != 14)
-                        ecl_internal_error("baboon");
-        }
         ecl_dealloc(ptr);
 }
 
