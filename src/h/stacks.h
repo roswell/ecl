@@ -307,7 +307,7 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_obje
 	if (ecl_frs_push(__the_env,tag) == 0) {
 
 #define CL_CATCH_END } \
-	frs_pop(); } while (0)
+	ecl_frs_pop(__the_env); } while (0)
 
 #define CL_CATCH_ALL_BEGIN(the_env) do {	\
 	const cl_env_ptr __the_env = (the_env);	\
