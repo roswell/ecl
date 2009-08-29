@@ -698,11 +698,18 @@ static void
 write_bignum(cl_object x, cl_object stream)
 {
 	int base = ecl_print_base();
-	cl_index str_size = mpz_sizeinbase(x->big.big_num, base);
-        char *txt = ecl_alloc_atomic(str_size + 1);
-        mpz_get_str(txt, base, x->big.big_num);
-        write_str(txt, stream);
-        ecl_dealloc(txt);
+        /* Include space for a sign and a terminating null character */
+	cl_index str_size = mpz_sizeinbase(x->big.big_num, base) + 2;
+        if (str_size <= 32) {
+                char txt[32];
+                mpz_get_str(txt, base, x->big.big_num);
+                write_str(txt, stream);
+        } else {
+                char *txt = ecl_alloc_atomic(str_size + 2);
+                mpz_get_str(txt, base, x->big.big_num);
+                write_str(txt, stream);
+                ecl_dealloc(txt);
+        }
 }
 
 #else  /* WITH_GMP */
