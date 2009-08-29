@@ -907,7 +907,7 @@ cl_fill_pointer(cl_object a)
 	assert_type_vector(a);
 	if (!ECL_ARRAY_HAS_FILL_POINTER_P(a)) {
 		a = ecl_type_error(@'fill-pointer', "argument",
-				   a, c_string_to_object("(AND VECTOR (SATISFIES ARRAY-HAS-FILL-POINTER-P))"));
+				   a, ecl_read_from_cstring("(AND VECTOR (SATISFIES ARRAY-HAS-FILL-POINTER-P))"));
 	}
 	@(return MAKE_FIXNUM(a->vector.fillp))
 }

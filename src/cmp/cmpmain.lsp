@@ -344,7 +344,7 @@ filesystem or in the database of ASDF modules."
 		   (princ ";
 cl_object output;
 si_select_package(make_simple_base_string(\"CL-USER\"));
-output = si_safe_eval(3, c_string_to_object(lisp_code), Cnil, OBJNULL);
+output = si_safe_eval(3, ecl_read_from_cstring(lisp_code), Cnil, OBJNULL);
 " stream)
 		   (when (eq target :program)
 		     (princ "

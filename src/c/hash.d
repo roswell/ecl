@@ -462,7 +462,7 @@ cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
 		rehash_size =
 			ecl_type_error(@'make-hash-table',"rehash-size",
 				       rehash_size,
-				       c_string_to_object("(OR (INTEGER 1 *) (FLOAT 0 (1)))"));
+				       ecl_read_from_cstring("(OR (INTEGER 1 *) (FLOAT 0 (1)))"));
 		goto AGAIN;
 	}
 	if (floatp(rehash_size)) {
@@ -481,7 +481,7 @@ cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
 		rehash_threshold =
 			ecl_type_error(@'make-hash-table',"rehash-threshold",
 				       rehash_threshold,
-				       c_string_to_object("(REAL 0 1)"));
+				       ecl_read_from_cstring("(REAL 0 1)"));
 	}
 	/*
 	 * Build actual hash.

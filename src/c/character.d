@@ -351,7 +351,7 @@ cl_character(cl_object x)
 		}
 	default: ERROR:
 		x = ecl_type_error(@'character',"character designator",
-				   x,c_string_to_object("(OR CHARACTER SYMBOL (ARRAY CHARACTER (1)) (ARRAY BASE-CHAR (1)))"));
+				   x,ecl_read_from_cstring("(OR CHARACTER SYMBOL (ARRAY CHARACTER (1)) (ARRAY BASE-CHAR (1)))"));
 		goto AGAIN;
 	}
 	@(return x)

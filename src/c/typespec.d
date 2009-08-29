@@ -57,7 +57,7 @@ FEtype_error_proper_list(cl_object x) {
 	cl_error(9, @'simple-type-error', @':format-control',
 		    make_constant_base_string("Not a proper list ~D"),
 		    @':format-arguments', cl_list(1, x),
-		    @':expected-type', c_string_to_object("si::proper-list"),
+		    @':expected-type', ecl_read_from_cstring("si::proper-list"),
 		    @':datum', x);
 }
 
