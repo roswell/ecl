@@ -100,6 +100,22 @@ rebinds this variable to NIL when control enters a break loop.")
 	all functions.~@
 	~@
 	See also: :trace.~%")
+      #+threads
+      ((:s :switch) tpl-switch-command nil
+       ":s(witch)       Switch to next process to debug"
+       ":switch process                                 [Break command]~@
+        :s processs                                     [Abbreviation]~@
+        ~@
+        Switch to next process in need to debugger attention. Argument~@
+        process, when provided, must be an integer indicating the rank~@
+        of the process in the debugger waiting list.~%")
+      #+threads
+      ((:w :waiting) tpl-waiting-command nil
+       ":w(aiting)      Display list of active toplevels"
+       ":waiting                                        [Break command]~@
+        :w                                              [Abbreviation]~@
+        ~@
+        Display list of active toplevels, including open debug sessions.~%")
       )
      ("Help commands"
       ((:apropos) tpl-apropos-command nil
@@ -360,24 +376,7 @@ rebinds this variable to NIL when control enters a break loop.")
         then be used regardless of of the symbol's package.~@
         ~@
         See also: :variables.~%")
-      #+threads
-      ((:s :switch) tpl-switch-command nil
-       ":s(witch)       Switch to next process to debug"
-       ":switch debuggee                                [Break command]~@
-        :s debuggee                                     [Abbreviation]~@
-        ~@
-        Switch to next process in need to debugger attention. Argument~@
-        debuggee, when provided, must be an integer indicating the rank~@
-        of the process in the debugger waiting list.~%")
-      #+threads
-      ((:w :waiting) tpl-waiting-command nil
-       ":w(aiting)      Display debugger's waiting list"
-       ":waiting                                        [Break command]~@
-        :w                                              [Abbreviation]~@
-        ~@
-        Display debugger's waiting list.~%")
-      )
-  )
+  ))
 
 (defvar *lisp-initialized* nil)
 
@@ -411,46 +410,58 @@ under certain conditions; see file 'Copyright' for details.")
 
 #+threads
 (progn
-  (defvar *console-lock* (mp:make-lock :name "Console lock"))
-  (defvar *console-available* #+:win32 0 #-:win32 (mp:make-condition-variable))
-  (defvar *console-owner* nil)
-)
+
+(defvar *console-lock* (mp:make-lock :name "Console lock"))
+#-:win32
+(defvar *console-available* (mp:make-condition-variable))
+(defvar *console-owner* nil)
+(defvar *console-waiting-list* '())
+
+(defun candidate-to-get-console-p (process)
+  (or (null *console-owner*)
+      (eq *console-owner* process)
+      (not (mp:process-active-p *console-owner*))))
+
+(defun register-in-waiting-list (process)
+  (mp:with-lock (*console-lock*)
+    (push process *console-waiting-list*)))
+
+(defun delete-from-waiting-list (process)
+  (mp:with-lock (*console-lock*)
+    (setf *console-waiting-list* (delete process *console-waiting-list*))))
+
+(defun grab-console (process)
+  (loop with repeat = t
+     while repeat
+     do (mp:with-lock (*console-lock*)
+          (cond ((candidate-to-get-console-p process)
+                 (setf *console-owner* process)
+                 (setf repeat nil))
+                (t
+                 #+:win32
+                 (sleep 0.1)
+                 #-:win32
+                 (mp:condition-variable-wait *console-available* *console-lock*))))))
+
+(defun release-console (process)
+  (mp:with-lock (*console-lock*)
+    (and (eq process *console-owner*) (setf *console-owner* nil))
+    #-:win32
+    (mp:condition-variable-signal *console-available*)))
+
+) ; #+threads
 
 (defmacro with-grabbed-console (&rest body)
   #-threads
   `(progn ,@body)
-  #+(and threads :win32)
-  `(progn
-     (tagbody
-      again
-        (mp:with-lock (*console-lock*)
-          (unless (or (null *console-owner*)
-                      (eq *console-owner* mp:*current-process*))
-            (when (plusp *condition-variable*)
-              (sleep 0.1)
-              (go again)))))
-     (setf *console-owner* mp:*current-process*)
-     (incf *console-available*)
-     (unwind-protect
-          (progn ,@body)
-       (mp:with-lock (*console-lock*)
-         (decf *console-available*)
-         (setf *console-owner* nil))))
-  #+(and threads (not :win32))
-  `(progn
-     (loop with locked = t
-        while locked
-        do (mp:with-lock (*console-lock*)
-             (if (or (null *console-owner*)
-                     (eq *console-owner* mp:*current-process*))
-                 (setf locked nil
-                       *console-owner* mp:*current-process*)
-                 (mp:condition-variable-wait *console-available* *console-lock*))))
-     (unwind-protect
-          (progn ,@body)
-       (mp:with-lock (*console-lock*)
-         (setf *console-owner* nil)
-         (mp:condition-variable-signal *console-available*)))))
+  #+threads
+  `(unwind-protect
+        (progn
+          (register-in-waiting-list mp:*current-process*)
+          (grab-console mp:*current-process*)
+          ,@body)
+     (delete-from-waiting-list mp:*current-process*)
+     (release-console mp:*current-process*)))
 
 (defvar *allow-recursive-debug* nil)
 (defvar *debug-status* nil)
@@ -477,8 +488,6 @@ under certain conditions; see file 'Copyright' for details.")
 	 values)
     (set-break-env)
     (set-current-ihs)
-    (unless quiet
-      (break-where))
     (flet ((rep ()
              ;; We let warnings pass by this way "warn" does the
              ;; work.  It is conventional not to trap anything
@@ -504,16 +513,17 @@ under certain conditions; see file 'Copyright' for details.")
 			   )
 		     )))
 
-               (setq - (with-grabbed-console
-                           (locally
-                               (declare (notinline tpl-read))
-                             (tpl-prompt)
-                             (tpl-read))))
-               (setq values
-                     (multiple-value-list
-                      (eval-with-env - *break-env*)))
-               (setq /// // // / / values *** ** ** * * (car /))
-               (tpl-print values))))
+               (with-grabbed-console
+                   (unless quiet
+                     (break-where)
+                     (setf quiet t))
+                 (setq - (locally (declare (notinline tpl-read))
+                           (tpl-prompt)
+                           (tpl-read))
+                       values (multiple-value-list
+                               (eval-with-env - *break-env*))
+                       /// // // / / values *** ** ** * * (car /))
+                 (tpl-print values)))))
 	  (loop
 	   (setq +++ ++ ++ + + -)
 	   (when
@@ -526,7 +536,7 @@ under certain conditions; see file 'Copyright' for details.")
 		    (restart-debugger "Go back to debugger level ~D." break-level)
 		    (rep)))
 		 nil)
-	     (break-where))))))
+	     (setf quiet nil))))))
 
 (defun tpl-prompt ()
   (typecase *tpl-prompt-hook*
@@ -1230,127 +1240,67 @@ package."
         (quit -1))))
 
 #+threads
-(progn
-  (defvar *debugger-waiting-list-lock* (mp:make-lock :name 'debugger-waiting-list))
-  (defvar *debugger-waiting-list* nil)
-  (defvar *debugger-lock* (mp:make-lock :name 'debugger))
-  (defvar *debuggee-elect* nil)
-  (defvar *debuggee* nil)
-  )
-
-#+threads
 (defun tpl-switch-command (&optional rank)
-  (when (integerp rank)
-    (let ((max (list-length *debugger-waiting-list*)))
-      (unless (and (< 0 rank) (<= rank max))
-	(error "Debugger switch command: Invalid argument value.")))
-    (let ((elect (car (last *debugger-waiting-list* rank))))
-      (when elect
-	(setq *debuggee-elect* elect))))
-  (invoke-restart 'suspend-debug)
+  (let (elect)
+    (cond ((integerp rank)
+           (let ((max (list-length *console-waiting-list*)))
+             (unless (and (< 0 rank) (<= rank max))
+               (error "Debugger switch command: Invalid argument value.")))
+           (setf elect (elt *console-waiting-list* (1- rank))))
+          (t
+           (setf elect (find rank *console-waiting-list* :key #'mp:process-name))))
+    (when elect
+      (setq *console-owner* elect)))
   (values))
 
 #+threads
 (defun tpl-waiting-command ()
-  (labels ((display-waitee (waiting-list)
-	     (unless waiting-list
-	       (return-from display-waitee 0))
-	     (let ((rank (1+ (display-waitee (cdr waiting-list)))))
-	       (format t "    ~D: ~s~%" rank (car waiting-list))
-	       rank)))
-    (format t "~&~%Debugger's waiting list:~2%")
-    (display-waitee *debugger-waiting-list*)
-    (terpri))
+  (format t "~&~%Debugger's waiting list:~2%")
+  (loop for process in *console-waiting-list*
+     for rank from 1
+     do (format t (if (eq process mp:*current-process*)
+                      "   >~D: ~s~%" 
+                      "    ~D: ~s~%")
+                rank process))
+  (terpri)
   (values))
-
-#+threads
-(defun register-on-debugger-waiting-list (process)
-  (mp:with-lock
-   (*debugger-waiting-list-lock*)
-   (unless (find process *debugger-waiting-list*)
-     (push process *debugger-waiting-list*)
-     (format *error-output* "~&~2%Debugger called in: ~S.~2%" process)
-     (finish-output))))
-
-#+threads
-(defun remove-from-debugger-waiting-list (process)
-  (mp:with-lock
-   (*debugger-waiting-list-lock*)
-   (setq *debugger-waiting-list* (delete process *debugger-waiting-list*))))
-
-(defmacro with-debugger-lock (&body body)
-  #+threads
-  `(mp:with-lock (*debugger-lock*)
-		 ,@body)
-  #-threads
-  `(progn ,@body))
 
 (defun default-debugger (condition)
   (unless *break-enable*
     (throw *quit-tag* nil))
-  (let*((*standard-input* *debug-io*)
-	(*standard-output* *debug-io*)
-	;;(*tpl-prompt-hook* "[dbg] ")
-	(*print-pretty* nil)
-	(*print-circle* t)
-	(*readtable* (or *break-readtable* *readtable*))
-	(*break-message* (format nil "~&~A~%" condition))
-	(*break-level* (1+ *break-level*))
-	(break-level *break-level*)
-	(*break-env* nil))
+  (let* ((*standard-input* *debug-io*)
+         (*standard-output* *debug-io*)
+         ;;(*tpl-prompt-hook* "[dbg] ")
+         (*print-pretty* nil)
+         (*print-circle* t)
+         (*readtable* (or *break-readtable* *readtable*))
+         (*break-message* (format nil "~&~A~%" condition))
+         (*break-level* (1+ *break-level*))
+         (break-level *break-level*)
+         (*break-env* nil))
     (check-default-debugger-runaway)
-    (tagbody
-     ;;debug
-     waiting-room
-     #+threads (register-on-debugger-waiting-list mp:*current-process*)
-     (with-debugger-lock
-      #+threads 
-      (progn
-	(when *debuggee-elect*
-	  (unless (eq *debuggee-elect* mp:*current-process*)
-	    (when (find *debuggee-elect* *debugger-waiting-list*)
-	      (when (mp:process-active-p *debuggee-elect*)
-		;; if *debuggee-elect* is dead we just pick-up the first comer.
-		(go waiting-room))))
-	  )
-	(setq *debuggee* mp:*current-process* *debuggee-elect* nil)
-	(remove-from-debugger-waiting-list mp:*current-process*))
-      (when (listen *debug-io*)
-	(clear-input *debug-io*))
-      ;; Like in SBCL, the error message is output through *error-output*
-      ;; The rest of the interaction is performed through *debug-io*
-      (finish-output)
-      (fresh-line *error-output*)
-      (terpri *error-output*)
-      (princ *break-message* *error-output*)
-      ;; Here we show a list of restarts and invoke the toplevel with
-      ;; an extended set of commands which includes invoking the associated
-      ;; restarts.
-      (restart-case
+    ;; We give our process priority for grabbing the console.
+    (setq *console-owner* mp:*current-process*)
+    ;; As of ECL 9.4.1 making a normal function return from the debugger
+    ;; seems to be a very bad idea! Basically, it dumps core...
+    (when (listen *debug-io*)
+      (clear-input *debug-io*))
+    ;; Like in SBCL, the error message is output through *error-output*
+    ;; The rest of the interaction is performed through *debug-io*
+    (finish-output)
+    (fresh-line *error-output*)
+    (terpri *error-output*)
+    (princ *break-message* *error-output*)
+    (loop
+       ;; Here we show a list of restarts and invoke the toplevel with
+       ;; an extended set of commands which includes invoking the associated
+       ;; restarts.
        (let* ((restart-commands (compute-restart-commands condition :display t))
-	      (debug-commands 
-	       ;;(adjoin restart-commands (adjoin break-commands *tpl-commands*))
-	       (update-debug-commands restart-commands)
-	       ))
-	 (tpl :commands debug-commands)
-	 )
-       #+threads
-       (suspend-debug ()
-	 :report (lambda (s)
-		   (format s "Put this process back on debugger's waiting list."))
-	 (go waiting-room))
-       (quit-debugger ()
-	 :report (lambda (s)
-		   (format s "Quit debugger level ~D." break-level))
-	 (go quit)))
-      ) ; with-debugger-lock
-     quit
-     ;; (format *debug-io* "~&Leaving debugger level ~D.~%" break-level)
-     ;; As of ECL 9.4.1 making a normal function return from the debugger
-     ;; seems to be a very bad idea! Basically, it dumps core...
-     (throw *quit-tag* t)
-     ) ; tagbody
-    ))
+              (debug-commands 
+               ;;(adjoin restart-commands (adjoin break-commands *tpl-commands*))
+               (update-debug-commands restart-commands)
+                ))
+         (tpl :commands debug-commands)))))
 
 (defun invoke-debugger (condition)
   (when *debugger-hook*

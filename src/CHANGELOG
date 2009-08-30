@@ -75,6 +75,12 @@ ECL 9.9.1:
 
  - When signbit() is not available, ECL now looks for existence of copysign.
 
+* Signals and environment:
+
+ - The toplevel now allows handling multiple processes in the same console.
+   Two new commands, :w and :s, allow reading the list of processes waiting for
+   grabbing the console and switching to that given process.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
