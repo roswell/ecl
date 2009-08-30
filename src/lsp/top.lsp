@@ -412,7 +412,7 @@ under certain conditions; see file 'Copyright' for details.")
 #+threads
 (progn
   (defvar *console-lock* (mp:make-lock :name "Console lock"))
-  (defvar *condition-variable* #-:win32 (mp:make-condition-variable))
+  (defvar *console-available* #+:win32 0 #-:win32 (mp:make-condition-variable))
   (defvar *console-owner* nil)
 )
 
@@ -423,29 +423,34 @@ under certain conditions; see file 'Copyright' for details.")
   `(progn
      (tagbody
       again
-        (with-lock (*console-lock*)
-          (cond (*condition-variable*
-                 (sleep 0.1)
-                 (go again))
-                (t
-                 (setf *console-owner* mp:*current-process*
-                       *condition-variable* mp:*current-process*)))))
+        (mp:with-lock (*console-lock*)
+          (unless (or (null *console-owner*)
+                      (eq *console-owner* mp:*current-process*))
+            (when (plusp *condition-variable*)
+              (sleep 0.1)
+              (go again)))))
+     (setf *console-owner* mp:*current-process*)
+     (incf *console-available*)
      (unwind-protect
           (progn ,@body)
-       (with-lock (*console-lock*)
-         (setf *console-owner* nil
-               *condition-variable* nil))))
+       (mp:with-lock (*console-lock*)
+         (decf *console-available*)
+         (setf *console-owner* nil))))
   #+(and threads (not :win32))
   `(progn
-     (with-lock (*console-lock*)
-       (unless (eq *console-owner* mp:*current-process*)
-         (mp:condition-variable-wait *console-available* *console-lock*))
-       (setf *console-owner* mp:*current-process*))
+     (loop with locked = t
+        while locked
+        do (mp:with-lock (*console-lock*)
+             (if (or (null *console-owner*)
+                     (eq *console-owner* mp:*current-process*))
+                 (setf locked nil
+                       *console-owner* mp:*current-process*)
+                 (mp:condition-variable-wait *console-available* *console-lock*))))
      (unwind-protect
           (progn ,@body)
-       (with-lock (*console-lock*)
+       (mp:with-lock (*console-lock*)
          (setf *console-owner* nil)
-         (mp:condition-variable-signal *console-variable*)))))
+         (mp:condition-variable-signal *console-available*)))))
 
 (defvar *allow-recursive-debug* nil)
 (defvar *debug-status* nil)
