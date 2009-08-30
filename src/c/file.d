@@ -5003,7 +5003,9 @@ init_file(void)
 	null_stream = cl_make_two_way_stream(null_stream, cl_make_broadcast_stream(0));
 	cl_core.null_stream = null_stream;
 
-#if 1
+        /* We choose C streams by default only when _not_ using threads.
+         * The reason is that C streams block on I/O operations. */
+#if !defined(ECL_THREADS)
 	standard_input = ecl_make_stream_from_FILE(make_constant_base_string("stdin"),
 						   stdin, smm_input, 8, flags, external_format);
 	standard_output = ecl_make_stream_from_FILE(make_constant_base_string("stdout"),
