@@ -15,7 +15,12 @@
     See file '../Copyright' for full details.
 */
 
-#define _XOPEN_SOURCE 600 /* For SA_SIGINFO in Solaris */
+#ifdef __sun__
+/* For SA_SIGINFO in Solaris. We could have used _XOPEN_SOURCE=600, but
+ * this requires C99 and the default GCC for Solaris (3.4.3) does not
+ * support this C standard. */
+#define __EXTENSIONS__
+#endif
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>

@@ -15,7 +15,9 @@
     See file '../Copyright' for full details.
 */
 
+#ifndef __sun__ /* See unixint.d for the reason of this */
 #define _XOPEN_SOURCE 600	/* For pthread mutex attributes */
+#endif
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
 #include <ecl/ecl-inl.h>
