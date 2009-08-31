@@ -278,6 +278,7 @@ case "${host_os}" in
 		;;
 	solaris*)
 		thehost='sun4sol2'
+		THREAD_LIBS='-lpthread'
 		SHARED_LDFLAGS="-dy -G ${LDFLAGS}"
 		BUNDLE_LDFLAGS="-dy -G ${LDFLAGS}"
 		ECL_LDRPATH='-Wl,-R,~A'
