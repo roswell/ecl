@@ -19,6 +19,13 @@
 (defmacro with-lock ((lock) &body body)
   `(progn ,@body))
 
+(defun safe-mkstemp (template)
+  (or (si::mkstemp template)
+      (error "Unable to create temporay file~%~
+	~AXXXXXX
+Make sure you have enough free space in disk, check permissions or set~%~
+the environment variable TMPDIR to a different value." template)))
+
 (defun safe-system (string)
   (cmpnote "Invoking external command:~%  ~A" string)
   (let ((result (si:system string)))
@@ -365,7 +372,7 @@ return 0;"
   ;; To avoid name clashes, this object file will have a temporary
   ;; file name (tmp-name).
   ;;
-  (let* ((tmp-name (si::mkstemp #P"TMP:ECLINIT"))
+  (let* ((tmp-name (safe-mkstemp #P"TMP:ECLINIT"))
 	 (c-name (si::coerce-to-filename
 		  (compile-file-pathname tmp-name :type :c)))
 	 (o-name (si::coerce-to-filename
@@ -692,13 +699,7 @@ after compilation."
 	(t
 	 (setq form `(setf (symbol-function ',name) #',form))))
 
-  (let ((template (format nil "TMP:ECL~3,'0x" (incf *gazonk-counter*))))
-    (unless (setq data-pathname (si::mkstemp template))
-      (error "Unable to create temporay file~%~
-	~AXXXXXX
-Make sure you have enough free space in disk, check permissions or set~%~
-the environment variable TMPDIR to a different value." template)
-      (return-from compile (values nil t t))))
+  (setq data-pathname (safe-mkstemp (format nil "TMP:ECL~3,'0x" (incf *gazonk-counter*))))
 
   (let*((*load-time-values* 'values) ;; Only the value is kept
 	(c-pathname (compile-file-pathname data-pathname :type :c))
