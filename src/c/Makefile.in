@@ -60,7 +60,7 @@ all:	$(DPP) ../libeclmin.a ../cinit.o
 	if test -f ../CROSS-DPP ; then ../CROSS-DPP $< $@ ; else $(DPP) $< $@ ; fi
 .d.o: $(DPP)
 	if test -f ../CROSS-DPP ; then ../CROSS-DPP $< tmp.c ; else $(DPP) $< tmp.c ; fi
-	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -o $@ $<
+	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -o $@ tmp.c
 	$(RM) tmp.c
 .c.s: $(HFILES)
 	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -S -o $@ $<
