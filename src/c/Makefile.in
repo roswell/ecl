@@ -58,6 +58,10 @@ all:	$(DPP) ../libeclmin.a ../cinit.o
 
 .d.c: $(DPP)
 	if test -f ../CROSS-DPP ; then ../CROSS-DPP $< $@ ; else $(DPP) $< $@ ; fi
+.d.o: $(DPP)
+	if test -f ../CROSS-DPP ; then ../CROSS-DPP $< tmp.c ; else $(DPP) $< tmp.c ; fi
+	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -o $@ $<
+	$(RM) tmp.c
 .c.s: $(HFILES)
 	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -S -o $@ $<
 .c.o: $(HFILES)
@@ -84,7 +88,7 @@ ffi_x86_64.c: $(srcdir)/arch/ffi_x86_64.d $(DPP) $(HFILES)
 	$(RANLIB) $@
 
 clean:
-	$(RM) $(DPP) *.c *.h $(OBJS) all_symbols.o all_symbols2.o ../libecl.a cinit.o core a.out
+	$(RM) $(DPP) *.c *.h $(OBJS) all_symbols.o all_symbols2.o ../libecl.a cinit.o core a.out tmp.c
 
 # Build rules
 
