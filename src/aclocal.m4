@@ -284,6 +284,7 @@ case "${host_os}" in
 		TCPLIBS='-lsocket -lnsl -lintl'
 		clibs='-ldl'
 		CFLAGS="${CFLAGS} -std=gnu99"
+		enable_slow_config=yes
 		;;
 	cygwin*)
 		thehost='cygwin'
@@ -735,13 +736,11 @@ dnl configuring ECL in a compatible way.
 dnl
 AC_DEFUN(ECL_GMP_BASED_CONFIG,[
 AC_MSG_CHECKING([Using the GMP library to guess good compiler/linker flags])
-(rm -rf tmp; \
- mkdir tmp; \
- aux=`cd ${srcdir}/gmp; pwd`;
- cd tmp; \
- ${aux}/configure --srcdir=${aux} --prefix=${builddir} >/dev/null 2>&1)
-GMP_CFLAGS=`grep '^s,@CFLAGS@' tmp/config.status| sed 's&s,@CFLAGS@,\(.*\),;t t&\1&'`
-GMP_LDFLAGS=`grep '^s,@GMP_LDFLAGS@' tmp/config.status| sed 's&s,@GMP_LDFLAGS@,\(.*\),;t t&\1&'`;
+if test ! -f gmp/config.status; then
+  AC_MSG_ERROR([Cannot find GMP's configuration file. Aborting])
+fi
+GMP_CFLAGS=`grep '^s,@CFLAGS@' gmp/config.status| sed 's&s,@CFLAGS@,\(.*\),;t t&\1&'`
+GMP_LDFLAGS=`grep '^s,@GMP_LDFLAGS@' gmp/config.status| sed 's&s,@GMP_LDFLAGS@,\(.*\),;t t&\1&'`;
 # Notice that GMP_LDFLAGS is designed to be passed to libtool, and therefore
 # some options could be prefixed by -Wc, which means "flag for the compiler".
 LDFLAGS=`echo ${LDFLAGS} ${GMP_LDFLAGS} | sed 's%-Wc,%%g'`

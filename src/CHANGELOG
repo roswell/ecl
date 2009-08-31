@@ -36,6 +36,9 @@ ECL 9.9.1:
  - The functions cl_alloc_simple_{base,extended}_string() now carry the prefix
    ecl_ instead of cl_, and they are simple aliases for ecl_alloc_simple_vector.
 
+ - The option --enable-slow-config is now always on in Solaris and it does not
+   take more time than an ordinary build using --with-system-gmp=no
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

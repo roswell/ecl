@@ -299,12 +299,6 @@ AC_PROG_LN_S          # sets variable LN_S
 AC_PROG_MAKE_SET      # set $(MAKE) if needed
 
 dnl -----------------------------------------------------------------------
-dnl GMP-based search of C/C++ compiler and linker flags
-if test "${enable_slow_config}" = "yes"; then
-ECL_GMP_BASED_CONFIG
-fi
-
-dnl -----------------------------------------------------------------------
 dnl Checks which do not come with autoconf (must be after AC_PROG_CC)
 ECL_MAKE_ABSOLUTE_SRCDIR
 ECL_CROSS_CONFIG
@@ -318,6 +312,74 @@ if test -z `which gzip`; then
   INFOEXT=info.gz
 else
   INFOEXT=info
+fi
+
+dnl ======================================================================
+dnl GNU multiprecision library
+dnl
+dnl This a multi-stage process. First we have to detect whether we must build
+dnl the GMP library. If this is the case, then we may have to detect the
+dnl build flags for the library, because GMP may choose to build for 64
+dnl or 32 bits executables and ECL has to be compiled / linked using precisely
+dnl the same flags
+dnl
+if test "x${with_gmp}" != "xno"; then
+  CFLAGS="$CFLAGS $GMP_CFLAGS"
+  LDFLAGS="$LDFLAGS $GMP_LDFLAGS"
+
+  if test ${with_system_gmp} = "auto"; then
+     AC_CHECK_LIB( [gmp], [__gmpz_init],
+                   [with_system_gmp=yes], [with_system_gmp=no] )
+  fi
+
+  if test "${with_system_gmp}" = "yes"; then
+    AC_CHECK_LIB( [gmp], [__gmpz_init],
+      [FASL_LIBS="${FASL_LIBS} -lgmp"],
+      [AC_MSG_ERROR([System gmp library requested but not found.])])
+  else
+    SUBDIRS="${SUBDIRS} gmp"
+    CORE_LIBS="-leclgmp ${CORE_LIBS}"
+    if test ${enable_shared} = "no"; then
+      LIBRARIES="${LIBRARIES} ${LIBPREFIX}eclgmp.${LIBEXT}"
+    fi
+  fi
+fi
+
+dnl ----------------------------------------------------------------------
+dnl Configure local GMP if needed
+AC_SUBST(ECL_GMP_HEADER)
+if test "${with_gmp}" = "no" ; then
+  AC_MSG_NOTICE(Not using GMP library at all.  Are you sure?)
+  EXTRA_OBJS="${EXTRA_OBJS} big_ll.o"
+  ECL_GMP_HEADER='nofile'
+else
+  AC_DEFINE( [WITH_GMP], [1], [Use GMP for bignums] )
+  EXTRA_OBJS="${EXTRA_OBJS} big.o"
+  ECL_GMP_HEADER='gmp.h'
+  if test "${with_system_gmp}" = "no" ; then
+    AC_MSG_NOTICE(Configuring included GMP library:)
+    test -d gmp && rm -rf gmp
+    if test -z "$gmp_build"; then
+      gmp_build="${build_alias}"
+    fi
+    if mkdir gmp; then
+     ECL_GMP_HEADER='ecl/gmp.h'
+     dnl Notice we need -DPIC to force the assembler to generate PIC code
+     (destdir=`${PWDCMD}`; cd gmp; CC="${CC} ${PICFLAG}" \
+       $srcdir/gmp/configure --disable-shared --prefix=${destdir} \
+	--infodir=${destdir}/doc --includedir=${destdir}/ecl --with-pic \
+        --libdir=${destdir} --build=${gmp_build} --host=${host_alias} $with_gmp)
+    fi
+  fi
+  with_gmp="yes"
+fi
+
+dnl -----------------------------------------------------------------------
+dnl GMP-based search of C/C++ compiler and linker flags
+AC_MSG_CHECKING([GMP autoconf])
+AC_MSG_RESULT(["${with_gmp}.${with_system_gmp}.${enable_slow_config}"])
+if test "${with_gmp}.${with_system_gmp}.${enable_slow_config}" = "yes.no.yes"; then
+  ECL_GMP_BASED_CONFIG
 fi
 
 dnl =====================================================================
@@ -426,32 +488,6 @@ fi
 
 if test ${enable_smallcons} = "yes" ; then
    AC_DEFINE(ECL_SMALL_CONS)
-fi
-
-dnl ----------------------------------------------------------------------
-dnl GNU multiprecision library
-if test "x${with_gmp}" != "xno"; then
-
-  CFLAGS="$CFLAGS $GMP_CFLAGS"
-  LDFLAGS="$LDFLAGS $GMP_LDFLAGS"
-
-  if test ${with_system_gmp} = "auto"; then
-
-     AC_CHECK_LIB( [gmp], [__gmpz_init],
-                   [with_system_gmp=yes], [with_system_gmp=no] )
-  fi
-
-  if test "${with_system_gmp}" = "yes"; then
-    AC_CHECK_LIB( [gmp], [__gmpz_init],
-      [FASL_LIBS="${FASL_LIBS} -lgmp"],
-      [AC_MSG_ERROR([System gmp library requested but not found.])])
-  else
-    SUBDIRS="${SUBDIRS} gmp"
-    CORE_LIBS="-leclgmp ${CORE_LIBS}"
-    if test ${enable_shared} = "no"; then
-      LIBRARIES="${LIBRARIES} ${LIBPREFIX}eclgmp.${LIBEXT}"
-    fi
-  fi
 fi
 
 dnl ----------------------------------------------------------------------
@@ -781,35 +817,6 @@ case "${enable_boehm}" in
   *)
     AC_MSG_ERROR([Not a valid argument for --enable-boehm $enable_boehm]);;
 esac
-
-dnl ----------------------------------------------------------------------
-dnl Configure local GMP if needed
-AC_SUBST(ECL_GMP_HEADER)
-if test "${with_gmp}" = "no" ; then
-  AC_MSG_NOTICE(Not using GMP library at all.  Are you sure?)
-  EXTRA_OBJS="${EXTRA_OBJS} big_ll.o"
-  ECL_GMP_HEADER='nofile'
-else
-  AC_DEFINE( [WITH_GMP], [1], [Use GMP for bignums] )
-  EXTRA_OBJS="${EXTRA_OBJS} big.o"
-  ECL_GMP_HEADER='gmp.h'
-  if test "${with_system_gmp}" = "no" ; then
-    AC_MSG_NOTICE(Configuring included GMP library:)
-    test -d gmp && rm -rf gmp
-    if test -z "$gmp_build"; then
-      gmp_build="${build_alias}"
-    fi
-    if mkdir gmp; then
-     ECL_GMP_HEADER='ecl/gmp.h'
-     dnl Notice we need -DPIC to force the assembler to generate PIC code
-     (destdir=`${PWDCMD}`; cd gmp; CC="${CC} ${PICFLAG}" \
-       $srcdir/gmp/configure --disable-shared --prefix=${destdir} \
-	--infodir=${destdir}/doc --includedir=${destdir}/ecl --with-pic \
-        --libdir=${destdir} --build=${gmp_build} --host=${host_alias} $with_gmp)
-    fi
-  fi
-fi
-
 
 AC_CONFIG_FILES([
   bare.lsp lsp/load.lsp clos/load.lsp cmp/load.lsp

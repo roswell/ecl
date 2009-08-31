@@ -637,7 +637,6 @@ ac_includes_default="\
 #endif"
 
 ac_subst_vars='LTLIBOBJS
-ECL_GMP_HEADER
 ECL_BOEHM_GC_HEADER
 CLX_INFO
 ECL_CC
@@ -663,6 +662,7 @@ SONAME2
 SONAME3
 EGREP
 GREP
+ECL_GMP_HEADER
 INSTALL_INFO
 INFOEXT
 thehost
@@ -4223,35 +4223,6 @@ $as_echo "no" >&6; }
 fi
       # set $(MAKE) if needed
 
-if test "${enable_slow_config}" = "yes"; then
-
-{ $as_echo "$as_me:$LINENO: checking Using the GMP library to guess good compiler/linker flags" >&5
-$as_echo_n "checking Using the GMP library to guess good compiler/linker flags... " >&6; }
-(rm -rf tmp; \
- mkdir tmp; \
- aux=`cd ${srcdir}/gmp; pwd`;
- cd tmp; \
- ${aux}/configure --srcdir=${aux} --prefix=${builddir} >/dev/null 2>&1)
-GMP_CFLAGS=`grep '^s,@CFLAGS@' tmp/config.status| sed 's&s,@CFLAGS@,\(.*\),;t t&\1&'`
-GMP_LDFLAGS=`grep '^s,@GMP_LDFLAGS@' tmp/config.status| sed 's&s,@GMP_LDFLAGS@,\(.*\),;t t&\1&'`;
-# Notice that GMP_LDFLAGS is designed to be passed to libtool, and therefore
-# some options could be prefixed by -Wc, which means "flag for the compiler".
-LDFLAGS=`echo ${LDFLAGS} ${GMP_LDFLAGS} | sed 's%-Wc,%%g'`
-CFLAGS=`echo ${CFLAGS} ${GMP_CFLAGS} | sed 's%-Wc,%%g'`
-GMP_CFLAGS=""
-GMP_LDFLAGS=""
-#host=`grep '^s,@host@' config.status | sed 's&s,@host@,\(.*\),;t t&\1&'`
-{ $as_echo "$as_me:$LINENO: checking C/C++ compiler flags" >&5
-$as_echo_n "checking C/C++ compiler flags... " >&6; }
-{ $as_echo "$as_me:$LINENO: result: ${CFLAGS}" >&5
-$as_echo "${CFLAGS}" >&6; }
-{ $as_echo "$as_me:$LINENO: checking Linker flags" >&5
-$as_echo_n "checking Linker flags... " >&6; }
-{ $as_echo "$as_me:$LINENO: result: ${LDFLAGS}" >&5
-$as_echo "${LDFLAGS}" >&6; }
-
-fi
-
 
 
 
@@ -4462,6 +4433,7 @@ case "${host_os}" in
 		TCPLIBS='-lsocket -lnsl -lintl'
 		clibs='-ldl'
 		CFLAGS="${CFLAGS} -std=gnu99"
+		enable_slow_config=yes
 		;;
 	cygwin*)
 		thehost='cygwin'
@@ -4662,6 +4634,232 @@ if test -z `which gzip`; then
   INFOEXT=info.gz
 else
   INFOEXT=info
+fi
+
+if test "x${with_gmp}" != "xno"; then
+  CFLAGS="$CFLAGS $GMP_CFLAGS"
+  LDFLAGS="$LDFLAGS $GMP_LDFLAGS"
+
+  if test ${with_system_gmp} = "auto"; then
+     { $as_echo "$as_me:$LINENO: checking for __gmpz_init in -lgmp" >&5
+$as_echo_n "checking for __gmpz_init in -lgmp... " >&6; }
+if test "${ac_cv_lib_gmp___gmpz_init+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lgmp  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char __gmpz_init ();
+int
+main ()
+{
+return __gmpz_init ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext && {
+	 test "$cross_compiling" = yes ||
+	 $as_test_x conftest$ac_exeext
+       }; then
+  ac_cv_lib_gmp___gmpz_init=yes
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_lib_gmp___gmpz_init=no
+fi
+
+rm -rf conftest.dSYM
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_lib_gmp___gmpz_init" >&5
+$as_echo "$ac_cv_lib_gmp___gmpz_init" >&6; }
+if test "x$ac_cv_lib_gmp___gmpz_init" = x""yes; then
+  with_system_gmp=yes
+else
+  with_system_gmp=no
+fi
+
+  fi
+
+  if test "${with_system_gmp}" = "yes"; then
+    { $as_echo "$as_me:$LINENO: checking for __gmpz_init in -lgmp" >&5
+$as_echo_n "checking for __gmpz_init in -lgmp... " >&6; }
+if test "${ac_cv_lib_gmp___gmpz_init+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lgmp  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char __gmpz_init ();
+int
+main ()
+{
+return __gmpz_init ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext && {
+	 test "$cross_compiling" = yes ||
+	 $as_test_x conftest$ac_exeext
+       }; then
+  ac_cv_lib_gmp___gmpz_init=yes
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_lib_gmp___gmpz_init=no
+fi
+
+rm -rf conftest.dSYM
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_lib_gmp___gmpz_init" >&5
+$as_echo "$ac_cv_lib_gmp___gmpz_init" >&6; }
+if test "x$ac_cv_lib_gmp___gmpz_init" = x""yes; then
+  FASL_LIBS="${FASL_LIBS} -lgmp"
+else
+  { { $as_echo "$as_me:$LINENO: error: System gmp library requested but not found." >&5
+$as_echo "$as_me: error: System gmp library requested but not found." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
+  else
+    SUBDIRS="${SUBDIRS} gmp"
+    CORE_LIBS="-leclgmp ${CORE_LIBS}"
+    if test ${enable_shared} = "no"; then
+      LIBRARIES="${LIBRARIES} ${LIBPREFIX}eclgmp.${LIBEXT}"
+    fi
+  fi
+fi
+
+
+if test "${with_gmp}" = "no" ; then
+  { $as_echo "$as_me:$LINENO: Not using GMP library at all.  Are you sure?" >&5
+$as_echo "$as_me: Not using GMP library at all.  Are you sure?" >&6;}
+  EXTRA_OBJS="${EXTRA_OBJS} big_ll.o"
+  ECL_GMP_HEADER='nofile'
+else
+
+cat >>confdefs.h <<\_ACEOF
+#define WITH_GMP 1
+_ACEOF
+
+  EXTRA_OBJS="${EXTRA_OBJS} big.o"
+  ECL_GMP_HEADER='gmp.h'
+  if test "${with_system_gmp}" = "no" ; then
+    { $as_echo "$as_me:$LINENO: Configuring included GMP library:" >&5
+$as_echo "$as_me: Configuring included GMP library:" >&6;}
+    test -d gmp && rm -rf gmp
+    if test -z "$gmp_build"; then
+      gmp_build="${build_alias}"
+    fi
+    if mkdir gmp; then
+     ECL_GMP_HEADER='ecl/gmp.h'
+          (destdir=`${PWDCMD}`; cd gmp; CC="${CC} ${PICFLAG}" \
+       $srcdir/gmp/configure --disable-shared --prefix=${destdir} \
+	--infodir=${destdir}/doc --includedir=${destdir}/ecl --with-pic \
+        --libdir=${destdir} --build=${gmp_build} --host=${host_alias} $with_gmp)
+    fi
+  fi
+  with_gmp="yes"
+fi
+
+{ $as_echo "$as_me:$LINENO: checking GMP autoconf" >&5
+$as_echo_n "checking GMP autoconf... " >&6; }
+{ $as_echo "$as_me:$LINENO: result: \"${with_gmp}.${with_system_gmp}.${enable_slow_config}\"" >&5
+$as_echo "\"${with_gmp}.${with_system_gmp}.${enable_slow_config}\"" >&6; }
+if test "${with_gmp}.${with_system_gmp}.${enable_slow_config}" = "yes.no.yes"; then
+
+{ $as_echo "$as_me:$LINENO: checking Using the GMP library to guess good compiler/linker flags" >&5
+$as_echo_n "checking Using the GMP library to guess good compiler/linker flags... " >&6; }
+if test ! -f gmp/config.status; then
+  { { $as_echo "$as_me:$LINENO: error: Cannot find GMP's configuration file. Aborting" >&5
+$as_echo "$as_me: error: Cannot find GMP's configuration file. Aborting" >&2;}
+   { (exit 1); exit 1; }; }
+fi
+GMP_CFLAGS=`grep '^s,@CFLAGS@' gmp/config.status| sed 's&s,@CFLAGS@,\(.*\),;t t&\1&'`
+GMP_LDFLAGS=`grep '^s,@GMP_LDFLAGS@' gmp/config.status| sed 's&s,@GMP_LDFLAGS@,\(.*\),;t t&\1&'`;
+# Notice that GMP_LDFLAGS is designed to be passed to libtool, and therefore
+# some options could be prefixed by -Wc, which means "flag for the compiler".
+LDFLAGS=`echo ${LDFLAGS} ${GMP_LDFLAGS} | sed 's%-Wc,%%g'`
+CFLAGS=`echo ${CFLAGS} ${GMP_CFLAGS} | sed 's%-Wc,%%g'`
+GMP_CFLAGS=""
+GMP_LDFLAGS=""
+#host=`grep '^s,@host@' config.status | sed 's&s,@host@,\(.*\),;t t&\1&'`
+{ $as_echo "$as_me:$LINENO: checking C/C++ compiler flags" >&5
+$as_echo_n "checking C/C++ compiler flags... " >&6; }
+{ $as_echo "$as_me:$LINENO: result: ${CFLAGS}" >&5
+$as_echo "${CFLAGS}" >&6; }
+{ $as_echo "$as_me:$LINENO: checking Linker flags" >&5
+$as_echo_n "checking Linker flags... " >&6; }
+{ $as_echo "$as_me:$LINENO: result: ${LDFLAGS}" >&5
+$as_echo "${LDFLAGS}" >&6; }
+
 fi
 
 
@@ -5685,169 +5883,6 @@ if test ${enable_smallcons} = "yes" ; then
 #define ECL_SMALL_CONS 1
 _ACEOF
 
-fi
-
-if test "x${with_gmp}" != "xno"; then
-
-  CFLAGS="$CFLAGS $GMP_CFLAGS"
-  LDFLAGS="$LDFLAGS $GMP_LDFLAGS"
-
-  if test ${with_system_gmp} = "auto"; then
-
-     { $as_echo "$as_me:$LINENO: checking for __gmpz_init in -lgmp" >&5
-$as_echo_n "checking for __gmpz_init in -lgmp... " >&6; }
-if test "${ac_cv_lib_gmp___gmpz_init+set}" = set; then
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lgmp  $LIBS"
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char __gmpz_init ();
-int
-main ()
-{
-return __gmpz_init ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (ac_try="$ac_link"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
-$as_echo "$ac_try_echo") >&5
-  (eval "$ac_link") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest$ac_exeext && {
-	 test "$cross_compiling" = yes ||
-	 $as_test_x conftest$ac_exeext
-       }; then
-  ac_cv_lib_gmp___gmpz_init=yes
-else
-  $as_echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	ac_cv_lib_gmp___gmpz_init=no
-fi
-
-rm -rf conftest.dSYM
-rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
-      conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:$LINENO: result: $ac_cv_lib_gmp___gmpz_init" >&5
-$as_echo "$ac_cv_lib_gmp___gmpz_init" >&6; }
-if test "x$ac_cv_lib_gmp___gmpz_init" = x""yes; then
-  with_system_gmp=yes
-else
-  with_system_gmp=no
-fi
-
-  fi
-
-  if test "${with_system_gmp}" = "yes"; then
-    { $as_echo "$as_me:$LINENO: checking for __gmpz_init in -lgmp" >&5
-$as_echo_n "checking for __gmpz_init in -lgmp... " >&6; }
-if test "${ac_cv_lib_gmp___gmpz_init+set}" = set; then
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lgmp  $LIBS"
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char __gmpz_init ();
-int
-main ()
-{
-return __gmpz_init ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (ac_try="$ac_link"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
-$as_echo "$ac_try_echo") >&5
-  (eval "$ac_link") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest$ac_exeext && {
-	 test "$cross_compiling" = yes ||
-	 $as_test_x conftest$ac_exeext
-       }; then
-  ac_cv_lib_gmp___gmpz_init=yes
-else
-  $as_echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	ac_cv_lib_gmp___gmpz_init=no
-fi
-
-rm -rf conftest.dSYM
-rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
-      conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:$LINENO: result: $ac_cv_lib_gmp___gmpz_init" >&5
-$as_echo "$ac_cv_lib_gmp___gmpz_init" >&6; }
-if test "x$ac_cv_lib_gmp___gmpz_init" = x""yes; then
-  FASL_LIBS="${FASL_LIBS} -lgmp"
-else
-  { { $as_echo "$as_me:$LINENO: error: System gmp library requested but not found." >&5
-$as_echo "$as_me: error: System gmp library requested but not found." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-
-  else
-    SUBDIRS="${SUBDIRS} gmp"
-    CORE_LIBS="-leclgmp ${CORE_LIBS}"
-    if test ${enable_shared} = "no"; then
-      LIBRARIES="${LIBRARIES} ${LIBPREFIX}eclgmp.${LIBEXT}"
-    fi
-  fi
 fi
 
 { $as_echo "$as_me:$LINENO: checking for soname flags" >&5
@@ -13482,38 +13517,6 @@ $as_echo "$as_me: error: Boehm-Weiser garbage collector's headers not found" >&2
 $as_echo "$as_me: error: Not a valid argument for --enable-boehm $enable_boehm" >&2;}
    { (exit 1); exit 1; }; };;
 esac
-
-
-if test "${with_gmp}" = "no" ; then
-  { $as_echo "$as_me:$LINENO: Not using GMP library at all.  Are you sure?" >&5
-$as_echo "$as_me: Not using GMP library at all.  Are you sure?" >&6;}
-  EXTRA_OBJS="${EXTRA_OBJS} big_ll.o"
-  ECL_GMP_HEADER='nofile'
-else
-
-cat >>confdefs.h <<\_ACEOF
-#define WITH_GMP 1
-_ACEOF
-
-  EXTRA_OBJS="${EXTRA_OBJS} big.o"
-  ECL_GMP_HEADER='gmp.h'
-  if test "${with_system_gmp}" = "no" ; then
-    { $as_echo "$as_me:$LINENO: Configuring included GMP library:" >&5
-$as_echo "$as_me: Configuring included GMP library:" >&6;}
-    test -d gmp && rm -rf gmp
-    if test -z "$gmp_build"; then
-      gmp_build="${build_alias}"
-    fi
-    if mkdir gmp; then
-     ECL_GMP_HEADER='ecl/gmp.h'
-          (destdir=`${PWDCMD}`; cd gmp; CC="${CC} ${PICFLAG}" \
-       $srcdir/gmp/configure --disable-shared --prefix=${destdir} \
-	--infodir=${destdir}/doc --includedir=${destdir}/ecl --with-pic \
-        --libdir=${destdir} --build=${gmp_build} --host=${host_alias} $with_gmp)
-    fi
-  fi
-fi
-
 
 ac_config_files="$ac_config_files bare.lsp lsp/load.lsp clos/load.lsp cmp/load.lsp ../Makefile Makefile c/Makefile doc/Makefile doc/ecl.man doc/ecl-config.man ecl/configpre.h:h/config.h.in bin/ecl-config.pre:util/ecl-config lsp/config.pre:lsp/config.lsp.in compile.pre:compile.lsp.in cmp/cmpdefs.pre:cmp/cmpdefs.lsp"
 
