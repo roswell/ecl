@@ -160,8 +160,7 @@ void GC_push_regs()
 #endif
 
 #if !defined(HAVE_PUSH_REGS) && defined(UNIX_LIKE)
-# ifdef NO_GETCONTEXT
-#  error
+# ifndef NO_GETCONTEXT
 #  include <ucontext.h>
 # endif
 #endif
