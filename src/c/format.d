@@ -2108,7 +2108,7 @@ DIRECTIVE:
 #ifdef ECL_UNICODE
 		strm = ecl_alloc_adjustable_extended_string(64);
 #else
-		strm = cl_alloc_adjustable_base_string(64);
+		strm = ecl_alloc_adjustable_base_string(64);
 #endif
 		null_strm = 1;
 	} else if (strm == Ct) {

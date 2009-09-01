@@ -60,7 +60,7 @@ si_get_buffer_string()
 #ifdef ECL_UNICODE
 		output = ecl_alloc_adjustable_extended_string(ECL_BUFFER_STRING_SIZE);
 #else
-		output = cl_alloc_adjustable_base_string(ECL_BUFFER_STRING_SIZE);
+		output = ecl_alloc_adjustable_base_string(ECL_BUFFER_STRING_SIZE);
 #endif
 	} else {
 		output = CAR(pool);
@@ -87,7 +87,7 @@ si_put_buffer_string(cl_object string)
 #ifdef ECL_UNICODE
 				string = ecl_alloc_adjustable_extended_string(ECL_BUFFER_STRING_SIZE);
 #else
-				string = cl_alloc_adjustable_base_string(ECL_BUFFER_STRING_SIZE);
+				string = ecl_alloc_adjustable_base_string(ECL_BUFFER_STRING_SIZE);
 #endif
 			}
 			TOKEN_STRING_FILLP(string) = l+1;
