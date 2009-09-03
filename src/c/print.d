@@ -1580,6 +1580,12 @@ si_write_ugly_object(cl_object x, cl_object stream)
 		write_addr((void*)x->frame.base, stream);
 		write_ch('>', stream);
 		break;
+	case t_weak_pointer:
+		if (ecl_print_readably()) FEprint_not_readable(x);
+		write_str("#<weak-pointer ", stream);
+		write_addr(x, stream);
+		write_ch('>', stream);
+		break;
 #ifdef ECL_THREADS
 	case t_process:
 		if (ecl_print_readably()) FEprint_not_readable(x);
