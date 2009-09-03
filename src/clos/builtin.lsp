@@ -82,6 +82,7 @@
             (si::code-block)
 	    (si::foreign-data)
 	    (si::frame)
+	    (si::weak-pointer)
 	    #+threads (mp::process)
 	    #+threads (mp::lock)
 	    #+threads (mp::condition-variable))))

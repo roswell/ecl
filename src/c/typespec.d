@@ -212,6 +212,8 @@ ecl_type_to_symbol(cl_type t)
 		return @'si::foreign-data';
 	case t_frame:
 		return @'si::frame';
+	case t_weak_pointer:
+		return @'ext::weak-pointer';
 	default:
 		ecl_internal_error("not a lisp data object");
 	}

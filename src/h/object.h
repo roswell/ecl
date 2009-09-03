@@ -88,6 +88,7 @@ typedef enum {
 	t_codeblock,
 	t_foreign,
 	t_frame,
+	t_weak_pointer,
 	t_end,
 	t_other,
 	t_contiguous,		/*  contiguous block  */
@@ -810,6 +811,11 @@ struct ecl_stack_frame {
 	struct cl_env_struct *env;
 };
 
+struct ecl_weak_pointer {	/*  weak pointer to value  */
+	HEADER;
+	cl_object value;
+};
+
 /*
 	dummy type
 */
@@ -919,6 +925,7 @@ union cl_lispunion {
 	struct ecl_codeblock	cblock;		/*  codeblock  */
 	struct ecl_foreign	foreign; 	/*  user defined data type */
 	struct ecl_stack_frame	frame;		/*  stack frame  */
+	struct ecl_weak_pointer weak;		/*  weak pointers  */
 };
 
 /*

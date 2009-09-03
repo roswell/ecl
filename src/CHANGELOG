@@ -39,6 +39,11 @@ ECL 9.9.1:
  - The option --enable-slow-config is now always on in Solaris and it does not
    take more time than an ordinary build using --with-system-gmp=no
 
+ - ECL now implements weak pointers. The interface is
+	(ext:make-weak-pointer value) => weak-pointer
+	(ext:weak-pointer-value weak-pointer) => value
+   and it defines a new built-in type, EXT:WEAK-POINTER
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

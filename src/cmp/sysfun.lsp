@@ -1466,6 +1466,9 @@
 (def-inline c::ldb1 :always (fixnum fixnum fixnum) t
  "MAKE_FIXNUM((((~((cl_fixnum)-1 << (#0))) << (#1)) & (cl_fixnum)(#2)) >> (#1))")
 
+(proclaim-function ext:make-weak-pointer (t) t)
+(proclaim-function ext:weak-pointer-value (t) t)
+
 ;; Functions only available with CLOS
 
 #+clos(progn

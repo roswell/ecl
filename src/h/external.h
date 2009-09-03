@@ -253,6 +253,9 @@ extern ECL_API void ecl_dealloc(void *);
 #define ecl_alloc_atomic_align(s,d) ecl_alloc_atomic(s)
 #define ecl_register_static_root(x) ecl_register_root(x)
 extern ECL_API cl_object ecl_alloc_compact_object(cl_type t, cl_index extra_space);
+
+extern ECL_API cl_object si_make_weak_pointer(cl_object o);
+extern ECL_API cl_object si_weak_pointer_value(cl_object o);
 #else
 extern ECL_API cl_object si_allocate _ARGS((cl_narg narg, cl_object type, cl_object qty, ...));
 extern ECL_API cl_object si_maximum_allocatable_pages _ARGS((cl_narg narg, cl_object type));

@@ -451,6 +451,9 @@ standard_finalizer(cl_object o)
 	case t_stream:
 		cl_close(1, o);
 		break;
+	case t_weak_pointer:
+		GC_unregister_disappearing_link(&(o->weak.value));
+		break;
 #ifdef ECL_THREADS
 	case t_lock: {
 		const cl_env_ptr the_env = ecl_process_env();
@@ -554,9 +557,13 @@ si_set_finalizer(cl_object o, cl_object finalizer)
 	void *odata;
 	ecl_disable_interrupts_env(the_env);
 	if (finalizer == Cnil) {
-		GC_register_finalizer_no_order(o, (GC_finalization_proc)0, 0, &ofn, &odata);
+		GC_register_finalizer_no_order(o, (GC_finalization_proc)0,
+					       0, &ofn, &odata);
 	} else {
-		GC_register_finalizer_no_order(o, (GC_finalization_proc)queueing_finalizer, finalizer, &ofn, &odata);
+		GC_finalization_proc newfn;
+		newfn = (GC_finalization_proc)queueing_finalizer;
+		GC_register_finalizer_no_order(o, newfn, finalizer,
+					       &ofn, &odata);
 	}
 	ecl_enable_interrupts_env(the_env);
 	@(return)
@@ -727,6 +734,48 @@ si_gc_dump()
 	GC_dump();
 	ecl_enable_interrupts_env(the_env);
 	@(return)
+}
+
+/**********************************************************************
+ * WEAK POINTERS
+ */
+
+static cl_object
+ecl_alloc_weak_pointer(cl_object o)
+{
+	const cl_env_ptr the_env = ecl_process_env();
+	struct ecl_weak_pointer *obj;
+	ecl_disable_interrupts_env(the_env);
+	obj = GC_MALLOC_ATOMIC(sizeof(struct ecl_weak_pointer));
+	ecl_enable_interrupts_env(the_env);
+	obj->t = t_weak_pointer;
+	obj->value = o;
+	GC_general_register_disappearing_link(&(obj->value), (void*)o);
+	return (cl_object)obj;
+}
+
+cl_object
+si_make_weak_pointer(cl_object o)
+{
+	cl_object pointer = ecl_alloc_weak_pointer(o);
+	si_set_finalizer(o, pointer);
+	@(return pointer);
+}
+
+static cl_object
+ecl_weak_pointer_value(cl_object o)
+{
+	return o->weak.value;
+}
+
+cl_object
+si_weak_pointer_value(cl_object o)
+{
+	cl_object value;
+	if (type_of(o) != t_weak_pointer)
+		FEwrong_type_argument(@'ext::weak-pointer', o);
+	value = (cl_object)GC_call_with_alloc_lock((GC_fn_type)ecl_weak_pointer_value, o);
+	@(return (value? value : Cnil));
 }
 
 #endif /* GBC_BOEHM */

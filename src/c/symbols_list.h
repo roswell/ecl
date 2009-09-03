@@ -1803,5 +1803,9 @@ cl_symbols[] = {
 {KEY_ "SYSV", KEYWORD, NULL, -1, OBJNULL},
 {KEY_ "UNIX64", KEYWORD, NULL, -1, OBJNULL},
 
+{EXT_ "WEAK-POINTER", EXT_ORDINARY, NULL, -1, OBJNULL},
+{EXT_ "MAKE-WEAK-POINTER", EXT_ORDINARY, si_make_weak_pointer, 1, OBJNULL},
+{EXT_ "WEAK-POINTER-VALUE", EXT_ORDINARY, si_weak_pointer_value, 1, OBJNULL},
+
 /* Tag for end of list */
 {NULL, CL_ORDINARY, NULL, -1, OBJNULL}};
