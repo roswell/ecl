@@ -471,6 +471,14 @@ mp_lock_holder(cl_object lock)
 }
 
 cl_object
+mp_lock_count(cl_object lock)
+{
+	if (type_of(lock) != t_lock)
+		FEwrong_type_argument(@'mp::lock', lock);
+	@(return MAKE_FIXNUM(lock->lock.counter))
+}
+
+cl_object
 mp_giveup_lock(cl_object lock)
 {
 	cl_object own_process = mp_current_process();

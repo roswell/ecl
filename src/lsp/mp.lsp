@@ -21,13 +21,20 @@
 (defmacro with-lock ((lock) &body body)
   #-threads
   `(progn ,@body)
+  ;; Why do we need %count? Even if get-lock succeeeds, an interrupt may
+  ;; happen between the end of get-lock and when we save the output of
+  ;; the function. That means we lose the information and ignore that
+  ;; the lock was actually acquired. Furthermore, a lock can be recursive
+  ;; and mp:lock-holder is also not reliable.
   #+threads
-  `(let ((%the-lock ,lock))
-    (unwind-protect
-	 (progn
-	   (mp::get-lock %the-lock)
-	   ,@body)
-      (mp::giveup-lock %the-lock))))
+  `(let* ((%the-lock ,lock)
+          (%count (mp:lock-count %the-lock)))
+     (unwind-protect
+          (progn
+            (mp::get-lock %the-lock)
+            ,@body)
+       (when (> (mp:lock-count %the-lock) %count)
+         (mp::giveup-lock %the-lock)))))
 
 (defmacro without-interrupts (&body body)
   `(let ((si:*interrupt-enable* nil))

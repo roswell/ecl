@@ -44,6 +44,11 @@ ECL 9.9.1:
 	(ext:weak-pointer-value weak-pointer) => value
    and it defines a new built-in type, EXT:WEAK-POINTER
 
+* Bugs fixed:
+
+ - WITH-LOCK might run into a race condition when the lock acquisition process
+   was interrupted.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

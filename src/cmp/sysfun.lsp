@@ -1469,6 +1469,18 @@
 (proclaim-function ext:make-weak-pointer (t) t)
 (proclaim-function ext:weak-pointer-value (t) t)
 
+;; Functions only available with threads
+#+threads(progn
+(proclaim-function mp:make-lock (*) mp:lock)
+(proclaim-function mp:get-lock (mp:lock &optional t) t)
+(proclaim-function mp:giveup-lock (mp:lock) t)
+(proclaim-function mp:recursive-lock-p (mp:lock) t)
+(proclaim-function mp:lock-name (mp:lock) symbol)
+(proclaim-function mp:lock-holder (mp:lock) t)
+(proclaim-function mp:lock-count (mp:lock) fixnum)
+(def-inline si:instance-ref :unsafe (mp:lock) fixnum "((#0)->lock.count)")
+)
+
 ;; Functions only available with CLOS
 
 #+clos(progn

@@ -1496,6 +1496,7 @@ cl_symbols[] = {
 {MP_ "RECURSIVE-LOCK-P", MP_ORDINARY, mp_recursive_lock_p, 1, OBJNULL},
 {MP_ "LOCK-NAME", MP_ORDINARY, mp_lock_name, 1, OBJNULL},
 {MP_ "LOCK-HOLDER", MP_ORDINARY, mp_lock_holder, 1, OBJNULL},
+{MP_ "LOCK-COUNT", MP_ORDINARY, mp_lock_count, 1, OBJNULL},
 {MP_ "GET-LOCK", MP_ORDINARY, mp_get_lock, -1, OBJNULL},
 {MP_ "GIVEUP-LOCK", MP_ORDINARY, mp_giveup_lock, 1, OBJNULL},
 {MP_ "MAKE-CONDITION-VARIABLE", MP_ORDINARY, mp_make_condition_variable, 0, OBJNULL},

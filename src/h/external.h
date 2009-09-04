@@ -1597,6 +1597,7 @@ extern ECL_API cl_object mp_make_lock _ARGS((cl_narg narg, ...));
 extern ECL_API cl_object mp_recursive_lock_p(cl_object lock);
 extern ECL_API cl_object mp_lock_name(cl_object lock);
 extern ECL_API cl_object mp_lock_holder(cl_object lock);
+extern ECL_API cl_object mp_lock_count(cl_object lock);
 extern ECL_API cl_object mp_get_lock _ARGS((cl_narg narg, cl_object lock, ...));
 extern ECL_API cl_object mp_giveup_lock(cl_object lock);
 extern ECL_API cl_object mp_make_condition_variable(void);
