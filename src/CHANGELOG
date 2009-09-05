@@ -49,6 +49,8 @@ ECL 9.9.1:
  - WITH-LOCK might run into a race condition when the lock acquisition process
    was interrupted.
 
+ - The following functions are now interrupt safe: MP:MAKE-LOCK.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

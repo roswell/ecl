@@ -423,24 +423,15 @@ mp_process_run_function(cl_narg narg, cl_object name, cl_object function, ...)
 @
 	output = ecl_alloc_object(t_lock);
 	ecl_disable_interrupts_env(the_env);
-#ifdef ECL_WINDOWS_THREADS
 	output->lock.name = name;
+#ifdef ECL_WINDOWS_THREADS
 	output->lock.mutex = CreateMutex(NULL, FALSE, NULL);
+#else
+	pthread_mutex_init(&output->lock.mutex, &mutexattr_recursive);
+#endif
 	output->lock.holder = Cnil;
 	output->lock.counter = 0;
 	output->lock.recursive = (recursive != Cnil);
-#else
-	output->lock.name = name;
-	output->lock.holder = Cnil;
-	output->lock.counter = 0;
-	if (recursive == Cnil) {
-		output->lock.recursive = 0;
-		pthread_mutex_init(&output->lock.mutex, &mutexattr_error);
-	} else {
-		output->lock.recursive = 1;
-		pthread_mutex_init(&output->lock.mutex, &mutexattr_recursive);
-	}
-#endif
 	ecl_set_finalizer_unprotected(output, Ct);
 	ecl_enable_interrupts_env(the_env);
 	@(return output)
@@ -481,6 +472,7 @@ mp_lock_count(cl_object lock)
 cl_object
 mp_giveup_lock(cl_object lock)
 {
+        /* Must be called with interrupts disabled. */
 	cl_object own_process = mp_current_process();
 	if (type_of(lock) != t_lock)
 		FEwrong_type_argument(@'mp::lock', lock);
@@ -504,32 +496,39 @@ mp_giveup_lock(cl_object lock)
 	cl_object output;
 	int rc;
 @
+{
 	if (type_of(lock) != t_lock)
 		FEwrong_type_argument(@'mp::lock', lock);
-	/* In Windows, all locks are recursive. We simulate the other case. */
-	/* We will complain always if recursive=0 and try to lock recursively. */
-	if (!lock->lock.recursive && (lock->lock.holder == the_env->own_process)) {
-		FEerror("A recursive attempt was made to hold lock ~S", 1, lock);
-	}
-	/* FIXME!  This problem has a nonzero chance of problems with
+        if (lock->lock.holder == the_env->own_process) {
+                if (!lock->lock.recursive) {
+                        FEerror("A recursive attempt was made to hold lock ~S",
+                                1, lock);
+                }
+                lock->lock.counter++;
+                output = t;
+                goto OUTPUT;
+        }
+	/* FIXME!  This code has a nonzero chance of problems with
          * interrupts. If an interupt happens right after we locked the mutex
          * but before we set count and owner, we are in trouble, since the
          * mutex might be locked. */
 #ifdef ECL_WINDOWS_THREADS
 	switch (WaitForSingleObject(lock->lock.mutex, (wait==Ct?INFINITE:0))) {
 		case WAIT_OBJECT_0:
-			lock->lock.counter++;
+                        lock->lock.counter++;
                         lock->lock.holder = the_env->own_process;
-			output = Ct;
+                        output = Ct;
 			break;
 		case WAIT_TIMEOUT:
-			output = Cnil;
+                        output = Cnil;
 			break;
 		case WAIT_ABANDONED:
 			ecl_internal_error("");
+                        output = Cnil;
 			break;
 		case WAIT_FAILED:
 			FEwin32_error("Unable to lock Win32 Mutex", 0);
+                        output = Cnil;
 			break;
 	}
 #else
@@ -542,10 +541,15 @@ mp_giveup_lock(cl_object lock)
 		lock->lock.counter++;
 		lock->lock.holder = the_env->own_process;
 		output = Ct;
-	} else {
+	} else if (rc == EBUSY) {
 		output = Cnil;
-	}
+	} else {
+                FEerror("Unable to lock mutex. Error code: %d.", 1,
+                        MAKE_FIXNUM(rc));
+                output = Cnil;
+        }
 #endif
+ OUTPUT:
 	@(return output)
 @)
 
