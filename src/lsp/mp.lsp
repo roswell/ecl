@@ -13,7 +13,7 @@
 
 #-threads
 (defpackage "MP"
-  (:use "CL")
+  (:use "CL" "SI")
   (:export "WITH-LOCK" "WITHOUT-INTERRUPTS"))
 
 (in-package "MP")
@@ -59,31 +59,31 @@ WITHOUT-INTERRUPTS in:
     ;; regardless of the interrupt policy in effect when it is called.
     (lambda () (with-local-interrupts ...)))
 "
-  (with-unique-names (outer-allow-with-interrupts outer-interrupts-enabled)
+  (ext:with-unique-names (outer-allow-with-interrupts outer-interrupts-enabled)
     `(multiple-value-prog1
          (macrolet ((allow-with-interrupts (&body allow-forms)
-                      `(let ((*allow-with-interrupts* ,',outer-allow-with-interrupts))
+                      `(let ((si:*allow-with-interrupts* ,',outer-allow-with-interrupts))
                          ,@allow-forms))
                     (with-restored-interrupts (&body with-forms)
-                      `(let ((*interrupts-enabled* ,',outer-interrupts-enabled))
+                      `(let ((si:*interrupts-enabled* ,',outer-interrupts-enabled))
                          ,@with-forms))
                     (with-local-interrupts (&body with-forms)
-                      `(let* ((*allow-with-interrupts* ,',outer-allow-with-interrupts)
-                              (*interrupts-enabled* ,',outer-allow-with-interrupts))
+                      `(let* ((si:*allow-with-interrupts* ,',outer-allow-with-interrupts)
+                              (si:*interrupts-enabled* ,',outer-allow-with-interrupts))
                          (when ,',outer-allow-with-interrupts
                            (si::check-pending-interrupts))
                          (locally ,@with-forms))))
-           (let* ((,outer-interrupts-enabled *allow-with-interrupts*)
-                  (*interrupts-enabled* nil)
-                  (,outer-allow-with-interrupts *allow-with-interrupts*)
-                  (*allow-with-interrupts* nil))
+           (let* ((,outer-interrupts-enabled si:*interrupts-enabled*)
+                  (si:*interrupts-enabled* nil)
+                  (,outer-allow-with-interrupts si:*allow-with-interrupts*)
+                  (si:*allow-with-interrupts* nil))
              (declare (ignorable ,outer-allow-with-interrupts
                                  ,outer-interrupts-enabled))
              ,@body))
-       (when *interrupts-enabled*
+       (when si:*interrupts-enabled*
          (si::check-pending-interrupts)))))
 
-(defmacro with-lock ((lock) &body body)
+(defmacro with-lock ((lock-form) &body body)
   #-threads
   `(progn ,@body)
   ;; Why do we need %count? Even if get-lock succeeeds, an interrupt may
@@ -96,8 +96,8 @@ WITHOUT-INTERRUPTS in:
   ;; the get-lock statement, to ensure that the unlocking is done with
   ;; interrupts disabled.
   #+threads
-  (with-unique-names (lock count interrupts)
-    `(let* ((,lock ,lock)
+  (ext:with-unique-names (lock count interrupts)
+    `(let* ((,lock ,lock-form)
             (,count (mp:lock-count ,lock)))
        (without-interrupts
            (unwind-protect
