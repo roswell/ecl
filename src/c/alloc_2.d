@@ -552,6 +552,8 @@ si_get_finalizer(cl_object o)
 void
 ecl_set_finalizer_unprotected(cl_object o, cl_object finalizer)
 {
+	GC_finalization_proc ofn;
+	void *odata;
 	if (finalizer == Cnil) {
 		GC_register_finalizer_no_order(o, (GC_finalization_proc)0,
 					       0, &ofn, &odata);
@@ -567,8 +569,6 @@ cl_object
 si_set_finalizer(cl_object o, cl_object finalizer)
 {
 	const cl_env_ptr the_env = ecl_process_env();
-	GC_finalization_proc ofn;
-	void *odata;
 	ecl_disable_interrupts_env(the_env);
         ecl_set_finalizer_unprotected(o, finalizer);
 	ecl_enable_interrupts_env(the_env);
