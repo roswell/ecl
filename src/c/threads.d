@@ -422,6 +422,7 @@ mp_process_run_function(cl_narg narg, cl_object name, cl_object function, ...)
 	cl_object output;
 @
 	output = ecl_alloc_object(t_lock);
+	ecl_disable_interrupts_env(the_env);
 #ifdef ECL_WINDOWS_THREADS
 	output->lock.name = name;
 	output->lock.mutex = CreateMutex(NULL, FALSE, NULL);
@@ -429,7 +430,6 @@ mp_process_run_function(cl_narg narg, cl_object name, cl_object function, ...)
 	output->lock.counter = 0;
 	output->lock.recursive = (recursive != Cnil);
 #else
-	{
 	output->lock.name = name;
 	output->lock.holder = Cnil;
 	output->lock.counter = 0;
@@ -440,9 +440,9 @@ mp_process_run_function(cl_narg narg, cl_object name, cl_object function, ...)
 		output->lock.recursive = 1;
 		pthread_mutex_init(&output->lock.mutex, &mutexattr_recursive);
 	}
-	}
 #endif
-	si_set_finalizer(output, Ct);
+	ecl_set_finalizer_unprotected(output, Ct);
+	ecl_enable_interrupts_env(the_env);
 	@(return output)
 @)
 
@@ -511,11 +511,15 @@ mp_giveup_lock(cl_object lock)
 	if (!lock->lock.recursive && (lock->lock.holder == the_env->own_process)) {
 		FEerror("A recursive attempt was made to hold lock ~S", 1, lock);
 	}
+	/* FIXME!  This problem has a nonzero chance of problems with
+         * interrupts. If an interupt happens right after we locked the mutex
+         * but before we set count and owner, we are in trouble, since the
+         * mutex might be locked. */
 #ifdef ECL_WINDOWS_THREADS
 	switch (WaitForSingleObject(lock->lock.mutex, (wait==Ct?INFINITE:0))) {
 		case WAIT_OBJECT_0:
-                        lock->lock.holder = the_env->own_process;
 			lock->lock.counter++;
+                        lock->lock.holder = the_env->own_process;
 			output = Ct;
 			break;
 		case WAIT_TIMEOUT:
@@ -535,8 +539,8 @@ mp_giveup_lock(cl_object lock)
 		rc = pthread_mutex_trylock(&lock->lock.mutex);
 	}
 	if (rc == 0) {
-		lock->lock.holder = the_env->own_process;
 		lock->lock.counter++;
+		lock->lock.holder = the_env->own_process;
 		output = Ct;
 	} else {
 		output = Cnil;
