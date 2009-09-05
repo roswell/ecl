@@ -71,7 +71,7 @@ typedef struct cl_compiler_env *cl_compiler_ptr;
 static void asm_clear(cl_env_ptr env, cl_index h);
 static void asm_op(cl_env_ptr env, cl_fixnum op);
 static void asm_op2(cl_env_ptr env, int op, int arg);
-static cl_object asm_end(cl_env_ptr env, cl_index handle);
+static cl_object asm_end(cl_env_ptr env, cl_index handle, cl_object definition);
 static cl_index asm_jmp(cl_env_ptr env, register int op);
 static void asm_complete(cl_env_ptr env, register int op, register cl_index original);
 
@@ -156,7 +156,7 @@ pop_maybe_nil(cl_object *l) {
 /* ------------------------------ ASSEMBLER ------------------------------ */
 
 static cl_object
-asm_end(cl_env_ptr env, cl_index beginning) {
+asm_end(cl_env_ptr env, cl_index beginning, cl_object definition) {
         const cl_compiler_ptr c_env = env->c_env;
 	cl_object bytecodes;
 	cl_index code_size, data_size, i;
@@ -169,6 +169,7 @@ asm_end(cl_env_ptr env, cl_index beginning) {
 	data_size = ecl_length(c_env->constants);
 	bytecodes = ecl_alloc_object(t_bytecodes);
 	bytecodes->bytecodes.name = @'si::bytecodes';
+        bytecodes->bytecodes.definition = definition;
 	bytecodes->bytecodes.code_size = code_size;
 	bytecodes->bytecodes.data_size = data_size;
 	bytecodes->bytecodes.code = ecl_alloc_atomic(code_size * sizeof(cl_opcode));
@@ -2217,7 +2218,7 @@ eval_form(cl_env_ptr env, cl_object form) {
         asm_op(env, OP_EXIT);
         VALUES(0) = Cnil;
         NVALUES = 0;
-        bytecodes = asm_end(env, handle);
+        bytecodes = asm_end(env, handle, form);
         ecl_interpret((cl_object)&frame, new_c_env.lex_env, bytecodes);
         asm_clear(env, handle);
         env->c_env = old_c_env;
@@ -2754,10 +2755,10 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
 	c_undo_bindings(env, old_c_env->variables, 1);
 	asm_op(env, OP_EXIT);
 
-	output = asm_end(env, handle);
+        if (Null(ecl_symbol_value(@'si::*keep-definitions*')))
+                lambda = Cnil;
+	output = asm_end(env, handle, lambda);
 	output->bytecodes.name = name;
-	output->bytecodes.definition = Null(ecl_symbol_value(@'si::*keep-definitions*'))?
-		Cnil : lambda;
 
 	env->c_env = old_c_env;
 
@@ -2842,8 +2843,7 @@ si_make_lambda(cl_object name, cl_object rest)
 	CL_UNWIND_PROTECT_BEGIN(the_env) {
 		compile_form(the_env, form, FLAG_VALUES);
 		asm_op(the_env, OP_EXIT);
-		bytecodes = asm_end(the_env, handle);
-		bytecodes->bytecodes.definition = form;
+		bytecodes = asm_end(the_env, handle, form);
 	} CL_UNWIND_PROTECT_EXIT {
 		/* Clear up */
 		the_env->c_env = old_c_env;
