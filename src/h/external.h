@@ -657,6 +657,7 @@ extern ECL_API int ecl_stream_to_handle(cl_object s, bool output);
 
 /* finalize.c */
 
+extern ECL_API void ecl_set_finalizer_unprotected(cl_object o, cl_object finalizer);
 extern ECL_API cl_object si_get_finalizer(cl_object o);
 extern ECL_API cl_object si_set_finalizer(cl_object o, cl_object finalizer);
 
