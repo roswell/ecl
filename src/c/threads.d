@@ -496,7 +496,6 @@ mp_giveup_lock(cl_object lock)
 	cl_object output;
 	int rc;
 @
-{
 	if (type_of(lock) != t_lock)
 		FEwrong_type_argument(@'mp::lock', lock);
         if (lock->lock.holder == the_env->own_process) {
@@ -505,7 +504,7 @@ mp_giveup_lock(cl_object lock)
                                 1, lock);
                 }
                 lock->lock.counter++;
-                output = t;
+                output = Ct;
                 goto OUTPUT;
         }
 	/* FIXME!  This code has a nonzero chance of problems with
