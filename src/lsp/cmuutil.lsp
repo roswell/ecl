@@ -123,3 +123,22 @@
     `(macrolet ,macros (let* ,(nreverse binds) ,@body))))
 
 ); eval-when
+
+;;; Automate an idiom often found in macros:
+;;;   (LET ((FOO (GENSYM "FOO"))
+;;;         (MAX-INDEX (GENSYM "MAX-INDEX-")))
+;;;     ...)
+;;;
+;;; "Good notation eliminates thought." -- Eric Siggia
+;;;
+;;; Incidentally, this is essentially the same operator which
+;;; _On Lisp_ calls WITH-GENSYMS.
+(defmacro with-unique-names (symbols &body body)
+  `(let ,(mapcar (lambda (symbol)
+                   (let* ((symbol-name (symbol-name symbol))
+                          (stem (if (every #'alpha-char-p symbol-name)
+                                    symbol-name
+                                    (concatenate 'string symbol-name "-"))))
+                     `(,symbol (block-gensym ,stem))))
+                 symbols)
+     ,@body))
