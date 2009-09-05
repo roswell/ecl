@@ -60,6 +60,10 @@ ECL 9.9.1:
 
  - The use of GIVEUP-LOCK in WITH-LOCK is now protected against interrupts.
 
+ - Forms in toplevel EVAL-WHEN or PROGN statements did not have a proper value
+   of bytecodes.definition, causing the debugger to enter an infinite chain
+   of errors
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
