@@ -196,7 +196,7 @@ static bool
 interrupts_disabled_by_lisp(cl_env_ptr the_env)
 {
 	return (ecl_get_option(ECL_OPT_BOOTED) &&
-		ecl_symbol_value(@'si::*interrupt-enable*') == Cnil);
+		ecl_symbol_value(@'si::*interrupts-enabled*') == Cnil);
 }
 
 static void
@@ -661,7 +661,7 @@ init_unixint(int pass)
 					    cl_core.system_package);
 			si_Xmake_constant(name, MAKE_FIXNUM(known_signals[i].code));
 		}
-		ECL_SET(@'si::*interrupt-enable*', Ct);
+		ECL_SET(@'si::*interrupts-enabled*', Ct);
 #ifdef SIGFPE
 		if (ecl_get_option(ECL_OPT_TRAP_SIGFPE)) {
 			mysignal(SIGFPE, non_evil_signal_handler);
