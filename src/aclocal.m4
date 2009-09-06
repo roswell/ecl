@@ -330,11 +330,15 @@ case "${host_os}" in
 		else
 		  export ABI=mode32
 		fi
+                if test "x$ABI" = "x64"; then
+                  if echo "$CFLAGS" | grep -v '[ ]*-m64' >/dev/null ; then
+                     CFLAGS="-m64 $CFLAGS"
+                     LDFLAGS="-m64 $LDFLAGS"
+                  fi
+                fi      
                 # The Boehm-Weiser GC library shipped with Fink does not work
                 # well with our signal handler.
                 enable_boehm=included
-		# ECL, due to some of the libraries, does not build on
-		# 64 bit mode on OSX. We prevent GMP using that mode.
 		SONAME="${SHAREDPREFIX}ecl.SOVERSION.${SHAREDEXT}"
 		SONAME_LDFLAGS="-Wl,-install_name,SONAME -Wl,-compatibility_version,${PACKAGE_VERSION}"
 		;;
@@ -771,7 +775,11 @@ case "${host_cpu}" in
 		EXTRA_OBJS="${EXTRA_OBJS} apply_x86.o"
 		AC_DEFINE(ECL_ASM_APPLY)
 	fi
-        AC_DEFINE(ECL_USE_VARARG_AS_POINTER)
+        # OSX may report i386 and still allow building 64-bits
+        # executables.
+        if test $CL_FIXNUM_BITS = 32; then
+          AC_DEFINE(ECL_USE_VARARG_AS_POINTER)
+        fi
 	dynamic_ffi=yes
 	;;
    x86_64 )

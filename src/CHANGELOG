@@ -51,6 +51,9 @@ ECL 9.9.1:
 
  - Symbol SI:*INTERRUPT-DISABLE* changes name to SI:*INTERRUPTS-DISABLED*.
 
+ - Under OS X, you can use the environment variable ABI to select between
+   32-bits (ABI=32) or 64-bits pointers (ABI=64).
+
 * Bugs fixed:
 
  - WITH-LOCK might run into a race condition when the lock acquisition process
