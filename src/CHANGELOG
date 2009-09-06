@@ -64,6 +64,8 @@ ECL 9.9.1:
    of bytecodes.definition, causing the debugger to enter an infinite chain
    of errors
 
+ - In Solaris 8 ECL failed because it did not find inttypes.h
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

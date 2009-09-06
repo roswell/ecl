@@ -8687,7 +8687,7 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-#ifdef HAVE_STDINT_H
+#ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
 #else
 #ifdef HAVE_STDINT_H
@@ -8801,7 +8801,7 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-#ifdef HAVE_STDINT_H
+#ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
 #else
 #ifdef HAVE_STDINT_H
@@ -8861,7 +8861,7 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-#ifdef HAVE_STDINT_H
+#ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
 #else
 #ifdef HAVE_STDINT_H
@@ -8921,7 +8921,7 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-#ifdef HAVE_STDINT_H
+#ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
 #else
 #ifdef HAVE_STDINT_H

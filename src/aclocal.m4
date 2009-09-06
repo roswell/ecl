@@ -427,7 +427,7 @@ if test -z "${ECL_STDINT_HEADER}"; then
 AC_CHECK_HEADER([inttypes.h],[ECL_STDINT_HEADER="#include <inttypes.h>"],[])
 fi
 if test -n "${ECL_STDINT_HEADER}" -a -z "${ECL_UINT8_T}"; then
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#ifdef HAVE_STDINT_H
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
 #else
 #ifdef HAVE_STDINT_H
@@ -459,7 +459,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [[
 }]])],[ECL_UINT8_T="unsigned char";ECL_INT8_T="signed char"],[])
 fi
 if test -n "${ECL_STDINT_HEADER}" -a -z "${ECL_UINT16_T}"; then
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#ifdef HAVE_STDINT_H
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
 #else
 #ifdef HAVE_STDINT_H
@@ -478,7 +478,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#ifdef HAVE_STDINT_H
 }]])],[ECL_UINT16_T=uint16_t;ECL_INT16_T=int16_t],[])
 fi
 if test -n "${ECL_STDINT_HEADER}" -a -z "${ECL_UINT32_T}"; then
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#ifdef HAVE_STDINT_H
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
 #else
 #ifdef HAVE_STDINT_H
@@ -497,7 +497,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#ifdef HAVE_STDINT_H
 }]])],[ECL_UINT32_T=uint32_t;ECL_INT32_T=int32_t],[])
 fi
 if test -n "${ECL_STDINT_HEADER}" -a -z "${ECL_UINT64_T}"; then
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#ifdef HAVE_STDINT_H
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
 #else
 #ifdef HAVE_STDINT_H
