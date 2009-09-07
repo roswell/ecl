@@ -4833,7 +4833,9 @@ $as_echo "$as_me: Configuring included GMP library:" >&6;}
           (destdir=`${PWDCMD}`; cd gmp; CC="${CC} ${PICFLAG}" \
        $srcdir/gmp/configure --disable-shared --prefix=${destdir} \
 	--infodir=${destdir}/doc --includedir=${destdir}/ecl --with-pic \
-        --libdir=${destdir} --build=${gmp_build} --host=${host_alias} $with_gmp)
+        --libdir=${destdir} --build=${gmp_build} --host=${host_alias} \
+        CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" CC="${CC} ${PICFLAG}" \
+        $with_gmp)
     fi
   fi
   with_gmp="yes"
@@ -13240,10 +13242,11 @@ $as_echo "$as_me: Configuring included Boehm GC library:" >&6;}
     test -d gc && rm -rf gc
     if mkdir gc; then
      (destdir=`${PWDCMD}`; cd gc; \
-      CC="${CC} ${PICFLAG}" CFLAGS="-DGC_BUILD ${CFLAGS}" LDFLAGS="${LDFLAGS}" \
-        $srcdir/gc/configure --disable-shared --prefix=${destdir} \
+      $srcdir/gc/configure --disable-shared --prefix=${destdir} \
 	--includedir=${destdir}/ecl/ --libdir=${destdir} --build=${build_alias} \
-	--host=${host_alias} --enable-large-config ${boehm_configure_flags})
+	--host=${host_alias} --enable-large-config \
+        CC="${CC} ${PICFLAG}" CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" \
+        ${boehm_configure_flags})
       ECL_BOEHM_GC_HEADER='ecl/gc/gc.h'
     else
       { { $as_echo "$as_me:$LINENO: error: Unable to create 'gc' directory" >&5
