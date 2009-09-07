@@ -4484,6 +4484,9 @@ case "${host_os}" in
                      CFLAGS="-m64 $CFLAGS"
                      LDFLAGS="-m64 $LDFLAGS"
                   fi
+                  # Needed when building the old version of GMP.
+                  # Should be removed when moving to MPIR
+                  ABI="long"
                 fi
                 # The Boehm-Weiser GC library shipped with Fink does not work
                 # well with our signal handler.
