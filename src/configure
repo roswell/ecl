@@ -4488,6 +4488,9 @@ case "${host_os}" in
                   # Should be removed when moving to MPIR
                   ABI="long"
                 fi
+                if test "x$ABI" = "x32"; then
+                  ABI="long"
+                fi
                 # The Boehm-Weiser GC library shipped with Fink does not work
                 # well with our signal handler.
                 enable_boehm=included

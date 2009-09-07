@@ -338,7 +338,10 @@ case "${host_os}" in
                   # Needed when building the old version of GMP.
                   # Should be removed when moving to MPIR
                   ABI="long"
-                fi      
+                fi
+                if test "x$ABI" = "x32"; then
+                  ABI="long"
+                fi
                 # The Boehm-Weiser GC library shipped with Fink does not work
                 # well with our signal handler.
                 enable_boehm=included
