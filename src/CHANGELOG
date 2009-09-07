@@ -69,6 +69,8 @@ ECL 9.9.1:
 
  - In Solaris 8 ECL failed because it did not find inttypes.h
 
+ - When signbit() is not available, ECL now looks for existence of copysign.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
