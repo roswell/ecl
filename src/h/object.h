@@ -825,7 +825,7 @@ struct ecl_dummy {
 
 #ifdef ECL_THREADS
 struct ecl_process {
-	HEADER1(active);
+	HEADER2(active,tobejoined);
 	cl_object name;
 	cl_object function;
 	cl_object args;

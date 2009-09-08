@@ -54,7 +54,9 @@ ECL 9.9.1:
  - Under OS X, you can use the environment variable ABI to select between
    32-bits (ABI=32) or 64-bits pointers (ABI=64).
 
- - New function MP:PROCESS-JOIN, waits for a thread to terminate.
+ - New function MP:PROCESS-JOIN, waits for a thread to terminate (J.C.Beaudoin)
+   For this to work, threads are always created in a joinable state, and they
+   only detach themselves when exiting and no process is waiting.
 
 * Bugs fixed:
 

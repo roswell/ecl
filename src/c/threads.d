@@ -170,9 +170,18 @@ thread_entry_point(void *arg)
 		cl_apply(2, process->process.function, process->process.args);
 		ecl_bds_unwind1(env);
 	} CL_CATCH_ALL_END;
-	process->process.active = 0;
 
-	/* 3) If everything went right, we should be exiting the thread
+        /* 3) Here signal that we are going to leave. Resources may or may
+         *    not be eliminated, depending on whether another thread will
+         *    wait for us or not.
+         */
+	process->process.active = 0;
+#ifndef ECL_WINDOWS_THREADS
+        if (!process->process.tobejoined)
+                pthread_detach(process->process.thread);
+#endif
+
+	/* 4) If everything went right, we should be exiting the thread
 	 *    through this point. thread_cleanup is automatically invoked.
 	 */
 #ifdef ECL_WINDOWS_THREADS
@@ -188,6 +197,7 @@ static cl_object
 alloc_process(cl_object name, cl_object initial_bindings)
 {
 	cl_object process = ecl_alloc_object(t_process);
+        process->process.tobejoined = 0;
 	process->process.active = 0;
 	process->process.name = name;
 	process->process.function = Cnil;
@@ -399,6 +409,8 @@ mp_process_whostate(cl_object process)
 cl_object
 mp_process_join(cl_object process)
 {
+	assert_type_process(process);
+        process->process.tobejoined = 1;
         if (process->process.active) {
 #ifdef ECL_WINDOWS_THREADS
                 if (WaitForSingleObject(process->process.threads, INFINITE) !=
@@ -697,7 +709,7 @@ init_threads(cl_env_ptr env)
 	pthread_mutexattr_init(&mutexattr_recursive);
 	pthread_mutexattr_settype(&mutexattr_recursive, PTHREAD_MUTEX_RECURSIVE);
 	pthread_attr_init(&pthreadattr);
-	pthread_attr_setdetachstate(&pthreadattr, PTHREAD_CREATE_DETACHED);
+	/*pthread_attr_setdetachstate(&pthreadattr, PTHREAD_CREATE_DETACHED);*/
 	pthread_mutex_init(&cl_core.global_lock, &mutexattr_error);
 #endif
 	cl_core.processes = OBJNULL;
