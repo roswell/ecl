@@ -1812,5 +1812,7 @@ cl_symbols[] = {
 
 {EXT_ "WITH-UNIQUE-NAMES", EXT_ORDINARY, NULL, -1, OBJNULL},
 
+{MP_ "PROCESS-JOIN", EXT_ORDINARY, mp_process_join, 1, OBJNULL},
+
 /* Tag for end of list */
 {NULL, CL_ORDINARY, NULL, -1, OBJNULL}};

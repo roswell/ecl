@@ -397,6 +397,19 @@ mp_process_whostate(cl_object process)
 }
 
 cl_object
+mp_process_join(cl_object process)
+{
+        if (process->process.active) {
+                void *result;
+                if (pthread_join(process->process.thread, &result)) {
+                        FEerror("MP:PROCESS-JOIN: Error when joining process ~A",
+                                1, process);
+                }
+        }
+        @(return Cnil)
+}
+
+cl_object
 mp_process_run_function(cl_narg narg, cl_object name, cl_object function, ...)
 {
 	cl_object process;
