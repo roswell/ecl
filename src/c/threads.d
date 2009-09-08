@@ -400,11 +400,20 @@ cl_object
 mp_process_join(cl_object process)
 {
         if (process->process.active) {
+#ifdef ECL_WINDOWS_THREADS
+                if (WaitForSingleObject(process->process.threads, INFINITE) !=
+                    WAIT_OBJECT_0)
+                {
+                        FEerror("MP:PROCESS-JOIN: Error when joining process ~A",
+                                1, process);
+                }
+#else
                 void *result;
                 if (pthread_join(process->process.thread, &result)) {
                         FEerror("MP:PROCESS-JOIN: Error when joining process ~A",
                                 1, process);
                 }
+#endif
         }
         @(return Cnil)
 }
