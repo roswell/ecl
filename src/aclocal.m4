@@ -432,9 +432,11 @@ ECL_INT16_T=""
 ECL_INT32_T=""
 ECL_INT64_T=""
 AC_SUBST(ECL_STDINT_HEADER)
-AC_CHECK_HEADER([stdint.h],[ECL_STDINT_HEADER="#include <stdint.h>"],[])
+AC_CHECK_HEADER([stdint.h],[AC_DEFINE(HAVE_STDINT_H)
+ECL_STDINT_HEADER="#include <stdint.h>"],[])
 if test -z "${ECL_STDINT_HEADER}"; then
-AC_CHECK_HEADER([inttypes.h],[ECL_STDINT_HEADER="#include <inttypes.h>"],[])
+AC_CHECK_HEADER([inttypes.h],[AC_DEFINE(HAVE_INTTYPES_H)
+ECL_STDINT_HEADER="#include <inttypes.h>"],[])
 fi
 if test -n "${ECL_STDINT_HEADER}" -a -z "${ECL_UINT8_T}"; then
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#ifdef HAVE_INTTYPES_H
