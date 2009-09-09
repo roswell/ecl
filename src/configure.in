@@ -370,7 +370,7 @@ else
 	--infodir=${destdir}/doc --includedir=${destdir}/ecl --with-pic \
         --libdir=${destdir} --build=${gmp_build} --host=${host_alias} \
         CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" CC="${CC} ${PICFLAG}" \
-        $with_gmp)
+        ABI=$ABI $with_gmp)
     fi
   fi
   with_gmp="yes"
