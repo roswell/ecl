@@ -430,7 +430,8 @@ typedef unsigned @CL_FIXNUM_TYPE@ cl_hashkey;
 #    define signbit(x) (copysign(1.0,(x)) < 0)
 #   else 
      /* Fall back to no signed zero */
-#    undef ECL_SIGNED_ZERO
+#    undef \
+     ECL_SIGNED_ZERO
 #    define signbit(x) ((x) < 0)
 #   endif
 #  endif
