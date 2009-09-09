@@ -1491,6 +1491,7 @@ cl_symbols[] = {
 {MP_ "PROCESS-PRESET","mp_process_preset"},
 {MP_ "PROCESS-RUN-FUNCTION","mp_process_run_function"},
 {MP_ "PROCESS-WHOSTATE","mp_process_whostate"},
+{MP_ "PROCESS-JOIN","mp_process_join"},
 {MP_ "MAKE-LOCK","mp_make_lock"},
 {KEY_ "RECURSIVE",NULL},
 {MP_ "RECURSIVE-LOCK-P","mp_recursive_lock_p"},
@@ -1811,8 +1812,6 @@ cl_symbols[] = {
 {MP_ "*ALLOW-WITH-INTERRUPTS*",NULL},
 
 {EXT_ "WITH-UNIQUE-NAMES",NULL},
-
-{MP_ "PROCESS-JOIN","mp_process_join"},
 
 /* Tag for end of list */
 {NULL,NULL}};
