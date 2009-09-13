@@ -688,13 +688,32 @@ cl_boot(int argc, char **argv)
 
 /************************* ENVIRONMENT ROUTINES ***********************/
 
-@(defun ext::quit (&optional (code MAKE_FIXNUM(0)))
-	cl_fixnum i;
+@(defun ext::quit (&optional (code MAKE_FIXNUM(0)) (kill_all_threads Cnil))
 @
-	if (!FIXNUMP(code))
-		FEerror("Illegal exit code: ~S.", 1, code);
-	i = fix(code);
-	exit(i);
+{
+#ifdef ECL_THREADS
+        if (!Null(kill_all_threads)) {
+                cl_object this = the_env->own_process;
+                cl_object p, all_threads = mp_all_processes();
+                for (p = all_threads; !Null(p); p = ECL_CONS_CDR(p)) {
+                        cl_object process = ECL_CONS_CAR(p);
+                        if (process != this) mp_process_kill(process);
+                }
+                for (p = all_threads; !Null(p); p = ECL_CONS_CDR(p)) {
+                        cl_object process = ECL_CONS_CAR(p);
+                        if (process != this) mp_process_join(process);
+                }
+        }
+#endif
+        the_env->nvalues = 1;
+        the_env->values[0] = code;
+        if (the_env->frs_org <= the_env->frs_top)
+                ecl_unwind(the_env, the_env->frs_org);
+        CEerror(Ct, "QUIT: there is no frame to return to. "
+                "Using continue will just abort.", 0);
+        cl_shutdown();
+        exit(FIXNUMP(code)? fix(code) : 0);
+}
 @)
 
 cl_object

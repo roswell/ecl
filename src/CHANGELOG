@@ -58,6 +58,12 @@ ECL 9.9.1:
    For this to work, threads are always created in a joinable state, and they
    only detach themselves when exiting and no process is waiting.
 
+ - EXT:QUIT now has a different definition
+	(ext:quit &optional (exit-code 0) (kill-all-threads nil))
+   The first difference is that QUIT will execute all unwind-protect forms
+   that surrounds the form that caused the exit. The second one is that we
+   can explicitely kill all threads and wait for them to exit before exiting.
+
 * Bugs fixed:
 
  - WITH-LOCK might run into a race condition when the lock acquisition process

@@ -359,8 +359,8 @@ cl_shutdown();
 if (FIXNUMP(output))
 	return fix(output);
 if (Null(output) || (output == OBJNULL))
-	return 1;
-return 0;"
+	return 0;
+return 1;"
                             stream))
 		   (princ #\} stream)
 		   )))))
