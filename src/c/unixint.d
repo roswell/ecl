@@ -40,7 +40,6 @@
 #endif
 #if defined(mingw32) || defined(_MSC_VER)
 # include <windows.h>
-void handle_fpe_signal(int,int);
 #endif
 #if !defined(_MSC_VER)
 # include <unistd.h>
@@ -226,6 +225,22 @@ handler_fn_protype(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
 		break;
 	case SIGFPE: {
 		cl_object condition = @'arithmetic-error';
+#ifdef _MSC_VER
+                switch (_fpecode) {
+                case _FPE_INVALID:
+                        condition = @'floating-point-invalid-operation';
+                        break;
+                case _FPE_OVERFLOW:
+                        condition = @'floating-point-overflow';
+                        break;
+                case _FPE_UNDERFLOW:
+                        condition = @'floating-point-underflow';
+                        break;
+                case _FPE_ZERODIVIDE:
+                        condition = @'division-by-zero';
+                        break;
+                }
+#endif
 #if defined(HAVE_FENV_H) & !defined(ECL_AVOID_FENV_H)
 		if (fetestexcept(FE_DIVBYZERO))
 			condition = @'division-by-zero';
@@ -290,16 +305,9 @@ unblock_signal(int signal)
 static void
 handler_fn_protype(handle_signal_now, int sig, siginfo_t *info, void *aux)
 {
-#if defined (_MSC_VER)
-	if (sig == SIGFPE) {
-		handle_fpe_signal(sig, _fpecode);
-	}
-#endif
 	unblock_signal(sig);
 	call_handler(lisp_signal_handler, sig, info, aux);
 }
-
-static void handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux);
 
 static void
 handler_fn_protype(non_evil_signal_handler, int sig, siginfo_t *siginfo, void *data)
@@ -413,22 +421,21 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
 static void
 handler_fn_protype(sigbus_handler, int sig, siginfo_t *info, void *aux)
 {
-	cl_env_ptr the_env = &cl_env;
 #if defined(SA_SIGINFO) && defined(ECL_USE_MPROTECT)
 	/* We access the environment when it was protected. That
 	 * means there was a pending signal. */
+	cl_env_ptr the_env = &cl_env;
 	if ((void*)the_env == (void*)info->si_addr) {
 		int signal = the_env->interrupt_pending;
 		siginfo_t info = *(siginfo_t*)(the_env->interrupt_info);
 		mprotect(the_env, sizeof(*the_env), PROT_READ | PROT_WRITE);
 		the_env->interrupt_pending = 0;
 		the_env->disable_interrupts = 0;
-		unblock_signal(sig);
 		handle_signal_now(signal, &info, aux);
                 return;
 	}
 #endif
-	call_handler(handle_signal_now, sig, info, aux);
+	call_handler(lisp_signal_handler, sig, info, aux);
 }
 #endif
 
@@ -495,6 +502,8 @@ si_catch_signal(cl_object code, cl_object boolean)
 }
 
 #ifdef _MSC_VER
+static LPTOP_LEVEL_EXCEPTION_FILTER old_W32_exception_filter = NULL;
+
 LONG WINAPI W32_exception_filter(struct _EXCEPTION_POINTERS* ep)
 {
 	LONG excpt_result;
@@ -527,30 +536,9 @@ LONG WINAPI W32_exception_filter(struct _EXCEPTION_POINTERS* ep)
 			excpt_result = EXCEPTION_CONTINUE_SEARCH;
 			break;
 	}
-
+        if (old_W32_exception_filter)
+                return old_W32_exception_filter(ep);
 	return excpt_result;
-}
-
-void handle_fpe_signal(int sig, int num)
-{
-	cl_object condition = @'arithmetic-error';
-
-	switch (num) {
-	case _FPE_INVALID:
-		condition = @'floating-point-invalid-operation';
-		break;
-	case _FPE_OVERFLOW:
-		condition = @'floating-point-overflow';
-		break;
-	case _FPE_UNDERFLOW:
-		condition = @'floating-point-underflow';
-		break;
-	case _FPE_ZERODIVIDE:
-		condition = @'division-by-zero';
-		break;
-	}
-	si_trap_fpe(@'last', Ct);
-	cl_error(1, condition);
 }
 
 BOOL WINAPI W32_console_ctrl_handler(DWORD type)
@@ -650,8 +638,11 @@ init_unixint(int pass)
                 }
 #endif
 #ifdef _MSC_VER
-		SetUnhandledExceptionFilter(W32_exception_filter);
-		SetConsoleCtrlHandler(W32_console_ctrl_handler, TRUE);
+		old_W32_exception_filter =
+                        SetUnhandledExceptionFilter(W32_exception_filter);
+                if (ecl_get_option(ECL_OPT_TRAP_SIGINT)) {
+                        SetConsoleCtrlHandler(W32_console_ctrl_handler, TRUE);
+                }
 #endif
 	} else {
 		int i;
