@@ -95,8 +95,7 @@ struct cl_env_struct {
 #ifdef ECL_THREADS
 	cl_object own_process;
 #endif
-	int interrupt_pending;
-	void *interrupt_info;
+	cl_object pending_interrupt;
 
 	/* The following is a hash table for caching invocations of
 	   generic functions. In a multithreaded environment we must

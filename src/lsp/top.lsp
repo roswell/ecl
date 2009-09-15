@@ -466,7 +466,7 @@ under certain conditions; see file 'Copyright' for details.")
 (defvar *allow-recursive-debug* nil)
 (defvar *debug-status* nil)
 
-(defun terminal-interrupt (correctablep)
+(defun terminal-interrupt (&optional (correctablep t))
   (let ((*break-enable* t))
     (if correctablep
       (cerror "Continues execution." 'ext:interactive-interrupt)

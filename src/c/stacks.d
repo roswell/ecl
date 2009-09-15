@@ -599,7 +599,4 @@ init_stacks(cl_env_ptr env, char *new_cs_org)
 		sigaltstack(&new_stack, NULL);
 	}
 #endif
-#ifdef SA_SIGINFO
-	env->interrupt_info = ecl_alloc_atomic(sizeof(siginfo_t));
-#endif
 }

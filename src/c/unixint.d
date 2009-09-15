@@ -209,20 +209,20 @@ jump_to_sigsegv_handler(cl_env_ptr the_env)
 	ecl_internal_error("SIGSEGV without handler to jump to.");
 }
 
-static void
+static cl_object
 handler_fn_protype(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
 {
-	cl_env_ptr the_env = &cl_env;
 #if defined(ECL_THREADS) && !defined(_MSC_VER) && !defined(mingw32)
+	cl_env_ptr the_env = ecl_process_env();
         if (sig == ecl_get_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL)) {
-		funcall(1, the_env->own_process->process.interrupt);
-                return;
+		return the_env->own_process->process.interrupt;
         }
 #endif
 	switch (sig) {
-	case SIGINT:
-		funcall(2, @'si::terminal-interrupt', Ct);
-		break;
+	case SIGINT: {
+                cl_object function = SYM_FUN(@'si::terminal-interrupt');
+                return function? function : Cnil;
+        }
 	case SIGFPE: {
 		cl_object condition = @'arithmetic-error';
 #ifdef _MSC_VER
@@ -269,21 +269,22 @@ handler_fn_protype(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
 		}
 #endif
 		si_trap_fpe(@'last', Ct);
-		cl_error(1, condition);
-		break;
+                return condition;
 	}
 	case SIGSEGV:
-                cl_error(1, @'ext::segmentation-violation');
+                return @'ext::segmentation-violation';
 #ifdef SIGBUS
 	case SIGBUS:
-                cl_error(1, @'ext::segmentation-violation');
+                return @'ext::segmentation-violation';
 #endif
 	default:
-		FEerror("Serious signal ~D caught.", 1, MAKE_FIXNUM(sig));
+		return MAKE_FIXNUM(sig);
 	}
 }
 
+#define unblock_signal(sig)
 #ifdef HAVE_SIGPROCMASK
+# undef unblock_signal
 static void
 unblock_signal(int signal)
 {
@@ -298,40 +299,43 @@ unblock_signal(int signal)
 	sigprocmask(SIG_UNBLOCK, &block_mask, NULL);
 # endif
 }
-#else
-# define unblock_signal(sig)
 #endif
 
 static void
-handler_fn_protype(handle_signal_now, int sig, siginfo_t *info, void *aux)
+handle_signal_now(cl_object signal_code)
 {
-	unblock_signal(sig);
-	call_handler(lisp_signal_handler, sig, info, aux);
+        switch (type_of(signal_code)) {
+        case t_fixnum:
+                FEerror("Serious signal ~D caught.", 1, signal_code);
+                break;
+        case t_symbol:
+                cl_error(1, signal_code);
+                break;
+        case t_cfun:
+        case t_cfunfixed:
+        case t_bytecodes:
+        case t_bclosure:
+                cl_funcall(1, signal_code);
+        default:
+                break;
+        }
 }
 
 static void
-handler_fn_protype(non_evil_signal_handler, int sig, siginfo_t *siginfo, void *data)
+handle_or_queue(cl_object signal_code, int code)
 {
 	int old_errno = errno;
-	cl_env_ptr the_env;
-	if (!ecl_get_option(ECL_OPT_BOOTED)) {
-		ecl_internal_error("Got signal before environment was installed"
-				   " on our thread.");
-	}
-	the_env = ecl_process_env();
-	reinstall_signal(sig, non_evil_signal_handler);
+	cl_env_ptr the_env = ecl_process_env();
 	/*
 	 * If interrupts are disabled by C we are not so eager on
 	 * detecting when the interrupts become enabled again. We
 	 * queue the signal and are done with that.
 	 */
 	if (interrupts_disabled_by_lisp(the_env)) {
-		if (!the_env->interrupt_pending) {
-			the_env->interrupt_pending = sig;
-			copy_siginfo(the_env->interrupt_info, siginfo);
+		if (!the_env->pending_interrupt) {
+			the_env->pending_interrupt = signal_code;
 		}
 		errno = old_errno;
-		return;
 	}
 	/*
 	 * If interrupts are disabled by C, and we have not pushed a
@@ -341,11 +345,10 @@ handler_fn_protype(non_evil_signal_handler, int sig, siginfo_t *siginfo, void *d
 	 * platforms we change the value of disable_interrupts to 3, so
 	 * that we detect changes.
 	 */
-	if (interrupts_disabled_by_C(the_env)) {
+	else if (interrupts_disabled_by_C(the_env)) {
 		the_env->disable_interrupts = 3;
-		if (!the_env->interrupt_pending) {
-			the_env->interrupt_pending = sig;
-			copy_siginfo(the_env->interrupt_info, siginfo);
+		if (!the_env->pending_interrupt) {
+			the_env->pending_interrupt = signal_code;
 #ifdef ECL_USE_MPROTECT
 			if (mprotect(the_env, sizeof(*the_env), PROT_READ) < 0) {
 				ecl_internal_error("Unable to mprotect environment.");
@@ -353,21 +356,39 @@ handler_fn_protype(non_evil_signal_handler, int sig, siginfo_t *siginfo, void *d
 #endif
 		}
 		errno = old_errno;
-		return;
 	}
 	/*
 	 * If interrupts are enabled, that means we are in a safe area
 	 * and may execute arbitrary lisp code. We can thus call the
 	 * appropriate handlers.
 	 */
-	errno = old_errno;
-	call_handler(handle_signal_now, sig, siginfo, data);
+	else {
+                errno = old_errno;
+                if (code) unblock_signal(code);
+                handle_signal_now(signal_code);
+        }
+}
+
+static void
+handler_fn_protype(non_evil_signal_handler, int sig, siginfo_t *siginfo, void *data)
+{
+        int old_errno = errno;
+        cl_object signal_object;
+	reinstall_signal(sig, non_evil_signal_handler);
+	if (!ecl_get_option(ECL_OPT_BOOTED)) {
+		ecl_internal_error("Got signal before environment was installed"
+				   " on our thread.");
+	}
+        signal_object = call_handler(lisp_signal_handler, sig, siginfo, data);
+        errno = old_errno;
+        handle_or_queue(signal_object, sig);
 }
 
 static void
 handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
 {
-	cl_env_ptr the_env = ecl_process_env();
+	cl_env_ptr the_env;
+	reinstall_signal(sig, sigsegv_handler);
 	if (!ecl_get_option(ECL_OPT_BOOTED)) {
 		ecl_internal_error("Got signal before environment was installed"
 				   " on our thread.");
@@ -387,33 +408,14 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
                 return;
 	}
 # endif
-	if (interrupts_disabled_by_lisp(the_env)) {
-		if (!the_env->interrupt_pending) {
-			the_env->interrupt_pending = sig;
-			copy_siginfo(the_env->interrupt_info, info);
-		}
-		return;
-	}
-	if (interrupts_disabled_by_C(the_env)) {
-		if (!the_env->interrupt_pending) {
-			the_env->interrupt_pending = sig;
-			copy_siginfo(the_env->interrupt_info, info);
-# ifdef ECL_USE_MPROTECT
-			if (mprotect(the_env, sizeof(*the_env), PROT_READ) < 0)
-				ecl_internal_error("Unable to mprotect environment.");
-# endif
-		}
-		return;
-	}
-	handle_signal_now(sig, info, aux);
+        handle_or_queue(@'ext::segmentation-violation', SIGSEGV);
 #else
-	reinstall_signal(sig, sigsegv_handler);
 	/*
 	 * We cannot distinguish between a stack overflow and a simple
 	 * access violation. Thus we assume the worst case and jump to
 	 * the outermost handler.
 	 */
-	jump_to_sigsegv_handler(&cl_env);
+	jump_to_sigsegv_handler(the_env);
 #endif
 }
 
@@ -421,21 +423,23 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
 static void
 handler_fn_protype(sigbus_handler, int sig, siginfo_t *info, void *aux)
 {
+        cl_env_ptr the_env;
+	reinstall_signal(sig, sigsegv_handler);
 #if defined(SA_SIGINFO) && defined(ECL_USE_MPROTECT)
 	/* We access the environment when it was protected. That
 	 * means there was a pending signal. */
-	cl_env_ptr the_env = &cl_env;
+	the_env = ecl_process_env();
 	if ((void*)the_env == (void*)info->si_addr) {
-		int signal = the_env->interrupt_pending;
-		siginfo_t info = *(siginfo_t*)(the_env->interrupt_info);
+		cl_object signal = the_env->pending_interrupt;
 		mprotect(the_env, sizeof(*the_env), PROT_READ | PROT_WRITE);
-		the_env->interrupt_pending = 0;
+		the_env->pending_interrupt = NULL;
 		the_env->disable_interrupts = 0;
-		handle_signal_now(signal, &info, aux);
+                unblock_signal(SIGBUS);
+		handle_signal_now(signal);
                 return;
 	}
 #endif
-	call_handler(lisp_signal_handler, sig, info, aux);
+        handle_or_queue(@'ext::segmentation-violation', SIGBUS);
 }
 #endif
 
@@ -450,13 +454,11 @@ void
 ecl_check_pending_interrupts(void)
 {
 	const cl_env_ptr env = ecl_process_env();
-	int sig;
-	void *info;
+	cl_object sig;
 	env->disable_interrupts = 0;
-	info = env->interrupt_info;
-	sig = env->interrupt_pending;
+	sig = env->pending_interrupt;
 	if (sig) {
-		call_handler(handle_signal_now, sig, info, 0);
+		handle_signal_now(sig);
 	}
 }
 
@@ -513,23 +515,37 @@ LONG WINAPI W32_exception_filter(struct _EXCEPTION_POINTERS* ep)
 	{
 		/* Catch all arithmetic exceptions */
 		case EXCEPTION_INT_DIVIDE_BY_ZERO:
+                        handle_or_queue(@'division-by-zero', 0);
+                        return;
 		case EXCEPTION_INT_OVERFLOW:
+                        handle_or_queue(@'arithmetic-error', 0);
+                        return;
 		case EXCEPTION_FLT_DIVIDE_BY_ZERO:
+                        handle_or_queue(@'floating-point-overflow', 0);
+                        return;
 		case EXCEPTION_FLT_OVERFLOW:
+                        handle_or_queue(@'floating-point-overflow', 0);
+                        return;
 		case EXCEPTION_FLT_UNDERFLOW:
+                        handle_or_queue(@'floating-point-underflow', 0);
+                        return;
 		case EXCEPTION_FLT_INEXACT_RESULT:
+                        handle_or_queue(@'floating-point-indexact', 0);
+                        return;
 		case EXCEPTION_FLT_DENORMAL_OPERAND:
 		case EXCEPTION_FLT_INVALID_OPERATION:
+                        handle_or_queue(@'floating-point-invalid-operation', 0);
+                        return;
 		case EXCEPTION_FLT_STACK_CHECK:
-			non_evil_signal_handler(SIGFPE);
-			break;
+                        handle_or_queue(@'arithmetic-error', 0);
+                        return;
 		/* Catch segmentation fault */
 		case EXCEPTION_ACCESS_VIOLATION:
-			sigsegv_handler(SIGSEGV);
-			break;
+                        handle_or_queue(@'ext::segmentation-violation', 0);
+                        return;
 		/* Catch illegal instruction */
 		case EXCEPTION_ILLEGAL_INSTRUCTION:
-			non_evil_signal_handler(SIGILL);
+			handle_or_queue(MAKE_FIXNUM(SIGILL), 0);
 			break;
 		/* Do not catch anything else */
 		default:
@@ -547,7 +563,7 @@ BOOL WINAPI W32_console_ctrl_handler(DWORD type)
 	{
 		/* Catch CTRL-C */
 		case CTRL_C_EVENT:
-			non_evil_signal_handler(SIGINT);
+			handle_or_queue(@'si::terminal-interrupt');
 			return TRUE;
 	}
 	return FALSE;
