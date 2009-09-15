@@ -931,7 +931,6 @@ si_get_library_pathname(void)
 			1, MAKE_FIXNUM(GetLastError()));
 	}
 	s->base_string.fillp = len;
-	printf("%s\n", s->base_string.self);
         /* GetModuleFileName returns a file name. We have to strip
          * the directory component. */
         s = cl_make_pathname(8, @':name', Cnil, @':type', Cnil,
