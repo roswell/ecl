@@ -327,7 +327,7 @@ handle_or_queue(cl_object signal_code, int code)
 	int old_errno = errno;
 	cl_env_ptr the_env = ecl_process_env();
 	/*
-	 * If interrupts are disabled by C we are not so eager on
+	 * If interrupts are disabled by lisp we are not so eager on
 	 * detecting when the interrupts become enabled again. We
 	 * queue the signal and are done with that.
 	 */
@@ -398,12 +398,14 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
 # ifdef ECL_DOWN_STACK
 	if ((char*)info->si_addr > the_env->cs_barrier &&
 	    (char*)info->si_addr <= the_env->cs_org) {
+                unblock_signal(SIGSEGV);
 		jump_to_sigsegv_handler(the_env);
                 return;
 	}
 # else
 	if ((char*)info->si_addr < the_env->cs_barrier &&
 	    (char*)info->si_addr >= the_env->cs_org) {
+                unblock_signal(SIGSEGV);
 		jump_to_sigsegv_handler(the_env);
                 return;
 	}
@@ -415,6 +417,7 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
 	 * access violation. Thus we assume the worst case and jump to
 	 * the outermost handler.
 	 */
+        unblock_signal(SIGSEGV);
 	jump_to_sigsegv_handler(the_env);
 #endif
 }
