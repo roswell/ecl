@@ -1509,6 +1509,7 @@ cl_symbols[] = {
 {MP_ "INTERRUPT-PROCESS","mp_interrupt_process"},
 {MP_ "+LOAD-COMPILE-LOCK+",NULL},
 {MP_ "WITH-LOCK",NULL},
+{MP_ "WITH-INTERRUPTS",NULL},
 {MP_ "WITHOUT-INTERRUPTS",NULL},
 {MP_ "BLOCK-SIGNALS","mp_block_signals"},
 {MP_ "RESTORE-SIGNALS","mp_restore_signals"},

@@ -83,6 +83,27 @@ WITHOUT-INTERRUPTS in:
        (when si:*interrupts-enabled*
          (si::check-pending-interrupts)))))
 
+(defmacro with-interrupts (&body body)
+  "Executes BODY with deferrable interrupts conditionally enabled. If there
+are pending interrupts they take effect prior to executing BODY.
+
+As interrupts are normally allowed WITH-INTERRUPTS only makes sense if there
+is an outer WITHOUT-INTERRUPTS with a corresponding ALLOW-WITH-INTERRUPTS:
+interrupts are not enabled if any outer WITHOUT-INTERRUPTS is not accompanied
+by ALLOW-WITH-INTERRUPTS."
+  (with-unique-names (allowp enablep)
+    ;; We could manage without ENABLEP here, but that would require
+    ;; taking extra care not to ever have *ALLOW-WITH-INTERRUPTS* NIL
+    ;; and *INTERRUPTS-ENABLED* T -- instead of risking future breakage
+    ;; we take the tiny hit here.
+    `(let* ((,allowp si:*allow-with-interrupts*)
+            (,enablep si:*interrupts-enabled*)
+            (si:*interrupts-enabled* (or ,enablep ,allowp)))
+       (when (and ,allowp (not ,enablep))
+         (si::check-pending-interrupts))
+       (locally ,@body))))
+
+
 (defmacro with-lock ((lock-form &rest options) &body body)
   #-threads
   `(progn ,@body)

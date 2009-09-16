@@ -44,10 +44,11 @@ ECL 9.9.1:
 	(ext:weak-pointer-value weak-pointer) => value
    and it defines a new built-in type, EXT:WEAK-POINTER
 
- - ECL now implements WITHOUT-INTERRUPTS similarly to SBCL. It creates three
-   local macros, ALLOW-WITH-INTERRUPTS and WITH-LOCAL-INTERRUPTS, and an
-   additional one WITH-RESTORED-INTERRUPTS, which executes the forms with
-   the value of interrupts of the forms that surround WITHOUT-INTERRUPTS.
+ - ECL now implements WITHOUT-INTERRUPTS and WITH-INTERRUPTS similarly to SBCL.
+   It creates three local macros, ALLOW-WITH-INTERRUPTS and
+   WITH-LOCAL-INTERRUPTS, and an additional one WITH-RESTORED-INTERRUPTS,
+   which executes the forms with the value of interrupts of the forms that
+   surround WITHOUT-INTERRUPTS.
 
  - Symbol SI:*INTERRUPT-DISABLE* changes name to SI:*INTERRUPTS-DISABLED*.
 
