@@ -15,6 +15,54 @@
     See file '../Copyright' for full details.
 */
 
+/**********************************************************************
+ * HOW WE HANDLE SIGNALS AND EXCEPTIONS
+ *
+ * (the following should be correlated with the manual)
+ *
+ * POSIX contemplates the notion of "signals", which are events that
+ * cause a process or a thread to be interrupted. Windows uses the
+ * term "exception", which includes also a more general kind of
+ * errors.
+ *
+ * In both cases the consequence is that a thread or process may be
+ * interrupted at any time, either by causes which are intrinsic to
+ * them (synchronous signals), such as floating point exceptions, or
+ * extrinsic (asynchronous signals), such as the process being aborted
+ * by the user.
+ * 
+ * Of course, those interruptions are not always welcome. When the
+ * interrupt is delivered and a handler is invoked, the thread or even
+ * the whole program may be in an inconsistent state. For instance the
+ * thread may have acquired a lock, or it may be in the process of
+ * filling the fields of a structure. Understanding this POSIX
+ * restricts severely what functions can be called from a signal
+ * handler, thereby limiting its usefulness.
+ *
+ * There is a simple solution, which ECL uses, and which is to mark
+ * sections of code which are interruptible, and in which it is safe
+ * for the handler to run arbitrary code, protect anything else. In
+ * principle this "marking" can be done using POSIX functions such as
+ * pthread_sigmask() or sigprocmask().
+ *
+ * However in practice this is slow, as it involves at least a
+ * function call, resolving thread-local variables, etc, etc, and it
+ * will not work in Windows. Furthermore, sometimes we want signals to
+ * be detected but not to be immediately processed. For instance, when
+ * reading from the terminal we want to be able to interrupt the
+ * process, but we can not execute the code from the handler, since
+ * read() may leave the input stream in an inconsistent, or even
+ * locked state.
+ *
+ * Our approach is slightly different: we install our own signal
+ * hander which reads a single, thread-local variable stored in the
+ * ecl_process_env()->disable_interrupts. If the variable marks that
+ * signals should be postponed, then the information about the signal
+ * is queued. Otherwise the appropriate code is executed: for instance
+ * invoking the debugger, jumping to a condition handler, quitting,
+ * etc.
+ */
+
 #ifdef __sun__
 /* For SA_SIGINFO in Solaris. We could have used _XOPEN_SOURCE=600, but
  * this requires C99 and the default GCC for Solaris (3.4.3) does not
@@ -150,8 +198,6 @@ static struct {
 	{ -1, "" }
 };
 
-/******************************* ------- ******************************/
-
 #ifdef HAVE_SIGPROCMASK
 # define handler_fn_protype(name, sig, info, aux) name(sig, info, aux)
 # define call_handler(name, sig, info, aux) name(sig, info, aux)
@@ -163,7 +209,7 @@ mysignal(int code, void (*handler)(int, siginfo_t *, void*))
 	struct sigaction new_action, old_action;
 #ifdef SA_SIGINFO
 	new_action.sa_sigaction = handler;
-	sigemptyset(&new_action.sa_mask);
+	sigfillset(&new_action.sa_mask);
 	new_action.sa_flags = SA_SIGINFO;
 # ifdef SA_ONSTACK
 	if (code == SIGSEGV) {
@@ -172,7 +218,7 @@ mysignal(int code, void (*handler)(int, siginfo_t *, void*))
 # endif
 #else
 	new_action.sa_handler = handler;
-	sigemptyset(&new_action.sa_mask);
+	sigfillset(&new_action.sa_mask);
 	new_action.sa_flags = 0;
 #endif
 	sigaction(code, &new_action, &old_action);
