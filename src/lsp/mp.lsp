@@ -14,7 +14,7 @@
 #-threads
 (defpackage "MP"
   (:use "CL" "SI")
-  (:export "WITH-LOCK" "WITHOUT-INTERRUPTS"))
+  (:export "WITH-LOCK"))
 
 (in-package "MP")
 

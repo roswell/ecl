@@ -26,56 +26,6 @@
 (in-package "SYSTEM")
 
 ;;; ----------------------------------------------------------------------
-;;; ECL's interface to the toplevel and debugger
-
-(defun sys::universal-error-handler (continue-string datum args)
-  "Args: (error-name continuable-p function-name
-       continue-format-string error-format-string
-       &rest args)
-ECL specific.
-Starts the error handler of ECL.
-When an error is detected, ECL calls this function with the specified
-arguments.  To change the error handler of ECL, redefine this function.
-ERROR-NAME is the name of the error.  CONTINUABLE-P is T for a continuable
-error and NIL for a fatal error.  FUNCTION-NAME is the name of the function
-that caused the error.  CONTINUE-FORMAT-STRING and ERROR-FORMAT-STRING are the
-format strings of the error message.  ARGS are the arguments to the format
-strings."
-  (declare (inline apply) ;; So as not to get bogus frames in debugger
-	   (ignore error-name))
-  (let ((condition (coerce-to-condition datum args 'simple-error 'error)))
-    (cond
-      ((eq t continue-string)
-       ; from CEerror; mostly allocation errors
-       (with-simple-restart (ignore "Ignore the error, and try the operation again")
-	 (signal condition)
-	 (invoke-debugger condition)))
-      ((stringp continue-string)
-       (with-simple-restart
-	 (continue "~A" (format nil "~?" continue-string args))
-	 (signal condition)
-	 (invoke-debugger condition)))
-      ((and continue-string (symbolp continue-string))
-       ; from CEerror
-       (with-simple-restart (accept "Accept the error, returning NIL")
-	 (multiple-value-bind (rv used-restart)
-	   (with-simple-restart (ignore "Ignore the error, and try the operation again")
-	     (multiple-value-bind (rv used-restart)
-	       (with-simple-restart (continue "Continue, using ~S" continue-string)
-		 (signal condition)
-		 (invoke-debugger condition))
-
-	       (if used-restart continue-string rv)))
-	   (if used-restart t rv))))
-      (t
-	(progn
-	  (signal condition)
-	  (invoke-debugger condition))))))
-
-(defun sys::tpl-continue-command (&rest any)
-  (apply #'invoke-restart 'continue any))
-
-;;; ----------------------------------------------------------------------
 ;;; Unique Ids
 
 (defmacro unique-id (obj)
@@ -771,6 +721,56 @@ memory limits before executing the program again."))))
 (defun use-value (value &optional c)
   (let ((restart (find-restart 'USE-VALUE c)))
     (and restart (invoke-restart restart value))))
+
+;;; ----------------------------------------------------------------------
+;;; ECL's interface to the toplevel and debugger
+
+(defun sys::universal-error-handler (continue-string datum args)
+  "Args: (error-name continuable-p function-name
+       continue-format-string error-format-string
+       &rest args)
+ECL specific.
+Starts the error handler of ECL.
+When an error is detected, ECL calls this function with the specified
+arguments.  To change the error handler of ECL, redefine this function.
+ERROR-NAME is the name of the error.  CONTINUABLE-P is T for a continuable
+error and NIL for a fatal error.  FUNCTION-NAME is the name of the function
+that caused the error.  CONTINUE-FORMAT-STRING and ERROR-FORMAT-STRING are the
+format strings of the error message.  ARGS are the arguments to the format
+strings."
+  (declare (inline apply) ;; So as not to get bogus frames in debugger
+	   (ignore error-name))
+  (let ((condition (coerce-to-condition datum args 'simple-error 'error)))
+    (cond
+      ((eq t continue-string)
+       ; from CEerror; mostly allocation errors
+       (with-simple-restart (ignore "Ignore the error, and try the operation again")
+	 (signal condition)
+	 (invoke-debugger condition)))
+      ((stringp continue-string)
+       (with-simple-restart
+	 (continue "~A" (format nil "~?" continue-string args))
+	 (signal condition)
+	 (invoke-debugger condition)))
+      ((and continue-string (symbolp continue-string))
+       ; from CEerror
+       (with-simple-restart (accept "Accept the error, returning NIL")
+	 (multiple-value-bind (rv used-restart)
+	   (with-simple-restart (ignore "Ignore the error, and try the operation again")
+	     (multiple-value-bind (rv used-restart)
+	       (with-simple-restart (continue "Continue, using ~S" continue-string)
+		 (signal condition)
+		 (invoke-debugger condition))
+
+	       (if used-restart continue-string rv)))
+	   (if used-restart t rv))))
+      (t
+	(progn
+	  (signal condition)
+	  (invoke-debugger condition))))))
+
+(defun sys::tpl-continue-command (&rest any)
+  (apply #'invoke-restart 'continue any))
 
 #|
 ;;; ----------------------------------------------------------------------

@@ -1509,10 +1509,12 @@ cl_symbols[] = {
 {MP_ "INTERRUPT-PROCESS","mp_interrupt_process"},
 {MP_ "+LOAD-COMPILE-LOCK+",NULL},
 {MP_ "WITH-LOCK",NULL},
-{MP_ "WITH-INTERRUPTS",NULL},
-{MP_ "WITHOUT-INTERRUPTS",NULL},
 {MP_ "BLOCK-SIGNALS","mp_block_signals"},
 {MP_ "RESTORE-SIGNALS","mp_restore_signals"},
+{MP_ "PROCESS-SUSPEND","mp_process_suspend"},
+{MP_ "PROCESS-RESUME","mp_process_resume"},
+{MP_ "SUSPEND-LOOP","mp_suspend_loop"},
+{MP_ "BREAK-SUSPEND-LOOP","mp_break_suspend_loop"},
 #endif
 
 {SYS_ "WHILE",NULL},
@@ -1815,6 +1817,13 @@ cl_symbols[] = {
 {MP_ "*ALLOW-WITH-INTERRUPTS*",NULL},
 
 {EXT_ "WITH-UNIQUE-NAMES",NULL},
+
+{SYS_ "HANDLE-SIGNAL","si_handle_signal"},
+
+{EXT_ "WITH-INTERRUPTS",NULL},
+{EXT_ "WITHOUT-INTERRUPTS",NULL},
+{EXT_ "WITH-LOCAL-INTERRUPTS",NULL},
+{EXT_ "ALLOW-WITH-INTERRUPTS",NULL},
 
 /* Tag for end of list */
 {NULL,NULL}};

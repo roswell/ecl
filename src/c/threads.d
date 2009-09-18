@@ -126,12 +126,14 @@ thread_cleanup(void *aux)
 	 * mp_process_kill().
 	 */
 	cl_object process = (cl_object)aux;
+	process->process.active = 0;
+	mp_giveup_lock(process->process.exit_lock);
 	THREAD_OP_LOCK();
 	cl_core.processes = ecl_remove_eq(process, cl_core.processes);
 	THREAD_OP_UNLOCK();
-	_ecl_dealloc_env(process->process.env);
+	if (process->process.env)
+		_ecl_dealloc_env(process->process.env);
 	process->process.env = NULL;
-	process->process.active = 0;
 }
 
 #ifdef ECL_WINDOWS_THREADS
@@ -164,6 +166,7 @@ thread_entry_point(void *arg)
 	*     provides us with an elegant way to exit the thread: we just
 	*     do an unwind up to frs_top.
 	*/
+	mp_get_lock(1, process->process.exit_lock);
 	process->process.active = 1;
 	CL_CATCH_ALL_BEGIN(env) {
 		ecl_bds_bind(env, @'mp::*current-process*', process);
@@ -171,18 +174,9 @@ thread_entry_point(void *arg)
 		ecl_bds_unwind1(env);
 	} CL_CATCH_ALL_END;
 
-        /* 3) Here signal that we are going to leave. Resources may or may
-         *    not be eliminated, depending on whether another thread will
-         *    wait for us or not.
-         */
-	process->process.active = 0;
-#ifndef ECL_WINDOWS_THREADS
-        if (!process->process.tobejoined)
-                pthread_detach(process->process.thread);
-#endif
-
 	/* 4) If everything went right, we should be exiting the thread
-	 *    through this point. thread_cleanup is automatically invoked.
+	 *    through this point. thread_cleanup is automatically invoked
+	 *    marking the process as inactive.
 	 */
 #ifdef ECL_WINDOWS_THREADS
 	thread_cleanup(process);
@@ -197,7 +191,6 @@ static cl_object
 alloc_process(cl_object name, cl_object initial_bindings)
 {
 	cl_object process = ecl_alloc_object(t_process);
-        process->process.tobejoined = 0;
 	process->process.active = 0;
 	process->process.name = name;
 	process->process.function = Cnil;
@@ -215,10 +208,11 @@ alloc_process(cl_object name, cl_object initial_bindings)
 		process->process.initial_bindings
 			= si_copy_hash_table(this_env->bindings_hash);
 	}
+	process->process.exit_lock = mp_make_lock(0);
 	return process;
 }
 
-void
+bool
 ecl_import_current_thread(cl_object name, cl_object bindings)
 {
 	cl_object process, l;
@@ -232,13 +226,13 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
 	for (l = cl_core.processes; l != Cnil; l = ECL_CONS_CDR(l)) {
 		cl_object p = ECL_CONS_CAR(l);
 		if (p->process.thread == current) {
-			return;
+			return 0;
 		}
 	}
 	env = _ecl_alloc_env();
 	ecl_set_process_env(env);
-	process = alloc_process(name, bindings);
-	process->process.active = 1;
+	env->own_process = process = alloc_process(name, bindings);
+	process->process.active = 2;
 	process->process.thread = current;
 	process->process.env = env;
 	THREAD_OP_LOCK();
@@ -247,12 +241,13 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
 	ecl_init_env(env);
 	env->bindings_hash = process->process.initial_bindings;
 	ecl_enable_interrupts_env(env);
+	return 1;
 }
 
 void
 ecl_release_current_thread(void)
 {
-	thread_cleanup(&cl_env);
+	thread_cleanup(ecl_process_env()->own_process);
 }
 
 @(defun mp::make-process (&key name ((:initial-bindings initial_bindings) Ct))
@@ -310,6 +305,39 @@ mp_interrupt_process(cl_object process, cl_object function)
 }
 
 cl_object
+mp_suspend_loop()
+{
+        cl_env_ptr env = ecl_process_env();
+	printf(";;; Suspending process %p\n", env->own_process);
+        CL_CATCH_BEGIN(env,@'mp::suspend-loop') {
+                for ( ; ; ) {
+                        cl_sleep(MAKE_FIXNUM(1000));
+                }
+        } CL_CATCH_END;
+	printf(";;; Resuming process %p\n", env->own_process);
+}
+
+cl_object
+mp_break_suspend_loop()
+{
+        if (frs_sch(@'mp::suspend-loop')) {
+                cl_throw(@'mp::suspend-loop');
+        }
+}
+
+cl_object
+mp_process_suspend(cl_object process)
+{
+        mp_interrupt_process(process, @'mp::suspend-loop');
+}
+
+cl_object
+mp_process_resume(cl_object process)
+{
+        mp_interrupt_process(process, @'mp::break-suspend-loop');
+}
+
+cl_object
 mp_process_kill(cl_object process)
 {
 	return mp_interrupt_process(process, @'mp::exit-process');
@@ -349,7 +377,22 @@ mp_process_enable(cl_object process)
 	if (mp_process_active_p(process) != Cnil)
 		FEerror("Cannot enable the running process ~A.", 1, process);
         process->process.parent = mp_current_process();
+	/*
+	 * We launch the thread with the signal mask specified in cl_core.
+	 * The reason is that we might need to block certain signals
+	 * to be processed by the signal handling thread in unixint.d
+	 */
+#ifdef HAVE_SIGPROCMASK
+	{
+		sigset_t previous;
+		pthread_sigmask(SIG_SETMASK, cl_core.default_sigmask, &previous);
+		code = pthread_create(&process->process.thread, &pthreadattr,
+				      thread_entry_point, process);
+		pthread_sigmask(SIG_SETMASK, &previous, NULL);
+	}
+#else
 	code = pthread_create(&process->process.thread, &pthreadattr, thread_entry_point, process);
+#endif
 	output = code? Cnil : process;
 #endif
 	@(return output)
@@ -363,18 +406,12 @@ mp_exit_process(void)
 #else
 	int same = pthread_equal(pthread_self(), main_thread);
 #endif
-	if (same) {
-		/* This is the main thread. Quitting it means exiting the
-		   program. */
-		si_quit(0);
-	} else {
-		/* We simply undo the whole of the frame stack. This brings up
-		   back to the thread entry point, going through all possible
-		   UNWIND-PROTECT.
-		*/
-		const cl_env_ptr env = ecl_process_env();
-		ecl_unwind(env, env->frs_org);
-	}
+	/* We simply undo the whole of the frame stack. This brings up
+	   back to the thread entry point, going through all possible
+	   UNWIND-PROTECT.
+	*/
+	const cl_env_ptr env = ecl_process_env();
+	ecl_unwind(env, env->frs_org);
 }
 
 cl_object
@@ -410,22 +447,18 @@ cl_object
 mp_process_join(cl_object process)
 {
 	assert_type_process(process);
-        process->process.tobejoined = 1;
-        if (process->process.active) {
-#ifdef ECL_WINDOWS_THREADS
-                if (WaitForSingleObject(process->process.threads, INFINITE) !=
-                    WAIT_OBJECT_0)
-                {
-                        FEerror("MP:PROCESS-JOIN: Error when joining process ~A",
-                                1, process);
+	/* We only wait for threads that we have created */
+        if (process->process.active != 1) {
+		cl_object l = process->process.exit_lock;
+		if (!Null(l)) {
+			l = mp_get_lock(1, l);
+			if (Null(l)) {
+				FEerror("MP:PROCESS-JOIN: Error when "
+					"joining process ~A",
+					1, process);
+			}
+			mp_giveup_lock(l);
                 }
-#else
-                void *result;
-                if (pthread_join(process->process.thread, &result)) {
-                        FEerror("MP:PROCESS-JOIN: Error when joining process ~A",
-                                1, process);
-                }
-#endif
         }
         @(return Cnil)
 }
@@ -596,7 +629,7 @@ mp_giveup_lock(cl_object lock)
                                 1, lock);
                 }
                 lock->lock.counter++;
-                output = Ct;
+                output = lock;
                 goto OUTPUT;
         }
 	/* FIXME!  This code has a nonzero chance of problems with
@@ -608,7 +641,7 @@ mp_giveup_lock(cl_object lock)
 		case WAIT_OBJECT_0:
                         lock->lock.counter++;
                         lock->lock.holder = the_env->own_process;
-                        output = Ct;
+                        output = lock;
 			break;
 		case WAIT_TIMEOUT:
                         output = Cnil;
@@ -631,7 +664,7 @@ mp_giveup_lock(cl_object lock)
 	if (rc == 0) {
 		lock->lock.counter++;
 		lock->lock.holder = the_env->own_process;
-		output = Ct;
+		output = lock;
 	} else if (rc == EBUSY) {
 		output = Cnil;
 	} else {
@@ -767,7 +800,7 @@ init_threads(cl_env_ptr env)
 	pthread_mutexattr_init(&mutexattr_recursive);
 	pthread_mutexattr_settype(&mutexattr_recursive, PTHREAD_MUTEX_RECURSIVE);
 	pthread_attr_init(&pthreadattr);
-	/*pthread_attr_setdetachstate(&pthreadattr, PTHREAD_CREATE_DETACHED);*/
+	pthread_attr_setdetachstate(&pthreadattr, PTHREAD_CREATE_DETACHED);
 	pthread_mutex_init(&cl_core.global_lock, &mutexattr_error);
 #endif
 	cl_core.processes = OBJNULL;

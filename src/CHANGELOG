@@ -65,6 +65,20 @@ ECL 9.9.1:
    that surrounds the form that caused the exit. The second one is that we
    can explicitely kill all threads and wait for them to exit before exiting.
 
+ - Two new functions MP:PROCESS-SUSPEND and MP:PROCESS-RESUME allow suspending
+   and resuming a thread.
+
+ - ECL now has a signal handling thread running in the background. When
+   Ctrl-C or Ctrl-Break is pressed or the process gets a SIGINT signal, then
+   a separate thread is spawned for handling that event. This thread typically
+   enters the debugger, allowing either to continue or to interrupt specific
+   processes.
+
+ - When running in multithreaded mode, the streams for *terminal-io*,
+   *standard-input* and *standard-output* are created using non-locking
+   C pipes, instead of locking C streams. This is essential to allow background
+   threads gain control of the console.
+
 * Bugs fixed:
 
  - WITH-LOCK might run into a race condition when the lock acquisition process

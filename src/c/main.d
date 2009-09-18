@@ -68,6 +68,9 @@ static cl_fixnum option_values[ECL_OPT_LIMIT+1] = {
 	1,		/* ECL_OPT_TRAP_SIGINT */
 	1,		/* ECL_OPT_TRAP_SIGILL */
 	1,		/* ECL_OPT_TRAP_SIGBUS */
+	1,		/* ECL_OPT_TRAP_INTERRUPT_SIGNAL */
+	1,		/* ECL_OPT_SIGNAL_HANDLING_THREAD */
+	128,		/* ECL_OPT_SIGNAL_QUEUE_SIZE */
 	0,		/* ECL_OPT_BOOTED */
 	8192,		/* ECL_OPT_BIND_STACK_SIZE */
 	128,		/* ECL_OPT_BIND_STACK_SAFETY_AREA */
@@ -393,6 +396,8 @@ cl_boot(int argc, char **argv)
 		return 1;
 	}
 
+	/*ecl_set_option(ECL_OPT_SIGNAL_HANDLING_THREAD, 0);*/
+
 #if !defined(GBC_BOEHM)
 	setbuf(stdin,  stdin_buf);
 	setbuf(stdout, stdout_buf);
@@ -401,6 +406,11 @@ cl_boot(int argc, char **argv)
 	ARGC = argc;
 	ARGV = argv;
 	ecl_self = argv[0];
+
+#ifdef ECL_THREADS
+        cl_core.processes = Cnil;
+#endif
+        cl_core.default_sigmask = 0;
 
 	init_unixint(0);
 	init_alloc();
@@ -688,7 +698,7 @@ cl_boot(int argc, char **argv)
 
 /************************* ENVIRONMENT ROUTINES ***********************/
 
-@(defun ext::quit (&optional (code MAKE_FIXNUM(0)) (kill_all_threads Cnil))
+@(defun ext::quit (&optional (code MAKE_FIXNUM(0)) (kill_all_threads Ct))
 @
 {
 #ifdef ECL_THREADS

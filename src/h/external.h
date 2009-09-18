@@ -220,6 +220,10 @@ struct cl_core_struct {
 #ifdef GBC_BOEHM
         char *safety_region;
 #endif
+#ifdef ECL_THREADS
+	cl_object signal_queue_lock;
+#endif
+	cl_object signal_queue;
 
 #ifdef ECL_UNICODE
 	cl_object unicode_database;
@@ -227,6 +231,7 @@ struct cl_core_struct {
 	uint8_t *ucd_pages;
 	uint8_t *ucd_data;
 #endif
+	void *default_sigmask;
 };
 
 extern ECL_API struct cl_core_struct cl_core;
@@ -889,6 +894,9 @@ typedef enum {
 	ECL_OPT_TRAP_SIGINT,
 	ECL_OPT_TRAP_SIGILL,
 	ECL_OPT_TRAP_SIGBUS,
+	ECL_OPT_TRAP_INTERRUPT_SIGNAL,
+	ECL_OPT_SIGNAL_HANDLING_THREAD,
+	ECL_OPT_SIGNAL_QUEUE_SIZE,
 	ECL_OPT_BOOTED,
 	ECL_OPT_BIND_STACK_SIZE,
 	ECL_OPT_BIND_STACK_SAFETY_AREA,
@@ -1466,7 +1474,6 @@ extern ECL_API cl_index ecl_progv(cl_env_ptr env, cl_object vars, cl_object valu
 extern ECL_API void ecl_bds_unwind(cl_env_ptr env, cl_index new_bds_top_index);
 extern ECL_API void ecl_unwind(cl_env_ptr env, ecl_frame_ptr fr) /*__attribute__((noreturn))*/;
 extern ECL_API ecl_frame_ptr frs_sch(cl_object frame_id);
-extern ECL_API ecl_frame_ptr frs_sch_catch(cl_object frame_id);
 
 /* string.c */
 
@@ -1590,6 +1597,8 @@ extern ECL_API cl_object mp_process_yield(void);
 extern ECL_API cl_object mp_process_join(cl_object process);
 extern ECL_API cl_object mp_process_interrupt(cl_object process, cl_object function);
 extern ECL_API cl_object mp_process_kill(cl_object process);
+extern ECL_API cl_object mp_process_suspend(cl_object process);
+extern ECL_API cl_object mp_process_resume(cl_object process);
 extern ECL_API cl_object mp_process_name(cl_object process);
 extern ECL_API cl_object mp_process_preset _ARGS((cl_narg narg, cl_object process, cl_object function, ...));
 extern ECL_API cl_object mp_process_run_function _ARGS((cl_narg narg, cl_object name, cl_object function, ...));
@@ -1610,7 +1619,7 @@ extern ECL_API cl_object mp_current_process(void);
 extern ECL_API cl_object mp_block_signals(void);
 extern ECL_API cl_object mp_restore_signals(cl_object sigmask);
 
-extern ECL_API void ecl_import_current_thread(cl_object process_name, cl_object process_binding);
+extern ECL_API bool ecl_import_current_thread(cl_object process_name, cl_object process_binding);
 extern ECL_API void ecl_release_current_thread(void);
 #endif
 
@@ -1702,6 +1711,7 @@ extern ECL_API cl_object si_copy_file(cl_object orig, cl_object end);
 #define ecl_enable_interrupts() ecl_enable_interrupts_env(&cl_env)
 #define ECL_PSEUDO_ATOMIC_ENV(env,stmt) (ecl_disable_interrupts_env(env),(stmt),ecl_enable_interrupts_env(env))
 #define ECL_PSEUDO_ATOMIC(stmt) (ecl_disable_interrupts(),(stmt),ecl_enable_interrupts())
+extern ECL_API cl_object si_handle_signal(cl_object signal);
 extern ECL_API cl_object si_catch_signal(cl_object signal, cl_object state);
 extern ECL_API cl_object si_check_pending_interrupts(void);
 extern ECL_API cl_object si_disable_interrupts(void);

@@ -825,19 +825,16 @@ struct ecl_dummy {
 
 #ifdef ECL_THREADS
 struct ecl_process {
-	HEADER2(active,tobejoined);
+	HEADER1(active);
 	cl_object name;
 	cl_object function;
 	cl_object args;
 	pthread_t thread;
 	struct cl_env_struct *env;
 	cl_object interrupt;
-	/*void *stack;*/
-	/*cl_index stack_size;*/
-	void *altstack;
-	cl_index altstack_size;
 	cl_object initial_bindings;
         cl_object parent;
+	cl_object exit_lock;
 };
 
 struct ecl_lock {

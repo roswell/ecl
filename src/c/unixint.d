@@ -247,12 +247,15 @@ interrupts_disabled_by_lisp(cl_env_ptr the_env)
 static void
 jump_to_sigsegv_handler(cl_env_ptr the_env)
 {
-	ecl_frame_ptr destination = frs_sch(OBJNULL);
-	if (destination) {
-		the_env->nvalues = 0;
-		ecl_unwind(the_env, destination);
-	}
-	ecl_internal_error("SIGSEGV without handler to jump to.");
+	/*
+	 * Right now we have no means of specifying a jump point
+	 * for really bad events. We just jump to the outermost
+	 * frame, which is equivalent to quitting, and wait for
+	 * someone to intercept this jump.
+	 */
+	ecl_frame_ptr destination = ecl_process_env()->frs_org;
+	the_env->nvalues = 0;
+	ecl_unwind(the_env, destination);
 }
 
 static cl_object
@@ -261,7 +264,7 @@ handler_fn_protype(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
 #if defined(ECL_THREADS) && !defined(_MSC_VER) && !defined(mingw32)
 	cl_env_ptr the_env = ecl_process_env();
         if (sig == ecl_get_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL)) {
-		return the_env->own_process->process.interrupt;
+		return si_coerce_to_function(the_env->own_process->process.interrupt);
         }
 #endif
 	switch (sig) {
@@ -367,6 +370,82 @@ handle_signal_now(cl_object signal_code)
         }
 }
 
+cl_object
+si_handle_signal(cl_object signal_code)
+{
+	handle_signal_now(signal_code);
+	@(return)
+}
+
+static void
+create_signal_queue(cl_index size)
+{
+	cl_object base = Cnil;
+	while (size--) {
+		base = CONS(Cnil, base);
+	}
+#ifdef ECL_THREADS
+	{
+		cl_object lock = mp_make_lock(0);
+		mp_get_lock(1, lock);
+		cl_core.signal_queue_lock = lock;
+		cl_core.signal_queue = base;
+		mp_giveup_lock(lock);
+	}
+#else
+	cl_core.signal_queue = base;
+#endif
+}
+
+static void
+queue_signal(cl_env_ptr env, cl_object code)
+{
+	cl_object record;
+#ifdef ECL_THREADS
+	cl_object lock = cl_core.signal_queue_lock;
+	/* The queue only exists when we have booted */
+	if (lock != Cnil) {
+		mp_get_lock(1, lock);
+		record = cl_core.signal_queue;
+		if (record != Cnil)
+			cl_core.signal_queue = ECL_CONS_CDR(record);
+		mp_giveup_lock(lock);
+	}
+#else
+	record = cl_core.signal_queue;
+#endif
+	if (record == Cnil) {
+		/* Signal lost! The queue was too small. */
+		/* We can no allocate further memory, since
+		 * we are in a signal handler. */
+	} else {
+		ECL_CONS_CDR(record) = env->pending_interrupt;
+		ECL_CONS_CAR(record) = code;
+		env->pending_interrupt = record;
+	}
+}
+
+static cl_object
+pop_signal(cl_env_ptr env)
+{
+	cl_object record = env->pending_interrupt, output = Cnil;
+	if (record != Cnil) {
+#ifdef ECL_THREADS
+		cl_object lock = cl_core.signal_queue_lock;
+		mp_get_lock(1, lock);
+		ECL_CONS_CDR(record) = cl_core.signal_queue;
+		cl_core.signal_queue = record;
+		output = ECL_CONS_CAR(record);
+		mp_giveup_lock(lock);
+#else
+		ECL_CONS_CDR(record) = cl_core.signal_queue;
+		cl_core.signal_queue = record;
+		output = ECL_CONS_CAR(record);
+#endif
+	}
+	return record;
+}
+
 static void
 handle_or_queue(cl_object signal_code, int code)
 {
@@ -378,9 +457,7 @@ handle_or_queue(cl_object signal_code, int code)
 	 * queue the signal and are done with that.
 	 */
 	if (interrupts_disabled_by_lisp(the_env)) {
-		if (!the_env->pending_interrupt) {
-			the_env->pending_interrupt = signal_code;
-		}
+		queue_signal(the_env, signal_code);
 		errno = old_errno;
 	}
 	/*
@@ -393,14 +470,12 @@ handle_or_queue(cl_object signal_code, int code)
 	 */
 	else if (interrupts_disabled_by_C(the_env)) {
 		the_env->disable_interrupts = 3;
-		if (!the_env->pending_interrupt) {
-			the_env->pending_interrupt = signal_code;
+		queue_signal(the_env, signal_code);
 #ifdef ECL_USE_MPROTECT
-			if (mprotect(the_env, sizeof(*the_env), PROT_READ) < 0) {
-				ecl_internal_error("Unable to mprotect environment.");
-                        }
-#endif
+		if (mprotect(the_env, sizeof(*the_env), PROT_READ) < 0) {
+			ecl_internal_error("Unable to mprotect environment.");
 		}
+#endif
 		errno = old_errno;
 	}
 	/*
@@ -479,9 +554,8 @@ handler_fn_protype(sigbus_handler, int sig, siginfo_t *info, void *aux)
 	 * means there was a pending signal. */
 	the_env = ecl_process_env();
 	if ((void*)the_env == (void*)info->si_addr) {
-		cl_object signal = the_env->pending_interrupt;
+		cl_object signal = pop_signal(the_env);
 		mprotect(the_env, sizeof(*the_env), PROT_READ | PROT_WRITE);
-		the_env->pending_interrupt = NULL;
 		the_env->disable_interrupts = 0;
                 unblock_signal(SIGBUS);
 		handle_signal_now(signal);
@@ -606,16 +680,60 @@ LONG WINAPI W32_exception_filter(struct _EXCEPTION_POINTERS* ep)
 	return excpt_result;
 }
 
+static cl_object
+W32_handle_in_thread(cl_object signal_code)
+{
+	int outside_ecl = ecl_import_current_thread(@'si::handle-signal', Cnil);
+
+	mp_process_run_function(3, @'si::handle-signal', @'si::handle-signal',
+				signal_code);
+
+	if (outside_ecl) ecl_release_current_thread();
+}
+
 BOOL WINAPI W32_console_ctrl_handler(DWORD type)
 {
 	switch (type)
 	{
 		/* Catch CTRL-C */
 		case CTRL_C_EVENT:
-			handle_or_queue(@'si::terminal-interrupt');
+			W32_handle_in_new_thread(@'si::terminal-interrupt');
 			return TRUE;
 	}
 	return FALSE;
+}
+#endif
+
+#if defined(ECL_THREADS) && defined(HAVE_SIGPROCMASK)
+static cl_object
+asynchronous_signal_servicing_thread()
+{
+	sigset_t handled_set;
+	cl_object signal_code;
+	int signo;
+        /*
+         * We wait here for all signals that are blocked in all other
+         * threads. It would be desirable to be able to wait for _all_
+         * signals, but this can not be done for SIGFPE, SIGSEGV, etc
+         */
+	pthread_sigmask(SIG_SETMASK, NULL, &handled_set);
+	sigfillset(&handled_set);
+	CL_CATCH_ALL_BEGIN(ecl_process_env()) {
+	for (;;) {
+		/* Waiting may fail! */
+		int status = sigwait(&handled_set, &signo);
+		if (status == 0) {
+			signal_code = call_handler(lisp_signal_handler, signo,
+						   NULL, NULL);
+			if (!Null(signal_code)) {
+				mp_process_run_function(3, @'si::handle-signal',
+							@'si::handle-signal',
+							signal_code);
+			}
+		}
+	}
+	} CL_CATCH_ALL_END;
+	@(return)
 }
 #endif
 
@@ -667,69 +785,167 @@ si_trap_fpe(cl_object condition, cl_object flag)
 	@(return MAKE_FIXNUM(bits))
 }
 
-void
-init_unixint(int pass)
+/*
+ * In this code we decide whether to install a process-wide signal
+ * handler for each of the asynchronous signals (SIGINT, SIGTERM,
+ * SIGCHLD...) or we block the signal and let the background thread
+ * detect and process them.
+ */
+static void
+install_asynchronous_signal_handlers()
 {
-	if (pass == 0) {
+#if defined(_MSC_VER)
+# define async_handler(signal,handler,mask)
+#else
+# if defined(ECL_THREADS) && defined(HAVE_SIGPROCMASK)
+#  define async_handler(signal,handler,mask)  {				\
+		if (ecl_get_option(ECL_OPT_SIGNAL_HANDLING_THREAD)) {	\
+			sigaddset(mask, signal);			\
+		} else {						\
+			mysignal(signal,handler);			\
+		}}
+# else
+#  define async_handler(signal,handler,mask)	\
+	mysignal(signal,handler)
+# endif
+#endif
+#if defined(ECL_THREADS) && defined(HAVE_SIGPROCMASK)
+	static sigset_t sigmask;
+	pthread_sigmask(SIG_SETMASK, NULL, &sigmask);
+#endif
+	cl_core.default_sigmask = NULL;
 #ifdef SIGSEGV
-		if (ecl_get_option(ECL_OPT_TRAP_SIGSEGV)) {
-			mysignal(SIGSEGV, sigsegv_handler);
-		}
+	if (ecl_get_option(ECL_OPT_TRAP_SIGSEGV)) {
+		async_handler(SIGSEGV, sigsegv_handler, &sigmask);
+	}
 #endif
 #if defined(SIGBUS) /*&& !defined(GBC_BOEHM)*/
-		if (ecl_get_option(ECL_OPT_TRAP_SIGBUS)) {
-			mysignal(SIGBUS, sigbus_handler);
-		}
+	if (ecl_get_option(ECL_OPT_TRAP_SIGBUS)) {
+		async_handler(SIGBUS, sigbus_handler, &sigmask);
+	}
 #endif
 #ifdef SIGINT
-		if (ecl_get_option(ECL_OPT_TRAP_SIGINT)) {
-			mysignal(SIGINT, non_evil_signal_handler);
-		}
+	if (ecl_get_option(ECL_OPT_TRAP_SIGINT)) {
+		async_handler(SIGINT, non_evil_signal_handler, &sigmask);
+	}
 #endif
+#if defined(ECL_THREADS) && defined(HAVE_SIGPROCMASK)
+	pthread_sigmask(SIG_SETMASK, &sigmask, NULL);
+	cl_core.default_sigmask = &sigmask;
+#endif
+#ifdef _MSC_VER
+	old_W32_exception_filter =
+		SetUnhandledExceptionFilter(W32_exception_filter);
+	if (ecl_get_option(ECL_OPT_TRAP_SIGINT)) {
+		SetConsoleCtrlHandler(W32_console_ctrl_handler, TRUE);
+	}
+#endif
+#undef async_handler
+}
+
+/*
+ * In POSIX systems we may set up a background thread that detects
+ * synchronous signals and spawns a new thread to handle each of them.
+ */
+static void
+install_signal_handling_thread()
+{
+#if defined(ECL_THREADS) && defined(HAVE_SIGPROCMASK)
+	if (ecl_get_option(ECL_OPT_SIGNAL_HANDLING_THREAD)) {
+		cl_object fun =
+			ecl_make_cfun((cl_objectfn_fixed)
+				      asynchronous_signal_servicing_thread,
+				      @'si::handle-signal',
+				      Cnil,
+				      0);
+		cl_object process =
+			mp_process_run_function(2,
+						@'si::handle-signal',
+						fun);
+		if (Null(process)) {
+			ecl_internal_error("Unable to create signal "
+					   "servicing thread");
+		}
+	}
+#endif
+}
+
+/*
+ * In order to implement MP:INTERRUPT-PROCESS, MP:PROCESS-KILL and the
+ * like, we use signals. This routine sets up a synchronous signal
+ * handler for that particular signal.
+ */
+static void
+install_process_interrupt_handler()
+{
 #ifdef SIGRTMIN
 # define DEFAULT_THREAD_INTERRUPT_SIGNAL SIGRTMIN + 2
 #else
 # define DEFAULT_THREAD_INTERRUPT_SIGNAL SIGUSR1
 #endif
 #if defined(ECL_THREADS) && !defined(_MSC_VER) && !defined(mingw32)
-                {
-                        int signal = ecl_get_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL);
-                        if (signal == 0) {
-                                signal = DEFAULT_THREAD_INTERRUPT_SIGNAL;
-                                ecl_set_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL,
-                                               signal);
-                        }
-                        mysignal(signal, non_evil_signal_handler);
-                }
-#endif
-#ifdef _MSC_VER
-		old_W32_exception_filter =
-                        SetUnhandledExceptionFilter(W32_exception_filter);
-                if (ecl_get_option(ECL_OPT_TRAP_SIGINT)) {
-                        SetConsoleCtrlHandler(W32_console_ctrl_handler, TRUE);
-                }
-#endif
-	} else {
-		int i;
-		for (i = 0; known_signals[i].code >= 0; i++) {
-			cl_object name =
-				_ecl_intern(known_signals[i].text,
-					    cl_core.system_package);
-			si_Xmake_constant(name, MAKE_FIXNUM(known_signals[i].code));
+	if (ecl_get_option(ECL_OPT_TRAP_INTERRUPT_SIGNAL)) {
+		int signal = ecl_get_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL);
+		if (signal == 0) {
+			signal = DEFAULT_THREAD_INTERRUPT_SIGNAL;
+			ecl_set_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL,
+				       signal);
 		}
-		ECL_SET(@'si::*interrupts-enabled*', Ct);
+		mysignal(signal, non_evil_signal_handler);
+	}
+#endif
+}
+
+/*
+ * This routine sets up handlers for all other exceptions, such as
+ * floating point exceptions, access to restricted regions of memory,
+ * etc.
+ */
+static void
+install_synchronous_signal_handlers()
+{
+	ECL_SET(@'si::*interrupts-enabled*', Ct);
 #ifdef SIGFPE
-		if (ecl_get_option(ECL_OPT_TRAP_SIGFPE)) {
-			mysignal(SIGFPE, non_evil_signal_handler);
-			si_trap_fpe(Ct, Ct);
+	if (ecl_get_option(ECL_OPT_TRAP_SIGFPE)) {
+		mysignal(SIGFPE, non_evil_signal_handler);
+		si_trap_fpe(Ct, Ct);
 # ifdef ECL_IEEE_FP
-                        /* By default deactivate errors and accept
-                         * denormals in floating point computations */
-                        si_trap_fpe(@'floating-point-invalid-operation', Cnil);
-                        si_trap_fpe(@'division-by-zero', Cnil);
+		/* By default deactivate errors and accept
+		 * denormals in floating point computations */
+		si_trap_fpe(@'floating-point-invalid-operation', Cnil);
+		si_trap_fpe(@'division-by-zero', Cnil);
 # endif
-		}
+	}
 #endif
-		ecl_process_env()->disable_interrupts = 0;
+	ecl_process_env()->disable_interrupts = 0;
+}
+
+/*
+ * Create one Common Lisp constant for each signal that we know,
+ * such as +SIGINT+ for SIGINT, etc.
+ */
+static void
+create_signal_code_constants()
+{
+	int i;
+	for (i = 0; known_signals[i].code >= 0; i++) {
+		cl_object name =
+			_ecl_intern(known_signals[i].text,
+				    cl_core.system_package);
+		si_Xmake_constant(name, MAKE_FIXNUM(known_signals[i].code));
+	}
+}
+
+void
+init_unixint(int pass)
+{
+	if (pass == 0) {
+		install_asynchronous_signal_handlers();
+		install_process_interrupt_handler();
+	} else {
+		create_signal_queue(ecl_get_option(ECL_OPT_SIGNAL_QUEUE_SIZE));
+		create_signal_code_constants();
+		install_synchronous_signal_handlers();
+		install_signal_handling_thread();
 	}
 }

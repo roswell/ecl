@@ -110,6 +110,15 @@ rebinds this variable to NIL when control enters a break loop.")
         process, when provided, must be an integer indicating the rank~@
         of the process in the debugger waiting list.~%")
       #+threads
+      ((:br :break) tpl-interrupt-command nil
+       ":br(eak)        Stop a given process"
+       ":break process                                  [Break command]~@
+        :br processs                                    [Abbreviation]~@
+        ~@
+        Interrupt a given process. Argument process, must be provided and
+        it must be an integer indicating the rank~@
+        of the process in the debugger waiting list (:waiting).~%")
+      #+threads
       ((:w :waiting) tpl-waiting-command nil
        ":w(aiting)      Display list of active toplevels"
        ":waiting                                        [Break command]~@
@@ -466,11 +475,44 @@ under certain conditions; see file 'Copyright' for details.")
 (defvar *allow-recursive-debug* nil)
 (defvar *debug-status* nil)
 
-(defun terminal-interrupt (&optional (correctablep t))
+(defun simple-terminal-interrupt (correctablep)
   (let ((*break-enable* t))
     (if correctablep
-      (cerror "Continues execution." 'ext:interactive-interrupt)
+	(cerror "Continues execution." 'ext:interactive-interrupt)
       (error "Console interrupt -- cannot continue."))))
+
+(defun terminal-interrupt (&optional (correctablep t))
+  #+threads
+  (mp:without-interrupts
+   (let* ((suspended '())
+	  (break-process nil))
+     (loop with this = mp:*current-process*
+	   for i in (mp:all-processes)
+	   unless (or (eq i this)
+		      (eq (mp:process-name i) 'si::handle-signal))
+	   do (progn (format t "~%;;; Suspending process ~A" i)
+		     (push i suspended)
+		     (mp:process-suspend i)))
+     (mp:with-local-interrupts
+      (restart-case (simple-terminal-interrupt correctablep)
+	(mp:interrupt-process (&optional (process-number 1))
+	  :report (lambda (stream) (princ "Interrupt a certain process." stream))
+	  (loop for processes = (mp:all-processes)
+		while (not (and (fixnump process-number)
+				(<= 1 process-number (length processes))))
+		do (restart-case (cerror "Continue without breaking"
+					 "Not a valid process index ~D"
+					 process-number)
+		    (continue ())
+		    (store-value (new-value) (setf process-number new-value))))
+	  (setf break-process (elt (mp:all-processes) (1+ process-number))))))
+     (mapc #'mp:process-resume suspended)
+     (when break-process
+       (mp:interrupt-process break-process
+			     #'(lambda ()
+				 (simple-terminal-interrupt correctablep))))))
+  #-threads
+  (simple-terminal-interrupt correctablep))
 
 (defun tpl (&key ((:commands *tpl-commands*) tpl-commands)
 		 ((:prompt-hook *tpl-prompt-hook*) *tpl-prompt-hook*)
@@ -1279,6 +1321,7 @@ package."
          (break-level *break-level*)
          (*break-env* nil))
     (check-default-debugger-runaway)
+    #+threads
     ;; We give our process priority for grabbing the console.
     (setq *console-owner* mp:*current-process*)
     ;; As of ECL 9.4.1 making a normal function return from the debugger

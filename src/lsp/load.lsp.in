@@ -43,7 +43,6 @@
   "src:lsp;format.lsp"
   "src:lsp;defpackage.lsp"
   "src:lsp;ffi.lsp"
-#+threads
   "src:lsp;mp.lsp"
 #+tk
   "src:lsp;tk-init.lsp"

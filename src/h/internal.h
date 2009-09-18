@@ -304,6 +304,13 @@ extern void cl_write_object(cl_object x, cl_object stream);
 #define	RTABSIZE	CHAR_CODE_LIMIT	/*  read table size  */
 #endif
 
+/* threads.d */
+
+#ifdef ECL_THREADS
+extern ECL_API cl_object mp_suspend_loop();
+extern ECL_API cl_object mp_break_suspend_loop();
+#endif
+
 /* time.d */
 
 #define UTC_time_to_universal_time(x) ecl_plus(ecl_make_integer(x),cl_core.Jan1st1970UT)
