@@ -639,37 +639,37 @@ LONG WINAPI W32_exception_filter(struct _EXCEPTION_POINTERS* ep)
 		/* Catch all arithmetic exceptions */
 		case EXCEPTION_INT_DIVIDE_BY_ZERO:
                         handle_or_queue(@'division-by-zero', 0);
-                        return;
+                        return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_INT_OVERFLOW:
                         handle_or_queue(@'arithmetic-error', 0);
-                        return;
+                        return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_FLT_DIVIDE_BY_ZERO:
                         handle_or_queue(@'floating-point-overflow', 0);
-                        return;
+                        return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_FLT_OVERFLOW:
                         handle_or_queue(@'floating-point-overflow', 0);
-                        return;
+                        return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_FLT_UNDERFLOW:
                         handle_or_queue(@'floating-point-underflow', 0);
-                        return;
+                        return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_FLT_INEXACT_RESULT:
-                        handle_or_queue(@'floating-point-indexact', 0);
-                        return;
+                        handle_or_queue(@'floating-point-inexact', 0);
+                        return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_FLT_DENORMAL_OPERAND:
 		case EXCEPTION_FLT_INVALID_OPERATION:
                         handle_or_queue(@'floating-point-invalid-operation', 0);
-                        return;
+                        return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_FLT_STACK_CHECK:
                         handle_or_queue(@'arithmetic-error', 0);
-                        return;
+                        return EXCEPTION_CONTINUE_EXECUTION;
 		/* Catch segmentation fault */
 		case EXCEPTION_ACCESS_VIOLATION:
                         handle_or_queue(@'ext::segmentation-violation', 0);
-                        return;
+                        return EXCEPTION_CONTINUE_EXECUTION;
 		/* Catch illegal instruction */
 		case EXCEPTION_ILLEGAL_INSTRUCTION:
 			handle_or_queue(MAKE_FIXNUM(SIGILL), 0);
-			break;
+			return EXCEPTION_CONTINUE_EXECUTION;
 		/* Do not catch anything else */
 		default:
 			excpt_result = EXCEPTION_CONTINUE_SEARCH;
@@ -681,7 +681,7 @@ LONG WINAPI W32_exception_filter(struct _EXCEPTION_POINTERS* ep)
 }
 
 static cl_object
-W32_handle_in_thread(cl_object signal_code)
+W32_handle_in_new_thread(cl_object signal_code)
 {
 	int outside_ecl = ecl_import_current_thread(@'si::handle-signal', Cnil);
 

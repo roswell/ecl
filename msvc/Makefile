@@ -26,7 +26,7 @@ THEHOST           = win32
 GMP_TYPE      = gc
 
 # Set it to non-empty to include Win32 thread support
-ECL_THREADS   =
+ECL_THREADS   = 1
 
 # Set it to non-empty to include support for Unicode characters
 ECL_UNICODE   =
