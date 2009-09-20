@@ -359,6 +359,7 @@ typedef int fenv_t;
 #define ECL_PI2_L 1.57079632679489661923132169163975144l
 
 void ecl_deliver_fpe(void);
+void ecl_interrupt_process(cl_object process, cl_object function);
 
 /*
  * Fake several ISO C99 mathematical functions

@@ -245,6 +245,8 @@ ecl_init_env(cl_env_ptr env)
 	env->method_hash_clear_list = Cnil;
 #endif
 #endif
+        env->pending_interrupt = Cnil;
+
 	init_stacks(env, &i);
 
         {
@@ -275,7 +277,12 @@ _ecl_dealloc_env(cl_env_ptr env)
 	if (munmap(env, sizeof(*env)))
 		ecl_internal_error("Unable to deallocate environment structure.");
 #else
+# if defined(ECL_USE_GUARD_PAGE)
+        if (VirtualFree(env, sizeof(*env), MEM_RELEASE))
+                ecl_internal_error("Unable to deallocate environment structure.");
+# else
 	ecl_dealloc(env);
+# endif
 #endif
 }
 
@@ -294,6 +301,11 @@ _ecl_alloc_env()
 	if (output == MAP_FAILED)
 		ecl_internal_error("Unable to allocate environment structure.");
 #else
+# if defined(ECL_USE_GUARD_PAGE)
+	output = VirtualAlloc(0, sizeof(*output), MEM_COMMIT);
+	if (output == NULL)
+		ecl_internal_error("Unable to allocate environment structure.");
+# else
 	static struct cl_env_struct first_env;
 	if (!ecl_get_option(ECL_OPT_BOOTED)) {
 		/* We have not set up any environment. Hence, we cannot call ecl_alloc()
@@ -303,6 +315,7 @@ _ecl_alloc_env()
 	} else {
 		output = ecl_alloc(sizeof(*output));
 	}
+# endif
 #endif
 	/*
 	 * An uninitialized environment _always_ disables interrupts. They

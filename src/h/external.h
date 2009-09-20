@@ -1719,7 +1719,6 @@ extern ECL_API cl_object si_enable_interrupts(void);
 extern ECL_API cl_object si_trap_fpe(cl_object condition, cl_object flag);
 extern ECL_API void ecl_check_pending_interrupts(void);
 
-
 /* unixsys.c */
 
 extern ECL_API cl_object si_system(cl_object cmd);

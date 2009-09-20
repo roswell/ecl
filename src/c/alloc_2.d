@@ -664,7 +664,7 @@ ecl_mark_env(struct cl_env_struct *env)
 	}
 #endif
 	/*memset(env->values[env->nvalues], 0, (64-env->nvalues)*sizeof(cl_object));*/
-#if defined(ECL_THREADS) && !defined(ECL_USE_MPROTECT)
+#if defined(ECL_THREADS) && !defined(ECL_USE_MPROTECT) && !defined(ECL_USE_GUARD_PAGE)
 	/* When using threads, "env" is a pointer to memory allocated by ECL. */
 	GC_push_conditional((void *)env, (void *)(env + 1), 1);
 	GC_set_mark_bit((void *)env);

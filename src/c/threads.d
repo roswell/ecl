@@ -275,32 +275,7 @@ mp_interrupt_process(cl_object process, cl_object function)
 {
 	if (mp_process_active_p(process) == Cnil)
 		FEerror("Cannot interrupt the inactive process ~A", 1, process);
-#ifdef ECL_WINDOWS_THREADS
-	/*
-	{
-	CONTEXT context;
-	HANDLE thread = process->process.thread;
-	if (SuspendThread(thread) == (DWORD)-1)
-		FEwin32_error("Cannot suspend process ~A", 1, process);
-	context.ContextFlags = CONTEXT_CONTROL | CONTEXT_INTEGER;
-	if (!GetThreadContext(thread, &context))
-		FEwin32_error("Cannot get context for process ~A", 1, process);
-	context.Eip = process_interrupt_handler;
-	if (!SetThreadContext(thread, &context))
-		FEwin32_error("Cannot set context for process ~A", 1, process);
-	process->process.interrupt = function;
-	if (ResumeThread(thread) == (DWORD)-1)
-		FEwin32_error("Cannot resume process ~A", 1, process);
-	}
-	*/
-#else
-        {
-                int signal = ecl_get_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL);
-                process->process.interrupt = function;
-                if (pthread_kill(process->process.thread, signal))
-                        FElibc_error("pthread_kill() failed.", 0);
-        }
-#endif
+        ecl_interrupt_process(process, function);
 	@(return Ct)
 }
 
@@ -308,13 +283,11 @@ cl_object
 mp_suspend_loop()
 {
         cl_env_ptr env = ecl_process_env();
-	printf(";;; Suspending process %p\n", env->own_process);
         CL_CATCH_BEGIN(env,@'mp::suspend-loop') {
                 for ( ; ; ) {
                         cl_sleep(MAKE_FIXNUM(1000));
                 }
         } CL_CATCH_END;
-	printf(";;; Resuming process %p\n", env->own_process);
 }
 
 cl_object

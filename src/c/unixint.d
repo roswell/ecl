@@ -258,13 +258,15 @@ jump_to_sigsegv_handler(cl_env_ptr the_env)
 	ecl_unwind(the_env, destination);
 }
 
+static cl_object pop_signal(cl_env_ptr env);
+
 static cl_object
 handler_fn_protype(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
 {
 #if defined(ECL_THREADS) && !defined(_MSC_VER) && !defined(mingw32)
 	cl_env_ptr the_env = ecl_process_env();
         if (sig == ecl_get_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL)) {
-		return si_coerce_to_function(the_env->own_process->process.interrupt);
+		return pop_signal(the_env);
         }
 #endif
 	switch (sig) {
@@ -362,6 +364,7 @@ handle_signal_now(cl_object signal_code)
                 break;
         case t_cfun:
         case t_cfunfixed:
+        case t_cclosure:
         case t_bytecodes:
         case t_bclosure:
                 cl_funcall(1, signal_code);
@@ -380,16 +383,13 @@ si_handle_signal(cl_object signal_code)
 static void
 create_signal_queue(cl_index size)
 {
-	cl_object base = Cnil;
-	while (size--) {
-		base = CONS(Cnil, base);
-	}
+	cl_object base = cl_make_list(2, MAKE_FIXNUM(size));
 #ifdef ECL_THREADS
 	{
 		cl_object lock = mp_make_lock(0);
 		mp_get_lock(1, lock);
-		cl_core.signal_queue_lock = lock;
 		cl_core.signal_queue = base;
+		cl_core.signal_queue_lock = lock;
 		mp_giveup_lock(lock);
 	}
 #else
@@ -400,25 +400,24 @@ create_signal_queue(cl_index size)
 static void
 queue_signal(cl_env_ptr env, cl_object code)
 {
-	cl_object record;
+	cl_object record = Cnil;
 #ifdef ECL_THREADS
 	cl_object lock = cl_core.signal_queue_lock;
 	/* The queue only exists when we have booted */
-	if (lock != Cnil) {
-		mp_get_lock(1, lock);
-		record = cl_core.signal_queue;
-		if (record != Cnil)
-			cl_core.signal_queue = ECL_CONS_CDR(record);
-		mp_giveup_lock(lock);
-	}
-#else
-	record = cl_core.signal_queue;
+	if (lock == Cnil) {
+                return;
+        }
+        mp_get_lock(1, lock);
 #endif
-	if (record == Cnil) {
-		/* Signal lost! The queue was too small. */
-		/* We can no allocate further memory, since
-		 * we are in a signal handler. */
-	} else {
+        record = cl_core.signal_queue;
+        cl_core.signal_queue = ECL_CDR(record);
+#ifdef ECL_THREADS
+        mp_giveup_lock(lock);
+#endif
+        /* If record == Cnil, signal is lost! The queue was
+         * too small.  We can no allocate further memory,
+         * since we are in a signal handler. */
+	if (record != Cnil) {
 		ECL_CONS_CDR(record) = env->pending_interrupt;
 		ECL_CONS_CAR(record) = code;
 		env->pending_interrupt = record;
@@ -428,19 +427,18 @@ queue_signal(cl_env_ptr env, cl_object code)
 static cl_object
 pop_signal(cl_env_ptr env)
 {
-	cl_object record = env->pending_interrupt, output = Cnil;
-	if (record != Cnil) {
+	cl_object record = env->pending_interrupt;
+	if (record != Cnil && record != NULL) {
 #ifdef ECL_THREADS
 		cl_object lock = cl_core.signal_queue_lock;
 		mp_get_lock(1, lock);
+#endif
+                env->pending_interrupt = ECL_CONS_CDR(record);
 		ECL_CONS_CDR(record) = cl_core.signal_queue;
 		cl_core.signal_queue = record;
-		output = ECL_CONS_CAR(record);
+		record = ECL_CONS_CAR(record);
+#ifdef ECL_THREADS
 		mp_giveup_lock(lock);
-#else
-		ECL_CONS_CDR(record) = cl_core.signal_queue;
-		cl_core.signal_queue = record;
-		output = ECL_CONS_CAR(record);
 #endif
 	}
 	return record;
@@ -450,7 +448,10 @@ static void
 handle_or_queue(cl_object signal_code, int code)
 {
 	int old_errno = errno;
-	cl_env_ptr the_env = ecl_process_env();
+	cl_env_ptr the_env;
+        if (Null(signal_code) || signal_code == NULL)
+                return;
+        the_env = ecl_process_env();
 	/*
 	 * If interrupts are disabled by lisp we are not so eager on
 	 * detecting when the interrupts become enabled again. We
@@ -475,6 +476,12 @@ handle_or_queue(cl_object signal_code, int code)
 		if (mprotect(the_env, sizeof(*the_env), PROT_READ) < 0) {
 			ecl_internal_error("Unable to mprotect environment.");
 		}
+#else
+# ifdef ECL_USE_GUARD_PAGE
+                if (!VirtualProtect(the_env, sizeof(*the_env), PAGE_GUARD, NULL)) {
+			ecl_internal_error("Unable to mprotect environment.");
+		}
+# endif
 #endif
 		errno = old_errno;
 	}
@@ -554,11 +561,14 @@ handler_fn_protype(sigbus_handler, int sig, siginfo_t *info, void *aux)
 	 * means there was a pending signal. */
 	the_env = ecl_process_env();
 	if ((void*)the_env == (void*)info->si_addr) {
-		cl_object signal = pop_signal(the_env);
+		cl_object signal;
 		mprotect(the_env, sizeof(*the_env), PROT_READ | PROT_WRITE);
-		the_env->disable_interrupts = 0;
+                the_env->disable_interrupts = 0;
                 unblock_signal(SIGBUS);
-		handle_signal_now(signal);
+                for (signal = pop_signal(the_env); !Null(signal) && signal; ) {
+                        handle_signal_now(signal);
+                        signal = pop_signal(the_env);
+                }
                 return;
 	}
 #endif
@@ -580,8 +590,8 @@ ecl_check_pending_interrupts(void)
 	cl_object sig;
 	env->disable_interrupts = 0;
 	sig = env->pending_interrupt;
-	if (sig) {
-		handle_signal_now(sig);
+	if (sig != Cnil && sig != NULL) {
+		handle_signal_now(pop_signal(env));
 	}
 }
 
@@ -626,10 +636,71 @@ si_catch_signal(cl_object code, cl_object boolean)
 	@(return Cnil)
 }
 
-#ifdef _MSC_VER
+#ifdef ECL_THREADS
+static bool
+do_interrupt_thread(cl_object process)
+{
+# ifdef ECL_WINDOWS_THREADS
+#  ifndef ECL_USE_GUARD_PAGE
+#   error "Cannot implement ecl_interrupt_process without guard pages"
+#  endif
+        HANDLE thread = process->process.thread;
+	CONTEXT context;
+        void *trap_address = process->process.env;
+        int ok = 0;
+        if (SuspendThread(thread) == (DWORD)-1) goto EXIT;
+	context.ContextFlags = CONTEXT_FULL;
+	if (!GetThreadContext(thread, &context)) goto RESUME;
+#  ifdef _AMD64_
+        trap_address = context.Rsp;
+#  endif
+#  ifdef _X86_
+        trap_address = context.Esp;
+#  endif
+        process->process.interrupt = Ct;
+        VirtualProtect(trap_address, 1, PAGE_GUARD, NULL);
+ RESUME:
+	if (ResumeThread(thread) == (DWORD)-1) goto EXIT;
+        ok = 1;
+ EXIT:
+        return ok;
+# else
+        int signal = ecl_get_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL);
+        return pthread_kill(process->process.thread, signal) == 0;
+# endif
+}
+
+void
+ecl_interrupt_process(cl_object process, cl_object function)
+{
+        /*
+         * We first get the lock to ensure that we do not interrupt
+         * the thread while acquiring the queue lock. Then the code
+         * takes two different approaches depending on the platform:
+         *
+         * - In Windows it sets up a trap in the stack, so that the
+         *   uncaught exception handler can catch it and process it.
+         * - In POSIX systems it sends a user level interrupt to
+         *   the thread, which then decides how to act.
+         */
+        cl_object lock;
+        int ok;
+        function = si_coerce_to_function(function);
+        lock = mp_get_lock(1, cl_core.signal_queue_lock);
+        queue_signal(process->process.env, function);
+        ok = do_interrupt_thread(process);
+        mp_giveup_lock(lock);
+        if (!ok) {
+		FEerror("Cannot interrupt process ~A", 1, process);
+        }
+}
+#endif /* ECL_THREADS */
+
+#ifdef ECL_WINDOWS_THREADS
 static LPTOP_LEVEL_EXCEPTION_FILTER old_W32_exception_filter = NULL;
 
-LONG WINAPI W32_exception_filter(struct _EXCEPTION_POINTERS* ep)
+static LONG WINAPI
+W32_exception_filter(struct _EXCEPTION_POINTERS* ep)
 {
 	LONG excpt_result;
 
@@ -670,6 +741,21 @@ LONG WINAPI W32_exception_filter(struct _EXCEPTION_POINTERS* ep)
 		case EXCEPTION_ILLEGAL_INSTRUCTION:
 			handle_or_queue(MAKE_FIXNUM(SIGILL), 0);
 			return EXCEPTION_CONTINUE_EXECUTION;
+                /* Access to guard page */
+        	case STATUS_GUARD_PAGE_VIOLATION: {
+                        cl_env_ptr env = ecl_process_env();
+                        cl_object process = process->process.interrupt;
+                        if (!Null(process->process.interrupt)) {
+                                cl_object signal = pop_signal(the_env);
+                                process->process.interrupt = Cnil;
+                                while (signal != Cnil && signal) {
+                                        handle_signal_now(signal);
+                                        signal = pop_signal(the_env);
+                                }
+                                return EXCEPTION_CONTINUE_EXECUTION;
+                        }
+                        break;
+                }
 		/* Do not catch anything else */
 		default:
 			excpt_result = EXCEPTION_CONTINUE_SEARCH;

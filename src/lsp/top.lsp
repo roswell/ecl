@@ -475,11 +475,10 @@ under certain conditions; see file 'Copyright' for details.")
 (defvar *allow-recursive-debug* nil)
 (defvar *debug-status* nil)
 
-(defun simple-terminal-interrupt (correctablep)
+(defun simple-terminal-interrupt ()
   (let ((*break-enable* t))
-    (if correctablep
-	(cerror "Continues execution." 'ext:interactive-interrupt)
-      (error "Console interrupt -- cannot continue."))))
+    (format t "Signalling console interrupt")
+    (error "Console interrupt -- cannot continue.")))
 
 (defun terminal-interrupt (&optional (correctablep t))
   #+threads
@@ -495,6 +494,7 @@ under certain conditions; see file 'Copyright' for details.")
 		     (mp:process-suspend i)))
      (mp:with-local-interrupts
       (restart-case (simple-terminal-interrupt correctablep)
+        (continue () (return-from terminal-interrupt))
 	(mp:interrupt-process (&optional (process-number 1))
 	  :report (lambda (stream) (princ "Interrupt a certain process." stream))
 	  (loop for processes = (mp:all-processes)
@@ -506,13 +506,16 @@ under certain conditions; see file 'Copyright' for details.")
 		    (continue ())
 		    (store-value (new-value) (setf process-number new-value))))
 	  (setf break-process (elt (mp:all-processes) (1+ process-number))))))
-     (mapc #'mp:process-resume suspended)
+     (loop for process in suspended
+        unless (eq process break-process)
+        do (mp:process-resume suspended))
      (when break-process
        (mp:interrupt-process break-process
 			     #'(lambda ()
 				 (simple-terminal-interrupt correctablep))))))
   #-threads
-  (simple-terminal-interrupt correctablep))
+  (restart-case (simple-terminal-interrupt)
+    (continue ())))
 
 (defun tpl (&key ((:commands *tpl-commands*) tpl-commands)
 		 ((:prompt-hook *tpl-prompt-hook*) *tpl-prompt-hook*)
