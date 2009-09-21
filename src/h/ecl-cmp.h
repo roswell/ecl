@@ -14,6 +14,7 @@
     See file '../Copyright' for full details.
 */
 
+#define _WINSOCKAPI_
 #include <ecl/ecl.h>
 #include <math.h> /* for inline mathematics */
 
