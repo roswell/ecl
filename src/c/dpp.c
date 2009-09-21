@@ -467,7 +467,7 @@ get_lambda_list(void)
 			return;
 		if (c == '&') {
 			p = read_token();
-			goto OPTIONAL;
+			goto _OPT;
 		}
 		unreadc(c);
 		p = read_token();
@@ -476,15 +476,15 @@ get_lambda_list(void)
 		required[nreq++] = p;
 	}
 
-OPTIONAL:
+_OPT:
 	if (strcmp(p, "optional") != 0 && strcmp(p, "o") != 0)
-		goto REST;
+		goto _REST;
 	for (;;  nopt++) {
 		if ((c = nextc()) == ')')
 			return;
 		if (c == '&') {
 			p = read_token();
-			goto REST;
+			goto _REST;
 		}
 		if (nopt >= MAXOPT)
 			error("too many optional argument");
@@ -506,9 +506,9 @@ OPTIONAL:
 		}
 	}
 
-REST:
+_REST:
 	if (strcmp(p, "rest") != 0 && strcmp(p, "r") != 0)
-		goto KEY;
+		goto _KEY;
 	rest_flag = TRUE;
 	if ((c = nextc()) == ')' || c == '&')
 		error("&rest var missing");
@@ -519,11 +519,10 @@ REST:
 	if (c != '&')
 		error("& expected");
 	p = read_token();
-	goto KEY;
 
-KEY:
+_KEY:
 	if (strcmp(p, "key") != 0 && strcmp(p, "k") != 0)
-		goto AUX;
+		goto _AUX;
 	key_flag = TRUE;
 	for (;;  nkey++) {
 		if ((c = nextc()) == ')')
@@ -539,7 +538,7 @@ KEY:
 					error("& expected");
 				p = read_token();
 			}
-			goto AUX;
+			goto _AUX;
 		}
 		if (nkey >= MAXKEY)
 			error("too many optional argument");
@@ -576,7 +575,7 @@ KEY:
 		}
 	}
 
-AUX:
+_AUX:
 	if (strcmp(p, "aux") != 0 && strcmp(p, "a") != 0)
 		error("illegal lambda-list keyword");
 	for (;;) {
