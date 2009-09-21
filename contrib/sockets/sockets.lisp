@@ -50,7 +50,6 @@
  "#endif")
 #+:wsock
 (clines
- #+(or :msvc :mingw32)
  "#include <winsock2.h>"
  "typedef unsigned int uint32_t;"
  #-:mingw32
