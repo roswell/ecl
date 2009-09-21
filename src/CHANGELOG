@@ -124,7 +124,19 @@ ECL 9.9.1:
  - ECL now follows the SBCL model, by which there is a global lock for
    destructive package operations (INTERN, EXPORT, etc), but not for
    query only operations (FIND-SYMBOL, PACKAGE-USE-LIST), etc.
- 
+
+* Windows:
+
+ - The latest version of Visual Studio introduced a number of automatically
+   generated files (*.implib, *.manifest, *.expdef) which are not used at
+   all by ECL, but which were also not deleted, causing the temporary
+   directory to be filled with garbage.
+
+ - FASLs created by COMPILE and LOAD in the directory for temporary files are
+   now properly deleted before exiting ECL.
+
+ - ECL now embeds the manifest file in the generated executables and shared
+   libraries. 
 
 ;;; Local Variables: ***
 ;;; mode:text ***
