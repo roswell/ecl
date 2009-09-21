@@ -143,6 +143,7 @@ ecl_library_open(cl_object filename, bool force_reload) {
 		 * file has been previously loaded. */
 #if defined(mingw32) || defined(_MSC_VER)
 		filename = copy_object_file(filename);
+		self_destruct = 1;
 #else
 		block = ecl_library_find_by_name(filename);
 		if (!Null(block)) {
