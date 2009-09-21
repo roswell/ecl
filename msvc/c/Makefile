@@ -7,11 +7,15 @@ srcdir	= ..\..\src\c
 !if "$(ECL_THREADS)" != ""
 ECL_THREADS_FLAG=1
 THREADS_OBJ= threads.obj threads_mutex.obj
-THREADS_FLAGS= -DECL_THREADS
 !else
 ECL_THREADS_FLAG=0
 THREADS_OBJ=
-THREADS_FLAGS=
+!endif
+
+!if "$(ECL_UNICODE)" != ""
+ECL_UNICODE_FLAG=1
+!else
+ECL_UNICODE_FLAG=0
 !endif
 
 # Programs used by "make":
@@ -19,7 +23,6 @@ THREADS_FLAGS=
 TRUE_CC = cl
 CC	= cl
 CFLAGS	= -c $(ECL_CFLAGS) -DECL_API="__declspec(dllexport)" -I./ -I../ -I$(srcdir) -I$(top_srcdir)/gc/include  -I$(top_srcdir)/gc/include/private
-DEFS    = $(THREADS_FLAGS)
 
 SHELL	= /bin/sh
 RM	= del
@@ -97,12 +100,13 @@ clean:
 # Build rules
 
 $(DPP): $(srcdir)/dpp.c $(srcdir)/symbols_list2.h ../ecl/config.h
-	$(TRUE_CC) -I.. -I./ $(DEFS) $(srcdir)/dpp.c  -o $@
+	$(TRUE_CC) -I.. -I./ $(srcdir)/dpp.c  -o $@
 ../ecl/config.h: ../ecl/config.h.msvc6 Makefile
 	for %i in ($(HFILES)) do $(CP) %i ..\ecl
 	cut.exe "@ECL_FPE_CODE@" "$(srcdir:\=/)/arch/fpe_x86.c" \
 		"@ECL_VERSION_NUMBER@" "$(ECL_VERSION_NUMBER)" \
 		"@ECL_THREADS@" "$(ECL_THREADS_FLAG)" \
+		"@ECL_UNICODE@" "$(ECL_UNICODE_FLAG)" \
 	        < ..\ecl\config.h.msvc6 > $@
 
 #

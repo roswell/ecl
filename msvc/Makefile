@@ -93,7 +93,7 @@ GCFLAGS = nodebug=1
 !endif
 
 CFLAGS  = /EHsc /DGC_DLL /DGC_BUILD /nologo /D_CRT_SECURE_NO_DEPRECATE $(CFLAGS_CONFIG)
-LDFLAGS	= /link /nologo /nodefaultlib:libcmt /nodefaultlib:libcmtd /nodefaultlib:libc /nodefaultlib:libcd $(LDFLAGS_CONFIG)
+LDFLAGS	= /link /incremental:no /nologo /nodefaultlib:libcmt /nodefaultlib:libcmtd /nodefaultlib:libc /nodefaultlib:libcd $(LDFLAGS_CONFIG)
 
 
 # Additional configuration for thread support
@@ -109,7 +109,6 @@ DEF        = ecl-threads.def
 # Additional configuration for Unicode support
 #
 !if "$(ECL_UNICODE)" != ""
-CFLAGS     = $(CFLAGS) /DECL_UNICODE
 UCDDAT     = ucd.dat
 !endif
 
@@ -208,6 +207,9 @@ ucd.dat: $(top_srcdir)\..\contrib\unicode\ucd.dat
 
 ecl_min$(EXE): $(LIBRARIES) eclmin.lib $(UCDDAT)
 	$(CC) /Fe$@ cinit.obj c\all_symbols.obj eclmin.lib $(LDFLAGS) $(LIBS)
+	if exist ecl_min$(EXE).manifest \
+	 mt -manifest ecl_min.exe.manifest -outputresource:ecl_min.exe;1
+	-$(RM) ecl_min.exp ecl_min.lib ecl_min$(EXE).manifest
 
 .gdbinit: $(srcdir)\util\gdbinit
 	$(CP) $(srcdir)\util\gdbinit $@
@@ -305,7 +307,8 @@ ecl-cc.bat: util\ecl-cc.bat Makefile
 eclmin.lib: eclgmp.lib eclgc.lib lsp/config.lsp
 	cd c
 	$(MAKE) ECL_VERSION_NUMBER=$(ECL_VERSION_NUMBER) \
-	        ECL_THREADS=$(ECL_THREADS) "ECL_CFLAGS=$(CFLAGS) -DGC_BUILD"
+	        ECL_THREADS=$(ECL_THREADS) ECL_UNICODE=$(ECL_UNICODE) \
+		"ECL_CFLAGS=$(CFLAGS) -DGC_BUILD"
 	cd ..
 eclgc.lib:
 	cd gc
