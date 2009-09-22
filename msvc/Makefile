@@ -10,8 +10,8 @@ srcdir	= ..\src
 
 SHORT_SITE_NAME   =
 LONG_SITE_NAME    =
-ECL_VERSION       = 9.8.4
-ECL_VERSION_NUMBER= 90804
+ECL_VERSION       = 9.9.1
+ECL_VERSION_NUMBER= 90901
 ARCHITECTURE      = PENTIUM4
 SOFTWARE_TYPE     = NT
 SOFTWARE_VERSION  = 5.0
@@ -26,6 +26,9 @@ THEHOST           = win32
 GMP_TYPE      = gc
 
 # Set it to non-empty to include Win32 thread support
+# Currently it is NOT SUPPORTED to build ECL without threads. The reason
+# is that certain exception handlers in Windows always use new threads.
+# Without them, ECL would be an even more fragile piece of software.
 ECL_THREADS   = 1
 
 # Set it to non-empty to include support for Unicode characters

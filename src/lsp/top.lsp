@@ -477,8 +477,46 @@ under certain conditions; see file 'Copyright' for details.")
 
 (defun simple-terminal-interrupt ()
   (let ((*break-enable* t))
-    (format t "Signalling console interrupt")
-    (error "Console interrupt -- cannot continue.")))
+    (error 'ext:interactive-interrupt)))
+
+#+threads
+(defun apply-process-filter (process-filter process)
+  (declare (si::c-local))
+  (typecase process-filter
+    ((null) nil)
+    ((cons) (member process process-filter :test #'eq))
+    ((or symbol function)
+     (funcall process-filter process))
+    ((t) (eq process process-filter))))
+
+#+threads
+(defun show-process-list (&optional process-filter)
+  (loop with current = mp:*current-process*
+	with rank = 1
+	for process in (mp:all-processes)
+	unless (apply-process-filter process-filter process)
+	collect (progn
+		  (format t (if (eq process current)
+				"~%  >~D: ~s"
+			      "~%   ~D: ~s")
+			  rank process)
+		  (incf rank)
+		  process)))
+
+#+threads
+(defun query-process (&optional (process-filter mp:*current-process*))
+  (format t "~&Choose the integer code of process to interrupt.
+Use special code 0 to cancel this operation.")
+  (loop for process-list = (show-process-list process-filter)
+	for code = (progn
+		     (tpl-prompt)
+		     (tpl-read))
+	do (cond ((zerop code)
+		  (return nil))
+		 ((and (fixnump code) (<= 1 code (length process-list)))
+		  (return (list (elt process-list (1- code)))))
+		 (t
+		  (format t "~&Not a valid process number")))))
 
 (defun terminal-interrupt (&optional (correctablep t))
   #+threads
@@ -493,26 +531,18 @@ under certain conditions; see file 'Copyright' for details.")
 		     (push i suspended)
 		     (mp:process-suspend i)))
      (mp:with-local-interrupts
-      (restart-case (simple-terminal-interrupt correctablep)
+      (restart-case (simple-terminal-interrupt)
         (continue () (return-from terminal-interrupt))
-	(mp:interrupt-process (&optional (process-number 1))
+	(mp:interrupt-process (process)
+	  :interactive query-process
 	  :report (lambda (stream) (princ "Interrupt a certain process." stream))
-	  (loop for processes = (mp:all-processes)
-		while (not (and (fixnump process-number)
-				(<= 1 process-number (length processes))))
-		do (restart-case (cerror "Continue without breaking"
-					 "Not a valid process index ~D"
-					 process-number)
-		    (continue ())
-		    (store-value (new-value) (setf process-number new-value))))
-	  (setf break-process (elt (mp:all-processes) (1+ process-number))))))
+	  (setf break-process process))))
      (loop for process in suspended
         unless (eq process break-process)
-        do (mp:process-resume suspended))
+        do (mp:process-resume process))
      (when break-process
        (mp:interrupt-process break-process
-			     #'(lambda ()
-				 (simple-terminal-interrupt correctablep))))))
+			     #'simple-terminal-interrupt))))
   #-threads
   (restart-case (simple-terminal-interrupt)
     (continue ())))
@@ -658,7 +688,6 @@ under certain conditions; see file 'Copyright' for details.")
 	     `(tpl-unknown-command ',name)))
 	((eq (third c) :restart)
 	 `(progn
-	    ;;(format t "~&About to invoke restart: ~A.~%" ,(second c))
 	    (invoke-restart-interactively ,(second c))))
 	((eq (third c) :eval)
 	 `(,(second c) . ,(tpl-parse-forms line)))

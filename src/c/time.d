@@ -142,7 +142,7 @@ cl_sleep(cl_object z)
 #if defined (mingw32) || defined(_MSC_VER)
         {
                 double r = ecl_to_double(z) * 1000;
-                Sleep((long)r);
+                SleepEx((long)r, TRUE);
         }
 #else
 	z = ecl_round1(z);

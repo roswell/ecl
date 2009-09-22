@@ -88,6 +88,7 @@
 #endif
 #if defined(mingw32) || defined(_MSC_VER)
 # include <windows.h>
+# define ECL_WINDOWS_THREADS
 #endif
 #if !defined(_MSC_VER)
 # include <unistd.h>
@@ -383,10 +384,10 @@ si_handle_signal(cl_object signal_code)
 static void
 create_signal_queue(cl_index size)
 {
-	cl_object base = cl_make_list(2, MAKE_FIXNUM(size));
+	cl_object base = cl_make_list(1, MAKE_FIXNUM(size));
 #ifdef ECL_THREADS
 	{
-		cl_object lock = mp_make_lock(0);
+		cl_object lock = mp_make_lock(2, @':name', @'mp::interrupt-process');
 		mp_get_lock(1, lock);
 		cl_core.signal_queue = base;
 		cl_core.signal_queue_lock = lock;
@@ -410,7 +411,7 @@ queue_signal(cl_env_ptr env, cl_object code)
         mp_get_lock(1, lock);
 #endif
         record = cl_core.signal_queue;
-        cl_core.signal_queue = ECL_CDR(record);
+        cl_core.signal_queue = CDR(record);
 #ifdef ECL_THREADS
         mp_giveup_lock(lock);
 #endif
@@ -637,6 +638,14 @@ si_catch_signal(cl_object code, cl_object boolean)
 }
 
 #ifdef ECL_THREADS
+static VOID CALLBACK
+wakeup_function(ULONG_PTR foo)
+{
+	cl_env_ptr env = ecl_process_env();
+	volatile i = env->nvalues;
+	env->nvalues = i;
+}
+
 static bool
 do_interrupt_thread(cl_object process)
 {
@@ -644,24 +653,60 @@ do_interrupt_thread(cl_object process)
 #  ifndef ECL_USE_GUARD_PAGE
 #   error "Cannot implement ecl_interrupt_process without guard pages"
 #  endif
-        HANDLE thread = process->process.thread;
+        HANDLE thread = (HANDLE)process->process.thread;
 	CONTEXT context;
         void *trap_address = process->process.env;
-        int ok = 0;
-        if (SuspendThread(thread) == (DWORD)-1) goto EXIT;
+	DWORD guard = PAGE_GUARD | PAGE_READWRITE;
+        int ok = 1;
+        if (SuspendThread(thread) == (DWORD)-1) {
+		FEwin32_error("Unable to suspend thread ~A", 1,
+			      process);
+		ok = 0;
+		goto EXIT;
+	}
+#if 0
 	context.ContextFlags = CONTEXT_FULL;
-	if (!GetThreadContext(thread, &context)) goto RESUME;
+	if (!GetThreadContext(thread, &context))  {
+		FEwin32_error("Unable to query context in thread ~A", 1,
+			      process);
+		ok = 0;
+		goto RESUME;
+	}
 #  ifdef _AMD64_
-        trap_address = context.Rsp;
+        trap_address = (void*)context.Rsp;
 #  endif
 #  ifdef _X86_
-        trap_address = context.Esp;
+        trap_address = (void*)context.Esp;
 #  endif
         process->process.interrupt = Ct;
-        VirtualProtect(trap_address, 1, PAGE_GUARD, NULL);
+        if (!VirtualProtect(trap_address, 1, guard, &guard)) {
+		FEwin32_error("Unable to protect memory from thread ~A",
+			      1, process);
+		ok = 0;
+#else
+        process->process.interrupt = Ct;
+        if (!VirtualProtect(process->process.env,
+			    sizeof(struct cl_env_struct),
+			    guard,
+			    &guard))
+	{
+		FEwin32_error("Unable to protect memory from thread ~A",
+			      1, process);
+		ok = 0;
+	}
+#endif
  RESUME:
-	if (ResumeThread(thread) == (DWORD)-1) goto EXIT;
-        ok = 1;
+	if (!QueueUserAPC(wakeup_function, thread, 0)) {
+		FEwin32_error("Unable to queue APC call to thread ~A",
+			      1, process);
+		ok = 0;
+	}
+	if (ResumeThread(thread) == (DWORD)-1)  {
+		FEwin32_error("Unable to resume thread ~A", 1,
+			      process);
+		ok = 0;
+		goto EXIT;
+	}
  EXIT:
         return ok;
 # else
@@ -699,14 +744,28 @@ ecl_interrupt_process(cl_object process, cl_object function)
 #ifdef ECL_WINDOWS_THREADS
 static LPTOP_LEVEL_EXCEPTION_FILTER old_W32_exception_filter = NULL;
 
-static LONG WINAPI
-W32_exception_filter(struct _EXCEPTION_POINTERS* ep)
+LONG WINAPI
+_ecl_w32_exception_filter(struct _EXCEPTION_POINTERS* ep)
 {
 	LONG excpt_result;
 
 	excpt_result = EXCEPTION_CONTINUE_EXECUTION;
 	switch (ep->ExceptionRecord->ExceptionCode)
 	{
+                /* Access to guard page */
+        	case STATUS_GUARD_PAGE_VIOLATION: {
+                        cl_env_ptr env = ecl_process_env();
+                        cl_object process = env->own_process;
+                        if (!Null(process->process.interrupt)) {
+                                cl_object signal = pop_signal(env);
+                                process->process.interrupt = Cnil;
+                                while (signal != Cnil && signal) {
+                                        handle_signal_now(signal);
+                                        signal = pop_signal(env);
+                                }
+                                return EXCEPTION_CONTINUE_EXECUTION;
+                        }
+                }
 		/* Catch all arithmetic exceptions */
 		case EXCEPTION_INT_DIVIDE_BY_ZERO:
                         handle_or_queue(@'division-by-zero', 0);
@@ -741,21 +800,6 @@ W32_exception_filter(struct _EXCEPTION_POINTERS* ep)
 		case EXCEPTION_ILLEGAL_INSTRUCTION:
 			handle_or_queue(MAKE_FIXNUM(SIGILL), 0);
 			return EXCEPTION_CONTINUE_EXECUTION;
-                /* Access to guard page */
-        	case STATUS_GUARD_PAGE_VIOLATION: {
-                        cl_env_ptr env = ecl_process_env();
-                        cl_object process = process->process.interrupt;
-                        if (!Null(process->process.interrupt)) {
-                                cl_object signal = pop_signal(the_env);
-                                process->process.interrupt = Cnil;
-                                while (signal != Cnil && signal) {
-                                        handle_signal_now(signal);
-                                        signal = pop_signal(the_env);
-                                }
-                                return EXCEPTION_CONTINUE_EXECUTION;
-                        }
-                        break;
-                }
 		/* Do not catch anything else */
 		default:
 			excpt_result = EXCEPTION_CONTINUE_SEARCH;
@@ -770,10 +814,9 @@ static cl_object
 W32_handle_in_new_thread(cl_object signal_code)
 {
 	int outside_ecl = ecl_import_current_thread(@'si::handle-signal', Cnil);
-
-	mp_process_run_function(3, @'si::handle-signal', @'si::handle-signal',
+	mp_process_run_function(3, @'si::handle-signal',
+				@'si::handle-signal',
 				signal_code);
-
 	if (outside_ecl) ecl_release_current_thread();
 }
 
@@ -782,13 +825,16 @@ BOOL WINAPI W32_console_ctrl_handler(DWORD type)
 	switch (type)
 	{
 		/* Catch CTRL-C */
-		case CTRL_C_EVENT:
-			W32_handle_in_new_thread(@'si::terminal-interrupt');
-			return TRUE;
+	case CTRL_C_EVENT: {
+		cl_object function = SYM_FUN(@'si::terminal-interrupt');
+		if (function)
+			W32_handle_in_new_thread(function);
+		return TRUE;
+	}
 	}
 	return FALSE;
 }
-#endif
+#endif /* ECL_WINDOWS_THREADS */
 
 #if defined(ECL_THREADS) && defined(HAVE_SIGPROCMASK)
 static cl_object
@@ -919,9 +965,9 @@ install_asynchronous_signal_handlers()
 	pthread_sigmask(SIG_SETMASK, &sigmask, NULL);
 	cl_core.default_sigmask = &sigmask;
 #endif
-#ifdef _MSC_VER
+#ifdef ECL_WINDOWS_THREADS
 	old_W32_exception_filter =
-		SetUnhandledExceptionFilter(W32_exception_filter);
+		SetUnhandledExceptionFilter(_ecl_w32_exception_filter);
 	if (ecl_get_option(ECL_OPT_TRAP_SIGINT)) {
 		SetConsoleCtrlHandler(W32_console_ctrl_handler, TRUE);
 	}

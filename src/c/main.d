@@ -302,7 +302,8 @@ _ecl_alloc_env()
 		ecl_internal_error("Unable to allocate environment structure.");
 #else
 # if defined(ECL_USE_GUARD_PAGE)
-	output = VirtualAlloc(0, sizeof(*output), MEM_COMMIT);
+	output = VirtualAlloc(0, sizeof(*output), MEM_COMMIT,
+			      PAGE_READWRITE);
 	if (output == NULL)
 		ecl_internal_error("Unable to allocate environment structure.");
 # else

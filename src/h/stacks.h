@@ -309,14 +309,26 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_obje
 #define CL_CATCH_END } \
 	ecl_frs_pop(__the_env); } while (0)
 
-#define CL_CATCH_ALL_BEGIN(the_env) do {	\
+#if defined(_MSC_VER)
+# define CL_CATCH_ALL_BEGIN(the_env) do {			\
+	const cl_env_ptr __the_env = (the_env);			\
+	_try {							\
+	const cl_env_ptr __the_env = (the_env);			\
+	if (ecl_frs_push(__the_env,ECL_PROTECT_TAG) == 0) {
+# define CL_CATCH_ALL_IF_CAUGHT } else {
+# define CL_CATCH_ALL_END }}						\
+	_except(_ecl_w32_exception_filter(GetExceptionInformation())) \
+	{ (void)0; }							\
+	ecl_frs_pop(__the_env); } while(0)
+#else
+# define CL_CATCH_ALL_BEGIN(the_env) do {	\
 	const cl_env_ptr __the_env = (the_env);	\
 	if (ecl_frs_push(__the_env,ECL_PROTECT_TAG) == 0) {
-
-#define CL_CATCH_ALL_IF_CAUGHT } else {
-
-#define CL_CATCH_ALL_END } \
+# define CL_CATCH_ALL_IF_CAUGHT } else {
+# define CL_CATCH_ALL_END } \
 	ecl_frs_pop(__the_env); } while(0)
+#endif
+
 
 #ifdef __cplusplus
 }

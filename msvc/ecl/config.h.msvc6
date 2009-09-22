@@ -101,6 +101,9 @@
 
 /* Use mprotect for fast interrupt dispatch				*/
 /* #undef ECL_USE_MPROTECT */
+#if defined(_MSC_VER) || defined(mingw32)
+# define ECL_USE_GUARD_PAGE
+#endif
 
 /* Integer types                        				*/
 #define ecl_uint8_t unsigned char

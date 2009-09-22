@@ -19,7 +19,9 @@
 #ifndef __sun__ /* See unixinit.d for this */
 #define _XOPEN_SOURCE 600	/* For pthread mutex attributes */
 #endif
-#if !defined(_MSC_VER) && !defined(mingw32)
+#if defined(_MSC_VER) || defined(mingw32)
+# include <windows.h>
+#else
 # include <pthread.h>
 #endif
 #include <errno.h>
@@ -52,12 +54,10 @@ extern HANDLE WINAPI GC_CreateThread(
 # ifndef WITH___THREAD
 DWORD cl_env_key;
 # endif
-static DWORD main_thread;
 #else
 # ifndef WITH___THREAD
 static pthread_key_t cl_env_key;
 # endif
-static pthread_t main_thread;
 static pthread_attr_t pthreadattr;
 static pthread_mutexattr_t mutexattr_error, mutexattr_recursive;
 #endif /* _MSC_VER || mingw32 */
@@ -137,6 +137,11 @@ thread_cleanup(void *aux)
 }
 
 #ifdef ECL_WINDOWS_THREADS
+extern LONG WINAPI
+_ecl_w32_exception_filter(struct _EXCEPTION_POINTERS* ep);
+#endif
+
+#ifdef ECL_WINDOWS_THREADS
 static DWORD WINAPI thread_entry_point(void *arg)
 #else
 static void *
@@ -146,10 +151,10 @@ thread_entry_point(void *arg)
         cl_object process = (cl_object)arg;
 	cl_env_ptr env;
 
-	/* 1) Setup the environment for the execution of the thread */
 #ifndef ECL_WINDOWS_THREADS
 	pthread_cleanup_push(thread_cleanup, (void *)process);
 #endif
+	/* 1) Setup the environment for the execution of the thread */
 	process->process.env = env = _ecl_alloc_env();
 	env->own_process = process;
 	ecl_set_process_env(env);
@@ -159,7 +164,7 @@ thread_entry_point(void *arg)
 	ecl_init_env(env);
 	env->bindings_hash = process->process.initial_bindings;
 	ecl_enable_interrupts_env(env);
-        env->trap_fpe_bits = process->process.parent->process.env->trap_fpe_bits;
+        env->trap_fpe_bits = process->process.trap_fpe_bits;
         si_trap_fpe(@'last', Ct);
 
 	/* 2) Execute the code. The CATCH_ALL point is the destination
@@ -219,9 +224,22 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
 	pthread_t current;
 	cl_env_ptr env;
 #ifdef ECL_WINDOWS_THREADS
-	current = GetCurrentThread();
+	{
+	HANDLE aux = GetCurrentThread();
+	DuplicateHandle(GetCurrentProcess(),
+			aux,
+			GetCurrentProcess(),
+			&current,
+			0,
+			FALSE,
+			DUPLICATE_SAME_ACCESS);
+	CloseHandle(current);
+	}
 #else
 	current = pthread_self();
+#endif
+#ifdef GBC_BOEHM
+	GC_register_my_thread((void*)&name);
 #endif
 	for (l = cl_core.processes; l != Cnil; l = ECL_CONS_CDR(l)) {
 		cl_object p = ECL_CONS_CAR(l);
@@ -240,6 +258,8 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
 	THREAD_OP_UNLOCK();
 	ecl_init_env(env);
 	env->bindings_hash = process->process.initial_bindings;
+	mp_get_lock(1, process->process.exit_lock);
+	process->process.active = 1;
 	ecl_enable_interrupts_env(env);
 	return 1;
 }
@@ -248,6 +268,9 @@ void
 ecl_release_current_thread(void)
 {
 	thread_cleanup(ecl_process_env()->own_process);
+#ifdef GBC_BOEHM
+	GC_unregister_my_thread();
+#endif
 }
 
 @(defun mp::make-process (&key name ((:initial-bindings initial_bindings) Ct))
@@ -285,7 +308,7 @@ mp_suspend_loop()
         cl_env_ptr env = ecl_process_env();
         CL_CATCH_BEGIN(env,@'mp::suspend-loop') {
                 for ( ; ; ) {
-                        cl_sleep(MAKE_FIXNUM(1000));
+                        cl_sleep(MAKE_FIXNUM(100));
                 }
         } CL_CATCH_END;
 }
@@ -342,6 +365,8 @@ mp_process_enable(cl_object process)
 	if (mp_process_active_p(process) != Cnil)
 		FEerror("Cannot enable the running process ~A.", 1, process);
         process->process.parent = mp_current_process();
+	process->process.trap_fpe_bits =
+		process->process.parent->process.env->trap_fpe_bits;
 	code = (HANDLE)CreateThread(NULL, 0, thread_entry_point, process, 0, &threadId);
 	output = (process->process.thread = code)? process : Cnil;
 #else
@@ -374,11 +399,6 @@ mp_process_enable(cl_object process)
 cl_object
 mp_exit_process(void)
 {
-#ifdef ECL_WINDOWS_THREADS
-	int same = GetCurrentThreadId() == main_thread;
-#else
-	int same = pthread_equal(pthread_self(), main_thread);
-#endif
 	/* We simply undo the whole of the frame stack. This brings up
 	   back to the thread entry point, going through all possible
 	   UNWIND-PROTECT.
@@ -580,13 +600,13 @@ mp_giveup_lock(cl_object lock)
 	}
 	if (--lock->lock.counter == 0) {
 		lock->lock.holder = Cnil;
-	}
 #ifdef ECL_WINDOWS_THREADS
-        if (ReleaseMutex(lock->lock.mutex) == 0)
-		FEwin32_error("Unable to release Win32 Mutex", 0);
+		if (ReleaseMutex(lock->lock.mutex) == 0)
+			FEwin32_error("Unable to release Win32 Mutex", 0);
 #else
-	pthread_mutex_unlock(&lock->lock.mutex);
+		pthread_mutex_unlock(&lock->lock.mutex);
 #endif
+	}
 	@(return Ct)
 }
 
@@ -764,6 +784,7 @@ void
 init_threads(cl_env_ptr env)
 {
 	cl_object process;
+	pthread_t main_thread;
 
 #ifdef ECL_WINDOWS_THREADS
 	cl_core.global_lock = CreateMutex(NULL, FALSE, NULL);
@@ -790,7 +811,16 @@ init_threads(cl_env_ptr env)
 	ecl_set_process_env(env);
 
 #ifdef ECL_WINDOWS_THREADS
-	main_thread = GetCurrentThreadId();
+	{
+	HANDLE aux = GetCurrentThread();
+	DuplicateHandle(GetCurrentProcess(),
+			aux,
+			GetCurrentProcess(),
+			&main_thread,
+			0,
+			FALSE,
+			DUPLICATE_SAME_ACCESS);
+	}
 #else
 	main_thread = pthread_self();
 #endif

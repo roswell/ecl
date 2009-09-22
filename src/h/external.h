@@ -127,6 +127,9 @@ struct cl_env_struct {
 
         /* Floating point interrupts which are trapped */
         int trap_fpe_bits;
+
+	/* Old exception filter. Needed by windows. */
+	void *old_exception_filter;
 };
 
 #ifndef __GNUC__
@@ -1717,6 +1720,9 @@ extern ECL_API cl_object si_check_pending_interrupts(void);
 extern ECL_API cl_object si_disable_interrupts(void);
 extern ECL_API cl_object si_enable_interrupts(void);
 extern ECL_API cl_object si_trap_fpe(cl_object condition, cl_object flag);
+#if defined(_MSC_VER) || defined(mingw32)
+extern LONG WINAPI _ecl_w32_exception_filter(struct _EXCEPTION_POINTERS*);
+#endif
 extern ECL_API void ecl_check_pending_interrupts(void);
 
 /* unixsys.c */
