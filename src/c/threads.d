@@ -697,13 +697,33 @@ mp_condition_variable_wait(cl_object cv, cl_object lock)
 #ifdef ECL_WINDOWS_THREADS
 	FEerror("Condition variables are not supported under Windows.", 0);
 #else
+        int count, rc;
+        cl_object own_process = mp_current_process();
 	if (type_of(cv) != t_condition_variable)
 		FEwrong_type_argument(@'mp::condition-variable', cv);
 	if (type_of(lock) != t_lock)
 		FEwrong_type_argument(@'mp::lock', lock);
-	if (pthread_cond_wait(&cv->condition_variable.cv,
-	                      &lock->lock.mutex) == 0)
-		lock->lock.holder = mp_current_process();
+        if (lock->lock.holder != own_process) {
+                FEerror("Attempt to wait on a condition variable using lock~%~S"
+                        "~%which is not owned by process~%~S", 2, lock, own_process);
+        }
+        if (lock->lock.counter > 0) {
+                FEerror("mp:condition-variable-wait can not be used with recursive"
+                        " locks:~%~S", 1, lock);
+        }
+        /* Note: this is highly unsafe. We are marking the lock as released
+         * without knowing whether pthread_cond_wait worked as expected. */
+        lock->lock.counter = 0;
+        lock->lock.holder = Cnil;
+	rc = pthread_cond_wait(&cv->condition_variable.cv,
+                               &lock->lock.mutex);
+        lock->lock.holder = own_process;
+        lock->lock.counter = 1;
+        if (rc != 0) {
+                FEerror("System returned error code ~D "
+                        "when waiting on condition variable~%~A~%and lock~%~A.",
+                        3, MAKE_FIXNUM(rc), cv, lock);
+        }
 #endif
 	@(return Ct)
 }
@@ -714,6 +734,8 @@ mp_condition_variable_timedwait(cl_object cv, cl_object lock, cl_object seconds)
 #ifdef ECL_WINDOWS_THREADS
 	FEerror("Condition variables are not supported under Windows.", 0);
 #else
+        int rc;
+        cl_object own_process = mp_current_process();
 	double r;
 	struct timespec   ts;
 	struct timeval    tp;
@@ -722,6 +744,14 @@ mp_condition_variable_timedwait(cl_object cv, cl_object lock, cl_object seconds)
 		FEwrong_type_argument(@'mp::condition-variable', cv);
 	if (type_of(lock) != t_lock)
 		FEwrong_type_argument(@'mp::lock', lock);
+        if (lock->lock.holder != own_process) {
+                FEerror("Attempt to wait on a condition variable using lock~%~S"
+                        "~%which is not owned by process~%~S", 2, lock, own_process);
+        }
+        if (lock->lock.counter > 0) {
+                FEerror("mp:condition-variable-wait can not be used with recursive"
+                        " locks:~%~S", 1, lock);
+        }
 	/* INV: ecl_minusp() makes sure `seconds' is real */
 	if (ecl_minusp(seconds))
 		cl_error(9, @'simple-type-error', @':format-control',
@@ -741,13 +771,20 @@ mp_condition_variable_timedwait(cl_object cv, cl_object lock, cl_object seconds)
 		ts.tv_nsec -= 1e9;
 		ts.tv_sec++;
 	}
-	if (pthread_cond_timedwait(&cv->condition_variable.cv,
-	                           &lock->lock.mutex, &ts) == 0) {
-		lock->lock.holder = mp_current_process();
-		@(return Ct)
-	} else {
-		@(return Cnil)
-	}
+        /* Note: this is highly unsafe. We are marking the lock as released
+         * without knowing whether pthread_cond_wait worked as expected. */
+        lock->lock.counter = 0;
+        lock->lock.holder = Cnil;
+	rc = pthread_cond_timedwait(&cv->condition_variable.cv,
+                                    &lock->lock.mutex, &ts);
+        lock->lock.holder = own_process;
+        lock->lock.counter = 1;
+        if (rc != ETIMEDOUT) {
+                FEerror("System returned error code ~D "
+                        "when waiting on condition variable~%~A~%and lock~%~A.",
+                        3, MAKE_FIXNUM(rc), cv, lock);
+        }
+        @(return (rc? Ct : Cnil))
 #endif
 }
 
