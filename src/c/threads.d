@@ -612,11 +612,12 @@ mp_giveup_lock(cl_object lock)
 
 @(defun mp::get-lock (lock &optional (wait Ct))
 	cl_object output;
+	cl_object own_process = mp_current_process();
 	int rc;
 @
 	if (type_of(lock) != t_lock)
 		FEwrong_type_argument(@'mp::lock', lock);
-        if (lock->lock.holder == the_env->own_process) {
+        if (lock->lock.holder == own_process) {
                 if (!lock->lock.recursive) {
                         FEerror("A recursive attempt was made to hold lock ~S",
                                 1, lock);
@@ -633,7 +634,7 @@ mp_giveup_lock(cl_object lock)
 	switch (WaitForSingleObject(lock->lock.mutex, (wait==Ct?INFINITE:0))) {
 		case WAIT_OBJECT_0:
                         lock->lock.counter++;
-                        lock->lock.holder = the_env->own_process;
+                        lock->lock.holder = own_process;
                         output = lock;
 			break;
 		case WAIT_TIMEOUT:
@@ -656,7 +657,7 @@ mp_giveup_lock(cl_object lock)
 	}
 	if (rc == 0) {
 		lock->lock.counter++;
-		lock->lock.holder = the_env->own_process;
+		lock->lock.holder = own_process;
 		output = lock;
 	} else if (rc == EBUSY) {
 		output = Cnil;
