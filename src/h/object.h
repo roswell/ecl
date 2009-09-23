@@ -84,6 +84,9 @@ typedef enum {
 	t_process,
 	t_lock,
 	t_condition_variable,
+# ifdef ECL_SEMAPHORES
+        t_semaphore,
+# endif
 #endif
 	t_codeblock,
 	t_foreign,
@@ -851,7 +854,11 @@ struct ecl_condition_variable {
         pthread_cond_t cv;
 };
 
-#endif
+struct ecl_semaphore {
+        HEADER;
+        void *handle;
+};
+#endif /* ECL_THREADS */
 
 #ifdef CLOS
 #define CLASS_OF(x)		(x)->instance.clas
@@ -919,6 +926,9 @@ union cl_lispunion {
 	struct ecl_process	process; 	/*  process  */
 	struct ecl_lock		lock; 		/*  lock  */
         struct ecl_condition_variable condition_variable; /*  condition-variable */
+#endif
+#ifdef ECL_SEMAPHORES
+        struct ecl_semaphore	semaphore;	/*  semaphore  */
 #endif
 	struct ecl_codeblock	cblock;		/*  codeblock  */
 	struct ecl_foreign	foreign; 	/*  user defined data type */

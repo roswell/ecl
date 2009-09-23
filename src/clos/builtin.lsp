@@ -85,7 +85,8 @@
 	    (si::weak-pointer)
 	    #+threads (mp::process)
 	    #+threads (mp::lock)
-	    #+threads (mp::condition-variable))))
+	    #+threads (mp::condition-variable)
+	    #+semaphores (mp::semaphore))))
 
 (loop for (name . rest) in '#.+builtin-classes+
    with index = 1

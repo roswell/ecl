@@ -405,6 +405,11 @@ ONCE_MORE:
 	  obj->condition_variable.cv = OBJNULL;
 	  break;
 #endif
+#ifdef ECL_SEMAPHORES
+	case t_semaphore:
+          obj->semaphore.handle = NULL;
+	  break;
+#endif
 #ifdef CLOS
 	case t_instance:
 	  obj->instance.length = 0;
@@ -758,6 +763,10 @@ init_alloc(void)
 	init_tm(t_condition_variable, "tCONDITION-VARIABLE",
                 sizeof(struct ecl_condition_variable), 2);
 #endif /* THREADS */
+#ifdef ECL_SEMAPHORES
+	init_tm(t_semaphore, "tSEMAPHORE",
+                sizeof(struct ecl_semaphore), 2);
+#endif
 #ifdef ECL_LONG_FLOAT
 	init_tm(t_longfloat, "tLONGFLOAT", sizeof(struct ecl_long_float), 2);
 #endif

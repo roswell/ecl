@@ -841,3 +841,28 @@ case "${host_cpu}" in
 esac
 AC_SUBST(ECL_FPE_CODE)
 ])
+
+dnl ----------------------------------------------------------------------
+dnl Check whether we have unnamed POSIX semaphores available
+AC_DEFUN([ECL_POSIX_SEMAPHORES],
+[AC_MSG_CHECKING(working sem_init())
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#ifdef HAVE_SEMAPHORE_H
+#include <semaphore.h>
+int main() {
+  sem_t aux;
+  if (sem_init(&aux, 0, 0))
+    exit(1);
+  exit(0);
+#else
+int main() {
+  exit(1);
+}
+#endif
+}]])],[working_sem_init=yes],[working_sem_init=no],[])
+AC_MSG_RESULT([$working_sem_init])
+if test $working_sem_init = yes ; then
+  AC_DEFINE(ECL_SEMAPHORES)
+  AC_DEFINE(HAVE_SEM_INIT)
+fi
+])

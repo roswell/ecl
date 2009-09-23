@@ -67,6 +67,7 @@
 #undef ECL_THREADS
 #ifdef ECL_THREADS
 # define GC_THREADS
+/* # udef ECL_SEMAPHORES */
 #endif
 
 /* __thread thread-local variables?                                     */
@@ -337,6 +338,10 @@ typedef unsigned @CL_FIXNUM_TYPE@ cl_hashkey;
 #undef HAVE_COPYSIGNL
 /* whether we have sched_yield() that gives priority to other threads	*/
 #undef HAVE_SCHED_YIELD
+/* whether we semaphore.h                                               */
+#undef HAVE_SEMAPHORE_H
+/* whether we have a working sem_init()                                 */
+#undef HAVE_SEM_INIT
 /* uname() for system identification					*/
 #undef HAVE_UNAME
 #undef HAVE_UNISTD_H

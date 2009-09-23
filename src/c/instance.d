@@ -262,6 +262,9 @@ enum ecl_built_in_classes {
 	ECL_BUILTIN_LOCK,
 	ECL_BUILTIN_CONDITION_VARIABLE
 #endif
+#ifdef ECL_SEMAPHORES
+        , ECL_BUILTIN_SEMAPHORE
+#endif
 };
 
 cl_object
@@ -350,6 +353,10 @@ cl_class_of(cl_object x)
 		index = ECL_BUILTIN_LOCK; break;
 	case t_condition_variable:
 		index = ECL_BUILTIN_CONDITION_VARIABLE; break;
+#endif
+#ifdef ECL_SEMAPHORES
+	case t_semaphores:
+		index = ECL_BUILTIN_SEMAPHORE; break;
 #endif
 	case t_codeblock:
 		index = ECL_BUILTIN_CODE_BLOCK; break;

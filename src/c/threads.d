@@ -1,6 +1,6 @@
 /* -*- mode: c; c-basic-offset: 8 -*- */
 /*
-    threads.d -- Posix threads with support from GCC.
+    threads.d -- Native threads.
 */
 /*
     Copyright (c) 2003, Juan Jose Garcia Ripoll.
@@ -36,6 +36,9 @@
 #endif
 #ifdef HAVE_SCHED_YIELD
 # include <sched.h>
+#endif
+#ifdef HAVE_SEMAPHORE_H
+# include <semaphore.h>
 #endif
 
 #if defined(_MSC_VER) || defined(mingw32)
@@ -831,6 +834,188 @@ mp_condition_variable_broadcast(cl_object cv)
 #endif
 	@(return Ct)
 }
+
+/*----------------------------------------------------------------------
+ * SEMAPHORES
+ */
+
+#ifdef ECL_SEMAPHORES
+
+# ifdef ECL_MACH_SEMAPHORES
+struct ecl_semaphore_inner {
+        task_t owner;
+        semaphore_t counter[1];
+};
+# endif
+
+@(defun mp::make-semaphore (max &key name ((:count count) MAKE_FIXNUM(0)))
+	cl_object output;
+	cl_index initial_count, max_count;
+@
+{
+        output = ecl_alloc_object(t_semaphore);
+        ecl_disable_interrupts_env(the_env);
+        output->semaphore.name = name;
+        output->semaphore.handle = NULL;
+        ecl_set_finalizer_unprotected(output, Ct);
+        max_count = ecl_fixnum_in_range(@'mp:make-semaphore', "maximum count",
+                                        max, 0, 0xFFFF);
+        initial_count = ecl_fixnum_in_range(@'mp:make-semaphore', "initial count",
+                                            count, 0, max_count);
+#ifdef ECL_WINDOWS_THREADS
+        {
+                HANDLE h = CreateSemaphore(NULL,
+                                           initial_count,
+                                           0xFFFF,
+                                           NULL);
+                output->semaphore.handle = h;
+                ecl_enable_interrupts_env(the_env);
+                if (h == NULL)
+                        FEwin32_error("Unable to create semaphore object.", 0);
+        }
+#else
+# ifdef HAVE_SEM_INIT
+        {
+                sem_t *h = ecl_alloc_atomic(sizeof(sem_t));
+                int rc = sem_init(h, 0, initial_count);
+                if (!rc)
+                        output->semaphore.handle = h;
+                ecl_enable_interrupts();
+                if (rc)
+                        FEerror("Unable to create semaphore object.", 0);
+        }
+# endif /* HAVE_SEM_INIT */
+#endif /* ECL_WINDOWS_THREADS */
+        @(return output)
+}
+@)
+
+cl_object
+mp_semaphore_trywait(cl_object sem)
+{
+        cl_object output;
+        if (typeof(sem) != t_semaphore)
+                FEwrong_type_argument(@'mp::semaphore', cv);
+ AGAIN:
+#ifdef ECL_WINDOWS_THREADS
+        {
+                HANDLE h = (HANDLE)(sem->semaphore.handle);
+                switch (WaitForSingleObject(h, 0)) {
+		case WAIT_OBJECT_0:
+                        output = Ct;
+			break;
+                case WAIT_TIMEOUT:
+                        output = Cnil;
+                        break;
+		default:
+			FEwin32_error("Unable to wait on semaphore", 0);
+                        output = Cnil;
+                }
+        }
+#else
+# ifdef HAVE_SEM_INIT
+        {
+                sem_t *h = (sem_t *)(sem->semaphore.handle);
+                int rc = sem_trywait(h);
+                if (sem_trywait(h)) {
+                        if (errno != EAGAIN) {
+                                FElibc_error("Unable to wait on semaphore", 0);
+                        }
+                        output = Cnil;
+                } else {
+                        output = Ct;
+                }
+        }
+# endif /* HAVE_SEM_INIT */
+#endif /* ECL_WINDOWS_THREADS */
+        @(return output)
+}
+
+
+cl_object
+mp_semaphore_wait(cl_object sem)
+{
+        cl_object output;
+        if (typeof(sem) != t_semaphore)
+                FEwrong_type_argument(@'mp::semaphore', cv);
+ AGAIN:
+#ifdef ECL_WINDOWS_THREADS
+        {
+                HANDLE h = (HANDLE)(sem->semaphore.handle);
+                if (WaitForSingleObject(h, INFINITE) != WAIT_OBJECT_0) {
+			FEwin32_error("Unable to wait on semaphore", 0);
+                }
+        }
+#else
+# ifdef HAVE_SEM_INIT
+        {
+                sem_t *h = (sem_t *)(sem->semaphore.handle);
+                int rc = sem_wait(h);
+                if (sem_wait(h)) {
+                        if (errno == EINTR) {
+                                ecl_check_pending_interrupts();
+                                goto AGAIN;
+                        }
+                        FElibc_error("Unable to wait on semaphore", 0);
+                }
+        }
+# endif /* HAVE_SEM_INIT */
+#endif /* ECL_WINDOWS_THREADS */
+        @(return Ct)
+}
+
+cl_object
+mp_semaphore_signal(cl_object sem)
+{
+        if (typeof(sem) != t_semaphore)
+                FEwrong_type_argument(@'mp::semaphore', cv);
+ AGAIN:
+#ifdef ECL_WINDOWS_THREADS
+        {
+                HANDLE h = (HANDLE)(sem->semaphore.handle);
+                if (!ReleaseSemaphore(h, 1, NULL)) {
+                        FEwin32_error("Unable to post on semaphore ~A" 1, sem);
+                }
+        }
+#else
+# ifdef HAVE_SEM_INIT
+        {
+                sem_t *h = (sem_t *)(sem->semaphore.handle);
+                int rc = sem_wait(h);
+                if (sem_wait(h)) {
+                        if (errno == EINTR) {
+                                ecl_check_pending_interrupts();
+                                goto AGAIN;
+                        }
+                        FElibc_error("Unable to post on semaphore ~A", 1, sem);
+                }
+        }
+# endif /* HAVE_SEM_INIT */
+#endif /* ECL_WINDOWS_THREADS */
+        @(return Ct)
+}
+
+cl_object
+mp_semaphore_close(cl_object sem)
+{
+        if (typeof(sem) != t_semaphore)
+                FEwrong_type_argument(@'mp::semaphore', cv);
+#ifdef ECL_WINDOWS_THREADS
+        {
+                HANDLE h = (HANDLE)(sem->semaphore.handle);
+                if (h) CloseHandle(h);
+        }
+#else
+# ifdef HAVE_SEM_INIT
+        /*
+         * No need for closing.
+         */
+# endif /* HAVE_SEM_INIT */
+#endif /* ECL_WINDOWS_THREADS */
+        @(return Ct)
+}
+
+#endif /* ECL_SEMAPHORES */
 
 /*----------------------------------------------------------------------
  * INITIALIZATION

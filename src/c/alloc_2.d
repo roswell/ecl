@@ -189,6 +189,9 @@ ecl_alloc_object(cl_type t)
         case t_lock:
         case t_condition_variable:
 #endif
+#ifdef ECL_SEMAPHORES:
+        case t_semaphores:
+#endif
 	case t_foreign:
 	case t_codeblock: {
 		cl_object obj;
@@ -422,6 +425,9 @@ init_alloc(void)
 	init_tm(t_condition_variable, "CONDITION-VARIABLE",
                 sizeof(struct ecl_condition_variable));
 #endif
+#ifdef ECL_SEMAPHORES
+	init_tm(t_semaphores, "SEMAPHORES", sizeof(struct ecl_semaphores));
+#endif
 #ifdef ECL_LONG_FLOAT
 	init_tm(t_longfloat, "LONG-FLOAT", sizeof(struct ecl_long_float));
 #endif
@@ -475,6 +481,12 @@ standard_finalizer(cl_object o)
 		pthread_cond_destroy(&o->condition_variable.cv);
 #endif
 		ecl_enable_interrupts_env(the_env);
+		break;
+	}
+#endif
+#ifdef ECL_SEMAPHORES
+	case t_semaphore: {
+                mp_semaphore_close(o);
 		break;
 	}
 #endif

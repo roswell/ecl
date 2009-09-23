@@ -107,6 +107,9 @@ static const char *feature_names[] = {
 #ifdef ECL_THREADS
 	"THREADS",
 #endif
+#ifdef ECL_SEMAPHORES
+	"SEMAPHORES",
+#endif
 #ifdef CLOS
 	"CLOS",
 #endif

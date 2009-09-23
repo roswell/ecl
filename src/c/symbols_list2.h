@@ -1517,6 +1517,14 @@ cl_symbols[] = {
 {MP_ "PROCESS-RESUME","mp_process_resume"},
 {MP_ "SUSPEND-LOOP","mp_suspend_loop"},
 {MP_ "BREAK-SUSPEND-LOOP","mp_break_suspend_loop"},
+# ifdef ECL_SEMAPHORES
+{MP_ "SEMAPHORE",NULL},
+{MP_ "MAKE-SEMAPHORE","mp_make_semaphore"},
+{MP_ "SEMAPHORE-WAIT","mp_semaphore_wait"},
+{MP_ "SEMAPHORE-TRYWAIT","mp_semaphore_trywait"},
+{MP_ "SEMAPHORE-SIGNAL","mp_semaphore_signal"},
+{MP_ "SEMAPHORE-CLOSE","mp_semaphore_close"},
+# endif
 #endif
 
 {SYS_ "WHILE",NULL},

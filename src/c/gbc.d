@@ -391,6 +391,10 @@ BEGIN:
 	case t_condition_variable:
                 break;
 #endif /* THREADS */
+#ifdef ECL_SEMAPHORES
+	case t_semaphore:
+                break;
+#endif
 #ifdef CLOS
 	case t_instance:
 		mark_object(x->instance.clas);
@@ -669,6 +673,11 @@ sweep_phase(void)
 #else
 				pthread_cond_destroy(&x->condition_variable.cv);
 #endif
+				break;
+#endif
+#ifdef ECL_SEMAPHORES
+			case t_semaphore:
+#error "Unfinished"
 				break;
 #endif
 			default:;

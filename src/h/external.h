@@ -1626,6 +1626,13 @@ extern ECL_API cl_object mp_restore_signals(cl_object sigmask);
 
 extern ECL_API bool ecl_import_current_thread(cl_object process_name, cl_object process_binding);
 extern ECL_API void ecl_release_current_thread(void);
+# ifdef ECL_SEMAPHORES
+extern ECL_API void mp_make_semaphore _ARGS((cl_narg, cl_object, ...));
+extern ECL_API void mp_semaphore_trywait(cl_object);
+extern ECL_API void mp_semaphore_wait(cl_object);
+extern ECL_API void mp_semaphore_signal(cl_object);
+extern ECL_API void mp_semaphore_close(cl_object);
+# endif
 #endif
 
 

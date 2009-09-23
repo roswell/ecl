@@ -454,6 +454,7 @@ if test "${enable_threads}" = "yes" ; then
     else
       AC_MSG_RESULT([no])
     fi
+    ECL_POSIX_SEMAPHORES
   fi
 else
   boehm_configure_flags="${boehm_configure_flags} --disable-threads"
@@ -564,7 +565,7 @@ dnl !!! end autoscan
 
 AC_CHECK_HEADERS( [sys/resource.h sys/utsname.h float.h pwd.h dlfcn.h link.h] \
                   [mach-o/dyld.h ulimit.h dirent.h sys/ioctl.h sys/select.h] \
-                  [sys/wait.h] )
+                  [sys/wait.h semaphore.h] )
 
 dnl =====================================================================
 dnl Checks for typedefs, structures, and compiler characteristics.

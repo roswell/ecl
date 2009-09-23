@@ -1612,6 +1612,14 @@ si_write_ugly_object(cl_object x, cl_object stream)
 		write_ch('>', stream);
 		break;
 #endif /* ECL_THREADS */
+#ifdef ECL_SEMAPHORES
+	case t_semaphore:
+		if (ecl_print_readably()) FEprint_not_readable(x);
+		write_str("#<semaphore ", stream);
+		write_addr(x, stream);
+		write_ch('>', stream);
+		break;
+#endif
 	default:
 		if (ecl_print_readably()) FEprint_not_readable(x);
 		write_str("#<illegal pointer ", stream);
