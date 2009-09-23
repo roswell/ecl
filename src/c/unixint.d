@@ -638,6 +638,7 @@ si_catch_signal(cl_object code, cl_object boolean)
 }
 
 #ifdef ECL_THREADS
+# ifdef ECL_WINDOWS_THREADS
 static VOID CALLBACK
 wakeup_function(ULONG_PTR foo)
 {
@@ -645,6 +646,7 @@ wakeup_function(ULONG_PTR foo)
 	volatile i = env->nvalues;
 	env->nvalues = i;
 }
+# endif
 
 static bool
 do_interrupt_thread(cl_object process)
