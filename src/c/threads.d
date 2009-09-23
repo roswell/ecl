@@ -580,11 +580,29 @@ mp_lock_holder(cl_object lock)
 }
 
 cl_object
+mp_lock_mine_p(cl_object lock)
+{
+	if (type_of(lock) != t_lock)
+		FEwrong_type_argument(@'mp::lock', lock);
+	@(return ((lock->lock.holder == mp_current_process())? Ct : Cnil))
+}
+
+cl_object
 mp_lock_count(cl_object lock)
 {
 	if (type_of(lock) != t_lock)
 		FEwrong_type_argument(@'mp::lock', lock);
 	@(return MAKE_FIXNUM(lock->lock.counter))
+}
+
+cl_object
+mp_lock_count_mine(cl_object lock)
+{
+	if (type_of(lock) != t_lock)
+		FEwrong_type_argument(@'mp::lock', lock);
+        @(return ((lock->lock.holder == mp_current_process())?
+                  MAKE_FIXNUM(lock->lock.counter) :
+                  MAKE_FIXNUM(0)))
 }
 
 cl_object

@@ -117,15 +117,13 @@ by ALLOW-WITH-INTERRUPTS."
   ;; the get-lock statement, to ensure that the unlocking is done with
   ;; interrupts disabled.
   #+threads
-  (ext:with-unique-names (lock my-lock count interrupts)
+  (ext:with-unique-names (lock count interrupts)
     `(let* ((,lock ,lock-form)
-            (,my-lock (eq (mp:lock-holder ,lock) mp:*current-process*))
-            (,count (mp:lock-count ,lock)))
+            (,count (mp:lock-count-mine ,lock)))
        (without-interrupts
            (unwind-protect
                 (with-restored-interrupts
                     (mp::get-lock ,lock)
                   (locally ,@body))
-             (when (and (eq (mp:lock-holder ,lock) mp:*current-process*)
-                        (or (not ,my-lock) (> (mp:lock-count ,lock) ,count)))
+             (when (> (mp:lock-count-mine ,lock) ,count)
                (mp::giveup-lock ,lock)))))))
