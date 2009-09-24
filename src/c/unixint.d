@@ -851,7 +851,6 @@ asynchronous_signal_servicing_thread()
          * signals, but this can not be done for SIGFPE, SIGSEGV, etc
          */
 	pthread_sigmask(SIG_SETMASK, NULL, &handled_set);
-	sigfillset(&handled_set);
 	CL_CATCH_ALL_BEGIN(ecl_process_env()) {
 	for (;;) {
 		/* Waiting may fail! */
@@ -1026,6 +1025,10 @@ install_process_interrupt_handler()
 				       signal);
 		}
 		mysignal(signal, non_evil_signal_handler);
+#ifdef HAVE_SIGROCMASK
+                sigdelset(cl_core.default_sigmask, signal);
+                pthread_sigmask(SIG_SETMASK, cl_core.default_sigmask, NULL);
+#endif
 	}
 #endif
 }
