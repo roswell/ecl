@@ -264,6 +264,7 @@ static cl_object pop_signal(cl_env_ptr env);
 static cl_object
 handler_fn_protype(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
 {
+        printf(";;; signal %d received\n", sig);
 #if defined(ECL_THREADS) && !defined(_MSC_VER) && !defined(mingw32)
 	cl_env_ptr the_env = ecl_process_env();
         if (sig == ecl_get_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL)) {
@@ -356,6 +357,7 @@ unblock_signal(int signal)
 static void
 handle_signal_now(cl_object signal_code)
 {
+        printf(";;; handling signal %p received\n", signal_code);
         switch (type_of(signal_code)) {
         case t_fixnum:
                 FEerror("Serious signal ~D caught.", 1, signal_code);
@@ -518,6 +520,7 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
 {
 	cl_env_ptr the_env;
 	reinstall_signal(sig, sigsegv_handler);
+        printf(";;; sigsegv received\n");
 	if (!ecl_get_option(ECL_OPT_BOOTED)) {
 		ecl_internal_error("Got signal before environment was installed"
 				   " on our thread.");
@@ -557,11 +560,14 @@ handler_fn_protype(sigbus_handler, int sig, siginfo_t *info, void *aux)
 {
         cl_env_ptr the_env;
 	reinstall_signal(sig, sigsegv_handler);
+        printf(";;; sigbus received\n");
 #if defined(SA_SIGINFO) && defined(ECL_USE_MPROTECT)
 	/* We access the environment when it was protected. That
 	 * means there was a pending signal. */
 	the_env = ecl_process_env();
-	if ((void*)the_env == (void*)info->si_addr) {
+	if (((char*)the_env <= (char*)info->si_addr) &&
+            ((char*)info->si_addr <= (char*)(the_env+1)))
+        {
 		cl_object signal;
 		mprotect(the_env, sizeof(*the_env), PROT_READ | PROT_WRITE);
                 the_env->disable_interrupts = 0;
@@ -947,16 +953,6 @@ install_asynchronous_signal_handlers()
 	pthread_sigmask(SIG_SETMASK, NULL, &sigmask);
 #endif
 	cl_core.default_sigmask = NULL;
-#ifdef SIGSEGV
-	if (ecl_get_option(ECL_OPT_TRAP_SIGSEGV)) {
-		async_handler(SIGSEGV, sigsegv_handler, &sigmask);
-	}
-#endif
-#if defined(SIGBUS) /*&& !defined(GBC_BOEHM)*/
-	if (ecl_get_option(ECL_OPT_TRAP_SIGBUS)) {
-		async_handler(SIGBUS, sigbus_handler, &sigmask);
-	}
-#endif
 #ifdef SIGINT
 	if (ecl_get_option(ECL_OPT_TRAP_SIGINT)) {
 		async_handler(SIGINT, non_evil_signal_handler, &sigmask);
@@ -1052,6 +1048,16 @@ install_synchronous_signal_handlers()
 		si_trap_fpe(@'floating-point-invalid-operation', Cnil);
 		si_trap_fpe(@'division-by-zero', Cnil);
 # endif
+	}
+#endif
+#ifdef SIGBUS
+	if (ecl_get_option(ECL_OPT_TRAP_SIGBUS)) {
+		mysignal(SIGBUS, sigbus_handler);
+	}
+#endif
+#ifdef SIGSEGV
+	if (ecl_get_option(ECL_OPT_TRAP_SIGSEGV)) {
+		mysignal(SIGSEGV, sigsegv_handler);
 	}
 #endif
 	ecl_process_env()->disable_interrupts = 0;
