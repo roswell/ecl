@@ -1835,5 +1835,7 @@ cl_symbols[] = {
 {EXT_ "WITH-LOCAL-INTERRUPTS",NULL},
 {EXT_ "ALLOW-WITH-INTERRUPTS",NULL},
 
+{SYS_ "*QUIT-TAG*",NULL},
+
 /* Tag for end of list */
 {NULL,NULL}};
