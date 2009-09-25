@@ -254,8 +254,16 @@ jump_to_sigsegv_handler(cl_env_ptr the_env)
 	 * frame, which is equivalent to quitting, and wait for
 	 * someone to intercept this jump.
 	 */
-	ecl_frame_ptr destination = ecl_process_env()->frs_org;
-	the_env->nvalues = 0;
+        ecl_frame_ptr destination;
+        cl_object tag = SYM_VAL(@'si::*quit-tag*');
+        the_env->nvalues = 0;
+        if (tag) {
+                destination = ecl_frs_sch(SYM_VAL(@'si::*quit-tag*'));
+                if (destination) {
+                        ecl_unwind(the_env, destination);
+                }
+        }
+        destination = ecl_process_env()->frs_org;
 	ecl_unwind(the_env, destination);
 }
 

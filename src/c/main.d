@@ -536,6 +536,9 @@ cl_boot(int argc, char **argv)
 #endif
 	GC_enable();
 
+        /* Create tag to jump to when aborting */
+        ECL_SET(env, @'si::*quit-tag*', @'si::*quit-tag*');
+
         /*
          * Initialize default pathnames
          */

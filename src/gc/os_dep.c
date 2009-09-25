@@ -4328,5 +4328,3 @@ void GC_print_address_map(void)
 }
 
 #endif
-
-
