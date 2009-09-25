@@ -3878,8 +3878,6 @@ catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
 #   error FIXME for non-ppc/x86 darwin
 # endif
 
-      printf("Exception %d received\n", exception);
-
   if(exception != EXC_BAD_ACCESS || code[0] != KERN_PROTECTION_FAILURE) {
 #   ifdef DEBUG_EXCEPTION_HANDLING
       /* We aren't interested, pass it on to the old handler */

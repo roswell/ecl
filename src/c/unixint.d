@@ -264,7 +264,6 @@ static cl_object pop_signal(cl_env_ptr env);
 static cl_object
 handler_fn_protype(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
 {
-        printf(";;; signal %d received\n", sig);
 #if defined(ECL_THREADS) && !defined(_MSC_VER) && !defined(mingw32)
 	cl_env_ptr the_env = ecl_process_env();
         if (sig == ecl_get_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL)) {
@@ -357,7 +356,6 @@ unblock_signal(int signal)
 static void
 handle_signal_now(cl_object signal_code)
 {
-        printf(";;; handling signal %p received\n", signal_code);
         switch (type_of(signal_code)) {
         case t_fixnum:
                 FEerror("Serious signal ~D caught.", 1, signal_code);
@@ -520,7 +518,6 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
 {
 	cl_env_ptr the_env;
 	reinstall_signal(sig, sigsegv_handler);
-        printf(";;; sigsegv received\n");
 	if (!ecl_get_option(ECL_OPT_BOOTED)) {
 		ecl_internal_error("Got signal before environment was installed"
 				   " on our thread.");
@@ -560,7 +557,6 @@ handler_fn_protype(sigbus_handler, int sig, siginfo_t *info, void *aux)
 {
         cl_env_ptr the_env;
 	reinstall_signal(sig, sigsegv_handler);
-        printf(";;; sigbus received\n");
 #if defined(SA_SIGINFO) && defined(ECL_USE_MPROTECT)
 	/* We access the environment when it was protected. That
 	 * means there was a pending signal. */
