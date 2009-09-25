@@ -310,6 +310,7 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_obje
 	ecl_frs_pop(__the_env); } while (0)
 
 #if defined(_MSC_VER)
+extern LONG ECL_API _ecl_w32_exception_filter(struct _EXCEPTION_POINTERS *);
 # define CL_CATCH_ALL_BEGIN(the_env) do {			\
 	const cl_env_ptr __the_env = (the_env);			\
 	_try {							\
