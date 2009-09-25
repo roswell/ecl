@@ -102,7 +102,7 @@ LDFLAGS	= /link /nologo /nodefaultlib:libcmt /nodefaultlib:libcmtd /nodefaultlib
 ENV_EXPORT = cl_env,DATA
 !else
 ENV_EXPORT = ecl_process_env
-CFLAGS     = $(CFLAGS) /DECL_THREADS
+CFLAGS     = $(CFLAGS)
 DEF        = ecl-threads.def
 !endif
 

@@ -5,9 +5,11 @@ top_srcdir = ..\..\src
 srcdir	= ..\..\src\c
 
 !if "$(ECL_THREADS)" != ""
+ECL_THREADS_FLAG=1
 THREADS_OBJ= threads.obj
 THREADS_FLAGS= -DECL_THREADS
 !else
+ECL_THREADS_FLAG=0
 THREADS_OBJ=
 THREADS_FLAGS=
 !endif
@@ -100,6 +102,7 @@ $(DPP): $(srcdir)/dpp.c $(srcdir)/symbols_list2.h ../ecl/config.h
 	for %i in ($(HFILES)) do $(CP) %i ..\ecl
 	cut.exe "@ECL_FPE_CODE@" "$(srcdir:\=/)/arch/fpe_x86.c" \
 		"@ECL_VERSION_NUMBER@" "$(ECL_VERSION_NUMBER)" \
+		"@ECL_THREADS@" "$(ECL_THREADS_FLAG)" \
 	        < ..\ecl\config.h.msvc6 > $@
 
 #

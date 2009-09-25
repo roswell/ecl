@@ -58,9 +58,11 @@
 #include <ecl/gmp.h>
 
 /* Userland threads?							*/
-/* #undef ECL_THREADS */
-#ifdef ECL_THREADS
+#define ECL_THREADS @ECL_THREADS@
+#if ECL_THREADS
 # define GC_WIN32_THREADS
+#else
+# undef ECL_THREADS
 #endif
 
 /* __thread thread-local variables?                                     */
