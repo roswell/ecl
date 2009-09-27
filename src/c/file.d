@@ -2630,7 +2630,8 @@ io_file_clear_input(cl_object strm)
 	}
 #endif
 	while (file_listen(f) == ECL_LISTEN_AVAILABLE) {
-		eformat_read_char(strm);
+		ecl_character c = eformat_read_char(strm);
+                if (c == EOF) return;
 	}
 }
 
@@ -4623,6 +4624,12 @@ file_listen(int fileno)
 	fd_set fds;
 	int retv, fd;
 	struct timeval tv = { 0, 0 };
+        /*
+         * Note that the following code is fragile. If the file is closed (/dev/null)
+         * then select() may return 1 (at least on OS X), so that we return a flag
+         * saying characters are available but will find none to read. See also the
+         * code in cl_clear_input().
+         */
 	FD_ZERO(&fds);
 	FD_SET(fileno, &fds);
 	retv = select(fileno + 1, &fds, NULL, NULL, &tv);
