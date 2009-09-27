@@ -264,19 +264,18 @@ extern void cl_write_object(cl_object x, cl_object stream);
 /* global locks */
 
 #ifdef ECL_THREADS
-# if defined(_MSC_VER) || defined(mingw32)
-#  define pthread_mutex_lock(x) \
-	 (WaitForSingleObject(*(HANDLE*)(x), INFINITE) != WAIT_OBJECT_0)
-#  define pthread_mutex_unlock(x) (ReleaseMutex(*(HANDLE*)(x)) == 0)
-# else
-#  include <pthread.h>
-# endif
-# define HASH_TABLE_LOCK(h) if ((h)->hash.lockable) if (pthread_mutex_lock(&(h)->hash.lock)) ecl_internal_error("")
-# define PACKAGE_OP_LOCK() if (pthread_mutex_lock(&cl_core.global_lock)) ecl_internal_error("")
-# define THREAD_OP_LOCK() if (pthread_mutex_lock(&cl_core.global_lock)) ecl_internal_error("")
-# define HASH_TABLE_UNLOCK(h) if ((h)->hash.lockable) if (pthread_mutex_unlock(&(h)->hash.lock)) ecl_internal_error("")
-# define PACKAGE_OP_UNLOCK() if (pthread_mutex_unlock(&cl_core.global_lock)) ecl_internal_error("")
-# define THREAD_OP_UNLOCK() if (pthread_mutex_unlock(&cl_core.global_lock)) ecl_internal_error("")
+# define HASH_TABLE_LOCK(h) do {                                        \
+                cl_object lock = (h)->hash.lock;                        \
+                if (lock != Cnil) mp_get_lock_wait(lock);               \
+        } while (0);
+# define HASH_TABLE_UNLOCK(h) do {                                      \
+                cl_object lock = (h)->hash.lock;                        \
+                if (lock != Cnil) mp_giveup_lock(lock);                 \
+        } while (0);
+# define THREAD_OP_LOCK() mp_get_lock_wait(cl_core.global_lock)
+# define THREAD_OP_UNLOCK() mp_giveup_lock(cl_core.global_lock)
+# define PACKAGE_OP_LOCK() THREAD_OP_LOCK()
+# define PACKAGE_OP_UNLOCK() THREAD_OP_UNLOCK()
 # define ERROR_HANDLER_LOCK() THREAD_OP_LOCK()
 # define ERROR_HANDLER_UNLOCK() THREAD_OP_UNLOCK()
 #else

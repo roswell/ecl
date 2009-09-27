@@ -440,7 +440,9 @@ if test "${enable_threads}" = "yes" ; then
     AC_MSG_ERROR([Threads aren't supported on this system.])
   else
     boehm_configure_flags="${boehm_configure_flags} ${THREAD_GC_FLAGS}"
-    EXTRA_OBJS="${EXTRA_OBJS} ${THREAD_OBJ}.${OBJEXT}"
+    for k in $THREAD_OBJ; do EXTRA_OBJS="$EXTRA_OBJS ${k}.${OBJEXT}"; done
+    AC_MSG_CHECKING([for thread object files])
+    AC_MSG_RESULT([${THREAD_OBJ}])
     LIBS="${THREAD_LIBS} ${LIBS}"
     CFLAGS="${CFLAGS} ${THREAD_CFLAGS}"
     AC_DEFINE( [ECL_THREADS], [1], [Userland threads?])

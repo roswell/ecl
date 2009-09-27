@@ -210,7 +210,7 @@ struct cl_core_struct {
 
 #ifdef ECL_THREADS
 	cl_object processes;
-	pthread_mutex_t global_lock;
+	cl_object global_lock;
 #endif
 	cl_object libraries;
 	cl_object to_be_finalized;
@@ -1606,15 +1606,6 @@ extern ECL_API cl_object mp_process_name(cl_object process);
 extern ECL_API cl_object mp_process_preset _ARGS((cl_narg narg, cl_object process, cl_object function, ...));
 extern ECL_API cl_object mp_process_run_function _ARGS((cl_narg narg, cl_object name, cl_object function, ...));
 extern ECL_API cl_object mp_process_whostate(cl_object process);
-extern ECL_API cl_object mp_make_lock _ARGS((cl_narg narg, ...));
-extern ECL_API cl_object mp_recursive_lock_p(cl_object lock);
-extern ECL_API cl_object mp_lock_name(cl_object lock);
-extern ECL_API cl_object mp_lock_holder(cl_object lock);
-extern ECL_API cl_object mp_lock_mine_p(cl_object lock);
-extern ECL_API cl_object mp_lock_count(cl_object lock);
-extern ECL_API cl_object mp_lock_count_mine(cl_object lock);
-extern ECL_API cl_object mp_get_lock _ARGS((cl_narg narg, cl_object lock, ...));
-extern ECL_API cl_object mp_giveup_lock(cl_object lock);
 extern ECL_API cl_object mp_make_condition_variable(void);
 extern ECL_API cl_object mp_condition_variable_wait(cl_object cv, cl_object lock);
 extern ECL_API cl_object mp_condition_variable_timedwait(cl_object cv, cl_object lock, cl_object seconds);
@@ -1633,8 +1624,23 @@ extern ECL_API void mp_semaphore_wait(cl_object);
 extern ECL_API void mp_semaphore_signal(cl_object);
 extern ECL_API void mp_semaphore_close(cl_object);
 # endif
-#endif
 
+/* threads_mutex.c */
+
+extern ECL_API cl_object mp_make_lock _ARGS((cl_narg narg, ...));
+extern ECL_API cl_object mp_recursive_lock_p(cl_object lock);
+extern ECL_API cl_object mp_lock_name(cl_object lock);
+extern ECL_API cl_object mp_lock_holder(cl_object lock);
+extern ECL_API cl_object mp_lock_mine_p(cl_object lock);
+extern ECL_API cl_object mp_lock_count(cl_object lock);
+extern ECL_API cl_object mp_lock_count_mine(cl_object lock);
+extern ECL_API cl_object mp_get_lock _ARGS((cl_narg narg, cl_object lock, ...));
+extern ECL_API cl_object mp_get_lock_wait(cl_object lock);
+extern ECL_API cl_object mp_get_lock_nowait(cl_object lock);
+extern ECL_API cl_object mp_giveup_lock(cl_object lock);
+
+extern ECL_API cl_object ecl_make_lock(cl_object lock, bool recursive);
+#endif /* ECL_THREADS */
 
 /* time.c */
 

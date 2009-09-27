@@ -6,7 +6,7 @@ srcdir	= ..\..\src\c
 
 !if "$(ECL_THREADS)" != ""
 ECL_THREADS_FLAG=1
-THREADS_OBJ= threads.obj
+THREADS_OBJ= threads.obj threads_mutex.obj
 THREADS_FLAGS= -DECL_THREADS
 !else
 ECL_THREADS_FLAG=0

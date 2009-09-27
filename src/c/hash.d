@@ -511,15 +511,12 @@ cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
 	if (h->hash.factor < 0.1) {
 		h->hash.factor = 0.1;
 	}
-	h->hash.lockable = !Null(lockable);
 #ifdef ECL_THREADS
-	if (h->hash.lockable) {
-#if defined(_MSC_VER) || defined(mingw32)
-		h->hash.lock = CreateMutex(NULL, FALSE, NULL);
-#else
-		pthread_mutex_init(&h->hash.lock, NULL);
-#endif
-	}
+	if (!Null(lockable)) {
+                h->hash.lock = mp_make_lock(2, @':recursive', Ct);
+	} else {
+                h->hash.lock = Cnil;
+        }
 #endif
 	return h;
 }
@@ -729,7 +726,7 @@ si_copy_hash_table(cl_object orig)
 				   cl_hash_table_size(orig),
 				   cl_hash_table_rehash_size(orig),
 				   cl_hash_table_rehash_threshold(orig),
-				   orig->hash.lockable? Ct : Cnil);
+				   orig->hash.lock);
 	HASH_TABLE_LOCK(hash);
 	memcpy(hash->hash.data, orig->hash.data,
 	       orig->hash.size * sizeof(*orig->hash.data));

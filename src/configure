@@ -4351,7 +4351,7 @@ THREAD_CFLAGS=''
 THREAD_LIBS=''
 THREAD_GC_FLAGS='--enable-threads=posix'
 INSTALL_TARGET='install'
-THREAD_OBJ='threads'
+THREAD_OBJ='threads threads_mutex'
 clibs=''
 SONAME=''
 SONAME_LDFLAGS=''
@@ -5947,7 +5947,11 @@ $as_echo "$as_me: error: Threads aren't supported on this system." >&2;}
    { (exit 1); exit 1; }; }
   else
     boehm_configure_flags="${boehm_configure_flags} ${THREAD_GC_FLAGS}"
-    EXTRA_OBJS="${EXTRA_OBJS} ${THREAD_OBJ}.${OBJEXT}"
+    for k in $THREAD_OBJ; do EXTRA_OBJS="$EXTRA_OBJS ${k}.${OBJEXT}"; done
+    { $as_echo "$as_me:$LINENO: checking for thread object files" >&5
+$as_echo_n "checking for thread object files... " >&6; }
+    { $as_echo "$as_me:$LINENO: result: ${THREAD_OBJ}" >&5
+$as_echo "${THREAD_OBJ}" >&6; }
     LIBS="${THREAD_LIBS} ${LIBS}"
     CFLAGS="${CFLAGS} ${THREAD_CFLAGS}"
 

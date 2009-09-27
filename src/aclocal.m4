@@ -202,7 +202,7 @@ THREAD_CFLAGS=''
 THREAD_LIBS=''
 THREAD_GC_FLAGS='--enable-threads=posix'
 INSTALL_TARGET='install'
-THREAD_OBJ='threads'
+THREAD_OBJ='threads threads_mutex'
 clibs=''
 SONAME=''
 SONAME_LDFLAGS=''
@@ -866,3 +866,4 @@ if test $working_sem_init = yes ; then
   AC_DEFINE(HAVE_SEM_INIT)
 fi
 ])
+

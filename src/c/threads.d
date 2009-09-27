@@ -12,9 +12,6 @@
 
     See file '../Copyright' for full details.
 */
-/*
- * IMPORTANT!!!! IF YOU EDIT THIS FILE, CHANGE ALSO threads_win32.d
- */
 
 #ifndef __sun__ /* See unixinit.d for this */
 #define _XOPEN_SOURCE 600	/* For pthread mutex attributes */
@@ -27,7 +24,6 @@
 #include <errno.h>
 #include <time.h>
 #include <signal.h>
-#define GC_THREADS
 #define ECL_INCLUDE_MATH_H
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
@@ -41,14 +37,12 @@
 # include <semaphore.h>
 #endif
 
-#if defined(_MSC_VER) || defined(mingw32)
-# define ECL_WINDOWS_THREADS
+#ifdef ECL_WINDOWS_THREADS
 /*
  * We have to put this explicit definition here because Boehm GC
  * is designed to produce a DLL and we rather want a static
  * reference
  */
-# include <windows.h>
 # include <gc.h>
 extern HANDLE WINAPI GC_CreateThread(
     LPSECURITY_ATTRIBUTES lpThreadAttributes, 
@@ -61,9 +55,7 @@ DWORD cl_env_key;
 # ifndef WITH___THREAD
 static pthread_key_t cl_env_key;
 # endif
-static pthread_attr_t pthreadattr;
-static pthread_mutexattr_t mutexattr_error, mutexattr_recursive;
-#endif /* _MSC_VER || mingw32 */
+#endif /* ECL_WINDOWS_THREADS */
 
 extern void ecl_init_env(struct cl_env_struct *env);
 
@@ -138,11 +130,6 @@ thread_cleanup(void *aux)
 		_ecl_dealloc_env(process->process.env);
 	process->process.env = NULL;
 }
-
-#ifdef ECL_WINDOWS_THREADS
-extern LONG WINAPI
-_ecl_w32_exception_filter(struct _EXCEPTION_POINTERS* ep);
-#endif
 
 #ifdef ECL_WINDOWS_THREADS
 static DWORD WINAPI thread_entry_point(void *arg)
@@ -348,7 +335,7 @@ mp_process_yield(void)
 #ifdef HAVE_SCHED_YIELD
 	sched_yield();
 #else
-# if defined(_MSC_VER) || defined(mingw32)
+# ifdef ECL_WINDOWS_THREADS
 	Sleep(0);
 # else
 	sleep(0); /* Use sleep(0) to yield to a >= priority thread */
@@ -374,7 +361,10 @@ mp_process_enable(cl_object process)
 	output = (process->process.thread = code)? process : Cnil;
 #else
 	int code;
+        pthread_attr_t pthreadattr;
 
+	pthread_attr_init(&pthreadattr);
+	pthread_attr_setdetachstate(&pthreadattr, PTHREAD_CREATE_DETACHED);
 	if (mp_process_active_p(process) != Cnil)
 		FEerror("Cannot enable the running process ~A.", 1, process);
         process->process.parent = mp_current_process();
@@ -534,163 +524,6 @@ mp_restore_signals(cl_object sigmask)
         return mp_set_sigmask(sigmask);
 #endif
 }
-
-/*----------------------------------------------------------------------
- * LOCKS or MUTEX
- */
-
-@(defun mp::make-lock (&key name ((:recursive recursive) Ct))
-	cl_object output;
-@
-	output = ecl_alloc_object(t_lock);
-	ecl_disable_interrupts_env(the_env);
-	output->lock.name = name;
-#ifdef ECL_WINDOWS_THREADS
-	output->lock.mutex = CreateMutex(NULL, FALSE, NULL);
-#else
-	pthread_mutex_init(&output->lock.mutex, &mutexattr_recursive);
-#endif
-	output->lock.holder = Cnil;
-	output->lock.counter = 0;
-	output->lock.recursive = (recursive != Cnil);
-	ecl_set_finalizer_unprotected(output, Ct);
-	ecl_enable_interrupts_env(the_env);
-	@(return output)
-@)
-
-cl_object
-mp_recursive_lock_p(cl_object lock)
-{
-	if (type_of(lock) != t_lock)
-		FEwrong_type_argument(@'mp::lock', lock);
-	@(return (lock->lock.recursive? Ct : Cnil))
-}
-
-cl_object
-mp_lock_name(cl_object lock)
-{
-	if (type_of(lock) != t_lock)
-		FEwrong_type_argument(@'mp::lock', lock);
-	@(return lock->lock.name)
-}
-
-cl_object
-mp_lock_holder(cl_object lock)
-{
-	if (type_of(lock) != t_lock)
-		FEwrong_type_argument(@'mp::lock', lock);
-	@(return lock->lock.holder)
-}
-
-cl_object
-mp_lock_mine_p(cl_object lock)
-{
-	if (type_of(lock) != t_lock)
-		FEwrong_type_argument(@'mp::lock', lock);
-	@(return ((lock->lock.holder == mp_current_process())? Ct : Cnil))
-}
-
-cl_object
-mp_lock_count(cl_object lock)
-{
-	if (type_of(lock) != t_lock)
-		FEwrong_type_argument(@'mp::lock', lock);
-	@(return MAKE_FIXNUM(lock->lock.counter))
-}
-
-cl_object
-mp_lock_count_mine(cl_object lock)
-{
-	if (type_of(lock) != t_lock)
-		FEwrong_type_argument(@'mp::lock', lock);
-        @(return ((lock->lock.holder == mp_current_process())?
-                  MAKE_FIXNUM(lock->lock.counter) :
-                  MAKE_FIXNUM(0)))
-}
-
-cl_object
-mp_giveup_lock(cl_object lock)
-{
-        /* Must be called with interrupts disabled. */
-	cl_object own_process = mp_current_process();
-	if (type_of(lock) != t_lock)
-		FEwrong_type_argument(@'mp::lock', lock);
-	if (lock->lock.holder != own_process) {
-		FEerror("Attempt to give up a lock ~S that is not owned by ~S.", 2,
-			lock, own_process);
-	}
-	if (--lock->lock.counter == 0) {
-		lock->lock.holder = Cnil;
-#ifdef ECL_WINDOWS_THREADS
-		if (ReleaseMutex(lock->lock.mutex) == 0)
-			FEwin32_error("Unable to release Win32 Mutex", 0);
-#else
-		pthread_mutex_unlock(&lock->lock.mutex);
-#endif
-	}
-	@(return Ct)
-}
-
-@(defun mp::get-lock (lock &optional (wait Ct))
-	cl_object output;
-	cl_object own_process = mp_current_process();
-	int rc;
-@
-	if (type_of(lock) != t_lock)
-		FEwrong_type_argument(@'mp::lock', lock);
-        if (lock->lock.holder == own_process) {
-                if (!lock->lock.recursive) {
-                        FEerror("A recursive attempt was made to hold lock ~S",
-                                1, lock);
-                }
-                lock->lock.counter++;
-                output = lock;
-                goto OUTPUT;
-        }
-	/* FIXME!  This code has a nonzero chance of problems with
-         * interrupts. If an interupt happens right after we locked the mutex
-         * but before we set count and owner, we are in trouble, since the
-         * mutex might be locked. */
-#ifdef ECL_WINDOWS_THREADS
-	switch (WaitForSingleObject(lock->lock.mutex, (wait==Ct?INFINITE:0))) {
-		case WAIT_OBJECT_0:
-                        lock->lock.counter++;
-                        lock->lock.holder = own_process;
-                        output = lock;
-			break;
-		case WAIT_TIMEOUT:
-                        output = Cnil;
-			break;
-		case WAIT_ABANDONED:
-			ecl_internal_error("");
-                        output = Cnil;
-			break;
-		case WAIT_FAILED:
-			FEwin32_error("Unable to lock Win32 Mutex", 0);
-                        output = Cnil;
-			break;
-	}
-#else
-	if (wait == Ct) {
-		rc = pthread_mutex_lock(&lock->lock.mutex);
-	} else {
-		rc = pthread_mutex_trylock(&lock->lock.mutex);
-	}
-	if (rc == 0) {
-		lock->lock.counter++;
-		lock->lock.holder = own_process;
-		output = lock;
-	} else if (rc == EBUSY) {
-		output = Cnil;
-	} else {
-                FEerror("Unable to lock mutex. Error code: %d.", 1,
-                        MAKE_FIXNUM(rc));
-                output = Cnil;
-        }
-#endif
- OUTPUT:
-	@(return output)
-@)
 
 /*----------------------------------------------------------------------
  * CONDITION VARIABLES
@@ -1027,17 +860,7 @@ init_threads(cl_env_ptr env)
 	cl_object process;
 	pthread_t main_thread;
 
-#ifdef ECL_WINDOWS_THREADS
-	cl_core.global_lock = CreateMutex(NULL, FALSE, NULL);
-#else
-	pthread_mutexattr_init(&mutexattr_error);
-	pthread_mutexattr_settype(&mutexattr_error, PTHREAD_MUTEX_ERRORCHECK);
-	pthread_mutexattr_init(&mutexattr_recursive);
-	pthread_mutexattr_settype(&mutexattr_recursive, PTHREAD_MUTEX_RECURSIVE);
-	pthread_attr_init(&pthreadattr);
-	pthread_attr_setdetachstate(&pthreadattr, PTHREAD_CREATE_DETACHED);
-	pthread_mutex_init(&cl_core.global_lock, &mutexattr_error);
-#endif
+        cl_core.global_lock = ecl_make_lock(@'si::package-lock', 0);
 	cl_core.processes = OBJNULL;
 
 	/* We have to set the environment before any allocation takes place,
