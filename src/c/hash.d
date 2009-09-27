@@ -339,7 +339,7 @@ add_new_to_hash(cl_object key, cl_object hashtable, cl_object value)
 	corrupted_hash(hashtable);
 }
 
-void
+cl_object
 ecl_sethash(cl_object key, cl_object hashtable, cl_object value)
 {
 	cl_index i;
@@ -355,17 +355,18 @@ ecl_sethash(cl_object key, cl_object hashtable, cl_object value)
 	i = hashtable->hash.entries + 1;
 	if (i >= hashtable->hash.size ||
 	    i >= (hashtable->hash.size * hashtable->hash.factor)) {
-		ecl_extend_hashtable(hashtable);
+		hashtable = ecl_extend_hashtable(hashtable);
 	}
 	add_new_to_hash(key, hashtable, value);
  OUTPUT:
 	HASH_TABLE_UNLOCK(hashtable);
+        return hashtable;
 }
 
-void
+cl_object
 ecl_extend_hashtable(cl_object hashtable)
 {
-	cl_object old, key;
+	cl_object old, new, key;
 	cl_index old_size, new_size, i;
 	cl_object new_size_obj;
 
@@ -385,23 +386,31 @@ ecl_extend_hashtable(cl_object hashtable)
 	} else {
 		new_size = fix(new_size_obj);
 	}
-	old = ecl_alloc_object(t_hashtable);
-	old->hash = hashtable->hash;
-	hashtable->hash.data = NULL; /* for GC sake */
-	hashtable->hash.entries = 0;
-	hashtable->hash.size = new_size;
-	hashtable->hash.data = (struct ecl_hashtable_entry *)
+        if (hashtable->hash.test == htt_pack) {
+                new = ecl_alloc_object(t_hashtable);
+                new->hash = hashtable->hash;
+                old = hashtable;
+        } else {
+                old = ecl_alloc_object(t_hashtable);
+                old->hash = hashtable->hash;
+                new = hashtable;
+        }
+	new->hash.data = NULL; /* for GC sake */
+	new->hash.entries = 0;
+	new->hash.size = new_size;
+	new->hash.data = (struct ecl_hashtable_entry *)
 	  ecl_alloc(new_size * sizeof(struct ecl_hashtable_entry));
 	for (i = 0;  i < new_size;  i++) {
-		hashtable->hash.data[i].key = OBJNULL;
-		hashtable->hash.data[i].value = OBJNULL;
+		new->hash.data[i].key = OBJNULL;
+		new->hash.data[i].value = OBJNULL;
 	}
-	for (i = 0;  i < old_size;  i++)
+	for (i = 0;  i < old_size;  i++) {
 		if ((key = old->hash.data[i].key) != OBJNULL) {
-			if (hashtable->hash.test == htt_pack)
+			if (new->hash.test == htt_pack)
 				key = SYMBOL_NAME(old->hash.data[i].value);
-			add_new_to_hash(key, hashtable, old->hash.data[i].value);
+			add_new_to_hash(key, new, old->hash.data[i].value);
 		}
+        }
 }
 
 

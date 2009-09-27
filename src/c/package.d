@@ -367,9 +367,9 @@ ecl_intern(cl_object name, cl_object p, int *intern_flag)
 	if (p == cl_core.keyword_package) {
 		ecl_symbol_type_set(s, ecl_symbol_type(s) | stp_constant);
 		ECL_SET(s, s);
-		ecl_sethash(name, p->pack.external, s);
+		p->pack.external = ecl_sethash(name, p->pack.external, s);
 	} else {
-		ecl_sethash(name, p->pack.internal, s);
+		p->pack.internal = ecl_sethash(name, p->pack.internal, s);
 	}
  OUTPUT:
 	PACKAGE_UNLOCK(p);
@@ -520,7 +520,7 @@ cl_export2(cl_object s, cl_object p)
 	} end_loop_for_on;
 	if (hash != OBJNULL)
 		ecl_remhash(name, hash);
-	ecl_sethash(name, p->pack.external, s);
+	p->pack.external = ecl_sethash(name, p->pack.external, s);
  OUTPUT:
 	PACKAGE_UNLOCK(p);
 }
@@ -609,7 +609,7 @@ cl_unexport2(cl_object s, cl_object p)
 		(void)0;
 	} else {
 		ecl_remhash(name, p->pack.external);
-		ecl_sethash(name, p->pack.internal, s);
+		p->pack.internal = ecl_sethash(name, p->pack.internal, s);
 	}
 	PACKAGE_UNLOCK(p);
 }
@@ -638,7 +638,7 @@ cl_import2(cl_object s, cl_object p)
 		if (intern_flag == INTERNAL || intern_flag == EXTERNAL)
 			goto OUTPUT;
 	}
-	ecl_sethash(name, p->pack.internal, s);
+	p->pack.internal = ecl_sethash(name, p->pack.internal, s);
 	symbol_add_package(s, p);
  OUTPUT:
 	PACKAGE_UNLOCK(p);
@@ -673,7 +673,7 @@ ecl_shadowing_import(cl_object s, cl_object p)
 		symbol_remove_package(x, p);
 	}
 	p->pack.shadowings = CONS(s, p->pack.shadowings);
-	ecl_sethash(name, p->pack.internal, s);
+	p->pack.internal = ecl_sethash(name, p->pack.internal, s);
  OUTPUT:
 	PACKAGE_UNLOCK(p);
 }
@@ -694,7 +694,7 @@ ecl_shadow(cl_object s, cl_object p)
 	x = ecl_find_symbol_nolock(s, p, &intern_flag);
 	if (intern_flag != INTERNAL && intern_flag != EXTERNAL) {
 		x = cl_make_symbol(s);
-		ecl_sethash(s, p->pack.internal, x);
+		p->pack.internal = ecl_sethash(s, p->pack.internal, x);
 		x->symbol.hpack = p;
 	}
 	p->pack.shadowings = CONS(x, p->pack.shadowings);

@@ -239,7 +239,7 @@ extern cl_object si_formatter_aux _ARGS((cl_narg narg, cl_object strm, cl_object
 #endif
 
 /* hash.d */
-extern void ecl_extend_hashtable(cl_object hashtable);
+extern cl_object ecl_extend_hashtable(cl_object hashtable);
 
 /* gfun.d, kernel.lsp */
 

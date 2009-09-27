@@ -106,6 +106,12 @@ ECL 9.9.1:
    enters the debugger, allowing either to continue or to interrupt specific
    processes.
 
+* Packages:
+
+ - The package hash tables are not destructively extended, but rather a new
+   hash table is created when we need more room. ecl_sethash() now returns
+   the pointer to the possibly reallocated hashtable.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
