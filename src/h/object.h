@@ -263,9 +263,6 @@ struct ecl_package {
 	cl_object usedby;	/*  used-by-list of packages  */
 	cl_object internal;	/*  hashtable for internal symbols  */
 	cl_object external;	/*  hashtable for external symbols  */
-#ifdef ECL_THREADS
-	pthread_mutex_t lock;	/*  thread safe packages  */
-#endif
 };
 
 /*

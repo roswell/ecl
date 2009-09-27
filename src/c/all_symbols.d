@@ -201,7 +201,8 @@ make_this_symbol(int i, cl_object s, int code, const char *name,
 	s->symbol.hpack = package;
 	s->symbol.name = make_constant_base_string(name);
 	if (package == cl_core.keyword_package) {
-		ecl_sethash(s->symbol.name, package->pack.external, s);
+		package->pack.external =
+                        ecl_sethash(s->symbol.name, package->pack.external, s);
 		ECL_SET(s, s);
 	} else {
 		int intern_flag;

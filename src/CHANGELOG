@@ -112,6 +112,11 @@ ECL 9.9.1:
    hash table is created when we need more room. ecl_sethash() now returns
    the pointer to the possibly reallocated hashtable.
 
+ - ECL now follows the SBCL model, by which there is a global lock for
+   destructive package operations (INTERN, EXPORT, etc), but not for
+   query only operations (FIND-SYMBOL, PACKAGE-USE-LIST), etc.
+ 
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

@@ -411,6 +411,7 @@ ecl_extend_hashtable(cl_object hashtable)
 			add_new_to_hash(key, new, old->hash.data[i].value);
 		}
         }
+        return new;
 }
 
 

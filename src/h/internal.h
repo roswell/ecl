@@ -249,10 +249,6 @@ extern cl_object ecl_extend_hashtable(cl_object hashtable);
 
 extern cl_object FEnot_funcallable_vararg(cl_narg narg, ...);
 
-/* package.d */
-
-extern cl_object ecl_find_symbol_nolock(cl_object name, cl_object p, int *intern_flag);
-
 /* print.d */
 
 #define ECL_PPRINT_QUEUE_SIZE			128
@@ -276,11 +272,9 @@ extern void cl_write_object(cl_object x, cl_object stream);
 #  include <pthread.h>
 # endif
 # define HASH_TABLE_LOCK(h) if ((h)->hash.lockable) if (pthread_mutex_lock(&(h)->hash.lock)) ecl_internal_error("")
-# define PACKAGE_LOCK(p) if (pthread_mutex_lock(&(p)->pack.lock)) ecl_internal_error("")
 # define PACKAGE_OP_LOCK() if (pthread_mutex_lock(&cl_core.global_lock)) ecl_internal_error("")
 # define THREAD_OP_LOCK() if (pthread_mutex_lock(&cl_core.global_lock)) ecl_internal_error("")
 # define HASH_TABLE_UNLOCK(h) if ((h)->hash.lockable) if (pthread_mutex_unlock(&(h)->hash.lock)) ecl_internal_error("")
-# define PACKAGE_UNLOCK(p) if (pthread_mutex_unlock(&(p)->pack.lock)) ecl_internal_error("")
 # define PACKAGE_OP_UNLOCK() if (pthread_mutex_unlock(&cl_core.global_lock)) ecl_internal_error("")
 # define THREAD_OP_UNLOCK() if (pthread_mutex_unlock(&cl_core.global_lock)) ecl_internal_error("")
 # define ERROR_HANDLER_LOCK() THREAD_OP_LOCK()
@@ -288,8 +282,6 @@ extern void cl_write_object(cl_object x, cl_object stream);
 #else
 # define HASH_TABLE_LOCK(h)
 # define HASH_TABLE_UNLOCK(h)
-# define PACKAGE_LOCK(p)
-# define PACKAGE_UNLOCK(p)
 # define PACKAGE_OP_LOCK()
 # define PACKAGE_OP_UNLOCK()
 # define ERROR_HANDLER_LOCK()
