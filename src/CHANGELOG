@@ -1,7 +1,20 @@
 ECL 9.9.1:
 ==========
 
-* Visible changes:
+* Configuration flags:
+
+ - The option --enable-slow-config is now always on in Solaris and it does not
+   take more time than an ordinary build using --with-system-gmp=no
+
+ - A new compiler macro ECL_NO_LEGACY can be defined to remove all deprecated
+   macros and functions. Have a look at the end of src/h/external.h to see
+   what functions are deprecated on each release -- typically they are functions
+   that have been renamed with one of the prefixes, ecl_, cl_, si_, ext_ or _ecl.
+
+ - Under OS X, you can use the environment variable ABI to select between
+   32-bits (ABI=32) or 64-bits pointers (ABI=64).
+
+* Bignums:
 
  - When embedded, ECL may coexist with code that uses the GMP library in
    different ways, and sometimes that code may use different memory allocation
@@ -20,11 +33,6 @@ ECL 9.9.1:
    prefix "_ecl", and some of them have been turned into macros. Do not use
    those functions if possible.
 
- - A new compiler macro ECL_NO_LEGACY can be defined to remove all deprecated
-   macros and functions. Have a look at the end of src/h/external.h to see
-   what functions are deprecated on each release -- typically they are functions
-   that have been renamed with one of the prefixes, ecl_, cl_, si_, ext_ or _ecl.
-
  - Bignums are now allocated as a compact IMMUTABLE unit that combines the lisp
    object and the data for the GMP integer itself. Since it can be now
    allocated as an atomic (i.e. pointerless) region of memory, the garbage
@@ -36,13 +44,17 @@ ECL 9.9.1:
  - The functions cl_alloc_simple_{base,extended}_string() now carry the prefix
    ecl_ instead of cl_, and they are simple aliases for ecl_alloc_simple_vector.
 
- - The option --enable-slow-config is now always on in Solaris and it does not
-   take more time than an ordinary build using --with-system-gmp=no
-
  - ECL now implements weak pointers. The interface is
 	(ext:make-weak-pointer value) => weak-pointer
 	(ext:weak-pointer-value weak-pointer) => value
    and it defines a new built-in type, EXT:WEAK-POINTER
+
+ - When running in multithreaded mode, the streams for *terminal-io*,
+   *standard-input* and *standard-output* are created using non-locking
+   C pipes, instead of locking C streams. This is essential to allow background
+   threads gain control of the console.
+
+* Native threads:
 
  - ECL now implements WITHOUT-INTERRUPTS and WITH-INTERRUPTS similarly to SBCL.
    It creates three local macros, ALLOW-WITH-INTERRUPTS and
@@ -51,9 +63,6 @@ ECL 9.9.1:
    surround WITHOUT-INTERRUPTS.
 
  - Symbol SI:*INTERRUPT-DISABLE* changes name to SI:*INTERRUPTS-DISABLED*.
-
- - Under OS X, you can use the environment variable ABI to select between
-   32-bits (ABI=32) or 64-bits pointers (ABI=64).
 
  - New function MP:PROCESS-JOIN, waits for a thread to terminate (J.C.Beaudoin)
    For this to work, threads are always created in a joinable state, and they
@@ -67,17 +76,6 @@ ECL 9.9.1:
 
  - Two new functions MP:PROCESS-SUSPEND and MP:PROCESS-RESUME allow suspending
    and resuming a thread.
-
- - ECL now has a signal handling thread running in the background. When
-   Ctrl-C or Ctrl-Break is pressed or the process gets a SIGINT signal, then
-   a separate thread is spawned for handling that event. This thread typically
-   enters the debugger, allowing either to continue or to interrupt specific
-   processes.
-
- - When running in multithreaded mode, the streams for *terminal-io*,
-   *standard-input* and *standard-output* are created using non-locking
-   C pipes, instead of locking C streams. This is essential to allow background
-   threads gain control of the console.
 
 * Bugs fixed:
 
@@ -101,6 +99,12 @@ ECL 9.9.1:
  - The toplevel now allows handling multiple processes in the same console.
    Two new commands, :w and :s, allow reading the list of processes waiting for
    grabbing the console and switching to that given process.
+
+ - ECL now has a signal handling thread running in the background. When
+   Ctrl-C or Ctrl-Break is pressed or the process gets a SIGINT signal, then
+   a separate thread is spawned for handling that event. This thread typically
+   enters the debugger, allowing either to continue or to interrupt specific
+   processes.
 
 ;;; Local Variables: ***
 ;;; mode:text ***
