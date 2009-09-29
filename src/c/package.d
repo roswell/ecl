@@ -117,7 +117,9 @@ make_package_hashtable()
 	cl_index hsize = 128;
 
 	h = ecl_alloc_object(t_hashtable);
+#ifdef ECL_THREADS
 	h->hash.lock = Cnil;
+#endif
 	h->hash.test = htt_pack;
 	h->hash.size = hsize;
 	h->hash.rehash_size = ecl_make_singlefloat(1.5f);
