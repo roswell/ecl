@@ -161,7 +161,11 @@ void GC_push_regs()
 
 #if !defined(HAVE_PUSH_REGS) && defined(UNIX_LIKE)
 # ifndef NO_GETCONTEXT
-#  include <ucontext.h>
+#  ifdef __APPLE__
+#   include <sys/ucontext.h>
+#  else
+#   include <ucontext.h>
+#  endif
 # endif
 #endif
 
