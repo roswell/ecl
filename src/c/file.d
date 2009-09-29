@@ -4017,7 +4017,7 @@ ecl_force_output(cl_object strm)
 void
 ecl_finish_output(cl_object strm)
 {
-	return stream_dispatch_table(strm)->finish_output(strm);
+	stream_dispatch_table(strm)->finish_output(strm);
 }
 
 int
