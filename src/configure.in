@@ -472,8 +472,19 @@ if test ${enable_boehm} = "no" ; then
   enable_smallcons="no"
 else
   if test ${enable_boehm} = "auto"; then
-    AC_CHECK_LIB( [gc], [GC_malloc],
-                  [enable_boehm="system"], [enable_boehm="included"])
+    if test ${enable_threads} = "no"; then
+      AC_CHECK_LIB( [gc], [GC_malloc],
+                    [enable_boehm="system"], [enable_boehm="included"] )
+    else
+      AC_CHECK_LIB( [gc], [GC_register_my_thread],
+                    [enable_boehm="system"], [enable_boehm="included"] )
+    fi
+    AC_MSG_CHECKING( [whether we can use the existing Boehm-Weiser library] )
+    if test ${enable_boehm} = "system"; then
+      AC_MSG_RESULT([yes])
+    else
+      AC_MSG_RESULT([no])
+    fi
   fi
 
   if test ${enable_boehm} = "system"; then 
