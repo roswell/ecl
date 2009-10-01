@@ -232,7 +232,7 @@ mp_get_lock_wait(cl_object lock)
          * but before we set count and owner, we are in trouble, since the
          * mutex might be locked. */
 #ifdef ECL_WINDOWS_THREADS
-	switch (WaitForSingleObject(lock->lock.mutex, (wait==Ct?INFINITE:0))) {
+	switch (WaitForSingleObject(lock->lock.mutex, INFINITE)) {
 		case WAIT_OBJECT_0:
                         lock->lock.counter++;
                         lock->lock.holder = own_process;
