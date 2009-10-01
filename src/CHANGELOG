@@ -77,6 +77,15 @@ ECL 9.9.1:
  - Two new functions MP:PROCESS-SUSPEND and MP:PROCESS-RESUME allow suspending
    and resuming a thread.
 
+ - The C function ecl_import_current_thread() now automatically registers the
+   thread with the garbage collector. You should use ecl_release_current_thread()
+   before the thread exits, for consistency.
+
+ - Due to the change in ecl_import_current_thread(), ECL now needs a slightly
+   more modern version of the Boehm-Weiser garbage collector. Hence, even if you
+   try to enforce --enable-boehm=system, you may find that ECL ignores the
+   pre-installed library in favor of the one shipped with it.
+
 * Bugs fixed:
 
  - WITH-LOCK might run into a race condition when the lock acquisition process
