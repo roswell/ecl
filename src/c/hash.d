@@ -722,11 +722,16 @@ cl_object
 si_copy_hash_table(cl_object orig)
 {
 	cl_object hash;
+#ifdef ECL_THREADS
+	cl_object lockable = orig->hash.lock;
+#else
+	cl_object lockable = Cnil;
+#endif
 	hash = cl__make_hash_table(cl_hash_table_test(orig),
 				   cl_hash_table_size(orig),
 				   cl_hash_table_rehash_size(orig),
 				   cl_hash_table_rehash_threshold(orig),
-				   orig->hash.lock);
+				   lockable);
 	HASH_TABLE_LOCK(hash);
 	memcpy(hash->hash.data, orig->hash.data,
 	       orig->hash.size * sizeof(*orig->hash.data));
