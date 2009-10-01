@@ -74,10 +74,12 @@
 #undef GBC_BOEHM
 #ifdef GBC_BOEHM
 # ifdef ECL_WINDOWS_THREADS
-#   define GC_WIN32_THREADS
+#   define GC_WIN32_THREADS	/* For older versions */
+#   define GC_THREADS		/* For >= 7.2 */
 # else
 #  ifdef ECL_THREADS
-#    define GC_PTHREADS
+#    define GC_PTHREADS		/* For older versions */
+#    define GC_THREADS		/* For >= 7.2 */
 #  endif
 # endif
 # define ECL_DYNAMIC_VV

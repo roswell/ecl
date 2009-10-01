@@ -61,6 +61,8 @@
 #define ECL_THREADS @ECL_THREADS@
 #if ECL_THREADS
 # define GC_WIN32_THREADS
+# define GC_THREADS
+# define ECL_WINDOWS_THREADS
 #else
 # undef ECL_THREADS
 #endif
