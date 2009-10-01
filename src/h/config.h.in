@@ -48,13 +48,6 @@
 /* Always use CLOS							*/
 #define CLOS
 
-/* Use Boehm's garbage collector					*/
-#undef GBC_BOEHM
-#ifdef GBC_BOEHM
-#define ECL_DYNAMIC_VV
-#include "@ECL_BOEHM_GC_HEADER@"
-#endif
-
 /* Use GNU Multiple Precision library for bignums                       */
 #ifndef DPP
 #undef WITH_GMP
@@ -66,13 +59,29 @@
 /* Userland threads?							*/
 #undef ECL_THREADS
 #ifdef ECL_THREADS
-# define GC_THREADS
+# if defined(_MSC_VER) || defined(mingw32)
+#  define ECL_WINDOWS_THREADS
+# endif
 /* # udef ECL_SEMAPHORES */
 #endif
 
 /* __thread thread-local variables?                                     */
 #ifndef openbsd
 #undef WITH___THREAD
+#endif
+
+/* Use Boehm's garbage collector					*/
+#undef GBC_BOEHM
+#ifdef GBC_BOEHM
+# ifdef ECL_WINDOWS_THREADS
+#   define GC_WIN32_THREADS
+# else
+#  ifdef ECL_THREADS
+#    define GC_PTHREADS
+#  endif
+# endif
+# define ECL_DYNAMIC_VV
+# include "@ECL_BOEHM_GC_HEADER@"
 #endif
 
 /* Network streams							*/

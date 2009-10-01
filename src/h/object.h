@@ -824,9 +824,6 @@ struct ecl_dummy {
 };
 
 #ifdef ECL_THREADS
-#if defined(_MSC_VER) || defined(mingw32)
-# define ECL_WINDOWS_THREADS
-#endif
 struct ecl_process {
 	HEADER1(active);
 	cl_object name;
