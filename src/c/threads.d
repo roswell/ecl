@@ -561,7 +561,7 @@ mp_condition_variable_wait(cl_object cv, cl_object lock)
                 FEerror("Attempt to wait on a condition variable using lock~%~S"
                         "~%which is not owned by process~%~S", 2, lock, own_process);
         }
-        if (lock->lock.counter > 0) {
+        if (lock->lock.counter > 1) {
                 FEerror("mp:condition-variable-wait can not be used with recursive"
                         " locks:~%~S", 1, lock);
         }
@@ -602,7 +602,7 @@ mp_condition_variable_timedwait(cl_object cv, cl_object lock, cl_object seconds)
                 FEerror("Attempt to wait on a condition variable using lock~%~S"
                         "~%which is not owned by process~%~S", 2, lock, own_process);
         }
-        if (lock->lock.counter > 0) {
+        if (lock->lock.counter > 1) {
                 FEerror("mp:condition-variable-wait can not be used with recursive"
                         " locks:~%~S", 1, lock);
         }
@@ -633,7 +633,7 @@ mp_condition_variable_timedwait(cl_object cv, cl_object lock, cl_object seconds)
                                     &lock->lock.mutex, &ts);
         lock->lock.holder = own_process;
         lock->lock.counter = 1;
-        if (rc != ETIMEDOUT) {
+        if (rc != 0 && rc != ETIMEDOUT) {
                 FEerror("System returned error code ~D "
                         "when waiting on condition variable~%~A~%and lock~%~A.",
                         3, MAKE_FIXNUM(rc), cv, lock);
