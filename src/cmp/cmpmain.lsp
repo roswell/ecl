@@ -496,7 +496,8 @@ static cl_object VV[VM];
        #+msvc
        (unwind-protect
          (progn
-           (with-open-file (f "static_lib.tmp" :direction :output :if-does-not-exist :create :if-exists :supersede)
+           (with-open-file (f "static_lib.tmp" :direction :output
+			      :if-does-not-exist :create :if-exists :supersede)
              (format f "/DEBUGTYPE:CV /OUT:~A ~A ~{~&\"~A\"~}"
                      output-name o-name ld-flags))
            (safe-system "link -lib @static_lib.tmp"))
@@ -859,7 +860,8 @@ from the C language code.  NIL means \"do not create the file\"."
 
 (defun compiler-pass2 (c-pathname h-pathname data-pathname system-p init-name
 		       shared-data &key input-designator)
-  (with-open-file (*compiler-output1* c-pathname :direction :output)
+  (with-open-file (*compiler-output1* c-pathname :direction :output
+				      :if-does-not-exist :create :if-exists :supersede)
     (wt-comment-nl "Compiler: ~A ~A" (lisp-implementation-type) (lisp-implementation-version))
     #-ecl-min
     (multiple-value-bind (second minute hour day month year)
@@ -867,7 +869,8 @@ from the C language code.  NIL means \"do not create the file\"."
       (wt-comment-nl "Date: ~D/~D/~D ~2,'0D:~2,'0D (yyyy/mm/dd)" year month day hour minute)
       (wt-comment-nl "Machine: ~A ~A ~A" (software-type) (software-version) (machine-type)))
     (wt-comment-nl "Source: ~A" input-designator)
-    (with-open-file (*compiler-output2* h-pathname :direction :output)
+    (with-open-file (*compiler-output2* h-pathname :direction :output
+					:if-does-not-exist :create :if-exists :supersede)
       (wt-nl1 "#include " *cmpinclude*)
       (catch *cmperr-tag* (ctop-write init-name
 				      h-pathname
