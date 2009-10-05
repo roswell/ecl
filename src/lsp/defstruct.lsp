@@ -294,7 +294,7 @@
   #+clos
   (when print-function
     (eval `(defmethod print-object ((obj ,name) stream)
-	     (,print-function obj stream *print-level*))))
+	     (,print-function obj stream 0))))
   #+clos
   (when print-object
     (eval `(defmethod print-object ((obj ,name) stream)
