@@ -80,6 +80,9 @@
 #  ifdef ECL_THREADS
 #    define GC_PTHREADS		/* For older versions */
 #    define GC_THREADS		/* For >= 7.2 */
+#    ifdef __APPLE__		/* For older versions */
+#      define GC_DARWIN_THREADS
+#    endif
 #  endif
 # endif
 # define ECL_DYNAMIC_VV
