@@ -67,11 +67,13 @@
 /* For SA_SIGINFO in Solaris. We could have used _XOPEN_SOURCE=600, but
  * this requires C99 and the default GCC for Solaris (3.4.3) does not
  * support this C standard. */
-#define __EXTENSIONS__
+# define __EXTENSIONS__
 #endif
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
+/* To get APCProc calls */
+#define _WIN32_WINNT 0x400
 #include <ecl/ecl.h>
 #if defined(HAVE_FENV_H) && !defined(ECL_AVOID_FENV_H)
 # ifndef _GNU_SOURCE
@@ -88,7 +90,6 @@
 #endif
 #if defined(mingw32) || defined(_MSC_VER)
 # include <windows.h>
-# define ECL_WINDOWS_THREADS
 #endif
 #if !defined(_MSC_VER)
 # include <unistd.h>
