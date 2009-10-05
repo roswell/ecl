@@ -78,7 +78,7 @@ the environment variable TMPDIR to a different value." template)))
 	     (manifest (probe-file manifest-namestring)))
 	(when manifest
 	  (safe-system
-	   (format nil "mt -manifest ~S \"-outputresource:~A;~D\""
+	   (format nil "mt -nologo -manifest ~S \"-outputresource:~A;~D\""
 		   manifest-namestring
 		   (namestring real-file)
 		   (ecase type
