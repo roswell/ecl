@@ -2378,7 +2378,7 @@ c_listA(cl_env_ptr env, cl_object args, int flags)
 	for (; !ecl_endp(body); body = ECL_CONS_CDR(body)) {
 	  cl_object form = ECL_CONS_CAR(body);
 
-	  if (!Null(doc) && type_of(form) == t_base_string && !ecl_endp(CDR(body))) {
+	  if (!Null(doc) && ecl_stringp(form) && !ecl_endp(CDR(body))) {
 	    if (documentation == Cnil)
 	      documentation = form;
 	    else
