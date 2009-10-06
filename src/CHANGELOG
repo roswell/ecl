@@ -136,7 +136,12 @@ ECL 9.9.1:
    now properly deleted before exiting ECL.
 
  - ECL now embeds the manifest file in the generated executables and shared
-   libraries. 
+   libraries.
+
+* Other errors:
+
+ - Extended strings (i.e. strings with characters that are not base-characters)
+   were not identified as valid documentation strings by the interpreter.
 
 ;;; Local Variables: ***
 ;;; mode:text ***
