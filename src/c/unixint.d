@@ -220,9 +220,9 @@ mysignal(int code, void (*handler)(int, siginfo_t *, void*))
 # endif
 #else
 	new_action.sa_handler = handler;
-	sigfillset(&new_action.sa_mask);
 	new_action.sa_flags = 0;
 #endif
+	sigfillset(&new_action.sa_mask);
 	sigaction(code, &new_action, &old_action);
 }
 #else /* HAVE_SIGPROCMASK */
@@ -357,16 +357,14 @@ handler_fn_protype(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
 static void
 unblock_signal(int signal)
 {
-	struct sigaction oact;
-	sigset_t block_mask;
-	sigaction(signal, NULL, &oact);
-	block_mask = oact.sa_mask;
-	sigaddset(&block_mask, signal);
-	sigdelset(&block_mask, cl_core.default_sigmask);
+	/*
+	 * We do not really "unblock" the signal, but rather restore
+	 * ECL's default sigmask.
+	 */
 # ifdef ECL_THREADS
-	pthread_sigmask(SIG_UNBLOCK, &block_mask, NULL);
+	pthread_sigmask(SIG_SETMASK, cl_core.default_sigmask, NULL);
 # else
-	sigprocmask(SIG_UNBLOCK, &block_mask, NULL);
+	sigprocmask(SIG_SETMASK, cl_core.default_sigmaks, NULL);
 # endif
 }
 #endif
