@@ -362,6 +362,7 @@ unblock_signal(int signal)
 	sigaction(signal, NULL, &oact);
 	block_mask = oact.sa_mask;
 	sigaddset(&block_mask, signal);
+	sigdelset(&block_mask, cl_core.default_sigmask);
 # ifdef ECL_THREADS
 	pthread_sigmask(SIG_UNBLOCK, &block_mask, NULL);
 # else
@@ -428,6 +429,8 @@ queue_signal(cl_env_ptr env, cl_object code)
         mp_get_lock(1, lock);
 #endif
         record = cl_core.signal_queue;
+	if (record == OBJNULL)
+		return;
         cl_core.signal_queue = CDR(record);
 #ifdef ECL_THREADS
         mp_giveup_lock(lock);
@@ -550,6 +553,23 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
 				   " on our thread.");
 	}
 	the_env = ecl_process_env();
+#if defined(SA_SIGINFO) && defined(ECL_USE_MPROTECT)
+	/* We access the environment when it was protected. That
+	 * means there was a pending signal. */
+	if (((char*)the_env <= (char*)info->si_addr) &&
+            ((char*)info->si_addr <= (char*)(the_env+1)))
+        {
+		cl_object signal;
+		mprotect(the_env, sizeof(*the_env), PROT_READ | PROT_WRITE);
+                the_env->disable_interrupts = 0;
+                unblock_signal(SIGBUS);
+                for (signal = pop_signal(the_env); !Null(signal) && signal; ) {
+                        handle_signal_now(signal);
+                        signal = pop_signal(the_env);
+                }
+                return;
+	}
+#endif
 #ifdef HAVE_SIGPROCMASK
 # ifdef ECL_DOWN_STACK
 	if ((char*)info->si_addr > the_env->cs_barrier &&
@@ -1062,14 +1082,33 @@ install_process_interrupt_handler()
 }
 
 /*
- * This routine sets up handlers for all other exceptions, such as
- * floating point exceptions, access to restricted regions of memory,
- * etc.
+ * This routine sets up handlers for all exceptions, such as access to
+ * restricted regions of memory. They have to be set up before we call
+ * init_GC().
  */
 static void
 install_synchronous_signal_handlers()
 {
-	ECL_SET(@'si::*interrupts-enabled*', Ct);
+#ifdef SIGBUS
+	if (ecl_get_option(ECL_OPT_TRAP_SIGBUS)) {
+		mysignal(SIGBUS, sigbus_handler);
+	}
+#endif
+#ifdef SIGSEGV
+	if (ecl_get_option(ECL_OPT_TRAP_SIGSEGV)) {
+		mysignal(SIGSEGV, sigsegv_handler);
+	}
+#endif
+}
+
+/*
+ * This routine sets up handlers for floating point exceptions. We
+ * cannot do it earlier because it requires the memory allocator to
+ * be set up.
+ */
+static void
+install_fpe_signal_handlers()
+{
 #ifdef SIGFPE
 	if (ecl_get_option(ECL_OPT_TRAP_SIGFPE)) {
 		mysignal(SIGFPE, non_evil_signal_handler);
@@ -1082,17 +1121,6 @@ install_synchronous_signal_handlers()
 # endif
 	}
 #endif
-#ifdef SIGBUS
-	if (ecl_get_option(ECL_OPT_TRAP_SIGBUS)) {
-		mysignal(SIGBUS, sigbus_handler);
-	}
-#endif
-#ifdef SIGSEGV
-	if (ecl_get_option(ECL_OPT_TRAP_SIGSEGV)) {
-		mysignal(SIGSEGV, sigsegv_handler);
-	}
-#endif
-	ecl_process_env()->disable_interrupts = 0;
 }
 
 /*
@@ -1115,12 +1143,19 @@ void
 init_unixint(int pass)
 {
 	if (pass == 0) {
+#ifdef ECL_THREADS
+		cl_core.signal_queue_lock = Cnil;
+#endif
+		cl_core.signal_queue = OBJNULL;
 		install_asynchronous_signal_handlers();
 		install_process_interrupt_handler();
+		install_synchronous_signal_handlers();
 	} else {
 		create_signal_queue(ecl_get_option(ECL_OPT_SIGNAL_QUEUE_SIZE));
 		create_signal_code_constants();
-		install_synchronous_signal_handlers();
+		install_fpe_signal_handlers();
 		install_signal_handling_thread();
+		ECL_SET(@'si::*interrupts-enabled*', Ct);
+		ecl_process_env()->disable_interrupts = 0;
 	}
 }
