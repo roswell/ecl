@@ -532,7 +532,7 @@ Use special code 0 to cancel this operation.")
 		     (mp:process-suspend i)))
      (mp:with-local-interrupts
       (restart-case (simple-terminal-interrupt)
-        (continue () (return-from terminal-interrupt))
+        (continue () (setf break-process nil))
 	(mp:interrupt-process (process)
 	  :interactive query-process
 	  :report (lambda (stream) (princ "Interrupt a certain process." stream))
