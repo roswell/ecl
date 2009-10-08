@@ -181,15 +181,14 @@ make_this_symbol(int i, cl_object s, int code, const char *name,
 	case CL_PACKAGE: package = cl_core.lisp_package; break;
 	case SI_PACKAGE: package = cl_core.system_package; break;
 	case KEYWORD_PACKAGE: package = cl_core.keyword_package; break;
-#ifdef ECL_THREADS
 	case MP_PACKAGE: package = cl_core.mp_package; break;
-#endif
 #ifdef CLOS
 	case CLOS_PACKAGE: package = cl_core.clos_package; break;
 #endif
 #ifdef ECL_CLOS_STREAMS
 	case GRAY_PACKAGE: package = cl_core.gray_package; break;
 #endif
+	default: printf("%d\n", code & ~(int)3); ecl_internal_error("Unknown package code in init_all_symbols()");
 	}
 	s->symbol.t = t_symbol;
 	s->symbol.dynamic = 0;

@@ -166,9 +166,7 @@ struct cl_core_struct {
 	cl_object gray_package;
 # endif
 #endif
-#ifdef ECL_THREADS
 	cl_object mp_package;
-#endif
 	cl_object packages_to_be_created;
 
 	cl_object pathname_translations;

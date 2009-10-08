@@ -497,12 +497,10 @@ cl_boot(int argc, char **argv)
 		ecl_make_package(make_constant_base_string("CLOS"),
 				 Cnil, ecl_list1(cl_core.lisp_package));
 #endif
-#ifdef ECL_THREADS
 	cl_core.mp_package =
 		ecl_make_package(make_constant_base_string("MP"),
 				 ecl_list1(make_constant_base_string("MULTIPROCESSING")),
 				 ecl_list1(cl_core.lisp_package));
-#endif
 #ifdef ECL_CLOS_STREAMS
 	cl_core.gray_package = ecl_make_package(make_constant_base_string("GRAY"),
 						Cnil,

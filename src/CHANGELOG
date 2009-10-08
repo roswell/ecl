@@ -8,6 +8,9 @@ ECL 9.10.2:
  - Changed src/c/aclocal.m4 so that the GMP library also builds under OS X
    Snow Leopard in 64-bits mode.
 
+ - The package MP is needed also in single-threaded versions (for
+   mp:with-lock, which is used in CLX).
+
 ECL 9.10.1:
 ===========
 
