@@ -11,6 +11,11 @@ ECL 9.10.2:
  - The package MP is needed also in single-threaded versions (for
    mp:with-lock, which is used in CLX).
 
+ - In Linux there is a problem with handlers for SIGFPE being totally ignored
+   by the system. The problem seems to be solved by refusing to use
+   feenableexcept() and restricting to C99 exception tests. That is bad because
+   we can not reliably and cheaply detect underflow exceptions.
+
 ECL 9.10.1:
 ===========
 
