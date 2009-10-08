@@ -893,7 +893,7 @@
   (sb-thread:make-mutex :name name))
 
 #+(and ecl threads)
-(defun make-lock (name)
+(defun make-process-lock (name)
   (mp:make-lock :name name))
 
 ;;; HOLDING-LOCK: Execute a body of code with a lock held.
