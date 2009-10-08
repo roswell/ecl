@@ -1,3 +1,13 @@
+ECL 9.10.2:
+===========
+
+* Bugs fixed:
+
+ - Fixed typo in src/c/unixint.d that affected single-threaded builds
+
+ - Changed src/c/aclocal.m4 so that the GMP library also builds under OS X
+   Snow Leopard in 64-bits mode.
+
 ECL 9.10.1:
 ===========
 

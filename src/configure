@@ -4474,11 +4474,10 @@ case "${host_os}" in
 		THREAD_CFLAGS='-D_THREAD_SAFE'
 		THREAD_LIBS='-lpthread'
 		# The GMP library has not yet been ported to Intel-OSX
-		if test "`uname -m`" = i386; then
-		  gmp_build=none-apple-${host_os}
-		else
-		  export ABI=mode32
-		fi
+		case "`uname -m`" in
+		i386*|x86_64) gmp_build=none-apple-${host_os};;
+		*) ABI=32;;
+		esac
                 if test "x$ABI" = "x64"; then
                   if echo "$CFLAGS" | grep -v ' *-m64' >/dev/null ; then
                      CFLAGS="-m64 $CFLAGS"
