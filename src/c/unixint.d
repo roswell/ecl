@@ -203,7 +203,7 @@ static struct {
 #ifdef HAVE_SIGPROCMASK
 # define handler_fn_protype(name, sig, info, aux) name(sig, info, aux)
 # define call_handler(name, sig, info, aux) name(sig, info, aux)
-# define reinstall_signal(x,y)
+# define reinstall_signal(x,y) mysignal(x,y)
 # define copy_siginfo(x,y) memcpy(x, y, sizeof(struct sigaction))
 static void
 mysignal(int code, void (*handler)(int, siginfo_t *, void*))
@@ -211,7 +211,6 @@ mysignal(int code, void (*handler)(int, siginfo_t *, void*))
 	struct sigaction new_action, old_action;
 #ifdef SA_SIGINFO
 	new_action.sa_sigaction = handler;
-	sigfillset(&new_action.sa_mask);
 	new_action.sa_flags = SA_SIGINFO;
 # ifdef SA_ONSTACK
 	if (code == SIGSEGV) {
@@ -281,8 +280,8 @@ static cl_object pop_signal(cl_env_ptr env);
 static cl_object
 handler_fn_protype(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
 {
-#if defined(ECL_THREADS) && !defined(_MSC_VER) && !defined(mingw32)
 	cl_env_ptr the_env = ecl_process_env();
+#if defined(ECL_THREADS) && !defined(_MSC_VER) && !defined(mingw32)
         if (sig == ecl_get_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL)) {
 		return pop_signal(the_env);
         }
@@ -294,49 +293,72 @@ handler_fn_protype(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
         }
 	case SIGFPE: {
 		cl_object condition = @'arithmetic-error';
+		int code = 0;
 #ifdef _MSC_VER
                 switch (_fpecode) {
                 case _FPE_INVALID:
                         condition = @'floating-point-invalid-operation';
+			code = FE_INVALID;
                         break;
                 case _FPE_OVERFLOW:
                         condition = @'floating-point-overflow';
+			code = FE_OVERFLOW;
                         break;
                 case _FPE_UNDERFLOW:
                         condition = @'floating-point-underflow';
+			code = FE_UNDERFLOW;
                         break;
                 case _FPE_ZERODIVIDE:
                         condition = @'division-by-zero';
+			code = FE_DIVBYZERO;
                         break;
                 }
 #endif
 #if defined(HAVE_FENV_H) & !defined(ECL_AVOID_FENV_H)
-		if (fetestexcept(FE_DIVBYZERO))
+		if (fetestexcept(FE_DIVBYZERO)) {
 			condition = @'division-by-zero';
-		else if (fetestexcept(FE_INVALID))
+			code = FE_DIVBYZERO;
+		} else if (fetestexcept(FE_INVALID)) {
 			condition = @'floating-point-invalid-operation';
-		else if (fetestexcept(FE_OVERFLOW))
+			code = FE_INVALID;
+		} else if (fetestexcept(FE_OVERFLOW)) {
 			condition = @'floating-point-overflow';
-		else if (fetestexcept(FE_UNDERFLOW))
+			code = FE_OVERFLOW;
+		} else if (fetestexcept(FE_UNDERFLOW)) {
 			condition = @'floating-point-underflow';
-		else if (fetestexcept(FE_INEXACT))
+			code = FE_UNDERFLOW;
+		} else if (fetestexcept(FE_INEXACT)) {
 			condition = @'floating-point-inexact';
+			code = FE_INEXACT;
+		}
                 feclearexcept(FE_ALL_EXCEPT);
 #endif
 #ifdef SA_SIGINFO
 		if (info) {
-			if (info->si_code == FPE_INTDIV || info->si_code == FPE_FLTDIV)
+			if (info->si_code == FPE_INTDIV || info->si_code == FPE_FLTDIV) {
 				condition = @'division-by-zero';
-			if (info->si_code == FPE_FLTOVF)
+				code = FE_DIVBYZERO;
+			}
+			if (info->si_code == FPE_FLTOVF) {
 				condition = @'floating-point-overflow';
-			if (info->si_code == FPE_FLTUND)
+				code = FE_OVERFLOW;
+			}
+			if (info->si_code == FPE_FLTUND) {
 				condition = @'floating-point-underflow';
-			if (info->si_code == FPE_FLTRES)
+				code = FE_UNDERFLOW;
+			}
+			if (info->si_code == FPE_FLTRES) {
 				condition = @'floating-point-inexact';
-			if (info->si_code == FPE_FLTINV)
+				code = FE_INEXACT;
+			}
+			if (info->si_code == FPE_FLTINV) {
 				condition = @'floating-point-invalid-operation';
+				code = FE_INVALID;
+			}
 		}
 #endif
+		if (code && !(code & the_env->trap_fpe_bits))
+			condition = Cnil;
 		si_trap_fpe(@'last', Ct);
                 return condition;
 	}
@@ -938,7 +960,9 @@ si_trap_fpe(cl_object condition, cl_object flag)
         if (condition == @'last') {
 		bits = the_env->trap_fpe_bits;
         } else {
-                if (condition == @'division-by-zero')
+                if (condition == Ct)
+                        bits = FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW | FE_INVALID;
+		else if (condition == @'division-by-zero')
                         bits = FE_DIVBYZERO;
                 else if (condition == @'floating-point-overflow')
                         bits = FE_OVERFLOW;
@@ -948,9 +972,7 @@ si_trap_fpe(cl_object condition, cl_object flag)
                         bits = FE_INVALID;
                 else if (condition == @'floating-point-inexact')
                         bits = FE_INEXACT;
-                else if (condition == Ct)
-                        bits = FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW | FE_INVALID;
-		else if (FIXNUMP(condition))
+                else if (FIXNUMP(condition))
 			bits = fix(condition) & all;
                 if (flag == Cnil) {
                         bits = the_env->trap_fpe_bits & ~bits;
