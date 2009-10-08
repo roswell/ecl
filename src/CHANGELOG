@@ -16,6 +16,9 @@ ECL 9.10.2:
    feenableexcept() and restricting to C99 exception tests. That is bad because
    we can not reliably and cheaply detect underflow exceptions.
 
+ - In CLX, there were a couple of typos in the code related to locks and ECL.
+   These typos only revealed in multithreaded builds of the CLX library.
+
 ECL 9.10.1:
 ===========
 
