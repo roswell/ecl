@@ -952,8 +952,8 @@
 			      &key timeout)
 			&body body)
   (declare (ignore display))
-  `(progn (mp:get-lock ,lock)
-	  ,@body))
+  `(mp::with-lock (,lock)
+      ,@body))
 
 #+sbcl
 (defmacro holding-lock ((lock display &optional (whostate "CLX wait")
