@@ -364,7 +364,7 @@ unblock_signal(int signal)
 # ifdef ECL_THREADS
 	pthread_sigmask(SIG_SETMASK, cl_core.default_sigmask, NULL);
 # else
-	sigprocmask(SIG_SETMASK, cl_core.default_sigmaks, NULL);
+	sigprocmask(SIG_SETMASK, cl_core.default_sigmask, NULL);
 # endif
 }
 #endif
