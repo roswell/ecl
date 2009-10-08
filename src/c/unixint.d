@@ -212,7 +212,7 @@ mysignal(int code, void (*handler)(int, siginfo_t *, void*))
 #ifdef SA_SIGINFO
 	new_action.sa_sigaction = handler;
 	new_action.sa_flags = SA_SIGINFO;
-# ifdef SA_ONSTACK
+# if 0 && defined(SA_ONSTACK)
 	if (code == SIGSEGV) {
 		new_action.sa_flags |= SA_ONSTACK;
 	}
@@ -606,7 +606,7 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
                 return;
 	}
 # endif
-# ifdef SA_ONSTACK
+# if 0 && defined(SA_ONSTACK)
 	/* The handler is executed in an externally allocated stack, and
          * thus it is not safe to execute lisp code here. We just bounce
          * up to the outermost toplevel.

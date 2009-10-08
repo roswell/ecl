@@ -582,7 +582,7 @@ init_stacks(cl_env_ptr env, char *new_cs_org)
 #endif
 	cs_set_size(env, ecl_get_option(ECL_OPT_C_STACK_SIZE));
 
-#if defined(HAVE_SIGPROCMASK) && defined(SA_SIGINFO) && defined(SA_ONSTACK)
+#if 0 /* defined(HAVE_SIGPROCMASK) && defined(SA_SIGINFO) && defined(SA_ONSTACK) */
 	if (ecl_get_option(ECL_OPT_SIGALTSTACK_SIZE)) {
 		stack_t new_stack;
 		cl_index size = ecl_get_option(ECL_OPT_SIGALTSTACK_SIZE);
