@@ -5,19 +5,18 @@ ECL 9.10.2:
 
  - Fixed typo in src/c/unixint.d that affected single-threaded builds
 
- - Changed src/c/aclocal.m4 so that the GMP library also builds under OS X
-   Snow Leopard in 64-bits mode.
+ - The GMP library did not build in OS X Snow Leopard in 64-bits mode.
 
- - The package MP is needed also in single-threaded versions (for
+ - The package MP is needed also in single-threaded versions (for fake
    mp:with-lock, which is used in CLX).
-
- - In Linux there is a problem with handlers for SIGFPE being totally ignored
-   by the system. The problem seems to be solved by refusing to use
-   feenableexcept() and restricting to C99 exception tests. That is bad because
-   we can not reliably and cheaply detect underflow exceptions.
 
  - In CLX, there were a couple of typos in the code related to locks and ECL.
    These typos only revealed in multithreaded builds of the CLX library.
+
+ - In Linux there is a problem with handlers for SIGFPE being totally ignored
+   by the system. The problem seems to be solved by avoiding the use of
+   feenableexcept() and restricting to C99 exception tests. That is bad because
+   we can not reliably and cheaply detect underflow exceptions.
 
  - Under OS X, --enable-rpath works again. It was broken for about a year
    due to my misunderstanding of how -install_name works and the differences
