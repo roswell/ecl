@@ -51,10 +51,15 @@
 #endif
 #endif
 
-#ifdef ECL_THREADS
-# if defined(_MSC_VER) || defined(mingw32)
+#if defined(_MSC_VER) || defined(mingw32)
+# ifndef WIN32_LEAN_AND_MEAN
 #  define WIN32_LEAN_AND_MEAN 1 /* Do not include winsock.h */
 #  include <windows.h>
+#  undef WIN32_LEAN_AND_MEAN
+# else
+#  include <windows.h>
+# endif
+# ifdef ECL_THREADS
    typedef HANDLE pthread_t;
    typedef HANDLE pthread_mutex_t;
    typedef HANDLE pthread_cond_t; /*Dummy, not really used*/
@@ -62,8 +67,8 @@
 #  ifdef GBC_BOEHM
 #   define CreateThread GC_CreateThread
 #  endif
-# endif
-#endif
+# endif /* ECL_THREADS */
+#endif /* _MSC_VER || mingw32 */
 
 #include <ecl/object.h>
 #include <ecl/stacks.h>
