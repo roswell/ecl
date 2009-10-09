@@ -19,6 +19,10 @@ ECL 9.10.2:
  - In CLX, there were a couple of typos in the code related to locks and ECL.
    These typos only revealed in multithreaded builds of the CLX library.
 
+ - Under OS X, --enable-rpath works again. It was broken for about a year
+   due to my misunderstanding of how -install_name works and the differences
+   between that and -rpath.
+
 ECL 9.10.1:
 ===========
 

@@ -4494,7 +4494,7 @@ case "${host_os}" in
                 # well with our signal handler.
                 enable_boehm=included
 		SONAME="${SHAREDPREFIX}ecl.SOVERSION.${SHAREDEXT}"
-		SONAME_LDFLAGS="-Wl,-install_name,SONAME -Wl,-compatibility_version,${PACKAGE_VERSION}"
+		SONAME_LDFLAGS="-Wl,-install_name,@libdir\@/SONAME -Wl,-compatibility_version,${PACKAGE_VERSION}"
 		;;
 	nsk*)
 		# HP Non-Stop platform
