@@ -744,26 +744,6 @@ do_interrupt_thread(cl_object process)
 		ok = 0;
 		goto EXIT;
 	}
-#if 0
-	context.ContextFlags = CONTEXT_FULL;
-	if (!GetThreadContext(thread, &context))  {
-		FEwin32_error("Unable to query context in thread ~A", 1,
-			      process);
-		ok = 0;
-		goto RESUME;
-	}
-#  ifdef _AMD64_
-        trap_address = (void*)context.Rsp;
-#  endif
-#  ifdef _X86_
-        trap_address = (void*)context.Esp;
-#  endif
-        process->process.interrupt = Ct;
-        if (!VirtualProtect(trap_address, 1, guard, &guard)) {
-		FEwin32_error("Unable to protect memory from thread ~A",
-			      1, process);
-		ok = 0;
-#else
         process->process.interrupt = Ct;
         if (!VirtualProtect(process->process.env,
 			    sizeof(struct cl_env_struct),
@@ -774,7 +754,6 @@ do_interrupt_thread(cl_object process)
 			      1, process);
 		ok = 0;
 	}
-#endif
  RESUME:
 	if (!QueueUserAPC(wakeup_function, thread, 0)) {
 		FEwin32_error("Unable to queue APC call to thread ~A",
