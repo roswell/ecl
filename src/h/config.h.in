@@ -190,13 +190,8 @@ typedef unsigned @CL_FIXNUM_TYPE@ cl_hashkey;
 #define ECL_MULTIPLE_VALUES_LIMIT 64
 
 /* A setjmp that does not save signals					*/
-#if 0
 #define ecl_setjmp	@ECL_SETJMP@
 #define ecl_longjmp	@ECL_LONGJMP@
-#else
-#define ecl_setjmp	setjmp
-#define ecl_longjmp	longjmp
-#endif
 
 /*
  * Structure/Instance limits. The index to a slot must fit in the

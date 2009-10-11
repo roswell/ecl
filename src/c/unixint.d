@@ -997,9 +997,13 @@ install_asynchronous_signal_handlers()
 	mysignal(signal,handler)
 # endif
 #endif
-#if defined(ECL_THREADS) && defined(HAVE_SIGPROCMASK)
+#ifdef HAVE_SIGPROCMASK
 	static sigset_t sigmask;
+# ifdef ECL_THREADS
 	pthread_sigmask(SIG_SETMASK, NULL, &sigmask);
+# else
+        sigprocmask(SIG_SETMASK, NULL, &sigmask);
+# endif
 #endif
 	cl_core.default_sigmask = NULL;
 #ifdef SIGINT
@@ -1007,10 +1011,14 @@ install_asynchronous_signal_handlers()
 		async_handler(SIGINT, non_evil_signal_handler, &sigmask);
 	}
 #endif
-#if defined(ECL_THREADS) && defined(HAVE_SIGPROCMASK)
+#ifdef HAVE_SIGPROCMASK
+# if defined(ECL_THREADS)
 	pthread_sigmask(SIG_SETMASK, &sigmask, NULL);
-	cl_core.default_sigmask = &sigmask;
+# else
+	sigprocmask(SIG_SETMASK, &sigmask, NULL);
+# endif
 #endif
+	cl_core.default_sigmask = &sigmask;
 #ifdef ECL_WINDOWS_THREADS
 	old_W32_exception_filter =
 		SetUnhandledExceptionFilter(_ecl_w32_exception_filter);
