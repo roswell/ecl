@@ -338,27 +338,25 @@ handler_fn_protype(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
 			if (info->si_code == FPE_INTDIV || info->si_code == FPE_FLTDIV) {
 				condition = @'division-by-zero';
 				code = FE_DIVBYZERO;
-			}
-			if (info->si_code == FPE_FLTOVF) {
+			} else if (info->si_code == FPE_FLTOVF) {
 				condition = @'floating-point-overflow';
 				code = FE_OVERFLOW;
-			}
-			if (info->si_code == FPE_FLTUND) {
+			} else if (info->si_code == FPE_FLTUND) {
 				condition = @'floating-point-underflow';
 				code = FE_UNDERFLOW;
-			}
-			if (info->si_code == FPE_FLTRES) {
+			} else if (info->si_code == FPE_FLTRES) {
 				condition = @'floating-point-inexact';
 				code = FE_INEXACT;
-			}
-			if (info->si_code == FPE_FLTINV) {
+			} else if (info->si_code == FPE_FLTINV) {
 				condition = @'floating-point-invalid-operation';
 				code = FE_INVALID;
 			}
 		}
 #endif
+                /*
 		if (code && !(code & the_env->trap_fpe_bits))
 			condition = Cnil;
+                */
 		si_trap_fpe(@'last', Ct);
                 return condition;
 	}
