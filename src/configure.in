@@ -176,6 +176,12 @@ AC_ARG_WITH(profile,
                   [(yes|builtin|no, default=YES if Boehm-Weiser garbage collector used)]),
   [], [with_profile=yes])
 
+AC_ARG_WITH(dffi,
+  AS_HELP_STRING( [--with-dffi],
+                  [dynamic foreign function interface]
+                  [(auto|no, default=AUTO if libffi available or intel processor)]),
+  [], [with_dffi=auto])
+
 AC_ARG_WITH(fpe,
   AS_HELP_STRING( [--with-fpe],
                   [detect floating point exceptions]
@@ -395,13 +401,7 @@ dnl Checks for libraries
 
 LIBS="${LIBS} -lm"
 AC_CHECK_LIB(sun, getpwnam)         # on IRIX adds -lsun
-AC_CHECK_LIB( ffi, ffi_call, [has_ffi_lib=yes], [has_ffi_lib=no] )
-AC_CHECK_HEADER( [ffi/ffi.h], [has_ffi_h=$has_ffi_lib], [has_ffi_h=no] )
 AC_ISC_POSIX
-if test $has_ffi_h = "yes"; then
-  AC_DEFINE(HAVE_LIBFFI)
-  LDFLAGS="$LDFLAGS -lffi"
-fi
 
 dnl ----------------------------------------------------------------------
 dnl Profiling & debug flags
@@ -617,7 +617,9 @@ ECL_INTEGER_TYPES
 ECL_LINEFEED_MODE
 ECL_FIND_SETJMP
 ECL_FILE_STRUCTURE
+if test "x$with_dffi" != "xno"; then
 ECL_FFI
+fi
 ECL_FPE_MODEL
 
 if test "$enable_longdouble" != "no" ; then

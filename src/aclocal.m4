@@ -774,6 +774,14 @@ dnl Do we have a non-portable implementation of calls to foreign
 dnl functions?
 dnl
 AC_DEFUN([ECL_FFI],[
+AC_CHECK_LIB( ffi, ffi_call, [has_ffi_lib=yes], [has_ffi_lib=no] )
+if test $has_ffi_lib = yes; then
+  AC_CHECK_HEADER( [ffi/ffi.h], [has_ffi_h=$has_ffi_lib], [has_ffi_h=no] )
+fi
+if test $has_ffi_h = "yes"; then
+  AC_DEFINE(HAVE_LIBFFI)
+  LDFLAGS="$LDFLAGS -lffi"
+else
 AC_MSG_CHECKING([whether we can dynamically build calls to C functions])
 case "${host_cpu}" in
    i686 | i586 | pentium* | athlon* )
@@ -804,6 +812,7 @@ esac
 AC_MSG_RESULT([${dynamic_ffi}])
 if test "$dynamic_ffi" = "yes" ; then
   AC_DEFINE(ECL_DYNAMIC_FFI, 1, [we can build calls to foreign functions])
+fi
 fi
 ])
 

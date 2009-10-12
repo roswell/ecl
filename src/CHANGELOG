@@ -1,3 +1,17 @@
+ECL 9.10.3:
+===========
+
+* Bugs fixed:
+
+ - In single-threaded builds, ECL did not properly restore the signal mask
+   before jumping out of a signal handler.
+
+ - Floating point exceptions were sometimes ignored, leading to infinite loops.
+
+ - A new configuration flag is added, --with-dffi. This flag allows
+   deactivating the foreign function interface when the compiler does not
+   support inline assembly with the GCC syntax and libffi is not available.
+
 ECL 9.10.2:
 ===========
 
