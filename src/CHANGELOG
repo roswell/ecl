@@ -12,6 +12,9 @@ ECL 9.10.3:
    deactivating the foreign function interface when the compiler does not
    support inline assembly with the GCC syntax and libffi is not available.
 
+ - In a multithreaded ECL, when handling a Ctr-C/SIGINT asynchronous interrupt,
+   there was not always a CONTINUE restart available.
+
 ECL 9.10.2:
 ===========
 

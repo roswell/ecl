@@ -544,7 +544,7 @@ Use special code 0 to cancel this operation.")
         do (mp:process-resume process))
      (when break-process
        (mp:interrupt-process break-process
-			     #'simple-terminal-interrupt))))
+			     #'single-threaded-terminal-interrupt))))
   #-threads
   (single-threaded-terminal-interrupt))
 
