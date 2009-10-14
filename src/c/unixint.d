@@ -1017,8 +1017,8 @@ install_asynchronous_signal_handlers()
 # else
 	sigprocmask(SIG_SETMASK, &sigmask, NULL);
 # endif
-#endif
 	cl_core.default_sigmask = &sigmask;
+#endif
 #ifdef ECL_WINDOWS_THREADS
 	old_W32_exception_filter =
 		SetUnhandledExceptionFilter(_ecl_w32_exception_filter);
