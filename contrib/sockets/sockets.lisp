@@ -1373,14 +1373,14 @@ GET-NAME-SERVICE-ERRNO")
 ;;; SOCKET OPTIONS
 ;;;
 
-(defun get-sockopt-int (fd const)
-  (let ((ret (c-inline (fd const) (:int :int) t
+(defun get-sockopt-int (fd level const)
+  (let ((ret (c-inline (fd level const) (:int :int :int) t
 "{
         int sockopt, ret;
         socklen_t socklen = sizeof(int);
 
 	ecl_disable_interrupts();
-	ret = getsockopt(#0,SOL_SOCKET,#1,&sockopt,&socklen);
+	ret = getsockopt(#0,#1,#2,&sockopt,&socklen);
 	ecl_enable_interrupts();
 
         @(return) = (ret == 0) ? ecl_make_integer(sockopt) : Cnil;
@@ -1390,14 +1390,14 @@ GET-NAME-SERVICE-ERRNO")
 	(error "Sockopt error: ~A" (c-inline () () :cstring "strerror(errno)" :one-liner t)))))
 
 
-(defun get-sockopt-bool (fd const)
-  (let ((ret (c-inline (fd const) (:int :int) t
+(defun get-sockopt-bool (fd level const)
+  (let ((ret (c-inline (fd level const) (:int :int :int) t
 "{
         int sockopt, ret;
         socklen_t socklen = sizeof(int);
 
 	ecl_disable_interrupts();
-        ret = getsockopt(#0,SOL_SOCKET,#1,&sockopt,&socklen);
+        ret = getsockopt(#0,#1,#2,&sockopt,&socklen);
 	ecl_enable_interrupts();
 
         @(return) = (ret == 0) ? Ct : Cnil;
@@ -1407,19 +1407,19 @@ GET-NAME-SERVICE-ERRNO")
 	(error "Sockopt error: ~A" (c-inline () () :cstring "strerror(errno)" :one-liner t)))))
 
 #+wsock
-(defun get-sockopt-timeval (fd const)
-  (* 1000 (get-sockopt-int fd const)))
+(defun get-sockopt-timeval (fd level const)
+  (* 1000 (get-sockopt-int fd level const)))
 
 #-wsock
-(defun get-sockopt-timeval (fd const)
-  (let ((ret (c-inline (fd const) (:int :int) t
+(defun get-sockopt-timeval (fd level const)
+  (let ((ret (c-inline (fd level const) (:int :int :int) t
 "{
 	struct timeval tv;
         socklen_t socklen = sizeof(struct timeval);
         int ret;
 
 	ecl_disable_interrupts();
-	ret = getsockopt(#0,SOL_SOCKET,#1,&tv,&socklen);
+	ret = getsockopt(#0,#1,#2,&tv,&socklen);
 	ecl_enable_interrupts();
 
         @(return) = (ret == 0) ? ecl_make_doublefloat((double)tv.tv_sec
@@ -1429,14 +1429,14 @@ GET-NAME-SERVICE-ERRNO")
 	ret
 	(error "Sockopt error: ~A" (c-inline () () :cstring "strerror(errno)" :one-liner t)))))
 
-(defun set-sockopt-int (fd const value)
-  (let ((ret (c-inline (fd const value) (:int :int :int) t
+(defun set-sockopt-int (fd level const value)
+  (let ((ret (c-inline (fd level const value) (:int :int :int :int) t
 "{
-        int sockopt = #2;
+        int sockopt = #3;
         int ret;
 
 	ecl_disable_interrupts();
-	ret = setsockopt(#0,SOL_SOCKET,#1,&sockopt,sizeof(int));
+	ret = setsockopt(#0,#1,#2,&sockopt,sizeof(int));
 	ecl_enable_interrupts();
 
         @(return) = (ret == 0) ? Ct : Cnil;
@@ -1445,14 +1445,14 @@ GET-NAME-SERVICE-ERRNO")
 	value
 	(error "Sockopt error: ~A" (c-inline () () :cstring "strerror(errno)" :one-liner t)))))
 
-(defun set-sockopt-bool (fd const value)
-  (let ((ret (c-inline (fd const value) (:int :int :object) t
+(defun set-sockopt-bool (fd level const value)
+  (let ((ret (c-inline (fd level const value) (:int :int :int :object) t
 "{
-        int sockopt = (#2 == Cnil) ? 0 : 1;
+        int sockopt = (#3 == Cnil) ? 0 : 1;
         int ret;
 
 	ecl_disable_interrupts();
-	ret = setsockopt(#0,SOL_SOCKET,#1,&sockopt,sizeof(int));
+	ret = setsockopt(#0,#1,#2,&sockopt,sizeof(int));
 	ecl_enable_interrupts();
 
         @(return) = (ret == 0) ? Ct : Cnil;
@@ -1462,17 +1462,17 @@ GET-NAME-SERVICE-ERRNO")
 	(error "Sockopt error: ~A" (c-inline () () :cstring "strerror(errno)" :one-liner t)))))
 
 #-wsock
-(defun set-sockopt-timeval (fd const value)
-  (let ((ret (c-inline (fd const value) (:int :int :double) t
+(defun set-sockopt-timeval (fd level const value)
+  (let ((ret (c-inline (fd level const value) (:int :int :int :double) t
 "{
 	struct timeval tv;
-	double tmp = #2;
+	double tmp = #3;
 	int ret;
 
 	ecl_disable_interrupts();
 	tv.tv_sec = (int)tmp;
 	tv.tv_usec = (int)((tmp-floor(tmp))*1000000.0);
-        ret = setsockopt(#0,SOL_SOCKET,#1,&tv,sizeof(struct timeval));
+        ret = setsockopt(#0,#1,#2,&tv,sizeof(struct timeval));
 	ecl_enable_interrupts();
 
         @(return) = (ret == 0) ? Ct : Cnil;
@@ -1486,33 +1486,35 @@ GET-NAME-SERVICE-ERRNO")
   (set-sockopt-int fd const (* 1000 value)))
 
 (eval-when (:compile-toplevel :load-toplevel)
-  (defmacro define-sockopt (name c-const type &optional (read-only nil))
+  (defmacro define-sockopt (name c-level c-const type &optional (read-only nil))
     `(progn
        (export ',name)
        (defun ,name (socket)
 	 (,(intern (format nil "GET-SOCKOPT-~A" type))
 	   (socket-file-descriptor socket)
+	   (c-constant ,c-level)
 	   (c-constant ,c-const)))
        ,@(unless read-only
 	   `((defun (setf ,name) (value socket)
 	       (,(intern (format nil "SET-SOCKOPT-~A" type))
 		 (socket-file-descriptor socket)
+		 (c-constant ,c-level)
 		 (c-constant ,c-const)
 		 value)))))))
 
-(define-sockopt sockopt-type "SO_TYPE" int t)
-(define-sockopt sockopt-receive-buffer "SO_RCVBUF" int)
-(define-sockopt sockopt-receive-timeout "SO_RCVTIMEO" timeval)
-(define-sockopt sockopt-send-timeout "SO_SNDTIMEO" timeval)
-(define-sockopt sockopt-reuse-address "SO_REUSEADDR" bool)
-(define-sockopt sockopt-keep-alive "SO_KEEPALIVE" bool)
-(define-sockopt socket-dont-route "SO_DONTROUTE" bool)
-(define-sockopt socket-linger "SO_LINGER" bool)
+(define-sockopt sockopt-type "SOL_SOCKET" "SO_TYPE" int t)
+(define-sockopt sockopt-receive-buffer "SOL_SOCKET" "SO_RCVBUF" int)
+(define-sockopt sockopt-receive-timeout "SOL_SOCKET" "SO_RCVTIMEO" timeval)
+(define-sockopt sockopt-send-timeout "SOL_SOCKET" "SO_SNDTIMEO" timeval)
+(define-sockopt sockopt-reuse-address "SOL_SOCKET" "SO_REUSEADDR" bool)
+(define-sockopt sockopt-keep-alive "SOL_SOCKET" "SO_KEEPALIVE" bool)
+(define-sockopt socket-dont-route "SOL_SOCKET" "SO_DONTROUTE" bool)
+(define-sockopt socket-linger "SOL_SOCKET" "SO_LINGER" bool)
 
 #-(or :sun4sol2 :linux :wsock :cygwin)
-(define-sockopt sockopt-reuse-port "SO_REUSEPORT" bool)
+(define-sockopt sockopt-reuse-port "SOL_SOCKET" "SO_REUSEPORT" bool)
 
-(define-sockopt sockopt-tcp-nodelay "TCP_NODELAY" bool)
+(define-sockopt sockopt-tcp-nodelay "IPPROTO_TCP" "TCP_NODELAY" bool)
 
 ;; Add sockopts here as you need them...
 

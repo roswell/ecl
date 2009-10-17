@@ -15,6 +15,11 @@ ECL 9.10.3:
  - In a multithreaded ECL, when handling a Ctr-C/SIGINT asynchronous interrupt,
    there was not always a CONTINUE restart available.
 
+* Sockets:
+
+ - The socket option TCP_NODELAY option used the wrong interface: SOL_SOCKET
+   instead of IPPROTO_TCP.
+
 ECL 9.10.2:
 ===========
 
