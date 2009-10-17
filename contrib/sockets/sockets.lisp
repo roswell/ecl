@@ -1400,10 +1400,10 @@ GET-NAME-SERVICE-ERRNO")
         ret = getsockopt(#0,#1,#2,&sockopt,&socklen);
 	ecl_enable_interrupts();
 
-        @(return) = (ret == 0) ? Ct : Cnil;
+        @(return) = (ret == 0) ? ecl_make_integer(sockopt) : Cnil;
 }")))
     (if ret
-	ret
+	(/= ret 0)
 	(error "Sockopt error: ~A" (c-inline () () :cstring "strerror(errno)" :one-liner t)))))
 
 #+wsock
@@ -1458,7 +1458,7 @@ GET-NAME-SERVICE-ERRNO")
         @(return) = (ret == 0) ? Ct : Cnil;
 }")))
     (if ret
-	ret
+	value
 	(error "Sockopt error: ~A" (c-inline () () :cstring "strerror(errno)" :one-liner t)))))
 
 #-wsock
