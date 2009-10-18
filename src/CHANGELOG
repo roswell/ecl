@@ -18,7 +18,10 @@ ECL 9.10.3:
 * Sockets:
 
  - The socket option TCP_NODELAY option used the wrong interface: SOL_SOCKET
-   instead of IPPROTO_TCP.
+   instead of IPPROTO_TCP (Chun Tian)
+
+ - sockopt-linger and (setf sockopt-linger) now work as they should, using
+   the struct linger argument (M. Mondor)
 
 ECL 9.10.2:
 ===========
