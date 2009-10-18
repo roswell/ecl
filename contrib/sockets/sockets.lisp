@@ -1389,7 +1389,6 @@ GET-NAME-SERVICE-ERRNO")
 	ret
 	(error "Sockopt error: ~A" (c-inline () () :cstring "strerror(errno)" :one-liner t)))))
 
-
 (defun get-sockopt-bool (fd level const)
   (let ((ret (c-inline (fd level const) (:int :int :int) t
 "{
@@ -1424,6 +1423,23 @@ GET-NAME-SERVICE-ERRNO")
 
         @(return) = (ret == 0) ? ecl_make_doublefloat((double)tv.tv_sec
 					+ ((double)tv.tv_usec) / 1000000.0) : Cnil;
+}")))
+    (if ret
+	ret
+	(error "Sockopt error: ~A" (c-inline () () :cstring "strerror(errno)" :one-liner t)))))
+
+(defun get-sockopt-linger (fd level const)
+  (let ((ret (c-inline (fd level const) (:int :int :int) t
+"{
+	struct linger sockopt;
+	socklen_t socklen = sizeof(struct linger);
+	int ret;
+
+	ecl_disable_interrupts();
+	ret = getsockopt(#0,#1,#2,&sockopt,&socklen);
+	ecl_enable_interrupts();
+
+	@(return) = (ret == 0) ? ecl_make_integer((sockopt.l_onoff != 0) ? sockopt.l_linger : 0) : Cnil;
 }")))
     (if ret
 	ret
@@ -1482,8 +1498,30 @@ GET-NAME-SERVICE-ERRNO")
 	(error "Sockopt error: ~A" (c-inline () () :cstring "strerror(errno)" :one-liner t)))))
 
 #+wsock
-(defun set-sockopt-timeval (fd const value)
-  (set-sockopt-int fd const (* 1000 value)))
+(defun set-sockopt-timeval (fd level const value)
+  (set-sockopt-int fd level const (* 1000 value)))
+
+(defun set-sockopt-linger (fd level const value)
+  (let ((ret (c-inline (fd level const value) (:int :int :int :int) t
+"{
+	struct linger sockopt = {0, 0};
+	int value = #3;
+	int ret;
+
+	if (value > 0) {
+		sockopt.l_onoff = 1;
+		sockopt.l_linger = value;
+	}
+
+	ecl_disable_interrupts();
+	ret = setsockopt(#0,#1,#2,&sockopt,sizeof(struct linger));
+	ecl_enable_interrupts();
+
+	@(return) = (ret == 0) ? Ct : Cnil;
+}")))
+    (if ret
+	value
+	(error "Sockopt error: ~A" (c-inline () () :cstring "strerror(errno)" :one-liner t)))))
 
 (eval-when (:compile-toplevel :load-toplevel)
   (defmacro define-sockopt (name c-level c-const type &optional (read-only nil))
@@ -1508,8 +1546,8 @@ GET-NAME-SERVICE-ERRNO")
 (define-sockopt sockopt-send-timeout "SOL_SOCKET" "SO_SNDTIMEO" timeval)
 (define-sockopt sockopt-reuse-address "SOL_SOCKET" "SO_REUSEADDR" bool)
 (define-sockopt sockopt-keep-alive "SOL_SOCKET" "SO_KEEPALIVE" bool)
-(define-sockopt socket-dont-route "SOL_SOCKET" "SO_DONTROUTE" bool)
-(define-sockopt socket-linger "SOL_SOCKET" "SO_LINGER" bool)
+(define-sockopt sockopt-dont-route "SOL_SOCKET" "SO_DONTROUTE" bool)
+(define-sockopt sockopt-linger "SOL_SOCKET" "SO_LINGER" linger)
 
 #-(or :sun4sol2 :linux :wsock :cygwin)
 (define-sockopt sockopt-reuse-port "SOL_SOCKET" "SO_REUSEPORT" bool)
