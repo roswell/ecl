@@ -9,11 +9,12 @@ VPATH	= @srcdir@
 #
 TRUE_CC = @CC@
 CC	= @CC@
-CFLAGS	= -I. -I@true_builddir@ -I$(srcdir) -I../ecl/gc -DECL_API -DECL_NO_LEGACY \
-	  @CPPFLAGS@ @CFLAGS@ @ECL_CFLAGS@ -c \
-#	  -Wall -W -Wfloat-equal -Wundef -Wendif-labels -Wpointer-arith -Wcast-align \
-#	  -Wwrite-strings -Wconversion -Wsign-compare -Wmissing-prototypes -Wredundant-decls \
-#	  -Wunreachable-code -Winline
+CFLAGS	= -I. -I@true_builddir@ -I$(srcdir) -I../ecl/gc -DECL_API -DECL_NO_LEGACY  @CPPFLAGS@ @CFLAGS@ @ECL_CFLAGS@ -c
+
+# The following flags could be added and used by GCC
+#  -Wall -W -Wfloat-equal -Wundef -Wendif-labels -Wpointer-arith -Wcast-align \
+#  -Wwrite-strings -Wconversion -Wsign-compare -Wmissing-prototypes \
+#  -Wredundant-decls -Wunreachable-code -Winline
 
 SHELL	= /bin/sh
 RM	= @RM@
