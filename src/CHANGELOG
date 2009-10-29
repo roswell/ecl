@@ -15,6 +15,9 @@ ECL 9.10.3:
  - In a multithreaded ECL, when handling a Ctr-C/SIGINT asynchronous interrupt,
    there was not always a CONTINUE restart available.
 
+ - The cygwin port was broken because LOAD was unable to load and execute
+   binary files.
+
 * Sockets:
 
  - The socket option TCP_NODELAY option used the wrong interface: SOL_SOCKET
