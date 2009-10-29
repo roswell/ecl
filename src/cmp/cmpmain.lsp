@@ -230,6 +230,7 @@ the environment variable TMPDIR to a different value." template)))
 #ifdef __cplusplus
 extern \"C\"
 #endif
+ECL_DLLEXPORT
 void ~A(cl_object cblock)
 {
 	static cl_object Cblock;
