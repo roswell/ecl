@@ -155,9 +155,8 @@ install-base:
 	  if test -s $$i ; then \
 	   if echo $$i | grep dll; then \
 	    $(INSTALL_LIBRARY) $$i $(DESTDIR)$(bindir); \
-	   else \
-	    $(INSTALL_LIBRARY) $$i $(DESTDIR)$(libdir); \
-	   fi \
+	   fi; \
+	   $(INSTALL_LIBRARY) $$i $(DESTDIR)$(libdir); \
 	  fi \
 	done
 	if [ "x@SONAME@" != "x" -a -f "@SONAME@" ]; then \
