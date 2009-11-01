@@ -537,7 +537,7 @@ extern ECL_API cl_object CEerror(cl_object c, const char *err_str, int narg, ...
 extern ECL_API void FEillegal_index(cl_object x, cl_object i);
 extern ECL_API void FEtype_error_symbol(cl_object obj) /*__attribute__((noreturn))*/;
 extern ECL_API void FElibc_error(const char *msg, int narg, ...) /*__attribute__((noreturn))*/;
-#if defined(mingw32) || defined(_MSC_VER)
+#if defined(mingw32) || defined(_MSC_VER) || defined(cygwin)
 extern ECL_API void FEwin32_error(const char *msg, int narg, ...) /*__attribute__((noreturn))*/;
 #endif
 
