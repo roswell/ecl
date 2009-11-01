@@ -65,6 +65,7 @@
 
 (defclass monolithic-bundle-op (bundle-op)
   ((monolithic :initform t)
+   (prologue-code :accessor monolithic-op-prologue-code)
    (epilogue-code :accessor monolithic-op-epilogue-code)))
 
 (defclass monolithic-fasl-op (fasl-op monolithic-bundle-op) ())
@@ -85,23 +86,34 @@
     (setf (slot-value instance 'name-suffix)
 	  (if (bundle-op-monolithic-p instance) "-mono" "")))
   (when (typep instance 'monolithic-bundle-op)
-    (destructuring-bind (&rest original-initargs &key epilogue-code &allow-other-keys) (slot-value instance 'original-initargs)
-      (setf (slot-value instance 'original-initargs) (remove-keys '(epilogue-code) original-initargs)
+    (destructuring-bind (&rest original-initargs
+                         &key prologue-code epilogue-code &allow-other-keys)
+        (slot-value instance 'original-initargs)
+      (setf (slot-value instance 'original-initargs)
+            (remove-keys '(epilogue-code prologue-code) original-initargs)
+            (monolithic-op-prologue-code instance) prologue-code
             (monolithic-op-epilogue-code instance) epilogue-code)))
   (setf (bundle-op-build-args instance)
 	(remove-keys '(type monolithic name-suffix)
 		     (slot-value instance 'original-initargs))))
 
+(defvar *force-load-p* nil)
+
+(defmethod operation-done-p :around ((operation load-op) c)
+  (if *force-load-p* nil (call-next-method)))
+
 (defun gather-components (op-type system &key filter-system filter-type include-self)
   ;; This function creates a list of components, matched together with an
   ;; operation. This list may be restricted to sub-components of SYSTEM if
   ;; GATHER-ALL = NIL (default), and it may include the system itself.
-  (let ((operation (make-instance op-type)))
+  (let* ((operation (make-instance op-type))
+         (*force-load-p* t)
+         (tree (traverse (make-instance 'load-op) system)))
     (append
-     (loop for (op . component) in (traverse (make-instance 'load-op :force t) system)
+     (loop for (op . component) in tree
 	when (and (typep op 'load-op)
 		  (typep component filter-type)
-		  (or (not filter-system) (eq (component-system component) filter-systeme)))
+		  (or (not filter-system) (eq (component-system component) filter-system)))
 	collect (progn
 		  (when (eq component system) (setf include-self nil))
 		  (cons operation component)))
@@ -134,7 +146,7 @@
 ;;
 (defmethod bundle-sub-operations ((o lib-op) c)
   (gather-components 'compile-op c
-		     :filter-system (and (bundle-op-monolithic-p o) c)
+		     :filter-system (and (not (bundle-op-monolithic-p o)) c)
 		     :filter-type '(not system)))
 ;;
 ;; SHARED LIBRARIES
@@ -191,6 +203,9 @@
     (ensure-directories-exist (first output))
     (apply #'c::builder (bundle-op-type o) (first output) :lisp-files object-files
 	   (append (bundle-op-build-args o)
+                   (when (and (typep o 'monolithic-bundle-op)
+                              (monolithic-op-prologue-code o))
+                     `(:prologue-code ,(monolithic-op-prologue-code o)))
                    (when (and (typep o 'monolithic-bundle-op)
                               (monolithic-op-epilogue-code o))
                      `(:epilogue-code ,(monolithic-op-epilogue-code o)))))))
