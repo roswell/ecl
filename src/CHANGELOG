@@ -18,6 +18,11 @@ ECL 9.10.3:
  - The cygwin port was broken because LOAD was unable to load and execute
    binary files.
 
+ - In cygwin, FASL files can not lack a file extension, because dlopen()
+   then looks for a file ending in ".dll" and fails.
+
+ - In cygwin, files that are dlopen'ed must have executable permissions.
+
 * Sockets:
 
  - The socket option TCP_NODELAY option used the wrong interface: SOL_SOCKET

@@ -18,6 +18,9 @@
 #include <string.h>
 #include <stdio.h>
 #ifdef ENABLE_DLOPEN
+# ifdef cygwin
+#  include <w32api/windows.h>
+# endif
 # ifdef HAVE_DLFCN_H
 #  include <dlfcn.h>
 #  define INIT_PREFIX "init_fas_"
@@ -48,6 +51,7 @@
 #endif
 #include <ecl/ecl-inl.h>
 #include <ecl/internal.h>
+#include <sys/stat.h>
 
 #ifndef HAVE_LSTAT
 static void
@@ -62,7 +66,6 @@ copy_object_file(cl_object original)
 	int err;
 	cl_object copy = make_constant_base_string("TMP:ECL");
 	copy = si_coerce_to_filename(si_mkstemp(copy));
-	ecl_disable_interrupts();
         /*
          * We either have to make a full copy to convince the loader to load this object
          * file again, or we want to retain the possibility of overwriting the object
@@ -70,15 +73,35 @@ copy_object_file(cl_object original)
          * The symlinks do not seem to work in latest versions of Linux.
          */
 #if defined(mingw32) || defined(_MSC_VER)
+	ecl_disable_interrupts();
 	err = !CopyFile(original->base_string.self, copy->base_string.self, 0);
-#else
-	err = Null(si_copy_file(original, copy));
-#endif
 	ecl_enable_interrupts();
 	if (err) {
-		cl_delete_file(copy);
-		FEerror("Unable to copy file ~A to ~A", 2, original, copy);
+		FEwin32_error("Error when copying file from~&~3T~A~&to~&~3T~A",
+			      2, original, copy);
 	}
+#else
+	err = Null(si_copy_file(original, copy));
+	if (err) {
+		FEerror("Error when copying file from~&~3T~A~&to~&~3T~A",
+			2, original, copy);
+	}
+#endif
+#ifdef cygwin
+	{
+		cl_object new_copy = make_constant_base_string(".dll");
+		new_copy = si_base_string_concatenate(2, copy, new_copy);
+		cl_rename_file(2, copy, new_copy);
+		copy = new_copy;
+	}
+	ecl_disable_interrupts();
+	err = chmod(copy->base_string.self, S_IRWXU) < 0;
+	ecl_enable_interrupts();
+	if (err) {
+		FElibc_error("Unable to give executable permissions to ~A",
+			     1, copy);
+	}
+#endif
 	return copy;
 }
 
@@ -141,7 +164,7 @@ ecl_library_open(cl_object filename, bool force_reload) {
 		 * _always_ made because otherwise it cannot be
 		 * overwritten. In Unix we need only do that when the
 		 * file has been previously loaded. */
-#if defined(mingw32) || defined(_MSC_VER)
+#if defined(mingw32) || defined(_MSC_VER) || defined(cygwin)
 		filename = copy_object_file(filename);
 		self_destruct = 1;
 #else
