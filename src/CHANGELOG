@@ -26,6 +26,15 @@ ECL 9.10.3:
  - sockopt-linger and (setf sockopt-linger) now work as they should, using
    the struct linger argument (M. Mondor)
 
+* ASDF:
+
+ - ASDF:MAKE-BUILD now accepts also a :PROLOGUE-CODE argument with code to
+   be executed before all lisp files are run.
+
+ - C:BUILDER's argument :PROLOGUE-CODE can now be a lisp form and in the case
+   of standalone programs it is always executed after cl_boot() has been
+   invoked.
+
 ECL 9.10.2:
 ===========
 
