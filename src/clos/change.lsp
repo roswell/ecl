@@ -165,7 +165,8 @@
 			 :lambda-list '(class &rest initargs))
 
 (defmethod reinitialize-instance ((class class) &rest initargs
-				  &key direct-superclasses (direct-slots nil direct-slots-p))
+				  &key (direct-superclasses () direct-superclasses-p)
+				       (direct-slots nil direct-slots-p))
   (let ((name (class-name class)))
     (when (member name '(CLASS BUILT-IN-CLASS) :test #'eq)
       (error "The kernel CLOS class ~S cannot be changed." name)))
@@ -183,14 +184,19 @@
 		collect (canonical-slot-to-direct-slot class s))))
 
   ;; set up inheritance checking that it makes sense
-  (dolist (l (setf (class-direct-superclasses class)
-		   (check-direct-superclasses class direct-superclasses)))
-    (add-direct-subclass l class))
+  (when direct-superclasses-p
+    (setf direct-superclasses 
+          (check-direct-superclasses class direct-superclasses))
+    (dolist (l (class-direct-superclasses class))
+      (unless (member l direct-superclasses)
+        (remove-direct-subclass l class)))
+    (dolist (l (setf (class-direct-superclasses class)
+		     direct-superclasses))
+      (add-direct-subclass l class)))
 
   ;; if there are no forward references, we can just finalize the class here
   (setf (class-finalized-p class) nil)
-  (unless (find-if #'forward-referenced-class-p (class-direct-superclasses class))
-    (finalize-inheritance class))
+  (finalize-unless-forward class)
 
   class)
 

@@ -143,6 +143,10 @@
 (defmethod effective-slot-definition-class ((class T) &rest canonicalized-slot)
   (find-class 'standard-effective-slot-definition nil))
 
+(defun finalize-unless-forward (class)
+  (unless (find-if #'forward-referenced-class-p (class-direct-superclasses class))
+    (finalize-inheritance class)))
+
 (defmethod initialize-instance ((class class) &rest initargs
 				&key sealedp direct-superclasses direct-slots)
   ;; convert the slots from lists to direct slots
@@ -162,8 +166,7 @@
   (dolist (l (setf direct-superclasses (class-direct-superclasses class)))
     (add-direct-subclass l class))
 
-  (unless (find-if #'forward-referenced-class-p direct-superclasses)
-      (finalize-inheritance class))
+  (finalize-unless-forward class)
 
   class)
 
@@ -293,8 +296,7 @@ because it contains a reference to the undefined class~%  ~A"
   ;; invoking FINALIZE-INHERITANCE on all of its children. Obviously,
   ;; this only makes sense when the class has been defined.
   (dolist (subclass (reverse (class-direct-subclasses class)))
-    (reinitialize-instance subclass
-			   :direct-superclasses (class-direct-superclasses subclass)))
+    (finalize-unless-forward subclass))
   )
 
 (defun std-create-slots-table (class)
