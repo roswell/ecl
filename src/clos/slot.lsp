@@ -50,7 +50,17 @@
     (setf initfunction (eval initfunction)))
   (list name initform initfunction type allocation initargs readers writers documentation location))
 
+(defun freeze-class-slot-initfunction (slotd)
+  (when (eq (getf slotd :allocation) :class)
+    (let ((initfunc (getf slotd :initfunction)))
+      (when initfunc
+        (setf (getf slotd :initfunction)
+              (constantly (funcall initfunc))))))
+  slotd)
+
 (defun canonical-slot-to-direct-slot (class slotd)
+  ;; Class slot init functions must be called right away
+  (setf slotd (freeze-class-slot-initfunction slotd))
   (if (find-class 'slot-definition nil)
       (apply #'make-instance
 	     (apply #'direct-slot-definition-class class slotd)

@@ -70,6 +70,7 @@
 	 (when (and slot-names
 		    (or (eq slot-names 'T)
 			(member slot-name slot-names))
+		    (not (eq (slot-definition-allocation slotd) :class))
 		    (not (slot-boundp instance slot-name)))
 	   (let ((initfun (slot-definition-initfunction slotd)))
 	     (when initfun
@@ -487,7 +488,9 @@ because it contains a reference to the undefined class~%  ~A"
 	     (allocation (slot-definition-allocation slotd)))
 	(cond ((not (eq (slot-definition-allocation slotd) :class)))
 	      ((find name direct-slots :key #'slot-definition-name) ; new shared slot
-	       (setf (slot-definition-location slotd) (list (unbound))))
+	       (let* ((initfunc (slot-definition-initfunction slotd))
+	              (value (if initfunc (funcall initfunc) (unbound))))
+	         (setf (slot-definition-location slotd) (list value))))
 	      (t			; inherited shared slot
 	       (dolist (c (class-precedence-list class))
 		 (unless (eql c class)
