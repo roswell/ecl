@@ -28,7 +28,7 @@
 ;;; does not work yet, since the class NULL does not exist.
 ;;;
 (setf (find-class 'built-in-class)
-      (make-instance (find-class 'class)
+      (make-instance (find-class 'standard-class)
 		     :name 'built-in-class
 		     :direct-superclasses (list (find-class 'class))
 		     :direct-slots nil))
