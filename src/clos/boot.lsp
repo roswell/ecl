@@ -98,7 +98,7 @@
   ;; 5) Generate accessors (In macros.lsp)
 )
 
-(defconstant +the-standard-class+ (find-class 'standard nil))
+(defconstant +the-standard-class+ (find-class 'standard-class nil))
 
 (defmethod class-prototype ((class class))
   (unless (slot-boundp class 'prototype)
@@ -114,8 +114,9 @@
 
 (defun find-slot-definition (class slot-name)
   (declare (si::c-local))
-  (if (eq (si:instance-class class) +the-standard-class+)
-      (gethash (class-slot-table class) slot-name nil)
+  (if nil #+nil ; TODO: fix
+      (eq (si:instance-class class) +the-standard-class+)
+      (gethash slot-name (slot-table class) nil)
       (find slot-name (class-slots class) :key #'slot-definition-name)))
 
 (defun slot-value (self slot-name)

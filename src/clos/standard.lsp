@@ -203,8 +203,9 @@ argument was supplied for metaclass ~S." (class-of class))))))))
 
 (defun find-slot-definition (class slot-name)
   (declare (si::c-local))
-  (if (eq (si:instance-class class) +the-standard-class+)
-      (gethash (class-slot-table class) slot-name nil)
+  (if nil #+nil ; TODO: fix
+      (eq (si:instance-class class) +the-standard-class+)
+      (gethash slot-name (slot-table class) nil)
       (find slot-name (class-slots class) :key #'slot-definition-name)))
 
 (defmethod finalize-inheritance ((class class))
