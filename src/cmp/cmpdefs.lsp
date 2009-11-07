@@ -112,6 +112,7 @@
 		;;; For SPECIAL and GLOBAL: the vv-index for variable name.
   (type t)	;;; Type of the variable.
   (index -1)    ;;; position in *vars*. Used by similar.
+  (ignorable nil) ;;; Whether there was an IGNORABLE/IGNORE declaration
   )
 
 ;;; A function may be compiled into a CFUN, CCLOSURE or CCLOSURE+LISP_CLOSURE

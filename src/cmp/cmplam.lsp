@@ -228,7 +228,9 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 	   (new-variable-names (mapcar #'var-name new-variables)))
       (when (setq ss (set-difference ss new-variable-names))
 	(push `(special ,@ss) declarations))
-      (when (setq is (set-difference is new-variable-names))
+      (when (setq is (loop for (var . expected-uses) in is
+                        unless (member var new-variable-names)
+                        collect var))
 	(push `(ignorable ,@is) declarations))
       (loop for (var . type) in ts
 	    unless (member var new-variable-names)

@@ -337,7 +337,13 @@
 	      (IGNORE
 	       (cmpassert (proper-list-p decl-args #'symbolp)
 			  "Syntax error in declaration ~s" decl)
-	       (setf is (append decl-args is)))
+	       (nconc (loop for name in decl-args
+                         do (push (cons name -1) is))))
+	      (IGNORABLE
+	       (cmpassert (proper-list-p decl-args #'symbolp)
+			  "Syntax error in declaration ~s" decl)
+	       (nconc (loop for name in decl-args
+                         do (push (cons name 0) is))))
 	      (TYPE
 	       (cmpassert decl-args "Syntax error in declaration ~s" decl)
 	       (declare-variables (first decl-args) (rest decl-args)))
@@ -462,14 +468,16 @@
     (c2expr body)))
 
 (defun check-vdecl (vnames ts is)
-  (dolist (x ts)
-    (unless (member (car x) vnames)
-      (cmpwarn "Type declaration was found for not bound variable ~s."
-               (car x))))
-  (dolist (x is)
-    (unless (member x vnames)
-      (cmpwarn "Ignore declaration was found for not bound variable ~s." x)))
-  )
+  (loop for (var . type) in ts
+     unless (member var vnames :test #'eq)
+     do (cmpwarn "Declaration of type~&~4T~A~&was found for not bound variable ~s."
+                 type var))
+  (loop for (var . expected-uses) in is
+     unless (member var vnames :test #'eq)
+     do (cmpwarn (if (minusp expected-uses)
+                     "IGNORE declaration was found for not bound variable ~s."
+                     "IGNORABLE declaration was found for not bound variable ~s.")
+                 var)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;

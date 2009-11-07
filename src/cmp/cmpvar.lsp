@@ -118,7 +118,8 @@
 (defun c1make-var (name specials ignores types)
   (cmpck (not (symbolp name)) "The variable ~s is not a symbol." name)
   (cmpck (constantp name) "The constant ~s is being bound." name)
-  (let (type)
+  (let ((ignorable (cdr (assoc name ignores)))
+        type)
     (if (setq type (assoc name types))
 	(setq type (type-filter (cdr type)))
 	(setq type 'T))
@@ -131,11 +132,13 @@
           (t
 	   (make-var :name name :type type :loc 'OBJECT
 		     :kind 'LEXICAL ; we rely on check-vref to fix it
-		     :ref (if (member name ignores) -1 0))))))
+                     :ignorable ignorable
+		     :ref (or ignorable 0))))))
 
 (defun check-vref (var)
   (when (eq (var-kind var) 'LEXICAL)
-    (when (zerop (var-ref var)) ;;; This field may be -1 (IGNORE). Beppe
+    (when (and (zerop (var-ref var)) ;;; This field may be -1 (IGNORE). Beppe
+               (not (var-ignorable var)))
         (cmpwarn "The variable ~s is not used." (var-name var)))
     (when (not (var-ref-clb var))
       ;; if the variable can be stored locally, set it var-kind to its type

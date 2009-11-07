@@ -23,6 +23,8 @@ ECL 9.10.3:
 
  - In cygwin, files that are dlopen'ed must have executable permissions.
 
+ - ECL ignored the IGNORABLE declaration.
+
 * Sockets:
 
  - The socket option TCP_NODELAY option used the wrong interface: SOL_SOCKET
