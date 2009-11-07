@@ -25,6 +25,10 @@ ECL 9.10.3:
 
  - ECL ignored the IGNORABLE declaration.
 
+ - ECL could not compile DEFMETHOD forms whose arguments referenced unfinalized
+   classes. The actual bug was related to SUBTYPEP not being able to determine
+   the relation between classes when one is unfinalized.
+
 * Sockets:
 
  - The socket option TCP_NODELAY option used the wrong interface: SOL_SOCKET

@@ -858,6 +858,8 @@ if not possible."
 	     (eq class (find-class name 'nil))
 	     (or (find-registered-tag name)
 		 (find-built-in-tag name))))
+      (and (not (clos::class-finalized-p class))
+           (throw '+canonical-type-failure+ nil))
       (register-type class
 		     #'(lambda (c) (or (si::instancep c) (symbolp c)))
 		     #'(lambda (c1 c2)
