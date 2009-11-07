@@ -348,7 +348,10 @@ values of the last FORM.  If no FORM is given, returns NIL."
 		symbol))
 	(t
 	 `(progn
-	   (put-sysprop ',symbol 'si::symbol-macro (lambda (form env) ',expansion))
+	   (put-sysprop ',symbol 'si::symbol-macro 
+                        (lambda (form env) 
+                          (declare (ignore form env))
+                          ',expansion))
 	   ,(ext:register-with-pde whole)
 	   ',symbol))))
 
