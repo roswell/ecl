@@ -58,7 +58,7 @@
 	      (si::inspect-indent)
 	      (format t "It has no class slots.~%")))))
 
-(defmethod select-clos-N ((instance standard-class))
+(defun select-clos-N-inner-class (instance)
   (let* ((class (si:instance-class instance))
 	 (local-slotds (slot-value class 'CLOS::SLOTS)))
         (if local-slotds
@@ -83,30 +83,11 @@
 	      (si::inspect-indent)
 	      (format t "It has no (local) slots.~%")))))
 
+(defmethod select-clos-N ((instance std-class))
+  (select-clos-N-inner-class instance))
+
 (defmethod select-clos-N ((instance t))
-  (let* ((class (si:instance-class instance))
-	 (local-slotds (slot-value class 'CLOS::SLOTS)))
-        (if local-slotds
-	    (progn
-	      (si::inspect-indent)
-	      (format t "The (local) slots are:~%")
-	      (incf si::*inspect-level*)
-	      (dolist (slotd local-slotds)
-		(si::inspect-indent-1)
-		(format t "name : ~S" (clos::slot-definition-name slotd))
-		(if (slot-boundp instance (clos::slot-definition-name slotd))
-		    (si::inspect-recursively "value:"
-		       (slot-value instance (clos::slot-definition-name slotd))
-;		       (slot-value instance (clos::slot-definition-name slotd))
-		       )
-		    (si::inspect-print "value: Unbound"
-		       nil
-;		       (slot-value instance (clos::slot-definition-name slotd))
-		       )))
-	      (decf si::*inspect-level*))
-	    (progn
-	      (si::inspect-indent)
-	      (format t "It has no (local) slots.~%")))))
+  (select-clos-N-inner-class instance))
 
 (defmethod select-clos-L ((instance standard-object))
   (let* ((class (si:instance-class instance))
@@ -130,7 +111,7 @@
 	      (format t "It has no class slots.~%")))
 	(terpri)))
 
-(defmethod select-clos-L ((instance standard-class))
+(defun select-clos-L-inner-class (instance)
   (let* ((class (si:instance-class instance))
 	 (local-slotds (slot-value class 'CLOS::SLOTS)))
         (terpri)
@@ -143,18 +124,11 @@
 	      (format t "It has no (local) slots.~%")))
 	(terpri)))
 
+(defmethod select-clos-L ((instance std-class))
+  (select-clos-L-inner-class instance))
+
 (defmethod select-clos-L ((instance t))
-  (let* ((class (si:instance-class instance))
-	 (local-slotds (slot-value class 'CLOS::SLOTS)))
-        (terpri)
-	(if local-slotds
-	    (progn
-	      (format t "The names of the (local) slots are:~%")
-	      (dolist (slotd local-slotds)
-		      (format t "  ~S~%" (clos::slot-definition-name slotd))))
-	    (progn
-	      (format t "It has no (local) slots.~%")))
-	(terpri)))
+  (select-clos-L-inner-class instance))
 
 (defmethod select-clos-J ((instance standard-object))
   (let* ((class (si:instance-class instance))
@@ -185,7 +159,7 @@
 	      (terpri)
 	      (terpri)))))
 
-(defmethod select-clos-J ((instance standard-class))
+(defun select-clos-J-inner-class (instance)
   (let* ((class (si:instance-class instance))
 	 (local-slotds (slot-value class 'CLOS::SLOTS))
 	 (slotd (car (member (prog1
@@ -215,35 +189,11 @@
 	      (terpri)
 	      (terpri)))))
 
+(defmethod select-clos-J ((instance std-class))
+  (select-clos-J-inner-class instance))
+
 (defmethod select-clos-J ((instance t))
-  (let* ((class (si:instance-class instance))
-	 (local-slotds (slot-value class 'CLOS::SLOTS))
-	 (slotd (car (member (prog1
-			       (read-preserving-whitespace *query-io*)
-			       (si::inspect-read-line))
-			     local-slotds
-			     :key #'clos::slot-definition-name
-			     :test #'eq))))
-        (if slotd
-	    (progn
-	      (incf si::*inspect-level*)
-	      (si::inspect-indent-1)
-	      (format t "name : ~S" (clos::slot-definition-name slotd))
-	      (if (slot-boundp instance (clos::slot-definition-name slotd))
-		  (si::inspect-recursively "value:"
-		     (slot-value instance (clos::slot-definition-name slotd))
-;		     (slot-value instance (clos::slot-definition-name slotd))
-		     )
-		  (si::inspect-print "value: Unbound"
-		     nil
-;		     (slot-value instance (clos::slot-definition-name slotd))
-		     ))
-	      (decf si::*inspect-level*))
-	    (progn
-	      (terpri)
-	      (format t "~S is not a slot of the instance." (slot-definition-name slotd))
-	      (terpri)
-	      (terpri)))))
+  (select-clos-J-inner-class instance))
 
 (defun select-clos-? ()
   (declare (si::c-local))
@@ -262,8 +212,9 @@ q (or Q):             quits the inspection.~%~
 	  ))
 
 (defmethod inspect-obj ((instance standard-object))
-  (unless (eq (si:instance-class (si:instance-class instance))
-              (find-class 'STANDARD-CLASS))
+  (unless (let ((metaclass (si:instance-class (si:instance-class instance))))
+            (or (eq metaclass (find-class 'STANDARD-CLASS))
+                (eq metaclass (find-class 'FUNCALLABLE-STANDARD-CLASS))))
           (terpri)
           (format t "No applicable method CLOS::INSPECT-OBJ for an instance~%")
           (format t "of class ~S" (si:instance-class instance))
@@ -320,7 +271,7 @@ q (or Q):             quits the inspection.~%~
       (si::inspect-indent)))
   (incf si::*inspect-level*))
 
-(defmethod inspect-obj ((instance standard-class))
+(defun inspect-obj-inner-class (instance)
   (decf si::*inspect-level*)
   (let* ((class (si:instance-class instance))
 	 (local-slotds (slot-value class 'CLOS::SLOTS)))
@@ -371,56 +322,11 @@ q (or Q):             quits the inspection.~%~
       (si::inspect-indent)))
   (incf si::*inspect-level*))
 
+(defmethod inspect-obj ((instance std-class))
+  (inspect-obj-inner-class instance))
+
 (defmethod inspect-obj ((instance t))
-  (decf si::*inspect-level*)
-  (let* ((class (si:instance-class instance))
-	 (local-slotds (slot-value class 'CLOS::SLOTS)))
-    (declare (type class))
-    (loop
-      (format t "~S - clos object:" instance)
-      (incf si::*inspect-level*)
-      (si::inspect-indent)
-      (format t "- it is an instance of class named ~S,"
-	      (class-name class))
-      (si::inspect-indent)
-      (format t "- it has ~A local slots: " (length local-slotds))
-      (force-output)
-      (case (do ((char (read-char *query-io*) (read-char *query-io*)))
-		((and (char/= char #\Space) (char/= #\Tab)) char))
-	    ((#\Newline #\Return)
-	     (select-clos-N instance)
-	     (return nil))
-	    ((#\n #\N)
-	     (si::inspect-read-line)
-	     (select-clos-N instance)
-	     (return nil))
-	    ((#\s #\S)
-	     (si::inspect-read-line)
-	     (return nil))
-	    ((#\p #\P)
-	     (si::inspect-read-line)
-	     (si::select-P instance))
-	    ((#\a #\A)
-	     (si::inspect-read-line)
-	     (throw 'SI::ABORT-INSPECT nil))
-	    ((#\e #\E)
-	     (si::select-E))
-	    ((#\q #\Q)
-	     (si::inspect-read-line)
-	     (throw 'SI::QUIT-INSPECT nil))
-	    ((#\l #\L)
-	     (si::inspect-read-line)
-	     (select-clos-L instance))
-	    ((#\j #\J)
-	     (select-clos-J instance))
-	    ((#\?)
-	     (si::inspect-read-line)
-	     (select-clos-?))
-	    (t
-	     (si::inspect-read-line)))
-      (decf si::*inspect-level*)
-      (si::inspect-indent)))
-  (incf si::*inspect-level*))
+  (inspect-obj-inner-class instance))
 
 ;;; -------------------------------------------------------------------------
 ;;;

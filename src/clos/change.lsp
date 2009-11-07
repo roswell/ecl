@@ -50,7 +50,7 @@
 			     #'shared-initialize (list new-data added-slots))))
     (apply #'shared-initialize new-data added-slots initargs)))
 
-(defmethod change-class ((instance standard-object) (new-class standard-class)
+(defmethod change-class ((instance standard-object) (new-class std-class)
 			 &rest initargs)
   (let* ((old-instance (si::copy-instance instance))
 	 (new-size (class-size new-class))

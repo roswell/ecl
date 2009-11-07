@@ -167,7 +167,7 @@
 
   class)
 
-(defmethod shared-initialize :after ((class standard-class) slot-names &rest initargs &key
+(defmethod shared-initialize :after ((class std-class) slot-names &rest initargs &key
 				     (optimize-slot-access (list *optimize-slot-access*))
 				     sealedp)
   (setf (slot-value class 'optimize-slot-access) (first optimize-slot-access)
@@ -186,6 +186,7 @@
 	  (list (find-class (typecase class
 			      (STANDARD-CLASS 'STANDARD-OBJECT)
 			      (STRUCTURE-CLASS 'STRUCTURE-OBJECT)
+			      (FUNCALLABLE-STANDARD-CLASS 'FUNCALLABLE-STANDARD-OBJECT)
 			      (otherwise (error "No :DIRECT-SUPERCLASS ~
 argument was supplied for metaclass ~S." (class-of class))))))))
   ;; FIXME!!! Here should come the invocation of VALIDATE-SUPERCLASS!
@@ -203,10 +204,12 @@ argument was supplied for metaclass ~S." (class-of class))))))))
 
 (defun find-slot-definition (class slot-name)
   (declare (si::c-local))
-  (if nil #+nil ; TODO: fix
-      (eq (si:instance-class class) +the-standard-class+)
-      (gethash slot-name (slot-table class) nil)
-      (find slot-name (class-slots class) :key #'slot-definition-name)))
+  (let (table)
+    (if (and (or (eq (si:instance-class class) +the-standard-class+)
+                 (eq (si:instance-class class) +the-funcallable-standard-class+))
+             (not (eq (setf table (slot-table class)) 'SI::UNBOUND)))
+        (gethash slot-name table nil)
+        (find slot-name (class-slots class) :key #'slot-definition-name))))
 
 (defmethod finalize-inheritance ((class class))
   ;; FINALIZE-INHERITANCE computes the guts of what defines a class: the
@@ -301,7 +304,7 @@ because it contains a reference to the undefined class~%  ~A"
       (setf (gethash (slot-definition-name slotd) table) slotd))
     (setf (slot-table class) table)))
 
-(defmethod finalize-inheritance ((class standard-class))
+(defmethod finalize-inheritance ((class std-class))
   (call-next-method)
   (std-create-slots-table class)
   (std-class-generate-accessors class))
@@ -496,7 +499,7 @@ because it contains a reference to the undefined class~%  ~A"
 		       (return)))))))))
     slots))
 
-(defmethod compute-slots :around ((class standard-class))
+(defmethod compute-slots :around ((class std-class))
   (std-class-compute-slots class (call-next-method)))
 
 ;;; ----------------------------------------------------------------------
@@ -586,8 +589,6 @@ because it contains a reference to the undefined class~%  ~A"
   ;; the instance.
   ;;
   (dolist (slotd (class-direct-slots standard-class))
-    #+(or)
-    (print (slot-definition-name slotd))
     (multiple-value-bind (reader writer)
 	(let ((name (slot-definition-name slotd))
 	      (allocation (slot-definition-allocation slotd))
@@ -723,7 +724,7 @@ because it contains a reference to the undefined class~%  ~A"
 ;;; ----------------------------------------------------------------------
 ;;; Methods
 
-(defmethod describe-object ((obj standard-class) (stream t))
+(defmethod describe-object ((obj std-class) (stream t))
   (let ((slotds (class-slots (si:instance-class obj))))
     (format t "~%~A is an instance of class ~A"
 	    obj (class-name (si:instance-class obj)))

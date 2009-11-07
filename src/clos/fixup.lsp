@@ -43,7 +43,7 @@
 			    x))))
     (map-into direct-slots #'identity new-direct-slots)
     (map-into effective-slots #'identity new-effective-slots)
-    (when (typep class 'standard-class)
+    (when (typep class 'std-class)
       (std-create-slots-table class)))
   (mapc #'convert-one-class (class-direct-subclasses class)))
 
@@ -65,12 +65,12 @@
   (make-instances-obsolete (find-class 't))
   (convert-one-class (find-class 't)))
 
-(defmethod reader-method-class ((class standard-class)
+(defmethod reader-method-class ((class std-class)
 				(direct-slot direct-slot-definition)
 				&rest initargs)
   (find-class 'standard-reader-method))
 
-(defmethod writer-method-class ((class standard-class)
+(defmethod writer-method-class ((class std-class)
 				(direct-slot direct-slot-definition)
 				&rest initargs)
   (find-class 'standard-writer-method))

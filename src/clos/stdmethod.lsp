@@ -11,15 +11,22 @@
 
 (in-package "CLOS")
 
+;;; ----------------------------------------------------------------------
+;;; Funcallable object
+;;; ----------------------------------------------------------------------
+
+(defclass funcallable-standard-object (standard-object function) ())
 
 ;;; ----------------------------------------------------------------------
 ;;; Generic Functions
 ;;; ----------------------------------------------------------------------
 
-(defclass generic-function (standard-object function) ())
+(defclass generic-function (standard-object function) ()
+  (:metaclass 'funcallable-standard-class))
 
 (defclass standard-generic-function (generic-function)
-  #.+standard-generic-function-slots+)
+  #.+standard-generic-function-slots+
+  (:metaclass 'funcallable-standard-class))
 
 ;;;----------------------------------------------------------------------
 ;;; Method

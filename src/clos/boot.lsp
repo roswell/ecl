@@ -41,7 +41,11 @@
 ;; itself as metaclass. MAKE-EMPTY-CLASS takes care of that.
 ;;
 (let* ((standard-class (make-empty-standard-class 'STANDARD-CLASS nil))
+       (std-class (make-empty-standard-class 'STD-CLASS standard-class))
        (standard-object (make-empty-standard-class 'STANDARD-OBJECT standard-class))
+       (funcallable-standard-class
+        (make-empty-standard-class 'FUNCALLABLE-STANDARD-CLASS
+                                   standard-class))
        (the-class (make-empty-standard-class 'CLASS standard-class))
        (the-t (make-empty-standard-class 'T the-class))
        ;; It does not matter that we pass NIL instead of a class object,
@@ -52,7 +56,7 @@
 			     collect (canonical-slot-to-direct-slot nil s)))
        (hash-table (make-hash-table :size 24)))
 
-  ;; 2) STANDARD-CLASS and CLASS are the only classes with slots. Create a
+  ;; 2) STANDARD-CLASS and CLASS and others are classes with slots. Create a
   ;; hash table for them, so that SLOT-VALUE works. Notice that we
   ;; make a intentional mistake: CLASS and STANDARD-CLASS share the same
   ;; hashtable!!
@@ -68,11 +72,22 @@
   (setf (class-slots               the-class) (copy-list class-slots)
 	(class-size                the-class) (length class-slots)
 	(slot-table                the-class) hash-table
-	(class-direct-slots        the-class) class-slots
-	(class-slots               standard-class) standard-slots
+	(class-direct-slots        the-class) class-slots)
+  (setf (class-slots               standard-class) standard-slots
 	(class-size                standard-class) (length standard-slots)
 	(slot-table                standard-class) hash-table
-	(class-direct-slots        standard-class) (set-difference standard-slots class-slots))
+	(class-direct-slots        standard-class)
+        (set-difference standard-slots class-slots))
+  (setf	(class-slots               funcallable-standard-class) standard-slots
+	(class-size                funcallable-standard-class) (length standard-slots)
+	(slot-table                funcallable-standard-class) hash-table
+	(class-direct-slots        funcallable-standard-class)
+        (class-direct-slots        standard-class))
+  (setf	(class-slots               std-class) standard-slots
+	(class-size                std-class) (length standard-slots)
+	(slot-table                std-class) hash-table
+	(class-direct-slots        std-class)
+        (class-direct-slots        standard-class))
 
   ;; 3) Fix the class hierarchy
   (setf (class-direct-superclasses the-t) nil
@@ -81,16 +96,22 @@
 	(class-direct-subclasses standard-object) (list the-class)
 	(class-direct-superclasses the-class) (list standard-object)
 	(class-direct-subclasses the-class) (list standard-class)
-	(class-direct-superclasses standard-class) (list the-class))
+	(class-direct-superclasses std-class) (list the-class)
+	(class-direct-superclasses standard-class) (list std-class)
+	(class-direct-superclasses funcallable-standard-class) (list std-class))
 
   (si::instance-sig-set the-class)
+  (si::instance-sig-set std-class)
   (si::instance-sig-set standard-class)
   (si::instance-sig-set standard-object)
+  (si::instance-sig-set funcallable-standard-class)
   (si::instance-sig-set the-t)
 
   ;; 4) Fix the class precedence list
-  (let ((cpl (list standard-class the-class standard-object the-t)))
-    (setf (class-precedence-list standard-class) cpl
+  (let ((cpl (list std-class the-class standard-object the-t)))
+    (setf (class-precedence-list std-class) cpl
+          (class-precedence-list standard-class) (list* standard-class cpl)
+          (class-precedence-list funcallable-standard-class) (list* funcallable-standard-class cpl)
 	  (class-precedence-list the-class) (cdr cpl)
 	  (class-precedence-list standard-object) (cddr cpl)
 	  (class-precedence-list the-t) (cdddr cpl)))
@@ -99,6 +120,8 @@
 )
 
 (defconstant +the-standard-class+ (find-class 'standard-class nil))
+(defconstant +the-funcallable-standard-class+
+  (find-class 'funcallable-standard-class nil))
 
 (defmethod class-prototype ((class class))
   (unless (slot-boundp class 'prototype)
@@ -114,8 +137,8 @@
 
 (defun find-slot-definition (class slot-name)
   (declare (si::c-local))
-  (if nil #+nil ; TODO: fix
-      (eq (si:instance-class class) +the-standard-class+)
+  (if (or (eq (si:instance-class class) +the-standard-class+)
+          (eq (si:instance-class class) +the-funcallable-standard-class+))
       (gethash slot-name (slot-table class) nil)
       (find slot-name (class-slots class) :key #'slot-definition-name)))
 
