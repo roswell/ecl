@@ -262,9 +262,11 @@ int
 main(int argc, char **argv)
 {
 	cl_boot(argc, argv);
+	CL_CATCH_ALL_BEGIN(ecl_process_env()) {
 	~A
 	read_VV(OBJNULL, ~A);
 	~A
+	} CL_CATCH_ALL_END;
 }")
 
 #+:win32
@@ -277,9 +279,11 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
 	int argc;
 	ecl_get_commandline_args(&argc, &argv);
 	cl_boot(argc, argv);
+	CL_CATCH_ALL_BEGIN(ecl_process_env()) {
 	~A
 	read_VV(OBJNULL, ~A);
 	~A
+	} CL_CATCH_ALL_END;
 }")
 
 (defun init-function-name (s &key (kind :object))

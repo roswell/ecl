@@ -52,6 +52,9 @@ ECL 9.11.1:
    standalone programs the prologue code is always executed after cl_boot() has
    been invoked.
 
+ - QUIT did not work from standalone executables created with neither ASDF
+   nor with C:BUILDER.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
