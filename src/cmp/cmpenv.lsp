@@ -302,6 +302,21 @@
 	  (when v (setf (var-type v) type1)))
 	(warn "The variable name ~s is not a symbol." var))))
 
+(defun parse-ignore-declaration (decl-args expected-ref-number)
+  (loop with output = '()
+     for name in decl-args
+     do (cond ((symbolp name)
+               (push (cons name expected-ref-number) output))
+              (t
+               (cmpassert (and (consp name)
+                               (= (length name) 2)
+                               (eq (first name) 'function))
+                          "Invalid argument to IGNORE/IGNORABLE declaration:~&~A"
+                          name)))
+     finally (return output)))
+
+(trace parse-ignore-declaration)
+
 (defun c1body (body doc-p &aux
 	            (all-declarations nil)
 		    (ss nil)		; special vars
@@ -335,15 +350,11 @@
 			  "Syntax error in declaration ~s" decl)
 	       (setf ss (append decl-args ss)))
 	      (IGNORE
-	       (cmpassert (proper-list-p decl-args #'symbolp)
-			  "Syntax error in declaration ~s" decl)
-	       (nconc (loop for name in decl-args
-                         do (push (cons name -1) is))))
+               (setf is (nconc (parse-ignore-declaration decl-args -1)
+                               is)))
 	      (IGNORABLE
-	       (cmpassert (proper-list-p decl-args #'symbolp)
-			  "Syntax error in declaration ~s" decl)
-	       (nconc (loop for name in decl-args
-                         do (push (cons name 0) is))))
+	       (setf is (nconc (parse-ignore-declaration decl-args 0)
+                               is)))
 	      (TYPE
 	       (cmpassert decl-args "Syntax error in declaration ~s" decl)
 	       (declare-variables (first decl-args) (rest decl-args)))

@@ -30,6 +30,9 @@ ECL 9.11.1:
 
  - ECL ignored the IGNORABLE declaration.
 
+ - The IGNORE/IGNORABLE declarations accept (but ignore) arguments of the 
+   for (FUNCTION function-name).
+
  - SUBTYPEP caused a SIGSEGV when the input was a not finalized class.
 
  - Due to the SUBTYPEP bug, ECL could not compile DEFMETHOD forms whose
