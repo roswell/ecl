@@ -318,6 +318,7 @@ extern ECL_API cl_object cl_array_dimension(cl_object a, cl_object index);
 extern ECL_API cl_object cl_array_total_size(cl_object a);
 extern ECL_API cl_object cl_adjustable_array_p(cl_object a);
 extern ECL_API cl_object cl_array_displacement(cl_object a);
+extern ECL_API cl_object si_array_raw_data(cl_object array);
 extern ECL_API cl_object cl_svref(cl_object x, cl_object index);
 extern ECL_API cl_object si_svset(cl_object x, cl_object index, cl_object v);
 extern ECL_API cl_object cl_array_has_fill_pointer_p(cl_object a);

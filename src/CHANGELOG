@@ -1,6 +1,12 @@
 ECL 9.10.3:
 ===========
 
+* Visible changes:
+
+ - New function EXT:ARRAY-RAW-DATA returns a non-adjustable vector of type
+   (UNSIGNED-BYTE 8) with the content of an array. The returned array overlaps
+   with the original, so any change on one will affect the other.
+
 * Bugs fixed:
 
  - In single-threaded builds, ECL did not properly restore the signal mask

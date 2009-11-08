@@ -759,6 +759,38 @@ because the total size of the to-array is too small.", 0);
 	from->array.self.t = address_inc(base, j, fromtype);
 }
 
+cl_object
+si_array_raw_data(cl_object x)
+{
+        cl_elttype et = ecl_array_elttype(x);
+        cl_index total_size = x->vector.dim * ecl_aet_size[et];
+        cl_object output, to_array;
+        uint8_t *data;
+        if (et == aet_object) {
+                FEerror("EXT:ARRAY-RAW-DATA can not get data "
+                        "from an array with element type T.", 0);
+        }
+        data = x->vector.self.b8;
+        to_array = x->array.displaced;
+        if (to_array == Cnil || ((to_array = ECL_CONS_CAR(to_array)) == Cnil)) {
+                output = ecl_alloc_object(t_vector);
+                output->vector.elttype = aet_b8;
+                output->vector.self.b8 = data;
+                output->vector.dim = output->vector.fillp = total_size;
+                output->vector.flags = 0; /* no fill pointer, not adjustable */
+                output->vector.displaced = Cnil;
+        } else {
+                cl_index displ = data - to_array->vector.self.b8;
+                output = si_make_vector(@'ext::byte8',
+                                        MAKE_FIXNUM(total_size),
+                                        Cnil,
+                                        Cnil,
+                                        si_array_raw_data(to_array),
+                                        MAKE_FIXNUM(displ));
+        }
+        @(return output)
+}
+
 cl_elttype
 ecl_array_elttype(cl_object x)
 {

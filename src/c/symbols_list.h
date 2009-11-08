@@ -1837,5 +1837,7 @@ cl_symbols[] = {
 
 {SYS_ "*QUIT-TAG*", SI_SPECIAL, NULL, -1, OBJNULL},
 
+{EXT_ "ARRAY-RAW-DATA", EXT_ORDINARY, si_array_raw_data, 1, OBJNULL},
+
 /* Tag for end of list */
 {NULL, CL_ORDINARY, NULL, -1, OBJNULL}};
