@@ -1,4 +1,4 @@
-ECL 9.10.3:
+ECL 9.11.1:
 ===========
 
 * Visible changes:
@@ -19,10 +19,9 @@ ECL 9.10.3:
    support inline assembly with the GCC syntax and libffi is not available.
 
  - In a multithreaded ECL, when handling a Ctr-C/SIGINT asynchronous interrupt,
-   there was not always a CONTINUE restart available.
+   the CONTINUE restart was not always available.
 
- - The cygwin port was broken because LOAD was unable to load and execute
-   binary files.
+ - In cygwin, LOAD was unable to load and execute binary files.
 
  - In cygwin, FASL files can not lack a file extension, because dlopen()
    then looks for a file ending in ".dll" and fails.
@@ -31,14 +30,15 @@ ECL 9.10.3:
 
  - ECL ignored the IGNORABLE declaration.
 
- - ECL could not compile DEFMETHOD forms whose arguments referenced unfinalized
-   classes. The actual bug was related to SUBTYPEP not being able to determine
-   the relation between classes when one is unfinalized.
+ - SUBTYPEP caused a SIGSEGV when the input was a not finalized class.
+
+ - Due to the SUBTYPEP bug, ECL could not compile DEFMETHOD forms whose
+   arguments referenced non-finalized classes
 
 * Sockets:
 
- - The socket option TCP_NODELAY option used the wrong interface: SOL_SOCKET
-   instead of IPPROTO_TCP (Chun Tian)
+ - The socket option TCP_NODELAY option has been fixed: it was improperly using
+   the socket interface SOL_SOCKET instead of IPPROTO_TCP (Chun Tian)
 
  - sockopt-linger and (setf sockopt-linger) now work as they should, using
    the struct linger argument (M. Mondor)
@@ -48,178 +48,9 @@ ECL 9.10.3:
  - ASDF:MAKE-BUILD now accepts also a :PROLOGUE-CODE argument with code to
    be executed before all lisp files are run.
 
- - C:BUILDER's argument :PROLOGUE-CODE can now be a lisp form and in the case
-   of standalone programs it is always executed after cl_boot() has been
-   invoked.
-
-ECL 9.10.2:
-===========
-
-* Bugs fixed:
-
- - Fixed typo in src/c/unixint.d that affected single-threaded builds
-
- - The GMP library did not build in OS X Snow Leopard in 64-bits mode.
-
- - The package MP is needed also in single-threaded versions (for fake
-   mp:with-lock, which is used in CLX).
-
- - In CLX, there were a couple of typos in the code related to locks and ECL.
-   These typos only revealed in multithreaded builds of the CLX library.
-
- - In Linux there is a problem with handlers for SIGFPE being totally ignored
-   by the system. The problem seems to be solved by avoiding the use of
-   feenableexcept() and restricting to C99 exception tests. That is bad because
-   we can not reliably and cheaply detect underflow exceptions.
-
- - Under OS X, --enable-rpath works again. It was broken for about a year
-   due to my misunderstanding of how -install_name works and the differences
-   between that and -rpath.
-
-ECL 9.10.1:
-===========
-
-* Configuration flags:
-
- - The option --enable-slow-config is now always on in Solaris and it does not
-   take more time than an ordinary build using --with-system-gmp=no
-
- - A new compiler macro ECL_NO_LEGACY can be defined to remove all deprecated
-   macros and functions. Have a look at the end of src/h/external.h to see
-   what functions are deprecated on each release -- typically they are functions
-   that have been renamed with one of the prefixes, ecl_, cl_, si_, ext_ or _ecl.
-
- - Under OS X, you can use the environment variable ABI to select between
-   32-bits (ABI=32) or 64-bits pointers (ABI=64).
-
-* Bignums:
-
- - When embedded, ECL may coexist with code that uses the GMP library in
-   different ways, and sometimes that code may use different memory allocation
-   routines. In order to solve this problem ECL introduces a new option,
-   ECL_OPT_SET_GMP_MEMORY_FUNCTIONS, which determines whether GMP will use the
-   Boehm-Weiser garbage collector to allocate memory or not.
-
- - The previous change also implies that ECL must do all bignum computations
-   using GMP-allocated numbers that are then automatically freed. More
-   precisely, this is done using big_register[0-2]_get() and
-   big_register_normalize() everywhere and operating destructively on those
-   numbers. These functions have been made aware of the fact that GMP may
-   use other allocation routines and always call mpz_clear() to free memory.
-
- - The internal functions dealing with bignums have been renamed with the usual
-   prefix "_ecl", and some of them have been turned into macros. Do not use
-   those functions if possible.
-
- - Bignums are now allocated as a compact IMMUTABLE unit that combines the lisp
-   object and the data for the GMP integer itself. Since it can be now
-   allocated as an atomic (i.e. pointerless) region of memory, the garbage
-   collector has to work less for marking and collecting them.
-
- - The function ecl_alloc_simple_vector() also creates arrays as a compact unit
-   with pointerfree memory whenever possible.
-
- - The functions cl_alloc_simple_{base,extended}_string() now carry the prefix
-   ecl_ instead of cl_, and they are simple aliases for ecl_alloc_simple_vector.
-
- - ECL now implements weak pointers. The interface is
-	(ext:make-weak-pointer value) => weak-pointer
-	(ext:weak-pointer-value weak-pointer) => value
-   and it defines a new built-in type, EXT:WEAK-POINTER
-
- - When running in multithreaded mode, the streams for *terminal-io*,
-   *standard-input* and *standard-output* are created using non-locking
-   C pipes, instead of locking C streams. This is essential to allow background
-   threads gain control of the console.
-
-* Native threads:
-
- - ECL now implements WITHOUT-INTERRUPTS and WITH-INTERRUPTS similarly to SBCL.
-   It creates three local macros, ALLOW-WITH-INTERRUPTS and
-   WITH-LOCAL-INTERRUPTS, and an additional one WITH-RESTORED-INTERRUPTS,
-   which executes the forms with the value of interrupts of the forms that
-   surround WITHOUT-INTERRUPTS.
-
- - Symbol SI:*INTERRUPT-DISABLE* changes name to SI:*INTERRUPTS-DISABLED*.
-
- - New function MP:PROCESS-JOIN, waits for a thread to terminate (J.C.Beaudoin)
-   For this to work, threads are always created in a joinable state, and they
-   only detach themselves when exiting and no process is waiting.
-
- - EXT:QUIT now has a different definition
-	(ext:quit &optional (exit-code 0) (kill-all-threads nil))
-   The first difference is that QUIT will execute all unwind-protect forms
-   that surrounds the form that caused the exit. The second one is that we
-   can explicitely kill all threads and wait for them to exit before exiting.
-
- - Two new functions MP:PROCESS-SUSPEND and MP:PROCESS-RESUME allow suspending
-   and resuming a thread.
-
- - The C function ecl_import_current_thread() now automatically registers the
-   thread with the garbage collector. You should use ecl_release_current_thread()
-   before the thread exits, for consistency.
-
- - Due to the change in ecl_import_current_thread(), ECL now needs a slightly
-   more modern version of the Boehm-Weiser garbage collector. Hence, even if you
-   try to enforce --enable-boehm=system, you may find that ECL ignores the
-   pre-installed library in favor of the one shipped with it.
-
-* Bugs fixed:
-
- - WITH-LOCK might run into a race condition when the lock acquisition process
-   was interrupted.
-
- - The following functions are now interrupt safe: MP:MAKE-LOCK.
-
- - The use of GIVEUP-LOCK in WITH-LOCK is now protected against interrupts.
-
- - Forms in toplevel EVAL-WHEN or PROGN statements did not have a proper value
-   of bytecodes.definition, causing the debugger to enter an infinite chain
-   of errors
-
- - In Solaris 8 ECL failed because it did not find inttypes.h
-
- - When signbit() is not available, ECL now looks for existence of copysign.
-
-* Signals and environment:
-
- - The toplevel now allows handling multiple processes in the same console.
-   Two new commands, :w and :s, allow reading the list of processes waiting for
-   grabbing the console and switching to that given process.
-
- - ECL now has a signal handling thread running in the background. When
-   Ctrl-C or Ctrl-Break is pressed or the process gets a SIGINT signal, then
-   a separate thread is spawned for handling that event. This thread typically
-   enters the debugger, allowing either to continue or to interrupt specific
-   processes.
-
-* Packages:
-
- - The package hash tables are not destructively extended, but rather a new
-   hash table is created when we need more room. ecl_sethash() now returns
-   the pointer to the possibly reallocated hashtable.
-
- - ECL now follows the SBCL model, by which there is a global lock for
-   destructive package operations (INTERN, EXPORT, etc), but not for
-   query only operations (FIND-SYMBOL, PACKAGE-USE-LIST), etc.
-
-* Windows:
-
- - The latest version of Visual Studio introduced a number of automatically
-   generated files (*.implib, *.manifest, *.expdef) which are not used at
-   all by ECL, but which were also not deleted, causing the temporary
-   directory to be filled with garbage.
-
- - FASLs created by COMPILE and LOAD in the directory for temporary files are
-   now properly deleted before exiting ECL.
-
- - ECL now embeds the manifest file in the generated executables and shared
-   libraries.
-
-* Other errors:
-
- - Extended strings (i.e. strings with characters that are not base-characters)
-   were not identified as valid documentation strings by the interpreter.
+ - C:BUILDER's argument :PROLOGUE-CODE can now be a lisp form. In the case of
+   standalone programs the prologue code is always executed after cl_boot() has
+   been invoked.
 
 ;;; Local Variables: ***
 ;;; mode:text ***
