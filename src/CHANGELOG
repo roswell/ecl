@@ -35,6 +35,9 @@ ECL 9.11.1:
  - Due to the SUBTYPEP bug, ECL could not compile DEFMETHOD forms whose
    arguments referenced non-finalized classes
 
+ - When supplied an error value, (EXT:SAFE-EVAL form env &optional err-value)
+   never returned the output of the evaluated form.
+
 * Sockets:
 
  - The socket option TCP_NODELAY option has been fixed: it was improperly using

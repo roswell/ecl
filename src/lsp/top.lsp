@@ -1412,7 +1412,8 @@ value."
     (unwind-protect
          (if err-value-p
              (let ((*break-enable* nil))
-               (si::eval-with-env form env))
+               (setf output (si::eval-with-env form env)
+                     ok t))
              (handler-bind ((serious-condition #'invoke-debugger))
                (setf output (si::eval-with-env form env)
                      ok t)))
