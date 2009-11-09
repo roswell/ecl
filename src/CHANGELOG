@@ -7,6 +7,8 @@ ECL 9.11.1:
    (UNSIGNED-BYTE 8) with the content of an array. The returned array overlaps
    with the original, so any change on one will affect the other.
 
+ - LOAD works on special files (/dev/null and the like).
+
 * Bugs fixed:
 
  - In single-threaded builds, ECL did not properly restore the signal mask

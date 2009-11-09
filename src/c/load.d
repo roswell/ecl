@@ -541,8 +541,10 @@ si_load_source(cl_object source, cl_object verbose, cl_object print)
 	if (!Null(pntype) && (pntype != @':wild')) {
 		/* If filename already has an extension, make sure
 		   that the file exists */
+                cl_object kind;
 		filename = si_coerce_to_filename(pathname);
-		if (si_file_kind(filename, Ct) != @':file') {
+                kind = si_file_kind(filename, Ct);
+		if (kind != @':file' && kind != @':special') {
 			filename = Cnil;
 		} else {
 			function = cl_cdr(ecl_assoc(pathname->pathname.type, hooks));
@@ -550,10 +552,12 @@ si_load_source(cl_object source, cl_object verbose, cl_object print)
 	} else loop_for_in(hooks) {
 		/* Otherwise try with known extensions until a matching
 		   file is found */
+                cl_object kind;
 		filename = pathname;
 		filename->pathname.type = CAAR(hooks);
 		function = CDAR(hooks);
-		if (si_file_kind(filename, Ct) == @':file')
+                kind = si_file_kind(filename, Ct);
+		if (kind == @':file' || kind == @':special')
 			break;
 		else
 			filename = Cnil;
