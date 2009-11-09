@@ -428,11 +428,12 @@
 If FORMAT-STRING is non-NIL, it is used as the format string to be output to
 *ERROR-OUTPUT* before entering the break loop.  ARGs are arguments to the
 format string."
-  (with-simple-restart (continue "Return from BREAK.")
-    (invoke-debugger
-      (make-condition 'SIMPLE-CONDITION
-		      :FORMAT-CONTROL    format-control
-		      :FORMAT-ARGUMENTS format-arguments)))
+  (let ((*debugger-hook* nil))
+    (with-simple-restart (continue "Return from BREAK.")
+      (invoke-debugger
+       (make-condition 'SIMPLE-CONDITION
+                       :FORMAT-CONTROL format-control
+                       :FORMAT-ARGUMENTS format-arguments))))
   nil)
 
 (defun warn (datum &rest arguments)
