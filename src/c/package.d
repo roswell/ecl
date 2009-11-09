@@ -391,7 +391,7 @@ find_symbol_inner(cl_object name, cl_object p, int *intern_flag)
 cl_object
 ecl_find_symbol(cl_object n, cl_object p, int *intern_flag)
 {
-	n = cl_string(n);
+	if (!ECL_STRINGP(n)) FEtype_error_string(n);
 	p = si_coerce_to_package(p);
         return find_symbol_inner(n, p, intern_flag);
 }

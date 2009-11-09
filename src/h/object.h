@@ -153,6 +153,12 @@ typedef cl_object (*cl_objectfn_fixed)();
 #define ARRAY_TYPE(t)		(t >= t_array && t <= t_bitvector)
 #define ECL_ARRAYP(x)		((IMMEDIATE(x) == 0) && (x)->d.t >= t_array && (x)->d.t <= t_bitvector)
 #define ECL_VECTORP(x)		((IMMEDIATE(x) == 0) && (x)->d.t >= t_vector && (x)->d.t <= t_bitvector)
+#ifdef ECL_UNICODE
+#define ECL_STRINGP(x)		((IMMEDIATE(x) == 0) && \
+                                 ((x)->d.t == t_base_string || (x)->d.t == t_string))
+#else
+#define ECL_STRINGP(x)		((IMMEDIATE(x) == 0) && ((x)->d.t == t_base_string))
+#endif
 
 #define HEADER			int8_t t, m, padding[2]
 #define HEADER1(field)		int8_t t, m, field, padding

@@ -855,14 +855,15 @@ write_symbol(cl_object x, cl_object stream)
 	} else if (package == cl_core.keyword_package) {
 		write_ch(':', stream);
 	} else if ((print_package != Cnil && package != print_package)
-		   || ecl_find_symbol(x, ecl_current_package(), &intern_flag)!=x
+		   || ecl_find_symbol(ecl_symbol_name(x), ecl_current_package(),
+                                      &intern_flag)!=x
 		   || intern_flag == 0)
 	{
 		cl_object name = package->pack.name;
 		write_symbol_string(name, readtable->readtable.read_case,
 				    print_case, stream,
 				    needs_to_be_escaped(name, readtable, print_case));
-		if (ecl_find_symbol(x, package, &intern_flag) != x)
+		if (ecl_find_symbol(ecl_symbol_name(x), package, &intern_flag) != x)
 			ecl_internal_error("can't print symbol");
 		if ((print_package != Cnil && package != print_package)
 		    || intern_flag == INTERNAL) {

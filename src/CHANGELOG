@@ -43,6 +43,9 @@ ECL 9.11.1:
  - When supplied an error value, (EXT:SAFE-EVAL form env &optional err-value)
    never returned the output of the evaluated form.
 
+ - FIND-SYMBOL accepted string designators instead of just strings, as
+   mandated by the ANSI specification.
+
 * Sockets:
 
  - The socket option TCP_NODELAY option has been fixed: it was improperly using
