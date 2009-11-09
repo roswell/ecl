@@ -53,6 +53,10 @@ Usage: ecl [-? | --help]
     ("-h" 0 #0# :noloadrc)
     ("-norc" 0 nil :noloadrc)
     ("--" 0 nil :stop)
+    ("--version" 0
+     (progn (setf quit 0)
+            (format *standard-output* "ECL ~A" (lisp-implementation-version)))
+     :noloadrc)
     ("-debug" 0 (setf si::*break-enable* t))
     ("-nodebug" 0 (setf si::*break-enable* nil))
     ("-eval" 1 (eval (read-from-string 1)))

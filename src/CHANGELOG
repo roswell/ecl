@@ -9,6 +9,9 @@ ECL 9.11.1:
 
  - LOAD works on special files (/dev/null and the like).
 
+ - New command line option --version outputs the version number preceded
+   by the implementation name ("ECL 9.11.1" in this particular release).
+
 * Bugs fixed:
 
  - In single-threaded builds, ECL did not properly restore the signal mask
