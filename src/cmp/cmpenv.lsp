@@ -315,8 +315,6 @@
                           name)))
      finally (return output)))
 
-(trace parse-ignore-declaration)
-
 (defun c1body (body doc-p &aux
 	            (all-declarations nil)
 		    (ss nil)		; special vars
