@@ -722,23 +722,27 @@ cl_boot(int argc, char **argv)
                 cl_object p, all_threads = mp_all_processes();
                 for (p = all_threads; !Null(p); p = ECL_CONS_CDR(p)) {
                         cl_object process = ECL_CONS_CAR(p);
-                        if (process != this) mp_process_kill(process);
+                        if (process != this && process->process.active)
+                                mp_process_kill(process);
                 }
                 for (p = all_threads; !Null(p); p = ECL_CONS_CDR(p)) {
                         cl_object process = ECL_CONS_CAR(p);
-                        if (process != this) mp_process_join(process);
+                        if (process != this && process->process.active)
+                                mp_process_join(process);
                 }
         }
 #endif
-        the_env->nvalues = 1;
-        the_env->values[0] = code;
+        ECL_SET(@'ext::*program-exit-code*', code);
         if (the_env->frs_org <= the_env->frs_top)
                 ecl_unwind(the_env, the_env->frs_org);
-        CEerror(Ct, "QUIT: there is no frame to return to. "
-                "Using continue will just abort.", 0);
+        si_exit(1, code);
+}
+@)
+
+@(defun ext::exit (&optional (code ECL_SYM_VAL(ecl_process_env(),@'ext::*program-exit-code*')))
+@
         cl_shutdown();
         exit(FIXNUMP(code)? fix(code) : 0);
-}
 @)
 
 cl_object

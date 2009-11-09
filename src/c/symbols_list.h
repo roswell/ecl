@@ -1839,5 +1839,8 @@ cl_symbols[] = {
 
 {EXT_ "ARRAY-RAW-DATA", EXT_ORDINARY, si_array_raw_data, 1, OBJNULL},
 
+{EXT_ "*PROGRAM-EXIT-CODE*", EXT_SPECIAL, NULL, -1, MAKE_FIXNUM(0)},
+{EXT_ "EXIT", EXT_ORDINARY, si_exit, -1, OBJNULL},
+
 /* Tag for end of list */
 {NULL, CL_ORDINARY, NULL, -1, OBJNULL}};

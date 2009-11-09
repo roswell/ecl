@@ -267,6 +267,7 @@ main(int argc, char **argv)
 	read_VV(OBJNULL, ~A);
 	~A
 	} CL_CATCH_ALL_END;
+	si_exit(0);
 }")
 
 #+:win32
@@ -284,6 +285,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
 	read_VV(OBJNULL, ~A);
 	~A
 	} CL_CATCH_ALL_END;
+	si_exit(0);
 }")
 
 (defun init-function-name (s &key (kind :object))
@@ -408,17 +410,7 @@ filesystem or in the database of ASDF modules."
 cl_object output;
 si_select_package(make_simple_base_string(\"CL-USER\"));
 output = si_safe_eval(3, ecl_read_from_cstring(lisp_code), Cnil, OBJNULL);
-" stream)
-		   (when (eq target :program)
-		     (princ "
-cl_shutdown();
-if (FIXNUMP(output))
-	return fix(output);
-if (Null(output) || (output == OBJNULL))
-	return 0;
-return 1;"
-                            stream))
-		   (princ #\} stream)
+}" stream)
 		   )))))
   (cond ((null prologue-code)
 	 (setf prologue-code ""))
