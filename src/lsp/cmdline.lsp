@@ -55,7 +55,7 @@ Usage: ecl [-? | --help]
     ("--" 0 nil :stop)
     ("--version" 0
      (progn (setf quit 0)
-            (format *standard-output* "ECL ~A" (lisp-implementation-version)))
+            (format *standard-output* "ECL ~A~%" (lisp-implementation-version)))
      :noloadrc)
     ("-debug" 0 (setf si::*break-enable* t))
     ("-nodebug" 0 (setf si::*break-enable* nil))
