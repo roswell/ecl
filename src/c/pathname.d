@@ -834,7 +834,7 @@ ecl_merge_pathnames(cl_object path, cl_object defaults, cl_object default_versio
 		directory = path->pathname.directory;
 	else if (!Null(defaults->pathname.directory))
 		directory = ecl_append(defaults->pathname.directory,
-				   CDR(path->pathname.directory));
+                                       CDR(path->pathname.directory));
 	else
 		directory = path->pathname.directory;
 	if (Null(name = path->pathname.name))
