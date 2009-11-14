@@ -409,7 +409,7 @@ filesystem or in the database of ASDF modules."
 		   (princ ";
 cl_object output;
 si_select_package(make_simple_base_string(\"CL-USER\"));
-output = si_safe_eval(3, ecl_read_from_cstring(lisp_code), Cnil, OBJNULL);
+output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), Cnil);
 }" stream)
 		   )))))
   (cond ((null prologue-code)
@@ -425,7 +425,7 @@ output = si_safe_eval(3, ecl_read_from_cstring(lisp_code), Cnil, OBJNULL);
 		   (princ ";
 cl_object output;
 si_select_package(make_simple_base_string(\"CL-USER\"));
-output = si_safe_eval(3, ecl_read_from_cstring(lisp_code), Cnil, OBJNULL);
+output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), Cnil);
 }" stream)
 		   )))))
   ;;
