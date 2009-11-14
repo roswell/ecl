@@ -185,58 +185,45 @@ cl_cdr(cl_object x)
 	@(return head)
 @)
 
-static cl_object
-append_into(cl_object tail, cl_object l)
+static cl_object *
+append_into(cl_object head, cl_object *tail, cl_object l)
 {
-	if (!Null(ECL_CONS_CDR(tail))) {
+	if (!Null(*tail)) {
 		/* (APPEND '(1 . 2) 3) */
-		FEtype_error_proper_list(tail);
+		FEtype_error_proper_list(head);
 	}
 	while (CONSP(l)) {
 		cl_object cons = ecl_list1(ECL_CONS_CAR(l));
-		ECL_RPLACD(tail, cons);
-		tail = cons;
+		*tail = cons;
+		tail = &ECL_CONS_CDR(cons);
 		l = ECL_CONS_CDR(l);
 	}
-	ECL_RPLACD(tail, l);
+        *tail = l;
 	return tail;
 }
 
 @(defun append (&rest rest)
-	cl_object head = Cnil, tail = Cnil;
+	cl_object head = Cnil, *tail = &head;
 @
-	while (narg--) {
+	for (; narg > 1; narg--) {
 		cl_object other = cl_va_arg(rest);
-		if (Null(head)) {
-			head = other;
-			if (Null(head))
-				continue;
-			if (!LISTP(head)) {
-				if (narg) {
-					/* (APPEND atom whatever) */
-					FEtype_error_list(other);
-				}
-				/* (APPEND atom) */
-				break;
-			}
-			other = ECL_CONS_CDR(head);
-			tail = head = ecl_list1(ECL_CONS_CAR(head));
-		}
-		tail = append_into(tail, other);
+                tail = append_into(head, tail, other);
 	}
+        if (narg) {
+                *tail = cl_va_arg(rest);
+        }
 	@(return head)
 @)
 
 cl_object
 ecl_append(cl_object x, cl_object y)
 {
-	cl_object head, tail;
-	if (Null(x))
-		return y;
-	if (!LISTP(x))
-		FEtype_error_list(x);
-	head = tail = ecl_list1(ECL_CONS_CAR(x));
-	append_into(append_into(tail, ECL_CONS_CDR(x)), y);
+	cl_object head = Cnil;
+        cl_object *tail = &head;
+	if (!Null(x)) {
+                tail = append_into(head, tail, x);
+        }
+        *tail = y;
 	return head;
 }
 

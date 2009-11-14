@@ -49,6 +49,8 @@ ECL 9.11.1:
  - FIND-SYMBOL accepted string designators instead of just strings, as
    mandated by the ANSI specification.
 
+ - APPEND copied also the last argument.
+
 * Sockets:
 
  - The socket option TCP_NODELAY option has been fixed: it was improperly using
