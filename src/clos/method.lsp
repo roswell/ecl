@@ -68,7 +68,8 @@
 	(setf lambda-list
 		(append (subseq lambda-list 0 x)
 			'(&allow-other-keys)
-			(and x (subseq lambda-list x))))))
+			(and x (subseq lambda-list x))
+                        nil))))
     (let* ((class-declarations
 	    (nconc (loop for name in required-parameters
 		      for type in specializers
