@@ -238,28 +238,27 @@
 	   (c2expr* form)
 	   (do-m-v-setq-any min-values max-values vars nil))))))
 
-(defun c1multiple-value-bind (args &aux (vars nil) (vnames nil) init-form
-                                   ss is ts body other-decls
-                                   (*cmp-env* (cmp-env-copy)))
+(defun c1multiple-value-bind (args &aux (*cmp-env* (cmp-env-copy)))
   (check-args-number 'MULTIPLE-VALUE-BIND args 2)
-
-  (multiple-value-setq (body ss ts is other-decls) (c1body (cddr args) nil))
-
-  (c1declare-specials ss)
-
-  (dolist (s (first args))
-    (push s vnames)
-    (push (c1make-var s ss is ts) vars))
-  (setq init-form (c1expr (second args)))
-  (dolist (v (setq vars (nreverse vars)))
-    (push-vars v))
-  (check-vdecl vnames ts is)
-  (setq body (c1decl-body other-decls body))
-  (dolist (var vars) (check-vref var))
-  (make-c1form* 'MULTIPLE-VALUE-BIND :type (c1form-type body)
-		:local-vars vars
-		:args vars init-form body)
-  )
+  (let* ((variables (pop args))
+         (init-form (pop args)))
+    (when (= (length variables) 1)
+      (return-from c1multiple-value-bind
+        (c1expr `(let* ((,(first variables) ,init-form))
+                   ,@args))))
+    (multiple-value-bind (body ss ts is other-decls)
+        (c1body args nil)
+      (c1declare-specials ss)
+      (let* ((vars (loop for name in variables
+                      collect (c1make-var name ss is ts))))
+        (setq init-form (c1expr init-form))
+        (mapc #'push-vars vars)
+        (check-vdecl variables ts is)
+        (setq body (c1decl-body other-decls body))
+        (mapc #'check-vref vars)
+        (make-c1form* 'MULTIPLE-VALUE-BIND :type (c1form-type body)
+                      :local-vars vars
+                      :args vars init-form body)))))
 
 (defun c2multiple-value-bind (vars init-form body)
   ;; 0) Compile the form which is going to give us the values
