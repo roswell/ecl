@@ -295,31 +295,24 @@ Does not check if the third gang is a single-element list."
 	         ,store-form ,store)
 	      `(mask-field ,btemp ,access-form)))))
 
-
 ;;; The expansion function for SETF.
 (defun setf-expand-1 (place newvalue env)
   (declare (si::c-local))
   (multiple-value-bind (vars vals stores store-form access-form)
       (get-setf-expansion place env)
     (declare (ignore access-form))
-    (let ((declaration `(declare (:read-only ,@(append vars stores)))))
-      (cond ((and (consp place)
-                  (let* ((name (first place))
-                         (inverse (get-sysprop name 'setf-update-fn)))
-                    (and inverse
-                         (consp store-form)
-                         (eq inverse (first store-form))
-                         `(,inverse ,@(rest place) ,newvalue)))))
-            ((= (length stores) 1)
-             `(let* ,(mapcar #'list
-                             (append vars stores)
-                             (append vals (list newvalue)))
-                ,declaration
-                ,store-form))
-            (t `(let* ,(mapcar #'list vars vals)
-                  (multiple-value-bind ,stores ,newvalue
-                    ,declaration
-                    ,store-form)))))))
+    (cond ((and (consp place)
+                (let* ((name (first place))
+                       (inverse (get-sysprop name 'setf-update-fn)))
+                  (and inverse
+                       (consp store-form)
+                       (eq inverse (first store-form))
+                       `(,inverse ,@(rest place) ,newvalue)))))
+          (t `(let* ,(mapcar #'list vars vals)
+                (declare (:read-only ,@vars))
+                (multiple-value-bind ,stores ,newvalue
+                  (declare (:read-only ,@stores))
+                  ,store-form))))))
 
 (defun setf-structure-access (struct type index newvalue)
   (declare (si::c-local))
