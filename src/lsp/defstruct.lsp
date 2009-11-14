@@ -110,7 +110,7 @@
       (when other-slots
 	(unless aux
 	  (push '&aux other-slots))
-	(setf boa-list (append boa-list other-slots)))
+	(setf boa-list (nconc boa-list other-slots)))
       (values boa-list assertions))))
 
 (defun make-constructor (name constructor type named slot-descriptions)
