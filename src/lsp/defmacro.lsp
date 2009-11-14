@@ -256,29 +256,31 @@
 	    body doc)))
 
 (defun sys::expand-defmacro (name vl body
-			     &aux *dl* *key-check* *arg-check*
-			     doc decls ppn env)
-  (multiple-value-setq (decls body doc)
-    (find-declarations body))
-  ;; We turn (a . b) into (a &rest b)
-  ;; This is required because MEMBER (used below) does not like improper lists
-  (let ((cell (last vl)))
-    (when (rest cell)
-      (setq vl (nconc (butlast vl 0) (list '&rest (rest cell))))))
-  ;; If we find an &environment variable in the lambda list, we take not of the
-  ;; name and remove it from the list so that DESTRUCTURE does not get confused
-  (if (setq env (member '&environment vl :test #'eq))
-      (setq vl (nconc (ldiff vl env) (cddr env))
-	    env (second env))
-      (progn
-	(setq env (gensym))
-	(push `(declare (ignore ,env)) decls)))
-  (multiple-value-bind (ppn whole *dl* *key-check* *arg-check*)
-      (destructure vl t)
-    (setq body (nconc decls (append *arg-check* *key-check* body)))
-    (values `(ext::lambda-block ,name (,whole ,env &aux ,@*dl*) ,@body)
-	    ppn
-	    doc)))
+			     &aux *dl* *key-check* *arg-check*)
+  (multiple-value-bind (decls body doc)
+    (find-declarations body)
+    ;; We turn (a . b) into (a &rest b)
+    ;; This is required because MEMBER (used below) does not like improper lists
+    (let ((cell (last vl)))
+      (when (rest cell)
+        (setq vl (nconc (butlast vl 0) (list '&rest (rest cell))))))
+    ;; If we find an &environment variable in the lambda list, we take not of the
+    ;; name and remove it from the list so that DESTRUCTURE does not get confused
+    (let ((env (member '&environment vl :test #'eq)))
+      (if env
+          (setq vl (nconc (ldiff vl env) (cddr env))
+                env (second env))
+          (setq env (gensym)
+                decls (list* `(declare (ignore ,env)) decls)))
+      (multiple-value-bind (ppn whole *dl* *key-check* *arg-check*)
+          (destructure vl t)
+        (values `(ext::lambda-block ,name (,whole ,env &aux ,@*dl*)
+                                    ,@decls 
+                                    ,@*arg-check*
+                                    ,@*key-check*
+                                    ,@body)
+                ppn
+                doc)))))
 
 (si::fset 'defmacro
 	  #'(ext::lambda-block defmacro (def env)
