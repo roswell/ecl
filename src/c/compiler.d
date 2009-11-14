@@ -1575,23 +1575,20 @@ c_vbind(cl_env_ptr env, cl_object var, int n, cl_object specials)
 static int
 c_multiple_value_bind(cl_env_ptr env, cl_object args, int flags)
 {
-	cl_object old_env = env->c_env->variables;
-	cl_object vars, value, body, specials;
-	cl_index n;
-
-	vars = pop(&args);
-	value = pop(&args);
-	body = c_process_declarations(args);
-	specials = VALUES(3);
-
-	compile_form(env, value, FLAG_VALUES);
-	n = ecl_length(vars);
-	if (n == 0) {
-		c_declare_specials(env, specials);
-		flags = compile_body(env, body, flags);
-		c_undo_bindings(env, old_env, 0);
-	} else {
-		cl_object old_variables = env->c_env->variables;
+	cl_object vars = pop(&args);
+	cl_object value = pop(&args);
+	switch (ecl_length(vars)) {
+        case 0:
+                return c_locally(env, args, flags);
+        case 1:
+                vars = ECL_CONS_CAR(vars);
+                vars = ecl_list1(cl_list(2, vars, value));
+                return c_leta(env, cl_listX(2, vars, args), flags);
+        default: {
+                cl_object old_variables = env->c_env->variables;
+                cl_object body = c_process_declarations(args);
+                cl_object specials = VALUES(3);
+                compile_form(env, value, FLAG_VALUES);
 		for (vars=cl_reverse(vars); n--; ) {
 			cl_object var = pop(&vars);
 			if (!SYMBOLP(var))
@@ -1601,8 +1598,8 @@ c_multiple_value_bind(cl_env_ptr env, cl_object args, int flags)
 		c_declare_specials(env, specials);
 		flags = compile_body(env, body, flags);
 		c_undo_bindings(env, old_variables, 0);
-	}
-	return flags;
+                return flags;
+	}}
 }
 
 
