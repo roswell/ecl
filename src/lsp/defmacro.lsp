@@ -323,12 +323,16 @@
 ;;;	  |  . sym }
 ;;;	 )
 
-(defmacro destructuring-bind (vl list &body body &aux (decls nil))
-  (multiple-value-setq (decls body) (find-declarations body))
-  (multiple-value-bind (ppn whole *dl* *key-check* *arg-check*)
-      (destructure vl nil)
-    (setq body (nconc decls (append *arg-check* *key-check* body)))
-    (list* 'let* (cons (list whole list) *dl*) body)))
+(defmacro destructuring-bind (vl list &body body)
+  (multiple-value-bind (decls body)
+      (find-declarations body)
+    (multiple-value-bind (ppn whole *dl* *key-check* *arg-check*)
+        (destructure vl nil)
+      `(let* ((,whole ,list) ,@*dl*)
+         ,@decls
+         ,@*arg-check*
+         ,@*key-check*
+         ,@body))))
 
 (defun warn (&rest foo) nil)
 
