@@ -12,6 +12,9 @@ ECL 9.11.1:
  - New command line option --version outputs the version number preceded
    by the implementation name ("ECL 9.11.1" in this particular release).
 
+ - MULTIPLE-VALUE-BIND is optimally replaced with a LET form when the number
+   of variables is 1.
+
 * Bugs fixed:
 
  - In single-threaded builds, ECL did not properly restore the signal mask
