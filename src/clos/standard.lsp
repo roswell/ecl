@@ -70,7 +70,6 @@
 	 (when (and slot-names
 		    (or (eq slot-names 'T)
 			(member slot-name slot-names))
-		    (not (eq (slot-definition-allocation slotd) :class))
 		    (not (slot-boundp instance slot-name)))
 	   (let ((initfun (slot-definition-initfunction slotd)))
 	     (when initfun
