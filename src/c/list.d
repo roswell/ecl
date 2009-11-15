@@ -210,6 +210,10 @@ append_into(cl_object head, cl_object *tail, cl_object l)
                 tail = append_into(head, tail, other);
 	}
         if (narg) {
+                if (!Null(*tail)) {
+                        /* (APPEND '(1 . 2) 3) */
+                        FEtype_error_proper_list(head);
+                }
                 *tail = cl_va_arg(rest);
         }
 	@(return head)
@@ -222,6 +226,10 @@ ecl_append(cl_object x, cl_object y)
         cl_object *tail = &head;
 	if (!Null(x)) {
                 tail = append_into(head, tail, x);
+        }
+        if (!Null(*tail)) {
+                /* (APPEND '(1 . 2) 3) */
+                FEtype_error_proper_list(head);
         }
         *tail = y;
 	return head;
