@@ -1577,7 +1577,8 @@ c_multiple_value_bind(cl_env_ptr env, cl_object args, int flags)
 {
 	cl_object vars = pop(&args);
 	cl_object value = pop(&args);
-	switch (ecl_length(vars)) {
+        int n = ecl_length(vars);
+	switch (n) {
         case 0:
                 return c_locally(env, args, flags);
         case 1:
