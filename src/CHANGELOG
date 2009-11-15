@@ -58,6 +58,9 @@ ECL 9.11.1:
 
  - (ATAN #C(0.0 1.0)) no longer produces an infinite recursion.
 
+ - Solved a hard to hit bug in DEFCLASS's routine for detecting collisions in
+   slot names
+
 * Sockets:
 
  - The socket option TCP_NODELAY option has been fixed: it was improperly using

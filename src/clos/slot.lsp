@@ -146,7 +146,7 @@
        (collect))
       ((null scan) (nreverse collect))
     (let* ((slotd (parse-slot (first scan)))
-	   (name (second slotd)))
+	   (name (getf slotd :name)))
       (dolist (other-slotd collect)
 	(when (eq name (getf other-slotd :name))
 	  (si::simple-program-error
