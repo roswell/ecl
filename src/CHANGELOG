@@ -54,6 +54,10 @@ ECL 9.11.1:
 
  - APPEND copied also the last argument.
 
+ - (LOG #C(x x)) now produces a better result when x == 0
+
+ - (ATAN #C(0.0 1.0)) no longer produces an infinite recursion.
+
 * Sockets:
 
  - The socket option TCP_NODELAY option has been fixed: it was improperly using

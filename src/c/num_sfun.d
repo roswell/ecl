@@ -225,9 +225,18 @@ ecl_log1_complex(cl_object r, cl_object i)
 {
 	cl_object a = ecl_abs(r);
 	cl_object p = ecl_abs(i);
-	if (ecl_number_compare(a, p) > 0) {
+	int rel = ecl_number_compare(a, p);
+	if (rel > 0) {
 		cl_object aux = p;
 		p = a; a = aux;
+	} else if (rel == 0) {
+		/* if a == p, 
+		 * log(sqrt(a^2+p^2)) = log(2a^2)/2
+		 */
+		a = ecl_times(a, a);
+		a = ecl_divide(ecl_log1(ecl_plus(a, a)), MAKE_FIXNUM(2));
+		p = MAKE_FIXNUM(0);
+		goto OUTPUT;
 	}
 	/* For the real part of the output we use the formula
 	 *	log(sqrt(p^2 + a^2)) = log(sqrt(p^2*(1 + (a/p)^2)))
@@ -236,6 +245,7 @@ ecl_log1_complex(cl_object r, cl_object i)
 	a = ecl_plus(ecl_divide(ecl_log1p(ecl_times(a,a)), MAKE_FIXNUM(2)),
 		     ecl_log1(p));
 	p = ecl_atan2(i, r);
+ OUTPUT:
 	return ecl_make_complex(a, p);
 }
 
@@ -499,11 +509,12 @@ cl_object
 ecl_atan1(cl_object y)
 {
 	if (type_of(y) == t_complex) {
-#if 0 /* FIXME! ANSI states it should be this first part */
-		z = ecl_times(cl_core.imag_unit, y);
-		z = ecl_log1(ecl_one_plus(z)) +
-		    ecl_log1(ecl_minus(MAKE_FIXNUM(1), z));
-		z = ecl_divide(z, ecl_times(MAKE_FIXNUM(2), cl_core.imag_unit));
+#if 1 /* ANSI states it should be this first part */
+		cl_object z = ecl_times(cl_core.imag_unit, y);
+		z = ecl_plus(ecl_log1(ecl_one_plus(z)),
+			     ecl_log1(ecl_minus(MAKE_FIXNUM(1), z)));
+		z = ecl_divide(z, ecl_times(MAKE_FIXNUM(2),
+					    cl_core.imag_unit));
 #else
 		cl_object z1, z = ecl_times(cl_core.imag_unit, y);
 		z = ecl_one_plus(z);
