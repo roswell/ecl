@@ -1133,7 +1133,7 @@ sharp_dot_reader(cl_object in, cl_object c, cl_object d)
 {
 	if (d != Cnil && !read_suppress)
 		extra_argument('.', in, d);
-	c = ecl_read_object_non_recursive(in);
+	c = ecl_read_object(in);
 	if (c == OBJNULL)
 		FEend_of_file(in);
 	if (read_suppress)
@@ -1222,7 +1222,7 @@ sharp_eq_reader(cl_object in, cl_object c, cl_object d)
 		FEreader_error("The #= readmacro requires an argument.", in, 0);
 	if (ecl_assql(d, sharp_eq_context) != Cnil)
 		FEreader_error("Duplicate definitions for #~D=.", in, 1, d);
-	pair = ecl_list1(d);
+	pair = CONS(d, OBJNULL);
 	ECL_SETQ(the_env, @'si::*sharp-eq-context*', CONS(pair, sharp_eq_context));
 	value = ecl_read_object(in);
 	if (value == pair)
@@ -1237,13 +1237,15 @@ sharp_sharp_reader(cl_object in, cl_object c, cl_object d)
 	const cl_env_ptr the_env = ecl_process_env();
 	cl_object pair;
 
-	if (read_suppress) @(return Cnil)
+	if (read_suppress)
+                @(return Cnil)
 	if (Null(d))
 		FEreader_error("The ## readmacro requires an argument.", in, 0);
 	pair = ecl_assq(d, ECL_SYM_VAL(the_env, @'si::*sharp-eq-context*'));
-	if (pair != Cnil)
-		@(return pair)
-	FEreader_error("#~D# is undefined.", in, 1, d);
+	if (pair == Cnil)
+                FEreader_error("#~D# is undefined.", in, 1, d);
+        value = ECL_CONS_CDR(pair);
+        @(return ((value == OBJNULL)? pair : value))
 }
 
 static cl_object
@@ -1321,7 +1323,7 @@ patch_sharp(cl_object x)
 	pairs = sharp_eq_context;
 	loop_for_in(pairs) { 
 		cl_object pair = ECL_CONS_CAR(pairs);
-		ECL_RPLACA(pair, OBJNULL);
+                ECL_RPLACA(pair, OBJNULL);
 	} end_loop_for_in;
 
 	x = do_patch_sharp(x);

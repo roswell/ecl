@@ -63,6 +63,8 @@ ECL 9.11.1:
 
  - LOG and LOG1P did not work properly with NaNs under linux.
 
+ - ECL had problems combining #. and #n=/#n# reader macros.
+
 * Sockets:
 
  - The socket option TCP_NODELAY option has been fixed: it was improperly using
