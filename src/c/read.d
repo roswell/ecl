@@ -1235,7 +1235,7 @@ static cl_object
 sharp_sharp_reader(cl_object in, cl_object c, cl_object d)
 {
 	const cl_env_ptr the_env = ecl_process_env();
-	cl_object pair;
+	cl_object pair, value;
 
 	if (read_suppress)
                 @(return Cnil)
