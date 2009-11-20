@@ -31,7 +31,7 @@ cl_symbol_function(cl_object sym)
 	int type = ecl_symbol_type(sym);
 	if (type & stp_special_form) {
 		output = @'special';
-	} else if (SYM_FUN(sym) == Cnil) {
+	} else if (Null(sym) || (SYM_FUN(sym) == Cnil)) {
 		FEundefined_function(sym);
 	} else if (type & stp_macro) {
 		output = CONS(@'si::macro', SYM_FUN(sym));
