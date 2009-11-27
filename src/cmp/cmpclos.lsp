@@ -79,7 +79,7 @@
     (cond ((and readers writers)
 	   (cmpwarn "When analyzing generic function ~A found both slot reader and writer methods"
 		    fname))
-	  ((not gf)
+	  ((not (or readers writers))
 	   nil)
 	  ((/= (length args) (length (clos::generic-function-spec-list gf)))
 	   (cmpwarn "Too many arguments for generic function ~A" fname)
