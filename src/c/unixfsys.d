@@ -49,13 +49,19 @@
 #include <errno.h>
 
 static int
-safe_chdir(const char *path)
+safe_chdir(const char *path, cl_object prefix)
 {
-	int output;
-	ecl_disable_interrupts();
-	output = chdir(path);
-	ecl_enable_interrupts();
-	return output;
+	if (prefix != Cnil) {
+		cl_object aux = make_constant_base_string(path);
+		aux = si_base_string_concatenate(2, prefix, aux);
+		return safe_chdir(aux->base_string.self, Cnil);
+	} else {
+		int output;
+		ecl_disable_interrupts();
+		output = chdir(path);
+		ecl_enable_interrupts();
+		return output;
+	}
 }
 
 static int
@@ -81,20 +87,29 @@ safe_lstat(const char *path, struct stat *sb)
 #endif
 
 #if defined(_MSC_VER) || defined(mingw32)
-static void
-change_drive(cl_object pathname)
+static cl_object
+drive_host_prefix(cl_object pathname)
 {
-	if (pathname->pathname.device != Cnil) {
-		char device[3] = {'\0', ':', '\0'};
-		device[0] = pathname->pathname.device->base_string.self[0];
-		if (safe_chdir(device) < 0) {
-			FElibc_error("Can't change the current drive to ~S",
-				     1, pathname->pathname.device);
-		}
+	cl_object device = pathname->pathname.device;
+	cl_object host = pathname->pathname.host;
+	cl_object output = Cnil;
+	if (device != Cnil) {
+		output = make_constant_base_string("X:");
+		output->base_string.self[0] = device->base_string.self[0];
 	}
+	if (host != Cnil) {
+		cl_object slash = make_constant_base_string("/");
+		if (output != Cnil)
+			output = si_base_string_concatenate(5, output, slash, slash,
+							    host, slash);
+		else
+			output = si_base_string_concatenate(4, slash, slash, host,
+							    slash);
+	}
+	return output;
 }
 #else
-#define change_drive(x) (void)0
+#define drive_host_prefix(x) Cnil
 #endif
 
 /*
@@ -244,7 +259,7 @@ cl_truename(cl_object orig_pathname)
 	 * the filesystem.
 	 */
 	CL_UNWIND_PROTECT_BEGIN(the_env) {
-		cl_object kind, filename;
+		cl_object kind, filename, prefix;
 	BEGIN:
 		filename = si_coerce_to_filename(pathname);
 		kind = file_kind((char*)filename->base_string.self, FALSE);
@@ -274,28 +289,35 @@ cl_truename(cl_object orig_pathname)
                         }
                         filename = OBJNULL;
 		}
-		change_drive(pathname);
+		prefix = drive_host_prefix(pathname);
 		for (dir = pathname->pathname.directory;
 		     !Null(dir);
-		     dir = CDR(dir))
+		     dir = ECL_CONS_CDR(dir))
 		{
-			volatile cl_object part = CAR(dir);
+			volatile cl_object part = ECL_CONS_CAR(dir);
 			if (type_of(part) == t_base_string) {
-				if (safe_chdir((char*)part->base_string.self) < 0) {
+				if (safe_chdir((char*)part->base_string.self, prefix) < 0) {
 ERROR:					FElibc_error("Can't change the current directory to ~S",
 						     1, pathname);
 				}
 			} else if (part == @':absolute') {
-				if (safe_chdir("/") < 0)
-					goto ERROR;
+				if (Null(prefix)) {
+					if (safe_chdir("/", prefix) < 0)
+						goto ERROR;
+				} else {
+					cl_object aux = make_constant_base_string("/");
+					prefix = si_base_string_concatenate(2, prefix, aux);
+					continue;
+				}
 			} else if (part == @':relative') {
 				/* Nothing to do */
 			} else if (part == @':up') {
-				if (safe_chdir("..") < 0)
+				if (safe_chdir("..", prefix) < 0)
 					goto ERROR;
 			} else {
 				FEerror("~S is not allowed in TRUENAME", 1, part);
 			}
+			prefix = Cnil;
 		}
 #ifdef HAVE_LSTAT
 		if (filename) {
@@ -323,7 +345,7 @@ ERROR:					FElibc_error("Can't change the current directory to ~S",
                                                        version);
                 }
 	} CL_UNWIND_PROTECT_EXIT {
-		safe_chdir((char*)previous->base_string.self);
+		safe_chdir((char*)previous->base_string.self, Cnil);
 	} CL_UNWIND_PROTECT_END;
 
 	@(return pathname)
@@ -656,7 +678,7 @@ string_match(const char *s, const char *p) {
  * by following the symlinks.
  */
 static cl_object
-list_current_directory(const char *mask, bool only_dir)
+list_current_directory(const char *mask, bool only_dir, cl_object prefix)
 {
 	cl_object out = Cnil;
 	char *text;
@@ -682,7 +704,13 @@ list_current_directory(const char *mask, bool only_dir)
 	ecl_disable_interrupts();
 	for (;;) {
 		if (hFind == NULL) {
-			hFind = FindFirstFile(".\\*", &fd);
+			const char *mask = ".\\*";
+			if (prefix != Cnil) {
+				cl_object aux = make_constant_base_string(mask);
+				prefix = si_base_string_concatenate(2, prefix, aux);
+				mask = (const char *)prefix->base_string.self;
+			}
+			hFind = FindFirstFile(mask, &fd);
 			if (hFind == INVALID_HANDLE_VALUE) {
 				out = Cnil;
 				goto OUTPUT;
@@ -756,7 +784,7 @@ dir_files(cl_object basedir, cl_object pathname)
 		return cl_list(1, basedir);
 	}
 	mask = ecl_make_pathname(Cnil, Cnil, Cnil, name, type, pathname->pathname.version);
-	all_files = list_current_directory(NULL, FALSE);
+	all_files = list_current_directory(NULL, FALSE, Cnil);
 	loop_for_in(all_files) {
 		cl_object new = CAR(all_files);
 		char *text = (char*)new->base_string.self;
@@ -794,7 +822,7 @@ dir_files(cl_object basedir, cl_object pathname)
  * list.
  */
 static cl_object
-dir_recursive(cl_object pathname, cl_object directory)
+dir_recursive(cl_object pathname, cl_object directory, cl_object prefix)
 {
 	cl_object item, next_dir, prev_dir = current_dir(), output = Cnil;
 
@@ -822,56 +850,64 @@ dir_recursive(cl_object pathname, cl_object directory)
 		 * enter & scan all subdirectories in our curent directory.
 		 */
 		next_dir = list_current_directory((item == @':wild')? "*" :
-						  (const char *)item->base_string.self, TRUE);
+						  (const char *)item->base_string.self,
+						  TRUE, prefix);
 		loop_for_in(next_dir) {
 			char *text = (char*)(CAR(next_dir)->base_string.self);
 			/* We are unable to move into this directory! */
-			if (safe_chdir(text) < 0)
+			if (safe_chdir(text, prefix) < 0)
 				continue;
-			item = dir_recursive(pathname, CDR(directory));
+			item = dir_recursive(pathname, CDR(directory), Cnil);
 			output = ecl_nconc(item, output);
-			safe_chdir((char*)prev_dir->base_string.self);
+			safe_chdir((char*)prev_dir->base_string.self, prefix);
 		} end_loop_for_in;
 	} else if (item == @':absolute') {
 		/*
 		 * 2.2) If CAR(DIRECTORY) is :ABSOLUTE, we have to scan the
 		 * root directory.
 		 */
-		if (safe_chdir("/") < 0)
+		if (safe_chdir("/", prefix) < 0)
 			return Cnil;
-		output = dir_recursive(pathname, CDR(directory));
-		safe_chdir((char*)prev_dir->base_string.self);
+		if (Null(prefix)) {
+			if (safe_chdir("/", Cnil) < 0)
+				return Cnil;
+		} else {
+			cl_object aux = make_constant_base_string("/");
+			prefix = si_base_string_concatenate(2, prefix, aux);
+		}
+		output = dir_recursive(pathname, CDR(directory), prefix);
+		safe_chdir((char*)prev_dir->base_string.self, Cnil);
 	} else if (item == @':relative') {
 		/*
 		 * 2.3) If CAR(DIRECTORY) is :RELATIVE, we have to scan the
 		 * current directory.
 		 */
-		output = dir_recursive(pathname, CDR(directory));
+		output = dir_recursive(pathname, CDR(directory), Cnil);
 	} else if (item == @':up') {
 		/*
 		 * 2.4) If CAR(DIRECTORY) is :UP, we have to scan the directory
 		 * which contains this one.
 		 */
-		if (safe_chdir("..") < 0)
+		if (safe_chdir("..", Cnil) < 0)
 			return Cnil;
-		output = dir_recursive(pathname, CDR(directory));
-		safe_chdir((char*)prev_dir->base_string.self);
+		output = dir_recursive(pathname, CDR(directory), Cnil);
+		safe_chdir((char*)prev_dir->base_string.self, Cnil);
 	} else if (item == @':wild-inferiors') {
 		/*
 		 * 2.5) If CAR(DIRECTORY) is :WILD-INFERIORS, we have to do
 		 * scan all subdirectories from _all_ levels, looking for a
 		 * tree that matches the remaining part of DIRECTORY.
 		 */
-		next_dir = list_current_directory("*", TRUE);
+		next_dir = list_current_directory("*", TRUE, prefix);
 		loop_for_in(next_dir) {
 			char *text = (char*)(CAR(next_dir)->base_string.self);
-			if (safe_chdir(text) < 0)
+			if (safe_chdir(text, prefix) < 0)
 				continue;
-			item = dir_recursive(pathname, directory);
+			item = dir_recursive(pathname, directory, Cnil);
 			output = ecl_nconc(item, output);
-			safe_chdir((char*)prev_dir->base_string.self);
+			safe_chdir((char*)prev_dir->base_string.self, Cnil);
 		} end_loop_for_in;
-		output = ecl_nconc(output, dir_recursive(pathname, CDR(directory)));
+		output = ecl_nconc(output, dir_recursive(pathname, CDR(directory), Cnil));
 	}
 	return output;
 }
@@ -883,11 +919,11 @@ dir_recursive(cl_object pathname, cl_object directory)
 	CL_UNWIND_PROTECT_BEGIN(the_env) {
 		prev_dir = current_dir();
 		mask = coerce_to_file_pathname(mask);
-		change_drive(mask);
-		output = dir_recursive(mask, mask->pathname.directory);
+		output = dir_recursive(mask, mask->pathname.directory,
+				       drive_host_prefix(mask));
 	} CL_UNWIND_PROTECT_EXIT {
 		if (prev_dir != Cnil)
-			safe_chdir((char*)prev_dir->base_string.self);
+			safe_chdir((char*)prev_dir->base_string.self, Cnil);
 	} CL_UNWIND_PROTECT_END;
 	@(return output)
 @)
@@ -967,7 +1003,7 @@ si_get_library_pathname(void)
 	namestring = ecl_namestring(directory,
                                     ECL_NAMESTRING_TRUNCATE_IF_ERROR |
                                     ECL_NAMESTRING_FORCE_BASE_STRING);
-	if (safe_chdir((char*)namestring->base_string.self) <0)
+	if (safe_chdir((char*)namestring->base_string.self, Cnil) < 0)
 		FElibc_error("Can't change the current directory to ~A",
 			     1, namestring);
 	if (change_d_p_d != Cnil)

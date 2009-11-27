@@ -15,6 +15,13 @@ ECL 9.11.1:
  - MULTIPLE-VALUE-BIND is optimally replaced with a LET form when the number
    of variables is 1.
 
+ - ECL now accepts Windows' UNC pathnames.
+    (with-open-file (s #P"//JUANJO-IMAC/Public Folder/index.html"
+                       :direction :input)
+      (loop for l = (read-line s nil nil)
+            while l
+            do (princ l)))
+
 * Bugs fixed:
 
  - In single-threaded builds, ECL did not properly restore the signal mask

@@ -552,38 +552,51 @@ ecl_parse_namestring(cl_object s, cl_index start, cl_index end, cl_index *ep,
 	 *	[[device:[//hostname]]/][directory-component/]*[pathname-name][.pathname-type]
 	 */
 	logical = FALSE;
+	/* We only parse a hostname when the device was present. This
+	 * requisite is a bit stupid and only applies to the Unix port,
+	 * where "//home/" is equivalent to "/home" However, in Windows
+	 * we need "//FOO/" to be separately handled, for it is a shared
+	 * resource.
+	 */
+#if defined(_MSC_VER) || defined(mingw32)
+	if ((start+1 <= end) && is_slash(ecl_char(s, start))) {
+		device = Cnil;
+		goto maybe_parse_host;
+	}
+#endif
 	device = parse_word(s, is_colon, WORD_INCLUDE_DELIM | WORD_EMPTY_IS_NIL |
 			    WORD_DISALLOW_SLASH, start, end, ep);
 	if (device == @':error' || device == Cnil) {
-		/* We only parse a hostname when the device was present. */
 		device = Cnil;
 		host = Cnil;
-	} else if (!ecl_stringp(device)) {
-		return Cnil;
-	} else {
-		/* Files have no effective device. */
-		if (@string-equal(2, device, @':file') == Ct)
-			device = Cnil;
-		start = *ep;
-		host = Cnil;
-		if ((start+2) <= end && is_slash(ecl_char(s, start)) &&
-		    is_slash(ecl_char(s, start+1)))
-		{
-			host = parse_word(s, is_slash, WORD_EMPTY_IS_NIL,
-					  start+2, end, ep);
-			if (host == @':error') {
-				host = Cnil;
-			} else if (host != Cnil) {
-				if (!ecl_stringp(host))
-					return Cnil;
-				start = *ep;
-				if (is_slash(ecl_char(s,--start)))
-					*ep = start;
-			}
-		}
-		if (ecl_length(device) == 0)
-			device = Cnil;
+		goto done_device_and_host;
 	}
+	if (!ecl_stringp(device)) {
+		return Cnil;
+	}
+ maybe_parse_host:
+	/* Files have no effective device. */
+	if (@string-equal(2, device, @':file') == Ct)
+		device = Cnil;
+	start = *ep;
+	host = Cnil;
+	if ((start+2) <= end && is_slash(ecl_char(s, start)) &&
+	    is_slash(ecl_char(s, start+1)))
+	{
+		host = parse_word(s, is_slash, WORD_EMPTY_IS_NIL,
+				  start+2, end, ep);
+		if (host == @':error') {
+			host = Cnil;
+		} else if (host != Cnil) {
+			if (!ecl_stringp(host))
+				return Cnil;
+			start = *ep;
+			if (is_slash(ecl_char(s,--start)))
+				*ep = start;
+		}
+	}
+	if (ecl_length(device) == 0)
+		device = Cnil;
  done_device_and_host:
 	path = parse_directories(s, 0, *ep, end, ep);
 	if (CONSP(path)) {
@@ -893,9 +906,11 @@ ecl_namestring(cl_object x, int flags)
 			writestr_stream(":", buffer);
 		}
 		if (host != Cnil) {
+#if !defined(_MSC_VER) && !defined(mingw32)
 			if (y == Cnil) {
 				writestr_stream("file:", buffer);
 			}
+#endif
 			writestr_stream("//", buffer);
 			si_do_write_sequence(host, buffer, MAKE_FIXNUM(0), Cnil);
 		}
