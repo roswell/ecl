@@ -532,7 +532,7 @@ handle_or_queue(cl_object signal_code, int code)
 	else {
                 errno = old_errno;
                 if (code) unblock_signal(code);
-		si_trap_fpe(Ct, Ct); /* Clear FPE exception flag */
+		si_trap_fpe(@'last', Ct); /* Clear FPE exception flag */
                 handle_signal_now(signal_code);
         }
 }
