@@ -94,7 +94,7 @@ drive_host_prefix(cl_object pathname)
 	cl_object host = pathname->pathname.host;
 	cl_object output = Cnil;
 	if (device != Cnil) {
-		output = make_constant_base_string("X:");
+		output = make_base_string_copy("X:");
 		output->base_string.self[0] = device->base_string.self[0];
 	}
 	if (host != Cnil) {
