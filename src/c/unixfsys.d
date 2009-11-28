@@ -361,8 +361,8 @@ ecl_backup_open(const char *filename, int option, int mode)
 
 	strcat(strcpy(backupfilename, filename), ".BAK");
 	ecl_disable_interrupts();
-#ifdef _MSC_VER
-	/* MSVC rename doesn't remove an existing file */
+#if defined(_MSC_VER) || defined(mingw32)
+	/* Windows' rename doesn't replace an existing file */
 	if (access(backupfilename, F_OK) == 0 && unlink(backupfilename)) {
 		ecl_enable_interrupts();
 		FElibc_error("Cannot remove the file ~S", 1, make_simple_base_string(backupfilename));
