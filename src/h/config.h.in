@@ -78,6 +78,14 @@
 # endif
 # define ECL_DYNAMIC_VV
 # include "@ECL_BOEHM_GC_HEADER@"
+/* GC >= 7.2 defines these macros to intercept thread functions, but
+ * in doing so it breaks mingw. */
+# if defined(mingw32) && defined(_beginthreadex)
+#  undef _beginthread
+#  undef _endthread
+#  undef _beginthreadex
+#  undef _endthreadex
+# end
 #endif
 
 /* Network streams							*/
