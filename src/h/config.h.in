@@ -85,7 +85,7 @@
 #  undef _endthread
 #  undef _beginthreadex
 #  undef _endthreadex
-# end
+# endif
 #endif
 
 /* Network streams							*/
