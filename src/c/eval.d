@@ -61,6 +61,7 @@ ecl_apply_from_stack_frame(cl_object frame, cl_object x)
 			return _ecl_standard_dispatch(frame, fun);
 		case ECL_USER_DISPATCH:
 			fun = fun->instance.slots[fun->instance.length - 1];
+                        break;
 		default:
 			FEinvalid_function(fun);
 		}
