@@ -278,7 +278,7 @@
 			     "Method qualifiers ~S are not allowed in the method~
 			      combination ~S." .method-qualifiers. ,name)))))
 	      ,@group-after
-	      (effective-method-function ,@body t))))
+	      (effective-method-function (progn ,@body) t))))
       )))
 
 (defmacro define-method-combination (name &body body)
