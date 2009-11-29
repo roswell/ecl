@@ -71,6 +71,9 @@ si_structure_subtype_p(cl_object x, cl_object y)
 	SLOTS(x) = NULL;	/* for GC sake */
 	SLENGTH(x) = --narg;
 	SLOTS(x) = (cl_object *)ecl_alloc_align(sizeof(cl_object)*narg, sizeof(cl_object));
+#ifdef CLOS
+        x->instance.sig = ECL_UNBOUND;
+#endif
 	if (narg >= ECL_SLOTS_LIMIT)
 		FEerror("Limit on structure size exceeded: ~S slots requested.",
 			1, MAKE_FIXNUM(narg));
@@ -97,6 +100,9 @@ ecl_copy_structure(cl_object x)
 	SLOTS(y) = NULL;	/* for GC sake */
 	SLOTS(y) = (cl_object *)ecl_alloc_align(size, sizeof(cl_object));
 	memcpy(SLOTS(y), SLOTS(x), size);
+#ifdef CLOS
+        y->instance.sig = x->instance.sig;
+#endif
 	@(return y)
 }
 #endif /* !CLOS */
