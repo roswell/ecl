@@ -680,8 +680,9 @@ struct ecl_codeblock {
 struct ecl_bytecodes {
 	HEADER;
 	cl_object name;		/*  function name  */
-	cl_objectfn entry;	/*  entry address  */
 	cl_object definition;	/*  function definition in list form  */
+	cl_objectfn entry;	/*  entry address (must match the position of
+                                 *  the equivalent field in cfun) */
 	cl_index code_size;	/*  number of bytecodes  */
 	cl_index data_size;	/*  number of constants  */
 	char *code;		/*  the intermediate language  */
@@ -710,7 +711,8 @@ struct ecl_cfunfixed {		/*  compiled function header  */
 	HEADER1(narg);
 	cl_object name;		/*  compiled function name  */
 	cl_object block;	/*  descriptor of C code block for GC  */
-	cl_objectfn entry;	/*  entry address  */
+	cl_objectfn entry;	/*  entry address (must match the position of
+                                 *  the equivalent field in cfun) */
 	cl_objectfn_fixed entry_fixed;	/*  entry address  */
 	cl_object file;		/*  file where it was defined...  */
 	cl_object file_position;/*  and where it was created  */
@@ -720,7 +722,8 @@ struct ecl_cclosure {		/*  compiled closure header  */
 	HEADER;
 	cl_object env;		/*  environment  */
 	cl_object block;	/*  descriptor of C code block for GC  */
-	cl_objectfn entry;	/*  entry address  */
+	cl_objectfn entry;	/*  entry address (must match the position of
+                                 *  the equivalent field in cfun) */
 	cl_object file;		/*  file where it was defined...  */
 	cl_object file_position;/*  and where it was created  */
 };
