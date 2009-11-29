@@ -82,7 +82,7 @@ static cl_fixnum option_values[ECL_OPT_LIMIT+1] = {
 	16*1024,	/* ECL_OPT_C_STACK_SAFETY_AREA */
 	1,		/* ECL_OPT_SIGALTSTACK_SIZE */
 #if ECL_FIXNUM_BITS <= 32
-	512*1024*1024, 	/* ECL_OPT_HEAP_SIZE */
+	1024*1024*1024, /* ECL_OPT_HEAP_SIZE */
 #else
 	4024*1024*1024, /* ECL_OPT_HEAP_SIZE */
 #endif
