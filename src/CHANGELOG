@@ -75,6 +75,8 @@ ECL 9.12.1:
  - FDEFINITION and SYMBOL-FUNCTION caused an incorrect error condition when
    acting on NIL.
 
+ - The optimizer for TYPEP did not work when passed three arguments.
+
 * Clos:
 
  - CLOS:SET-FUNCALLABLE-INSTANCE-FUNCTION broke the value if SI:INSTANCE-SIG,

@@ -154,7 +154,7 @@
 	  (t
 	   form))))
 
-(define-compiler-macro typep (&whole form object type &environment env)
+(define-compiler-macro typep (&whole form object type &optional e &environment env)
   (expand-typep form object type env))
 
 ;;;
