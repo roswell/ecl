@@ -131,32 +131,31 @@
 	 (discarded-slots '())
 	 (added-slots '())
 	 (property-list '()))
-    (unless (equal old-slotds new-slotds)
-      (setf instance (si::allocate-raw-instance instance class (class-size class)))
-      (si::instance-sig-set instance)
-      (let* ((new-i 0)
-	     (old-local-slotds (remove :instance old-slotds :test-not #'eq
-				       :key #'slot-definition-allocation))
-	     (new-local-slotds (remove :instance new-slotds :test-not #'eq
-				       :key #'slot-definition-allocation)))
-	(declare (fixnum new-i))
-	(setq discarded-slots
-	      (set-difference (mapcar #'slot-definition-name old-local-slotds)
-			      (mapcar #'slot-definition-name new-local-slotds)))
-	(dolist (slot-name discarded-slots)
-	  (let* ((ndx (position slot-name old-local-slotds :key #'slot-definition-name)))
-	    (push (cons slot-name (si::instance-ref old-instance ndx))
-		  property-list)))
-	(dolist (new-slot new-local-slotds)
-	  (let* ((name (slot-definition-name new-slot))
-		 (old-i (position name old-local-slotds :key #'slot-definition-name)))
-	    (if old-i
-		(si::instance-set instance new-i
-				  (si::instance-ref old-instance old-i))
-		(push name added-slots))
-	    (incf new-i))))
-      (update-instance-for-redefined-class instance added-slots
-					   discarded-slots property-list))))
+    (setf instance (si::allocate-raw-instance instance class (class-size class)))
+    (si::instance-sig-set instance)
+    (let* ((new-i 0)
+           (old-local-slotds (remove :instance old-slotds :test-not #'eq
+                                     :key #'slot-definition-allocation))
+           (new-local-slotds (remove :instance new-slotds :test-not #'eq
+                                     :key #'slot-definition-allocation)))
+      (declare (fixnum new-i))
+      (setq discarded-slots
+            (set-difference (mapcar #'slot-definition-name old-local-slotds)
+                            (mapcar #'slot-definition-name new-local-slotds)))
+      (dolist (slot-name discarded-slots)
+        (let* ((ndx (position slot-name old-local-slotds :key #'slot-definition-name)))
+          (push (cons slot-name (si::instance-ref old-instance ndx))
+                property-list)))
+      (dolist (new-slot new-local-slotds)
+        (let* ((name (slot-definition-name new-slot))
+               (old-i (position name old-local-slotds :key #'slot-definition-name)))
+          (if old-i
+              (si::instance-set instance new-i
+                                (si::instance-ref old-instance old-i))
+              (push name added-slots))
+          (incf new-i))))
+    (update-instance-for-redefined-class instance added-slots
+                                         discarded-slots property-list)))
 
 ;;; ----------------------------------------------------------------------
 ;;; CLASS REDEFINITION PROTOCOL

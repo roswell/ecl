@@ -82,6 +82,9 @@ ECL 9.12.1:
 
  - The optimized slot accessors check that the instances are up to date.
 
+ - The use of MAKE-INSTANCES-OBSOLETE now forces UPDATE-INSTANCE-FOR-REDEFINED-CLASS
+   to be invoked even if the slots did not change.
+
 * Sockets:
 
  - The socket option TCP_NODELAY option has been fixed: it was improperly using
