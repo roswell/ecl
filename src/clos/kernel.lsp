@@ -34,7 +34,6 @@
 	name)	
     (dolist (s slotds `(progn ,@output))
       (when (setf name (getf (cdr s) :accessor))
-	(remf (cdr s) :accessor)
 	(setf output
 	      (append output
 		      `((defun ,name (obj)
@@ -46,6 +45,11 @@
 			  `(si:instance-ref ,obj ,,i))
 			))))
       (incf i))))
+(defun remove-accessors (slotds)
+  (loop for i in slotds
+     for j = (copy-list i)
+     do (remf (cdr j) :accessor)
+     collect j))
 )
 
 ;;; ----------------------------------------------------------------------
@@ -69,7 +73,7 @@
       (sealedp :initarg :sealedp :initform nil :accessor class-sealedp)
       (prototype))))
 
-#.(create-accessors +class-slots+ 'class)
+;#.(create-accessors +class-slots+ 'class)
 
 ;;; ----------------------------------------------------------------------
 ;;; STANDARD-CLASS

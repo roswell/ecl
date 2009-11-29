@@ -25,7 +25,7 @@
   (:metaclass 'funcallable-standard-class))
 
 (defclass standard-generic-function (generic-function)
-  #.+standard-generic-function-slots+
+  #.(remove-accessors +standard-generic-function-slots+)
   (:metaclass 'funcallable-standard-class))
 
 ;;;----------------------------------------------------------------------
@@ -35,7 +35,7 @@
 (defclass method () ())
 
 (defclass standard-method (method)
-  #.+standard-method-slots+)
+  #.(remove-accessors +standard-method-slots+))
 
 
 (defun function-keywords (method)

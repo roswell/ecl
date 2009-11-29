@@ -75,8 +75,12 @@ ECL 9.12.1:
  - FDEFINITION and SYMBOL-FUNCTION caused an incorrect error condition when
    acting on NIL.
 
+* Clos:
+
  - CLOS:SET-FUNCALLABLE-INSTANCE-FUNCTION broke the value if SI:INSTANCE-SIG,
    preventing any further access to the instance slots.
+
+ - The optimized slot accessors check that the instances are up to date.
 
 * Sockets:
 

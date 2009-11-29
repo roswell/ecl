@@ -50,9 +50,9 @@
        (the-t (make-empty-standard-class 'T the-class))
        ;; It does not matter that we pass NIL instead of a class object,
        ;; because CANONICAL-SLOT-TO-DIRECT-SLOT will make simple slots.
-       (class-slots (loop for s in (parse-slots '#.+class-slots+)
+       (class-slots (loop for s in (parse-slots '#.(remove-accessors +class-slots+))
 			  collect (canonical-slot-to-direct-slot nil s)))
-       (standard-slots (loop for s in (parse-slots '#.+standard-class-slots+)
+       (standard-slots (loop for s in (parse-slots '#.(remove-accessors +standard-class-slots+))
 			     collect (canonical-slot-to-direct-slot nil s)))
        (hash-table (make-hash-table :size 24)))
 
