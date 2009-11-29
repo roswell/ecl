@@ -183,7 +183,8 @@
   gfun)
 
 (defmethod ensure-generic-function-using-class
-    ((gfun generic-function) name &rest args &key (method-class 'STANDARD-METHOD)
+    ((gfun generic-function) name &rest args &key
+     (method-class 'STANDARD-METHOD method-class-p)
      (generic-function-class (class-of gfun))
      (delete-methods nil))
   ;; modify the existing object
@@ -195,7 +196,7 @@
   ;; FIXME! We should check that the class GENERIC-FUNCTION-CLASS is compatible
   ;; with the old one. In what sense "compatible" is ment, I do not know!
   ;; (See ANSI DEFGENERIC entry)
-  (when (symbolp generic-function-class)
+  (when (and method-class-p (symbolp generic-function-class))
     (setf generic-function-class (find-class generic-function-class)))
   (unless (si::subclassp generic-function-class (find-class 'generic-function))
     (error "~A is not a valid :GENERIC-FUNCTION-CLASS argument for ENSURE-GENERIC-FUNCTION."
@@ -211,7 +212,8 @@
       (apply #'change-class gfun generic-function-class :name name args)))
 
 (defmethod ensure-generic-function-using-class
-    ((gfun null) name &rest args &key (method-class 'STANDARD-METHOD)
+    ((gfun null) name &rest args &key
+     (method-class 'STANDARD-METHOD method-class-p)
      (generic-function-class 'STANDARD-GENERIC-FUNCTION)
      (delete-methods nil))
   ;; else create a new generic function object
@@ -220,7 +222,7 @@
   (remf args :declare)
   (remf args :environment)
   (remf args :delete-methods)
-  (unless (classp method-class)
+  (when (and method-class-p (symbolp generic-function-class))
     (setf args (list* :method-class (find-class method-class) args)))
   (set-funcallable-instance-function
    (apply #'make-instance generic-function-class :name name args)
