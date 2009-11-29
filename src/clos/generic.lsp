@@ -196,17 +196,17 @@
   ;; FIXME! We should check that the class GENERIC-FUNCTION-CLASS is compatible
   ;; with the old one. In what sense "compatible" is ment, I do not know!
   ;; (See ANSI DEFGENERIC entry)
-  (when (and method-class-p (symbolp generic-function-class))
+  (when (symbolp generic-function-class)
     (setf generic-function-class (find-class generic-function-class)))
   (unless (si::subclassp generic-function-class (find-class 'generic-function))
     (error "~A is not a valid :GENERIC-FUNCTION-CLASS argument for ENSURE-GENERIC-FUNCTION."
 	   generic-function-class))
+  (when (and method-class-p (symbolp method-class))
+    (setf args (list* :method-class (find-class method-class) args)))
   (when delete-methods
     (dolist (m (copy-list (generic-function-methods gfun)))
       (when (getf (method-plist m) :method-from-defgeneric-p)
 	(remove-method gfun m))))
-  (unless (classp method-class)
-    (setf args (list* :method-class (find-class method-class) args)))
   (if (eq (class-of gfun) generic-function-class)
       (apply #'reinitialize-instance gfun :name name args)
       (apply #'change-class gfun generic-function-class :name name args)))
