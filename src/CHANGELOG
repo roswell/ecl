@@ -1,6 +1,16 @@
 ECL 9.12.1:
 ===========
 
+* Platform support:
+
+ - Support for Itanium.
+
+ - Support for Solaris and SunStudio compiler.
+
+ - Support for Microsoft Visual Studio C++ 10 beta.
+
+ - Support for Cygwin.
+
 * Visible changes:
 
  - New function EXT:ARRAY-RAW-DATA returns a non-adjustable vector of type
