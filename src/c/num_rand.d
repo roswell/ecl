@@ -127,36 +127,80 @@ generate_double(cl_object state)
 
 #endif
 
+#ifdef WITH_GMP
+static mp_limb_t
+generate_limb(cl_object state)
+{
+#if GMP_LIMB_BITS <= 32
+        return generate_int32(state);
+#else
+# if GMP_LIMB_BITS <= 64
+        mp_limb_t high = generate_int32(state);
+        return (high << 32) | generate_int32(state);
+# else
+#  if GMP_LIMB_BITS <= 128
+        mp_limb_t word0 = generate_int32(state);
+        mp_limb_t word1 = generate_int32(state);
+        mp_limb_t word2 = generate_int32(state);
+        mp_limb_t word3 = generate_int32(state);
+        return (word3 << 96) | (word3 << 64) | (word1 << 32) || word0;
+#  endif
+# endif
+#endif
+}
+#endif
+
+static cl_object
+random_integer(cl_object limit, cl_object state)
+{
+#ifdef WITH_GMP
+        cl_index bit_length = fix(cl_integer_length(limit));
+        cl_object buffer = ecl_ash(MAKE_FIXNUM(1), bit_length);
+        for (bit_length = buffer->big.big_size; bit_length--; ) {
+                buffer->big.big_limbs[bit_length] =
+                        generate_limb(state);
+        }
+        return cl_mod(buffer, limit);
+#else
+        return ecl_floor1(ecl_times(x, cl_rational(ecl_make_doublefloat(d))));
+#endif
+}
+
 static cl_object
 rando(cl_object x, cl_object rs)
 {
 	cl_object z;
-	double d = generate_double(rs->random.value);
  AGAIN:
 	if (!ecl_plusp(x)) {
 		goto ERROR;
 	}
 	switch (type_of(x)) {
 	case t_fixnum:
-		z = MAKE_FIXNUM((cl_fixnum)(fix(x) * d));
-		break;
+#if FIXNUM_BITS <= 32
+                z = MAKE_FIXNUM(generate_int32(rs->random.value) % fix(x));
+                break;
+#endif
 	case t_bignum:
-		z = ecl_floor1(ecl_times(x, cl_rational(ecl_make_doublefloat(d))));
+		z = random_integer(x, rs);
 		break;
 #ifdef ECL_SHORT_FLOAT
 	case t_shortfloat:
-		z = make_shortfloat(ecl_short_float(x) * (float)d);
+		z = make_shortfloat(ecl_short_float(x) *
+                                    (float)generate_double(rs->random.value));
 		break;
 #endif
 	case t_singlefloat:
-		z = ecl_make_singlefloat(sf(x) * (float)d);
+		z = ecl_make_singlefloat(sf(x) *
+                                         (float)generate_double(rs->random.value));
 		break;
 	case t_doublefloat:
-		z = ecl_make_doublefloat(df(x) * d);
+		z = ecl_make_doublefloat(df(x) *
+                                         generate_double(rs->random.value));
 		break;
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
-		z = ecl_make_longfloat(ecl_long_float(x) * (long double)d);
+		z = ecl_make_longfloat(ecl_long_float(x) *
+                                       (long double)generate_double(rs->random.value));
 		break;
 #endif
 	default:
