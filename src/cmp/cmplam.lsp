@@ -147,6 +147,19 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
   (handler-case (si::process-lambda-list list 'function)
     (error (c) (cmperr "Illegal lambda list ~S" list))))
 
+(defun extract-type-checks (type-checks type-declarations other-decls)
+  (flet ((required-type-check (name other-decls)
+	   (loop for decl in other-decls
+		 never (and (consp decl)
+			   (eq (first decl) 'si::no-check-type)
+			   (member name (rest decl))))))
+    (when (policy-automatic-check-type-p)
+      (loop for var in type-checks
+	    for name = (var-name var)
+	    for type = (cdr (assoc name type-declarations))
+	    when (and type (required-type-check name other-decls))
+	    collect `(optional-check-type ,name ,type)))))
+
 (defun c1lambda-expr (lambda-expr
                       &optional (block-name nil)
                       &aux doc body ss is ts
@@ -242,21 +255,11 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
       ;; (type (function (t t) t) foo)) We let OPTIONAL-CHECK-TYPE do the
       ;; job.
       ;;
-      (let* ((pairs (loop for var in type-checks
-		       nconc (let* ((name (var-name var))
-				    (type (assoc name ts)))
-			       (when type
-				 (loop for decl in other-decls
-				    unless (and (consp decl)
-						(eq (first decl) 'si::no-check-type)
-						(member name (rest decl)))
-				    do (return (list (list name (cdr type))))))))))
-	(when (and pairs (policy-automatic-check-type-p))
+      (let* ((checks (extract-type-checks type-checks ts other-decls)))
+	(when checks
 	  (cmpnote "In ~:[an anonymous function~;function ~:*~A~], checking types of argument~@[s~]~{ ~A~}."
-		   block-name
-		   (mapcar #'var-name type-checks))
-	  (loop for pair in (nreverse pairs)
-	     do (push `(optional-check-type ,@pair) body))))
+		   block-name (mapcar #'second checks))
+	  (setf body (nconc checks body))))
       (setq body
 	    (cond (aux-vars
 		   (let ((let nil))
