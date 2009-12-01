@@ -1,3 +1,10 @@
+ECL 9.12.2:
+===========
+
+* Bugs fixed:
+
+ - RANDOM broken on 64-bits architectures.
+
 ECL 9.12.1:
 ===========
 

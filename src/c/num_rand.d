@@ -155,7 +155,10 @@ random_integer(cl_object limit, cl_object state)
 {
 #ifdef WITH_GMP
         cl_index bit_length = fix(cl_integer_length(limit));
-        cl_object buffer = ecl_ash(MAKE_FIXNUM(1), bit_length);
+        cl_object buffer;
+        if (bit_length <= FIXNUM_BITS)
+                bit_length = FIXNUM_BITS;
+        buffer = ecl_ash(MAKE_FIXNUM(1), bit_length);
         for (bit_length = buffer->big.big_size; bit_length--; ) {
                 buffer->big.big_limbs[bit_length] =
                         generate_limb(state);
