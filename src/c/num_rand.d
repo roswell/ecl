@@ -159,8 +159,8 @@ random_integer(cl_object limit, cl_object state)
         if (bit_length <= FIXNUM_BITS)
                 bit_length = FIXNUM_BITS;
         buffer = ecl_ash(MAKE_FIXNUM(1), bit_length);
-        for (bit_length = buffer->big.big_size; bit_length--; ) {
-                buffer->big.big_limbs[bit_length] =
+        for (bit_length = mpz_size(buffer->big.big_num); bit_length; ) {
+                buffer->big.big_limbs[--bit_length] =
                         generate_limb(state);
         }
         return cl_mod(buffer, limit);
@@ -184,7 +184,7 @@ rando(cl_object x, cl_object rs)
                 break;
 #endif
 	case t_bignum:
-		z = random_integer(x, rs);
+		z = random_integer(x, rs->random.value);
 		break;
 #ifdef ECL_SHORT_FLOAT
 	case t_shortfloat:
