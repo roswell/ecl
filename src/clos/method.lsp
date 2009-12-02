@@ -119,7 +119,7 @@
 			     .next-methods.))
 		      ,@real-body)))))
 	(values
-	 `(ext::lambda-block ,generic-function-name
+	 `#'(ext::lambda-block ,generic-function-name
 	      ,lambda-list
 	      ,@(and class-declarations `((declare ,@class-declarations)))
 	      ,@real-body)

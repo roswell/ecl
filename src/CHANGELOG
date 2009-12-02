@@ -7,7 +7,9 @@ ECL 9.12.2:
 
 * Other changes:
 
-- Enlarged the string buffers used for reading and parsing lisp data.
+ - Methods now show up in the debugger with their original name.
+
+ - Enlarged the string buffers used for reading and parsing lisp data.
 
 ECL 9.12.1:
 ===========
