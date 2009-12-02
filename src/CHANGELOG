@@ -5,6 +5,8 @@ ECL 9.12.2:
 
  - RANDOM broken on 64-bits architectures.
 
+ - The debugger now shows the package names of inspected variables.
+
 * Other changes:
 
  - Methods now show up in the debugger with their original name.
