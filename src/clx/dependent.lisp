@@ -1347,10 +1347,7 @@
 
 #+ecl
 (defmacro without-interrupts (&body body)
-  #+threads
-  `(mp:without-interrupts ,@body)
-  #-threads
-  `(let ((ext:*interrupt-enable* nil)) ,@body))
+  `(mp:without-interrupts ,@body))
 
 #+sbcl
 (defvar *without-interrupts-sic-lock*
