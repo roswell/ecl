@@ -7,6 +7,8 @@ ECL 9.12.2:
 
  - The debugger now shows the package names of inspected variables.
 
+ - The code in CLX that dealt with interrupts had become outdated.
+
 * Other changes:
 
  - Methods now show up in the debugger with their original name.
