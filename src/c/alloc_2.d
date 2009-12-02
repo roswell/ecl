@@ -70,6 +70,8 @@ out_of_memory(size_t requested_bytes)
         int method = 0;
         if (!interrupts)
                 ecl_disable_interrupts_env(the_env);
+	/* Free the input / output buffers */
+	the_env->string_pool = Cnil;
 #ifdef ECL_THREADS
 	/* The out of memory condition may happen in more than one thread */
         /* But then we have to ensure the error has not been solved */

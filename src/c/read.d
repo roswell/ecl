@@ -82,6 +82,11 @@ si_put_buffer_string(cl_object string)
 			l = TOKEN_STRING_FILLP(ECL_CONS_CAR(pool));
 		}
 		if (l < ECL_MAX_STRING_POOL_SIZE) {
+			/* Ok, by ignoring the following code, here we
+			 * are doing like SBCL: we simply grow the
+			 * input buffer and do not care about its
+			 * size. */
+#if 0
 			if (TOKEN_STRING_DIM(string) > 32*ECL_BUFFER_STRING_SIZE) {
 				/* String has been enlarged. Cut it. */
 #ifdef ECL_UNICODE
@@ -90,6 +95,7 @@ si_put_buffer_string(cl_object string)
 				string = ecl_alloc_adjustable_base_string(ECL_BUFFER_STRING_SIZE);
 #endif
 			}
+#endif
 			TOKEN_STRING_FILLP(string) = l+1;
 			env->string_pool = CONS(string, pool);
 		}
