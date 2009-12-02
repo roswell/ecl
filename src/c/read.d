@@ -82,7 +82,7 @@ si_put_buffer_string(cl_object string)
 			l = TOKEN_STRING_FILLP(ECL_CONS_CAR(pool));
 		}
 		if (l < ECL_MAX_STRING_POOL_SIZE) {
-			if (TOKEN_STRING_DIM(string) > ECL_BUFFER_STRING_SIZE) {
+			if (TOKEN_STRING_DIM(string) > 32*ECL_BUFFER_STRING_SIZE) {
 				/* String has been enlarged. Cut it. */
 #ifdef ECL_UNICODE
 				string = ecl_alloc_adjustable_extended_string(ECL_BUFFER_STRING_SIZE);

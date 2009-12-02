@@ -5,6 +5,10 @@ ECL 9.12.2:
 
  - RANDOM broken on 64-bits architectures.
 
+* Other changes:
+
+- Enlarged the string buffers used for reading and parsing lisp data.
+
 ECL 9.12.1:
 ===========
 
