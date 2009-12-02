@@ -147,18 +147,28 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
   (handler-case (si::process-lambda-list list 'function)
     (error (c) (cmperr "Illegal lambda list ~S" list))))
 
-(defun extract-type-checks (type-checks type-declarations other-decls)
+(defun extract-type-checks (function-name type-checks type-declarations other-decls)
+  ;; We generate automatic type checks for function arguments that are
+  ;; declared. Note that not all type declarations can be checked
+  ;; (take for instance (type (function (t t) t) foo))
   (flet ((required-type-check (name other-decls)
 	   (loop for decl in other-decls
 		 never (and (consp decl)
 			   (eq (first decl) 'si::no-check-type)
 			   (member name (rest decl))))))
     (when (policy-automatic-check-type-p)
-      (loop for var in type-checks
+      (loop with checked-vars = '()
+	    for var in type-checks
 	    for name = (var-name var)
 	    for type = (cdr (assoc name type-declarations))
 	    when (and type (required-type-check name other-decls))
-	    collect `(optional-check-type ,name ,type)))))
+	    collect
+	    (progn (push name checked-vars)
+		   `(optional-check-type ,name ,type))
+	    finally
+	    (when checked-vars
+	      (cmpnote "In ~:[an anonymous function~;function ~:*~A~], checking types of argument~@[s~]~{ ~A~}."
+		       function-name checked-vars))))))
 
 (defun c1lambda-expr (lambda-expr
                       &optional (block-name nil)
@@ -231,6 +241,10 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 	      (third specs) init
 	      (fourth specs) flag)))
 
+    ;; Prepend optional checks for input arguments
+    (setf body (nconc (extract-type-checks block-name type-checks ts other-decls)
+		      body))
+
     ;; After creating all variables and processing the initalization
     ;; forms, we wil process the body. However, all free declarations,
     ;; that is declarations which do not refer to the function
@@ -239,27 +253,19 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
     (let* ((declarations other-decls)
 	   (new-variables (cmp-env-new-variables *cmp-env* old-env))
 	   (new-variable-names (mapcar #'var-name new-variables)))
+      ;; Gather declarations for &aux variables, either special...
       (when (setq ss (set-difference ss new-variable-names))
 	(push `(special ,@ss) declarations))
+      ;; ...ignorable...
       (when (setq is (loop for (var . expected-uses) in is
                         unless (member var new-variable-names)
                         collect var))
 	(push `(ignorable ,@is) declarations))
+      ;; ...or type declarations
       (loop for (var . type) in ts
 	    unless (member var new-variable-names)
 	    do (push `(type ,type ,var) declarations))
-      ;; We generate automatic type checks for function arguments that
-      ;; are declared These checks can be deactivated by appropriate
-      ;; safety settings which are checked by OPTIONAL-CHECK-TYPE. Note
-      ;; that not all type declarations can be checked (take for instance
-      ;; (type (function (t t) t) foo)) We let OPTIONAL-CHECK-TYPE do the
-      ;; job.
-      ;;
-      (let* ((checks (extract-type-checks type-checks ts other-decls)))
-	(when checks
-	  (cmpnote "In ~:[an anonymous function~;function ~:*~A~], checking types of argument~@[s~]~{ ~A~}."
-		   block-name (mapcar #'second checks))
-	  (setf body (nconc checks body))))
+      ;; ...and create the enclosing LET* form
       (setq body
 	    (cond (aux-vars
 		   (let ((let nil))
