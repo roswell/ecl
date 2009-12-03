@@ -333,13 +333,14 @@ ecl_log1p(cl_object x)
  AGAIN:
 	switch (type_of(x)) {
 	case t_fixnum:
-	case t_bignum:
 	case t_ratio: {
 		float f = number_to_float(x);
 		if (f < -1) goto COMPLEX;
 		output = ecl_make_singlefloat(log1pf(number_to_float(x)));
                 break;
 	}
+	case t_bignum:
+                return ecl_log1(ecl_one_plus(x));
 #ifdef ECL_SHORT_FLOAT
 	case t_shortfloat: {
 		float f = ecl_short_float(x);
