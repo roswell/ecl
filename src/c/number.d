@@ -17,6 +17,8 @@
 
 #define ECL_INCLUDE_MATH_H
 #include <ecl/ecl.h>
+#include <float.h>
+#include <limits.h>
 #include <signal.h>
 #ifdef HAVE_FENV_H
 # define _GNU_SOURCE
@@ -510,7 +512,6 @@ ecl_deliver_fpe(void)
 			condition = @'floating-point-inexact';
                 else
                         condition = @'arithmetic-error';
-                cl_print(1,condition);
                 feclearexcept(FE_ALL_EXCEPT);
 		cl_error(1, condition);
         }
@@ -724,8 +725,7 @@ ecl_to_long_double(cl_object x)
                 return (mpz_sgn(x->big.big_num) < 0) ? -output : output;
         }
 	case t_ratio:
-                return ecl_to_long_double(x->ratio.num) /
-                        ecl_to_long_double(x->ratio.den);
+                return ratio_to_long_double(x->ratio.num, x->ratio.den);
 #ifdef ECL_SHORT_FLOAT
 	case t_singlefloat:
 		return ecl_short_float(x);
@@ -742,39 +742,133 @@ ecl_to_long_double(cl_object x)
 }
 #endif
 
+#ifdef WITH_GMP
+static cl_object
+into_bignum(cl_object bignum, cl_object integer)
+{
+        if (FIXNUMP(integer)) {
+                mpz_set_si(bignum->big.big_num, fix(integer));
+        } else {
+                mpz_set(bignum->big.big_num, integer->big.big_num);
+        }
+        return bignum;
+}
+
+static cl_fixnum
+remove_zeros(cl_object *integer)
+{
+        cl_object buffer = into_bignum(_ecl_big_register0(), *integer);
+        unsigned long den_twos = mpz_scan1(buffer->big.big_num, 0);
+        if (den_twos < ULONG_MAX) {
+                mpz_div_2exp(buffer->big.big_num, buffer->big.big_num, den_twos);
+                *integer = _ecl_big_register_normalize(buffer);
+                return -den_twos;
+        } else {
+                _ecl_big_register_free(buffer);
+                return 0;
+        }
+}
+
+static cl_object
+prepare_ratio_to_float(cl_object num, cl_object den, int digits, cl_fixnum *scaleout)
+{
+        /* We have to cook our own routine because GMP does not round.
+         * The recipe is simple: we multiply the numberator by a large
+         * enough number so that the division by the denominator fits
+         * the floating point number. The result is scaled back by the
+         * appropriate exponent.
+         */
+        /* Scale down the denominator, eliminating the zeros
+         * so that we have smaller operands.
+         */
+        cl_fixnum scale = remove_zeros(&den);
+        cl_fixnum num_size, den_size, delta;
+        num_size = ecl_integer_length(num);
+        den_size = ecl_integer_length(den);
+        delta = den_size - num_size;
+        scale -= delta;
+        num = ecl_ash(num, digits + delta + 1);
+        do {
+                cl_object fraction = ecl_truncate2(num, den);
+                cl_object rem = VALUES(1);
+                cl_fixnum len = ecl_integer_length(fraction);
+                if ((len - digits) == 1) {
+                        if (ecl_oddp(fraction)) {
+                                cl_object one = ecl_minusp(num)?
+                                        MAKE_FIXNUM(-1) :
+                                        MAKE_FIXNUM(1);
+                                if (rem == MAKE_FIXNUM(0)) {
+                                        rem = cl_logand(2, fraction, MAKE_FIXNUM(2));
+                                        if (rem != MAKE_FIXNUM(0))
+                                                fraction = ecl_plus(fraction, one);
+                                } else {
+                                        fraction = ecl_plus(fraction, one);
+                                }
+                        }
+                        *scaleout = scale - (digits + 1);
+                        return fraction;
+                }
+                num = ecl_ash(num, -1);
+                scale++;
+                --delta;
+        } while (1);
+}
+#endif /* WITH_GMP */
+
+static float
+ratio_to_float(cl_object num, cl_object den)
+{
+#ifdef WITH_GMP
+        cl_fixnum scale;
+        cl_object bits = prepare_ratio_to_float(num, den, FLT_MANT_DIG, &scale);
+        float output = ecl_to_double(bits);
+        return ldexpf(output, scale);
+#else
+        return (float)(FIXNUMP(num) ? fix(num) : num->big.big_num) /
+                (float)(FIXNUMP(den) ? fix(den) : den->big.big_num);
+#endif
+}
+
+static double
+ratio_to_double(cl_object num, cl_object den)
+{
+#ifdef WITH_GMP
+        cl_fixnum scale;
+        cl_object bits = prepare_ratio_to_float(num, den, DBL_MANT_DIG, &scale);
+        double output = ecl_to_double(bits);
+        return ldexp(output, scale);
+#else
+        return (double)(FIXNUMP(num) ? fix(num) : num->big.big_num) /
+                (double)(FIXNUMP(den) ? fix(den) : den->big.big_num);
+#endif
+}
+
+#ifdef ECL_LONG_DOUBLE
+static long double
+ratio_to_long_double(cl_object num, cl_object den)
+{
+#ifdef WITH_GMP
+        cl_fixnum scale;
+        cl_object bits = prepare_ratio_to_float(num, den, LDBL_MANT_DIG, &scale);
+        long double output = ecl_to_lon_double(bits);
+        return ldexpl(output, scale);
+#else
+        return (long double)(FIXNUMP(num) ? fix(num) : num->big.big_num) /
+                (long double)(FIXNUMP(den) ? fix(den) : den->big.big_num);
+#endif
+}
+#endif /* ECL_LONG_DOUBLE */
+
 double
 ecl_to_double(cl_object x)
 {
 	switch(type_of(x)) {
 	case t_fixnum:
 		return((double)(fix(x)));
-
 	case t_bignum:
-		return(_ecl_big_to_double(x));
-
-	case t_ratio: {
-#ifdef WITH_GMP
-		double output;
-                mpq_t aux;
-		mpq_init(aux);
-		if (FIXNUMP(x->ratio.num)) {
-			mpz_set_si(mpq_numref(aux), fix(x->ratio.num));
-		} else {
-			mpz_set(mpq_numref(aux), x->ratio.num->big.big_num);
-		}
-		if (FIXNUMP(x->ratio.den)) {
-			mpz_set_si(mpq_denref(aux), fix(x->ratio.den));
-		} else {
-			mpz_set(mpq_denref(aux), x->ratio.den->big.big_num);
-		}
-		output = mpq_get_d(aux);
-		mpq_clear(aux);
-		return output;
-#else  /* WITH_GMP */
-                return (double)(FIXNUMP(x->ratio.num) ? fix(x->ratio.num) : x->ratio.num->big.big_num) /
-                     (double)(FIXNUMP(x->ratio.den) ? fix(x->ratio.den) : x->ratio.den->big.big_num);
-#endif /* WITH_GMP */
-	}
+		return _ecl_big_to_double(x);
+	case t_ratio:
+                return ratio_to_double(x->ratio.num, x->ratio.den);
 #ifdef ECL_SHORT_FLOAT
 	case t_singlefloat:
 		return ecl_short_float(x);

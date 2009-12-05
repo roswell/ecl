@@ -154,7 +154,7 @@ static cl_object
 random_integer(cl_object limit, cl_object state)
 {
 #ifdef WITH_GMP
-        cl_index bit_length = fix(cl_integer_length(limit));
+        cl_index bit_length = ecl_integer_length(limit);
         cl_object buffer;
         if (bit_length <= FIXNUM_BITS)
                 bit_length = FIXNUM_BITS;

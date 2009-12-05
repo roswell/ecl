@@ -264,7 +264,7 @@ ecl_log1(cl_object x)
                 break;
 	}
         case t_bignum: {
-                cl_fixnum l = fix(cl_integer_length(x)) - 1;
+                cl_fixnum l = ecl_integer_length(x) - 1;
                 cl_object r = ecl_make_ratio(x, ecl_ash(MAKE_FIXNUM(1), l));
                 float d = logf(number_to_float(r)) + l * logf(2.0);
 		if (d < 0) goto COMPLEX;

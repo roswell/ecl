@@ -1,3 +1,11 @@
+ECL 9.12.3:
+===========
+
+* Visible changes:
+
+ - When converting rationals to floats, ECL now rounds instead of using the
+   routine in GMP, which truncates.
+
 ECL 9.12.2:
 ===========
 

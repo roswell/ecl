@@ -657,8 +657,8 @@ cl_logcount(cl_object x)
 	@(return MAKE_FIXNUM(count_bits(x)))
 }
 
-cl_object
-cl_integer_length(cl_object x)
+cl_index
+ecl_integer_length(cl_object x)
 {
 	int count;
 	cl_fixnum i;
@@ -684,7 +684,13 @@ cl_integer_length(cl_object x)
 	default:
 		FEtype_error_integer(x);
 	}
-	@(return MAKE_FIXNUM(count))
+	return count;
+}
+
+cl_object
+cl_integer_length(cl_object x)
+{
+	@(return MAKE_FIXNUM(ecl_integer_length(x)))
 }
 
 cl_object
