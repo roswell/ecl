@@ -235,7 +235,6 @@ ecl_log1_complex(cl_object r, cl_object i)
 		 */
 		a = ecl_times(a, a);
 		a = ecl_divide(ecl_log1(ecl_plus(a, a)), MAKE_FIXNUM(2));
-		p = MAKE_FIXNUM(0);
 		goto OUTPUT;
 	}
 	/* For the real part of the output we use the formula
@@ -244,8 +243,8 @@ ecl_log1_complex(cl_object r, cl_object i)
 	a = ecl_divide(a, p);
 	a = ecl_plus(ecl_divide(ecl_log1p(ecl_times(a,a)), MAKE_FIXNUM(2)),
 		     ecl_log1(p));
-	p = ecl_atan2(i, r);
  OUTPUT:
+	p = ecl_atan2(i, r);
 	return ecl_make_complex(a, p);
 }
 
@@ -264,11 +263,14 @@ ecl_log1(cl_object x)
                 break;
 	}
         case t_bignum: {
-                cl_fixnum l = ecl_integer_length(x) - 1;
-                cl_object r = ecl_make_ratio(x, ecl_ash(MAKE_FIXNUM(1), l));
-                float d = logf(number_to_float(r)) + l * logf(2.0);
-		if (d < 0) goto COMPLEX;
-                output = ecl_make_singlefloat(d);
+                if (ecl_minusp(x)) {
+                        goto COMPLEX;
+                } else {
+                        cl_fixnum l = ecl_integer_length(x) - 1;
+                        cl_object r = ecl_make_ratio(x, ecl_ash(MAKE_FIXNUM(1), l));
+                        float d = logf(number_to_float(r)) + l * logf(2.0);
+                        output = ecl_make_singlefloat(d);
+                }
                 break;
         }
 #ifdef ECL_SHORT_FLOAT
