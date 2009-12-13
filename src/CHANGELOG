@@ -6,6 +6,10 @@ ECL 9.12.3:
  - When converting rationals to floats, ECL now rounds instead of using the
    routine in GMP, which truncates.
 
+ - LOAD open streams in buffered mode. It does not cause any significant
+   performance increase except in broken network filesystems that lack
+   buffering such as some implementations of NFS.
+
 ECL 9.12.2:
 ===========
 

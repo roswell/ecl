@@ -464,7 +464,8 @@ si_load_source(cl_object source, cl_object verbose, cl_object print)
 		strm = source;
 	} else {
 		strm = ecl_open_stream(source, smm_input, Cnil, Cnil, 8,
-				       ECL_STREAM_DEFAULT_FORMAT, Cnil);
+				       ECL_STREAM_DEFAULT_FORMAT | ECL_STREAM_C_STREAM,
+                                       Cnil);
 		if (Null(strm))
 			@(return Cnil)
 	}
