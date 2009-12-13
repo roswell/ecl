@@ -707,41 +707,6 @@ ecl_make_complex(cl_object r, cl_object i)
 	return(c);
 }
 
-#ifdef ECL_LONG_FLOAT
-long double
-ecl_to_long_double(cl_object x)
-{
-	switch(type_of(x)) {
-	case t_fixnum:
-		return (long double)fix(x);
-	case t_bignum: {
-                long double output = 0;
-                int i, l = mpz_size(x->big.big_num), exp = 0;
-                for (i = 0; i < l; i++) {
-                        output += mpz_getlimbn(x->big.big_num, i);
-                        output = ldexpl(output, -GMP_LIMB_BITS);
-                }
-                output = ldexpl(output, l * GMP_LIMB_BITS);
-                return (mpz_sgn(x->big.big_num) < 0) ? -output : output;
-        }
-	case t_ratio:
-                return ratio_to_long_double(x->ratio.num, x->ratio.den);
-#ifdef ECL_SHORT_FLOAT
-	case t_singlefloat:
-		return ecl_short_float(x);
-#endif
-	case t_singlefloat:
-		return (long double)sf(x);
-	case t_doublefloat:
-		return (long double)df(x);
-	case t_longfloat:
-		return ecl_long_float(x);
-	default:
-		FEtype_error_real(x);
-	}
-}
-#endif
-
 #ifdef WITH_GMP
 static cl_object
 into_bignum(cl_object bignum, cl_object integer)
@@ -885,6 +850,41 @@ ecl_to_double(cl_object x)
 		FEtype_error_real(x);
 	}
 }
+
+#ifdef ECL_LONG_FLOAT
+long double
+ecl_to_long_double(cl_object x)
+{
+	switch(type_of(x)) {
+	case t_fixnum:
+		return (long double)fix(x);
+	case t_bignum: {
+                long double output = 0;
+                int i, l = mpz_size(x->big.big_num), exp = 0;
+                for (i = 0; i < l; i++) {
+                        output += mpz_getlimbn(x->big.big_num, i);
+                        output = ldexpl(output, -GMP_LIMB_BITS);
+                }
+                output = ldexpl(output, l * GMP_LIMB_BITS);
+                return (mpz_sgn(x->big.big_num) < 0) ? -output : output;
+        }
+	case t_ratio:
+                return ratio_to_long_double(x->ratio.num, x->ratio.den);
+#ifdef ECL_SHORT_FLOAT
+	case t_singlefloat:
+		return ecl_short_float(x);
+#endif
+	case t_singlefloat:
+		return (long double)sf(x);
+	case t_doublefloat:
+		return (long double)df(x);
+	case t_longfloat:
+		return ecl_long_float(x);
+	default:
+		FEtype_error_real(x);
+	}
+}
+#endif
 
 cl_object
 cl_rational(cl_object x)
