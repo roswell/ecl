@@ -808,7 +808,7 @@ ratio_to_double(cl_object num, cl_object den)
 #endif
 }
 
-#ifdef ECL_LONG_DOUBLE
+#ifdef ECL_LONG_FLOAT
 static long double
 ratio_to_long_double(cl_object num, cl_object den)
 {
@@ -822,7 +822,7 @@ ratio_to_long_double(cl_object num, cl_object den)
                 (long double)(FIXNUMP(den) ? fix(den) : den->big.big_num);
 #endif
 }
-#endif /* ECL_LONG_DOUBLE */
+#endif /* ECL_LONG_FLOAT */
 
 double
 ecl_to_double(cl_object x)
