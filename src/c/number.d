@@ -815,7 +815,7 @@ ratio_to_long_double(cl_object num, cl_object den)
 #ifdef WITH_GMP
         cl_fixnum scale;
         cl_object bits = prepare_ratio_to_float(num, den, LDBL_MANT_DIG, &scale);
-        long double output = ecl_to_lon_double(bits);
+        long double output = ecl_to_long_double(bits);
         return ldexpl(output, scale);
 #else
         return (long double)(FIXNUMP(num) ? fix(num) : num->big.big_num) /
