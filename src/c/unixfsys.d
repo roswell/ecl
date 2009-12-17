@@ -746,9 +746,9 @@ list_current_directory(const char *mask, bool only_dir, cl_object prefix)
 		    (text[1] == '\0' ||
 		     (text[1] == '.' && text[2] == '\0')))
 			continue;
-		if (only_dir && file_kind(text, TRUE) != @':directory')
-			continue;
 		if (mask && !string_match(text, mask))
+			continue;
+		if (only_dir && file_kind(text, TRUE) != @':directory')
 			continue;
 		out = ecl_cons(make_base_string_copy(text), out);
 	}

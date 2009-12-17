@@ -1,3 +1,10 @@
+ECL 9.12.4:
+===========
+
+* Bugs fixed:
+
+ - DIRECTORY used stat() also on files that did not match the directory masks.
+
 ECL 9.12.3:
 ===========
 
