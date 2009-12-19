@@ -1227,18 +1227,22 @@ cl_host_namestring(cl_object pname)
 
 /* --------------- PATHNAME MATCHING ------------------ */
 
-static bool path_item_match(cl_object a, cl_object mask);
-
-static bool
-do_path_item_match(cl_object s, cl_index j, cl_object p, cl_index i)
+/*
+ * Take two C strings and check if the first (s) one matches against
+ * the pattern given by the second one (p). The pattern is that of a
+ * Unix shell except for brackets and curly braces
+ */
+bool
+ecl_string_match(cl_object s, cl_index j, cl_index ls,
+                 cl_object p, cl_index i, cl_index lp)
 {
-	cl_index ls = ecl_length(s), lp = ecl_length(p);
 	while (i < lp) {
 		cl_index cp = ecl_char(p, i);
-		if (cp == '*') {
-			/* An asterisk in the patter matches any number
-			 * of characters. We try the shortest sequence
-			 * that matches. */
+                switch (cp) {
+                case '*': {
+			/* An asterisk in the pattern matches any
+			 * number of characters. We try the shortest
+			 * sequence that matches. */
 			cl_index cn = 0, next;
 			for (next = i+1;
 			     next < lp && ((cn = ecl_char(p, next)) == '*');
@@ -1248,20 +1252,33 @@ do_path_item_match(cl_object s, cl_index j, cl_object p, cl_index i)
 				return TRUE;
 			}
 			while (j < ls) {
-				if (do_path_item_match(s, j, p, next)) {
+				if (ecl_string_match(s, j, ls, p, next, lp)) {
 					return TRUE;
 				}
 				j++;
 			}
 			return FALSE;
+                        break;
 		}
-		if ((j >= ls) || (cp != ecl_char(s, j))) {
-			/* Either there are no characters left in "s"
-			 * or the next character does not match. */
-			return FALSE;
-		}
-		i++; j++;
+                case '?':
+                        /* Match any character */
+                        if (j > ls) return FALSE;
+                        i++; j++;
+                        break;
+                case '\\':
+                        /* Interpret a pattern character literally.
+                           Trailing slash is interpreted as a slash. */
+                        if (++i >= lp) i--;
+                default:
+                        if ((j >= ls) || (cp != ecl_char(s, j))) {
+                                /* Either there are no characters left in "s"
+                                 * or the next character does not match. */
+                                return FALSE;
+                        }
+                        i++; j++;
+                }
 	}
+        /* At the end all characters should have been matched */
 	return (j >= ls);
 }
 
@@ -1275,7 +1292,8 @@ path_item_match(cl_object a, cl_object mask) {
 		return (a == mask);
 	if (!ecl_stringp(mask))
 		FEerror("~S is not supported as mask for pathname-match-p", 1, mask);
-	return do_path_item_match(a, 0, mask, 0);
+	return ecl_string_match(a, 0, ecl_length(a),
+                                mask, 0, ecl_length(mask));
 }
 
 static bool

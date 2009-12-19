@@ -5,6 +5,10 @@ ECL 9.12.4:
 
  - DIRECTORY used stat() also on files that did not match the directory masks.
 
+ - The syntax for matching strings in DIRECTORY is now the same as in
+   PATHNAME-MATCH-P. Formerly there were small differences, the forming
+   understanding characters #\? and #\\
+
 ECL 9.12.3:
 ===========
 

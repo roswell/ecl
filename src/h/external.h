@@ -1265,6 +1265,8 @@ extern ECL_API void ecl_unuse_package(cl_object x0, cl_object p);
 
 /* pathname.c */
 
+extern ECL_API bool ecl_string_match(cl_object s, cl_index j, cl_index ls, cl_object p, cl_index i, cl_index lp);
+
 extern ECL_API cl_object cl_pathname(cl_object name);
 extern ECL_API cl_object cl_logical_pathname(cl_object pname);
 extern ECL_API cl_object cl_pathnamep(cl_object pname);
