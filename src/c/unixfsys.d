@@ -621,54 +621,13 @@ ecl_homedir_pathname(cl_object user)
 	@(return ecl_homedir_pathname(Cnil));
 @)
 
-/*
- * Take two C strings and check if the first one matches
- * against the pattern given by the second one. The pattern
- * is that of a Unix shell except for brackets and curly
- * braces
- */
 static bool
-string_match(const char *s, const char *p) {
-	const char *next;
-	while (*s) {
-	  switch (*p) {
-	  case '*':
-	    /* Match any group of characters */
-	    next = p+1;
-	    if (*next != '?') {
-	      if (*next == '\\')
-		next++;
-	      while (*s && *s != *next) s++;
-	    }
-	    if (string_match(s,next))
-	      return TRUE;
-	    /* starts back from the '*' */
-	    if (!*s)
-	      return FALSE;
-	    s++;
-	    break;
-	  case '?':
-	    /* Match any character */
-	    s++, p++;
-	    break;
-	  case '\\':
-      /* Interpret a pattern character literally.
-         Trailing slash is interpreted as a slash. */
-	    if (p[1]) p++;
-	    if (*s != *p)
-	      return FALSE;
-	    s++, p++;
-	    break;
-	  default:
-	    if (*s != *p)
-	      return FALSE;
-	    s++, p++;
-	    break;
-	  }
-	}
-	while (*p == '*')
-	  p++;
-	return (*p == 0);
+string_match(const char *s, const char *p)
+{
+        cl_index ls = strlen(s), lp = strlen(p);
+        ecl_def_ct_base_string(strng, s, ls, /*auto*/, const);
+        ecl_def_ct_base_string(pattern, p, lp, /*auto*/, const);
+        return ecl_string_match(strng, 0, ls, pattern, 0, lp);
 }
 
 /*
@@ -783,13 +742,12 @@ dir_files(cl_object basedir, cl_object pathname)
 	if (name == Cnil && type == Cnil) {
 		return cl_list(1, basedir);
 	}
-	mask = ecl_make_pathname(Cnil, Cnil, Cnil, name, type, pathname->pathname.version);
+	mask = ecl_make_pathname(Cnil, Cnil, Cnil, name, type,
+                                 pathname->pathname.version);
 	all_files = list_current_directory(NULL, FALSE, Cnil);
 	loop_for_in(all_files) {
 		cl_object new = CAR(all_files);
 		char *text = (char*)new->base_string.self;
-		if (file_kind(text, TRUE) == @':directory')
-			continue;
 		if (ecl_stringp(new) && ecl_member_char(':', new)) {
 			/* File names are allowed to have ':', but ECL
 			 * interprets colons as separators for device names
@@ -804,6 +762,9 @@ dir_files(cl_object basedir, cl_object pathname)
 		new->pathname.host = basedir->pathname.host;
 		new->pathname.device = basedir->pathname.device;
 		new->pathname.directory = basedir->pathname.directory;
+		if (file_kind(text, TRUE) == @':directory') {
+			continue;
+                }
 #ifdef HAVE_LSTAT
 		/* Resolve symbolic links */
 		if (file_kind(text, FALSE) == @':link') {
