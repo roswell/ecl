@@ -46,6 +46,7 @@ SUBDIRS = @SUBDIRS@
 LIBRARIES = @LIBRARIES@
 LSP_LIBRARIES = @LSP_LIBRARIES@
 TARGETS = @TARGETS@
+ECL_CMPDIR = @ECL_CMPDIR@
 
 all:	$(TARGETS) bin/ecl-config
 .PHONY:	all
@@ -84,10 +85,10 @@ ecl_min$(EXE): $(LIBRARIES) .gdbinit @LIBPREFIX@eclmin.@LIBEXT@
 
 lsp/config.lsp: lsp/config.pre
 	sed -e 's,@ecldir\\@,$(ecldir),g' < lsp/config.pre > lsp/config.lsp
-cmp/cmpdefs.lsp: cmp/cmpdefs.pre
+$(ECL_CMPDIR)/cmpdefs.lsp: $(ECL_CMPDIR)/cmpdefs.pre
 	sed -e 's,@ecldir\\@,"$(ecldir)",g' \
 	    -e 's,@libdir\\@,"$(libdir)",g' \
-	    -e 's,@includedir\\@,"$(includedir)",g' < cmp/cmpdefs.pre > $@
+	    -e 's,@includedir\\@,"$(includedir)",g' < $(ECL_CMPDIR)/cmpdefs.pre > $@
 compile.lsp: compile.pre
 	sed -e 's,@ecldir\\@,$(ecldir),g' \
 	    -e 's,@libdir\\@,$(libdir),g' < compile.pre > compile.lsp
@@ -96,7 +97,7 @@ bin/ecl-config: bin/ecl-config.pre
 	    -e 's,@includedir\\@,$(includedir),' bin/ecl-config.pre > bin/ecl-config
 
 
-@LIBPREFIX@eclmin.@LIBEXT@: @LIBPREFIX@eclgmp.@LIBEXT@ @LIBPREFIX@eclgc.@LIBEXT@ lsp/config.lsp cmp/cmpdefs.lsp ecl/external.h
+@LIBPREFIX@eclmin.@LIBEXT@: @LIBPREFIX@eclgmp.@LIBEXT@ @LIBPREFIX@eclgc.@LIBEXT@ lsp/config.lsp $(ECL_CMPDIR)/cmpdefs.lsp ecl/external.h
 	cd c; $(MAKE)
 @LIBPREFIX@eclgc.@LIBEXT@:
 	test -d ecl/gc || mkdir ecl/gc
@@ -113,7 +114,7 @@ bin/ecl-config: bin/ecl-config.pre
 	  mv ./@LIBPREFIX@gmp.@LIBEXT@ ./@LIBPREFIX@eclgmp.@LIBEXT@; \
 	fi
 sysfun.lsp:
-	$(LN_S) $(srcdir)/cmp/sysfun.lsp ./
+	$(LN_S) $(srcdir)/$(ECL_CMPDIR)/sysfun.lsp ./
 
 rt.lisp:
 	cp $(srcdir)/../contrib/rt/rt.lisp ./

@@ -67,7 +67,7 @@
 (princ #+(or cross ecl-min) ";;; About to load cmp/load.lsp"
        #-(or cross ecl-min) ";;; About to load cmp.so")
 
-(load #+(or cross ecl-min) "cmp/load.lsp"
+(load #+(or cross ecl-min) "@ECL_CMPDIR@/load.lsp"
       #-(or cross ecl-min) "cmp.so")
 
 ;;;

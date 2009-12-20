@@ -258,6 +258,11 @@ AC_ARG_WITH(profile-cflags,
                   [(yes,no,actual flags,default=NO)]),
   [],[with_profile_cflags="no"])
 
+AC_ARG_WITH(newcmp,
+  AS_HELP_STRING( [--with-newcmp],
+                  [new compiler (yes|no, default=NO)]),
+  [], [with_newcmp=no])
+
 dnl -----------------------------------------------------------------------
 dnl Installation directories
 ecldir="${libdir}/ecl-${PACKAGE_VERSION}"
@@ -422,6 +427,15 @@ if test "$with_profile_cflags" != "no"; then
   CXXFLAGS="$with_profile_cflags $CFLAGS"
   LDFLAGS="$with_profile_cflags $LDFLAGS"
 fi
+
+dnl ----------------------------------------------------------------------
+dnl Version of the compiler
+if test "${with_newcmp}" = "yes"; then
+  ECL_CMPDIR=new-cmp
+else
+  ECL_CMPDIR=cmp
+fi
+AC_SUBST(ECL_CMPDIR)
 
 dnl ----------------------------------------------------------------------
 dnl Native thread support
@@ -847,11 +861,12 @@ case "${enable_boehm}" in
 esac
 
 AC_CONFIG_FILES([
-  bare.lsp lsp/load.lsp clos/load.lsp cmp/load.lsp
+  bare.lsp lsp/load.lsp clos/load.lsp cmp/load.lsp new-cmp/load.lsp
   ../Makefile Makefile c/Makefile doc/Makefile doc/ecl.man doc/ecl-config.man
   ecl/configpre.h:h/config.h.in bin/ecl-config.pre:util/ecl-config
   lsp/config.pre:lsp/config.lsp.in compile.pre:compile.lsp.in
   cmp/cmpdefs.pre:cmp/cmpdefs.lsp
+  new-cmp/cmpdefs.pre:new-cmp/cmpdefs.lsp
  ])
 AC_CONFIG_HEADERS([ecl/config.h:ecl/configpre.h]) # FIXME
 AC_OUTPUT

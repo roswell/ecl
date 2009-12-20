@@ -1,0 +1,48 @@
+;;; @configure_input@
+
+(defconstant +cmp-module-files+
+'("build:new-cmp;cmpdefs.lsp"
+  "src:new-cmp;cmpmac.lsp"
+  "src:new-cmp;cmpinline.lsp"
+  "src:new-cmp;cmputil.lsp"
+  "src:new-cmp;cmptype.lsp"
+  "src:new-cmp;cmpbind.lsp"
+  "src:new-cmp;cmptables.lsp"
+  "src:new-cmp;cmptranslate.lsp"
+  "src:new-cmp;cmpbackend.lsp"
+  "src:new-cmp;cmpblock.lsp"
+  "src:new-cmp;cmpcall.lsp"
+  "src:new-cmp;cmpcatch.lsp"
+  "src:new-cmp;cmpenv.lsp"
+  "src:new-cmp;cmpeval.lsp"
+  "src:new-cmp;cmpexit.lsp"
+  "src:new-cmp;cmpflet.lsp"
+  "src:new-cmp;cmpfun.lsp"
+  "src:new-cmp;cmpif.lsp"
+  "src:new-cmp;cmplam.lsp"
+  "src:new-cmp;cmplet.lsp"
+  "src:new-cmp;cmploc.lsp"
+  "src:new-cmp;cmpmap.lsp"
+  "src:new-cmp;cmpstack.lsp"
+  "src:new-cmp;cmpmulti.lsp"
+  "src:new-cmp;cmpspecial.lsp"
+  "src:new-cmp;cmptag.lsp"
+  "src:new-cmp;cmptop.lsp"
+  "src:new-cmp;cmpvar.lsp"
+  "src:new-cmp;cmpwt.lsp"
+  "src:new-cmp;cmpffi.lsp"
+  "src:new-cmp;cmpcbk.lsp"
+  "src:new-cmp;cmpct.lsp"
+  "src:new-cmp;cmpnum.lsp"
+  "src:new-cmp;cmpname.lsp"
+  "src:new-cmp;cmpopt.lsp"
+  "src:new-cmp;cmpprop.lsp"
+  "src:new-cmp;cmpclos.lsp"
+  "src:new-cmp;cmpstructures.lsp"
+  "src:new-cmp;cmparray.lsp"
+  "src:new-cmp;cmpmain.lsp"))
+
+(let ((si::*keep-documentation* nil))
+  (mapc #'(lambda (x) (load x :verbose nil)) +cmp-module-files+)
+  (load "src:new-cmp;sysfun" :verbose nil))
+
