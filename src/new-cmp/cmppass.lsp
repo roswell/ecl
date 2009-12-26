@@ -83,7 +83,6 @@ output value is not used."
                        (nreverse forms))))
 
 (defun delete-if-no-side-effects (form)
-  (pprint-c1form form) 
   (when (c1form-p form)
     (case (c1form-name form)
       ((LOCATION VAR SYS:STRUCTURE-REF #+clos SYS:INSTANCE-REF)
@@ -137,9 +136,54 @@ forms are also suppressed."
                                              (c1form-arg 0 form))))
                     (setf (c1form-args form) (list new-args))
                     (null new-args)))))
-    (delete-if #'unused-bindings forms)
-    (setf (fun-local-vars fun)
-          (delete #'unused-variable-p (fun-local-vars fun))
-          (fun-referred-vars fun)
-          (delete #'unused-variable-p (fun-referred-vars fun)))))
+    (when (warn-about-unused-variables function)
+      (setf (fun-local-vars function)
+            (delete #'unused-variable-p (fun-local-vars function))
+            (fun-referred-vars function)
+            (delete #'unused-variable-p (fun-referred-vars function))))
+    (delete-if #'unused-bindings forms)))
+
+(defun warn-about-unused-variables (function)
+  (loop with *current-function* = function
+     with unused-to-be-warned = '()
+     for v in (fun-local-vars function)
+     when (and (unused-variable-p v)
+               (zerop (var-ref v)) ; VAR-REF < 0 means ignore
+               (not (or (global-var-p v)
+                        (temporal-var-p v))))
+     do (push v unused-to-be-warned)
+     finally (return
+               (when unused-to-be-warned
+                 (cmpwarn-style "In function ~S found unused variables:~&~4T~{ ~S~}."
+                                (fun-name function)
+                                (mapcar #'var-name unused-to-be-warned))
+                 t))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; DECIDE VARIABLE REPRESENTATION TYPE
+;;;
+;;; Currently this is very very crude:
+;;;
+;;;	* We unbox everything that is declared with a type that fits
+;;;	  in a C variable.
+;;;	* We cannot unbox function arguments, because they are always
+;;;	  passed with C type cl_object.
+;;;
+
+(defun pass-decide-var-rep-types (function forms)
+  (flet ((compute-variable-rep-type (v requireds)
+           (let* ((kind (var-kind v)))
+             (if (eq kind 'LEXICAL)
+                 (if (member v requireds)
+                     :OBJECT
+                     (lisp-type->rep-type (var-type v)))
+                 kind))))
+    (loop with lambda-list = (fun-lambda-list function)
+       with requireds = (first lambda-list)
+       for v in (fun-local-vars function)
+       do (setf (var-kind v) (compute-variable-rep-type v requireds))))
+  forms)
+
+
 

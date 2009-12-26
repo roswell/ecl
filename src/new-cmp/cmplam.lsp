@@ -286,10 +286,6 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
                                  compiled-body
                                  (c1function-epilogue fun)))
 
-      ;; Assign locations to each variable that is not closed over
-      (dolist (var new-variables)
-	(check-vref var))
-
       (setf (fun-lambda fun) compiled-body
             (fun-doc fun) doc
             (fun-lambda-list fun) (list requireds optionals rest

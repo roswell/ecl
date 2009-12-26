@@ -85,7 +85,8 @@
 
 (defun eliminate-from-read-nodes (var form)
   (when (var-p var)
-    (setf (var-read-nodes var) (delete form (var-read-nodes var)))))
+    (setf (var-ref var) (1- (var-ref var))
+          (var-read-nodes var) (delete form (var-read-nodes var)))))
 
 (defun eliminate-from-set-nodes (var form)
   (when (var-p var)
@@ -140,17 +141,6 @@
 		     :kind 'LEXICAL ; we rely on check-vref to fix it
 		     :ref (if (member name ignores) -1 0))))))
 
-(defun check-vref (var)
-  (when (eq (var-kind var) 'LEXICAL)
-    (when (zerop (var-ref var)) ;;; This field may be -1 (IGNORE). Beppe
-      (cmpwarn-style "The variable ~s is not used." (var-name var)))
-    (when (not (var-ref-clb var))
-      ;; if the variable can be stored locally, set it var-kind to its type
-      (setf (var-kind var)
-	    (if (plusp (var-ref var))
-		(lisp-type->rep-type (var-type var))
-		:OBJECT)))))
-
 (defun c1var (destination name)
   (let ((vref (c1vref name (eq destination 'TRASH))))
     (when vref
@@ -202,6 +192,10 @@
        (let ((kind (var-kind var)))
          (unless (member kind '(LEXICAL CLOSURE SPECIAL GLOBAL REPLACED DISCARDED))
            kind))))
+
+(defun temporal-var-p (var)
+  ;; FIXME! Currently we have no other way of identifying temporal variables
+  (var-read-only-p var))
 
 (defun wt-var (var &aux (var-loc (var-loc var))) ; ccb
   (declare (type var var))

@@ -127,7 +127,7 @@
      ;;do (when (member-type (var-type v)
      ;;                      '(FIXNUM CHARACTER DOUBLE-FLOAT SINGLE-FLOAT))
      ;;     (incf (var-ref v)))
-     collect (progn (check-vref v) pair)))
+     collect pair))
 
 (defun check-unused-variable-definition (var form)
   ;; Check whether the variable is ever read and, if not, whether the
