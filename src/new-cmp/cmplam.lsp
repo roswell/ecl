@@ -116,6 +116,12 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
       (setf no-entry-p nil)
       (cmpnote "Ignoring SI::C-LOCAL declaration for ~A when DEBUG is ~D"
                name debug))
+    ;; HACK! FIXME! This is for compatibility with old ECL.
+    (when exported-p
+      (multiple-value-setq (proclaimed-minargs maxargs found) (get-proclaimed-narg name))
+      (if found
+          (setf minargs proclaimed-minargs)
+          (setf maxargs call-arguments-limit)))
     (setf (fun-name fun) name
           (fun-debug fun) debug
           (fun-minarg fun) minargs
@@ -219,10 +225,10 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
                      (let ((rest-var (c1make-var rest ss is ts)))
                        (cmp-env-register-var rest-var)
                        rest-var))
-              compiled-body (nconc (c1varargs-bind-op nargs varargs
+              compiled-body (nconc compiled-body
+                                   (c1varargs-bind-op nargs varargs
                                                       minargs maxargs nkeys
                                                       (policy-check-nargs))
-                                   compiled-body
                                    (c1optionals optionals nargs varargs ss is ts)))
         (when (or rest keywords allow-other-keys)
           (setf compiled-body (nconc compiled-body
@@ -273,7 +279,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
           (setq compiled-body (nconc (c1bind non-special-bound-variables)
                                      compiled-body
                                      body
-                                     (c1unbind bound-variables)
+                                     (c1unbind new-variables)
                                      (c1set-loc 'ACTUAL-RETURN 'VALUES+VALUE0)))))
 
       (setf compiled-body (nconc (c1function-prologue fun)
@@ -318,14 +324,15 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
   (string= (var-name var) +simple-va-args+))
 
 (defun c1requireds (requireds ss is ts)
-  (loop for i from 1
+  (c1bind-requireds
+   (loop for i from 1
      for spec on requireds
      for name = (first spec)
      for var = (c1make-var name ss is ts)
      do (setf (first spec) var)
      do (push var (fun-local-vars *current-function*))
      do (cmp-env-register-var var)
-     nconc (c1bind-required var (next-lcl))))
+     collect (cons var (next-lcl)))))
 
 (defun c1keywords (rest-var keywords allow-other-keys nargs varargs ss is ts)
   (loop with keywords-list = '()
@@ -376,8 +383,8 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
      for init = (second spec)
      for var = (c1make-var name ss is ts)
      for flag = (third spec)
-     do (let* ((found-tag (make-tag :name (gensym "KEY-FOUND") :label (next-label)))
-               (next-tag (make-tag :name (gensym "KEY-NEXT") :label (next-label))))
+     do (let* ((found-tag (make-tag :name (gensym "OPT-FOUND") :label (next-label)))
+               (next-tag (make-tag :name (gensym "OPT-NEXT") :label (next-label))))
           (setf output (nconc output
                               (c1jmp-true found-tag nargs)
                               (c1maybe-bind-special var init)
@@ -425,9 +432,9 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
         (cmpnote "In ~:[an anonymous function~;function ~:*~A~], checking types of argument~@[s~]~{ ~A~}."
                  (fun-name *current-function*)
                  (mapcar #'var-name type-checks))
-        (c1translate 'trash
-                     (loop for pair in (nreverse pairs)
-                        collect `(optional-check-type ,@pair)))))))
+        (c1progn 'trash
+                 (loop for pair in (nreverse pairs)
+                    collect `(optional-check-type ,@pair)))))))
 
 #| Steps:
  1. defun creates declarations for requireds + va_alist

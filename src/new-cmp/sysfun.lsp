@@ -339,7 +339,7 @@
 
 ;; ECL extensions:
 (proclaim-function si:*make-special (symbol) symbol)
-(proclaim-function si:*make-constant (symbol) symbol)
+(proclaim-function si:*make-constant (symbol t) symbol)
 (proclaim-function si:put-f (list t t) list)
 (proclaim-function si:rem-f (list t) boolean)
 (proclaim-function si:set-symbol-plist (symbol t) t)
@@ -2195,3 +2195,6 @@
      clos::pop-next-method
      )))
 
+
+
+(trace c::c1compile-function)

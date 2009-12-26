@@ -1,5 +1,7 @@
 * Routine for type propagation in function calls.
 
+* Restore specialized function for FSET.
+
 * Region-based computation of *VOLATILE* _after_ compiling the whole function.
 
 * In SET-TRASH-LOC, we now consider that ALL function calls have side effects
@@ -89,3 +91,6 @@
   :READ-ONLY declarations.
 
 * Restore handling of shared data.
+
+* The arguments of a function, when declared to have an unboxed type, generate
+  inefficient CHECK-TYPE forms after that.

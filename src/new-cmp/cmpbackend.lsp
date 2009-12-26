@@ -16,13 +16,83 @@
 ;;; C/C++ BACKEND
 ;;;
 
+(defvar *c-opened-blocks* 0)
+
+(defun c2driver (forms)
+  (let ((*c-opened-blocks* 0))
+    (loop for f in forms
+       do (c2expr f)
+       finally (when (plusp *c-opened-blocks*)
+                 (error "Stray opened C blocks")))))
+         
+(defun c2expr (form)
+  (cond ((consp form)
+         (loop for f in form
+            do (c2expr f)))
+        ((tag-p form)
+         (pprint-c1form form)
+         (when (plusp (tag-ref form))
+           (let ((label (tag-label form)))
+             (unless label
+               (setf (tag-label form) (setf label (next-label))))
+             (wt-label (tag-label form)))))
+        ((c1form-p form)
+         (pprint-c1form form)
+         (let* ((*file* (c1form-file form))
+                (*file-position* (c1form-file form))
+                (*current-form* (c1form-form form))
+                (*current-c2form* form)
+                (*cmp-env* (c1form-env form))
+                (name (c1form-name form))
+                (args (c1form-args form))
+                (dispatch (gethash name +c2-dispatch-table+)))
+           (unless dispatch
+             (error "Unknown C1 form ~A" form))
+           (apply dispatch args)))
+        (t
+         (error "In C2EXPR, invalid C1 form ~A" form))))
+
+;;;
+;;; C-BLOCKS
+;;;
+
+(defun open-c-block (&optional no-new-line)
+  (unless no-new-line
+    (if (zerop *c-opened-blocks*)
+        (wt-nl1)
+        (wt-nl)))
+  (incf *c-opened-blocks*)
+  (wt "{"))
+
+(defun close-all-c-blocks (&optional (final-value 0))
+  (let ((n (- *c-opened-blocks* final-value)))
+    (when (plusp n)
+      (if (zerop final-value)
+          (wt-nl1)
+          (wt-nl))
+      (dotimes (i n)
+        (wt "}"))
+      (setf *c-opened-blocks* final-value))))
+
+(defun close-c-block ()
+  (unless (plusp *c-opened-blocks*)
+    (error "Internal error: number of C/C++ blocks does not match expected value"))
+  (wt-nl) (wt "}") (decf *c-opened-blocks*))
+
+(defmacro with-c-block (&body code)
+  `(unwind-protect
+        (progn
+          (open-c-block)
+          ,@code)
+     (close-c-block)))
+
 ;;;
 ;;; VARIABLE BINDINGS
 ;;;
 
 (defun c2bind (temps)
-  (loop with first = "{"
-     with new-env = nil
+  (loop with block-p = nil
+     with new-env = t
      with closed-overs = '()
      for v in temps
      do (case (var-kind v)
@@ -32,19 +102,19 @@
            (push v closed-overs))
           ((CLOSURE)
            (push v closed-overs)
-           (unless new-env
+           (when new-env
              (let ((env-lvl *env-lvl*))
-               (wt-nl) (wt first) (setf first "")
+               (format t "~&;;; Increasing environment depth to ~D" (1+ env-lvl))
+               (unless block-p (open-c-block) (setf block-p t))
                (wt *volatile* "cl_object env" (incf *env-lvl*) " = env" env-lvl ";"))
-             (setf new-env t)))
+             (setf new-env nil)))
           (t
            (setf (var-loc v) (next-lcl))
            (wt-nl)
-           (wt first) (setf first "")
+           (unless block-p (open-c-block :no-newline) (setf block-p t))
            (wt *volatile* (rep-type-name (var-kind v)) " " v ";")
            (let ((name (var-name v))) (when name (wt-comment (var-name v))))))
-     finally (loop for v in closed-overs
-                do (bind NIL v))))
+     finally (loop for v in closed-overs do (bind NIL v))))
 
 (defun c2bind-special (var value-loc)
   (bds-bind value-loc var))
@@ -64,21 +134,22 @@
 (defun c2unbind (temps &optional (close-block t))
   (loop with nspecials = 0
      with closure = 0
-     with opened-block = nil
+     with block-p = nil
      for v in temps
      for kind = (var-kind v)
      do (case kind
-          (CLOSURE (setf opened-block t) (incf closure))
+          (CLOSURE (setf block-p t) (incf closure))
           ((SPECIAL GLOBAL) (incf nspecials))
           ((REPLACED DISCARDED LEXICAL))
-          (otherwise (setf opened-block t)))
+          (otherwise (setf block-p t)))
      finally (progn
 	       (c2unbind-specials nspecials)
 	       (unless (zerop closure)
+                 (wt-nl "/* End of lifetime of env" *env-lvl* "*/")
 		 (decf *env-lvl*)
+                 (format t "~&;;; Decreasing environment depth to ~D" *env-lvl*)
                  (decf *env* closure))
-               (when (and close-block opened-block)
-                 (wt-nl "}")))))
+               (when block-p (close-c-block)))))
 
 ;;;
 ;;; ASSIGNMENTS
@@ -97,29 +168,29 @@
          (locations (ldiff locations extras)))
     (loop for v in extras
        do (bind nil v))
-    (if (plusp min-args)
-        (wt-nl "{int _nvalues = cl_env_copy->nvalues - " min-args ";")
-        (wt-nl "{int _nvalues = cl_env_copy->nvalues;"))
-    (loop for i from 0 below min-args
-       for v = (pop locations)
-       do (set-loc `(VALUE ,i) v))
-    (loop with last-label = (next-label)
-       with labels = '()
-       for v in locations
-       for i from min-args
-       for l = (next-label)
-       do (progn
-            (push l labels)
-            (wt-nl "if (_nvalues-- <= 0) ") (wt-go l)
-            (set-loc `(VALUE ,i) v))
-       finally (progn
-                 (wt-nl) (wt-go last-label)
-                 (loop for l in (nreverse labels)
-                    for v in (reverse locations)
-                    do (wt-label l)
-                    do (set-loc nil v))
-                 (wt-label last-label)
-                 (wt "    }")))))
+    (with-c-block
+      (if (plusp min-args)
+          (wt-nl "int _nvalues = cl_env_copy->nvalues - " min-args ";")
+          (wt-nl "int _nvalues = cl_env_copy->nvalues;"))
+      (loop for i from 0 below min-args
+         for v = (pop locations)
+         do (set-loc `(VALUE ,i) v))
+      (loop with last-label = (next-label)
+         with labels = '()
+         for v in locations
+         for i from min-args
+         for l = (next-label)
+         do (progn
+              (push l labels)
+              (wt-nl "if (_nvalues-- <= 0) ") (wt-go l)
+              (set-loc `(VALUE ,i) v))
+         finally (progn
+                   (wt-nl) (wt-go last-label)
+                   (loop for l in (nreverse labels)
+                      for v in (reverse locations)
+                      do (wt-label l)
+                      do (set-loc nil v))
+                   (wt-label last-label))))))
 
 (defun c2values-op (locations)
   (loop for i from 0
@@ -131,11 +202,32 @@
 ;;; FUNCTION ARGUMENTS
 ;;;
 
-(defun c2bind-required (var n)
-  (bind n var))
+(defun c2bind-requireds (var-loc-pairs)
+  (loop with new-env = t
+     with block-p = nil
+     for (v . required-loc) in var-loc-pairs
+     ;; This is a hack: the C backend imposes that the arguments have
+     ;; always representation type :OBJECT
+     do (when (member (var-kind v) '(:DOUBLE :CHAR :FIXUNM :FLOAT))
+          (setf (var-kind v) :OBJECT))
+     ;; Here we perform the actual binding.
+     do (case (var-kind v)
+          (CLOSURE
+           (when new-env
+             (let ((env-lvl *env-lvl*))
+               (format t "~&;;; Increasing environment depth to ~D" (1+ env-lvl))
+               (unless block-p (open-c-block) (setf block-p t))
+               (wt *volatile* "cl_object env" (incf *env-lvl*)
+                   " = env" env-lvl ";")
+               (setf new-env nil))))
+          ((SPECIAL GLOBAL LEXICAL REPLACED DISCARDED))
+          (t
+           (unless block-p (open-c-block) (setf block-p t)))))
+  (loop for (v . required-loc) in var-loc-pairs
+     do (bind required-loc v)))
 
 (defun c2varargs-bind-op (nargs-loc varargs-loc minargs maxargs nkeywords check)
-  (wt-nl "{")
+  (open-c-block)
   (wt-comment "Arguments parsing - begin")
   (when (plusp nkeywords)
     (wt-nl "cl_object keyvars[" (* 2 nkeywords) "];"))
@@ -178,7 +270,7 @@
 (defun c2varargs-unbind-op (nargs-loc varargs-loc minargs maxargs nkeywords)
   (when (simple-varargs-loc-p varargs-loc)
     (wt-nl "va_end(args);"))
-  (wt-nl "}")
+  (close-c-block)
   (wt-comment "Arguments parsing - end"))
 
 ;;;
@@ -202,14 +294,16 @@
   (wt-nl "ecl_unwind(cl_env_copy," var ");"))
 
 (defun c2frame-id (var)
-  (bind "ECL_NEW_FRAME_ID(cl_env_copy)" var))
+  (set-loc '(VV "ECL_NEW_FRAME_ID(cl_env_copy)") var))
 
 ;;;
 ;;; STACK FRAMES
 ;;;
 
 (defun c2stack-frame-open (var)
-  (wt-nl "{struct ecl_stack_frame _ecl_inner_frame_aux;")
+  ;; STACK-FRAME-OPEN always follows a BIND form and hence it needs
+  ;; no opening / closing braces.
+  (wt "struct ecl_stack_frame _ecl_inner_frame_aux;")
   (wt-nl *volatile* "cl_object _ecl_inner_frame = ecl_stack_frame_open(cl_env_copy,(cl_object)&_ecl_inner_frame_aux,0);")
   (bind "_ecl_inner_frame" var))
 
@@ -229,8 +323,7 @@
          "," function-loc ");"))
 
 (defun c2stack-frame-close (frame-var)
-  (wt-nl "ecl_stack_frame_close(" frame-var ");")
-  (wt-nl "}"))
+  (wt-nl "ecl_stack_frame_close(" frame-var ");"))
 
 ;;;
 ;;; LOCAL AND NONLOCAL CONTROL TRANSFER
@@ -298,11 +391,10 @@
          (ii (inline-function destination fname arg-types
                               (type-and return-type expected-type))))
     (when ii
-      (setf args (coerce-locations args (inline-info-arg-types ii)))
       (return-from call-global-loc (apply-inline-info ii args))))
 
   ;; Call to a function defined in the same file. Direct calls are
-  ;; only emitted for low or neutral values of DEBUG is >= 2.
+  ;; only emitted for low or neutral values of DEBUG >= 2.
   (when (and (<= (cmp-env-optimization 'debug) 1)
              (or (fun-p fun)
                  (and (null fun)
@@ -333,7 +425,7 @@
 
   (call-unknown-global-loc fname nil args))
 
-(defun coerce-locations (locations types &optional args-to-be-saved)
+(defun coerce-locations (locations &optional types args-to-be-saved)
   (loop for i from 0
      for loc in locations
      for type = (if types (pop types) :object)
@@ -346,7 +438,7 @@
                  `(COERCE-LOC ,rep-type ,loc))))
 
 (defun call-normal-loc (fname fun args)
-  `(CALL-NORMAL ,fun ,args))
+  `(CALL-NORMAL ,fun ,(coerce-locations args)))
 
 (defun call-exported-function-loc (fname args fun-c-name minarg maxarg in-core)
   (unless in-core
@@ -381,7 +473,7 @@
               function-p nil)
         (setf loc (list 'FDEFINITION fname)
               function-p t)))
-  `(CALL-INDIRECT ,loc ,args ,fname ,function-p))
+  `(CALL-INDIRECT ,loc ,(coerce-locations args) ,fname ,function-p))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -426,8 +518,8 @@
 (defun wt-call (fun args &optional fname env)
   (if env
       (progn
-        (push-new :aux-closure (fun-code-gen-props *current-function*))
-        (wt "(aux_closure.env="env",cl_env_copy->function=(cl_object)&aux_closure,")
+        (pushnew :aux-closure (fun-code-gen-props *current-function*))
+        (wt "(aux_closure.env=" env ",cl_env_copy->function=(cl_object)&aux_closure,")
         (wt-call fun args)
         (wt ")"))
       (progn
@@ -444,7 +536,8 @@
 ;;;
 
 (defun c2debug-env-open (fname)
-  (wt-nl "{struct ihs_frame _ecl_ihs;")
+  (open-c-block)
+  (wt "struct ihs_frame _ecl_ihs;")
   (wt-comment "Debug info for:")
   (wt-nl "const cl_object _ecl_debug_env = Cnil;")
   (wt-comment fname)
@@ -455,13 +548,13 @@
   (wt-nl)
   (wt-nl "ecl_ihs_pop(cl_env_copy);")
   (wt-comment "Debug info removed")
-  (wt-nl "}"))
+  (close-c-block))
 
 (defun c2debug-env-push-vars (variables)
   #-:msvc ;; FIXME! Problem with initialization of statically defined vectors
   (let* ((filtered-locations '())
          (filtered-codes '()))
-    (wt-nl "{")
+    (open-c-block)
     (wt-comment "Debug bindings - register")
     ;; Filter out variables that we know how to store in the
     ;; debug information table. This excludes among other things
@@ -502,7 +595,7 @@
     (wt-nl)
     (wt-comment "Debug bindings - remove")
     (wt-nl "ihs.lex_env=_ecl_debug_env->vector.self.t[0];")
-    (when close-block (wt-nl "}"))))
+    (when close-block (close-c-block))))
 
 ;;;
 ;;; FUNCTION PROLOGUE AND EPILOGUE
@@ -544,8 +637,10 @@
   (let ((cname (fun-cfun fun)))
     (wt-nl "XTR_" cname))
   (wt-nl "const cl_env_ptr cl_env_copy = ecl_process_env();")
-  (when (eq (fun-closure fun) 'CLOSURE)
-    (wt "cl_object " *volatile* "env0 = cl_env_copy->function->cclosure.env;"))
+  (wt-nl "cl_object " *volatile* 
+         (if (eq (fun-closure fun) 'CLOSURE)
+             "env0 = cl_env_copy->function->cclosure.env;"
+             "env0 = Cnil;"))
   (wt-nl "cl_object " *volatile* "value0;")
   (when (policy-check-stack-overflow)
     (wt-nl "ecl_cs_check(cl_env_copy,value0);")
@@ -598,7 +693,8 @@
 
 (defun c2entry-function-prologue (fun &key shared-data)
   (wt-nl1 "#define flag V1")
-  (wt-nl "{cl_object *VVtemp;")
+  (open-c-block)
+  (wt "cl_object *VVtemp;")
   (wt-comment "Entry point of ECL module / FASL")
   (when shared-data
     (wt-nl "Cblock=flag;")
@@ -645,7 +741,9 @@
                        (t "local function ~a"))
                  (or (fun-name fun) (fun-description fun) 'CLOSURE))
   (c2emit-function-declaration fun)
-  (wt-nl1 "{")
+  (open-c-block :function)
+  (format t "~&;;; Environment depth ~A" *env-lvl*)
+  (format t "~&;;; Environment size ~A" *env*)
   (c2emit-local-variables fun)
   (c2emit-last-arg-macro fun)
   (c2emit-closure-scan fun)
@@ -666,11 +764,13 @@
       (wt-h " \\")
       (wt-nl-h " struct ecl_cclosure aux_closure;"))
     ;; Close C blocks
-    (when (eq (fun-name fun) +init-function-name+)
-      (wt-nl "}"))
     (when (fun-narg-p fun)
       (wt-nl "#undef __ecl_last_arg"))
-    (wt-nl1 "}")))
+    (unless (zerop *env-lvl*)
+      (error "Wrong value of environment depth ~A" *env-lvl*))
+    (unless (= *env* (fun-env fun))
+      (error "Wrong value of environment size ~A" *env*))
+    (close-all-c-blocks)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;

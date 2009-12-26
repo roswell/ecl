@@ -17,10 +17,14 @@
 ;;;
 
 (defun c1translate (destination value)
+  (when (and c::*current-function* (eq (fun-name c::*current-function*) 'search))
+    (print 'c1translate)
+    (pprint destination)
+    (pprint value))
   (enforce-destination destination (c1expr destination value)))
 
 (defun c2translate (forms)
-  (c2expr forms))
+  (c2driver forms))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -258,8 +262,8 @@
 (defun c1function-epilogue (fun)
   (make-c1form* 'FUNCTION-EPILOGUE :args fun))
 
-(defun c1bind-required (var ndx)
-  (make-c1form* 'BIND-REQUIRED :args var ndx))
+(defun c1bind-requireds (var-loc-pairs)
+  (make-c1form* 'BIND-REQUIREDS :args var-loc-pairs))
 
 (defun c1varargs-bind-op (nargs-loc varargs-loc minargs maxargs nkeywords check)
   (make-c1form* 'VARARGS-BIND
@@ -392,6 +396,7 @@
     ;; Add type information to the arguments.
     (loop for arg in args-loc
        for type in arg-types
+       do (maybe-add-to-read-nodes arg form)
        do (and-form-type (car arg-types) form (car args)
                          :safe "In a call to ~a" fname))
     (update-destination-type destination form return-type)
@@ -404,6 +409,7 @@
                              :type return-type
                              :args destination fname args
                              (values-type-primary-type return-type))))
+    (loop for arg in args do (maybe-add-to-read-nodes arg form))
     (update-destination-type destination form return-type)
     form))
 

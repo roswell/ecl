@@ -84,6 +84,10 @@
 	   )))))
 
 (defun t1/c1expr (destination form)
+  (when (and c::*current-function* (eq (fun-name c::*current-function*) 'SEARCH))
+    (print 'T1/C1EXPR)
+    (print destination)
+    (print form))
   (cond ((not *compile-toplevel*)
 	 (c1translate destination form))
 	((atom form)
@@ -92,18 +96,19 @@
 	 (t1expr* destination form))))	
 
 (defun emit-local-funs (fun)
+  (format t "~&;;; Adding ~A" (fun-child-funs fun))
   (loop with *compile-time-too* = nil
      with *compile-toplevel* = nil
      with emitted-local-funs = (make-hash-table :test #'eql)
      with pending = (fun-child-funs fun)
-     for f = (first pending)
-     while f
-     do (progn
+     while pending
+     do (let ((f (pop pending)))
           (when (gethash f emitted-local-funs)
-            (error "Doubly emitted function ~A" fun))
+            (error "Doubly emitted function ~A" f))
           (t3local-fun f)
+          (format t "~&;;; Adding ~A" (fun-child-funs f))
           (setf (gethash f emitted-local-funs) t
-                pending (nconc pending (copy-list (fun-child-funs f)))))))
+                pending (append (fun-child-funs f) pending)))))
 
 (defun ctop-write (name h-pathname data-pathname
 		        &key shared-data
@@ -213,7 +218,6 @@
 
 (defun c1eval-when (destination args)
   (check-args-number 'EVAL-WHEN args 1)
-  (pprint `(EVAL-WHEN ,@args))
   (let ((load-flag nil)
 	(compile-flag nil)
 	(execute-flag nil))
@@ -357,6 +361,8 @@
                (eq (c1form-name fun-form) 'FUNCTION)
 	       (not (eq (c1form-arg 0 fun-form) 'GLOBAL)))
 	  (let ((fun-object (c1form-arg 2 fun-form)))
+            (setf (fun-child-funs *current-function*)
+                  (delete fun-object (fun-child-funs *current-function*)))
 	    (cond ((fun-no-entry fun-object)
                    (when macro
                      (cmperr "Declaration C-LOCAL used in macro ~a" (fun-name fun)))

@@ -63,9 +63,10 @@
          (incf *lex*)
          (setq *max-lex* (max *lex* *max-lex*))))
 
-(defun next-env () (prog1 *env*
-		     (incf *env*)
-		     (setq *max-env* (max *env* *max-env*))))
+(defun next-env ()
+  (prog1 *env*
+    (incf *env*)
+    (setq *max-env* (max *env* *max-env*))))
 
 (defun function-arg-types (arg-types &aux (types nil))
   (do ((al arg-types (cdr al)))
@@ -161,8 +162,8 @@
 		    (t
 		     (incf minarg)
 		     (incf maxarg)))
-	   finally (return (values minarg maxarg)))
-	(values 0 call-arguments-limit))))
+	   finally (return (values minarg maxarg found)))
+	(values 0 call-arguments-limit found))))
 
 ;;; Proclamation and declaration handling.
 

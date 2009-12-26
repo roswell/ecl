@@ -20,10 +20,24 @@
 ;;; CONSTRUCTORS
 ;;;
 
+(defun trace-function (f)
+  #'(lambda (&rest args)
+      (terpri) (princ #\>) (princ f)
+      (loop with *print-length* = 4 with *print-depth* = 3
+         for i in args do (print i))
+      (multiple-value-prog1 (apply f args)
+        (terpri) (princ #\<) (princ f))))
+
 (defun make-dispatch-table (pairs)
   (loop with output = (make-hash-table :size (* 2 (length pairs)) :test #'eq)
      for (name . function) in pairs
      do (setf (gethash name output) function)
+     finally (return output))
+  #+nil
+  (loop with output = (make-hash-table :size (* 2 (length pairs)) :test #'eq)
+     for (name . function) in pairs
+     for traced-function = (trace-function function)
+     do (setf (gethash name output) traced-function)
      finally (return output)))
 
 (defun extend-dispatch-table (pairs table)
@@ -111,7 +125,6 @@
 
    ;; cmptop.lsp
    (load-time-value . c1load-time-value)
-   (si:fset . c1fset)
 
    ;; cmptranslate.lsp
    (values-ref . c1values-ref)
@@ -149,7 +162,7 @@
     (function-prologue . c2function-prologue)
     (function-epilogue . c2function-epilogue)
     
-    (bind-required . c2bind-required)
+    (bind-requireds . c2bind-requireds)
     (varargs-bind . c2varargs-bind-op)
     (varargs-pop . c2varargs-pop-op)
     (varargs-rest . c2varargs-rest-op)

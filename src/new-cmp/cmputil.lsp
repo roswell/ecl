@@ -238,8 +238,6 @@
        (when throw-flag ,error-form))))
 
 (defun cmp-eval (form)
-  (pprint 'CMP-EVAL)
-  (pprint form)
   (if (and (atom form) (not (symbolp form)))
       form
       (handler-case (eval form)

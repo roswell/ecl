@@ -96,37 +96,10 @@
                     (c1call-global-op destination fname temps)
                     postfix))))))
 
-(defun c2expr (form)
-  (cond ((consp form)
-         (loop for f in form
-            do (c2expr f)))
-        ((tag-p form)
-         (pprint-c1form form)
-         (when (plusp (tag-ref form))
-           (let ((label (tag-label form)))
-             (unless label
-               (setf (tag-label form) (setf label (next-label))))
-             (wt-label (tag-label form)))))
-        ((c1form-p form)
-         (pprint-c1form form)
-         (let* ((*file* (c1form-file form))
-                (*file-position* (c1form-file form))
-                (*current-form* (c1form-form form))
-                (*current-c2form* form)
-                (*cmp-env* (c1form-env form))
-                (name (c1form-name form))
-                (args (c1form-args form))
-                (dispatch (gethash name +c2-dispatch-table+)))
-           (unless dispatch
-             (error "Unknown C1 form ~A" form))
-           (apply dispatch args)))
-        (t
-         (error "In C2EXPR, invalid C1 form ~A" form))))
-
 (defun c1progn (destination forms)
   (or (loop for fl on forms
-         nconc (t1/c1expr (if (rest fl) 'TRASH destination)
-                          (first fl)))
+         append (t1/c1expr (if (rest fl) 'TRASH destination)
+                           (first fl)))
       (t1/c1expr destination 'NIL)))
 
 ;;; ----------------------------------------------------------------------

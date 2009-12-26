@@ -158,6 +158,7 @@ The second value is an association list of atoms to the tags they represent."
            (list normal-tag)
            body
            (c1frame-pop tag-var)
+           (c1unbind (list tag-var))
            (c1translate destination nil))))
 
 (defun c1go (destination args)
