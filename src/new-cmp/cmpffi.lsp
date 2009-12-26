@@ -331,15 +331,9 @@
         (cmperr "C-INLINE: mismatch between sizes of argument list and argument types."))
       (c1with-saved-values (prefix postfix temps arguments)
         (nconc prefix
-               (make-c1form* 'C-INLINE :type output-type
-                             :args
-                             destination
-                             temps
-                             arg-types
-                             output-rep-type
-                             c-expression
-                             side-effects
-                             one-liner)
+               (c1c-inline-op output-type destination temps arg-types
+                              output-rep-type c-expression side-effects
+                              one-liner)
                postfix)))))
 
 (defun produce-inline-loc (argument-locs arg-types output-rep-type

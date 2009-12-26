@@ -413,6 +413,17 @@
     (update-destination-type destination form return-type)
     form))
 
+(defun c1c-inline-op (output-type destination temps arg-types
+                      output-rep-type c-expression side-effects
+                      one-liner)
+  (let ((form (make-c1form* 'C-INLINE :type output-type
+                             :args destination temps arg-types
+                             output-rep-type c-expression side-effects
+                             one-liner)))
+    (loop for arg in temps do (maybe-add-to-read-nodes arg form))
+    (update-destination-type destination form output-type)
+    form))
+
 ;;;
 ;;; DEBUG INFORMATION
 ;;;

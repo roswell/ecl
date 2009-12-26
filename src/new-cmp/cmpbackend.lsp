@@ -255,9 +255,10 @@
 (defun c2varargs-rest-op (dest-loc nargs-loc varargs-loc nkeys
                           keywords-loc allow-other-keys)
   (if (not (or keywords-loc allow-other-keys))
-      (if (simple-varargs-loc-p varargs-loc)
-          (wt-nl dest-loc "=cl_grab_rest_args(args);")
-          (wt-nl dest-loc "=cl_grab_rest_args(cl_args);"))
+      (set-loc (if (simple-varargs-loc-p varargs-loc)
+                   '(c-inline :object "cl_grab_rest_args(args)" () t nil)
+                   '(c-inline :object "cl_grab_rest_args(cl_args)" () t nil))
+               dest-loc)
       (progn
         (if keywords-loc
             (wt-nl "cl_parse_key(cl_args," nkeys "," keywords-loc ",keyvars")

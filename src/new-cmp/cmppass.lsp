@@ -89,6 +89,12 @@ output value is not used."
        t)
       ((BIND UNBIND)
        (every #'unused-variable-p (c1form-arg 0 form)))
+      ((VARARGS-REST VARARGS-POP)
+       (let ((destination (c1form-arg 0 form)))
+         (when (unused-variable-p destination)
+           (setf (c1form-arg 0 form) 'TRASH)
+           (eliminate-from-set-nodes destination form)))
+       nil)
       (CALL-GLOBAL
        (let* ((form-args (c1form-args form))
               (destination (first form-args))
@@ -113,8 +119,6 @@ output value is not used."
       (t nil))))
 
 (defun unused-destination (dest)
-  (when (var-p dest)
-    (print (var-read-nodes dest)))
   (or (eq dest 'trash)
       (and (var-p dest)
            (unused-variable-p dest))))
@@ -175,14 +179,16 @@ forms are also suppressed."
   (flet ((compute-variable-rep-type (v requireds)
            (let* ((kind (var-kind v)))
              (if (eq kind 'LEXICAL)
-                 (if (member v requireds)
+                 (if (member v requireds :test #'eq)
                      :OBJECT
                      (lisp-type->rep-type (var-type v)))
                  kind))))
     (loop with lambda-list = (fun-lambda-list function)
        with requireds = (first lambda-list)
        for v in (fun-local-vars function)
-       do (setf (var-kind v) (compute-variable-rep-type v requireds))))
+       do (setf (var-kind v) (compute-variable-rep-type v requireds))
+       do (format t "~&;;; Variable name ~A is type ~S location ~S" (var-name v)
+                  (var-kind v) (var-loc v))))
   forms)
 
 
