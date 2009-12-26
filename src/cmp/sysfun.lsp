@@ -48,8 +48,7 @@
 
 (defmacro proclaim-function (&whole form name arg-types return-type
 			     &key no-sp-change predicate no-side-effects)
-  (unless (or (null arg-types)
-	      (equal arg-types '(*)))
+  (unless (equal arg-types '(*))
     (put-sysprop name 'proclaimed-arg-types arg-types))
   (when (and return-type (not (eq 'T return-type)))
     (put-sysprop name 'proclaimed-return-type return-type))
@@ -107,6 +106,7 @@
 ;;
 
 (deftype string-designator () '(or string symbol character))
+(deftype byte-specifier () '(cons unsigned-byte unsigned-byte))
 (deftype natural () '(integer 0 *))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -249,6 +249,8 @@
  "ecl_array_dimension(#0,fixint(#1))")
 (def-inline array-dimension :always (t fixnum) fixnum
  "ecl_array_dimension(#0,#1)")
+
+(proclaim-function array-dimensions (array) list :no-side-effects t)
 
 (proclaim-function array-total-size (array) t :no-side-effects t)
 (def-inline array-total-size :unsafe (t) :fixnum "((#0)->array.dim)")
@@ -1012,11 +1014,24 @@
 
 (proclaim-function atanh (number) number :no-side-effects t)
 
+(proclaim-function signum (number) number :no-side-effects t)
+(proclaim-function phase (number) number :no-side-effects t)
+(proclaim-function logtest (integer integer) t :no-side-effects t)
+(proclaim-function byte (unsigned-byte unsigned-byte) byte-specifier :no-side-effects t)
+(proclaim-function byte-size (byte-specifier) unsigned-byte :no-side-effects t)
+(proclaim-function byte-position (byte-specifier) unsigned-byte :no-side-effects t)
+(proclaim-function deposit-field (integer byte-specifier integer) integer :no-side-effects t)
+(proclaim-function dpb (integer byte-specifier integer) integer :no-side-effects t)
+(proclaim-function ldb (byte-specifier integer) unsigned-byte :no-side-effects t)
+(proclaim-function ldb-test (byte-specifier integer) t :no-side-effects t)
+(proclaim-function mask-field (byte-specifier integer) unsigned-byte :no-side-effects t)
+
 ;; file package.d
 
 (proclaim-function make-package (t *) t)
 (proclaim-function si:select-package (t) t)
 (proclaim-function find-package (t) t)
+(proclaim-function find-all-symbols (string) list)
 (proclaim-function package-name (t) t)
 (proclaim-function package-nicknames (t) t)
 (proclaim-function rename-package (t t *) t)
@@ -1102,6 +1117,8 @@
 (proclaim-function vectorp (t) t :predicate t :no-side-effects t)
 (def-inline vectorp :always (t) :bool "@0;ECL_VECTORP(#0)")
 
+(proclaim-function vector-pop (vector) t)
+
 (proclaim-function vector-push (t vector) (or fixnum null) :no-sp-change t)
 (proclaim-function vector-push-extend (t vector *) fixnum :no-sp-change t)
 (proclaim-function simple-string-p (t) t :predicate t)
@@ -1165,6 +1182,9 @@
 (proclaim-function print (t *) t)
 (def-inline print :always (t t) t "ecl_print(#0,#1)")
 (def-inline print :always (t) t "ecl_print(#0,Cnil)")
+
+(proclaim-function prin1-to-string (t) string)
+(proclaim-function princ-to-string (t) string)
 
 (proclaim-function probe-file (t) t :predicate t)
 (proclaim-function unread-char (t *) t)
@@ -1369,8 +1389,8 @@
 (proclaim-function si:structurep (t) t :predicate t)
 (proclaim-function si:structure-subtype-p (t t) t :predicate t)
 
-(proclaim-function si:*make-special (*) t)
-(proclaim-function si:*make-constant (*) t)
+(proclaim-function si:*make-special (symbol) t)
+(proclaim-function si:*make-constant (symbol t) t)
 
 ;; file symbol.d
 
@@ -1419,6 +1439,23 @@
 ;; AKCL addition
 
 (proclaim-function si:copy-stream (t t) t)
+
+;; file seqlib.lsp
+
+(proclaim-function constantly (t) function)
+
+;; file predlib.lsp
+
+(proclaim-function coerce (t t) t)
+
+;; file autoload.lsp
+
+(proclaim-function provide (string-designator) t)
+
+;; file mislib.lsp
+
+(proclaim-function load-logical-pathname-translations (string) t)
+(proclaim-function logical-pathname-translations (string) list)
 
 ;; file seq.lsp
 

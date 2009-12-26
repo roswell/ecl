@@ -336,9 +336,6 @@
 
 (define-compiler-macro si::aset (&whole form value array &rest indices
                                         &environment env)
-  (print (cmp-env-optimization 'safety env))
-  (print (cmp-env-optimization 'speed env))
-  (print (cmp-env-optimization 'debug env))
   (cond ((not (policy-open-code-aref/aset-p env))
          form)
         ((null indices)

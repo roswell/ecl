@@ -378,7 +378,8 @@ cl_type_of(cl_object x)
 			t = @'array';
 		else
 			t = @'simple-array';
-		t = cl_list(3, t, ecl_elttype_to_symbol(ecl_array_elttype(x)), cl_array_dimensions(1, x));
+		t = cl_list(3, t, ecl_elttype_to_symbol(ecl_array_elttype(x)),
+                            cl_array_dimensions(x));
 		break;
 	case t_vector:
 		if (ECL_ADJUSTABLE_ARRAY_P(x) ||
@@ -387,8 +388,9 @@ cl_type_of(cl_object x)
 				    MAKE_FIXNUM(x->vector.dim));
 		} else if (ECL_ARRAY_HAS_FILL_POINTER_P(x) ||
 			   (cl_elttype)x->vector.elttype != aet_object) {
-			t = cl_list(3, @'simple-array', ecl_elttype_to_symbol(ecl_array_elttype(x)),
-				    cl_array_dimensions(1, x));
+			t = cl_list(3, @'simple-array',
+                                    ecl_elttype_to_symbol(ecl_array_elttype(x)),
+				    cl_array_dimensions(x));
 		} else {
 			t = cl_list(2, @'simple-vector', MAKE_FIXNUM(x->vector.dim));
 		}

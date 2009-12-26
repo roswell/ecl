@@ -96,9 +96,11 @@
 	forms)
     (cond ((> l si::c-arguments-limit)
 	   (unoptimized-long-call `#',fname args))
+#|
 	  ((maybe-optimize-structure-access fname args))
 	  #+clos
 	  ((maybe-optimize-generic-function fname args))
+|#
 	  (t
 	   (let* ((forms (c1args* args))
 		  (return-type (propagate-types fname forms args)))

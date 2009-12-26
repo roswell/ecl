@@ -67,7 +67,7 @@ si_signal_simple_error(cl_narg narg, cl_object condition, cl_object continuable,
 }
 
 extern cl_object
-cl_array_dimensions(cl_narg narg, cl_object array, ...)
+cl_array_dimensions(cl_object array)
 {
 	return funcall(2, @'ARRAY-DIMENSIONS', array);
 }
