@@ -186,8 +186,9 @@
 (defun unboxed (var)
   (not (eq (var-rep-type var) :object)))
 
-(defun global (var)
-  (member (var-kind var) '(SPECIAL GLOBAL)))
+(defun global-var-p (var)
+  (and (var-p var)
+       (member (var-kind var) '(SPECIAL GLOBAL) :test #'eq)))
 
 (defun local (var)
   (let ((kind (var-kind var)))
@@ -301,7 +302,7 @@
 (defun unused-variable-p (var)
   "Is the value of the variable ever read?"
   (and (null (var-read-nodes var))
-       (not (global var))))
+       (not (global-var-p var))))
 
 (defun c1progv (destination args)
   (check-args-number 'PROGV args 2)

@@ -223,12 +223,12 @@
     (maybe-add-to-read-nodes value-loc form)))
 
 (defun c1maybe-bind-special (dest-var forms)
-  (if (global dest-var)
+  (if (global-var-p dest-var)
       (c1bind-special dest-var forms)
       (c1translate dest-var forms)))
 
 (defun c1maybe-bind-special-op (dest-var loc)
-  (if (global dest-var)
+  (if (global-var-p dest-var)
       (c1bind-special-op dest-var loc)
       (c1set-loc dest-var loc)))
 
@@ -270,7 +270,7 @@
                 :args nargs-loc varargs-loc minargs maxargs nkeywords check))
 
 (defun c1varargs-pop-op (dest nargs-loc varargs-loc)
-  (if (and (var-p dest) (global dest))
+  (if (global-var-p dest)
       (nconc (c1varargs-pop-op 'VALUE0 nargs-loc varargs-loc)
              (c1bind-special-op dest 'VALUE0))
       (make-c1form* 'VARARGS-POP :args dest nargs-loc varargs-loc)))

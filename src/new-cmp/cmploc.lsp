@@ -73,7 +73,7 @@
       ;; variables. These calls can detect whether a variable is
       ;; boudp and since the error is a side effect, they can not
       ;; be suppressed.
-      (and (var-p loc) (global loc)
+      (and (global-var-p loc)
            (policy-global-var-checking))
       (case (first loc)
         ((CALL CALL-NORMAL CALL-INDIRECT) T)

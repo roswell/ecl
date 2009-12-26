@@ -46,7 +46,7 @@
          finally (return (nconc (c1bind locals)
                                 extras
                                 compiled-body
-                                (c1unbind (append locals specials)))
+                                (c1unbind (nconc specials locals)))
                          )))))
 
 (defun parse-let (var-assignment-pairs ss is ts other-decls)
@@ -81,9 +81,9 @@
        for var = (car pair)
        for form = (cdr pair)
        when (member (var-kind var) '(SPECIAL GLOBAL))
-       collect (let ((aux (c1make-var (gensym) nil nil nil)))
-                 (setf (car pair) aux)
-                 (push (list (var-name var) (var-name aux)) specials))
+       do (let ((aux (c1make-var (gensym) nil nil nil)))
+            (setf (car pair) aux)
+            (push (list (var-name var) (var-name aux)) specials))
        finally (when specials
                  (setf body `((let* ,specials
                                 (declare (special ,@(mapcar #'car specials)))
@@ -101,7 +101,7 @@
      for v = (car pair)
      for name = (var-name v)
      for form = (cdr pair)
-     for binding-type = (if (global v) 'c1bind-special 'c1translate)
+     for binding-type = (if (global-var-p v) 'c1bind-special 'c1translate)
      for compiled-form = (funcall binding-type v form)
      do (setf (cdr pair) compiled-form
               variable-names (cons name variable-names))
