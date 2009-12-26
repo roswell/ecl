@@ -83,6 +83,14 @@
     (add-to-set-nodes v forms))
   forms)
 
+(defun eliminate-from-read-nodes (var form)
+  (when (var-p var)
+    (setf (var-read-nodes var) (delete form (var-read-nodes var)))))
+
+(defun eliminate-from-set-nodes (var form)
+  (when (var-p var)
+    (setf (var-set-nodes var) (delete form (var-set-nodes var)))))
+
 ;;; A special binding creates a var object with the kind field SPECIAL,
 ;;; whereas a special declaration without binding creates a var object with
 ;;; the kind field GLOBAL.  Thus a reference to GLOBAL may need to make sure
@@ -169,7 +177,9 @@
 	   ;; symbol-macrolet
 	   (baboon))
 	  (t
-           (when (and maybe-drop-ref (or (local var) (not (policy-global-var-checking))))
+           (when (and maybe-drop-ref
+                      (not (and (global-var-p var)
+                                (policy-global-var-checking))))
              (return-from c1vref nil))
            (when (minusp (var-ref var)) ; IGNORE.
              (cmpwarn-style "The ignored variable ~s is used." name)
@@ -183,17 +193,15 @@
 			      (var-loc var) 'OBJECT))))
 	   var))))
 
-(defun unboxed (var)
-  (not (eq (var-rep-type var) :object)))
-
 (defun global-var-p (var)
   (and (var-p var)
        (member (var-kind var) '(SPECIAL GLOBAL) :test #'eq)))
 
-(defun local (var)
-  (let ((kind (var-kind var)))
-    (unless (member kind '(LEXICAL CLOSURE SPECIAL GLOBAL REPLACED DISCARDED))
-      kind)))
+(defun local-var-p (var)
+  (and (var-p var)
+       (let ((kind (var-kind var)))
+         (unless (member kind '(LEXICAL CLOSURE SPECIAL GLOBAL REPLACED DISCARDED))
+           kind))))
 
 (defun wt-var (var &aux (var-loc (var-loc var))) ; ccb
   (declare (type var var))

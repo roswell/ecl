@@ -40,6 +40,7 @@
   "src:new-cmp;cmpclos.lsp"
   "src:new-cmp;cmpstructures.lsp"
   "src:new-cmp;cmparray.lsp"
+  "src:new-cmp;cmppass.lsp"
   "src:new-cmp;cmpmain.lsp"))
 
 (let ((si::*keep-documentation* nil))

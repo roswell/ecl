@@ -147,6 +147,10 @@
 
     (setq *compiler-phase* 't2)
 
+    ;; Optimization passes
+    (execute-pass 'pass-delete-no-side-effects)
+    (execute-pass 'pass-delete-unused-bindings)
+
     ;; Emit entry function
     (let ((*compile-to-linking-call* nil))
       (t3local-fun *top-level-forms*))

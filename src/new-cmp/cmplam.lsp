@@ -275,7 +275,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
                             (c1debug-env-close block-name))))
 
         (let* ((bound-variables (set-difference new-variables requireds))
-               (non-special-bound-variables (remove-if #'global bound-variables)))
+               (non-special-bound-variables (remove-if #'global-var-p bound-variables)))
           (setq compiled-body (nconc (c1bind non-special-bound-variables)
                                      compiled-body
                                      body
