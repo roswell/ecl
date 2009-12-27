@@ -151,9 +151,10 @@ The second value is an association list of atoms to the tags they represent."
     (nconc (c1bind (list tag-var))
            (c1frame-id tag-var)
            (c1frame-set tag-var normal-tag)
-           (loop for t in tags
-              when (or (tag-ref-ccb t) (tag-ref-clb t))
-              collect (c1translate `(JMP-TRUE ,t) `(EQ (VALUES-REF 0) ,(tag-index t))))
+           (loop for tag in tags
+              when (or (tag-ref-ccb tag) (tag-ref-clb tag))
+              collect (c1translate `(JMP-TRUE ,tag)
+                                   `(EQ (VALUES-REF 0) ,(tag-index tag))))
            (c1translate 'TRASH '(error "Unknown GO tag"))
            (list normal-tag)
            body
