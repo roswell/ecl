@@ -256,14 +256,14 @@
                           keywords-loc allow-other-keys)
   (if (not (or keywords-loc allow-other-keys))
       (set-loc (if (simple-varargs-loc-p varargs-loc)
-                   '(c-inline :object "cl_grab_rest_args(args)" () t nil)
-                   '(c-inline :object "cl_grab_rest_args(cl_args)" () t nil))
+                   '(c-inline (:object) "cl_grab_rest_args(args)" () t nil)
+                   '(c-inline (:object) "cl_grab_rest_args(cl_args)" () t nil))
                dest-loc)
       (progn
         (if keywords-loc
             (wt-nl "cl_parse_key(cl_args," nkeys "," keywords-loc ",keyvars")
             (wt-nl "cl_parse_key(cl_args,0,NULL,NULL"))
-        (if dest-loc
+        (if (and dest-loc (not (eq dest-loc 'TRASH)))
             (wt ",(cl_object*)&" dest-loc)
             (wt ",NULL"))
         (wt (if allow-other-keys ",TRUE);" ",FALSE);")))))
@@ -684,12 +684,12 @@
 (defun c2emit-last-arg-macro (fun)
   (when (fun-narg-p fun)
     (let ((nreq (fun-minarg fun)))
-      (wt-nl "#define __ecl_last_arg "
-             (cond ((plusp nreq)
-                    (format nil "V~d" nreq))
-                   ((eq (fun-closure fun) 'LEXICAL)
-                    (format nil "lex~D" (1- (fun-level fun))))
-                   (t "narg")))
+      (wt-nl1 "#define __ecl_last_arg "
+              (cond ((plusp nreq)
+                     (format nil "V~d" nreq))
+                    ((eq (fun-closure fun) 'LEXICAL)
+                     (format nil "lex~D" (1- (fun-level fun))))
+                    (t "narg")))
       (wt-comment "Last argument before '...'"))))
 
 (defun c2entry-function-prologue (fun &key shared-data)
@@ -766,7 +766,7 @@
       (wt-nl-h " struct ecl_cclosure aux_closure;"))
     ;; Close C blocks
     (when (fun-narg-p fun)
-      (wt-nl "#undef __ecl_last_arg"))
+      (wt-nl1 "#undef __ecl_last_arg"))
     (unless (zerop *env-lvl*)
       (error "Wrong value of environment depth ~A" *env-lvl*))
     (unless (= *env* (fun-env fun))
@@ -784,7 +784,8 @@
         ((tag-p f)
          (format t "~&~A / ~A:" (tag-name f) (tag-label f)))
         (t
-         (format t "~&;;; Unknown form ~A" f))))
+         (format t "~&;;; Unknown form ~A" f)))
+  f)
 
 (defun pprint-c1forms (forms)
   (mapc #'pprint-c1form forms))

@@ -180,11 +180,12 @@ forms are also suppressed."
 (defun pass-decide-var-rep-types (function forms)
   (flet ((compute-variable-rep-type (v requireds)
            (let* ((kind (var-kind v)))
-             (if (eq kind 'LEXICAL)
-                 (if (member v requireds :test #'eq)
-                     :OBJECT
-                     (lisp-type->rep-type (var-type v)))
-                 kind))))
+             (cond ((or (not (eq kind 'lexical)) (var-ref-clb v))
+                    kind)
+                   ((member v requireds :test #'eq)
+                    :OBJECT)
+                   (t
+                    (lisp-type->rep-type (var-type v)))))))
     (loop with lambda-list = (fun-lambda-list function)
        with requireds = (first lambda-list)
        for v in (fun-local-vars function)
@@ -192,4 +193,38 @@ forms are also suppressed."
   forms)
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; CONSISTENCY CHECKS
+;;;
 
+(defun pass-consistency (function forms)
+  "We verify that all used variables that appear in a form contain this
+form in its read/set nodes, and add other consistency checks."
+  (labels ((in-read-set-nodes (tree form)
+             (cond ((var-p tree)
+                    (or (member form (var-read-nodes tree) :test #'eq)
+                        (member form (var-set-nodes tree) :test #'eq)
+                        (progn
+                          (warn "Variable ~A not referenced" (var-name tree))
+                          nil)))
+                   ((atom tree)
+                    t)
+                   (t
+                    (and (in-read-set-nodes (car tree) form)
+                         (in-read-set-nodes (cdr tree) form))))))
+    (loop for form in forms
+       for args = (and (c1form-p form) (c1form-args form))
+       unless (or (null args)
+                  (in-read-set-nodes args form)
+                  (member (c1form-name form)
+                          '(BIND UNBIND BIND-REQUIREDS
+                            BIND-SPECIAL PROGV
+                            FRAME-JMP-NEXT
+                            FRAME-POP FRAME-SAVE-NEXT
+                            VARARGS-BIND VARARGS-UNBIND)))
+       do (progn
+            (pprint-c1forms forms)
+            (error ";;; Inconsistent form ~S form with arguments~{~&;;;   ~A~}"
+                   (c1form-name form) args)))
+    forms))

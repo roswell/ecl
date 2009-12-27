@@ -303,7 +303,8 @@
 
 (defun unused-variable-p (var)
   "Is the value of the variable ever read?"
-  (and (null (var-read-nodes var))
+  (and (var-p var)
+       (null (var-read-nodes var))
        (not (global-var-p var))))
 
 (defun c1progv (destination args)

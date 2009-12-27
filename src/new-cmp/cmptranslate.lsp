@@ -86,21 +86,22 @@
                  (error "Wrong destination in forms list ~S" expr))))
   expr)
 
-(defun maybe-add-to-read-nodes (var-or-loc forms)
-  (when (var-p var-or-loc)
-    (add-to-read-nodes var-or-loc forms))
-  forms)
-
-(defun maybe-add-to-set-nodes (var-or-loc forms)
-  (when (var-p var-or-loc)
-    (add-to-set-nodes var-or-loc forms))
-  forms)
-
+(labels ((recursively-process (function var-or-loc forms)
+           (loop (cond ((var-p var-or-loc)
+                        (return (funcall function var-or-loc forms)))
+                       ((atom var-or-loc)
+                        (return))
+                       ((consp var-or-loc)
+                        (recursively-process function (pop var-or-loc) forms))))))
+  (defun maybe-add-to-read-nodes (var-or-loc forms)
+    (recursively-process 'add-to-read-nodes var-or-loc forms)
+    forms)
+  (defun maybe-add-to-set-nodes (var-or-loc forms)
+    (recursively-process 'add-to-set-nodes var-or-loc forms)
+    forms))
 (defun maybe-add-to-read/set-nodes (var-or-loc forms)
-  (when (var-p var-or-loc)
-    (add-to-set-nodes var-or-loc forms)
-    (add-to-read-nodes var-or-loc forms))
-  forms)
+  (maybe-add-to-set-nodes var-or-loc forms)
+  (maybe-add-to-read-nodes var-or-loc forms))
 
 (defun c1save-one-value (value)
   (if (constantp value)
@@ -249,14 +250,14 @@
 			  (c1set-loc new-destination 'VALUES)))
 
 (defun c1set-mv (locations &optional (min-args 0) (max-args multiple-values-limit))
-  (loop with form = (make-c1form* 'SET-MV :args locations min-args max-args)
-     for v in locations
-     do (maybe-add-to-set-nodes v form)
-     finally (return form)))
+  (maybe-add-to-set-nodes locations
+                          (make-c1form* 'SET-MV :args locations min-args max-args)))
 
 (defun c1values-op (locations)
-  (make-c1form* 'VALUES :type `(VALUES ,@(mapcar #'loc-type locations))
-                :args locations))
+  (let ((form (make-c1form* 'VALUES
+                            :type `(VALUES ,@(mapcar #'loc-type locations))
+                            :args locations)))
+    (maybe-add-to-read-nodes locations form)))
 
 ;;;
 ;;; FUNCTION ARGUMENTS AND BLOCKS
@@ -312,8 +313,8 @@
 
 (defun c1frame-set (id-loc no-label)
   (incf (tag-ref no-label))
-  (maybe-add-to-set-nodes id-loc
-			  (make-c1form* 'FRAME-SET :args id-loc no-label)))
+  (maybe-add-to-read-nodes id-loc
+                           (make-c1form* 'FRAME-SET :args id-loc no-label)))
 
 (defun c1frame-pop (&optional var)
   (make-c1form* 'FRAME-POP :args var))
@@ -355,7 +356,9 @@
    (make-c1form* 'STACK-FRAME-APPLY :args frame-var function-loc)))
 
 (defun c1stack-frame-close (frame-var)
-  (make-c1form* 'STACK-FRAME-CLOSE :args frame-var))
+  (maybe-add-to-read-nodes
+   frame-var
+   (make-c1form* 'STACK-FRAME-CLOSE :args frame-var)))
 
 ;;;
 ;;; LOCAL AND NONLOCAL CONTROL TRANSFER
@@ -386,8 +389,8 @@
 (defun c1return-from-op (var name)
   (maybe-add-to-read-nodes var (make-c1form* 'RETURN-FROM :args var name)))
 
-(defun c1throw-op (tag)
-  (make-c1form* 'THROW :args tag))
+(defun c1throw-op (tag-loc)
+  (maybe-add-to-read-nodes tag-loc (make-c1form* 'THROW :args tag-loc)))
 
 (defun c1go-op (tag)
   (make-c1form* 'GO :args tag))
@@ -400,7 +403,9 @@
   (make-c1form* 'DO-FLET/LABELS :args function-list))
 
 (defun c1funcall-op (destination arguments)
-  (make-c1form* 'FUNCALL :args destination arguments))
+  (let ((form (make-c1form* 'FUNCALL :args destination arguments)))
+    (maybe-add-to-read-nodes arguments form)
+    (maybe-add-to-set-nodes destination form)))
 
 (defun c1call-local-op (destination fun args-loc)
   (let* ((return-type (or (get-local-return-type fun) 'T))
@@ -409,24 +414,25 @@
                              :type return-type
                              :args destination fun args-loc)))
     ;; Add type information to the arguments.
+    (pprint form)
+    (maybe-add-to-read-nodes args-loc form)
     (loop for arg in args-loc
        for type in arg-types
-       do (maybe-add-to-read-nodes arg form)
        do (and-form-type (car arg-types) form (car args)
                          :safe "In a call to ~a" fname))
     (update-destination-type destination form return-type)
-    form))
+    (maybe-add-to-set-nodes destination form)))
 
-(defun c1call-global-op (destination fname args)
-  (let* ((return-type (propagate-types fname args nil))
+(defun c1call-global-op (destination fname arguments)
+  (let* ((return-type (propagate-types fname arguments nil))
          (form (make-c1form* 'CALL-GLOBAL
                              :sp-change (function-may-change-sp fname)
                              :type return-type
-                             :args destination fname args
+                             :args destination fname arguments
                              (values-type-primary-type return-type))))
-    (loop for arg in args do (maybe-add-to-read-nodes arg form))
+    (maybe-add-to-read-nodes arguments form)
     (update-destination-type destination form return-type)
-    form))
+    (maybe-add-to-set-nodes destination form)))
 
 (defun c1c-inline-op (output-type destination temps arg-types
                       output-rep-type c-expression side-effects
@@ -435,9 +441,9 @@
                              :args destination temps arg-types
                              output-rep-type c-expression side-effects
                              one-liner)))
-    (loop for arg in temps do (maybe-add-to-read-nodes arg form))
+    (maybe-add-to-read-nodes temps form)
     (update-destination-type destination form output-type)
-    form))
+    (maybe-add-to-set-nodes destination form)))
 
 ;;;
 ;;; DEBUG INFORMATION

@@ -364,7 +364,8 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
             (setf (fourth spec) flag)
             (push flag (fun-local-vars *current-function*))
             (cmp-env-register-var flag)))
-     finally (return (nconc (c1varargs-rest-op rest-var nargs varargs i
+     finally (return (nconc (c1varargs-rest-op (or rest-var 'TRASH)
+                                               nargs varargs i
                                                (and keywords-list
                                                     (add-keywords (nreverse keywords-list)))
                                                allow-other-keys)
