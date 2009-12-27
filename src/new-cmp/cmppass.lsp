@@ -233,15 +233,18 @@ form in its read/set nodes, and add other consistency checks."
 
 (defun pass-assign-labels (function forms)
   (loop with *last-label* = 0
+     with last-tag = nil
      with last = nil
      for f in forms
      do (cond ((not (tag-p f))
                (setf last nil))
               (last
                (setf (tag-label f) last
+                     (tag-ref last-tag) (+ (tag-ref last-tag) (tag-ref f))
                      (tag-ref f) 0))
               (t
-               (setf last (next-label)
+               (setf last-tag f
+                     last (next-label)
                      (tag-label f) last)))
      finally (setf (fun-last-label function) *last-label*))
   forms)
