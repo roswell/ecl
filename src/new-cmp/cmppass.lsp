@@ -135,7 +135,9 @@ forms are also suppressed."
              (unused-variable-p (if (consp v) (car v) v)))
            (unused-bindings (form)
              (and (c1form-p form)
-                  (member (c1form-name form) '(BIND UNBIND BIND-REQUIREDS))
+                  (member (c1form-name form) '(BIND UNBIND BIND-REQUIREDS
+                                               DEBUG-ENV-PUSH-VARS
+                                               DEBUG-ENV-POP-VARS))
                   (let ((new-args (delete-if #'unused-variable-binding-p
                                              (c1form-arg 0 form))))
                     (setf (c1form-args form) (list new-args))
@@ -186,9 +188,7 @@ forms are also suppressed."
     (loop with lambda-list = (fun-lambda-list function)
        with requireds = (first lambda-list)
        for v in (fun-local-vars function)
-       do (setf (var-kind v) (compute-variable-rep-type v requireds))
-       do (format t "~&;;; Variable name ~A is type ~S location ~S" (var-name v)
-                  (var-kind v) (var-loc v))))
+       do (setf (var-kind v) (compute-variable-rep-type v requireds))))
   forms)
 
 
