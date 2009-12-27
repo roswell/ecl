@@ -529,7 +529,6 @@
 	((var-p x)
 	 (setf (var-type x) v))
 	(t
-         (error)
          (cmpnote "Cannot change type of location ~A" x))))
 
 (defun enforce-types (fname arg-types forms &optional lisp-forms)
