@@ -32,13 +32,12 @@
            (body (create-temps-for-specials var-form-pairs body psetq-p))
            (compiled-pairs (compile-let-forms var-form-pairs psetq-p
                                               ss is ts other-decls))
-           (compiled-body (c1decl-body destination other-decls body))
-           (filtered-pairs (delete-replaceable-vars compiled-pairs)))
+           (compiled-body (c1decl-body destination other-decls body)))
       (loop with locals = '()
          with specials = '()
          with forms = '()
          with extras = '()
-         for (v . f) in filtered-pairs
+         for (v . f) in compiled-pairs
          do (if (member (var-kind v) '(SPECIAL GLOBAL))
 		(push v specials)
 	        (push v locals))
@@ -115,26 +114,3 @@
          (check-vdecl variable-names ts is)
          (c1declare-specials ss)))
   var-form-pairs)
-
-(defun delete-replaceable-vars (var-form-pairs)
-  ;; Delete pairs of variables that are never used or which can
-  ;; be replaced by their values.
-  (loop for pair in var-form-pairs
-     for v = (car pair)
-     for form = (cdr pair)
-     unless (check-unused-variable-definition v form)
-     ;;Force unboxing:
-     ;;do (when (member-type (var-type v)
-     ;;                      '(FIXNUM CHARACTER DOUBLE-FLOAT SINGLE-FLOAT))
-     ;;     (incf (var-ref v)))
-     collect pair))
-
-(defun check-unused-variable-definition (var form)
-  ;; Check whether the variable is ever read and, if not, whether the
-  ;; initialization form can be completely deleted
-  (when (unused-variable-p var)
-    (setf (var-kind var) 'DISCARDED)
-    (unless (form-causes-side-effect form)
-      (cmpnote "Deleted unused variable ~A and its initialization form." (var-name var))
-      t)))
-
