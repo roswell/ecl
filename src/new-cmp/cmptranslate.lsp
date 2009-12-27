@@ -112,12 +112,12 @@
 (defmacro c1with-temps ((prefix postfix &rest temps) &rest body)
   `(let* ((*c1-temps* *c1-temps*)
           (*cmp-env* (cmp-env-copy))
-          ,@(loop for t in temps
-               collect `(,t (make-c1-temp)))
+          ,@(loop for name in temps
+               collect `(,name (make-c1-temp)))
           (,prefix (c1bind (list ,@temps)))
           (,postfix (c1unbind (list ,@temps))))
-     ,@(loop for t in temps
-          collect `(cmp-env-register-var ,t *cmp-env*))
+     ,@(loop for name in temps
+          collect `(cmp-env-register-var ,name *cmp-env*))
      ,@body))
 
 (defmacro c1with-saved-one-value ((prefix postfix location expression) &rest body)
@@ -398,7 +398,7 @@
   (maybe-add-to-read-nodes tag-loc (make-c1form* 'THROW :args tag-loc)))
 
 (defun c1go-op (tag)
-  (make-c1form* 'GO :args tag))
+  (maybe-add-to-read-nodes tag (make-c1form* 'GO :args tag)))
 
 ;;;
 ;;; FUNCTION CALLS, CLOSURES AND THE LIKE
