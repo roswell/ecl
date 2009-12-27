@@ -96,6 +96,12 @@
     (add-to-set-nodes var-or-loc forms))
   forms)
 
+(defun maybe-add-to-read/set-nodes (var-or-loc forms)
+  (when (var-p var-or-loc)
+    (add-to-set-nodes var-or-loc forms)
+    (add-to-read-nodes var-or-loc forms))
+  forms)
+
 (defun c1save-one-value (value)
   (if (constantp value)
       (values nil (build-constant-value-loc (cmp-eval value) :always t))
@@ -273,12 +279,19 @@
   (if (global-var-p dest)
       (nconc (c1varargs-pop-op 'VALUE0 nargs-loc varargs-loc)
              (c1bind-special-op dest 'VALUE0))
-      (make-c1form* 'VARARGS-POP :args dest nargs-loc varargs-loc)))
+      (let ((form (make-c1form* 'VARARGS-POP :args dest nargs-loc varargs-loc)))
+        (maybe-add-to-read/set-nodes nargs-loc form)
+        (maybe-add-to-read/set-nodes varargs-loc form)
+        (maybe-add-to-set-nodes dest form))))
 
 (defun c1varargs-rest-op (dest-loc nargs-loc varargs-loc nkeys
                           keywords-list allow-other-keys)
-  (make-c1form* 'VARARGS-REST :type 'LIST :args dest-loc nargs-loc varargs-loc
-                nkeys keywords-list allow-other-keys))
+  (let ((form (make-c1form* 'VARARGS-REST :type 'LIST :args dest-loc
+                            nargs-loc varargs-loc
+                            nkeys keywords-list allow-other-keys)))
+    (maybe-add-to-read/set-nodes nargs-loc form)
+    (maybe-add-to-read/set-nodes varargs-loc form)
+    (maybe-add-to-set-nodes dest-loc form)))
 
 (defun c1varargs-unbind-op (nargs-loc varargs-loc minargs maxargs nkeywords)
   (make-c1form* 'VARARGS-UNBIND
@@ -289,7 +302,9 @@
 ;;;
 
 (defun c1values-ref (destination args)
-   (make-c1form* 'SET :args destination `(VALUE ,(first args))))
+  (maybe-add-to-set-nodes
+   destination
+   (make-c1form* 'SET :args destination `(VALUE ,(first args)))))
 
 ;;;
 ;;; JUMP FRAMES
@@ -310,27 +325,27 @@
   (make-c1form* 'FRAME-JMP-NEXT :args var))
 
 (defun c1frame-id (var)
-  (make-c1form* 'FRAME-ID :args var))
+  (maybe-add-to-set-nodes var (make-c1form* 'FRAME-ID :args var)))
 
 ;;;
 ;;; STACK FRAMES
 ;;;
 
 (defun c1stack-frame-open (var)
-  (make-c1form* 'STACK-FRAME-OPEN :args var))
+  (maybe-add-to-set-nodes var (make-c1form* 'STACK-FRAME-OPEN :args var)))
 
 (defun c1stack-frame-push (frame-var value-loc)
-  (maybe-add-to-read-nodes
+  (maybe-add-to-read/set-nodes
    frame-var
    (make-c1form* 'STACK-FRAME-PUSH :args frame-var value-loc)))
 
 (defun c1stack-frame-push-values (frame-var)
-  (maybe-add-to-read-nodes
+  (maybe-add-to-read/set-nodes
    frame-var
    (make-c1form* 'STACK-FRAME-PUSH-VALUES :args frame-var)))
 
 (defun c1stack-frame-pop-values (frame-var &optional (dest 'trash))
-  (maybe-add-to-read-nodes
+  (maybe-add-to-read/set-nodes
    frame-var
    (make-c1form* 'STACK-FRAME-POP-VALUES :args frame-var dest)))
 
@@ -369,7 +384,7 @@
   (add-jmp-cleanups tag (c1set-loc `(JMP-ZERO ,tag) loc)))
 
 (defun c1return-from-op (var name)
-  (make-c1form* 'RETURN-FROM :args var name))
+  (maybe-add-to-read-nodes var (make-c1form* 'RETURN-FROM :args var name)))
 
 (defun c1throw-op (tag)
   (make-c1form* 'THROW :args tag))
