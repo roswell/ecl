@@ -160,6 +160,7 @@
     (apply #'format t args)))
 
 (defun cmperr (string &rest args)
+  (apply #'error string args)
   (let ((c (make-condition 'compiler-error
 			   :format-control string
 			   :format-arguments args)))
