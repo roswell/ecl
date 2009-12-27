@@ -1128,7 +1128,7 @@
                    (member t))
 
 ;; ECL extensions:
-(proclaim-function si:string-to-object (string) t)
+(proclaim-function si:string-to-object (string &optional t) t)
 (proclaim-function si:standard-readtable (t) readtable)
 
 
@@ -2078,7 +2078,7 @@
     describe inspect
     ;; iolib.lsp
     read-from-string write-to-string prin1-to-string princ-to-string
-    y-or-n-p yes-or-no-p dribble
+    y-or-n-p yes-or-no-p dribble si::string-to-object
     ;; listlib.lsp
     union nunion intersection nintersection set-difference nset-difference
     set-exclusive-or nset-exclusive-or subsetp rassoc-if rassoc-if-not
