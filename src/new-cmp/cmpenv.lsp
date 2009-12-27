@@ -492,7 +492,7 @@
 		    (error "Inconsistency in environment."))
 		  (return-from c1cleanup-forms
 		    (nconc (c1unbind specials nil)
-			   (apply #'append cleanup-forms))))))
+			   (apply #'nconc (mapcar #'copy-list cleanup-forms)))))))
 
 (defun cmp-env-register-var (var &optional (env *cmp-env*) (boundp t))
   (push (list (var-name var)
@@ -550,7 +550,7 @@
   env)
 
 (defun cmp-env-register-cleanup (form &optional (env *cmp-env*))
-  (push (list :cleanup form) (cmp-env-variables env))
+  (push (list :cleanup (copy-list form)) (cmp-env-variables env))
   env)
 
 (defun cmp-env-search-function (name &optional (env *cmp-env*))
