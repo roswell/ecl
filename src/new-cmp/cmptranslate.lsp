@@ -189,10 +189,15 @@
     (make-c1form* 'UNBIND :args vars close-block)))
 
 (defun c1progv-op (ndx-loc vars-loc values-loc)
-  (make-c1form* 'PROGV :args ndx-loc vars-loc values-loc))
+  (let ((form (make-c1form* 'PROGV :args ndx-loc vars-loc values-loc)))
+    (setf (var-kind ndx-loc) :CL-INDEX
+          (var-type ndx-loc) 'SI::INDEX)
+    (maybe-add-to-set-nodes ndx-loc form)
+    (maybe-add-to-read-nodes vars-loc form)
+    (maybe-add-to-read-nodes values-loc form)))
 
 (defun c1progv-exit-op (ndx-loc)
-  (make-c1form* 'PROGV-EXIT :args ndx-loc))
+  (maybe-add-to-read-nodes ndx-loc (make-c1form* 'PROGV-EXIT :args ndx-loc)))
 
 ;;;
 ;;; ASSIGNMENTS

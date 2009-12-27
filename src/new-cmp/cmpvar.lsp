@@ -319,7 +319,8 @@
 	  (nconc ndx-prefix
 		 prefix
 		 (c1progv-op bds-ndx (first temps) (second temps))
-		 (c1translate destination args)
+		 (c1progn destination args)
+                 (c1progv-exit-op bds-ndx)
 		 postfix
 		 ndx-postfix))))))
 
