@@ -152,6 +152,7 @@
     (execute-pass 'pass-delete-no-side-effects)
     (execute-pass 'pass-delete-unused-bindings)
     (execute-pass 'pass-decide-var-rep-types)
+    (execute-pass 'pass-assign-labels)
 
     ;; Emit entry function
     (let ((*compile-to-linking-call* nil))

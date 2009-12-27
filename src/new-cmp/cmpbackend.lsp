@@ -34,8 +34,8 @@
          (when (plusp (tag-ref form))
            (let ((label (tag-label form)))
              (unless label
-               (setf (tag-label form) (setf label (next-label))))
-             (wt-label (tag-label form)))))
+               (error "No label for tag ~A" form))
+             (wt-label label))))
         ((c1form-p form)
          (pprint-c1form form)
          (let* ((*file* (c1form-file form))

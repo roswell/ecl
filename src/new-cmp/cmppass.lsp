@@ -225,3 +225,23 @@ form in its read/set nodes, and add other consistency checks."
             (error ";;; Inconsistent form ~S form with arguments~{~&;;;   ~A~}"
                    (c1form-name form) args)))
     forms))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; ASSIGN LABELS
+;;;
+
+(defun pass-assign-labels (function forms)
+  (loop with *last-label* = 0
+     with last = nil
+     for f in forms
+     do (cond ((not (tag-p f))
+               (setf last nil))
+              (last
+               (setf (tag-label f) last
+                     (tag-ref f) 0))
+              (t
+               (setf last (next-label)
+                     (tag-label f) last)))
+     finally (setf (fun-last-label function) *last-label*))
+  forms)
