@@ -128,6 +128,7 @@
 (defmacro make-c1form* (&rest args)
   `(list (make-c1form-alone ,@args)))
 
+#+(or)
 (defmacro make-c1form-alone (name &rest args)
   (let ((info-args '())
 	(form-args '()))
