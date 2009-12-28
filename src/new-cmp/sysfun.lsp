@@ -2194,3 +2194,4 @@
      ;; method.lsp
      clos::pop-next-method
      )))
+;(trace c::c1expr c::c1call-global c::c1if c::cmp-macroexpand c::cmp-expand-macro)
