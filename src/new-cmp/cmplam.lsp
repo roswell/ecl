@@ -350,7 +350,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
                               (c1maybe-bind-special var init)
                               (and flag
                                    (setf flag (c1make-var flag ss is ts))
-                                   (c1maybe-bind-special-op flag t))
+                                   (c1maybe-bind-special-op flag nil))
                               (c1jmp next-tag)
                               (list found-tag)
                               (c1maybe-bind-special-op var `(KEYVARS ,i))
@@ -365,7 +365,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
             (push flag (fun-local-vars *current-function*))
             (cmp-env-register-var flag)))
      finally (return (nconc (c1varargs-rest-op (or rest-var 'TRASH)
-                                               nargs varargs i
+                                               nargs varargs (1+ i)
                                                (and keywords-list
                                                     (add-keywords (nreverse keywords-list)))
                                                allow-other-keys)
@@ -383,11 +383,11 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
      do (let* ((found-tag (make-tag :name (gensym "OPT-FOUND") :label (next-label)))
                (next-tag (make-tag :name (gensym "OPT-NEXT") :label (next-label))))
           (setf output (nconc output
-                              (c1jmp-true found-tag nargs)
+                              (c1jmp-nonzero found-tag nargs)
                               (c1maybe-bind-special var init)
                               (and flag
                                    (setf flag (c1make-var flag ss is ts))
-                                   (c1maybe-bind-special-op flag t))
+                                   (c1maybe-bind-special-op flag nil))
                               (c1jmp next-tag)
                               (list found-tag)
                               (c1varargs-pop-op var nargs varargs)
