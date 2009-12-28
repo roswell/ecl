@@ -128,8 +128,23 @@
                               (*cmp-env* (cmp-env-copy)))
   (check-args-number 'MULTIPLE-VALUE-BIND args 2)
   (let* ((variables (pop args))
-         (values (pop args)))
-    (c1translate destination
-                 `(let ,variables
-                    (multiple-value-setq ,variables ,values)
-                    (locally ,@args)))))
+         (values (pop args))
+         (body args))
+    (c1translate
+     destination
+     (case (length variables)
+       ;; Simple cases can be rewritten as more efficient forms
+       ;; Note that without variables we need a body because otherwise
+       ;; the VALUES form is output.
+       (0 `(progn ,values ,@(or body '((progn)))))
+       (1 `(let ((,(first variables) ,values)) ,@body))
+       ;; FIXME! This is ugly ugly and it is there because we do not want
+       ;; to duplicate the code in LET/LET* but surely there is a better
+       ;; way.
+       (t (let ((temps (loop for i in variables collect (gensym "VALUES"))))
+            `(let ,temps
+               (multiple-value-setq ,temps ,values)
+               (let (,@(loop for a in variables
+                          for b in temps
+                          collect (list a b)))
+                 ,@body))))))))
