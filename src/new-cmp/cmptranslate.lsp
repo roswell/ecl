@@ -201,7 +201,7 @@
 
 (defun update-destination-type (destination form type)
   (cond ((not (var-p destination)))
-        ((eq type t))
+        ((eq (setf type (values-type-primary-type type)) t))
         ((var-read-only-p destination)
          (setf (var-type destination) type))
         (t
@@ -386,6 +386,10 @@
 (defun c1jmp-zero (tag loc)
   (incf (tag-ref tag))
   (add-jmp-cleanups tag (c1set-loc `(JMP-ZERO ,tag) loc)))
+
+(defun c1jmp-nonzero (tag loc)
+  (incf (tag-ref tag))
+  (add-jmp-cleanups tag (c1set-loc `(JMP-NONZERO ,tag) loc)))
 
 (defun c1return-from-op (var name)
   (maybe-add-to-read-nodes var (make-c1form* 'RETURN-FROM :args var name)))

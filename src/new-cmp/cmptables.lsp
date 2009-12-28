@@ -265,6 +265,7 @@
     ;; cmpbackend.lsp
     (jmp-true . set-loc-jmp-true)
     (jmp-false . set-loc-jmp-false)
-    (jmp-zero . set-loc-jmp-false)
+    (jmp-zero . set-loc-jmp-zero)
+    (jmp-nonzero . set-loc-jmp-nonzero)
     )))
 
