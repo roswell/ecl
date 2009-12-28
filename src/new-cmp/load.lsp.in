@@ -9,7 +9,6 @@
   "src:new-cmp;cmpbind.lsp"
   "src:new-cmp;cmptables.lsp"
   "src:new-cmp;cmptranslate.lsp"
-  "src:new-cmp;cmpbackend.lsp"
   "src:new-cmp;cmpblock.lsp"
   "src:new-cmp;cmpcall.lsp"
   "src:new-cmp;cmpcatch.lsp"
@@ -41,6 +40,7 @@
   "src:new-cmp;cmpstructures.lsp"
   "src:new-cmp;cmparray.lsp"
   "src:new-cmp;cmppass.lsp"
+  "src:new-cmp;cmpbackend.lsp"
   "src:new-cmp;cmpmain.lsp"))
 
 (let ((si::*keep-documentation* nil))
