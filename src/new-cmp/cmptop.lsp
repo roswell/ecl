@@ -92,7 +92,6 @@
 	 (t1expr* destination form))))	
 
 (defun emit-local-funs (fun)
-  (format t "~&;;; Adding ~A" (fun-child-funs fun))
   (loop with *compile-time-too* = nil
      with *compile-toplevel* = nil
      with emitted-local-funs = (make-hash-table :test #'eql)
@@ -102,7 +101,6 @@
           (when (gethash f emitted-local-funs)
             (error "Doubly emitted function ~A" f))
           (t3local-fun f)
-          (format t "~&;;; Adding ~A" (fun-child-funs f))
           (setf (gethash f emitted-local-funs) t
                 pending (append (fun-child-funs f) pending)))))
 
