@@ -39,28 +39,20 @@
       (cmp-env-register-tag (tag-name exit) exit *cmp-env*)
       (cmp-env-register-cleanup cleanup-form *cmp-env*)
       (setf (blk-env blk) *cmp-env*)
-      (c1with-saved-output (prefix postfix new-destination destination)
-        (let ((body (c1translate new-destination `(progn ,@(rest args)))))
-          (setf (blk-destination blk) new-destination)
-          (if (plusp (var-ref blk-var))
-	      (progn
-		(nconc prefix
-		       (c1bind (list blk-var))
-		       (c1frame-id blk-var)
-		       (c1frame-set blk-var exit)
-		       (c1set-from-values new-destination)
-		       (c1jmp exit)
-		       body
-		       (list exit)
-                       (c1set-loc destination new-destination)
-		       (c1unbind (list blk-var))
-		       cleanup-form
-		       postfix))
-              (nconc prefix
-                     body
-                     (list exit)
-                     (c1set-loc destination new-destination)
-                     postfix)))))))
+      (let ((body (c1translate destination `(progn ,@(rest args)))))
+        (setf (blk-destination blk) destination)
+        (if (plusp (var-ref blk-var))
+            (nconc (c1bind (list blk-var))
+                   (c1frame-id blk-var)
+                   (c1frame-set blk-var exit)
+                   (c1set-from-values destination)
+                   (c1jmp exit)
+                   body
+                   (list exit)
+                   (c1unbind (list blk-var))
+                   cleanup-form)
+            (nconc body
+                   (list exit)))))))
 
 (defun c1return-from (destination args)
   (check-args-number 'RETURN-FROM args 1 2)
