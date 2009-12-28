@@ -61,6 +61,10 @@
 
 (in-package "COMPILER")
 
+(defparameter *dump-output* (open "dump.log" :direction :output
+                                  :if-exists :supersede
+                                  :if-does-not-exist :create))
+
 (defun execute-pass (pass)
   (format *dump-output* "~&;;; Executing pass ~A" pass)
   (loop with pending = (list *top-level-forms*)
@@ -70,6 +74,24 @@
      do (format *dump-output* "~&;;; Executing pass ~A on ~A" pass f)
      do (setf (fun-lambda f) (funcall pass f (fun-lambda f))
               pending (append (fun-child-funs f) pending))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; OUTPUT C1FORMS
+;;;
+
+(defun pprint-c1form (f &optional (stream t))
+  (cond ((c1form-p f)
+         (format stream "~&~4T~16A~4T~{~A ~}" (c1form-name f) (c1form-args f)))
+        ((tag-p f)
+         (format stream "~&~A / ~A:" (tag-name f) (tag-label f)))
+        (t
+         (format stream "~&;;; Unknown form ~A" f)))
+  (force-output stream)
+  f)
+
+(defun pprint-c1forms (forms &optional (stream t))
+  (loop for f in forms do (pprint-c1form f stream)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -201,7 +223,7 @@ forms are also suppressed."
 (defun pass-consistency (function forms)
   "We verify that all used variables that appear in a form contain this
 form in its read/set nodes, and add other consistency checks."
-  ;(pprint-c1forms forms)
+  (pprint-c1forms forms *dump-output*)
   (labels ((in-read-set-nodes (tree form)
              (cond ((var-p tree)
                     (or (member form (var-read-nodes tree) :test #'eq)
