@@ -309,6 +309,7 @@
   (bind "_ecl_inner_frame" var))
 
 (defun c2stack-frame-push (frame-var value-loc)
+  (setf value-loc (coerce-one-location value-loc :object))
   (wt-nl "ecl_stack_frame_push(" frame-var "," value-loc ");"))
 
 (defun c2stack-frame-push-values (frame-var)
@@ -334,22 +335,22 @@
   (wt-nl) (wt-go (tag-label tag)))
 
 (defun set-loc-jmp-true (loc tag)
-  (wt-nl "if (" loc ") ")
+  (wt-nl "if (" (coerce-one-location loc :bool) ") ")
   (wt-go (tag-label tag)))
 
 (defun set-loc-jmp-false (loc tag)
-  (wt-nl "if (!(" loc ")) ")
+  (wt-nl "if (!(" (coerce-one-location loc :bool) ")) ")
   (wt-go (tag-label tag)))
 
 (defun set-loc-jmp-zero (loc tag)
-  (wt-nl "if (!(" loc ")) ")
+  (wt-nl "if (!(" (coerce-one-location loc :bool) ")) ")
   (wt-go (tag-label tag)))
 
 (defun c2return-from-op (var name)
   (wt-nl "cl_return_from(" var "," (add-symbol name) ");"))
 
 (defun c2throw-op (tag)
-  (wt-nl "cl_throw(" tag ");"))
+  (wt-nl "cl_throw(" (coerce-one-location tag :object) ");"))
 
 (defun c2go-op (tag)
   (let ((var (tag-var tag)))
@@ -426,6 +427,11 @@
 
   (call-unknown-global-loc fname nil args))
 
+(defun coerce-one-location (location rep-type)
+  (if (eq rep-type (loc-representation-type location))
+      location
+      `(COERCE-LOC ,rep-type ,location)))
+
 (defun coerce-locations (locations &optional types args-to-be-saved)
   (loop for i from 0
      for loc in locations
@@ -434,9 +440,7 @@
      when (and args-to-be-saved (member i args-to-be-saved)
                (not (var-p loc)))
      do (cmpnote "Ignoring '~{@~A;~}' in a c-inline form" args-to-be-saved)
-     collect (if (eq rep-type (loc-representation-type loc))
-                 loc
-                 `(COERCE-LOC ,rep-type ,loc))))
+     collect (coerce-one-location loc rep-type)))
 
 (defun call-normal-loc (fname fun args)
   `(CALL-NORMAL ,fun ,(coerce-locations args)))
