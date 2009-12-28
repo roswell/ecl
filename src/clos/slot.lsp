@@ -67,7 +67,8 @@
 	     slotd)
       (apply #'make-simple-slotd slotd)))
 
-(let ((accessors (mapcar #'first (mapcar #'last +slot-definition-slots+))))
+(let ((accessors (loop for i in +slot-definition-slots+
+                    collect (first (last i)))))
   (dotimes (i (length accessors))
     (let ((name (first (nth i +slot-definition-slots+)))
 	  (position i)
