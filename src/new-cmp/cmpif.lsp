@@ -16,6 +16,8 @@
 
 (defun c1alternatives (form true-branch false-branch)
   (c1with-saved-value (prefix postfix temp form)
+    (when (or prefix postfix)
+      (setf (var-kind temp) :bool))
     (nconc prefix
            (if true-branch
                (nconc (c1jmp-true true-branch temp)
