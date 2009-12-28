@@ -2194,7 +2194,3 @@
      ;; method.lsp
      clos::pop-next-method
      )))
-
-
-
-(trace c::c1compile-function)

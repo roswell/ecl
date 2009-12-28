@@ -17,10 +17,6 @@
 ;;;
 
 (defun c1translate (destination value)
-  (when (and c::*current-function* (eq (fun-name c::*current-function*) 'search))
-    (print 'c1translate)
-    (pprint destination)
-    (pprint value))
   (enforce-destination destination (c1expr destination value)))
 
 (defun c2translate (forms)
@@ -419,7 +415,6 @@
                              :type return-type
                              :args destination fun args-loc)))
     ;; Add type information to the arguments.
-    (pprint form)
     (maybe-add-to-read-nodes args-loc form)
     (loop for arg in args-loc
        for type in arg-types

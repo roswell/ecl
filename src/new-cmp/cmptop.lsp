@@ -84,10 +84,6 @@
 	   )))))
 
 (defun t1/c1expr (destination form)
-  (when (and c::*current-function* (eq (fun-name c::*current-function*) 'SEARCH))
-    (print 'T1/C1EXPR)
-    (print destination)
-    (print form))
   (cond ((not *compile-toplevel*)
 	 (c1translate destination form))
 	((atom form)

@@ -18,6 +18,10 @@
 
 (defvar *c-opened-blocks* 0)
 
+(defparameter *dump-output* (open "dump.log" :direction :output
+                                  :if-exists :supersede
+                                  :if-does-not-exist :create))
+
 (defun c2driver (forms)
   (let ((*c-opened-blocks* 0))
     (loop for f in forms
@@ -30,14 +34,14 @@
          (loop for f in form
             do (c2expr f)))
         ((tag-p form)
-         (pprint-c1form form)
+         (pprint-c1form form *dump-output*)
          (when (plusp (tag-ref form))
            (let ((label (tag-label form)))
              (unless label
                (error "No label for tag ~A" form))
              (wt-label label))))
         ((c1form-p form)
-         (pprint-c1form form)
+         (pprint-c1form form *dump-output*)
          (let* ((*file* (c1form-file form))
                 (*file-position* (c1form-file form))
                 (*current-form* (c1form-form form))
@@ -104,7 +108,8 @@
            (push v closed-overs)
            (when new-env
              (let ((env-lvl *env-lvl*))
-               (format t "~&;;; Increasing environment depth to ~D" (1+ env-lvl))
+               (format *dump-output* "~&;;; Increasing environment depth to ~D"
+                       (1+ env-lvl))
                (unless block-p (open-c-block) (setf block-p t))
                (wt *volatile* "cl_object env" (incf *env-lvl*) " = env" env-lvl ";"))
              (setf new-env nil)))
@@ -147,7 +152,8 @@
 	       (unless (zerop closure)
                  (wt-nl "/* End of lifetime of env" *env-lvl* "*/")
 		 (decf *env-lvl*)
-                 (format t "~&;;; Decreasing environment depth to ~D" *env-lvl*)
+                 (format *dump-output* "~&;;; Decreasing environment depth to ~D"
+                         *env-lvl*)
                  (decf *env* closure))
                (when block-p (close-c-block)))))
 
@@ -159,7 +165,8 @@
   (cond ((eq loc value)
          (cmpnote "Dummy SET statement ~A <- ~A" loc value)
          (unless (equal loc *destination*)
-           (format t "~&;;; In dummy SET, destination ~A /= loc ~A" *destination* loc)))
+           (format *dump-output* "~&;;; In dummy SET, destination ~A /= loc ~A"
+                   *destination* loc)))
         (t
          (set-loc value loc))))
 
@@ -215,7 +222,8 @@
           (CLOSURE
            (when new-env
              (let ((env-lvl *env-lvl*))
-               (format t "~&;;; Increasing environment depth to ~D" (1+ env-lvl))
+               (format *dump-output* "~&;;; Increasing environment depth to ~D"
+                       (1+ env-lvl))
                (unless block-p (open-c-block) (setf block-p t))
                (wt *volatile* "cl_object env" (incf *env-lvl*)
                    " = env" env-lvl ";")
@@ -747,8 +755,8 @@
                  (or (fun-name fun) (fun-description fun) 'CLOSURE))
   (c2emit-function-declaration fun)
   (open-c-block :function)
-  (format t "~&;;; Environment depth ~A" *env-lvl*)
-  (format t "~&;;; Environment size ~A" *env*)
+  (format *dump-output* "~&;;; Environment depth ~A" *env-lvl*)
+  (format *dump-output* "~&;;; Environment size ~A" *env*)
   (c2emit-local-variables fun)
   (c2emit-last-arg-macro fun)
   (c2emit-closure-scan fun)
@@ -782,14 +790,15 @@
 ;;; OUTPUT C1FORMS
 ;;;
 
-(defun pprint-c1form (f)
+(defun pprint-c1form (f &optional (stream t))
   (cond ((c1form-p f)
-         (format t "~&~4T~16A~4T~{~A ~}" (c1form-name f) (c1form-args f)))
+         (format stream "~&~4T~16A~4T~{~A ~}" (c1form-name f) (c1form-args f)))
         ((tag-p f)
-         (format t "~&~A / ~A:" (tag-name f) (tag-label f)))
+         (format stream "~&~A / ~A:" (tag-name f) (tag-label f)))
         (t
-         (format t "~&;;; Unknown form ~A" f)))
+         (format stream "~&;;; Unknown form ~A" f)))
+  (force-output stream)
   f)
 
-(defun pprint-c1forms (forms)
-  (mapc #'pprint-c1form forms))
+(defun pprint-c1forms (forms &optional (stream t))
+  (mapc #'pprint-c1form forms stream))

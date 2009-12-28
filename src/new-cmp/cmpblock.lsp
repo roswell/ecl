@@ -100,7 +100,6 @@
                                     cleanup
                                     (c1jmp exit-tag)
                                     postfix)))))
-        (print 'hola)
 	(setf (blk-type blk) (values-type-or (blk-type blk) type)
               (blk-ref blk) (1+ (blk-ref blk)))
         output))))

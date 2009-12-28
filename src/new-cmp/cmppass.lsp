@@ -62,11 +62,12 @@
 (in-package "COMPILER")
 
 (defun execute-pass (pass)
-  (cmpnote "Executing pass ~A" pass)
+  (format *dump-output* "~&;;; Executing pass ~A" pass)
   (loop with pending = (list *top-level-forms*)
      for *current-function* = (pop pending)
      for f = *current-function*
      while f
+     do (format *dump-output* "~&;;; Executing pass ~A on ~A" pass f)
      do (setf (fun-lambda f) (funcall pass f (fun-lambda f))
               pending (append (fun-child-funs f) pending))))
 
@@ -200,7 +201,7 @@ forms are also suppressed."
 (defun pass-consistency (function forms)
   "We verify that all used variables that appear in a form contain this
 form in its read/set nodes, and add other consistency checks."
-  (pprint-c1forms forms)
+  ;(pprint-c1forms forms)
   (labels ((in-read-set-nodes (tree form)
              (cond ((var-p tree)
                     (or (member form (var-read-nodes tree) :test #'eq)
