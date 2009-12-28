@@ -242,7 +242,7 @@
 
 (defun set-trash-loc (loc)
   (when (loc-has-side-effects loc)
-    (wt-nl "(void)(" loc ");")))
+    (wt-nl loc ";")))
 
 (defun set-the-loc (value type loc)
   (set-loc value loc))
