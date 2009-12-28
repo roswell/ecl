@@ -18,10 +18,6 @@
 
 (defvar *c-opened-blocks* 0)
 
-(defparameter *dump-output* (open "dump.log" :direction :output
-                                  :if-exists :supersede
-                                  :if-does-not-exist :create))
-
 (defun c2driver (forms)
   (let ((*c-opened-blocks* 0))
     (loop for f in forms
@@ -355,8 +351,22 @@
   (wt-nl "if (!(" (coerce-one-location loc :bool) ")) ")
   (wt-go (tag-label tag)))
 
+(defconstant +integer-representation-types+
+  '#.(loop for records on +representation-types+ by #'cddr
+        for (name (type c-type) &rest) = records
+        when (subtypep type 'integer)
+        collect name))
+
 (defun set-loc-jmp-zero (loc tag)
-  (wt-nl "if (!(" (coerce-one-location loc :bool) ")) ")
+  (assert (member (loc-representation-type loc) +integer-representation-types+
+                  :test #'eq))
+  (wt-nl "if (!(" loc ")) ")
+  (wt-go (tag-label tag)))
+
+(defun set-loc-jmp-nonzero (loc tag)
+  (assert (member (loc-representation-type loc) +integer-representation-types+
+                  :test #'eq))
+  (wt-nl "if ((" loc ")) ")
   (wt-go (tag-label tag)))
 
 (defun c2return-from-op (var name)
@@ -790,20 +800,3 @@
       (error "Wrong value of environment size ~A" *env*))
     (close-all-c-blocks)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;
-;;; OUTPUT C1FORMS
-;;;
-
-(defun pprint-c1form (f &optional (stream t))
-  (cond ((c1form-p f)
-         (format stream "~&~4T~16A~4T~{~A ~}" (c1form-name f) (c1form-args f)))
-        ((tag-p f)
-         (format stream "~&~A / ~A:" (tag-name f) (tag-label f)))
-        (t
-         (format stream "~&;;; Unknown form ~A" f)))
-  (force-output stream)
-  f)
-
-(defun pprint-c1forms (forms &optional (stream t))
-  (mapc #'pprint-c1form forms stream))
