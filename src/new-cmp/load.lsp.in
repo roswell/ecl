@@ -47,6 +47,7 @@
   "src:new-cmp;cmpc-bind.lsp"
   "src:new-cmp;cmpc-inline.lsp"
   "src:new-cmp;cmpc-data.lsp"
+  "src:new-cmp;cmpc-pass.lsp"
   "src:new-cmp;cmpc-ops.lsp"
   "src:new-cmp;cmpc-tables.lsp"
   "src:new-cmp;cmpc-cbk.lsp"
