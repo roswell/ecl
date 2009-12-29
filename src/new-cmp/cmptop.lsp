@@ -95,6 +95,12 @@
                            (first fl)))
       (t1/c1expr destination 'NIL)))
 
+(defun c1decl-body (destination decls body)
+  (if (null decls)
+      (c1progn destination body)
+      (let* ((*cmp-env* (add-declarations decls (cmp-env-copy *cmp-env*))))
+	(c1progn destination body))))
+
 (defun c1eval-when (destination args)
   (check-args-number 'EVAL-WHEN args 1)
   (let ((load-flag nil)

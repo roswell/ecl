@@ -12,61 +12,7 @@
 
 ;;;; CMPENV  Environments of the Compiler.
 
-(in-package "COMPILER")
-
-;;; Only these flags are set by the user.
-;;; If (safe-compile) is ON, some kind of run-time checks are not
-;;; included in the compiled code.  The default value is OFF.
-
-(defconstant +init-env-form+
-  '((*gensym-counter* 0)
-    (*compiler-in-use* t)
-    (*compiler-phase* 't1)
-    (*callbacks* nil)
-    (*next-cfun* 0)
-    (*lcl* 0)
-    (*last-label* 0)
-    (*load-objects* (make-hash-table :size 128 :test #'equal))
-    (*make-forms* nil)
-    (*static-constants* nil)
-    (*permanent-objects* nil)
-    (*temporary-objects* nil)
-    (*local-funs* nil)
-    (*global-var-objects* nil)
-    (*global-vars* nil)
-    (*global-funs* nil)
-    (*global-cfuns-array* nil)
-    (*linking-calls* nil)
-    (*global-entries* nil)
-    (*undefined-vars* nil)
-    (*top-level-forms* nil)
-    (*clines-string-list* '())
-    (*inline-functions* nil)
-    (*inline-blocks* 0)
-    (*debugger-hook* 'compiler-debugger)
-    (*type-and-cache* (type-and-empty-cache))
-    (*type-or-cache* (type-or-empty-cache))
-    (*values-type-or-cache* (values-type-or-empty-cache))
-    (*values-type-and-cache* (values-type-and-empty-cache))
-    (*values-type-primary-type-cache* (values-type-primary-type-empty-cache))
-    (*values-type-to-n-types-cache* (values-type-to-n-types-empty-cache))
-    ))
-
-(defun next-lcl () (list 'LCL (incf *lcl*)))
-
-(defun next-cfun (&optional (prefix "L~D~A") (lisp-name nil))
-  (let ((code (incf *next-cfun*)))
-    (format nil prefix code (lisp-to-c-name lisp-name))))
-
-(defun next-lex ()
-  (prog1 (cons *level* *lex*)
-         (incf *lex*)
-         (setq *max-lex* (max *lex* *max-lex*))))
-
-(defun next-env ()
-  (prog1 *env*
-    (incf *env*)
-    (setq *max-env* (max *env* *max-env*))))
+(in-package "C-ENV")
 
 (defun function-arg-types (arg-types &aux (types nil))
   (do ((al arg-types (cdr al)))
@@ -75,6 +21,11 @@
        (nreverse types))
       (declare (object al))
       (push (type-filter (car al)) types)))
+
+(defun proper-list-p (x &optional test)
+  (and (listp x)
+       (handler-case (list-length x) (type-error (c) nil))
+       (or (null test) (every test x))))
 
 ;;; The valid return type declaration is:
 ;;;	(( VALUES {type}* )) or ( {type}* ).
@@ -108,11 +59,11 @@
 	      (t (warn "The function proclamation ~s ~s is not valid."
 		       fname decl)))
 	(if (eq arg-types '*)
-	    (rem-sysprop fname 'PROCLAIMED-ARG-TYPES)
-	    (put-sysprop fname 'PROCLAIMED-ARG-TYPES arg-types))
+	    (sys:rem-sysprop fname 'PROCLAIMED-ARG-TYPES)
+	    (sys:put-sysprop fname 'PROCLAIMED-ARG-TYPES arg-types))
 	(if (eq return-types '*)
-	    (rem-sysprop fname 'PROCLAIMED-RETURN-TYPE)
-	    (put-sysprop fname 'PROCLAIMED-RETURN-TYPE return-types)))
+	    (sys:rem-sysprop fname 'PROCLAIMED-RETURN-TYPE)
+	    (sys:put-sysprop fname 'PROCLAIMED-RETURN-TYPE return-types)))
       (warn "The function proclamation ~s ~s is not valid." fname decl)))
 
 (defun add-function-declaration (fname arg-types return-types env)
@@ -125,13 +76,13 @@
   (let ((x (cmp-env-search-ftype fname env)))
     (if x
         (values (first x) t)
-        (get-sysprop fname 'PROCLAIMED-ARG-TYPES))))
+        (sys:get-sysprop fname 'PROCLAIMED-ARG-TYPES))))
 
 (defun get-return-type (fname &optional (env *cmp-env*))
   (let ((x (cmp-env-search-ftype fname env)))
     (if x
 	(values (second x) t)
-	(get-sysprop fname 'PROCLAIMED-RETURN-TYPE))))
+	(sys:get-sysprop fname 'PROCLAIMED-RETURN-TYPE))))
 
 (defun get-local-arg-types (fun &optional (env *cmp-env*))
   (let ((x (cmp-env-search-ftype (fun-name fun))))
@@ -173,7 +124,7 @@
         (let ((x (cmp-env-search-declaration 'notinline env)))
           (and x (member fname x :test #'same-fname-p)))
 	(member fname *notinline* :test #'same-fname-p)
-	(get-sysprop fname 'CMP-NOTINLINE))))
+	(sys:get-sysprop fname 'CMP-NOTINLINE))))
 
 #-:CCL
 (defun proclaim (decl &aux decl-name)
@@ -217,12 +168,12 @@
     (INLINE
      (dolist (fun (cdr decl))
        (if (si::valid-function-name-p fun)
-	   (rem-sysprop fun 'CMP-NOTINLINE)
+	   (sys:rem-sysprop fun 'CMP-NOTINLINE)
 	   (error "Not a valid function name ~s in proclamation ~s" fun decl))))
     (NOTINLINE
      (dolist (fun (cdr decl))
        (if (si::valid-function-name-p fun)
-	   (put-sysprop fun 'CMP-NOTINLINE t)
+	   (sys:put-sysprop fun 'CMP-NOTINLINE t)
 	   (error "Not a valid function name ~s in proclamation ~s" fun decl))))
     ((OBJECT IGNORE DYNAMIC-EXTENT IGNORABLE)
      ;; FIXME! IGNORED!
@@ -240,12 +191,12 @@
 		  (si::mangle-name x t)
 		(if found
 		    (warn "The function ~s is already in the runtime. C-EXPORT-FNAME declaration ignored." x)
-		    (put-sysprop x 'Lfun c-name))))
+		    (sys:put-sysprop x 'Lfun c-name))))
 	     ((consp x)
 	      (destructuring-bind (c-name lisp-name) x
 		(if (si::mangle-name lisp-name)
 		    (warn "The funciton ~s is already in the runtime. C-EXPORT-FNAME declaration ignored." lisp-name)
-		    (put-sysprop lisp-name 'Lfun c-name))))
+		    (sys:put-sysprop lisp-name 'Lfun c-name))))
 	     (t
 	      (error "Syntax error in proclamation ~s" decl)))))
     ((ARRAY ATOM BASE-CHAR BIGNUM BIT BIT-VECTOR CHARACTER COMPILED-FUNCTION
@@ -261,7 +212,7 @@
 	      (when ok
 		(proclaim-var type (rest decl))
 		t)))
-	   ((let ((proclaimer (get-sysprop (car decl) :proclaim)))
+	   ((let ((proclaimer (sys:get-sysprop (car decl) :proclaim)))
 	      (when (functionp proclaimer)
 		(mapc proclaimer (rest decl))
 		t)))
@@ -270,9 +221,9 @@
 	    (warn "The declaration specifier ~s is unknown." decl-name))))))
 
 (defun type-name-p (name)
-  (or (get-sysprop name 'SI::DEFTYPE-DEFINITION)
+  (or (sys:get-sysprop name 'SI::DEFTYPE-DEFINITION)
       (find-class name nil)
-      (get-sysprop name 'SI::STRUCTURE-TYPE)))
+      (sys:get-sysprop name 'SI::STRUCTURE-TYPE)))
 
 (defun validate-alien-declaration (names-list error)
   (declare (si::c-local))
@@ -287,7 +238,7 @@
   (setq type (type-filter type))
   (dolist (var vl)
     (if (symbolp var)
-	(let ((type1 (get-sysprop var 'CMP-TYPE))
+	(let ((type1 (sys:get-sysprop var 'CMP-TYPE))
 	      (v (sch-global var)))
 	  (setq type1 (if type1 (type-and type1 type) type))
 	  (when v (setq type1 (type-and type1 (var-type v))))
@@ -296,7 +247,7 @@
 	     "Inconsistent type declaration was found for the variable ~s."
 	     var)
 	    (setq type1 T))
-	  (put-sysprop var 'CMP-TYPE type1)
+	  (sys:put-sysprop var 'CMP-TYPE type1)
 	  (when v (setf (var-type v) type1)))
 	(warn "The variable name ~s is not a symbol." var))))
 
@@ -440,12 +391,6 @@
        (unless (alien-declaration-p (first decl))
 	 (cmpwarn "The declaration specifier ~s is unknown." (car decl))))))
   env)
-
-(defun c1decl-body (destination decls body)
-  (if (null decls)
-      (c1progn destination body)
-      (let* ((*cmp-env* (add-declarations decls (cmp-env-copy *cmp-env*))))
-	(c1progn destination body))))
 
 (defun check-vdecl (vnames ts is)
   (dolist (x ts)
@@ -725,3 +670,7 @@ Also, when reading the value of a global variable, should we ensure it is bound?
 
 (defun policy-check-nargs (&optional (env *cmp-env*))
   (>= (cmp-env-optimization 'safety) 1))
+
+(defmacro safe-compile ()
+  `(>= (cmp-env-optimization 'safety) 2))
+

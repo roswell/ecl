@@ -12,7 +12,7 @@
 
 ;;;; CMPDATA     Collect data used in lisp code
 
-(in-package "COMPILER")
+(in-package "C-DATA")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;

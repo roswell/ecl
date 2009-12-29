@@ -386,11 +386,11 @@
 (defun c2do-flet/labels (local-funs)
   ;; FIXME! We change the order for compatibility to make "diff"
   ;; with previous sources easier
-  (mapc #'new-local (reverse local-funs)))
+  (mapc #'c::new-local (reverse local-funs)))
 
 (defun c2funcall-op (destination args)
   (let* ((loc (pop args))
-	 (form-type (c1form-or-loc-primary-type loc))
+	 (form-type (location-primary-type loc))
          (function-p (and (subtypep form-type 'function)
                           (policy-assume-right-type))))
     (set-loc (call-unknown-global-loc nil loc args function-p)
@@ -412,7 +412,7 @@
       (call-unknown-global-loc fname nil args)))
 
   ;; Open-codable function.
-  (let* ((arg-types (mapcar #'c1form-or-loc-primary-type args))
+  (let* ((arg-types (mapcar #'location-primary-type args))
          (ii (inline-function destination fname arg-types
                               (type-and return-type expected-type))))
     (when ii
@@ -435,7 +435,7 @@
   ;; either because it has been proclaimed so, or because it belongs
   ;; to the runtime.
   (when (and (<= (cmp-env-optimization 'debug) 1)
-             (setf fd (get-sysprop fname 'Lfun)))
+             (setf fd (sys:get-sysprop fname 'Lfun)))
     (multiple-value-bind (minarg maxarg) (get-proclaimed-narg fname)
       (return-from call-global-loc
         (call-exported-function-loc
@@ -738,7 +738,7 @@
     (wt-nl "#endif")
     ;; With this we ensure creating a constant with the tag
     ;; and the initialization file
-    (wt-nl "Cblock->cblock.data_text = \"" (init-name-tag (fun-cfun fun)) "\";")
+    (wt-nl "Cblock->cblock.data_text = \"" (c-tags:init-name-tag (fun-cfun fun)) "\";")
     )
   (when si::*compiler-constants*
     (wt-nl "{cl_object data = ecl_symbol_value("

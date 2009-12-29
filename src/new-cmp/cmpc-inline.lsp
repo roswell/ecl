@@ -12,7 +12,7 @@
 
 ;;;; CMPINLINE  Open coding optimizer.
 
-(in-package "COMPILER")
+(in-package "C-BACKEND")
 
 ;;;
 ;;; inline-function:
@@ -24,7 +24,7 @@
   ;; Those functions that use INLINE-FUNCTION must rebind
   ;; the variable *INLINE-BLOCKS*.
   (and (inline-possible fname)
-       (not (get-sysprop fname 'C2))
+       (not (sys:get-sysprop fname 'C2))
        (let* ((dest-rep-type (loc-representation-type destination))
               (dest-type (rep-type->lisp-type dest-rep-type))
               (ii (get-inline-info fname arg-types return-type return-rep-type)))
@@ -70,15 +70,15 @@
         (let ((other (inline-type-matches (cdr x) types return-type)))
           (setf output (choose-inline-info output other return-type return-rep-type)))))
     (unless (safe-compile)
-      (dolist (x (get-sysprop fname ':INLINE-UNSAFE))
+      (dolist (x (sys:get-sysprop fname ':INLINE-UNSAFE))
         (let ((other (inline-type-matches x types return-type)))
           (when other
             (setf output (choose-inline-info output other return-type return-rep-type))))))
-    (dolist (x (get-sysprop fname ':INLINE-SAFE))
+    (dolist (x (sys:get-sysprop fname ':INLINE-SAFE))
       (let ((other (inline-type-matches x types return-type)))
         (when other
           (setf output (choose-inline-info output other return-type return-rep-type)))))
-    (dolist (x (get-sysprop fname ':INLINE-ALWAYS))
+    (dolist (x (sys:get-sysprop fname ':INLINE-ALWAYS))
       (let ((other (inline-type-matches x types return-type)))
         (when other
           (setf output (choose-inline-info output other return-type return-rep-type)))))

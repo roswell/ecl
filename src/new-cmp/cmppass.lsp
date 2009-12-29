@@ -171,34 +171,6 @@ forms are also suppressed."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
-;;; DECIDE VARIABLE REPRESENTATION TYPE
-;;;
-;;; Currently this is very very crude:
-;;;
-;;;	* We unbox everything that is declared with a type that fits
-;;;	  in a C variable.
-;;;	* We cannot unbox function arguments, because they are always
-;;;	  passed with C type cl_object.
-;;;
-
-(defun pass-decide-var-rep-types (function forms)
-  (flet ((compute-variable-rep-type (v requireds)
-           (let* ((kind (var-kind v)))
-             (cond ((or (not (eq kind 'lexical)) (var-ref-clb v))
-                    kind)
-                   ((member v requireds :test #'eq)
-                    :OBJECT)
-                   (t
-                    (lisp-type->rep-type (var-type v)))))))
-    (loop with lambda-list = (fun-lambda-list function)
-       with requireds = (first lambda-list)
-       for v in (fun-local-vars function)
-       do (setf (var-kind v) (compute-variable-rep-type v requireds))))
-  forms)
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;
 ;;; CONSISTENCY CHECKS
 ;;;
 

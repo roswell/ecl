@@ -70,6 +70,7 @@ progress. The default value is T.")
 (defvar *compiler-input*)
 (defvar *compiler-output1*)
 (defvar *compiler-output2*)
+(defvar *dump-output*)
 
 ;;; --cmpcbk.lsp--
 ;;;
@@ -255,3 +256,42 @@ deleted. We need this for #'COMPILE because windows DLLs cannot
 be deleted if they have been opened with LoadLibrary.")
 
 (defvar *undefined-vars* nil)
+
+;;; Only these flags are set by the user.
+;;; If (safe-compile) is ON, some kind of run-time checks are not
+;;; included in the compiled code.  The default value is OFF.
+
+(defconstant +init-env-form+
+  '((*gensym-counter* 0)
+    (*compiler-in-use* t)
+    (*compiler-phase* 't1)
+    (*callbacks* nil)
+    (*next-cfun* 0)
+    (*lcl* 0)
+    (*last-label* 0)
+    (*load-objects* (make-hash-table :size 128 :test #'equal))
+    (*make-forms* nil)
+    (*static-constants* nil)
+    (*permanent-objects* nil)
+    (*temporary-objects* nil)
+    (*local-funs* nil)
+    (*global-var-objects* nil)
+    (*global-vars* nil)
+    (*global-funs* nil)
+    (*global-cfuns-array* nil)
+    (*linking-calls* nil)
+    (*global-entries* nil)
+    (*undefined-vars* nil)
+    (*top-level-forms* nil)
+    (*clines-string-list* '())
+    (*inline-functions* nil)
+    (*inline-blocks* 0)
+    (*debugger-hook* 'compiler-debugger)
+    (*type-and-cache* (type-and-empty-cache))
+    (*type-or-cache* (type-or-empty-cache))
+    (*values-type-or-cache* (values-type-or-empty-cache))
+    (*values-type-and-cache* (values-type-and-empty-cache))
+    (*values-type-primary-type-cache* (values-type-primary-type-empty-cache))
+    (*values-type-to-n-types-cache* (values-type-to-n-types-empty-cache))
+    ))
+

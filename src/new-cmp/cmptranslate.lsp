@@ -19,9 +19,6 @@
 (defun c1translate (destination value)
   (enforce-destination destination (c1expr destination value)))
 
-(defun c2translate (forms)
-  (c2driver forms))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;; SPECIALIZED OPERATIONS

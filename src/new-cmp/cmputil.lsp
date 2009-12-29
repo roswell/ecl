@@ -12,7 +12,7 @@
 ;;;;
 ;;;;    See file '../Copyright' for full details.
 
-(in-package "COMPILER")
+(in-package "C-LOG")
 
 (define-condition compiler-message (simple-condition)
   ((prefix :initform "Note" :accessor compiler-message-prefix)
@@ -128,7 +128,7 @@
 			(compiler-error #'handle-compiler-error)
                         (compiler-internal-error #'handle-compiler-internal-error)
                         (serious-condition #'handle-compiler-internal-error))
-           (with-lock (+load-compile-lock+)
+           (mp:with-lock (mp::+load-compile-lock+)
              (let ,+init-env-form+
                (with-compilation-unit ()
                  ,@body))))
@@ -158,6 +158,12 @@
 (defun cmpprogress (&rest args)
   (when *compile-verbose*
     (apply #'format t args)))
+
+(defmacro cmpck (condition string &rest args)
+  `(if ,condition (cmperr ,string ,@args)))
+
+(defmacro cmpassert (condition string &rest args)
+  `(unless ,condition (cmperr ,string ,@args)))
 
 (defun cmperr (string &rest args)
   (apply #'error string args)
@@ -279,19 +285,3 @@
   (rem-sysprop symbol ':inline-unsafe)
   (rem-sysprop symbol ':inline-safe)
   (rem-sysprop symbol 'lfun))
-  
-(defun lisp-to-c-name (obj)
-  "Translate Lisp object prin1 representation to valid C identifier name"
-  (and obj 
-       (map 'string 
-            #'(lambda (c)
-                (let ((cc (char-code c)))
-                  (if (or (<= #.(char-code #\a) cc #.(char-code #\z))
-                          (<= #.(char-code #\0) cc #.(char-code #\9)))
-                      c #\_)))
-            (string-downcase (prin1-to-string obj)))))
-
-(defun proper-list-p (x &optional test)
-  (and (listp x)
-       (handler-case (list-length x) (type-error (c) nil))
-       (or (null test) (every test x))))

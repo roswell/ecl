@@ -215,7 +215,7 @@
 		   (:constructor do-make-c1form))
   (name nil)            ;; See cmptables.lsp for all valid form names
   (args '())            ;; Arguments
-  (env (cmp-env-copy))  ;; Environment in which this form was compiled
+  (env (c-env:cmp-env-copy))  ;; Environment in which this form was compiled
   (local-vars nil)	;; List of var-objects created directly in the form.
   (sp-change nil)	;; Whether execution of the form may change
 			;; the value of a special variable.

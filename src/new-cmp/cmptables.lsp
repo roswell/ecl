@@ -48,12 +48,6 @@
      do (setf (gethash output k) v)
      finally (return output)))
 
-(let ((p (find-package "C-DATA")))
-  (do-symbols (s "C-DATA")
-    (when (eq (symbol-package s) p)
-      (print s)
-      (export s p))))
-
 ;;; ------------------------------------------------------------------
 ;;; COMMON LISP FORMS TRANSLATORS
 ;;;
@@ -144,10 +138,5 @@
    (psetq . c1psetq)
    (progv . c1progv)
    ))
-
-(print *package*)
-(print (package-use-list *package*))
-(print (multiple-value-list (find-symbol "MAKE-DISPATCH-TABLE" "C-DATA")))
-(print (multiple-value-list (find-symbol "MAKE-DISPATCH-TABLE" "C")))
 
 (defparameter +c1-dispatch-table+ (make-dispatch-table +c1-dispatch-data+))

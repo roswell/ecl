@@ -62,6 +62,22 @@
                   (eq (var-loc x) 'OBJECT)))
              (fun-referred-vars fun)))
 
+(defun fun-narg-p (fun)
+  (not (fun-fixed-narg fun)))
+
+(defun fun-volatile-p (fun)
+  (loop for f in (fun-lambda fun)
+     thereis (and (not (tag-p f)) (eq (c1form-name f) 'frame-set))))
+
+(defun fun-fixed-narg (fun)
+  "Returns true if the function has a fixed number of arguments and it is not a closure.
+The function thus belongs to the type of functions that ecl_make_cfun accepts."
+  (let (narg)
+    (and (not (eq (fun-closure fun) 'CLOSURE))
+	 (= (fun-minarg fun) (setf narg (fun-maxarg fun)))
+	 (<= narg si::c-arguments-limit)
+	 narg)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;; CERTAIN OPTIMIZERS

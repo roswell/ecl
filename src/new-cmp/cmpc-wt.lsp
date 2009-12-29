@@ -40,6 +40,8 @@
 (defmacro wt-nl1 (&rest forms)
   `(wt #\Newline ,@forms))
 
+(defmacro wt-go (label)
+  `(wt "goto L" ,label ";"))
 
 (defun wt-label (label)
   (wt-nl1 "L" label ":;"))

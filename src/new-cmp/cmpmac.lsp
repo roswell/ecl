@@ -3,8 +3,7 @@
 ;;; ----------------------------------------------------------------------
 ;;; Macros only used in the code of the compiler itself:
 
-(in-package "COMPILER")
-(import 'sys::arglist "COMPILER")
+(in-package "C-DATA")
 
 ;; ----------------------------------------------------------------------
 ;; CACHED FUNCTIONS
@@ -54,30 +53,35 @@
 
 (defun next-label () (incf *last-label*))
 
-(defmacro wt-go (label)
-  `(wt "goto L" ,label ";"))
+(defun next-lcl () (list 'LCL (incf *lcl*)))
+  
+(defun lisp-to-c-name (obj)
+  "Translate Lisp object prin1 representation to valid C identifier name"
+  (and obj 
+       (map 'string 
+            #'(lambda (c)
+                (let ((cc (char-code c)))
+                  (if (or (<= #.(char-code #\a) cc #.(char-code #\z))
+                          (<= #.(char-code #\0) cc #.(char-code #\9)))
+                      c #\_)))
+            (string-downcase (prin1-to-string obj)))))
 
-;;; from cmplam.lsp
-(defmacro ck-spec (condition)
-  `(unless ,condition
-           (cmperr "The parameter specification ~s is illegal." spec)))
+(defun next-cfun (&optional (prefix "L~D~A") (lisp-name nil))
+  (let ((code (incf *next-cfun*)))
+    (format nil prefix code (lisp-to-c-name lisp-name))))
 
-(defmacro ck-vl (condition)
-  `(unless ,condition
-           (cmperr "The lambda list ~s is illegal." vl)))
+(defun next-lex ()
+  (prog1 (cons *level* *lex*)
+         (incf *lex*)
+         (setq *max-lex* (max *lex* *max-lex*))))
 
-;;; fromcmputil.sp
-(defmacro cmpck (condition string &rest args)
-  `(if ,condition (cmperr ,string ,@args)))
+(defun next-env ()
+  (prog1 *env*
+    (incf *env*)
+    (setq *max-env* (max *env* *max-env*))))
 
-(defmacro cmpassert (condition string &rest args)
-  `(unless ,condition (cmperr ,string ,@args)))
-
-(defmacro safe-compile ()
-  `(>= (cmp-env-optimization 'safety) 2))
-
-(defmacro compiler-check-args ()
-  `(>= (cmp-env-optimization 'safety) 1))
-
-(defmacro compiler-push-events ()
-  `(>= (cmp-env-optimization 'safety) 3))
+(let ((p (find-package "C-DATA")))
+  (do-symbols (s "C-DATA")
+    (when (eq (symbol-package s) p)
+      (print s)
+      (export s p))))

@@ -86,34 +86,3 @@
     (otherwise
      (setf (fun-env fun) 0 (fun-level fun) 0)))
   (push fun *local-funs*))
-
-(defun wt-fdefinition (fun-name)
-  (let ((vv (add-object fun-name)))
-    (if (and (symbolp fun-name)
-	     (or (not (safe-compile))
-		 (and (eql (symbol-package fun-name) (find-package "CL"))
-		      (fboundp fun-name) (functionp (fdefinition fun-name)))))
-	(wt "(" vv "->symbol.gfdef)")
-	(wt "ecl_fdefinition(" vv ")"))))
-
-(defun environment-accessor (fun)
-  (let* ((env-var (env-var-name *env-lvl*))
-	 (expected-env-size (fun-env fun)))
-    (if (< expected-env-size *env*)
-	(format nil "ecl_nthcdr(~D,~A)" (- *env* expected-env-size) env-var)
-	env-var)))
-
-(defun wt-make-closure (fun &aux (cfun (fun-cfun fun)))
-  (declare (type fun fun))
-  (let* ((closure (fun-closure fun))
-	 narg)
-    (cond ((eq closure 'CLOSURE)
-	   (wt "ecl_make_cclosure_va((cl_objectfn)" cfun ","
-	       (environment-accessor fun)
-	       ",Cblock)"))
-	  ((eq closure 'LEXICAL)
-	   (baboon))
-	  ((setf narg (fun-fixed-narg fun)) ; empty environment fixed number of args
-	   (wt "ecl_make_cfun((cl_objectfn_fixed)" cfun ",Cnil,Cblock," narg ")"))
-	  (t ; empty environment variable number of args
-	   (wt "ecl_make_cfun_va((cl_objectfn)" cfun ",Cnil,Cblock)")))))

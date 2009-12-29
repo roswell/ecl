@@ -33,15 +33,15 @@
     (extract-static-constants stream)
     (adjust-data-indices *permanent-objects*)
     (adjust-data-indices *temporary-objects*)
-    (let ((output nil))
+    (let* ((output nil)
+           (all-data (data-get-all-objects)))
       (cond (*compiler-constants*
              (format stream "~%#define compiler_data_text NULL~%#define compiler_data_text_size 0~%")
-             (setf output (concatenate 'vector (data-get-all-objects))))
-            ((plusp (data-size))
+             (setf output (concatenate 'vector all-data)))
+            ((plusp (length all-data))
              (wt-data-begin stream)
-             (wt-filtered-data
-              (subseq (prin1-to-string (data-get-all-objects)) 1)
-              stream)
+             (wt-filtered-data (subseq (prin1-to-string all-data) 1)
+                               stream)
              (wt-data-end stream)))
       (when must-close
         (close must-close))

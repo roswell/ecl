@@ -12,7 +12,7 @@
 
 ;;;; CMPTYPE  Type information.
 
-(in-package "COMPILER")
+(in-package "C-TYPES")
 
 ;;; CL-TYPE is any valid type specification of Common Lisp.
 ;;;
@@ -93,7 +93,7 @@
 		    (when (subtypep type v) (return v))))
 		 ((and (eq type-name 'SATISFIES) ; Beppe
 		       (symbolp (car type-args))
-		       (get-sysprop (car type-args) 'TYPE-FILTER)))
+		       (sys:get-sysprop (car type-args) 'TYPE-FILTER)))
 		 (t t))))))
 
 (defun valid-type-specifier (type)
@@ -502,10 +502,10 @@
 ;;; TYPE PROPAGATORS
 ;;;
 
-(in-package "COMPILER")
+(in-package "C-TYPES")
 
 (defun infer-arg-and-return-types (fname forms &optional (env *cmp-env*))
-  (let ((found (get-sysprop fname 'C1TYPE-PROPAGATOR))
+  (let ((found (sys:get-sysprop fname 'C1TYPE-PROPAGATOR))
         arg-types
         (return-type '(VALUES &REST T)))
     (cond (found
@@ -539,12 +539,11 @@
           (cmpwarn "Too few arguments for proclaimed function ~A" fname))
         (return))
       (let* ((value (first args))
-             (actual-type (location-primary-type value)))
-        (multiple-value-bind (included for-sure)
-            (subtypep expected-type actual-type)
-          (when (and for-sure (not included))
+             (actual-type (location-primary-type value))
+             (intersection (type-and actual-type expected-type)))
+          (unless intersection
             (cmperr "The argument ~d of function ~a has type~&~4T~A~&instead of expected~&~4T~A"
-                    i fname actual-type expected-type)))))))
+                    i fname actual-type expected-type))))))
 
 (defun propagate-types (fname forms)
   (multiple-value-bind (arg-types return-type found)
@@ -558,13 +557,13 @@
     (let ((var (gensym)))
       (setf lambda-list (append lambda-list (list '&rest var))
             body (list* `(declare (ignorable ,var)) body)))
-    `(put-sysprop ',fname 'C1TYPE-PROPAGATOR
-                  #'(ext:lambda-block ,fname ,lambda-list ,@body))))
+    `(sys:put-sysprop ',fname 'C1TYPE-PROPAGATOR
+                      #'(ext:lambda-block ,fname ,lambda-list ,@body))))
 
 (defun copy-type-propagator (orig dest-list)
-  (loop with function = (get-sysprop orig 'C1TYPE-PROPAGATOR)
+  (loop with function = (sys:get-sysprop orig 'C1TYPE-PROPAGATOR)
      for name in dest-list
-     do (put-sysprop name 'C1TYPE-PROPAGATOR function)))
+     do (sys:put-sysprop name 'C1TYPE-PROPAGATOR function)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;

@@ -178,5 +178,5 @@
                       0))
          (*volatile* (if (fun-volatile-p fun) "volatile " ""))
          (*permanent-data* t))
-    (c2translate (fun-lambda fun))))
+    (c2driver (fun-lambda fun))))
 

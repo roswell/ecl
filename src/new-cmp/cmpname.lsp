@@ -16,9 +16,7 @@
 ;;;; functions. This initialization function has a C name which needs
 ;;;; to be unique. This file has functions to create such names.
 
-(in-package "COMPILER")
-
-(defvar *counter* 0)
+(in-package "C-TAGS")
 
 (defun encode-number-in-name (number)
   ;; Encode a number in an alphanumeric identifier which is a valid C name.
@@ -123,3 +121,34 @@ the function name it precedes."
        "init_ECL_PROGRAM")
       (otherwise
        (error "C::BUILDER cannot accept files of kind ~s" kind)))))
+
+(defun init-function-name (s &key (kind :object))
+  (flet ((translate-char (c)
+	   (cond ((and (char>= c #\a) (char<= c #\z))
+		  (char-upcase c))
+		 ((and (char>= c #\A) (char<= c #\Z))
+		  c)
+		 ((or (eq c #\-) (eq c #\_))
+		  #\_)
+		 ((eq c #\*)
+		  #\x)
+		 ((eq c #\?)
+		  #\a)
+		 ((digit-char-p c)
+		  c)
+		 (t
+		  #\p)))
+	 (disambiguation (c)
+	   (case kind
+	     (:object "")
+             (:program "exe_")
+	     ((:fasl :fas) "fas_")
+	     ((:library :shared-library :dll :static-library :lib) "lib_")
+	     (otherwise (error "Not a valid argument to INIT-FUNCTION-NAME: kind = ~S"
+			       kind)))))
+    (setq s (map 'string #'translate-char (string s)))
+    (concatenate 'string
+		 "init_"
+		 (disambiguation kind)
+		 (map 'string #'translate-char (string s)))))
+
