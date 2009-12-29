@@ -16,7 +16,22 @@
 
 (defpackage "C-DATA"
   (:nicknames "COMPILER-DATA")
-  (:use "FFI" "CL"))
+  (:use "FFI" "CL")
+  (:export "*COMPILER-BREAK-ENABLE*"
+	   "*COMPILE-PRINT*"
+	   "*COMPILE-TO-LINKING-CALL*"
+	   "*COMPILE-VERBOSE*"
+	   "*CC*"
+	   "*CC-OPTIMIZE*"
+	   "*SUPPRESS-COMPILER-WARNINGS*"
+	   "*SUPPRESS-COMPILER-NOTES*"
+	   "*SUPPRESS-COMPILER-MESSAGES*"
+           "PROCLAIMED-ARG-TYPES"
+           "PROCLAIMED-RETURN-TYPE"
+           "NO-SP-CHANGE"
+           "PURE"
+           "NO-SIDE-EFFECTS")
+  (:import-from "SI" "*COMPILER-CONSTANTS*"))
 
 (defpackage "C-BACKEND"
   (:use "FFI" "CL" "C-DATA")
