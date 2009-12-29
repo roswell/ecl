@@ -49,6 +49,30 @@
 (defun c1t (destination)
   (c1set-loc destination t))
 
+(defun c1constant-value (destination val &key always only-small-values)
+  (when (eq destination 'TRASH)
+    (return-from c1constant-value (c1nil destination)))
+  (multiple-value-bind (loc found-p)
+      (build-constant-value-loc val :always always :only-small-values only-small-values)
+    (when found-p
+      (c1set-loc destination loc))))
+
+(defun build-constant-value-loc (val &key always only-small-values)
+  (cond
+   ((eq val nil) (values nil t))
+   ((eq val t) (values t t))
+   ((sys::fixnump val) (values (list 'FIXNUM-VALUE val) t))
+   ((characterp val) (values (list 'CHARACTER-VALUE (char-code val)) t))
+   ((typep val 'DOUBLE-FLOAT)
+    (values (list 'DOUBLE-FLOAT-VALUE val (add-object val)) t))
+   ((typep val 'SINGLE-FLOAT)
+    (values (list 'SINGLE-FLOAT-VALUE val (add-object val)) t))
+   ((typep val 'LONG-FLOAT)
+    (values (list 'LONG-FLOAT-VALUE val (add-object val)) t))
+   (always
+    (values (add-object val) t))
+   (t (values nil nil))))
+
 (defun c1call-symbol (destination fname args &aux fd basic-fd)
   (cond ((and (setq basic-fd (gethash fname +c1-dispatch-table+))
               (special-operator-p fname))

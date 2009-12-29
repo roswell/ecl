@@ -45,10 +45,6 @@
 		"*COMPILER-CONSTANTS*" "REGISTER-GLOBAL" "CMP-ENV-REGISTER-MACROLET"
 		"COMPILER-LET"))
 
-(defpackage "C-BACKEND"
-  (:use "FFI" "CL" #+threads "MP" "C")
-  (:export "DUMP-ALL"))
-
 (in-package "COMPILER")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

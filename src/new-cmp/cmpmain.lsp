@@ -708,7 +708,7 @@ the environment variable TMPDIR to a different value." template)
 	(compiler-pass2 c-pathname h-pathname data-pathname nil
 			init-name nil
                         :input-designator (format nil "~A" def)))
-      (setf *compiler-constants* (data-dump data-pathname))
+      (setf *compiler-constants* (c-backend::data-dump data-pathname))
 
       (compiler-cc c-pathname o-pathname)
       (bundle-cc (si::coerce-to-filename so-pathname)

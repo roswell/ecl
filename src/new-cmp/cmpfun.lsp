@@ -15,6 +15,43 @@
 
 (in-package "COMPILER")
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; FUNCTION AND FORM PROPERTIES
+;;;
+
+(defun form-causes-side-effect (form)
+  (if (listp form)
+      (some #'form-causes-side-effect form)
+      (case (c1form-name form)
+        ((LOCATION VAR SYS:STRUCTURE-REF #+clos SYS:INSTANCE-REF)
+         nil)
+        (CALL-GLOBAL
+         (let ((fname (c1form-arg 0 form))
+               (args (c1form-arg 1 form)))
+           (or (function-may-have-side-effects fname)
+               (args-cause-side-effect args))))
+        (t t))))
+
+(defun args-cause-side-effect (forms)
+  (some #'form-causes-side-effect forms))
+
+(defun function-may-have-side-effects (fname)
+  (declare (si::c-local))
+  (not (get-sysprop fname 'no-side-effects)))
+
+(defun function-may-change-sp (fname)
+  (not (or (get-sysprop fname 'no-side-effects)
+	   (get-sysprop fname 'no-sp-change))))
+
+(defun function-can-be-evaluated-at-compile-time (fname)
+  (get-sysprop fname 'pure))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; CERTAIN OPTIMIZERS
+;;;
+
 (defvar *princ-string-limit* 80)
 
 (defun c1apply (destination args)
