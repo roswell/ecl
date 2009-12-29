@@ -200,6 +200,10 @@
 (defpackage "C-BACKEND"
   (:use "FFI" "CL" "C-DATA" "C-TYPES" "C-ENV" "C-PASSES" "C-LOG")
   (:export "CTOP-WRITE" "DUMP-ALL" "DATA-DUMP"
+           "+SIMPLE-VA-ARGS+"
+           "+CL-VA-ARGS+"
+           "+NARGS-VAR+"
+           "SIMPLE-VARARGS-LOC-P"
            "WT-FILTERED-DATA"))
 
 (defpackage "C"

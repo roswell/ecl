@@ -230,6 +230,13 @@
   (loop for (v . required-loc) in var-loc-pairs
      do (bind required-loc v)))
 
+(defconstant +simple-va-args+ (make-symbol "args"))
+(defconstant +cl-va-args+ (make-symbol "cl_args"))
+(defconstant +nargs-var+ (make-symbol "narg"))
+
+(defun simple-varargs-loc-p (var)
+  (string= (var-name var) +simple-va-args+))
+
 (defun c2varargs-bind-op (nargs-loc varargs-loc minargs maxargs nkeywords check)
   (open-c-block)
   (wt-comment "Arguments parsing - begin")

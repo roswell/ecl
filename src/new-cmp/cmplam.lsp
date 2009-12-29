@@ -195,13 +195,13 @@
     (setf compiled-body (c1requireds requireds ss is ts))
     (let* ((nkeys (pop keywords)))
       (when (or optionals rest keywords)
-        (setf nargs (make-var :name +nargs-var+ :type 'FIXNUM
+        (setf nargs (make-var :name c-backend:+nargs-var+ :type 'FIXNUM
                               :loc '(VV "narg" 0)
                               :kind :fixnum)
               varargs (if (and (not (or rest keywords allow-other-keys))
                                (< maxargs 30))
-                          +simple-va-args+
-                          +cl-va-args+)
+                          c-backend:+simple-va-args+
+                          c-backend:+cl-va-args+)
               varargs (make-var :name varargs :type 'T
                                 :loc `(VV ,varargs 0)
                                 :kind :OBJECT)
@@ -295,13 +295,6 @@
                                         ,@body)))
         (t
          (c1progn 'VALUES+VALUE0 body))))
-
-(defconstant +simple-va-args+ (make-symbol "args"))
-(defconstant +cl-va-args+ (make-symbol "cl_args"))
-(defconstant +nargs-var+ (make-symbol "narg"))
-
-(defun simple-varargs-loc-p (var)
-  (string= (var-name var) +simple-va-args+))
 
 (defun c1requireds (requireds ss is ts)
   (c1bind-requireds
