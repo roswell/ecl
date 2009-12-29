@@ -75,8 +75,8 @@
    (progn . c1progn)
 
    ;; cmpffi.lsp
-   (ffi:clines . c-backend::c1clines)
-   (ffi:c-inline . c-backend::c1c-inline)
+   (ffi:clines . c1clines)
+   (ffi:c-inline . c1c-inline)
 
    ;; cmpflet
    (flet . c1flet)

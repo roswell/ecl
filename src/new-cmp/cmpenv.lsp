@@ -208,7 +208,7 @@
      (proclaim-var decl-name (cdr decl)))
     (otherwise
      (cond ((multiple-value-bind (ok type)
-		(valid-type-specifier decl-name)
+		(c-types:valid-type-specifier decl-name)
 	      (when ok
 		(proclaim-var type (rest decl))
 		t)))
@@ -300,7 +300,7 @@
 	       (push decl others))
 	      (otherwise
 	       (multiple-value-bind (ok type)
-                   (valid-type-specifier decl-name)
+                   (c-types:valid-type-specifier decl-name)
                  (cmpassert ok "The declaration specifier ~s is unknown." decl-name)
                  (declare-variables type decl-args)))
 	      )))))
@@ -449,7 +449,7 @@
   env)
 
 (defun cmp-env-declare-special (name &optional (env *cmp-env*))
-  (cmp-env-register-var (c1make-global-variable name :warn nil :kind 'SPECIAL)
+  (cmp-env-register-var (c::c1make-global-variable name :warn nil :kind 'SPECIAL)
 			env nil)
   env)
 

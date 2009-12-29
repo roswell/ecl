@@ -149,3 +149,4 @@
 ;;; Now we are in shape to do something useful.
 ;;; End of bare.lsp")
 (terpri)
+(setf c::*compiler-break-enable* t)

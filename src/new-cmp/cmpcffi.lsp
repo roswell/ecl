@@ -57,9 +57,9 @@
     ;; Find out the output types of the inline form. The syntax is rather relaxed
     ;; 	output-type = lisp-type | c-type | (values {lisp-type | c-type}*)
     (flet ((produce-type-pair (type)
-	     (if (lisp-type-p type)
-		 (cons type (lisp-type->rep-type type))
-		 (cons (rep-type->lisp-type type) type))))
+	     (if (c-backend::lisp-type-p type)
+		 (cons type (c-backend::lisp-type->rep-type type))
+		 (cons (c-backend::rep-type->lisp-type type) type))))
       (cond ((eq output-type ':void)
 	     (setf output-rep-type '()
 		   output-type 'NIL))
