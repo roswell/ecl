@@ -46,7 +46,7 @@
          (let ((loc (var-loc var)))
            (when (var-p loc)
              (var-referenced-in-forms loc form))))
-        ((global-variable-p var) ; Too pessimistic?
+        ((global-var-p var) ; Too pessimistic?
          t)
         ((null (var-read-nodes var))
          nil)
@@ -64,13 +64,13 @@
            (when (var-p loc)
              (var-referenced-in-forms loc form))))
         ((and (null (var-read-nodes var))
-              (not (global-variable-p var)))
+              (not (global-var-p var)))
          nil)
         ((listp form)
          (loop for f in form thereis (var-changed-in-form var f)))
         ((not (c1form-p form))
          nil)
-        ((global-variable-p var) ; Too pessimistic?
+        ((global-var-p var) ; Too pessimistic?
          (c1form-sp-change form))
         (t
          (member form (var-set-nodes var)))))
