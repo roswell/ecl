@@ -66,7 +66,7 @@
 
 (in-package "C-DATA")
 
-(defun loc-type (loc)
+(defun location-type (loc)
   (cond ((eq loc NIL) 'NULL)
 	((var-p loc) (var-type loc))
 	((si::fixnump loc) 'fixnum)
@@ -91,3 +91,10 @@
                 T))
 	   (otherwise T)))))
 
+(defun location-primary-type (loc)
+  (location-type loc))
+
+(defun (setf location-type) (value loc)
+  (if (var-p loc)
+      (setf (var-type loc) value)
+      (error "Unable to change value of fixed location ~A" loc)))

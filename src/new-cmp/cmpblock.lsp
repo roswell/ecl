@@ -86,12 +86,10 @@
               (let* ((val (c1translate new-destination (second args)))
                      (cleanup (c1cleanup-forms (blk-env blk)))
                      (exit-tag (blk-exit blk)))
-                (setf type (translated-form-values-type new-destination val)
-                      output (nconc prefix
+                (setf output (nconc prefix
                                     val
                                     cleanup
                                     postfix
                                     (c1jmp exit-tag))))))
-	(setf (blk-type blk) (values-type-or (blk-type blk) type)
-              (blk-ref blk) (1+ (blk-ref blk)))
+	(incf (blk-ref blk))
         output))))

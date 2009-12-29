@@ -28,32 +28,6 @@
 ;;;
 
 ;;;
-;;; COMPUTING VALUE OF TRANSLATED FORMS
-;;;
-;;; This here should probably disappear, eventually, once the type
-;;; passes are implemented.
-;;;
-
-(defun translated-form-values-type (destination forms)
-  (loop with output-type = T
-     for f in forms
-     for name = (and (c1form-p f) (c1form-name f))
-     do (case name
-          ((NIL))
-          ((CALL-LOCAL CALL-GLOBAL FUNCALL
-            SET BIND-SPECIAL VARARGS-POP VARARGS-REST)
-           (when (eq destination (c1form-arg 0 f))
-             (setf output-type (c1form-type f))))
-          ((VALUES STACK-FRAME-POP-VALUES)
-           (when (eq destination 'VALUES)
-             (setf output-type (c1form-type f)))))
-     finally (return output-type)))
-
-(defun translated-form-primary-type (destination forms)
-  (values-type-primary-type
-   (translated-form-values-type destination forms)))
-
-;;;
 ;;; HANDLING OF TEMPORARIES
 ;;;
 
@@ -212,20 +186,19 @@
              (let* ((*print-length* 4)
                     (*print-level* 3))
                (cmpwarn "Variable ~A was declared to have type ~A~%and is assigned a value of type ~A"
-                        (var-name destination) type2 type))))))
-  (setf (c1form-values-type form) type))
+                        (var-name destination) type2 type)))))))
 
 (defun c1set-loc (dest value-loc)
   (unless (eq dest value-loc)
-    (let* ((type (loc-type value-loc))
-           (form (make-c1form* 'SET :type type :args dest value-loc)))
+    (let* ((type (location-type value-loc))
+           (form (make-c1form* 'SET :args dest value-loc)))
       (update-destination-type dest form type)
       (maybe-add-to-set-nodes dest form)
       (maybe-add-to-read-nodes value-loc form))))
 
 (defun c1bind-special-op (dest value-loc)
-  (let* ((type (loc-type value-loc))
-         (form (make-c1form* 'BIND-SPECIAL :type type :args dest value-loc)))
+  (let* ((type (location-type value-loc))
+         (form (make-c1form* 'BIND-SPECIAL :args dest value-loc)))
     (update-destination-type dest form type)
     (maybe-add-to-set-nodes dest form)
     (maybe-add-to-read-nodes value-loc form)))
@@ -256,7 +229,6 @@
 
 (defun c1values-op (locations)
   (let ((form (make-c1form* 'VALUES
-                            :type `(VALUES ,@(mapcar #'loc-type locations))
                             :args locations)))
     (maybe-add-to-read-nodes locations form)))
 
@@ -288,9 +260,10 @@
 
 (defun c1varargs-rest-op (dest-loc nargs-loc varargs-loc nkeys
                           keywords-list allow-other-keys)
-  (let ((form (make-c1form* 'VARARGS-REST :type 'LIST :args dest-loc
+  (let ((form (make-c1form* 'VARARGS-REST :args dest-loc
                             nargs-loc varargs-loc
                             nkeys keywords-list allow-other-keys)))
+    (update-destination-type dest-loc 'list)
     (maybe-add-to-read/set-nodes nargs-loc form)
     (maybe-add-to-read/set-nodes varargs-loc form)
     (maybe-add-to-set-nodes dest-loc form)))
@@ -416,7 +389,6 @@
   (let* ((return-type (or (get-local-return-type fun) 'T))
          (arg-types (get-local-arg-types fun))
          (form (make-c1form* 'CALL-LOCAL
-                             :type return-type
                              :args destination fun args-loc)))
     ;; Add type information to the arguments.
     (maybe-add-to-read-nodes args-loc form)
@@ -431,7 +403,6 @@
   (let* ((return-type (propagate-types fname arguments nil))
          (form (make-c1form* 'CALL-GLOBAL
                              :sp-change (function-may-change-sp fname)
-                             :type return-type
                              :args destination fname arguments
                              (values-type-primary-type return-type))))
     (maybe-add-to-read-nodes arguments form)
@@ -441,7 +412,7 @@
 (defun c1c-inline-op (output-type destination temps arg-types
                       output-rep-type c-expression side-effects
                       one-liner)
-  (let ((form (make-c1form* 'C-INLINE :type output-type
+  (let ((form (make-c1form* 'C-INLINE
                              :args destination temps arg-types
                              output-rep-type c-expression side-effects
                              one-liner)))

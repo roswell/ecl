@@ -402,7 +402,7 @@
 (defun c2call-global (destination fname args &optional (return-type T))
   (let ((fun (find fname *global-funs* :key #'fun-name :test #'same-fname-p)))
     (set-loc (call-global-loc destination fname fun args return-type
-                              (loc-type destination))
+                              (location-type destination))
              destination)))
 
 (defun call-global-loc (destination fname fun args return-type expected-type)

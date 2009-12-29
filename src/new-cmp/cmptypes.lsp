@@ -177,7 +177,6 @@
   exit			;;; Where to return.  A label.
   destination		;;; Where the value of the block to go.
   var			;;; Variable containing the block ID.
-  (type 'NIL)		;;; Estimated type.
   env			;;; Block environment
   )
 
@@ -197,11 +196,6 @@
   )
 
 (defstruct (info)
-  (local-vars nil)	;;; List of var-objects created directly in the form.
-  (type t)		;;; Type of the form.
-  (sp-change nil)	;;; Whether execution of the form may change
-			;;; the value of a special variable.
-  (volatile nil)	;;; whether there is a possible setjmp. Beppe
   )
 
 (defstruct (inline-info)
@@ -219,11 +213,15 @@
 (defstruct (c1form (:include info)
 		   (:print-object print-c1form)
 		   (:constructor do-make-c1form))
-  (name nil)
-  (parent nil)
-  (args '())
-  (env (cmp-env-copy))
-  (form nil)
-  (toplevel-form)
-  (file nil)
+  (name nil)            ;; See cmptables.lsp for all valid form names
+  (args '())            ;; Arguments
+  (env (cmp-env-copy))  ;; Environment in which this form was compiled
+  (local-vars nil)	;; List of var-objects created directly in the form.
+  (sp-change nil)	;; Whether execution of the form may change
+			;; the value of a special variable.
+  (volatile nil)	;; whether there is a possible setjmp. Beppe
+
+  (form nil)            ;; Origin of this form
+  (toplevel-form)       ;; ... including toplevel form in which it appears
+  (file nil)            ;; ... and source file and position
   (file-position 0))

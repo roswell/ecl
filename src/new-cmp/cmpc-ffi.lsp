@@ -126,7 +126,7 @@
   ;(print dest-rep-type)
   ;(print loc)
   (let* ((dest-type (rep-type->lisp-type dest-rep-type))
-	 (loc-type (loc-type loc))
+	 (loc-type (location-type loc))
 	 (loc-rep-type (loc-representation-type loc)))
     (labels ((coercion-error ()
 	       (cmperr "Unable to coerce lisp object from type (~S,~S)~%~
@@ -148,7 +148,7 @@
 	    (wt "((" (rep-type-name dest-rep-type) ")" loc ")"))
 	   ((:object)
 	    (ensure-valid-object-type dest-type)
-	    (wt (cond ((or (subtypep (loc-type loc) 'fixnum)
+	    (wt (cond ((or (subtypep (location-type loc) 'fixnum)
 			(not (policy-check-all-arguments-p)))
 		       "fix(")
 		      ((member dest-rep-type '(:unsigned-short :unsigned-long :cl-index))

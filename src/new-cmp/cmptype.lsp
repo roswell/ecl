@@ -319,11 +319,11 @@
 ;;;
 (defun and-form-type (type form original-form &optional (mode :safe)
 		      (format-string "") &rest format-args)
-  (let* ((type2 (c1form-or-loc-primary-type form))
+  (let* ((type2 (location-primary-type form))
 	 (type1 (type-and type type2)))
     ;; We only change the type if it is not NIL. Is this wise?
     (if type1
-	(setf (c1form-or-loc-values-type form) type1)
+	(setf (location-type form) type1)
 	(funcall (if (eq mode :safe) #'cmperr #'cmpwarn)
 		 "~?, the type of the form ~s is ~s, not ~s." format-string
 		 format-args original-form type2 type))
@@ -507,71 +507,13 @@
 
 (in-package "COMPILER")
 
-(defun c1form-or-loc-primary-type (x)
-  (cond ((c1form-p x)
-	 (c1form-primary-type x))
-	((var-p x)
-	 (var-type x))
-	(t
-	 (loc-type x))))
-
-(defun c1form-or-loc-values-type (x)
-  (cond ((c1form-p x)
-	 (c1form-values-type x))
-	((var-p x)
-	 (var-type x))
-	(t
-	 (loc-type x))))
-
-(defun (setf c1form-or-loc-values-type) (v x)
-  (cond ((c1form-p x)
-	 (setf (c1form-values-type x) v))
-	((var-p x)
-	 (setf (var-type x) v))
-	(t
-         (cmpnote "Cannot change type of location ~A" x))))
-
-(defun enforce-types (fname arg-types forms &optional lisp-forms)
-  (do* ((types arg-types (rest types))
-        (fl forms (rest fl))
-        (al lisp-forms (rest al))
-        (i 1 (1+ i))
-        (in-optionals nil))
-       ((endp types)
-        (when types
-          (cmpwarn "Too many arguments passed to ~A" fname)))
-    (let ((expected-type (first types)))
-      (when (member expected-type '(* &rest &key &allow-other-keys) :test #'eq)
-        (return))
-      (when (eq expected-type '&optional)
-        (when (or in-optionals (null (rest types)))
-          (cmpwarn "Syntax error in type proclamation for function ~A.~&~A"
-                   fname arg-types))
-        (setf in-optionals t
-              types (rest types)
-              expected-type (first types)))
-      (when (endp fl)
-        (unless in-optionals
-          (cmpwarn "Too few arguments for proclaimed function ~A" fname))
-        (return))
-      (when lisp-forms
-        (let* ((form (first fl))
-               (lisp-form (first al))
-               (old-type (c1form-or-loc-values-type form)))
-          (and-form-type expected-type form lisp-form
-                         :safe "In the argument ~d of a call to ~a" i fname)
-          ;; In safe mode, we cannot assume that the type of the
-          ;; argument is going to be the right one.
-          (unless (zerop (cmp-env-optimization 'safety))
-            (setf (c1form-or-loc-values-type form) old-type)))))))
-
 (defun infer-arg-and-return-types (fname forms &optional (env *cmp-env*))
   (let ((found (get-sysprop fname 'C1TYPE-PROPAGATOR))
         arg-types
         (return-type '(VALUES &REST T)))
     (cond (found
            (multiple-value-setq (arg-types return-type)
-             (apply found fname (mapcar #'c1form-or-loc-primary-type forms))))
+             (apply found fname (mapcar #'location-primary-type forms))))
           ((multiple-value-setq (arg-types found)
              (get-arg-types fname env))
            (setf return-type (or (get-return-type fname) return-type))))

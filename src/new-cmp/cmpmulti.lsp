@@ -109,19 +109,6 @@
                   (c1set-mv vars)
                   (c1var destination (var-name (first vars))))))))
 
-#+(or)
-(defun c1form-values-number (form)
-  (let ((type (c1form-values-type form)))
-    (cond ((or (eq type 'T) (eq type '*))
-	   (values 0 MULTIPLE-VALUES-LIMIT))
-	  ((or (atom type) (not (eq (first type) 'VALUES)))
-	   (values 1 1))
-	  ((or (member '&rest type) (member 'optional type))
-	   (values 0 MULTIPLE-VALUES-LIMIT))
-	  (t
-	   (let ((l (1- (length type))))
-	     (values l l))))))
-
 (defun c1multiple-value-bind (destination args &aux
                               (vars nil) (vnames nil) init-form
                               ss is ts body other-decls

@@ -30,7 +30,12 @@
            "PROCLAIMED-RETURN-TYPE"
            "NO-SP-CHANGE"
            "PURE"
-           "NO-SIDE-EFFECTS")
+           "NO-SIDE-EFFECTS"
+
+           "MAKE-C1FORM*"
+
+           "LOCATION-TYPE"
+           )
   (:import-from "SI" "*COMPILER-CONSTANTS*"))
 
 (defpackage "C-BACKEND"

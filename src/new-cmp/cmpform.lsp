@@ -14,9 +14,6 @@
 
 (in-package "C-DATA")
 
-(defun print-c1form (form stream)
-  (format stream "#<form ~A ~X>" (c1form-name form) (ext::pointer form)))
-
 (defmacro make-c1form* (&rest args)
   `(list (make-c1form-alone ,@args)))
 
@@ -73,23 +70,6 @@
 (defun c1form-volatile* (form)
   (if (c1form-volatile form) "volatile " ""))
 
-(defun get-output-c1form (form)
-  (cond ((null form)
-         (error "Empty form list"))
-        ((listp form)
-         (first (last form)))
-        (t
-         form)))
-
-(defun c1form-values-type (form)
-  (c1form-type (get-output-c1form form)))
-
-(defun (setf c1form-values-type) (type form)
-  (setf (c1form-type (get-output-c1form form)) type))
-
-(defun c1form-primary-type (form)
-  (values-type-primary-type (c1form-values-type form)))
-
 (defun find-node-in-list (home-node list)
   (flet ((parent-node-p (node presumed-child)
 	   (loop
@@ -121,3 +101,5 @@
 (defun pprint-c1forms (forms &optional (stream t))
   (loop for f in forms do (pprint-c1form f stream)))
 
+(defun print-c1form (form stream)
+  (format stream "#<form ~A ~X>" (c1form-name form) (ext::pointer form)))
