@@ -433,6 +433,17 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
                  (loop for pair in (nreverse pairs)
                     collect `(optional-check-type ,@pair)))))))
 
+(defun exported-fname (name)
+  (let (cname)
+    (if (and (symbolp name)
+             (not (member name *notinline*))
+             (setf cname (get-sysprop name 'Lfun)))
+        (values cname t)
+        (values (next-cfun "L~D~A" name) nil))))
+
+(defun new-defun (new &optional no-entry)
+  (push new *global-funs*))
+
 #| Steps:
  1. defun creates declarations for requireds + va_alist
  2. c2lambda-expr adds declarations for:

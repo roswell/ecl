@@ -45,6 +45,10 @@
 		"*COMPILER-CONSTANTS*" "REGISTER-GLOBAL" "CMP-ENV-REGISTER-MACROLET"
 		"COMPILER-LET"))
 
+(defpackage "C-BACKEND"
+  (:use "FFI" "CL" #+threads "MP" "C")
+  (:export "DUMP-ALL"))
+
 (in-package "COMPILER")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -505,8 +509,6 @@ lines are inserted, but the order is preserved")
 
 (defvar *use-static-constants-p* nil)   ; T/NIL flag to determine whether one may
                                         ; generate lisp constant values as C structs
-(defvar *static-constants* nil)		; constants that can be built as C values
-                                        ; holds { ( object c-variable constant ) }*
 
 (defvar *compiler-constants* nil)	; a vector with all constants
 					; only used in COMPILE

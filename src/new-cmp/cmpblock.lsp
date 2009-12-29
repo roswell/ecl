@@ -90,8 +90,8 @@
                       output (nconc prefix
                                     val
                                     cleanup
-                                    (c1jmp exit-tag)
-                                    postfix)))))
+                                    postfix
+                                    (c1jmp exit-tag))))))
 	(setf (blk-type blk) (values-type-or (blk-type blk) type)
               (blk-ref blk) (1+ (blk-ref blk)))
         output))))

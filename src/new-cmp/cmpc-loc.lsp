@@ -2,6 +2,7 @@
 ;;;;
 ;;;;  Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya.
 ;;;;  Copyright (c) 1990, Giuseppe Attardi.
+;;;;  Copyright (c) 2009, Juan Jose Garcia-Ripoll.
 ;;;;
 ;;;;    This program is free software; you can redistribute it and/or
 ;;;;    modify it under the terms of the GNU Library General Public
@@ -10,9 +11,9 @@
 ;;;;
 ;;;;    See file '../Copyright' for full details.
 
-;;;; CMPLOC  Set-loc and Wt-loc.
+;;;; CMPC-LOC	Write locations as C expressions
 
-(in-package "COMPILER")
+(in-package "C-BACKEND")
 
 ;;; Valid locations are:
 ;;;	NIL
@@ -60,12 +61,17 @@
 ;;;	( BIND var alternative )	Alternative is optional
 ;;;	( JUMP-TRUE label )
 ;;;	( JUMP-FALSE label )
+;;;	( JUMP-ZERO label )
+;;;	( JUMP-NONZERO label )
 
-(defun tmp-destination (loc)
-  (case loc
-    (VALUES 'VALUES)
-    (TRASH 'TRASH)
-    (T 'RETURN)))
+(defun locative-type-from-var-kind (kind)
+  (cdr (assoc kind
+              '((:object . "_ecl_object_loc")
+                (:fixnum . "_ecl_fixnum_loc")
+                (:char . "_ecl_base_char_loc")
+                (:float . "_ecl_float_loc")
+                (:double . "_ecl_double_loc")
+                ((special global closure replaced discarded lexical) . NIL)))))
 
 (defun loc-has-side-effects (loc)
   (if (atom loc)
@@ -82,7 +88,8 @@
         (FDEFINITION (policy-global-function-checking))
         (otherwise nil))))
 
-;;; ------------------------------------------------------------------
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
 ;;; WRITING C/C++ REPRESENTATIONS LOCATIONS
 ;;;
 
@@ -109,11 +116,6 @@
 (defun wt-va-arg-loc () (wt "(narg--,va_arg(args,cl_object))"))
 
 (defun wt-cl-va-arg-loc () (wt "(narg--,cl_va_arg(cl_args))"))
-
-(defun last-call-p ()
-  (member *exit*
-          '(RETURN RETURN-FIXNUM RETURN-CHARACTER RETURN-SINGLE-FLOAT
-            RETURN-DOUBLE-FLOAT RETURN-LONG-FLOAT RETURN-OBJECT)))
 
 (defun wt-car (loc) (wt "CAR(" loc ")"))
 
@@ -157,92 +159,6 @@
 
 (defun wt-keyvars (i) (wt "keyvars[" i "]"))
 
-(defun loc-refers-to-special (loc)
-  (cond ((var-p loc)
-	 (member (var-kind loc) '(SPECIAL GLOBAL)))
-	((atom loc)
-	 nil)
-	((eq (setf loc (first loc)) 'BIND)
-	 t)
-	((eq loc 'C-INLINE)
-	 t) ; We do not know, so guess yes
-	(t nil)))
-
-(defun values-loc (n)
-  (list 'VALUE n))
-
 (defun wt-the-loc (type loc)
   (wt-loc loc))
 
-;;; ------------------------------------------------------------------
-;;; ASSIGNING TO LOCATIONS
-;;;
-
-(defun uses-values (loc)
-  (and (consp loc)
-       (or (member (car loc) '(CALL CALL-NORMAL CALL-INDIRECT) :test #'eq)
-           (and (eq (car loc) 'C-INLINE)
-                (eq (sixth loc) 'VALUES)))))
-
-(defun set-loc (loc destination)
-  (unless (eql destination loc)
-    (cond ((var-p destination)
-           (set-var loc destination))
-          ((atom destination)
-           (let ((fd (gethash destination +c2-set-loc-table+)))
-             (cond (fd
-                    (funcall fd loc))
-                   ((setq fd (gethash destination +c2-wt-loc-table+))
-                    (wt-nl) (funcall fd) (wt "= ")
-                    (wt-coerce-loc (loc-representation-type destination) loc)
-                    (wt ";"))
-                   (t
-                    (error "No known way to assign to location ~A"
-                           destination)))))
-          (t
-           (let* ((name (first destination))
-                  (fd (gethash name +c2-set-loc-table+)))
-             (cond (fd
-                    (apply fd loc (rest destination)))
-                   ((setq fd (gethash name +c2-wt-loc-table+))
-                    (wt-nl) (apply fd (rest destination)) (wt "= ")
-                    (wt-coerce-loc (loc-representation-type destination) loc)
-                    (wt ";"))
-                   (t
-                    (error "No known way to assign to location ~A"
-                           destination))))))))
-
-(defun set-values-loc (loc)
-  (cond ((eq loc 'VALUES))
-        ((uses-values loc)
-         (wt-nl "cl_env_copy->values[0]=") (wt-coerce-loc :object loc) (wt ";"))
-        (t
-         (wt-nl "cl_env_copy->values[0]=") (wt-coerce-loc :object loc)
-         (wt ";")
-         (wt-nl "cl_env_copy->nvalues=1;"))))
-
-(defun set-values+value0-loc (loc)
-  (cond ((eq loc 'VALUES)
-         (wt-nl "value0=cl_env_copy->values[0];"))
-        ((uses-values loc)
-         (wt-nl "value0=")(wt-coerce-loc :object loc) (wt ";"))
-        (t
-         (wt-nl "value0=") (wt-coerce-loc :object loc) (wt ";")
-         (wt-nl "cl_env_copy->nvalues=1;"))))
-
-(defun set-value0-loc (loc)
-  (wt-nl "value0=") (wt-coerce-loc :object loc) (wt ";"))
-
-(defun set-return-loc (loc)
-  (set-values+value0-loc loc))
-
-(defun set-actual-return-loc (loc)
-  (set-loc loc 'VALUES+VALUE0)
-  (wt-nl "return value0;"))
-
-(defun set-trash-loc (loc)
-  (when (loc-has-side-effects loc)
-    (wt-nl loc ";")))
-
-(defun set-the-loc (value type loc)
-  (set-loc value loc))

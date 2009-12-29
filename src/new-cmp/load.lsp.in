@@ -40,7 +40,13 @@
   "src:new-cmp;cmpstructures.lsp"
   "src:new-cmp;cmparray.lsp"
   "src:new-cmp;cmppass.lsp"
-  "src:new-cmp;cmpbackend.lsp"
+  "src:new-cmp;cmpc-data.lsp"
+  "src:new-cmp;cmpc-wt.lsp"
+  "src:new-cmp;cmpc-loc.lsp"
+  "src:new-cmp;cmpc-set.lsp"
+  "src:new-cmp;cmpc-ops.lsp"
+  "src:new-cmp;cmpc-tables.lsp"
+  "src:new-cmp;cmpc-top.lsp"
   "src:new-cmp;cmpmain.lsp"))
 
 (let ((si::*keep-documentation* nil))

@@ -96,12 +96,6 @@
                     (c1call-global-op destination fname temps)
                     postfix))))))
 
-(defun c1progn (destination forms)
-  (or (loop for fl on forms
-         append (t1/c1expr (if (rest fl) 'TRASH destination)
-                           (first fl)))
-      (t1/c1expr destination 'NIL)))
-
 ;;; ----------------------------------------------------------------------
 
 (defvar *compiler-temps*

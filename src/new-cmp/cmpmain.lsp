@@ -390,7 +390,7 @@ static cl_object VV[VM];
 #endif
 #define ECL_SHARED_DATA_FILE 1
 " (data-permanent-storage-size))
-	   (data-dump c-file))
+	   (c-backend::data-dump c-file))
 	  (t
 	   (format c-file "
 #define compiler_data_text NULL
@@ -582,8 +582,8 @@ compiled successfully, returns the pathname of the compiled file"
                       :input-designator (namestring input-pathname))
 
       (if shared-data-file
-	  (data-dump shared-data-pathname t)
-	  (data-dump data-pathname))
+	  (c-backend::data-dump shared-data-pathname t)
+	  (c-backend::data-dump data-pathname))
 
       (let ((o-pathname (if system-p
                             output-file
@@ -796,10 +796,10 @@ from the C language code.  NIL means \"do not create the file\"."
 	     (data-init)
              (with-t1expr (init-name)
                (t1expr disassembled-form))
-	     (ctop-write init-name
-			 (if h-file h-file "")
-			 (if data-file data-file ""))
-	     (data-dump data-file))
+	     (c-backend::ctop-write init-name
+                                    (if h-file h-file "")
+                                    (if data-file data-file ""))
+	     (c-backend::data-dump data-file))
 	(setf (symbol-function 'T3LOCAL-FUN) t3local-fun)
 	(when h-file (close *compiler-output2*)))))
   nil)
@@ -816,10 +816,10 @@ from the C language code.  NIL means \"do not create the file\"."
     (wt-comment-nl "Source: ~A" input-designator)
     (with-open-file (*compiler-output2* h-pathname :direction :output)
       (wt-nl1 "#include " *cmpinclude*)
-      (catch *cmperr-tag* (ctop-write init-name
-				      h-pathname
-				      data-pathname
-				      :shared-data shared-data))
+      (catch *cmperr-tag* (c-backend::ctop-write init-name
+                                                 h-pathname
+                                                 data-pathname
+                                                 :shared-data shared-data))
       (terpri *compiler-output1*)
       (terpri *compiler-output2*))))
 

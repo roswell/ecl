@@ -9,7 +9,7 @@
 ;;;;
 ;;;;    See file '../Copyright' for full details.
 
-(in-package "COMPILER")
+(in-package "C-BACKEND")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -799,4 +799,27 @@
     (unless (= *env* (fun-env fun))
       (error "Wrong value of environment size ~A" *env*))
     (close-all-c-blocks)))
+
+;;;
+;;; FSET FIXME! UNUSED!
+;;;
+
+(defun c2fset (fun fname macro pprint c1forms)
+  (when (fun-no-entry fun)
+    (wt-nl "(void)0; /* No entry created for "
+	   (format nil "~A" (fun-name fun))
+	   " */")
+    ;; FIXME! Look at c2function!
+    (new-local fun)
+    (return-from c2fset))
+  (when (fun-closure fun)
+    (return-from c2fset (c2call-global destination 'SI:FSET c1forms)))
+  (let ((*inline-blocks* 0)
+	(loc (data-empty-loc)))
+    (push (list loc fname fun) *global-cfuns-array*)
+    ;; FIXME! Look at c2function!
+    (new-local fun)
+    (wt-nl (if macro "ecl_cmp_defmacro(" "ecl_cmp_defun(")
+	   loc ");")
+    (close-inline-blocks)))
 

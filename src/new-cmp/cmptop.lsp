@@ -25,8 +25,6 @@
                  ,@body))
            ,init-name))
 
-(defparameter +init-function-name+ (gensym "ENTRY-POINT"))
-
 (defun t1loop (body init-name)
   (let* ((only-argument (make-var :name (gensym "CBLOCK")
                                   :type T
@@ -91,131 +89,11 @@
 	(t
 	 (t1expr* destination form))))	
 
-(defun emit-local-funs (fun)
-  (loop with *compile-time-too* = nil
-     with *compile-toplevel* = nil
-     with emitted-local-funs = (make-hash-table :test #'eql)
-     with pending = (fun-child-funs fun)
-     while pending
-     do (let ((f (pop pending)))
-          (when (gethash f emitted-local-funs)
-            (error "Doubly emitted function ~A" f))
-          (t3local-fun f)
-          (setf (gethash f emitted-local-funs) t
-                pending (append (fun-child-funs f) pending)))))
-
-(defun ctop-write (name h-pathname data-pathname
-		        &key shared-data
-			&aux def top-output-string
-			(*volatile* "volatile "))
-
-  ;(let ((*print-level* 3)) (pprint *top-level-forms*))
-  (wt-nl1 "#include \"" (si::coerce-to-filename h-pathname) "\"")
-  ;; All lines from CLINES statements are grouped at the beginning of the header
-  ;; Notice that it does not make sense to guarantee that c-lines statements
-  ;; are produced in-between the function definitions, because two functions
-  ;; might be collapsed into one, or we might not produce that function at all
-  ;; and rather inline it.
-  (do ()
-      ((null *clines-string-list*))
-    (wt-nl-h (pop *clines-string-list*)))
-  (wt-nl-h "#ifdef __cplusplus")
-  (wt-nl-h "extern \"C\" {")
-  (wt-nl-h "#endif")
-  (when si::*compiler-constants*
-    (wt-nl-h "#include <string.h>"))
-  ;;; Initialization function.
-  (let* ((c-output-file *compiler-output1*)
-	 (*compiler-output1* (make-string-output-stream))
-	 (*compiler-declared-globals* (make-hash-table)))
-    (unless shared-data
-      (wt-nl1 "#include \"" (si::coerce-to-filename data-pathname) "\""))
-
-    ;; Type propagation phase
-    (when *do-type-propagation*
-      (setq *compiler-phase* 'p1propagate)
-      (dolist (form *top-level-forms*)
-        (p1propagate form nil))
-      (dolist (fun *local-funs*)
-        (propagate-function-types fun)))
-
-    (setq *compiler-phase* 't2)
-
-    ;; Optimization passes
-    (execute-pass 'pass-consistency)
-    (execute-pass 'pass-delete-no-side-effects)
-    (execute-pass 'pass-delete-unused-bindings)
-    (execute-pass 'pass-decide-var-rep-types)
-    (execute-pass 'pass-assign-labels)
-
-    ;; Emit entry function
-    (let ((*compile-to-linking-call* nil))
-      (t3local-fun *top-level-forms*))
-
-    ;; Now emit the rest
-    (let ((*compiler-output1* c-output-file))
-      (emit-local-funs *top-level-forms*))
-
-    (setq top-output-string (get-output-stream-string *compiler-output1*)))
-
-  ;; Declarations in h-file.
-  (wt-nl-h "static cl_object Cblock;")
-  (let ((num-objects (data-size)))
-    (if (zerop num-objects)
-	(progn
-	  (wt-nl-h "#undef ECL_DYNAMIC_VV")
-	  (wt-nl-h "#define compiler_data_text \"\"")
-	  (wt-nl-h "#define compiler_data_text_size 0")
-	  (wt-nl-h "#define VM 0")
-	  (wt-nl-h "#define VMtemp 0")
-	  (wt-nl-h "#define VV NULL"))
-	(progn
-	  (wt-nl-h "#define VM " (data-permanent-storage-size))
-	  (wt-nl-h "#define VMtemp "  (data-temporary-storage-size))
-	  (wt-nl-h "#ifdef ECL_DYNAMIC_VV")
-	  (wt-nl-h "static cl_object *VV;")
-	  (wt-nl-h "#else")
-	  (wt-nl-h "static cl_object VV[VM];")
-	  (wt-nl-h "#endif"))))
-
-  (dolist (l *linking-calls*)
-    (let* ((c-name (fourth l))
-	   (var-name (fifth l)))
-      (wt-nl-h "static cl_object " c-name "(cl_narg, ...);")
-      (wt-nl-h "static cl_object (*" var-name ")(cl_narg, ...)=" c-name ";")))
-
-  ;;; Initial functions for linking calls.
-  (dolist (l *linking-calls*)
-    (let* ((var-name (fifth l))
-	   (c-name (fourth l))
-	   (lisp-name (third l)))
-      (wt-nl1 "static cl_object " c-name "(cl_narg narg, ...)"
-	      "{TRAMPOLINK(narg," lisp-name ",&" var-name ",Cblock);}")))
-
-  (wt-nl-h "#ifdef __cplusplus")
-  (wt-nl-h "}")
-  (wt-nl-h "#endif")
-
-  (when (and (listp *static-constants*)
-             (setf *static-constants* (nreverse *static-constants*)))
-    (wt-nl-h "/*")
-    (wt-nl-h " * Statically defined constants")
-    (wt-nl-h " */")
-    (loop for (value name builder) in (reverse *static-constants*)
-          do (terpri *compiler-output2*)
-          do (funcall builder name value *compiler-output2*)))
-
-  (output-cfuns *compiler-output2*)
-
-  (setq *compiler-phase* 't3)
-
-  ;;; Callbacks
-  (when *callbacks*
-    (wt-nl-h "#include <ecl/internal.h>")
-    (dolist (x *callbacks*)
-      (apply #'t3-defcallback x)))
-
-  (wt-nl top-output-string))
+(defun c1progn (destination forms)
+  (or (loop for fl on forms
+         append (t1/c1expr (if (rest fl) 'TRASH destination)
+                           (first fl)))
+      (t1/c1expr destination 'NIL)))
 
 (defun c1eval-when (destination args)
   (check-args-number 'EVAL-WHEN args 1)
@@ -242,29 +120,6 @@
 	   (c1progn destination 'NIL))
 	  (t
 	   (c1progn destination 'NIL)))))
-
-(defun exported-fname (name)
-  (let (cname)
-    (if (and (symbolp name)
-             (not (member name *notinline*))
-             (setf cname (get-sysprop name 'Lfun)))
-        (values cname t)
-        (values (next-cfun "L~D~A" name) nil))))
-
-(defun new-defun (new &optional no-entry)
-  (push new *global-funs*))
-
-(defun print-function (x)
-  (format t "~%<a FUN: ~A, CLOSURE: ~A, LEVEL: ~A, ENV: ~A>"
-	  (fun-name x) (fun-closure x) (fun-level x) (fun-env x)))
-
-(defun rep-type (type)
-  (case type
-    (FIXNUM "cl_fixnum ")
-    (CHARACTER "unsigned char ")
-    (SINGLE-FLOAT "float ")
-    (DOUBLE-FLOAT "double ")
-    (otherwise "cl_object ")))
 
 (defun t1ordinary (destination form)
   (when *compile-time-too* (cmp-eval form))
@@ -296,48 +151,29 @@
 	   (setf loc (add-object (cmp-eval form)))))
     (c1set-loc destination loc)))
 
-(defun parse-cvspecs (x &aux (cvspecs nil))
-  (dolist (cvs x (nreverse cvspecs))
-    (cond ((symbolp cvs)
-           (push (list :OBJECT (string-downcase (symbol-name cvs))) cvspecs))
-          ((stringp cvs) (push (list :OBJECT cvs) cvspecs))
-          ((and (consp cvs)
-                (member (car cvs) '(OBJECT CHAR INT FLOAT DOUBLE)))
-           (dolist (name (cdr cvs))
-             (push (list (car cvs)
-                         (cond ((symbolp name)
-                                (string-downcase (symbol-name name)))
-                               ((stringp name) name)
-                               (t (cmperr "The C variable name ~s is illegal."
-                                          name))))
-                   cvspecs)))
-          (t (cmperr "The C variable specification ~s is illegal." cvs)))))
+(defun c1locally (destination args)
+  (multiple-value-bind (body ss ts is other-decl)
+      (c1body args t)
+    (let ((*cmp-env* (cmp-env-copy)))
+      (c1declare-specials ss)
+      (check-vdecl nil ts is)
+      (c1decl-body destination other-decl body))))
 
-(defun locative-type-from-var-kind (kind)
-  (cdr (assoc kind
-              '((:object . "_ecl_object_loc")
-                (:fixnum . "_ecl_fixnum_loc")
-                (:char . "_ecl_base_char_loc")
-                (:float . "_ecl_float_loc")
-                (:double . "_ecl_double_loc")
-                ((special global closure replaced discarded lexical) . NIL)))))
+(defun c1macrolet (destination args)
+  (check-args-number 'MACROLET args 1)
+  (let ((*cmp-env* (cmp-env-copy)))
+    (cmp-env-register-macrolet (first args) *cmp-env*)
+    (c1locally destination (cdr args))))
 
-(defun t3local-fun (fun)
-  (print-emitting fun)
-  (let* ((*current-function* fun)
-         (*lcl* (fun-last-lcl fun))
-         (*last-label* (fun-last-label fun))
-	 (*lex* 0)
-         (*max-lex* 0)
-	 (*env* (fun-env fun))		; continue growing env
-	 (*max-env* *env*)
-         (*env-lvl* 0)
-	 (*level* (if (eq (fun-closure fun) 'LEXICAL)
-                      (fun-level fun)
-                      0))
-         (*volatile* (if (fun-volatile-p fun) "volatile " ""))
-         (*permanent-data* t))
-    (c2translate (fun-lambda fun))))
+(defun c1symbol-macrolet (destination args)
+  (check-args-number 'SYMBOL-MACROLET args 1)
+  (let ((*cmp-env* (cmp-env-copy)))
+    (dolist (def (car args))
+      (let ((name (first def)))	    
+	(cmpck (or (endp def) (not (symbolp name)) (endp (cdr def)))
+	     "The symbol-macro definition ~s is illegal." def)
+	(cmp-env-register-symbol-macro name (second def))))
+    (c1locally destination (cdr args))))
 
 ;;; ----------------------------------------------------------------------
 ;;; Optimizer for FSET. Removes the need for a special handling of DEFUN as a
@@ -380,46 +216,6 @@
                                  pprint
                                  unoptimized))))
           unoptimized))))
-
-(defun c2fset (fun fname macro pprint c1forms)
-  (when (fun-no-entry fun)
-    (wt-nl "(void)0; /* No entry created for "
-	   (format nil "~A" (fun-name fun))
-	   " */")
-    ;; FIXME! Look at c2function!
-    (new-local fun)
-    (return-from c2fset))
-  (when (fun-closure fun)
-    (return-from c2fset (c2call-global destination 'SI:FSET c1forms)))
-  (let ((*inline-blocks* 0)
-	(loc (data-empty-loc)))
-    (push (list loc fname fun) *global-cfuns-array*)
-    ;; FIXME! Look at c2function!
-    (new-local fun)
-    (wt-nl (if macro "ecl_cmp_defmacro(" "ecl_cmp_defun(")
-	   loc ");")
-    (close-inline-blocks)))
-
-(defun output-cfuns (stream)
-  (let ((n-cfuns (length *global-cfuns-array*)))
-    (wt-nl-h "/*")
-    (wt-nl-h " * Exported Lisp functions")
-    (wt-nl-h " */")
-    (wt-nl-h "#define compiler_cfuns_size " n-cfuns)
-    (if (zerop n-cfuns)
-        (wt-nl-h "#define compiler_cfuns NULL")
-        (progn
-          (format stream "~%static const struct ecl_cfun compiler_cfuns[] = {~
-~%~t/*t,m,narg,padding,name,block,entry*/");
-          (loop for (loc fname-loc fun) in (nreverse *global-cfuns-array*)
-                do (let* ((cfun (fun-cfun fun))
-                          (minarg (fun-minarg fun))
-                          (maxarg (fun-maxarg fun))
-                          (narg (if (= minarg maxarg) maxarg nil)))
-                     (format stream "~%{0,0,~D,0,MAKE_FIXNUM(~D),MAKE_FIXNUM(~D),(cl_objectfn)~A,Cnil,MAKE_FIXNUM(~D)},"
-                             (or narg -1) (second loc) (second fname-loc)
-                             cfun (fun-file-position fun))))
-          (format stream "~%};")))))
 
 ;;; ----------------------------------------------------------------------
 
