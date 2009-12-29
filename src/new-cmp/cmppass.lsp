@@ -77,24 +77,6 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
-;;; OUTPUT C1FORMS
-;;;
-
-(defun pprint-c1form (f &optional (stream t))
-  (cond ((c1form-p f)
-         (format stream "~&~4T~16A~4T~{~A ~}" (c1form-name f) (c1form-args f)))
-        ((tag-p f)
-         (format stream "~&~A / ~A:" (tag-name f) (tag-label f)))
-        (t
-         (format stream "~&;;; Unknown form ~A" f)))
-  (force-output stream)
-  f)
-
-(defun pprint-c1forms (forms &optional (stream t))
-  (loop for f in forms do (pprint-c1form f stream)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;
 ;;; DELETE UNUSED FORMS
 ;;;
 

@@ -12,9 +12,5 @@
 ;;;;  CMPC -- Definitions common to the backend
 ;;;;
 
-(defpackage "C-BACKEND"
-  (:use "FFI" "CL" #+threads "MP" "C")
-  (:export "CTOP-WRITE" "DUMP-ALL" "DATA-DUMP"))
-
 (in-package "C-BACKEND")
 

@@ -20,6 +20,8 @@
 ;;; CONSTRUCTORS
 ;;;
 
+(in-package "C-DATA")
+
 (defun trace-function (f)
   #'(lambda (&rest args)
       (terpri) (princ #\>) (princ f)
@@ -46,9 +48,16 @@
      do (setf (gethash output k) v)
      finally (return output)))
 
+(let ((p (find-package "C-DATA")))
+  (do-symbols (s "C-DATA")
+    (when (eq (symbol-package s) p)
+      (export s))))
+
 ;;; ------------------------------------------------------------------
 ;;; COMMON LISP FORMS TRANSLATORS
 ;;;
+
+(in-package "C")
 
 (defconstant +c1-dispatch-data+
  '(

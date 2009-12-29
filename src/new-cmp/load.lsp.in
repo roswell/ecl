@@ -1,7 +1,11 @@
 ;;; @configure_input@
 
 (defconstant +cmp-module-files+
-'("build:new-cmp;cmpdefs.lsp"
+'("src:new-cmp;cmppackage.lsp"
+  "src:new-cmp;cmptypes.lsp"
+  "src:new-cmp;cmpglobals.lsp"
+  "build:new-cmp;cmpdefs.lsp"
+  "src:new-cmp;cmpform.lsp"
   "src:new-cmp;cmpmac.lsp"
   "src:new-cmp;cmputil.lsp"
   "src:new-cmp;cmptype.lsp"
@@ -36,12 +40,12 @@
   "src:new-cmp;cmparray.lsp"
   "src:new-cmp;cmppass.lsp"
   "src:new-cmp;cmpc.lsp"
-  "src:new-cmp;cmpc-data.lsp"
   "src:new-cmp;cmpc-wt.lsp"
   "src:new-cmp;cmpc-loc.lsp"
   "src:new-cmp;cmpc-set.lsp"
   "src:new-cmp;cmpc-ffi.lsp"
   "src:new-cmp;cmpc-inline.lsp"
+  "src:new-cmp;cmpc-data.lsp"
   "src:new-cmp;cmpc-ops.lsp"
   "src:new-cmp;cmpc-tables.lsp"
   "src:new-cmp;cmpc-top.lsp"
@@ -49,5 +53,5 @@
 
 (let ((si::*keep-documentation* nil))
   (mapc #'(lambda (x) (load x :verbose nil)) +cmp-module-files+)
-  (load "src:new-cmp;sysfun" :verbose nil))
+  (load "src:new-cmp;sysfun" :verbose t))
 

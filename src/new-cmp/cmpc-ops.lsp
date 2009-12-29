@@ -676,20 +676,7 @@
 
 (defun c2emit-closure-scan (fun)
   (when (eq (fun-closure fun) 'CLOSURE)
-    (let ((clv-used (remove-if
-                     #'(lambda (x)
-                         (or
-                          ;; non closure variable
-                          (not (ref-ref-ccb x))
-                          ;; special variable
-                          (eq (var-kind x) 'special)
-                          ;; not actually referenced
-                          (and (not (var-referenced-in-form x (fun-lambda fun)))
-                               (not (var-changed-in-form x (fun-lambda fun))))
-                          ;; parameter of this closure
-                          ;; (not yet bound, therefore var-loc is OBJECT)
-                          (eq (var-loc x) 'OBJECT)))
-                     (fun-referred-vars fun)))
+    (let ((clv-used (function-closure-variables fun))
           l)
       (when clv-used
         (setf clv-used (sort clv-used #'> :key #'var-loc))
