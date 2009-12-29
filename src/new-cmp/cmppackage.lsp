@@ -34,7 +34,7 @@
 
            "MAKE-C1FORM*"
 
-           "LOCATION-TYPE"
+           "LOCATION-TYPE" "LOCATION-PRIMARY-TYPE"
            )
   (:import-from "SI" "*COMPILER-CONSTANTS*"))
 
