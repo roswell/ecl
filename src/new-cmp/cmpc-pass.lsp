@@ -18,5 +18,5 @@
   (execute-pass 'pass-consistency)
   (execute-pass 'pass-delete-no-side-effects)
   (execute-pass 'pass-delete-unused-bindings)
-  (execute-pass 'pass-decide-var-rep-types)
-  (execute-pass 'pass-assign-labels))
+  (execute-pass 'pass-assign-labels)
+  (execute-pass 'pass-decide-var-rep-types))

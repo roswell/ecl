@@ -35,11 +35,47 @@
            "MAKE-C1FORM*"
 
            "LOCATION-TYPE" "LOCATION-PRIMARY-TYPE"
+
+           "PPRINT-C1FORM" "PPRINT-C1FORMS"
+           ;;
+           ;; Symbols naming possible locations
+           ;;
+           "TEMP" "LCL" "VV" "VV-TEMP" "TRASH"
+           "FIXNUM-VALUE" "CHARACTER-VALUE"
+           "LONG-FLOAT-VALUE" "DOUBLE-FLOAT-VALUE" "SINGLE-FLOAT-VALUE"
+           "VALUE" "VALUE0" "VALUES+VALUE0" "RETURN" "ACTUAL-RETURN"
+           "VA-ARG" "CL-VA-ARG" "KEYVARS"
+           "CALL" "CALL-NORMAL" "CALL-INDIRECT"
+           "COERCE-LOC"
+           "FDEFINITION" "MAKE-CCLOSURE"
+           "JMP-TRUE" "JMP-FALSE" "JMP-ZERO" "JMP-NONZERO"
+           ;;
+           ;; Symbols naming C1FORMS
+           ;;
+           "SET-MV" "BIND" "BIND-SPECIAL" "UNBIND" "PROGV-EXIT"
+           "FRAME-POP" "FRAME-SET" "FRAME-SAVE-NEXT" "FRAME-JMP-NEXT"
+           "FRAME-ID"
+           "CALL-LOCAL" "CALL-GLOBAL" "JMP"
+           "FUNCTION-EPILOGUE" "FUNCTION-PROLOGUE" "BIND-REQUIREDS"
+           "VARARGS-BIND" "VARARGS-POP" "VARARGS-REST" "VARARGS-UNBIND"
+           "STACK-FRAME-OPEN" "STACK-FRAME-PUSH" "STACK-FRAME-PUSH-VALUES"
+           "STACK-FRAME-POP-VALUES" "STACK-FRAME-APPLY" "STACK-FRAME-CLOSE"
+           "DEBUG-ENV-OPEN" "DEBUG-ENV-CLOSE" "DEBUG-ENV-PUSH-VARS"
+           "DEBUG-ENV-POP-VARS"
+           "DO-FLET/LABELS"
            )
   (:import-from "SI" "*COMPILER-CONSTANTS*"))
 
-(defpackage "C-BACKEND"
+(defpackage "C-PASSES"
   (:use "FFI" "CL" "C-DATA")
+  (:export "EXECUTE-PASS"
+           "PASS-CONSISTENCY"
+           "PASS-DELETE-NO-SIDE-EFFECTS"
+           "PASS-ASSIGN-LABELS"
+           "PASS-DELETE-UNUSED-BINDINGS"))
+
+(defpackage "C-BACKEND"
+  (:use "FFI" "CL" "C-DATA" "C-PASSES")
   (:export "CTOP-WRITE" "DUMP-ALL" "DATA-DUMP"
            "WT-FILTERED-DATA"))
 

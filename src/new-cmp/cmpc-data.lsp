@@ -140,7 +140,8 @@
   (unless (or *compiler-constants* (not *use-static-constants-p*))
     (let ((static-constants 0))
       (flet ((turned-static-p (record)
-               (destructuring-bind (object (&whole location vv-tag index object-copy))
+               (destructuring-bind (object (&whole location vv-tag index object-copy)
+                                           index-copy)
                    (let ((builder (static-constant-expression object)))
                      (when builder
                        (let* ((next-index (incf static-constants))
@@ -163,15 +164,18 @@
 (defun replace-optimizable-constants ()
   (let ((found nil))
     (flet ((turned-inline-p (record)
-             (destructuring-bind (object (&whole location vv-tag index object-copy))
-                 (let ((x (assoc object +optimizable-constants+)))
-                   (when x
-                     (setf found t)
-                     (format *dump-output* "~&;;; Replacing constant ~A with ~A"
-                             object (second x))
-                     (setf (second location) (second x)
-                           (first location) (first x))
-                     t)))))
+             (print record)
+             (destructuring-bind (object (&whole location vv-tag index object-copy)
+                                         index-copy)
+                 record
+               (let ((x (assoc object +optimizable-constants+)))
+                 (when x
+                   (setf found t)
+                   (format *dump-output* "~&;;; Replacing constant ~A with ~A"
+                           object (second x))
+                   (setf (second location) (second x)
+                         (first location) (first x))
+                   t)))))
       (setf *permanent-objects*
             (delete-if #'turned-inline-p *permanent-objects*)
             *temporary-objects*

@@ -59,7 +59,7 @@
 ;;;	VARARGS-UNBIND		nargs-loc varargs-loc min max nkeys check
 ;;;
 
-(in-package "COMPILER")
+(in-package "C-PASSES")
 
 (defparameter *dump-output* (open "dump.log" :direction :output
                                   :if-exists :supersede
