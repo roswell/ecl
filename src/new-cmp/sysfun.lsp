@@ -59,67 +59,30 @@
 ;;; or in unsafe compilation mode, respectively.
 ;;;
 
-(in-package "COMPILER")
+(in-package "C-DATA")
+(export 'PROCLAIM-FUNCTION "C-DATA")
 
 (defmacro proclaim-function (&whole form name arg-types return-type &rest properties)
-  (when (get-sysprop name 'proclaimed-arg-types)
+  (when (sys:get-sysprop name 'proclaimed-arg-types)
     (warn "Duplicate proclamation for ~A" name))
   (unless (or (equal arg-types '(*)))
-    (put-sysprop name 'proclaimed-arg-types arg-types))
+    (sys:put-sysprop name 'proclaimed-arg-types arg-types))
   (when (and return-type (not (eq 'T return-type)))
-    (put-sysprop name 'proclaimed-return-type return-type))
+    (sys:put-sysprop name 'proclaimed-return-type return-type))
   (loop for p in properties
      do (case p
           (:no-sp-change
-           (put-sysprop name 'no-sp-change t))
+           (sys:put-sysprop name 'no-sp-change t))
           ((:predicate :pure)
-           (put-sysprop name 'pure t)
-           (put-sysprop name 'no-side-effects t))
+           (sys:put-sysprop name 'pure t)
+           (sys:put-sysprop name 'no-side-effects t))
           ((:no-side-effects :reader)
-           (put-sysprop name 'no-side-effects t))
+           (sys:put-sysprop name 'no-side-effects t))
           (otherwise
            (error "Unknown property ~S in function proclamation ~S" p form))))
-  (rem-sysprop name ':inline-always)
-  (rem-sysprop name ':inline-safe)
-  (rem-sysprop name ':inline-unsafe)
-  nil)
-
-(defmacro def-inline (name safety arg-types return-rep-type expansion
-                      &key (one-liner t) (exact-return-type nil)
-		      &aux arg-rep-types)
-  (setf safety
-	(case safety
-	  (:unsafe :inline-unsafe)
-	  (:safe :inline-safe)
-	  (:always :inline-always)
-	  (t (error "In DEF-INLINE, wrong value of SAFETY"))))
-  (setf arg-rep-types
-	(mapcar #'(lambda (x) (if (eq x '*) x (lisp-type->rep-type x)))
-		arg-types))
-  (when (eq return-rep-type t)
-    (setf return-rep-type :object))
-  (let* ((return-type (if (and (consp return-rep-type)
-                               (eq (first return-rep-type) 'values))
-                          t
-                          (rep-type->lisp-type return-rep-type)))
-         (inline-info
-          (make-inline-info :name name
-                            :arg-rep-types arg-rep-types
-                            :return-rep-type return-rep-type
-                            :return-type return-type
-                            :arg-types arg-types
-                            :exact-return-type exact-return-type
-                            ;; :side-effects (not (get-sysprop name 'no-side-effects))
-                            :one-liner one-liner
-                            :expansion expansion))
-         (previous (get-sysprop name safety)))
-    #+(or)
-    (loop for i in previous
-       when (and (equalp (inline-info-arg-types i) arg-types)
-                 (not (equalp return-type (inline-info-return-type i))))
-       do (format t "~&;;; Redundand inline definition for ~A~&;;; ~<~A~>~&;;; ~<~A~>"
-                  name i inline-info))
-    (put-sysprop name safety (cons inline-info previous)))
+  (sys:rem-sysprop name ':inline-always)
+  (sys:rem-sysprop name ':inline-safe)
+  (sys:rem-sysprop name ':inline-unsafe)
   nil)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1234,6 +1197,46 @@
 ;;;
 ;;; INLINE EXPANSIONS
 ;;;
+
+(in-package "C-BACKEND")
+
+(defmacro def-inline (name safety arg-types return-rep-type expansion
+                      &key (one-liner t) (exact-return-type nil)
+		      &aux arg-rep-types)
+  (setf safety
+	(case safety
+	  (:unsafe :inline-unsafe)
+	  (:safe :inline-safe)
+	  (:always :inline-always)
+	  (t (error "In DEF-INLINE, wrong value of SAFETY"))))
+  (setf arg-rep-types
+	(mapcar #'(lambda (x) (if (eq x '*) x (lisp-type->rep-type x)))
+		arg-types))
+  (when (eq return-rep-type t)
+    (setf return-rep-type :object))
+  (let* ((return-type (if (and (consp return-rep-type)
+                               (eq (first return-rep-type) 'values))
+                          t
+                          (rep-type->lisp-type return-rep-type)))
+         (inline-info
+          (make-inline-info :name name
+                            :arg-rep-types arg-rep-types
+                            :return-rep-type return-rep-type
+                            :return-type return-type
+                            :arg-types arg-types
+                            :exact-return-type exact-return-type
+                            ;; :side-effects (not (get-sysprop name 'no-side-effects))
+                            :one-liner one-liner
+                            :expansion expansion))
+         (previous (sys:get-sysprop name safety)))
+    #+(or)
+    (loop for i in previous
+       when (and (equalp (inline-info-arg-types i) arg-types)
+                 (not (equalp return-type (inline-info-return-type i))))
+       do (format t "~&;;; Redundand inline definition for ~A~&;;; ~<~A~>~&;;; ~<~A~>"
+                  name i inline-info))
+    (sys:put-sysprop name safety (cons inline-info previous)))
+  nil)
 
 (def-inline aref :unsafe (t t t) t
  "@0;ecl_aref_unsafe(#0,fix(#1)*(#0)->array.dims[1]+fix(#2))")
