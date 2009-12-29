@@ -87,7 +87,7 @@
            (MAKE-CCLOSURE 'FUNCTION)
            ((VV VV-TEMP)
             (if (cddr loc)
-                (object-type (third loc))
+                (type-of (third loc))
                 T))
 	   (otherwise T)))))
 

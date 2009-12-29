@@ -44,9 +44,6 @@
 (defun member-type (type disjoint-supertypes)
   (member type disjoint-supertypes :test #'subtypep))
 
-(defun object-type (thing)
-  (type-of thing))
-
 (defun type-filter (type &optional values-allowed)
   (multiple-value-bind (type-name type-args) (sys::normalize-type type)
     (case type-name
