@@ -783,13 +783,13 @@ from the C language code.  NIL means \"do not create the file\"."
          (*compiler-output2* (if h-file
 				 (open h-file :direction :output :external-format :default)
 				 null-stream))
-         (t3local-fun (symbol-function 'T3LOCAL-FUN))
+         (t3local-fun (symbol-function 'c-backend::t3local-fun))
 	 (compiler-conditions nil)
          (init-name (compute-init-name "foo" :kind :fasl)))
     (with-compiler-env (compiler-conditions)
       (unwind-protect
 	   (progn
-	     (setf (symbol-function 'T3LOCAL-FUN)
+	     (setf (symbol-function 'c-backend::t3local-fun)
 		   #'(lambda (&rest args)
 		       (let ((*compiler-output1* *standard-output*))
 			 (apply t3local-fun args))))
@@ -800,7 +800,7 @@ from the C language code.  NIL means \"do not create the file\"."
                                     (if h-file h-file "")
                                     (if data-file data-file ""))
 	     (c-backend::data-dump data-file))
-	(setf (symbol-function 'T3LOCAL-FUN) t3local-fun)
+	(setf (symbol-function 'c-backend::t3local-fun) t3local-fun)
 	(when h-file (close *compiler-output2*)))))
   nil)
 
