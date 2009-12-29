@@ -811,6 +811,7 @@ from the C language code.  NIL means \"do not create the file\"."
       (catch *cmperr-tag* (c-backend::ctop-write init-name
                                                  h-pathname
                                                  data-pathname
+                                                 :input-designator input-designator
                                                  :shared-data shared-data))
       (terpri *compiler-output1*)
       (terpri *compiler-output2*))))

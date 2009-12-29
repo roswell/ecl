@@ -15,7 +15,7 @@
 (in-package "C-BACKEND")
 
 (defun ctop-write (name h-pathname data-pathname
-                   &key shared-data
+                   &key shared-data input-designator
                    &aux def top-output-string
                    (*volatile* "volatile "))
 
@@ -31,7 +31,8 @@
                    year month day hour minute)
     (wt-comment-nl "Machine: ~A ~A ~A"
                    (software-type) (software-version) (machine-type)))
-  (wt-comment-nl "Source: ~A" input-designator)
+  (wt-comment-nl "Source: ~A"
+                 (or input-designator "Uknown"))
 
   (wt-nl1 "#include " c::*cmpinclude*)
   (wt-nl1 "#include \"" (si::coerce-to-filename h-pathname) "\"")
