@@ -144,6 +144,15 @@
      ,@body))
 
 ;;;
+;;; CLEANUP STATEMENTS
+;;;
+
+(defun c1cleanup-forms (env)
+  (multiple-value-bind (specials other-statements)
+      (cmp-env-cleanups env)
+    (nconc (c1unbind specials nil) other-statements)))
+
+;;;
 ;;; VARIABLE BINDINGS
 ;;;
 

@@ -97,14 +97,14 @@ the function name it precedes."
       (subseq name (length prefix) nil)
       name))
 
-(defun guess-init-name (pathname &key (kind (guess-kind pathname)))
+(defun guess-init-name (pathname &key kind)
   (if (eq kind :object)
     (or (and (probe-file pathname)
 	     (find-init-name pathname))
 	(error "Cannot find out entry point for binary file ~A" pathname))
     (compute-init-name pathname :kind kind)))
 
-(defun compute-init-name (pathname &key (kind (guess-kind pathname)))
+(defun compute-init-name (pathname &key kind)
   (let ((filename (pathname-name pathname)))
     (case kind
       ((:object :c)

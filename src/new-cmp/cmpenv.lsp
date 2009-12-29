@@ -418,7 +418,7 @@
 (defmacro cmp-env-functions (&optional (env '*cmp-env*))
   `(cdr ,env))
 
-(defun c1cleanup-forms (env)
+(defun cmp-env-cleanups (env)
   (loop with specials = '()
 	with end = (cmp-env-variables env)
 	with cleanup-forms = '()
@@ -435,9 +435,8 @@
 	finally (progn
 		  (unless (eq records-list end)
 		    (error "Inconsistency in environment."))
-		  (return-from c1cleanup-forms
-		    (nconc (c1unbind specials nil)
-			   (apply #'nconc (mapcar #'copy-list cleanup-forms)))))))
+		  (return (values specials
+                                  (apply #'nconc (mapcar #'copy-list cleanup-forms)))))))
 
 (defun cmp-env-register-var (var &optional (env *cmp-env*) (boundp t))
   (push (list (var-name var)
