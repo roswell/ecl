@@ -400,7 +400,7 @@
     (maybe-add-to-set-nodes destination form)))
 
 (defun c1call-global-op (destination fname arguments)
-  (let* ((return-type (propagate-types fname arguments nil))
+  (let* ((return-type (propagate-types fname arguments))
          (form (make-c1form* 'CALL-GLOBAL
                              :sp-change (function-may-change-sp fname)
                              :args destination fname arguments
