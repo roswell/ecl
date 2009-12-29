@@ -70,14 +70,6 @@
 (defun c1form-volatile* (form)
   (if (c1form-volatile form) "volatile " ""))
 
-(defun find-node-in-list (home-node list)
-  (flet ((parent-node-p (node presumed-child)
-	   (loop
-	    (cond ((null presumed-child) (return nil))
-		  ((eq node presumed-child) (return t))
-		  (t (setf presumed-child (c1form-parent presumed-child)))))))
-    (member home-node list :test #'parent-node-p)))
-
 (defun c1form-set-volatile (flag forms)
   (loop for i in forms
      do (setf (c1form-volatile i) flag))
