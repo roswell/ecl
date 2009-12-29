@@ -231,6 +231,7 @@ lines are inserted, but the order is preserved")
 (defvar *local-funs* nil)		; holds { fun }*
 (defvar *top-level-forms* nil)		; holds { top-level-form }*
 (defvar *make-forms* nil)		; holds { top-level-form }*
+(defvar +init-function-name+ (gensym "ENTRY-POINT"))
 
 ;;;
 ;;;     top-level-form:

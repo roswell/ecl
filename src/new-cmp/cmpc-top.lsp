@@ -14,8 +14,6 @@
 
 (in-package "C-BACKEND")
 
-(defparameter +init-function-name+ (gensym "ENTRY-POINT"))
-
 (defun ctop-write (name h-pathname data-pathname
                    &key shared-data
                    &aux def top-output-string
