@@ -51,7 +51,8 @@
 (let ((p (find-package "C-DATA")))
   (do-symbols (s "C-DATA")
     (when (eq (symbol-package s) p)
-      (export s))))
+      (print s)
+      (export s p))))
 
 ;;; ------------------------------------------------------------------
 ;;; COMMON LISP FORMS TRANSLATORS
@@ -80,8 +81,8 @@
    (progn . c1progn)
 
    ;; cmpffi.lsp
-   (ffi:clines . c1clines)
-   (ffi:c-inline . c1c-inline)
+   (ffi:clines . c-backend::c1clines)
+   (ffi:c-inline . c-backend::c1c-inline)
 
    ;; cmpflet
    (flet . c1flet)
@@ -143,5 +144,10 @@
    (psetq . c1psetq)
    (progv . c1progv)
    ))
+
+(print *package*)
+(print (package-use-list *package*))
+(print (multiple-value-list (find-symbol "MAKE-DISPATCH-TABLE" "C-DATA")))
+(print (multiple-value-list (find-symbol "MAKE-DISPATCH-TABLE" "C")))
 
 (defparameter +c1-dispatch-table+ (make-dispatch-table +c1-dispatch-data+))

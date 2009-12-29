@@ -9,7 +9,6 @@
   "src:new-cmp;cmpmac.lsp"
   "src:new-cmp;cmputil.lsp"
   "src:new-cmp;cmptype.lsp"
-  "src:new-cmp;cmpbind.lsp"
   "src:new-cmp;cmptables.lsp"
   "src:new-cmp;cmptranslate.lsp"
   "src:new-cmp;cmpblock.lsp"
@@ -30,7 +29,6 @@
   "src:new-cmp;cmptag.lsp"
   "src:new-cmp;cmptop.lsp"
   "src:new-cmp;cmpvar.lsp"
-  "src:new-cmp;cmpcbk.lsp"
   "src:new-cmp;cmpnum.lsp"
   "src:new-cmp;cmpname.lsp"
   "src:new-cmp;cmpopt.lsp"
@@ -44,14 +42,16 @@
   "src:new-cmp;cmpc-loc.lsp"
   "src:new-cmp;cmpc-set.lsp"
   "src:new-cmp;cmpc-ffi.lsp"
+  "src:new-cmp;cmpc-bind.lsp"
   "src:new-cmp;cmpc-inline.lsp"
   "src:new-cmp;cmpc-data.lsp"
   "src:new-cmp;cmpc-ops.lsp"
   "src:new-cmp;cmpc-tables.lsp"
+  "src:new-cmp;cmpc-cbk.lsp"
   "src:new-cmp;cmpc-top.lsp"
   "src:new-cmp;cmpmain.lsp"))
 
 (let ((si::*keep-documentation* nil))
-  (mapc #'(lambda (x) (load x :verbose nil)) +cmp-module-files+)
+  (mapc #'(lambda (x) (load x :verbose t)) +cmp-module-files+)
   (load "src:new-cmp;sysfun" :verbose t))
 

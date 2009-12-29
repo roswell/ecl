@@ -162,3 +162,25 @@
 (defun wt-the-loc (type loc)
   (wt-loc loc))
 
+(defun wt-lex (lex)
+  (if (consp lex)
+    (wt "lex" (car lex) "[" (cdr lex) "]")
+    (wt-lcl lex)))
+
+;;; reference to variable of inner closure.
+(defun wt-env (clv) (wt "ECL_CONS_CAR(CLV" clv ")"))
+
+
+(defun wt-var (var &aux (var-loc (var-loc var))) ; ccb
+  (declare (type var var))
+  (case (var-kind var)
+    (CLOSURE (wt-env var-loc))
+    (LEXICAL (wt-lex var-loc))
+    (REPLACED (wt var-loc))
+    (DISCARDED (baboon))
+    ((SPECIAL GLOBAL)
+     (if (policy-global-var-checking)
+	 (wt "ecl_symbol_value(" var-loc ")")
+	 (wt "ECL_SYM_VAL(cl_env_copy," var-loc ")")))
+    (t (wt var-loc))
+    ))

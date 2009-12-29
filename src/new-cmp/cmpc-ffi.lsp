@@ -77,6 +77,12 @@
 (defun lisp-type-p (type)
   (subtypep type 'T))
 
+(defun var-rep-type (var)
+  (case (var-kind var)
+    ((LEXICAL CLOSURE SPECIAL GLOBAL) :object)
+    (REPLACED (loc-representation-type (var-loc var)))
+    (DISCARDED :object)
+    (t (var-kind var))))
 
 ;; ----------------------------------------------------------------------
 ;; LOCATIONS and representation types

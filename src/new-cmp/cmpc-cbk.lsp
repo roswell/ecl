@@ -11,7 +11,7 @@
 ;;;;
 ;;;;    See file '../Copyright' for full details.
 
-(in-package "COMPILER")
+(in-package "C-BACKEND")
 
 (defun c1-defcallback (destination args)
   (destructuring-bind (name return-type arg-list &rest body)

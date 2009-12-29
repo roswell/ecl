@@ -16,11 +16,12 @@
 
 (defpackage "C-DATA"
   (:nicknames "COMPILER-DATA")
-  (:use "FFI" "CL" "C-DATA"))
+  (:use "FFI" "CL"))
 
 (defpackage "C-BACKEND"
   (:use "FFI" "CL" "C-DATA")
-  (:export "CTOP-WRITE" "DUMP-ALL" "DATA-DUMP"))
+  (:export "CTOP-WRITE" "DUMP-ALL" "DATA-DUMP"
+           "WT-FILTERED-DATA"))
 
 (defpackage "C"
   (:nicknames "COMPILER")

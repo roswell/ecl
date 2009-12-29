@@ -197,63 +197,6 @@
   ;; FIXME! Currently we have no other way of identifying temporal variables
   (var-read-only-p var))
 
-(defun wt-var (var &aux (var-loc (var-loc var))) ; ccb
-  (declare (type var var))
-  (case (var-kind var)
-    (CLOSURE (wt-env var-loc))
-    (LEXICAL (wt-lex var-loc))
-    (REPLACED (wt var-loc))
-    (DISCARDED (baboon))
-    ((SPECIAL GLOBAL)
-     (if (policy-global-var-checking)
-	 (wt "ecl_symbol_value(" var-loc ")")
-	 (wt "ECL_SYM_VAL(cl_env_copy," var-loc ")")))
-    (t (wt var-loc))
-    ))
-
-(defun var-rep-type (var)
-  (case (var-kind var)
-    ((LEXICAL CLOSURE SPECIAL GLOBAL) :object)
-    (REPLACED (loc-representation-type (var-loc var)))
-    (DISCARDED :object)
-    (t (var-kind var))))
-
-(defun set-var (loc var &aux (var-loc (var-loc var))) ;  ccb
-  (unless (var-p var)
-    (baboon))
-  (when (unused-variable-p var)
-    (set-loc loc 'trash)
-    (return-from set-var))
-  (case (var-kind var)
-    (DISCARDED
-     (set-loc loc 'TRASH))
-    (CLOSURE
-     (wt-nl)(wt-env var-loc)(wt "= ")
-     (wt-coerce-loc (var-rep-type var) loc)
-     (wt #\;))
-    (LEXICAL
-     (wt-nl)(wt-lex var-loc)(wt "= ")
-     (wt-coerce-loc (var-rep-type var) loc)
-     (wt #\;))
-    ((SPECIAL GLOBAL)
-     (if (safe-compile)
-         (wt-nl "cl_set(" var-loc ",")
-         (wt-nl "ECL_SETQ(cl_env_copy," var-loc ","))
-     (wt-coerce-loc (var-rep-type var) loc)
-     (wt ");"))
-    (t
-     (wt-nl var-loc "= ")
-     (wt-coerce-loc (var-rep-type var) loc)
-     (wt #\;))))
-
-(defun wt-lex (lex)
-  (if (consp lex)
-    (wt "lex" (car lex) "[" (cdr lex) "]")
-    (wt-lcl lex)))
-
-;;; reference to variable of inner closure.
-(defun wt-env (clv) (wt "ECL_CONS_CAR(CLV" clv ")"))
-
 ;;; ----------------------------------------------------------------------
 
 (defun c1make-global-variable (name &key (type t) (kind 'GLOBAL) (warn nil))

@@ -807,15 +807,7 @@ from the C language code.  NIL means \"do not create the file\"."
 (defun compiler-pass2 (c-pathname h-pathname data-pathname system-p init-name
 		       shared-data &key input-designator)
   (with-open-file (*compiler-output1* c-pathname :direction :output)
-    (wt-comment-nl "Compiler: ~A ~A" (lisp-implementation-type) (lisp-implementation-version))
-    #-ecl-min
-    (multiple-value-bind (second minute hour day month year)
-        (get-decoded-time)
-      (wt-comment-nl "Date: ~D/~D/~D ~2,'0D:~2,'0D (yyyy/mm/dd)" year month day hour minute)
-      (wt-comment-nl "Machine: ~A ~A ~A" (software-type) (software-version) (machine-type)))
-    (wt-comment-nl "Source: ~A" input-designator)
     (with-open-file (*compiler-output2* h-pathname :direction :output)
-      (wt-nl1 "#include " *cmpinclude*)
       (catch *cmperr-tag* (c-backend::ctop-write init-name
                                                  h-pathname
                                                  data-pathname

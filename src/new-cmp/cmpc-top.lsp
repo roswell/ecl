@@ -21,6 +21,21 @@
                    &aux def top-output-string
                    (*volatile* "volatile "))
 
+  ;; Output some information about the compiler at the top of the sources.
+  ;;
+  (wt-comment-nl "Compiler: ~A ~A"
+                 (lisp-implementation-type)
+                 (lisp-implementation-version))
+  #-ecl-min
+  (multiple-value-bind (second minute hour day month year)
+      (get-decoded-time)
+    (wt-comment-nl "Date: ~D/~D/~D ~2,'0D:~2,'0D (yyyy/mm/dd)"
+                   year month day hour minute)
+    (wt-comment-nl "Machine: ~A ~A ~A"
+                   (software-type) (software-version) (machine-type)))
+  (wt-comment-nl "Source: ~A" input-designator)
+
+  (wt-nl1 "#include " c::*cmpinclude*)
   (wt-nl1 "#include \"" (si::coerce-to-filename h-pathname) "\"")
   ;; All lines from CLINES statements are grouped at the beginning of the header
   ;; Notice that it does not make sense to guarantee that c-lines statements

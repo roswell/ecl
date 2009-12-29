@@ -3,6 +3,7 @@
 ;;;;  CMPBIND  Variable Binding.
 ;;;;
 ;;;;  Copyright (c) 1990, Giuseppe Attardi.
+;;;;  Copyright (c) 2009, Juan Jose Garcia-Ripoll.
 ;;;;
 ;;;;  This file is part of ECoLisp, herein referred to as ECL.
 ;;;;
@@ -13,7 +14,7 @@
 ;;;;
 ;;;;    See file '../Copyright' for full details.
 
-(in-package "COMPILER")
+(in-package "C-BACKEND")
 
 ;;; bind must be called for each variable in a lambda or let, once the value
 ;;; to be bound has been placed in loc.

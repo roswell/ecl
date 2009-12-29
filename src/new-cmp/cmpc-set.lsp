@@ -86,3 +86,31 @@
 
 (defun set-the-loc (value type loc)
   (set-loc value loc))
+
+(defun set-var (loc var &aux (var-loc (var-loc var))) ;  ccb
+  (unless (var-p var)
+    (baboon))
+  (when (unused-variable-p var)
+    (set-loc loc 'trash)
+    (return-from set-var))
+  (case (var-kind var)
+    (DISCARDED
+     (set-loc loc 'TRASH))
+    (CLOSURE
+     (wt-nl)(wt-env var-loc)(wt "= ")
+     (wt-coerce-loc (var-rep-type var) loc)
+     (wt #\;))
+    (LEXICAL
+     (wt-nl)(wt-lex var-loc)(wt "= ")
+     (wt-coerce-loc (var-rep-type var) loc)
+     (wt #\;))
+    ((SPECIAL GLOBAL)
+     (if (safe-compile)
+         (wt-nl "cl_set(" var-loc ",")
+         (wt-nl "ECL_SETQ(cl_env_copy," var-loc ","))
+     (wt-coerce-loc (var-rep-type var) loc)
+     (wt ");"))
+    (t
+     (wt-nl var-loc "= ")
+     (wt-coerce-loc (var-rep-type var) loc)
+     (wt #\;))))
