@@ -18,6 +18,7 @@
   "src:new-cmp;cmpcatch.lsp"
   "src:new-cmp;cmpenv.lsp"
   "src:new-cmp;cmpeval.lsp"
+  "src:new-cmp;cmpcffi.lsp"
   "src:new-cmp;cmpflet.lsp"
   "src:new-cmp;cmpfun.lsp"
   "src:new-cmp;cmpif.lsp"

@@ -58,8 +58,8 @@
 (defun add-load-form (object location)
   (when (clos::need-to-make-load-form-p object)
     (if (not (eq *compiler-phase* 't1))
-	(cmperr "Unable to internalize complex object ~A in ~a phase"
-                object *compiler-phase*)
+	(error "Unable to internalize complex object ~A in ~a phase"
+               object *compiler-phase*)
 	(multiple-value-bind (make-form init-form) (make-load-form object)
 	  (setf (gethash object *load-objects*) location)
           (setf *make-forms*
@@ -114,9 +114,7 @@
   (let ((x (search keywords *permanent-objects*
 		   :test #'(lambda (k record) (eq k (first record))))))
     (if x
-	(progn
-	  (cmpnote "~@<Reusing keywords lists for ~_~A~@:>" keywords)
-	  (second (elt *permanent-objects* x)))
+        (second (elt *permanent-objects* x))
 	(prog1
 	    (add-object (pop keywords) :duplicate t :permanent t)
 	  (dolist (k keywords)
