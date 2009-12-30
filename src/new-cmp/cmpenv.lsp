@@ -20,7 +20,7 @@
            (member (car al) '(&optional &rest &key)))
        (nreverse types))
       (declare (object al))
-      (push (type-filter (car al)) types)))
+      (push (c-types:type-filter (car al)) types)))
 
 (defun proper-list-p (x &optional test)
   (and (listp x)
@@ -40,8 +40,8 @@
                ((or (endp (cdar return-types))
                     (member (cadar return-types) '(&optional &rest &key)))
                 t)
-               (t (type-filter (cadar return-types)))))
-        (t (type-filter (car return-types)))))
+               (t (c-types:type-filter (cadar return-types)))))
+        (t (c-types:type-filter (car return-types)))))
 
 (defun add-function-proclamation (fname decl)
   (if (symbolp fname)
@@ -235,20 +235,19 @@
                new-declaration))))
 
 (defun proclaim-var (type vl)
-  (setq type (type-filter type))
+  (setq type (c-types:type-filter type))
   (dolist (var vl)
     (if (symbolp var)
-	(let ((type1 (sys:get-sysprop var 'CMP-TYPE))
-	      (v (sch-global var)))
-	  (setq type1 (if type1 (type-and type1 type) type))
-	  (when v (setq type1 (type-and type1 (var-type v))))
-	  (unless type1
+	(let* ((type1 (sys:get-sysprop var 'CMP-TYPE))
+               (v (find var *undefined-vars* :key #'var-name))
+               (merged (if type1 (type-and type1 type) type)))
+	  (unless merged
 	    (warn
-	     "Inconsistent type declaration was found for the variable ~s."
-	     var)
-	    (setq type1 T))
-	  (sys:put-sysprop var 'CMP-TYPE type1)
-	  (when v (setf (var-type v) type1)))
+	     "Proclamation for variable ~A of type~&~4T~A~&is incompatible with previous declaration~&~4~T~A"
+	     var type type1)
+	    (setq merged T))
+	  (sys:put-sysprop var 'CMP-TYPE merged)
+	  (when v (setf (var-type v) merged)))
 	(warn "The variable name ~s is not a symbol." var))))
 
 (defun c1body (body doc-p &aux
