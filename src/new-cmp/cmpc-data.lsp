@@ -191,16 +191,18 @@ static cl_object VV[VM];
 (defun replace-optimizable-constants ()
   (let ((found nil))
     (flet ((try-inlining (record)
-             (destructuring-bind (object (&whole location vv-tag index object-copy)
+             (destructuring-bind (object (&whole location vv-tag index
+                                                 &optional object-copy)
                                          index-copy)
                  record
-               (let ((x (assoc object +optimizable-constants+)))
-                 (when x
+               (let* ((x (assoc object +optimizable-constants+))
+                      (new-location (cdr x)))
+                 (when new-location
                    (setf found t)
                    (format *dump-output* "~&;;; Replacing constant ~A with ~A"
-                           object (second x))
-                   (setf (second location) (second x)
-                         (first location) (first x)
+                           object (second new-location))
+                   (setf (second location) (second new-location)
+                         (first location) (first new-location)
                          record nil))))
              record))
       (map-into *permanent-objects* #'try-inlining *permanent-objects*)
@@ -214,53 +216,18 @@ static cl_object VV[VM];
 	    (c-value (second record)))
        (push 
         (cond ((symbolp name)
-               (let* ((value (symbol-value name))
-                      (type (lisp-type->rep-type (type-of value))))
-                 (cons value `(VV ,c-value value))))
-              ((floatp name)
-               (let* ((value name)
-                      (type (type-of value))
-                      (loc-type (case type
-                                  (single-float 'single-float-value)
-                                  (double-float 'double-float-value)
-                                  (long-float 'long-float-value)))
-                      (location `(VV ,c-value)))
-                (cons value (list loc-type value location))))
+               (let* ((value (symbol-value name)))
+                 (cons value `(VV ,c-value ,value))))
               (t
-               (cons name`(VV ,c-value))))
+               (cons name `(VV ,c-value ,name))))
         +optimizable-constants+)))
  (reverse
- `((MOST-POSITIVE-SHORT-FLOAT "FLT_MAX")
-   (MOST-POSITIVE-SINGLE-FLOAT "FLT_MAX")
-
-   (MOST-NEGATIVE-SHORT-FLOAT "-FLT_MAX")
-   (MOST-NEGATIVE-SINGLE-FLOAT "-FLT_MAX")
-
-   (LEAST-POSITIVE-SHORT-FLOAT "FLT_MIN")
-   (LEAST-POSITIVE-SINGLE-FLOAT "FLT_MIN")
-   (LEAST-POSITIVE-NORMALIZED-SHORT-FLOAT "FLT_MIN")
-   (LEAST-POSITIVE-NORMALIZED-SINGLE-FLOAT" FLT_MIN")
-
-   (LEAST-NEGATIVE-SHORT-FLOAT "-FLT_MIN")
-   (LEAST-NEGATIVE-SINGLE-FLOAT "-FLT_MIN")
-   (LEAST-NEGATIVE-NORMALIZED-SHORT-FLOAT "-FLT_MIN")
-   (LEAST-NEGATIVE-NORMALIZED-SINGLE-FLOAT "-FLT_MIN")
-
-   (MOST-POSITIVE-DOUBLE-FLOAT "DBL_MAX")
-   (MOST-NEGATIVE-DOUBLE-FLOAT "-DBL_MAX")
-   (LEAST-POSITIVE-DOUBLE-FLOAT "DBL_MIN")
-   (LEAST-POSITIVE-NORMALIZED-DOUBLE-FLOAT "DBL_MIN")
-   (LEAST-NEGATIVE-DOUBLE-FLOAT "-DBL_MIN")
-   (LEAST-NEGATIVE-NORMALIZED-DOUBLE-FLOAT "-DBL_MIN")
-
-   ;; Order is important: on platforms where 0.0 and -0.0 are the same
-   ;; the last one is prioritized.
-   (#.(coerce 0 'single-float) "cl_core.singlefloat_zero")
+ `((#.(coerce 0 'single-float) "cl_core.singlefloat_zero")
    (#.(coerce 0 'double-float) "cl_core.doublefloat_zero")
    (#.(coerce -0.0 'single-float) "cl_core.singlefloat_minus_zero")
    (#.(coerce -0.0 'double-float) "cl_core.doublefloat_minus_zero")
 
-   (#.(si::standard-readtable) "cl_core.standard_readtable")
+   ;(#.(si::standard-readtable) "cl_core.standard_readtable")
 
    (#.(find-package :cl) "cl_core.lisp_package")
    (#.(find-package :cl-user) "cl_core.user_package")
@@ -270,14 +237,8 @@ static cl_object VV[VM];
    (#.(find-package :mp) "cl_core.mp_package")
 
    #+long-float
-   ,@'(
-    (MOST-POSITIVE-LONG-FLOAT "LDBL_MAX")
-    (MOST-NEGATIVE-LONG-FLOAT "-LDBL_MAX")
-    (LEAST-POSITIVE-LONG-FLOAT "LDBL_MIN")
-    (LEAST-POSITIVE-NORMALIZED-LONG-FLOAT" LDBL_MIN")
-    (LEAST-NEGATIVE-LONG-FLOAT "-LDBL_MIN")
-    (LEAST-NEGATIVE-NORMALIZED-LONG-FLOAT "-LDBL_MIN")
-    (#.(coerce -0.0 'long-float) "cl_core.longfloat_minus_zero")
-    (#.(coerce 0 'long-float) "cl_core.longfloat_zero")
-    )
-   )))
+   (#.(coerce -0.0 'long-float) "cl_core.longfloat_minus_zero")
+   #+long-float
+   (#.(coerce 0 'long-float) "cl_core.longfloat_zero")
+   )
+   ))
