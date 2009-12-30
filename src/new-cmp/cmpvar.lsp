@@ -115,13 +115,6 @@
 ;;; the kind field GLOBAL.  Thus a reference to GLOBAL may need to make sure
 ;;; that the variable has a value.
 
-;;;  Bootstrap problem: proclaim needs this function:
-(defun sch-global (name)
-  (dolist (var *undefined-vars* nil)
-    (declare (type var var))
-    (when (eq (var-name var) name)
-      (return-from sch-global var))))
-
 ;;;
 ;;; Check if a variable has been declared as a special variable with a global
 ;;; value.
