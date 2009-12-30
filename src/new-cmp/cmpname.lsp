@@ -97,12 +97,13 @@ the function name it precedes."
       (subseq name (length prefix) nil)
       name))
 
-(defun guess-init-name (pathname &key kind)
+(defun guess-init-name (pathname kind)
   (if (eq kind :object)
     (or (and (probe-file pathname)
 	     (find-init-name pathname))
 	(error "Cannot find out entry point for binary file ~A" pathname))
     (compute-init-name pathname :kind kind)))
+(trace guess-init-name find-init-name)
 
 (defun compute-init-name (pathname &key kind)
   (let ((filename (pathname-name pathname)))
@@ -112,7 +113,7 @@ the function name it precedes."
       ((:fasl :fas)
        (init-function-name "CODE" :kind :fas))
       ((:static-library :lib)
-       (init-function-name (remove-prefix +static-library-prefix+ filename)
+       (init-function-name (remove-prefix c::+static-library-prefix+ filename)
 			   :kind :lib))
       ((:shared-library :dll)
        (init-function-name (remove-prefix +shared-library-prefix+ filename)
