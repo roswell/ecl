@@ -36,7 +36,7 @@
   (cond ((consp form)
          (loop for f in form thereis (var-referenced-in-form var f)))
         ((c1form-p form)
-         (member form (var-read-nodes var)))
+         (member form (var-read-nodes var) :test #'eq))
         (t
          nil)))
 
@@ -53,7 +53,7 @@
         ((listp form)
          (loop for f in form thereis (var-referenced-in-form var f)))
         ((c1form-p form)
-         (member form (var-set-nodes var)))
+         (member form (var-read-nodes var) :test #'eq))
         (t
          nil)))
 
@@ -63,7 +63,7 @@
          (let ((loc (var-loc var)))
            (when (var-p loc)
              (var-referenced-in-forms loc form))))
-        ((and (null (var-read-nodes var))
+        ((and (null (var-set-nodes var))
               (not (global-var-p var)))
          nil)
         ((listp form)
@@ -73,7 +73,7 @@
         ((global-var-p var) ; Too pessimistic?
          (c1form-sp-change form))
         (t
-         (member form (var-set-nodes var)))))
+         (member form (var-set-nodes var) :test #'eq))))
 
 (defun add-to-read-nodes (var forms)
   (dolist (form forms)
