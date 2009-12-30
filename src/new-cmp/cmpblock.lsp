@@ -65,8 +65,7 @@
 	(cmperr "The block ~s is undefined." name))
       (let* ((destination (blk-destination blk))
 	     (var (blk-var blk))
-	     (type T)
-             output)
+	     output)
 	(cond (ccb (setf (blk-ref-ccb blk) t
                          (var-kind var) 'CLOSURE
 			 (var-ref-ccb var) T))
@@ -79,8 +78,7 @@
         (if (or ccb clb unw)
             (let* ((val (c1translate 'VALUES (second args)))
                    (return-stmt (c1return-from-op var (blk-name blk))))
-              (setf type (translated-form-values-type 'VALUES val)
-                    output (nconc val (c1cleanup-forms (blk-env blk)) return-stmt))
+              (setf output (nconc val (c1cleanup-forms (blk-env blk)) return-stmt))
               (add-to-read-nodes var return-stmt))
             (c1with-saved-output (prefix postfix new-destination (blk-destination blk))
               (let* ((val (c1translate new-destination (second args)))
