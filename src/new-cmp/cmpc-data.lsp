@@ -206,7 +206,7 @@ static cl_object VV[VM];
       (map-into *permanent-objects* #'try-inlining *permanent-objects*)
       (map-into *temporary-objects* #'try-inlining *temporary-objects*)
       (when found
-        (push-new "#include <float.h>" *clines-string-list*)))))
+        (pushnew "#include <float.h>" *clines-string-list*)))))
 
 (mapc
  #'(lambda (record)
