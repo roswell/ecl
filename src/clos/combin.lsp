@@ -239,11 +239,11 @@
 	  (unless (symbolp (setf generic-function (second x)))
 	    (syntax-error))))
       (dolist (group method-groups)
-	(destructuring-bind (name predicate &key description
+	(destructuring-bind (group-name predicate &key description
 				  (order :most-specific-first) (required nil))
 	    group
-	  (if (symbolp name)
-	      (push name group-names)
+	  (if (symbolp group-name)
+	      (push group-name group-names)
 	      (syntax-error))
 	  (let ((condition
 		(cond ((eql predicate '*) 'T)
@@ -257,15 +257,15 @@
 				    `(every #'equal ',p .METHOD-QUALIFIERS.)
 				    `(equal ',p .METHOD-QUALIFIERS.))))))
 		      (t (syntax-error)))))
-	    (push `(,condition (push .METHOD. ,name)) group-checks))
+	    (push `(,condition (push .METHOD. ,group-name)) group-checks))
 	  (when required
-	    (push `(unless ,name
-		    (invalid-method-error "Method combination: ~S. No methods ~
-					   in required group ~S." ,name))
+	    (push `(unless ,group-name
+		    (error "Method combination: ~S. No methods ~
+			    in required group ~S." ,name ,group-name))
 		  group-after))
 	  (case order
 	    (:most-specific-first
-	     (push `(setf ,name (nreverse ,name)) group-after))
+	     (push `(setf ,group-name (nreverse ,group-name)) group-after))
 	    (:most-specific-last)
 	    (otherwise (syntax-error)))))
       `(install-method-combination ',name
