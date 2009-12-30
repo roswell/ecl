@@ -71,7 +71,7 @@
 #define VMtemp 0
 #define VV NULL
 ")
-	(format stream "~
+	(format stream "
 #define VM ~A
 #define VMtemp ~A
 #ifdef ECL_DYNAMIC_VV
@@ -175,7 +175,7 @@ static cl_object VV[VM];
                        (let* ((next-index (incf static-constants))
                               (name (format nil "_ecl_static_~D" next-index)))
                          (setf (second location) name)
-                         (funcall name object sream)
+                         (funcall builder name object stream)
                          (setf record nil)))))
                record))
         (map-into *permanent-objects* #'try-turning-static *permanent-objects*)
