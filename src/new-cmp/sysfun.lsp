@@ -2063,7 +2063,7 @@
 
 (in-package "SI")
 
-(defvar c::*in-all-symbols-functions*
+(defparameter c-data::*in-all-symbols-functions*
   '(;; arraylib.lsp
     make-array vector array-dimensions array-in-bounds-p array-row-major-index
     bit sbit bit-and bit-ior bit-xor bit-eqv bit-nand bit-nor bit-andc1
@@ -2142,7 +2142,7 @@
 ))
 
 (proclaim
-  `(si::c-export-fname #+ecl-min ,@c::*in-all-symbols-functions*
+  `(si::c-export-fname #+ecl-min ,@c-data::*in-all-symbols-functions*
     si::ecase-error si::etypecase-error si::do-check-type
     ccase-error typecase-error-string find-documentation find-declarations
     si::search-keyword si::check-keyword si::check-arg-length

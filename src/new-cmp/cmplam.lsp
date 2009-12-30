@@ -87,7 +87,7 @@
          (global-p (and (assoc 'SI::C-GLOBAL declarations) t))
          (no-entry-p (and (or (assoc 'SI::C-LOCAL declarations)
                               #+ecl-min
-                              (member name c::*in-all-symbols-functions*))
+                              (member name c-data::*in-all-symbols-functions*))
                           t))
          (debug (cmp-env-optimization 'debug env))
          cfun
@@ -96,6 +96,7 @@
     (if global-p
         (multiple-value-setq (cfun exported-p) (exported-fname name))
         (setf cfun (next-cfun "LC~D~A" name) exported-p nil))
+    (format t "~&;;; Function ~A is exported? ~A" name exported-p)
     (when (and no-entry-p (>= debug 2))
       (setf no-entry-p nil)
       (cmpnote "Ignoring SI::C-LOCAL declaration for ~A when DEBUG is ~D"

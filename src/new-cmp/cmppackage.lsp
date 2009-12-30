@@ -47,6 +47,9 @@
            "NEXT-LABEL" "NEXT-LCL" "NEXT-LEX" "NEXT-ENV" "NEXT-CFUN"
 
            "LEXICAL" "GLOBAL" "SPECIAL" "REPLACED" "DISCARDED" "CLOSURE"
+           "LFUN"
+           "CMP-NOTINLINE" "CMP-TYPE" "TYPE-FILTER"
+           "C1SPECIAL" "C1TYPE-PROPAGATOR" "C1" "T1" "P1PROPAGATE" "WT-LOC" "C2"
 
            "MAKE-DISPATCH-TABLE"
            ;;
@@ -110,6 +113,7 @@
            "CHECK-ARGS-NUMBER"
            "TOO-MANY-ARGS"
            "TOO-FEW-ARGS"
+           "UNDEFINED-VARIABLE"
 
            "WITH-CMP-PROTECTION"
            "CMP-EVAL"
