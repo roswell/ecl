@@ -33,7 +33,6 @@
 (defun make-c1-temp ()
   (let ((v (make-var :kind :object :type t :ref 1
                      :name (gensym "X")
-                     :read-only-p t
                      :loc `(LCL ,(- (length *c1-temps*))))))
     (push v *c1-temps*)
     v))
