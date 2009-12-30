@@ -186,7 +186,6 @@
         (t
          (let* ((type2 (var-type destination))
                 (type1 (type-and type type2)))
-           ;; We only change the type if it is not NIL. Is this wise?
            (unless type1
              (let* ((*print-length* 4)
                     (*print-level* 3))
