@@ -49,12 +49,12 @@
   (wt-nl-h "#endif")
   (when si::*compiler-constants*
     (wt-nl-h "#include <string.h>"))
+  (unless shared-data
+    (wt-nl1 "#include \"" (si::coerce-to-filename data-pathname) "\""))
   ;;; Initialization function.
   (let* ((c-output-file *compiler-output1*)
 	 (*compiler-output1* (make-string-output-stream))
 	 (*compiler-declared-globals* (make-hash-table)))
-    (unless shared-data
-      (wt-nl1 "#include \"" (si::coerce-to-filename data-pathname) "\""))
 
     ;; Type propagation phase
     (when *do-type-propagation*
@@ -81,23 +81,6 @@
 
   ;; Declarations in h-file.
   (wt-nl-h "static cl_object Cblock;")
-  (let ((num-objects (data-size)))
-    (if (zerop num-objects)
-	(progn
-	  (wt-nl-h "#undef ECL_DYNAMIC_VV")
-	  (wt-nl-h "#define compiler_data_text \"\"")
-	  (wt-nl-h "#define compiler_data_text_size 0")
-	  (wt-nl-h "#define VM 0")
-	  (wt-nl-h "#define VMtemp 0")
-	  (wt-nl-h "#define VV NULL"))
-	(progn
-	  (wt-nl-h "#define VM " (data-permanent-storage-size))
-	  (wt-nl-h "#define VMtemp "  (data-temporary-storage-size))
-	  (wt-nl-h "#ifdef ECL_DYNAMIC_VV")
-	  (wt-nl-h "static cl_object *VV;")
-	  (wt-nl-h "#else")
-	  (wt-nl-h "static cl_object VV[VM];")
-	  (wt-nl-h "#endif"))))
 
   (dolist (l *linking-calls*)
     (let* ((c-name (fourth l))

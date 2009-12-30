@@ -33,6 +33,7 @@
     (extract-static-constants stream)
     (adjust-data-indices *permanent-objects*)
     (adjust-data-indices *temporary-objects*)
+    (output-compiler-data-macros stream)
     (let* ((output nil)
            (all-data (data-get-all-objects)))
       (cond (*compiler-constants*
@@ -49,11 +50,38 @@
       output)))
 
 (defun adjust-data-indices (array)
-  (loop for last-index from 0
+  (loop with last-index = 0
      for record across array
      for location = (second record)
+     when location
      do (setf (second location) last-index
-              (third record) last-index)))
+              (third record) last-index
+              (aref array last-index) record
+              last-index (1+ last-index))
+     finally (setf (fill-pointer array) last-index)))
+
+(defun output-compiler-data-macros (stream)
+  (let ((num-objects (data-size)))
+    (if (zerop num-objects)
+        (format stream "
+#undef ECL_DYNAMIC_VV
+#define compiler_data_text \"\"
+#define compiler_data_text_size 0
+#define VM 0
+#define VMtemp 0
+#define VV NULL
+")
+	(format stream "~
+#define VM ~A
+#define VMtemp ~A
+#ifdef ECL_DYNAMIC_VV
+static cl_object *VV;
+#else
+static cl_object VV[VM];
+#endif
+"
+                (data-permanent-storage-size)
+                (data-temporary-storage-size)))))
 
 (defun wt-data-begin (stream)
   (setq *wt-string-size* 0)
@@ -139,7 +167,7 @@
 (defun extract-static-constants (stream)
   (unless (or *compiler-constants* (not *use-static-constants-p*))
     (let ((static-constants 0))
-      (flet ((turned-static-p (record)
+      (flet ((try-turning-static (record)
                (destructuring-bind (object (&whole location vv-tag index object-copy)
                                            index-copy)
                    (let ((builder (static-constant-expression object)))
@@ -148,11 +176,10 @@
                               (name (format nil "_ecl_static_~D" next-index)))
                          (setf (second location) name)
                          (funcall name object sream)
-                         t))))))
-        (setf *permanent-objects*
-              (delete-if #'turned-static-p *permanent-objects*)
-              *temporary-objects*
-              (delete-if #'turned-static-p *temporary-objects*))))))
+                         (setf record nil)))))
+               record))
+        (map-into *permanent-objects* #'try-turning-static *permanent-objects*)
+        (map-into *temporary-objects* #'try-turning-static *temporary-objects*)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -163,8 +190,7 @@
 
 (defun replace-optimizable-constants ()
   (let ((found nil))
-    (flet ((turned-inline-p (record)
-             (print record)
+    (flet ((try-inlining (record)
              (destructuring-bind (object (&whole location vv-tag index object-copy)
                                          index-copy)
                  record
@@ -174,12 +200,11 @@
                    (format *dump-output* "~&;;; Replacing constant ~A with ~A"
                            object (second x))
                    (setf (second location) (second x)
-                         (first location) (first x))
-                   t)))))
-      (setf *permanent-objects*
-            (delete-if #'turned-inline-p *permanent-objects*)
-            *temporary-objects*
-            (delete-if #'turned-inline-p *temporary-objects*))
+                         (first location) (first x)
+                         record nil))))
+             record))
+      (map-into *permanent-objects* #'try-inlining *permanent-objects*)
+      (map-into *temporary-objects* #'try-inlining *temporary-objects*)
       (when found
         (push-new "#include <float.h>" *clines-string-list*)))))
 
