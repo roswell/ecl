@@ -294,23 +294,22 @@
       (return-from produce-inline-loc 'VALUES))
 
     ;; Otherwise we have to set up variables for holding the output.
-    (flet ((make-output-var (type)
-	     (let ((var (make-lcl-var :rep-type type)))
-	       (wt-nl (rep-type-name type) " " var ";")
-	       var)))
-      (wt-nl "{")
+    (flet ((make-output-var (rep-type)
+             (make-var :kind rep-type :type (rep-type->lisp-type rep-type)
+                       :loc (next-lcl))))
+      (open-c-block)
       (let ((output-vars (mapcar #'make-output-var output-rep-type)))
+        (loop for v in output-vars
+           do (wt (rep-type-name (var-kind v)) " " v ";"))
 	(wt-c-inline-loc output-rep-type c-expression coerced-arguments
                          side-effects output-vars)
-	(cond ((= (length output-vars) 1)
-	       (first output-vars))
-	      (t
-	       (loop for v in output-vars
-		     for i from 0
-		     do (set-loc v `(VALUE ,i)))
-	       (wt "cl_env_copy->nvalues=" (length output-vars) ";")
-	       'VALUES)))
-      (wt-nl "}"))))
+        (loop for v in output-vars
+           for i from 0
+           do (set-loc (coerce-one-location v :OBJECT)
+                       `(VALUE ,i)))
+        (wt "cl_env_copy->nvalues=" (length output-vars) ";"))
+      (close-c-block)
+      'VALUES+VALUE0)))
 
 (defun c2c-inline (destination arguments &rest rest)
   (set-loc (apply #'produce-inline-loc arguments rest)
@@ -333,8 +332,8 @@
 			    (l (length output-vars)))
 			(if (< ndx l)
 			    (wt (nth ndx output-vars))
-			  (cmperr "Used @(RETURN ~D) in a C-INLINE form with ~D output values"
-				  ndx l)))))
+                            (cmperr "Used @(RETURN ~D) in a C-INLINE form with ~D output values"
+                                    ndx l)))))
 		 (t
 		  (when (and (consp object) (eq (first object) 'QUOTE))
 		    (setq object (second object)))
