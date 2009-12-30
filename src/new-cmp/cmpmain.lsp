@@ -342,7 +342,7 @@ output = cl_safe_eval(c_string_to_object(lisp_code), Cnil, OBJNULL);
 				  :object :c))
 	     (error "C::BUILDER does not accept a file ~s of kind ~s" item kind))
 	   (let* ((path (parse-namestring item))
-		  (init-fn (guess-init-name path target))
+		  (init-fn (guess-init-name path (guess-kind path)))
 		  (flags (guess-ld-flags path)))
 	     ;; We should give a warning that we cannot link this module in
 	     (when flags (push flags ld-flags))
