@@ -179,7 +179,7 @@
 ;;; ASSIGNMENTS
 ;;;
 
-(defun update-destination-type (destination form type)
+(defun update-destination-type (destination type)
   (cond ((not (var-p destination)))
         ((eq (setf type (values-type-primary-type type)) t))
         ((var-read-only-p destination)
@@ -198,14 +198,14 @@
   (unless (eq dest value-loc)
     (let* ((type (location-type value-loc))
            (form (make-c1form* 'SET :args dest value-loc)))
-      (update-destination-type dest form type)
+      (update-destination-type dest type)
       (maybe-add-to-set-nodes dest form)
       (maybe-add-to-read-nodes value-loc form))))
 
 (defun c1bind-special-op (dest value-loc)
   (let* ((type (location-type value-loc))
          (form (make-c1form* 'BIND-SPECIAL :args dest value-loc)))
-    (update-destination-type dest form type)
+    (update-destination-type dest type)
     (maybe-add-to-set-nodes dest form)
     (maybe-add-to-read-nodes value-loc form)))
 
@@ -402,7 +402,7 @@
        for type in arg-types
        do (and-form-type (car arg-types) form (car args)
                          :safe "In a call to ~a" fname))
-    (update-destination-type destination form return-type)
+    (update-destination-type destination return-type)
     (maybe-add-to-set-nodes destination form)))
 
 (defun c1call-global-op (destination fname arguments)
@@ -412,7 +412,7 @@
                              :args destination fname arguments
                              (values-type-primary-type return-type))))
     (maybe-add-to-read-nodes arguments form)
-    (update-destination-type destination form return-type)
+    (update-destination-type destination return-type)
     (maybe-add-to-set-nodes destination form)))
 
 (defun c1c-inline-op (output-type destination temps arg-types
@@ -423,7 +423,7 @@
                              output-rep-type c-expression side-effects
                              one-liner)))
     (maybe-add-to-read-nodes temps form)
-    (update-destination-type destination form output-type)
+    (update-destination-type destination output-type)
     (maybe-add-to-set-nodes destination form)))
 
 ;;;
