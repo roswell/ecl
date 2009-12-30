@@ -1092,7 +1092,7 @@
 
 ;; ECL extensions:
 (proclaim-function si:string-to-object (string &optional t) t)
-(proclaim-function si:standard-readtable (t) readtable)
+(proclaim-function si:standard-readtable () readtable)
 
 
 ;;;
