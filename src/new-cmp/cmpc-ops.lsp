@@ -41,6 +41,7 @@
          (let* ((*file* (c1form-file form))
                 (*file-position* (c1form-file form))
                 (*current-form* (c1form-form form))
+                (*current-toplevel-form* (c1form-toplevel-form form))
                 (*current-c2form* form)
                 (*cmp-env* (c1form-env form))
                 (name (c1form-name form))

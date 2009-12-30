@@ -159,6 +159,7 @@
 			;;; Source file or NIL
   (file-position *compile-file-position*)
 			;;; Top-level form number in source file
+  (toplevel-form *current-toplevel-form*)
   code-gen-props	;;; Extra properties for code generation
   )
 

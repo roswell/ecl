@@ -83,5 +83,4 @@
 (let ((p (find-package "C-DATA")))
   (do-symbols (s "C-DATA")
     (when (eq (symbol-package s) p)
-      (print s)
       (export s p))))

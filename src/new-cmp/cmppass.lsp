@@ -68,12 +68,15 @@
 (defun execute-pass (pass)
   (format *dump-output* "~&;;; Executing pass ~A" pass)
   (loop with pending = (list *top-level-forms*)
-     for *current-function* = (pop pending)
-     for f = *current-function*
+     for f = (pop pending)
+     for *current-function* = f
      while f
-     do (format *dump-output* "~&;;; Executing pass ~A on ~A" pass f)
-     do (setf (fun-lambda f) (funcall pass f (fun-lambda f))
-              pending (append (fun-child-funs f) pending))))
+     do (let ((*compile-file-truename* (fun-file f))
+              (*compile-file-position* (fun-file-position f))
+              (*current-toplevel-form* (fun-toplevel-form f)))
+          (format *dump-output* "~&;;; Executing pass ~A on ~A" pass f)
+          (setf (fun-lambda f) (funcall pass f (fun-lambda f))
+                pending (append (fun-child-funs f) pending)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
