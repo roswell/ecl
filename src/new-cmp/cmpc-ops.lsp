@@ -448,7 +448,7 @@
       (return-from call-global-loc
         (call-exported-function-loc
          fname args fd minarg maxarg
-         (member fname *in-all-symbols-functions*)))))
+         (member fname c-data::*in-all-symbols-functions*)))))
 
   (multiple-value-bind (found fd minarg maxarg)
       (si::mangle-name fname t)
