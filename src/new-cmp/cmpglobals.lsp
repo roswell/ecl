@@ -214,7 +214,7 @@ lines are inserted, but the order is preserved")
 ;;;  where each vv-index should be given an object before
 ;;;  defining the current function during loading process.
 
-(defvar *use-static-constants-p* nil)   ; T/NIL flag to determine whether one may
+(defvar *use-static-constants-p* t)     ; T/NIL flag to determine whether one may
                                         ; generate lisp constant values as C structs
 
 (defvar *compiler-constants* nil)	; a vector with all constants

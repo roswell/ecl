@@ -337,7 +337,6 @@
 		 (t
 		  (when (and (consp object) (eq (first object) 'QUOTE))
 		    (setq object (second object)))
-                  (error ")
 		  (wt (add-object object :permanent t))))))
 	(#\#
 	 (let* ((k (read-char s))

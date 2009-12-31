@@ -55,6 +55,9 @@
 (defun data-empty-loc ()
   (add-object 0 :duplicate t :permanent t))
 
+(defun load-form-data-place-p (data-record)
+  (typep (first data-record) 'fixnum))
+
 (defun add-load-form (object location)
   (when (clos::need-to-make-load-form-p object)
     (if (not (eq *compiler-phase* 't1))

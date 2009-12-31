@@ -168,15 +168,18 @@ static cl_object VV[VM];
   (unless (or *compiler-constants* (not *use-static-constants-p*))
     (let ((static-constants 0))
       (flet ((try-turning-static (record)
-               (destructuring-bind (object (&whole location vv-tag index object-copy)
-                                           index-copy)
+               (unless (or (null record)
+                           (load-form-data-place-p record))
+                 (destructuring-bind (object (&whole location vv-tag index object-copy)
+                                             index-copy)
+                     record
                    (let ((builder (static-constant-expression object)))
                      (when builder
                        (let* ((next-index (incf static-constants))
                               (name (format nil "_ecl_static_~D" next-index)))
                          (setf (second location) name)
                          (funcall builder name object stream)
-                         (setf record nil)))))
+                         (setf record nil))))))
                record))
         (map-into *permanent-objects* #'try-turning-static *permanent-objects*)
         (map-into *temporary-objects* #'try-turning-static *temporary-objects*)))))
@@ -191,19 +194,21 @@ static cl_object VV[VM];
 (defun replace-optimizable-constants ()
   (let ((found nil))
     (flet ((try-inlining (record)
-             (destructuring-bind (object (&whole location vv-tag index
-                                                 &optional object-copy)
-                                         index-copy)
-                 record
-               (let* ((x (assoc object +optimizable-constants+))
-                      (new-location (cdr x)))
-                 (when new-location
-                   (setf found t)
-                   (format *dump-output* "~&;;; Replacing constant ~A with ~A"
+             (unless (or (null record)
+                         (load-form-data-place-p record))
+               (destructuring-bind (object (&whole location vv-tag index
+                                                   &optional object-copy)
+                                           index-copy)
+                   record
+                 (let* ((x (assoc object +optimizable-constants+))
+                        (new-location (cdr x)))
+                   (when new-location
+                     (setf found t)
+                     (format *dump-output* "~&;;; Replacing constant ~A with ~A"
                            object (second new-location))
-                   (setf (second location) (second new-location)
-                         (first location) (first new-location)
-                         record nil))))
+                     (setf (second location) (second new-location)
+                           (first location) (first new-location)
+                           record nil)))))
              record))
       (map-into *permanent-objects* #'try-inlining *permanent-objects*)
       (map-into *temporary-objects* #'try-inlining *temporary-objects*)
