@@ -103,7 +103,6 @@ the function name it precedes."
 	     (find-init-name pathname))
 	(error "Cannot find out entry point for binary file ~A" pathname))
     (compute-init-name pathname :kind kind)))
-(trace guess-init-name find-init-name)
 
 (defun compute-init-name (pathname &key kind)
   (let ((filename (pathname-name pathname)))
