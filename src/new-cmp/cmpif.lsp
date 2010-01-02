@@ -96,6 +96,7 @@
                     (otherwise f))))
            (otherwise (c1alternatives form true-branch false-branch))))))
 
+#+nil
 (defun c1if (destination args)
   (check-args-number 'IF args 2 3)
   (if (and (eq destination 'TRASH) (= (length args) 2))
@@ -125,3 +126,17 @@
                     (list tag-true)
                     (c1translate destination true-branch)
                     (list tag-exit)))))))
+
+(defun c1if (destination args)
+  (check-args-number 'IF args 2 3)
+  (let* ((tag-true (make-tag :name (gensym "IF-TRUE") :label (next-label)))
+         (tag-exit (make-tag :name (gensym "IF-EXIT") :label (next-label)))
+         (false-branch (third args))
+         (true-branch (second args))
+         (condition (first args)))
+    (nconc (c1alternatives condition tag-true nil)
+           (c1translate destination false-branch)
+           (c1jmp tag-exit)
+           (list tag-true)
+           (c1translate destination true-branch)
+           (list tag-exit))))
