@@ -43,9 +43,9 @@
             do (let ((x (c1condition form
                                      (if (rest f) nil true-branch)
                                      false-branch)))
-                 (cond ((null x)
+                 (cond ((eq x :always-false)
                         (return (nreconc output (c1jmp false-branch))))
-                       ((atom x)
+                       ((eq x :always-true)
                         ;; True branch, we do nothing
                         )
                        (t
@@ -70,15 +70,18 @@
             do (let ((x (c1condition form
                                      true-branch
                                      (if (rest f) nil false-branch))))
-                 (if (listp x)
-                     (setf output (nreconc x output))
-                     (return (nreconc output (c1jmp true-branch)))))
+                 (cond ((eq x :always-false)
+                        ;; Always false, we do nothing
+                        )
+                       ((eq x :always-true)
+                        (return (nreconc output (c1jmp true-branch))))
+                       (t
+                        (setf output (nreconc x output)))))
             finally (return (nreverse output))))))
 
 (defun c1condition (form true-branch false-branch)
   (cond ((constantp form)
-         (let ((value (cmp-eval form)))
-           (and value t)))
+         (if (cmp-eval form) :always-true :always-false))
         ((atom form)
          (c1alternatives form true-branch false-branch))
         (t
@@ -86,7 +89,11 @@
            (AND (c1if-and (rest form) true-branch false-branch))
            (OR (c1if-or (rest form) true-branch false-branch))
            (NOT (check-args-number 'NOT (rest form) 1 1)
-                (c1condition (second form) false-branch true-branch))
+                (let ((f (c1condition (second form) false-branch true-branch)))
+                  (case f
+                    ((:always-true) :always-false)
+                    ((:always-false) :always-true)
+                    (otherwise f))))
            (otherwise (c1alternatives form true-branch false-branch))))))
 
 (defun c1if (destination args)
@@ -97,8 +104,8 @@
              (condition (first args))
              (f (c1condition condition nil tag-false)))
         (case f
-          ((T) (c1translate destination true-branch))
-          ((NIL) (c1translate destination nil))
+          ((:always-true) (c1translate destination true-branch))
+          ((:always-false) (c1translate destination nil))
           (otherwise
            (nconc f
                   (c1translate destination true-branch)
@@ -110,8 +117,8 @@
              (condition (first args))
              (f (c1condition condition tag-true nil)))
         (case f
-          ((NIL) (c1translate destination false-branch))
-          ((T) (c1translate destination true-branch))
+          ((:always-false) (c1translate destination false-branch))
+          ((:always-true) (c1translate destination true-branch))
           (t (nconc f
                     (c1translate destination false-branch)
                     (c1jmp tag-exit)
