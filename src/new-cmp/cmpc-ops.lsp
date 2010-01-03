@@ -683,24 +683,34 @@
     (wt-comment "C stack overflow?")))
 
 (defun c2emit-closure-scan (fun)
-  (when (eq (fun-closure fun) 'CLOSURE)
-    (let ((clv-used (function-closure-variables fun))
-          l)
-      (when clv-used
-        (setf clv-used (sort clv-used #'> :key #'var-loc))
-        l (var-loc (first clv-used)))
+  "Scans the environment looking for the locations of all closure variables we
+actually use."
+  (let ((clv-used (and (eq (fun-closure fun) 'CLOSURE)
+                       (function-closure-variables fun))))
+    (when clv-used
+      (loop for v in clv-used
+            do (format *dump-output*
+                       "~&;;; Closure variable ~A loc ~S"
+                       (var-name v) (var-loc v)))
       (wt-nl "/* Scanning closure data ... */")
-      (do ((n (1- (fun-env fun)) (1- n))
-           (bs clv-used)
-           (first t))
-          ((or (minusp n) (null bs)))
-        (wt-nl "cl_object CLV" n)
-        (if first
-            (progn (wt "=env0;") (setf first nil))
-            (wt "=CDR(CLV" (1+ n) ");"))
-        (when (= n (var-loc (first bs)))
-          (wt-comment (var-name (first clv-used)))
-          (pop clv-used)))
+      (loop with first = t
+            with variables = (sort clv-used #'> :key #'var-loc)
+            with v = (pop variables)
+            with loc = (var-loc v)
+            for n from (1- (fun-env fun)) downto 0
+            while v
+            do (progn
+                 (when (> loc n)
+                   (error "Inconsistent value of variable location ~A and fun-env for ~A"
+                          (var-name a) (fun-name fun)))
+                 (wt-nl "cl_object CLV" n)
+                 (if first
+                     (progn (wt "=env0;") (setf first nil))
+                     (wt "=CDR(CLV" (1+ n) ");"))
+                 (when (= n loc)
+                   (wt-comment (var-name v))
+                   (setf v (pop variables)
+                         loc (and v (var-loc v))))))
       (wt-nl "/* ... closure scanning finished */"))))
 
 (defun c2emit-last-arg-macro (fun)
