@@ -942,10 +942,11 @@ si_get_library_pathname(void)
         {
                 cl_object true_pathname = cl_probe_file(s);
                 if (Null(true_pathname)) {
-                        ecl_internal_error("Cannot find ECL's directory");
+                        s = current_dir();
+                } else {
+                        /* Produce a string */
+                        s = ecl_namestring(s, ECL_NAMESTRING_FORCE_BASE_STRING);
                 }
-                /* Produce a string */
-                s = ecl_namestring(s, ECL_NAMESTRING_FORCE_BASE_STRING);
         }
         cl_core.library_pathname = s;
  OUTPUT_UNCHANGED:

@@ -1,4 +1,4 @@
-ECL 9.12.4:
+ECL 10.1.1:
 ===========
 
 * Bugs fixed:
@@ -8,6 +8,10 @@ ECL 9.12.4:
  - The syntax for matching strings in DIRECTORY is now the same as in
    PATHNAME-MATCH-P. Formerly there were small differences, the forming
    understanding characters #\? and #\\
+
+ - Standalone executables do not require the existence of the ECLDIR directory
+   to start up -- it may be required, though, for working Unicode because the
+   encodings are stored there.
 
 ECL 9.12.3:
 ===========
