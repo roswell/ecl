@@ -942,7 +942,7 @@ cl_symbols[] = {
 {"VALUES-LIST", CL_ORDINARY, cl_values_list, 1, OBJNULL},
 {"VARIABLE", CL_ORDINARY, NULL, -1, OBJNULL},
 {"VECTOR", CL_ORDINARY, ECL_NAME(cl_vector), -1, OBJNULL},
-{"VECTOR-POP", CL_ORDINARY, ECL_NAME(cl_vector_pop), -1, OBJNULL},
+{"VECTOR-POP", CL_ORDINARY, ECL_NAME(cl_vector_pop), 1, OBJNULL},
 {"VECTOR-PUSH", CL_ORDINARY, ECL_NAME(cl_vector_push), 2, OBJNULL},
 {"VECTOR-PUSH-EXTEND", CL_ORDINARY, ECL_NAME(cl_vector_push_extend), -1, OBJNULL},
 {"VECTORP", CL_ORDINARY, cl_vectorp, 1, OBJNULL},
