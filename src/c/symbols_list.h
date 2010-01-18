@@ -1491,7 +1491,7 @@ cl_symbols[] = {
 {MP_ "PROCESS-PRESET", MP_ORDINARY, mp_process_preset, -1, OBJNULL},
 {MP_ "PROCESS-RUN-FUNCTION", MP_ORDINARY, mp_process_run_function, -1, OBJNULL},
 {MP_ "PROCESS-WHOSTATE", MP_ORDINARY, mp_process_whostate, 1, OBJNULL},
-{MP_ "PROCESS-JOIN", EXT_ORDINARY, mp_process_join, 1, OBJNULL},
+{MP_ "PROCESS-JOIN", MP_ORDINARY, mp_process_join, 1, OBJNULL},
 {MP_ "MAKE-LOCK", MP_ORDINARY, mp_make_lock, -1, OBJNULL},
 {KEY_ "RECURSIVE", KEYWORD, NULL, -1, OBJNULL},
 {MP_ "RECURSIVE-LOCK-P", MP_ORDINARY, mp_recursive_lock_p, 1, OBJNULL},

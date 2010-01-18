@@ -13,6 +13,8 @@ ECL 10.1.1:
    to start up -- it may be required, though, for working Unicode because the
    encodings are stored there.
 
+ - PROCESS-JOIN was exported from the wrong package.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
