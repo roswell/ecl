@@ -162,11 +162,20 @@ thread_entry_point(void *arg)
 	*     provides us with an elegant way to exit the thread: we just
 	*     do an unwind up to frs_top.
 	*/
-	mp_get_lock(1, process->process.exit_lock);
+	mp_get_lock_wait(process->process.exit_lock);
 	process->process.active = 1;
 	CL_CATCH_ALL_BEGIN(env) {
 		ecl_bds_bind(env, @'mp::*current-process*', process);
-		cl_apply(2, process->process.function, process->process.args);
+		env->values[0] = cl_apply(2, process->process.function,
+                                          process->process.args);
+                {
+                        cl_object output = Cnil;
+                        int i = env->nvalues;
+                        while (i--) {
+                                output = CONS(env->values[i], output);
+                        }
+                        process->process.exit_values = output;
+                }
 		ecl_bds_unwind1(env);
 	} CL_CATCH_ALL_END;
 
@@ -192,6 +201,7 @@ alloc_process(cl_object name, cl_object initial_bindings)
 	process->process.function = Cnil;
 	process->process.args = Cnil;
 	process->process.interrupt = Cnil;
+        process->process.exit_values = Cnil;
 	process->process.env = NULL;
 	if (initial_bindings != OBJNULL) {
 		process->process.initial_bindings
@@ -249,7 +259,7 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
 	THREAD_OP_UNLOCK();
 	ecl_init_env(env);
 	env->bindings_hash = process->process.initial_bindings;
-	mp_get_lock(1, process->process.exit_lock);
+	mp_get_lock_wait(process->process.exit_lock);
 	process->process.active = 1;
 	ecl_enable_interrupts_env(env);
 	return 1;
@@ -440,7 +450,7 @@ mp_process_join(cl_object process)
 		if (!Null(l)) {
                         while (process->process.active != 1)
                                 cl_sleep(MAKE_FIXNUM(0));
-			l = mp_get_lock(1, l);
+			l = mp_get_lock_wait(l);
 			if (Null(l)) {
 				FEerror("MP:PROCESS-JOIN: Error when "
 					"joining process ~A",
@@ -449,7 +459,7 @@ mp_process_join(cl_object process)
 			mp_giveup_lock(l);
                 }
         }
-        @(return Cnil)
+        return cl_values_list(process->process.exit_values);
 }
 
 cl_object

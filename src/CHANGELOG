@@ -17,6 +17,9 @@ ECL 10.1.1:
 
  - PROCESS-JOIN would fail when called while a thread was being started.
 
+ - The output values of a process or thread are now collected in the process
+   object and returned by PROCESS-JOIN.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

@@ -845,6 +845,7 @@ struct ecl_process {
         cl_object parent;
 	cl_object exit_lock;
 	int trap_fpe_bits;
+        cl_object exit_values;
 };
 
 struct ecl_lock {
