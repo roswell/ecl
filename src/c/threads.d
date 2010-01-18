@@ -141,6 +141,7 @@ thread_entry_point(void *arg)
         cl_object process = (cl_object)arg;
 	cl_env_ptr env;
 
+        process->process.active = 2;
 #ifndef ECL_WINDOWS_THREADS
 	pthread_cleanup_push(thread_cleanup, (void *)process);
 #endif
@@ -434,9 +435,11 @@ mp_process_join(cl_object process)
 {
 	assert_type_process(process);
 	/* We only wait for threads that we have created */
-        if (process->process.active != 1) {
+        if (process->process.active) {
 		cl_object l = process->process.exit_lock;
 		if (!Null(l)) {
+                        while (process->process.active != 1)
+                                cl_sleep(MAKE_FIXNUM(0));
 			l = mp_get_lock(1, l);
 			if (Null(l)) {
 				FEerror("MP:PROCESS-JOIN: Error when "
