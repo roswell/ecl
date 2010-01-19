@@ -789,7 +789,7 @@ ecl_interrupt_process(cl_object process, cl_object function)
         cl_object lock;
         int ok;
         function = si_coerce_to_function(function);
-        lock = mp_get_lock(1, cl_core.signal_queue_lock);
+        lock = mp_get_lock_wait(cl_core.signal_queue_lock);
         queue_signal(process->process.env, function);
         ok = do_interrupt_thread(process);
         mp_giveup_lock(lock);
@@ -901,17 +901,32 @@ asynchronous_signal_servicing_thread()
 	sigset_t handled_set;
 	cl_object signal_code;
 	int signo;
+	int interrupt_signal = 0;
+	if (ecl_get_option(ECL_OPT_TRAP_INTERRUPT_SIGNAL)) {
+		interrupt_signal = ecl_get_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL);
+	}
         /*
          * We wait here for all signals that are blocked in all other
          * threads. It would be desirable to be able to wait for _all_
-         * signals, but this can not be done for SIGFPE, SIGSEGV, etc
+         * signals, but this can not be done for SIGFPE, SIGSEGV, etc.
          */
 	pthread_sigmask(SIG_SETMASK, NULL, &handled_set);
+	/*
+	 * Under OS X we also have to explicitely add the signal we
+	 * use to communicate process interrupts. For some unknown
+	 * reason those signals may get lost.
+	 */
+	if (interrupt_signal) {
+		sigaddset(&handled_set, interrupt_signal);
+		pthread_sigmask(SIG_SETMASK, &handled_set, NULL);
+	}
 	CL_CATCH_ALL_BEGIN(ecl_process_env()) {
 	for (;;) {
 		/* Waiting may fail! */
 		int status = sigwait(&handled_set, &signo);
 		if (status == 0) {
+			if (interrupt_signal == signo)
+				goto RETURN;
 			signal_code = call_handler(lisp_signal_handler, signo,
 						   NULL, NULL);
 			if (!Null(signal_code)) {
@@ -922,6 +937,7 @@ asynchronous_signal_servicing_thread()
 		}
 	}
 	} CL_CATCH_ALL_END;
+ RETURN:
 	@(return)
 }
 #endif

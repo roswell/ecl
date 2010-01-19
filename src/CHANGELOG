@@ -20,6 +20,9 @@ ECL 10.1.1:
  - The output values of a process or thread are now collected in the process
    object and returned by PROCESS-JOIN.
 
+ - The interrupt servicing thread must explicitely include the interrupt signal
+   among the ones it captures. Otherwise it will never be interrupted itself.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

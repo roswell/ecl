@@ -121,8 +121,8 @@ thread_cleanup(void *aux)
 	 * mp_process_kill().
 	 */
 	cl_object process = (cl_object)aux;
-	process->process.active = 0;
 	mp_giveup_lock(process->process.exit_lock);
+	process->process.active = 0;
 	THREAD_OP_LOCK();
 	cl_core.processes = ecl_remove_eq(process, cl_core.processes);
 	THREAD_OP_UNLOCK();
