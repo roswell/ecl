@@ -81,11 +81,7 @@ ecl_bds_bind(cl_env_ptr env, cl_object s, cl_object value)
 {
 	cl_object bindings = env->bindings_hash;
 	struct ecl_hashtable_entry *h = bindings->hash.get(s, bindings);
-	struct bds_bd *slot = ++env->bds_top;
-	if (slot >= env->bds_limit) {
-		ecl_bds_overflow();
-		slot = env->bds_top;
-	}
+        cl_object old_value;
 	if (h->key == OBJNULL) {
 		/* The previous binding was at most global */
 		cl_index i = bindings->hash.entries + 1;
@@ -96,14 +92,21 @@ ecl_bds_bind(cl_env_ptr env, cl_object s, cl_object value)
 		bindings->hash.entries = i;
 		h->key = s;
 		h->value = value;
-		slot->symbol = s;
-		slot->value = s->symbol.value;
+                old_value = OBJNULL;
 	} else {
 		/* We have to save a dynamic binding */
-		slot->symbol = h->key;
-		slot->value = h->value;
+                old_value = h->value;
 		h->value = value;
 	}
+        {
+                struct bds_bd *slot = ++env->bds_top;
+                if (slot >= env->bds_limit) {
+                        ecl_bds_overflow();
+                        slot = env->bds_top;
+                }
+		slot->symbol = s;
+		slot->value = old_value;
+        }
 	s->symbol.dynamic |= 1;
 }
 
@@ -112,11 +115,7 @@ ecl_bds_push(cl_env_ptr env, cl_object s)
 {
 	cl_object bindings = env->bindings_hash;
 	struct ecl_hashtable_entry *h = bindings->hash.get(s, bindings);
-	struct bds_bd *slot = ++env->bds_top;
-	if (slot >= env->bds_limit) {
-		ecl_bds_overflow();
-		slot = env->bds_top;
-	}
+        cl_object old_value;
 	if (h->key == OBJNULL) {
 		/* The previous binding was at most global */
 		cl_index i = bindings->hash.entries + 1;
@@ -127,13 +126,20 @@ ecl_bds_push(cl_env_ptr env, cl_object s)
 		bindings->hash.entries = i;
 		h->key = s;
 		h->value = s->symbol.value;
-		slot->symbol = s;
-                slot->value = OBJNULL;
+                old_value = OBJNULL;
 	} else {
 		/* We have to save a dynamic binding */
-		slot->symbol = h->key;
-		slot->value = h->value;
+                old_value = h->value;
 	}
+        {
+                struct bds_bd *slot = ++env->bds_top;
+                if (slot >= env->bds_limit) {
+                        ecl_bds_overflow();
+                        slot = env->bds_top;
+                }
+		slot->symbol = s;
+		slot->value = old_value;
+        }
 	s->symbol.dynamic |= 1;
 }
 
