@@ -126,8 +126,9 @@ ecl_bds_push(cl_env_ptr env, cl_object s)
 		}
 		bindings->hash.entries = i;
 		h->key = s;
-		h->value = slot->value = s->symbol.value;
+		h->value = s->symbol.value;
 		slot->symbol = s;
+                slot->value = OBJNULL;
 	} else {
 		/* We have to save a dynamic binding */
 		slot->symbol = h->key;
