@@ -1320,7 +1320,7 @@ do_patch_sharp(cl_object x, cl_object table)
         }
 	default:;
 	}
-        ecl_sethash(x, table, x);
+        _ecl_sethash(x, table, x);
         return x;
 }
 
@@ -1338,7 +1338,7 @@ patch_sharp(cl_object x)
         pairs = ECL_SYM_VAL(the_env, @'si::*sharp-eq-context*');
         loop_for_in(pairs) {
                 cl_object pair = ECL_CONS_CAR(pairs);
-                ecl_sethash(pair, table, ECL_CONS_CDR(pair));
+                _ecl_sethash(pair, table, ECL_CONS_CDR(pair));
         } end_loop_for_in;
 	x = do_patch_sharp(x, table);
 	return x;
@@ -1966,7 +1966,7 @@ ecl_readtable_set(cl_object readtable, int c, enum ecl_chattrib cat,
 						   Ct);
 			readtable->readtable.hash = hash;
 		}
-		ecl_sethash(CODE_CHAR(c), hash,
+		_ecl_sethash(CODE_CHAR(c), hash,
 			    CONS(MAKE_FIXNUM(cat), macro_or_table));
 	} else
 #endif
@@ -2064,7 +2064,7 @@ ecl_invalid_character_p(int c)
 	if (Null(fnc)) {
 		ecl_remhash(CODE_CHAR(subcode), table);
 	} else {
-		ecl_sethash(CODE_CHAR(subcode), table, fnc);
+		_ecl_sethash(CODE_CHAR(subcode), table, fnc);
 	}
 	if (ecl_lower_case_p(subcode)) {
 		subcode = ecl_char_upcase(subcode);
@@ -2074,7 +2074,7 @@ ecl_invalid_character_p(int c)
 	if (Null(fnc)) {
 		ecl_remhash(CODE_CHAR(subcode), table);
 	} else {
-		ecl_sethash(CODE_CHAR(subcode), table, fnc);
+		_ecl_sethash(CODE_CHAR(subcode), table, fnc);
 	}
 	@(return Ct)
 @)

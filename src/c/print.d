@@ -1724,7 +1724,7 @@ object_will_print_as_hash(cl_object x)
 		return !(code == OBJNULL || code == Cnil);
 	} else if (code == OBJNULL) {
 		/* Was not found before */
-		ecl_sethash(x, circle_stack, Cnil);
+		_ecl_sethash(x, circle_stack, Cnil);
 		return 0;
 	} else {
 		return 1;
@@ -1750,11 +1750,11 @@ search_print_circle(cl_object x)
 		code = ecl_gethash_safe(x, circle_stack, OBJNULL);
 		if (code == OBJNULL) {
 			/* Was not found before */
-			ecl_sethash(x, circle_stack, Cnil);
+			_ecl_sethash(x, circle_stack, Cnil);
 			return 0;
 		} else if (code == Cnil) {
 			/* This object is referenced twice */
-			ecl_sethash(x, circle_stack, Ct);
+			_ecl_sethash(x, circle_stack, Ct);
 			return 1;
 		} else {
 			return 2;
@@ -1763,13 +1763,13 @@ search_print_circle(cl_object x)
 		code = ecl_gethash_safe(x, circle_stack, OBJNULL);
 		if (code == OBJNULL || code == Cnil) {
 			/* Is not referenced or was not found before */
-			/* ecl_sethash(x, circle_stack, Cnil); */
+			/* _ecl_sethash(x, circle_stack, Cnil); */
 			return 0;
 		} else if (code == Ct) {
 			/* This object is referenced twice, but has no code yet */
 			cl_fixnum new_code = fix(circle_counter) + 1;
 			circle_counter = MAKE_FIXNUM(new_code);
-			ecl_sethash(x, circle_stack, circle_counter);
+			_ecl_sethash(x, circle_stack, circle_counter);
 			ECL_SETQ(ecl_process_env(), @'si::*circle-counter*',
 				 circle_counter);
 			return -new_code;

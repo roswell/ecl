@@ -90,7 +90,7 @@ ecl_bds_bind(cl_env_ptr env, cl_object s, cl_object value)
 		/* The previous binding was at most global */
 		slot->symbol = s;
 		slot->value = s->symbol.value;
-		ecl_sethash(s, bindings, value);
+		_ecl_sethash(s, bindings, value);
 	} else {
 		/* We have to save a dynamic binding */
 		slot->symbol = h->key;
@@ -114,7 +114,7 @@ ecl_bds_push(cl_env_ptr env, cl_object s)
 		/* The previous binding was at most global */
 		slot->symbol = s;
 		slot->value = s->symbol.value;
-		ecl_sethash(s, bindings, s->symbol.value);
+		_ecl_sethash(s, bindings, s->symbol.value);
 	} else {
 		/* We have to save a dynamic binding */
 		slot->symbol = h->key;
