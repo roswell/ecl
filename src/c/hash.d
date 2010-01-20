@@ -466,8 +466,7 @@ ecl_sethash(cl_object key, cl_object hashtable, cl_object value)
 		goto OUTPUT;
 	}
 	i = hashtable->hash.entries + 1;
-	if (i >= hashtable->hash.size ||
-	    i >= (hashtable->hash.size * hashtable->hash.factor)) {
+	if (i >= hashtable->hash.limit) {
 		hashtable = ecl_extend_hashtable(hashtable);
 	}
 	add_new_to_hash(key, hashtable, value);
@@ -511,6 +510,7 @@ ecl_extend_hashtable(cl_object hashtable)
 	new->hash.data = NULL; /* for GC sake */
 	new->hash.entries = 0;
 	new->hash.size = new_size;
+	new->hash.limit = new->hash.size * new->hash.factor;
 	new->hash.data = (struct ecl_hashtable_entry *)
 	  ecl_alloc(new_size * sizeof(struct ecl_hashtable_entry));
 	for (i = 0;  i < new_size;  i++) {
@@ -636,7 +636,7 @@ cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
 	if (h->hash.factor < 0.1) {
 		h->hash.factor = 0.1;
 	}
-	/*h->hash.limit = h->hash.size * h->hash.factor;*/
+	h->hash.limit = h->hash.size * h->hash.factor;
 	h->hash.data = NULL;	/* for GC sake */
 	h->hash.data = (struct ecl_hashtable_entry *)
 		ecl_alloc(hsize * sizeof(struct ecl_hashtable_entry));

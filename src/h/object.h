@@ -351,6 +351,7 @@ struct ecl_hashtable {		/*  hash table header  */
 	struct ecl_hashtable_entry *data; /*  pointer to the hash table  */
 	cl_index entries;	/*  number of entries  */
 	cl_index size;		/*  hash table size  */
+	cl_index limit;		/*  hash table threshold (integer value)  */
 	cl_object rehash_size;	/*  rehash size  */
 	cl_object threshold;	/*  rehash threshold  */
 	double factor;		/*  cached value of threshold  */
