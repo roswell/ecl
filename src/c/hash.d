@@ -419,60 +419,38 @@ ecl_gethash_safe(cl_object key, cl_object hashtable, cl_object def)
 	return def;
 }
 
-static void
-add_new_to_hash(cl_object key, cl_object hashtable, cl_object value)
+cl_object
+_ecl_sethash(cl_object key, cl_object hashtable, cl_object value)
 {
-	int htest;
-	cl_hashkey h;
-	cl_index i, hsize;
 	struct ecl_hashtable_entry *e;
-
-	/* INV: hashtable has the right type */
-	htest = hashtable->hash.test;
-	hsize = hashtable->hash.size;
-	switch (htest) {
-	case htt_eq:	h = (cl_hashkey)key >> 2; break;
-	case htt_eql:	h = _hash_eql(0, key); break;
-	case htt_equal:	h = _hash_equal(3, 0, key); break;
-	case htt_equalp:h = _hash_equalp(3, 0, key); break;
-	case htt_pack:	h = _hash_equal(3, 0, key); break;
-	default:	corrupted_hash(hashtable);
-	}
-	e = hashtable->hash.data;
-	for (i = h % hsize; ; i = (i + 1) % hsize)
-		if (e[i].key == OBJNULL) {
-			hashtable->hash.entries++;
-			if (htest == htt_pack)
-				e[i].key = MAKE_FIXNUM(h & 0xFFFFFFF);
-			else
-				e[i].key = key;
-			e[i].value = value;
-			return;
+ AGAIN:
+	e = hashtable->hash.get(key, hashtable);
+	if (e->key == OBJNULL) {
+		cl_index i = hashtable->hash.entries + 1;
+		if (i >= hashtable->hash.limit) {
+			hashtable = ecl_extend_hashtable(hashtable);
+			goto AGAIN;
 		}
-	corrupted_hash(hashtable);
+		hashtable->hash.entries = i;
+		if (hashtable->hash.test == htt_pack) {
+			cl_hashkey h = _hash_equal(3,0,key);
+			e->key = MAKE_FIXNUM(h & 0xFFFFFFF);
+		} else {
+			e->key = key;
+		}
+	}
+	e->value = value;
+	return hashtable;
 }
 
 cl_object
 ecl_sethash(cl_object key, cl_object hashtable, cl_object value)
 {
-	cl_index i;
-	struct ecl_hashtable_entry *e;
-
 	assert_type_hash_table(hashtable);
 	HASH_TABLE_LOCK(hashtable);
-	e = hashtable->hash.get(key, hashtable);
-	if (e->key != OBJNULL) {
-		e->value = value;
-		goto OUTPUT;
-	}
-	i = hashtable->hash.entries + 1;
-	if (i >= hashtable->hash.limit) {
-		hashtable = ecl_extend_hashtable(hashtable);
-	}
-	add_new_to_hash(key, hashtable, value);
- OUTPUT:
+	hashtable = _ecl_sethash(key, hashtable, value);
 	HASH_TABLE_UNLOCK(hashtable);
-        return hashtable;
+	return hashtable;
 }
 
 cl_object
@@ -521,7 +499,7 @@ ecl_extend_hashtable(cl_object hashtable)
 		if ((key = old->hash.data[i].key) != OBJNULL) {
 			if (new->hash.test == htt_pack)
 				key = SYMBOL_NAME(old->hash.data[i].value);
-			add_new_to_hash(key, new, old->hash.data[i].value);
+			_ecl_sethash(key, new, old->hash.data[i].value);
 		}
         }
         return new;
