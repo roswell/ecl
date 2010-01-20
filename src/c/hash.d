@@ -224,60 +224,78 @@ _hash_equalp(int depth, cl_hashkey h, cl_object x)
 	}
 }
 
+#define HASH_TABLE_LOOP(hkey,hvalue,h,HASH_TABLE_LOOP_TEST) {   \
+	cl_index hsize = hashtable->hash.size; \
+        cl_index i = h % hsize, j = hsize, k; \
+	for (k = 0; k < hsize;  i = (i + 1) % hsize, k++) { \
+		struct ecl_hashtable_entry *e = hashtable->hash.data + i; \
+		cl_object hkey = e->key, hvalue = e->value; \
+		if (hkey == OBJNULL) { \
+			if (e->value == OBJNULL) { \
+				if (j == hsize) \
+					return e; \
+				else \
+					return hashtable->hash.data + j; \
+			} else { \
+				if (j == hsize) \
+					j = i; \
+				else if (j == i) \
+                                        return e; \
+                        } \
+			continue; \
+		} \
+		if (HASH_TABLE_LOOP_TEST) return hashtable->hash.data + i; \
+	} \
+	return hashtable->hash.data + j; \
+}
+
+struct ecl_hashtable_entry *
+ecl_search_hash_eq(cl_object key, cl_object hashtable)
+{
+	cl_hashkey h = (cl_hashkey)key >> 2;
+        HASH_TABLE_LOOP(hkey, hvalue, h, key == hkey);
+}
+
+struct ecl_hashtable_entry *
+ecl_search_hash_eql(cl_object key, cl_object hashtable)
+{
+	cl_hashkey h = _hash_eql(0, key);
+        HASH_TABLE_LOOP(hkey, hvalue, h, ecl_eql(key, hkey));
+}
+
+struct ecl_hashtable_entry *
+ecl_search_hash_equal(cl_object key, cl_object hashtable)
+{
+	cl_hashkey h = _hash_equal(3, 0, key);
+        HASH_TABLE_LOOP(hkey, hvalue, h, ecl_equal(key, hkey));
+}
+
+struct ecl_hashtable_entry *
+ecl_search_hash_equalp(cl_object key, cl_object hashtable)
+{
+	cl_hashkey h = _hash_equalp(3, 0, key);
+        HASH_TABLE_LOOP(hkey, hvalue, h, ecl_equalp(key, hkey));
+}
+
+struct ecl_hashtable_entry *
+ecl_search_hash_pack(cl_object key, cl_object hashtable)
+{
+	cl_hashkey h = _hash_equal(3, 0, key);
+        cl_object ho = MAKE_FIXNUM(h & 0xFFFFFFF);
+        HASH_TABLE_LOOP(hkey, hvalue, h, (ho==hkey) && ecl_string_eq(key,SYMBOL_NAME(hvalue)));
+}
+
 struct ecl_hashtable_entry *
 ecl_search_hash(cl_object key, cl_object hashtable)
 {
-	cl_hashkey h;
-	cl_index hsize, i, j, k;
-	struct ecl_hashtable_entry *e;
-	cl_object hkey, ho;
-	int htest;
-	bool b;
-
-	htest = hashtable->hash.test;
-	hsize = hashtable->hash.size;
-	j = hsize;
-	switch (htest) {
-	case htt_eq:	h = (cl_hashkey)key >> 2; break;
-	case htt_eql:	h = _hash_eql(0, key); break;
-	case htt_equal:	h = _hash_equal(3, 0, key); break;
-	case htt_equalp:h = _hash_equalp(3, 0, key); break;
-	case htt_pack:	h = _hash_equal(3, 0, key);
-			ho = MAKE_FIXNUM(h & 0xFFFFFFF);
-			break;
+	switch (hashtable->hash.test) {
+	case htt_eq:	return ecl_search_hash_eq(key, hashtable);
+	case htt_eql:	return ecl_search_hash_eql(key, hashtable);
+	case htt_equal:	return ecl_search_hash_equal(key, hashtable);
+	case htt_equalp:return ecl_search_hash_equalp(key, hashtable);
+	case htt_pack:	return ecl_search_hash_pack(key, hashtable);
 	default:	corrupted_hash(hashtable);
 	}
-	i = h % hsize;
-	for (k = 0; k < hsize;  i = (i + 1) % hsize, k++) {
-		e = &hashtable->hash.data[i];
-		hkey = e->key;
-		if (hkey == OBJNULL) {
-			if (e->value == OBJNULL)
-				if (j == hsize)
-					return(e);
-				else
-					return(&hashtable->hash.data[j]);
-			else
-				if (j == hsize)
-					j = i;
-				else if (j == i)
-				  /* this was never returning --wfs
-				     but looping around with j=0 */
-				  return(e);
-			continue;
-		}
-		switch (htest) {
-		case htt_eq:	b = key == hkey; break;
-		case htt_eql:	b = ecl_eql(key, hkey); break;
-		case htt_equal: b = ecl_equal(key, hkey); break;
-		case htt_equalp:b = ecl_equalp(key, hkey); break;
-		case htt_pack:	b = (ho==hkey) && ecl_string_eq(key,SYMBOL_NAME(e->value));
-				break;
-		}
-		if (b)
-			return(&hashtable->hash.data[i]);
-	}
-	return(&hashtable->hash.data[j]);
 }
 
 cl_object

@@ -23,6 +23,11 @@ ECL 10.1.1:
  - The interrupt servicing thread must explicitely include the interrupt signal
    among the ones it captures. Otherwise it will never be interrupted itself.
 
+* Visible changes:
+
+ - Significant speed up in access to hash tables of up to 30% by writing
+   specialized loops for EQ, EQL, EQUAL, EQUALP and package hash tables.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
