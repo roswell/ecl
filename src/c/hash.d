@@ -390,14 +390,7 @@ _ecl_sethash_pack(cl_object key, cl_object hashtable, cl_object value)
 struct ecl_hashtable_entry *
 _ecl_gethash(cl_object key, cl_object hashtable)
 {
-	switch (hashtable->hash.test) {
-	case htt_eq:	return _ecl_gethash_eq(key, hashtable);
-	case htt_eql:	return _ecl_gethash_eql(key, hashtable);
-	case htt_equal:	return _ecl_gethash_equal(key, hashtable);
-	case htt_equalp:return _ecl_gethash_equalp(key, hashtable);
-	case htt_pack:	return _ecl_gethash_pack(key, hashtable);
-	default:	corrupted_hash(hashtable);
-	}
+	return hashtable->hash.get(key, hashtable);
 }
 
 cl_object
@@ -407,7 +400,7 @@ ecl_gethash(cl_object key, cl_object hashtable)
 
 	assert_type_hash_table(hashtable);
 	HASH_TABLE_LOCK(hashtable);
-	output = _ecl_gethash(key, hashtable)->value;
+	output = hashtable->hash.get(key, hashtable)->value;
 	HASH_TABLE_UNLOCK(hashtable);
 	return output;
 }
@@ -419,7 +412,7 @@ ecl_gethash_safe(cl_object key, cl_object hashtable, cl_object def)
 
 	assert_type_hash_table(hashtable);
 	HASH_TABLE_LOCK(hashtable);
-	e = _ecl_gethash(key, hashtable);
+	e = hashtable->hash.get(key, hashtable);
 	if (e->key != OBJNULL)
 		def = e->value;
 	HASH_TABLE_UNLOCK(hashtable);
@@ -467,7 +460,7 @@ ecl_sethash(cl_object key, cl_object hashtable, cl_object value)
 
 	assert_type_hash_table(hashtable);
 	HASH_TABLE_LOCK(hashtable);
-	e = _ecl_gethash(key, hashtable);
+	e = hashtable->hash.get(key, hashtable);
 	if (e->key != OBJNULL) {
 		e->value = value;
 		goto OUTPUT;
@@ -576,18 +569,23 @@ cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
 	if (test == @'eq' || test == SYM_FUN(@'eq')) {
 		htt = htt_eq;
 		get = _ecl_gethash_eq;
+		set = _ecl_sethash_eq;
 	} else if (test == @'eql' || test == SYM_FUN(@'eql')) {
 		htt = htt_eql;
 		get = _ecl_gethash_eql;
+		set = _ecl_sethash_eql;
 	} else if (test == @'equal' || test == SYM_FUN(@'equal')) {
 		htt = htt_equal;
 		get = _ecl_gethash_equal;
+		set = _ecl_sethash_equal;
 	} else if (test == @'equalp' || test == SYM_FUN(@'equalp')) {
 		htt = htt_equalp;
 		get = _ecl_gethash_equalp;
+		set = _ecl_sethash_equalp;
 	} else if (test == @'package') {
 		htt = htt_pack;
 		get = _ecl_gethash_pack;
+		set = _ecl_sethash_pack;
 	} else {
 		FEerror("~S is an illegal hash-table test function.",
 			1, test);
@@ -628,19 +626,22 @@ cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
 	 */
 	h = ecl_alloc_object(t_hashtable);
 	h->hash.test = htt;
+	h->hash.get = get;
+	h->hash.set = set;
 	h->hash.size = hsize;
         h->hash.entries = 0;
-	h->hash.data = NULL;	/* for GC sake */
-	h->hash.data = (struct ecl_hashtable_entry *)
-		ecl_alloc(hsize * sizeof(struct ecl_hashtable_entry));
-	do_clrhash(h);
-
 	h->hash.rehash_size = rehash_size;
 	h->hash.threshold = rehash_threshold;
 	h->hash.factor = ecl_to_double(rehash_threshold);
 	if (h->hash.factor < 0.1) {
 		h->hash.factor = 0.1;
 	}
+	/*h->hash.limit = h->hash.size * h->hash.factor;*/
+	h->hash.data = NULL;	/* for GC sake */
+	h->hash.data = (struct ecl_hashtable_entry *)
+		ecl_alloc(hsize * sizeof(struct ecl_hashtable_entry));
+	do_clrhash(h);
+
 #ifdef ECL_THREADS
 	if (!Null(lockable)) {
                 h->hash.lock = mp_make_lock(2, @':recursive', Ct);
@@ -662,7 +663,7 @@ cl_hash_table_p(cl_object ht)
 @
 	assert_type_hash_table(ht);
 	HASH_TABLE_LOCK(ht);
-	e = *_ecl_gethash(key, ht);
+	e = *(ht->hash.get(key, ht));
 	HASH_TABLE_UNLOCK(ht);
 	if (e.key != OBJNULL)
 		@(return e.value Ct)
@@ -686,7 +687,7 @@ ecl_remhash(cl_object key, cl_object hashtable)
 
 	assert_type_hash_table(hashtable);
 	HASH_TABLE_LOCK(hashtable);
-	e = _ecl_gethash(key, hashtable);
+	e = hashtable->hash.get(key, hashtable);
 	if (e->key == OBJNULL) {
 		output = FALSE;
 	} else {
