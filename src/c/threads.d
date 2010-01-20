@@ -448,7 +448,7 @@ mp_process_join(cl_object process)
         if (process->process.active) {
 		cl_object l = process->process.exit_lock;
 		if (!Null(l)) {
-                        while (process->process.active != 1)
+                        while (process->process.active > 1)
                                 cl_sleep(MAKE_FIXNUM(0));
 			l = mp_get_lock_wait(l);
 			if (Null(l)) {
