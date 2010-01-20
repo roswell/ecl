@@ -141,6 +141,7 @@ thread_entry_point(void *arg)
         cl_object process = (cl_object)arg;
 	cl_env_ptr env;
 
+        ecl_set_process_env(NULL);
         process->process.active = 2;
 #ifndef ECL_WINDOWS_THREADS
 	pthread_cleanup_push(thread_cleanup, (void *)process);
