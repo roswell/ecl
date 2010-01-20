@@ -281,6 +281,9 @@ static cl_object
 handler_fn_protype(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
 {
 	cl_env_ptr the_env = ecl_process_env();
+        /* The lisp environment might not be installed. */
+        if (the_env == NULL)
+                return;
 #if defined(ECL_THREADS) && !defined(_MSC_VER) && !defined(mingw32)
         if (sig == ecl_get_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL)) {
 		return pop_signal(the_env);
@@ -572,6 +575,9 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
 				   " on our thread.");
 	}
 	the_env = ecl_process_env();
+        /* The lisp environment might not be installed. */
+        if (the_env == NULL)
+                return;
 #if defined(SA_SIGINFO) && defined(ECL_USE_MPROTECT)
 	/* We access the environment when it was protected. That
 	 * means there was a pending signal. */
@@ -632,10 +638,13 @@ handler_fn_protype(sigbus_handler, int sig, siginfo_t *info, void *aux)
 {
         cl_env_ptr the_env;
 	reinstall_signal(sig, sigsegv_handler);
+	the_env = ecl_process_env();
+        /* The lisp environment might not be installed. */
+        if (the_env == NULL)
+                return;
 #if defined(SA_SIGINFO) && defined(ECL_USE_MPROTECT)
 	/* We access the environment when it was protected. That
 	 * means there was a pending signal. */
-	the_env = ecl_process_env();
 	if (((char*)the_env <= (char*)info->si_addr) &&
             ((char*)info->si_addr <= (char*)(the_env+1)))
         {
@@ -787,15 +796,16 @@ ecl_interrupt_process(cl_object process, cl_object function)
          *   the thread, which then decides how to act.
          */
         cl_object lock;
-        int ok;
-        function = si_coerce_to_function(function);
-        lock = mp_get_lock_wait(cl_core.signal_queue_lock);
-        queue_signal(process->process.env, function);
-        ok = do_interrupt_thread(process);
-        mp_giveup_lock(lock);
-        if (!ok) {
-		FEerror("Cannot interrupt process ~A", 1, process);
+        if (process->process.active == 1) {
+                int ok;
+                function = si_coerce_to_function(function);
+                lock = mp_get_lock_wait(cl_core.signal_queue_lock);
+                queue_signal(process->process.env, function);
+                ok = do_interrupt_thread(process);
+                mp_giveup_lock(lock);
+                if (ok) return;
         }
+        FEerror("Cannot interrupt process ~A", 1, process);
 }
 #endif /* ECL_THREADS */
 
