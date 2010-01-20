@@ -276,6 +276,12 @@ _hash_equalp(int depth, cl_hashkey h, cl_object x)
  * EQ HASHTABLES
  */
 
+#if 0
+#define _hash_eq(k) ((cl_hashkey)(k) ^ ((cl_hashkey)(k) >> 16))
+#else
+#define _hash_eq(k) ((cl_hashkey)(k) >> 2)
+#endif
+
 static struct ecl_hashtable_entry *
 _ecl_hash_loop_eq(cl_hashkey h, cl_object key, cl_object hashtable)
 {
@@ -285,14 +291,14 @@ _ecl_hash_loop_eq(cl_hashkey h, cl_object key, cl_object hashtable)
 struct ecl_hashtable_entry *
 _ecl_gethash_eq(cl_object key, cl_object hashtable)
 {
-	cl_hashkey h = (cl_hashkey)key >> 2;
+	cl_hashkey h = _hash_eq(key);
 	return _ecl_hash_loop_eq(h, key, hashtable);
 }
 
 cl_object
 _ecl_sethash_eq(cl_object key, cl_object hashtable, cl_object value)
 {
-	HASH_TABLE_SET(h, _ecl_hash_loop_eq, (cl_hashkey)key >> 2, key);
+	HASH_TABLE_SET(h, _ecl_hash_loop_eq, _hash_eq(key), key);
 }
 
 /*
