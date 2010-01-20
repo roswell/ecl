@@ -113,22 +113,11 @@ symbol_add_package(cl_object s, cl_object p)
 static cl_object
 make_package_hashtable()
 {
-	cl_object h;
-	cl_index hsize = 128;
-
-	h = ecl_alloc_object(t_hashtable);
-#ifdef ECL_THREADS
-	h->hash.lock = Cnil;
-#endif
-	h->hash.test = htt_pack;
-	h->hash.size = hsize;
-	h->hash.rehash_size = ecl_make_singlefloat(1.5f);
-	h->hash.threshold = ecl_make_singlefloat(0.75f);
-	h->hash.factor = 0.7;
-	h->hash.entries = 0;
-	h->hash.data = NULL; /* for GC sake */
-	h->hash.data = (struct ecl_hashtable_entry *)ecl_alloc(hsize * sizeof(struct ecl_hashtable_entry));
-	return cl_clrhash(h);
+	return cl__make_hash_table(@'package', /* package hash table */
+				   MAKE_FIXNUM(128), /* initial size */
+				   ecl_make_singlefloat(1.5f), /* rehash size */
+				   ecl_make_singlefloat(0.75f), /* rehash threshold */
+				   Cnil); /* lockable */
 }
 
 cl_object

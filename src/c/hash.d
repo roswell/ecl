@@ -568,20 +568,30 @@ cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
 	int htt;
 	cl_index hsize;
 	cl_object h;
+	struct ecl_hashtable_entry *(*get)(cl_object, cl_object);
+	void (*set)(cl_object, cl_object, cl_object);
 	/*
 	 * Argument checking
 	 */
-	if (test == @'eq' || test == SYM_FUN(@'eq'))
+	if (test == @'eq' || test == SYM_FUN(@'eq')) {
 		htt = htt_eq;
-	else if (test == @'eql' || test == SYM_FUN(@'eql'))
+		get = _ecl_gethash_eq;
+	} else if (test == @'eql' || test == SYM_FUN(@'eql')) {
 		htt = htt_eql;
-	else if (test == @'equal' || test == SYM_FUN(@'equal'))
+		get = _ecl_gethash_eql;
+	} else if (test == @'equal' || test == SYM_FUN(@'equal')) {
 		htt = htt_equal;
-	else if (test == @'equalp' || test == SYM_FUN(@'equalp'))
+		get = _ecl_gethash_equal;
+	} else if (test == @'equalp' || test == SYM_FUN(@'equalp')) {
 		htt = htt_equalp;
-	else
+		get = _ecl_gethash_equalp;
+	} else if (test == @'package') {
+		htt = htt_pack;
+		get = _ecl_gethash_pack;
+	} else {
 		FEerror("~S is an illegal hash-table test function.",
 			1, test);
+	}
 	hsize = ecl_fixnum_in_range(@'make-hash-table',"size",size,0,ATOTLIM);;
 	if (hsize < 16) {
 		hsize = 16;
