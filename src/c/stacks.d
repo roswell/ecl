@@ -79,7 +79,7 @@ ecl_cs_overflow(void)
 void
 ecl_bds_bind(cl_env_ptr env, cl_object s, cl_object value)
 {
-	struct ecl_hashtable_entry *h = ecl_search_hash(s, env->bindings_hash);
+	struct ecl_hashtable_entry *h = _ecl_gethash(s, env->bindings_hash);
 	struct bds_bd *slot = ++env->bds_top;
 	if (slot >= env->bds_limit) {
 		ecl_bds_overflow();
@@ -102,7 +102,7 @@ ecl_bds_bind(cl_env_ptr env, cl_object s, cl_object value)
 void
 ecl_bds_push(cl_env_ptr env, cl_object s)
 {
-	struct ecl_hashtable_entry *h = ecl_search_hash(s, env->bindings_hash);
+	struct ecl_hashtable_entry *h = _ecl_gethash(s, env->bindings_hash);
 	struct bds_bd *slot = ++env->bds_top;
 	if (slot >= env->bds_limit) {
 		ecl_bds_overflow();
@@ -126,7 +126,7 @@ ecl_bds_unwind1(cl_env_ptr env)
 {
 	struct bds_bd *slot = env->bds_top--;
 	cl_object s = slot->symbol;
-	struct ecl_hashtable_entry *h = ecl_search_hash(s, env->bindings_hash);
+	struct ecl_hashtable_entry *h = _ecl_gethash(s, env->bindings_hash);
 	if (slot->value == OBJNULL) {
 		/* We have deleted all dynamic bindings */
 		h->key = OBJNULL;
@@ -144,7 +144,7 @@ ecl_symbol_slot(cl_env_ptr env, cl_object s)
 	if (Null(s))
 		s = Cnil_symbol;
 	if (s->symbol.dynamic) {
-		struct ecl_hashtable_entry *h = ecl_search_hash(s, env->bindings_hash);
+		struct ecl_hashtable_entry *h = _ecl_gethash(s, env->bindings_hash);
 		if (h->key != OBJNULL)
 			return &h->value;
 	}
@@ -155,7 +155,7 @@ cl_object
 ecl_set_symbol(cl_env_ptr env, cl_object s, cl_object value)
 {
 	if (s->symbol.dynamic) {
-		struct ecl_hashtable_entry *h = ecl_search_hash(s, env->bindings_hash);
+		struct ecl_hashtable_entry *h = _ecl_gethash(s, env->bindings_hash);
 		if (h->key != OBJNULL) {
 			return (h->value = value);
 		}

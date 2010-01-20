@@ -734,7 +734,8 @@ extern ECL_API cl_object ecl_sethash(cl_object key, cl_object hashtable, cl_obje
 extern ECL_API cl_object ecl_gethash(cl_object key, cl_object hash);
 extern ECL_API cl_object ecl_gethash_safe(cl_object key, cl_object hash, cl_object def);
 extern ECL_API bool ecl_remhash(cl_object key, cl_object hash);
-extern ECL_API struct ecl_hashtable_entry *ecl_search_hash(cl_object key, cl_object hashtable);
+extern ECL_API struct ecl_hashtable_entry *_ecl_gethash(cl_object key, cl_object hashtable);
+extern ECL_API void _ecl_sethash(cl_object key, cl_object hashtable, cl_object value);
 
 /* instance.c */
 
@@ -2016,6 +2017,8 @@ extern ECL_API cl_object clos_standard_instance_set _ARGS((cl_narg narg, cl_obje
 #define cl_alloc_simple_base_string ecl_alloc_simple_base_string
 #define cl_alloc_adjustable_base_string ecl_alloc_adjustable_base_string
 #define cl_alloc_simple_extended_string ecl_alloc_simple_extended_string
+
+#define ecl_search_hash _ecl_gethash
 
 #endif
 

@@ -532,7 +532,7 @@ BEGIN:
 		ex = x->hash.data;
 		for (i = 0;  i < x->hash.size;  i++) {
 			if (ex[i].key != OBJNULL) {
-				ey = ecl_search_hash(ex[i].key, y);
+				ey = _ecl_gethash(ex[i].key, y);
 				if (ey->key == OBJNULL || !ecl_equalp(ex[i].value, ey->value))
 					return(FALSE);
 			}
