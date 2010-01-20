@@ -88,9 +88,16 @@ ecl_bds_bind(cl_env_ptr env, cl_object s, cl_object value)
 	}
 	if (h->key == OBJNULL) {
 		/* The previous binding was at most global */
+		cl_index i = bindings->hash.entries + 1;
+		if (i > bindings->hash.limit) {
+			env->bindings_hash = bindings = ecl_extend_hashtable(bindings);
+			h = bindings->hash.get(s, bindings);
+		}
+		bindings->hash.entries = i;
+		h->key = s;
+		h->value = value;
 		slot->symbol = s;
 		slot->value = s->symbol.value;
-		_ecl_sethash(s, bindings, value);
 	} else {
 		/* We have to save a dynamic binding */
 		slot->symbol = h->key;
@@ -112,9 +119,15 @@ ecl_bds_push(cl_env_ptr env, cl_object s)
 	}
 	if (h->key == OBJNULL) {
 		/* The previous binding was at most global */
+		cl_index i = bindings->hash.entries + 1;
+		if (i > bindings->hash.limit) {
+			env->bindings_hash = bindings = ecl_extend_hashtable(bindings);
+			h = bindings->hash.get(s, bindings);
+		}
+		bindings->hash.entries = i;
+		h->key = s;
+		h->value = slot->value = s->symbol.value;
 		slot->symbol = s;
-		slot->value = s->symbol.value;
-		_ecl_sethash(s, bindings, s->symbol.value);
 	} else {
 		/* We have to save a dynamic binding */
 		slot->symbol = h->key;

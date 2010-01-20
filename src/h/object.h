@@ -359,7 +359,7 @@ struct ecl_hashtable {		/*  hash table header  */
 	cl_object lock;		/*  mutex to prevent race conditions  */
 #endif
 	struct ecl_hashtable_entry *(*get)(cl_object, cl_object);
-	void (*set)(cl_object, cl_object, cl_object);
+	cl_object (*set)(cl_object, cl_object, cl_object);
 };
 
 typedef enum {			/*  array element type  */
