@@ -261,12 +261,12 @@ void
 _ecl_dealloc_env(cl_env_ptr env)
 {
         /*
-         * Environment cleanup
+         * Environment cleanup. This is only required when the environment is
+	 * allocated using mmap or some other method. We could do more, cleaning
+	 * up stacks, etc, but we actually do not do it because that would need
+	 * a lisp environment set up -- the allocator assumes one -- and we
+	 * may have already cleaned up the value of ecl_process_env()
          */
-        int i;
-        for (i = 0; i < 3; i++) {
-                _ecl_big_clear(env->big_register[i]);
-        }
 #if defined(ECL_USE_MPROTECT)
 	if (munmap(env, sizeof(*env)))
 		ecl_internal_error("Unable to deallocate environment structure.");
@@ -274,8 +274,6 @@ _ecl_dealloc_env(cl_env_ptr env)
 # if defined(ECL_USE_GUARD_PAGE)
         if (VirtualFree(env, sizeof(*env), MEM_RELEASE))
                 ecl_internal_error("Unable to deallocate environment structure.");
-# else
-	ecl_dealloc(env);
 # endif
 #endif
 }

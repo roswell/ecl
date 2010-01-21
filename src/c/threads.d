@@ -121,14 +121,16 @@ thread_cleanup(void *aux)
 	 * mp_process_kill().
 	 */
 	cl_object process = (cl_object)aux;
-	mp_giveup_lock(process->process.exit_lock);
+	cl_env_ptr env = process->process.env;
 	process->process.active = 0;
+	process->process.env = NULL;
+        ecl_disable_interrupts_env(env);
+	mp_giveup_lock(process->process.exit_lock);
 	THREAD_OP_LOCK();
 	cl_core.processes = ecl_remove_eq(process, cl_core.processes);
 	THREAD_OP_UNLOCK();
-	if (process->process.env)
-		_ecl_dealloc_env(process->process.env);
-	process->process.env = NULL;
+	ecl_set_process_env(NULL);
+	if (env) _ecl_dealloc_env(env);
 }
 
 #ifdef ECL_WINDOWS_THREADS
@@ -139,26 +141,19 @@ thread_entry_point(void *arg)
 #endif
 {
         cl_object process = (cl_object)arg;
-	cl_env_ptr env;
+	cl_env_ptr env = process->process.env;
 
-        ecl_set_process_env(NULL);
-        process->process.active = 2;
+	/* 1) Setup the environment for the execution of the thread */
+	ecl_set_process_env(env = process->process.env);
 #ifndef ECL_WINDOWS_THREADS
 	pthread_cleanup_push(thread_cleanup, (void *)process);
 #endif
-	/* 1) Setup the environment for the execution of the thread */
-	process->process.env = env = _ecl_alloc_env();
-	env->own_process = process;
-	ecl_set_process_env(env);
 	THREAD_OP_LOCK();
 	cl_core.processes = CONS(process, cl_core.processes);
 	THREAD_OP_UNLOCK();
-	ecl_init_env(env);
 	ecl_cs_set_org(env);
-	env->bindings_hash = process->process.initial_bindings;
-	ecl_enable_interrupts_env(env);
-        env->trap_fpe_bits = process->process.trap_fpe_bits;
         si_trap_fpe(@'last', Ct);
+	ecl_enable_interrupts_env(env);
 
 	/* 2) Execute the code. The CATCH_ALL point is the destination
 	*     provides us with an elegant way to exit the thread: we just
@@ -360,27 +355,51 @@ mp_process_yield(void)
 cl_object
 mp_process_enable(cl_object process)
 {
-	cl_object output;
-#ifdef ECL_WINDOWS_THREADS
-	HANDLE code;
-	DWORD threadId;
-
-	if (mp_process_active_p(process) != Cnil)
+	/*
+	 * We try to grab the process exit lock. If we achieve it that
+	 * means the 1) process is not running or in the finalization
+	 * or 2) it is in the initialization phase. The second case we
+	 * can distinguish because process.active != 0. The first one
+	 * is ok.
+	 */
+	cl_env_ptr process_env;
+	int ok;
+	if (Null(mp_get_lock_nowait(process->process.exit_lock))) {
 		FEerror("Cannot enable the running process ~A.", 1, process);
+		return;
+	}
+	if (process->process.active) {
+		mp_giveup_lock(process->process.exit_lock);
+		FEerror("Cannot enable the running process ~A.", 1, process);
+		return;
+	}
+	process_env = _ecl_alloc_env();
+	ecl_init_env(process_env);
+	process_env->trap_fpe_bits = process->process.trap_fpe_bits;
+	process_env->bindings_hash = process->process.initial_bindings;
+	process_env->own_process = process;
+
+	process->process.env = process_env;
         process->process.parent = mp_current_process();
 	process->process.trap_fpe_bits =
 		process->process.parent->process.env->trap_fpe_bits;
+	process->process.active = 2;
+
+#ifdef ECL_WINDOWS_THREADS
+	{
+	HANDLE code;
+	DWORD threadId;
+
 	code = (HANDLE)CreateThread(NULL, 0, thread_entry_point, process, 0, &threadId);
-	output = (process->process.thread = code)? process : Cnil;
+	ok = (process->process.thread = code);
+	}
 #else
+	{
 	int code;
         pthread_attr_t pthreadattr;
 
 	pthread_attr_init(&pthreadattr);
 	pthread_attr_setdetachstate(&pthreadattr, PTHREAD_CREATE_DETACHED);
-	if (mp_process_active_p(process) != Cnil)
-		FEerror("Cannot enable the running process ~A.", 1, process);
-        process->process.parent = mp_current_process();
 	/*
 	 * We launch the thread with the signal mask specified in cl_core.
 	 * The reason is that we might need to block certain signals
@@ -395,11 +414,20 @@ mp_process_enable(cl_object process)
 		pthread_sigmask(SIG_SETMASK, &previous, NULL);
 	}
 #else
-	code = pthread_create(&process->process.thread, &pthreadattr, thread_entry_point, process);
+	code = pthread_create(&process->process.thread, &pthreadattr,
+			      thread_entry_point, process);
 #endif
-	output = code? Cnil : process;
+	ok = (code == 0);
+	}
 #endif
-	@(return output)
+	if (!ok) {
+		process->process.active = 0;
+		process->process.env = NULL;
+		_ecl_dealloc_env(process_env);
+	}
+	mp_giveup_lock(process->process.exit_lock);
+
+	@(return (ok? Ct : Cnil))
 }
 
 cl_object
