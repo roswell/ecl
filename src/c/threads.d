@@ -143,6 +143,17 @@ thread_entry_point(void *arg)
         cl_object process = (cl_object)arg;
 	cl_env_ptr env = process->process.env;
 
+	/*
+	 * Upon entering this routine
+	 *	process.env = our environment for lisp
+	 *	process.active = 2
+	 *	signals are disabled in the environment
+	 *
+	 * Since process.active = 2, this process will not recevie
+	 * signals that originate from other processes. Furthermore,
+	 * we expect not to get any other interrupts (SIGSEGV, SIGFPE)
+	 * if we do things right.
+	 */
 	/* 1) Setup the environment for the execution of the thread */
 	ecl_set_process_env(env = process->process.env);
 #ifndef ECL_WINDOWS_THREADS
