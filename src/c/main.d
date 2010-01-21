@@ -203,8 +203,6 @@ ecl_set_option(int option, cl_fixnum value)
 void
 ecl_init_env(cl_env_ptr env)
 {
-	char i;
-
 	env->c_env = NULL;
 
 	env->string_pool = Cnil;
@@ -221,17 +219,6 @@ ecl_init_env(cl_env_ptr env)
 	env->indent_stack = ecl_alloc_atomic(ECL_PPRINT_INDENTATION_STACK_SIZE * sizeof(short));
 	env->fmt_aux_stream = ecl_make_string_output_stream(64, 1);
 #endif
-#if !defined(GBC_BOEHM)
-# if defined(THREADS)
-#  error "No means to mark the stack of a thread :-/"
-# else
-	/* Rough estimate. Not very safe. We assume that cl_boot()
-	 * is invoked from the main() routine of the program.
-	 */
-	env->cs_org = (char*)(&env);
-# endif /* THREADS */
-#endif /* !GBC_BOEHM */
-
 #ifdef HAVE_LIBFFI
         env->ffi_args_limit = 0;
         env->ffi_types = 0;
@@ -254,7 +241,7 @@ ecl_init_env(cl_env_ptr env)
 #endif
         env->pending_interrupt = Cnil;
 
-	init_stacks(env, &i);
+	init_stacks(env);
 
         {
 	int i;
@@ -532,6 +519,7 @@ cl_boot(int argc, char **argv)
 	 */
         init_big();
 	ecl_init_env(env);
+	ecl_cs_set_org(env);
 #if !defined(GBC_BOEHM)
 	/* We need this because a lot of stuff is to be created */
 	init_GC();

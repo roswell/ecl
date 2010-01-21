@@ -72,6 +72,34 @@ ecl_cs_overflow(void)
 	cs_set_size(env, size);
 }
 
+void
+ecl_cs_set_org(cl_env_ptr env)
+{
+	/* Rough estimate. Not very safe. We assume that cl_boot()
+	 * is invoked from the main() routine of the program.
+	 */
+	env->cs_org = (char*)(&env);
+	env->cs_barrier = env->cs_org;
+#if defined(HAVE_SYS_RESOURCE_H) && defined(RLIMIT_STACK)
+	{
+		struct rlimit rl;
+		cl_index size;
+		getrlimit(RLIMIT_STACK, &rl);
+		if (rl.rlim_cur != RLIM_INFINITY) {
+			size = rl.rlim_cur / 2;
+			if (size > (cl_index)ecl_get_option(ECL_OPT_C_STACK_SIZE))
+				ecl_set_option(ECL_OPT_C_STACK_SIZE, size);
+#ifdef ECL_DOWN_STACK
+			env->cs_barrier = env->cs_org - rl.rlim_cur - 1024;
+#else
+			env->cs_barrier = env->cs_org + rl.rlim_cur + 1024;
+#endif
+		}
+	}
+#endif
+	cs_set_size(env, ecl_get_option(ECL_OPT_C_STACK_SIZE));
+}
+
 
 /********************* BINDING STACK ************************/
 
@@ -562,7 +590,7 @@ si_get_limit(cl_object type)
 }
 
 void
-init_stacks(cl_env_ptr env, char *new_cs_org)
+init_stacks(cl_env_ptr env)
 {
 	static struct ihs_frame ihs_org = { NULL, NULL, NULL, 0};
 	cl_index size, margin;
@@ -585,27 +613,6 @@ init_stacks(cl_env_ptr env, char *new_cs_org)
 	ihs_org.function = Cnil;
 	ihs_org.lex_env = Cnil;
 	ihs_org.index = 0;
-
-	env->cs_org = new_cs_org;
-	env->cs_barrier = new_cs_org;
-#if defined(HAVE_SYS_RESOURCE_H) && defined(RLIMIT_STACK)
-	{
-		struct rlimit rl;
-		cl_index size;
-		getrlimit(RLIMIT_STACK, &rl);
-		if (rl.rlim_cur != RLIM_INFINITY) {
-			size = rl.rlim_cur / 2;
-			if (size > (cl_index)ecl_get_option(ECL_OPT_C_STACK_SIZE))
-				ecl_set_option(ECL_OPT_C_STACK_SIZE, size);
-#ifdef ECL_DOWN_STACK
-			env->cs_barrier = env->cs_org - rl.rlim_cur - 1024;
-#else
-			env->cs_barrier = env->cs_org + rl.rlim_cur + 1024;
-#endif
-		}
-	}
-#endif
-	cs_set_size(env, ecl_get_option(ECL_OPT_C_STACK_SIZE));
 
 #if 0 /* defined(HAVE_SIGPROCMASK) && defined(SA_SIGINFO) && defined(SA_ONSTACK) */
 	if (ecl_get_option(ECL_OPT_SIGALTSTACK_SIZE)) {

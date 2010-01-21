@@ -38,7 +38,7 @@ extern void init_GC(void);
 extern void init_macros(void);
 extern void init_number(void);
 extern void init_read(void);
-extern void init_stacks(cl_env_ptr, char *);
+extern void init_stacks(cl_env_ptr);
 extern void init_unixint(int pass);
 extern void init_unixtime(void);
 #ifdef mingw32

@@ -154,6 +154,7 @@ thread_entry_point(void *arg)
 	cl_core.processes = CONS(process, cl_core.processes);
 	THREAD_OP_UNLOCK();
 	ecl_init_env(env);
+	ecl_cs_set_org(env);
 	env->bindings_hash = process->process.initial_bindings;
 	ecl_enable_interrupts_env(env);
         env->trap_fpe_bits = process->process.trap_fpe_bits;
