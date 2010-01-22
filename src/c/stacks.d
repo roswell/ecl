@@ -155,7 +155,7 @@ ecl_bds_bind_special_case(cl_object s)
 void
 ecl_bds_bind(cl_env_ptr env, cl_object s, cl_object value)
 {
-        cl_object bindings, *location, old_value;
+        cl_object *location;
         struct bds_bd *slot;
         cl_index index = s->symbol.binding;
  AGAIN:
@@ -174,7 +174,7 @@ ecl_bds_bind(cl_env_ptr env, cl_object s, cl_object value)
 void
 ecl_bds_push(cl_env_ptr env, cl_object s)
 {
-        cl_object bindings, *location, old_value;
+        cl_object *location;
         struct bds_bd *slot;
         cl_index index = s->symbol.binding;
  AGAIN:
