@@ -193,7 +193,7 @@ make_this_symbol(int i, cl_object s, int code, const char *name,
 	s->symbol.t = t_symbol;
 	s->symbol.dynamic = 0;
 #ifdef ECL_THREADS
-	s->symbol.binding = 0;
+	s->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
 #endif
 	ECL_SET(s, OBJNULL);
 	SYM_FUN(s) = Cnil;

@@ -120,7 +120,7 @@ cl_make_symbol(cl_object str)
 	x->symbol.name = str;
 	x->symbol.dynamic = 0;
 #ifdef ECL_THREADS
-	x->symbol.binding = 0;
+	x->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
 #endif	/*  */
 	ECL_SET(x,OBJNULL);
 	SYM_FUN(x) = Cnil;
@@ -329,7 +329,7 @@ cl_symbol_name(cl_object x)
 		x->symbol.gfdef = sym->symbol.gfdef;
 		x->symbol.plist = cl_copy_list(sym->symbol.plist);
 #ifdef ECL_THREADS
-		x->symbol.binding = 0;
+		x->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
 #endif
 		/* FIXME!!! We should also copy the system property list */
 	}

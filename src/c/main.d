@@ -441,7 +441,7 @@ cl_boot(int argc, char **argv)
 	Cnil_symbol->symbol.hpack = Cnil;
 	Cnil_symbol->symbol.stype = stp_constant;
 #ifdef ECL_THREADS
-	Cnil_symbol->symbol.binding = 0;
+	Cnil_symbol->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
 #endif
 	cl_num_symbols_in_core=1;
 
@@ -454,7 +454,7 @@ cl_boot(int argc, char **argv)
 	Ct->symbol.hpack = Cnil;
 	Ct->symbol.stype = stp_constant;
 #ifdef ECL_THREADS
-	Ct->symbol.binding = 0;
+	Ct->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
 #endif
 	cl_num_symbols_in_core=2;
 
@@ -542,6 +542,15 @@ cl_boot(int argc, char **argv)
 		ecl_make_pathname(Cnil, Cnil, Cnil, Cnil, Cnil, Cnil));
 #endif
 
+#ifdef ECL_THREADS
+        cl_core.last_var_index = 0;
+        cl_core.reused_indices = Cnil;
+	env->bindings_hash = si_make_vector(Ct, MAKE_FIXNUM(256),
+                                            Cnil, Cnil, Cnil, Cnil);
+        si_fill_array_with_elt(env->bindings_hash, OBJNULL, MAKE_FIXNUM(0), Cnil);
+	ECL_SET(@'mp::*current-process*', env->own_process);
+#endif
+
         /*
          * Initialize Unicode character database.
          */
@@ -626,15 +635,6 @@ cl_boot(int argc, char **argv)
 	ECL_SET(@'si::c-ulong-max', ecl_make_unsigned_integer(ULONG_MAX));
 
 	init_unixtime();
-
-#ifdef ECL_THREADS
-        cl_core.last_var_index = 0;
-        cl_core.reused_indices = Cnil;
-	env->bindings_hash = si_make_vector(Ct, MAKE_FIXNUM(256),
-                                            Cnil, Cnil, Cnil, Cnil);
-        si_fill_array_with_elt(env->bindings_hash, OBJNULL, MAKE_FIXNUM(0), Cnil);
-	ECL_SET(@'mp::*current-process*', env->own_process);
-#endif
 
 	/*
 	 * Initialize I/O subsystem.
