@@ -35,13 +35,15 @@ struct cl_env_struct {
 	/*
 	 * The BinDing Stack stores the bindings of special variables.
 	 */
+#ifdef ECL_THREADS
+        cl_index thread_local_bindings_size;
+        cl_object *thread_local_bindings;
+	cl_object bindings_array;
+#endif
 	cl_index bds_size;
 	struct bds_bd *bds_org;
 	struct bds_bd *bds_top;
 	struct bds_bd *bds_limit;
-#ifdef ECL_THREADS
-	cl_object bindings_hash;
-#endif
 
 	/*
 	 * The Invocation History Stack (IHS) keeps a list of the names of the

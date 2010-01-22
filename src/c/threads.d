@@ -216,7 +216,7 @@ alloc_process(cl_object name, cl_object initial_bindings)
                                        Cnil, Cnil, Cnil, Cnil);
                 si_fill_array_with_elt(array, OBJNULL, MAKE_FIXNUM(0), Cnil);
 	} else {
-		array = cl_copy_seq(ecl_process_env()->bindings_hash);
+		array = cl_copy_seq(ecl_process_env()->bindings_array);
 	}
         process->process.initial_bindings = array;
 	process->process.exit_lock = mp_make_lock(0);
@@ -263,7 +263,9 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
 	cl_core.processes = CONS(process, cl_core.processes);
 	THREAD_OP_UNLOCK();
 	ecl_init_env(env);
-	env->bindings_hash = process->process.initial_bindings;
+	env->bindings_array = process->process.initial_bindings;
+        env->thread_local_bindings_size = env->bindings_array->vector.dim;
+        env->thread_local_bindings = env->bindings_array->vector.self.t;
 	mp_get_lock_wait(process->process.exit_lock);
 	process->process.active = 1;
 	ecl_enable_interrupts_env(env);
@@ -384,7 +386,11 @@ mp_process_enable(cl_object process)
 	process_env = _ecl_alloc_env();
 	ecl_init_env(process_env);
 	process_env->trap_fpe_bits = process->process.trap_fpe_bits;
-	process_env->bindings_hash = process->process.initial_bindings;
+	process_env->bindings_array = process->process.initial_bindings;
+        process_env->thread_local_bindings_size = 
+                process_env->bindings_array->vector.dim;
+        process_env->thread_local_bindings =
+                process_env->bindings_array->vector.self.t;
 	process_env->own_process = process;
 
 	process->process.env = process_env;

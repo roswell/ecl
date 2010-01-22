@@ -545,9 +545,11 @@ cl_boot(int argc, char **argv)
 #ifdef ECL_THREADS
         cl_core.last_var_index = 0;
         cl_core.reused_indices = Cnil;
-	env->bindings_hash = si_make_vector(Ct, MAKE_FIXNUM(256),
+	env->bindings_array = si_make_vector(Ct, MAKE_FIXNUM(256),
                                             Cnil, Cnil, Cnil, Cnil);
-        si_fill_array_with_elt(env->bindings_hash, OBJNULL, MAKE_FIXNUM(0), Cnil);
+        si_fill_array_with_elt(env->bindings_array, OBJNULL, MAKE_FIXNUM(0), Cnil);
+        env->thread_local_bindings_size = env->bindings_array->vector.dim;
+        env->thread_local_bindings = env->bindings_array->vector.self.t;
 	ECL_SET(@'mp::*current-process*', env->own_process);
 #endif
 
