@@ -203,7 +203,7 @@ thread_entry_point(void *arg)
 static cl_object
 alloc_process(cl_object name, cl_object initial_bindings)
 {
-	cl_object process = ecl_alloc_object(t_process);
+	cl_object process = ecl_alloc_object(t_process), array;
 	process->process.active = 0;
 	process->process.name = name;
 	process->process.function = Cnil;
@@ -212,16 +212,13 @@ alloc_process(cl_object name, cl_object initial_bindings)
         process->process.exit_values = Cnil;
 	process->process.env = NULL;
 	if (initial_bindings != OBJNULL) {
-		process->process.initial_bindings
-			= cl__make_hash_table(@'eq', MAKE_FIXNUM(1024),
-					      ecl_make_singlefloat(1.5),
-					      ecl_make_singlefloat(0.7),
-					      Cnil); /* no need for locking */
+		array = si_make_vector(Ct, MAKE_FIXNUM(256),
+                                       Cnil, Cnil, Cnil, Cnil);
+                si_fill_array_with_elt(array, OBJNULL, MAKE_FIXNUM(0), Cnil);
 	} else {
-		cl_env_ptr this_env = ecl_process_env();
-		process->process.initial_bindings
-			= si_copy_hash_table(this_env->bindings_hash);
+		array = cl_copy_seq(ecl_process_env()->bindings_hash);
 	}
+        process->process.initial_bindings = array;
 	process->process.exit_lock = mp_make_lock(0);
 	return process;
 }

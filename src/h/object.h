@@ -257,6 +257,9 @@ struct ecl_symbol {
 	cl_object name;		/*  print name  */
 	cl_object hpack;	/*  home package  */
 				/*  Cnil for uninterned symbols  */
+#ifdef ECL_THREADS
+        cl_index binding;	/*  index into the bindings array  */
+#endif
 };
 #define SYM_FUN(sym)	((sym)->symbol.gfdef)
 

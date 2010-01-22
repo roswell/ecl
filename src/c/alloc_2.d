@@ -493,6 +493,14 @@ standard_finalizer(cl_object o)
 		break;
 	}
 #endif
+#ifdef ECL_THREADS
+        case t_symbol: {
+                THREAD_OP_LOCK();
+                cl_core.reused_indices = CONS(MAKE_FIXNUM(o->symbol.binding),
+                                              cl_core.reused_indices);
+                THREAD_OP_UNLOCK();
+        }
+#endif
 	default:;
 	}
 }

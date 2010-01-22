@@ -440,6 +440,9 @@ cl_boot(int argc, char **argv)
 	Cnil_symbol->symbol.plist = Cnil;
 	Cnil_symbol->symbol.hpack = Cnil;
 	Cnil_symbol->symbol.stype = stp_constant;
+#ifdef ECL_THREADS
+	Cnil_symbol->symbol.binding = 0;
+#endif
 	cl_num_symbols_in_core=1;
 
 	Ct->symbol.t = (short)t_symbol;
@@ -450,6 +453,9 @@ cl_boot(int argc, char **argv)
 	Ct->symbol.plist = Cnil;
 	Ct->symbol.hpack = Cnil;
 	Ct->symbol.stype = stp_constant;
+#ifdef ECL_THREADS
+	Ct->symbol.binding = 0;
+#endif
 	cl_num_symbols_in_core=2;
 
 #ifdef NO_PATH_MAX
@@ -622,10 +628,11 @@ cl_boot(int argc, char **argv)
 	init_unixtime();
 
 #ifdef ECL_THREADS
-	env->bindings_hash = cl__make_hash_table(@'eq', MAKE_FIXNUM(1024),
-						   ecl_make_singlefloat(1.5f),
-						   ecl_make_singlefloat(0.75f),
-						   Cnil); /* no locking */
+        cl_core.last_var_index = 0;
+        cl_core.reused_indices = Cnil;
+	env->bindings_hash = si_make_vector(Ct, MAKE_FIXNUM(256),
+                                            Cnil, Cnil, Cnil, Cnil);
+        si_fill_array_with_elt(env->bindings_hash, OBJNULL, MAKE_FIXNUM(0), Cnil);
 	ECL_SET(@'mp::*current-process*', env->own_process);
 #endif
 

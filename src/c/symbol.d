@@ -119,6 +119,9 @@ cl_make_symbol(cl_object str)
 	x = ecl_alloc_object(t_symbol);
 	x->symbol.name = str;
 	x->symbol.dynamic = 0;
+#ifdef ECL_THREADS
+	x->symbol.binding = 0;
+#endif	/*  */
 	ECL_SET(x,OBJNULL);
 	SYM_FUN(x) = Cnil;
 	x->symbol.plist = Cnil;
@@ -325,6 +328,9 @@ cl_symbol_name(cl_object x)
 		x->symbol.value = sym->symbol.value;
 		x->symbol.gfdef = sym->symbol.gfdef;
 		x->symbol.plist = cl_copy_list(sym->symbol.plist);
+#ifdef ECL_THREADS
+		x->symbol.binding = 0;
+#endif
 		/* FIXME!!! We should also copy the system property list */
 	}
 	@(return x)

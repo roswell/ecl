@@ -104,71 +104,84 @@ ecl_cs_set_org(cl_env_ptr env)
 /********************* BINDING STACK ************************/
 
 #ifdef ECL_THREADS
+cl_index
+ecl_new_binding_index(cl_object symbol)
+{
+        cl_object pool;
+        cl_index new_index;
+        THREAD_OP_LOCK();
+	symbol->symbol.dynamic |= 1;
+        new_index = symbol->symbol.binding;
+        if (!new_index) {
+                si_set_finalizer(symbol, Ct);
+                pool = cl_core.reused_indices;
+                if (!Null(pool)) {
+                        new_index = fix(ECL_CONS_CAR(pool));
+                        cl_core.reused_indices = ECL_CONS_CDR(pool);
+                } else {
+                        new_index = ++cl_core.last_var_index;
+                }
+        }
+        THREAD_OP_UNLOCK();
+        return new_index;
+}
+
+cl_object
+ecl_extend_bindings_array(cl_object vector)
+{
+        cl_index new_size = cl_core.last_var_index * 1.25;
+        cl_object new_vector = si_make_vector(Ct, MAKE_FIXNUM(new_size), Cnil,
+                                             Cnil, Cnil, Cnil);
+        ecl_copy_subarray(new_vector, 0, vector, 0, vector->vector.dim);
+        return new_vector;
+}
+
 void
 ecl_bds_bind(cl_env_ptr env, cl_object s, cl_object value)
 {
-	cl_object bindings = env->bindings_hash;
-	struct ecl_hashtable_entry *h = bindings->hash.get(s, bindings);
-        cl_object old_value;
-	if (h->key == OBJNULL) {
-		/* The previous binding was at most global */
-		cl_index i = bindings->hash.entries + 1;
-		if (i > bindings->hash.limit) {
-			env->bindings_hash = bindings = ecl_extend_hashtable(bindings);
-			h = bindings->hash.get(s, bindings);
-		}
-		bindings->hash.entries = i;
-		h->key = s;
-		h->value = value;
-                old_value = OBJNULL;
-	} else {
-		/* We have to save a dynamic binding */
-                old_value = h->value;
-		h->value = value;
-	}
-        {
-                struct bds_bd *slot = ++env->bds_top;
-                if (slot >= env->bds_limit) {
-                        ecl_bds_overflow();
-                        slot = env->bds_top;
-                }
-		slot->symbol = s;
-		slot->value = old_value;
+        cl_object bindings, *location, old_value;
+        struct bds_bd *slot;
+        cl_index index = s->symbol.binding;
+        if (!index) {
+                s->symbol.binding = index = ecl_new_binding_index(s);
         }
-	s->symbol.dynamic |= 1;
+	bindings = env->bindings_hash;
+        if (index >= bindings->vector.dim) {
+                bindings = ecl_extend_bindings_array(bindings);
+        }
+        location = bindings->array.self.t + index;
+        slot = ++env->bds_top;
+        if (slot >= env->bds_limit) {
+                ecl_bds_overflow();
+                slot = env->bds_top;
+        }
+        slot->symbol = s;
+        slot->value = *location;
+        *location = value;
 }
 
 void
 ecl_bds_push(cl_env_ptr env, cl_object s)
 {
-	cl_object bindings = env->bindings_hash;
-	struct ecl_hashtable_entry *h = bindings->hash.get(s, bindings);
-        cl_object old_value;
-	if (h->key == OBJNULL) {
-		/* The previous binding was at most global */
-		cl_index i = bindings->hash.entries + 1;
-		if (i > bindings->hash.limit) {
-			env->bindings_hash = bindings = ecl_extend_hashtable(bindings);
-			h = bindings->hash.get(s, bindings);
-		}
-		bindings->hash.entries = i;
-		h->key = s;
-		h->value = s->symbol.value;
-                old_value = OBJNULL;
-	} else {
-		/* We have to save a dynamic binding */
-                old_value = h->value;
-	}
-        {
-                struct bds_bd *slot = ++env->bds_top;
-                if (slot >= env->bds_limit) {
-                        ecl_bds_overflow();
-                        slot = env->bds_top;
-                }
-		slot->symbol = s;
-		slot->value = old_value;
+        cl_object bindings, *location, old_value;
+        struct bds_bd *slot;
+        cl_index index = s->symbol.binding;
+        if (!index) {
+                s->symbol.binding = index = ecl_new_binding_index(s);
         }
-	s->symbol.dynamic |= 1;
+	bindings = env->bindings_hash;
+        if (index >= bindings->vector.dim) {
+                bindings = ecl_extend_bindings_array(bindings);
+        }
+        location = bindings->array.self.t + index;
+        slot = ++env->bds_top;
+        if (slot >= env->bds_limit) {
+                ecl_bds_overflow();
+                slot = env->bds_top;
+        }
+        slot->symbol = s;
+        slot->value = *location;
+	if (!(*location)) *location = s->symbol.value;
 }
 
 void
@@ -177,41 +190,40 @@ ecl_bds_unwind1(cl_env_ptr env)
 	struct bds_bd *slot = env->bds_top--;
 	cl_object s = slot->symbol;
 	cl_object bindings = env->bindings_hash;
-	struct ecl_hashtable_entry *h = bindings->hash.get(s, bindings);
-	if (slot->value == OBJNULL) {
-		/* We have deleted all dynamic bindings */
-		h->key = OBJNULL;
-		h->value = Cnil;
-		bindings->hash.entries--;
-	} else {
-		/* We restore the previous dynamic binding */
-		h->value = slot->value;
-	}
+        cl_object *location = bindings->vector.self.t + s->symbol.binding;
+        *location = slot->value;
 }
 
 cl_object *
 ecl_symbol_slot(cl_env_ptr env, cl_object s)
 {
-	if (Null(s))
+	if (Null(s)) {
 		s = Cnil_symbol;
-	if (s->symbol.dynamic) {
-		cl_object bindings = env->bindings_hash;
-		struct ecl_hashtable_entry *h = bindings->hash.get(s, bindings);
-		if (h->key != OBJNULL)
-			return &h->value;
-	}
-	return &s->symbol.value;
+        } else {
+                cl_index index = s->symbol.binding;
+                if (index) {
+                        cl_object bindings = env->bindings_hash;
+                        if (index < bindings->vector.dim) {
+				cl_object *location = bindings->vector.self.t + index;
+				if (*location)
+					return location;
+                        }
+                }
+                return &s->symbol.value;
+        }
 }
 
 cl_object
 ecl_set_symbol(cl_env_ptr env, cl_object s, cl_object value)
 {
-	if (s->symbol.dynamic) {
+        cl_index index = s->symbol.binding;
+	if (index) {
 		cl_object bindings = env->bindings_hash;
-		struct ecl_hashtable_entry *h = bindings->hash.get(s, bindings);
-		if (h->key != OBJNULL) {
-			return (h->value = value);
-		}
+                if (index < bindings->vector.dim) {
+                        cl_object *location = bindings->vector.self.t + index;
+                        if (*location)
+                                return (*location) = value;
+                }
 	}
 	return (s->symbol.value = value);
 }

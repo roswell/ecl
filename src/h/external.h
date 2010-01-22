@@ -39,7 +39,9 @@ struct cl_env_struct {
 	struct bds_bd *bds_org;
 	struct bds_bd *bds_top;
 	struct bds_bd *bds_limit;
+#ifdef ECL_THREADS
 	cl_object bindings_hash;
+#endif
 
 	/*
 	 * The Invocation History Stack (IHS) keeps a list of the names of the
@@ -233,6 +235,11 @@ struct cl_core_struct {
 	uint8_t *ucd_data;
 #endif
 	void *default_sigmask;
+
+#ifdef ECL_THREADS
+        cl_index last_var_index;
+        cl_object reused_indices;
+#endif
 };
 
 extern ECL_API struct cl_core_struct cl_core;
