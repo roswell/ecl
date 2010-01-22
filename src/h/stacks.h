@@ -43,6 +43,7 @@ typedef struct bds_bd {
 
 typedef struct cl_env_struct *cl_env_ptr;
 
+extern ECL_API struct bds_bd *ecl_bds_overflow(void) /*__attribute__((noreturn))*/;
 #ifdef ECL_THREADS
 #define ECL_MISSING_SPECIAL_BINDING (~((cl_index)0))
 extern ECL_API void ecl_bds_bind(cl_env_ptr env, cl_object symbol, cl_object v);

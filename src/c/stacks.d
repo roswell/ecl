@@ -140,10 +140,6 @@ ecl_extend_bindings_array(cl_object vector)
 static cl_index
 ecl_bds_bind_special_case(cl_object s)
 {
-        if (s->symbol.binding == 0) {
-                printf("\nFOO\n");
-                abort();
-        }
         if (s->symbol.binding == ECL_MISSING_SPECIAL_BINDING) {
                 return ecl_new_binding_index(s);
         } else {
@@ -169,10 +165,7 @@ ecl_bds_bind(cl_env_ptr env, cl_object s, cl_object value)
         }
         location = env->thread_local_bindings + index;
         slot = ++env->bds_top;
-        if (slot >= env->bds_limit) {
-                ecl_bds_overflow();
-                slot = env->bds_top;
-        }
+        if (slot >= env->bds_limit) slot = ecl_bds_overflow();
         slot->symbol = s;
         slot->value = *location;
         *location = value;
@@ -191,10 +184,7 @@ ecl_bds_push(cl_env_ptr env, cl_object s)
         }
         location = env->thread_local_bindings + index;
         slot = ++env->bds_top;
-        if (slot >= env->bds_limit) {
-                ecl_bds_overflow();
-                slot = env->bds_top;
-        }
+        if (slot >= env->bds_limit) slot = ecl_bds_overflow();
         slot->symbol = s;
         slot->value = *location;
 	if (!(*location)) *location = s->symbol.value;
@@ -213,7 +203,7 @@ cl_object *
 ecl_symbol_slot(cl_env_ptr env, cl_object s)
 {
 	if (Null(s)) {
-		s = Cnil_symbol;
+		return &(Cnil_symbol->symbol.value);
         } else {
                 cl_index index = s->symbol.binding;
                 if (index < env->thread_local_bindings_size) {
@@ -269,7 +259,7 @@ ecl_bds_set_size(cl_env_ptr env, cl_index size)
 	}
 }
 
-void
+struct bds_bd *
 ecl_bds_overflow(void)
 {
 	cl_env_ptr env = ecl_process_env();
@@ -285,6 +275,7 @@ ecl_bds_overflow(void)
 		  @'ext::stack-overflow', @':size', MAKE_FIXNUM(size),
 		  @':type', @'ext::binding-stack');
 	ecl_bds_set_size(env, size + (size / 2));
+        return env->bds_top;
 }
 
 void
