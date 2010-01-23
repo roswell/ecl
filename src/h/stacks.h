@@ -47,6 +47,24 @@ extern ECL_API struct bds_bd *ecl_bds_overflow(void) /*__attribute__((noreturn))
 #ifdef ECL_THREADS
 #define ECL_MISSING_SPECIAL_BINDING (~((cl_index)0))
 extern ECL_API void ecl_bds_bind(cl_env_ptr env, cl_object symbol, cl_object v);
+extern ECL_API void ecl_bds_bind_special_case(cl_env_ptr env,cl_object s, cl_object v);
+#define	ecl_bds_bind(env,sym,val) do {                                  \
+                const cl_env_ptr env_copy = (env);                      \
+                const cl_object s = (sym);                              \
+                const cl_object v = (val);                              \
+                cl_object *location;                                    \
+                struct bds_bd *slot;                                    \
+                const cl_index index = s->symbol.binding;               \
+                if (index >= env_copy->thread_local_bindings_size) {    \
+                        ecl_bds_bind_special_case(env_copy,s,v);        \
+                } else {                                                \
+                        location = env_copy->thread_local_bindings + index; \
+                        slot = ++env->bds_top;                          \
+                        if (slot >= env->bds_limit) slot = ecl_bds_overflow(); \
+                        slot->symbol = s;                               \
+                        slot->value = *location;                        \
+                        *location = v; }                                \
+        } while (0)
 extern ECL_API void ecl_bds_push(cl_env_ptr env, cl_object symbol);
 extern ECL_API void ecl_bds_unwind1(cl_env_ptr env);
 extern ECL_API cl_object *ecl_symbol_slot(cl_env_ptr env, cl_object s);

@@ -138,9 +138,10 @@ ecl_extend_bindings_array(cl_object vector)
 }
 
 static cl_index
-ecl_bds_bind_special_case(cl_object s)
+ecl_bds_special_case(cl_object s)
 {
-        if (s->symbol.binding == ECL_MISSING_SPECIAL_BINDING) {
+        cl_index index = s->symbol.binding;
+        if (index == ECL_MISSING_SPECIAL_BINDING) {
                 return ecl_new_binding_index(s);
         } else {
                 cl_env_ptr env = ecl_process_env();
@@ -148,21 +149,16 @@ ecl_bds_bind_special_case(cl_object s)
                 env->bindings_array = ecl_extend_bindings_array(vector);
                 env->thread_local_bindings_size = vector->vector.dim;
                 env->thread_local_bindings = vector->vector.self.t;
-                return s->symbol.binding;
+                return index;
         }
 }
 
 void
-ecl_bds_bind(cl_env_ptr env, cl_object s, cl_object value)
+ecl_bds_bind_special_case(cl_env_ptr env, cl_object s, cl_object value)
 {
         cl_object *location;
         struct bds_bd *slot;
-        cl_index index = s->symbol.binding;
- AGAIN:
-        if (index >= env->thread_local_bindings_size) {
-                index = ecl_bds_bind_special_case(s);
-                goto AGAIN;
-        }
+        cl_index index = ecl_bds_special_case(s);
         location = env->thread_local_bindings + index;
         slot = ++env->bds_top;
         if (slot >= env->bds_limit) slot = ecl_bds_overflow();
@@ -179,7 +175,7 @@ ecl_bds_push(cl_env_ptr env, cl_object s)
         cl_index index = s->symbol.binding;
  AGAIN:
         if (index >= env->thread_local_bindings_size) {
-                index = ecl_bds_bind_special_case(s);
+                index = ecl_bds_special_case(s);
                 goto AGAIN;
         }
         location = env->thread_local_bindings + index;
@@ -202,17 +198,13 @@ ecl_bds_unwind1(cl_env_ptr env)
 cl_object *
 ecl_symbol_slot(cl_env_ptr env, cl_object s)
 {
-	if (Null(s)) {
-		return &(Cnil_symbol->symbol.value);
-        } else {
-                cl_index index = s->symbol.binding;
-                if (index < env->thread_local_bindings_size) {
-                        cl_object *location = env->thread_local_bindings + index;
-                        if (*location)
-                                return location;
-                }
-                return &s->symbol.value;
+        cl_index index = s->symbol.binding;
+        if (index < env->thread_local_bindings_size) {
+                cl_object *location = env->thread_local_bindings + index;
+                if (*location)
+                        return location;
         }
+        return &s->symbol.value;
 }
 
 cl_object
