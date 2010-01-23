@@ -9,6 +9,7 @@ extern "C" {
  * Per-thread data.
  */
 
+typedef struct cl_env_struct *cl_env_ptr;
 struct cl_env_struct {
 	/* Flag for disabling interrupts while we call C library functions. */
 	volatile int disable_interrupts;
@@ -1486,8 +1487,8 @@ extern ECL_API cl_object si_get_limit(cl_object type);
 
 extern ECL_API cl_index ecl_progv(cl_env_ptr env, cl_object vars, cl_object values);
 extern ECL_API void ecl_bds_unwind(cl_env_ptr env, cl_index new_bds_top_index);
-extern ECL_API void ecl_unwind(cl_env_ptr env, ecl_frame_ptr fr) /*__attribute__((noreturn))*/;
-extern ECL_API ecl_frame_ptr frs_sch(cl_object frame_id);
+extern ECL_API void ecl_unwind(cl_env_ptr env, struct ecl_frame *fr) /*__attribute__((noreturn))*/;
+extern ECL_API struct ecl_frame *frs_sch(cl_object frame_id);
 
 /* string.c */
 

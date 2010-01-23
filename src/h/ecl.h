@@ -73,8 +73,8 @@
 #endif /* _MSC_VER || mingw32 */
 
 #include <ecl/object.h>
-#include <ecl/stacks.h>
 #include <ecl/external.h>
+#include <ecl/stacks.h>
 #include <ecl/eval.h>
 #include <ecl/number.h>
 #ifdef LOCATIVE

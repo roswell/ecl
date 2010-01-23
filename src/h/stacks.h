@@ -41,14 +41,71 @@ typedef struct bds_bd {
 #define	ecl_bds_check(env) \
 	((env->bds_top >= env->bds_limit)? ecl_bds_overflow() : (void)0)
 
-typedef struct cl_env_struct *cl_env_ptr;
-
 extern ECL_API struct bds_bd *ecl_bds_overflow(void) /*__attribute__((noreturn))*/;
 #ifdef ECL_THREADS
-#define ECL_MISSING_SPECIAL_BINDING (~((cl_index)0))
+# define ECL_MISSING_SPECIAL_BINDING (~((cl_index)0))
 extern ECL_API void ecl_bds_bind(cl_env_ptr env, cl_object symbol, cl_object v);
 extern ECL_API void ecl_bds_bind_special_case(cl_env_ptr env,cl_object s, cl_object v);
-#define	ecl_bds_bind(env,sym,val) do {                                  \
+extern ECL_API void ecl_bds_push(cl_env_ptr env, cl_object symbol);
+extern ECL_API void ecl_bds_unwind1(cl_env_ptr env);
+extern ECL_API cl_object *ecl_symbol_slot(cl_env_ptr env, cl_object s);
+extern ECL_API cl_object ecl_set_symbol(cl_env_ptr env, cl_object s, cl_object v);
+# ifdef __GNUC__
+static inline void ecl_bds_bind_inl(cl_env_ptr env, cl_object s, cl_object v)
+{
+        cl_object *location;
+        struct bds_bd *slot;
+        const cl_index index = s->symbol.binding;
+        if (index >= env->thread_local_bindings_size) {
+                ecl_bds_bind_special_case(env,s,v);
+        } else {
+                location = env->thread_local_bindings + index;
+                slot = ++env->bds_top;
+                if (slot >= env->bds_limit) slot = ecl_bds_overflow();
+                slot->symbol = s;
+                slot->value = *location;
+                *location = v;
+        }
+}
+static inline void ecl_bds_push_inl(cl_env_ptr env, cl_object s)
+{
+        cl_object *location;
+        struct bds_bd *slot;
+        const cl_index index = s->symbol.binding;
+        if (index >= env->thread_local_bindings_size) {
+                ecl_bds_push(env, s);
+        } else {
+                location = env->thread_local_bindings + index;
+                slot = ++env->bds_top;
+                if (slot >= env->bds_limit) slot = ecl_bds_overflow();
+                slot->symbol = s;
+                slot->value = *location;
+                if (!(*location)) *location = s->symbol.value;
+        }
+}
+static inline void ecl_bds_unwind1_inl(cl_env_ptr env)
+{
+	struct bds_bd *slot = env->bds_top--;
+	cl_object s = slot->symbol;
+        cl_object *location = env->thread_local_bindings + s->symbol.binding;
+        *location = slot->value;
+}
+static inline cl_object *ecl_symbol_slot_inl(cl_env_ptr env, cl_object s)
+{
+        cl_index index = s->symbol.binding;
+        if (index < env->thread_local_bindings_size) {
+                cl_object *location = env->thread_local_bindings + index;
+                if (*location)
+                        return location;
+        }
+        return &s->symbol.value;
+}
+#  define ecl_bds_bind ecl_bds_bind_inl
+#  define ecl_bds_push ecl_bds_push_inl
+#  define ecl_bds_unwind1 ecl_bds_unwind1_inl
+#  define ecl_symbol_slot ecl_symbol_slot_inl
+# else /* __GNUC__ */
+#  define ecl_bds_bind(env,sym,val) do {                                \
                 const cl_env_ptr env_copy = (env);                      \
                 const cl_object s = (sym);                              \
                 const cl_object v = (val);                              \
@@ -65,10 +122,7 @@ extern ECL_API void ecl_bds_bind_special_case(cl_env_ptr env,cl_object s, cl_obj
                         slot->value = *location;                        \
                         *location = v; }                                \
         } while (0)
-extern ECL_API void ecl_bds_push(cl_env_ptr env, cl_object symbol);
-extern ECL_API void ecl_bds_unwind1(cl_env_ptr env);
-extern ECL_API cl_object *ecl_symbol_slot(cl_env_ptr env, cl_object s);
-extern ECL_API cl_object ecl_set_symbol(cl_env_ptr env, cl_object s, cl_object v);
+#endif /* !__GNUC__ */
 #define ECL_SYM_VAL(env,s) (*ecl_symbol_slot(env,s))
 #define ECL_SET(s,v) ((s)->symbol.value=(v))
 #define ECL_SETQ(env,s,v) (ecl_set_symbol(env,s,v))

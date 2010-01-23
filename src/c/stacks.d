@@ -103,123 +103,6 @@ ecl_cs_set_org(cl_env_ptr env)
 
 /********************* BINDING STACK ************************/
 
-#ifdef ECL_THREADS
-static cl_index
-ecl_new_binding_index(cl_object symbol)
-{
-        cl_object pool;
-        cl_index new_index;
-        THREAD_OP_LOCK();
-	symbol->symbol.dynamic |= 1;
-        new_index = symbol->symbol.binding;
-        if (new_index == ECL_MISSING_SPECIAL_BINDING) {
-                si_set_finalizer(symbol, Ct);
-                pool = cl_core.reused_indices;
-                if (!Null(pool)) {
-                        new_index = fix(ECL_CONS_CAR(pool));
-                        cl_core.reused_indices = ECL_CONS_CDR(pool);
-                } else {
-                        new_index = ++cl_core.last_var_index;
-                }
-                symbol->symbol.binding = new_index;
-        }
-        THREAD_OP_UNLOCK();
-        return new_index;
-}
-
-static cl_object
-ecl_extend_bindings_array(cl_object vector)
-{
-        cl_index new_size = cl_core.last_var_index * 1.25;
-        cl_object new_vector = si_make_vector(Ct, MAKE_FIXNUM(new_size), Cnil,
-                                             Cnil, Cnil, Cnil);
-        ecl_copy_subarray(new_vector, 0, vector, 0, vector->vector.dim);
-        return new_vector;
-}
-
-static cl_index
-ecl_bds_special_case(cl_object s)
-{
-        cl_index index = s->symbol.binding;
-        if (index == ECL_MISSING_SPECIAL_BINDING) {
-                return ecl_new_binding_index(s);
-        } else {
-                cl_env_ptr env = ecl_process_env();
-                cl_object vector = env->bindings_array;
-                env->bindings_array = ecl_extend_bindings_array(vector);
-                env->thread_local_bindings_size = vector->vector.dim;
-                env->thread_local_bindings = vector->vector.self.t;
-                return index;
-        }
-}
-
-void
-ecl_bds_bind_special_case(cl_env_ptr env, cl_object s, cl_object value)
-{
-        cl_object *location;
-        struct bds_bd *slot;
-        cl_index index = ecl_bds_special_case(s);
-        location = env->thread_local_bindings + index;
-        slot = ++env->bds_top;
-        if (slot >= env->bds_limit) slot = ecl_bds_overflow();
-        slot->symbol = s;
-        slot->value = *location;
-        *location = value;
-}
-
-void
-ecl_bds_push(cl_env_ptr env, cl_object s)
-{
-        cl_object *location;
-        struct bds_bd *slot;
-        cl_index index = s->symbol.binding;
- AGAIN:
-        if (index >= env->thread_local_bindings_size) {
-                index = ecl_bds_special_case(s);
-                goto AGAIN;
-        }
-        location = env->thread_local_bindings + index;
-        slot = ++env->bds_top;
-        if (slot >= env->bds_limit) slot = ecl_bds_overflow();
-        slot->symbol = s;
-        slot->value = *location;
-	if (!(*location)) *location = s->symbol.value;
-}
-
-void
-ecl_bds_unwind1(cl_env_ptr env)
-{
-	struct bds_bd *slot = env->bds_top--;
-	cl_object s = slot->symbol;
-        cl_object *location = env->thread_local_bindings + s->symbol.binding;
-        *location = slot->value;
-}
-
-cl_object *
-ecl_symbol_slot(cl_env_ptr env, cl_object s)
-{
-        cl_index index = s->symbol.binding;
-        if (index < env->thread_local_bindings_size) {
-                cl_object *location = env->thread_local_bindings + index;
-                if (*location)
-                        return location;
-        }
-        return &s->symbol.value;
-}
-
-cl_object
-ecl_set_symbol(cl_env_ptr env, cl_object s, cl_object value)
-{
-        cl_index index = s->symbol.binding;
-        if (index < env->thread_local_bindings_size) {
-                cl_object *location = env->thread_local_bindings + index;
-                if (*location)
-                        return (*location) = value;
-        }
-	return (s->symbol.value = value);
-}
-#endif
-
 void
 ecl_bds_unwind_n(cl_env_ptr env, int n)
 {
@@ -338,6 +221,148 @@ si_bds_val(cl_object arg)
         cl_object v = get_bds_ptr(arg)->value;
 	@(return ((v == OBJNULL)? ECL_UNBOUND : v))
 }
+
+#ifdef ECL_THREADS
+# ifdef ecl_bds_bind
+#  undef ecl_bds_bind
+#  undef ecl_bds_push
+#  undef ecl_bds_unwind1
+#  undef ecl_symbol_slot
+# endif
+
+static cl_index
+ecl_new_binding_index(cl_object symbol)
+{
+        cl_object pool;
+        cl_index new_index;
+        THREAD_OP_LOCK();
+	symbol->symbol.dynamic |= 1;
+        new_index = symbol->symbol.binding;
+        if (new_index == ECL_MISSING_SPECIAL_BINDING) {
+                si_set_finalizer(symbol, Ct);
+                pool = cl_core.reused_indices;
+                if (!Null(pool)) {
+                        new_index = fix(ECL_CONS_CAR(pool));
+                        cl_core.reused_indices = ECL_CONS_CDR(pool);
+                } else {
+                        new_index = ++cl_core.last_var_index;
+                }
+                symbol->symbol.binding = new_index;
+        }
+        THREAD_OP_UNLOCK();
+        return new_index;
+}
+
+static cl_object
+ecl_extend_bindings_array(cl_object vector)
+{
+        cl_index new_size = cl_core.last_var_index * 1.25;
+        cl_object new_vector = si_make_vector(Ct, MAKE_FIXNUM(new_size), Cnil,
+                                             Cnil, Cnil, Cnil);
+        ecl_copy_subarray(new_vector, 0, vector, 0, vector->vector.dim);
+        return new_vector;
+}
+
+static cl_index
+ecl_bds_special_case(cl_object s)
+{
+        cl_index index = s->symbol.binding;
+        if (index == ECL_MISSING_SPECIAL_BINDING) {
+                return ecl_new_binding_index(s);
+        } else {
+                cl_env_ptr env = ecl_process_env();
+                cl_object vector = env->bindings_array;
+                env->bindings_array = ecl_extend_bindings_array(vector);
+                env->thread_local_bindings_size = vector->vector.dim;
+                env->thread_local_bindings = vector->vector.self.t;
+                return index;
+        }
+}
+
+void
+ecl_bds_bind_special_case(cl_env_ptr env, cl_object s, cl_object value)
+{
+        cl_object *location;
+        struct bds_bd *slot;
+        cl_index index = ecl_bds_special_case(s);
+        location = env->thread_local_bindings + index;
+        slot = ++env->bds_top;
+        if (slot >= env->bds_limit) slot = ecl_bds_overflow();
+        slot->symbol = s;
+        slot->value = *location;
+        *location = value;
+}
+
+void
+ecl_bds_bind(cl_env_ptr env, cl_object s, cl_object v)
+{
+        cl_object *location;
+        struct bds_bd *slot;
+        const cl_index index = s->symbol.binding;
+        if (index >= env->thread_local_bindings_size) {
+                ecl_bds_bind_special_case(env,s,v);
+        } else {
+                location = env->thread_local_bindings + index;
+                slot = ++env->bds_top;
+                if (slot >= env->bds_limit) slot = ecl_bds_overflow();
+                slot->symbol = s;
+                slot->value = *location;
+                *location = v;
+        }
+}
+
+void
+ecl_bds_push(cl_env_ptr env, cl_object s)
+{
+        cl_object *location;
+        struct bds_bd *slot;
+        cl_index index = s->symbol.binding;
+ AGAIN:
+        if (index >= env->thread_local_bindings_size) {
+                index = ecl_bds_special_case(s);
+                goto AGAIN;
+        }
+        location = env->thread_local_bindings + index;
+        slot = ++env->bds_top;
+        if (slot >= env->bds_limit) slot = ecl_bds_overflow();
+        slot->symbol = s;
+        slot->value = *location;
+	if (!(*location)) *location = s->symbol.value;
+}
+
+void
+ecl_bds_unwind1(cl_env_ptr env)
+{
+	struct bds_bd *slot = env->bds_top--;
+	cl_object s = slot->symbol;
+        cl_object *location = env->thread_local_bindings + s->symbol.binding;
+        *location = slot->value;
+}
+
+cl_object *
+ecl_symbol_slot(cl_env_ptr env, cl_object s)
+{
+        cl_index index = s->symbol.binding;
+        if (index < env->thread_local_bindings_size) {
+                cl_object *location = env->thread_local_bindings + index;
+                if (*location)
+                        return location;
+        }
+        return &s->symbol.value;
+}
+
+cl_object
+ecl_set_symbol(cl_env_ptr env, cl_object s, cl_object value)
+{
+        cl_index index = s->symbol.binding;
+        if (index < env->thread_local_bindings_size) {
+                cl_object *location = env->thread_local_bindings + index;
+                if (*location)
+                        return (*location) = value;
+        }
+	return (s->symbol.value = value);
+}
+#endif
 
 /******************** INVOCATION STACK **********************/
 
