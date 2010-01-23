@@ -495,10 +495,13 @@ standard_finalizer(cl_object o)
 #endif
 #ifdef ECL_THREADS
         case t_symbol: {
+                cl_object cons = ecl_list1(MAKE_FIXNUM(o->symbol.binding));
+                ecl_disable_interrupts();
                 THREAD_OP_LOCK();
-                cl_core.reused_indices = CONS(MAKE_FIXNUM(o->symbol.binding),
-                                              cl_core.reused_indices);
+                ECL_CONS_CDR(cons) = cl_core.reused_indices;
+                cl_core.reused_indices = cons;
                 THREAD_OP_UNLOCK();
+                ecl_enable_interrupts();
         }
 #endif
 	default:;
