@@ -222,14 +222,17 @@ si_bds_val(cl_object arg)
 	@(return ((v == OBJNULL)? ECL_UNBOUND : v))
 }
 
-#ifdef ECL_THREADS
-# ifdef ecl_bds_bind
-#  undef ecl_bds_bind
-#  undef ecl_bds_push
-#  undef ecl_bds_unwind1
-#  undef ecl_symbol_slot
-# endif
+#ifdef ecl_bds_bind
+# undef ecl_bds_bind
+# undef ecl_bds_push
+# undef ecl_bds_unwind1
+#endif
+#ifdef ecl_symbol_slot
+# undef ecl_symbol_slot
+# undef ecl_set_symbol
+#endif
 
+#ifdef ECL_THREADS
 static cl_index
 ecl_new_binding_index(cl_object symbol)
 {
@@ -279,7 +282,7 @@ ecl_bds_special_case(cl_object s)
         }
 }
 
-void
+static void
 ecl_bds_bind_special_case(cl_env_ptr env, cl_object s, cl_object value)
 {
         cl_object *location;
@@ -292,10 +295,15 @@ ecl_bds_bind_special_case(cl_env_ptr env, cl_object s, cl_object value)
         slot->value = *location;
         *location = value;
 }
+#endif /* ECL_THREADS */
 
+/*
+ * The following routines must match the inline forms in stacks.h
+ */
 void
 ecl_bds_bind(cl_env_ptr env, cl_object s, cl_object v)
 {
+#ifdef ECL_THREADS
         cl_object *location;
         struct bds_bd *slot;
         const cl_index index = s->symbol.binding;
@@ -309,11 +317,18 @@ ecl_bds_bind(cl_env_ptr env, cl_object s, cl_object v)
                 slot->value = *location;
                 *location = v;
         }
+#else
+	ecl_bds_check(env);
+	(++(env->bds_top))->symbol = s;
+	env->bds_top->value = s->symbol.value; \
+	s->symbol.value = v;
+#endif
 }
 
 void
 ecl_bds_push(cl_env_ptr env, cl_object s)
 {
+#ifdef ECL_THREADS
         cl_object *location;
         struct bds_bd *slot;
         cl_index index = s->symbol.binding;
@@ -328,6 +343,11 @@ ecl_bds_push(cl_env_ptr env, cl_object s)
         slot->symbol = s;
         slot->value = *location;
 	if (!(*location)) *location = s->symbol.value;
+#else
+	ecl_bds_check(env);
+	(++(env->bds_top))->symbol = s;
+	env->bds_top->value = s->symbol.value;
+#endif
 }
 
 void
@@ -335,10 +355,15 @@ ecl_bds_unwind1(cl_env_ptr env)
 {
 	struct bds_bd *slot = env->bds_top--;
 	cl_object s = slot->symbol;
+#ifdef ECL_THREADS
         cl_object *location = env->thread_local_bindings + s->symbol.binding;
         *location = slot->value;
+#else
+        s->symbol.value = slot->value;
+#endif
 }
 
+#ifdef ECL_THREADS
 cl_object *
 ecl_symbol_slot(cl_env_ptr env, cl_object s)
 {
@@ -362,7 +387,7 @@ ecl_set_symbol(cl_env_ptr env, cl_object s, cl_object value)
         }
 	return (s->symbol.value = value);
 }
-#endif
+#endif /* ECL_THREADS */
 
 /******************** INVOCATION STACK **********************/
 
