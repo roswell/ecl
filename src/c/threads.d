@@ -441,7 +441,7 @@ mp_process_enable(cl_object process)
 	}
 	mp_giveup_lock(process->process.exit_lock);
 
-	@(return (ok? Ct : Cnil))
+	@(return (ok? process : Cnil))
 }
 
 cl_object
