@@ -704,6 +704,7 @@
 (proclaim-function si:argc (*) t)
 (proclaim-function si:argv (*) t)
 (proclaim-function si:getenv (*) t)
+(proclaim-function si:environ() list)
 (proclaim-function si:pointer (*) t)
 
 ;; file mapfun.d

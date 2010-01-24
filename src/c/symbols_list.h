@@ -1842,5 +1842,7 @@ cl_symbols[] = {
 {EXT_ "*PROGRAM-EXIT-CODE*", EXT_SPECIAL, NULL, -1, MAKE_FIXNUM(0)},
 {EXT_ "EXIT", EXT_ORDINARY, si_exit, -1, OBJNULL},
 
+{EXT_ "ENVIRON", EXT_ORDINARY, si_environ, 0, OBJNULL},
+
 /* Tag for end of list */
 {NULL, CL_ORDINARY, NULL, -1, OBJNULL}};

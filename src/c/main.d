@@ -814,6 +814,30 @@ si_setenv(cl_object var, cl_object value)
 #endif
 
 cl_object
+si_environ(void)
+{
+        cl_object output = Cnil;
+#ifdef HAVE_ENVIRON
+        char **p;
+        extern char **environ;
+        for (p = environ; *p; p++) {
+                output = CONS(make_constant_base_string(*p), output);
+        }
+        output = cl_nreverse(output);
+#else
+# if defined(_MSC_VER) || defined(mingw32)
+        LPTCH p;
+        for (p = GetEnvironmentStrings(); *p; ) {
+                output = CONS(make_constant_base_string(p), output);
+                do { (void)0; } while (*(p++));
+        }
+        output = cl_nreverse(output);
+# endif
+#endif /* HAVE_ENVIRON */
+        @(return output)
+}
+
+cl_object
 si_pointer(cl_object x)
 {
 	const cl_env_ptr the_env = ecl_process_env();

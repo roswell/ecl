@@ -1179,6 +1179,7 @@
 (proclaim-function ext:argc () si::index)
 (proclaim-function ext:argv () list)
 (proclaim-function ext:getenv (string) (or null string))
+(proclaim-function ext:environ () list)
 (proclaim-function ext:system (string) fixnum)
 (proclaim-function ext:getpid () fixnum)
 (proclaim-function ext:make-pipe () (or two-way-stream null))

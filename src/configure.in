@@ -682,6 +682,8 @@ AC_CHECK_FUNCS( [sched_yield uname fseeko] )
 
 AC_CHECK_HEADER( [sys/mman.h], AC_DEFINE(ECL_USE_MPROTECT) )
 
+ECL_POSIX_ENVIRON
+
 dnl =====================================================================
 dnl Checks for system services
 

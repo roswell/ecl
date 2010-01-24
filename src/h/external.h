@@ -897,6 +897,7 @@ extern ECL_API cl_object si_argc(void);
 extern ECL_API cl_object si_argv(cl_object index);
 extern ECL_API cl_object si_getenv(cl_object var);
 extern ECL_API cl_object si_setenv(cl_object var, cl_object value);
+extern ECL_API cl_object si_environ(void);
 extern ECL_API cl_object si_pointer(cl_object x);
 extern ECL_API cl_object si_quit _ARGS((cl_narg narg, ...)) /*__attribute__((noreturn))*/;
 extern ECL_API cl_object si_exit _ARGS((cl_narg narg, ...)) /*__attribute__((noreturn))*/;

@@ -875,3 +875,22 @@ if test $working_sem_init = yes ; then
 fi
 ])
 
+
+dnl ----------------------------------------------------------------------
+dnl Check "char **environ" is available
+AC_DEFUN([ECL_POSIX_ENVIRON],
+[AC_MSG_CHECKING(working environ)
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <stdlib.h>
+extern char **environ;
+int main() {
+  if (environ)
+    exit(0);
+  exit(1);
+}]])],[working_environ=yes],[working_environ=no],[])
+AC_MSG_RESULT([$working_environ])
+if test $working_environ = yes ; then
+  AC_DEFINE(HAVE_ENVIRON)
+fi
+])
+
