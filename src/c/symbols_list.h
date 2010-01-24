@@ -1844,5 +1844,7 @@ cl_symbols[] = {
 
 {EXT_ "ENVIRON", EXT_ORDINARY, si_environ, 0, OBJNULL},
 
+{KEY_ "ENVIRON", KEYWORD, NULL, -1, OBJNULL},
+
 /* Tag for end of list */
 {NULL, CL_ORDINARY, NULL, -1, OBJNULL}};

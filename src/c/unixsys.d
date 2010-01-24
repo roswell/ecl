@@ -17,6 +17,7 @@
 
 #include <ecl/ecl.h>
 #include <stdlib.h>
+#include <strings.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <ecl/internal.h>
@@ -73,8 +74,54 @@ si_make_pipe()
 	@(return output)
 }
 
+static cl_object
+from_list_to_execve_argument(cl_object l, char ***environp)
+{
+        cl_object p;
+        cl_index i, j, total_size = 0, nstrings = 0;
+        cl_object buffer;
+        char **environ;
+        for (p = l; !Null(p); p = ECL_CONS_CDR(p)) {
+                cl_object s;
+                if (!CONSP(p)) {
+                        FEerror("In EXT:RUN-PROGRAM, environment "
+                                "is not a list of strings", 0);
+                }
+                s = ECL_CONS_CAR(p);
+                if (type_of(s) != t_base_string) {
+                        FEerror("In EXT:RUN-PROGRAM, environment "
+                                "is not a list of base strings", 0);
+                }
+                total_size += s->base_string.fillp + 1;
+                nstrings++;
+        }
+        /* Extra place for ending null */
+        total_size++;
+        buffer = ecl_alloc_simple_base_string(++total_size);
+        environ = ecl_alloc_atomic((nstrings + 1) * sizeof(char*));
+        for (j = i = 0, p = l; !Null(p); p = ECL_CONS_CDR(p)) {
+                cl_object s = ECL_CONS_CAR(p);
+                cl_index l = s->base_string.fillp;
+                if (i + l + 1 >= total_size) {
+                        FEerror("In EXT:RUN-PROGRAM, environment list"
+                                " changed during execution.", 0);
+                        break;
+                }
+                environ[j++] = buffer->base_string.self + i;
+                memcpy(buffer->base_string.self + i,
+                       s->base_string.self,
+                       l);
+                i += l;
+                buffer->base_string.self[i++] = 0;
+        }
+        buffer->base_string.self[i++] = 0;
+        environ[j] = 0;
+        if (environp) environp = environ;
+        return buffer;
+}
+
 @(defun ext::run-program (command argv &key (input @':stream') (output @':stream')
-	  		  (error @'t') (wait @'t'))
+	  		  (error @'t') (wait @'t') (environ Cnil))
 	int parent_write = 0, parent_read = 0;
 	int child_pid;
 	cl_object stream_write;
@@ -92,6 +139,8 @@ si_make_pipe()
 	HANDLE current = GetCurrentProcess();
 	HANDLE saved_stdout, saved_stdin, saved_stderr;
 	SECURITY_ATTRIBUTES attr;
+        cl_object env_buffer;
+        char *env = NULL;
 
 	/* Enclose each argument, as well as the file name
 	   in double quotes, to avoid problems when these
@@ -102,6 +151,11 @@ si_make_pipe()
 			  command, argv);
 	command = si_copy_to_simple_base_string(command);
 	command = ecl_null_terminated_base_string(command);
+
+        if (!Null(environ)) {
+                env_buffer = from_list_to_execve_arguments(environ, NULL);
+                env = env_buffer->base_string.self;
+        }
 
 	attr.nLength = sizeof(SECURITY_ATTRIBUTES);
 	attr.lpSecurityDescriptor = NULL;
@@ -209,7 +263,7 @@ si_make_pipe()
 			   TRUE, /* Inherit handles (for files) */
 			   /*CREATE_NEW_CONSOLE |*/
 			   0 /*(input == Ct || output == Ct || error == Ct ? 0 : CREATE_NO_WINDOW)*/,
-			   NULL, /* Inherit environment */
+			   env, /* Inherit environment */
 			   NULL, /* Current directory */
 			   &st_info, /* Startup info */
 			   &pr_info); /* Process info */
@@ -334,7 +388,14 @@ si_make_pipe()
 				argv_ptr[j] = arg->base_string.self;
 			}
 		}
-		execvp((char*)command->base_string.self, argv_ptr);
+                if (!Null(environ)) {
+                        char **pstrings;
+                        cl_object buffer = from_list_to_execve_argument(environ,
+                                                                        &pstrings);
+                        execve((char*)command->base_string.self, argv_ptr, pstrings);
+                } else {
+                        execvp((char*)command->base_string.self, argv_ptr);
+                }
 		/* at this point exec has failed */
 		perror("exec");
 		abort();

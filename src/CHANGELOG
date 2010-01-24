@@ -32,6 +32,9 @@ ECL 10.1.1:
    process environment. This is the equivalent of POSIX (char **environ)
    and Windows' GetEnvironmentStrings.
 
+ - EXT:RUN-PROGRAM now accepts a keyword argument, :ENVIRON, which is a
+   list of strings configuring the environment of the child process.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
