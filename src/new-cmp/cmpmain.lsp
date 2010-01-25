@@ -647,7 +647,8 @@ after compilation."
 	 (warn "COMPILE can not compile generic functions yet")
 	 (return-from compile (values def t nil)))
 	((null (setq form (function-lambda-expression def)))
-	 (warn "We have lost the original function definition for ~s. Compilation to C failed")
+	 (warn "We have lost the original function definition for ~s. Compilation to C failed"
+               name)
 	 (return-from compile (values def t nil)))
 	(t
 	 (setq form `(setf (symbol-function ',name) #',form))))
