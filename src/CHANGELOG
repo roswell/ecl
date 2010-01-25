@@ -35,6 +35,13 @@ ECL 10.1.1:
  - EXT:RUN-PROGRAM now accepts a keyword argument, :ENVIRON, which is a
    list of strings configuring the environment of the child process.
 
+ - EXT:RUN-PROGRAM returns as second value an EXT:EXTERNAL-PROCESS structure,
+   which supports the queries EXT:EXTERNAL-PROCESS-{PID,INPUT,OUTPUT,STATUS},
+   following CCL's conventions.
+
+ - New function EXT:EXTERNAL-PROCESS-WAIT to wait indefinitely or simply query
+   the status of a process.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

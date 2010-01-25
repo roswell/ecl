@@ -1758,6 +1758,8 @@ extern ECL_API void ecl_check_pending_interrupts(void);
 extern ECL_API cl_object si_system(cl_object cmd);
 extern ECL_API cl_object si_make_pipe();
 extern ECL_API cl_object si_run_program _ARGS((cl_narg narg, cl_object command, cl_object args, ...));
+extern ECL_API cl_object si_external_process_wait _ARGS((cl_narg narg, cl_object h, ...));
+extern ECL_API cl_object si_close_windows_handle(cl_object h);
 
 
 /* unicode -- no particular file, but we group these changes here */

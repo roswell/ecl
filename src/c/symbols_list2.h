@@ -1846,5 +1846,23 @@ cl_symbols[] = {
 
 {KEY_ "ENVIRON",NULL},
 
+{EXT_ "MAKE-EXTERNAL-PROCESS",NULL},
+{EXT_ "EXTERNAL-PROCESS",NULL},
+{EXT_ "EXTERNAL-PROCESS-PID",NULL},
+{EXT_ "EXTERNAL-PROCESS-INPUT",NULL},
+{EXT_ "EXTERNAL-PROCESS-OUTPUT",NULL},
+{EXT_ "EXTERNAL-PROCESS-STATUS",NULL},
+
+{KEY_ "RUNNING",NULL},
+{KEY_ "EXITED",NULL},
+{KEY_ "SIGNALED",NULL},
+{KEY_ "STOPPED",NULL},
+
+{EXT_ "EXTERNAL-PROCESS-WAIT","si_external_process_wait"},
+
+#if defined(_MSC_VER) || defined(mingw32)
+{SI_ "CLOSE-WINDOWS-HANDLE","si_close_windows_handle"},
+#endif
+
 /* Tag for end of list */
 {NULL,NULL}};

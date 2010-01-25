@@ -116,17 +116,111 @@ from_list_to_execve_argument(cl_object l, char ***environp)
         }
         buffer->base_string.self[i++] = 0;
         environ[j] = 0;
-        if (environp) environp = environ;
+        if (environp) *environp = environ;
         return buffer;
 }
+
+static cl_object
+make_external_process(cl_object pid, cl_object input, cl_object output)
+{
+        return cl_funcall(4, @'ext::make-external-process', pid, input, output);
+}
+
+#if defined(_MSC_VER) || defined(mingw32)
+cl_object
+si_close_windows_handle(cl_object h)
+{
+        if (type_of(h) == t_foreign) {
+                HANDLE *ph = (HANDLE*)h->foreign.data;
+                if (ph) CloseHandle(*ph);
+        }
+}
+
+static cl_object
+make_windows_handle(HANDLE h)
+{
+        cl_object h = ecl_allocate_foreign_data(@':pointer', sizeof(HANDLE*));
+        HANDLE *ph = (HANDLE*)h->foreign.data;
+        *ph = h;
+        si_set_finalizer(h, @'si::close-windows-handle');
+        return h;
+}
+#endif
+
+@(defun ext::external-process-wait (process_or_pid &optional (wait Cnil))
+	cl_object status, code;
+@
+{
+        if (!FIXNUMP(process_or_pid)) {
+                cl_object pid = cl_funcall(2, @'ext::external-process-pid',
+                                           process_or_pid);
+                if (Null(pid)) {
+                        /* Process already exited */
+                        return cl_funcall(2, @'ext::external-process-status',
+                                          process_or_pid);
+                }
+                status = si_external_process_wait(2, pid, wait);
+                code = VALUES(1);
+                ecl_structure_set(process_or_pid, @'ext::external-process',
+                                  0, Cnil);
+                ecl_structure_set(process_or_pid, @'ext::external-process',
+                                  3, status);
+                ecl_structure_set(process_or_pid, @'ext::external-process',
+                                  4, code);
+        } else {
+                cl_object exit_status = Cnil;
+#if defined(_MSC_VER) || defined(mingw32)
+                HANDLE *hProcess = ecl_foreign_data_pointer_safe(process_or_pid);
+                DWORD exitcode;
+                int ok;
+                WaitForSingleObject(*hProcess, Null(wait)? 0 : INFINITE);
+                ecl_disable_interrupts_env(the_env);
+                ok = GetExitCodeProcess(*hProcess, &exitcode);
+                if (!ok) {
+                        status = @':error';
+                } else if (exitcode == STILL_ACTIVE) {
+                        status = @':runnning';
+                } else {
+                        status = @':exited';
+                        code = MAKE_FIXNUM(exitcode);
+                        process_or_pid->foreign.data = NULL;
+                        CloseHandle(*hProcess);
+                }
+                ecl_enable_interrupts(the_env);
+#else
+                cl_index pid = fix(process_or_pid);
+                int code_int;
+                int error = waitpid(pid, &code_int, Null(wait)? WNOHANG : 0);
+                if (error < 0) {
+                        status = @':error';
+                } else if (WIFEXITED(code_int)) {
+                        status = @':exited';
+                        code = MAKE_FIXNUM(WEXITSTATUS(code_int));
+                } else if (WIFSIGNALED(code_int)) {
+                        status = @':signaled';
+                        code = MAKE_FIXNUM(WTERMSIG(code_int));
+                } else if (WIFSTOPPED(code_int)) {
+                        status = @':stopped';
+                        code = MAKE_FIXNUM(WSTOPSIG(code_int));
+                } else {
+                        status = @':running';
+                        code = Cnil;
+                }
+#endif
+        }
+        @(return status code)
+}
+@)
 
 @(defun ext::run-program (command argv &key (input @':stream') (output @':stream')
 	  		  (error @'t') (wait @'t') (environ Cnil))
 	int parent_write = 0, parent_read = 0;
 	int child_pid;
+	cl_object pid, process;
 	cl_object stream_write;
 	cl_object stream_read;
 	cl_object exit_status = Cnil;
+	cl_object external_process;
 @
 	command = si_copy_to_simple_base_string(command);
 	argv = cl_mapcar(2, @'si::copy-to-simple-base-string', argv);
@@ -296,17 +390,8 @@ from_list_to_execve_argument(cl_object l, char ***environp)
 	if (child_stdout) CloseHandle(child_stdout);
 	if (child_stderr) CloseHandle(child_stderr);
 	if (ok) {
-		DWORD exitcode;
 		CloseHandle(pr_info.hThread);
-		child_pid = pr_info.dwProcessId;
-		if (wait != Cnil) {
-			  WaitForSingleObject(pr_info.hProcess, INFINITE);
-			  if (GetExitCodeProcess(pr_info.hProcess, &exitcode) &&
-			      STILL_ACTIVE != exitcode) {
-				  exit_status = MAKE_FIXNUM(exitcode);
-			  }
-		}
-		CloseHandle(pr_info.hProcess);
+                pid = make_windows_handle(pr_info.hProcess);
 	} else {
 		const char *message;
 		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
@@ -314,7 +399,7 @@ from_list_to_execve_argument(cl_object l, char ***environp)
 			      0, GetLastError(), 0, (void*)&message, 0, NULL);
 		printf("%s\n", message);
 		LocalFree(message);
-		child_pid = -1;
+		pid = Cnil;
 	}
 }
 #else /* mingw */
@@ -403,14 +488,14 @@ from_list_to_execve_argument(cl_object l, char ***environp)
 	close(child_stdin);
 	close(child_stdout);
 	close(child_stderr);
-	if (child_pid > 0 && wait != Cnil) {
-	   	int status;
-		waitpid(child_pid, &status, 0);
-		exit_status = MAKE_FIXNUM(WEXITSTATUS(status));
-	}
+        if (child_pid < 0) {
+                pid = Cnil;
+        } else {
+                pid = MAKE_FIXNUM(child_pid);
+        }
 }
 #endif /* mingw */
-	if (child_pid < 0) {
+	if (Null(pid)) {
 		if (parent_write) close(parent_write);
 		if (parent_read) close(parent_read);
 		parent_write = 0;
@@ -433,9 +518,15 @@ from_list_to_execve_argument(cl_object l, char ***environp)
 		parent_read = 0;
 		stream_read = cl_core.null_stream;
 	}
+	process = make_external_process(pid, stream_write, stream_read);
+	if (!Null(wait)) {
+                exit_status = si_external_process_wait(2, process, Ct);
+                exit_status = VALUES(1);
+        }
 	@(return ((parent_read || parent_write)?
 		  cl_make_two_way_stream(stream_read, stream_write) :
 		  Cnil)
-		 exit_status)
+                 exit_status
+                 process)
 @)
 

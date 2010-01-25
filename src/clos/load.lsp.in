@@ -23,6 +23,7 @@
   "src:lsp;describe.lsp" ; Depends on conditions.lsp
   "src:clos;inspect.lsp" ; Depends on describe.lsp
   "src:lsp;top.lsp" ; Depends on conditions.lsp
+  "src:lsp;process.lsp" ; Depends on defclass
   ))
 
 (mapc #'(lambda (x)
