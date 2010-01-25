@@ -1861,7 +1861,7 @@ cl_symbols[] = {
 {EXT_ "EXTERNAL-PROCESS-WAIT", EXT_ORDINARY, si_external_process_wait, -1, OBJNULL},
 
 #if defined(_MSC_VER) || defined(mingw32)
-{SI_ "CLOSE-WINDOWS-HANDLE", SI_ORDINARY, si_close_windows_handle, 1, OBJNULL},
+{SYS_ "CLOSE-WINDOWS-HANDLE", SI_ORDINARY, si_close_windows_handle, 1, OBJNULL},
 #endif
 
 /* Tag for end of list */

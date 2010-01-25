@@ -17,7 +17,7 @@
 
 #include <ecl/ecl.h>
 #include <stdlib.h>
-#include <strings.h>
+#include <string.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <ecl/internal.h>
@@ -139,11 +139,12 @@ si_close_windows_handle(cl_object h)
 static cl_object
 make_windows_handle(HANDLE h)
 {
-        cl_object h = ecl_allocate_foreign_data(@':pointer', sizeof(HANDLE*));
-        HANDLE *ph = (HANDLE*)h->foreign.data;
+        cl_object foreign = ecl_allocate_foreign_data(@':pointer-void',
+						      sizeof(HANDLE*));
+        HANDLE *ph = (HANDLE*)foreign->foreign.data;
         *ph = h;
-        si_set_finalizer(h, @'si::close-windows-handle');
-        return h;
+        si_set_finalizer(foreign, @'si::close-windows-handle');
+        return foreign;
 }
 #endif
 
@@ -151,7 +152,7 @@ make_windows_handle(HANDLE h)
 	cl_object status, code;
 @
 {
-        if (!FIXNUMP(process_or_pid)) {
+        if (type_of(process_or_pid) == T_STRUCTURE) {
                 cl_object pid = cl_funcall(2, @'ext::external-process-pid',
                                            process_or_pid);
                 if (Null(pid)) {
@@ -180,7 +181,7 @@ make_windows_handle(HANDLE h)
                         status = @':error';
                         code = Cnil;
                 } else if (exitcode == STILL_ACTIVE) {
-                        status = @':runnning';
+                        status = @':running';
                         code = Cnil;
                 } else {
                         status = @':exited';
@@ -188,9 +189,9 @@ make_windows_handle(HANDLE h)
                         process_or_pid->foreign.data = NULL;
                         CloseHandle(*hProcess);
                 }
-                ecl_enable_interrupts(the_env);
+                ecl_enable_interrupts_env(the_env);
 #else
-                cl_index pid = fix(process_or_pid);
+                cl_index pid = fixint(process_or_pid);
                 int code_int;
                 int error = waitpid(pid, &code_int, Null(wait)? WNOHANG : 0);
                 if (error < 0) {
@@ -250,7 +251,7 @@ make_windows_handle(HANDLE h)
 	command = ecl_null_terminated_base_string(command);
 
         if (!Null(environ)) {
-                env_buffer = from_list_to_execve_arguments(environ, NULL);
+                env_buffer = from_list_to_execve_argument(environ, NULL);
                 env = env_buffer->base_string.self;
         }
 
@@ -396,7 +397,7 @@ make_windows_handle(HANDLE h)
 		CloseHandle(pr_info.hThread);
                 pid = make_windows_handle(pr_info.hProcess);
 	} else {
-		const char *message;
+		char *message;
 		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
 			      FORMAT_MESSAGE_ALLOCATE_BUFFER,
 			      0, GetLastError(), 0, (void*)&message, 0, NULL);

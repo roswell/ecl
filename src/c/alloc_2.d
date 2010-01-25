@@ -191,7 +191,7 @@ ecl_alloc_object(cl_type t)
         case t_lock:
         case t_condition_variable:
 #endif
-#ifdef ECL_SEMAPHORES:
+#ifdef ECL_SEMAPHORES
         case t_semaphores:
 #endif
 	case t_foreign:
@@ -489,6 +489,7 @@ standard_finalizer(cl_object o)
 #endif
 #ifdef ECL_SEMAPHORES
 	case t_semaphore: {
+		const cl_env_ptr the_env = ecl_process_env();
                 ecl_disable_interrupts_env(the_env);
                 mp_semaphore_close(o);
                 ecl_enable_interrupts_env(the_env);
@@ -498,6 +499,7 @@ standard_finalizer(cl_object o)
 #ifdef ECL_THREADS
         case t_symbol: {
                 cl_object cons = ecl_list1(MAKE_FIXNUM(o->symbol.binding));
+		const cl_env_ptr the_env = ecl_process_env();
                 ecl_disable_interrupts_env(the_env);
                 THREAD_OP_LOCK();
                 ECL_CONS_CDR(cons) = cl_core.reused_indices;

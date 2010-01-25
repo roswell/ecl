@@ -5021,13 +5021,13 @@ init_file(void)
 						 stderr, smm_output, 8, flags, external_format);
 #else
 	standard_input = ecl_make_file_stream_from_fd(make_constant_base_string("stdin"),
-						      STDIN_FILENO, smm_input, 8, flags,
+						      STDIN_FILENO, smm_input_file, 8, flags,
 						      external_format);
 	standard_output = ecl_make_file_stream_from_fd(make_constant_base_string("stdout"),
-						       STDOUT_FILENO, smm_output, 8, flags,
+						       STDOUT_FILENO, smm_output_file, 8, flags,
 						       external_format);
 	error_output = ecl_make_file_stream_from_fd(make_constant_base_string("stderr"),
-						    STDERR_FILENO, smm_output, 8, flags,
+						    STDERR_FILENO, smm_output_file, 8, flags,
 						    external_format);
 #endif
 	cl_core.standard_input = standard_input;
