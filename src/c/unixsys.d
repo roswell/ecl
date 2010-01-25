@@ -178,8 +178,10 @@ make_windows_handle(HANDLE h)
                 ok = GetExitCodeProcess(*hProcess, &exitcode);
                 if (!ok) {
                         status = @':error';
+                        code = Cnil;
                 } else if (exitcode == STILL_ACTIVE) {
                         status = @':runnning';
+                        code = Cnil;
                 } else {
                         status = @':exited';
                         code = MAKE_FIXNUM(exitcode);
@@ -193,6 +195,7 @@ make_windows_handle(HANDLE h)
                 int error = waitpid(pid, &code_int, Null(wait)? WNOHANG : 0);
                 if (error < 0) {
                         status = @':error';
+                        code = Cnil;
                 } else if (WIFEXITED(code_int)) {
                         status = @':exited';
                         code = MAKE_FIXNUM(WEXITSTATUS(code_int));
