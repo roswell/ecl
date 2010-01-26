@@ -227,9 +227,9 @@ si_bds_val(cl_object arg)
 # undef ecl_bds_push
 # undef ecl_bds_unwind1
 #endif
-#ifdef ecl_symbol_slot
-# undef ecl_symbol_slot
-# undef ecl_set_symbol
+#ifdef ecl_bds_read
+# undef ecl_bds_read
+# undef ecl_bds_set
 #endif
 
 #ifdef ECL_THREADS
@@ -352,20 +352,19 @@ ecl_bds_unwind1(cl_env_ptr env)
 }
 
 #ifdef ECL_THREADS
-cl_object *
-ecl_symbol_slot(cl_env_ptr env, cl_object s)
+cl_object
+ecl_bds_read(cl_env_ptr env, cl_object s)
 {
         cl_index index = s->symbol.binding;
         if (index < env->thread_local_bindings_size) {
-                cl_object *location = env->thread_local_bindings + index;
-                if (*location)
-                        return location;
+                cl_object x = env->thread_local_bindings[index];
+                if (x) return x;
         }
-        return &s->symbol.value;
+        return s->symbol.value;
 }
 
 cl_object
-ecl_set_symbol(cl_env_ptr env, cl_object s, cl_object value)
+ecl_bds_set(cl_env_ptr env, cl_object s, cl_object value)
 {
         cl_index index = s->symbol.binding;
         if (index < env->thread_local_bindings_size) {

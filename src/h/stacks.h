@@ -49,11 +49,11 @@ extern ECL_API void ecl_bds_push(cl_env_ptr env, cl_object symbol);
 extern ECL_API void ecl_bds_unwind1(cl_env_ptr env);
 extern ECL_API void ecl_bds_unwind_n(cl_env_ptr env, int n);
 #ifdef ECL_THREADS
-extern ECL_API cl_object *ecl_symbol_slot(cl_env_ptr env, cl_object s);
-extern ECL_API cl_object ecl_set_symbol(cl_env_ptr env, cl_object s, cl_object v);
-# define ECL_SYM_VAL(env,s) (*ecl_symbol_slot(env,s))
+extern ECL_API cl_object ecl_bds_read(cl_env_ptr env, cl_object s);
+extern ECL_API cl_object ecl_bds_set(cl_env_ptr env, cl_object s, cl_object v);
+# define ECL_SYM_VAL(env,s) (ecl_bds_read(env,s))
 # define ECL_SET(s,v) ((s)->symbol.value=(v))
-# define ECL_SETQ(env,s,v) (ecl_set_symbol(env,s,v))
+# define ECL_SETQ(env,s,v) (ecl_bds_set(env,s,v))
 #else
 # define ECL_SYM_VAL(env,s) ((s)->symbol.value)
 # define ECL_SET(s,v) ((s)->symbol.value=(v))
@@ -123,17 +123,16 @@ static inline void ecl_bds_unwind1_inl(cl_env_ptr env)
 }
 
 # ifdef ECL_THREADS
-static inline cl_object *ecl_symbol_slot_inl(cl_env_ptr env, cl_object s)
+static inline cl_object ecl_bds_read_inl(cl_env_ptr env, cl_object s)
 {
         cl_index index = s->symbol.binding;
         if (index < env->thread_local_bindings_size) {
-                cl_object *location = env->thread_local_bindings + index;
-                if (*location)
-                        return location;
+                cl_object x = env->thread_local_bindings[index];
+                if (x) return x;
         }
-        return &s->symbol.value;
+        return s->symbol.value;
 }
-static inline cl_object ecl_set_symbol_inl(cl_env_ptr env, cl_object s, cl_object v)
+static inline cl_object ecl_bds_set_inl(cl_env_ptr env, cl_object s, cl_object v)
 {
         cl_index index = s->symbol.binding;
         if (index < env->thread_local_bindings_size) {
@@ -142,8 +141,8 @@ static inline cl_object ecl_set_symbol_inl(cl_env_ptr env, cl_object s, cl_objec
         }
         return s->symbol.value = v;
 }
-#  define ecl_symbol_slot ecl_symbol_slot_inl
-#  define ecl_set_symbol ecl_set_symbol_inl
+#  define ecl_bds_read ecl_bds_read_inl
+#  define ecl_bds_set ecl_bds_set_inl
 # endif
 # define ecl_bds_bind ecl_bds_bind_inl
 # define ecl_bds_push ecl_bds_push_inl
