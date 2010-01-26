@@ -360,7 +360,6 @@
       " CLSR" *reservation-cmacro*
       " STCK" *reservation-cmacro*)
   (wt-nl "cl_object value0;")
-  (when sp (wt-nl "ecl_bds_check(cl_env_copy);"))
   ; (when (compiler-push-events) (wt-nl "ihs_check;"))
   )
 
