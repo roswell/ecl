@@ -108,6 +108,8 @@ char *function_c_name;
 char *required[MAXREQ];
 int nreq;
 
+int the_env_defined = 0;
+
 struct optional {
 	char *o_var;
 	char *o_init;
@@ -410,6 +412,7 @@ reset(void)
 {
 	int i;
 
+        the_env_defined = 0;
 	poolp = pool;
 	function = NULL;
 	function_symbol = "";
@@ -636,6 +639,7 @@ put_declaration(void)
   int simple_varargs;
 
   put_lineno();
+  the_env_defined = 1;
   fprintf(out, "\tconst cl_env_ptr the_env = ecl_process_env();\n");
   for (i = 0;  i < nopt;  i++) {
     put_lineno();
@@ -763,12 +767,15 @@ put_return(void)
 	int i, t;
 
 	t = tab_save+1;
+        
+        fprintf(out, "{\n");
+        if (!the_env_defined) {
+          put_tabs(t);
+          fprintf(out, "const cl_env_ptr the_env = ecl_process_env();\n");
+        }
 	if (nres == 0) {
-	  fprintf(out, "return0();");
-	} else if (nres == 1) {
-	  fprintf(out, "return1(%s);", result[0]);
+          fprintf(out, "the_env->nvalues = 0; return Cnil;\n");
 	} else {
-	  fprintf(out, "{\n");
 	  put_tabs(t);
 	  for (i = 0;  i < nres;  i++) {
 		put_tabs(t);
@@ -782,9 +789,9 @@ put_return(void)
 	  }
 	  put_tabs(t);
 	  fprintf(out, "return __value0;\n");
-	  put_tabs(tab_save);
-	  fprintf(out, "}\n");
 	}
+        put_tabs(tab_save);
+        fprintf(out, "}\n");
 }
 
 int
