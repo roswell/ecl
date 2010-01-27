@@ -71,7 +71,7 @@ _ecl_big_register_normalize(cl_object x)
 	return _ecl_big_register_copy(x);
 }
 
-#if ECL_LONG_BITSS < FIXNUM_BITS
+#if ECL_LONG_BITS < FIXNUM_BITS
 # undef _ecl_big_set_fixnum
 # undef _ecl_big_set_index
 # if GMP_LIMB_BITS >= FIXNUM_BITS
