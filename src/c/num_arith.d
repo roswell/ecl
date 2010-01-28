@@ -40,31 +40,6 @@ fixnum_times(cl_fixnum i, cl_fixnum j)
 	return _ecl_big_register_normalize(x);
 }
 
-static cl_object
-_ecl_big_times_fix(cl_object b, cl_fixnum i)
-{
-	cl_object z;
-
-	if (i == 1)
-		return b;
-	z = _ecl_big_register0();
-	if (i == -1) {
-                _ecl_big_complement(z, b);
-        } else {
-                _ecl_big_mul_si(z, b, i);
-        }
-	return _ecl_big_register_normalize(z);
-}
-
-static cl_object
-_ecl_big_times_big(cl_object x, cl_object y)
-{
-	cl_object z;
-	z = _ecl_big_register0();
-        _ecl_big_mul(z, x, y);
-	return _ecl_big_register_normalize(z);
-}
-
 cl_object
 ecl_times(cl_object x, cl_object y)
 {

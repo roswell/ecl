@@ -378,6 +378,12 @@ extern ECL_API void ecl_clear_compiler_properties(cl_object sym);
 #define _ecl_big_register2()	ecl_process_env()->big_register[2]
 extern ECL_API cl_object _ecl_big_register_copy(cl_object x);
 extern ECL_API cl_object _ecl_big_register_normalize(cl_object x);
+extern ECL_API cl_object _ecl_big_times_fix(cl_object x, cl_fixnum y);
+extern ECL_API cl_object _ecl_big_times_big(cl_object x, cl_object y);
+extern ECL_API cl_object _ecl_big_plus_fix(cl_object x, cl_fixnum y);
+extern ECL_API cl_object _ecl_big_plus_big(cl_object x, cl_object y);
+extern ECL_API cl_object _ecl_fix_minus_big(cl_fixnum x, cl_object y);
+extern ECL_API cl_object _ecl_big_minus_big(cl_object x, cl_object y);
 extern ECL_API void _ecl_big_register_free(cl_object x);
 extern ECL_API cl_object bignum1(cl_fixnum val);
 
