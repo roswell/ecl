@@ -15,6 +15,13 @@
 
 #define ECL_BIG_REGISTER_SIZE	32
 #ifdef WITH_GMP
+#define ECL_WITH_TEMP_BIGNUM(name,n)                                    \
+        mp_limb_t name##data[n];                                        \
+        volatile struct ecl_bignum name##aux;                           \
+        const cl_object name = (name##aux.big_num->_mp_alloc = n,       \
+                                name##aux.big_num->_mp_size = 0,        \
+                                name##aux.big_num->_mp_d = name##data,  \
+                                (cl_object)(&name##aux))
 #if ECL_LONG_BITS >= FIXNUM_BITS
 #define _ecl_big_set_fixnum(x, f) mpz_set_si((x)->big.big_num,(f))
 #define _ecl_big_set_index(x, f) mpz_set_ui((x)->big.big_num,(f))
@@ -51,6 +58,10 @@ extern ECL_API _ecl_big_set_fixnum(cl_object x, cl_index f);
 
 #else  /* WITH_GMP */
 
+#define ECL_WITH_TEMP_BIGNUM(name,n)                                    \
+        volatile struct ecl_bignum name##aux;                           \
+        const cl_object name = (name##aux.big_num = 0,                  \
+                                (cl_object)(&name##aux))
 #define _ecl_big_set_fixnum(x,f) ((x)->big.big_num=(f))
 #define _ecl_big_set_index(x,f) ((x)->big.big_num=(f))
 #define _ecl_big_init2(x,size)	((x)->big.big_num=0)

@@ -146,24 +146,17 @@ static const limbs_per_fixnum = 1;
 static conts limbs_per_fixnum = (FIXNUM_BITS + GMP_LIMB_BITS - 1) / GMP_LIMB_BITS;
 #endif
 
-#define WITH_TEMP_BIGNUM(name,n)                                        \
-        mp_limb_t name##data[n];                                        \
-        volatile struct ecl_bignum name##aux;                           \
-        const cl_object name = (name##aux.big_num->_mp_alloc = n,       \
-                                name##aux.big_num->_mp_size = 0,        \
-                                name##aux.big_num->_mp_d = name##data,  \
-                                (cl_object)(&name##aux))
 
 cl_object
 _ecl_fix_times_fix(cl_fixnum x, cl_fixnum y)
 {
 #if ECL_LONG_BITS >= FIXNUM_BITS
-        WITH_TEMP_BIGNUM(z,4);
+        ECL_WITH_TEMP_BIGNUM(z,4);
         mpz_set_si(z->big.big_num, x);
         mpz_mul_si(z->big.big_num, z->big.big_num, y);
 #else
-        WITH_TEMP_BIGNUM(z,4);
-        WITH_TEMP_BIGNUM(w,4);
+        ECL_WITH_TEMP_BIGNUM(z,4);
+        ECL_WITH_TEMP_BIGNUM(w,4);
         mpz_set_si(z->big.big_num, x);
         mpz_set_si(w->big.big_num, y);
         mpz_mu(z->big.big_num, z->big.big_num, w->big.big_num);
@@ -264,6 +257,55 @@ _ecl_big_negate(cl_object a)
         cl_object z = _ecl_alloc_compact_bignum(size_a);
         mpz_neg(z->big.big_num, a->big.big_num);
         return big_normalize(z);
+}
+
+cl_object
+_ecl_big_divided_by_big(cl_object a, cl_object b)
+{
+        cl_object z;
+        cl_index size_a = (a->big.big_size < 0)? -a->big.big_size : a->big.big_size;
+        cl_index size_b = (b->big.big_size < 0)? -b->big.big_size : b->big.big_size;
+        cl_fixnum size_z = size_a - size_b + 1;
+        if (size_z <= 0) size_z = 1;
+        z = _ecl_alloc_compact_bignum(size_z);
+        mpz_tdiv_q(z->big.big_num,a->big.big_num,b->big.big_num);
+        return big_normalize(z);
+}
+
+cl_object
+_ecl_big_divided_by_fix(cl_object x, cl_fixnum y)
+{
+        ECL_WITH_TEMP_BIGNUM(by, 2);
+        _ecl_big_set_fixnum(by, y);
+        return _ecl_big_divided_by_big(x, by);
+}
+
+cl_object
+_ecl_big_ceiling(cl_object a, cl_object b, cl_object *pr)
+{
+        cl_object q = _ecl_big_register0();
+        cl_object r = _ecl_big_register1();
+        mpz_cdiv_qr(q->big.big_num, r->big.big_num, a->big.big_num, b->big.big_num);
+        *pr = _ecl_big_register_normalize(r);
+        return _ecl_big_register_normalize(q);
+}
+
+cl_object
+_ecl_big_floor(cl_object a, cl_object b, cl_object *pr)
+{
+        cl_object q = _ecl_big_register0();
+        cl_object r = _ecl_big_register1();
+        mpz_fdiv_qr(q->big.big_num, r->big.big_num, a->big.big_num, b->big.big_num);
+        *pr = _ecl_big_register_normalize(r);
+        return _ecl_big_register_normalize(q);
+}
+
+cl_object
+_ecl_fix_divided_by_big(cl_fixnum x, cl_object y)
+{
+        ECL_WITH_TEMP_BIGNUM(bx, 2);
+        _ecl_big_set_fixnum(bx, x);
+        return _ecl_big_divided_by_big(bx, y);
 }
 
 static void *

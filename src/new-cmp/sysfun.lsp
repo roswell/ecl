@@ -1592,7 +1592,7 @@
  "(double)(#0)*(double)(#1)" :exact-return-type t)
 (def-inline * :always (fixnum-float fixnum-float) :float
  "(float)(#0)*(float)(#1)" :exact-return-type t)
-(def-inline * :always (fixnum fixnum) t "fixnum_times(#0,#1)" :exact-return-type t)
+(def-inline * :always (fixnum fixnum) t "_ecl_fix_times_fix(#0,#1)" :exact-return-type t)
 (def-inline * :always (fixnum fixnum) :fixnum "(#0)*(#1)" :exact-return-type t)
 
 (def-inline / :always (t t) t "ecl_divide(#0,#1)")

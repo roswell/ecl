@@ -226,18 +226,9 @@ ecl_floor2(cl_object x, cl_object y)
 		   *	x = MOST_NEGATIVE_FIXNUM
 		   *    y = - MOST_NEGATIVE_FIXNUM
 		   */
-		  cl_object q = _ecl_big_register0();
-		  cl_object r = _ecl_big_register1();
-#ifdef WITH_GMP
-		  cl_object j = _ecl_big_register2();
-		  mpz_set_si(j->big.big_num, fix(x));
-		  mpz_fdiv_qr(q->big.big_num, r->big.big_num, j->big.big_num, y->big.big_num);
-#else  /* WITH_GMP */
-                  q->big.big_num = (big_num_t)fix(x) / y->big.big_num;
-                  r->big.big_num = (big_num_t)fix(x) % y->big.big_num;
-#endif /* WITH_GMP */
-		  v0 = _ecl_big_register_normalize(q);
-		  v1 = _ecl_big_register_normalize(r);
+                  ECL_WITH_TEMP_BIGNUM(bx,4);
+                  _ecl_big_set_fixnum(bx, fix(x));
+                  v0 = _ecl_big_floor(bx, y, &v1);
 		  break;
 		}
 		case t_ratio:		/* FIX / RAT */
@@ -287,31 +278,13 @@ ecl_floor2(cl_object x, cl_object y)
 	case t_bignum:
 		switch(ty) {
 		case t_fixnum: {	/* BIG / FIX */
-		  cl_object q = _ecl_big_register0();
-		  cl_object r = _ecl_big_register1();
-#ifdef WITH_GMP
-		  cl_object j = _ecl_big_register2();
-		  mpz_set_si(j->big.big_num, fix(y));
-		  mpz_fdiv_qr(q->big.big_num, r->big.big_num, x->big.big_num, j->big.big_num);
-#else  /* WITH_GMP */
-                  q->big.big_num = x->big.big_num / fix(y);
-                  r->big.big_num = x->big.big_num % fix(y);
-#endif /* WITH_GMP */
-		  v0 = _ecl_big_register_normalize(q);
-		  v1 = _ecl_big_register_normalize(r);
+                  ECL_WITH_TEMP_BIGNUM(by,4);
+                  _ecl_big_set_fixnum(by, fix(y));
+                  v0 = _ecl_big_floor(x, by, &v1);
 		  break;
 		}
 		case t_bignum: {	/* BIG / BIG */
-		  cl_object q = _ecl_big_register0();
-		  cl_object r = _ecl_big_register1();
-#ifdef WITH_GMP
-		  mpz_fdiv_qr(q->big.big_num, r->big.big_num, x->big.big_num, y->big.big_num);
-#else  /* WITH_GMP */
-                  q = x->big.big_num / y->big.big_num;
-                  r = x->big.big_num % y->big.big_num;
-#endif /* WITH_GMP */
-		  v0 = _ecl_big_register_normalize(q);
-		  v1 = _ecl_big_register_normalize(r);
+                  v0 = _ecl_big_floor(x, y, &v1);
 		  break;
 		}
 		case t_ratio:		/* BIG / RAT */
@@ -511,18 +484,9 @@ ecl_ceiling2(cl_object x, cl_object y)
 		   *	x = MOST_NEGATIVE_FIXNUM
 		   *    y = - MOST_NEGATIVE_FIXNUM
 		   */
-		  cl_object q = _ecl_big_register0();
-		  cl_object r = _ecl_big_register1();
-#ifdef WITH_GMP
-		  cl_object j = _ecl_big_register2();
-		  mpz_set_si(j->big.big_num, fix(x));
-		  mpz_cdiv_qr(q->big.big_num, r->big.big_num, j->big.big_num, y->big.big_num);
-#else  /* WITH_GMP */
-                  q = (big_num_t)fix(x) / y->big.big_num;
-                  r = (big_num_t)fix(x) % y->big.big_num;
-#endif /* WITH_GMP */
-		  v0 = _ecl_big_register_normalize(q);
-		  v1 = _ecl_big_register_normalize(r);
+                  ECL_WITH_TEMP_BIGNUM(bx,4);
+                  _ecl_big_set_fixnum(bx, fix(x));
+                  v0 = _ecl_big_ceiling(bx, y, &v1);
 		  break;
 		}
 		case t_ratio:		/* FIX / RAT */
@@ -572,31 +536,13 @@ ecl_ceiling2(cl_object x, cl_object y)
 	case t_bignum:
 		switch(type_of(y)) {
 		case t_fixnum: {	/* BIG / FIX */
-		  cl_object q = _ecl_big_register0();
-		  cl_object r = _ecl_big_register1();
-#ifdef WITH_GMP
-		  cl_object j = _ecl_big_register2();
-		  mpz_set_si(j->big.big_num, fix(y));
-		  mpz_cdiv_qr(q->big.big_num, r->big.big_num, x->big.big_num, j->big.big_num);
-#else  /* WITH_GMP */
-                  q = x->big.big_num / fix(y);
-                  r = x->big.big_num % fix(y);
-#endif /* WITH_GMP */
-		  v0 = _ecl_big_register_normalize(q);
-		  v1 = _ecl_big_register_normalize(r);
+                  ECL_WITH_TEMP_BIGNUM(by,4);
+                  _ecl_big_set_fixnum(by, fix(y));
+                  v0 = _ecl_big_ceiling(x, by, &v1);
 		  break;
 		}
 		case t_bignum: {	/* BIG / BIG */
-		  cl_object q = _ecl_big_register0();
-		  cl_object r = _ecl_big_register1();
-#ifdef WITH_GMP
-		  mpz_cdiv_qr(q->big.big_num, r->big.big_num, x->big.big_num, y->big.big_num);
-#else  /* WITH_GMP */
-                  q->big.big_num = x->big.big_num / y->big.big_num;
-                  r->big.big_num = x->big.big_num % y->big.big_num;
-#endif /* WITH_GMP */
-		  v0 = _ecl_big_register_normalize(q);
-		  v1 = _ecl_big_register_normalize(r);
+                  v0 = _ecl_big_ceiling(x, y, &v1);
 		  break;
 		}
 		case t_ratio:		/* BIG / RAT */

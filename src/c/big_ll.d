@@ -123,6 +123,7 @@ _ecl_big_plus_fix(cl_object x, cl_fixnum y)
         z->big.big_num = x->big.big_num + y;
 	return big_normalize(z);
 }
+
 cl_object
 _ecl_fix_times_fix(cl_fixnum x, cl_fixnum y)
 {
@@ -131,6 +132,27 @@ _ecl_fix_times_fix(cl_fixnum x, cl_fixnum y)
 	return big_normalize(z);
 }
 
+cl_object
+_ecl_big_ceiling(cl_object a, cl_object b, cl_object *pr)
+{
+        cl_object q = ecl_alloc_object(t_bignum);
+        cl_object r = ecl_alloc_object(t_bignum);
+        q->big.num = x->big.num / y->big.big_num;
+        r->big.num = x->big.num % y->big.big_num;
+        *pr = big_normalize(r);
+        return big_normalize(q);
+}
+
+cl_object
+_ecl_big_floor(cl_object a, cl_object b, cl_object *pr)
+{
+        cl_object q = ecl_alloc_object(t_bignum);
+        cl_object r = ecl_alloc_object(t_bignum);
+        q->big.num = x->big.num / y->big.big_num;
+        r->big.num = x->big.num % y->big.big_num;
+        *pr = big_normalize(r);
+        return big_normalize(q);
+}
 
 cl_object
 _ecl_big_negate(cl_object x)

@@ -948,37 +948,20 @@ ecl_integer_divide(cl_object x, cl_object y)
 			if (y == MAKE_FIXNUM(0))
 				FEdivision_by_zero(x, y);
 			return MAKE_FIXNUM(fix(x) / fix(y));
-		}
-		if (ty == t_bignum) {
-			/* The only number "x" which can be a bignum and be
-			 * as large as "-x" is -MOST_NEGATIVE_FIXNUM. However
-			 * in newer versions of ECL we will probably choose
-			 * MOST_NEGATIVE_FIXNUM = - MOST_POSITIVE_FIXNUM.
-			 */
-			if (-MOST_NEGATIVE_FIXNUM > MOST_POSITIVE_FIXNUM) {
-				if (_ecl_big_cmp_si(y, -fix(x)))
-					return MAKE_FIXNUM(0);
-				else
-					return MAKE_FIXNUM(-1);
-			} else {
-				return MAKE_FIXNUM(0);
-			}
-		}
-		FEtype_error_integer(y);
+		} else if (ty == t_bignum) {
+                        return _ecl_fix_divided_by_big(fix(x), y);
+		} else {
+                        FEtype_error_integer(y);
+                }
 	}
 	if (tx == t_bignum) {
-		cl_object q = _ecl_big_register0();
 		if (ty == t_bignum) {
-			_ecl_big_tdiv_q(q, x, y);
+			return _ecl_big_divided_by_big(x, y);
 		} else if (ty == t_fixnum) {
-			long j = fix(y);
-                        _ecl_big_tdiv_q_ui(q, x, labs(j));
-			if (j < 0)
-				_ecl_big_complement(q, q);
+                        return _ecl_big_divided_by_fix(x, fix(y));
 		} else {
 			FEtype_error_integer(y);
 		}
-		return _ecl_big_register_normalize(q);
 	}
 	FEtype_error_integer(x);
 }
