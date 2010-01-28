@@ -711,17 +711,13 @@ ecl_negate(cl_object x)
 	case t_fixnum:
                 return ecl_make_integer(-fix(x));
 	case t_bignum:
-		z = _ecl_big_register0();
-                _ecl_big_complement(z, x);
-		return _ecl_big_register_normalize(z);
-
+		return _ecl_big_negate(x);
 	case t_ratio:
 		z1 = ecl_negate(x->ratio.num);
 		z = ecl_alloc_object(t_ratio);
 		z->ratio.num = z1;
 		z->ratio.den = x->ratio.den;
 		return z;
-
 #ifdef ECL_SHORT_FLOAT
 	case t_shortfloat:
 		return make_shortfloat(-ecl_shortfloat(x));
@@ -730,7 +726,6 @@ ecl_negate(cl_object x)
 		z = ecl_alloc_object(t_singlefloat);
 		sf(z) = -sf(x);
 		return z;
-
 	case t_doublefloat:
 		z = ecl_alloc_object(t_doublefloat);
 		df(z) = -df(x);

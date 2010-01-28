@@ -384,6 +384,7 @@ extern ECL_API cl_object _ecl_big_plus_fix(cl_object x, cl_fixnum y);
 extern ECL_API cl_object _ecl_big_plus_big(cl_object x, cl_object y);
 extern ECL_API cl_object _ecl_fix_minus_big(cl_fixnum x, cl_object y);
 extern ECL_API cl_object _ecl_big_minus_big(cl_object x, cl_object y);
+extern ECL_API cl_object _ecl_big_negate(cl_object x);
 extern ECL_API void _ecl_big_register_free(cl_object x);
 extern ECL_API cl_object bignum1(cl_fixnum val);
 

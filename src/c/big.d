@@ -228,6 +228,15 @@ _ecl_fix_minus_big(cl_fixnum a, cl_object b)
         return big_normalize(z);
 }
 
+cl_object
+_ecl_big_negate(cl_object a)
+{
+        cl_index size_a = (a->big.big_size < 0)? -a->big.big_size : a->big.big_size;
+        cl_object z = _ecl_alloc_compact_bignum(size_a);
+        mpz_neg(z->big.big_num, a->big.big_num);
+        return big_normalize(z);
+}
+
 static void *
 mp_alloc(size_t size)
 {
