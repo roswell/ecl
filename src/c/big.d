@@ -220,18 +220,12 @@ _ecl_big_minus_big(cl_object a, cl_object b)
 cl_object
 _ecl_fix_minus_big(cl_fixnum a, cl_object b)
 {
-        cl_object z;
-	if (a == 0) {
-		return ecl_negate(b);
-        } else {
-                cl_index size_b = (b->big.big_size < 0)? -b->big.big_size
-                        : b->big.big_size;
-                cl_index size_z = size_b + limbs_per_fixnum;
-                cl_object z = _ecl_alloc_compact_bignum(size_z);
-                mpz_set_si(z->big.big_num, a);
-                mpz_sub(z->big.big_num, z->big.big_num, b->big.big_num);
-                return big_normalize(z);
-        }
+	cl_index size_b = (b->big.big_size < 0)? -b->big.big_size : b->big.big_size;
+        cl_index size_z = size_b + limbs_per_fixnum;
+        cl_object z = _ecl_alloc_compact_bignum(size_z);
+        mpz_set_si(z->big.big_num, a);
+        mpz_sub(z->big.big_num, z->big.big_num, b->big.big_num);
+        return big_normalize(z);
 }
 
 static void *
