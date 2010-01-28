@@ -34,7 +34,7 @@ _ecl_big_register_free(cl_object x)
 static cl_object
 _ecl_alloc_compact_bignum(cl_index limbs)
 {
-#if 0
+#if 1
         cl_index bytes = limbs * sizeof(mp_limb_t);
         cl_object new_big = ecl_alloc_compact_object(t_bignum, bytes);
         new_big->big.big_limbs = ECL_COMPACT_OBJECT_EXTRA(new_big);
