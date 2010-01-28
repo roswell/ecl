@@ -388,6 +388,7 @@ extern ECL_API cl_object _ecl_big_minus_big(cl_object x, cl_object y);
 extern ECL_API cl_object _ecl_fix_divided_by_big(cl_fixnum x, cl_object y);
 extern ECL_API cl_object _ecl_big_divided_by_fix(cl_object x, cl_fixnum y);
 extern ECL_API cl_object _ecl_big_divided_by_big(cl_object x, cl_object y);
+extern ECL_API cl_object _ecl_big_gcd(cl_object x, cl_object y);
 extern ECL_API cl_object _ecl_big_ceiling(cl_object x, cl_object y, cl_object *r);
 extern ECL_API cl_object _ecl_big_floor(cl_object x, cl_object y, cl_object *r);
 extern ECL_API cl_object _ecl_big_negate(cl_object x);

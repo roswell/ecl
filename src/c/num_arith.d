@@ -985,35 +985,29 @@ ecl_integer_divide(cl_object x, cl_object y)
 cl_object
 ecl_gcd(cl_object x, cl_object y)
 {
-	cl_object gcd, x_big, y_big;
+	cl_object gcd;
+        ECL_WITH_TEMP_BIGNUM(x_big,1);
+        ECL_WITH_TEMP_BIGNUM(y_big,1);
 
 	switch (type_of(x)) {
 	case t_fixnum:
-                x_big = _ecl_big_register0();
                 _ecl_big_set_fixnum(x_big, fix(x));
-		break;
+                x = x_big;
 	case t_bignum:
-                x_big = x;
 		break;
 	default:
 		FEtype_error_integer(x);
 	}
 	switch (type_of(y)) {
 	case t_fixnum:
-                y_big = _ecl_big_register1();
                 _ecl_big_set_fixnum(y_big, fix(y));
-                break;
+                y = y_big;
 	case t_bignum:
-                y_big = y;
                 break;
 	default:
 		FEtype_error_integer(y);
         }
-        gcd = _ecl_big_register2();
-        _ecl_big_gcd(gcd, x_big, y_big);
-        if (x != x_big) _ecl_big_register_free(x_big);
-        if (y != y_big) _ecl_big_register_free(y_big);
-        return _ecl_big_register_normalize(gcd);
+        return _ecl_big_gcd(x, y);
 }
 
 /*  (1+ x)  */

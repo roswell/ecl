@@ -54,7 +54,6 @@ extern ECL_API _ecl_big_set_fixnum(cl_object x, cl_index f);
 #define _ecl_big_tdiv_q(q, x, y)	mpz_tdiv_q((q)->big.big_num,(x)->big.big_num,(y)->big.big_num)
 #define _ecl_big_tdiv_q_ui(q, x, y)	mpz_tdiv_q_ui((q)->big.big_num, (x)->big.big_num, (y))
 #define _ecl_big_set_d(x, d)		mpz_set_d((x)->big.big_num, (d))
-#define _ecl_big_gcd(gcd, x, y)	mpz_gcd((gcd)->big.big_num, (x)->big.big_num, (y)->big.big_num)
 
 #else  /* WITH_GMP */
 
@@ -90,5 +89,4 @@ extern int _ecl_big_num_t_sgn(big_num_t x);
 #define _ecl_big_tdiv_q(q, x, y)	((q)->big.big_num = (x)->big.big_num / (y)->big.big_num)
 #define _ecl_big_tdiv_q_ui(q, x, y)	((q)->big.big_num = (x)->big.big_num / (y))
 #define _ecl_big_set_d(x, d)		((x)->big.big_num = (big_num_t)(d))
-extern ECL_API _ecl_big_gcd(cl_object gcd, cl_object x, cl_object y);
 #endif /* WITH_GMP */

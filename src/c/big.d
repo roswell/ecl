@@ -273,6 +273,14 @@ _ecl_big_divided_by_big(cl_object a, cl_object b)
 }
 
 cl_object
+_ecl_big_gcd(cl_object a, cl_object b)
+{
+        cl_object z = _ecl_big_register0();
+        mpz_gcd(z->big.big_num, a->big.big_num, b->big.big_num);
+        return _ecl_big_register_normalize(z);
+}
+
+cl_object
 _ecl_big_divided_by_fix(cl_object x, cl_fixnum y)
 {
         ECL_WITH_TEMP_BIGNUM(by, 2);

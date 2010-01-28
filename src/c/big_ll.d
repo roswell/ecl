@@ -66,9 +66,10 @@ _ecl_big_copy(cl_object x)
 }
 
 cl_object
-_ecl_big_gcd(cl_object gcd, cl_object x, cl_object y)
+_ecl_big_gcd(cl_object x, cl_object y)
 {
         big_num_t i = x->big.big_num, j = y->big.big_num;
+        cl_object gcd = ecl_alloc_object(t_bignum);
         while ( 1 ) {
                 big_num_t k;
                 if ( i<j ) {
@@ -78,7 +79,7 @@ _ecl_big_gcd(cl_object gcd, cl_object x, cl_object y)
                 }
                 if ( j == 0 ) {
                         gcd->big.big_num = k;
-                        break;
+                        return gcd;
                 }
                 k = i % j;
                 i = j;
