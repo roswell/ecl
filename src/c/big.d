@@ -146,6 +146,35 @@ static const limbs_per_fixnum = 1;
 static conts limbs_per_fixnum = (FIXNUM_BITS + GMP_LIMB_BITS - 1) / GMP_LIMB_BITS;
 #endif
 
+#define WITH_TEMP_BIGNUM(name,n)                                        \
+        mp_limb_t name##data[n];                                        \
+        volatile struct ecl_bignum name##aux;                           \
+        const cl_object name = (name##aux.big_num->_mp_alloc = n,       \
+                                name##aux.big_num->_mp_size = 0,        \
+                                name##aux.big_num->_mp_d = name##data,  \
+                                (cl_object)(&name##aux))
+
+cl_object
+_ecl_fix_times_fix(cl_fixnum x, cl_fixnum y)
+{
+#if ECL_LONG_BITS >= FIXNUM_BITS
+        WITH_TEMP_BIGNUM(z,4);
+        mpz_set_si(z->big.big_num, x);
+        mpz_mul_si(z->big.big_num, z->big.big_num, y);
+#else
+        WITH_TEMP_BIGNUM(z,4);
+        WITH_TEMP_BIGNUM(w,4);
+        mpz_set_si(z->big.big_num, x);
+        mpz_set_si(w->big.big_num, y);
+        mpz_mu(z->big.big_num, z->big.big_num, w->big.big_num);
+#endif
+        {
+                cl_object y = big_normalize(z);
+                if (y == z) y = _ecl_big_copy(z);
+                return y;
+        }
+}
+
 cl_object
 _ecl_big_times_big(cl_object a, cl_object b)
 {

@@ -32,15 +32,6 @@
 @)
 
 cl_object
-fixnum_times(cl_fixnum i, cl_fixnum j)
-{
-	cl_object x = _ecl_big_register0();
-        _ecl_big_set_si(x, i);
-        _ecl_big_mul_si(x, x, j);
-	return _ecl_big_register_normalize(x);
-}
-
-cl_object
 ecl_times(cl_object x, cl_object y)
 {
 	cl_object z, z1;
@@ -49,7 +40,7 @@ ecl_times(cl_object x, cl_object y)
 	case t_fixnum:
 		switch (type_of(y)) {
 		case t_fixnum:
-			return fixnum_times(fix(x),fix(y));
+			return _ecl_fix_times_fix(fix(x),fix(y));
 		case t_bignum:
 			return _ecl_big_times_fix(y, fix(x));
 		case t_ratio:

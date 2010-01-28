@@ -123,6 +123,14 @@ _ecl_big_plus_fix(cl_object x, cl_fixnum y)
         z->big.big_num = x->big.big_num + y;
 	return big_normalize(z);
 }
+cl_object
+_ecl_fix_times_fix(cl_fixnum x, cl_fixnum y)
+{
+	cl_object z = ecl_alloc_object(t_bignum);
+        z->big.big_num = x * y;
+	return big_normalize(z);
+}
+
 
 cl_object
 _ecl_big_negate(cl_object x)
