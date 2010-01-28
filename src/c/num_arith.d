@@ -273,14 +273,7 @@ ecl_plus(cl_object x, cl_object y)
 		case t_fixnum:
                         return ecl_make_integer(fix(x) + fix(y));
 		case t_bignum:
-			if ((i = fix(x)) == 0)
-				return(y);
-			z = _ecl_big_register0();
-			if (i > 0)
-                                _ecl_big_add_ui(z, y, i);
-			else
-                                _ecl_big_sub_ui(z, y, -i);
-		  	return _ecl_big_register_normalize(z);
+                        return _ecl_big_plus_fix(y, fix(x));
 		case t_ratio:
 			z = ecl_times(x, y->ratio.den);
 			z = ecl_plus(z, y->ratio.num);
@@ -307,18 +300,9 @@ ecl_plus(cl_object x, cl_object y)
 	case t_bignum:
 		switch (type_of(y)) {
 		case t_fixnum:
-			if ((j = fix(y)) == 0)
-				return(x);
-			z = _ecl_big_register0();
-			if (j > 0)
-                                _ecl_big_add_ui(z, x, j);
-			else
-                                _ecl_big_sub_ui(z, x, (-j));
-			return _ecl_big_register_normalize(z);
+                        return _ecl_big_plus_fix(x, fix(y));
 		case t_bignum:
-                        z = _ecl_big_register0();
-                        _ecl_big_add(z, x, y);
-			return _ecl_big_register_normalize(z);
+                        return _ecl_big_plus_big(x, y);
 		case t_ratio:
 			z = ecl_times(x, y->ratio.den);
 			z = ecl_plus(z, y->ratio.num);

@@ -187,7 +187,7 @@ _ecl_big_plus_fix(cl_object a, cl_fixnum b)
                 cl_index size_z = size_a + limbs_per_fixnum;
                 cl_object z = _ecl_alloc_compact_bignum(size_z);
                 if (b < 0) {
-                        _ecl_big_sub_ui(z, a, b);
+                        _ecl_big_sub_ui(z, a, (-b));
                 } else {
                         _ecl_big_add_ui(z, a, b);
                 }
