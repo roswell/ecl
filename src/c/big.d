@@ -25,6 +25,7 @@
 void
 _ecl_big_register_free(cl_object x)
 {
+        return;
         /* We only need to free the integer when it gets too large */
         if (x->big.big_dim > 3 * ECL_BIG_REGISTER_SIZE) {
                 mpz_realloc2(x->big.big_num, ECL_BIG_REGISTER_SIZE * GMP_LIMB_BITS);
