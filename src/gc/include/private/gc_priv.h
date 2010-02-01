@@ -876,6 +876,10 @@ struct _GC_arrays {
   word _bytes_allocd_before_gc;
 		/* Number of words allocated before this	*/
 		/* collection cycle.				*/
+  size_t _size_map[MAXOBJBYTES+1];
+    	/* Number of words to allocate for a given allocation request in */
+    	/* bytes.							 */
+
 # ifndef SEPARATE_GLOBALS
     word _bytes_allocd;
   	/* Number of words allocated during this collection cycle */
@@ -934,10 +938,6 @@ struct _GC_arrays {
 # ifdef USE_MUNMAP
     word _unmapped_bytes;
 # endif
-
-    size_t _size_map[MAXOBJBYTES+1];
-    	/* Number of words to allocate for a given allocation request in */
-    	/* bytes.							 */
 
 # ifdef STUBBORN_ALLOC
     ptr_t _sobjfreelist[MAXOBJGRANULES+1];
