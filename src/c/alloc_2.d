@@ -30,9 +30,11 @@
 static void finalize_queued();
 
 #ifdef GBC_BOEHM_PRECISE
+# if GBC_BOEHM
+#  undef GBC_BOEHM_PRECISE
+# else
 #include "private/gc_priv.h"
 #include "gc_typed.h"
-# if 0
 static int cl_object_kind;
 static void **cl_object_free_list;
 # endif
@@ -140,11 +142,12 @@ out_of_memory(size_t requested_bytes)
 #undef alloc_object
 #endif
 
-static size_t type_size[t_end];
+static struct {
+        size_t size;
 #ifdef GBC_BOEHM_PRECISE
-static GC_word type_bitmaps[t_end];
-static GC_word type_descriptor[t_end];
+        GC_word descriptor;
 #endif
+} type_info[t_end];
 
 static void
 error_wrong_tag(cl_type t)
@@ -156,40 +159,37 @@ cl_object
 ecl_alloc_object(cl_type t)
 {
 #ifdef GBC_BOEHM_PRECISE
-# if 1
+# ifndef GBC_BOEHM_OWN_ALLOCATOR
 	const cl_env_ptr the_env = ecl_process_env();
 	GC_descr d;
 	size_t size;
         cl_object op;
         ecl_disable_interrupts_env(the_env);
-        if (t < t_start || t > t_end) {
+        if (__builtin_expect(t < t_start || t > t_end, 0)) {
                 error_wrong_tag(t);
         }
-	size = type_size[t];
-	d = type_descriptor[t];
+	size = type_info[t].size;
+	d = type_info[t].descriptor;
 	if (d)
 		op = GC_malloc_explicitly_typed(size, d);
 	else
 		op = GC_MALLOC_ATOMIC(size);
         op->d.t = t;
-        op->d.m = 0;
         ecl_enable_interrupts_env(the_env);
         return op;
 # else
 #define TYPD_EXTRA_BYTES (sizeof(word) - EXTRA_BYTES)
-#define GENERAL_MALLOC(lb,k) \
-        (void *)GC_clear_stack(GC_generic_malloc_ignore_off_page(lb, k))
+#define GENERAL_MALLOC(lb,k) (void *)GC_generic_malloc(lb, k)
 	const cl_env_ptr the_env = ecl_process_env();
 	typedef void *ptr_t;
 	ptr_t op;
 	ptr_t * opp;
 	size_t lg, lb;
-	extern ptr_t GC_clear_stack();
 	DCL_LOCK_STATE;
 
         ecl_disable_interrupts_env(the_env);
-	lb = type_size[t] + TYPD_EXTRA_BYTES;
-	if(SMALL_OBJ(lb)) {
+	lb = type_info[t].size + TYPD_EXTRA_BYTES;
+	if (__builtin_expect(SMALL_OBJ(lb),1)) {
 		lg = GC_size_map[lb];
 		opp = &(cl_object_free_list[lg]);
 		LOCK();
@@ -206,13 +206,10 @@ ecl_alloc_object(cl_type t)
 		}
 	} else {
 		op = (ptr_t)GENERAL_MALLOC((word)lb, cl_object_kind);
-		if (op != NULL)
-			lg = BYTES_TO_GRANULES(GC_size(op));
+                lg = BYTES_TO_GRANULES(GC_size(op));
 	}
-	if (op != NULL)
-		((word *)op)[GRANULES_TO_WORDS(lg) - 1] = type_descriptor[t];
+        ((word *)op)[GRANULES_TO_WORDS(lg) - 1] = type_info[t].descriptor;
         ((cl_object)op)->d.t = t;
-        ((cl_object)op)->d.m = 0;
         ecl_enable_interrupts_env(the_env);
         return (cl_object)op;
 # endif
@@ -235,7 +232,7 @@ ecl_alloc_object(cl_type t)
 	case t_doublefloat: {
 		cl_object obj;
 		ecl_disable_interrupts_env(the_env);
-		obj = (cl_object)GC_MALLOC_ATOMIC(type_size[t]);
+		obj = (cl_object)GC_MALLOC_ATOMIC(type_info[t].size);
 		ecl_enable_interrupts_env(the_env);
                 obj->d.t = t;
                 return obj;
@@ -279,7 +276,7 @@ ecl_alloc_object(cl_type t)
 	case t_codeblock: {
 		cl_object obj;
 		ecl_disable_interrupts_env(the_env);
-		obj = (cl_object)GC_MALLOC(type_size[t]);
+		obj = (cl_object)GC_MALLOC(type_info[t].size);
 		ecl_enable_interrupts_env(the_env);
                 obj->d.t = t;
                 return obj;
@@ -295,7 +292,7 @@ cl_object
 ecl_alloc_compact_object(cl_type t, cl_index extra_space)
 {
 	const cl_env_ptr the_env = ecl_process_env();
-        cl_index size = type_size[t];
+        cl_index size = type_info[t].size;
         cl_object x;
         ecl_disable_interrupts_env(the_env);
         x = (cl_object)GC_MALLOC_ATOMIC(size + extra_space);
@@ -470,7 +467,7 @@ init_alloc(void)
 	GC_clear_roots();
 	GC_disable();
 
-#if 0 /*def GBC_BOEHM_PRECISE */
+#ifdef GBC_BOEHM_PRECISE
         cl_object_free_list = (void **)GC_new_free_list_inner();
         cl_object_kind = GC_new_kind_inner(cl_object_free_list,
                                            (((word)WORDS_TO_BYTES(-1)) | GC_DS_PER_OBJECT),
@@ -486,9 +483,9 @@ init_alloc(void)
 		cl_core.safety_region = 0;
 	}
 
-#define init_tm(x,y,z,w) type_size[x] = (z); /*type_ptr[x] = (w)*/
+#define init_tm(x,y,z,w) type_info[x].size = (z); /*type_ptr[x] = (w)*/
 	for (i = 0; i < t_end; i++) {
-		type_size[i] = 0;
+		type_info[i].size = 0;
 	}
 	init_tm(t_list, "CONS", sizeof(struct ecl_cons), 2);
 	init_tm(t_bignum, "BIGNUM", sizeof(struct ecl_bignum), 0);
@@ -541,29 +538,29 @@ init_alloc(void)
 	init_tm(t_frame, "STACK-FRAME", sizeof(struct ecl_stack_frame), 2);
 	init_tm(t_weak_pointer, "WEAK-POINTER", sizeof(struct ecl_weak_pointer), 0);
 #ifdef GBC_BOEHM_PRECISE
-        type_bitmaps[t_list] =
+        type_info[t_list].descriptor =
                 to_bitmap(&c, &(c.car)) |
                 to_bitmap(&c, &(c.cdr));
-        type_bitmaps[t_bignum] =
+        type_info[t_bignum].descriptor =
                 to_bitmap(&o, &(o.big.big_limbs));
-        type_bitmaps[t_ratio] =
+        type_info[t_ratio].descriptor =
                 to_bitmap(&o, &(o.ratio.num)) |
                 to_bitmap(&o, &(o.ratio.den));
-        type_bitmaps[t_singlefloat] = 0;
-        type_bitmaps[t_doublefloat] = 0;
+        type_info[t_singlefloat].descriptor = 0;
+        type_info[t_doublefloat].descriptor = 0;
 #ifdef ECL_LONG_FLOAT
-        type_bitmaps[t_longfloat] = 0;
+        type_info[t_longfloat].descriptor = 0;
 #endif
-        type_bitmaps[t_complex] =
+        type_info[t_complex].descriptor =
                 to_bitmap(&o, &(o.complex.real)) |
                 to_bitmap(&o, &(o.complex.imag));
-        type_bitmaps[t_symbol] =
+        type_info[t_symbol].descriptor =
                 to_bitmap(&o, &(o.symbol.value)) |
                 to_bitmap(&o, &(o.symbol.gfdef)) |
                 to_bitmap(&o, &(o.symbol.plist)) |
                 to_bitmap(&o, &(o.symbol.name)) |
                 to_bitmap(&o, &(o.symbol.hpack));
-        type_bitmaps[t_package] =
+        type_info[t_package].descriptor =
                 to_bitmap(&o, &(o.pack.name)) |
                 to_bitmap(&o, &(o.pack.nicknames)) |
                 to_bitmap(&o, &(o.pack.shadowings)) |
@@ -571,32 +568,32 @@ init_alloc(void)
                 to_bitmap(&o, &(o.pack.usedby)) |
                 to_bitmap(&o, &(o.pack.internal)) |
                 to_bitmap(&o, &(o.pack.external));
-        type_bitmaps[t_hashtable] =
+        type_info[t_hashtable].descriptor =
 # ifdef ECL_THREADS
                 to_bitmap(&o, &(o.hash.lock)) |
 # endif
                 to_bitmap(&o, &(o.hash.data)) |
                 to_bitmap(&o, &(o.hash.rehash_size)) |
                 to_bitmap(&o, &(o.hash.threshold));
-        type_bitmaps[t_array] =
+        type_info[t_array].descriptor =
                 to_bitmap(&o, &(o.array.dims)) |
                 to_bitmap(&o, &(o.array.self.t)) |
                 to_bitmap(&o, &(o.array.displaced));
-        type_bitmaps[t_vector] =
+        type_info[t_vector].descriptor =
                 to_bitmap(&o, &(o.vector.self.t)) |
                 to_bitmap(&o, &(o.vector.displaced));
 # ifdef ECL_UNICODE
-        type_bitmaps[t_string] =
+        type_info[t_string].descriptor =
                 to_bitmap(&o, &(o.string.self)) |
                 to_bitmap(&o, &(o.string.displaced));
 # endif
-	type_bitmaps[t_base_string] =
+	type_info[t_base_string].descriptor =
                 to_bitmap(&o, &(o.base_string.self)) |
                 to_bitmap(&o, &(o.base_string.displaced));
-        type_bitmaps[t_bitvector] =
+        type_info[t_bitvector].descriptor =
                 to_bitmap(&o, &(o.vector.self.t)) |
                 to_bitmap(&o, &(o.vector.displaced));
-        type_bitmaps[t_stream] =
+        type_info[t_stream].descriptor =
                 to_bitmap(&o, &(o.stream.ops)) |
                 to_bitmap(&o, &(o.stream.object0)) |
                 to_bitmap(&o, &(o.stream.object1)) |
@@ -604,57 +601,57 @@ init_alloc(void)
                 to_bitmap(&o, &(o.stream.buffer)) |
                 to_bitmap(&o, &(o.stream.format)) |
                 to_bitmap(&o, &(o.stream.format_table));
-        type_bitmaps[t_random] =
+        type_info[t_random].descriptor =
                 to_bitmap(&o, &(o.random.value));
-        type_bitmaps[t_readtable] =
+        type_info[t_readtable].descriptor =
 # ifdef ECL_UNICODE
                 to_bitmap(&o, &(o.readtable.hash)) |
 # endif
                 to_bitmap(&o, &(o.readtable.table));
-        type_bitmaps[t_pathname] =
+        type_info[t_pathname].descriptor =
                 to_bitmap(&o, &(o.pathname.version)) |
                 to_bitmap(&o, &(o.pathname.type)) |
                 to_bitmap(&o, &(o.pathname.name)) |
                 to_bitmap(&o, &(o.pathname.directory)) |
                 to_bitmap(&o, &(o.pathname.device)) |
                 to_bitmap(&o, &(o.pathname.host));
-        type_bitmaps[t_bytecodes] =
+        type_info[t_bytecodes].descriptor =
                 to_bitmap(&o, &(o.bytecodes.name)) |
                 to_bitmap(&o, &(o.bytecodes.definition)) |
                 to_bitmap(&o, &(o.bytecodes.code)) |
                 to_bitmap(&o, &(o.bytecodes.data)) |
                 to_bitmap(&o, &(o.bytecodes.file)) |
                 to_bitmap(&o, &(o.bytecodes.file_position));
-        type_bitmaps[t_bclosure] =
+        type_info[t_bclosure].descriptor =
                 to_bitmap(&o, &(o.bclosure.code)) |
                 to_bitmap(&o, &(o.bclosure.lex));
-        type_bitmaps[t_cfun] =
+        type_info[t_cfun].descriptor =
                 to_bitmap(&o, &(o.cfun.name)) |
                 to_bitmap(&o, &(o.cfun.block)) |
                 to_bitmap(&o, &(o.cfun.file)) |
                 to_bitmap(&o, &(o.cfun.file_position));
-        type_bitmaps[t_cfunfixed] =
+        type_info[t_cfunfixed].descriptor =
                 to_bitmap(&o, &(o.cfunfixed.name)) |
                 to_bitmap(&o, &(o.cfunfixed.block)) |
                 to_bitmap(&o, &(o.cfunfixed.file)) |
                 to_bitmap(&o, &(o.cfunfixed.file_position));
-        type_bitmaps[t_cclosure] =
+        type_info[t_cclosure].descriptor =
                 to_bitmap(&o, &(o.cclosure.env)) |
                 to_bitmap(&o, &(o.cclosure.block)) |
                 to_bitmap(&o, &(o.cclosure.file)) |
                 to_bitmap(&o, &(o.cclosure.file_position));
 # ifndef CLOS
-        type_bitmaps[t_structure] =
+        type_info[t_structure].descriptor =
                 to_bitmap(&o, &(o.structure.self)) |
                 to_bitmap(&o, &(o.structure.name));
 # else
-        type_bitmaps[t_instance] =
+        type_info[t_instance].descriptor =
                 to_bitmap(&o, &(o.instance.clas)) |
                 to_bitmap(&o, &(o.instance.sig)) |
                 to_bitmap(&o, &(o.instance.slots));
 # endif
 # ifdef ECL_THREADS
-        type_bitmaps[t_process] =
+        type_info[t_process].descriptor =
                 to_bitmap(&o, &(o.process.name)) |
                 to_bitmap(&o, &(o.process.function)) |
                 to_bitmap(&o, &(o.process.args)) |
@@ -664,36 +661,35 @@ init_alloc(void)
                 to_bitmap(&o, &(o.process.parent)) |
                 to_bitmap(&o, &(o.process.exit_lock)) |
                 to_bitmap(&o, &(o.process.exit_values));
-        type_bitmaps[t_lock] =
+        type_info[t_lock].descriptor =
                 to_bitmap(&o, &(o.lock.name)) |
                 to_bitmap(&o, &(o.lock.holder));
-	type_bitmaps[t_condition_variable] = 0;
+	type_info[t_condition_variable].descriptor = 0;
 #   ifdef ECL_SEMAPHORES
-	type_bitmaps[t_semaphore] = 0;
+	type_info[t_semaphore].descriptor = 0;
 #   endif
 # endif
-        type_bitmaps[t_codeblock] =
+        type_info[t_codeblock].descriptor =
                 to_bitmap(&o, &(o.cblock.data)) |
                 to_bitmap(&o, &(o.cblock.temp_data)) |
                 to_bitmap(&o, &(o.cblock.next)) |
                 to_bitmap(&o, &(o.cblock.name)) |
                 to_bitmap(&o, &(o.cblock.links)) |
                 to_bitmap(&o, &(o.cblock.source));
-        type_bitmaps[t_foreign] =
+        type_info[t_foreign].descriptor =
                 to_bitmap(&o, &(o.foreign.data)) |
                 to_bitmap(&o, &(o.foreign.tag));
-        type_bitmaps[t_frame] =
+        type_info[t_frame].descriptor =
                 to_bitmap(&o, &(o.frame.stack)) |
                 to_bitmap(&o, &(o.frame.base)) |
                 to_bitmap(&o, &(o.frame.env));
-	type_bitmaps[t_weak_pointer] = 0;
+	type_info[t_weak_pointer].descriptor = 0;
 	for (i = 0; i < t_end; i++) {
-                /*		type_descriptor[i] = reverse_bitmap(type_bitmaps[i]); */
-		if (type_bitmaps[i])
-			type_descriptor[i] = GC_make_descriptor(type_bitmaps + i,
-								type_size[i] / sizeof(GC_word));
-		else
-			type_descriptor[i] = 0;
+                GC_word descriptor = type_info[i].descriptor;
+                int bits = type_info[i].size / sizeof(GC_word);
+		type_info[i].descriptor = descriptor?
+                        GC_make_descriptor(&descriptor, bits) :
+                        0;
 	}
 #endif /* GBC_BOEHM_PRECISE */
 	old_GC_push_other_roots = GC_push_other_roots;
