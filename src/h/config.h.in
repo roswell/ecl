@@ -264,6 +264,9 @@ typedef unsigned @CL_FIXNUM_TYPE@ cl_hashkey;
 /* Activate Boehm-Weiser incremental garbage collector			*/
 #undef GBC_BOEHM_GENGC
 
+/* Activate Boehm-Weiser precise garbage collector			*/
+#undef GBC_BOEHM_PRECISE
+
 /*
  * SYSTEM FEATURES:
  */

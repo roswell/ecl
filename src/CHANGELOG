@@ -42,6 +42,11 @@ ECL 10.1.1:
  - New function EXT:EXTERNAL-PROCESS-WAIT to wait indefinitely or simply query
    the status of a process.
 
+ - ECL implements a new garbage collector marking mode which at the overhead of
+   one word per object achieves precise marking of heap objects, reducing
+   accidental data retention and improving the time spent in garbage
+   collection.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

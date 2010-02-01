@@ -29,6 +29,15 @@
 
 static void finalize_queued();
 
+#include "gc_mark.h"
+#ifdef GBC_BOEHM_PRECISE
+#include "private/gc_pmark.h"
+#include "gc_typed.h"
+static int cl_object_kind;
+static void **cl_object_free_list;
+static unsigned cl_object_proc;
+#endif
+
 /**********************************************************
  *		OBJECT ALLOCATION			  *
  **********************************************************/
@@ -132,10 +141,73 @@ out_of_memory(size_t requested_bytes)
 #endif
 
 static size_t type_size[t_end];
+static GC_word type_bitmaps[t_end];
+static GC_word type_descriptor[t_end];
+
+static void
+error_wrong_tag(cl_type t)
+{
+        ecl_internal_error("Collector called with invalid tag number.");
+}
 
 cl_object
 ecl_alloc_object(cl_type t)
 {
+#ifdef GBC_BOEHM_PRECISE
+# if 1
+	const cl_env_ptr the_env = ecl_process_env();
+        cl_object op;
+        ecl_disable_interrupts_env(the_env);
+        op = GC_malloc_explicitly_typed(type_size[t], type_descriptor[t]);
+        op->d.t = t;
+        op->d.m = 0;
+        ecl_enable_interrupts_env(the_env);
+        return op;
+# else
+#define TYPD_EXTRA_BYTES (sizeof(word) - EXTRA_BYTES)
+#define GENERAL_MALLOC(lb,k) \
+        (void *)GC_generic_malloc((word)lb, k)
+	const cl_env_ptr the_env = ecl_process_env();
+        cl_object op;
+        void **opp;
+        size_t lb, lg;
+        DCL_LOCK_STATE;
+
+        ecl_disable_interrupts_env(the_env);
+        if (t < t_start || t > t_end) {
+                error_wrong_tag(t);
+        }
+        lb = type_size[t] + TYPD_EXTRA_BYTES;
+        if (SMALL_OBJ(lb)) {
+                lg = GC_size_map[lb];
+                opp = &(cl_object_free_list[lg]);
+                LOCK();
+                if ((op = *opp) == 0) {
+                        UNLOCK();
+                        op = (cl_object)GENERAL_MALLOC((word)lb, cl_object_kind);
+                        if (0 == op) return 0;
+                        lg = GC_size_map[lb];	/* May have been uninitialized.	*/
+                } else {
+                        *opp = obj_link(op);
+                        obj_link(op) = 0;
+                        GC_bytes_allocd += GRANULES_TO_BYTES(lg);
+                        UNLOCK();
+                }
+        } else {
+                op = (cl_object)GENERAL_MALLOC((word)lb, cl_object_kind);
+                if (op == NULL)
+                        ecl_internal_error("Out of memory");
+                lg = BYTES_TO_GRANULES(GC_size(op));
+        }
+        if (op == NULL)
+                ecl_internal_error("Out of memory");
+        op->d.t = t;
+        op->d.m = 0;
+        ((word *)op)[GRANULES_TO_WORDS(lg) - 1] = type_descriptor[t];
+        ecl_enable_interrupts_env(the_env);
+        return op;
+# endif
+#else
 	const cl_env_ptr the_env = ecl_process_env();
 
 	/* GC_MALLOC already resets objects */
@@ -207,6 +279,7 @@ ecl_alloc_object(cl_type t)
 		printf("\ttype = %d\n", t);
 		ecl_internal_error("alloc botch.");
 	}
+#endif
 }
 
 cl_object
@@ -345,9 +418,21 @@ extern void (*GC_start_call_back)();
 static void (*old_GC_push_other_roots)();
 static void stacks_scanner();
 
+static cl_index
+to_bitmap(void *x, void *y)
+{
+        cl_index n = (char*)y - (char*)x;
+        if (n % sizeof(void*))
+                ecl_internal_error("Misaligned pointer in ECL structure.");
+        n /= sizeof(void*);
+        return 1 << n;
+}
+
 void
 init_alloc(void)
 {
+        union cl_lispunion o;
+        struct ecl_cons c;
 	int i;
 	if (alloc_initialized) return;
 	alloc_initialized = TRUE;
@@ -370,11 +455,19 @@ init_alloc(void)
 		GC_enable_incremental();
 	}
 	GC_register_displacement(1);
-#if 0
+#ifdef GBC_BOEHM_PRECISE
 	GC_init_explicit_typing();
 #endif
 	GC_clear_roots();
 	GC_disable();
+
+#ifdef GBC_BOEHM_PRECISE
+        cl_object_free_list = (void **)GC_new_free_list_inner();
+        cl_object_kind = GC_new_kind_inner(cl_object_free_list,
+                                           (((word)WORDS_TO_BYTES(-1)) | GC_DS_PER_OBJECT),
+                                           TRUE, TRUE);
+#endif /* !GBC_BOEHM_PRECISE */
+
 	GC_set_max_heap_size(cl_core.max_heap_size = ecl_get_option(ECL_OPT_HEAP_SIZE));
         /* Save some memory for the case we get tight. */
 	if (cl_core.max_heap_size == 0) {
@@ -384,56 +477,230 @@ init_alloc(void)
 		cl_core.safety_region = 0;
 	}
 
-#define init_tm(x,y,z) type_size[x] = (z)
+#define init_tm(x,y,z,w) type_size[x] = (z); /*type_ptr[x] = (w)*/
 	for (i = 0; i < t_end; i++) {
 		type_size[i] = 0;
+                type_bitmaps[i] = 0;
 	}
-	init_tm(t_singlefloat, "SINGLE-FLOAT", /* 8 */
-		sizeof(struct ecl_singlefloat));
-	init_tm(t_list, "CONS", sizeof(struct ecl_cons)); /* 12 */
-	init_tm(t_doublefloat, "DOUBLE-FLOAT", /* 16 */
-		sizeof(struct ecl_doublefloat));
-	init_tm(t_bytecodes, "BYTECODES", sizeof(struct ecl_bytecodes));
-	init_tm(t_bclosure, "BCLOSURE", sizeof(struct ecl_bclosure));
-	init_tm(t_base_string, "BASE-STRING", sizeof(struct ecl_base_string)); /* 20 */
-#ifdef ECL_UNICODE
-	init_tm(t_string, "STRING", sizeof(struct ecl_string));
-#endif
-	init_tm(t_array, "ARRAY", sizeof(struct ecl_array)); /* 24 */
-	init_tm(t_pathname, "PATHNAME", sizeof(struct ecl_pathname)); /* 28 */
-	init_tm(t_symbol, "SYMBOL", sizeof(struct ecl_symbol)); /* 32 */
-	init_tm(t_package, "PACKAGE", sizeof(struct ecl_package)); /* 36 */
-	init_tm(t_codeblock, "CODEBLOCK", sizeof(struct ecl_codeblock));
-	init_tm(t_bignum, "BIGNUM", sizeof(struct ecl_bignum));
-	init_tm(t_ratio, "RATIO", sizeof(struct ecl_ratio));
-	init_tm(t_complex, "COMPLEX", sizeof(struct ecl_complex));
-	init_tm(t_hashtable, "HASH-TABLE", sizeof(struct ecl_hashtable));
-	init_tm(t_vector, "VECTOR", sizeof(struct ecl_vector));
-	init_tm(t_bitvector, "BIT-VECTOR", sizeof(struct ecl_vector));
-	init_tm(t_stream, "STREAM", sizeof(struct ecl_stream));
-	init_tm(t_random, "RANDOM-STATE", sizeof(struct ecl_random));
-	init_tm(t_readtable, "READTABLE", sizeof(struct ecl_readtable));
-	init_tm(t_cfun, "CFUN", sizeof(struct ecl_cfun));
-	init_tm(t_cfunfixed, "CFUN", sizeof(struct ecl_cfunfixed));
-	init_tm(t_cclosure, "CCLOSURE", sizeof(struct ecl_cclosure));
-#ifndef CLOS
-	init_tm(t_structure, "STRUCTURE", sizeof(struct ecl_structure));
-#else
-	init_tm(t_instance, "INSTANCE", sizeof(struct ecl_instance));
-#endif /* CLOS */
-	init_tm(t_foreign, "FOREIGN", sizeof(struct ecl_foreign));
-#ifdef ECL_THREADS
-	init_tm(t_process, "PROCESS", sizeof(struct ecl_process));
-	init_tm(t_lock, "LOCK", sizeof(struct ecl_lock));
-	init_tm(t_condition_variable, "CONDITION-VARIABLE",
-                sizeof(struct ecl_condition_variable));
-#endif
-#ifdef ECL_SEMAPHORES
-	init_tm(t_semaphores, "SEMAPHORES", sizeof(struct ecl_semaphores));
-#endif
+	init_tm(t_list, "CONS", sizeof(struct ecl_cons), 2);
+        type_bitmaps[t_list] =
+                to_bitmap(&c, &(c.car)) |
+                to_bitmap(&c, &(c.cdr));
+
+	init_tm(t_bignum, "BIGNUM", sizeof(struct ecl_bignum), 0);
+        type_bitmaps[t_bignum] =
+                to_bitmap(&o, &(o.big.big_limbs));
+
+	init_tm(t_ratio, "RATIO", sizeof(struct ecl_ratio), 2);
+        type_bitmaps[t_ratio] =
+                to_bitmap(&o, &(o.ratio.num)) |
+                to_bitmap(&o, &(o.ratio.den));
+
+	init_tm(t_singlefloat, "SINGLE-FLOAT", sizeof(struct ecl_singlefloat), 0);
+        type_bitmaps[t_singlefloat] = 0;
+
+	init_tm(t_doublefloat, "DOUBLE-FLOAT", sizeof(struct ecl_doublefloat), 0);
+        type_bitmaps[t_doublefloat] = 0;
+
 #ifdef ECL_LONG_FLOAT
 	init_tm(t_longfloat, "LONG-FLOAT", sizeof(struct ecl_long_float));
+        type_bitmaps[t_longfloat] = 0;
 #endif
+	init_tm(t_complex, "COMPLEX", sizeof(struct ecl_complex), 2);
+        type_bitmaps[t_complex] =
+                to_bitmap(&o, &(o.complex.real)) |
+                to_bitmap(&o, &(o.complex.imag));
+
+	init_tm(t_symbol, "SYMBOL", sizeof(struct ecl_symbol), 5);
+        type_bitmaps[t_symbol] =
+                to_bitmap(&o, &(o.symbol.value)) |
+                to_bitmap(&o, &(o.symbol.gfdef)) |
+                to_bitmap(&o, &(o.symbol.plist)) |
+                to_bitmap(&o, &(o.symbol.name)) |
+                to_bitmap(&o, &(o.symbol.hpack));
+
+	init_tm(t_package, "PACKAGE", sizeof(struct ecl_package), -1); /* 36 */
+        type_bitmaps[t_package] =
+                to_bitmap(&o, &(o.pack.name)) |
+                to_bitmap(&o, &(o.pack.nicknames)) |
+                to_bitmap(&o, &(o.pack.shadowings)) |
+                to_bitmap(&o, &(o.pack.uses)) |
+                to_bitmap(&o, &(o.pack.usedby)) |
+                to_bitmap(&o, &(o.pack.internal)) |
+                to_bitmap(&o, &(o.pack.external));
+
+#ifdef ECL_THREADS
+	init_tm(t_hashtable, "HASH-TABLE", sizeof(struct ecl_hashtable), 3);
+#else
+	init_tm(t_hashtable, "HASH-TABLE", sizeof(struct ecl_hashtable), 4);
+#endif
+        type_bitmaps[t_hashtable] =
+#ifdef ECL_THREADS
+                to_bitmap(&o, &(o.hash.lock)) |
+#endif
+                to_bitmap(&o, &(o.hash.data)) |
+                to_bitmap(&o, &(o.hash.rehash_size)) |
+                to_bitmap(&o, &(o.hash.threshold));
+
+	init_tm(t_array, "ARRAY", sizeof(struct ecl_array), 3);
+        type_bitmaps[t_array] =
+                to_bitmap(&o, &(o.array.dims)) |
+                to_bitmap(&o, &(o.array.self.t)) |
+                to_bitmap(&o, &(o.array.displaced));
+
+	init_tm(t_vector, "VECTOR", sizeof(struct ecl_vector), 2);
+        type_bitmaps[t_vector] =
+                to_bitmap(&o, &(o.vector.self.t)) |
+                to_bitmap(&o, &(o.vector.displaced));
+#ifdef ECL_UNICODE
+	init_tm(t_string, "STRING", sizeof(struct ecl_string), 2);
+        type_bitmaps[t_string] =
+                to_bitmap(&o, &(o.string.self)) |
+                to_bitmap(&o, &(o.string.displaced));
+#endif
+	init_tm(t_base_string, "BASE-STRING", sizeof(struct ecl_base_string), 2);
+	type_bitmaps[t_base_string] =
+                to_bitmap(&o, &(o.base_string.self)) |
+                to_bitmap(&o, &(o.base_string.displaced));
+
+	init_tm(t_bitvector, "BIT-VECTOR", sizeof(struct ecl_vector), 2);
+        type_bitmaps[t_bitvector] =
+                to_bitmap(&o, &(o.vector.self.t)) |
+                to_bitmap(&o, &(o.vector.displaced));
+
+	init_tm(t_stream, "STREAM", sizeof(struct ecl_stream), 6);
+        type_bitmaps[t_stream] =
+                to_bitmap(&o, &(o.stream.ops)) |
+                to_bitmap(&o, &(o.stream.object0)) |
+                to_bitmap(&o, &(o.stream.object1)) |
+                to_bitmap(&o, &(o.stream.byte_stack)) |
+                to_bitmap(&o, &(o.stream.buffer)) |
+                to_bitmap(&o, &(o.stream.format)) |
+                to_bitmap(&o, &(o.stream.format_table));
+
+	init_tm(t_random, "RANDOM-STATE", sizeof(struct ecl_random), -1);
+        type_bitmaps[t_random] =
+                to_bitmap(&o, &(o.random.value));
+
+	init_tm(t_readtable, "READTABLE", sizeof(struct ecl_readtable), 2);
+        type_bitmaps[t_readtable] =
+#ifdef ECL_UNICODE
+                to_bitmap(&o, &(o.readtable.hash)) |
+#endif
+                to_bitmap(&o, &(o.readtable.table));
+
+	init_tm(t_pathname, "PATHNAME", sizeof(struct ecl_pathname), -1);
+        type_bitmaps[t_pathname] =
+                to_bitmap(&o, &(o.pathname.version)) |
+                to_bitmap(&o, &(o.pathname.type)) |
+                to_bitmap(&o, &(o.pathname.name)) |
+                to_bitmap(&o, &(o.pathname.directory)) |
+                to_bitmap(&o, &(o.pathname.device)) |
+                to_bitmap(&o, &(o.pathname.host));
+
+	init_tm(t_bytecodes, "BYTECODES", sizeof(struct ecl_bytecodes), -1);
+        type_bitmaps[t_bytecodes] =
+                to_bitmap(&o, &(o.bytecodes.name)) |
+                to_bitmap(&o, &(o.bytecodes.definition)) |
+                to_bitmap(&o, &(o.bytecodes.code)) |
+                to_bitmap(&o, &(o.bytecodes.data)) |
+                to_bitmap(&o, &(o.bytecodes.file)) |
+                to_bitmap(&o, &(o.bytecodes.file_position));
+
+	init_tm(t_bclosure, "BCLOSURE", sizeof(struct ecl_bclosure), 3);
+        type_bitmaps[t_bclosure] =
+                to_bitmap(&o, &(o.bclosure.code)) |
+                to_bitmap(&o, &(o.bclosure.lex));
+
+	init_tm(t_cfun, "CFUN", sizeof(struct ecl_cfun), -1);
+        type_bitmaps[t_cfun] =
+                to_bitmap(&o, &(o.cfun.name)) |
+                to_bitmap(&o, &(o.cfun.block)) |
+                to_bitmap(&o, &(o.cfun.file)) |
+                to_bitmap(&o, &(o.cfun.file_position));
+
+	init_tm(t_cfunfixed, "CFUNFIXED", sizeof(struct ecl_cfunfixed), -1);
+        type_bitmaps[t_cfunfixed] =
+                to_bitmap(&o, &(o.cfunfixed.name)) |
+                to_bitmap(&o, &(o.cfunfixed.block)) |
+                to_bitmap(&o, &(o.cfunfixed.file)) |
+                to_bitmap(&o, &(o.cfunfixed.file_position));
+
+	init_tm(t_cclosure, "CCLOSURE", sizeof(struct ecl_cclosure), -1);
+        type_bitmaps[t_cclosure] =
+                to_bitmap(&o, &(o.cclosure.env)) |
+                to_bitmap(&o, &(o.cclosure.block)) |
+                to_bitmap(&o, &(o.cclosure.file)) |
+                to_bitmap(&o, &(o.cclosure.file_position));
+
+#ifndef CLOS
+	init_tm(t_structure, "STRUCTURE", sizeof(struct ecl_structure), 2);
+        type_bitmaps[t_structure] =
+                to_bitmap(&o, &(o.structure.self)) |
+                to_bitmap(&o, &(o.structure.name));
+#else
+	init_tm(t_instance, "INSTANCE", sizeof(struct ecl_instance), 4);
+        type_bitmaps[t_instance] =
+                to_bitmap(&o, &(o.instance.clas)) |
+                to_bitmap(&o, &(o.instance.sig)) |
+                to_bitmap(&o, &(o.instance.slots));
+#endif /* CLOS */
+
+#ifdef ECL_THREADS
+	init_tm(t_process, "PROCESS", sizeof(struct ecl_process), 8);
+        type_bitmaps[t_process] =
+                to_bitmap(&o, &(o.process.name)) |
+                to_bitmap(&o, &(o.process.function)) |
+                to_bitmap(&o, &(o.process.args)) |
+                to_bitmap(&o, &(o.process.env)) |
+                to_bitmap(&o, &(o.process.interrupt)) |
+                to_bitmap(&o, &(o.process.initial_bindings)) |
+                to_bitmap(&o, &(o.process.parent)) |
+                to_bitmap(&o, &(o.process.exit_lock)) |
+                to_bitmap(&o, &(o.process.exit_values));
+
+	init_tm(t_lock, "LOCK", sizeof(struct ecl_lock), 2);
+        type_bitmaps[t_lock] =
+                to_bitmap(&o, &(o.lock.name)) |
+                to_bitmap(&o, &(o.lock.holder));
+
+	init_tm(t_condition_variable, "CONDITION-VARIABLE",
+                sizeof(struct ecl_condition_variable), 0);
+	type_bitmaps[t_condition_variable] = 0;
+
+# ifdef ECL_SEMAPHORES
+	init_tm(t_semaphore, "SEMAPHORES", sizeof(struct ecl_semaphores));
+	type_bitmaps[t_semaphore] = 0;
+# endif
+#endif
+	init_tm(t_codeblock, "CODEBLOCK", sizeof(struct ecl_codeblock), -1);
+        type_bitmaps[t_codeblock] =
+                to_bitmap(&o, &(o.cblock.data)) |
+                to_bitmap(&o, &(o.cblock.temp_data)) |
+                to_bitmap(&o, &(o.cblock.next)) |
+                to_bitmap(&o, &(o.cblock.name)) |
+                to_bitmap(&o, &(o.cblock.links)) |
+                to_bitmap(&o, &(o.cblock.source));
+
+	init_tm(t_foreign, "FOREIGN", sizeof(struct ecl_foreign), 2);
+        type_bitmaps[t_foreign] =
+                to_bitmap(&o, &(o.foreign.data)) |
+                to_bitmap(&o, &(o.foreign.tag));
+
+	init_tm(t_frame, "STACK-FRAME", sizeof(struct ecl_stack_frame), 2);
+        type_bitmaps[t_frame] =
+                to_bitmap(&o, &(o.frame.stack)) |
+                to_bitmap(&o, &(o.frame.base)) |
+                to_bitmap(&o, &(o.frame.env));
+
+	init_tm(t_weak_pointer, "WEAK-POINTER", sizeof(struct ecl_weak_pointer), 0);
+	type_bitmaps[t_weak_pointer] = 0;
+
+	for (i = 0; i < t_end; i++) {
+                /*		type_descriptor[i] = reverse_bitmap(type_bitmaps[i]); */
+                type_descriptor[i] = GC_make_descriptor(type_bitmaps + i,
+                                                        type_size[i] / sizeof(GC_word));
+	}
 
 	old_GC_push_other_roots = GC_push_other_roots;
 	GC_push_other_roots = stacks_scanner;
