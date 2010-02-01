@@ -25,6 +25,10 @@
 #include <winsock.h>
 #endif
 
+#ifndef __GCC__
+# define __builtin_expect(form,value) (form)
+#endif
+
 #ifdef GBC_BOEHM
 
 static void finalize_queued();
