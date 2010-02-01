@@ -39,8 +39,10 @@ static void finalize_queued();
 # else
 #include "private/gc_priv.h"
 #include "gc_typed.h"
+#  ifdef GBC_BOEHM_OWN_ALLOCATOR
 static int cl_object_kind;
 static void **cl_object_free_list;
+#  endif
 # endif
 #endif
 
@@ -472,10 +474,12 @@ init_alloc(void)
 	GC_disable();
 
 #ifdef GBC_BOEHM_PRECISE
+# ifdef GBC_BOEHM_OWN_ALLOCATOR
         cl_object_free_list = (void **)GC_new_free_list_inner();
         cl_object_kind = GC_new_kind_inner(cl_object_free_list,
                                            (((word)WORDS_TO_BYTES(-1)) | GC_DS_PER_OBJECT),
                                            TRUE, TRUE);
+# endif
 #endif /* !GBC_BOEHM_PRECISE */
 
 	GC_set_max_heap_size(cl_core.max_heap_size = ecl_get_option(ECL_OPT_HEAP_SIZE));
