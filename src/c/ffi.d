@@ -36,8 +36,8 @@ static const cl_object ecl_foreign_type_table[] = {
         @':uint16-t',
 #endif
 #ifdef ecl_uint32_t
-        @':int64-t',
-        @':uint64-t',
+        @':int32-t',
+        @':uint32-t',
 #endif
 #ifdef ecl_uint64_t
         @':int64-t',
