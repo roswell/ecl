@@ -25,8 +25,12 @@
 #include <winsock.h>
 #endif
 
-#ifndef __GCC__
+#if !defined(__GNUC__)
 # define __builtin_expect(form,value) (form)
+#else
+# if (__GNUC__ < 3)
+#  define __builtin_expect(form,value) (form)
+# endif
 #endif
 
 #ifdef GBC_BOEHM
@@ -37,10 +41,14 @@ static void finalize_queued();
 # if GBC_BOEHM
 #  undef GBC_BOEHM_PRECISE
 # else
-#include "gc_typed.h"
+#  include "gc_typed.h"
+#  include "gc_mark.h"
 #  ifdef GBC_BOEHM_OWN_ALLOCATOR
-#include "private/gc_priv.h"
-static int cl_object_kind;
+#  include "private/gc_priv.h"
+#  endif
+#  define GBC_BOEHM_OWN_MARKER
+#  if defined(GBC_BOEHM_OWN_MARKER) || defined(GBC_BOEHM_OWN_ALLOCATOR)
+static int cl_object_kind, cl_object_mark_proc_index;
 static void **cl_object_free_list;
 #  endif
 # endif
@@ -242,6 +250,224 @@ allocate_object_own(register struct ecl_type_information *type_info)
         return (cl_object)op;
 }
 #endif /* GBC_BOEHM_OWN_ALLOCATOR */
+
+#ifdef GBC_BOEHM_OWN_MARKER
+#define IGNORABLE_POINTER(obj) (IMMEDIATE(obj) & 2)
+#define GC_MARK_AND_PUSH(obj, msp, lim, src) \
+        ((!IGNORABLE_POINTER(obj) &&				      \
+	  (GC_word)obj >= (GC_word)GC_least_plausible_heap_addr &&    \
+	  (GC_word)obj <= (GC_word)GC_greatest_plausible_heap_addr)?  \
+	 GC_mark_and_push(obj, msp, lim, src) :			      \
+	 msp)
+
+static struct GC_ms_entry *
+cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl,
+		    GC_word env)
+{
+#if 1
+	cl_type t = ((cl_object)addr)->d.t;
+	if (__builtin_expect(t > t_start && t < t_end, 1)) {
+		struct ecl_type_information *info = type_info + t;
+		GC_word d = info->descriptor;
+		GC_word *p;
+		for (p = addr; d; p++, d<<=1) {
+			if ((GC_signed_word)d < 0) {
+				GC_word aux = *p;
+				if ((aux & 2) ||
+				    aux <= (GC_word)GC_least_plausible_heap_addr ||
+				    aux >= (GC_word)GC_greatest_plausible_heap_addr)
+					continue;
+				msp = GC_mark_and_push((void*)aux, (void*)msp,
+						       (void*)msl, (void*)p);
+			}
+		}
+	}
+#else
+#define MAYBE_MARK2(ptr) {						\
+		GC_word aux = (GC_word)(ptr);				\
+		if (!(aux & 2) && \
+		    aux >= (GC_word)GC_least_plausible_heap_addr &&	\
+		    aux <= (GC_word)GC_greatest_plausible_heap_addr)	\
+			msp = GC_mark_and_push((void*)aux, msp, msl, (void*)o); \
+	}
+#define MAYBE_MARK(ptr) {						\
+		GC_word aux = (GC_word)(ptr);				\
+		if (!(aux & 2) && \
+		    aux >= (GC_word)lpa &&	\
+		    aux <= (GC_word)gpa)	\
+			msp = GC_mark_and_push((void*)aux, msp, msl, (void*)o); \
+	}
+	cl_object o = (cl_object)addr;
+	const GC_word lpa = (GC_word)GC_least_plausible_heap_addr;
+	const GC_word gpa = (GC_word)GC_greatest_plausible_heap_addr;
+	switch (o->d.t) {
+	case t_bignum:
+                MAYBE_MARK(o->big.big_limbs);
+		break;
+        case t_ratio:
+                MAYBE_MARK(o->ratio.num);
+                MAYBE_MARK(o->ratio.den);
+		break;
+        case t_complex:
+                MAYBE_MARK(o->complex.real);
+                MAYBE_MARK(o->complex.imag);
+		break;
+        case t_symbol:
+                MAYBE_MARK(o->symbol.hpack);
+                MAYBE_MARK(o->symbol.name);
+                MAYBE_MARK(o->symbol.plist);
+                MAYBE_MARK(o->symbol.gfdef);
+                MAYBE_MARK(o->symbol.value);
+		break;
+        case t_package:
+                MAYBE_MARK(o->pack.external);
+                MAYBE_MARK(o->pack.internal);
+                MAYBE_MARK(o->pack.usedby);
+                MAYBE_MARK(o->pack.uses);
+                MAYBE_MARK(o->pack.shadowings);
+                MAYBE_MARK(o->pack.nicknames);
+                MAYBE_MARK(o->pack.name);
+		break;
+        case t_hashtable:
+# ifdef ECL_THREADS
+                MAYBE_MARK(o->hash.lock);
+# endif
+                MAYBE_MARK(o->hash.threshold);
+                MAYBE_MARK(o->hash.rehash_size);
+                MAYBE_MARK(o->hash.data);
+ 		break;
+	case t_array:
+                MAYBE_MARK(o->array.dims);
+        case t_vector:
+# ifdef ECL_UNICODE
+        case t_string:
+# endif
+	case t_base_string:
+        case t_bitvector:
+                MAYBE_MARK(o->vector.self.t);
+                MAYBE_MARK(o->vector.displaced);
+		break;
+        case t_stream:
+                MAYBE_MARK(o->stream.format_table);
+                MAYBE_MARK(o->stream.format);
+                MAYBE_MARK(o->stream.buffer);
+                MAYBE_MARK(o->stream.byte_stack);
+                MAYBE_MARK(o->stream.object1);
+                MAYBE_MARK(o->stream.object0);
+                MAYBE_MARK(o->stream.ops);
+ 		break;
+       case t_random:
+                MAYBE_MARK(o->random.value);
+  		break;
+      case t_readtable:
+# ifdef ECL_UNICODE
+                MAYBE_MARK(o->readtable.hash);
+# endif
+                MAYBE_MARK(o->readtable.table);
+		break;
+        case t_pathname:
+                MAYBE_MARK(o->pathname.version);
+                MAYBE_MARK(o->pathname.type);
+                MAYBE_MARK(o->pathname.name);
+                MAYBE_MARK(o->pathname.directory);
+                MAYBE_MARK(o->pathname.device);
+                MAYBE_MARK(o->pathname.host);
+		break;
+        case t_bytecodes:
+                MAYBE_MARK(o->bytecodes.file_position);
+                MAYBE_MARK(o->bytecodes.file);
+                MAYBE_MARK(o->bytecodes.data);
+                MAYBE_MARK(o->bytecodes.code);
+                MAYBE_MARK(o->bytecodes.definition);
+                MAYBE_MARK(o->bytecodes.name);
+		break;
+        case t_bclosure:
+                MAYBE_MARK(o->bclosure.lex);
+                MAYBE_MARK(o->bclosure.code);
+		break;
+        case t_cfun:
+                MAYBE_MARK(o->cfun.file_position);
+                MAYBE_MARK(o->cfun.file);
+                MAYBE_MARK(o->cfun.block);
+                MAYBE_MARK(o->cfun.name);
+		break;
+        case t_cfunfixed:
+                MAYBE_MARK(o->cfunfixed.file_position);
+                MAYBE_MARK(o->cfunfixed.file);
+                MAYBE_MARK(o->cfunfixed.block);
+                MAYBE_MARK(o->cfunfixed.name);
+		break;
+        case t_cclosure:
+                MAYBE_MARK(o->cclosure.file_position);
+                MAYBE_MARK(o->cclosure.file);
+                MAYBE_MARK(o->cclosure.block);
+                MAYBE_MARK(o->cclosure.env);
+		break;
+# ifndef CLOS
+        case t_structure:
+                MAYBE_MARK(o->structure.name);
+                MAYBE_MARK(o->structure.self);
+		break;
+# else
+        case t_instance:
+                MAYBE_MARK(o->instance.slots);
+                MAYBE_MARK(o->instance.sig);
+                MAYBE_MARK(o->instance.clas);
+		break;
+# endif
+# ifdef ECL_THREADS
+        case t_process:
+                MAYBE_MARK(o->process.exit_values);
+                MAYBE_MARK(o->process.exit_lock);
+                MAYBE_MARK(o->process.parent);
+                MAYBE_MARK(o->process.initial_bindings);
+                MAYBE_MARK(o->process.interrupt);
+                MAYBE_MARK(o->process.env);
+                MAYBE_MARK(o->process.args);
+                MAYBE_MARK(o->process.function);
+                MAYBE_MARK(o->process.name);
+		break;
+        case t_lock:
+                MAYBE_MARK(o->lock.holder);
+                MAYBE_MARK(o->lock.name);
+		break;
+# endif
+        case t_codeblock:
+                MAYBE_MARK(o->cblock.source);
+                MAYBE_MARK(o->cblock.links);
+                MAYBE_MARK(o->cblock.name);
+                MAYBE_MARK(o->cblock.next);
+                MAYBE_MARK(o->cblock.temp_data);
+                MAYBE_MARK(o->cblock.data);
+		break;
+        case t_foreign:
+                MAYBE_MARK(o->foreign.tag);
+                MAYBE_MARK(o->foreign.data);
+		break;
+        case t_frame:
+                MAYBE_MARK(o->frame.env);
+                MAYBE_MARK(o->frame.base);
+                MAYBE_MARK(o->frame.stack);
+		break;
+	default:
+		break;
+	}
+#endif
+	return msp;
+}
+
+static cl_object
+allocate_object_marked(register struct ecl_type_information *type_info)
+{
+	const cl_env_ptr the_env = ecl_process_env();
+        cl_object op;
+        ecl_disable_interrupts_env(the_env);
+        op = GC_generic_malloc(type_info->size, cl_object_kind);
+        op->d.t = type_info->t;
+        ecl_enable_interrupts_env(the_env);
+        return op;
+}
+#endif
 
 cl_object
 ecl_alloc_object(cl_type t)
@@ -514,6 +740,14 @@ init_alloc(void)
         cl_object_kind = GC_new_kind_inner(cl_object_free_list,
                                            (((word)WORDS_TO_BYTES(-1)) | GC_DS_PER_OBJECT),
                                            TRUE, TRUE);
+# else
+#  ifdef GBC_BOEHM_OWN_MARKER
+        cl_object_free_list = (void **)GC_new_free_list_inner();
+	cl_object_mark_proc_index = GC_new_proc(cl_object_mark_proc);
+        cl_object_kind = GC_new_kind_inner(cl_object_free_list,
+                                           GC_MAKE_PROC(cl_object_mark_proc_index, 0),
+                                           FALSE, TRUE);
+#  endif
 # endif
 #endif /* !GBC_BOEHM_PRECISE */
 
@@ -735,6 +969,11 @@ init_alloc(void)
                 GC_word descriptor = type_info[i].descriptor;
                 int bits = type_info[i].size / sizeof(GC_word);
                 if (descriptor) {
+#ifdef GBC_BOEHM_OWN_MARKER
+			type_info[i].allocator = allocate_object_marked;
+                        descriptor = GC_make_descriptor(&descriptor, bits);
+			descriptor &= ~GC_DS_TAGS;
+#else
                         GC_word mask = (1 << (bits-1)) - 1;
                         mask ^= (descriptor >> 1);
                         if (mask == 0)
@@ -742,6 +981,7 @@ init_alloc(void)
                         else
                                 type_info[i].allocator = allocate_object_typed;
                         descriptor = GC_make_descriptor(&descriptor, bits);
+#endif
                 } else {
                         type_info[i].allocator = allocate_object_atomic;
                         descriptor = 0;
