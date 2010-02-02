@@ -37,9 +37,9 @@ static void finalize_queued();
 # if GBC_BOEHM
 #  undef GBC_BOEHM_PRECISE
 # else
-#include "private/gc_priv.h"
 #include "gc_typed.h"
 #  ifdef GBC_BOEHM_OWN_ALLOCATOR
+#include "private/gc_priv.h"
 static int cl_object_kind;
 static void **cl_object_free_list;
 #  endif
@@ -148,11 +148,13 @@ out_of_memory(size_t requested_bytes)
 #undef alloc_object
 #endif
 
-static struct {
+static struct ecl_type_information {
         size_t size;
 #ifdef GBC_BOEHM_PRECISE
         GC_word descriptor;
 #endif
+        cl_object (*allocator)(register struct ecl_type_information *);
+        size_t t;
 } type_info[t_end];
 
 static void
@@ -161,29 +163,49 @@ error_wrong_tag(cl_type t)
         ecl_internal_error("Collector called with invalid tag number.");
 }
 
-cl_object
-ecl_alloc_object(cl_type t)
+static cl_object
+allocate_object_atomic(register struct ecl_type_information *type_info)
 {
-#ifdef GBC_BOEHM_PRECISE
-# ifndef GBC_BOEHM_OWN_ALLOCATOR
 	const cl_env_ptr the_env = ecl_process_env();
-	GC_descr d;
-	size_t size;
         cl_object op;
         ecl_disable_interrupts_env(the_env);
-        if (__builtin_expect(t < t_start || t > t_end, 0)) {
-                error_wrong_tag(t);
-        }
-	size = type_info[t].size;
-	d = type_info[t].descriptor;
-	if (d)
-		op = GC_malloc_explicitly_typed(size, d);
-	else
-		op = GC_MALLOC_ATOMIC(size);
-        op->d.t = t;
+        op = GC_MALLOC_ATOMIC(type_info->size);
+        op->d.t = type_info->t;
         ecl_enable_interrupts_env(the_env);
         return op;
-# else
+}
+
+static cl_object
+allocate_object_full(register struct ecl_type_information *type_info)
+{
+	const cl_env_ptr the_env = ecl_process_env();
+        cl_object op;
+        ecl_disable_interrupts_env(the_env);
+        op = GC_MALLOC(type_info->size);
+        op->d.t = type_info->t;
+        ecl_enable_interrupts_env(the_env);
+        return op;
+}
+
+#ifdef GBC_BOEHM_PRECISE
+static cl_object
+allocate_object_typed(register struct ecl_type_information *type_info)
+{
+	const cl_env_ptr the_env = ecl_process_env();
+        cl_object op;
+        ecl_disable_interrupts_env(the_env);
+        op = GC_malloc_explicitly_typed(type_info->size, type_info->descriptor);
+        op->d.t = type_info->t;
+        ecl_enable_interrupts_env(the_env);
+        return op;
+}
+#endif
+
+#ifdef GBC_BOEHM_OWN_ALLOCATOR
+#error
+static cl_object
+allocate_object_own(register struct ecl_type_information *type_info)
+{
 #define TYPD_EXTRA_BYTES (sizeof(word) - EXTRA_BYTES)
 #define GENERAL_MALLOC(lb,k) (void *)GC_generic_malloc(lb, k)
 	const cl_env_ptr the_env = ecl_process_env();
@@ -194,7 +216,7 @@ ecl_alloc_object(cl_type t)
 	DCL_LOCK_STATE;
 
         ecl_disable_interrupts_env(the_env);
-	lb = type_info[t].size + TYPD_EXTRA_BYTES;
+	lb = type_info->size + TYPD_EXTRA_BYTES;
 	if (__builtin_expect(SMALL_OBJ(lb),1)) {
 		lg = GC_size_map[lb];
 		opp = &(cl_object_free_list[lg]);
@@ -214,11 +236,24 @@ ecl_alloc_object(cl_type t)
 		op = (ptr_t)GENERAL_MALLOC((word)lb, cl_object_kind);
                 lg = BYTES_TO_GRANULES(GC_size(op));
 	}
-        ((word *)op)[GRANULES_TO_WORDS(lg) - 1] = type_info[t].descriptor;
-        ((cl_object)op)->d.t = t;
+        ((word *)op)[GRANULES_TO_WORDS(lg) - 1] = type_info->descriptor;
+        ((cl_object)op)->d.t = type_info->t;
         ecl_enable_interrupts_env(the_env);
         return (cl_object)op;
-# endif
+}
+#endif /* GBC_BOEHM_OWN_ALLOCATOR */
+
+cl_object
+ecl_alloc_object(cl_type t)
+{
+#ifdef GBC_BOEHM_PRECISE
+        struct ecl_type_information *ti;
+        if (__builtin_expect(t > t_start && t < t_end, 1)) {
+                ti = type_info + t;
+                return ti->allocator(ti);
+        }
+        error_wrong_tag(t);
+        return OBJNULL;
 #else
 	const cl_env_ptr the_env = ecl_process_env();
 
@@ -491,17 +526,21 @@ init_alloc(void)
 		cl_core.safety_region = 0;
 	}
 
-#define init_tm(x,y,z,w) type_info[x].size = (z); /*type_ptr[x] = (w)*/
+#define init_tm(x,y,z,w) {                                              \
+                type_info[x].size = (z);                                \
+                if ((w) == 0) { type_info[x].allocator = allocate_object_atomic; } }
 	for (i = 0; i < t_end; i++) {
+                type_info[i].t = i;
 		type_info[i].size = 0;
+                type_info[i].allocator = allocate_object_full;
 	}
 	init_tm(t_list, "CONS", sizeof(struct ecl_cons), 2);
-	init_tm(t_bignum, "BIGNUM", sizeof(struct ecl_bignum), 0);
+	init_tm(t_bignum, "BIGNUM", sizeof(struct ecl_bignum), 2);
 	init_tm(t_ratio, "RATIO", sizeof(struct ecl_ratio), 2);
 	init_tm(t_singlefloat, "SINGLE-FLOAT", sizeof(struct ecl_singlefloat), 0);
 	init_tm(t_doublefloat, "DOUBLE-FLOAT", sizeof(struct ecl_doublefloat), 0);
 #ifdef ECL_LONG_FLOAT
-	init_tm(t_longfloat, "LONG-FLOAT", sizeof(struct ecl_long_float));
+	init_tm(t_longfloat, "LONG-FLOAT", sizeof(struct ecl_long_float), 0);
 #endif
 	init_tm(t_complex, "COMPLEX", sizeof(struct ecl_complex), 2);
 	init_tm(t_symbol, "SYMBOL", sizeof(struct ecl_symbol), 5);
@@ -538,7 +577,7 @@ init_alloc(void)
 	init_tm(t_condition_variable, "CONDITION-VARIABLE",
                 sizeof(struct ecl_condition_variable), 0);
 # ifdef ECL_SEMAPHORES
-	init_tm(t_semaphore, "SEMAPHORES", sizeof(struct ecl_semaphores));
+	init_tm(t_semaphore, "SEMAPHORES", sizeof(struct ecl_semaphores), 0);
 # endif
 #endif
 	init_tm(t_codeblock, "CODEBLOCK", sizeof(struct ecl_codeblock), -1);
@@ -695,9 +734,19 @@ init_alloc(void)
 	for (i = 0; i < t_end; i++) {
                 GC_word descriptor = type_info[i].descriptor;
                 int bits = type_info[i].size / sizeof(GC_word);
-		type_info[i].descriptor = descriptor?
-                        GC_make_descriptor(&descriptor, bits) :
-                        0;
+                if (descriptor) {
+                        GC_word mask = (1 << (bits-1)) - 1;
+                        mask ^= (descriptor >> 1);
+                        if (mask == 0)
+                                type_info[i].allocator = allocate_object_full;
+                        else
+                                type_info[i].allocator = allocate_object_typed;
+                        descriptor = GC_make_descriptor(&descriptor, bits);
+                } else {
+                        type_info[i].allocator = allocate_object_atomic;
+                        descriptor = 0;
+                }
+                type_info[i].descriptor = descriptor;
 	}
 #endif /* GBC_BOEHM_PRECISE */
 	old_GC_push_other_roots = GC_push_other_roots;
