@@ -47,6 +47,8 @@ ECL 10.1.1:
    accidental data retention and improving the time spent in garbage
    collection.
 
+ - ECL now ships with ASDF version 1.596
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
