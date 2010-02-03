@@ -233,6 +233,20 @@ close_around(cl_object fun, cl_object lex) {
         reg0 = ecl_apply_from_stack_frame((cl_object)&frame, fun);      \
         the_env->stack_top -= __n; }
 
+static void
+undefined_function(cl_object fname)
+{
+	cl_error(3, @'undefined-function', @':name', fname);
+}
+
+static void
+invalid_function(cl_object obj)
+{
+	FEwrong_type_argument(@'function', obj);
+}
+
+
+
 /* -------------------- THE INTERPRETER -------------------- */
 
 cl_object
@@ -452,7 +466,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 		SETUP_ENV(the_env);
 	AGAIN:
 		if (reg0 == OBJNULL || reg0 == Cnil) {
-			FEundefined_function(x);
+			undefined_function(x);
 		}
 		switch (type_of(reg0)) {
 		case t_cfunfixed:
@@ -478,13 +492,13 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 				reg0 = reg0->instance.slots[reg0->instance.length - 1];
 				goto AGAIN;
 			default:
-				FEinvalid_function(reg0);
+				invalid_function(reg0);
 			}
 			break;
 #endif
 		case t_symbol:
 			if (reg0->symbol.stype & stp_macro)
-				FEundefined_function(x);
+				undefined_function(x);
 			reg0 = SYM_FUN(reg0);
 			goto AGAIN;
 		case t_bytecodes:
@@ -494,7 +508,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 			reg0 = ecl_interpret(frame, reg0->bclosure.lex, reg0->bclosure.code);
 			break;
 		default:
-			FEinvalid_function(reg0);
+			invalid_function(reg0);
 		}
 		ECL_STACK_POP_N_UNSAFE(the_env, narg);
 		THREAD_NEXT;

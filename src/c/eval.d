@@ -43,11 +43,11 @@ ecl_apply_from_stack_frame(cl_object frame, cl_object x)
 	cl_object fun = x;
       AGAIN:
         frame->frame.env->function = fun;
-	if (fun == OBJNULL || fun == Cnil)
+	if (__builtin_expect(fun == OBJNULL || fun == Cnil, 0))
 		FEundefined_function(x);
 	switch (type_of(fun)) {
 	case t_cfunfixed:
-		if (narg != (cl_index)fun->cfun.narg)
+		if (__builtin_expect(narg != (cl_index)fun->cfun.narg, 0))
 			FEwrong_num_arguments(fun);
 		return APPLY_fixed(narg, fun->cfunfixed.entry_fixed, sp);
 	case t_cfun:
@@ -68,7 +68,7 @@ ecl_apply_from_stack_frame(cl_object frame, cl_object x)
 		goto AGAIN;
 #endif
 	case t_symbol:
-		if (fun->symbol.stype & stp_macro)
+		if (__builtin_expect(fun->symbol.stype & stp_macro, 0))
 			FEundefined_function(x);
 		fun = SYM_FUN(fun);
 		goto AGAIN;
@@ -85,8 +85,8 @@ cl_objectfn
 ecl_function_dispatch(cl_env_ptr env, cl_object x)
 {
 	cl_object fun = x;
-      AGAIN:
-	if (fun == OBJNULL || fun == Cnil)
+ AGAIN:
+	if (__builtin_expect(fun == OBJNULL || fun == Cnil, 0))
 		FEundefined_function(x);
 	switch (type_of(fun)) {
 	case t_cfunfixed:
@@ -104,7 +104,7 @@ ecl_function_dispatch(cl_env_ptr env, cl_object x)
                 return fun->instance.entry;
 #endif
 	case t_symbol:
-		if (fun->symbol.stype & stp_macro)
+		if (__builtin_expect(fun->symbol.stype & stp_macro, 0))
 			FEundefined_function(x);
 		fun = SYM_FUN(fun);
 		goto AGAIN;

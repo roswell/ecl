@@ -54,6 +54,10 @@ ECL 10.1.1:
    and the linker. Note, however, that the flags that ECL uses may take
    priority.
 
+ - In the C code we are beginning to use GCC's attributes (__attribute__) and
+   branch annotation (__builtin_expect) to decrease the size of code that
+   checks for errors and improve overall speed.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

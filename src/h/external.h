@@ -555,8 +555,8 @@ extern ECL_API void FEunbound_variable(cl_object sym) /*__attribute__((noreturn)
 extern ECL_API void FEinvalid_macro_call(cl_object obj) /*__attribute__((noreturn))*/;
 extern ECL_API void FEinvalid_variable(const char *s, cl_object obj) /*__attribute__((noreturn))*/;
 extern ECL_API void FEassignment_to_constant(cl_object v) /*__attribute__((noreturn))*/;
-extern ECL_API void FEundefined_function(cl_object fname) /*__attribute__((noreturn))*/;
-extern ECL_API void FEinvalid_function(cl_object obj) /*__attribute__((noreturn))*/;
+extern ECL_API void FEundefined_function(cl_object fname) __attribute__((noreturn));
+extern ECL_API void FEinvalid_function(cl_object obj) __attribute__((noreturn));
 extern ECL_API void FEinvalid_function_name(cl_object obj) /*__attribute__((noreturn))*/;
 extern ECL_API cl_object CEerror(cl_object c, const char *err_str, int narg, ...);
 extern ECL_API void FEillegal_index(cl_object x, cl_object i);
