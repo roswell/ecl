@@ -116,6 +116,7 @@ the environment variable TMPDIR to a different value." template)))
 	   (fix-for-mingw (ecl-library-directory))
 	   options
            *ld-rpath*
+           *user-ld-flags*
 	   *ld-flags*))
   #+msvc
   (embed-manifest-file o-pathname :program)
@@ -146,6 +147,7 @@ the environment variable TMPDIR to a different value." template)))
 	   (fix-for-mingw (ecl-library-directory))
 	   options
            *ld-rpath*
+           *user-ld-flags*
 	   (dll-extra-flags o-pathname)))
   #+msvc
   (embed-manifest-file o-pathname :dll)
@@ -155,11 +157,12 @@ the environment variable TMPDIR to a different value." template)))
   (let ((lib-file (compile-file-pathname o-pathname :type :lib)))
     (safe-system
      (format nil
-	     "gcc -shared -o ~S -L~S ~{~S ~} ~@[~S~] ~@?"
+	     "gcc -shared -o ~S -L~S ~{~S ~} ~@[~S~]~{ '~A'~} ~@?"
 	     (si::coerce-to-filename o-pathname)
 	     (fix-for-mingw (ecl-library-directory))
 	     options
              *ld-rpath*
+             *user-ld-flags*
 	     *ld-shared-flags*))))
 
 #+dlopen
@@ -188,6 +191,7 @@ the environment variable TMPDIR to a different value." template)))
 	   (fix-for-mingw (ecl-library-directory))
 	   options
            *ld-rpath*
+           *user-ld-flags*
 	   (bundle-extra-flags init-name o-pathname)))
   #+msvc
   (embed-manifest-file o-pathname :fasl)
@@ -196,11 +200,12 @@ the environment variable TMPDIR to a different value." template)))
   #+(or mingw32)
   (safe-system
    (format nil
-	   "gcc -shared -o ~S -Wl,--export-all-symbols -L~S ~{~S ~} ~@[~S~] ~A"
+	   "gcc -shared -o ~S -Wl,--export-all-symbols -L~S ~{~S ~} ~@[~S~]~{ '~A'~} ~A"
 	   (si::coerce-to-filename o-pathname)
 	   (fix-for-mingw (ecl-library-directory))
 	   options
            *ld-rpath*
+           *user-ld-flags*
 	   *ld-bundle-flags*)))
 
 (defconstant +lisp-program-header+ "
@@ -922,7 +927,8 @@ from the C language code.  NIL means \"do not create the file\"."
            (fix-for-mingw (ecl-include-directory))
 	   *cc-flags* (>= (cmp-env-optimization 'speed) 2) *cc-optimize*
 	   (si::coerce-to-filename c-pathname)
-	   (si::coerce-to-filename o-pathname))
+	   (si::coerce-to-filename o-pathname)
+           *user-cc-flags*)
 ; Since the SUN4 assembler loops with big files, you might want to use this:
 ;   (format nil
 ;	   "~A ~@[~*-O1~] -S -I. -I~A -w ~A ; as -o ~A ~A"

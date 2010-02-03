@@ -49,6 +49,11 @@ ECL 10.1.1:
 
  - ECL now ships with ASDF version 1.596
 
+ - The variables C:*USER-CC-FLAGS* and C:*USER-LD-FLAGS* are lists of strings
+   which can be customized by the user to change the behavior of the C compiler
+   and the linker. Note, however, that the flags that ECL uses may take
+   priority.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

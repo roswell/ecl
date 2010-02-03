@@ -23,6 +23,8 @@
 	   "*COMPILE-VERBOSE*"
 	   "*CC*"
 	   "*CC-OPTIMIZE*"
+           "*USER-CC-FLAGS*"
+           "*USER-LD-FLAGS*"
 	   "BUILD-ECL"
 	   "BUILD-PROGRAM"
            "BUILD-FASL"
@@ -453,11 +455,11 @@ coprocessor).")
 (defvar *cc-optimize* #-msvc "-O"
                       #+msvc "@CFLAGS_OPTIMIZE@")
 
-(defvar *ld-format* #-msvc "~A -o ~S -L~S ~{~S ~} ~@[~S~] ~A"
-                    #+msvc "~A -Fe~S~* ~{~S ~} ~@[~S~] ~A")
+(defvar *ld-format* #-msvc "~A -o ~S -L~S ~{~S ~} ~@[~S~]~{ '~A'~} ~A"
+                    #+msvc "~A -Fe~S~* ~{~S ~} ~@[~S~]~{ '~A'~} ~A")
 
-(defvar *cc-format* #-msvc "~A \"-I~A\" ~A ~:[~*~;~A~] -w -c \"~A\" -o \"~A\""
-                    #+msvc "~A -I\"~A\" ~A ~:[~*~;~A~] -w -c \"~A\" -Fo\"~A\"")
+(defvar *cc-format* #-msvc "~A \"-I~A\" ~A ~:[~*~;~A~] -w -c \"~A\" -o \"~A\"~{ '~A'~}"
+                    #+msvc "~A -I\"~A\" ~A ~:[~*~;~A~] -w -c \"~A\" -Fo\"~A\"~{ '~A'~}")
 
 #-dlopen
 (defvar *ld-flags* "@LDFLAGS@ -lecl @CORE_LIBS@ @FASL_LIBS@ @LIBS@")
@@ -470,6 +472,16 @@ coprocessor).")
 #+dlopen
 (defvar *ld-bundle-flags* #-msvc "@BUNDLE_LDFLAGS@ @LDFLAGS@ -lecl @FASL_LIBS@ @LIBS@"
                           #+msvc "@BUNDLE_LDFLAGS@ @LDFLAGS@ ecl.lib @CLIBS@")
+
+(defvar *user-ld-flags* '()
+"Flags and options to be passed to the linker when building FASL, shared libraries
+and standalone programs. It is not required to surround values with quotes or use
+slashes before special characters.")
+
+(defvar *user-cc-flags* '()
+"Flags and options to be passed to the C compiler when building FASL, shared libraries
+and standalone programs. It is not required to surround values with quotes or use
+slashes before special characters.")
 
 (defvar +shared-library-prefix+ "@SHAREDPREFIX@")
 (defvar +shared-library-extension+ "@SHAREDEXT@")
