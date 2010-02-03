@@ -86,6 +86,13 @@
 #else
 #define ECL_INLINE
 #endif
+#if !defined(__GNUC__)
+# define __builtin_expect(form,value) (form)
+#else
+# if (__GNUC__ < 3)
+#  define __builtin_expect(form,value) (form)
+# endif
+#endif
 
 typedef void (*ecl_init_function_t)(cl_object block);
 

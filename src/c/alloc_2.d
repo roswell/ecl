@@ -25,14 +25,6 @@
 #include <winsock.h>
 #endif
 
-#if !defined(__GNUC__)
-# define __builtin_expect(form,value) (form)
-#else
-# if (__GNUC__ < 3)
-#  define __builtin_expect(form,value) (form)
-# endif
-#endif
-
 #ifdef GBC_BOEHM
 
 static void finalize_queued();
