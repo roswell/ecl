@@ -19,15 +19,15 @@
 #include <ecl/internal.h>
 #include <string.h>
 
-#define PREPARE_MAP(env, list, cdrs_frame, cars_frame, narg)    \
-	struct ecl_stack_frame frames_aux[2];                   \
-	const cl_object cdrs_frame = (cl_object)frames_aux;     \
-        const cl_object cars_frame = (cl_object)(frames_aux+1); \
-	ECL_STACK_FRAME_FROM_VA_LIST(env,cdrs_frame,list);      \
-	ECL_STACK_FRAME_COPY(cars_frame, cdrs_frame);           \
-	narg = cars_frame->frame.size;                          \
-	if (narg == 0) {                                        \
-		FEprogram_error("MAP*: Too few arguments", 0);  \
+#define PREPARE_MAP(env, list, cdrs_frame, cars_frame, narg)            \
+	struct ecl_stack_frame frames_aux[2];                           \
+	const cl_object cdrs_frame = (cl_object)frames_aux;             \
+        const cl_object cars_frame = (cl_object)(frames_aux+1);         \
+	ECL_STACK_FRAME_FROM_VA_LIST(env,cdrs_frame,list);              \
+	ECL_STACK_FRAME_COPY(cars_frame, cdrs_frame);                   \
+	narg = cars_frame->frame.size;                                  \
+	if (__builtin_expect(narg == 0, 0)) {                           \
+		FEprogram_error_noreturn("MAP*: Too few arguments", 0); \
 	}
 
 @(defun mapcar (fun &rest lists)

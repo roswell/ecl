@@ -231,8 +231,9 @@ cl_parse_key(
 	for (; args[0].narg > 1; ) {
 		cl_object keyword = cl_va_arg(args);
 		cl_object value = cl_va_arg(args);
-		if (!SYMBOLP(keyword))
-			FEprogram_error("LAMBDA: Keyword expected, got ~S.", 1, keyword);
+		if (__builtin_expect(!SYMBOLP(keyword), 0))
+			FEprogram_error_noreturn("LAMBDA: Keyword expected, got ~S.",
+                                                 1, keyword);
 		if (rest != NULL) {
 			rest = &ECL_CONS_CDR(*rest = ecl_list1(keyword));
 			rest = &ECL_CONS_CDR(*rest = ecl_list1(value));
@@ -254,10 +255,10 @@ cl_parse_key(
 			unknown_keyword = keyword;
 	goon:;
 	}
-	if (args[0].narg != 0)
-		FEprogram_error("Odd number of keys", 0);
-	if (unknown_keyword != OBJNULL && !allow_other_keys &&
-	    (supplied_allow_other_keys == Cnil ||
-	     supplied_allow_other_keys == OBJNULL))
+	if (__builtin_expect(args[0].narg != 0, 0))
+		FEprogram_error_noreturn("Odd number of keys", 0);
+	if (__builtin_expect(unknown_keyword != OBJNULL && !allow_other_keys &&
+                             (supplied_allow_other_keys == Cnil ||
+                              supplied_allow_other_keys == OBJNULL), 0))
 		FEprogram_error("Unknown keyword ~S", 1, unknown_keyword);
 }

@@ -33,8 +33,9 @@ ecl_make_cfun(cl_objectfn_fixed c_function, cl_object name, cl_object cblock, in
         cf->cfunfixed.file = Cnil;
         cf->cfunfixed.file_position = MAKE_FIXNUM(-1);
 	cf->cfunfixed.narg = narg;
-	if (narg < 0 || narg > C_ARGUMENTS_LIMIT)
-	    FEprogram_error("ecl_make_cfun: function requires too many arguments.",0);
+	if (__builtin_expect(narg < 0 || narg > C_ARGUMENTS_LIMIT, 0))
+                FEprogram_error_noreturn("ecl_make_cfun: function requires "
+                                         "too many arguments.",0);
 	return cf;
 }
 

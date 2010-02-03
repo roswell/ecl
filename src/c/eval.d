@@ -153,9 +153,9 @@ cl_funcall(cl_narg narg, cl_object function, ...)
 				ecl_stack_frame_push(frame, lastarg->frame.base[i]);
 			}
 		} else loop_for_in (lastarg) {
-			if (i >= CALL_ARGUMENTS_LIMIT) {
+                        if (__builtin_expect(i >= CALL_ARGUMENTS_LIMIT, 0)) {
 				ecl_stack_frame_close(frame);
-				FEprogram_error("CALL-ARGUMENTS-LIMIT exceeded",0);
+				FEprogram_error_noreturn("CALL-ARGUMENTS-LIMIT exceeded",0);
 			}
 			ecl_stack_frame_push(frame, CAR(lastarg));
 			i++;

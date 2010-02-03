@@ -541,6 +541,7 @@ extern ECL_API cl_object cl_cerror _ARGS((cl_narg narg, cl_object cformat, cl_ob
 extern ECL_API void ecl_internal_error(const char *s) /*__attribute__((noreturn))*/;
 extern ECL_API void ecl_cs_overflow(void) /*__attribute__((noreturn))*/;
 extern ECL_API void FEprogram_error(const char *s, int narg, ...) /*__attribute__((noreturn))*/;
+extern ECL_API void FEprogram_error_noreturn(const char *s, int narg, ...) __attribute__((noreturn));
 extern ECL_API void FEcontrol_error(const char *s, int narg, ...) /*__attribute__((noreturn))*/;
 extern ECL_API void FEreader_error(const char *s, cl_object stream, int narg, ...) /*__attribute__((noreturn))*/;
 #define FEparse_error FEreader_error
