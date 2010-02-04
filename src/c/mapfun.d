@@ -26,7 +26,7 @@
 	ECL_STACK_FRAME_FROM_VA_LIST(env,cdrs_frame,list);              \
 	ECL_STACK_FRAME_COPY(cars_frame, cdrs_frame);                   \
 	narg = cars_frame->frame.size;                                  \
-	if (__builtin_expect(narg == 0, 0)) {                           \
+	if (ecl_unlikely(narg == 0)) {                                  \
 		FEprogram_error_noreturn("MAP*: Too few arguments", 0); \
 	}
 

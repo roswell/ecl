@@ -5,6 +5,24 @@ extern "C" {
 
 #define _ARGS(x) x
 
+#if defined(__cplusplus) || (defined(__GNUC__) && !defined(__STRICT_ANSI__))
+#define ECL_INLINE inline
+#else
+#define ECL_INLINE
+#endif
+#if !defined(__GNUC__)
+# define ecl_likely(form) (form)
+# define ecl_unlikely(form) (form)
+#else
+# if (__GNUC__ < 3)
+#  define ecl_likely(form) (form)
+#  define ecl_unlikely(form) (form)
+# else
+#  define ecl_likely(form) __builtin_expect(form,1)
+#  define ecl_unlikely(form) __builtin_expect(form,0)
+# endif
+#endif
+
 /*
  * Per-thread data.
  */

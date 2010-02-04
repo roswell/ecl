@@ -217,7 +217,7 @@ allocate_object_own(register struct ecl_type_information *type_info)
 
         ecl_disable_interrupts_env(the_env);
 	lb = type_info->size + TYPD_EXTRA_BYTES;
-	if (__builtin_expect(SMALL_OBJ(lb),1)) {
+	if (ecl_likely(SMALL_OBJ(lb))) {
 		lg = GC_size_map[lb];
 		opp = &(cl_object_free_list[lg]);
 		LOCK();
@@ -258,7 +258,7 @@ cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl
 {
 #if 1
 	cl_type t = ((cl_object)addr)->d.t;
-	if (__builtin_expect(t > t_start && t < t_end, 1)) {
+	if (ecl_likely(t > t_start && t < t_end)) {
 		struct ecl_type_information *info = type_info + t;
 		GC_word d = info->descriptor;
 		GC_word *p;
@@ -466,7 +466,7 @@ ecl_alloc_object(cl_type t)
 {
 #ifdef GBC_BOEHM_PRECISE
         struct ecl_type_information *ti;
-        if (__builtin_expect(t > t_start && t < t_end, 1)) {
+        if (ecl_likely(t > t_start && t < t_end)) {
                 ti = type_info + t;
                 return ti->allocator(ti);
         }

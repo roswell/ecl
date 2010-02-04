@@ -81,19 +81,6 @@
 #include <ecl/unify.h>
 #endif
 
-#if defined(__cplusplus) || (defined(__GNUC__) && !defined(__STRICT_ANSI__))
-#define ECL_INLINE inline
-#else
-#define ECL_INLINE
-#endif
-#if !defined(__GNUC__)
-# define __builtin_expect(form,value) (form)
-#else
-# if (__GNUC__ < 3)
-#  define __builtin_expect(form,value) (form)
-# endif
-#endif
-
 typedef void (*ecl_init_function_t)(cl_object block);
 
 #endif /* ECL_H */

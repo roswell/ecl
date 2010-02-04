@@ -216,7 +216,7 @@ asm_clear(cl_env_ptr env, cl_index h) {
 
 static void
 asm_op2(cl_env_ptr env, int code, int n) {
-	if (__builtin_expect(n < -MAX_OPARG || MAX_OPARG < n, 0))
+	if (ecl_unlikely(n < -MAX_OPARG || MAX_OPARG < n))
 		FEprogram_error_noreturn("Argument to bytecode is too large", 0);
 	asm_op(env, code);
 	asm_arg(env, n);
@@ -241,9 +241,9 @@ asm_jmp(cl_env_ptr env, int op) {
 static void
 asm_complete(cl_env_ptr env, int op, cl_index pc) {
 	cl_fixnum delta = current_pc(env) - pc;  /* [1] */
-	if (__builtin_expect(op && (asm_ref(env, pc-1) != op), 0))
+	if (ecl_unlikely(op && (asm_ref(env, pc-1) != op)))
 		FEprogram_error_noreturn("Non matching codes in ASM-COMPLETE2", 0);
-	else if (__builtin_expect(delta < -MAX_OPARG || delta > MAX_OPARG, 0))
+	else if (ecl_unlikely(delta < -MAX_OPARG || delta > MAX_OPARG))
 		FEprogram_error_noreturn("Too large jump", 0);
 	else {
 #ifdef ECL_SMALL_BYTECODES

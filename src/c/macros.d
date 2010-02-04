@@ -174,7 +174,7 @@ static cl_object
 when_macro(cl_object whole, cl_object env)
 {
 	cl_object args = CDR(whole);
-	if (__builtin_expect(ecl_endp(args), 0))
+	if (ecl_unlikely(ecl_endp(args)))
 		FEprogram_error_noreturn("Syntax error: ~S.", 1, whole);
 	return cl_list(3, @'if', CAR(args), CONS(@'progn', CDR(args)));
 }

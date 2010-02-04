@@ -354,12 +354,12 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
   (unless (or local-entry-p (not (compiler-check-args)))
     (incf *inline-blocks*)
     (if (and use-narg (not varargs))
-	(wt-nl "if (__builtin_expect(narg!=" nreq ",0)) FEwrong_num_arguments_anonym();")
+	(wt-nl "if (ecl_unlikely(narg!=" nreq ")) FEwrong_num_arguments_anonym();")
 	(when varargs
 	  (when requireds
-	    (wt-nl "if (__builtin_expect(narg<" nreq ",0)) FEwrong_num_arguments_anonym();"))
+	    (wt-nl "if (ecl_unlikely(narg<" nreq ")) FEwrong_num_arguments_anonym();"))
 	  (unless (or rest keywords allow-other-keys)
-	    (wt-nl "if (__builtin_expect(narg>" (+ nreq nopt) ",0)) FEwrong_num_arguments_anonym();"))))
+	    (wt-nl "if (ecl_unlikely(narg>" (+ nreq nopt) ")) FEwrong_num_arguments_anonym();"))))
     (wt-nl "{"))
 
   ;; If the number of required arguments exceeds the number of variables we
