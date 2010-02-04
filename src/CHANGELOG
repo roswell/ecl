@@ -47,7 +47,7 @@ ECL 10.1.1:
    accidental data retention and improving the time spent in garbage
    collection.
 
- - ECL now ships with ASDF version 1.596
+ - ECL now ships with ASDF version 1.603
 
  - The variables C:*USER-CC-FLAGS* and C:*USER-LD-FLAGS* are lists of strings
    which can be customized by the user to change the behavior of the C compiler
