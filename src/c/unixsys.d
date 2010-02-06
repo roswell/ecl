@@ -31,6 +31,11 @@
 #include <sys/wait.h>
 #endif
 
+/* Mingw defines 'environ' to be a macro instead of a global variable. */
+#ifdef environ
+# undef environ
+#endif
+
 cl_object
 si_system(cl_object cmd_string)
 {
@@ -80,7 +85,7 @@ from_list_to_execve_argument(cl_object l, char ***environp)
         cl_object p;
         cl_index i, j, total_size = 0, nstrings = 0;
         cl_object buffer;
-        char **environ;
+        char **env;
         for (p = l; !Null(p); p = ECL_CONS_CDR(p)) {
                 cl_object s;
                 if (!CONSP(p)) {
@@ -98,7 +103,7 @@ from_list_to_execve_argument(cl_object l, char ***environp)
         /* Extra place for ending null */
         total_size++;
         buffer = ecl_alloc_simple_base_string(++total_size);
-        environ = ecl_alloc_atomic((nstrings + 1) * sizeof(char*));
+        env = ecl_alloc_atomic((nstrings + 1) * sizeof(char*));
         for (j = i = 0, p = l; !Null(p); p = ECL_CONS_CDR(p)) {
                 cl_object s = ECL_CONS_CAR(p);
                 cl_index l = s->base_string.fillp;
@@ -107,7 +112,7 @@ from_list_to_execve_argument(cl_object l, char ***environp)
                                 " changed during execution.", 0);
                         break;
                 }
-                environ[j++] = buffer->base_string.self + i;
+                env[j++] = buffer->base_string.self + i;
                 memcpy(buffer->base_string.self + i,
                        s->base_string.self,
                        l);
@@ -115,7 +120,7 @@ from_list_to_execve_argument(cl_object l, char ***environp)
                 buffer->base_string.self[i++] = 0;
         }
         buffer->base_string.self[i++] = 0;
-        environ[j] = 0;
+        env[j] = 0;
         if (environp) *environp = environ;
         return buffer;
 }
