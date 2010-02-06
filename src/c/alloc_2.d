@@ -1151,11 +1151,33 @@ si_set_finalizer(cl_object o, cl_object finalizer)
 	@(return)
 }
 
+/* If we do not build our own version of the library, we do not have
+ * control over the existence of this variable.
+ */
+#if GBC_BOEHM == 0
+extern int GC_print_stats;
+#else
+static int GC_print_stats;
+#endif
+
 cl_object
 si_gc_stats(cl_object enable)
 {
-	cl_object old_status = cl_core.gc_stats? Ct : Cnil;
-	cl_core.gc_stats = (enable != Cnil);
+	cl_object old_status;
+        if (cl_core.gc_stats == 0) {
+                old_status = Cnil;
+        } else if (GC_print_stats) {
+                old_status = @':full';
+        } else {
+                old_status = Ct;
+        }
+        if (enable == Cnil) {
+                GC_print_stats = 1;
+                cl_core.gc_stats = 0;
+        } else {
+                cl_core.gc_stats = 1;
+                GC_print_stats = enable == @':full';
+        }
 	if (cl_core.bytes_consed == Cnil) {
 #ifndef WITH_GMP
 		cl_core.bytes_consed = MAKE_FIXNUM(0);
