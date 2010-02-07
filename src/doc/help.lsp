@@ -137,6 +137,13 @@ The value of the last top-level form.")
 (docfun * function (&rest numbers) "
 Returns the product of the args.  With no args, returns 1.")
 
+(docvar *debugger-hook* variable "
+This is either NIL or a function of two arguments, a condition and the value
+of *DEBUGGER-HOOK*. This function can either handle the condition or return
+which causes the standard debugger to execute. The system passes the value
+of this variable to the function because it binds *DEBUGGER-HOOK* to NIL
+around the invocation.")
+
 (docvar *debug-io* variable "
 The stream used by the ECL debugger.  The initial value is a synonym stream to
 *TERMINAL-IO*.")
@@ -205,6 +212,18 @@ ECL specific.
 If the value of SI::*INTERRUPT-ENABLE* is non-NIL, ECL signals an error on the
 terminal interrupt (this is the default case).  If it is NIL, ECL ignores the
 interrupt and assigns T to SI::*INTERRUPT-ENABLE*.")
+
+(docvar ext::*invoke-debugger-hook* variable "
+ECL specific.
+This is either NIL or a designator for a function of two arguments,
+to be run when the debugger is about to be entered.  The function is
+run with *INVOKE-DEBUGGER-HOOK* bound to NIL to minimize recursive
+errors, and receives as arguments the condition that triggered
+debugger entry and the previous value of *INVOKE-DEBUGGER-HOOK*
+
+This mechanism is an extension similar to the standard *DEBUGGER-HOOK*.
+In contrast to *DEBUGGER-HOOK*, it is observed by INVOKE-DEBUGGER even when
+called by BREAK.")
 
 #-boehm-gc
 (docvar si::*lisp-maxpages* variable "

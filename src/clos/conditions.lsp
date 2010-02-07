@@ -894,8 +894,6 @@ strings."
       (format T "~A" (car p))
       (format T "~%"))))
 
-(defvar *debugger-hook* NIL)
-
 (defun invoke-debugger (&optional (datum "Debug") &rest arguments)
   (let ((condition
 	 (coerce-to-condition datum arguments 'simple-condition 'debug)))

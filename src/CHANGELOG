@@ -78,6 +78,8 @@ ECL 10.2.1:
     ;;;   (DEFMACRO WITH-COMPILATION-UNIT (OPTIONS &REST BODY) ...)
     ;;; The variable OPTIONS is not used.
 
+ - ECL now implements EXT:*INVOKE-DEBUGGER-HOOK*, which works like *DEBUGGER-HOOK*
+   but is also observed by BREAK. (SBCL extension adopted by ECL)
 
 ;;; Local Variables: ***
 ;;; mode:text ***

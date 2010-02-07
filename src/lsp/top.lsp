@@ -1379,10 +1379,17 @@ package."
          (tpl :commands debug-commands)))))
 
 (defun invoke-debugger (condition)
-  (when *debugger-hook*
-    (let* ((old-hook *debugger-hook*)
-	   (*debugger-hook* nil))
-      (funcall old-hook condition old-hook)))
+  ;; call *INVOKE-DEBUGGER-HOOK* first, so that *DEBUGGER-HOOK* is not
+  ;; called when the debugger is disabled. We adopt this mechanism
+  ;; from SBCL.
+  (let ((old-hook *invoke-debugger-hook*))
+    (when old-hook
+      (let ((*invoke-debugger-hook* nil))
+        (funcall old-hook condition old-hook))))
+  (let* ((old-hook *debugger-hook*))
+    (when old-hook
+      (let ((*debugger-hook* nil))
+        (funcall old-hook condition old-hook))))
   (locally 
     (declare (notinline default-debugger))
     (if (<= 0 *tpl-level*) ;; Do we have a top-level REPL above us?
@@ -1390,6 +1397,7 @@ package."
         (let* (;; We do not have a si::top-level invocation above us
                ;; so we have to provide the environment for interactive use.
                (*break-enable* *break-enable*)
+               (*invoke-debugger-hook* *invoke-debugger-hook*)
                (*debugger-hook* *debugger-hook*)
                (*quit-tags* (cons *quit-tag* *quit-tags*))
                (*quit-tag* *quit-tags*)	; any unique new value

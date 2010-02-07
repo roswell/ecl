@@ -1866,5 +1866,7 @@ cl_symbols[] = {
 {SYS_ "CLOSE-WINDOWS-HANDLE","si_close_windows_handle"},
 #endif
 
+{EXT_ "*INVOKE-DEBUGGER-HOOK*",NULL},
+
 /* Tag for end of list */
 {NULL,NULL}};
