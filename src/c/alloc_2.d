@@ -1191,10 +1191,13 @@ si_gc_stats(cl_object enable)
 		mpz_init2(cl_core.gc_counter->big.big_num, 128);
 #endif
 	} else {
-                size1 = _ecl_big_register_normalize(cl_core.bytes_consed);
-                size2 = _ecl_big_register_normalize(cl_core.gc_counter);
+                /* We need fresh copies of the bignums */
+                size1 = _ecl_big_plus_fix(cl_core.bytes_consed, 1);
+                size2 = _ecl_big_plus_fix(cl_core.gc_counter, 1);
+#ifdef WITH_GMP
                 mpz_set_ui(cl_core.bytes_consed->big.big_num, 0);
                 mpz_set_ui(cl_core.gc_counter->big.big_num, 0);
+#endif
         }
 	@(return size1 size2 old_status)
 }
