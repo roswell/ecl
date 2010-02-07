@@ -135,7 +135,6 @@ ecl_make_package(cl_object name, cl_object nicknames, cl_object use_list)
 	PACKAGE_OP_LOCK();
 	if (cl_core.packages_to_be_created != OBJNULL) {
 		cl_object l = cl_core.packages_to_be_created;
-		cl_object tail = l;
 		while (CONSP(l)) {
 			cl_object pair = ECL_CONS_CAR(l);
 			cl_object other_name = ECL_CONS_CAR(pair);
@@ -144,15 +143,11 @@ ecl_make_package(cl_object name, cl_object nicknames, cl_object use_list)
 				    @':test', @'string=') != Cnil)
 			{
 				x = ECL_CONS_CDR(pair);
-				pair = ECL_CONS_CDR(l);
-				if (l == tail) {
-					cl_core.packages_to_be_created = pair;
-				} else {
-					ECL_RPLACD(tail, pair);
-				}
+                                cl_core.packages_to_be_created =
+                                        ecl_remove_eq(pair,
+                                                      cl_core.packages_to_be_created);
 				goto INTERN;
 			}
-			tail = l;
 			l = ECL_CONS_CDR(l);
 		}
 	}

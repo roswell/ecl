@@ -33,6 +33,10 @@ ECL 10.2.1:
 
  - The compiler now uses THE forms with a VALUES type.
 
+ - If file A.lsp explicitely loads B.lsp to use a package that is only defined
+   in B, then ECL signaled an error in the compiled version of A even after
+   this one had required B.lsp.
+
 * Visible changes:
 
  - Significant speedup in access to hash tables of up to 30% by writing
