@@ -115,8 +115,10 @@
  `(do-compilation-unit #'(lambda () ,@body) ,@options))
 
 (defun compiler-debugger (condition old-hook)
+  #+(or)
   (when *compiler-break-enable*
     (si::default-debugger condition))
+  (si::default-debugger condition)
   (abort))
 
 (defmacro with-compiler-env ((compiler-conditions) &body body)
