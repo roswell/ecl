@@ -153,7 +153,6 @@
 	  ((null tag1)
            (setf c::*compiler-break-enable* t)
            ;(error "foo")
-           (break)
 	   (cmpwarn "Unknown type ~S. Assuming it is T." t1)
 	   t2)
 	  (t
