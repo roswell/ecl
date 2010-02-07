@@ -874,6 +874,7 @@
 	 (function
 	  `(ext::lambda-block ,block-name (,object-var ,stream-var
 					   &aux (,count-name 0))
+            (declare (ignorable ,object-var ,stream-var ,count-name))
 	    (macrolet ((pprint-pop ()
 			 '(progn
 			   (unless (pprint-pop-helper ,object-var ,count-name
