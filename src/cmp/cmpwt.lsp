@@ -246,9 +246,7 @@
   (let ((x (search keywords *permanent-objects*
 		   :test #'(lambda (k record) (eq k (first record))))))
     (if x
-	(progn
-	  (cmpnote "~@<Reusing keywords lists for ~_~A~@:>" keywords)
-	  (second (elt *permanent-objects* x)))
+        (second (elt *permanent-objects* x))
 	(prog1
 	    (add-object (pop keywords) :duplicate t :permanent t)
 	  (dolist (k keywords)
