@@ -1154,7 +1154,7 @@ si_set_finalizer(cl_object o, cl_object finalizer)
 /* If we do not build our own version of the library, we do not have
  * control over the existence of this variable.
  */
-#if GBC_BOEHM == 0
+#if 1 /*GBC_BOEHM == 0*/
 extern int GC_print_stats;
 #else
 static int GC_print_stats;
@@ -1164,6 +1164,8 @@ cl_object
 si_gc_stats(cl_object enable)
 {
 	cl_object old_status;
+        cl_object size1 = MAKE_FIXNUM(0);
+        cl_object size2 = MAKE_FIXNUM(0);
         if (cl_core.gc_stats == 0) {
                 old_status = Cnil;
         } else if (GC_print_stats) {
@@ -1188,11 +1190,13 @@ si_gc_stats(cl_object enable)
 		cl_core.gc_counter = ecl_alloc_object(t_bignum);
 		mpz_init2(cl_core.gc_counter->big.big_num, 128);
 #endif
-	}
-	@(return
-	  _ecl_big_register_normalize(cl_core.bytes_consed)
-	  _ecl_big_register_normalize(cl_core.gc_counter)
-	  old_status)
+	} else {
+                size1 = _ecl_big_register_normalize(cl_core.bytes_consed);
+                size2 = _ecl_big_register_normalize(cl_core.gc_counter);
+                mpz_set_ui(cl_core.bytes_consed->big.big_num, 0);
+                mpz_set_ui(cl_core.gc_counter->big.big_num, 0);
+        }
+	@(return size1 size2 old_status)
 }
 
 /*
@@ -1211,7 +1215,7 @@ finalize_queued()
 #if GBC_BOEHM == 0
 		mpz_add_ui(cl_core.bytes_consed->big.big_num,
 			   cl_core.bytes_consed->big.big_num,
-			   GC_get_bytes_since_gc() * sizeof(cl_index));
+			   GC_get_bytes_since_gc());
 #else
 		/* This is not accurate and may wrap around. We try
 		   to detect this assuming that an overflow in an
