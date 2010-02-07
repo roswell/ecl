@@ -1172,11 +1172,11 @@ si_gc_stats(cl_object enable)
                 old_status = Ct;
         }
         if (enable == Cnil) {
-                GC_print_stats = 1;
+                GC_print_stats = 0;
                 cl_core.gc_stats = 0;
         } else {
                 cl_core.gc_stats = 1;
-                GC_print_stats = enable == @':full';
+                GC_print_stats = (enable == @':full');
         }
 	if (cl_core.bytes_consed == Cnil) {
 #ifndef WITH_GMP
