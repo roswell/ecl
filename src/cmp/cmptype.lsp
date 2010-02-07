@@ -153,6 +153,7 @@
 	  ((null tag1)
            (setf c::*compiler-break-enable* t)
            ;(error "foo")
+           (break)
 	   (cmpwarn "Unknown type ~S. Assuming it is T." t1)
 	   t2)
 	  (t
@@ -545,7 +546,9 @@
 	    (when in-optionals
 	      (cmpwarn "Syntax error in type proclamation for function ~A.~&~A"
 		       fname arg-types))
-	    (setf in-optionals t))
+	    (setf in-optionals t
+                  types (rest types)
+                  expected-type (first types)))
 	  (when (endp fl)
 	    (unless in-optionals
 	      (cmpwarn "Too few arguments for proclaimed function ~A" fname))

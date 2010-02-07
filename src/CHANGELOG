@@ -28,6 +28,9 @@ ECL 10.2.1:
 
  - Internal variable MP:*ALLOW-WITH-INTERRUPTS* was not declared special.
 
+ - The compiler now understands function type proclamations with &optional
+   values.
+
 * Visible changes:
 
  - Significant speedup in access to hash tables of up to 30% by writing
