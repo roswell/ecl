@@ -88,7 +88,8 @@
 	(when (and (= 0 (var-ref var))
 		   (not (member (var-kind var) '(special global)))
 		   (not (form-causes-side-effect form)))
-	  (cmpnote "Removing unused variable ~A" (var-name var))
+          (unless (var-ignorable var)
+            (cmpnote "Removing unused variable ~A" (var-name var)))
 	  (go continue))
 	;;  (let ((v1 e1) (v2 e2) (v3 e3)) (expr e4 v2 e5))
 	;;  can become
@@ -322,7 +323,8 @@
 	(when (and (= 0 (var-ref var))
 		   (not (member (var-kind var) '(SPECIAL GLOBAL)))
 		   (not (form-causes-side-effect form)))
-	  (cmpnote "Removing unused variable ~A" (var-name var))
+          (unless (var-ignorable var)
+            (cmpnote "Removing unused variable ~A" (var-name var)))
 	  (go continue))
 	;;  (let* ((v1 e1) (v2 e2) (v3 e3)) (expr e4 v2 e5))
 	;;  can become
