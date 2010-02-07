@@ -210,12 +210,13 @@ Does not check if the third gang is a single-element list."
 (defsetf readtable-case sys:readtable-case-set)
 (defsetf stream-external-format sys::stream-external-format-set)
 
-(define-setf-expander getf (&environment env place indicator &optional default)
+(define-setf-expander getf (&environment env place indicator
+                            &optional (default nil default-p))
   (multiple-value-bind (vars vals stores store-form access-form)
       (get-setf-expansion place env)
     (let* ((itemp (gensym)) (store (gensym)) (def (gensym)))
-      (values `(,@vars ,itemp ,def)
-              `(,@vals ,indicator ,default)
+      (values `(,@vars ,itemp ,@(if default-p (list def) nil))
+              `(,@vals ,indicator ,@(and default-p (list default)))
               `(,store)
               `(let ((,(car stores) (sys:put-f ,access-form ,store ,itemp)))
                  ,store-form
