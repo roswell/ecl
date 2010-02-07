@@ -36,7 +36,11 @@
 	   (let* ((*print-length* 3)
                   (*print-level* 2))
 	     (format stream "~A: in file ~A, position ~D and top form~%  ~A~%"
-		     prefix file position form))
+		     prefix
+                     (make-pathname :name (pathname-name file)
+                                    :type (pathname-type file)
+                                    :version (pathname-version file))
+                     position form))
 	   (format stream "~A: " prefix))
        (format stream "~?"
 	       (simple-condition-format-control c)
