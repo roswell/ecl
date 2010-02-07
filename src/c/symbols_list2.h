@@ -1826,7 +1826,7 @@ cl_symbols[] = {
 {EXT_ "MAKE-WEAK-POINTER","si_make_weak_pointer"},
 {EXT_ "WEAK-POINTER-VALUE","si_weak_pointer_value"},
 
-{MP_ "*ALLOW-WITH-INTERRUPTS*",NULL},
+{SYS_ "*ALLOW-WITH-INTERRUPTS*",NULL},
 
 {EXT_ "WITH-UNIQUE-NAMES",NULL},
 

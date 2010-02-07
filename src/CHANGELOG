@@ -1,4 +1,4 @@
-ECL 10.1.1:
+ECL 10.2.1:
 ===========
 
 * Bugs fixed:
@@ -25,6 +25,8 @@ ECL 10.1.1:
 
  - No longer style warnings about removal of a variable when this variable was
    previously declared as ignorable.
+
+ - Internal variable MP:*ALLOW-WITH-INTERRUPTS* was not declared special.
 
 * Visible changes:
 
