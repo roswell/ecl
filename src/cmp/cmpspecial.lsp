@@ -27,12 +27,9 @@
   (let* ((form (c1expr (second args)))
 	 (the-type (type-filter (first args) t))
 	 type)
-    (cond ((and (consp the-type) (eq (first the-type) 'VALUES))
-	   (cmpwarn "Ignoring THE form with type ~A" the-type))
-	  ((not (setf type (type-and the-type (c1form-primary-type form))))
-	   (cmpwarn "Type mismatch was found in ~s." (cons 'THE args)))
-	  (t
-	   (setf (c1form-type form) type)))
+    (if (setf type (type-and the-type (c1form-primary-type form)))
+        (setf (c1form-type form) type)
+      (cmpwarn "Type mismatch was found in ~s." (cons 'THE args)))
     form))
 
 (defun c1compiler-let (args &aux (symbols nil) (values nil))
