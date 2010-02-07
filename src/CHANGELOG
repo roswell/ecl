@@ -28,7 +28,7 @@ ECL 10.1.1:
 
 * Visible changes:
 
- - Significant speed up in access to hash tables of up to 30% by writing
+ - Significant speedup in access to hash tables of up to 30% by writing
    specialized loops for EQ, EQL, EQUAL, EQUALP and package hash tables.
 
  - New function EXT:ENVIRON returns the list of strings that makes up the
