@@ -613,6 +613,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
     (when (and key-flag (not allow-other-keys))
       (push `(si::check-keyword ,rest ',all-keys) extra-stmts))
     `(let* ,(nreverse (delete-if-not #'first let-vars))
+       ,@(and apply-var `((declare (ignorable ,apply-var))))
       ,@(multiple-value-bind (decl body)
 	   (si::find-declarations (rest lambda-form))
 	 (append decl extra-stmts body)))))
