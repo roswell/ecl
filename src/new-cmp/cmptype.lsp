@@ -138,12 +138,12 @@
 	  ((null tag1)
            (setf c::*compiler-break-enable* t)
            ;(error "foo")
-	   (cmpwarn "Unknown type ~S. Assuming it is T." t1)
+	   (cmpnote "Unknown type ~S. Assuming it is T." t1)
 	   t2)
 	  (t
            (setf c::*compiler-break-enable* t)
            ;(error "foo")
-	   (cmpwarn "Unknown type ~S. Assuming it is T." t2)
+	   (cmpnote "Unknown type ~S. Assuming it is T." t2)
 	   t1))))
 
 (defun-equal-cached values-type-primary-type (type)
@@ -300,10 +300,10 @@
 	   (cmpwarn "Unsupported CONS type ~S. Replacing it with T." t2)
 	   T)
 	  ((null tag1)
-	   (cmpwarn "Unknown type ~S" t1)
+	   (cmpnote "Unknown type ~S" t1)
 	   T)
 	  (t
-	   (cmpwarn "Unknown type ~S" t2)
+	   (cmpnote "Unknown type ~S" t2)
 	   T))))
 
 (defun type>= (type1 type2)
