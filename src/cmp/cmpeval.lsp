@@ -112,8 +112,9 @@
                            ))))))
 
 (defun c2expr (form)
-  (let* ((*file* (c1form-file form))
-         (*file-position* (c1form-file form))
+  (let* ((*compile-file-truename* (c1form-file form))
+         (*compile-file-position* (c1form-file-position form))
+         (*current-toplevel-form* (c1form-toplevel-form form))
          (*current-form* (c1form-form form))
          (*current-c2form* form)
          (name (c1form-name form))

@@ -31,6 +31,8 @@ ECL 10.2.1:
  - The compiler now understands function type proclamations with &optional
    values.
 
+ - The compiler now uses THE forms with a VALUES type.
+
 * Visible changes:
 
  - Significant speedup in access to hash tables of up to 30% by writing
@@ -65,6 +67,13 @@ ECL 10.2.1:
  - In the C code we are beginning to use GCC's attributes (__attribute__) and
    branch annotation (__builtin_expect) to decrease the size of code that
    checks for errors and improve overall speed.
+
+ - When printing compiler notes, instead of printing the macroexpanded form,
+   ECL now prints the toplevel form, as follows
+    ;;; Warning: in file src:lsp;autoload.lsp.NEWEST, position 1178 and top form
+    ;;;   (DEFMACRO WITH-COMPILATION-UNIT (OPTIONS &REST BODY) ...)
+    ;;; The variable OPTIONS is not used.
+
 
 ;;; Local Variables: ***
 ;;; mode:text ***

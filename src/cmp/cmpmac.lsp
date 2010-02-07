@@ -79,6 +79,7 @@
   (parent nil)
   (args '())
   (form nil)
+  (toplevel-form nil)
   (file nil)
   (file-position 0))
 
@@ -91,6 +92,7 @@
 			      :sp-change (info-sp-change subform)
 			      :volatile (info-volatile subform)
                               :form *current-form*
+                              :toplevel-form *current-toplevel-form*
                               :file *compile-file-truename*
                               :file-position *compile-file-position*)))
     (c1form-add-info form args)
@@ -112,6 +114,7 @@
 		     l (cdr l))))))
     (let ((form (apply #'do-make-c1form :name name :args form-args
                        :form *current-form*
+                       :toplevel-form *current-toplevel-form*
                        :file *compile-file-truename*
                        :file-position *compile-file-position*
 		       info-args)))

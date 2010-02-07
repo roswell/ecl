@@ -15,14 +15,17 @@
 (in-package "COMPILER")
 
 (defun t1expr (form)
-  (let ((*cmp-env* (cmp-env-new)))
+  (let* ((*current-toplevel-form* form)
+         (*cmp-env* (cmp-env-new)))
     (push (t1expr* form) *top-level-forms*)))
 
 (defvar *toplevel-forms-to-print*
   '(defun defmacro defvar defparameter defclass defmethod defgeneric))
 
-(defun t1expr* (form &aux (*current-form* form) (*first-error* t)
-		    (*setjmps* 0))
+(defun t1expr* (form &aux
+                     (*current-form* form)
+                     (*first-error* t)
+                     (*setjmps* 0))
   ;(let ((*print-level* 3)) (print form))
   (catch *cmperr-tag*
     (when (consp form)
