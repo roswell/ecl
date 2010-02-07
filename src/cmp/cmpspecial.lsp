@@ -27,7 +27,7 @@
   (let* ((form (c1expr (second args)))
 	 (the-type (type-filter (first args) t))
 	 type)
-    (if (setf type (type-and the-type (c1form-primary-type form)))
+    (if (setf type (values-type-and the-type (c1form-primary-type form)))
         (setf (c1form-type form) type)
       (cmpwarn "Type mismatch was found in ~s." (cons 'THE args)))
     form))
