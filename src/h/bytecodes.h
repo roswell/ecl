@@ -120,13 +120,18 @@ typedef int16_t cl_oparg;
 # define OPARG_SIZE 1
 # define READ_OPCODE(v)	v[0]
 # define READ_OPARG(v)	v[0]
-# define GET_OPARG(r,v) { r = READ_OPARG(v); v++; }
+# define GET_OPARG(r,v) { r = *(v++); }
 #endif
 #define GET_OPCODE(v) *((v)++)
 #define GET_DATA(r,v,data) { \
 	cl_oparg ndx; \
 	GET_OPARG(ndx, v); \
 	r = data[ndx]; \
+}
+#define GET_DATA_PTR(r,v,data) { \
+	cl_oparg ndx; \
+	GET_OPARG(ndx, v); \
+	r = data+ndx; \
 }
 #define GET_LABEL(pc,v)	{ \
 	pc = (v) + READ_OPARG(v); \

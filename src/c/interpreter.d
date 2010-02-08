@@ -649,20 +649,20 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 	   Executes the enclosed code in a lexical enviroment extended with
 	   the functions "fun1" ... "funn". Note that we only record the
 	   index of the first function: the others are after this one.
+           Note that nfun > 0.
 	*/
 	CASE(OP_FLET); {
-		cl_index nfun, first;
+		int nfun;
 		cl_object old_lex, *fun;
 		GET_OPARG(nfun, vector);
-		GET_OPARG(first, vector);
-		fun = data + first;
+		GET_DATA_PTR(fun, vector, data);
 		/* Copy the environment so that functions get it without references
 		   to themselves, and then add new closures to the environment. */
 		old_lex = lex_env;
-		while (nfun--) {
+		do {
 			cl_object f = close_around(*(fun++), old_lex);
 			lex_env = bind_function(lex_env, f->bytecodes.name, f);
-		}
+		} while (--nfun);
 		THREAD_NEXT;
 	}
 	/* OP_LABELS	nfun{arg}
@@ -676,23 +676,26 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 	   the functions "fun1" ... "funn".
 	*/
 	CASE(OP_LABELS); {
-		cl_index i, nfun, first;
-		cl_object *fun, l, new_lex;
+		cl_index nfun;
+		cl_object *fun;
 		GET_OPARG(nfun, vector);
-		GET_OPARG(first, vector);
-		fun = data + first;
+		GET_DATA_PTR(fun, vector, data);
 		/* Build up a new environment with all functions */
-		for (new_lex = lex_env, i = nfun; i; i--) {
-			cl_object f = *(fun++);
-			new_lex = bind_function(new_lex, f->bytecodes.name, f);
-		}
+                {
+                        cl_index i = nfun;
+                        do {
+                                cl_object f = *(fun++);
+                                lex_env = bind_function(lex_env, f->bytecodes.name, f);
+                        } while (--i);
+                }
 		/* Update the closures so that all functions can call each other */
-		;
-		for (l = new_lex, i = nfun; i; i--) {
-			ECL_RPLACA(l, close_around(ECL_CONS_CAR(l), new_lex));
-			l = ECL_CONS_CDR(l);
-		}
-		lex_env = new_lex;
+                {
+                        cl_object l = lex_env;
+                        do {
+                                ECL_RPLACA(l, close_around(ECL_CONS_CAR(l), lex_env));
+                                l = ECL_CONS_CDR(l);
+                        } while (--nfun);
+                }
 		THREAD_NEXT;
 	}
 	/* OP_LFUNCTION	n{arg}, function-name{symbol}
