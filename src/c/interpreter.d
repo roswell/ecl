@@ -233,6 +233,34 @@ close_around(cl_object fun, cl_object lex) {
         reg0 = ecl_apply_from_stack_frame((cl_object)&frame, fun);      \
         the_env->stack_top -= __n; }
 
+static void too_many_arguments(cl_object bytecodes, cl_object frame) ecl_attr_noreturn;
+static void odd_number_of_keywords(cl_object bytecodes) ecl_attr_noreturn;
+static void unknown_keyword(cl_object bytecodes, cl_object frame) ecl_attr_noreturn;
+
+static void
+too_many_arguments(register cl_object bytecodes, register cl_object frame)
+{
+        FEprogram_error("Too many arguments passed to "
+                        "function ~A~&Argument list: ~S",
+                        2, bytecodes, cl_apply(2, @'list', frame));
+}
+
+static void
+odd_number_of_keywords(register cl_object bytecodes)
+{
+        FEprogram_error("Function ~A called with odd number "
+                        "of keyword arguments.",
+                        1, bytecodes);
+}
+
+static void
+unknown_keyword(register cl_object bytecodes, register cl_object frame)
+{
+        FEprogram_error("Unknown keyword argument passed to function ~S.~&"
+                        "Argument list: ~S", 2, bytecodes,
+                        cl_apply(2, @'list', frame));
+}
+
 /* -------------------- THE INTERPRETER -------------------- */
 
 cl_object
@@ -543,9 +571,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
         */
         CASE(OP_NOMORE); {
                 if (ecl_unlikely(frame_index < frame->frame.size))
-                        FEprogram_error("Too many arguments passed to "
-                                        "function ~A~&Argument list: ~S",
-                                        2, bytecodes, cl_apply(2, @'list', frame));
+                        too_many_arguments(bytecodes, frame);
                 THREAD_NEXT;
         }
 	/* OP_POPREST
@@ -570,9 +596,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
                 count = frame->frame.size - frame_index;
                 last = first + count;
                 if (ecl_unlikely(count & 1)) {
-                        FEprogram_error("Function ~A called with odd number "
-                                        "of keyword arguments.",
-                                        1, bytecodes);
+                        odd_number_of_keywords(bytecodes);
                 }
                 aok = ECL_CONS_CAR(keys_list);
                 for (; (keys_list = ECL_CONS_CDR(keys_list), !Null(keys_list)); ) {
@@ -604,11 +628,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
                                         }
                                 }
                                 if (ecl_unlikely(count && (aok & 1) == 0)) {
-                                        FEprogram_error("Unknown keyword argument "
-                                                        "passed to function ~S.~&"
-                                                        "Argument list: ~S",
-                                                        2, bytecodes,
-                                                        cl_apply(2, @'list', frame));
+                                        unknown_keyword(bytecodes, frame);
                                 }
                         }
                 }
