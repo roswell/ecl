@@ -53,6 +53,10 @@ cs_set_size(cl_env_ptr env, cl_index new_size)
 void
 ecl_cs_overflow(void)
 {
+        static const char *stack_overflow_msg =
+                "\n;;;\n;;; Stack overflow.\n"
+                ";;; Jumping to the outermost toplevel prompt\n"
+                ";;;\n\n";
 	cl_env_ptr env = ecl_process_env();
 	cl_index safety_area = ecl_get_option(ECL_OPT_C_STACK_SAFETY_AREA);
 	cl_index size = env->cs_size;
@@ -64,7 +68,7 @@ ecl_cs_overflow(void)
 		env->cs_limit += safety_area;
 #endif
 	else
-		ecl_internal_error("Cannot grow stack size.");
+                ecl_unrecoverable_error(env, stack_overflow_msg);
 	cl_cerror(6, make_constant_base_string("Extend stack size"),
 		  @'ext::stack-overflow', @':size', MAKE_FIXNUM(size),
 		  @':type', @'ext::c-stack');

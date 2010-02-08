@@ -245,36 +245,6 @@ interrupts_disabled_by_lisp(cl_env_ptr the_env)
 		ecl_symbol_value(@'si::*interrupts-enabled*') == Cnil);
 }
 
-static void
-jump_to_sigsegv_handler(cl_env_ptr the_env, const char *message)
-{
-	/*
-	 * Right now we have no means of specifying a jump point
-	 * for really bad events. We just jump to the outermost
-	 * frame, which is equivalent to quitting, and wait for
-	 * someone to intercept this jump.
-	 */
-        ecl_frame_ptr destination;
-        cl_object tag;
-
-        /*
-         * We output the error message with very low level routines
-         * because we can not risk another stack overflow.
-         */
-        writestr_stream(message, cl_core.error_output);
-
-        tag = ECL_SYM_VAL(the_env, @'si::*quit-tag*');
-        the_env->nvalues = 0;
-        if (tag) {
-                destination = frs_sch(tag);
-                if (destination) {
-                        ecl_unwind(the_env, destination);
-                }
-        }
-        destination = ecl_process_env()->frs_org;
-	ecl_unwind(the_env, destination);
-}
-
 static cl_object pop_signal(cl_env_ptr env);
 
 static cl_object
@@ -600,14 +570,14 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
 	if ((char*)info->si_addr > the_env->cs_barrier &&
 	    (char*)info->si_addr <= the_env->cs_org) {
                 unblock_signal(SIGSEGV);
-		jump_to_sigsegv_handler(the_env, stack_overflow_msg);
+		ecl_unrecoverable_error(the_env, stack_overflow_msg);
                 return;
 	}
 # else
 	if ((char*)info->si_addr < the_env->cs_barrier &&
 	    (char*)info->si_addr >= the_env->cs_org) {
                 unblock_signal(SIGSEGV);
-		jump_to_sigsegv_handler(the_env, stack_overflow_msg);
+		ecl_unrecoverable_error(the_env, stack_overflow_msg);
                 return;
 	}
 # endif
@@ -617,7 +587,7 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
          * up to the outermost toplevel.
 	 */
         unblock_signal(SIGSEGV);
-	jump_to_sigsegv_handler(the_env, segv_msg);
+	ecl_unrecoverable_error(the_env, segv_msg);
 # else
         handle_or_queue(@'ext::segmentation-violation', SIGSEGV);
 # endif
@@ -628,7 +598,7 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
 	 * the outermost handler.
 	 */
         unblock_signal(SIGSEGV);
-	jump_to_sigsegv_handler(the_env, segv_msg);
+	ecl_unrecoverable_error(the_env, segv_msg);
 #endif
 }
 

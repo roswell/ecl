@@ -41,6 +41,37 @@ ecl_internal_error(const char *s)
 	abort();
 }
 
+
+void
+ecl_unrecoverable_error(cl_env_ptr the_env, const char *message)
+{
+	/*
+	 * Right now we have no means of specifying a jump point
+	 * for really bad events. We just jump to the outermost
+	 * frame, which is equivalent to quitting, and wait for
+	 * someone to intercept this jump.
+	 */
+        ecl_frame_ptr destination;
+        cl_object tag;
+
+        /*
+         * We output the error message with very low level routines
+         * because we can not risk another stack overflow.
+         */
+        writestr_stream(message, cl_core.error_output);
+
+        tag = ECL_SYM_VAL(the_env, @'si::*quit-tag*');
+        the_env->nvalues = 0;
+        if (tag) {
+                destination = frs_sch(tag);
+                if (destination) {
+                        ecl_unwind(the_env, destination);
+                }
+        }
+        destination = ecl_process_env()->frs_org;
+	ecl_unwind(the_env, destination);
+}
+
 /*****************************************************************************/
 /*		Support for Lisp Error Handler				     */
 /*****************************************************************************/

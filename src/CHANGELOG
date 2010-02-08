@@ -39,6 +39,10 @@ ECL 10.2.1:
 
  - ECL accepts FTYPE proclamations for SETF-functions.
 
+ - On platforms where a stack overflow does not cause a SIGSEGV, ECL was unable
+   to recover from it. Now it jumps to the outermost protection frame
+   (typically the toplevel).
+
 * Visible changes:
 
  - Significant speedup in access to hash tables of up to 30% by writing
