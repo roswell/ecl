@@ -95,7 +95,7 @@
         (t (type-filter (car return-types)))))
 
 (defun add-function-proclamation (fname decl)
-  (if (symbolp fname)
+  (if (si:valid-function-name-p fname)
       (let* ((arg-types '*)
 	     (return-types '*)
 	     (l decl))

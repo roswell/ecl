@@ -44,7 +44,7 @@
         (t (c-types:type-filter (car return-types)))))
 
 (defun add-function-proclamation (fname decl)
-  (if (symbolp fname)
+  (if (si:valid-function-name-p fname)
       (let* ((arg-types '*)
 	     (return-types '*)
 	     (l decl))
@@ -59,11 +59,11 @@
 	      (t (warn "The function proclamation ~s ~s is not valid."
 		       fname decl)))
 	(if (eq arg-types '*)
-	    (sys:rem-sysprop fname 'PROCLAIMED-ARG-TYPES)
-	    (sys:put-sysprop fname 'PROCLAIMED-ARG-TYPES arg-types))
+	    (rem-sysprop fname 'PROCLAIMED-ARG-TYPES)
+	    (put-sysprop fname 'PROCLAIMED-ARG-TYPES arg-types))
 	(if (eq return-types '*)
-	    (sys:rem-sysprop fname 'PROCLAIMED-RETURN-TYPE)
-	    (sys:put-sysprop fname 'PROCLAIMED-RETURN-TYPE return-types)))
+	    (rem-sysprop fname 'PROCLAIMED-RETURN-TYPE)
+	    (put-sysprop fname 'PROCLAIMED-RETURN-TYPE return-types)))
       (warn "The function proclamation ~s ~s is not valid." fname decl)))
 
 (defun add-function-declaration (fname arg-types return-types env)

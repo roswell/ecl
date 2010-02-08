@@ -37,6 +37,8 @@ ECL 10.2.1:
    in B, then ECL signaled an error in the compiled version of A even after
    this one had required B.lsp.
 
+ - ECL accepts FTYPE proclamations for SETF-functions.
+
 * Visible changes:
 
  - Significant speedup in access to hash tables of up to 30% by writing
