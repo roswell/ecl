@@ -141,13 +141,17 @@ ecl_bds_set_size(cl_env_ptr env, cl_index size)
 struct bds_bd *
 ecl_bds_overflow(void)
 {
+        static const char *stack_overflow_msg =
+                "\n;;;\n;;; Binding stack overflow.\n"
+                ";;; Jumping to the outermost toplevel prompt\n"
+                ";;;\n\n";
 	cl_env_ptr env = ecl_process_env();
 	cl_index margin = ecl_get_option(ECL_OPT_BIND_STACK_SAFETY_AREA);
 	cl_index size = env->bds_size;
 	bds_ptr org = env->bds_org;
 	bds_ptr last = org + size;
 	if (env->bds_limit >= last) {
-		ecl_internal_error("Bind stack overflow, cannot grow larger.");
+                ecl_unrecoverable_error(env, stack_overflow_msg);
 	}
 	env->bds_limit += margin;
 	cl_cerror(6, make_constant_base_string("Extend stack size"),
@@ -491,13 +495,17 @@ frs_set_size(cl_env_ptr env, cl_index size)
 static void
 frs_overflow(void)		/* used as condition in list.d */
 {
+        static const char *stack_overflow_msg =
+                "\n;;;\n;;; Frame stack overflow.\n"
+                ";;; Jumping to the outermost toplevel prompt\n"
+                ";;;\n\n";
 	cl_env_ptr env = ecl_process_env();
 	cl_index margin = ecl_get_option(ECL_OPT_FRAME_STACK_SAFETY_AREA);
 	cl_index size = env->frs_size;
 	ecl_frame_ptr org = env->frs_org;
 	ecl_frame_ptr last = org + size;
 	if (env->frs_limit >= last) {
-		ecl_internal_error("Frame stack overflow, cannot grow larger.");
+                ecl_unrecoverable_error(env, stack_overflow_msg);
 	}
 	env->frs_limit += margin;
 	cl_cerror(6, make_constant_base_string("Extend stack size"),
