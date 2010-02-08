@@ -1627,6 +1627,7 @@
 
 (def-inline floor :always (t) (values &rest t) "ecl_floor1(#0)")
 (def-inline floor :always (t t) (values &rest t) "ecl_floor2(#0,#1)")
+#+(or) ; does not work well, no multiple values
 (def-inline floor :always (fixnum fixnum) :fixnum
  "@01;(#0>=0&&#1>0?(#0)/(#1):ecl_ifloor(#0,#1))")
 
@@ -1635,6 +1636,7 @@
 
 (def-inline truncate :always (t) (values &rest t) "ecl_truncate1(#0)")
 (def-inline truncate :always (t t) (values &rest t) "ecl_truncate2(#0,#1)")
+#+(or) ; does not work well, no multiple values
 (def-inline truncate :always (fixnum-float) :fixnum "(cl_fixnum)(#0)")
 
 (def-inline round :always (t) (values &rest t) "ecl_round1(#0)")
