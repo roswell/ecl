@@ -1177,9 +1177,19 @@ also known as unix-domain sockets."))
   (let ((stream (and (slot-boundp socket 'stream)
 		     (slot-value socket 'stream))))
     (unless stream
-      (setf stream (let ((fd (socket-file-descriptor socket)))
-		     (make-stream-from-fd fd #-:wsock :input-output #+:wsock :input-output-wsock
-					  buffering)))
+      (setf stream
+            #+threads
+            (let* ((fd (socket-file-descriptor socket))
+                   (in (make-stream-from-fd fd #-wsock :input #+wsock :input-wsock
+                                            buffering))
+                   (out (make-stream-from-fd fd #-wsock :output #+wsock :output-wsock
+                                             buffering)))
+              (make-two-way-stream in out))
+            #-threads
+            (let ((fd (socket-file-descriptor socket)))
+              (make-stream-from-fd fd #-:wsock :input-output
+                                   #+:wsock :input-output-wsock
+                                   buffering)))
       (setf (slot-value socket 'stream) stream)
       #+ ignore
       (sb-ext:cancel-finalization socket))

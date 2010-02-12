@@ -43,6 +43,10 @@ ECL 10.2.1:
    to recover from it. Now it jumps to the outermost protection frame
    (typically the toplevel).
 
+ - Socket streams are now two-way streams. This solves a problem with
+   multithreaded builds in certain platforms (OS X) where a C stream can not be
+   used to read and write simultaneously.
+
 * Visible changes:
 
  - Significant speedup in access to hash tables of up to 30% by writing
