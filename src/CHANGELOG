@@ -1,13 +1,17 @@
 ECL 10.2.1:
 ===========
 
+This release has three important focuses: performance improvements in various
+fronts (garbage collection and hash tables), extending the run-process function
+and important fixes to let ECL work better with Slime.
+
 * Bugs fixed:
 
  - DIRECTORY used stat() also on files that did not match the directory masks.
 
  - The syntax for matching strings in DIRECTORY is now the same as in
-   PATHNAME-MATCH-P. Formerly there were small differences, the forming
-   understanding characters #\? and #\\
+   PATHNAME-MATCH-P. Formerly there were small differences, such as DIRECTORY
+   understanding characters #\? and #\\ and PATHNAME-MATCH-P not.
 
  - Standalone executables do not require the existence of the ECLDIR directory
    to start up -- it may be required, though, for working Unicode because the
@@ -15,23 +19,23 @@ ECL 10.2.1:
 
  - PROCESS-JOIN was exported from the wrong package.
 
- - PROCESS-JOIN would fail when called while a thread was being started.
+ - PROCESS-JOIN failed when invoked with a thread that was in the process of
+   being set up.
 
  - The output values of a process or thread are now collected in the process
    object and returned by PROCESS-JOIN.
 
- - The interrupt servicing thread must explicitely include the interrupt signal
-   among the ones it captures. Otherwise it will never be interrupted itself.
+ - ECL's interrupt servicing thread could not be shut down.
 
- - No longer style warnings about removal of a variable when this variable was
-   previously declared as ignorable.
+ - When compiling LET forms, ECL emitted warnings about removal of variables
+   even when they were declared IGNORABLE.
 
- - Internal variable MP:*ALLOW-WITH-INTERRUPTS* was not declared special.
+ - An internal variable MP:*ALLOW-WITH-INTERRUPTS* was not declared special.
 
- - The compiler now understands function type proclamations with &optional
+ - The compiler now understands function type proclamations with &OPTIONAL
    values.
 
- - The compiler now uses THE forms with a VALUES type.
+ - The compiler now accepts THE special forms with a VALUES type.
 
  - If file A.lsp explicitely loads B.lsp to use a package that is only defined
    in B, then ECL signaled an error in the compiled version of A even after
@@ -39,48 +43,49 @@ ECL 10.2.1:
 
  - ECL accepts FTYPE proclamations for SETF-functions.
 
- - On platforms where a stack overflow does not cause a SIGSEGV, ECL was unable
-   to recover from it. Now it jumps to the outermost protection frame
-   (typically the toplevel).
+ - On platforms where a stack overflow does not trigger a SIGSEGV, ECL was
+   unable to recover from the overflow. Now it jumps to the outermost
+   protection frame (typically the toplevel).
 
- - Socket streams are now two-way streams. This solves a problem with
-   multithreaded builds in certain platforms (OS X) where a C stream can not be
-   used to read and write simultaneously.
+ - Socket streams are now two-way streams. This solves a problem with certain
+   platforms (OS X) where a C stream can not be used to read and write
+   simultaneously by two different threads.
 
 * Visible changes:
 
- - Significant speedup in access to hash tables of up to 30% by writing
-   specialized loops for EQ, EQL, EQUAL, EQUALP and package hash tables.
+ - Hash tables now use hand-coded specialized loops for EQ, EQL, EQUAL, EQUALP
+   and package types, achieving a reduction of about 30% time in lookups.
 
- - New function EXT:ENVIRON returns the list of strings that makes up the
+ - A new function EXT:ENVIRON returns the list of strings that makes up the
    process environment. This is the equivalent of POSIX (char **environ)
    and Windows' GetEnvironmentStrings.
 
- - EXT:RUN-PROGRAM now accepts a keyword argument, :ENVIRON, which is a
-   list of strings configuring the environment of the child process.
+ - EXT:RUN-PROGRAM now accepts a keyword argument, :ENVIRON, with a list of
+   strings used to configure the environment of the child process. For instance
+   '("PWD=/home" "PATH=/usr/bin")
 
- - EXT:RUN-PROGRAM returns as second value an EXT:EXTERNAL-PROCESS structure,
+ - EXT:RUN-PROGRAM returns as third value an EXT:EXTERNAL-PROCESS structure,
    which supports the queries EXT:EXTERNAL-PROCESS-{PID,INPUT,OUTPUT,STATUS},
    following CCL's conventions.
 
- - New function EXT:EXTERNAL-PROCESS-WAIT to wait indefinitely or simply query
-   the status of a process.
+ - The new function EXT:EXTERNAL-PROCESS-WAIT can be used to wait indefinitely
+   for termination of a process or simply to query its status.
 
  - ECL implements a new garbage collector marking mode which at the overhead of
    one word per object achieves precise marking of heap objects, reducing
    accidental data retention and improving the time spent in garbage
-   collection.
+   collection. This mode is only available when using --enable-boehm=system at
+   configuration time.
 
  - ECL now ships with ASDF version 1.604
 
  - The variables C:*USER-CC-FLAGS* and C:*USER-LD-FLAGS* are lists of strings
-   which can be customized by the user to change the behavior of the C compiler
-   and the linker. Note, however, that the flags that ECL uses may take
-   priority.
+   which can used to change the behavior of the C compiler and the
+   linker. Note, however, that the flags that ECL uses may take priority.
 
  - In the C code we are beginning to use GCC's attributes (__attribute__) and
-   branch annotation (__builtin_expect) to decrease the size of code that
-   checks for errors and improve overall speed.
+   branch annotation (__builtin_expect). This decreases the size of code that
+   checks for errors and improves performance.
 
  - When printing compiler notes, instead of printing the macroexpanded form,
    ECL now prints the toplevel form, as follows
