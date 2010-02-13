@@ -422,7 +422,13 @@ SB-SYS:MAKE-FD-STREAM."))
   (let ((fd (socket-file-descriptor socket)))
     (unless (eql fd -1) ; already closed
       (cond ((slot-boundp socket 'stream)
-	     (close (slot-value socket 'stream)) ;; closes fd indirectly
+             (let ((stream (slot-value socket 'stream)))
+               #+threads
+               (close (two-way-stream-input stream))
+               #+threads
+               (close (two-way-stream-output stream))
+               #-threads
+               (close stream)) ;; closes fd indirectly
 	     (slot-makunbound socket 'stream))
 	    ((= (socket-close-low-level socket) -1)
 	     (socket-error "close")))
