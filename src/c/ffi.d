@@ -31,6 +31,10 @@ static const cl_object ecl_foreign_type_table[] = {
 	@':unsigned-int',
 	@':long',
 	@':unsigned-long',
+#ifdef ecl_uint8_t
+        @':int8-t',
+        @':uint8-t',
+#endif
 #ifdef ecl_uint16_t
         @':int16-t',
         @':uint16-t',
@@ -73,6 +77,10 @@ static unsigned int ecl_foreign_type_size[] = {
 	sizeof(unsigned int),
 	sizeof(long),
 	sizeof(unsigned long),
+#ifdef ecl_uint8_t
+        sizeof(ecl_int8_t),
+        sizeof(ecl_uint8_t),
+#endif
 #ifdef ecl_uint16_t
         sizeof(ecl_int16_t),
         sizeof(ecl_uint16_t),
@@ -126,13 +134,17 @@ static ffi_type *ecl_type_to_libffi_type[] = {
 	&ffi_type_uint, /*@':unsigned-int',*/
 	&ffi_type_slong, /*@':long',*/
 	&ffi_type_ulong, /*@':unsigned-long',*/
+#ifdef ecl_uint8_t
+        &ffi_type_sint8, /*@':int8-t',*/
+        &ffi_type_uint8, /*@':uint8-t',*/
+#endif
 #ifdef ecl_uint16_t
         &ffi_type_sint16, /*@':int16-t',*/
         &ffi_type_uint16, /*@':uint16-t',*/
 #endif
 #ifdef ecl_uint32_t
-        &ffi_type_sint32, /*@':int64-t',*/
-        &ffi_type_uint32, /*@':uint64-t',*/
+        &ffi_type_sint32, /*@':int32-t',*/
+        &ffi_type_uint32, /*@':uint32-t',*/
 #endif
 #ifdef ecl_uint64_t
         &ffi_type_sint64, /*@':int64-t',*/

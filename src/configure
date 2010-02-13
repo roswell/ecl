@@ -2360,7 +2360,7 @@ fi
 if test "${enable_precisegc+set}" = set; then
   enableval=$enable_precisegc; enable_precisegc=${enableval}
 else
-  enable_precisegc=no
+  enable_precisegc=yes
 fi
 
 
@@ -8700,9 +8700,11 @@ fi
 $as_echo "${CL_FIXNUM_TYPE}" >&6; }
 
 ECL_STDINT_HEADER=""
+ECL_UINT8_T=""
 ECL_UINT16_T=""
 ECL_UINT32_T=""
 ECL_UINT64_T=""
+ECL_INT8_T=""
 ECL_INT16_T=""
 ECL_INT32_T=""
 ECL_INT64_T=""

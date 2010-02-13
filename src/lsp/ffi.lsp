@@ -63,7 +63,11 @@
        (member name '(:byte :unsigned-byte :short :unsigned-short
 		      :int :unsigned-int :char :unsigned-char
 		      :long :unsigned-long :pointer-void :object
-		      :float :double :cstring)
+		      :float :double :cstring
+                      :int8-t #+uint16-t :int16-t
+                      #+uint32-t :int32-t #+uint64-t :int64-t
+                      :uint8-t #+uint16-t :uint16-t
+                      #+uint32-t :uint32-t #+uint64-t :uint64-t)
 	       :test 'eq)))
 
 (defmacro def-foreign-type (name definition)

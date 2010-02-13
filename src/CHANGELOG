@@ -95,6 +95,9 @@ and important fixes to let ECL work better with Slime.
 
  - ECL now implements EXT:*INVOKE-DEBUGGER-HOOK*, which works like *DEBUGGER-HOOK*
    but is also observed by BREAK. (SBCL extension adopted by ECL)
+ 
+ - The UFFI interface now supports C99 types, such as :int8-t, :uint32-t, etc,
+   but only when the corresponding types do exist in the underlying C environment.
 
 ;;; Local Variables: ***
 ;;; mode:text ***
