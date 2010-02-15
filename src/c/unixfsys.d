@@ -243,111 +243,117 @@ si_readlink(cl_object filename) {
 cl_object
 cl_truename(cl_object orig_pathname)
 {
-	const cl_env_ptr the_env = ecl_process_env();
-	cl_object dir;
-	cl_object previous = current_dir();
-
+        cl_object kind, filename, dir;
+	cl_object base_dir = si_getcwd(0);
 	cl_object pathname = coerce_to_file_pathname(orig_pathname);
-	if (pathname->pathname.directory == Cnil)
-		pathname = ecl_merge_pathnames(previous, pathname, @':newest');
-
+        pathname = ecl_merge_pathnames(pathname, base_dir, @':newest');
+        base_dir = ecl_make_pathname(pathname->pathname.host,
+                                     pathname->pathname.device,
+                                     ecl_list1(@':absolute'),
+                                     Cnil, Cnil, Cnil);
 	/* We process the directory part of the filename, removing all
-	 * possible symlinks. To do so, we only have to change to the
+	 * possible symlinks. To do so, we inspect recursively the
 	 * directory which contains our file, and come back. We also have to
 	 * ensure that the filename itself does not point to a symlink: if so,
 	 * then we resolve the value of the symlink and continue traversing
 	 * the filesystem.
 	 */
-	CL_UNWIND_PROTECT_BEGIN(the_env) {
-		cl_object kind, filename, prefix;
-	BEGIN:
-		filename = si_coerce_to_filename(pathname);
-		kind = file_kind((char*)filename->base_string.self, FALSE);
-		if (kind == Cnil) {
-			FEcannot_open(orig_pathname);
-#ifdef HAVE_LSTAT
-		} else if (kind == @':link') {
-			/* The link might be a relative pathname. In that case we have
-			 * to merge with the original pathname */
-			filename = cl_merge_pathnames(2, si_readlink(filename),
-						      ecl_make_pathname(Cnil, Cnil,
-									cl_pathname_directory(1,filename),
-									Cnil, Cnil, Cnil));
-#endif
-		} else {
-                        /* If the pathname is a directory but we have supplied
-                           a file name, correct the type by appending a directory
-                           separator and re-parsing again the namestring */
-                        if (kind == @':directory' &&
-                            (pathname->pathname.name != Cnil ||
-                             pathname->pathname.type != Cnil)) {
-                                pathname = si_base_string_concatenate
-                                        (2, filename,
-                                         make_constant_base_string("/"));
-                                pathname = cl_pathname(pathname);
-                                goto BEGIN;
-                        }
-                        filename = OBJNULL;
-		}
-		prefix = drive_host_prefix(pathname);
-		for (dir = pathname->pathname.directory;
-		     !Null(dir);
-		     dir = ECL_CONS_CDR(dir))
-		{
-			volatile cl_object part = ECL_CONS_CAR(dir);
-			if (type_of(part) == t_base_string) {
-				if (safe_chdir((char*)part->base_string.self, prefix) < 0) {
-ERROR:					FElibc_error("Can't change the current directory to ~S",
-						     1, pathname);
-				}
-			} else if (part == @':absolute') {
-				if (Null(prefix)) {
-					if (safe_chdir("/", prefix) < 0)
-						goto ERROR;
-				} else {
-					cl_object aux = make_constant_base_string("/");
-					prefix = si_base_string_concatenate(2, prefix, aux);
-					continue;
-				}
-			} else if (part == @':relative') {
-				/* Nothing to do */
-			} else if (part == @':up') {
-				if (safe_chdir("..", prefix) < 0)
-					goto ERROR;
-			} else {
-				FEerror("~S is not allowed in TRUENAME", 1, part);
-			}
-			prefix = Cnil;
-		}
-#ifdef HAVE_LSTAT
-		if (filename) {
-			/* It was a symlink. We take the content of this
-			 * link and try to find its truename. */
-			pathname = cl_parse_namestring(3, filename, Cnil, Cnil);
-			goto BEGIN;
-		}
-#endif
-                {
-                        /* ECL does not contemplate version numbers
-                           in directory pathnames */
-                        cl_object version = @':newest';
-                        if (pathname->pathname.name == Cnil &&
-                            pathname->pathname.type == Cnil) {
-                                version = Cnil;
-                                /* We have to destructively change the
-                                 * pathname version here. Otherwise
-                                 * merge_pathnames will not do it. It is
-                                 * safe because coerce_to_file_pathname
-                                 * created a copy. */
-                                pathname->pathname.version = version;
-                        }
-                        pathname = ecl_merge_pathnames(si_getcwd(0), pathname,
-                                                       version);
+        dir = pathname->pathname.directory;
+        while (!Null(dir))
+	{
+                cl_object aux, prefix, part = ECL_CONS_CAR(dir);
+                dir = ECL_CONS_CDR(dir);
+                if (part == @':absolute') {
+                        base_dir->pathname.directory = ecl_list1(part);
+                        continue;
+                } else if (part == @':relative') {
+                        /* Nothing to do */
+                        continue;
+                } else if (part == @':up') {
+                        aux = make_constant_base_string("..");
+                } else if (type_of(part) != t_base_string) {
+                        FEerror("Directory component ~S found in pathname~&  ~S"
+                                "~&is not allowed in TRUENAME",
+                                1, part);
+                } else {
+                        aux = part;
                 }
-	} CL_UNWIND_PROTECT_EXIT {
-		safe_chdir((char*)previous->base_string.self, Cnil);
-	} CL_UNWIND_PROTECT_END;
-
+                prefix = ecl_namestring(base_dir, ECL_NAMESTRING_FORCE_BASE_STRING);
+                aux = si_base_string_concatenate(2, prefix, aux);
+                kind = file_kind((char*)aux->base_string.self, FALSE);
+                if (kind == Cnil) {
+                        FEcannot_open(orig_pathname);
+                } else if (kind == @':directory') {
+                        cl_object newdir = base_dir->pathname.directory;
+                        if (part == @':up') {
+                                newdir = ecl_butlast(newdir, 1);
+                                if (Null(newdir)) {
+                                        FEerror("Pathname contained an :UP component  "
+                                                "that goes above the base directory:"
+                                                "~&  ~S", 1, orig_pathname);
+                                }
+                        } else {
+                                newdir = ecl_nconc(newdir, ecl_list1(part));
+                        }
+                        base_dir->pathname.directory = newdir;
+#ifdef HAVE_LSTAT
+                } else if (kind == @':link') {
+                        aux = cl_truename(ecl_merge_pathnames(si_readlink(aux),
+                                                              base_dir, @':newest'));
+                        if (aux->pathname.name != Cnil ||
+                            aux->pathname.type != Cnil)
+                                goto WRONG_DIR;
+                        base_dir->pathname = pathname->pathname;
+                        base_dir->pathname.directory = CONS(@':relative', dir);
+                        pathname = ecl_merge_pathnames(base_dir, aux, @':newest');
+                        return cl_truename(pathname);
+#endif
+                } else {
+                WRONG_DIR:
+                        FEerror("The directory~&  ~S~&in pathname~&  ~S~&"
+                                "points to a file or special device.",
+                                2, base_dir->pathname.directory,
+                                orig_pathname);
+                }
+        }
+        pathname = ecl_merge_pathnames(base_dir, pathname, @':newest');
+        filename = si_coerce_to_filename(pathname);
+        kind = file_kind((char*)filename->base_string.self, FALSE);
+        if (kind == Cnil) {
+                FEcannot_open(orig_pathname);
+#ifdef HAVE_LSTAT
+        } else if (kind == @':link') {
+                /* The link might be a relative pathname. In that case we have
+                 * to merge with the original pathname */
+                filename = si_readlink(filename);
+                pathname = ecl_merge_pathnames(filename, base_dir, @':newest');
+                return cl_truename(pathname);
+#endif
+        } else if (kind == @':directory'){
+                /* If the pathname is a directory but we have supplied
+                   a file name, correct the type by appending a directory
+                   separator and re-parsing again the namestring */
+                if (pathname->pathname.name != Cnil ||
+                    pathname->pathname.type != Cnil) {
+                        pathname = si_base_string_concatenate
+                                (2, filename,
+                                 make_constant_base_string("/"));
+                        pathname = cl_pathname(pathname);
+                }
+        }
+        /* ECL does not contemplate version numbers
+           in directory pathnames */
+        if (pathname->pathname.name == Cnil &&
+            pathname->pathname.type == Cnil) {
+                /* We have to destructively change the
+                 * pathname version here. Otherwise
+                 * merge_pathnames will not do it. It is
+                 * safe because coerce_to_file_pathname
+                 * created a copy. */
+                pathname->pathname.version = Cnil;
+        } else {
+                pathname->pathname.version = @':newest';
+        }
 	@(return pathname)
 }
 

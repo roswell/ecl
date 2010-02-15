@@ -51,6 +51,8 @@ and important fixes to let ECL work better with Slime.
    platforms (OS X) where a C stream can not be used to read and write
    simultaneously by two different threads.
 
+ - TRUENAME and PROBE-FILE were not thread safe.
+
 * Visible changes:
 
  - Hash tables now use hand-coded specialized loops for EQ, EQL, EQUAL, EQUALP
