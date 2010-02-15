@@ -218,6 +218,10 @@ typedef unsigned int uint32_t;
 /* We can use small, two-words conses, without type information		*/
 /* #undef ECL_SMALL_CONS */
 
+#define ecl_likely(form) (form)
+#define ecl_unlikely(form) (form)
+#define ecl_attr_noreturn
+
 /* -CUT-: Everything below this mark will not be installed		*/
 /* -------------------------------------------------------------------- *
  *	BUILD OPTIONS WHICH NEED NOT BE EXPORTED			*
