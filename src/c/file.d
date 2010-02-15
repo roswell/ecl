@@ -4310,6 +4310,11 @@ cl_open_stream_p(cl_object strm)
 	/* ANSI and Cltl2 specify that open-stream-p should work
 	   on closed streams, and that a stream is only closed
 	   when #'close has been applied on it */
+#ifdef ECL_CLOS_STREAMS
+	if (ECL_INSTANCEP(strm)) {
+		return funcall(2, @'gray::open-stream-p', strm);
+	}
+#endif
 	if (type_of(strm) != t_stream)
 		FEwrong_type_argument(@'stream', strm);
 	@(return (strm->stream.closed ? Cnil : Ct))
