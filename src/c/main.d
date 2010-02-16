@@ -143,6 +143,9 @@ static const char *feature_names[] = {
 #ifdef _MSC_VER
 	"MSVC",
 #endif
+#if defined(_MSC_VER) || defined(mingw32)
+        "WINDOWS",
+#endif
 #ifdef ECL_CMU_FORMAT
 	"CMU-FORMAT",
 #endif
