@@ -786,6 +786,10 @@ union ecl_ffi_values {
 	unsigned short us;
 	long l;
 	unsigned long ul;
+#ifdef ecl_uint8_t
+        ecl_int8_t i8;
+        ecl_uint8_t u8;
+#endif
 #ifdef ecl_uint16_t
         ecl_int16_t i16;
         ecl_uint16_t u16;

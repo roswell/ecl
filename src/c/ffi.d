@@ -404,6 +404,12 @@ ecl_foreign_data_ref_elt(void *p, enum ecl_ffi_tag tag)
 		return ecl_make_unsigned_integer(*(unsigned int *)p);
 	case ECL_FFI_LONG:
 		return ecl_make_integer(*(long *)p);
+#ifdef ecl_uint8_t
+        case ECL_FFI_INT8_T:
+                return MAKE_FIXNUM(*(ecl_int8_t *)p);
+        case ECL_FFI_UINT8_T:
+                return MAKE_FIXNUM(*(ecl_uint8_t *)p);
+#endif
 #ifdef ecl_uint16_t
         case ECL_FFI_INT16_T:
                 return ecl_make_int16_t(*(ecl_int16_t *)p);
@@ -479,6 +485,12 @@ ecl_foreign_data_set_elt(void *p, enum ecl_ffi_tag tag, cl_object value)
 	case ECL_FFI_UNSIGNED_LONG:
 		*(unsigned long *)p = fixnnint(value);
 		break;
+#ifdef ecl_uint8_t
+        case ECL_FFI_INT8_T:
+                *(ecl_int8_t *)p = fixint(value);
+        case ECL_FFI_UINT8_T:
+                *(ecl_uint8_t *)p = fixnnint(value);
+#endif
 #ifdef ecl_uint16_t
         case ECL_FFI_INT16_T:
                 *(ecl_int16_t *)p = ecl_to_int16_t(value);

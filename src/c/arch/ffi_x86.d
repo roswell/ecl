@@ -37,6 +37,10 @@ ecl_fficall_push_arg(union ecl_ffi_values *data, enum ecl_ffi_tag type)
 	case ECL_FFI_UNSIGNED_BYTE: i = data->ub; goto INT;
 	case ECL_FFI_SHORT: i = data->s; goto INT;
 	case ECL_FFI_UNSIGNED_SHORT: i = data->us; goto INT;
+#ifdef ecl_uint8_t
+        case ECL_FFI_INT8_T: i = data->i8; goto INT;
+        case ECL_FFI_UINT8_T: i = data->u8; goto INT;
+#endif
 #ifdef ecl_uint16_t
         case ECL_FFI_INT16_T: i = data->i16; goto INT;
         case ECL_FFI_UINT16_T: i = data->u16; goto INT;
@@ -123,6 +127,13 @@ ecl_fficall_execute(void *f_ptr, struct ecl_fficall *fficall, enum ecl_ffi_tag r
 	} else if (return_type == ECL_FFI_DOUBLE) {
 		fficall->output.d = ((double (*)())f_ptr)();
         }
+#ifdef ecl_uint8_t
+        else if (return_type == ECL_FFI_INT8_T) {
+                fficall->output.i8 = ((ecl_int8_t (*)())f_ptr)();
+	} else if (return_type == ECL_FFI_UINT16_T) {
+                fficall->output.u8 = ((ecl_uint8_t (*)())f_ptr)();
+	}
+#endif
 #ifdef ecl_uint16_t
         else if (return_type == ECL_FFI_INT16_T) {
                 fficall->output.i16 = ((ecl_int16_t (*)())f_ptr)();
@@ -202,11 +213,15 @@ ecl_dynamic_callback_execute(cl_object cbk_info, char *arg_buffer)
 	case ECL_FFI_UNSIGNED_CHAR: i = output.uc; goto INT;
 	case ECL_FFI_BYTE: i = output.b; goto INT;
 	case ECL_FFI_UNSIGNED_BYTE: i = output.ub; goto INT;
-#ifdef ecl_uint32_t
+#ifdef ecl_uint8_t
+	case ECL_FFI_INT8_T: i = output.i8; goto INT;
+	case ECL_FFI_UINT8_T: i = output.u8; goto INT;
+#endif
+#ifdef ecl_uint16_t
         case ECL_FFI_INT16_T:
 #endif
 	case ECL_FFI_SHORT: i = output.s; goto INT;
-#ifdef ecl_uint32_t
+#ifdef ecl_uint16_t
         case ECL_FFI_UINT16_T:
 #endif
 	case ECL_FFI_UNSIGNED_SHORT: i = output.us; goto INT;
