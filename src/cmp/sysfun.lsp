@@ -107,6 +107,7 @@
 
 (deftype string-designator () '(or string symbol character))
 (deftype byte-specifier () '(cons unsigned-byte unsigned-byte))
+(deftype function-designator () '(or symbol function))
 (deftype natural () '(integer 0 *))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -377,20 +378,17 @@
 
 ;; file stacks.d
 
-(proclaim-function si:ihs-top (t) t)
-(proclaim-function si:ihs-fun (*) t)
-(proclaim-function si:ihs-env (*) t)
-(proclaim-function si:frs-top (*) t)
-(proclaim-function si::frs-vs (*) t)
-(proclaim-function si:frs-bds (*) t)
-(proclaim-function si:frs-tag (*) t)
-(proclaim-function si:frs-ihs (*) t)
-(proclaim-function si:bds-top (*) t)
-(proclaim-function si:bds-var (*) t)
-(proclaim-function si:bds-val (*) t)
-(proclaim-function si::vs-top (*) t)
-(proclaim-function si::vs (*) t)
-(proclaim-function si:sch-frs-base (*) t)
+(proclaim-function si:ihs-top () si::index)
+(proclaim-function si:ihs-fun (si::index) (or null function-designator))
+(proclaim-function si:ihs-env (si::index) t)
+(proclaim-function si:frs-top () si::index)
+(proclaim-function si:frs-bds (si::index) si::index)
+(proclaim-function si:frs-tag (si::index) t)
+(proclaim-function si:frs-ihs (si::index) si::index)
+(proclaim-function si:bds-top () si::index)
+(proclaim-function si:bds-var (si::index) symbol)
+(proclaim-function si:bds-val (si::index) t)
+(proclaim-function si:sch-frs-base (si::index si::index) (or null si::index))
 
 ;; file eval.d
 
