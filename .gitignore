@@ -38,3 +38,5 @@ msvc/lsp/*.[ch]
 BUILD-STAMP
 MODULES
 Makefile
+
+src/autom4te.cache
