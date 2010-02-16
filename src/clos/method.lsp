@@ -103,17 +103,16 @@
 	(when in-closure-p
 	  (setf plist '(:needs-next-method-p FUNCTION))
 	  (setf real-body
-		`((let* ((.combined-method-args.
-			  (locally (declare (special .combined-method-args.))
-			    (if (listp .combined-method-args.)
-				.combined-method-args.
-				(apply #'list .combined-method-args.))))
+		`((let* ((.closed-combined-method-args.
+                          (if (listp .combined-method-args.)
+                              .combined-method-args.
+                              (apply #'list .combined-method-args.)))
 			 (.next-methods. *next-methods*))
 		    (flet ((call-next-method (&rest args)
 			     (unless .next-methods.
 			       (error "No next method"))
 			     (funcall (car .next-methods.)
-				      (or args .combined-method-args.)
+				      (or args .closed-combined-method-args.)
 				      (rest .next-methods.)))
 			   (next-method-p ()
 			     .next-methods.))
