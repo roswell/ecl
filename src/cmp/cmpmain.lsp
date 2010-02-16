@@ -703,7 +703,7 @@ compiled successfully, returns the pathname of the compiled file"
 	       (setf warning-p t))
 	      ((typep i '(or compiler-error warning))
 	       (setf warning-p t failure-p t)))
-     finally (return (values (and (not failure-p) main-value) warning-p failure-p))))
+     finally (return (values main-value warning-p failure-p))))
 
 #-dlopen
 (defun compile (name &optional (def nil supplied-p))
