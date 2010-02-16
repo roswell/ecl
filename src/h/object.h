@@ -747,7 +747,7 @@ enum ecl_ffi_tag {
 	ECL_FFI_UNSIGNED_INT,
 	ECL_FFI_LONG,
 	ECL_FFI_UNSIGNED_LONG,
-#ifdef ecl_uint16_t
+#ifdef ecl_uint8_t
         ECL_FFI_INT8_T,
         ECL_FFI_UINT8_T,
 #endif
