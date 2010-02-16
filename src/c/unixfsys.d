@@ -234,6 +234,66 @@ si_readlink(cl_object filename) {
 }
 #endif /* HAVE_LSTAT */
 
+static cl_object
+enter_directory(cl_object base_dir, cl_object subdir)
+{
+        /* Assuming we start in "base_dir", enter a subdirectory named by
+         * "subdir", which may be a string, :UP, :ABSOLUTE or :RELATIVE.
+         * If the operation succeeds, return the truename of the resulting
+         * path -- resolving any links in the process. */
+        cl_object aux, output, kind;
+        if (subdir == @':absolute') {
+                return cl_make_pathname(4, @':directory', ecl_list1(subdir),
+                                        @':defaults', base_dir);
+        } else if (subdir == @':relative') {
+                /* Nothing to do */
+                return base_dir;
+        } else if (subdir == @':up') {
+                aux = make_constant_base_string("..");
+        } else if (type_of(subdir) != t_base_string) {
+                FEerror("Directory component ~S found in pathname~&  ~S"
+                        "~&is not allowed in TRUENAME or DIRECTORY",
+                        1, subdir);
+        } else {
+                aux = subdir;
+        }
+        /* We now compose a new path based on the base directory and
+         * the new component. We have to verify that the new pathname is
+         * a directory and if it is a link recover the true name. */
+        aux = ecl_append(base_dir->pathname.directory, ecl_list1(aux));
+        output = cl_make_pathname(4, @':directory', aux, @':defaults', base_dir);
+        aux = ecl_namestring(output, ECL_NAMESTRING_FORCE_BASE_STRING);
+        aux->base_string.self[aux->base_string.fillp-1] = 0;
+        kind = file_kind((char*)aux->base_string.self, FALSE);
+        if (kind == Cnil) {
+                FEcannot_open(base_dir);
+#ifdef HAVE_LSTAT
+        } else if (kind == @':link') {
+                output = cl_truename(ecl_merge_pathnames(si_readlink(aux),
+                                                         base_dir, @':newest'));
+                if (output->pathname.name != Cnil ||
+                    output->pathname.type != Cnil)
+                        goto WRONG_DIR;
+                return output;
+#endif
+        } else if (kind != @':directory') {
+        WRONG_DIR:
+                FEerror("The directory~&  ~S~&in pathname~&  ~S~&"
+                        "actually points to a file or special device.",
+                        2, subdir, base_dir);
+        }
+        if (subdir == @':up') {
+                cl_object newdir= output->pathname.directory;
+                newdir = ecl_nbutlast(newdir, 0);
+                if (Null(newdir)) {
+                        FEerror("Pathname contained an :UP component  "
+                                "that goes above the base directory:"
+                                "~&  ~S", 1, output);
+                }
+                output->pathname.directory = newdir;
+        }
+        return output;
+}
 
 /*
  * Search the actual name of the directory of a pathname,
@@ -258,63 +318,9 @@ cl_truename(cl_object orig_pathname)
 	 * then we resolve the value of the symlink and continue traversing
 	 * the filesystem.
 	 */
-        dir = pathname->pathname.directory;
-        while (!Null(dir))
+        for (dir = pathname->pathname.directory; !Null(dir); dir = ECL_CONS_CDR(dir))
 	{
-                cl_object aux, prefix, part = ECL_CONS_CAR(dir);
-                dir = ECL_CONS_CDR(dir);
-                if (part == @':absolute') {
-                        base_dir->pathname.directory = ecl_list1(part);
-                        continue;
-                } else if (part == @':relative') {
-                        /* Nothing to do */
-                        continue;
-                } else if (part == @':up') {
-                        aux = make_constant_base_string("..");
-                } else if (type_of(part) != t_base_string) {
-                        FEerror("Directory component ~S found in pathname~&  ~S"
-                                "~&is not allowed in TRUENAME",
-                                1, part);
-                } else {
-                        aux = part;
-                }
-                prefix = ecl_namestring(base_dir, ECL_NAMESTRING_FORCE_BASE_STRING);
-                aux = si_base_string_concatenate(2, prefix, aux);
-                kind = file_kind((char*)aux->base_string.self, FALSE);
-                if (kind == Cnil) {
-                        FEcannot_open(orig_pathname);
-                } else if (kind == @':directory') {
-                        cl_object newdir = base_dir->pathname.directory;
-                        if (part == @':up') {
-                                newdir = ecl_butlast(newdir, 1);
-                                if (Null(newdir)) {
-                                        FEerror("Pathname contained an :UP component  "
-                                                "that goes above the base directory:"
-                                                "~&  ~S", 1, orig_pathname);
-                                }
-                        } else {
-                                newdir = ecl_nconc(newdir, ecl_list1(part));
-                        }
-                        base_dir->pathname.directory = newdir;
-#ifdef HAVE_LSTAT
-                } else if (kind == @':link') {
-                        aux = cl_truename(ecl_merge_pathnames(si_readlink(aux),
-                                                              base_dir, @':newest'));
-                        if (aux->pathname.name != Cnil ||
-                            aux->pathname.type != Cnil)
-                                goto WRONG_DIR;
-                        base_dir->pathname = pathname->pathname;
-                        base_dir->pathname.directory = CONS(@':relative', dir);
-                        pathname = ecl_merge_pathnames(base_dir, aux, @':newest');
-                        return cl_truename(pathname);
-#endif
-                } else {
-                WRONG_DIR:
-                        FEerror("The directory~&  ~S~&in pathname~&  ~S~&"
-                                "points to a file or special device.",
-                                2, base_dir->pathname.directory,
-                                orig_pathname);
-                }
+                base_dir = enter_directory(base_dir, ECL_CONS_CAR(dir));
         }
         pathname = ecl_merge_pathnames(base_dir, pathname, @':newest');
         filename = si_coerce_to_filename(pathname);
