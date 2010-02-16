@@ -373,7 +373,7 @@
 	  (loop for type in spec-how-list
 		for name in (generic-function-lambda-list gf)
 		for i from 0
-		when type collect (cons type (position name a-p-o))))
+		when type collect (cons type i)))
     (let* ((g-f-l-l (generic-function-lambda-list gf)))
       (when (consp g-f-l-l)
 	(let ((required-arguments (rest (si::process-lambda-list g-f-l-l t))))
