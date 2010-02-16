@@ -360,6 +360,11 @@ install:
 	for %i in (ecl-static.lib) do IF EXIST %i $(CP) %i "$(libdir)"
 	IF NOT EXIST "$(docdir)" $(MKDIR) "$(docdir)"
 	for %i in (..\Copyright ..\ANNOUNCEMENT ..\LGPL ..\README.1st ..\src\CHANGELOG) do $(CP) %i "$(docdir)"
+!if "$(ECL_UNICODE)" != ""
+	$(CP) $(UCDDAT) "$(libdir)"
+	IF NOT EXIST "$(libdir)\encodings" $(MKDIR) "$(libdir)\encodings"
+	$(CP) encodings\*.* "$(libdir)\encodings"
+!endif
 
 windows-nsi:
 	IF EXIST "$(TAR_DIR)" $(RMDIR) "$(TAR_DIR)"
