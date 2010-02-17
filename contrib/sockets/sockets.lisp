@@ -1208,9 +1208,9 @@ also known as unix-domain sockets."))
            (auto-close-two-way-stream stream)
            stream))
         (input
-         (make-stream-from-fd fd #-wsock :input #+wsock :input-wsock))
+         (make-stream-from-fd fd #-wsock :input #+wsock :input-wsock buffering))
 	(output
-	 (make-stream-from-fd fd #-wsock :output #+wsock :output-wsock))
+	 (make-stream-from-fd fd #-wsock :output #+wsock :output-wsock buffering))
 	(t
 	 (error "SOCKET-MAKE-STREAM: at least one of :INPUT or :OUTPUT has to be true."))))
 
