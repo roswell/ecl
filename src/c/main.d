@@ -466,6 +466,7 @@ cl_boot(int argc, char **argv)
 #else
 	cl_core.path_max = MAXPATHLEN;
 #endif
+	cl_core.slash = make_constant_base_string("/");
 
 	cl_core.packages = Cnil;
 	cl_core.packages_to_be_created = OBJNULL;
