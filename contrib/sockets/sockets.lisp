@@ -1225,7 +1225,7 @@ also known as unix-domain sockets."))
       (unless (or input-p output-p)
 	(setf input t output t))
       (setf stream (socket-make-stream-inner (socket-file-descriptor socket)
-					     input output))
+					     input output buffering))
       (unless (eq external-format :default)
 	(setf (stream-external-format stream) external-format))
       (when buffering
