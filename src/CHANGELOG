@@ -104,6 +104,8 @@ and important fixes to let ECL work better with Slime.
  - SOCKET-MAKE-STREAM defaults :BUFFERING to :FULL and allows three new keyword
    arguments, :INPUT, :OUTPUT and :EXTERNAL-FORMAT, as in SBCL.
 
+ - COMPILE-FILE admits the keyword argument :EXTERNAL-FORMAT.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

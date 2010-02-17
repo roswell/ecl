@@ -447,6 +447,7 @@ static cl_object VV[VM];
 		      (shared-data-file nil)
 		      (system-p nil)
 		      (load nil)
+                      (external-format :default)
 		      output-file
                       &aux (*standard-output* *standard-output*)
                            (*error-output* *error-output*)
@@ -535,7 +536,8 @@ compiled successfully, returns the pathname of the compiled file"
 					 (if system-p :object :fasl)))
 
       (with-t1expr (init-name)
-        (with-open-file (*compiler-input* *compile-file-pathname*)
+        (with-open-file (*compiler-input* *compile-file-pathname*
+                                          :external-format external-format)
           (do* ((ext:*source-location* (cons *compile-file-pathname* 0))
                 (*compile-file-position* 0 (file-position *compiler-input*))
                 (form (si::read-object-or-ignore *compiler-input* eof)
