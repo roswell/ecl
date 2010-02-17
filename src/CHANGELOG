@@ -106,6 +106,8 @@ and important fixes to let ECL work better with Slime.
 
  - COMPILE-FILE admits the keyword argument :EXTERNAL-FORMAT.
 
+ - A new function EXT:ALL-ENCODINGS lists all encondings known to ECL.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
