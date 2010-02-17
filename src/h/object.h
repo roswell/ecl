@@ -587,7 +587,8 @@ enum {
 	ECL_STREAM_SIGNED_BYTES = 64,
 	ECL_STREAM_LITTLE_ENDIAN = 128,
 	ECL_STREAM_C_STREAM = 256,
-	ECL_STREAM_MIGHT_SEEK = 512
+	ECL_STREAM_MIGHT_SEEK = 512,
+	ECL_STREAM_CLOSE_COMPONENTS = 1024
 };
 
 typedef int (*cl_eformat_encoder)(cl_object stream, unsigned char *buffer, int c);

@@ -1787,6 +1787,16 @@ two_way_column(cl_object strm)
 	return ecl_file_column(TWO_WAY_STREAM_OUTPUT(strm));
 }
 
+static cl_object
+two_way_close(cl_object strm)
+{
+	if (strm->stream.flags & ECL_STREAM_CLOSE_COMPONENTS) {
+		cl_close(1, TWO_WAY_STREAM_INPUT(strm));
+		cl_close(1, TWO_WAY_STREAM_OUTPUT(strm));
+	}
+	return generic_close(strm);
+}
+
 const struct ecl_file_ops two_way_ops = {
 	two_way_write_byte8,
 	two_way_read_byte8,
@@ -1817,7 +1827,7 @@ const struct ecl_file_ops two_way_ops = {
 	generic_always_nil, /* get_position */
 	generic_set_position,
 	two_way_column,
-	generic_close
+	two_way_close
 };
 
 
@@ -1960,6 +1970,15 @@ broadcast_column(cl_object strm)
 	return ecl_file_column(ECL_CONS_CAR(l));
 }
 
+static cl_object
+broadcast_close(cl_object strm)
+{
+	if (strm->stream.flags & ECL_STREAM_CLOSE_COMPONENTS) {
+		cl_mapc(2, @'close', BROADCAST_STREAM_LIST(strm));
+	}
+	return generic_close(strm);
+}
+
 const struct ecl_file_ops broadcast_ops = {
 	broadcast_write_byte8,
 	not_input_read_byte8,
@@ -1990,7 +2009,7 @@ const struct ecl_file_ops broadcast_ops = {
 	broadcast_get_position,
 	broadcast_set_position,
 	broadcast_column,
-	generic_close
+	broadcast_close
 };
 
 @(defun make_broadcast_stream (&rest ap)
@@ -2136,6 +2155,16 @@ echo_column(cl_object strm)
 	return ecl_file_column(ECHO_STREAM_OUTPUT(strm));
 }
 
+static cl_object
+echo_close(cl_object strm)
+{
+	if (strm->stream.flags & ECL_STREAM_CLOSE_COMPONENTS) {
+		cl_close(1, ECHO_STREAM_INPUT(strm));
+		cl_close(1, ECHO_STREAM_OUTPUT(strm));
+	}
+	return generic_close(strm);
+}
+
 const struct ecl_file_ops echo_ops = {
 	echo_write_byte8,
 	echo_read_byte8,
@@ -2166,7 +2195,7 @@ const struct ecl_file_ops echo_ops = {
 	generic_always_nil, /* get_position */
 	generic_set_position,
 	echo_column,
-	generic_close
+	echo_close
 };
 
 cl_object
@@ -2271,6 +2300,15 @@ concatenated_listen(cl_object strm)
 	return ECL_LISTEN_EOF;
 }
 
+static cl_object
+concatenated_close(cl_object strm)
+{
+	if (strm->stream.flags & ECL_STREAM_CLOSE_COMPONENTS) {
+		cl_mapc(2, @'close', CONCATENATED_STREAM_LIST(strm));
+	}
+	return generic_close(strm);
+}
+
 const struct ecl_file_ops concatenated_ops = {
 	not_output_write_byte8,
 	concatenated_read_byte8,
@@ -2301,7 +2339,7 @@ const struct ecl_file_ops concatenated_ops = {
 	generic_always_nil, /* get_position */
 	generic_set_position,
 	generic_column,
-	generic_close
+	concatenated_close
 };
 
 @(defun make_concatenated_stream (&rest ap)
