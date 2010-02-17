@@ -242,9 +242,9 @@ AC_ARG_ENABLE(gengc,
 
 AC_ARG_ENABLE(precisegc,
   AS_HELP_STRING( [--enable-precisegc],
-		  [use type information during garbage collection. Requires Boehm-Weiser gc.]
+		  [use type information during garbage collection. Requires Boehm-Weiser gc (EXPERIMENTAL).]
 		  [(no|yes, default=NO)]),
-  [enable_precisegc=${enableval}], [enable_precisegc=yes] )
+  [enable_precisegc=${enableval}], [enable_precisegc=no] )
 
 dnl AC_ARG_ENABLE(debug,
 dnl   AS_HELP_STRING( [--enable-debug],
