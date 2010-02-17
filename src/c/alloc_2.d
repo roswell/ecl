@@ -28,6 +28,7 @@
 #ifdef GBC_BOEHM
 
 static void finalize_queued();
+static void ecl_mark_env(struct cl_env_struct *env);
 
 #ifdef GBC_BOEHM_PRECISE
 # if GBC_BOEHM
@@ -414,10 +415,11 @@ cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl
                 MAYBE_MARK(o->process.parent);
                 MAYBE_MARK(o->process.initial_bindings);
                 MAYBE_MARK(o->process.interrupt);
-                MAYBE_MARK(o->process.env);
                 MAYBE_MARK(o->process.args);
                 MAYBE_MARK(o->process.function);
                 MAYBE_MARK(o->process.name);
+                if (o->process.env && o->process.env != Cnil)
+                        ecl_mark_env(o->process.env);
 		break;
         case t_lock:
                 MAYBE_MARK(o->lock.holder);
