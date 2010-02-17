@@ -859,8 +859,16 @@ ecl_merge_pathnames(cl_object path, cl_object defaults, cl_object default_versio
 		if (Null(version))
 			version = defaults->pathname.version;
 	}
-	if (Null(version))
+	if (Null(version)) {
+		if (default_version == @':default') {
+			if (Null(name) && Null(type)) {
+				default_version = Cnil;
+			} else {
+				default_version = @':newest';
+			}
+		}
 		version = default_version;
+	}
 	/*
 		In this implementation, version is not considered
 	*/
