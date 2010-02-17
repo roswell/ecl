@@ -1162,7 +1162,7 @@ also known as unix-domain sockets."))
 (defun dup (fd)
   (ffi:c-inline (fd) (:int) :int "dup(#0)" :one-liner t))
 
-(defun make-stream-from-fd (fd mode &optional (name "FD-STREAM"))
+(defun make-stream-from-fd (fd mode buffering &optional (name "FD-STREAM"))
   (assert (stringp name) (name) "name must be a string.")
   (let* ((smm-mode (ecase mode
 		       (:input (c-constant "smm_input"))
@@ -1174,31 +1174,41 @@ also known as unix-domain sockets."))
 		       (:output-wsock (c-constant "smm_output_wsock"))
 		       #+:wsock
 		       (:input-output-wsock (c-constant "smm_io_wsock"))
-		       )))
-    (ffi:c-inline (name fd smm-mode) (t :int :int) t
-		  "ecl_make_stream_from_fd(#0,#1,(enum ecl_smmode)#2,8,
-                                           ECL_STREAM_DEFAULT_FORMAT,Cnil)"
-		  :one-liner t)))
+		       ))
+         (stream (ffi:c-inline (name fd smm-mode) (t :int :int) t
+                               "ecl_make_stream_from_fd(#0,#1,(enum ecl_smmode)#2,8,
+                                                        ECL_STREAM_DEFAULT_FORMAT,Cnil)"
+                               :one-liner t)))
+    (when buffering
+      (si::set-buffering-mode stream buffering))
+    stream))
 
-(defun socket-make-stream-inner (fd input output)
-  ;; We have to create one stream per channel. The reason is that
-  ;; buffered I/O is done using ANSI C FILEs which do not support
+(defun auto-close-two-way-stream (stream)
+  (declare (si::c-local))
+  (ffi:c-inline (stream) (t) :void
+                "(#0)->stream.flags |= ECL_STREAM_CLOSE_COMPONENTS"
+                :one-liner t))
+
+(defun socket-make-stream-inner (fd input output buffering)
+  ;; In Unix we have to create one stream per channel. The reason is
+  ;; that buffered I/O is done using ANSI C FILEs which do not support
   ;; concurrent reads and writes -- if one thread is listening to the
   ;; FILE it blocks all output.  The solution is to create a
   ;; two-way-stream when both input and output are T, and force that
-  ;; stream to close its components (small hack in ECL).
-  (cond (input
-	 (if output
-	     (let* ((in (socket-make-stream-inner (dup fd) t nil))
-		    (out (socket-make-stream-inner fd nil t))
-		    (stream (handler-case (make-two-way-stream (print in) (print out))
-			      (error (c) (princ c) (quit)))))
-	       (print stream)
-	       (ffi:c-inline (stream) (t) :void
-			     "(#0)->stream.flags |= ECL_STREAM_CLOSE_COMPONENTS"
-			     :one-liner t)
-	       stream)
-	     (make-stream-from-fd fd #-wsock :input #+wsock :input-wsock)))
+  ;; stream to close its components (small hack in ECL). In Windows we
+  ;; do not have this problem because we do not know how to wrap a
+  ;; FILE around a socket.
+  (cond ((and input output)
+         #+wsock
+         (make-stream-from-fd fd :input-output-wsock buffering)
+         #-wsock
+         (let* ((in (socket-make-stream-inner (dup fd) t nil buffering))
+                (out (socket-make-stream-inner fd nil t buffering))
+                (stream (make-two-way-stream in out)))
+           (auto-close-two-way-stream stream)
+           stream))
+        (input
+         (make-stream-from-fd fd #-wsock :input #+wsock :input-wsock))
 	(output
 	 (make-stream-from-fd fd #-wsock :output #+wsock :output-wsock))
 	(t
@@ -1227,7 +1237,8 @@ also known as unix-domain sockets."))
 
 #+:wsock
 (defmethod socket-make-stream ((socket named-pipe-socket)
-			       &key (buffering :full) (external-format :default))
+			       &key input output
+                               (buffering :full) (external-format :default))
   (let ((stream (and (slot-boundp socket 'stream)
 		     (slot-value socket 'stream))))
     (unless stream
@@ -1236,9 +1247,7 @@ also known as unix-domain sockets."))
 		   (in (make-stream-from-fd fd :smm-input buffering external-format))
 		   (out (make-stream-from-fd fd :smm-output buffering external-format)))
 	      (make-two-way-stream in out)))
-      (setf (slot-value socket 'stream) stream)
-      #+ ignore
-      (sb-ext:cancel-finalization socket))
+      (setf (slot-value socket 'stream) stream))
     stream))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
