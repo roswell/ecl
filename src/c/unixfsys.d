@@ -98,7 +98,7 @@ drive_host_prefix(cl_object pathname)
 		output->base_string.self[0] = device->base_string.self[0];
 	}
 	if (host != Cnil) {
-		cl_object slash = make_constant_base_string("/");
+		cl_object slash = cl_core.slash;
 		if (output != Cnil)
 			output = si_base_string_concatenate(5, output, slash, slash,
 							    host, slash);
@@ -266,11 +266,11 @@ enter_directory(cl_object base_dir, cl_object subdir)
         aux->base_string.self[aux->base_string.fillp-1] = 0;
         kind = file_kind((char*)aux->base_string.self, FALSE);
         if (kind == Cnil) {
-                FEcannot_open(base_dir);
+		FEcannot_open(base_dir);
 #ifdef HAVE_LSTAT
         } else if (kind == @':link') {
                 output = cl_truename(ecl_merge_pathnames(si_readlink(aux),
-                                                         base_dir, @':newest'));
+                                                         base_dir, @':default'));
                 if (output->pathname.name != Cnil ||
                     output->pathname.type != Cnil)
                         goto WRONG_DIR;
@@ -295,45 +295,53 @@ enter_directory(cl_object base_dir, cl_object subdir)
         return output;
 }
 
-/*
- * Search the actual name of the directory of a pathname,
- * going through links if they exist. Default is
- * current directory
- */
-cl_object
-cl_truename(cl_object orig_pathname)
+static cl_object
+make_absolute_pathname(cl_object orig_pathname)
 {
-        cl_object kind, filename, dir;
 	cl_object base_dir = si_getcwd(0);
 	cl_object pathname = coerce_to_file_pathname(orig_pathname);
-        pathname = ecl_merge_pathnames(pathname, base_dir, @':newest');
-        base_dir = ecl_make_pathname(pathname->pathname.host,
-                                     pathname->pathname.device,
-                                     ecl_list1(@':absolute'),
-                                     Cnil, Cnil, Cnil);
-	/* We process the directory part of the filename, removing all
-	 * possible symlinks. To do so, we inspect recursively the
-	 * directory which contains our file, and come back. We also have to
-	 * ensure that the filename itself does not point to a symlink: if so,
-	 * then we resolve the value of the symlink and continue traversing
-	 * the filesystem.
-	 */
-        for (dir = pathname->pathname.directory; !Null(dir); dir = ECL_CONS_CDR(dir))
-	{
-                base_dir = enter_directory(base_dir, ECL_CONS_CAR(dir));
-        }
-        pathname = ecl_merge_pathnames(base_dir, pathname, @':newest');
-        filename = si_coerce_to_filename(pathname);
+        return ecl_merge_pathnames(pathname, base_dir, @':default');
+}
+
+static cl_object
+make_base_pathname(cl_object pathname)
+{
+        return ecl_make_pathname(pathname->pathname.host,
+				 pathname->pathname.device,
+				 ecl_list1(@':absolute'),
+				 Cnil, Cnil, Cnil);
+}
+
+static cl_object
+file_truename(cl_object pathname, cl_object filename)
+{
+	cl_object kind;
+	if (Null(pathname)) {
+		if (Null(filename)) {
+			printf("Both FILENAME and PATHNAME are null!\n",0);
+			abort();
+		}
+		pathname = cl_pathname(filename);
+	} else if (Null(filename)) {
+		filename = ecl_namestring(pathname, ECL_NAMESTRING_FORCE_BASE_STRING);
+		if (Null(filename)) {
+			FEerror("Unprintable pathname ~S found in TRUENAME", 1, pathname);
+		}
+	}
         kind = file_kind((char*)filename->base_string.self, FALSE);
         if (kind == Cnil) {
-                FEcannot_open(orig_pathname);
+                FEcannot_open(pathname);
 #ifdef HAVE_LSTAT
         } else if (kind == @':link') {
                 /* The link might be a relative pathname. In that case we have
                  * to merge with the original pathname */
                 filename = si_readlink(filename);
-                pathname = ecl_merge_pathnames(filename, base_dir, @':newest');
-                return cl_truename(pathname);
+		pathname = ecl_make_pathname(pathname->pathname.host,
+					     pathname->pathname.device,
+					     pathname->pathname.directory,
+					     Cnil, Cnil, Cnil);
+                pathname = ecl_merge_pathnames(filename, pathname, @':default');
+                return file_truename(pathname, Cnil);
 #endif
         } else if (kind == @':directory'){
                 /* If the pathname is a directory but we have supplied
@@ -360,7 +368,33 @@ cl_truename(cl_object orig_pathname)
         } else {
                 pathname->pathname.version = @':newest';
         }
-	@(return pathname)
+	@(return pathname kind)
+}
+
+/*
+ * Search the actual name of the directory of a pathname,
+ * going through links if they exist. Default is
+ * current directory
+ */
+cl_object
+cl_truename(cl_object orig_pathname)
+{
+        cl_object kind, filename, dir;
+	cl_object pathname = make_absolute_pathname(orig_pathname);
+	cl_object base_dir = make_base_pathname(pathname);
+	/* We process the directory part of the filename, removing all
+	 * possible symlinks. To do so, we inspect recursively the
+	 * directory which contains our file, and come back. We also have to
+	 * ensure that the filename itself does not point to a symlink: if so,
+	 * then we resolve the value of the symlink and continue traversing
+	 * the filesystem.
+	 */
+        for (dir = pathname->pathname.directory; !Null(dir); dir = ECL_CONS_CDR(dir))
+	{
+                base_dir = enter_directory(base_dir, ECL_CONS_CAR(dir));
+        }
+        pathname = ecl_merge_pathnames(base_dir, pathname, @':default');
+	@(return file_truename(pathname, Cnil))
 }
 
 int
@@ -649,16 +683,18 @@ string_match(const char *s, const char *p)
  * by following the symlinks.
  */
 static cl_object
-list_current_directory(const char *mask, bool only_dir, cl_object prefix)
+list_directory(cl_object base_dir, const char *mask)
 {
 	cl_object out = Cnil;
+	cl_object prefix = ecl_namestring(base_dir, ECL_NAMESTRING_FORCE_BASE_STRING);
+	cl_object component, kind;
 	char *text;
 #if defined(HAVE_DIRENT_H)
 	DIR *dir;
 	struct dirent *entry;
 
 	ecl_disable_interrupts();
-	dir = opendir("./");
+	dir = opendir((char*)prefix->base_string.self);
 	if (dir == NULL) {
 		out = Cnil;
 		goto OUTPUT;
@@ -675,13 +711,9 @@ list_current_directory(const char *mask, bool only_dir, cl_object prefix)
 	ecl_disable_interrupts();
 	for (;;) {
 		if (hFind == NULL) {
-			const char *mask = ".\\*";
-			if (prefix != Cnil) {
-				cl_object aux = make_constant_base_string(mask);
-				prefix = si_base_string_concatenate(2, prefix, aux);
-				mask = (const char *)prefix->base_string.self;
-			}
-			hFind = FindFirstFile(mask, &fd);
+			cl_object aux = make_constant_base_string(".\\*");
+			cl_object mask = si_base_string_concatenate(2, prefix, aux);
+			hFind = FindFirstFile((char*)mask->base_string.self, &fd);
 			if (hFind == INVALID_HANDLE_VALUE) {
 				out = Cnil;
 				goto OUTPUT;
@@ -699,7 +731,7 @@ list_current_directory(const char *mask, bool only_dir, cl_object prefix)
 	DIRECTORY dir;
 
 	ecl_disable_interrupts();
-	fp = fopen("./", OPEN_R);
+	fp = fopen((char*)prefix->base_string.self, OPEN_R);
 	if (fp == NULL) {
 		out = Cnil;
 		goto OUTPUT;
@@ -719,9 +751,11 @@ list_current_directory(const char *mask, bool only_dir, cl_object prefix)
 			continue;
 		if (mask && !string_match(text, mask))
 			continue;
-		if (only_dir && file_kind(text, TRUE) != @':directory')
-			continue;
-		out = ecl_cons(make_base_string_copy(text), out);
+		component = make_constant_base_string(text);
+		component = si_base_string_concatenate(2, prefix, component);
+		component = file_truename(Cnil, component);
+		kind = VALUES(1);
+		out = CONS(CONS(component, kind), out);
 	}
 #ifdef HAVE_DIRENT_H
 	closedir(dir);
@@ -745,46 +779,28 @@ OUTPUT:
  * used to build these pathnames.
  */
 static cl_object
-dir_files(cl_object basedir, cl_object pathname)
+dir_files(cl_object base_dir, cl_object pathname)
 {
 	cl_object all_files, output = Cnil;
 	cl_object mask;
 	cl_object name = pathname->pathname.name;
 	cl_object type = pathname->pathname.type;
 	if (name == Cnil && type == Cnil) {
-		return cl_list(1, basedir);
+		return cl_list(1, base_dir);
 	}
 	mask = ecl_make_pathname(Cnil, Cnil, Cnil, name, type,
                                  pathname->pathname.version);
-	all_files = list_current_directory(NULL, FALSE, Cnil);
-	loop_for_in(all_files) {
-		cl_object new = CAR(all_files);
-		char *text = (char*)new->base_string.self;
-		if (ecl_stringp(new) && ecl_member_char(':', new)) {
-			/* File names are allowed to have ':', but ECL
-			 * interprets colons as separators for device names
-			 * By prepending the name with a ':', we set the device
-			 * to NIL and parse the file name properly */
-			new = si_base_string_concatenate(2, make_constant_base_string(":"),
-							 new);
+	for (all_files = list_directory(base_dir, NULL);
+	     !Null(all_files);
+	     all_files = ECL_CONS_CDR(all_files))
+	{
+		cl_object record = ECL_CONS_CAR(all_files);
+		cl_object new = ECL_CONS_CAR(record);
+		cl_object kind = ECL_CONS_CDR(record);
+		if (kind != @':directory') {
+			output = CONS(new, output);
 		}
-		new = cl_pathname(new);
-		if (Null(cl_pathname_match_p(new, mask)))
-			continue;
-		new->pathname.host = basedir->pathname.host;
-		new->pathname.device = basedir->pathname.device;
-		new->pathname.directory = basedir->pathname.directory;
-		if (file_kind(text, TRUE) == @':directory') {
-			continue;
-                }
-#ifdef HAVE_LSTAT
-		/* Resolve symbolic links */
-		if (file_kind(text, FALSE) == @':link') {
-			new = cl_truename(new);
-		}
-#endif
-		output = CONS(new, output);
-	} end_loop_for_in;
+	}
 	return output;
 }
 
@@ -795,10 +811,10 @@ dir_files(cl_object basedir, cl_object pathname)
  * list.
  */
 static cl_object
-dir_recursive(cl_object pathname, cl_object directory, cl_object prefix)
+dir_recursive(cl_object base_dir, cl_object directory, cl_object filemask)
 {
-	cl_object item, next_dir, prev_dir = current_dir(), output = Cnil;
-
+	cl_object item, output = Cnil;
+ AGAIN:
 	/* There are several possibilities here:
 	 *
 	 * 1) The list of subdirectories DIRECTORY is empty, and only PATHNAME
@@ -807,98 +823,75 @@ dir_recursive(cl_object pathname, cl_object directory, cl_object prefix)
 	 * we have to find a file which corresponds to the description.
 	 */
 	if (directory == Cnil) {
-		prev_dir = cl_pathname(prev_dir);
-		return dir_files(prev_dir, pathname);
+		return dir_files(base_dir, filemask);
 	}
 	/*
 	 * 2) We have not yet exhausted the DIRECTORY component of the
 	 * pathname. We have to enter some subdirectory, determined by
 	 * CAR(DIRECTORY) and scan it.
 	 */
-	item = CAR(directory);
+	item = ECL_CONS_CAR(directory);
 
 	if (type_of(item) == t_base_string || item == @':wild') {
 		/*
 		 * 2.1) If CAR(DIRECTORY) is a string or :WILD, we have to
 		 * enter & scan all subdirectories in our curent directory.
 		 */
-		next_dir = list_current_directory((item == @':wild')? "*" :
-						  (const char *)item->base_string.self,
-						  TRUE, prefix);
-		loop_for_in(next_dir) {
-			char *text = (char*)(CAR(next_dir)->base_string.self);
-			/* We are unable to move into this directory! */
-			if (safe_chdir(text, prefix) < 0)
+		const char *mask = (item == @':wild')? "*" :
+			(const char *)item->base_string.self;
+		cl_object next_dir = list_directory(base_dir, mask);
+		for (; !Null(next_dir); next_dir = ECL_CONS_CDR(next_dir)) {
+			cl_object record = ECL_CONS_CAR(next_dir);
+			cl_object component = ECL_CONS_CAR(record);
+			cl_object kind = ECL_CONS_CDR(record);
+			if (kind != @':directory')
 				continue;
-			item = dir_recursive(pathname, CDR(directory), Cnil);
+			item = dir_recursive(cl_pathname(component),
+					     ECL_CONS_CDR(directory),
+					     filemask);
 			output = ecl_nconc(item, output);
-			safe_chdir((char*)prev_dir->base_string.self, prefix);
-		} end_loop_for_in;
-	} else if (item == @':absolute') {
-		/*
-		 * 2.2) If CAR(DIRECTORY) is :ABSOLUTE, we have to scan the
-		 * root directory.
-		 */
-		if (safe_chdir("/", prefix) < 0)
-			return Cnil;
-		if (Null(prefix)) {
-			if (safe_chdir("/", Cnil) < 0)
-				return Cnil;
-		} else {
-			cl_object aux = make_constant_base_string("/");
-			prefix = si_base_string_concatenate(2, prefix, aux);
 		}
-		output = dir_recursive(pathname, CDR(directory), prefix);
-		safe_chdir((char*)prev_dir->base_string.self, Cnil);
-	} else if (item == @':relative') {
-		/*
-		 * 2.3) If CAR(DIRECTORY) is :RELATIVE, we have to scan the
-		 * current directory.
-		 */
-		output = dir_recursive(pathname, CDR(directory), Cnil);
-	} else if (item == @':up') {
-		/*
-		 * 2.4) If CAR(DIRECTORY) is :UP, we have to scan the directory
-		 * which contains this one.
-		 */
-		if (safe_chdir("..", Cnil) < 0)
-			return Cnil;
-		output = dir_recursive(pathname, CDR(directory), Cnil);
-		safe_chdir((char*)prev_dir->base_string.self, Cnil);
 	} else if (item == @':wild-inferiors') {
 		/*
-		 * 2.5) If CAR(DIRECTORY) is :WILD-INFERIORS, we have to do
+		 * 2.2) If CAR(DIRECTORY) is :WILD-INFERIORS, we have to do
 		 * scan all subdirectories from _all_ levels, looking for a
 		 * tree that matches the remaining part of DIRECTORY.
 		 */
-		next_dir = list_current_directory("*", TRUE, prefix);
-		loop_for_in(next_dir) {
-			char *text = (char*)(CAR(next_dir)->base_string.self);
-			if (safe_chdir(text, prefix) < 0)
+		cl_object next_dir = list_directory(base_dir, "*");
+		for (; !Null(next_dir); next_dir = ECL_CONS_CDR(next_dir)) {
+			cl_object record = ECL_CONS_CAR(next_dir);
+			cl_object component = ECL_CONS_CAR(record);
+			cl_object kind = ECL_CONS_CDR(record);
+			if (kind != @':directory')
 				continue;
-			item = dir_recursive(pathname, directory, Cnil);
+			item = dir_recursive(cl_pathname(component),
+					     directory,
+					     filemask);
 			output = ecl_nconc(item, output);
-			safe_chdir((char*)prev_dir->base_string.self, Cnil);
-		} end_loop_for_in;
-		output = ecl_nconc(output, dir_recursive(pathname, CDR(directory), Cnil));
+		}
+		directory = ECL_CONS_CDR(directory);
+		goto AGAIN;
+	} else { /* :ABSOLUTE, :RELATIVE, :UP */
+		/*
+		 * 2.2) If CAR(DIRECTORY) is :ABSOLUTE, :RELATIVE or :UP we update
+		 * the directory to reflect the root, the current or the parent one.
+		 */
+		base_dir = enter_directory(base_dir, item);
+		directory = ECL_CONS_CDR(directory);
+		goto AGAIN;
 	}
 	return output;
 }
 
 @(defun directory (mask &key &allow_other_keys)
-	cl_object prev_dir = Cnil;
-	volatile cl_object output;
+        cl_object base_dir;
+	cl_object output;
 @
-	CL_UNWIND_PROTECT_BEGIN(the_env) {
-		prev_dir = current_dir();
-		mask = coerce_to_file_pathname(mask);
-		output = dir_recursive(mask, mask->pathname.directory,
-				       drive_host_prefix(mask));
-	} CL_UNWIND_PROTECT_EXIT {
-		if (prev_dir != Cnil)
-			safe_chdir((char*)prev_dir->base_string.self, Cnil);
-	} CL_UNWIND_PROTECT_END;
-	@(return output)
+        mask = coerce_to_file_pathname(mask);
+        mask = make_absolute_pathname(mask);
+        base_dir = make_base_pathname(mask);
+        output = dir_recursive(base_dir, mask->pathname.directory, mask);
+        @(return output)
 @)
 
 @(defun ext::getcwd (&optional (change_d_p_d Cnil))
