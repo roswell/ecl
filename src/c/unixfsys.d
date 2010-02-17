@@ -318,8 +318,8 @@ file_truename(cl_object pathname, cl_object filename)
 	cl_object kind;
 	if (Null(pathname)) {
 		if (Null(filename)) {
-			printf("Both FILENAME and PATHNAME are null!\n",0);
-			abort();
+			ecl_internal_error("file_truename:"
+                                           " both FILENAME and PATHNAME are null!");
 		}
 		pathname = cl_pathname(filename);
 	} else if (Null(filename)) {
@@ -778,7 +778,9 @@ OUTPUT:
  * of pathnames. BASEDIR is the truename of the current directory and it is
  * used to build these pathnames.
  */
-static cl_object
+extern cl_object dir_files(cl_object base_dir, cl_object pathname);
+
+cl_object
 dir_files(cl_object base_dir, cl_object pathname)
 {
 	cl_object all_files, output = Cnil;
@@ -788,8 +790,8 @@ dir_files(cl_object base_dir, cl_object pathname)
 	if (name == Cnil && type == Cnil) {
 		return cl_list(1, base_dir);
 	}
-	mask = ecl_make_pathname(Cnil, Cnil, Cnil, name, type,
-                                 pathname->pathname.version);
+	mask = ecl_make_pathname(Cnil, Cnil, Cnil,
+                                 name, type, pathname->pathname.version);
 	for (all_files = list_directory(base_dir, NULL);
 	     !Null(all_files);
 	     all_files = ECL_CONS_CDR(all_files))
@@ -797,6 +799,9 @@ dir_files(cl_object base_dir, cl_object pathname)
 		cl_object record = ECL_CONS_CAR(all_files);
 		cl_object new = ECL_CONS_CAR(record);
 		cl_object kind = ECL_CONS_CDR(record);
+                if (Null(cl_pathname_match_p(new, mask))) {
+                        continue;
+                }
 		if (kind != @':directory') {
 			output = CONS(new, output);
 		}
