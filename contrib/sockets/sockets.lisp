@@ -424,9 +424,9 @@ SB-SYS:MAKE-FD-STREAM."))
       (cond ((slot-boundp socket 'stream)
              (let ((stream (slot-value socket 'stream)))
                #+threads
-               (close (two-way-stream-input stream))
+               (close (two-way-stream-input-stream stream))
                #+threads
-               (close (two-way-stream-output stream))
+               (close (two-way-stream-output-stream stream))
                #-threads
                (close stream)) ;; closes fd indirectly
 	     (slot-makunbound socket 'stream))
@@ -1159,9 +1159,12 @@ also known as unix-domain sockets."))
 ;;; the sockets will be closed upon garbage collection)
 ;;;
 
-(defun make-stream-from-fd (fd mode buffering &optional (name "FD-STREAM"))
+(defun dup (fd)
+  (ffi:c-inline (fd) (:int) :int "dup(#0)" :one-liner t))
+
+(defun make-stream-from-fd (fd mode &optional (name "FD-STREAM"))
   (assert (stringp name) (name) "name must be a string.")
-  (c-inline (name fd (ecase mode
+  (let* ((smm-mode (ecase mode
 		       (:input (c-constant "smm_input"))
 		       (:output (c-constant "smm_output"))
 		       (:input-output (c-constant "smm_io"))
@@ -1171,46 +1174,67 @@ also known as unix-domain sockets."))
 		       (:output-wsock (c-constant "smm_output_wsock"))
 		       #+:wsock
 		       (:input-output-wsock (c-constant "smm_io_wsock"))
-		       )
-		  buffering)
-	    (t :int :int :object)
-	    t
-	    "si_set_buffering_mode(ecl_make_stream_from_fd(#0,#1,(enum ecl_smmode)#2,8,ECL_STREAM_DEFAULT_FORMAT,Cnil), #3)"
-	    :one-liner t))
+		       )))
+    (ffi:c-inline (name fd smm-mode) (t :int :int) t
+		  "ecl_make_stream_from_fd(#0,#1,(enum ecl_smmode)#2,8,
+                                           ECL_STREAM_DEFAULT_FORMAT,Cnil)"
+		  :one-liner t)))
 
-(defmethod socket-make-stream ((socket socket)  &rest args &key (buffering nil))
-  (declare (ignore args))
+(defun socket-make-stream-inner (fd input output)
+  ;; We have to create one stream per channel. The reason is that
+  ;; buffered I/O is done using ANSI C FILEs which do not support
+  ;; concurrent reads and writes -- if one thread is listening to the
+  ;; FILE it blocks all output.  The solution is to create a
+  ;; two-way-stream when both input and output are T, and force that
+  ;; stream to close its components (small hack in ECL).
+  (cond (input
+	 (if output
+	     (let* ((in (socket-make-stream-inner (dup fd) t nil))
+		    (out (socket-make-stream-inner fd nil t))
+		    (stream (handler-case (make-two-way-stream (print in) (print out))
+			      (error (c) (princ c) (quit)))))
+	       (print stream)
+	       (ffi:c-inline (stream) (t) :void
+			     "(#0)->stream.flags |= ECL_STREAM_CLOSE_COMPONENTS"
+			     :one-liner t)
+	       stream)
+	     (make-stream-from-fd fd #-wsock :input #+wsock :input-wsock)))
+	(output
+	 (make-stream-from-fd fd #-wsock :output #+wsock :output-wsock))
+	(t
+	 (error "SOCKET-MAKE-STREAM: at least one of :INPUT or :OUTPUT has to be true."))))
+
+(defmethod socket-make-stream ((socket socket)
+			       &key (input nil input-p) (output nil output-p)
+			       (buffering :full) (external-format :default))
   (let ((stream (and (slot-boundp socket 'stream)
 		     (slot-value socket 'stream))))
     (unless stream
-      (setf stream
-            #+threads
-            (let* ((fd (socket-file-descriptor socket))
-                   (in (make-stream-from-fd fd #-wsock :input #+wsock :input-wsock
-                                            buffering))
-                   (out (make-stream-from-fd fd #-wsock :output #+wsock :output-wsock
-                                             buffering)))
-              (make-two-way-stream in out))
-            #-threads
-            (let ((fd (socket-file-descriptor socket)))
-              (make-stream-from-fd fd #-:wsock :input-output
-                                   #+:wsock :input-output-wsock
-                                   buffering)))
+      ;; Complicated default logic for compatibility with previous releases
+      ;; should disappear soon. (FIXME!)
+      (unless (or input-p output-p)
+	(setf input t output t))
+      (setf stream (socket-make-stream-inner (socket-file-descriptor socket)
+					     input output))
+      (unless (eq external-format :default)
+	(setf (stream-external-format stream) external-format))
+      (when buffering
+	(setf stream (si::set-buffering-mode stream buffering)))
       (setf (slot-value socket 'stream) stream)
       #+ ignore
       (sb-ext:cancel-finalization socket))
     stream))
 
 #+:wsock
-(defmethod socket-make-stream ((socket named-pipe-socket) &rest args &key (buffering nil))
-  (declare (ignore args))
+(defmethod socket-make-stream ((socket named-pipe-socket)
+			       &key (buffering :full) (external-format :default))
   (let ((stream (and (slot-boundp socket 'stream)
 		     (slot-value socket 'stream))))
     (unless stream
       (setf stream
 	    (let* ((fd (socket-file-descriptor socket))
-		   (in (make-stream-from-fd fd :smm-input buffering))
-		   (out (make-stream-from-fd fd :smm-output buffering)))
+		   (in (make-stream-from-fd fd :smm-input buffering external-format))
+		   (out (make-stream-from-fd fd :smm-output buffering external-format)))
 	      (make-two-way-stream in out)))
       (setf (slot-value socket 'stream) stream)
       #+ ignore
