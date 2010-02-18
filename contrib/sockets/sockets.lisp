@@ -1162,7 +1162,7 @@ also known as unix-domain sockets."))
 (defun dup (fd)
   (ffi:c-inline (fd) (:int) :int "dup(#0)" :one-liner t))
 
-(defun make-stream-from-fd (fd mode buffering &optional (name "FD-STREAM"))
+(defun make-stream-from-fd (fd mode &key buffering external-format (name "FD-STREAM"))
   (assert (stringp name) (name) "name must be a string.")
   (let* ((smm-mode (ecase mode
 		       (:input (c-constant "smm_input"))
@@ -1181,6 +1181,8 @@ also known as unix-domain sockets."))
                                :one-liner t)))
     (when buffering
       (si::set-buffering-mode stream buffering))
+    (unless (eq external-format :default)
+      (setf (stream-external-format stream) external-format))
     stream))
 
 (defun auto-close-two-way-stream (stream)
@@ -1189,7 +1191,7 @@ also known as unix-domain sockets."))
                 "(#0)->stream.flags |= ECL_STREAM_CLOSE_COMPONENTS"
                 :one-liner t))
 
-(defun socket-make-stream-inner (fd input output buffering)
+(defun socket-make-stream-inner (fd input output buffering external-format)
   ;; In Unix we have to create one stream per channel. The reason is
   ;; that buffered I/O is done using ANSI C FILEs which do not support
   ;; concurrent reads and writes -- if one thread is listening to the
@@ -1200,17 +1202,20 @@ also known as unix-domain sockets."))
   ;; FILE around a socket.
   (cond ((and input output)
          #+wsock
-         (make-stream-from-fd fd :input-output-wsock buffering)
+         (make-stream-from-fd fd :input-output-wsock
+                              :buffering buffering :external-format external-format)
          #-wsock
-         (let* ((in (socket-make-stream-inner (dup fd) t nil buffering))
-                (out (socket-make-stream-inner fd nil t buffering))
+         (let* ((in (socket-make-stream-inner (dup fd) t nil buffering external-format))
+                (out (socket-make-stream-inner fd nil t buffering external-format))
                 (stream (make-two-way-stream in out)))
            (auto-close-two-way-stream stream)
            stream))
         (input
-         (make-stream-from-fd fd #-wsock :input #+wsock :input-wsock buffering))
+         (make-stream-from-fd fd #-wsock :input #+wsock :input-wsock
+                              :buffering buffering :external-format external-format))
 	(output
-	 (make-stream-from-fd fd #-wsock :output #+wsock :output-wsock buffering))
+	 (make-stream-from-fd fd #-wsock :output #+wsock :output-wsock
+                              :buffering buffering :external-format external-format))
 	(t
 	 (error "SOCKET-MAKE-STREAM: at least one of :INPUT or :OUTPUT has to be true."))))
 
@@ -1225,11 +1230,7 @@ also known as unix-domain sockets."))
       (unless (or input-p output-p)
 	(setf input t output t))
       (setf stream (socket-make-stream-inner (socket-file-descriptor socket)
-					     input output buffering))
-      (unless (eq external-format :default)
-	(setf (stream-external-format stream) external-format))
-      (when buffering
-	(setf stream (si::set-buffering-mode stream buffering)))
+					     input output buffering external-format))
       (setf (slot-value socket 'stream) stream)
       #+ ignore
       (sb-ext:cancel-finalization socket))
