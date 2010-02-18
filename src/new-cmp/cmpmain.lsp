@@ -30,7 +30,7 @@
 
 (defun compile-file-pathname (name &key (output-file T) (type nil type-supplied-p)
                               verbose print c-file h-file data-file shared-data-file
-                              system-p load)
+                              system-p load external-format)
   (let* ((format '())
          (extension '()))
     (unless type-supplied-p
