@@ -27,7 +27,7 @@ Make sure you have enough free space in disk, check permissions or set~%~
 the environment variable TMPDIR to a different value." template)))
 
 (defun safe-system (string)
-  (cmpnote "Invoking external command:~%  ~A" string)
+  (cmpnote "Invoking external command:~%  ~A~%" string)
   (let ((result (si:system string)))
     (unless (zerop result)
       (cerror "Continues anyway."
@@ -585,7 +585,7 @@ compiled successfully, returns the pathname of the compiled file"
   (when (and system-p load)
     (error "Cannot load system files."))
 
-  (cmpprogress "~&;;; Compiling ~a." (namestring input-pathname))
+  (cmpprogress "~&;;;~%;;; Compiling ~a." (namestring input-pathname))
 
   (let* ((eof '(NIL))
 	 (*compiler-in-use* *compiler-in-use*)
@@ -655,7 +655,8 @@ compiled successfully, returns the pathname of the compiled file"
                      (si::coerce-to-filename o-pathname))))
 
       (if (setf true-output-file (probe-file output-file))
-          (cmpprogress "~&;;; Finished compiling ~a.~%" (namestring input-pathname))
+          (cmpprogress "~&;;; Finished compiling ~a.~%;;;~%"
+                       (namestring input-pathname))
           (cmperr "The C compiler failed to compile the intermediate file."))
 
       (mapc #'cmp-delete-file to-delete)
@@ -912,7 +913,7 @@ from the C language code.  NIL means \"do not create the file\"."
    ))
 
 (defun print-compiler-info ()
-  (cmpprogress "~&;;; OPTIMIZE levels: Safety=~d, Space=~d, Speed=~d, Debug=~d~%"
+  (cmpprogress "~&;;; OPTIMIZE levels: Safety=~d, Space=~d, Speed=~d, Debug=~d~%;;;~%"
 	       *safety* *space* *speed* *debug*))
 
 (defmacro with-compilation-unit (options &rest body)
