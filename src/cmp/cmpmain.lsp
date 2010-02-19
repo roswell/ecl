@@ -293,36 +293,6 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
 	si_exit(0);
 }")
 
-(defun init-function-name (s &key (kind :object))
-  (flet ((translate-char (c)
-	   (cond ((and (char>= c #\a) (char<= c #\z))
-		  (char-upcase c))
-		 ((and (char>= c #\A) (char<= c #\Z))
-		  c)
-		 ((or (eq c #\-) (eq c #\_))
-		  #\_)
-		 ((eq c #\*)
-		  #\x)
-		 ((eq c #\?)
-		  #\a)
-		 ((digit-char-p c)
-		  c)
-		 (t
-		  #\p)))
-	 (disambiguation (c)
-	   (case kind
-	     (:object "")
-             (:program "exe_")
-	     ((:fasl :fas) "fas_")
-	     ((:library :shared-library :dll :static-library :lib) "lib_")
-	     (otherwise (error "Not a valid argument to INIT-FUNCTION-NAME: kind = ~S"
-			       kind)))))
-    (setq s (map 'string #'translate-char (string s)))
-    (concatenate 'string
-		 "init_"
-		 (disambiguation kind)
-		 (map 'string #'translate-char (string s)))))
-
 (defun guess-kind (pathname)
   "Given a file name, guess whether it is an object file, a library, a program
 or a loadable module."
@@ -460,7 +430,7 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), Cnil);
 				  :object :c))
 	     (error "C::BUILDER does not accept a file ~s of kind ~s" item kind))
 	   (let* ((path (parse-namestring item))
-		  (init-fn (guess-init-name path))
+		  (init-fn (guess-init-name path (guess-kind path)))
 		  (flags (guess-ld-flags path)))
 	     ;; We should give a warning that we cannot link this module in
 	     (when flags (push flags ld-flags))

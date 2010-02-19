@@ -10,7 +10,7 @@
   "src:new-cmp;cmpmac.lsp"
   "src:new-cmp;cmpform.lsp"
   "src:new-cmp;cmploc.lsp"
-  "src:new-cmp;cmputil.lsp"
+  "src:cmp;cmputil.lsp"
   "src:new-cmp;cmptype.lsp"
   "src:new-cmp;cmptranslate.lsp"
   "src:new-cmp;cmpblock.lsp"

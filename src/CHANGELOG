@@ -108,6 +108,8 @@ and important fixes to let ECL work better with Slime.
 
  - A new function EXT:ALL-ENCODINGS lists all encondings known to ECL.
 
+ - Improved readability of compiler messages.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
