@@ -1080,6 +1080,37 @@ and			 E
 where B is the radix used to represent FLOAT.  S and F are floats of the same
 float format as FLOAT, and E is an integer.")
 
+(docfun defun macro (name lambda-list &body)
+        "Syntax: (defun name lambda-list {decl | doc}* {form}*)
+Defines a global function named by NAME.
+The complete syntax of a lambda-list is:
+	({var}*
+	 [&optional {var | (var [init [svar]])}*]
+	 [&rest var]
+	 [&key {var | ({var | (keyword var)} [init [svar]])}*
+	       [&allow-other-keys]]
+	 [&aux {var | (var [init])}*])
+The doc-string DOC, if supplied, is saved as a FUNCTION doc and can be
+retrieved by (documentation 'NAME 'function).")
+
+(docfun defmacro macro (name lambda-list &body body)
+"Syntax: (defmacro name defmacro-lambda-list {decl | doc}* {form}*)
+Defines a global macro named by NAME.  The complete syntax of DEFMACRO-LAMBDA-
+LIST is:
+	( [&whole var] [&environment var] . pvar )
+where PVAR may be a symbol,
+	( {pvar}* [&optional {var | (pvar [init [pvar]])}*] . var )
+or
+	( {pvar}*
+	  [&optional {var | (pvar [init [pvar]])}*]
+	  [{&rest | &body} pvar]
+	  [&key {var | ({var | (keyword pvar)} [init [pvar]])}*
+	        [&allow-other-keys]]
+	  [&aux {var | (pvar [init])}*] )
+The doc-string DOC, if supplied, is saved as a FUNCTION doc and can be
+retrieved by (documentation 'NAME 'function).  See LIST for the backquote
+macro useful for defining macros.")
+
 (docfun delete function (item sequence
        &key (key '#'identity) (test '#'eql) test-not
             (start 0) (end (length sequence))
