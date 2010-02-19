@@ -53,7 +53,6 @@ machine."
 			   (encode-number-in-name path-hash)
 			   "_"
 			   (encode-number-in-name ms))))
-    (cmpnote "Creating tag: ~S for ~S" tag file)
     tag))
 
 (defun init-name-tag (init-name)
@@ -61,7 +60,6 @@ machine."
 
 (defun search-tag (stream tag)
   (declare (si::c-local))
-  (terpri)
   (do* ((eof nil)
 	(key (concatenate 'list tag ":"))
 	(string key))
@@ -88,10 +86,8 @@ names, we store them in a string in the object file. This string is recognized
 by the TAG it has at the beginning This function searches that tag and retrieves
 the function name it precedes."
   (with-open-file (stream file :direction :input :element-type '(unsigned-byte 8))
-    (cmpnote "Scanning ~S" file)
     (when (search-tag stream tag)
       (let ((name (read-name stream)))
-	(cmpnote "Found tag: ~S for ~A" name file)
 	name))))
 
 (defun remove-prefix (prefix name)
