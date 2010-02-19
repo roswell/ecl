@@ -33,7 +33,7 @@
   "src:new-cmp;cmptop.lsp"
   "src:new-cmp;cmpvar.lsp"
   "src:new-cmp;cmpnum.lsp"
-  "src:new-cmp;cmpname.lsp"
+  "src:cmp;cmpname.lsp"
   "src:new-cmp;cmpopt.lsp"
   "src:new-cmp;cmpprop.lsp"
   "src:new-cmp;cmpclos.lsp"

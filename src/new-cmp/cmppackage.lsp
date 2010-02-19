@@ -14,6 +14,8 @@
 
 (si::package-lock "CL" nil)
 
+(pushnew :new-cmp *features*)
+
 (defpackage "C-DATA"
   (:nicknames "COMPILER-DATA")
   (:use "FFI" "CL")
