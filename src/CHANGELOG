@@ -110,6 +110,8 @@ and important fixes to let ECL work better with Slime.
 
  - Improved readability of compiler messages.
 
+ - SERVE-EVENT now allows time resolution of less than one second.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

@@ -167,10 +167,11 @@
 			  :one-liner nil
 			  :side-effects t)
 		(c-inline (rfd      wfd    (1+ maxfd) seconds) 
-			  (:object :object :int       :int) (values :int :int)
+			  (:object :object :int       :double) (values :int :int)
 			  "{ struct timeval tv;
-                                tv.tv_sec = #3;
-                                tv.tv_usec = 0;
+                             double seconds = #3;
+                                tv.tv_sec = seconds;
+                                tv.tv_usec = (seconds * 1e6);
                                 @(return 0) = select(#2, (fd_set*)#0->foreign.data,
                                                          (fd_set*)#1->foreign.data,
                                                          NULL, &tv);
