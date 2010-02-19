@@ -683,11 +683,11 @@ string_match(const char *s, const char *p)
  * by following the symlinks.
  */
 static cl_object
-list_directory(cl_object base_dir, const char *mask)
+list_directory(cl_object base_dir, const char *text_mask, cl_object pathname_mask)
 {
 	cl_object out = Cnil;
 	cl_object prefix = ecl_namestring(base_dir, ECL_NAMESTRING_FORCE_BASE_STRING);
-	cl_object component, kind;
+	cl_object component, component_path, kind;
 	char *text;
 #if defined(HAVE_DIRENT_H)
 	DIR *dir;
@@ -749,13 +749,18 @@ list_directory(cl_object base_dir, const char *mask)
 		    (text[1] == '\0' ||
 		     (text[1] == '.' && text[2] == '\0')))
 			continue;
-		if (mask && !string_match(text, mask))
+		if (text_mask && !string_match(text, text_mask))
 			continue;
 		component = make_constant_base_string(text);
 		component = si_base_string_concatenate(2, prefix, component);
-		component = file_truename(Cnil, component);
+                component_path = cl_pathname(component);
+                if (!Null(pathname_mask)) {
+                        if (Null(cl_pathname_match_p(component, pathname_mask)))
+                                continue;
+                }
+		component_path = file_truename(component_path, component);
 		kind = VALUES(1);
-		out = CONS(CONS(component, kind), out);
+		out = CONS(CONS(component_path, kind), out);
 	}
 #ifdef HAVE_DIRENT_H
 	closedir(dir);
@@ -792,16 +797,13 @@ dir_files(cl_object base_dir, cl_object pathname)
 	}
 	mask = ecl_make_pathname(Cnil, Cnil, Cnil,
                                  name, type, pathname->pathname.version);
-	for (all_files = list_directory(base_dir, NULL);
+	for (all_files = list_directory(base_dir, NULL, mask);
 	     !Null(all_files);
 	     all_files = ECL_CONS_CDR(all_files))
 	{
 		cl_object record = ECL_CONS_CAR(all_files);
 		cl_object new = ECL_CONS_CAR(record);
 		cl_object kind = ECL_CONS_CDR(record);
-                if (Null(cl_pathname_match_p(new, mask))) {
-                        continue;
-                }
 		if (kind != @':directory') {
 			output = CONS(new, output);
 		}
@@ -844,7 +846,7 @@ dir_recursive(cl_object base_dir, cl_object directory, cl_object filemask)
 		 */
 		const char *mask = (item == @':wild')? "*" :
 			(const char *)item->base_string.self;
-		cl_object next_dir = list_directory(base_dir, mask);
+		cl_object next_dir = list_directory(base_dir, mask, Cnil);
 		for (; !Null(next_dir); next_dir = ECL_CONS_CDR(next_dir)) {
 			cl_object record = ECL_CONS_CAR(next_dir);
 			cl_object component = ECL_CONS_CAR(record);
@@ -862,7 +864,7 @@ dir_recursive(cl_object base_dir, cl_object directory, cl_object filemask)
 		 * scan all subdirectories from _all_ levels, looking for a
 		 * tree that matches the remaining part of DIRECTORY.
 		 */
-		cl_object next_dir = list_directory(base_dir, "*");
+		cl_object next_dir = list_directory(base_dir, "*", Cnil);
 		for (; !Null(next_dir); next_dir = ECL_CONS_CDR(next_dir)) {
 			cl_object record = ECL_CONS_CAR(next_dir);
 			cl_object component = ECL_CONS_CAR(record);
