@@ -199,6 +199,6 @@
       (wt-label *exit*))
     (unwind-no-exit 'TAIL-RECURSION-MARK)
     (wt-nl "goto TTL;")
-    (cmpnote "Tail-recursive call of ~s was replaced by iteration."
-	     (fun-name fun))
+    (cmpdebug "Tail-recursive call of ~s was replaced by iteration."
+              (fun-name fun))
     t))
