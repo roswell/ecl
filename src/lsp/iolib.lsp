@@ -294,11 +294,15 @@ the one used internally by ECL compiled files."
     (or all-encodings
         (progn
           (setf all-encodings basic-encodings)
+          #+unicode
           (dolist (i (directory "sys:encodings;*"))
             (push (intern (pathname-name i) "KEYWORD") all-encodings))
           all-encodings))))
 
 (defun ext:load-encoding (name)
+  #-unicode
+  (warn "EXT:LOAD-ENCODING not available when ECL is built without support for Unicode")
+  #+unicode
   (let ((filename (make-pathname :name (symbol-name name) :defaults "sys:encodings;")))
     (cond ((probe-file filename)
 	   (load filename :verbose nil)
@@ -314,6 +318,9 @@ the one used internally by ECL compiled files."
 	   (error "Unable to find mapping file ~A for encoding ~A" filename name)))))
 
 (defun ext:make-encoding (mapping)
+  #-unicode
+  (error "Not a valid external format ~A" mapping)
+  #+unicode
   (cond
     ((symbolp mapping)
      (let ((var (intern (symbol-name mapping) (find-package "EXT"))))
