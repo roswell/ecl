@@ -112,6 +112,8 @@ and important fixes to let ECL work better with Slime.
 
  - SERVE-EVENT now allows time resolution of less than one second.
 
+ - The PROFILE package now has an alias, SB-PROFILE.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

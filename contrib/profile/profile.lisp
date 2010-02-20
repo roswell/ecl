@@ -9,7 +9,7 @@
 
 (eval-when (:compile-toplevel :load-toplevel)
   (defpackage "PROFILE"
-    (:nicknames "PROF")
+    (:nicknames "PROF" "SB-PROFILE")
     (:export "PROFILE" "REPORT" "RESET" "UNPROFILE" "UNPROFILE-ALL"))
 )
 
