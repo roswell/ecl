@@ -1467,6 +1467,7 @@ extern ECL_API cl_object cl_symbol_value(cl_object sym);
 extern ECL_API cl_object cl_boundp(cl_object sym);
 extern ECL_API cl_object cl_special_operator_p(cl_object form);
 extern ECL_API cl_object ecl_fdefinition(cl_object fname);
+extern ECL_API bool ecl_boundp(cl_env_ptr env, cl_object o);
 
 /* sequence.c */
 

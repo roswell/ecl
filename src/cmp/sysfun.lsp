@@ -1227,7 +1227,8 @@
 (proclaim-function fboundp (symbol) t :predicate t)
 (proclaim-function symbol-value (symbol) t)
 (proclaim-function boundp (symbol) t :predicate t :no-side-effects t)
-(def-inline boundp :always (symbol) :bool "ECL_SYM_VAL(cl_env_copy,#0)!=OBJNULL")
+(def-inline boundp :always (t) :bool "ecl_boundp(cl_env_copy,#0)")
+(def-inline boundp :unsafe ((and symbol (not null))) :bool "ECL_SYM_VAL(cl_env_copy,#0)!=OBJNULL")
 
 (proclaim-function macro-function (symbol) t)
 (proclaim-function special-operator-p (symbol) t :predicate t)

@@ -1851,7 +1851,9 @@
 
 (def-inline copy-readtable :always (null null) t "standard_readtable")
 
-(def-inline boundp :always (symbol) :bool "ECL_SYM_VAL(cl_env_copy,#0)!=OBJNULL")
+(def-inline boundp :always (t) :bool "ecl_boundp(cl_env_copy,#0)")
+(def-inline boundp :unsafe (symbol) :bool "@0;Null(#0)||(ECL_SYM_VAL(cl_env_copy,#0)!=OBJNULL)")
+
 
 ;; file sequence.d
 

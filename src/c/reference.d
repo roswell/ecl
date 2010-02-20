@@ -141,22 +141,23 @@ cl_symbol_value(cl_object sym)
 	@(return value)
 }
 
+bool
+ecl_boundp(cl_env_ptr env, cl_object sym)
+{
+	if (Null(sym)) {
+		return 1;
+	} else {
+		if (!SYMBOLP(sym))
+			FEtype_error_symbol(sym);
+		return ECL_SYM_VAL(the_env, sym) != OBJNULL;
+	}
+}
+
 cl_object
 cl_boundp(cl_object sym)
 {
 	const cl_env_ptr the_env = ecl_process_env();
-	cl_object output;
-	if (Null(sym)) {
-		output = Ct;
-	} else {
-		if (!SYMBOLP(sym))
-			FEtype_error_symbol(sym);
-		if (ECL_SYM_VAL(the_env, sym) == OBJNULL)
-			output = Cnil;
-		else
-			output = Ct;
-	}
-	@(return output)
+	@(return (ecl_boundp(the_env,sym)? Ct : Cnil))
 }
 
 cl_object
