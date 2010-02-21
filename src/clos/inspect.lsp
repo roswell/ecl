@@ -17,8 +17,8 @@
 
 (defmethod select-clos-N ((instance standard-object))
   (let* ((class (si:instance-class instance))
-	 (local-slotds (slot-value class 'CLOS::SLOTS))
-	 (class-slotds (slot-value class 'CLOS::CLASS-CLASS-SLOTS)))
+	 (local-slotds (class-local-slots class))
+	 (class-slotds (class-class-slots class)))
         (if local-slotds
 	    (progn
 	      (si::inspect-indent)
@@ -60,7 +60,7 @@
 
 (defun select-clos-N-inner-class (instance)
   (let* ((class (si:instance-class instance))
-	 (local-slotds (slot-value class 'CLOS::SLOTS)))
+	 (local-slotds (class-local-slots class)))
         (if local-slotds
 	    (progn
 	      (si::inspect-indent)
@@ -91,8 +91,8 @@
 
 (defmethod select-clos-L ((instance standard-object))
   (let* ((class (si:instance-class instance))
-	 (local-slotds (slot-value class 'CLOS::SLOTS))
-	 (class-slotds (slot-value class 'CLOS::CLASS-CLASS-SLOTS)))
+	 (local-slotds (class-local-slots class))
+	 (class-slotds (class-class-slots class)))
         (terpri)
 	(if local-slotds
 	    (progn
@@ -113,7 +113,7 @@
 
 (defun select-clos-L-inner-class (instance)
   (let* ((class (si:instance-class instance))
-	 (local-slotds (slot-value class 'CLOS::SLOTS)))
+	 (local-slotds (class-local-slots class)))
         (terpri)
 	(if local-slotds
 	    (progn
@@ -132,8 +132,8 @@
 
 (defmethod select-clos-J ((instance standard-object))
   (let* ((class (si:instance-class instance))
-	 (local-slotds (slot-value class 'CLOS::SLOTS))
-	 (class-slotds (slot-value class 'CLOS::CLASS-CLASS-SLOTS))
+	 (local-slotds (class-local-slots class))
+	 (class-slotds (class-class-slots class))
 	 (slotd (car (member (prog1
 			       (read-preserving-whitespace *query-io*)
 			       (si::inspect-read-line))
@@ -161,7 +161,7 @@
 
 (defun select-clos-J-inner-class (instance)
   (let* ((class (si:instance-class instance))
-	 (local-slotds (slot-value class 'CLOS::SLOTS))
+	 (local-slotds (class-local-slots class))
 	 (slotd (car (member (prog1
 			       (read-preserving-whitespace *query-io*)
 			       (si::inspect-read-line))
@@ -211,6 +211,12 @@ q (or Q):             quits the inspection.~%~
 ?:                    prints this.~%~%"
 	  ))
 
+(defun class-local-slots (class)
+  (remove :class (class-slots class) :key #'clos::slot-definition-allocation))
+
+(defun class-class-slots (class)
+  (remove :instance (class-slots class) :key #'clos::slot-definition-allocation))
+
 (defmethod inspect-obj ((instance standard-object))
   (unless (let ((metaclass (si:instance-class (si:instance-class instance))))
             (or (eq metaclass (find-class 'STANDARD-CLASS))
@@ -221,8 +227,8 @@ q (or Q):             quits the inspection.~%~
           (throw 'SI::ABORT-INSPECT nil))
   (decf si::*inspect-level*)
   (let* ((class (si:instance-class instance))
-	 (local-slotds (slot-value class 'CLOS::SLOTS))
-	 (class-slotds (slot-value class 'CLOS::CLASS-CLASS-SLOTS)))
+	 (local-slotds (class-local-slots class))
+	 (class-slotds (class-class-slots class)))
     (declare (type class class))
     (loop
       (format t "~S - clos object:" instance)
@@ -274,7 +280,7 @@ q (or Q):             quits the inspection.~%~
 (defun inspect-obj-inner-class (instance)
   (decf si::*inspect-level*)
   (let* ((class (si:instance-class instance))
-	 (local-slotds (slot-value class 'CLOS::SLOTS)))
+	 (local-slotds (class-local-slots class)))
     (declare (type class class))
     (loop
       (format t "~S - clos object:" instance)
