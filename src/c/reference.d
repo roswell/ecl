@@ -149,7 +149,7 @@ ecl_boundp(cl_env_ptr env, cl_object sym)
 	} else {
 		if (!SYMBOLP(sym))
 			FEtype_error_symbol(sym);
-		return ECL_SYM_VAL(the_env, sym) != OBJNULL;
+		return ECL_SYM_VAL(env, sym) != OBJNULL;
 	}
 }
 
