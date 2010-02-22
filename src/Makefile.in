@@ -48,7 +48,7 @@ LSP_LIBRARIES = @LSP_LIBRARIES@
 TARGETS = @TARGETS@
 ECL_CMPDIR = @ECL_CMPDIR@
 
-all:	$(TARGETS) bin/ecl-config
+all:	$(TARGETS) bin/ecl-config TAGS
 .PHONY:	all
 
 %Makefile: $(srcdir)/%Makefile.in config.status
@@ -149,7 +149,7 @@ install-base:
 	rm $(DESTDIR)$(includedir)/ecl/config.h
 	mv $(DESTDIR)$(includedir)/ecl/config-install.h $(DESTDIR)$(includedir)/ecl/config.h
 	$(INSTALL_SCRIPT) bin/ecl-config $(DESTDIR)$(bindir)
-	for i in BUILD-STAMP help.doc ; do \
+	for i in BUILD-STAMP help.doc TAGS ; do \
 	  $(INSTALL_DATA) $$i $(DESTDIR)$(ecldir); \
 	done
 	for i in $(LSP_LIBRARIES) $(LIBRARIES); do \
@@ -194,7 +194,7 @@ clean: mostlyclean
 	$(RM) -r *
 mostlyclean: clean_lisp
 	for i in $(SUBDIRS); do (cd $$i; $(MAKE) clean); done
-	$(RM) ecl_min$(EXE) bin/ecl$(EXE) help.doc core a.out
+	$(RM) ecl_min$(EXE) bin/ecl$(EXE) help.doc core a.out TAGS
 	$(RM) config.version config.log config.cache
 	$(RM) *.c *.o *.a *.h *.data *.fas *.dat *.la *.so *.dylib
 clean_lisp:
@@ -224,5 +224,16 @@ selfbuild:
 	./ecl compile
 	-for i in lsp clos cmp clx tk; do test -d $$i && diff --exclude=\*.o $$i stage2/$$i; done | less
 
+# Make sure to also include *.d files; and match DPP's idiosyncracies
+# like "@si::foo" and "@(defun si::foo".
 TAGS:
-	etags -R --langmap=c:+.d
+	if which etags ; then \
+	srcfiles=`find $(srcdir)/c/ $(srcdir)/h/ -name '*.[chd]'`; \
+	etags --language=c    -o $@ $$srcfiles && \
+	etags --language=none -o $@ --append \
+	      --regex='/@\([-:*a-zA-z]+\)/\1/' \
+	      --regex='/@(defun \([-:*a-zA-z]+\)/\1/' \
+	      $$srcfiles; \
+	else \
+	echo > $@; \
+	fi

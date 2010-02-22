@@ -114,6 +114,13 @@ and important fixes to let ECL work better with Slime.
 
  - The PROFILE package now has an alias, SB-PROFILE.
 
+ - ECL now stores the location of its source files in a logical hostname,
+   "SRC:", which points to the directory where Announcement is located.
+
+ - When building ECL, if "etags" is installed, a file TAGS is created which
+   contains references to the location of all C functions. This file can be
+   used to locate functions from the core library in Slime, using M-.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
