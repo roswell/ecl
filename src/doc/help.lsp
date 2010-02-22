@@ -27,7 +27,7 @@
 	((eq kind 'macro)
 	 (setf args (format nil "Syntax: ~A" args)))
 	(t
-	 (setf args (format nil "Syntax: ~A" args))))
+	 (setf args (format nil "Args: ~A" args))))
   (si::set-documentation
    symbol 'function
    (format nil "~A in ~A package:~@[~%~A~]~@[~%~A~]~%"
