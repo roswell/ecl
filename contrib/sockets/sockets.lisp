@@ -1236,6 +1236,9 @@ also known as unix-domain sockets."))
       (sb-ext:cancel-finalization socket))
     stream))
 
+(defmethod ext::stream-fd ((socket socket))
+  (socket-file-descriptor socket))
+
 #+:wsock
 (defmethod socket-make-stream ((socket named-pipe-socket)
 			       &key input output
