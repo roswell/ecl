@@ -141,10 +141,10 @@
 	  (setf finish nil))))
     (compute-fun-closure-type fun)
     (when (fun-global fun)
-      (when (fun-closure fun)
-	(cmperr "Function ~A is global but is closed over some variables.~%~{~A ~}"
-                (fun-name fun) (mapcar #'var-name (fun-referred-vars fun))))
-      (new-defun fun (fun-no-entry fun)))))
+      (if (fun-closure fun)
+          (cmpnote "Function ~A is global but is closed over some variables.~%~{~A ~}"
+                   (fun-name fun) (mapcar #'var-name (fun-referred-vars fun)))
+          (new-defun fun (fun-no-entry fun))))))
 
 
 (defun c1lambda-expr (fun lambda-expr CB/LB

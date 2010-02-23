@@ -138,10 +138,10 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 	  (setf finish nil))))
     (compute-fun-closure-type fun)
     (when global
-      (when (fun-closure fun)
-	(cmperr "Function ~A is global but is closed over some variables.~%~{~A ~}"
-                (fun-name fun) (mapcar #'var-name (fun-referred-vars fun))))
-      (new-defun fun (fun-no-entry fun))))
+      (if (fun-closure fun)
+          (cmpnote "Function ~A is global but is closed over some variables.~%~{~A ~}"
+                   (fun-name fun) (mapcar #'var-name (fun-referred-vars fun)))
+          (new-defun fun (fun-no-entry fun)))))
   fun)
 
 (defun cmp-process-lambda-list (list)
