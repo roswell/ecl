@@ -1869,5 +1869,10 @@ cl_symbols[] = {
 
 {EXT_ "*INVOKE-DEBUGGER-HOOK*",NULL},
 
+{EXT_ "*DOCUMENTATION-POOL*",NULL},
+{EXT_ "ANNOTATE",NULL},
+{EXT_ "GET-ANNOTATION",NULL},
+{EXT_ "REMOVE-ANNOTATION",NULL},
+
 /* Tag for end of list */
 {NULL,NULL}};
