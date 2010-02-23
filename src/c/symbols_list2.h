@@ -1873,6 +1873,7 @@ cl_symbols[] = {
 {EXT_ "ANNOTATE",NULL},
 {EXT_ "GET-ANNOTATION",NULL},
 {EXT_ "REMOVE-ANNOTATION",NULL},
+{EXT_ "FUNCTION-LAMBDA-LIST",NULL},
 
 /* Tag for end of list */
 {NULL,NULL}};

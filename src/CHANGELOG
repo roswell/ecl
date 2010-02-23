@@ -124,6 +124,10 @@ and important fixes to let ECL work better with Slime.
  - Documentation files now allow for annotation of arbitrary symbols,
    based on a key and a sub-key which are both symbols.
 
+ - New function EXT:FUNCTION-LAMBDA-LIST which currently only works with
+   functions from the core ECL library, generic functions and interpreted
+   functions.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

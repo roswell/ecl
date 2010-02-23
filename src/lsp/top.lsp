@@ -833,26 +833,38 @@ Use special code 0 to cancel this operation.")
 
 (defun function-lambda-list (function)
   (cond
+    ((symbolp function)
+     (if (or (not (fboundp function))
+             (special-operator-p function)
+             (macro-function function))
+         (values nil nil)
+         (function-lambda-list (fdefinition function))))
     ((typep function 'generic-function)
-     (generic-function-lambda-list function))
-    ((not (typep function 'compiled-function))
-     (function-lambda-list (fdefinition function)))
+     (values (clos:generic-function-lambda-list function) t))
     ;; Use the lambda list from the function definition, if available,
     ;; but remove &aux arguments.
     ((let ((f (function-lambda-expression function)))
        (when f
-	 (let* ((list (if (eql (first f) 'LAMBDA)
-			  (second f)
-			  (third f)))
-		(ndx (position '&aux list)))
-	   (if ndx
-	       (subseq list 0 (1- ndx))
-	       list)))))
+         (let* ((list (if (eql (first f) 'LAMBDA)
+                          (second f)
+                          (third f)))
+                (ndx (position '&aux list)))
+           (return-from function-lambda-list
+             (values (if ndx (subseq list 0 (1- ndx)) list) t))))))
     ;; Reconstruct the lambda list from the bytecodes
     ((multiple-value-bind (lex-env bytecodes data)
-	 (si::bc-split function)
+         (si::bc-split function)
+       (declare (ignore lex-env))
        (when bytecodes
-	 (reconstruct-bytecodes-lambda-list (coerce data 'list)))))))
+         (setq data (coerce data 'list))
+         (return-from function-lambda-list
+           (values (reconstruct-bytecodes-lambda-list data) t)))))
+    ;; If it's a compiled function of ECL itself, reconstruct the
+    ;; lambda-list from its documentation string.
+    (t
+     (let* ((name (compiled-function-name function))
+            (args (ext:get-annotation name :lambda-list nil)))
+       (values args (and args t))))))
 
 #-ecl-min
 (defun decode-env-elt (env ndx)
