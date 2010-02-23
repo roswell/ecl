@@ -58,7 +58,7 @@
       path)))
 
 (defun search-help-file (key path &aux (pos 0))
-  (when (not (stringp key))
+  (when (not (or (stringp key) (symbolp key)))
     (return-from search-help-file nil))
   (labels ((bin-search (file start end &aux (delta 0) (middle 0) sym)
 	     (declare (fixnum start end delta middle))
@@ -100,8 +100,8 @@
   (setq *keep-documentation* t))
 #-ecl-min
 (progn
-  (defvar *documentation-pool* (list (make-hash-table :test #'equal :size 128)
-				     "SYS:help.doc"))
+  (setq *documentation-pool* (list (make-hash-table :test #'equal :size 128)
+                                   "SYS:help.doc"))
   (defvar *keep-documentation* t))
 
 (defun new-documentation-pool (&optional (size 1024))
@@ -236,6 +236,6 @@ strings."
             (when (not (member kind '(defmethod)))
               (annotate name 'location kind source-location))
             (when (member kind '(defun defmacro defgeneric))
-              (annotate name 'arglist nil (third definition))))
+              (annotate name :lambda-list nil (third definition))))
           output-form))
 

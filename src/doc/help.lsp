@@ -25,8 +25,10 @@
 	((and doc (search "Args:" doc))
 	 (setf args nil))
 	((eq kind 'macro)
+         (ext:annotate symbol ':lambda-list nil args)
 	 (setf args (format nil "Syntax: ~A" args)))
 	(t
+         (ext:annotate symbol ':lambda-list nil args)
 	 (setf args (format nil "Args: ~A" args))))
   (si::set-documentation
    symbol 'function
