@@ -409,13 +409,11 @@ q (or Q):             quits the inspection.~%~
     (setf (documentation (class-name object) 'structure) new-value)))
 
 (defmethod documentation ((object list) doc-type)
-  (when (and (si::valid-function-name-p object)
-	     (member doc-type '(function compiler-macro)))
+  (when (member doc-type '(function compiler-macro))
     (si::get-documentation object doc-type)))
 
 (defmethod (setf documentation) (new-value (object list) doc-type)
-  (when (and (si::valid-function-name-p object)
-	     (member doc-type '(function compiler-macro)))
+  (when (member doc-type '(function compiler-macro))
     (si::set-documentation object doc-type new-value)))
 
 (defmethod documentation ((object standard-generic-function) doc-type)
