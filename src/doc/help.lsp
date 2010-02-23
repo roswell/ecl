@@ -24,10 +24,11 @@
 	 (setf args nil))
 	((and doc (search "Args:" doc))
 	 (setf args nil))
-	((eq kind 'macro)
+	((member kind '(macro special))
          (ext:annotate symbol ':lambda-list nil args)
 	 (setf args (format nil "Syntax: ~A" args)))
 	(t
+         (assert (listp args))
          (ext:annotate symbol ':lambda-list nil args)
 	 (setf args (format nil "Args: ~A" args))))
   (si::set-documentation
@@ -93,7 +94,7 @@
 
 (setf ext:*register-with-pde-hook* #'our-pde-hook)
 
-#|
+#||
 (defmacro docfun (symbol kind args string)
   `(progn (si::putprop ',symbol ,string 'si::function-documentation)
 	  (si::putprop ',symbol ',args 'arglist)
@@ -107,7 +108,8 @@
 (defmacro doctype (symbol string)
   `(progn (si::putprop ',symbol ,string 'si::type-documentation)
           ',symbol))
-|#
+||#
+
 ;;;----------------------------------------------------------------------
 ;;;	Ordered alphabetically for binary search
 ;;;----------------------------------------------------------------------
@@ -251,7 +253,7 @@ ECL specific.
 Declares that the global variable named by SYMBOL is a constant with VALUE as
 its constant value.")
 
-(docfun si::*make-special function symbol "
+(docfun si::*make-special function (symbol) "
 ECL specific.
 Declares the variable named by NAME as a special variable.")
 
@@ -917,7 +919,7 @@ are discarded.")
 The ECL compiler embeds STRINGs into the intermediate C language code.  The
 interpreter ignores this form.")
 
-#| eliminated. Beppe
+#|| eliminated. Beppe
 (docfun cdeclaration macro "(cdeclaration {string}*)" "
 ECL specific.
 The ECL compiler embeds STRINGs into the intermediate H language code.
@@ -929,7 +931,7 @@ The ECL compiler embeds STRINGs into the intermediate C language init_code
 function. This allows to perform initialization operations when the binary
 file is loaded.
 The interpreter ignores this form.")
-|#
+||#
 
 (docfun close function (stream &key (abort nil)) "
 Closes STREAM.  Returns NIL if STREAM is closed successfully; non-NIL
@@ -1997,7 +1999,7 @@ is notated as
 	#<string-output stream n>
 where N is a number that identifies the stream.")
 
-(docfun si::make-string-output-stream-from-string function string ")
+(docfun si::make-string-output-stream-from-string function (string) ")
 ECL specific.
 Creates and returns a string-output-stream to STRING.  STRING must have a
 fill-pointer.")
@@ -3183,7 +3185,7 @@ Outputs STRING to STREAM.  Returns STRING.")
 (docfun zerop function (number) "
 Returns T if the arg is zero; NIL otherwise.")
 
-#|
+#||
 ;;; ----------------------------------------------------------------------
 ;;; System Builder Tools
 
@@ -3376,5 +3378,5 @@ ECL specific.
 Read mode: VARIABLE is assigned the next subterm.
 Write mode: a new variable is stored in VARIABLE as the next subterm.")
 
-|#
+||#
 ;;;----------------------------------------------------------------------
