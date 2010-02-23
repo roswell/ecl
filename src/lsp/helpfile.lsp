@@ -164,7 +164,7 @@ Sets up a new hash table for storing documentation strings."
               (dolist (i record)
                 (let ((key-sub-key (car i)))
                   (when (equal (car key-sub-key) key)
-                    (push (cdr i) output))))
+                    (push (cons (cdr key-sub-key) (cdr i)) output))))
               (if (setq output (record-field record key sub-key))
                   (return output))))))))
 
