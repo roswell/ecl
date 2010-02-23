@@ -23,20 +23,17 @@ last FORM.  If not, simply returns NIL."
   (multiple-value-setq (body doc-string) (remove-documentation body))
   (let* ((function `#'(ext::lambda-block ,name ,vl ,@body))
 	 (global-function `#'(ext::lambda-block ,name ,vl
-			       (declare (si::c-global))
-			       ,@body)))
+                                                (declare (si::c-global))
+                                                ,@body)))
     (when *dump-defun-definitions*
       (print function)
       (setq function `(si::bc-disassemble ,function)))
-  `(progn
-     (eval-when (:execute)
-       (si::fset ',name ,function))
-     (eval-when (:load-toplevel)
-       ,(ext:register-with-pde whole `(si::fset ',name ,global-function)))
-    ,@(si::expand-set-documentation name 'function doc-string)
-    ',name)))
+    `(progn
+       ,(ext:register-with-pde whole `(si::fset ',name ,global-function))
+       ,@(si::expand-set-documentation name 'function doc-string)
+       ',name)))
 
-(defmacro defmacro (name vl &body body &aux doc-string)
+(defmacro defmacro (&whole whole name vl &body body &aux doc-string)
   ;; Documentation in help.lsp
   (multiple-value-bind (function pprint doc-string)
       (sys::expand-defmacro name vl body)
@@ -45,7 +42,7 @@ last FORM.  If not, simply returns NIL."
       (print function)
       (setq function `(si::bc-disassemble ,function)))
     `(eval-when (:compile-toplevel :load-toplevel :execute)
-       (si::fset ',name ,function t ,pprint)
+       ,(ext:register-with-pde whole `(si::fset ',name ,function t ,pprint))
        ,@(si::expand-set-documentation name 'function doc-string)
        ',name)))
 

@@ -20,7 +20,7 @@
   (let* ((*package* (find-package "CL"))
 	 (file (open path :direction :input)))
     (do ((end nil)
-	 (h (make-hash-table :size 1024 :test #'eql)))
+	 (h (make-hash-table :size 1024 :test #'equal)))
 	(end h)
       (do ((c (read-char file nil)))
 	  ((or (not c) (eq c #\^_))
@@ -58,6 +58,8 @@
       path)))
 
 (defun search-help-file (key path &aux (pos 0))
+  (when (not (stringp key))
+    (return-from search-help-file nil))
   (labels ((bin-search (file start end &aux (delta 0) (middle 0) sym)
 	     (declare (fixnum start end delta middle))
 	     (when (< start end)
@@ -98,7 +100,7 @@
   (setq *keep-documentation* t))
 #-ecl-min
 (progn
-  (defvar *documentation-pool* (list (make-hash-table :test #'eq :size 128)
+  (defvar *documentation-pool* (list (make-hash-table :test #'equal :size 128)
 				     "SYS:help.doc"))
   (defvar *keep-documentation* t))
 
@@ -107,6 +109,64 @@
 Sets up a new hash table for storing documentation strings."
   (push (make-hash-table :test #'eql :size size)
 	*documentation-pool*))
+
+(defun record-cons (record key sub-key)
+  (let ((cons (cons key sub-key)))
+    (dolist (i record i)
+      (when (equalp (car i) cons)
+        (return i)))))
+
+(defun record-field (record key sub-key)
+  (cdr (record-cons record key sub-key)))
+
+(defun set-record-field (record key sub-key value)
+  (let ((field (record-cons record key sub-key)))
+    (if field
+        (rplacd field value)
+        (setq record (list* (cons (cons key sub-key) value) record)))
+    record))
+
+(defun rem-record-field (record key sub-key)
+  (let ((x (record-cons record key sub-key)))
+    (if x
+        (let ((output '()))
+          (dolist (i record output)
+            (when (not (eq i x))
+              (setq output (cons i output)))))
+        record)))
+
+(defun annotate (object key sub-key value)
+  (let ((dict (first *documentation-pool*)))
+    (when (hash-table-p dict)
+      (let ((record (set-record-field (gethash object dict)
+                                      key sub-key value)))
+        (si::hash-set object dict record)))))
+
+(defun remove-annotation (object key sub-key)
+  (let ((dict (first *documentation-pool*)))
+    (when (hash-table-p dict)
+      (let ((record (rem-record-field (gethash object dict)
+                                      key sub-key)))
+	(if record
+            (si::hash-set object dict record)
+            (remhash object dict))))))
+
+(defun get-annotation (object key sub-key)
+  (let ((output '()))
+    (dolist (dict *documentation-pool* output)
+      (let ((record (if (hash-table-p dict)
+                        (gethash object dict)
+                        (if (stringp dict)
+                            (search-help-file object dict)
+                            nil))))
+        (when record
+          (if (eq sub-key :all)
+              (dolist (i record)
+                (let ((key-sub-key (car i)))
+                  (when (equal (car key-sub-key) key)
+                    (push (cdr i) output))))
+              (if (setq output (record-field record key sub-key))
+                  (return output))))))))
 
 (defun dump-documentation (file &optional (merge nil))
   "Args: (filespec &optional (merge nil))
@@ -118,35 +178,18 @@ the help file."
       (dump-help-file dict file merge)
       (rplaca *documentation-pool* file))))
 
-(defun get-documentation (object doc-type &aux output)
-  (dolist (dict *documentation-pool*)
-    (cond ((hash-table-p dict)
-	   (when (and (setq output (gethash object dict))
-		      (setq output (getf output doc-type)))
-	     (return-from get-documentation output)))
-	  ((and (stringp dict)
-                (or (symbolp object)
-                    (functionp object)))
-	   (when (and (setq output (search-help-file 
-                                    (if (functionp object)
-                                        (compiled-function-name object)
-                                        object)
-                                    dict))
-		      (setq output (getf output doc-type)))
-	     (return-from get-documentation output))))))
+(defun get-documentation (object doc-type)
+  (when (functionp object)
+    (when (null (setq object (compiled-function-name object)))
+      (return-from get-documentation nil)))
+  (get-annotation object 'documentation doc-type))
 
 (defun set-documentation (object doc-type string)
   (when (not (or (stringp string) (null string)))
     (error "~S is not a valid documentation string" string))
-  (let ((dict (first *documentation-pool*)))
-    (when (hash-table-p dict)
-      (let ((plist (gethash object dict)))
-	(setq plist (if string
-			(put-f plist string doc-type)
-			(rem-f plist doc-type)))
-	(if plist
-	  (si::hash-set object dict plist)
-	  (remhash object dict)))))
+  (if string
+      (annotate object 'documentation doc-type string)
+      (remove-annotation object 'documentation doc-type))
   string)
 
 (defun expand-set-documentation (symbol doc-type string)
@@ -176,3 +219,15 @@ strings."
 
 #+ecl-min
 (when (null *documentation-pool*) (new-documentation-pool 1024))
+
+#+ecl-min
+(setq ext::*register-with-pde-hook*
+      #'(lambda (source-location definition output-form)
+          (let* ((kind (first definition))
+                 (name (second definition)))
+            ;(print (list name kind source-location))
+            (annotate name 'location kind source-location)
+            (when (member kind '(defun defmacro defgeneric))
+              (annotate name 'arglist nil (third definition))))
+          output-form))
+

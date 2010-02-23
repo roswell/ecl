@@ -121,6 +121,9 @@ and important fixes to let ECL work better with Slime.
    contains references to the location of all C functions. This file can be
    used to locate functions from the core library in Slime, using M-.
 
+ - Documentation files now allow for annotation of arbitrary symbols,
+   based on a key and a sub-key which are both symbols.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
