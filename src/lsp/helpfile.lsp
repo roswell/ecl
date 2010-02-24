@@ -151,7 +151,7 @@ Sets up a new hash table for storing documentation strings."
             (si::hash-set object dict record)
             (remhash object dict))))))
 
-(defun get-annotation (object key sub-key)
+(defun get-annotation (object key &optional (sub-key :all))
   (let ((output '()))
     (dolist (dict *documentation-pool* output)
       (let ((record (if (hash-table-p dict)
@@ -224,18 +224,38 @@ strings."
 	(t
 	 (error "~S is an unknown documentation type" type))))
 
-#+ecl-min
-(when (null *documentation-pool*) (new-documentation-pool 1024))
+(defun make-dspec (definition)
+  (when (consp definition)
+    (let* ((kind (first definition))
+           (name (second definition))
+           (extra '()))
+      (when (eq kind 'defmethod)
+        (let ((list (third definition)))
+          (setq extra (if (symbolp list)
+                          (cons list (fourth definition))
+                          list))))
+      (list* kind name extra))))
+
+;; (EXT:OPTIONAL-ANNOTATION arguments for EXT:ANNOTATE)
+(si::fset 'ext:optional-annotation
+          #'(ext:lambda-block ext:optional-annotation (whole env)
+               #+ecl-min
+               `(ext:annotate ,@(rest whole)))
+          t)
+
+(defun default-annotation-logic (source-location definition output-form
+                                 &optional (dspec (make-dspec definition)))
+  (let* ((kind (first definition))
+         (name (second definition)))
+    `(progn
+       (ext:optional-annotation ',name 'location ',dspec ',source-location)
+       ,(when (member kind '(defun defmacro defgeneric))
+          `(ext:optional-annotation ',name :lambda-list nil ',(third definition)))
+       ,output-form)))
 
 #+ecl-min
-(setq ext::*register-with-pde-hook*
-      #'(lambda (source-location definition output-form)
-          (let* ((kind (first definition))
-                 (name (second definition)))
-            ;(print (list name kind source-location))
-            (when (not (member kind '(defmethod)))
-              (annotate name 'location kind source-location))
-            (when (member kind '(defun defmacro defgeneric))
-              (annotate name :lambda-list nil (third definition))))
-          output-form))
+(when (null *documentation-pool*) (new-documentation-pool 1024))
+#+ecl-min
+(setq ext::*register-with-pde-hook* 'default-annotation-logic)
+
 
