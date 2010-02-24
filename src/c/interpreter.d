@@ -1255,7 +1255,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 	}
 }
 
-@(defun si::interpreter_stack ()
+@(defun si::interpreter-stack ()
 @
 	@(return Cnil)
 @)

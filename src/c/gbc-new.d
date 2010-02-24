@@ -938,7 +938,7 @@ _mark_contblock(void *x, size_t s)
  *----------------------------------------------------------------------
  */
 
-@(defun si::room_report ()
+@(defun si::room-report ()
 	int i;
 	cl_object *tl;
 @
@@ -970,7 +970,7 @@ _mark_contblock(void *x, size_t s)
 	return VALUES(0);
 @)
 
-@(defun si::reset_gc_count ()
+@(defun si::reset-gc-count ()
 	int i;
 @
 	cbgccount = 0;
@@ -979,7 +979,7 @@ _mark_contblock(void *x, size_t s)
 	@(return)
 @)
 
-@(defun si::gc_time ()
+@(defun si::gc-time ()
 @
 	@(return MAKE_FIXNUM(gc_time))
 @)

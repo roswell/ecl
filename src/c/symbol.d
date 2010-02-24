@@ -437,7 +437,7 @@ si_putprop(cl_object sym, cl_object value, cl_object indicator)
 }
 
 /* Added for defstruct. Beppe */
-@(defun si::put_properties (sym &rest ind_values)
+@(defun si::put-properties (sym &rest ind_values)
 @
 	while (--narg >= 2) {
 		cl_object prop = cl_va_arg(ind_values);
@@ -448,7 +448,7 @@ si_putprop(cl_object sym, cl_object value, cl_object indicator)
 @)
 
 cl_object
-@si::*make_special(cl_object sym)
+@si::*make-special(cl_object sym)
 {
 	int type = ecl_symbol_type(sym);
 	if (type & stp_constant)
@@ -459,7 +459,7 @@ cl_object
 }
 
 cl_object
-@si::*make_constant(cl_object sym, cl_object val)
+@si::*make-constant(cl_object sym, cl_object val)
 {
 	int type = ecl_symbol_type(sym);
 	if (type & stp_special)

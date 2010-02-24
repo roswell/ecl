@@ -1382,7 +1382,7 @@ coerce_to_from_pathname(cl_object x, cl_object host)
 	}
 }
 
-@(defun si::pathname_translations (host &optional (set OBJNULL))
+@(defun si::pathname-translations (host &optional (set OBJNULL))
 	cl_index parsed_len, len;
 	cl_object pair, l;
 @

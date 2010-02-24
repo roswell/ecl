@@ -918,7 +918,7 @@ nstring_case(cl_narg narg, cl_object fun, ecl_casefun casefun, cl_va_list ARGS)
 	return nstring_case(narg, @'nstring-capitalize', char_capitalize, args);
 @)
 
-@(defun si::base_string_concatenate (&rest args)
+@(defun si::base-string-concatenate (&rest args)
 	cl_index l;
 	int i;
 	cl_object output;

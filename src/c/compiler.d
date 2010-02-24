@@ -2369,7 +2369,7 @@ c_listA(cl_env_ptr env, cl_object args, int flags)
 /*
   Handles special declarations, removes declarations from body
  */
-@(defun si::process_declarations (body &optional doc)
+@(defun si::process-declarations (body &optional doc)
 	cl_object documentation = Cnil, declarations = Cnil, specials = Cnil;
 	cl_object decls, vars, v;
 @

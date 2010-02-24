@@ -858,12 +858,12 @@ since ~D pages are already allocated.",
 	@(return MAKE_FIXNUM(maxcbpage))
 @)
 
-@(defun si::get_hole_size ()
+@(defun si::get-hole-size ()
 @
 	@(return MAKE_FIXNUM(new_holepage))
 @)
 
-@(defun si::set_hole_size (size)
+@(defun si::set-hole-size (size)
 	cl_index i;
 @
 	i = fixnnint(size);
@@ -873,7 +873,7 @@ since ~D pages are already allocated.",
 	@(return size)
 @)
 
-@(defun si::ignore_maximum_pages (&optional (flag OBJNULL))
+@(defun si::ignore-maximum-pages (&optional (flag OBJNULL))
 @
 	if (flag == OBJNULL)
 		@(return (ignore_maximum_pages? Ct : Cnil))

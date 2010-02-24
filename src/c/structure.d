@@ -62,7 +62,7 @@ si_structure_subtype_p(cl_object x, cl_object y)
 		     && structure_subtypep(STYPE(x), y)) ? Ct : Cnil))
 }
 
-@(defun si::make_structure (type &rest args)
+@(defun si::make-structure (type &rest args)
 	cl_object x;
 	int i;
 @
