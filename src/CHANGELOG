@@ -128,6 +128,9 @@ and important fixes to let ECL work better with Slime.
    functions from the core ECL library, generic functions and interpreted
    functions.
 
+ - The debugger now is capable of showing the special variable bindings
+   from a function.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

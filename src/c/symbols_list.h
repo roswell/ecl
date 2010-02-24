@@ -1122,6 +1122,7 @@ cl_symbols[] = {
 {SYS_ "GETPID", SI_ORDINARY, si_getpid, 0, OBJNULL},
 {SYS_ "HASH-SET", SI_ORDINARY, si_hash_set, 3, OBJNULL},
 {SYS_ "HASH-TABLE-ITERATOR", SI_ORDINARY, si_hash_table_iterator, 1, OBJNULL},
+{SYS_ "IHS-BDS", SI_ORDINARY, si_ihs_bds, 1, OBJNULL},
 {SYS_ "IHS-ENV", SI_ORDINARY, si_ihs_env, 1, OBJNULL},
 {SYS_ "IHS-FUN", SI_ORDINARY, si_ihs_fun, 1, OBJNULL},
 {SYS_ "IHS-NEXT", SI_ORDINARY, si_ihs_next, 1, OBJNULL},

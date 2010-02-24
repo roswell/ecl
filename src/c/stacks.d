@@ -453,6 +453,12 @@ si_ihs_next(cl_object x)
 }
 
 cl_object
+si_ihs_bds(cl_object arg)
+{
+	@(return MAKE_FIXNUM(get_ihs_ptr(fixnnint(arg))->bds))
+}
+
+cl_object
 si_ihs_fun(cl_object arg)
 {
 	@(return get_ihs_ptr(fixnnint(arg))->function)

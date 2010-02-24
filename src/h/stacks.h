@@ -181,6 +181,7 @@ typedef struct ihs_frame {
 	cl_object function;
 	cl_object lex_env;
 	cl_index index;
+        cl_index bds;
 } *ihs_ptr;
 
 #define ecl_ihs_push(env,rec,fun,lisp_env) do { \
@@ -190,6 +191,7 @@ typedef struct ihs_frame {
 	r->function=(fun);			\
 	r->lex_env=(lisp_env);			\
 	r->index=__the_env->ihs_top->index+1;	\
+        r->bds=__the_env->bds_top - __the_env->bds_org; \
 	__the_env->ihs_top = r; 		\
 } while(0)
 

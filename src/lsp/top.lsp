@@ -920,49 +920,62 @@ Use special code 0 to cancel this operation.")
                    next))
       env)))
 
-(defun tpl-variables-command (&optional no-values)
-  (let*((*print-level* 2)
-	(*print-length* 4)
-	(*print-pretty* t)
-	(*print-readably* nil)
-	(functions '())
-	(blocks '())
-	(variables '())
-	record0 record1)
-    (dolist (record (decode-ihs-env *break-env*))
+(defun ihs-environment (ihs-index)
+  (let* ((functions '())
+         (blocks '())
+         (local-variables '())
+         (special-variables '()))
+    (dolist (record (decode-ihs-env (ihs-env ihs-index)))
       (cond ((atom record)
 	     (push (compiled-function-name record) functions))
 	    ((progn
 	       (setf record0 (car record) record1 (cdr record))
 	       (or (symbolp record0) (stringp record0)))
-	     (setq variables (list* record0 record1 variables)))
+	     (setq local-variables (acons record0 record1 local-variables)))
 	    ((symbolp record1)
 	     (push record1 blocks))
 	    (t
 	     )))
-    (format t "~:[~;Local functions: ~:*~{~s~^, ~}.~%~]" functions)
-    (format t "~:[~;Block names: ~:*~{~s~^, ~}.~%~]" blocks)
+    (let ((top (ihs-top)))
+      (unless (> ihs-index top)
+        (loop with bds-min = (ihs-bds ihs-index)
+           with bds-max = (if (= ihs-index top)
+                              (bds-top)
+                              (ihs-bds (1+ ihs-index)))
+           for i from bds-min below bds-max
+           for variable = (bds-var i)
+           for value = (bds-val i)
+           unless (assoc variable special-variables)
+           do (setf special-variables (acons variable value special-variables)))))
+    (values local-variables special-variables functions blocks)))
 
-    ;; This format is what was in the orignal code.
-    ;; It simply does not work when no-values is t.
-    ;; If you care to debug this kind of conundrum then have fun!
-    ;;(format t "Local variables: ~:[~:[none~;~:*~{~a~1*~:@{, ~a~1*~}~}~]~;~
-    ;;                            ~:[none~;~:*~{~%  ~a: ~s~}~]~]~%"
-    ;;          (not no-values) variables)
-    (format t "Local variables: ")
-    (if variables
-	(if no-values
-	    (do ((vals variables (cddr vals)))
-		((endp vals))
-		(format t "~%  ~S" (car vals))
-		)
-	  (do ((vals variables (cddr vals)))
-	      ((endp vals))
-	      (format t "~%  ~S: ~S" (car vals) (cadr vals))
-	   )
-	  )
-      (format t "none")
-      )
+(defun tpl-print-variables (prefix variables no-values)
+  ;; This format is what was in the orignal code.
+  ;; It simply does not work when no-values is t.
+  ;; If you care to debug this kind of conundrum then have fun!
+  ;;(format t "Local variables: ~:[~:[none~;~:*~{~a~1*~:@{, ~a~1*~}~}~]~;~
+  ;;                            ~:[none~;~:*~{~%  ~a: ~s~}~]~]~%"
+  ;;          (not no-values) variables)
+  (format t prefix)
+  (if variables
+      (loop for (var . value) in variables
+         do (if no-values
+                (format t "~% ~S" var)
+                (format t "~% ~S: ~S" var value)))
+      (format t "none")))
+
+(defun tpl-variables-command (&optional no-values)
+  (let*((*print-level* 2)
+	(*print-length* 4)
+	(*print-pretty* t)
+	(*print-readably* nil))
+    (multiple-value-bind (local-variables special-variables functions blocks)
+        (ihs-environment *ihs-current*)
+      (format t "~:[~;Local functions: ~:*~{~s~^, ~}.~%~]" functions)
+      (format t "~:[~;Block names: ~:*~{~s~^, ~}.~%~]" blocks)
+      (tpl-print-variables "Local variables: " local-variables no-values)
+      (tpl-print-variables "~%Special variables: "
+                           special-variables no-values))
     (terpri)
     (values)))
 
