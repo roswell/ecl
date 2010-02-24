@@ -552,6 +552,7 @@ Use special code 0 to cancel this operation.")
 		 ((:prompt-hook *tpl-prompt-hook*) *tpl-prompt-hook*)
   		 (broken-at nil)
 		 (quiet nil))
+  (declare (c::policy-debug-ihs-frame))
   (let* ((*ihs-base* *ihs-top*)
 	 (*ihs-top* (if broken-at (ihs-search t broken-at) (ihs-top)))
 	 (*ihs-current* (if broken-at (ihs-prev *ihs-top*) *ihs-top*))
@@ -938,16 +939,18 @@ Use special code 0 to cancel this operation.")
 	     )))
     (let ((top (ihs-top)))
       (unless (> ihs-index top)
-        (loop with bds-min = (ihs-bds ihs-index)
+        (loop with bds-min = (1+ (ihs-bds ihs-index))
            with bds-max = (if (= ihs-index top)
                               (bds-top)
                               (ihs-bds (1+ ihs-index)))
-           for i from bds-min below bds-max
+           for i from bds-min to bds-max
            for variable = (bds-var i)
            for value = (bds-val i)
            unless (assoc variable special-variables)
            do (setf special-variables (acons variable value special-variables)))))
-    (values local-variables special-variables functions blocks)))
+    (values (nreverse local-variables)
+            (nreverse special-variables)
+            functions blocks)))
 
 (defun tpl-print-variables (prefix variables no-values)
   ;; This format is what was in the orignal code.
@@ -1407,6 +1410,7 @@ package."
   ;; call *INVOKE-DEBUGGER-HOOK* first, so that *DEBUGGER-HOOK* is not
   ;; called when the debugger is disabled. We adopt this mechanism
   ;; from SBCL.
+  (declare (c::policy-debug-ihs-frame))
   (let ((old-hook *invoke-debugger-hook*))
     (when old-hook
       (let ((*invoke-debugger-hook* nil))

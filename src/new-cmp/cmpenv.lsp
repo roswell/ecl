@@ -295,7 +295,8 @@
 	      (:READ-ONLY
 	       (push decl others))
 	      ((OPTIMIZE FTYPE INLINE NOTINLINE DECLARATION SI::C-LOCAL SI::C-GLOBAL
-		DYNAMIC-EXTENT IGNORABLE VALUES SI::NO-CHECK-TYPE)
+		DYNAMIC-EXTENT IGNORABLE VALUES SI::NO-CHECK-TYPE
+                POLICY-DEBUG-IHS-FRAME)
 	       (push decl others))
 	      (otherwise
 	       (multiple-value-bind (ok type)
@@ -317,6 +318,9 @@
 (defun search-optimization-quality (declarations what)
   (dolist (i (reverse declarations)
 	   (default-optimization what))
+    (when (and (consp i) (eq (first i) 'policy-debug-ihs-frame)
+               (eq what 'debug))
+      (return 2))      
     (when (and (consp i) (eq (first i) 'optimize))
       (dolist (j (rest i))
 	(cond ((consp j)
@@ -352,6 +356,8 @@
       (OPTIMIZE
        (let ((optimizations (compute-optimizations (rest decl) env)))
          (setf env (cmp-env-add-declaration 'optimize optimizations))))
+      (POLICY-DEBUG-IHS-FRAME
+       (setf env (cmp-env-add-declaration 'optimize (compute-optimizations '(debug 2) env))))
       (FTYPE
        (if (atom (rest decl))
 	   (cmpwarn "Syntax error in declaration ~a" decl)

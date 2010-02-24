@@ -17,6 +17,7 @@
   (list (eval (read *query-io*))))
 
 (defun wrong-type-argument (object type &optional place function)
+  (declare (c::policy-debug-ihs-frame))
   (tagbody again
      (restart-case
 	 (error 'simple-type-error

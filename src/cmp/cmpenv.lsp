@@ -362,7 +362,8 @@
 	      (:READ-ONLY
 	       (push decl others))
 	      ((OPTIMIZE FTYPE INLINE NOTINLINE DECLARATION SI::C-LOCAL SI::C-GLOBAL
-		DYNAMIC-EXTENT IGNORABLE VALUES SI::NO-CHECK-TYPE)
+		DYNAMIC-EXTENT IGNORABLE VALUES SI::NO-CHECK-TYPE
+                POLICY-DEBUG-IHS-FRAME)
 	       (push decl others))
 	      (otherwise
 	       (if (member decl-name si::*alien-declarations*)
@@ -388,6 +389,9 @@
 (defun search-optimization-quality (declarations what)
   (dolist (i (reverse declarations)
 	   (default-optimization what))
+    (when (and (consp i) (eq (first i) 'policy-debug-ihs-frame)
+               (eq what 'debug))
+      (return 2))      
     (when (and (consp i) (eq (first i) 'optimize))
       (dolist (j (rest i))
 	(cond ((consp j)
@@ -418,6 +422,10 @@
 	       (SPEED (setf (fourth optimizations) value))
 	       (COMPILATION-SPEED)
 	       (t (cmpwarn "The OPTIMIZE quality ~s is unknown." (car x))))))))
+      (POLICY-DEBUG-IHS-FRAME
+       (unless optimizations
+         (setq optimizations (cmp-env-all-optimizations)))
+       (setf (first optimizations) (max 2 (first optimizations))))
       (FTYPE
        (if (atom (rest decl))
 	   (cmpwarn "Syntax error in declaration ~a" decl)
@@ -664,3 +672,9 @@
 (defun policy-array-bounds-check-p (&optional (env *cmp-env*))
   "Check access to array bounds?"
   (>= (cmp-env-optimization 'safety env) 1))
+
+(defun policy-debug-ihs-frame (&optional (env *cmp-env*))
+  "Shall we create an IHS frame so that this function shows up in backtraces?"
+  ;; Note that this is a prerequisite for registering variable bindings. Hence,
+  ;; it has to be recorded in a special variable.
+  (>= (fun-debug *current-function*) 2))
