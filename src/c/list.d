@@ -626,7 +626,7 @@ ecl_nbutlast(cl_object l, cl_index n)
 {
 	cl_object r;
 	if (!LISTP(l))
-                FEwrong_type_only_arg(@'nbutlast', x, @'list');
+                FEwrong_type_only_arg(@'nbutlast', l, @'list');
 	for (n++, r = l; n && CONSP(r); n--, r = ECL_CONS_CDR(r))
 		;
 	if (n == 0) {
