@@ -117,7 +117,6 @@ cl_exp(cl_object x)
 {
 	cl_object output;
         ECL_MATHERR_CLEAR;
- AGAIN:
 	switch (type_of(x)) {
 	case t_fixnum:
 	case t_bignum:
@@ -147,8 +146,7 @@ cl_exp(cl_object x)
 		break;
 	}
 	default:
-		x = ecl_type_error(@'exp',"exponent",x,@'number');
-		goto AGAIN;
+		FEwrong_type_nth_arg(@'exp', 1, x, @'number');
 	}
         ECL_MATHERR_TEST;
 	@(return output)
@@ -159,12 +157,13 @@ cl_expt(cl_object x, cl_object y)
 {
 	cl_type ty, tx;
 	cl_object z;
- AGAIN:
-	while ((ty = type_of(y), !ECL_NUMBER_TYPE_P(ty))) {
-		y = ecl_type_error(@'exp',"exponent",y,@'number');
+        ty = type_of(y);
+        if (!ECL_NUMBER_TYPE_P(ty)) {
+                FEwrong_type_nth_arg(@'expt', 2, y, @'number');
 	}
-	while ((tx = type_of(x), !ECL_NUMBER_TYPE_P(tx))) {
-		x = ecl_type_error(@'exp',"basis",x,@'number');
+        tx = type_of(x);
+        if (!ECL_NUMBER_TYPE_P(tx)) {
+                FEwrong_type_nth_arg(@'expt', 2, x, @'number');
 	}
 	if (ecl_zerop(y)) {
 		/* INV: The most specific numeric types come first. */
@@ -253,7 +252,6 @@ ecl_log1(cl_object x)
 {
         cl_object output;
         ECL_MATHERR_CLEAR;
- AGAIN:
 	switch (type_of(x)) {
 	case t_fixnum:
 	case t_ratio: {
@@ -314,8 +312,7 @@ ecl_log1(cl_object x)
 		output = ecl_log1_complex(x, MAKE_FIXNUM(0));
 		break;
 	default:
-		x = ecl_type_error(@'log',"argument",x,@'number');
-		goto AGAIN;
+                FEwrong_type_nth_arg(@'log', 1, x, @'number');
 	}
         ECL_MATHERR_TEST;
         return output;
@@ -332,7 +329,6 @@ ecl_log1p(cl_object x)
 {
         cl_object output;
         ECL_MATHERR_CLEAR;
- AGAIN:
 	switch (type_of(x)) {
 	case t_fixnum:
 	case t_ratio: {
@@ -386,8 +382,7 @@ ecl_log1p(cl_object x)
 					  MAKE_FIXNUM(0));
 		break;
 	default:
-		x = ecl_type_error(@'log',"argument",x,@'number');
-		goto AGAIN;
+                FEwrong_type_nth_arg(@'log', 1, x, @'number');
         }
         ECL_MATHERR_TEST;
         return output;
@@ -405,11 +400,9 @@ cl_sqrt(cl_object x)
 	cl_object z;
 	cl_type tx;
         ECL_MATHERR_CLEAR;
- AGAIN:
 	tx = type_of(x);
 	if (!ECL_NUMBER_TYPE_P(tx)) {
-		x = ecl_type_error(@'sqrt',"argument",x,@'number');
-		goto AGAIN;
+                FEwrong_type_nth_arg(@'sqrt', 1, x, @'number');
 	}
 	if (tx == t_complex) {
 		z = ecl_make_ratio(MAKE_FIXNUM(1), MAKE_FIXNUM(2));
@@ -574,7 +567,6 @@ cl_sin(cl_object x)
 {
 	cl_object output;
         ECL_MATHERR_CLEAR;
- AGAIN:
 	switch (type_of(x)) {
 	case t_fixnum:
 	case t_bignum:
@@ -606,8 +598,7 @@ cl_sin(cl_object x)
 		break;
 	}
 	default:
-		x = ecl_type_error(@'sin',"argument",x,@'number');
-		goto AGAIN;
+                FEwrong_type_nth_arg(@'sin', 1, x, @'number');
 	}
         ECL_MATHERR_TEST;
 	@(return output)
@@ -618,7 +609,6 @@ cl_cos(cl_object x)
 {
 	cl_object output;
         ECL_MATHERR_CLEAR;
- AGAIN:
 	switch (type_of(x)) {
 	case t_fixnum:
 	case t_bignum:
@@ -649,8 +639,7 @@ cl_cos(cl_object x)
 		break;
 	}
 	default:
-		x = ecl_type_error(@'cos',"argument",x,@'number');
-		goto AGAIN;
+		FEwrong_type_nth_arg(@'cos', 1, x, @'number');
 	}
         ECL_MATHERR_TEST;
 	@(return output)
@@ -673,7 +662,6 @@ cl_tan(cl_object x)
 {
 	cl_object output;
         ECL_MATHERR_CLEAR;
- AGAIN:
 	switch (type_of(x)) {
 	case t_fixnum:
 	case t_bignum:
@@ -698,8 +686,7 @@ cl_tan(cl_object x)
 		break;
 	}
 	default:
-		x = ecl_type_error(@'tan',"argument",x,@'number');
-		goto AGAIN;
+                FEwrong_type_nth_arg(@'tan', 1, x, @'number');
 	}
         ECL_MATHERR_TEST;
 	@(return output)
@@ -710,7 +697,6 @@ cl_sinh(cl_object x)
 {
 	cl_object output;
         ECL_MATHERR_CLEAR;
- AGAIN:
 	switch (type_of(x)) {
 	case t_fixnum:
 	case t_bignum:
@@ -743,8 +729,7 @@ cl_sinh(cl_object x)
 		break;
 	}
 	default:
-		x = ecl_type_error(@'sinh',"argument",x,@'number');
-		goto AGAIN;
+                FEwrong_type_nth_arg(@'sinh', 1, x, @'number');
 	}
         ECL_MATHERR_TEST;
 	@(return output)
@@ -755,7 +740,6 @@ cl_cosh(cl_object x)
 {
 	cl_object output;
         ECL_MATHERR_CLEAR;
- AGAIN:
 	switch (type_of(x)) {
 	case t_fixnum:
 	case t_bignum:
@@ -788,8 +772,7 @@ cl_cosh(cl_object x)
 		break;
 	}
 	default:
-		x = ecl_type_error(@'cosh',"argument",x,@'number');
-		goto AGAIN;
+                FEwrong_type_nth_arg(@'cosh', 1, x, @'number');
 	}
         ECL_MATHERR_TEST;
 	@(return output)
@@ -800,7 +783,6 @@ cl_tanh(cl_object x)
 {
 	cl_object output;
         ECL_MATHERR_CLEAR;
- AGAIN:
 	switch (type_of(x)) {
 	case t_fixnum:
 	case t_bignum:
@@ -825,8 +807,7 @@ cl_tanh(cl_object x)
 		break;
 	}
 	default:
-		x = ecl_type_error(@'tanh',"argument",x,@'number');
-		goto AGAIN;
+                FEwrong_type_nth_arg(@'tanh', 1, x, @'number');
 	}
         ECL_MATHERR_TEST;
 	@(return output)

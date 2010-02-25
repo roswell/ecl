@@ -552,6 +552,7 @@ extern ECL_API void FEcannot_open(cl_object fn) ecl_attr_noreturn;
 extern ECL_API void FEend_of_file(cl_object strm) ecl_attr_noreturn;
 extern ECL_API void FEclosed_stream(cl_object strm) ecl_attr_noreturn;
 extern ECL_API void FEwrong_type_argument(cl_object type, cl_object value) ecl_attr_noreturn;
+extern ECL_API void FEwrong_type_nth_arg(cl_object function, cl_narg narg, cl_object type, cl_object value) ecl_attr_noreturn;
 extern ECL_API void FEwrong_num_arguments(cl_object fun) ecl_attr_noreturn;
 extern ECL_API void FEwrong_num_arguments_anonym(void) ecl_attr_noreturn;
 extern ECL_API void FEunbound_variable(cl_object sym) ecl_attr_noreturn;
