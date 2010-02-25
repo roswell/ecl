@@ -974,7 +974,8 @@ si_package_hash_tables(cl_object p)
 {
 	const cl_env_ptr the_env = ecl_process_env();
 	cl_object he, hi, u;
-	assert_type_package(p);
+        if (type_of(p) != t_package)
+                FEwrong_type_only_arg(@'si::package-hash-tables', p, @'package');
 	PACKAGE_OP_LOCK();
 	he = si_copy_hash_table(p->pack.external);
 	hi = si_copy_hash_table(p->pack.internal);

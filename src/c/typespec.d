@@ -223,13 +223,6 @@ assert_type_non_negative_integer(cl_object p)
 }
 
 void
-assert_type_package(cl_object p)
-{
-	if (type_of(p) != t_package)
-		FEwrong_type_argument(@'package', p);
-}
-
-void
 assert_type_cons(cl_object p)
 {
 	if (ATOM(p))
