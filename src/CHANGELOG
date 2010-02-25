@@ -129,7 +129,7 @@ and important fixes to let ECL work better with Slime.
    functions.
 
  - The debugger now is capable of showing the special variable bindings
-   from a function.
+   from a function, as well as the restarts newly bound by that function.
 
 ;;; Local Variables: ***
 ;;; mode:text ***
