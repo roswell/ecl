@@ -21,7 +21,10 @@
   (tagbody again
      (restart-case
 	 (error 'simple-type-error
-		:format-control "In ~:[an anonymous function~;~:*function ~A~], ~:[found object~;~:*the value of ~A is~]~%~8t~S~%which is not of expected type ~A"
+		:format-control
+                "In ~:[an anonymous function~;~:*function ~A~], ~
+                 ~:[found object~;~:*the value of ~A is~]~%~8t~S~%~
+                 which is not of expected type ~A"
 		:format-arguments (list function place object type)
 		:datum object
 		:expected-type type

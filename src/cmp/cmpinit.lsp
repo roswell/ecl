@@ -1,7 +1,7 @@
 ;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: C -*-
 ;;;;
 
-(in-package 'compiler)
+(in-package "COMPILER")
 
 ;;; The production version:
 (proclaim '(optimize (safety 0) (space 3) (speed 3)))

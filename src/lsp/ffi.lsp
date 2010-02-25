@@ -701,7 +701,7 @@
 	 args))
 
 (eval-when (:load-toplevel :execute)
-  (defmacro c-inline (args arg-types ret-type &rest others)
+  (defmacro c-inline (args arg-types ret-type &body others)
     `(error "The special form c-inline cannot be used in the interpreter: ~A"
       (list (list ,@args) ',arg-types ',ret-type ,@others))))
 

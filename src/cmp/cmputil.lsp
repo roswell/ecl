@@ -32,6 +32,31 @@
                  (setf output f)))
        finally (return output))))
 
+;; For indirect use in :REPORT functions
+(defun compiler-message-report (stream c format-control &rest format-arguments)
+    (let ((position (compiler-message-file-position c))
+        (prefix (compiler-message-prefix c))
+        (file (compiler-message-file c))
+        (form (innermost-non-expanded-form (compiler-message-toplevel-form c))))
+    (if (and form
+             position
+             (not (minusp position))
+             (not (equalp form '|compiler preprocess|)))
+        (let* ((*print-length* 2)
+               (*print-level* 2))
+          (format stream
+                  "~A:~%  in file ~A, position ~D~&  at ~A"
+                  prefix
+                  (make-pathname :name (pathname-name file)
+                                 :type (pathname-type file)
+                                 :version (pathname-version file))
+                  position
+                  form))
+        (format stream "~A:" prefix))
+    (format stream (compiler-message-format c)
+            format-control
+            format-arguments)))
+
 (define-condition compiler-message (simple-condition)
   ((prefix :initform "Note" :accessor compiler-message-prefix)
    (format :initform +note-format+ :accessor compiler-message-format)
@@ -43,30 +68,10 @@
                   :accessor compiler-message-toplevel-form)
    (form :initarg :form :initform *current-form*
          :accessor compiler-message-form))
-  (:REPORT
-   (lambda (c stream)
-     (let ((position (compiler-message-file-position c))
-           (prefix (compiler-message-prefix c))
-           (file (compiler-message-file c))
-           (form (innermost-non-expanded-form (compiler-message-toplevel-form c))))
-       (if (and form
-                position
-                (not (minusp position))
-                (not (equalp form '|compiler preprocess|)))
-	   (let* ((*print-length* 2)
-                  (*print-level* 2))
-	     (format stream
-                     "~A:~%  in file ~A, position ~D~&  at ~A"
-		     prefix
-                     (make-pathname :name (pathname-name file)
-                                    :type (pathname-type file)
-                                    :version (pathname-version file))
-                     position
-                     form))
-	   (format stream "~A:" prefix))
-       (format stream (compiler-message-format c)
-	       (simple-condition-format-control c)
-	       (simple-condition-format-arguments c))))))
+  (:report (lambda (c stream)
+             (apply #'compiler-message-report stream c
+                    (simple-condition-format-control c)
+                    (simple-condition-format-arguments c)))))
 
 (define-condition compiler-note (compiler-message) ())
 
@@ -93,9 +98,11 @@
 (define-condition compiler-undefined-variable (compiler-style-warning)
   ((variable :initarg :name :initform nil))
   (:report
-   (lambda (condition stream)
-     (format stream "Variable ~A was undefined. Compiler assumes it is a global."
-	     (slot-value condition 'variable)))))
+   (lambda (c stream)
+     (compiler-message-report stream c
+                              "Variable ~A was undefined. ~
+                               Compiler assumes it is a global."
+                              (slot-value c 'variable)))))
 
 (defun print-compiler-message (c stream)
   (unless (typep c *suppress-compiler-messages*)
