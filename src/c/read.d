@@ -2003,8 +2003,8 @@ ecl_invalid_character_p(int c)
         }
 	if (Null(fromrdtbl))
 		fromrdtbl = cl_core.standard_readtable;
-        assert_type_readtable(@'readtable-case', 1, tochr);
-        assert_type_readtable(@'readtable-case', 2, fromchr);
+        assert_type_readtable(@'readtable-case', 1, tordtbl);
+        assert_type_readtable(@'readtable-case', 2, fromrdtbl);
 	fc = ecl_char_code(fromchr);
 	tc = ecl_char_code(tochr);
 
