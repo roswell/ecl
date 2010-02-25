@@ -23,11 +23,6 @@ FEtype_error_cons(cl_object x) {
 }
 
 void
-FEtype_error_number(cl_object x) {
-	FEwrong_type_argument(@'number', x);
-}
-
-void
 FEtype_error_real(cl_object x) {
 	FEwrong_type_argument(@'real', x);
 }

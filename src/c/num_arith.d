@@ -61,7 +61,7 @@ ecl_times(cl_object x, cl_object y)
 		case t_complex:
 			goto COMPLEX;
 		default:
-			FEtype_error_number(y);
+			FEwrong_type_nth_arg(@'*', 2, y, @'number');
 		}
 	case t_bignum:
 		switch (type_of(y)) {
@@ -87,7 +87,7 @@ ecl_times(cl_object x, cl_object y)
 		case t_complex:
 			goto COMPLEX;
 		default:
-			FEtype_error_number(y);
+			FEwrong_type_nth_arg(@'*', 2, y, @'number');
 		}
 	case t_ratio:
 		switch (type_of(y)) {
@@ -114,7 +114,7 @@ ecl_times(cl_object x, cl_object y)
 		case t_complex:
 			goto COMPLEX;
 		default:
-			FEtype_error_number(y);
+			FEwrong_type_nth_arg(@'*', 2, y, @'number');
 		}
 #ifdef ECL_SHORT_FLOAT
 	case t_shortfloat: {
@@ -138,7 +138,7 @@ ecl_times(cl_object x, cl_object y)
 		case t_complex:
 			goto COMPLEX;
 		default:
-			FEtype_error_number(y);
+			FEwrong_type_nth_arg(@'*', 2, y, @'number');
 		}
 	}
 #endif
@@ -165,7 +165,7 @@ ecl_times(cl_object x, cl_object y)
 		case t_complex:
 			goto COMPLEX;
 		default:
-			FEtype_error_number(y);
+			FEwrong_type_nth_arg(@'*', 2, y, @'number');
 		}
 	}
 	case t_doublefloat: {
@@ -193,7 +193,7 @@ ecl_times(cl_object x, cl_object y)
                                                 ecl_times(x, y->complex.imag));
 		}
 		default:
-			FEtype_error_number(y);
+			FEwrong_type_nth_arg(@'*', 2, y, @'number');
 		}
 	}
 #ifdef ECL_LONG_FLOAT
@@ -218,7 +218,7 @@ ecl_times(cl_object x, cl_object y)
 		case t_complex:
 			goto COMPLEX;
 		default:
-			FEtype_error_number(y);
+			FEwrong_type_nth_arg(@'*', 2, y, @'number');
 		}
 	}
 #endif
@@ -238,7 +238,7 @@ ecl_times(cl_object x, cl_object y)
 		return ecl_make_complex(ecl_minus(z11, z12), ecl_plus(z21, z22));
 	}
 	default:
-		FEtype_error_number(x);
+		FEwrong_type_nth_arg(@'*', 1, x, @'number');
 	}
 }
 
@@ -286,7 +286,7 @@ ecl_plus(cl_object x, cl_object y)
 			return ecl_make_complex(ecl_plus(x, y->complex.real),
 					    y->complex.imag);
 		default:
-			FEtype_error_number(y);
+			FEwrong_type_nth_arg(@'+', 2, y, @'number');
 		}
 	case t_bignum:
 		switch (type_of(y)) {
@@ -313,7 +313,7 @@ ecl_plus(cl_object x, cl_object y)
 		case t_complex:
 			goto COMPLEX;
 		default:
-			FEtype_error_number(y);
+			FEwrong_type_nth_arg(@'+', 2, y, @'number');
 		}
 	case t_ratio:
 		switch (type_of(y)) {
@@ -343,7 +343,7 @@ ecl_plus(cl_object x, cl_object y)
 		case t_complex:
 			goto COMPLEX;
 		default:
-			FEtype_error_number(y);
+			FEwrong_type_nth_arg(@'+', 2, y, @'number');
 		}
 #ifdef ECL_SHORT_FLOAT
 	case t_shortfloat:
@@ -366,7 +366,7 @@ ecl_plus(cl_object x, cl_object y)
 		case t_complex:
 			goto COMPLEX;
 		default:
-			FEtype_error_number(y);
+			FEwrong_type_nth_arg(@'+', 2, y, @'number');
 		}
 #endif
 	case t_singlefloat:
@@ -391,7 +391,7 @@ ecl_plus(cl_object x, cl_object y)
 		case t_complex:
 			goto COMPLEX;
 		default:
-			FEtype_error_number(y);
+			FEwrong_type_nth_arg(@'+', 2, y, @'number');
 		}
 	case t_doublefloat:
 		switch (type_of(y)) {
@@ -415,7 +415,7 @@ ecl_plus(cl_object x, cl_object y)
 		case t_complex:
 			goto COMPLEX;
 		default:
-			FEtype_error_number(y);
+			FEwrong_type_nth_arg(@'+', 2, y, @'number');
 		}
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
@@ -438,7 +438,7 @@ ecl_plus(cl_object x, cl_object y)
 		case t_complex:
 			goto COMPLEX;
 		default:
-			FEtype_error_number(y);
+			FEwrong_type_nth_arg(@'+', 2, y, @'number');
 		}
 #endif
 	case t_complex:
@@ -451,7 +451,7 @@ ecl_plus(cl_object x, cl_object y)
 		z1 = ecl_plus(x->complex.imag, y->complex.imag);
 		return ecl_make_complex(z, z1);
 	default:
-		FEtype_error_number(x);
+		FEwrong_type_nth_arg(@'+', 1, x, @'number');
 	}
 }
 
@@ -499,7 +499,7 @@ ecl_minus(cl_object x, cl_object y)
 		case t_complex:
 			goto COMPLEX;
 		default:
-			FEtype_error_number(y);
+			FEwrong_type_nth_arg(@'-', 2, y, @'number');
 		}
 	case t_bignum:
 		switch (type_of(y)) {
@@ -526,7 +526,7 @@ ecl_minus(cl_object x, cl_object y)
 		case t_complex:
 			goto COMPLEX;
 		default:
-			FEtype_error_number(y);
+			FEwrong_type_nth_arg(@'-', 2, y, @'number');
 		}
 	case t_ratio:
 		switch (type_of(y)) {
@@ -556,7 +556,7 @@ ecl_minus(cl_object x, cl_object y)
 		case t_complex:
 			goto COMPLEX;
 		default:
-			FEtype_error_number(y);
+			FEwrong_type_nth_arg(@'-', 2, y, @'number');
 		}
 #ifdef ECL_SHORT_FLOAT
 	case t_shortfloat:
@@ -579,7 +579,7 @@ ecl_minus(cl_object x, cl_object y)
 		case t_complex:
 			goto COMPLEX;
 		default:
-			FEtype_error_number(y);
+			FEwrong_type_nth_arg(@'-', 2, y, @'number');
 		}
 #endif
 	case t_singlefloat:
@@ -604,7 +604,7 @@ ecl_minus(cl_object x, cl_object y)
 		case t_complex:
 			goto COMPLEX;
 		default:
-			FEtype_error_number(y);
+			FEwrong_type_nth_arg(@'-', 2, y, @'number');
 		}
 	case t_doublefloat:
 		switch (type_of(y)) {
@@ -628,7 +628,7 @@ ecl_minus(cl_object x, cl_object y)
 		case t_complex:
 			goto COMPLEX;
 		default:
-			FEtype_error_number(y);
+			FEwrong_type_nth_arg(@'-', 2, y, @'number');
 		}
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
@@ -651,7 +651,7 @@ ecl_minus(cl_object x, cl_object y)
 		case t_complex:
 			goto COMPLEX;
 		default:
-			FEtype_error_number(y);
+			FEwrong_type_nth_arg(@'-', 2, y, @'number');
 		}
 #endif
 	COMPLEX:
@@ -667,7 +667,7 @@ ecl_minus(cl_object x, cl_object y)
 		}
 		return ecl_make_complex(z, z1);
 	default:
-		FEtype_error_number(x);
+		FEwrong_type_nth_arg(@'-', 1, x, @'number');
 	}
 }
 
@@ -688,7 +688,7 @@ cl_conjugate(cl_object c)
 #endif
 		break;
 	default:
-		FEtype_error_number(c);
+		FEwrong_type_only_arg(@'conjugate', c, @'number');
 	}
 	@(return c)
 }
@@ -730,7 +730,7 @@ ecl_negate(cl_object x)
 		z1 = ecl_negate(x->complex.imag);
 		return ecl_make_complex(z, z1);
 	default:
-		FEtype_error_number(x);
+		FEwrong_type_only_arg(@'-', x, @'number');
 	}
 }
 
@@ -783,7 +783,7 @@ ecl_divide(cl_object x, cl_object y)
 		case t_complex:
 			goto COMPLEX;
 		default:
-			FEtype_error_number(y);
+			FEwrong_type_nth_arg(@'/', 2, y, @'number');
 		}
 	case t_ratio:
 		switch (type_of(y)) {
@@ -812,7 +812,7 @@ ecl_divide(cl_object x, cl_object y)
 		case t_complex:
 			goto COMPLEX;
 		default:
-			FEtype_error_number(y);
+			FEwrong_type_nth_arg(@'/', 2, y, @'number');
 		}
 #ifdef ECL_SHORT_FLOAT
 	case t_shortfloat:
@@ -835,7 +835,7 @@ ecl_divide(cl_object x, cl_object y)
 		case t_complex:
 			goto COMPLEX;
 		default:
-			FEtype_error_number(y);
+			FEwrong_type_nth_arg(@'/', 2, y, @'number');
 		}
 #endif
 	case t_singlefloat:
@@ -860,7 +860,7 @@ ecl_divide(cl_object x, cl_object y)
 		case t_complex:
 			goto COMPLEX;
 		default:
-			FEtype_error_number(y);
+			FEwrong_type_nth_arg(@'/', 2, y, @'number');
 		}
 	case t_doublefloat:
 		switch (type_of(y)) {
@@ -884,7 +884,7 @@ ecl_divide(cl_object x, cl_object y)
 		case t_complex:
 			goto COMPLEX;
 		default:
-			FEtype_error_number(y);
+			FEwrong_type_nth_arg(@'/', 2, y, @'number');
 		}
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
@@ -907,7 +907,7 @@ ecl_divide(cl_object x, cl_object y)
 		case t_complex:
 			goto COMPLEX;
 		default:
-			FEtype_error_number(y);
+			FEwrong_type_nth_arg(@'/', 2, y, @'number');
 		}
 #endif
 	case t_complex:
@@ -932,7 +932,7 @@ ecl_divide(cl_object x, cl_object y)
 		z  = ecl_make_complex(ecl_divide(z1, z), ecl_divide(z2, z));
 		return(z);
 	default:
-		FEtype_error_number(x);
+		FEwrong_type_nth_arg(@'/', 1, x, @'number');
 	}
 }
 
@@ -1061,7 +1061,7 @@ ecl_one_plus(cl_object x)
 		return ecl_make_complex(z, x->complex.imag);
 
 	default:
-		FEtype_error_number(x);
+		FEwrong_type_only_arg(@'1+', x, @'number');
 	}
 }
 
@@ -1116,7 +1116,7 @@ ecl_one_minus(cl_object x)
 		return ecl_make_complex(z, x->complex.imag);
 
 	default:
-		FEtype_error_real(x);
+		FEwrong_type_only_arg(@'1-', x, @'number');
 	}
 }
 

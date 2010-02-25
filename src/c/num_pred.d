@@ -47,7 +47,7 @@ ecl_zerop(cl_object x)
 		       ecl_zerop(x->complex.imag));
 
 	default:
-		FEtype_error_number(x);
+                FEwrong_type_only_arg(@'zerop', x, @'number');
 	}
 }
 

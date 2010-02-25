@@ -118,7 +118,7 @@ ecl_number_equalp(cl_object x, cl_object y)
 		case t_complex:
 			goto Y_COMPLEX;
 		default:
-			FEtype_error_number(y);
+			FEwrong_type_nth_arg(@'=', 2, y, @'number');
 		}
 	case t_bignum:
 		switch (type_of(y)) {
@@ -141,7 +141,7 @@ ecl_number_equalp(cl_object x, cl_object y)
 		case t_complex:
 			goto Y_COMPLEX;
 		default:
-			FEtype_error_number(y);
+			FEwrong_type_nth_arg(@'=', 2, y, @'number');
 		}
 	case t_ratio:
 		switch (type_of(y)) {
@@ -164,7 +164,7 @@ ecl_number_equalp(cl_object x, cl_object y)
 		case t_complex:
 			goto Y_COMPLEX;
 		default:
-			FEtype_error_number(y);
+			FEwrong_type_nth_arg(@'=', 2, y, @'number');
 		}
 #ifdef ECL_SHORT_FLOAT
 	case t_shortfloat:
@@ -199,7 +199,7 @@ ecl_number_equalp(cl_object x, cl_object y)
 		case t_complex:
 			goto Y_COMPLEX;
 		default:
-			FEtype_error_number(y);
+			FEwrong_type_nth_arg(@'=', 2, y, @'number');
 		}
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat: {
@@ -224,7 +224,7 @@ ecl_number_equalp(cl_object x, cl_object y)
 		case t_complex:
 			goto Y_COMPLEX;
 		default:
-			FEtype_error_number(y);
+			FEwrong_type_nth_arg(@'=', 2, y, @'number');
 		}
 	}
 #endif
@@ -242,9 +242,9 @@ ecl_number_equalp(cl_object x, cl_object y)
 			else
 				return 0;
 		}
-		FEtype_error_number(y);
+                FEwrong_type_nth_arg(@'=', 2, y, @'number');
 	default:
-		FEtype_error_number(x);
+                FEwrong_type_nth_arg(@'=', 1, x, @'number');
 	}
 }
 

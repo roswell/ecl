@@ -1698,7 +1698,6 @@ extern ECL_API void assert_type_proper_list(cl_object p);
 extern ECL_API cl_object cl_type_of(cl_object x);
 
 extern ECL_API void FEtype_error_cons(cl_object x) ecl_attr_noreturn;
-extern ECL_API void FEtype_error_number(cl_object x) ecl_attr_noreturn;
 extern ECL_API void FEtype_error_real(cl_object x) ecl_attr_noreturn;
 extern ECL_API void FEtype_error_float(cl_object x) ecl_attr_noreturn;
 extern ECL_API void FEtype_error_list(cl_object x) ecl_attr_noreturn;
