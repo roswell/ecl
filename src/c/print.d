@@ -2061,7 +2061,7 @@ ecl_write_string(cl_object strng, cl_object strm)
 			ecl_write_char(strng->base_string.self[i], strm);
 		break;
 	default:
-		FEtype_error_string(strng);
+                FEwrong_type_nth_arg(@'write-string', 1, strng, @'string');
 	}
 		
 	ecl_force_output(strm);

@@ -826,7 +826,7 @@ ecl_array_dimension(cl_object a, cl_index index)
                 if (index) FEwrong_dimensions(a, index+1);
 		return a->vector.dim;
 	default:
-                FEwrong_type_only_arg(@'array-dimension', x, @'array');
+                FEwrong_type_only_arg(@'array-dimension', a, @'array');
 	}
 }
 
