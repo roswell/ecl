@@ -266,13 +266,6 @@ assert_type_array(cl_object p)
 		FEwrong_type_argument(@'array', p);
 }
 
-void
-assert_type_vector(cl_object p)
-{
-	if (!ECL_VECTORP(p))
-		FEwrong_type_argument(@'vector', p);
-}
-
 cl_object
 cl_type_of(cl_object x)
 {

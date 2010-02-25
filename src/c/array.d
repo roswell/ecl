@@ -979,7 +979,8 @@ cl_object
 cl_fill_pointer(cl_object a)
 {
 	const cl_env_ptr the_env = ecl_process_env();
-	assert_type_vector(a);
+        if (!ECL_VECTORP(a))
+                FEwrong_type_only_arg(@'fill-pointer', a, @'vector');
 	if (!ECL_ARRAY_HAS_FILL_POINTER_P(a)) {
                 const char *type = "(AND VECTOR (SATISFIES ARRAY-HAS-FILL-POINTER-P))";
 		FEwrong_type_nth_arg(@'fill-pointer', 1, a, ecl_read_from_cstring(type));
@@ -994,10 +995,10 @@ cl_object
 si_fill_pointer_set(cl_object a, cl_object fp)
 {
 	const cl_env_ptr the_env = ecl_process_env();
-	assert_type_vector(a);
-	if (!ECL_ARRAY_HAS_FILL_POINTER_P(a)) {
+        if (!ECL_VECTORP(a) || !ECL_ARRAY_HAS_FILL_POINTER_P(a)) {
                 const char *type = "(AND VECTOR (SATISFIES ARRAY-HAS-FILL-POINTER-P))";
-		FEwrong_type_nth_arg(@'fill-pointer', 1, a, ecl_read_from_cstring(type));
+		FEwrong_type_nth_arg(@'si::fill-pointer-set', 1, a,
+                                     ecl_read_from_cstring(type));
         }
         a->vector.fillp = ecl_fixnum_in_range(@'adjust-array',"fill pointer",fp,
                                               0,a->vector.dim);
