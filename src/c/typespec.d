@@ -18,11 +18,6 @@
 #include <ecl/ecl.h>
 
 void
-FEtype_error_character(cl_object x) {
-	FEwrong_type_argument(@'character', x);
-}
-
-void
 FEtype_error_cons(cl_object x) {
 	FEwrong_type_argument(@'cons', x);
 }
@@ -40,11 +35,6 @@ FEtype_error_real(cl_object x) {
 void
 FEtype_error_float(cl_object x) {
 	FEwrong_type_argument(@'float', x);
-}
-
-void
-FEtype_error_integer(cl_object x) {
-	FEwrong_type_argument(@'integer', x);
 }
 
 void
@@ -256,7 +246,7 @@ assert_type_integer(cl_object p)
 {
 	cl_type t = type_of(p);
 	if (t != t_fixnum && t != t_bignum)
-		FEtype_error_integer(p);
+                FEwrong_type_nth_arg(@'coerce', 1, p, @'integer');
 }
 
 void

@@ -131,7 +131,7 @@ ecl_to_index(cl_object n)
 	case t_bignum:
 		FEtype_error_index(Cnil, n);
 	default:
-		FEtype_error_integer(n);
+                FEwrong_type_only_arg(@'coerce', n, @'integer');
 	}
 }
 

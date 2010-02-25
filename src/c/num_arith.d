@@ -951,7 +951,7 @@ ecl_integer_divide(cl_object x, cl_object y)
 		} else if (ty == t_bignum) {
                         return _ecl_fix_divided_by_big(fix(x), y);
 		} else {
-                        FEtype_error_integer(y);
+                        FEwrong_type_nth_arg(@'round', 2, y, @'integer');
                 }
 	}
 	if (tx == t_bignum) {
@@ -960,10 +960,10 @@ ecl_integer_divide(cl_object x, cl_object y)
 		} else if (ty == t_fixnum) {
                         return _ecl_big_divided_by_fix(x, fix(y));
 		} else {
-			FEtype_error_integer(y);
+                        FEwrong_type_nth_arg(@'round', 2, y, @'integer');
 		}
 	}
-	FEtype_error_integer(x);
+        FEwrong_type_nth_arg(@'round', 1, x, @'integer');
 }
 
 @(defun gcd (&rest nums)
@@ -996,7 +996,7 @@ ecl_gcd(cl_object x, cl_object y)
 	case t_bignum:
 		break;
 	default:
-		FEtype_error_integer(x);
+		FEwrong_type_nth_arg(@'gcd', 1, x, @'integer');
 	}
 	switch (type_of(y)) {
 	case t_fixnum:
@@ -1005,7 +1005,7 @@ ecl_gcd(cl_object x, cl_object y)
 	case t_bignum:
                 break;
 	default:
-		FEtype_error_integer(y);
+		FEwrong_type_nth_arg(@'gcd', 2, y, @'integer');
         }
         return _ecl_big_gcd(x, y);
 }

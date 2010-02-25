@@ -223,6 +223,27 @@ FEwrong_type_argument(cl_object type, cl_object value)
 }
 
 void
+FEwrong_type_only_arg(cl_object function, cl_object value, cl_object type)
+{
+        const char *message =
+                "In ~:[an anonymous function~;~:*function ~A~], "
+                "the value of the only argument is~&  ~S~&which is "
+                "not of the expected type ~A";
+        cl_env_ptr env = ecl_process_env();
+        struct ihs_frame tmp_ihs;
+        if (!Null(function) && env->ihs_top && env->ihs_top->function != function) {
+                ecl_ihs_push(env,&tmp_ihs,function,Cnil);
+        }        
+        si_signal_simple_error(8,
+                               @'type-error', /* condition name */
+                               Cnil, /* not correctable */
+                               make_constant_base_string(message), /* format control */
+                               cl_list(3, function, value, type),
+                               @':expected-type', type,
+                               @':datum', value);
+}
+
+void
 FEwrong_type_nth_arg(cl_object function, cl_narg narg, cl_object value, cl_object type)
 {
         const char *message =

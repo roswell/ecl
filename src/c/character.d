@@ -24,7 +24,7 @@ ecl_char_code(cl_object c)
 {
 	if (CHARACTERP(c))
 		return CHAR_CODE(c);
-	FEtype_error_character(c);
+	FEwrong_type_only_arg(@'char-code', c, @'character');
 }
 
 ecl_base_char
@@ -37,7 +37,7 @@ ecl_base_char_code(cl_object c)
 			return (int)code;
 		}
 	}
-	FEtype_error_character(c);
+	FEwrong_type_only_arg(@'char-code', c, @'base-char');
 #else
 	return ecl_char_code(c);
 #endif
@@ -376,7 +376,7 @@ cl_code_char(cl_object c)
 		c = Cnil;
 		break;
 	default:
-		FEtype_error_integer(c);
+                FEwrong_type_only_arg(@'code-char', c, @'integer');
 	}
 	@(return c)
 }

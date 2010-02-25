@@ -359,7 +359,7 @@ ecl_boole(int op, cl_object x, cl_object y)
                         return _ecl_big_register_normalize(x_copy);
 		}
 		default:
-			FEtype_error_integer(y);
+                        FEwrong_type_nth_arg(@'boole', 2, y, @'integer');
 		}
 		break;
 	case t_bignum: {
@@ -377,12 +377,12 @@ ecl_boole(int op, cl_object x, cl_object y)
 			bignum_operations[op](x_copy, y);
 			break;
 		default:
-			FEtype_error_integer(y);
+                        FEwrong_type_nth_arg(@'boole', 2, y, @'integer');
 		}
                 return _ecl_big_register_normalize(x_copy);
 	}
 	default:
-		FEtype_error_integer(x);
+                FEwrong_type_nth_arg(@'boole', 1, x, @'integer');
 	}
 	return x;
 }
@@ -427,7 +427,7 @@ count_bits(cl_object x)
 #endif /* WITH_GMP */
 		break;
 	default:
-		FEtype_error_integer(x);
+                FEwrong_type_only_arg(@'logcount', x, @'integer');
 	}
 	return count;
 }
@@ -682,7 +682,7 @@ ecl_integer_length(cl_object x)
 #endif /* WITH_GMP */
 		break;
 	default:
-		FEtype_error_integer(x);
+                FEwrong_type_only_arg(@'integer-length', x, @'integer');
 	}
 	return count;
 }

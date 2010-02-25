@@ -124,7 +124,7 @@ ecl_oddp(cl_object x)
 		return fix(x) & 1;
 	if (type_of(x) == t_bignum)
 		return _ecl_big_odd_p(x);
-	FEtype_error_integer(x);
+        FEwrong_type_only_arg(@'oddp', x, @'integer');
 }
 
 int
@@ -134,7 +134,7 @@ ecl_evenp(cl_object x)
 		return ~fix(x) & 1;
 	if (type_of(x) == t_bignum)
 		return _ecl_big_even_p(x);
-	FEtype_error_integer(x);
+        FEwrong_type_only_arg(@'evenp', x, @'integer');
 }
 
 cl_object
