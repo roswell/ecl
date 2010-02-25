@@ -28,7 +28,7 @@ static void corrupted_hash(cl_object hashtable) /*__attribute__((noreturn))*/;
 #define SYMBOL_NAME(x) (Null(x)? Cnil_symbol->symbol.name : (x)->symbol.name)
 
 static void
-assert_type_hash_table(cl_object fun, cl_narg narg, cl_object p)
+assert_type_hash_table(cl_object function, cl_narg narg, cl_object p)
 {
 	if (type_of(p) != t_hashtable)
 		FEwrong_type_nth_arg(function, narg, p, @'hash-table');
@@ -446,7 +446,7 @@ _ecl_sethash(cl_object key, cl_object hashtable, cl_object value)
 cl_object
 ecl_sethash(cl_object key, cl_object hashtable, cl_object value)
 {
-	assert_type_hash_table(@'si::sethash', 2, hashtable);
+	assert_type_hash_table(@'si::hash-set', 2, hashtable);
 	HASH_TABLE_LOCK(hashtable);
 	hashtable = hashtable->hash.set(key, hashtable, value);
 	HASH_TABLE_UNLOCK(hashtable);
@@ -460,7 +460,7 @@ ecl_extend_hashtable(cl_object hashtable)
 	cl_index old_size, new_size, i;
 	cl_object new_size_obj;
 
-	assert_type_hash_table(@'si::sethash', 2, hashtable);
+	assert_type_hash_table(@'si::hash-set', 2, hashtable);
 	old_size = hashtable->hash.size;
 	/* We do the computation with lisp datatypes, just in case the sizes contain
 	 * weird numbers */

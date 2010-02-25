@@ -1387,7 +1387,8 @@ coerce_to_from_pathname(cl_object x, cl_object host)
 	cl_object pair, l;
 @
 	/* Check that host is a valid host name */
-	host = ecl_check_type_string(@'si::pathname-translations',host);
+	if (!ECL_STRINGP(host))
+                FEwrong_type_nth_arg(@'si::pathname-translations', 1, host, @'string');
 	len = ecl_length(host);
 	parse_word(host, is_null, WORD_LOGICAL, 0, len, &parsed_len);
 	if (parsed_len < len) {
@@ -1399,7 +1400,9 @@ coerce_to_from_pathname(cl_object x, cl_object host)
 		@(return ((pair == Cnil)? Cnil : CADR(pair)));
 	}
 	/* Set the new translation list */
-	assert_type_list(set);
+        if (!LISTP(set)) {
+                FEwrong_type_nth_arg(@'si::pathname-translations', 2, set, @'list');
+        }
 	if (pair == Cnil) {
 		pair = CONS(host, CONS(Cnil, Cnil));
 		cl_core.pathname_translations = CONS(pair, cl_core.pathname_translations);

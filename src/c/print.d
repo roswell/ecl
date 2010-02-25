@@ -1905,7 +1905,8 @@ potential_number_p(cl_object strng, int base)
 
 @(defun write-string (strng &o strm &k (start MAKE_FIXNUM(0)) end)
 @
-	strng = ecl_check_type_string(@'write-string', strng);
+        if (!ECL_STRINGP(strng))
+                FEwrong_type_nth_arg(@'write-string', 1, strng, @'string');
 	strm = stream_or_default_output(strm);
 #ifdef ECL_CLOS_STREAMS
 	if (type_of(strm) != t_stream)
@@ -1918,7 +1919,8 @@ potential_number_p(cl_object strng, int base)
 
 @(defun write-line (strng &o strm &k (start MAKE_FIXNUM(0)) end)
 @
-	strng = ecl_check_type_string(@'write-line', strng);
+        if (!ECL_STRINGP(strng))
+                FEwrong_type_nth_arg(@'write-line', 1, strng, @'string');
 	strm = stream_or_default_output(strm);
 #ifdef ECL_CLOS_STREAMS
 	if (type_of(strm) != t_stream)

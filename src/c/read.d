@@ -1805,7 +1805,8 @@ EOFCHK:	if (c == EOF && TOKEN_STRING_FILLP(token) == 0) {
 	cl_index s, e, ep;
 	cl_object rtbl = ecl_current_readtable();
 @ {
-	strng = ecl_check_type_string(@'parse-integer', strng);
+        if (!ECL_STRINGP(strng))
+                FEwrong_type_nth_arg(@'parse-integer', 1, strng, @'string');
 	get_string_start_end(strng, start, end, &s, &e);
 	if (!FIXNUMP(radix) ||
 	    fix(radix) < 2 || fix(radix) > 36)

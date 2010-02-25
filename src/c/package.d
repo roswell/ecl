@@ -305,7 +305,8 @@ ecl_intern(cl_object name, cl_object p, int *intern_flag)
 {
 	cl_object s, ul;
 
-	name = ecl_check_type_string(@'intern', name);
+        if (!ECL_STRINGP(name))
+                FEwrong_type_nth_arg(@'intern', 1, name, @'string');
 	p = si_coerce_to_package(p);
  TRY_AGAIN_LABEL:
         s = find_symbol_inner(name, p, intern_flag);

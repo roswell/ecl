@@ -1700,7 +1700,6 @@ extern ECL_API void FEtype_error_array(cl_object x) ecl_attr_noreturn;
 extern ECL_API void FEdivision_by_zero(cl_object x, cl_object y) ecl_attr_noreturn;
 extern ECL_API cl_object ecl_type_error(cl_object function, const char *place, cl_object o, cl_object type);
 extern ECL_API cl_object ecl_check_cl_type(cl_object fun, cl_object p, cl_type t);
-extern ECL_API cl_object ecl_check_type_string(cl_object fun, cl_object p);
 
 
 /* unixfsys.c */

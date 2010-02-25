@@ -858,7 +858,7 @@ cl_array_displacement(cl_object a)
 	cl_index offset;
 
         if (!ECL_ARRAYP(a))
-                FEwrong_type_only_arg(@'adjustable-displacement', a, @'array');
+                FEwrong_type_only_arg(@'array-displacement', a, @'array');
 	to_array = a->array.displaced;
 	if (Null(to_array)) {
 		offset = 0;

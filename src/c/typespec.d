@@ -180,25 +180,6 @@ ecl_check_cl_type(cl_object fun, cl_object p, cl_type t)
 	return p;
 }
 
-cl_object
-ecl_check_type_string(cl_object fun, cl_object p)
-{
-	cl_type t;
- AGAIN:
-	t = type_of(p);
-	if (t != t_base_string) {
-#ifdef ECL_UNICODE
-		if (t != t_string) 
-#endif
-			{
-			p = ecl_type_error(fun,"",p,@'string');
-			goto AGAIN;
-			}
-	}
-	return p;
-}
-
-
 void
 assert_type_integer(cl_object p)
 {
