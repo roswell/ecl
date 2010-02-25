@@ -65,12 +65,6 @@ FEtype_error_array(cl_object v)
 }
 
 void
-FEtype_error_vector(cl_object v)
-{
-	FEwrong_type_argument(@'vector', v);
-}
-
-void
 FEtype_error_string(cl_object s)
 {
 	FEwrong_type_argument(@'string', s);
