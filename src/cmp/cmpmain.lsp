@@ -37,7 +37,8 @@ the environment variable TMPDIR to a different value." template)))
 
 (defun compile-file-pathname (name &key (output-file T) (type nil type-supplied-p)
                               verbose print c-file h-file data-file shared-data-file
-                              system-p load external-format)
+                              system-p load external-format source-truename
+                              source-offset)
   (let* ((format '())
          (extension '()))
     (unless type-supplied-p
@@ -529,6 +530,8 @@ static cl_object VV[VM];
                       &key
 		      ((:verbose *compile-verbose*) *compile-verbose*)
 		      ((:print *compile-print*) *compile-print*)
+                      (source-truename nil)
+                      (source-offset 0)
 		      (c-file nil)
 		      (h-file nil)
 		      (data-file nil)
@@ -544,6 +547,7 @@ static cl_object VV[VM];
 			   (*print-pretty* nil)
 			   (*compile-file-pathname* nil)
 			   (*compile-file-truename* nil)
+                           (ext:*source-location* (cons source-truename 0))
 			   (*suppress-compiler-messages*
 			    (or *suppress-compiler-messages* (not *compile-verbose*)))
 			   init-name)
@@ -622,13 +626,15 @@ compiled successfully, returns the pathname of the compiled file"
 
       (with-open-file (*compiler-input* *compile-file-pathname*
                                         :external-format external-format)
-	(do* ((ext:*source-location* (cons *compile-file-pathname* 0))
-              (*compile-file-position* 0 (file-position *compiler-input*))
+        (unless source-truename
+          (setf (car ext:*source-location*) *compile-file-pathname*))
+        (do* ((*compile-file-position* 0 (file-position *compiler-input*))
               (form (si::read-object-or-ignore *compiler-input* eof)
                     (si::read-object-or-ignore *compiler-input* eof)))
-	    ((eq form eof))
+             ((eq form eof))
           (when form
-            (setf (cdr ext:*source-location*) *compile-file-position*)
+            (setf (cdr ext:*source-location*)
+                  (+ source-offset *compile-file-position*))
             (t1expr form))))
 
       (cmpprogress "~&;;; End of Pass 1.")

@@ -135,6 +135,10 @@ and important fixes to let ECL work better with Slime.
    unique identifier denoting the last commit. This can be used to discriminate
    between unstable releases and remove stale FASL files.
 
+ - COMPILE-FILE admits two new keyword arguments, :SOURCE-TRUENAME and
+   :SOURCE-OFFSET which can be used to change the value returned by
+   EXT:COMPILED-FUNCTION-FILE when acting on compiled functions.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
