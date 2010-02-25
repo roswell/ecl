@@ -329,13 +329,11 @@ ecl_char_compare(cl_object x, cl_object y)
 cl_object
 cl_character(cl_object x)
 {
- AGAIN:
 	switch (type_of(x)) {
 	case t_character:
 		break;
 	case t_symbol:
-		x = x->symbol.name;
-		goto AGAIN;
+		return cl_character(x->symbol.name);
 #ifdef ECL_UNICODE
 	case t_string:
 		if (x->string.fillp == 1) {
@@ -350,9 +348,7 @@ cl_character(cl_object x)
 			break;
 		}
 	default: ERROR:
-		x = ecl_type_error(@'character',"character designator",
-				   x,ecl_read_from_cstring("(OR CHARACTER SYMBOL (ARRAY CHARACTER (1)) (ARRAY BASE-CHAR (1)))"));
-		goto AGAIN;
+                FEwrong_type_nth_arg(@'character', 1, x, ecl_read_from_cstring("(OR CHARACTER SYMBOL (ARRAY CHARACTER (1)) (ARRAY BASE-CHAR (1)))"));
 	}
 	@(return x)
 }
@@ -405,7 +401,6 @@ cl_char_downcase(cl_object c)
 @ {
 	cl_fixnum basis = ecl_fixnum_in_range(@'digit-char',"radix",radix,2,36);
 	cl_object output = Cnil;
-  AGAIN:
 	switch (type_of(weight)) {
 	case t_fixnum: {
 		cl_fixnum value = fix(weight);
@@ -420,8 +415,7 @@ cl_char_downcase(cl_object c)
 	case t_bignum:
 		break;
 	default:
-		weight = ecl_type_error(@'digit-char',"weight",weight,@'integer');
-		goto AGAIN;
+                FEwrong_type_nth_arg(@'digit-char',1,weight,@'integer');
 	}
 	@(return output)
 } @)

@@ -822,99 +822,82 @@ cl_list_all_packages()
 
 @(defun export (symbols &o (pack ecl_current_package()))
 @
-BEGIN:
 	switch (type_of(symbols)) {
 	case t_symbol:
 		cl_export2(symbols, pack);
 		break;
-
 	case t_list:
 		pack = si_coerce_to_package(pack);
 		loop_for_in(symbols) {
 			cl_export2(ECL_CONS_CAR(symbols), pack);
 		} end_loop_for_in;
 		break;
-
 	default:
-		symbols = ecl_type_error(@'export',"argument",symbols,
-					 cl_list(3,@'or',@'symbol',@'list'));
-		goto BEGIN;
+                FEwrong_type_nth_arg(@'export',1,symbols,
+                                     cl_list(3,@'or',@'symbol',@'list'));
 	}
 	@(return Ct)
 @)
 
 @(defun unexport (symbols &o (pack ecl_current_package()))
 @
-BEGIN:
 	switch (type_of(symbols)) {
 	case t_symbol:
 		cl_unexport2(symbols, pack);
 		break;
-
 	case t_list:
 		pack = si_coerce_to_package(pack);
 		loop_for_in(symbols) {
 			cl_unexport2(ECL_CONS_CAR(symbols), pack);
 		} end_loop_for_in;
 		break;
-
 	default:
-		symbols = ecl_type_error(@'unexport',"argument",symbols,
-					 cl_list(3,@'or',@'symbol',@'list'));
-		goto BEGIN;
+                FEwrong_type_nth_arg(@'unexport',1,symbols,
+                                     cl_list(3,@'or',@'symbol',@'list'));
 	}
 	@(return Ct)
 @)
 
 @(defun import (symbols &o (pack ecl_current_package()))
 @
-BEGIN:
 	switch (type_of(symbols)) {
 	case t_symbol:
 		cl_import2(symbols, pack);
 		break;
-
 	case t_list:
 		pack = si_coerce_to_package(pack);
 		loop_for_in(symbols) {
 			cl_import2(ECL_CONS_CAR(symbols), pack);
 		} end_loop_for_in;
 		break;
-
 	default:
-		symbols = ecl_type_error(@'import',"argument",symbols,
-					 cl_list(3,@'or',@'symbol',@'list'));
-		goto BEGIN;
+                FEwrong_type_nth_arg(@'import',1,symbols,
+                                     cl_list(3,@'or',@'symbol',@'list'));
 	}
 	@(return Ct)
 @)
 
 @(defun shadowing_import (symbols &o (pack ecl_current_package()))
 @
-BEGIN:
 	switch (type_of(symbols)) {
 	case t_symbol:
 		ecl_shadowing_import(symbols, pack);
 		break;
-
 	case t_list:
 		pack = si_coerce_to_package(pack);
 		loop_for_in(symbols) {
 			ecl_shadowing_import(ECL_CONS_CAR(symbols), pack);
 		} end_loop_for_in;
 		break;
-
 	default:
-		symbols = ecl_type_error(@'shadowing-import',"argument",symbols,
-					 cl_list(3,@'or',@'symbol',@'list'));
-		goto BEGIN;
+                FEwrong_type_nth_arg(@'shadowing-import',1,symbols,
+                                     cl_list(3,@'or',@'symbol',@'list'));
 	}
 	@(return Ct)
 @)
 
 @(defun shadow (symbols &o (pack ecl_current_package()))
 @
-BEGIN:
 	switch (type_of(symbols)) {
 #ifdef ECL_UNICODE
 	case t_string:
@@ -933,9 +916,8 @@ BEGIN:
 		} end_loop_for_in;
 		break;
 	default:
-		symbols = ecl_type_error(@'shadow',"",symbols,
-					 cl_list(3,@'or',@'symbol',@'list'));
-		goto BEGIN;
+                FEwrong_type_nth_arg(@'shadow',1,symbols,
+                                     cl_list(3,@'or',@'symbol',@'list'));
 	}
 	@(return Ct)
 @)
@@ -950,17 +932,15 @@ BEGIN:
 	case t_package:
 		ecl_use_package(pack, pa);
 		break;
-
 	case t_list:
 		pa = si_coerce_to_package(pa);
 		loop_for_in(pack) {
 			ecl_use_package(ECL_CONS_CAR(pack), pa);
 		} end_loop_for_in;
 		break;
-
 	default:
-		assert_type_package(pack);
-		goto BEGIN;
+                FEwrong_type_nth_arg(@'use-package', 1, pack,
+                                     ecl_read_from_cstring("(OR SYMBOL CHARACTER STRING LIST PACKAGE)"));
 	}
 	@(return Ct)
 @)
@@ -975,17 +955,15 @@ BEGIN:
 	case t_package:
 		ecl_unuse_package(pack, pa);
 		break;
-
 	case t_list:
 		pa = si_coerce_to_package(pa);
 		loop_for_in(pack) {
 			ecl_unuse_package(ECL_CONS_CAR(pack), pa);
 		} end_loop_for_in;
 		break;
-
 	default:
-		assert_type_package(pack);
-		goto BEGIN;
+                FEwrong_type_nth_arg(@'unuse-package', 1, pack,
+                                     ecl_read_from_cstring("(OR SYMBOL CHARACTER STRING LIST PACKAGE)"));
 	}
 	@(return Ct)
 @)

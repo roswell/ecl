@@ -153,7 +153,6 @@ si_row_major_aset(cl_object x, cl_object indx, cl_object val)
 @ {
 	cl_index i, j;
 	cl_index r = narg - 1;
-  AGAIN:
 	switch (type_of(x)) {
 	case t_array:
 		if (r != x->array.rank)
@@ -177,8 +176,7 @@ si_row_major_aset(cl_object x, cl_object indx, cl_object val)
 					0, (cl_fixnum)x->vector.dim-1);
 		break;
 	default:
-		x = ecl_type_error(@'aref',"argument",x,@'array');
-		goto AGAIN;
+                FEwrong_type_nth_arg(@'aref', 1, x, @'array');
 	}
 	@(return ecl_aref_unsafe(x, j));
 } @)
@@ -269,7 +267,6 @@ ecl_aref1(cl_object x, cl_index index)
 @ {
 	cl_index i, j;
 	cl_index r = narg - 2;
-  AGAIN:
 	switch (type_of(x)) {
 	case t_array:
 		if (r != x->array.rank)
@@ -293,8 +290,7 @@ ecl_aref1(cl_object x, cl_index index)
 					0, (cl_fixnum)x->vector.dim - 1);
 		break;
 	default:
-		x = ecl_type_error(@'si::aset',"destination",v,@'array');
-		goto AGAIN;
+                FEwrong_type_nth_arg(@'si::aset', 1, x, @'array');
 	}
 	@(return ecl_aset_unsafe(x, j, v))
 } @)
@@ -929,12 +925,12 @@ cl_svref(cl_object x, cl_object index)
 	const cl_env_ptr the_env = ecl_process_env();
 	cl_index i;
 
-	while (type_of(x) != t_vector ||
-	       (x->vector.flags & (ECL_FLAG_ADJUSTABLE | ECL_FLAG_HAS_FILL_POINTER)) ||
-	       CAR(x->vector.displaced) != Cnil ||
-	       (cl_elttype)x->vector.elttype != aet_object)
+	if (type_of(x) != t_vector ||
+            (x->vector.flags & (ECL_FLAG_ADJUSTABLE | ECL_FLAG_HAS_FILL_POINTER)) ||
+            CAR(x->vector.displaced) != Cnil ||
+            (cl_elttype)x->vector.elttype != aet_object)
 	{
-		x = ecl_type_error(@'svref',"argument",x,@'simple-vector');
+                FEwrong_type_nth_arg(@'svref',1,x,@'simple-vector');
 	}
 	i = ecl_fixnum_in_range(@'svref',"index",index,0,(cl_fixnum)x->vector.dim-1);
 	@(return x->vector.self.t[i])
@@ -946,12 +942,12 @@ si_svset(cl_object x, cl_object index, cl_object v)
 	const cl_env_ptr the_env = ecl_process_env();
 	cl_index i;
 
-	while (type_of(x) != t_vector ||
-	       (x->vector.flags & (ECL_FLAG_ADJUSTABLE | ECL_FLAG_HAS_FILL_POINTER)) ||
-	       CAR(x->vector.displaced) != Cnil ||
-	       (cl_elttype)x->vector.elttype != aet_object)
+	if (type_of(x) != t_vector ||
+            (x->vector.flags & (ECL_FLAG_ADJUSTABLE | ECL_FLAG_HAS_FILL_POINTER)) ||
+            CAR(x->vector.displaced) != Cnil ||
+            (cl_elttype)x->vector.elttype != aet_object)
 	{
-		x = ecl_type_error(@'si::svset',"argument",x,@'simple-vector');
+		FEwrong_type_nth_arg(@'si::svset',1,x,@'simple-vector');
 	}
 	i = ecl_fixnum_in_range(@'svref',"index",index,0,(cl_fixnum)x->vector.dim-1);
 	@(return (x->vector.self.t[i] = v))
@@ -962,7 +958,6 @@ cl_array_has_fill_pointer_p(cl_object a)
 {
 	const cl_env_ptr the_env = ecl_process_env();
 	cl_object r;
- AGAIN:
 	switch (type_of(a)) {
 	case t_array:
 		r = Cnil; break;
@@ -975,9 +970,7 @@ cl_array_has_fill_pointer_p(cl_object a)
 		r = ECL_ARRAY_HAS_FILL_POINTER_P(a)? Ct : Cnil;
 		break;
 	default:
-		a = ecl_type_error(@'array-has-fill-pointer-p',"argument",
-				   a, @'array');
-		goto AGAIN;
+                FEwrong_type_nth_arg(@'array-has-fill-pointer-p',1,a,@'array');
 	}
 	@(return r)
 }
@@ -988,8 +981,8 @@ cl_fill_pointer(cl_object a)
 	const cl_env_ptr the_env = ecl_process_env();
 	assert_type_vector(a);
 	if (!ECL_ARRAY_HAS_FILL_POINTER_P(a)) {
-		a = ecl_type_error(@'fill-pointer', "argument",
-				   a, ecl_read_from_cstring("(AND VECTOR (SATISFIES ARRAY-HAS-FILL-POINTER-P))"));
+                const char *type = "(AND VECTOR (SATISFIES ARRAY-HAS-FILL-POINTER-P))";
+		FEwrong_type_nth_arg(@'fill-pointer', 1, a, ecl_read_from_cstring(type));
 	}
 	@(return MAKE_FIXNUM(a->vector.fillp))
 }
@@ -1002,13 +995,12 @@ si_fill_pointer_set(cl_object a, cl_object fp)
 {
 	const cl_env_ptr the_env = ecl_process_env();
 	assert_type_vector(a);
-	if (ECL_ARRAY_HAS_FILL_POINTER_P(a)) {
-		a->vector.fillp = 
-			ecl_fixnum_in_range(@'adjust-array',"fill pointer",fp,
-					    0,a->vector.dim);
-	} else {
-		FEerror("The vector ~S has no fill pointer.", 1, a);
-	}
+	if (!ECL_ARRAY_HAS_FILL_POINTER_P(a)) {
+                const char *type = "(AND VECTOR (SATISFIES ARRAY-HAS-FILL-POINTER-P))";
+		FEwrong_type_nth_arg(@'fill-pointer', 1, a, ecl_read_from_cstring(type));
+        }
+        a->vector.fillp = ecl_fixnum_in_range(@'adjust-array',"fill pointer",fp,
+                                              0,a->vector.dim);
 	@(return fp)
 }
 

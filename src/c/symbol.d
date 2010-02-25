@@ -24,69 +24,59 @@
 cl_object
 ecl_symbol_package(cl_object s)
 {
-	do {
-		if (Null(s))
-			return Cnil_symbol->symbol.hpack;
-		if (type_of(s) == t_symbol)
-			return s->symbol.hpack;
-		s = ecl_type_error(@'symbol-package', "symbol", s, @'symbol');
-	} while(1);
+        if (Null(s))
+                return Cnil_symbol->symbol.hpack;
+        if (type_of(s) == t_symbol)
+                return s->symbol.hpack;
+        FEwrong_type_nth_arg(@'symbol-package', 1, s, @'symbol');
 }
 
 int
 ecl_symbol_type(cl_object s)
 {
-	do {
-		if (Null(s))
-			return Cnil_symbol->symbol.stype;
-		if (type_of(s) == t_symbol)
-			return s->symbol.stype;
-		s = ecl_type_error(@'symbol-name', "symbol", s, @'symbol');
-	} while(1);
+        if (Null(s))
+                return Cnil_symbol->symbol.stype;
+        if (type_of(s) == t_symbol)
+                return s->symbol.stype;
+        FEwrong_type_nth_arg(@'symbol-name', 1, s, @'symbol');
 }
 
 void
 ecl_symbol_type_set(cl_object s, int type)
 {
-	do {
-		if (Null(s)) {
-			Cnil_symbol->symbol.stype = type;
-			return;
-		}
-		if (type_of(s) == t_symbol) {
-			s->symbol.stype = type;
-			return;
-		}
-		s = ecl_type_error(@'symbol-name', "symbol", s, @'symbol');
-	} while(1);
+        if (Null(s)) {
+                Cnil_symbol->symbol.stype = type;
+                return;
+        }
+        if (type_of(s) == t_symbol) {
+                s->symbol.stype = type;
+                return;
+        }
+        FEwrong_type_nth_arg(@'symbol-name', 1, s, @'symbol');
 }
 
 cl_object
 ecl_symbol_name(cl_object s)
 {
-	do {
-		if (Null(s)) {
-			return Cnil_symbol->symbol.name;
-		}
-		if (type_of(s) == t_symbol) {
-			return s->symbol.name;
-		}
-		s = ecl_type_error(@'symbol-name', "symbol", s, @'symbol');
-	} while(1);
+        if (Null(s)) {
+                return Cnil_symbol->symbol.name;
+        }
+        if (type_of(s) == t_symbol) {
+                return s->symbol.name;
+        }
+        FEwrong_type_nth_arg(@'symbol-name', 1, s, @'symbol');
 }
 
 static cl_object *
 ecl_symbol_plist(cl_object s)
 {
-	do {
-		if (Null(s)) {
-			return &Cnil_symbol->symbol.plist;
-		}
-		if (type_of(s) == t_symbol) {
-			return &s->symbol.plist;
-		}
-		s = ecl_type_error(@'symbol-plist', "symbol", s, @'symbol');
-	} while(1);
+        if (Null(s)) {
+                return &Cnil_symbol->symbol.plist;
+        }
+        if (type_of(s) == t_symbol) {
+                return &s->symbol.plist;
+        }
+        FEwrong_type_nth_arg(@'symbol-plist', 1, s, @'symbol');
 }
 
 /**********************************************************************/
@@ -97,7 +87,6 @@ cl_object
 cl_make_symbol(cl_object str)
 {
 	cl_object x;
- AGAIN:
 	/* INV: In several places it is assumed that we copy the string! */
 	switch (type_of(str)) {
 #ifdef ECL_UNICODE
@@ -113,8 +102,7 @@ cl_make_symbol(cl_object str)
 		str = si_copy_to_simple_base_string(str);
 		break;
 	default:
-		str = ecl_type_error(@'make-symbol',"name",str,@'string');
-		goto AGAIN;
+		FEwrong_type_nth_arg(@'make-symbol',1,str,@'string');
 	}
 	x = ecl_alloc_object(t_symbol);
 	x->symbol.name = str;
@@ -341,7 +329,6 @@ cl_symbol_name(cl_object x)
 	cl_object counter, output;
 	bool increment;
 @ {
- AGAIN:
 	if (ecl_stringp(prefix)) {
 		counter = ECL_SYM_VAL(the_env, @'*gensym-counter*');
 		increment = 1;
@@ -350,9 +337,8 @@ cl_symbol_name(cl_object x)
 		prefix = cl_core.gensym_prefix;
 		increment = 0;
 	} else {
-		prefix = ecl_type_error(@'gensym',"prefix",prefix,
-					cl_list(3, @'or', @'string', @'integer'));
-		goto AGAIN;
+                FEwrong_type_nth_arg(@'gensym',2,prefix,
+                                     cl_list(3, @'or', @'string', @'integer'));
 	}
 	output = ecl_make_string_output_stream(64, 1);
 	ecl_bds_bind(the_env, @'*print-escape*', Cnil);

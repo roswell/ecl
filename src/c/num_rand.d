@@ -173,7 +173,6 @@ static cl_object
 rando(cl_object x, cl_object rs)
 {
 	cl_object z;
- AGAIN:
 	if (!ecl_plusp(x)) {
 		goto ERROR;
 	}
@@ -206,11 +205,10 @@ rando(cl_object x, cl_object rs)
                                        (long double)generate_double(rs->random.value));
 		break;
 #endif
-	default:
-	ERROR:
-		x = ecl_type_error(@'random',"limit",x,
-				   ecl_read_from_cstring("(OR (INTEGER (0) *) (FLOAT (0) *))"));
-		goto AGAIN;
+	default: ERROR: {
+                const char *type = "(OR (INTEGER (0) *) (FLOAT (0) *))";
+		FEwrong_type_nth_arg(@'random',1,x, ecl_read_from_cstring(type));
+        }
 	}
 	return z;
 }
