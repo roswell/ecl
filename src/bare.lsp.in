@@ -1,3 +1,4 @@
+;;; -*- Mode:Lisp -*-
 ;;; @configure_input@
 ;;;
 ;;; This file can be loaded either in ECL_MIN or in the final executable
@@ -24,6 +25,20 @@
 ;;;
 (setq *package* (find-package "SYSTEM"))
 (setq si::*keep-definitions* nil)
+
+;;;
+;;; * Create commit version number
+;;;
+
+(setq si::+commit-id+ "0")
+(when (probe-file "@top_srcdir@/../.git/")
+  (when (zerop (si::system "(cd \"@top_srcdir@\" && git log --format=oneline -1) > COMMIT-ID"))
+    (let* ((file (print (open "COMMIT-ID" :direction :input :element-type :default
+                              :external-format :default)))
+           (line (print (read-line file))))
+      (setq si::+commit-id+ (subseq line 0 40))
+      (close file))))
+(print si::+commit-id+)
 
 ;;;
 ;;; * Load Common-Lisp base library

@@ -1879,5 +1879,7 @@ cl_symbols[] = {
 {EXT_ "OPTIONAL-ANNOTATION",NULL},
 {EXT_ "LOCATION",NULL},
 
+{EXT_ "LISP-IMPLEMENTATION-VCS-ID",NULL},
+
 /* Tag for end of list */
 {NULL,NULL}};

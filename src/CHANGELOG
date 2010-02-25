@@ -131,6 +131,10 @@ and important fixes to let ECL work better with Slime.
  - The debugger now is capable of showing the special variable bindings
    from a function, as well as the restarts newly bound by that function.
 
+ - When using git, a new function EXT:LISP-IMPLEMENTATION-VCS-ID returns a
+   unique identifier denoting the last commit. This can be used to discriminate
+   between unstable releases and remove stale FASL files.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
