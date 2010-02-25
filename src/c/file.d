@@ -4630,6 +4630,8 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
 		byte_size = 8;
 	} else if (element_type == @':default') {
 		byte_size = 0;
+        } else if (element_type == @'base-char' || element_type == @'character') {
+                byte_size = 0;
 	} else if (funcall(3, @'subtypep', element_type, @'character') != Cnil) {
 		byte_size = 0;
 	} else {
