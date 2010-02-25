@@ -30,7 +30,8 @@
 ;;; * Create commit version number
 ;;;
 
-(setq si::+commit-id+ "0")
+(setq si::+commit-id+ "UNKNOWN")
+#-windows
 (when (probe-file "@top_srcdir@/../.git/")
   (when (zerop (si::system "(cd \"@top_srcdir@\" && git log --format=oneline -1) > COMMIT-ID"))
     (let* ((file (print (open "COMMIT-ID" :direction :input :element-type :default
