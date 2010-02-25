@@ -798,7 +798,8 @@ ecl_array_elttype(cl_object x)
 cl_object
 cl_array_rank(cl_object a)
 {
-	assert_type_array(a);
+        if (!ECL_ARRAYP(a))
+                FEwrong_type_only_arg(@'array-rank', a, @'array');
 	@(return ((type_of(a) == t_array) ? MAKE_FIXNUM(a->array.rank)
 					  : MAKE_FIXNUM(1)))
 }
@@ -833,14 +834,16 @@ ecl_array_dimension(cl_object a, cl_index index)
 cl_object
 cl_array_total_size(cl_object a)
 {
-	assert_type_array(a);
+        if (!ECL_ARRAYP(a))
+                FEwrong_type_only_arg(@'array-total-size', a, @'array');
 	@(return MAKE_FIXNUM(a->array.dim))
 }
 
 cl_object
 cl_adjustable_array_p(cl_object a)
 {
-	assert_type_array(a);
+        if (!ECL_ARRAYP(a))
+                FEwrong_type_only_arg(@'adjustable-array-p', a, @'array');
 	@(return (ECL_ADJUSTABLE_ARRAY_P(a) ? Ct : Cnil))
 }
 
@@ -854,7 +857,8 @@ cl_array_displacement(cl_object a)
 	cl_object to_array;
 	cl_index offset;
 
-	assert_type_array(a);
+        if (!ECL_ARRAYP(a))
+                FEwrong_type_only_arg(@'adjustable-displacement', a, @'array');
 	to_array = a->array.displaced;
 	if (Null(to_array)) {
 		offset = 0;

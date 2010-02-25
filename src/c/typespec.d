@@ -259,13 +259,6 @@ assert_type_hash_table(cl_object p)
 		FEwrong_type_argument(@'hash-table', p);
 }
 
-void
-assert_type_array(cl_object p)
-{
-	if (!ECL_ARRAYP(p))
-		FEwrong_type_argument(@'array', p);
-}
-
 cl_object
 cl_type_of(cl_object x)
 {
