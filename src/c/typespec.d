@@ -37,16 +37,6 @@ FEtype_error_proper_list(cl_object x) {
 }
 
 void
-FEtype_error_alist(cl_object x)
-{
-	cl_error(9, @'simple-type-error', @':format-control',
-		    make_constant_base_string("Not a valid association list ~D"),
-		    @':format-arguments', cl_list(1, x),
-		    @':expected-type', @'list',
-		    @':datum', x);
-}
-
-void
 FEcircular_list(cl_object x)
 {
 	/* FIXME: Is this the right way to rebind it? */
