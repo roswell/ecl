@@ -32,7 +32,7 @@
 
 (setq si::+commit-id+ "UNKNOWN")
 (when (and (not (member :windows *features*))
-           (probe-file "@top_srcdir@/../.git/")
+           (probe-file "@top_srcdir@/../.git/"))
   (when (probe-file "COMMIT-ID")
     (delete-file "COMMIT-ID"))
   (when (and (zerop (si::system "(cd \"@top_srcdir@\" && git log --format=oneline -1) > COMMIT-ID"))
