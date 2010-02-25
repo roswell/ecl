@@ -243,7 +243,7 @@ ecl_aref(cl_object x, cl_index index)
                 }
 		out_of_bounds_error(index, x);
         }
-        FEtype_error_array(x);
+        FEwrong_type_nth_arg(@'aref', 1, x, @'array');
 }
 
 cl_object
@@ -255,7 +255,7 @@ ecl_aref1(cl_object x, cl_index index)
                 }
 		out_of_bounds_error(index, x);
         }
-        FEtype_error_array(x);
+        FEwrong_type_nth_arg(@'aref', 1, x, @'array');
 }
 
 /*
@@ -374,7 +374,7 @@ ecl_aset(cl_object x, cl_index index, cl_object value)
                         return ecl_aset_unsafe(x, index, value);
 		out_of_bounds_error(index, x);
         }
-        FEtype_error_array(x);
+        FEwrong_type_nth_arg(@'si::aset', 1, x, @'array');
 }
 
 cl_object
@@ -385,7 +385,7 @@ ecl_aset1(cl_object x, cl_index index, cl_object value)
                         return ecl_aset_unsafe(x, index, value);
 		out_of_bounds_error(index, x);
         }
-        FEtype_error_array(x);
+        FEwrong_type_nth_arg(@'si::aset', 1, x, @'array');
 }
 
 /*
@@ -826,7 +826,7 @@ ecl_array_dimension(cl_object a, cl_index index)
                 if (index) FEwrong_dimensions(a, index+1);
 		return a->vector.dim;
 	default:
-		FEtype_error_array(a);
+                FEwrong_type_only_arg(@'array-dimension', x, @'array');
 	}
 }
 
