@@ -232,13 +232,6 @@ assert_type_proper_list(cl_object p)
 }
 
 void
-assert_type_readtable(cl_object p)
-{
-	if (type_of(p) != t_readtable)
-		FEwrong_type_argument(@'readtable', p);
-}
-
-void
 assert_type_hash_table(cl_object p)
 {
 	if (type_of(p) != t_hashtable)
