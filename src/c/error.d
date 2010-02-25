@@ -345,12 +345,6 @@ FEillegal_index(cl_object x, cl_object i)
 }
 
 void
-FEtype_error_symbol(cl_object obj)
-{
-	FEwrong_type_argument(@'symbol', obj);
-}
-
-void
 FEdivision_by_zero(cl_object x, cl_object y)
 {
 	cl_error(5, @'division-by-zero', @':operation', @'/',

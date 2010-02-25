@@ -14,8 +14,6 @@
     See file '../Copyright' for full details.
 */
 
-#define check_symbol(x) if (!SYMBOLP(x)) FEtype_error_symbol(x);
-
 #define CONS(a,d)	ecl_cons((a),(d))
 #define ACONS(a,b,c)	ecl_cons(ecl_cons((a),(b)),(c))
 #define CAR(x)		(Null(x)? (x) : ECL_CONS_CAR(x))
