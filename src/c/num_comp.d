@@ -297,7 +297,7 @@ ecl_number_compare(cl_object x, cl_object y)
 			return long_double_fix_compare(ix, ecl_long_float(y));
 #endif
 		default:
-			FEtype_error_real(y);
+			FEwrong_type_nth_arg(@'<', 2, y, @'real');
 		}
 	case t_bignum:
 		switch (ty) {
@@ -320,7 +320,7 @@ ecl_number_compare(cl_object x, cl_object y)
 			y = cl_rational(y);
 			goto BEGIN;
 		default:
-			FEtype_error_real(y);
+			FEwrong_type_nth_arg(@'<', 2, y, @'real');
 		}
 	case t_ratio:
 		switch (ty) {
@@ -345,7 +345,7 @@ ecl_number_compare(cl_object x, cl_object y)
 			y = cl_rational(y);
 			goto BEGIN;
 		default:
-			FEtype_error_real(y);
+			FEwrong_type_nth_arg(@'<', 2, y, @'real');
 		}
 #ifdef ECL_SHORT_FLOAT
 	case t_shortfloat:
@@ -378,7 +378,7 @@ ecl_number_compare(cl_object x, cl_object y)
 			goto LONGFLOAT;
 #endif
 		default:
-			FEtype_error_real(y);
+			FEwrong_type_nth_arg(@'<', 2, y, @'real');
 		}
 	DOUBLEFLOAT:
 		if (dx == dy)
@@ -412,7 +412,7 @@ ecl_number_compare(cl_object x, cl_object y)
 			ldy = ecl_long_float(y);
 			break;
 		default:
-			FEtype_error_real(y);
+			FEwrong_type_nth_arg(@'<', 2, y, @'real');
 		}
 	LONGFLOAT:
 		if (ldx == ldy)
@@ -424,7 +424,7 @@ ecl_number_compare(cl_object x, cl_object y)
 		break;
 #endif
 	default:
-		FEtype_error_real(x);
+		FEwrong_type_nth_arg(@'<', 1, x, @'real');
 	}
 }
 

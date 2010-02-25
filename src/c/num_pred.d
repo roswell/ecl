@@ -79,7 +79,7 @@ ecl_plusp(cl_object x)
 		return ecl_long_float(x) > 0.0;
 #endif
 	default:
-		FEtype_error_real(x);
+		FEwrong_type_only_arg(@'plusp', x, @'real');
 	}
 }
 
@@ -113,7 +113,7 @@ ecl_minusp(cl_object x)
 		return ecl_long_float(x) < 0;
 #endif
 	default:
-		FEtype_error_real(x);
+		FEwrong_type_only_arg(@'minusp', x, @'real');
 	}
 }
 

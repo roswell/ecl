@@ -847,7 +847,7 @@ ecl_to_double(cl_object x)
 		return (double)ecl_long_float(x);
 #endif
 	default:
-		FEtype_error_real(x);
+		FEwrong_type_nth_arg(@'coerce', 1, x, @'real');
 	}
 }
 
@@ -881,7 +881,7 @@ ecl_to_long_double(cl_object x)
 	case t_longfloat:
 		return ecl_long_float(x);
 	default:
-		FEtype_error_real(x);
+		FEwrong_type_nth_arg(@'coerce', 1, x, @'real');
 	}
 }
 #endif
