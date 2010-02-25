@@ -964,6 +964,11 @@ Use special code 0 to cancel this operation.")
                (push (compiled-function-name record) functions))
               ((progn
                  (setf record0 (car record) record1 (cdr record))
+                 (when (stringp record0)
+                   (setf record0
+                         (let ((*package* (find-package "KEYWORD")))
+                           (with-standard-io-syntax
+                             (read-from-string record0)))))
                  (or (symbolp record0) (stringp record0)))
                (setq local-variables (acons record0 record1 local-variables)))
               ((symbolp record1)
