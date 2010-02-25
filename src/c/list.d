@@ -683,7 +683,8 @@ cl_ldiff(cl_object x, cl_object y)
 cl_object
 cl_rplaca(cl_object x, cl_object v)
 {
-	assert_type_cons(x);
+        if (!ECL_CONSP(x))
+                FEwrong_type_nth_arg(@'rplaca', 1, x, @'cons');
 	ECL_RPLACA(x, v);
 	@(return x)
 }
@@ -691,7 +692,8 @@ cl_rplaca(cl_object x, cl_object v)
 cl_object
 cl_rplacd(cl_object x, cl_object v)
 {
-	assert_type_cons(x);
+        if (!ECL_CONSP(x))
+                FEwrong_type_nth_arg(@'rplacd', 1, x, @'cons');
 	ECL_RPLACD(x, v);
 	@(return x)
 }

@@ -223,20 +223,6 @@ assert_type_non_negative_integer(cl_object p)
 }
 
 void
-assert_type_cons(cl_object p)
-{
-	if (ATOM(p))
-		FEwrong_type_argument(@'cons', p);
-}
-
-void
-assert_type_list(cl_object p)
-{
-	if (ATOM(p) && p != Cnil)
-		FEtype_error_list(p);
-}
-
-void
 assert_type_proper_list(cl_object p)
 {
 	if (ATOM(p) && p != Cnil)

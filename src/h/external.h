@@ -1687,10 +1687,9 @@ extern ECL_API cl_object cl_get_universal_time(void);
 extern ECL_API void assert_type_integer(cl_object p);
 extern ECL_API void assert_type_non_negative_integer(cl_object p);
 extern ECL_API void assert_type_string(cl_object p);
-extern ECL_API void assert_type_cons(cl_object p);
 extern ECL_API void assert_type_readtable(cl_object p);
 extern ECL_API void assert_type_hash_table(cl_object p);
-extern ECL_API void assert_type_list(cl_object p);
+extern ECL_API void assert_type_plist(cl_object p);
 extern ECL_API void assert_type_proper_list(cl_object p);
 extern ECL_API cl_object cl_type_of(cl_object x);
 
