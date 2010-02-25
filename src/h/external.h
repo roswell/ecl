@@ -1702,7 +1702,6 @@ extern ECL_API void FEtype_error_list(cl_object x) ecl_attr_noreturn;
 extern ECL_API void FEtype_error_proper_list(cl_object x) ecl_attr_noreturn;
 extern ECL_API void FEtype_error_stream(cl_object x) ecl_attr_noreturn;
 extern ECL_API void FEtype_error_sequence(cl_object x) ecl_attr_noreturn;
-extern ECL_API void FEtype_error_instance(cl_object x) ecl_attr_noreturn;
 extern ECL_API void FEcircular_list(cl_object x) ecl_attr_noreturn;
 extern ECL_API void FEtype_error_index(cl_object seq, cl_object ndx) ecl_attr_noreturn;
 extern ECL_API void FEtype_error_array(cl_object x) ecl_attr_noreturn;
