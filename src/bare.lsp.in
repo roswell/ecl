@@ -33,13 +33,16 @@
 (setq si::+commit-id+ "UNKNOWN")
 #-windows
 (when (probe-file "@top_srcdir@/../.git/")
-  (when (zerop (si::system "(cd \"@top_srcdir@\" && git log --format=oneline -1) > COMMIT-ID"))
-    (let* ((file (print (open "COMMIT-ID" :direction :input :element-type :default
-                              :external-format :default)))
-           (line (print (read-line file))))
-      (setq si::+commit-id+ (subseq line 0 40))
+  (when (probe-file "COMMIT-ID")
+    (delete-file "COMMIT-ID"))
+  (when (and (zerop (si::system "(cd \"@top_srcdir@\" && git log --format=oneline -1) > COMMIT-ID"))
+             (probe-file "COMMIT-ID"))
+    (let* ((file (open "COMMIT-ID" :direction :input :element-type :default
+                       :external-format :default))
+           (line (read-line file))
+           (l (length line)))
+      (setq si::+commit-id+ (subseq line 0 (min l 40)))
       (close file))))
-(print si::+commit-id+)
 
 ;;;
 ;;; * Load Common-Lisp base library
