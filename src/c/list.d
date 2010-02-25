@@ -140,7 +140,7 @@ cl_car(cl_object x)
 		return1(x);
 	if (CONSP(x))
 		return1(CAR(x));
-	FEtype_error_list(x);
+	FEwrong_type_only_arg(@'car', x, @'list');
 }
 
 cl_object
@@ -150,7 +150,7 @@ cl_cdr(cl_object x)
 		return1(x);
 	if (CONSP(x))
 		return1(ECL_CONS_CDR(x));
-	FEtype_error_list(x);
+	FEwrong_type_only_arg(@'cdr', x, @'list');
 }
 
 @(defun list (&rest args)
@@ -248,7 +248,7 @@ ecl_append(cl_object x, cl_object y)
 cl_object cl_##name(cl_object foo) { \
 	register cl_object arg = foo; \
 	code; return1(arg); \
-E:	FEtype_error_list(arg);}
+ E:	FEwrong_type_only_arg(@'car',arg,@'list');}
 
 defcxr(caar, x, car(car(x)))
 defcxr(cadr, x, car(cdr(x)))
@@ -331,10 +331,10 @@ cl_object
 cl_endp(cl_object x)
 {
 	if (Null(x))
-		@(return Ct)
+		@(return Ct);
 	if (LISTP(x))
-		@(return Cnil)
-	FEtype_error_list(x);
+		@(return Cnil);
+        FEwrong_type_only_arg(@'endp', x, @'list');
 }
 
 bool
@@ -344,7 +344,7 @@ ecl_endp(cl_object x)
 		return(TRUE);
 	if (LISTP(x))
 		return(FALSE);
-	FEtype_error_list(x);
+        FEwrong_type_only_arg(@'endp', x, @'list');
 }
 
 cl_object
@@ -460,7 +460,7 @@ cl_copy_list(cl_object x)
 {
 	cl_object copy;
 	if (!LISTP(x)) {
-		FEtype_error_list(x);
+                FEwrong_type_only_arg(@'copy-list', x, @'list');
 	}
 	copy = Cnil;
 	if (!Null(x)) {
@@ -489,7 +489,7 @@ cl_copy_alist(cl_object x)
 {
 	cl_object copy;
 	if (!LISTP(x)) {
-		FEtype_error_list(x);
+                FEwrong_type_only_arg(@'copy-alist', x, @'list');
 	}
 	copy = Cnil;
 	if (!Null(x)) {
@@ -626,7 +626,7 @@ ecl_nbutlast(cl_object l, cl_index n)
 {
 	cl_object r;
 	if (!LISTP(l))
-		FEtype_error_list(l);
+                FEwrong_type_only_arg(@'nbutlast', x, @'list');
 	for (n++, r = l; n && CONSP(r); n--, r = ECL_CONS_CDR(r))
 		;
 	if (n == 0) {
@@ -655,7 +655,7 @@ cl_ldiff(cl_object x, cl_object y)
 {
 	cl_object head = Cnil;
 	if (!LISTP(x)) {
-		FEtype_error_list(x);
+                FEwrong_type_only_arg(@'ldiff', x, @'list');
 	}
 	/* Here we use that, if X or Y are CONS, then (EQL X Y)
 	 * only when X == Y */

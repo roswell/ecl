@@ -819,7 +819,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 
 	CASE(OP_ENDP);
 		if (ecl_unlikely(!LISTP(reg0)))
-                        FEtype_error_list(reg0);
+                        FEwrong_type_only_arg(@'endp', reg0, @'list');
 	CASE(OP_NOT); {
 		reg0 = (reg0 == Cnil)? Ct : Cnil;
 		THREAD_NEXT;
