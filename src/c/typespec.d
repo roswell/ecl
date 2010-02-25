@@ -231,13 +231,6 @@ assert_type_proper_list(cl_object p)
 		FEcircular_list(p);
 }
 
-void
-assert_type_hash_table(cl_object p)
-{
-	if (type_of(p) != t_hashtable)
-		FEwrong_type_argument(@'hash-table', p);
-}
-
 cl_object
 cl_type_of(cl_object x)
 {
