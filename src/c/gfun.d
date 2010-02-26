@@ -71,7 +71,7 @@ reshape_instance(cl_object x, int delta)
 cl_object
 clos_set_funcallable_instance_function(cl_object x, cl_object function_or_t)
 {
-	if (!ECL_INSTANCEP(x))
+	if (ecl_unlikely(!ECL_INSTANCEP(x)))
                 FEwrong_type_nth_arg(@'clos::set-funcallable-instance-function',
                                      1, x, @'ext::instance');
 	if (x->instance.isgf == ECL_USER_DISPATCH) {

@@ -192,7 +192,7 @@ ecl_floor2(cl_object x, cl_object y)
 	cl_object v0, v1;
 	cl_type ty;
         ty = type_of(y);
-	if (!ECL_NUMBER_TYPE_P(ty)) {
+	if (ecl_unlikely(!ECL_NUMBER_TYPE_P(ty))) {
                 FEwrong_type_nth_arg(@'floor',2,y,@'real');
 	}
 	switch(type_of(x)) {
@@ -446,7 +446,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 	cl_object v0, v1;
 	cl_type ty;
         ty = type_of(y);
-	if (!ECL_NUMBER_TYPE_P(ty)) {
+	if (ecl_unlikely(!ECL_NUMBER_TYPE_P(ty))) {
 		FEwrong_type_nth_arg(@'ceiling',2, y, @'real');
 	}
 	switch(type_of(x)) {
@@ -962,7 +962,7 @@ cl_object
 cl_float_radix(cl_object x)
 {
 	const cl_env_ptr the_env = ecl_process_env();
-	if (cl_floatp(x) != Ct) {
+	if (ecl_unlikely(cl_floatp(x) != Ct)) {
 		FEwrong_type_nth_arg(@'float-radix',1,x,@'float');
 	}
 	@(return MAKE_FIXNUM(FLT_RADIX))

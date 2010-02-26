@@ -305,7 +305,7 @@ ecl_intern(cl_object name, cl_object p, int *intern_flag)
 {
 	cl_object s, ul;
 
-        if (!ECL_STRINGP(name))
+        if (ecl_unlikely(!ECL_STRINGP(name)))
                 FEwrong_type_nth_arg(@'intern', 1, name, @'string');
 	p = si_coerce_to_package(p);
  TRY_AGAIN_LABEL:
@@ -376,7 +376,7 @@ find_symbol_inner(cl_object name, cl_object p, int *intern_flag)
 cl_object
 ecl_find_symbol(cl_object n, cl_object p, int *intern_flag)
 {
-	if (!ECL_STRINGP(n))
+	if (ecl_unlikely(!ECL_STRINGP(n)))
                 FEwrong_type_nth_arg(@'find-symbol', 1, n, @'string');
 	p = si_coerce_to_package(p);
         return find_symbol_inner(n, p, intern_flag);
@@ -975,7 +975,7 @@ si_package_hash_tables(cl_object p)
 {
 	const cl_env_ptr the_env = ecl_process_env();
 	cl_object he, hi, u;
-        if (type_of(p) != t_package)
+        if (ecl_unlikely(type_of(p) != t_package))
                 FEwrong_type_only_arg(@'si::package-hash-tables', p, @'package');
 	PACKAGE_OP_LOCK();
 	he = si_copy_hash_table(p->pack.external);

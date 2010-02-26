@@ -1427,7 +1427,7 @@ sharp_dollar_reader(cl_object in, cl_object c, cl_object d)
 static void
 assert_type_readtable(cl_object function, cl_narg narg, cl_object p)
 {
-	if (type_of(p) != t_readtable)
+	if (ecl_unlikely(type_of(p) != t_readtable))
 		FEwrong_type_nth_arg(function, narg, p, @'readtable');
 }
 
@@ -1805,11 +1805,11 @@ EOFCHK:	if (c == EOF && TOKEN_STRING_FILLP(token) == 0) {
 	cl_index s, e, ep;
 	cl_object rtbl = ecl_current_readtable();
 @ {
-        if (!ECL_STRINGP(strng))
+        if (ecl_unlikely(!ECL_STRINGP(strng)))
                 FEwrong_type_nth_arg(@'parse-integer', 1, strng, @'string');
 	get_string_start_end(strng, start, end, &s, &e);
-	if (!FIXNUMP(radix) ||
-	    fix(radix) < 2 || fix(radix) > 36)
+	if (ecl_unlikely(!FIXNUMP(radix) ||
+                         fix(radix) < 2 || fix(radix) > 36))
 		FEerror("~S is an illegal radix.", 1, radix);
 	while (s < e &&
 	       ecl_readtable_get(rtbl, ecl_char(strng, s), NULL) == cat_whitespace) {

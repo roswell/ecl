@@ -158,11 +158,11 @@ cl_expt(cl_object x, cl_object y)
 	cl_type ty, tx;
 	cl_object z;
         ty = type_of(y);
-        if (!ECL_NUMBER_TYPE_P(ty)) {
+        if (ecl_unlikely(!ECL_NUMBER_TYPE_P(ty))) {
                 FEwrong_type_nth_arg(@'expt', 2, y, @'number');
 	}
         tx = type_of(x);
-        if (!ECL_NUMBER_TYPE_P(tx)) {
+        if (ecl_unlikely(!ECL_NUMBER_TYPE_P(tx))) {
                 FEwrong_type_nth_arg(@'expt', 2, x, @'number');
 	}
 	if (ecl_zerop(y)) {
@@ -401,7 +401,7 @@ cl_sqrt(cl_object x)
 	cl_type tx;
         ECL_MATHERR_CLEAR;
 	tx = type_of(x);
-	if (!ECL_NUMBER_TYPE_P(tx)) {
+	if (ecl_unlikely(!ECL_NUMBER_TYPE_P(tx))) {
                 FEwrong_type_only_arg(@'sqrt', x, @'number');
 	}
 	if (tx == t_complex) {

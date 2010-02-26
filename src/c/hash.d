@@ -30,7 +30,7 @@ static void corrupted_hash(cl_object hashtable) /*__attribute__((noreturn))*/;
 static void
 assert_type_hash_table(cl_object function, cl_narg narg, cl_object p)
 {
-	if (type_of(p) != t_hashtable)
+	if (ecl_unlikely(type_of(p) != t_hashtable))
 		FEwrong_type_nth_arg(function, narg, p, @'hash-table');
 }
 

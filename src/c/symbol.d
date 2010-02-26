@@ -358,7 +358,7 @@ cl_symbol_name(cl_object x)
 	cl_object output, s;
 	int intern_flag;
 @
-        if (!ECL_STRINGP(prefix))
+        if (ecl_unlikely(!ECL_STRINGP(prefix)))
                 FEwrong_type_nth_arg(@'gentemp', 1, prefix, @'string');
 	pack = si_coerce_to_package(pack);
 ONCE_MORE:

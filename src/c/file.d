@@ -1851,7 +1851,8 @@ cl_make_two_way_stream(cl_object istrm, cl_object ostrm)
 cl_object
 cl_two_way_stream_input_stream(cl_object strm)
 {
-	if (type_of(strm) != t_stream || strm->stream.mode != smm_two_way)
+	if (ecl_unlikely(type_of(strm) != t_stream ||
+                         strm->stream.mode != smm_two_way))
 		FEwrong_type_only_arg(@'two-way-stream-input-stream',
                                       strm, @'two-way-stream');
 	@(return TWO_WAY_STREAM_INPUT(strm))
@@ -1860,7 +1861,8 @@ cl_two_way_stream_input_stream(cl_object strm)
 cl_object
 cl_two_way_stream_output_stream(cl_object strm)
 {
-	if (type_of(strm) != t_stream || strm->stream.mode != smm_two_way)
+	if (ecl_unlikely(type_of(strm) != t_stream ||
+                         strm->stream.mode != smm_two_way))
 		FEwrong_type_only_arg(@'two-way-stream-output-stream',
                                       strm, @'two-way-stream');
 	@(return TWO_WAY_STREAM_OUTPUT(strm))
@@ -2040,7 +2042,8 @@ const struct ecl_file_ops broadcast_ops = {
 cl_object
 cl_broadcast_stream_streams(cl_object strm)
 {
-	if (type_of(strm) != t_stream || strm->stream.mode != smm_broadcast)
+	if (ecl_unlikely(type_of(strm) != t_stream ||
+                         strm->stream.mode != smm_broadcast))
 		FEwrong_type_only_arg(@'broadcast-stream-streams',
                                       strm, @'broadcast-stream');
 	return cl_copy_list(BROADCAST_STREAM_LIST(strm));
@@ -2221,7 +2224,8 @@ cl_make_echo_stream(cl_object strm1, cl_object strm2)
 cl_object
 cl_echo_stream_input_stream(cl_object strm)
 {
-	if (type_of(strm) != t_stream || strm->stream.mode != smm_echo)
+	if (ecl_unlikely(type_of(strm) != t_stream ||
+                         strm->stream.mode != smm_echo))
 		FEwrong_type_only_arg(@'echo-stream-input-stream',
                                       strm, @'echo-stream');
 	@(return ECHO_STREAM_INPUT(strm))
@@ -2230,7 +2234,8 @@ cl_echo_stream_input_stream(cl_object strm)
 cl_object
 cl_echo_stream_output_stream(cl_object strm)
 {
-	if (type_of(strm) != t_stream || strm->stream.mode != smm_echo)
+	if (ecl_unlikely(type_of(strm) != t_stream ||
+                         strm->stream.mode != smm_echo))
 		FEwrong_type_only_arg(@'echo-stream-output-stream',
                                       strm, @'echo-stream');
 	@(return ECHO_STREAM_OUTPUT(strm))
@@ -2373,7 +2378,8 @@ const struct ecl_file_ops concatenated_ops = {
 cl_object
 cl_concatenated_stream_streams(cl_object strm)
 {
-	if (type_of(strm) != t_stream || strm->stream.mode != smm_concatenated)
+	if (ecl_unlikely(type_of(strm) != t_stream ||
+                         strm->stream.mode != smm_concatenated))
 		FEwrong_type_only_arg(@'concatenated-stream-streams',
                                       strm, @'concatenated-stream');
 	return cl_copy_list(CONCATENATED_STREAM_LIST(strm));
@@ -2572,7 +2578,8 @@ cl_make_synonym_stream(cl_object sym)
 cl_object
 cl_synonym_stream_symbol(cl_object strm)
 {
-	if (type_of(strm) != t_stream || strm->stream.mode != smm_synonym)
+	if (ecl_unlikely(type_of(strm) != t_stream ||
+                         strm->stream.mode != smm_synonym))
 		FEwrong_type_only_arg(@'synonym-stream-symbol',
                                       strm, @'synonym-stream');
 	@(return SYNONYM_STREAM_SYMBOL(strm))
@@ -4360,7 +4367,7 @@ cl_open_stream_p(cl_object strm)
 		return funcall(2, @'gray::open-stream-p', strm);
 	}
 #endif
-	if (type_of(strm) != t_stream)
+	if (ecl_unlikely(type_of(strm) != t_stream))
                 FEwrong_type_only_arg(@'open-stream-p', strm, @'stream');
 	@(return (strm->stream.closed ? Cnil : Ct))
 }
@@ -4383,7 +4390,7 @@ cl_stream_external_format(cl_object strm)
 		output = @':default';
 	else
 #endif
-	if (t != t_stream)
+        if (ecl_unlikely(t != t_stream))
                 FEwrong_type_only_arg(@'stream-external-format', strm, @'stream');
 	if (strm->stream.mode == smm_synonym) {
 		strm = SYNONYM_STREAM_STREAM(strm);

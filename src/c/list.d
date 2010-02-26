@@ -136,21 +136,17 @@ setup_test(struct cl_test *t, cl_object item, cl_object test,
 cl_object
 cl_car(cl_object x)
 {
-	if (Null(x))
-		return1(x);
-	if (CONSP(x))
-		return1(CAR(x));
-	FEwrong_type_only_arg(@'car', x, @'list');
+	if (ecl_unlikely(!LISTP(x)))
+                FEwrong_type_only_arg(@'car', x, @'list');
+	return1(Null(x)? x : ECL_CONS_CAR(x));
 }
 
 cl_object
 cl_cdr(cl_object x)
 {
-	if (Null(x))
-		return1(x);
-	if (CONSP(x))
-		return1(ECL_CONS_CDR(x));
-	FEwrong_type_only_arg(@'cdr', x, @'list');
+	if (ecl_unlikely(!LISTP(x)))
+                FEwrong_type_only_arg(@'car', x, @'list');
+	return1(Null(x)? x : ECL_CONS_CDR(x));
 }
 
 @(defun list (&rest args)
@@ -236,19 +232,19 @@ ecl_append(cl_object x, cl_object y)
 }
 
 /* Open coded CARs and CDRs */
-#define car(foo) \
-	foo; \
-	if (!LISTP(x)) goto E; \
+#define car(foo)                                \
+	foo;                                    \
+	if (ecl_unlikely(!LISTP(x))) goto E;    \
 	if (!Null(x)) x = ECL_CONS_CAR(x);
-#define cdr(foo) \
-	foo; \
-	if (!LISTP(x)) goto E; \
+#define cdr(foo)                                \
+	foo;                                    \
+	if (ecl_unlikely(!LISTP(x))) goto E;    \
 	if (!Null(x)) x = ECL_CONS_CDR(x);
-#define defcxr(name, arg, code) \
-cl_object cl_##name(cl_object foo) { \
-	register cl_object arg = foo; \
-	code; return1(arg); \
- E:	FEwrong_type_only_arg(@'car',arg,@'list');}
+#define defcxr(name, arg, code)                                 \
+        cl_object cl_##name(cl_object foo) {                    \
+                register cl_object arg = foo;                   \
+                code; return1(arg);                             \
+        E:	FEwrong_type_only_arg(@'car',arg,@'list');}
 
 defcxr(caar, x, car(car(x)))
 defcxr(cadr, x, car(cdr(x)))
@@ -330,21 +326,24 @@ BEGIN:
 cl_object
 cl_endp(cl_object x)
 {
-	if (Null(x))
-		@(return Ct);
-	if (LISTP(x))
-		@(return Cnil);
-        FEwrong_type_only_arg(@'endp', x, @'list');
+        cl_object output = Cnil;
+	if (Null(x)) {
+                output = Ct;
+        } else if (ecl_unlikely(!LISTP(x))) {
+                FEwrong_type_only_arg(@'endp', x, @'list');
+        }
+        @(return output);
 }
 
 bool
 ecl_endp(cl_object x)
 {
-	if (Null(x))
-		return(TRUE);
-	if (LISTP(x))
-		return(FALSE);
-        FEwrong_type_only_arg(@'endp', x, @'list');
+	if (Null(x)) {
+                return TRUE;
+        } else if (ecl_unlikely(!LISTP(x))) {
+                FEwrong_type_only_arg(@'endp', x, @'list');
+        }
+        return FALSE;
 }
 
 cl_object
@@ -355,7 +354,7 @@ cl_list_length(cl_object x)
 	/* INV: A list's length always fits in a fixnum */
 	fast = slow = x;
 	for (n = 0; !Null(fast); n++, fast = ECL_CONS_CDR(fast)) {
-		if (!LISTP(fast)) {
+		if (ecl_unlikely(!LISTP(fast))) {
 			FEtype_error_list(fast);
 		}
 		if (n & 1) {
@@ -459,7 +458,7 @@ cl_object
 cl_copy_list(cl_object x)
 {
 	cl_object copy;
-	if (!LISTP(x)) {
+	if (ecl_unlikely(!LISTP(x))) {
                 FEwrong_type_only_arg(@'copy-list', x, @'list');
 	}
 	copy = Cnil;
@@ -488,7 +487,7 @@ cl_object
 cl_copy_alist(cl_object x)
 {
 	cl_object copy;
-	if (!LISTP(x)) {
+	if (ecl_unlikely(!LISTP(x))) {
                 FEwrong_type_only_arg(@'copy-alist', x, @'list');
 	}
 	copy = Cnil;
@@ -625,7 +624,7 @@ cl_object
 ecl_nbutlast(cl_object l, cl_index n)
 {
 	cl_object r;
-	if (!LISTP(l))
+	if (ecl_unlikely(!LISTP(l)))
                 FEwrong_type_only_arg(@'nbutlast', l, @'list');
 	for (n++, r = l; n && CONSP(r); n--, r = ECL_CONS_CDR(r))
 		;
@@ -654,7 +653,7 @@ cl_object
 cl_ldiff(cl_object x, cl_object y)
 {
 	cl_object head = Cnil;
-	if (!LISTP(x)) {
+	if (ecl_unlikely(!LISTP(x))) {
                 FEwrong_type_only_arg(@'ldiff', x, @'list');
 	}
 	/* Here we use that, if X or Y are CONS, then (EQL X Y)
@@ -683,7 +682,7 @@ cl_ldiff(cl_object x, cl_object y)
 cl_object
 cl_rplaca(cl_object x, cl_object v)
 {
-        if (!CONSP(x))
+        if (ecl_unlikely(!CONSP(x)))
                 FEwrong_type_nth_arg(@'rplaca', 1, x, @'cons');
 	ECL_RPLACA(x, v);
 	@(return x)
@@ -692,7 +691,7 @@ cl_rplaca(cl_object x, cl_object v)
 cl_object
 cl_rplacd(cl_object x, cl_object v)
 {
-        if (!CONSP(x))
+        if (ecl_unlikely(!CONSP(x)))
                 FEwrong_type_nth_arg(@'rplacd', 1, x, @'cons');
 	ECL_RPLACD(x, v);
 	@(return x)

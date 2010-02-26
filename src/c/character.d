@@ -22,9 +22,9 @@
 ecl_character
 ecl_char_code(cl_object c)
 {
-	if (CHARACTERP(c))
-		return CHAR_CODE(c);
-	FEwrong_type_only_arg(@'char-code', c, @'character');
+	if (ecl_unlikely(!CHARACTERP(c)))
+                FEwrong_type_only_arg(@'char-code', c, @'character');
+        return CHAR_CODE(c);
 }
 
 ecl_base_char

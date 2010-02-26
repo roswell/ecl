@@ -223,7 +223,7 @@ ecl_make_random_state(cl_object rs)
 		if (Null(rs)) {
 			rs = ecl_symbol_value(@'*random-state*');
 		}
-		if (type_of(rs) != t_random) {
+		if (ecl_unlikely(type_of(rs) != t_random)) {
 			FEwrong_type_only_arg(@'make-random-state', rs,
                                               @'random-state');
 		}

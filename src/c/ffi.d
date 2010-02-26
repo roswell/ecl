@@ -186,9 +186,10 @@ ecl_allocate_foreign_data(cl_object tag, cl_index size)
 void *
 ecl_foreign_data_pointer_safe(cl_object f)
 {
-	if (type_of(f) != t_foreign)
+	if (ecl_unlikely(type_of(f) != t_foreign)) {
                 FEwrong_type_only_arg(@'si::foreign-data-pointer', f,
                                       @'si::foreign-data');
+        }
 	return f->foreign.data;
 }
 
@@ -199,7 +200,8 @@ ecl_base_string_pointer_safe(cl_object f)
 	/* FIXME! Is there a better function name? */
 	f = ecl_check_cl_type(@'si::make-foreign-data-from-array', f, t_base_string);
 	s = f->base_string.self;
-	if (ECL_ARRAY_HAS_FILL_POINTER_P(f) && s[f->base_string.fillp] != 0) {
+	if (ecl_unlikely(ECL_ARRAY_HAS_FILL_POINTER_P(f) &&
+                         s[f->base_string.fillp] != 0)) {
 		FEerror("Cannot coerce a string with fill pointer to (char *)", 0);
 	}
 	return (char *)s;
@@ -235,7 +237,7 @@ si_allocate_foreign_data(cl_object tag, cl_object size)
 cl_object
 si_free_foreign_data(cl_object f)
 {
-	if (type_of(f) != t_foreign) {
+	if (ecl_unlikely(type_of(f) != t_foreign)) {
                 FEwrong_type_only_arg(@'si::free-foreign-data', f,
                                       @'si::foreign-data');
 	}
@@ -251,7 +253,7 @@ cl_object
 si_make_foreign_data_from_array(cl_object array)
 {
 	cl_object tag = Cnil;
-	if (type_of(array) != t_array && type_of(array) != t_vector) {
+	if (ecl_unlikely(type_of(array) != t_array && type_of(array) != t_vector)) {
                 FEwrong_type_only_arg(@'si::make-foreign-data-from-array', array,
                                       @'array');
 	}
@@ -270,7 +272,7 @@ si_make_foreign_data_from_array(cl_object array)
 cl_object
 si_foreign_data_address(cl_object f)
 {
-	if (type_of(f) != t_foreign) {
+	if (ecl_unlikely(type_of(f) != t_foreign)) {
                 FEwrong_type_only_arg(@'si::foreign-data-address', f,
                                       @'si::foreign-data');
 	}
@@ -280,7 +282,7 @@ si_foreign_data_address(cl_object f)
 cl_object
 si_foreign_data_tag(cl_object f)
 {
-	if (type_of(f) != t_foreign) {
+	if (ecl_unlikely(type_of(f) != t_foreign)) {
                 FEwrong_type_only_arg(@'si::foreign-data-tag', f,
                                       @'si::foreign-data');
 	}
@@ -295,11 +297,11 @@ si_foreign_data_pointer(cl_object f, cl_object andx, cl_object asize,
 	cl_index size = fixnnint(asize);
 	cl_object output;
 
-	if (type_of(f) != t_foreign) {
+	if (ecl_unlikely(type_of(f) != t_foreign)) {
                 FEwrong_type_only_arg(@'si::foreign-data-pointer', f,
                                       @'si::foreign-data');
 	}
-	if (ndx >= f->foreign.size || (f->foreign.size - ndx) < size) {
+	if (ecl_unlikely(ndx >= f->foreign.size || (f->foreign.size - ndx) < size)) {
 		FEerror("Out of bounds reference into foreign data type ~A.", 1, f);
 	}
 	output = ecl_alloc_object(t_foreign);
@@ -316,11 +318,11 @@ si_foreign_data_ref(cl_object f, cl_object andx, cl_object asize, cl_object tag)
 	cl_index size = fixnnint(asize);
 	cl_object output;
 
-	if (type_of(f) != t_foreign) {
+	if (ecl_unlikely(type_of(f) != t_foreign)) {
                 FEwrong_type_nth_arg(@'si::foreign-data-ref', 1, f,
                                      @'si::foreign-data');
 	}
-	if (ndx >= f->foreign.size || (f->foreign.size - ndx) < size) {
+	if (ecl_unlikely(ndx >= f->foreign.size || (f->foreign.size - ndx) < size)) {
 		FEerror("Out of bounds reference into foreign data type ~A.", 1, f);
 	}
 	output = ecl_allocate_foreign_data(tag, size);
@@ -334,17 +336,17 @@ si_foreign_data_set(cl_object f, cl_object andx, cl_object value)
 	cl_index ndx = fixnnint(andx);
 	cl_index size, limit;
 
-	if (type_of(f) != t_foreign) {
+	if (ecl_unlikely(type_of(f) != t_foreign)) {
                 FEwrong_type_nth_arg(@'si::foreign-data-set', 1, f,
                                      @'si::foreign-data');
 	}
-	if (type_of(value) != t_foreign) {
+	if (ecl_unlikely(type_of(value) != t_foreign)) {
                 FEwrong_type_nth_arg(@'si::foreign-data-set', 3, value,
                                      @'si::foreign-data');
 	}
 	size = value->foreign.size;
 	limit = f->foreign.size;
-	if (ndx >= limit || (limit - ndx) < size) {
+	if (ecl_unlikely(ndx >= limit || (limit - ndx) < size)) {
 		FEerror("Out of bounds reference into foreign data type ~A.", 1, f);
 	}
 	memcpy(f->foreign.data + ndx, value->foreign.data, size);
@@ -550,10 +552,10 @@ si_foreign_data_ref_elt(cl_object f, cl_object andx, cl_object type)
 	cl_index ndx = fixnnint(andx);
 	cl_index limit = f->foreign.size;
 	enum ecl_ffi_tag tag = ecl_foreign_type_code(type);
-	if (ndx >= limit || (ndx + ecl_foreign_type_size[tag] > limit)) {
+	if (ecl_unlikely(ndx >= limit || (ndx + ecl_foreign_type_size[tag] > limit))) {
 		FEerror("Out of bounds reference into foreign data type ~A.", 1, f);
 	}
-	if (type_of(f) != t_foreign) {
+	if (ecl_unlikely(type_of(f) != t_foreign)) {
                 FEwrong_type_nth_arg(@'si::foreign-data-ref-elt', 1, f,
                                      @'si::foreign-data');
 	}
@@ -566,10 +568,10 @@ si_foreign_data_set_elt(cl_object f, cl_object andx, cl_object type, cl_object v
 	cl_index ndx = fixnnint(andx);
 	cl_index limit = f->foreign.size;
 	enum ecl_ffi_tag tag = ecl_foreign_type_code(type);
-	if (ndx >= limit || ndx + ecl_foreign_type_size[tag] > limit) {
+	if (ecl_unlikely(ndx >= limit || ndx + ecl_foreign_type_size[tag] > limit)) {
 		FEerror("Out of bounds reference into foreign data type ~A.", 1, f);
 	}
-	if (type_of(f) != t_foreign) {
+	if (ecl_unlikely(type_of(f) != t_foreign)) {
                 FEwrong_type_nth_arg(@'si::foreign-data-set-elt', 1, f,
                                      @'si::foreign-data');
 	}
@@ -587,7 +589,7 @@ si_size_of_foreign_elt_type(cl_object type)
 cl_object
 si_null_pointer_p(cl_object f)
 {
-	if (type_of(f) != t_foreign)
+	if (ecl_unlikely(type_of(f) != t_foreign))
                 FEwrong_type_only_arg(@'si::null-pointer-p', f,
                                       @'si::foreign-data');
 	@(return ((f->foreign.data == NULL)? Ct : Cnil))
@@ -596,7 +598,7 @@ si_null_pointer_p(cl_object f)
 cl_object
 si_foreign_data_recast(cl_object f, cl_object size, cl_object tag)
 {
-	if (type_of(f) != t_foreign)
+	if (ecl_unlikely(type_of(f) != t_foreign))
                 FEwrong_type_nth_arg(@'si::foreign-data-recast', 1, f,
                                      @'si::foreign-data');
 	f->foreign.size = fixnnint(size);
@@ -627,8 +629,9 @@ si_load_foreign_module(cl_object filename)
 	mp_giveup_lock(ecl_symbol_value(@'mp::+load-compile-lock+'));
 	} CL_UNWIND_PROTECT_END;
 # endif
-	if (type_of(output) != t_codeblock) {
-		FEerror("LOAD-FOREIGN-MODULE: Could not load foreign module ~S (Error: ~S)", 2, filename, output);
+	if (ecl_unlikely(type_of(output) != t_codeblock)) {
+		FEerror("LOAD-FOREIGN-MODULE: Could not load "
+                        "foreign module ~S (Error: ~S)", 2, filename, output);
         }
         output->cblock.locked |= 1;
         @(return output)
@@ -655,8 +658,10 @@ si_find_foreign_symbol(cl_object var, cl_object module, cl_object type, cl_objec
 	}
 	output = ecl_make_foreign_data(type, ecl_to_fixnum(size), sym);
 OUTPUT:
-	if (type_of(output) != t_foreign)
-		FEerror("FIND-FOREIGN-SYMBOL: Could not load foreign symbol ~S from module ~S (Error: ~S)", 3, var, module, output);
+	if (ecl_unlikely(type_of(output) != t_foreign))
+		FEerror("FIND-FOREIGN-SYMBOL: Could not load "
+                        "foreign symbol ~S from module ~S (Error: ~S)",
+                        3, var, module, output);
         @(return output)
 #endif
 }

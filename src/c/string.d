@@ -865,7 +865,7 @@ nstring_case(cl_narg narg, cl_object fun, ecl_casefun casefun, cl_va_list ARGS)
 	KEYS[1]=@':end';
 	cl_parse_key(ARGS, 2, KEYS, KEY_VARS, NULL, FALSE);
 
-        if (!ECL_STRINGP(strng))
+        if (ecl_unlikely(!ECL_STRINGP(strng)))
                 FEwrong_type_nth_arg(fun, 1, strng, @'string');
 	if (startp == Cnil) start = MAKE_FIXNUM(0);
 	get_string_start_end(strng, start, end, &s, &e);

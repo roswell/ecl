@@ -131,12 +131,13 @@ cl_symbol_value(cl_object sym)
 	if (Null(sym)) {
 		value = sym;
 	} else {
-		if (!SYMBOLP(sym)) {
+		if (ecl_unlikely(!SYMBOLP(sym))) {
 			FEwrong_type_only_arg(@'symbol-value', sym, @'symbol');
 		}
 		value = ECL_SYM_VAL(the_env, sym);
-		if (value == OBJNULL)
+		if (ecl_unlikely(value == OBJNULL)) {
 			FEunbound_variable(sym);
+                }
 	}
 	@(return value)
 }
@@ -147,7 +148,7 @@ ecl_boundp(cl_env_ptr env, cl_object sym)
 	if (Null(sym)) {
 		return 1;
 	} else {
-		if (!SYMBOLP(sym))
+		if (ecl_unlikely(!SYMBOLP(sym)))
 			FEwrong_type_only_arg(@'boundp', sym, @'symbol');
 		return ECL_SYM_VAL(env, sym) != OBJNULL;
 	}

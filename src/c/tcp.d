@@ -323,7 +323,7 @@ si_open_unix_socket_stream(cl_object path)
 	cl_object stream;
 	struct sockaddr_un addr;
 
-	if (type_of(path) != t_base_string)
+	if (ecl_unlikely(type_of(path) != t_base_string))
                 FEwrong_type_nth_arg(@'si::open-unix-socket-stream', 1, path,
                                      @'string');
 	if (path->base_string.fillp > UNIX_MAX_PATH-1)
