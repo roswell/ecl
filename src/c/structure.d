@@ -92,7 +92,7 @@ ecl_copy_structure(cl_object x)
 	cl_object y;
 
 	if (!si_structurep(x))
-		FEwrong_type_argument(@'structure', x);
+		FEwrong_type_only_arg(@'copy-structure', x, @'structure');
 	y = ecl_alloc_object(T_STRUCTURE);
 	STYPE(y) = STYPE(x);
 	SLENGTH(y) = j = SLENGTH(x);
@@ -124,7 +124,7 @@ cl_copy_structure(cl_object s)
 		s = cl_copy_seq(s);
 		break;
 	default:
-		FEwrong_type_argument(@'structure', s);
+                FEwrong_type_only_arg(@'copy-structure', s, @'structure');
 	}
 	@(return s)
 }
@@ -135,7 +135,7 @@ cl_object
 si_structure_name(cl_object s)
 {
 	if (!si_structurep(s))
-		FEwrong_type_argument(@'structure', s);
+                FEwrong_type_only_arg(@'si::structure-name', s, @'structure');
 	@(return SNAME(s))
 }
 
@@ -144,17 +144,17 @@ si_structure_ref(cl_object x, cl_object type, cl_object index)
 {
 	if (type_of(x) != T_STRUCTURE ||
 	    !structure_subtypep(STYPE(x), type))
-		FEwrong_type_argument(type, x);
+                FEwrong_type_nth_arg(@'si::structure-ref', 1, x, type);
 	@(return SLOT(x, fix(index)))
 }
 
 cl_object
-ecl_structure_ref(cl_object x, cl_object name, int n)
+ecl_structure_ref(cl_object x, cl_object type, int n)
 {
 
 	if (type_of(x) != T_STRUCTURE ||
-	    !structure_subtypep(STYPE(x), name))
-		FEwrong_type_argument(name, x);
+	    !structure_subtypep(STYPE(x), type))
+                FEwrong_type_nth_arg(@'si::structure-ref', 1, x, type);
 	return(SLOT(x, n));
 }
 
@@ -163,18 +163,18 @@ si_structure_set(cl_object x, cl_object type, cl_object index, cl_object val)
 {
 	if (type_of(x) != T_STRUCTURE ||
 	    !structure_subtypep(STYPE(x), type))
-		FEwrong_type_argument(type, x);
+                FEwrong_type_nth_arg(@'si::structure-set', 1, x, type);
 	SLOT(x, fix(index)) = val;
 	@(return val)
 }
 
 cl_object
-ecl_structure_set(cl_object x, cl_object name, int n, cl_object v)
+ecl_structure_set(cl_object x, cl_object type, int n, cl_object v)
 {
 
 	if (type_of(x) != T_STRUCTURE ||
-	    !structure_subtypep(STYPE(x), name))
-		FEwrong_type_argument(name, x);
+	    !structure_subtypep(STYPE(x), type))
+                FEwrong_type_nth_arg(@'si::structure-set', 1, x, type);
 	SLOT(x, n) = v;
 	return(v);
 }

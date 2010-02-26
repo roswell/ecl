@@ -1451,8 +1451,9 @@ si_write_ugly_object(cl_object x, cl_object stream)
 #ifndef CLOS
 	case t_structure: {
 		cl_object print_function;
-		if (type_of(x->str.name) != t_symbol)
-			FEwrong_type_argument(@'symbol', x->str.name);
+		if (ecl_unlikely(type_of(x->str.name) != t_symbol))
+			FEerror("Found a corrupt structure with a type name~%"
+                                "  ~S~%that is not a symbol.", x->str.name);
 		print_function = si_get_sysprop(x->str.name, @'si::structure-print-function');
 		if (Null(print_function) || !ecl_print_structure())
 		{
@@ -1560,8 +1561,6 @@ si_write_ugly_object(cl_object x, cl_object stream)
 		break;
 #ifdef CLOS
 	case t_instance:
-		if (!ECL_INSTANCEP(CLASS_OF(x)))
-			FEwrong_type_argument(@'ext::instance', CLASS_OF(x));
 		call_print_object(x, stream);
 		break;
 #endif /* CLOS */

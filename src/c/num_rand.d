@@ -224,7 +224,8 @@ ecl_make_random_state(cl_object rs)
 			rs = ecl_symbol_value(@'*random-state*');
 		}
 		if (type_of(rs) != t_random) {
-			FEwrong_type_argument(@'random-state', rs);
+			FEwrong_type_only_arg(@'make-random-state', rs,
+                                              @'random-state');
 		}
 		z->random.value = cl_copy_seq(rs->random.value);
 	}

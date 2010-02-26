@@ -676,10 +676,10 @@ L:
 		default:
 			;/* Fall through to error message */
 		}
-	default:
-		FEwrong_type_argument(cl_list(4, @'or', @'file-stream',
-					      @'string', @'pathname'),
-				      x);
+	default: {
+                const char *type = "(OR FILE-STREAM STRING PATHNAME)";
+                FEwrong_type_only_arg(@'pathname', x, ecl_read_from_cstring(type));
+        }
 	}
 	@(return x)
 }
