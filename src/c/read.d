@@ -1526,7 +1526,8 @@ ecl_current_read_base(void)
                      ecl_fixnum_greater(x, MAKE_FIXNUM(36)))
         {
                 ECL_SETQ(the_env, @'*read_base*', MAKE_FIXNUM(10));
-                FEerror("The value of *READ-BASE*, ~S, was illegal.", 1, x);
+                FEerror("The value of *READ-BASE*~&  ~S~%"
+                        "is not in the range (INTEGER 2 36)", 1, x);
         }
 	return fix(x);
 }
@@ -1551,7 +1552,8 @@ ecl_current_read_default_float_format(void)
 #endif
 	}
 	ECL_SETQ(the_env, @'*read-default-float-format*', @'single-float');
-	FEerror("The value of *READ-DEFAULT-FLOAT-FORMAT*, ~S, was illegal.",
+	FEerror("The value of *READ-DEFAULT-FLOAT-FORMAT*~& ~S~%"
+                "is not one of (SINGLE-FLOAT SHORT-FLOAT DOUBLE-FLOAT LONG-FLOAT)",
 		1, x);
 }
 
