@@ -65,12 +65,6 @@ FEtype_error_array(cl_object v)
 }
 
 void
-FEtype_error_stream(cl_object strm)
-{
-	FEwrong_type_argument(@[stream], strm);
-}
-
-void
 FEtype_error_sequence(cl_object x) {
 	FEwrong_type_argument(@[sequence], x);
 }

@@ -3987,7 +3987,7 @@ stream_dispatch_table(cl_object strm)
 	}
 #endif
 	if (type_of(strm) != t_stream)
-		FEtype_error_stream(strm);
+		FEwrong_type_argument(@[stream], strm);
 	return (const struct ecl_file_ops *)strm->stream.ops;
 }
 
