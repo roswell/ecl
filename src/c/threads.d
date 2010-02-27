@@ -104,7 +104,7 @@ static void
 assert_type_process(cl_object o)
 {
 	if (type_of(o) != t_process)
-		FEwrong_type_argument(@'mp::process', o);
+		FEwrong_type_argument(@[mp::process], o);
 }
 
 static void
@@ -294,7 +294,7 @@ mp_process_preset(cl_narg narg, cl_object process, cl_object function, ...)
 	cl_va_list args;
 	cl_va_start(args, function, narg, 2);
 	if (narg < 2)
-		FEwrong_num_arguments(@'mp::process-preset');
+		FEwrong_num_arguments(@[mp::process-preset]);
 	assert_type_process(process);
 	process->process.function = function;
 	process->process.args = cl_grab_rest_args(args);
@@ -513,7 +513,7 @@ mp_process_run_function(cl_narg narg, cl_object name, cl_object function, ...)
 	cl_va_list args;
 	cl_va_start(args, function, narg, 2);
 	if (narg < 2)
-		FEwrong_num_arguments(@'mp::process-run-function');
+		FEwrong_num_arguments(@[mp::process-run-function]);
 	if (CONSP(name)) {
 		process = cl_apply(2, @'mp::make-process', name);
 	} else {
@@ -611,11 +611,11 @@ mp_condition_variable_wait(cl_object cv, cl_object lock)
         int count, rc;
         cl_object own_process = mp_current_process();
 	if (ecl_unlikely(type_of(cv) != t_condition_variable))
-                FEwrong_type_nth_arg(@'mp::condition-variable-wait', 1, cv,
-                                     @'mp::condition-variable');
+                FEwrong_type_nth_arg(@[mp::condition-variable-wait], 1, cv,
+                                     @[mp::condition-variable]);
 	if (ecl_unlikely(type_of(lock) != t_lock))
-                FEwrong_type_nth_arg(@'mp::condition-variable-wait', 2, lock,
-                                     @'mp::lock');
+                FEwrong_type_nth_arg(@[mp::condition-variable-wait], 2, lock,
+                                     @[mp::lock]);
         if (ecl_unlikely(lock->lock.holder != own_process)) {
                 FEerror("Attempt to wait on a condition variable using lock~%~S"
                         "~%which is not owned by process~%~S", 2, lock, own_process);
@@ -654,11 +654,11 @@ mp_condition_variable_timedwait(cl_object cv, cl_object lock, cl_object seconds)
 	struct timeval    tp;
 
 	if (ecl_unlikely(type_of(cv) != t_condition_variable))
-                FEwrong_type_nth_arg(@'mp::condition-variable-timedwait',
-                                     1, cv, @'mp::condition-variable');
+                FEwrong_type_nth_arg(@[mp::condition-variable-timedwait],
+                                     1, cv, @[mp::condition-variable]);
 	if (ecl_unlikely(type_of(lock) != t_lock))
-                FEwrong_type_nth_arg(@'mp::condition-variable-timedwait',
-                                     2, lock, @'mp::lock');
+                FEwrong_type_nth_arg(@[mp::condition-variable-timedwait],
+                                     2, lock, @[mp::lock]);
         if (ecl_unlikely(lock->lock.holder != own_process)) {
                 FEerror("Attempt to wait on a condition variable using lock~%~S"
                         "~%which is not owned by process~%~S", 2, lock, own_process);
@@ -711,8 +711,8 @@ mp_condition_variable_signal(cl_object cv)
 	FEerror("Condition variables are not supported under Windows.", 0);
 #else
 	if (ecl_unlikely(type_of(cv) != t_condition_variable)) {
-                FEwrong_type_only_arg(@'mp::condition-variable-signal',
-                                      cv, @'mp::condition-variable');
+                FEwrong_type_only_arg(@[mp::condition-variable-signal],
+                                      cv, @[mp::condition-variable]);
         }
 	pthread_cond_signal(&cv->condition_variable.cv);
 #endif
@@ -726,8 +726,8 @@ mp_condition_variable_broadcast(cl_object cv)
 	FEerror("Condition variables are not supported under Windows.", 0);
 #else
 	if (ecl_unlikely(type_of(cv) != t_condition_variable)) {
-                FEwrong_type_only_arg(@'mp::condition-variable-broadcast',
-                                      cv, @'mp::condition-variable');
+                FEwrong_type_only_arg(@[mp::condition-variable-broadcast],
+                                      cv, @[mp::condition-variable]);
         }
 	pthread_cond_broadcast(&cv->condition_variable.cv);
 #endif
@@ -794,7 +794,7 @@ mp_semaphore_trywait(cl_object sem)
 {
         cl_object output;
         if (ecl_unlikely(typeof(sem) != t_semaphore)) {
-                FEwrong_type_only_arg(@'mp::semaphore-trywait', sem, @'mp::semaphore');
+                FEwrong_type_only_arg(@[mp::semaphore-trywait], sem, @[mp::semaphore]);
         }
  AGAIN:
 #ifdef ECL_WINDOWS_THREADS
@@ -837,7 +837,7 @@ mp_semaphore_wait(cl_object sem)
 {
         cl_object output;
         if (ecl_unlikely(typeof(sem) != t_semaphore)) {
-                FEwrong_type_only_arg(@'mp::semaphore-wait', sem, @'mp::semaphore');
+                FEwrong_type_only_arg(@[mp::semaphore-wait], sem, @[mp::semaphore]);
         }
  AGAIN:
 #ifdef ECL_WINDOWS_THREADS
@@ -869,7 +869,7 @@ cl_object
 mp_semaphore_signal(cl_object sem)
 {
         if (ecl_unlikely(typeof(sem) != t_semaphore)) {
-                FEwrong_type_only_arg(@'mp::semaphore-signal', sem, @'mp::semaphore');
+                FEwrong_type_only_arg(@[mp::semaphore-signal], sem, @[mp::semaphore]);
         }
  AGAIN:
 #ifdef ECL_WINDOWS_THREADS
@@ -901,7 +901,7 @@ cl_object
 mp_semaphore_close(cl_object sem)
 {
         if (ecl_unlikely(typeof(sem) != t_semaphore)) {
-                FEwrong_type_only_arg(@'mp::semaphore-close', sem, @'mp::semaphore');
+                FEwrong_type_only_arg(@[mp::semaphore-close], sem, @[mp::semaphore]);
         }
 #ifdef ECL_WINDOWS_THREADS
         {

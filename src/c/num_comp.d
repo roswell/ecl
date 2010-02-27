@@ -118,7 +118,7 @@ ecl_number_equalp(cl_object x, cl_object y)
 		case t_complex:
 			goto Y_COMPLEX;
 		default:
-			FEwrong_type_nth_arg(@'=', 2, y, @'number');
+			FEwrong_type_nth_arg(@[=], 2, y, @[number]);
 		}
 	case t_bignum:
 		switch (type_of(y)) {
@@ -141,7 +141,7 @@ ecl_number_equalp(cl_object x, cl_object y)
 		case t_complex:
 			goto Y_COMPLEX;
 		default:
-			FEwrong_type_nth_arg(@'=', 2, y, @'number');
+			FEwrong_type_nth_arg(@[=], 2, y, @[number]);
 		}
 	case t_ratio:
 		switch (type_of(y)) {
@@ -164,7 +164,7 @@ ecl_number_equalp(cl_object x, cl_object y)
 		case t_complex:
 			goto Y_COMPLEX;
 		default:
-			FEwrong_type_nth_arg(@'=', 2, y, @'number');
+			FEwrong_type_nth_arg(@[=], 2, y, @[number]);
 		}
 #ifdef ECL_SHORT_FLOAT
 	case t_shortfloat:
@@ -199,7 +199,7 @@ ecl_number_equalp(cl_object x, cl_object y)
 		case t_complex:
 			goto Y_COMPLEX;
 		default:
-			FEwrong_type_nth_arg(@'=', 2, y, @'number');
+			FEwrong_type_nth_arg(@[=], 2, y, @[number]);
 		}
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat: {
@@ -224,7 +224,7 @@ ecl_number_equalp(cl_object x, cl_object y)
 		case t_complex:
 			goto Y_COMPLEX;
 		default:
-			FEwrong_type_nth_arg(@'=', 2, y, @'number');
+			FEwrong_type_nth_arg(@[=], 2, y, @[number]);
 		}
 	}
 #endif
@@ -242,9 +242,9 @@ ecl_number_equalp(cl_object x, cl_object y)
 			else
 				return 0;
 		}
-                FEwrong_type_nth_arg(@'=', 2, y, @'number');
+                FEwrong_type_nth_arg(@[=], 2, y, @[number]);
 	default:
-                FEwrong_type_nth_arg(@'=', 1, x, @'number');
+                FEwrong_type_nth_arg(@[=], 1, x, @[number]);
 	}
 }
 
@@ -297,7 +297,7 @@ ecl_number_compare(cl_object x, cl_object y)
 			return long_double_fix_compare(ix, ecl_long_float(y));
 #endif
 		default:
-			FEwrong_type_nth_arg(@'<', 2, y, @'real');
+			FEwrong_type_nth_arg(@[<], 2, y, @[real]);
 		}
 	case t_bignum:
 		switch (ty) {
@@ -320,7 +320,7 @@ ecl_number_compare(cl_object x, cl_object y)
 			y = cl_rational(y);
 			goto BEGIN;
 		default:
-			FEwrong_type_nth_arg(@'<', 2, y, @'real');
+			FEwrong_type_nth_arg(@[<], 2, y, @[real]);
 		}
 	case t_ratio:
 		switch (ty) {
@@ -345,7 +345,7 @@ ecl_number_compare(cl_object x, cl_object y)
 			y = cl_rational(y);
 			goto BEGIN;
 		default:
-			FEwrong_type_nth_arg(@'<', 2, y, @'real');
+			FEwrong_type_nth_arg(@[<], 2, y, @[real]);
 		}
 #ifdef ECL_SHORT_FLOAT
 	case t_shortfloat:
@@ -378,7 +378,7 @@ ecl_number_compare(cl_object x, cl_object y)
 			goto LONGFLOAT;
 #endif
 		default:
-			FEwrong_type_nth_arg(@'<', 2, y, @'real');
+			FEwrong_type_nth_arg(@[<], 2, y, @[real]);
 		}
 	DOUBLEFLOAT:
 		if (dx == dy)
@@ -412,7 +412,7 @@ ecl_number_compare(cl_object x, cl_object y)
 			ldy = ecl_long_float(y);
 			break;
 		default:
-			FEwrong_type_nth_arg(@'<', 2, y, @'real');
+			FEwrong_type_nth_arg(@[<], 2, y, @[real]);
 		}
 	LONGFLOAT:
 		if (ldx == ldy)
@@ -424,7 +424,7 @@ ecl_number_compare(cl_object x, cl_object y)
 		break;
 #endif
 	default:
-		FEwrong_type_nth_arg(@'<', 1, x, @'real');
+		FEwrong_type_nth_arg(@[<], 1, x, @[real]);
 	}
 }
 

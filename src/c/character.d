@@ -23,7 +23,7 @@ ecl_character
 ecl_char_code(cl_object c)
 {
 	if (ecl_unlikely(!CHARACTERP(c)))
-                FEwrong_type_only_arg(@'char-code', c, @'character');
+                FEwrong_type_only_arg(@[char-code], c, @[character]);
         return CHAR_CODE(c);
 }
 
@@ -37,7 +37,7 @@ ecl_base_char_code(cl_object c)
 			return (int)code;
 		}
 	}
-	FEwrong_type_only_arg(@'char-code', c, @'base-char');
+	FEwrong_type_only_arg(@[char-code], c, @[base-char]);
 #else
 	return ecl_char_code(c);
 #endif
@@ -178,7 +178,7 @@ ecl_char_eq(cl_object x, cl_object y)
 @
 	/* INV: ecl_char_eq() checks types of its arguments */
 	if (narg == 0)
-		FEwrong_num_arguments(@'char/=');
+		FEwrong_num_arguments(@[char/=]);
 	c = cl_va_arg(cs);
 	for (i = 2; i<=narg; i++) {
 		cl_va_list ds;
@@ -261,7 +261,7 @@ ecl_char_equal(cl_object x, cl_object y)
 @
 	/* INV: ecl_char_equal() checks the type of its arguments */
 	if (narg == 0)
-		FEwrong_num_arguments(@'char-not-equal');
+		FEwrong_num_arguments(@[char-not-equal]);
 	c = cl_va_arg(cs);
 	for (i = 2;  i<=narg;  i++) {
 		cl_va_list ds;
@@ -348,7 +348,7 @@ cl_character(cl_object x)
 			break;
 		}
 	default: ERROR:
-                FEwrong_type_nth_arg(@'character', 1, x, ecl_read_from_cstring("(OR CHARACTER SYMBOL (ARRAY CHARACTER (1)) (ARRAY BASE-CHAR (1)))"));
+                FEwrong_type_nth_arg(@[character], 1, x, ecl_read_from_cstring("(OR CHARACTER SYMBOL (ARRAY CHARACTER (1)) (ARRAY BASE-CHAR (1)))"));
 	}
 	@(return x)
 }
@@ -376,7 +376,7 @@ cl_code_char(cl_object c)
 		c = Cnil;
 		break;
 	default:
-                FEwrong_type_only_arg(@'code-char', c, @'integer');
+                FEwrong_type_only_arg(@[code-char], c, @[integer]);
 	}
 	@(return c)
 }
@@ -415,7 +415,7 @@ cl_char_downcase(cl_object c)
 	case t_bignum:
 		break;
 	default:
-                FEwrong_type_nth_arg(@'digit-char',1,weight,@'integer');
+                FEwrong_type_nth_arg(@[digit-char],1,weight,@[integer]);
 	}
 	@(return output)
 } @)

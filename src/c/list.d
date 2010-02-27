@@ -137,7 +137,7 @@ cl_object
 cl_car(cl_object x)
 {
 	if (ecl_unlikely(!LISTP(x)))
-                FEwrong_type_only_arg(@'car', x, @'list');
+                FEwrong_type_only_arg(@[car], x, @[list]);
 	return1(Null(x)? x : ECL_CONS_CAR(x));
 }
 
@@ -145,7 +145,7 @@ cl_object
 cl_cdr(cl_object x)
 {
 	if (ecl_unlikely(!LISTP(x)))
-                FEwrong_type_only_arg(@'car', x, @'list');
+                FEwrong_type_only_arg(@[car], x, @[list]);
 	return1(Null(x)? x : ECL_CONS_CDR(x));
 }
 
@@ -167,7 +167,7 @@ cl_cdr(cl_object x)
 	cl_object head;
 @
 	if (narg == 0)
-		FEwrong_num_arguments(@'list*');
+		FEwrong_num_arguments(@[list*]);
 	head = cl_va_arg(args);
 	if (--narg) {
 		cl_object tail = head = ecl_list1(head);
@@ -244,7 +244,7 @@ ecl_append(cl_object x, cl_object y)
         cl_object cl_##name(cl_object foo) {                    \
                 register cl_object arg = foo;                   \
                 code; return1(arg);                             \
-        E:	FEwrong_type_only_arg(@'car',arg,@'list');}
+        E:	FEwrong_type_only_arg(@[car],arg,@[list]);}
 
 defcxr(caar, x, car(car(x)))
 defcxr(cadr, x, car(cdr(x)))
@@ -330,7 +330,7 @@ cl_endp(cl_object x)
 	if (Null(x)) {
                 output = Ct;
         } else if (ecl_unlikely(!LISTP(x))) {
-                FEwrong_type_only_arg(@'endp', x, @'list');
+                FEwrong_type_only_arg(@[endp], x, @[list]);
         }
         @(return output);
 }
@@ -341,7 +341,7 @@ ecl_endp(cl_object x)
 	if (Null(x)) {
                 return TRUE;
         } else if (ecl_unlikely(!LISTP(x))) {
-                FEwrong_type_only_arg(@'endp', x, @'list');
+                FEwrong_type_only_arg(@[endp], x, @[list]);
         }
         return FALSE;
 }
@@ -459,7 +459,7 @@ cl_copy_list(cl_object x)
 {
 	cl_object copy;
 	if (ecl_unlikely(!LISTP(x))) {
-                FEwrong_type_only_arg(@'copy-list', x, @'list');
+                FEwrong_type_only_arg(@[copy-list], x, @[list]);
 	}
 	copy = Cnil;
 	if (!Null(x)) {
@@ -488,7 +488,7 @@ cl_copy_alist(cl_object x)
 {
 	cl_object copy;
 	if (ecl_unlikely(!LISTP(x))) {
-                FEwrong_type_only_arg(@'copy-alist', x, @'list');
+                FEwrong_type_only_arg(@[copy-alist], x, @[list]);
 	}
 	copy = Cnil;
 	if (!Null(x)) {
@@ -625,7 +625,7 @@ ecl_nbutlast(cl_object l, cl_index n)
 {
 	cl_object r;
 	if (ecl_unlikely(!LISTP(l)))
-                FEwrong_type_only_arg(@'nbutlast', l, @'list');
+                FEwrong_type_only_arg(@[nbutlast], l, @[list]);
 	for (n++, r = l; n && CONSP(r); n--, r = ECL_CONS_CDR(r))
 		;
 	if (n == 0) {
@@ -654,7 +654,7 @@ cl_ldiff(cl_object x, cl_object y)
 {
 	cl_object head = Cnil;
 	if (ecl_unlikely(!LISTP(x))) {
-                FEwrong_type_only_arg(@'ldiff', x, @'list');
+                FEwrong_type_only_arg(@[ldiff], x, @[list]);
 	}
 	/* Here we use that, if X or Y are CONS, then (EQL X Y)
 	 * only when X == Y */
@@ -683,7 +683,7 @@ cl_object
 cl_rplaca(cl_object x, cl_object v)
 {
         if (ecl_unlikely(!CONSP(x)))
-                FEwrong_type_nth_arg(@'rplaca', 1, x, @'cons');
+                FEwrong_type_nth_arg(@[rplaca], 1, x, @[cons]);
 	ECL_RPLACA(x, v);
 	@(return x)
 }
@@ -692,7 +692,7 @@ cl_object
 cl_rplacd(cl_object x, cl_object v)
 {
         if (ecl_unlikely(!CONSP(x)))
-                FEwrong_type_nth_arg(@'rplacd', 1, x, @'cons');
+                FEwrong_type_nth_arg(@[rplacd], 1, x, @[cons]);
 	ECL_RPLACD(x, v);
 	@(return x)
 }
@@ -920,9 +920,8 @@ cl_object
 cl_tailp(cl_object y, cl_object x)
 {
 	loop_for_on(x) {
-		if (ecl_eql(x, y))
-			@(return Ct)
-	} end_loop_for_on;
+		if (ecl_eql(x, y)) @(return Ct);
+	} end_loop_for_on(x);
 	return cl_eql(x, y);
 }
 
@@ -930,7 +929,7 @@ cl_tailp(cl_object y, cl_object x)
 	cl_object output;
 @
 	if (narg < 2)
-		FEwrong_num_arguments(@'adjoin');
+		FEwrong_num_arguments(@[adjoin]);
 	output = @si::member1(item, list, test, test_not, key);
 	if (Null(output))
 		output = CONS(item, list);
@@ -1026,7 +1025,7 @@ ecl_remove_eq(cl_object x, cl_object l)
 				tail = cons;
 			}
 		}
-	} end_loop_for_on;
+	} end_loop_for_on_unsafe(l);
 	return head;
 }
 

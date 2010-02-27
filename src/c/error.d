@@ -26,6 +26,14 @@
 #endif
 #include <ecl/internal.h>
 
+static cl_object
+cl_symbol_or_object(cl_object x)
+{
+        if (FIXNUMP(x))
+                return (cl_object)(cl_symbols + fix(x));
+        return x;
+}
+
 void
 ecl_internal_error(const char *s)
 {
@@ -219,6 +227,7 @@ FEclosed_stream(cl_object strm)
 void
 FEwrong_type_argument(cl_object type, cl_object value)
 {
+        type = cl_symbol_or_object(type);
 	cl_error(5, @'type-error', @':datum', value, @':expected-type', type);
 }
 
@@ -231,6 +240,8 @@ FEwrong_type_only_arg(cl_object function, cl_object value, cl_object type)
                 "not of the expected type ~A";
         cl_env_ptr env = ecl_process_env();
         struct ihs_frame tmp_ihs;
+        function = cl_symbol_or_object(function);
+        type = cl_symbol_or_object(type);
         if (!Null(function) && env->ihs_top && env->ihs_top->function != function) {
                 ecl_ihs_push(env,&tmp_ihs,function,Cnil);
         }        
@@ -252,6 +263,8 @@ FEwrong_type_nth_arg(cl_object function, cl_narg narg, cl_object value, cl_objec
                 "not of the expected type ~A";
         cl_env_ptr env = ecl_process_env();
         struct ihs_frame tmp_ihs;
+        function = cl_symbol_or_object(function);
+        type = cl_symbol_or_object(type);
         if (!Null(function) && env->ihs_top && env->ihs_top->function != function) {
                 ecl_ihs_push(env,&tmp_ihs,function,Cnil);
         }        
@@ -284,9 +297,7 @@ FEundefined_function(cl_object fname)
 void
 FEwrong_num_arguments(cl_object fun)
 {
-	if (FIXNUMP(fun)) {
-		fun = (cl_object)(cl_symbols + fix(fun));
-	}
+        fun = cl_symbol_or_object(fun);
 	FEprogram_error("Wrong number of arguments passed to function ~S.",
 			1, fun);
 }

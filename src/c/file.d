@@ -1853,8 +1853,8 @@ cl_two_way_stream_input_stream(cl_object strm)
 {
 	if (ecl_unlikely(type_of(strm) != t_stream ||
                          strm->stream.mode != smm_two_way))
-		FEwrong_type_only_arg(@'two-way-stream-input-stream',
-                                      strm, @'two-way-stream');
+		FEwrong_type_only_arg(@[two-way-stream-input-stream],
+                                      strm, @[two-way-stream]);
 	@(return TWO_WAY_STREAM_INPUT(strm))
 }
 
@@ -1863,8 +1863,8 @@ cl_two_way_stream_output_stream(cl_object strm)
 {
 	if (ecl_unlikely(type_of(strm) != t_stream ||
                          strm->stream.mode != smm_two_way))
-		FEwrong_type_only_arg(@'two-way-stream-output-stream',
-                                      strm, @'two-way-stream');
+		FEwrong_type_only_arg(@[two-way-stream-output-stream],
+                                      strm, @[two-way-stream]);
 	@(return TWO_WAY_STREAM_OUTPUT(strm))
 }
 
@@ -2044,8 +2044,8 @@ cl_broadcast_stream_streams(cl_object strm)
 {
 	if (ecl_unlikely(type_of(strm) != t_stream ||
                          strm->stream.mode != smm_broadcast))
-		FEwrong_type_only_arg(@'broadcast-stream-streams',
-                                      strm, @'broadcast-stream');
+		FEwrong_type_only_arg(@[broadcast-stream-streams],
+                                      strm, @[broadcast-stream]);
 	return cl_copy_list(BROADCAST_STREAM_LIST(strm));
 }
 
@@ -2226,8 +2226,8 @@ cl_echo_stream_input_stream(cl_object strm)
 {
 	if (ecl_unlikely(type_of(strm) != t_stream ||
                          strm->stream.mode != smm_echo))
-		FEwrong_type_only_arg(@'echo-stream-input-stream',
-                                      strm, @'echo-stream');
+		FEwrong_type_only_arg(@[echo-stream-input-stream],
+                                      strm, @[echo-stream]);
 	@(return ECHO_STREAM_INPUT(strm))
 }
 
@@ -2236,8 +2236,8 @@ cl_echo_stream_output_stream(cl_object strm)
 {
 	if (ecl_unlikely(type_of(strm) != t_stream ||
                          strm->stream.mode != smm_echo))
-		FEwrong_type_only_arg(@'echo-stream-output-stream',
-                                      strm, @'echo-stream');
+		FEwrong_type_only_arg(@[echo-stream-output-stream],
+                                      strm, @[echo-stream]);
 	@(return ECHO_STREAM_OUTPUT(strm))
 }
 
@@ -2380,8 +2380,8 @@ cl_concatenated_stream_streams(cl_object strm)
 {
 	if (ecl_unlikely(type_of(strm) != t_stream ||
                          strm->stream.mode != smm_concatenated))
-		FEwrong_type_only_arg(@'concatenated-stream-streams',
-                                      strm, @'concatenated-stream');
+		FEwrong_type_only_arg(@[concatenated-stream-streams],
+                                      strm, @[concatenated-stream]);
 	return cl_copy_list(CONCATENATED_STREAM_LIST(strm));
 }
 
@@ -2580,8 +2580,8 @@ cl_synonym_stream_symbol(cl_object strm)
 {
 	if (ecl_unlikely(type_of(strm) != t_stream ||
                          strm->stream.mode != smm_synonym))
-		FEwrong_type_only_arg(@'synonym-stream-symbol',
-                                      strm, @'synonym-stream');
+		FEwrong_type_only_arg(@[synonym-stream-symbol],
+                                      strm, @[synonym-stream]);
 	@(return SYNONYM_STREAM_SYMBOL(strm))
 }
 
@@ -4210,7 +4210,7 @@ cl_file_string_length(cl_object stream, cl_object string)
 		l = compute_char_size(stream, CHAR_CODE(string));
 		break;
 	default:
-                FEwrong_type_nth_arg(@'file-string-length', 2, string, @'string');
+                FEwrong_type_nth_arg(@[file-string-length], 2, string, @[string]);
 	}
 	@(return MAKE_FIXNUM(l))
 }
@@ -4391,7 +4391,7 @@ cl_stream_external_format(cl_object strm)
 	else
 #endif
         if (ecl_unlikely(t != t_stream))
-                FEwrong_type_only_arg(@'stream-external-format', strm, @'stream');
+                FEwrong_type_only_arg(@[stream-external-format], strm, @[stream]);
 	if (strm->stream.mode == smm_synonym) {
 		strm = SYNONYM_STREAM_STREAM(strm);
 		goto AGAIN;

@@ -324,8 +324,8 @@ si_open_unix_socket_stream(cl_object path)
 	struct sockaddr_un addr;
 
 	if (ecl_unlikely(type_of(path) != t_base_string))
-                FEwrong_type_nth_arg(@'si::open-unix-socket-stream', 1, path,
-                                     @'string');
+                FEwrong_type_nth_arg(@[si::open-unix-socket-stream], 1, path,
+                                     @[string]);
 	if (path->base_string.fillp > UNIX_MAX_PATH-1)
 		FEerror("~S is a too long file name.", 1, path);
 

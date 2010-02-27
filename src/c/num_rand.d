@@ -207,7 +207,7 @@ rando(cl_object x, cl_object rs)
 #endif
 	default: ERROR: {
                 const char *type = "(OR (INTEGER (0) *) (FLOAT (0) *))";
-		FEwrong_type_nth_arg(@'random',1,x, ecl_read_from_cstring(type));
+		FEwrong_type_nth_arg(@[random],1,x, ecl_read_from_cstring(type));
         }
 	}
 	return z;
@@ -224,8 +224,8 @@ ecl_make_random_state(cl_object rs)
 			rs = ecl_symbol_value(@'*random-state*');
 		}
 		if (ecl_unlikely(type_of(rs) != t_random)) {
-			FEwrong_type_only_arg(@'make-random-state', rs,
-                                              @'random-state');
+			FEwrong_type_only_arg(@[make-random-state], rs,
+                                              @[random-state]);
 		}
 		z->random.value = cl_copy_seq(rs->random.value);
 	}

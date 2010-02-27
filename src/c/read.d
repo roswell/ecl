@@ -1428,7 +1428,7 @@ static void
 assert_type_readtable(cl_object function, cl_narg narg, cl_object p)
 {
 	if (ecl_unlikely(type_of(p) != t_readtable))
-		FEwrong_type_nth_arg(function, narg, p, @'readtable');
+		FEwrong_type_nth_arg(function, narg, p, @[readtable]);
 }
 
 
@@ -1441,7 +1441,7 @@ ecl_copy_readtable(cl_object from, cl_object to)
 	size_t total_bytes = entry_bytes * RTABSIZE;
 	cl_object output;
 
-	assert_type_readtable(@'copy-readtable', 1, from);
+	assert_type_readtable(@[copy-readtable], 1, from);
 	/* For the sake of garbage collector and thread safety we
 	 * create an incomplete object and only copy to the destination
 	 * at the end in a more or less "atomic" (meaning "fast") way.
@@ -1468,7 +1468,7 @@ ecl_copy_readtable(cl_object from, cl_object to)
 	}
 #endif
 	if (!Null(to)) {
-                assert_type_readtable(@'copy-readtable', 2, to);
+                assert_type_readtable(@[copy-readtable], 2, to);
 		to->readtable = output->readtable;
 		output = to;
 	}
@@ -1806,7 +1806,7 @@ EOFCHK:	if (c == EOF && TOKEN_STRING_FILLP(token) == 0) {
 	cl_object rtbl = ecl_current_readtable();
 @ {
         if (ecl_unlikely(!ECL_STRINGP(strng)))
-                FEwrong_type_nth_arg(@'parse-integer', 1, strng, @'string');
+                FEwrong_type_nth_arg(@[parse-integer], 1, strng, @[string]);
 	get_string_start_end(strng, start, end, &s, &e);
 	if (ecl_unlikely(!FIXNUMP(radix) ||
                          fix(radix) < 2 || fix(radix) > 36))
@@ -1878,7 +1878,7 @@ CANNOT_PARSE:		FEparse_error("Cannot parse an integer in the string ~S.",
 cl_object
 cl_readtable_case(cl_object r)
 {
-        assert_type_readtable(@'readtable-case', 1, r);
+        assert_type_readtable(@[readtable-case], 1, r);
 	switch (r->readtable.read_case) {
 	case ecl_case_upcase: r = @':upcase'; break;
 	case ecl_case_downcase: r = @':downcase'; break;
@@ -1900,7 +1900,7 @@ error_locked_readtable(cl_object r)
 cl_object
 si_readtable_case_set(cl_object r, cl_object mode)
 {
-        assert_type_readtable(@'readtable-case', 1, r);
+        assert_type_readtable(@[readtable-case], 1, r);
         if (r->readtable.locked) {
                 error_locked_readtable(r);
         }
@@ -1914,7 +1914,7 @@ si_readtable_case_set(cl_object r, cl_object mode)
 		r->readtable.read_case = ecl_case_invert;
 	} else {
                 const char *type = "(member :upcase :downcase :preserve :invert)";
-		FEwrong_type_nth_arg(@'si::readtable-case-set', 2,
+		FEwrong_type_nth_arg(@[si::readtable-case-set], 2,
                                      mode, ecl_read_from_cstring(type));
 	}
 	@(return mode)
@@ -2002,8 +2002,8 @@ ecl_invalid_character_p(int c)
         }
 	if (Null(fromrdtbl))
 		fromrdtbl = cl_core.standard_readtable;
-        assert_type_readtable(@'readtable-case', 1, tordtbl);
-        assert_type_readtable(@'readtable-case', 2, fromrdtbl);
+        assert_type_readtable(@[readtable-case], 1, tordtbl);
+        assert_type_readtable(@[readtable-case], 2, fromrdtbl);
 	fc = ecl_char_code(fromchr);
 	tc = ecl_char_code(tochr);
 
@@ -2044,7 +2044,7 @@ ecl_invalid_character_p(int c)
 	cl_object table;
 	int c;
 @
-        assert_type_readtable(@'make-dispatch-macro-character', 3, readtable);
+        assert_type_readtable(@[make-dispatch-macro-character], 3, readtable);
 	c = ecl_char_code(chr);
 	cat = Null(non_terminating_p)? cat_terminating : cat_non_terminating;
 	table = cl__make_hash_table(@'eql', MAKE_FIXNUM(128),
@@ -2060,7 +2060,7 @@ ecl_invalid_character_p(int c)
 	cl_object table;
 	cl_fixnum subcode;
 @
-        assert_type_readtable(@'set-dispatch-macro-character', 4, readtable);
+        assert_type_readtable(@[set-dispatch-macro-character], 4, readtable);
 	ecl_readtable_get(readtable, ecl_char_code(dspchr), &table);
         if (readtable->readtable.locked) {
                 error_locked_readtable(readtable);
@@ -2095,7 +2095,7 @@ ecl_invalid_character_p(int c)
 	if (Null(readtable)) {
 		readtable = cl_core.standard_readtable;
 	}
-        assert_type_readtable(@'get-dispatch-macro-character', 3, readtable);
+        assert_type_readtable(@[get-dispatch-macro-character], 3, readtable);
 	c = ecl_char_code(dspchr);
 	ecl_readtable_get(readtable, c, &table);
 	if (type_of(table) != t_hashtable) {
@@ -2119,7 +2119,7 @@ si_standard_readtable()
 @(defun ext::readtable-lock (r &optional yesno)
 	cl_object output;
 @
-	assert_type_readtable(@'ext::readtable-lock', 1, r);
+	assert_type_readtable(@[ext::readtable-lock], 1, r);
         output = (r->readtable.locked)? Ct : Cnil;
 	if (narg > 1) {
                 r->readtable.locked = !Null(yesno);
@@ -2490,7 +2490,7 @@ read_VV(cl_object block, void (*entry_point)(cl_object))
 				"compiled file~&  ~A~&but has not been created",
 				2, CAR(x), block->cblock.name);
 			}
-		} end_loop_for_on;
+		} end_loop_for_on(x);
                 old_eptbc = cl_core.packages_to_be_created;
 		if (VVtemp) {
 			block->cblock.temp_data = NULL;

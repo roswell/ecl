@@ -28,7 +28,7 @@ ecl_symbol_package(cl_object s)
                 return Cnil_symbol->symbol.hpack;
         if (type_of(s) == t_symbol)
                 return s->symbol.hpack;
-        FEwrong_type_nth_arg(@'symbol-package', 1, s, @'symbol');
+        FEwrong_type_nth_arg(@[symbol-package], 1, s, @[symbol]);
 }
 
 int
@@ -38,7 +38,7 @@ ecl_symbol_type(cl_object s)
                 return Cnil_symbol->symbol.stype;
         if (type_of(s) == t_symbol)
                 return s->symbol.stype;
-        FEwrong_type_nth_arg(@'symbol-name', 1, s, @'symbol');
+        FEwrong_type_nth_arg(@[symbol-name], 1, s, @[symbol]);
 }
 
 void
@@ -52,7 +52,7 @@ ecl_symbol_type_set(cl_object s, int type)
                 s->symbol.stype = type;
                 return;
         }
-        FEwrong_type_nth_arg(@'symbol-name', 1, s, @'symbol');
+        FEwrong_type_nth_arg(@[symbol-name], 1, s, @[symbol]);
 }
 
 cl_object
@@ -64,7 +64,7 @@ ecl_symbol_name(cl_object s)
         if (type_of(s) == t_symbol) {
                 return s->symbol.name;
         }
-        FEwrong_type_nth_arg(@'symbol-name', 1, s, @'symbol');
+        FEwrong_type_nth_arg(@[symbol-name], 1, s, @[symbol]);
 }
 
 static cl_object *
@@ -76,7 +76,7 @@ ecl_symbol_plist(cl_object s)
         if (type_of(s) == t_symbol) {
                 return &s->symbol.plist;
         }
-        FEwrong_type_nth_arg(@'symbol-plist', 1, s, @'symbol');
+        FEwrong_type_nth_arg(@[symbol-plist], 1, s, @[symbol]);
 }
 
 /**********************************************************************/
@@ -102,7 +102,7 @@ cl_make_symbol(cl_object str)
 		str = si_copy_to_simple_base_string(str);
 		break;
 	default:
-		FEwrong_type_nth_arg(@'make-symbol',1,str,@'string');
+		FEwrong_type_nth_arg(@[make-symbol],1,str,@[string]);
 	}
 	x = ecl_alloc_object(t_symbol);
 	x->symbol.name = str;
@@ -337,7 +337,7 @@ cl_symbol_name(cl_object x)
 		prefix = cl_core.gensym_prefix;
 		increment = 0;
 	} else {
-                FEwrong_type_nth_arg(@'gensym',2,prefix,
+                FEwrong_type_nth_arg(@[gensym],2,prefix,
                                      cl_list(3, @'or', @'string', @'integer'));
 	}
 	output = ecl_make_string_output_stream(64, 1);
@@ -359,7 +359,7 @@ cl_symbol_name(cl_object x)
 	int intern_flag;
 @
         if (ecl_unlikely(!ECL_STRINGP(prefix)))
-                FEwrong_type_nth_arg(@'gentemp', 1, prefix, @'string');
+                FEwrong_type_nth_arg(@[gentemp], 1, prefix, @[string]);
 	pack = si_coerce_to_package(pack);
 ONCE_MORE:
 	output = ecl_make_string_output_stream(64, 1);

@@ -163,7 +163,7 @@ ecl_fits_in_base_string(cl_object s)
 	case t_base_string:
 		return 1;
 	default:
-		FEwrong_type_nth_arg(@'si::copy-to-simple-base-string',1,s,@'string');
+		FEwrong_type_nth_arg(@[si::copy-to-simple-base-string],1,s,@[string]);
 	}
 }
 
@@ -204,7 +204,7 @@ si_copy_to_simple_base_string(cl_object x)
 			goto AGAIN;
 		}
 	default:
-                FEwrong_type_nth_arg(@'si::copy-to-simple-base-string',1,x,@'string');
+                FEwrong_type_nth_arg(@[si::copy-to-simple-base-string],1,x,@[string]);
 	}
 	@(return y)
 }
@@ -247,7 +247,7 @@ cl_string(cl_object x)
 			break;
 		}
 	default:
-                FEwrong_type_nth_arg(@'string',1,x,@'string');
+                FEwrong_type_nth_arg(@[string],1,x,@[string]);
 	}
 	@(return x)
 }
@@ -292,7 +292,7 @@ si_coerce_to_extended_string(cl_object x)
 			goto AGAIN;
 		}
 	default:
-                FEwrong_type_nth_arg(@'si::coerce-to-extended-string',1,x,@'string');
+                FEwrong_type_nth_arg(@[si::coerce-to-extended-string],1,x,@[string]);
 	}
 	@(return y)
 }
@@ -321,7 +321,7 @@ ecl_char(cl_object object, cl_index index)
 			FEillegal_index(object, MAKE_FIXNUM(index));
 		return object->base_string.self[index];
 	default:
-                FEwrong_type_nth_arg(@'char',1,object,@'string');
+                FEwrong_type_nth_arg(@[char],1,object,@[string]);
 	}
 }
 
@@ -350,7 +350,7 @@ ecl_char_set(cl_object object, cl_index index, ecl_character value)
 			FEillegal_index(object, MAKE_FIXNUM(index));
 		return object->base_string.self[index] = value;
 	default:
-                FEwrong_type_nth_arg(@'si::char-set',1,object,@'string');
+                FEwrong_type_nth_arg(@[si::char-set],1,object,@[string]);
 	}
 }
 
@@ -523,7 +523,7 @@ ecl_string_eq(cl_object x, cl_object y)
 			return 1;
 			}
 		default:
-                        FEwrong_type_nth_arg(@'string=',2,y,@'string');
+                        FEwrong_type_nth_arg(@[string=],2,y,@[string]);
 		}
 		break;
 	case t_base_string:
@@ -533,11 +533,11 @@ ecl_string_eq(cl_object x, cl_object y)
 		case t_base_string:
 			return memcmp(x->base_string.self, y->base_string.self, i) == 0;
 		default:
-                        FEwrong_type_nth_arg(@'string=',2,y,@'string');
+                        FEwrong_type_nth_arg(@[string=],2,y,@[string]);
 		}
 		break;
 	default:
-                FEwrong_type_nth_arg(@'string=',2,x,@'string');
+                FEwrong_type_nth_arg(@[string=],2,x,@[string]);
 	}
 #else
 	return memcmp(x->base_string.self, y->base_string.self, i) == 0;
@@ -710,7 +710,7 @@ ecl_member_char(ecl_character c, cl_object char_bag)
 	case t_bitvector:
 		return(FALSE);
 	default:
-		FEwrong_type_nth_arg(@'member',2,char_bag,@'sequence');
+		FEwrong_type_nth_arg(@[member],2,char_bag,@[sequence]);
 	}
 }
 
@@ -866,7 +866,7 @@ nstring_case(cl_narg narg, cl_object fun, ecl_casefun casefun, cl_va_list ARGS)
 	cl_parse_key(ARGS, 2, KEYS, KEY_VARS, NULL, FALSE);
 
         if (ecl_unlikely(!ECL_STRINGP(strng)))
-                FEwrong_type_nth_arg(fun, 1, strng, @'string');
+                FEwrong_type_nth_arg(fun, 1, strng, @[string]);
 	if (startp == Cnil) start = MAKE_FIXNUM(0);
 	get_string_start_end(strng, start, end, &s, &e);
 	b = TRUE;
@@ -958,6 +958,6 @@ ecl_string_push_extend(cl_object s, ecl_character c)
 		ecl_char_set(s, s->base_string.fillp++, c);
 		return c;
 	default:
-                FEwrong_type_nth_arg(@'vector-push-extend',1,s,@'string');
+                FEwrong_type_nth_arg(@[vector-push-extend],1,s,@[string]);
 	}
 }

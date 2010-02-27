@@ -81,7 +81,7 @@ fixint(cl_object x)
                         return (cl_fixnum)x->big.big_num;
 #endif /* WITH_GMP */
 	}
-	FEwrong_type_argument(@'fixnum', x);
+	FEwrong_type_argument(@[fixnum], x);
 }
 
 cl_index
@@ -847,7 +847,7 @@ ecl_to_double(cl_object x)
 		return (double)ecl_long_float(x);
 #endif
 	default:
-		FEwrong_type_nth_arg(@'coerce', 1, x, @'real');
+		FEwrong_type_nth_arg(@[coerce], 1, x, @[real]);
 	}
 }
 
@@ -881,7 +881,7 @@ ecl_to_long_double(cl_object x)
 	case t_longfloat:
 		return ecl_long_float(x);
 	default:
-		FEwrong_type_nth_arg(@'coerce', 1, x, @'real');
+		FEwrong_type_nth_arg(@[coerce], 1, x, @[real]);
 	}
 }
 #endif

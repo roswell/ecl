@@ -19,12 +19,12 @@
 
 void
 FEtype_error_cons(cl_object x) {
-	FEwrong_type_argument(@'cons', x);
+	FEwrong_type_argument(@[cons], x);
 }
 
 void
 FEtype_error_list(cl_object x) {
-	FEwrong_type_argument(@'list', x);
+	FEwrong_type_argument(@[list], x);
 }
 
 void
@@ -61,18 +61,18 @@ FEtype_error_index(cl_object seq, cl_object ndx)
 void
 FEtype_error_array(cl_object v)
 {
-	FEwrong_type_argument(@'array', v);
+	FEwrong_type_argument(@[array], v);
 }
 
 void
 FEtype_error_stream(cl_object strm)
 {
-	FEwrong_type_argument(@'stream', strm);
+	FEwrong_type_argument(@[stream], strm);
 }
 
 void
 FEtype_error_sequence(cl_object x) {
-	FEwrong_type_argument(@'sequence', x);
+	FEwrong_type_argument(@[sequence], x);
 }
 
 cl_object
@@ -185,7 +185,7 @@ assert_type_integer(cl_object p)
 {
 	cl_type t = type_of(p);
 	if (t != t_fixnum && t != t_bignum)
-                FEwrong_type_nth_arg(@'coerce', 1, p, @'integer');
+                FEwrong_type_nth_arg(@[coerce], 1, p, @[integer]);
 }
 
 void

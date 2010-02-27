@@ -302,6 +302,11 @@ struct ecl_package {
  */
 
 #ifdef ECL_SMALL_CONS
+#define ECL_LISTP(x)    (IMMEDIATE(x) == t_list)
+#define ECL_CONSP(x)    (LISTP(x) && !Null(x))
+#define ECL_ATOM(x)     (Null(x) || !LISTP(x))
+#define ECL_SYMBOLP(x)  (Null(x) || ((IMMEDIATE(x) == 0) && ((x)->d.t == t_symbol)))
+
 #define LISTP(x)	(IMMEDIATE(x) == t_list)
 #define CONSP(x)	(LISTP(x) && !Null(x))
 #define ATOM(x)		(Null(x) || !LISTP(x))
@@ -319,6 +324,11 @@ struct ecl_cons {
 	cl_object cdr;		/*  cdr  */
 };
 #else
+#define ECL_LISTP(x)    (IMMEDIATE(x)? Null(x) : ((x)->d.t == t_list))
+#define ECL_CONSP(x)    ((IMMEDIATE(x) == 0) && ((x)->d.t == t_list))
+#define ECL_ATOM(x)     (IMMEDIATE(x) || ((x)->d.t != t_list))
+#define ECL_SYMBOLP(x)  (Null(x) || ((IMMEDIATE(x) == 0) && ((x)->d.t == t_symbol)))
+
 #define LISTP(x)	(IMMEDIATE(x)? Null(x) : ((x)->d.t == t_list))
 #define CONSP(x)	((IMMEDIATE(x) == 0) && ((x)->d.t == t_list))
 #define ATOM(x)		(IMMEDIATE(x) || ((x)->d.t != t_list))

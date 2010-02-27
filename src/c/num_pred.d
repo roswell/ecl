@@ -47,7 +47,7 @@ ecl_zerop(cl_object x)
 		       ecl_zerop(x->complex.imag));
 
 	default:
-                FEwrong_type_only_arg(@'zerop', x, @'number');
+                FEwrong_type_only_arg(@[zerop], x, @[number]);
 	}
 }
 
@@ -79,7 +79,7 @@ ecl_plusp(cl_object x)
 		return ecl_long_float(x) > 0.0;
 #endif
 	default:
-		FEwrong_type_only_arg(@'plusp', x, @'real');
+		FEwrong_type_only_arg(@[plusp], x, @[real]);
 	}
 }
 
@@ -113,7 +113,7 @@ ecl_minusp(cl_object x)
 		return ecl_long_float(x) < 0;
 #endif
 	default:
-		FEwrong_type_only_arg(@'minusp', x, @'real');
+		FEwrong_type_only_arg(@[minusp], x, @[real]);
 	}
 }
 
@@ -124,7 +124,7 @@ ecl_oddp(cl_object x)
 		return fix(x) & 1;
 	if (type_of(x) == t_bignum)
 		return _ecl_big_odd_p(x);
-        FEwrong_type_only_arg(@'oddp', x, @'integer');
+        FEwrong_type_only_arg(@[oddp], x, @[integer]);
 }
 
 int
@@ -134,7 +134,7 @@ ecl_evenp(cl_object x)
 		return ~fix(x) & 1;
 	if (type_of(x) == t_bignum)
 		return _ecl_big_even_p(x);
-        FEwrong_type_only_arg(@'evenp', x, @'integer');
+        FEwrong_type_only_arg(@[evenp], x, @[integer]);
 }
 
 cl_object

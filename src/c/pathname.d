@@ -678,7 +678,7 @@ L:
 		}
 	default: {
                 const char *type = "(OR FILE-STREAM STRING PATHNAME)";
-                FEwrong_type_only_arg(@'pathname', x, ecl_read_from_cstring(type));
+                FEwrong_type_only_arg(@[pathname], x, ecl_read_from_cstring(type));
         }
 	}
 	@(return x)
@@ -743,7 +743,7 @@ cl_logical_pathname(cl_object x)
 			{
 				@(return Ct)
 			}
-		} end_loop_for_on;
+		} end_loop_for_on_unsafe(list);
 	}
 	if (checked == 0) {
 		FEerror("~A is not a valid pathname component", 1, component);
@@ -1388,7 +1388,7 @@ coerce_to_from_pathname(cl_object x, cl_object host)
 @
 	/* Check that host is a valid host name */
         if (ecl_unlikely(!ECL_STRINGP(host)))
-                FEwrong_type_nth_arg(@'si::pathname-translations', 1, host, @'string');
+                FEwrong_type_nth_arg(@[si::pathname-translations], 1, host, @[string]);
 	len = ecl_length(host);
 	parse_word(host, is_null, WORD_LOGICAL, 0, len, &parsed_len);
 	if (parsed_len < len) {
@@ -1401,7 +1401,7 @@ coerce_to_from_pathname(cl_object x, cl_object host)
 	}
 	/* Set the new translation list */
         if (ecl_unlikely(!LISTP(set))) {
-                FEwrong_type_nth_arg(@'si::pathname-translations', 2, set, @'list');
+                FEwrong_type_nth_arg(@[si::pathname-translations], 2, set, @[list]);
         }
 	if (pair == Cnil) {
 		pair = CONS(host, CONS(Cnil, Cnil));

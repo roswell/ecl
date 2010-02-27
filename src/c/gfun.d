@@ -72,8 +72,8 @@ cl_object
 clos_set_funcallable_instance_function(cl_object x, cl_object function_or_t)
 {
 	if (ecl_unlikely(!ECL_INSTANCEP(x)))
-                FEwrong_type_nth_arg(@'clos::set-funcallable-instance-function',
-                                     1, x, @'ext::instance');
+                FEwrong_type_nth_arg(@[clos::set-funcallable-instance-function],
+                                     1, x, @[ext::instance]);
 	if (x->instance.isgf == ECL_USER_DISPATCH) {
 		reshape_instance(x, -1);
 		x->instance.isgf = ECL_NOT_FUNCALLABLE;
@@ -176,7 +176,7 @@ si_clear_gfun_hash(cl_object what)
 		cl_object process = ECL_CONS_CAR(list);
 		struct cl_env_struct *env = process->process.env;
 		env->method_hash_clear_list = CONS(what, env->method_hash_clear_list);
-	} end_loop_for_on;
+	} end_loop_for_on_unsafe(list);
 	THREAD_OP_UNLOCK();
 #else
 	do_clear_method_hash(&cl_env, what);
@@ -312,7 +312,7 @@ get_spec_vector(cl_env_ptr env, cl_object frame, cl_object gf)
 			args[spec_position];
 		if (spec_no > vector->vector.dim)
 			return OBJNULL;
-	} end_loop_for_on;
+	} end_loop_for_on_unsafe(spec_how_list);
 	vector->vector.fillp = spec_no;
 	return vector;
 }
@@ -365,7 +365,7 @@ _ecl_standard_dispatch(cl_object frame, cl_object gf)
 		clear_list = env->method_hash_clear_list;
 		loop_for_on_unsafe(clear_list) {
 			do_clear_method_hash(&cl_env, ECL_CONS_CAR(clear_list));
-		} end_loop_for_on;
+		} end_loop_for_on_unsafe(clear_list);
 		env->method_hash_clear_list = Cnil;
 		THREAD_OP_UNLOCK();
 	}

@@ -131,7 +131,7 @@ ecl_to_index(cl_object n)
 	case t_bignum:
 		FEtype_error_index(Cnil, n);
 	default:
-                FEwrong_type_only_arg(@'coerce', n, @'integer');
+                FEwrong_type_only_arg(@[coerce], n, @[integer]);
 	}
 }
 
@@ -176,7 +176,7 @@ si_row_major_aset(cl_object x, cl_object indx, cl_object val)
 					0, (cl_fixnum)x->vector.dim-1);
 		break;
 	default:
-                FEwrong_type_nth_arg(@'aref', 1, x, @'array');
+                FEwrong_type_nth_arg(@[aref], 1, x, @[array]);
 	}
 	@(return ecl_aref_unsafe(x, j));
 } @)
@@ -238,7 +238,7 @@ cl_object
 ecl_aref(cl_object x, cl_index index)
 {
         if (ecl_unlikely(!ECL_ARRAYP(x))) {
-                FEwrong_type_nth_arg(@'aref', 1, x, @'array');
+                FEwrong_type_nth_arg(@[aref], 1, x, @[array]);
         }
         if (ecl_unlikely(index >= x->array.dim)) {
                 out_of_bounds_error(index, x);
@@ -250,7 +250,7 @@ cl_object
 ecl_aref1(cl_object x, cl_index index)
 {
         if (ecl_unlikely(!ECL_VECTORP(x))) {
-                FEwrong_type_nth_arg(@'aref', 1, x, @'array');
+                FEwrong_type_nth_arg(@[aref], 1, x, @[array]);
         }
         if (ecl_unlikely(index >= x->array.dim)) {
 		out_of_bounds_error(index, x);
@@ -290,7 +290,7 @@ ecl_aref1(cl_object x, cl_index index)
 					0, (cl_fixnum)x->vector.dim - 1);
 		break;
 	default:
-                FEwrong_type_nth_arg(@'si::aset', 1, x, @'array');
+                FEwrong_type_nth_arg(@[si::aset], 1, x, @[array]);
 	}
 	@(return ecl_aset_unsafe(x, j, v))
 } @)
@@ -370,7 +370,7 @@ cl_object
 ecl_aset(cl_object x, cl_index index, cl_object value)
 {
         if (ecl_unlikely(!ECL_ARRAYP(x))) {
-                FEwrong_type_nth_arg(@'si::aset', 1, x, @'array');
+                FEwrong_type_nth_arg(@[si::aset], 1, x, @[array]);
         }
         if (ecl_unlikely(index >= x->array.dim)) {
 		out_of_bounds_error(index, x);
@@ -382,7 +382,7 @@ cl_object
 ecl_aset1(cl_object x, cl_index index, cl_object value)
 {
         if (ecl_unlikely(!ECL_VECTORP(x))) {
-                FEwrong_type_nth_arg(@'si::aset', 1, x, @'array');
+                FEwrong_type_nth_arg(@[si::aset], 1, x, @[array]);
         }
         if (ecl_unlikely(index >= x->array.dim)) {
 		out_of_bounds_error(index, x);
@@ -793,7 +793,7 @@ cl_elttype
 ecl_array_elttype(cl_object x)
 {
         if (ecl_unlikely(!ECL_ARRAYP(x)))
-                FEwrong_type_argument(@'array', x);
+                FEwrong_type_argument(@[array], x);
         return x->array.elttype;
 }
 
@@ -801,7 +801,7 @@ cl_object
 cl_array_rank(cl_object a)
 {
         if (ecl_unlikely(!ECL_ARRAYP(a)))
-                FEwrong_type_only_arg(@'array-rank', a, @'array');
+                FEwrong_type_only_arg(@[array-rank], a, @[array]);
 	@(return ((type_of(a) == t_array) ? MAKE_FIXNUM(a->array.rank)
 					  : MAKE_FIXNUM(1)))
 }
@@ -831,7 +831,7 @@ ecl_array_dimension(cl_object a, cl_index index)
                         FEwrong_dimensions(a, index+1);
 		return a->vector.dim;
 	default:
-                FEwrong_type_only_arg(@'array-dimension', a, @'array');
+                FEwrong_type_only_arg(@[array-dimension], a, @[array]);
 	}
 }
 
@@ -839,7 +839,7 @@ cl_object
 cl_array_total_size(cl_object a)
 {
         if (ecl_unlikely(!ECL_ARRAYP(a)))
-                FEwrong_type_only_arg(@'array-total-size', a, @'array');
+                FEwrong_type_only_arg(@[array-total-size], a, @[array]);
 	@(return MAKE_FIXNUM(a->array.dim))
 }
 
@@ -847,7 +847,7 @@ cl_object
 cl_adjustable_array_p(cl_object a)
 {
         if (ecl_unlikely(!ECL_ARRAYP(a)))
-                FEwrong_type_only_arg(@'adjustable-array-p', a, @'array');
+                FEwrong_type_only_arg(@[adjustable-array-p], a, @[array]);
 	@(return (ECL_ADJUSTABLE_ARRAY_P(a) ? Ct : Cnil))
 }
 
@@ -862,7 +862,7 @@ cl_array_displacement(cl_object a)
 	cl_index offset;
 
         if (ecl_unlikely(!ECL_ARRAYP(a)))
-                FEwrong_type_only_arg(@'array-displacement', a, @'array');
+                FEwrong_type_only_arg(@[array-displacement], a, @[array]);
 	to_array = a->array.displaced;
 	if (Null(to_array)) {
 		offset = 0;
@@ -938,7 +938,7 @@ cl_svref(cl_object x, cl_object index)
                          CAR(x->vector.displaced) != Cnil ||
                          (cl_elttype)x->vector.elttype != aet_object))
 	{
-                FEwrong_type_nth_arg(@'svref',1,x,@'simple-vector');
+                FEwrong_type_nth_arg(@[svref],1,x,@[simple-vector]);
 	}
 	i = ecl_fixnum_in_range(@'svref',"index",index,0,(cl_fixnum)x->vector.dim-1);
 	@(return x->vector.self.t[i])
@@ -955,7 +955,7 @@ si_svset(cl_object x, cl_object index, cl_object v)
                          CAR(x->vector.displaced) != Cnil ||
                          (cl_elttype)x->vector.elttype != aet_object))
 	{
-		FEwrong_type_nth_arg(@'si::svset',1,x,@'simple-vector');
+		FEwrong_type_nth_arg(@[si::svset],1,x,@[simple-vector]);
 	}
 	i = ecl_fixnum_in_range(@'svref',"index",index,0,(cl_fixnum)x->vector.dim-1);
 	@(return (x->vector.self.t[i] = v))
@@ -978,7 +978,7 @@ cl_array_has_fill_pointer_p(cl_object a)
 		r = ECL_ARRAY_HAS_FILL_POINTER_P(a)? Ct : Cnil;
 		break;
 	default:
-                FEwrong_type_nth_arg(@'array-has-fill-pointer-p',1,a,@'array');
+                FEwrong_type_nth_arg(@[array-has-fill-pointer-p],1,a,@[array]);
 	}
 	@(return r)
 }
@@ -988,10 +988,10 @@ cl_fill_pointer(cl_object a)
 {
 	const cl_env_ptr the_env = ecl_process_env();
         if (ecl_unlikely(!ECL_VECTORP(a)))
-                FEwrong_type_only_arg(@'fill-pointer', a, @'vector');
+                FEwrong_type_only_arg(@[fill-pointer], a, @[vector]);
 	if (ecl_unlikely(!ECL_ARRAY_HAS_FILL_POINTER_P(a))) {
                 const char *type = "(AND VECTOR (SATISFIES ARRAY-HAS-FILL-POINTER-P))";
-		FEwrong_type_nth_arg(@'fill-pointer', 1, a, ecl_read_from_cstring(type));
+		FEwrong_type_nth_arg(@[fill-pointer], 1, a, ecl_read_from_cstring(type));
 	}
 	@(return MAKE_FIXNUM(a->vector.fillp))
 }
@@ -1005,7 +1005,7 @@ si_fill_pointer_set(cl_object a, cl_object fp)
 	const cl_env_ptr the_env = ecl_process_env();
         if (ecl_unlikely(!ECL_VECTORP(a) || !ECL_ARRAY_HAS_FILL_POINTER_P(a))) {
                 const char *type = "(AND VECTOR (SATISFIES ARRAY-HAS-FILL-POINTER-P))";
-		FEwrong_type_nth_arg(@'si::fill-pointer-set', 1, a,
+		FEwrong_type_nth_arg(@[si::fill-pointer-set], 1, a,
                                      ecl_read_from_cstring(type));
         }
         a->vector.fillp = ecl_fixnum_in_range(@'adjust-array',"fill pointer",fp,

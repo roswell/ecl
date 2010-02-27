@@ -1905,7 +1905,7 @@ potential_number_p(cl_object strng, int base)
 @(defun write-string (strng &o strm &k (start MAKE_FIXNUM(0)) end)
 @
         if (ecl_unlikely(!ECL_STRINGP(strng)))
-                FEwrong_type_nth_arg(@'write-string', 1, strng, @'string');
+                FEwrong_type_nth_arg(@[write-string], 1, strng, @[string]);
 	strm = stream_or_default_output(strm);
 #ifdef ECL_CLOS_STREAMS
 	if (type_of(strm) != t_stream)
@@ -1919,7 +1919,7 @@ potential_number_p(cl_object strng, int base)
 @(defun write-line (strng &o strm &k (start MAKE_FIXNUM(0)) end)
 @
         if (ecl_unlikely(!ECL_STRINGP(strng)))
-                FEwrong_type_nth_arg(@'write-line', 1, strng, @'string');
+                FEwrong_type_nth_arg(@[write-line], 1, strng, @[string]);
 	strm = stream_or_default_output(strm);
 #ifdef ECL_CLOS_STREAMS
 	if (type_of(strm) != t_stream)
@@ -2062,7 +2062,7 @@ ecl_write_string(cl_object strng, cl_object strm)
 			ecl_write_char(strng->base_string.self[i], strm);
 		break;
 	default:
-                FEwrong_type_nth_arg(@'write-string', 1, strng, @'string');
+                FEwrong_type_nth_arg(@[write-string], 1, strng, @[string]);
 	}
 		
 	ecl_force_output(strm);

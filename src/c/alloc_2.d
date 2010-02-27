@@ -1306,7 +1306,7 @@ stacks_scanner()
 			cl_object process = ECL_CONS_CAR(l);
 			struct cl_env_struct *env = process->process.env;
 			ecl_mark_env(env);
-		} end_loop_for_on;
+		} end_loop_for_on_unsafe(l);
 	}
 #else
 	ecl_mark_env(&cl_env);
@@ -1385,8 +1385,8 @@ si_weak_pointer_value(cl_object o)
 {
 	cl_object value;
 	if (ecl_unlikely(type_of(o) != t_weak_pointer))
-		FEwrong_type_only_arg(@'ext::weak-pointer-value', o,
-                                      @'ext::weak-pointer');
+		FEwrong_type_only_arg(@[ext::weak-pointer-value], o,
+                                      @[ext::weak-pointer]);
 	value = (cl_object)GC_call_with_alloc_lock((GC_fn_type)ecl_weak_pointer_value, o);
 	@(return (value? value : Cnil));
 }

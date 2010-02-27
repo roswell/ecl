@@ -31,7 +31,7 @@ static void
 assert_type_hash_table(cl_object function, cl_narg narg, cl_object p)
 {
 	if (ecl_unlikely(type_of(p) != t_hashtable))
-		FEwrong_type_nth_arg(function, narg, p, @'hash-table');
+		FEwrong_type_nth_arg(function, narg, p, @[hash-table]);
 }
 
 static void
@@ -416,7 +416,7 @@ ecl_gethash(cl_object key, cl_object hashtable)
 {
 	cl_object output;
 
-	assert_type_hash_table(@'gethash', 2, hashtable);
+	assert_type_hash_table(@[gethash], 2, hashtable);
 	HASH_TABLE_LOCK(hashtable);
 	output = hashtable->hash.get(key, hashtable)->value;
 	HASH_TABLE_UNLOCK(hashtable);
@@ -428,7 +428,7 @@ ecl_gethash_safe(cl_object key, cl_object hashtable, cl_object def)
 {
 	struct ecl_hashtable_entry *e;
 
-	assert_type_hash_table(@'gethash', 2, hashtable);
+	assert_type_hash_table(@[gethash], 2, hashtable);
 	HASH_TABLE_LOCK(hashtable);
 	e = hashtable->hash.get(key, hashtable);
 	if (e->key != OBJNULL)
@@ -446,7 +446,7 @@ _ecl_sethash(cl_object key, cl_object hashtable, cl_object value)
 cl_object
 ecl_sethash(cl_object key, cl_object hashtable, cl_object value)
 {
-	assert_type_hash_table(@'si::hash-set', 2, hashtable);
+	assert_type_hash_table(@[si::hash-set], 2, hashtable);
 	HASH_TABLE_LOCK(hashtable);
 	hashtable = hashtable->hash.set(key, hashtable, value);
 	HASH_TABLE_UNLOCK(hashtable);
@@ -460,7 +460,7 @@ ecl_extend_hashtable(cl_object hashtable)
 	cl_index old_size, new_size, i;
 	cl_object new_size_obj;
 
-	assert_type_hash_table(@'si::hash-set', 2, hashtable);
+	assert_type_hash_table(@[si::hash-set], 2, hashtable);
 	old_size = hashtable->hash.size;
 	/* We do the computation with lisp datatypes, just in case the sizes contain
 	 * weird numbers */
@@ -639,7 +639,7 @@ cl_hash_table_p(cl_object ht)
 @(defun gethash (key ht &optional (no_value Cnil))
 	struct ecl_hashtable_entry e;
 @
-	assert_type_hash_table(@'gethash', 2, ht);
+	assert_type_hash_table(@[gethash], 2, ht);
 	HASH_TABLE_LOCK(ht);
 	e = *(ht->hash.get(key, ht));
 	HASH_TABLE_UNLOCK(ht);
@@ -663,7 +663,7 @@ ecl_remhash(cl_object key, cl_object hashtable)
 	struct ecl_hashtable_entry *e;
 	bool output;
 
-	assert_type_hash_table(@'remhash', 2, hashtable);
+	assert_type_hash_table(@[remhash], 2, hashtable);
 	HASH_TABLE_LOCK(hashtable);
 	e = hashtable->hash.get(key, hashtable);
 	if (e->key == OBJNULL) {
@@ -688,7 +688,7 @@ cl_remhash(cl_object key, cl_object ht)
 cl_object
 cl_clrhash(cl_object ht)
 {
-	assert_type_hash_table(@'clrhash', 1, ht);
+	assert_type_hash_table(@[clrhash], 1, ht);
 	if (ht->hash.entries) {
 		HASH_TABLE_LOCK(ht);
 		do_clrhash(ht);
@@ -701,7 +701,7 @@ cl_object
 cl_hash_table_test(cl_object ht)
 {
 	cl_object output;
-	assert_type_hash_table(@'hash-table-test', 1, ht);
+	assert_type_hash_table(@[hash-table-test], 1, ht);
 	switch(ht->hash.test) {
 	    case htt_eq: output = @'eq'; break;
 	    case htt_eql: output = @'eql'; break;
@@ -716,14 +716,14 @@ cl_hash_table_test(cl_object ht)
 cl_object
 cl_hash_table_size(cl_object ht)
 {
-	assert_type_hash_table(@'hash-table-size', 1, ht);
+	assert_type_hash_table(@[hash-table-size], 1, ht);
 	@(return MAKE_FIXNUM(ht->hash.size))
 }
 
 cl_object
 cl_hash_table_count(cl_object ht)
 {
-	assert_type_hash_table(@'hash-table-count', 1, ht);
+	assert_type_hash_table(@[hash-table-count], 1, ht);
 	@(return (MAKE_FIXNUM(ht->hash.entries)))
 }
 
@@ -755,7 +755,7 @@ si_hash_table_iterate(cl_narg narg)
 cl_object
 si_hash_table_iterator(cl_object ht)
 {
-	assert_type_hash_table(@'si::hash-table-iterator', 1, ht);
+	assert_type_hash_table(@[si::hash-table-iterator], 1, ht);
 	@(return ecl_make_cclosure_va((cl_objectfn)si_hash_table_iterate,
                                       cl_list(2, MAKE_FIXNUM(-1), ht),
                                       @'si::hash-table-iterator'))
@@ -764,14 +764,14 @@ si_hash_table_iterator(cl_object ht)
 cl_object
 cl_hash_table_rehash_size(cl_object ht)
 {
-	assert_type_hash_table(@'hash-table-rehash-size', 1, ht);
+	assert_type_hash_table(@[hash-table-rehash-size], 1, ht);
 	@(return ht->hash.rehash_size)
 }
 
 cl_object
 cl_hash_table_rehash_threshold(cl_object ht)
 {
-	assert_type_hash_table(@'hash-table-rehash-threshold', 1, ht);
+	assert_type_hash_table(@[hash-table-rehash-threshold], 1, ht);
 	@(return ht->hash.threshold)
 }
 
@@ -818,7 +818,7 @@ cl_maphash(cl_object fun, cl_object ht)
 {
 	cl_index i;
 
-	assert_type_hash_table(@'maphash', 2, ht);
+	assert_type_hash_table(@[maphash], 2, ht);
 	for (i = 0;  i < ht->hash.size;  i++) {
 		struct ecl_hashtable_entry e = ht->hash.data[i];
 		if(e.key != OBJNULL)

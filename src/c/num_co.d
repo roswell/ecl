@@ -90,11 +90,11 @@ number_remainder(cl_object x, cl_object y, cl_object q)
 			x = ecl_make_longfloat(ecl_to_long_double(x)); break;
 #endif
 		default:
-                        FEwrong_type_nth_arg(@'float',2,y,@'float');
+                        FEwrong_type_nth_arg(@[float],2,y,@[float]);
 		}
 		break;
 	default:
-                FEwrong_type_nth_arg(@'float',1,x,@'real');
+                FEwrong_type_nth_arg(@[float],1,x,@[real]);
 	}
 	@(return x)
 @)
@@ -110,7 +110,7 @@ cl_numerator(cl_object x)
 	case t_bignum:
 		break;
 	default:
-                FEwrong_type_nth_arg(@'numerator',1,x,@'rational');
+                FEwrong_type_nth_arg(@[numerator],1,x,@[rational]);
 	}
 	@(return x)
 }
@@ -127,7 +127,7 @@ cl_denominator(cl_object x)
 		x = MAKE_FIXNUM(1);
 		break;
 	default:
-                FEwrong_type_nth_arg(@'numerator',1,x,@'rational');
+                FEwrong_type_nth_arg(@[numerator],1,x,@[rational]);
 	}
 	@(return x)
 }
@@ -180,7 +180,7 @@ ecl_floor1(cl_object x)
 	}
 #endif
 	default:
-                FEwrong_type_nth_arg(@'floor',1,x,@'real');
+                FEwrong_type_nth_arg(@[floor],1,x,@[real]);
 	}
 	@(return v0 v1)
 }
@@ -193,7 +193,7 @@ ecl_floor2(cl_object x, cl_object y)
 	cl_type ty;
         ty = type_of(y);
 	if (ecl_unlikely(!ECL_NUMBER_TYPE_P(ty))) {
-                FEwrong_type_nth_arg(@'floor',2,y,@'real');
+                FEwrong_type_nth_arg(@[floor],2,y,@[real]);
 	}
 	switch(type_of(x)) {
 	case t_fixnum:
@@ -373,7 +373,7 @@ ecl_floor2(cl_object x, cl_object y)
 	}
 #endif
 	default:
-                FEwrong_type_nth_arg(@'floor', 1, x, @'real');
+                FEwrong_type_nth_arg(@[floor], 1, x, @[real]);
 	}
 	@(return v0 v1)
 }
@@ -434,7 +434,7 @@ ecl_ceiling1(cl_object x)
 	}
 #endif
 	default:
-		FEwrong_type_nth_arg(@'ceiling',1,x,@'real');
+		FEwrong_type_nth_arg(@[ceiling],1,x,@[real]);
 	}
 	@(return v0 v1)
 }
@@ -447,7 +447,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 	cl_type ty;
         ty = type_of(y);
 	if (ecl_unlikely(!ECL_NUMBER_TYPE_P(ty))) {
-		FEwrong_type_nth_arg(@'ceiling',2, y, @'real');
+		FEwrong_type_nth_arg(@[ceiling],2, y, @[real]);
 	}
 	switch(type_of(x)) {
 	case t_fixnum:
@@ -624,7 +624,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 	}
 #endif
 	default:
-                FEwrong_type_nth_arg(@'ceiling', 1, x, @'real');
+                FEwrong_type_nth_arg(@[ceiling], 1, x, @[real]);
 	}
 	@(return v0 v1)
 }
@@ -686,7 +686,7 @@ ecl_truncate1(cl_object x)
 	}
 #endif
 	default:
-                FEwrong_type_nth_arg(@'truncate',1,x,@'real');
+                FEwrong_type_nth_arg(@[truncate],1,x,@[real]);
 	}
 	@(return v0 v1)
 }
@@ -794,7 +794,7 @@ ecl_round1(cl_object x)
 	}
 #endif
 	default:
-                FEwrong_type_nth_arg(@'round',1,x,@'real');
+                FEwrong_type_nth_arg(@[round],1,x,@[real]);
 	}
 	@(return v0 v1)
 }
@@ -919,7 +919,7 @@ cl_decode_float(cl_object x)
 	}
 #endif
 	default:
-                FEwrong_type_nth_arg(@'decode-float',1,x,@'float');
+                FEwrong_type_nth_arg(@[decode-float],1,x,@[float]);
 	}
 	@(return x MAKE_FIXNUM(e) ecl_make_singlefloat(s))
 }
@@ -933,7 +933,7 @@ cl_scale_float(cl_object x, cl_object y)
 	if (FIXNUMP(y)) {
 		k = fix(y);
 	} else {
-		FEwrong_type_nth_arg(@'scale-float',2,y,@'fixnum');
+		FEwrong_type_nth_arg(@[scale-float],2,y,@[fixnum]);
 	}
 	switch (type_of(x)) {
 #ifdef ECL_SHORT_FLOAT
@@ -953,7 +953,7 @@ cl_scale_float(cl_object x, cl_object y)
 		break;
 #endif
 	default:
-                FEwrong_type_nth_arg(@'scale-float',1,x,@'float');
+                FEwrong_type_nth_arg(@[scale-float],1,x,@[float]);
 	}
 	@(return x)
 }
@@ -963,7 +963,7 @@ cl_float_radix(cl_object x)
 {
 	const cl_env_ptr the_env = ecl_process_env();
 	if (ecl_unlikely(cl_floatp(x) != Ct)) {
-		FEwrong_type_nth_arg(@'float-radix',1,x,@'float');
+		FEwrong_type_nth_arg(@[float-radix],1,x,@[float]);
 	}
 	@(return MAKE_FIXNUM(FLT_RADIX))
 }
@@ -988,7 +988,7 @@ cl_float_radix(cl_object x)
 		negativep = signbit(ecl_long_float(x)); break;
 #endif
 	default:
-                FEwrong_type_nth_arg(@'float-sign',1,x,@'float');
+                FEwrong_type_nth_arg(@[float-sign],1,x,@[float]);
 	}
 	switch (type_of(y)) {
 #ifdef ECL_SHORT_FLOAT
@@ -1016,7 +1016,7 @@ cl_float_radix(cl_object x)
 	}
 #endif
 	default:
-                FEwrong_type_nth_arg(@'float-sign',2,y,@'float');
+                FEwrong_type_nth_arg(@[float-sign],2,y,@[float]);
 	}
 	@(return y);
 @)
@@ -1041,7 +1041,7 @@ cl_float_digits(cl_object x)
 		break;
 #endif
 	default:
-                FEwrong_type_nth_arg(@'float-digits',1,x,@'float');
+                FEwrong_type_nth_arg(@[float-digits],1,x,@[float]);
 	}
 	@(return x)
 }
@@ -1117,7 +1117,7 @@ cl_float_precision(cl_object x)
 	}
 #endif
 	default:
-		FEwrong_type_nth_arg(@'float-precision',1,x,@'float');
+		FEwrong_type_nth_arg(@[float-precision],1,x,@[float]);
 	}
 	@(return MAKE_FIXNUM(precision))
 }
@@ -1199,7 +1199,7 @@ cl_integer_decode_float(cl_object x)
 	}
 #endif
 	default:
-		FEwrong_type_nth_arg(@'integer-decode-float',1,x,@'float');
+		FEwrong_type_nth_arg(@[integer-decode-float],1,x,@[float]);
 	}
 	@(return x MAKE_FIXNUM(e) MAKE_FIXNUM(s))
 }
@@ -1230,7 +1230,7 @@ cl_realpart(cl_object x)
 		x = x->complex.real;
 		break;
 	default:
-		FEwrong_type_nth_arg(@'realpart',1,x,@'number');
+		FEwrong_type_nth_arg(@[realpart],1,x,@[number]);
 	}
 	@(return x)
 }
@@ -1276,7 +1276,7 @@ cl_imagpart(cl_object x)
 		x = x->complex.imag;
 		break;
 	default:
-                FEwrong_type_nth_arg(@'imagpart',1,x,@'number');
+                FEwrong_type_nth_arg(@[imagpart],1,x,@[number]);
 	}
 	@(return x)
 }

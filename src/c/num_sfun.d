@@ -146,7 +146,7 @@ cl_exp(cl_object x)
 		break;
 	}
 	default:
-		FEwrong_type_only_arg(@'exp', x, @'number');
+		FEwrong_type_only_arg(@[exp], x, @[number]);
 	}
         ECL_MATHERR_TEST;
 	@(return output)
@@ -159,11 +159,11 @@ cl_expt(cl_object x, cl_object y)
 	cl_object z;
         ty = type_of(y);
         if (ecl_unlikely(!ECL_NUMBER_TYPE_P(ty))) {
-                FEwrong_type_nth_arg(@'expt', 2, y, @'number');
+                FEwrong_type_nth_arg(@[expt], 2, y, @[number]);
 	}
         tx = type_of(x);
         if (ecl_unlikely(!ECL_NUMBER_TYPE_P(tx))) {
-                FEwrong_type_nth_arg(@'expt', 2, x, @'number');
+                FEwrong_type_nth_arg(@[expt], 2, x, @[number]);
 	}
 	if (ecl_zerop(y)) {
 		/* INV: The most specific numeric types come first. */
@@ -312,7 +312,7 @@ ecl_log1(cl_object x)
 		output = ecl_log1_complex(x, MAKE_FIXNUM(0));
 		break;
 	default:
-                FEwrong_type_nth_arg(@'log', 1, x, @'number');
+                FEwrong_type_nth_arg(@[log], 1, x, @[number]);
 	}
         ECL_MATHERR_TEST;
         return output;
@@ -382,7 +382,7 @@ ecl_log1p(cl_object x)
 					  MAKE_FIXNUM(0));
 		break;
 	default:
-                FEwrong_type_only_arg(@'log', x, @'number');
+                FEwrong_type_only_arg(@[log], x, @[number]);
         }
         ECL_MATHERR_TEST;
         return output;
@@ -402,7 +402,7 @@ cl_sqrt(cl_object x)
         ECL_MATHERR_CLEAR;
 	tx = type_of(x);
 	if (ecl_unlikely(!ECL_NUMBER_TYPE_P(tx))) {
-                FEwrong_type_only_arg(@'sqrt', x, @'number');
+                FEwrong_type_only_arg(@[sqrt], x, @[number]);
 	}
 	if (tx == t_complex) {
 		z = ecl_make_ratio(MAKE_FIXNUM(1), MAKE_FIXNUM(2));
@@ -598,7 +598,7 @@ cl_sin(cl_object x)
 		break;
 	}
 	default:
-                FEwrong_type_only_arg(@'sin', x, @'number');
+                FEwrong_type_only_arg(@[sin], x, @[number]);
 	}
         ECL_MATHERR_TEST;
 	@(return output)
@@ -639,7 +639,7 @@ cl_cos(cl_object x)
 		break;
 	}
 	default:
-		FEwrong_type_only_arg(@'cos', x, @'number');
+		FEwrong_type_only_arg(@[cos], x, @[number]);
 	}
         ECL_MATHERR_TEST;
 	@(return output)
@@ -686,7 +686,7 @@ cl_tan(cl_object x)
 		break;
 	}
 	default:
-                FEwrong_type_only_arg(@'tan', x, @'number');
+                FEwrong_type_only_arg(@[tan], x, @[number]);
 	}
         ECL_MATHERR_TEST;
 	@(return output)
@@ -729,7 +729,7 @@ cl_sinh(cl_object x)
 		break;
 	}
 	default:
-                FEwrong_type_only_arg(@'sinh', x, @'number');
+                FEwrong_type_only_arg(@[sinh], x, @[number]);
 	}
         ECL_MATHERR_TEST;
 	@(return output)
@@ -772,7 +772,7 @@ cl_cosh(cl_object x)
 		break;
 	}
 	default:
-                FEwrong_type_only_arg(@'cosh', x, @'number');
+                FEwrong_type_only_arg(@[cosh], x, @[number]);
 	}
         ECL_MATHERR_TEST;
 	@(return output)
@@ -807,7 +807,7 @@ cl_tanh(cl_object x)
 		break;
 	}
 	default:
-                FEwrong_type_only_arg(@'tanh', x, @'number');
+                FEwrong_type_only_arg(@[tanh], x, @[number]);
 	}
         ECL_MATHERR_TEST;
 	@(return output)

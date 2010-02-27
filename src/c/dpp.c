@@ -251,13 +251,26 @@ search_keyword(const char *name)
 }
 
 char *
-search_symbol(char *name, int *symbol_code)
+search_symbol(char *name, int *symbol_code, int code)
 {
 	int i;
 	for (i = 0; cl_symbols[i].name != NULL; i++) {
 		if (!strcasecmp(name, cl_symbols[i].name)) {
 			name = poolp;
-			if (i == 0) {
+                        if (code) {
+                                pushstr("MAKE_FIXNUM(/*");
+                                pushstr(cl_symbols[i].name);
+				pushstr("*/");
+				if (i >= 1000)
+					pushc((i / 1000) % 10 + '0');
+				if (i >= 100)
+					pushc((i / 100) % 10 + '0');
+				if (i >= 10)
+					pushc((i / 10) % 10 + '0');
+				pushc(i % 10 + '0');
+				pushstr(")");
+				pushc(0);
+                        } else if (i == 0) {
 				pushstr("Cnil");
 				pushc(0);
 			} else {
@@ -283,19 +296,20 @@ search_symbol(char *name, int *symbol_code)
 }
 
 char *
-read_symbol()
+read_symbol(int code)
 {
 	char c, *name = poolp;
+        char end = code? ']' : '\'';
 
 	c = readc();
-	while (c != '\'') {
+	while (c != end) {
 		if (c == '_') c = '-';
 		pushc(c); 
 		c = readc();
 	}
 	pushc(0);
 
-	name = search_symbol(poolp = name, 0);
+	name = search_symbol(poolp = name, 0, code);
 	if (name == NULL) {
 		name = poolp;
 		printf("\nUnknown symbol: %s\n", name);
@@ -387,7 +401,10 @@ read_token(void)
 		} else if (c == '@') {
 			c = readc();
 			if (c == '\'') {
-				(void)read_symbol();
+				(void)read_symbol(0);
+				poolp--;
+			} else if (c == '[') {
+				(void)read_symbol(1);
 				poolp--;
 			} else if (c == '@') {
 				pushc(c);
@@ -448,7 +465,7 @@ void
 get_function(void)
 {
 	function = read_function();
-	function_symbol = search_symbol(function, &function_code);
+	function_symbol = search_symbol(function, &function_code, 0);
 	if (function_symbol == NULL) {
 		function_symbol = poolp;
 		pushstr("Cnil");
@@ -833,7 +850,14 @@ LOOP:
 	} else if (c == '\'') {
 		char *p;
 		poolp = pool;
-		p = read_symbol();
+		p = read_symbol(0);
+		pushc('\0');
+		fprintf(out,"%s",p);
+		goto LOOP;
+	}  else if (c == '[') {
+		char *p;
+		poolp = pool;
+		p = read_symbol(1);
 		pushc('\0');
 		fprintf(out,"%s",p);
 		goto LOOP;
