@@ -132,6 +132,14 @@ typedef cl_object (*cl_objectfn_fixed)();
 #define	fix(obje)		(((cl_fixnum)(obje)) >> 2)
 #define FIXNUMP(o)		(IMMEDIATE(o) == t_fixnum)
 
+#define ECL_FIXNUMP(o)          (IMMEDIATE(o) == t_fixnum)
+#define ecl_fixnum_lower(a,b)   ((cl_fixnum)(a) < (cl_fixnum)(b))
+#define ecl_fixnum_greater(a,b) ((cl_fixnum)(a) > (cl_fixnum)(b))
+#define ecl_fixnum_leq(a,b)     ((cl_fixnum)(a) <= (cl_fixnum)(b))
+#define ecl_fixnum_geq(a,b)     ((cl_fixnum)(a) >= (cl_fixnum)(b))
+#define ecl_fixnum_plusp(a)     ((cl_fixnum)(a) > (cl_fixnum)MAKE_FIXNUM(0))
+#define ecl_fixnum_minusp(a)    ((cl_fixnum)(a) < (cl_fixnum)(0))
+
 /* Immediate characters:	*/
 #define CHARACTER_TAG		t_character
 #define CHARACTERP(o)		(IMMEDIATE(o) == t_character)
