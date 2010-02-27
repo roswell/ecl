@@ -308,8 +308,9 @@ LOOP:
 			ecl_unread_char(c, in);
 			break;
 		}
-		if (ecl_invalid_character_p(c)) {
-			FEreader_error("Found invalid character ~:C", in, 1, CODE_CHAR(c));
+		unlikely_if (ecl_invalid_character_p(c)) {
+			FEreader_error("Found invalid character ~:C", in,
+                                       1, CODE_CHAR(c));
 		}
 		if (read_case != ecl_case_preserve) {
 			if (ecl_upper_case_p(c)) {
@@ -360,7 +361,7 @@ LOOP:
 	if ((base <= 10) && ecl_alpha_char_p(TOKEN_STRING_CHAR(token,0)))
 		goto SYMBOL;
 	x = ecl_parse_number(token, 0, TOKEN_STRING_FILLP(token), &i, base);
-	if (x == Cnil)
+	unlikely_if (x == Cnil)
 		FEreader_error("Syntax error when reading number.~%Offending string: ~S.",
 			       in, 1, token);
 	if (x != OBJNULL && length == i)
@@ -381,7 +382,7 @@ LOOP:
 		return token;
 	} else if (external_symbol) {
 		x = ecl_find_symbol(token, p, &intern_flag);
-		if (intern_flag != EXTERNAL) {
+		unlikely_if (intern_flag != EXTERNAL) {
 			FEerror("Cannot find the external symbol ~A in ~S.",
 				2, cl_copy_seq(token), p);
 		}
@@ -647,7 +648,7 @@ cl_object comma_reader(cl_object in, cl_object c)
 	const cl_env_ptr env = ecl_process_env();
 	cl_fixnum backq_level = fix(ECL_SYM_VAL(env, @'si::*backq-level*'));
 
-	if (backq_level <= 0)
+	unlikely_if (backq_level <= 0)
 		FEreader_error("A comma has appeared out of a backquote.", in, 0);
 	/* Read character & complain at EOF */
 	c = cl_peek_char(2,Cnil,in);
@@ -747,7 +748,7 @@ dispatch_reader_fun(cl_object in, cl_object dc)
 	cl_object dispatch_table;
 	int c = ecl_char_code(dc);
 	ecl_readtable_get(readtable, c, &dispatch_table);
-	if (type_of(dispatch_table) != t_hashtable)
+	unlikely_if (type_of(dispatch_table) != t_hashtable)
 		FEreader_error("~C is not a dispatching macro character",
 			       in, 1, dc);
 	return dispatch_macro_character(dispatch_table, in, c);
@@ -774,7 +775,7 @@ dispatch_macro_character(cl_object table, cl_object in, int c)
 	{
 		cl_object dc = CODE_CHAR(c);
 		cl_object fun = ecl_gethash_safe(dc, table, Cnil);
-		if (Null(fun)) {
+		unlikely_if (Null(fun)) {
 			FEreader_error("No dispatch function defined "
 				       "for character ~S",
 				       in, 1, dc);
@@ -787,7 +788,7 @@ static cl_object
 single_quote_reader(cl_object in, cl_object c)
 {
 	c = ecl_read_object(in);
-	if (c == OBJNULL)
+	unlikely_if (c == OBJNULL)
 		FEend_of_file(in);
 	@(return cl_list(2, @'quote', c))
 }
@@ -824,11 +825,11 @@ sharp_C_reader(cl_object in, cl_object c, cl_object d)
 	if (d != Cnil && !read_suppress)
 		extra_argument('C', in, d);
 	x = ecl_read_object(in);
-	if (x == OBJNULL)
+	unlikely_if (x == OBJNULL)
 		FEend_of_file(in);
 	if (read_suppress)
 		@(return Cnil);
-	if (Null(x) || type_of(x) != t_list || ecl_length(x) != 2)
+	unlikely_if (Null(x) || type_of(x) != t_list || ecl_length(x) != 2)
 		FEreader_error("Reader macro #C should be followed by a list",
 			       in, 0);
 	real = CAR(x);
@@ -853,11 +854,11 @@ sharp_backslash_reader(cl_object in, cl_object c, cl_object d)
 {
 	const cl_env_ptr env = ecl_process_env();
 	cl_object token;
-	if (d != Cnil && !read_suppress)
-		if (!FIXNUMP(d) ||
-		    fix(d) != 0)
+	if (d != Cnil && !read_suppress) {
+		unlikely_if (!FIXNUMP(d) || d != MAKE_FIXNUM(0)) {
 			FEreader_error("~S is an illegal CHAR-FONT.", in, 1, d);
-			/*  assuming that CHAR-FONT-LIMIT is 1  */
+                }
+        }
 	ecl_bds_bind(env, @'*readtable*', cl_core.standard_readtable);
 	token = ecl_read_object_with_delimiter(in, EOF, ECL_READ_ONLY_TOKEN,
                                                cat_single_escape);
@@ -871,7 +872,7 @@ sharp_backslash_reader(cl_object in, cl_object c, cl_object d)
 		c = CODE_CHAR(TOKEN_STRING_CHAR(token,1) & 037);
 	} else {
 		cl_object nc = cl_name_char(token);
-		if (Null(nc)) {
+		unlikely_if (Null(nc)) {
 			FEreader_error("~S is an illegal character name.", in, 1, token);
 		}
 		c = nc;
@@ -887,7 +888,7 @@ sharp_single_quote_reader(cl_object in, cl_object c, cl_object d)
 	if(d != Cnil && !suppress)
 		extra_argument('\'', in, d);
 	c = ecl_read_object(in);
-	if (c == OBJNULL) {
+	unlikely_if (c == OBJNULL) {
 		FEend_of_file(in);
 	} else if (suppress) {
 		c = Cnil;
@@ -906,14 +907,16 @@ sharp_Y_reader(cl_object in, cl_object c, cl_object d)
 	if (d != Cnil && !read_suppress)
 		extra_argument('C', in, d);
 	x = ecl_read_object(in);
-	if (x == OBJNULL)
+	unlikely_if (x == OBJNULL) {
 		FEend_of_file(in);
-	if (read_suppress)
+        }
+	if (read_suppress) {
 		@(return Cnil);
-	if (Null(x) || type_of(x) != t_list || ecl_length(x) != 5)
+        }
+	unlikely_if (Null(x) || type_of(x) != t_list || ecl_length(x) != 5) {
 		FEreader_error("Reader macro #Y should be followed by a list",
 			       in, 0);
-
+        }
         rv = ecl_alloc_object(t_bytecodes);
 
         rv->bytecodes.name = ECL_CONS_CAR(x);
@@ -977,9 +980,10 @@ sharp_left_parenthesis_reader(cl_object in, cl_object c, cl_object d)
 		 */
 		cl_object x = do_read_delimited_list(')', in, 1);
 		cl_index a = _cl_backq_car(&x);
-		if (a == APPEND || a == NCONC)
+		unlikely_if (a == APPEND || a == NCONC) {
 			FEreader_error("A ,@ or ,. appeared in an illegal position.",
 				       in, 0);
+                }
 		if (a == QUOTE) {
 			v = funcall(4, @'make-array', cl_list(1, cl_length(x)),
 				    @':initial-contents', x);
@@ -1004,9 +1008,8 @@ sharp_left_parenthesis_reader(cl_object in, cl_object c, cl_object d)
 		   be smaller, and in that case...*/
 		cl_object last;
 		cl_index dim, i;
-                if (ecl_unlikely(!ECL_FIXNUMP(d) ||
-                                 ((dim = fix(d)) < 0) ||
-                                 (dim > ADIMLIM))) {
+                unlikely_if (!ECL_FIXNUMP(d) || ((dim = fix(d)) < 0) ||
+                             (dim > ADIMLIM)) {
                         FEreader_error("Invalid dimension size ~D in #()", in, 1, d);
                 }
 		v = ecl_alloc_simple_vector(dim, aet_object);
@@ -1014,8 +1017,9 @@ sharp_left_parenthesis_reader(cl_object in, cl_object c, cl_object d)
 			cl_object aux = ecl_read_object_with_delimiter(in, ')', 0, cat_constituent);
 			if (aux == OBJNULL)
 				break;
-			if (i >= dim) {
-				FEreader_error("Vector larger than specified length, ~D.", in, 1, d);
+			unlikely_if (i >= dim) {
+				FEreader_error("Vector larger than specified length,"
+                                               "~D.", in, 1, d);
 			}
 			ecl_aset_unsafe(v, i, last = aux);
 		}
@@ -1050,8 +1054,8 @@ sharp_asterisk_reader(cl_object in, cl_object c, cl_object d)
 			ecl_unread_char(x, in);
 			break;
 		}
-		if (a == cat_single_escape || a == cat_multiple_escape ||
-		    (x != '0' && x != '1'))
+		unlikely_if (a == cat_single_escape || a == cat_multiple_escape ||
+                             (x != '0' && x != '1'))
 		{
 			FEreader_error("Character ~:C is not allowed after #*",
 				       in, 1, CODE_CHAR(x));
@@ -1061,17 +1065,17 @@ sharp_asterisk_reader(cl_object in, cl_object c, cl_object d)
 	if (Null(d)) {
 		dim = dimcount;
 	} else {
-                if (ecl_unlikely(!ECL_FIXNUMP(d) ||
-                                 ((dim = fix(d)) < 0) ||
-                                 (dim > ADIMLIM))) {
+                unlikely_if (!ECL_FIXNUMP(d) || ((dim = fix(d)) < 0) ||
+                             (dim > ADIMLIM))
+                {
                         FEreader_error("Wrong vector dimension size ~D in #*.",
                                        in, 1, d);
                 }
-		if (dimcount > dim)
+		unlikely_if (dimcount > dim)
 			FEreader_error("Too many elements in #*.", in, 0);
-		if (dim && (dimcount == 0))
+		unlikely_if (dim && (dimcount == 0))
 			FEreader_error("Cannot fill the bit-vector #*.", in, 0);
-		else last = ECL_STACK_REF(env,-1);
+		last = ECL_STACK_REF(env,-1);
 	}
 	x = ecl_alloc_simple_vector(dim, aet_bit);
 	for (i = 0; i < dim; i++) {
@@ -1149,11 +1153,11 @@ sharp_dot_reader(cl_object in, cl_object c, cl_object d)
 	if (d != Cnil && !read_suppress)
 		extra_argument('.', in, d);
 	c = ecl_read_object(in);
-	if (c == OBJNULL)
+	unlikely_if (c == OBJNULL)
 		FEend_of_file(in);
 	if (read_suppress)
 		@(return Cnil);
-	if (ecl_symbol_value(@'*read-eval*') == Cnil)
+	unlikely_if (ecl_symbol_value(@'*read-eval*') == Cnil)
 		FEreader_error("Cannot evaluate the form #.~A", in, 1, c);
 	c = si_eval_with_env(1, c);
 	@(return c)
@@ -1169,11 +1173,13 @@ read_number(cl_object in, int radix, cl_object macro_char)
 		x = Cnil;
 	} else {
 		x = ecl_parse_number(token, 0, TOKEN_STRING_FILLP(token), &i, radix);
-		if (x == OBJNULL || x == Cnil || i != TOKEN_STRING_FILLP(token)) {
+		unlikely_if (x == OBJNULL || x == Cnil ||
+                             i != TOKEN_STRING_FILLP(token))
+                {
 			FEreader_error("Cannot parse the #~A readmacro.", in, 1,
 				       macro_char);
 		}
-		if (cl_rationalp(x) == Cnil) {
+		unlikely_if (cl_rationalp(x) == Cnil) {
 			FEreader_error("The float ~S appeared after the #~A readmacro.",
 				       in, 2, x, macro_char);
 		}
@@ -1210,14 +1216,15 @@ static cl_object
 sharp_R_reader(cl_object in, cl_object c, cl_object d)
 {
 	int radix;
-	if (read_suppress)
+	if (read_suppress) {
 		radix = 10;
-	else if (FIXNUMP(d)) {
-		radix = fix(d);
-		if (radix > 36 || radix < 2)
-			FEreader_error("~S is an illegal radix.", in, 1, d);
-	} else {
+        } else unlikely_if (!FIXNUMP(d)) {
 		FEreader_error("No radix was supplied in the #R readmacro.", in, 0);
+        } else {
+		radix = fix(d);
+		unlikely_if (radix > 36 || radix < 2) {
+			FEreader_error("~S is an illegal radix.", in, 1, d);
+                }
 	}
 	@(return (read_number(in, radix, CODE_CHAR('R'))))
 }
@@ -1232,16 +1239,19 @@ sharp_eq_reader(cl_object in, cl_object c, cl_object d)
 	cl_object definition, pair, value;
 	cl_object sharp_eq_context = ECL_SYM_VAL(the_env, @'si::*sharp-eq-context*');
 
-	if (read_suppress) @(return)
-	if (Null(d))
+	if (read_suppress) @(return);
+	unlikely_if (Null(d)) {
 		FEreader_error("The #= readmacro requires an argument.", in, 0);
-	if (ecl_assq(d, sharp_eq_context) != Cnil)
+        }
+	unlikely_if (ecl_assq(d, sharp_eq_context) != Cnil) {
 		FEreader_error("Duplicate definitions for #~D=.", in, 1, d);
+        }
         pair = CONS(d, Cnil);
 	ECL_SETQ(the_env, @'si::*sharp-eq-context*', CONS(pair, sharp_eq_context));
 	value = ecl_read_object(in);
-	if (value == pair)
+	unlikely_if (value == pair) {
 		FEreader_error("#~D# is defined by itself.", in, 1, d);
+        }
 	ECL_RPLACD(pair, value);
 	@(return value)
 }
@@ -1253,12 +1263,14 @@ sharp_sharp_reader(cl_object in, cl_object c, cl_object d)
 	cl_object pair;
 
 	if (read_suppress)
-                @(return Cnil)
-	if (Null(d))
+                @(return Cnil);
+	unlikely_if (Null(d)) {
 		FEreader_error("The ## readmacro requires an argument.", in, 0);
+        }
 	pair = ecl_assq(d, ECL_SYM_VAL(the_env, @'si::*sharp-eq-context*'));
-	if (pair == Cnil)
+	unlikely_if (pair == Cnil) {
                 FEreader_error("#~D# is undefined.", in, 1, d);
+        }
         @(return pair)
 }
 
@@ -1433,11 +1445,12 @@ sharp_dollar_reader(cl_object in, cl_object c, cl_object d)
 	readtable routines
 */
 
-static void
+static void ECL_INLINE
 assert_type_readtable(cl_object function, cl_narg narg, cl_object p)
 {
-	if (ecl_unlikely(type_of(p) != t_readtable))
+	unlikely_if (type_of(p) != t_readtable) {
 		FEwrong_type_nth_arg(function, narg, p, @[readtable]);
+        }
 }
 
 
@@ -1492,7 +1505,7 @@ ecl_current_readtable(void)
 
 	/* INV: *readtable* always has a value */
 	r = ECL_SYM_VAL(the_env, @'*readtable*');
-	if (type_of(r) != t_readtable) {
+	unlikely_if (type_of(r) != t_readtable) {
 		ECL_SETQ(the_env, @'*readtable*', cl_core.standard_readtable);
 		FEerror("The value of *READTABLE*, ~S, was not a readtable.",
 			1, r);
@@ -1505,16 +1518,17 @@ ecl_current_read_base(void)
 {
 	const cl_env_ptr the_env = ecl_process_env();
 	cl_object x;
+        cl_fixnum b;
 
 	/* INV: *READ-BASE* always has a value */
 	x = ECL_SYM_VAL(the_env, @'*read_base*');
-	if (FIXNUMP(x)) {
-		cl_fixnum b = fix(x);
-		if (b >= 2 && b <= 36)
-			return b;
-	}
-	ECL_SETQ(the_env, @'*read_base*', MAKE_FIXNUM(10));
-	FEerror("The value of *READ-BASE*, ~S, was illegal.", 1, x);
+        unlikely_if (!ECL_FIXNUMP(x) || ecl_fixnum_lower(x,MAKE_FIXNUM(2)) ||
+                     ecl_fixnum_greater(x, MAKE_FIXNUM(36)))
+        {
+                ECL_SETQ(the_env, @'*read_base*', MAKE_FIXNUM(10));
+                FEerror("The value of *READ-BASE*, ~S, was illegal.", 1, x);
+        }
+	return fix(x);
 }
 
 char
@@ -1609,26 +1623,26 @@ do_read_delimited_list(int d, cl_object in, bool proper_list)
 		x = ecl_read_object_with_delimiter(in, d, 0, cat_constituent);
 		if (x == OBJNULL) {
 			/* End of the list. */
-			if (after_dot == 1) {
+			unlikely_if (after_dot == 1) {
 				/* Something like (1 . ) */
 				FEreader_error("Object missing after a list dot", in, 0);
 			}
 			return y;
 		} else if (x == @'si::.') {
-			if (proper_list) {
+			unlikely_if (proper_list) {
 				FEreader_error("A dotted list was found where a proper list was expected.", in, 0);
 			}
-			if (p == &y) {
+			unlikely_if (p == &y) {
 				/* Something like (. 2) */
 				FEreader_error("A dot appeared after a left parenthesis.", in, 0);
 			}
-			if (after_dot) {
+			unlikely_if (after_dot) {
 				/* Something like (1 . . 2) */
 				FEreader_error("Two dots appeared consecutively.", in, 0);
 			}
 			after_dot = 1;
 		} else if (after_dot) {
-			if (after_dot++ > 1) {
+			unlikely_if (after_dot++ > 1) {
 				/* Something like (1 . 2 3) */
 				FEreader_error("Too many objects after a list dot", in, 0);
 			}
@@ -1814,12 +1828,16 @@ EOFCHK:	if (c == EOF && TOKEN_STRING_FILLP(token) == 0) {
 	cl_index s, e, ep;
 	cl_object rtbl = ecl_current_readtable();
 @ {
-        if (ecl_unlikely(!ECL_STRINGP(strng)))
+        unlikely_if (!ECL_STRINGP(strng)) {
                 FEwrong_type_nth_arg(@[parse-integer], 1, strng, @[string]);
+        }
 	get_string_start_end(strng, start, end, &s, &e);
-	if (ecl_unlikely(!FIXNUMP(radix) ||
-                         fix(radix) < 2 || fix(radix) > 36))
+	unlikely_if (!FIXNUMP(radix) ||
+                     ecl_fixnum_lower(radix, MAKE_FIXNUM(2)) ||
+                     ecl_fixnum_greater(radix, MAKE_FIXNUM(36)))
+        {
 		FEerror("~S is an illegal radix.", 1, radix);
+        }
 	while (s < e &&
 	       ecl_readtable_get(rtbl, ecl_char(strng, s), NULL) == cat_whitespace) {
 		s++;
@@ -1842,7 +1860,9 @@ EOFCHK:	if (c == EOF && TOKEN_STRING_FILLP(token) == 0) {
 		@(return x MAKE_FIXNUM(ep));
 	}
 	for (s = ep; s < e; s++) {
-		if (ecl_readtable_get(rtbl, ecl_char(strng, s), NULL) != cat_whitespace) {
+		unlikely_if (ecl_readtable_get(rtbl, ecl_char(strng, s), NULL)
+                             != cat_whitespace) 
+                {
 CANNOT_PARSE:		FEparse_error("Cannot parse an integer in the string ~S.",
 				      Cnil, 1, strng);
 		}
@@ -2071,10 +2091,10 @@ ecl_invalid_character_p(int c)
 @
         assert_type_readtable(@[set-dispatch-macro-character], 4, readtable);
 	ecl_readtable_get(readtable, ecl_char_code(dspchr), &table);
-        if (readtable->readtable.locked) {
+        unlikely_if (readtable->readtable.locked) {
                 error_locked_readtable(readtable);
         }
-	if (type_of(table) != t_hashtable) {
+	unlikely_if (type_of(table) != t_hashtable) {
 		FEerror("~S is not a dispatch character.", 1, dspchr);
 	}
 	subcode = ecl_char_code(subchr);
@@ -2107,7 +2127,7 @@ ecl_invalid_character_p(int c)
         assert_type_readtable(@[get-dispatch-macro-character], 3, readtable);
 	c = ecl_char_code(dspchr);
 	ecl_readtable_get(readtable, c, &table);
-	if (type_of(table) != t_hashtable) {
+	unlikely_if (type_of(table) != t_hashtable) {
 		FEerror("~S is not a dispatch character.", 1, dspchr);
 	}
 	c = ecl_char_code(subchr);
@@ -2420,9 +2440,9 @@ read_VV(cl_object block, void (*entry_point)(cl_object))
                         if (len) {
                                 /* Code from COMPILE uses data in *compiler-constants* */
                                 cl_object v = ECL_SYM_VAL(env,@'si::*compiler-constants*');
-                                if (type_of(v) != t_vector ||
-                                    v->vector.dim != len ||
-                                    v->vector.elttype != aet_object)
+                                unlikely_if (type_of(v) != t_vector ||
+                                             v->vector.dim != len ||
+                                             v->vector.elttype != aet_object)
                                         FEerror("Internal error: corrupted data in "
                                                 "si::*compiler-constants*", 0);
                                 VV = block->cblock.data = v->vector.self.t;
@@ -2469,8 +2489,9 @@ read_VV(cl_object block, void (*entry_point)(cl_object))
 			}
 		}
                 ecl_bds_unwind(env, bds_ndx);
-		if (i < len)
-			FEreader_error("Not enough data while loading binary file", in, 0);
+		unlikely_if (i < len)
+			FEreader_error("Not enough data while loading"
+                                       "binary file", in, 0);
 	NO_DATA_LABEL:
 		for (i = 0; i < block->cblock.cfuns_size; i++) {
 			const struct ecl_cfun *prototype = block->cblock.cfuns+i;

@@ -21,6 +21,8 @@ extern "C" {
  *	FUNCTIONS, VARIABLES AND TYPES NOT FOR GENERAL USE		*
  * -------------------------------------------------------------------- */
 
+#define unlikely_if(x) if (ecl_unlikely(x))
+
 /* booting */
 extern void init_all_symbols(void);
 extern void init_alloc(void);
