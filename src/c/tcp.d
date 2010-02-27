@@ -273,7 +273,13 @@ si_open_client_stream(cl_object host, cl_object port)
    /* Ensure "host" is a string that we can pass to a C function */
    host = si_copy_to_simple_base_string(host);
 
-   p = ecl_fixnum_in_range(@'si::open-client-stream',"port",port,0,65535);
+   if (ecl_unlikely(!ECL_FIXNUMP(port) ||
+                    ecl_fixnum_minusp(port) ||
+                    ecl_fixnum_greater(port,MAKE_FIXNUM(65536)))) {
+           FEwrong_type_nth_arg(@[si::open-client-stream], 2, port,
+                                ecl_read_from_cstring("(INTEGER 0 65535)"));
+   }
+   p = fix(port);
 
    if (host->base_string.fillp > BUFSIZ - 1)
      FEerror("~S is a too long file name.", 1, host);
@@ -301,7 +307,13 @@ si_open_server_stream(cl_object port)
    cl_index p;
    cl_object output;
 
-   p = ecl_fixnum_in_range(@'si::open-client-stream',"port",port,0,65535);
+   if (ecl_unlikely(!ECL_FIXNUMP(port) ||
+                    ecl_fixnum_minusp(port) ||
+                    ecl_fixnum_greater(port,MAKE_FIXNUM(65536)))) {
+           FEwrong_type_only_arg(@[si::open-client-stream], port,
+                                 ecl_read_from_cstring("(INTEGER 0 65535)"));
+   }
+   p = fix(port);
    ecl_disable_interrupts();
    fd = create_server_port(p);
    ecl_enable_interrupts();

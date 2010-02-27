@@ -109,23 +109,6 @@ fixnnint(cl_object x)
 		    @':datum', x);
 }
 
-cl_fixnum
-ecl_fixnum_in_range(cl_object fun, const char *what, cl_object value,
-		    cl_fixnum min, cl_fixnum max)
-{
-	do {
-		if (FIXNUMP(value)) {
-			cl_fixnum output = fix(value);
-			if ((min <= output) && (output <= max)) {
-				return output;
-			}
-		}
-		value = ecl_type_error(fun, what, value,
-				       cl_list(3,@'integer',MAKE_FIXNUM(min),
-					       MAKE_FIXNUM(max)));
-	} while(1);
-}
-
 cl_object
 ecl_make_integer(cl_fixnum l)
 {
@@ -146,6 +129,13 @@ ecl_make_unsigned_integer(cl_index l)
                 return _ecl_big_register_copy(z);
 	}
 	return MAKE_FIXNUM(l);
+}
+
+int
+ecl_to_bit(cl_object x) {
+        if (ecl_unlikely((x != MAKE_FIXNUM(0)) && (x != MAKE_FIXNUM(1))))
+                FEwrong_type_nth_arg(@[coerce], 1, x, @[bit]);
+        return x == MAKE_FIXNUM(1);
 }
 
 ecl_uint8_t

@@ -279,6 +279,61 @@ FEwrong_type_nth_arg(cl_object function, cl_narg narg, cl_object value, cl_objec
 }
 
 void
+FEwrong_type_key_arg(cl_object function, cl_object key, cl_object value, cl_object type)
+{
+        const char *message =
+                "In ~:[an anonymous function~;~:*function ~A~], "
+                "the value of the argument ~S is~&  ~S~&which is "
+                "not of the expected type ~A";
+        cl_env_ptr env = ecl_process_env();
+        struct ihs_frame tmp_ihs;
+        function = cl_symbol_or_object(function);
+        type = cl_symbol_or_object(type);
+        key = cl_symbol_or_object(key);
+        if (!Null(function) && env->ihs_top && env->ihs_top->function != function) {
+                ecl_ihs_push(env,&tmp_ihs,function,Cnil);
+        }        
+        si_signal_simple_error(8,
+                               @'type-error', /* condition name */
+                               Cnil, /* not correctable */
+                               make_constant_base_string(message), /* format control */
+                               cl_list(4, function, key, value, type),
+                               @':expected-type', type,
+                               @':datum', value);
+}
+
+void
+FEwrong_index(cl_object function, cl_object a, int which, cl_object ndx,
+              cl_index nonincl_limit)
+{
+        const char *message1 =
+                "In ~:[an anonymous function~;~:*function ~A~], "
+                "the ~*index into the object~% ~A.~%"
+                "takes a value ~D out of the range ~A.";
+        const char *message2 =
+                "In ~:[an anonymous function~;~:*function ~A~], "
+                "the ~:R index into the object~% ~A~%"
+                "takes a value ~D out of the range ~A.";
+        cl_object limit = ecl_make_integer(nonincl_limit-1);
+	cl_object type = ecl_make_integer_type(MAKE_FIXNUM(0), limit);
+        cl_object message = make_constant_base_string((which<0) ? message1 : message2);
+        cl_env_ptr env = ecl_process_env();
+        struct ihs_frame tmp_ihs;
+        function = cl_symbol_or_object(function);
+        if (!Null(function) && env->ihs_top && env->ihs_top->function != function) {
+                ecl_ihs_push(env,&tmp_ihs,function,Cnil);
+        }        
+        si_signal_simple_error(8,
+                               @'type-error', /* condition name */
+                               Cnil, /* not correctable */
+                               message, /* format control */
+                               cl_list(5, function, MAKE_FIXNUM(which+1), ndx,
+                                       a, type),
+                               @':expected-type', type,
+                               @':datum', index);
+}
+
+void
 FEunbound_variable(cl_object sym)
 {
 	cl_error(3, @'unbound-variable', @':name', sym);

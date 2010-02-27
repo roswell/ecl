@@ -342,7 +342,6 @@ extern ECL_API cl_object si_make_pure_array(cl_object etype, cl_object dims, cl_
 extern ECL_API cl_object si_fill_array_with_elt(cl_object array, cl_object elt, cl_object start, cl_object end);
 
 extern ECL_API void FEwrong_dimensions(cl_object a, cl_index rank) ecl_attr_noreturn;
-extern ECL_API void FEwrong_index(cl_object a, cl_index ndx, cl_index upper) ecl_attr_noreturn;
 extern ECL_API cl_index ecl_to_index(cl_object n);
 extern ECL_API cl_index ecl_array_dimension(cl_object x, cl_index n);
 extern ECL_API cl_object ecl_aref_unsafe(cl_object x, cl_index index);
@@ -554,8 +553,10 @@ extern ECL_API void FEclosed_stream(cl_object strm) ecl_attr_noreturn;
 extern ECL_API void FEwrong_type_argument(cl_object type, cl_object value) ecl_attr_noreturn;
 extern ECL_API void FEwrong_type_only_arg(cl_object function, cl_object type, cl_object value) ecl_attr_noreturn;
 extern ECL_API void FEwrong_type_nth_arg(cl_object function, cl_narg narg, cl_object type, cl_object value) ecl_attr_noreturn;
+extern ECL_API void FEwrong_type_key_arg(cl_object function, cl_object keyo, cl_object type, cl_object value) ecl_attr_noreturn;
 extern ECL_API void FEwrong_num_arguments(cl_object fun) ecl_attr_noreturn;
 extern ECL_API void FEwrong_num_arguments_anonym(void) ecl_attr_noreturn;
+extern ECL_API void FEwrong_index(cl_object function, cl_object a, int which, cl_object ndx, cl_index nonincl_limit) ecl_attr_noreturn;
 extern ECL_API void FEunbound_variable(cl_object sym) ecl_attr_noreturn;
 extern ECL_API void FEinvalid_macro_call(cl_object obj) ecl_attr_noreturn;
 extern ECL_API void FEinvalid_variable(const char *s, cl_object obj) ecl_attr_noreturn;
@@ -1001,10 +1002,9 @@ extern ECL_API cl_object ecl_one_minus(cl_object x);
 
 extern ECL_API cl_fixnum fixint(cl_object x);
 extern ECL_API cl_index  fixnnint(cl_object x);
-extern ECL_API cl_fixnum ecl_fixnum_in_range(cl_object fun, const char *what, cl_object value,
-				     cl_fixnum min, cl_fixnum max);
 extern ECL_API cl_object ecl_make_integer(cl_fixnum i);
 extern ECL_API cl_object ecl_make_unsigned_integer(cl_index i);
+extern ECL_API int ecl_to_bit(cl_object o);
 extern ECL_API ecl_uint8_t ecl_to_uint8_t(cl_object o);
 extern ECL_API ecl_int8_t ecl_to_int8_t(cl_object o);
 #define ecl_make_uint8_t(i) MAKE_FIXNUM(i)
@@ -1699,7 +1699,7 @@ extern ECL_API void FEtype_error_array(cl_object x) ecl_attr_noreturn;
 extern ECL_API void FEdivision_by_zero(cl_object x, cl_object y) ecl_attr_noreturn;
 extern ECL_API cl_object ecl_type_error(cl_object function, const char *place, cl_object o, cl_object type);
 extern ECL_API cl_object ecl_check_cl_type(cl_object fun, cl_object p, cl_type t);
-
+extern ECL_API cl_object ecl_make_integer_type(cl_object min, cl_object max);
 
 /* unixfsys.c */
 

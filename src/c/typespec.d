@@ -325,3 +325,9 @@ cl_type_of(cl_object x)
 	}
 	@(return t)
 }
+
+cl_object
+ecl_make_integer_type(cl_object min, cl_object max)
+{
+        return cl_list(3, @'integer', min, max);
+}

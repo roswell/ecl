@@ -568,7 +568,14 @@ cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
 		FEerror("~S is an illegal hash-table test function.",
 			1, test);
 	}
-	hsize = ecl_fixnum_in_range(@'make-hash-table',"size",size,0,ATOTLIM);;
+        if (ecl_unlikely(!ECL_FIXNUMP(size) ||
+                         ecl_fixnum_minusp(size) ||
+                         ecl_fixnum_geq(size,MAKE_FIXNUM(ATOTLIM)))) {
+            FEwrong_type_key_arg(@[make-hash-table], @[:size], size,
+                                 ecl_make_integer_type(MAKE_FIXNUM(0),
+                                                       MAKE_FIXNUM(ATOTLIM)));
+        }
+        hsize = fix(size);
 	if (hsize < 16) {
 		hsize = 16;
 	}

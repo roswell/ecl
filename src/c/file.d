@@ -4217,12 +4217,22 @@ si_do_write_sequence(cl_object seq, cl_object stream, cl_object s, cl_object e)
 	   sequence. Therefore, we only need to check the type of the
 	   object, and seq == Cnil i.f.f. t = t_symbol */
 	limit = ecl_length(seq);
-	start = ecl_fixnum_in_range(@'write-sequence',"start",s,0,limit);
+        if (ecl_unlikely(!ECL_FIXNUMP(s) ||
+                         ((start = fix(s)) < 0) ||
+                         (start > limit))) {
+                FEwrong_type_key_arg(@[write-sequence], @[:start], s,
+                                     ecl_make_integer_type(MAKE_FIXNUM(0),
+                                                           MAKE_FIXNUM(limit-1)));
+        }
 	if (e == Cnil) {
 		end = limit;
-	} else {
-		end = ecl_fixnum_in_range(@'write-sequence',"end",e,0,limit);
-	}
+	} else if (ecl_unlikely(!ECL_FIXNUMP(e) ||
+                                ((end = fix(e)) < 0) ||
+                                (end > limit))) {
+                FEwrong_type_key_arg(@[write-sequence], @[:end], e,
+                                     ecl_make_integer_type(MAKE_FIXNUM(0),
+                                                           MAKE_FIXNUM(limit)));
+        }
 	if (end <= start) {
 		goto OUTPUT;
 	}
@@ -4260,12 +4270,22 @@ si_do_read_sequence(cl_object seq, cl_object stream, cl_object s, cl_object e)
 	   sequence. Therefore, we only need to check the type of the
 	   object, and seq == Cnil i.f.f. t = t_symbol */
 	limit = ecl_length(seq);
-	start = ecl_fixnum_in_range(@'read-sequence',"start",s,0,limit);
+        if (ecl_unlikely(!ECL_FIXNUMP(s) ||
+                         ((start = fix(s)) < 0) ||
+                         (start > limit))) {
+                FEwrong_type_key_arg(@[read-sequence], @[:start], s,
+                                     ecl_make_integer_type(MAKE_FIXNUM(0),
+                                                           MAKE_FIXNUM(limit-1)));
+        }
 	if (e == Cnil) {
 		end = limit;
-	} else {
-		end = ecl_fixnum_in_range(@'read-sequence',"end",e,0,limit);
-	}
+	} else if (ecl_unlikely(!ECL_FIXNUMP(e) ||
+                                ((end = fix(e)) < 0) ||
+                                (end > limit))) {
+                FEwrong_type_key_arg(@[read-sequence], @[:end], e,
+                                     ecl_make_integer_type(MAKE_FIXNUM(0),
+                                                           MAKE_FIXNUM(limit)));
+        }
 	if (end <= start) {
 		goto OUTPUT;
 	}

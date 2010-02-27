@@ -1002,9 +1002,13 @@ sharp_left_parenthesis_reader(cl_object in, cl_object c, cl_object d)
 		/* Finally: Both dimension and data are provided. The
 		   amount of data cannot exceed the length, but it may
 		   be smaller, and in that case...*/
-		cl_index dim = ecl_fixnum_in_range(@'make-array',"size",d,0,ADIMLIM);
 		cl_object last;
-		cl_index i;
+		cl_index dim, i;
+                if (ecl_unlikely(!ECL_FIXNUMP(d) ||
+                                 ((dim = fix(d)) < 0) ||
+                                 (dim > ADIMLIM))) {
+                        FEreader_error("Invalid dimension size ~D in #()", in, 1, d);
+                }
 		v = ecl_alloc_simple_vector(dim, aet_object);
 		for (i = 0, last = Cnil;; i++) {
 			cl_object aux = ecl_read_object_with_delimiter(in, ')', 0, cat_constituent);
@@ -1057,9 +1061,14 @@ sharp_asterisk_reader(cl_object in, cl_object c, cl_object d)
 	if (Null(d)) {
 		dim = dimcount;
 	} else {
-		dim = ecl_fixnum_in_range(@'make-array',"dimension",d,0,ADIMLIM);
+                if (ecl_unlikely(!ECL_FIXNUMP(d) ||
+                                 ((dim = fix(d)) < 0) ||
+                                 (dim > ADIMLIM))) {
+                        FEreader_error("Wrong vector dimension size ~D in #*.",
+                                       in, 1, d);
+                }
 		if (dimcount > dim)
-			FEreader_error("Too many elements in #*....", in, 0);
+			FEreader_error("Too many elements in #*.", in, 0);
 		if (dim && (dimcount == 0))
 			FEreader_error("Cannot fill the bit-vector #*.", in, 0);
 		else last = ECL_STACK_REF(env,-1);

@@ -989,9 +989,16 @@ cl_object
 si_mkdir(cl_object directory, cl_object mode)
 {
 	cl_object filename = si_coerce_to_filename(directory);
-	cl_index modeint = ecl_fixnum_in_range(@'si::mkdir',"mode",mode,0,0777);
-	int ok;
+	int modeint, ok;
 
+        if (ecl_unlikely(!ECL_FIXNUMP(mode) ||
+                         ecl_fixnum_minusp(mode) ||
+                         ecl_fixnum_greater(mode, MAKE_FIXNUM(0777)))) {
+                FEwrong_type_nth_arg(@[si::mkdir], 2, mode,
+                                     ecl_make_integer_type(MAKE_FIXNUM(0),
+                                                           MAKE_FIXNUM(0777)));
+        }
+        modeint = fix(mode);
 	if (filename->base_string.fillp)
 	    filename->base_string.self[--filename->base_string.fillp] = 0;
 
@@ -1003,7 +1010,7 @@ si_mkdir(cl_object directory, cl_object mode)
 #endif
 	ecl_enable_interrupts();
 
-	if (ok < 0)
+	if (ecl_unlikely(ok < 0))
 		FElibc_error("Could not create directory ~S", 1, filename);
 	@(return filename)
 }

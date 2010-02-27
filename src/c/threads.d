@@ -757,10 +757,21 @@ struct ecl_semaphore_inner {
         output->semaphore.name = name;
         output->semaphore.handle = NULL;
         ecl_set_finalizer_unprotected(output, Ct);
-        max_count = ecl_fixnum_in_range(@'mp:make-semaphore', "maximum count",
-                                        max, 0, 0xFFFF);
-        initial_count = ecl_fixnum_in_range(@'mp:make-semaphore', "initial count",
-                                            count, 0, max_count);
+        if (ecl_unlikely(!ECL_FIXNUMP(max) ||
+                         ecl_fixnum_minusp(max) ||
+                         ecl_fixnum_greaterp(max, MAKE_FIXNUM(0xFFFF)))) {
+                FEwrong_type_nth_arg(@[mp::make-semaphore], 1, max,
+                                     ecl_make_integer_type(MAKE_FIXNUM(0),
+                                                           MAKE_FIXNUM(0xFFFF)));
+        }
+        max_count = fix(max);
+        if (ecl_unlikely(!ECL_FIXNUMP(count) ||
+                         ((initial_count = fix(count)) < 0) ||
+                         initial_count > max_count)) {
+                FEwrong_type_key_arg(@[mp::make-semaphore], @[:count], count,
+                                     ecl_make_integer_type(MAKE_FIXNUM(0),
+                                                           max));
+        }
 #ifdef ECL_WINDOWS_THREADS
         {
                 HANDLE h = CreateSemaphore(NULL,

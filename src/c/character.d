@@ -120,8 +120,16 @@ ecl_string_case(cl_object s)
 
 @(defun digit_char_p (c &optional (radix MAKE_FIXNUM(10)))
 @ {
-	cl_fixnum basis = ecl_fixnum_in_range(@'digit-char-p',"radix", radix, 2, 36);
-	cl_fixnum value = ecl_digitp(ecl_char_code(c), basis);
+	cl_fixnum basis, value;
+        if (ecl_unlikely(!ECL_FIXNUMP(radix) ||
+                         ecl_fixnum_lower(radix, MAKE_FIXNUM(2)) ||
+                         ecl_fixnum_greater(radix, MAKE_FIXNUM(36)))) {
+                FEwrong_type_nth_arg(@[digit-char-p], 2, radix,
+                                     ecl_make_integer_type(MAKE_FIXNUM(2),
+                                                           MAKE_FIXNUM(36)));
+        }
+        basis = fix(radix);
+	value = ecl_digitp(ecl_char_code(c), basis);
 	@(return ((value < 0)? Cnil: MAKE_FIXNUM(value)));
 } @)
 
@@ -399,8 +407,16 @@ cl_char_downcase(cl_object c)
 
 @(defun digit_char (weight &optional (radix MAKE_FIXNUM(10)))
 @ {
-	cl_fixnum basis = ecl_fixnum_in_range(@'digit-char',"radix",radix,2,36);
-	cl_object output = Cnil;
+        cl_fixnum basis;
+        cl_object output = Cnil;
+        if (ecl_unlikely(!ECL_FIXNUMP(radix) ||
+                         ecl_fixnum_lower(radix, MAKE_FIXNUM(2)) ||
+                         ecl_fixnum_greater(radix, MAKE_FIXNUM(36)))) {
+                FEwrong_type_nth_arg(@[digit-char], 2, radix,
+                                     ecl_make_integer_type(MAKE_FIXNUM(2),
+                                                           MAKE_FIXNUM(36)));
+        }
+        basis = fix(radix);
 	switch (type_of(weight)) {
 	case t_fixnum: {
 		cl_fixnum value = fix(weight);
