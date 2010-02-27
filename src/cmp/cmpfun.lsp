@@ -98,7 +98,7 @@
          (x (first args))
          (y (second args)))
     (when (safe-compile)
-      (wt-nl "if(ATOM(" x "))"
+      (wt-nl "if (ecl_unlikely(ATOM(" x ")))"
              "FEtype_error_cons(" x ");"))
     (wt-nl "ECL_CONS_CAR(" x ") = " y ";")
     (unwind-exit x)
@@ -115,7 +115,7 @@
          (x (first args))
          (y (second args)))
     (when (safe-compile)
-      (wt-nl "if(ATOM(" x "))"
+      (wt-nl "if (ecl_unlikely(ATOM(" x ")))"
              "FEtype_error_cons(" x ");"))
     (wt-nl "ECL_CONS_CDR(" x ") = " y ";")
     (unwind-exit x)
