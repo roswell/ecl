@@ -1908,7 +1908,7 @@ potential_number_p(cl_object strng, int base)
                 FEwrong_type_nth_arg(@[write-string], 1, strng, @[string]);
 	strm = stream_or_default_output(strm);
 #ifdef ECL_CLOS_STREAMS
-	if (type_of(strm) != t_stream)
+        if (!ECL_ANSI_STREAM_P(strm))
 		funcall(5, @'gray::stream-write-string', strm, strng, start, end);
 	else
 #endif
@@ -1922,7 +1922,7 @@ potential_number_p(cl_object strng, int base)
                 FEwrong_type_nth_arg(@[write-line], 1, strng, @[string]);
 	strm = stream_or_default_output(strm);
 #ifdef ECL_CLOS_STREAMS
-	if (type_of(strm) != t_stream)
+	if (!ECL_ANSI_STREAM_P(strm))
 		funcall(5, @'gray::stream-write-string', strm, strng,
 			start, end);
 	else
@@ -1942,7 +1942,7 @@ potential_number_p(cl_object strng, int base)
 @
  	strm = stream_or_default_output(strm);
 #ifdef ECL_CLOS_STREAMS
-	if (type_of(strm) != t_stream) {
+	if (!ECL_ANSI_STREAM_P(strm)) {
 		return funcall(2, @'gray::stream-fresh-line', strm);
 	}
 #endif
@@ -1957,7 +1957,7 @@ potential_number_p(cl_object strng, int base)
 @
  	strm = stream_or_default_output(strm);
 #ifdef ECL_CLOS_STREAMS
-	if (type_of(strm) != t_stream) {
+        if (!ECL_ANSI_STREAM_P(strm)) {
 		return funcall(2, @'gray::stream-finish-output', strm);
 	}
 #endif
@@ -1989,7 +1989,7 @@ cl_write_byte(cl_object integer, cl_object binary_output_stream)
 @(defun write-sequence (sequence stream &key (start MAKE_FIXNUM(0)) end)
 @
 #ifdef ECL_CLOS_STREAMS
-	if (type_of(stream) != t_stream)
+	if (!ECL_ANSI_STREAM_P(stream))
 		return funcall(5, @'gray::stream-write-sequence', stream, sequence, start, end);
 	else
 #endif
@@ -2035,7 +2035,7 @@ ecl_terpri(cl_object strm)
 {
 	strm = stream_or_default_output(strm);
 #ifdef ECL_CLOS_STREAMS
-	if (type_of(strm) != t_stream) {
+	if (!ECL_ANSI_STREAM_P(strm)) {
 		return funcall(2, @'gray::stream-terpri', strm);
 	}
 #endif

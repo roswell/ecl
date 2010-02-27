@@ -1496,8 +1496,7 @@ cl_object
 cl_get_output_stream_string(cl_object strm)
 {
 	cl_object strng;
-	if (type_of(strm) != t_stream ||
-	    (enum ecl_smmode)strm->stream.mode != smm_string_output)
+	if (ecl_unlikely(!ECL_ANSI_STREAM_TYPE_P(strm, smm_string_output)))
 		FEerror("~S is not a string-output stream.", 1, strm);
 	strng = cl_copy_seq(STRING_OUTPUT_STRING(strm));
 	STRING_OUTPUT_STRING(strm)->base_string.fillp = 0;
@@ -1851,18 +1850,16 @@ cl_make_two_way_stream(cl_object istrm, cl_object ostrm)
 cl_object
 cl_two_way_stream_input_stream(cl_object strm)
 {
-	if (ecl_unlikely(type_of(strm) != t_stream ||
-                         strm->stream.mode != smm_two_way))
+	if (ecl_unlikely(!ECL_ANSI_STREAM_TYPE_P(strm,smm_two_way)))
 		FEwrong_type_only_arg(@[two-way-stream-input-stream],
                                       strm, @[two-way-stream]);
-	@(return TWO_WAY_STREAM_INPUT(strm))
+	@(return TWO_WAY_STREAM_INPUT(strm));
 }
 
 cl_object
 cl_two_way_stream_output_stream(cl_object strm)
 {
-	if (ecl_unlikely(type_of(strm) != t_stream ||
-                         strm->stream.mode != smm_two_way))
+	if (ecl_unlikely(!ECL_ANSI_STREAM_TYPE_P(strm, smm_two_way)))
 		FEwrong_type_only_arg(@[two-way-stream-output-stream],
                                       strm, @[two-way-stream]);
 	@(return TWO_WAY_STREAM_OUTPUT(strm))
@@ -2042,8 +2039,7 @@ const struct ecl_file_ops broadcast_ops = {
 cl_object
 cl_broadcast_stream_streams(cl_object strm)
 {
-	if (ecl_unlikely(type_of(strm) != t_stream ||
-                         strm->stream.mode != smm_broadcast))
+	if (ecl_unlikely(!ECL_ANSI_STREAM_TYPE_P(strm, smm_broadcast)))
 		FEwrong_type_only_arg(@[broadcast-stream-streams],
                                       strm, @[broadcast-stream]);
 	return cl_copy_list(BROADCAST_STREAM_LIST(strm));
@@ -2224,8 +2220,7 @@ cl_make_echo_stream(cl_object strm1, cl_object strm2)
 cl_object
 cl_echo_stream_input_stream(cl_object strm)
 {
-	if (ecl_unlikely(type_of(strm) != t_stream ||
-                         strm->stream.mode != smm_echo))
+	if (ecl_unlikely(!ECL_ANSI_STREAM_TYPE_P(strm, smm_echo)))
 		FEwrong_type_only_arg(@[echo-stream-input-stream],
                                       strm, @[echo-stream]);
 	@(return ECHO_STREAM_INPUT(strm))
@@ -2234,8 +2229,7 @@ cl_echo_stream_input_stream(cl_object strm)
 cl_object
 cl_echo_stream_output_stream(cl_object strm)
 {
-	if (ecl_unlikely(type_of(strm) != t_stream ||
-                         strm->stream.mode != smm_echo))
+	if (ecl_unlikely(!ECL_ANSI_STREAM_TYPE_P(strm, smm_echo)))
 		FEwrong_type_only_arg(@[echo-stream-output-stream],
                                       strm, @[echo-stream]);
 	@(return ECHO_STREAM_OUTPUT(strm))
@@ -2378,8 +2372,7 @@ const struct ecl_file_ops concatenated_ops = {
 cl_object
 cl_concatenated_stream_streams(cl_object strm)
 {
-	if (ecl_unlikely(type_of(strm) != t_stream ||
-                         strm->stream.mode != smm_concatenated))
+	if (ecl_unlikely(!ECL_ANSI_STREAM_TYPE_P(strm, smm_concatenated)))
 		FEwrong_type_only_arg(@[concatenated-stream-streams],
                                       strm, @[concatenated-stream]);
 	return cl_copy_list(CONCATENATED_STREAM_LIST(strm));
@@ -2578,8 +2571,7 @@ cl_make_synonym_stream(cl_object sym)
 cl_object
 cl_synonym_stream_symbol(cl_object strm)
 {
-	if (ecl_unlikely(type_of(strm) != t_stream ||
-                         strm->stream.mode != smm_synonym))
+	if (ecl_unlikely(!ECL_ANSI_STREAM_TYPE_P(strm, smm_synonym)))
 		FEwrong_type_only_arg(@[synonym-stream-symbol],
                                       strm, @[synonym-stream]);
 	@(return SYNONYM_STREAM_SYMBOL(strm))
@@ -3799,7 +3791,7 @@ si_set_buffering_mode(cl_object stream, cl_object buffer_mode_symbol)
 	enum ecl_smmode mode = stream->stream.mode;
 	int buffer_mode;
 
-	if (type_of(stream) != t_stream) {
+	if (ecl_unlikely(!ECL_ANSI_STREAM_P(stream))) {
 		FEerror("Cannot set buffer of ~A", 1, stream);
 	}
 
@@ -3911,7 +3903,7 @@ int
 ecl_stream_to_handle(cl_object s, bool output)
 {
  BEGIN:
-	if (type_of(s) != t_stream)
+	if (ecl_unlikely(!ECL_ANSI_STREAM_P(s)))
 		return -1;
 	switch ((enum ecl_smmode)s->stream.mode) {
 	case smm_input:
@@ -3946,7 +3938,7 @@ si_file_stream_fd(cl_object s)
 {
         cl_object ret;
 
-	if (type_of(s) != t_stream)
+	if (ecl_unlikely(!ECL_ANSI_STREAM_P(s)))
 		FEerror("file_stream_fd: not a stream", 0);
 
 	switch ((enum ecl_smmode)s->stream.mode) {
@@ -3986,7 +3978,7 @@ stream_dispatch_table(cl_object strm)
 		return &clos_stream_ops;
 	}
 #endif
-	if (type_of(strm) != t_stream)
+	if (!ECL_ANSI_STREAM_P(strm))
 		FEwrong_type_argument(@[stream], strm);
 	return (const struct ecl_file_ops *)strm->stream.ops;
 }
@@ -4181,8 +4173,8 @@ cl_file_string_length(cl_object stream, cl_object string)
 		@(return Cnil)
 	}
 #endif
-	if (type_of(stream) != t_stream) {
-		not_a_file_stream(stream);
+	if (ecl_unlikely(!ECL_ANSI_STREAM_P(stream))) {
+                FEwrong_type_only_arg(@[file-string-length], stream, @[stream]);
 	}
 	if (stream->stream.mode == smm_broadcast) {
 		stream = BROADCAST_STREAM_LIST(stream);
@@ -4192,7 +4184,7 @@ cl_file_string_length(cl_object stream, cl_object string)
 			goto BEGIN;
 		}
 	}
-	if (!ECL_FILE_STREAMP(stream)) {
+	if (!ECL_FILE_STREAM_P(stream)) {
 		not_a_file_stream(stream);
 	}
 	switch (type_of(string)) {
@@ -4367,7 +4359,7 @@ cl_open_stream_p(cl_object strm)
 		return funcall(2, @'gray::open-stream-p', strm);
 	}
 #endif
-	if (ecl_unlikely(type_of(strm) != t_stream))
+	if (ecl_unlikely(!ECL_ANSI_STREAM_P(strm)))
                 FEwrong_type_only_arg(@'open-stream-p', strm, @'stream');
 	@(return (strm->stream.closed ? Cnil : Ct))
 }
@@ -4408,7 +4400,7 @@ cl_streamp(cl_object strm)
 		return funcall(2, @'gray::streamp', strm);
 	}
 #endif
-	@(return ((type_of(strm) == t_stream) ? Ct : Cnil))
+	@(return (ECL_ANSI_STREAM_P(strm) ? Ct : Cnil))
 }
 
 /**********************************************************************

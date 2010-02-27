@@ -1656,7 +1656,7 @@ do_read_delimited_list(int d, cl_object in, bool proper_list)
 @
 	strm = stream_or_default_input(strm);
 #ifdef ECL_CLOS_STREAMS
-	if (type_of(strm) != t_stream) {
+        if (!ECL_ANSI_STREAM_P(strm)) {
 		token = funcall(2, @'gray::stream-read-line', strm);
 		if (!Null(VALUES(1))) {
 			c = EOF;
@@ -1765,7 +1765,7 @@ EOFCHK:	if (c == EOF && TOKEN_STRING_FILLP(token) == 0) {
 @
 	strm = stream_or_default_input(strm);
 #ifdef ECL_CLOS_STREAMS
-	if (type_of(strm) != t_stream) {
+	if (!ECL_ANSI_STREAM_P(strm)) {
 		cl_object output = funcall(2,@'gray::stream-read-char-no-hang', strm);
 		if (output == @':eof')
 			goto END_OF_FILE;
@@ -1857,7 +1857,7 @@ CANNOT_PARSE:		FEparse_error("Cannot parse an integer in the string ~S.",
 @(defun read_sequence (sequence stream &key (start MAKE_FIXNUM(0)) end)
 @
 #ifdef ECL_CLOS_STREAMS
-	if (type_of(stream) != t_stream)
+	if (!ECL_ANSI_STREAM_P(stream))
 		return funcall(5, @'gray::stream-read-sequence', stream, sequence, start, end);
 	else
 #endif

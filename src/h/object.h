@@ -605,6 +605,11 @@ typedef int (*cl_eformat_encoder)(cl_object stream, unsigned char *buffer, int c
 typedef cl_index (*cl_eformat_read_byte8)(cl_object object, unsigned char *buffer, cl_index n);
 typedef int (*cl_eformat_decoder)(cl_object stream, cl_eformat_read_byte8 read_byte8, cl_object source);
 
+#define ECL_ANSI_STREAM_P(o) \
+        (IMMEDIATE(o) == 0 && ((o)->d.t == t_stream))
+#define ECL_ANSI_STREAM_TYPE_P(o,m) \
+        (IMMEDIATE(o) == 0 && ((o)->d.t == t_stream) && ((o)->stream.mode == (m)))
+
 struct ecl_stream {
 	HEADER2(mode,closed);	/*  stream mode of enum smmode  */
 				/*  closed stream?  */
