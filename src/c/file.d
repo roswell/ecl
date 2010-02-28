@@ -85,27 +85,27 @@ static ecl_off_t ecl_integer_to_off_t(cl_object offset);
 
 static cl_object alloc_stream();
 
-static cl_object not_a_file_stream(cl_object fn);
-static void not_an_input_stream(cl_object fn);
-static void not_an_output_stream(cl_object fn);
-static void not_a_character_stream(cl_object s);
-static void not_a_binary_stream(cl_object s);
-static int restartable_io_error(cl_object strm);
+static cl_object not_a_file_stream(cl_object fn) ecl_attr_noreturn;
+static void not_an_input_stream(cl_object fn) ecl_attr_noreturn;
+static void not_an_output_stream(cl_object fn) ecl_attr_noreturn;
+static void not_a_character_stream(cl_object s) ecl_attr_noreturn;
+static void not_a_binary_stream(cl_object s) ecl_attr_noreturn;
+static int restartable_io_error(cl_object strm) ecl_attr_noreturn;
 static void unread_error(cl_object strm);
 static void unread_twice(cl_object strm);
-static void io_error(cl_object strm);
-static void character_size_overflow(cl_object strm, ecl_character c);
+static void io_error(cl_object strm) ecl_attr_noreturn;
+static void character_size_overflow(cl_object strm, ecl_character c) ecl_attr_noreturn;
 #ifdef ECL_UNICODE
-static void unsupported_character(cl_object strm);
-static void malformed_character(cl_object strm);
+static void unsupported_character(cl_object strm) ecl_attr_noreturn;
+static void malformed_character(cl_object strm) ecl_attr_noreturn;
 static void too_long_utf8_sequence(cl_object strm);
-static void invalid_codepoint(cl_object strm, cl_fixnum c);
+static void invalid_codepoint(cl_object strm, cl_fixnum c) ecl_attr_noreturn;
 #endif
-static void wrong_file_handler(cl_object strm);
-
+static void wrong_file_handler(cl_object strm) ecl_attr_noreturn;
 #if defined(ECL_WSOCK)
-static void wsock_error( const char *err_msg, cl_object strm );
+static void wsock_error( const char *err_msg, cl_object strm ) ecl_attr_noreturn;
 #endif
+
 /**********************************************************************
  * NOT IMPLEMENTED or NOT APPLICABLE OPERATIONS
  */
@@ -1191,7 +1191,7 @@ clos_stream_read_char(cl_object strm)
 		return EOF;
         else
                 value = -1;
-        if (value < 0 || value > CHAR_CODE_LIMIT)
+        unlikely_if (value < 0 || value > CHAR_CODE_LIMIT)
                 FEerror("Unknown character ~A", 1, output);
         return value;
 }
@@ -1433,7 +1433,7 @@ cl_object
 si_make_string_output_stream_from_string(cl_object s)
 {
 	cl_object strm = alloc_stream();
-	if (!ecl_stringp(s) || !ECL_ARRAY_HAS_FILL_POINTER_P(s))
+	unlikely_if (!ECL_STRINGP(s) || !ECL_ARRAY_HAS_FILL_POINTER_P(s))
 		FEerror("~S is not a -string with a fill-pointer.", 1, s);
 	strm->stream.ops = duplicate_dispatch_table(&str_out_ops);
 	strm->stream.mode = (short)smm_string_output;
@@ -1496,8 +1496,9 @@ cl_object
 cl_get_output_stream_string(cl_object strm)
 {
 	cl_object strng;
-	if (ecl_unlikely(!ECL_ANSI_STREAM_TYPE_P(strm, smm_string_output)))
-		FEerror("~S is not a string-output stream.", 1, strm);
+	unlikely_if (!ECL_ANSI_STREAM_TYPE_P(strm, smm_string_output))
+                FEwrong_type_only_arg(@[get-output-stream-string],
+                                      strm, @[string-stream]);
 	strng = cl_copy_seq(STRING_OUTPUT_STRING(strm));
 	STRING_OUTPUT_STRING(strm)->base_string.fillp = 0;
 	@(return strng)
@@ -1645,29 +1646,12 @@ ecl_make_string_input_stream(cl_object strng, cl_index istart, cl_index iend)
 }
 
 @(defun make_string_input_stream (strng &o istart iend)
-	cl_index s, e;
+        cl_index_pair p;
 @
 	strng = cl_string(strng);
-	if (Null(istart))
-		s = 0;
-	else if (!FIXNUMP(istart) || FIXNUM_MINUSP(istart))
-		goto E;
-	else
-		s = (cl_index)fix(istart);
-	if (Null(iend))
-		e = strng->base_string.fillp;
-	else if (!FIXNUMP(iend) || FIXNUM_MINUSP(iend))
-		goto E;
-	else
-		e = (cl_index)fix(iend);
-	if (e > strng->base_string.fillp || s > e)
-		goto E;
-	@(return (ecl_make_string_input_stream(strng, s, e)))
-
-E:
-	FEerror("~S and ~S are illegal as :START and :END~%\
-for the string ~S.",
-		3, istart, iend, strng);
+        if (Null(istart)) istart = MAKE_FIXNUM(0);
+        p = ecl_vector_start_end(@[make-string-input-stream], strng, istart, iend);
+	@(return (ecl_make_string_input_stream(strng, p.start, p.end)))
 @)
 
 /**********************************************************************
@@ -3593,7 +3577,7 @@ winsock_stream_read_byte8(cl_object strm, unsigned char *c, cl_index n)
 			ecl_disable_interrupts();
 			len = recv(s, c, n, 0);
 			if (len == SOCKET_ERROR )
-				wsock_error( "Cannot read bytes from Windows socket ~S.~%~A", strm);
+				wsock_error("Cannot read bytes from Windows socket ~S.~%~A", strm);
 			ecl_enable_interrupts();
 		}
 	}
@@ -3651,7 +3635,7 @@ winsock_stream_listen(cl_object strm)
 			ecl_disable_interrupts();
 			result = select( 0, &fds, NULL, NULL,  &tv );
 			if ( result == SOCKET_ERROR )
-				wsock_error( "Cannot listen on Windows socket ~S.~%~A", strm );
+				wsock_error("Cannot listen on Windows socket ~S.~%~A", strm );
 			ecl_enable_interrupts();
 			return ( result > 0 
 				 ? ECL_LISTEN_AVAILABLE 

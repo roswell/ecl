@@ -1036,7 +1036,6 @@ cl_namestring(cl_object x)
 	&o host (defaults si_default_pathname_defaults())
 	&k (start MAKE_FIXNUM(0)) end junk_allowed
 	&a output)
-	cl_index s, e, ee;
 @
 	if (host != Cnil) {
 		host = cl_string(host);
@@ -1045,6 +1044,8 @@ cl_namestring(cl_object x)
 		output = cl_pathname(thing);
 	} else {
 		cl_object default_host = host;
+                cl_index_pair p;
+                cl_index ee;
 		if (default_host == Cnil && defaults != Cnil) {
 			defaults = cl_pathname(defaults);
 			default_host = defaults->pathname.host;
@@ -1052,10 +1053,10 @@ cl_namestring(cl_object x)
 #ifdef ECL_UNICODE
 		thing = si_coerce_to_base_string(thing);
 #endif
-		get_string_start_end(thing, start, end, &s, &e);
-		output = ecl_parse_namestring(thing, s, e, &ee, default_host);
+		p = ecl_vector_start_end(@[parse-namestring], thing, start, end);
+		output = ecl_parse_namestring(thing, p.start, p.end, &ee, default_host);
 		start = MAKE_FIXNUM(ee);
-		if (output == Cnil || ee != e) {
+		if (output == Cnil || ee != p.end) {
 			if (Null(junk_allowed)) {
 				FEparse_error("Cannot parse the namestring ~S~%"
 					      "from ~S to ~S.", Cnil,

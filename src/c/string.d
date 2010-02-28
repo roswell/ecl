@@ -18,6 +18,7 @@
 
 #include <ecl/ecl.h>
 #include <string.h>
+#include <ecl/internal.h>
 #include <ecl/ecl-inl.h>
 
 typedef ecl_character (*ecl_casefun)(ecl_character, bool *);
@@ -354,32 +355,36 @@ ecl_char_set(cl_object object, cl_index index, ecl_character value)
 	}
 }
 
-void
-get_string_start_end(cl_object string, cl_object start, cl_object end,
-		     cl_index *ps, cl_index *pe)
+cl_index_pair
+ecl_vector_start_end(cl_object fun,
+                     cl_object string, cl_object start, cl_object end)
 {
 	/* INV: works on both t_base_string and t_string */
 	/* INV: Works with either string or symbol */
-	if (!FIXNUMP(start) || FIXNUM_MINUSP(start))
-		goto E;
-	else
-		*ps = fix(start);
+        cl_index_pair p;
+	unlikely_if (!ECL_FIXNUMP(start) || ecl_fixnum_minusp(start)) {
+                FEwrong_type_key_arg(fun, @[:start], start, @[byte]);
+        }
+        p.start = fix(start);
 	if (Null(end)) {
-		*pe = string->vector.fillp;
-		if (*pe < *ps)
-			goto E;
-	} else if (!FIXNUMP(end) || FIXNUM_MINUSP(end))
-		goto E;
-	else {
-		*pe = fix(end);
-		if (*pe < *ps || *pe > string->vector.fillp)
-			goto E;
+		p.end = string->vector.fillp;
+	} else {
+                unlikely_if (!FIXNUMP(end) || ecl_fixnum_minusp(end)) {
+                        FEwrong_type_key_arg(fun, @[:end], end,
+                                             ecl_read_from_cstring("(OR NULL BYTE)"));
+                }
+		p.end = fix(end);
+		unlikely_if (p.end > string->vector.fillp) {
+                        cl_object fillp = MAKE_FIXNUM(string->vector.fillp);
+                        FEwrong_type_key_arg(fun, @[:end], end,
+                                             ecl_make_integer_type(start, fillp));
+                }
 	}
-	return;
-
-E:
-	FEerror("~S and ~S are illegal as :START and :END~%\
-for the string designator ~S.", 3, start, end, string);
+        unlikely_if (p.end < p.start) {
+                FEwrong_type_key_arg(fun, @[:start], start,
+                                     ecl_make_integer_type(MAKE_FIXNUM(0), end));
+        }
+        return p;
 }
 
 #ifdef ECL_UNICODE
@@ -451,13 +456,16 @@ compare_base(unsigned char *s1, cl_index l1, unsigned char *s2, cl_index l2,
 
 @(defun string= (string1 string2 &key (start1 MAKE_FIXNUM(0)) end1
 		                      (start2 MAKE_FIXNUM(0)) end2)
+        cl_index_pair p;
 	cl_index s1, e1, s2, e2;
 @
   AGAIN:
 	string1 = cl_string(string1);
 	string2 = cl_string(string2);
-	get_string_start_end(string1, start1, end1, &s1, &e1);
-	get_string_start_end(string2, start2, end2, &s2, &e2);
+	p = ecl_vector_start_end(@[string=], string1, start1, end1);
+        s1 = p.start; e1 = p.end;
+	p = ecl_vector_start_end(@[string=], string2, start2, end2);
+        s2 = p.start; e2 = p.end;
 	if (e1 - s1 != e2 - s2)
 		@(return Cnil)
 #ifdef ECL_UNICODE
@@ -548,13 +556,16 @@ ecl_string_eq(cl_object x, cl_object y)
 @(defun string_equal (string1 string2 &key (start1 MAKE_FIXNUM(0)) end1
 		                           (start2 MAKE_FIXNUM(0)) end2)
 	cl_index s1, e1, s2, e2;
+        cl_index_pair p;
 	int output;
 @
 AGAIN:
 	string1 = cl_string(string1);
 	string2 = cl_string(string2);
-	get_string_start_end(string1, start1, end1, &s1, &e1);
-	get_string_start_end(string2, start2, end2, &s2, &e2);
+	p = ecl_vector_start_end(@[string=], string1, start1, end1);
+        s1 = p.start; e1 = p.end;
+	p = ecl_vector_start_end(@[string=], string2, start2, end2);
+        s2 = p.start; e2 = p.end;
 	if (e1 - s1 != e2 - s2)
 		@(return Cnil);
 #ifdef ECL_UNICODE
@@ -574,6 +585,7 @@ string_compare(cl_narg narg, int sign1, int sign2, int case_sensitive, cl_va_lis
 	cl_object string1 = cl_va_arg(ARGS);
 	cl_object string2 = cl_va_arg(ARGS);
 	cl_index s1, e1, s2, e2;
+        cl_index_pair p;
 	int output;
 	cl_object result;
 	cl_object KEYS[4];
@@ -596,8 +608,10 @@ string_compare(cl_narg narg, int sign1, int sign2, int case_sensitive, cl_va_lis
 	string2 = cl_string(string2);
 	if (start1p == Cnil) start1 = MAKE_FIXNUM(0);
 	if (start2p == Cnil) start2 = MAKE_FIXNUM(0);
-	get_string_start_end(string1, start1, end1, &s1, &e1);
-	get_string_start_end(string2, start2, end2, &s2, &e2);
+	p = ecl_vector_start_end(@[string=], string1, start1, end1);
+        s1 = p.start; e1 = p.end;
+	p = ecl_vector_start_end(@[string=], string2, start2, end2);
+        s2 = p.start; e2 = p.end;
 #ifdef ECL_UNICODE
 	if (ECL_EXTENDED_STRING_P(string1) || ECL_EXTENDED_STRING_P(string2)) {
 		output = compare_strings(string1, s1, e1, string2, s2, e2,
@@ -759,16 +773,16 @@ cl_string_right_trim(cl_object char_bag, cl_object strng)
 }
 
 static cl_object
-string_case(cl_narg narg, ecl_casefun casefun, cl_va_list ARGS)
+string_case(cl_narg narg, cl_object fun, ecl_casefun casefun, cl_va_list ARGS)
 {
 	cl_object strng = cl_va_arg(ARGS);
-	cl_index s, e, i;
+        cl_index_pair p;
+	cl_index i;
 	bool b;
 	cl_object KEYS[2];
-#define start KEY_VARS[0]
-#define end KEY_VARS[1]
-#define startp KEY_VARS[2]
-	cl_object conv;
+#define kstart KEY_VARS[0]
+#define kend KEY_VARS[1]
+#define kstartp KEY_VARS[2]
 	cl_object KEY_VARS[4];
 
 	if (narg < 1) FEwrong_num_arguments_anonym();
@@ -776,31 +790,24 @@ string_case(cl_narg narg, ecl_casefun casefun, cl_va_list ARGS)
 	KEYS[1]=@':end';
 	cl_parse_key(ARGS, 2, KEYS, KEY_VARS, NULL, FALSE);
 
-	strng = cl_string(strng);
-	conv  = cl_copy_seq(strng);
-	if (startp == Cnil)
-		start = MAKE_FIXNUM(0);
-	get_string_start_end(conv, start, end, &s, &e);
+        strng = cl_string(strng);
+        strng = cl_copy_seq(strng);
+	if (kstartp == Cnil)
+                kstart = MAKE_FIXNUM(0);
+	p = ecl_vector_start_end(fun, strng, kstart, kend);
 	b = TRUE;
 #ifdef ECL_UNICODE
-	switch(type_of(conv)) {
-	case t_string:
-		for (i = s;  i < e;  i++)
-			conv->string.self[i] = (*casefun)(conv->string.self[i], &b);
-		break;
-	case t_base_string:
-		for (i = s;  i < e;  i++)
-			conv->base_string.self[i] = (*casefun)(conv->base_string.self[i], &b);
-		break;
-	}
-#else
-	for (i = s;  i < e;  i++)
-		conv->base_string.self[i] = (*casefun)(conv->base_string.self[i], &b);
+	if (ECL_EXTENDED_STRING_(strng)) {
+		for (i = p.start;  i < p.end;  i++)
+			strng->string.self[i] = (*casefun)(strng->string.self[i], &b);
+        } else
 #endif
-	@(return conv)
-#undef startp
-#undef start
-#undef end
+	for (i = p.start;  i < p.end;  i++)
+		strng->base_string.self[i] = (*casefun)(strng->base_string.self[i], &b);
+	@(return strng)
+#undef kstartp
+#undef kstart
+#undef kend
 }
 
 static ecl_character
@@ -811,7 +818,7 @@ char_upcase(ecl_character c, bool *bp)
 
 @(defun string-upcase (&rest args)
 @
-	return string_case(narg, char_upcase, args);
+	return string_case(narg, @[string-upcase], char_upcase, args);
 @)
 
 static ecl_character
@@ -822,7 +829,7 @@ char_downcase(ecl_character c, bool *bp)
 
 @(defun string-downcase (&rest args)
 @
-	return string_case(narg, char_downcase, args);
+	return string_case(narg, @[string-downcase], char_downcase, args);
 @)
 
 static ecl_character
@@ -844,7 +851,7 @@ char_capitalize(ecl_character c, bool *bp)
 
 @(defun string-capitalize (&rest args)
 @
-	return string_case(narg, char_capitalize, args);
+	return string_case(narg, @[string-capitalize], char_capitalize, args);
 @)
 
 
@@ -852,12 +859,13 @@ static cl_object
 nstring_case(cl_narg narg, cl_object fun, ecl_casefun casefun, cl_va_list ARGS)
 {
 	cl_object strng = cl_va_arg(ARGS);
-	cl_index s, e, i;
+        cl_index_pair p;
+	cl_index i;
 	bool b;
 	cl_object KEYS[2];
-#define start KEY_VARS[0]
-#define end KEY_VARS[1]
-#define startp KEY_VARS[2]
+#define kstart KEY_VARS[0]
+#define kend KEY_VARS[1]
+#define kstartp KEY_VARS[2]
 	cl_object KEY_VARS[4];
 
 	if (narg < 1) FEwrong_num_arguments_anonym();
@@ -867,22 +875,22 @@ nstring_case(cl_narg narg, cl_object fun, ecl_casefun casefun, cl_va_list ARGS)
 
         if (ecl_unlikely(!ECL_STRINGP(strng)))
                 FEwrong_type_nth_arg(fun, 1, strng, @[string]);
-	if (startp == Cnil) start = MAKE_FIXNUM(0);
-	get_string_start_end(strng, start, end, &s, &e);
+	if (kstartp == Cnil)
+                kstart = MAKE_FIXNUM(0);
+	p = ecl_vector_start_end(fun, strng, kstart, kend);
 	b = TRUE;
 #ifdef ECL_UNICODE
 	if (ECL_EXTENDED_STRING_P(strng)) {
-		for (i = s;  i < e;  i++)
+		for (i = p.start;  i < p.end;  i++)
 			strng->string.self[i] = (*casefun)(strng->string.self[i], &b);
 	} else
-#else
-	for (i = s;  i < e;  i++)
-		strng->base_string.self[i] = (*casefun)(strng->base_string.self[i], &b);
 #endif
+	for (i = p.start;  i < p.end;  i++)
+		strng->base_string.self[i] = (*casefun)(strng->base_string.self[i], &b);
 	@(return strng)
-#undef startp
-#undef start
-#undef end
+#undef kstartp
+#undef kstart
+#undef kend
 }
 
 @(defun nstring-upcase (&rest args)

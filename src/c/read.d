@@ -1832,12 +1832,17 @@ EOFCHK:	if (c == EOF && TOKEN_STRING_FILLP(token) == 0) {
         unlikely_if (!ECL_STRINGP(strng)) {
                 FEwrong_type_nth_arg(@[parse-integer], 1, strng, @[string]);
         }
-	get_string_start_end(strng, start, end, &s, &e);
 	unlikely_if (!FIXNUMP(radix) ||
                      ecl_fixnum_lower(radix, MAKE_FIXNUM(2)) ||
                      ecl_fixnum_greater(radix, MAKE_FIXNUM(36)))
         {
 		FEerror("~S is an illegal radix.", 1, radix);
+        }
+        {
+                cl_index_pair p =
+                        ecl_vector_start_end(@[parse-integer], strng, start, end);
+                s = p.start;
+                e = p.end;
         }
 	while (s < e &&
 	       ecl_readtable_get(rtbl, ecl_char(strng, s), NULL) == cat_whitespace) {

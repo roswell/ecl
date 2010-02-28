@@ -1550,7 +1550,6 @@ extern ECL_API cl_object ecl_cstring_to_base_string_or_nil(const char *s);
 extern ECL_API bool ecl_string_eq(cl_object x, cl_object y);
 extern ECL_API bool ecl_member_char(ecl_character c, cl_object char_bag);
 extern ECL_API ecl_character ecl_string_push_extend(cl_object s, ecl_character c);
-extern ECL_API void get_string_start_end(cl_object s, cl_object start, cl_object end, cl_index *ps, cl_index *pe);
 extern ECL_API bool ecl_fits_in_base_string(cl_object s);
 extern ECL_API ecl_character ecl_char(cl_object s, cl_index i);
 extern ECL_API ecl_character ecl_char_set(cl_object s, cl_index i, ecl_character c);
