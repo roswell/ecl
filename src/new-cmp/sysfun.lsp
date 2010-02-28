@@ -1775,18 +1775,17 @@
 
 (def-inline null :always (t) :bool "#0==Cnil")
 
-(def-inline symbolp :always (t) :bool "SYMBOLP(#0)")
+(def-inline symbolp :always (t) :bool "@0;ECL_SYMBOLP(#0)")
 
-(def-inline atom :always (t) :bool "ATOM(#0)")
+(def-inline atom :always (t) :bool "@0;ECL_ATOM(#0)")
 
-(def-inline consp :always (t) :bool "CONSP(#0)")
+(def-inline consp :always (t) :bool "@0;ECL_CONSP(#0)")
 
-(def-inline listp :always (t) :bool "@0;LISTP(#0)")
+(def-inline listp :always (t) :bool "@0;ECL_LISTP(#0)")
 
 (def-inline numberp :always (t) :bool "ecl_numberp(#0)")
 
-(def-inline integerp :always (t) :bool
- "@0;type_of(#0)==t_fixnum||type_of(#0)==t_bignum")
+(def-inline integerp :always (t) :bool "@0;ECL_FIXNUMP(#0)||ECL_BIGNUMP(#0)")
 
 (def-inline floatp :always (t) :bool "floatp(#0)")
 
@@ -1794,11 +1793,11 @@
 
 (def-inline base-char-p :always (character) :bool "BASE_CHAR_P(#0)")
 
-(def-inline stringp :always (t) :bool "ecl_stringp(#0)")
+(def-inline stringp :always (t) :bool "@0;ECL_STRINGP(#0)")
 
-(def-inline base-string-p :always (t) :bool "type_of(#0)==t_base_string")
+(def-inline base-string-p :always (t) :bool "@0;ECL_BASE_STRING_P(#0)")
 
-(def-inline bit-vector-p :always (t) :bool "(type_of(#0)==t_bitvector)")
+(def-inline bit-vector-p :always (t) :bool "@0;ECL_BIT_VECTOR_P(#0)")
 
 (def-inline vectorp :always (t) :bool "@0;ECL_VECTORP(#0)")
 
@@ -1986,21 +1985,21 @@
 
 (proclaim-function short-float-p (t) gen-bool :predicate)
 #-short-float
-(def-inline short-float-p :always (t) :bool "type_of(#0)==t_singlefloat")
+(def-inline short-float-p :always (t) :bool "@0;ECL_SINGLE_FLOAT_P(#0)")
 #+short-float
 (def-inline short-float-p :always (t) :bool "type_of(#0)==t_shortfloat")
 
 (proclaim-function single-float-p (t) gen-bool :predicate)
-(def-inline single-float-p :always (t) :bool "type_of(#0)==t_singlefloat")
+(def-inline single-float-p :always (t) :bool "@0;ECL_SINGLE_FLOAT_P(#0)")
 
 (proclaim-function double-float-p (t) gen-bool :predicate)
-(def-inline double-float-p :always (t) :bool "type_of(#0)==t_doublefloat")
+(def-inline double-float-p :always (t) :bool "@0;ECL_DOUBLE_FLOAT_P(#0)")
 
 (proclaim-function long-float-p (t) gen-bool :predicate)
 #-long-float
-(def-inline long-float-p :always (t) :bool "type_of(#0)==t_doublefloat")
+(def-inline long-float-p :always (t) :bool "@0;ECL_DOUBLE_FLOAT_P(#0)")
 #+long-float
-(def-inline long-float-p :always (t) :bool "type_of(#0)==t_longfloat")
+(def-inline long-float-p :always (t) :bool "@0;ECL_LONG_FLOAT_P(#0)")
 
 (proclaim-function si:fixnump (t) gen-bool :predicate)
 (def-inline si:fixnump :always (t) :bool "FIXNUMP(#0)")

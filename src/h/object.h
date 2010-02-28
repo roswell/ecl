@@ -177,6 +177,9 @@ typedef cl_object (*cl_objectfn_fixed)();
 #define ECL_RANDOM_STATE_P(x)   ((IMMEDIATE(x) == 0) && ((x)->d.t == t_random))
 #define ECL_SINGLE_FLOAT_P(x)   ((IMMEDIATE(x) == 0) && ((x)->d.t == t_singlefloat))
 #define ECL_DOUBLE_FLOAT_P(x)   ((IMMEDIATE(x) == 0) && ((x)->d.t == t_doublefloat))
+#ifdef ECL_LONG_FLOAT
+#define ECL_LONG_FLOAT_P(x)     ((IMMEDIATE(x) == 0) && ((x)->d.t == t_longfloat))
+#endif
 #define ECL_PACKAGEP(x)         ((IMMEDIATE(x) == 0) && ((x)->d.t == t_package))
 #define ECL_PATHNAMEP(x)        ((IMMEDIATE(x) == 0) && ((x)->d.t == t_pathname))
 #define ECL_READTABLEP(x)       ((IMMEDIATE(x) == 0) && ((x)->d.t == t_readtable))
