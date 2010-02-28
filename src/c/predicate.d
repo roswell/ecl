@@ -112,7 +112,7 @@ cl_realp(cl_object x)
 cl_object
 cl_complexp(cl_object x)
 {
-	@(return ((type_of(x) == t_complex) ? Ct : Cnil))
+	@(return (ECL_COMPLEXP(x) ? Ct : Cnil))
 }
 
 cl_object
@@ -143,56 +143,42 @@ ecl_stringp(cl_object x)
 cl_object
 cl_stringp(cl_object x)
 {
-	@(return (ecl_stringp(x)? Ct : Cnil))
+	@(return (ECL_STRINGP(x)? Ct : Cnil))
 }
 
 cl_object
 cl_bit_vector_p(cl_object x)
 {
-	@(return ((type_of(x) == t_bitvector) ? Ct : Cnil))
+	@(return (ECL_BIT_VECTOR_P(x) ? Ct : Cnil))
 }
 
 cl_object
 cl_vectorp(cl_object x)
 {
-	cl_type t = type_of(x);
-#ifdef ECL_UNICODE
-	@(return ((t == t_vector || t == t_string || t == t_base_string || t == t_bitvector) ? Ct : Cnil))
-#else
-	@(return ((t == t_vector || t == t_base_string || t == t_bitvector) ? Ct : Cnil))
-#endif
+	@(return (ECL_VECTORP(x) ? Ct : Cnil))
 }
 
 cl_object
 cl_simple_string_p(cl_object x)
 {
-#ifdef ECL_UNICODE
-	cl_type t = type_of(x);
-	@(return (((t == t_base_string || (t == t_string)) &&
-                   !ECL_ADJUSTABLE_ARRAY_P(x) &&
-                   !ECL_ARRAY_HAS_FILL_POINTER_P(x) &&
-                   Null(CAR(x->string.displaced))) ? Ct : Cnil))
-#else
-	@(return ((type_of(x) == t_base_string &&
+	@(return ((ECL_STRINGP(x) &&
                    !ECL_ADJUSTABLE_ARRAY_P(x) &&
                    !ECL_ARRAY_HAS_FILL_POINTER_P(x) &&
                    Null(CAR(x->base_string.displaced))) ? Ct : Cnil))
-#endif
-
 }
 
 #ifdef ECL_UNICODE
 cl_object
 si_base_string_p(cl_object x)
 {
-	@(return ((type_of(x) == t_base_string)? Ct : Cnil))
+	@(return (ECL_BASE_STRING_P(x) ? Ct : Cnil))
 }
 #endif
 
 cl_object
 cl_simple_bit_vector_p(cl_object x)
 {
-	@(return ((type_of(x) == t_bitvector &&
+	@(return ((ECL_BIT_VECTOR_P(x) &&
                    !ECL_ADJUSTABLE_ARRAY_P(x) &&
                    !ECL_ARRAY_HAS_FILL_POINTER_P(x) &&
                    Null(CAR(x->vector.displaced))) ? Ct : Cnil))
@@ -212,14 +198,13 @@ cl_simple_vector_p(cl_object x)
 cl_object
 cl_arrayp(cl_object x)
 {
-	cl_type t = type_of(x);
-	@(return (ARRAY_TYPE(t) ? Ct : Cnil))
+	@(return (ECL_ARRAYP(x) ? Ct : Cnil))
 }
 
 cl_object
 cl_packagep(cl_object x)
 {
-	@(return ((type_of(x) == t_package) ? Ct : Cnil))
+	@(return (ECL_PACKAGEP(x) ? Ct : Cnil))
 }
 
 cl_object

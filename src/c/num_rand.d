@@ -19,6 +19,7 @@
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <ecl/internal.h>
 
 #if 0
 
@@ -223,7 +224,7 @@ ecl_make_random_state(cl_object rs)
 		if (Null(rs)) {
 			rs = ecl_symbol_value(@'*random-state*');
 		}
-		if (ecl_unlikely(type_of(rs) != t_random)) {
+		unlikely_if (!ECL_RANDOM_STATE_P(rs)) {
 			FEwrong_type_only_arg(@[make-random-state], rs,
                                               @[random-state]);
 		}
@@ -246,5 +247,5 @@ ecl_make_random_state(cl_object rs)
 cl_object
 cl_random_state_p(cl_object x)
 {
-	@(return ((type_of(x) == t_random) ? Ct : Cnil))
+	@(return (ECL_RANDOM_STATE_P(x) ? Ct : Cnil))
 }

@@ -242,7 +242,7 @@ ecl_find_package_nolock(cl_object name)
 {
 	cl_object l, p;
 
-	if (type_of(name) == t_package)
+	if (ECL_PACKAGEP(name))
 		return name;
 	name = cl_string(name);
 	l = cl_core.packages;
@@ -280,7 +280,7 @@ cl_object
 ecl_current_package(void)
 {
 	cl_object x = ecl_symbol_value(@'*package*');
-	if (type_of(x) != t_package) {
+	unlikely_if (!ECL_PACKAGEP(x)) {
 		const cl_env_ptr env = ecl_process_env();
 		ECL_SETQ(env, @'*package*', cl_core.user_package);
 		FEerror("The value of *PACKAGE*, ~S, was not a package",
@@ -975,7 +975,7 @@ si_package_hash_tables(cl_object p)
 {
 	const cl_env_ptr the_env = ecl_process_env();
 	cl_object he, hi, u;
-        if (ecl_unlikely(type_of(p) != t_package))
+        unlikely_if (!ECL_PACKAGEP(p))
                 FEwrong_type_only_arg(@[si::package-hash-tables], p, @[package]);
 	PACKAGE_OP_LOCK();
 	he = si_copy_hash_table(p->pack.external);

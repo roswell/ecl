@@ -17,6 +17,7 @@
 
 #define ECL_INCLUDE_MATH_H
 #include <ecl/ecl.h>
+#include <ecl/internal.h>
 
 int
 ecl_zerop(cl_object x)
@@ -122,9 +123,9 @@ ecl_oddp(cl_object x)
 {
 	if (FIXNUMP(x))
 		return fix(x) & 1;
-	if (type_of(x) == t_bignum)
-		return _ecl_big_odd_p(x);
-        FEwrong_type_only_arg(@[oddp], x, @[integer]);
+	unlikely_if (!ECL_BIGNUMP(x))
+                FEwrong_type_only_arg(@[oddp], x, @[integer]);
+        return _ecl_big_odd_p(x);
 }
 
 int
@@ -132,9 +133,9 @@ ecl_evenp(cl_object x)
 {
 	if (FIXNUMP(x))
 		return ~fix(x) & 1;
-	if (type_of(x) == t_bignum)
-		return _ecl_big_even_p(x);
-        FEwrong_type_only_arg(@[evenp], x, @[integer]);
+	unlikely_if (!ECL_BIGNUMP(x))
+                FEwrong_type_only_arg(@[evenp], x, @[integer]);
+        return _ecl_big_even_p(x);
 }
 
 cl_object

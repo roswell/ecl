@@ -250,7 +250,7 @@ enter_directory(cl_object base_dir, cl_object subdir)
                 return base_dir;
         } else if (subdir == @':up') {
                 aux = make_constant_base_string("..");
-        } else if (type_of(subdir) != t_base_string) {
+        } else if (!ECL_BASE_STRING_P(subdir)) {
                 FEerror("Directory component ~S found in pathname~&  ~S"
                         "~&is not allowed in TRUENAME or DIRECTORY",
                         1, subdir);
@@ -839,7 +839,7 @@ dir_recursive(cl_object base_dir, cl_object directory, cl_object filemask)
 	 */
 	item = ECL_CONS_CAR(directory);
 
-	if (type_of(item) == t_base_string || item == @':wild') {
+	if (ECL_BASE_STRING_P(item) || item == @':wild') {
 		/*
 		 * 2.1) If CAR(DIRECTORY) is a string or :WILD, we have to
 		 * enter & scan all subdirectories in our curent directory.

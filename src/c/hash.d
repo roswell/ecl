@@ -27,10 +27,10 @@ static void corrupted_hash(cl_object hashtable) /*__attribute__((noreturn))*/;
 
 #define SYMBOL_NAME(x) (Null(x)? Cnil_symbol->symbol.name : (x)->symbol.name)
 
-static void
+static void ECL_INLINE
 assert_type_hash_table(cl_object function, cl_narg narg, cl_object p)
 {
-	if (ecl_unlikely(type_of(p) != t_hashtable))
+	unlikely_if (!ECL_HASH_TABLE_P(p))
 		FEwrong_type_nth_arg(function, narg, p, @[hash-table]);
 }
 
@@ -640,7 +640,7 @@ cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
 cl_object
 cl_hash_table_p(cl_object ht)
 {
-	@(return ((type_of(ht) == t_hashtable) ? Ct : Cnil))
+	@(return (ECL_HASH_TABLE_P(ht) ? Ct : Cnil))
 }
 
 @(defun gethash (key ht &optional (no_value Cnil))

@@ -195,7 +195,7 @@ BEGIN:
 	if ((a == cat_terminating || a == cat_non_terminating) &&
             (flags != ECL_READ_ONLY_TOKEN)) {
 		cl_object o;
-		if (type_of(x) == t_hashtable) {
+		if (ECL_HASH_TABLE_P(x)) {
 			o = dispatch_macro_character(x, in, c);
 		} else {
 			o = funcall(3, x, in, CODE_CHAR(c));
@@ -205,7 +205,7 @@ BEGIN:
                                 return Cnil;
                         goto BEGIN;
                 }
-		if (the_env->nvalues > 1) {
+		unlikely_if (the_env->nvalues > 1) {
                         FEerror("The readmacro ~S returned ~D values.",
                                 2, x, MAKE_FIXNUM(i));
                 }
@@ -252,7 +252,7 @@ LOOP:
 				   all referenced packages have been properly built.
 				*/
 				cl_object name = cl_copy_seq(token);
-				if (cl_core.packages_to_be_created == OBJNULL) {
+				unlikely_if (cl_core.packages_to_be_created == OBJNULL) {
 					FEerror("There is no package with the name ~A.",
 						1, name);
 				} else if (!Null(p = ecl_assoc(name, cl_core.packages_to_be_created))) {
@@ -522,7 +522,7 @@ ecl_parse_number(cl_object str, cl_index start, cl_index end,
 		double d;
 #endif
 #ifdef ECL_UNICODE
-		if (type_of(str) == t_string) {
+		if (ECL_EXTENDED_STRING_P(str)) {
 			for (i = start; i < end; i++) {
 				cl_index c = ecl_char(str, i);
 				if (c > 255) {
@@ -748,7 +748,7 @@ dispatch_reader_fun(cl_object in, cl_object dc)
 	cl_object dispatch_table;
 	int c = ecl_char_code(dc);
 	ecl_readtable_get(readtable, c, &dispatch_table);
-	unlikely_if (type_of(dispatch_table) != t_hashtable)
+	unlikely_if (!ECL_HASH_TABLE_P(dispatch_table))
 		FEreader_error("~C is not a dispatching macro character",
 			       in, 1, dc);
 	return dispatch_macro_character(dispatch_table, in, c);
@@ -829,7 +829,7 @@ sharp_C_reader(cl_object in, cl_object c, cl_object d)
 		FEend_of_file(in);
 	if (read_suppress)
 		@(return Cnil);
-	unlikely_if (Null(x) || type_of(x) != t_list || ecl_length(x) != 2)
+	unlikely_if (!ECL_CONSP(x) || ecl_length(x) != 2)
 		FEreader_error("Reader macro #C should be followed by a list",
 			       in, 0);
 	real = CAR(x);
@@ -913,7 +913,7 @@ sharp_Y_reader(cl_object in, cl_object c, cl_object d)
 	if (read_suppress) {
 		@(return Cnil);
         }
-	unlikely_if (Null(x) || type_of(x) != t_list || ecl_length(x) != 5) {
+	unlikely_if (!ECL_CONSP(x) || ecl_length(x) != 5) {
 		FEreader_error("Reader macro #Y should be followed by a list",
 			       in, 0);
         }
@@ -1014,7 +1014,8 @@ sharp_left_parenthesis_reader(cl_object in, cl_object c, cl_object d)
                 }
 		v = ecl_alloc_simple_vector(dim, aet_object);
 		for (i = 0, last = Cnil;; i++) {
-			cl_object aux = ecl_read_object_with_delimiter(in, ')', 0, cat_constituent);
+			cl_object aux = ecl_read_object_with_delimiter(in, ')', 0,
+                                                                       cat_constituent);
 			if (aux == OBJNULL)
 				break;
 			unlikely_if (i >= dim) {
@@ -1448,7 +1449,7 @@ sharp_dollar_reader(cl_object in, cl_object c, cl_object d)
 static void ECL_INLINE
 assert_type_readtable(cl_object function, cl_narg narg, cl_object p)
 {
-	unlikely_if (type_of(p) != t_readtable) {
+	unlikely_if (!ECL_READTABLEP(p)) {
 		FEwrong_type_nth_arg(function, narg, p, @[readtable]);
         }
 }
@@ -1476,7 +1477,7 @@ ecl_copy_readtable(cl_object from, cl_object to)
 	memcpy(to_rtab, from_rtab, total_bytes);
 	for (i = 0;  i < RTABSIZE;  i++) {
 		cl_object d = from_rtab[i].dispatch;
-		if (type_of(d) == t_hashtable) {
+		if (ECL_HASH_TABLE_P(d)) {
 			d = si_copy_hash_table(d);
 		}
 		to_rtab[i].dispatch = d;
@@ -1505,7 +1506,7 @@ ecl_current_readtable(void)
 
 	/* INV: *readtable* always has a value */
 	r = ECL_SYM_VAL(the_env, @'*readtable*');
-	unlikely_if (type_of(r) != t_readtable) {
+	unlikely_if (!ECL_READTABLEP(r)) {
 		ECL_SETQ(the_env, @'*readtable*', cl_core.standard_readtable);
 		FEerror("The value of *READTABLE*, ~S, was not a readtable.",
 			1, r);
@@ -1517,19 +1518,17 @@ int
 ecl_current_read_base(void)
 {
 	const cl_env_ptr the_env = ecl_process_env();
-	cl_object x;
+	/* INV: *READ-BASE* always has a value */
+	cl_object x = ECL_SYM_VAL(the_env, @'*read_base*');
         cl_fixnum b;
 
-	/* INV: *READ-BASE* always has a value */
-	x = ECL_SYM_VAL(the_env, @'*read_base*');
-        unlikely_if (!ECL_FIXNUMP(x) || ecl_fixnum_lower(x,MAKE_FIXNUM(2)) ||
-                     ecl_fixnum_greater(x, MAKE_FIXNUM(36)))
+        unlikely_if (!ECL_FIXNUMP(x) || ((b = fix(x)) < 2) || (b > 36))
         {
                 ECL_SETQ(the_env, @'*read_base*', MAKE_FIXNUM(10));
                 FEerror("The value of *READ-BASE*~&  ~S~%"
                         "is not in the range (INTEGER 2 36)", 1, x);
         }
-	return fix(x);
+	return b;
 }
 
 char
@@ -1954,7 +1953,7 @@ si_readtable_case_set(cl_object r, cl_object mode)
 cl_object
 cl_readtablep(cl_object readtable)
 {
-	@(return ((type_of(readtable) == t_readtable)? Ct : Cnil))
+	@(return (ECL_READTABLEP(readtable) ? Ct : Cnil))
 }
 
 #ifdef ECL_UNICODE
@@ -2039,7 +2038,7 @@ ecl_invalid_character_p(int c)
 	tc = ecl_char_code(tochr);
 
 	cat = ecl_readtable_get(fromrdtbl, fc, &dispatch);
-	if (type_of(dispatch) == t_hashtable) {
+	if (ECL_READTABLEP(dispatch)) {
 		dispatch = si_copy_hash_table(dispatch);
 	}
 	ecl_readtable_set(tordtbl, tc, cat, dispatch);
@@ -2064,7 +2063,7 @@ ecl_invalid_character_p(int c)
 	if (Null(readtable))
 		readtable = cl_core.standard_readtable;
 	cat = ecl_readtable_get(readtable, ecl_char_code(c), &dispatch);
-	if (type_of(dispatch) == t_hashtable)
+        if (ECL_HASH_TABLE_P(dispatch))
 		dispatch = cl_core.dispatch_reader;
 	@(return dispatch ((cat == cat_non_terminating)? Ct : Cnil))
 @)
@@ -2096,7 +2095,7 @@ ecl_invalid_character_p(int c)
         unlikely_if (readtable->readtable.locked) {
                 error_locked_readtable(readtable);
         }
-	unlikely_if (type_of(table) != t_hashtable) {
+        unlikely_if (!ECL_HASH_TABLE_P(table)) {
 		FEerror("~S is not a dispatch character.", 1, dspchr);
 	}
 	subcode = ecl_char_code(subchr);
@@ -2129,7 +2128,7 @@ ecl_invalid_character_p(int c)
         assert_type_readtable(@[get-dispatch-macro-character], 3, readtable);
 	c = ecl_char_code(dspchr);
 	ecl_readtable_get(readtable, c, &table);
-	unlikely_if (type_of(table) != t_hashtable) {
+	unlikely_if (!ECL_HASH_TABLE_P(table)) {
 		FEerror("~S is not a dispatch character.", 1, dspchr);
 	}
 	c = ecl_char_code(subchr);

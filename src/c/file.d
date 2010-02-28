@@ -1358,7 +1358,7 @@ static cl_object
 str_out_element_type(cl_object strm)
 {
 	cl_object string = STRING_OUTPUT_STRING(strm);
-	if (type_of(string) == t_base_string)
+	if (ECL_BASE_STRING_P(string))
 		return @'base-char';
 	return @'character';
 }
@@ -1439,12 +1439,12 @@ si_make_string_output_stream_from_string(cl_object s)
 	strm->stream.mode = (short)smm_string_output;
 	STRING_OUTPUT_STRING(strm) = s;
 	STRING_OUTPUT_COLUMN(strm) = 0;
-#ifndef ECL_UNICODE
+#if !defined(ECL_UNICODE)
 	strm->stream.format = @':default';
 	strm->stream.flags = ECL_STREAM_DEFAULT_FORMAT;
 	strm->stream.byte_size = 8;
 #else
-	if (type_of(s) == t_base_string) {
+	if (ECL_BASE_STRING_P(s)) {
 		strm->stream.format = @':latin-1';
 		strm->stream.flags = ECL_STREAM_LATIN_1;
 		strm->stream.byte_size = 8;
@@ -1555,7 +1555,7 @@ static cl_object
 str_in_element_type(cl_object strm)
 {
 	cl_object string = STRING_INPUT_STRING(strm);
-	if (type_of(string) == t_base_string)
+	if (ECL_BASE_STRING_P(string))
 		return @'base-char';
 	return @'character';
 }
@@ -1626,12 +1626,12 @@ ecl_make_string_input_stream(cl_object strng, cl_index istart, cl_index iend)
 	STRING_INPUT_STRING(strm) = strng;
 	STRING_INPUT_POSITION(strm) = istart;
 	STRING_INPUT_LIMIT(strm) = iend;
-#ifndef ECL_UNICODE
+#if !defined(ECL_UNICODE)
 	strm->stream.format = @':default';
 	strm->stream.flags = ECL_STREAM_DEFAULT_FORMAT;
 	strm->stream.byte_size = 8;
 #else
-	if (type_of(strng) == t_base_string) {
+	if (ECL_BASE_STRING_P(string) == t_base_string) {
 		strm->stream.format = @':latin-1';
 		strm->stream.flags = ECL_STREAM_LATIN_1;
 		strm->stream.byte_size = 8;
@@ -2991,7 +2991,7 @@ parse_external_format(cl_object stream, cl_object format, int flags)
 	if (format == @':US-ASCII') {
 		return flags | ECL_STREAM_US_ASCII; 
 	}
-	if (type_of(format) == t_hashtable) {
+	if (ECL_HASH_TABLE_P(format)) {
 		stream->stream.format_table = format;
 		return flags | ECL_STREAM_USER_FORMAT;
 	}
@@ -4836,7 +4836,7 @@ ecl_integer_to_off_t(cl_object offset)
 		output = fixint(offset);
 	} else if (FIXNUMP(offset)) {
 		output = fixint(offset);
-	} else if (type_of(offset) == t_bignum) {
+	} else if (ECL_BIGNUMP(offset)) {
 #ifdef WITH_GMP
 		if (sizeof(offset->big.big_limbs[0]) == sizeof(cl_index)) {
 			if (offset->big.big_size > 2) {

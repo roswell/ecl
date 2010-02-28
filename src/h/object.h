@@ -161,12 +161,25 @@ typedef cl_object (*cl_objectfn_fixed)();
 #define ARRAY_TYPE(t)		(t >= t_array && t <= t_bitvector)
 #define ECL_ARRAYP(x)		((IMMEDIATE(x) == 0) && (x)->d.t >= t_array && (x)->d.t <= t_bitvector)
 #define ECL_VECTORP(x)		((IMMEDIATE(x) == 0) && (x)->d.t >= t_vector && (x)->d.t <= t_bitvector)
+#define ECL_BIT_VECTOR_P(x)     ((IMMEDIATE(x) == 0) && ((x)->d.t == t_bitvector))
 #ifdef ECL_UNICODE
 #define ECL_STRINGP(x)		((IMMEDIATE(x) == 0) && \
                                  ((x)->d.t == t_base_string || (x)->d.t == t_string))
+#define ECL_EXTENDED_STRING_P(x) ((IMMEDIATE(x) == 0) && (x)->d.t == t_string)
 #else
 #define ECL_STRINGP(x)		((IMMEDIATE(x) == 0) && ((x)->d.t == t_base_string))
+#define ECL_EXTENDED_STRING_P(x) 0
 #endif
+#define ECL_BASE_STRING_P(x)	((IMMEDIATE(x) == 0) && ((x)->d.t == t_base_string))
+#define ECL_HASH_TABLE_P(x)	((IMMEDIATE(x) == 0) && ((x)->d.t == t_hashtable))
+#define ECL_BIGNUMP(x)          ((IMMEDIATE(x) == 0) && ((x)->d.t == t_bignum))
+#define ECL_COMPLEXP(x)         ((IMMEDIATE(x) == 0) && ((x)->d.t == t_complex))
+#define ECL_RANDOM_STATE_P(x)   ((IMMEDIATE(x) == 0) && ((x)->d.t == t_random))
+#define ECL_SINGLE_FLOAT_P(x)   ((IMMEDIATE(x) == 0) && ((x)->d.t == t_singlefloat))
+#define ECL_DOUBLE_FLOAT_P(x)   ((IMMEDIATE(x) == 0) && ((x)->d.t == t_doublefloat))
+#define ECL_PACKAGEP(x)         ((IMMEDIATE(x) == 0) && ((x)->d.t == t_package))
+#define ECL_PATHNAMEP(x)        ((IMMEDIATE(x) == 0) && ((x)->d.t == t_pathname))
+#define ECL_READTABLEP(x)       ((IMMEDIATE(x) == 0) && ((x)->d.t == t_readtable))
 
 #define HEADER			int8_t t, m, padding[2]
 #define HEADER1(field)		int8_t t, m, field, padding

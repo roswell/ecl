@@ -233,16 +233,25 @@ ecl_number_equalp(cl_object x, cl_object y)
 			return 0;
 		return ecl_number_equalp(x, y->complex.real);
 	case t_complex:
-		if (type_of(y) == t_complex)
+                switch (type_of(y)) {
+                case t_complex:
 			return (ecl_number_equalp(x->complex.real, y->complex.real) &&
 				ecl_number_equalp(x->complex.imag, y->complex.imag));
-		if (REAL_TYPE(type_of(y))) {
+                case t_fixnum: case t_bignum: case t_ratio:
+                case t_singlefloat: case t_doublefloat:
+#ifdef ECL_SHORT_FLOAT
+                case t_shortfloat:
+#endif
+#ifdef ECL_LONG_FLOAT
+                case t_longfloat:
+#endif
 			if (ecl_zerop(x->complex.imag))
 				return ecl_number_equalp(x->complex.real, y) != 0;
 			else
 				return 0;
-		}
-                FEwrong_type_nth_arg(@[=], 2, y, @[number]);
+                default:
+                        FEwrong_type_nth_arg(@[=], 2, y, @[number]);
+                }
 	default:
                 FEwrong_type_nth_arg(@[=], 1, x, @[number]);
 	}

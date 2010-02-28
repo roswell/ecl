@@ -93,7 +93,7 @@ from_list_to_execve_argument(cl_object l, char ***environp)
                                 "is not a list of strings", 0);
                 }
                 s = ECL_CONS_CAR(p);
-                if (type_of(s) != t_base_string) {
+                if (!ECL_BASE_STRING_P(s)) {
                         FEerror("In EXT:RUN-PROGRAM, environment "
                                 "is not a list of base strings", 0);
                 }

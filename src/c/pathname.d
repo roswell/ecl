@@ -637,12 +637,11 @@ si_default_pathname_defaults(void)
 	 * not enter an infinite loop when using PARSE-NAMESTRING, because
 	 * this routine might itself try to use the value of this variable. */
 	cl_object path = ecl_symbol_value(@'*default-pathname-defaults*');
-	while (type_of(path) != t_pathname) {
+	unlikely_if (!ECL_PATHNAMEP(path)) {
 		const cl_env_ptr the_env = ecl_process_env();
 		ecl_bds_bind(the_env, @'*default-pathname-defaults*', si_getcwd(0));
-		path = ecl_type_error(@'pathname', "*default-pathname-defaults*",
-				      path, @'pathname');
-		ecl_bds_unwind1(the_env);
+                FEwrong_type_key_arg(@[pathname], @[*default-pathname-defaults*],
+                                     path, @'pathname');
 	}
 	@(return path)
 }
@@ -1015,9 +1014,9 @@ NO_DIRECTORY:
 	}
         buffer = cl_get_output_stream_string(buffer);
 #ifdef ECL_UNICODE
-	if (type_of(buffer) == t_string &&
+	if (ECL_EXTENDED_STRING_P(buffer) &&
             (flags & ECL_NAMESTRING_FORCE_BASE_STRING)) {
-		if (!ecl_fits_in_base_string(buffer))
+		unlikely_if (!ecl_fits_in_base_string(buffer))
 			FEerror("The filesystem does not accept filenames "
                                 "with extended characters: ~S",
 				1, buffer);
@@ -1112,13 +1111,13 @@ cl_namestring(cl_object x)
 cl_object
 cl_pathnamep(cl_object pname)
 {
-	@(return ((type_of(pname) == t_pathname)? Ct : Cnil))
+	@(return (ECL_PATHNAMEP(pname) ? Ct : Cnil))
 }
 
 cl_object
 si_logical_pathname_p(cl_object pname)
 {
-	@(return ((type_of(pname) == t_pathname && pname->pathname.logical)?
+	@(return ((ECL_PATHNAMEP(pname) && pname->pathname.logical)?
 		  Ct : Cnil))
 }
 

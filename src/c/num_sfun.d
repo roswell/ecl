@@ -61,7 +61,7 @@ log1pl(long double x)
 cl_object
 ecl_abs(cl_object x)
 {
-	if (type_of(x) != t_complex) {
+	if (!ECL_COMPLEXP(x)) {
 		if (ecl_minusp(x)) {
 			x = ecl_negate(x);
 		}
@@ -525,7 +525,7 @@ ecl_atan2(cl_object y, cl_object x)
 	double dy = ecl_to_double(y);
 	double dx = ecl_to_double(x);
 	double dz = ecl_atan2_double(dy, dx);
-	if (type_of(x) == t_doublefloat || type_of(y) == t_doublefloat) {
+	if (ECL_DOUBLE_FLOAT_P(x) || ECL_DOUBLE_FLOAT_P(y)) {
 		output = ecl_make_doublefloat(dz);
 	} else {
 		output = ecl_make_singlefloat(dz);
@@ -539,7 +539,7 @@ ecl_atan2(cl_object y, cl_object x)
 cl_object
 ecl_atan1(cl_object y)
 {
-	if (type_of(y) == t_complex) {
+	if (ECL_COMPLEXP(y)) {
 #if 0 /* ANSI states it should be this first part */
 		cl_object z = ecl_times(cl_core.imag_unit, y);
 		z = ecl_plus(ecl_log1(ecl_one_plus(z)),

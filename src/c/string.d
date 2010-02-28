@@ -256,7 +256,7 @@ cl_string(cl_object x)
 cl_object
 si_coerce_to_base_string(cl_object x)
 {
-	if (type_of(x) != t_base_string) {
+	if (!ECL_BASE_STRING_P(x)) {
 		x = si_copy_to_simple_base_string(x);
 	}
 	@(return x)
@@ -558,7 +558,7 @@ AGAIN:
 	if (e1 - s1 != e2 - s2)
 		@(return Cnil);
 #ifdef ECL_UNICODE
-	if (type_of(string1) != t_base_string || type_of(string2) != t_base_string) {
+        if (ECL_EXTENDED_STRING_P(string1) || ECL_EXTENDED_STRING_P(string2)) {
 		output = compare_strings(string1, s1, e1, string2, s2, e2, 0, &e1);
 	} else
 #endif
@@ -599,7 +599,7 @@ string_compare(cl_narg narg, int sign1, int sign2, int case_sensitive, cl_va_lis
 	get_string_start_end(string1, start1, end1, &s1, &e1);
 	get_string_start_end(string2, start2, end2, &s2, &e2);
 #ifdef ECL_UNICODE
-	if (type_of(string1) != t_base_string || type_of(string2) != t_base_string) {
+	if (ECL_EXTENDED_STRING_P(string1) || ECL_EXTENDED_STRING_P(string2)) {
 		output = compare_strings(string1, s1, e1, string2, s2, e2,
 					 case_sensitive, &e1);
 	} else
@@ -871,13 +871,10 @@ nstring_case(cl_narg narg, cl_object fun, ecl_casefun casefun, cl_va_list ARGS)
 	get_string_start_end(strng, start, end, &s, &e);
 	b = TRUE;
 #ifdef ECL_UNICODE
-	if (type_of(strng) == t_string) {
+	if (ECL_EXTENDED_STRING_P(strng)) {
 		for (i = s;  i < e;  i++)
 			strng->string.self[i] = (*casefun)(strng->string.self[i], &b);
-	} else {
-		for (i = s;  i < e;  i++)
-			strng->base_string.self[i] = (*casefun)(strng->base_string.self[i], &b);
-	}
+	} else
 #else
 	for (i = s;  i < e;  i++)
 		strng->base_string.self[i] = (*casefun)(strng->base_string.self[i], &b);

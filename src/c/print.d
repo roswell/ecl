@@ -315,7 +315,7 @@ ecl_print_level(void)
                                 "is not of the expected type (OR NULL (INTEGER 0 *))",
                                 1, object);
 		}
-	} else if (ecl_unlikely(type_of(object) != t_bignum)) {
+	} else if (ecl_unlikely(!ECL_BIGNUMP(object))) {
 		goto ERROR;
 	} else {
 		level = MOST_POSITIVE_FIXNUM;
@@ -338,7 +338,7 @@ ecl_print_length(void)
                                 "is not of the expected type (OR NULL (INTEGER 0 *))",
                                 1, object);
 		}
-	} else if (ecl_unlikely(type_of(object) != t_bignum)) {
+	} else if (ecl_unlikely(!ECL_BIGNUMP(object))) {
 		goto ERROR;
 	} else {
 		length = MOST_POSITIVE_FIXNUM;

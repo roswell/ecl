@@ -71,7 +71,7 @@ fixint(cl_object x)
 {
 	if (FIXNUMP(x))
 		return fix(x);
-	if (type_of(x) == t_bignum) {
+	if (ECL_BIGNUMP(x)) {
 #ifdef WITH_GMP
 		if (mpz_fits_slong_p(x->big.big_num)) {
 			return mpz_get_si(x->big.big_num);
@@ -91,7 +91,7 @@ fixnnint(cl_object x)
 		cl_fixnum i = fix(x);
 		if (i >= 0)
 			return i;
-	} else if (type_of(x) == t_bignum) {
+	} else if (ECL_BIGNUMP(x)) {
 #ifdef WITH_GMP
 		if (mpz_fits_ulong_p(x->big.big_num)) {
 			return mpz_get_ui(x->big.big_num);
@@ -247,7 +247,7 @@ ecl_to_uint64_t(cl_object x) {
                 if (!ecl_minusp(x)) {
                         if (FIXNUMP(x)) {
                                 return (ecl_uint64_t)fix(x);
-                        } else if (type_of(x) != t_bignum) {
+                        } else if (!ECL_BIGNUMP(x)) {
                                 (void)0;
                         } else if (mpz_fits_ulong_p(x->big.big_num)) {
                                 return (ecl_uint64_t)mpz_get_ui(x->big.big_num);
@@ -274,7 +274,7 @@ ecl_to_int64_t(cl_object x) {
         do {
                 if (FIXNUMP(x)) {
                         return (ecl_int64_t)fix(x);
-                } else if (type_of(x) != t_bignum) {
+                } else if (!ECL_BIGNUMP(x)) {
                         (void)0;
                 } else if (mpz_fits_slong_p(x->big.big_num)) {
                         return (ecl_int64_t)mpz_get_si(x->big.big_num);
@@ -368,7 +368,7 @@ ecl_to_unsigned_long_long(cl_object x) {
                 if (!ecl_minusp(x)) {
                         if (FIXNUMP(x)) {
                                 return (ecl_ulong_long_t)fix(x);
-                        } else if (type_of(x) != t_bignum) {
+                        } else if (!ECL_BIGNUMP(x)) {
                                 (void)0;
                         } else if (mpz_fits_ulong_p(x->big.big_num)) {
                                 return (ecl_ulong_long_t)mpz_get_ui(x->big.big_num);
@@ -400,7 +400,7 @@ ecl_to_long_long(cl_object x)
         do {
                 if (FIXNUMP(x)) {
                         return (ecl_long_long_t)fix(x);
-                } else if (type_of(x) != t_bignum) {
+                } else if (!ECL_BIGNUMP(x)) {
                         (void)0;
                 } else if (mpz_fits_slong_p(x->big.big_num)) {
                         return (ecl_long_long_t)mpz_get_si(x->big.big_num);
