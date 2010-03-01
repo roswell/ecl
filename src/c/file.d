@@ -90,7 +90,7 @@ static void not_an_input_stream(cl_object fn) ecl_attr_noreturn;
 static void not_an_output_stream(cl_object fn) ecl_attr_noreturn;
 static void not_a_character_stream(cl_object s) ecl_attr_noreturn;
 static void not_a_binary_stream(cl_object s) ecl_attr_noreturn;
-static int restartable_io_error(cl_object strm) ecl_attr_noreturn;
+static int restartable_io_error(cl_object strm);
 static void unread_error(cl_object strm);
 static void unread_twice(cl_object strm);
 static void io_error(cl_object strm) ecl_attr_noreturn;
