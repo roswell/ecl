@@ -797,7 +797,7 @@ string_case(cl_narg narg, cl_object fun, ecl_casefun casefun, cl_va_list ARGS)
 	p = ecl_vector_start_end(fun, strng, kstart, kend);
 	b = TRUE;
 #ifdef ECL_UNICODE
-	if (ECL_EXTENDED_STRING_(strng)) {
+	if (ECL_EXTENDED_STRING_P(strng)) {
 		for (i = p.start;  i < p.end;  i++)
 			strng->string.self[i] = (*casefun)(strng->string.self[i], &b);
         } else
