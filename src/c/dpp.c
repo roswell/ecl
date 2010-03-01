@@ -692,9 +692,9 @@ put_declaration(void)
   }
   if (nopt == 0 && !rest_flag && !key_flag) {
     put_lineno();
-    fprintf(out, "\tif (ecl_unlikely(narg!=%d))");
+    fprintf(out, "\tif (ecl_unlikely(narg!=%d))", nreq);
     fprintf(out, "\t   FEwrong_num_arguments(MAKE_FIXNUM(%d));\n",
-            nreq, function_code);
+            function_code);
   } else {
     simple_varargs = !rest_flag && !key_flag && ((nreq + nopt) < 32);
     if (key_flag) {
