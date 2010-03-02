@@ -224,6 +224,7 @@ lsp/config.lsp: $(srcdir)/lsp/config.lsp.in Makefile c\cut$(EXE)
 	    "@SOFTWARE_TYPE@" "$(SOFTWARE_TYPE)" \
 	    "@SOFTWARE_VERSION@" "$(SOFTWARE_VERSION)" \
 	    "@thehost@" "$(THEHOST)" \
+	    "@top_srcdir@" "$(top_srcdir:\=/)/" \
 	    < $(srcdir)\lsp\config.lsp.in > lsp\config.lsp
 compile.lsp: bare.lsp $(srcdir)/compile.lsp.in Makefile
 	c\cut "@ecldir\@" "$(libdir:\=/)" \
