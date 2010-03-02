@@ -330,7 +330,7 @@ FEwrong_index(cl_object function, cl_object a, int which, cl_object ndx,
                                cl_list(5, function, MAKE_FIXNUM(which+1), ndx,
                                        a, type),
                                @':expected-type', type,
-                               @':datum', index);
+                               @':datum', ndx);
 }
 
 void
