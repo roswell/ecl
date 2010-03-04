@@ -191,7 +191,7 @@
   (debug 0)		;;; Debug quality
   (file (car ext:*source-location*))
 			;;; Source file or NIL
-  (file-position *compile-file-position*)
+  (file-position (or (cdr ext:*source-location*) *compile-file-position*))
 			;;; Top-level form number in source file
   )
 
