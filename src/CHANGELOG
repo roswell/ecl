@@ -1,9 +1,10 @@
-ECL 10.2.1:
+ECL 10.3.1:
 ===========
 
 This release has three important focuses: performance improvements in various
 fronts (garbage collection and hash tables), extending the run-process function
-and important fixes to let ECL work better with Slime.
+and important fixes to let ECL work better with Slime. To quote one lisper
+ECL "this feels like a real Lisp implementation now"
 
 * Bugs fixed:
 
