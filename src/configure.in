@@ -395,6 +395,9 @@ else
         --libdir=${destdir} --build=${gmp_build} --host=${host_alias} \
         CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" CC="${CC} ${PICFLAG}" \
         "$GMP_ABI" $with_gmp)
+     if test ! -f gmp/config.status; then
+       AC_MSG_ERROR([Failed to configure the GMP library.])
+     fi
     fi
   else
     if test "x$ECL_GMP_HEADER" = "x"; then

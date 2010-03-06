@@ -5529,6 +5529,11 @@ $as_echo "$as_me: Configuring included GMP library:" >&6;}
         --libdir=${destdir} --build=${gmp_build} --host=${host_alias} \
         CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" CC="${CC} ${PICFLAG}" \
         "$GMP_ABI" $with_gmp)
+     if test ! -f gmp/config.status; then
+       { { $as_echo "$as_me:$LINENO: error: Failed to configure the GMP library." >&5
+$as_echo "$as_me: error: Failed to configure the GMP library." >&2;}
+   { (exit 1); exit 1; }; }
+     fi
     fi
   else
     if test "x$ECL_GMP_HEADER" = "x"; then
