@@ -382,6 +382,11 @@ else
       gmp_build="${build_alias}"
     fi
     ECL_GMP_HEADER='ecl/gmp.h'
+    if test "x$ABI" = "x"; then
+      GMP_ABI=""
+    else
+      GMP_ABI="ABI=$ABI"
+    fi
     if mkdir gmp; then
      dnl Notice we need -DPIC to force the assembler to generate PIC code
      (destdir=`${PWDCMD}`; cd gmp; CC="${CC} ${PICFLAG}" \
@@ -389,7 +394,7 @@ else
 	--infodir=${destdir}/doc --includedir=${destdir}/ecl --with-pic \
         --libdir=${destdir} --build=${gmp_build} --host=${host_alias} \
         CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" CC="${CC} ${PICFLAG}" \
-        ABI=$ABI $with_gmp)
+        "$GMP_ABI" $with_gmp)
     fi
   else
     if test "x$ECL_GMP_HEADER" = "x"; then
