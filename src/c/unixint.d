@@ -1156,7 +1156,7 @@ init_unixint(int pass)
 		create_signal_queue(ecl_get_option(ECL_OPT_SIGNAL_QUEUE_SIZE));
 		create_signal_code_constants();
 		install_fpe_signal_handlers();
-		/*install_signal_handling_thread();*/
+		install_signal_handling_thread();
 		ECL_SET(@'si::*interrupts-enabled*', Ct);
 		ecl_process_env()->disable_interrupts = 0;
 	}
