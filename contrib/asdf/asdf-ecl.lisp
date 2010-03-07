@@ -289,7 +289,8 @@
         t))))
 
 (defun register-pre-built-system (name)
-  (register-system name (make-instance 'system :name name)))
+  (register-system name (make-instance 'system :name name
+                                       :source-file nil)))
 
 (setf si::*module-provider-functions*
       (loop for f in si::*module-provider-functions*
