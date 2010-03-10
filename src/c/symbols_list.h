@@ -1881,5 +1881,7 @@ cl_symbols[] = {
 
 {EXT_ "LISP-IMPLEMENTATION-VCS-ID", EXT_ORDINARY, NULL, -1, Cnil},
 
+{SYS_ "SIGNAL-SERVICING", SI_ORDINARY, NULL, -1, Cnil},
+
 /* Tag for end of list */
 {NULL, CL_ORDINARY, NULL, -1, OBJNULL}};

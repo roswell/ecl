@@ -10,6 +10,10 @@ ECL 10.3.2:
  - The source location annotator records the original pathnames, not the
    truenames. This allows in particular moving ECL's core files.
 
+ - The signal servicing thread now carries the name SI:SIGNAL-SERVICING, which
+   is different from the name of the threads that are created to actually
+   handle those signals.
+
 ECL 10.3.1:
 ===========
 

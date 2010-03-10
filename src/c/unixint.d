@@ -1038,12 +1038,12 @@ install_signal_handling_thread()
 		cl_object fun =
 			ecl_make_cfun((cl_objectfn_fixed)
 				      asynchronous_signal_servicing_thread,
-				      @'si::handle-signal',
+				      @'si::signal-servicing',
 				      Cnil,
 				      0);
 		cl_object process =
 			mp_process_run_function(2,
-						@'si::handle-signal',
+						@'si::signal-servicing',
 						fun);
 		if (Null(process)) {
 			ecl_internal_error("Unable to create signal "
