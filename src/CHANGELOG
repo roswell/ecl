@@ -5,6 +5,9 @@ ECL 10.3.2:
 
  - Fixed offset problems in READ/WRITE-SEQUENCE.
 
+ - In multithreaded ECL, the signal servicing thread was not created due to
+   a stale debug statement.
+
 * Visible changes:
 
  - The source location annotator records the original pathnames, not the
