@@ -8,6 +8,9 @@ ECL 10.3.2:
  - In multithreaded ECL, the signal servicing thread was not created due to
    a stale debug statement.
 
+ - The tool 'ecl-config' contained unsubstituted values, such as @LDRPATH@
+   because these variablesls had been renamed in the autoconf file.
+
 * Visible changes:
 
  - The source location annotator records the original pathnames, not the

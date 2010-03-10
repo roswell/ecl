@@ -283,6 +283,7 @@ boehm_configure_flags=""
 AC_EXEEXT dnl			Guess whether .exe is needed for executables
 AC_SUBST(buildir)               dnl For top-level Makefile.in
 AC_SUBST(ECL_CFLAGS)            dnl Similar, but specific to ECL (see src/util/ecl-config)
+AC_SUBST(DEBUG_CFLAGS)
 AC_SUBST(GMP_CFLAGS)		dnl CFLAGS needed for compiling with system GMP library
 AC_SUBST(GMP_LDFLAGS)		dnl LDFLAGS needed for compiling with system GMP library
 AC_SUBST(FASL_LIBS)             dnl Libraries to link into all ecl code but not
@@ -429,6 +430,7 @@ if test "$with_debug_cflags" = "yes"; then
   with_debug_cflags="-g"
 fi
 if test "$with_debug_cflags" != "no"; then
+  DEBUG_CFLAGS="$with_debug_cflags"
   CFLAGS="$with_debug_cflags $CFLAGS"
   CXXFLAGS="$with_debug_cflags $CXXFLAGS"
   LDFLAGS="$with_debug_cflags $LDFLAGS"

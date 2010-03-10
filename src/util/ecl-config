@@ -36,5 +36,5 @@ if test "$echo_cflags" = "yes"; then
 fi
 
 if test "$echo_ldflags" = "yes"; then
-  echo "@LDRPATH@ -L@libdir\@ $LDFLAGS @LDFLAGS@ @GMP_LDFLAGS@ @LIBS@"
+  echo "@ECL_LDRPATH@ -L@libdir\@ $LDFLAGS @LDFLAGS@ @GMP_LDFLAGS@ @LIBS@"
 fi

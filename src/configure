@@ -720,6 +720,7 @@ CORE_LIBS
 FASL_LIBS
 GMP_LDFLAGS
 GMP_CFLAGS
+DEBUG_CFLAGS
 ECL_CFLAGS
 buildir
 ecldir
@@ -2400,7 +2401,8 @@ test -z "${docdir}" && docdir="${datadir}/doc/ecl-${PACKAGE_VERSION}"
 
 boehm_configure_flags=""
 
-                            				                                                                                                                  TARGETS='bin/ecl$(EXE)'
+
+				                                                                                                                  TARGETS='bin/ecl$(EXE)'
 SUBDIRS=c
                             LSP_FEATURES='*features*'
 
@@ -5747,6 +5749,7 @@ if test "$with_debug_cflags" = "yes"; then
   with_debug_cflags="-g"
 fi
 if test "$with_debug_cflags" != "no"; then
+  DEBUG_CFLAGS="$with_debug_cflags"
   CFLAGS="$with_debug_cflags $CFLAGS"
   CXXFLAGS="$with_debug_cflags $CXXFLAGS"
   LDFLAGS="$with_debug_cflags $LDFLAGS"
