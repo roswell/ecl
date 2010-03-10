@@ -471,7 +471,8 @@ si_load_source(cl_object source, cl_object verbose, cl_object print)
 	}
 	CL_UNWIND_PROTECT_BEGIN(the_env) {
 		cl_object form_index = MAKE_FIXNUM(0);
-		cl_object location = CONS(source, form_index);
+                cl_object pathname = ECL_SYM_VAL(the_env, @'*load-pathname*');
+		cl_object location = CONS(pathname, form_index);
 		ecl_bds_bind(the_env, @'ext::*source-location*', location);
 		for (;;) {
                         form_index = ecl_file_position(strm);
