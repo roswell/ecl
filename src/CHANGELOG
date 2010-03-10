@@ -1,6 +1,10 @@
 ECL 10.3.2:
 ===========
 
+* Bugs fixed:
+
+ - Fixed offset problems in READ/WRITE-SEQUENCE.
+
 * Visible changes:
 
  - The source location annotator records the original pathnames, not the

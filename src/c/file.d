@@ -2782,7 +2782,7 @@ io_file_read_vector(cl_object strm, cl_object data, cl_index start, cl_index end
 	if (t == aet_b8 || t == aet_i8) {
 		if (strm->stream.byte_size == 8) {
 			void *aux = data->vector.self.bc + start;
-			return strm->stream.ops->read_byte8(strm, aux, end-start);
+			return start + strm->stream.ops->read_byte8(strm, aux, end-start);
 		}
 	} else if (t == aet_fix || t == aet_index) {
 		if (strm->stream.byte_size == sizeof(cl_fixnum)*8) {
@@ -2803,7 +2803,7 @@ io_file_write_vector(cl_object strm, cl_object data, cl_index start, cl_index en
 		return start;
 	if (t == aet_b8 || t == aet_i8) {
 		if (strm->stream.byte_size == 8) {
-			void *aux = data->vector.self.fix + start;
+			void *aux = data->vector.self.bc + start;
 			return strm->stream.ops->write_byte8(strm, aux, end-start);
 		}
 	} else if (t == aet_fix || t == aet_index) {
