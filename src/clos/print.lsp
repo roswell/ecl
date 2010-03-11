@@ -129,13 +129,13 @@ printer and we should rather use MAKE-LOAD-FORM."
 
 (defmethod print-object ((instance t) stream)
   (print-unreadable-object (instance stream)
-	(format stream "a ~A"
+	(format stream "a ~S"
 		(class-name (si:instance-class instance))))
   instance)
 
 (defmethod print-object ((class class) stream)
   (print-unreadable-object (class stream)
-	(format stream "The ~A ~A"
+	(format stream "The ~A ~S"
 		(class-name (si:instance-class class)) (class-name class)))
   class)
 
