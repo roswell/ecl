@@ -133,11 +133,14 @@
 (make-package "ASDF")
 
 (defun build-fake-asdf (name)
-  (with-open-file (*standard-output* (make-pathname :name name :type "asd")
-                   :direction :output :if-exists :supersede :if-does-not-exist :create)
+  (let ((path (make-pathname :name name :type "asd")))
+    (with-open-file (*standard-output* path
+                     :direction :output :if-exists :supersede
+                     :if-does-not-exist :create)
     (print `(defsystem ,name :class asdf::prebuilt-system
                :lib ,(format nil "SYS:~A" (string name))
-               :components ((:compiled-file ,(string name)))))))
+               :components ((:compiled-file ,(string name))))))
+    path))
 
 (defun build-module (name sources &key additional-files
                      (builtin nil) (dir "build:")
@@ -146,13 +149,13 @@
   (let* ((name (string-downcase name)))
     (when additional-files
       (setf *module-files* (append additional-files *module-files*)))
-    (unless (equalp name "asdf")
-      (build-fake-asdf name))
     (let* ((objects (compile-if-old dir sources :system-p t :c-file t
                                     :data-file t :h-file t)))
       (push (c::build-static-library name :lisp-files objects) *module-files*)
       (when builtin
         (push (intern name) *module-symbols*))
+      (unless (equalp name "asdf")
+        (push (build-fake-asdf name) *module-files*))
       #-:wants-dlopen
       (push (build-fake-module name sources) *module-files*)
       #+:wants-dlopen
