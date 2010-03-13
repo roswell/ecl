@@ -189,8 +189,6 @@ the help file."
 (defun set-documentation (object doc-type string)
   (when (not (or (stringp string) (null string)))
     (error "~S is not a valid documentation string" string))
-  (when (consp object)
-    (print (list object doc-type string)))
   (let ((key 'documentation))
     (when (and object (listp object) (si::valid-function-name-p object))
       (setq object (second object) key 'setf-documentation))
