@@ -11,6 +11,9 @@ ECL 10.3.2:
  - The tool 'ecl-config' contained unsubstituted values, such as @LDRPATH@
    because these variablesls had been renamed in the autoconf file.
 
+ - The reimplementation of DIRECTORY introduced a bug in pathnames with ending
+   double wildcars, such as "/foo/**/".
+
 * Visible changes:
 
  - The source location annotator records the original pathnames, not the

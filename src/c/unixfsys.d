@@ -830,7 +830,7 @@ dir_recursive(cl_object base_dir, cl_object directory, cl_object filemask)
 	 * we have to find a file which corresponds to the description.
 	 */
 	if (directory == Cnil) {
-		return dir_files(base_dir, filemask);
+		return ecl_nconc(dir_files(base_dir, filemask), output);
 	}
 	/*
 	 * 2) We have not yet exhausted the DIRECTORY component of the
