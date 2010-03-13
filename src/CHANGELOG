@@ -22,6 +22,9 @@ ECL 10.3.2:
 
  - FFI:CLINES admits @lisp-object notation in the strings.
 
+ - ECL's contributed modules can now be used in standalone programs, for they   
+   are now stored both in FASL form and as statically linked libraries.
+
 ECL 10.3.1:
 ===========
 
