@@ -332,10 +332,11 @@
                            (wt (add-object object :permanent t))))
                        (write-char c output-stream))))))
     (loop for s in *clines-string-list*
+       do (terpri output-stream)
        do (if (find #\@ s)
               (parse-one-string s output-stream)
-              (write-string s output-stream))
-       do (terpri output-stream))
+              (write-string s output-stream)))
+    (terpri output-stream)
     (setf *clines-string-list* nil)))
 
 ;; ----------------------------------------------------------------------
