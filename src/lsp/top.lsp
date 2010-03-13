@@ -1480,13 +1480,13 @@ supplied, then SAFE-EVAL will not use a debugger but rather return that
 value."
   (let ((output nil) (ok nil))
     (unwind-protect
-         (if err-value-p
-             (let ((*break-enable* nil))
-               (setf output (si::eval-with-env form env)
-                     ok t))
-             (handler-bind ((serious-condition #'invoke-debugger))
-               (setf output (si::eval-with-env form env)
-                     ok t)))
+         (handler-bind ((serious-condition
+                         (if err-value-p
+                             #'(lambda (c)
+                                 (return-from safe-eval err-value))
+                             #'invoke-debugger)))
+           (setf output (si::eval-with-env form env)
+                 ok t))
       (return-from safe-eval (if ok output err-value)))))
 
 #-ecl-min

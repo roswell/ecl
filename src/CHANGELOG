@@ -14,6 +14,9 @@ ECL 10.3.2:
  - The reimplementation of DIRECTORY introduced a bug in pathnames with ending
    double wildcars, such as "/foo/**/".
 
+ - EXT:SAFE-EVAL (or cl_safe_eval in C) would attempt to start the debugger
+   when an error was signaled.
+
 * Visible changes:
 
  - The source location annotator records the original pathnames, not the
