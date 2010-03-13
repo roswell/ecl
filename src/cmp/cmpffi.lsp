@@ -303,15 +303,40 @@
 	(t
 	 (coercion-error))))))
 
-;; ----------------------------------------------------------------------
-;; C/C++ DECLARATIONS AND HEADERS
-;;
-
+;;; ----------------------------------------------------------------------
+;;; C/C++ DECLARATIONS AND HEADERS
+;;;
+;;; All lines from CLINES statements are grouped at the beginning of the header
+;;; Notice that it does not make sense to guarantee that c-lines statements
+;;; are produced in-between the function definitions, because two functions
+;;; might be collapsed into one, or we might not produce that function at all
+;;; and rather inline it.
+;;;
 (defun c1clines (args)
   (unless (every #'stringp args)
     (cmperr "The argument to CLINES, ~s, is not a list of strings." args))
   (setf *clines-string-list* (nconc *clines-string-list* (copy-list args)))
   (c1expr '(progn)))
+
+(defun output-clines (output-stream)
+  (flet ((parse-one-string (s output-stream)
+           (with-input-from-string (stream s)
+             (loop for c = (read-char stream nil nil)
+                while c
+                do (if (eq c #\@)
+                       (let ((object (handler-case (read stream)
+                                       (serious-condition (c)
+                                         (cmperr "Unable to parse FFI:CLINES string~& ~S"
+                                                 s)))))
+                         (let ((*compiler-output1* output-stream))
+                           (wt (add-object object :permanent t))))
+                       (write-char c output-stream))))))
+    (loop for s in *clines-string-list*
+       do (if (find #\@ s)
+              (parse-one-string s output-stream)
+              (write-string s output-stream))
+       do (terpri output-stream))
+    (setf *clines-string-list* nil)))
 
 ;; ----------------------------------------------------------------------
 ;; C/C++ INLINE CODE

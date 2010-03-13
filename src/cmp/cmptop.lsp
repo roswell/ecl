@@ -103,14 +103,15 @@
   ;(let ((*print-level* 3)) (pprint *top-level-forms*))
   (setq *top-level-forms* (nreverse *top-level-forms*))
   (wt-nl1 "#include \"" (si::coerce-to-filename h-pathname) "\"")
-  ;; All lines from CLINES statements are grouped at the beginning of the header
-  ;; Notice that it does not make sense to guarantee that c-lines statements
-  ;; are produced in-between the function definitions, because two functions
-  ;; might be collapsed into one, or we might not produce that function at all
-  ;; and rather inline it.
-  (do ()
-      ((null *clines-string-list*))
-    (wt-nl-h (pop *clines-string-list*)))
+
+  ;; VV might be needed by functions in CLINES.
+  (wt-nl-h "#ifdef ECL_DYNAMIC_VV")
+  (wt-nl-h "static cl_object *VV;")
+  (wt-nl-h "#else")
+  (wt-nl-h "static cl_object VV[VM];")
+  (wt-nl-h "#endif")
+  (output-clines *compiler-output2*)
+
   (wt-nl-h "#ifdef __cplusplus")
   (wt-nl-h "extern \"C\" {")
   (wt-nl-h "#endif")
@@ -204,12 +205,7 @@
 	  (wt-nl-h "#define VV NULL"))
 	(progn
 	  (wt-nl-h "#define VM " (data-permanent-storage-size))
-	  (wt-nl-h "#define VMtemp "  (data-temporary-storage-size))
-	  (wt-nl-h "#ifdef ECL_DYNAMIC_VV")
-	  (wt-nl-h "static cl_object *VV;")
-	  (wt-nl-h "#else")
-	  (wt-nl-h "static cl_object VV[VM];")
-	  (wt-nl-h "#endif"))))
+	  (wt-nl-h "#define VMtemp "  (data-temporary-storage-size)))))
 
   (dolist (l *linking-calls*)
     (let* ((c-name (fourth l))

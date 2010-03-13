@@ -20,6 +20,8 @@ ECL 10.3.2:
    is different from the name of the threads that are created to actually
    handle those signals.
 
+ - FFI:CLINES admits @lisp-object notation in the strings.
+
 ECL 10.3.1:
 ===========
 
