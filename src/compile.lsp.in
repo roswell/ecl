@@ -260,6 +260,16 @@
                           "src:clx;manager.lisp"
                           "src:clx;image.lisp"
                           "src:clx;resource.lisp"
+                          "src:clx;shape.lisp"
+                          "src:clx;big-requests.lisp"
+                          "src:clx;xvidmode.lisp"
+                          "src:clx;xrender.lisp"
+                          "src:clx;glx.lisp"
+                          "src:clx;gl.lisp"
+                          "src:clx;dpms.lisp"
+                          "src:clx;xtest.lisp"
+                          "src:clx;screensaver.lisp"
+                          "src:clx;xinerama.lisp"
 			  "build:clx;module.lisp"))
        #+:msvc
        (c::*cc-flags* (concatenate 'string c::*cc-flags* " -Zm150")))
