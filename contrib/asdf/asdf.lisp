@@ -93,6 +93,10 @@
                  (unless (eq sym (find-symbol (string sym) package))
                    (remove-symbol sym package)))
                (use-package used package)))
+           (ensure-fmakunbound (package symbols)
+             (loop :for name :in symbols
+               :for sym = (find-symbol (string name) package)
+               :when sym :do (fmakunbound sym)))
            (ensure-export (package export)
              (let ((syms (loop :for x :in export :collect
                            (intern (string x) package))))
@@ -101,11 +105,12 @@
                    (remove-symbol sym package)))
                (dolist (sym syms)
                  (export sym package))))
-           (ensure-package (name &key nicknames use unintern shadow export)
+           (ensure-package (name &key nicknames use unintern fmakunbound shadow export)
              (let ((p (ensure-exists name nicknames use)))
                (ensure-unintern p unintern)
                (ensure-shadow p shadow)
                (ensure-export p export)
+               (ensure-fmakunbound p fmakunbound)
                p)))
     (ensure-package
      ':asdf-utilities
@@ -140,16 +145,19 @@
     (ensure-package
      ':asdf
      :use '(:common-lisp :asdf-utilities)
-     :unintern '(#:*asdf-revision*)
+     :unintern '(#:*asdf-revision* #:around #:asdf-method-combination #:split #:make-collector
+                 #:perform #:explain #:output-files #:operation-done-p
+                 #:component-relative-pathname #:system-relative-pathname)
      :export
      '(#:defsystem #:oos #:operate #:find-system #:run-shell-command
        #:system-definition-pathname #:find-component ; miscellaneous
        #:compile-system #:load-system #:test-system
        #:compile-op #:load-op #:load-source-op
        #:test-op
-       #:operation                 ; operations
+       #:operation               ; operations
        #:feature                 ; sort-of operation
        #:version                 ; metaphorically sort-of an operation
+       #:version-satisfies
 
        #:input-files #:output-files #:perform ; operation methods
        #:operation-done-p #:explain
@@ -217,9 +225,6 @@
        #:coerce-entry-to-directory
        #:remove-entry-from-registry
 
-       #:standard-asdf-method-combination
-       #:around                     ; protocol assistants
-
        #:initialize-output-translations
        #:clear-output-translations
        #:ensure-output-translations
@@ -247,7 +252,7 @@
   ;; This parameter isn't actually user-visible
   ;; -- please use the exported function ASDF:ASDF-VERSION below.
   ;; the 1+ hair is to ensure that we don't do an inadvertent find and replace
-  (subseq "VERSION:1.634" (1+ (length "VERSION"))))
+  (subseq "VERSION:1.646" (1+ (length "VERSION"))))
 
 (defun asdf-version ()
   "Exported interface to the version of ASDF currently installed. A string.
@@ -268,7 +273,7 @@ Defaults to `t`.")
 (defvar *verbose-out* nil)
 
 (defparameter +asdf-methods+
-  '(perform explain output-files operation-done-p))
+  '(perform-with-restarts perform explain output-files operation-done-p))
 
 #+allegro
 (eval-when (:compile-toplevel :execute)
@@ -301,56 +306,14 @@ Defaults to `t`.")
         (when system-p (setf (getf (slot-value c 'flags) :system-p) system-p))))))
 
 ;;;; -------------------------------------------------------------------------
-;;;; CLOS magic for asdf:around methods
-
-(define-method-combination standard-asdf-method-combination ()
-  ((around-asdf (around))
-   (around (:around))
-   (before (:before))
-   (primary () :required t)
-   (after (:after)))
-  (flet ((call-methods (methods)
-           (mapcar #'(lambda (method)
-                       `(call-method ,method))
-                   methods)))
-    (let* ((form (if (or before after (rest primary))
-                     `(multiple-value-prog1
-                          (progn ,@(call-methods before)
-                                 (call-method ,(first primary)
-                                              ,(rest primary)))
-                        ,@(call-methods (reverse after)))
-                     `(call-method ,(first primary))))
-           (standard-form (if around
-                              `(call-method ,(first around)
-                                            (,@(rest around)
-                                               (make-method ,form)))
-                              form)))
-      (if around-asdf
-          `(call-method ,(first around-asdf)
-                        (,@(rest around-asdf) (make-method ,standard-form)))
-          standard-form))))
-
-(setf (documentation 'standard-asdf-method-combination
-                     'method-combination)
-      "This method combination is based on the standard method combination,
-but defines a new method-qualifier, `asdf:around`.  `asdf:around`
-methods will be run *around* any `:around` methods, so that the core
-protocol may employ around methods and those around methods will not
-be overridden by around methods added by a system developer.")
-
-;;;; -------------------------------------------------------------------------
 ;;;; ASDF Interface, in terms of generic functions.
 
-(defgeneric perform (operation component)
-  (:method-combination standard-asdf-method-combination))
-(defgeneric operation-done-p (operation component)
-  (:method-combination standard-asdf-method-combination))
-(defgeneric explain (operation component)
-  (:method-combination standard-asdf-method-combination))
-(defgeneric output-files (operation component)
-  (:method-combination standard-asdf-method-combination))
-(defgeneric input-files (operation component)
-  (:method-combination standard-asdf-method-combination))
+(defgeneric perform-with-restarts (operation component))
+(defgeneric perform (operation component))
+(defgeneric operation-done-p (operation component))
+(defgeneric explain (operation component))
+(defgeneric output-files (operation component))
+(defgeneric input-files (operation component))
 
 (defgeneric system-source-file (system)
   (:documentation "Return the source file in which system is defined."))
@@ -440,27 +403,6 @@ The plan returned is a list of dotted-pairs. Each pair is the `cons`
 of ASDF operation object and a `component` object. The pairs will be
 processed in order by `operate`."))
 
-(defgeneric output-files-using-mappings (source possible-paths path-mappings)
-  (:documentation
-"Use the variable \\*source-to-target-mappings\\* to find
-an output path for the source. The algorithm transforms each
-entry in possible-paths as follows: If there is a mapping
-whose source starts with the path of possible-path, then
-replace possible-path with a pathname that starts with the
-target of the mapping and continues with the rest of
-possible-path. If no such mapping is found, then use the
-default mapping.
-
-If \\*centralize-lisp-binaries\\* is false, then the default
-mapping is to place the output in a subdirectory of the
-source. The subdirectory is named using the Lisp
-implementation \(see
-implementation-specific-directory-name\). If
-\\*centralize-lisp-binaries\\* is true, then the default
-mapping is to place the output in subdirectories of
-\\*default-toplevel-directory\\* where the subdirectory
-structure will mirror that of the source."))
-
 
 ;;;; -------------------------------------------------------------------------
 ;;;; General Purpose Utilities
@@ -499,22 +441,31 @@ does not have an absolute directory, then the HOST and DEVICE come from the DEFA
          (name (or (pathname-name specified) (pathname-name defaults)))
          (type (or (pathname-type specified) (pathname-type defaults)))
          (version (or (pathname-version specified) (pathname-version defaults))))
-    (multiple-value-bind (host device directory)
-        (ecase (first directory)
-          ((nil)
-           (values (pathname-host defaults)
-                   (pathname-device defaults)
-                   (pathname-directory defaults)))
-          ((:absolute)
-           (values (pathname-host specified)
-                   (pathname-device specified)
-                   directory))
-          ((:relative)
-           (values (pathname-host defaults)
-                   (pathname-device defaults)
-                   (append (pathname-directory defaults) (cdr directory)))))
-      (make-pathname :host host :device device :directory directory
-                     :name name :type type :version version))))
+    (labels ((ununspecific (x)
+               (if (eq x :unspecific) nil x))
+             (unspecific-handler (p)
+               (if (typep p 'logical-pathname) #'ununspecific #'identity)))
+      (multiple-value-bind (host device directory unspecific-handler)
+          (ecase (first directory)
+            ((nil)
+             (values (pathname-host defaults)
+                     (pathname-device defaults)
+                     (pathname-directory defaults)
+                     (unspecific-handler defaults)))
+            ((:absolute)
+             (values (pathname-host specified)
+                     (pathname-device specified)
+                     directory
+                     (unspecific-handler specified)))
+            ((:relative)
+             (values (pathname-host defaults)
+                     (pathname-device defaults)
+                     (append (pathname-directory defaults) (cdr directory))
+                     (unspecific-handler defaults))))
+        (make-pathname :host host :device device :directory directory
+                       :name (funcall unspecific-handler name)
+                       :type (funcall unspecific-handler type)
+                       :version (funcall unspecific-handler version))))))
 
 (define-modify-macro appendf (&rest args)
   append "Append onto list")
@@ -546,11 +497,16 @@ starting the separation from the end, e.g. when called with arguments
           (setf end start))))))
 
 (defun split-name-type (filename)
-  (destructuring-bind (name &optional type)
-      (split-string filename :max 2 :separator ".")
-    (if (equal name "")
-        (values filename nil)
-        (values name type))))
+  (let ((unspecific
+         ;; Giving :unspecific as argument to make-pathname is not portable.
+         ;; See CLHS make-pathname and 19.2.2.2.3.
+         ;; We only use it on implementations that support it.
+         (or #+(or sbcl ccl ecl lispworks) :unspecific)))
+    (destructuring-bind (name &optional (type unspecific))
+        (split-string filename :max 2 :separator ".")
+      (if (equal name "")
+          (values filename unspecific)
+          (values name type)))))
 
 (defun component-name-to-pathname-components (s &optional force-directory)
   "Splits the path string S, returning three values:
@@ -601,6 +557,8 @@ pathnames."
   #+allegro (excl:pathname-resolve-symbolic-links path))
 
 (defun getenv (x)
+  #+abcl
+  (ext:getenv x)
   #+sbcl
   (sb-ext:posix-getenv x)
   #+clozure
@@ -738,6 +696,9 @@ actually-existing directory."
                             :directory nil
                             :defaults p)
              sofar)))))))
+
+(defun lispize-pathname (input-file)
+  (make-pathname :type "lisp" :defaults input-file))
 
 ;;;; -------------------------------------------------------------------------
 ;;;; Classes, Conditions
@@ -1133,7 +1094,7 @@ to `~a` which is not a directory.~@:>"
   ;; NOTE that the host and device slots will be taken from the defaults,
   ;; but that should only matter if you either (a) use absolute pathnames, or
   ;; (b) later merge relative pathnames with CL:MERGE-PATHNAMES instead of
-  ;; ASDF:MERGE-PATHNAMES*
+  ;; ASDF-UTILITIES:MERGE-PATHNAMES*
   (etypecase name
     (pathname
      name)
@@ -1193,7 +1154,7 @@ to `~a` which is not a directory.~@:>"
                                      &allow-other-keys)
   (declare (ignorable operation slot-names force))
   ;; empty method to disable initarg validity checking
-  )
+  (values))
 
 (defun node-for (o c)
   (cons (class-name (class-of o)) c))
@@ -1530,7 +1491,7 @@ recursive calls to traverse.")
   ;; Note how we use OUTPUT-FILES to find the binary locations
   ;; This allows the user to override the names.
   (let* ((input (output-files o c))
-         (output (compile-file-pathname (first input) :type :fasl)))
+         (output (compile-file-pathname (lispize-pathname (first input)) :type :fasl)))
     (c:build-fasl output :lisp-files (remove "fas" input :key #'pathname-type :test #'string=))))
 
 (defmethod perform :after ((operation operation) (c component))
@@ -1564,11 +1525,12 @@ recursive calls to traverse.")
         (error 'compile-error :component c :operation operation)))))
 
 (defmethod output-files ((operation compile-op) (c cl-source-file))
-  #-:broken-fasl-loader
-  (list #-ecl (compile-file-pathname (component-pathname c))
-        #+ecl (compile-file-pathname (component-pathname c) :type :object)
-        #+ecl (compile-file-pathname (component-pathname c) :type :fasl))
-  #+:broken-fasl-loader (list (component-pathname c)))
+  (let ((p (lispize-pathname (component-pathname c))))
+    #-:broken-fasl-loader
+    (list #-ecl (compile-file-pathname p)
+          #+ecl (compile-file-pathname p :type :object)
+          #+ecl (compile-file-pathname p :type :fasl))
+    #+:broken-fasl-loader (list p)))
 
 (defmethod perform ((operation compile-op) (c static-file))
   nil)
@@ -1591,10 +1553,13 @@ recursive calls to traverse.")
   #-ecl (mapcar #'load (input-files o c))
   #+ecl (loop :for i :in (input-files o c)
           :unless (string= (pathname-type i) "fas")
-          :collect (let ((output (compile-file-pathname i)))
+          :collect (let ((output (compile-file-pathname (lispize-pathname i))))
                      (load output))))
 
-(defmethod perform around ((o load-op) (c cl-source-file))
+(defmethod perform-with-restarts (operation component)
+  (perform operation component))
+
+(defmethod perform-with-restarts :around ((o load-op) (c cl-source-file))
   (let ((state :initial))
     (loop :until (or (eq state :success)
                      (eq state :failure)) :do
@@ -1605,7 +1570,7 @@ recursive calls to traverse.")
             (setf state :success))
            (:failed-load
             (setf state :recompiled)
-            (perform (make-instance 'asdf:compile-op) c))
+            (perform (make-instance 'compile-op) c))
            (t
             (with-simple-restart
                 (try-recompiling "Recompile ~a and try loading it again"
@@ -1614,7 +1579,7 @@ recursive calls to traverse.")
               (call-next-method)
               (setf state :success)))))))
 
-(defmethod perform around ((o compile-op) (c cl-source-file))
+(defmethod perform-with-restarts :around ((o compile-op) (c cl-source-file))
   (let ((state :initial))
     (loop :until (or (eq state :success)
                      (eq state :failure)) :do
@@ -1625,7 +1590,7 @@ recursive calls to traverse.")
             (setf state :success))
            (:failed-compile
             (setf state :recompiled)
-            (perform (make-instance 'asdf:compile-op) c))
+            (perform-with-restarts o c))
            (t
             (with-simple-restart
                 (try-recompiling "Try recompiling ~a"
@@ -1717,7 +1682,7 @@ recursive calls to traverse.")
         (loop :for (op . component) :in steps :do
           (loop
             (restart-case
-                (progn (perform op component)
+                (progn (perform-with-restarts op component)
                        (return))
               (retry ()
                 :report
@@ -2078,7 +2043,10 @@ output to `*verbose-out*`.  Returns the shell's exit code."
     #+ecl ;; courtesy of Juan Jose Garcia Ripoll
     (si:system command)
 
-    #-(or openmcl clisp lispworks allegro scl cmu sbcl ecl)
+    #+abcl
+    (ext:run-shell-command command :output *verbose-out*)
+
+    #-(or openmcl clisp lispworks allegro scl cmu sbcl ecl abcl)
     (error "RUN-SHELL-COMMAND not implemented for this Lisp")
     ))
 
@@ -2104,13 +2072,12 @@ output to `*verbose-out*`.  Returns the shell's exit code."
      :directory (relativize-directory (pathname-directory p))
      :defaults p)))
 
-(defun system-relative-pathname (system pathname &key name type)
-  (let ((directory (pathname-directory pathname)))
-    (merge-pathnames*
-     (make-pathname :name (or name (pathname-name pathname))
-                    :type (or type (pathname-type pathname))
-                    :directory (relativize-directory directory))
-     (system-source-directory system))))
+(defun system-relative-pathname (system name &key type)
+  (merge-pathnames*
+   (merge-component-name-type
+    :name name
+    :type type)
+   (system-source-directory system)))
 
 
 ;;; ---------------------------------------------------------------------------
@@ -2206,10 +2173,44 @@ output to `*verbose-out*`.  Returns the shell's exit code."
 
 ;;; ---------------------------------------------------------------------------
 ;;; Generic support for configuration files
-(defun user-configuration-directory ()
-  (merge-pathnames* #p".config/" (user-homedir-pathname)))
-(defun system-configuration-directory ()
-  #p"/etc/")
+(defun try-directory-subpath (x sub &key type)
+  (let* ((p (and x (ensure-directory-pathname x)))
+         (tp (and p (ignore-errors (truename p))))
+         (sp (and tp (merge-pathnames* (merge-component-name-type sub :type type) p)))
+         (ts (and sp (ignore-errors (truename sp)))))
+    (and ts (values sp ts))))
+(defun user-configuration-directories ()
+  (remove-if
+   #'null
+   (flet ((try (x sub) (try-directory-subpath x sub :type :directory)))
+     `(,(try (getenv "XDG_CONFIG_HOME") "common-lisp/")
+       ,@(loop :with dirs = (getenv "XDG_CONFIG_DIRS")
+           :for dir :in (split-string dirs :separator ":")
+           :collect (try dir "common-lisp/"))
+       #+windows
+        ,@`(#+lispworks ,(try (sys:get-folder-path :common-appdata) "common-lisp/config/")
+            ;;; read-windows-registry HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders\AppData
+           #+(not cygwin)
+           ,(try (or (getenv "USERPROFILE") (user-homedir-pathname))
+                 "Application Data/common-lisp/config/"))
+       ,(try (user-homedir-pathname) ".config/common-lisp/")))))
+(defun system-configuration-directories ()
+  (remove-if
+   #'null
+   (flet ((try (x sub) (try-directory-subpath x sub :type :directory)))
+     `(#+windows
+       ,@`(#+lispworks ,(try (sys:get-folder-path :local-appdata) "common-lisp/config/")
+           ;;; read-windows-registry HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders\Common AppData
+           #+(not cygwin)
+           ,(try (getenv "ALLUSERSPROFILE") "Application Data/common-lisp/config/"))
+       #p"/etc/"))))
+(defun in-first-directory (dirs x)
+  (loop :for dir :in dirs
+    :thereis (and dir (ignore-errors (truename (merge-pathnames* x (ensure-directory-pathname dir)))))))
+(defun in-user-configuration-directory (x)
+  (in-first-directory (user-configuration-directories) x))
+(defun in-system-configuration-directory (x)
+  (in-first-directory (system-configuration-directories) x))
 
 (defun configuration-inheritance-directive-p (x)
   (let ((kw '(:inherit-configuration :ignore-inherited-configuration)))
@@ -2261,8 +2262,27 @@ said element itself being a sorted list of mappings.
 Each mapping is a pair of a source pathname and destination pathname,
 and the order is by decreasing length of namestring of the source pathname.")
 
-(defvar *user-cache* '(:home ".cache" "common-lisp" :implementation))
-(defvar *system-cache* '(:root "var" "cache" "common-lisp" :uid :implementation))
+(defvar *user-cache*
+  (or
+   (let ((h (getenv "XDG_CACHE_HOME")))
+     (and h `(,h "common-lisp" :implementation)))
+   #+(and windows lispworks)
+   (let ((h (sys:get-folder-path :common-appdata))) ;; no :common-caches in Windows???
+     (and h `(,h "common-lisp" "cache")))
+   #+(and windows (not cygwin))
+   ;;; read-windows-registry HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders\Cache
+   (let ((h (or (getenv "USERPROFILE") (user-homedir-pathname))))
+     (and h `(,h "Local Settings" "Temporary Internet Files" "common-lisp")))
+   '(:home ".cache" "common-lisp" :implementation)))
+(defvar *system-cache*
+  (or
+   #+(and windows lispworks)
+   (let ((h (sys:get-folder-path :common-appdata))) ;; no :common-caches in Windows???
+     (and h `(,h "common-lisp" "cache")))
+   #+windows
+   (let ((h (or (getenv "USERPROFILE") (user-homedir-pathname))))
+     (and h `(,h "Local Settings" "Temporary Internet Files" "common-lisp")))
+   '(:root "var" "cache" "common-lisp" :uid :implementation)))
 
 (defun output-translations ()
   (car *output-translations*))
@@ -2432,17 +2452,17 @@ with a different configuration, so the configuration would be re-read then."
 (defun implementation-output-translations ()
   *implementation-output-translations*)
 
-(defparameter *output-translations-file* #p"common-lisp/asdf-output-translations.conf")
-(defparameter *output-translations-directory* #p"common-lisp/asdf-output-translations.conf.d/")
+(defparameter *output-translations-file* #p"asdf-output-translations.conf")
+(defparameter *output-translations-directory* #p"asdf-output-translations.conf.d/")
 
 (defun user-output-translations-pathname ()
-  (merge-pathnames* *output-translations-file* (user-configuration-directory)))
+  (in-user-configuration-directory *output-translations-file* ))
 (defun system-output-translations-pathname ()
-  (merge-pathnames* *output-translations-file* (system-configuration-directory)))
+  (in-system-configuration-directory *output-translations-file*))
 (defun user-output-translations-directory-pathname ()
-  (merge-pathnames* *output-translations-directory* (user-configuration-directory)))
+  (in-user-configuration-directory *output-translations-directory*))
 (defun system-output-translations-directory-pathname ()
-  (merge-pathnames* *output-translations-directory* (system-configuration-directory)))
+  (in-system-configuration-directory *output-translations-directory*))
 (defun environment-output-translations ()
   (getenv "ASDF_OUTPUT_TRANSLATIONS"))
 
@@ -2536,14 +2556,20 @@ return the configuration"
        :return (translate-pathname path source destination)
        :finally (return path)))))
 
-(defmethod output-files :around ((op operation) (c component))
-  "Method to rewrite output files to fasl-root"
-  (mapcar #'apply-output-translations (call-next-method)))
+(defmethod output-files :around (operation component)
+  "Translate output files, unless asked not to"
+  (declare (ignorable operation component))
+  (values
+   (multiple-value-bind (files fixedp) (call-next-method)
+     (if fixedp
+         files
+         (mapcar #'apply-output-translations files)))
+   t))
 
 (defun compile-file-pathname* (input-file &rest keys)
   (apply-output-translations
    (apply #'compile-file-pathname
-          (truenamize (make-pathname :type "lisp" :defaults input-file))
+          (truenamize (lispize-pathname input-file))
           keys)))
 
 ;;;; -----------------------------------------------------------------
@@ -2733,19 +2759,20 @@ with a different configuration, so the configuration would be re-read then."
            (return `(:source-registry ,@(nreverse directives)))))))))
 
 (defun register-asd-directory (directory &key recurse exclude collect)
-  (if (not recurse)
-      (funcall collect (ensure-directory-pathname directory))
-      (let* ((files (ignore-errors
-                      (directory (merge-pathnames* *wild-asd* directory)
-                                 #+sbcl #+sbcl :resolve-symlinks nil
-                                 #+clisp #+clisp :circle t)))
-             (dirs (remove-duplicates (mapcar #'pathname-directory-pathname files)
-                                      :test #'equal)))
-        (loop
-          :for dir :in dirs
-          :unless (loop :for x :in exclude
-                    :thereis (find x (pathname-directory dir) :test #'equal))
-          :do (funcall collect dir)))))
+  (let ((directory (ensure-directory-pathname directory)))
+    (if (not recurse)
+        (funcall collect directory)
+        (let* ((files (ignore-errors
+                        (directory (merge-pathnames* *wild-asd* directory)
+                                   #+sbcl #+sbcl :resolve-symlinks nil
+                                   #+clisp #+clisp :circle t)))
+               (dirs (remove-duplicates (mapcar #'pathname-directory-pathname files)
+                                        :test #'equal)))
+          (loop
+            :for dir :in dirs
+            :unless (loop :for x :in exclude
+                      :thereis (find x (pathname-directory dir) :test #'equal))
+            :do (funcall collect dir))))))
 
 (defparameter *default-source-registries*
   '(environment-source-registry
@@ -2754,34 +2781,48 @@ with a different configuration, so the configuration would be re-read then."
     system-source-registry
     system-source-registry-directory))
 
-(defparameter *source-registry-file* #p"common-lisp/source-registry.conf")
-(defparameter *source-registry-directory* #p"common-lisp/source-registry.conf.d/")
+(defparameter *source-registry-file* #p"source-registry.conf")
+(defparameter *source-registry-directory* #p"source-registry.conf.d/")
 
 (defun wrapping-source-registry ()
   `(:source-registry
     #+sbcl (:tree ,(getenv "SBCL_HOME"))
    :inherit-configuration))
 (defun default-source-registry ()
-  `(:source-registry
-    #+sbcl (:directory ,(merge-pathnames* ".sbcl/systems/" (user-homedir-pathname)))
-    (:directory ,(truenamize (directory-namestring *default-pathname-defaults*)))
-    (:directory ,(merge-pathnames* ".local/share/common-lisp/systems/" (user-homedir-pathname)))
-    (:tree ,(merge-pathnames* ".local/share/common-lisp/source/" (user-homedir-pathname)))
-    (:directory "/usr/local/share/common-lisp/systems/")
-    (:tree "/usr/local/share/common-lisp/source/")
-    (:directory "/usr/local/share/common-lisp/systems/")
-    (:tree "/usr/local/share/common-lisp/source/")
-    (:directory "/usr/share/common-lisp/systems/")
-    (:tree "/usr/share/common-lisp/source/")
-    :inherit-configuration))
+  (flet ((try (x sub) (try-directory-subpath x sub :type :directory)))
+    `(:source-registry
+      #+sbcl (:directory ,(merge-pathnames* ".sbcl/systems/" (user-homedir-pathname)))
+      (:directory ,(truenamize (directory-namestring *default-pathname-defaults*)))
+      ,@(let*
+         #+(or (not windows) cygwin)
+         ((datahome
+           (or (getenv "XDG_DATA_HOME")
+               (try (user-homedir-pathname) ".local/share/")))
+          (datadirs
+           (or (getenv "XDG_DATA_DIRS") "/usr/local/share:/usr/share"))
+          (dirs (cons datahome (split-string datadirs :separator ":"))))
+         #+(and windows (not cygwin))
+         ((datahome
+           #+lispworks (sys:get-folder-path :common-appdata)
+           #-lispworks (try (or (getenv "USERPROFILE") (user-homedir-pathname))
+                            "Application Data"))
+          (datadir
+           #+lispworks (sys:get-folder-path :local-appdata)
+           #-lispworks (try (getenv "ALLUSERSPROFILE")
+                            "Application Data"))
+          (dirs (list datahome datadir)))
+         (loop :for dir :in dirs
+           :collect `(:directory ,(try dir "common-lisp/systems/"))
+           :collect `(:tree ,(try dir "common-lisp/source/"))))
+      :inherit-configuration)))
 (defun user-source-registry ()
-  (merge-pathnames* *source-registry-file* (user-configuration-directory)))
+  (in-user-configuration-directory *source-registry-file*))
 (defun system-source-registry ()
-  (merge-pathnames* *source-registry-file* (system-configuration-directory)))
+  (in-system-configuration-directory *source-registry-file*))
 (defun user-source-registry-directory ()
-  (merge-pathnames* *source-registry-directory* (user-configuration-directory)))
+  (in-user-configuration-directory *source-registry-directory*))
 (defun system-source-registry-directory ()
-  (merge-pathnames* *source-registry-directory* (system-configuration-directory)))
+  (in-system-configuration-directory *source-registry-directory*))
 (defun environment-source-registry ()
   (getenv "CL_SOURCE_REGISTRY"))
 
@@ -2917,7 +2958,8 @@ with a different configuration, so the configuration would be re-read then."
     (setf excl:*warn-on-nested-reader-conditionals* *acl-warn-save*)))
 
 (pushnew :asdf *features*)
-;;(pushnew :asdf2 *features*) ;; do that when we reach version 2
+;; this is a release candidate for ASDF 2.0
+(pushnew :asdf2 *features*)
 
 (provide :asdf)
 
