@@ -277,10 +277,14 @@
   ((static-library :accessor prebuilt-system-static-library :initarg :lib)))
 
 (defmethod output-files ((o lib-op) (c prebuilt-system))
-  (list (compile-file-pathname (prebuilt-system-static-library c) :type :lib)))
+  (values (list (compile-file-pathname (prebuilt-system-static-library c) :type :lib))
+          ;; Do not translate pathnames
+          t))
 
 (defmethod perform ((o lib-op) (c prebuilt-system))
-  (car (output-files o c)))
+  (values (car (output-files o c))
+          ;; Do not translate pathnames
+          t))
 
 (defmethod component-depends-on ((o lib-op) (c prebuilt-system))
   nil)
