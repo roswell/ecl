@@ -2893,10 +2893,9 @@
   "Return the same hostname as gethostname(3) would"
   ;; machine-instance probably works on a lot of lisps, but clisp is not
   ;; one of them
-  #+(or cmu sbcl) (machine-instance)
+  #+(or cmu sbcl ecl) (machine-instance)
   ;; resources-pathname was using short-site-name for this purpose
   #+excl (short-site-name)
-  #+ecl (si:getenv "HOST")
   #+clisp (let ((s (machine-instance))) (subseq s 0 (position #\Space s)))
   #-(or excl cmu sbcl ecl clisp) (error "get-host-name not implemented"))
 
