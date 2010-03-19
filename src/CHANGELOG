@@ -20,6 +20,9 @@ ECL 10.3.2:
  - The logical hostname EXT: did not have a pathname translation relative to
    that of SRC:
 
+ - After loading the compiler, the COMMON-LISP package was left unlocked
+   against changes.
+
 * Visible changes:
 
  - The source location annotator records the original pathnames, not the

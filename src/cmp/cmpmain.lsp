@@ -925,7 +925,7 @@ from the C language code.  NIL means \"do not create the file\"."
 (defmacro with-compilation-unit (options &rest body)
   `(progn ,@body))
 
-(si::package-lock "CL" nil)
+(si::package-lock "CL" t)
 
 #-ecl-min
 (with-standard-io-syntax
