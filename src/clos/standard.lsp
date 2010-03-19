@@ -143,8 +143,14 @@
 (defmethod effective-slot-definition-class ((class T) &rest canonicalized-slot)
   (find-class 'standard-effective-slot-definition nil))
 
+(defun has-forward-referenced-parents (class)
+  (or (forward-referenced-class-p class)
+      (and (not (class-finalized-p class))
+           (some #'has-forward-referenced-parents
+                 (class-direct-superclasses class)))))
+
 (defun finalize-unless-forward (class)
-  (unless (find-if #'forward-referenced-class-p (class-direct-superclasses class))
+  (unless (find-if #'has-forward-referenced-parents (class-direct-superclasses class))
     (finalize-inheritance class)))
 
 (defmethod initialize-instance ((class class) &rest initargs
