@@ -132,8 +132,10 @@ Returns, as a string, the version of the software under which ECL runs."
                   ,name `(("**;*.*" ,(merge-pathnames "**/*.*" path))))))))
   (define-pathname-translations "SYS" (si::get-library-pathname))
   (let ((x (ext:getenv "ECLSRCDIR")))
+    ;; Notice we use true_srcdir, which in Windows resolves to a
+    ;; Windows pathname, not a mingw/cygwin pathname
     (unless (and x (setq x (probe-file x)))
-      (setf x #.(truename "@top_srcdir@/")))
+      (setf x #.(truename "@true_srcdir@/")))
     (define-pathname-translations "SRC" x)
     (define-pathname-translations "EXT" (merge-pathnames "../contrib/" x))
     ))
