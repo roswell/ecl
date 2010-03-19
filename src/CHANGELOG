@@ -17,6 +17,9 @@ ECL 10.3.2:
  - EXT:SAFE-EVAL (or cl_safe_eval in C) would attempt to start the debugger
    when an error was signaled.
 
+ - The logical hostname EXT: did not have a pathname translation relative to
+   that of SRC:
+
 * Visible changes:
 
  - The source location annotator records the original pathnames, not the

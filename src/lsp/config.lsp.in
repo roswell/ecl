@@ -134,4 +134,6 @@ Returns, as a string, the version of the software under which ECL runs."
   (let ((x (ext:getenv "ECLSRCDIR")))
     (unless (and x (setq x (probe-file x)))
       (setf x #.(truename "@top_srcdir@/")))
-    (define-pathname-translations "SRC" x)))
+    (define-pathname-translations "SRC" x)
+    (define-pathname-translations "EXT" (merge-pathnames "../contrib/" x))
+    ))
