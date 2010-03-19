@@ -176,8 +176,17 @@
       ((do-defseq (f args countp everywherep)
 	 (let* (from-end-form
 		normal-form
+                (last-index (gensym "LAST-INDEX"))
+                (ith-cons (gensym "ITH-CONS"))
 		(i-in-range '(and (<= start i) (< i end)))
-		(x '(elt sequence i))
+		(x `(cond
+                      ((not ,ith-cons) (elt sequence i))
+                      ((<= ,last-index i)
+                       (setf ,ith-cons (nthcdr (- i ,last-index) ,ith-cons)
+                             ,last-index i)
+                       (car ,ith-cons))
+                      (t (car (setf ,last-index i 
+                                    ,ith-cons (nthcdr i sequence))))))
 		(keyx `(key ,x))
 		(satisfies-the-test `(compare item ,keyx))
 		(number-satisfied
@@ -213,15 +222,18 @@
 	       (with-start-end start end sequence
 			     ;; FIXME! We use that no object have more than
 			     ;; MOST-POSITIVE-FIXNUM elements.
-			     (let ,@(if countp
-					'(((count (cond ((null count)
-							 most-positive-fixnum)
-							((minusp count)
-							 0)
-							((> count most-positive-fixnum)
-							 most-positive-fixnum)
-							(t count))))))
-				  ,@(if countp '((declare (fixnum count))))
+                               (let ((,ith-cons (and (consp sequence) sequence))
+                                     (,last-index 0)
+                                     ,@(and countp
+                                            '((count (cond ((null count)
+                                                            most-positive-fixnum)
+                                                           ((minusp count)
+                                                            0)
+                                                           ((> count most-positive-fixnum)
+                                                            most-positive-fixnum)
+                                                           (t count))))))
+                                  (declare (fixnum ,last-index
+                                                   ,@(and countp (list count))))
 				  nil
 				  (if from-end ,from-end-form ,normal-form))))))))
     (do-defseq ,f ,args ,countp ,everywherep)
@@ -370,8 +382,10 @@
        (,endp-i sequence)
      (declare (fixnum i k))
      (when (and ,within-count ,satisfies-the-test)
-           (setf ,x newitem)
-           ,kount-up)))
+       (if ,ith-cons
+           (setf (car ,ith-cons) newitem)
+           (setf (elt sequence i) newitem))
+       ,kount-up)))
 
 
 (defseq find () nil nil t
@@ -397,7 +411,7 @@
             (start 0) (end (length sequence)) (from-end nil))
 Returns a copy of SEQUENCE without duplicated elements."
   (and test test-not (test-error))
-  (when (and (listp sequence) (not from-end) (null start) (null end))
+  (when (and (listp sequence) (not from-end) (zerop start) (null end))
         (when (endp sequence) (return-from remove-duplicates nil))
         (do ((l sequence (cdr l)) (l1 nil))
             ((endp (cdr l))
@@ -420,7 +434,7 @@ Returns a copy of SEQUENCE without duplicated elements."
 Destructive REMOVE-DUPLICATES.  SEQUENCE may be destroyed."
   (declare (fixnum l))
   (with-tests (test test-not key)
-    (when (and (listp sequence) (not from-end) (null start) (null end))
+    (when (and (listp sequence) (not from-end) (zerop start) (null end))
       (when (endp sequence) (return-from delete-duplicates nil))
       (do ((l sequence))
 	  ((endp (cdr l))
