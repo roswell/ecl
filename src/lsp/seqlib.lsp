@@ -233,7 +233,7 @@
                                                             most-positive-fixnum)
                                                            (t count))))))
                                   (declare (fixnum ,last-index
-                                                   ,@(and countp (list count))))
+                                                   ,@(and countp '(count))))
 				  nil
 				  (if from-end ,from-end-form ,normal-form))))))))
     (do-defseq ,f ,args ,countp ,everywherep)
