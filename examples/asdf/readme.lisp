@@ -38,10 +38,10 @@
 
 (princ "
 
-Building FASL file 'example.fas'
+Building FASL file 'example.fasb'
 
 ")
-(asdf:make-build :example :type :fasl)
+(asdf:make-build :example :type :fasl :move-here t)
 
 ;;;
 ;;; Now we load the previous file!
@@ -52,7 +52,7 @@ Building FASL file 'example.fas'
 Loading FASL file example.fas
 
 ")
-(load "example.fas")
+(load "example.fasb")
 
 ;;;
 ;;; Now that it worked, we attempt building a single program file with everything.
@@ -63,7 +63,9 @@ Loading FASL file example.fas
 Building standalone executable 'example' ('example.exe' in Windows)
 
 ")
-(asdf:make-build :example :type :program :args (list :epilogue-code '(ext:quit 0)))
+(asdf:make-build :example
+                 :type :program :epilogue-code '(ext:quit 0)
+                 :move-here t)
 
 ;;;
 ;;; Test the program
