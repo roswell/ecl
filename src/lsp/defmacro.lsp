@@ -77,7 +77,7 @@
        (err nil))
       ((null tail)
        (when (and err (not allow-other-keys))
-	 (error "They key ~s is not allowed" err)))
+	 (error "The key ~s is not allowed" err)))
     (if (atom tail)
       (error "keyword list is not a proper list")
       (setq head (car tail) tail (cdr tail)))
