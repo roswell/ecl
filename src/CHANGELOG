@@ -31,6 +31,9 @@ ECL 10.3.2:
  - ECL's contributed modules can now be used in standalone programs, for they   
    are now stored both in FASL form and as statically linked libraries.
 
+ - ASDF:MAKE-BUILD now takes a new keyword argument, :MOVE-HERE, that allows
+   moving the files that ASDF creates to the current directory.
+
 ECL 10.3.1:
 ===========
 
