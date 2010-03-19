@@ -486,7 +486,7 @@ c_register_var(cl_env_ptr env, cl_object var, bool special, bool bound)
 {
 	/* If this is just a declaration, ensure that the variable was not
 	 * declared before as special, to save memory. */
-	if (bound || (c_var_ref(env, var, 0, FALSE) >= ECL_UNDEFINED_VAR_REF)) {
+	if (bound || (c_var_ref(env, var, 1, FALSE) >= ECL_UNDEFINED_VAR_REF)) {
                 const cl_compiler_ptr c_env = env->c_env;
 		c_env->variables = CONS(cl_list(4, var,
                                                 special? @'special' : Cnil,
@@ -664,7 +664,7 @@ c_declare_specials(cl_env_ptr env, cl_object specials)
 	while (!Null(specials)) {
 		int ndx;
 		cl_object var = pop(&specials);
-		ndx = c_var_ref(env, var,0,FALSE);
+		ndx = c_var_ref(env, var, 1, FALSE);
 		if (ndx >= 0 || ndx == ECL_UNDEFINED_VAR_REF)
 			c_register_var(env, var, TRUE, FALSE);
 	}
@@ -1914,8 +1914,8 @@ c_symbol_macrolet(cl_env_ptr env, cl_object args, int flags)
 		cl_object expansion = pop(&definition);
 		cl_object arglist = cl_list(2, @gensym(0), @gensym(0));
 		cl_object function;
-		if ((ecl_symbol_type(name) & (stp_special | stp_constant)) ||
-		    c_var_ref(env, name,1,FALSE) == -2)
+		if ((ecl_symbol_type(name) & stp_constant) ||
+                    ecl_member_eq(name, specials))
 		{
 			FEprogram_error_noreturn("SYMBOL-MACROLET: Symbol ~A cannot be \
 declared special and appear in a symbol-macrolet.", 1, name);
