@@ -233,6 +233,7 @@
 (defun compute-applicable-methods (gf args)
   (declare (optimize (safety 0) (speed 3)))
   (let* ((methods (generic-function-methods gf))
+	 (f (generic-function-a-p-o-function gf))
 	 applicable-list
 	 args-specializers)
     ;; first compute the applicable method list
@@ -258,10 +259,14 @@
     (dolist (arg args)
       (push (class-of arg) args-specializers))
     (setq args-specializers (nreverse args-specializers))
+    ;; reorder args to match the precedence order
+    (when f
+      (setf args-specializers
+	    (funcall f (subseq args-specializers 0
+			       (length (generic-function-argument-precedence-order gf))))))
     ;; then order the list
     (do* ((scan applicable-list)
 	  (most-specific (first scan) (first scan))
-	  (f (generic-function-a-p-o-function gf))
 	  (ordered-list))
 	 ((null (cdr scan)) (when most-specific
 			      ;; at least one method
@@ -334,8 +339,8 @@
 	  ((and (listp spec-2) (eq (car spec-2) 'eql)) '2) ; Beppe
 	  ((member spec-1 (member spec-2 cpl)) '2)
 	  ((member spec-2 (member spec-1 cpl)) '1)
-	  (t (error "Complex type specifiers are not yet supported."))
-	  )))
+	  ;; This will force an error in the caller
+	  (t nil))))
 
 (defun compute-g-f-spec-list (gf)
   (flet ((nupdate-spec-how-list (spec-how-list specializers gf)
