@@ -23,6 +23,8 @@ ECL 10.3.2:
  - After loading the compiler, the COMMON-LISP package was left unlocked
    against changes.
 
+ - ECL can build again itself using a C++ compiler (--with-cxx thus works).
+
 * Visible changes:
 
  - The source location annotator records the original pathnames, not the
