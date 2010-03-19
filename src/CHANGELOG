@@ -40,6 +40,10 @@ ECL 10.3.2:
  - ASDF:MAKE-BUILD now takes a new keyword argument, :MOVE-HERE, that allows
    moving the files that ASDF creates to the current directory.
 
+ - Gray streams implement a new generic function, GRAY:STREAM-FILE-DESCRIPTOR
+   which is used by SERVE-EVENT to gather the system identifier which is used
+   to wait on input from the device.
+
 ECL 10.3.1:
 ===========
 

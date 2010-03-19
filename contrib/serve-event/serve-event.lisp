@@ -56,20 +56,11 @@
 (define-c-constants
     +eintr+ "EINTR")
 
-(defmethod ext::stream-fd ((stream t))
-  (etypecase stream
-    (fixnum stream)
-    (two-way-stream (ext::stream-fd (two-way-stream-input-stream stream)))
-    (file-stream (si:file-stream-fd stream))
-    (otherwise (error "In SERVE-EVENT, stream~%  ~A~%does not have an associated file descriptor" stream))))
-
 (defstruct (handler
-            (:constructor make-handler (direction stream-or-descriptor function
-                                        &aux (descriptor (ext::stream-fd stream-or-descriptor))))
+            (:constructor make-handler (descriptor direction function))
             (:copier nil))
   ;; Reading or writing...
   (direction nil :type (member :input :output))
-  (stream-or-descriptor nil)
   ;; File descriptor this handler is tied to.
   ;; FIXME: Should be based on FD_SETSIZE
   (descriptor 0)
@@ -81,16 +72,35 @@
   #!+sb-doc
   "List of all the currently active handlers for file descriptors")
 
+(defun coerce-to-descriptor (stream-or-fd direction)
+  (etypecase stream-or-fd
+    (fixnum stream-or-fd)
+    (file-stream (si:file-stream-fd stream))
+    (two-way-stream
+     (coerce-to-descriptor
+      (case direction
+        (:input  (two-way-stream-input-stream  stream-or-fd))
+        (:output (two-way-stream-output-stream stream-or-fd)))
+      direction))
+    #+clos-streams
+    (stream (gray::stream-file-descriptor stream-or-fd direction))))
 
 ;;; Add a new handler to *descriptor-handlers*.
-(defun add-fd-handler (fd direction function)
-  "Arrange to call FUNCTION whenever FD is usable. DIRECTION should be
-  either :INPUT or :OUTPUT. The value returned should be passed to
-  SYSTEM:REMOVE-FD-HANDLER when it is no longer needed."
+(defun add-fd-handler (stream-or-fd direction function)
+  "Arrange to call FUNCTION whenever the fd designated by STREAM-OR-FD
+  is usable. DIRECTION should be either :INPUT or :OUTPUT. The value
+  returned should be passed to SYSTEM:REMOVE-FD-HANDLER when it is no
+  longer needed."
   (unless (member direction '(:input :output))
-    ;; FIXME: should be TYPE-ERROR?
-    (error "Invalid direction ~S, must be either :INPUT or :OUTPUT" direction))
-  (let ((handler (make-handler direction fd function)))
+    (error 'simple-type-error
+           :format-control "Invalid direction ~S, must be either ~
+                            :INPUT or :OUTPUT."
+           :format-arguments (list direction)
+           :datum direction
+           :expected-type '(member :input :output)))
+  (let ((handler (make-handler (coerce-to-descriptor stream-or-fd direction)
+                               direction
+                               function)))
     (push handler *descriptor-handlers*)
     handler))
 
