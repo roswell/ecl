@@ -554,7 +554,7 @@ cl_unexport2(cl_object s, cl_object p)
 				"Ignore lock and proceed", p, 2, s, p);
 	PACKAGE_OP_LOCK();
 	x = find_symbol_inner(name, p, &intern_flag);
-	if (intern_flag == 0) {
+	if (intern_flag == 0 || x != s) {
 		PACKAGE_OP_UNLOCK();
 		FEpackage_error("Cannot unexport ~S because it does not belong to package ~S.",
 				p, 2, s, p);
