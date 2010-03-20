@@ -25,6 +25,9 @@ ECL 10.3.2:
 
  - ECL can build again itself using a C++ compiler (--with-cxx thus works).
 
+ - ecl_make_file_stream_from_fd() did not set the right mode in the stream
+   structure.
+
 * Visible changes:
 
  - The source location annotator records the original pathnames, not the

@@ -3189,10 +3189,10 @@ ecl_make_file_stream_from_fd(cl_object fname, int fd, enum ecl_smmode smm,
 	stream->stream.mode = (short)smm;
 	stream->stream.closed = 0;
 	switch(smm) {
-	case smm_probe:
 	case smm_input:
 		smm = smm_input_file;
 	case smm_input_file:
+	case smm_probe:
 		stream->stream.ops = duplicate_dispatch_table(&input_file_ops);
 		break;
 	case smm_output:
@@ -4565,7 +4565,7 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
 		si_set_buffering_mode(x, byte_size? @':full' : @':line');
 	} else {
 		x = ecl_make_file_stream_from_fd(fn, f, smm, byte_size, flags,
-						 external_format);
+                                                 external_format);
 	}
 	if (smm == smm_probe) {
 		cl_close(1, x);
