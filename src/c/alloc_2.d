@@ -1370,7 +1370,7 @@ cl_object
 si_make_weak_pointer(cl_object o)
 {
 	cl_object pointer = ecl_alloc_weak_pointer(o);
-	si_set_finalizer(o, pointer);
+        si_set_finalizer(pointer, Ct);
 	@(return pointer);
 }
 
