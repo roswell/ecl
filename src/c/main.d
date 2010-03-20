@@ -612,7 +612,6 @@ cl_boot(int argc, char **argv)
 	   a vector of weak pointers thanks to the magic in
 	   gbc.d/alloc_2.d */
 	cl_core.libraries = Cnil;
-	cl_core.to_be_finalized = Cnil;
 	cl_core.bytes_consed = Cnil;
 	cl_core.gc_counter = Cnil;
 	cl_core.gc_stats = FALSE;

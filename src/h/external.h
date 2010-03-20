@@ -216,7 +216,6 @@ struct cl_core_struct {
 	cl_object global_lock;
 #endif
 	cl_object libraries;
-	cl_object to_be_finalized;
 
 	cl_index max_heap_size;
 	cl_object bytes_consed;

@@ -27,7 +27,7 @@
 
 #ifdef GBC_BOEHM
 
-static void finalize_queued();
+static void gather_statistics();
 static void ecl_mark_env(struct cl_env_struct *env);
 
 #ifdef GBC_BOEHM_PRECISE
@@ -985,7 +985,7 @@ init_alloc(void)
 #endif /* GBC_BOEHM_PRECISE */
 	old_GC_push_other_roots = GC_push_other_roots;
 	GC_push_other_roots = stacks_scanner;
-	GC_start_call_back = (void (*)())finalize_queued;
+	GC_start_call_back = (void (*)())gather_statistics;
 	GC_java_finalization = 1;
         GC_oom_fn = out_of_memory;
         GC_set_warn_proc(no_warnings);
@@ -1061,48 +1061,15 @@ standard_finalizer(cl_object o)
 }
 
 static void
-group_finalizer(cl_object l, cl_object no_data)
-{
-	CL_NEWENV_BEGIN {
-		while (CONSP(l)) {
-			cl_object record = ECL_CONS_CAR(l);
-			cl_object o = ECL_CONS_CAR(record);
-			cl_object procedure = ECL_CONS_CDR(record);
-			l = ECL_CONS_CDR(l);
-			if (procedure != Ct) {
-				funcall(2, procedure, o);
-			}
-			standard_finalizer(o);
-		}
-	} CL_NEWENV_END;
-}
-
-static void
-queueing_finalizer(cl_object o, cl_object finalizer)
+wrapped_finalizer(cl_object o, cl_object finalizer)
 {
 	if (finalizer != Cnil && finalizer != NULL) {
-		/* Only nonstandard finalizers are queued */
-		if (finalizer == Ct) {
-			CL_NEWENV_BEGIN {
-				standard_finalizer(o);
-			} CL_NEWENV_END;
-		} else {
-			/* Note the way we do this: finalizers might
-			   get executed as a consequence of these calls. */
-			volatile cl_object aux = ACONS(o, finalizer, Cnil);
-			cl_object l = cl_core.to_be_finalized;
-			if (Null(l)) {
-				const cl_env_ptr the_env = ecl_process_env();
-				GC_finalization_proc ofn;
-				void *odata;
-				cl_core.to_be_finalized = aux;
-				ecl_disable_interrupts_env(the_env);
-				GC_register_finalizer_no_order(aux, (GC_finalization_proc*)group_finalizer, NULL, &ofn, &odata);
-				ecl_enable_interrupts_env(the_env);
-			} else {
-				ECL_RPLACD(l, aux);
-			}
-		}
+                CL_NEWENV_BEGIN {
+                        if (finalizer != Ct) {
+				funcall(2, finalizer, o);
+                        }
+                        standard_finalizer(o);
+                } CL_NEWENV_END;
 	}
 }
 
@@ -1117,7 +1084,7 @@ si_get_finalizer(cl_object o)
 	GC_register_finalizer_no_order(o, (GC_finalization_proc)0, 0, &ofn, &odata);
 	if (ofn == 0) {
 		output = Cnil;
-	} else if (ofn == (GC_finalization_proc)queueing_finalizer) {
+	} else if (ofn == (GC_finalization_proc)wrapped_finalizer) {
 		output = (cl_object)odata;
 	} else {
 		output = Cnil;
@@ -1137,7 +1104,7 @@ ecl_set_finalizer_unprotected(cl_object o, cl_object finalizer)
 					       0, &ofn, &odata);
 	} else {
 		GC_finalization_proc newfn;
-		newfn = (GC_finalization_proc)queueing_finalizer;
+		newfn = (GC_finalization_proc)wrapped_finalizer;
 		GC_register_finalizer_no_order(o, newfn, finalizer,
 					       &ofn, &odata);
 	}
@@ -1211,9 +1178,8 @@ si_gc_stats(cl_object enable)
  * invoked with the garbage collection lock on.
  */
 static void
-finalize_queued()
+gather_statistics()
 {
-        cl_core.to_be_finalized = Cnil;
 	if (cl_core.gc_stats) {
 #ifdef WITH_GMP
 		/* Sorry, no gc stats if you do not use bignums */
