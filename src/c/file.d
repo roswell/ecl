@@ -3884,7 +3884,6 @@ ecl_make_stream_from_fd(cl_object fname, int fd, enum ecl_smmode smm,
 	fp = fdopen(fd, mode);
 #endif
         if (fp == NULL) {
-                printf("'%s'\n", mode);
                 FElibc_error("Unable to create stream for file descriptor ~D",
                              1, ecl_make_integer(fd));
         }
