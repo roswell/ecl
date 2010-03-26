@@ -3,6 +3,8 @@
 #
 top_srcdir= @top_srcdir@
 srcdir	= @srcdir@
+mandir=@mandir@
+manext=1
 
 # Programs used by "make":
 #
@@ -122,9 +124,7 @@ rt.lisp:
 BUILD-STAMP: config.status
 	echo "#" `uname -a` > $@
 	head -8 config.log | tail -6 >> $@
-install: install-base
-#	cd doc; $(MAKE) prefix=$(prefix) DESTDIR=$(DESTDIR) install
-install-base:
+install:
 	# Here we would use the option -s but the install program in sourceforge-solaris
 	# is broken.
 	$(mkinstalldirs) $(DESTDIR)$(bindir) $(DESTDIR)$(libdir) \
@@ -173,21 +173,26 @@ install-base:
 	    *) $(INSTALL_DATA) $$i $(DESTDIR)$(ecldir);; \
 	  esac \
 	done
+	for i in Copyright LGPL; do \
+	  $(INSTALL_DATA) $(top_srcdir)/../$$i $(DESTDIR)$(libdir); \
+	done
+	$(mkinstalldirs) $(DESTDIR)$(mandir)/man$(manext)
+	for i in doc/ecl.man doc/ecl-config.man; do \
+	    $(INSTALL_DATA) $$i $(DESTDIR)$(mandir)/man$(manext)/ecl.$(manext); \
+	done
+
 flatinstall: BUILD-STAMP
 	$(MAKE) DESTDIR=$(DESTDIR) bindir=$(prefix) libdir=$(prefix) \
 	  includedir=$(prefix) ecldir=$(prefix) install-base
-#	cd doc; $(MAKE) DESTDIR=$(DESTDIR) prefix=$(prefix) docdir=$(prefix)/doc flatinstall
 
 uninstall:
 	for i in $(TARGETS) ecl-config; do $(RM) $(DESTDIR)$(bindir)/$$i; done
 	$(RM) -r $(DESTDIR)$(includedir)/ecl $(DESTDIR)$(ecldir)
-	for i in $(LSP_LIBRARIES) $(LIBRARIES); do \
+	for i in $(LSP_LIBRARIES) $(LIBRARIES) Copyright LGPL; do \
 	  $(RM) $(DESTDIR)$(libdir)/$$i || : ; \
 	done
-#	cd doc; $(MAKE) uninstall
-
-doc: $(TARGETS)
-	cd doc; $(MAKE)
+	rm $(DESTDIR)$(mandir)/man$(manext)/ecl.$(manext)
+	rm $(DESTDIR)$(mandir)/man$(manext)/ecl-config.$(manext)
 
 clean: mostlyclean
 	$(RM) -r *

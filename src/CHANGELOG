@@ -56,6 +56,8 @@ ECL 10.3.2:
    (.a or .lib), and a FASL (*.fasb). This can be used, to replace existing
    systems with precompiled ones.
 
+ - ECL restores the habit of installing manual pages for ecl and ecl-config.
+
 ECL 10.3.1:
 ===========
 
