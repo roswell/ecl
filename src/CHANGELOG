@@ -58,6 +58,10 @@ ECL 10.3.2:
 
  - ECL restores the habit of installing manual pages for ecl and ecl-config.
 
+ - We have removed the obsolete versions of the documentation files. The
+   up to date documentation now lives in a separate source repository,
+   as explained in http://ecls.sourceforge.net/download.html
+
 ECL 10.3.1:
 ===========
 
