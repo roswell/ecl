@@ -394,11 +394,13 @@
               (software-type)
               (machine-type)
               (software-version))
-      (pprint `(defsystem ,name-keyword
-                   :components ((:compiled-file ,(pathname-name fasl)))
-                   :lib ,(make-pathname :name (pathname-name library)
-                                        :type (pathname-type library)))
-              s))))
+      (let ((*package* (find-package :keyword)))
+        (pprint `(defsystem ,name-keyword
+                     :class asdf:prebuilt-system
+                     :components ((:compiled-file ,(pathname-name fasl)))
+                     :lib ,(make-pathname :name (pathname-name library)
+                                          :type (pathname-type library)))
+                s)))))
 
 ;;;
 ;;; Final integration steps
