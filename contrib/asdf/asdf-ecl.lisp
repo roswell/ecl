@@ -396,7 +396,7 @@
               (software-version))
       (let ((*package* (find-package :keyword)))
         (pprint `(defsystem ,name-keyword
-                     :class asdf:prebuilt-system
+                     :class asdf::prebuilt-system
                      :components ((:compiled-file ,(pathname-name fasl)))
                      :lib ,(make-pathname :name (pathname-name library)
                                           :type (pathname-type library)))
@@ -406,7 +406,7 @@
 ;;; Final integration steps
 ;;;
 
-(export '(make-build load-fasl-op))
+(export '(make-build load-fasl-op prebuilt-system))
 (push '("fasb" . si::load-binary) si::*load-hooks*)
 
 (require 'cmp)
