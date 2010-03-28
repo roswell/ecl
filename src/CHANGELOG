@@ -30,6 +30,8 @@ ECL 10.3.2:
 
  - ECL did not understand type declarations that involved symbol macros.
 
+ - (SETF STREAM-EXTERNAL-FORMAT) inserted the wrong format type in some cases.
+
 * Visible changes:
 
  - The source location annotator records the original pathnames, not the

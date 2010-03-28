@@ -2943,47 +2943,47 @@ parse_external_format(cl_object stream, cl_object format, int flags)
 		return flags & ~ECL_STREAM_LITTLE_ENDIAN;
 	}
 	if (format == @':pass-through' || format == Ct) {
-		return flags | ECL_STREAM_DEFAULT_FORMAT;
+		return (flags & ~ECL_STREAM_FORMAT) | ECL_STREAM_DEFAULT_FORMAT;
 	}
 #ifdef ECL_UNICODE
 	if (format == @':UTF-8') {
-		return flags | ECL_STREAM_UTF_8; 
+		return (flags & ~ECL_STREAM_FORMAT) | ECL_STREAM_UTF_8; 
 	}
 	if (format == @':UCS-2') {
-		return flags | ECL_STREAM_UCS_2;
+		return (flags & ~ECL_STREAM_FORMAT) | ECL_STREAM_UCS_2;
 	}
 	if (format == @':UCS-2BE') {
-		return flags | ECL_STREAM_UCS_2BE;
+		return (flags & ~ECL_STREAM_FORMAT) | ECL_STREAM_UCS_2BE;
 	}
 	if (format == @':UCS-2LE') {
-		return flags | ECL_STREAM_UCS_2LE;
+		return (flags & ~ECL_STREAM_FORMAT) | ECL_STREAM_UCS_2LE;
 	}
 	if (format == @':UCS-4') {
-		return flags | ECL_STREAM_UCS_4;
+		return (flags & ~ECL_STREAM_FORMAT) | ECL_STREAM_UCS_4;
 	}
 	if (format == @':UCS-4BE') {
-		return flags | ECL_STREAM_UCS_4BE;
+		return (flags & ~ECL_STREAM_FORMAT) | ECL_STREAM_UCS_4BE;
 	}
 	if (format == @':UCS-4LE') {
-		return flags | ECL_STREAM_UCS_4LE;
+		return (flags & ~ECL_STREAM_FORMAT) | ECL_STREAM_UCS_4LE;
 	}
 	if (format == @':ISO-8859-1') {
-		return flags | ECL_STREAM_ISO_8859_1;
+		return (flags & ~ECL_STREAM_FORMAT) | ECL_STREAM_ISO_8859_1;
 	}
 	if (format == @':LATIN-1') {
-		return flags | ECL_STREAM_LATIN_1;
+		return (flags & ~ECL_STREAM_FORMAT) | ECL_STREAM_LATIN_1;
 	}
 	if (format == @':US-ASCII') {
-		return flags | ECL_STREAM_US_ASCII; 
+		return (flags & ~ECL_STREAM_FORMAT) | ECL_STREAM_US_ASCII; 
 	}
 	if (ECL_HASH_TABLE_P(format)) {
 		stream->stream.format_table = format;
-		return flags | ECL_STREAM_USER_FORMAT;
+		return (flags & ~ECL_STREAM_FORMAT) | ECL_STREAM_USER_FORMAT;
 	}
 	if (SYMBOLP(format)) {
 		stream->stream.format_table = cl_funcall(2, @'ext::make-encoding',
 							 format);
-		return flags | ECL_STREAM_USER_FORMAT;
+		return (flags & ~ECL_STREAM_FORMAT) | ECL_STREAM_USER_FORMAT;
 	}
 #endif
 	FEerror("Unknown or unsupported external format: ~A", 1, format);
