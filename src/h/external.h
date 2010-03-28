@@ -897,8 +897,8 @@ extern ECL_API void *ecl_library_symbol(cl_object block, const char *symbol, boo
 extern ECL_API cl_object ecl_library_error(cl_object block);
 extern ECL_API void ecl_library_close(cl_object block);
 extern ECL_API void ecl_library_close_all(void);
-extern ECL_API cl_object si_load_source(cl_object file, cl_object verbose, cl_object print);
-extern ECL_API cl_object si_load_binary(cl_object file, cl_object verbose, cl_object print);
+extern ECL_API cl_object si_load_source(cl_object file, cl_object verbose, cl_object print, cl_object format);
+extern ECL_API cl_object si_load_binary(cl_object file, cl_object verbose, cl_object print, cl_object format);
 extern ECL_API cl_object cl_load _ARGS((cl_narg narg, cl_object pathname, ...));
 
 

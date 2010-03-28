@@ -388,7 +388,7 @@ ecl_library_close_all(void)
 }
 
 cl_object
-si_load_binary(cl_object filename, cl_object verbose, cl_object print)
+si_load_binary(cl_object filename, cl_object verbose, cl_object print, cl_object external_format)
 {
 	const cl_env_ptr the_env = ecl_process_env();
 	cl_object block;
@@ -453,7 +453,7 @@ OUTPUT:
 #endif /* !ENABLE_DLOPEN */
 
 cl_object
-si_load_source(cl_object source, cl_object verbose, cl_object print)
+si_load_source(cl_object source, cl_object verbose, cl_object print, cl_object external_format)
 {
 	cl_env_ptr the_env = ecl_process_env();
 	cl_object x, strm;
@@ -464,8 +464,7 @@ si_load_source(cl_object source, cl_object verbose, cl_object print)
 		strm = source;
 	} else {
 		strm = ecl_open_stream(source, smm_input, Cnil, Cnil, 8,
-				       ECL_STREAM_DEFAULT_FORMAT | ECL_STREAM_C_STREAM,
-                                       Cnil);
+				       ECL_STREAM_C_STREAM, external_format);
 		if (Null(strm))
 			@(return Cnil)
 	}
@@ -504,6 +503,7 @@ si_load_source(cl_object source, cl_object verbose, cl_object print)
 	      &key (verbose ecl_symbol_value(@'*load-verbose*'))
 		   (print ecl_symbol_value(@'*load-print*'))
 		   (if_does_not_exist @':error')
+                   (external_format @':default')
 	           (search_list ecl_symbol_value(@'si::*load-search-list*'))
 	      &aux pathname pntype hooks filename function ok)
 	bool not_a_filename = 0;
@@ -531,9 +531,10 @@ si_load_source(cl_object source, cl_object verbose, cl_object print)
 		loop_for_in(search_list) {
 			cl_object d = CAR(search_list);
 			cl_object f = cl_merge_pathnames(2, pathname, d);
-			cl_object ok = cl_load(9, f, @':verbose', verbose,
+			cl_object ok = cl_load(11, f, @':verbose', verbose,
 					       @':print', print,
 					       @':if-does-not-exist', Cnil,
+                                               @':external-format', external_format,
 					       @':search-list', Cnil);
 			if (!Null(ok)) {
 				@(return ok);
@@ -581,7 +582,7 @@ NOT_A_FILENAME:
 	ecl_bds_bind(the_env, @'*load-truename*',
 		     not_a_filename? Cnil : (filename = cl_truename(filename)));
 	if (!Null(function)) {
-		ok = funcall(4, function, filename, verbose, print);
+		ok = funcall(5, function, filename, verbose, print, external_format);
 	} else {
 #if 0 /* defined(ENABLE_DLOPEN) && !defined(mingw32) && !defined(_MSC_VER)*/
 		/*
@@ -599,7 +600,7 @@ NOT_A_FILENAME:
 		}
 		if (!Null(ok))
 #endif
-		ok = si_load_source(filename, verbose, print);
+		ok = si_load_source(filename, verbose, print, external_format);
 	}
 	ecl_bds_unwind_n(the_env, 4);
 	if (!Null(ok))
