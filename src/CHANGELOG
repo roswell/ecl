@@ -28,6 +28,8 @@ ECL 10.3.2:
  - ecl_make_file_stream_from_fd() did not set the right mode in the stream
    structure.
 
+ - ECL did not understand type declarations that involved symbol macros.
+
 * Visible changes:
 
  - The source location annotator records the original pathnames, not the

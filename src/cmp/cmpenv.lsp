@@ -484,9 +484,17 @@
     (c1add-declarations decls)
     (c2expr body)))
 
+(defun symbol-macrolet-declaration-p (name type)
+  (let* ((record (assoc name (cmp-env-variables *cmp-env*))))
+    (when (eq (second record) 'si::symbol-macro)
+      (let ((expression (macroexpand-1 name *cmp-env*)))
+        (cmp-env-register-symbol-macro name `(the ,type ,expression)))
+      t)))
+
 (defun check-vdecl (vnames ts is)
   (loop for (var . type) in ts
-     unless (member var vnames :test #'eq)
+     unless (or (member var vnames :test #'eq)
+                (symbol-macrolet-declaration-p var type))
      do (cmpwarn "Declaration of type~&~4T~A~&was found for not bound variable ~s."
                  type var))
   (loop for (var . expected-uses) in is
