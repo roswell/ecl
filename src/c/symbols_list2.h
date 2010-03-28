@@ -1885,7 +1885,7 @@ cl_symbols[] = {
 {SYS_ "SIGNAL-SERVICING",NULL},
 
 {EXT_ "*DEFAULT-EXTERNAL-FORMAT*",NULL},
-{KEY_ "C-LOCALE",NULL},
+{KEY_ "PASS-THROUGH",NULL},
 
 /* Tag for end of list */
 {NULL,NULL}};
