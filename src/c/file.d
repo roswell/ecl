@@ -1441,7 +1441,7 @@ si_make_string_output_stream_from_string(cl_object s)
 	STRING_OUTPUT_STRING(strm) = s;
 	STRING_OUTPUT_COLUMN(strm) = 0;
 #if !defined(ECL_UNICODE)
-	strm->stream.format = @':default';
+	strm->stream.format = @':pass-through';
 	strm->stream.flags = ECL_STREAM_DEFAULT_FORMAT;
 	strm->stream.byte_size = 8;
 #else
@@ -1629,7 +1629,7 @@ ecl_make_string_input_stream(cl_object strng, cl_index istart, cl_index iend)
 	STRING_INPUT_POSITION(strm) = istart;
 	STRING_INPUT_LIMIT(strm) = iend;
 #if !defined(ECL_UNICODE)
-	strm->stream.format = @':default';
+	strm->stream.format = @':pass-through';
 	strm->stream.flags = ECL_STREAM_DEFAULT_FORMAT;
 	strm->stream.byte_size = 8;
 #else
@@ -2011,7 +2011,7 @@ const struct ecl_file_ops broadcast_ops = {
 	}
 	x = alloc_stream();
 	if (Null(streams)) {
-		x->stream.format = @':default';
+		x->stream.format = @':pass-through';
 	} else {
 		x->stream.format = cl_stream_external_format(ECL_CONS_CAR(streams));
 	}
@@ -2344,7 +2344,7 @@ const struct ecl_file_ops concatenated_ops = {
 	}
 	x = alloc_stream();
 	if (Null(streams)) {
-		x->stream.format = @':default';
+		x->stream.format = @':pass-through';
 	} else {
 		x->stream.format = cl_stream_external_format(ECL_CONS_CAR(streams));
 	}
@@ -2942,7 +2942,7 @@ parse_external_format(cl_object stream, cl_object format, int flags)
 	if (format == @':BIG-ENDIAN') {
 		return flags & ~ECL_STREAM_LITTLE_ENDIAN;
 	}
-	if (format == @':default' || format == Ct) {
+	if (format == @':pass-through' || format == Ct) {
 		return flags | ECL_STREAM_DEFAULT_FORMAT;
 	}
 #ifdef ECL_UNICODE
@@ -3003,6 +3003,9 @@ set_stream_elt_type(cl_object stream, cl_fixnum byte_size, int flags,
 		flags &= ~ECL_STREAM_SIGNED_BYTES;
 		t = @'unsigned-byte';
 	}
+        if (external_format == @':default') {
+                external_format = ecl_symbol_value(@'ext::*default-external-format*');
+        }
 	flags = parse_external_format(stream, external_format, flags);
 	stream->stream.ops->read_char = eformat_read_char;
 	stream->stream.ops->write_char = eformat_write_char;
@@ -3092,7 +3095,7 @@ set_stream_elt_type(cl_object stream, cl_fixnum byte_size, int flags,
 	case ECL_STREAM_DEFAULT_FORMAT:
 		IO_STREAM_ELT_TYPE(stream) = @'base-char';
 		byte_size = 8;
-		stream->stream.format = @':default';
+		stream->stream.format = @':pass-through';
 		stream->stream.encoder = passthrough_encoder;
 		stream->stream.decoder = passthrough_decoder;
 		break;
@@ -4601,7 +4604,7 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
 		   (element_type @'base-char')
 		   (if_exists Cnil iesp)
 		   (if_does_not_exist Cnil idnesp)
-	           (external_format @':default')
+                   (external_format @':default')
 		   (cstream Ct)
 	      &aux strm)
 	enum ecl_smmode smm;

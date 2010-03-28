@@ -64,6 +64,12 @@ ECL 10.3.2:
    up to date documentation now lives in a separate source repository,
    as explained in http://ecls.sourceforge.net/download.html
 
+ - The encoding :DEFAULT implies looking up in the special variable
+   EXT:*DEFAULT-EXTERNAL-FORMAT* the actual value of the encoding, which may be
+   a known one, or :pass-through.
+
+ - LOAD now accepts the keyword argument :EXTERNAL-FORMAT
+
 ECL 10.3.1:
 ===========
 
