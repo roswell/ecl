@@ -641,6 +641,7 @@ actually-existing directory."
 #+clisp (defun get-uid () (posix:uid))
 #+sbcl (defun get-uid () (sb-unix:unix-getuid))
 #+cmu (defun get-uid () (unix:unix-getuid))
+#+ecl (ffi:clines "#include <sys/types.h>" "#include <unistd.h>")
 #+ecl (defun get-uid () (ffi:c-inline () () :int "getuid()" :one-liner t))
 #+allegro (defun get-uid () (excl.osi:getuid))
 #-(or cmu sbcl clisp allegro ecl)
