@@ -577,8 +577,8 @@
 	     (when (member name (second record) :test #'eql)
 	       (setf found record)
 	       (return)))
-	    ((eq (second record) 'si::symbol-macro)
-	     (when (eq name 'si::symbol-macro)
+            ((eq name 'si::symbol-macro)
+             (when (eq (second record) 'si::symbol-macro)
 	       (setf found record))
 	     (return))
 	    (t
@@ -615,7 +615,8 @@
 (defun symbol-macrolet-declaration-p (name type)
   (let* ((record (cmp-env-search-variables name 'si::symbol-macro *cmp-env*)))
     (when record
-      (let ((expression (macroexpand-1 name *cmp-env*)))
+      (let* ((expression (funcall (third record) name nil)))
+        (print expression)
         (cmp-env-register-symbol-macro name `(the ,type ,expression)))
       t)))
 
