@@ -183,7 +183,7 @@ install:
 
 flatinstall: BUILD-STAMP
 	$(MAKE) DESTDIR=$(DESTDIR) bindir=$(prefix) libdir=$(prefix) \
-	  includedir=$(prefix) ecldir=$(prefix) install-base
+	  includedir=$(prefix) ecldir=$(prefix) install
 
 uninstall:
 	for i in $(TARGETS) ecl-config; do $(RM) $(DESTDIR)$(bindir)/$$i; done
