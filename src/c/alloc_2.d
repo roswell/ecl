@@ -1330,7 +1330,7 @@ ecl_alloc_weak_pointer(cl_object o)
 	obj->value = o;
         if (!FIXNUMP(o) && !CHARACTERP(o) && !Null(o)) {
                 GC_general_register_disappearing_link(&(obj->value), (void*)o);
-                si_set_finalizer(pointer, Ct);
+                si_set_finalizer(obj, Ct);
         }
 	return (cl_object)obj;
 }
