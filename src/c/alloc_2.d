@@ -1328,7 +1328,10 @@ ecl_alloc_weak_pointer(cl_object o)
 	ecl_enable_interrupts_env(the_env);
 	obj->t = t_weak_pointer;
 	obj->value = o;
-	GC_general_register_disappearing_link(&(obj->value), (void*)o);
+        if (!FIXNUMP(o) && !CHARACTERP(o) && !Null(o)) {
+                GC_general_register_disappearing_link(&(obj->value), (void*)o);
+                si_set_finalizer(pointer, Ct);
+        }
 	return (cl_object)obj;
 }
 
@@ -1336,7 +1339,6 @@ cl_object
 si_make_weak_pointer(cl_object o)
 {
 	cl_object pointer = ecl_alloc_weak_pointer(o);
-        si_set_finalizer(pointer, Ct);
 	@(return pointer);
 }
 
