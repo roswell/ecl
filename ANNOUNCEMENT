@@ -30,9 +30,6 @@ Known issues
   stable version that runs on it does not contain all the required
   functionality.
 
-- --with-cxx is currently broken and ECL does not BUILD with a C++ compiler,
-  but it can still be USED in C++ programs.
-
 Changes since last release
 ==========================
 

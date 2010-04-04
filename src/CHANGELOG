@@ -1,4 +1,4 @@
-ECL 10.3.2:
+ECL 10.4.1:
 ===========
 
 * Bugs fixed:
@@ -34,31 +34,21 @@ ECL 10.3.2:
 
 * Visible changes:
 
- - The source location annotator records the original pathnames, not the
-   truenames. This allows in particular moving ECL's core files.
+ - The source location annotator records the original pathnames instead of
+   truenames. This allows Slime to find out the ECL sources even if they
+   have been moved.
 
  - The signal servicing thread now carries the name SI:SIGNAL-SERVICING, which
    is different from the name of the threads that are created to actually
-   handle those signals.
+   handle those signals. Users should avoid killing SI:SIGNAL-SERVICING.
 
- - FFI:CLINES admits @lisp-object notation in the strings.
-
- - ECL's contributed modules can now be used in standalone programs, for they   
-   are now stored both in FASL form and as statically linked libraries.
-
- - ASDF:MAKE-BUILD now takes a new keyword argument, :MOVE-HERE, that allows
-   moving the files that ASDF creates to the current directory. :MOVE-HERE can
-   be a flag, in which case the files are output at ./asdf-output/ or a
-   pathname designator, in which case the directories are created.
+ - FFI:CLINES admits the notation @lisp-object, just like FFI:C-INLINE. The
+   result is that @lisp-object gets replaced with a pointer to the given
+   lisp object, created at run time.
 
  - Gray streams implement a new generic function, GRAY:STREAM-FILE-DESCRIPTOR
-   which is used by SERVE-EVENT to gather the system identifier which is used
-   to wait on input from the device.
-
- - ASDF:MAKE-BUILD admits a new type, :BINARY, which creates a standalone
-   system (*.asd) accompanied by two binary files, statically linked library
-   (.a or .lib), and a FASL (*.fasb). This can be used, to replace existing
-   systems with precompiled ones.
+   which is used by SERVE-EVENT to gather the C file descriptor or Windows
+   handle used to wait on input from the device.
 
  - ECL restores the habit of installing manual pages for ecl and ecl-config.
 
@@ -72,147 +62,21 @@ ECL 10.3.2:
 
  - LOAD now accepts the keyword argument :EXTERNAL-FORMAT
 
-ECL 10.3.1:
-===========
+* ASDF:
 
-This release has three important focuses: performance improvements in various
-fronts (garbage collection and hash tables), extending the run-process function
-and important fixes to let ECL work better with Slime. To quote one lisper
-ECL "this feels like a real Lisp implementation now"
+ - ECL's contributed modules and ECL's compiler can now be used in standalone
+   programs, for they are now stored both in FASL form and as statically linked
+   libraries.
 
-* Bugs fixed:
+ - ASDF:MAKE-BUILD takes a new keyword argument, :MOVE-HERE, that allows moving
+   the files that ASDF creates to the current directory. :MOVE-HERE can be the
+   boolean value T, in which case the files are output at ./asdf-output/ or a
+   pathname designator with the actual destination.
 
- - DIRECTORY used stat() also on files that did not match the directory masks.
-
- - The syntax for matching strings in DIRECTORY is now the same as in
-   PATHNAME-MATCH-P. Formerly there were small differences, such as DIRECTORY
-   understanding characters #\? and #\\ and PATHNAME-MATCH-P not.
-
- - Standalone executables do not require the existence of the ECLDIR directory
-   to start up -- it may be required, though, for working Unicode because the
-   encodings are stored there.
-
- - PROCESS-JOIN was exported from the wrong package.
-
- - PROCESS-JOIN failed when invoked with a thread that was in the process of
-   being set up.
-
- - The output values of a process or thread are now collected in the process
-   object and returned by PROCESS-JOIN.
-
- - ECL's interrupt servicing thread could not be shut down.
-
- - When compiling LET forms, ECL emitted warnings about removal of variables
-   even when they were declared IGNORABLE.
-
- - An internal variable MP:*ALLOW-WITH-INTERRUPTS* was not declared special.
-
- - The compiler now understands function type proclamations with &OPTIONAL
-   values.
-
- - The compiler now accepts THE special forms with a VALUES type.
-
- - If file A.lsp explicitely loads B.lsp to use a package that is only defined
-   in B, then ECL signaled an error in the compiled version of A even after
-   this one had required B.lsp.
-
- - ECL accepts FTYPE proclamations for SETF-functions.
-
- - On platforms where a stack overflow does not trigger a SIGSEGV, ECL was
-   unable to recover from the overflow. Now it jumps to the outermost
-   protection frame (typically the toplevel).
-
- - Socket streams are now two-way streams. This solves a problem with certain
-   platforms (OS X) where a C stream can not be used to read and write
-   simultaneously by two different threads.
-
- - TRUENAME and PROBE-FILE were not thread safe.
-
-* Visible changes:
-
- - Hash tables now use hand-coded specialized loops for EQ, EQL, EQUAL, EQUALP
-   and package types, achieving a reduction of about 30% time in lookups.
-
- - A new function EXT:ENVIRON returns the list of strings that makes up the
-   process environment. This is the equivalent of POSIX (char **environ)
-   and Windows' GetEnvironmentStrings.
-
- - EXT:RUN-PROGRAM now accepts a keyword argument, :ENVIRON, with a list of
-   strings used to configure the environment of the child process. For instance
-   '("PWD=/home" "PATH=/usr/bin")
-
- - EXT:RUN-PROGRAM returns as third value an EXT:EXTERNAL-PROCESS structure,
-   which supports the queries EXT:EXTERNAL-PROCESS-{PID,INPUT,OUTPUT,STATUS},
-   following CCL's conventions.
-
- - The new function EXT:EXTERNAL-PROCESS-WAIT can be used to wait indefinitely
-   for termination of a process or simply to query its status.
-
- - ECL implements a new garbage collector marking mode which at the overhead of
-   one word per object achieves precise marking of heap objects, reducing
-   accidental data retention and improving the time spent in garbage
-   collection. This mode is only available when using --enable-boehm=system at
-   configuration time.
-
- - ECL now ships with ASDF version 1.604
-
- - The variables C:*USER-CC-FLAGS* and C:*USER-LD-FLAGS* are lists of strings
-   which can used to change the behavior of the C compiler and the
-   linker. Note, however, that the flags that ECL uses may take priority.
-
- - In the C code we are beginning to use GCC's attributes (__attribute__) and
-   branch annotation (__builtin_expect). This decreases the size of code that
-   checks for errors and improves performance.
-
- - When printing compiler notes, instead of printing the macroexpanded form,
-   ECL now prints the toplevel form, as follows
-    ;;; Warning: in file src:lsp;autoload.lsp.NEWEST, position 1178 and top form
-    ;;;   (DEFMACRO WITH-COMPILATION-UNIT (OPTIONS &REST BODY) ...)
-    ;;; The variable OPTIONS is not used.
-
- - ECL now implements EXT:*INVOKE-DEBUGGER-HOOK*, which works like *DEBUGGER-HOOK*
-   but is also observed by BREAK. (SBCL extension adopted by ECL)
- 
- - The UFFI interface now supports C99 types, such as :int8-t, :uint32-t, etc,
-   but only when the corresponding types do exist in the underlying C environment.
-
- - SOCKET-MAKE-STREAM defaults :BUFFERING to :FULL and allows three new keyword
-   arguments, :INPUT, :OUTPUT and :EXTERNAL-FORMAT, as in SBCL.
-
- - COMPILE-FILE admits the keyword argument :EXTERNAL-FORMAT.
-
- - A new function EXT:ALL-ENCODINGS lists all encondings known to ECL.
-
- - Improved readability of compiler messages.
-
- - SERVE-EVENT now allows time resolution of less than one second.
-
- - The PROFILE package now has an alias, SB-PROFILE.
-
- - ECL now stores the location of its source files in a logical hostname,
-   "SRC:", which points to the directory where Announcement is located.
-
- - When building ECL, if "etags" is installed, a file TAGS is created which
-   contains references to the location of all C functions. This file can be
-   used to locate functions from the core library in Slime, using M-.
-
- - Documentation files now allow for annotation of arbitrary symbols,
-   based on a key and a sub-key which are both symbols.
-
- - New function EXT:FUNCTION-LAMBDA-LIST which currently only works with
-   functions from the core ECL library, generic functions and interpreted
-   functions.
-
- - The debugger now is capable of showing the special variable bindings
-   from a function, as well as the restarts newly bound by that function.
-
- - When using git, a new function EXT:LISP-IMPLEMENTATION-VCS-ID returns a
-   unique identifier denoting the last commit. This can be used to discriminate
-   between unstable releases and remove stale FASL files.
-
- - COMPILE-FILE admits two new keyword arguments, :SOURCE-TRUENAME and
-   :SOURCE-OFFSET which can be used to change the value returned by
-   EXT:COMPILED-FUNCTION-FILE when acting on compiled functions.
+ - ASDF:MAKE-BUILD admits a new type, :BINARY, which creates a standalone
+   system (*.asd) accompanied by two binary files, statically linked library
+   (.a or .lib), and a FASL (*.fasb). This can be used, to replace existing
+   systems with precompiled ones.
 
 ;;; Local Variables: ***
 ;;; mode:text ***
