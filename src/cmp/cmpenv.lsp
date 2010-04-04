@@ -612,18 +612,17 @@
 	when (and (consp i) (var-p (fourth i)))
 	collect (fourth i)))
 
-(defun symbol-macrolet-declaration-p (name type)
+(defun symbol-macro-declaration-p (name type)
   (let* ((record (cmp-env-search-variables name 'si::symbol-macro *cmp-env*)))
-    (when record
-      (let* ((expression (funcall (third record) name nil)))
-        (print expression)
+    (when (and record (functionp record))
+      (let* ((expression (funcall record name nil)))
         (cmp-env-register-symbol-macro name `(the ,type ,expression)))
       t)))
 
 (defun check-vdecl (vnames ts is)
   (loop for (var . type) in ts
      unless (or (member var vnames :test #'eq)
-                (symbol-macrolet-declaration-p var type))
+                (symbol-macro-declaration-p var type))
      do (cmpwarn "Declaration of type~&~4T~A~&was found for not bound variable ~s."
                  type var))
   (loop for (var . expected-uses) in is
