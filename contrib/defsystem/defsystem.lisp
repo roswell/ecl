@@ -870,6 +870,7 @@
       :sbcl
       :cormanlisp
       :scl
+      :ecl
       (and allegro-version>= (version>= 4 1)))
 (eval-when #-(or :lucid)
            (:compile-toplevel :load-toplevel :execute)
@@ -4358,7 +4359,7 @@ used with caution.")
   (unless *dont-redefine-require*
     (let (#+(or :mcl (and :CCL (not :lispworks)))
 	  (ccl:*warn-if-redefine-kernel* nil))
-      #-(or (and allegro-version>= (version>= 4 1)) :lispworks)
+      #-(or :ecl (and allegro-version>= (version>= 4 1)) :lispworks)
       (setf (symbol-function
 	     #-(or (and :excl :allegro-v4.0) :mcl :sbcl :lispworks) 'lisp:require
 	     #+(and :excl :allegro-v4.0) 'cltl1:require
@@ -4369,6 +4370,12 @@ used with caution.")
 	     #+(and :mcl (not :openmcl)) 'ccl:require
 	     )
 	    (symbol-function 'new-require))
+      #+:ecl
+      (progn
+        (ext:package-lock "CL" nil)
+        (setf (symbol-function 'lisp:require)
+              (symbol-function 'new-require))
+        (ext:package-lock "CL" t))
       #+:lispworks
       (let ((warn-packs system::*packages-for-warn-on-redefinition*))
 	(declare (special system::*packages-for-warn-on-redefinition*))
