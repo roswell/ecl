@@ -479,9 +479,9 @@ static cl_object VV[VM];
        (when (probe-file output-name) (delete-file output-name))
        #-msvc
        (progn
-       (safe-system (format nil "ar cr ~A ~A ~{~A ~}"
-			    output-name o-name ld-flags))
-       (safe-system (format nil "ranlib ~A" output-name)))
+       (safe-system (format nil "ar cr ~S ~S ~{~S ~}"
+			    (namestring output-name) (namestring o-name) ld-flags))
+       (safe-system (format nil "ranlib ~S" (namestring output-name))))
        #+msvc
        (unwind-protect
          (progn
