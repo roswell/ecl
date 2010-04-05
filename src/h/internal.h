@@ -43,7 +43,7 @@ extern void init_read(void);
 extern void init_stacks(cl_env_ptr);
 extern void init_unixint(int pass);
 extern void init_unixtime(void);
-#ifdef mingw32
+#if defined(__MINGW32__)
 extern void init_compiler(void);
 #endif
 #ifdef ECL_THREADS
@@ -318,7 +318,7 @@ extern cl_fixnum ecl_runtime(void);
 /* unixint.d */
 
 #ifdef ECL_DEFINE_FENV_CONSTANTS
-# if defined(_MSC_VER) || defined(mingw32)
+# if defined(_MSC_VER) || defined(__MINGW32__)
 #  define HAVE_FEENABLEEXCEPT
 #  include <float.h>
 #  if defined(_MSC_VER)

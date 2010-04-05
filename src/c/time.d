@@ -32,12 +32,12 @@
 # include <unistd.h>
 #endif
 #include <ecl/internal.h>
-#if defined(mingw32) || defined(_MSC_VER)
+#if defined(__MINGW32__) || defined(_MSC_VER)
 #include <windows.h>
 #include <WinSock.h>
 #endif
 
-#if !defined(HAVE_GETTIMEOFDAY) && !defined(HAVE_GETRUSAGE) && !defined(mingw32) && !defined(_MSC_VER)
+#if !defined(HAVE_GETTIMEOFDAY) && !defined(HAVE_GETRUSAGE) && !defined(__MINGW32__) && !defined(_MSC_VER)
 struct timeval {
 	long tv_sec;
 	long tv_usec;
@@ -53,7 +53,7 @@ get_real_time(struct timeval *tv)
 	struct timezone tz;
 	gettimeofday(tv, &tz);
 #else
-# if defined(mingw32) || defined(_MSC_VER)
+# if defined(__MINGW32__) || defined(_MSC_VER)
 	DWORD x = GetTickCount();
 	tv->tv_sec = x / 1000;
 	tv->tv_usec = (x % 1000) * 1000;
@@ -79,7 +79,7 @@ get_run_time(struct timeval *tv)
 	tv->tv_sec = buf.tms_utime / CLK_TCK;
 	tv->tv_usec = (buf.tms_utime % CLK_TCK) * 1000000;
 # else
-#  if defined(mingw32) || defined(_MSC_VER)
+#  if defined(__MINGW32__) || defined(_MSC_VER)
 	FILETIME creation_time;
 	FILETIME exit_time;
 	FILETIME kernel_time;
@@ -135,7 +135,7 @@ cl_sleep(cl_object z)
                 nanosleep(&tm, NULL);
         }
 #else
-#if defined (mingw32) || defined(_MSC_VER)
+#if defined (__MINGW32__) || defined(_MSC_VER)
         {
                 double r = ecl_to_double(z) * 1000;
                 SleepEx((long)r, TRUE);

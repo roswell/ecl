@@ -19,7 +19,7 @@
 
 #include <ecl/ecl.h>
 #include <limits.h>
-#if defined(_MSC_VER) || defined(mingw32)
+#if defined(_MSC_VER) || defined(__MINGW32__)
 # include <windows.h>
 # include <shellapi.h>
 # define MAXPATHLEN 512
@@ -136,14 +136,14 @@ static const char *feature_names[] = {
 #ifdef MSDOS
 	"MS-DOS",
 #endif
-#ifdef mingw32
+#if defined(__MINGW32__)
 	"MINGW32",
         "WIN32",
 #endif
 #ifdef _MSC_VER
 	"MSVC",
 #endif
-#if defined(_MSC_VER) || defined(mingw32)
+#if defined(_MSC_VER) || defined(__MINGW32__)
         "WINDOWS",
 #endif
 #ifdef ECL_CMU_FORMAT
@@ -790,7 +790,7 @@ si_setenv(cl_object var, cl_object value)
 		 * the right thing. */
 		unsetenv((char*)var->base_string.self);
 #else
-#if defined(_MSC_VER) || defined(mingw32)
+#if defined(_MSC_VER) || defined(__MINGW32__)
 		si_setenv(var, make_simple_base_string(""));
 #else
 		putenv((char*)var->base_string.self);
@@ -828,7 +828,7 @@ si_environ(void)
         }
         output = cl_nreverse(output);
 #else
-# if defined(_MSC_VER) || defined(mingw32)
+# if defined(_MSC_VER) || defined(__MINGW32__)
         LPTCH p;
         for (p = GetEnvironmentStrings(); *p; ) {
                 output = CONS(make_constant_base_string(p), output);
@@ -847,7 +847,7 @@ si_pointer(cl_object x)
 	@(return ecl_make_unsigned_integer((cl_index)x))
 }
 
-#if defined(_MSC_VER) || defined(mingw32)
+#if defined(_MSC_VER) || defined(__MINGW32__)
 void
 ecl_get_commandline_args(int* argc, char*** argv) {
 	LPWSTR *wArgs;

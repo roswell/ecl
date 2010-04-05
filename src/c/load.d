@@ -39,7 +39,7 @@
 # ifdef HAVE_LINK_H
 #  include <link.h>
 # endif
-# if defined(mingw32) || defined(_MSC_VER)
+# if defined(__MINGW32__) || defined(_MSC_VER)
 #  include <windows.h>
 #  include <windef.h>
 #  include <winbase.h>
@@ -72,7 +72,7 @@ copy_object_file(cl_object original)
          * file we load later on (case of Windows, which locks files that are loaded).
          * The symlinks do not seem to work in latest versions of Linux.
          */
-#if defined(mingw32) || defined(_MSC_VER)
+#if defined(__MINGW32__) || defined(_MSC_VER)
 	ecl_disable_interrupts();
 	err = !CopyFile(original->base_string.self, copy->base_string.self, 0);
 	ecl_enable_interrupts();
@@ -164,7 +164,7 @@ ecl_library_open(cl_object filename, bool force_reload) {
 		 * _always_ made because otherwise it cannot be
 		 * overwritten. In Unix we need only do that when the
 		 * file has been previously loaded. */
-#if defined(mingw32) || defined(_MSC_VER) || defined(cygwin)
+#if defined(__MINGW32__) || defined(_MSC_VER) || defined(cygwin)
 		filename = copy_object_file(filename);
 		self_destruct = 1;
 #else
@@ -214,7 +214,7 @@ ecl_library_open(cl_object filename, bool force_reload) {
 		block->cblock.handle = out;
 	}}
 #endif
-#if defined(mingw32) || defined(_MSC_VER)
+#if defined(__MINGW32__) || defined(_MSC_VER)
 	block->cblock.handle = LoadLibrary(filename_string);
 #endif
 	ecl_enable_interrupts();
@@ -256,7 +256,7 @@ ecl_library_symbol(cl_object block, const char *symbol, bool lock) {
 			if (p) return p;
 		}
 		ecl_disable_interrupts();
-#if defined(mingw32) || defined(_MSC_VER)
+#if defined(__MINGW32__) || defined(_MSC_VER)
  		{
 		HANDLE hndSnap = NULL;
 		HANDLE hnd = NULL;
@@ -279,7 +279,7 @@ ecl_library_symbol(cl_object block, const char *symbol, bool lock) {
 #ifdef HAVE_DLFCN_H
 		p = dlsym(0, symbol);
 #endif
-#if !defined(mingw32) && !defined(_MSC_VER) && !defined(HAVE_DLFCN_H)
+#if !defined(__MINGW32__) && !defined(_MSC_VER) && !defined(HAVE_DLFCN_H)
 		p = 0;
 #endif
 		ecl_enable_interrupts();
@@ -288,7 +288,7 @@ ecl_library_symbol(cl_object block, const char *symbol, bool lock) {
 #ifdef HAVE_DLFCN_H
 		p = dlsym(block->cblock.handle, symbol);
 #endif
-#if defined(mingw32) || defined(_MSC_VER)
+#if defined(__MINGW32__) || defined(_MSC_VER)
 		{
 			HMODULE h = (HMODULE)(block->cblock.handle);
 			p = GetProcAddress(h, symbol);
@@ -331,7 +331,7 @@ ecl_library_error(cl_object block) {
 		output = make_base_string_copy(message);
 	}
 #endif
-#if defined(mingw32) || defined(_MSC_VER)
+#if defined(__MINGW32__) || defined(_MSC_VER)
 	{
 		const char *message;
 		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
@@ -365,7 +365,7 @@ ecl_library_close(cl_object block) {
 #ifdef HAVE_MACH_O_DYLD_H
 		NSUnLinkModule(block->cblock.handle, NSUNLINKMODULE_OPTION_NONE);
 #endif
-#if defined(mingw32) || defined(_MSC_VER)
+#if defined(__MINGW32__) || defined(_MSC_VER)
 		FreeLibrary(block->cblock.handle);
 #endif
 		ecl_enable_interrupts();
@@ -584,7 +584,7 @@ NOT_A_FILENAME:
 	if (!Null(function)) {
 		ok = funcall(5, function, filename, verbose, print, external_format);
 	} else {
-#if 0 /* defined(ENABLE_DLOPEN) && !defined(mingw32) && !defined(_MSC_VER)*/
+#if 0 /* defined(ENABLE_DLOPEN) && !defined(__MINGW32__) && !defined(_MSC_VER)*/
 		/*
 		 * DISABLED BECAUSE OF SECURITY ISSUES!
 		 * In systems where we can do this, we try to load the file

@@ -566,7 +566,7 @@ extern ECL_API void FEinvalid_function_name(cl_object obj) ecl_attr_noreturn;
 extern ECL_API cl_object CEerror(cl_object c, const char *err_str, int narg, ...);
 extern ECL_API void FEillegal_index(cl_object x, cl_object i) ecl_attr_noreturn;
 extern ECL_API void FElibc_error(const char *msg, int narg, ...) ecl_attr_noreturn;
-#if defined(mingw32) || defined(_MSC_VER) || defined(cygwin)
+#if defined(__MINGW32__) || defined(_MSC_VER) || defined(cygwin)
 extern ECL_API void FEwin32_error(const char *msg, int narg, ...) ecl_attr_noreturn;
 #endif
 
@@ -952,7 +952,7 @@ extern ECL_API void ecl_set_option(int option, cl_fixnum value);
 extern ECL_API cl_fixnum ecl_get_option(int option);
 extern ECL_API int cl_boot(int argc, char **argv);
 extern ECL_API void cl_shutdown(void);
-#if defined(_MSC_VER) || defined(mingw32)
+#if defined(_MSC_VER) || defined(__MINGW32__)
 extern ECL_API void ecl_get_commandline_args(int* argc, char*** argv);
 #endif
 
@@ -1746,7 +1746,7 @@ extern ECL_API cl_object si_check_pending_interrupts(void);
 extern ECL_API cl_object si_disable_interrupts(void);
 extern ECL_API cl_object si_enable_interrupts(void);
 extern ECL_API cl_object si_trap_fpe(cl_object condition, cl_object flag);
-#if defined(_MSC_VER) || defined(mingw32)
+#if defined(_MSC_VER) || defined(__MINGW32__)
 extern ECL_API LONG WINAPI _ecl_w32_exception_filter(struct _EXCEPTION_POINTERS*);
 #endif
 extern ECL_API void ecl_check_pending_interrupts(void);

@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <ecl/internal.h>
-#if defined(mingw32) || defined (_MSC_VER)
+#if defined(__MINGW32__) || defined (_MSC_VER)
 #include <windows.h>
 #endif
 #ifdef HAVE_UNISTD_H
@@ -59,7 +59,7 @@ si_make_pipe()
 {
 	cl_object output;
 	int fds[2], ret;
-#if defined(_MSC_VER) || defined(mingw32)
+#if defined(_MSC_VER) || defined(__MINGW32__)
 	ret = _pipe(fds, 4096, _O_BINARY);
 #else
 	ret = pipe(fds);
@@ -131,7 +131,7 @@ make_external_process(cl_object pid, cl_object input, cl_object output)
         return cl_funcall(4, @'ext::make-external-process', pid, input, output);
 }
 
-#if defined(_MSC_VER) || defined(mingw32)
+#if defined(_MSC_VER) || defined(__MINGW32__)
 cl_object
 si_close_windows_handle(cl_object h)
 {
@@ -175,7 +175,7 @@ make_windows_handle(HANDLE h)
                                   4, code);
         } else {
                 cl_object exit_status = Cnil;
-#if defined(_MSC_VER) || defined(mingw32)
+#if defined(_MSC_VER) || defined(__MINGW32__)
                 HANDLE *hProcess = ecl_foreign_data_pointer_safe(process_or_pid);
                 DWORD exitcode;
                 int ok;
@@ -233,7 +233,7 @@ make_windows_handle(HANDLE h)
 @
 	command = si_copy_to_simple_base_string(command);
 	argv = cl_mapcar(2, @'si::copy-to-simple-base-string', argv);
-#if defined(mingw32) || defined (_MSC_VER)
+#if defined(__MINGW32__) || defined (_MSC_VER)
 {
 	BOOL ok;
 	STARTUPINFO st_info;
