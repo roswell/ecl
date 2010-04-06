@@ -51,12 +51,12 @@
    (prologue-code :accessor monolithic-op-prologue-code)
    (epilogue-code :accessor monolithic-op-epilogue-code)))
 
-(defclass monolithic-fasl-op (fasl-op monolithic-bundle-op) ())
+(defclass monolithic-fasl-op (monolithic-bundle-op fasl-op) ())
 
-(defclass monolithic-lib-op (lib-op monolithic-bundle-op)
+(defclass monolithic-lib-op (monolithic-bundle-op lib-op)
   ((type :initform :lib)))
 
-(defclass monolithic-dll-op (dll-op monolithic-bundle-op)
+(defclass monolithic-dll-op (monolithic-bundle-op dll-op)
   ((type :initform :dll)))
 
 (defclass program-op (monolithic-bundle-op)
