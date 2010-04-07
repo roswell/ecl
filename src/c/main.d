@@ -658,8 +658,9 @@ cl_boot(int argc, char **argv)
 #endif
 	aux = cl_list(
 #ifdef ENABLE_DLOPEN
-		9,CONS(make_constant_base_string("fas"), @'si::load-binary'),
+		10,CONS(make_constant_base_string("fas"), @'si::load-binary'),
 		CONS(make_constant_base_string("fasl"), @'si::load-binary'),
+		CONS(make_constant_base_string("fasb"), @'si::load-binary'),
 #else
 		7,
 #endif
