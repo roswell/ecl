@@ -1456,7 +1456,7 @@ cl_symbols[] = {
 {SYS_ "C-ULONG-MAX", SI_CONSTANT, NULL, -1, OBJNULL}, /* See main.d */
 {SYS_ "C-ULONG-LONG-MAX",SI_CONSTANT,NULL,-1,OBJNULL}, /* See main.d */
 #ifdef GBC_BOEHM
-{SYS_ "GC", SI_ORDINARY, si_gc, 1, OBJNULL},
+{SYS_ "GC", SI_ORDINARY, si_gc, -1, OBJNULL},
 {SYS_ "GC-DUMP", SI_ORDINARY, si_gc_dump, 0, OBJNULL},
 #endif
 

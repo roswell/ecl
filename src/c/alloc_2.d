@@ -1295,7 +1295,7 @@ ecl_register_root(cl_object *p)
 }
 
 cl_object
-si_gc(cl_object area)
+si_gc(cl_narg narg, ...)
 {
 	const cl_env_ptr the_env = ecl_process_env();
 	ecl_disable_interrupts_env(the_env);
