@@ -4322,6 +4322,26 @@ ECL_NEWLINE=LF
 ###          3 = (f)->_cnt
 ECL_FILE_CNT=0
 
+###
+### 1.6) Other integer types (set to 'no' to disable)
+###
+ECL_STDINT_HEADER="#include <stdint.h>"
+ECL_UINT8_T=uint8_t
+ECL_UINT16_T=uint16_t
+ECL_UINT32_T=uint32_t
+ECL_UINT64_T=no
+ECL_INT8_T=int8_t
+ECL_INT16_T=uint16_t
+ECL_INT32_T=uint32_t
+ECL_INT64_T=no
+ECL_LONG_LONG_BITS=no
+
+###
+### 1.7) Other features (set to 'no' to disable)
+###
+ECL_WORKING_SEM_INIT=no
+ECL_WORKING_ENVIRON=yes
+
 ### 2) To cross-compile ECL so that it runs on the system
 ###		${host}
 ### you need to first compile ECL on the system in which you are building
@@ -5819,9 +5839,11 @@ $as_echo "yes" >&6; }
       { $as_echo "$as_me:$LINENO: result: no" >&5
 $as_echo "no" >&6; }
     fi
-    { $as_echo "$as_me:$LINENO: checking working sem_init()" >&5
+
+{ $as_echo "$as_me:$LINENO: checking working sem_init()" >&5
 $as_echo_n "checking working sem_init()... " >&6; }
-if test "$cross_compiling" = yes; then
+if test -z "$ECL_WORKING_SEM_INIT"; then
+  if test "$cross_compiling" = yes; then
   { { $as_echo "$as_me:$LINENO: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 { { $as_echo "$as_me:$LINENO: error: cannot run test program while cross compiling
@@ -5867,23 +5889,24 @@ $as_echo "$ac_try_echo") >&5
   ac_status=$?
   $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  working_sem_init=yes
+  ECL_WORKING_SEM_INIT=yes
 else
   $as_echo "$as_me: program exited with status $ac_status" >&5
 $as_echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
 ( exit $ac_status )
-working_sem_init=no
+ECL_WORKING_SEM_INIT=no
 fi
 rm -rf conftest.dSYM
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
 fi
 
 
-{ $as_echo "$as_me:$LINENO: result: $working_sem_init" >&5
-$as_echo "$working_sem_init" >&6; }
-if test $working_sem_init = yes ; then
+fi
+{ $as_echo "$as_me:$LINENO: result: $ECL_WORKING_SEM_INIT" >&5
+$as_echo "$ECL_WORKING_SEM_INIT" >&6; }
+if test $ECL_WORKING_SEM_INIT = yes ; then
   cat >>confdefs.h <<\_ACEOF
 #define ECL_SEMAPHORES 1
 _ACEOF
@@ -8041,10 +8064,16 @@ fi
 
 { $as_echo "$as_me:$LINENO: checking size of long long" >&5
 $as_echo_n "checking size of long long... " >&6; }
-if test "$GCC" = yes; then
-  ac_cv_c_long_long=yes
+if test "x$ECL_LONG_LONG_BITS" = "no"; then
+  { $as_echo "$as_me:$LINENO: result: not available" >&5
+$as_echo "not available" >&6; }
+  ac_cv_c_long_long=no
+  ECL_LONG_LONG_BITS=""
 else
-  cat >conftest.$ac_ext <<_ACEOF
+  if test "$GCC" = yes; then
+    ac_cv_c_long_long=yes
+  else
+    cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
@@ -8086,9 +8115,11 @@ sed 's/^/| /' conftest.$ac_ext >&5
 fi
 
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  fi
 fi
 if test $ac_cv_c_long_long = yes; then
-  if test "$cross_compiling" = yes; then
+  if test "x$ECL_LONG_LONG_BITS" = "x"; then
+    if test "$cross_compiling" = yes; then
   { { $as_echo "$as_me:$LINENO: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 { { $as_echo "$as_me:$LINENO: error: cannot run test program while cross compiling
@@ -8151,8 +8182,9 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext conftest.$a
 fi
 
 
+  fi
 fi
-if test -z "$ECL_LONG_LONG_BITS"; then
+if test "x$ECL_LONG_LONG_BITS" = "x"; then
   { $as_echo "$as_me:$LINENO: result: not available" >&5
 $as_echo "not available" >&6; }
 else
@@ -8707,15 +8739,6 @@ fi
 { $as_echo "$as_me:$LINENO: result: ${CL_FIXNUM_TYPE}" >&5
 $as_echo "${CL_FIXNUM_TYPE}" >&6; }
 
-ECL_STDINT_HEADER=""
-ECL_UINT8_T=""
-ECL_UINT16_T=""
-ECL_UINT32_T=""
-ECL_UINT64_T=""
-ECL_INT8_T=""
-ECL_INT16_T=""
-ECL_INT32_T=""
-ECL_INT64_T=""
 
 if test "${ac_cv_header_stdint_h+set}" = set; then
   { $as_echo "$as_me:$LINENO: checking for stdint.h" >&5
@@ -9295,7 +9318,13 @@ if test "${ECL_UINT64_T}${CL_FIXNUM_BITS}" = "64"; then
 fi
 { $as_echo "$as_me:$LINENO: checking uint8_t type" >&5
 $as_echo_n "checking uint8_t type... " >&6; }
-if test -n "${ECL_UINT8_T}"; then
+if test "x${ECL_UINT8_T}" = "x" -o "x${ECL_UINT8_T}" = xno; then
+  { $as_echo "$as_me:$LINENO: result: none" >&5
+$as_echo "none" >&6; }
+  { { $as_echo "$as_me:$LINENO: error: Can not build ECL without byte types" >&5
+$as_echo "$as_me: error: Can not build ECL without byte types" >&2;}
+   { (exit 1); exit 1; }; }
+else
   cat >>confdefs.h <<_ACEOF
 #define ecl_uint8_t $ECL_UINT8_T
 _ACEOF
@@ -9306,16 +9335,13 @@ _ACEOF
 
   { $as_echo "$as_me:$LINENO: result: ${ECL_UINT8_T}" >&5
 $as_echo "${ECL_UINT8_T}" >&6; }
-else
-  { $as_echo "$as_me:$LINENO: result: none" >&5
-$as_echo "none" >&6; }
-  { { $as_echo "$as_me:$LINENO: error: Can not build ECL without byte types" >&5
-$as_echo "$as_me: error: Can not build ECL without byte types" >&2;}
-   { (exit 1); exit 1; }; }
 fi
 { $as_echo "$as_me:$LINENO: checking uint16_t type" >&5
 $as_echo_n "checking uint16_t type... " >&6; }
-if test -n "${ECL_UINT16_T}"; then
+if test "x${ECL_UINT16_T}" = "x" -o "x${ECL_UINT16_T}" = xno; then
+  { $as_echo "$as_me:$LINENO: result: none" >&5
+$as_echo "none" >&6; }
+else
   cat >>confdefs.h <<_ACEOF
 #define ecl_uint16_t $ECL_UINT16_T
 _ACEOF
@@ -9326,13 +9352,13 @@ _ACEOF
 
   { $as_echo "$as_me:$LINENO: result: ${ECL_UINT16_T}" >&5
 $as_echo "${ECL_UINT16_T}" >&6; }
-else
-  { $as_echo "$as_me:$LINENO: result: none" >&5
-$as_echo "none" >&6; }
 fi
 { $as_echo "$as_me:$LINENO: checking uint32_t type" >&5
 $as_echo_n "checking uint32_t type... " >&6; }
-if test -n "${ECL_UINT32_T}"; then
+if test "x${ECL_UINT32_T}" = "x" -o "x${ECL_UINT32_T}" = xno; then
+  { $as_echo "$as_me:$LINENO: result: none" >&5
+$as_echo "none" >&6; }
+else
   cat >>confdefs.h <<_ACEOF
 #define ecl_uint32_t $ECL_UINT32_T
 _ACEOF
@@ -9343,13 +9369,13 @@ _ACEOF
 
   { $as_echo "$as_me:$LINENO: result: ${ECL_UINT32_T}" >&5
 $as_echo "${ECL_UINT32_T}" >&6; }
-else
-  { $as_echo "$as_me:$LINENO: result: none" >&5
-$as_echo "none" >&6; }
 fi
 { $as_echo "$as_me:$LINENO: checking uint64_t type" >&5
 $as_echo_n "checking uint64_t type... " >&6; }
-if test -n "${ECL_UINT64_T}"; then
+if test "x${ECL_UINT64_T}" = "x" -o "x${ECL_UINT64_T}" = xno; then
+  { $as_echo "$as_me:$LINENO: result: none" >&5
+$as_echo "none" >&6; }
+else
   cat >>confdefs.h <<_ACEOF
 #define ecl_uint64_t $ECL_UINT64_T
 _ACEOF
@@ -9360,9 +9386,6 @@ _ACEOF
 
   { $as_echo "$as_me:$LINENO: result: ${ECL_UINT64_T}" >&5
 $as_echo "${ECL_UINT64_T}" >&6; }
-else
-  { $as_echo "$as_me:$LINENO: result: none" >&5
-$as_echo "none" >&6; }
 fi
 
 
@@ -13624,9 +13647,11 @@ fi
 
 
 
+
 { $as_echo "$as_me:$LINENO: checking working environ" >&5
 $as_echo_n "checking working environ... " >&6; }
-if test "$cross_compiling" = yes; then
+if test -z "$ECL_WORKING_ENVIRON"; then
+  if test "$cross_compiling" = yes; then
   { { $as_echo "$as_me:$LINENO: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 { { $as_echo "$as_me:$LINENO: error: cannot run test program while cross compiling
@@ -13672,23 +13697,24 @@ $as_echo "$ac_try_echo") >&5
   ac_status=$?
   $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  working_environ=yes
+  ECL_WORKING_ENVIRON=yes
 else
   $as_echo "$as_me: program exited with status $ac_status" >&5
 $as_echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
 ( exit $ac_status )
-working_environ=no
+ECL_WORKING_ENVIRON=no
 fi
 rm -rf conftest.dSYM
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
 fi
 
 
-{ $as_echo "$as_me:$LINENO: result: $working_environ" >&5
-$as_echo "$working_environ" >&6; }
-if test $working_environ = yes ; then
+fi
+{ $as_echo "$as_me:$LINENO: result: $ECL_WORKING_ENVIRON" >&5
+$as_echo "$ECL_WORKING_ENVIRON" >&6; }
+if test $ECL_WORKING_ENVIRON = yes ; then
   cat >>confdefs.h <<\_ACEOF
 #define HAVE_ENVIRON 1
 _ACEOF

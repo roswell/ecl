@@ -1,6 +1,10 @@
 ECL 10.4.2:
 ===========
 
+* Bugs fixed:
+
+ - Several autoconf tests in src/aclocal.in did not work when cross compiling.
+
 * Visible changes:
 
  - "fasb" is now a valid FASL file type, accepted by ECL even in absence of

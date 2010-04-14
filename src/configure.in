@@ -627,7 +627,7 @@ AC_TYPE_SIZE_T                  dnl !!! DNLed
 AC_STRUCT_TM
 AC_C_VOLATILE
 AC_CHECK_TYPES([ptrdiff_t])
-AC_C_LONG_LONG
+ECL_LONG_LONG
 dnl !!! end autoscan
 
 dnl !!! dnled in original

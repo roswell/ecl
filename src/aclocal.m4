@@ -3,17 +3,24 @@ dnl -*- autoconf -*-
 dnl --------------------------------------------------------------
 dnl http://autoconf-archive.cryp.to/ac_c_long_long_.html
 dnl Provides a test for the existance of the long long int type and defines HAVE_LONG_LONG if it is found.
-AC_DEFUN([AC_C_LONG_LONG],
+AC_DEFUN([ECL_LONG_LONG],
 [AC_MSG_CHECKING(size of long long)
-if test "$GCC" = yes; then
-  ac_cv_c_long_long=yes
+if test "x$ECL_LONG_LONG_BITS" = "no"; then
+  AC_MSG_RESULT(not available)
+  ac_cv_c_long_long=no
+  ECL_LONG_LONG_BITS=""
 else
-  AC_TRY_COMPILE(,[long long int i;],
-  ac_cv_c_long_long=yes,
-  ac_cv_c_long_long=no)
+  if test "$GCC" = yes; then
+    ac_cv_c_long_long=yes
+  else
+    AC_TRY_COMPILE(,[long long int i;],
+    ac_cv_c_long_long=yes,
+    ac_cv_c_long_long=no)
+  fi
 fi
 if test $ac_cv_c_long_long = yes; then
-  AC_RUN_IFELSE([AC_LANG_SOURCE([[#include <stdio.h>
+  if test "x$ECL_LONG_LONG_BITS" = "x"; then
+    AC_RUN_IFELSE([AC_LANG_SOURCE([[#include <stdio.h>
 int main() {
   const char *int_type;
   int bits;
@@ -26,8 +33,9 @@ int main() {
   fprintf(f,"ECL_LONG_LONG_BITS='%d'",bits);
   exit(0);
 }]])],[eval "`cat conftestval`"],[],[])
+  fi
 fi
-if test -z "$ECL_LONG_LONG_BITS"; then
+if test "x$ECL_LONG_LONG_BITS" = "x"; then
   AC_MSG_RESULT(not available)
 else
   AC_MSG_RESULT([$ECL_LONG_LONG_BITS])
@@ -107,6 +115,26 @@ ECL_NEWLINE=LF
 ###          2 = (f)->_r
 ###          3 = (f)->_cnt
 ECL_FILE_CNT=0
+
+###
+### 1.6) Other integer types (set to 'no' to disable)
+###
+ECL_STDINT_HEADER="#include <stdint.h>"
+ECL_UINT8_T=uint8_t
+ECL_UINT16_T=uint16_t
+ECL_UINT32_T=uint32_t
+ECL_UINT64_T=no
+ECL_INT8_T=int8_t
+ECL_INT16_T=uint16_t
+ECL_INT32_T=uint32_t
+ECL_INT64_T=no
+ECL_LONG_LONG_BITS=no
+
+###
+### 1.7) Other features (set to 'no' to disable)
+###
+ECL_WORKING_SEM_INIT=no
+ECL_WORKING_ENVIRON=yes
 
 ### 2) To cross-compile ECL so that it runs on the system
 ###		${host}
@@ -423,15 +451,6 @@ dnl Check the existence of different integer types and that they
 dnl have the right size;
 dnl
 AC_DEFUN(ECL_INTEGER_TYPES,[
-ECL_STDINT_HEADER=""
-ECL_UINT8_T=""
-ECL_UINT16_T=""
-ECL_UINT32_T=""
-ECL_UINT64_T=""
-ECL_INT8_T=""
-ECL_INT16_T=""
-ECL_INT32_T=""
-ECL_INT64_T=""
 AC_SUBST(ECL_STDINT_HEADER)
 AC_CHECK_HEADER([stdint.h],[AC_DEFINE(HAVE_STDINT_H)
 ECL_STDINT_HEADER="#include <stdint.h>"],[])
@@ -537,37 +556,37 @@ if test "${ECL_UINT64_T}${CL_FIXNUM_BITS}" = "64"; then
   ECL_INT64_T="cl_fixnum"
 fi
 AC_MSG_CHECKING(uint8_t type)
-if test -n "${ECL_UINT8_T}"; then
+if test "x${ECL_UINT8_T}" = "x" -o "x${ECL_UINT8_T}" = xno; then
+  AC_MSG_RESULT(none)
+  AC_MSG_ERROR(Can not build ECL without byte types)
+else
   AC_DEFINE_UNQUOTED([ecl_uint8_t],[$ECL_UINT8_T])
   AC_DEFINE_UNQUOTED([ecl_int8_t],[$ECL_INT8_T])
   AC_MSG_RESULT(${ECL_UINT8_T})
-else
-  AC_MSG_RESULT(none)
-  AC_MSG_ERROR(Can not build ECL without byte types)
 fi
 AC_MSG_CHECKING(uint16_t type)
-if test -n "${ECL_UINT16_T}"; then
+if test "x${ECL_UINT16_T}" = "x" -o "x${ECL_UINT16_T}" = xno; then
+  AC_MSG_RESULT(none)
+else
   AC_DEFINE_UNQUOTED([ecl_uint16_t],[$ECL_UINT16_T])
   AC_DEFINE_UNQUOTED([ecl_int16_t],[$ECL_INT16_T])
   AC_MSG_RESULT(${ECL_UINT16_T})
-else
-  AC_MSG_RESULT(none)
 fi
 AC_MSG_CHECKING(uint32_t type)
-if test -n "${ECL_UINT32_T}"; then
+if test "x${ECL_UINT32_T}" = "x" -o "x${ECL_UINT32_T}" = xno; then
+  AC_MSG_RESULT(none)
+else
   AC_DEFINE_UNQUOTED([ecl_uint32_t],[$ECL_UINT32_T])
   AC_DEFINE_UNQUOTED([ecl_int32_t],[$ECL_INT32_T])
   AC_MSG_RESULT(${ECL_UINT32_T})
-else
-  AC_MSG_RESULT(none)
 fi
 AC_MSG_CHECKING(uint64_t type)
-if test -n "${ECL_UINT64_T}"; then
+if test "x${ECL_UINT64_T}" = "x" -o "x${ECL_UINT64_T}" = xno; then
+  AC_MSG_RESULT(none)
+else
   AC_DEFINE_UNQUOTED([ecl_uint64_t],[$ECL_UINT64_T])
   AC_DEFINE_UNQUOTED([ecl_int64_t],[$ECL_INT64_T])
   AC_MSG_RESULT(${ECL_UINT64_T})
-else
-  AC_MSG_RESULT(none)
 fi
 ])
 dnl
@@ -854,18 +873,20 @@ AC_SUBST(ECL_FPE_CODE)
 
 dnl ----------------------------------------------------------------------
 dnl Check whether we have unnamed POSIX semaphores available
-AC_DEFUN([ECL_POSIX_SEMAPHORES],
-[AC_MSG_CHECKING(working sem_init())
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
+AC_DEFUN([ECL_POSIX_SEMAPHORES],[
+AC_MSG_CHECKING(working sem_init())
+if test -z "$ECL_WORKING_SEM_INIT"; then
+  AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <semaphore.h>
 int main() {
   sem_t aux;
   if (sem_init(&aux, 0, 0))
     exit(1);
   exit(0);
-}]])],[working_sem_init=yes],[working_sem_init=no],[])
-AC_MSG_RESULT([$working_sem_init])
-if test $working_sem_init = yes ; then
+}]])],[ECL_WORKING_SEM_INIT=yes],[ECL_WORKING_SEM_INIT=no],[])
+fi
+AC_MSG_RESULT([$ECL_WORKING_SEM_INIT])
+if test $ECL_WORKING_SEM_INIT = yes ; then
   AC_DEFINE(ECL_SEMAPHORES)
   AC_DEFINE(HAVE_SEM_INIT)
 fi
@@ -874,18 +895,20 @@ fi
 
 dnl ----------------------------------------------------------------------
 dnl Check "char **environ" is available
-AC_DEFUN([ECL_POSIX_ENVIRON],
-[AC_MSG_CHECKING(working environ)
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
+AC_DEFUN([ECL_POSIX_ENVIRON],[
+AC_MSG_CHECKING(working environ)
+if test -z "$ECL_WORKING_ENVIRON"; then
+  AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <stdlib.h>
 extern char **environ;
 int main() {
   if (environ)
     exit(0);
   exit(1);
-}]])],[working_environ=yes],[working_environ=no],[])
-AC_MSG_RESULT([$working_environ])
-if test $working_environ = yes ; then
+}]])],[ECL_WORKING_ENVIRON=yes],[ECL_WORKING_ENVIRON=no],[])
+fi
+AC_MSG_RESULT([$ECL_WORKING_ENVIRON])
+if test $ECL_WORKING_ENVIRON = yes ; then
   AC_DEFINE(HAVE_ENVIRON)
 fi
 ])
