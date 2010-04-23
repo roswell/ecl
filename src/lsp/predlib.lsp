@@ -292,6 +292,7 @@ and is not adjustable."
       (COMPLEX . COMPLEXP)
       (CONS . CONSP)
       (FLOAT . FLOATP)
+      (SI:FOREIGN-DATA . SI:FOREIGN-DATA-P)
       (FUNCTION . FUNCTIONP)
       (HASH-TABLE . HASH-TABLE-P)
       (INTEGER . INTEGERP)

@@ -400,6 +400,11 @@
 (proclaim-function constantp (t) t :predicate t)
 (proclaim-function si::link-enable (*) t)
 
+;; file ffi.d
+
+(proclaim-function si:foreign-data-p (t) gen-bool :predicate t)
+(def-inline si:foreign-data-p :always (t) :bool "@0;ECL_FOREIGN_DATA_P(#0)")
+
 ;; file file.d
 
 (proclaim-function make-synonym-stream (symbol) synonym-stream)

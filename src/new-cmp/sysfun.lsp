@@ -1192,7 +1192,7 @@
 ;;;
 
 (proclaim-function si:pointer (t) unsigned-byte)
-
+(proclaim-function si:foreign-data-p (t) gen-bool :predicate)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -1423,6 +1423,10 @@
 (def-inline char-downcase :always (character) :wchar "ecl_char_downcase(#0)")
 
 (def-inline char-int :always (character) :fixnum "#0")
+
+;; file ffi.d
+
+(def-inline si:foreign-data-p :always (t) :bool "@0;ECL_FOREIGN_DATA_P(#0)")
 
 ;; file file.d
 

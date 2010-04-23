@@ -1400,6 +1400,7 @@ cl_symbols[] = {
 {SYS_ "FIND-FOREIGN-SYMBOL", SI_ORDINARY, si_find_foreign_symbol, 4, OBJNULL},
 {SYS_ "FOREIGN-DATA", SI_ORDINARY, NULL, -1, OBJNULL},
 {SYS_ "FOREIGN-DATA-ADDRESS", SI_ORDINARY, si_foreign_data_address, 1, OBJNULL},
+{SYS_ "FOREIGN-DATA-P", SI_ORDINARY, si_foreign_data_p, 1, OBJNULL},
 {SYS_ "FOREIGN-DATA-POINTER", SI_ORDINARY, si_foreign_data_pointer, 4, OBJNULL},
 {SYS_ "FOREIGN-DATA-RECAST", SI_ORDINARY, si_foreign_data_recast, 3, OBJNULL},
 {SYS_ "FOREIGN-DATA-REF", SI_ORDINARY, si_foreign_data_ref, 4, OBJNULL},

@@ -270,6 +270,12 @@ si_make_foreign_data_from_array(cl_object array)
 }
 
 cl_object
+si_foreign_data_p(cl_object f)
+{
+        @(return (ECL_FOREIGN_DATA_P(f)? Ct : Cnil))
+}
+
+cl_object
 si_foreign_data_address(cl_object f)
 {
 	if (ecl_unlikely(type_of(f) != t_foreign)) {
