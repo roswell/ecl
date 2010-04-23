@@ -176,6 +176,9 @@ static const char *feature_names[] = {
 #ifdef ecl_uint64_t
         "UINT64-T",
 #endif
+#ifdef ecl_long_long_t
+        "LONG-LONG",
+#endif
         0
 };
 

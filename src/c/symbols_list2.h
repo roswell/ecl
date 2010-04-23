@@ -1455,6 +1455,9 @@ cl_symbols[] = {
 {SYS_ "C-USHORT-MAX",NULL},
 {SYS_ "C-ULONG-MAX",NULL}, /* See main.d */
 {SYS_ "C-ULONG-LONG-MAX",NULL}, /* See main.d */
+#ifdef ecl_long_long_t
+{SYS_ "C-LONG-LONG-BIT",NULL},
+#endif
 #ifdef GBC_BOEHM
 {SYS_ "GC","si_gc"},
 {SYS_ "GC-DUMP","si_gc_dump"},

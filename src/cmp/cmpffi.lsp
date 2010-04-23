@@ -51,6 +51,17 @@
     :cl-index
     ((integer 0 #.most-positive-fixnum) "cl_index"
      "ecl_make_unsigned_integer" "fixnnint" "fix")
+    #+long-long
+    :long-long
+    #+long-long
+    ((signed-byte #.si:c-long-long-bit) "ecl_long_long_t" "ecl_make_long_long"
+     "ecl_to_long_long" "ecl_to_long_long")
+    #+long-long
+    :unsigned-long-long
+    #+long-long
+    ((unsigned-byte #.si:c-long-long-bit) "ecl_ulong_long_t"
+         "ecl_make_unsigned_long_long"
+         "ecl_to_unsigned_long_long" "ecl_to_unsigned_long_long")
     :float
     (single-float "float" "ecl_make_singlefloat" "ecl_to_float" "ecl_to_float")
     :double
@@ -59,7 +70,7 @@
     :long-double
     #+:long-float
     (long-float "long double" "ecl_make_longfloat" "ecl_to_long_double"
-		"ecl_to_long_double")
+                   "ecl_to_long_double")
     :unsigned-char
     (base-char "char" "CODE_CHAR" "ecl_base_char_code" "CHAR_CODE")
     :char

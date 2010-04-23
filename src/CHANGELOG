@@ -5,12 +5,17 @@ ECL 10.4.2:
 
  - Several autoconf tests in src/aclocal.in did not work when cross compiling.
 
+ - ECL defines the feature LONG-LONG when this type is available in the
+   C compiler.
+
 * Visible changes:
 
  - "fasb" is now a valid FASL file type, accepted by ECL even in absence of
    ASDF.
 
  - EXT:GC ignores any argument passed to it.
+
+ - ECL's compiler now understands the unboxed type :long-long
 
 ECL 10.4.1:
 ===========

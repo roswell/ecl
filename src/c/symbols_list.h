@@ -1455,6 +1455,9 @@ cl_symbols[] = {
 {SYS_ "C-USHORT-MAX", SI_CONSTANT, NULL, -1, MAKE_FIXNUM(USHRT_MAX)},
 {SYS_ "C-ULONG-MAX", SI_CONSTANT, NULL, -1, OBJNULL}, /* See main.d */
 {SYS_ "C-ULONG-LONG-MAX",SI_CONSTANT,NULL,-1,OBJNULL}, /* See main.d */
+#ifdef ecl_long_long_t
+{SYS_ "C-LONG-LONG-BIT", SI_CONSTANT, NULL, -1, MAKE_FIXNUM(ECL_LONG_LONG_BITS)},
+#endif
 #ifdef GBC_BOEHM
 {SYS_ "GC", SI_ORDINARY, si_gc, -1, OBJNULL},
 {SYS_ "GC-DUMP", SI_ORDINARY, si_gc_dump, 0, OBJNULL},
