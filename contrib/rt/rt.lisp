@@ -257,3 +257,5 @@
 	  ))
       (finish-output s)
       (null pending))))
+
+(provide '#:rt)
