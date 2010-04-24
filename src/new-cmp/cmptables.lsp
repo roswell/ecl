@@ -109,6 +109,7 @@
    (function . c1function)
    (the . c1the)
    (eval-when . c1eval-when)
+   (ext:with-backend . c1with-backend)
    (declare . c1declare)
    (ext:compiler-let . c1compiler-let)
 

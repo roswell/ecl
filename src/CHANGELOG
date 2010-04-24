@@ -8,6 +8,10 @@ ECL 10.4.2:
  - ECL defines the feature LONG-LONG when this type is available in the
    C compiler.
 
+ - When LIST, LIST*, and some other functions appeared as toplevel forms, the
+   interpreter compiled its arguments also as toplevel forms, causing their
+   execution in the wrong order.
+
 * Visible changes:
 
  - "fasb" is now a valid FASL file type, accepted by ECL even in absence of
@@ -15,7 +19,8 @@ ECL 10.4.2:
 
  - EXT:GC ignores any argument passed to it.
 
- - ECL's compiler now understands the unboxed type :long-long
+ - ECL's compiler now understands the unboxed type :long-long.
+
 
 ECL 10.4.1:
 ===========

@@ -112,6 +112,7 @@ static int c_tagbody(cl_env_ptr env, cl_object args, int flags);
 static int c_throw(cl_env_ptr env, cl_object args, int flags);
 static int c_unwind_protect(cl_env_ptr env, cl_object args, int flags);
 static int c_while(cl_env_ptr env, cl_object args, int flags);
+static int c_with_backend(cl_env_ptr env, cl_object args, int flags);
 static int c_until(cl_env_ptr env, cl_object args, int flags);
 static void eval_form(cl_env_ptr env, cl_object form);
 static int compile_body(cl_env_ptr env, cl_object args, int flags);
@@ -308,18 +309,19 @@ static compiler_record database[] = {
   {@'unwind-protect', c_unwind_protect, 1},
   {@'values', c_values, 1},
   {@'si::while', c_while, 0},
+  {@'ext::with-backend', c_with_backend, 0},
   {@'si::until', c_until, 0},
 
   /* Extras */
 
-  {@'cons', c_cons, 0},
-  {@'car', c_car, 0},
-  {@'cdr', c_cdr, 0},
-  {@'first', c_car, 0},
-  {@'rest', c_cdr, 0},
-  {@'list', c_list, 0},
-  {@'list*', c_listA, 0},
-  {@'endp', c_endp, 0},
+  {@'cons', c_cons, 1},
+  {@'car', c_car, 1},
+  {@'cdr', c_cdr, 1},
+  {@'first', c_car, 1},
+  {@'rest', c_cdr, 1},
+  {@'list', c_list, 1},
+  {@'list*', c_listA, 1},
+  {@'endp', c_endp, 1},
   {NULL, NULL, 1}
 };
 
@@ -1191,6 +1193,15 @@ c_while(cl_env_ptr env, cl_object body, int flags) {
 static int
 c_until(cl_env_ptr env, cl_object body, int flags) {
 	return c_while_until(env, body, flags, 0);
+}
+
+static int
+c_with_backend(cl_env_ptr env, cl_object args, int flags)
+{
+        cl_object backend = pop(&args);
+        if (!ecl_member_eq(@':bytecodes', backend))
+                args = Cnil;
+        return compile_body(env, args, flags);
 }
 
 static int

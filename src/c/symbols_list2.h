@@ -1891,5 +1891,9 @@ cl_symbols[] = {
 {EXT_ "*DEFAULT-EXTERNAL-FORMAT*",NULL},
 {KEY_ "PASS-THROUGH",NULL},
 
+{EXT_ "WITH-BACKEND",NULL},
+{KEY_ "BYTECODES",NULL},
+{KEY_ "C/C++",NULL},
+
 /* Tag for end of list */
 {NULL,NULL}};

@@ -28,6 +28,13 @@
          (value (pop args)))
     (c1translate `(THE ,type ,destination) value)))
 
+(defun c1with-backend (destination forms)
+  (destructuring-bind ((&rest conditions) &rest body)
+      forms
+    (c1progn destination
+             (and (member :c-backend conditions)
+                  body))))
+
 (defun c1compiler-let (destination args &aux (symbols nil) (values nil))
   (when (endp args) (too-few-args 'COMPILER-LET 1 0))
   (dolist (spec (car args))

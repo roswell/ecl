@@ -136,6 +136,11 @@
     (wt-label *exit*))
   )
 
+(defun c1with-backend (forms)
+  (destructuring-bind ((&rest conditions) &rest body)
+      forms
+    (c1progn (and (member :c/c++ conditions) body))))
+
 (defun c1progn (forms)
   (cond ((endp forms) (t1/c1expr 'NIL))
 	((endp (cdr forms)) (t1/c1expr (car forms)))
@@ -190,3 +195,4 @@
 
 (put-sysprop 'PROGN 'C1SPECIAL 'c1progn)
 (put-sysprop 'PROGN 'C2 'c2progn)
+(put-sysprop 'EXT:WITH-BACKEND 'C1SPECIAL 'c1with-backend)
