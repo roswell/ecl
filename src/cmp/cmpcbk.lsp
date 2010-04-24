@@ -86,15 +86,18 @@
 		(:stdcall "__stdcall ")
 		(t (cmperr "DEFCALLBACK does not support ~A as calling convention"
 			   call-type)))))
+    (wt-nl-h "static " return-type-name " " fmod c-name "(")
     (wt-nl1 "static " return-type-name " " fmod c-name "(")
     (loop for n from 0
 	  and type in arg-types
 	  with comma = ""
 	  do
 	  (progn
+            (wt-h comma (rep-type-name (ffi::%convert-to-arg-type type)) " var" n)
 	    (wt comma (rep-type-name (ffi::%convert-to-arg-type type)) " var" n)
 	    (setf comma ",")))
     (wt ")")
+    (wt-h ");")
     (wt-nl1 "{")
     (when return-p
       (wt-nl return-type-name " output;"))
