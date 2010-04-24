@@ -2213,6 +2213,9 @@ Returns the N-th cdr of LIST.  N must be a non-negative integer.")
 (docfun null function (x) "
 Returns T if X is NIL; NIL otherwise.")
 
+(docfun si:null-pointer-p function (ptr) "
+Return true if PTR is a null pointer.")
+
 (doctype number "
 A number is an integer, a ratio, a float, or a complex number.  Integers and
 ratios are collectively called rationals.")
