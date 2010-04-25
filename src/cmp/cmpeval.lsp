@@ -137,9 +137,11 @@
   )
 
 (defun c1with-backend (forms)
-  (destructuring-bind ((&rest conditions) &rest body)
-      forms
-    (c1progn (and (member :c/c++ conditions) body))))
+  (c1progn (loop for tag = (pop forms)
+              for form = (pop forms)
+              while tag
+              when (eq tag :c/c++)
+              collect form)))
 
 (defun c1progn (forms)
   (cond ((endp forms) (t1/c1expr 'NIL))

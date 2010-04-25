@@ -25,10 +25,10 @@ ECL 10.4.2:
    on whether it is going to be processed by the interpreter or by the C
    compiler.
       (defun example ()
-        (ext:with-backend (:bytecodes) (print 3))
-        (ext:with-backend (:c/c++) (print 2)))
-   The two currently available backends are :bytecodes and :c/c++. Note that
-   when the backend does not match the value, the form is replaced with (VALUES).
+        (ext:with-backend
+          :bytecodes (print 3)
+          :c/c++ (print 2)))
+   The two currently available backends are :bytecodes and :c/c++.
 
 
 ECL 10.4.1:

@@ -1198,10 +1198,14 @@ c_until(cl_env_ptr env, cl_object body, int flags) {
 static int
 c_with_backend(cl_env_ptr env, cl_object args, int flags)
 {
-        cl_object backend = pop(&args);
-        if (!ecl_member_eq(@':bytecodes', backend))
-                args = Cnil;
-        return compile_body(env, args, flags);
+        cl_object forms = Cnil;
+        while (!Null(args)) {
+                cl_object tag = pop(&args);
+                cl_object form = pop(&args);
+                if (tag == @':bytecodes')
+                        forms = CONS(form, forms);
+        }
+        return compile_body(env, forms, flags);
 }
 
 static int
