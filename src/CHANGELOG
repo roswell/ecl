@@ -12,6 +12,8 @@ ECL 10.4.2:
    interpreter compiled its arguments also as toplevel forms, causing their
    execution in the wrong order.
 
+ - EXT:MAKE-FOREIGN-DATA-FROM-ARRAY now supports all unboxed types.
+
 * Visible changes:
 
  - "fasb" is now a valid FASL file type, accepted by ECL even in absence of

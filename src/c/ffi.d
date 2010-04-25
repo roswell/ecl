@@ -20,6 +20,47 @@
 # include <ffi/ffi.h>
 #endif
 
+static const cl_object ecl_aet_to_ffi_table[aet_bc+1] = {
+	@':void', /* aet_object */
+	@':float', /* aet_df */
+	@':double', /* aet_df */
+	@':void', /* aet_bit */
+#if ECL_FIXNUM_BITS == 32 && defined(ecl_uint32_t)
+        @':int32-t', /* aet_fix */
+        @':uint32-t', /* aet_index */
+#else
+# if ECL_FIXNUM_BITS == 64 && defined(ecl_uint64_t)
+        @':int64-t', /* aet_fix */
+        @':uint64-t', /* aet_index */
+# else
+        @':void', /* aet_fix */
+        @':void', /* aet_index */
+# endif
+#endif
+	@':uint8-t', /* aet_b8 */
+        @':int8-t', /* aet_i8 */
+#ifdef ecl_uint16_t
+        @':uint16-t', /* aet_b16 */
+        @':int16-t', /* aet_i16 */
+#endif
+#ifdef ecl_uint32_t
+        @':uint32-t', /* aet_b32 */
+        @':int32-t', /* aet_i32 */
+#endif
+#ifdef ecl_uint64_t
+        @':uint64-t', /* aet_b64 */
+        @':int64-t', /* aet_i64 */
+#endif
+#ifdef ECL_UNICODE
+# ifdef ecl_int32_t
+	@':int32-t', /* aet_ch */
+# else
+        @':void', /* aet_ch */
+# endif
+#endif
+	@':char' /* aet_bc */
+};
+
 static const cl_object ecl_foreign_type_table[] = {
 	@':char',
 	@':unsigned-char',
@@ -252,19 +293,16 @@ si_free_foreign_data(cl_object f)
 cl_object
 si_make_foreign_data_from_array(cl_object array)
 {
-	cl_object tag = Cnil;
+	cl_object tag;
 	if (ecl_unlikely(type_of(array) != t_array && type_of(array) != t_vector)) {
                 FEwrong_type_only_arg(@[si::make-foreign-data-from-array], array,
                                       @[array]);
 	}
-	switch (array->array.elttype) {
-	case aet_sf: tag = @':float'; break;
-	case aet_df: tag = @':double'; break;
-	case aet_fix: tag = @':int'; break;
-	case aet_index: tag = @':unsigned-int'; break;
-	default:
-		FEerror("Cannot make foreign object from array with element type ~S.", 1, ecl_elttype_to_symbol(array->array.elttype));
-		break;
+        tag = ecl_aet_to_ffi_table[array->array.elttype];
+        if (ecl_unlikely(Null(tag))) {
+		FEerror("Cannot make foreign object from array "
+                        "with element type ~S.", 1,
+                        ecl_elttype_to_symbol(array->array.elttype));
 	}
 	@(return ecl_make_foreign_data(tag, 0, array->array.self.bc));
 }
