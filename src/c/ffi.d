@@ -566,32 +566,42 @@ ecl_foreign_data_set_elt(void *p, enum ecl_ffi_tag tag, cl_object value)
 #ifdef ecl_uint8_t
         case ECL_FFI_INT8_T:
                 *(ecl_int8_t *)p = fixint(value);
+                break;
         case ECL_FFI_UINT8_T:
                 *(ecl_uint8_t *)p = fixnnint(value);
+                break;
 #endif
 #ifdef ecl_uint16_t
         case ECL_FFI_INT16_T:
                 *(ecl_int16_t *)p = ecl_to_int16_t(value);
+                break;
         case ECL_FFI_UINT16_T:
                 *(ecl_uint16_t *)p = ecl_to_uint16_t(value);
+                break;
 #endif
 #ifdef ecl_uint32_t
         case ECL_FFI_INT32_T:
                 *(ecl_int32_t *)p = ecl_to_int32_t(value);
+                break;
         case ECL_FFI_UINT32_T:
                 *(ecl_uint32_t *)p = ecl_to_uint32_t(value);
+                break;
 #endif
 #ifdef ecl_uint64_t
         case ECL_FFI_INT64_T:
                 *(ecl_int64_t *)p = ecl_to_int64_t(value);
+                break;
         case ECL_FFI_UINT64_T:
                 *(ecl_uint64_t *)p = ecl_to_uint64_t(value);
+                break;
 #endif
 #ifdef ecl_long_long_t
         case ECL_FFI_LONG_LONG:
                 *(ecl_long_long_t *)p = ecl_to_long_long(value);
+                break;
         case ECL_FFI_UNSIGNED_LONG_LONG:
                 *(ecl_ulong_long_t *)p = ecl_to_unsigned_long_long(value);
+                break;
 #endif
 	case ECL_FFI_POINTER_VOID:
 		*(void **)p = ecl_foreign_data_pointer_safe(value);
