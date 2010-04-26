@@ -56,6 +56,18 @@
     (:unsigned-int . "ECL_FFI_UNSIGNED_INT")
     (:long . "ECL_FFI_LONG")
     (:unsigned-long . "ECL_FFI_UNSIGNED_LONG")
+    #+:uint16-t #+:uint16-t
+    (:int16-t . "ECL_FFI_INT16_T")
+    (:uint16-t . "ECL_FFI_UINT16_T")
+    #+:uint32-t #+:uint32-t
+    (:int32-t . "ECL_FFI_INT32_T")
+    (:uint32-t . "ECL_FFI_UINT32_T")
+    #+:uint64-t #+:uint64-t
+    (:int64-t . "ECL_FFI_INT64_T")
+    (:uint64-t . "ECL_FFI_UINT64_T")
+    #+:long-long #+:long-long
+    (:long-long . "ECL_FFI_LONG_LONG")
+    (:unsigned-long-long . "ECL_FFI_UNSIGNED_LONG_LONG")
     (:pointer-void . "ECL_FFI_POINTER_VOID")
     (:cstring . "ECL_FFI_CSTRING")
     (:object . "ECL_FFI_OBJECT")
@@ -66,14 +78,14 @@
 (defun foreign-elt-type-code (type)
   (let ((x (assoc type +foreign-elt-type-codes+)))
     (unless x
-      (cmperr "~a is not a valid elementary FFI type" x))
+      (cmperr "~a is not a valid elementary FFI type" type))
     (cdr x)))
 
 (defun t3-defcallback (lisp-name c-name c-name-constant return-type
 		       arg-types arg-type-constants call-type &aux (return-p t))
-  (cond ((ffi::foreign-elt-type-p return-type))
-	((member return-type '(nil :void))
+  (cond ((member return-type '(nil :void))
 	 (setf return-p nil))
+	((ffi::foreign-elt-type-p return-type))
 	((and (consp return-type)
 	      (member (first return-type) '(* array)))
 	 (setf return-type :pointer-void))
