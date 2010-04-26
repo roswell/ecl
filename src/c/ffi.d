@@ -334,6 +334,20 @@ si_foreign_data_tag(cl_object f)
 }
 
 cl_object
+si_foreign_data_equal(cl_object f1, cl_object f2)
+{
+	if (ecl_unlikely(!ECL_FOREIGN_DATA_P(f1))) {
+                FEwrong_type_only_arg(@[si::foreign-data-address], f1,
+                                      @[si::foreign-data]);
+	}
+	if (ecl_unlikely(!ECL_FOREIGN_DATA_P(f2))) {
+                FEwrong_type_only_arg(@[si::foreign-data-address], f2,
+                                      @[si::foreign-data]);
+	}
+	@(return ((f1->foreign.data == f2->foreign.data)? Ct : Cnil))
+}
+
+cl_object
 si_foreign_data_pointer(cl_object f, cl_object andx, cl_object asize,
 			cl_object tag)
 {
@@ -397,16 +411,25 @@ si_foreign_data_set(cl_object f, cl_object andx, cl_object value)
 	@(return value)
 }
 
-enum ecl_ffi_tag
-ecl_foreign_type_code(cl_object type)
+static int
+foreign_type_code(cl_object type)
 {
 	int i;
 	for (i = 0; i <= ECL_FFI_VOID; i++) {
 		if (type == ecl_foreign_type_table[i])
-			return (enum ecl_ffi_tag)i;
+			return i;
 	}
-	FEerror("~A does not denote an elementary foreign type.", 1, type);
-	return ECL_FFI_VOID;
+        return -1;
+}
+
+enum ecl_ffi_tag
+ecl_foreign_type_code(cl_object type)
+{
+	int i = foreign_type_code(type);
+        if (ecl_unlikely(i < 0)) {
+                FEerror("~A does not denote an elementary foreign type.", 1, type);
+        }
+	return (enum ecl_ffi_tag)i;
 }
 
 #ifdef HAVE_LIBFFI
@@ -628,6 +651,12 @@ si_size_of_foreign_elt_type(cl_object type)
 {
 	enum ecl_ffi_tag tag = ecl_foreign_type_code(type);
 	@(return MAKE_FIXNUM(ecl_foreign_type_size[tag]))
+}
+
+cl_object
+si_foreign_elt_type_p(cl_object type)
+{
+	@(return ((foreign_type_code(type) < 0)? Cnil : Ct))
 }
 
 cl_object

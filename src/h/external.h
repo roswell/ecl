@@ -590,8 +590,10 @@ extern ECL_API cl_object _ecl_link_call(cl_object sym, cl_objectfn *pLK, cl_obje
 /* ffi.c */
 
 extern ECL_API cl_object si_allocate_foreign_data(cl_object tag, cl_object size);
+extern ECL_API cl_object si_foreign_elt_type_p(cl_object f);
 extern ECL_API cl_object si_foreign_data_p(cl_object f);
 extern ECL_API cl_object si_foreign_data_address(cl_object f);
+extern ECL_API cl_object si_foreign_data_equal(cl_object f1, cl_object f2);
 extern ECL_API cl_object si_foreign_data_pointer(cl_object f, cl_object ndx, cl_object size, cl_object tag);
 extern ECL_API cl_object si_foreign_data_ref(cl_object f, cl_object ndx, cl_object size, cl_object tag);
 extern ECL_API cl_object si_foreign_data_ref_elt(cl_object f, cl_object ndx, cl_object tag);
