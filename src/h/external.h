@@ -605,6 +605,7 @@ extern ECL_API cl_object si_free_foreign_data(cl_object x);
 extern ECL_API cl_object si_make_foreign_data_from_array(cl_object x);
 extern ECL_API cl_object si_null_pointer_p(cl_object f);
 extern ECL_API cl_object si_size_of_foreign_elt_type(cl_object tag);
+extern ECL_API cl_object si_alignment_of_foreign_elt_type(cl_object tag);
 extern ECL_API cl_object si_load_foreign_module(cl_object module);
 extern ECL_API cl_object si_find_foreign_symbol(cl_object var, cl_object module, cl_object type, cl_object size);
 extern ECL_API cl_object si_call_cfun(cl_narg, cl_object fun, cl_object return_type, cl_object arg_types, cl_object args, ...);

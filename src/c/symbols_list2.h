@@ -1415,6 +1415,7 @@ cl_symbols[] = {
 {SYS_ "LOAD-FOREIGN-MODULE","si_load_foreign_module"},
 {SYS_ "NULL-POINTER-P","si_null_pointer_p"},
 {SYS_ "SIZE-OF-FOREIGN-ELT-TYPE","si_size_of_foreign_elt_type"},
+{SYS_ "ALIGNMENT-OF-FOREIGN-ELT-TYPE","si_alignment_of_foreign_elt_type"},
 {KEY_ "BYTE",NULL},
 {KEY_ "CHAR",NULL},
 {KEY_ "CSTRING",NULL},

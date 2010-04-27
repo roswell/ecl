@@ -14,6 +14,9 @@ ECL 10.4.2:
 
  - EXT:MAKE-FOREIGN-DATA-FROM-ARRAY now supports all unboxed types.
 
+ - ECL did not properly compute the alignment of foreign types in structures.
+   This is now done using standard C constructs in a portable and robust way.
+
 * Visible changes:
 
  - "fasb" is now a valid FASL file type, accepted by ECL even in absence of
