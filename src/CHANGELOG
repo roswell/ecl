@@ -35,6 +35,9 @@ ECL 10.4.2:
           :c/c++ (print 2)))
    The two currently available backends are :bytecodes and :c/c++.
 
+ - Added accurate type proclamations for all functions in the ANSI CL
+   specification.
+
 
 ECL 10.4.1:
 ===========

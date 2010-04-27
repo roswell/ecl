@@ -1965,6 +1965,12 @@ extern ECL_API cl_object cl_set_pprint_dispatch _ARGS((cl_narg narg, cl_object V
 extern ECL_API cl_object cl_method_combination_error _ARGS((cl_narg narg, cl_object format, ...));
 extern ECL_API cl_object cl_invalid_method_error _ARGS((cl_narg narg, cl_object method, cl_object format, ...));
 
+/* boot.lsp */
+extern ECL_API cl_object cl_slot_boundp(cl_object object, cl_object slot);
+extern ECL_API cl_object cl_slot_makunbound(cl_object object, cl_object slot);
+extern ECL_API cl_object cl_slot_value(cl_object object, cl_object slot);
+extern ECL_API cl_object cl_slot_exists_p(cl_object object, cl_object slot);
+
 #if 0
 /* defclass.lsp */
 extern ECL_API cl_object clos_ensure_class _ARGS((cl_narg narg, cl_object V1, ...));

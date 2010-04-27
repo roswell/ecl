@@ -1638,6 +1638,11 @@
      #-(or) standard-instance-access ; this function is a synonym for si:instance-ref
      #-(or) funcallable-standard-instance-access ; same for this one
      subclassp of-class-p
+     ;; boot.lsp
+     slot-boundp
+     slot-makunbound
+     slot-value
+     slot-exists-p
      )
 ))
 
@@ -1668,11 +1673,6 @@
     #+clos
     ,@'(;; defclass.lsp
      clos::ensure-class
-     ;; boot.lsp
-     clos::slot-boundp
-     clos::slot-makunbound
-     clos::slot-value
-     clos::slot-exists-p
      ;; combin.lsp
      clos::simple-code-walker
      ;; standard.lsp

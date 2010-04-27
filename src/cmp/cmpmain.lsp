@@ -929,6 +929,7 @@ from the C language code.  NIL means \"do not create the file\"."
 
 #-ecl-min
 (with-standard-io-syntax
-  (load "sys:sysfun"))
+  (load "sys:sysfun")
+  (load "sys:proclamations"))
 
 (provide 'cmp)

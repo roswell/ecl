@@ -166,11 +166,11 @@
       (unless declared
 	(if (= maxarg minarg)
 	    (progn
-	      (wt-h1 "extern cl_object ") (wt-h1 fun-c-name) (wt-h1 "(")
+	      (wt-nl-h "extern cl_object " fun-c-name "(")
 	      (dotimes (i maxarg)
 		(when (> i 0) (wt-h1 ","))
 		(wt-h1 "cl_object"))
-	      (wt-h1 ")"))
+	      (wt-h1 ");"))
 	    (progn
 	      (wt-nl-h "#ifdef __cplusplus")
 	      (wt-nl-h "extern cl_object " fun-c-name "(...);")
