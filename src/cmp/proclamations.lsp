@@ -79,6 +79,8 @@
 (deftype array-rank-index ()
   '(integer 0 #.(1- array-rank-limit)))
 (deftype association-list ()
+  'list
+  #+(or)
   '(or null (cons cons association-list)))
 (deftype byte-specifier ()
   "The type of the output of BYTE."
@@ -133,8 +135,12 @@
 (deftype pathname-version ()
   '(or unsigned-byte (member nil :wild :newest :unspecific)))
 (deftype proper-list ()
+  'list
+  #+(or)
   '(or null (cons t proper-list)))
 (deftype property-list ()
+  'list
+  #+(or)
   '(or null (cons t (cons t property-list))))
 (deftype radix ()
   '(integer 2 36))

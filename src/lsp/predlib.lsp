@@ -1093,8 +1093,8 @@ if not possible."
   ;; The problem with the code below is that it does not suport infinite
   ;; recursion. Instead we just canonicalize everything to CONS, irrespective
   ;; of whether the arguments are valid types or not!
-  (canonical-type 'CONS)
   #+(or)
+  (canonical-type 'CONS)
   (let ((car-tag (if (eq car-type '*) -1 (canonical-type car-type)))
 	(cdr-tag (if (eq cdr-type '*) -1 (canonical-type cdr-type))))
     (cond ((or (zerop car-tag) (zerop cdr-tag))
