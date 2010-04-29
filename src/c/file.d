@@ -1646,11 +1646,10 @@ ecl_make_string_input_stream(cl_object strng, cl_index istart, cl_index iend)
 	return strm;
 }
 
-@(defun make_string_input_stream (strng &o istart iend)
+@(defun make_string_input_stream (strng &o (istart MAKE_FIXNUM(0)) iend)
         cl_index_pair p;
 @
 	strng = cl_string(strng);
-        if (Null(istart)) istart = MAKE_FIXNUM(0);
         p = ecl_vector_start_end(@[make-string-input-stream], strng, istart, iend);
 	@(return (ecl_make_string_input_stream(strng, p.start, p.end)))
 @)

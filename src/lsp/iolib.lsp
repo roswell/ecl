@@ -25,7 +25,7 @@ automatically closed on exit."
          (PROGN ,@b)
          (CLOSE ,var)))))
 
-(defmacro with-input-from-string ((var string &key index start end) &rest body)
+(defmacro with-input-from-string ((var string &key index (start 0) end) &rest body)
   "Syntax: (with-input-from-string (var string-form {keyword value}*)
            {decl}* {form}*)
 Evaluates FORMs with VAR bound to a string input stream from the string that
