@@ -22,9 +22,9 @@
 
 (in-package "COMPILER")
 
-(defmacro def-inline (name safety arg-types return-rep-type expansion
-                      &key (one-liner t) (exact-return-type nil)
-		      &aux arg-rep-types)
+(defun def-inline (name safety arg-types return-rep-type expansion
+                   &key (one-liner t) (exact-return-type nil)
+                   &aux arg-rep-types)
   (setf safety
 	(case safety
 	  (:unsafe :inline-unsafe)
@@ -57,11 +57,10 @@
                  (not (equalp return-type (inline-info-return-type i))))
        do (format t "~&;;; Redundand inline definition for ~A~&;;; ~<~A~>~&;;; ~<~A~>"
                   name i inline-info))
-    (put-sysprop name safety (cons inline-info previous)))
-  nil)
+    (put-sysprop name safety (cons inline-info previous))))
 
-(eval '(progn
-
+(eval-when (:compile-toplevel :execute)
+(defparameter +inline-forms+ '(
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;; ALL FUNCTION DECLARATIONS AND INLINE FORMS
@@ -847,45 +846,55 @@
  "MAKE_FIXNUM((((~((cl_fixnum)-1 << (#0))) << (#1)) & (cl_fixnum)(#2)) >> (#1))")
 
 ;; Functions only available with threads
-#+threads(progn
-
+#+threads
 (def-inline mp:lock-count :unsafe (mp:lock) fixnum "((#0)->lock.count)")
-)
 
 ;; Functions only available with CLOS
 
-#+clos(progn
-
+#+clos
 (def-inline si:instance-ref :always (t fixnum) t "ecl_instance_ref((#0),(#1))")
+#+clos
 (def-inline si:instance-ref :unsafe (standard-object fixnum) t
  "(#0)->instance.slots[#1]")
 
+#+clos
 (def-inline si::instance-sig :unsafe (standard-object) list
  "(#0)->instance.sig")
 
+#+clos
 (def-inline si:instance-set :unsafe (t fixnum t) t
  "ecl_instance_set((#0),(#1),(#2))")
+#+clos
 (def-inline si:instance-set :unsafe (standard-object fixnum t) t
  "(#0)->instance.slots[#1]=(#2)")
 
+#+clos
 (def-inline si:instance-class :always (standard-object) t "CLASS_OF(#0)")
 
+#+clos
 (def-inline si::instancep :always (t) :bool "@0;ECL_INSTANCEP(#0)")
+#+clos
 (def-inline si:unbound :always nil t "ECL_UNBOUND")
 
+#+clos
 (def-inline si:sl-boundp :always (t) :bool "(#0)!=ECL_UNBOUND")
 
+#+clos
 (def-inline standard-instance-access :always (standard-object fixnum) t "ecl_instance_ref((#0),(#1))")
+#+clos
 (def-inline standard-instance-access :unsafe (standard-object fixnum) t
  "(#0)->instance.slots[#1]")
 
+#+clos
 (def-inline funcallable-standard-instance-access :always (funcallable-standard-object fixnum) t "ecl_instance_ref((#0),(#1))")
+#+clos
 (def-inline funcallable-standard-instance-access :unsafe (funcallable-standard-object fixnum) t
  "(#0)->instance.slots[#1]")
 
-)
+))) ; eval-when
 
-)) ; eval
+(loop for i in '#.(mapcar #'rest +inline-forms+)
+   do (apply #'def-inline i))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;

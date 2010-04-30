@@ -42,8 +42,7 @@
 
 (in-package "C")
 
-(defmacro proclamation (&whole form name arg-types return-type
-                        &rest properties)
+(defun proclaim-function (name arg-types return-type &rest properties)
   (when (sys:get-sysprop name 'proclaimed-arg-types)
     (warn "Duplicate proclamation for ~A" name))
   (when (eq arg-types '())
@@ -56,15 +55,14 @@
      do (case p
           (:no-sp-change
            (sys:put-sysprop name 'no-sp-change t))
-          ((:predicate :pure)
+          ((:predicate :pure):q
            (sys:put-sysprop name 'pure t)
            (sys:put-sysprop name 'no-side-effects t))
           ((:no-side-effects :reader)
            (sys:put-sysprop name 'no-side-effects t))
           (otherwise
            (error "Unknown property ~S in function proclamation ~S"
-                  p form))))
-  nil)
+                  p form)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; AUXILIARY TYPES
@@ -161,6 +159,8 @@
   'unsigned-byte)
 
 
+(eval-when (:compile-toplevel :execute)
+(defparameter +proclamations+ '(
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;; ALL FUNCTION DECLARATIONS
@@ -1275,24 +1275,34 @@
 (proclamation si:unbound () t :pure)
 
 #+clos
-(progn
 (proclamation si:allocate-raw-instance (t t fixnum) si:instance)
+#+clos
 (proclamation si:instance-ref-safe (t fixnum) t)
+#+clos
 (proclamation si:instance-ref (t fixnum) t :reader)
+#+clos
 (proclamation si::instance-sig (standard-object) list :reader)
+#+clos
 (proclamation si:instance-set (t fixnum t) t)
+#+clos
 (proclamation si:instance-class (t) t :reader)
+#+clos
 (proclamation si:instance-class-set (t t) t)
+#+clos
 (proclamation si:instancep (t) t :pure)
+#+clos
 (proclamation si:sl-boundp (t) t :reader)
+#+clos
 (proclamation si:sl-makunbound (t fixnum) t)
+#+clos
 (proclamation standard-instance-access (standard-object fixnum) t :reader)
+#+clos
 (proclamation funcallable-standard-instance-access
               (funcallable-standard-object fixnum)
               t :reader)
+#+clos
 (proclamation associate-methods-to-gfun (generic-function *)
               generic-function)
-)
 
 ;;;
 ;;; A. FFI
@@ -1300,4 +1310,9 @@
 
 (proclamation si:pointer (t) unsigned-byte)
 (proclamation si:foreign-data-p (t) gen-bool :pure)
+
+))) ; eval-when
+
+(loop for i in '#.(mapcar #'rest +proclamations+)
+   do (apply #'proclaim-function i))
 
