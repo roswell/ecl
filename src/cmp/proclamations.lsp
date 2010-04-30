@@ -8,7 +8,7 @@
 ;;;
 ;;; The function proclamations are created with PROCLAIM-FUNCTION, as in
 ;;;
-;;;	(PROCLAIM-FUNCTION function-name ([arg-type]*) return-type
+;;;	(PROCLAMATION function-name ([arg-type]*) return-type
 ;;;		&rest {:no-sp-change|:pure|:reader|:no-side-effects})
 ;;;
 ;;; with the following interpretation: ARG-TYPE and RETURN-TYPE denote the most
@@ -46,11 +46,12 @@
                         &rest properties)
   (when (sys:get-sysprop name 'proclaimed-arg-types)
     (warn "Duplicate proclamation for ~A" name))
+  (when (eq arg-types '())
+    (setf arg-types '(&optional)))
   (unless (or (equal arg-types '(*)))
     (sys:put-sysprop name 'proclaimed-arg-types arg-types))
   (when (and return-type (not (eq 'T return-type)))
     (sys:put-sysprop name 'proclaimed-return-type return-type))
-  (print form)
   (loop for p in properties
      do (case p
           (:no-sp-change
@@ -63,11 +64,6 @@
           (otherwise
            (error "Unknown property ~S in function proclamation ~S"
                   p form))))
-  #+(or)
-  (progn
-    (sys:rem-sysprop name ':inline-always)
-    (sys:rem-sysprop name ':inline-safe)
-    (sys:rem-sysprop name ':inline-unsafe))
   nil)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -361,6 +357,8 @@
 (proclamation si:put-sysprop (t t t) t)
 (proclamation si:get-sysprop (t t t) t)
 (proclamation si:rem-sysprop (t t) gen-bool)
+(proclamation si:put-properties (symbol &rest t) symbol :no-sp-change)
+
 
 ;;;
 ;;; 11. PACKAGES
@@ -529,8 +527,16 @@
 
 ;; ECL extensions
 (proclamation si:bit-array-op (t t t t) t)
+(proclamation si:fixnump (t) gen-book :pure)
 
-
+;; Virtual functions added by the compiler
+(proclamation shift>> (*) nil :pure)
+(proclamation shift<< (*) nil :pure)
+(proclamation short-float-p (*) nil :pure)
+(proclamation single-float-p (*) nil :pure)
+(proclamation double-float-p (*) nil :pure)
+(proclamation long-float-p (*) nil :pure)
+(proclamation c::ldb1 (fixnum fixnum fixnum) fixnum :no-side-effects)
 
 
 ;;;
@@ -1076,6 +1082,7 @@
 (proclamation si:open-server-stream (unsigned-byte) stream)
 (proclamation si:open-unix-socket-stream (base-string) stream)
 (proclamation si:lookup-host-entry (t) (values (or null string) list list))
+(proclamation si:copy-stream (stream stream) t)
 
 ;;;
 ;;; 22. PRINT
@@ -1177,6 +1184,10 @@
 (proclamation provide (string-designator) t)
 (proclamation require (string-designatior &optional list) t)
 
+;; ECL extensions
+(proclamation si:clear-compiler-properties (symbol) t)
+
+
 ;;;
 ;;; 25. ENVIRONMENT
 ;;;
@@ -1247,7 +1258,7 @@
 (proclamation ext:gc (&optional gen-bool) t)
 (proclamation ext:quit (&optional fixnum) t)
 (proclamation ext:argc () si::index)
-(proclamation ext:argv () list)
+(proclamation ext:argv (unsigned-byte) list)
 (proclamation ext:getenv (string) (or null string))
 (proclamation ext:environ () list)
 (proclamation ext:system (string) fixnum)
@@ -1257,6 +1268,31 @@
               (values (or null two-way-stream)
                       (or null integer)
                       ext:external-process))
+
+(proclamation ext:make-weak-pointer (t) ext:weak-pointer :no-side-effects)
+(proclamation ext:weak-pointer-value (ext:weak-pointer) t)
+
+(proclamation si:unbound () t :pure)
+
+#+clos
+(progn
+(proclamation si:allocate-raw-instance (t t fixnum) si:instance)
+(proclamation si:instance-ref-safe (t fixnum) t)
+(proclamation si:instance-ref (t fixnum) t :reader)
+(proclamation si::instance-sig (standard-object) list :reader)
+(proclamation si:instance-set (t fixnum t) t)
+(proclamation si:instance-class (t) t :reader)
+(proclamation si:instance-class-set (t t) t)
+(proclamation si:instancep (t) t :pure)
+(proclamation si:sl-boundp (t) t :reader)
+(proclamation si:sl-makunbound (t fixnum) t)
+(proclamation standard-instance-access (standard-object fixnum) t :reader)
+(proclamation funcallable-standard-instance-access
+              (funcallable-standard-object fixnum)
+              t :reader)
+(proclamation associate-methods-to-gfun (generic-function *)
+              generic-function)
+)
 
 ;;;
 ;;; A. FFI
