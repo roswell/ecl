@@ -135,7 +135,6 @@
 #+WANTS-CMP
 (build-module "cmp" +cmp-module-files+ 
               :dir "build:@ECL_CMPDIR@;" :prefix "CMP"
-              :additional-files '("sysfun.lsp" "proclamations.lsp")
               :builtin #+:BUILTIN-CMP t #-:BUILTIN-CMP nil)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

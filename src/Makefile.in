@@ -67,7 +67,7 @@ c/ecl/external.h: $(top_srcdir)/h/external.h
 ecl/external.h: c/ecl/external.h c/ecl/external.h
 	cp $(srcdir)/h/*.h ecl/
 
-bin/ecl$(EXE): ecl_min$(EXE) compile.lsp sysfun.lsp proclamations.lsp ecl/external.h BUILD-STAMP
+bin/ecl$(EXE): ecl_min$(EXE) compile.lsp ecl/external.h BUILD-STAMP
 	cp $(top_srcdir)/../contrib/unicode/ucd.dat .
 	if [ -f CROSS-COMPILER ]; then \
 		./CROSS-COMPILER compile; \
@@ -116,11 +116,6 @@ bin/ecl-config: bin/ecl-config.pre
 	  cd .. && mv include/gmp.h ecl/ && rmdir include &&  \
 	  mv ./@LIBPREFIX@gmp.@LIBEXT@ ./@LIBPREFIX@eclgmp.@LIBEXT@; \
 	fi
-sysfun.lsp:
-	$(LN_S) $(srcdir)/$(ECL_CMPDIR)/sysfun.lsp ./
-proclamations.lsp:
-	$(LN_S) $(srcdir)/$(ECL_CMPDIR)/proclamations.lsp ./
-
 
 rt.lisp:
 	cp $(srcdir)/../contrib/rt/rt.lisp ./
