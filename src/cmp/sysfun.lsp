@@ -63,15 +63,6 @@
 (eval '(progn
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; AUXILIARY TYPES
-;;
-
-(deftype string-designator () '(or string symbol character))
-(deftype byte-specifier () '(cons unsigned-byte unsigned-byte))
-(deftype function-designator () '(or symbol function))
-(deftype natural () '(integer 0 *))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;; ALL FUNCTION DECLARATIONS AND INLINE FORMS
 ;;;
