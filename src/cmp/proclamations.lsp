@@ -42,15 +42,12 @@
 
 (in-package "C")
 
-(defun proclaim-function (name arg-types return-type &rest properties)
+(defun parse-function-proclamation
+    (name arg-types return-type &rest properties)
   (when (sys:get-sysprop name 'proclaimed-arg-types)
     (warn "Duplicate proclamation for ~A" name))
-  (when (eq arg-types '())
-    (setf arg-types '(&optional)))
-  (unless (or (equal arg-types '(*)))
-    (sys:put-sysprop name 'proclaimed-arg-types arg-types))
-  (when (and return-type (not (eq 'T return-type)))
-    (sys:put-sysprop name 'proclaimed-return-type return-type))
+  (#-new-cmp proclaim-function #+new-cmp c-env::proclaim-function
+   name (list arg-types return-type))
   (loop for p in properties
      do (case p
           (:no-sp-change
@@ -61,8 +58,8 @@
           ((:no-side-effects :reader)
            (sys:put-sysprop name 'no-side-effects t))
           (otherwise
-           (error "Unknown property ~S in function proclamation ~S"
-                  p form)))))
+           (error "Unknown property ~S in function proclamation for ~S"
+                  p name)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; AUXILIARY TYPES
@@ -351,12 +348,12 @@
 (proclamation si:*make-special (symbol) symbol)
 (proclamation si:*make-constant (symbol t) symbol)
 (proclamation si:put-f (list t t) list)
-(proclamation si:rem-f (list t) boolean)
+(proclamation si:rem-f (list t) (values list boolean))
 (proclamation si:set-symbol-plist (symbol list) list)
 (proclamation si:putprop (symbol t t) t)
 (proclamation si:put-sysprop (t t t) t)
-(proclamation si:get-sysprop (t t t) t)
-(proclamation si:rem-sysprop (t t) gen-bool)
+(proclamation si:get-sysprop (t t) (values t boolean))
+(proclamation si:rem-sysprop (t t) boolean)
 (proclamation si:put-properties (symbol &rest t) symbol :no-sp-change)
 
 
@@ -526,7 +523,7 @@
 ;; (proclamation arithmetic-error-operation (condition) t)
 
 ;; ECL extensions
-(proclamation si:bit-array-op (t t t t) t)
+(proclamation si:bit-array-op (t t t t) (array bit))
 (proclamation si:fixnump (t) gen-book :pure)
 
 ;; Virtual functions added by the compiler
@@ -699,8 +696,8 @@
 (proclamation nunion (proper-list proper-list &key) proper-list)
 
 ;; ECL extensions
-(proclamation member1 (t proper-list t t t) t)
-(proclamation si:memq (t proper-list) t)
+(proclamation si:member1 (t proper-list t t t) list)
+(proclamation si:memq (t proper-list) list)
 
 ;;;
 ;;; 15. ARRAYS
@@ -1314,5 +1311,5 @@
 ))) ; eval-when
 
 (loop for i in '#.(mapcar #'rest +proclamations+)
-   do (apply #'proclaim-function i))
+   do (apply #'parse-function-proclamation i))
 

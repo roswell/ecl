@@ -1,7 +1,6 @@
 ;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: C -*-
 ;;;;
-;;;;  Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya.
-;;;;  Copyright (c) 1990, Giuseppe Attardi.
+;;;;  Copyright (c) 2010, Juan Jose Garcia-Ripoll
 ;;;;
 ;;;;    This program is free software; you can redistribute it and/or
 ;;;;    modify it under the terms of the GNU Library General Public
@@ -10,10 +9,10 @@
 ;;;;
 ;;;;    See file '../Copyright' for full details.
 ;;;;
-;;;;  CMPVARS -- Global variables and flag definitions
+;;;;  CMPGLOBALS -- Global variables and flag definitions
 ;;;;
 
-(in-package "C-DATA")
+(in-package #-new-cmp "COMPILER" #+new-cmp "C-DATA")
 
 ;;;
 ;;; VARIABLES
@@ -23,11 +22,9 @@
 ;;;
 ;;; Empty info struct
 ;;;
-(defvar *inline-functions* nil)
+#-new-cmp
+(defvar *info* (make-info))
 (defvar *inline-blocks* 0)
-;;; *inline-functions* holds:
-;;;	(...( function-name . inline-info )...)
-;;;
 ;;; *inline-blocks* holds the number of C blocks opened for declaring
 ;;; temporaries for intermediate results of the evaluation of inlined
 ;;; function calls.
@@ -36,8 +33,8 @@
 ;;;
 ;;; Variables and constants for error handling
 ;;;
-(defvar *current-toplevel-form* '|compiler preprocess|)
 (defvar *current-form* '|compiler preprocess|)
+(defvar *current-toplevel-form* '|compiler preprocess|)
 (defvar *current-c2form* nil)
 (defvar *compile-file-position* -1)
 (defvar *first-error* t)
@@ -58,7 +55,7 @@ each form it processes. The default value is NIL.")
   "This variable controls whether the compiler should display messages about its
 progress. The default value is T.")
 
-(defvar *suppress-compiler-messages* nil
+(defvar *suppress-compiler-messages* 'compiler-debug-note
   "A type denoting which compiler messages and conditions are _not_ displayed.")
 
 (defvar *suppress-compiler-notes* nil) ; Deprecated
@@ -70,7 +67,6 @@ progress. The default value is T.")
 (defvar *compiler-input*)
 (defvar *compiler-output1*)
 (defvar *compiler-output2*)
-(defvar *dump-output*)
 
 ;;; --cmpcbk.lsp--
 ;;;
@@ -106,6 +102,11 @@ progress. The default value is T.")
 
 (defvar *lcl* 0)		; number of local variables
 
+#-new-cmp
+(defvar *temp* 0)		; number of temporary variables
+#-new-cmp
+(defvar *max-temp* 0)		; maximum *temp* reached
+
 (defvar *level* 0)		; nesting level for local functions
 
 (defvar *lex* 0)		; number of lexical variables in local functions
@@ -114,7 +115,13 @@ progress. The default value is T.")
 (defvar *env* 0)		; number of variables in current form
 (defvar *max-env* 0)		; maximum *env* in whole function
 (defvar *env-lvl* 0)		; number of levels of environments
+#-new-cmp
+(defvar *aux-closure* nil)	; stack allocated closure needed for indirect calls
+#-new-cmp
+(defvar *ihs-used-p* nil)       ; function must be registered in IHS?
 
+#-new-cmp
+(defvar *next-cmacro* 0)	; holds the last cmacro number used.
 (defvar *next-cfun* 0)		; holds the last cfun used.
 
 ;;;
@@ -126,7 +133,6 @@ progress. The default value is T.")
 (defvar *tail-recursion-info* nil)
 
 (defvar *allow-c-local-declaration* t)
-(defvar *notinline* nil)
 
 ;;; --cmpexit.lsp--
 ;;;
@@ -146,7 +152,7 @@ progress. The default value is T.")
 
 (defvar *current-function* nil)
 
-(defvar *cmp-env* (cons nil nil)
+(defvar *cmp-env* nil
 "The compiler environment consists of a pair or cons of two
 lists, one containing variable records, the other one macro and
 function recors:
@@ -172,6 +178,11 @@ boundaries. Note that compared with the bytecodes compiler, these
 records contain an additional variable, block, tag or function
 object at the end.")
 
+(defvar *cmp-env-root* (cons nil nil)
+"This is the common environment shared by all toplevel forms. It can
+only be altered by DECLAIM forms and it is used to initialize the
+value of *CMP-ENV*.")
+
 ;;; --cmplog.lsp--
 ;;;
 ;;; Destination of output of different forms. See cmploc.lsp for types
@@ -187,6 +198,20 @@ object at the end.")
 (defvar *delete-files* t)
 (defvar *files-to-be-deleted* '())
 
+(defvar *user-ld-flags* '()
+"Flags and options to be passed to the linker when building FASL, shared libraries
+and standalone programs. It is not required to surround values with quotes or use
+slashes before special characters.")
+
+(defvar *user-cc-flags* '()
+"Flags and options to be passed to the C compiler when building FASL, shared libraries
+and standalone programs. It is not required to surround values with quotes or use
+slashes before special characters.")
+
+;;;
+;;; Compiler program and flags.
+;;;
+
 ;;; --cmptop.lsp--
 ;;;
 (defvar *do-type-propagation* nil
@@ -195,15 +220,20 @@ object at the end.")
 (defvar *compiler-phase* nil)
 
 (defvar *volatile*)
+#-new-cmp
+(defvar *setjmps* 0)
 
 (defvar *compile-toplevel* T
   "Holds NIL or T depending on whether we are compiling a toplevel form.")
-(defvar *compile-time-too* nil)
 
 (defvar *clines-string-list* '()
   "List of strings containing C/C++ statements which are directly inserted
 in the translated C/C++ file. Notice that it is unspecified where these
 lines are inserted, but the order is preserved")
+
+(defvar *compile-time-too* nil)
+#-new-cmp
+(defvar *not-compile-time* nil)
 
 (defvar *permanent-data* nil)		; detemines whether we use *permanent-objects*
 					; or *temporary-objects*
@@ -214,8 +244,10 @@ lines are inserted, but the order is preserved")
 ;;;  where each vv-index should be given an object before
 ;;;  defining the current function during loading process.
 
-(defvar *use-static-constants-p* t)     ; T/NIL flag to determine whether one may
+(defvar *use-static-constants-p* nil)   ; T/NIL flag to determine whether one may
                                         ; generate lisp constant values as C structs
+(defvar *static-constants* nil)		; constants that can be built as C values
+                                        ; holds { ( object c-variable constant ) }*
 
 (defvar *compiler-constants* nil)	; a vector with all constants
 					; only used in COMPILE
@@ -232,7 +264,6 @@ lines are inserted, but the order is preserved")
 (defvar *local-funs* nil)		; holds { fun }*
 (defvar *top-level-forms* nil)		; holds { top-level-form }*
 (defvar *make-forms* nil)		; holds { top-level-form }*
-(defvar +init-function-name+ (gensym "ENTRY-POINT"))
 
 ;;;
 ;;;     top-level-form:
@@ -244,10 +275,15 @@ lines are inserted, but the order is preserved")
 ;;;	| ( 'CLINES'	string* )
 ;;;	| ( 'LOAD-TIME-VALUE' vv )
 
+#-new-cmp
+(defvar *reservations* nil)
 (defvar *reservation-cmacro* nil)
 
 ;;; *reservations* holds (... ( cmacro . value ) ...).
 ;;; *reservation-cmacro* holds the cmacro current used as vs reservation.
+
+;;; *global-entries* holds (... ( fname cfun return-types arg-type ) ...).
+(defvar *global-entries* nil)
 
 (defvar *self-destructing-fasl* '()
 "A value T means that, when a FASL module is being unloaded (for
@@ -266,8 +302,15 @@ be deleted if they have been opened with LoadLibrary.")
     (*compiler-in-use* t)
     (*compiler-phase* 't1)
     (*callbacks* nil)
+    (*cmp-env-root* (cmp-env-copy *cmp-env-root*))
+    (*cmp-env* nil)
+    #-new-cmp
+    (*max-temp* 0)
+    #-new-cmp
+    (*temp* 0)
+    #-new-cmp
+    (*next-cmacro* 0)
     (*next-cfun* 0)
-    (*lcl* 0)
     (*last-label* 0)
     (*load-objects* (make-hash-table :size 128 :test #'equal))
     (*make-forms* nil)
@@ -282,16 +325,24 @@ be deleted if they have been opened with LoadLibrary.")
     (*linking-calls* nil)
     (*global-entries* nil)
     (*undefined-vars* nil)
+    #-new-cmp
+    (*reservations* nil)
     (*top-level-forms* nil)
+    (*compile-time-too* nil)
     (*clines-string-list* '())
-    (*inline-functions* nil)
     (*inline-blocks* 0)
     (*debugger-hook* 'compiler-debugger)
+    #+new-cmp
     (*type-and-cache* (type-and-empty-cache))
+    #+new-cmp
     (*type-or-cache* (type-or-empty-cache))
+    #+new-cmp
     (*values-type-or-cache* (values-type-or-empty-cache))
+    #+new-cmp
     (*values-type-and-cache* (values-type-and-empty-cache))
+    #+new-cmp
     (*values-type-primary-type-cache* (values-type-primary-type-empty-cache))
+    #+new-cmp
     (*values-type-to-n-types-cache* (values-type-to-n-types-empty-cache))
     ))
 

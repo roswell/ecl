@@ -78,7 +78,7 @@
 	   collect (if (consp x)
 		       x
 		       (let ((tag (make-tag :name x :var tag-var :index tag-index)))
-			 (cmp-env-register-tag tag)
+			 (cmp-env-register-tag (tag-name tag) tag)
 			 (incf tag-index)
 			 tag))))
   ;; Split forms according to the tag they are preceded by and compile

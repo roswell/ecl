@@ -145,7 +145,7 @@
 (defun build-module (name sources &key additional-files
                      (builtin nil) (dir "build:")
                      ((:prefix si::*init-function-prefix*) "EXT"))
-  (proclaim '(optimize (safety 2) (speed 1)))
+  (proclaim '(optimize (safety 2) (speed 1) (debug 1)))
   (let* ((name (string-downcase name)))
     (when additional-files
       (setf *module-files* (append additional-files *module-files*)))

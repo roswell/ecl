@@ -31,9 +31,11 @@
 (defun create-accessors (slotds type)
   (let ((i 0)
 	(output '())
+        (names '())
 	name)	
-    (dolist (s slotds `(progn ,@output))
+    (dolist (s slotds)
       (when (setf name (getf (cdr s) :accessor))
+        (push name names)
 	(setf output
 	      (append output
 		      `((defun ,name (obj)
@@ -44,7 +46,12 @@
 			(define-compiler-macro ,name (obj)
 			  `(si:instance-ref ,obj ,,i))
 			))))
-      (incf i))))
+      (incf i))
+    `(progn
+       #+nil
+       (eval-when (:compile-toplevel :execute)
+         (proclaim '(notinline ,@names)))
+       ,@output)))
 (defun remove-accessors (slotds)
   (loop for i in slotds
      for j = (copy-list i)

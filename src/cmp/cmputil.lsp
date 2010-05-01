@@ -347,9 +347,3 @@
                           (<= #.(char-code #\0) cc #.(char-code #\9)))
                       c #\_)))
             (string-downcase (prin1-to-string obj)))))
-
-#-new-cmp
-(defun proper-list-p (x &optional test)
-  (and (listp x)
-       (handler-case (list-length x) (type-error (c) nil))
-       (or (null test) (every test x))))

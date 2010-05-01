@@ -16,7 +16,7 @@
 
 (defun t1expr (form)
   (let* ((*current-toplevel-form* nil)
-         (*cmp-env* (cmp-env-new)))
+         (*cmp-env* (cmp-env-copy (or *cmp-env* *cmp-env-root*))))
     (push (t1expr* form) *top-level-forms*)))
 
 (defvar *toplevel-forms-to-print*
@@ -67,8 +67,17 @@
 
 (defun t2expr (form)
   (when form
-    (let ((def (get-sysprop (c1form-name form) 'T2)))
-      (when def (apply def (c1form-args form))))))
+    (let* ((def (get-sysprop (c1form-name form) 'T2)))
+      (if def
+          (let ((*compile-file-truename* (c1form-file form))
+                (*compile-file-position* (c1form-file-position form))
+                (*current-toplevel-form* (c1form-form form))
+                (*current-form* (c1form-form form))
+                (*current-c2form* form)
+                (*cmp-env* (c1form-env form)))
+            (apply def (c1form-args form)))
+          (cmperr "Unhandled T2FORM found at the toplevel:~%~4I~A"
+                  form)))))
 
 (defvar *emitted-local-funs* nil)
 
@@ -280,7 +289,7 @@
   (progv symbols values (c2expr body)))
 
 (defun t2progn (args)
-  (mapcar #'t2expr args))
+  (mapc #'t2expr args))
 
 (defun exported-fname (name)
   (let (cname)
@@ -376,7 +385,10 @@
       (wt-h "T" i)
       (unless (= (1+ i) *max-temp*) (wt-h ",")))
     (wt-h ";"))
-;  (wt-nl-h "#define VU" *reservation-cmacro*)
+  (when *ihs-used-p*
+    (wt-h " \\")
+    (wt-nl-h "struct ihs_frame ihs; \\")
+    (wt-nl-h "const cl_object _ecl_debug_env = Cnil;"))
   (wt-nl-h "#define VLEX" *reservation-cmacro*)
   ;; There should be no need to mark lex as volatile, since we
   ;; are going to pass pointers of this array around and the compiler
@@ -509,12 +521,6 @@
     (c2expr form)
     (wt-label *exit*)))
 
-(defun t2decl-body (decls body)
-  (let ((*cmp-env* *cmp-env*)
-        (*notinline* *notinline*))
-    (c1add-declarations decls)
-    (t2expr body)))
-
 (defun parse-cvspecs (x &aux (cvspecs nil))
   (dolist (cvs x (nreverse cvspecs))
     (cond ((symbolp cvs)
@@ -533,8 +539,6 @@
           (t (cmperr "The C variable specification ~s is illegal." cvs))))
   )
 
-(defvar *debug-fun* nil)
-
 (defun locative-type-from-var-kind (kind)
   (cdr (assoc kind
               '((:object . "_ecl_object_loc")
@@ -545,11 +549,6 @@
                 ((special global closure replaced lexical) . NIL)))))
 
 (defun build-debug-lexical-env (var-locations &optional first)
-  #+:msvc
-  (if first
-      (wt-nl "cl_object _ecl_debug_env = Cnil;")
-    (wt-nl "ihs.lex_env = _ecl_debug_env = Cnil;"))
-
   #-:msvc ;; FIXME! Problem with initialization of statically defined vectors
   (let* ((filtered-locations '())
          (filtered-codes '()))
@@ -569,6 +568,7 @@
     ;; variables, including name and type, and dynamic one, which is
     ;; a vector of pointer to the variables.
     (when filtered-codes
+      (setf *ihs-used-p* t)
       (wt-nl "static const struct ecl_var_debug_info _ecl_descriptors[]={")
       (loop for (name . code) in filtered-codes
             for i from 0
@@ -582,12 +582,9 @@
       (wt "};")
       (wt-nl "ecl_def_ct_vector(_ecl_debug_env,aet_index,_ecl_debug_info_raw,"
              (+ 2 (length filtered-locations))
-             ",,);"))
-    (if first
-        (if (not filtered-codes)
-            (wt-nl "cl_object _ecl_debug_env = Cnil;"))
-        (if filtered-codes
-            (wt-nl "ihs.lex_env=_ecl_debug_env;")))
+             ",,);")
+      (unless first
+        (wt-nl "ihs.lex_env=_ecl_debug_env;")))
     filtered-codes))
 
 (defun pop-debug-lexical-env ()
@@ -605,8 +602,7 @@
 			      (*volatile* (c1form-volatile* lambda-expr))
 			      (*tail-recursion-info* fun)
                               (lambda-list (c1form-arg 0 lambda-expr))
-                              (requireds (car lambda-list))
-                              (*debug-fun* *debug-fun*))
+                              (requireds (car lambda-list)))
   (declare (fixnum level nenvs))
   (print-emitting fun)
   (wt-comment-nl (cond ((fun-global fun) "function definition for ~a")
@@ -652,8 +648,10 @@
 	 (*level* level)
 	 (*exit* 'RETURN) (*unwind-exit* '(RETURN))
 	 (*destination* 'RETURN)
+         (*ihs-used-p* nil)
 	 (*reservation-cmacro* (next-cmacro))
-	 (*inline-blocks* 1))
+	 (*inline-blocks* 1)
+         (*cmp-env* (cmp-env-copy (fun-cmp-env fun))))
     (wt-nl1 "{")
     (wt " VT" *reservation-cmacro*
 	" VLEX" *reservation-cmacro*
@@ -663,9 +661,6 @@
     (when (eq (fun-closure fun) 'CLOSURE)
       (wt "cl_object " *volatile* "env0 = cl_env_copy->function->cclosure.env;"))
     (wt-nl *volatile* "cl_object value0;")
-    (when (>= (fun-debug fun) 2)
-      (setq *debug-fun* (fun-debug fun))
-      (wt-nl "struct ihs_frame ihs;"))
     (when (policy-check-stack-overflow)
       (wt-nl "ecl_cs_check(cl_env_copy,value0);"))
     (when (eq (fun-closure fun) 'CLOSURE)
@@ -706,11 +701,11 @@
 		   (c1form-arg 2 lambda-expr)
 		   (fun-cfun fun) (fun-name fun)
 		   narg
-                   (>= (fun-debug fun) 2)
 		   (fun-closure fun))
     (wt-nl1)
     (close-inline-blocks)
-    (wt-function-epilogue (fun-closure fun)))	; we should declare in CLSR only those used
+    ;; we should declare in CLSR only those used
+    (wt-function-epilogue (fun-closure fun)))
   )
 
 ;;; ----------------------------------------------------------------------
@@ -819,7 +814,6 @@
 ;;; Pass 2 initializers.
 
 (put-sysprop 'COMPILER-LET 'T2 't2compiler-let)
-(put-sysprop 'DECL-BODY 't2 't2decl-body)
 (put-sysprop 'PROGN 'T2 't2progn)
 (put-sysprop 'ORDINARY 'T2 't2ordinary)
 (put-sysprop 'LOAD-TIME-VALUE 'T2 't2load-time-value)

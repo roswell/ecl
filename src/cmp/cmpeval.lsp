@@ -103,7 +103,7 @@
 |#
 	  (t
 	   (let* ((forms (c1args* args))
-		  (return-type (propagate-types fname forms args)))
+		  (return-type (propagate-types fname forms)))
 	     (make-c1form* 'CALL-GLOBAL
 			   :sp-change (function-may-change-sp fname)
 			   :type return-type
@@ -117,6 +117,7 @@
          (*current-toplevel-form* (c1form-toplevel-form form))
          (*current-form* (c1form-form form))
          (*current-c2form* form)
+         (*cmp-env* (c1form-env form))
          (name (c1form-name form))
          (args (c1form-args form))
          (dispatch (get-sysprop name 'C2)))
@@ -198,3 +199,4 @@
 (put-sysprop 'PROGN 'C1SPECIAL 'c1progn)
 (put-sysprop 'PROGN 'C2 'c2progn)
 (put-sysprop 'EXT:WITH-BACKEND 'C1SPECIAL 'c1with-backend)
+(put-sysprop 'EXT:WITH-BACKEND 'T1 'c1with-backend)

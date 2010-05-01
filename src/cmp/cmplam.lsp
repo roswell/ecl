@@ -82,7 +82,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
   (when *current-function*
     (push fun (fun-child-funs *current-function*)))
   (let* ((*current-function* fun)
-	 (*cmp-env* (cmp-env-mark CB/LB))
+	 (*cmp-env* (setf (fun-cmp-env fun) (cmp-env-mark CB/LB)))
 	 (setjmps *setjmps*)
 	 (decl (si::process-declarations (rest lambda-list-and-body)))
 	 (lambda-expr (c1lambda-expr lambda-list-and-body
@@ -92,9 +92,9 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 	 (debug (search-optimization-quality decl 'debug))
 	 (no-entry (assoc 'SI::C-LOCAL decl))
 	 cfun exported minarg maxarg)
-    (when (and no-entry (>= debug 2))
+    (when (and no-entry (policy-debug-ihs-frame))
       (setf no-entry nil)
-      (cmpnote "Ignoring SI::C-LOCAL declaration for ~A when DEBUG is ~D" name debug))
+      (cmpnote "Ignoring SI::C-LOCAL declaration for~%~4I~A~%because the debug level is large" name))
     (unless (eql setjmps *setjmps*)
       (setf (c1form-volatile lambda-expr) t))
     (setf (fun-lambda fun) lambda-expr)
@@ -122,8 +122,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 	  (fun-minarg fun) minarg
 	  (fun-maxarg fun) maxarg
 	  (fun-description fun) name
-	  (fun-no-entry fun) no-entry
-	  (fun-debug fun) debug)
+	  (fun-no-entry fun) no-entry)
     (reduce #'add-referred-variables-to-function
 	    (mapcar #'fun-referred-vars children)
 	    :initial-value fun)
@@ -316,7 +315,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 |#
 
 (defun c2lambda-expr
-    (lambda-list body cfun fname use-narg fname-in-ihs-p
+    (lambda-list body cfun fname use-narg
                  &optional closure-type local-entry-p
 		 &aux (requireds (first lambda-list))
 		 (optionals (second lambda-list))
@@ -327,6 +326,9 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 		 (nopt (/ (length optionals) 3))
 		 (nkey (/ (length keywords) 4))
 		 (varargs (or optionals rest keywords allow-other-keys))
+                 (fname-in-ihs-p (or (policy-debug-variable-bindings)
+                                     (and (policy-debug-ihs-frame)
+                                          fname)))
 		 simple-varargs
 		 (*permanent-data* t)
 		 (*unwind-exit* *unwind-exit*)
@@ -433,14 +435,12 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 
     (when fname-in-ihs-p
       (wt-nl "{")
+      (setf *ihs-used-p* t)
       (push 'IHS *unwind-exit*)
-      (cond ((>= *debug-fun* 3)
-             (build-debug-lexical-env (reverse requireds) t)
-             (wt-nl "ecl_ihs_push(cl_env_copy,&ihs," (add-symbol fname)
-                    ",_ecl_debug_env);"))
-            (t
-             (wt-nl "ecl_ihs_push(cl_env_copy,&ihs," (add-symbol fname)
-                    ",Cnil);"))))
+      (when (policy-debug-variable-bindings)
+        (build-debug-lexical-env (reverse requireds) t))
+      (wt-nl "ecl_ihs_push(cl_env_copy,&ihs," (add-symbol fname)
+             ",_ecl_debug_env);"))
 
     (setq *lcl* lcl))
 

@@ -2418,6 +2418,7 @@ c_listA(cl_env_ptr env, cl_object args, int flags)
 	}
 	/* END: SEARCH DECLARE */
 
+        declarations = cl_nreverse(declarations);
 	@(return declarations body documentation specials)
 @)
 

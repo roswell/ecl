@@ -200,17 +200,26 @@
   (c2expr body)
   (when block-p (wt-nl "}")))
 
+(defun c1decl-body (decls body)
+  (if (null decls)
+      (c1progn body)
+      (let* ((*cmp-env* (reduce #'add-one-declaration decls
+                                :initial-value (cmp-env-copy *cmp-env*))))
+        (c1progn body))))
+
 (defun c1locally (args)
   (multiple-value-bind (body ss ts is other-decl)
       (c1body args t)
-    (c1declare-specials ss)
-    (check-vdecl nil ts is)
-    (c1decl-body other-decl body)))
+    (if (or ss ts is other-decl)
+        (let ((*cmp-env* (cmp-env-copy)))
+          (c1declare-specials ss)
+          (check-vdecl nil ts is)
+          (c1decl-body other-decl body))
+        (c1progn body))))
 
 (defun c1macrolet (args)
   (check-args-number 'MACROLET args 1)
-  (let ((*cmp-env* (cmp-env-copy)))
-    (cmp-env-register-macrolet (first args) *cmp-env*)
+  (let ((*cmp-env* (cmp-env-register-macrolet (first args) (cmp-env-copy))))
     (c1locally (cdr args))))
 
 (defun c1symbol-macrolet (args)

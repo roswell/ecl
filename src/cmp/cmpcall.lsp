@@ -125,7 +125,7 @@
 
   ;; Call to a function defined in the same file. Direct calls are
   ;; only emitted for low or neutral values of DEBUG is >= 2.
-  (when (and (<= (cmp-env-optimization 'debug) 1)
+  (when (and (policy-use-direct-C-call)
              (or (fun-p fun)
                  (and (null fun)
                       (setf fun (find fname *global-funs* :test #'same-fname-p
@@ -139,7 +139,7 @@
   ;; Call to a function whose C language function name is known,
   ;; either because it has been proclaimed so, or because it belongs
   ;; to the runtime.
-  (when (and (<= (cmp-env-optimization 'debug) 1)
+  (when (and (policy-use-direct-C-call)
              (setf fd (get-sysprop fname 'Lfun)))
     (multiple-value-bind (minarg maxarg) (get-proclaimed-narg fname)
       (return-from call-global-loc

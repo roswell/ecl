@@ -1,7 +1,6 @@
 ;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: C -*-
 ;;;;
-;;;;  Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya.
-;;;;  Copyright (c) 1990, Giuseppe Attardi.
+;;;;  Copyright (c) 2010, Juan Jose Garcia-Ripoll
 ;;;;
 ;;;;    This program is free software; you can redistribute it and/or
 ;;;;    modify it under the terms of the GNU Library General Public
@@ -13,7 +12,7 @@
 ;;;;  CMPTYPES -- Data types for the Lisp core structures
 ;;;;
 
-(in-package "C-DATA")
+(in-package #-new-cmp "COMPILER" #+new-cmp "C-DATA")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -53,7 +52,8 @@
 ;  read-nodes	;;; Nodes (c1forms) in which the reference occurs
   set-nodes	;;; Nodes in which the variable is modified
   kind		;;; One of LEXICAL, CLOSURE, SPECIAL, GLOBAL, :OBJECT, :FIXNUM,
-  		;;; :CHAR, :DOUBLE, :FLOAT, REPLACED or DISCARDED
+  		;;; :CHAR, :DOUBLE, :FLOAT, or REPLACED (used for
+		;;; LET variables).
   (function *current-function*)
 		;;; For local variables, in which function it was created.
 		;;; For global variables, it doesn't have a meaning.
@@ -78,6 +78,11 @@
 		;;;	lex-ndx is the index within the array for this env.
 		;;; For SPECIAL and GLOBAL: the vv-index for variable name.
   (type t)	;;; Type of the variable.
+  #-new-cmp
+  (index -1)    ;;; position in *vars*. Used by similar.
+  #-new-cmp
+  (ignorable nil) ;;; Whether there was an IGNORABLE/IGNORE declaration
+  #+new-cmp
   read-only-p   ;;; T for variables that are assigned only once.
   )
 
@@ -126,7 +131,9 @@
 ;  ref-clb		;;; Unused.
 ;  read-nodes		;;; Nodes (c1forms) in which the reference occurs
   cfun			;;; The cfun for the function.
+  #+new-cmp
   (last-lcl 0)		;;; Number of local variables (just to bookkeep names)
+  #+new-cmp
   (last-label 0)	;;; Number of generated labels (same as last-lcl)
   (level 0)		;;; Level of lexical nesting for a function.
   (env 0)     		;;; Size of env of closure.
@@ -140,12 +147,14 @@
   closure		;;; During Pass2, T if env is used inside the function
   var			;;; the variable holding the funob
   description		;;; Text for the object, in case NAME == NIL.
+  #+new-cmp
   lambda-list		;;; List of (requireds optionals rest-var keywords-p
 		        ;;;          keywords allow-other-keys-p)
+  lambda		;;; Lambda c1-form for this function.
   (minarg 0)		;;; Min. number arguments that the function receives.
   (maxarg call-arguments-limit)
 			;;; Max. number arguments that the function receives.
-  lambda		;;; Lambda c1-form for this function.
+  #+new-cmp
   doc			;;; Documentation
   (parent *current-function*)
 			;;; Parent function, NIL if global.
@@ -154,13 +163,17 @@
   (referred-funs nil)	;;; List of external functions called in this one.
 			;;; We only register direct calls, not calls via object.
   (child-funs nil)	;;; List of local functions defined here.
+  #+new-cmp
   (debug 0)		;;; Debug quality
-  (file *compile-file-truename*)
+  (file (car ext:*source-location*))
 			;;; Source file or NIL
-  (file-position *compile-file-position*)
+  (file-position (or (cdr ext:*source-location*) *compile-file-position*))
 			;;; Top-level form number in source file
+  #+new-cmp
   (toplevel-form *current-toplevel-form*)
+  #+new-cmp
   code-gen-props	;;; Extra properties for code generation
+  (cmp-env (cmp-env-copy)) ;;; Environment
   )
 
 (defstruct (blk (:include ref))
@@ -178,7 +191,10 @@
   exit			;;; Where to return.  A label.
   destination		;;; Where the value of the block to go.
   var			;;; Variable containing the block ID.
-  env			;;; Block environment
+  #-new-cmp
+  (type 'NIL)		;;; Estimated type.
+  #+new-cmp
+  env                   ;;; Block environment.
   )
 
 (defstruct (tag (:include ref))
@@ -193,10 +209,17 @@
   unwind-exit		;;; Where to unwind-no-exit.
   var			;;; Variable containing frame ID.
   index			;;; An integer denoting the label.
-  env			;;; Tag environment
+  #+new-cmp
+  env                   ;;; Tag environment.
   )
 
 (defstruct (info)
+  (local-vars nil)	;;; List of var-objects created directly in the form.
+   #-new-cmp
+  (type t)		;;; Type of the form.
+  (sp-change nil)	;;; Whether execution of the form may change
+			;;; the value of a special variable.
+  (volatile nil)	;;; whether there is a possible setjmp. Beppe
   )
 
 (defstruct (inline-info)
@@ -214,15 +237,14 @@
 (defstruct (c1form (:include info)
 		   (:print-object print-c1form)
 		   (:constructor do-make-c1form))
-  (name nil)            ;; See cmptables.lsp for all valid form names
-  (args '())            ;; Arguments
-  (env (c-env:cmp-env-copy))  ;; Environment in which this form was compiled
-  (local-vars nil)	;; List of var-objects created directly in the form.
-  (sp-change nil)	;; Whether execution of the form may change
-			;; the value of a special variable.
-  (volatile nil)	;; whether there is a possible setjmp. Beppe
-
-  (form nil)            ;; Origin of this form
-  (toplevel-form)       ;; ... including toplevel form in which it appears
-  (file nil)            ;; ... and source file and position
+  (name nil)
+  (parent nil)
+  #+new-cmp
+  (env (c-env:cmp-env-copy)) ;; Environment in which this form was compiled
+  #-new-cmp
+  (env (cmp-env-copy)) ;; Environment in which this form was compiled
+  (args '())
+  (form nil)
+  (toplevel-form nil)
+  (file nil)
   (file-position 0))

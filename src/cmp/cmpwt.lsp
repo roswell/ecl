@@ -14,110 +14,16 @@
 
 (in-package "COMPILER")
 
-(defvar *wt-string-size* 0)
-
+;;; ======================================================================
+;;;
+;;; DATA FILES
+;;;
 ;;; Each lisp compiled file consists on code and a data section. Whenever an
 ;;; #'in-package toplevel form is found, a read-time evaluated expression is
 ;;; inserted in the data section which changes the current package for the
 ;;; rest of it. This way it is possible to save some space by writing the
 ;;; symbol's package only when it does not belong to the current package.
 
-(defun wt-label (label)
-  (when (cdr label) (wt-nl1 "L" (car label) ":;")))
-
-(defun wt-filtered-comment (text stream single-line)
-  (declare (string text))
-  (if single-line
-      (progn
-	(fresh-line stream)
-	(princ "/*	" stream))
-      (format stream "~50T/*  "))
-  (let* ((l (1- (length text))))
-    (declare (fixnum l))
-    (dotimes (n l)
-      (let ((c (schar text n)))
-	(princ c stream)
-	(when (and (char= c #\*) (char= (schar text (1+ n)) #\/))
-	  (princ #\\ stream))))
-    (princ (schar text l) stream))
-  (format stream "~70T*/")
-  )
-
-(defun do-wt-comment (message-or-format args single-line-p)
-  (unless (and (symbolp message-or-format) (not (symbol-package message-or-format)))
-    (wt-filtered-comment (if (stringp message-or-format)
-                             (if args
-                                 (apply #'format nil message-or-format args)
-                                 message-or-format)
-                             (princ-to-string message-or-format))
-                         *compiler-output1*
-                         single-line-p)))
-
-(defun wt-comment (message &rest extra)
-  (do-wt-comment message extra nil))
-
-(defun wt-comment-nl (message &rest extra)
-  (do-wt-comment message extra t))
-
-(defun wt1 (form)
-  (typecase form
-    ((or STRING INTEGER CHARACTER)
-     (princ form *compiler-output1*))
-    ((or DOUBLE-FLOAT SINGLE-FLOAT)
-     (format *compiler-output1* "~10,,,,,,'eG" form))
-    (LONG-FLOAT
-     (format *compiler-output1* "~,,,,,,'eEl" form))
-    (VAR (wt-var form))
-    (t (wt-loc form)))
-  nil)
-
-(defun wt-h1 (form)
-  (if (consp form)
-      (let ((fun (get-sysprop (car form) 'wt-loc)))
-	(if fun
-	    (let ((*compiler-output1* *compiler-output2*))
-	      (apply fun (cdr form)))
-	    (cmperr "The location ~s is undefined." form)))
-      (princ form *compiler-output2*))
-  nil)
-
-;;; This routine converts lisp data into C-strings. We have to take
-;;; care of escaping special characteres with backslashes. We also have
-;;; to split long lines using  the fact that multiple strings are joined
-;;; together by the compiler.
-;;;
-(defun wt-filtered-data (string stream &optional one-liner)
-  (let ((N (length string))
-	(wt-data-column 80))
-    (incf *wt-string-size* (1+ N)) ; 1+ accounts for a blank space
-    (format stream (if one-liner "\"" "~%\""))
-    (dotimes (i N)
-      (decf wt-data-column)
-      (when (< wt-data-column 0)
-	(format stream "\"~% \"")
-	(setq wt-data-column 79))
-      (let ((x (aref string i)))
-	(cond
-	  ((or (< (char-code x) 32)
-	       (> (char-code x) 127))
-	   (case x
-	     ; We avoid a trailing backslash+newline because some preprocessors
-	     ; remove them.
-	     (#\Newline (princ "\\n" stream))
-	     (#\Tab (princ "\\t" stream))
-	     (t (format stream "\\~3,'0o" (char-code x)))))
-	  ((char= x #\\)
-	   (princ "\\\\" stream))
-	  ((char= x #\")
-	   (princ "\\\"" stream))
-	  (t (princ x stream)))))
-    (princ (if one-liner "\""  " \"") stream)
-    string))
-
-;;; ======================================================================
-;;;
-;;; DATA FILES
-;;;
 
 (defun data-permanent-storage-size ()
   (length *permanent-objects*))

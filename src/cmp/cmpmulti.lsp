@@ -238,9 +238,10 @@
 	   (c2expr* form)
 	   (do-m-v-setq-any min-values max-values vars nil))))))
 
-(defun c1multiple-value-bind (args &aux (*cmp-env* (cmp-env-copy)))
+(defun c1multiple-value-bind (args)
   (check-args-number 'MULTIPLE-VALUE-BIND args 2)
-  (let* ((variables (pop args))
+  (let* ((*cmp-env* (cmp-env-copy))
+         (variables (pop args))
          (init-form (pop args)))
     (when (= (length variables) 1)
       (return-from c1multiple-value-bind

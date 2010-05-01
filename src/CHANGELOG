@@ -41,6 +41,7 @@ ECL 10.4.2:
  - The compiler is now shipped as a single FASL file, cmp.fas, without
    extra files such as sysfun.lsp
 
+ - DECLAIM's proclamation do not propagate beyond the compiled file.
 
 ECL 10.4.1:
 ===========

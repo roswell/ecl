@@ -215,7 +215,7 @@ of the occurrences in those lists."
      do (multiple-value-bind (arg-type local-ass)
             (p1propagate v assumptions)
           (setf assumptions local-ass))
-     finally (let ((type (propagate-types fname args nil)))
+     finally (let ((type (propagate-types fname args)))
                (prop-message "~&;;; Computing output of function ~A with args~&;;;  ~{ ~A~}~&;;; gives ~A, while before ~A"
                        fname (mapcar #'c1form-type args) type (c1form-type c1form))
                (return (values type assumptions)))))

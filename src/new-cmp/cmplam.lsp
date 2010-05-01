@@ -414,7 +414,6 @@
 (defun exported-fname (name)
   (let (cname)
     (if (and (symbolp name)
-             (not (member name *notinline*))
              (setf cname (get-sysprop name 'Lfun)))
         (values cname t)
         (values (next-cfun "L~D~A" name) nil))))
