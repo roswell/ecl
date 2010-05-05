@@ -83,3 +83,10 @@
 (defun next-env () (prog1 *env*
 		     (incf *env*)
 		     (setq *max-env* (max *env* *max-env*))))
+
+(defmacro with-clean-symbols (symbols &body body)
+  "Rewrites the given forms replacing the given symbols with uninterned
+ones, which is useful for creating hygienic macros."
+  `(progn ,@(sublis (loop for s in symbols
+                      collect (cons s (make-symbol (symbol-name s))))
+                   body)))

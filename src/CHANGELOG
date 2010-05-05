@@ -1,4 +1,4 @@
-ECL 10.4.2:
+ECL 10.5.1:
 ===========
 
 * Bugs fixed:
@@ -43,85 +43,7 @@ ECL 10.4.2:
 
  - DECLAIM's proclamation do not propagate beyond the compiled file.
 
-ECL 10.4.1:
-===========
-
-* Bugs fixed:
-
- - Fixed offset problems in READ/WRITE-SEQUENCE.
-
- - In multithreaded ECL, the signal servicing thread was not created due to
-   a stale debug statement.
-
- - The tool 'ecl-config' contained unsubstituted values, such as @LDRPATH@
-   because these variablesls had been renamed in the autoconf file.
-
- - The reimplementation of DIRECTORY introduced a bug in pathnames with ending
-   double wildcars, such as "/foo/**/".
-
- - EXT:SAFE-EVAL (or cl_safe_eval in C) would attempt to start the debugger
-   when an error was signaled.
-
- - The logical hostname EXT: did not have a pathname translation relative to
-   that of SRC:
-
- - After loading the compiler, the COMMON-LISP package was left unlocked
-   against changes.
-
- - ECL can build again itself using a C++ compiler (--with-cxx thus works).
-
- - ecl_make_file_stream_from_fd() did not set the right mode in the stream
-   structure.
-
- - ECL did not understand type declarations that involved symbol macros.
-
- - (SETF STREAM-EXTERNAL-FORMAT) inserted the wrong format type in some cases.
-
-* Visible changes:
-
- - The source location annotator records the original pathnames instead of
-   truenames. This allows Slime to find out the ECL sources even if they
-   have been moved.
-
- - The signal servicing thread now carries the name SI:SIGNAL-SERVICING, which
-   is different from the name of the threads that are created to actually
-   handle those signals. Users should avoid killing SI:SIGNAL-SERVICING.
-
- - FFI:CLINES admits the notation @lisp-object, just like FFI:C-INLINE. The
-   result is that @lisp-object gets replaced with a pointer to the given
-   lisp object, created at run time.
-
- - Gray streams implement a new generic function, GRAY:STREAM-FILE-DESCRIPTOR
-   which is used by SERVE-EVENT to gather the C file descriptor or Windows
-   handle used to wait on input from the device.
-
- - ECL restores the habit of installing manual pages for ecl and ecl-config.
-
- - We have removed the obsolete versions of the documentation files. The
-   up to date documentation now lives in a separate source repository,
-   as explained in http://ecls.sourceforge.net/download.html
-
- - The encoding :DEFAULT implies looking up in the special variable
-   EXT:*DEFAULT-EXTERNAL-FORMAT* the actual value of the encoding, which may be
-   a known one, or :pass-through.
-
- - LOAD now accepts the keyword argument :EXTERNAL-FORMAT
-
-* ASDF:
-
- - ECL's contributed modules and ECL's compiler can now be used in standalone
-   programs, for they are now stored both in FASL form and as statically linked
-   libraries.
-
- - ASDF:MAKE-BUILD takes a new keyword argument, :MOVE-HERE, that allows moving
-   the files that ASDF creates to the current directory. :MOVE-HERE can be the
-   boolean value T, in which case the files are output at ./asdf-output/ or a
-   pathname designator with the actual destination.
-
- - ASDF:MAKE-BUILD admits a new type, :BINARY, which creates a standalone
-   system (*.asd) accompanied by two binary files, statically linked library
-   (.a or .lib), and a FASL (*.fasb). This can be used, to replace existing
-   systems with precompiled ones.
+ - AREF/ASET can now be open-coded by the C compiler.
 
 ;;; Local Variables: ***
 ;;; mode:text ***

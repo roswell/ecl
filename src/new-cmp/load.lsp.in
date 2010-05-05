@@ -43,7 +43,7 @@
   "src:new-cmp;cmpprop.lsp"
   "src:new-cmp;cmpclos.lsp"
   "src:new-cmp;cmpstructures.lsp"
-  "src:new-cmp;cmparray.lsp"
+  "src:cmp;cmparray.lsp"
   "src:new-cmp;cmppass.lsp"
   "src:new-cmp;cmpc.lsp"
   "src:cmp;cmpc-wt.lsp"
