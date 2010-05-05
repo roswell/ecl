@@ -98,7 +98,8 @@ out_of_bounds_error(cl_index ndx, cl_object x)
 void
 FEwrong_dimensions(cl_object a, cl_index rank)
 {
-        cl_object list = cl_make_list(rank, @':initial-element', @'*');
+        cl_object list = cl_make_list(3, MAKE_FIXNUM(rank),
+                                      @':initial-element', @'*');
         cl_object type = cl_list(3, @'array', @'*', list);
         FEwrong_type_argument(type, a);
 }
