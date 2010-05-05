@@ -101,7 +101,11 @@
 ;;; value.
 
 (defun check-global (name)
-  (or (member name *global-vars* :test #'eq :key #'var-name)
+  (member name *global-vars* :test #'eq :key #'var-name))
+
+(defun special-variable-p (name)
+  (or (si::specialp name)
+      (check-global name)
       (let ((v (cmp-env-search-var name)))
         ;; Fixme! Revise the declamation code to ensure whether
         ;; we also have to consider 'GLOBAL here.
@@ -127,9 +131,7 @@
     (if (setq type (assoc name types))
 	(setq type (type-filter (cdr type)))
 	(setq type 'T))
-    (cond ((or (member name specials)
-	       (sys:specialp name)
-               (check-global name))	;; added. Beppe 17 Aug 1987
+    (cond ((or (member name specials) (special-variable-p name))
            (unless type
 	     (setf type (or (get-sysprop name 'CMP-TYPE) 'T)))
 	   (c1make-global-variable name :kind 'SPECIAL :type type))
@@ -274,7 +276,7 @@
       (setf var (make-var :name name :kind kind :type type :loc (add-symbol name))))
     (push var *global-var-objects*)
     (when warn
-      (unless (or (sys:specialp name) (constantp name) (check-global name))
+      (unless (or (constantp name) (special-variable-p name))
 	(undefined-variable name)
 	(push var *undefined-vars*)))
     var))
