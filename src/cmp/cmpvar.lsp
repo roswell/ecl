@@ -101,7 +101,11 @@
 ;;; value.
 
 (defun check-global (name)
-  (member name *global-vars* :test #'eq :key #'var-name))
+  (or (member name *global-vars* :test #'eq :key #'var-name)
+      (let ((v (cmp-env-search-var name)))
+        ;; Fixme! Revise the declamation code to ensure whether
+        ;; we also have to consider 'GLOBAL here.
+        (and v (eq (var-kind v) 'SPECIAL)))))
 
 ;;;
 ;;; Check if the symbol has a symbol macro

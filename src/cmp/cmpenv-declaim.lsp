@@ -25,12 +25,12 @@
            (loop for name in specials
               unless (assoc name types)
               do (let ((v (c1make-global-variable name :kind 'special)))
-                   (setf env (cmp-env-register-var v env))))
+                   (setf env (cmp-env-register-var v env nil))))
            (loop for (name . type) in types
               for specialp = (or (sys:specialp name) (member name specials))
               for kind = (if specialp 'SPECIAL 'GLOBAL)
               for v = (c1make-global-variable name :type type :kind kind)
-              do (setf env (cmp-env-register-var v env)))
+              do (setf env (cmp-env-register-var v env nil)))
            env))
     (multiple-value-bind (body specials types ignored others doc all)
         (c1body `((DECLARE ,@args)) nil)
