@@ -88,13 +88,9 @@
 ;;;
 
 (define-compiler-macro aref (&whole form array &rest indices &environment env)
-  (print form)
-  (print (policy-open-code-aref/aset-p env))
-  (print (policy-array-bounds-check-p env))
-  (print
   (if (policy-open-code-aref/aset-p env)
       (expand-aref array indices (policy-array-bounds-check-p env))
-      form)))
+      form))
 
 (defun expand-aref (array indices check)
   (with-clean-symbols (%array)
@@ -106,14 +102,10 @@
 
 (define-compiler-macro si::aset (&whole form value array &rest indices
                                         &environment env)
-  (print form)
-  (print (policy-open-code-aref/aset-p env))
-  (print (policy-array-bounds-check-p env))
-  (print
   (if (policy-open-code-aref/aset-p env)
       (expand-aset array indices value
                    (policy-array-bounds-check-p env))
-      form)))
+      form))
 
 (defun expand-aset (array indices value check)
   (with-clean-symbols (%array %value)
@@ -222,7 +214,7 @@
                       for c-code = (format nil "(#0)->array.dims[~D]" i)
                       collect `((:object) :fixnum ,c-code :one-liner t
                                 :side-effects nil)))))
-    `(c-inline (,array) ,(aref tails n))))
+    `(c-inline (,array) ,@(aref tails n))))
 
 (defmacro array-dimension-fast (array n)
   (if (typep n '(integer 0 #.(1- array-rank-limit)))
