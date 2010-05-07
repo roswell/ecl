@@ -147,29 +147,6 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
   (handler-case (si::process-lambda-list list 'function)
     (error (c) (cmperr "Illegal lambda list ~S" list))))
 
-(defun extract-type-checks (function-name type-checks type-declarations other-decls)
-  ;; We generate automatic type checks for function arguments that are
-  ;; declared. Note that not all type declarations can be checked
-  ;; (take for instance (type (function (t t) t) foo))
-  (flet ((required-type-check (name other-decls)
-	   (loop for decl in other-decls
-		 never (and (consp decl)
-			   (eq (first decl) 'si::no-check-type)
-			   (member name (rest decl))))))
-    (when (policy-automatic-check-type-p)
-      (loop with checked-vars = '()
-	    for var in type-checks
-	    for name = (var-name var)
-	    for type = (cdr (assoc name type-declarations))
-	    when (and type (required-type-check name other-decls))
-	    collect
-	    (progn (push name checked-vars)
-		   `(optional-check-type ,name ,type))
-	    finally
-	    (when checked-vars
-	      (cmpnote "In ~:[an anonymous function~;function ~:*~A~], checking types of argument~@[s~]~{ ~A~}."
-		       function-name checked-vars))))))
-
 (defun c1lambda-expr (lambda-expr
                       &optional (block-name nil)
                       &aux doc body ss is ts
@@ -241,9 +218,9 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 	      (third specs) init
 	      (fourth specs) flag)))
 
-    ;; Prepend optional checks for input arguments
-    (setf body (nconc (extract-type-checks block-name type-checks ts other-decls)
-		      body))
+    ;; Make other declarations take effect right now
+    (setf *cmp-env* (reduce #'add-one-declaration other-decls
+                            :initial-value *cmp-env*))
 
     ;; After creating all variables and processing the initalization
     ;; forms, we wil process the body. However, all free declarations,
@@ -251,43 +228,50 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
     ;; arguments, have to be applied to the body. At the same time, we
     ;; replace &aux variables with a LET* form that defines them.
     (let* ((declarations other-decls)
-	   (new-variables (cmp-env-new-variables *cmp-env* old-env))
-	   (new-variable-names (mapcar #'var-name new-variables)))
+           (type-checks (extract-lambda-type-checks requireds optionals
+                                                    keywords ts other-decls))
+           (type-check-forms (car type-checks))
+           (let-vars (loop for spec on (nconc (cdr type-checks) aux-vars)
+                        by #'cddr
+                        for name = (first spec)
+                        for init = (second spec)
+                        collect (list name init)))
+           (new-variables (cmp-env-new-variables *cmp-env* old-env))
+	   (already-declared-names (set-difference (mapcar #'var-name new-variables)
+                                                   (mapcar #'car let-vars))))
       ;; Gather declarations for &aux variables, either special...
-      (when (setq ss (set-difference ss new-variable-names))
-	(push `(special ,@ss) declarations))
+      (let ((specials (set-difference ss already-declared-names)))
+        (when specials
+          (push `(special ,@specials) declarations)))
       ;; ...ignorable...
-      (when (setq is (loop for (var . expected-uses) in is
-                        unless (member var new-variable-names)
-                        collect var))
-	(push `(ignorable ,@is) declarations))
+      (let ((ignorables (loop for (var . expected-uses) in is
+                           unless (member var already-declared-names)
+                           collect var)))
+        (when ignorables
+          (push `(ignorable ,@ignorables) declarations)))
       ;; ...or type declarations
       (loop for (var . type) in ts
-	    unless (member var new-variable-names)
+	    unless (member var already-declared-names)
 	    do (push `(type ,type ,var) declarations))
-      ;; ...and create the enclosing LET* form
-      (setq body
-	    (cond (aux-vars
-		   (let ((let nil))
-		     (do ((specs aux-vars (cddr specs)))
-			 ((endp specs))
-		       (let ((var (first specs))
-			     (init (second specs)))
-			 (setq let (cons (if init (list var init) var) let))))
-		     (c1expr `(let* ,(nreverse let)
-			       (declare ,@declarations)
-			       ,@body))))
-		  (declarations
-		   (c1expr `(locally (declare ,@declarations) ,@body)))
-		  (t
-		   (c1progn body))))
+      ;; ...create the enclosing LET* form for the &aux variables
+      (when (or let-vars declarations)
+        (setq body `((let* ,let-vars
+                       (declare ,@declarations)
+                       ,@body))))
+      ;; ...wrap around the optional type checks
+      (setq body (nconc type-check-forms body))
+      ;; ...now finally compile the body with the type checks
+      (let ((*cmp-env* (cmp-env-copy *cmp-env*)))
+        (setf body (c1progn body)))
+      ;;
+      ;; ...and verify whether all variables are used.
       (dolist (var new-variables)
-	(check-vref var))
+        (check-vref var))
       (make-c1form* 'LAMBDA
-		    :local-vars new-variables
- 		    :args (list requireds optionals rest key-flag keywords
-				allow-other-keys)
-		    doc body))))
+                    :local-vars new-variables
+                    :args (list requireds optionals rest key-flag keywords
+                                allow-other-keys)
+                    doc body))))
 
 (defun lambda-form-allowed-nargs (lambda)
   (let ((minarg 0)

@@ -67,14 +67,65 @@
           (FUNCTION 'FUNCTION)
           (otherwise (simplify-type type))))))
 
+(defun extract-lambda-type-checks (requireds optionals keywords ts other-decls)
+  ;; We generate automatic type checks for function arguments that
+  ;; are declared These checks can be deactivated by appropriate
+  ;; safety settings which are checked by OPTIONAL-CHECK-TYPE. Note
+  ;; that not all type declarations can be checked (take for instance
+  ;; (type (function (t t) t) foo)) We let OPTIONAL-CHECK-TYPE do the
+  ;; job.
+  (when (policy-automatic-check-type-p)
+    (loop with type-checks = (append (loop for spec on optionals by #'cdddr
+                                        collect (first spec))
+                                     (loop for spec on keywords by #'cddddr
+                                        collect (second spec))
+                                     requireds)
+       for var in type-checks
+       for name = (var-name var)
+       for type = (cdr (assoc name ts))
+       for checked = (and type
+                          (loop for decl in other-decls
+                             never (and (consp decl)
+                                        (eq (first decl)
+                                            'si::no-check-type)
+                                        (member name (rest decl)))))
+       when checked
+       collect `(assert-type-if-known ,name ,type) into checks
+       ;; We remove assumption about types, which will be checked later
+       when checked
+       do (setf (var-type var) T)
+       ;; And we add additional variables with proclaimed types
+       when (and checked (not (eq (var-kind var) 'SPECIAL)))
+       nconc `(,name (the ,type ,name)) into new-auxs
+       finally
+         (progn
+           (when checks
+             (cmpnote "In ~:[an anonymous function~;function ~:*~A~], checking types of argument~@[s~]~{ ~A~}."
+                      (fun-name *current-function*)
+                      (mapcar #'second checks)))
+           (return (cons checks new-auxs))))))
+
 (defmacro optional-check-type (&whole whole var-name type &environment env)
   "Generates a type check that is only activated for the appropriate
 safety settings and when the type is not trivial."
-  (unless (policy-automatic-check-type-p env)
-    (cmpnote "Unable to emit check for variable ~A" whole))
-  (when (policy-automatic-check-type-p env)
-    (setf type (remove-function-types type))
-    (multiple-value-bind (ok valid)
-	(subtypep 't type)
-      (unless (or ok (not valid))
-	`(check-type ,var-name ,type)))))
+  (if (not (policy-automatic-check-type-p env))
+      (cmpnote "Unable to emit check for variable ~A" whole)
+      (multiple-value-bind (ok valid)
+          (subtypep 't (setf type (remove-function-types type)))
+        (unless (or ok (not valid))
+          (setf var-name
+               `(the ,type (progn (check-type ,var-name ,type) ,var-name))))))
+  var-name)
+
+(defmacro assert-type-if-known (&whole whole value type &environment env)
+  "Generates a type check on an expression, ensuring that it is satisfied."
+  (multiple-value-bind (ok valid)
+      (subtypep 't (setf type (remove-function-types type)))
+    (if (or ok (not valid))
+        value
+        (with-clean-symbols (%value)
+          `(let ((%value ,value))
+             (unless (typep %value ',type)
+               (ffi:c-inline (',type %value) (:object :object) :void
+                "FEwrong_type_argument(#0,#1);" :one-liner nil))
+             (the ,type %value))))))

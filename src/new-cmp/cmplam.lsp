@@ -224,13 +224,9 @@
                                    (c1varargs-unbind-op nargs varargs
                                                         minargs maxargs nkeys)))))
 
-    ;; Optional type checks for function arguments whose types have been
-    ;; declared. This is not mandated by the standard but it is a common practice
-    ;; begun by CMUCL & SBCL.
-    (setf compiled-body (nconc compiled-body
-                               (c1optional-type-checks requireds optionals keywords
-                                                       ts other-decls)))
-                    
+    ;; Make other declarations take effect right now
+    (setf *cmp-env* (reduce #'add-one-declaration other-decls
+                            :initial-value *cmp-env*))
 
     ;; After creating all variables and processing the initalization
     ;; forms, we wil process the body. However, all free declarations,
@@ -238,21 +234,36 @@
     ;; arguments, have to be applied to the body. At the same time, we
     ;; replace &aux variables with a LET* form that defines them.
     (let* ((declarations other-decls)
+           (type-checks (extract-lambda-type-checks requireds optionals
+                                                    keywords ts other-decls))
+           (type-check-forms (car type-checks))
+           (aux-vars (nconc (cdr type-checks) aux-vars))
+           (aux-var-names (loop for v in aux-vars by #'cddr
+                             collect (first v)))
 	   (new-variables (cmp-env-new-variables *cmp-env* old-env))
-	   (new-variable-names (mapcar #'var-name new-variables)))
-      (when (setq ss (set-difference ss new-variable-names))
-	(push `(special ,@ss) declarations))
-      (when (setq is (set-difference is new-variable-names))
-	(push `(ignorable ,@is) declarations))
+	   (already-declared-name (set-difference (mapcar #'var-name new-variables)
+                                                  aux-var-names)))
+      ;; Gather declarations for &aux variables, either special...
+      (let ((specials (set-difference ss already-declared-names)))
+        (when specials
+          (push `(special ,@specials) declarations)))
+      ;; ...ignorable...
+      (let ((ignorables (loop for (var . expected-uses) in is
+                           unless (member var already-declared-names)
+                           collect var)))
+        (when ignorables
+          (push `(ignorable ,@ignorables) declarations)))
+      ;; ...or type declarations
       (loop for (var . type) in ts
-	    unless (member var new-variable-names)
+	    unless (member var already-declared-names)
 	    do (push `(type ,type ,var) declarations))
 
       (let ((*cmp-env* (cmp-env-copy)))
         (when (policy-debug-variable-bindings)
           (cmp-env-register-cleanup (c1debug-env-pop-vars requireds) *cmp-env*))
 
-        (setq body (c1lambda-body new-variables aux-vars declarations body))
+        (setq body (c1lambda-body new-variables type-check-forms
+                                  aux-vars declarations body))
 
         (when (policy-debug-ihs-frame)
           (setf body (nconc (c1debug-env-open block-name)
@@ -276,26 +287,25 @@
             (fun-lambda-list fun) (list requireds optionals rest
                                         key-flag keywords allow-other-keys)))))
 
-(defun c1lambda-body (new-variables aux-vars declarations body)
+(defun c1lambda-body (new-variables type-check-forms aux-vars declarations body)
   (cond ((and new-variables (policy-debug-variable-bindings))
          (let* ((cleanup (c1debug-env-pop-vars new-variables))
                 (*cmp-env* (cmp-env-register-cleanup cleanup (cmp-env-copy))))
            (nconc (c1debug-env-push-vars new-variables)
                   (c1lambda-body nil aux-vars declarations body)
-                  (c1debug-env-pop-vars new-variables t))))
-        (aux-vars
-         (c1translate 'VALUES+VALUE0
-                      `(let* ,(loop for specs on aux-vars by #'cddr
-                                 for var = (first specs)
-                                 for init = (second specs)
-                                 collect (if init (list var init) var))
-                         (declare ,@declarations)
-                         ,@body)))
-        (declarations
-         (c1translate 'VALUES+VALUE0 `(locally (declare ,@declarations)
-                                        ,@body)))
-        (t
-         (c1progn 'VALUES+VALUE0 body))))
+                  (c1debug-env-pop-vars new-variables t)))
+         ((or aux-vars type-check-forms declarations)
+          (c1translate 'VALUES+VALUE0
+                       `(progn
+                          ,@type-check-forms
+                          `(let* ,(loop for specs on aux-vars by #'cddr
+                                     for var = (first specs)
+                                     for init = (second specs)
+                                     collect (if init (list var init) var))
+                             (declare ,@declarations)
+                             ,@body))))
+         (t
+          (c1progn 'VALUES+VALUE0 body)))))
 
 (defun c1requireds (requireds ss is ts)
   (c1bind-requireds
@@ -380,36 +390,6 @@
             (push flag (fun-local-vars *current-function*))
             (cmp-env-register-var flag)))
      finally (return output)))
-
-(defun c1optional-type-checks (requireds optionals keywords ts other-decls)
-  ;; We generate automatic type checks for function arguments that
-  ;; are declared These checks can be deactivated by appropriate
-  ;; safety settings which are checked by OPTIONAL-CHECK-TYPE. Note
-  ;; that not all type declarations can be checked (take for instance
-  ;; (type (function (t t) t) foo)) We let OPTIONAL-CHECK-TYPE do the
-  ;; job.
-  (when (policy-automatic-check-type-p)
-    (let* ((type-checks (append requireds
-                                (loop for spec on optionals by #'cdddr
-                                   collect (first spec))
-                                (loop for spec on keywords by #'cddddr
-                                   collect (first spec))))
-           (pairs (loop for var in type-checks
-                     nconc (let* ((name (var-name var))
-                                  (type (assoc name ts)))
-                             (when type
-                               (loop for decl in other-decls
-                                  unless (and (consp decl)
-                                              (eq (first decl) 'si::no-check-type)
-                                              (member name (rest decl)))
-                                  do (return (list (list name (cdr type))))))))))
-      (when pairs
-        (cmpnote "In ~:[an anonymous function~;function ~:*~A~], checking types of argument~@[s~]~{ ~A~}."
-                 (fun-name *current-function*)
-                 (mapcar #'var-name type-checks))
-        (c1progn 'trash
-                 (loop for pair in (nreverse pairs)
-                    collect `(optional-check-type ,@pair)))))))
 
 (defun exported-fname (name)
   (let (cname)
