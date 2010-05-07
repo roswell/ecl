@@ -124,8 +124,16 @@ safety settings and when the type is not trivial."
     (if (or ok (not valid))
         value
         (with-clean-symbols (%value)
+          #+(or)
           `(let ((%value ,value))
              (unless (typep %value ',type)
                (ffi:c-inline (',type %value) (:object :object) :void
                 "FEwrong_type_argument(#0,#1);" :one-liner nil))
+             (the ,type %value))
+          `(let ((%value ,value))
+             (declare (:read-only %value))
+             (ffi:c-inline ((typep %value ',type) ',type %value)
+                           (:bool :object :object) :void
+                           "if (ecl_unlikely(!(#0)))
+         FEwrong_type_argument(#1,#2);" :one-liner nil)
              (the ,type %value))))))
