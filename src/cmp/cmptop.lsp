@@ -16,7 +16,9 @@
 
 (defun t1expr (form)
   (let* ((*current-toplevel-form* nil)
-         (*cmp-env* (cmp-env-copy (or *cmp-env* *cmp-env-root*))))
+         (*cmp-env* (if *cmp-env*
+                        (cmp-env-copy *cmp-env*)
+                        (cmp-env-root))))
     (push (t1expr* form) *top-level-forms*)))
 
 (defvar *toplevel-forms-to-print*
@@ -651,7 +653,7 @@
          (*ihs-used-p* nil)
 	 (*reservation-cmacro* (next-cmacro))
 	 (*inline-blocks* 1)
-         (*cmp-env* (cmp-env-copy (fun-cmp-env fun))))
+         (*cmp-env* (c1form-env lambda-expr)))
     (wt-nl1 "{")
     (wt " VT" *reservation-cmacro*
 	" VLEX" *reservation-cmacro*
