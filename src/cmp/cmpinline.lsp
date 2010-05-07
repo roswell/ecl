@@ -31,15 +31,13 @@
 ;;; The forth element is T if and only if the result value is a new Lisp
 ;;; object, i.e., it must be explicitly protected against GBC.
 
-(defun make-inline-temp-var (expected-type value-type &optional loc)
-  (let ((out-rep-type (lisp-type->rep-type expected-type)))
+(defun make-inline-temp-var (expected-type value-type &optional rep-type)
+  (let ((out-rep-type (or rep-type (lisp-type->rep-type expected-type))))
     (if (eq out-rep-type :object)
         (make-temp-var)
         (let ((var (make-lcl-var :rep-type out-rep-type
                                  :type (type-and expected-type value-type))))
-          (if loc
-              (wt-nl "{" (rep-type-name out-rep-type) " " var "=" loc ";")
-              (wt-nl "{" (rep-type-name out-rep-type) " " var ";"))
+          (wt-nl "{" (rep-type-name out-rep-type) " " var ";")
           (incf *inline-blocks*)
           var))))
 
@@ -47,7 +45,8 @@
   (let ((var (c1form-arg 0 form))
         (value-type (c1form-primary-type form)))
     (if (var-changed-in-form-list var rest-forms)
-        (let* ((temp (make-inline-temp-var expected-type value-type)))
+        (let* ((temp (make-inline-temp-var expected-type value-type
+                                           (var-rep-type var))))
           (let ((*destination* temp)) (set-loc var))
           (list value-type temp))
         (list value-type var))))
@@ -66,7 +65,8 @@
          (return-type (c1form-primary-type form))
          (loc (call-global-loc fname nil args return-type expected-type))
          (type (loc-type loc))
-         (temp (make-inline-temp-var expected-type type))
+         (temp (make-inline-temp-var expected-type type
+                                     (loc-representation-type loc)))
          (*destination* temp))
     (set-loc loc)
     (list type temp)))
