@@ -381,6 +381,7 @@
     (let ((ndx (position :cstring arg-types)))
       (when ndx
 	(let* ((var (gensym))
+               (arguments (copy-list arguments))
 	       (value (elt arguments ndx)))
 	  (setf (elt arguments ndx) var
 		(elt arg-types ndx) :char*)
