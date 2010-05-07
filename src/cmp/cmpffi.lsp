@@ -127,9 +127,19 @@
      "ecl_make_ushort" "ecl_to_ushort" "fix")
     ))
 
+(defparameter +representation-type-hash+
+  (loop with table = (make-hash-table :size 128 :test 'eq)
+     for record on +representation-types+ by #'cddr
+     for rep-type = (first record)
+     for information = (second record)
+     do (setf (gethash rep-type table) information)
+     finally (return table)))
+
+(defun rep-type-record (rep-type)
+  (gethash rep-type +representation-type-hash+))
 
 (defun rep-type->lisp-type (rep-type)
-  (let ((output (getf +representation-types+ rep-type)))
+  (let ((output (rep-type-record rep-type)))
     (cond (output
            (if (eq rep-type :void) nil
 	     (or (first output)
@@ -143,7 +153,7 @@
     ;; We expect type = NIL when we have no information. Should be fixed. FIXME!
     ((null type)
      :object)
-    ((getf +representation-types+ type)
+    ((rep-type-record type)
      type)
     (t
      (do ((l +representation-types+ (cddr l)))
@@ -152,8 +162,8 @@
 	 (return-from lisp-type->rep-type (first l)))))))
 
 (defun rep-type-name (type)
-  (or (second (getf +representation-types+ type))
-      (cmperr "Not a valid type name ~S" type)))
+  (or (second (rep-type-record type))
+      (cmperr "Not a valid C type name ~S" type)))
 
 (defun lisp-type-p (type)
   (subtypep type 'T))
@@ -164,13 +174,13 @@
 					       long-float-value)))
     (wt (third loc)) ;; VV index
     (return-from wt-to-object-conversion))
-  (let ((x (caddr (getf +representation-types+ loc-rep-type))))
+  (let ((x (third (rep-type-record loc-rep-type))))
     (unless x
       (cmperr "Cannot coerce C variable of type ~A to lisp object" loc-rep-type))
     (wt x "(" loc ")")))
 
 (defun wt-from-object-conversion (dest-type loc-type rep-type loc)
-  (let ((x (cdddr (getf +representation-types+ rep-type))))
+  (let ((x (cdddr (rep-type-record rep-type))))
     (unless x
       (cmperr "Cannot coerce lisp object to C type ~A" rep-type))
     (wt (if (and (not (policy-check-all-arguments-p))
