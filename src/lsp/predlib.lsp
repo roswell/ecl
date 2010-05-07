@@ -740,6 +740,7 @@ if not possible."
 ;;
 (defun find-type-bounds (type in-our-family-p type-<= minimize-super)
   (declare (si::c-local)
+           (optimize (safety 0))
 	   (function in-our-family-p type-<=)) 
   (let* ((subtype-tag 0)
 	 (disjoint-tag 0)
@@ -772,6 +773,7 @@ if not possible."
 ;;
 (defun register-type (type in-our-family-p type-<=)
   (declare (si::c-local)
+           (optimize (safety 0))
 	   (function in-our-family-p type-<=))
   (or (find-registered-tag type)
       (multiple-value-bind (tag-super tag-sub)
