@@ -131,11 +131,10 @@ and a possible documentation string (only accepted when DOC-P is true)."
 	       (return-from search-optimization-quality 3)))))))
 
 (defun compute-optimizations (arguments env)
-  (let ((optimizations (cmp-env-all-optimizations env)))
+  (let ((optimizations (copy-list (cmp-env-all-optimizations env))))
     (dolist (x arguments)
-      (when (symbolp x) (setq x (list x 3)))
-      (unless optimizations
-        (setq optimizations (cmp-env-all-optimizations)))
+      (when (symbolp x)
+        (setq x (list x 3)))
       (if (or (not (consp x))
               (not (consp (cdr x)))
               (not (numberp (second x)))
