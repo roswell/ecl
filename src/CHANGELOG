@@ -17,6 +17,10 @@ ECL 10.5.1:
  - ECL did not properly compute the alignment of foreign types in structures.
    This is now done using standard C constructs in a portable and robust way.
 
+ - Even if a function was compiled with a given set of optimizations, a call
+   to PROCLAIM which appeared after the function could change the value of
+   those optimizations and influence what the emitted C code looked like.
+
 * Visible changes:
 
  - "fasb" is now a valid FASL file type, accepted by ECL even in absence of
