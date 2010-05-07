@@ -12,7 +12,7 @@
 
 (in-package "SI")
 
-(declaim (optimize (safety 1)))
+(declaim (optimize (safety 0)))
 
 ;;;; Pretty streams
 
@@ -950,7 +950,8 @@
   (declare (type (member :block :current) relative-to)
 	   (type real n)
 	   (type (or stream (member t nil)) stream)
-	   (values null))
+	   (values null)
+           (optimize (safety 1)))
   (let ((stream (case stream
 		  ((t) *terminal-io*)
 		  ((nil) *standard-output*)
@@ -974,7 +975,8 @@
   (declare (type (member :line :section :line-relative :section-relative) kind)
 	   (type unsigned-byte colnum colinc)
 	   (type (or stream (member t nil)) stream)
-	   (values null))
+	   (values null)
+           (optimize (safety 1)))
   (let ((stream (case stream
 		  ((t) *terminal-io*)
 		  ((nil) *standard-output*)
@@ -1107,9 +1109,9 @@
 
 
 (defun copy-pprint-dispatch (&optional (table *print-pprint-dispatch*))
-  (declare (type (or pprint-dispatch-table null) table))
+  (declare (type (or pprint-dispatch-table null) table)
+           (optimize (safety 1)))
   (let* ((orig (or table *initial-pprint-dispatch*)))
-    (check-type orig pprint-dispatch-table)
     (let* ((new (make-pprint-dispatch-table
 		 :entries (copy-list (pprint-dispatch-table-entries orig))))
 	   (new-cons-entries (pprint-dispatch-table-cons-entries new)))
@@ -1122,7 +1124,8 @@
   (write-ugly-object object stream))
 
 (defun pprint-dispatch (object &optional (table *print-pprint-dispatch*))
-  (declare (type (or pprint-dispatch-table null) table))
+  (declare (type (or pprint-dispatch-table null) table)
+           (optimize (safety 1)))
   (let* ((table (or table *initial-pprint-dispatch*))
 	 (cons-entry
 	  (and (consp object)
@@ -1143,7 +1146,8 @@
 			    (priority 0) (table *print-pprint-dispatch*))
   (declare (type (or null function symbol) function)
 	   (type real priority)
-	   (type pprint-dispatch-table table))
+	   (type pprint-dispatch-table table)
+           (optimize (safety 1)))
   ;; FIXME! This check should be automatically generated when compiling
   ;; with high enough safety mode.
   (unless (typep priority 'real)
