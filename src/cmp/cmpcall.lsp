@@ -15,12 +15,6 @@
 
 (in-package "COMPILER")
 
-;;; Like macro-function except it searches the lexical environment,
-;;; to determine if the macro is shadowed by a function or a macro.
-(defun cmp-macro-function (name)
-  (or (cmp-env-search-macro name)
-      (macro-function name)))
-
 (defun unoptimized-long-call (fun arguments)
   (let ((frame (gensym)))
     (c1expr `(with-stack ,frame

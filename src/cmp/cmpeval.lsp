@@ -49,8 +49,6 @@
 (defun c1call-symbol (fname args &aux fd)
   (cond ((setq fd (get-sysprop fname 'c1special)) (funcall fd args))
 	((c1call-local fname args))
-	((setq fd (cmp-env-search-macro fname))
-	 (c1expr (cmp-expand-macro fd (list* fname args))))
 	((and (setq fd (get-sysprop fname 'C1))
 	      (inline-possible fname))
 	 (funcall fd args))
@@ -64,7 +62,7 @@
 		  (cmp-expand-macro fd (list* fname args)))
 		success))
 	 (c1expr fd))
-	((setq fd (macro-function fname))
+	((setq fd (cmp-macro-function fname))
 	 (c1expr (cmp-expand-macro fd (list* fname args))))
 	(t (c1call-global fname args))))
 

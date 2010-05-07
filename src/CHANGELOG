@@ -45,7 +45,8 @@ ECL 10.5.1:
  - The compiler is now shipped as a single FASL file, cmp.fas, without
    extra files such as sysfun.lsp
 
- - DECLAIM's proclamation do not propagate beyond the compiled file.
+ - DECLAIM proclamation and toplevel DEFMACRO definitions do not propagate
+   beyond the compiled file.
 
  - AREF/ASET can now be open-coded by the C compiler.
 

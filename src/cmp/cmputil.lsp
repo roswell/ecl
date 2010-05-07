@@ -302,15 +302,13 @@
               form c)
       nil)))
 
-(defun cmp-macroexpand (form &optional (env *cmp-env*))
-  (handler-case (macroexpand form env)
-    (serious-condition (c)
-      (when *compiler-break-enable*
-        (invoke-debugger c))
-      (cmperr "The macro form ~s was not expanded successfully.~%Error detected:~%~A"
-              form c)
-      nil)))
-  
+;;; Like macro-function except it searches the lexical environment,
+;;; to determine if the macro is shadowed by a function or a macro.
+(defun cmp-macro-function (name)
+  (or (cmp-env-search-macro name)
+      (gethash name *global-macros*)
+      (macro-function name)))
+
 (defun cmp-expand-macro (fd form &optional (env *cmp-env*))
   (handler-case
       (let ((new-form (funcall *macroexpand-hook* fd form env)))

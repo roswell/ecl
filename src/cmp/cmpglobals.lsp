@@ -285,6 +285,8 @@ lines are inserted, but the order is preserved")
 ;;; *global-entries* holds (... ( fname cfun return-types arg-type ) ...).
 (defvar *global-entries* nil)
 
+(defvar *global-macros* nil)
+
 (defvar *self-destructing-fasl* '()
 "A value T means that, when a FASL module is being unloaded (for
 instance during garbage collection), the associated file will be
@@ -322,6 +324,7 @@ be deleted if they have been opened with LoadLibrary.")
     (*global-vars* nil)
     (*global-funs* nil)
     (*global-cfuns-array* nil)
+    (*global-macros* (make-hash-table :size 64 :test #'eql))
     (*linking-calls* nil)
     (*global-entries* nil)
     (*undefined-vars* nil)

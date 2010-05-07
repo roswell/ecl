@@ -185,6 +185,16 @@
 	(cmp-env-register-symbol-macro name (second def))))
     (c1locally destination (cdr args))))
 
+(defun t1defmacro (destination args)
+  (check-args-number 'DEFMACRO args 2)
+  (destructuring-bind (name lambda-list &rest body)
+      args
+    (multiple-value-bind (function pprint doc-string)
+        (sys::expand-defmacro name lambda-list body)
+      (setf (gethash name *global-macros*)
+            (coerce function 'function))
+      (c1locally destination (macroexpand `(DEFMACRO ,@args))))))
+
 ;;; ----------------------------------------------------------------------
 ;;; Optimizer for FSET. Removes the need for a special handling of DEFUN as a
 ;;; toplevel form and also allows optimizing calls to DEFUN or DEFMACRO which

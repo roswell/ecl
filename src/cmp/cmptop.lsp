@@ -488,6 +488,16 @@
       (setf form (make-c1form* 'PROGN :args (nconc previous (list form))))))
   form)
 
+(defun t1defmacro (args)
+  (check-args-number 'LOAD-TIME-VALUE args 2)
+  (destructuring-bind (name lambda-list &rest body)
+      args
+    (multiple-value-bind (function pprint doc-string)
+        (sys::expand-defmacro name lambda-list body)
+      (setf (gethash name *global-macros*)
+            (coerce function 'function))
+      (t1expr* (macroexpand `(DEFMACRO ,@args))))))
+
 (defun c1load-time-value (args)
   (check-args-number 'LOAD-TIME-VALUE args 1 2)
   (let ((form (first args))
@@ -799,6 +809,7 @@
 
 ;;; Pass 1 top-levels.
 
+(put-sysprop 'DEFMACRO 'T1 't1defmacro)
 (put-sysprop 'COMPILER-LET 'T1 'c1compiler-let)
 (put-sysprop 'EVAL-WHEN 'T1 'c1eval-when)
 (put-sysprop 'PROGN 'T1 'c1progn)

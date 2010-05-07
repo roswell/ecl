@@ -41,7 +41,7 @@ last FORM.  If not, simply returns NIL."
     (when *dump-defun-definitions*
       (print function)
       (setq function `(si::bc-disassemble ,function)))
-    `(eval-when (:compile-toplevel :load-toplevel :execute)
+    `(progn
        ,(ext:register-with-pde whole `(si::fset ',name ,function t ,pprint))
        ,@(si::expand-set-documentation name 'function doc-string)
        ',name)))

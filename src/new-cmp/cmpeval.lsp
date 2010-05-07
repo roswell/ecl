@@ -89,7 +89,7 @@
 		  (cmp-expand-macro fd (list* fname args)))
 		success))
 	 (c1expr destination fd))
-	((setq fd (macro-function fname))
+	((setq fd (cmp-macro-function fname))
 	 (c1expr destination (cmp-expand-macro fd (list* fname args))))
 	(t (c1call-global destination fname args))))
 
