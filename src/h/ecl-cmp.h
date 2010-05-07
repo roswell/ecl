@@ -19,11 +19,6 @@
 #include <math.h> /* for inline mathematics */
 #include <ecl/ecl-inl.h>
 
-#undef cs_check
-#define	cs_check \
-	if ((int *)(&narg) < cs_limit) \
-		cs_overflow()
-
 #define TRAMPOLINK(narg, vv, lk, cblock) \
 	cl_va_list args; cl_va_start(args, narg, narg, 0); \
 	return(_ecl_link_call(vv, (cl_objectfn *)lk, cblock, narg, args))
