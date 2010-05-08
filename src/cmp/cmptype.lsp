@@ -74,7 +74,7 @@
   ;; that not all type declarations can be checked (take for instance
   ;; (type (function (t t) t) foo)) We let OPTIONAL-CHECK-TYPE do the
   ;; job.
-  (when (policy-automatic-check-type-p)
+  (when (policy-automatic-check-type)
     (loop with type-checks = (append (loop for spec on optionals by #'cdddr
                                         collect (first spec))
                                      (loop for spec on keywords by #'cddddr
@@ -108,7 +108,7 @@
 (defmacro optional-check-type (&whole whole var-name type &environment env)
   "Generates a type check that is only activated for the appropriate
 safety settings and when the type is not trivial."
-  (if (not (policy-automatic-check-type-p env))
+  (if (not (policy-automatic-check-type env))
       (cmpnote "Unable to emit check for variable ~A" whole)
       (multiple-value-bind (ok valid)
           (subtypep 't (setf type (remove-function-types type)))

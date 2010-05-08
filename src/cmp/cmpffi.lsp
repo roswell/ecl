@@ -183,7 +183,7 @@
   (let ((x (cdddr (rep-type-record rep-type))))
     (unless x
       (cmperr "Cannot coerce lisp object to C type ~A" rep-type))
-    (wt (if (and (not (policy-check-all-arguments-p))
+    (wt (if (and (not (policy-check-all-arguments))
 		 (subtypep loc-type dest-type))
 	    (second x)
 	  (first x))

@@ -32,7 +32,7 @@
     ;; If the type is known and we can assume it will not change, we
     ;; replace it with the upgraded form.
     (when (and (constantp element-type env)
-	       (policy-assume-types-dont-change-p env))
+	       (policy-assume-types-dont-change env))
       (let ((new-type (cmp-eval element-type)))
 	(when (known-type-p new-type)
 	  (setf element-type `',(upgraded-array-element-type new-type)))))
@@ -88,8 +88,8 @@
 ;;;
 
 (define-compiler-macro aref (&whole form array &rest indices &environment env)
-  (if (policy-open-code-aref/aset-p env)
-      (expand-aref array indices (policy-array-bounds-check-p env))
+  (if (policy-open-code-aref/aset env)
+      (expand-aref array indices (policy-array-bounds-check env))
       form))
 
 (defun expand-aref (array indices check)
@@ -102,9 +102,9 @@
 
 (define-compiler-macro si::aset (&whole form value array &rest indices
                                         &environment env)
-  (if (policy-open-code-aref/aset-p env)
+  (if (policy-open-code-aref/aset env)
       (expand-aset array indices value
-                   (policy-array-bounds-check-p env))
+                   (policy-array-bounds-check env))
       form))
 
 (defun expand-aset (array indices value check)

@@ -50,6 +50,15 @@ ECL 10.5.1:
 
  - AREF/ASET can now be open-coded by the C compiler.
 
+ - Compilation policies (including optimization and safety checks) are now
+   defined as flags that are activated and deactivated by certain optimization
+   levels. In order for the flag to be active, all conditions have to be
+   matched. For instance
+      (define-policy inline-slot-access :on speed 1 :off debug 2 :off safety 2
+        "Inline access to structures and sealed classes")
+   slot inlining would be activated by a SPEED of 1, but only if DEBUG and
+   SAFETY are below 2.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

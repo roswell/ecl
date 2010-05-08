@@ -75,7 +75,7 @@
 	  (make-c1form* 'SYS:STRUCTURE-REF :type type
 			:args c-form (add-symbol name) index
 			(if (or (subtypep (c1form-type c-form) structure-type)
-				(not (policy-check-all-arguments-p)))
+				(not (policy-check-all-arguments)))
 			    :unsafe
 			    nil)))
 	(c1call-global 'sys:structure-ref args))))

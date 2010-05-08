@@ -22,7 +22,7 @@
     (let ((gf (fdefinition fname)))
       (when (typep gf 'standard-generic-function)
 	;;(check-generic-function-args gf args)
-	(when (policy-inline-slot-access-p)
+	(when (policy-inline-slot-access)
 	  (maybe-optimize-slot-accessor fname gf args))))))
 
 ;;;
@@ -126,6 +126,6 @@
             for accessor = (cadr (member :accessor slot-definition))
             when accessor
             collect `(define-compiler-macro ,accessor (&whole whole obj &environment env)
-                       (if (policy-inline-slot-access-p env)
+                       (if (policy-inline-slot-access env)
                            `(si::instance-ref ,obj ,,i)
                            whole)))))

@@ -614,7 +614,8 @@
 			      (*volatile* (c1form-volatile* lambda-expr))
 			      (*tail-recursion-info* fun)
                               (lambda-list (c1form-arg 0 lambda-expr))
-                              (requireds (car lambda-list)))
+                              (requireds (car lambda-list))
+                              (*cmp-env* (c1form-env lambda-expr)))
   (declare (fixnum level nenvs))
   (print-emitting fun)
   (wt-comment-nl (cond ((fun-global fun) "function definition for ~a")
@@ -624,6 +625,11 @@
   (when (fun-shares-with fun)
     (wt-comment-nl "... shares definition with ~a" (fun-name (fun-shares-with fun)))
     (return-from t3local-fun))
+  (wt-comment-nl "optimize speed ~D, debug ~D, space ~D, safety ~D "
+                 (cmp-env-optimization 'speed)
+                 (cmp-env-optimization 'debug)
+                 (cmp-env-optimization 'space)
+                 (cmp-env-optimization 'safety))
   (cond ((fun-exported fun)
 	 (wt-nl-h "ECL_DLLEXPORT cl_object " cfun "(")
 	 (wt-nl1 "cl_object " cfun "("))
@@ -662,8 +668,7 @@
 	 (*destination* 'RETURN)
          (*ihs-used-p* nil)
 	 (*reservation-cmacro* (next-cmacro))
-	 (*inline-blocks* 1)
-         (*cmp-env* (c1form-env lambda-expr)))
+	 (*inline-blocks* 1))
     (wt-nl1 "{")
     (wt " VT" *reservation-cmacro*
 	" VLEX" *reservation-cmacro*

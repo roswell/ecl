@@ -169,7 +169,7 @@
   (multiple-value-bind (declarations body)
       (si:process-declarations body nil)
     (let* ((list-var (gensym))
-	   (typed-var (if (policy-check-all-arguments-p env)
+	   (typed-var (if (policy-check-all-arguments env)
 			  list-var
 			  `(the cons ,list-var))))
       `(block nil

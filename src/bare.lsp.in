@@ -142,10 +142,13 @@
                :components ((:compiled-file ,(string name))))))
     path))
 
+(defconstant +ecl-optimization-settings+ 
+  '(optimize (safety 2) (speed 1) (debug 1) (space 1)))
+
 (defun build-module (name sources &key additional-files
                      (builtin nil) (dir "build:")
                      ((:prefix si::*init-function-prefix*) "EXT"))
-  (proclaim '(optimize (safety 2) (speed 1) (debug 1)))
+  (proclaim +ecl-optimization-settings+)
   (let* ((name (string-downcase name)))
     (when additional-files
       (setf *module-files* (append additional-files *module-files*)))
