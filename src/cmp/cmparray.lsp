@@ -92,48 +92,47 @@
 
 (define-compiler-macro aref (&whole form array &rest indices &environment env)
   (if (policy-open-code-aref/aset env)
-      (expand-aref array indices (policy-array-bounds-check env))
+      (expand-aref array indices env)
       form))
 
-(defun expand-aref (array indices check)
+(defun expand-aref (array indices env)
   (with-clean-symbols (%array)
     `(let ((%array ,array))
        (declare (:read-only %array)
                 (optimize (safety 0)))
        (row-major-aref %array
-                       ,(expand-row-major-index '%array indices check)))))
+                       ,(expand-row-major-index '%array indices env)))))
 
 (define-compiler-macro si::aset (&whole form value array &rest indices
                                         &environment env)
   (if (policy-open-code-aref/aset env)
-      (expand-aset array indices value
-                   (policy-array-bounds-check env))
+      (expand-aset array indices value env)
       form))
 
-(defun expand-aset (array indices value check)
+(defun expand-aset (array indices value env)
   (with-clean-symbols (%array %value)
-    (let ((indices (expand-row-major-index '%array indices check)))
+    (let ((indices (expand-row-major-index '%array indices env)))
       `(let ((%value ,value)
              (%array ,array))
        (declare (:read-only %array %value)
                 (optimize (safety 0)))
        (si::row-major-aset %array ,indices %value)))))
 
-(defun expand-zero-dim-index-check (a check)
-  (if check
+(defun expand-zero-dim-index-check (a env)
+  (if (policy-type-assertions env)
+      0
       `(progn
          (check-arrayp ,a)
          (check-expected-rank ,a 0)
-         0)
-      0))
+         0)))
 
-(defun expand-vector-index-check (a index check)
+(defun expand-vector-index-check (a index env)
   (flet ((expansion (a index)
            `(progn
               (check-vectorp ,a)
               (check-vector-in-bounds ,a ,index)
               ,index)))
-    (if check
+    (if (policy-type-assertions env)
         (if (constantp index)
             (expansion a index)
             (with-clean-symbols (%array-index)
@@ -142,23 +141,25 @@
                  ,(expansion a '%array-index))))
         index)))
 
-(defun expand-row-major-index (a indices check)
+(defun expand-row-major-index (a indices env)
   (when (null indices)
     (return-from expand-row-major-index
-      (expand-zero-dim-index-check a check)))
+      (expand-zero-dim-index-check a env)))
   (when (null (rest indices))
     (return-from expand-row-major-index
-      (expand-vector-index-check a (first indices) check)))
-  (let* ((expected-rank (length indices)))
+      (expand-vector-index-check a (first indices) env)))
+  (let* ((expected-rank (length indices))
+         (check (policy-array-bounds-check env)))
     (with-clean-symbols (%ndx-var %output-var %dim-var)
       `(let* ((%ndx-var ,(pop indices))
               (%output-var %ndx-var)
               (%dim-var 0))
          (declare (type si::index %ndx-var %output-var %dim-var))
-         ,@(when check
+         ,@(when (policy-type-assertions env)
                  `((check-arrayp ,a)
-                   (check-expected-rank ,a ,expected-rank)
-                   (check-index-in-bounds ,a %output-var %dim-var)))
+                   (check-expected-rank ,a ,expected-rank)))
+         ,@(when check
+                  `((check-index-in-bounds ,a %output-var %dim-var)))
          ,@(loop for j from 1
               for index in indices
               collect `(setf %dim-var (array-dimension-fast ,a ,j)
