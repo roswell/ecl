@@ -117,7 +117,7 @@
 (defun valid-type-specifier (type)
   (handler-case
      (if (subtypep type 'T)
-	 (values t (type-filter type))
+	 (values t type)
          (values nil nil))
     (error (c) (values nil nil))))
 
