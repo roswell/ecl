@@ -1906,6 +1906,7 @@ cl_symbols[] = {
 {EXT_ "EVALUATE-FORMS",NULL},
 
 {EXT_ "ARRAY-INDEX",NULL},
+{EXT_ "ANSI-STREAM",NULL},
 
 
 /* Tag for end of list */

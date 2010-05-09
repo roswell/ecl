@@ -12,7 +12,7 @@
 
 (in-package "GRAY")
 
-(import 'clos::ansi-stream)
+(import 'ext:ansi-stream)
 
 ;;;
 ;;; This is the generic function interface for CLOS streams.
@@ -470,7 +470,7 @@
 ;; UNREAD-CHAR
 
 (defmethod stream-unread-char ((stream ansi-stream) character)
-  (cl:unread-char stream character))
+  (cl:unread-char character stream))
 
 (defmethod stream-unread-char ((stream ansi-stream) character)
   (bug-or-error stream 'stream-unread-char))
@@ -560,7 +560,7 @@
 ;; WRITE-BYTE
 
 (defmethod stream-write-byte ((stream ansi-stream) integer)
-  (cl:write-byte stream integer))
+  (cl:write-byte integer stream))
 
 (defmethod stream-write-byte ((stream t) integer)
   (bug-or-error stream 'stream-write-byte))
@@ -569,7 +569,7 @@
 ;; WRITE-CHAR
 
 (defmethod stream-write-char ((stream ansi-stream) character)
-  (cl:write-char stream character))
+  (cl:write-char character stream))
 
 (defmethod stream-write-char ((stream t) character)
   (bug-or-error stream 'stream-write-char))
