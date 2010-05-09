@@ -115,6 +115,7 @@
             (intern (concatenate 'string "POLICY-" (symbol-name name))
                     (find-package "C")))
            (doc (find-if #'stringp conditions)))
+      (import declaration-name (find-package "EXT"))
       ;; Register as an optimization quality with its own flags
       (let* ((circular-list (list (cons test 0)))
              (flags-list (list* (cons 0 test)
@@ -295,13 +296,3 @@ INTGERP, STRINGP.")
 
 (defun compiler-push-events ()
   (>= (cmp-env-optimization 'safety) 3))
-
-(eval-when (:compile-toplevel :execute :load-toplevel)
-  (print 'hola)
-  (let ((*print-base* 2)(*print-circle* t))
-    (maphash #'(lambda (k v) (print (list k v)))
-             c::*optimization-quality-switches*)
-    (terpri)
-    (loop for q in '(debug safety speed space)
-       do (print (list* q (gethash q c::*optimization-quality-switches*))))
-    (print (c::default-policy))))
