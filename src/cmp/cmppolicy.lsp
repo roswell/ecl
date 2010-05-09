@@ -34,7 +34,7 @@
 
 #.`(eval-when (:compile-toplevel :execute :load-toplevel)
   ,@(loop for name in +optimization-quality-orders+
-     for i from 0 by 4
+       for i from 0 by 4
        for fun-name = (intern (concatenate 'string
                                            "POLICY-TO-" (symbol-name name) "-LEVEL"))
        collect `(defun ,fun-name (policy)
@@ -89,7 +89,7 @@
   (let ((record (gethash (first decl) *optimization-quality-switches*)))
     (when (and record (consp decl) (eql (list-length decl) 1))
       (let* ((old (cmp-env-policy env))
-             (new (compute-policy (list (first decl) 3) old)))
+             (new (compute-policy (list (first decl)) old)))
         (cmp-env-add-declaration 'optimization (list new) env)))))
 
 (defun add-default-optimizations (env)
@@ -155,6 +155,18 @@
                 (return `(defun ,function-name (&optional (env *cmp-env*))
                            ,@(and doc (list doc))
                            (,(policy-function-name alias) env)))))
+             (:anti-alias
+              (let* ((alias (first conditions))
+                     (bits (gethash (policy-declaration-name alias)
+                               *optimization-quality-switches*)))
+                (setf bits (list (second bits)
+                                 (first bits)))
+                (rplacd (cdr bits) (cdr bits))
+                (setf (gethash declaration-name *optimization-quality-switches*)
+                      bits)
+                (return `(defun ,function-name (&optional (env *cmp-env*))
+                           ,@(and doc (list doc))
+                           (not (,(policy-function-name alias) env))))))
              (:on
               (push `(>= (cmp-env-optimization ',(first conditions) env)
                          ,(second conditions))
@@ -194,8 +206,11 @@
 
 (define-policy assume-right-type :alias assume-no-errors)
 
+(define-policy type-assertions :anti-alias assume-no-errors
+  "Generate type assertions when inlining accessors and other functions.")
+
 (define-policy check-stack-overflow :on safety 2
-  "Aadd a stack check to every function")
+  "Add a stack check to every function")
 
 (define-policy check-arguments-type :on safety 1
   "Generate CHECK-TYPE forms for function arguments with type declarations")
