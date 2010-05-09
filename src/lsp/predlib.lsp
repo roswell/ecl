@@ -260,6 +260,9 @@ fill-pointer, and is not adjustable."
 and is not adjustable."
   (if size `(simple-array bit (,size)) '(simple-array bit (*))))
 
+(deftype array-index ()
+  '(integer 0 #.(1- array-dimension-limit)))
+
 ;;************************************************************
 ;;			TYPEP
 ;;************************************************************

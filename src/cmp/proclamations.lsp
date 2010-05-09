@@ -65,8 +65,6 @@
 ;; AUXILIARY TYPES
 ;;
 
-(deftype array-dimension ()
-  '(integer 0 #.(1- array-dimension-limit)))
 (deftype array-rank-index ()
   '(integer 0 #.(1- array-rank-limit)))
 (deftype association-list ()
@@ -105,7 +103,7 @@
   't)
 (deftype integer-length ()
   "A type that fits maximum number of bits that an integer may have in this system"
-  'array-dimension)
+  'ext:array-index)
 (deftype natural ()
   "Non-negative number"
   '(integer 0 *))
@@ -477,7 +475,7 @@
 (proclamation integer-length (integer) integer-length :pure)
 (proclamation integerp (t) gen-bool :pure)
 (proclamation parse-integer (string &rest t)
-              (values integer array-dimension)
+              (values integer ext:array-index)
               :no-side-effects)
 (proclamation boole ((integer 0 15) integer integer) integer :pure)
 (proclamation logand (&rest integer) integer :pure)
@@ -703,41 +701,41 @@
 ;;; 15. ARRAYS
 ;;;
 
-(proclamation make-array ((or array-dimension list) &key)
+(proclamation make-array ((or ext:array-index list) &key)
               array :no-side-effects)
-(proclamation adjust-array (array (or array-dimension list) &key) array)
+(proclamation adjust-array (array (or ext:array-index list) &key) array)
 (proclamation adjustable-array-p (array) gen-bool :pure)
-(proclamation aref (array &rest array-dimension) t :reader)
+(proclamation aref (array &rest ext:array-index) t :reader)
 (proclamation array-dimension (array array-rank-index)
-              array-dimension :reader)
+              ext:array-index :reader)
 (proclamation array-dimensions (array) list :reader)
 (proclamation array-element-type (array) type-specifier :pure)
 (proclamation array-has-fill-pointer-p (array) gen-bool :pure)
 (proclamation array-displacement (array)
-              (values (or array null) array-dimension)
+              (values (or array null) ext:array-index)
               :reader)
-(proclamation array-in-bounds-p (array &rest array-dimension) gen-bool
+(proclamation array-in-bounds-p (array &rest ext:array-index) gen-bool
               :no-side-effects)
 (proclamation array-rank (array) array-rank-index :reader)
-(proclamation array-row-major-index (array &rest array-dimension)
-              array-dimension :no-side-effects)
-(proclamation array-total-size (array) array-dimension :reader)
+(proclamation array-row-major-index (array &rest ext:array-index)
+              ext:array-index :no-side-effects)
+(proclamation array-total-size (array) ext:array-index :reader)
 (proclamation arrayp (t) gen-bool :pure)
-(proclamation fill-pointer (vector) array-dimension :reader)
-(proclamation row-major-aref (array array-dimension) t :reader)
+(proclamation fill-pointer (vector) ext:array-index :reader)
+(proclamation row-major-aref (array ext:array-index) t :reader)
 (proclamation upgraded-array-element-type
               (type-specifier &optional environment)
               type-specifier :no-side-effects)
 (proclamation simple-vector-p (t) gen-bool :pure)
-(proclamation svref (simple-vector array-dimension) t :reader)
+(proclamation svref (simple-vector ext:array-index) t :reader)
 (proclamation vector (&rest t) vector :no-side-effects)
 (proclamation vector-pop (vector) t)
-(proclamation vector-push (t vector) (or array-dimension null))
-(proclamation vector-push-extend (t vector &optional array-dimension)
-              array-dimension)
+(proclamation vector-push (t vector) (or ext:array-index null))
+(proclamation vector-push-extend (t vector &optional ext:array-index)
+              ext:array-index)
 (proclamation vectorp (t) gen-bool :pure)
-(proclamation bit ((array bit) &rest array-dimension) bit :reader)
-(proclamation sbit ((simple-array bit) &rest array-dimension)
+(proclamation bit ((array bit) &rest ext:array-index) bit :reader)
+(proclamation sbit ((simple-array bit) &rest ext:array-index)
               bit :reader)
 (proclamation bit-and (bit-array bit-array &optional
                        (or bit-array (member t nil)))
@@ -777,10 +775,10 @@
 ;; ECL extensions
 (proclamation si:make-pure-array (t t t t t t) array)
 (proclamation si:make-vector (t t t t t t) vector)
-(proclamation si:aset (t array &rest array-dimension) t)
-(proclamation si:row-major-aset (array array-dimension t) t)
-(proclamation si:svset (simple-vector array-dimension t) t)
-(proclamation si:fill-pointer-set (vector array-dimension) array-dimension)
+(proclamation si:aset (t array &rest ext:array-index) t)
+(proclamation si:row-major-aset (array ext:array-index t) t)
+(proclamation si:svset (simple-vector ext:array-index t) t)
+(proclamation si:fill-pointer-set (vector ext:array-index) ext:array-index)
 (proclamation si:replace-array (array array) array)
 
 ;;;
@@ -788,8 +786,8 @@
 ;;;
 
 (proclamation simple-string-p (t) gen-bool :pure)
-(proclamation char (string array-dimension) character :reader)
-(proclamation schar (simple-string array-dimension) character :reader)
+(proclamation char (string ext:array-index) character :reader)
+(proclamation schar (simple-string ext:array-index) character :reader)
 (proclamation string (string-designator) string :no-side-effects)
 (proclamation string-upcase (string-designator &key)
               string :no-side-effects)
@@ -809,34 +807,34 @@
 (proclamation string= (string-designator string-designator &key)
               gen-bool :no-side-effects)
 (proclamation string/= (string-designator string-designator &key)
-              (or array-dimension null) :no-side-effects)
+              (or ext:array-index null) :no-side-effects)
 (proclamation string< (string-designator string-designator &key)
-              (or array-dimension null) :no-side-effects)
+              (or ext:array-index null) :no-side-effects)
 (proclamation string> (string-designator string-designator &key)
-              (or array-dimension null) :no-side-effects)
+              (or ext:array-index null) :no-side-effects)
 (proclamation string<= (string-designator string-designator &key)
-              (or array-dimension null) :no-side-effects)
+              (or ext:array-index null) :no-side-effects)
 (proclamation string>= (string-designator string-designator &key)
-              (or array-dimension null) :no-side-effects)
+              (or ext:array-index null) :no-side-effects)
 (proclamation string-equal (string-designator string-designator &key)
               gen-bool :no-side-effects)
 (proclamation string-not-equal (string-designator string-designator &key)
-              (or array-dimension null) :no-side-effects)
+              (or ext:array-index null) :no-side-effects)
 (proclamation string-lessp (string-designator string-designator &key)
-              (or array-dimension null) :no-side-effects)
+              (or ext:array-index null) :no-side-effects)
 (proclamation string-greaterp (string-designator string-designator &key)
-              (or array-dimension null) :no-side-effects)
+              (or ext:array-index null) :no-side-effects)
 (proclamation string-not-lessp (string-designator string-designator &key)
-              (or array-dimension null) :no-side-effects)
+              (or ext:array-index null) :no-side-effects)
 (proclamation string-not-greaterp (string-designator string-designator &key)
-              (or array-dimension null) :no-side-effects)
+              (or ext:array-index null) :no-side-effects)
 (proclamation stringp (t) gen-bool :predicate)
-(proclamation make-string (array-dimension &key) string :no-side-effects)
+(proclamation make-string (ext:array-index &key) string :no-side-effects)
 
 ;; ECL extensions:
 (proclamation si:base-string-p (t) gen-bool :pure)
-(proclamation si:char-set (string array-dimension character) character)
-(proclamation si:schar-set (string array-dimension character) character)
+(proclamation si:char-set (string ext:array-index character) character)
+(proclamation si:schar-set (string ext:array-index character) character)
 (proclamation si:base-string-concatenate (&rest base-string) base-string)
 
 ;;;
@@ -909,12 +907,12 @@
 
 (proclamation make-hash-table (&key) hash-table :no-side-effects)
 (proclamation hash-table-p (t) gen-bool :pure)
-(proclamation hash-table-count (hash-table) array-dimension :reader)
+(proclamation hash-table-count (hash-table) ext:array-index :reader)
 (proclamation hash-table-rehash-size (hash-table)
               (or (integer 1 *) (float (1.0) *))
               :pure)
 (proclamation hash-table-rehash-threshold (hash-table) (real 0 1) :pure)
-(proclamation hash-table-size (hash-table) array-dimension :reader)
+(proclamation hash-table-size (hash-table) ext:array-index :reader)
 (proclamation hash-table-test (hash-table) function-designator :pure)
 (proclamation gethash (t hash-table &optional t) (values t gen-bool) :reader)
 (proclamation remhash (t hash-table) gen-bool)
@@ -958,7 +956,7 @@
               :no-side-effects)
 (proclamation parse-namestring (pathname-designator &optional pathname-host
                                 pathname-designator &key)
-              (values (or pathname null) (or array-dimension null))
+              (values (or pathname null) (or ext:array-index null))
               :no-side-effects)
 (proclamation wild-pathname-p (pathname-designator
                                &optional (member :host :device :directory :name
@@ -1064,8 +1062,8 @@
               concatenated-stream :pure)
 (proclamation get-output-stream-string (string-stream) string :reader)
 (proclamation make-string-input-stream (string &optional
-                                               array-dimension
-                                               (or array-dimension null))
+                                               ext:array-index
+                                               (or ext:array-index null))
               string-stream :reader)
 (proclamation make-string-output-stream (&key) string-stream :reader)
 
@@ -1140,7 +1138,7 @@
 (proclamation read-delimited-list (character &optional stream-designator gen-bool)
               list)
 (proclamation read-from-string (string &optional gen-bool t &key)
-              (values t array-dimension))
+              (values t ext:array-index))
 (proclamation readtable-case (readtable)
               (member :upcase :downcase :preserve :invert)
               :reader)

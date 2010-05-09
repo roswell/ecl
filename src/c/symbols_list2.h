@@ -1905,6 +1905,8 @@ cl_symbols[] = {
 {EXT_ "INLINE-TYPE-CHECKS",NULL},
 {EXT_ "EVALUATE-FORMS",NULL},
 
+{EXT_ "ARRAY-INDEX",NULL},
+
 
 /* Tag for end of list */
 {NULL,NULL}};
