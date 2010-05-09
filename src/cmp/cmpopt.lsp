@@ -93,7 +93,7 @@
 	   (expand-typep form object `',(funcall function) env))
 	  ;;
 	  ;; No optimizations that take up too much space unless requested.
-	  ((policy-open-code-type-checks)
+	  ((policy-inline-type-checks)
 	   form)
 	  ;;
 	  ;; CONS types. They must be checked _before_ sequence types. We
@@ -165,7 +165,7 @@
   (multiple-value-bind (declarations body)
       (si:process-declarations body nil)
     (let* ((list-var (gensym))
-	   (typed-var (if (policy-check-all-arguments env)
+	   (typed-var (if (policy-assume-no-errors env)
 			  list-var
 			  `(the cons ,list-var))))
       `(block nil
@@ -222,7 +222,7 @@
 	   (cmperror "Cannot COERCE an expression to an empty type."))
 	  ;;
 	  ;; No optimizations that take up too much space unless requested.
-	  ((policy-open-code-type-checks)
+	  ((policy-inline-type-checks)
 	   form)
 	  ;;
 	  ;; Search for a simple template above, replacing X by the value.

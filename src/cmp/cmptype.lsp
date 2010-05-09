@@ -70,11 +70,10 @@
 (defun extract-lambda-type-checks (requireds optionals keywords ts other-decls)
   ;; We generate automatic type checks for function arguments that
   ;; are declared These checks can be deactivated by appropriate
-  ;; safety settings which are checked by OPTIONAL-CHECK-TYPE. Note
+  ;; safety settings which are checked by ASSERT-TYPE. Note
   ;; that not all type declarations can be checked (take for instance
-  ;; (type (function (t t) t) foo)) We let OPTIONAL-CHECK-TYPE do the
-  ;; job.
-  (when (policy-automatic-check-type)
+  ;; (type (function (t t) t) foo)) We let the macro do the job.
+  (when (policy-check-arguments-type)
     (loop with type-checks = (append (loop for spec on optionals by #'cdddr
                                         collect (first spec))
                                      (loop for spec on keywords by #'cddddr
@@ -104,18 +103,6 @@
                       (fun-name *current-function*)
                       (mapcar #'second checks)))
            (return (cons checks new-auxs))))))
-
-(defmacro optional-check-type (&whole whole var-name type &environment env)
-  "Generates a type check that is only activated for the appropriate
-safety settings and when the type is not trivial."
-  (if (not (policy-automatic-check-type env))
-      (cmpnote "Unable to emit check for variable ~A" whole)
-      (multiple-value-bind (ok valid)
-          (subtypep 't (setf type (remove-function-types type)))
-        (unless (or ok (not valid))
-          (setf var-name
-               `(the ,type (progn (check-type ,var-name ,type) ,var-name))))))
-  var-name)
 
 (defmacro assert-type-if-known (&whole whole value type &environment env)
   "Generates a type check on an expression, ensuring that it is satisfied."

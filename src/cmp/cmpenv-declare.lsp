@@ -99,7 +99,8 @@ and a possible documentation string (only accepted when DOC-P is true)."
               SI::NO-CHECK-TYPE POLICY-DEBUG-IHS-FRAME :READ-ONLY)
              (push decl others))
             (otherwise
-             (if (alien-declaration-p decl-name)
+             (if (or (alien-declaration-p decl-name)
+                     (policy-declaration-name-p decl-name))
                  (push decl others)
                  (multiple-value-bind (ok type)
                      (valid-type-specifier decl-name)
@@ -139,19 +140,22 @@ special variable declarations, as these have been extracted before."
     (INLINE
       (declare-inline (rest decl) env))
     (NOTINLINE
-     (setf env (declare-notinline (rest decl) env)))
+     (declare-notinline (rest decl) env))
     (DECLARATION
      (validate-alien-declaration (rest decl) #'cmperr)
-     (setf env (cmp-env-extend-declaration 'alien (rest decl) env)))
+     (cmp-env-extend-declaration 'alien (rest decl) env))
     ((SI::C-LOCAL SI::C-GLOBAL SI::NO-CHECK-TYPE :READ-ONLY)
      env)
     ((DYNAMIC-EXTENT IGNORABLE)
      ;; FIXME! SOME ARE IGNORED!
      env)
     (otherwise
-     (unless (alien-declaration-p (first decl) env)
-       (cmpwarn "Unknown declaration specifier ~s" (first decl)))
-     env)))
+     (cond ((alien-declaration-p (first decl) env)
+            env)
+           ((maybe-add-policy decl env))
+           (t
+            (cmpwarn "Unknown declaration specifier ~s" (first decl))
+            env)))))
 
 (defun symbol-macro-declaration-p (name type)
   (let* ((record (cmp-env-search-variables name 'si::symbol-macro *cmp-env*)))

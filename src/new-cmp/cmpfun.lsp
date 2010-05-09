@@ -128,7 +128,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
              "FEwrong_type_nth_arg(#0,#1,#2,#3);" :one-liner nil))
 
 (define-compiler-macro rplaca (&whole form cons value &environment env)
-  (if (policy-open-code-accessors env)
+  (if (policy-inline-accessors env)
       (expand-rplaca/d (eq (first form) 'rplaca) cons value env)
       form))
 
@@ -182,7 +182,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
   form)
 
 (define-compiler-macro nth (&whole form which cons &environment env)
-  (if (and (policy-open-code-accessors env) (numberp which) (<= 0 which 7))
+  (if (and (policy-inline-accessors env) (numberp which) (<= 0 which 7))
       (case which
         (0 (list 'CAR cons))
         (1 (list 'CADR cons))
@@ -195,7 +195,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
       form))
 
 (define-compiler-macro nthcdr (&whole form which cons &environment env)
-  (if (and (policy-open-code-accessors env) (numberp which) (<= 0 which 7))
+  (if (and (policy-inline-accessors env) (numberp which) (<= 0 which 7))
       (case which
         (0 cons)
         (1 (list 'CDR cons))

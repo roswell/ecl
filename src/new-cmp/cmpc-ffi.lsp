@@ -148,7 +148,7 @@
 	   ((:object)
 	    (ensure-valid-object-type dest-type)
 	    (wt (cond ((or (subtypep (location-type loc) 'fixnum)
-			(not (policy-check-all-arguments-p)))
+                           (policy-assume-no-errors))
 		       "fix(")
 		      ((member dest-rep-type '(:unsigned-short :unsigned-long :cl-index))
 		       "ecl_to_unsigned_integer(")
