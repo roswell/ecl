@@ -14,9 +14,6 @@
 
 (in-package #-new-cmp "COMPILER" #+new-cmp "C-ENV")
 
-(defun cmp-env-new ()
-  (cons nil nil))
-
 (defun cmp-env-root (&optional (env *cmp-env-root*))
   "Provide a root environment for toplevel forms storing all declarations
 that are susceptible to be changed by PROCLAIM."
@@ -82,6 +79,13 @@ that are susceptible to be changed by PROCLAIM."
   (push (list (fun-name fun) 'function fun)
 	(cmp-env-functions env))
   env)
+
+(defun cmp-env-register-global-macro (name function)
+  (unless (tailp (cmp-env-functions *cmp-env-root*) *cmp-env*)
+    (break))
+  (nconc (cmp-env-functions *cmp-env-root*)
+         (list (list name 'si::macro function)))
+  (values))
 
 (defun cmp-env-register-macro (name function &optional (env *cmp-env*))
   (push (list name 'si::macro function)

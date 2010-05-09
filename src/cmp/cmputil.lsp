@@ -293,8 +293,8 @@
            (setf throw-flag nil))
        (when throw-flag ,error-form))))
 
-(defun cmp-eval (form)
-  (handler-case (eval form)
+(defun cmp-eval (form &optional env)
+  (handler-case (si::eval-with-env form env nil t t)
     (serious-condition (c)
       (when *compiler-break-enable*
         (invoke-debugger c))
@@ -306,7 +306,6 @@
 ;;; to determine if the macro is shadowed by a function or a macro.
 (defun cmp-macro-function (name)
   (or (cmp-env-search-macro name)
-      (gethash name *global-macros*)
       (macro-function name)))
 
 (defun cmp-expand-macro (fd form &optional (env *cmp-env*))

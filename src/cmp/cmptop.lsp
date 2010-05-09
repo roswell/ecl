@@ -494,8 +494,8 @@
       args
     (multiple-value-bind (function pprint doc-string)
         (sys::expand-defmacro name lambda-list body)
-      (setf (gethash name *global-macros*)
-            (coerce function 'function))
+      (let ((fn (cmp-eval function *cmp-env*)))
+        (cmp-env-register-global-macro name fn))
       (t1expr* (macroexpand `(DEFMACRO ,@args))))))
 
 (defun c1load-time-value (args)

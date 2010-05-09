@@ -178,7 +178,8 @@ boundaries. Note that compared with the bytecodes compiler, these
 records contain an additional variable, block, tag or function
 object at the end.")
 
-(defvar *cmp-env-root* (cons nil nil)
+(defvar *cmp-env-root*
+  (cons nil (list (list '#:no-macro 'si::macro (constantly nil))))
 "This is the common environment shared by all toplevel forms. It can
 only be altered by DECLAIM forms and it is used to initialize the
 value of *CMP-ENV*.")
@@ -304,7 +305,7 @@ be deleted if they have been opened with LoadLibrary.")
     (*compiler-in-use* t)
     (*compiler-phase* 't1)
     (*callbacks* nil)
-    (*cmp-env-root* (cmp-env-copy *cmp-env-root*))
+    (*cmp-env-root* (copy-tree *cmp-env-root*))
     (*cmp-env* nil)
     #-new-cmp
     (*max-temp* 0)
@@ -324,7 +325,6 @@ be deleted if they have been opened with LoadLibrary.")
     (*global-vars* nil)
     (*global-funs* nil)
     (*global-cfuns-array* nil)
-    (*global-macros* (make-hash-table :size 64 :test #'eql))
     (*linking-calls* nil)
     (*global-entries* nil)
     (*undefined-vars* nil)
