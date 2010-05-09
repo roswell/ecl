@@ -13,7 +13,7 @@
   "src:cmp;cmputil.lsp"
   "src:cmp;cmptype-arith.lsp"
   "src:cmp;cmptype-prop.lsp"
-  "src:new-cmp;cmptype.lsp"
+  "src:cmp;cmptype.lsp"
   "src:new-cmp;cmptranslate.lsp"
   "src:new-cmp;cmpblock.lsp"
   "src:new-cmp;cmpcall.lsp"
