@@ -128,9 +128,9 @@
   (cmpck (constantp name) "The constant ~s is being bound." name)
   (let ((ignorable (cdr (assoc name ignores)))
         type)
-    (if (setq type (assoc name types))
-	(setq type (type-filter (cdr type)))
-	(setq type 'T))
+    (setq type (if (setq type (assoc name types))
+                   (cdr type)
+                   'T))
     (cond ((or (member name specials) (special-variable-p name))
            (unless type
 	     (setf type (or (get-sysprop name 'CMP-TYPE) 'T)))

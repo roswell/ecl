@@ -20,8 +20,7 @@
 ;;;
 (defun get-slot-type (name index)
   ;; default is t
-  (type-filter
-   (or (third (nth index (get-sysprop name 'SYS::STRUCTURE-SLOT-DESCRIPTIONS))) 'T)))
+  (or (third (nth index (get-sysprop name 'SYS::STRUCTURE-SLOT-DESCRIPTIONS))) 'T))
 
 ;;;
 ;;; STRUCTURE SLOT READING

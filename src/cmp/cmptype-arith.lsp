@@ -62,58 +62,6 @@
       (STRUCTURE-OBJECT 'STRUCTURE-OBJECT)
       (t t))))
 
-(defun type-filter (type &optional values-allowed)
-  (multiple-value-bind (type-name type-args) (sys::normalize-type type)
-    (case type-name
-        ((FIXNUM CHARACTER SINGLE-FLOAT DOUBLE-FLOAT SYMBOL) type-name)
-        (SHORT-FLOAT #-short-float 'SINGLE-FLOAT #+short-float 'SHORT-FLOAT)
-        (LONG-FLOAT #-long-float 'DOUBLE-FLOAT #+long-float 'LONG-FLOAT)
-        ((SIMPLE-STRING STRING) 'STRING)
-        ((SIMPLE-BIT-VECTOR BIT-VECTOR) 'BIT-VECTOR)
-	((NIL T) t)
-	((SIMPLE-ARRAY ARRAY)
-	 (cond ((endp type-args) '(ARRAY *))		; Beppe
-	       ((eq '* (car type-args)) t)
-	       (t (let ((element-type (upgraded-array-element-type (car type-args)))
-			(dimensions (if (cdr type-args) (second type-args) '*)))
-		    (if (and (not (eq dimensions '*))
-			     (or (numberp dimensions)
-				 (= (length dimensions) 1)))
-		      (case element-type
-			(BASE-CHAR 'STRING)
-			(BIT 'BIT-VECTOR)
-			(t (list 'VECTOR element-type)))
-		      (list 'ARRAY element-type))))))
-	(INTEGER (if (subtypep type 'FIXNUM) 'FIXNUM t))
-	((STREAM CONS) type-name) ; Juanjo
-        (FUNCTION type-name)
-	(t (cond ((eq type-name 'VALUES)
-		  (unless values-allowed
-		    (error "VALUES type found in a place where it is not allowed."))
-		  `(VALUES ,@(mapcar #'(lambda (x)
-					(if (or (eq x '&optional)
-						(eq x '&rest))
-					    x
-					    (type-filter x)))
-				    type-args)))
-		 #+clos
-		 ((subtypep type 'STANDARD-OBJECT) type)
-		 #+clos
-		 ((subtypep type 'STRUCTURE-OBJECT) type)
-		 ((dolist (v '(FIXNUM CHARACTER SINGLE-FLOAT DOUBLE-FLOAT
-                               #+short-float SHORT-FLOAT #+long-float LONG-FLOAT
-			       (VECTOR T) STRING BIT-VECTOR
-			       (VECTOR FIXNUM) (VECTOR SINGLE-FLOAT)
-			       (VECTOR DOUBLE-FLOAT) (ARRAY BASE-CHAR)
-			       (ARRAY BIT) (ARRAY FIXNUM)
-			       (ARRAY SINGLE-FLOAT) (ARRAY DOUBLE-FLOAT)
-			       (ARRAY T))) ; Beppe
-		    (when (subtypep type v) (return v))))
-		 ((and (eq type-name 'SATISFIES) ; Beppe
-		       (symbolp (car type-args))
-		       (sys:get-sysprop (car type-args) 'TYPE-FILTER)))
-		 (t t))))))
-
 (defun valid-type-specifier (type)
   (handler-case
      (if (subtypep type 'T)

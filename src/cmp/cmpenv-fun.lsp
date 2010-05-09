@@ -20,7 +20,7 @@
            (member (car al) '(&optional &rest &key)))
        (nreverse types))
       (declare (object al))
-      (push (type-filter (car al)) types)))
+    (push (car al) types)))
 
 ;;; The valid return type declaration is:
 ;;;	(( VALUES {type}* )) or ( {type}* ).
@@ -35,9 +35,8 @@
                ((or (endp (cdar return-types))
                     (member (cadar return-types) '(&optional &rest &key)))
                 t)
-               (t (type-filter (car return-types) t))))
-        (t (#-new-cmp type-filter #+new-cmp c-types:type-filter
-            (car return-types)))))
+               (t (car return-types))))
+        (t (car return-types))))
 
 (defun proclaim-function (fname decl)
   (if (si:valid-function-name-p fname)

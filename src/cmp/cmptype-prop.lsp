@@ -35,28 +35,28 @@
         (when types
           (cmpwarn "Too many arguments passed to ~A" fname)))
     (let ((expected-type (first types)))
-      (when (member expected-type '(* &rest &key &allow-other-keys) :test #'eq)
-        (return))
-      (when (eq expected-type '&optional)
-        (when (or in-optionals (null (rest types)))
-          (cmpwarn "Syntax error in type proclamation for function ~A.~&~A"
-                   fname arg-types))
-        (setf in-optionals t
-              types (rest types)
-              expected-type (first types)))
-      (when (endp args)
-        (unless in-optionals
-          (cmpwarn "Too few arguments for proclaimed function ~A" fname))
-        (return))
-      (let* ((value (first args))
-             (actual-type (location-primary-type value))
-             (intersection (type-and actual-type expected-type)))
-          (unless intersection
-            (cmperr "The argument ~d of function ~a has type~&~4T~A~&instead of expected~&~4T~A"
-                    i fname actual-type expected-type))
-          #-new-cmp
-          (when (zerop (cmp-env-optimization 'safety))
-            (setf (c1form-type value) intersection))))))
+      (cond ((member expected-type '(* &rest &key &allow-other-keys) :test #'eq)
+             (return))
+            ((eq expected-type '&optional)
+             (when in-optionals
+               (cmpwarn "Syntax error in type proclamation for function ~A.~&~A"
+                        fname arg-types))
+             (setf in-optionals t
+                   types (rest types)))
+            ((endp args)
+             (unless in-optionals
+               (cmpwarn "Too few arguments for proclaimed function ~A" fname))
+             (return))
+            (t
+             (let* ((value (first args))
+                    (actual-type (location-primary-type value))
+                    (intersection (type-and actual-type expected-type)))
+               (unless intersection
+                 (cmperr "The argument ~d of function ~a has type~&~4T~A~&instead of expected~&~4T~A"
+                         i fname actual-type expected-type))
+               #-new-cmp
+               (when (zerop (cmp-env-optimization 'safety))
+                 (setf (c1form-type value) intersection))))))))
 
 (defun propagate-types (fname forms)
   (multiple-value-bind (arg-types return-type found)

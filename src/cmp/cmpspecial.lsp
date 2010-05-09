@@ -25,7 +25,7 @@
 (defun c1the (args)
   (check-args-number 'THE args 2 2)
   (let* ((form (c1expr (second args)))
-	 (the-type (type-filter (first args) t))
+	 (the-type (first args))
 	 type)
     (if (setf type (values-type-and the-type (c1form-primary-type form)))
         (setf (c1form-type form) type)

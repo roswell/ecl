@@ -118,7 +118,6 @@
 	    (warn "Unknown declaration specifier ~s" decl-name))))))
 
 (defun proclaim-var (type vl)
-  (setq type (type-filter type))
   (dolist (var vl)
     (if (symbolp var)
 	(let ((type1 (get-sysprop var 'CMP-TYPE))
