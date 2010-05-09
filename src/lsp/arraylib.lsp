@@ -232,6 +232,8 @@ Replaces ITEM for the element of VECTOR that is pointed to by the fill-pointer
 of VECTOR and then increments the fill-pointer by one.  Returns NIL if the new
 value of the fill-pointer becomes too large.  Otherwise, returns the new fill-
 pointer as the value."
+  (declare (vector vector)
+           (optimize (safety 1)))
   (let ((fp (fill-pointer vector)))
     (declare (fixnum fp))
     (cond ((< fp (the fixnum (array-dimension vector 0)))
