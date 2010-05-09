@@ -336,7 +336,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
     (baboon))
 
   ;; check arguments
-  (unless (or local-entry-p (not (compiler-check-args)))
+  (unless (or local-entry-p (not (policy-check-nargs)))
     (incf *inline-blocks*)
     (if (and use-narg (not varargs))
 	(wt-nl "if (ecl_unlikely(narg!=" nreq ")) FEwrong_num_arguments_anonym();")

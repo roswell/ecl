@@ -212,7 +212,7 @@
 (define-policy check-stack-overflow :on safety 2
   "Add a stack check to every function")
 
-(define-policy check-arguments-type :on safety 1
+(define-policy ext:check-arguments-type :on safety 1
   "Generate CHECK-TYPE forms for function arguments with type declarations")
 
 (define-policy array-bounds-check :alias assume-no-errors
@@ -224,7 +224,7 @@
 (define-policy global-function-checking :alias assume-no-errors
   "Read the binding of a global function even if it is discarded")
 
-(define-policy check-nargs :on safety 1
+(define-policy check-nargs :on safety 1 :on ext:check-arguments-type 1
   "Check that the number of arguments a function receives is within bounds")
 
 ;;
@@ -267,9 +267,6 @@ INTGERP, STRINGP.")
 
 (defun safe-compile ()
   (>= (cmp-env-optimization 'safety) 2))
-
-(defun compiler-check-args ()
-  (>= (cmp-env-optimization 'safety) 1))
 
 (defun compiler-push-events ()
   (>= (cmp-env-optimization 'safety) 3))
