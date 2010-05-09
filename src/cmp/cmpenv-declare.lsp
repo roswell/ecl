@@ -109,54 +109,12 @@ and a possible documentation string (only accepted when DOC-P is true)."
        finally (return (values body specials types ignored
                                (nreverse others) doc all-declarations)))))
 
-(defun default-optimization (optimization)
-  (ecase optimization
-    (speed *speed*)
-    (safety *safety*)
-    (space *space*)
-    (debug *debug*)))
-
-(defun search-optimization-quality (declarations what)
-  (dolist (i (reverse declarations)
-	   (default-optimization what))
-    (when (and (consp i) (eq (first i) 'policy-debug-ihs-frame)
-               (eq what 'debug))
-      (return 2))      
-    (when (and (consp i) (eq (first i) 'optimize))
-      (dolist (j (rest i))
-	(cond ((consp j)
-	       (when (eq (first j) what)
-		 (return-from search-optimization-quality (second j))))
-	      ((eq j what)
-	       (return-from search-optimization-quality 3)))))))
-
-(defun compute-optimizations (arguments env)
-  (let ((optimizations (copy-list (cmp-env-all-optimizations env))))
-    (dolist (x arguments)
-      (when (symbolp x)
-        (setq x (list x 3)))
-      (if (or (not (consp x))
-              (not (consp (cdr x)))
-              (not (numberp (second x)))
-              (not (<= 0 (second x) 3)))
-          (cmpwarn "Illegal OPTIMIZE proclamation ~s" x)
-          (let ((value (second x)))
-            (case (car x)
-              (DEBUG (setf (first optimizations) value))
-              (SAFETY (setf (second optimizations) value))
-              (SPACE (setf (third optimizations) value))
-              (SPEED (setf (fourth optimizations) value))
-              (COMPILATION-SPEED)
-              (t (cmpwarn "Unknown OPTIMIZE quality ~s" (car x)))))))
-    optimizations))
-
 (defun add-one-declaration (env decl)
   "Add to the environment one declarations which is not type, ignorable or
 special variable declarations, as these have been extracted before."
   (case (car decl)
     (OPTIMIZE
-     (let ((optimizations (compute-optimizations (rest decl) env)))
-       (cmp-env-add-declaration 'optimize optimizations env)))
+     (cmp-env-add-optimizations (rest decl) env))
     (POLICY-DEBUG-IHS-FRAME
      (let ((flag (or (rest decl) '(t))))
        (if *current-function*

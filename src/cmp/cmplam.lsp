@@ -89,7 +89,6 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 				     (si::function-block-name name)))
 	 (children (fun-child-funs fun))
 	 (global (and (assoc 'SI::C-GLOBAL decl) 'T))
-	 (debug (search-optimization-quality decl 'debug))
 	 (no-entry (assoc 'SI::C-LOCAL decl))
 	 cfun exported minarg maxarg)
     (when (and no-entry (policy-debug-ihs-frame))

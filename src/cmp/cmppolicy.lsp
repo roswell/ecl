@@ -14,52 +14,159 @@
 
 (in-package #-new-cmp "COMPILER" #+new-cmp "C-ENV")
 
-(defun cmp-env-all-optimizations (&optional (env *cmp-env*))
-  (or (cmp-env-search-declaration 'optimize)
-      (list *debug* *safety* *space* *speed*)))
-
-(defun cmp-env-optimization (property &optional (env *cmp-env*))
-  (let ((x (cmp-env-all-optimizations env)))
-    (case property
-      (debug (first x))
-      (safety (second x))
-      (space (third x))
-      (speed (fourth x)))))
+(eval-when (:compile-toplevel :execute)
+  (defconstant +optimization-quality-orders+ '(debug safety speed space)))
 
 (eval-when (:compile-toplevel :execute)
-  (defparameter +last-optimization-bit+ 0)
+  (defparameter *optimization-quality-switches*
+    #.(loop with hash = (make-hash-table :size 64 :test #'eq)
+         for name in +optimization-quality-orders+
+         for i from 0 by 4
+         for list = (loop with mask = (ash #b1111 i)
+                       for level from 0 to 3
+                       for bits = (ash 1 (+ level i))
+                       collect (cons bits (logxor bits mask)))
+         do (setf (gethash name hash) list)
+         finally (return hash))))
+
+(eval-when (:load-toplevel)
+  (defparameter *optimization-quality-switches* #.*optimization-quality-switches*))
+
+#.`(eval-when (:compile-toplevel :execute :load-toplevel)
+  ,@(loop for name in +optimization-quality-orders+
+     for i from 0 by 4
+       for fun-name = (intern (concatenate 'string
+                                           "POLICY-TO-" (symbol-name name) "-LEVEL"))
+       collect `(defun ,fun-name (policy)
+                  (loop for level from 0 to 3
+                     when (logbitp (+ level ,i) policy)
+                     return level))))
+
+(defun optimization-quality-switches (type index)
+  (nth index (gethash type *optimization-quality-switches*)))
+
+(defun compute-policy (arguments old-bits)
+  (let* ((bits old-bits))
+    (dolist (x arguments)
+      (let (flags name value)
+        (cond ((symbolp x)
+               (setq flags (optimization-quality-switches x 3)
+                     value 3
+                     name x))
+              ((or (not (consp x))
+                   (not (consp (cdr x)))
+                   (not (numberp (second x)))
+                   (not (<= 0 (second x) 3))))
+              (t
+               (setf name (first x)
+                     value (second x)
+                     flags (optimization-quality-switches name (second x)))))
+        (if (null flags)
+            (cmpwarn "Illegal or unknown OPTIMIZE proclamation ~s" x)
+            (setf bits (logandc2 (logior bits (car flags)) (cdr flags))))))
+    bits))
+
+(defun default-policy ()
+  (compute-policy `((space ,*space*)
+                    (safety ,*safety*)
+                    (debug ,*debug*)
+                    (speed ,*speed*))
+                  0))
+
+(defun cmp-env-policy (env)
+  (or (first (cmp-env-search-declaration 'optimization env))
+      (default-policy)))
+
+(defun cmp-env-add-optimizations (decl &optional (env *cmp-env*))
+  (let* ((old (cmp-env-policy env))
+         (new (compute-policy decl old)))
+    (cmp-env-add-declaration 'optimization (list new) env)))
+
+(defun add-default-optimizations (env)
+  (if (cmp-env-search-declaration 'optimization)
+      env
+      (cmp-env-add-declaration 'optimization (list (default-policy)) env)))
+
+(defun cmp-env-all-optimizations (&optional (env *cmp-env*))
+  (let ((o (cmp-env-policy env)))
+    (list (policy-to-debug-level o)
+          (policy-to-safety-level o)
+          (policy-to-space-level o)
+          (policy-to-speed-level o))))
+
+(defun cmp-env-optimization (property &optional (env *cmp-env*))
+  (let ((o (cmp-env-policy env)))
+    (case property
+      (debug (policy-to-debug-level o))
+      (safety (policy-to-safety-level o))
+      (space (policy-to-space-level o))
+      (speed (policy-to-speed-level o)))))
+
+(eval-when (:compile-toplevel :execute)
+  (defparameter +last-optimization-bit+ 17)
+  (defun policy-bits (quality level)
+    (loop for i from level to 3
+       sum (car (optimization-quality-switches quality i))))
   (defmacro define-policy (&whole whole name &rest conditions)
     (let* ((test (ash 1 +last-optimization-bit+))
-           (constant-name
-            (intern (concatenate 'string "+POLICY-" (symbol-name name) "+")
-                    (find-package "C")))
+           (declaration-name
+            (intern (concatenate 'string "POLICY-" (symbol-name name))))
            (function-name
             (intern (concatenate 'string "POLICY-" (symbol-name name))
                     (find-package "C")))
            (doc (find-if #'stringp conditions)))
-      (incf +last-optimization-bit+)
-      (loop with conditions = (remove doc conditions)
+      ;; Register as an optimization quality with its own flags
+      (let* ((circular-list (list (cons test 0)))
+             (flags-list (list* (cons 0 test)
+                                circular-list)))
+        (rplacd circular-list circular-list)
+        (let ((*print-circle* t))
+          (print (list* declaration-name flags-list)))
+        (incf +last-optimization-bit+)
+        (setf (gethash declaration-name *optimization-quality-switches*)
+              flags-list))
+      ;; Scan the definition and correct the flags
+      (loop with extra = '()
+         with slow = '()
+         with bits-on = test
+         with bits-off = 0
+         with conditions = (remove doc conditions)
          for case = (pop conditions)
          while case
-         collect
+         do
            (case case
              (:on
-              `(>= (cmp-env-optimization ',(pop conditions)) ,(pop conditions)))
+              (push `(>= (cmp-env-optimization ',(first conditions) env)
+                         ,(second conditions))
+                    slow)
+              (setf bits-on (logior (policy-bits (pop conditions)
+                                                 (pop conditions))
+                                    bits-on)))
              (:off
-              `(< (cmp-env-optimization ',(pop conditions)) ,(pop conditions)))
+              (push `(< (cmp-env-optimization ',(first conditions) env)
+                        ,(second conditions))
+                    slow)
+              (setf bits-off (logior (policy-bits (pop conditions)
+                                                  (pop conditions))
+                                     bits-off)))
              (:requires
-              (pop conditions))
+              (push (pop conditions) extra))
              (otherwise
               (error "Syntax error in macro~%  ~A"
                      `(define-policy ,@whole))))
-         into expressions
          finally
-           (return
-             `(progn
-                (defparameter ,constant-name ,test ,@(and doc (list doc)))
-                (defun ,function-name (&optional (env *cmp-env*))
+           (progn
+             (when (zerop (logandc2 bits-on test))
+               (setf bits-on (logior (policy-bits 'speed 0) bits-on)))
+             (return
+               `(defun ,function-name (&optional (env *cmp-env*))
                   ,@(and doc (list doc))
-                  (and ,@expressions))))))))
+                  (let ((bits (cmp-env-policy env)))
+                    (and (logtest bits ,bits-on)
+                         (not (logtest bits ,bits-off))
+                         ,@extra)))))))))
+
+(define-policy base-camp)
 
 (define-policy assume-no-errors :off safety 2)
 
@@ -188,3 +295,13 @@ INTGERP, STRINGP.")
 
 (defun compiler-push-events ()
   (>= (cmp-env-optimization 'safety) 3))
+
+(eval-when (:compile-toplevel :execute :load-toplevel)
+  (print 'hola)
+  (let ((*print-base* 2)(*print-circle* t))
+    (maphash #'(lambda (k v) (print (list k v)))
+             c::*optimization-quality-switches*)
+    (terpri)
+    (loop for q in '(debug safety speed space)
+       do (print (list* q (gethash q c::*optimization-quality-switches*))))
+    (print (c::default-policy))))

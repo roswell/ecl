@@ -21,11 +21,7 @@
   "Provide a root environment for toplevel forms storing all declarations
 that are susceptible to be changed by PROCLAIM."
   (let* ((env (cmp-env-copy env)))
-    (destructuring-bind (debug safety space speed)
-        (cmp-env-all-optimizations env)
-      (add-one-declaration env `(optimize
-                                 (speed ,speed) (space ,space)
-                                 (debug ,debug) (safety ,safety))))))
+    (add-default-optimizations env)))
 
 (defun cmp-env-copy (&optional (env *cmp-env*))
   (cons (car env) (cdr env)))
