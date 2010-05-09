@@ -54,34 +54,37 @@
 ;;; VECTOR-PUSH and VECTOR-PUSH-EXTEND
 ;;;
 
-(defun expand-vector-push (whole env)
+(defun expand-vector-push (whole env extend)
   (declare (si::c-local))
-  (let* ((extend (eq (first whole) 'vector-push-extend))
-	 (args (rest whole)))
-    (unless (or ;; Avoid infinite recursion
-		(eq (first args) '.val)
-		(safe-compile)
-		(>= (cmp-env-optimization 'space env) 2))
-      (setf whole
-	    `(let* ((.val ,(car args))
-		    (.vec ,(second args))
-		    (.i (fill-pointer .vec))
-		    (.dim (array-total-size .vec)))
-	       (declare (fixnum .i .dim)
-			(:read-only .vec .val .i .dim))
-	       (cond ((< .i .dim)
-		      (sys::fill-pointer-set .vec (the fixnum (+ 1 .i)))
-		      (sys::aset .val .vec .i)
-		      .i)
-		     (t ,(when extend
-			       `(vector-push-extend .val .vec ,@(cddr args)))))))))
+  (let* ((args (rest whole)))
+    (with-clean-symbols (value vector index dimension)
+      (unless (or (eq (first args) 'value) ; No infinite recursion
+                  (not (policy-open-code-aref/aset)))
+        (setf whole
+              `(let* ((value ,(car args))
+                      (vector ,(second args)))
+                 (declare (:read-only value vector)
+                          (optimize (safety 0)))
+                 ,@(unless (policy-assume-right-type)
+                     `((check-vectorp vector)))
+                 (let ((index (fill-pointer vector))
+                       (dimension (array-total-size vector)))
+                   (declare (fixnum index dimension)
+                            (:read-only index dimension))
+                   (cond ((< index dimension)
+                          (sys::fill-pointer-set vector (the fixnum (+ 1 index)))
+                          (sys::aset value vector index)
+                          index)
+                         (t ,(if extend
+                               `(vector-push-extend value vector ,@(cddr args))
+                               nil)))))))))
   whole)
 
 (define-compiler-macro vector-push (&whole whole &rest args &environment env)
-  (expand-vector-push whole env))
+  (expand-vector-push whole env nil))
 
 (define-compiler-macro vector-push-extend (&whole whole &rest args &environment env)
-  (expand-vector-push whole env))
+  (expand-vector-push whole env t))
 
 ;;;
 ;;; AREF/ASET

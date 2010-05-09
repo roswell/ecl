@@ -55,13 +55,13 @@
          into expressions
          finally
            (return
-(print
              `(progn
                 (defparameter ,constant-name ,test ,@(and doc (list doc)))
                 (defun ,function-name (&optional (env *cmp-env*))
                   ,@(and doc (list doc))
                   (and ,@expressions))))))))
-)
+
+(define-policy assume-no-errors :off safety 2)
 
 (define-policy assume-right-type :off safety 2)
 
@@ -176,8 +176,9 @@
 (define-policy check-nargs :on safety 1
   "Check that the number of arguments a function receives is within bounds")
 
-(defun policy-check-nargs (&optional (env *cmp-env*))
-  (>= (cmp-env-optimization 'safety) 1))
+(define-policy open-code-type-checks :off space 2
+  "Expand TYPEP and similar forms in terms of simpler functions, such as FLOATP,
+INTGERP, STRINGP.")
 
 (defun safe-compile ()
   (>= (cmp-env-optimization 'safety) 2))

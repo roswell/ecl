@@ -46,13 +46,9 @@
   ;; returns the original form. Note that for successful recursion we
   ;; have to output indeed the ORIGINAL FORM, not some intermediate
   ;; step. Otherwise the compiler macro will enter an infinite loop.
-  (let* ((space (cmp-env-optimization 'space env))
-	 (speed (cmp-env-optimization 'speed env))
-	 (safety (cmp-env-optimization 'safety env))
-	 (orig-type type)
+  (let* ((orig-type type)
 	 aux function
 	 first rest)
-    (declare (si::fixnum space speed))
     (cond ((not (and (constantp type) (setf type (cmp-eval type)) t))
 	   form)
 	  ;; Type is not known
@@ -68,7 +64,7 @@
 	  ;; safety, we will simply assume the user knows what she's doing.
 	  ((subtypep type NIL)
 	   (cmpwarn "TYPEP form contains an empty type ~S and cannot be optimized" type)
-	   (if (< safety 1)
+	   (if (policy-assume-no-errors)
 	       NIL
 	       form))
 	  ;;
@@ -97,7 +93,7 @@
 	   (expand-typep form object `',(funcall function) env))
 	  ;;
 	  ;; No optimizations that take up too much space unless requested.
-	  ((and (>= space 2) (> space speed))
+	  ((policy-open-code-type-checks)
 	   form)
 	  ;;
 	  ;; CONS types. They must be checked _before_ sequence types. We
@@ -212,10 +208,7 @@
   ;; returns the original form. Note that for successful recursion we
   ;; have to output indeed the ORIGINAL FORM, not some intermediate
   ;; step. Otherwise the compiler macro will enter an infinite loop.
-  (let* ((space (cmp-env-optimization 'space env))
-	 (speed (cmp-env-optimization 'speed env))
-	 (safety (cmp-env-optimization 'safety env))
-	 (orig-type type)
+  (let* ((orig-type type)
 	 first rest)
     (cond ((not (and (constantp type) (setf type (cmp-eval type))))
 	   form)
@@ -229,7 +222,7 @@
 	   (cmperror "Cannot COERCE an expression to an empty type."))
 	  ;;
 	  ;; No optimizations that take up too much space unless requested.
-	  ((and (>= space 2) (> space speed))
+	  ((policy-open-code-type-checks)
 	   form)
 	  ;;
 	  ;; Search for a simple template above, replacing X by the value.
@@ -298,7 +291,7 @@
 			   DOUBLE-FLOAT #+long-float LONG-FLOAT
 			   #+short-float SHORT-FLOAT))
 	   (let ((unchecked (expand-coerce form value `',first env)))
-	     (if (< safety 1)
+	     (if (policy-assume-no-errors)
 		 unchecked
 		 `(let ((x ,unchecked))
 		    (declare (,first x))
