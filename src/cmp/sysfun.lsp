@@ -185,7 +185,7 @@
  "(#0)->array.self.fix[#1]= #2")
 
 (def-inline array-rank :unsafe (array) :fixnum
- "(#0)->array.rank")
+ "@0;(((#0)->d.t == t_array)?(#0)->array.rank:1)")
 
 (def-inline array-dimension :always (t t) fixnum
  "ecl_array_dimension(#0,fixint(#1))")
@@ -270,96 +270,66 @@
 
 ;; file list.d
 
-(def-inline car :always (list) t "CAR(#0)")
 (def-inline car :unsafe (cons) t "ECL_CONS_CAR(#0)")
 (def-inline car :unsafe (t) t "CAR(#0)")
 
-(def-inline cdr :always (list) t "CDR(#0)")
 (def-inline cdr :unsafe (cons) t "ECL_CONS_CDR(#0)")
 (def-inline cdr :unsafe (t) t "CDR(#0)")
 
-(def-inline caar :always (cons) t "CAAR(#0)")
 (def-inline caar :unsafe (t) t "CAAR(#0)")
 
-(def-inline cadr :always (cons) t "CADR(#0)")
 (def-inline cadr :unsafe (t) t "CADR(#0)")
 
-(def-inline cdar :always (cons) t "CDAR(#0)")
 (def-inline cdar :unsafe (t) t "CDAR(#0)")
 
-(def-inline cddr :always (cons) t "CDDR(#0)")
 (def-inline cddr :unsafe (t) t "CDDR(#0)")
 
-(def-inline caaar :always (cons) t "CAAAR(#0)")
 (def-inline caaar :unsafe (t) t "CAAAR(#0)")
 
-(def-inline caadr :always (cons) t "CAADR(#0)")
 (def-inline caadr :unsafe (t) t "CAADR(#0)")
 
-(def-inline cadar :always (cons) t "CADAR(#0)")
 (def-inline cadar :unsafe (t) t "CADAR(#0)")
 
-(def-inline caddr :always (cons) t "CADDR(#0)")
 (def-inline caddr :unsafe (t) t "CADDR(#0)")
 
-(def-inline cdaar :always (cons) t "CDAAR(#0)")
 (def-inline cdaar :unsafe (t) t "CDAAR(#0)")
 
-(def-inline cdadr :always (cons) t "CDADR(#0)")
 (def-inline cdadr :unsafe (t) t "CDADR(#0)")
 
-(def-inline cddar :always (cons) t "CDDAR(#0)")
 (def-inline cddar :unsafe (t) t "CDDAR(#0)")
 
-(def-inline cdddr :always (cons) t "CDDDR(#0)")
 (def-inline cdddr :unsafe (t) t "CDDDR(#0)")
 
-(def-inline caaaar :always (cons) t "CAAAAR(#0)")
 (def-inline caaaar :unsafe (t) t "CAAAAR(#0)")
 
-(def-inline caaadr :always (cons) t "CAAADR(#0)")
 (def-inline caaadr :unsafe (t) t "CAAADR(#0)")
 
-(def-inline caadar :always (cons) t "CAADAR(#0)")
 (def-inline caadar :unsafe (t) t "CAADAR(#0)")
 
-(def-inline caaddr :always (cons) t "CAADDR(#0)")
 (def-inline caaddr :unsafe (t) t "CAADDR(#0)")
 
-(def-inline cadaar :always (cons) t "CADAAR(#0)")
 (def-inline cadaar :unsafe (t) t "CADAAR(#0)")
 
-(def-inline cadadr :always (cons) t "CADADR(#0)")
 (def-inline cadadr :unsafe (t) t "CADADR(#0)")
 
-(def-inline caddar :always (cons) t "CADDAR(#0)")
 (def-inline caddar :unsafe (t) t "CADDAR(#0)")
 
-(def-inline cadddr :always (cons) t "CADDDR(#0)")
 (def-inline cadddr :unsafe (t) t "CADDDR(#0)")
 
-(def-inline cdaaar :always (cons) t "CDAAAR(#0)")
 (def-inline cdaaar :unsafe (t) t "CDAAAR(#0)")
 
-(def-inline cdaadr :always (cons) t "CDAADR(#0)")
 (def-inline cdaadr :unsafe (t) t "CDAADR(#0)")
 
-(def-inline cdadar :always (cons) t "CDADAR(#0)")
 (def-inline cdadar :unsafe (t) t "CDADAR(#0)")
 
-(def-inline cdaddr :always (cons) t "CDADDR(#0)")
 (def-inline cdaddr :unsafe (t) t "CDADDR(#0)")
 
-(def-inline cddaar :always (cons) t "CDDAAR(#0)")
 (def-inline cddaar :unsafe (t) t "CDDAAR(#0)")
 
-(def-inline cddadr :always (cons) t "CDDADR(#0)")
 (def-inline cddadr :unsafe (t) t "CDDADR(#0)")
 
-(def-inline cdddar :always (cons) t "CDDDAR(#0)")
 (def-inline cdddar :unsafe (t) t "CDDDAR(#0)")
 
-(def-inline cddddr :always (cons) t "CDDDDR(#0)")
 (def-inline cddddr :unsafe (t) t "CDDDDR(#0)")
 
 (def-inline cons :always (t t) t "CONS(#0,#1)")
