@@ -46,27 +46,6 @@
 ;; TYPE CHECKING
 ;;
 
-(defun remove-function-types (type)
-  ;; We replace this type by an approximate one that contains no function
-  ;; types. This function may not produce the best approximation. Hence,
-  ;; it is only used for optional type checks where we do not want to pass
-  ;; TYPEP a complex type.
-  (flet ((simplify-type (type)
-           (cond ((subtypep type '(NOT FUNCTION))
-                  type)
-                 ((subtypep type 'FUNCTION)
-                  'FUNCTION)
-                 (t
-                  T))))
-    (if (atom type)
-        (simplify-type type)
-        (case (first type)
-          ((OR AND NOT)
-           (cons (first type)
-                 (loop for i in (rest type) collect (remove-function-types i))))
-          (FUNCTION 'FUNCTION)
-          (otherwise (simplify-type type))))))
-
 (defun extract-lambda-type-checks (requireds optionals keywords ts other-decls)
   ;; We generate automatic type checks for function arguments that
   ;; are declared These checks can be deactivated by appropriate
@@ -106,9 +85,9 @@
 
 (defmacro assert-type-if-known (&whole whole value type &environment env)
   "Generates a type check on an expression, ensuring that it is satisfied."
-  (multiple-value-bind (ok valid)
-      (subtypep 't (setf type (remove-function-types type)))
-    (if (or ok (not valid))
+  (multiple-value-bind (trivial valid)
+      (subtypep 't type)
+    (if (and trivial valid)
         value
         (with-clean-symbols (%value)
           #+(or)
