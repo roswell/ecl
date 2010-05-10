@@ -22,9 +22,9 @@
           ((atom bindings)
            (invalid-let-bindings 'LET bindings))
           ((null (rest bindings))
-           (do-c1let* bindings args))
+           (c1let/let* 'let* bindings args))
           (t
-           (do-c1let bindings args)))))
+           (c1let/let* 'let bindings args)))))
 
 (defun c1let* (args)
   (check-args-number 'LET* args 1)
@@ -34,7 +34,29 @@
           ((atom bindings)
            (invalid-let-bindings 'LET bindings))
           (t
-           (do-c1let* bindings args)))))
+           (c1let/let* 'let* bindings args)))))
+
+(defun c1let/let* (let/let* bindings body &aux (setjmps *setjmps*)
+                   (forms nil) (vars nil)
+                   ss is ts other-decls
+                   (*cmp-env* (cmp-env-copy)))
+
+  (multiple-value-setq (body ss ts is other-decls) (c1body body nil))
+
+  (multiple-value-setq (vars forms)
+    (split-bindings let/let* bindings ss is ts other-decls))
+
+  (check-vdecl (mapcar #'var-name vars) ts is)
+  (c1declare-specials ss)
+  (setq body (c1decl-body other-decls body))
+
+  (multiple-value-bind (used-vars used-forms)
+      (funcall (if (eq let/let* 'let) 'optimize-c1let 'optimize-c1let*)
+               vars forms body)
+    (make-c1form* let/let* :type (c1form-type body)
+                  :volatile (not (eql setjmps *setjmps*))
+                  :local-vars used-vars
+                  :args used-vars used-forms body)))
 
 (defun invalid-let-bindings (let/let* bindings)
   (cmperr "Syntax error in ~A bindings:~%~4I~A"
@@ -72,27 +94,6 @@
     (when (eq let/let* 'LET)
       (mapc #'push-vars vars))
     (values vars forms)))
-
-(defun do-c1let (bindings body &aux (setjmps *setjmps*)
-                 (forms nil) (vars nil)
-                 ss is ts other-decls
-                 (*cmp-env* (cmp-env-copy)))
-
-  (multiple-value-setq (body ss ts is other-decls) (c1body body nil))
-
-  (multiple-value-setq (vars forms)
-    (split-bindings 'LET bindings ss is ts other-decls))
-
-  (check-vdecl (mapcar #'var-name vars) ts is)
-  (c1declare-specials ss)
-  (setq body (c1decl-body other-decls body))
-
-  (multiple-value-bind (used-vars used-forms)
-      (optimize-c1let vars forms body)
-    (make-c1form* 'LET :type (c1form-type body)
-                  :volatile (not (eql setjmps *setjmps*))
-                  :local-vars used-vars
-                  :args used-vars used-forms body)))
 
 (defun optimize-c1let (variables forms body)
   ;; since the body may produce type constraints on variables:
@@ -291,27 +292,6 @@
 	   (RETURN (return NIL))
 	   (BDS-BIND)
 	   (t (return T))))))
-
-(defun do-c1let* (bindings body &aux (forms nil) (vars nil)
-                  (setjmps *setjmps*)
-                  ss is ts other-decls
-                  (*cmp-env* (cmp-env-copy)))
-
-  (multiple-value-setq (body ss ts is other-decls) (c1body body nil))
-
-  (multiple-value-setq (vars forms)
-    (split-bindings 'LET* bindings ss is ts other-decls))
-
-  (c1declare-specials ss)
-  (check-vdecl (mapcar #'var-name vars) ts is)
-  (setq body (c1decl-body other-decls body))
-
-  (multiple-value-bind (used-vars used-forms)
-      (optimize-c1let* vars forms body)
-    (make-c1form* 'LET* :type (c1form-type body)
-                  :volatile (not (eql setjmps *setjmps*))
-                  :local-vars used-vars
-                  :args used-vars used-forms body)))
 
 (defun optimize-c1let* (variables forms body)
   ;; since the body may produce type constraints on variables,
