@@ -218,8 +218,21 @@
     (print-compiler-message c t)
     (abort)))
 
-(defun check-args-number (operator args &optional (min 0) (max nil))
-  (let ((l (length args)))
+(defun safe-list-length (l)
+  (cond ((null l)
+         0)
+        ((atom l)
+         nil)
+        (t
+         (handler-case (list-length l)
+           (error (c) nil)))))
+
+(defun check-args-number (operator args &optional (min 0) (max most-positive-fixnum))
+
+  (let ((l (safe-list-length args)))
+    (when (null l)
+      (let ((*print-circle* t))
+        (cmperr "Improper or circular list passed to ~A~%~A" operator args)))
     (when (< l min)
       (too-few-args operator min l))
     (when (and max (> l max))
