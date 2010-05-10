@@ -16,26 +16,25 @@
 
 (defun c1let (args)
   (check-args-number 'LET args 1)
-  (let ((variables (pop args)))
-    (cond ((null variables)
+  (let ((bindings (pop args)))
+    (cond ((null bindings)
            (c1locally args))
-          ((atom variables)
-           (invalid-let-bindings 'LET variables))
-          ((null (rest variables))
-           (c1let* (list* variables args)))
+          ((atom bindings)
+           (invalid-let-bindings 'LET bindings))
+          ((null (rest bindings))
+           (do-c1let* bindings args))
           (t
-           (do-c1let variables args)))))
+           (do-c1let bindings args)))))
 
-#+(or)
 (defun c1let* (args)
   (check-args-number 'LET* args 1)
-  (let ((variables (pop args)))
-    (cond ((null variables)
+  (let ((bindings (pop args)))
+    (cond ((null bindings)
            (c1locally args))
-          ((atom variables)
-           (invalid-let-bindings 'LET variables))
+          ((atom bindings)
+           (invalid-let-bindings 'LET bindings))
           (t
-           (do-c1let* variables args)))))
+           (do-c1let* bindings args)))))
 
 (defun invalid-let-bindings (let/let* bindings)
   (cmperr "Syntax error in ~A bindings:~%~4I~A"
@@ -57,34 +56,34 @@
       (let* ((var (c1make-var name specials ignored types))
              (init (if form
                        (and-form-type (var-type var)
-                                    (c1expr (setf form (first form)))
-                                    form
-                                    :unsafe
-                                    "In LET/LET* bindings")
+                                      (c1expr (setf form (first form)))
+                                      form
+                                      :unsafe
+                                      "In LET/LET* bindings")
                        (default-init var))))
         ;; :read-only variable handling. Beppe
         (when (read-only-variable-p name other-decls)
           (setf (var-type var) (c1form-primary-type init)))
         (push var vars)
         (push init forms)
-        (when (eq let/let* 'LET*) (push-vars name))))
+        (when (eq let/let* 'LET*) (push-vars var))))
     (setf vars (nreverse vars)
           forms (nreverse forms))
     (when (eq let/let* 'LET)
       (mapc #'push-vars vars))
     (values vars forms)))
 
-(defun do-c1let (variables body &aux (setjmps *setjmps*)
-                 (forms nil) (vars nil) (vnames nil)
+(defun do-c1let (bindings body &aux (setjmps *setjmps*)
+                 (forms nil) (vars nil)
                  ss is ts other-decls
                  (*cmp-env* (cmp-env-copy)))
 
   (multiple-value-setq (body ss ts is other-decls) (c1body body nil))
 
   (multiple-value-setq (vars forms)
-    (split-bindings 'LET variables ss is ts other-decls))
+    (split-bindings 'LET bindings ss is ts other-decls))
 
-  (check-vdecl (mapcar #'var-name vnames) ts is)
+  (check-vdecl (mapcar #'var-name vars) ts is)
   (c1declare-specials ss)
   (setq body (c1decl-body other-decls body))
 
@@ -293,57 +292,38 @@
 	   (BDS-BIND)
 	   (t (return T))))))
 
-(defun c1let* (args &aux (forms nil) (vars nil) (vnames nil)
-                    (setjmps *setjmps*)
-                    ss is ts body other-decls
-                    (*cmp-env* (cmp-env-copy)))
-  (check-args-number 'LET* args 1)
+(defun do-c1let* (bindings body &aux (forms nil) (vars nil)
+                  (setjmps *setjmps*)
+                  ss is ts other-decls
+                  (*cmp-env* (cmp-env-copy)))
 
-  (multiple-value-setq (body ss ts is other-decls) (c1body (cdr args) nil))
+  (multiple-value-setq (body ss ts is other-decls) (c1body body nil))
 
-  (dolist (x (car args))
-    (cond ((symbolp x)
-           (let ((v (c1make-var x ss is ts)))
-	     (push x vnames)
-	     (push (default-init v) forms)
-	     (push v vars)
-	     (push-vars v)))
-          ((not (and (consp x) (or (endp (cdr x)) (endp (cddr x)))))
-           (cmperr "The variable binding ~s is illegal." x))
-          (t (let* ((v (c1make-var (car x) ss is ts))
-		    (form (if (endp (cdr x))
-			      (default-init v)
-			      (and-form-type (var-type v)
-					     (c1expr (second x))
-					     (second x)
-					     :unsafe
-					     "In LET* bindings"))))
-	       ;; :read-only variable handling.
-	       (when (read-only-variable-p (car x) other-decls)
-		 (setf (var-type v) (c1form-primary-type form)))
-	       (push (car x) vnames)
-	       (push form forms)
-	       (push v vars)
-	       (push-vars v)))))
+  (multiple-value-setq (vars forms)
+    (split-bindings 'LET* bindings ss is ts other-decls))
 
   (c1declare-specials ss)
-  (check-vdecl vnames ts is)
+  (check-vdecl (mapcar #'var-name vars) ts is)
   (setq body (c1decl-body other-decls body))
 
+  (multiple-value-bind (used-vars used-forms)
+      (optimize-c1let* vars forms body)
+    (make-c1form* 'LET* :type (c1form-type body)
+                  :volatile (not (eql setjmps *setjmps*))
+                  :local-vars used-vars
+                  :args used-vars used-forms body)))
+
+(defun optimize-c1let* (variables forms body)
   ;; since the body may produce type constraints on variables,
   ;; do it again:
-  (do ((vs (setq vars (nreverse vars)) (cdr vs))
-       (fs (nreverse forms) (cdr fs))
+  (do ((vs variables (cdr vs))
+       (fs forms (cdr fs))
        (used-vars '())
        (used-forms '()))
       ((null vs)
-       (setf used-vars (nreverse used-vars))
-       (make-c1form* 'LET* :type (c1form-type body)
-		     :volatile (not (eql setjmps *setjmps*))
-		     :local-vars used-vars
-		     :args used-vars (nreverse used-forms) body))
+       (values (nreverse used-vars) (nreverse used-forms)))
     (let* ((var (first vs))
-	   (form (and-form-type (var-type var) (car fs) (cadar args)
+	   (form (and-form-type (var-type var) (car fs) (var-name var)
 				:unsafe "In LET* body"))
 	   (form-type (c1form-primary-type form))
 	   (rest-forms (cons body (rest fs))))
@@ -382,7 +362,7 @@
 		   (or (and (null (rest vs))	; last variable
 			    ;; its form does not affect previous variables
 			    (let ((tforms (list form)))
-			      (dolist (v vars)
+			      (dolist (v variables)
 				(when (eq v var) (return t))
 				(when (var-changed-in-form-list v tforms)
 				  (return nil)))))
