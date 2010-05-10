@@ -342,19 +342,16 @@
 (def-inline nth :unsafe (t t) t "ecl_nth(fix(#0),#1)")
 (def-inline nth :unsafe (fixnum t) t "ecl_nth(#0,#1)")
 
-(def-inline first :always (cons) t "ECL_CONS_CAR(#0)")
+(def-inline first :unsafe (cons) t "ECL_CONS_CAR(#0)")
 (def-inline first :unsafe (t) t "CAR(#0)")
 
-(def-inline second :always (cons) t "CADR(#0)")
 (def-inline second :unsafe (t) t "CADR(#0)")
 
-(def-inline third :always (cons) t "CADDR(#0)")
 (def-inline third :unsafe (t) t "CADDR(#0)")
 
-(def-inline fourth :always (cons) t "CADDDR(#0)")
 (def-inline fourth :unsafe (t) t "CADDDR(#0)")
 
-(def-inline rest :always (cons) t "ECL_CONS_CDR(#0)")
+(def-inline rest :unsafe (cons) t "ECL_CONS_CDR(#0)")
 (def-inline rest :unsafe (t) t "CDR(#0)")
 
 (def-inline nthcdr :always (t t) t "ecl_nthcdr(fixint(#0),#1)")
