@@ -57,8 +57,6 @@
 	  ;; Simple ones
 	  ((subtypep 'T type) T)
 	  ((eq type 'NIL) NIL)
-	  ((eq aux 'SATISFIES)
-	   `(funcall #',function ,object))
 	  ;;
 	  ;; Detect inconsistencies in the provided type. If we run at low
 	  ;; safety, we will simply assume the user knows what she's doing.
@@ -141,6 +139,12 @@
                 (declare (:read-only ,var))
 		(AND (TYPEP ,var ',first)
 		     ,@(expand-in-interval-p `(the ,first ,var) rest)))))
+          ;;
+          ;; (SATISFIES predicate)
+	  ((and (eq first 'SATISFIES)
+                (= (list-length type) 2)
+                (symbolp (second type)))
+	   `(function ,object))
 	  ;;
 	  ;; Complex types with arguments.
 	  ((setf rest (rest type)
