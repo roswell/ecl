@@ -270,10 +270,12 @@
 
 ;; file list.d
 
-(def-inline car :always (cons) t "CAR(#0)")
+(def-inline car :always (list) t "CAR(#0)")
+(def-inline car :unsafe (cons) t "ECL_CONS_CAR(#0)")
 (def-inline car :unsafe (t) t "CAR(#0)")
 
-(def-inline cdr :always (cons) t "CDR(#0)")
+(def-inline cdr :always (list) t "CDR(#0)")
+(def-inline cdr :unsafe (cons) t "ECL_CONS_CDR(#0)")
 (def-inline cdr :unsafe (t) t "CDR(#0)")
 
 (def-inline caar :always (cons) t "CAAR(#0)")
