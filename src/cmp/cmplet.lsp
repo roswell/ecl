@@ -14,43 +14,64 @@
 
 (in-package "COMPILER")
 
-(defun c1let (args &aux	(setjmps *setjmps*)
-                        (forms nil) (vars nil) (vnames nil)
-                        ss is ts body other-decls
-			(*cmp-env* (cmp-env-copy)))
+(defun c1let (args)
   (check-args-number 'LET args 1)
+  (let ((variables (first args)))
+    (cond ((null variables)
+           (c1locally (rest args)))
+          ((atom variables)
+           (invalid-let-bindings 'LET variables))
+          ((null (rest variables))
+           (c1let* args))
+          (t
+           (do-c1let variables (rest args))))))
 
-  (multiple-value-setq (body ss ts is other-decls) (c1body (cdr args) nil))
+(defun invalid-let-bindings (let/let* bindings)
+  (cmperr "Syntax error in ~A bindings:~%~4I~A"
+          let/let* bindings))
 
-  (dolist (x (car args))
-    (cond ((symbolp x)
-           (let ((v (c1make-var x ss is ts)))
-                (push x vnames)
-                (push v vars)
-                (push (default-init v) forms)))
-          (t (cmpck (not (and (consp x) (or (endp (cdr x)) (endp (cddr x)))))
-                    "The variable binding ~s is illegal." x)
-             (let* ((vname (car x))
-		    (v (c1make-var vname ss is ts))
-		    (form (if (endp (cdr x))
-                            (default-init v)
-                            (and-form-type (var-type v)
-                                           (c1expr (second x))
-                                           (second x)
-					   :unsafe
-					   "In LET bindings"))))
-	       ;; :read-only variable handling. Beppe
-	       (when (read-only-variable-p vname other-decls)
-	         (setf (var-type v) (c1form-primary-type form)))
-	       (push vname vnames)
-	       (push v vars)
-	       (push form forms)))))
+(defun split-bindings (let/let* bindings specials ignored types other-decls)
+  (do ((b bindings)
+       (vars '())
+       (forms '())
+       name form)
+      ((atom b)
+       (unless (null b)
+         (invalid-let-bindings let/let* bindings))
+       (values (nreverse vars)
+               (nreverse forms)))
+    (if (symbolp (setf form (pop b)))
+        (setf name form form nil)
+        (progn
+          (check-args-number "LET/LET* binding" form 1 2)
+          (setf name (first form) form (rest form))))
+    (let* ((var (c1make-var name specials ignored types))
+           (init (if form
+                     (and-form-type (var-type var)
+                                    (c1expr (setf form (first form)))
+                                    form
+                                    :unsafe
+                                    "In LET/LET* bindings")
+                     (default-init var))))
+      ;; :read-only variable handling. Beppe
+      (when (read-only-variable-p name other-decls)
+        (setf (var-type var) (c1form-primary-type init)))
+      (push var vars)
+      (push init forms))))
 
-  (setf vars (nreverse vars) forms (nreverse forms))
+(defun do-c1let (variables body &aux (setjmps *setjmps*)
+                 (forms nil) (vars nil) (vnames nil)
+                 ss is ts other-decls
+                 (*cmp-env* (cmp-env-copy)))
+
+  (multiple-value-setq (body ss ts is other-decls) (c1body body nil))
+
+  (multiple-value-setq (vars forms)
+    (split-bindings 'LET variables ss is ts other-decls))
 
   (mapc #'push-vars vars)
 
-  (check-vdecl vnames ts is)
+  (check-vdecl (mapcar #'var-name vnames) ts is)
 
   (c1declare-specials ss)
   (setq body (c1decl-body other-decls body))
@@ -529,3 +550,6 @@
 (put-sysprop 'LET 'C2 'c2let)
 (put-sysprop 'LET* 'C1SPECIAL 'c1let*)
 (put-sysprop 'LET* 'C2 'c2let*)
+
+(trace c::split-bindings c::do-c1let)
+
