@@ -83,6 +83,32 @@
                       (mapcar #'second checks)))
            (return (cons checks new-auxs))))))
 
+(defun type-error-check (value type)
+  (case type
+    (cons
+     `(ffi:c-inline (,value) (:object) :void
+        "@0;if (ecl_unlikely(ATOM(#0))) FEtype_error_cons(#0);"
+        :one-liner nil))
+    (array
+     `(ffi:c-inline (,value) (:object) :void
+        "if (ecl_unlikely(!ECL_ARRAYP(#0))) FEtype_error_array(#0);"
+        :one-liner nil))
+    (list
+     `(ffi:c-inline (,value) (:object) :void
+        "if (ecl_unlikely(!ECL_LISTP(#0))) FEtype_error_list(#0);"
+        :one-liner nil))
+    (sequence
+     `(ffi:c-inline (,value) (:object) :void
+        "if (ecl_unlikely(!(ECL_LISTP(#0) || ECL_VECTORP(#0))))
+           FEtype_error_sequence(#0);"
+        :one-liner nil))
+    (otherwise
+     `(ffi:c-inline
+       ((typep ,value ',type) ',type ,value)
+       (:bool :object :object) :void
+       "if (ecl_unlikely(!(#0)))
+         FEwrong_type_argument(#1,#2);" :one-liner nil))))
+
 (defmacro assert-type-if-known (&whole whole value type &environment env)
   "Generates a type check on an expression, ensuring that it is satisfied."
   (multiple-value-bind (trivial valid)
@@ -90,16 +116,6 @@
     (if (and trivial valid)
         value
         (with-clean-symbols (%value)
-          #+(or)
-          `(let ((%value ,value))
-             (unless (typep %value ',type)
-               (ffi:c-inline (',type %value) (:object :object) :void
-                "FEwrong_type_argument(#0,#1);" :one-liner nil))
-             (the ,type %value))
-          `(let ((%value ,value))
-             (declare (:read-only %value))
-             (ffi:c-inline ((typep %value ',type) ',type %value)
-                           (:bool :object :object) :void
-                           "if (ecl_unlikely(!(#0)))
-         FEwrong_type_argument(#1,#2);" :one-liner nil)
+          `(let* ((%value ,value))
+             ,(type-error-check '%value type)
              (the ,type %value))))))
