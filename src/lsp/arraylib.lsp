@@ -117,28 +117,57 @@ INDEXes must be equal to the rank of ARRAY."
               (>= (car s) (array-dimension array i)))
           (return nil))))
 
+(defun row-major-index-inner (array indices)
+  (declare (optimize (safety 0))
+           (array array)
+           (si::c-local))
+  (flet ((indexing-error (array indices)
+           (error "Not valid index or indices~%~A~%into array~%~A" indices array)))
+    (do* ((r (array-rank array))
+          (i 0 (1+ i))
+          (j 0)
+          (s indices (cdr (the cons s))))
+         ((null s)
+          (when (< i r)
+            (indexing-error array indices))
+          j)
+      (declare (ext:array-index j)
+               (fixnum i r))
+      (let* ((d (array-dimension array i))
+             (o (car (the cons s)))
+             ndx)
+        (declare (ext:array-index ndx))
+        (unless (and (typep o 'fixnum)
+                     (<= 0 (setf ndx o))
+                     (< ndx (array-dimension array i)))
+          (indexing-error array indices))
+        (setf j (* j d)
+              j (+ j ndx))))))
 
 (defun array-row-major-index (array &rest indices)
   "Args: (array &rest indexes)
 Returns the non-negative integer that represents the location of the element
 of ARRAY specified by INDEXes, assuming all elements of ARRAY are aligned in
 row-major order."
-  (do ((i 0 (1+ i))
-       (j 0 (+ (* j (array-dimension array i)) (car s)))
-       (s indices (cdr s)))
-      ((null s) j)))
+  (declare (array array)
+           (optimize (safety 1)))
+  (row-major-index-inner array indices))
 
 
 (defun bit (bit-array &rest indices)
   "Args: (bit-array &rest indexes)
 Returns the bit of BIT-ARRAY specified by INDEXes."
-  (apply #'aref bit-array indices))
+  (declare (array array)
+           (optimize (safety 1)))
+  (row-major-aref bit-array (row-major-index-inner bit-array indices)))
 
 
 (defun sbit (bit-array &rest indices)
   "Args: (simple-bit-array &rest subscripts)
 Returns the specified bit in SIMPLE-BIT-ARRAY."
-  (apply #'aref bit-array indices))
+  (declare (array array)
+           (optimize (safety 1)))
+  (row-major-aref bit-array (row-major-index-inner bit-array indices)))
 
 
 (defun bit-and (bit-array1 bit-array2 &optional result-bit-array)
@@ -235,17 +264,15 @@ Replaces ITEM for the element of VECTOR that is pointed to by the fill-pointer
 of VECTOR and then increments the fill-pointer by one.  Returns NIL if the new
 value of the fill-pointer becomes too large.  Otherwise, returns the new fill-
 pointer as the value."
-  (declare (vector vector)
-           (ext:check-arguments-type)
-           (optimize (safety 0)))
-  (let ((fp (fill-pointer vector)))
-    (declare (fixnum fp))
-    (cond ((< fp (the fixnum (array-total-size vector)))
+  ;; FILL-POINTER asserts vector is a vector
+  (let* ((fp (fill-pointer vector))
+         (vector (the vector vector)))
+    (declare (optimize (safety 0)))
+    (cond ((< fp (array-total-size vector))
            (sys:aset new-element vector fp)
-           (sys:fill-pointer-set vector (the fixnum (1+ fp)))
+           (sys:fill-pointer-set vector (the ext:array-index (1+ fp)))
 	   fp)
 	  (t nil))))
-
 
 (defun vector-push-extend (new-element vector &optional extension)
   "Args: (item vector &optional (n (length vector)))
@@ -253,30 +280,30 @@ Replaces ITEM for the element of VECTOR that is pointed to by the fill-pointer
 of VECTOR and then increments the fill-pointer by one.  If the new value of
 the fill-pointer becomes too large, extends VECTOR for N more elements.
 Returns the new value of the fill-pointer."
-  (declare (vector vector)
-           (ext:check-arguments-type)
-           (optimize (safety 0)))
-  (let ((fp (fill-pointer vector))
-	(d (array-total-size vector)))
-    (unless (< fp d)
-      (adjust-array vector
-		    (list (+ d (or extension (max d 4))))
-		    :element-type (array-element-type vector)
-		    :fill-pointer fp))
-    (sys:aset new-element vector fp)
-    (sys:fill-pointer-set vector (1+ fp))
-    fp))
+  ;; FILL-POINTER asserts vector is a vector
+  (let* ((fp (fill-pointer vector))
+         (vector (the vector vector)))
+    (declare (optimize (safety 0)))
+    (let ((d (array-total-size vector)))
+      (unless (< fp d)
+        (adjust-array vector
+                      (list (+ d (or extension (max d 4))))
+                      :element-type (array-element-type vector)
+                      :fill-pointer fp))
+      (sys:aset new-element vector fp)
+      (sys:fill-pointer-set vector (1+ fp))
+      fp)))
 
 (defun vector-pop (vector)
   "Args: (vector)
 Decrements the fill-pointer of VECTOR by one and returns the element pointed
 to by the new fill-pointer.  Signals an error if the old value of the fill-
 pointer is 0 already."
-  (declare (vector vector)
-           (ext:check-arguments-type)
-           (optimize (safety 0)))
-  (let ((fp (fill-pointer vector)))
-    (declare (ext:array-index fp))
+  ;; FILL-POINTER asserts vector is a vector and has fill pointer
+  (let* ((fp (fill-pointer vector))
+         (vector (the vector vector)))
+    (declare (ext:array-index fp)
+             (optimize (safety 0)))
     (when (zerop fp)
       (error "The fill pointer of the vector ~S zero." vector))
     (sys:fill-pointer-set vector (decf fp))
