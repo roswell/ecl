@@ -36,64 +36,60 @@
           (t
            (c1let/let* 'let* bindings args)))))
 
-(defun c1let/let* (let/let* bindings body &aux (setjmps *setjmps*)
-                   (forms nil) (vars nil)
-                   ss is ts other-decls
-                   (*cmp-env* (cmp-env-copy)))
-
-  (multiple-value-setq (body ss ts is other-decls) (c1body body nil))
-
-  (multiple-value-setq (vars forms)
-    (split-bindings let/let* bindings ss is ts other-decls))
-
-  (check-vdecl (mapcar #'var-name vars) ts is)
-  (c1declare-specials ss)
-  (setq body (c1decl-body other-decls body))
-
-  (multiple-value-bind (used-vars used-forms)
-      (funcall (if (eq let/let* 'let) 'optimize-c1let 'optimize-c1let*)
-               vars forms body)
-    (make-c1form* let/let* :type (c1form-type body)
-                  :volatile (not (eql setjmps *setjmps*))
-                  :local-vars used-vars
-                  :args used-vars used-forms body)))
+(defun c1let/let* (let/let* bindings body)
+  (let* ((setjmps *setjmps*)
+         (*cmp-env* (cmp-env-copy)))
+    (multiple-value-bind (vars forms body)
+        (process-let-bindings let/let* bindings body)
+      (multiple-value-setq (vars forms)
+          (funcall (if (eq let/let* 'let) 'optimize-c1let 'optimize-c1let*)
+                   vars forms body))
+      (make-c1form* let/let*
+                    :type (c1form-type body)
+                    :volatile (not (eql setjmps *setjmps*))
+                    :local-vars vars
+                    :args vars forms body))))
 
 (defun invalid-let-bindings (let/let* bindings)
   (cmperr "Syntax error in ~A bindings:~%~4I~A"
           let/let* bindings))
 
-(defun split-bindings (let/let* bindings specials ignored types other-decls)
-  (let ((vars '())
-        (forms '()))
-    (do ((b bindings)
-         name form)
-        ((atom b)
-         (unless (null b)
-           (invalid-let-bindings let/let* bindings)))
-      (if (symbolp (setf form (pop b)))
-          (setf name form form nil)
-          (progn
-            (check-args-number "LET/LET* binding" form 1 2)
-            (setf name (first form) form (rest form))))
-      (let* ((var (c1make-var name specials ignored types))
-             (init (if form
-                       (and-form-type (var-type var)
-                                      (c1expr (setf form (first form)))
-                                      form
-                                      :unsafe
-                                      "In LET/LET* bindings")
-                       (default-init var))))
-        ;; :read-only variable handling. Beppe
-        (when (read-only-variable-p name other-decls)
-          (setf (var-type var) (c1form-primary-type init)))
-        (push var vars)
-        (push init forms)
-        (when (eq let/let* 'LET*) (push-vars var))))
-    (setf vars (nreverse vars)
-          forms (nreverse forms))
-    (when (eq let/let* 'LET)
-      (mapc #'push-vars vars))
-    (values vars forms)))
+(defun process-let-bindings (let/let* bindings body)
+  (multiple-value-bind (body specials types ignoreds other-decls)
+      (c1body body nil)
+    (let ((vars '())
+          (forms '()))
+      (do ((b bindings)
+           name form)
+          ((atom b)
+           (unless (null b)
+             (invalid-let-bindings let/let* bindings)))
+        (if (symbolp (setf form (pop b)))
+            (setf name form form nil)
+            (progn
+              (check-args-number "LET/LET* binding" form 1 2)
+              (setf name (first form) form (rest form))))
+        (let* ((var (c1make-var name specials ignoreds types))
+               (init (if form
+                         (and-form-type (var-type var)
+                                        (c1expr (setf form (first form)))
+                                        form
+                                        :unsafe
+                                        "In LET/LET* bindings")
+                         (default-init var))))
+          ;; :read-only variable handling. Beppe
+          (when (read-only-variable-p name other-decls)
+            (setf (var-type var) (c1form-primary-type init)))
+          (push var vars)
+          (push init forms)
+          (when (eq let/let* 'LET*) (push-vars var))))
+      (setf vars (nreverse vars)
+            forms (nreverse forms))
+      (when (eq let/let* 'LET)
+        (mapc #'push-vars vars))
+      (check-vdecl (mapcar #'var-name vars) types ignoreds)
+      (c1declare-specials specials)
+      (values vars forms (c1decl-body other-decls body)))))
 
 (defun optimize-c1let (variables forms body)
   ;; since the body may produce type constraints on variables:
