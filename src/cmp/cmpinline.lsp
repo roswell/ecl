@@ -280,28 +280,6 @@
               (nreverse rts))
         inline-info))))
 
-(defun need-to-protect (forms &aux ii)
-  (do ((forms forms (cdr forms))
-       (res nil))
-      ((or res (endp forms)) res)
-    (let ((form (car forms)))
-      (declare (object form))
-      (case (c1form-name form)
-	(LOCATION)
-	(VAR
-	 (when (var-changed-in-form-list (c1form-arg 0 form) (cdr forms))
-	   (setq res t)))
-	(CALL-GLOBAL
-	 (let ((fname (c1form-arg 0 form))
-	       (args (c1form-arg 1 form)))
-	   (or (function-may-have-side-effects fname)
-	       (need-to-protect args))))
-	(SYS:STRUCTURE-REF
-	 (when (need-to-protect (list (c1form-arg 0 form)))
-	   (setq res t)))
-	(t (setq res t)))))
-  )
-
 (defun close-inline-blocks ()
   (dotimes (i *inline-blocks*) (declare (fixnum i)) (wt #\})))
 
@@ -312,6 +290,7 @@
   (some #'c1form-side-effects forms))
 
 (defun function-may-have-side-effects (fname)
+
   (not (get-sysprop fname 'no-side-effects)))
 
 (defun function-may-change-sp (fname)
