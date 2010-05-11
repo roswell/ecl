@@ -86,7 +86,10 @@
 		       (pop arg-types)
 		       (pop args))))
 	    (setq forms (nreverse fl))))
-	(make-c1form* 'CALL-LOCAL :sp-change t :type return-type
+	(make-c1form* 'CALL-LOCAL
+                      :sp-change t ; conservative estimate
+                      :side-effects t ; conservative estimate
+                      :type return-type
 		      :args fun forms)))))
 
 (defun c1call-global (fname args)
@@ -104,6 +107,7 @@
 		  (return-type (propagate-types fname forms)))
 	     (make-c1form* 'CALL-GLOBAL
 			   :sp-change (function-may-change-sp fname)
+                           :side-effects (function-may-have-side-effects fname)
 			   :type return-type
 			   :args fname forms
                            ;; loc and type are filled by c2expr

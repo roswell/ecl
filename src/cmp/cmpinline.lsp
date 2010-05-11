@@ -306,21 +306,12 @@
   (dotimes (i *inline-blocks*) (declare (fixnum i)) (wt #\})))
 
 (defun form-causes-side-effect (form)
-  (case (c1form-name form)
-    ((LOCATION VAR SYS:STRUCTURE-REF #+clos SYS:INSTANCE-REF)
-     nil)
-    (CALL-GLOBAL
-     (let ((fname (c1form-arg 0 form))
-	   (args (c1form-arg 1 form)))
-       (or (function-may-have-side-effects fname)
-	   (args-cause-side-effect args))))
-    (t t)))
+  (c1form-side-effects form))
 
 (defun args-cause-side-effect (forms)
-  (some #'form-causes-side-effect forms))
+  (some #'c1form-side-effects forms))
 
 (defun function-may-have-side-effects (fname)
-  (declare (si::c-local))
   (not (get-sysprop fname 'no-side-effects)))
 
 (defun function-may-change-sp (fname)
