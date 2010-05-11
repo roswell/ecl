@@ -18,68 +18,6 @@
 ;;;
 ;;; TYPE PROPAGATION LOOP
 ;;;
-;;;
-;;; ALL C1FORMS: Intermediate language used by the compiler
-;;;
-;;;	(LOCATION	loc)
-;;;	(VAR		var)
-;;;	(SETQ		var value-c1form)
-;;;	(PSETQ		var-list value-c1form-list)
-;;;	(BLOCK		blk-var progn-c1form)
-;;;	(PROGN		body)
-;;;	(TAGBODY	tag-var tag-body)
-;;;	(DECL-BODY	declaration-list progn-c1form)
-;;;	(RETURN-FROM	blk-var return-type value)
-;;;	(FUNCALL	fun-value (arg-value*))
-;;;	(CALL-LOCAL	obj-fun (arg-value*))
-;;;	(CALL-GLOBAL	fun-name (arg-value*))
-;;;	(CATCH		catch-value body)
-;;;	(UNWIND-PROTECT	protected-c1form body)
-;;;	(THROW		catch-value output-value)
-;;;	(GO		tag-var return-type)
-;;;	(C-INLINE	(arg-c1form*)
-;;;			(arg-type-symbol*)
-;;;			output-rep-type
-;;;			c-expression-string
-;;;			side-effects-p
-;;;			one-liner-p)
-;;;	(LOCALS		local-fun-list body labels-p)
-;;;	(IF		fmla-c1form true-c1form false-c1form)
-;;;	(FMLA-NOT	fmla-c1form)
-;;;	(LAMBDA		lambda-list doc body-c1form)
-;;;	(LET		vars-list var-init-c1form-list decl-body-c1form)
-;;;	(LET*		vars-list var-init-c1form-list decl-body-c1form)
-;;;	(VALUES		values-c1form-list)
-;;;	(MULTIPLE-VALUE-SETQ vars-list values-c1form-list)
-;;;	(MULTIPLE-VALUE-BIND vars-list init-c1form body)
-;;;	(COMPILER-LET	symbols values body)
-;;;	(FUNCTION	{GLOBAL|CLOSURE} lambda-form fun-object)
-;;;
-;;;	(C2PRINC	object-string-or-char stream-var stream-c1form)
-;;;	(RPLACA		dest-c1form value-c1form)
-;;;	(RPLACD		dest-c1form value-c1form)
-;;;	(MEMBER!2	fun-symbol args-c1form-list)
-;;;	(ASSOC!2	fun-symbol args-c1form-list)
-;;;
-;;;	(SI:STRUCTURE-REF struct-c1form type-name slot-index {:UNSAFE|NIL})
-;;;	(SI:STRUCTURE-SET struct-c1form type-name slot-index value-c1form)
-;;;
-;;;	(WITH-STACK	body)
-;;;	(STACK-PUSH-VALUES value-c1form push-statement-c1form)
-;;;
-;;;	(ORDINARY	c1form)
-;;;	(LOAD-TIME-VALUE dest-loc value-c1form)
-;;;	(FSET		function-object vv-loc, macro-p pprint-p lambda-form)
-;v;;	(MAKE-FORM	vv-loc value-c1form)
-;;;	(INIT-FORM	vv-loc value-c1form)
-;;;
-;;;	body =		(c1form*)
-;;;	tag-body =	({c1form | tag}*)
-;;;	return-type =	{CLB | CCB | UNWIND-PROTECT}
-;;;	*value =	c1form
-;;;	lambda-list = 	(requireds optionals rest key-flag keywords allow-other-keys)
-;;;
-;;;
 
 (defvar *type-propagation-messages* t)
 

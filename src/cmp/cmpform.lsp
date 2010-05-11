@@ -14,6 +14,85 @@
 
 (in-package "COMPILER")
 
+;;;
+;;; ALL C1FORMS: Intermediate language used by the compiler
+;;;
+;;;	body =		(c1form*)
+;;;	tag-body =	({c1form | tag}*)
+;;;	return-type =	{CLB | CCB | UNWIND-PROTECT}
+;;;	*value =	c1form
+;;;	lambda-list = 	(requireds optionals rest key-flag keywords allow-other-keys)
+;;;
+
+(eval-when (:compile-toplevel :execute)
+(defconstant +all-c1-forms+
+  '((LOCATION		loc)
+    (VAR		var)
+    (SETQ		var value-c1form)
+    (PSETQ		var-list value-c1form-list)
+    (BLOCK		blk-var progn-c1form)
+    (PROGN		body)
+    (PROGV		symbols values form)
+    (TAGBODY		tag-var tag-body)
+    (DECL-BODY		declaration-list progn-c1form)
+    (RETURN-FROM	blk-var return-type value)
+    (FUNCALL		fun-value (arg-value*))
+    (CALL-LOCAL		obj-fun (arg-value*))
+    (CALL-GLOBAL	fun-name (arg-value*))
+    (CATCH		catch-value body)
+    (UNWIND-PROTECT	protected-c1form body)
+    (THROW		catch-value output-value)
+    (GO			tag-var return-type)
+    (C-INLINE		(arg-c1form*)
+			(arg-type-symbol*)
+			output-rep-type
+			c-expression-string
+			side-effects-p
+			one-liner-p)
+    (LOCALS		local-fun-list body labels-p)
+    (IF			fmla-c1form true-c1form false-c1form)
+    (FMLA-NOT		fmla-c1form)
+    (FMLA-AND		*)
+    (FMLA-OR		*)
+    (LAMBDA		lambda-list doc body-c1form)
+    (LET		vars-list var-init-c1form-list decl-body-c1form)
+    (LET*		vars-list var-init-c1form-list decl-body-c1form)
+    (FLET		local-funs body-c1form let/labels)
+    (LABELS		local-funs body-c1form let/labels)
+    (VALUES		values-c1form-list)
+    (MULTIPLE-VALUE-SETQ vars-list values-c1form-list)
+    (MULTIPLE-VALUE-BIND vars-list init-c1form body)
+    (COMPILER-LET	symbols values body)
+    (FUNCTION		(GLOBAL/CLOSURE) lambda-form fun-object)
+    (C2PRINC		object-string-or-char stream-var stream-c1form)
+    (RPLACA		(dest-c1form value-c1form))
+    (RPLACD		(dest-c1form value-c1form))
+    (MEMBER!2		fun-symbol args-c1form-list)
+    (ASSOC!2		fun-symbol args-c1form-list)
+
+    (SI:STRUCTURE-REF	struct-c1form type-name slot-index (:UNSAFE/NIL))
+    (SI:STRUCTURE-SET	struct-c1form type-name slot-index value-c1form)
+    (SI:FSET		fun-object fun-name macro-p pprint-p unoptimized-c1form)
+
+    (WITH-STACK		body)
+    (STACK-PUSH-VALUES value-c1form push-statement-c1form)
+
+    (ORDINARY		c1form)
+    (LOAD-TIME-VALUE	dest-loc value-c1form)
+    (FSET		function-object vv-loc macro-p pprint-p lambda-form)
+    (MAKE-FORM		vv-loc value-c1form)
+    (INIT-FORM		vv-loc value-c1form))))
+
+(defconstant +c1-form-hash+
+  #.(loop with hash = (make-hash-table :size 128 :test #'eq)
+       for (name . rest) in +all-c1-forms+
+       for length = (if (member '* rest) nil (length rest))
+       for side-effects = (if (member :no-side-effects rest)
+                              (progn (decf length) nil)
+                              t)
+       do (setf (gethash name hash) (list length side-effects))
+       finally (return hash)))
+
 (defun print-c1form (form stream)
   (format stream "#<form ~A ~X>" (c1form-name form) (ext::pointer form)))
 
@@ -53,13 +132,28 @@
       form)))
 
 (defun c1form-add-info (form dependents)
-  (dolist (subform dependents form)
-    (cond ((c1form-p subform)
-	   (when (info-sp-change subform)
-	     (setf (info-sp-change form) t))
-	   (setf (c1form-parent subform) form))
-	  ((consp subform)
-	   (c1form-add-info form subform)))))
+  (labels ((add-info-loop (form dependents)
+             (loop for subform in dependents
+                when (c1form-p subform)
+                do (when (c1form-sp-change subform)
+                     (setf (c1form-sp-change form) t
+                           (c1form-side-effects form) t))
+                and do (setf (c1form-parent subform) form)
+                when (consp subform)
+                do (add-info-loop form subform))))
+    (let ((record (gethash (c1form-name form) +c1-form-hash+)))
+      (unless record
+        (error "Internal error: unknown C1FORM name ~A"
+               (c1form-name form)))
+      (let ((length (first record))
+            (sp-change (c1form-sp-change form))
+            (side-effects (second record)))
+        (setf (c1form-side-effects form) (or (c1form-side-effects form)
+                                             sp-change
+                                             side-effects))
+        (unless (or (null length) (= length (length (c1form-args form))))
+          (error "Internal error: illegal number of arguments in ~A" form))))
+    (add-info-loop form dependents)))
 
 (defun copy-c1form (form)
   (copy-structure form))

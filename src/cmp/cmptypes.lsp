@@ -244,6 +244,7 @@
   #-new-cmp
   (env (cmp-env-copy)) ;; Environment in which this form was compiled
   (args '())
+  (side-effects nil) ;;; Does it have side effects
   (form nil)
   (toplevel-form nil)
   (file nil)
