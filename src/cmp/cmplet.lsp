@@ -41,9 +41,16 @@
          (*cmp-env* (cmp-env-copy)))
     (multiple-value-bind (vars forms body)
         (process-let-bindings let/let* bindings body)
+      ;; Try eliminating unused variables, replace constant ones, etc.
       (multiple-value-setq (vars forms)
-          (funcall (if (eq let/let* 'let) 'optimize-c1let 'optimize-c1let*)
-                   vars forms body))
+        (if (eq let/let* 'let*)
+            (optimize-c1let* vars forms body)
+            (c1let-optimize-read-only-vars 'let vars forms body)))
+      ;; Verify that variables are referenced and assign final boxed / unboxed type
+      (mapc #'check-vref vars)
+      (unless (= (length vars) (length forms))
+        (break)
+        (error "foo"))
       (make-c1form* let/let*
                     :type (c1form-type body)
                     :volatile (not (eql setjmps *setjmps*))
@@ -91,66 +98,63 @@
       (c1declare-specials specials)
       (values vars forms (c1decl-body other-decls body)))))
 
-(defun optimize-c1let (variables forms body)
-  ;; since the body may produce type constraints on variables:
-  ;; (let (x) (foo x)) where (type (function (fixnum) fixnum) foo)
-  ;; do it again
-  (do ((vars variables (cdr vars))
-       (forms forms (cdr forms))
-       (used-vars '())
-       (used-forms '()))
-      ((null vars)
-       (values (nreverse used-vars)
-               (nreverse used-forms)))
-    (let* ((var (first vars))
-	   (form (and-form-type (var-type var) (first forms) (var-name var)
-				:unsafe "In LET body"))
-	   (form-type (c1form-primary-type form)))
-      (declare (type var var))
-      ;; Automatic treatement for READ-ONLY variables which are not
-      ;; closed over in other functions.
-      (unless (or (var-changed-in-form-list var (list body))
-		  (var-functions-reading var)
-		  (var-functions-setting var))
-	(setf (var-type var) form-type)
-	(update-var-type var form-type body)
-	;; * (let ((v2 e2)) e3 e4) => (let () e3 e4)
-	;;   provided
-	;;   - v2 does not appear in body
-	;;   - e2 produces no side effects
-	(when (and (= 0 (var-ref var))
-		   (not (member (var-kind var) '(special global)))
-		   (not (form-causes-side-effect form)))
-          (unless (var-ignorable var)
-            (cmpnote "Removing unused variable ~A" (var-name var)))
-	  (go continue))
-	;;  (let ((v1 e1) (v2 e2) (v3 e3)) (expr e4 v2 e5))
-	;;  can become
-	;;  (let ((v1 e1) (v3 e3)) (expr e4 e2 e5))
-	;;  provided
-	;;  - v2 appears only once
-	;;  - v2 appears only in body
-	;;  - e2 does not affect v1 nor e3, e3 does not affect e2
-	;;  - e4 does not affect e2
-	(when (and (= 1 (var-ref var))
-		   (var-referenced-in-form var body)
-		   (not (form-causes-side-effect form))
-		   ;; it does not refer to special variables which
-		   ;; are changed in the LET form
-		   (notany #'(lambda (v) (var-referenced-in-form v form)) variables)
-		   (catch var
-		     (replaceable var body)))
-	  (cmpdebug "Replacing variable ~A by its value ~A" (var-name var) form)
-	  (nsubst-var var form)
-	  (go continue))
-	)
-      #+nil
-      (when (member-type form-type '(FIXNUM CHARACTER DOUBLE-FLOAT SINGLE-FLOAT))
-	(incf (var-ref var)))		; force unboxing
-      (check-vref var)
-      (push var used-vars)
-      (push form used-forms))
-    continue))
+(defun c1let-optimize-read-only-vars (let/let* all-vars all-forms body)
+  (loop with base = (list body)
+     for vars on all-vars
+     for forms on all-forms
+     for var = (first vars)
+     for form = (first forms)
+     for rest-vars = (cdr vars)
+     for rest-forms = (if (eq let/let* 'LET) base (cons body (cdr forms)))
+     for read-only-p = (and (null (var-set-nodes var))
+                            (not (global-var-p var)))
+     when read-only-p
+     do (fix-read-only-variable-type var form rest-forms)
+     unless (and read-only-p
+                (or (c1let-unused-variable-p var form)
+                    (c1let-optimize-out-variable var form rest-vars rest-forms)))
+     collect var into used-vars and
+     collect form into used-forms
+     finally (return (values used-vars used-forms))))
+
+(defun fix-read-only-variable-type (var form rest-forms)
+  (and-form-type (var-type var) form (var-name var) :unsafe "In LET body")
+  (let ((form-type (c1form-primary-type form)))
+    (setf (var-type var) form-type)
+    (update-var-type var form-type rest-forms)))
+
+(defun c1let-unused-variable-p (var form)
+  ;; * (let ((v2 e2)) e3 e4) => (let () e3 e4)
+  ;;   provided
+  ;;   - v2 does not appear in body
+  ;;   - e2 produces no side effects
+  (when (and (= 0 (var-ref var))
+             (not (member (var-kind var) '(special global)))
+             (not (form-causes-side-effect form)))
+    (unless (var-ignorable var)
+      (cmpnote "Removing unused variable ~A" (var-name var)))
+    t))
+
+(defun c1let-optimize-out-variable (var form rest-vars rest-forms)
+  ;;  (let ((v1 e1) (v2 e2) (v3 e3)) (expr e4 v2 e5))
+  ;;  can become
+  ;;  (let ((v1 e1) (v3 e3)) (expr e4 e2 e5))
+  ;;  provided
+  ;;  - v2 appears only once
+  ;;  - v2 appears only in body
+  ;;  - e2 does not affect v1 nor e3, e3 does not affect e2
+  ;;  - e4 does not affect e2
+  (when (and (= 1 (var-ref var))
+             (not (form-causes-side-effect form))
+             ;; it does not refer to special variables which
+             ;; are changed in the LET form
+             (notany #'(lambda (v) (var-referenced-in-form v form)) rest-vars)
+             (catch var
+               (replaceable var rest-forms)))
+    (cmpdebug "Replacing variable ~A by its value ~A" (var-name var) form)
+    (nsubst-var var form)
+    (return-from c1let-optimize-out-variable t))
+  nil)
 
 (defun update-var-type (var type x)
   (cond ((consp x)
@@ -361,19 +365,23 @@
 
 ;; should check whether a form before var causes a side-effect
 ;; exactly one occurrence of var is present in forms
-(defun replaceable (var form &aux (args (c1form-args form)))
-  (case (c1form-name form)
-    (VAR
-     (if (eq var (first args))
-	 (throw var T)
-	 T))
-    ((LOCATION SYS:STRUCTURE-REF) T)
-    (CALL-GLOBAL
-     (dolist (subform (second args) T)
-       (when (or (not (replaceable var subform))
-		 (form-causes-side-effect subform))
-	 (return nil))))
-    (SETQ (replaceable var (second args)))))
+(defun replaceable (var form)
+  (if (consp form)
+      (loop for f in form
+         always (replaceable var f))
+      (let ((args (c1form-args form)))
+        (case (c1form-name form)
+          (VAR
+           (if (eq var (first args))
+               (throw var T)
+               T))
+          ((LOCATION SYS:STRUCTURE-REF) T)
+          (CALL-GLOBAL
+           (dolist (subform (second args) T)
+             (when (or (not (replaceable var subform))
+                       (form-causes-side-effect subform))
+               (return nil))))
+          (SETQ (replaceable var (second args)))))))
 
 (defun c2let* (vars forms body
                     &aux (block-p nil)
@@ -381,7 +389,6 @@
 		    (*env* *env*)
 		    (*env-lvl* *env-lvl*) env-grows)
   (declare (type boolean block-p))
-
   (do ((vl vars (cdr vl))
        (fl forms (cdr fl))
        (var) (form) (kind))
@@ -488,7 +495,7 @@
     (baboon "Cannot replace a variable that is to be changed"))
   (when (var-functions-reading var)
     (baboon "Cannot replace a variable that is closed over"))
-  (when (> (length (var-read-nodes var)) 1)
+  (when (rest (var-read-nodes var))
     (baboon "Cannot replace a variable that is used more than once"))
   ;; FIXME!!!!
   ;; Only take the first value out of the form
@@ -522,3 +529,4 @@
 (put-sysprop 'LET 'C2 'c2let)
 (put-sysprop 'LET* 'C1SPECIAL 'c1let*)
 (put-sysprop 'LET* 'C2 'c2let*)
+
