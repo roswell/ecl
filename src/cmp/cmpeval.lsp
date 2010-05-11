@@ -42,9 +42,9 @@
       form))
 
 (defvar *c1nil* (make-c1form* 'LOCATION :type (object-type nil) :args nil))
-(defun c1nil () *c1nil*)
+(defun c1nil () (copy-structure *c1nil*))
 (defvar *c1t* (make-c1form* 'LOCATION :type (object-type t) :args t))
-(defun c1t () *c1t*)
+(defun c1t () (copy-structure *c1t*))
 
 (defun c1call-symbol (fname args &aux fd)
   (cond ((setq fd (get-sysprop fname 'c1special)) (funcall fd args))
