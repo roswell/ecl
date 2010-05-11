@@ -213,6 +213,11 @@
   (and (not (member (var-kind var) '(LEXICAL CLOSURE SPECIAL GLOBAL REPLACED)))
        (var-kind var)))
 
+(defun global-var-p (var)
+  (let ((kind (var-kind var)))
+    (or (eq kind 'global)
+        (eq kind 'special))))
+
 (defun c2var (vref) (unwind-exit vref))
 
 (defun c2location (loc) (unwind-exit loc))
