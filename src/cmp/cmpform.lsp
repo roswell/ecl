@@ -129,32 +129,67 @@
       (c1form-add-info form form-args)
       form)))
 
+(defun c1form-add-info-loop (form dependents)
+  (loop for subform in dependents
+     when (c1form-p subform)
+     do (progn
+          (when (c1form-sp-change subform)
+            (setf (c1form-sp-change form) t
+                  (c1form-side-effects form) t))
+          (when (c1form-side-effects subform)
+            (setf (c1form-side-effects form) t))
+          (unless (eq (c1form-name subform) 'LOCATION)
+            (when (rest (c1form-parents subform))
+              (error "Running twice through same form"))
+            (setf (c1form-parents subform)
+                  (nconc (c1form-parents subform)
+                         (c1form-parents form)))))
+     when (consp subform)
+     do (c1form-add-info-loop form subform)))
+
 (defun c1form-add-info (form dependents)
-  (labels ((add-info-loop (form dependents)
-             (loop for subform in dependents
-                when (c1form-p subform)
-                do (progn
-                     (when (c1form-sp-change subform)
-                       (setf (c1form-sp-change form) t
-                             (c1form-side-effects form) t))
-                     (when (c1form-side-effects subform)
-                       (setf (c1form-side-effects form) t))
-                     (setf (c1form-parent subform) form))
-                when (consp subform)
-                do (add-info-loop form subform))))
-    (let ((record (gethash (c1form-name form) +c1-form-hash+)))
-      (unless record
-        (error "Internal error: unknown C1FORM name ~A"
-               (c1form-name form)))
-      (let ((length (first record))
-            (sp-change (c1form-sp-change form))
-            (side-effects (second record)))
-        (setf (c1form-side-effects form) (or (c1form-side-effects form)
-                                             sp-change
-                                             side-effects))
-        (unless (or (null length) (= length (length (c1form-args form))))
-          (error "Internal error: illegal number of arguments in ~A" form))))
-    (add-info-loop form dependents)))
+  (let ((record (gethash (c1form-name form) +c1-form-hash+)))
+    (unless record
+      (error "Internal error: unknown C1FORM name ~A"
+             (c1form-name form)))
+    (let ((length (first record))
+          (sp-change (c1form-sp-change form))
+          (side-effects (second record)))
+      (setf (c1form-side-effects form)
+            (or (c1form-side-effects form) sp-change side-effects)
+            (c1form-parents form)
+            (list form))
+      (unless (or (null length) (= length (length (c1form-args form))))
+        (error "Internal error: illegal number of arguments in ~A" form))))
+  (c1form-add-info-loop form dependents))
+
+(defun c1form-replace-with (dest new-fields)
+  (let* (new-parents)
+    ;; We have to relocate the children nodes of NEW-FIELDS in
+    ;; the new branch. This implies rewriting the parents chain,
+    ;; but only for non-location nodes (these are reused).
+    (if (eq (c1form-name new-fields) 'LOCATION)
+        (setf new-parents (c1form-parents dest))
+        (setf new-parents (c1form-parents new-fields)
+              (car new-parents) dest
+              (cdr new-parents) (c1form-parents dest)))
+    ;; Side effects might have to be propagated to the parents
+    ;; but currently we do not allow moving forms with side effects
+    (when (c1form-side-effects new-fields)
+      (baboon "Attempted to move a form with side-effects"))
+    ;; Remaining fields are just copied
+    (setf (c1form-type dest) (c1form-type new-fields)
+          (c1form-sp-change dest) (c1form-sp-change new-fields)
+          (c1form-side-effects dest) (c1form-side-effects new-fields)
+          (c1form-volatile dest) (c1form-volatile new-fields)
+          (c1form-name dest) (c1form-name new-fields)
+          (c1form-args dest) (c1form-args new-fields)
+          (c1form-parents dest) new-parents
+          (c1form-env dest) (c1form-env new-fields)
+          (c1form-form dest) (c1form-form new-fields)
+          (c1form-toplevel-form dest) (c1form-toplevel-form new-fields)
+          (c1form-file dest) (c1form-file new-fields)
+          (c1form-file-position dest) (c1form-file-position new-fields))))
 
 (defun copy-c1form (form)
   (copy-structure form))
@@ -177,8 +212,5 @@
 
 (defun find-node-in-list (home-node list)
   (flet ((parent-node-p (node presumed-child)
-	   (loop
-	    (cond ((null presumed-child) (return nil))
-		  ((eq node presumed-child) (return t))
-		  (t (setf presumed-child (c1form-parent presumed-child)))))))
+           (member node (c1form-parents presumed-child))))
     (member home-node list :test #'parent-node-p)))

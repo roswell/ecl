@@ -501,18 +501,11 @@
   ;; Only take the first value out of the form
   #+nil
   (setf form (make-c1form* 'VALUES :args (list form)))
-  (dolist (where (var-read-nodes var))
-    (cond ((and (eql (c1form-name where) 'VAR)
-		(eql (c1form-arg 0 where) var))
-	   (setf (c1form-type where) (c1form-type form)
-		 (c1form-sp-change where) (c1form-sp-change form)
-		 (c1form-volatile where) (c1form-volatile form)
-		 (c1form-name where) (c1form-name form)
-		 (c1form-args where) (c1form-args form))
-	   (c1form-add-info where (c1form-args where))
-	   )
-	  (t
-	   (baboon "VAR-SET-NODES are only C1FORMS of type VAR")))))
+  (let ((where (first (var-read-nodes var))))
+    (unless (and (eql (c1form-name where) 'VAR)
+                 (eql (c1form-arg 0 where) var))
+      (baboon "VAR-READ-NODES are only C1FORMS of type VAR"))
+    (c1form-replace-with where form)))
 
 (defun member-var (var list)
   (let ((kind (var-kind var)))

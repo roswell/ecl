@@ -238,7 +238,7 @@
 		   (:print-object print-c1form)
 		   (:constructor do-make-c1form))
   (name nil)
-  (parent nil)
+  (parents nil)
   #+new-cmp
   (env (c-env:cmp-env-copy)) ;; Environment in which this form was compiled
   #-new-cmp

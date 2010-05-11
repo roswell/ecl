@@ -289,7 +289,8 @@
 (defun undefined-variable (sym)
   (do-cmpwarn 'compiler-undefined-variable :name sym))
   
-(defun baboon (&aux (*print-case* :upcase))
+(defun baboon (&key (format-control "A bug was found in the compiler")
+               format-arguments)
   (signal 'compiler-internal-error
 	  :format-control "A bug was found in the compiler."
 	  :format-arguments nil))

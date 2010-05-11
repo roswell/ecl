@@ -23,7 +23,7 @@
        (setf x (cdr x))
        (if (listp x)
            (c1expr x)
-           (copy-structure x)))))
+           x))))
    ((eq val nil) (c1nil))
    ((eq val t) (c1t))
    ((sys::fixnump val)
