@@ -26,14 +26,14 @@
 
 (eval-when (:compile-toplevel :execute)
 (defconstant +all-c1-forms+
-  '((LOCATION		loc)
+  '((LOCATION		loc :movable)
     (VAR		var)
     (SETQ		var value-c1form :side-effects)
     (PSETQ		var-list value-c1form-list :side-effects)
-    (BLOCK		blk-var progn-c1form)
-    (PROGN		body)
+    (BLOCK		blk-var progn-c1form :movable)
+    (PROGN		body :movable)
     (PROGV		symbols values form :side-effects)
-    (TAGBODY		tag-var tag-body)
+    (TAGBODY		tag-var tag-body :movable)
     (RETURN-FROM	blk-var return-type value :side-effects)
     (FUNCALL		fun-value (arg-value*) :side-effects)
     (CALL-LOCAL		obj-fun (arg-value*) :side-effects)
@@ -49,33 +49,33 @@
 			side-effects-p
 			one-liner-p
 			:side-effects)
-    (LOCALS		local-fun-list body labels-p)
-    (IF			fmla-c1form true-c1form false-c1form)
-    (FMLA-NOT		fmla-c1form)
-    (FMLA-AND		*)
-    (FMLA-OR		*)
+    (LOCALS		local-fun-list body labels-p :movable)
+    (IF			fmla-c1form true-c1form false-c1form :movable)
+    (FMLA-NOT		fmla-c1form :movable)
+    (FMLA-AND		* :movable)
+    (FMLA-OR		* :movable)
     (LAMBDA		lambda-list doc body-c1form)
     (LET		vars-list var-init-c1form-list decl-body-c1form)
     (LET*		vars-list var-init-c1form-list decl-body-c1form)
-    (VALUES		values-c1form-list)
+    (VALUES		values-c1form-list :movable)
     (MULTIPLE-VALUE-SETQ vars-list values-c1form-list :side-effects)
-    (MULTIPLE-VALUE-BIND vars-list init-c1form body)
+    (MULTIPLE-VALUE-BIND vars-list init-c1form body :movable)
     (COMPILER-LET	symbols values body)
-    (FUNCTION		(GLOBAL/CLOSURE) lambda-form fun-object)
+    (FUNCTION		(GLOBAL/CLOSURE) lambda-form fun-object :movable)
     (C2PRINC		object-string-or-char stream-var stream-c1form :side-effects)
     (RPLACA		(dest-c1form value-c1form) :side-effects)
     (RPLACD		(dest-c1form value-c1form) :side-effects)
-    (MEMBER!2		fun-symbol args-c1form-list)
-    (ASSOC!2		fun-symbol args-c1form-list)
+    (MEMBER!2		fun-symbol args-c1form-list :movable)
+    (ASSOC!2		fun-symbol args-c1form-list :movable)
 
-    (SI:STRUCTURE-REF	struct-c1form type-name slot-index (:UNSAFE/NIL))
+    (SI:STRUCTURE-REF	struct-c1form type-name slot-index (:UNSAFE/NIL) :movable)
     (SI:STRUCTURE-SET	struct-c1form type-name slot-index value-c1form :side-effects)
 
     (WITH-STACK		body :side-effects)
-    (STACK-PUSH-VALUES value-c1form push-statement-c1form :side-effects)
+    (STACK-PUSH-VALUES value-c1form push-statement-c1form :side-effects :movable)
 
-    (ORDINARY		c1form)
-    (LOAD-TIME-VALUE	dest-loc value-c1form)
+    (ORDINARY		c1form :movable)
+    (LOAD-TIME-VALUE	dest-loc value-c1form :movable)
     (SI:FSET		function-object vv-loc macro-p pprint-p lambda-form
 			:side-effects)
     (MAKE-FORM		vv-loc value-c1form :side-effects)
@@ -86,9 +86,12 @@
        for (name . rest) in +all-c1-forms+
        for length = (if (member '* rest) nil (length rest))
        for side-effects = (if (member :side-effects rest)
-                              (progn (decf length) t)
+                              (progn (and length (decf length)) t)
                               nil)
-       do (setf (gethash name hash) (list length side-effects))
+       for movable = (if (member :movable rest)
+                         (progn (and length (decf length)) t)
+                         nil)
+       do (setf (gethash name hash) (list length side-effects movable))
        finally (return hash)))
 
 (defun print-c1form (form stream)
@@ -164,32 +167,23 @@
   (c1form-add-info-loop form dependents))
 
 (defun c1form-replace-with (dest new-fields)
-  (let* (new-parents)
-    ;; We have to relocate the children nodes of NEW-FIELDS in
-    ;; the new branch. This implies rewriting the parents chain,
-    ;; but only for non-location nodes (these are reused).
-    (if (eq (c1form-name new-fields) 'LOCATION)
-        (setf new-parents (c1form-parents dest))
-        (setf new-parents (c1form-parents new-fields)
-              (car new-parents) dest
-              (cdr new-parents) (c1form-parents dest)))
-    ;; Side effects might have to be propagated to the parents
-    ;; but currently we do not allow moving forms with side effects
-    (when (c1form-side-effects new-fields)
-      (baboon "Attempted to move a form with side-effects"))
-    ;; Remaining fields are just copied
-    (setf (c1form-type dest) (c1form-type new-fields)
-          (c1form-sp-change dest) (c1form-sp-change new-fields)
-          (c1form-side-effects dest) (c1form-side-effects new-fields)
-          (c1form-volatile dest) (c1form-volatile new-fields)
-          (c1form-name dest) (c1form-name new-fields)
-          (c1form-args dest) (c1form-args new-fields)
-          (c1form-parents dest) new-parents
-          (c1form-env dest) (c1form-env new-fields)
-          (c1form-form dest) (c1form-form new-fields)
-          (c1form-toplevel-form dest) (c1form-toplevel-form new-fields)
-          (c1form-file dest) (c1form-file new-fields)
-          (c1form-file-position dest) (c1form-file-position new-fields))))
+  ;; We have to relocate the children nodes of NEW-FIELDS in
+  ;; the new branch. This implies rewriting the parents chain,
+  ;; but only for non-location nodes (these are reused).
+  (unless (eq (c1form-name new-fields) 'LOCATION)
+    (rplacd (c1form-parents new-fields)
+            (c1form-parents dest)))
+  ;; Side effects might have to be propagated to the parents
+  ;; but currently we do not allow moving forms with side effects
+  (when (c1form-side-effects new-fields)
+    (baboon "Attempted to move a form with side-effects"))
+  ;; Remaining flags are just copied
+  (setf (c1form-type dest) (c1form-type new-fields)
+        (c1form-sp-change dest) (c1form-sp-change new-fields)
+        (c1form-side-effects dest) (c1form-side-effects new-fields)
+        (c1form-volatile dest) (c1form-volatile new-fields)
+        (c1form-name dest) 'PROGN
+        (c1form-args dest) (list (list new-fields))))
 
 (defun copy-c1form (form)
   (copy-structure form))
@@ -214,3 +208,25 @@
   (flet ((parent-node-p (node presumed-child)
            (member node (c1form-parents presumed-child))))
     (member home-node list :test #'parent-node-p)))
+
+(defun traverse-c1form-tree (tree function)
+  (cond ((consp tree)
+         (loop for f in tree
+            do (traverse-c1form-tree f function)))
+        ((c1form-p tree)
+         (loop for f in (c1form-args tree)
+            do (traverse-c1form-tree f function))
+         (funcall function tree))))
+
+(defun c1form-movable-p (form)
+  (flet ((abort-on-not-pure (form)
+           (let ((name (c1form-name form)))
+             (cond ((eq name 'VAR)
+                    (let ((var (c1form-arg 0 form)))
+                      (when (or (global-var-p var)
+                                (var-set-nodes var))
+                        (return-from c1form-movable-p nil))))
+                   ((or (c1form-side-effects form)
+                        (not (third (gethash name +c1-form-hash+))))
+                    (return-from c1form-movable-p nil))))))
+    (abort-on-not-pure form)))

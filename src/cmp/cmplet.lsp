@@ -51,11 +51,14 @@
       (unless (= (length vars) (length forms))
         (break)
         (error "foo"))
-      (make-c1form* let/let*
-                    :type (c1form-type body)
-                    :volatile (not (eql setjmps *setjmps*))
-                    :local-vars vars
-                    :args vars forms body))))
+      (let ((sp-change (some #'global-var-p vars)))
+        (make-c1form* let/let*
+                      :sp-change sp-change
+                      :side-effects sp-change
+                      :type (c1form-type body)
+                      :volatile (not (eql setjmps *setjmps*))
+                      :local-vars vars
+                      :args vars forms body)))))
 
 (defun invalid-let-bindings (let/let* bindings)
   (cmperr "Syntax error in ~A bindings:~%~4I~A"
@@ -101,11 +104,11 @@
 (defun c1let-optimize-read-only-vars (let/let* all-vars all-forms body)
   (loop with base = (list body)
      for vars on all-vars
-     for forms on all-forms
+     for forms on (nconc all-forms (list body))
      for var = (first vars)
      for form = (first forms)
      for rest-vars = (cdr vars)
-     for rest-forms = (if (eq let/let* 'LET) base (cons body (cdr forms)))
+     for rest-forms = (cdr forms)
      for read-only-p = (and (null (var-set-nodes var))
                             (not (global-var-p var)))
      when read-only-p
@@ -149,8 +152,7 @@
              ;; it does not refer to special variables which
              ;; are changed in the LET form
              (notany #'(lambda (v) (var-referenced-in-form v form)) rest-vars)
-             (catch var
-               (replaceable var rest-forms)))
+             (replaceable var rest-forms))
     (cmpdebug "Replacing variable ~A by its value ~A" (var-name var) form)
     (nsubst-var var form)
     (return-from c1let-optimize-out-variable t))
@@ -297,7 +299,7 @@
   ;; since the body may produce type constraints on variables,
   ;; do it again:
   (do ((vs variables (cdr vs))
-       (fs forms (cdr fs))
+       (fs (nconc forms (list body)) (cdr fs))
        (used-vars '())
        (used-forms '()))
       ((null vs)
@@ -308,7 +310,8 @@
 	   (form-type (c1form-primary-type form))
 	   (rest-forms (cons body (rest fs))))
       ;; Automatic treatement for READ-ONLY variables:
-      (unless (or (var-changed-in-form-list var rest-forms)
+      (unless (or (global-var-p var)
+                  (var-changed-in-form-list var rest-forms)
 		  (var-functions-reading var)
 		  (var-functions-setting var))
 	(setf (var-type var) form-type)
@@ -347,9 +350,8 @@
 				(when (var-changed-in-form-list v tforms)
 				  (return nil)))))
 		       (not (args-cause-side-effect fs)))
-		   (catch var
-		     (replaceable var body)))
-	  (cmpdebug "Replacing variable ~A by its value ~a" (var-name var) form)
+                   (replaceable var fs))
+	  (cmpnote "Replacing variable ~A by its value ~a" (var-name var) form)
 	  (nsubst-var var form)
 	  (go continue))
 	)
@@ -366,22 +368,15 @@
 ;; should check whether a form before var causes a side-effect
 ;; exactly one occurrence of var is present in forms
 (defun replaceable (var form)
-  (if (consp form)
-      (loop for f in form
-         always (replaceable var f))
-      (let ((args (c1form-args form)))
-        (case (c1form-name form)
-          (VAR
-           (if (eq var (first args))
-               (throw var T)
-               T))
-          ((LOCATION SYS:STRUCTURE-REF) T)
-          (CALL-GLOBAL
-           (dolist (subform (second args) T)
-             (when (or (not (replaceable var subform))
-                       (form-causes-side-effect subform))
-               (return nil))))
-          (SETQ (replaceable var (second args)))))))
+  (labels ((abort-on-side-effects (form)
+             (if (eq (c1form-name form) 'VAR)
+                 (when (eq var (first (c1form-args form)))
+                   (return-from replaceable t))
+                 (when (c1form-side-effects form)
+                   (return-from replaceable nil)))))
+    (traverse-c1form-tree form #'abort-on-side-effects)
+    (baboon :format-control "In REPLACEABLE, variable ~A not found. Form:~%~A"
+            :format-arguments (list (var-name var) *current-form*))))
 
 (defun c2let* (vars forms body
                     &aux (block-p nil)
@@ -402,7 +397,7 @@
       (case (c1form-name form)
         (LOCATION
          (when (can-be-replaced* var body (cdr fl))
-	   (cmpdebug "Replacing variable ~a by its value" (var-name var))
+	   (cmpnote "Replacing variable ~a by its value" (var-name var))
            (setf (var-kind var) 'REPLACED
                  (var-loc var) (c1form-arg 0 form))))
         (VAR
@@ -415,7 +410,7 @@
 		      (can-be-replaced* var body (cdr fl))
 		      (not (var-changed-in-form-list var1 (rest fl)))
 		      (not (var-changed-in-form var1 body)))
-	     (cmpdebug "Replacing variable ~a by its value" (var-name var))
+	     (cmpnote "Replacing variable ~a by its value" (var-name var))
              (setf (var-kind var) 'REPLACED
                    (var-loc var) var1)))))
       (unless env-grows
@@ -505,6 +500,13 @@
     (unless (and (eql (c1form-name where) 'VAR)
                  (eql (c1form-arg 0 where) var))
       (baboon "VAR-READ-NODES are only C1FORMS of type VAR"))
+    #+(or)
+    (setf (var-read-nodes var) nil
+          (var-set-nodes var) nil
+          (var-functions-setting var) nil
+          (var-functions-reading var) nil
+          (var-ref var) 0
+          (var-ignorable var) t)
     (c1form-replace-with where form)))
 
 (defun member-var (var list)
@@ -522,4 +524,3 @@
 (put-sysprop 'LET 'C2 'c2let)
 (put-sysprop 'LET* 'C1SPECIAL 'c1let*)
 (put-sysprop 'LET* 'C2 'c2let*)
-
