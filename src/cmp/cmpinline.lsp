@@ -71,6 +71,13 @@
     (set-loc loc)
     (list type temp)))
 
+(defun emit-inlined-progn (form expected-type forms)
+  (let ((args (c1form-arg 0 form)))
+    (loop while (rest args)
+       do (let ((*destination* 'TRASH))
+            (c2expr* (pop args))))
+    (emit-inline-form (first args) expected-type forms)))
+
 (defun emit-inlined-structure-ref (form expected-type rest-forms)
   (let ((type (c1form-primary-type form)))
     (if (args-cause-side-effect rest-forms)
@@ -100,6 +107,28 @@
                     (c1form-arg 1 form)
                     #+nil (c1form-arg 2 form))))))
 
+(defun emit-inline-form (form expected-type forms)
+  (case (c1form-name form)
+    (LOCATION
+     (list (c1form-primary-type form) (c1form-arg 0 form)))
+    (VAR
+     (emit-inlined-variable form expected-type forms))
+    (CALL-GLOBAL
+     (emit-inlined-call-global form expected-type))
+    (SYS:STRUCTURE-REF
+     (emit-inlined-structure-ref form expected-type forms))
+    #+clos
+    (SYS:INSTANCE-REF
+     (emit-inlined-instance-ref form expected-type forms))
+    (SETQ
+     (emit-inlined-setq form expected-type forms))
+    (PROGN
+     (emit-inlined-progn form expected-type forms))
+    (t (let* ((type (c1form-primary-type form))
+              (temp (make-inline-temp-var expected-type type)))
+         (let ((*destination* temp)) (c2expr* form))
+         (list type temp)))))
+
 ;;;
 ;;; inline-args:
 ;;;   returns a list of pairs (type loc)
@@ -109,36 +138,10 @@
 ;;; call close-inline-blocks
 ;;;
 (defun inline-args (forms &optional types)
-  (do* ((forms forms)
-        (expected-type)
-        (form)
-        (locs '()))
-       ((endp forms) (nreverse locs))
-    (setq form (pop forms)
-          expected-type (if types (pop types) t))
-    (case (c1form-name form)
-      (LOCATION
-       (push (list (c1form-primary-type form) (c1form-arg 0 form)) locs))
-      (VAR
-       (push (emit-inlined-variable form expected-type forms) locs))
-
-      (CALL-GLOBAL
-       (push (emit-inlined-call-global form expected-type) locs))
-
-      (SYS:STRUCTURE-REF
-       (push (emit-inlined-structure-ref form expected-type forms) locs))
-
-      #+clos
-      (SYS:INSTANCE-REF
-       (push (emit-inlined-instance-ref form expected-type forms) locs))
-
-      (SETQ
-       (push (emit-inlined-setq form expected-type forms) locs))
-
-      (t (let* ((type (c1form-primary-type form))
-                (temp (make-inline-temp-var expected-type type)))
-           (let ((*destination* temp)) (c2expr* form))
-           (push (list type temp) locs))))))
+  (loop for form-list on forms
+     for form = (first form-list)
+     for expected-type = (if types (pop types) t)
+     collect (emit-inline-form form expected-type (rest form-list))))
 
 (defun destination-type ()
   (rep-type->lisp-type (loc-representation-type *destination*))
