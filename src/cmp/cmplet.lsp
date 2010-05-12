@@ -43,14 +43,9 @@
         (process-let-bindings let/let* bindings body)
       ;; Try eliminating unused variables, replace constant ones, etc.
       (multiple-value-setq (vars forms)
-        (if (eq let/let* 'let*)
-            (optimize-c1let* vars forms body)
-            (c1let-optimize-read-only-vars 'let vars forms body)))
+        (c1let-optimize-read-only-vars vars forms body))
       ;; Verify that variables are referenced and assign final boxed / unboxed type
       (mapc #'check-vref vars)
-      (unless (= (length vars) (length forms))
-        (break)
-        (error "foo"))
       (let ((sp-change (some #'global-var-p vars)))
         (make-c1form* let/let*
                       :sp-change sp-change
@@ -101,7 +96,7 @@
       (c1declare-specials specials)
       (values vars forms (c1decl-body other-decls body)))))
 
-(defun c1let-optimize-read-only-vars (let/let* all-vars all-forms body)
+(defun c1let-optimize-read-only-vars (all-vars all-forms body)
   (loop with base = (list body)
      for vars on all-vars
      for forms on (nconc all-forms (list body))
@@ -110,6 +105,8 @@
      for rest-vars = (cdr vars)
      for rest-forms = (cdr forms)
      for read-only-p = (and (null (var-set-nodes var))
+                            (null (var-functions-reading var))
+                            (null (var-functions-setting var))
                             (not (global-var-p var)))
      when read-only-p
      do (fix-read-only-variable-type var form rest-forms)
@@ -136,6 +133,7 @@
              (not (form-causes-side-effect form)))
     (unless (var-ignorable var)
       (cmpnote "Removing unused variable ~A" (var-name var)))
+    (delete-c1forms form)
     t))
 
 (defun c1let-optimize-out-variable (var form rest-vars rest-forms)
@@ -484,6 +482,19 @@
   (declare (type var var))
   (and (can-be-replaced var body)
        (not (var-changed-in-form-list var forms))))
+
+;; should check whether a form before var causes a side-effect
+;; exactly one occurrence of var is present in forms
+(defun delete-c1forms (form)
+  (flet ((eliminate-references (form)
+           (if (eq (c1form-name form) 'VAR)
+               (let ((var (c1form-arg 0 form)))
+                 (when var
+                   (decf (var-ref var))
+                   (setf (var-ref var) (1- (var-ref var))
+                         (var-read-nodes var)
+                         (delete form (var-read-nodes var))))))))
+    (traverse-c1form-tree form #'eliminate-references)))
 
 (defun nsubst-var (var form)
   (when (var-set-nodes var)
