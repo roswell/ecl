@@ -15,6 +15,7 @@
 (in-package "COMPILER")
 
 (defun c1expr (form)
+  (let ((*current-form* form))
   (setq form (catch *cmperr-tag*
     (cond ((symbolp form)
 	   (setq form (chk-symbol-macrolet form))
@@ -36,7 +37,7 @@
 		   ((and (consp fun) (eq (car fun) 'LAMBDA))
 		    (c1funcall form))
 		   (t (cmperr "~s is not a legal function name." fun)))))
-	  (t (c1constant-value form :always t)))))
+	  (t (c1constant-value form :always t))))))
   (if (eq form '*cmperr-tag*)
       (c1nil)
       form))
