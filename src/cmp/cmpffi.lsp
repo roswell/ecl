@@ -417,7 +417,9 @@
       (do ((processed-arguments '())
 	   (processed-arg-types '()))
 	  ((and (endp arguments) (endp arg-types))
-	   (make-c1form* 'C-INLINE :type output-type :args
+	   (make-c1form* 'C-INLINE :type output-type
+                         :side-effects side-effects
+                         :args
 			 (nreverse processed-arguments)
 			 (nreverse processed-arg-types)
 			 output-rep-type
