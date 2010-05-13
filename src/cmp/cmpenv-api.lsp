@@ -129,7 +129,8 @@ that are susceptible to be changed by PROCLAIM."
 	    ((eq record 'UNWIND-PROTECT)
 	     (setf unw t))
 	    ((atom record)
-	     (baboon))
+	     (baboon :format-control "Uknown record found in environment~%~S"
+                     :format-arguments (list record)))
 	    ;; We have to use EQUAL because the name can be a list (SETF whatever)
 	    ((equal (first record) name)
 	     (setf found (first (last record)))
@@ -149,7 +150,8 @@ that are susceptible to be changed by PROCLAIM."
 	    ((eq record 'UNWIND-PROTECT)
 	     (setf unw t))
 	    ((atom record)
-	     (baboon))
+	     (baboon :format-control "Uknown record found in environment~%~S"
+                     :format-arguments (list record)))
 	    ((not (eq (first record) type)))
 	    ((eq type :block)
 	     (when (eq name (second record))
