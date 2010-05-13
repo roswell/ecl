@@ -498,24 +498,16 @@
 
 (defun nsubst-var (var form)
   (when (var-set-nodes var)
-    (baboon "Cannot replace a variable that is to be changed"))
+    (baboon :format-control "Cannot replace a variable that is to be changed"))
   (when (var-functions-reading var)
-    (baboon "Cannot replace a variable that is closed over"))
+    (baboon :format-control "Cannot replace a variable that is closed over"))
   (when (rest (var-read-nodes var))
-    (baboon "Cannot replace a variable that is used more than once"))
-  ;; FIXME!!!!
-  ;; Only take the first value out of the form
-  #+nil
-  (setf form (make-c1form* 'VALUES :args (list form)))
+    (baboon :format-control "Cannot replace a variable that is used more than once"))
   (let ((where (first (var-read-nodes var))))
     (unless (and (eql (c1form-name where) 'VAR)
                  (eql (c1form-arg 0 where) var))
-      (baboon "VAR-READ-NODES are only C1FORMS of type VAR"))
-    #+(or)
+      (baboon :format-control "VAR-READ-NODES are only C1FORMS of type VAR"))
     (setf (var-read-nodes var) nil
-          (var-set-nodes var) nil
-          (var-functions-setting var) nil
-          (var-functions-reading var) nil
           (var-ref var) 0
           (var-ignorable var) t)
     (c1form-replace-with where form)))
