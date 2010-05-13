@@ -119,3 +119,8 @@
           `(let* ((%value ,value))
              ,(type-error-check '%value type)
              (the ,type %value))))))
+
+(defmacro optional-type-check (&whole whole value type &environment env)
+  (if (policy-assume-right-type)
+      value
+      `(assert-type-if-known ,value ,type)))
