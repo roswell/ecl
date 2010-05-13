@@ -305,8 +305,8 @@
 
 (put-sysprop 'apply 'C1 'c1apply)
 
-(put-sysprop 'rplaca 'C1 'c1rplaca)
-(put-sysprop 'rplaca 'C2 'c2rplaca)
+;(put-sysprop 'rplaca 'C1 'c1rplaca)
+;(put-sysprop 'rplaca 'C2 'c2rplaca)
 (put-sysprop 'rplacd 'C1 'c1rplacd)
 (put-sysprop 'rplacd 'C2 'c2rplacd)
 
