@@ -80,10 +80,10 @@
 
 (defun emit-inlined-values (form expected-type forms)
   (let ((args (c1form-arg 0 form)))
-    (prog1 (emit-inline-form form expected-type forms)
+    (prog1 (emit-inline-form (pop args) expected-type forms)
       (loop with *destination* = 'TRASH
-         while (rest args)
-         do (c2expr* (pop args))))))
+         for form in args
+         do (c2expr* form)))))
 
 (defun emit-inlined-structure-ref (form expected-type rest-forms)
   (let ((type (c1form-primary-type form)))
@@ -131,6 +131,8 @@
      (emit-inlined-setq form expected-type forms))
     (PROGN
      (emit-inlined-progn form expected-type forms))
+    (VALUES
+     (emit-inlined-values form expected-type forms))
     (t (let* ((type (c1form-primary-type form))
               (temp (make-inline-temp-var expected-type type)))
          (let ((*destination* temp)) (c2expr* form))
