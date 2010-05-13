@@ -255,12 +255,7 @@
       (values 1 1)
       (values-number-from-type (c1form-type form))))
 
-#+(or)
 (defun c1form-single-valued-p (form)
   (or (fourth (gethash (c1form-name form) +c1-form-hash+))
-      (<= (nth-value 1 (c1form-values-number form)))))
-
-#+(or)
-(defun c1form-values-number (form)
-  (values-number-from-type (c1form-type form)))
+      (<= (nth-value 1 (c1form-values-number form)) 1)))
 

@@ -94,9 +94,12 @@
     ;; ... FIXME! This can be improved! It leads to code like
     ;;		value0 = <computed value>;
     ;;		T0 = value0;
-    (let ((*destination* 'VALUE0))
-      (c2expr* (first forms)))
-    (unwind-exit 'VALUE0))
+    (let ((form (first forms)))
+      (if (c1form-single-valued-p form)
+          (c2expr* form)
+          (progn
+            (let ((*destination* 'VALUE0)) (c2expr* form))
+            (unwind-exit 'VALUE0)))))
    ;; In all other cases, we store the values in the VALUES vector,
    ;; and force the compiler to retrieve anything out of it.
    (t
