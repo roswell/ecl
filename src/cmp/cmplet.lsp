@@ -110,6 +110,7 @@
      do (fix-read-only-variable-type var form rest-forms)
      unless (and read-only-p
                 (or (c1let-unused-variable-p var form)
+                    (c1let-constant-value var form rest-vars rest-forms)
                     (c1let-can-move-variable-value-p var form rest-vars rest-forms)))
      collect var into used-vars and
      collect form into used-forms
@@ -139,7 +140,7 @@
   ;;  - v2 is a read only variable
   ;;  - the value of e2 is not modified in e3 nor in following expressions
   (when (and (notany #'(lambda (v) (var-referenced-in-form v form)) rest-vars)
-             (c1form-constant-p form rest-forms))
+             (c1form-unmodified-p form rest-forms))
     (cmpdebug "Replacing variable ~A by its value ~A" (var-name var) form)
     (nsubst-var var form)
     t))
@@ -438,16 +439,14 @@
     (baboon :format-control "Cannot replace a variable that is to be changed"))
   (when (var-functions-reading var)
     (baboon :format-control "Cannot replace a variable that is closed over"))
-  (when (rest (var-read-nodes var))
-    (baboon :format-control "Cannot replace a variable that is used more than once"))
-  (let ((where (first (var-read-nodes var))))
+  (dolist (where (var-read-nodes var))
     (unless (and (eql (c1form-name where) 'VAR)
                  (eql (c1form-arg 0 where) var))
       (baboon :format-control "VAR-READ-NODES are only C1FORMS of type VAR"))
-    (setf (var-read-nodes var) nil
-          (var-ref var) 0
-          (var-ignorable var) t)
-    (c1form-replace-with where form)))
+    (c1form-replace-with where form))
+  (setf (var-read-nodes var) nil
+        (var-ref var) 0
+        (var-ignorable var) t))
 
 (defun member-var (var list)
   (let ((kind (var-kind var)))
