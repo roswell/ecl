@@ -94,7 +94,7 @@
     (let ((form (first forms)))
       (if (or (not (member *destination* '(RETURN VALUES)))
               (c1form-single-valued-p form))
-          (c2expr* form)
+          (c2expr form)
           (progn
             (let ((*destination* 'VALUE0)) (c2expr* form))
             (unwind-exit 'VALUE0)))))
