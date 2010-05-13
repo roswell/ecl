@@ -226,7 +226,7 @@
 	   (cmperror "Cannot COERCE an expression to an empty type."))
 	  ;;
 	  ;; No optimizations that take up too much space unless requested.
-	  ((policy-inline-type-checks)
+	  ((not (policy-inline-type-checks))
 	   form)
 	  ;;
 	  ;; Search for a simple template above, replacing X by the value.
@@ -265,7 +265,8 @@
 	       (si::closest-sequence-type type)
 	     (if (eq elt-type 'list)
 		 `(si::coerce-to-list ,value)
-		 `(si::coerce-to-vector ,value ',elt-type ',length))))
+		 `(si::coerce-to-vector ,value ',elt-type ',length
+                                        ,(and (subtypep type 'simple-array) t)))))
 	  ;;
 	  ;; There are no other atomic types to optimize
 	  ((atom type)

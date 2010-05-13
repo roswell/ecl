@@ -160,9 +160,10 @@ default value of INITIAL-ELEMENT depends on TYPE."
 	  ((null it) (nreverse output))
 	(push (seq-iterator-ref object it) output))))
 
-(defun coerce-to-vector (object elt-type length)
+(defun coerce-to-vector (object elt-type length simple-array-p)
   (let ((output object))
     (unless (and (vectorp object)
+                 (or (null simple-array-p) (simple-array-p object))
 		 (eq (array-element-type object) elt-type))
       (let* ((final-length (if (eq length '*) (length object) length)))
 	(setf output (make-vector elt-type final-length nil nil nil 0))

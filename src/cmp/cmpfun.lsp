@@ -318,6 +318,5 @@
 (put-sysprop 'nth 'C1CONDITIONAL 'co1nth)
 (put-sysprop 'nthcdr 'C1CONDITIONAL 'co1nthcdr)
 
-(put-sysprop 'coerce 'C1CONDITIONAL 'co1coerce)
 (put-sysprop 'cons 'C1CONDITIONAL 'co1cons)
 (put-sysprop 'ldb 'C1CONDITIONAL 'co1ldb)
