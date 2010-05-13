@@ -184,7 +184,7 @@
         (c1form-sp-change dest) (c1form-sp-change new-fields)
         (c1form-side-effects dest) (c1form-side-effects new-fields)
         (c1form-volatile dest) (c1form-volatile new-fields)
-        (c1form-name dest) 'PROGN
+        (c1form-name dest) 'VALUES
         (c1form-args dest) (list (list new-fields))))
 
 (defun copy-c1form (form)
