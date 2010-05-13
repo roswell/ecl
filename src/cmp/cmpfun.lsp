@@ -87,23 +87,6 @@
 	  (t
 	   (c1funcall (list* '#'APPLY args))))))
 
-(defun c1rplaca (args)
-  (check-args-number 'RPLACA args 2 2)
-  (make-c1form* 'RPLACA :args (c1args* args)))
-
-(defun c2rplaca (args)
-  (let* ((*inline-blocks* 0)
-         (*temp* *temp*)
-         (args (coerce-locs (inline-args args)))
-         (x (first args))
-         (y (second args)))
-    (when (safe-compile)
-      (wt-nl "if (ecl_unlikely(ATOM(" x ")))"
-             "FEtype_error_cons(" x ");"))
-    (wt-nl "ECL_CONS_CAR(" x ") = " y ";")
-    (unwind-exit x)
-    (close-inline-blocks)))
-
 (defun c1rplacd (args)
   (check-args-number 'RPLACD args 2 2)
   (make-c1form* 'RPLACD :args (c1args* args)))
@@ -119,35 +102,6 @@
              "FEtype_error_cons(" x ");"))
     (wt-nl "ECL_CONS_CDR(" x ") = " y ";")
     (unwind-exit x)
-    (close-inline-blocks)))
-
-(defun c1assoc (args)
-  (check-args-number 'ASSOC args 2)
-  (cond ((endp (cddr args))
-	 (make-c1form* 'ASSOC!2 :args 'EQL (c1args* args)))
-	((and (eq (third args) ':TEST)
-	      (= (length args) 4)       ; Beppe
-	      (member (fourth args) '('EQ #'EQ 'EQUAL #'EQUAL
-				      'EQUALP #'EQUALP 'EQL #'EQL)
-		      :test 'EQUAL))
-	 (make-c1form* 'ASSOC!2 :args (second (fourth args))
-		       (c1args* (list (car args) (second args)))))
-	(t
-	 (c1call-global 'ASSOC args))))
-
-(defun c2assoc!2 (fun args)
-  (let* ((*inline-blocks* 0)
-         (*temp* *temp*))
-    (unwind-exit
-     (produce-inline-loc (inline-args args) '(T T) '(:object)
-                         (case fun
-                           (eq "ecl_assq(#0,#1)")
-                           (eql "ecl_assql(#0,#1)")
-                           (equal "ecl_assoc(#0,#1)")
-                           (equalp "ecl_assqlp(#0,#1)"))
-                         nil ; side effects?
-                         t
-                         ))
     (close-inline-blocks)))
 
 (defun co1nth (args)
@@ -279,13 +233,8 @@
 
 (put-sysprop 'apply 'C1 'c1apply)
 
-;(put-sysprop 'rplaca 'C1 'c1rplaca)
-;(put-sysprop 'rplaca 'C2 'c2rplaca)
 (put-sysprop 'rplacd 'C1 'c1rplacd)
 (put-sysprop 'rplacd 'C2 'c2rplacd)
-
-(put-sysprop 'assoc 'C1 'c1assoc)
-(put-sysprop 'assoc!2 'C2 'c2assoc!2)
 
 (put-sysprop 'nth 'C1CONDITIONAL 'co1nth)
 (put-sysprop 'nthcdr 'C1CONDITIONAL 'co1nthcdr)

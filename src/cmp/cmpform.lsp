@@ -62,9 +62,7 @@
     (COMPILER-LET	symbols values body)
     (FUNCTION		(GLOBAL/CLOSURE) lambda-form fun-object :single-valued)
     (C2PRINC		object-string-or-char stream-var stream-c1form :side-effects)
-    (RPLACA		(dest-c1form value-c1form) :side-effects)
     (RPLACD		(dest-c1form value-c1form) :side-effects)
-    (ASSOC!2		fun-symbol args-c1form-list :pure)
 
     (SI:STRUCTURE-REF	struct-c1form type-name slot-index (:UNSAFE/NIL) :pure)
     (SI:STRUCTURE-SET	struct-c1form type-name slot-index value-c1form :side-effects)
