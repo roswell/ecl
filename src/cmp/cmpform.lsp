@@ -26,8 +26,8 @@
 
 (eval-when (:compile-toplevel :execute)
 (defconstant +all-c1-forms+
-  '((LOCATION		loc :pure)
-    (VAR		var)
+  '((LOCATION		loc :pure :single-valued)
+    (VAR		var :single-valued)
     (SETQ		var value-c1form :side-effects)
     (PSETQ		var-list value-c1form-list :side-effects)
     (BLOCK		blk-var progn-c1form :pure)
@@ -60,7 +60,7 @@
     (MULTIPLE-VALUE-SETQ vars-list values-c1form-list :side-effects)
     (MULTIPLE-VALUE-BIND vars-list init-c1form body :pure)
     (COMPILER-LET	symbols values body)
-    (FUNCTION		(GLOBAL/CLOSURE) lambda-form fun-object)
+    (FUNCTION		(GLOBAL/CLOSURE) lambda-form fun-object :single-valued)
     (C2PRINC		object-string-or-char stream-var stream-c1form :side-effects)
     (RPLACA		(dest-c1form value-c1form) :side-effects)
     (RPLACD		(dest-c1form value-c1form) :side-effects)
@@ -74,7 +74,7 @@
     (STACK-PUSH-VALUES value-c1form push-statement-c1form :side-effects)
 
     (ORDINARY		c1form :pure)
-    (LOAD-TIME-VALUE	dest-loc value-c1form :pure)
+    (LOAD-TIME-VALUE	dest-loc value-c1form :pure :single-valued)
     (SI:FSET		function-object vv-loc macro-p pprint-p lambda-form
 			:side-effects)
     (MAKE-FORM		vv-loc value-c1form :side-effects)
@@ -90,7 +90,10 @@
        for movable = (if (member :pure rest)
                          (progn (and length (decf length)) t)
                          nil)
-       do (setf (gethash name hash) (list length side-effects movable))
+       for single-valued = (if (member :single-valued rest)
+                               (progn (and length (decf length)) t)
+                               nil)
+       do (setf (gethash name hash) (list length side-effects movable single-valued))
        finally (return hash)))
 
 (defun print-c1form (form stream)
@@ -181,7 +184,7 @@
         (c1form-sp-change dest) (c1form-sp-change new-fields)
         (c1form-side-effects dest) (c1form-side-effects new-fields)
         (c1form-volatile dest) (c1form-volatile new-fields)
-        (c1form-name dest) 'VALUES
+        (c1form-name dest) 'PROGN
         (c1form-args dest) (list (list new-fields))))
 
 (defun copy-c1form (form)
@@ -246,3 +249,18 @@
                     (return-from c1form-unmodified-p nil))))))
     (traverse-c1form-tree form #'abort-on-not-pure)
     t))
+
+(defun c1form-values-number (form)
+  (if (fourth (gethash (c1form-name form) +c1-form-hash+))
+      (values 1 1)
+      (values-number-from-type (c1form-type form))))
+
+#+(or)
+(defun c1form-single-valued-p (form)
+  (or (fourth (gethash (c1form-name form) +c1-form-hash+))
+      (<= (nth-value 1 (c1form-values-number form)))))
+
+#+(or)
+(defun c1form-values-number (form)
+  (values-number-from-type (c1form-type form)))
+

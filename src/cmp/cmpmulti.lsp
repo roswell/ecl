@@ -144,18 +144,6 @@
 	   (add-to-set-nodes-of-var-list
 	    vars (make-c1form* 'MULTIPLE-VALUE-SETQ :args vars value))))))
 
-(defun c1form-values-number (form)
-  (let ((type (c1form-type form)))
-    (cond ((or (eq type 'T) (eq type '*))
-	   (values 0 MULTIPLE-VALUES-LIMIT))
-	  ((or (atom type) (not (eq (first type) 'VALUES)))
-	   (values 1 1))
-	  ((or (member '&rest type) (member 'optional type))
-	   (values 0 MULTIPLE-VALUES-LIMIT))
-	  (t
-	   (let ((l (1- (length type))))
-	     (values l l))))))
-
 (defun do-m-v-setq-fixed (nvalues vars form use-bind &aux (output (first vars)))
   ;; This routine should evaluate FORM and store the values (whose amount
   ;; is known to be NVALUES) into the variables VARS. The output is a
