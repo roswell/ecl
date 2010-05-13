@@ -91,11 +91,9 @@
    ;; For a single form, we must simply ensure that we only take a single
    ;; value of those that the function may output.
    ((endp (rest forms))
-    ;; ... FIXME! This can be improved! It leads to code like
-    ;;		value0 = <computed value>;
-    ;;		T0 = value0;
     (let ((form (first forms)))
-      (if (c1form-single-valued-p form)
+      (if (or (not (member *destination* '(RETURN VALUES)))
+              (c1form-single-valued-p form))
           (c2expr* form)
           (progn
             (let ((*destination* 'VALUE0)) (c2expr* form))
