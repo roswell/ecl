@@ -48,8 +48,6 @@
       (mapc #'check-vref vars)
       (let ((sp-change (some #'global-var-p vars)))
         (make-c1form* let/let*
-                      :sp-change sp-change
-                      :side-effects sp-change
                       :type (c1form-type body)
                       :volatile (not (eql setjmps *setjmps*))
                       :local-vars vars
@@ -112,7 +110,7 @@
      do (fix-read-only-variable-type var form rest-forms)
      unless (and read-only-p
                 (or (c1let-unused-variable-p var form)
-                    (c1let-optimize-out-variable var form rest-vars rest-forms)))
+                    (c1let-can-move-variable-value-p var form rest-vars rest-forms)))
      collect var into used-vars and
      collect form into used-forms
      finally (return (values used-vars used-forms))))
@@ -136,7 +134,17 @@
     (delete-c1forms form)
     t))
 
-(defun c1let-optimize-out-variable (var form rest-vars rest-forms)
+(defun c1let-constant-value (var form rest-vars rest-forms)
+  ;;  (let ((v1 e1) (v2 e2) (v3 e3)) (expr e4 v2 e5))
+  ;;  - v2 is a read only variable
+  ;;  - the value of e2 is not modified in e3 nor in following expressions
+  (when (and (notany #'(lambda (v) (var-referenced-in-form v form)) rest-vars)
+             (c1form-constant-p form rest-forms))
+    (cmpdebug "Replacing variable ~A by its value ~A" (var-name var) form)
+    (nsubst-var var form)
+    t))
+
+(defun c1let-can-move-variable-value-p (var form rest-vars rest-forms)
   ;;  (let ((v1 e1) (v2 e2) (v3 e3)) (expr e4 v2 e5))
   ;;  can become
   ;;  (let ((v1 e1) (v3 e3)) (expr e4 e2 e5))
@@ -153,8 +161,7 @@
              (replaceable var rest-forms))
     (cmpdebug "Replacing variable ~A by its value ~A" (var-name var) form)
     (nsubst-var var form)
-    (return-from c1let-optimize-out-variable t))
-  nil)
+    t))
 
 (defun update-var-type (var type x)
   (cond ((consp x)
