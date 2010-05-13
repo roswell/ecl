@@ -64,7 +64,6 @@
     (C2PRINC		object-string-or-char stream-var stream-c1form :side-effects)
     (RPLACA		(dest-c1form value-c1form) :side-effects)
     (RPLACD		(dest-c1form value-c1form) :side-effects)
-    (MEMBER!2		fun-symbol args-c1form-list :pure)
     (ASSOC!2		fun-symbol args-c1form-list :pure)
 
     (SI:STRUCTURE-REF	struct-c1form type-name slot-index (:UNSAFE/NIL) :pure)

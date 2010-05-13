@@ -40,6 +40,8 @@
   "src:new-cmp;cmpnum.lsp"
   "src:cmp;cmpname.lsp"
   "src:cmp;cmpopt.lsp"
+  "src:cmp;cmpopt-cons.lsp"
+  "src:cmp;cmpopt-sequence.lsp"
   "src:new-cmp;cmpprop.lsp"
   "src:new-cmp;cmpclos.lsp"
   "src:new-cmp;cmpstructures.lsp"

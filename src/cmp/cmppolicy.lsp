@@ -253,6 +253,10 @@
   "Expand TYPEP and similar forms in terms of simpler functions, such as FLOATP,
 INTGERP, STRINGP.")
 
+(define-policy inline-sequence-functions :off space 2
+  "Inline functions such as MAP, MEMBER, FIND, etc")
+
+
 ;;
 ;; DEBUG POLICY
 ;;

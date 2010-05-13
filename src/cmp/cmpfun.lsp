@@ -121,32 +121,6 @@
     (unwind-exit x)
     (close-inline-blocks)))
 
-(defun c1member (args)
-  (check-args-number 'MEMBER args 2)
-  (cond ((endp (cddr args))
-	 (make-c1form* 'MEMBER!2 :args 'EQL (c1args* args)))
-	((and (eq (third args) :test)
-	      (= (length args) 4)       ; Beppe
-	      (member (fourth args) '('EQ #'EQ 'EQUAL #'EQUAL 'EQL #'EQL)
-		      :test #'EQUAL))	; arg4 = (QUOTE EQ)
-	 (make-c1form* 'MEMBER!2 :args (second (fourth args))
-		       (c1args* (list (car args) (second args)))))
-	(t
-	 (c1call-global 'MEMBER args))))
-
-(defun c2member!2 (fun args)
-  (let ((*inline-blocks* 0)
-        (*temp* *temp*))
-    (unwind-exit
-     (produce-inline-loc (inline-args args) '(T T) '(:object)
-                         (case fun
-                           (EQ "si_memq(#0,#1)")
-                           (EQL "ecl_memql(#0,#1)")
-                           (EQUAL "ecl_member(#0,#1)"))
-                         nil ; side effects?
-                         t)) ; one liner?
-    (close-inline-blocks)))
-
 (defun c1assoc (args)
   (check-args-number 'ASSOC args 2)
   (cond ((endp (cddr args))
@@ -310,8 +284,6 @@
 (put-sysprop 'rplacd 'C1 'c1rplacd)
 (put-sysprop 'rplacd 'C2 'c2rplacd)
 
-(put-sysprop 'member 'C1 'c1member)
-(put-sysprop 'member!2 'C2 'c2member!2)
 (put-sysprop 'assoc 'C1 'c1assoc)
 (put-sysprop 'assoc!2 'C2 'c2assoc!2)
 
