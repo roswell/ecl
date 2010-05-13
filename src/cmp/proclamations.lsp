@@ -195,6 +195,9 @@
 ; (proclamation type-error-datum (condition) t)
 ; (proclamation type-error-expected-type (condition) t)
 
+;; ECL EXTENSIONS
+(proclaim si::coerce-to-vector (t type-specifier t gen-bool) vector)
+
 ;;;
 ;;; 5. DATA AND CONTROL FLOW
 ;;;
