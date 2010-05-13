@@ -292,8 +292,8 @@
 (defun baboon (&key (format-control "A bug was found in the compiler")
                format-arguments)
   (signal 'compiler-internal-error
-	  :format-control "A bug was found in the compiler."
-	  :format-arguments nil))
+	  :format-control format-control
+	  :format-arguments format-arguments))
   
 (defmacro with-cmp-protection (main-form error-form)
   `(let* ((si::*break-enable* *compiler-break-enable*)
