@@ -47,16 +47,15 @@
 			output-rep-type
 			c-expression-string
 			side-effects-p
-			one-liner-p
-			:side-effects)
+			one-liner-p)
     (LOCALS		local-fun-list body labels-p :movable)
     (IF			fmla-c1form true-c1form false-c1form :movable)
     (FMLA-NOT		fmla-c1form :movable)
     (FMLA-AND		* :movable)
     (FMLA-OR		* :movable)
     (LAMBDA		lambda-list doc body-c1form)
-    (LET		vars-list var-init-c1form-list decl-body-c1form)
-    (LET*		vars-list var-init-c1form-list decl-body-c1form)
+    (LET		vars-list var-init-c1form-list decl-body-c1form :movable)
+    (LET*		vars-list var-init-c1form-list decl-body-c1form :movable)
     (VALUES		values-c1form-list :movable)
     (MULTIPLE-VALUE-SETQ vars-list values-c1form-list :side-effects)
     (MULTIPLE-VALUE-BIND vars-list init-c1form body :movable)
@@ -72,7 +71,7 @@
     (SI:STRUCTURE-SET	struct-c1form type-name slot-index value-c1form :side-effects)
 
     (WITH-STACK		body :side-effects)
-    (STACK-PUSH-VALUES value-c1form push-statement-c1form :side-effects :movable)
+    (STACK-PUSH-VALUES value-c1form push-statement-c1form :side-effects)
 
     (ORDINARY		c1form :movable)
     (LOAD-TIME-VALUE	dest-loc value-c1form :movable)
