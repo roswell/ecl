@@ -91,7 +91,7 @@
 	   (expand-typep form object `',(funcall function) env))
 	  ;;
 	  ;; No optimizations that take up too much space unless requested.
-	  ((policy-inline-type-checks)
+	  ((not (policy-inline-type-checks))
 	   form)
 	  ;;
 	  ;; CONS types. They must be checked _before_ sequence types. We
