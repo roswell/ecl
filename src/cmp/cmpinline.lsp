@@ -63,7 +63,8 @@
   (let* ((fname (c1form-arg 0 form))
          (args (c1form-arg 1 form))
          (return-type (c1form-primary-type form))
-         (loc (call-global-loc fname nil args return-type expected-type))
+         (fun (find fname *global-funs* :key #'fun-name :test #'same-fname-p))
+         (loc (call-global-loc fname fun args return-type expected-type))
          (type (loc-type loc))
          (temp (make-inline-temp-var expected-type type
                                      (loc-representation-type loc)))
@@ -115,28 +116,29 @@
                     #+nil (c1form-arg 2 form))))))
 
 (defun emit-inline-form (form expected-type forms)
-  (case (c1form-name form)
-    (LOCATION
-     (list (c1form-primary-type form) (c1form-arg 0 form)))
-    (VAR
-     (emit-inlined-variable form expected-type forms))
-    (CALL-GLOBAL
-     (emit-inlined-call-global form expected-type))
-    (SYS:STRUCTURE-REF
-     (emit-inlined-structure-ref form expected-type forms))
-    #+clos
-    (SYS:INSTANCE-REF
-     (emit-inlined-instance-ref form expected-type forms))
-    (SETQ
-     (emit-inlined-setq form expected-type forms))
-    (PROGN
-     (emit-inlined-progn form expected-type forms))
-    (VALUES
-     (emit-inlined-values form expected-type forms))
-    (t (let* ((type (c1form-primary-type form))
-              (temp (make-inline-temp-var expected-type type)))
-         (let ((*destination* temp)) (c2expr* form))
-         (list type temp)))))
+  (with-c1form-env (form form)
+    (case (c1form-name form)
+      (LOCATION
+       (list (c1form-primary-type form) (c1form-arg 0 form)))
+      (VAR
+       (emit-inlined-variable form expected-type forms))
+      (CALL-GLOBAL
+       (emit-inlined-call-global form expected-type))
+      (SYS:STRUCTURE-REF
+       (emit-inlined-structure-ref form expected-type forms))
+      #+clos
+      (SYS:INSTANCE-REF
+       (emit-inlined-instance-ref form expected-type forms))
+      (SETQ
+       (emit-inlined-setq form expected-type forms))
+      (PROGN
+        (emit-inlined-progn form expected-type forms))
+      (VALUES
+       (emit-inlined-values form expected-type forms))
+      (t (let* ((type (c1form-primary-type form))
+                (temp (make-inline-temp-var expected-type type)))
+           (let ((*destination* temp)) (c2expr* form))
+           (list type temp))))))
 
 ;;;
 ;;; inline-args:

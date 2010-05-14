@@ -256,3 +256,12 @@
   (or (fourth (gethash (c1form-name form) +c1-form-hash+))
       (<= (nth-value 1 (c1form-values-number form)) 1)))
 
+(defmacro with-c1form-env ((form value) &rest body)
+  `(let* ((,form ,value)
+          (*compile-file-truename* (c1form-file ,form))
+          (*compile-file-position* (c1form-file-position ,form))
+          (*current-toplevel-form* (c1form-toplevel-form ,form))
+          (*current-form* (c1form-form ,form))
+          (*current-c2form* ,form)
+          (*cmp-env* (c1form-env ,form)))
+     ,@body))
