@@ -101,6 +101,26 @@
                          test-flag
                          test))))))
 
+(defmacro do-in-seq ((%elt sequence &key (start 0) end output) &body body)
+  (ext:with-unique-names (%start %iterator %counter %sequence)
+    (let* ((counter (and end `(- (or ,end most-positive-fixnum)
+                                 ,%start)))
+           (test (if end
+                     `(and ,%iterator (plusp ,%counter))
+                     %iterator)))
+      `(let* ((,%sequence ,sequence)
+              (,%start ,start)
+              (,%iterator (ext::make-seq-iterator ,%sequence ,%start))
+              (,%counter ,counter))
+         (declare (:read-only ,%sequence ,%start ,%counter)
+                  (ignorable ,%counter)
+                  (fixnum ,%counter))
+         (loop
+            (unless ,test (return ,output))
+            (let ((,%elt (ext::seq-iterator-ref ,%sequence ,%iterator)))
+              ,@body)
+            (setf ,%iterator (ext::seq-iterator-next ,%sequence ,%iterator)))))))
+
 ;;;
 ;;; MEMBER
 ;;;
@@ -131,7 +151,7 @@
             `(ffi:c-inline (,value ,list) (:object :object) :object
                            "ecl_member(#0,#1)" :one-liner t :side-effects nil)))))
     (when test-function
-      (ext:with-unique-names (%value %sublist %elt %key)
+      (ext:with-unique-names (%value %sublist %elt)
         `(let ((,%value ,value)
                ,@init)
            (do-in-list (,%elt ,%sublist ,list)
@@ -172,7 +192,7 @@
             `(ffi:c-inline (,value ,list) (:object :object) :object
                            "ecl_assqlp(#0,#1)" :one-liner t :side-effects nil)))))
     (when test-function
-      (ext:with-unique-names (%value %sublist %elt %key %car)
+      (ext:with-unique-names (%value %sublist %elt %car)
         `(let ((,%value ,value)
                ,@init)
            (do-in-list (,%elt ,%sublist ,list)
@@ -185,5 +205,28 @@
 (define-compiler-macro assoc (&whole whole value list &rest sequence-args)
   (if (policy-inline-sequence-functions)
       (or (apply #'expand-assoc (rest whole))
+          whole)
+      whole))
+
+;;;
+;;; FIND
+;;;
+
+(defun expand-find (value sequence &rest sequence-args)
+  (multiple-value-bind (key-function test-function init
+                        key-flag test-flag test start end)
+      (seq-opt-parse-args 'member sequence-args)
+    (when test-function
+      (ext:with-unique-names (%value %elt)
+        `(let ((,%value ,value)
+               ,@init)
+           (do-in-seq (,%elt ,sequence)
+             (when ,(funcall test-function %value
+                             (funcall key-function %elt))
+               (return ,%elt))))))))
+
+(define-compiler-macro find (&whole whole value sequence &rest sequence-args)
+  (if (policy-inline-sequence-functions)
+      (or (apply #'expand-find (rest whole))
           whole)
       whole))
