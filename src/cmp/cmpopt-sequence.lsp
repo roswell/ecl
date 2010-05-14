@@ -171,16 +171,16 @@
           (return-from expand-assoc
             `(ffi:c-inline (,value ,list) (:object :object) :object
                            "ecl_assqlp(#0,#1)" :one-liner t :side-effects nil)))))
-    #+(or)
     (when test-function
       (ext:with-unique-names (%value %sublist %elt %key %car)
         `(let ((,%value ,value)
                ,@init)
            (do-in-list (,%elt ,%sublist ,list)
-             (let ((,%car (cons-car (optional-type-check ,%elt cons))))
-               (when ,(funcall test-function %value
-                               (funcall key-function %car))
-                 (return ,%elt)))))))))
+             (when ,%elt
+               (let ((,%car (cons-car (optional-type-check ,%elt cons))))
+                 (when ,(funcall test-function %value
+                                 (funcall key-function %car))
+                   (return ,%elt))))))))))
 
 (define-compiler-macro assoc (&whole whole value list &rest sequence-args)
   (if (policy-inline-sequence-functions)
