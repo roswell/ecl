@@ -36,6 +36,13 @@
                (expand-simple-optimizer (rest whole) args inline-form env)
                whole)))))
 
+(defmacro cons-car (x)
+  `(ffi:c-inline (,x) (:object) :object "ECL_CONS_CAR(#0)"
+                 :one-liner t :side-effects nil))
+
+(defmacro cons-cdr (x)
+  `(ffi:c-inline (,x) (:object) :object "ECL_CONS_CDR(#0)"
+                 :one-liner t :side-effects nil))
 ;;;
 ;;; RPLACA / RPLACD
 ;;;
