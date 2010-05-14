@@ -90,3 +90,7 @@ ones, which is useful for creating hygienic macros."
   `(progn ,@(sublis (loop for s in symbols
                       collect (cons s (make-symbol (symbol-name s))))
                    body)))
+
+(defmacro reckless (&rest body)
+  `(locally (declare (optimize (safety 0)))
+     ,@body))
