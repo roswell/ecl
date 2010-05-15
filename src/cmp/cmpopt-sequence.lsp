@@ -174,6 +174,19 @@
                         key-flag test-flag test)
       (seq-opt-parse-args 'member sequence-args :start-end nil)
     (unless key-flag
+      #+(or)
+      (when (and (or (null test) (constant-function-expression test))
+                 (constant-expression-p list))
+        (when (<= (length (setf list (cmp-eval list))) 4)
+          (return-from expand-member
+            (ext:with-unique-names (%value)
+              `(let ((,%value ,value))
+                 (or ,@(loop for l on list
+                          for elt = (first l)
+                          collect `(and ,(funcall test-function %value `',elt)
+                                        ',l))))))
+          (when (or (consp list) (symbol list))
+            (setf list `',list))))
       (when (or (null test-flag) (eq test-flag :test))
         (when (member test '('EQ #'EQ) :test #'equal)
           (return-from expand-member
