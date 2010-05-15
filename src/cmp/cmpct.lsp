@@ -42,7 +42,7 @@
 		  :args (list 'LONG-FLOAT-VALUE val (add-object val))))
    (always
     (make-c1form* 'LOCATION :type (object-type val)
-		  :args (list 'VV (add-object val))))
+		  :args (add-object val)))
    (only-small-values nil)
    (t nil)))
 
