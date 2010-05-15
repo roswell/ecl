@@ -14,6 +14,18 @@
 
 (in-package "SYSTEM")
 
+(defun error-not-a-sequence (value)
+  (declare (si::c-local))
+  (signal-type-error value 'sequence))
+
+(defun error-sequence-index (sequence index)
+  (declare (si::c-local))
+  (error 'simple-type-error
+         :datum index
+         :expected-type 'unsigned-byte
+         :format-control "Not a valid index ~A into sequence ~A"
+         :format-arguments (list index sequence)))
+
 (defun error-sequence-type (type)
   (declare (si::c-local))
   (error 'simple-type-error
@@ -125,32 +137,52 @@ default value of INITIAL-ELEMENT depends on TYPE."
     sequence))
 
 (defun make-seq-iterator (sequence &optional (start 0))
-  (cond ((null start)
-	 (setf start 0))
-	((not (integerp start))
-	 (error "Value ~A is not a valid index into sequence ~A" start sequence)))
-  (cond ((consp sequence)
-	 (nthcdr start sequence))
-	((>= start (length sequence))
-	 nil)
-	(t
-	 start)))
+  (declare (optimize (safety 0)))
+  (cond ((fixnump start)
+         (let ((aux start))
+           (declare (fixnum aux))
+           (cond ((minusp aux)
+                  (error-sequence-index sequence start))
+                 ((listp sequence)
+                  (nthcdr aux sequence))
+                 ((vectorp sequence)
+                  (and (< start (length (the vector sequence)))
+                       start))
+                 (t
+                  (error-not-a-sequence sequence)))))
+        ((not (or (listp sequence) (vectorp sequence)))
+         (error-not-a-sequence sequence))
+        ((integerp start)
+         nil)
+        (t
+         (error-sequence-index sequence start))))
 
 (defun seq-iterator-ref (sequence iterator)
+  (declare (optimize (safety 0)))
   (if (si::fixnump iterator)
-      (elt sequence iterator)
-      (first iterator)))
+      (aref (the vector sequence) iterator)
+      (car (the cons iterator))))
 
 (defun seq-iterator-set (sequence iterator value)
+  (declare (optimize (safety 0)))
   (if (si::fixnump iterator)
-      (setf (elt sequence iterator) value)
-      (setf (first iterator) value)))
+      (setf (aref (the vector sequence) iterator) value)
+      (setf (car (the cons iterator)) value)))
 
 (defun seq-iterator-next (sequence iterator)
-  (if (fixnump iterator)
-      (and (< (incf iterator) (length sequence))
-	   iterator)
-      (rest iterator)))
+  (declare (optimize (safety 0)))
+  (cond ((fixnump iterator)
+         (let ((aux (1+ iterator)))
+           (declare (fixnum aux))
+           (and (< aux (length (the vector sequence)))
+                aux)))
+        ((atom iterator)
+         (error-not-a-sequence iterator))
+        (t
+         (setf iterator (cdr (the cons iterator)))
+         (unless (listp iterator)
+           (error-not-a-sequence iterator))
+         iterator)))
 
 (defun coerce-to-list (object)
   (if (listp object)
