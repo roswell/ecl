@@ -704,7 +704,7 @@
 (def-inline si:elt-set :unsafe (vector fixnum t) t "ecl_aset1_unsafe(#0,#1,#2)")
 
 (def-inline length :always (t) :fixnum "ecl_length(#0)")
-(def-inline length :unsafe (array t) :fixnum "(#0)->vector.fillp")
+(def-inline length :unsafe (vector) :fixnum "(#0)->vector.fillp")
 
 ;; file character.d
 
