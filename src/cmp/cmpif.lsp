@@ -34,7 +34,7 @@
 
 (defun c1fmla-constant (fmla &aux f)
   (cond
-   ((constantp fmla)
+   ((constant-expression-p fmla)
     (and (cmp-eval fmla) t))
    ((atom fmla)
     fmla)
@@ -179,36 +179,40 @@
   )
 
 (defun set-jump-true (loc label)
-  (cond ((null loc))
-	((eq loc t)
-	 (unwind-no-exit label)
-	 (wt-nl) (wt-go label))
-	(t
-	 (cond ((eq (loc-representation-type loc) :bool)
-		(wt-nl "if(" loc "){"))
-	       (t
-		(wt-nl "if((")
-		(wt-coerce-loc :object loc)
-		(wt ")!=Cnil){")))
-	 (unwind-no-exit label)
-	 (wt-nl) (wt-go label)
-	 (wt "}"))))
+  (multiple-value-bind (constantp value)
+      (loc-immediate-value-p loc)
+    (cond ((not constantp)
+           (cond ((eq (loc-representation-type loc) :bool)
+                  (wt-nl "if(" loc "){"))
+                 (t
+                  (wt-nl "if((")
+                  (wt-coerce-loc :object loc)
+                  (wt ")!=Cnil){")))
+           (unwind-no-exit label)
+           (wt-nl) (wt-go label)
+           (wt "}"))
+          ((null value))
+          (t
+           (unwind-no-exit label)
+           (wt-nl) (wt-go label)))))
 
 (defun set-jump-false (loc label)
-  (cond ((eq loc t))
-	((null loc)
-	 (unwind-no-exit label)
-	 (wt-nl) (wt-go label))
-	(t
-	 (cond ((eq (loc-representation-type loc) :bool)
-		(wt-nl "if(!(" loc ")){"))
-	       (t
-		(wt-nl "if((")
-		(wt-coerce-loc :object loc)
-		(wt ")==Cnil){")))
-	 (unwind-no-exit label)
-	 (wt-nl) (wt-go label)
-	 (wt "}"))))
+  (multiple-value-bind (constantp value)
+      (loc-immediate-value-p loc)
+    (cond ((not constantp)
+           (cond ((eq (loc-representation-type loc) :bool)
+                  (wt-nl "if(!(" loc ")){"))
+                 (t
+                  (wt-nl "if((")
+                  (wt-coerce-loc :object loc)
+                  (wt ")==Cnil){")))
+           (unwind-no-exit label)
+           (wt-nl) (wt-go label)
+           (wt "}"))
+          (value)
+          (t
+           (unwind-no-exit label)
+           (wt-nl) (wt-go label)))))
 
 ;;; ----------------------------------------------------------------------
 
