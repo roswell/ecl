@@ -22,5 +22,3 @@
              (or (member head '(IF OR AND NULL NOT PROGN))
                  (and (get-sysprop head 'pure)
                       (inline-possible head)))))))
-
-(trace constant-expression-p)
