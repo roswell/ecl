@@ -101,6 +101,43 @@
                          test-flag
                          test))))))
 
+#+(or)
+(define-compiler-macro ext::make-seq-iterator (seq &optional (start 0))
+  (with-clean-symbols (%seq %start)
+    `(let ((%seq (optional-type-check ,seq sequence))
+           (%start ,start))
+       (cond ((consp %seq)
+              (nthcdr %start %seq))
+             ((< %start (length %seq))
+              %start)
+             (t
+              nil)))))
+
+#+(or)
+(define-compiler-macro ext::seq-iterator-ref (seq iterator)
+  (with-clean-symbols (%seq %iterator)
+    `(let* ((%seq ,seq)
+            (%iterator ,iterator))
+       (declare (optimize (safety 0)))
+       (if (si::fixnump %iterator)
+           ;; Fixnum iterators are always fine
+           (aref %seq %iterator)
+           ;; Error check in case we may have been passed an improper list
+           (cons-car (assert-type-if-known %iterator cons))))))
+
+#+(or)
+(define-compiler-macro ext::seq-iterator-next (seq iterator)
+  (with-clean-symbols (%seq %iterator)
+    `(let* ((%seq ,seq)
+            (%iterator ,iterator))
+       (declare (optimize (safety 0)))
+       (if (si::fixnump %iterator)
+           (let ((%iterator (1+ (the fixnum %iterator))))
+             (declare (fixnum %iterator))
+             (and (< %iterator (length (the vector %seq)))
+                  %iterator))
+           (cons-cdr %iterator)))))
+
 (defmacro do-in-seq ((%elt sequence &key (start 0) end output) &body body)
   (ext:with-unique-names (%start %iterator %counter %sequence)
     (let* ((counter (and end `(- (or ,end most-positive-fixnum)
