@@ -224,11 +224,17 @@ FEclosed_stream(cl_object strm)
 	cl_error(3, @'stream-error', @':stream', strm);
 }
 
+cl_object
+si_signal_type_error(cl_object value, cl_object type)
+{
+	return cl_error(5, @'type-error', @':expected-type', type,
+                        @':datum', value);
+}
+
 void
 FEwrong_type_argument(cl_object type, cl_object value)
 {
-        type = cl_symbol_or_object(type);
-	cl_error(5, @'type-error', @':datum', value, @':expected-type', type);
+        si_signal_type_error(value, cl_symbol_or_object(type));
 }
 
 void

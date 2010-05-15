@@ -569,6 +569,8 @@ extern ECL_API void FElibc_error(const char *msg, int narg, ...) ecl_attr_noretu
 #if defined(__MINGW32__) || defined(_MSC_VER) || defined(cygwin)
 extern ECL_API void FEwin32_error(const char *msg, int narg, ...) ecl_attr_noreturn;
 #endif
+extern ECL_API cl_object si_signal_type_error(cl_object value, cl_object type) ecl_attr_noreturn;
+
 
 /* eval.c */
 
