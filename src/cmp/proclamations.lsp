@@ -52,7 +52,7 @@
      do (case p
           (:no-sp-change
            (sys:put-sysprop name 'no-sp-change t))
-          ((:predicate :pure):q
+          ((:predicate :pure)
            (sys:put-sysprop name 'pure t)
            (sys:put-sysprop name 'no-side-effects t))
           ((:no-side-effects :reader)
