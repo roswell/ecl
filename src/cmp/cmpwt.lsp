@@ -138,6 +138,11 @@
 	     (add-load-form object x))
 	   x))))
 
+(defun vt-loc-value (loc)
+  (case (car loc)
+    (VV (aref *permanent-objects* (second loc)))
+    (VV-TEMP (aref *temporary-objects* (second loc)))))
+
 (defun add-symbol (symbol)
   (add-object symbol :duplicate nil :permanent t))
 

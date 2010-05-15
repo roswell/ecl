@@ -73,6 +73,25 @@
            (and (eq (car loc) 'C-INLINE)
                 (eq (sixth loc) 'VALUES)))))
 
+(defun loc-immediate-value-p (loc &aux head)
+  (cond ((eq loc t)
+         (values t t))
+        ((eq loc nil)
+         (values t nil))
+        ((ext:fixnump loc)
+         (values t loc))
+        ((atom loc)
+         (values nil nil))
+        ((or (eq (setf head (car loc)) 'VV)
+             (eq head 'VV-TEMP))
+         (let ((value (vt-loc-value loc)))
+           (if (ext:fixnump value)
+               (values nil nil)
+               (values t value))))
+        ((member head '(fixnum-value character-value long-float-value
+                        double-float-value single-float-value))
+         (values t (second loc)))))
+
 (defun set-loc (loc &aux fd)
   (when (eql *destination* loc)
     (return-from set-loc))
@@ -153,15 +172,15 @@
 
 (defun wt-lcl (lcl) (unless (numberp lcl) (baboon)) (wt "V" lcl))
 
-(defun wt-vv (vv)
+(defun wt-vv (vv &optional object)
   (if (numberp vv)
-    (wt "VV[" vv "]")
-    (wt vv)))
+      (wt "VV[" vv "]")
+      (wt vv)))
 
-(defun wt-vv-temp (vv)
+(defun wt-vv-temp (vv &optional object)
   (if (numberp vv)
-    (wt "VVtemp[" vv "]")
-    (wt vv)))
+      (wt "VVtemp[" vv "]")
+      (wt vv)))
 
 (defun wt-lcl-loc (lcl &optional type)
   (wt-lcl lcl))
