@@ -1183,6 +1183,7 @@ cl_symbols[] = {
 {SYS_ "SETF-UPDATE",NULL},
 {SYS_ "SIMPLE-PROGRAM-ERROR","ECL_NAME(si_simple_program_error)"},
 {SYS_ "SIGNAL-SIMPLE-ERROR","si_signal_simple_error"},
+{SYS_ "SIGNAL-TYPE-ERROR","si_signal_type_error"},
 {SYS_ "SPECIALP","si_specialp"},
 {SYS_ "STANDARD-READTABLE","si_standard_readtable"},
 {SYS_ "STEPPER","OBJNULL"},
