@@ -182,12 +182,6 @@
                  (CJT (car fs) Tlabel label)
                  (wt-label label))))
     (FMLA-NOT (CJF (c1form-arg 0 fmla) Flabel Tlabel))
-    (LOCATION
-     (case (c1form-arg 0 fmla)
-       ((T) (unwind-no-exit Tlabel) (wt-nl) (wt-go Tlabel))
-       ((NIL))
-       (t (let ((*destination* (list 'JUMP-TRUE Tlabel)))
-            (c2expr* fmla)))))
     (t (let ((*destination* (list 'JUMP-TRUE Tlabel))) (c2expr* fmla))))
   )
 
@@ -209,12 +203,6 @@
                  (CJT (car fs) Tlabel label)
                  (wt-label label))))
     (FMLA-NOT (CJT (c1form-arg 0 fmla) Flabel Tlabel))
-    (LOCATION
-     (case (c1form-arg 0 fmla)
-       ((T))
-       ((NIL) (unwind-no-exit Flabel) (wt-nl) (wt-go Flabel))
-       (t (let ((*destination* (list 'JUMP-FALSE Flabel)))
-            (c2expr* fmla)))))
     (t (let ((*destination* (list 'JUMP-FALSE Flabel))) (c2expr* fmla))))
   )
 
