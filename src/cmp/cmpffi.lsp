@@ -244,6 +244,7 @@
                              (t type))))
 	   (BIND (var-rep-type (second loc)))
 	   (LCL (lisp-type->rep-type (or (third loc) T)))
+           ((JUMP-TRUE JUMP-FALSE) :bool)
 	   (otherwise :object)))))
 
 (defun wt-coerce-loc (dest-rep-type loc)
