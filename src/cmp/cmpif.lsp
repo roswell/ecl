@@ -27,9 +27,10 @@
 
 (defun c1not (args)
   (check-args-number 'NOT args 1)
-  (let ((f (c1fmla-constant `(NOT ,@args))))
-    (if (or (eq f t) (eq f nil) (atom f))
-        (c1expr f)
+  (let* ((value (first args))
+         (f (c1fmla-constant value)))
+    (if (or (eq f t) (eq f nil))
+        (c1expr (not f))
         (let* ((value (c1expr (first args))))
           (make-c1form* 'FMLA-NOT
                         :type '(member t nil)
@@ -206,19 +207,35 @@
     (t (let ((*destination* (list 'JUMP-FALSE Flabel))) (c2expr* fmla))))
   )
 
+(defun negate-argument (inlined-arg dest-loc)
+  (let* ((loc (second inlined-arg))
+         (rep-type (loc-representation-type loc)))
+    (apply #'produce-inline-loc
+           (list inlined-arg)
+           (if (eq (loc-representation-type dest-loc) :bool)
+               (case rep-type
+                 (:bool '((:bool) (:bool) "(#0)==Cnil" nil t))
+                 (:object '((:object) (:bool) "(#0)!=Cnil" nil t))
+                 (otherwise (return-from negate-argument nil)))
+               (case rep-type
+                 (:bool '((:bool) (:object) "(#0)?Cnil:Ct" nil t))
+                 (:object '((:object) (:object) "Null(#0)?Ct:Cnil" nil t))
+                 (otherwise (return-from negate-argument nil)))))))
+
 (defun c2fmla-not (arg)
   (let ((dest *destination*))
     (cond ((and (consp dest) (eq (car dest) 'JUMP-TRUE))
            (let ((*destination* `(JUMP-FALSE ,@(cdr dest))))
              (c2expr arg)))
           ((and (consp dest) (eq (car dest) 'JUMP-FALSE))
-           (let ((*destination* `(JUMP-FALSE ,@(cdr dest))))
+           (let ((*destination* `(JUMP-TRUE ,@(cdr dest))))
              (c2expr arg)))
           (t
            (let ((*inline-blocks* 0)
                  (*temp* *temp*))
-             (unwind-exit (apply #'produce-inline-loc (inline-args (list arg))
-                                 '((:bool) (:bool) "!(#0)" nil t)))
+             (unwind-exit (negate-argument
+                           (emit-inline-form arg t nil)
+                           *destination*))
              (close-inline-blocks))))))
 
 (defun c2fmla-and (args)
@@ -323,8 +340,8 @@
 
 (put-sysprop 'if 'c1special 'c1if)
 (put-sysprop 'if 'c2 'c2if)
-;(put-sysprop 'not 'c1 'c1not)
-;(put-sysprop 'fmla-not 'c2 'c2fmla-not)
+(put-sysprop 'not 'c1 'c1not)
+(put-sysprop 'fmla-not 'c2 'c2fmla-not)
 (put-sysprop 'and 'c1 'c1and)
 (put-sysprop 'fmla-and 'c2 'c2fmla-and)
 ;(put-sysprop 'or 'c1 'c1or)
