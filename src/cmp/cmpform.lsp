@@ -132,8 +132,9 @@
       form)))
 
 (defun c1form-add-info-loop (form dependents)
-  (loop for subform in dependents
-     when (c1form-p subform)
+  (loop with subform
+     while (consp dependents)
+     when (c1form-p (setf subform (pop dependents)))
      do (progn
           (when (c1form-sp-change subform)
             (setf (c1form-sp-change form) t
