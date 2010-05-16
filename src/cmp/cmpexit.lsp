@@ -41,7 +41,7 @@
       (JUMP-FALSE
        (set-jump-false loc (second *destination*))
        (when (eq loc nil) (return-from unwind-exit)))))
-  (dolist (ue *unwind-exit* (baboon))
+  (dolist (ue *unwind-exit* (baboon-improper-*exit*))
     ;; perform all unwind-exit's which precede *exit*
     (cond
       ((consp ue)		    ; ( label# . ref-flag )| (STACK n) |(LCL n)
@@ -73,14 +73,15 @@
 	      (when jump-p (wt-nl) (wt-go *exit*))
 	      (return))
 	     (t (setq jump-p t))))
-      ((numberp ue) (baboon)
+      ((numberp ue)
+       (baboon-unwind-exit ue)
        (setq bds-lcl ue bds-bind 0))
       (t (case ue
 	   (IHS (setf ihs-p ue))
            (IHS-ENV (setf ihs-p (or ihs-p ue)))
 	   (BDS-BIND (incf bds-bind))
 	   (RETURN
-	     (unless (eq *exit* 'RETURN) (baboon))
+	     (unless (eq *exit* 'RETURN) (baboon-unwind-exit ue))
 	     ;; *destination* must be either RETURN or TRASH.
 	     (cond ((eq loc 'VALUES)
 		    ;; from multiple-value-prog1 or values
@@ -123,13 +124,21 @@
 	    (wt-nl "ecl_frs_pop(cl_env_copy);"))
 	   (TAIL-RECURSION-MARK)
 	   (JUMP (setq jump-p t))
-	   (t (baboon))))))
+	   (t (baboon-unwind-exit ue))))))
   ;;; Never reached
   )
 
+(defun baboon-improper-*exit* ()
+  (baboon :format-control "The value of *EXIT*~%~A~%is not found in *UNWIND-EXIT*~%~A"
+          :format-arguments (list *exit* *unwind-exit*)))
+
+(defun baboon-unwind-exit (ue)
+  (baboon :format-control "The value of unwind exit~%~A~%found in *UNWIND-EXIT*~%~A~%is not valid."
+          :format-arguments (list ue *unwind-exit*)))
+
 (defun unwind-no-exit (exit &aux (bds-lcl nil) (bds-bind 0) (stack-frame nil) (ihs-p nil))
   (declare (fixnum bds-bind))
-  (dolist (ue *unwind-exit* (baboon))
+  (dolist (ue *unwind-exit* (baboon-improper-*exit*))
     (cond
        ((consp ue)
 	(cond ((eq ue exit)
@@ -142,23 +151,23 @@
        ((member ue '(RETURN RETURN-OBJECT RETURN-FIXNUM RETURN-CHARACTER
                             RETURN-DOUBLE-FLOAT RETURN-SINGLE-FLOAT))
         (if (eq exit ue)
-          (progn (unwind-bds bds-lcl bds-bind stack-frame ihs-p)
-                 (return))
-          (baboon))
+            (progn (unwind-bds bds-lcl bds-bind stack-frame ihs-p)
+                   (return))
+            (baboon-unwind-exit ue))
         ;;; Never reached
         )
        ((eq ue 'FRAME) (wt-nl "ecl_frs_pop(cl_env_copy);"))
        ((eq ue 'TAIL-RECURSION-MARK)
         (if (eq exit 'TAIL-RECURSION-MARK)
-          (progn (unwind-bds bds-lcl bds-bind stack-frame ihs-p)
-                 (return))
-          (baboon))
+            (progn (unwind-bds bds-lcl bds-bind stack-frame ihs-p)
+                   (return))
+            (baboon-unwind-exit ue))
         ;;; Never reached
         )
        ((eq ue 'JUMP))
        ((eq ue 'IHS-ENV)
         (setf ihs-p ue))
-       (t (baboon))
+       (t (baboon-unwind-exit ue))
        ))
   ;;; Never reached
   )
