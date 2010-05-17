@@ -52,19 +52,38 @@
                            :args values))))))
 
 (defun c1or (args)
-  (let ((f (c1fmla-constant `(OR ,@args))))
-    (cond ((or (eq f t) (eq f nil) (atom f))
-           (c1expr f))
-          ((null args)
-           (c1expr nil))
-          ((null (rest args))
-           (c1expr (first args)))
-          (t
-           (let* ((values (c1args* args))
-                  (last (first (last values))))
-             (make-c1form* 'FMLA-OR
-                           :type (type-or 'null (c1form-type last))
-                           :args values))))))
+  (if (null args)
+      (c1expr nil)
+      (let* ((values (c1args* args))
+	     (last (first (last values))))
+	(if (rest values)
+	    (make-c1form* 'FMLA-OR
+			 :type (type-or 'null (c1form-type last))
+			 :args values)
+	    last)))
+  #+(or)
+  (let ((args (c1args* args)))
+    (if (null args)
+	(c1expr nil)
+	(let ((butlast (butlast args))
+	      (last (first (last args))))
+	  (if butlast
+	      (make-c1form* 'FMLA-OR
+			    :type (type-or 'null (c1form-type last))
+			    :args butlast last)
+	      last))))
+
+  #+(or)
+  (cond ((null args)
+	 (c1expr nil))
+	((null (rest args))
+	 (c1expr (first args)))
+	(t
+	 (let* ((values (c1args* args))
+		(last (first (last values))))
+	   (make-c1form* 'FMLA-OR
+			 :type (type-or 'null (c1form-type last))
+			 :args values)))))
 
 (defun resolve-constants (list)
   (mapcar #'(lambda (x)
@@ -270,35 +289,23 @@
     (wt-label normal-exit)))
 
 (defun c2fmla-or (args)
-  (let* ((normal-exit (next-label))
-         (ue (cons normal-exit *unwind-exit*))
-         (dest *destination*))
-    (cond ((and (consp dest) (eq (car dest) 'JUMP-TRUE))
-           (let ((*exit* normal-exit)
-                 (*unwind-exit* ue))
-             (CJT *current-c2form* (second dest) normal-exit)
-             (wt-label normal-exit)))
-          ((and (consp dest) (eq (car dest) 'JUMP-FALSE))
-           (let ((*exit* normal-exit)
-                 (*unwind-exit* ue))
-             (CJF *current-c2form* normal-exit (second dest))
-             (wt-label normal-exit)))
-          (t
-           (loop for forms on args
-              for f = (first forms)
-              do (cond ((rest forms)
-                        (let ((*destination* 'VALUE0))
-                          (c2expr* f))
-                        (let ((*exit* normal-exit)
-                              (*unwind-exit* ue))
-                          (set-jump-true 'VALUE0 normal-exit)))
-                       (t
-                        (let ((*destination 'VALUE0))
-                          (c2expr* f))))
-              finally
-                (progn
-                  (wt-label normal-exit)
-                  (unwind-exit 'VALUE0)))))))
+  (loop with normal-exit = (next-label)
+     with ue = (cons normal-exit *unwind-exit*)
+     for forms on args
+     for f = (first forms)
+     do (cond ((rest forms)
+	       (let ((*destination* 'VALUE0))
+		 (c2expr* f))
+	       (let ((*exit* normal-exit)
+		     (*unwind-exit* ue))
+		 (set-jump-true 'VALUE0 normal-exit)))
+	      (t
+	       (let ((*destination* 'VALUE0))
+		 (c2expr* f))))
+     finally
+       (progn
+	 (wt-label normal-exit)
+	 (unwind-exit 'VALUE0))))
 
 (defun set-jump-true (loc label)
   (multiple-value-bind (constantp value)
@@ -344,7 +351,7 @@
 (put-sysprop 'fmla-not 'c2 'c2fmla-not)
 (put-sysprop 'and 'c1 'c1and)
 (put-sysprop 'fmla-and 'c2 'c2fmla-and)
-;(put-sysprop 'or 'c1 'c1or)
-;(put-sysprop 'fmla-or 'c2 'c2fmla-or)
+(put-sysprop 'or 'c1 'c1or)
+(put-sysprop 'fmla-or 'c2 'c2fmla-or)
 (put-sysprop 'jump-true 'set-loc 'set-jump-true)
 (put-sysprop 'jump-false 'set-loc 'set-jump-false)
