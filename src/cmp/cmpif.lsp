@@ -55,7 +55,7 @@
         ;; (AND x) => x
         (if butlast
             (make-c1form* 'FMLA-AND
-                          :type (c1form-type last)
+                          :type (type-or 'null (c1form-type last))
                           :args butlast last)
             last))))
 
@@ -69,7 +69,9 @@
         ;; (OR x) => x
 	(if butlast
 	    (make-c1form* 'FMLA-OR
-			 :type (type-or 'null (c1form-type last))
+			 :type (reduce #'type-or butlast
+                                       :key #'c1form-type
+                                       :initial-value (c1form-type last))
 			 :args butlast last)
 	    last))))
 
