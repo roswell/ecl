@@ -142,6 +142,13 @@
          (c2expr form2)))
   )
 
+(eval-when (:compile-toplevel :execute)
+(defmacro with-exit-label ((label) &body body)
+  `(let* ((,label (next-label))
+	  (*unwind-exit* (cons ,label *unwind-exit*)))
+     ,@body
+     (wt-label ,label))))
+
 ;;; If fmla is true, jump to Tlabel.  If false, do nothing.
 (defun CJT (fmla Tlabel Flabel)
   (case (c1form-name fmla)
@@ -203,7 +210,7 @@
 (defun c2fmla-not (arg)
   (let ((dest *destination*))
     (cond ((and (consp dest) (eq (car dest) 'JUMP-TRUE))
-           (let (((*destination* `(JUMP-FALSE ,@(cdr dest)))))
+           (let ((*destination* `(JUMP-FALSE ,@(cdr dest))))
              (c2expr arg)))
           ((and (consp dest) (eq (car dest) 'JUMP-FALSE))
            (let ((*destination* `(JUMP-TRUE ,@(cdr dest))))
@@ -217,35 +224,27 @@
              (close-inline-blocks))))))
 
 (defun c2fmla-and (args)
-  (let* ((normal-exit (next-label))
-         (dest *destination*))
-    (cond ((and (consp dest) (eq (car dest) 'JUMP-TRUE))
-           (let ((*exit* normal-exit)
-                 (*unwind-exit* (cons normal-exit *unwind-exit*)))
-             (CJT *current-c2form* (second dest) normal-exit)))
-          ((and (consp dest) (eq (car dest) 'JUMP-FALSE))
-           (let ((*exit* normal-exit)
-                 (*unwind-exit* (cons normal-exit *unwind-exit*)))
-             (CJF *current-c2form* normal-exit (second dest))))
-          (t
-           (loop with false-label = (next-label)
-              with ue = (cons false-label *unwind-exit*)
-              for forms on args
-              for f = (first forms)
-              do (cond ((rest forms)
-                        (let ((*exit* false-label)
-                              (*unwind-exit* ue)
-                              (*destination* `(JUMP-FALSE ,false-label)))
-                          (c2expr* f)))
-                       (t
-                        (c2expr f)
-                        (wt-nl)
-                        (wt-go normal-exit)))
-              finally
-                (progn
-                  (wt-label false-label)
-                  (unwind-exit nil)))))
-    (wt-label normal-exit)))
+  (with-exit-label (normal-exit)
+    (let* ((dest *destination*))
+      (cond ((and (consp dest) (eq (car dest) 'JUMP-TRUE))
+	     (let ((*exit* normal-exit)
+		   (*unwind-exit* (cons normal-exit *unwind-exit*)))
+	       (CJT *current-c2form* (second dest) normal-exit)))
+	    ((and (consp dest) (eq (car dest) 'JUMP-FALSE))
+	     (let ((*exit* normal-exit)
+		   (*unwind-exit* (cons normal-exit *unwind-exit*)))
+	       (CJF *current-c2form* normal-exit (second dest))))
+	    (t
+	     (with-exit-label (false-label)
+	       (loop for forms on args
+		  for f = (first forms)
+		  do (cond ((rest forms)
+			    (let ((*destination* `(JUMP-FALSE ,false-label)))
+			      (c2expr* f)))
+			   (t
+			    (c2expr f)
+			    (wt-nl) (wt-go normal-exit)))))
+	     (unwind-exit nil))))))
 
 (defun c2fmla-or (butlast last)
   (let* ((normal-exit (next-label))
