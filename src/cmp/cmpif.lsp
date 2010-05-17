@@ -21,7 +21,7 @@
       ((T) (c1expr (second args)))
       ((NIL) (if (endp (cddr args)) (c1nil) (c1expr (third args))))
       (otherwise
-       (make-c1form* 'IF :args (c1fmla f) (c1expr (second args))
+       (make-c1form* 'IF :args (c1expr f) (c1expr (second args))
 		     (if (endp (cddr args)) (c1nil) (c1expr (third args))))))
     ))
 
@@ -41,7 +41,7 @@
     (cond ((or (eq f t) (eq f nil) (atom f))
            (c1expr f))
           ((null args)
-           (c1expr t))
+           (c1t))
           ((null (rest args))
            (c1expr (first args)))
           (t
@@ -53,37 +53,14 @@
 
 (defun c1or (args)
   (if (null args)
-      (c1expr nil)
+      (c1nil)
       (let* ((values (c1args* args))
 	     (last (first (last values))))
 	(if (rest values)
 	    (make-c1form* 'FMLA-OR
 			 :type (type-or 'null (c1form-type last))
 			 :args values)
-	    last)))
-  #+(or)
-  (let ((args (c1args* args)))
-    (if (null args)
-	(c1expr nil)
-	(let ((butlast (butlast args))
-	      (last (first (last args))))
-	  (if butlast
-	      (make-c1form* 'FMLA-OR
-			    :type (type-or 'null (c1form-type last))
-			    :args butlast last)
-	      last))))
-
-  #+(or)
-  (cond ((null args)
-	 (c1expr nil))
-	((null (rest args))
-	 (c1expr (first args)))
-	(t
-	 (let* ((values (c1args* args))
-		(last (first (last values))))
-	   (make-c1form* 'FMLA-OR
-			 :type (type-or 'null (c1form-type last))
-			 :args values)))))
+	    last))))
 
 (defun resolve-constants (list)
   (mapcar #'(lambda (x)
@@ -138,26 +115,6 @@
    ((let ((fd (cmp-macro-function f)))
       (and fd (c1fmla-constant (cmp-expand-macro fd fmla)))))
    (t fmla)))
-
-(defun c1fmla (fmla)
-  (if (consp fmla)
-      (case (car fmla)
-            (AND (case (length (cdr fmla))
-                   (0 (c1t))
-                   (1 (c1fmla (second fmla)))
-                   (t (make-c1form* 'FMLA-AND :args
-                                    (mapcar #'c1fmla (rest fmla))))))
-            (OR (case (length (cdr fmla))
-                   (0 (c1nil))
-                   (1 (c1fmla (second fmla)))
-                   (t (make-c1form* 'FMLA-OR :args
-                                    (mapcar #'c1fmla (rest fmla))))))
-            ((NOT NULL)
-	     (check-args-number 'NOT (rest fmla) 1 1)
-	     (make-c1form* 'FMLA-NOT :args (c1fmla (second fmla))))
-            (t (c1expr fmla)))
-      (c1expr fmla))
-  )
 
 (defun c2if (fmla form1 form2
                   &aux (Tlabel (next-label)) Flabel)
