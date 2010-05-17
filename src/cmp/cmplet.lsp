@@ -131,7 +131,7 @@
              (not (member (var-kind var) '(special global)))
              (not (form-causes-side-effect form)))
     (unless (var-ignorable var)
-      (cmpnote "Removing unused variable ~A" (var-name var)))
+      (cmpdebug "Removing unused variable ~A" (var-name var)))
     (delete-c1forms form)
     t))
 
@@ -333,7 +333,7 @@
       (case (c1form-name form)
         (LOCATION
          (when (can-be-replaced* var body (cdr fl))
-	   (cmpnote "Replacing variable ~a by its value" (var-name var))
+	   (cmpdebug "Replacing variable ~a by its value" (var-name var))
            (setf (var-kind var) 'REPLACED
                  (var-loc var) (c1form-arg 0 form))))
         (VAR
@@ -346,7 +346,7 @@
 		      (can-be-replaced* var body (cdr fl))
 		      (not (var-changed-in-form-list var1 (rest fl)))
 		      (not (var-changed-in-form var1 body)))
-	     (cmpnote "Replacing variable ~a by its value" (var-name var))
+	     (cmpdebug "Replacing variable ~a by its value" (var-name var))
              (setf (var-kind var) 'REPLACED
                    (var-loc var) var1)))))
       (unless env-grows
