@@ -26,15 +26,18 @@
     ))
 
 (defun c1not (args)
-  (check-args-number 'NOT args 1)
-  (let* ((value (first args))
-         (f (c1fmla-constant value)))
-    (if (or (eq f t) (eq f nil))
-        (c1expr (not f))
-        (let* ((value (c1expr (first args))))
-          (make-c1form* 'FMLA-NOT
-                        :type '(member t nil)
-                        :args value)))))
+  (check-args-number 'NOT args 1 1)
+  (let* ((value (c1expr (first args))))
+    ;; When the argument is constant, we can just return
+    ;; a constant as well.
+    (when (eq (c1form-name value) 'LOCATION)
+      (let ((loc (c1form-arg 0 value)))
+        (multiple-value-bind (constant-p value)
+            (loc-immediate-value-p loc)
+          (return-from c1not (c1expr (not value))))))
+    (make-c1form* 'FMLA-NOT
+                  :type '(member t nil)
+                  :args value)))
 
 (defun c1and (args)
   (let ((f (c1fmla-constant `(AND ,@args))))
