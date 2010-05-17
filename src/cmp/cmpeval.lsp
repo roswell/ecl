@@ -167,7 +167,7 @@
 	(return)))))
 
 (defun c1args* (forms)
-  (mapcar #'(lambda (form) (c1expr form)) forms))
+  (mapcar #'c1expr forms))
 
 ;;; ----------------------------------------------------------------------
 
