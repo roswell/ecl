@@ -85,7 +85,7 @@
 	 do (with-open-file (out filename :direction :output :if-exists :supersede
 				 :if-does-not-exist :create :element-type 'base-char)
 	      (format t "~%;;; Creating alias ~A -> ~A, ~A" alias name filename)
-	      (format out "(defparameter ext::~A 'ext::~A)" alias name))))
+	      (format out "(defparameter ext::~A (ext::make-encoding 'ext::~A))" alias name))))
 
 (copy-file "ext:encodings;tools.lisp" "build:encodings;tools.lisp")
 (copy-file "ext:encodings;ISO-2022-JP" "build:encodings;ISO-2022-JP")
