@@ -76,6 +76,8 @@
   '(cons integer-length integer-length))
 (deftype character-code ()
   '(integer 0 #.(1- char-code-limit)))
+(deftype character-designator ()
+  '(or character string-designator))
 (deftype external-file-format ()
   '(or symbol list))
 (deftype declaration-specifier ()
