@@ -227,13 +227,9 @@
   (with-exit-label (normal-exit)
     (let* ((dest *destination*))
       (cond ((and (consp dest) (eq (car dest) 'JUMP-TRUE))
-	     (let ((*exit* normal-exit)
-		   (*unwind-exit* (cons normal-exit *unwind-exit*)))
-	       (CJT *current-c2form* (second dest) normal-exit)))
+	     (CJT *current-c2form* (second dest) normal-exit))
 	    ((and (consp dest) (eq (car dest) 'JUMP-FALSE))
-	     (let ((*exit* normal-exit)
-		   (*unwind-exit* (cons normal-exit *unwind-exit*)))
-	       (CJF *current-c2form* normal-exit (second dest))))
+	     (CJF *current-c2form* normal-exit (second dest)))
 	    (t
 	     (with-exit-label (false-label)
 	       (loop for forms on args
