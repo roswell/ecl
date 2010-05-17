@@ -46,10 +46,11 @@
            (c1expr (first args)))
           (t
            (let* ((values (c1args* args))
-                  (last (first (last values))))
+                  (last (first (last values)))
+		  (butlast (nbutlast values)))
              (make-c1form* 'FMLA-AND
                            :type (type-or 'null (c1form-type last))
-                           :args values))))))
+                           :args butlast last))))))
 
 (defun c1or (args)
   (if (null args)
@@ -153,8 +154,8 @@
 (defun CJT (fmla Tlabel Flabel)
   (case (c1form-name fmla)
     (FMLA-AND (do ((fs (c1form-arg 0 fmla) (cdr fs)))
-                  ((endp (cdr fs))
-                   (CJT (car fs) Tlabel Flabel))
+                  ((endp fs)
+                   (CJT (c1form-arg 1 fmla) Tlabel Flabel))
                 (let* ((label (next-label))
                        (*unwind-exit* (cons label *unwind-exit*)))
                   (CJF (car fs) label Flabel)
@@ -174,7 +175,8 @@
 (defun CJF (fmla Tlabel Flabel)
   (case (c1form-name fmla)
     (FMLA-AND (do ((fs (c1form-arg 0 fmla) (cdr fs)))
-                  ((endp (cdr fs)) (CJF (car fs) Tlabel Flabel))
+                  ((endp fs)
+		   (CJF (c1form-arg 1 fmla) Tlabel Flabel))
                 (declare (object fs))
                 (let* ((label (next-label))
                        (*unwind-exit* (cons label *unwind-exit*)))
@@ -223,7 +225,7 @@
                            *destination*))
              (close-inline-blocks))))))
 
-(defun c2fmla-and (args)
+(defun c2fmla-and (butlast last)
   (with-exit-label (normal-exit)
     (let* ((dest *destination*))
       (cond ((and (consp dest) (eq (car dest) 'JUMP-TRUE))
@@ -232,14 +234,11 @@
 	     (CJF *current-c2form* normal-exit (second dest)))
 	    (t
 	     (with-exit-label (false-label)
-	       (loop for forms on args
-		  for f = (first forms)
-		  do (cond ((rest forms)
-			    (let ((*destination* `(JUMP-FALSE ,false-label)))
-			      (c2expr* f)))
-			   (t
-			    (c2expr f)
-			    (wt-nl) (wt-go normal-exit)))))
+	       (dolist (f butlast)
+		 (let ((*destination* `(JUMP-FALSE ,false-label)))
+		   (c2expr* f)))
+	       (c2expr last)
+	       (wt-nl) (wt-go normal-exit))
 	     (unwind-exit nil))))))
 
 (defun c2fmla-or (butlast last)
