@@ -173,8 +173,11 @@
   (multiple-value-bind (key-function test-function init
                         key-flag test-flag test)
       (seq-opt-parse-args 'member sequence-args :start-end nil)
+    ;; When having complex arguments (:allow-other-keys, etc)
+    ;; we just give up.
+    (when (null key-function)
+      (return-from expand-member nil))
     (unless key-flag
-      #+(or)
       (when (and (or (null test) (constant-function-expression test))
                  (constant-expression-p list))
         (when (<= (length (setf list (cmp-eval list))) 4)
@@ -184,9 +187,9 @@
                  (or ,@(loop for l on list
                           for elt = (first l)
                           collect `(and ,(funcall test-function %value `',elt)
-                                        ',l))))))
-          (when (or (consp list) (symbol list))
-            (setf list `',list))))
+                                        ',l)))))))
+        (when (or (consp list) (symbol list))
+          (setf list `',list)))
       (when (or (null test-flag) (eq test-flag :test))
         (when (member test '('EQ #'EQ) :test #'equal)
           (return-from expand-member
@@ -200,14 +203,13 @@
           (return-from expand-member
             `(ffi:c-inline (,value ,list) (:object :object) :object
                            "ecl_member(#0,#1)" :one-liner t :side-effects nil)))))
-    (when test-function
-      (ext:with-unique-names (%value %sublist %elt)
-        `(let ((,%value ,value)
-               ,@init)
-           (do-in-list (,%elt ,%sublist ,list)
-             (when ,(funcall test-function %value
-                             (funcall key-function %elt))
-               (return ,%sublist))))))))
+    (ext:with-unique-names (%value %sublist %elt)
+      `(let ((,%value ,value)
+             ,@init)
+         (do-in-list (,%elt ,%sublist ,list)
+           (when ,(funcall test-function %value
+                           (funcall key-function %elt))
+             (return ,%sublist)))))))
 
 (define-compiler-macro member (&whole whole value list &rest sequence-args)
   (if (policy-inline-sequence-functions)
