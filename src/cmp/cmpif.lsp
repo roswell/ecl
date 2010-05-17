@@ -16,14 +16,21 @@
 
 (defun c1if (args)
   (check-args-number 'IF args 2 3)
-  (let ((f (c1fmla-constant (car args))))
-    (case f
-      ((T) (c1expr (second args)))
-      ((NIL) (if (endp (cddr args)) (c1nil) (c1expr (third args))))
-      (otherwise
-       (make-c1form* 'IF :args (c1expr f) (c1expr (second args))
-		     (if (endp (cddr args)) (c1nil) (c1expr (third args))))))
-    ))
+  (let ((test (c1expr (car args))))
+    ;; Resolve IF expressions with constant arguments
+    (when (eq (c1form-name test) 'LOCATION)
+      (multiple-value-bind (constant-p value)
+          (loc-immediate-value-p (c1form-arg 0 test))
+        (when constant-p
+          (return-from c1if
+            (c1expr (if value (second args) (third args)))))))
+    ;; Otherwise, normal IF form
+    (let* ((true-branch (c1expr (second args)))
+           (false-branch (c1expr (third args))))
+      (make-c1form* 'IF
+                    :type (type-or (c1form-type true-branch)
+                                   (c1form-type false-branch))
+                    :args test true-branch false-branch))))
 
 (defun c1not (args)
   (check-args-number 'NOT args 1 1)
@@ -31,95 +38,40 @@
     ;; When the argument is constant, we can just return
     ;; a constant as well.
     (when (eq (c1form-name value) 'LOCATION)
-      (let ((loc (c1form-arg 0 value)))
-        (multiple-value-bind (constant-p value)
-            (loc-immediate-value-p loc)
-          (return-from c1not (c1expr (not value))))))
+      (multiple-value-bind (constant-p value)
+          (loc-immediate-value-p (c1form-arg 0 value))
+        (return-from c1not (c1expr (not value)))))
     (make-c1form* 'FMLA-NOT
                   :type '(member t nil)
                   :args value)))
 
 (defun c1and (args)
-  (let ((f (c1fmla-constant `(AND ,@args))))
-    (cond ((or (eq f t) (eq f nil) (atom f))
-           (c1expr f))
-          ((null args)
-           (c1t))
-          ((null (rest args))
-           (c1expr (first args)))
-          (t
-           (let* ((values (c1args* args))
-                  (last (first (last values)))
-		  (butlast (nbutlast values)))
-             (make-c1form* 'FMLA-AND
-                           :type (type-or 'null (c1form-type last))
-                           :args butlast last))))))
+  ;; (AND) => T
+  (if (null args)
+      (c1t)
+      (let* ((values (c1args* args))
+             (last (first (last values)))
+             (butlast (nbutlast values)))
+        ;; (AND x) => x
+        (if butlast
+            (make-c1form* 'FMLA-AND
+                          :type (c1form-type last)
+                          :args butlast last)
+            last))))
 
 (defun c1or (args)
+  ;; (OR) => T
   (if (null args)
       (c1nil)
       (let* ((values (c1args* args))
 	     (last (first (last values)))
 	     (butlast (butlast values)))
+        ;; (OR x) => x
 	(if butlast
 	    (make-c1form* 'FMLA-OR
 			 :type (type-or 'null (c1form-type last))
 			 :args butlast last)
 	    last))))
-
-(defun resolve-constants (list)
-  (mapcar #'(lambda (x)
-              (if (constantp x)
-                  (and (cmp-eval x) t)
-                  x))
-          list))
-
-(defun c1fmla-constant (fmla &aux f)
-  (cond
-   ((constant-expression-p fmla)
-    (and (cmp-eval fmla) t))
-   ((atom fmla)
-    fmla)
-   ((eq (setf f (car fmla)) 'AND)
-    (let* ((simplified (delete t (mapcar #'c1fmla-constant (rest fmla)))))
-      (cond ((null simplified)
-             t) ; (AND)
-            ((rest simplified)
-             `(AND ,@simplified))
-            (t
-             (first simplified)))))
-   ((eq f 'OR)
-    (let* ((simplified (delete nil (mapcar #'c1fmla-constant (rest fmla)))))
-      (cond ((null simplified)
-             nil) ; (OR)
-            ((rest simplified)
-             `(OR ,@simplified))
-            (t
-             (first simplified)))))
-   ((member f '(NOT NULL))
-    (when (endp (cdr fmla)) (too-few-args 'not 1 0))
-    (unless (endp (cddr fmla))
-      (too-many-args 'not 1 (length (cdr fmla))))
-    (setq f (c1fmla-constant (second fmla)))
-    (case f
-      ((T) nil)
-      ((NIL) t)
-      (t (list 'NOT f))))
-   ((or (get-sysprop f 'C1)
-        (get-sysprop f 'C1SPECIAL)
-        (get-sysprop f 'C1CONDITIONAL))
-    fmla)
-   ((let ((fd (compiler-macro-function f)))
-      (and fd
-           (inline-possible f)
-           (let ((success nil))
-             (multiple-value-setq (fmla success)
-               (cmp-expand-macro fd fmla))
-             success)
-           (c1fmla-constant fmla))))
-   ((let ((fd (cmp-macro-function f)))
-      (and fd (c1fmla-constant (cmp-expand-macro fd fmla)))))
-   (t fmla)))
 
 (eval-when (:compile-toplevel :execute)
 (defmacro with-exit-label ((label) &body body)
