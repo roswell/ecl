@@ -215,7 +215,7 @@
 (define-policy ext:check-arguments-type :on safety 1
   "Generate CHECK-TYPE forms for function arguments with type declarations")
 
-(define-policy array-bounds-check :alias assume-no-errors
+(define-policy array-bounds-check :on safety 1
   "Check out of bounds access to arrays")
 
 (define-policy global-var-checking :alias assume-no-errors
