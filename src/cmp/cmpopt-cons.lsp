@@ -52,8 +52,8 @@
 
 (define-simple-optimizer rplaca ((c cons) value)
   (:object :object) :object
-  "ECL_CONS_CAR(#0)=#1" :one-liner t)
+  "@0;(ECL_CONS_CAR(#0)=#1,#0)" :one-liner t)
 
 (define-simple-optimizer rplacd ((c cons) value)
   (:object :object) :object
-  "ECL_CONS_CDR(#0)=#1" :one-liner t)
+  "@0;(ECL_CONS_CDR(#0)=#1,#0)" :one-liner t)
