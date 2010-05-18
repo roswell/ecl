@@ -138,11 +138,6 @@
 	     (add-load-form object x))
 	   x))))
 
-(defun vt-loc-value (loc)
-  (case (car loc)
-    (VV (aref *permanent-objects* (second loc)))
-    (VV-TEMP (aref *temporary-objects* (second loc)))))
-
 (defun add-symbol (symbol)
   (add-object symbol :duplicate nil :permanent t))
 
@@ -208,3 +203,15 @@
               (let* ((c-name (format nil "_ecl_static_~D" (length *static-constants*))))
                 (push (list object c-name builder) *static-constants*)
                 `(VV ,c-name))))))))
+
+(defun vt-loc-value (loc)
+  (flet ((static-constant-value (index)
+	   (first (find loc *static-constants* :key #'second
+			:test #'string=))))
+    (let ((index (second loc)))
+      (cond ((stringp index)
+	     (static-constant-value index))
+	    ((eq (car loc) 'VV)
+	     (aref *permanent-objects* index))
+	    (t
+	     (VV-TEMP (aref *temporary-objects* index)))))))
