@@ -1909,6 +1909,7 @@ cl_symbols[] = {
 {EXT_ "ARRAY-INDEX",NULL},
 {EXT_ "ANSI-STREAM",NULL},
 
+{EXT_ "COMPLEX-ARRAY",NULL},
 
 /* Tag for end of list */
 {NULL,NULL}};
