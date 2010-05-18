@@ -148,14 +148,16 @@
 (defun do-m-v-setq-fixed (nvalues vars form use-bind &aux (output (first vars)))
   ;; This routine should evaluate FORM and store the values (whose amount
   ;; is known to be NVALUES) into the variables VARS. The output is a
-  ;; place from where the first value can be retreived
+  ;; place from where the first value can be retreived.
+  ;; INV: There is at least one variable.
   ;;
   (if (or (> nvalues 1) use-bind)
       (let ((*destination* 'VALUES))
 	(c2expr* form)
-	(dotimes (i nvalues)
-	  (funcall (if use-bind #'bind-var #'set-var)
-		   (values-loc i) (pop vars))))
+	(loop for i from 0 below nvalues
+	   while vars
+	   do (funcall (if use-bind #'bind-var #'set-var)
+		       (values-loc i) (pop vars))))
       (let ((*destination* (pop vars)))
 	(c2expr* form)))
   (dolist (v vars)
