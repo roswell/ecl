@@ -206,7 +206,7 @@
 
 (defun vt-loc-value (loc)
   (flet ((static-constant-value (index)
-	   (first (find loc *static-constants* :key #'second
+	   (first (find index *static-constants* :key #'second
 			:test #'string=))))
     (let ((index (second loc)))
       (cond ((stringp index)
