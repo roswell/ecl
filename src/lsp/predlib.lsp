@@ -1146,7 +1146,9 @@ if not possible."
 	       (FLOAT (OR SINGLE-FLOAT DOUBLE-FLOAT
                        #+long-float LONG-FLOAT
                        #+short-float SHORT-FLOAT))
-	       (REAL (OR INTEGER SINGLE-FLOAT DOUBLE-FLOAT RATIO))
+	       (REAL (OR INTEGER SINGLE-FLOAT DOUBLE-FLOAT
+		      #+short-float SHORT-FLOAT
+		      #+long-float LONG-FLOAT RATIO))
 	       (COMPLEX (COMPLEX REAL))
 
 	       (NUMBER (OR REAL COMPLEX))
@@ -1291,15 +1293,23 @@ if not possible."
 	    (register-interval-type type))
 	   ((FLOAT)
 	    (canonical-type `(OR (SINGLE-FLOAT ,@(rest type))
-			      (DOUBLE-FLOAT ,@(rest type)))))
+				 (DOUBLE-FLOAT ,@(rest type))
+				 #+short-float
+				 (SHORT-FLOAT ,@(rest type))
+				 #+long-float
+				 (LONG-FLOAT ,@(rest type)))))
 	   ((REAL)
 	    (canonical-type `(OR (INTEGER ,@(rest type))
-			      (RATIO ,@(rest type))
-			      (SINGLE-FLOAT ,@(rest type))
-			      (DOUBLE-FLOAT ,@(rest type)))))
+				 (RATIO ,@(rest type))
+				 (SINGLE-FLOAT ,@(rest type))
+				 (DOUBLE-FLOAT ,@(rest type))
+				 #+short-float
+				 (SHORT-FLOAT ,@(rest type))
+				 #+long-float
+				 (LONG-FLOAT ,@(rest type)))))
 	   ((RATIONAL)
 	    (canonical-type `(OR (INTEGER ,@(rest type))
-			      (RATIO ,@(rest type)))))
+				 (RATIO ,@(rest type)))))
 	   (COMPLEX
 	    (or (find-built-in-tag type)
 		(canonical-complex-type (second type))))
