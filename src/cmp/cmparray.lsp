@@ -154,22 +154,24 @@
       `(let* ((%ndx-var ,(pop indices))
               (%output-var %ndx-var)
               (%dim-var 0))
-         (declare (type si::index %ndx-var %output-var %dim-var))
+         (declare (type ext:array-index %ndx-var %output-var %dim-var))
          ,@(when (policy-type-assertions env)
                  `((check-arrayp ,a)
                    (check-expected-rank ,a ,expected-rank)))
          ,@(when check
                   `((check-index-in-bounds ,a %output-var %dim-var)))
+         (setf %dim-var (array-dimension-fast ,a 0))
          ,@(loop for j from 1
               for index in indices
-              collect `(setf %dim-var (array-dimension-fast ,a ,j)
+              collect `(setf %output-var
+                             (the ext:array-index (* %output-var %dim-var))
+                             %dim-var (array-dimension-fast ,a ,j)
                              %ndx-var ,index)
               collect (when check
                         `(check-index-in-bounds ,a %ndx-var %dim-var))
               collect `(setf %output-var
-                             (the si::index
-                               (+ (the si::index (* %output-var %dim-var))
-                                  %ndx-var))))
+                             (the ext:array-index
+                               (+ %output-var %ndx-var))))
          %output-var))))
 
 ;(trace c::expand-row-major-index c::expand-aset c::expand-aref)
