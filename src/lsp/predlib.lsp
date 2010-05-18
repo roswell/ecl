@@ -281,6 +281,12 @@ and is not adjustable."
        (not (array-has-fill-pointer-p x))
        (not (array-displacement x))))
 
+(defun complex-array-p (x)
+  (and (arrayp x)
+       (or (adjustable-array-p x)
+	   (array-has-fill-pointer-p x)
+	   (array-displacement x))))
+
 (eval-when (:execute :load-toplevel :compile-toplevel)
   (defconstant +known-typep-predicates+
     '((ARRAY . ARRAYP)
@@ -293,6 +299,7 @@ and is not adjustable."
       (CHARACTER . CHARACTERP)
       (COMPILED-FUNCTION . COMPILED-FUNCTION-P)
       (COMPLEX . COMPLEXP)
+      (COMPLEX-ARRAY . COMPLEX-ARRAY-P)
       (CONS . CONSP)
       (FLOAT . FLOATP)
       (SI:FOREIGN-DATA . SI:FOREIGN-DATA-P)
@@ -381,6 +388,7 @@ and is not adjustable."
 
 (defun error-type-specifier (type)
   (declare (si::c-local))
+  (print type)
   (error "~S is not a valid type specifier." type))
 
 (defun match-dimensions (array pat)
@@ -480,6 +488,13 @@ Returns T if X belongs to TYPE; NIL otherwise."
     (SIMPLE-VECTOR
      (and (simple-vector-p object)
           (or (null i) (match-dimensions object i))))
+    (COMPLEX-ARRAY
+     (and (complex-array-p object)
+          (or (endp i) (eq (car i) '*)
+	      ;; (car i) needs expansion
+	      (eq (array-element-type object)
+		  (upgraded-array-element-type (car i))))
+          (or (endp (cdr i)) (match-dimensions object (second i)))))
     (SIMPLE-ARRAY
      (and (simple-array-p object)
           (or (endp i) (eq (car i) '*)
@@ -915,7 +930,7 @@ if not possible."
 
 ;;
 ;; This canonicalizes the array type into the form
-;;	({ARRAY | SIMPLE-ARRAY} {elt-type | '*} {'* | (['*]*)})
+;;	({COMPLEX-ARRAY | SIMPLE-ARRAY} {elt-type | '*} {'* | (['*]*)})
 ;;
 ;; ELT-TYPE is the upgraded element type of the input.
 ;;
@@ -944,8 +959,7 @@ if not possible."
 ;; type T2.
 ;;
 (defun array-type-<= (t1 t2)
-  (unless (and (or (eq (first t1) (first t2))
-		   (eq (first t2) 'ARRAY))
+  (unless (and (eq (first t2) (first t2))
 	       (eq (second t1) (second t2)))
     (return-from array-type-<= nil))
   (let ((dim (third t1))
@@ -963,7 +977,7 @@ if not possible."
 
 (defun array-type-p (type)
   (and (consp type)
-       (member (first type) '(ARRAY SIMPLE-ARRAY))))
+       (member (first type) '(COMPLEX-ARRAY SIMPLE-ARRAY))))
 
 ;;----------------------------------------------------------------------
 ;; INTERVALS:
@@ -1314,7 +1328,9 @@ if not possible."
 	    (or (find-built-in-tag type)
 		(canonical-complex-type (second type))))
 	   (CONS (apply #'register-cons-type (rest type)))
-	   ((ARRAY SIMPLE-ARRAY) (register-array-type type))
+	   (ARRAY (logior (register-array-type `(COMPLEX-ARRAY ,@(rest type)))
+			  (register-array-type `(SIMPLE-ARRAY ,@(rest type)))))
+	   ((COMPLEX-ARRAY SIMPLE-ARRAY) (register-array-type type))
 	   ;;(FUNCTION (register-function-type type))
 	   ;;(VALUES (register-values-type type))
 	   (FUNCTION (canonical-type 'FUNCTION))

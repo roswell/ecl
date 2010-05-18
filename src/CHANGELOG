@@ -21,6 +21,8 @@ ECL 10.5.1:
    to PROCLAIM which appeared after the function could change the value of
    those optimizations and influence what the emitted C code looked like.
 
+ - Solved a problem with type intersections between SIMPLE-ARRAY and ARRAY.
+
 * Visible changes:
 
  - "fasb" is now a valid FASL file type, accepted by ECL even in absence of
