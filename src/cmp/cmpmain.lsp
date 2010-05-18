@@ -89,6 +89,7 @@ the environment variable TMPDIR to a different value." template)))
 
 (defun cmp-delete-file (file)
   (cond ((null *delete-files*))
+	((ext:getenv "ECL_PRESERVE_FILES"))
 	(*debug-compiler*
 	 (cmpprogress "~%Postponing deletion of ~A" file)
 	 (push file *files-to-be-deleted*))
