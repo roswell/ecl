@@ -700,8 +700,8 @@
 (def-inline si:elt-set :always (vector fixnum t) t "ecl_aset1(#0,#1,#2)")
 
 (def-inline si:elt-set :unsafe (t t t) t "ecl_elt_set(#0,fix(#1),#2)")
-(def-inline si:elt-set :unsafe (vector t t) t "ecl_aset1_unsafe(#0,fixint(#1),#2)")
-(def-inline si:elt-set :unsafe (vector fixnum t) t "ecl_aset1_unsafe(#0,#1,#2)")
+(def-inline si:elt-set :unsafe (vector t t) t "ecl_aset_unsafe(#0,fixint(#1),#2)")
+(def-inline si:elt-set :unsafe (vector fixnum t) t "ecl_aset_unsafe(#0,#1,#2)")
 
 (def-inline length :always (t) :fixnum "ecl_length(#0)")
 (def-inline length :unsafe (vector) :fixnum "(#0)->vector.fillp")
