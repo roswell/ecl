@@ -166,46 +166,6 @@
         (error "Internal error: illegal number of arguments in ~A" form))))
   (c1form-add-info-loop form dependents))
 
-(defun c1form-replace-with (dest new-fields)
-  ;; Side effects might have to be propagated to the parents
-  ;; but currently we do not allow moving forms with side effects
-  (when (c1form-side-effects new-fields)
-    (baboon "Attempted to move a form with side-effects"))
-  ;; We have to relocate the children nodes of NEW-FIELDS in
-  ;; the new branch. This implies rewriting the parents chain,
-  ;; but only for non-location nodes (these are reused).
-  (unless (eq (c1form-name new-fields) 'LOCATION)
-    (rplacd (c1form-parents new-fields)
-            (c1form-parents dest)))
-  ;; Remaining flags are just copied
-  (setf (c1form-type dest) (c1form-type new-fields)
-        (c1form-sp-change dest) (c1form-sp-change new-fields)
-        (c1form-side-effects dest) (c1form-side-effects new-fields)
-        (c1form-volatile dest) (c1form-volatile new-fields)
-        (c1form-name dest) 'VALUES
-        (c1form-args dest) (list (list new-fields))))
-
-(defun c1form-replace-entirely (dest new-fields)
-  ;; Similar to the previous one, but we can really overwrite
-  ;; all fields instead of enclosing into a different form
-  (when (c1form-side-effects new-fields)
-    (baboon "Attempted to move a form with side-effects"))
-  ;; Replacing the inheritance chain is a bit more complicated
-  ;; because we want to preserve the "CAR" of the new-fields,
-  ;; which is used by its children
-  (let* ((new (car (c1form-parents new-fields)))
-	 (old (cdr (c1form-parents dest))))
-    ;; Remaining flags are just copied
-    (setf (c1form-name dest) (c1form-name new-fields)
-	  (c1form-parents dest) (nconc (rplaca new dest) old)
-	  (c1form-type dest) (c1form-type new-fields)
-	  (c1form-local-vars dest) (c1form-local-vars new-fields)
-	  (c1form-sp-change dest) (c1form-sp-change new-fields)
-	  (c1form-side-effects dest) (c1form-side-effects new-fields)
-	  (c1form-volatile dest) (c1form-volatile new-fields)
-	  (c1form-args dest) (c1form-args new-fields)
-	  (c1form-env dest) (c1form-env new-fields))))
-
 (defun copy-c1form (form)
   (copy-structure form))
 
@@ -302,3 +262,50 @@
           (*current-c2form* ,form)
           (*cmp-env* (c1form-env ,form)))
      ,@body))
+
+(defun relocate-parents-list (dest new-fields)
+  (let* ((old (c1form-parents dest))
+	 (first-cons (or (c1form-parents new-fields) old)))
+    (setf (car first-cons) dest
+	  (cdr first-cons) (rest old)
+	  (c1form-parents new-fields) nil
+	  (c1form-parents dest) first-cons)))
+
+(defun c1form-replace-with (dest new-fields)
+  ;; Side effects might have to be propagated to the parents
+  ;; but currently we do not allow moving forms with side effects
+  (when (c1form-side-effects new-fields)
+    (baboon :format-control "Attempted to move a form with side-effects"))
+  ;; The following protocol is only valid for VAR references.
+  (unless (eq (c1form-name dest) 'VAR)
+    (baboon :format-control "Cannot replace forms other than VARs:~%~4I~A" dest))
+  ;; We have to relocate the children nodes of NEW-FIELDS in
+  ;; the new branch. This implies rewriting the parents chain,
+  ;; but only for non-location nodes (these are reused). The only
+  ;; exceptions are forms that can be fully replaced
+  (case (c1form-name new-fields)
+    (LOCATION)
+    (VAR
+     (let ((var (c1form-arg 0 new-fields)))
+       ;; If this is the first time we replace a reference with this one
+       ;; then we have to remove it from the read nodes of the variable
+       (when (c1form-parents new-fields)
+	 (delete-from-read-nodes var new-fields))
+       ;; ... and then add the new node
+       (relocate-parents-list dest new-fields)
+       (add-to-read-nodes var dest)))
+    (t
+     (relocate-parents-list dest new-fields)))
+  ;; Remaining flags are just copied
+  (setf (c1form-name dest)          (c1form-name new-fields)
+	(c1form-local-vars dest)    (c1form-local-vars new-fields)
+        (c1form-type dest)          (c1form-type new-fields)
+        (c1form-sp-change dest)     (c1form-sp-change new-fields)
+        (c1form-side-effects dest)  (c1form-side-effects new-fields)
+        (c1form-volatile dest)      (c1form-volatile new-fields)
+        (c1form-args dest)          (c1form-args new-fields)
+	(c1form-env dest)           (c1form-env new-fields)
+	(c1form-form dest)          (c1form-form new-fields)
+	(c1form-toplevel-form dest) (c1form-toplevel-form new-fields)
+	(c1form-file dest)          (c1form-file new-fields)
+	(c1form-file-position dest) (c1form-file-position new-fields)))
