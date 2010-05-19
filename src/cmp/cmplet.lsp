@@ -120,7 +120,7 @@
   (and-form-type (var-type var) form (var-name var) :unsafe "In LET body")
   (let ((form-type (c1form-primary-type form)))
     (setf (var-type var) form-type)
-    (update-var-type var form-type rest-forms)))
+    (update-variable-type var form-type)))
 
 (defun c1let-unused-variable-p (var form)
   ;; * (let ((v2 e2)) e3 e4) => (let () e3 e4)
@@ -164,28 +164,16 @@
     (nsubst-var var form)
     t))
 
-(defun update-var-type (var type x)
-  (cond ((consp x)
-	 (dolist (e x)
-	   (update-var-type var type e)))
-	((not (c1form-p x)))
-	((eq (c1form-name x) 'VAR)
-	 (when (eq var (c1form-arg 0 x))
-	   (setf (c1form-type x) (type-and (c1form-primary-type x) type))))
-	(t
-	 (update-var-type var type (c1form-args x)))))
-
 (defun read-only-variable-p (v other-decls)
   (dolist (i other-decls nil)
     (when (and (eq (car i) :READ-ONLY)
 	       (member v (rest i)))
       (return t))))
 
-(defun update-variable-type (var form)
+(defun c2let-update-variable-type (var form)
   (unless (or (var-set-nodes var)
               (unboxed var))
-    (setf (var-type var)
-          (type-and (var-type var) (c1form-primary-type form)))))
+    (update-variable-type var (c1form-type form))))
 
 (defun c2let (vars forms body
                    &aux (block-p nil) (bindings nil)
@@ -197,7 +185,7 @@
 
   ;; FIXME! Until we switch on the type propagation phase we do
   ;; this little optimization here
-  (mapc 'update-variable-type vars forms)
+  (mapc 'c2let-update-variable-type vars forms)
 
   ;; Allocation is needed for:
   ;; 1. each variable which is LOCAL and which is not REPLACED
@@ -333,7 +321,7 @@
 
   ;; FIXME! Until we switch on the type propagation phase we do
   ;; this little optimization here
-  (mapc 'update-variable-type vars forms)
+  (mapc 'c2let-update-variable-type vars forms)
 
   (do ((vl vars (cdr vl))
        (fl forms (cdr fl))
@@ -440,28 +428,24 @@
 ;; exactly one occurrence of var is present in forms
 (defun delete-c1forms (form)
   (flet ((eliminate-references (form)
-           (if (eq (c1form-name form) 'VAR)
-               (let ((var (c1form-arg 0 form)))
-                 (when var
-                   (decf (var-ref var))
-                   (setf (var-ref var) (1- (var-ref var))
-                         (var-read-nodes var)
-                         (delete form (var-read-nodes var))))))))
+           (when (eq (c1form-name form) 'VAR)
+	     (let ((var (c1form-arg 0 form)))
+	       (when var
+		 (delete-from-read-nodes var form))))))
     (traverse-c1form-tree form #'eliminate-references)))
 
 (defun nsubst-var (var form)
   (when (var-set-nodes var)
     (baboon :format-control "Cannot replace a variable that is to be changed"))
   (when (var-functions-reading var)
-    (baboon :format-control "Cannot replace a variable that is closed over"))
-  (dolist (where (var-read-nodes var))
+    (baboon :format-control "Cannot replace a variable that forms part of a closure"))
+  (dolist (where (var-read-forms var))
     (unless (and (eql (c1form-name where) 'VAR)
                  (eql (c1form-arg 0 where) var))
       (baboon :format-control "VAR-READ-NODES are only C1FORMS of type VAR"))
+    (delete-from-read-nodes var where)
     (c1form-replace-with where form))
-  (setf (var-read-nodes var) nil
-        (var-ref var) 0
-        (var-ignorable var) t))
+  (setf (var-ignorable var) 0))
 
 (defun member-var (var list)
   (let ((kind (var-kind var)))

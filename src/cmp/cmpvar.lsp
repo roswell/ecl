@@ -22,14 +22,14 @@
     var))
 
 (defun var-referenced-in-form-list (var form-list)
-  (dolist (f form-list nil)
-    (when (var-referenced-in-form var f)
-      (return t))))
+  (and (var-read-nodes var)
+       (loop for f in form-list
+	  thereis (var-referenced-in-form var f))))
 
 (defun var-changed-in-form-list (var form-list)
-  (dolist (f form-list nil)
-    (when (var-changed-in-form var f)
-      (return t))))
+  (and (var-set-nodes var)
+       (loop for f in form-list
+	  thereis (var-changed-in-form var f))))
 
 ;;; FIXME! VAR-REFERENCED-IN-FORM and VAR-CHANGED-IN-FORM are too
 ;;; pessimistic. One should check whether the functions reading/setting the
@@ -47,7 +47,7 @@
       (let ((loc (var-loc var)))
 	(when (var-p loc)
 	  (var-referenced-in-forms loc form)))
-      (or (find-node-in-list form (var-read-nodes var))
+      (or (find-form-in-node-list form (var-read-nodes var))
 	  (var-functions-reading var))))
 
 (defun var-changed-in-form (var form)
@@ -57,13 +57,54 @@
 	(let ((loc (var-loc var)))
 	  (when (var-p loc)
 	    (var-changed-in-form loc form)))
-	(or (find-node-in-list form (var-set-nodes var))
+	(or (find-form-in-node-list form (var-set-nodes var))
 	    (if (or (eq kind 'SPECIAL) (eq kind 'GLOBAL))
 		(c1form-sp-change form)
 		(var-functions-setting var))))))
 
+(defun update-variable-type (var orig-type)
+  ;; FIXME! Refuse to update type of variables that are modified
+  (when (var-set-nodes var)
+    (return-from update-variable-type))
+  (let ((type (type-and (var-type var) orig-type)))
+    (if (null type)
+	(cmpwarn "Variable assigned a value incompatible with its type declaration.~%Variable: ~A~%Expected type: ~A~%Value type: ~A"
+		 (var-name var)
+		 (var-type var)
+		 orig-type)
+	(loop for form in (var-read-forms var)
+	   when (and (eq (c1form-name form) 'VAR)
+		     (eq var (c1form-arg 0 form)))
+	   do (setf (c1form-type form) type)
+	   finally (setf (var-type var) type)))))
+
+(defun var-read-forms (var)
+  (mapcar #'first (var-read-nodes var)))
+
+(defun assert-var-ref-value (var)
+  (unless (let ((ref (var-ref var)))
+	    (or (> ref (/ most-positive-fixnum 2))
+		(= (var-ref var) (+ (length (var-read-nodes var))
+				    (length (var-set-nodes var))))))
+    (baboon :format-control "Number of references in VAR ~A unequal to references list"
+	    :format-arguments (list var))))
+
+(defun assert-var-not-ignored (var)
+  (when (let ((x (var-ignorable var))) (and x (minusp x)))
+    (cmpwarn "Variable ~A, declared as IGNORE, found in a lisp form."
+	     (var-name var))
+    (setf (var-ignorable var) nil)))
+
+(defun delete-from-read-nodes (var form)
+  (assert-var-ref-value var)
+  (setf (var-ref var) (1- (var-ref var))
+	(var-read-nodes var) (delete-form-from-node-list form (var-read-nodes var))))
+
 (defun add-to-read-nodes (var form)
-  (push form (var-read-nodes var))
+  (assert-var-ref-value var)
+  (assert-var-not-ignored var)
+  (setf (var-ref var) (1+ (var-ref var))
+	(var-read-nodes var) (add-form-to-node-list form (var-read-nodes var)))
   (when *current-function*
     (unless (eq *current-function* (var-function var))
       (pushnew *current-function* (var-functions-reading var))
@@ -71,7 +112,10 @@
   form)
 
 (defun add-to-set-nodes (var form)
-  (push form (var-set-nodes var))
+  (assert-var-ref-value var)
+  (assert-var-not-ignored var)
+  (setf (var-ref var) (1+ (var-ref var))
+	(var-set-nodes var) (add-form-to-node-list form (var-set-nodes var)))
   ;;(push form (var-read-nodes var))
   (when *current-function*
     (unless (eq *current-function* (var-function var))
@@ -139,7 +183,7 @@
 	   (make-var :name name :type type :loc 'OBJECT
 		     :kind 'LEXICAL ; we rely on check-vref to fix it
                      :ignorable ignorable
-		     :ref (or ignorable 0))))))
+		     :ref 0)))))
 
 (defun check-vref (var)
   (when (eq (var-kind var) 'LEXICAL)
@@ -154,17 +198,12 @@
 		:OBJECT)))))
 
 (defun c1var (name)
-  (let ((vref (c1vref name)))
-    (unless (var-p vref)
-      ;; This might be the case if there is a symbol macrolet
-      (return-from c1var vref))
-    (let ((output (make-c1form* 'VAR :type (var-type vref)
-				:args vref)))
-      (add-to-read-nodes vref output)
-      output)
-    #+nil
-    (add-to-read-nodes vref (make-c1form* 'VAR :type (var-type vref)
-					  :args vref))))
+  (let* ((var (c1vref name))
+	 (output (make-c1form* 'VAR
+			       :type (var-type var)
+			       :args var)))
+      (add-to-read-nodes var output)
+      output))
 
 (defun make-lcl-var (&key rep-type (type 'T))
   (unless rep-type
@@ -189,9 +228,8 @@
 	   ;; symbol-macrolet
 	   (baboon))
 	  (t
-           (when (minusp (var-ref var)) ; IGNORE.
-             (cmpwarn "The ignored variable ~s is used." name)
-             (setf (var-ref var) 0))
+	   (assert-var-ref-value var)
+	   (assert-var-not-ignored var)
 	   (when (eq (var-kind var) 'LEXICAL)
 	     (cond (ccb (setf (var-ref-clb var) nil ; replace a previous 'CLB
 			      (var-ref-ccb var) t
@@ -199,7 +237,6 @@
 			      (var-loc var) 'OBJECT))
 		   (clb (setf (var-ref-clb var) t
 			      (var-loc var) 'OBJECT))))
-           (incf (var-ref var))
 	   var))))
 
 (defun push-vars (v)

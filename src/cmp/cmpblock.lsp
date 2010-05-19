@@ -84,24 +84,26 @@
       (unless blk
 	(cmperr "The block ~s is undefined." name))
       (let* ((val (c1expr (second args)))
-	     (var (blk-var blk))
+	     (var nil)
 	     (type T))
 	(cond (ccb (setf (blk-ref-ccb blk) t
 			 type 'CCB
+			 var (blk-var blk)
 			 (var-kind var) 'CLOSURE
-			 (var-ref-ccb var) T)
-		   (incf (var-ref var)))
+			 (var-ref-ccb var) T))
 	      (clb (setf (blk-ref-clb blk) t
-			 type 'CLB)
-		   (incf (var-ref var)))
-	      (unw (setf type 'UNWIND-PROTECT)
-		   (incf (var-ref var))))
+			 type 'CLB
+			 var (blk-var blk)))
+	      (unw (setf type 'UNWIND-PROTECT
+			 var (blk-var blk))))
 	(incf (blk-ref blk))
 	(setf (blk-type blk) (type-or (blk-type blk) (c1form-primary-type val)))
-	(add-to-read-nodes var (make-c1form* 'RETURN-FROM :type 'T
-					     :args blk type val))))))
+	(let ((output (make-c1form* 'RETURN-FROM :type 'T
+				    :args blk type val var)))
+	  (when var (add-to-read-nodes var output))
+	  output)))))
 
-(defun c2return-from (blk type val)
+(defun c2return-from (blk type val var)
   (case type
     (CCB
      (let ((*destination* 'VALUES)) (c2expr* val))

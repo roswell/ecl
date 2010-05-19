@@ -34,7 +34,7 @@
     (PROGN		body :pure)
     (PROGV		symbols values form :side-effects)
     (TAGBODY		tag-var tag-body :pure)
-    (RETURN-FROM	blk-var return-type value :side-effects)
+    (RETURN-FROM	blk-var return-type value variable-or-nil :side-effects)
     (FUNCALL		fun-value (arg-value*) :side-effects)
     (CALL-LOCAL		obj-fun (arg-value*) :side-effects)
     (CALL-GLOBAL	fun-name (arg-value*))
@@ -167,16 +167,16 @@
   (c1form-add-info-loop form dependents))
 
 (defun c1form-replace-with (dest new-fields)
+  ;; Side effects might have to be propagated to the parents
+  ;; but currently we do not allow moving forms with side effects
+  (when (c1form-side-effects new-fields)
+    (baboon "Attempted to move a form with side-effects"))
   ;; We have to relocate the children nodes of NEW-FIELDS in
   ;; the new branch. This implies rewriting the parents chain,
   ;; but only for non-location nodes (these are reused).
   (unless (eq (c1form-name new-fields) 'LOCATION)
     (rplacd (c1form-parents new-fields)
             (c1form-parents dest)))
-  ;; Side effects might have to be propagated to the parents
-  ;; but currently we do not allow moving forms with side effects
-  (when (c1form-side-effects new-fields)
-    (baboon "Attempted to move a form with side-effects"))
   ;; Remaining flags are just copied
   (setf (c1form-type dest) (c1form-type new-fields)
         (c1form-sp-change dest) (c1form-sp-change new-fields)
@@ -184,6 +184,27 @@
         (c1form-volatile dest) (c1form-volatile new-fields)
         (c1form-name dest) 'VALUES
         (c1form-args dest) (list (list new-fields))))
+
+(defun c1form-replace-entirely (dest new-fields)
+  ;; Similar to the previous one, but we can really overwrite
+  ;; all fields instead of enclosing into a different form
+  (when (c1form-side-effects new-fields)
+    (baboon "Attempted to move a form with side-effects"))
+  ;; Replacing the inheritance chain is a bit more complicated
+  ;; because we want to preserve the "CAR" of the new-fields,
+  ;; which is used by its children
+  (let* ((new (car (c1form-parents new-fields)))
+	 (old (cdr (c1form-parents dest))))
+    ;; Remaining flags are just copied
+    (setf (c1form-name dest) (c1form-name new-fields)
+	  (c1form-parents dest) (nconc (rplaca new dest) old)
+	  (c1form-type dest) (c1form-type new-fields)
+	  (c1form-local-vars dest) (c1form-local-vars new-fields)
+	  (c1form-sp-change dest) (c1form-sp-change new-fields)
+	  (c1form-side-effects dest) (c1form-side-effects new-fields)
+	  (c1form-volatile dest) (c1form-volatile new-fields)
+	  (c1form-args dest) (c1form-args new-fields)
+	  (c1form-env dest) (c1form-env new-fields))))
 
 (defun copy-c1form (form)
   (copy-structure form))
@@ -204,10 +225,25 @@
 (defun location-primary-type (form)
   (c1form-primary-type form))
 
-(defun find-node-in-list (home-node list)
-  (flet ((parent-node-p (node presumed-child)
-           (member node (c1form-parents presumed-child))))
-    (member home-node list :test #'parent-node-p)))
+(defun find-form-in-node-list (form list)
+  (let ((v1 (loop with form-parents = (c1form-parents form)
+	       for presumed-child-parents in list
+	       thereis (tailp form-parents presumed-child-parents)))
+	(v2 (loop for presumed-child-parents in list
+	       thereis (member form presumed-child-parents :test #'eq))))
+    (unless (eq (and v1 t) (and v2 t))
+      (baboon :format-control "Mismatch between FIND-FORM-IN-NODE-LISTs"))
+    v1))
+
+(defun add-form-to-node-list (form list)
+  (list* (c1form-parents form) list))
+
+(defun delete-form-from-node-list (form list)
+  (let ((parents (c1form-parents form)))
+    (unless (member parents list)
+      (baboon :format-control "Unable to find C1FORM~%~4I~A~%in node list~%~4I~A"
+	      :format-arguments (list form list)))
+    (delete parents list)))
 
 (defun traverse-c1form-tree (tree function)
   (cond ((consp tree)

@@ -61,7 +61,6 @@
 	   (let ((funob (local-function-ref fun t)))
 	     (if funob
 		 (let* ((var (fun-var funob)))
-		   (incf (var-ref var))
 		   (add-to-read-nodes var (make-c1form* 'VAR :args var)))
 		 (make-c1form* 'FUNCTION
                                :type 'FUNCTION
