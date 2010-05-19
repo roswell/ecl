@@ -181,6 +181,12 @@
 	       (member v (rest i)))
       (return t))))
 
+(defun update-variable-type (var form)
+  (unless (or (var-set-nodes var)
+              (unboxed var))
+    (setf (var-type var)
+          (type-and (var-type var) (c1form-primary-type form)))))
+
 (defun c2let (vars forms body
                    &aux (block-p nil) (bindings nil)
                    initials
@@ -188,6 +194,10 @@
 		   (*env* *env*)
                    (*env-lvl* *env-lvl*) env-grows)
   (declare (type boolean block-p))
+
+  ;; FIXME! Until we switch on the type propagation phase we do
+  ;; this little optimization here
+  (mapc 'update-variable-type vars forms)
 
   ;; Allocation is needed for:
   ;; 1. each variable which is LOCAL and which is not REPLACED
@@ -320,6 +330,11 @@
 		    (*env* *env*)
 		    (*env-lvl* *env-lvl*) env-grows)
   (declare (type boolean block-p))
+
+  ;; FIXME! Until we switch on the type propagation phase we do
+  ;; this little optimization here
+  (mapc 'update-variable-type vars forms)
+
   (do ((vl vars (cdr vl))
        (fl forms (cdr fl))
        (var) (form) (kind))
