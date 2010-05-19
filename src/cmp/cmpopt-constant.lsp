@@ -22,3 +22,10 @@
              (or (member head '(IF OR AND NULL NOT PROGN))
                  (and (get-sysprop head 'pure)
                       (inline-possible head)))))))
+
+(defun extract-constant-value (form &optional failure)
+  (if (constant-expression-p form)
+      (handler-case (cmp-eval form)
+        (error (c) failure))
+      failure))
+
