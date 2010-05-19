@@ -13,9 +13,40 @@
 
 (in-package "COMPILER")
 
+(defun valid-array-index-p (x)
+  (typep x 'ext:array-index))
+
 ;;;
 ;;; MAKE-ARRAY
 ;;;
+
+(defun guess-array-element-type (element-type)
+  (if (and (setf element-type (extract-constant-value element-type))
+           (known-type-p element-type))
+      (upgraded-array-element-type element-type)
+      '*))
+
+(defun guess-array-dimensions-type (orig-dimensions &aux dimensions)
+  (and (consp orig-dimensions)
+       (eq (first dimensions) 'LIST)
+       (let ((l (list-length orig-dimensions)))
+         (when (and l (< -1 l array-rank-limit))
+           (return-from guess-array-dimensions-type
+             (make-list (1- l) :initial-element '*)))))
+  (let ((dimensions (extract-constant-value orig-dimensions :failed)))
+    (cond ((eq dimensions ':failed)
+           '*)
+          ((valid-array-index-p dimensions)
+           (list dimensions))
+          ((and (listp dimensions)
+                (let ((rank (list-length dimensions)))
+                  (or (numberp rank)
+                      (< -1 rank array-rank-limit)
+                      (every #'valid-array-index dimensions))))
+           dimensions)
+          (t
+           (cmpwarn "The first argument to MAKE-ARRAY~%~A~%is not a valid set of dimensions" orig-dimensions)
+           '*))))
 
 (define-compiler-macro make-array (&whole form dimensions &key (element-type t)
 					  (initial-element nil initial-element-supplied-p)
@@ -27,27 +58,28 @@
   ;; is no speed, debug or space reason not to do it, unless the user
   ;; specifies not to inline MAKE-ARRAY, but in that case the compiler
   ;; macro should not be used.
-  (unless (or initial-element-supplied-p
-	      initial-contents-supplied-p)
-    ;; If the type is known and we can assume it will not change, we
-    ;; replace it with the upgraded form.
-    (when (and (constantp element-type env)
-	       (policy-assume-types-dont-change env))
-      (let ((new-type (cmp-eval element-type)))
-	(when (known-type-p new-type)
-	  (setf element-type `',(upgraded-array-element-type new-type)))))
-    ;; Finally, we choose between making a vector or making a general array.
-    ;; It only saves some time, since MAKE-PURE-ARRAY will call MAKE-VECTOR
-    ;; if a one-dimensional array is to be created.
-    (let ((function 'si::make-pure-array))
-      (when (constantp dimensions env)
-	(let ((d (cmp-eval dimensions)))
-	  (when (or (integerp d) (and (listp d) (= (length d) 1) (setf d (first d))))
-	    (setf function 'si::make-vector
-		  dimensions `',d)))
-	(setf form
-	      `(,function ,element-type ,dimensions ,adjustable ,fill-pointer
-			  ,displaced-to ,displaced-index-offset)))))
+  (let* ((dimensions-type (guess-array-dimensions-type dimensions))
+         (guessed-element-type (guess-array-element-type element-type)))
+    (unless (or initial-element-supplied-p
+                initial-contents-supplied-p)
+      ;; If the type is known and we can assume it will not change, we
+      ;; replace it with the upgraded form.
+      (unless (eq guessed-element-type '*)
+        (setf element-type `',guessed-element-type))
+      ;; Finally, we choose between making a vector or making a general array.
+      ;; It only saves some time, since MAKE-PURE-ARRAY will call MAKE-VECTOR
+      ;; if a one-dimensional array is to be created.
+      (let ((function 'si::make-pure-array))
+        (when (and (listp dimensions-type)
+                   (null (rest dimensions-type))
+                   (integerp (first dimensions-type)))
+          (setf function 'si::make-vector
+                dimensions (first dimensions-type)))
+        (setf form
+              `(,function ,element-type ,dimensions ,adjustable ,fill-pointer
+                          ,displaced-to ,displaced-index-offset)))
+      (setf form `(the (array ,guessed-element-type ,dimensions-type)
+                    ,form))))
   form)
 
 ;;;
@@ -110,13 +142,13 @@
       form))
 
 (defun expand-aset (array indices value env)
-  (with-clean-symbols (%array %value)
-    (let ((indices (expand-row-major-index '%array indices env)))
-      `(let ((%value ,value)
-             (%array ,array))
-       (declare (:read-only %array %value)
+  (ext:with-unique-names (%array %value %index)
+    `(let* ((,%value ,value)
+            (,%array ,array)
+            (,%index ,(expand-row-major-index %array indices env)))
+       (declare (:read-only ,%array ,%value ,%index)
                 (optimize (safety 0)))
-       (si::row-major-aset %array ,indices %value)))))
+       (si::row-major-aset ,%array ,%index ,%value))))
 
 (defun expand-zero-dim-index-check (a env)
   (if (policy-type-assertions env)
