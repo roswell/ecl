@@ -105,7 +105,7 @@
                             (:read-only index dimension))
                    (cond ((< index dimension)
                           (sys::fill-pointer-set vector (the fixnum (+ 1 index)))
-                          (sys::aset value vector index)
+                          (sys::aset vector index value)
                           index)
                          (t ,(if extend
                                `(vector-push-extend value vector ,@(cddr args))
@@ -135,20 +135,25 @@
        (row-major-aref %array
                        ,(expand-row-major-index '%array indices env)))))
 
-(define-compiler-macro si::aset (&whole form value array &rest indices
+(define-compiler-macro si::aset (&whole form array &rest indices-and-value
                                         &environment env)
-  (if (policy-open-code-aref/aset env)
-      (expand-aset array indices value env)
-      form))
+  (cond ((null indices-and-value)
+	 (cmpwarn "Too few arguments to SI::ASET form~%~4I~A"
+		  form)
+	 form)
+	((policy-open-code-aref/aset env)
+	 (let* ((indices (butlast indices-and-value))
+		(value (first (last indices-and-value))))
+	   (expand-aset array indices value env)))
+	(t
+	 form)))
 
 (defun expand-aset (array indices value env)
-  (ext:with-unique-names (%array %value %index)
-    `(let* ((,%value ,value)
-            (,%array ,array)
-            (,%index ,(expand-row-major-index %array indices env)))
-       (declare (:read-only ,%array ,%value ,%index)
+  (ext:with-unique-names (%array)
+    `(let* ((,%array ,array))
+       (declare (:read-only ,%array)
                 (optimize (safety 0)))
-       (si::row-major-aset ,%array ,%index ,%value))))
+       (si::row-major-aset ,%array ,(expand-row-major-index %array indices env) ,value))))
 
 (defun expand-zero-dim-index-check (a env)
   (if (policy-type-assertions env)

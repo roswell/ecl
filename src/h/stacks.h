@@ -41,7 +41,7 @@ typedef struct bds_bd {
 } *bds_ptr;
 
 #define	ecl_bds_check(env) \
-	(ecl_unlikely(env->bds_top >= env->bds_limit)? ecl_bds_overflow() : (void)0)
+	(ecl_unlikely(env->bds_top >= env->bds_limit)? (ecl_bds_overflow(),1) : 0)
 
 #define ECL_MISSING_SPECIAL_BINDING (~((cl_index)0))
 

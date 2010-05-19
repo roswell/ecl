@@ -97,6 +97,7 @@ Returns a list whose N-th element is the length of the N-th dimension of ARRAY."
   (do ((i (array-rank array))
        (d nil))
       ((= i 0) d)
+    (declare (fixnum i))
     (setq i (1- i))
     (setq d (cons (array-dimension array i) d))))
 
@@ -269,7 +270,7 @@ pointer as the value."
          (vector (the vector vector)))
     (declare (optimize (safety 0)))
     (cond ((< fp (array-total-size vector))
-           (sys:aset new-element vector fp)
+           (sys:aset vector fp new-element)
            (sys:fill-pointer-set vector (the ext:array-index (1+ fp)))
 	   fp)
 	  (t nil))))
@@ -290,7 +291,7 @@ Returns the new value of the fill-pointer."
                       (list (+ d (or extension (max d 4))))
                       :element-type (array-element-type vector)
                       :fill-pointer fp))
-      (sys:aset new-element vector fp)
+      (sys:aset vector fp new-element)
       (sys:fill-pointer-set vector (1+ fp))
       fp)))
 

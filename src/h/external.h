@@ -336,7 +336,7 @@ extern ECL_API cl_object cl_fill_pointer(cl_object a);
 extern ECL_API cl_object si_fill_pointer_set(cl_object a, cl_object fp);
 extern ECL_API cl_object si_replace_array(cl_object old_obj, cl_object new_obj);
 extern ECL_API cl_object cl_aref _ARGS((cl_narg narg, cl_object x, ...));
-extern ECL_API cl_object si_aset _ARGS((cl_narg narg, cl_object v, cl_object x, ...));
+extern ECL_API cl_object si_aset _ARGS((cl_narg narg, cl_object x, ...));
 extern ECL_API cl_object si_make_pure_array(cl_object etype, cl_object dims, cl_object adj, cl_object fillp, cl_object displ, cl_object disploff);
 extern ECL_API cl_object si_fill_array_with_elt(cl_object array, cl_object elt, cl_object start, cl_object end);
 

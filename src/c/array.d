@@ -263,10 +263,11 @@ ecl_aref1(cl_object x, cl_index index)
 
 		(si:aset value array dim0 ... dimN)
 */
-@(defun si::aset (v x &rest dims)
+@(defun si::aset (x &rest dims)
 @ {
 	cl_index i, j;
 	cl_index r = narg - 2;
+	cl_object v;
 	switch (type_of(x)) {
 	case t_array:
 		if (ecl_unlikely(r != x->array.rank))
@@ -292,6 +293,7 @@ ecl_aref1(cl_object x, cl_index index)
 	default:
                 FEwrong_type_nth_arg(@[si::aset], 1, x, @[array]);
 	}
+	v = cl_va_arg(dims);
 	@(return ecl_aset_unsafe(x, j, v))
 } @)
 

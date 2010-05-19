@@ -102,6 +102,7 @@
 (def-inline aref :unsafe ((array fixnum) fixnum) :fixnum
  "(#0)->array.self.fix[#1]")
 
+#|
 (def-inline si:aset :unsafe (t t t t) t
  "@0;ecl_aset_unsafe(#1,fix(#2)*(#1)->array.dims[1]+fix(#3),#0)")
 (def-inline si:aset :unsafe (t t fixnum fixnum) t
@@ -143,6 +144,7 @@
  "(#1)->array.self.fix[#2]= #0")
 (def-inline si:aset :unsafe (fixnum (array bit) fixnum) :fixnum
  "ecl_aset_bv(#1,#2,#0)")
+|#
 
 (def-inline row-major-aref :always (t t) t "ecl_aref(#0,fixint(#1))")
 (def-inline row-major-aref :always (t fixnum) t "ecl_aref(#0,#1)")
