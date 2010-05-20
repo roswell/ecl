@@ -952,7 +952,9 @@
     si::set-documentation si::expand-set-documentation
     si::packages-iterator
     si::pprint-logical-block-helper si::pprint-pop-helper
-    si::make-seq-iterator si::seq-iterator-ref si::seq-iterator-set si::seq-iterator-next
+    si::make-seq-iterator si::seq-iterator-ref
+    si::seq-iterator-set si::seq-iterator-next
+    si::sequence-count
     si::structure-type-error si::define-structure
     si::coerce-to-list si::coerce-to-vector
     si::fill-array-with-seq

@@ -908,6 +908,7 @@
 (proclamation si::seq-iterator-next (sequence t) t :reader)
 (proclamation si::sequence-start-end (t sequence sequence-index (or null sequence-index))
               (values fixnum fixnum) :no-side-effects)
+(proclamation si::sequence-count ((or null integer)) fixnum :no-side-effects)
 
 ;;;
 ;;; 18. HASH TABLES
