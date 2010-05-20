@@ -379,12 +379,26 @@
 	:test-not #'unsafe-funcall1 :key key))
 
 
-(defseq position () nil nil t
-  ;; Both runs
-  `(do (,iterate-i)
-       (,endp-i nil)
-     (declare (fixnum i))
-     (when ,satisfies-the-test (return i))))
+(defun position (item sequence &key from-end (start 0) end key test test-not)
+  (with-start-end (start end sequence)
+    (with-tests (test test-not key)
+      (let ((output nil))
+        (do-sequence (elt sequence start end
+                      :output output :index index :specialize t)
+          (when (compare item (key elt))
+            (unless from-end
+              (return index))
+            (setf output index)))))))
+
+(defun position-if (predicate sequence &key from-end (start 0) end key)
+  (position (si::coerce-to-function predicate) sequence
+            :from-end from-end :start start :end end
+            :test #'unsafe-funcall1 :key key))
+
+(defun position-if-not (predicate sequence &key from-end (start 0) end key)
+  (position (si::coerce-to-function predicate) sequence
+            :from-end from-end :start start :end end
+            :test-not #'unsafe-funcall1 :key key))
 
 
 (defun remove-duplicates (sequence
