@@ -27,6 +27,20 @@
         ((vectorp sequence) (list 'vector (array-element-type sequence)))
         (t (error "~S is not a sequence." sequence))))
 
+(defun sequence-count (count)
+  (cond ((null count)
+         most-positive-fixnum)
+        ((fixnump count)
+         count)
+        ((integerp count)
+         most-positive-fixnum)
+        (t
+         (error 'simple-type-error
+                :datum count
+                :expected-type 'integer
+                :format-control "The value of :COUNT is not a valid counter~%~4I~A"
+                :format-arguments (list count)))))
+
 (defun test-error()
   (declare (si::c-local))
   (error "both test and test-not are supplied"))
@@ -341,19 +355,46 @@
            (t (setf (elt newseq i) ,x)))))
 
 
-(defseq nsubstitute (newitem) t nil t
-  ;; Both runs
-  `(do (,iterate-i ,kount-0)
-       (,endp-i sequence)
-     (declare (fixnum i k))
-     (when (and ,within-count ,satisfies-the-test)
-       (if ,ith-cons
-           (setf (car ,ith-cons) newitem)
-           (setf (elt sequence i) newitem))
-       ,kount-up)))
+(defun nsubstitute (new old sequence &key (start 0) end from-end count
+                    key test test-not)
+  (with-start-end (start end sequence)
+    (with-tests (test test-not key)
+      (with-count (%count count :output sequence)
+        (if from-end
+            (if (listp sequence)
+                (nreverse
+                 (let ((l (length sequence)))
+                   (nsubstitute new old (nreverse sequence)
+                                :start (- l end) :end (- l start)
+                                :key key :test test :test-not test-not
+                                :count count)))
+                (do-vector (elt sequence start end :setter elt-set
+                                :from-end t :output sequence)
+                  (when (compare old (key elt))
+                    (elt-set new)
+                    (when (zerop (decf %count))
+                      (return sequence)))))
+            (do-sequence (elt sequence start end :setter elt-set
+                              :output sequence :specialize t)
+              (when (compare old (key elt))
+                (elt-set new)
+                (when (zerop (decf %count))
+                  (return sequence)))))))))
+
+(defun nsubstitute-if (new predicate sequence
+                       &key (start 0) end from-end count key)
+  (nsubstitute new predicate sequence :key key :test #'unsafe-funcall1
+               :start start :end end :from-end from-end :count count
+               :key key))
+
+(defun nsubstitute-if-not (new predicate sequence
+                           &key (start 0) end from-end count key)
+  (nsubstitute new predicate sequence :key key :test-not #'unsafe-funcall1
+               :start start :end end :from-end from-end :count count
+               :key key))
 
 
-(defun find (item sequence &key from-end (start 0) end key test test-not)
+(defun find (item sequence &key (start 0) end from-end key test test-not)
   (with-start-end (start end sequence)
     (with-tests (test test-not key)
       (if from-end

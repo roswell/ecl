@@ -61,6 +61,9 @@ ECL 10.5.1:
    slot inlining would be activated by a SPEED of 1, but only if DEBUG and
    SAFETY are below 2.
 
+ - Important performance improvements in sequence functions, such as
+   FIND, POSITION, COUNT, NSUBSTITUTE and their IF/IF-NOT variants.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
