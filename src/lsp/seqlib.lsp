@@ -315,8 +315,8 @@
 	 :test #'unsafe-funcall1 :key key))
 
 (defun count-if-not (predicate sequence &key from-end (start 0) end key)
-  (count (si::coerce-to-function predicate) sequence
-	 :from-end from-end :start start :end end
+  (count (si::coerce-to-function predicate)
+	 sequence :from-end from-end :start start :end end
 	 :test-not #'unsafe-funcall1 :key key))
 
 (defseq internal-count () t nil nil
@@ -353,12 +353,30 @@
        ,kount-up)))
 
 
-(defseq find () nil nil t
-  ;; Both runs
-  `(do (,iterate-i)
-       (,endp-i nil)
-     (declare (fixnum i))
-     (when ,satisfies-the-test (return ,x))))
+(defun find (item sequence &key from-end (start 0) end key test test-not)
+  (with-start-end (start end sequence)
+    (with-tests (test test-not key)
+      (if from-end
+	  (if (listp sequence)
+	      (let ((l (length sequence)))
+		(find item (reverse sequence) :start (- l end)
+		      :end (- l start) :test test :test-not test-not :key key))
+	      (do-vector (elt sequence start end :from-end t)
+		(when (compare item (key elt))
+		  (return elt))))
+	  (do-sequence (elt sequence start end :specialize t)
+	    (when (compare item (key elt))
+	      (return elt)))))))
+
+(defun find-if (predicate sequence &key from-end (start 0) end key)
+  (find (si::coerce-to-function predicate) sequence
+	:from-end from-end :start start :end end
+	:test #'unsafe-funcall1 :key key))
+
+(defun find-if-not (predicate sequence &key from-end (start 0) end key)
+  (find (si::coerce-to-function predicate) sequence
+	:from-end from-end :start start :end end
+	:test-not #'unsafe-funcall1 :key key))
 
 
 (defseq position () nil nil t
