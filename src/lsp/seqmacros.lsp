@@ -14,6 +14,14 @@
 
 (in-package "SYSTEM")
 
+(defmacro with-count ((count &optional (value count) &key output)
+                      &body body)
+  `(let ((,count (sequence-count ,value)))
+     (declare (fixnum ,count))
+     (if (plusp ,count)
+         ,@body
+         ,output)))            
+
 (defmacro with-predicate ((predicate) &body body)
   `(let ((,predicate (si::coerce-to-function ,predicate)))
      (declare (function ,predicate))
@@ -58,9 +66,15 @@
   `(locally (declare (optimize (safety 0) (speed 3) (debug 0))) ,@body))
 
 (defmacro do-vector ((elt vector start end
-                      &key from-end output (index (gensym)))
+                      &key from-end output setter (index (gensym)))
                      &body body)
   (with-unique-names (%vector %count)
+    (when setter
+      (setf body `((macrolet ((,setter (value)
+                                `(reckless (si::aset ,',%vector
+                                                     ,',index
+                                                     ,value))))
+                     ,@body))))
     (if from-end
 	`(do* ((,%vector ,vector)
 	       (,index ,end)
@@ -79,8 +93,14 @@
 	   (let ((,elt (reckless (aref ,%vector ,index))))
 	     ,@body)))))
 
-(defmacro do-sublist ((elt list start end &key output (index (gensym))) &body body)
+(defmacro do-sublist ((elt list start end &key output
+                       setter (index (gensym)))
+                      &body body)
   (with-unique-names (%sublist %count)
+    (when setter
+      (setf body `((macrolet ((,setter (value)
+                                `(reckless (rplaca ,',%sublist ,value))))
+                     ,@body))))
     `(do* ((,index ,start (1+ ,index))
 	   (,%sublist (nthcdr ,index ,list) (cdr ,%sublist))
 	   (,%count (- ,end ,index) (1- ,%count)))
@@ -90,16 +110,18 @@
        (let ((,elt (car ,%sublist)))
 	 ,@body))))
 
-(defmacro do-sequence ((elt sequence start end &key (index (gensym)) output specialize)
+(defmacro do-sequence ((elt sequence start end &rest args
+                       &key setter index output specialize)
 		       &body body)
   (if specialize
       (with-unique-names (%sequence)
+        (setf args (copy-list args))
+        (remf args :specialize)
+        (setf args (list* elt %sequence start end args))
 	`(let ((,%sequence ,sequence))
 	   (if (listp ,%sequence)
-	       (do-sublist (,elt ,%sequence ,start ,end :output ,output :index ,index)
-		 ,@body)
-	       (do-vector (,elt ,%sequence ,start ,end :output ,output :index ,index)
-		 ,@body))))
+	       (do-sublist ,args ,@body)
+	       (do-vector ,args ,@body))))
       (with-unique-names (%sequence %start %i %count)
 	`(do* ((,%sequence ,sequence)
 	       (,index ,start (1+ ,index))
