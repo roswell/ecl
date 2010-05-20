@@ -18,6 +18,46 @@
 #include <ecl/ecl.h>
 #include <limits.h>
 #include <ecl/ecl-inl.h>
+#include <ecl/internal.h>
+
+cl_index_pair
+ecl_sequence_start_end(cl_object fun, cl_object sequence,
+		       cl_object start, cl_object end)
+{
+        cl_index_pair p;
+	cl_index l;
+	l = ecl_length(sequence);
+	unlikely_if (!ECL_FIXNUMP(start) || ecl_fixnum_minusp(start)) {
+                FEwrong_type_key_arg(fun, @[:start], start, @[byte]);
+        }
+        p.start = fix(start);
+	if (Null(end)) {
+		p.end = l;
+	} else {
+                unlikely_if (!FIXNUMP(end) || ecl_fixnum_minusp(end)) {
+                        FEwrong_type_key_arg(fun, @[:end], end,
+                                             ecl_read_from_cstring("(OR NULL BYTE)"));
+                }
+		p.end = fix(end);
+		unlikely_if (p.end > l) {
+                        cl_object fillp = MAKE_FIXNUM(l);
+                        FEwrong_type_key_arg(fun, @[:end], end,
+                                             ecl_make_integer_type(start, fillp));
+                }
+	}
+        unlikely_if (p.end < p.start) {
+                FEwrong_type_key_arg(fun, @[:start], start,
+                                     ecl_make_integer_type(MAKE_FIXNUM(0), end));
+        }
+        return p;
+}
+
+cl_object
+si_sequence_start_end(cl_object fun, cl_object sequence, cl_object start, cl_object end)
+{
+	cl_index_pair p = ecl_sequence_start_end(fun, sequence, start, end);
+	@(return MAKE_FIXNUM(p.start) MAKE_FIXNUM(p.end));
+}
 
 cl_object
 cl_elt(cl_object x, cl_object i)

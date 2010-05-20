@@ -298,10 +298,12 @@ extern void cl_write_object(cl_object x, cl_object stream);
 #define	RTABSIZE	CHAR_CODE_LIMIT	/*  read table size  */
 #endif
 
-/* string.d */
+/* sequence.d */
 typedef struct { cl_index start, end; } cl_index_pair;
-extern ECL_API cl_index_pair ecl_vector_start_end(cl_object fun, cl_object s, cl_object start, cl_object end);
+extern ECL_API cl_index_pair ecl_sequence_start_end(cl_object fun, cl_object s, cl_object start, cl_object end);
 
+/* string.d */
+#define ecl_vector_start_end ecl_sequence_start_end
 
 /* threads.d */
 

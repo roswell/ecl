@@ -355,38 +355,6 @@ ecl_char_set(cl_object object, cl_index index, ecl_character value)
 	}
 }
 
-cl_index_pair
-ecl_vector_start_end(cl_object fun,
-                     cl_object string, cl_object start, cl_object end)
-{
-	/* INV: works on both t_base_string and t_string */
-	/* INV: Works with either string or symbol */
-        cl_index_pair p;
-	unlikely_if (!ECL_FIXNUMP(start) || ecl_fixnum_minusp(start)) {
-                FEwrong_type_key_arg(fun, @[:start], start, @[byte]);
-        }
-        p.start = fix(start);
-	if (Null(end)) {
-		p.end = string->vector.fillp;
-	} else {
-                unlikely_if (!FIXNUMP(end) || ecl_fixnum_minusp(end)) {
-                        FEwrong_type_key_arg(fun, @[:end], end,
-                                             ecl_read_from_cstring("(OR NULL BYTE)"));
-                }
-		p.end = fix(end);
-		unlikely_if (p.end > string->vector.fillp) {
-                        cl_object fillp = MAKE_FIXNUM(string->vector.fillp);
-                        FEwrong_type_key_arg(fun, @[:end], end,
-                                             ecl_make_integer_type(start, fillp));
-                }
-	}
-        unlikely_if (p.end < p.start) {
-                FEwrong_type_key_arg(fun, @[:start], start,
-                                     ecl_make_integer_type(MAKE_FIXNUM(0), end));
-        }
-        return p;
-}
-
 #ifdef ECL_UNICODE
 static int
 compare_strings(cl_object string1, cl_index s1, cl_index e1,

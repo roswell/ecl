@@ -33,29 +33,6 @@
 	   (optimize (speed 3) (safety 0)))
   (funcall f x))
 
-(defun sequence-limits (start end seq)
-  (declare (si::c-local))
-  (let* (x0 x1 (l (length seq)))
-    (declare (fixnum x0 x1 l))
-    (unless (and (fixnump start) (>= (setq x0 start) 0))
-      (error 'simple-type-error
-	     :format-control "~S is not a valid :START for sequence ~S"
-	     :format-arguments (list start seq)
-	     :datum start
-	     :expected-type `(integer 0 ,l)))
-    (if end
-	(unless (and (fixnump end) (>= (setq x1 end) 0))
-	  (error 'simple-type-error
-		 :format-control "~S is not a valid :END for sequence ~S"
-		 :format-arguments (list end seq)
-		 :datum end
-		 :expected-type `(or nil (integer 0 ,l))))
-	(setq x1 l))
-    (unless (<= x0 x1)
-      (error ":START = ~S should be smaller or equal to :END = ~S"
-	     start end))
-    (values x0 x1)))
-
 (eval-when (:compile-toplevel :execute)
   (defmacro with-predicate ((predicate) &body body)
     `(let ((,predicate (si::coerce-to-function ,predicate)))
@@ -85,7 +62,7 @@
 	 ,@body)))
   (defmacro with-start-end (start end seq &body body)
     `(multiple-value-bind (,start ,end)
-        (sequence-limits ,start ,end ,seq) 
+        (sequence-start-end 'subseq ,seq ,start ,end) 
       (declare (fixnum ,start ,end))
       ,@body)))
 

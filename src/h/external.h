@@ -1477,6 +1477,7 @@ extern ECL_API bool ecl_boundp(cl_env_ptr env, cl_object o);
 
 /* sequence.c */
 
+extern ECL_API cl_object si_sequence_start_end(cl_object fun, cl_object sequence, cl_object start, cl_object end);
 extern ECL_API cl_object cl_elt(cl_object x, cl_object i);
 extern ECL_API cl_object si_elt_set(cl_object seq, cl_object index, cl_object val);
 extern ECL_API cl_object cl_copy_seq(cl_object x);

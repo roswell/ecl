@@ -1911,5 +1911,7 @@ cl_symbols[] = {
 
 {EXT_ "COMPLEX-ARRAY", EXT_ORDINARY, NULL, -1, OBJNULL},
 
+{SYS_ "SEQUENCE-START-END", SI_ORDINARY, si_sequence_start_end, 4, OBJNULL},
+
 /* Tag for end of list */
 {NULL, CL_ORDINARY, NULL, -1, OBJNULL}};
