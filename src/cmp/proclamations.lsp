@@ -198,7 +198,8 @@
 ; (proclamation type-error-expected-type (condition) t)
 
 ;; ECL EXTENSIONS
-(proclaim si::coerce-to-vector (t type-specifier t gen-bool) vector)
+(proclamation si::coerce-to-vector (t type-specifier t gen-bool) vector :no-side-effects)
+(proclamation si::coerce-to-function (function-designator) function :no-side-effects)
 
 ;;;
 ;;; 5. DATA AND CONTROL FLOW
