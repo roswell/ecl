@@ -42,7 +42,7 @@
                     end
                     key (initial-value nil ivsp))
   (let ((function (si::coerce-to-function function)))
-    (with-start-end start end sequence
+    (with-start-end (start end sequence)
       (with-key (key)
 	(cond ((not from-end)
 	       (when (null ivsp)
@@ -69,7 +69,7 @@
 
 (defun fill (sequence item &key (start 0) end)
   ;; INV: WITH-START-END checks the sequence type and size.
-  (with-start-end start end sequence
+  (with-start-end (start end sequence)
      (if (listp sequence)
          (do* ((x (nthcdr start sequence) (cdr x))
                (i (- end start) (1- i)))
@@ -80,8 +80,8 @@
          (si::fill-array-with-elt sequence item start end))))
 
 (defun replace (sequence1 sequence2 &key (start1 0) end1 (start2 0) end2)
-  (with-start-end start1 end1 sequence1
-   (with-start-end start2 end2 sequence2		  
+  (with-start-end (start1 end1 sequence1)
+   (with-start-end (start2 end2 sequence2)
     (if (and (eq sequence1 sequence2)
              (> start1 start2))
         (do* ((i 0 (1+ i))
@@ -166,7 +166,7 @@
                              nil))
 	     ,@(if everywherep '((declare (fixnum l))))
 	     (with-tests (test test-not key)
-	       (with-start-end start end sequence
+	       (with-start-end (start end sequence)
 			     ;; FIXME! We use that no object have more than
 			     ;; MOST-POSITIVE-FIXNUM elements.
                                (let ((,ith-cons (and (consp sequence) sequence))
@@ -292,14 +292,32 @@
                  (t (setf (elt newseq j) ,x)
                     (decf j))))))
 
-(defseq count () nil nil t
-  ;; Both runs
-  `(do (,iterate-i ,kount-0)
-       (,endp-i k)
-     (declare (fixnum i k))
-     (when (and ,satisfies-the-test)
-           ,kount-up)))
+(defun count (item sequence &key from-end (start 0) end key test test-not)
+  (with-start-end (start end sequence)
+    (with-tests (test test-not key)
+      (let ((counter 0))
+	(declare (fixnum counter))
+	(if from-end
+	    (if (listp sequence)
+		(let ((l (length sequence)))
+		  (count item (reverse sequence) :start (- l end)
+			 :end (- l start) :test test :test-not test-not :key key))
+		(do-vector (elt sequence start end :from-end t :output counter)
+		  (when (compare item (key elt))
+		    (incf counter))))
+	    (do-sequence (elt sequence start end :specialize t :output counter)
+	      (when (compare item (key elt))
+		(incf counter))))))))
 
+(defun count-if (predicate sequence &key from-end (start 0) end key)
+  (count (si::coerce-to-function predicate) sequence
+	 :from-end from-end :start start :end end
+	 :test #'unsafe-funcall1 :key key))
+
+(defun count-if-not (predicate sequence &key from-end (start 0) end key)
+  (count (si::coerce-to-function predicate) sequence
+	 :from-end from-end :start start :end end
+	 :test-not #'unsafe-funcall1 :key key))
 
 (defseq internal-count () t nil nil
   ;; Both runs
@@ -390,7 +408,7 @@ Destructive REMOVE-DUPLICATES.  SEQUENCE may be destroyed."
 	       (rplaca l (cadr l))
 	       (rplacd l (cddr l)))
 	      (t (setq l (cdr l))))))
-    (with-start-end start end sequence
+    (with-start-end (start end sequence)
       (if (not from-end)
 	  (do ((n 0)
 	       (i start (1+ i)))
@@ -470,8 +488,8 @@ Returns NIL if they are of the same length and they have the same elements in
 the sense of TEST.  Otherwise, returns the index of SEQUENCE1 to the first
 element that does not match."
   (and test test-not (test-error))
-  (with-start-end start1 end1 sequence1
-   (with-start-end start2 end2 sequence2
+  (with-start-end (start1 end1 sequence1)
+   (with-start-end (start2 end2 sequence2)
     (with-tests (test test-not key)
       (if (not from-end)
 	  (do ((i1 start1 (1+ i1))
@@ -505,8 +523,8 @@ Searches SEQUENCE2 for a subsequence that element-wise matches SEQUENCE1.
 Returns the index to the first element of the subsequence if such a
 subsequence is found.  Returns NIL otherwise."
   (and test test-not (test-error))
-  (with-start-end start1 end1 sequence1
-   (with-start-end start2 end2 sequence2  
+  (with-start-end (start1 end1 sequence1)
+   (with-start-end (start2 end2 sequence2)
     (with-tests (test test-not key)
       (if (not from-end)
 	  (loop
