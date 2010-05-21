@@ -14,13 +14,15 @@
 
 (in-package "SYSTEM")
 
-(defmacro with-count ((count &optional (value count) &key output)
+(defmacro with-count ((count &optional (value count) &key (output nil output-p))
                       &body body)
   `(let ((,count (sequence-count ,value)))
      (declare (fixnum ,count))
-     (if (plusp ,count)
-         ,@body
-         ,output)))            
+     ,(if output-p
+	  `(if (plusp ,count)
+	       ,@body
+	       ,output)
+	  `(progn ,@body))))
 
 (defmacro with-predicate ((predicate) &body body)
   `(let ((,predicate (si::coerce-to-function ,predicate)))

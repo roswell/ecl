@@ -33,7 +33,9 @@
         ((fixnump count)
          count)
         ((integerp count)
-         most-positive-fixnum)
+         (if (minusp count)
+             -1
+             most-positive-fixnum))
         (t
          (error 'simple-type-error
                 :datum count
@@ -227,38 +229,111 @@
 	   `(',f)))))
 ; eval-when
 
+(defun filter-vector (which out in start end from-end count
+                      test test-not key)
+  (with-start-end (start end in)
+    (with-tests (test test-not key)
+      (with-count (%count count :output in)
+	(let* ((l (length in))
+               (existing 0))
+          (declare (fixnum l jndex removed existing))
+          ;; If the OUT is empty that means we REMOVE and we have to
+          ;; create the destination array. For that we first count how
+          ;; many elements are deletable and allocate the
+          ;; corresponding amount of space.
+          (unless (eq out in)
+            (setf existing (count which in :start start :end end
+                                   :test test :test-not test-not :key key))
+            (when (zerop existing)
+              (return-from filter-vector
+                (values in l)))
+            (setf out (make-array (- l (min existing %count))
+                                  :element-type
+                                  (array-element-type in))))
+          ;; We begin by copying the elements in [0, start)
+          (unless (eq out in)
+            (copy-subarray out 0 in 0 start))
+          ;; ... filter the segement in [start, end)
+          (cond (from-end
+                 (unless (plusp existing)
+                   (setf existing (count which in :start start :end end
+                                         :test test :test-not test-not
+                                         :key key)))
+                 (setf %count (if (< existing %count)
+                                  0
+                                  (- existing %count)))
+                 (do-vector (elt in start end :index index)
+                   (when (or (not (compare which (key elt)))
+                             (not (minusp (decf %count))))
+                     (setf (aref (the vector out) start) elt
+                           start (1+ start)))))
+                (t
+                 (do-vector (elt in start end :index index)
+                   (if (compare which (key elt))
+                       (when (zerop (decf %count))
+                         (setf end (1+ index))
+                         (return))
+                       (setf (aref (the vector out) start) elt
+                             start (1+ start))))))
+          ;; ... and copy the rest
+          (values out (copy-subarray out start in end l)))))))
 
-(defseq remove () t nil t
-      ;; Ordinary run
-      `(if (listp sequence)
-           (let* ((l sequence) (l1 nil))
-             (do ((i 0 (1+ i)))
-                 ((>= i start))
-               (declare (fixnum i))
-               (push (car l) l1)
-               (pop l))
-             (do ((i start (1+ i)) (j 0))
-                 ((or (>= i end) (>= j count) (endp l))
-                  (nreconc l1 l))
-               (declare (fixnum i j))
-               (if (compare item (key (car l)))
-		   (incf j)
-		   (push (car l) l1))
-	       (pop l)))
-           (delete item sequence
-                   :from-end from-end
-                   :test test :test-not test-not
-                   :start start :end end
-                   :count count
-                   :key key))
-      ;; From end run
-      `(delete item sequence
-               :from-end from-end
-               :test test :test-not test-not
-               :start start :end end
-               :count count
-               :key key))
+(defun copy-subarray (out start-out in start-in end-in)
+  (reckless
+   (do* ((n end-in)
+	 (i start-in (1+ i))
+	 (j start-out (1+ j)))
+	((>= i n)
+         i)
+     (declare (fixnum i j n))
+     (row-major-aset out j (row-major-aref in i)))))
 
+(defun remove-list (which sequence start end count test test-not key)
+  (with-start-end (start end sequence)
+    (with-tests (test test-not key)
+      (with-count (%count count :output sequence)
+	(let* ((output nil)
+	       (index 0))
+	  (declare (fixnum index))
+	  (while (and sequence (< index start))
+	    (setf output (cons (car (the cons sequence)) output)
+		  sequence (cdr (the cons sequence))
+		  index (1+ index)))
+	  (when (plusp %count)
+	    (loop
+	       (unless (< index end) (return))
+	       (let ((elt (car (the cons sequence))))
+		 (setf sequence (cdr (the cons sequence)))
+		 (if (compare which (key elt))
+		     (when (zerop (decf %count))
+		       (return))
+		     (push elt output))
+		 (incf index))))
+	  (nreconc output sequence))))))
+
+(defun remove (which sequence &key (start 0) end from-end count
+               test test-not key)
+  (if (listp sequence)
+      (if from-end
+          (let ((l (length sequence)))
+            (nreverse (delete which (reverse sequence)
+                              :start (if end (- l end) 0) :end (- l start)
+                              :from-end nil
+                              :test test :test-not test-not :key key
+                              :count count)))
+          (remove-list which sequence start end count test test-not key))
+      (values (filter-vector which nil sequence start end from-end count
+                             test test-not key))))
+
+(defun remove-if (predicate sequence &key (start 0) end from-end count key)
+  (remove (si::coerce-to-function predicate) sequence
+	  :start start :end end :from-end from-end :count count
+	  :test #'unsafe-funcall1 :key key))
+
+(defun remove-if-not (predicate sequence &key (start 0) end from-end count key)
+  (remove (si::coerce-to-function predicate) sequence
+	  :start start :end end :from-end from-end :count count
+	  :test-not #'unsafe-funcall1 :key key))
 
 (defseq delete () t t t
       ;; Ordinary run
