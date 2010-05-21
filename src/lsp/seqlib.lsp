@@ -124,9 +124,9 @@
 
 (defun filter-vector (which out in start end from-end count
                       test test-not key)
-  (declare (optimize (speed 3) (safety 0) (debug 0)))
-  (with-start-end (start end in)
-    (with-tests (test test-not key)
+  (with-tests (test test-not key)
+    (declare (optimize (speed 3) (safety 0) (debug 0)))
+    (with-start-end (start end in)
       (with-count (%count count :output in)
 	(let* ((l (length in))
                (existing 0))
@@ -192,10 +192,10 @@
     (row-major-aset out j (row-major-aref in i))))
 
 (defun remove-list (which sequence start end count test test-not key)
-  (declare (optimize (speed 3) (safety 0) (debug 0)))
   (with-start-end (start end sequence)
     (with-tests (test test-not key)
       (with-count (%count count :output sequence)
+        (declare (optimize (speed 3) (safety 0) (debug 0)))
 	(let* ((output nil)
 	       (index 0))
 	  (declare (fixnum index))
@@ -216,6 +216,7 @@
 
 (defun remove (which sequence &key (start 0) end from-end count
                test test-not key)
+  (declare (optimize (speed 3) (safety 1) (debug 0)))
   (if (listp sequence)
       (if from-end
           (let ((l (length sequence)))
@@ -239,8 +240,9 @@
 	  :test-not #'unsafe-funcall1 :key key))
 
 (defun delete-list (which sequence start end count test test-not key)
-  (with-start-end (start end sequence)
-    (with-tests (test test-not key)
+  (with-tests (test test-not key)
+    (declare (optimize (speed 3) (safety 0) (debug 0)))
+    (with-start-end (start end sequence)
       (with-count (%count count :output sequence)
 	(let* ((splice (cons nil sequence))
                (output splice)
@@ -268,6 +270,7 @@
 
 (defun delete (which sequence &key (start 0) end from-end count
                test test-not key)
+  (declare (optimize (speed 3) (safety 1) (debug 0)))
   (cond ((listp sequence)
          (if from-end
              (let ((l (length sequence)))
@@ -276,11 +279,13 @@
                              (if end (- l end) 0) (- l start)
                              count test test-not key)))
              (delete-list which sequence start end count test test-not key)))
-        ((array-has-fill-pointer-p sequence)
+        ((not (vectorp sequence))
+         (signal-type-error sequence 'sequence))
+        ((array-has-fill-pointer-p (the vector sequence))
          (multiple-value-bind (sequence l)
              (filter-vector which sequence sequence start end from-end count
                             test test-not key)
-           (setf (fill-pointer sequence) l)
+           (setf (fill-pointer (the vector sequence)) l)
            sequence))
         (t
          (values (filter-vector which nil sequence start end from-end count
@@ -297,8 +302,9 @@
 	  :test-not #'unsafe-funcall1 :key key))
 
 (defun count (item sequence &key from-end (start 0) end key test test-not)
-  (with-start-end (start end sequence)
-    (with-tests (test test-not key)
+  (with-tests (test test-not key)
+    (declare (optimize (speed 3) (safety 0) (debug 0)))
+    (with-start-end (start end sequence)
       (let ((counter 0))
 	(declare (fixnum counter))
 	(if from-end
@@ -344,8 +350,9 @@
 
 (defun nsubstitute (new old sequence &key (start 0) end from-end count
                     key test test-not)
-  (with-start-end (start end sequence)
-    (with-tests (test test-not key)
+  (with-tests (test test-not key)
+    (declare (optimize (speed 3) (safety 0) (debug 0)))
+    (with-start-end (start end sequence)
       (with-count (%count count :output sequence)
 	;; FIXME! This could be simplified to (AND FROM-END COUNT)
 	;; but the ANSI test suite complains because it expects always
@@ -387,8 +394,9 @@
 
 
 (defun find (item sequence &key (start 0) end from-end key test test-not)
-  (with-start-end (start end sequence)
-    (with-tests (test test-not key)
+  (with-tests (test test-not key)
+    (declare (optimize (speed 3) (safety 0) (debug 0)))
+    (with-start-end (start end sequence)
       (if from-end
 	  (if (listp sequence)
 	      (let ((l (length sequence)))
@@ -413,8 +421,9 @@
 
 
 (defun position (item sequence &key from-end (start 0) end key test test-not)
-  (with-start-end (start end sequence)
-    (with-tests (test test-not key)
+  (with-tests (test test-not key)
+    (declare (optimize (speed 3) (safety 0) (debug 0)))
+    (with-start-end (start end sequence)
       (let ((output nil))
         (do-sequence (elt sequence start end
                       :output output :index index :specialize t)
