@@ -441,6 +441,47 @@
             :from-end from-end :start start :end end
             :test-not #'unsafe-funcall1 :key key))
 
+(defun remove-duplicates-list (sequence start end from-end test test-not key)
+  (with-tests (test test-not key)
+    (declare (optimize (speed 3) (safety 0) (debug 0) (space 0)))
+    (with-start-end (start end sequence)
+      (let* ((output nil)
+             (index 0))
+        (declare (fixnum index))
+        (while (and sequence (plusp start))
+          (setf output (cons (car (the cons sequence)) output)
+                sequence (cdr (the cons sequence))
+                start (1- start)
+                end (1- end)))
+        (let ((start sequence)
+              (end (nthcdr (- end start) sequence)))
+          ;; When from-end, keep the first occurrence of each duplicate
+          ;; element; otherwise we keep the last one. Hence, A-I-L-P
+          ;; 1) if from-end, return T only when there are no duplicates
+          ;;    before current;
+          ;; 2) otherwise, return T only when there are no duplicates
+          ;;    after the current one.
+          (flet ((already-in-list-p (start current end from-end)
+                   (let ((elt (key (car (the cons current)))))
+                     (if from-end
+                         (loop
+                            (when (eq start current)
+                              (return nil))
+                            (when (compare elt (key (car (the cons start))))
+                              (return t))
+                            (setf start (cdr (the cons start))))
+                         (loop
+                            (setf current (cdr (the cons current)))
+                            (when (eq current end)
+                              (return nil))
+                            (when (compare elt (key (car (the cons current))))
+                              (return t)))))))
+            (loop
+               (when (eq sequence end)
+                 (return (nreconc output sequence)))
+               (unless (already-in-list-p start sequence end from-end)
+                 (push (car (the cons sequence)) output))
+               (setf sequence (cdr (the cons sequence))))))))))
 
 (defun remove-duplicates (sequence
                           &key test test-not from-end (start 0) end key)
@@ -448,20 +489,13 @@
        &key key (test '#'eql) test-not
             (start 0) (end (length sequence)) (from-end nil))
 Returns a copy of SEQUENCE without duplicated elements."
-  (and test test-not (test-error))
-  (when (and (listp sequence) (not from-end) (zerop start) (null end))
-        (when (endp sequence) (return-from remove-duplicates nil))
-        (do ((l sequence (cdr l)) (l1 nil))
-            ((endp (cdr l))
-             (return-from remove-duplicates (nreconc l1 l)))
-          (unless (member1 (car l) (cdr l) test test-not key)
-                  (setq l1 (cons (car l) l1)))))
-  (delete-duplicates sequence
-                     :from-end from-end
-                     :test test :test-not test-not
-                     :start start :end end
-                     :key key))
-       
+  (if (listp sequence)
+      (remove-duplicates-list sequence start end from-end test test-not key)
+      (delete-duplicates sequence
+                         :from-end from-end
+                         :test test :test-not test-not
+                         :start start :end end
+                         :key key)))
 
 (defun delete-duplicates (sequence
 			  &key test test-not from-end (start 0) end key
