@@ -62,9 +62,10 @@ ECL 10.5.1:
    SAFETY are below 2.
 
  - Important performance improvements in sequence functions, such as FIND,
-   POSITION, COUNT, REMOVE, NSUBSTITUTE and their IF/IF-NOT variants. Except
-   COUNT, for efficiency, some of the previously mentioned functions may run
-   through the sequences in arbitrary orders one or more times.
+   POSITION, COUNT, REMOVE, DELETE, SUBSTITUTE, NSUBSTITUTE and their IF/IF-NOT
+   variants. Except COUNT, for efficiency, some of the previously mentioned
+   functions may run through the sequences in arbitrary orders one or more
+   times.
 
 ;;; Local Variables: ***
 ;;; mode:text ***
