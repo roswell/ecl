@@ -124,12 +124,13 @@
 
 (defun filter-vector (which out in start end from-end count
                       test test-not key)
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
   (with-start-end (start end in)
     (with-tests (test test-not key)
       (with-count (%count count :output in)
 	(let* ((l (length in))
                (existing 0))
-          (declare (fixnum l jndex removed existing))
+          (declare (fixnum l existing))
           ;; If the OUT is empty that means we REMOVE and we have to
           ;; create the destination array. For that we first count how
           ;; many elements are deletable and allocate the
@@ -146,42 +147,52 @@
           ;; We begin by copying the elements in [0, start)
           (unless (eq out in)
             (copy-subarray out 0 in 0 start))
-          ;; ... filter the segement in [start, end)
-          (cond (from-end
-                 (unless (plusp existing)
-                   (setf existing (count which in :start start :end end
-                                         :test test :test-not test-not
-                                         :key key)))
-                 (setf %count (if (< existing %count)
-                                  0
-                                  (- existing %count)))
-                 (do-vector (elt in start end :index index)
-                   (when (or (not (compare which (key elt)))
-                             (not (minusp (decf %count))))
-                     (setf (aref (the vector out) start) elt
-                           start (1+ start)))))
-                (t
-                 (do-vector (elt in start end :index index)
-                   (if (compare which (key elt))
-                       (when (zerop (decf %count))
-                         (setf end (1+ index))
-                         (return))
-                       (setf (aref (the vector out) start) elt
-                             start (1+ start))))))
-          ;; ... and copy the rest
+          ;; ... skip the elements in [start, end) which either
+          ;; do not need to be filtered (because of :from-end)
+          ;; or do not satisfy the test, 
+          (let ((skip 0))
+            (declare (fixnum skip))
+            (when from-end
+              (unless (plusp existing)
+                (setf existing (count which in :start start :end end
+                                      :test test :test-not test-not
+                                      :key key)))
+              (setf skip (if (< existing %count) 0 (- existing %count))))
+            (if (eq out in)
+                (do-vector (elt in start end :index index)
+                  (when (and (compare which (key elt))
+                             (minusp (decf skip)))
+                    (return))
+                  (incf start))
+                (do-vector (elt in start end :index index)
+                  (when (and (compare which (key elt))
+                             (minusp (decf skip)))
+                    (return))
+                  (setf (aref (the vector out) start) elt
+                        start (1+ start)))))
+          ;; ... now filter the rest
+          (do-vector (elt in start end :index index)
+            (if (compare which (key elt))
+                (when (zerop (decf %count))
+                  (setf end (1+ index))
+                  (return))
+                (setf (aref (the vector out) start) elt
+                      start (1+ start))))
+          ;; ... and copy the elements outside the limits
           (values out (copy-subarray out start in end l)))))))
 
 (defun copy-subarray (out start-out in start-in end-in)
-  (reckless
-   (do* ((n end-in)
-	 (i start-in (1+ i))
-	 (j start-out (1+ j)))
-	((>= i n)
-         j)
-     (declare (fixnum i j n))
-     (row-major-aset out j (row-major-aref in i)))))
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
+  (do* ((n end-in)
+        (i start-in (1+ i))
+        (j start-out (1+ j)))
+       ((>= i n)
+        j)
+    (declare (fixnum i j n))
+    (row-major-aset out j (row-major-aref in i))))
 
 (defun remove-list (which sequence start end count test test-not key)
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
   (with-start-end (start end sequence)
     (with-tests (test test-not key)
       (with-count (%count count :output sequence)
