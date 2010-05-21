@@ -1489,6 +1489,8 @@ extern ECL_API cl_object cl_subseq _ARGS((cl_narg narg, cl_object sequence, cl_o
 extern ECL_API cl_object ecl_elt(cl_object seq, cl_fixnum index);
 extern ECL_API cl_object ecl_elt_set(cl_object seq, cl_fixnum index, cl_object val);
 extern ECL_API cl_fixnum ecl_length(cl_object x);
+extern ECL_API cl_object ecl_subseq(cl_object seq, cl_index start, cl_index limit);
+extern ECL_API cl_object ecl_copy_seq(cl_object seq);
 
 
 /* stacks.c */

@@ -142,73 +142,66 @@ E:
 	FEtype_error_index(seq, MAKE_FIXNUM(index));
 }
 
-@(defun subseq (sequence start &optional end &aux x)
-	cl_fixnum s, e;
-	cl_fixnum i;
-@
-	s = fixnnint(start);
-	if (Null(end))
-		e = -1;
-	else
-		e = fixnnint(end);
+cl_object
+ecl_subseq(cl_object sequence, cl_index start, cl_index limit)
+{
 	switch (type_of(sequence)) {
 	case t_list:
-		if (Null(sequence)) {
-			if (s > 0)
-				goto ILLEGAL_START_END;
-			if (e > 0)
-				goto ILLEGAL_START_END;
-			@(return Cnil)
+		if (start)
+			sequence = ecl_nthcdr(start, sequence);
+		{
+			cl_object x = Cnil;
+			cl_object *z = &x;
+			while (!Null(sequence) && (limit--)) {
+				if (ECL_ATOM(sequence))
+					FEtype_error_cons(sequence);
+				z = &ECL_CONS_CDR(*z = ecl_list1(ECL_CONS_CAR(sequence)));
+				sequence = ECL_CONS_CDR(sequence);
+			}
+			return x;
 		}
-		if (e >= 0)
-			if ((e -= s) < 0)
-				goto ILLEGAL_START_END;
-		while (s-- > 0) {
-			if (ATOM(sequence))
-				goto ILLEGAL_START_END;
-			sequence = CDR(sequence);
-		}
-		if (e < 0)
-			return cl_copy_list(sequence);
-		{ cl_object *z = &x;
-		  for (i = 0;  i < e;  i++) {
-		    if (ATOM(sequence))
-		      goto ILLEGAL_START_END;
-		    z = &ECL_CONS_CDR(*z = ecl_list1(CAR(sequence)));
-		    sequence = CDR(sequence);
-		  }
-		}
-		@(return x)
-
 #ifdef ECL_UNICODE
 	case t_string:
 #endif
 	case t_vector:
 	case t_bitvector:
-	case t_base_string:
-		if (s > sequence->vector.fillp)
-			goto ILLEGAL_START_END;
-		if (e < 0)
-			e = sequence->vector.fillp;
-		else if (e < s || e > sequence->vector.fillp)
-			goto ILLEGAL_START_END;
-		x = ecl_alloc_simple_vector(e - s, ecl_array_elttype(sequence));
-		ecl_copy_subarray(x, 0, sequence, s, e-s);
-		@(return x)
-
+	case t_base_string: {
+		cl_index size;
+		cl_object x;
+		if (start > sequence->vector.fillp) {
+			x = ecl_alloc_simple_vector(0, ecl_array_elttype(sequence));
+		} else {
+			size = sequence->vector.fillp - start;
+			if (size > limit)
+				size = limit;
+			x = ecl_alloc_simple_vector(size, ecl_array_elttype(sequence));
+			ecl_copy_subarray(x, 0, sequence, start, size);
+		}
+		return x;
+	}
 	default:
 		FEtype_error_sequence(sequence);
 	}
+}
 
-ILLEGAL_START_END:
-	FEerror("~S and ~S are illegal as :START and :END~%\
-for the sequence ~S.", 3, start, end, sequence);
+cl_object
+ecl_copy_seq(cl_object sequence)
+{
+	return ecl_subseq(sequence, 0, MOST_POSITIVE_FIXNUM);
+}
+
+@(defun subseq (sequence start &optional end &aux x)
+	cl_index_pair p;
+@
+	p = ecl_sequence_start_end(@[subseq], sequence, start, end);
+	sequence = ecl_subseq(sequence, p.start, p.end - p.start);
+	@(return sequence);
 @)
 
 cl_object
 cl_copy_seq(cl_object x)
 {
-	return @subseq(2, x, MAKE_FIXNUM(0));
+	@(return ecl_subseq(x, 0, MOST_POSITIVE_FIXNUM));
 }
 
 cl_object

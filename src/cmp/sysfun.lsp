@@ -708,6 +708,8 @@
 (def-inline length :always (t) :fixnum "ecl_length(#0)")
 (def-inline length :unsafe (vector) :fixnum "(#0)->vector.fillp")
 
+(def-inline copy-seq :always (t) t "ecl_copy_seq(#0)")
+
 ;; file character.d
 
 (def-inline char :always (t fixnum) t "ecl_aref1(#0,#1)")
