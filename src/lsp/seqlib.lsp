@@ -126,11 +126,10 @@
                       test test-not key)
   (with-tests (test test-not key)
     (declare (optimize (speed 3) (safety 0) (debug 0)))
-    (with-start-end (start end in)
+    (with-start-end (start end in l)
       (with-count (%count count :output in)
-	(let* ((l (length in))
-               (existing 0))
-          (declare (fixnum l existing))
+	(let* ((existing 0))
+          (declare (fixnum existing))
           ;; If the OUT is empty that means we REMOVE and we have to
           ;; create the destination array. For that we first count how
           ;; many elements are deletable and allocate the
@@ -304,18 +303,20 @@
 (defun count (item sequence &key from-end (start 0) end key test test-not)
   (with-tests (test test-not key)
     (declare (optimize (speed 3) (safety 0) (debug 0)))
-    (with-start-end (start end sequence)
+    (with-start-end (start end sequence l)
       (let ((counter 0))
 	(declare (fixnum counter))
 	(if from-end
 	    (if (listp sequence)
-		(let ((l (length sequence)))
-		  (count item (reverse sequence) :start (- l end)
-			 :end (- l start) :test test :test-not test-not :key key))
-		(do-vector (elt sequence start end :from-end t :output counter)
+                (count item (reverse sequence)
+                       :start (- l end) :end (- l start)
+                       :test test :test-not test-not :key key)
+		(do-vector (elt sequence start end :from-end t
+                                :output counter)
 		  (when (compare item (key elt))
 		    (incf counter))))
-	    (do-sequence (elt sequence start end :specialize t :output counter)
+	    (do-sequence (elt sequence start end :specialize t
+                              :output counter)
 	      (when (compare item (key elt))
 		(incf counter))))))))
 
@@ -352,7 +353,7 @@
                     key test test-not)
   (with-tests (test test-not key)
     (declare (optimize (speed 3) (safety 0) (debug 0)))
-    (with-start-end (start end sequence)
+    (with-start-end (start end sequence l)
       (with-count (%count count :output sequence)
 	;; FIXME! This could be simplified to (AND FROM-END COUNT)
 	;; but the ANSI test suite complains because it expects always
@@ -360,11 +361,10 @@
         (if from-end
             (if (listp sequence)
                 (nreverse
-                 (let ((l (length sequence)))
-                   (nsubstitute new old (nreverse sequence)
-                                :start (- l end) :end (- l start)
-                                :key key :test test :test-not test-not
-                                :count count)))
+                 (nsubstitute new old (nreverse sequence)
+                              :start (- l end) :end (- l start)
+                              :key key :test test :test-not test-not
+                              :count count))
                 (do-vector (elt sequence start end :setter elt-set
                                 :from-end t :output sequence)
                   (when (compare old (key elt))
@@ -396,12 +396,11 @@
 (defun find (item sequence &key (start 0) end from-end key test test-not)
   (with-tests (test test-not key)
     (declare (optimize (speed 3) (safety 0) (debug 0)))
-    (with-start-end (start end sequence)
+    (with-start-end (start end sequence l)
       (if from-end
 	  (if (listp sequence)
-	      (let ((l (length sequence)))
-		(find item (reverse sequence) :start (- l end)
-		      :end (- l start) :test test :test-not test-not :key key))
+              (find item (reverse sequence) :start (- l end)
+                    :end (- l start) :test test :test-not test-not :key key)
 	      (do-vector (elt sequence start end :from-end t)
 		(when (compare item (key elt))
 		  (return elt))))

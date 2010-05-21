@@ -299,7 +299,7 @@ extern void cl_write_object(cl_object x, cl_object stream);
 #endif
 
 /* sequence.d */
-typedef struct { cl_index start, end; } cl_index_pair;
+typedef struct { cl_index start, end, length; } cl_index_pair;
 extern ECL_API cl_index_pair ecl_sequence_start_end(cl_object fun, cl_object s, cl_object start, cl_object end);
 
 /* string.d */

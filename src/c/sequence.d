@@ -26,7 +26,7 @@ ecl_sequence_start_end(cl_object fun, cl_object sequence,
 {
         cl_index_pair p;
 	cl_index l;
-	l = ecl_length(sequence);
+	p.length = l = ecl_length(sequence);
 	unlikely_if (!ECL_FIXNUMP(start) || ecl_fixnum_minusp(start)) {
                 FEwrong_type_key_arg(fun, @[:start], start, @[unsigned-byte]);
         }
@@ -56,7 +56,8 @@ cl_object
 si_sequence_start_end(cl_object fun, cl_object sequence, cl_object start, cl_object end)
 {
 	cl_index_pair p = ecl_sequence_start_end(fun, sequence, start, end);
-	@(return MAKE_FIXNUM(p.start) MAKE_FIXNUM(p.end));
+	@(return MAKE_FIXNUM(p.start) MAKE_FIXNUM(p.end)
+          MAKE_FIXNUM(p.length));
 }
 
 cl_object
