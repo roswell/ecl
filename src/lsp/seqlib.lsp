@@ -342,24 +342,33 @@
            ,kount-up)))
 
 
-(defseq substitute (newitem) t t t
-  ;; Both runs
-  `(do ((newseq (make-sequence (seqtype sequence) l))
-        ,iterate-i-everywhere
-        ,kount-0)
-       (,endp-i-everywhere newseq)
-     (declare (fixnum i k))
-     (cond ((and ,i-in-range ,within-count ,satisfies-the-test)
-            (setf (elt newseq i) newitem)
-            ,kount-up)
-           (t (setf (elt newseq i) ,x)))))
+(defun substitute (new old sequence &key (start 0) end from-end count
+		   key test test-not)
+  (nsubstitute new old (copy-seq sequence) :start start :end end :from-end from-end
+	       :count count :key key :test test :test-not test-not))
 
+(defun substitute-if (new predicate sequence
+		      &key (start 0) end from-end count key)
+  (nsubstitute new (si::coerce-to-function predicate) (copy-seq sequence)
+	       :key key :test #'unsafe-funcall1
+               :start start :end end :from-end from-end :count count
+               :key key))
+
+(defun substitute-if-not (new predicate sequence
+			  &key (start 0) end from-end count key)
+  (nsubstitute new (si::coerce-to-function predicate) (copy-seq sequence)
+	       :key key :test-not #'unsafe-funcall1
+               :start start :end end :from-end from-end :count count
+               :key key))
 
 (defun nsubstitute (new old sequence &key (start 0) end from-end count
                     key test test-not)
   (with-start-end (start end sequence)
     (with-tests (test test-not key)
       (with-count (%count count :output sequence)
+	;; FIXME! This could be simplified to (AND FROM-END COUNT)
+	;; but the ANSI test suite complains because it expects always
+	;; a from-end inspection order!
         (if from-end
             (if (listp sequence)
                 (nreverse
@@ -383,13 +392,15 @@
 
 (defun nsubstitute-if (new predicate sequence
                        &key (start 0) end from-end count key)
-  (nsubstitute new predicate sequence :key key :test #'unsafe-funcall1
+  (nsubstitute new (si::coerce-to-function predicate) sequence
+	       :key key :test #'unsafe-funcall1
                :start start :end end :from-end from-end :count count
                :key key))
 
 (defun nsubstitute-if-not (new predicate sequence
                            &key (start 0) end from-end count key)
-  (nsubstitute new predicate sequence :key key :test-not #'unsafe-funcall1
+  (nsubstitute new (si::coerce-to-function predicate) sequence
+	       :key key :test-not #'unsafe-funcall1
                :start start :end end :from-end from-end :count count
                :key key))
 
