@@ -16,13 +16,14 @@
 
 (defmacro with-count ((count &optional (value count) &key (output nil output-p))
                       &body body)
+  (setf body `(locally ,@body))
   `(let ((,count (sequence-count ,value)))
      (declare (fixnum ,count))
      ,(if output-p
 	  `(if (plusp ,count)
-	       ,@body
+	       ,body
 	       ,output)
-	  `(progn ,@body))))
+	  body)))
 
 (defmacro with-predicate ((predicate) &body body)
   `(let ((,predicate (si::coerce-to-function ,predicate)))
