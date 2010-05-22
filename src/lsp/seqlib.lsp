@@ -444,9 +444,7 @@
   (with-tests (test test-not key)
     (declare (optimize (speed 3) (safety 0) (debug 0) (space 0)))
     (with-start-end (start end sequence)
-      (let* ((output nil)
-             (index 0))
-        (declare (fixnum index))
+      (let* ((output nil))
         (while (and sequence (plusp start))
           (setf output (cons (car (the cons sequence)) output)
                 sequence (cdr (the cons sequence))
@@ -488,22 +486,29 @@
        &key key (test '#'eql) test-not
             (start 0) (end (length sequence)) (from-end nil))
 Returns a copy of SEQUENCE without duplicated elements."
-  (if (listp sequence)
-      (remove-duplicates-list sequence start end from-end test test-not key)
-      (delete-duplicates sequence
-                         :from-end from-end
-                         :test test :test-not test-not
-                         :start start :end end
-                         :key key)))
+  (declare (optimize (speed 3) (safety 1) (debug 0)))
+  (cond ((listp sequence)
+         (remove-duplicates-list sequence start
+                                 end from-end test test-not key))
+        ((vectorp sequence)
+         (let* ((l (filter-duplicates-vector nil sequence
+                                             start end from-end
+                                             test test-not key))
+                (v (make-array l :element-type
+                               (array-element-type sequence))))
+           (filter-duplicates-vector v sequence
+                                     start end from-end
+                                     test test-not key)
+           v))
+        ((not (vectorp sequence))
+         (signal-type-error sequence 'sequence))))
 
 (defun delete-duplicates-list (sequence start end from-end test test-not key)
   (with-tests (test test-not key)
     (declare (optimize (speed 3) (safety 0) (debug 0) (space 0)))
     (with-start-end (start end sequence)
       (let* ((splice (cons nil sequence))
-             (output splice)
-             (index 0))
-        (declare (fixnum index))
+             (output splice))
         (while (and sequence (plusp start))
           (setf splice (cdr (the cons splice))
                 sequence (cdr (the cons sequence))
@@ -536,83 +541,65 @@ Returns a copy of SEQUENCE without duplicated elements."
                    (setf sequence (cdr (the cons sequence))
                          splice (cdr (the cons splice)))))))))))
 
+(defun filter-duplicates-vector (out in start end from-end test test-not key)
+  (with-tests (test test-not key)
+    (declare (optimize (speed 3) (safety 0) (debug 0) (space 0)))
+    (with-start-end (start end in length)
+      (when (and out (not (eq out in)))
+        (copy-subarray out 0 in 0 start))
+      (flet ((already-in-vector-p (sequence start current end from-end)
+               (declare (vector sequence)
+                        (fixnum start current end))
+               (if from-end
+                   (setf end current)
+                   (setf start (1+ current)))
+               (let ((base (key (aref sequence current))))
+                 (do-vector (elt sequence start end :output nil)
+                   (when (compare base (key elt))
+                     (return t))))))
+        (let ((index start)
+              (jndex start))
+          (declare (fixnum index jndex))
+        (loop
+           (when (= index end)
+             (return (if out
+                         (copy-subarray out jndex in end length)
+                         (+ jndex (- length end)))))
+           (unless (already-in-vector-p in start index end from-end)
+             (when out
+               (setf (aref (the vector out) jndex)
+                     (aref (the vector in) index)))
+             (setf jndex (1+ jndex)))
+           (setf index (1+ index))))))))
+
 (defun delete-duplicates (sequence
 			  &key test test-not from-end (start 0) end key)
   "Args: (sequence &key key
 		     (test '#'eql) test-not
                      (start 0) (end (length sequence)) (from-end nil))
 Destructive REMOVE-DUPLICATES.  SEQUENCE may be destroyed."
-  (declare (fixnum l))
-  (when (listp sequence)
-    (return-from delete-duplicates
-      (delete-duplicates-list sequence start end from-end
-                              test test-not key)))
-  (with-tests (test test-not key)
-    (with-start-end (start end sequence l)
-      (if (not from-end)
-	  (do ((n 0)
-	       (i start (1+ i)))
-	      ((>= i end)
-	       (do ((newseq (make-sequence (seqtype sequence)
-					   (the fixnum (- l n))))
-		    (i 0 (1+ i))
-		    (j 0))
-		   ((>= i l) newseq)
-		 (declare (fixnum i j))
-		 (cond ((and (<= start i)
-			     (< i end)
-			     (position (key (elt sequence i))
-				       sequence
-				       :test test
-				       :test-not test-not
-				       :start (the fixnum (1+ i))
-				       :end end
-				       :key key)))
-		       (t
-			(setf (elt newseq j) (elt sequence i))
-			(incf j)))))
-	    (declare (fixnum n i))
-	    (when (position (key (elt sequence i))
-			    sequence
-			    :test test
-			    :test-not test-not
-			    :start (the fixnum (1+ i))
-			    :end end
-			    :key key)
-	      (incf n)))
-	  (do ((n 0)
-	       (i (1- end) (1- i)))
-	      ((< i start)
-	       (do ((newseq (make-sequence (seqtype sequence)
-					   (the fixnum (- l n))))
-		    (i (1- l) (1- i))
-		    (j (- (the fixnum (1- l)) n)))
-		   ((< i 0) newseq)
-		 (declare (fixnum i j))
-		 (cond ((and (<= start i)
-			     (< i end)
-			     (position (key (elt sequence i))
-				       sequence
-				       :from-end t
-				       :test test
-				       :test-not test-not
-				       :start start
-				       :end i
-				       :key key)))
-		       (t
-			(setf (elt newseq j) (elt sequence i))
-			(decf j)))))
-	    (declare (fixnum n i))
-	    (when (position (key (elt sequence i))
-			    sequence
-			    :from-end t
-			    :test test
-			    :test-not test-not
-			    :start start
-			    :end i
-			    :key key)
-	      (incf n)))))))
-       
+  (declare (optimize (speed 3) (safety 1) (debug 0)))
+  (cond ((listp sequence)
+         (delete-duplicates-list sequence start end from-end
+                                 test test-not key))
+        ((not (vectorp sequence))
+         (signal-type-error sequence 'sequence))
+        ((array-has-fill-pointer-p sequence)
+         (let ((l (filter-duplicates-vector sequence sequence
+                                            start end from-end
+                                            test test-not key)))
+           (setf (fill-pointer sequence) l)
+           sequence))
+        (t
+         (let* ((l (filter-duplicates-vector nil sequence
+                                             start end from-end
+                                             test test-not key))
+                (v (make-array l :element-type
+                               (array-element-type sequence))))
+           (filter-duplicates-vector v sequence
+                                     start end from-end
+                                     test test-not key)
+           v))))       
 
 (defun mismatch (sequence1 sequence2
 		 &key from-end test test-not key
