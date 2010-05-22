@@ -211,10 +211,10 @@
     (row-major-aset out j (row-major-aref in i))))
 
 (defun remove-list (which sequence start end count test test-not key)
-  (with-start-end (start end sequence)
-    (with-tests (test test-not key)
+  (with-tests (test test-not key)
+    (declare (optimize (speed 3) (safety 0) (debug 0)))
+    (with-start-end (start end sequence)
       (with-count (%count count :output sequence)
-        (declare (optimize (speed 3) (safety 0) (debug 0)))
 	(let* ((output nil)
 	       (index 0))
 	  (declare (fixnum index))
