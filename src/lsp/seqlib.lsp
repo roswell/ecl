@@ -104,7 +104,8 @@
 
 (defun fill (sequence item &key (start 0) end)
   ;; INV: WITH-START-END checks the sequence type and size.
-  (with-start-end (start end sequence)
+  (reckless
+   (with-start-end (start end sequence)
      (if (listp sequence)
          (do* ((x (nthcdr start sequence) (cdr x))
                (i (- end start) (1- i)))
@@ -112,7 +113,7 @@
                sequence)
            (declare (fixnum i) (cons x))
            (setf (first x) item))
-         (si::fill-array-with-elt sequence item start end))))
+         (si::fill-array-with-elt sequence item start end)))))
 
 (defun replace (sequence1 sequence2 &key (start1 0) end1 (start2 0) end2)
   (with-start-end (start1 end1 sequence1)
