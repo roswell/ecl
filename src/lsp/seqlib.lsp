@@ -632,7 +632,6 @@ Compares element-wise the specified subsequences of SEQUENCE1 and SEQUENCE2.
 Returns NIL if they are of the same length and they have the same elements in
 the sense of TEST.  Otherwise, returns the index of SEQUENCE1 to the first
 element that does not match."
-  (and test test-not (test-error))
   (with-start-end (start1 end1 sequence1)
    (with-start-end (start2 end2 sequence2)
     (with-tests (test test-not key)
@@ -667,7 +666,6 @@ element that does not match."
 Searches SEQUENCE2 for a subsequence that element-wise matches SEQUENCE1.
 Returns the index to the first element of the subsequence if such a
 subsequence is found.  Returns NIL otherwise."
-  (and test test-not (test-error))
   (with-start-end (start1 end1 sequence1)
    (with-start-end (start2 end2 sequence2)
     (with-tests (test test-not key)
