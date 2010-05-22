@@ -213,8 +213,8 @@
                (incf index)))
 	  (nreconc output sequence))))))
 
-(defun remove (which sequence &key (start 0) end from-end count
-               test test-not key)
+(defun remove (which sequence &key test test-not (start 0) end
+               from-end count key)
   (declare (optimize (speed 3) (safety 1) (debug 0)))
   (if (listp sequence)
       (if from-end
@@ -266,8 +266,8 @@
                (incf index)))
           (cdr output))))))
 
-(defun delete (which sequence &key (start 0) end from-end count
-               test test-not key)
+(defun delete (which sequence &key test test-not (start 0) end
+               from-end count key)
   (declare (optimize (speed 3) (safety 1) (debug 0)))
   (cond ((listp sequence)
          (if from-end
@@ -294,12 +294,13 @@
 	  :start start :end end :from-end from-end :count count
 	  :test #'unsafe-funcall1 :key key))
 
-(defun delete-if-not (predicate sequence &key (start 0) end from-end count key)
+(defun delete-if-not (predicate sequence &key (start 0) end
+                      from-end count key)
   (delete (si::coerce-to-function predicate) sequence
 	  :start start :end end :from-end from-end :count count
 	  :test-not #'unsafe-funcall1 :key key))
 
-(defun count (item sequence &key from-end (start 0) end key test test-not)
+(defun count (item sequence &key test test-not from-end (start 0) end key)
   (with-tests (test test-not key)
     (declare (optimize (speed 3) (safety 0) (debug 0)))
     (with-start-end (start end sequence l)
@@ -329,8 +330,8 @@
 	 sequence :from-end from-end :start start :end end
 	 :test-not #'unsafe-funcall1 :key key))
 
-(defun substitute (new old sequence &key (start 0) end from-end count
-		   key test test-not)
+(defun substitute (new old sequence &key test test-not (start 0) end
+                   from-end count key)
   (nsubstitute new old (copy-seq sequence) :start start :end end :from-end from-end
 	       :count count :key key :test test :test-not test-not))
 
@@ -348,8 +349,8 @@
                :start start :end end :from-end from-end :count count
                :key key))
 
-(defun nsubstitute (new old sequence &key (start 0) end from-end count
-                    key test test-not)
+(defun nsubstitute (new old sequence &key test test-not (start 0) end
+                    from-end count key)
   (with-tests (test test-not key)
     (declare (optimize (speed 3) (safety 0) (debug 0)))
     (with-start-end (start end sequence l)
@@ -392,7 +393,7 @@
                :key key))
 
 
-(defun find (item sequence &key (start 0) end from-end key test test-not)
+(defun find (item sequence &key test test-not (start 0) end from-end key)
   (with-tests (test test-not key)
     (declare (optimize (speed 3) (safety 0) (debug 0)))
     (with-start-end (start end sequence l)
@@ -418,7 +419,7 @@
 	:test-not #'unsafe-funcall1 :key key))
 
 
-(defun position (item sequence &key from-end (start 0) end key test test-not)
+(defun position (item sequence &key test test-not from-end (start 0) end key)
   (with-tests (test test-not key)
     (declare (optimize (speed 3) (safety 0) (debug 0)))
     (with-start-end (start end sequence)
