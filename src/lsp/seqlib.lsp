@@ -417,16 +417,13 @@
   (with-tests (test test-not key)
     (declare (optimize (speed 3) (safety 0) (debug 0)))
     (with-start-end (start end sequence l)
-      (if from-end
-	  (if (listp sequence)
-              (find item (reverse sequence) :start (- l end)
-                    :end (- l start) :test test :test-not test-not :key key)
-	      (do-vector (elt sequence start end :from-end t)
-		(when (compare item (key elt))
-		  (return elt))))
-	  (do-sequence (elt sequence start end :specialize t)
-	    (when (compare item (key elt))
-	      (return elt)))))))
+      (let ((output nil))
+        (do-sequence (elt sequence start end
+                          :output output :index index :specialize t)
+          (when (compare item (key elt))
+            (unless from-end
+              (return elt))
+            (setf output elt)))))))
 
 (defun find-if (predicate sequence &key from-end (start 0) end key)
   (find (si::coerce-to-function predicate) sequence
