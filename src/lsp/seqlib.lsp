@@ -252,19 +252,18 @@
 	    (setf sequence (cdr (the cons sequence))
 		  splice (cdr (the cons splice))
 		  index (1+ index)))
-	  (when (plusp %count)
-	    (loop
-	       (unless (< index end)
-                 (return))
-	       (let ((elt (car (the cons sequence))))
-		 (setf sequence (cdr (the cons sequence)))
-		 (cond ((compare which (key elt))
-                        (setf (cdr splice) sequence)
-                        (when (zerop (decf %count))
-                          (return)))
-                       (t
-                        (setf splice (cdr splice))))
-		 (incf index))))
+          (loop
+             (unless (< index end)
+               (return))
+             (let ((elt (car (the cons sequence))))
+               (setf sequence (cdr (the cons sequence)))
+               (cond ((compare which (key elt))
+                      (setf (cdr splice) sequence)
+                      (when (zerop (decf %count))
+                        (return)))
+                     (t
+                      (setf splice (cdr splice))))
+               (incf index)))
           (cdr output))))))
 
 (defun delete (which sequence &key (start 0) end from-end count
@@ -497,25 +496,59 @@ Returns a copy of SEQUENCE without duplicated elements."
                          :start start :end end
                          :key key)))
 
+(defun delete-duplicates-list (sequence start end from-end test test-not key)
+  (with-tests (test test-not key)
+    (declare (optimize (speed 3) (safety 0) (debug 0) (space 0)))
+    (with-start-end (start end sequence)
+      (let* ((splice (cons nil sequence))
+             (output splice)
+             (index 0))
+        (declare (fixnum index))
+        (while (and sequence (plusp start))
+          (setf splice (cdr (the cons splice))
+                sequence (cdr (the cons sequence))
+                start (1- start)
+                end (1- end)))
+        (let ((start splice)
+              (end (nthcdr (- end start) sequence)))
+          (flet ((already-in-list-p (start current end from-end)
+                   (let ((elt (key (car (the cons current)))))
+                     (if from-end
+                         (loop
+                            (when (eq start current)
+                              (return nil))
+                            (when (compare elt (key (car (the cons start))))
+                              (return t))
+                            (setf start (cdr (the cons start))))
+                         (loop
+                            (setf current (cdr (the cons current)))
+                            (when (eq current end)
+                              (return nil))
+                            (when (compare elt (key (car (the cons current))))
+                              (return t)))))))
+            (loop
+               (when (eq sequence end)
+                 (return (cdr (the cons output))))
+               (if (already-in-list-p (cdr (the cons start))
+                                      sequence end from-end)
+                   (setf sequence (cdr (the cons sequence))
+                         (cdr splice) sequence)
+                   (setf sequence (cdr (the cons sequence))
+                         splice (cdr (the cons splice)))))))))))
+
 (defun delete-duplicates (sequence
-			  &key test test-not from-end (start 0) end key
-                          &aux (l (length sequence)))
+			  &key test test-not from-end (start 0) end key)
   "Args: (sequence &key key
 		     (test '#'eql) test-not
                      (start 0) (end (length sequence)) (from-end nil))
 Destructive REMOVE-DUPLICATES.  SEQUENCE may be destroyed."
   (declare (fixnum l))
+  (when (listp sequence)
+    (return-from delete-duplicates
+      (delete-duplicates-list sequence start end from-end
+                              test test-not key)))
   (with-tests (test test-not key)
-    (when (and (listp sequence) (not from-end) (zerop start) (null end))
-      (when (endp sequence) (return-from delete-duplicates nil))
-      (do ((l sequence))
-	  ((endp (cdr l))
-	   (return-from delete-duplicates sequence))
-	(cond ((member1 (car l) (cdr l) test test-not key)
-	       (rplaca l (cadr l))
-	       (rplacd l (cddr l)))
-	      (t (setq l (cdr l))))))
-    (with-start-end (start end sequence)
+    (with-start-end (start end sequence l)
       (if (not from-end)
 	  (do ((n 0)
 	       (i start (1+ i)))
