@@ -58,30 +58,49 @@
                     end
                     key (initial-value nil ivsp))
   (let ((function (si::coerce-to-function function)))
-    (with-start-end (start end sequence)
+    (declare (optimize (speed 3) (safety 0) (debug 0)))
+    (with-start-end (start end sequence length)
       (with-key (key)
-	(cond ((not from-end)
-	       (when (null ivsp)
-		 (when (>= start end)
-		   (return-from reduce (funcall function)))
-		 (setq initial-value (key (elt sequence start)))
-		 (incf start))
-	       (do ((x initial-value
-		       (funcall function x
-				(prog1 (key (elt sequence start))
-				  (incf start)))))
-		   ((>= start end) x)))
-	      (t
-	       (when (null ivsp)
-                 (when (>= start end)
-		   (return-from reduce (funcall function)))
-                 (decf end)
-                 (setq initial-value (elt sequence end)))
-	       (do ((x initial-value (funcall function
-					      (key (elt sequence end))
-					      x)))
-		   ((>= start end) x)
-		 (decf end))))))))
+        (cond ((>= start end)
+               (if ivsp
+                   initial-value
+                   (funcall function)))
+              ((listp sequence)
+               (when from-end
+                 (let* ((output nil))
+                   (do-sublist (elt sequence start end)
+                     (setf output (cons elt output)))
+                   (setf sequence output
+                         end (- end start) start 0)))
+               (while (plusp start)
+                 (setf sequence (cdr (the cons sequence))
+                       start (1- start)
+                       end (1- end)))
+               (unless ivsp
+                 (setf initial-value (key (car (the cons sequence)))
+                       sequence (cdr (the cons sequence))
+                       end (1- end)))
+               (do-sublist (elt sequence 0 end :output initial-value)
+                 (setf initial-value
+                       (if from-end
+                           (funcall function (key elt) initial-value)
+                           (funcall function initial-value (key elt))))))
+              (from-end
+               (unless ivsp
+                 (setf initial-value (key (aref sequence (1- end)))
+                       end (1- end)))
+               (do-vector(elt sequence start end :from-end t
+                              :output initial-value)
+                 (setf initial-value
+                       (funcall function (key elt) initial-value))))
+              (t
+               (unless ivsp
+                 (setf initial-value (key (aref sequence start))
+                       start (1+ start)))
+               (do-vector(elt sequence start end :output initial-value)
+                 (setf initial-value
+                       (funcall function initial-value (key elt))))
+                 ))))))
 
 (defun fill (sequence item &key (start 0) end)
   ;; INV: WITH-START-END checks the sequence type and size.
