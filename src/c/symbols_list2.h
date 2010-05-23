@@ -1916,5 +1916,8 @@ cl_symbols[] = {
 {SYS_ "SHRINK-VECTOR",NULL},
 {SYS_ "COPY-SUBARRAY",NULL},
 
+{SYS_ "CONS-CAR","cl_car"},
+{SYS_ "CONS-CDR","cl_cdr"},
+
 /* Tag for end of list */
 {NULL,NULL}};

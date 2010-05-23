@@ -702,6 +702,8 @@
 ;; ECL extensions
 (proclamation si:member1 (t proper-list t t t) list)
 (proclamation si:memq (t proper-list) list)
+(proclamation si:cons-car (cons) t :reader)
+(proclamation si:cons-cdr (cons) t :reader)
 
 ;;;
 ;;; 15. ARRAYS
