@@ -268,9 +268,9 @@ SEQUENCEs, where K is the minimum length of the given SEQUENCEs."
     (when result-type
       (let ((l (length sequence)))
         (when more-sequences
-          (setf l (l (reduce #'min more-sequences
-                             :initial-value l
-                             :key #'length))))
+          (setf l (reduce #'min more-sequences
+                          :initial-value l
+                          :key #'length)))
         (setf output (make-sequence result-type l)
               it (make-seq-iterator output))))
     (do-sequences (elt-list sequences :output output)
