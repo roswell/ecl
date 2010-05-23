@@ -1727,7 +1727,7 @@ collected result will be returned as the value of the LOOP."
   (let ((stepper (cond ((loop-tequal (car *loop-source-code*) :by)
 			(loop-pop-source)
 			(loop-get-form))
-		       (t '(function cdr)))))
+		       (t '(function cons-cdr)))))
     (cond ((and (consp stepper) (eq (car stepper) 'quote))
 	   (loop-warn "Use of QUOTE around stepping function in LOOP will be left verbatim.")
 	   (values `(funcall ,stepper ,listvar) nil))
@@ -1789,11 +1789,8 @@ collected result will be returned as the value of the LOOP."
 	       (pseudo-step `(,listvar ,list-step)))
 	  (when (and constantp (listp list-value))
 	    (setq first-endtest (null list-value)))
-          #-LOOP-Prefer-POP
-          (when (eq step-function 'cdr)
-            (rplaca list-step 'cons-cdr))
 	  #+LOOP-Prefer-POP
-          (when (eq step-function 'cdr)
+          (when (eq step-function 'cons-cdr)
             (setq step `(,var (pop ,listvar)) pseudo-step nil))
 	  `(,other-endtest ,step () ,pseudo-step
 	    ,@(and (not (eq first-endtest other-endtest))
