@@ -135,3 +135,21 @@
 	      ((or (null ,%i) (not (plusp ,%count))) ,output)
 	   (let ((,elt (seq-iterator-ref ,%sequence ,%i)))
 	     ,@body)))))
+
+(defmacro do-sequences ((elt-list seq-list &key output) &body body)
+  (with-unique-names (%iterators %sequences)
+    `(do* ((,%sequences ,seq-list)
+           (,%iterators (mapcar #'make-seq-iterator ,%sequences))
+           (,elt-list (copy-list ,%sequences)))
+          ((null (setf ,elt-list
+                       (seq-iterator-list-pop ,elt-list
+                                              ,%sequences
+                                              ,%iterators)))
+           ,@(and output (list output)))
+       ,@body)))
+
+(defmacro cons-car (x)
+  `(car (the cons ,x)))
+
+(defmacro cons-cdr (x)
+  `(cdr (the cons ,x)))

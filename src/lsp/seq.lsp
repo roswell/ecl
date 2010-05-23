@@ -14,6 +14,10 @@
 
 (in-package "SYSTEM")
 
+#+ecl-min
+(eval-when (:execute)
+  (load (merge-pathnames "seqmacros.lsp" *load-truename*)))
+
 (defun error-not-a-sequence (value)
   (declare (si::c-local))
   (signal-type-error value 'sequence))
@@ -184,6 +188,32 @@ default value of INITIAL-ELEMENT depends on TYPE."
            (error-not-a-sequence iterator))
          iterator)))
 
+(defun seq-iterator-list-pop (values-list seq-list iterator-list)
+  (declare (optimize (safety 0)))
+  (do* ((it-list iterator-list)
+        (v-list values-list))
+       ((null v-list)
+        values-list)
+    (let* ((it (cons-car it-list))
+           (sequence (cons-car seq-list)))
+      (cond ((null it)
+             (return nil))
+            ((fixnump it)
+             (let* ((n it) (s sequence))
+               (declare (fixnum n) (vector s))
+               (rplaca v-list (aref s n))
+               (rplaca it-list (and (< (incf n) (length s)) n))))
+            ((atom it)
+             (error-not-a-sequence it))
+            (t
+             (rplaca v-list (cons-car it))
+             (unless (listp (setf it (cons-cdr it)))
+               (error-not-a-sequence it))
+             (rplaca it-list it)))
+      (setf v-list (cons-cdr v-list)
+            it-list (cons-cdr it-list)
+            seq-list (cons-cdr seq-list)))))
+
 (defun coerce-to-list (object)
   (if (listp object)
       object
@@ -270,18 +300,21 @@ SEQUENCEs, where K is the minimum length of the given SEQUENCEs."
              (apply predicate val)))
         ,test)))))
 
-(def-seq-bool-parser some
+(defun some (predicate sequence &rest more-sequences)
   "Args: (predicate sequence &rest more-sequences)
 Returns T if at least one of the elements in SEQUENCEs satisfies PREDICATE;
 NIL otherwise."
-  (when that-value (return that-value))
-  nil)
+  (reckless
+   (do-sequences (elt-list (cons sequence more-sequences) :output nil)
+     (let ((x (apply predicate elt-list)))
+       (when x (return x))))))
 
-(def-seq-bool-parser every
+(defun every (predicate sequence &rest more-sequences)
   "Args: (predicate sequence &rest more-sequences)
 Returns T if every elements of SEQUENCEs satisfy PREDICATE; NIL otherwise."
-  (unless that-value (return nil))
-  t)
+  (do-sequences (elt-list (cons sequence more-sequences) :output t)
+    (unless (apply predicate elt-list)
+      (return nil))))
 
 #|
 (def-seq-bool-parser notany
