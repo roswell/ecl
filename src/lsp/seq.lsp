@@ -280,26 +280,6 @@ SEQUENCEs, where K is the minimum length of the given SEQUENCEs."
         (seq-iterator-set x ix that-value)
 	(setq ix (seq-iterator-next x ix))))))
 
-(eval-when (eval compile)
-(defmacro def-seq-bool-parser (name doc test end-value)
- `(defun ,name (predicate sequence &rest more-sequences)
-    ,doc
-    (setq more-sequences (cons sequence more-sequences))
-    (do ((it (mapcar #'make-seq-iterator more-sequences))
-         (val (make-sequence 'list (length more-sequences))))
-        (nil)
-      (declare (optimize (safety 0)))
-      (do ((i it (cdr i))
-           (v val (cdr v))
-	   (s more-sequences (cdr s)))
-          ((null i))
-        (unless (car i) (return-from ,name ,end-value))
-        (rplaca v (seq-iterator-ref (car s) (car i)))
-        (rplaca i (seq-iterator-next (car s) (car i))))
-      (let ((that-value
-             (apply predicate val)))
-        ,test)))))
-
 (defun some (predicate sequence &rest more-sequences)
   "Args: (predicate sequence &rest more-sequences)
 Returns T if at least one of the elements in SEQUENCEs satisfies PREDICATE;
