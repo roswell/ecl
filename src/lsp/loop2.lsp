@@ -1303,13 +1303,18 @@ collected result will be returned as the value of the LOOP."
   (cond ((or (null name) (null dtype) (eq dtype t)) nil)
 	((symbolp name)
 	 (unless (or (eq dtype t) (member (the symbol name) *loop-nodeclare*))
-	   (let ((dtype #-cmu dtype
-			#+cmu
-			(let ((init (loop-typed-init dtype)))
-			  (if (typep init dtype)
-			      dtype
-			      `(or (member ,init) ,dtype)))))
-	     (push `(type ,dtype ,name) *loop-declarations*))))
+           ;; Allow redeclaration of a variable. This can be used by
+           ;; the loop constructors to make the type more and more
+           ;; precise as we add keywords
+           (let ((previous (find name *loop-declarations*
+                                 :key #'(lambda (d)
+                                          (and (consp d)
+                                               (= (length d) 3)
+                                               (eq (cons-car d) 'type)
+                                               (third d))))))
+             (if previous
+                 (setf (second previous) dtype)
+                 (push `(type ,dtype ,name) *loop-declarations*)))))
 	((consp name)
 	 (cond ((consp dtype)
 		(loop-declare-variable (car name) (car dtype))
@@ -1937,7 +1942,6 @@ collected result will be returned as the value of the LOOP."
 
 ;;;; Master Sequencer Function
 
-
 (defun loop-sequencer (indexv indexv-type indexv-user-specified-p
 			  variable variable-type
 			  sequence-variable sequence-type
@@ -2028,6 +2032,18 @@ collected result will be returned as the value of the LOOP."
        (setq step-hack `(,variable ,(hide-variable-reference indexv-user-specified-p indexv step-hack))))
      (let ((first-test test) (remaining-tests test))
        (when (and stepby-constantp start-constantp limit-constantp)
+         ;; We can make the number type more precise when we know the
+         ;; start, end and step values.
+         (let ((new-type (typecase (+ start-value stepby limit-value)
+                           (integer `(integer ,(min start-value limit-value)
+                                              ,(max start-value limit-value)))
+                           (single-float 'single-float)
+                           (double-float 'double-float)
+                           (long-float 'long-float)
+                           (short-float 'short-float)
+                           (t indexv-type))))
+           (unless (subtypep indexv-type new-type)
+             (loop-declare-variable indexv new-type)))
 	 (when (setq first-test (funcall (symbol-function testfn) start-value limit-value))
 	   (setq remaining-tests t)))
        `(() (,indexv ,(hide-variable-reference t indexv step)) ,remaining-tests ,step-hack

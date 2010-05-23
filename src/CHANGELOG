@@ -68,6 +68,10 @@ ECL 10.5.1:
    functions may run through the sequences in arbitrary orders one or more
    times.
 
+ - LOOP is now capable of declaring an iteration variable to have a
+   more precise type (fixnum, single-float, etc), when the iteration limits
+   are known, as in (LOOP FOR I FROM 0 TO 1000 ....)
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
