@@ -322,6 +322,8 @@ static compiler_record database[] = {
   {@'list', c_list, 1},
   {@'list*', c_listA, 1},
   {@'endp', c_endp, 1},
+  {@'si::cons-car', c_car, 1},
+  {@'si::cons-cdr', c_cdr, 1},
   {NULL, NULL, 1}
 };
 

@@ -75,7 +75,7 @@
 		   (si::while %dolist-var
 		      (setq ,var (first %dolist-var))
 		      ,@body
-		      (setq %dolist-var (rest %dolist-var)))
+		      (setq %dolist-var (cons-cdr %dolist-var)))
 		   ,(when exit `(setq ,var nil))
 		   ,@exit)))))))
   (si::fset 'dolist f t))

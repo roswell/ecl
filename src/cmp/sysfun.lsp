@@ -275,14 +275,14 @@
 (def-inline car :unsafe (cons) t "ECL_CONS_CAR(#0)")
 (def-inline car :unsafe (t) t "CAR(#0)")
 
-(def-inline cons-car :always (t) t "CAR(#0)")
-(def-inline cons-car :unsafe (t) t "ECL_CONS_CAR(#0)")
+(def-inline si::cons-car :always (t) t "CAR(#0)")
+(def-inline si::cons-car :unsafe (t) t "ECL_CONS_CAR(#0)")
 
 (def-inline cdr :unsafe (cons) t "ECL_CONS_CDR(#0)")
 (def-inline cdr :unsafe (t) t "CDR(#0)")
 
-(def-inline cons-cdr :always (t) t "CDR(#0)")
-(def-inline cons-cdr :unsafe (t) t "ECL_CONS_CDR(#0)")
+(def-inline si::cons-cdr :always (t) t "CDR(#0)")
+(def-inline si::cons-cdr :unsafe (t) t "ECL_CONS_CDR(#0)")
 
 (def-inline caar :unsafe (t) t "CAAR(#0)")
 

@@ -147,9 +147,3 @@
                                               ,%iterators)))
            ,@(and output (list output)))
        ,@body)))
-
-(defmacro cons-car (x)
-  `(car (the cons ,x)))
-
-(defmacro cons-cdr (x)
-  `(cdr (the cons ,x)))
