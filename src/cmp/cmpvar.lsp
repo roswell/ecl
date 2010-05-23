@@ -75,7 +75,7 @@
 	(loop for form in (var-read-forms var)
 	   when (and (eq (c1form-name form) 'VAR)
 		     (eq var (c1form-arg 0 form)))
-	   do (setf (c1form-type form) type)
+	   do (setf (c1form-type form) (type-and type (c1form-type form)))
 	   finally (setf (var-type var) type)))))
 
 (defun var-read-forms (var)
