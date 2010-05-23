@@ -2035,8 +2035,10 @@ collected result will be returned as the value of the LOOP."
          ;; We can make the number type more precise when we know the
          ;; start, end and step values.
          (let ((new-type (typecase (+ start-value stepby limit-value)
-                           (integer `(integer ,(min start-value limit-value)
-                                              ,(max start-value limit-value)))
+                           (integer (if (and (fixnump start-value)
+                                             (fixnump limit-value))
+                                        'fixnum
+                                        indexv-type))
                            (single-float 'single-float)
                            (double-float 'double-float)
                            (long-float 'long-float)
