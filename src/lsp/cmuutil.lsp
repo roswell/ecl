@@ -136,9 +136,13 @@
 (defmacro with-unique-names (symbols &body body)
   `(let* ,(mapcar (lambda (symbol)
                     (let* ((symbol-name (symbol-name symbol))
+                           #+ecl-min
+                           (stem symbol-name)
+                           #-ecl-min
                            (stem (if (every #'alpha-char-p symbol-name)
-                                    symbol-name
-                                    (concatenate 'string symbol-name "-"))))
+                                     nil
+                                     symbol-name
+                                     (concatenate 'string symbol-name "-"))))
                       `(,symbol (gensym ,stem))))
                   symbols)
      ,@body))
