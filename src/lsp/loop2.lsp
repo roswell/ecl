@@ -1785,12 +1785,16 @@ collected result will be returned as the value of the LOOP."
 	#-LOOP-Prefer-POP (declare (ignore step-function))
 	(let* ((first-endtest `(endp ,listvar))
 	       (other-endtest first-endtest)
-	       (step `(,var (car ,listvar)))
+	       (step `(,var (cons-car ,listvar)))
 	       (pseudo-step `(,listvar ,list-step)))
 	  (when (and constantp (listp list-value))
 	    (setq first-endtest (null list-value)))
-	  #+LOOP-Prefer-POP (when (eq step-function 'cdr)
-			      (setq step `(,var (pop ,listvar)) pseudo-step nil))
+          #-LOOP-Prefer-POP
+          (when (eq step-function 'cdr)
+            (rplaca list-step 'cons-cdr))
+	  #+LOOP-Prefer-POP
+          (when (eq step-function 'cdr)
+            (setq step `(,var (pop ,listvar)) pseudo-step nil))
 	  `(,other-endtest ,step () ,pseudo-step
 	    ,@(and (not (eq first-endtest other-endtest))
 		   `(,first-endtest ,step () ,pseudo-step))))))))
