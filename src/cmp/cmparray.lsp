@@ -60,13 +60,12 @@
   ;; macro should not be used.
   (let* ((dimensions-type (guess-array-dimensions-type dimensions))
          (guessed-element-type (guess-array-element-type element-type)))
-    (unless (or initial-element-supplied-p
-                initial-contents-supplied-p)
+    (unless initial-contents-supplied-p
       ;; If the type is known and we can assume it will not change, we
       ;; replace it with the upgraded form.
       (unless (eq guessed-element-type '*)
         (setf element-type `',guessed-element-type))
-      ;; Finally, we choose between making a vector or making a general array.
+      ;; Now we choose between making a vector or making a general array.
       ;; It only saves some time, since MAKE-PURE-ARRAY will call MAKE-VECTOR
       ;; if a one-dimensional array is to be created.
       (let ((function 'si::make-pure-array))
@@ -78,6 +77,9 @@
         (setf form
               `(,function ,element-type ,dimensions ,adjustable ,fill-pointer
                           ,displaced-to ,displaced-index-offset)))
+      ;; Then we may fill the array with a given value
+      (when initial-element-supplied-p
+        (setf form `(si::fill-array-with-elt ,form ,initial-element 0 nil)))
       (setf form `(the (array ,guessed-element-type ,dimensions-type)
                     ,form))))
   form)
