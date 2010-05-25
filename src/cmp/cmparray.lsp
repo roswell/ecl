@@ -186,29 +186,33 @@
     (return-from expand-row-major-index
       (expand-vector-index-check a (first indices) env)))
   (let* ((expected-rank (length indices))
-         (check (policy-array-bounds-check env)))
+         (check (policy-array-bounds-check env))
+	 (dims (loop for i from 0
+		  for index in indices
+		  collect `(,(gentemp "DIM") (array-dimension-fast ,a ,i))))
+	 (dim-names (mapcar #'first dims)))
     (with-clean-symbols (%ndx-var %output-var %dim-var)
-      `(let* ((%ndx-var ,(pop indices))
-              (%output-var %ndx-var)
-              (%dim-var 0))
-         (declare (type ext:array-index %ndx-var %output-var %dim-var))
+      `(let* (,@dims
+	      (%output-var 0))
+         (declare (type ext:array-index %output-var ,@dim-names)
+		  (ignorable ,@dim-names))
          ,@(when (policy-type-assertions env)
                  `((check-arrayp ,a)
                    (check-expected-rank ,a ,expected-rank)))
-         ,@(when check
-                  `((check-index-in-bounds ,a %output-var %dim-var)))
-         (setf %dim-var (array-dimension-fast ,a 0))
-         ,@(loop for j from 1
-              for index in indices
-              collect `(setf %output-var
-                             (the ext:array-index (* %output-var %dim-var))
-                             %dim-var (array-dimension-fast ,a ,j)
-                             %ndx-var ,index)
-              collect (when check
-                        `(check-index-in-bounds ,a %ndx-var %dim-var))
-              collect `(setf %output-var
-                             (the ext:array-index
-                               (+ %output-var %ndx-var))))
+	 ,@(loop with last-dim = nil
+	      for i from 0
+	      for l in indices
+	      for index in indices
+	      for dim-var in dim-names
+	      when last-dim
+	      collect `(setf %output-var
+			     (the ext:array-index (* %output-var ,last-dim)))
+	      collect `(let ((%ndx-var ,index))
+			 (declare (ext:array-index %ndx-var))
+			 ,(and check `(check-index-in-bounds ,a %ndx-var ,dim-var))
+			 `(setf %output-var
+				(the ext:array-index (+ %output-var %ndx-var))))
+	      do (setf last-dim dim-var))
          %output-var))))
 
 ;(trace c::expand-row-major-index c::expand-aset c::expand-aref)
