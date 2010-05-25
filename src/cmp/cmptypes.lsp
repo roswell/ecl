@@ -52,8 +52,7 @@
 ;  read-nodes	;;; Nodes (c1forms) in which the reference occurs
   set-nodes	;;; Nodes in which the variable is modified
   kind		;;; One of LEXICAL, CLOSURE, SPECIAL, GLOBAL, :OBJECT, :FIXNUM,
-  		;;; :CHAR, :DOUBLE, :FLOAT, or REPLACED (used for
-		;;; LET variables).
+  		;;; :CHAR, :DOUBLE, :FLOAT.
   (function *current-function*)
 		;;; For local variables, in which function it was created.
 		;;; For global variables, it doesn't have a meaning.
@@ -69,7 +68,6 @@
 		;;; variable is used later, and therefore CLB may supersede
 		;;; OBJECT.
 		;;; During Pass 2:
-  		;;; For REPLACED: the actual location of the variable.
   		;;; For :FIXNUM, :CHAR, :FLOAT, :DOUBLE, :OBJECT:
   		;;;   the cvar for the C variable that holds the value.
   		;;; For LEXICAL or CLOSURE: the frame-relative address for

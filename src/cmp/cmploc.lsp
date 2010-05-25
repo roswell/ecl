@@ -21,6 +21,7 @@
 ;;;	VALUE0
 ;;;	VALUES
 ;;;	var-object
+;;;     a string                        designating a C expression
 ;;;	( VALUE i )			VALUES(i)
 ;;;	( VV vv-index )
 ;;;	( VV-temp vv-index )
@@ -66,6 +67,28 @@
     (VALUES 'VALUES)
     (TRASH 'TRASH)
     (T 'RETURN)))
+
+(defun loc-in-c1form-movable-p (loc)
+  "A location that is in a C1FORM and can be moved"
+  (cond ((member loc '(t nil))
+	 t)
+	((ext:fixnump loc)
+	 t)
+	((stringp loc)
+	 t)
+	((member loc '(value0 values va-arg cl-va-arg))
+	 nil)
+	((atom loc)
+	 (baboon :format-control "Unknown location ~A found in C1FORM"
+		 :format-arguments (list loc)))
+	((member (setf loc (car loc))
+		 '(VV VV-TEMP FIXNUM-VALUE CHARACTER-VALUE
+		   DOUBLE-FLOAT-VALUE SINGLE-FLOAT-VALUE #+long-float LONG-FLOAT-VALUE
+		   KEYVARS))
+	 t)
+	(t
+	 (baboon :format-control "Unknown location ~A found in C1FORM"
+		 :format-arguments (list loc)))))
 
 (defun uses-values (loc)
   (and (consp loc)

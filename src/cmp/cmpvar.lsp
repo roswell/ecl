@@ -43,24 +43,16 @@
 
 (defun var-referenced-in-form (var form)
   (declare (type var var))
-  (if (eq (var-kind var) 'REPLACED)
-      (let ((loc (var-loc var)))
-	(when (var-p loc)
-	  (var-referenced-in-forms loc form)))
-      (or (find-form-in-node-list form (var-read-nodes var))
-	  (var-functions-reading var))))
+  (or (find-form-in-node-list form (var-read-nodes var))
+      (var-functions-reading var)))
 
 (defun var-changed-in-form (var form)
   (declare (type var var))
   (let ((kind (var-kind var)))
-    (if (eq (var-kind var) 'REPLACED)
-	(let ((loc (var-loc var)))
-	  (when (var-p loc)
-	    (var-changed-in-form loc form)))
-	(or (find-form-in-node-list form (var-set-nodes var))
-	    (if (or (eq kind 'SPECIAL) (eq kind 'GLOBAL))
-		(c1form-sp-change form)
-		(var-functions-setting var))))))
+    (or (find-form-in-node-list form (var-set-nodes var))
+	(if (or (eq kind 'SPECIAL) (eq kind 'GLOBAL))
+	    (c1form-sp-change form)
+	    (var-functions-setting var)))))
 
 (defun update-variable-type (var orig-type)
   ;; FIXME! Refuse to update type of variables that are modified
@@ -247,7 +239,7 @@
   (not (eq (var-rep-type var) :object)))
 
 (defun local (var)
-  (and (not (member (var-kind var) '(LEXICAL CLOSURE SPECIAL GLOBAL REPLACED)))
+  (and (not (member (var-kind var) '(LEXICAL CLOSURE SPECIAL GLOBAL)))
        (var-kind var)))
 
 (defun global-var-p (var)
@@ -264,7 +256,6 @@
   (case (var-kind var)
     (CLOSURE (wt-env var-loc))
     (LEXICAL (wt-lex var-loc))
-    (REPLACED (wt var-loc))
     ((SPECIAL GLOBAL)
      (if (safe-compile)
 	 (wt "ecl_symbol_value(" var-loc ")")
@@ -275,7 +266,6 @@
 (defun var-rep-type (var)
   (case (var-kind var)
     ((LEXICAL CLOSURE SPECIAL GLOBAL) :object)
-    (REPLACED (loc-representation-type (var-loc var)))
     (t (var-kind var))))
 
 (defun set-var (loc var &aux (var-loc (var-loc var))) ;  ccb

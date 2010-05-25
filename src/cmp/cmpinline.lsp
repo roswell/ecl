@@ -294,8 +294,16 @@
               (nreverse rts))
         inline-info))))
 
-(defun close-inline-blocks ()
-  (dotimes (i *inline-blocks*) (declare (fixnum i)) (wt #\})))
+(defun maybe-open-inline-block ()
+  (unless (plusp *inline-blocks*)
+    (wt "{")
+    (setf *inline-blocks* 1)))
+
+(defun close-inline-blocks (&optional new-line)
+  (loop for i of-type fixnum from 0 below *inline-blocks*
+     when (and (zerop i) new-line)
+     do (wt-nl)
+     do (wt #\})))
 
 (defun form-causes-side-effect (form)
   (c1form-side-effects form))

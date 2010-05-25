@@ -558,7 +558,7 @@
                 (:char . "_ecl_base_char_loc")
                 (:float . "_ecl_float_loc")
                 (:double . "_ecl_double_loc")
-                ((special global closure replaced lexical) . NIL)))))
+                ((special global closure lexical) . NIL)))))
 
 (defun build-debug-lexical-env (var-locations &optional first)
   #-:msvc ;; FIXME! Problem with initialization of statically defined vectors

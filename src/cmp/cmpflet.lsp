@@ -89,8 +89,7 @@
 	body-c1form)))
 
 (defun fun-referred-local-vars (fun)
-  (remove-if #'(lambda (v) (member (var-kind v) '(SPECIAL GLOBAL REPLACED)))
-	     (fun-referred-vars fun)))
+  (remove-if #'global-var-p (fun-referred-vars fun)))
 
 (defun compute-fun-closure-type (fun)
   (labels

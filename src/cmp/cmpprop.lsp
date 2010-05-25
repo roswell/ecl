@@ -106,7 +106,7 @@ of the occurrences in those lists."
 
 (defun revise-var-type (variable assumptions where-to-stop)
   (unless (member (var-kind variable)
-                  '(LEXICAL CLOSURE SPECIAL GLOBAL REPLACED) :test #'eql)
+                  '(LEXICAL CLOSURE SPECIAL GLOBAL) :test #'eql)
     (do* ((l assumptions (cdr l))
           (variable-type nil))
          ((or (null l) (eq l where-to-stop))
@@ -125,7 +125,7 @@ of the occurrences in those lists."
                                     one-type))))))))
 
 (defun p1expand-assumptions (var type assumptions)
-  (unless (member (var-kind var) '(LEXICAL CLOSURE SPECIAL GLOBAL REPLACED))
+  (unless (member (var-kind var) '(LEXICAL CLOSURE SPECIAL GLOBAL))
     (prop-message "~&;;; Adding variable ~A with type ~A" (var-name var) type)
     (unless (or (var-set-nodes var) (var-functions-setting var))
       (prop-message "~&;;; Changing type of read-only variable ~A" (var-name var))
