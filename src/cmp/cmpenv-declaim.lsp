@@ -50,3 +50,8 @@
                     (proclaim ',declarations)))
      (eval-when (:load-toplevel :execute)
        (mapc 'proclaim ',declarations))))
+
+(defmacro ext::c-declaim (&rest declarations)
+  `(ext:with-backend
+       :c/c++ (eval-when (:compile-toplevel)
+                (c::process-declaim-args ',declarations))))
