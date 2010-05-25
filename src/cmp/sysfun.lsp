@@ -157,6 +157,28 @@
  "(#0)->string.self[#1]")
 (def-inline row-major-aref :unsafe ((array base-char) fixnum) :char
  "(#0)->base_string.self[#1]")
+(def-inline row-major-aref :unsafe ((array ext:byte8) fixnum) :uint8-t
+ "(#0)->vector.b8[#1]")
+(def-inline row-major-aref :unsafe ((array ext:integer8) fixnum) :int8-t
+ "(#0)->vector.i8[#1]")
+#+:uint16-t
+(def-inline row-major-aref :unsafe ((array ext:byte16) fixnum) :uint16-t
+ "(#0)->vector.b16[#1]")
+#+:uint16-t
+(def-inline row-major-aref :unsafe ((array ext:integer16) fixnum) :int16-t
+ "(#0)->vector.i16[#1]")
+#+:uint32-t
+(def-inline row-major-aref :unsafe ((array ext:byte32) fixnum) :uint32-t
+ "(#0)->vector.b32[#1]")
+#+:uint32-t
+(def-inline row-major-aref :unsafe ((array ext:integer32) fixnum) :int32-t
+ "(#0)->vector.i32[#1]")
+#+:uint64-t
+(def-inline row-major-aref :unsafe ((array ext:byte64) fixnum) :uint64-t
+ "(#0)->vector.b64[#1]")
+#+:uint64-t
+(def-inline row-major-aref :unsafe ((array ext:integer64) fixnum) :int64-t
+ "(#0)->vector.i16[#1]")
 (def-inline row-major-aref :unsafe ((array double-float) fixnum) :double
  "(#0)->array.self.df[#1]")
 (def-inline row-major-aref :unsafe ((array single-float) fixnum) :float
@@ -179,6 +201,28 @@
 #+unicode
 (def-inline si:row-major-aset :unsafe ((array character) fixnum character) :wchar
  "(#0)->string.self[#1]= #2")
+(def-inline si:row-major-aset :unsafe ((array ext:byte8) fixnum ext:byte8) :uint8-t
+ "(#0)->vector.b8[#1]= #2")
+(def-inline si:row-major-aset :unsafe ((array ext:integer8) fixnum ext:integer8) :int8-t
+ "(#0)->vector.i8[#1]= #2")
+#+:uint16-t
+(def-inline si:row-major-aset :unsafe ((array ext:byte16) fixnum ext:byte16) :uint16-t
+ "(#0)->vector.b16[#1]= #2")
+#+:uint16-t
+(def-inline si:row-major-aset :unsafe ((array ext:integer16) fixnum ext:integer16) :int16-t
+ "(#0)->vector.i16[#1]= #2")
+#+:uint32-t
+(def-inline si:row-major-aset :unsafe ((array ext:byte32) fixnum ext:byte32) :uint32-t
+ "(#0)->vector.b32[#1]= #2")
+#+:uint32-t
+(def-inline si:row-major-aset :unsafe ((array ext:integer32) fixnum ext:integer32) :int32-t
+ "(#0)->vector.i32[#1]= #2")
+#+:uint64-t
+(def-inline si:row-major-aset :unsafe ((array ext:byte64) fixnum ext:byte64) :uint64-t
+ "(#0)->vector.b64[#1]= #2")
+#+:uint64-t
+(def-inline si:row-major-aset :unsafe ((array ext:integer64) fixnum ext:integer64) :int64-t
+ "(#0)->vector.i64[#1]= #2")
 (def-inline si:row-major-aset :unsafe ((array double-float) fixnum double-float) :double
  "(#0)->array.self.df[#1]= #2")
 (def-inline si:row-major-aset :unsafe ((array single-float) fixnum single-float) :float
