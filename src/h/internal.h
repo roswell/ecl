@@ -43,9 +43,7 @@ extern void init_read(void);
 extern void init_stacks(cl_env_ptr);
 extern void init_unixint(int pass);
 extern void init_unixtime(void);
-#if defined(__MINGW32__)
 extern void init_compiler(void);
-#endif
 #ifdef ECL_THREADS
 extern void init_threads(cl_env_ptr);
 #endif

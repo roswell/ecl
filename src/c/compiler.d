@@ -2070,7 +2070,6 @@ static int
 compile_form(cl_env_ptr env, cl_object stmt, int flags) {
         const cl_compiler_ptr c_env = env->c_env;
 	cl_object code_walker = ECL_SYM_VAL(env, @'si::*code-walker*');
-	compiler_record *l;
 	cl_object function;
 	bool push = flags & FLAG_PUSH;
 	int new_flags;
@@ -2131,9 +2130,10 @@ compile_form(cl_env_ptr env, cl_object stmt, int flags) {
 		stmt = ECL_CONS_CAR(stmt);
 		goto QUOTED;
 	}
-	for (l = database; l->symbol != OBJNULL; l++) {
-		/*cl_print(1, l->symbol);*/
-		if (l->symbol == function) {
+	{
+		cl_object index = ecl_gethash(function, cl_core.compiler_dispatch);
+		if (index != OBJNULL) {
+			compiler_record *l = database + fix(index);
 			c_env->lexical_level += l->lexical_increment;
 			if (c_env->stepping && function != @'function' &&
 			    c_env->lexical_level)
@@ -2890,3 +2890,18 @@ si_make_lambda(cl_object name, cl_object rest)
                 return output;
 	}
 @)
+
+void
+init_compiler()
+{
+	cl_object dispatch_table =
+		cl_core.compiler_dispatch =
+		cl__make_hash_table(@'eq', MAKE_FIXNUM(128), /* size */
+				    ecl_make_singlefloat(1.5f), /* rehash-size */
+				    ecl_make_singlefloat(0.5f), /* rehash-threshold */
+				    Cnil); /* thread-safe */
+	int i;
+	for (i = 0; database[i].symbol; i++) {
+		ecl_sethash(database[i].symbol, dispatch_table, MAKE_FIXNUM(i));
+	}
+}

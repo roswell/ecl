@@ -243,6 +243,8 @@ struct cl_core_struct {
         cl_object reused_indices;
 #endif
 	cl_object slash;
+
+	cl_object compiler_dispatch;
 };
 
 extern ECL_API struct cl_core_struct cl_core;

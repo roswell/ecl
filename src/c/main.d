@@ -677,6 +677,7 @@ cl_boot(int argc, char **argv)
 	ECL_SET(@'si::*load-hooks*', aux);
 	init_error();
 	init_macros();
+	init_compiler();
 
 	/*
 	 * Set up infrastructure for CLOS.
