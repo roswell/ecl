@@ -14,6 +14,22 @@
 
 (in-package "SYSTEM")
 
+(defun constantly-t (&rest foo)
+  (declare (ignore foo))
+  t)
+
+(defun constantly-nil (&rest foo)
+  (declare (ignore foo))
+  nil)
+
+(defun constantly (n)
+  "Args: (n)
+Builds a new function which accepts any number of arguments but always outputs N."
+  (case n
+    ((nil) #'constantly-nil)
+    ((t) #'constantly-t)
+    (t #'(lambda (&rest x) (declare (ignore x)) n))))
+
 (defvar *subtypep-cache* (si:make-vector t 256 nil nil nil 0))
 
 (defvar *upgraded-array-element-type-cache* (si:make-vector t 128 nil nil nil 0))
@@ -31,7 +47,8 @@
     (error "~s is not a valid type specifier" name))
   (create-type-name name)
   (put-sysprop name 'DEFTYPE-FORM form)
-  (put-sysprop name 'DEFTYPE-DEFINITION function)
+  (put-sysprop name 'DEFTYPE-DEFINITION
+               (if (functionp function) function (constantly function)))
   (subtypep-clear-cache)
   name)
 
@@ -59,10 +76,15 @@ by (documentation 'NAME 'type)."
 	  (when (and (symbolp variable)
 		     (not (member variable lambda-list-keywords)))
 	    (setf (first l) `(,variable '*))))))
-    `(eval-when (:compile-toplevel :load-toplevel :execute)
-       ,@(si::expand-set-documentation name 'type doc)
-       (do-deftype ',name '(DEFTYPE ,name ,lambda-list ,@body)
-		   #'(LAMBDA-BLOCK ,name ,lambda-list ,@body)))))
+    (let ((function `#'(LAMBDA-BLOCK ,name ,lambda-list ,@body)))
+      (when (and (null lambda-list) (consp body) (null (rest body)))
+        (let ((form (first body)))
+          (when (and (consp form) (eq (first form) 'quote))
+            (setf function form))))
+      `(eval-when (:compile-toplevel :load-toplevel :execute)
+         ,@(si::expand-set-documentation name 'type doc)
+         (do-deftype ',name '(DEFTYPE ,name ,lambda-list ,@body)
+                     ,function)))))
 
 
 ;;; Some DEFTYPE definitions.
@@ -266,14 +288,6 @@ and is not adjustable."
 ;;************************************************************
 ;;			TYPEP
 ;;************************************************************
-
-(defun constantly-t (&rest foo)
-  (declare (ignore foo))
-  t)
-
-(defun constantly-nil (&rest foo)
-  (declare (ignore foo))
-  nil)
 
 (defun simple-array-p (x)
   (and (arrayp x)

@@ -851,8 +851,3 @@ the sense of TEST."
 Returns a new function which first applies F to its arguments and then negates
 the output"
   #'(lambda (&rest x) (not (apply f x))))
-
-(defun constantly (n)
-  "Args: (n)
-Builds a new function which accepts any number of arguments but always outputs N."
-  #'(lambda (&rest x) (declare (ignore x)) n))
