@@ -23,6 +23,20 @@
            (invalid-let-bindings 'LET bindings))
           ((null (rest bindings))
            (c1let/let* 'let* bindings args))
+	  (t
+	   (loop with temp
+	      for b in bindings
+	      if (atom b)
+	      collect b into real-bindings
+	      else collect (setf temp (gentemp "LET")) into temp-names and
+	      collect (cons temp (cdr b)) into temp-bindings and
+	      collect (list (car b) temp) into real-bindings
+	      finally
+		(return (c1let/let* 'let*
+				    (nconc temp-bindings real-bindings)
+				    `((declare (ignorable ,@temp-names)
+					       (:read-only ,@temp-names))
+				      ,@args)))))
           (t
            (c1let/let* 'let bindings args)))))
 
@@ -32,7 +46,7 @@
     (cond ((null bindings)
            (c1locally args))
           ((atom bindings)
-           (invalid-let-bindings 'LET bindings))
+           (invalid-let-bindings 'LET* bindings))
           (t
            (c1let/let* 'let* bindings args)))))
 
@@ -174,119 +188,6 @@
   (unless (or (var-set-nodes var)
               (unboxed var))
     (update-variable-type var (c1form-type form))))
-
-(defun c2let (vars forms body
-                   &aux (block-p nil) (bindings nil)
-                   initials
-                   (*unwind-exit* *unwind-exit*)
-		   (*env* *env*)
-                   (*env-lvl* *env-lvl*) env-grows)
-  (declare (type boolean block-p))
-
-  ;; FIXME! Until we switch on the type propagation phase we do
-  ;; this little optimization here
-  (mapc 'c2let-update-variable-type vars forms)
-
-  ;; Allocation is needed for:
-  ;; 1. each variable which is LOCAL and which is not REPLACED
-  ;;    or whose value is not DISCARDED
-  ;; 2. each init form for the remaining variables except last
-
-  ;; Determine which variables are really necessary and create list of init's
-  ;; and list of bindings. Bindings for specials must be done after all inits.
-  (labels ((do-decl (var)
-	     (declare (type var var))
-	     (wt-nl)
-	     (unless block-p
-	       (wt "{") (setq block-p t))
-	     (wt *volatile* (rep-type-name (var-rep-type var)) " " var ";")
-	     (when (local var)
-	       (wt-comment (var-name var))))
-	   (do-init (var form fl)
-	     (if (and (local var)
-		      (not (args-cause-side-effect (cdr fl))))
-		 ;; avoid creating temporary for init
-		 (push (cons var form) initials)
-		 (let* ((loc (make-lcl-var :rep-type (var-rep-type var)
-					   :type (var-type var))))
-		   (do-decl loc)
-		   (push (cons loc form) initials)
-		   (push (cons var loc) bindings)))))
-
-    (do ((vl vars (rest vl))
-         (fl forms (rest fl))
-         (form) (var)
-         (prev-ss nil) (used t t))
-        ((endp vl))
-      (declare (type var var))
-      (setq form (first fl)
-            var (first vl))
-      (if (local var)
-	  (if (setq used (not (discarded var form body)))
-	    (progn
-	      (setf (var-loc var) (next-lcl))
-	      (do-decl var))
-	    ;; The variable is discared, we simply replace it with
-	    ;; a dummy value that will not get used.
-	    (setf (var-kind var) 'REPLACED
-		  (var-loc var) NIL)))
-      (when used
-	(if (unboxed var)
-	    (push (cons var form) initials)	; nil (ccb)
-	    ;; LEXICAL, SPECIAL, GLOBAL or :OBJECT
-	    (case (c1form-name form)
-	      (LOCATION
-	       (if (can-be-replaced var body)
-		   (setf (var-kind var) 'REPLACED
-			 (var-loc var) (c1form-arg 0 form))
-		   (push (cons var (c1form-arg 0 form)) bindings)))
-	      (VAR
-	       (let* ((var1 (c1form-arg 0 form)))
-		 (cond ((or (var-changed-in-form-list var1 (cdr fl))
-			    (and (member (var-kind var1) '(SPECIAL GLOBAL))
-				 (member (var-name var1) prev-ss)))
-			(do-init var form fl))
-		       ((and ;; Fixme! We should be able to replace variable
-			     ;; even if they are referenced across functions.
-			     ;; We just need to keep track of their uses.
-			     (member (var-kind var1) '(REPLACED :OBJECT))
-			     (can-be-replaced var body)
-			     (not (var-changed-in-form var1 body)))
-			(setf (var-kind var) 'REPLACED
-			      (var-loc var) var1))
-		       (t (push (cons var var1) bindings)))))
-	      (t (do-init var form fl))))
-	(unless env-grows
-	  (setq env-grows (var-ref-ccb var))))
-      (when (eq (var-kind var) 'SPECIAL) (push (var-name var) prev-ss))))
-
-  (when (env-grows env-grows)
-    (unless block-p
-      (wt-nl "{ ") (setq block-p t))
-    (let ((env-lvl *env-lvl*))
-      (wt "volatile cl_object env" (incf *env-lvl*) " = env" env-lvl ";")))
-
-  ;; eval INITFORM's and bind variables
-  (dolist (init (nreverse initials))
-    (let ((*destination* (car init))
-	  (*lcl* *lcl*))
-      (c2expr* (cdr init))))
-  ;; bind LET variables
-  (dolist (binding (nreverse bindings))
-    (bind (cdr binding) (car binding)))
-
-  (if (policy-debug-variable-bindings)
-      (let ((*unwind-exit* *unwind-exit*))
-        (wt-nl "{")
-        (let* ((env (build-debug-lexical-env vars)))
-          (when env (push 'IHS-ENV *unwind-exit*))
-          (c2expr body)
-          (wt-nl "}")
-          (when env (pop-debug-lexical-env))))
-      (c2expr body))
-
-  (when block-p (wt-nl "}"))
-  )
 
 (defun env-grows (possibily)
   ;; if additional closure variables are introduced and this is not
@@ -459,6 +360,5 @@
 ;;; ----------------------------------------------------------------------
 
 (put-sysprop 'LET 'C1SPECIAL 'c1let)
-(put-sysprop 'LET 'C2 'c2let)
 (put-sysprop 'LET* 'C1SPECIAL 'c1let*)
 (put-sysprop 'LET* 'C2 'c2let*)
