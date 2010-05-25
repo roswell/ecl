@@ -1919,5 +1919,7 @@ cl_symbols[] = {
 {SYS_ "CONS-CAR","cl_car"},
 {SYS_ "CONS-CDR","cl_cdr"},
 
+{EXT_ "COMPILER-TYPECASE",NULL},
+
 /* Tag for end of list */
 {NULL,NULL}};
