@@ -19,18 +19,21 @@
 
 (eval-when (:compile-toplevel :execute)
   (defparameter *optimization-quality-switches*
-    #.(loop with hash = (make-hash-table :size 64 :test #'eq)
-         for name in +optimization-quality-orders+
-         for i from 0 by 4
-         for list = (loop with mask = (ash #b1111 i)
-                       for level from 0 to 3
-                       for bits = (ash 1 (+ level i))
-                       collect (cons bits (logxor bits mask)))
-         do (setf (gethash name hash) list)
-         finally (return hash))))
+    (loop with hash = (make-hash-table :size 64 :test #'eq)
+       for name in +optimization-quality-orders+
+       for i from 0 by 4
+       for list = (loop with mask = (ash #b1111 i)
+                     for level from 0 to 3
+                     for bits = (ash 1 (+ level i))
+                     collect (cons bits (logxor bits mask)))
+       do (setf (gethash name hash) list)
+       finally (return hash)))
+  (setf (gethash 'compilation-speed *optimization-quality-switches*)
+        '#1=((0 . 0) . #1#)))
 
 (eval-when (:load-toplevel)
-  (defparameter *optimization-quality-switches* #.*optimization-quality-switches*))
+  (defparameter *optimization-quality-switches*
+    #.*optimization-quality-switches*))
 
 #.`(eval-when (:compile-toplevel :execute :load-toplevel)
   ,@(loop for name in +optimization-quality-orders+
@@ -197,6 +200,7 @@
                     (and (logtest bits ,bits-on)
                          (not (logtest bits ,bits-off))
                          ,@extra)))))))))
+
 
 ;;
 ;; ERROR CHECKING POLICY
