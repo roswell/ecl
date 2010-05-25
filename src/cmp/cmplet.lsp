@@ -307,16 +307,6 @@
 		  (eq var (last-form body))
 		  (eq 'TRASH *destination*))))))
 
-;; should check whether a form before var causes a side-effect
-;; exactly one occurrence of var is present in forms
-(defun delete-c1forms (form)
-  (flet ((eliminate-references (form)
-           (when (eq (c1form-name form) 'VAR)
-	     (let ((var (c1form-arg 0 form)))
-	       (when var
-		 (delete-from-read-nodes var form))))))
-    (traverse-c1form-tree form #'eliminate-references)))
-
 (defun nsubst-var (var form)
   (when (var-set-nodes var)
     (baboon :format-control "Cannot replace a variable that is to be changed"))

@@ -310,3 +310,13 @@
 	(c1form-toplevel-form dest) (c1form-toplevel-form new-fields)
 	(c1form-file dest)          (c1form-file new-fields)
 	(c1form-file-position dest) (c1form-file-position new-fields)))
+
+;; should check whether a form before var causes a side-effect
+;; exactly one occurrence of var is present in forms
+(defun delete-c1forms (form)
+  (flet ((eliminate-references (form)
+           (when (eq (c1form-name form) 'VAR)
+	     (let ((var (c1form-arg 0 form)))
+	       (when var
+		 (delete-from-read-nodes var form))))))
+    (traverse-c1form-tree form #'eliminate-references)))
