@@ -93,7 +93,7 @@
         (cmp-env-add-declaration 'optimization (list new) env)))))
 
 (defun add-default-optimizations (env)
-  (if (cmp-env-search-declaration 'optimization)
+  (if (cmp-env-search-declaration 'optimization env)
       env
       (cmp-env-add-declaration 'optimization (list (default-policy)) env)))
 
