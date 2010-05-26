@@ -148,18 +148,3 @@
 	   (wt "ecl_make_cfun((cl_objectfn_fixed)" cfun ",Cnil,Cblock," narg ")"))
 	  (t ; empty environment variable number of args
 	   (wt "ecl_make_cfun_va((cl_objectfn)" cfun ",Cnil,Cblock)")))))
-
-
-;;; ----------------------------------------------------------------------
-
-(put-sysprop 'quote 'c1special 'c1quote)
-(put-sysprop 'function 'c1special 'c1function)
-(put-sysprop 'function 'c2 'c2function)
-(put-sysprop 'the 'c1special 'c1the)
-(put-sysprop 'eval-when 'c1special 'c1eval-when)
-(put-sysprop 'declare 'c1special 'c1declare)
-(put-sysprop 'ext:compiler-let 'c1special 'c1compiler-let)
-(put-sysprop 'ext:compiler-let 'c2 'c2compiler-let)
-
-(put-sysprop 'fdefinition 'wt-loc 'wt-fdefinition)
-(put-sysprop 'make-cclosure 'wt-loc 'wt-make-closure)

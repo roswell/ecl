@@ -298,15 +298,3 @@
     (wt "}"))
   )
 
-;;; ----------------------------------------------------------------------
-
-(put-sysprop 'multiple-value-call 'c1special 'c1multiple-value-call)
-(put-sysprop 'multiple-value-call 'c2 'c2multiple-value-call)
-(put-sysprop 'multiple-value-prog1 'c1special 'c1multiple-value-prog1)
-(put-sysprop 'multiple-value-prog1 'c2 'c2multiple-value-prog1)
-(put-sysprop 'values 'c1 'c1values)
-(put-sysprop 'values 'c2 'c2values)
-(put-sysprop 'multiple-value-setq 'c1 'c1multiple-value-setq)
-(put-sysprop 'multiple-value-setq 'c2 'c2multiple-value-setq)
-(put-sysprop 'multiple-value-bind 'c1 'c1multiple-value-bind)
-(put-sysprop 'multiple-value-bind 'c2 'c2multiple-value-bind)

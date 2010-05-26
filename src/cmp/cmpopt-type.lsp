@@ -46,5 +46,3 @@
                   (declare ,@declarations)
                   ,body)))
            ,@output)))))
-
-(put-sysprop 'EXT:COMPILER-TYPECASE 'C1SPECIAL 'C1COMPILER-TYPECASE)

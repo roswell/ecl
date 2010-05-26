@@ -448,14 +448,3 @@
   (dotimes (i blocks) (wt "}"))
   (unwind-exit nil)
   )
-
-;;; ----------------------------------------------------------------------
-
-(put-sysprop 'VAR 'C2 'c2var)
-(put-sysprop 'LOCATION 'C2 'c2location)
-(put-sysprop 'SETQ 'c1special 'c1setq)
-(put-sysprop 'SETQ 'C2 'c2setq)
-(put-sysprop 'PROGV 'c1special 'c1progv)
-(put-sysprop 'PROGV 'C2 'c2progv)
-(put-sysprop 'PSETQ 'c1 'c1psetq)
-(put-sysprop 'PSETQ 'C2 'c2psetq)

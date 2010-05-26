@@ -44,6 +44,28 @@
   `(ffi:c-inline (,x) (:object) :object "ECL_CONS_CDR(#0)"
                  :one-liner t :side-effects nil))
 ;;;
+;;; CONS
+;;; turn repetitious cons's into a list*
+;;;
+
+(define-compiler-macro cons (&whole whole &rest args)
+  (labels ((cons-to-lista (x)
+	     (let ((tem (last x)))
+	       (if (and (consp tem)
+			(consp (car tem))
+			(eq (caar tem) 'CONS)
+			(eql (length (cdar tem)) 2))
+		   (cons-to-lista (append (butlast x) (cdar tem)))
+		   x))))
+    (let (temp)
+      (if (and (eql (length args) 2)
+	       (not (eq args (setq temp (cons-to-lista args)))))
+	  (if (equal '(nil) (last temp))
+	      (cons 'LIST (butlast temp))
+	      (cons 'LIST* temp))
+	  whole))))
+
+;;;
 ;;; RPLACA / RPLACD
 ;;;
 
@@ -57,3 +79,44 @@
 (define-simple-optimizer rplacd ((c cons) value)
   (:object :object) :object
   "@0;(ECL_CONS_CDR(#0)=#1,#0)" :one-liner t)
+
+;;;
+;;; NTH / NTHCDR
+;;;
+
+(define-compiler-macro nth (&whole whole &rest args)
+  (if (and (not (endp args))
+	   (not (endp (cdr args)))
+	   (endp (cddr args))
+	   (numberp (car args))
+	   (<= 0 (car args) 7))
+      (case (car args)
+	(0 (cons 'CAR (cdr args)))
+	(1 (cons 'CADR (cdr args)))
+	(2 (cons 'CADDR (cdr args)))
+	(3 (cons 'CADDDR (cdr args)))
+	(4 (list 'CAR (cons 'CDDDDR (cdr args))))
+	(5 (list 'CADR (cons 'CDDDDR (cdr args))))
+	(6 (list 'CADDR (cons 'CDDDDR (cdr args))))
+	(7 (list 'CADDDR (cons 'CDDDDR (cdr args))))
+	(t whole))
+      whole))
+
+(define-compiler-macro nthcdr (&whole whole &rest args)
+  (if (and (not (endp args))
+	   (not (endp (cdr args)))
+	   (endp (cddr args))
+	   (numberp (car args))
+	   (<= 0 (car args) 7))
+      (case (car args)
+	(0 (second args))
+	(1 (cons 'CDR (cdr args)))
+	(2 (cons 'CDDR (cdr args)))
+	(3 (cons 'CDDDR (cdr args)))
+	(4 (cons 'CDDDDR (cdr args)))
+	(5 (list 'CDR (cons 'CDDDDR (cdr args))))
+	(6 (list 'CDDR (cons 'CDDDDR (cdr args))))
+	(7 (list 'CDDDR (cons 'CDDDDR (cdr args))))
+	(t whole))
+      whole))
+

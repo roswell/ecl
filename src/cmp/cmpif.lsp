@@ -197,16 +197,3 @@
           (t
            (unwind-no-exit label)
            (wt-nl) (wt-go label)))))
-
-;;; ----------------------------------------------------------------------
-
-(put-sysprop 'if 'c1special 'c1if)
-(put-sysprop 'if 'c2 'c2if)
-(put-sysprop 'not 'c1 'c1not)
-(put-sysprop 'fmla-not 'c2 'c2fmla-not)
-(put-sysprop 'and 'c1 'c1and)
-(put-sysprop 'fmla-and 'c2 'c2fmla-and)
-(put-sysprop 'or 'c1 'c1or)
-(put-sysprop 'fmla-or 'c2 'c2fmla-or)
-(put-sysprop 'jump-true 'set-loc 'set-jump-true)
-(put-sysprop 'jump-false 'set-loc 'set-jump-false)

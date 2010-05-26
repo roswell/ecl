@@ -328,9 +328,3 @@
 		    (and (member (var-kind v2) '(SPECIAL GLOBAL))
 			 (eql (var-name v1) (var-name v2)))))
 	(member var list))))
-
-;;; ----------------------------------------------------------------------
-
-(put-sysprop 'LET 'C1SPECIAL 'c1let)
-(put-sysprop 'LET* 'C1SPECIAL 'c1let*)
-(put-sysprop 'LET* 'C2 'c2let*)

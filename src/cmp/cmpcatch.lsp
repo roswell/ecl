@@ -97,12 +97,3 @@
        (let ((*destination* loc)) (c2expr* tag))))
   (let ((*destination* 'VALUES)) (c2expr* val))
   (wt-nl "cl_throw(" loc ");"))
-
-;;; ----------------------------------------------------------------------
-
-(put-sysprop 'CATCH 'C1SPECIAL 'c1catch)
-(put-sysprop 'CATCH 'C2 'c2catch)
-(put-sysprop 'UNWIND-PROTECT 'C1SPECIAL 'c1unwind-protect)
-(put-sysprop 'UNWIND-PROTECT 'C2 'c2unwind-protect)
-(put-sysprop 'THROW 'C1SPECIAL 'c1throw)
-(put-sysprop 'THROW 'C2 'c2throw)

@@ -142,9 +142,3 @@
         (wt-nl "(" x ")->str.self[" index "]= " y ";"))
     (unwind-exit y)
     (close-inline-blocks)))
-
-(put-sysprop 'SYS:STRUCTURE-REF 'C1 'c1structure-ref)
-(put-sysprop 'SYS:STRUCTURE-REF 'C2 'c2structure-ref)
-(put-sysprop 'SYS:STRUCTURE-REF 'WT-LOC 'wt-structure-ref)
-(put-sysprop 'SYS:STRUCTURE-SET 'C1 'c1structure-set)
-(put-sysprop 'SYS:STRUCTURE-SET 'C2 'c2structure-set)

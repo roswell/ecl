@@ -28,7 +28,7 @@
 
 (defun wt-h1 (form)
   (if (consp form)
-      (let ((fun (get-sysprop (car form) 'wt-loc)))
+      (let ((fun (gethash (car form) *wt-loc-dispatch-table*)))
 	(if fun
 	    (let ((*compiler-output1* *compiler-output2*))
 	      (apply fun (cdr form)))

@@ -115,11 +115,3 @@
 	     (*exit* (blk-exit blk)))
 	 (c2expr val))))
   )
-
-;;; ----------------------------------------------------------------------
-
-(put-sysprop 'BLOCK 'C1SPECIAL 'c1block)
-(put-sysprop 'BLOCK 'C2 'c2block)
-
-(put-sysprop 'RETURN-FROM 'C1SPECIAL 'c1return-from)
-(put-sysprop 'RETURN-FROM 'C2 'c2return-from)

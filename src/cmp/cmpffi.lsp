@@ -563,9 +563,3 @@
 		  (cmperr "C-INLINE: Variable code exceeds number of arguments")))))
 	(otherwise
 	 (write-char c *compiler-output1*))))))
-
-(put-sysprop 'FFI:CLINES 'C1SPECIAL #'c1clines)
-(put-sysprop 'FFI:C-INLINE 'C1SPECIAL #'c1c-inline)
-(put-sysprop 'FFI:C-INLINE 'C2 #'c2c-inline)
-(put-sysprop 'FFI:C-INLINE 'WT-LOC #'wt-c-inline-loc)
-(put-sysprop 'COERCE-LOC 'WT-LOC #'wt-coerce-loc)

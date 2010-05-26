@@ -148,14 +148,15 @@
         ((or (not (consp *destination*))
              (not (symbolp (car *destination*))))
          (baboon))
-        ((setq fd (get-sysprop (car *destination*) 'SET-LOC))
+        ((setq fd (gethash (car *destination*) *set-loc-dispatch-table*))
          (apply fd loc (cdr *destination*)))
-        ((setq fd (get-sysprop (car *destination*) 'WT-LOC))
+        ((setq fd (gethash (car *destination*) *wt-loc-dispatch-table*))
          (wt-nl) (apply fd (cdr *destination*)) (wt "= ")
 	 (wt-coerce-loc (loc-representation-type *destination*) loc)
 	 (wt ";"))
-        (t (baboon)))))
-  )
+        (t (baboon :format-control "Unknown location found in SET-LOC~%~S"
+		   :format-arguments (list loc)))))))
+
 
 (defun wt-loc (loc &aux fd)
   (cond ((eq loc nil) (wt "Cnil"))
@@ -174,11 +175,12 @@
 	 (wt-var loc))
         ((or (not (consp loc))
              (not (symbolp (car loc))))
-         (baboon))
-        ((setq fd (get-sysprop (car loc) 'WT-LOC))
+         (baboon :format-control "Unknown location found in WT-LOC~%~S"
+		 :format-arguments (list loc)))
+        ((setq fd (gethash (car loc) *wt-loc-dispatch-table*))
 	 (apply fd (cdr loc)))
-	(t (baboon)))
-  )
+	(t (baboon :format-control "Unknown location found in WT-LOC~%~S"
+		   :format-arguments (list loc)))))
 
 (defun last-call-p ()
   (member *exit*
@@ -234,20 +236,3 @@
 
 (defun values-loc (n)
   (list 'VALUE n))
-
-;;; -----------------------------------------------------------------
-
-(put-sysprop 'TEMP 'WT-LOC #'wt-temp)
-(put-sysprop 'LCL 'WT-LOC #'wt-lcl-loc)
-(put-sysprop 'VV 'WT-LOC #'wt-vv)
-(put-sysprop 'VV-temp 'WT-LOC #'wt-vv-temp)
-(put-sysprop 'CAR 'WT-LOC #'wt-car)
-(put-sysprop 'CDR 'WT-LOC #'wt-cdr)
-(put-sysprop 'CADR 'WT-LOC #'wt-cadr)
-(put-sysprop 'FIXNUM-VALUE 'WT-LOC #'wt-number)
-(put-sysprop 'CHARACTER-VALUE 'WT-LOC #'wt-character)
-(put-sysprop 'LONG-FLOAT-VALUE 'WT-LOC #'wt-number)
-(put-sysprop 'DOUBLE-FLOAT-VALUE 'WT-LOC #'wt-number)
-(put-sysprop 'SINGLE-FLOAT-VALUE 'WT-LOC #'wt-number)
-(put-sysprop 'VALUE 'WT-LOC #'wt-value)
-(put-sysprop 'KEYVARS 'WT-LOC #'wt-keyvars)

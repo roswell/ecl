@@ -104,39 +104,6 @@
     (unwind-exit x)
     (close-inline-blocks)))
 
-(defun co1nth (args)
-  (and (not (endp args))
-       (not (endp (cdr args)))
-       (endp (cddr args))
-       (numberp (car args))
-       (<= 0 (car args) 7)
-       (c1expr (case (car args)
-		     (0 (cons 'CAR (cdr args)))
-		     (1 (cons 'CADR (cdr args)))
-		     (2 (cons 'CADDR (cdr args)))
-		     (3 (cons 'CADDDR (cdr args)))
-		     (4 (list 'CAR (cons 'CDDDDR (cdr args))))
-		     (5 (list 'CADR (cons 'CDDDDR (cdr args))))
-		     (6 (list 'CADDR (cons 'CDDDDR (cdr args))))
-		     (7 (list 'CADDDR (cons 'CDDDDR (cdr args))))
-		     ))))
-
-(defun co1nthcdr (args)
-  (and (not (endp args))
-       (not (endp (cdr args)))
-       (endp (cddr args))
-       (numberp (car args))
-       (<= 0 (car args) 7)
-       (c1expr (case (car args)
-		 (0 (second args))
-		 (1 (cons 'CDR (cdr args)))
-		 (2 (cons 'CDDR (cdr args)))
-		 (3 (cons 'CDDDR (cdr args)))
-		 (4 (cons 'CDDDDR (cdr args)))
-		 (5 (list 'CDR (cons 'CDDDDR (cdr args))))
-		 (6 (list 'CDDR (cons 'CDDDDR (cdr args))))
-		 (7 (list 'CDDDR (cons 'CDDDDR (cdr args))))))))
-
 ;;----------------------------------------------------------------------
 ;; We transform BOOLE into the individual operations, which have
 ;; inliners
@@ -165,41 +132,6 @@
 
 ;----------------------------------------------------------------------
 
-(defun co1coerce (args &aux expr type (info (make-info)))
-  (and args (cdr args) (endp (cddr args))
-       (let ((expr (first args))
-	     (type (second args)))
-	 (and (listp type)
-	      (eq (car type) 'QUOTE)
-	      (case (second type)
-		((CHARACTER BASE-CHAR) (c1expr `(CHARACTER ,expr)))
-		(FLOAT (c1expr `(FLOAT ,expr)))
-		(SHORT-FLOAT (c1expr `(FLOAT ,expr 0.0S0)))
-		(SINGLE-FLOAT (c1expr `(FLOAT ,expr 0.0F0)))
-		(DOUBLE-FLOAT (c1expr `(FLOAT ,expr 0.0D0)))
-		(LONG-FLOAT (c1expr `(FLOAT ,expr 0.0L0)))
-                )))))
-
-;----------------------------------------------------------------------
-;; turn repetitious cons's into a list*
-
-(defun co1cons (args &aux temp)
-  (labels ((cons-to-lista (x)
-	     (let ((tem (last x)))
-	       (if (and (consp tem)
-			(consp (car tem))
-			(eq (caar tem) 'CONS)
-			(eql (length (cdar tem)) 2))
-		   (cons-to-lista (append (butlast x) (cdar tem)))
-		   x))))
-    (and (eql (length args) 2)
-	 (not (eq args (setq temp (cons-to-lista args))))
-	 (c1expr (if (equal '(nil) (last temp))
-		     (cons 'LIST (butlast temp))
-		     (cons 'LIST* temp))))))
-
-;----------------------------------------------------------------------
-
 ;; Return the most particular type we can EASILY obtain from x.  
 (defun result-type (x)
   (cond ((symbolp x)
@@ -210,34 +142,3 @@
 	 (second x))
 	(t t)))
 
-;----------------------------------------------------------------------
-
-;;; Look for inline expansion of LDB1 in sysfun.lsp
-
-(defun co1ldb (args &aux (arg1 (first args))
-		    (len (integer-length most-positive-fixnum))
-		    size pos)
-    (and (consp arg1)
-	 (eq 'BYTE (car arg1))
-	 (integerp (setq size (second arg1)))
-	 (integerp (setq pos (third arg1)))
-	 (<= (+ size pos) len)
-	 (subtypep (result-type (second args)) 'FIXNUM)
-	 (c1expr `(the fixnum (ldb1 ,size ,pos ,(second args))))))
-
-;;; ----------------------------------------------------------------------
-
-(put-sysprop 'princ 'C1 'c1princ)
-(put-sysprop 'c2princ 'C2 'c2princ)
-(put-sysprop 'terpri 'C1 'c1terpri)
-
-(put-sysprop 'apply 'C1 'c1apply)
-
-(put-sysprop 'rplacd 'C1 'c1rplacd)
-(put-sysprop 'rplacd 'C2 'c2rplacd)
-
-(put-sysprop 'nth 'C1CONDITIONAL 'co1nth)
-(put-sysprop 'nthcdr 'C1CONDITIONAL 'co1nthcdr)
-
-(put-sysprop 'cons 'C1CONDITIONAL 'co1cons)
-(put-sysprop 'ldb 'C1CONDITIONAL 'co1ldb)

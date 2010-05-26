@@ -217,11 +217,3 @@
       (progn
 	(unwind-no-exit (tag-unwind-exit tag))
 	(wt-nl) (wt-go (tag-label tag)))))
-
-;;; ------------------------------------------------------------
-
-(put-sysprop 'tagbody 'c1special 'c1tagbody)
-(put-sysprop 'tagbody 'c2 'c2tagbody)
-
-(put-sysprop 'go 'c1special 'c1go)
-(put-sysprop 'go 'c2 'c2go)

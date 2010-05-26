@@ -48,14 +48,9 @@
 (defun c1t () *c1t*)
 
 (defun c1call-symbol (fname args &aux fd)
-  (cond ((setq fd (get-sysprop fname 'c1special)) (funcall fd args))
-	((c1call-local fname args))
-	((and (setq fd (get-sysprop fname 'C1))
-	      (inline-possible fname))
+  (cond ((setq fd (gethash fname *c1-dispatch-table*))
 	 (funcall fd args))
-	((and (setq fd (get-sysprop fname 'C1CONDITIONAL))
-	      (inline-possible fname)
-	      (funcall fd args)))
+	((c1call-local fname args))
 	((and (setq fd (compiler-macro-function fname))
 	      (inline-possible fname)
 	      (let ((success nil))
@@ -118,7 +113,7 @@
   (with-c1form-env (form form)
     (let* ((name (c1form-name form))
            (args (c1form-args form))
-           (dispatch (get-sysprop name 'C2)))
+           (dispatch (gethash name *c2-dispatch-table*)))
       (if (or (eq name 'LET) (eq name 'LET*))
           (let ((*volatile* (c1form-volatile* form)))
             (declare (special *volatile*))
@@ -191,10 +186,3 @@
       `(progn
 	 (defun ,name ,vars ,@body)
 	 (define-compiler-macro ,name ,temps (list* 'LET ,binding ',body))))))
-
-;;; ----------------------------------------------------------------------
-
-(put-sysprop 'PROGN 'C1SPECIAL 'c1progn)
-(put-sysprop 'PROGN 'C2 'c2progn)
-(put-sysprop 'EXT:WITH-BACKEND 'C1SPECIAL 'c1with-backend)
-(put-sysprop 'EXT:WITH-BACKEND 'T1 'c1with-backend)

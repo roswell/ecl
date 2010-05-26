@@ -93,5 +93,3 @@
 	 (wt ");")))
   (push 'BDS-BIND *unwind-exit*)
   (wt-comment (var-name var)))
-
-(put-sysprop 'BIND 'SET-LOC 'bind)

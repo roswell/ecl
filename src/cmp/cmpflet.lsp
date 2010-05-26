@@ -263,16 +263,3 @@
           (*temp* *temp*))
       (unwind-exit (list 'CALL-NORMAL fun (coerce-locs (inline-args args))))
       (close-inline-blocks))))
-
-;;; ----------------------------------------------------------------------
-
-(put-sysprop 'FLET 'C1SPECIAL 'c1flet)
-(put-sysprop 'LABELS 'C1SPECIAL 'c1labels)
-(put-sysprop 'LOCALLY 'C1SPECIAL 'c1locally)
-(put-sysprop 'MACROLET 'C1SPECIAL 'c1macrolet)
-(put-sysprop 'SYMBOL-MACROLET 'C1SPECIAL 'c1symbol-macrolet)
-
-(put-sysprop 'LOCALS 'c2 'c2locals)	; replaces both c2flet and c2lables
-;;; c2macrolet is not defined, because MACROLET is replaced by PROGN
-;;; during Pass 1.
-(put-sysprop 'CALL-LOCAL 'C2 'c2call-local)

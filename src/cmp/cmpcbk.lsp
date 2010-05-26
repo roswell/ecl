@@ -133,5 +133,3 @@
 	     (foreign-elt-type-code return-type) ",aux);")
       (wt-nl "return output;"))
     (wt-nl1 "}")))
-
-(put-sysprop 'FFI:DEFCALLBACK 'C1 #'c1-defcallback)

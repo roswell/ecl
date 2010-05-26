@@ -168,7 +168,7 @@
   ;; Those functions that use INLINE-FUNCTION must rebind
   ;; the variable *INLINE-BLOCKS*.
   (and (inline-possible fname)
-       (not (get-sysprop fname 'C2))
+       (not (gethash fname *c2-dispatch-table*))
        (let* ((dest-rep-type (loc-representation-type *destination*))
               (dest-type (rep-type->lisp-type dest-rep-type))
               (ii (get-inline-info fname arg-types return-type return-rep-type)))

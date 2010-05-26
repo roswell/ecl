@@ -273,13 +273,3 @@
     (when (fun-needs-narg fun)
       (push narg args))
     (wt-call fun-c-name args fun-lisp-name env)))
-
-;;; ----------------------------------------------------------------------
-
-(put-sysprop 'funcall 'C1 'c1funcall)
-(put-sysprop 'funcall 'c2 'c2funcall)
-(put-sysprop 'call-global 'c2 'c2call-global)
-
-(put-sysprop 'CALL 'WT-LOC #'wt-call)
-(put-sysprop 'CALL-NORMAL 'WT-LOC #'wt-call-normal)
-(put-sysprop 'CALL-INDIRECT 'WT-LOC #'wt-call-indirect)

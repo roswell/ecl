@@ -1,7 +1,6 @@
 ;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: C -*-
 ;;;;
-;;;;  Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya.
-;;;;  Copyright (c) 1990, Giuseppe Attardi.
+;;;;  Copyright (c) 2010, Juan Jose Garcia-Ripoll
 ;;;;
 ;;;;    This program is free software; you can redistribute it and/or
 ;;;;    modify it under the terms of the GNU Library General Public
@@ -181,20 +180,6 @@ of the occurrences in those lists."
   (let ((type (p1propagate body assumptions)))
     (values type assumptions)))
 
-(defun p1let (c1form base-assumptions vars forms body)
-  (let ((new-assumptions base-assumptions))
-    (loop for v in vars
-       for f in forms
-       do (multiple-value-bind (type ass)
-              (p1propagate f base-assumptions)
-            (setf new-assumptions (p1expand-assumptions v type new-assumptions))))
-    (multiple-value-bind (type assumptions)
-        (p1propagate body new-assumptions)
-      (loop for v in vars
-         do (revise-var-type v assumptions base-assumptions))
-      (values (setf (c1form-type c1form) type)
-              assumptions))))
-
 (defun p1let* (c1form base-assumptions vars forms body)
   (let ((assumptions base-assumptions))
     (loop for v in vars
@@ -307,7 +292,6 @@ as 2^*tagbody-limit* in the worst cases.")
 (put-sysprop 'decl-body 'p1propagate 'p1decl-body)
 (put-sysprop 'if 'p1propagate #'p1if)
 (put-sysprop 'LAMBDA 'P1PROPAGATE 'p1lambda)
-(put-sysprop 'LET 'P1PROPAGATE 'p1let)
 (put-sysprop 'LET* 'P1PROPAGATE 'p1let*)
 (put-sysprop 'LOCALS 'p1propagate 'p1locals)
 (put-sysprop 'MULTIPLE-VALUE-BIND 'p1propagate 'p1multiple-value-bind)

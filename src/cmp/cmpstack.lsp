@@ -79,12 +79,3 @@
   (c1expr `(c-inline ,args (t t) (values &rest t)
 		     "cl_env_copy->values[0]=ecl_apply_from_stack_frame(#0,#1);"
 		     :one-liner nil :side-effects t)))
-
-(put-sysprop 'with-stack 'C1 #'c1with-stack)
-(put-sysprop 'with-stack 'c2 #'c2with-stack)
-(put-sysprop 'innermost-stack-frame 'C1 #'c1innermost-stack-frame)
-(put-sysprop 'stack-push 'C1 #'c1stack-push)
-(put-sysprop 'stack-push-values 'C1 #'c1stack-push-values)
-(put-sysprop 'stack-push-values 'C2 #'c2stack-push-values)
-(put-sysprop 'stack-pop 'C1 #'c1stack-pop)
-(put-sysprop 'si::apply-from-stack-frame 'c1 #'c1apply-from-stack-frame)

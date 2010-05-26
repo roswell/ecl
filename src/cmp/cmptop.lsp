@@ -41,9 +41,9 @@
 	     (cmperr "~s is illegal function." fun))
 	    ((eq fun 'QUOTE)
 	     (t1ordinary 'NIL))
-	    ((setq fd (get-sysprop fun 'T1))
+	    ((setq fd (gethash fun *t1-dispatch-table*))
 	     (funcall fd args))
-	    ((or (get-sysprop fun 'C1) (get-sysprop fun 'C1SPECIAL))
+	    ((gethash fun *c1-dispatch-table*)
              (t1ordinary form))
 	    ((and (setq fd (compiler-macro-function fun))
 		  (inline-possible fun)
@@ -69,7 +69,7 @@
 
 (defun t2expr (form)
   (when form
-    (let* ((def (get-sysprop (c1form-name form) 'T2)))
+    (let* ((def (gethash (c1form-name form) *t2-dispatch-table*)))
       (if def
           (let ((*compile-file-truename* (c1form-file form))
                 (*compile-file-position* (c1form-file-position form))
@@ -812,29 +812,7 @@
 
 ;;; ----------------------------------------------------------------------
 
-;;; Pass 1 top-levels.
-
-(put-sysprop 'DEFMACRO 'T1 't1defmacro)
-(put-sysprop 'COMPILER-LET 'T1 'c1compiler-let)
-(put-sysprop 'EVAL-WHEN 'T1 'c1eval-when)
-(put-sysprop 'PROGN 'T1 'c1progn)
-(put-sysprop 'MACROLET 'T1 'c1macrolet)
-(put-sysprop 'LOCALLY 'T1 'c1locally)
-(put-sysprop 'SYMBOL-MACROLET 'T1 'c1symbol-macrolet)
-(put-sysprop 'LOAD-TIME-VALUE 'C1 'c1load-time-value)
-(put-sysprop 'SI:FSET 'C1 'c1fset)
-
 ;;; Pass 1 1/2 type propagation
 
 (put-sysprop 'ORDINARY 'P1PROPAGATE 'p1ordinary)
 (put-sysprop 'SI:FSET 'P1PROPAGATE 'p1fset)
-
-;;; Pass 2 initializers.
-
-(put-sysprop 'COMPILER-LET 'T2 't2compiler-let)
-(put-sysprop 'PROGN 'T2 't2progn)
-(put-sysprop 'ORDINARY 'T2 't2ordinary)
-(put-sysprop 'LOAD-TIME-VALUE 'T2 't2load-time-value)
-(put-sysprop 'MAKE-FORM 'T2 't2make-form)
-(put-sysprop 'INIT-FORM 'T2 't2init-form)
-(put-sysprop 'SI:FSET 'C2 'c2fset)
