@@ -809,10 +809,3 @@
                              (or narg -1) (second loc) (second fname-loc)
                              cfun (fun-file-position fun))))
           (format stream "~%};")))))
-
-;;; ----------------------------------------------------------------------
-
-;;; Pass 1 1/2 type propagation
-
-(put-sysprop 'ORDINARY 'P1PROPAGATE 'p1ordinary)
-(put-sysprop 'SI:FSET 'P1PROPAGATE 'p1fset)

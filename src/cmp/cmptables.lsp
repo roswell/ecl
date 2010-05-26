@@ -186,6 +186,24 @@
     (init-form . t2init-form)
     ))
 
+(defconstant +p1-dispatch-alist+
+  '((block . p1block)
+    (call-global . p1call-global)
+    (catch . p1catch)
+    (if . p1if)
+    (lambda . p1lambda)
+    (let* . p1let*)
+    (locals . p1locals)
+    (multiple-value-bind . p1multiple-value-bind)
+    (multiple-value-setq . p1multiple-value-setq)
+    (progn . p1progn)
+    (setq . p1setq)
+    (tagbody . p1tagbody)
+    (unwind-protect . p1unwind-protect)
+    (ordinary . p1ordinary)
+    (si::fset . p1fset)
+    ))
+
 (defun make-dispatch-table (alist)
   (loop with hash = (make-hash-table :size (max 128 (* 2 (length alist)))
 				     :test #'eq)
@@ -204,3 +222,9 @@
 (defparameter *wt-loc-dispatch-table* (make-dispatch-table +wt-loc-dispatch-alist+))
 
 (defparameter *t2-dispatch-table* (make-dispatch-table +t2-dispatch-alist+))
+
+(defparameter *p1-dispatch-table* (make-dispatch-table +p1-dispatch-alist+)
+  "Dispatch table for type propagators associated to C1FORMs.")
+
+(defparameter *p0-dispatch-table* (make-dispatch-table '())
+  "Type propagators for known functions.")

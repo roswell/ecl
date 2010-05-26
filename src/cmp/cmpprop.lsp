@@ -36,7 +36,7 @@
                (setf type (type-and (cdr record) (values-type-primary-type type))))
              (prop-message "~&;;; Querying variable ~A gives ~A" (var-name var) type)
              (values (setf (c1form-type form) type) assumptions)))
-          ((setf propagator (get-sysprop name 'p1propagate))
+          ((setf propagator (gethash name *p0-dispatch-table*))
            (prop-message "~&;;; Entering type propagation for ~A" name)
            (multiple-value-bind (type assumptions)
                (apply propagator form assumptions (c1form-args form))
@@ -163,9 +163,6 @@ of the occurrences in those lists."
     (p1propagate-list body assumptions))
   (values t assumptions))
 
-(defun p1decl-body (c1form assumptions decls body)
-  (p1propagate body assumptions))
-
 (defun p1if (c1form assumptions fmla true-branch false-branch)
   (multiple-value-bind (fmla-type base-assumptions)
       (p1propagate fmla assumptions)
@@ -285,21 +282,6 @@ as 2^*tagbody-limit* in the worst cases.")
       (p1propagate form assumptions)
     (p1propagate-list body assumptions)
     (values output-type assumptions)))
-
-(put-sysprop 'BLOCK 'P1PROPAGATE 'p1block)
-(put-sysprop 'call-global 'p1propagate 'p1call-global)
-(put-sysprop 'CATCH 'P1PROPAGATE 'p1catch)
-(put-sysprop 'decl-body 'p1propagate 'p1decl-body)
-(put-sysprop 'if 'p1propagate #'p1if)
-(put-sysprop 'LAMBDA 'P1PROPAGATE 'p1lambda)
-(put-sysprop 'LET* 'P1PROPAGATE 'p1let*)
-(put-sysprop 'LOCALS 'p1propagate 'p1locals)
-(put-sysprop 'MULTIPLE-VALUE-BIND 'p1propagate 'p1multiple-value-bind)
-(put-sysprop 'MULTIPLE-VALUE-SETQ 'p1propagate 'p1multiple-value-setq)
-(put-sysprop 'PROGN 'P1PROPAGATE 'p1progn)
-(put-sysprop 'SETQ 'p1propagate 'p1setq)
-(put-sysprop 'tagbody 'p1propagate 'p1tagbody)
-(put-sysprop 'UNWIND-PROTECT 'P1PROPAGATE 'p1unwind-protect)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

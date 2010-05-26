@@ -15,7 +15,7 @@
 (in-package #-new-cmp "COMPILER" #+new-cmp "C-TYPES")
 
 (defun infer-arg-and-return-types (fname forms &optional (env *cmp-env*))
-  (let ((found (sys:get-sysprop fname 'C1TYPE-PROPAGATOR))
+  (let ((found (gethash fname *p0-dispatch-table*))
         arg-types
         (return-type '(VALUES &REST T)))
     (cond (found
@@ -70,11 +70,13 @@
     (let ((var (gensym)))
       (setf lambda-list (append lambda-list (list '&rest var))
             body (list* `(declare (ignorable ,var)) body)))
-    `(sys:put-sysprop ',fname 'C1TYPE-PROPAGATOR
-                      #'(ext:lambda-block ,fname ,lambda-list ,@body))))
+    `(setf (gethash ',fname *p0-dispatch-table*)
+	   #'(ext:lambda-block ,fname ,lambda-list ,@body))))
 
 (defun copy-type-propagator (orig dest-list)
-  (loop with function = (sys:get-sysprop orig 'C1TYPE-PROPAGATOR)
+  (loop with function = (gethash orig *p0-dispatch-table*)
      for name in dest-list
-     do (sys:put-sysprop name 'C1TYPE-PROPAGATOR function)))
+     when function
+     do (setf (gethash name *p0-dispatch-table*) function)))
+
 
