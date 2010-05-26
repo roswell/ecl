@@ -40,7 +40,7 @@
 	  ;; either NIL or T), we lose a lot of information.
 	  (make-c1form* 'BLOCK
 			:local-vars (list blk-var)
-			:type (type-or (blk-type blk) (c1form-type body))
+			:type (values-type-or (blk-type blk) (c1form-type body))
 			:args blk body)
 	  body))))
 
@@ -97,7 +97,7 @@
 	      (unw (setf type 'UNWIND-PROTECT
 			 var (blk-var blk))))
 	(incf (blk-ref blk))
-	(setf (blk-type blk) (type-or (blk-type blk) (c1form-primary-type val)))
+	(setf (blk-type blk) (values-type-or (blk-type blk) (c1form-type val)))
 	(let ((output (make-c1form* 'RETURN-FROM :type 'T
 				    :args blk type val var)))
 	  (when var (add-to-read-nodes var output))

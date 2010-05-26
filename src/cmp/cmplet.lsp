@@ -200,11 +200,6 @@
 	       (member v (rest i)))
       (return t))))
 
-(defun c2let-update-variable-type (var form)
-  (unless (or (var-set-nodes var)
-              (unboxed var))
-    (update-variable-type var (c1form-type form))))
-
 (defun env-grows (possibily)
   ;; if additional closure variables are introduced and this is not
   ;; last form, we must use a new env.
@@ -236,10 +231,6 @@
 	       (*env-lvl* *env-lvl*)
 	       (*inline-blocks* 0))
   (declare (type boolean block-p))
-
-  ;; FIXME! Until we switch on the type propagation phase we do
-  ;; this little optimization here
-  (mapc 'c2let-update-variable-type vars forms)
 
   ;; Replace read-only variables when it is worth doing it.
   (loop for var in vars

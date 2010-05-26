@@ -215,7 +215,7 @@ slashes before special characters.")
 
 ;;; --cmptop.lsp--
 ;;;
-(defvar *do-type-propagation* nil
+(defvar *do-type-propagation* t
   "Flag for switching on the type propagation phase. Use with care, experimental.")
 
 (defvar *compiler-phase* nil)

@@ -188,9 +188,14 @@
 
 (defconstant +p1-dispatch-alist+
   '((block . p1block)
+    (return-from . p1return-from)
     (call-global . p1call-global)
     (catch . p1catch)
+    (throw . p1throw)
     (if . p1if)
+    (fmla-not . p1fmla-not)
+    (fmla-and . p1fmla-and)
+    (fmla-or . p1fmla-or)
     (lambda . p1lambda)
     (let* . p1let*)
     (locals . p1locals)
@@ -199,9 +204,13 @@
     (progn . p1progn)
     (setq . p1setq)
     (tagbody . p1tagbody)
+    (go . p1go)
     (unwind-protect . p1unwind-protect)
     (ordinary . p1ordinary)
     (si::fset . p1fset)
+    (var . p1var)
+    (location . p1location)
+    (values . p1values)
     ))
 
 (defun make-dispatch-table (alist)

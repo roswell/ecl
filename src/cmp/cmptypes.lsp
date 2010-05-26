@@ -190,7 +190,7 @@
   destination		;;; Where the value of the block to go.
   var			;;; Variable containing the block ID.
   #-new-cmp
-  (type 'NIL)		;;; Estimated type.
+  (type '(VALUES &REST T)) ;;; Estimated type.
   #+new-cmp
   env                   ;;; Block environment.
   )
@@ -213,8 +213,8 @@
 
 (defstruct (info)
   (local-vars nil)	;;; List of var-objects created directly in the form.
-   #-new-cmp
-  (type t)		;;; Type of the form.
+  #-new-cmp
+  (type '(VALUES &REST T)) ;;; Type of the form.
   (sp-change nil)	;;; Whether execution of the form may change
 			;;; the value of a special variable.
   (volatile nil)	;;; whether there is a possible setjmp. Beppe

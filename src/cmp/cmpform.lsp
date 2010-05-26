@@ -54,7 +54,6 @@
     (FMLA-AND		* :pure)
     (FMLA-OR		* :pure)
     (LAMBDA		lambda-list doc body-c1form)
-    (LET		vars-list var-init-c1form-list decl-body-c1form :pure)
     (LET*		vars-list var-init-c1form-list decl-body-c1form :pure)
     (VALUES		values-c1form-list :pure)
     (MULTIPLE-VALUE-SETQ vars-list values-c1form-list :side-effects)
@@ -299,8 +298,8 @@
   ;; Remaining flags are just copied
   (setf (c1form-name dest)          (c1form-name new-fields)
 	(c1form-local-vars dest)    (c1form-local-vars new-fields)
-        (c1form-type dest)          (type-and (c1form-type new-fields)
-                                              (c1form-type dest))
+        (c1form-type dest)          (values-type-and (c1form-type new-fields)
+						     (c1form-type dest))
         (c1form-sp-change dest)     (c1form-sp-change new-fields)
         (c1form-side-effects dest)  (c1form-side-effects new-fields)
         (c1form-volatile dest)      (c1form-volatile new-fields)

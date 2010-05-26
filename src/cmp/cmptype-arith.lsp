@@ -103,12 +103,12 @@
 	   t1)
 	  ((null tag1)
            (setf c::*compiler-break-enable* t)
-           ;(error "foo")
+           ;(break)
 	   (cmpnote "Unknown type ~S. Assuming it is T." t1)
 	   t2)
 	  (t
            (setf c::*compiler-break-enable* t)
-           ;(error "foo")
+	   ;(break)
 	   (cmpnote "Unknown type ~S. Assuming it is T." t2)
 	   t1))))
 
@@ -277,9 +277,11 @@
 	   (cmpwarn "Unsupported CONS type ~S. Replacing it with T." t2)
 	   T)
 	  ((null tag1)
+	   ;(break)
 	   (cmpnote "Unknown type ~S" t1)
 	   T)
 	  (t
+	   ;(break)
 	   (cmpnote "Unknown type ~S" t2)
 	   T))))
 

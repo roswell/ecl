@@ -28,8 +28,8 @@
     (let* ((true-branch (c1expr (second args)))
            (false-branch (c1expr (third args))))
       (make-c1form* 'IF
-                    :type (type-or (c1form-type true-branch)
-                                   (c1form-type false-branch))
+                    :type (values-type-or (c1form-type true-branch)
+					  (c1form-type false-branch))
                     :args test true-branch false-branch))))
 
 (defun c1not (args)
@@ -55,7 +55,7 @@
         ;; (AND x) => x
         (if butlast
             (make-c1form* 'FMLA-AND
-                          :type (type-or 'null (c1form-type last))
+                          :type (type-or 'null (c1form-primary-type last))
                           :args butlast last)
             last))))
 
@@ -70,8 +70,8 @@
 	(if butlast
 	    (make-c1form* 'FMLA-OR
 			 :type (reduce #'type-or butlast
-                                       :key #'c1form-type
-                                       :initial-value (c1form-type last))
+                                       :key #'c1form-primary-type
+                                       :initial-value (c1form-primary-type last))
 			 :args butlast last)
 	    last))))
 

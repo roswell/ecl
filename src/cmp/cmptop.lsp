@@ -182,7 +182,8 @@
     (when *do-type-propagation*
       (setq *compiler-phase* 'p1propagate)
       (dolist (form *top-level-forms*)
-        (p1propagate form nil))
+	(when form
+	  (p1propagate form nil)))
       (dolist (fun *local-funs*)
         (p1propagate (fun-lambda fun) nil)))
 
