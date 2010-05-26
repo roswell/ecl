@@ -154,6 +154,10 @@
 (deftype universal-time ()
   "Time represented as a non-negative number of seconds measured from the beginning of 1900."
   'unsigned-byte)
+(deftype time-zone ()
+  t)
+(deftype si::instance ()
+  'standard-object)
 
 
 (eval-when (:compile-toplevel :execute)
@@ -528,7 +532,7 @@
 
 ;; ECL extensions
 (proclamation si:bit-array-op (t t t t) (array bit))
-(proclamation si:fixnump (t) gen-book :pure)
+(proclamation si:fixnump (t) gen-bool :pure)
 
 ;; Virtual functions added by the compiler
 (proclamation shift>> (*) nil :pure)
@@ -1189,7 +1193,7 @@
               pathname :no-side-effects)
 (proclamation load ((or stream pathname-designator) &key) gen-bool)
 (proclamation provide (string-designator) t)
-(proclamation require (string-designatior &optional list) t)
+(proclamation require (string-designator &optional list) t)
 
 ;; ECL extensions
 (proclamation si:clear-compiler-properties (symbol) t)
