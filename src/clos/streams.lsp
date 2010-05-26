@@ -602,7 +602,7 @@
     (declare (fixnum end))
     (do ((pos start (1+ pos)))
 	((>= pos end))
-      (declare (type index pos))
+      (declare (type si::index pos))
       (stream-write-char stream (aref string pos))))
   string)
 
