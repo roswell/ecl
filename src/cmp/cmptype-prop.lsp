@@ -69,9 +69,9 @@
   (unless (member '&rest lambda-list)
     (let ((var (gensym)))
       (setf lambda-list (append lambda-list (list '&rest var))
-            body (list* `(declare (ignorable ,var)) body)))
-    `(setf (gethash ',fname *p0-dispatch-table*)
-	   #'(ext:lambda-block ,fname ,lambda-list ,@body))))
+            body (list* `(declare (ignorable ,var)) body))))
+  `(setf (gethash ',fname *p0-dispatch-table*)
+         #'(ext:lambda-block ,fname ,lambda-list ,@body)))
 
 (defun copy-type-propagator (orig dest-list)
   (loop with function = (gethash orig *p0-dispatch-table*)
