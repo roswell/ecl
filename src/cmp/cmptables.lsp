@@ -190,6 +190,7 @@
   '((block . p1block)
     (return-from . p1return-from)
     (call-global . p1call-global)
+    (call-local . p1call-local)
     (catch . p1catch)
     (throw . p1throw)
     (if . p1if)

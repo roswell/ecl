@@ -106,6 +106,14 @@ of the occurrences in those lists."
 		       type (c1form-type c1form))
                (return (values type assumptions)))))
 
+(defun p1call-local (c1form assumptions fun args &optional (return-type t))
+  (loop for v in args
+     do (multiple-value-bind (arg-type local-ass)
+            (p1propagate v assumptions)
+          (setf assumptions local-ass))
+     finally (return (values (fun-return-type fun)
+                             assumptions))))
+
 (defun p1catch (c1form assumptions tag body)
   (multiple-value-bind (tag-type assumptions)
       (p1propagate tag assumptions)
@@ -168,7 +176,10 @@ of the occurrences in those lists."
     (values type assumptions)))
 
 (defun p1propagate-function (fun assumptions)
-  (p1propagate (fun-lambda fun) assumptions))
+  (multiple-value-bind (output-type assumptions)
+      (p1propagate (fun-lambda fun) assumptions)
+    (values (setf (fun-return-type fun) output-type)
+            assumptions)))
 
 (defun p1let* (c1form base-assumptions vars forms body)
   (let ((assumptions base-assumptions))
@@ -283,7 +294,7 @@ compute it. This version only handles the simplest cases."
   (multiple-value-bind (elt-type array-type)
       (type-from-array-elt array-type)
     (values (cons array-type
-		  (nconc (make-list (1- (length indices))
+		  (nconc (make-list (1- (length indices-and-object))
 				    :initial-element 'si::index)
 			 (list elt-type)))
             elt-type)))

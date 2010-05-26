@@ -152,6 +152,7 @@
   (minarg 0)		;;; Min. number arguments that the function receives.
   (maxarg call-arguments-limit)
 			;;; Max. number arguments that the function receives.
+  (return-type '(VALUES &REST T))
   #+new-cmp
   doc			;;; Documentation
   (parent *current-function*)
