@@ -724,6 +724,45 @@ memory limits before executing the program again."))))
   (let ((restart (find-restart 'USE-VALUE c)))
     (and restart (invoke-restart restart value))))
 
+(defun assert-report (names stream)
+  (declare (si::c-local))
+  (format stream "Retry assertion")
+  (if names
+      (format stream " with new value~P for ~{~S~^, ~}."
+	      (length names) names)
+      (format stream ".")))
+
+(defun assert-prompt (name value)
+  (declare (si::c-local))
+  (if (y-or-n-p "The old value of ~S is ~S.~
+		~%Do you want to supply a new value? "
+                name value)
+      (flet ((read-it () (eval (read *query-io*))))
+        (format *query-io* "~&Type a form to be evaluated:~%")
+        (if (symbolp name) ;Help user debug lexical variables
+            (progv (list name) (list value) (read-it))
+            (read-it)))
+      value))
+
+(defun assert-failure (test-form &optional place-names values
+                       &rest condition-arguments)
+  (unless arguments
+    (setf arguments (list 'SIMPLE-TYPE-ERROR
+			  :DATUM test-form
+			  :EXPECTED-TYPE nil ; This needs some work in revision
+			  :FORMAT-CONTROL "The assertion ~S failed"
+			  :FORMAT-ARGUMENTS (list test-form))))
+  (restart-case (error (si::coerce-to-condition (first arguments)
+						 (rest arguments)
+						 'simple-error
+						 'assert))
+    (continue ()
+      :REPORT (lambda (stream) (assert-report place-names stream))
+      (return-from assert-failure
+	(values-list (loop for place-name in place-names
+			for value in values
+			collect (assert-prompt place-name value)))))))
+
 ;;; ----------------------------------------------------------------------
 ;;; ECL's interface to the toplevel and debugger
 

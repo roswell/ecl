@@ -69,49 +69,22 @@ value is used to indicate the expected type in the error message."
 	   (go again)))))
   value)
 
-(defun assert-report (names stream)
-  (format stream "Retry assertion")
-  (if names
-      (format stream " with new value~P for ~{~S~^, ~}."
-	      (length names) names)
-      (format stream ".")))
-
-(defun assert-prompt (name value)
-  (cond ((y-or-n-p "The old value of ~S is ~S.~
-		  ~%Do you want to supply a new value? "
-		   name value)
-	 (format *query-io* "~&Type a form to be evaluated:~%")
-	 (flet ((read-it () (eval (read *query-io*))))
-	   (if (symbolp name) ;Help user debug lexical variables
-	       (progv (list name) (list value) (read-it))
-	       (read-it))))
-	(t value)))
-
-(defun simple-assertion-failure (assertion)
-  (error 'SIMPLE-TYPE-ERROR
-	 :DATUM assertion
-	 :EXPECTED-TYPE nil		; This needs some work in next revision. -kmp
-	 :FORMAT-CONTROL "The assertion ~S failed."
-	 :FORMAT-ARGUMENTS (list assertion)))
-
-(defmacro assert (test-form &optional places datum &rest arguments)
+(defmacro assert (test-form &optional places &rest arguments)
   "Args: (assert form [({place}*) [string {arg}*]])
 Evaluates FORM and signals a continuable error if the value is NIL.  Before
 continuing, receives new values of PLACEs from user.  Repeats this process
 until FORM returns a non-NIL value.  Returns NIL.  STRING is the format string
 for the error message and ARGs are arguments to the format string."
-  (let ((tag (gensym)))
-    `(tagbody ,tag
-       (unless ,test-form
-	 (restart-case ,(if datum
-			    `(error ,datum ,@arguments)
-			    `(simple-assertion-failure ',test-form))
-	   (continue ()
-	       :REPORT (lambda (stream) (assert-report ',places stream))
-	     ,@(mapcar #'(lambda (place)
-			   `(setf ,place (assert-prompt ',place ,place)))
-		       places)
-             (go ,tag)))))))
+  (let ((repl
+         (if places
+             `(setf (values ,@places)
+                    (assert-failure ',test-form ',places (list ,@places)
+                                    ,@arguments))
+             `(assert-failure ',test-form
+                              ,@(and arguments
+                                     (list* nil nil arguments))))))
+  `(while (not ,test-form)
+     ,repl)))
 
 (defun accumulate-cases (macro-name cases list-is-atom-p)
   (declare (si::c-local))

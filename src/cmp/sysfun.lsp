@@ -1010,6 +1010,7 @@
     si::structure-type-error si::define-structure
     si::coerce-to-list si::coerce-to-vector
     si::fill-array-with-seq
+    si::assert-failure
     #+formatter
     ,@'(
     format-princ format-prin1 format-print-named-character

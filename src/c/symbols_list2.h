@@ -1921,5 +1921,7 @@ cl_symbols[] = {
 
 {EXT_ "COMPILER-TYPECASE",NULL},
 
+{SYS_ "ASSERT-FAILURE",NULL},
+
 /* Tag for end of list */
 {NULL,NULL}};

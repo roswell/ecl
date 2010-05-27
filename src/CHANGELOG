@@ -72,6 +72,9 @@ ECL 10.5.1:
    more precise type (fixnum, single-float, etc), when the iteration limits
    are known, as in (LOOP FOR I FROM 0 TO 1000 ....)
 
+ - ASSERT is now "cheaper", delegating the job on an auxiliary function and
+   not creating any nonlocal jump structures (TAGBODY, etc).
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
