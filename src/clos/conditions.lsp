@@ -745,7 +745,7 @@ memory limits before executing the program again."))))
       value))
 
 (defun assert-failure (test-form &optional place-names values
-                       &rest condition-arguments)
+                       &rest arguments)
   (unless arguments
     (setf arguments (list 'SIMPLE-TYPE-ERROR
 			  :DATUM test-form
@@ -753,9 +753,9 @@ memory limits before executing the program again."))))
 			  :FORMAT-CONTROL "The assertion ~S failed"
 			  :FORMAT-ARGUMENTS (list test-form))))
   (restart-case (error (si::coerce-to-condition (first arguments)
-						 (rest arguments)
-						 'simple-error
-						 'assert))
+                                                (rest arguments)
+                                                'simple-error
+                                                'assert))
     (continue ()
       :REPORT (lambda (stream) (assert-report place-names stream))
       (return-from assert-failure
