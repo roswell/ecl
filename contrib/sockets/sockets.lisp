@@ -209,8 +209,8 @@ weird stuff - see gethostbyname(3) for grisly details."
 	(name-service-error "get-host-by-name"))))
 
 (defun get-host-by-address (address)
-  (assert (typep address 'vector)
-	  (and (= (length address) 4)))
+  (assert (and (typep address 'vector)
+	       (= (length address) 4)))
   (let ((host-ent (make-instance 'host-ent)))
     (if
      (c-inline (address host-ent
