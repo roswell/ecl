@@ -238,3 +238,5 @@
 
 (defparameter *p0-dispatch-table* (make-dispatch-table '())
   "Type propagators for known functions.")
+
+(defparameter *cinline-dispatch-table* (make-dispatch-table '()))

@@ -118,7 +118,7 @@
            (let ((*inline-blocks* 0)
                  (*temp* *temp*))
              (unwind-exit (negate-argument
-                           (emit-inline-form arg t nil)
+                           (emit-inline-form arg nil)
                            *destination*))
              (close-inline-blocks))))))
 

@@ -110,12 +110,14 @@
     (return-from call-global-loc
       (call-unknown-global-loc fname nil (inline-args args))))
 
-  ;; Open-codable function.
-  (let* ((arg-types (mapcar #'c1form-primary-type args))
-         (ii (inline-function fname arg-types (type-and return-type expected-type))))
-    (setf args (inline-args args (and ii (inline-info-arg-types ii))))
-    (when ii
-      (return-from call-global-loc (apply-inline-info ii args))))
+  (setf args (inline-args args))
+
+  ;; Try with a function that has a C-INLINE expansion
+  (let ((inline-loc (apply-inliner fname
+                                   (type-and return-type expected-type)
+                                   args)))
+    (when inline-loc
+      (return-from call-global-loc inline-loc)))
 
   ;; Call to a function defined in the same file. Direct calls are
   ;; only emitted for low or neutral values of DEBUG is >= 2.
