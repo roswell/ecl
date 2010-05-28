@@ -135,6 +135,12 @@
      do (setf (gethash rep-type table) information)
      finally (return table)))
 
+(defun c-number-rep-type-p (rep-type)
+  (member rep-type +all-number-rep-types+))
+
+(defun c-number-type-p (type)
+  (c-number-rep-type-p (lisp-type->rep-type type)))
+
 (defun rep-type-record (rep-type)
   (gethash rep-type +representation-type-hash+))
 
