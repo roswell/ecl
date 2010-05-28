@@ -48,7 +48,8 @@
   (values (c1form-type form) assumptions))
 
 (defun p1var (form assumptions var)
-  (let* ((record (assoc var assumptions))
+  (let* ((record (and (assoc var assumptions)
+		      (baboon :format-control "Non empty assumptions found in P1VAR")))
 	 ;; Use the type of C1FORM because it might have been
 	 ;; coerced by a THE form.
 	 (var-type (if record (cdr record) (var-type var)))
@@ -185,7 +186,7 @@ of the occurrences in those lists."
     (loop with type
        for v in vars
        for f in forms
-       when (null (var-set-nodes v))
+       unless (or (global-var-p v) (var-set-nodes v))
        do (progn
 	    (multiple-value-setq (type assumptions) (p1propagate f assumptions))
 	    (setf (var-type v) (type-and (values-type-primary-type type)
@@ -208,8 +209,11 @@ of the occurrences in those lists."
       (p1propagate init-c1form assumptions)
     (loop for v in vars-list
        for type in (values-type-to-n-types init-form-type (length vars-list))
-       when (null (var-set-nodes v))
-       do (setf (var-type v) (type-and (var-type v) type)))
+       unless (or (global-var-p v)
+		  (var-set-nodes v))
+       do (setf (var-type v) (type-and (var-type v) type)) and
+       do (prop-message "~&;;; Variable ~A assigned type ~A"
+			  (var-name v) (var-type v)))
     (p1propagate body assumptions)))
 
 (defun p1multiple-value-setq (c1form assumptions vars-list value-c1form)
