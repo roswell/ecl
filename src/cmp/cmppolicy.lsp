@@ -206,7 +206,7 @@
 ;; ERROR CHECKING POLICY
 ;;
 
-(define-policy assume-no-errors :off safety 2)
+(define-policy assume-no-errors :off safety 1)
 
 (define-policy assume-right-type :alias assume-no-errors)
 
