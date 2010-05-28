@@ -122,6 +122,81 @@
 (def-type-propagator / (fname op1 &rest others)
   (arithmetic-propagator op1 others 'rational))
 
+(defun inline-binop (expected-type arg1 arg2 integer-result-type
+		     consing non-consing)
+  (multiple-value-bind (result t1 t2)
+      (maximum-number-type (inlined-arg-type arg1) (inlined-arg-type arg2))
+    (when (member result '(integer fixnum))
+      (setf result integer-result-type))
+    (let (c-rep-type)
+      (if (and (or (and (c-number-type-p result)
+			(setf c-rep-type (lisp-type->rep-type result)))
+		   (and (policy-assume-right-type)
+			(c-number-type-p expected-type)
+			(setf c-rep-type (lisp-type->rep-type expected-type))))
+	       (c-number-type-p t1)
+	       (c-number-type-p t2))
+	  (produce-inline-loc (list arg1 arg2) (list c-rep-type c-rep-type)
+			      (list c-rep-type) non-consing nil t)
+	  (produce-inline-loc (list arg1 arg2) '(:object :object) '(:object)
+			      consing nil t)))))
+
+(trace inline-binop)
+
+(defun inline-arith-unop (arg1 consing non-consing)
+  (let ((c-rep-type (inlined-arg-rep-type arg1)))
+    (if (c-number-rep-type-p c-rep-type)
+        (produce-inline-loc (list arg1) (list c-rep-type)
+                            (list c-rep-type) non-consing nil t)
+	(produce-inline-loc (list arg1) '(:object) '(:object)
+			    consing nil t))))
+
+(define-c-inliner + (return-type &rest arguments &aux arg1 arg2)
+  (when (null arguments)
+    (return '(fixnum-value 0)))
+  (setf arg1 (pop arguments))
+  (when (null arguments)
+    (return (inlined-arg-loc arg1)))
+  (loop for arg2 = (pop arguments)
+     for result = (inline-binop return-type arg1 arg2 'integer
+				"ecl_plus(#0,#1)" "(#0)+(#1)")
+     do (if arguments
+	    (setf arg1 (save-inline-loc result))
+	    (return result))))
+
+(define-c-inliner - (return-type arg1 &rest arguments &aux arg2)
+  (when (null arguments)
+    (return (inline-arith-unop arg1 "ecl_negate(#0)" "-(#0)")))
+  (loop for arg2 = (pop arguments)
+     for result = (inline-binop return-type arg1 arg2 'integer
+				"ecl_minus(#0,#1)" "(#0)-(#1)")
+     do (if arguments
+	    (setf arg1 (save-inline-loc result))
+	    (return result))))
+
+(define-c-inliner * (return-type &rest arguments &aux arg1 arg2)
+  (when (null arguments)
+    (return '(fixnum-value 1)))
+  (setf arg1 (pop arguments))
+  (when (null arguments)
+    (return (inlined-arg-loc arg1)))
+  (loop for arg2 = (pop arguments)
+     for result = (inline-binop return-type arg1 arg2 'integer
+				"ecl_times(#0,#1)" "(#0)*(#1)")
+     do (if arguments
+	    (setf arg1 (save-inline-loc result))
+	    (return result))))
+
+(define-c-inliner / (return-type arg1 &rest arguments &aux arg2)
+  (when (null arguments)
+    (return (inline-arith-unop arg1 "ecl_divide(MAKE_FIXNUM(1),(#0))" "1/(#0)")))
+  (loop for arg2 = (pop arguments)
+     for result = (inline-binop return-type arg1 arg2 'rational
+				"ecl_divide(#0,#1)" "(#0)/(#1)")
+     do (if arguments
+	    (setf arg1 (save-inline-loc result))
+	    (return result))))
+
 ;;;
 ;;; SPECIAL FUNCTIONS
 ;;;

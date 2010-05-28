@@ -41,6 +41,18 @@
           (incf *inline-blocks*)
           var))))
 
+(defun save-inline-loc (loc)
+  (let* ((rep-type (loc-representation-type (second loc)))
+         (temp (make-inline-temp-var (first loc) rep-type))
+         (*destination* temp))
+    (set-loc loc)
+    temp))
+
+(defmacro with-inlined-loc ((temp-loc loc) &rest body)
+  `(let ((,temp-loc (save-inline-loc ,loc)))
+     (setf ,temp-loc (list (var-type ,temp-loc) ,temp-loc))
+     ,@body))
+
 (defun emit-inlined-variable (form rest-forms)
   (let ((var (c1form-arg 0 form))
         (value-type (c1form-primary-type form)))
@@ -64,7 +76,7 @@
          (return-type (c1form-primary-type form))
          (fun (find fname *global-funs* :key #'fun-name :test #'same-fname-p))
          (loc (call-global-loc fname fun args return-type expected-type))
-         (type (loc-type loc))
+         (type (type-and return-type (loc-type loc)))
          (temp (make-inline-temp-var type (loc-representation-type loc)))
          (*destination* temp))
     (set-loc loc)

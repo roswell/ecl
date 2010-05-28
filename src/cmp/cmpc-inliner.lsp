@@ -15,14 +15,23 @@
 
 (in-package "COMPILER")
 
+(defun inlined-arg-loc (arg)
+  (second arg))
+
+(defun inlined-arg-type (arg)
+  (first arg))
+
+(defun inlined-arg-rep-type (arg)
+  (loc-representation-type (second arg)))
+
 (defmacro define-c-inliner (fname lambda-list &body body)
-  `(setf (gethash fname *cinline-dispatch-table*)
-	 #'(ext:lambda-block ,fname ,lambda-list ,@body)))
+  `(setf (gethash ',fname *cinline-dispatch-table*)
+	 #'(lambda ,lambda-list (block nil ,@body))))
 
 (defun apply-inliner (fname return-type inlined-args)
   (let ((fd (gethash fname *cinline-dispatch-table*)))
     (if fd
-	(apply fd inlined-args)
+	(apply fd return-type inlined-args)
 	(default-c-inliner fname return-type inlined-args))))
 
 (defun default-c-inliner (fname return-type inlined-args)
