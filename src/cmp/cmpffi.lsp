@@ -409,8 +409,9 @@
 	    ((equal output-type '(VALUES &REST t))
 	     (setf output-rep-type '((VALUES &REST t))))
 	    ((and (consp output-type) (eql (first output-type) 'VALUES))
-	     (setf output-rep-type (mapcar #'cdr (mapcar #'produce-type-pair (rest output-type)))
-		   output-type 'T))
+	     (let ((x (mapcar #'produce-type-pair (rest output-type))))
+	       (setf output-rep-type (mapcar #'cdr x)
+		     output-type `(VALUES ,@(mapcar #'car x)))))
 	    (t
 	     (let ((x (produce-type-pair output-type)))
 	       (setf output-type (car x)
