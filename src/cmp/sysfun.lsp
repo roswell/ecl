@@ -429,39 +429,6 @@
 
 ;; file num_arith.d
 
-(def-inline + :always (t t) t "ecl_plus(#0,#1)")
-(def-inline + :always (fixnum-float fixnum-float) :double
- "(double)(#0)+(double)(#1)" :exact-return-type t)
-(def-inline + :always (fixnum-float fixnum-float) :float
- "(float)(#0)+(float)(#1)" :exact-return-type t)
-(def-inline + :always (fixnum fixnum) :fixnum "(#0)+(#1)" :exact-return-type t)
-
-(def-inline - :always (t) t "ecl_negate(#0)")
-(def-inline - :always (t t) t "ecl_minus(#0,#1)")
-(def-inline - :always (fixnum-float fixnum-float) :double
- "(double)(#0)-(double)(#1)" :exact-return-type t)
-(def-inline - :always (fixnum-float fixnum-float) :float
- "(float)(#0)-(float)(#1)" :exact-return-type t)
-(def-inline - :always (fixnum fixnum) :fixnum "(#0)-(#1)" :exact-return-type t)
-(def-inline - :always (fixnum-float) :double "-(double)(#0)" :exact-return-type t)
-(def-inline - :always (fixnum-float) :float "-(float)(#0)" :exact-return-type t)
-(def-inline - :always (fixnum) :fixnum "-(#0)" :exact-return-type t)
-
-(def-inline * :always (t t) t "ecl_times(#0,#1)")
-(def-inline * :always (fixnum-float fixnum-float) :double
- "(double)(#0)*(double)(#1)" :exact-return-type t)
-(def-inline * :always (fixnum-float fixnum-float) :float
- "(float)(#0)*(float)(#1)" :exact-return-type t)
-(def-inline * :always (fixnum fixnum) t "_ecl_fix_times_fix(#0,#1)" :exact-return-type t)
-(def-inline * :always (fixnum fixnum) :fixnum "(#0)*(#1)" :exact-return-type t)
-
-(def-inline / :always (t t) t "ecl_divide(#0,#1)")
-(def-inline / :always (fixnum-float fixnum-float) :double
- "(double)(#0)/(double)(#1)" :exact-return-type t)
-(def-inline / :always (fixnum-float fixnum-float) :float
- "(float)(#0)/(float)(#1)" :exact-return-type t)
-(def-inline / :always (fixnum fixnum) :fixnum "(#0)/(#1)" :exact-return-type t)
-
 (def-inline 1+ :always (t) t "ecl_one_plus(#0)")
 (def-inline 1+ :always (double-loat) :double "(double)(#0)+1")
 (def-inline 1+ :always (single-float) :float "(float)(#0)+1")
