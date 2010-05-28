@@ -211,6 +211,7 @@
   `(unless ,condition (cmperr ,string ,@args)))
 
 (defun cmperr (string &rest args)
+  (break)
   (let ((c (make-condition 'compiler-error
 			   :format-control string
 			   :format-arguments args)))

@@ -1914,7 +1914,7 @@ cl_symbols[] = {
 {SYS_ "SEQUENCE-START-END","si_sequence_start_end"},
 {SYS_ "SEQUENCE-COUNT",NULL},
 {SYS_ "SHRINK-VECTOR",NULL},
-{SYS_ "COPY-SUBARRAY",NULL},
+{SYS_ "COPY-SUBARRAY","si_copy_subarray"},
 
 {SYS_ "CONS-CAR","cl_car"},
 {SYS_ "CONS-CDR","cl_cdr"},

@@ -1107,17 +1107,28 @@ ecl_copy_subarray(cl_object dest, cl_index i0, cl_object orig,
 	if (i1 + l > orig->array.dim) {
 		l = orig->array.dim - i1;
 	}
-	if (t != ecl_array_elttype(orig) || t == aet_bit) {
-		while (l--) {
-			ecl_aset_unsafe(dest, i0++, ecl_aref_unsafe(orig, i1++));
-		}
-	} else if (t >= 0 && t <= aet_last_type) {
+        if (dest == orig && i0 > i1) {
+                if (t != ecl_array_elttype(orig) || t == aet_bit) {
+                        for (i0 += l, i1 += l; l--; ) {
+                                ecl_aset_unsafe(dest, --i0,
+                                                ecl_aref_unsafe(orig, --i1));
+                        }
+                } else {
+                        cl_index elt_size = ecl_aet_size[t];
+                        memmove(dest->array.self.bc + i0 * elt_size,
+                                orig->array.self.bc + i1 * elt_size,
+                                l * elt_size);
+                }
+        } else if (t != ecl_array_elttype(orig) || t == aet_bit) {
+                while (l--) {
+                        ecl_aset_unsafe(dest, i0++,
+                                        ecl_aref_unsafe(orig, i1++));
+                }
+        } else {
 		cl_index elt_size = ecl_aet_size[t];
 		memcpy(dest->array.self.bc + i0 * elt_size,
-		       orig->array.self.bc + i1 * elt_size,
-		       l * elt_size);
-	} else {
-		FEbad_aet();
+                       orig->array.self.bc + i1 * elt_size,
+                       l * elt_size);
 	}
 }
 
@@ -1233,6 +1244,16 @@ ecl_reverse_subarray(cl_object x, cl_index i0, cl_index i1)
 	default:
 		FEbad_aet();
 	}
+}
+
+cl_object
+si_copy_subarray(cl_object dest, cl_object start0,
+                 cl_object orig, cl_object start1, cl_object length)
+{
+        ecl_copy_subarray(dest, fixnnint(start0),
+                          orig, fixnnint(start1),
+                          fixnnint(length));
+        @(return dest)
 }
 
 cl_object

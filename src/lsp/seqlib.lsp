@@ -18,6 +18,14 @@
 (eval-when (:execute)
   (load (merge-pathnames "seqmacros.lsp" *load-truename*)))
 
+#-ecl-min
+(eval-when (:compile-toplevel)
+(define-compiler-macro copy-subarray (&rest args)
+  `(ffi:c-inline ,args (:object :fixnum :object :fixnum :fixnum) :void
+                 "ecl_copy_subarray(#0,#1,#2,#3,#4)"
+                 :one-liner t))
+)
+
 (defun seqtype (sequence)
   (declare (si::c-local))
   (cond ((listp sequence) 'list)
@@ -118,29 +126,29 @@
 (defun replace (sequence1 sequence2 &key (start1 0) end1 (start2 0) end2)
   (with-start-end (start1 end1 sequence1)
    (with-start-end (start2 end2 sequence2)
-    (if (and (eq sequence1 sequence2)
-             (> start1 start2))
-        (do* ((i 0 (1+ i))
-              (l (if (< (the fixnum (- end1 start1))
-			(the fixnum (- end2 start2)))
-                      (- end1 start1)
-                      (- end2 start2)))
-              (s1 (+ start1 (the fixnum (1- l))) (the fixnum (1- s1)))
-              (s2 (+ start2 (the fixnum (1- l))) (the fixnum (1- s2))))
-            ((>= i l) sequence1)
-          (declare (fixnum i l s1 s2))
-          (setf (elt sequence1 s1) (elt sequence2 s2)))
-        (do ((i 0 (1+ i))
-             (l (if (< (the fixnum (- end1 start1))
-		       (the fixnum (- end2 start2)))
-                    (- end1 start1)
-                    (- end2 start2)))
-             (s1 start1 (1+ s1))
-             (s2 start2 (1+ s2)))
-            ((>= i l) sequence1)
-          (declare (fixnum i l s1 s2))
-          (setf (elt sequence1 s1) (elt sequence2 s2)))))))
-
+     (declare (optimize (speed 3) (safety 0) (debug 0)))
+     (let ((length (min (- end2 start2) (- end1 start1))))
+       (declare (fixnum length))
+       ;; If the two sequences are arrays, we can use COPY-SUBARRAY.
+       ;; Otherwise we have our own loop, which relies on sequence
+       ;; iterators. It becomes inefficient when sequences overlap
+       ;; because it has to save the data.
+       (if (and (vectorp sequence1)
+                (vectorp sequence2))
+           (copy-subarray sequence1 start1 sequence2 start2 length)
+           (do* ((data (if (and (eq sequence1 sequence2)
+                                (> start1 start2))
+                           (subseq sequence2 start2 end2)
+                           sequence2))
+                 (it2 (make-seq-iterator data start2)
+                      (seq-iterator-next data it2))
+                 (it1 (make-seq-iterator sequence1 start1)
+                      (seq-iterator-next sequence1 it1)))
+                ((or (<= length 0) (null it1) (null it2)))
+             (seq-iterator-set sequence1 it1
+                               (seq-iterator-ref sequence2 it2))
+             (decf length))))))
+  sequence1)
 
 (defun filter-vector (which out in start end from-end count
                       test test-not key)
@@ -198,17 +206,8 @@
                 (setf (aref (the vector out) start) elt
                       start (1+ start))))
           ;; ... and copy the elements outside the limits
-          (values out (copy-subarray out start in end l)))))))
-
-(defun copy-subarray (out start-out in start-in end-in)
-  (declare (optimize (speed 3) (safety 0) (debug 0)))
-  (do* ((n end-in)
-        (i start-in (1+ i))
-        (j start-out (1+ j)))
-       ((>= i n)
-        j)
-    (declare (fixnum i j n))
-    (row-major-aset out j (row-major-aref in i))))
+          (copy-subarray out start in end l)
+          (values out (+ start (- l end))))))))
 
 (defun remove-list (which sequence start end count test test-not key)
   (with-tests (test test-not key)
@@ -580,9 +579,9 @@ Returns a copy of SEQUENCE without duplicated elements."
           (declare (fixnum index jndex))
         (loop
            (when (= index end)
-             (return (if out
-                         (copy-subarray out jndex in end length)
-                         (+ jndex (- length end)))))
+             (return (progn
+                       (when out (copy-subarray out jndex in end length))
+                       (+ jndex (- length end)))))
            (unless (already-in-vector-p in start index end from-end)
              (when out
                (setf (aref (the vector out) jndex)
