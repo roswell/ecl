@@ -521,7 +521,7 @@
               (integer 0 #.(float-digits (coerce 1.0 'long-float)))
               :pure)
 (proclamation integer-decode-float (float)
-              (values float integer (member -1 1))
+              (values integer integer (member -1 1))
               :pure)
 (proclamation float (number &optional float) float :pure)
 (proclamation floatp (t) gen-bool :pure)
