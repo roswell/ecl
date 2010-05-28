@@ -212,8 +212,8 @@
 	      collect `(let ((%ndx-var ,index))
 			 (declare (ext:array-index %ndx-var))
 			 ,(and check `(check-index-in-bounds ,a %ndx-var ,dim-var))
-			 `(setf %output-var
-				(the ext:array-index (+ %output-var %ndx-var))))
+			 (setf %output-var
+			       (the ext:array-index (+ %output-var %ndx-var))))
 	      do (setf last-dim dim-var))
          %output-var))))
 
