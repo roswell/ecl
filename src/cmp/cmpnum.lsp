@@ -141,8 +141,6 @@
 	  (produce-inline-loc (list arg1 arg2) '(:object :object) '(:object)
 			      consing nil t)))))
 
-(trace inline-binop)
-
 (defun inline-arith-unop (arg1 consing non-consing)
   (let ((c-rep-type (inlined-arg-rep-type arg1)))
     (if (c-number-rep-type-p c-rep-type)
