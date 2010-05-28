@@ -18,11 +18,11 @@
 ;;; TYPE PROPAGATION LOOP
 ;;;
 
-(eval-when (eval compile)
-  (defvar *type-propagation-messages* nil)
-  (defmacro prop-message (&rest args)
+(eval-when (:execute :compile-toplevel)
+  (defparameter *type-propagation-messages* nil)
+  (defmacro prop-message (string &rest args)
     (when *type-propagation-messages*
-      `(format *standard-output* ,@args))))
+      `(format *standard-output* ,string ,@args))))
 
 (defun p1propagate (form assumptions)
   (let* ((*cmp-env* (c1form-env form))
@@ -48,13 +48,12 @@
   (values (c1form-type form) assumptions))
 
 (defun p1var (form assumptions var)
-  (let ((record (assoc var assumptions))
-	;; Use the type of C1FORM because it might have been
-	;; coerced by a THE form.
-	(type (c1form-primary-type form)))
-    (when record
-      (setf type (type-and (cdr record) (values-type-primary-type type)))
-      (prop-message "~&;;; Querying variable ~A gives ~A" (var-name var) type))
+  (let* ((record (assoc var assumptions))
+	 ;; Use the type of C1FORM because it might have been
+	 ;; coerced by a THE form.
+	 (var-type (if record (cdr record) (var-type var)))
+	 (type (type-and var-type (c1form-primary-type form))))
+    (prop-message "~&;;; Querying variable ~A gives ~A" (var-name var) type)
     (values type assumptions)))
 
 (defun p1values (form assumptions values)
@@ -96,6 +95,9 @@ of the occurrences in those lists."
   (values t assumptions))
 
 (defun p1call-global (c1form assumptions fname args &optional (return-type t))
+  (print (c1form-form c1form))
+  (loop for v in args
+     do (print (list v (c1form-type v))))
   (loop for v in args
      do (multiple-value-bind (arg-type local-ass)
             (p1propagate v assumptions)
@@ -190,7 +192,9 @@ of the occurrences in those lists."
        do (progn
 	    (multiple-value-setq (type assumptions) (p1propagate f assumptions))
 	    (setf (var-type v) (type-and (values-type-primary-type type)
-					 (var-type v)))))
+					 (var-type v)))
+	    (prop-message "~&;;; Variable ~A assigned type ~A"
+			  (var-name v) (var-type v))))
     (multiple-value-bind (type assumptions)
         (p1propagate body assumptions)
       (loop for v in vars
