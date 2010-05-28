@@ -95,8 +95,11 @@
                                         "In LET/LET* bindings")
                          (default-init var))))
           ;; :read-only variable handling. Beppe
-          (when (read-only-variable-p name other-decls)
-            (setf (var-type var) (c1form-primary-type init)))
+          (if (read-only-variable-p name other-decls)
+	      (if (global-var-p var)
+		  (cmpwarn "Found :READ-ONLY declaration for global var ~A"
+			   name)
+		  (setf (var-type var) (c1form-primary-type init))))
           (push var vars)
           (push init forms)
           (when (eq let/let* 'LET*) (push-vars var))))
