@@ -23,6 +23,14 @@ ECL 10.5.1:
 
  - Solved a problem with type intersections between SIMPLE-ARRAY and ARRAY.
 
+ - Logical pathnames are now translated to uppercase and, when converted
+   into physical pathnames, translated back using case :common This means
+   that #P"sys:foo.fas" is parsed as
+     (make-pathname :host "SYS" :name "FOO" :type "FAS")
+   and then
+     (translate-logical-pathname #P"SYS:FOO.FAS")
+       => "where/ecl/lives/foo.fas"
+
 * Visible changes:
 
  - "fasb" is now a valid FASL file type, accepted by ECL even in absence of
@@ -62,7 +70,7 @@ ECL 10.5.1:
    SAFETY are below 2.
 
  - Important performance improvements in sequence functions, such as FIND,
-   REPLACE, POSITION, COUNT, REMOVE, DELETE, SUBSTITUTE, NSUBSTITUTE,
+   SEARCH, REPLACE, POSITION, COUNT, REMOVE, DELETE, SUBSTITUTE, NSUBSTITUTE,
    DELETE-DUPLICATES, REMOVE-DUPLICATES and their possible IF/IF-NOT
    variants. Except COUNT, for efficiency, some of the previously mentioned
    functions may run through the sequences in arbitrary orders one or more

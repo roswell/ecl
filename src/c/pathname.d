@@ -30,6 +30,122 @@
 
 typedef int (*delim_fn)(int);
 
+/*
+ * Translates a string into the host's preferred case.
+ * See CLHS 19.2.2.1.2.2 Common Case in Pathname Components.
+ */
+
+static cl_object
+translate_common_case(cl_object str)
+{
+	int string_case;
+        /* Pathnames may contain some other objects, such as symbols,
+         * numbers, etc, which need not be translated */
+        if (str == OBJNULL) {
+                return str;
+        }
+	if (!ecl_stringp(str)) {
+		return str;
+	}
+	string_case = ecl_string_case(str);
+	if (string_case > 0) { /* ALL_UPPER */
+		/* We use UN*X conventions, so lower case is default.
+		 * However, this really should be conditionalised to the OS type,
+		 * and it should translate to the _local_ case.
+		 */
+		return cl_string_downcase(1, str);
+	} else if (string_case < 0) { /* ALL_LOWER */
+		/* We use UN*X conventions, so lower case is default.
+		 * However, this really should be conditionalised to the OS type,
+		 * and it should translate to _opposite_ of the local case.
+		 */
+		return cl_string_upcase(1, str);
+	} else {
+		/* Mixed case goes unchanged */
+		return str;
+	}
+}
+
+static cl_object
+translate_uppercase(cl_object str)
+{
+	int string_case;
+        /* Pathnames may contain some other objects, such as symbols,
+         * numbers, etc, which need not be translated */
+        if (str == OBJNULL) {
+                return str;
+        }
+	if (!ecl_stringp(str)) {
+		return str;
+	}
+	string_case = ecl_string_case(str);
+	if (string_case > 0) { /* ALL_UPPER */
+                return str;
+        } else {
+                return cl_string_upcase(1, str);
+        }
+}
+
+static cl_object
+translate_component_case(cl_object str, cl_object scase)
+{
+	if (scase == @':common') {
+		return translate_common_case(str);
+	} else if (scase == @':local') {
+		return str;
+	} else if (scase == @':upcase') {
+                return translate_uppercase(str);
+        } else {
+		FEerror("~S is not a valid pathname case specificer.~S"
+			"Only :COMMON or :LOCAL are accepted.", 1, scase);
+	}
+}
+
+static cl_object
+translate_list_case(cl_object list, cl_object scase)
+{
+	/* If the argument is really a list, translate all strings in it and
+	 * return this new list, else assume it is a string and translate it.
+	 */
+	if (!CONSP(list)) {
+		return translate_component_case(list,scase);
+	} else {
+		cl_object l;
+		list = cl_copy_list(list);
+		for (l = list; !ecl_endp(l); l = CDR(l)) {
+			/* It is safe to pass anything to translate_component_case,
+			 * because it will only transform strings, leaving other
+			 * object (such as symbols) unchanged.*/
+			cl_object name = ECL_CONS_CAR(l);
+			name = translate_component_case(name, scase);
+			ECL_RPLACA(l, name);
+		}
+		return list;
+	}
+}
+
+static cl_object
+fix_pathname_case(cl_object p, cl_object scase)
+{
+        if (p->pathname.logical) {
+                scase = @':upcase';
+        } else if (scase == @':local') {
+                return p;
+        }
+        p->pathname.host =
+                translate_component_case(p->pathname.host, scase);
+        p->pathname.device =
+                translate_component_case(p->pathname.device, scase);
+        p->pathname.directory =
+                translate_list_case(p->pathname.directory, scase);
+        p->pathname.name =
+                translate_component_case(p->pathname.name, scase);
+        p->pathname.type =
+                translate_component_case(p->pathname.type, scase);
+        return p;
+}
+
+
 static void
 push_substring(cl_object buffer, cl_object string, cl_index start, cl_index end)
 {
@@ -119,9 +235,11 @@ destructively_check_directory(cl_object directory, bool logical)
 
 cl_object
 ecl_make_pathname(cl_object host, cl_object device, cl_object directory,
-		  cl_object name, cl_object type, cl_object version)
+		  cl_object name, cl_object type, cl_object version,
+                  cl_object acase)
 {
 	cl_object x, p, component;
+        cl_object (*translator)(cl_object);
 
 	p = ecl_alloc_object(t_pathname);
 	if (ecl_stringp(host))
@@ -184,6 +302,7 @@ ecl_make_pathname(cl_object host, cl_object device, cl_object directory,
 	p->pathname.name      = name;
 	p->pathname.type      = type;
 	p->pathname.version   = version;
+        fix_pathname_case(p, acase);
 	if (destructively_check_directory(directory, p->pathname.logical) == @':error') {
 		cl_error(3, @'file-error', @':pathname', p);
 	}
@@ -239,76 +358,6 @@ static int is_slash(int c) { return IS_DIR_SEPARATOR(c); }
 static int is_semicolon(int c) { return c == ';'; }
 static int is_dot(int c) { return c == '.'; }
 static int is_null(int c) { return c == '\0'; }
-
-/*
- * Translates a string into the host's preferred case.
- * See CLHS 19.2.2.1.2.2 Common Case in Pathname Components.
- */
-
-static cl_object
-translate_common_case(cl_object str)
-{
-	int string_case;
-	if (!ecl_stringp(str)) {
-		/* Pathnames may contain some other objects, such as symbols,
-		 * numbers, etc, which need not be translated */
-		return str;
-	}
-	string_case = ecl_string_case(str);
-	if (string_case > 0) { /* ALL_UPPER */
-		/* We use UN*X conventions, so lower case is default.
-		 * However, this really should be conditionalised to the OS type,
-		 * and it should translate to the _local_ case.
-		 */
-		return cl_string_downcase(1, str);
-	} else if (string_case < 0) { /* ALL_LOWER */
-		/* We use UN*X conventions, so lower case is default.
-		 * However, this really should be conditionalised to the OS type,
-		 * and it should translate to _opposite_ of the local case.
-		 */
-		return cl_string_upcase(1, str);
-	} else {
-		/* Mixed case goes unchanged */
-		return str;
-	}
-}
-
-static cl_object
-translate_pathname_case(cl_object str, cl_object scase)
-{
-	if (scase == @':common') {
-		return translate_common_case(str);
-	} else if (scase == @':local') {
-		return str;
-	} else {
-		FEerror("~S is not a valid pathname case specificer.~S"
-			"Only :COMMON or :LOCAL are accepted.", 1, scase);
-	}
-}
-
-static cl_object
-translate_directory_case(cl_object list, cl_object scase)
-{
-	/* If the argument is really a list, translate all strings in it and
-	 * return this new list, else assume it is a string and translate it.
-	 */
-	if (!CONSP(list)) {
-		return translate_pathname_case(list,scase);
-	} else {
-		cl_object l;
-		list = cl_copy_list(list);
-		for (l = list; !ecl_endp(l); l = CDR(l)) {
-			/* It is safe to pass anything to translate_pathname_case,
-			 * because it will only transform strings, leaving other
-			 * object (such as symbols) unchanged.*/
-			cl_object name = ECL_CONS_CAR(l);
-			name = translate_pathname_case(name, scase);
-			ECL_RPLACA(l, name);
-		}
-		return list;
-	}
-}
-
 
 /*
  * Parses a word from string `S' until either:
@@ -624,7 +673,8 @@ ecl_parse_namestring(cl_object s, cl_index start, cl_index end, cl_index *ep,
 	version = (name != Cnil || type != Cnil) ? @':newest' : Cnil;
  make_it:
 	if (*ep >= end) *ep = end;
-	path = ecl_make_pathname(host, device, path, name, type, version);
+	path = ecl_make_pathname(host, device, path, name, type, version,
+                                 @':local');
 	path->pathname.logical = logical;
 	return tilde_expand(path);
 }
@@ -871,7 +921,8 @@ ecl_merge_pathnames(cl_object path, cl_object defaults, cl_object default_versio
 	/*
 		In this implementation, version is not considered
 	*/
-	defaults = ecl_make_pathname(host, device, directory, name, type, version);
+	defaults = ecl_make_pathname(host, device, directory, name,
+                                     type, version, @':local');
 	return defaults;
 }
 
@@ -1091,21 +1142,24 @@ cl_namestring(cl_object x)
 	if (Null(defaults)) {
 		defaults = si_default_pathname_defaults();
 		defaults = ecl_make_pathname(defaults->pathname.host,
-					     Cnil, Cnil, Cnil, Cnil, Cnil);
+					     Cnil, Cnil, Cnil, Cnil, Cnil,
+                                             @':local');
 	} else {
 		defaults = cl_pathname(defaults);
 	}
-	x = ecl_make_pathname(host != OBJNULL? translate_pathname_case(host,scase)
-			      : defaults->pathname.host,
-			      device != OBJNULL? translate_pathname_case(device,scase)
-			      : defaults->pathname.device,
-			      directory != OBJNULL? translate_directory_case(directory,scase)
+	x = ecl_make_pathname(host != OBJNULL? host
+                              : defaults->pathname.host,
+			      device != OBJNULL? device
+                              : defaults->pathname.device,
+			      directory != OBJNULL? directory
 			      : defaults->pathname.directory,
-			      name != OBJNULL? translate_pathname_case(name,scase)
+			      name != OBJNULL? name
 			      : defaults->pathname.name,
-			      type != OBJNULL? translate_pathname_case(type,scase)
+			      type != OBJNULL? type
 			      : defaults->pathname.type,
-			      version != OBJNULL? version : defaults->pathname.version);
+			      version != OBJNULL? version
+                              : defaults->pathname.version,
+                              scase);
 	@(return x)
 @)
 
@@ -1125,31 +1179,31 @@ si_logical_pathname_p(cl_object pname)
 @(defun pathname_host (pname &key ((:case scase) @':local'))
 @
 	pname = cl_pathname(pname);
-	@(return translate_pathname_case(pname->pathname.host,scase))
+	@(return translate_component_case(pname->pathname.host,scase))
 @)
 
 @(defun pathname_device (pname &key ((:case scase) @':local'))
 @
 	pname = cl_pathname(pname);
-	@(return translate_pathname_case(pname->pathname.device,scase))
+	@(return translate_component_case(pname->pathname.device,scase))
 @)
 
 @(defun pathname_directory (pname &key ((:case scase) @':local'))
 @
 	pname = cl_pathname(pname);
-        @(return translate_directory_case(pname->pathname.directory,scase))
+        @(return translate_list_case(pname->pathname.directory,scase))
 @)
 
 @(defun pathname_name(pname &key ((:case scase) @':local'))
 @
 	pname = cl_pathname(pname);
-	@(return translate_pathname_case(pname->pathname.name,scase))
+	@(return translate_component_case(pname->pathname.name,scase))
 @)
 
 @(defun pathname_type(pname &key ((:case scase) @':local'))
 @
 	pname = cl_pathname(pname);
-        @(return translate_pathname_case(pname->pathname.type,scase))
+        @(return translate_component_case(pname->pathname.type,scase))
 @)
 
 cl_object
@@ -1166,7 +1220,8 @@ cl_file_namestring(cl_object pname)
 	@(return ecl_namestring(ecl_make_pathname(Cnil, Cnil, Cnil,
 						  pname->pathname.name,
 						  pname->pathname.type,
-						  pname->pathname.version),
+						  pname->pathname.version,
+                                                  @':local'),
 				ECL_NAMESTRING_TRUNCATE_IF_ERROR))
 }
 
@@ -1176,7 +1231,8 @@ cl_directory_namestring(cl_object pname)
 	pname = cl_pathname(pname);
 	@(return ecl_namestring(ecl_make_pathname(Cnil, Cnil,
 						  pname->pathname.directory,
-						  Cnil, Cnil, Cnil),
+						  Cnil, Cnil, Cnil,
+                                                  @':local'),
 				ECL_NAMESTRING_TRUNCATE_IF_ERROR))
 }
 
@@ -1227,7 +1283,8 @@ cl_host_namestring(cl_object pname)
 			    EN_MATCH(path, defaults, device),
 			    pathdir, fname,
 			    EN_MATCH(path, defaults, type),
-			    EN_MATCH(path, defaults, version));
+			    EN_MATCH(path, defaults, version),
+                            @':local');
 	newpath->pathname.logical = path->pathname.logical;
 	@(return ecl_namestring(newpath, ECL_NAMESTRING_TRUNCATE_IF_ERROR))
 @)
@@ -1419,10 +1476,11 @@ coerce_to_from_pathname(cl_object x, cl_object host)
 @)
 
 static cl_object
-find_wilds(cl_object l, cl_object source, cl_object match)
+find_wilds(cl_object l, cl_object source, cl_object match, cl_object scase)
 {
 	cl_index i, j, k, ls, lm;
 
+        source = translate_component_case(source, scase);
 	if (match == @':wild')
 		return ecl_list1(source);
 	if (!ecl_stringp(match) || !ecl_stringp(source)) {
@@ -1430,6 +1488,7 @@ find_wilds(cl_object l, cl_object source, cl_object match)
 			return @':error';
 		return l;
 	}
+        match = translate_component_case(match, scase);
 	ls = ecl_length(source);
 	lm = ecl_length(match);
 	for(i = j = 0; i < ls && j < lm; ) {
@@ -1453,10 +1512,12 @@ find_wilds(cl_object l, cl_object source, cl_object match)
 }
 
 static cl_object
-find_list_wilds(cl_object a, cl_object mask)
+find_list_wilds(cl_object a, cl_object mask, cl_object scase)
 {
 	cl_object l = Cnil, l2;
 
+        a = translate_list_case(a, scase);
+        mask = translate_list_case(mask, scase);
 	while (!ecl_endp(mask)) {
 		cl_object item_mask = CAR(mask);
 		mask = CDR(mask);
@@ -1475,7 +1536,7 @@ find_list_wilds(cl_object a, cl_object mask)
 			if (item_mask != @':absolute' && item_mask != @':relative')
 				return @':error';
 		} else {
-			l2 = find_wilds(l, CAR(a), item_mask);
+			l2 = find_wilds(l, CAR(a), item_mask, @':local');
 			if (l == @':error')
 				return @':error';
 			if (!Null(l2))
@@ -1570,7 +1631,7 @@ copy_list_wildcards(cl_object *wilds, cl_object to)
 	return l;
 }
 
-@(defun translate-pathname (source from to &key)
+@(defun translate-pathname (source from to &key ((:case scase) @':local'))
 	cl_object wilds, out, d;
 @
 	/* The pathname from which we get the data */
@@ -1595,7 +1656,8 @@ copy_list_wildcards(cl_object *wilds, cl_object to)
 
 	/* Match directories */
 	wilds = find_list_wilds(source->pathname.directory,
-				from->pathname.directory);
+				from->pathname.directory,
+                                scase);
 	if (wilds == @':error')	goto error;
 	d = copy_list_wildcards(&wilds, to->pathname.directory);
 	if (d == @':error') goto error;
@@ -1603,7 +1665,8 @@ copy_list_wildcards(cl_object *wilds, cl_object to)
 	out->pathname.directory = d;
 
 	/* Match name */
-	wilds = find_wilds(Cnil, source->pathname.name, from->pathname.name);
+	wilds = find_wilds(Cnil, source->pathname.name, from->pathname.name,
+                           scase);
 	if (wilds == @':error') goto error2;
 	d = copy_wildcards(&wilds, to->pathname.name);
 	if (d == @':error') goto error;
@@ -1611,7 +1674,8 @@ copy_list_wildcards(cl_object *wilds, cl_object to)
 	out->pathname.name = d;
 
 	/* Match type */
-	wilds = find_wilds(Cnil, source->pathname.type, from->pathname.type);
+	wilds = find_wilds(Cnil, source->pathname.type, from->pathname.type,
+                           scase);
 	if (wilds == @':error') goto error2;
 	d = copy_wildcards(&wilds, to->pathname.type);
 	if (d == @':error') goto error;
@@ -1646,8 +1710,11 @@ copy_list_wildcards(cl_object *wilds, cl_object to)
 	for(; !ecl_endp(l); l = CDR(l)) {
 		pair = CAR(l);
 		if (!Null(cl_pathname_match_p(pathname, CAR(pair)))) {
-			pathname = cl_translate_pathname(3, pathname, CAR(pair),
-							 CADR(pair));
+			pathname = cl_translate_pathname(5, pathname,
+                                                         CAR(pair),
+							 CADR(pair),
+                                                         @':case',
+                                                         @':common');
 			goto begin;
 		}
 	}

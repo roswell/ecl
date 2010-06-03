@@ -309,7 +309,7 @@ make_base_pathname(cl_object pathname)
         return ecl_make_pathname(pathname->pathname.host,
 				 pathname->pathname.device,
 				 ecl_list1(@':absolute'),
-				 Cnil, Cnil, Cnil);
+				 Cnil, Cnil, Cnil, @':local');
 }
 
 static cl_object
@@ -339,7 +339,7 @@ file_truename(cl_object pathname, cl_object filename)
 		pathname = ecl_make_pathname(pathname->pathname.host,
 					     pathname->pathname.device,
 					     pathname->pathname.directory,
-					     Cnil, Cnil, Cnil);
+					     Cnil, Cnil, Cnil, @':local');
                 pathname = ecl_merge_pathnames(filename, pathname, @':default');
                 return file_truename(pathname, Cnil);
 #endif
@@ -796,7 +796,8 @@ dir_files(cl_object base_dir, cl_object pathname)
 		return cl_list(1, base_dir);
 	}
 	mask = ecl_make_pathname(Cnil, Cnil, Cnil,
-                                 name, type, pathname->pathname.version);
+                                 name, type, pathname->pathname.version,
+                                 @':local');
 	for (all_files = list_directory(base_dir, NULL, mask);
 	     !Null(all_files);
 	     all_files = ECL_CONS_CDR(all_files))

@@ -546,7 +546,7 @@ cl_boot(int argc, char **argv)
 	ECL_SET(@'*default-pathname-defaults*', si_getcwd(0));
 #else
 	ECL_SET(@'*default-pathname-defaults*',
-		ecl_make_pathname(Cnil, Cnil, Cnil, Cnil, Cnil, Cnil));
+		ecl_make_pathname(Cnil, Cnil, Cnil, Cnil, Cnil, Cnil, @':local'));
 #endif
 
 #ifdef ECL_THREADS

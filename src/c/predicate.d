@@ -273,12 +273,12 @@ ecl_eql(cl_object x, cl_object y)
 {
 	cl_type t;
 	if (x == y)
-		return(TRUE);
-	if ((t = type_of(x)) != type_of(y))
-		return(FALSE);
-	switch (t) {
-	case t_fixnum:
-		return FALSE;
+		return TRUE;
+        if (IMMEDIATE(x) || IMMEDIATE(y))
+                return FALSE;
+        if (x->d.t != y->d.t)
+                return FALSE;
+	switch (x->d.t) {
 	case t_bignum:
 		return (_ecl_big_compare(x, y) == 0);
 	case t_ratio:
@@ -299,8 +299,6 @@ ecl_eql(cl_object x, cl_object y)
 	case t_complex:
 		return (ecl_eql(x->complex.real, y->complex.real) &&
 			ecl_eql(x->complex.imag, y->complex.imag));
-	case t_character:
-		return(CHAR_CODE(x) == CHAR_CODE(y));
 	default:
 		return FALSE;
 	}
