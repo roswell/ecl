@@ -68,11 +68,11 @@ module."
       (set-difference *modules* saved-modules))))
 
 (pushnew #'(lambda (module)
-	     (let* ((sysdir (translate-logical-pathname #P"SYS:"))
-		    (module (string module)))
+	     (let* ((module (string module)))
 	       (or
-		(let ((path (merge-pathnames (make-pathname :name module) sysdir)))
+		(let ((path (make-pathname :name module :defaults "SYS:")))
 		  (load path :if-does-not-exist nil))
-		(let ((path (merge-pathnames (make-pathname :name (string-downcase module)) sysdir)))
+		(let ((path (make-pathname :name (string-downcase module)
+                                           :defaults "SYS:")))
 		  (load path :if-does-not-exist nil)))))
 	 *module-provider-functions*)
