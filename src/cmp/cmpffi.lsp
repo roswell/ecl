@@ -274,7 +274,7 @@
 	(#.+all-integer-rep-types+
 	 (case loc-rep-type
 	   (#.+all-number-rep-types+
-	    (wt "((" (rep-type-name dest-rep-type) ")" loc ")"))
+	    (wt "(" (rep-type-name dest-rep-type) ")(" loc ")"))
 	   ((:object)
 	    (ensure-valid-object-type dest-type)
 	    (wt-from-object-conversion dest-type loc-type dest-rep-type loc))
@@ -283,7 +283,7 @@
 	((:char :unsigned-char :wchar)
 	 (case loc-rep-type
 	   ((:char :unsigned-char :wchar)
-	    (wt "((" (rep-type-name dest-rep-type) ")" loc ")"))
+	    (wt "(" (rep-type-name dest-rep-type) ")(" loc ")"))
 	   ((:object)
 	    (ensure-valid-object-type dest-type)
 	    (wt-from-object-conversion dest-type loc-type dest-rep-type loc))
@@ -292,7 +292,7 @@
 	((:float :double :long-double)
 	 (case loc-rep-type
 	   (#.+all-number-rep-types+
-	    (wt "((" (rep-type-name dest-rep-type) ")" loc ")"))
+	    (wt "(" (rep-type-name dest-rep-type) ")(" loc ")"))
 	   ((:object)
 	    ;; We relax the check a bit, because it is valid in C to coerce
 	    ;; between floats of different types.
