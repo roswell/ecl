@@ -11,12 +11,18 @@
 
 (load (merge-pathnames "tools" *load-pathname*))
 
+(defconstant +encodings-root+ (translate-logical-pathname #p"ext:encodings;"))
+
 (loop for entry in +all-mappings+
    for name = (first entry)
-   for orig = (make-pathname :name name :type "BIN" :defaults "ext:encodings;")
-   for copy = (ensure-directories-exist (merge-pathnames "build:encodings;" orig))
+   for orig = (make-pathname :name name :type "BIN"
+                             :defaults +encodings-root+)
+   for copy = (ensure-directories-exist
+               (make-pathname :name name :type "BIN"
+                              :defaults "build:encodings;"))
    do (progn
 	(unless (probe-file orig)
+          (error "Missing mapping")
 	  (let ((mapping (if (equalp name "JISX0208")
 			     (mapcar #'rest (read-mapping name 3))
 			     (read-mapping name))))
@@ -80,7 +86,8 @@
 
 (loop for (name . aliases) in +aliases+
    do (loop for alias in aliases
-	 for filename0 = (make-pathname :name (symbol-name alias) :defaults "build:encodings;")
+	 for filename0 = (make-pathname :name (symbol-name alias)
+                                        :defaults "build:encodings;")
 	 for filename = (ensure-directories-exist filename0)
 	 do (with-open-file (out filename :direction :output :if-exists :supersede
 				 :if-does-not-exist :create :element-type 'base-char)
@@ -88,5 +95,7 @@
 	      (format out "(defparameter ext::~A (ext::make-encoding 'ext::~A))" alias name))))
 
 (copy-file "ext:encodings;tools.lisp" "build:encodings;tools.lisp")
-(copy-file "ext:encodings;ISO-2022-JP" "build:encodings;ISO-2022-JP")
-(copy-file "ext:encodings;ISO-2022-JP-1" "build:encodings;ISO-2022-JP-1")
+(copy-file (merge-pathnames "ISO-2022-JP" +encodings-root+)
+           "build:encodings;ISO-2022-JP")
+(copy-file (merge-pathnames "ISO-2022-JP-1" +encodings-root+)
+           "build:encodings;ISO-2022-JP-1")
