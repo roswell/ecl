@@ -67,7 +67,7 @@ c/ecl/external.h: $(top_srcdir)/h/external.h
 ecl/external.h: c/ecl/external.h c/ecl/external.h
 	cp $(srcdir)/h/*.h ecl/
 
-bin/ecl$(EXE): ecl_min$(EXE) compile.lsp ecl/external.h BUILD-STAMP
+bin/ecl$(EXE): ecl_min$(EXE) compile.lsp ecl/external.h build-stamp
 	cp $(top_srcdir)/../contrib/unicode/ucd.dat .
 	if [ -f CROSS-COMPILER ]; then \
 		./CROSS-COMPILER compile; \
@@ -120,7 +120,7 @@ bin/ecl-config: bin/ecl-config.pre
 rt.lisp:
 	cp $(srcdir)/../contrib/rt/rt.lisp ./
 
-BUILD-STAMP: config.status
+build-stamp: config.status
 	echo "#" `uname -a` > $@
 	head -8 config.log | tail -6 >> $@
 install:
@@ -148,7 +148,7 @@ install:
 	rm $(DESTDIR)$(includedir)/ecl/config.h
 	mv $(DESTDIR)$(includedir)/ecl/config-install.h $(DESTDIR)$(includedir)/ecl/config.h
 	$(INSTALL_SCRIPT) bin/ecl-config $(DESTDIR)$(bindir)
-	for i in BUILD-STAMP help.doc TAGS ; do \
+	for i in build-stamp help.doc TAGS ; do \
 	  $(INSTALL_DATA) $$i $(DESTDIR)$(ecldir); \
 	done
 	for i in $(LSP_LIBRARIES) $(LIBRARIES); do \
@@ -180,7 +180,7 @@ install:
 	    $(INSTALL_DATA) $$i $(DESTDIR)$(mandir)/man$(manext)/ecl.$(manext); \
 	done
 
-flatinstall: BUILD-STAMP
+flatinstall: build-stamp
 	$(MAKE) DESTDIR=$(DESTDIR) bindir=$(prefix) libdir=$(prefix) \
 	  includedir=$(prefix) ecldir=$(prefix) install
 
