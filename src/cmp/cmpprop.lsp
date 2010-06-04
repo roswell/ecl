@@ -86,14 +86,20 @@ of the occurrences in those lists."
     (baboon :format-control "REVISE-VAR-TYPE got a non-empty list of assumptions")))
 
 (defun p1block (c1form assumptions blk body)
+  (setf (blk-type blk) nil)
   (multiple-value-bind (normal-type assumptions)
       (p1propagate body assumptions)
-    (values (values-type-or (blk-type blk) normal-type)
-            assumptions)))
+    (let ((blk-type (blk-type blk)))
+      (values (if blk-type (values-type-or blk-type normal-type) normal-type)
+	      assumptions))))
 
-(defun p1return-from (c1form assumptions blk-var return-type value variable-or-nil)
-  (p1propagate value assumptions)
-  (values t assumptions))
+(defun p1return-from (c1form assumptions blk return-type value variable-or-nil)
+  (let* ((values-type (p1propagate value assumptions))
+	 (blk-type (blk-type blk)))
+    (setf (blk-type blk) (if blk-type
+			     (values-type-or blk-type values-type)
+			     values-type))
+    (values values-type assumptions)))
 
 (defun p1call-global (c1form assumptions fname args &optional (return-type t))
   (loop for v in args
