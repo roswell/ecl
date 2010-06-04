@@ -79,6 +79,24 @@
                 (double)(f) };                                  \
         static const cl_object name = (cl_object)(& name ## data)
 
+#define ecl_def_ct_long_float(name,f,static,const)			\
+        static const struct ecl_longfloat name ## data = {		\
+                (int8_t)t_longfloat, 0, 0, 0,				\
+                (long double)(f) };					\
+        static const cl_object name = (cl_object)(& name ## data)
+
+#define ecl_def_ct_ratio(name,num,den,static,const)			\
+        static const struct ecl_ratio name ## data = {			\
+                (int8_t)t_ratio, 0, 0, 0,				\
+                den, num };						\
+        static const cl_object name = (cl_object)(& name ## data)
+
+#define ecl_def_ct_complex(name,real,imag,static,const)			\
+        static const struct ecl_complex name ## data = {		\
+                (int8_t)t_complex, 0, 0, 0,				\
+                (cl_object)real, (cl_object)imag };			\
+        static const cl_object name = (cl_object)(& name ## data)
+
 #define ecl_def_ct_vector(name,type,raw,len,static,const)               \
         static const struct ecl_vector name ## data = {                 \
                 (int8_t)t_vector, 0, (type), 0,                         \

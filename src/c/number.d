@@ -1011,6 +1011,12 @@ ecl_def_ct_long_float(ldbl_zero,0,static,const);
 ecl_def_ct_long_float(ldbl_zero_neg,-0.0l,static,const);
 #endif
 
+ecl_def_ct_ratio(plus_half,MAKE_FIXNUM(1),MAKE_FIXNUM(2),static,const);
+ecl_def_ct_ratio(minus_half,MAKE_FIXNUM(-1),MAKE_FIXNUM(2),static,const);
+ecl_def_ct_complex(flt_imag_unit,&flt_zerodata,&flt_onedata,static,const);
+ecl_def_ct_complex(flt_imag_unit_neg,&flt_zerodata,&flt_one_negdata,static,const);
+ecl_def_ct_complex(flt_imag_two,&flt_zerodata,&flt_twodata,static,const);
+
 #ifdef ECL_LONG_FLOAT
 ecl_def_ct_long_float(float_pi,ECL_PI_L,static,const);
 #else
@@ -1092,11 +1098,11 @@ init_number(void)
         cl_core.longfloat_minus_zero = cl_core.longfloat_zero;
 # endif
 #endif
-	cl_core.plus_half = ecl_make_ratio(MAKE_FIXNUM(1), MAKE_FIXNUM(2));
-	cl_core.minus_half = ecl_make_ratio(MAKE_FIXNUM(-1), MAKE_FIXNUM(2));
-	cl_core.imag_unit = ecl_make_complex(flt_zero, flt_one);
-	cl_core.minus_imag_unit = ecl_make_complex(flt_zero, flt_one_neg);
-	cl_core.imag_two = ecl_make_complex(flt_zero, flt_two);
+	cl_core.plus_half = plus_half; /* ecl_make_ratio(MAKE_FIXNUM(1), MAKE_FIXNUM(2)); */
+	cl_core.minus_half = minus_half; /* ecl_make_ratio(MAKE_FIXNUM(-1), MAKE_FIXNUM(2)); */
+	cl_core.imag_unit = flt_imag_unit; /* ecl_make_complex(flt_zero, flt_one); */
+	cl_core.minus_imag_unit = flt_imag_unit_neg; /* ecl_make_complex(flt_zero, flt_one_neg); */
+	cl_core.imag_two = flt_imag_two; /* ecl_make_complex(flt_zero, flt_two);*/
 
 	ECL_SET(@'pi', float_pi);
         ECL_SET(@'*random-state*', ecl_make_random_state(Ct));

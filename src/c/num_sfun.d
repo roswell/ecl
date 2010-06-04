@@ -405,7 +405,7 @@ cl_sqrt(cl_object x)
                 FEwrong_type_only_arg(@[sqrt], x, @[number]);
 	}
 	if (tx == t_complex) {
-		z = ecl_make_ratio(MAKE_FIXNUM(1), MAKE_FIXNUM(2));
+		z = cl_core.plus_half;
 		z = cl_expt(x, z);
 	} else if (ecl_minusp(x)) {
 		z = ecl_make_complex(MAKE_FIXNUM(0), cl_sqrt(ecl_negate(x)));
