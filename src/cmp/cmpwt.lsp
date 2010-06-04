@@ -170,13 +170,15 @@
 
 (defun static-single-float-builder (name value stream)
   (let* ((*read-default-float-format* 'single-float)
-         (*print-readably* t))
-    (format stream "ecl_def_ct_single_float(~A,~S,static,const);" name value stream)))
+	 (*print-readably* t))
+    (format stream "ecl_def_ct_single_float(~A,~S,static,const);"
+	    name value stream)))
 
 (defun static-double-float-builder (name value stream)
   (let* ((*read-default-float-format* 'double-float)
-         (*print-readably* t))
-    (format stream "ecl_def_ct_single_float(~A,~S,static,const);" name value stream)))
+	 (*print-readably* t))
+    (format stream "ecl_def_ct_double_float(~A,~S,static,const);"
+	    name value stream)))
 
 (defun static-constant-builder (format value)
   (lambda (name stream)
@@ -185,8 +187,12 @@
 (defun static-constant-expression (object)
   (typecase object
     (base-string #'static-base-string-builder)
-    ;;(single-float #'static-single-float-builder)
-    ;;(double-float #'static-double-float-builder)
+    (single-float (and (not (si:float-nan-p object))
+		       (not (si:float-infinity-p object))
+		       #'static-single-float-builder))
+    (double-float (and (not (si:float-nan-p object))
+		       (not (si:float-infinity-p object))
+		       #'static-double-float-builder))
     (t nil)))
 
 (defun add-static-constant (object)
