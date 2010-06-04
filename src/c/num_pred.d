@@ -183,7 +183,7 @@ si_float_infinity_p(cl_object x)
 bool
 ecl_float_nan_p(cl_object x)
 {
-	return ecl_number_equalp(x,x);
+	return !ecl_number_equalp(x,x);
 }
 
 bool
