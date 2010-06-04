@@ -180,6 +180,37 @@
     (format stream "ecl_def_ct_double_float(~A,~S,static,const);"
 	    name value stream)))
 
+#+long-float
+(defun static-long-float-builder (name value stream)
+  (let* ((*read-default-float-format* 'long-float)
+	 (*print-readably* t))
+    (format stream "ecl_def_ct_long_float(~A,~SL,static,const);"
+	    name value stream)))
+
+(defun static-rational-builder (name value stream)
+  (let* ((*read-default-float-format* 'double-float)
+	 (*print-readably* t))
+    (format stream
+	    "ecl_def_ct_ratio(~A,MAKE_FIXNUM(~D),MAKE_FIXNUM(~D),static,const);"
+	    name (numerator value) (denominator value))))
+
+(defun static-constant-delegate (name value stream)
+  (funcall (static-constant-expression value)
+	   name value stream))
+
+(defun static-complex-builder (name value stream)
+  (let* ((*read-default-float-format* 'double-float)
+	 (*print-readably* t)
+	 (name-real (concatenate 'string name "_real"))
+	 (name-imag (concatenate 'string name "_imag")))
+    (static-constant-delegate name-real (realpart value) stream)
+    (terpri stream)
+    (static-constant-delegate name-imag (imagpart value) stream)
+    (terpri stream)
+    (format stream
+	    "ecl_def_ct_complex(~A,&~Adata,&~Adata,static,const);"
+	    name name-real name-imag)))
+
 (defun static-constant-builder (format value)
   (lambda (name stream)
     (format stream format name value)))
@@ -187,12 +218,22 @@
 (defun static-constant-expression (object)
   (typecase object
     (base-string #'static-base-string-builder)
+    (ratio (and (static-constant-expression (numerator object))
+		(static-constant-expression (denominator object))
+		#'static-rational-builder))
     (single-float (and (not (si:float-nan-p object))
 		       (not (si:float-infinity-p object))
 		       #'static-single-float-builder))
     (double-float (and (not (si:float-nan-p object))
 		       (not (si:float-infinity-p object))
 		       #'static-double-float-builder))
+    #+long-float
+    (long-float (and (not (si:float-nan-p object))
+		     (not (si:float-infinity-p object))
+		     #'static-long-float-builder))
+    (complex (and (static-constant-expression (realpart object))
+		  (static-constant-expression (imagpart object))
+		  #'static-complex-builder))
     (t nil)))
 
 (defun add-static-constant (object)
