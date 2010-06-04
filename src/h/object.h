@@ -185,7 +185,7 @@ typedef cl_object (*cl_objectfn_fixed)();
 #define ECL_READTABLEP(x)       ((IMMEDIATE(x) == 0) && ((x)->d.t == t_readtable))
 #define ECL_FOREIGN_DATA_P(x)   ((IMMEDIATE(x) == 0) && ((x)->d.t == t_foreign))
 
-#define HEADER			int8_t t, m, padding[2]
+#define HEADER			int8_t t, m, padding1, padding2
 #define HEADER1(field)		int8_t t, m, field, padding
 #define HEADER2(field1,field2)	int8_t t, m, field1, field2
 

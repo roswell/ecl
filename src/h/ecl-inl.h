@@ -68,13 +68,13 @@
         static const cl_object name = (cl_object)(& name ## data)
 
 #define ecl_def_ct_single_float(name,f,static,const)            \
-        static const struct ecl_doublefloat name ## data = {    \
+        static const struct ecl_singlefloat name ## data = {    \
                 (int8_t)t_singlefloat, 0, 0, 0,                 \
                 (float)(f) };                                   \
         static const cl_object name = (cl_object)(& name ## data)
 
 #define ecl_def_ct_double_float(name,f,static,const)            \
-        static const struct ecl_singlefloat name ## data = {    \
+        static const struct ecl_doublefloat name ## data = {    \
                 (int8_t)t_doublefloat, 0, 0, 0,                 \
                 (double)(f) };                                  \
         static const cl_object name = (cl_object)(& name ## data)
