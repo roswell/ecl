@@ -27,6 +27,7 @@
 #include <float.h>
 #define ECL_DEFINE_FENV_CONSTANTS
 #include <ecl/internal.h>
+#include <ecl/ecl-inl.h>
 
 #if defined(ECL_IEEE_FP) && defined(HAVE_FEENABLEEXCEPT)
 /*
@@ -984,79 +985,105 @@ float_to_integer(float d)
 	}
 }
 
+ecl_def_ct_single_float(flt_max,FLT_MAX,static,const);
+ecl_def_ct_single_float(flt_max_neg,-FLT_MAX,static,const);
+ecl_def_ct_single_float(flt_min,FLT_MIN,static,const);
+ecl_def_ct_single_float(flt_min_neg,-FLT_MIN,static,const);
+ecl_def_ct_single_float(flt_zero,0,static,const);
+ecl_def_ct_single_float(flt_zero_neg,-0.0,static,const);
+ecl_def_ct_single_float(flt_one,1,static,const);
+ecl_def_ct_single_float(flt_one_neg,-1,static,const);
+ecl_def_ct_single_float(flt_two,2,static,const);
+
+ecl_def_ct_double_float(dbl_max,DBL_MAX,static,const);
+ecl_def_ct_double_float(dbl_max_neg,-DBL_MAX,static,const);
+ecl_def_ct_double_float(dbl_min,DBL_MIN,static,const);
+ecl_def_ct_double_float(dbl_min_neg,-DBL_MIN,static,const);
+ecl_def_ct_double_float(dbl_zero,0,static,const);
+ecl_def_ct_double_float(dbl_zero_neg,-0.0,static,const);
+
+#ifdef ECL_LONG_FLOAT
+ecl_def_ct_long_float(ldbl_max,LDBL_MAX,static,const);
+ecl_def_ct_long_float(ldbl_max_neg,-LDBL_MAX,static,const);
+ecl_def_ct_long_float(ldbl_min,LDBL_MIN,static,const);
+ecl_def_ct_long_float(ldbl_min_neg,-LDBL_MIN,static,const);
+ecl_def_ct_long_float(ldbl_zero,0,static,const);
+ecl_def_ct_long_float(ldbl_zero_neg,-0.0l,static,const);
+#endif
+
+#ifdef ECL_LONG_FLOAT
+ecl_def_ct_long_float(float_pi,ECL_PI_L,static,const);
+#else
+ecl_def_ct_double_float(float_pi,ECL_PI_D,static,const);
+#endif
+
 void
 init_number(void)
 {
 	cl_object num;
 
-	num = ecl_make_singlefloat(FLT_MAX);
+	num = flt_max; /* ecl_make_singlefloat(FLT_MAX); */
 	ECL_SET(@'MOST-POSITIVE-SHORT-FLOAT', num);
 	ECL_SET(@'MOST-POSITIVE-SINGLE-FLOAT', num);
 
-	num = ecl_make_singlefloat(-FLT_MAX);
+	num = flt_max_neg; /* ecl_make_singlefloat(-FLT_MAX); */
 	ECL_SET(@'MOST-NEGATIVE-SHORT-FLOAT', num);
 	ECL_SET(@'MOST-NEGATIVE-SINGLE-FLOAT', num);
 
-	num = ecl_make_singlefloat(FLT_MIN);
+	num = flt_min; /* ecl_make_singlefloat(FLT_MIN); */
 	ECL_SET(@'LEAST-POSITIVE-SHORT-FLOAT', num);
 	ECL_SET(@'LEAST-POSITIVE-SINGLE-FLOAT', num);
 	ECL_SET(@'LEAST-POSITIVE-NORMALIZED-SHORT-FLOAT', num);
 	ECL_SET(@'LEAST-POSITIVE-NORMALIZED-SINGLE-FLOAT', num);
 
-	num = ecl_make_singlefloat(-FLT_MIN);
+	num = flt_min_neg; /* ecl_make_singlefloat(-FLT_MIN); */
 	ECL_SET(@'LEAST-NEGATIVE-SHORT-FLOAT', num);
 	ECL_SET(@'LEAST-NEGATIVE-SINGLE-FLOAT', num);
 	ECL_SET(@'LEAST-NEGATIVE-NORMALIZED-SHORT-FLOAT', num);
 	ECL_SET(@'LEAST-NEGATIVE-NORMALIZED-SINGLE-FLOAT', num);
 
-	num = ecl_make_doublefloat(DBL_MAX);
+	num = dbl_max; /* ecl_make_doublefloat(DBL_MAX); */
 	ECL_SET(@'MOST-POSITIVE-DOUBLE-FLOAT', num);
 #ifdef ECL_LONG_FLOAT
-	num = ecl_make_longfloat(LDBL_MAX);
+	num = ldbl_max; /* ecl_make_longfloat(LDBL_MAX); */
 #endif
 	ECL_SET(@'MOST-POSITIVE-LONG-FLOAT', num);
 
-	num = ecl_make_doublefloat(-DBL_MAX);
+	num = dbl_max_neg; /* ecl_make_doublefloat(-DBL_MAX); */
 	ECL_SET(@'MOST-NEGATIVE-DOUBLE-FLOAT', num);
 #ifdef ECL_LONG_FLOAT
-	num = ecl_make_longfloat(-LDBL_MAX);
+	num = ldbl_max_neg; /* ecl_make_longfloat(-LDBL_MAX); */
 #endif
 	ECL_SET(@'MOST-NEGATIVE-LONG-FLOAT', num);
 
-	num = ecl_make_doublefloat(DBL_MIN);
+	num = dbl_min; /* ecl_make_doublefloat(DBL_MIN); */
 	ECL_SET(@'LEAST-POSITIVE-DOUBLE-FLOAT', num);
 	ECL_SET(@'LEAST-POSITIVE-NORMALIZED-DOUBLE-FLOAT', num);
 #ifdef ECL_LONG_FLOAT
-	num = ecl_make_longfloat(LDBL_MIN);
+	num = ldbl_min; /* ecl_make_longfloat(LDBL_MIN); */
 #endif
 	ECL_SET(@'LEAST-POSITIVE-LONG-FLOAT', num);
 	ECL_SET(@'LEAST-POSITIVE-NORMALIZED-LONG-FLOAT', num);
 
-	num = ecl_make_doublefloat(-DBL_MIN);
+	num = dbl_min_neg; /* ecl_make_doublefloat(-DBL_MIN); */
 	ECL_SET(@'LEAST-NEGATIVE-DOUBLE-FLOAT', num);
 	ECL_SET(@'LEAST-NEGATIVE-NORMALIZED-DOUBLE-FLOAT', num);
 #ifdef ECL_LONG_FLOAT
-	num = ecl_make_longfloat(-LDBL_MIN);
+	num = ldbl_min_neg; /* ecl_make_longfloat(-LDBL_MIN); */
 #endif
 	ECL_SET(@'LEAST-NEGATIVE-LONG-FLOAT', num);
 	ECL_SET(@'LEAST-NEGATIVE-NORMALIZED-LONG-FLOAT', num);
 
- 	cl_core.singlefloat_zero = ecl_alloc_object(t_singlefloat);
- 	sf(cl_core.singlefloat_zero) = (float)0;
- 	cl_core.doublefloat_zero = ecl_alloc_object(t_doublefloat);
- 	df(cl_core.doublefloat_zero) = (double)0;
+ 	cl_core.singlefloat_zero = flt_zero;
+ 	cl_core.doublefloat_zero = dbl_zero;
 #ifdef ECL_LONG_FLOAT
- 	cl_core.longfloat_zero = ecl_alloc_object(t_longfloat);
- 	cl_core.longfloat_zero->longfloat.value = (long double)0;
+ 	cl_core.longfloat_zero = ldbl_zero;
 #endif
 #ifdef ECL_SIGNED_ZERO
- 	cl_core.singlefloat_minus_zero = ecl_alloc_object(t_singlefloat);
- 	sf(cl_core.singlefloat_minus_zero) = (float)-0.0;
- 	cl_core.doublefloat_minus_zero = ecl_alloc_object(t_doublefloat);
- 	df(cl_core.doublefloat_minus_zero) = (double)-0.0;
+ 	cl_core.singlefloat_minus_zero = flt_zero_neg;
+ 	cl_core.doublefloat_minus_zero = dbl_zero_neg;
 # ifdef ECL_LONG_FLOAT
- 	cl_core.longfloat_minus_zero = ecl_alloc_object(t_longfloat);
- 	cl_core.longfloat_minus_zero->longfloat.value = (long double)-0.0;
+ 	cl_core.longfloat_minus_zero = ldbl_zero_neg;
 # endif
 #else
         cl_core.singlefloat_minus_zero = cl_core.singlefloat_zero;
@@ -1067,17 +1094,10 @@ init_number(void)
 #endif
 	cl_core.plus_half = ecl_make_ratio(MAKE_FIXNUM(1), MAKE_FIXNUM(2));
 	cl_core.minus_half = ecl_make_ratio(MAKE_FIXNUM(-1), MAKE_FIXNUM(2));
-	cl_core.imag_unit =
-	    ecl_make_complex(ecl_make_singlefloat(0.0), ecl_make_singlefloat(1.0));
-	cl_core.minus_imag_unit =
-	    ecl_make_complex(ecl_make_singlefloat(0.0), ecl_make_singlefloat(-1.0));
-	cl_core.imag_two =
-	    ecl_make_complex(ecl_make_singlefloat(0.0), ecl_make_singlefloat(2.0));
+	cl_core.imag_unit = ecl_make_complex(flt_zero, flt_one);
+	cl_core.minus_imag_unit = ecl_make_complex(flt_zero, flt_one_neg);
+	cl_core.imag_two = ecl_make_complex(flt_zero, flt_two);
 
-#ifdef ECL_LONG_FLOAT
-	ECL_SET(@'pi', ecl_make_longfloat((long double)ECL_PI_L));
-#else
-	ECL_SET(@'pi', ecl_make_doublefloat((double)ECL_PI_D));
-#endif
+	ECL_SET(@'pi', float_pi);
         ECL_SET(@'*random-state*', ecl_make_random_state(Ct));
 }
