@@ -403,8 +403,11 @@
   (when (plusp *max-env*)
     (unless (eq closure-type 'CLOSURE)
       (wt-h " cl_object " *volatile* "env0;"))
+    ;; Note that the closure structure has to be marked volatile
+    ;; or else GCC may optimize away writes into it because it
+    ;; does not know it shared with the rest of the world.
     (when *aux-closure*
-      (wt-h " struct ecl_cclosure aux_closure;"))
+      (wt-h " volatile struct ecl_cclosure aux_closure;"))
     (wt-h " cl_object " *volatile*)
     (dotimes (i *max-env*)
       (wt-h "CLV" i)
