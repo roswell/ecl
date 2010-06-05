@@ -50,7 +50,7 @@
      nconc (loop for (object vv-record . rest) across array
               collect (cond ((gethash object *load-objects*)
                              0)
-                            ((vv-used vv-record)
+                            ((vv-used-p vv-record)
                              object)
                             (t
                              (cmpwarn "Object found in array but not used~%~A"
@@ -124,7 +124,6 @@
   ;; end up having two non-EQ objects created for the same value.
   (let* ((test (if *compiler-constants* 'eq 'equal))
 	 (array (if permanent *permanent-objects* *temporary-objects*))
-	 (make-vv (if permanent #'make-vv #'make-vv-temp))
 	 (x (or (and (not permanent)
 		     (find object *permanent-objects* :test test
 			   :key #'first))
@@ -134,7 +133,8 @@
 	 found)
     (cond ((add-static-constant object))
           ((and x duplicate)
-	   (setq x (funcall make-vv :location next-ndx :used forced))
+	   (setq x (make-vv :location next-ndx :used-p forced
+                            :permanent-p permanent))
 	   (vector-push-extend (list object x next-ndx) array)
 	   x)
 	  (x
@@ -144,7 +144,8 @@
 		(multiple-value-setq (found x) (si::mangle-name object)))
 	   x)
 	  (t
-	   (setq x (funcall make-vv :location next-ndx :used forced))
+	   (setq x (make-vv :location next-ndx :used-p forced
+                            :permanent-p permanent))
 	   (vector-push-extend (list object x next-ndx) array)
 	   (unless *compiler-constants*
 	     (add-load-form object x))
@@ -267,8 +268,8 @@
   (flet ((static-constant-value (index)
 	   (first (find index *static-constants* :key #'second
 			:test #'string=))))
-    (if (vv-temp-p loc)
-        (aref *temporary-objects* (vv-temp-location index))
+    (if (not (vv-permanent-p loc))
+        (aref *temporary-objects* (vv-location index))
         (if (vv-p loc)
             (let ((index (vv-location loc)))
               (if (stringp index)
@@ -279,23 +280,23 @@
             (baboon :format-control "VT-LOC-VALUE got an invalid location ~A"
                     :format-arguments (list loc))))))
 
-(defun wt-vv-index (index temp)
+(defun wt-vv-index (index permanent-p)
   (cond ((not (numberp index))
          (wt index))
-        (temp
-         (wt "VVtemp[" index "]"))
+        (permanent-p
+         (wt "VV[" index "]"))
         (t
-         (wt "VV[" index "]"))))
+         (wt "VVtemp[" index "]"))))
 
-(defun set-vv-index (loc index temp)
-  (wt-nl) (wt-vv-index index temp) (wt "= ")
+(defun set-vv-index (loc index permanent-p)
+  (wt-nl) (wt-vv-index index permanent-p) (wt "= ")
   (wt-coerce-loc :object loc)
   (wt ";"))
 
 (defun wt-vv (vv-loc)
-  (setf (vv-used vv-loc) t)
-  (wt-vv-index (vv-location vv-loc) (vv-temp-p vv-loc)))
+  (setf (vv-used-p vv-loc) t)
+  (wt-vv-index (vv-location vv-loc) (vv-permanent-p vv-loc)))
 
 (defun set-vv (loc vv-loc)
-  (setf (vv-used vv-loc) t)
-  (set-vv-index loc (vv-location vv-loc) (vv-temp-p vv-loc)))
+  (setf (vv-used-p vv-loc) t)
+  (set-vv-index loc (vv-location vv-loc) (vv-permanent-p vv-loc)))

@@ -280,7 +280,7 @@ as 2^*tagbody-limit* in the worst cases.")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun type-from-array-elt (array)
+(defun type-from-array-elt (array &aux name)
   "Input is a lisp type representing a valid subtype of ARRAY. Output is
 either the array element type or NIL, denoting that we are not able to
 compute it. This version only handles the simplest cases."
@@ -288,11 +288,20 @@ compute it. This version only handles the simplest cases."
                  'character)
                 ((eq array 'base-string)
                  'base-char)
-                ((member array '(array vector simple-vector simple-array))
+                ((member (setf array (expand-deftype array))
+                         '(array vector simple-array))
                  t)
-                ((or (atom array)
-		     (not (member (first array) 
-				  '(array vector simple-vector simple-array))))
+                ((atom array)
+                 (setf array 'array)
+                 t)
+                ((eq (setf name (first array)) 'OR)
+                 (apply #'type-or (mapcar #'type-from-array-elt
+                                          (rest array))))
+                ((eq (setf name (first array)) 'AND)
+                 (apply #'type-or (mapcar #'type-from-array-elt
+                                          (rest array))))
+                ((not (member (first array) 
+                              '(array vector simple-array)))
                  (setf array 'array)
 		 t)
                 ((null (rest array))
