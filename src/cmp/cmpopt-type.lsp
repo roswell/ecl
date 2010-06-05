@@ -14,18 +14,31 @@
 
 (in-package "COMPILER")
 
+(defun compute-c1form-type (form)
+  (let ((form (c1expr form)))
+    (prog1 (c1form-primary-type form)
+      (delete-c1forms form))))
+
+(defun safe-type<= (t1 t2)
+  (multiple-value-bind (subtypep known-typep)
+      (subtypep t1 t2)
+    (and subtypep known-typep)))
+
 (defun c1compiler-typecase (args)
-  (or (loop with expr-type = (let ((form (c1expr (pop args))))
-                               (prog1 (c1form-primary-type form)
-                                 (delete-c1forms form)))
-         with subtypep
-         with known-typep
-         for (type . body) in args
-         when (multiple-value-bind (subtypep known-typep)
-                  (subtypep expr-type type)
-                (and subtypep known-typep))
-         return (c1progn body))
-      (c1nil)))
+  (let* ((expr-type (compute-c1form-type (pop args)))
+         (match (find expr-type args :test #'safe-type<= :key #'first)))
+    (if match
+        (c1progn (rest match))
+        (c1nil))))
+
+(defun c1compiler-typecases (args)
+  (let* ((all-types (mapcar #'compute-c1form-type (pop args)))
+         (match (find expr-type args
+                      :test #'(lambda (s1 s2) (every #'safe-typep<= s1 s2))
+                      :key #'first)))
+    (if match
+        (c1progn (rest match))
+        (c1nil))))
 
 (define-compiler-macro dotimes ((variable limit &rest output) &body body)
   (multiple-value-bind (declarations body)

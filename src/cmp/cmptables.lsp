@@ -46,6 +46,7 @@
     (multiple-value-bind . c1multiple-value-bind) ; c1
 
     (ext:compiler-typecase . c1compiler-typecase) ; c1special
+    (c::compiler-typecases . c1compiler-typecases) ; c1special
 
     (quote . c1quote) ; c1special
     (function . c1function) ; c1special
