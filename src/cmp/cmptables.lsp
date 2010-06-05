@@ -97,6 +97,11 @@
   '((bind . bind)
     (jump-true . set-jump-true)
     (jump-false . set-jump-false)
+
+    (values . set-values-loc)
+    (value0 . set-value0-loc)
+    (return . set-return-loc)
+    (trash . set-trash-loc)
     ))
 
 (defconstant +wt-loc-dispatch-alist+
@@ -124,6 +129,14 @@
     (make-cclosure . wt-make-closure)
 
     (structure-ref . wt-structure-ref)
+
+    (nil . "Cnil")
+    (t . "Ct")
+    (return . "value0")
+    (values . "cl_env_copy->values[0]")
+    (va-arg . "va_arg(args,cl_object)")
+    (cl-va-arg . "cl_va_arg(args)")
+    (value0 . "value0")
     ))
 
 (defconstant +c2-dispatch-alist+

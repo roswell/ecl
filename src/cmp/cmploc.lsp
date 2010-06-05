@@ -119,76 +119,27 @@
         (t
          (values nil nil))))
 
-(defun set-loc (loc &aux fd)
-  (when (eql *destination* loc)
-    (return-from set-loc))
-  (case *destination*
-    (VALUES
-     (cond ((eq loc 'VALUES) (return-from set-loc))
-	   ((uses-values loc)
-	    (wt-nl "cl_env_copy->values[0]=") (wt-coerce-loc :object loc) (wt ";"))
-	   (t
-	    (wt-nl "cl_env_copy->values[0]=") (wt-coerce-loc :object loc)
-	    (wt "; cl_env_copy->nvalues=1;"))))
-    (VALUE0
-     (wt-nl "value0=") (wt-coerce-loc :object loc) (wt ";"))
-    (RETURN
-     (cond ((or (eq loc 'VALUES) (uses-values loc))
-	    (wt-nl "value0=") (wt-coerce-loc :object loc) (wt ";"))
-	   ((eq loc 'VALUE0) (wt-nl "cl_env_copy->nvalues=1;"))
-	   ((eq loc 'RETURN) (return-from set-loc))
-	   (t
-	    (wt-nl "value0=") (wt-coerce-loc :object loc)
-	    (wt "; cl_env_copy->nvalues=1;"))))
-    (TRASH
-     (cond ((uses-values loc) (wt-nl "(void)" loc ";"))
-	   ((and (consp loc)
-		 (eq (first loc) 'C-INLINE)
-		 (fifth loc)) ; side effects?
-            (wt-nl loc ";"))))
-    (t (cond
-	((var-p *destination*)
-	 (set-var loc *destination*))
-        ((vv-p *destination*)
-         (set-vv loc *destination*))
-        ((or (not (consp *destination*))
-             (not (symbolp (car *destination*))))
-         (baboon))
-        ((setq fd (gethash (car *destination*) *set-loc-dispatch-table*))
-         (apply fd loc (cdr *destination*)))
-        ((setq fd (gethash (car *destination*) *wt-loc-dispatch-table*))
-         (wt-nl) (apply fd (cdr *destination*)) (wt "= ")
-	 (wt-coerce-loc (loc-representation-type *destination*) loc)
-	 (wt ";"))
-        (t (baboon :format-control "Unknown location found in SET-LOC~%~S"
-		   :format-arguments (list loc)))))))
-
+(defun unknown-location (where loc)
+  (baboon :format-control "Unknown location found in ~A~%~S"
+          :format-arguments (list where loc)))
 
 (defun wt-loc (loc &aux fd)
-  (cond ((eq loc nil) (wt "Cnil"))
-        ((eq loc t) (wt "Ct"))
-        ((eq loc 'RETURN)
-	 (wt "value0"))	; added for last inline-arg
-	((eq loc 'VALUES)
-	 (wt "cl_env_copy->values[0]"))
-	((eq loc 'VA-ARG)
-	 (wt "va_arg(args,cl_object)"))
-	((eq loc 'CL-VA-ARG)
-	 (wt "cl_va_arg(args)"))
-	((eq loc 'VALUE0)
-	 (wt "value0"))
-	((var-p loc)
-	 (wt-var loc))
+  (cond ((consp loc)
+         (let ((fd (gethash (car loc) *wt-loc-dispatch-table*)))
+           (if fd
+               (apply fd (cdr loc))
+               (unknown-location 'wt-loc loc))))
+        ((symbolp loc)
+         (let ((txt (gethash loc *wt-loc-dispatch-table* :not-found)))
+           (when (eq txt :not-found)
+             (unknown-location 'wt-loc loc))
+           (wt txt)))
+        ((var-p loc)
+         (wt-var loc))
         ((vv-p loc)
          (wt-vv loc))
-        ((or (atom loc)
-             (not (symbolp (car loc))))
-         (baboon :format-control "Unknown location found in WT-LOC~%~S"
-		 :format-arguments (list loc)))
-        ((setq fd (gethash (car loc) *wt-loc-dispatch-table*))
-	 (apply fd (cdr loc)))
-	(t (baboon :format-control "Unknown location found in WT-LOC~%~S"
-		   :format-arguments (list loc)))))
+        (t
+         (unknown-location 'wt-loc loc))))
 
 (defun last-call-p ()
   (member *exit*
@@ -234,3 +185,61 @@
 
 (defun values-loc (n)
   (list 'VALUE n))
+
+;;;
+;;; SET-LOC
+;;;
+
+(defun set-unknown-loc (loc)
+  (unknown-location 'set-loc *destination*))
+
+(defun set-loc (loc &aux fd)
+  (let ((destination *destination*))
+    (cond ((eq destination loc))
+          ((symbolp destination)
+           (funcall (gethash destination *set-loc-dispatch-table*
+                             'set-unknown-loc)
+                    loc))
+          ((var-p destination)
+           (set-var loc destination))
+          ((vv-p destination)
+           (set-vv loc destination))
+          ((atom destination)
+           (unknown-location 'set-loc destination))
+          (t
+           (let ((fd (gethash (first destination) *set-loc-dispatch-table*)))
+             (if fd
+                 (apply fd loc (rest destination))
+                 (progn
+                   (wt-nl) (wt-loc destination) (wt "= ")
+                   (wt-coerce-loc (loc-representation-type *destination*) loc)
+                   (wt ";"))))))))
+                 
+(defun set-values-loc (loc)
+  (cond ((eq loc 'VALUES))
+        ((uses-values loc)
+         (wt-nl "cl_env_copy->values[0]=") (wt-coerce-loc :object loc) (wt ";"))
+        (t
+         (wt-nl "cl_env_copy->values[0]=") (wt-coerce-loc :object loc)
+         (wt "; cl_env_copy->nvalues=1;"))))
+
+(defun set-value0-loc (loc)
+  (wt-nl "value0=") (wt-coerce-loc :object loc) (wt ";"))
+
+(defun set-return-loc (loc)
+  (cond ((or (eq loc 'VALUES) (uses-values loc))
+         (wt-nl "value0=") (wt-coerce-loc :object loc) (wt ";"))
+        ((eq loc 'VALUE0)
+         (wt-nl "cl_env_copy->nvalues=1;"))
+        ((eq loc 'RETURN))
+        (t
+         (wt-nl "value0=") (wt-coerce-loc :object loc)
+         (wt "; cl_env_copy->nvalues=1;"))))
+
+(defun set-trash-loc (loc)
+  (cond ((uses-values loc) (wt-nl "(void)" loc ";"))
+        ((and (consp loc)
+              (eq (first loc) 'C-INLINE)
+              (fifth loc)) ; side effects?
+         (wt-nl loc ";"))))
+
