@@ -229,36 +229,38 @@ characters with double quotes.  Some strings may be displaced to another
 string, may have a fill-pointer, or may be adjustable.  Other strings are
 called simple-strings."
   #-unicode
-  (if size `(array character (,size)) '(array character (*)))
+  (if (eq size '*)
+      '(array character (*))
+      `(array character (,size)))
   #+unicode
-  (if size
+  (if (eq size '*)
+      '(or (array base-char (*)) (array character (*)))
       `(or (array base-char (,size))
-	   (array character (,size)))
-      '(or (array base-char (*)) (array character (*)))))
+	   (array character (,size)))))
 
-(deftype base-string (&optional size)
+(deftype base-string (&optional (size '*))
   "A string which is made of BASE-CHAR."
-  (if size `(array base-char (,size)) '(array base-char (*))))
+  (if (eq size '*) '(array base-char (*)) `(array base-char (,size))))
 
-(deftype extended-string (&optional size)
+(deftype extended-string (&optional (size '*))
   "A string which is nt a base string"
   #-unicode
   NIL
   #+unicode
-  (if size `(array character (,size)) '(array character (*))))
+  (if (eq size '*) '(array character (*)) `(array character (,size))))
 
-(deftype bit-vector (&optional size)
+(deftype bit-vector (&optional (size '*))
   "A bit-vector is a vector of bits.  A bit-vector is notated by '#*' followed
 by its elements (0 or 1).  Bit-vectors may be displaced to another array, may
 have a fill-pointer, or may be adjustable.  Other bit-vectors are called
 simple-bit-vectors.  Only simple-bit-vectors can be input in the above format
 using '#*'."
-  (if size `(array bit (,size)) '(array bit (*))))
+  (if (eq size '*) '(array bit (*)) `(array bit (,size))))
 
-(deftype simple-vector (&optional size)
+(deftype simple-vector (&optional (size '*))
   "A simple-vector is a vector that is not displaced to another array, has no
 fill-pointer, and is not adjustable."
-  (if size `(simple-array t (,size)) '(simple-array t (*))))
+  (if (eq size '*) '(simple-array t (*)) `(simple-array t (,size))))
 
 (deftype simple-string (&optional size)
   "A simple-string is a string that is not displaced to another array, has no
