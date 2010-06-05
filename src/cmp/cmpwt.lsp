@@ -47,10 +47,16 @@
   ;; We collect all objects that are to be externalized, but filter out
   ;; those which will be created by a lisp form.
   (loop for array in (list *permanent-objects* *temporary-objects*)
-     do (loop for (object vv-record . rest) across array
-           do (unless (vv-used vv-record)
-                (cmpwarn "Object found in array but not used~%~A"
-                         object))))
+     nconc (loop for (object vv-record . rest) across array
+              collect (cond ((gethash object *load-objects*)
+                             0)
+                            ((vv-used vv-record)
+                             object)
+                            (t
+                             (cmpwarn "Object found in array but not used~%~A"
+                                      object)
+                             0))))
+  #+(or)
   (loop for i in (nconc (map 'list #'first *permanent-objects*)
 			(map 'list #'first *temporary-objects*))
 	collect (if (gethash i *load-objects*)
