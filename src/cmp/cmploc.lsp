@@ -76,6 +76,8 @@
 	 t)
 	((stringp loc)
 	 t)
+        ((vv-p loc)
+         t)
 	((member loc '(value0 values va-arg cl-va-arg))
 	 nil)
 	((atom loc)
@@ -103,17 +105,19 @@
          (values t nil))
         ((ext:fixnump loc)
          (values t loc))
-        ((atom loc)
-         (values nil nil))
-        ((or (eq (setf head (car loc)) 'VV)
-             (eq head 'VV-TEMP))
+        ((vv-p loc)
          (let ((value (vt-loc-value loc)))
-           (if (ext:fixnump value)
+           (if (or (null value) (ext:fixnump value))
                (values nil nil)
                (values t value))))
+        ((atom loc)
+         (values nil nil))
+
         ((member head '(fixnum-value character-value long-float-value
                         double-float-value single-float-value))
-         (values t (second loc)))))
+         (values t (second loc)))
+        (t
+         (values nil nil))))
 
 (defun set-loc (loc &aux fd)
   (when (eql *destination* loc)
@@ -145,6 +149,8 @@
     (t (cond
 	((var-p *destination*)
 	 (set-var loc *destination*))
+        ((vv-p *destination*)
+         (set-vv loc *destination*))
         ((or (not (consp *destination*))
              (not (symbolp (car *destination*))))
          (baboon))
@@ -173,7 +179,9 @@
 	 (wt "value0"))
 	((var-p loc)
 	 (wt-var loc))
-        ((or (not (consp loc))
+        ((vv-p loc)
+         (wt-vv loc))
+        ((or (atom loc)
              (not (symbolp (car loc))))
          (baboon :format-control "Unknown location found in WT-LOC~%~S"
 		 :format-arguments (list loc)))
@@ -196,16 +204,6 @@
 (defun lcl-name (lcl) (format nil "V~D" lcl))
 
 (defun wt-lcl (lcl) (unless (numberp lcl) (baboon)) (wt "V" lcl))
-
-(defun wt-vv (vv &optional object)
-  (if (numberp vv)
-      (wt "VV[" vv "]")
-      (wt vv)))
-
-(defun wt-vv-temp (vv &optional object)
-  (if (numberp vv)
-      (wt "VVtemp[" vv "]")
-      (wt vv)))
 
 (defun wt-lcl-loc (lcl &optional type)
   (wt-lcl lcl))

@@ -27,14 +27,8 @@
   nil)
 
 (defun wt-h1 (form)
-  (if (consp form)
-      (let ((fun (gethash (car form) *wt-loc-dispatch-table*)))
-	(if fun
-	    (let ((*compiler-output1* *compiler-output2*))
-	      (apply fun (cdr form)))
-	    (cmperr "The location ~s is undefined." form)))
-      (princ form *compiler-output2*))
-  nil)
+  (let ((*compiler-output1* *compiler-output2*))
+    (wt1 form)))
 
 (defun wt (&rest forms)
   (mapc #'wt1 forms))

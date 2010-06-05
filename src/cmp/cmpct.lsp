@@ -68,12 +68,12 @@
                                   (single-float 'single-float-value)
                                   (double-float 'double-float-value)
                                   (long-float 'long-float-value)))
-                      (location `(VV ,c-value)))
+                      (location (make-vv :location c-value)))
                 (cons value (make-c1form* 'LOCATION :type type
                                           :args (list loc-type value location)))))
               (t
                (cons name (make-c1form* 'LOCATION :type (type-of name)
-                                         :args `(VV ,c-value)))))
+                                         :args (make-vv :location c-value)))))
         +optimizable-constants+)))
  (reverse
  `((MOST-POSITIVE-SHORT-FLOAT "FLT_MAX")

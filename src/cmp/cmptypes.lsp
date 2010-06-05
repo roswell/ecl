@@ -248,3 +248,19 @@
   (toplevel-form nil)
   (file nil)
   (file-position 0))
+
+#|
+(defstruct (vv :named (:type list))
+  (location nil)
+  (used nil))
+
+(defstruct (vv-temp :named (:type list))
+  (location nil)
+  (used nil))
+|#
+
+(defstruct vv
+  (location nil)
+  (used nil))
+
+(defstruct (vv-temp (:include vv)))

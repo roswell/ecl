@@ -46,6 +46,11 @@
 (defun data-get-all-objects ()
   ;; We collect all objects that are to be externalized, but filter out
   ;; those which will be created by a lisp form.
+  (loop for array in (list *permanent-objects* *temporary-objects*)
+     do (loop for (object vv-record . rest) across array
+           do (unless (vv-used vv-record)
+                (cmpwarn "Object found in array but not used~%~A"
+                         object))))
   (loop for i in (nconc (map 'list #'first *permanent-objects*)
 			(map 'list #'first *temporary-objects*))
 	collect (if (gethash i *load-objects*)
@@ -113,16 +118,17 @@
   ;; end up having two non-EQ objects created for the same value.
   (let* ((test (if *compiler-constants* 'eq 'equal))
 	 (array (if permanent *permanent-objects* *temporary-objects*))
-	 (vv (if permanent 'VV 'VV-temp))
+	 (make-vv (if permanent #'make-vv #'make-vv-temp))
 	 (x (or (and (not permanent)
 		     (find object *permanent-objects* :test test
 			   :key #'first))
 		(find object array :test test :key #'first)))
 	 (next-ndx (length array))
+         (forced duplicate)
 	 found)
     (cond ((add-static-constant object))
           ((and x duplicate)
-	   (setq x (list vv next-ndx))
+	   (setq x (funcall make-vv :location next-ndx :used forced))
 	   (vector-push-extend (list object x next-ndx) array)
 	   x)
 	  (x
@@ -132,7 +138,7 @@
 		(multiple-value-setq (found x) (si::mangle-name object)))
 	   x)
 	  (t
-	   (setq x (list vv next-ndx))
+	   (setq x (funcall make-vv :location next-ndx :used forced))
 	   (vector-push-extend (list object x next-ndx) array)
 	   (unless *compiler-constants*
 	     (add-load-form object x))
@@ -249,16 +255,41 @@
             (when builder
               (let* ((c-name (format nil "_ecl_static_~D" (length *static-constants*))))
                 (push (list object c-name builder) *static-constants*)
-                `(VV ,c-name))))))))
+                (make-vv :location c-name))))))))
 
 (defun vt-loc-value (loc)
   (flet ((static-constant-value (index)
 	   (first (find index *static-constants* :key #'second
 			:test #'string=))))
-    (let ((index (second loc)))
-      (cond ((stringp index)
-	     (static-constant-value index))
-	    ((eq (car loc) 'VV)
-	     (aref *permanent-objects* index))
-	    (t
-	     (VV-TEMP (aref *temporary-objects* index)))))))
+    (if (vv-temp-p loc)
+        (aref *temporary-objects* (vv-temp-location index))
+        (if (vv-p loc)
+            (let ((index (vv-location loc)))
+              (if (stringp index)
+                  (static-constant-value index)
+                  (aref *permanent-objects* index)))
+            nil
+            #+nil
+            (baboon :format-control "VT-LOC-VALUE got an invalid location ~A"
+                    :format-arguments (list loc))))))
+
+(defun wt-vv-index (index temp)
+  (cond ((not (numberp index))
+         (wt index))
+        (temp
+         (wt "VVtemp[" index "]"))
+        (t
+         (wt "VV[" index "]"))))
+
+(defun set-vv-index (loc index temp)
+  (wt-nl) (wt-vv-index index temp) (wt "= ")
+  (wt-coerce-loc :object loc)
+  (wt ";"))
+
+(defun wt-vv (vv-loc)
+  (setf (vv-used vv-loc) t)
+  (wt-vv-index (vv-location vv-loc) (vv-temp-p vv-loc)))
+
+(defun set-vv (loc vv-loc)
+  (setf (vv-used vv-loc) t)
+  (set-vv-index loc (vv-location vv-loc) (vv-temp-p vv-loc)))

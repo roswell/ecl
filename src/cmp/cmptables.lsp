@@ -108,8 +108,6 @@
 
     (temp . wt-temp)
     (lcl . wt-lcl-loc)
-    (vv . wt-vv)
-    (vv-temp . wt-vv-temp)
     (car . wt-car)
     (cdr . wt-cdr)
     (cadr . wt-cadr)
