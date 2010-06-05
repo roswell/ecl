@@ -106,7 +106,7 @@
         ((ext:fixnump loc)
          (values t loc))
         ((vv-p loc)
-         (let ((value (vt-loc-value loc)))
+         (let ((value (vv-value loc)))
            (if (or (null value) (ext:fixnump value))
                (values nil nil)
                (values t value))))

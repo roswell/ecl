@@ -252,4 +252,5 @@
 (defstruct vv
   (location nil)
   (used-p nil)
-  (permanent-p t))
+  (permanent-p t)
+  (value nil))

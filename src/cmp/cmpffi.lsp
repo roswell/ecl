@@ -214,6 +214,7 @@
 (defun loc-type (loc)
   (cond ((eq loc NIL) 'NULL)
 	((var-p loc) (var-type loc))
+        ((vv-p loc) (vv-type loc))
 	((si::fixnump loc) 'fixnum)
 	((atom loc) 'T)
 	(t
@@ -234,6 +235,7 @@
 (defun loc-representation-type (loc)
   (cond ((member loc '(NIL T)) :object)
 	((var-p loc) (var-rep-type loc))
+        ((vv-p loc) :object)
 	((si::fixnump loc) :fixnum)
         ((eq loc 'TRASH) :void)
 	((atom loc) :object)

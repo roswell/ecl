@@ -134,7 +134,8 @@
     (cond ((add-static-constant object))
           ((and x duplicate)
 	   (setq x (make-vv :location next-ndx :used-p forced
-                            :permanent-p permanent))
+                            :permanent-p permanent
+                            :value object))
 	   (vector-push-extend (list object x next-ndx) array)
 	   x)
 	  (x
@@ -145,7 +146,8 @@
 	   x)
 	  (t
 	   (setq x (make-vv :location next-ndx :used-p forced
-                            :permanent-p permanent))
+                            :permanent-p permanent
+                            :value object))
 	   (vector-push-extend (list object x next-ndx) array)
 	   (unless *compiler-constants*
 	     (add-load-form object x))
@@ -262,23 +264,7 @@
             (when builder
               (let* ((c-name (format nil "_ecl_static_~D" (length *static-constants*))))
                 (push (list object c-name builder) *static-constants*)
-                (make-vv :location c-name))))))))
-
-(defun vt-loc-value (loc)
-  (flet ((static-constant-value (index)
-	   (first (find index *static-constants* :key #'second
-			:test #'string=))))
-    (if (not (vv-permanent-p loc))
-        (aref *temporary-objects* (vv-location index))
-        (if (vv-p loc)
-            (let ((index (vv-location loc)))
-              (if (stringp index)
-                  (static-constant-value index)
-                  (aref *permanent-objects* index)))
-            nil
-            #+nil
-            (baboon :format-control "VT-LOC-VALUE got an invalid location ~A"
-                    :format-arguments (list loc))))))
+                (make-vv :location c-name :value object))))))))
 
 (defun wt-vv-index (index permanent-p)
   (cond ((not (numberp index))
@@ -300,3 +286,9 @@
 (defun set-vv (loc vv-loc)
   (setf (vv-used-p vv-loc) t)
   (set-vv-index loc (vv-location vv-loc) (vv-permanent-p vv-loc)))
+
+(defun vv-type (loc)
+  (let ((value (vv-value loc)))
+    (if (and value (not (si::fixnump value)))
+        (type-of value)
+        t)))
