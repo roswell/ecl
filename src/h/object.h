@@ -45,9 +45,6 @@ typedef enum {
 	   some routines, like cl_expt */
 	t_character = 2,	/* immediate character */
 	t_fixnum = 3,		/* immediate fixnum */
-#ifdef ECL_SHORT_FLOAT
-	t_shortfloat,
-#endif
 	t_bignum = 4,
 	t_ratio,
 	t_singlefloat,
