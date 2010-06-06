@@ -18,34 +18,8 @@
 #include <limits.h>
 #include <string.h>
 #include <ecl/ecl.h>
+#define ECL_DEFINE_AET_SIZE
 #include <ecl/internal.h>
-
-static const cl_index ecl_aet_size[] = {
-  sizeof(cl_object),          /* aet_object */
-  sizeof(float),              /* aet_sf */
-  sizeof(double),             /* aet_df */
-  0,                          /* aet_bit: cannot be handled with this code */
-  sizeof(cl_fixnum),          /* aet_fix */
-  sizeof(cl_index),           /* aet_index */
-  sizeof(uint8_t),            /* aet_b8 */
-  sizeof(int8_t),             /* aet_i8 */
-#ifdef ecl_uint16_t
-  sizeof(ecl_uint16_t),
-  sizeof(ecl_int16_t),
-#endif
-#ifdef ecl_uint32_t
-  sizeof(ecl_uint32_t),
-  sizeof(ecl_int32_t),
-#endif
-#ifdef ecl_uint64_t
-  sizeof(ecl_uint64_t),
-  sizeof(ecl_int64_t),
-#endif
-#ifdef ECL_UNICODE
-  sizeof(ecl_character),      /* aet_ch */
-#endif
-  sizeof(unsigned char)       /* aet_bc */
-};
 
 static const cl_object ecl_aet_name[] = {
         Ct,                   /* aet_object */
@@ -74,7 +48,6 @@ static const cl_object ecl_aet_name[] = {
         @'base-char'          /* aet_bc */
 };
 
-static void displace (cl_object from, cl_object to, cl_object offset);
 static void check_displaced (cl_object dlist, cl_object orig, cl_index newdim);
 
 static void
@@ -450,7 +423,7 @@ si_make_pure_array(cl_object etype, cl_object dims, cl_object adj,
 	if (Null(displ))
 		ecl_array_allocself(x);
 	else
-		displace(x, displ, disploff);
+		ecl_displace(x, displ, disploff);
 	@(return x);
 }
 
@@ -517,7 +490,7 @@ si_make_vector(cl_object etype, cl_object dim, cl_object adj,
 	if (Null(displ))
 		ecl_array_allocself(x);
 	else
-		displace(x, displ, disploff);
+		ecl_displace(x, displ, disploff);
 	@(return x)
 }
 
@@ -737,8 +710,8 @@ cl_array_element_type(cl_object a)
 	displaced to the to-array, so the from-array is pushed to the
 	cdr of the to-array's array.displaced.
 */
-static void
-displace(cl_object from, cl_object to, cl_object offset)
+void
+ecl_displace(cl_object from, cl_object to, cl_object offset)
 {
 	cl_index j;
 	void *base;
@@ -1073,7 +1046,7 @@ si_replace_array(cl_object olda, cl_object newa)
 		cl_object offset;
 		cl_array_displacement(other_array);
 		offset = VALUES(1);
-		displace(other_array, newa, offset);
+		ecl_displace(other_array, newa, offset);
 	}
 	switch (type_of(olda)) {
 	case t_array:

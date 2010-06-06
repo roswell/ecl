@@ -1923,5 +1923,8 @@ cl_symbols[] = {
 
 {SYS_ "ASSERT-FAILURE", SI_ORDINARY, NULL, -1, OBJNULL},
 
+{SYS_ "SERIALIZE", SI_ORDINARY, si_serialize, 1, OBJNULL},
+{SYS_ "DESERIALIZE", SI_ORDINARY, si_deserialize, 1, OBJNULL},
+
 /* Tag for end of list */
 {NULL, CL_ORDINARY, NULL, -1, OBJNULL}};

@@ -60,6 +60,41 @@ extern void _ecl_dealloc_env(cl_env_ptr);
 #endif
 extern void _ecl_set_max_heap_size(cl_index new_size);
 extern cl_object ecl_alloc_bytecodes(cl_index data_size, cl_index code_size);
+extern cl_index ecl_object_byte_size(cl_type t);
+
+/* array.d */
+
+#ifdef ECL_DEFINE_AET_SIZE
+#undef ECL_DEFINE_AET_SIZE
+static const cl_index ecl_aet_size[] = {
+  sizeof(cl_object),          /* aet_object */
+  sizeof(float),              /* aet_sf */
+  sizeof(double),             /* aet_df */
+  0,                          /* aet_bit: cannot be handled with this code */
+  sizeof(cl_fixnum),          /* aet_fix */
+  sizeof(cl_index),           /* aet_index */
+  sizeof(uint8_t),            /* aet_b8 */
+  sizeof(int8_t),             /* aet_i8 */
+#ifdef ecl_uint16_t
+  sizeof(ecl_uint16_t),
+  sizeof(ecl_int16_t),
+#endif
+#ifdef ecl_uint32_t
+  sizeof(ecl_uint32_t),
+  sizeof(ecl_int32_t),
+#endif
+#ifdef ecl_uint64_t
+  sizeof(ecl_uint64_t),
+  sizeof(ecl_int64_t),
+#endif
+#ifdef ECL_UNICODE
+  sizeof(ecl_character),      /* aet_ch */
+#endif
+  sizeof(unsigned char)       /* aet_bc */
+};
+#endif /* ECL_DEFINE_AET_SIZE */
+
+extern void ecl_displace(cl_object from, cl_object to, cl_object offset);
 
 /* compiler.d */
 
@@ -299,6 +334,11 @@ extern void cl_write_object(cl_object x, cl_object stream);
 /* sequence.d */
 typedef struct { cl_index start, end, length; } cl_index_pair;
 extern ECL_API cl_index_pair ecl_sequence_start_end(cl_object fun, cl_object s, cl_object start, cl_object end);
+
+/* serialize.d */
+
+extern cl_object si_serialize(cl_object root);
+extern cl_object si_deserialize(cl_object root);
 
 /* string.d */
 #define ecl_vector_start_end ecl_sequence_start_end

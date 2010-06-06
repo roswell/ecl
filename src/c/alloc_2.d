@@ -164,6 +164,18 @@ error_wrong_tag(cl_type t)
         ecl_internal_error("Collector called with invalid tag number.");
 }
 
+cl_index
+ecl_object_byte_size(cl_type t)
+{
+        if (t == t_fixnum || t == t_character)
+                FEerror("ecl_object_byte_size invoked with an immediate type ~D",
+                        1, MAKE_FIXNUM(1));
+        if (t >= t_end)
+                FEerror("ecl_object_byte_size invoked with an unkown type ~D",
+                        1, MAKE_FIXNUM(1));
+        return type_info[t].size;
+}
+
 static cl_object
 allocate_object_atomic(register struct ecl_type_information *type_info)
 {
