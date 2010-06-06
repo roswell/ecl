@@ -2471,8 +2471,18 @@ read_VV(cl_object block, void (*entry_point)(cl_object))
 		memset(VVtemp, 0, temp_len * sizeof(*VVtemp));
 
 		/* Read all data for the library */
-		in=ecl_make_string_input_stream(make_constant_base_string(block->cblock.data_text),
-						0, block->cblock.data_text_size);
+#ifdef ECL_EXTERNALIZABLE
+                {
+                        cl_object v = ecl_deserialize(block->cblock.data_text);
+                        unlikely_if (v->vector.dim < len)
+                                FEreader_error("Not enough data while loading"
+                                               "binary file", in, 0);
+                        memcpy(VV, v->vector.self.t, len * sizeof(cl_object));
+                }
+#else
+		in=ecl_make_string_input_stream
+                        (make_constant_base_string(block->cblock.data_text),
+                         0, block->cblock.data_text_size);
                 progv_list = ECL_SYM_VAL(env, @'si::+ecl-syntax-progv-list+');
                 bds_ndx = ecl_progv(env, ECL_CONS_CAR(progv_list),
                                     ECL_CONS_CDR(progv_list));
@@ -2498,6 +2508,7 @@ read_VV(cl_object block, void (*entry_point)(cl_object))
 		unlikely_if (i < len)
 			FEreader_error("Not enough data while loading"
                                        "binary file", in, 0);
+#endif
 	NO_DATA_LABEL:
 		for (i = 0; i < block->cblock.cfuns_size; i++) {
 			const struct ecl_cfun *prototype = block->cblock.cfuns+i;

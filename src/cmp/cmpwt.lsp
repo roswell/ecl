@@ -79,21 +79,35 @@
             (*compiler-constants*
              (format stream "~%#define compiler_data_text NULL~%#define compiler_data_text_size 0~%")
              (setf output (concatenate 'vector (data-get-all-objects))))
+            #+externalizable
             ((plusp (data-size))
-             (wt-data-begin stream)
-             (wt-filtered-data
-              (subseq (prin1-to-string (data-get-all-objects)) 1)
-              stream)
-             (wt-data-end stream)))
+             (let* ((data (concatenate 'vector (data-get-all-objects)))
+                    (raw (si::serialize data))
+                    (l (length raw)))
+               (format stream "~%#define compiler_data_text_size ~D~%static const uint8_t compiler_data_text[~D] = {" l l)
+               (loop for byte across raw
+                  for i from 0
+                  when (zerop (mod i 20))
+                  do (terpri stream)
+                  do (format stream "~D," byte))
+               (format stream "};")))
+            #-externalizable
+            ((plusp (data-size))
+             (let ((*wt-string-size* 0)
+                   (*wt-data-column* 80))
+               (princ "static const char compiler_data_text[] = " stream)
+               (wt-filtered-data
+                (subseq (prin1-to-string (data-get-all-objects)) 1)
+                stream)
+               (princ #\; stream)
+               (format stream "~%#define compiler_data_text_size ~D~%"
+                       *wt-string-size*))))
       (when must-close
         (close must-close))
       (data-init)
       output)))
 
 (defun wt-data-begin (stream)
-  (setq *wt-string-size* 0)
-  (setq *wt-data-column* 80)
-  (princ "static const char compiler_data_text[] = " stream)
   nil)
 
 (defun wt-data-end (stream)

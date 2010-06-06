@@ -118,7 +118,7 @@ static cl_object
 enqueue(pool_t pool, cl_object what)
 {
         cl_object record, index;
-        if (FIXNUMP(what) || CHARACTERP(what)) {
+        if (FIXNUMP(what) || CHARACTERP(what) || what == OBJNULL) {
                 return what;
         }
 #ifdef ECL_SMALL_CONS
@@ -154,11 +154,11 @@ serialize_bits(pool_t pool, void *data, cl_index size)
 }
 
 static void
-serialize_object_ptr(pool_t pool, cl_object *ptr, cl_index size)
+serialize_object_ptr(pool_t pool, cl_object *ptr, cl_index dim)
 {
-        cl_index index = serialize_bits(pool, ptr, size*sizeof(cl_object));
-        cl_object *p;
-        for (p = pool->data->vector.self.t + index; index; p++, index--) {
+        cl_index index = serialize_bits(pool, ptr, dim*sizeof(cl_object));
+        for (; dim; dim--, index += sizeof(cl_object)) {
+                cl_object *p = (cl_object)(pool->data->vector.self.b8 + index);
                 *p = enqueue(pool, *p);
                 p++;
         }
@@ -224,6 +224,11 @@ serialize_one(pool_t pool, cl_object what)
         buffer = (cl_object)(pool->data->vector.self.b8 + index);
         memcpy(buffer, what, bytes);
         switch (buffer->d.t) {
+        case t_singlefloat:
+        case t_doublefloat:
+#ifdef ECL_LONG_FLOAT
+        case t_longfloat:
+#endif
 #ifndef ECL_SMALL_CONS
         case t_cons:
                 buffer->cons.car = enqueue(pool, buffer->cons.car);
@@ -247,7 +252,19 @@ serialize_one(pool_t pool, cl_object what)
                 buffer->complex.imag = enqueue(pool, buffer->complex.imag);
                 break;
         }
+#ifdef ECL_UNICODE
+        case t_string:
+#endif
+        case t_vector:
+        case t_bitvector:
         case t_base_string: {
+                serialize_vector(pool, buffer);
+                break;
+        }
+        case t_array: {
+                cl_index bytes = ROUND_TO_WORD(buffer->array.rank *
+                                               sizeof(cl_index));
+                serialize_bits(pool, buffer->array.dims, bytes);
                 serialize_vector(pool, buffer);
                 break;
         }
@@ -488,11 +505,12 @@ fixup(cl_object o, cl_object *o_list)
 }
 
 cl_object
-si_deserialize(cl_object data)
+ecl_deserialize(uint8_t *raw)
 {
-        cl_index i, num_el = data->vector.self.index[1];
+        cl_index *data = (cl_index*)raw;
+        cl_index i, num_el = data[1];
         cl_object *output = ecl_alloc(sizeof(cl_object) * num_el);
-        uint8_t *raw = (uint8_t*)(data->vector.self.index + 2);
+        raw += 2*sizeof(cl_index);
         for (i = 0; i < num_el; i++) {
                 raw = reconstruct_one(raw, output+i);
         }
@@ -517,14 +535,11 @@ si_deserialize(cl_object data)
         for (i = 0; i < num_el; i++) {
                 fixup(output[i], output);
         }
-#if 0
-        {
-                cl_object v = output[0];
-                GC_FREE(output);
-                //ecl_dealloc(output);
-                @(return v);
-        }
-#else
-        @(return output[0])
-#endif
+}
+
+
+cl_object
+si_deserialize(cl_object data)
+{
+        @(return ecl_deserialize(data->vector.self.b8))
 }

@@ -179,6 +179,9 @@ static const char *feature_names[] = {
 #ifdef ecl_long_long_t
         "LONG-LONG",
 #endif
+#ifdef ECL_EXTERNALIZABLE
+        "EXTERNALIZABLE",
+#endif
         0
 };
 

@@ -339,6 +339,7 @@ extern ECL_API cl_index_pair ecl_sequence_start_end(cl_object fun, cl_object s, 
 
 extern cl_object si_serialize(cl_object root);
 extern cl_object si_deserialize(cl_object root);
+extern cl_object ecl_deserialize(uint8_t *data);
 
 /* string.d */
 #define ecl_vector_start_end ecl_sequence_start_end
