@@ -295,11 +295,9 @@ compute it. This version only handles the simplest cases."
                  (setf array 'array)
                  t)
                 ((eq (setf name (first array)) 'OR)
-                 (apply #'type-or (mapcar #'type-from-array-elt
-                                          (rest array))))
+                 `(OR ,@(mapcar #'type-from-array-elt (rest array))))
                 ((eq (setf name (first array)) 'AND)
-                 (apply #'type-or (mapcar #'type-from-array-elt
-                                          (rest array))))
+                 `(AND ,@(mapcar #'type-from-array-elt (rest array))))
                 ((not (member (first array) 
                               '(array vector simple-array)))
                  (setf array 'array)
