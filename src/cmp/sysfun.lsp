@@ -102,50 +102,6 @@
 (def-inline aref :unsafe ((array fixnum) fixnum) :fixnum
  "(#0)->array.self.fix[#1]")
 
-#|
-(def-inline si:aset :unsafe (t t t t) t
- "@0;ecl_aset_unsafe(#1,fix(#2)*(#1)->array.dims[1]+fix(#3),#0)")
-(def-inline si:aset :unsafe (t t fixnum fixnum) t
- "@0;ecl_aset_unsafe(#1,(#2)*(#1)->array.dims[1]+(#3),#0)")
-(def-inline si:aset :unsafe (t (array t) fixnum fixnum) t
- "@1;(#1)->array.self.t[#2*(#1)->array.dims[1]+#3]= #0")
-(def-inline si:aset :unsafe (t (array bit) fixnum fixnum) :fixnum
- "@0;ecl_aset_bv(#1,(#2)*(#1)->array.dims[1]+(#3),fix(#0))")
-(def-inline si:aset :unsafe (base-char (array base-char) fixnum fixnum) :char
- "@1;(#1)->base_string.self[#2*(#1)->array.dims[1]+#3]= #0")
-#+unicode
-(def-inline si:aset :unsafe (character (array character) fixnum fixnum) :wchar
- "@1;(#1)->string.self[#2*(#1)->array.dims[1]+#3]= #0")
-(def-inline si:aset :unsafe (double-float (array double-float) fixnum fixnum)
- :double "@1;(#1)->array.self.df[#2*(#1)->array.dims[1]+#3]= #0")
-(def-inline si:aset :unsafe (single-float (array single-float) fixnum fixnum)
- :float "@1;(#1)->array.self.sf[#2*(#1)->array.dims[1]+#3]= #0")
-(def-inline si:aset :unsafe (fixnum (array fixnum) fixnum fixnum) :fixnum
- "@1;(#1)->array.self.fix[#2*(#1)->array.dims[1]+#3]= #0")
-(def-inline si:aset :unsafe (fixnum (array bit) fixnum fixnum) :fixnum
- "@0;ecl_aset_bv(#1,(#2)*(#1)->array.dims[1]+(#3),#0)")
-(def-inline si:aset :always (t t t) t "ecl_aset1(#1,fixint(#2),#0)")
-(def-inline si:aset :always (t t fixnum) t "ecl_aset1(#1,#2,#0)")
-(def-inline si:aset :unsafe (t t t) t "ecl_aset1(#1,fix(#2),#0)")
-(def-inline si:aset :unsafe (t (array t) fixnum) t
- "(#1)->vector.self.t[#2]= #0")
-(def-inline si:aset :unsafe (t (array bit) fixnum) :fixnum
- "ecl_aset_bv(#1,#2,fix(#0))")
-(def-inline si:aset :unsafe (base-char (array base-char) fixnum) :char
- "(#1)->base_string.self[#2]= #0")
-#+unicode
-(def-inline si:aset :unsafe (character (array character) fixnum) :wchar
- "(#1)->string.self[#2]= #0")
-(def-inline si:aset :unsafe (double-float (array double-float) fixnum) :double
- "(#1)->array.self.df[#2]= #0")
-(def-inline si:aset :unsafe (single-float (array single-float) fixnum) :float
- "(#1)->array.self.sf[#2]= #0")
-(def-inline si:aset :unsafe (fixnum (array fixnum) fixnum) :fixnum
- "(#1)->array.self.fix[#2]= #0")
-(def-inline si:aset :unsafe (fixnum (array bit) fixnum) :fixnum
- "ecl_aset_bv(#1,#2,#0)")
-|#
-
 (def-inline row-major-aref :always (t t) t "ecl_aref(#0,fixint(#1))")
 (def-inline row-major-aref :always (t fixnum) t "ecl_aref(#0,#1)")
 (def-inline row-major-aref :unsafe (t t) t "ecl_aref_unsafe(#0,fix(#1))")
