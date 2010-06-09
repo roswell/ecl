@@ -14,7 +14,7 @@
 */
 
 #include <ecl/ecl.h>
-#include <strings.h>
+#include <string.h>
 #define ECL_DEFINE_AET_SIZE
 #include <ecl/internal.h>
 
@@ -229,6 +229,7 @@ serialize_one(pool_t pool, cl_object what)
 #ifdef ECL_LONG_FLOAT
         case t_longfloat:
 #endif
+                break;
 #ifndef ECL_SMALL_CONS
         case t_cons:
                 buffer->cons.car = enqueue(pool, buffer->cons.car);
@@ -535,6 +536,7 @@ ecl_deserialize(uint8_t *raw)
         for (i = 0; i < num_el; i++) {
                 fixup(output[i], output);
         }
+        return output[0];
 }
 
 
