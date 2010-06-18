@@ -173,7 +173,7 @@ install:
 	  esac \
 	done
 	for i in Copyright LGPL; do \
-	  $(INSTALL_DATA) $(top_srcdir)/../$$i $(DESTDIR)$(libdir); \
+	  $(INSTALL_DATA) $(top_srcdir)/../$$i $(DESTDIR)$(ecldir); \
 	done
 	$(mkinstalldirs) $(DESTDIR)$(mandir)/man$(manext)
 	for i in doc/ecl.man doc/ecl-config.man; do \
