@@ -20,11 +20,20 @@
   `(progn ,@body))
 
 (defun safe-mkstemp (template)
-  (or (si::mkstemp template)
+  ;; We do several things here. One is to check for success in MKSTEMP,
+  ;; the other one is to ensure that the output of this function _always_
+  ;; carries a file type -- this solves a problem with filesystems where
+  ;; mkstemp may introduce one or more dots in the name causing several
+  ;; functions below to ignore parts of the name.
+  (let* ((base (si::mkstemp template))
+         (output (and base (concatenate 'string (namestring base) ".tmp"))))
+    (when (or (null base)
+              (null (rename-file base output :if-exists nil)))
       (error "Unable to create temporay file~%~
 	~AXXXXXX
 Make sure you have enough free space in disk, check permissions or set~%~
-the environment variable TMPDIR to a different value." template)))
+the environment variable TMPDIR to a different value." template))
+    (truename output)))
 
 (defun safe-system (string)
   (cmpnote "Invoking external command:~%  ~A~%" string)
