@@ -80,7 +80,7 @@
         static const cl_object name = (cl_object)(& name ## data)
 
 #define ecl_def_ct_long_float(name,f,static,const)			\
-        static const struct ecl_longfloat name ## data = {		\
+        static const struct ecl_long_float name ## data = {		\
                 (int8_t)t_longfloat, 0, 0, 0,				\
                 (long double)(f) };					\
         static const cl_object name = (cl_object)(& name ## data)
