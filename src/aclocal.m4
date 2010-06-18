@@ -803,37 +803,7 @@ if test $has_ffi_h = "yes"; then
   AC_DEFINE(HAVE_LIBFFI)
   LDFLAGS="$LDFLAGS -lffi"
 else
-AC_MSG_CHECKING([whether we can dynamically build calls to C functions])
-case "${host_cpu}" in
-   i686 | i586 | pentium* | athlon* )
-	EXTRA_OBJS="${EXTRA_OBJS} ffi_x86.o"
-	if test "${enable_asmapply}" = "yes" ; then
-		EXTRA_OBJS="${EXTRA_OBJS} apply_x86.o"
-		AC_DEFINE(ECL_ASM_APPLY)
-	fi
-        # OSX may report i386 and still allow building 64-bits
-        # executables.
-        if test $CL_FIXNUM_BITS = 32; then
-          AC_DEFINE(ECL_USE_VARARG_AS_POINTER)
-        fi
-	dynamic_ffi=yes
-	;;
-   x86_64 )
-        if test "${CL_FIXNUM_BITS}" = 32 ; then
-	  EXTRA_OBJS="${EXTRA_OBJS} ffi_x86.o"
-	else
-	  EXTRA_OBJS="${EXTRA_OBJS} ffi_x86_64.o"
-	fi
-	dynamic_ffi=yes
-	;;
-   *)
-	dynamic_ffi=no
-	;;
-esac
-AC_MSG_RESULT([${dynamic_ffi}])
-if test "$dynamic_ffi" = "yes" ; then
-  AC_DEFINE(ECL_DYNAMIC_FFI, 1, [we can build calls to foreign functions])
-fi
+  AC_MSG_WARN([libffi is not installed; ECL will be built without the dynamic FFI])
 fi
 ])
 

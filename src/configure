@@ -9951,49 +9951,8 @@ _ACEOF
 
   LDFLAGS="$LDFLAGS -lffi"
 else
-{ $as_echo "$as_me:$LINENO: checking whether we can dynamically build calls to C functions" >&5
-$as_echo_n "checking whether we can dynamically build calls to C functions... " >&6; }
-case "${host_cpu}" in
-   i686 | i586 | pentium* | athlon* )
-	EXTRA_OBJS="${EXTRA_OBJS} ffi_x86.o"
-	if test "${enable_asmapply}" = "yes" ; then
-		EXTRA_OBJS="${EXTRA_OBJS} apply_x86.o"
-		cat >>confdefs.h <<\_ACEOF
-#define ECL_ASM_APPLY 1
-_ACEOF
-
-	fi
-        # OSX may report i386 and still allow building 64-bits
-        # executables.
-        if test $CL_FIXNUM_BITS = 32; then
-          cat >>confdefs.h <<\_ACEOF
-#define ECL_USE_VARARG_AS_POINTER 1
-_ACEOF
-
-        fi
-	dynamic_ffi=yes
-	;;
-   x86_64 )
-        if test "${CL_FIXNUM_BITS}" = 32 ; then
-	  EXTRA_OBJS="${EXTRA_OBJS} ffi_x86.o"
-	else
-	  EXTRA_OBJS="${EXTRA_OBJS} ffi_x86_64.o"
-	fi
-	dynamic_ffi=yes
-	;;
-   *)
-	dynamic_ffi=no
-	;;
-esac
-{ $as_echo "$as_me:$LINENO: result: ${dynamic_ffi}" >&5
-$as_echo "${dynamic_ffi}" >&6; }
-if test "$dynamic_ffi" = "yes" ; then
-
-cat >>confdefs.h <<\_ACEOF
-#define ECL_DYNAMIC_FFI 1
-_ACEOF
-
-fi
+  { $as_echo "$as_me:$LINENO: WARNING: libffi is not installed; ECL will be built without the dynamic FFI" >&5
+$as_echo "$as_me: WARNING: libffi is not installed; ECL will be built without the dynamic FFI" >&2;}
 fi
 
 fi
