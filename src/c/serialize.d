@@ -44,7 +44,7 @@ static cl_index object_size[] = {
 	ROUNDED_SIZE(ecl_singlefloat), /* t_singlefloat */
 	ROUNDED_SIZE(ecl_doublefloat), /* t_doublefloat */
 #ifdef ECL_LONG_FLOAT
-	ROUNDED_SIZE(ecl_longfloat), /* t_longfloat */
+	ROUNDED_SIZE(ecl_long_float), /* t_longfloat */
 #endif
 	ROUNDED_SIZE(ecl_complex), /* t_complex */
 	ROUNDED_SIZE(fake_symbol), /* t_symbol */
