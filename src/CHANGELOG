@@ -83,6 +83,10 @@ ECL 10.5.1:
  - ASSERT is now "cheaper", delegating the job on an auxiliary function and
    not creating any nonlocal jump structures (TAGBODY, etc).
 
+ - ECL's dynamic foreign function interface, that is the FFI that works for
+   interpreted and evaluated code and that does not need a C compiler, now
+   depends on libffi -- without it, it will refuse to build.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
