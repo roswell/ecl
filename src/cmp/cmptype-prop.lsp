@@ -52,8 +52,8 @@
                     (actual-type (location-primary-type value))
                     (intersection (type-and actual-type expected-type)))
                (unless intersection
-                 (cmperr "The argument ~d of function ~a has type~&~4T~A~&instead of expected~&~4T~A"
-                         i fname actual-type expected-type))
+                 (cmpwarn-stype "The argument ~d of function ~a has type~&~4T~A~&instead of expected~&~4T~A"
+                          i fname actual-type expected-type))
                #-new-cmp
                (when (zerop (cmp-env-optimization 'safety))
                  (setf (c1form-type value) intersection))))))))
