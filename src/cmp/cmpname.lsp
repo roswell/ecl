@@ -142,7 +142,8 @@ the function name it precedes."
 	     (:object "")
              (:program "exe_")
 	     ((:fasl :fas) "fas_")
-	     ((:library :shared-library :dll :static-library :lib) "lib_")
+	     ((:library :static-library :lib) "lib_")
+             ((:shared-library :dll) "dll_")
 	     (otherwise (error "Not a valid argument to INIT-FUNCTION-NAME: kind = ~S"
 			       kind)))))
     (setq s (map 'string #'translate-char (string s)))
