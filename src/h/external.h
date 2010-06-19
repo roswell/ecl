@@ -1256,6 +1256,16 @@ extern ECL_API cl_object ecl_log2(cl_object x, cl_object y);
 extern ECL_API cl_object ecl_atan2(cl_object y, cl_object x);
 extern ECL_API cl_object ecl_atan1(cl_object y);
 
+extern ECL_API cl_object ecl_abs(cl_object x);
+extern ECL_API cl_object ecl_exp(cl_object x);
+extern ECL_API cl_object ecl_expt(cl_object x, cl_object y);
+extern ECL_API cl_object ecl_sqrt(cl_object x);
+extern ECL_API cl_object ecl_sin(cl_object x);
+extern ECL_API cl_object ecl_cos(cl_object x);
+extern ECL_API cl_object ecl_tan(cl_object x);
+extern ECL_API cl_object ecl_sinh(cl_object x);
+extern ECL_API cl_object ecl_cosh(cl_object x);
+extern ECL_API cl_object ecl_tanh(cl_object x);
 
 /* package.c */
 

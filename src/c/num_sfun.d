@@ -115,6 +115,12 @@ ecl_fixnum_expt(cl_fixnum x, cl_fixnum y)
 cl_object
 cl_exp(cl_object x)
 {
+        @(return ecl_exp(x));
+}
+
+cl_object
+ecl_exp(cl_object x)
+{
 	cl_object output;
         ECL_MATHERR_CLEAR;
 	switch (type_of(x)) {
@@ -138,9 +144,9 @@ cl_exp(cl_object x)
 		cl_object y, y1;
 
 		y = x->complex.imag;
-		output = cl_exp(x->complex.real);
-		y1 = cl_cos(y);
-		y = cl_sin(y);
+		output = ecl_exp(x->complex.real);
+		y1 = ecl_cos(y);
+		y = ecl_sin(y);
 		y = ecl_make_complex(y1, y);
 		output = ecl_times(output, y);
 		break;
@@ -149,11 +155,17 @@ cl_exp(cl_object x)
 		FEwrong_type_only_arg(@[exp], x, @[number]);
 	}
         ECL_MATHERR_TEST;
-	@(return output)
+	return output;
 }
 
 cl_object
 cl_expt(cl_object x, cl_object y)
+{
+        @(return ecl_expt(x, y));
+}
+
+cl_object
+ecl_expt(cl_object x, cl_object y)
 {
 	cl_type ty, tx;
 	cl_object z;
@@ -185,8 +197,8 @@ cl_expt(cl_object x, cl_object y)
 			z = ecl_make_longfloat(1.0); break;
 #endif
 		case t_complex:
-			z = cl_expt((tx == t_complex)? x->complex.real : x,
-				    (ty == t_complex)? y->complex.real : y);
+			z = ecl_expt((tx == t_complex)? x->complex.real : x,
+                                     (ty == t_complex)? y->complex.real : y);
 			z = ecl_make_complex(z, MAKE_FIXNUM(0));
 			break;
 		default:
@@ -200,10 +212,10 @@ cl_expt(cl_object x, cl_object y)
 	} else if (ty != t_fixnum && ty != t_bignum) {
 		z = ecl_log1(x);
 		z = ecl_times(z, y);
-		z = cl_exp(z);
+		z = ecl_exp(z);
 	} else if (ecl_minusp(y)) {
 		z = ecl_negate(y);
-		z = cl_expt(x, z);
+		z = ecl_expt(x, z);
 		z = ecl_divide(MAKE_FIXNUM(1), z);
 	} else {
 		z = MAKE_FIXNUM(1);
@@ -216,7 +228,7 @@ cl_expt(cl_object x, cl_object y)
 			x = ecl_times(x, x);
 		} while (1);
 	}
-	@(return z);
+	return z;
 }
 
 static cl_object
@@ -397,6 +409,12 @@ si_log1p(cl_object x)
 cl_object
 cl_sqrt(cl_object x)
 {
+        @(return ecl_sqrt(x));
+}
+
+cl_object
+ecl_sqrt(cl_object x)
+{
 	cl_object z;
 	cl_type tx;
         ECL_MATHERR_CLEAR;
@@ -406,9 +424,9 @@ cl_sqrt(cl_object x)
 	}
 	if (tx == t_complex) {
 		z = cl_core.plus_half;
-		z = cl_expt(x, z);
+		z = ecl_expt(x, z);
 	} else if (ecl_minusp(x)) {
-		z = ecl_make_complex(MAKE_FIXNUM(0), cl_sqrt(ecl_negate(x)));
+		z = ecl_make_complex(MAKE_FIXNUM(0), ecl_sqrt(ecl_negate(x)));
 	} else switch (type_of(x)) {
 	case t_fixnum:
 	case t_bignum:
@@ -431,7 +449,7 @@ cl_sqrt(cl_object x)
 		(void)0;
 	}
         ECL_MATHERR_TEST;
-	@(return z);
+	return z;
 }
 
 static double
@@ -551,7 +569,7 @@ ecl_atan1(cl_object y)
 		z = ecl_one_plus(z);
 		z1 = ecl_times(y, y);
 		z1 = ecl_one_plus(z1);
-		z1 = cl_sqrt(z1);
+		z1 = ecl_sqrt(z1);
 		z = ecl_divide(z, z1);
 		z = ecl_log1(z);
 		z = ecl_times(cl_core.minus_imag_unit, z);
@@ -564,6 +582,12 @@ ecl_atan1(cl_object y)
 
 cl_object
 cl_sin(cl_object x)
+{
+        @(return ecl_sin(x));
+}
+
+cl_object
+ecl_sin(cl_object x)
 {
 	cl_object output;
         ECL_MATHERR_CLEAR;
@@ -592,8 +616,8 @@ cl_sin(cl_object x)
 		*/
 		cl_object dx = x->complex.real;
 		cl_object dy = x->complex.imag;
-		cl_object a = ecl_times(cl_sin(dx), cl_cosh(dy));
-		cl_object b = ecl_times(cl_cos(dx), cl_sinh(dy));
+		cl_object a = ecl_times(cl_sin(dx), ecl_cosh(dy));
+		cl_object b = ecl_times(cl_cos(dx), ecl_sinh(dy));
 		output = ecl_make_complex(a, b);
 		break;
 	}
@@ -601,11 +625,17 @@ cl_sin(cl_object x)
                 FEwrong_type_only_arg(@[sin], x, @[number]);
 	}
         ECL_MATHERR_TEST;
-	@(return output)
+        return output;
 }
 
 cl_object
 cl_cos(cl_object x)
+{
+        @(return ecl_cos(x));
+}
+
+cl_object
+ecl_cos(cl_object x)
 {
 	cl_object output;
         ECL_MATHERR_CLEAR;
@@ -633,8 +663,8 @@ cl_cos(cl_object x)
 		*/
 		cl_object dx = x->complex.real;
 		cl_object dy = x->complex.imag;
-		cl_object a = ecl_times(cl_cos(dx), cl_cosh(dy));
-		cl_object b = ecl_times(ecl_negate(cl_sin(dx)), cl_sinh(dy));
+		cl_object a = ecl_times(cl_cos(dx), ecl_cosh(dy));
+		cl_object b = ecl_times(ecl_negate(cl_sin(dx)), ecl_sinh(dy));
 		output = ecl_make_complex(a, b);
 		break;
 	}
@@ -642,7 +672,7 @@ cl_cos(cl_object x)
 		FEwrong_type_only_arg(@[cos], x, @[number]);
 	}
         ECL_MATHERR_TEST;
-	@(return output)
+        return output;
 }
 
 /*
@@ -659,6 +689,12 @@ static double safe_tanf(double x) { return tan(x); }
 
 cl_object
 cl_tan(cl_object x)
+{
+        @(return ecl_tan(x));
+}
+
+cl_object
+ecl_tan(cl_object x)
 {
 	cl_object output;
         ECL_MATHERR_CLEAR;
@@ -680,8 +716,8 @@ cl_tan(cl_object x)
 		output = ecl_make_longfloat(tanl(ecl_long_float(x))); break;
 #endif
 	case t_complex: {
-		cl_object a = cl_sin(x);
-		cl_object b = cl_cos(x);
+		cl_object a = ecl_sin(x);
+		cl_object b = ecl_cos(x);
 		output = ecl_divide(a, b);
 		break;
 	}
@@ -689,11 +725,17 @@ cl_tan(cl_object x)
                 FEwrong_type_only_arg(@[tan], x, @[number]);
 	}
         ECL_MATHERR_TEST;
-	@(return output)
+	return output;
 }
 
 cl_object
 cl_sinh(cl_object x)
+{
+        @(return ecl_sinh(x));
+}
+
+cl_object
+ecl_sinh(cl_object x)
 {
 	cl_object output;
         ECL_MATHERR_CLEAR;
@@ -723,8 +765,8 @@ cl_sinh(cl_object x)
 		*/
 		cl_object dx = x->complex.real;
 		cl_object dy = x->complex.imag;
-		cl_object a = ecl_times(cl_sinh(dx), cl_cos(dy));
-		cl_object b = ecl_times(cl_cosh(dx), cl_sin(dy));
+		cl_object a = ecl_times(cl_sinh(dx), ecl_cos(dy));
+		cl_object b = ecl_times(cl_cosh(dx), ecl_sin(dy));
 		output = ecl_make_complex(a, b);
 		break;
 	}
@@ -732,11 +774,17 @@ cl_sinh(cl_object x)
                 FEwrong_type_only_arg(@[sinh], x, @[number]);
 	}
         ECL_MATHERR_TEST;
-	@(return output)
+	return output;
 }
 
 cl_object
 cl_cosh(cl_object x)
+{
+        @(return ecl_cosh(x));
+}
+
+cl_object
+ecl_cosh(cl_object x)
 {
 	cl_object output;
         ECL_MATHERR_CLEAR;
@@ -766,8 +814,8 @@ cl_cosh(cl_object x)
 		*/
 		cl_object dx = x->complex.real;
 		cl_object dy = x->complex.imag;
-		cl_object a = ecl_times(cl_cosh(dx), cl_cos(dy));
-		cl_object b = ecl_times(cl_sinh(dx), cl_sin(dy));
+		cl_object a = ecl_times(cl_cosh(dx), ecl_cos(dy));
+		cl_object b = ecl_times(cl_sinh(dx), ecl_sin(dy));
 		output = ecl_make_complex(a, b);
 		break;
 	}
@@ -775,11 +823,17 @@ cl_cosh(cl_object x)
                 FEwrong_type_only_arg(@[cosh], x, @[number]);
 	}
         ECL_MATHERR_TEST;
-	@(return output)
+	return output;
 }
 
 cl_object
 cl_tanh(cl_object x)
+{
+        @(return ecl_tanh(x));
+}
+
+cl_object
+ecl_tanh(cl_object x)
 {
 	cl_object output;
         ECL_MATHERR_CLEAR;
@@ -801,8 +855,8 @@ cl_tanh(cl_object x)
 		output = ecl_make_longfloat(tanhl(ecl_long_float(x))); break;
 #endif
 	case t_complex: {
-		cl_object a = cl_sinh(x);
-		cl_object b = cl_cosh(x);
+		cl_object a = ecl_sinh(x);
+		cl_object b = ecl_cosh(x);
 		output = ecl_divide(a, b);
 		break;
 	}
@@ -810,7 +864,7 @@ cl_tanh(cl_object x)
                 FEwrong_type_only_arg(@[tanh], x, @[number]);
 	}
         ECL_MATHERR_TEST;
-	@(return output)
+	return output;
 }
 
 @(defun log (x &optional (y OBJNULL))

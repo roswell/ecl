@@ -528,6 +528,11 @@
 (def-inline evenp :always (t) :bool "ecl_evenp(#0)")
 (def-inline evenp :always (fixnum fixnum) :bool "~(#0) & 1")
 
+(def-inline abs :always (t t) t "ecl_abs(#0,#1)")
+
+(def-inline exp :always (t t) t "ecl_exp(#0,#1)")
+
+(def-inline expt :always (t t) t "ecl_expt(#0,#1)")
 (def-inline expt :always ((integer 2 2) (integer 0 29)) :fixnum "(1<<(#1))")
 (def-inline expt :always ((integer 0 0) t) :fixnum "0")
 (def-inline expt :always ((integer 1 1) t) :fixnum "1")
@@ -535,26 +540,33 @@
 (def-inline log :always (fixnum-float) :double "log((double)(#0))" :exact-return-type t)
 (def-inline log :always (fixnum-float) :float "(float)log((double)(#0))" :exact-return-type t)
 
+(def-inline sqrt :always (number) number "ecl_sqrt(#0)")
 (def-inline sqrt :always ((long-float 0.0 *)) :double "sqrt((double)(#0))")
 (def-inline sqrt :always ((double-float 0.0 *)) :double "sqrt((double)(#0))")
 (def-inline sqrt :always ((single-float 0.0 *)) :float "(float)sqrt((double)(#0))")
 (def-inline sqrt :always ((short-float 0.0 *)) :float "(float)sqrt((double)(#0))")
 
+(def-inline sin :always (number) number "sin(#0)")
 (def-inline sin :always (fixnum-float) :double "sin((double)(#0))" :exact-return-type t)
 (def-inline sin :always (fixnum-float) :float "(float)sin((double)(#0))" :exact-return-type t)
 
+(def-inline cos :always (t) number "ecl_cos(#0)")
 (def-inline cos :always (fixnum-float) :double "cos((double)(#0))" :exact-return-type t)
 (def-inline cos :always (fixnum-float) :float "(float)cos((double)(#0))" :exact-return-type t)
 
+(def-inline tan :always (t) number "ecl_tan(#0)")
 (def-inline tan :always (fixnum-float) :double "tan((double)(#0))" :exact-return-type t)
 (def-inline tan :always (fixnum-float) :float "(float)tan((double)(#0))" :exact-return-type t)
 
+(def-inline sinh :always (t) number "ecl_sinh(#0)")
 (def-inline sinh :always (fixnum-float) :double "sinh((double)(#0))" :exact-return-type t)
 (def-inline sinh :always (fixnum-float) :float "(float)sinh((double)(#0))" :exact-return-type t)
 
+(def-inline cosh :always (t) number "ecl_cosh(#0)")
 (def-inline cosh :always (fixnum-float) :double "cosh((double)(#0))" :exact-return-type t)
 (def-inline cosh :always (fixnum-float) :float "(float)cosh((double)(#0))" :exact-return-type t)
 
+(def-inline tanh :always (t) number "ecl_tanh(#0)")
 (def-inline tanh :always (fixnum-float) :double "tanh((double)(#0))" :exact-return-type t)
 (def-inline tanh :always (fixnum-float) :float "(float)tanh((double)(#0))" :exact-return-type t)
 
