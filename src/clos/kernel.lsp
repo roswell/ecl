@@ -82,7 +82,7 @@
       (sealedp :initarg :sealedp :initform nil :accessor class-sealedp)
       (prototype)
       (dependents :initform nil :accessor class-dependents)
-      (valid-initargs :initform nil :accessor class-valid-initargs))))
+      (valid-initargs :accessor class-valid-initargs))))
 
 ;#.(create-accessors +class-slots+ 'class)
 

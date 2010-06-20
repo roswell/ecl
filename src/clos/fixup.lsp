@@ -280,4 +280,20 @@ their lambda lists ~A and ~A are not congruent."
 
 (defgeneric update-dependents (object dependents &rest initargs))
 
+(defclass initargs-updater ()
+  ())
+
+(defun recursively-update-classes (a-class)
+  (slot-makunbound a-class 'valid-initargs)
+  (mapc #'recursively-update-classes (class-direct-subclasses a-class)))
+
+(defmethod update-dependents ((object generic-function) (dep initargs-updater)
+                               &rest initargs)
+  (recursively-update-classes +the-class+))
+
 (setf *clos-booted* t)
+
+(let ((x (make-instance 'initargs-updater)))
+  (add-dependent #'shared-initialize x)
+  (add-dependent #'initialize-instance x)
+  (add-dependent #'allocate-instance x))

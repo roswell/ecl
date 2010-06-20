@@ -110,14 +110,10 @@
   ;; be (:allow-other-keys t), which disables the checking of the arguments.
   ;; (Paul Dietz's ANSI test suite, test CLASS-24.4)
   (setf initargs (add-default-initargs class initargs))
-  (check-initargs class initargs
-		  (valid-keywords-from-methods
-                   (compute-applicable-methods
-                    #'allocate-instance (list class))
-                   (compute-applicable-methods
-                    #'initialize-instance (list (class-prototype class)))
-                   (compute-applicable-methods
-                    #'shared-initialize (list (class-prototype class) t))))
+  (let ((keywords (class-valid-initargs class)))
+    (when (eq keywords (si::unbound))
+      (setf keywords (precompute-valid-initarg-keywords class)))
+    (check-initargs class initargs nil (class-slots class) keywords))
   (let ((instance (apply #'allocate-instance class initargs)))
     (apply #'initialize-instance instance initargs)
     instance))
@@ -136,7 +132,7 @@
 	(when (eq supplied-value '+initform-unsupplied+)
 	  (remf initargs initarg))
 	(setf value (funcall value)
-	      initargs (append initargs (list initarg value))))))
+	      initargs (list* initarg value initargs)))))
   initargs)
 
 (defmethod direct-slot-definition-class ((class T) &rest canonicalized-slot)
@@ -178,11 +174,28 @@
 
   class)
 
-(defmethod shared-initialize :after ((class std-class) slot-names &rest initargs &key
-				     (optimize-slot-access (list *optimize-slot-access*))
-				     sealedp)
+(defun precompute-valid-initarg-keywords (class)
+  (setf (class-valid-initargs class)
+        (loop with methods = (nconc
+                              (compute-applicable-methods
+                               #'allocate-instance (list class))
+                              (compute-applicable-methods
+                               #'initialize-instance (list (class-prototype class)))
+                              (compute-applicable-methods
+                               #'shared-initialize (list (class-prototype class) t)))
+           for m in methods
+           for k = (method-keywords m)
+           when (eq k t)
+           return t
+           append k)))
+
+(defmethod shared-initialize ((class std-class) slot-names &rest initargs &key
+                              (optimize-slot-access (list *optimize-slot-access*))
+                              sealedp)
   (setf (slot-value class 'optimize-slot-access) (first optimize-slot-access)
-	(slot-value class 'sealedp) (and sealedp t)))
+	(slot-value class 'sealedp) (and sealedp t))
+  (setf class (call-next-method))
+  class)
 
 (defmethod add-direct-subclass ((parent class) child)
   (pushnew child (class-direct-subclasses parent)))
@@ -698,21 +711,18 @@ because it contains a reference to the undefined class~%  ~A"
 ;;;
 
 (defun valid-keywords-from-methods (&rest method-lists)
-  (let ((keys '()))
-    (dolist (methods method-lists keys)
-      ;; Given a list of methods, build up the list of valid keyword arguments
-      (dolist (m methods)
-        (let ((keywords (method-keywords m)))
-          (if (eq keywords t)
-              (return-from valid-keywords-from-methods t)
-              (setf keys (append keywords keys))))))))
+  (loop for methods in method-lists
+     when (member t methods :key #'method-keywords)
+     return t
+     nconc methods))
 
-(defun check-initargs (class initargs &optional method-initargs
-		       (slots (class-slots class)))
+(defun check-initargs (class initargs &optional methods
+		       (slots (class-slots class))
+                       cached-keywords)
   ;; First get all initargs which have been declared in the given
   ;; methods, then check the list of initargs declared in the slots
   ;; of the class.
-  (unless (eq method-initargs t)
+  (unless (eq methods t)
     (do* ((name-loc initargs (cddr name-loc))
 	  (allow-other-keys nil)
 	  (allow-other-keys-found nil)
@@ -730,10 +740,11 @@ because it contains a reference to the undefined class~%  ~A"
 		    (not allow-other-keys-found))
 	       (setf allow-other-keys (second name-loc)
 		     allow-other-keys-found t))
-	      ;; The initialization argument has been declared in some method
-	      ((member name method-initargs))
 	      ;; Check if the arguments is associated with a slot
-	      ((find name slots :test #'member :key #'slot-definition-initargs))
+	      ((member name slots :test #'member :key #'slot-definition-initargs))
+	      ;; The initialization argument has been declared in some method
+              ((member name cached-keywords))
+	      ((and methods (member name methods :test #'member :key #'method-keywords)))
 	      (t
 	       (setf unknown-key name)))))))
 

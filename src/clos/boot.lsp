@@ -119,6 +119,8 @@
   ;; 5) Generate accessors (In macros.lsp)
 )
 
+(defconstant +the-class+ (find-class 'class nil))
+(defconstant +the-std-class+ (find-class 'std-class nil))
 (defconstant +the-standard-class+ (find-class 'standard-class nil))
 (defconstant +the-funcallable-standard-class+
   (find-class 'funcallable-standard-class nil))
