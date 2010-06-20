@@ -202,12 +202,17 @@ their lambda lists ~A and ~A are not congruent."
   ;;
   gf)
 
-(setf (method-function
-       (eval '(defmethod false-add-method ((gf standard-generic-function)
-					   (method standard-method)))))
-      #'add-method)
-(setf (fdefinition 'add-method) #'false-add-method)
-(setf (generic-function-name #'add-method) 'add-method)
+(defun function-to-method (name signature)
+  (let* ((aux-name 'temp-method)
+         (method (eval `(defmethod ,aux-name ,signature)))
+         (generic-function (fdefinition aux-name)))
+    (setf (method-function method) (fdefinition name))
+    (setf (fdefinition name) generic-function)
+    (setf (generic-function-name generic-function) name)
+    (fmakunbound aux-name)))
+
+(function-to-method 'add-method '((gf standard-generic-function)
+                                  (method standard-method)))
 
 (defun remove-method (gf method)
   (setf (generic-function-methods gf)
@@ -249,3 +254,30 @@ their lambda lists ~A and ~A are not congruent."
       (t (error "~A is not a class." new-value))))
   new-value)
 )
+
+;;; ----------------------------------------------------------------------
+;;; DEPENDENT MAINTENANCE PROTOCOL
+;;;
+
+(function-to-method 'map-dependents '((c standard-generic-function) function))
+
+(defmethod map-dependents ((c class) function)
+  (dolist (d (class-dependents c))
+    (funcall function c)))
+
+(function-to-method 'add-dependent '((c standard-generic-function) function))
+
+(defmethod add-dependent ((c class) dep)
+  (pushnew c (class-dependents c)))
+
+(defmethod remove-dependent ((c standard-generic-function) dep)
+  (setf (generic-function-dependents c)
+        (remove dep (generic-function-dependents c))))
+
+(defmethod remove-dependent ((c class) dep)
+  (setf (class-dependents c)
+        (remove dep (class-dependents c))))
+
+(defgeneric update-dependents (object dependents &rest initargs))
+
+(setf *clos-booted* t)

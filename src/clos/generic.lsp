@@ -244,6 +244,9 @@
 	   (simple-program-error "The special operator ~A is not a valid name for a generic function" name))
 	  ((macro-function name)
 	   (simple-program-error "The symbol ~A is bound to a macro and is not a valid name for a generic function" name))
+          ((not *clos-booted*)
+           (setf (fdefinition (or traced name))
+		 (apply #'ensure-generic-function-using-class nil name args))
+           (fdefinition name))
 	  (t
-	   (simple-program-error "The symbol ~A is bound to an ordinary function and is not a valid name for a generic function" name))
-	  )))
+	   (simple-program-error "The symbol ~A is bound to an ordinary function and is not a valid name for a generic function" name)))))

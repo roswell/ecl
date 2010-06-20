@@ -16,6 +16,8 @@
 
 (in-package "CLOS")
 
+(defparameter *clos-booted* nil)
+
 (defconstant *default-method-cache-size* 64 "Size of hash tables for methods")
 
 ;;;----------------------------------------------------------------------
@@ -79,7 +81,8 @@
       (size :accessor class-size)
       (sealedp :initarg :sealedp :initform nil :accessor class-sealedp)
       (prototype)
-      (dependents :initform nil :accessor class-dependents))))
+      (dependents :initform nil :accessor class-dependents)
+      (valid-initargs :initform nil :accessor class-valid-initargs))))
 
 ;#.(create-accessors +class-slots+ 'class)
 
@@ -206,6 +209,17 @@
 
 ;;; ----------------------------------------------------------------------
 ;;;                                                         early versions
+
+(defun map-dependents (c function)
+  (dolist (d (if (classp c)
+                 (class-dependents c)
+                 (generic-function-dependents c)))
+    (funcall function d)))
+
+(defun add-dependent (c d)
+  (if (classp c)
+      (pushnew d (class-dependents c))
+      (pushnew d (generic-function-dependents c))))
 
 ;;; early version used during bootstrap
 (defun ensure-generic-function (name &key (lambda-list (si::unbound) l-l-p))
