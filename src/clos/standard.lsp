@@ -20,10 +20,11 @@
 
 (defmethod reinitialize-instance ((instance T) &rest initargs)
   (check-initargs (class-of instance) initargs
-		  (append (compute-applicable-methods
-			   #'reinitialize-instance (list instance))
-			  (compute-applicable-methods
-			   #'shared-initialize (list instance t))))
+		  (valid-keywords-from-methods
+                   (compute-applicable-methods
+                    #'reinitialize-instance (list instance))
+                   (compute-applicable-methods
+                    #'shared-initialize (list instance t))))
   (apply #'shared-initialize instance '() initargs))
 
 (defmethod shared-initialize ((instance T) slot-names &rest initargs)
@@ -110,12 +111,13 @@
   ;; (Paul Dietz's ANSI test suite, test CLASS-24.4)
   (setf initargs (add-default-initargs class initargs))
   (check-initargs class initargs
-		  (append (compute-applicable-methods
-			   #'allocate-instance (list class))
-			  (compute-applicable-methods
-			   #'initialize-instance (list (class-prototype class)))
-			  (compute-applicable-methods
-			   #'shared-initialize (list (class-prototype class) t))))
+		  (valid-keywords-from-methods
+                   (compute-applicable-methods
+                    #'allocate-instance (list class))
+                   (compute-applicable-methods
+                    #'initialize-instance (list (class-prototype class)))
+                   (compute-applicable-methods
+                    #'shared-initialize (list (class-prototype class) t))))
   (let ((instance (apply #'allocate-instance class initargs)))
     (apply #'initialize-instance instance initargs)
     instance))
@@ -695,30 +697,22 @@ because it contains a reference to the undefined class~%  ~A"
 ;;; on SHARED-INITIALIZE, REINITIALIZE-INSTANCE, etc. (See ANSI 7.1.2)
 ;;;
 
-(defun valid-keywords-from-methods (methods)
-  (declare (si::c-local))
-  ;; Given a list of methods, build up the list of valid keyword arguments
-  (do ((m methods (rest m))
-       (keys '()))
-      ((null m)
-       (values keys nil))
-    (multiple-value-bind (reqs opts rest key-flag keywords allow-other-keys)
-	(si::process-lambda-list (method-lambda-list (first m)) t)
-      (when allow-other-keys
-	(return (values nil t)))
-      (do ((k (rest keywords) (cddddr k)))
-	  ((null k))
-	(push (first k) keys)))))
+(defun valid-keywords-from-methods (&rest method-lists)
+  (let ((keys '()))
+    (dolist (methods method-lists keys)
+      ;; Given a list of methods, build up the list of valid keyword arguments
+      (dolist (m methods)
+        (let ((keywords (method-keywords m)))
+          (if (eq keywords t)
+              (return-from valid-keywords-from-methods t)
+              (setf keys (append keywords keys))))))))
 
-(defun check-initargs (class initargs &optional methods
+(defun check-initargs (class initargs &optional method-initargs
 		       (slots (class-slots class)))
   ;; First get all initargs which have been declared in the given
   ;; methods, then check the list of initargs declared in the slots
   ;; of the class.
-  (multiple-value-bind (method-initargs allow-other-keys)
-      (valid-keywords-from-methods methods)
-    (when allow-other-keys
-      (return-from check-initargs))
+  (unless (eq method-initargs t)
     (do* ((name-loc initargs (cddr name-loc))
 	  (allow-other-keys nil)
 	  (allow-other-keys-found nil)

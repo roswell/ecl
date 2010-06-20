@@ -43,11 +43,12 @@
     (setf added-slots (set-difference (mapcar #'slot-definition-name new-local-slotds)
 				      (mapcar #'slot-definition-name old-local-slotds)))
     (check-initargs (class-of new-data) initargs
-		    (append (compute-applicable-methods
-			     #'update-instance-for-different-class
-			     (list old-data new-data))
-			    (compute-applicable-methods
-			     #'shared-initialize (list new-data added-slots))))
+		    (valid-keywords-from-methods
+                     (compute-applicable-methods
+                      #'update-instance-for-different-class
+                      (list old-data new-data))
+                     (compute-applicable-methods
+                      #'shared-initialize (list new-data added-slots))))
     (apply #'shared-initialize new-data added-slots initargs)))
 
 (defmethod change-class ((instance standard-object) (new-class std-class)
@@ -115,12 +116,13 @@
      &rest initargs)
   (declare (ignore discarded-slots property-list))
   (check-initargs (class-of instance) initargs
-		  (append (compute-applicable-methods
-			   #'update-instance-for-redefined-class
-			   (list instance added-slots discarded-slots property-list))
-			  (compute-applicable-methods
-			   #'shared-initialize
-			   (list instance added-slots))))
+		  (valid-keywords-from-methods
+                   (compute-applicable-methods
+                    #'update-instance-for-redefined-class
+                    (list instance added-slots discarded-slots property-list))
+                   (compute-applicable-methods
+                    #'shared-initialize
+                    (list instance added-slots))))
   (apply #'shared-initialize instance added-slots initargs))
 
 (defun update-instance (instance)
