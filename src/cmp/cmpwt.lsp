@@ -53,7 +53,7 @@
                             ((vv-used-p vv-record)
                              object)
                             (t
-                             (cmpwarn "Object found in array but not used~%~A"
+                             (cmpnote "Constant value optimized away or not used~%~A"
                                       object)
                              0))))
   #+(or)
