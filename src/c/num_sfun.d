@@ -616,8 +616,8 @@ ecl_sin(cl_object x)
 		*/
 		cl_object dx = x->complex.real;
 		cl_object dy = x->complex.imag;
-		cl_object a = ecl_times(cl_sin(dx), ecl_cosh(dy));
-		cl_object b = ecl_times(cl_cos(dx), ecl_sinh(dy));
+		cl_object a = ecl_times(ecl_sin(dx), ecl_cosh(dy));
+		cl_object b = ecl_times(ecl_cos(dx), ecl_sinh(dy));
 		output = ecl_make_complex(a, b);
 		break;
 	}
@@ -663,8 +663,8 @@ ecl_cos(cl_object x)
 		*/
 		cl_object dx = x->complex.real;
 		cl_object dy = x->complex.imag;
-		cl_object a = ecl_times(cl_cos(dx), ecl_cosh(dy));
-		cl_object b = ecl_times(ecl_negate(cl_sin(dx)), ecl_sinh(dy));
+		cl_object a = ecl_times(ecl_cos(dx), ecl_cosh(dy));
+		cl_object b = ecl_times(ecl_negate(ecl_sin(dx)), ecl_sinh(dy));
 		output = ecl_make_complex(a, b);
 		break;
 	}
@@ -765,8 +765,8 @@ ecl_sinh(cl_object x)
 		*/
 		cl_object dx = x->complex.real;
 		cl_object dy = x->complex.imag;
-		cl_object a = ecl_times(cl_sinh(dx), ecl_cos(dy));
-		cl_object b = ecl_times(cl_cosh(dx), ecl_sin(dy));
+		cl_object a = ecl_times(ecl_sinh(dx), ecl_cos(dy));
+		cl_object b = ecl_times(ecl_cosh(dx), ecl_sin(dy));
 		output = ecl_make_complex(a, b);
 		break;
 	}
@@ -814,8 +814,8 @@ ecl_cosh(cl_object x)
 		*/
 		cl_object dx = x->complex.real;
 		cl_object dy = x->complex.imag;
-		cl_object a = ecl_times(cl_cosh(dx), ecl_cos(dy));
-		cl_object b = ecl_times(cl_sinh(dx), ecl_sin(dy));
+		cl_object a = ecl_times(ecl_cosh(dx), ecl_cos(dy));
+		cl_object b = ecl_times(ecl_sinh(dx), ecl_sin(dy));
 		output = ecl_make_complex(a, b);
 		break;
 	}

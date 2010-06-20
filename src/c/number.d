@@ -905,8 +905,8 @@ cl_rational(cl_object x)
 			e -= DBL_MANT_DIG;
 			x = double_to_integer(ldexp(d, DBL_MANT_DIG));
                         if (e != 0) {
-                                x = ecl_times(cl_expt(MAKE_FIXNUM(FLT_RADIX),
-                                                      MAKE_FIXNUM(e)),
+                                x = ecl_times(ecl_expt(MAKE_FIXNUM(FLT_RADIX),
+                                                       MAKE_FIXNUM(e)),
                                               x);
                         }
 		}
@@ -923,8 +923,8 @@ cl_rational(cl_object x)
                         d = ldexpl(d, LDBL_MANT_DIG);
 			x = long_double_to_integer(d);
 			if (e != 0) {
-				x = ecl_times(cl_expt(MAKE_FIXNUM(FLT_RADIX),
-                                                      MAKE_FIXNUM(e)),
+				x = ecl_times(ecl_expt(MAKE_FIXNUM(FLT_RADIX),
+                                                       MAKE_FIXNUM(e)),
                                               x);
 			}
 		}
