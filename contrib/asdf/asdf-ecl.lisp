@@ -82,6 +82,11 @@
         (remove-keys '(type monolithic name-suffix)
                      (slot-value instance 'original-initargs))))
 
+(defmethod bundle-op-build-args :around ((op lib-op))
+  (let ((args (call-next-method)))
+    (remf args :ld-flags)
+    args))
+
 (defvar *force-load-p* nil)
 
 (defmethod operation-done-p :around ((operation load-op) c)
