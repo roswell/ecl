@@ -530,7 +530,7 @@
 
 (def-inline abs :always (t t) t "ecl_abs(#0,#1)")
 
-(def-inline exp :always (t t) t "ecl_exp(#0,#1)")
+(def-inline exp :always (t) t "ecl_exp(#0)")
 
 (def-inline expt :always (t t) t "ecl_expt(#0,#1)")
 (def-inline expt :always ((integer 2 2) (integer 0 29)) :fixnum "(1<<(#1))")
@@ -546,7 +546,7 @@
 (def-inline sqrt :always ((single-float 0.0 *)) :float "(float)sqrt((double)(#0))")
 (def-inline sqrt :always ((short-float 0.0 *)) :float "(float)sqrt((double)(#0))")
 
-(def-inline sin :always (number) number "sin(#0)")
+(def-inline sin :always (number) number "ecl_sin(#0)")
 (def-inline sin :always (fixnum-float) :double "sin((double)(#0))" :exact-return-type t)
 (def-inline sin :always (fixnum-float) :float "(float)sin((double)(#0))" :exact-return-type t)
 
