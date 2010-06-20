@@ -197,6 +197,10 @@
   (setf (class-finalized-p class) nil)
   (finalize-unless-forward class)
 
+  ;; Now we can call the dependents
+  (map-dependents class #'(lambda (dep)
+                            (apply #'update-dependent class dep initargs)))
+
   class)
 
 (defmethod make-instances-obsolete ((class class))
@@ -246,4 +250,3 @@
 	    (remove-method gf-object found))
 	(when (null (generic-function-methods gf-object))
 	  (fmakunbound writer)))))))
-

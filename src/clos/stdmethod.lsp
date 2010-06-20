@@ -28,6 +28,21 @@
   #.(remove-accessors +standard-generic-function-slots+)
   (:metaclass 'funcallable-standard-class))
 
+;;;
+;;; GENERIC-FUNCTION DEPENDENT MAINTENANCE PROTOCOL
+;;;
+
+(defmethod map-dependents ((c standard-generic-function) function)
+  (dolist (d (generic-function-dependents c))
+    (funcall function c)))
+
+(defmethod add-dependent ((c standard-generic-function) dep)
+  (pushnew c (generic-function-dependents c)))
+
+(defmethod remove-dependent ((c standard-generic-function) dep)
+  (setf (generic-function-dependents c)
+        (remove dep (generic-function-dependents c))))
+
 ;;;----------------------------------------------------------------------
 ;;; Method
 ;;; ----------------------------------------------------------------------
@@ -56,3 +71,4 @@
 (defclass standard-reader-method (standard-accessor-method) ())
 
 (defclass standard-writer-method (standard-accessor-method) ())
+

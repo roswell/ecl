@@ -300,6 +300,8 @@ have disappeared."
       (setf (generic-function-argument-precedence-order gf)
 	    (rest (si::process-lambda-list (method-lambda-list method) t))))
     (compute-g-f-spec-list gf)
+    (dolist (d (generic-function-dependents gf))
+      (update-dependent gf d 'add-method method))
     method))
 
 (defun find-method (gf qualifiers specializers &optional (errorp t))

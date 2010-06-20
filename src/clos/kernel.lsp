@@ -78,7 +78,8 @@
       (documentation :initarg :documentation :initform nil)
       (size :accessor class-size)
       (sealedp :initarg :sealedp :initform nil :accessor class-sealedp)
-      (prototype))))
+      (prototype)
+      (dependents :initform nil :accessor class-dependents))))
 
 ;#.(create-accessors +class-slots+ 'class)
 
@@ -117,7 +118,8 @@
        :accessor generic-function-method-class)
       (documentation :initarg :documentation :initform nil)
       (methods :initform nil :accessor generic-function-methods)
-      (a-p-o-function :initform nil :accessor generic-function-a-p-o-function))))
+      (a-p-o-function :initform nil :accessor generic-function-a-p-o-function)
+      (dependents :initform nil :accessor generic-function-dependents))))
 
 #.(create-accessors +standard-generic-function-slots+
 		    'standard-generic-function)
@@ -220,7 +222,8 @@
 	      (generic-function-method-combination gfun) '(standard)
 	      (generic-function-methods gfun) nil
 	      (generic-function-spec-list gfun) nil
-	      (generic-function-method-class gfun) 'standard-method)
+	      (generic-function-method-class gfun) 'standard-method
+              (generic-function-dependents gfun) nil)
 	(when l-l-p
 	  (setf (generic-function-argument-precedence-order gfun)
 		(rest (si::process-lambda-list lambda-list t))))

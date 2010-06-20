@@ -78,6 +78,23 @@
   instance)
 
 ;;; ----------------------------------------------------------------------
+;;; DEPENDENT MAINTENANCE PROTOCOL
+;;;
+
+(defmethod map-dependents ((c class) function)
+  (print 'map-dependents)
+  (print (length (class-dependents c)))
+  (dolist (d (class-dependents c))
+    (funcall function c)))
+
+(defmethod add-dependent ((c class) dep)
+  (pushnew c (class-dependents c)))
+
+(defmethod remove-dependent ((c class) dep)
+  (setf (class-dependents c)
+        (remove dep (class-dependents c))))
+
+;;; ----------------------------------------------------------------------
 ;;; CLASSES INITIALIZATION AND REINITIALIZATION
 ;;;
 
