@@ -123,17 +123,19 @@
   ;; Here, for each slot which is not mentioned in the initialization
   ;; arguments, but which has a value associated with :DEFAULT-INITARGS,
   ;; we compute the value and add it to the list of initargs.
-  (dolist (scan (class-default-initargs class))
-    (let* ((initarg (first scan))
-	   (value (third scan))
-	   (supplied-value (si::search-keyword initargs initarg)))
-      (when (or (eq supplied-value '+initform-unsupplied+)
-		(eq supplied-value 'si::failed))
-	(when (eq supplied-value '+initform-unsupplied+)
-	  (remf initargs initarg))
-	(setf value (funcall value)
-	      initargs (list* initarg value initargs)))))
-  initargs)
+  (let ((output '()))
+    (dolist (scan (class-default-initargs class))
+      (let* ((initarg (first scan))
+             (value (third scan))
+             (supplied-value (si::search-keyword initargs initarg)))
+        (when (or (eq supplied-value '+initform-unsupplied+)
+                  (eq supplied-value 'si::failed))
+          (when (eq supplied-value '+initform-unsupplied+)
+            (remf initargs initarg))
+          (setf output (list* (funcall value) initarg output)))))
+    (if output
+        (append initargs (nreverse output))
+        initargs)))
 
 (defmethod direct-slot-definition-class ((class T) &rest canonicalized-slot)
   (find-class 'standard-direct-slot-definition nil))
