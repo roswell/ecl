@@ -87,6 +87,8 @@ ECL 10.5.1:
    interpreted and evaluated code and that does not need a C compiler, now
    depends on libffi -- without it, it will refuse to build.
 
+ - ECL exports a new feature, :C++, when it is built with a C++ compiler.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

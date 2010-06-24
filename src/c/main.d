@@ -182,6 +182,9 @@ static const char *feature_names[] = {
 #ifdef ECL_EXTERNALIZABLE
         "EXTERNALIZABLE",
 #endif
+#ifdef __cplusplus
+        "C++",
+#endif
         0
 };
 
