@@ -151,23 +151,23 @@ Returns the non-negative integer that represents the location of the element
 of ARRAY specified by INDEXes, assuming all elements of ARRAY are aligned in
 row-major order."
   (declare (array array)
-           (optimize (safety 1)))
+           (ext:check-arguments-type))
   (row-major-index-inner array indices))
 
 
 (defun bit (bit-array &rest indices)
   "Args: (bit-array &rest indexes)
 Returns the bit of BIT-ARRAY specified by INDEXes."
-  (declare (array array)
-           (optimize (safety 1)))
+  (declare (array bit-array)
+           (ext:check-arguments-type))
   (row-major-aref bit-array (row-major-index-inner bit-array indices)))
 
 
 (defun sbit (bit-array &rest indices)
   "Args: (simple-bit-array &rest subscripts)
 Returns the specified bit in SIMPLE-BIT-ARRAY."
-  (declare (array array)
-           (optimize (safety 1)))
+  (declare (array bit-array)
+           (ext:check-arguments-type))
   (row-major-aref bit-array (row-major-index-inner bit-array indices)))
 
 

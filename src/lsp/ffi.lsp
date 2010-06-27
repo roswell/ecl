@@ -125,11 +125,10 @@
     (values size (or align 0))))
 
 (defun allocate-foreign-object (type &optional (size 0 size-flag))
-  (declare (fixnum size))
   (let ((type-size (size-of-foreign-type type)))
     (cond ((null size-flag)
 	   (si::allocate-foreign-data type type-size))
-	  ((>= size 0)
+	  ((and (typep size 'fixnum) (>= size 0))
 	   (let ((bytes (* size type-size)))
 	     (si::allocate-foreign-data `(:array ,type ,size) bytes)))
 	  (t

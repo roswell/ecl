@@ -21,7 +21,7 @@ defined no attempt to find or load a definition is attempted and NIL is
 returned. If host is not already defined, but definition is found and loaded
 successfully, T is returned, else error."
   (declare (type string host)
-           (values (member t nil)))
+           (ext:check-arguments-type))
   (let ((*autoload-translations* nil))
     (unless (or (string-equal host "sys")
                 (si::pathname-translations host))
