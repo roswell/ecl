@@ -2500,7 +2500,7 @@ LOOP:
 	if (ATOM(lambda_list)) {
 		if (lambda_list == Cnil)
 			goto OUTPUT;
-		else if (context == @'function')
+		else if (context == @'function' || context == @'ftype')
 			goto ILLEGAL_LAMBDA;
 		else {
 			v = lambda_list;
@@ -2555,7 +2555,7 @@ REST:		if (stage >= AT_REST)
 	case AT_OPTIONALS:
 		spp = Cnil;
 		init = Cnil;
-		if (!ATOM(v)) {
+		if (!ATOM(v) && (context != @'ftype')) {
 			cl_object x = v;
 			v = ECL_CONS_CAR(x);
                         x = ECL_CONS_CDR(x);
@@ -2585,6 +2585,13 @@ REST:		if (stage >= AT_REST)
 	case AT_KEYS:
 		init = Cnil;
 		spp = Cnil;
+                if (context == @'ftype') {
+                        if (!CONSP(v))
+                                goto ILLEGAL_LAMBDA;
+                        key = ECL_CONS_CAR(v);
+                        v = CADR(v);
+                        goto KEY_PUSH;
+                }
 		if (!ATOM(v)) {
 			cl_object x = v;
 			v = ECL_CONS_CAR(x);
@@ -2612,6 +2619,7 @@ REST:		if (stage >= AT_REST)
 			key = ecl_intern(ecl_symbol_name(v), cl_core.keyword_package,
 					 &intern_flag);
 		}
+        KEY_PUSH:
 		nkey++;
 		push(key, keys);
 		push_var(v, keys);
