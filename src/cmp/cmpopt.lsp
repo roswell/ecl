@@ -86,8 +86,7 @@
 	  ;;
 	  ;; Complex types defined with DEFTYPE.
 	  ((and (atom type)
-		(get-sysprop type 'SI::DEFTYPE-DEFINITION)
-		(setq function (get-sysprop type 'SI::DEFTYPE-DEFINITION)))
+                (setq function (get-sysprop type 'SI::DEFTYPE-DEFINITION)))
 	   (expand-typep form object `',(funcall function) env))
 	  ;;
 	  ;; No optimizations that take up too much space unless requested.
@@ -143,8 +142,8 @@
           ;; (SATISFIES predicate)
 	  ((and (eq first 'SATISFIES)
                 (= (list-length type) 2)
-                (symbolp (second type)))
-	   `(function ,object))
+                (symbolp (setf function (second type))))
+	   `(,function ,object))
 	  ;;
 	  ;; Complex types with arguments.
 	  ((setf rest (rest type)
