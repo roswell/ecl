@@ -71,7 +71,7 @@
 ;;; * Compile and link Common-Lisp base library
 ;;;
 (setq si::*keep-documentation* nil)
-(proclaim +ecl-optimization-settings+)
+(mapc #'proclaim +ecl-optimization-settings+)
 (let* ((c::*cc-flags* (concatenate 'string "-DECL_API -I\"@true_builddir@/c\" " c::*cc-flags*))
        (lsp-objects (compile-if-old "build:lsp;" +lisp-module-files+
 				    :system-p t :c-file t :data-file t :h-file t
@@ -79,7 +79,7 @@
 				    )))
   #+CLOS
   (let* ((c::*compile-to-linking-call* nil))
-   (proclaim +ecl-optimization-settings+)
+   (mapc #'proclaim +ecl-optimization-settings+)
     (setq lsp-objects (append lsp-objects
 			      (compile-if-old "build:clos;" +clos-module-files+
 					      :system-p t :c-file t :data-file t :h-file t
@@ -128,7 +128,7 @@
 ;;;
 ;;; * Compile and link Common-Lisp to C compiler
 ;;;
-(proclaim +ecl-optimization-settings+)
+(mapc #'proclaim +ecl-optimization-settings+)
 
 (si::pathname-translations "SYS" '(("**;*.*.*" "@ecldir\@/**/*.*")))
 

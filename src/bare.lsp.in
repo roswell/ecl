@@ -16,7 +16,8 @@
 ;;;")
 
 (sys:*make-constant '+ecl-optimization-settings+ 
-  '(optimize (safety 2) (speed 1) (debug 1) (space 1)))
+  '((optimize (safety 2) (speed 1) (debug 1) (space 1))
+    (ext:no-check-arguments-type)))
 (sys:*make-constant '+ecl-unsafe-declarations+
   '(optimize (safety 0) (speed 3) (debug 0) (space 0)))
 (sys:*make-constant '+ecl-safe-declarations+
@@ -152,7 +153,7 @@
 (defun build-module (name sources &key additional-files
                      (builtin nil) (dir "build:")
                      ((:prefix si::*init-function-prefix*) "EXT"))
-  (proclaim +ecl-optimization-settings+)
+  (mapc #'proclaim +ecl-optimization-settings+)
   (let* ((name (string-downcase name)))
     (when additional-files
       (setf *module-files* (append additional-files *module-files*)))
