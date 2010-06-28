@@ -49,7 +49,9 @@
   (nth index (gethash type *optimization-quality-switches*)))
 
 (defun compute-policy (arguments old-bits)
-  (let* ((bits old-bits))
+  (let* ((bits old-bits)
+         (on 0)
+         (off 0))
     (dolist (x arguments)
       (let (flags name value)
         (cond ((symbolp x)
@@ -66,8 +68,12 @@
                      flags (optimization-quality-switches name (second x)))))
         (if (null flags)
             (cmpwarn "Illegal or unknown OPTIMIZE proclamation ~s" x)
-            (setf bits (logandc2 (logior bits (car flags)) (cdr flags))))))
-    bits))
+            (setf on (logior on (car flags))
+                  off (logior off (cdr flags))))))
+    ;;(format t "~%*~64b" bits)
+    ;;(format t "~% ~64b" on)
+    ;;(format t "~% ~64b" off)
+    (logandc2 (logior bits on) off)))
 
 (defun default-policy ()
   (compute-policy `((space ,*space*)
@@ -89,11 +95,12 @@
   (and (gethash name *optimization-quality-switches*) t))
 
 (defun maybe-add-policy (decl &optional (env *cmp-env*))
-  (let ((record (gethash (first decl) *optimization-quality-switches*)))
-    (when (and record (consp decl) (eql (list-length decl) 1))
-      (let* ((old (cmp-env-policy env))
-             (new (compute-policy (list (first decl)) old)))
-        (cmp-env-add-declaration 'optimization (list new) env)))))
+  (when (and (consp decl)
+             (eql (list-length decl) 1)
+             (gethash (first decl) *optimization-quality-switches*))
+    (let* ((old (cmp-env-policy env))
+           (new (compute-policy (list (first decl)) old)))
+      (cmp-env-add-declaration 'optimization (list new) env))))
 
 (defun add-default-optimizations (env)
   (if (cmp-env-search-declaration 'optimization env)
@@ -117,9 +124,35 @@
 
 (eval-when (:compile-toplevel :execute)
   (defparameter +last-optimization-bit+ 17)
-  (defun policy-bits (quality level)
+  (defun augment-policy (quality level on-off flag)
+    #+(or)
+    (if (eq on-off :on)
+        (loop for i from 0 to 3
+           for bits = (optimization-quality-switches quality i)
+           if (>= i level)
+           do (rplaca bits (logior (car bits) flag))
+           else do (rplacd bits (logior (cdr bits) flag)))
+        (loop for i from 0 to 3
+           for bits = (optimization-quality-switches quality i)
+           when (>= i level)
+           do (rplacd bits (logior (cdr bits) flag))))
+    #+(or)
     (loop for i from level to 3
-       sum (car (optimization-quality-switches quality i))))
+       for bits = (optimization-quality-switches quality i)
+       if (eq on-off :on)
+       do (rplaca bits (logior (car bits) flag))
+       else do (rplacd bits (logior (cdr bits) flag)))
+    (loop for i from 0 to 3
+       for bits = (optimization-quality-switches quality i)
+       if (< i level)
+       do
+         (case on-off
+           (:on (rplacd bits (logior (cdr bits) flag)))
+           (:off (rplaca bits (logior (car bits) flag))))
+       else do
+         (case on-off
+            ((:only-on :on) (rplaca bits (logior (car bits) flag)))
+            ((:only-off :off) (rplacd bits (logior (cdr bits) flag))))))
   (defun policy-declaration-name (base)
     (intern (symbol-name base) (find-package "EXT")))
   (defun policy-function-name (base)
@@ -129,7 +162,8 @@
     (let* ((test (ash 1 +last-optimization-bit+))
            (declaration-name (policy-declaration-name name))
            (function-name (policy-function-name name))
-           (doc (find-if #'stringp conditions)))
+           (doc (find-if #'stringp conditions))
+           (emit-function t))
       (export declaration-name (find-package "EXT"))
       ;; If it is an alias, just copy the bits
       ;; Register as an optimization quality with its own flags
@@ -137,19 +171,19 @@
              (flags-list (list* (cons 0 test)
                                 circular-list)))
         (rplacd circular-list circular-list)
-        (incf +last-optimization-bit+)
         (setf (gethash declaration-name *optimization-quality-switches*)
               flags-list))
       ;; Scan the definition and correct the flags
       (loop with extra = '()
          with slow = '()
-         with bits-on = test
-         with bits-off = 0
          with conditions = (remove doc conditions)
+         with trigger = nil
          for case = (pop conditions)
          while case
          do
            (case case
+             (:no-function
+              (setf emit-function nil))
              (:alias
               (let* ((alias (first conditions)))
                 (setf (gethash declaration-name *optimization-quality-switches*)
@@ -161,7 +195,7 @@
              (:anti-alias
               (let* ((alias (first conditions))
                      (bits (gethash (policy-declaration-name alias)
-                               *optimization-quality-switches*)))
+                                    *optimization-quality-switches*)))
                 (setf bits (list (second bits)
                                  (first bits)))
                 (rplacd (cdr bits) (cdr bits))
@@ -170,20 +204,19 @@
                 (return `(defun ,function-name (&optional (env *cmp-env*))
                            ,@(and doc (list doc))
                            (not (,(policy-function-name alias) env))))))
-             (:on
+             ((:only-on :on)
               (push `(>= (cmp-env-optimization ',(first conditions) env)
                          ,(second conditions))
                     slow)
-              (setf bits-on (logior (policy-bits (pop conditions)
-                                                 (pop conditions))
-                                    bits-on)))
-             (:off
+              (setf trigger (eq case :on))
+              (augment-policy (pop conditions) (pop conditions)
+                              case test))
+             ((:only-off :off)
               (push `(< (cmp-env-optimization ',(first conditions) env)
                         ,(second conditions))
                     slow)
-              (setf bits-off (logior (policy-bits (pop conditions)
-                                                  (pop conditions))
-                                     bits-off)))
+              (augment-policy (pop conditions) (pop conditions)
+                              case test))
              (:requires
               (push (pop conditions) extra))
              (otherwise
@@ -191,15 +224,16 @@
                      `(define-policy ,@whole))))
          finally
            (progn
-             (when (zerop (logandc2 bits-on test))
-               (setf bits-on (logior (policy-bits 'speed 0) bits-on)))
+             (incf +last-optimization-bit+)
+             (unless trigger
+               (augment-policy 'speed 0 :on test))
              (return
+               (and emit-function
                `(defun ,function-name (&optional (env *cmp-env*))
                   ,@(and doc (list doc))
                   (let ((bits (cmp-env-policy env)))
-                    (and (logtest bits ,bits-on)
-                         (not (logtest bits ,bits-off))
-                         ,@extra)))))))))
+                    (and (logtest bits ,test)
+                         ,@extra))))))))))
 
 
 ;;
@@ -219,6 +253,9 @@
 (define-policy ext:check-arguments-type :on safety 1
   "Generate CHECK-TYPE forms for function arguments with type declarations")
 
+(define-policy ext:no-check-arguments-type :anti-alias ext:check-arguments-type
+  "Deactivate check with the same name")
+
 (define-policy array-bounds-check :on safety 1
   "Check out of bounds access to arrays")
 
@@ -228,7 +265,7 @@
 (define-policy global-function-checking :alias assume-no-errors
   "Read the binding of a global function even if it is discarded")
 
-(define-policy check-nargs :on safety 1 :on ext:check-arguments-type 1
+(define-policy check-nargs :on safety 1 :only-on ext:check-arguments-type 1
   "Check that the number of arguments a function receives is within bounds")
 
 ;;
