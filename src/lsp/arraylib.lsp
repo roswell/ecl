@@ -158,7 +158,7 @@ row-major order."
 (defun bit (bit-array &rest indices)
   "Args: (bit-array &rest indexes)
 Returns the bit of BIT-ARRAY specified by INDEXes."
-  (declare (array bit-array)
+  (declare (array bit-array) ;; FIXME! Should be (simple-array bit)
            (ext:check-arguments-type))
   (row-major-aref bit-array (row-major-index-inner bit-array indices)))
 
@@ -166,7 +166,7 @@ Returns the bit of BIT-ARRAY specified by INDEXes."
 (defun sbit (bit-array &rest indices)
   "Args: (simple-bit-array &rest subscripts)
 Returns the specified bit in SIMPLE-BIT-ARRAY."
-  (declare (array bit-array)
+  (declare (array bit-array) ;; FIXME! Should be (simple-array bit)
            (ext:check-arguments-type))
   (row-major-aref bit-array (row-major-index-inner bit-array indices)))
 
@@ -275,7 +275,7 @@ pointer as the value."
 	   fp)
 	  (t nil))))
 
-(defun vector-push-extend (new-element vector &optional extension)
+(defun vector-push-extend (new-element vector &optional (extension 1))
   "Args: (item vector &optional (n (length vector)))
 Replaces ITEM for the element of VECTOR that is pointed to by the fill-pointer
 of VECTOR and then increments the fill-pointer by one.  If the new value of
@@ -288,7 +288,7 @@ Returns the new value of the fill-pointer."
     (let ((d (array-total-size vector)))
       (unless (< fp d)
         (adjust-array vector
-                      (list (+ d (or extension (max d 4))))
+                      (list (+ d (max extension (max d 4))))
                       :element-type (array-element-type vector)
                       :fill-pointer fp))
       (sys:aset vector fp new-element)
@@ -324,7 +324,7 @@ pointer is 0 already."
 		(l (min d1 d2))
 		(i1 start1)
 		(i2 start2))
-	   (declare (ext:array-index d1 d2 l step1 step2 i1 i2))
+	   (declare (ext:array-index d1 d2 l i1 i2))
 	   (if (null dims1)
 	       #+ecl-min
 	       (dotimes (i l)
@@ -368,7 +368,6 @@ Adjusts the dimensions of ARRAY to the given DIMENSIONS.  ARRAY must be an
 adjustable array."
   (declare (ignore initial-element
                    initial-contents
-                   fill-pointer
                    displaced-index-offset))
   (when (integerp new-dimensions)
         (setq new-dimensions (list new-dimensions)))

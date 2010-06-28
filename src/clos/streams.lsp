@@ -596,7 +596,8 @@
 
 (defmethod stream-write-string ((stream fundamental-character-output-stream)
 				string &optional (start 0) end)
-  (declare (string string)
+  (declare (type t stream) ; check for c::stream-designator ignored
+           (string string)
 	   (fixnum start)
            (ext:check-arguments-type))
   (let ((end (or end (length string))))

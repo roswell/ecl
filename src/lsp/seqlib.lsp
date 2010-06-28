@@ -287,7 +287,8 @@
 
 (defun delete (which sequence &key test test-not (start 0) end
                from-end count key)
-  (declare (optimize (speed 3) (safety 1) (debug 0)))
+  (declare (optimize (speed 3) (safety 1) (debug 0))
+           (ext:no-check-arguments-type))
   (cond ((listp sequence)
          (if from-end
              (let ((l (length sequence)))
@@ -503,7 +504,6 @@
        &key key (test '#'eql) test-not
             (start 0) (end (length sequence)) (from-end nil))
 Returns a copy of SEQUENCE without duplicated elements."
-  (declare (optimize (speed 3) (safety 1) (debug 0)))
   (cond ((listp sequence)
          (remove-duplicates-list sequence start
                                  end from-end test test-not key))
@@ -595,7 +595,6 @@ Returns a copy of SEQUENCE without duplicated elements."
 		     (test '#'eql) test-not
                      (start 0) (end (length sequence)) (from-end nil))
 Destructive REMOVE-DUPLICATES.  SEQUENCE may be destroyed."
-  (declare (optimize (speed 3) (safety 1) (debug 0)))
   (cond ((listp sequence)
          (delete-duplicates-list sequence start end from-end
                                  test test-not key))

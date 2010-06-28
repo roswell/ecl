@@ -999,6 +999,8 @@
    around the output.  ATSIGN? is ignored (but allowed so that PPRINT-FILL
    can be used with the ~/.../ format directive."
   (declare (ignore atsign?)
+           (type (or stream (member t nil)) stream)
+	   (ext:check-arguments-type)
 	   #.+ecl-safe-declarations+)
   (pprint-logical-block (stream list
 				:prefix (if colon? "(" "")
@@ -1016,6 +1018,8 @@
    around the output.  ATSIGN? is ignored (but allowed so that PPRINT-LINEAR
    can be used with the ~/.../ format directive."
   (declare (ignore atsign?)
+           (type (or stream (member t nil)) stream)
+	   (ext:check-arguments-type)
 	   #.+ecl-safe-declarations+)
   (pprint-logical-block (stream list
 				:prefix (if colon? "(" "")
@@ -1027,7 +1031,7 @@
       (write-char #\space stream)
       (pprint-newline :linear stream))))
 
-(defun pprint-tabular (stream list &optional (colon? t) atsign? tabsize)
+(defun pprint-tabular (stream list &optional (colon? t) atsign? (tabsize 16))
   "Output LIST to STREAM tabbing to the next column that is an even multiple
    of TABSIZE (which defaults to 16) between each element.  :FILL style
    conditional newlines are also output between each element.  If COLON? is
@@ -1035,6 +1039,8 @@
    ATSIGN? is ignored (but allowed so that PPRINT-TABULAR can be used with
    the ~/.../ format directive."
   (declare (ignore atsign?)
+           (type (or stream (member t nil)) stream)
+	   (ext:check-arguments-type)
 	   #.+ecl-safe-declarations+)
   (pprint-logical-block (stream list
 				:prefix (if colon? "(" "")
@@ -1136,6 +1142,7 @@
 
 (defun pprint-dispatch (object &optional (table *print-pprint-dispatch*))
   (declare (type (or pprint-dispatch-table null) table)
+	   (ext:check-arguments-type)
 	   #.+ecl-safe-declarations+)
   (let* ((table (or table *initial-pprint-dispatch*))
 	 (cons-entry
@@ -1155,7 +1162,8 @@
 
 (defun set-pprint-dispatch (type function &optional
 			    (priority 0) (table *print-pprint-dispatch*))
-  (declare (type (or null function symbol) function)
+  (declare (type t type)
+           (type (or null function symbol) function)
 	   (type real priority)
 	   (type pprint-dispatch-table table)
 	   #.+ecl-safe-declarations+)

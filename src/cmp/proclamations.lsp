@@ -67,6 +67,8 @@
 
 (deftype array-rank-index ()
   '(integer 0 #.(1- array-rank-limit)))
+(deftype bit-array ()
+  '(array bit *))
 (deftype association-list ()
   'list
   #+(or)
@@ -746,7 +748,7 @@
 (proclamation vector-push-extend (t vector &optional ext:array-index)
               ext:array-index)
 (proclamation vectorp (t) gen-bool :pure)
-(proclamation bit ((array bit) &rest ext:array-index) bit :reader)
+(proclamation bit (bit-array &rest ext:array-index) bit :reader)
 (proclamation sbit ((simple-array bit) &rest ext:array-index)
               bit :reader)
 (proclamation bit-and (bit-array bit-array &optional
