@@ -1016,9 +1016,16 @@ NO_DIRECTORY:
 		} else {
 			si_do_write_sequence(y, buffer, MAKE_FIXNUM(0), Cnil);
 		}
-	}
+	} else if (!logical && !Null(x->pathname.type)) {
+                /* #P".txt" is :NAME = ".txt" :TYPE = NIL and
+                   hence :NAME = NIL and :TYPE != NIL does not have
+                   a printed representation */
+                return Cnil;
+        }
 	y = x->pathname.type;
-	if (y != Cnil && y != @':unspecific') {
+        if (y == @':unspecific') {
+                return Cnil;
+        } else if (y != Cnil) {
 		if (y == @':wild') {
 			writestr_stream(".*", buffer);
 		} else {
@@ -1133,8 +1140,9 @@ cl_namestring(cl_object x)
 	@(return ecl_merge_pathnames(path, defaults, default_version))
 @)
 
-@(defun make_pathname (&key (host OBJNULL) (device OBJNULL) (directory OBJNULL)
-			    (name OBJNULL) (type OBJNULL) (version OBJNULL)
+@(defun make_pathname (&key (host Cnil hostp) (device Cnil devicep)
+		            (directory Cnil directoryp)
+			    (name Cnil namep) (type Cnil typep) (version Cnil versionp)
 		            ((:case scase) @':local')
 		            defaults
 		       &aux x)
@@ -1147,19 +1155,14 @@ cl_namestring(cl_object x)
 	} else {
 		defaults = cl_pathname(defaults);
 	}
-	x = ecl_make_pathname(host != OBJNULL? host
-                              : defaults->pathname.host,
-			      device != OBJNULL? device
-                              : defaults->pathname.device,
-			      directory != OBJNULL? directory
-			      : defaults->pathname.directory,
-			      name != OBJNULL? name
-			      : defaults->pathname.name,
-			      type != OBJNULL? type
-			      : defaults->pathname.type,
-			      version != OBJNULL? version
-                              : defaults->pathname.version,
-                              scase);
+	if (!hostp) host = defaults->pathname.host;
+	x = ecl_make_pathname(host, device, directory, name, type, version, scase);
+	if (!devicep) x->pathname.device = defaults->pathname.device;
+	if (!directoryp) x->pathname.directory = defaults->pathname.directory;
+	if (!namep) x->pathname.name = defaults->pathname.name;
+	if (!typep) x->pathname.type = defaults->pathname.type;
+	if (!versionp) x->pathname.version = defaults->pathname.version;
+
 	@(return x)
 @)
 
