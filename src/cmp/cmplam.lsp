@@ -85,11 +85,11 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 	 (*cmp-env* (setf (fun-cmp-env fun) (cmp-env-mark CB/LB)))
 	 (setjmps *setjmps*)
 	 (decl (si::process-declarations (rest lambda-list-and-body)))
+	 (global (and (assoc 'SI::C-GLOBAL decl) (setf (fun-global fun) T)))
+	 (no-entry (assoc 'SI::C-LOCAL decl))
 	 (lambda-expr (c1lambda-expr lambda-list-and-body
 				     (si::function-block-name name)))
 	 (children (fun-child-funs fun))
-	 (global (and (assoc 'SI::C-GLOBAL decl) 'T))
-	 (no-entry (assoc 'SI::C-LOCAL decl))
 	 cfun exported minarg maxarg)
     (when (and no-entry (policy-debug-ihs-frame))
       (setf no-entry nil)
@@ -115,7 +115,6 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 	(multiple-value-setq (minarg maxarg)
 	  (lambda-form-allowed-nargs lambda-expr)))
     (setf (fun-cfun fun) cfun
-	  (fun-global fun) global
 	  (fun-exported fun) exported
 	  (fun-closure fun) nil
 	  (fun-minarg fun) minarg
@@ -227,7 +226,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
     ;; arguments, have to be applied to the body. At the same time, we
     ;; replace &aux variables with a LET* form that defines them.
     (let* ((declarations other-decls)
-           (type-checks (extract-lambda-type-checks requireds optionals
+           (type-checks (extract-lambda-type-checks block-name requireds optionals
                                                     keywords ts other-decls))
            (type-check-forms (car type-checks))
            (let-vars (loop for spec on (nconc (cdr type-checks) aux-vars)
@@ -435,7 +434,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
     ;; which is what we do here.
     (let ((va-arg-loc (if simple-varargs 'VA-ARG 'CL-VA-ARG)))
       ;; counter for optionals
-      (wt "{int i=" nreq ";")
+      (wt-nl "{int i=" nreq ";")
       (do ((opt optionals (cdddr opt)))
 	  ((endp opt))
 	(wt-nl "if (i >= narg) {")

@@ -110,11 +110,13 @@
 	      (when ok
 		(proclaim-var type (rest decl))
 		t)))
+           ((maybe-add-policy decl *cmp-env-root*))            
 	   ((let ((proclaimer (get-sysprop (car decl) :proclaim)))
 	      (when (functionp proclaimer)
 		(mapc proclaimer (rest decl))
 		t)))
 	   (t
+            (break)
 	    (warn "Unknown declaration specifier ~s" decl-name))))))
 
 (defun proclaim-var (type vl)

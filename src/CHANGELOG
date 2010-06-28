@@ -89,6 +89,9 @@ ECL 10.5.1:
 
  - ECL exports a new feature, :C++, when it is built with a C++ compiler.
 
+ - Function proclamations and declarations are also used to deduce the type
+   of their arguments.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

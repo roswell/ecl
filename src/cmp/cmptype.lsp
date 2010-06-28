@@ -56,42 +56,89 @@
 ;; TYPE CHECKING
 ;;
 
-(defun extract-lambda-type-checks (requireds optionals keywords ts other-decls)
+(defun lambda-type-check-associate (fname requireds optionals keywords global-fun-p)
+  (multiple-value-bind (arg-types found)
+      (get-arg-types fname *cmp-env* global-fun-p)
+    (if found
+        (multiple-value-bind (req-types opt-types rest-flag key-flag
+                                        key-types allow-other-keys)
+            (si::process-lambda-list arg-types 'ftype)
+          (nconc 
+           (loop for var in requireds
+              for type in (rest req-types)
+              collect (cons var type))
+           (loop for optional in optionals by #'cdddr
+              for type in (rest opt-types) by #'cdddr
+              collect (cons optional type))
+           (loop for key-list on keywords by #'cddddr
+              for keyword = (first key-list)
+              for key-var = (second key-list)
+              for type = (loop for key-list on (rest key-types) by #'cddr
+                            when (eq keyword (first key-list))
+                            return (second key-list)
+                            finally (return t))
+              collect (cons key-var type))))
+        (nconc
+         (loop for var in requireds
+            collect (cons var t))
+         (loop for optional in optionals by #'cdddr
+            collect (cons optional t))
+         (loop for key-list on keywords by #'cddddr
+            for key-var = (second key-list)
+            collect (cons key-var t))))))
+
+(defun lambda-type-check-precise (assoc-list ts)
+  (loop for record in assoc-list
+     for var = (car record)
+     for type = (assoc (var-name var) ts)
+     when type
+     do
+     ;; Instead of trusting the global proclamation, we set a check based
+     ;; on the local declaration, without type merging.
+       (rplacd record (cdr type))
+       #+(or)
+       (rplacd record (type-and (cdr record) (cdr type))))
+  assoc-list)
+
+(defun extract-lambda-type-checks (fname requireds optionals keywords ts other-decls)
   ;; We generate automatic type checks for function arguments that
   ;; are declared These checks can be deactivated by appropriate
   ;; safety settings which are checked by ASSERT-TYPE. Note
   ;; that not all type declarations can be checked (take for instance
   ;; (type (function (t t) t) foo)) We let the macro do the job.
-  (when (policy-check-arguments-type)
-    (loop with type-checks = (append (loop for spec on optionals by #'cdddr
-                                        collect (first spec))
-                                     (loop for spec on keywords by #'cddddr
-                                        collect (second spec))
-                                     requireds)
-       for var in type-checks
-       for name = (var-name var)
-       for type = (cdr (assoc name ts))
-       for checked = (and type
-                          (loop for decl in other-decls
-                             never (and (consp decl)
-                                        (eq (first decl)
-                                            'si::no-check-type)
-                                        (member name (rest decl)))))
-       when checked
-       collect `(assert-type-if-known ,name ,type) into checks
-       ;; We remove assumption about types, which will be checked later
-       when checked
-       do (setf (var-type var) T)
-       ;; And we add additional variables with proclaimed types
-       when (and checked (not (eq (var-kind var) 'SPECIAL)))
-       nconc `(,name (the ,type ,name)) into new-auxs
-       finally
-         (progn
-           (when checks
-             (cmpnote "In ~:[an anonymous function~;function ~:*~A~], checking types of argument~@[s~]~{ ~A~}."
-                      (fun-name *current-function*)
-                      (mapcar #'second checks)))
-           (return (cons checks new-auxs))))))
+  (loop with policy-check-type = (policy-check-arguments-type)
+     with checks = '()
+     with new-auxs = '()
+     with global-fun-p = (member '(si::c-global) other-decls :test #'equal)
+     with type-checks = (lambda-type-check-precise
+                         (lambda-type-check-associate fname requireds
+                                                      optionals keywords
+                                                      global-fun-p)
+                         ts)
+     for (var . type) in type-checks
+     for name = (var-name var)
+     ;; Non trivial types are the only ones we care about
+     unless (eq type t)
+     do (if (and policy-check-type
+                 (loop for decl in other-decls
+                    never (and (consp decl)
+                               (eq (first decl)
+                                   'si::no-check-type)
+                               (member name (rest decl)))))
+            ;; We remove assumption about types, which will be checked
+            ;; later due to this assertion...
+            (setf (var-type var) t
+                  checks (list* `(assert-type-if-known ,name ,type) checks)
+                  new-auxs (list* `(the ,type ,name) name new-auxs))
+            ;; Or simply enforce the variable's type.
+            (setf (var-type var) (type-and (var-type var) type)))
+     finally
+       (progn
+         (when checks
+           (cmpnote "In ~:[an anonymous function~;function ~:*~A~], checking types of argument~@[s~]~{ ~A~}."
+                    (fun-name *current-function*)
+                    (mapcar #'second checks)))
+         (return (cons (nreverse checks) (nreverse new-auxs))))))
 
 (defun type-error-check (value type)
   (case type

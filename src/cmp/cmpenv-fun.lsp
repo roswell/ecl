@@ -73,17 +73,22 @@
       (warn "In (DECLARE (FTYPE ...)): ~s is not a valid function name" fname))
   env)
 
-(defun get-arg-types (fname &optional (env *cmp-env*))
+(defun get-arg-types (fname &optional (env *cmp-env*) (may-be-global t))
   (let ((x (cmp-env-search-ftype fname env)))
     (if x
-        (values (first x) t)
-        (sys:get-sysprop fname 'PROCLAIMED-ARG-TYPES))))
+        (values x t)
+        (when may-be-global
+          (let ((fun (cmp-env-search-function fname env)))
+            (when (or (null fun) (and (fun-p fun) (fun-global fun)))
+              (sys:get-sysprop fname 'PROCLAIMED-ARG-TYPES)))))))
 
 (defun get-return-type (fname &optional (env *cmp-env*))
   (let ((x (cmp-env-search-ftype fname env)))
     (if x
 	(values (second x) t)
-	(sys:get-sysprop fname 'PROCLAIMED-RETURN-TYPE))))
+        (let ((fun (cmp-env-search-function fname env)))
+          (when (or (null fun) (and (fun-p fun) (fun-global fun)))
+            (sys:get-sysprop fname 'PROCLAIMED-RETURN-TYPE))))))
 
 (defun get-local-arg-types (fun &optional (env *cmp-env*))
   (let ((x (cmp-env-search-ftype (fun-name fun))))
