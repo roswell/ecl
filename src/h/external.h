@@ -1735,6 +1735,7 @@ extern ECL_API cl_object cl_file_author(cl_object file);
 extern ECL_API cl_object si_file_kind(cl_object pathname, cl_object follow_links);
 extern ECL_API cl_object si_getcwd _ARGS((cl_narg narg, ...));
 extern ECL_API cl_object si_getpid(void);
+extern ECL_API cl_object si_getuid(void);
 extern ECL_API cl_object si_chdir _ARGS((cl_narg narg, cl_object directory, ...));
 extern ECL_API cl_object si_mkdir(cl_object directory, cl_object mode);
 extern ECL_API cl_object cl_directory _ARGS((cl_narg narg, cl_object directory, ...));

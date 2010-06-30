@@ -1120,6 +1120,7 @@ cl_symbols[] = {
 {EXT_ "GETENV","si_getenv"},
 {EXT_ "GETCWD","si_getcwd"},
 {SYS_ "GETPID","si_getpid"},
+{SYS_ "GETUID","si_getuid"},
 {SYS_ "HASH-SET","si_hash_set"},
 {SYS_ "HASH-TABLE-ITERATOR","si_hash_table_iterator"},
 {SYS_ "IHS-BDS","si_ihs_bds"},

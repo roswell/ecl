@@ -55,6 +55,12 @@ si_getpid(void)
 }
 
 cl_object
+si_getuid(void)
+{
+	@(return ecl_make_integer(getuid()));
+}
+
+cl_object
 si_make_pipe()
 {
 	cl_object output;
