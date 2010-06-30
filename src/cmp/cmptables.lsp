@@ -222,8 +222,11 @@
     (ordinary . p1ordinary)
     (si::fset . p1fset)
     (var . p1var)
-    (location . p1location)
     (values . p1values)
+    (location . p1trivial) ;; Some of these can be improved
+    (ffi:c-inline . p1trivial)
+    (function . p1trivial)
+    (load-time-value . p1trivial)
     ))
 
 (defun make-dispatch-table (alist)

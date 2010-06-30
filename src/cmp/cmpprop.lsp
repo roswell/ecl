@@ -44,7 +44,8 @@
            (cmpnote "Refusing to propagate ~A" name)
            (values (c1form-type form) assumptions)))))
 
-(defun p1location (form assumptions loc)
+(defun p1trivial (form assumptions &rest rest)
+  (declare (ignore rest))
   (values (c1form-type form) assumptions))
 
 (defun p1var (form assumptions var)
