@@ -226,6 +226,7 @@
     (location . p1trivial) ;; Some of these can be improved
     (ffi:c-inline . p1trivial)
     (function . p1trivial)
+    (funcall . p1trivial)
     (load-time-value . p1trivial)
     ))
 
