@@ -76,7 +76,7 @@
 (defun get-arg-types (fname &optional (env *cmp-env*) (may-be-global t))
   (let ((x (cmp-env-search-ftype fname env)))
     (if x
-        (values x t)
+        (values (first x) t)
         (when may-be-global
           (let ((fun (cmp-env-search-function fname env)))
             (when (or (null fun) (and (fun-p fun) (fun-global fun)))
