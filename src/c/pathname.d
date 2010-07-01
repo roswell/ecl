@@ -1635,7 +1635,8 @@ copy_list_wildcards(cl_object *wilds, cl_object to)
 }
 
 @(defun translate-pathname (source from to &key ((:case scase) @':local'))
-	cl_object wilds, out, d;
+	cl_object wilds, d;
+	cl_object host, device, directory, name, type, version;
 @
 	/* The pathname from which we get the data */
 	source = cl_pathname(source);
@@ -1646,16 +1647,14 @@ copy_list_wildcards(cl_object *wilds, cl_object to)
 
 	if (source->pathname.logical != from->pathname.logical)
 		goto error;
-	out = ecl_alloc_object(t_pathname);
-	out->pathname.logical = to->pathname.logical;
 
 	/* Match host names */
 	if (cl_string_equal(2, source->pathname.host, from->pathname.host) == Cnil)
 		goto error;
-	out->pathname.host = to->pathname.host;
+	host = to->pathname.host;
 
 	/* Logical pathnames do not have devices. We just overwrite it. */
-	out->pathname.device = to->pathname.device;
+	device = to->pathname.device;
 
 	/* Match directories */
 	wilds = find_list_wilds(source->pathname.directory,
@@ -1665,7 +1664,7 @@ copy_list_wildcards(cl_object *wilds, cl_object to)
 	d = copy_list_wildcards(&wilds, to->pathname.directory);
 	if (d == @':error') goto error;
 	if (wilds != Cnil) goto error2;
-	out->pathname.directory = d;
+	directory = d;
 
 	/* Match name */
 	wilds = find_wilds(Cnil, source->pathname.name, from->pathname.name,
@@ -1674,7 +1673,7 @@ copy_list_wildcards(cl_object *wilds, cl_object to)
 	d = copy_wildcards(&wilds, to->pathname.name);
 	if (d == @':error') goto error;
 	if (wilds != Cnil) goto error2;
-	out->pathname.name = d;
+	name = d;
 
 	/* Match type */
 	wilds = find_wilds(Cnil, source->pathname.type, from->pathname.type,
@@ -1683,17 +1682,17 @@ copy_list_wildcards(cl_object *wilds, cl_object to)
 	d = copy_wildcards(&wilds, to->pathname.type);
 	if (d == @':error') goto error;
 	if (wilds != Cnil) goto error2;
-	out->pathname.type = d;
+	type = d;
 
 	/* Match version */
-	out->pathname.version = to->pathname.version;
+	version = to->pathname.version;
 	if (from->pathname.version == @':wild') {
 		if (to->pathname.version == @':wild') {
-			out->pathname.version = source->pathname.version;
+			version = source->pathname.version;
 		}
 	}
-	return out;
-
+	return ecl_make_pathname(host, device, directory, name, type,
+                                 version, @':local');
  error:
 	FEerror("~S is not a specialization of path ~S", 2, source, from);
  error2:
