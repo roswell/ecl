@@ -14,11 +14,9 @@
 */
 
 #include <string.h>
+#define ECL_INCLUDE_FFI_H
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
-#ifdef HAVE_LIBFFI
-# include <ffi/ffi.h>
-#endif
 
 static const cl_object ecl_aet_to_ffi_table[aet_bc+1] = {
 	@':void', /* aet_object */

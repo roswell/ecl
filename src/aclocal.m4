@@ -795,15 +795,21 @@ dnl Do we have a non-portable implementation of calls to foreign
 dnl functions?
 dnl
 AC_DEFUN([ECL_FFI],[
+AC_SUBST(ECL_LIBFFI_HEADER)
 AC_CHECK_LIB( ffi, ffi_call, [has_ffi_lib=yes], [has_ffi_lib=no] )
-if test $has_ffi_lib = yes; then
-  AC_CHECK_HEADER( [ffi/ffi.h], [has_ffi_h=$has_ffi_lib], [has_ffi_h=no] )
-fi
-if test $has_ffi_h = "yes"; then
-  AC_DEFINE(HAVE_LIBFFI)
-  LDFLAGS="$LDFLAGS -lffi"
+if test $has_ffi_lib = "yes"; then
+  AC_CHECK_HEADER( [ffi/ffi.h], [ECL_LIBFFI_HEADER='ffi/ffi.h'], [], [] )
+  if test -z "$ECL_LIBFFI_HEADER"; then
+    AC_CHECK_HEADER( [ffi.h], [ECL_LIBFFI_HEADER='ffi.h'], [], [] )
+  fi
+  if test -z "$ECL_LIBFFI_HEADER"; then
+    AC_MSG_WARN([unable to find header file ffi.h; disabling dynamic FFI])
+  else
+    AC_DEFINE(HAVE_LIBFFI)
+    LDFLAGS="$LDFLAGS -lffi"
+  fi
 else
-  AC_MSG_WARN([libffi is not installed; ECL will be built without the dynamic FFI])
+  AC_MSG_WARN([libffi is not installed; disabling dynamic FFI])
 fi
 ])
 

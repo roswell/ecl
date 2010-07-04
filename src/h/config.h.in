@@ -505,3 +505,7 @@ typedef unsigned @CL_FIXNUM_TYPE@ cl_hashkey;
 #  define ECL_MATHERR_TEST
 # endif
 #endif
+
+#if defined(HAVE_LIBFFI) && defined(ECL_INCLUDE_FFI_H)
+#include "@ECL_LIBFFI_HEADER@"
+#endif
