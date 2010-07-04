@@ -81,6 +81,11 @@ ecl_min$(EXE): $(LIBRARIES) .gdbinit @LIBPREFIX@eclmin.@LIBEXT@
 	else \
 		$(CC) $(LDFLAGS) -o $@ cinit.o c/all_symbols.o -L./ @LIBPREFIX@eclmin.@LIBEXT@ $(CORE_LIBS) $(FASL_LIBS) $(LIBS);\
 	fi
+mini_ecl: ecl_min$(EXE) bare2.lsp
+	(echo '#!/bin/sh'; echo './ecl_min bare2.lsp') > $@
+	chmod +x $@
+bare2.lsp:
+	echo '(load "bare")(si::top-level)' > $@
 
 .gdbinit: $(srcdir)/util/gdbinit
 	cp $(srcdir)/util/gdbinit $@
