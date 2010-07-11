@@ -98,8 +98,8 @@
   ;;
   (if (constantp form)
       (let ((value (eval form)))
-	(cond ((null value) ''si::constantly-nil)
-	      ((eq value t) ''si::constantly-t)
+	(cond ((null value) '#'si::constantly-nil)
+	      ((eq value t) '#'si::constantly-t)
 	      (t `(constantly ,form))))
       `#'(lambda () ,form)))
 
