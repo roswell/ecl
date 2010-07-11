@@ -133,7 +133,7 @@
                                  collect (cons name t))))
 
 (defun declare-notinline (fname-list &optional (env *cmp-env*))
-  (unless (every #'symbolp fname-list)
+  (unless (every #'si::valid-function-name-p fname-list)
     (cmperr "Not a valid argument to NOTINLINE declaration~%~4I~A"
             fname-list))
   (cmp-env-extend-declaration 'INLINE
