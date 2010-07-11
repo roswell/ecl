@@ -724,7 +724,7 @@ because it contains a reference to the undefined class~%  ~A"
   ;; First get all initargs which have been declared in the given
   ;; methods, then check the list of initargs declared in the slots
   ;; of the class.
-  (unless (eq methods t)
+  (unless (or (eq methods t) (eq cached-keywords t))
     (do* ((name-loc initargs (cddr name-loc))
 	  (allow-other-keys nil)
 	  (allow-other-keys-found nil)
