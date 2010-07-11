@@ -76,11 +76,11 @@ and a possible documentation string (only accepted when DOC-P is true)."
        do (case decl-name
             (SPECIAL)
             (IGNORE
-             (cmpassert (proper-list-p decl-args #'symbolp)
+             (cmpassert (proper-list-p decl-args)
                         "Syntax error in declaration ~s" decl)
              (setf ignored (parse-ignore-declaration decl-args -1 ignored)))
             (IGNORABLE
-             (cmpassert (proper-list-p decl-args #'symbolp)
+             (cmpassert (proper-list-p decl-args)
                         "Syntax error in declaration ~s" decl)
              (setf ignored (parse-ignore-declaration decl-args 0 ignored)))
             (TYPE
