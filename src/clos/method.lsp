@@ -168,7 +168,7 @@
         ;; explicitely the bytecodes compiler with an environment, no
         ;; stepping, compiler-env-p = t and execute = nil, so that the
         ;; form does not get executed.
-        (si::eval-with-env method-lambda env nil t nil)))
+        (si::eval-with-env method-lambda env nil t t)))
     (values call-next-method-p
 	    next-method-p-p
 	    in-closure-p)))
