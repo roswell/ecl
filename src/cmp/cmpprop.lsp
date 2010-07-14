@@ -25,24 +25,27 @@
       `(format *standard-output* ,string ,@args))))
 
 (defun p1propagate (form assumptions)
-  (let* ((*cmp-env* (c1form-env form))
-	 (name (c1form-name form))
-	 (propagator (gethash name *p1-dispatch-table*)))
-    (cond (propagator
-           (prop-message "~&;;; Entering type propagation for ~A" name)
-           (multiple-value-bind (new-type assumptions)
-               (apply propagator form assumptions (c1form-args form))
-	     (when assumptions
-	       (baboon :format-control "Non-empty assumptions found in P1PROPAGATE"))
-             (prop-message "~&;;; Propagating ~A gives type ~A" name
-			   new-type)
+  (unless form
+    (return-from p1propagate (values 'null assumptions)))
+  (when (c1form-p form)
+    (let* ((*cmp-env* (c1form-env form))
+           (name (c1form-name form))
+           (propagator (gethash name *p1-dispatch-table*)))
+      (when propagator
+        (prop-message "~&;;; Entering type propagation for ~A" name)
+        (multiple-value-bind (new-type assumptions)
+            (apply propagator form assumptions (c1form-args form))
+          (when assumptions
+            (baboon :format-control "Non-empty assumptions found in P1PROPAGATE"))
+          (prop-message "~&;;; Propagating ~A gives type ~A" name
+                        new-type)
+          (return-from p1propagate
 	     (values (setf (c1form-type form)
 			   (values-type-and (c1form-type form)
 					    new-type))
-		     assumptions)))
-          (t
-           (cmpnote "Refusing to propagate ~A" name)
-           (values (c1form-type form) assumptions)))))
+		     assumptions))))))
+  (cmpnote "Refusing to propagate ~A" form)
+  (values (c1form-type form) assumptions))
 
 (defun p1trivial (form assumptions &rest rest)
   (declare (ignore rest))
