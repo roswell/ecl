@@ -47,7 +47,7 @@
        :c/c++ (eval-when (:compile-toplevel)
                 (c::process-declaim-args ',declarations))
        :bytecodes (eval-when (:compile-toplevel)
-                    (proclaim ',declarations)))
+                    (mapc 'proclaim ',declarations)))
      (eval-when (:load-toplevel :execute)
        (mapc 'proclaim ',declarations))))
 
