@@ -140,7 +140,8 @@
 
 (defun-equal-cached values-type-to-n-types (type length)
   (if (or (atom type) (not (eql (first type) 'values)))
-      (list* type (make-list (1- length) :initial-element 'NULL))
+      (and (plusp length)
+           (list* type (make-list (1- length) :initial-element 'NULL)))
       (do* ((l (rest type))
             (output '())
             (n length (1- n)))
