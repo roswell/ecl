@@ -38,7 +38,6 @@ by (documentation 'SYMBOL 'setf)."
 		 (put-sysprop ',access-fn 'SETF-UPDATE-FN ',(car rest))
                  (rem-sysprop ',access-fn 'SETF-LAMBDA)
                  (rem-sysprop ',access-fn 'SETF-METHOD)
-		 (rem-sysprop ',access-fn 'SETF-SYMBOL)
 		 ,@(si::expand-set-documentation access-fn 'setf (cadr rest))
                  ',access-fn))
 	(t
@@ -51,7 +50,6 @@ by (documentation 'SYMBOL 'setf)."
 	      (put-sysprop ',access-fn 'SETF-LAMBDA #'(lambda-block ,access-fn (,@store ,@args) ,@body))
 	      (rem-sysprop ',access-fn 'SETF-UPDATE-FN)
 	      (rem-sysprop ',access-fn 'SETF-METHOD)
-	      (rem-sysprop ',access-fn 'SETF-SYMBOL)
 	      ,@(si::expand-set-documentation access-fn 'setf doc)
 	      ',access-fn)))))
 
@@ -90,7 +88,6 @@ by (DOCUMENTATION 'SYMBOL 'SETF)."
 	  (put-sysprop ',access-fn 'SETF-METHOD #'(ext::lambda-block ,access-fn ,args ,@body))
           (rem-sysprop ',access-fn 'SETF-LAMBDA)
           (rem-sysprop ',access-fn 'SETF-UPDATE-FN)
-	  (rem-sysprop ',access-fn 'SETF-SYMBOL)
 	  ,@(si::expand-set-documentation access-fn 'setf
 					  (find-documentation body))
           ',access-fn))
