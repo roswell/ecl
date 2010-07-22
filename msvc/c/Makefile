@@ -61,7 +61,7 @@ OBJS	= main.obj symbol.obj package.obj list.obj\
 	time.obj unixint.obj\
 	mapfun.obj multival.obj hash.obj format.obj pathname.obj\
 	structure.obj load.obj unixfsys.obj unixsys.obj \
-	ffi.obj alloc_2.obj tcp.obj $(THREADS_OBJ) ffi_x86.obj
+	ffi.obj alloc_2.obj tcp.obj $(THREADS_OBJ) ffi_x86.obj serialize.obj
 
 all:	$(DPP) ..\eclmin.lib ..\cinit.obj
 

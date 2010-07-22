@@ -231,7 +231,7 @@ serialize_one(pool_t pool, cl_object what)
 #endif
                 break;
 #ifndef ECL_SMALL_CONS
-        case t_cons:
+        case t_list:
                 buffer->cons.car = enqueue(pool, buffer->cons.car);
                 buffer->cons.cdr = enqueue(pool, buffer->cons.car);
                 break;
