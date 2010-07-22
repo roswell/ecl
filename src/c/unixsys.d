@@ -57,7 +57,11 @@ si_getpid(void)
 cl_object
 si_getuid(void)
 {
+#if defined(_MSC_VER) || defined(__MINGW32__)
+        @(return MAKE_FIXNUM(0));
+#else
 	@(return ecl_make_integer(getuid()));
+#endif
 }
 
 cl_object
