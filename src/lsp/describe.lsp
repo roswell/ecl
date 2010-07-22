@@ -26,18 +26,15 @@
 ;; If this rule is not followed only severe confusion can result. JCB
 
 (defun inspect-read-line ()
-  (declare (si::c-local))
   (do ((char (read-char *query-io*) (read-char *query-io*)))
       ((or (char= char #\Newline) (char= char #\Return)))))
 
 (defun select-P (object)
-  (declare (si::c-local))
   (let* ((*print-pretty* t) (*print-level* nil) (*print-length* nil))
        (prin1 object)
        (terpri)))
 
 (defun select-E ()
-  (declare (si::c-local))
   (dolist (x (multiple-value-list
 	       (multiple-value-prog1
 		 (eval (read-preserving-whitespace *query-io*))
@@ -48,13 +45,11 @@
 	  (terpri)))
 
 (defun select-U ()
-  (declare (si::c-local))
   (prog1
     (eval (read-preserving-whitespace *query-io*))
     (inspect-read-line)))
 
 (defun select-? ()
-  (declare (si::c-local))
   (terpri)
   (format t
 	  "Inspect commands:~%~
@@ -162,13 +157,11 @@
              (terpri))))
 
 (defun inspect-indent ()
-  (declare (si::c-local))
   (fresh-line)
   (format t "~V@T"
           (* 4 (if (< *inspect-level* 8) *inspect-level* 8))))
 
 (defun inspect-indent-1 ()
-  (declare (si::c-local))
   (fresh-line)
   (format t "~V@T"
           (- (* 4 (if (< *inspect-level* 8) *inspect-level* 8)) 3)))
@@ -425,13 +418,11 @@ q (or Q):             quits the inspection.~%~
 
 #+CLOS
 (defun inspect-instance (instance)
-  (declare (si::c-local))
   (if *inspect-mode*
       (clos::inspect-obj instance)
       (clos::describe-object instance *standard-output*)))
 
 (defun inspect-object (object &aux (*inspect-level* *inspect-level*))
-  (declare (si::c-local))
   (inspect-indent)
   (when (and (not *inspect-mode*)
              (or (> *inspect-level* 5)
