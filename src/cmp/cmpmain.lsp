@@ -144,7 +144,7 @@ the environment variable TMPDIR to a different value." template))
     (concatenate 'string
 		 *ld-shared-flags*
 		 " /LIBPATH:" (ecl-library-directory)
-		 " /IMPLIB:" implib)))
+		 " \"/IMPLIB:" implib "\"")))
 			       
 
 #+dlopen
@@ -188,7 +188,7 @@ the environment variable TMPDIR to a different value." template))
 		 *ld-bundle-flags*
 		 " /EXPORT:" init-name
 		 " /LIBPATH:" (ecl-library-directory)
-		 " /IMPLIB:" implib)))
+		 " \"/IMPLIB:" implib "\"")))
 			       
 
 #+dlopen
