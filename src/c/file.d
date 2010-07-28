@@ -3336,7 +3336,7 @@ io_stream_force_output(cl_object strm)
 	ecl_enable_interrupts();
 }
 
-#define io_stream_finish_output generic_void
+#define io_stream_finish_output io_stream_force_output
 
 static int
 io_stream_interactive_p(cl_object strm)
