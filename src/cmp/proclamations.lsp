@@ -239,7 +239,7 @@
 (proclamation si:fset (function-name function &optional gen-bool t) function)
 (proclamation si:compiled-function-name (function) (or null function-name))
 (proclamation si:compiled-function-block (function) (or null si::codeblock))
-(proclamation si:compiled-function-file (function) (or null t))
+(proclamation si:compiled-function-file (function) (values t t))
 
 (proclamation si:ihs-top () si::index)
 (proclamation si:ihs-fun (si::index) (or null function-designator))
