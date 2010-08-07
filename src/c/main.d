@@ -182,6 +182,9 @@ static const char *feature_names[] = {
 #ifdef __cplusplus
         "C++",
 #endif
+#ifdef ECL_SSE2
+	"SSE2",
+#endif
         0
 };
 

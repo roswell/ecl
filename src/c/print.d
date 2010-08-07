@@ -1035,6 +1035,66 @@ write_array(bool vector, cl_object x, cl_object stream)
 	}
 }
 
+#ifdef ECL_SSE2
+static int
+is_all_FF(void *ptr, int size) {
+	int i;
+	for (i = 0; i < size; i++)
+		if (((unsigned char*)ptr)[i] != 0xFF)
+			return 0;
+	return 1;
+}
+
+static void
+write_sse_float(float v, cl_object stream)
+{
+	if (is_all_FF(&v, sizeof(float)))
+		write_str(" TRUE", stream);
+	else {
+		char buf[60];
+		sprintf(buf, " %g", v);
+		write_str(buf, stream);
+	}
+}
+
+static void
+write_sse_double(double v, cl_object stream)
+{
+	if (is_all_FF(&v, sizeof(double)))
+		write_str(" TRUE", stream);
+        else {
+		char buf[60];
+		sprintf(buf, " %lg", v);
+		write_str(buf, stream);
+	}
+}
+
+static void
+write_sse_pack(cl_object x, cl_object stream)
+{
+	int i;
+
+	switch (x->sse.elttype) {
+	case aet_sf:
+		for (i = 0; i < 4; i++)
+                        write_sse_float(x->sse.data.sf[i], stream);
+		break;
+	case aet_df:
+		write_sse_double(x->sse.data.df[0], stream);
+		write_sse_double(x->sse.data.df[1], stream);
+		break;
+	default:
+		for (i = 0; i < 16; i++) {
+			char buf[10];
+			int pad = 1 + (i%4 == 0);
+			sprintf(buf, "%*c%02x", pad, ' ', x->sse.data.b8[i]);
+			write_str(buf, stream);
+		}
+		break;
+	}
+}
+#endif
+
 cl_object
 si_write_ugly_object(cl_object x, cl_object stream)
 {
@@ -1617,6 +1677,14 @@ si_write_ugly_object(cl_object x, cl_object stream)
 		if (ecl_print_readably()) FEprint_not_readable(x);
 		write_str("#<semaphore ", stream);
 		write_addr(x, stream);
+		write_ch('>', stream);
+		break;
+#endif
+#ifdef ECL_SSE2
+	case t_sse_pack:
+		if (ecl_print_readably()) FEprint_not_readable(x);
+		write_str("#<SSE", stream);
+		write_sse_pack(x, stream);
 		write_ch('>', stream);
 		break;
 #endif

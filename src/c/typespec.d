@@ -162,6 +162,10 @@ ecl_type_to_symbol(cl_type t)
 		return @'si::frame';
 	case t_weak_pointer:
 		return @'ext::weak-pointer';
+#ifdef ECL_SSE2
+	case t_sse_pack:
+		return @'ext::sse-pack';
+#endif
 	default:
 		ecl_internal_error("not a lisp data object");
 	}
@@ -322,6 +326,15 @@ cl_type_of(cl_object x)
 	case t_list:
 		t = Null(x) ? @'null' : @'cons';
 		break;
+#ifdef ECL_SSE2
+	case t_sse_pack:
+		switch (x->sse.elttype) {
+		case aet_sf: t = @'ext::float-sse-pack'; break;
+		case aet_df: t = @'ext::double-sse-pack'; break;
+		default:     t = @'ext::int-sse-pack'; break;
+		}
+		break;
+#endif
 	default:
 		t = ecl_type_to_symbol(tx);
 	}

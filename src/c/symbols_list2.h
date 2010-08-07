@@ -1928,5 +1928,19 @@ cl_symbols[] = {
 {SYS_ "SERIALIZE","si_serialize"},
 {SYS_ "DESERIALIZE","si_deserialize"},
 
+#ifdef ECL_SSE2
+{EXT_ "SSE-PACK",NULL},
+{EXT_ "SSE-PACK-P","si_sse_pack_p"},
+{EXT_ "SSE-PACK-AS-ELT-TYPE","si_sse_pack_as_elt_type"},
+{EXT_ "VECTOR-TO-SSE-PACK","si_vector_to_sse_pack"},
+{EXT_ "SSE-PACK-TO-VECTOR","si_sse_pack_to_vector"},
+{EXT_ "INT-SSE-PACK",NULL},
+{EXT_ "INT-SSE-PACK-P","si_int_sse_pack_p"},
+{EXT_ "FLOAT-SSE-PACK",NULL},
+{EXT_ "FLOAT-SSE-PACK-P","si_float_sse_pack_p"},
+{EXT_ "DOUBLE-SSE-PACK",NULL},
+{EXT_ "DOUBLE-SSE-PACK-P","si_double_sse_pack_p"},
+#endif
+
 /* Tag for end of list */
 {NULL,NULL}};

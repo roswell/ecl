@@ -495,6 +495,9 @@ ecl_alloc_object(cl_type t)
 		return MAKE_FIXNUM(0); /* Immediate fixnum */
 	case t_character:
 		return CODE_CHAR(' '); /* Immediate character */
+#ifdef ECL_SSE2
+	case t_sse_pack:
+#endif
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
 #endif
@@ -821,6 +824,9 @@ init_alloc(void)
 	init_tm(t_foreign, "FOREIGN", sizeof(struct ecl_foreign), 2);
 	init_tm(t_frame, "STACK-FRAME", sizeof(struct ecl_stack_frame), 2);
 	init_tm(t_weak_pointer, "WEAK-POINTER", sizeof(struct ecl_weak_pointer), 0);
+#ifdef ECL_SSE2
+	init_tm(t_sse_pack, "SSE-PACK", sizeof(struct ecl_sse_pack), 0);
+#endif
 #ifdef GBC_BOEHM_PRECISE
         type_info[t_list].descriptor =
                 to_bitmap(&c, &(c.car)) |
@@ -968,6 +974,9 @@ init_alloc(void)
                 to_bitmap(&o, &(o.frame.base)) |
                 to_bitmap(&o, &(o.frame.env));
 	type_info[t_weak_pointer].descriptor = 0;
+#ifdef ECL_SSE2
+	type_info[t_sse_pack].descriptor = 0;
+#endif
 	for (i = 0; i < t_end; i++) {
                 GC_word descriptor = type_info[i].descriptor;
                 int bits = type_info[i].size / sizeof(GC_word);

@@ -87,6 +87,9 @@ typedef enum {
 	t_foreign,
 	t_frame,
 	t_weak_pointer,
+#ifdef ECL_SSE2
+	t_sse_pack,
+#endif
 	t_end,
 	t_other,
 	t_contiguous,		/*  contiguous block  */
@@ -179,6 +182,9 @@ typedef cl_object (*cl_objectfn_fixed)();
 #define ECL_PATHNAMEP(x)        ((IMMEDIATE(x) == 0) && ((x)->d.t == t_pathname))
 #define ECL_READTABLEP(x)       ((IMMEDIATE(x) == 0) && ((x)->d.t == t_readtable))
 #define ECL_FOREIGN_DATA_P(x)   ((IMMEDIATE(x) == 0) && ((x)->d.t == t_foreign))
+#ifdef ECL_SSE2
+#define ECL_SSE_PACK_P(x)       ((IMMEDIATE(x) == 0) && ((x)->d.t == t_sse_pack))
+#endif
 
 #define HEADER			int8_t t, m, padding1, padding2
 #define HEADER1(field)		int8_t t, m, field, padding
@@ -939,6 +945,36 @@ struct ecl_instance {		/*  instance header  */
 };
 #endif /* CLOS */
 
+#ifdef ECL_SSE2
+union ecl_sse_data {
+	__m128        vf;
+	__m128i       vi;
+	__m128d       vd;
+
+	uint8_t       b8[16];
+	int8_t        i8[16];
+#ifdef ecl_uint16_t
+	ecl_uint16_t  b16[8];
+	ecl_int16_t   i16[8];
+#endif
+#ifdef ecl_uint32_t
+	ecl_uint32_t  b32[4];
+	ecl_int32_t   i32[4];
+#endif
+#ifdef ecl_uint64_t
+	ecl_uint64_t  b64[2];
+	ecl_int64_t   i64[2];
+#endif
+	float         sf[4];
+	double        df[2];
+};
+
+struct ecl_sse_pack {
+	HEADER1(elttype);
+	union ecl_sse_data data;
+};
+#endif
+
 /*
 	Definition of lispunion.
 */
@@ -991,6 +1027,9 @@ union cl_lispunion {
 	struct ecl_foreign	foreign; 	/*  user defined data type */
 	struct ecl_stack_frame	frame;		/*  stack frame  */
 	struct ecl_weak_pointer weak;		/*  weak pointers  */
+#ifdef ECL_SSE2
+	struct ecl_sse_pack     sse;
+#endif
 };
 
 /*

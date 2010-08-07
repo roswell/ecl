@@ -86,7 +86,8 @@
 	    #+threads (mp::process)
 	    #+threads (mp::lock)
 	    #+threads (mp::condition-variable)
-	    #+semaphores (mp::semaphore))))
+	    #+semaphores (mp::semaphore)
+	    #+sse2 (ext::sse-pack))))
 
 (loop for (name . rest) in '#.+builtin-classes+
    with index = 1

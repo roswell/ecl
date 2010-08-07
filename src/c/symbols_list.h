@@ -1928,5 +1928,19 @@ cl_symbols[] = {
 {SYS_ "SERIALIZE", SI_ORDINARY, si_serialize, 1, OBJNULL},
 {SYS_ "DESERIALIZE", SI_ORDINARY, si_deserialize, 1, OBJNULL},
 
+#ifdef ECL_SSE2
+{EXT_ "SSE-PACK", EXT_ORDINARY, NULL, -1, OBJNULL},
+{EXT_ "SSE-PACK-P", EXT_ORDINARY, si_sse_pack_p, 1, OBJNULL},
+{EXT_ "SSE-PACK-AS-ELT-TYPE", EXT_ORDINARY, si_sse_pack_as_elt_type, 2, OBJNULL},
+{EXT_ "VECTOR-TO-SSE-PACK", EXT_ORDINARY, si_vector_to_sse_pack, 1, OBJNULL},
+{EXT_ "SSE-PACK-TO-VECTOR", EXT_ORDINARY, si_sse_pack_to_vector, 2, OBJNULL},
+{EXT_ "INT-SSE-PACK", EXT_ORDINARY, NULL, -1, OBJNULL},
+{EXT_ "INT-SSE-PACK-P", EXT_ORDINARY, si_int_sse_pack_p, 1, OBJNULL},
+{EXT_ "FLOAT-SSE-PACK", EXT_ORDINARY, NULL, -1, OBJNULL},
+{EXT_ "FLOAT-SSE-PACK-P", EXT_ORDINARY, si_float_sse_pack_p, 1, OBJNULL},
+{EXT_ "DOUBLE-SSE-PACK", EXT_ORDINARY, NULL, -1, OBJNULL},
+{EXT_ "DOUBLE-SSE-PACK-P", EXT_ORDINARY, si_double_sse_pack_p, 1, OBJNULL},
+#endif
+
 /* Tag for end of list */
 {NULL, CL_ORDINARY, NULL, -1, OBJNULL}};

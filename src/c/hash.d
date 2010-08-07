@@ -72,6 +72,10 @@ _hash_eql(cl_hashkey h, cl_object x)
 		return _hash_eql(h, x->complex.imag);
 	case t_character:
 		return hash_word(h, CHAR_CODE(x));
+#ifdef ECL_SSE2
+	case t_sse_pack:
+		return hash_string(h, x->sse.data.b8, 16);
+#endif
 	default:
 		return hash_word(h, ((cl_hashkey)x >> 2));
 	}

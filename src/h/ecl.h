@@ -72,6 +72,11 @@
 # endif /* ECL_THREADS */
 #endif /* _MSC_VER || __MINGW32__ */
 
+#ifdef ECL_SSE2
+#include <xmmintrin.h>
+#include <emmintrin.h>
+#endif
+
 #include <ecl/object.h>
 #include <ecl/external.h>
 #include <ecl/stacks.h>

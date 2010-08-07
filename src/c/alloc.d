@@ -276,6 +276,9 @@ ONCE_MORE:
 	  obj->ratio.num = OBJNULL;
 	  obj->ratio.den = OBJNULL;
 	  break;
+#ifdef ECL_SSE2
+	case t_sse_pack:
+#endif
 	case t_singlefloat:
 	case t_doublefloat:
 #ifdef ECL_LONG_FLOAT

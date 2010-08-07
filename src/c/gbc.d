@@ -153,6 +153,9 @@ BEGIN:
 		mark_next(x->ratio.den);
 		break;
 
+#ifdef ECL_SSE2
+	case t_sse_pack:
+#endif
 	case t_singlefloat:
 	case t_doublefloat:
 #ifdef ECL_LONG_FLOAT
