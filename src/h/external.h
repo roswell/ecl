@@ -1511,6 +1511,7 @@ extern ECL_API cl_object si_int_sse_pack_p(cl_object x);
 extern ECL_API cl_object si_float_sse_pack_p(cl_object x);
 extern ECL_API cl_object si_double_sse_pack_p(cl_object x);
 extern ECL_API cl_object si_sse_pack_as_elt_type(cl_object x, cl_object type);
+extern ECL_API cl_object si_sse_pack_element_type(cl_object x);
 
 extern ECL_API cl_object si_vector_to_sse_pack(cl_object x);
 extern ECL_API cl_object si_sse_pack_to_vector(cl_object x, cl_object elt_type);

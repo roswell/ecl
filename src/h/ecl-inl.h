@@ -103,3 +103,12 @@
                 Cnil, (cl_index)(len), (cl_index)(len),                 \
                 ecl_cast_ptr(cl_object*,raw), 0 };                      \
         static const cl_object name = (cl_object)(& name ## data)
+
+#ifdef ECL_SSE2
+#define ecl_def_ct_sse_pack(name,type,v0,v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15) \
+        static const struct ecl_sse_pack name ## data = {                 \
+                (int8_t)t_sse_pack, 0, (type), 0,                         \
+                {{v0,v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15}} \
+        }; \
+        static const cl_object name = (cl_object)(& name ## data)
+#endif

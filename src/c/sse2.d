@@ -103,6 +103,16 @@ si_sse_pack_as_elt_type(cl_object x, cl_object type)
 	@(return x)
 }
 
+cl_object
+si_sse_pack_element_type(cl_object x)
+{
+	if (ecl_unlikely(!ECL_SSE_PACK_P(x))) {
+                FEwrong_type_nth_arg(@[ext::sse-pack-element-type], 1, x, @[ext::sse-pack]);
+	}
+
+	@(return ecl_elttype_to_symbol(x->sse.elttype) MAKE_FIXNUM(x->sse.elttype));
+}
+
 /* Conversion to and from specialized vectors */
 
 cl_object

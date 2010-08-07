@@ -947,12 +947,15 @@ struct ecl_instance {		/*  instance header  */
 
 #ifdef ECL_SSE2
 union ecl_sse_data {
+	/* This member must be first in order for
+	   ecl_def_ct_sse_pack to work properly. */
+	uint8_t       b8[16];
+	int8_t        i8[16];
+
 	__m128        vf;
 	__m128i       vi;
 	__m128d       vd;
 
-	uint8_t       b8[16];
-	int8_t        i8[16];
 #ifdef ecl_uint16_t
 	ecl_uint16_t  b16[8];
 	ecl_int16_t   i16[8];
@@ -965,6 +968,7 @@ union ecl_sse_data {
 	ecl_uint64_t  b64[2];
 	ecl_int64_t   i64[2];
 #endif
+
 	float         sf[4];
 	double        df[2];
 };

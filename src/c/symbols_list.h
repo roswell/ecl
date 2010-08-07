@@ -1940,6 +1940,7 @@ cl_symbols[] = {
 {EXT_ "FLOAT-SSE-PACK-P", EXT_ORDINARY, si_float_sse_pack_p, 1, OBJNULL},
 {EXT_ "DOUBLE-SSE-PACK", EXT_ORDINARY, NULL, -1, OBJNULL},
 {EXT_ "DOUBLE-SSE-PACK-P", EXT_ORDINARY, si_double_sse_pack_p, 1, OBJNULL},
+{EXT_ "SSE-PACK-ELEMENT-TYPE", EXT_ORDINARY, si_sse_pack_element_type, 1, OBJNULL},
 #endif
 
 /* Tag for end of list */

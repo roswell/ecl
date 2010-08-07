@@ -240,6 +240,14 @@
 	    "ecl_def_ct_complex(~A,&~Adata,&~Adata,static,const);"
 	    name name-real name-imag)))
 
+#+sse2
+(defun static-sse-pack-builder (name value stream)
+  (let* ((bytes (ext:sse-pack-to-vector value '(unsigned-byte 8)))
+	 (type-code (nth-value 1 (ext:sse-pack-element-type value))))
+    (format stream
+	    "ecl_def_ct_sse_pack(~A,~A~{,~A~});"
+	    name type-code (coerce bytes 'list))))
+
 (defun static-constant-builder (format value)
   (lambda (name stream)
     (format stream format name value)))
@@ -263,6 +271,8 @@
     (complex (and (static-constant-expression (realpart object))
 		  (static-constant-expression (imagpart object))
 		  #'static-complex-builder))
+    #+sse2
+    (ext:sse-pack #'static-sse-pack-builder)
     (t nil)))
 
 (defun add-static-constant (object)
