@@ -146,4 +146,65 @@ si_vector_to_sse_pack(cl_object x)
 	@(return ssev)
 }
 
+/* Boxing and unboxing.
+
+   The unboxing primitives accept any kind of sse-pack on purpose. */
+
+cl_object
+ecl_make_int_sse_pack(__m128i value)
+{
+	cl_object obj = ecl_alloc_object(t_sse_pack);
+	obj->sse.elttype = aet_b8;
+	obj->sse.data.vi = value;
+	@(return obj);
+}
+
+__m128i
+ecl_unbox_int_sse_pack(cl_object x)
+{
+	do {
+		if (ECL_SSE_PACK_P(x))
+			return x->sse.data.vi;
+		x = ecl_type_error(@'coerce', "variable", x, @'ext::sse-pack');
+	} while(1);
+}
+
+cl_object
+ecl_make_float_sse_pack(__m128 value)
+{
+	cl_object obj = ecl_alloc_object(t_sse_pack);
+	obj->sse.elttype = aet_sf;
+	obj->sse.data.vf = value;
+	@(return obj);
+}
+
+__m128
+ecl_unbox_float_sse_pack(cl_object x)
+{
+	do {
+		if (ECL_SSE_PACK_P(x))
+			return x->sse.data.vf;
+		x = ecl_type_error(@'coerce', "variable", x, @'ext::sse-pack');
+	} while(1);
+}
+
+cl_object
+ecl_make_double_sse_pack(__m128d value)
+{
+	cl_object obj = ecl_alloc_object(t_sse_pack);
+	obj->sse.elttype = aet_df;
+	obj->sse.data.vd = value;
+	@(return obj);
+}
+
+__m128d
+ecl_unbox_double_sse_pack(cl_object x)
+{
+	do {
+		if (ECL_SSE_PACK_P(x))
+			return x->sse.data.vd;
+		x = ecl_type_error(@'coerce', "variable", x, @'ext::sse-pack');
+	} while(1);
+}
+
 #endif // ECL_SSE2

@@ -77,6 +77,21 @@
     (base-char "char" "CODE_CHAR" "ecl_base_char_code" "CHAR_CODE")
     :wchar
     (character "ecl_character" "CODE_CHAR" "ecl_char_code" "CHAR_CODE")
+    #+sse2
+    :int-sse-pack
+    #+sse2
+    (ext:int-sse-pack "__m128i" "ecl_make_int_sse_pack"
+     "ecl_unbox_int_sse_pack" "ecl_unbox_int_sse_pack_unsafe")
+    #+sse2
+    :float-sse-pack
+    #+sse2
+    (ext:float-sse-pack "__m128" "ecl_make_float_sse_pack"
+     "ecl_unbox_float_sse_pack" "ecl_unbox_float_sse_pack_unsafe")
+    #+sse2
+    :double-sse-pack
+    #+sse2
+    (ext:double-sse-pack "__m128d" "ecl_make_double_sse_pack"
+     "ecl_unbox_double_sse_pack" "ecl_unbox_double_sse_pack_unsafe")
     :object
     (t "cl_object")
     :bool
@@ -328,6 +343,13 @@
 	    (wt "ecl_base_string_pointer_safe(" loc ")"))
 	   ((:pointer-void)
 	    (wt "(char *)(" loc ")"))
+	   (otherwise
+	    (coercion-error))))
+	#+sse2
+	((:int-sse-pack :float-sse-pack :double-sse-pack)
+	 (case loc-rep-type
+	   ((:object)
+	    (wt-from-object-conversion dest-type loc-type dest-rep-type loc))
 	   (otherwise
 	    (coercion-error))))
 	(t
