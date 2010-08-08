@@ -324,6 +324,10 @@ extern ECL_API cl_object APPLY(cl_narg n, cl_objectfn, cl_object *x);
 extern ECL_API cl_object cl_row_major_aref(cl_object x, cl_object i);
 extern ECL_API cl_object si_row_major_aset(cl_object x, cl_object i, cl_object v);
 extern ECL_API cl_object si_make_vector(cl_object etype, cl_object dim, cl_object adj, cl_object fillp, cl_object displ, cl_object disploff);
+
+/* for open-coding the access while preserving the bounds and type check: */
+extern ECL_API void *ecl_row_major_ptr(cl_object arr, cl_index index, cl_index bytes);
+
 extern ECL_API cl_object cl_array_element_type(cl_object a);
 extern ECL_API cl_object cl_array_rank(cl_object a);
 extern ECL_API cl_object cl_array_dimension(cl_object a, cl_object index);

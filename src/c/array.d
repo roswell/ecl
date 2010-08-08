@@ -231,6 +231,33 @@ ecl_aref1(cl_object x, cl_index index)
         return ecl_aref_unsafe(x, index);
 }
 
+void *
+ecl_row_major_ptr(cl_object x, cl_index index, cl_index bytes)
+{
+	cl_index idx, elt_size, offset;
+	cl_elttype elt_type;
+
+	if (ecl_unlikely(!ECL_ARRAYP(x))) {
+		FEwrong_type_nth_arg(@[aref], 1, x, @[array]);
+	}
+
+	elt_type = x->array.elttype;
+	if (ecl_unlikely(elt_type == aet_bit || elt_type == aet_object))
+		FEerror("In ecl_row_major_ptr: Specialized array expected, element type ~S found.",
+			1,ecl_elttype_to_symbol(elt_type));
+
+	elt_size = ecl_aet_size[elt_type];
+	offset = index*elt_size;
+
+	/* don't check bounds if bytes == 0 */
+        if (ecl_unlikely(bytes > 0 && offset + bytes > x->array.dim*elt_size)) {
+                FEwrong_index(@[row-major-aref], x, -1, MAKE_FIXNUM(index),
+                              x->array.dim);
+        }
+
+	return x->array.self.b8 + offset;
+}
+
 /*
 	Internal function for setting array elements:
 
