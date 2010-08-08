@@ -326,6 +326,12 @@
 	   (otherwise
 	    (coercion-error))))
 	((:object)
+         #+sse2
+	 (case loc-rep-type
+	   ((:int-sse-pack :float-sse-pack :double-sse-pack)
+            (when (>= (cmp-env-optimization 'speed) 1)
+              (cmpwarn-style "Boxing a value of type ~S - performance degraded."
+                             loc-rep-type))))
 	 (wt-to-object-conversion loc-rep-type loc))
 	((:pointer-void)
 	 (case loc-rep-type

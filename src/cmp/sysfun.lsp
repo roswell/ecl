@@ -23,7 +23,7 @@
 (in-package "COMPILER")
 
 (defun def-inline (name safety arg-types return-rep-type expansion
-                   &key (one-liner t) (exact-return-type nil)
+                   &key (one-liner t) (exact-return-type nil) (inline-or-warn nil)
                    &aux arg-rep-types)
   (setf safety
 	(case safety
@@ -36,6 +36,8 @@
 		arg-types))
   (when (eq return-rep-type t)
     (setf return-rep-type :object))
+  (when inline-or-warn
+    (put-sysprop name 'should-be-inlined t))
   (let* ((return-type (if (and (consp return-rep-type)
                                (eq (first return-rep-type) 'values))
                           t

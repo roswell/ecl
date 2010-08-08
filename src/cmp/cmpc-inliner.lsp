@@ -102,6 +102,11 @@
       (let ((other (inline-type-matches x types return-type)))
         (when other
           (setf output (choose-inline-info output other return-type return-rep-type)))))
+    (when (and (null output)
+               (get-sysprop fname 'should-be-inlined)
+               (>= (cmp-env-optimization 'speed) 1))
+      (cmpwarn-style "Could not inline call to ~S ~S - performance may be degraded."
+                     fname types))
     output))
 
 (defun to-fixnum-float-type (type)
