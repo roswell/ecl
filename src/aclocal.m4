@@ -445,6 +445,21 @@ int main() {
 }]])],[ECL_FILE_CNT=3],[])
 fi
 ])
+
+dnl ---------------------------------------------------------------------
+dnl Check availability of standard sized integer types of a given width.  
+dnl On success, define the global variables ECL_INTx_T and ECL_UNITx_T to 
+dnl hold the names of the corresponding standard C integer types.
+AC_DEFUN(ECL_CHECK_SIZED_INTEGER_TYPE,[
+AC_TYPE_INT$1_T
+AC_TYPE_UINT$1_T
+if test "x$ac_cv_c_int$1_t" = xyes; then
+  eval ECL_INT$1_T="int$1_t"
+  eval ECL_UINT$1_T="uint$1_t"
+  AC_DEFINE_UNQUOTED([ecl_int$1_t],[int$1_t])
+  AC_DEFINE_UNQUOTED([ecl_uint$1_t],[uint$1_t])
+fi])
+
 dnl
 dnl --------------------------------------------------------------
 dnl Check the existence of different integer types and that they
@@ -458,91 +473,12 @@ if test -z "${ECL_STDINT_HEADER}"; then
 AC_CHECK_HEADER([inttypes.h],[AC_DEFINE(HAVE_INTTYPES_H)
 ECL_STDINT_HEADER="#include <inttypes.h>"],[])
 fi
-if test -n "${ECL_STDINT_HEADER}" -a -z "${ECL_UINT8_T}"; then
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#ifdef HAVE_INTTYPES_H
-#include <inttypes.h>
-#else
-#ifdef HAVE_STDINT_H
-#include <stdint.h>
-#endif
-#endif]], [[
-{
-  uint8_t i = 0x80;
-  if (i == 0)
-    return 0;
-  if ((i << 1))
-    return 0;
-  if ((i - 1) != 0x7F)
-    return 0;
-  return 1;
-}]])],[ECL_UINT8_T=uint8_t;ECL_INT8_T=int8_t],[])
-fi
-if test -z "${ECL_UINT8_T}"; then
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [[
-{
-  unsigned char c = 0x80;
-  if (i == 0)
-    return 0;
-  if ((i << 1))
-    return 0;
-  if ((i - 1) != 0x7F)
-    return 0;
-  return 1;
-}]])],[ECL_UINT8_T="unsigned char";ECL_INT8_T="signed char"],[])
-fi
-if test -n "${ECL_STDINT_HEADER}" -a -z "${ECL_UINT16_T}"; then
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#ifdef HAVE_INTTYPES_H
-#include <inttypes.h>
-#else
-#ifdef HAVE_STDINT_H
-#include <stdint.h>
-#endif
-#endif]], [[
-{
-  uint16_t i = 0x8000UL;
-  if (i == 0)
-    return 0;
-  if ((i << 1))
-    return 0;
-  if ((i - 1) != 0x7FFFUL)
-    return 0;
-  return 1;
-}]])],[ECL_UINT16_T=uint16_t;ECL_INT16_T=int16_t],[])
-fi
-if test -n "${ECL_STDINT_HEADER}" -a -z "${ECL_UINT32_T}"; then
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#ifdef HAVE_INTTYPES_H
-#include <inttypes.h>
-#else
-#ifdef HAVE_STDINT_H
-#include <stdint.h>
-#endif
-#endif]], [[
-{
-  uint32_t i = 0x80000000UL;
-  if (i == 0)
-    return 0;
-  if ((i << 1))
-    return 0;
-  if ((i - 1) != 0x7FFFFFFFUL)
-    return 0;
-  return 1;
-}]])],[ECL_UINT32_T=uint32_t;ECL_INT32_T=int32_t],[])
-fi
-if test -n "${ECL_STDINT_HEADER}" -a -z "${ECL_UINT64_T}"; then
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#ifdef HAVE_INTTYPES_H
-#include <inttypes.h>
-#else
-#ifdef HAVE_STDINT_H
-#include <stdint.h>
-#endif
-#endif]], [[
-{
-  uint64_t i = 1;
-  i <<= 63; if (i == 0) return 0;
-  i <<= 1;  if (i) return 0;
-  return 1;
-}]])],[ECL_UINT64_T=uint64_t;ECL_INT64_T=int64_t],[])
-fi
+
+ECL_CHECK_SIZED_INTEGER_TYPE(8)
+ECL_CHECK_SIZED_INTEGER_TYPE(16)
+ECL_CHECK_SIZED_INTEGER_TYPE(32)
+ECL_CHECK_SIZED_INTEGER_TYPE(64)
+
 if test "${ECL_UINT16_T}${CL_FIXNUM_BITS}" = "16"; then
   ECL_UINT16_T="cl_index"
   ECL_INT16_T="cl_fixnum"
@@ -555,38 +491,9 @@ if test "${ECL_UINT64_T}${CL_FIXNUM_BITS}" = "64"; then
   ECL_UINT64_T="cl_index"
   ECL_INT64_T="cl_fixnum"
 fi
-AC_MSG_CHECKING(uint8_t type)
+
 if test "x${ECL_UINT8_T}" = "x" -o "x${ECL_UINT8_T}" = xno; then
-  AC_MSG_RESULT(none)
   AC_MSG_ERROR(Can not build ECL without byte types)
-else
-  AC_DEFINE_UNQUOTED([ecl_uint8_t],[$ECL_UINT8_T])
-  AC_DEFINE_UNQUOTED([ecl_int8_t],[$ECL_INT8_T])
-  AC_MSG_RESULT(${ECL_UINT8_T})
-fi
-AC_MSG_CHECKING(uint16_t type)
-if test "x${ECL_UINT16_T}" = "x" -o "x${ECL_UINT16_T}" = xno; then
-  AC_MSG_RESULT(none)
-else
-  AC_DEFINE_UNQUOTED([ecl_uint16_t],[$ECL_UINT16_T])
-  AC_DEFINE_UNQUOTED([ecl_int16_t],[$ECL_INT16_T])
-  AC_MSG_RESULT(${ECL_UINT16_T})
-fi
-AC_MSG_CHECKING(uint32_t type)
-if test "x${ECL_UINT32_T}" = "x" -o "x${ECL_UINT32_T}" = xno; then
-  AC_MSG_RESULT(none)
-else
-  AC_DEFINE_UNQUOTED([ecl_uint32_t],[$ECL_UINT32_T])
-  AC_DEFINE_UNQUOTED([ecl_int32_t],[$ECL_INT32_T])
-  AC_MSG_RESULT(${ECL_UINT32_T})
-fi
-AC_MSG_CHECKING(uint64_t type)
-if test "x${ECL_UINT64_T}" = "x" -o "x${ECL_UINT64_T}" = xno; then
-  AC_MSG_RESULT(none)
-else
-  AC_DEFINE_UNQUOTED([ecl_uint64_t],[$ECL_UINT64_T])
-  AC_DEFINE_UNQUOTED([ecl_int64_t],[$ECL_INT64_T])
-  AC_MSG_RESULT(${ECL_UINT64_T})
 fi
 ])
 dnl
