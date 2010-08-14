@@ -1928,6 +1928,8 @@ cl_symbols[] = {
 {SYS_ "SERIALIZE", SI_ORDINARY, si_serialize, 1, OBJNULL},
 {SYS_ "DESERIALIZE", SI_ORDINARY, si_deserialize, 1, OBJNULL},
 
+{EXT_ "ARRAY-ELEMENT-TYPE-BYTE-SIZE", EXT_ORDINARY, si_array_element_type_byte_size, 1, OBJNULL},
+
 #ifdef ECL_SSE2
 {EXT_ "SSE-PACK", EXT_ORDINARY, NULL, -1, OBJNULL},
 {EXT_ "SSE-PACK-P", EXT_ORDINARY, si_sse_pack_p, 1, OBJNULL},
