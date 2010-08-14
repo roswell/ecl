@@ -115,7 +115,7 @@ ecl_make_integer(cl_fixnum l)
 {
 	if (l > MOST_POSITIVE_FIXNUM || l < MOST_NEGATIVE_FIXNUM) {
                 cl_object z = _ecl_big_register0();
-                _ecl_big_set_si(z, l);
+                _ecl_big_set_fixnum(z, l);
                 return _ecl_big_register_copy(z);
 	}
 	return MAKE_FIXNUM(l);
@@ -126,7 +126,7 @@ ecl_make_unsigned_integer(cl_index l)
 {
 	if (l > MOST_POSITIVE_FIXNUM) {
                 cl_object z = _ecl_big_register0();
-                _ecl_big_set_ui(z, l);
+                _ecl_big_set_index(z, l);
                 return _ecl_big_register_copy(z);
 	}
 	return MAKE_FIXNUM(l);
@@ -703,7 +703,7 @@ static cl_object
 into_bignum(cl_object bignum, cl_object integer)
 {
         if (FIXNUMP(integer)) {
-                mpz_set_si(bignum->big.big_num, fix(integer));
+                _ecl_big_set_fixnum(bignum, fix(integer));
         } else {
                 mpz_set(bignum->big.big_num, integer->big.big_num);
         }

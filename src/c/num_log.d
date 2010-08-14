@@ -354,7 +354,7 @@ ecl_boole(int op, cl_object x, cl_object y)
 		}
 		case t_bignum: {
                         cl_object x_copy = _ecl_big_register0();
-                        _ecl_big_set_si(x_copy, fix(x));
+                        _ecl_big_set_fixnum(x_copy, fix(x));
 			bignum_operations[op](x_copy, y);
                         return _ecl_big_register_normalize(x_copy);
 		}
@@ -368,7 +368,7 @@ ecl_boole(int op, cl_object x, cl_object y)
 		switch (type_of(y)) {
 		case t_fixnum: {
 			cl_object z = _ecl_big_register1();
-                        _ecl_big_set_si(z,fix(y));
+                        _ecl_big_set_fixnum(z,fix(y));
 			bignum_operations[op](x_copy, z);
 			_ecl_big_register_free(z);
 			break;
@@ -469,7 +469,7 @@ ecl_ash(cl_object x, cl_fixnum w)
 	} else {
 #ifdef WITH_GMP
 		if (FIXNUMP(x)) {
-			mpz_set_si(y->big.big_num, fix(x));
+			_ecl_big_set_fixnum(y, fix(x));
 			x = y;
 		}
 		mpz_mul_2exp(y->big.big_num, x->big.big_num, (unsigned long)w);
