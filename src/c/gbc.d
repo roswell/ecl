@@ -153,9 +153,6 @@ BEGIN:
 		mark_next(x->ratio.den);
 		break;
 
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat:
-#endif
 	case t_singlefloat:
 	case t_doublefloat:
 #ifdef ECL_LONG_FLOAT

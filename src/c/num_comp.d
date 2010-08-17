@@ -103,10 +103,6 @@ ecl_number_equalp(cl_object x, cl_object y)
 		case t_bignum:
 		case t_ratio:
 			return 0;
-#ifdef ECL_SHORT_FLOAT
-		case t_shortfloat:
-			return double_fix_compare(fix(x), ecl_short_float(y)) == 0;
-#endif
 		case t_singlefloat:
 			return double_fix_compare(fix(x), sf(y)) == 0;
 		case t_doublefloat:
@@ -128,9 +124,6 @@ ecl_number_equalp(cl_object x, cl_object y)
 			return _ecl_big_compare(x, y)==0;
 		case t_ratio:
 			return 0;
-#ifdef ECL_SHORT_FLOAT
-		case t_shortfloat:
-#endif
 		case t_singlefloat:
 		case t_doublefloat:
 #ifdef ECL_LONG_FLOAT
@@ -151,9 +144,6 @@ ecl_number_equalp(cl_object x, cl_object y)
 		case t_ratio:
 			return (ecl_number_equalp(x->ratio.num, y->ratio.num) &&
 				ecl_number_equalp(x->ratio.den, y->ratio.den));
-#ifdef ECL_SHORT_FLOAT
-		case t_shortfloat:
-#endif
 		case t_singlefloat:
 		case t_doublefloat:
 #ifdef ECL_LONG_FLOAT
@@ -166,11 +156,6 @@ ecl_number_equalp(cl_object x, cl_object y)
 		default:
 			FEwrong_type_nth_arg(@[=], 2, y, @[number]);
 		}
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat:
-		dx = ecl_short_float(x);
-		goto FLOAT;
-#endif
 	case t_singlefloat:
 		dx = sf(x);
 		goto FLOAT;
@@ -184,10 +169,6 @@ ecl_number_equalp(cl_object x, cl_object y)
 		case t_ratio:
 			x = cl_rational(x);
 			goto BEGIN;
-#ifdef ECL_SHORT_FLOAT
-		case t_shortfloat:
-			return dx == ecl_short_float(y);
-#endif
 		case t_singlefloat:
 			return dx == sf(y);
 		case t_doublefloat:
@@ -211,10 +192,6 @@ ecl_number_equalp(cl_object x, cl_object y)
 		case t_ratio:
 			x = cl_rational(x);
 			goto BEGIN;
-#ifdef ECL_SHORT_FLOAT
-		case t_shortfloat:
-			return dx == ecl_short_float(y);
-#endif
 		case t_singlefloat:
 			return dx == sf(y);
 		case t_doublefloat:
@@ -239,9 +216,6 @@ ecl_number_equalp(cl_object x, cl_object y)
 				ecl_number_equalp(x->complex.imag, y->complex.imag));
                 case t_fixnum: case t_bignum: case t_ratio:
                 case t_singlefloat: case t_doublefloat:
-#ifdef ECL_SHORT_FLOAT
-                case t_shortfloat:
-#endif
 #ifdef ECL_LONG_FLOAT
                 case t_longfloat:
 #endif
@@ -293,10 +267,6 @@ ecl_number_compare(cl_object x, cl_object y)
 			x = ecl_times(x, y->ratio.den);
 			y = y->ratio.num;
 			return(ecl_number_compare(x, y));
-#ifdef ECL_SHORT_FLOAT
-		case t_shortfloat:
-			return double_fix_compare(ix, ecl_short_float(y));
-#endif
 		case t_singlefloat:
 			return double_fix_compare(ix, sf(y));
 		case t_doublefloat:
@@ -318,9 +288,6 @@ ecl_number_compare(cl_object x, cl_object y)
 			x = ecl_times(x, y->ratio.den);
 			y = y->ratio.num;
 			return(ecl_number_compare(x, y));
-#ifdef ECL_SHORT_FLOAT
-		case t_shortfloat:
-#endif
 		case t_singlefloat:
 		case t_doublefloat:
 #ifdef ECL_LONG_FLOAT
@@ -343,9 +310,6 @@ ecl_number_compare(cl_object x, cl_object y)
 							   y->ratio.den),
 					      ecl_times(y->ratio.num,
 							   x->ratio.den)));
-#ifdef ECL_SHORT_FLOAT
-		case t_shortfloat:
-#endif
 		case t_singlefloat:
 		case t_doublefloat:
 #ifdef ECL_LONG_FLOAT
@@ -356,11 +320,6 @@ ecl_number_compare(cl_object x, cl_object y)
 		default:
 			FEwrong_type_nth_arg(@[<], 2, y, @[real]);
 		}
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat:
-		dx = (double)(ecl_short_float(x));
-		goto DOUBLEFLOAT0;
-#endif
 	case t_singlefloat:
 		dx = (double)(sf(x));
 		goto DOUBLEFLOAT0;
@@ -406,11 +365,6 @@ ecl_number_compare(cl_object x, cl_object y)
 		case t_ratio:
 			x = cl_rational(x);
 			goto BEGIN;
-#ifdef ECL_SHORT_FLOAT
-		case t_shortfloat:
-			ldy = ecl_short_float(y);
-			break;
-#endif
 		case t_singlefloat:
 			ldy = sf(y);
 			break;

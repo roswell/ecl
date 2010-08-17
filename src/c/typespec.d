@@ -98,10 +98,6 @@ ecl_type_to_symbol(cl_type t)
 		return @'bignum';
 	case t_ratio:
 		return @'ratio';
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat:
-		return @'short-float';
-#endif
 	case t_singlefloat:
 		return @'single-float';
 	case t_doublefloat:

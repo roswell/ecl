@@ -31,9 +31,6 @@ typedef int bool;
 #endif
 typedef unsigned char byte;
 
-#ifdef ECL_SHORT_FLOAT
-#undef ECL_SHORT_FLOAT
-#endif
         /* #define ECL_EXTERNALIZABLE */
 
 /*

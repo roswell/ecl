@@ -128,10 +128,6 @@ ecl_exp(cl_object x)
 	case t_bignum:
 	case t_ratio:
 		output = ecl_make_singlefloat(expf(number_to_float(x))); break;
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat:
-		output = make_shortfloat(expf(ecl_short_float(x))); break;
-#endif
 	case t_singlefloat:
 		output = ecl_make_singlefloat(expf(sf(x))); break;
 	case t_doublefloat:
@@ -184,10 +180,6 @@ ecl_expt(cl_object x, cl_object y)
 		case t_bignum:
 		case t_ratio:
 			z = MAKE_FIXNUM(1); break;
-#ifdef ECL_SHORT_FLOAT
-		case t_shortfloat:
-			z = make_shortfloat(1.0); break;
-#endif
 		case t_singlefloat:
 			z = ecl_make_singlefloat(1.0); break;
 		case t_doublefloat:
@@ -283,14 +275,6 @@ ecl_log1(cl_object x)
                 }
                 break;
         }
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat: {
-		float f = ecl_short_float(d);
-		if (f < 0) goto COMPLEX;
-		output = make_shortfloat(logf(ecl_short_float(x)));
-                break;
-	}
-#endif
 	case t_singlefloat: {
 		float f = sf(x);
 		if (isnan(f)) goto ISNAN;
@@ -351,15 +335,6 @@ ecl_log1p(cl_object x)
 	}
 	case t_bignum:
                 return ecl_log1(ecl_one_plus(x));
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat: {
-		float f = ecl_short_float(x);
-		if (isnan(f)) goto ISNAN;
-		if (f < -1) goto COMPLEX;
-		output = make_shortfloat(log1pf(ecl_short_float(x)));
-                break;
-	}
-#endif
 	case t_singlefloat: {
 		float f = sf(x);
 		if (isnan(f)) goto ISNAN;
@@ -432,10 +407,6 @@ ecl_sqrt(cl_object x)
 	case t_bignum:
 	case t_ratio:
 		z = ecl_make_singlefloat(sqrtf(number_to_float(x))); break;
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat:
-		z = make_shortfloat(sqrtf(ecl_short_float(x))); break;;
-#endif
 	case t_singlefloat:
 		z = ecl_make_singlefloat(sqrtf(sf(x))); break;
 	case t_doublefloat:
@@ -596,10 +567,6 @@ ecl_sin(cl_object x)
 	case t_bignum:
 	case t_ratio:
 		output = ecl_make_singlefloat(sinf(number_to_float(x))); break;
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat:
-		output = make_shortfloat(sinf(ecl_short_float(x))); break;
-#endif
 	case t_singlefloat:
 		output = ecl_make_singlefloat(sinf(sf(x))); break;
 	case t_doublefloat:
@@ -644,10 +611,6 @@ ecl_cos(cl_object x)
 	case t_bignum:
 	case t_ratio:
 		output = ecl_make_singlefloat(cosf(number_to_float(x))); break;
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat:
-		output = make_shortfloat(cosf(ecl_short_float(x))); break;
-#endif
 	case t_singlefloat:
 		output = ecl_make_singlefloat(cosf(sf(x))); break;
 	case t_doublefloat:
@@ -703,10 +666,6 @@ ecl_tan(cl_object x)
 	case t_bignum:
 	case t_ratio:
 		output = ecl_make_singlefloat(safe_tanf(number_to_float(x))); break;
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat:
-		output = make_shortfloat(safe_tanf(ecl_short_float(x))); break;
-#endif
 	case t_singlefloat:
 		output = ecl_make_singlefloat(safe_tanf(sf(x))); break;
 	case t_doublefloat:
@@ -744,10 +703,6 @@ ecl_sinh(cl_object x)
 	case t_bignum:
 	case t_ratio:
 		output = ecl_make_singlefloat(sinhf(number_to_float(x))); break;
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat:
-		output = make_shortfloat(sinhf(ecl_short_float(x))); break;
-#endif
 	case t_singlefloat:
 		output = ecl_make_singlefloat(sinhf(sf(x))); break;
 	case t_doublefloat:
@@ -793,10 +748,6 @@ ecl_cosh(cl_object x)
 	case t_bignum:
 	case t_ratio:
 		output = ecl_make_singlefloat(coshf(number_to_float(x))); break;
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat:
-		output = make_shortfloat(coshf(ecl_short_float(x))); break;
-#endif
 	case t_singlefloat:
 		output = ecl_make_singlefloat(coshf(sf(x))); break;
 	case t_doublefloat:
@@ -842,10 +793,6 @@ ecl_tanh(cl_object x)
 	case t_bignum:
 	case t_ratio:
 		output = ecl_make_singlefloat(tanhf(number_to_float(x))); break;
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat:
-		output = make_shortfloat(tanhf(ecl_short_float(x))); break;
-#endif
 	case t_singlefloat:
 		output = ecl_make_singlefloat(tanhf(sf(x))); break;
 	case t_doublefloat:

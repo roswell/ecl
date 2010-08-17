@@ -93,9 +93,6 @@ floatp(cl_object x)
 {
 	cl_type t = type_of(x);
 	return (t == t_singlefloat) || (t == t_doublefloat)
-#ifdef ECL_SHORT_FLOAT
-		|| (t == t_shortfloat)
-#endif
 #ifdef ECL_LONG_FLOAT
 		|| (t == t_longfloat)
 #endif
@@ -284,10 +281,6 @@ ecl_eql(cl_object x, cl_object y)
 	case t_ratio:
 		return (ecl_eql(x->ratio.num, y->ratio.num) &&
 			ecl_eql(x->ratio.den, y->ratio.den));
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat:
-		FLOAT_EQL(ecl_short_float(x), ecl_short_float(y), float);
-#endif
 	case t_singlefloat:
 		FLOAT_EQL(sf(x), sf(y), float);
 	case t_doublefloat:
@@ -340,12 +333,6 @@ BEGIN:
 	case t_ratio:
 		return (tx == ty) && ecl_eql(x->ratio.num, y->ratio.num) &&
 			ecl_eql(x->ratio.den, y->ratio.den);
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat: {
-                if (tx != ty) return 0;
-                FLOAT_EQL(ecl_short_float(x), ecl_short_float(y), float);
-        }
-#endif
 	case t_singlefloat: {
                 if (tx != ty) return 0;
                 FLOAT_EQL(sf(x), sf(y), float);
@@ -425,9 +412,6 @@ BEGIN:
 	case t_fixnum:
 	case t_bignum:
 	case t_ratio:
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat:
-#endif
 	case t_singlefloat:
 	case t_doublefloat:
 #ifdef ECL_LONG_FLOAT

@@ -29,10 +29,6 @@ ecl_zerop(cl_object x)
 	case t_bignum:
 	case t_ratio:
 		return(0);
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat:
-		return ecl_short_float(x) == 0.0;
-#endif
 	case t_singlefloat:
 		return(sf(x) == 0.0);
 
@@ -67,10 +63,6 @@ ecl_plusp(cl_object x)
 		/* INV: rat_den is always positive */
 		x = x->ratio.num;
 		goto RESTART;
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat:
-		return ecl_short_float(x) > 0.0;
-#endif
 	case t_singlefloat:
 		return sf(x) > 0.0;
 	case t_doublefloat:
@@ -100,10 +92,6 @@ ecl_minusp(cl_object x)
 		x = x->ratio.num;
 		goto RESTART;
 
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat:
-		return ecl_short_float(x) < 0;
-#endif
 	case t_singlefloat:
 		return sf(x) < 0;
 
@@ -190,10 +178,6 @@ bool
 ecl_float_infinity_p(cl_object x)
 {
 	switch (type_of(x)) {
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat:
-		return !isifinite(ecl_short_float(x));
-#endif
 	case t_singlefloat:
 		return !isfinite(sf(x));
 	case t_doublefloat:

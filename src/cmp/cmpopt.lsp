@@ -126,8 +126,7 @@
 	  ;;
 	  ;; (INTEGER * *), etc
 	  ((member first '(INTEGER RATIONAL FLOAT REAL SINGLE-FLOAT
-			   DOUBLE-FLOAT #+long-float LONG-FLOAT
-			   #+short-float SHORT-FLOAT))
+			   DOUBLE-FLOAT #+long-float LONG-FLOAT))
 	   (let ((var (gensym)))
 	     ;; Small optimization: it is easier to check for fixnum
 	     ;; than for integer. Use it when possible.
@@ -292,8 +291,7 @@
 	  ;; does not match. However, if safety settings are low, we
 	  ;; skip the interval test.
 	  ((member first '(INTEGER RATIONAL FLOAT REAL SINGLE-FLOAT
-			   DOUBLE-FLOAT #+long-float LONG-FLOAT
-			   #+short-float SHORT-FLOAT))
+			   DOUBLE-FLOAT #+long-float LONG-FLOAT))
 	   (let ((unchecked (expand-coerce form value `',first env)))
 	     (if (policy-assume-no-errors)
 		 unchecked

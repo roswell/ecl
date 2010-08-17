@@ -63,9 +63,6 @@ number_remainder(cl_object x, cl_object y, cl_object q)
 		ty = t_singlefloat;
 	}
 	switch (tx = type_of(x)) {
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat:
-#endif
 	case t_singlefloat:
 	case t_doublefloat:
 #ifdef ECL_LONG_FLOAT
@@ -77,10 +74,6 @@ number_remainder(cl_object x, cl_object y, cl_object q)
 	case t_bignum:
 	case t_ratio:
 		switch (ty) {
-#ifdef ECL_SHORT_FLOAT
-		case t_shortfloat:
-			x = make_shortfloat(ecl_to_double(x)); break;
-#endif
 		case t_singlefloat:
 			x = ecl_make_singlefloat(ecl_to_double(x)); break;
 		case t_doublefloat:
@@ -147,15 +140,6 @@ ecl_floor1(cl_object x)
 		v0 = ecl_floor2(x->ratio.num, x->ratio.den);
 		v1 = ecl_make_ratio(VALUES(1), x->ratio.den);
 		break;
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat: {
-		float d = ecl_short_float(x);
-		float y = floorf(d);
-		v0 = float_to_integer(y);
-		v1 = make_shortfloat(d - y);
-		break;
-	}
-#endif
 	case t_singlefloat: {
 		float d = sf(x);
 		float y = floorf(d);
@@ -225,16 +209,6 @@ ecl_floor2(cl_object x, cl_object y)
 		  v0 = ecl_floor2(ecl_times(x, y->ratio.den), y->ratio.num);
 		  v1 = ecl_make_ratio(VALUES(1), y->ratio.den);
 		  break;
-#ifdef ECL_SHORT_FLOAT
-		case t_shortfloat: {	/* FIX / SF */
-		  float n = ecl_short_float(y);
-		  float p = fix(x) / n;
-		  float q = floorf(p);
-		  v0 = float_to_integer(q);
-		  v1 = make_shortfloat((p - q)*n);
-		  break;
-		}
-#endif
 		case t_singlefloat: {	/* FIX / SF */
 		  float n = sf(y);
 		  float p = fix(x) / n;
@@ -281,16 +255,6 @@ ecl_floor2(cl_object x, cl_object y)
 		  v0 = ecl_floor2(ecl_times(x, y->ratio.den), y->ratio.num);
 		  v1 = ecl_make_ratio(VALUES(1), y->ratio.den);
 		  break;
-#ifdef ECL_SHORT_FLOAT
-		case t_shortfloat: {	/* BIG / SF */
-		  float n = ecl_short_float(y);
-		  float p = _ecl_big_to_double(x) / n;
-		  float q = floorf(p);
-		  v0 = float_to_integer(q);
-		  v1 = make_shortfloat((p - q)*n);
-		  break;
-		}
-#endif
 		case t_singlefloat: {	/* BIG / SF */
 		  float n = sf(y);
 		  float p = _ecl_big_to_double(x) / n;
@@ -333,16 +297,6 @@ ecl_floor2(cl_object x, cl_object y)
 		  v1 = ecl_divide(VALUES(1), x->ratio.den);
 		}
 		break;
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat: {		/* SF / ANY */
-		float n = ecl_to_double(y);
-		float p = sf(x)/n;
-		float q = floorf(p);
-		v0 = float_to_integer(q);
-		v1 = make_shortfloat(p*n - q*n);
-		break;
-	}
-#endif
 	case t_singlefloat: {		/* SF / ANY */
 		float n = ecl_to_double(y);
 		float p = sf(x)/n;
@@ -401,15 +355,6 @@ ecl_ceiling1(cl_object x)
 		v0 = ecl_ceiling2(x->ratio.num, x->ratio.den);
 		v1 = ecl_make_ratio(VALUES(1), x->ratio.den);
 		break;
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat: {
-		float d = ecl_short_float(x);
-		float y = ceilf(d);
-		v0 = float_to_integer(y);
-		v1 = make_shortfloat(d - y);
-		break;
-	}
-#endif
 	case t_singlefloat: {
 		float d = sf(x);
 		float y = ceilf(d);
@@ -479,16 +424,6 @@ ecl_ceiling2(cl_object x, cl_object y)
 		  v0 = ecl_ceiling2(ecl_times(x, y->ratio.den), y->ratio.num);
 		  v1 = ecl_make_ratio(VALUES(1), y->ratio.den);
 		  break;
-#ifdef ECL_SHORT_FLOAT
-		case t_shortfloat: {	/* FIX / SF */
-		  float n = ecl_short_float(y);
-		  float p = fix(x)/n;
-		  float q = ceilf(p);
-		  v0 = float_to_integer(q);
-		  v1 = ecl_make_singlefloat(p*n - q*n);
-		  break;
-		}
-#endif
 		case t_singlefloat: {	/* FIX / SF */
 		  float n = sf(y);
 		  float p = fix(x)/n;
@@ -535,16 +470,6 @@ ecl_ceiling2(cl_object x, cl_object y)
 		  v0 = ecl_ceiling2(ecl_times(x, y->ratio.den), y->ratio.num);
 		  v1 = ecl_make_ratio(VALUES(1), y->ratio.den);
 		  break;
-#ifdef ECL_SHORT_FLOAT
-		case t_shortfloat: {	/* BIG / SF */
-		  float n = ecl_short_float(y);
-		  float p = _ecl_big_to_double(x)/n;
-		  float q = ceilf(p);
-		  v0 = float_to_integer(q);
-		  v1 = make_shortfloat(p*n - q*n);
-		  break;
-		}
-#endif
 		case t_singlefloat: {	/* BIG / SF */
 		  float n = sf(y);
 		  float p = _ecl_big_to_double(x)/n;
@@ -587,16 +512,6 @@ ecl_ceiling2(cl_object x, cl_object y)
 		  v1 = ecl_divide(VALUES(1), x->ratio.den);
 		}
 		break;
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat: {		/* SF / ANY */
-		float n = ecl_to_double(y);
-		float p = sf(x)/n;
-		float q = ceilf(p);
-		v0 = float_to_integer(q);
-		v1 = make_shortfloat(p*n - q*n);
-		break;
-	}
-#endif
 	case t_singlefloat: {		/* SF / ANY */
 		float n = ecl_to_double(y);
 		float p = sf(x)/n;
@@ -653,15 +568,6 @@ ecl_truncate1(cl_object x)
 		v0 = ecl_truncate2(x->ratio.num, x->ratio.den);
 		v1 = ecl_make_ratio(VALUES(1), x->ratio.den);
 		break;
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat: {
-		float d = ecl_short_float(x);
-		float y = d > 0? floorf(d) : ceilf(d);
-		v0 = float_to_integer(y);
-		v1 = make_shortfloat(d - y);
-		break;
-	}
-#endif
 	case t_singlefloat: {
 		float d = sf(x);
 		float y = d > 0? floorf(d) : ceilf(d);
@@ -765,11 +671,6 @@ ecl_round1(cl_object x)
 		v0 = ecl_round2(x->ratio.num, x->ratio.den);
 		v1 = ecl_make_ratio(VALUES(1), x->ratio.den);
 		break;
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat:
-		f = ecl_short_float(x);
-		goto FLOAT;
-#endif
 	case t_singlefloat: {
 		float d = sf(x);
 		float q = round_double(d);
@@ -874,11 +775,6 @@ cl_decode_float(cl_object x)
 	float f;
 
 	switch (tx) {
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat:
-		f = ecl_short_float(x);
-		goto FLOAT;
-#endif
 	case t_singlefloat: {
 		f = sf(x);
 	FLOAT:
@@ -936,11 +832,6 @@ cl_scale_float(cl_object x, cl_object y)
 		FEwrong_type_nth_arg(@[scale-float],2,y,@[fixnum]);
 	}
 	switch (type_of(x)) {
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat:
-		x = make_shortfloat(ldexpf(ecl_short_float(x), k));
-		break;
-#endif
 	case t_singlefloat:
 		x = ecl_make_singlefloat(ldexpf(sf(x), k));
 		break;
@@ -975,10 +866,6 @@ cl_float_radix(cl_object x)
 		y = cl_float(2, MAKE_FIXNUM(1), x);
 	}
 	switch (type_of(x)) {
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat:
-		negativep = signbit(ecl_short_float(x)); break;
-#endif
 	case t_singlefloat:
 		negativep = signbit(sf(x)); break;
 	case t_doublefloat:
@@ -991,13 +878,6 @@ cl_float_radix(cl_object x)
                 FEwrong_type_nth_arg(@[float-sign],1,x,@[float]);
 	}
 	switch (type_of(y)) {
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat: {
-		float f = ecl_short_float(y);
-                if (signbit(f) != negativep) y = make_shortfloat(-f);
-		break;
-	}
-#endif
 	case t_singlefloat: {
 		float f = sf(y);
                 if (signbit(f) != negativep) y = ecl_make_singlefloat(-f);
@@ -1026,9 +906,6 @@ cl_float_digits(cl_object x)
 {
 	const cl_env_ptr the_env = ecl_process_env();
 	switch (type_of(x)) {
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat:
-#endif
 	case t_singlefloat:
 		x = MAKE_FIXNUM(FLT_MANT_DIG);
 		break;
@@ -1052,23 +929,6 @@ cl_float_precision(cl_object x)
 	const cl_env_ptr the_env = ecl_process_env();
 	int precision;
 	switch (type_of(x)) {
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat: {
-		float f = ecl_short_float(x);
-		if (f == 0.0) {
-			precision = 0;
-		} else {
-			int exp;
-			frexpf(f, &exp);
-			if (exp >= FLT_MIN_EXP) {
-				precision = FLT_MANT_DIG;
-			} else {
-				precision = FLT_MANT_DIG - (FLT_MIN_EXP - exp);
-			}
-		}
-		break;
-	}
-#endif
 	case t_singlefloat: {
 		float f = sf(x);
 		if (f == 0.0) {
@@ -1180,24 +1040,6 @@ cl_integer_decode_float(cl_object x)
 		}
 		break;
 	}
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat: {
-		float d = ecl_short_float(x);
-                if (signbit(d)) {
-                        s = -1;
-                        d = -d;
-                }
-		if (d == 0.0) {
-			e = 0;
-			x = MAKE_FIXNUM(0);
-		} else {
-                        d = frexpf(d, &e);
-			x = double_to_integer(ldexp(d, FLT_MANT_DIG));
-			e -= FLT_MANT_DIG;
-		}
-		break;
-	}
-#endif
 	default:
 		FEwrong_type_nth_arg(@[integer-decode-float],1,x,@[float]);
 	}
@@ -1217,9 +1059,6 @@ cl_realpart(cl_object x)
 	case t_fixnum:
 	case t_bignum:
 	case t_ratio:
-#ifdef ECL_SHORT_FLOAT
-	case t_longfloat:
-#endif
 	case t_singlefloat:
 	case t_doublefloat:
 #ifdef ECL_LONG_FLOAT
@@ -1244,14 +1083,6 @@ cl_imagpart(cl_object x)
 	case t_ratio:
 		x = MAKE_FIXNUM(0);
 		break;
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat:
-                if (signbit(ecl_short_float(x)))
-                        x = make_shortfloat(-0.0);
-                else
-                        x = make_shortfloat(0.0);
-		break;
-#endif
 	case t_singlefloat:
                 if (signbit(sf(x)))
                         x = cl_core.singlefloat_minus_zero;

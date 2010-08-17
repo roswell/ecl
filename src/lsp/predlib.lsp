@@ -467,9 +467,6 @@ Returns T if X belongs to TYPE; NIL otherwise."
     #+long-float
     (LONG-FLOAT
      (and (eq (type-of object) 'LONG-FLOAT) (in-interval-p object i)))
-    #+short-float
-    (SHORT-FLOAT
-     (and (eq (type-of object) 'SHORT-FLOAT) (in-interval-p object i)))
     (COMPLEX
      (and (complexp object)
           (or (null i)
@@ -1103,20 +1100,17 @@ if not possible."
 	tag))
   #+(or)
   (case real-type
-    ((SINGLE-FLOAT DOUBLE-FLOAT INTEGER RATIO #+long-float LONG-FLOAT
-      #+short-float SHORTF-FLOAT)
+    ((SINGLE-FLOAT DOUBLE-FLOAT INTEGER RATIO #+long-float LONG-FLOAT)
      (let ((tag (new-type-tag)))
        (push-type `(COMPLEX ,real-type) tag)
        tag))
     ((RATIONAL) (canonical-type '(OR (COMPLEX INTEGER) (COMPLEX RATIO))))
     ((FLOAT) (canonical-type '(OR (COMPLEX SINGLE-FLOAT) (COMPLEX DOUBLE-FLOAT)
-			       #+long-float (COMPLEX LONG-FLOAT)
-			       #+short-float (COMPLEX SHORT-FLOAT))))
+			       #+long-float (COMPLEX LONG-FLOAT))))
     ((* NIL REAL) (canonical-type
 		   '(OR (COMPLEX INTEGER) (COMPLEX RATIO)
 		        (COMPLEX SINGLE-FLOAT) (COMPLEX DOUBLE-FLOAT)
 		     #+long-float (COMPLEX LONG-FLOAT)
-		     #+short-float (COMPLEX SHORT-FLOAT)
 		     )))
     (otherwise (canonical-complex-type (upgraded-complex-part-type real-type)))))
 
@@ -1164,8 +1158,6 @@ if not possible."
 	       (FUNCTION (OR COMPILED-FUNCTION GENERIC-FUNCTION))
 
 	       (INTEGER (INTEGER * *))
-	       #+short-float
-	       (SHORT-FLOAT (SHORT-FLOAT * *))
 	       (SINGLE-FLOAT (SINGLE-FLOAT * *))
 	       (DOUBLE-FLOAT (DOUBLE-FLOAT * *))
 	       #+long-float
@@ -1174,10 +1166,8 @@ if not possible."
 
 	       (RATIONAL (OR INTEGER RATIO))
 	       (FLOAT (OR SINGLE-FLOAT DOUBLE-FLOAT
-                       #+long-float LONG-FLOAT
-                       #+short-float SHORT-FLOAT))
+                       #+long-float LONG-FLOAT))
 	       (REAL (OR INTEGER SINGLE-FLOAT DOUBLE-FLOAT
-		      #+short-float SHORT-FLOAT
 		      #+long-float LONG-FLOAT RATIO))
 	       (COMPLEX (COMPLEX REAL))
 
@@ -1318,14 +1308,11 @@ if not possible."
 	   (NOT (lognot (canonical-type (second type))))
 	   ((EQL MEMBER) (apply #'logior (mapcar #'register-member-type (rest type))))
 	   (SATISFIES (register-satisfies-type type))
-	   ((INTEGER SINGLE-FLOAT DOUBLE-FLOAT RATIO
-	     #+long-float LONG-FLOAT #+short-float SHORT-FLOAT)
+	   ((INTEGER SINGLE-FLOAT DOUBLE-FLOAT RATIO #+long-float LONG-FLOAT)
 	    (register-interval-type type))
 	   ((FLOAT)
 	    (canonical-type `(OR (SINGLE-FLOAT ,@(rest type))
 				 (DOUBLE-FLOAT ,@(rest type))
-				 #+short-float
-				 (SHORT-FLOAT ,@(rest type))
 				 #+long-float
 				 (LONG-FLOAT ,@(rest type)))))
 	   ((REAL)
@@ -1333,8 +1320,6 @@ if not possible."
 				 (RATIO ,@(rest type))
 				 (SINGLE-FLOAT ,@(rest type))
 				 (DOUBLE-FLOAT ,@(rest type))
-				 #+short-float
-				 (SHORT-FLOAT ,@(rest type))
 				 #+long-float
 				 (LONG-FLOAT ,@(rest type)))))
 	   ((RATIONAL)

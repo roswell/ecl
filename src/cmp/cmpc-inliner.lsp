@@ -105,8 +105,7 @@
     output))
 
 (defun to-fixnum-float-type (type)
-  (dolist (i '(FIXNUM DOUBLE-FLOAT SINGLE-FLOAT
-               #+short-float SHORT-FLOAT #+long-float LONG-FLOAT)
+  (dolist (i '(FIXNUM DOUBLE-FLOAT SINGLE-FLOAT #+long-float LONG-FLOAT)
            nil)
     (when (type>= i type)
       (return i))))
@@ -121,9 +120,6 @@
          'DOUBLE-FLOAT)
         ((or (eq t1 'SINGLE-FLOAT) (eq t2 'SINGLE-FLOAT))
          'SINGLE-FLOAT)
-        #+short-float
-        ((or (eq t1 'SHORT-FLOAT) (eq t2 'SHORT-FLOAT))
-         'SHORT-FLOAT)
         (T
          'FIXNUM)))
 

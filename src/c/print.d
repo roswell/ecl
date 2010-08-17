@@ -1108,24 +1108,11 @@ si_write_ugly_object(cl_object x, cl_object stream)
 		ecl_bds_unwind1(env);
 		break;
 	}
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat:
-		r = ecl_symbol_value(@'*read-default-float-format*');
-		write_double(ecl_short_float(x), (r == @'short-float')? 0 : 'f',
-                             FLT_SIG, stream, x);
-		break;
-	case t_singlefloat:
-		r = ecl_symbol_value(@'*read-default-float-format*');
-		write_double(sf(x), (r == @'single-float')? 0 : 's',
-                             FLT_SIG, stream, x);
-		break;
-#else
 	case t_singlefloat:
 		r = ecl_symbol_value(@'*read-default-float-format*');
 		write_double(sf(x), (r == @'single-float' || r == @'short-float')? 0 : 's',
                              FLT_SIG, stream, x);
 		break;
-#endif
 #ifdef ECL_LONG_FLOAT
 	case t_doublefloat:
 		r = ecl_symbol_value(@'*read-default-float-format*');

@@ -1064,20 +1064,12 @@ fmt_exponential_float(format_stack fmt, bool colon, bool atsign)
 		} else if (y == @'single-float') {
 			t = t_singlefloat;
 		} else {
-#ifdef ECL_SHORT_FLOAT
-			t = t_shortfloat;
-#else
 			t = t_singlefloat;
-#endif
 		}
 		if (type_of(x) == t)
 			exponentchar = 'E';
 		else if (type_of(x) == t_singlefloat)
 			exponentchar = 'F';
-#ifdef ECL_SHORT_FLOAT
-		else if (type_of(x) == t_shortfloat)
-			exponentchar = 'S';
-#endif
 #ifdef ECL_LONG_FLOAT
 		else if (type_of(x) == t_longfloat)
 			exponentchar = 'L';

@@ -281,9 +281,6 @@ cl_class_of(cl_object x)
 		index = ECL_BUILTIN_INTEGER; break;
 	case t_ratio:
 		index = ECL_BUILTIN_RATIO; break;
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat:
-#endif
 	case t_singlefloat:
 	case t_doublefloat:
 #ifdef ECL_LONG_FLOAT

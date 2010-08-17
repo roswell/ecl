@@ -1103,10 +1103,6 @@ extern ECL_API cl_object cl_rational(cl_object x);
 #define cl_rationalize cl_rational
 extern ECL_API double ecl_to_double(cl_object x);
 #define number_to_float(x) ((float)ecl_to_double(x))
-#ifdef ECL_SHORT_FLOAT
-extern ECL_API cl_object ecl_make_shortfloat(float f);
-extern ECL_API float ecl_short_float(cl_object o);
-#endif
 #ifdef ECL_LONG_FLOAT
 extern ECL_API long double ecl_to_long_double(cl_object x);
 extern ECL_API cl_object ecl_make_longfloat(long double f);

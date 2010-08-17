@@ -77,10 +77,6 @@ ecl_to_fixnum(cl_object x)
 /*	case t_character: return (cl_fixnum)CHAR_CODE(x); */
 	case t_ratio:
 		return (cl_fixnum)ecl_to_double(x);
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat:
-		return (cl_fixnum)ecl_short_float(x);
-#endif
 	case t_singlefloat:
 		return (cl_fixnum)sf(x);
 	case t_doublefloat:
@@ -103,10 +99,6 @@ ecl_to_unsigned_integer(cl_object x)
 		return fixnnint(x);
 	case t_ratio:
 		return (cl_index)ecl_to_double(x);
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat:
-		return (cl_index)ecl_short_float(x);
-#endif
 	case t_singlefloat:
 		return (cl_index)sf(x);
 	case t_doublefloat:
@@ -131,10 +123,6 @@ ecl_to_float(cl_object x)
 	case t_bignum:
 	case t_ratio:
 		return ecl_to_double(x);
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat:
-		return ecl_short_float(x);
-#endif
 	case t_singlefloat:
 		return sf(x);
 	case t_doublefloat:

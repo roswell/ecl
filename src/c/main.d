@@ -161,9 +161,6 @@ static const char *feature_names[] = {
 #ifdef ECL_LONG_FLOAT
 	"LONG-FLOAT",
 #endif
-#ifdef ECL_SHORT_FLOAT
-	"SHORT-FLOAT",
-#endif
 #ifdef ECL_RELATIVE_PACKAGE_NAMES
 	"RELATIVE-PACKAGE-NAMES",
 #endif

@@ -495,9 +495,6 @@ ecl_alloc_object(cl_type t)
 		return MAKE_FIXNUM(0); /* Immediate fixnum */
 	case t_character:
 		return CODE_CHAR(' '); /* Immediate character */
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat:
-#endif
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
 #endif

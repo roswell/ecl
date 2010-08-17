@@ -781,10 +781,7 @@
 
 (def-inline shift<< :always (fixnum fixnum) :fixnum "((#0) << (#1))")
 
-#-short-float
 (def-inline short-float-p :always (t) :bool "@0;ECL_SINGLE_FLOAT_P(#0)")
-#+short-float
-(def-inline short-float-p :always (t) :bool "type_of(#0) == t_short_float")
 
 (def-inline single-float-p :always (t) :bool "@0;ECL_SINGLE_FLOAT_P(#0)")
 

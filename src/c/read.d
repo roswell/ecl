@@ -562,9 +562,6 @@ ecl_parse_number(cl_object str, cl_index start, cl_index end,
 			exp_marker = ecl_current_read_default_float_format();
 			goto MAKE_FLOAT;
 		case 's':  case 'S':
-#ifdef ECL_SHORT_FLOAT
-			output = make_shortfloat(d);
-#endif
 		case 'f':  case 'F':
 			output = ecl_make_singlefloat(d);
 			break;

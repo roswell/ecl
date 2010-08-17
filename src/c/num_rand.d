@@ -186,12 +186,6 @@ rando(cl_object x, cl_object rs)
 	case t_bignum:
 		z = random_integer(x, rs->random.value);
 		break;
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat:
-		z = make_shortfloat(ecl_short_float(x) *
-                                    (float)generate_double(rs->random.value));
-		break;
-#endif
 	case t_singlefloat:
 		z = ecl_make_singlefloat(sf(x) *
                                          (float)generate_double(rs->random.value));

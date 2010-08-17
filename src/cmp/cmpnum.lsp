@@ -68,12 +68,10 @@
         (output nil)
         (default (if only-real 'REAL 'NUMBER))
         (types-list (if only-real
-                        '(FIXNUM INTEGER RATIONAL
-                          #+short-float SHORT-FLOAT SINGLE-FLOAT
+                        '(FIXNUM INTEGER RATIONAL SINGLE-FLOAT
                           DOUBLE-FLOAT #+long-float LONG-FLOAT FLOAT REAL
                           NUMBER)
-                        '(FIXNUM INTEGER RATIONAL
-                          #+short-float SHORT-FLOAT SINGLE-FLOAT
+                        '(FIXNUM INTEGER RATIONAL SINGLE-FLOAT
                           DOUBLE-FLOAT #+long-float LONG-FLOAT FLOAT REAL))))
     (dolist (i types-list
              (values (if (and t1-eq t2-eq output) output default)

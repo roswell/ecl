@@ -201,20 +201,18 @@
          ,@(when (policy-type-assertions env)
                  `((check-arrayp ,a)
                    (check-expected-rank ,a ,expected-rank)))
-	 ,@(loop with last-dim = nil
-	      for i from 0
+	 ,@(loop for i from 0
 	      for l in indices
 	      for index in indices
 	      for dim-var in dim-names
-	      when last-dim
+	      when (plusp i)
 	      collect `(setf %output-var
-			     (the ext:array-index (* %output-var ,last-dim)))
+			     (the ext:array-index (* %output-var ,dim-var)))
 	      collect `(let ((%ndx-var ,index))
 			 (declare (ext:array-index %ndx-var))
 			 ,(and check `(check-index-in-bounds ,a %ndx-var ,dim-var))
 			 (setf %output-var
-			       (the ext:array-index (+ %output-var %ndx-var))))
-	      do (setf last-dim dim-var))
+			       (the ext:array-index (+ %output-var %ndx-var)))))
          %output-var))))
 
 ;(trace c::expand-row-major-index c::expand-aset c::expand-aref)

@@ -54,12 +54,6 @@ _hash_eql(cl_hashkey h, cl_object x)
 	case t_ratio:
 		h = _hash_eql(h, x->ratio.num);
 		return _hash_eql(h, x->ratio.den);
-#ifdef ECL_SHORT_FLOAT
-	case t_shortfloat: {
-		float f = ecl_short_float(x);
-		return hash_string(h, (unsigned char*)&f, sizeof(f));
-	}
-#endif
 	case t_singlefloat:
 		return hash_string(h, (unsigned char*)&sf(x), sizeof(sf(x)));
 	case t_doublefloat:
@@ -127,12 +121,6 @@ _hash_equal(int depth, cl_hashkey h, cl_object x)
 	case t_random:
 		return _hash_equal(0, h, x->random.value);
 #ifdef ECL_SIGNED_ZERO
-# ifdef ECL_SHORT_FLOAT
-	case t_shortfloat: {
-		float f = ecl_short_float(x);
-		return hash_string(h, (unsigned char*)&f, sizeof(f));
-	}
-# endif
 	case t_singlefloat: {
 		float f = sf(x);
 		if (f == 0.0) f = 0.0;
@@ -198,16 +186,6 @@ _hash_equalp(int depth, cl_hashkey h, cl_object x)
 		return h;
 	case t_fixnum:
 		return hash_word(h, fix(x));
-#ifdef HAVE_SHORT_FLOAT
-	case t_shortfloat: {
-		/* FIXME! We should be more precise here! */
-		return hash_word(h, (cl_index)sf(x));
-		union { float f; cl_index w; } x;
-		x.w = 0;
-		x.f = ecl_short_float(x);
-		return hash_word(h, x.w);
-	}
-#endif
 	case t_singlefloat:
 		/* FIXME! We should be more precise here! */
 		return hash_word(h, (cl_index)sf(x));
