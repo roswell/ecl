@@ -160,7 +160,7 @@ _ecl_fix_times_fix(cl_fixnum x, cl_fixnum y)
         ECL_WITH_TEMP_BIGNUM(w,4);
         mpz_set_si(z->big.big_num, x);
         mpz_set_si(w->big.big_num, y);
-        mpz_mu(z->big.big_num, z->big.big_num, w->big.big_num);
+        mpz_mul(z->big.big_num, z->big.big_num, w->big.big_num);
 #endif
         {
                 cl_object y = big_normalize(z);
