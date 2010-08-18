@@ -27,7 +27,7 @@
 #define _ecl_big_set_index(x, f) mpz_set_ui((x)->big.big_num,(f))
 #else
 extern ECL_API _ecl_big_set_fixnum(cl_object x, cl_fixnum f);
-extern ECL_API _ecl_big_set_fixnum(cl_object x, cl_index f);
+extern ECL_API _ecl_big_set_index(cl_object x, cl_index f);
 #endif
 #define _ecl_big_init2(x,size)	mpz_init2((x)->big.big_num,(size)*GMP_LIMB_BITS)
 #define _ecl_big_clear(x)	mpz_clear((x)->big.big_num)
