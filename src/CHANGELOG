@@ -31,6 +31,8 @@ ECL 10.5.1:
      (translate-logical-pathname #P"SYS:FOO.FAS")
        => "where/ecl/lives/foo.fas"
 
+ - RENAME-FILE was not able to rename directories.
+
 * Visible changes:
 
  - "fasb" is now a valid FASL file type, accepted by ECL even in absence of

@@ -443,56 +443,32 @@ ecl_file_len(int f)
 	 *    or if it does not exist. Notice that the filename to be renamed
 	 *    is not the truename, because we might be renaming a symbolic link.
 	 */
-	old_filename = si_coerce_to_filename(oldn);
+	old_filename = cl_string_right_trim(ecl_list1(CODE_CHAR('/')),
+                                            si_coerce_to_filename(oldn));
 	old_truename = cl_truename(oldn);
 
 	/* 2) Create the new file name. */
 	newn = ecl_merge_pathnames(newn, oldn, @':newest');
 	new_filename = si_coerce_to_filename(newn);
 
-	ecl_disable_interrupts();
-	while (if_exists == @':error' || if_exists == Cnil) {
-#if defined(_MSC_VER) || defined(__MINGW32__)
-		error = SetErrorMode(0);
-		if (MoveFile((char*)old_filename->base_string.self,
-			     (char*)new_filename->base_string.self)) {
-			SetErrorMode(error);
-			goto SUCCESS;
-		}
-		SetErrorMode(error);
-		switch (GetLastError()) {
-		case ERROR_ALREADY_EXISTS:
-		case ERROR_FILE_EXISTS:
-			break;
-		default:
-			goto FAILURE_CLOBBER;
-		};
-#else
-		if (link((char*)old_filename->base_string.self,
-			 (char*)new_filename->base_string.self) == 0) {
-			(void)unlink((char*)old_filename->base_string.self);
-			goto SUCCESS;
-		}
-		if (errno != EEXIST && errno != ENOTEMPTY) {
-			goto FAILURE_CLOBBER;
-		}
-#endif
+	while (if_exists == @':error' || if_exists == Cnil)
+        {
+                if (cl_probe_file(new_filename) == Cnil) {
+                        if_exists = Ct;
+                        break;
+                }
 		/* if the file already exists */
-		if (if_exists != Cnil) {
-			ecl_enable_interrupts();
+		if (if_exists == @':error') {
 			if_exists = CEerror(@':supersede',
 					"When trying to rename ~S, ~S already exists", 2,
 					oldn, new_filename);
 			ecl_disable_interrupts();
 			if (if_exists == Ct) if_exists= @':error';
 		}
-
 		if (if_exists == Cnil) {
-			ecl_enable_interrupts();
 			@(return Cnil Cnil Cnil)
 		}
 	}
-	
 	if (if_exists == @':supersede' || if_exists == Ct) {
 #if defined(_MSC_VER) || defined(__MINGW32__)
 		error = SetErrorMode(0);
