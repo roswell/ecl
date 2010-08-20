@@ -1945,5 +1945,9 @@ cl_symbols[] = {
 {EXT_ "SSE-PACK-ELEMENT-TYPE","si_sse_pack_element_type"},
 #endif
 
+{EXT_ "UNIX-SIGNAL-RECEIVED",NULL},
+{EXT_ "UNIX-SIGNAL-RECEIVED-CODE",NULL},
+{KEY_ "CODE",NULL},
+
 /* Tag for end of list */
 {NULL,NULL}};

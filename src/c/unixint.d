@@ -367,7 +367,7 @@ handle_signal_now(cl_object signal_code)
 {
         switch (type_of(signal_code)) {
         case t_fixnum:
-                FEerror("Serious signal ~D caught.", 1, signal_code);
+                cl_error(3, @'ext::unix-signal-received', @':code', signal_code);
                 break;
         case t_symbol:
                 cl_error(1, signal_code);

@@ -515,6 +515,15 @@ or return to an outer frame, undoing all the function calls so far."
      (format stream "Memory limit reached. Please jump to an outer pointer, quit program and enlarge the
 memory limits before executing the program again."))))
 
+(define-condition ext:unix-signal-received ()
+  ((code :type fixnum
+         :initform 0
+         :initarg :signal-code
+         :accessor ext:unix-signal-received-code))
+  (:report (lambda (condition stream)
+             (format stream "Serious signal ~D caught."
+                     (ext:unix-signal-received-code condition)))))
+
 (define-condition type-error (error)
   ((datum :INITARG :DATUM :READER type-error-datum)
    (expected-type :INITARG :EXPECTED-TYPE :READER type-error-expected-type))
