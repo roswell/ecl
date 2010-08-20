@@ -460,16 +460,21 @@ ecl_file_len(int f)
 		/* if the file already exists */
 		if (if_exists == @':error') {
 			if_exists = CEerror(@':supersede',
-					"When trying to rename ~S, ~S already exists", 2,
-					oldn, new_filename);
-			ecl_disable_interrupts();
+					"When trying to rename ~S, ~S already exists",
+                                        2, oldn, new_filename);
 			if (if_exists == Ct) if_exists= @':error';
 		}
 		if (if_exists == Cnil) {
 			@(return Cnil Cnil Cnil)
 		}
 	}
-	if (if_exists == @':supersede' || if_exists == Ct) {
+	if (ecl_unlikely(if_exists != @':supersede' && if_exists != Ct)) {
+		/* invalid key */
+		FEerror("~S is an illegal IF-EXISTS option for RENAME-FILE.",
+                        1, if_exists);
+	}
+        {
+                ecl_disable_interrupts();
 #if defined(_MSC_VER) || defined(__MINGW32__)
 		error = SetErrorMode(0);
 		if (MoveFile((char*)old_filename->base_string.self,
@@ -516,10 +521,6 @@ ecl_file_len(int f)
 			goto SUCCESS;
 		}
 #endif
-	} else {
-		/* invalid key */
-		ecl_enable_interrupts();
-		FEerror("~S is an illegal IF-EXISTS option for RENAME-FILE.", 1, if_exists);
 	}
 FAILURE_CLOBBER:
 	ecl_enable_interrupts();
