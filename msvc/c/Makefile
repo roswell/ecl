@@ -18,6 +18,12 @@ ECL_UNICODE_FLAG=1
 ECL_UNICODE_FLAG=0
 !endif
 
+!if "$(ECL_SSE)" != ""
+ECL_SSE_FLAG=1
+!else
+ECL_SSE_FLAG=0
+!endif
+
 # Programs used by "make":
 #
 TRUE_CC = cl
@@ -107,6 +113,7 @@ $(DPP): $(srcdir)/dpp.c $(srcdir)/symbols_list2.h ../ecl/config.h
 		"@ECL_VERSION_NUMBER@" "$(ECL_VERSION_NUMBER)" \
 		"@ECL_THREADS@" "$(ECL_THREADS_FLAG)" \
 		"@ECL_UNICODE@" "$(ECL_UNICODE_FLAG)" \
+		"@ECL_SSE@" "$(ECL_SSE_FLAG)" \
 	        < ..\ecl\config.h.msvc6 > $@
 
 #

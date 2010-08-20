@@ -254,7 +254,7 @@ typedef unsigned @CL_FIXNUM_TYPE@ cl_hashkey;
 #endif
 
 #if defined(__SSE2__) || (defined(_M_IX86_FP) && _M_IX86_FP >= 2)
-#define ECL_SSE2
+#undef ECL_SSE2
 #endif
 
 /* -CUT-: Everything below this mark will not be installed		*/

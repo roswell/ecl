@@ -223,6 +223,14 @@ typedef unsigned int uint32_t;
 #define ecl_unlikely(form) (form)
 #define ecl_attr_noreturn
 
+#if defined(__SSE2__) || (defined(_M_IX86_FP) && _M_IX86_FP >= 2)
+#define ECL_SSE2 @ECL_SSE2@
+#if !ECL_SSE2
+#undef ECL_SSE2
+#endif
+#endif
+
+
 /* -CUT-: Everything below this mark will not be installed		*/
 /* -------------------------------------------------------------------- *
  *	BUILD OPTIONS WHICH NEED NOT BE EXPORTED			*

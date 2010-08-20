@@ -35,7 +35,10 @@ ECL_THREADS   = 1
 ECL_UNICODE   =
 
 # Set it to non-empty to enable Win32 debug support
-#ECL_DEBUG   = 1
+#ECL_DEBUG = 1
+
+# Set it to non-empty to support SSE2 intrinsics
+ECL_SSE =
 
 # Add the extensions to include in the build process. Comment any
 # of the following lines to remove a feature from the build process
@@ -75,18 +78,22 @@ MKNSI   = makensis.exe
 
 # ==================== Flags ====================
 
+!if "$(ECL_SSE)" != ""
+CFLAGS_SSE=/arch:SSE2
+!endif
+
 #
 # Configuration-specific (Debug/Release) options
 #
 !if "$(ECL_DEBUG)" != ""
 CFLAGS_OPTIMIZE = /Od
-CFLAGS_CONFIG = /Zi /D_DEBUG /MDd $(CFLAGS_OPTIMIZE)
+CFLAGS_CONFIG = /Zi /D_DEBUG /MDd $(CFLAGS_OPTIMIZE) $(CFLAGS_SSE)
 LDFLAGS_CONFIG = /debug /nodefaultlib:msvcrt.lib
 SHARED_LDFLAGS = /LDd
 GCFLAGS =
 !else
 CFLAGS_OPTIMIZE = /O2
-CFLAGS_CONFIG = /DNDEBUG /MD $(CFLAGS_OPTIMIZE)
+CFLAGS_CONFIG = /DNDEBUG /MD $(CFLAGS_OPTIMIZE) $(CFLAGS_SSE)
 LDFLAGS_CONFIG = /nodefaultlib:msvcrtd.lib
 SHARED_LDFLAGS = /LD
 GCFLAGS = nodebug=1
@@ -312,7 +319,7 @@ eclmin.lib: eclgmp.lib eclgc.lib lsp/config.lsp
 	cd c
 	$(MAKE) ECL_VERSION_NUMBER=$(ECL_VERSION_NUMBER) \
 	        ECL_THREADS=$(ECL_THREADS) ECL_UNICODE=$(ECL_UNICODE) \
-		"ECL_CFLAGS=$(CFLAGS) -DGC_BUILD"
+		ECL_SSE=$(ECL_SSE) "ECL_CFLAGS=$(CFLAGS) -DGC_BUILD"
 	cd ..
 eclgc.lib:
 	cd gc

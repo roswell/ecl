@@ -771,6 +771,39 @@ AC_SUBST(ECL_FPE_CODE)
 ])
 
 dnl ----------------------------------------------------------------------
+dnl Decide whether ECL should export SSE intrinsics
+dnl
+AC_DEFUN([ECL_SSE],[
+if test "x$with_sse" = xyes; then
+ AC_MSG_CHECKING([for SSE intrinsics])
+ AC_TRY_LINK([
+#include <xmmintrin.h>
+#include <emmintrin.h>
+],[__m128 value;
+_mm_getcsr();],[sse_included=yes],[sse_included=no])
+ if test "$sse_included" = "no"; then
+  OLD_CFLAGS="$CFLAGS"
+  CFLAGS="$CFLAGS -msse2"
+  AC_TRY_LINK([
+#include <xmmintrin.h>
+#include <emmintrin.h>
+],[__m128 value;
+_mm_getcsr();],[sse_included=yes],[sse_included=no])
+  if test "$sse_included" = "no"; then
+   CFLAGS="$OLD_CFLAGS"
+   with_sse=no
+  fi
+ fi
+ if test "x$with_sse" = xyes; then
+  AC_DEFINE(ECL_SSE2)
+  AC_MSG_RESULT([yes])
+ else
+  AC_MSG_RESULT([no])
+ fi
+fi
+])
+
+dnl ----------------------------------------------------------------------
 dnl Check whether we have unnamed POSIX semaphores available
 AC_DEFUN([ECL_POSIX_SEMAPHORES],[
 AC_MSG_CHECKING(working sem_init())
