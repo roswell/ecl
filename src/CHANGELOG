@@ -94,6 +94,8 @@ ECL 10.5.1:
  - Function proclamations and declarations are also used to deduce the type
    of their arguments.
 
+ - (EXPT 2 -2.0d0) is now computed in double precision.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

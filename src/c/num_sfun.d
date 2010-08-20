@@ -17,7 +17,8 @@
 
 #define ECL_INCLUDE_MATH_H
 #include <ecl/ecl.h>
-#include "ecl/internal.h"
+#include <ecl/internal.h>
+#include <ecl/ecl-inl.h>
 
 #ifndef HAVE_LOG1P
 double
@@ -160,49 +161,70 @@ cl_expt(cl_object x, cl_object y)
         @(return ecl_expt(x, y));
 }
 
+ecl_def_ct_single_float(singlefloat_one,1,static,const);
+ecl_def_ct_double_float(doublefloat_one,1,static,const);
+#ifdef ECL_LONG_FLOAT
+ecl_def_ct_long_float(longfloat_one,1,static,const);
+#endif
+
+static cl_object
+expt_zero(cl_object x, cl_object y)
+{
+	cl_type ty, tx;
+	cl_object z;
+        ty = type_of(y);
+        tx = type_of(x);
+        if (ecl_unlikely(!ECL_NUMBER_TYPE_P(tx))) {
+                FEwrong_type_nth_arg(@[expt], 1, x, @[number]);
+	}
+        /* INV: The most specific numeric types come first. */
+        switch ((ty > tx)? ty : tx) {
+        case t_fixnum:
+        case t_bignum:
+        case t_ratio:
+                return MAKE_FIXNUM(1);
+        case t_singlefloat:
+                return singlefloat_one;
+        case t_doublefloat:
+                return doublefloat_one;
+#ifdef ECL_LONG_FLOAT
+        case t_longfloat:
+                return longfloat_one;
+#endif
+        case t_complex:
+                z = expt_zero((tx == t_complex)? x->complex.real : x,
+                              (ty == t_complex)? y->complex.real : y);
+                return ecl_make_complex(z, MAKE_FIXNUM(0));
+        default:
+                /* We will never reach this */
+                (void)0;
+        }
+}
+
 cl_object
 ecl_expt(cl_object x, cl_object y)
 {
 	cl_type ty, tx;
 	cl_object z;
-        ty = type_of(y);
-        if (ecl_unlikely(!ECL_NUMBER_TYPE_P(ty))) {
-                FEwrong_type_nth_arg(@[expt], 2, y, @[number]);
+	if (ecl_unlikely(ecl_zerop(y))) {
+                return expt_zero(x, y);
 	}
+        ty = type_of(y);
         tx = type_of(x);
         if (ecl_unlikely(!ECL_NUMBER_TYPE_P(tx))) {
-                FEwrong_type_nth_arg(@[expt], 2, x, @[number]);
+                FEwrong_type_nth_arg(@[expt], 1, x, @[number]);
 	}
-	if (ecl_zerop(y)) {
-		/* INV: The most specific numeric types come first. */
-		switch ((ty > tx)? ty : tx) {
-		case t_fixnum:
-		case t_bignum:
-		case t_ratio:
-			z = MAKE_FIXNUM(1); break;
-		case t_singlefloat:
-			z = ecl_make_singlefloat(1.0); break;
-		case t_doublefloat:
-			z = ecl_make_doublefloat(1.0); break;
-#ifdef ECL_LONG_FLOAT
-		case t_longfloat:
-			z = ecl_make_longfloat(1.0); break;
-#endif
-		case t_complex:
-			z = ecl_expt((tx == t_complex)? x->complex.real : x,
-                                     (ty == t_complex)? y->complex.real : y);
-			z = ecl_make_complex(z, MAKE_FIXNUM(0));
-			break;
-		default:
-			/* We will never reach this */
-			(void)0;
-		}
-	} else if (ecl_zerop(x)) {
+        if (ecl_zerop(x)) {
 		z = ecl_times(x, y);
 		if (!ecl_plusp(ty==t_complex?y->complex.real:y))
 			z = ecl_divide(MAKE_FIXNUM(1), z);
 	} else if (ty != t_fixnum && ty != t_bignum) {
-		z = ecl_log1(x);
+                /* The following could be just
+                   z = ecl_log1(x);
+                   however, Maxima expects EXPT to have double accuracy
+                   when the first argument is integer and the second
+                   is double-float */
+		z = ecl_log1(ecl_times(x, expt_zero(x, y)));
 		z = ecl_times(z, y);
 		z = ecl_exp(z);
 	} else if (ecl_minusp(y)) {
