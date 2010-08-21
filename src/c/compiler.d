@@ -2905,8 +2905,8 @@ init_compiler()
 	cl_object dispatch_table =
 		cl_core.compiler_dispatch =
 		cl__make_hash_table(@'eq', MAKE_FIXNUM(128), /* size */
-				    ecl_make_singlefloat(1.5f), /* rehash-size */
-				    ecl_make_singlefloat(0.5f), /* rehash-threshold */
+                                    cl_core.rehash_size,
+                                    cl_core.rehash_threshold,
 				    Cnil); /* thread-safe */
 	int i;
 	for (i = 0; database[i].symbol; i++) {

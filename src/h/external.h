@@ -245,6 +245,9 @@ struct cl_core_struct {
 	cl_object slash;
 
 	cl_object compiler_dispatch;
+
+        cl_object rehash_size;
+        cl_object rehash_threshold;
 };
 
 extern ECL_API struct cl_core_struct cl_core;

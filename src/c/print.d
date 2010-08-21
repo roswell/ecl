@@ -1729,8 +1729,8 @@ si_write_object_recursive(cl_object x, cl_object stream)
 			cl_object hash =
 				cl__make_hash_table(@'eq',
 						    MAKE_FIXNUM(1024),
-						    ecl_make_singlefloat(1.5f),	
-						    ecl_make_singlefloat(0.75f), Cnil);
+                                                    cl_core.rehash_size,
+                                                    cl_core.rehash_threshold, Cnil);
 			ecl_bds_bind(env, @'si::*circle-counter*', Ct);
 			ecl_bds_bind(env, @'si::*circle-stack*', hash);
 			si_write_object(x, cl_core.null_stream);

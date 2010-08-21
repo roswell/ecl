@@ -41,6 +41,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ecl/internal.h>
+#include <ecl/ecl-inl.h>
 extern int GC_dont_gc;
 
 /******************************* EXPORTS ******************************/
@@ -397,6 +398,9 @@ read_char_database()
 #define read_char_database() (void)0
 #endif
 
+ecl_def_ct_single_float(default_rehash_size,1.5f,static,const);
+ecl_def_ct_single_float(default_rehash_threshold,0.75f,static,const);
+
 int
 cl_boot(int argc, char **argv)
 {
@@ -476,6 +480,9 @@ cl_boot(int argc, char **argv)
 	cl_core.path_max = MAXPATHLEN;
 #endif
 	cl_core.slash = make_constant_base_string("/");
+
+	cl_core.rehash_size = default_rehash_size;
+	cl_core.rehash_threshold = default_rehash_threshold;
 
 	cl_core.packages = Cnil;
 	cl_core.packages_to_be_created = OBJNULL;
@@ -578,8 +585,8 @@ cl_boot(int argc, char **argv)
 	 */
 	cl_core.char_names = aux =
 	    cl__make_hash_table(@'equalp', MAKE_FIXNUM(128), /* size */
-				ecl_make_singlefloat(1.5f), /* rehash-size */
-				ecl_make_singlefloat(0.5f), /* rehash-threshold */
+				cl_core.rehash_size,
+                                cl_core.rehash_threshold,
 				Cnil); /* thread-safe */
 	for (i = 0; char_names[i]; i++) {
 		cl_object name = make_constant_base_string(char_names[i]);
@@ -631,8 +638,8 @@ cl_boot(int argc, char **argv)
 
 	cl_core.system_properties =
 	    cl__make_hash_table(@'equal', MAKE_FIXNUM(1024), /* size */
-				ecl_make_singlefloat(1.5f), /* rehash-size */
-				ecl_make_singlefloat(0.75f), /* rehash-threshold */
+				cl_core.rehash_size,
+                                cl_core.rehash_threshold,
 				Ct); /* thread-safe */
 
 	cl_core.gensym_prefix = make_constant_base_string("G");
@@ -691,8 +698,8 @@ cl_boot(int argc, char **argv)
 #ifdef CLOS
 	ECL_SET(@'si::*class-name-hash-table*',
 		cl__make_hash_table(@'eq', MAKE_FIXNUM(1024), /* size */
-				    ecl_make_singlefloat(1.5f), /* rehash-size */
-				    ecl_make_singlefloat(0.75f), /* rehash-threshold */
+                                    cl_core.rehash_size,
+                                    cl_core.rehash_threshold,
 				    Ct)); /* thread safe */
 #endif
 

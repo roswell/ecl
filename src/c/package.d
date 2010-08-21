@@ -115,8 +115,8 @@ make_package_hashtable()
 {
 	return cl__make_hash_table(@'package', /* package hash table */
 				   MAKE_FIXNUM(128), /* initial size */
-				   ecl_make_singlefloat(1.5f), /* rehash size */
-				   ecl_make_singlefloat(0.75f), /* rehash threshold */
+                                   cl_core.rehash_size,
+                                   cl_core.rehash_threshold,
 				   Cnil); /* lockable */
 }
 

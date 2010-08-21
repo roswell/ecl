@@ -487,11 +487,10 @@ ecl_extend_hashtable(cl_object hashtable)
         return new;
 }
 
-
 @(defun make_hash_table (&key (test @'eql')
 			      (size MAKE_FIXNUM(1024))
-			      (rehash_size ecl_make_singlefloat(1.5))
-			      (rehash_threshold ecl_make_singlefloat(0.7))
+                              (rehash_size cl_core.rehash_size)
+			      (rehash_threshold cl_core.rehash_threshold)
 			      (lockable Cnil))
 @
 	@(return cl__make_hash_table(test, size, rehash_size, rehash_threshold,
