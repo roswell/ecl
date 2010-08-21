@@ -54,7 +54,6 @@ cl_env_ptr cl_env_p = NULL;
 #elif defined(WITH___THREAD)
 __thread cl_env_ptr cl_env_p = NULL;
 #endif
-struct cl_core_struct cl_core;
 const char *ecl_self;
 
 /************************ GLOBAL INITIALIZATION ***********************/
@@ -349,6 +348,117 @@ ecl_def_ct_base_string(str_lisp,"lisp",4,static,const);
 ecl_def_ct_base_string(str_NIL,"NIL",3,static,const);
 ecl_def_ct_base_string(str_slash,"/",1,static,const);
 
+ecl_def_ct_single_float(flt_zero,0,static,const);
+ecl_def_ct_single_float(flt_zero_neg,-0.0,static,const);
+ecl_def_ct_double_float(dbl_zero,0,static,const);
+ecl_def_ct_double_float(dbl_zero_neg,-0.0,static,const);
+#ifdef ECL_LONG_FLOAT
+ecl_def_ct_long_float(ldbl_zero,0,static,const);
+ecl_def_ct_long_float(ldbl_zero_neg,-0.0l,static,const);
+#endif
+ecl_def_ct_ratio(plus_half,MAKE_FIXNUM(1),MAKE_FIXNUM(2),static,const);
+ecl_def_ct_ratio(minus_half,MAKE_FIXNUM(-1),MAKE_FIXNUM(2),static,const);
+ecl_def_ct_single_float(flt_one,1,static,const);
+ecl_def_ct_single_float(flt_one_neg,-1,static,const);
+ecl_def_ct_single_float(flt_two,2,static,const);
+ecl_def_ct_complex(flt_imag_unit,&flt_zerodata,&flt_onedata,static,const);
+ecl_def_ct_complex(flt_imag_unit_neg,&flt_zerodata,&flt_one_negdata,static,const);
+ecl_def_ct_complex(flt_imag_two,&flt_zerodata,&flt_twodata,static,const);
+
+struct cl_core_struct cl_core = {
+	Cnil, /* packages */
+	Cnil, /* lisp_package */
+	Cnil, /* user_package */
+	Cnil, /* keyword_package */
+	Cnil, /* system_package */
+#ifdef CLOS
+	Cnil, /* clos_package */
+# ifdef ECL_CLOS_STREAMS
+	Cnil, /* gray_package */
+# endif
+#endif
+	Cnil, /* mp_package */
+	OBJNULL, /* packages_to_be_created */
+
+	Cnil, /* pathname_translations */
+        Cnil, /* library_pathname */
+
+	Cnil, /* terminal_io */
+	Cnil, /* null_stream */
+	Cnil, /* standard_input */
+	Cnil, /* standard_output */
+	Cnil, /* error_output */
+	Cnil, /* standard_readtable */
+	Cnil, /* dispatch_reader */
+	Cnil, /* default_dispatch_macro */
+
+	Cnil, /* char_names */
+	(cl_object)&str_emptydata, /* null_string */
+
+	(cl_object)&plus_halfdata, /* plus_half */
+	(cl_object)&minus_halfdata, /* minus_half */
+	(cl_object)&flt_imag_unitdata, /* imag_unit */
+	(cl_object)&flt_imag_unit_negdata, /* minus_imag_unit */
+	(cl_object)&flt_imag_twodata, /* imag_two */
+	(cl_object)&flt_zerodata, /* singlefloat_zero */
+	(cl_object)&dbl_zerodata, /* doublefloat_zero */
+	(cl_object)&flt_zero_negdata, /* singlefloat_minus_zero */
+	(cl_object)&dbl_zero_negdata, /* doublefloat_minus_zero */
+#ifdef ECL_LONG_FLOAT
+	(cl_object)&ldbl_zerodata, /* longfloat_zero */
+	(cl_object)&ldbl_zero_negdata, /* longfloat_minus_zero */
+#endif
+
+	(cl_object)&str_Gdata, /* gensym_prefix */
+	(cl_object)&str_Tdata, /* gentemp_prefix */
+	MAKE_FIXNUM(0), /* gentemp_counter */
+
+	Cnil, /* Jan1st1970UT */
+
+	Cnil, /* system_properties */
+
+#ifdef ECL_THREADS
+	Cnil, /* processes */
+	Cnil, /* global_lock */
+#endif
+	/* LIBRARIES is an adjustable vector of objects. It behaves as
+	   a vector of weak pointers thanks to the magic in
+	   gbc.d/alloc_2.d */
+	Cnil, /* libraries */
+
+	0, /* max_heap_size */
+	Cnil, /* bytes_consed */
+	Cnil, /* gc_counter */
+	0, /* gc_stats */
+	0, /* path_max */
+#ifdef GBC_BOEHM
+        NULL, /* safety_region */
+#endif
+#ifdef ECL_THREADS
+        Cnil, /* signal_queue_lock */
+#endif
+	Cnil, /* signal_queue */
+
+#ifdef ECL_UNICODE
+	Cnil, /* unicode_database */
+	NULL, /* ucd_misc */
+	NULL, /* ucd_pages */
+	NULL, /* ucd_data */
+#endif
+	NULL, /* default_sigmask */
+
+#ifdef ECL_THREADS
+        0, /* last_var_index */
+        Cnil, /* reused_indices */
+#endif
+	(cl_object)&str_slashdata, /* slash */
+
+	Cnil, /* compiler_dispatch */
+
+        (cl_object)&default_rehash_sizedata, /* rehash_size */
+        (cl_object)&default_rehash_thresholddata /* rehash_threshold */
+};
+
 int
 cl_boot(int argc, char **argv)
 {
@@ -376,11 +486,6 @@ cl_boot(int argc, char **argv)
 	ARGC = argc;
 	ARGV = argv;
 	ecl_self = argv[0];
-
-#ifdef ECL_THREADS
-        cl_core.processes = Cnil;
-#endif
-        cl_core.default_sigmask = 0;
 
 	init_unixint(0);
 	init_alloc();
@@ -427,13 +532,6 @@ cl_boot(int argc, char **argv)
 #else
 	cl_core.path_max = MAXPATHLEN;
 #endif
-	cl_core.slash = str_slash;
-
-	cl_core.rehash_size = default_rehash_size;
-	cl_core.rehash_threshold = default_rehash_threshold;
-
-	cl_core.packages = Cnil;
-	cl_core.packages_to_be_created = OBJNULL;
 
 	cl_core.lisp_package =
 		ecl_make_package(str_common_lisp,
@@ -493,8 +591,6 @@ cl_boot(int argc, char **argv)
         /*
          * Initialize default pathnames
          */
-	cl_core.pathname_translations = Cnil;
-        cl_core.library_pathname = Cnil;
 #if 1
 	ECL_SET(@'*default-pathname-defaults*', si_getcwd(0));
 #else
@@ -503,8 +599,6 @@ cl_boot(int argc, char **argv)
 #endif
 
 #ifdef ECL_THREADS
-        cl_core.last_var_index = 0;
-        cl_core.reused_indices = Cnil;
 	env->bindings_array = si_make_vector(Ct, MAKE_FIXNUM(256),
                                             Cnil, Cnil, Cnil, Cnil);
         si_fill_array_with_elt(env->bindings_array, OBJNULL, MAKE_FIXNUM(0), Cnil);
@@ -554,28 +648,11 @@ cl_boot(int argc, char **argv)
 	/*
 	 * Initialize constants (strings, numbers and time).
 	 */
-
-	/* LIBRARIES is an adjustable vector of objects. It behaves as
-	   a vector of weak pointers thanks to the magic in
-	   gbc.d/alloc_2.d */
-	cl_core.libraries = Cnil;
-	cl_core.bytes_consed = Cnil;
-	cl_core.gc_counter = Cnil;
-	cl_core.gc_stats = FALSE;
-
-	cl_core.null_string = str_empty;
-
-	cl_core.null_stream = Cnil; /* Filled in file.d */
-
 	cl_core.system_properties =
 	    cl__make_hash_table(@'equal', MAKE_FIXNUM(1024), /* size */
 				cl_core.rehash_size,
                                 cl_core.rehash_threshold,
 				Ct); /* thread-safe */
-
-	cl_core.gensym_prefix = str_G;
-	cl_core.gentemp_prefix = str_T;
-	cl_core.gentemp_counter = MAKE_FIXNUM(0);
 
 	init_number();
 

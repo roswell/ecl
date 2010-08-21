@@ -937,33 +937,17 @@ ecl_def_ct_single_float(flt_max,FLT_MAX,static,const);
 ecl_def_ct_single_float(flt_max_neg,-FLT_MAX,static,const);
 ecl_def_ct_single_float(flt_min,FLT_MIN,static,const);
 ecl_def_ct_single_float(flt_min_neg,-FLT_MIN,static,const);
-ecl_def_ct_single_float(flt_zero,0,static,const);
-ecl_def_ct_single_float(flt_zero_neg,-0.0,static,const);
-ecl_def_ct_single_float(flt_one,1,static,const);
-ecl_def_ct_single_float(flt_one_neg,-1,static,const);
-ecl_def_ct_single_float(flt_two,2,static,const);
-
 ecl_def_ct_double_float(dbl_max,DBL_MAX,static,const);
 ecl_def_ct_double_float(dbl_max_neg,-DBL_MAX,static,const);
 ecl_def_ct_double_float(dbl_min,DBL_MIN,static,const);
 ecl_def_ct_double_float(dbl_min_neg,-DBL_MIN,static,const);
-ecl_def_ct_double_float(dbl_zero,0,static,const);
-ecl_def_ct_double_float(dbl_zero_neg,-0.0,static,const);
 
 #ifdef ECL_LONG_FLOAT
 ecl_def_ct_long_float(ldbl_max,LDBL_MAX,static,const);
 ecl_def_ct_long_float(ldbl_max_neg,-LDBL_MAX,static,const);
 ecl_def_ct_long_float(ldbl_min,LDBL_MIN,static,const);
 ecl_def_ct_long_float(ldbl_min_neg,-LDBL_MIN,static,const);
-ecl_def_ct_long_float(ldbl_zero,0,static,const);
-ecl_def_ct_long_float(ldbl_zero_neg,-0.0l,static,const);
 #endif
-
-ecl_def_ct_ratio(plus_half,MAKE_FIXNUM(1),MAKE_FIXNUM(2),static,const);
-ecl_def_ct_ratio(minus_half,MAKE_FIXNUM(-1),MAKE_FIXNUM(2),static,const);
-ecl_def_ct_complex(flt_imag_unit,&flt_zerodata,&flt_onedata,static,const);
-ecl_def_ct_complex(flt_imag_unit_neg,&flt_zerodata,&flt_one_negdata,static,const);
-ecl_def_ct_complex(flt_imag_two,&flt_zerodata,&flt_twodata,static,const);
 
 #ifdef ECL_LONG_FLOAT
 ecl_def_ct_long_float(float_pi,ECL_PI_L,static,const);
@@ -1027,30 +1011,6 @@ init_number(void)
 #endif
 	ECL_SET(@'LEAST-NEGATIVE-LONG-FLOAT', num);
 	ECL_SET(@'LEAST-NEGATIVE-NORMALIZED-LONG-FLOAT', num);
-
- 	cl_core.singlefloat_zero = flt_zero;
- 	cl_core.doublefloat_zero = dbl_zero;
-#ifdef ECL_LONG_FLOAT
- 	cl_core.longfloat_zero = ldbl_zero;
-#endif
-#ifdef ECL_SIGNED_ZERO
- 	cl_core.singlefloat_minus_zero = flt_zero_neg;
- 	cl_core.doublefloat_minus_zero = dbl_zero_neg;
-# ifdef ECL_LONG_FLOAT
- 	cl_core.longfloat_minus_zero = ldbl_zero_neg;
-# endif
-#else
-        cl_core.singlefloat_minus_zero = cl_core.singlefloat_zero;
-        cl_core.doublefloat_minus_zero = cl_core.doublefloat_zero;
-# ifdef ECL_LONG_FLOAT
-        cl_core.longfloat_minus_zero = cl_core.longfloat_zero;
-# endif
-#endif
-	cl_core.plus_half = plus_half; /* ecl_make_ratio(MAKE_FIXNUM(1), MAKE_FIXNUM(2)); */
-	cl_core.minus_half = minus_half; /* ecl_make_ratio(MAKE_FIXNUM(-1), MAKE_FIXNUM(2)); */
-	cl_core.imag_unit = flt_imag_unit; /* ecl_make_complex(flt_zero, flt_one); */
-	cl_core.minus_imag_unit = flt_imag_unit_neg; /* ecl_make_complex(flt_zero, flt_one_neg); */
-	cl_core.imag_two = flt_imag_two; /* ecl_make_complex(flt_zero, flt_two);*/
 
 	ECL_SET(@'pi', float_pi);
         ECL_SET(@'*random-state*', ecl_make_random_state(Ct));
