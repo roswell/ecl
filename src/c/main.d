@@ -44,7 +44,7 @@
 #include <ecl/ecl-inl.h>
 extern int GC_dont_gc;
 
-#include "features.h"
+#include "ecl_features.h"
 #include "iso_latin_names.h"
 
 /******************************* EXPORTS ******************************/
