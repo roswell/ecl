@@ -22,14 +22,12 @@
     var))
 
 (defun var-referenced-in-form-list (var form-list)
-  (and (var-read-nodes var)
-       (loop for f in form-list
-	  thereis (var-referenced-in-form var f))))
+  (loop for f in form-list
+     thereis (var-referenced-in-form var f)))
 
 (defun var-changed-in-form-list (var form-list)
-  (and (var-set-nodes var)
-       (loop for f in form-list
-	  thereis (var-changed-in-form var f))))
+  (loop for f in form-list
+     thereis (var-changed-in-form var f)))
 
 ;;; FIXME! VAR-REFERENCED-IN-FORM and VAR-CHANGED-IN-FORM are too
 ;;; pessimistic. One should check whether the functions reading/setting the
@@ -48,8 +46,8 @@
 
 (defun var-changed-in-form (var form)
   (declare (type var var))
-  (let ((kind (var-kind var)))
-    (or (find-form-in-node-list form (var-set-nodes var))
+  (or (find-form-in-node-list form (var-set-nodes var))
+      (let ((kind (var-kind var)))
 	(if (or (eq kind 'SPECIAL) (eq kind 'GLOBAL))
 	    (c1form-sp-change form)
 	    (var-functions-setting var)))))
