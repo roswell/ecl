@@ -400,6 +400,25 @@ read_char_database()
 
 ecl_def_ct_single_float(default_rehash_size,1.5f,static,const);
 ecl_def_ct_single_float(default_rehash_threshold,0.75f,static,const);
+ecl_def_ct_base_string(str_common_lisp,"COMMON-LISP",11,static,const);
+ecl_def_ct_base_string(str_common_lisp_user,"COMMON-LISP-USER",16,static,const);
+ecl_def_ct_base_string(str_cl,"CL",2,static,const);
+ecl_def_ct_base_string(str_cl_user,"CL-USER",7,static,const);
+ecl_def_ct_base_string(str_lisp,"LISP",4,static,const);
+ecl_def_ct_base_string(str_user,"USER",4,static,const);
+ecl_def_ct_base_string(str_keyword,"KEYWORD",7,static,const);
+ecl_def_ct_base_string(str_si,"SI",2,static,const);
+ecl_def_ct_base_string(str_sys,"SYS",3,static,const);
+ecl_def_ct_base_string(str_system,"SYSTEM",6,static,const);
+ecl_def_ct_base_string(str_ext,"EXT",3,static,const);
+#ifdef CLOS
+ecl_def_ct_base_string(str_clos,"CLOS",4,static,const);
+#endif
+ecl_def_ct_base_string(str_mp,"MP",2,static,const);
+ecl_def_ct_base_string(str_multiprocessing,"MULTIPROCESSING",15,static,const);
+#ifdef ECL_CLOS_STREAMS
+ecl_def_ct_base_string(str_gray,"GRAY",4,static,const);
+#endif
 
 int
 cl_boot(int argc, char **argv)
@@ -488,37 +507,29 @@ cl_boot(int argc, char **argv)
 	cl_core.packages_to_be_created = OBJNULL;
 
 	cl_core.lisp_package =
-		ecl_make_package(make_constant_base_string("COMMON-LISP"),
-				 cl_list(2, make_constant_base_string("CL"),
-					 make_constant_base_string("LISP")),
+		ecl_make_package(str_common_lisp,
+				 cl_list(2, str_cl, str_lisp),
 				 Cnil);
 	cl_core.user_package =
-		ecl_make_package(make_constant_base_string("COMMON-LISP-USER"),
-				 cl_list(2, make_constant_base_string("CL-USER"),
-					 make_constant_base_string("USER")),
+		ecl_make_package(str_common_lisp_user,
+				 cl_list(2, str_cl_user, str_user),
 				 ecl_list1(cl_core.lisp_package));
 	cl_core.keyword_package =
-		ecl_make_package(make_constant_base_string("KEYWORD"),
-				 Cnil, Cnil);
+		ecl_make_package(str_keyword, Cnil, Cnil);
 	cl_core.system_package =
-		ecl_make_package(make_constant_base_string("SI"),
-				 cl_list(3,
-					 make_constant_base_string("SYSTEM"),
-					 make_constant_base_string("SYS"),
-					 make_constant_base_string("EXT")),
+		ecl_make_package(str_si,
+                                 cl_list(3,str_system,str_sys,str_ext),
 				 ecl_list1(cl_core.lisp_package));
 #ifdef CLOS
 	cl_core.clos_package =
-		ecl_make_package(make_constant_base_string("CLOS"),
-				 Cnil, ecl_list1(cl_core.lisp_package));
+		ecl_make_package(str_clos, Cnil, ecl_list1(cl_core.lisp_package));
 #endif
 	cl_core.mp_package =
-		ecl_make_package(make_constant_base_string("MP"),
-				 ecl_list1(make_constant_base_string("MULTIPROCESSING")),
+		ecl_make_package(str_mp,
+				 ecl_list1(str_multiprocessing),
 				 ecl_list1(cl_core.lisp_package));
 #ifdef ECL_CLOS_STREAMS
-	cl_core.gray_package = ecl_make_package(make_constant_base_string("GRAY"),
-						Cnil,
+	cl_core.gray_package = ecl_make_package(str_gray, Cnil,
 						CONS(cl_core.lisp_package, Cnil));
 #endif
 
