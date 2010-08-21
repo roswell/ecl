@@ -1516,12 +1516,12 @@ ecl_current_read_base(void)
 {
 	const cl_env_ptr the_env = ecl_process_env();
 	/* INV: *READ-BASE* always has a value */
-	cl_object x = ECL_SYM_VAL(the_env, @'*read_base*');
+	cl_object x = ECL_SYM_VAL(the_env, @'*read-base*');
         cl_fixnum b;
 
         unlikely_if (!ECL_FIXNUMP(x) || ((b = fix(x)) < 2) || (b > 36))
         {
-                ECL_SETQ(the_env, @'*read_base*', MAKE_FIXNUM(10));
+                ECL_SETQ(the_env, @'*read-base*', MAKE_FIXNUM(10));
                 FEerror("The value of *READ-BASE*~&  ~S~%"
                         "is not in the range (INTEGER 2 36)", 1, x);
         }
