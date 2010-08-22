@@ -16,13 +16,13 @@
 #ifndef __sun__ /* See unixinit.d for this */
 #define _XOPEN_SOURCE 600	/* For pthread mutex attributes */
 #endif
-#if defined(ECL_MS_WINDOWS_HOST)
+#include <errno.h>
+#include <ecl/ecl.h>
+#ifdef ECL_WINDOWS_THREADS
 # include <windows.h>
 #else
 # include <pthread.h>
 #endif
-#include <errno.h>
-#include <ecl/ecl.h>
 #include <ecl/internal.h>
 
 /*----------------------------------------------------------------------

@@ -22,13 +22,13 @@
 #include <fcntl.h>
 #include <ecl/internal.h>
 #if defined(ECL_MS_WINDOWS_HOST)
-#include <windows.h>
+# include <windows.h>
 #endif
 #ifdef HAVE_UNISTD_H
-#include <unistd.h>
+# include <unistd.h>
 #endif
 #ifdef HAVE_SYS_WAIT_H
-#include <sys/wait.h>
+# include <sys/wait.h>
 #endif
 
 /* Mingw defines 'environ' to be a macro instead of a global variable. */

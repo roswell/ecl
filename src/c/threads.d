@@ -16,17 +16,16 @@
 #ifndef __sun__ /* See unixinit.d for this */
 #define _XOPEN_SOURCE 600	/* For pthread mutex attributes */
 #endif
-#if defined(ECL_MS_WINDOWS_HOST)
-# include <windows.h>
-#else
-# include <pthread.h>
-#endif
 #include <errno.h>
 #include <time.h>
 #include <signal.h>
 #define ECL_INCLUDE_MATH_H
 #include <ecl/ecl.h>
-#include <ecl/internal.h>
+#ifdef ECL_WINDOWS_THREADS
+# include <windows.h>
+#else
+# include <pthread.h>
+#endif
 #ifdef HAVE_GETTIMEOFDAY
 # include <sys/time.h>
 #endif
@@ -36,6 +35,7 @@
 #ifdef HAVE_SEMAPHORE_H
 # include <semaphore.h>
 #endif
+#include <ecl/internal.h>
 
 #ifdef ECL_WINDOWS_THREADS
 /*

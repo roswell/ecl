@@ -33,8 +33,8 @@
 #endif
 #include <ecl/internal.h>
 #if defined(ECL_MS_WINDOWS_HOST)
-#include <windows.h>
-#include <WinSock.h>
+# include <windows.h>
+# include <WinSock.h>
 #endif
 
 #if !defined(HAVE_GETTIMEOFDAY) && !defined(HAVE_GETRUSAGE) && !defined(ECL_MS_WINDOWS_HOST)

@@ -22,7 +22,7 @@
 #include <signal.h>
 #include <stdlib.h>
 #if defined(ECL_MS_WINDOWS_HOST) || defined(cygwin)
-#include <windows.h>
+# include <windows.h>
 #endif
 #include <ecl/internal.h>
 
