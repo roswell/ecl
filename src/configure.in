@@ -81,12 +81,12 @@ AC_ARG_WITH(system-gmp,
 AC_ARG_WITH(gmp-prefix,
   AS_HELP_STRING( [--with-gmp-prefix=path],
                   [prefix for system GMP includes and libraries] ),
-  [GMP_CFLAGS="-I$withval/include"; GMP_LDFLAGS="-L$withval/lib"], [])
+  [GMP_CPPFLAGS="-I$withval/include"; GMP_LDFLAGS="-L$withval/lib"], [])
 
 AC_ARG_WITH(gmp-incdir,
   AS_HELP_STRING( [--with-gmp-incdir=path],
 		  [path to system GMP includes (overrides prefix)] ),
-  [GMP_CFLAGS="-I$withval"], [])
+  [GMP_CPPFLAGS="-I$withval"], [])
 
 AC_ARG_WITH(gmp-libdir,
   AS_HELP_STRING( [--with-gmp-libdir=path],
@@ -290,7 +290,7 @@ AC_EXEEXT dnl			Guess whether .exe is needed for executables
 AC_SUBST(buildir)               dnl For top-level Makefile.in
 AC_SUBST(ECL_CFLAGS)            dnl Similar, but specific to ECL (see src/util/ecl-config)
 AC_SUBST(DEBUG_CFLAGS)
-AC_SUBST(GMP_CFLAGS)		dnl CFLAGS needed for compiling with system GMP library
+AC_SUBST(GMP_CPPFLAGS)		dnl CFLAGS needed for compiling with system GMP library
 AC_SUBST(GMP_LDFLAGS)		dnl LDFLAGS needed for compiling with system GMP library
 AC_SUBST(FASL_LIBS)             dnl Libraries to link into all ecl code but not
                                 dnl into helper programs.
@@ -348,7 +348,7 @@ dnl or 32 bits executables and ECL has to be compiled / linked using precisely
 dnl the same flags
 dnl
 if test "x${with_gmp}" != "xno"; then
-  CFLAGS="$CFLAGS $GMP_CFLAGS"
+  CPPFLAGS="$CPPFLAGS $GMP_CPPFLAGS"
   LDFLAGS="$LDFLAGS $GMP_LDFLAGS"
 
   if test ${with_system_gmp} = "auto"; then

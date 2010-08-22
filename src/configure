@@ -720,7 +720,7 @@ SHARED_LDFLAGS
 CORE_LIBS
 FASL_LIBS
 GMP_LDFLAGS
-GMP_CFLAGS
+GMP_CPPFLAGS
 DEBUG_CFLAGS
 ECL_CFLAGS
 buildir
@@ -2120,14 +2120,14 @@ fi
 
 # Check whether --with-gmp-prefix was given.
 if test "${with_gmp_prefix+set}" = set; then
-  withval=$with_gmp_prefix; GMP_CFLAGS="-I$withval/include"; GMP_LDFLAGS="-L$withval/lib"
+  withval=$with_gmp_prefix; GMP_CPPFLAGS="-I$withval/include"; GMP_LDFLAGS="-L$withval/lib"
 fi
 
 
 
 # Check whether --with-gmp-incdir was given.
 if test "${with_gmp_incdir+set}" = set; then
-  withval=$with_gmp_incdir; GMP_CFLAGS="-I$withval"
+  withval=$with_gmp_incdir; GMP_CPPFLAGS="-I$withval"
 fi
 
 
@@ -4721,7 +4721,7 @@ else
 fi
 
 if test "x${with_gmp}" != "xno"; then
-  CFLAGS="$CFLAGS $GMP_CFLAGS"
+  CPPFLAGS="$CPPFLAGS $GMP_CPPFLAGS"
   LDFLAGS="$LDFLAGS $GMP_LDFLAGS"
 
   if test ${with_system_gmp} = "auto"; then
