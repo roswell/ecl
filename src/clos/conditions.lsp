@@ -518,7 +518,7 @@ memory limits before executing the program again."))))
 (define-condition ext:unix-signal-received ()
   ((code :type fixnum
          :initform 0
-         :initarg :signal-code
+         :initarg :code
          :accessor ext:unix-signal-received-code))
   (:report (lambda (condition stream)
              (format stream "Serious signal ~D caught."
