@@ -618,7 +618,7 @@ ecl_homedir_pathname(cl_object user)
 		FEerror("Unknown user ~S.", 1, p);
 	} else if ((h = getenv("HOME"))) {
 		namestring = make_base_string_copy(h);
-#if defined(_MSC_VER) || defined(ming32)
+#if defined(ECL_MS_WINDOWS_HOST)
 	} else if ((h = getenv("HOMEPATH")) && (d = getenv("HOMEDRIVE"))) {
 		namestring =
 			si_base_string_concatenate(2,
@@ -680,7 +680,7 @@ list_directory(cl_object base_dir, const char *text_mask, cl_object pathname_mas
 	while ((entry = readdir(dir))) {
 		text = entry->d_name;
 #else
-# ifdef _MSC_VER
+# ifdef ECL_MS_WINDOWS_HOST
 	WIN32_FIND_DATA fd;
 	HANDLE hFind = NULL;
 	BOOL found = FALSE;
@@ -720,7 +720,7 @@ list_directory(cl_object base_dir, const char *text_mask, cl_object pathname_mas
 		if (dir.d_ino == 0)
 			continue;
 		text = dir.d_name;
-# endif /* !_MSC_VER */
+# endif /* !ECL_MS_WINDOWS_HOST */
 #endif /* !HAVE_DIRENT_H */
 		if (text[0] == '.' &&
 		    (text[1] == '\0' ||
@@ -742,11 +742,11 @@ list_directory(cl_object base_dir, const char *text_mask, cl_object pathname_mas
 #ifdef HAVE_DIRENT_H
 	closedir(dir);
 #else
-# ifdef _MSC_VER
+# ifdef ECL_MS_WINDOWS_HOST
         FindClose(hFind);
 # else
 	fclose(fp);
-# endif /* !_MSC_VER */
+# endif /* !ECL_MS_WINDOWS_HOST */
 #endif /* !HAVE_DIRENT_H */
 	ecl_enable_interrupts();
 OUTPUT:

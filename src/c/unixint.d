@@ -979,7 +979,7 @@ si_trap_fpe(cl_object condition, cl_object flag)
 static void
 install_asynchronous_signal_handlers()
 {
-#if defined(_MSC_VER)
+#if defined(ECL_MS_WINDOWS_HOST)
 # define async_handler(signal,handler,mask)
 #else
 # if defined(ECL_THREADS) && defined(HAVE_SIGPROCMASK)

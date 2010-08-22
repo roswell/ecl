@@ -1423,7 +1423,7 @@ si_write_ugly_object(cl_object x, cl_object stream)
 			write_str("output stream ", stream);
 			si_write_ugly_object(IO_STREAM_FILENAME(x), stream);
 			break;
-#ifdef _MSC_VER
+#ifdef ECL_MS_WINDOWS_HOST
 		case smm_input_wsock:
 			write_str("input win32 socket stream ", stream);
 			si_write_ugly_object(IO_STREAM_FILENAME(x), stream);
