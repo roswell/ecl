@@ -13,11 +13,15 @@
     See file '../Copyright' for full details.
 */
 
-#if defined(ECL_THREADS) && !defined(_MSC_VER)
-#include <pthread.h>
-#endif
 #include <stdio.h>
 #include <ecl/ecl.h>
+#ifdef ECL_THREADS
+# ifdef ECL_WINDOWS_THREADS
+#  include <windows.h>
+# else
+#  include <pthread.h>
+# endif
+#endif
 #include <ecl/ecl-inl.h>
 #include <ecl/internal.h>
 #include <ecl/page.h>
