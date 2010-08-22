@@ -13,6 +13,8 @@
     See file '../Copyright' for full details.
 */
 
+#ifndef ECL_NUMBER_H
+#define ECL_NUMBER_H
 #define ECL_BIG_REGISTER_SIZE	32
 #ifdef WITH_GMP
 #define ECL_WITH_TEMP_BIGNUM(name,n)                                    \
@@ -22,12 +24,12 @@
                                 name##aux.big_num->_mp_size = 0,        \
                                 name##aux.big_num->_mp_d = name##data,  \
                                 (cl_object)(&name##aux))
+
+extern ECL_API cl_object _ecl_big_set_fixnum(cl_object x, cl_fixnum f);
+extern ECL_API cl_object _ecl_big_set_index(cl_object x, cl_index f);
 #if ECL_LONG_BITS >= FIXNUM_BITS
 #define _ecl_big_set_fixnum(x, f) mpz_set_si((x)->big.big_num,(f))
 #define _ecl_big_set_index(x, f) mpz_set_ui((x)->big.big_num,(f))
-#else
-extern ECL_API _ecl_big_set_fixnum(cl_object x, cl_fixnum f);
-extern ECL_API _ecl_big_set_index(cl_object x, cl_index f);
 #endif
 #define _ecl_big_init2(x,size)	mpz_init2((x)->big.big_num,(size)*GMP_LIMB_BITS)
 #define _ecl_big_clear(x)	mpz_clear((x)->big.big_num)
@@ -90,3 +92,4 @@ extern int _ecl_big_num_t_sgn(big_num_t x);
 #define _ecl_big_tdiv_q_ui(q, x, y)	((q)->big.big_num = (x)->big.big_num / (y))
 #define _ecl_big_set_d(x, d)		((x)->big.big_num = (big_num_t)(d))
 #endif /* WITH_GMP */
+#endif /* ECL_NUMBER_H */
