@@ -607,7 +607,7 @@ ecl_parse_namestring(cl_object s, cl_index start, cl_index end, cl_index *ep,
 	 * we need "//FOO/" to be separately handled, for it is a shared
 	 * resource.
 	 */
-#if defined(_MSC_VER) || defined(__MINGW32__)
+#if defined(ECL_MS_WINDOWS_HOST)
 	if ((start+1 <= end) && is_slash(ecl_char(s, start))) {
 		device = Cnil;
 		goto maybe_parse_host;
@@ -813,7 +813,7 @@ coerce_to_file_pathname(cl_object pathname)
 	pathname = coerce_to_physical_pathname(pathname);
 	pathname = cl_merge_pathnames(1, pathname);
 #if 0
-#if !defined(cygwin) && !defined(__MINGW32__) && !defined(_MSC_VER)
+#if !defined(cygwin) && !defined(ECL_MS_WINDOWS_HOST)
 	if (pathname->pathname.device != Cnil)
 		FEerror("Device ~S not yet supported.", 1,
 			pathname->pathname.device);
@@ -964,7 +964,7 @@ ecl_namestring(cl_object x, int flags)
 			writestr_stream(":", buffer);
 		}
 		if (host != Cnil) {
-#if !defined(_MSC_VER) && !defined(__MINGW32__)
+#if !defined(ECL_MS_WINDOWS_HOST)
 			if (y == Cnil) {
 				writestr_stream("file:", buffer);
 			}

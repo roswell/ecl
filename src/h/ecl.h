@@ -51,7 +51,7 @@
 #endif
 #endif
 
-#if defined(_MSC_VER) || defined(__MINGW32__)
+#if defined(ECL_MS_WINDOWS_HOST)
 # ifndef WIN32_LEAN_AND_MEAN
 #  define WIN32_LEAN_AND_MEAN 1 /* Do not include winsock.h */
 #  include <windows.h>
@@ -70,7 +70,7 @@
 # else
 #  error "The Windows ports cannot be built without threads."
 # endif /* ECL_THREADS */
-#endif /* _MSC_VER || __MINGW32__ */
+#endif /* ECL_MS_WINDOWS_HOST */
 
 #ifdef ECL_SSE2
 #include <xmmintrin.h>

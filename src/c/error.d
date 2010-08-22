@@ -21,7 +21,7 @@
 #include <errno.h>
 #include <signal.h>
 #include <stdlib.h>
-#if defined(__MINGW32__) || defined(_MSC_VER) || defined(cygwin)
+#if defined(ECL_MS_WINDOWS_HOST) || defined(cygwin)
 #include <windows.h>
 #endif
 #include <ecl/internal.h>
@@ -444,7 +444,7 @@ FElibc_error(const char *msg, int narg, ...)
 		make_constant_base_string(strerror(errno)));
 }
 
-#if defined(__MINGW32__) || defined(_MSC_VER) || defined(cygwin)
+#if defined(ECL_MS_WINDOWS_HOST) || defined(cygwin)
 void
 FEwin32_error(const char *msg, int narg, ...)
 {

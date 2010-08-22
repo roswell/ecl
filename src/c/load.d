@@ -14,9 +14,33 @@
     See file '../Copyright' for full details.
 */
 
-#include <ecl/ecl.h>
 #include <string.h>
 #include <stdio.h>
+#include <ecl/ecl.h>
+/*
+ * Choosing the interface for loading binary files. Currently we recognize
+ * three different methods:
+ *	- Windows API, provided by ECL_MS_WINDOWS_HOST
+ *	- dlopen, provided HAVE_DLFCN_H is defined
+ *	- NSLinkModule, provided HAVE_MACH_O_DYLD_H is defined
+ * They are chosen in this precise order. In order to make the code for these
+ * methods mutually exclusive, when one method is present, the other macros
+ * get undefined. Handling of dynamically loaded libraries is constrained to
+ * this file and thus the changes can be limited to this file.
+ */
+#ifdef ECL_MS_WINDOWS_HOST
+# ifdef HAVE_DLFCN_H
+#  undef HAVE_DLFCN_H
+# endif
+# ifdef HAVE_MACH_O_DYLD_H
+#  undef HAVE_MACH_O_DYLD_H
+# endif
+#endif
+#ifdef HAVE_DLFCN_H
+# ifdef HAVE_MACH_O_DYLD_H
+#  undef HAVE_MACH_O_DYLD_H
+# endif
+#endif
 #ifdef ENABLE_DLOPEN
 # ifdef cygwin
 #  include <w32api/windows.h>
@@ -24,22 +48,18 @@
 # ifdef HAVE_DLFCN_H
 #  include <dlfcn.h>
 #  define INIT_PREFIX "init_fas_"
-# endif
-# ifdef HAVE_MACH_O_DYLD_H
-#  ifndef HAVE_DLFCN_H
-#   include <mach-o/dyld.h>
-#   define INIT_PREFIX "_init_fas_"
-#  else
-#   undef HAVE_MACH_O_DYLD_H
-#  endif
 #  ifdef bool
 #   undef bool
 #  endif
 # endif
+# ifdef HAVE_MACH_O_DYLD_H
+#  include <mach-o/dyld.h>
+#  define INIT_PREFIX "_init_fas_"
+# endif
 # ifdef HAVE_LINK_H
 #  include <link.h>
 # endif
-# if defined(__MINGW32__) || defined(_MSC_VER)
+# if defined(ECL_MS_WINDOWS_HOST)
 #  include <windows.h>
 #  include <windef.h>
 #  include <winbase.h>
@@ -48,7 +68,7 @@
 # else
 #  include <unistd.h>
 # endif
-#endif
+#endif /* ENABLE_DLOPEN */
 #include <ecl/ecl-inl.h>
 #include <ecl/internal.h>
 #include <sys/stat.h>
@@ -72,7 +92,7 @@ copy_object_file(cl_object original)
          * file we load later on (case of Windows, which locks files that are loaded).
          * The symlinks do not seem to work in latest versions of Linux.
          */
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if defined(ECL_MS_WINDOWS_HOST)
 	ecl_disable_interrupts();
 	err = !CopyFile(original->base_string.self, copy->base_string.self, 0);
 	ecl_enable_interrupts();
@@ -164,7 +184,7 @@ ecl_library_open(cl_object filename, bool force_reload) {
 		 * _always_ made because otherwise it cannot be
 		 * overwritten. In Unix we need only do that when the
 		 * file has been previously loaded. */
-#if defined(__MINGW32__) || defined(_MSC_VER) || defined(cygwin)
+#if defined(ECL_MS_WINDOWS_HOST) || defined(cygwin)
 		filename = copy_object_file(filename);
 		self_destruct = 1;
 #else
@@ -214,7 +234,7 @@ ecl_library_open(cl_object filename, bool force_reload) {
 		block->cblock.handle = out;
 	}}
 #endif
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if defined(ECL_MS_WINDOWS_HOST)
 	block->cblock.handle = LoadLibrary(filename_string);
 #endif
 	ecl_enable_interrupts();
@@ -256,7 +276,7 @@ ecl_library_symbol(cl_object block, const char *symbol, bool lock) {
 			if (p) return p;
 		}
 		ecl_disable_interrupts();
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if defined(ECL_MS_WINDOWS_HOST)
  		{
 		HANDLE hndSnap = NULL;
 		HANDLE hnd = NULL;
@@ -279,7 +299,7 @@ ecl_library_symbol(cl_object block, const char *symbol, bool lock) {
 #ifdef HAVE_DLFCN_H
 		p = dlsym(0, symbol);
 #endif
-#if !defined(__MINGW32__) && !defined(_MSC_VER) && !defined(HAVE_DLFCN_H)
+#if !defined(ECL_MS_WINDOWS_HOST) && !defined(HAVE_DLFCN_H)
 		p = 0;
 #endif
 		ecl_enable_interrupts();
@@ -288,7 +308,7 @@ ecl_library_symbol(cl_object block, const char *symbol, bool lock) {
 #ifdef HAVE_DLFCN_H
 		p = dlsym(block->cblock.handle, symbol);
 #endif
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if defined(ECL_MS_WINDOWS_HOST)
 		{
 			HMODULE h = (HMODULE)(block->cblock.handle);
 			p = GetProcAddress(h, symbol);
@@ -331,7 +351,7 @@ ecl_library_error(cl_object block) {
 		output = make_base_string_copy(message);
 	}
 #endif
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if defined(ECL_MS_WINDOWS_HOST)
 	{
 		const char *message;
 		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
@@ -365,7 +385,7 @@ ecl_library_close(cl_object block) {
 #ifdef HAVE_MACH_O_DYLD_H
 		NSUnLinkModule(block->cblock.handle, NSUNLINKMODULE_OPTION_NONE);
 #endif
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if defined(ECL_MS_WINDOWS_HOST)
 		FreeLibrary(block->cblock.handle);
 #endif
 		ecl_enable_interrupts();
@@ -584,7 +604,7 @@ NOT_A_FILENAME:
 	if (!Null(function)) {
 		ok = funcall(5, function, filename, verbose, print, external_format);
 	} else {
-#if 0 /* defined(ENABLE_DLOPEN) && !defined(__MINGW32__) && !defined(_MSC_VER)*/
+#if 0 /* defined(ENABLE_DLOPEN) && !defined(ECL_MS_WINDOWS_HOST)*/
 		/*
 		 * DISABLED BECAUSE OF SECURITY ISSUES!
 		 * In systems where we can do this, we try to load the file

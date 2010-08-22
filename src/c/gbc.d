@@ -661,14 +661,14 @@ sweep_phase(void)
                                 break;
 #ifdef ECL_THREADS
 			case t_lock:
-#if defined(_MSC_VER) || defined(__MINGW32__)
+#if defined(ECL_MS_WINDOWS_HOST)
 				CloseHandle(x->lock.mutex);
 #else
 				pthread_mutex_destroy(&x->lock.mutex);
 #endif
 				break;
 			case t_condition_variable:
-#if defined(_MSC_VER) || defined(__MINGW32__)
+#if defined(ECL_MS_WINDOWS_HOST)
 				CloseHandle(x->condition_variable.cv);
 #else
 				pthread_cond_destroy(&x->condition_variable.cv);

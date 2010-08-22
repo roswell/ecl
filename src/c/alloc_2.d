@@ -1033,7 +1033,7 @@ standard_finalizer(cl_object o)
 	case t_lock: {
 		const cl_env_ptr the_env = ecl_process_env();
 		ecl_disable_interrupts_env(the_env);
-#if defined(_MSC_VER) || defined(__MINGW32__)
+#if defined(ECL_MS_WINDOWS_HOST)
 		CloseHandle(o->lock.mutex);
 #else
 		pthread_mutex_destroy(&o->lock.mutex);
@@ -1044,7 +1044,7 @@ standard_finalizer(cl_object o)
 	case t_condition_variable: {
 		const cl_env_ptr the_env = ecl_process_env();
 		ecl_disable_interrupts_env(the_env);
-#if defined(_MSC_VER) || defined(__MINGW32__)
+#if defined(ECL_MS_WINDOWS_HOST)
 		CloseHandle(o->condition_variable.cv);
 #else
 		pthread_cond_destroy(&o->condition_variable.cv);

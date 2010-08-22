@@ -88,7 +88,7 @@
 # endif
 # include <sys/mman.h>
 #endif
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if defined(ECL_MS_WINDOWS_HOST)
 # include <windows.h>
 #endif
 #if !defined(_MSC_VER)
@@ -254,7 +254,7 @@ handler_fn_protype(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
         /* The lisp environment might not be installed. */
         if (the_env == NULL)
                 return;
-#if defined(ECL_THREADS) && !defined(_MSC_VER) && !defined(__MINGW32__)
+#if defined(ECL_THREADS) && !defined(ECL_MS_WINDOWS_HOST)
         if (sig == ecl_get_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL)) {
 		return pop_signal(the_env);
         }
@@ -669,7 +669,7 @@ si_catch_signal(cl_object code, cl_object boolean)
 			0);
 # endif
 #endif
-#if defined(ECL_THREADS) && !defined(_MSC_VER) && !defined(__MINGW32__)
+#if defined(ECL_THREADS) && !defined(ECL_MS_WINDOWS_HOST)
 	if (code_int == ecl_get_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL)) {
 		FEerror("It is not allowed to change the behavior of ~D", 1,
                         MAKE_FIXNUM(code_int));
@@ -958,7 +958,7 @@ si_trap_fpe(cl_object condition, cl_object flag)
 # ifdef HAVE_FENV_H
         feclearexcept(all);
 # endif
-# if defined(_MSC_VER) || defined(__MINGW32__)
+# if defined(ECL_MS_WINDOWS_HOST)
 	_fpreset();
 # endif
 # ifdef HAVE_FEENABLEEXCEPT
@@ -1066,7 +1066,7 @@ install_process_interrupt_handler()
 #else
 # define DEFAULT_THREAD_INTERRUPT_SIGNAL SIGUSR1
 #endif
-#if defined(ECL_THREADS) && !defined(_MSC_VER) && !defined(__MINGW32__)
+#if defined(ECL_THREADS) && !defined(ECL_MS_WINDOWS_HOST)
 	if (ecl_get_option(ECL_OPT_TRAP_INTERRUPT_SIGNAL)) {
 		int signal = ecl_get_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL);
 		if (signal == 0) {

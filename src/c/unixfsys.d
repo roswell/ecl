@@ -41,7 +41,7 @@
 #  include <sys/dir.h>
 # endif
 #endif
-#if defined(_MSC_VER) || defined(__MINGW32__)
+#if defined(ECL_MS_WINDOWS_HOST)
 # include <windows.h>
 # undef ERROR
 #endif
@@ -86,7 +86,7 @@ safe_lstat(const char *path, struct stat *sb)
 }
 #endif
 
-#if defined(_MSC_VER) || defined(__MINGW32__)
+#if defined(ECL_MS_WINDOWS_HOST)
 static cl_object
 drive_host_prefix(cl_object pathname)
 {
@@ -169,7 +169,7 @@ current_dir(void) {
 static cl_object
 file_kind(char *filename, bool follow_links) {
 	cl_object output;
-#if defined(_MSC_VER) || defined(__MINGW32__)
+#if defined(ECL_MS_WINDOWS_HOST)
 	DWORD dw;
 	ecl_disable_interrupts();
 	dw = GetFileAttributes( filename );
@@ -208,7 +208,7 @@ si_file_kind(cl_object filename, cl_object follow_links) {
 	@(return file_kind((char*)filename->base_string.self, !Null(follow_links)))
 }
 
-#if defined(HAVE_LSTAT) && !defined(__MINGW32__) && !defined(_MSV_VER)
+#if defined(HAVE_LSTAT) && !defined(ECL_MS_WINDOWS_HOST)
 static cl_object
 si_readlink(cl_object filename) {
 	/* Given a filename which is a symlink, this routine returns
@@ -407,7 +407,7 @@ ecl_backup_open(const char *filename, int option, int mode)
 
 	strcat(strcpy(backupfilename, filename), ".BAK");
 	ecl_disable_interrupts();
-#if defined(_MSC_VER) || defined(__MINGW32__)
+#if defined(ECL_MS_WINDOWS_HOST)
 	/* Windows' rename doesn't replace an existing file */
 	if (access(backupfilename, F_OK) == 0 && unlink(backupfilename)) {
 		ecl_enable_interrupts();
@@ -475,7 +475,7 @@ ecl_file_len(int f)
 	}
         {
                 ecl_disable_interrupts();
-#if defined(_MSC_VER) || defined(__MINGW32__)
+#if defined(ECL_MS_WINDOWS_HOST)
 		error = SetErrorMode(0);
 		if (MoveFile((char*)old_filename->base_string.self,
 			     (char*)new_filename->base_string.self)) {
@@ -902,7 +902,7 @@ si_get_library_pathname(void)
                         goto OUTPUT;
                 }
         }
-#if defined(_MSC_VER) || defined(__MINGW32__)
+#if defined(ECL_MS_WINDOWS_HOST)
 	{
         char *buffer;
 	HMODULE hnd;
@@ -981,7 +981,7 @@ si_mkdir(cl_object directory, cl_object mode)
 	    filename->base_string.self[--filename->base_string.fillp] = 0;
 
 	ecl_disable_interrupts();
-#if defined(__MINGW32__)
+#if defined(ECL_MS_WINDOWS_HOST)
 	ok = mkdir((char*)filename->base_string.self);
 #else
 	ok = mkdir((char*)filename->base_string.self, modeint);
@@ -1000,7 +1000,7 @@ si_mkstemp(cl_object template)
 	cl_index l;
 	int fd;
 
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if defined(ECL_MS_WINDOWS_HOST)
 	cl_object phys, dir, file;
 	char strTempDir[MAX_PATH];
 	char strTempFileName[MAX_PATH];

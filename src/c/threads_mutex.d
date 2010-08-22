@@ -16,7 +16,7 @@
 #ifndef __sun__ /* See unixinit.d for this */
 #define _XOPEN_SOURCE 600	/* For pthread mutex attributes */
 #endif
-#if defined(_MSC_VER) || defined(__MINGW32__)
+#if defined(ECL_MS_WINDOWS_HOST)
 # include <windows.h>
 #else
 # include <pthread.h>

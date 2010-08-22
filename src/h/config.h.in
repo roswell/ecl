@@ -13,6 +13,10 @@
     See file '../Copyright' for full details.
 */
 
+#if defined(_MSC_VER) || defined(__MINGW32__) || __WIN32__ || __WING64__
+#define ECL_MS_WINDOWS_HOST
+#endif
+
 /*
  * If ECL_API has been predefined, that means we are building the core
  * library and, under windows, we must tell the compiler to export
@@ -21,7 +25,7 @@
  * uses ECL and, under windows, we must tell the compiler that certain
  * will be imported from a DLL.
  */
-#if defined(__MINGW32__) || defined(_MSC_VER) || defined(cygwin)
+#if defined(ECL_MS_WINDOWS_HOST) || defined(cygwin)
 # define ECL_DLLEXPORT __declspec(dllexport)
 # ifdef ECL_API
 #  undef \
@@ -59,7 +63,7 @@
 /* Userland threads?							*/
 #undef ECL_THREADS
 #ifdef ECL_THREADS
-# if defined(_MSC_VER) || defined(__MINGW32__)
+# if defined(ECL_MS_WINDOWS_HOST)
 #  define ECL_WINDOWS_THREADS
 # endif
 /* # udef ECL_SEMAPHORES */
@@ -80,7 +84,7 @@
 # include "@ECL_BOEHM_GC_HEADER@"
 /* GC >= 7.2 defines these macros to intercept thread functions, but
  * in doing so it breaks mingw. */
-# if defined(__MINGW32__) && defined(_beginthreadex)
+# if defined(ECL_MS_WINDOWS_HOST) && defined(_beginthreadex)
 #  undef _beginthread
 #  undef _endthread
 #  undef _beginthreadex
@@ -90,7 +94,7 @@
 
 /* Network streams							*/
 #undef TCP
-#if defined(TCP) && (defined(_MSC_VER) || defined(__MINGW32__))
+#if defined(TCP) && defined(ECL_MS_WINDOWS_HOST)
 # define ECL_WSOCK
 #endif
 
@@ -120,7 +124,7 @@
 
 /* Use mprotect for fast interrupt dispatch				*/
 #undef ECL_USE_MPROTECT
-#if defined(_MSC_VER) || defined(__MINGW32__)
+#if defined(ECL_MS_WINDOWS_HOST)
 # define ECL_USE_GUARD_PAGE
 #endif
 
@@ -455,7 +459,7 @@ typedef unsigned @CL_FIXNUM_TYPE@ cl_hashkey;
 #  define FILE_CNT(fp)	((fp)->_cnt)
 #endif
 
-#if defined(cygwin) || defined(__MINGW32__) || defined(_MSC_VER)
+#if defined(cygwin) || defined(ECL_MS_WINDOWS_HOST)
 #  define IS_DIR_SEPARATOR(x) ((x=='/')||(x=='\\'))
 #  define DIR_SEPARATOR		'/'
 #  define PATH_SEPARATOR	';'

@@ -551,7 +551,7 @@ int edit_double(int n, DBL_TYPE d, int *sp, char *s, int *ep)
 {
 	char *exponent, buff[DBL_SIZE + 1];
 	int length;
-#if defined(HAVE_FENV_H) || defined(_MSC_VER) || defined(__MINGW32__)
+#if defined(HAVE_FENV_H) || defined(ECL_MS_WINDOWS_HOST)
 	fenv_t env;
 	feholdexcept(&env);
 #endif
@@ -605,7 +605,7 @@ int edit_double(int n, DBL_TYPE d, int *sp, char *s, int *ep)
 			s[i] = '0';
 	}
 	s[n] = '\0';
-#if defined(HAVE_FENV_H) || defined(_MSC_VER) || defined(__MINGW32__)
+#if defined(HAVE_FENV_H) || defined(ECL_MS_WINDOWS_HOST)
 	feupdateenv(&env);
 #endif
 	return length;
@@ -615,7 +615,7 @@ static void
 write_double(DBL_TYPE d, int e, int n, cl_object stream, cl_object o)
 {
 	int exp;
-#if defined(HAVE_FENV_H) || defined(_MSC_VER) || defined(__MINGW32__)
+#if defined(HAVE_FENV_H) || defined(ECL_MS_WINDOWS_HOST)
 	fenv_t env;
 	feholdexcept(&env);
 #endif
@@ -696,7 +696,7 @@ write_double(DBL_TYPE d, int e, int n, cl_object stream, cl_object o)
 		}
 		write_decimal(exp, stream);
 	}
-#if defined(HAVE_FENV_H) || defined(_MSC_VER) || defined(__MINGW32__)
+#if defined(HAVE_FENV_H) || defined(ECL_MS_WINDOWS_HOST)
 	feupdateenv(&env);
 #endif
 }

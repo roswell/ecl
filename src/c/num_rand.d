@@ -67,7 +67,7 @@ init_random_state()
 	cl_object a = ecl_alloc_simple_base_string(bytes);
 	ulong *mt = (ulong*)a->base_string.self;
 	int j;
-#if !defined(_MSC_VER) && !defined(__MINGW32__)
+#if !defined(ECL_MS_WINDOWS_HOST)
 	FILE *fp = fopen("/dev/urandom","r");
 	if (fp) {
 		fread(mt, sizeof(*mt), MT_N, fp);

@@ -29,7 +29,7 @@
 # include <unistd.h>
 #endif
 #include <fcntl.h>
-#if !defined(__MINGW32__) && !defined(_MSC_VER)
+#if !defined(ECL_MS_WINDOWS_HOST)
 #include <sys/stat.h>
 /* it isn't pulled in by fcntl.h */
 #endif
@@ -45,7 +45,7 @@
 # include <sys/time.h>
 # include <sys/types.h>
 # include <unistd.h>
-#elif defined(__MINGW32__) || defined(_MSC_VER)
+#elif defined(ECL_MS_WINDOWS_HOST)
 # include <winsock.h>
 # include <sys/stat.h>
 # define STDIN_FILENO 0
@@ -2649,7 +2649,7 @@ static void
 io_file_clear_input(cl_object strm)
 {
 	int f = IO_FILE_DESCRIPTOR(strm);
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if defined(ECL_MS_WINDOWS_HOST)
 	if (isatty(f)) {
 		/* Flushes Win32 console */
 		if (!FlushConsoleInputBuffer((HANDLE)_get_osfhandle(f)))
@@ -3308,7 +3308,7 @@ static void
 io_stream_clear_input(cl_object strm)
 {
 	FILE *fp = IO_STREAM_FILE(strm);
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if defined(ECL_MS_WINDOWS_HOST)
         int f = fileno(fp);
 	if (isatty(f)) {
 		/* Flushes Win32 console */
@@ -4475,7 +4475,7 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
 	cl_env_ptr the_env = &cl_env;
 	cl_object x;
 	int f;
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if defined(ECL_MS_WINDOWS_HOST)
         int mode = _S_IREAD | _S_IWRITE;
 #else
 	mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
@@ -4685,7 +4685,7 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
 static int
 file_listen(int fileno)
 {
-#if !defined(__MINGW32__) && !defined(_MSC_VER)
+#if !defined(ECL_MS_WINDOWS_HOST)
 # if defined(HAVE_SELECT)
 	fd_set fds;
 	int retv, fd;
@@ -5058,7 +5058,7 @@ init_file(void)
 	cl_object aux;
 	cl_object null_stream;
 	cl_object external_format = Cnil;
-#if defined(_MSC_VER) || defined(__MINGW32__)
+#if defined(ECL_MS_WINDOWS_HOST)
 # ifdef ECL_UNICODE
 	external_format = cl_list(2, @':latin-1', @':crlf');
 	flags = 0;

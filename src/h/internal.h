@@ -359,7 +359,7 @@ extern cl_fixnum ecl_runtime(void);
 /* unixint.d */
 
 #ifdef ECL_DEFINE_FENV_CONSTANTS
-# if defined(_MSC_VER) || defined(__MINGW32__)
+# if defined(ECL_MS_WINDOWS_HOST)
 #  define HAVE_FEENABLEEXCEPT
 #  include <float.h>
 #  if defined(_MSC_VER)

@@ -63,10 +63,13 @@ ecl_def_string_array(feature_names,static,const) = {
 	ecl_def_string_array_elt("MINGW32"),
         ecl_def_string_array_elt("WIN32"),
 #endif
+#if defined(__WIN64__)
+        ecl_def_string_array_elt("WIN64"),
+#endif
 #ifdef _MSC_VER
 	ecl_def_string_array_elt("MSVC"),
 #endif
-#if defined(_MSC_VER) || defined(__MINGW32__)
+#if defined(ECL_MS_WINDOWS_HOST)
         ecl_def_string_array_elt("WINDOWS"),
 #endif
 #ifdef ECL_CMU_FORMAT
