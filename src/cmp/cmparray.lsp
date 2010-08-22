@@ -157,6 +157,15 @@
                 (optimize (safety 0)))
        (si::row-major-aset ,%array ,(expand-row-major-index %array indices env) ,value))))
 
+(define-compiler-macro array-row-major-index (&whole form array &rest indices &environment env)
+  (if (policy-open-code-aref/aset env)
+      (with-clean-symbols (%array)
+	`(let ((%array ,array))
+	   (declare (:read-only %array)
+		    (optimize (safety 0)))
+	   ,(expand-row-major-index '%array indices env)))
+      form))
+
 (defun expand-zero-dim-index-check (a env)
   (if (policy-type-assertions env)
       0
