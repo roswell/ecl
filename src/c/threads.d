@@ -405,7 +405,7 @@ mp_process_enable(cl_object process)
 	DWORD threadId;
 
 	code = (HANDLE)CreateThread(NULL, 0, thread_entry_point, process, 0, &threadId);
-	ok = (process->process.thread = code);
+	ok = (process->process.thread = code) != NULL;
 	}
 #else
 	{
