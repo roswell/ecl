@@ -2516,8 +2516,10 @@ read_VV(cl_object block, void (*entry_point)(cl_object))
                         cl_object position = prototype->file_position;
 			int narg = prototype->narg;
 			VV[location] = narg<0?
-				ecl_make_cfun_va(prototype->entry, fname, block) :
-				ecl_make_cfun(prototype->entry, fname, block, narg);
+				ecl_make_cfun_va((cl_objectfn)prototype->entry,
+                                                 fname, block) :
+				ecl_make_cfun((cl_objectfn_fixed)prototype->entry,
+                                              fname, block, narg);
                         /* Add source file info */
                         if (position != MAKE_FIXNUM(-1)) {
                                 ecl_set_function_source_file_info(VV[location],

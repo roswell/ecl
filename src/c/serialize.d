@@ -161,7 +161,7 @@ serialize_object_ptr(pool_t pool, cl_object *ptr, cl_index dim)
 {
         cl_index index = serialize_bits(pool, ptr, dim*sizeof(cl_object));
         for (; dim; dim--, index += sizeof(cl_object)) {
-                cl_object *p = (cl_object)(pool->data->vector.self.b8 + index);
+                cl_object *p = (cl_object *)(pool->data->vector.self.b8 + index);
                 *p = enqueue(pool, *p);
                 p++;
         }

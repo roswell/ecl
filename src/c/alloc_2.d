@@ -80,7 +80,7 @@ out_of_memory_check(size_t requested_bytes)
 }
 
 static void
-no_warnings(char *msg, void *arg)
+no_warnings(char *msg, GC_word arg)
 {
 }
 
@@ -1031,7 +1031,7 @@ standard_finalizer(cl_object o)
 		cl_close(1, o);
 		break;
 	case t_weak_pointer:
-		GC_unregister_disappearing_link(&(o->weak.value));
+		GC_unregister_disappearing_link((void**)&(o->weak.value));
 		break;
 #ifdef ECL_THREADS
 	case t_lock: {
@@ -1351,8 +1351,8 @@ ecl_alloc_weak_pointer(cl_object o)
 	obj->t = t_weak_pointer;
 	obj->value = o;
         if (!FIXNUMP(o) && !CHARACTERP(o) && !Null(o)) {
-                GC_general_register_disappearing_link(&(obj->value), (void*)o);
-                si_set_finalizer(obj, Ct);
+                GC_general_register_disappearing_link((void**)&(obj->value), (void*)o);
+                si_set_finalizer((cl_object)obj, Ct);
         }
 	return (cl_object)obj;
 }

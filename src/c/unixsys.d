@@ -285,7 +285,8 @@ make_windows_handle(HANDLE h)
 					     DUPLICATE_CLOSE_SOURCE |
 					     DUPLICATE_SAME_ACCESS);
 			if (ok) {
-				parent_write = _open_osfhandle(tmp, _O_WRONLY /*| _O_TEXT*/);
+				parent_write = _open_osfhandle((intptr_t)tmp,
+                                                               _O_WRONLY /*| _O_TEXT*/);
 				if (parent_write < 0)
 					printf("open_osfhandle failed\n");
 			}
@@ -297,7 +298,9 @@ make_windows_handle(HANDLE h)
 		cl_object input_stream = ecl_symbol_value(@'*standard-input*');
 		int stream_handle = ecl_stream_to_handle(input_stream, 0);
 		if (stream_handle >= 0)
-			DuplicateHandle(current, _get_osfhandle(stream_handle) /*GetStdHandle(STD_INPUT_HANDLE)*/,
+			DuplicateHandle(current,
+                                        (HANDLE)_get_osfhandle(stream_handle)
+                                        /*GetStdHandle(STD_INPUT_HANDLE)*/,
 					current, &child_stdin, 0, TRUE,
 					DUPLICATE_SAME_ACCESS);
 		else
@@ -318,7 +321,8 @@ make_windows_handle(HANDLE h)
 					     DUPLICATE_CLOSE_SOURCE |
 					     DUPLICATE_SAME_ACCESS);
 			if (ok) {
-				parent_read = _open_osfhandle(tmp, _O_RDONLY /*| _O_TEXT*/);
+				parent_read = _open_osfhandle((intptr_t)tmp,
+                                                              _O_RDONLY /*| _O_TEXT*/);
 				if (parent_read < 0)
 					printf("open_osfhandle failed\n");
 			}
@@ -330,7 +334,9 @@ make_windows_handle(HANDLE h)
 		cl_object output_stream = ecl_symbol_value(@'*standard-output*');
 		int stream_handle = ecl_stream_to_handle(output_stream, 1);
 		if (stream_handle >= 0)
-			DuplicateHandle(current, _get_osfhandle(stream_handle) /*GetStdHandle(STD_OUTPUT_HANDLE)*/,
+			DuplicateHandle(current,
+                                        (HANDLE)_get_osfhandle(stream_handle)
+                                        /*GetStdHandle(STD_OUTPUT_HANDLE)*/,
 					current, &child_stdout, 0, TRUE,
 					DUPLICATE_SAME_ACCESS);
 		else
@@ -352,7 +358,9 @@ make_windows_handle(HANDLE h)
 		cl_object error_stream = ecl_symbol_value(@'*error-output*');
 		int stream_handle = ecl_stream_to_handle(error_stream, 1);
 		if (stream_handle >= 0)
-			DuplicateHandle(current, _get_osfhandle(stream_handle) /*GetStdHandle(STD_ERROR_HANDLE)*/,
+			DuplicateHandle(current,
+                                        (HANDLE)_get_osfhandle(stream_handle)
+                                        /*GetStdHandle(STD_ERROR_HANDLE)*/,
 					current, &child_stderr, 0, TRUE,
 					DUPLICATE_SAME_ACCESS);
 		else

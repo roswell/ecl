@@ -222,7 +222,7 @@ make_this_symbol(int i, cl_object s, int code, const char *name,
 	} else if (fun) {
 		cl_object f;
 		if (narg >= 0) {
-			f = ecl_make_cfun(fun, s, NULL, narg);
+			f = ecl_make_cfun((cl_objectfn_fixed)fun, s, NULL, narg);
 		} else {
 			f = ecl_make_cfun_va(fun, s, NULL);
 		}

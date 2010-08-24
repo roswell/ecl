@@ -59,8 +59,10 @@ static const cl_object ecl_aet_to_ffi_table[aet_bc+1] = {
 	@':char' /* aet_bc */
 };
 
+#define AUX_PTR(type) \
+	((struct { char a[1]; union { type c[1]; char d[sizeof(type)]; } b; } *)0)
 #define ALIGNMENT(type) \
-        (long)(((struct { char a; type b[1]; } *)0)->b)
+        (AUX_PTR(type)->b.d - AUX_PTR(type)->a)
 #define FFI_DESC(symbol,type) \
         {symbol, sizeof(type), ALIGNMENT(type)}
 

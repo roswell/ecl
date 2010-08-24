@@ -405,7 +405,7 @@ FEinvalid_function_name(cl_object fname)
 
 /*      bootstrap version                */
 static cl_object
-universal_error_handler(cl_narg narg, cl_object c, cl_object err, cl_object args, ...)
+universal_error_handler(cl_narg narg, ...)
 {
 	ecl_internal_error("\nLisp initialization error.\n");
 }
