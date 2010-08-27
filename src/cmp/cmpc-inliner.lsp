@@ -147,6 +147,11 @@
                    (return-from inline-type-matches nil))
                  (push new-type rts)
                  (setq number-max (maximum-float-type number-max new-type))))
+              #+sse2
+              ;; Allow implicit casts between SSE subtypes to kick in
+              ((and (type>= 'ext:sse-pack type)
+                    (type>= 'ext:sse-pack arg-type))
+               (push type rts))
               ((type>= type arg-type)
                (push type rts))
               (t (return-from inline-type-matches nil)))))

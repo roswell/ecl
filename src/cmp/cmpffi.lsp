@@ -355,7 +355,20 @@
 	((:int-sse-pack :float-sse-pack :double-sse-pack)
 	 (case loc-rep-type
 	   ((:object)
-	    (wt-from-object-conversion dest-type loc-type dest-rep-type loc))
+	    (wt-from-object-conversion 'ext:sse-pack loc-type dest-rep-type loc))
+           ;; Implicitly cast between SSE subtypes
+           ((:int-sse-pack :float-sse-pack :double-sse-pack)
+            (wt (ecase dest-rep-type
+                  (:int-sse-pack (ecase loc-rep-type
+                                   (:float-sse-pack "_mm_castps_si128")
+                                   (:double-sse-pack "_mm_castpd_si128")))
+                  (:float-sse-pack (ecase loc-rep-type
+                                     (:int-sse-pack "_mm_castsi128_ps")
+                                     (:double-sse-pack "_mm_castpd_ps")))
+                  (:double-sse-pack (ecase loc-rep-type
+                                      (:int-sse-pack "_mm_castsi128_pd")
+                                      (:float-sse-pack "_mm_castps_pd"))))
+                "(" loc ")"))
 	   (otherwise
 	    (coercion-error))))
 	(t
