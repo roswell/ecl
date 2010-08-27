@@ -61,7 +61,7 @@
       #+clos
       (STRUCTURE-OBJECT 'STRUCTURE-OBJECT)
       #+sse2
-      ((EXT:INT-SSE-PACK EXT:FLOAT-SSE-PACK EXT:DOUBLE-SSE-PACK) type)
+      ((EXT:SSE-PACK EXT:INT-SSE-PACK EXT:FLOAT-SSE-PACK EXT:DOUBLE-SSE-PACK) type)
       (t t))))
 
 (defun valid-type-specifier (type)

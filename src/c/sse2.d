@@ -31,24 +31,6 @@ si_sse_pack_p(cl_object x)
 	@(return (ECL_SSE_PACK_P(x) ? Ct : Cnil))
 }
 
-cl_object
-si_int_sse_pack_p(cl_object x)
-{
-	@(return (ECL_SSE_PACK_P(x) && x->sse.elttype != aet_sf && x->sse.elttype != aet_df ? Ct : Cnil))
-}
-
-cl_object
-si_float_sse_pack_p(cl_object x)
-{
-	@(return (ECL_SSE_PACK_P(x) && x->sse.elttype == aet_sf ? Ct : Cnil))
-}
-
-cl_object
-si_double_sse_pack_p(cl_object x)
-{
-	@(return (ECL_SSE_PACK_P(x) && x->sse.elttype == aet_df ? Ct : Cnil))
-}
-
 /* Element type substitution */
 
 static void verify_sse_elttype(cl_elttype eltt) {

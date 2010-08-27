@@ -328,11 +328,7 @@ cl_type_of(cl_object x)
 		break;
 #ifdef ECL_SSE2
 	case t_sse_pack:
-		switch (x->sse.elttype) {
-		case aet_sf: t = @'ext::float-sse-pack'; break;
-		case aet_df: t = @'ext::double-sse-pack'; break;
-		default:     t = @'ext::int-sse-pack'; break;
-		}
+		t = @'ext::sse-pack';
 		break;
 #endif
 	default:

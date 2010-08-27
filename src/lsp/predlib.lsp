@@ -343,9 +343,9 @@ and is not adjustable."
       (STRUCTURE . SYS:STRUCTUREP)
       (SYMBOL . SYMBOLP)
       #+sse2 (EXT:SSE-PACK . EXT:SSE-PACK-P)
-      #+sse2 (EXT:INT-SSE-PACK . EXT:INT-SSE-PACK-P)
-      #+sse2 (EXT:FLOAT-SSE-PACK . EXT:FLOAT-SSE-PACK-P)
-      #+sse2 (EXT:DOUBLE-SSE-PACK . EXT:DOUBLE-SSE-PACK-P)
+      #+sse2 (EXT:INT-SSE-PACK . EXT:SSE-PACK-P)
+      #+sse2 (EXT:FLOAT-SSE-PACK . EXT:SSE-PACK-P)
+      #+sse2 (EXT:DOUBLE-SSE-PACK . EXT:SSE-PACK-P)
       (T . CONSTANTLY-T)
       (VECTOR . VECTORP))))
 
@@ -654,14 +654,6 @@ if not possible."
 	   (FUNCTION (coerce-to-function object))
 	   ((VECTOR SIMPLE-VECTOR #+unicode SIMPLE-BASE-STRING SIMPLE-STRING #+unicode BASE-STRING STRING BIT-VECTOR SIMPLE-BIT-VECTOR)
 	    (concatenate type object))
-           #+sse2
-           ((EXT:INT-SSE-PACK EXT:FLOAT-SSE-PACK EXT:DOUBLE-SSE-PACK)
-            (if (ext:sse-pack-p object)
-                (ext:sse-pack-as-elt-type object (case type
-                                                   (EXT:INT-SSE-PACK '(unsigned-byte 8))
-                                                   (EXT:FLOAT-SSE-PACK 'single-float)
-                                                   (EXT:DOUBLE-SSE-PACK 'double-float)))
-                (error-coerce object type)))
 	   (t
 	    (if (or (listp object) (vector object))
 		(concatenate type object)

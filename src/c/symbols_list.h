@@ -1937,11 +1937,8 @@ cl_symbols[] = {
 {EXT_ "VECTOR-TO-SSE-PACK", EXT_ORDINARY, si_vector_to_sse_pack, 1, OBJNULL},
 {EXT_ "SSE-PACK-TO-VECTOR", EXT_ORDINARY, si_sse_pack_to_vector, 2, OBJNULL},
 {EXT_ "INT-SSE-PACK", EXT_ORDINARY, NULL, -1, OBJNULL},
-{EXT_ "INT-SSE-PACK-P", EXT_ORDINARY, si_int_sse_pack_p, 1, OBJNULL},
 {EXT_ "FLOAT-SSE-PACK", EXT_ORDINARY, NULL, -1, OBJNULL},
-{EXT_ "FLOAT-SSE-PACK-P", EXT_ORDINARY, si_float_sse_pack_p, 1, OBJNULL},
 {EXT_ "DOUBLE-SSE-PACK", EXT_ORDINARY, NULL, -1, OBJNULL},
-{EXT_ "DOUBLE-SSE-PACK-P", EXT_ORDINARY, si_double_sse_pack_p, 1, OBJNULL},
 {EXT_ "SSE-PACK-ELEMENT-TYPE", EXT_ORDINARY, si_sse_pack_element_type, 1, OBJNULL},
 #endif
 

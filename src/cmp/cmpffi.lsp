@@ -78,11 +78,6 @@
     :wchar
     (character "ecl_character" "CODE_CHAR" "ecl_char_code" "CHAR_CODE")
     #+sse2
-    :int-sse-pack
-    #+sse2
-    (ext:int-sse-pack "__m128i" "ecl_make_int_sse_pack"
-     "ecl_unbox_int_sse_pack" "ecl_unbox_int_sse_pack_unsafe")
-    #+sse2
     :float-sse-pack
     #+sse2
     (ext:float-sse-pack "__m128" "ecl_make_float_sse_pack"
@@ -92,6 +87,11 @@
     #+sse2
     (ext:double-sse-pack "__m128d" "ecl_make_double_sse_pack"
      "ecl_unbox_double_sse_pack" "ecl_unbox_double_sse_pack_unsafe")
+    #+sse2
+    :int-sse-pack
+    #+sse2
+    (ext:sse-pack #|<-intentional|# "__m128i" "ecl_make_int_sse_pack"
+     "ecl_unbox_int_sse_pack" "ecl_unbox_int_sse_pack_unsafe")
     :object
     (t "cl_object")
     :bool
@@ -148,7 +148,11 @@
      for rep-type = (first record)
      for information = (second record)
      do (setf (gethash rep-type table) information)
-     finally (return table)))
+     finally (progn
+               #+sse2 ; hack: sse-pack -> int, but int -> int-sse-pack
+               (setf (gethash :int-sse-pack table)
+                     (list* 'ext:int-sse-pack (cdr (gethash :int-sse-pack table))))
+               (return table))))
 
 (defun c-number-rep-type-p (rep-type)
   (member rep-type +all-number-rep-types+))

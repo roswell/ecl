@@ -294,10 +294,7 @@ ecl_eql(cl_object x, cl_object y)
 			ecl_eql(x->complex.imag, y->complex.imag));
 #ifdef ECL_SSE2
 	case t_sse_pack:
-		return (x->sse.elttype == y->sse.elttype ||
-			(x->sse.elttype != aet_sf && x->sse.elttype != aet_df &&
-			 y->sse.elttype != aet_sf && y->sse.elttype != aet_df))
-			&& !memcmp(x->sse.data.b8, y->sse.data.b8, 16);
+		return !memcmp(x->sse.data.b8, y->sse.data.b8, 16);
 #endif
 	default:
 		return FALSE;
