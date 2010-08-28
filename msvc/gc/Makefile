@@ -1,8 +1,7 @@
 # Makefile for Windows NT.  Assumes Microsoft compiler.
 # DLLs are included in the root set under NT, but not under win32S.
 # Use "nmake nodebug=1 all" for optimized versions of library, gctest and editor.
-
-MY_CPU=X86
+# MY_CPU=X86 for 32 bits or AMD64 for 64 bits
 CPU=$(MY_CPU)
 !include <ntwin32.mak>
 
@@ -45,7 +44,11 @@ all: gc.lib
 $(OBJS) tests\test.obj: $(srcdir)\include\private\gc_priv.h $(srcdir)\include\private\gc_hdrs.h $(srcdir)\include\gc.h $(srcdir)\include\private\gcconfig.h $(srcdir)\include\private\gc_locks.h $(srcdir)\include\private\gc_pmark.h $(srcdir)\include\gc_mark.h $(srcdir)\include\private\msvc_dbg.h
 
 gc.lib: $(OBJS)
+!if "$(CPU)" == "X386"
 	lib /MACHINE:i386 /out:gc.lib $(OBJS)
+!else
+	lib /MACHINE:X64 /out:gc.lib $(OBJS)
+!endif
 # The original NT SDK used lib32 instead of lib
 
 gctest.exe: tests\test.obj gc.lib

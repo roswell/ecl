@@ -4,6 +4,14 @@
 top_srcdir = ..\..\src
 srcdir	= ..\..\src\c
 
+!if "$(ECL_WIN64)" != ""
+ECL_FFI_OBJ=
+ECL_FPE_CODE=fpe_none.c
+!else
+ECL_FFI_OBJ=ffi_x86.obj
+ECL_FPE_CODE=fpe_x86.c
+!endif
+
 !if "$(ECL_THREADS)" != ""
 ECL_THREADS_FLAG=1
 THREADS_OBJ= threads.obj threads_mutex.obj
@@ -67,7 +75,8 @@ OBJS	= main.obj symbol.obj package.obj list.obj\
 	time.obj unixint.obj\
 	mapfun.obj multival.obj hash.obj format.obj pathname.obj\
 	structure.obj load.obj unixfsys.obj unixsys.obj \
-	ffi.obj alloc_2.obj tcp.obj $(THREADS_OBJ) ffi_x86.obj serialize.obj
+	ffi.obj alloc_2.obj tcp.obj $(THREADS_OBJ) serialize.obj \
+	$(ECL_FFI_OBJ)
 
 all:	$(DPP) ..\eclmin.lib ..\cinit.obj
 
@@ -109,7 +118,7 @@ $(DPP): $(srcdir)/dpp.c $(srcdir)/symbols_list2.h ../ecl/config.h
 	$(TRUE_CC) -I.. -I./ $(srcdir)/dpp.c  -o $@
 ../ecl/config.h: ../ecl/config.h.msvc6 Makefile
 	for %i in ($(HFILES)) do $(CP) %i ..\ecl
-	cut.exe "@ECL_FPE_CODE@" "$(srcdir:\=/)/arch/fpe_x86.c" \
+	cut.exe "@ECL_FPE_CODE@" "$(srcdir:\=/)/arch/$(ECL_FPE_CODE)" \
 		"@ECL_VERSION_NUMBER@" "$(ECL_VERSION_NUMBER)" \
 		"@ECL_THREADS@" "$(ECL_THREADS_FLAG)" \
 		"@ECL_UNICODE@" "$(ECL_UNICODE_FLAG)" \

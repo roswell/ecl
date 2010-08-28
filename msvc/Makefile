@@ -17,6 +17,9 @@ SOFTWARE_TYPE     = NT
 SOFTWARE_VERSION  = 5.0
 THEHOST           = win32
 
+# Define to 1 to make a 64-bit build
+ECL_WIN64 =
+
 # Define here the processor type to compile GMP library
 # with maximum optimization. Possible values are:
 # 	gc -> generic implementation
@@ -80,6 +83,14 @@ MKNSI   = makensis.exe
 
 !if "$(ECL_SSE)" != ""
 CFLAGS_SSE=/arch:SSE2
+!endif
+
+!if "$(ECL_WIN64)" != ""
+GMP_BITS=64
+GC_CPU=AMD64
+!else
+GMP_BITS=32
+GC_CPU=X86
 !endif
 
 #
@@ -323,7 +334,7 @@ eclmin.lib: eclgmp.lib eclgc.lib lsp/config.lsp
 	cd ..
 eclgc.lib:
 	cd gc
-	$(MAKE) $(GCFLAGS) ECL_THREADS=$(ECL_THREADS) "CFLAGS_CONFIG=$(CFLAGS_CONFIG)" gc.lib
+	$(MAKE) $(GCFLAGS) ECL_THREADS=$(ECL_THREADS) "CFLAGS_CONFIG=$(CFLAGS_CONFIG)" "MY_CPU=$(GC_CPU)" gc.lib
 	$(CP) gc.lib ..\eclgc.lib
 	cd ..
 	if not exist ecl\gc $(MKDIR) ecl\gc
@@ -336,7 +347,8 @@ eclgc.lib:
 	$(CP) $(srcdir)\gc\libatomic_ops-1.2\src\atomic_ops.h ecl\gc
 eclgmp.lib:
 	cd gmp
-	$(MAKE) "MPN_TYPE = $(GMP_TYPE)" "CFLAGS_CONFIG=$(CFLAGS_CONFIG)"
+	$(MAKE) "MPN_TYPE=$(GMP_TYPE)" "CFLAGS_CONFIG=$(CFLAGS_CONFIG)" \
+		"BITS=$(GMP_BITS)"
 	$(CP) gmp.lib ..\eclgmp.lib
 	$(CP) gmp.h ..\ecl\gmp.h
 	cd ..
