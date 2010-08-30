@@ -552,6 +552,7 @@ Use special code 0 to cancel this operation.")
 		 ((:prompt-hook *tpl-prompt-hook*) *tpl-prompt-hook*)
   		 (broken-at nil)
 		 (quiet nil))
+  #-ecl-min
   (declare (c::policy-debug-ihs-frame))
   (let* ((*ihs-base* *ihs-top*)
 	 (*ihs-top* (if broken-at (ihs-search t broken-at) (ihs-top)))
@@ -1443,6 +1444,7 @@ package."
   ;; call *INVOKE-DEBUGGER-HOOK* first, so that *DEBUGGER-HOOK* is not
   ;; called when the debugger is disabled. We adopt this mechanism
   ;; from SBCL.
+  #-ecl-min
   (declare (c::policy-debug-ihs-frame))
   (let ((old-hook *invoke-debugger-hook*))
     (when old-hook

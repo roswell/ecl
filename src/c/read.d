@@ -2537,7 +2537,7 @@ read_VV(cl_object block, void (*entry_point)(cl_object))
 				2, CAR(x), block->cblock.name);
 			}
 		} end_loop_for_on(x);
-                old_eptbc = cl_core.packages_to_be_created;
+                /* old_eptbc = cl_core.packages_to_be_created; */
 		if (VVtemp) {
 			block->cblock.temp_data = NULL;
 			block->cblock.temp_data_size = 0;

@@ -33,6 +33,8 @@ ECL 10.5.1:
 
  - RENAME-FILE was not able to rename directories.
 
+ - Detection of missing packages in the reader was accidentally deactivated.
+
 * Visible changes:
 
  - "fasb" is now a valid FASL file type, accepted by ECL even in absence of
