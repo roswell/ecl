@@ -1073,6 +1073,14 @@ static void
 write_sse_pack(cl_object x, cl_object stream)
 {
 	int i;
+	cl_elttype etype = x->sse.elttype;
+	cl_object mode = ecl_symbol_value(@'ext::*sse-pack-print-mode*');
+
+	if (mode != Cnil) {
+		if (mode == @':float') etype = aet_sf;
+		else if (mode == @':double') etype = aet_df;
+		else etype = aet_b8;
+	}
 
 	switch (x->sse.elttype) {
 	case aet_sf:

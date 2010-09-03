@@ -1940,6 +1940,7 @@ cl_symbols[] = {
 {EXT_ "FLOAT-SSE-PACK",NULL},
 {EXT_ "DOUBLE-SSE-PACK",NULL},
 {EXT_ "SSE-PACK-ELEMENT-TYPE","si_sse_pack_element_type"},
+{EXT_ "*SSE-PACK-PRINT-MODE*",NULL},
 #endif
 
 {EXT_ "UNIX-SIGNAL-RECEIVED",NULL},
