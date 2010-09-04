@@ -2531,13 +2531,14 @@ read_VV(cl_object block, void (*entry_point)(cl_object))
 		(*entry_point)(MAKE_FIXNUM(0));
 		x = cl_core.packages_to_be_created;
 		loop_for_on(x) {
+                        if (ecl_member(x, cl_core.packages))
+                                continue;
 			if ((old_eptbc == OBJNULL) || !ecl_member(x, old_eptbc)) {
 				CEerror(Ct, "The package named ~A was referenced in "
 				"compiled file~&  ~A~&but has not been created",
 				2, CAR(x), block->cblock.name);
 			}
 		} end_loop_for_on(x);
-                /* old_eptbc = cl_core.packages_to_be_created; */
 		if (VVtemp) {
 			block->cblock.temp_data = NULL;
 			block->cblock.temp_data_size = 0;
