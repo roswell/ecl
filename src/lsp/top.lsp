@@ -898,6 +898,23 @@ Use special code 0 to cancel this operation.")
 		output = ecl_make_doublefloat(*p);
 		break;
 	}
+#ifdef ECL_SSE2
+	case _ecl_int_sse_pack_loc: {
+		__m128i *p = (__m128i*)value;
+		output = ecl_make_int_sse_pack(_mm_loadu_si128(p));
+		break;
+	}
+	case _ecl_float_sse_pack_loc: {
+		__m128 *p = (__m128*)value;
+		output = ecl_make_float_sse_pack(_mm_loadu_ps((float*)p));
+		break;
+	}
+	case _ecl_double_sse_pack_loc: {
+		__m128d *p = (__m128d*)value;
+		output = ecl_make_double_sse_pack(_mm_loadu_pd((double*)p));
+		break;
+	}
+#endif
 	default: {
 		ecl_base_char *p = (ecl_base_char*)value;
 		output = CODE_CHAR(*p);

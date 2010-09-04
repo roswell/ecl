@@ -562,6 +562,9 @@
                 (:char . "_ecl_base_char_loc")
                 (:float . "_ecl_float_loc")
                 (:double . "_ecl_double_loc")
+		#+sse2 (:int-sse-pack . "_ecl_int_sse_pack_loc")
+		#+sse2 (:float-sse-pack . "_ecl_float_sse_pack_loc")
+		#+sse2 (:double-sse-pack . "_ecl_double_sse_pack_loc")
                 ((special global closure lexical) . NIL)))))
 
 (defun build-debug-lexical-env (var-locations &optional first)
