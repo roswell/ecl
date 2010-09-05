@@ -252,7 +252,7 @@ LOOP:
 				   all referenced packages have been properly built.
 				*/
 				cl_object name = cl_copy_seq(token);
-				unlikely_if (cl_core.packages_to_be_created == OBJNULL) {
+				unlikely_if (cl_core.packages_to_be_created_p == Cnil) {
 					FEerror("There is no package with the name ~A.",
 						1, name);
 				} else if (!Null(p = ecl_assoc(name, cl_core.packages_to_be_created))) {
@@ -2428,8 +2428,7 @@ read_VV(cl_object block, void (*entry_point)(cl_object))
                 cl_object progv_list;
 
 		ecl_bds_bind(env, @'si::*cblock*', block);
-		if (cl_core.packages_to_be_created == OBJNULL)
-			cl_core.packages_to_be_created = Cnil;
+                cl_core.packages_to_be_created_p = Ct;
 
 		/* Communicate the library which Cblock we are using, and get
 		 * back the amount of data to be processed.
@@ -2507,6 +2506,8 @@ read_VV(cl_object block, void (*entry_point)(cl_object))
                                        "binary file", in, 0);
 #endif
 	NO_DATA_LABEL:
+                cl_core.packages_to_be_created_p = Cnil;
+
 		for (i = 0; i < block->cblock.cfuns_size; i++) {
 			const struct ecl_cfun *prototype = block->cblock.cfuns+i;
 			cl_index fname_location = fix(prototype->block);
@@ -2529,16 +2530,17 @@ read_VV(cl_object block, void (*entry_point)(cl_object))
 		}
 		/* Execute top-level code */
 		(*entry_point)(MAKE_FIXNUM(0));
-		x = cl_core.packages_to_be_created;
-		loop_for_on(x) {
-                        if (ecl_member(x, cl_core.packages))
-                                continue;
-			if ((old_eptbc == OBJNULL) || !ecl_member(x, old_eptbc)) {
-				CEerror(Ct, "The package named ~A was referenced in "
-				"compiled file~&  ~A~&but has not been created",
-				2, CAR(x), block->cblock.name);
-			}
-		} end_loop_for_on(x);
+		x = cl_set_difference(2, cl_core.packages_to_be_created, old_eptbc);
+                old_eptbc = cl_core.packages_to_be_created;
+                unlikely_if (!Null(x)) {
+                        CEerror(Ct,
+                                Null(ECL_CONS_CDR(x))?
+                                "Package ~A referenced in "
+				"compiled file~&  ~A~&but has not been created":
+                                "The packages~&  ~A~&were referenced in "
+				"compiled file~&  ~A~&but have not been created",
+				2, x, block->cblock.name);
+		}
 		if (VVtemp) {
 			block->cblock.temp_data = NULL;
 			block->cblock.temp_data_size = 0;
@@ -2549,6 +2551,7 @@ read_VV(cl_object block, void (*entry_point)(cl_object))
 		if (in != OBJNULL)
 			cl_close(1,in);
 		cl_core.packages_to_be_created = old_eptbc;
+                cl_core.packages_to_be_created_p = Cnil;
 	} CL_UNWIND_PROTECT_END;
 
 	return block;

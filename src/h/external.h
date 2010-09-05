@@ -173,6 +173,7 @@ struct cl_core_struct {
 #endif
 	cl_object mp_package;
 	cl_object packages_to_be_created;
+        cl_object packages_to_be_created_p;
 
 	cl_object pathname_translations;
         cl_object library_pathname;

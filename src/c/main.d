@@ -378,7 +378,8 @@ struct cl_core_struct cl_core = {
 # endif
 #endif
 	Cnil, /* mp_package */
-	OBJNULL, /* packages_to_be_created */
+	Cnil, /* packages_to_be_created */
+        Cnil, /* packages_to_be_created_p */
 
 	Cnil, /* pathname_translations */
         Cnil, /* library_pathname */
