@@ -140,14 +140,14 @@
 
 (make-package "ASDF")
 
-(defun build-fake-asdf (name)
+(defun build-fake-asdf (name &optional (filename (string name)))
   (let ((path (make-pathname :name name :type "asd")))
     (with-open-file (*standard-output* path
                      :direction :output :if-exists :supersede
                      :if-does-not-exist :create)
-    (print `(defsystem ,name :class asdf::prebuilt-system
-               :lib ,(format nil "SYS:~A" (string name))
-               :components ((:compiled-file ,(string name))))))
+      (print `(defsystem ,name :class asdf::prebuilt-system
+                         :lib ,(format nil "SYS:~A" filename)
+                         :components ((:compiled-file ,filename)))))
     path))
 
 (defun build-module (name sources &key additional-files

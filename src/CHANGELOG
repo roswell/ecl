@@ -98,6 +98,11 @@ ECL 10.5.1:
 
  - (EXPT 2 -2.0d0) is now computed in double precision.
 
+ - When building programs with ASDF:MAKE-BUILD, "prebuilt-asdf" may be listed
+   in the dependencies, as the last one, so that ASDF is linked in. It is
+   required by some packages that do not distinguish between compilation and
+   distribution.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
