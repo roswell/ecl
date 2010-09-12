@@ -406,7 +406,10 @@ si_make_pure_array(cl_object etype, cl_object dims, cl_object adj,
 	cl_object x;
 	if (FIXNUMP(dims)) {
 		return si_make_vector(etype, dims, adj, fillp, displ, disploff);
-	}
+	} else if (ecl_unlikely(!ECL_LISTP(dims))) {
+                FEwrong_type_nth_arg(@[make-array], 1, dims,
+                                     cl_list(3, @'or', @'list', @'fixnum'));
+        }
 	r = ecl_length(dims);
 	if (ecl_unlikely(r >= ARANKLIM)) {
 		FEerror("The array rank, ~R, is too large.", 1, MAKE_FIXNUM(r));
