@@ -98,13 +98,13 @@ the function name it precedes."
 
 (defun guess-init-name (pathname kind)
   (if (eq kind :object)
-    (or (and (probe-file pathname)
-	     (find-init-name pathname))
-	(error "Cannot find out entry point for binary file ~A" pathname))
-    (compute-init-name pathname :kind kind)))
+      (or (and (probe-file pathname)
+               (find-init-name pathname))
+          (error "Cannot find out entry point for binary file ~A" pathname))
+      (compute-init-name pathname :kind kind)))
 
 (defun compute-init-name (pathname &key (kind (guess-kind pathname)))
-  (let ((filename (pathname-name pathname)))
+  (let ((filename (pathname-name (translate-logical-pathname pathname))))
     (case kind
       ((:object :c)
        (unique-init-name pathname))
