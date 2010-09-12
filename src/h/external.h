@@ -156,7 +156,7 @@ struct cl_env_struct {
 #endif
 
 /*
- * Per-process data.
+ * Per-process data. Modify main.d accordingly.
  */
 
 struct cl_core_struct {
@@ -172,6 +172,7 @@ struct cl_core_struct {
 # endif
 #endif
 	cl_object mp_package;
+        cl_object c_package;
 	cl_object packages_to_be_created;
         cl_object packages_to_be_created_p;
 

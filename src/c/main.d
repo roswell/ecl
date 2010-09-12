@@ -313,6 +313,8 @@ ecl_def_ct_base_string(str_common_lisp_user,"COMMON-LISP-USER",16,static,const);
 ecl_def_ct_base_string(str_cl,"CL",2,static,const);
 ecl_def_ct_base_string(str_cl_user,"CL-USER",7,static,const);
 ecl_def_ct_base_string(str_LISP,"LISP",4,static,const);
+ecl_def_ct_base_string(str_c,"C",1,static,const);
+ecl_def_ct_base_string(str_compiler,"COMPILER",11,static,const);
 ecl_def_ct_base_string(str_user,"USER",4,static,const);
 ecl_def_ct_base_string(str_keyword,"KEYWORD",7,static,const);
 ecl_def_ct_base_string(str_si,"SI",2,static,const);
@@ -378,6 +380,7 @@ struct cl_core_struct cl_core = {
 # endif
 #endif
 	Cnil, /* mp_package */
+        Cnil, /* c_package */
 	Cnil, /* packages_to_be_created */
         Cnil, /* packages_to_be_created_p */
 
@@ -547,6 +550,10 @@ cl_boot(int argc, char **argv)
 	cl_core.system_package =
 		ecl_make_package(str_si,
                                  cl_list(3,str_system,str_sys,str_ext),
+				 ecl_list1(cl_core.lisp_package));
+	cl_core.c_package =
+		ecl_make_package(str_c,
+                                 ecl_list1(str_compiler),
 				 ecl_list1(cl_core.lisp_package));
 #ifdef CLOS
 	cl_core.clos_package =
