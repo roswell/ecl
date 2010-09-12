@@ -34,7 +34,7 @@
 #include <ecl/internal.h>
 #if defined(ECL_MS_WINDOWS_HOST)
 # include <windows.h>
-# include <WinSock.h>
+# include <winsock.h>
 #endif
 
 #if !defined(HAVE_GETTIMEOFDAY) && !defined(HAVE_GETRUSAGE) && !defined(ECL_MS_WINDOWS_HOST)

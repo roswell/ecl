@@ -72,7 +72,7 @@ bin/ecl$(EXE): ecl_min$(EXE) compile.lsp ecl/external.h build-stamp
 	if [ -f CROSS-COMPILER ]; then \
 		./CROSS-COMPILER compile; \
 	else \
-		ECLDIR=`pwd`/ ./ecl_min compile; \
+		ECLDIR=`pwd`/ ./ecl_min$(EXE) compile; \
 	fi
 
 ecl_min$(EXE): $(LIBRARIES) .gdbinit @LIBPREFIX@eclmin.@LIBEXT@
