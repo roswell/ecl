@@ -1647,10 +1647,14 @@ collected result will be returned as the value of the LOOP."
 (defun loop-do-repeat ()
   (loop-disallow-conditional :repeat)
   (let* ((form (loop-get-form))
-         (type (if (fixnump form) 'fixnum 'real)))
-    (let ((var (loop-make-variable (gensym) form type)))
-      (push `(when (minusp (decf ,var)) (go end-loop)) *loop-before-loop*)
-      (push `(when (minusp (decf ,var)) (go end-loop)) *loop-after-body*)
+         (type (if (fixnump form) 'fixnum 'real))
+         (var (loop-make-variable (gensym) form type))
+         #-ecl
+         (form `(when (minusp (decf ,var)) (go end-loop)))
+         #+ecl ;; ECL 10.9.1 has a problem with optimizing (+ ...)
+         (form `(when (minusp (setf ,var (1- ,var))) (go end-loop))))
+      (push form *loop-before-loop*)
+      (push form *loop-after-body*)
       ;; FIXME: What should
       ;;   (loop count t into a
       ;;         repeat 3
@@ -1658,7 +1662,7 @@ collected result will be returned as the value of the LOOP."
       ;;         finally (return (list a b)))
       ;; return: (3 3) or (4 3)? PUSHes above are for the former
       ;; variant, L-P-B below for the latter.
-      #+nil (loop-pseudo-body `(when (minusp (decf ,var)) (go end-loop))))))
+      #+nil (loop-pseudo-body form)))
 
 (defun loop-when-it-variable ()
   (declare (si::c-local))
