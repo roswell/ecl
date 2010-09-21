@@ -41,6 +41,7 @@
        for fun-name = (intern (concatenate 'string
                                            "POLICY-TO-" (symbol-name name) "-LEVEL"))
        collect `(defun ,fun-name (policy)
+                  (declare (declaration ext:assume-right-type))
                   (loop for level from 0 to 3
                      when (logbitp (+ level ,i) policy)
                      return level))))
@@ -235,6 +236,7 @@
                     (and (logtest bits ,test)
                          ,@extra))))))))))
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
 
 ;;
 ;; ERROR CHECKING POLICY
@@ -297,7 +299,6 @@ INTGERP, STRINGP.")
 (define-policy inline-sequence-functions :off space 2
   "Inline functions such as MAP, MEMBER, FIND, etc")
 
-
 ;;
 ;; DEBUG POLICY
 ;;
@@ -309,6 +310,8 @@ INTGERP, STRINGP.")
 
 (define-policy debug-ihs-frame :on debug 3
   "Let the functions appear in backtraces")
+
+); eval-when
 
 (defun safe-compile ()
   (>= (cmp-env-optimization 'safety) 2))
