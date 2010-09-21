@@ -140,8 +140,9 @@
 
 (defmacro do-in-seq ((%elt sequence &key (start 0) end output) &body body)
   (ext:with-unique-names (%start %iterator %counter %sequence)
-    (let* ((counter (and end `(- (or ,end most-positive-fixnum)
-                                 ,%start)))
+    (let* ((counter (if end
+                        `(- (or ,end most-positive-fixnum) ,%start)
+                        0))
            (test (if end
                      `(and ,%iterator (plusp ,%counter))
                      %iterator)))
