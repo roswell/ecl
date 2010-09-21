@@ -1646,8 +1646,8 @@ collected result will be returned as the value of the LOOP."
 
 (defun loop-do-repeat ()
   (loop-disallow-conditional :repeat)
-  (let ((form (loop-get-form))
-	(type 'real))
+  (let* ((form (loop-get-form))
+         (type (if (fixnump form) 'fixnum 'real)))
     (let ((var (loop-make-variable (gensym) form type)))
       (push `(when (minusp (decf ,var)) (go end-loop)) *loop-before-loop*)
       (push `(when (minusp (decf ,var)) (go end-loop)) *loop-after-body*)
