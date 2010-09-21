@@ -96,6 +96,7 @@
 #endif
 #define ECL_DEFINE_FENV_CONSTANTS
 #include <ecl/internal.h>
+#include <ecl/ecl-inl.h>
 
 static struct {
 	int code;
@@ -362,15 +363,18 @@ unblock_signal(int signal)
 }
 #endif
 
+ecl_def_ct_base_string(str_ignore_signal,"Ignore signal ~:*~D",19,static,const);
+
 static void
 handle_signal_now(cl_object signal_code)
 {
         switch (type_of(signal_code)) {
         case t_fixnum:
-                cl_error(3, @'ext::unix-signal-received', @':code', signal_code);
+                cl_cerror(4, str_ignore_signal, @'ext::unix-signal-received',
+                          @':code', signal_code);
                 break;
         case t_symbol:
-                cl_error(1, signal_code);
+                cl_cerror(2, str_ignore_signal, signal_code);
                 break;
         case t_cfun:
         case t_cfunfixed:
