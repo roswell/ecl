@@ -133,7 +133,7 @@
 
 (defun handle-compiler-internal-error (c)
   (when *compiler-break-enable*
-    (si::default-debugger c))
+    (invoke-debugger c))
   (setf c (make-condition 'compiler-internal-error
                           :format-control "~A"
                           :format-arguments (list c)))
@@ -156,13 +156,6 @@
 
 (defmacro with-compilation-unit ((&rest options) &body body)
  `(do-compilation-unit #'(lambda () ,@body) ,@options))
-
-(defun compiler-debugger (condition old-hook)
-  #+(or)
-  (when *compiler-break-enable*
-    (si::default-debugger condition))
-  (si::default-debugger condition)
-  (abort))
 
 (defmacro with-compiler-env ((compiler-conditions) &body body)
   `(let ((*compiler-conditions* nil))

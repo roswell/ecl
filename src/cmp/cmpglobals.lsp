@@ -334,7 +334,6 @@ be deleted if they have been opened with LoadLibrary.")
     (*compile-time-too* nil)
     (*clines-string-list* '())
     (*inline-blocks* 0)
-    (*debugger-hook* 'compiler-debugger)
     #+new-cmp
     (*type-and-cache* (type-and-empty-cache))
     #+new-cmp
