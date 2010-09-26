@@ -699,12 +699,17 @@ prepare_ratio_to_float(cl_object num, cl_object den, int digits, cl_fixnum *scal
          * so that we have smaller operands.
          */
         cl_fixnum scale = remove_zeros(&den);
-        cl_fixnum num_size, den_size, delta;
-        num_size = ecl_integer_length(num);
-        den_size = ecl_integer_length(den);
-        delta = den_size - num_size;
+        cl_fixnum num_size = ecl_integer_length(num);
+        cl_fixnum delta = ecl_integer_length(den) - num_size;
         scale -= delta;
-        num = ecl_ash(num, digits + delta + 1);
+        {
+                cl_fixnum adjust = digits + delta + 1;
+                if (adjust > 0) {
+                        num = ecl_ash(num, adjust);
+                } else if (adjust < 0) {
+                        den = ecl_ash(den, -adjust);
+                }
+        }
         do {
                 cl_object fraction = ecl_truncate2(num, den);
                 cl_object rem = VALUES(1);
@@ -715,8 +720,8 @@ prepare_ratio_to_float(cl_object num, cl_object den, int digits, cl_fixnum *scal
                                         MAKE_FIXNUM(-1) :
                                         MAKE_FIXNUM(1);
                                 if (rem == MAKE_FIXNUM(0)) {
-                                        rem = cl_logand(2, fraction, MAKE_FIXNUM(2));
-                                        if (rem != MAKE_FIXNUM(0))
+                                        if (cl_logbitp(fraction, MAKE_FIXNUM(1))
+                                            != Cnil)
                                                 fraction = ecl_plus(fraction, one);
                                 } else {
                                         fraction = ecl_plus(fraction, one);
@@ -725,9 +730,8 @@ prepare_ratio_to_float(cl_object num, cl_object den, int digits, cl_fixnum *scal
                         *scaleout = scale - (digits + 1);
                         return fraction;
                 }
-                num = ecl_ash(num, -1);
+                den = ecl_ash(den, 1);
                 scale++;
-                --delta;
         } while (1);
 }
 #endif /* WITH_GMP */
@@ -783,7 +787,7 @@ ecl_to_double(cl_object x)
 	case t_fixnum:
 		return((double)(fix(x)));
 	case t_bignum:
-		return _ecl_big_to_double(x);
+		return ratio_to_double(x, MAKE_FIXNUM(1));
 	case t_ratio:
                 return ratio_to_double(x->ratio.num, x->ratio.den);
 	case t_singlefloat:
@@ -806,16 +810,8 @@ ecl_to_long_double(cl_object x)
 	switch(type_of(x)) {
 	case t_fixnum:
 		return (long double)fix(x);
-	case t_bignum: {
-                long double output = 0;
-                int i, l = mpz_size(x->big.big_num), exp = 0;
-                for (i = 0; i < l; i++) {
-                        output += mpz_getlimbn(x->big.big_num, i);
-                        output = ldexpl(output, -GMP_LIMB_BITS);
-                }
-                output = ldexpl(output, l * GMP_LIMB_BITS);
-                return (mpz_sgn(x->big.big_num) < 0) ? -output : output;
-        }
+	case t_bignum:
+                return ratio_to_long_double(x, MAKE_FIXNUM(1));
 	case t_ratio:
                 return ratio_to_long_double(x->ratio.num, x->ratio.den);
 	case t_singlefloat:
