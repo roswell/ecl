@@ -120,7 +120,8 @@
 
 ;;;; Miscellaneous Environment Things
 
-
+(defmacro loop-unsafe (&rest x)
+  `(locally (declare (ext:assume-right-type)) ,@x))
 
 ;;;The LOOP-Prefer-POP feature makes LOOP generate code which "prefers" to use POP or
 ;;; its obvious expansion (prog1 (car x) (setq x (cdr x))).  Usually this involves
@@ -1649,10 +1650,7 @@ collected result will be returned as the value of the LOOP."
   (let* ((form (loop-get-form))
          (type (if (fixnump form) 'fixnum 'real))
          (var (loop-make-variable (gensym) form type))
-         #-ecl
-         (form `(when (minusp (decf ,var)) (go end-loop)))
-         #+ecl ;; ECL 10.9.1 has a problem with optimizing (+ ...)
-         (form `(when (minusp (setf ,var (1- ,var))) (go end-loop))))
+         (form `(loop-unsafe (when (minusp (decf ,var)) (go end-loop)))))
       (push form *loop-before-loop*)
       (push form *loop-after-body*)
       ;; FIXME: What should
@@ -2031,6 +2029,7 @@ collected result will be returned as the value of the LOOP."
 		(setq endform (loop-typed-init indexv-type) inclusive-iteration t))
 	      (when endform (setq testfn (if inclusive-iteration  '< '<=)))
 	      (setq step (if (eql stepby 1) `(1- ,indexv) `(- ,indexv ,stepby)))))
+     (setq step `(loop-unsafe ,step))
      (when testfn (setq test (hide-variable-reference t indexv `(,testfn ,indexv ,endform))))
      (when step-hack
        (setq step-hack `(,variable ,(hide-variable-reference indexv-user-specified-p indexv step-hack))))
