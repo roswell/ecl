@@ -901,3 +901,4 @@ AC_CONFIG_FILES([
  ])
 AC_CONFIG_HEADERS([ecl/config.h:ecl/configpre.h]) # FIXME
 AC_OUTPUT
+for i in $srcdir/c/*/; do mkdir c/`basename $i`; done
