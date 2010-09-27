@@ -155,6 +155,21 @@
 	      #-:BUILTIN-BYTECMP nil)
 
 ;;;
+;;; * SSE
+;;;
+#+(and WANTS-CMP SSE2)
+(build-module "cl-simd"
+              '("ext:cl-simd;sse-package.lisp"
+                "ext:cl-simd;ecl-sse-core.lisp"
+                "ext:cl-simd;sse-intrinsics.lisp"
+                "ext:cl-simd;sse-array-defs.lisp"
+                "ext:cl-simd;ecl-sse-utils.lisp"
+                "ext:cl-simd;sse-utils.lisp")
+              :dir "build:ext;"
+              :prefix "EXT"
+              :builtin nil)
+
+;;;
 ;;; * DEFSYSTEM
 ;;;
 #+WANTS-DEFSYSTEM
