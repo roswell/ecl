@@ -1949,5 +1949,7 @@ cl_symbols[] = {
 {EXT_ "UNIX-SIGNAL-RECEIVED-CODE",NULL},
 {KEY_ "CODE",NULL},
 
+{EXT_ "ASSUME-RIGHT-TYPE",NULL},
+
 /* Tag for end of list */
 {NULL,NULL}};

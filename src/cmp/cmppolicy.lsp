@@ -31,10 +31,6 @@
   (setf (gethash 'compilation-speed *optimization-quality-switches*)
         '#1=((0 . 0) . #1#)))
 
-(eval-when (:load-toplevel)
-  (defparameter *optimization-quality-switches*
-    #.*optimization-quality-switches*))
-
 #.`(eval-when (:compile-toplevel :execute :load-toplevel)
   ,@(loop for name in +optimization-quality-orders+
        for i from 0 by 4
@@ -318,3 +314,7 @@ INTGERP, STRINGP.")
 
 (defun compiler-push-events ()
   (>= (cmp-env-optimization 'safety) 3))
+
+(eval-when (:load-toplevel)
+  (defparameter *optimization-quality-switches*
+    #.*optimization-quality-switches*))
