@@ -156,20 +156,21 @@
     ;;
     (when (or (eq (inline-info-return-rep-type inline-info) :bool)
               (null (inline-info-exact-return-type inline-info))
-              (let ((inline-return-type (inline-info-return-type inline-info)))
-                (if number-max
-                    ;; for arithmetic operators we take the maximal
-                    ;; type as possible result type. Note that FIXNUM
-                    ;; is not an option, because the product, addition
-                    ;; or difference of fixnums may be a larger
-                    ;; integer.
-                    (and (setf number-max (if (eq number-max 'fixnum)
-                                              'integer
-                                              number-max))
-                         (type>= inline-return-type number-max)
-                         (type>= number-max return-type))
-                    ;; no contravariance
-                    (type>= inline-return-type return-type))))
+              (and (policy-assume-right-type)
+                   (let ((inline-return-type (inline-info-return-type inline-info)))
+                     (if number-max
+                         ;; for arithmetic operators we take the maximal
+                         ;; type as possible result type. Note that FIXNUM
+                         ;; is not an option, because the product, addition
+                         ;; or difference of fixnums may be a larger
+                         ;; integer.
+                         (and (setf number-max (if (eq number-max 'fixnum)
+                                                   'integer
+                                                   number-max))
+                              (type>= inline-return-type number-max)
+                              (type>= number-max return-type))
+                         ;; no contravariance
+                         (type>= inline-return-type return-type)))))
       (let ((inline-info (copy-structure inline-info)))
         (setf (inline-info-arg-types inline-info)
               (nreverse rts))
