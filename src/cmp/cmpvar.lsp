@@ -140,7 +140,7 @@
 (defun special-variable-p (name)
   (or (si::specialp name)
       (check-global name)
-      (let ((v (cmp-env-search-var name)))
+      (let ((v (cmp-env-search-var name *cmp-env-root*)))
         ;; Fixme! Revise the declamation code to ensure whether
         ;; we also have to consider 'GLOBAL here.
         (and v (eq (var-kind v) 'SPECIAL)))))
