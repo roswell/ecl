@@ -15,17 +15,17 @@
     See file '../Copyright' for full details.
 */
 
-#include <ecl/ecl.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <fcntl.h>
+#if !defined(_MSC_VER)
+# include <unistd.h>
+#endif
+#include <ecl/ecl.h>
 #include <ecl/internal.h>
 #if defined(ECL_MS_WINDOWS_HOST)
 # include <windows.h>
-#endif
-#ifdef HAVE_UNISTD_H
-# include <unistd.h>
 #endif
 #ifdef HAVE_SYS_WAIT_H
 # include <sys/wait.h>

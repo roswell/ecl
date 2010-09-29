@@ -15,15 +15,15 @@
     See file '../Copyright' for full details.
 */
 
-#define ECL_INCLUDE_MATH_H
-#include <ecl/ecl.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <float.h>
 #ifndef _MSC_VER
-#include <unistd.h>
+# include <unistd.h>
 #endif
+#define ECL_INCLUDE_MATH_H
+#include <ecl/ecl.h>
 #if defined(HAVE_FENV_H)
 # include <fenv.h>
 #endif

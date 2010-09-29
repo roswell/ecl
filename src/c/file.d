@@ -22,19 +22,19 @@
 	by accessing the FILE structure of C.
 */
 
-#include <ecl/ecl.h>
 #include <errno.h>
 #include <sys/types.h>
 #ifndef _MSC_VER
 # include <unistd.h>
 #endif
 #include <fcntl.h>
-#if !defined(ECL_MS_WINDOWS_HOST)
-#include <sys/stat.h>
+#if !defined(_MSC_VER) && !defined(__MINGW32__)
+# include <sys/stat.h>
 /* it isn't pulled in by fcntl.h */
 #endif
 #include <string.h>
 #include <stdio.h>
+#include <ecl/ecl.h>
 #include <ecl/ecl-inl.h>
 #include <ecl/internal.h>
 

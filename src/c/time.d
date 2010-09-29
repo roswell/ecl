@@ -15,9 +15,18 @@
     See file '../Copyright' for full details.
 */
 
+#include <time.h>
+#ifndef _MSC_VER
+# include <unistd.h>
+#endif
+#if defined(_MSC_VER) || defined(__MINGW32__)
+# include <windows.h>
+# include <winsock.h>
+#endif
+
 #define ECL_INCLUDE_MATH_H
 #include <ecl/ecl.h>
-#include <time.h>
+#include <ecl/internal.h>
 #ifdef HAVE_TIMES
 # include <sys/times.h>
 #endif
@@ -27,14 +36,6 @@
 #endif
 #ifdef HAVE_GETTIMEOFDAY
 # include <sys/time.h>
-#endif
-#ifndef _MSC_VER
-# include <unistd.h>
-#endif
-#include <ecl/internal.h>
-#if defined(ECL_MS_WINDOWS_HOST)
-# include <windows.h>
-# include <winsock.h>
 #endif
 
 #if !defined(HAVE_GETTIMEOFDAY) && !defined(HAVE_GETRUSAGE) && !defined(ECL_MS_WINDOWS_HOST)
@@ -49,7 +50,7 @@ static struct timeval beginning;
 static void
 get_real_time(struct timeval *tv)
 {
-#ifdef HAVE_GETTIMEOFDAY
+#if defined(HAVE_GETTIMEOFDAY) && !defined(ECL_MS_WINDOWS_HOST)
 	struct timezone tz;
 	gettimeofday(tv, &tz);
 #else

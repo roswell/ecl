@@ -74,25 +74,29 @@
 #include <stdio.h>
 /* To get APCProc calls */
 #define _WIN32_WINNT 0x400
+#include <signal.h>
+
+#if defined(_MSC_VER) || defined(__MINGW32__)
+# include <windows.h>
+#endif
+#if !defined(_MSC_VER)
+# include <unistd.h>
+#endif
+
 #include <ecl/ecl.h>
+
 #if defined(HAVE_FENV_H) && !defined(ECL_AVOID_FENV_H)
 # ifndef _GNU_SOURCE
 #  define _GNU_SOURCE
 # endif
 # include <fenv.h>
 #endif
-#include <signal.h>
+
 #ifdef ECL_USE_MPROTECT
 # ifndef SA_SIGINFO
 #  error "We cannot use the mmap code without siginfo"
 # endif
 # include <sys/mman.h>
-#endif
-#if defined(ECL_MS_WINDOWS_HOST)
-# include <windows.h>
-#endif
-#if !defined(_MSC_VER)
-# include <unistd.h>
 #endif
 #define ECL_DEFINE_FENV_CONSTANTS
 #include <ecl/internal.h>

@@ -15,7 +15,6 @@
     See file '../Copyright' for full details.
 */
 
-#include <ecl/ecl.h>
 #include <string.h>
 #include <stdio.h>
 #include <limits.h>
@@ -27,6 +26,7 @@
 # define F_OK 0
 #endif
 #include <sys/types.h>
+#include <ecl/ecl.h>
 #ifdef HAVE_PWD_H
 # include <pwd.h>
 #endif
