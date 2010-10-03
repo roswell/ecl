@@ -1468,7 +1468,7 @@ Optional Features:
   --enable-opcode8        interpreter uses 8-bit codes (default=NO, only works
                           on Intel)
   --enable-unicode        enable support for unicode (default=NO)
-  --enable-longdouble     include support for long double (default=NO)
+  --enable-longdouble     include support for long double (default=YES)
   --enable-c99complex     include support for C complex type (default=NO)
   --enable-hierarchical-packages
                           hierarchical package names (default=YES)
@@ -2328,7 +2328,7 @@ fi
 if test "${enable_longdouble+set}" = set; then
   enableval=$enable_longdouble; enable_longdouble=${enableval}
 else
-  enable_longdouble=no
+  enable_longdouble=yes
 fi
 
 

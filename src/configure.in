@@ -213,8 +213,8 @@ AC_ARG_ENABLE(unicode,
 AC_ARG_ENABLE(longdouble,
   AS_HELP_STRING( [--enable-longdouble],
                   [include support for long double]
-                  [(default=NO)]),
-  [enable_longdouble=${enableval}], [enable_longdouble=no])
+                  [(default=YES)]),
+  [enable_longdouble=${enableval}], [enable_longdouble=yes])
 
 AC_ARG_ENABLE(c99complex,
   AS_HELP_STRING( [--enable-c99complex],
