@@ -5,7 +5,7 @@ dnl http://autoconf-archive.cryp.to/ac_c_long_long_.html
 dnl Provides a test for the existance of the long long int type and defines HAVE_LONG_LONG if it is found.
 AC_DEFUN([ECL_LONG_LONG],
 [AC_MSG_CHECKING(size of long long)
-if test "x$ECL_LONG_LONG_BITS" = "no"; then
+if test "x$ECL_LONG_LONG_BITS" = "xno"; then
   AC_MSG_RESULT(not available)
   ac_cv_c_long_long=no
   ECL_LONG_LONG_BITS=""
@@ -100,6 +100,8 @@ CL_FIXNUM_TYPE=int
 CL_FIXNUM_BITS=32
 CL_FIXNUM_MAX=536870911L
 CL_FIXNUM_MIN=-536870912L
+CL_INT_BITS=32
+CL_LONG_BITS=32
 
 ### 1.3) Order of bytes within a word
 ECL_BIGENDIAN=no
@@ -125,8 +127,8 @@ ECL_UINT16_T=uint16_t
 ECL_UINT32_T=uint32_t
 ECL_UINT64_T=no
 ECL_INT8_T=int8_t
-ECL_INT16_T=uint16_t
-ECL_INT32_T=uint32_t
+ECL_INT16_T=int16_t
+ECL_INT32_T=int32_t
 ECL_INT64_T=no
 ECL_LONG_LONG_BITS=no
 
