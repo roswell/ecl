@@ -122,7 +122,7 @@ $(DPP): $(srcdir)/dpp.c $(srcdir)/symbols_list2.h ../ecl/config.h
 		"@ECL_VERSION_NUMBER@" "$(ECL_VERSION_NUMBER)" \
 		"@ECL_THREADS@" "$(ECL_THREADS_FLAG)" \
 		"@ECL_UNICODE@" "$(ECL_UNICODE_FLAG)" \
-		"@ECL_SSE@" "$(ECL_SSE_FLAG)" \
+		"@ECL_SSE2@" "$(ECL_SSE_FLAG)" \
 	        < ..\ecl\config.h.msvc6 > $@
 
 #
