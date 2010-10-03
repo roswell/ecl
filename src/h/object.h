@@ -116,6 +116,7 @@ typedef cl_object (*cl_objectfn_fixed)();
 	Definition of each implementation type.
 */
 
+#define ECL_TAG_BITS		2
 #define IMMEDIATE(o)		((cl_fixnum)(o) & 3)
 #define IMMEDIATE_TAG		3
 

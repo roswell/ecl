@@ -27,6 +27,9 @@
 
 extern ECL_API cl_object _ecl_big_set_fixnum(cl_object x, cl_fixnum f);
 extern ECL_API cl_object _ecl_big_set_index(cl_object x, cl_index f);
+#ifdef ECL_LONG_FLOAT
+extern ECL_API long double _ecl_big_to_long_double(cl_object x);
+#endif
 #if ECL_LONG_BITS >= FIXNUM_BITS
 #define _ecl_big_set_fixnum(x, f) mpz_set_si((x)->big.big_num,(f))
 #define _ecl_big_set_index(x, f) mpz_set_ui((x)->big.big_num,(f))

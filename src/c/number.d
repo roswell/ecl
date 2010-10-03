@@ -742,7 +742,12 @@ ratio_to_float(cl_object num, cl_object den)
 #ifdef WITH_GMP
         cl_fixnum scale;
         cl_object bits = prepare_ratio_to_float(num, den, FLT_MANT_DIG, &scale);
-        float output = ecl_to_double(bits);
+# if (FIXNUM_BITS-ECL_TAG_BITS) >= FLT_MANT_DIG
+        /* The output of prepare_ratio_to_float will always fit an integer */
+        float output = fix(bits);
+# else
+        float output = FIXNUMP(bits)? fix(bits) : _ecl_big_to_double(bits);
+# endif
         return ldexpf(output, scale);
 #else
         return (float)(FIXNUMP(num) ? fix(num) : num->big.big_num) /
@@ -756,7 +761,12 @@ ratio_to_double(cl_object num, cl_object den)
 #ifdef WITH_GMP
         cl_fixnum scale;
         cl_object bits = prepare_ratio_to_float(num, den, DBL_MANT_DIG, &scale);
-        double output = ecl_to_double(bits);
+# if (FIXNUM_BITS-ECL_TAG_BITS) >= DBL_MANT_DIG
+        /* The output of prepare_ratio_to_float will always fit an integer */
+        double output = fix(bits);
+# else
+        double output = FIXNUMP(bits)? fix(bits) : _ecl_big_to_double(bits);
+# endif
         return ldexp(output, scale);
 #else
         return (double)(FIXNUMP(num) ? fix(num) : num->big.big_num) /
@@ -771,7 +781,14 @@ ratio_to_long_double(cl_object num, cl_object den)
 #ifdef WITH_GMP
         cl_fixnum scale;
         cl_object bits = prepare_ratio_to_float(num, den, LDBL_MANT_DIG, &scale);
-        long double output = ecl_to_long_double(bits);
+# if (FIXNUM_BITS-ECL_TAG_BITS) >= LDBL_MANT_DIG
+        /* The output of prepare_ratio_to_float will always fit an integer */
+        long double output = fix(bits);
+# else
+        long double output = FIXNUMP(bits)?
+                (long double)fix(bits) :
+                _ecl_big_to_long_double(bits);
+# endif
         return ldexpl(output, scale);
 #else
         return (long double)(FIXNUMP(num) ? fix(num) : num->big.big_num) /
