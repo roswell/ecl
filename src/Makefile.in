@@ -172,7 +172,7 @@ install:
 	    $(LN_S) @SONAME3@ @SONAME@ ) \
 	fi
 	$(INSTALL_PROGRAM) c/dpp$(EXE) $(DESTDIR)$(ecldir)
-	$(INSTALL_PROGRAM) c/ecl_min(EXE) $(DESTDIR)$(ecldir)
+	$(INSTALL_PROGRAM) ecl_min$(EXE) $(DESTDIR)$(ecldir)
 	for i in `cat modules`; do \
 	  case $$i in \
 	    *.fas) $(INSTALL_PROGRAM) $$i $(DESTDIR)$(ecldir);; \
