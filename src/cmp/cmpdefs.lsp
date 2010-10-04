@@ -29,6 +29,12 @@ coprocessor).")
 (defvar *ld* "@ECL_CC@"
 "This variable controls the linker which is used by ECL.")
 
+(defvar *ranlib* "@RANLIB@"
+  "Name of the `ranlib' program on the hosting platform.")
+
+(defvar *ar* "@AR@"
+  "Name of the `AR' program on the hosting platform.")
+
 (defvar *cc-flags* "@CPPFLAGS@ @CFLAGS@ @ECL_CFLAGS@")
 
 (defvar *cc-optimize* #-msvc "-O2"

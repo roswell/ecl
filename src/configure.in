@@ -321,6 +321,8 @@ AC_PROG_RANLIB        # sets variable RANLIB
 AC_PROG_INSTALL       # sets variables INSTALL, INSTALL_DATA, INSTALL_PROGRAM
 AC_PROG_LN_S          # sets variable LN_S
 AC_PROG_MAKE_SET      # set $(MAKE) if needed
+AC_PROG_RANLIB        # set variable RANLIB
+AC_CHECK_TOOL([AR],[ar]) # set variable AR to appropriate `ar' program
 
 dnl -----------------------------------------------------------------------
 dnl Checks which do not come with autoconf (must be after AC_PROG_CC)

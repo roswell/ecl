@@ -123,7 +123,7 @@ the environment variable TMPDIR to a different value." template))
    (format nil
 	   *ld-format*
 	   *ld*
-	   (si::coerce-to-filename o-pathname)
+	   (brief-namestring o-pathname)
 	   (fix-for-mingw (ecl-library-directory))
 	   options
            *ld-rpath*
@@ -154,7 +154,7 @@ the environment variable TMPDIR to a different value." template))
    (format nil
 	   *ld-format*
 	   *ld*
-	   (si::coerce-to-filename o-pathname)
+	   (brief-namestring o-pathname)
 	   (fix-for-mingw (ecl-library-directory))
 	   options
            *ld-rpath*
@@ -168,8 +168,9 @@ the environment variable TMPDIR to a different value." template))
   (let ((lib-file (compile-file-pathname o-pathname :type :lib)))
     (safe-system
      (format nil
-	     "gcc -shared -o ~S -L~S ~{~S ~} ~@[~S~]~{ '~A'~} ~@?"
-	     (si::coerce-to-filename o-pathname)
+	     "~S -shared -o ~S -L~S ~{~S ~} ~@[~S~]~{ '~A'~} ~@?"
+	     *cc*
+	     (brief-namestring o-pathname)
 	     (fix-for-mingw (ecl-library-directory))
 	     options
              *ld-rpath*
@@ -198,7 +199,7 @@ the environment variable TMPDIR to a different value." template))
    (format nil
 	   *ld-format*
 	   *ld*
-	   (si::coerce-to-filename o-pathname)
+	   (brief-namestring o-pathname)
 	   (fix-for-mingw (ecl-library-directory))
 	   options
            *ld-rpath*
@@ -212,7 +213,7 @@ the environment variable TMPDIR to a different value." template))
   (safe-system
    (format nil
 	   "gcc -shared -o ~S -Wl,--export-all-symbols -L~S ~{~S ~} ~@[~S~]~{ '~A'~} ~A"
-	   (si::coerce-to-filename o-pathname)
+	   (brief-namestring o-pathname)
 	   (fix-for-mingw (ecl-library-directory))
 	   options
            *ld-rpath*
@@ -326,13 +327,13 @@ or a loadable module."
   "Given a file name, return the compiler command line argument to link this file in."
   (case kind
     ((:object :c)
-     (si::coerce-to-filename pathname))
+     (brief-namestring pathname))
     ((:fasl :fas)
      nil)
     ((:static-library :lib)
-     (si::coerce-to-filename pathname))
+     (brief-namestring pathname))
     ((:shared-library :dll)
-     (si::coerce-to-filename pathname))
+     (brief-namestring pathname))
     ((:program)
      nil)
     (otherwise
@@ -489,9 +490,10 @@ static cl_object VV[VM];
        (when (probe-file output-name) (delete-file output-name))
        #-msvc
        (progn
-       (safe-system (format nil "ar cr ~S ~S ~{~S ~}"
-			    (namestring output-name) (namestring o-name) ld-flags))
-       (safe-system (format nil "ranlib ~S" (namestring output-name))))
+       (safe-system (format nil "~S cr ~S ~S ~{~S ~}"
+			    *ar* (namestring output-name)
+			    (brief-namestring o-name) ld-flags))
+       (safe-system (format nil "~S ~S" *ranlib* (namestring output-name))))
        #+msvc
        (unwind-protect
          (progn
@@ -915,8 +917,8 @@ from the C language code.  NIL means \"do not create the file\"."
 	   *cc*
            (fix-for-mingw (ecl-include-directory))
 	   *cc-flags* (>= (cmp-env-optimization 'speed) 2) *cc-optimize*
-	   (si::coerce-to-filename c-pathname)
-	   (si::coerce-to-filename o-pathname)
+	   (brief-namestring c-pathname)
+	   (brief-namestring o-pathname)
            *user-cc-flags*)
 ; Since the SUN4 assembler loops with big files, you might want to use this:
 ;   (format nil

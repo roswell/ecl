@@ -22,6 +22,12 @@
 (defconstant +error-format+ "~&~@<  * ~;~?~;~:@>")
 (defconstant +fatal-format+ "~&~@<  ** ~;~?~;~:@>")
 
+;; Return a namestring for a path that is sufficiently
+;; unambiguous (hopefully) for the C compiler (and associates)
+;; to decipher.
+(defun brief-namestring (path)
+  (enough-namestring (si::coerce-to-filename path)))
+
 (defun innermost-non-expanded-form (form)
   (when (listp form)
     (loop with output = nil

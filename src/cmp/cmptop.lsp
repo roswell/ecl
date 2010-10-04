@@ -113,7 +113,7 @@
 
   ;(let ((*print-level* 3)) (pprint *top-level-forms*))
   (setq *top-level-forms* (nreverse *top-level-forms*))
-  (wt-nl1 "#include \"" (si::coerce-to-filename h-pathname) "\"")
+  (wt-nl1 "#include \"" (brief-namestring h-pathname) "\"")
 
   ;; VV might be needed by functions in CLINES.
   (wt-nl-h "#ifdef ECL_DYNAMIC_VV")
@@ -135,7 +135,7 @@
 	 (*emitted-local-funs* nil)
 	 (*compiler-declared-globals* (make-hash-table)))
     (unless shared-data
-      (wt-nl1 "#include \"" (si::coerce-to-filename data-pathname) "\""))
+      (wt-nl1 "#include \"" (brief-namestring data-pathname) "\""))
     (wt-nl1 "#ifdef __cplusplus")
     (wt-nl1 "extern \"C\"")
     (wt-nl1 "#endif")
