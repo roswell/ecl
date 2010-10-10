@@ -136,7 +136,7 @@
  "(#0)->vector.self.b64[#1]")
 #+:uint64-t
 (def-inline row-major-aref :unsafe ((array ext:integer64) fixnum) :int64-t
- "(#0)->vector.self.i16[#1]")
+ "(#0)->vector.self.i64[#1]")
 (def-inline row-major-aref :unsafe ((array double-float) fixnum) :double
  "(#0)->array.self.df[#1]")
 (def-inline row-major-aref :unsafe ((array single-float) fixnum) :float
