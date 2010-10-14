@@ -676,7 +676,9 @@ ecl_elttype_to_symbol(cl_elttype aet)
 
 cl_object
 si_array_element_type_byte_size(cl_object type) {
-	cl_elttype aet = ecl_symbol_to_elttype(type);
+        cl_elttype aet = ECL_ARRAYP(type) ?
+                type->array.elttype :
+                ecl_symbol_to_elttype(type);
 	cl_object size = MAKE_FIXNUM(ecl_aet_size[aet]);
 	if (aet == aet_bit)
 		size = ecl_make_ratio(MAKE_FIXNUM(1),MAKE_FIXNUM(CHAR_BIT));
