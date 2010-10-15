@@ -93,137 +93,71 @@
 (defvar *digits* "0123456789")
 
 (defun flonum-to-string (x &optional width fdigits scale fmin)
+  (declare (type float x))
+  ;; FIXME: I think only FORMAT-DOLLARS calls FLONUM-TO-STRING with
+  ;; possibly-negative X.
+  (setf x (abs x))
   (cond ((zerop x)
-	 ;;zero is a special case which float-string cannot handle
-	 (if fdigits
-	     (let ((s (make-string (1+ fdigits) :initial-element #\0)))
-	       (setf (schar s 0) #\.)
-	       (values s (length s) t (zerop fdigits) 0))
-	     (values "." 1 t t 0)))
-	(t
-	 (multiple-value-bind (sig exp)
-			      (integer-decode-float x)
-	   (let* ((precision (float-precision x))
-		  (digits (float-digits x))
-		  (fudge (- digits precision))
-		  (width (if width (max width 1) nil)))
-	   (float-string (ash sig (- fudge)) (+ exp fudge) precision width
-			 fdigits scale fmin))))))
-
-
-(defun float-string (fraction exponent precision width fdigits scale fmin)
-  (declare (si::c-local))
-  (let ((r fraction) (s 1) (m- 1) (m+ 1) (k 0)
-	(digits 0) (decpnt 0) (cutoff nil) (roundup nil) u low high
-	(digit-string (make-array 50 :element-type 'base-char
-				  :fill-pointer 0 :adjustable t)))
-    ;;Represent fraction as r/s, error bounds as m+/s and m-/s.
-    ;;Rational arithmetic avoids loss of precision in subsequent calculations.
-    (cond ((> exponent 0)
-	   (setq r (ash fraction exponent))
-	   (setq m- (ash 1 exponent))
-	   (setq m+ m-))
-	  ((< exponent 0)
-	   (setq s (ash 1 (- exponent)))))
-    ;;adjust the error bounds m+ and m- for unequal gaps
-    (when (= fraction (ash 1 precision))
-      (setq m+ (ash m+ 1))
-      (setq r (ash r 1))
-      (setq s (ash s 1)))
-    ;;scale value by requested amount, and update error bounds
-    (when scale
-      (if (minusp scale)
-	  (let ((scale-factor (expt 10 (- scale))))
-	    (setq s (* s scale-factor)))
-	  (let ((scale-factor (expt 10 scale)))
-	    (setq r (* r scale-factor))
-	    (setq m+ (* m+ scale-factor))
-	    (setq m- (* m- scale-factor)))))
-    ;;scale r and s and compute initial k, the base 10 logarithm of r
-    (do ()
-        ((>= r (ceiling s 10)))
-      (decf k)
-      (setq r (* r 10))
-      (setq m- (* m- 10))
-      (setq m+ (* m+ 10)))
-    (do ()(nil)
-      (do ()
-	  ((< (+ (ash r 1) m+) (ash s 1)))
-	(setq s (* s 10))
-	(incf k))
-      ;;determine number of fraction digits to generate
-      (cond (fdigits
-	     ;;use specified number of fraction digits
-	     (setq cutoff (- fdigits))
-	     ;;don't allow less than fmin fraction digits
-	     (if (and fmin (> cutoff (- fmin))) (setq cutoff (- fmin))))
-	    (width
-	     ;;use as many fraction digits as width will permit
-             ;;but force at least fmin digits even if width will be exceeded
-	     (if (< k 0)
-		 (setq cutoff (- 1 width))
-		 (setq cutoff (1+ (- k width))))
-	     (if (and fmin (> cutoff (- fmin))) (setq cutoff (- fmin)))))
-      ;;If we decided to cut off digit generation before precision has
-      ;;been exhausted, rounding the last digit may cause a carry propagation.
-      ;;We can prevent this, preserving left-to-right digit generation, with
-      ;;a few magical adjustments to m- and m+.  Of course, correct rounding
-      ;;is also preserved.
-      (when (or fdigits width)
-	(let ((a (- cutoff k))
-	      (y s))
-	  (if (>= a 0)
-	      (dotimes (i a) (setq y (* y 10)))
-	      (dotimes (i (- a)) (setq y (ceiling y 10))))
-	  (setq m- (max y m-))
-	  (setq m+ (max y m+))
-	  (when (= m+ y) (setq roundup t))))
-      (when (< (+ (ash r 1) m+) (ash s 1)) (return)))
-    ;;zero-fill before fraction if no integer part
-    (when (< k 0)
-      (setq decpnt digits)
-      (vector-push-extend #\. digit-string)
-      (dotimes (i (- k))
-	(incf digits) (vector-push-extend #\0 digit-string)))
-    ;;generate the significant digits
-    (do ()(nil)
-      (decf k)
-      (when (= k -1)
-	(vector-push-extend #\. digit-string)
-	(setq decpnt digits))
-      (multiple-value-setq (u r) (truncate (* r 10) s))
-      (setq m- (* m- 10))
-      (setq m+ (* m+ 10))
-      (setq low (< (ash r 1) m-))
-      (if roundup
-	  (setq high (>= (ash r 1) (- (ash s 1) m+)))
-	  (setq high (> (ash r 1) (- (ash s 1) m+))))
-      ;;stop when either precision is exhausted or we have printed as many
-      ;;fraction digits as permitted
-      (when (or low high (and cutoff (<= k cutoff))) (return))
-      (vector-push-extend (char *digits* u) digit-string)
-      (incf digits))
-    ;;if cutoff occured before first digit, then no digits generated at all
-    (when (or (not cutoff) (>= k cutoff))
-      ;;last digit may need rounding
-      (vector-push-extend (char *digits*
-				(cond ((and low (not high)) u)
-				      ((and high (not low)) (1+ u))
-				      (t (if (<= (ash r 1) s) u (1+ u)))))
-			  digit-string)
-      (incf digits))
-    ;;zero-fill after integer part if no fraction
-    (when (>= k 0)
-      (dotimes (i k) (incf digits) (vector-push-extend #\0 digit-string))
-      (vector-push-extend #\. digit-string)
-      (setq decpnt digits))
-    ;;add trailing zeroes to pad fraction if fdigits specified
-    (when fdigits
-      (dotimes (i (- fdigits (- digits decpnt)))
-	(incf digits)
-	(vector-push-extend #\0 digit-string)))
-    ;;all done
-    (values digit-string (1+ digits) (= decpnt 0) (= decpnt digits) decpnt)))
+         ;; Zero is a special case which FLOAT-STRING cannot handle.
+         (if fdigits
+             (let ((s (make-string (1+ fdigits) :initial-element #\0)))
+               (setf (schar s 0) #\.)
+               (values s (length s) t (zerop fdigits) 0))
+             (values "." 1 t t 0)))
+        (t
+         (multiple-value-bind (e string)
+             (if fdigits
+                 (float-to-digits nil x
+                                  (min (- (+ fdigits (or scale 0)))
+                                       (- (or fmin 0)))
+                                  nil)
+                 (if (and width (> width 1))
+                     (let ((w (multiple-value-list
+                               (float-to-digits nil x
+                                                (max 1
+                                                     (+ (1- width)
+                                                        (if (and scale (minusp scale))
+                                                            scale 0)))
+                                                t)))
+                           (f (multiple-value-list
+                               (float-to-digits nil x
+                                                (- (+ (or fmin 0)
+                                                      (if scale scale 0)))
+                                                nil))))
+                       (cond
+                         ((>= (length (cadr w)) (length (cadr f)))
+                          (values-list w))
+                         (t (values-list f))))
+                     (float-to-digits nil x nil nil)))
+           (let ((e (+ e (or scale 0)))
+                 (stream (make-string-output-stream)))
+             (if (plusp e)
+                 (progn
+                   (write-string string stream :end (min (length string)
+                                                         e))
+                   (dotimes (i (- e (length string)))
+                     (write-char #\0 stream))
+                   (write-char #\. stream)
+                   (write-string string stream :start (min (length
+                                                            string) e))
+                   (when fdigits
+                     (dotimes (i (- fdigits
+                                    (- (length string)
+                                       (min (length string) e))))
+                       (write-char #\0 stream))))
+                 (progn
+                   (write-string "." stream)
+                   (dotimes (i (- e))
+                     (write-char #\0 stream))
+                   (write-string string stream)
+                   (when fdigits
+                     (dotimes (i (+ fdigits e (- (length string))))
+                       (write-char #\0 stream)))))
+             (let ((string (get-output-stream-string stream)))
+               (values string (length string)
+                       (char= (char string 0) #\.)
+                       (char= (char string (1- (length string))) #\.)
+                       (position #\. string))))))))
 
 ;;; SCALE-EXPONENT  --  Internal
 ;;;

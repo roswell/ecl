@@ -1001,8 +1001,7 @@ cl_integer_decode_float(cl_object x)
 			x = MAKE_FIXNUM(0);
 		} else {
                         d = frexpl(d, &e);
-			/* FIXME! Loss of precision! */
-			x = double_to_integer(ldexpl(d, LDBL_MANT_DIG));
+			x = long_double_to_integer(ldexpl(d, LDBL_MANT_DIG));
 			e -= LDBL_MANT_DIG;
 		}
 		break;

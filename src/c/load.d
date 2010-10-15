@@ -259,14 +259,10 @@ ecl_library_open(cl_object filename, bool force_reload) {
 		block = other;
 	} else {
 		si_set_finalizer(block, Ct);
-#if 0
                 if (block->cblock.handle != NULL)
                         cl_core.libraries = CONS(block, cl_core.libraries);
                 else
                         ecl_library_close(block);
-#else
-		cl_core.libraries = CONS(block, cl_core.libraries);
-#endif
 	}
 	}
 	return block;

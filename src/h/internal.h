@@ -287,14 +287,12 @@ extern cl_object FEnot_funcallable_vararg(cl_narg narg, ...);
 
 /* print.d */
 
+extern cl_object _ecl_ensure_buffer(cl_object buffer, cl_fixnum length);
+extern void _ecl_string_push_c_string(cl_object s, const char *c);
+
 #define ECL_PPRINT_QUEUE_SIZE			128
 #define ECL_PPRINT_INDENTATION_STACK_SIZE	256
 
-#ifdef ECL_LONG_FLOAT
-extern int edit_double(int n, long double d, int *sp, char *s, int *ep);
-#else
-extern int edit_double(int n, double d, int *sp, char *s, int *ep);
-#endif
 extern void cl_write_object(cl_object x, cl_object stream);
 
 /* global locks */

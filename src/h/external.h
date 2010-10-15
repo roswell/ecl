@@ -564,7 +564,7 @@ extern ECL_API void FEend_of_file(cl_object strm) ecl_attr_noreturn;
 extern ECL_API void FEclosed_stream(cl_object strm) ecl_attr_noreturn;
 extern ECL_API void FEwrong_type_argument(cl_object type, cl_object value) ecl_attr_noreturn;
 extern ECL_API void FEwrong_type_only_arg(cl_object function, cl_object type, cl_object value) ecl_attr_noreturn;
-extern ECL_API void FEwrong_type_nth_arg(cl_object function, cl_narg narg, cl_object type, cl_object value) ecl_attr_noreturn;
+extern ECL_API void FEwrong_type_nth_arg(cl_object function, cl_narg narg, cl_object value, cl_object type) ecl_attr_noreturn;
 extern ECL_API void FEwrong_type_key_arg(cl_object function, cl_object keyo, cl_object type, cl_object value) ecl_attr_noreturn;
 extern ECL_API void FEwrong_num_arguments(cl_object fun) ecl_attr_noreturn;
 extern ECL_API void FEwrong_num_arguments_anonym(void) ecl_attr_noreturn;
@@ -1168,7 +1168,10 @@ extern ECL_API cl_object cl_min _ARGS((cl_narg narg, cl_object min, ...));
 
 extern ECL_API int ecl_number_equalp(cl_object x, cl_object y);
 extern ECL_API int ecl_number_compare(cl_object x, cl_object y);
-
+#define ecl_lowereq(x,y) (ecl_number_compare((x),(y)) <= 0)
+#define ecl_greatereq(x,y) (ecl_number_compare((x),(y)) >= 0)
+#define ecl_lower(x,y) (ecl_number_compare((x),(y)) < 0)
+#define ecl_greater(x,y) (ecl_number_compare((x),(y)) > 0)
 
 /* num_log.c */
 
@@ -1426,6 +1429,18 @@ extern ECL_API cl_object ecl_terpri(cl_object strm);
 extern ECL_API void ecl_write_string(cl_object strng, cl_object strm);
 extern ECL_API void ecl_princ_str(const char *s, cl_object sym);
 extern ECL_API void ecl_princ_char(int c, cl_object sym);
+
+/* printer/integer_to_string.d */
+extern ECL_API cl_object si_integer_to_string(cl_object buffer, cl_object integer, cl_object base, cl_object radix, cl_object decimalp);
+
+/* printer/float_string.d */
+extern ECL_API cl_object si_float_string(cl_narg narg, cl_object string, cl_object x, ...);
+
+/* printer/float_to_digits.d */
+extern ECL_API cl_object si_float_to_digits(cl_object digits, cl_object number, cl_object position, cl_object relativep);
+
+/* printer/float_to_string.d */
+extern ECL_API cl_object si_float_to_string_free(cl_object buffer, cl_object number, cl_object e_min, cl_object e_max);
 
 
 /* profile.c */

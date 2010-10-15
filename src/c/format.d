@@ -15,8 +15,15 @@
     See file '../Copyright' for full details.
 */
 
+#include <string.h>
+#include <float.h>
+#define ECL_INCLUDE_MATH_H
+#define ECL_DEFINE_FENV_CONSTANTS
 #include <ecl/ecl.h>
 #include <limits.h>
+#if defined(HAVE_FENV_H)
+# include <fenv.h>
+#endif
 #include <ecl/internal.h>
 
 #if !defined(ECL_CMU_FORMAT)
@@ -734,6 +741,113 @@ fmt_character(format_stack fmt, bool colon, bool atsign)
 		for (;  i < fmt->aux_string->string.fillp;  i++)
 			ecl_write_char(tempstr(fmt, i), fmt->stream);
 	}
+}
+
+/* The floating point precision is required to make the
+   most-positive-long-float printed expression readable.
+   If this is too small, then the rounded off fraction, may be too big
+   to read */
+
+/* Maximum number of significant digits required to represent accurately
+ * a double or single float. */
+
+#define LOG10_2 0.30103
+#define DBL_SIG ((int)(DBL_MANT_DIG * LOG10_2 + 1))
+#define FLT_SIG ((int)(FLT_MANT_DIG * LOG10_2 + 1))
+
+/* This is the maximum number of decimal digits that our numbers will have.
+ * Notice that we leave some extra margin, to ensure that reading the number
+ * again will produce the same floating point number.
+ */
+#ifdef ECL_LONG_FLOAT
+# define LDBL_SIG ((int)(LDBL_MANT_DIG * LOG10_2 + 1))
+# define DBL_MAX_DIGITS (LDBL_SIG + 3)
+# define DBL_EXPONENT_SIZE (1 + 1 + 4)
+#else
+# define DBL_MAX_DIGITS (DBL_SIG + 3)
+# define DBL_EXPONENT_SIZE (1 + 1 + 3) /* Exponent marker 'e' + sign + digits .*/
+#endif
+
+/* The sinificant digits + the possible sign + the decimal dot. */
+#define DBL_MANTISSA_SIZE (DBL_MAX_DIGITS + 1 + 1)
+/* Total estimated size that a floating point number can take. */
+#define DBL_SIZE (DBL_MANTISSA_SIZE + DBL_EXPONENT_SIZE)
+
+#ifdef ECL_LONG_FLOAT
+#define EXP_STRING "Le"
+#define G_EXP_STRING "Lg"
+#define DBL_TYPE long double
+#define strtod strtold
+extern long double strtold(const char *nptr, char **endptr);
+#else
+#define EXP_STRING "e"
+#define G_EXP_STRING "g"
+#define DBL_TYPE double
+#endif
+
+static int
+edit_double(int n, DBL_TYPE d, int *sp, char *s, int *ep)
+{
+	char *exponent, buff[DBL_SIZE + 1];
+	int length;
+#if defined(HAVE_FENV_H) || defined(ECL_MS_WINDOWS_HOST)
+	fenv_t env;
+	feholdexcept(&env);
+#endif
+	unlikely_if (isnan(d) || !isfinite(d)) {
+		FEerror("Can't print a non-number.", 0);
+        }
+	if (n < -DBL_MAX_DIGITS)
+		n = DBL_MAX_DIGITS;
+	if (n < 0) {
+		DBL_TYPE aux;
+		n = -n;
+		do {
+			sprintf(buff, "%- *.*" EXP_STRING, n + 1 + 1 + DBL_EXPONENT_SIZE, n-1, d);
+			aux = strtod(buff, NULL);
+#ifdef ECL_LONG_FLOAT
+			if (n < LDBL_SIG)
+				aux = (double) aux;
+#endif
+			if (n < DBL_SIG)
+				aux = (float)aux;
+			n++;
+		} while (d != aux && n <= DBL_MAX_DIGITS);
+		n--;
+	} else {
+		sprintf(buff, "%- *.*" EXP_STRING, DBL_SIZE,
+			(n <= DBL_MAX_DIGITS)? (n-1) : (DBL_MAX_DIGITS-1), d);
+	}
+	exponent = strchr(buff, 'e');
+
+	/* Get the exponent */
+	*ep = strtol(exponent+1, NULL, 10);
+
+	/* Get the sign */
+	*sp = (buff[0] == '-') ? -1 : +1;
+
+	/* Get the digits of the mantissa */
+	buff[2] = buff[1];
+
+	/* Get the actual number of digits in the mantissa */
+	length = exponent - (buff + 2);
+
+	/* The output consists of a string {d1,d2,d3,...,dn}
+	   with all N digits of the mantissa. If we ask for more
+	   digits than there are, the last ones are set to zero. */
+	if (n <= length) {
+		memcpy(s, buff+2, n);
+	} else {
+		cl_index i;
+		memcpy(s, buff+2, length);
+		for (i = length;  i < n;  i++)
+			s[i] = '0';
+	}
+	s[n] = '\0';
+#if defined(HAVE_FENV_H) || defined(ECL_MS_WINDOWS_HOST)
+	feupdateenv(&env);
+#endif
+	return length;
 }
 
 static void

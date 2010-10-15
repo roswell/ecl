@@ -154,32 +154,38 @@ printer and we should rather use MAKE-LOAD-FORM."
 	    (method-specializers m)))
   m)
 
-(defun ext::output-float-nan (x stream)
-  (print-unreadable-object (x stream :type t)
-    (princ "quiet NaN" stream)))
+(defun ext::float-nan-string (x)
+  (when *print-readably*
+    (error 'print-not-readable :object x))
+  (cdr (assoc (type-of x)
+              '((single-float . "#<single-float quiet NaN>")
+                (double-float . "#<double-float quiet NaN>")
+                (long-float . "#<long-float quiet NaN>")
+                (short-float . "#<short-float quiet NaN>")))))
 
-(defun ext::output-float-infinity (x stream)
+(defun ext::float-infinity-string (x)
   (when (and *print-readably* (null *read-eval*))
     (error 'print-not-readable :object x))
   (let ((*print-circle* nil)
         (*print-package* #.(find-package :keyword))
-        (infinities '((#.ext::single-float-negative-infinity .
-                       ext::single-float-negative-infinity)
-                      (#.ext::double-float-negative-infinity .
-                       ext::double-float-negative-infinity)
-                      (#.ext::short-float-negative-infinity .
-                       ext::short-float-negative-infinity)
-                      (#.ext::long-float-negative-infinity .
-                       ext::long-float-negative-infinity)
-                      (#.ext::single-float-positive-infinity .
-                       ext::single-float-positive-infinity)
-                      (#.ext::double-float-positive-infinity .
-                       ext::double-float-positive-infinity)
-                      (#.ext::short-float-positive-infinity .
-                       ext::short-float-positive-infinity)
-                      (#.ext::long-float-positive-infinity .
-                       ext::long-float-positive-infinity))))
-    (format stream "#.~S" (cdr (assoc x infinities)))))
+        (negative-infinities '((single-float .
+                                "#.ext::single-float-negative-infinity")
+                               (double-float .
+                                "#.ext::double-float-negative-infinity")
+                               (long-float .
+                                "#.ext::long-float-negative-infinity")
+                               (short-float .
+                                "#.ext::short-float-negative-infinity")))
+        (positive-infinities '((single-float .
+                                "#.ext::single-float-positive-infinity")
+                               (double-float .
+                                "#.ext::double-float-positive-infinity")
+                               (long-float .
+                                "#.ext::long-float-positive-infinity")
+                               (short-float .
+                                "#.ext::short-float-positive-infinity"))))
+    (cdr (assoc (type-of x)
+                (if (plusp x) positive-infinities negative-infinities)))))
 
 ;;; ----------------------------------------------------------------------
 ;;; Describe

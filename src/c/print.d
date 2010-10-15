@@ -18,16 +18,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <float.h>
 #ifndef _MSC_VER
 # include <unistd.h>
 #endif
-#define ECL_INCLUDE_MATH_H
 #include <ecl/ecl.h>
-#if defined(HAVE_FENV_H)
-# include <fenv.h>
-#endif
-#define ECL_DEFINE_FENV_CONSTANTS
 #include <ecl/internal.h>
 #include <ecl/bytecodes.h>
 
@@ -444,29 +438,41 @@ write_pathname(cl_object path, cl_object stream)
 }
 
 static void
-write_positive_fixnum(cl_index i, int base, cl_index len, cl_object stream)
+write_integer(cl_object number, cl_object stream)
 {
-	/* The maximum number of digits is achieved for base 2 and it
-	   is always < FIXNUM_BITS, since we use at least one bit for
-	   tagging */
-	short digits[FIXNUM_BITS];
-	int j = 0;
-	if (i == 0) {
-		digits[j++] = '0';
-	} else do {
-		digits[j++] = ecl_digit_char(i % base, base);
-		i /= base;
-	} while (i > 0);
-	while (len-- > j)
-		write_ch('0', stream);
-	while (j-- > 0)
-		write_ch(digits[j], stream);
+        cl_object s = si_get_buffer_string();
+        int print_base = ecl_print_base();
+        si_integer_to_string(s, number,
+                             MAKE_FIXNUM(print_base),
+                             ecl_symbol_value(@'*print-radix*'),
+                             Ct /* decimal syntax */);
+        si_do_write_sequence(s, stream, MAKE_FIXNUM(0), Cnil);
+        si_put_buffer_string(s);
 }
 
 static void
 write_decimal(cl_fixnum i, cl_object stream)
 {
-	write_positive_fixnum(i, 10, 0, stream);
+        cl_object s = si_get_buffer_string();
+        si_integer_to_string(s, MAKE_FIXNUM(i), MAKE_FIXNUM(10), Cnil, Cnil);
+        si_do_write_sequence(s, stream, MAKE_FIXNUM(0), Cnil);
+        si_put_buffer_string(s);
+}
+
+static void
+write_ratio(cl_object r, cl_object stream)
+{
+        cl_object s = si_get_buffer_string();
+        int print_base = ecl_print_base();
+        si_integer_to_string(s, r->ratio.num, MAKE_FIXNUM(print_base),
+                             ecl_symbol_value(@'*print-radix*'),
+                             Cnil /* decimal syntax */);
+        ecl_string_push_extend(s, '/');
+        si_integer_to_string(s, r->ratio.den,
+                             MAKE_FIXNUM(print_base),
+                             Cnil, Cnil);
+        si_do_write_sequence(s, stream, MAKE_FIXNUM(0), Cnil);
+        si_put_buffer_string(s);
 }
 
 static void
@@ -485,265 +491,14 @@ write_addr(cl_object x, cl_object stream)
 }
 
 static void
-write_base(int base, cl_object stream)
+write_float(cl_object f, cl_object stream)
 {
-	if (base == 2)
-		write_str("#b", stream);
-	else if (base == 8)
-		write_str("#o", stream);
-	else if (base == 16)
-		write_str("#x", stream);
-	else if (base >= 10) {
-		write_ch('#', stream);
-		write_ch(base/10+'0', stream);
-		write_ch(base%10+'0', stream);
-		write_ch('r', stream);
-	} else {
-		write_ch('#', stream);
-		write_ch(base+'0', stream);
-		write_ch('r', stream);
-	}
+        cl_object s = si_get_buffer_string();
+        s = si_float_to_string_free(s, f, MAKE_FIXNUM(-3), MAKE_FIXNUM(8));
+        si_do_write_sequence(s, stream, MAKE_FIXNUM(0), Cnil);
+        si_put_buffer_string(s);
 }
 
-/* The floating point precision is required to make the
-   most-positive-long-float printed expression readable.
-   If this is too small, then the rounded off fraction, may be too big
-   to read */
-
-/* Maximum number of significant digits required to represent accurately
- * a double or single float. */
-
-#define LOG10_2 0.30103
-#define DBL_SIG ((int)(DBL_MANT_DIG * LOG10_2 + 1))
-#define FLT_SIG ((int)(FLT_MANT_DIG * LOG10_2 + 1))
-
-/* This is the maximum number of decimal digits that our numbers will have.
- * Notice that we leave some extra margin, to ensure that reading the number
- * again will produce the same floating point number.
- */
-#ifdef ECL_LONG_FLOAT
-# define LDBL_SIG ((int)(LDBL_MANT_DIG * LOG10_2 + 1))
-# define DBL_MAX_DIGITS (LDBL_SIG + 3)
-# define DBL_EXPONENT_SIZE (1 + 1 + 4)
-#else
-# define DBL_MAX_DIGITS (DBL_SIG + 3)
-# define DBL_EXPONENT_SIZE (1 + 1 + 3) /* Exponent marker 'e' + sign + digits .*/
-#endif
-
-/* The sinificant digits + the possible sign + the decimal dot. */
-#define DBL_MANTISSA_SIZE (DBL_MAX_DIGITS + 1 + 1)
-/* Total estimated size that a floating point number can take. */
-#define DBL_SIZE (DBL_MANTISSA_SIZE + DBL_EXPONENT_SIZE)
-
-#ifdef ECL_LONG_FLOAT
-#define EXP_STRING "Le"
-#define G_EXP_STRING "Lg"
-#define DBL_TYPE long double
-#define strtod strtold
-extern long double strtold(const char *nptr, char **endptr);
-#else
-#define EXP_STRING "e"
-#define G_EXP_STRING "g"
-#define DBL_TYPE double
-#endif
-
-int edit_double(int n, DBL_TYPE d, int *sp, char *s, int *ep)
-{
-	char *exponent, buff[DBL_SIZE + 1];
-	int length;
-#if defined(HAVE_FENV_H) || defined(ECL_MS_WINDOWS_HOST)
-	fenv_t env;
-	feholdexcept(&env);
-#endif
-	unlikely_if (isnan(d) || !isfinite(d)) {
-		FEerror("Can't print a non-number.", 0);
-        }
-	if (n < -DBL_MAX_DIGITS)
-		n = DBL_MAX_DIGITS;
-	if (n < 0) {
-		DBL_TYPE aux;
-		n = -n;
-		do {
-			sprintf(buff, "%- *.*" EXP_STRING, n + 1 + 1 + DBL_EXPONENT_SIZE, n-1, d);
-			aux = strtod(buff, NULL);
-#ifdef ECL_LONG_FLOAT
-			if (n < LDBL_SIG)
-				aux = (double) aux;
-#endif
-			if (n < DBL_SIG)
-				aux = (float)aux;
-			n++;
-		} while (d != aux && n <= DBL_MAX_DIGITS);
-		n--;
-	} else {
-		sprintf(buff, "%- *.*" EXP_STRING, DBL_SIZE,
-			(n <= DBL_MAX_DIGITS)? (n-1) : (DBL_MAX_DIGITS-1), d);
-	}
-	exponent = strchr(buff, 'e');
-
-	/* Get the exponent */
-	*ep = strtol(exponent+1, NULL, 10);
-
-	/* Get the sign */
-	*sp = (buff[0] == '-') ? -1 : +1;
-
-	/* Get the digits of the mantissa */
-	buff[2] = buff[1];
-
-	/* Get the actual number of digits in the mantissa */
-	length = exponent - (buff + 2);
-
-	/* The output consists of a string {d1,d2,d3,...,dn}
-	   with all N digits of the mantissa. If we ask for more
-	   digits than there are, the last ones are set to zero. */
-	if (n <= length) {
-		memcpy(s, buff+2, n);
-	} else {
-		cl_index i;
-		memcpy(s, buff+2, length);
-		for (i = length;  i < n;  i++)
-			s[i] = '0';
-	}
-	s[n] = '\0';
-#if defined(HAVE_FENV_H) || defined(ECL_MS_WINDOWS_HOST)
-	feupdateenv(&env);
-#endif
-	return length;
-}
-
-static void
-write_double(DBL_TYPE d, int e, int n, cl_object stream, cl_object o)
-{
-	int exp;
-#if defined(HAVE_FENV_H) || defined(ECL_MS_WINDOWS_HOST)
-	fenv_t env;
-	feholdexcept(&env);
-#endif
-        if (isnan(d)) {
-                if (ecl_print_readably())
-# ifdef ECL_LONG_FLOAT
-                        FEprint_not_readable(ecl_make_longfloat(d));
-# else
-	                FEprint_not_readable(ecl_make_doublefloat(d));
-# endif
-                funcall(3, @'ext::output-float-nan', o, stream);
-                return;
-        }
-        if (!isfinite(d)) {
-                funcall(3, @'ext::output-float-infinity', o, stream);
-                return;
-        }
-	if (d < 0) {
-		write_ch('-', stream);
-		d = -d;
-	}
-        if (d == 0.0) {
-#if defined(ECL_SIGNED_ZERO) && defined(signbit)
-		if (signbit(d))
-			write_str("-0.0", stream);
-		else
-#endif
-			write_str("0.0", stream);
-		exp = 0;
-	} else if (d < 1e-3 || d > 1e7) {
-		int sign;
-		char buff[DBL_MANTISSA_SIZE + 1];
-		n = edit_double(-n, d, &sign, buff, &exp);
-		write_ch(buff[0], stream);
-		write_ch('.', stream);
-		for (;  --n > 1; ) {
-			if (buff[n] != '0') {
-				break;
-			}
-			buff[n] = '\0';
-		}
-		write_str(buff+1, stream);
-	} else {
-		char buff[DBL_MANTISSA_SIZE + 1];
-		int i;
-		DBL_TYPE aux;
-		/* Print in fixed point notation with enough number of
-		 * digits to preserve all information when reading again
-		 */
-		do {
-			sprintf(buff, "%0*.*" G_EXP_STRING, DBL_MANTISSA_SIZE, n, d);
-			aux = strtod(buff, NULL);
-#ifdef LDBL_SIG
-			if (n < LDBL_SIG) aux = (double)aux;
-#endif
-			if (n < DBL_SIG) aux = (float)aux;
-			n++;
-		} while (aux != d && n <= DBL_MAX_DIGITS);
-		n--;
-		/* We look for the first nonzero character. There is
-		 * always one because our floating point number is not
-		 * zero.*/
-		for (i = 0; buff[i] == '0' && buff[i+1] != '.'; i++)
-			;
-		write_str(buff + i, stream);
-		if (strchr(buff, '.') == 0) {
-			write_str(".0", stream);
-		}
-		exp = 0;
-	}
-	if (exp || e) {
-		if (e == 0)
-			e = 'E';
-		write_ch(e, stream);
-		if (exp < 0) {
-			write_ch('-', stream);
-			exp = -exp;
-		}
-		write_decimal(exp, stream);
-	}
-#if defined(HAVE_FENV_H) || defined(ECL_MS_WINDOWS_HOST)
-	feupdateenv(&env);
-#endif
-}
-
-
-#ifdef WITH_GMP
-
-static void
-write_bignum(cl_object x, cl_object stream)
-{
-	int base = ecl_print_base();
-        /* Include space for a sign and a terminating null character */
-	cl_index str_size = mpz_sizeinbase(x->big.big_num, base) + 2;
-        if (str_size <= 32) {
-                char txt[32];
-                mpz_get_str(txt, base, x->big.big_num);
-                write_str(txt, stream);
-        } else {
-                char *txt = ecl_alloc_atomic(str_size + 2);
-                mpz_get_str(txt, base, x->big.big_num);
-                write_str(txt, stream);
-                ecl_dealloc(txt);
-        }
-}
-
-#else  /* WITH_GMP */
-
-static void
-write_positive_bignum(big_num_t x, cl_object stream)
-{
-	/* The maximum number of digits is achieved for base 2 and it
-	   is always < 8*sizeof(big_num_t) */
-	int base = ecl_print_base();
-	short digits[8*sizeof(big_num_t)];
-	int j = 0;
-	if (x == (big_num_t)0) {
-		digits[j++] = '0';
-	} else do {
-		digits[j++] = ecl_digit_char((cl_fixnum)(x % (big_num_t)base), base);
-		x /= base;
-	} while (x > (big_num_t)0);
-	/* while (len-- > j)
-           write_ch('0', stream); */
-	while (j-- > 0)
-		write_ch(digits[j], stream);
-}
-#endif /* WITH_GMP */
 
 static bool
 all_dots(cl_object s)
@@ -1124,81 +879,20 @@ si_write_ugly_object(cl_object x, cl_object stream)
 		write_ch('>', stream);
 		break;
 
-	case t_fixnum: {
-		bool print_radix = ecl_print_radix();
-		int print_base = ecl_print_base();
-		if (print_radix && print_base != 10)
-			write_base(print_base, stream);
-		if (x == MAKE_FIXNUM(0)) {
-			write_ch('0', stream);
-		} else if (FIXNUM_MINUSP(x)) {
-			write_ch('-', stream);
-			write_positive_fixnum(-fix(x), print_base, 0, stream);
-		} else {
-			write_positive_fixnum(fix(x), print_base, 0, stream);
-		}
-		if (print_radix && print_base == 10) {
-			write_ch('.', stream);
-		}
-		break;
-	}
-	case t_bignum: {
-		bool print_radix = ecl_print_radix();
-		int print_base = ecl_print_base();
-		if (print_radix && print_base != 10)
-			write_base(print_base, stream);
-#ifdef WITH_GMP
-		write_bignum(x, stream);
-#else  /* WITH_GMP */
-                if (_ecl_big_zerop(x)) {
-                        write_ch('0', stream);
-                } else if (_ecl_big_sign(x) < 0) {
-                        write_ch('-', stream);
-                        write_positive_bignum(-(x->big.big_num), stream);
-                } else {
-                        write_positive_bignum(x->big.big_num, stream);
-                }
-#endif /* WITH_GMP */
-
-		if (print_radix && print_base == 10)
-			write_ch('.', stream);
-		break;
-	}
-	case t_ratio: {
-		const cl_env_ptr env = ecl_process_env();
-		if (ecl_print_radix()) {
-			write_base(ecl_print_base(), stream);
-		}
-		ecl_bds_bind(env, @'*print-radix*', Cnil);
-		si_write_ugly_object(x->ratio.num, stream);
-		write_ch('/', stream);
-		si_write_ugly_object(x->ratio.den, stream);
-		ecl_bds_unwind1(env);
-		break;
-	}
+	case t_fixnum:
+	case t_bignum:
+                write_integer(x, stream);
+                break;
+	case t_ratio:
+                write_ratio(x, stream);
+                break;
 	case t_singlefloat:
-		r = ecl_symbol_value(@'*read-default-float-format*');
-		write_double(sf(x), (r == @'single-float' || r == @'short-float')? 0 : 's',
-                             FLT_SIG, stream, x);
-		break;
+	case t_doublefloat:
 #ifdef ECL_LONG_FLOAT
-	case t_doublefloat:
-		r = ecl_symbol_value(@'*read-default-float-format*');
-		write_double(df(x), (r == @'double-float')? 0 : 'd', DBL_SIG, stream,
-                             x);
-		break;
 	case t_longfloat:
-		r = ecl_symbol_value(@'*read-default-float-format*');
-		write_double(ecl_long_float(x), (r == @'long-float')? 0 : 'l',
-                             LDBL_SIG, stream, x);
-		break;
-#else
-	case t_doublefloat:
-		r = ecl_symbol_value(@'*read-default-float-format*');
-		write_double(df(x), (r == @'double-float' || r == @'long-float')? 0 : 'd',
-                             DBL_SIG, stream, x);
-		break;
 #endif
+                write_float(x, stream);
+		break;
 	case t_complex:
 		write_str("#C(", stream);
 		si_write_ugly_object(x->complex.real, stream);

@@ -43,6 +43,8 @@ OBJS	= main.o symbol.o package.o list.o\
 	instance.o gfun.o reference.o character.o\
 	file.o read.o print.o error.o string.o cfun.o\
 	reader/parse_integer.o reader/parse_number.o \
+	printer/float_to_digits.o printer/float_to_string.o \
+	printer/integer_to_string.o \
 	typespec.o assignment.o \
 	predicate.o number.o\
 	num_pred.o num_comp.o num_arith.o num_sfun.o num_co.o\

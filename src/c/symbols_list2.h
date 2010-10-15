@@ -1820,8 +1820,8 @@ cl_symbols[] = {
 
 {SYS_ "READ-OBJECT-OR-IGNORE","si_read_object_or_ignore"},
 
-{EXT_ "OUTPUT-FLOAT-NAN",NULL},
-{EXT_ "OUTPUT-FLOAT-INFINITY",NULL},
+{EXT_ "FLOAT-NAN-STRING",NULL},
+{EXT_ "FLOAT-INFINITY-STRING",NULL},
 
 {EXT_ "READTABLE-LOCK","si_readtable_lock"},
 
@@ -1948,6 +1948,10 @@ cl_symbols[] = {
 {KEY_ "CODE",NULL},
 
 {EXT_ "ASSUME-RIGHT-TYPE",NULL},
+
+{SYS_ "FLOAT-TO-DIGITS","si_float_to_digits"},
+{SYS_ "FLOAT-TO-STRING-FREE","si_float_to_string_free"},
+{SYS_ "INTEGER-TO-STRING","si_integer_to_string"},
 
 /* Tag for end of list */
 {NULL,NULL}};
