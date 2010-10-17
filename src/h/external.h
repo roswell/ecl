@@ -1703,6 +1703,7 @@ extern ECL_API cl_object mp_process_resume(cl_object process);
 extern ECL_API cl_object mp_process_name(cl_object process);
 extern ECL_API cl_object mp_process_preset _ARGS((cl_narg narg, cl_object process, cl_object function, ...));
 extern ECL_API cl_object mp_process_run_function _ARGS((cl_narg narg, cl_object name, cl_object function, ...));
+extern ECL_API cl_object mp_process_run_function_wait _ARGS((cl_narg narg, ...));
 extern ECL_API cl_object mp_process_whostate(cl_object process);
 extern ECL_API cl_object mp_make_condition_variable(void);
 extern ECL_API cl_object mp_condition_variable_wait(cl_object cv, cl_object lock);

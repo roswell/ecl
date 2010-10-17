@@ -1050,9 +1050,9 @@ install_signal_handling_thread()
 				      Cnil,
 				      0);
 		cl_object process =
-			mp_process_run_function(2,
-						@'si::signal-servicing',
-						fun);
+			mp_process_run_function_wait(2,
+                                                     @'si::signal-servicing',
+                                                     fun);
 		if (Null(process)) {
 			ecl_internal_error("Unable to create signal "
 					   "servicing thread");

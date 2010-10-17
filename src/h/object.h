@@ -890,8 +890,15 @@ struct ecl_dummy {
 };
 
 #ifdef ECL_THREADS
+enum {
+        ECL_PROCESS_INACTIVE = 0,
+        ECL_PROCESS_BOOTING,
+        ECL_PROCESS_ACTIVE,
+        ECL_PROCESS_EXITING,
+        ECL_PROCESS_DEAD
+};
 struct ecl_process {
-	HEADER1(active);
+	HEADER2(active, phase);
 	cl_object name;
 	cl_object function;
 	cl_object args;

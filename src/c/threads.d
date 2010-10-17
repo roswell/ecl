@@ -36,6 +36,7 @@
 # include <semaphore.h>
 #endif
 #include <ecl/internal.h>
+#include <ecl/ecl-inl.h>
 
 #ifdef ECL_WINDOWS_THREADS
 /*
@@ -122,6 +123,7 @@ thread_cleanup(void *aux)
 	 */
 	cl_object process = (cl_object)aux;
 	cl_env_ptr env = process->process.env;
+        process->process.phase = ECL_PROCESS_EXITING;
 	process->process.active = 0;
 	process->process.env = NULL;
         ecl_disable_interrupts_env(env);
@@ -131,6 +133,7 @@ thread_cleanup(void *aux)
 	THREAD_OP_UNLOCK();
 	ecl_set_process_env(NULL);
 	if (env) _ecl_dealloc_env(env);
+        process->process.phase = ECL_PROCESS_DEAD;
 }
 
 #ifdef ECL_WINDOWS_THREADS
@@ -155,6 +158,7 @@ thread_entry_point(void *arg)
 	 * if we do things right.
 	 */
 	/* 1) Setup the environment for the execution of the thread */
+        process->process.phase = ECL_PROCESS_BOOTING;
 	ecl_set_process_env(env = process->process.env);
 #ifndef ECL_WINDOWS_THREADS
 	pthread_cleanup_push(thread_cleanup, (void *)process);
@@ -172,6 +176,7 @@ thread_entry_point(void *arg)
 	*/
 	mp_get_lock_wait(process->process.exit_lock);
 	process->process.active = 1;
+        process->process.phase = ECL_PROCESS_ACTIVE;
 	CL_CATCH_ALL_BEGIN(env) {
 		ecl_bds_bind(env, @'mp::*current-process*', process);
 		env->values[0] = cl_apply(2, process->process.function,
@@ -191,6 +196,7 @@ thread_entry_point(void *arg)
 	 *    through this point. thread_cleanup is automatically invoked
 	 *    marking the process as inactive.
 	 */
+        process->process.phase = ECL_PROCESS_EXITING;
 #ifdef ECL_WINDOWS_THREADS
 	thread_cleanup(process);
 	return 1;
@@ -204,6 +210,7 @@ static cl_object
 alloc_process(cl_object name, cl_object initial_bindings)
 {
 	cl_object process = ecl_alloc_object(t_process), array;
+        process->process.phase = ECL_PROCESS_INACTIVE;
 	process->process.active = 0;
 	process->process.name = name;
 	process->process.function = Cnil;
@@ -256,6 +263,7 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
 	env = _ecl_alloc_env();
 	ecl_set_process_env(env);
 	env->own_process = process = alloc_process(name, bindings);
+        process->process.phase = ECL_PROCESS_BOOTING;
 	process->process.active = 2;
 	process->process.thread = current;
 	process->process.env = env;
@@ -268,6 +276,7 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
         env->thread_local_bindings = env->bindings_array->vector.self.t;
 	mp_get_lock_wait(process->process.exit_lock);
 	process->process.active = 1;
+        process->process.phase = ECL_PROCESS_ACTIVE;
 	ecl_enable_interrupts_env(env);
 	return 1;
 }
@@ -522,6 +531,23 @@ mp_process_run_function(cl_narg narg, cl_object name, cl_object function, ...)
 	cl_apply(4, @'mp::process-preset', process, function,
 		 cl_grab_rest_args(args));
 	return mp_process_enable(process);
+}
+
+cl_object
+mp_process_run_function_wait(cl_narg narg, ...)
+{
+	cl_object process;
+	cl_va_list args;
+	cl_va_start(args, narg, narg, 0);
+	process = cl_apply(2, @'mp::process-run-function',
+                           cl_grab_rest_args(args));
+        if (!Null(process)) {
+                ecl_def_ct_single_float(wait, 0.001, static, const);
+                while (process->process.phase < ECL_PROCESS_ACTIVE) {
+                        cl_sleep(wait);
+                }
+        }
+	@(return process)
 }
 
 /*----------------------------------------------------------------------
