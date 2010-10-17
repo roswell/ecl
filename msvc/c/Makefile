@@ -67,6 +67,9 @@ OBJS	= main.obj symbol.obj package.obj list.obj\
 	apply.obj eval.obj interpreter.obj compiler.obj disassembler.obj \
 	instance.obj gfun.obj reference.obj character.obj\
 	file.obj read.obj print.obj error.obj string.obj cfun.obj\
+	reader/parse_integer.o reader/parse_number.o \
+	printer/float_to_digits.o printer/float_to_string.o \
+	printer/integer_to_string.o \
 	typespec.obj assignment.obj \
 	predicate.obj big.obj number.obj\
 	num_pred.obj num_comp.obj num_arith.obj num_sfun.obj num_co.obj\
