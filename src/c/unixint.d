@@ -367,7 +367,7 @@ unblock_signal(int signal)
 }
 #endif
 
-ecl_def_ct_base_string(str_ignore_signal,"Ignore signal ~:*~D",19,static,const);
+ecl_def_ct_base_string(str_ignore_signal,"Ignore signal",13,static,const);
 
 static void
 handle_signal_now(cl_object signal_code)
@@ -1107,6 +1107,11 @@ install_synchronous_signal_handlers()
 #ifdef SIGSEGV
 	if (ecl_get_option(ECL_OPT_TRAP_SIGSEGV)) {
 		mysignal(SIGSEGV, sigsegv_handler);
+	}
+#endif
+#ifdef SIGPIPE
+	if (ecl_get_option(ECL_OPT_TRAP_SIGPIPE)) {
+		mysignal(SIGPIPE, non_evil_signal_handler);
 	}
 #endif
 }

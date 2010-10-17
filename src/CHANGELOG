@@ -103,6 +103,8 @@ ECL 10.5.1:
    required by some packages that do not distinguish between compilation and
    distribution.
 
+ - ECL now captures SIGPIPE.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
