@@ -733,6 +733,9 @@ static void fill_inet_sockaddr(struct sockaddr_in *sockaddr, int port,
 		     :long
 		     "
 {
+	int sock = #0;
+	int length = #2;
+	void *buffer = safe_buffer_pointer(#1, length);
         int flags = ( #8 ? MSG_OOB : 0 )  |
                     ( #9 ? MSG_EOR : 0 ) |
                     ( #a ? MSG_DONTROUTE : 0 ) |
@@ -745,8 +748,14 @@ static void fill_inet_sockaddr(struct sockaddr_in *sockaddr, int port,
 
 	ecl_disable_interrupts();
 	fill_inet_sockaddr(&sockaddr, #3, #4, #5, #6, #7);
-        len = sendto(#0, safe_buffer_pointer(#1,#2),
-                     #2, flags,(struct sockaddr*)&sockaddr, 
+##if (MSG_NOSIGNAL == 0) && defined(SO_NOSIGPIPE)
+	{
+		int sockopt = #c;
+		setsockopt(#0,SOL_SOCKET,SO_NOSIGPIPE,&sockopt,sizeof(int));
+	}
+##endif
+        len = sendto(sock, buffer,
+                     length, flags,(struct sockaddr*)&sockaddr, 
                      sizeof(struct sockaddr_in));
 	ecl_enable_interrupts();
         @(return) = len;
@@ -760,6 +769,9 @@ static void fill_inet_sockaddr(struct sockaddr_in *sockaddr, int port,
 		     :long
 		     "
 {
+	int sock = #0;
+	int length = #2;
+	void *buffer = safe_buffer_pointer(#1, length);
         int flags = ( #3 ? MSG_OOB : 0 )  |
                     ( #4 ? MSG_EOR : 0 ) |
                     ( #5 ? MSG_DONTROUTE : 0 ) |
@@ -769,7 +781,13 @@ static void fill_inet_sockaddr(struct sockaddr_in *sockaddr, int port,
         cl_type type = type_of(#1);
         ssize_t len;
 	ecl_disable_interrupts();
-	len = send(#0, safe_buffer_pointer(#1,#2), #2, flags);
+##if (MSG_NOSIGNAL == 0) && defined(SO_NOSIGPIPE)
+	{
+		int sockopt = #7;
+		setsockopt(#0,SOL_SOCKET,SO_NOSIGPIPE,&sockopt,sizeof(int));
+	}
+##endif
+	len = send(sock, buffer, length, flags);
 	ecl_enable_interrupts();
         @(return) = len;
 }
@@ -805,9 +823,9 @@ also known as unix-domain sockets."))
         struct sockaddr_un sockaddr;
 	size_t size;
 	int output;
-#ifdef BSD
+##ifdef BSD
         sockaddr.sun_len = sizeof(struct sockaddr_un);
-#endif
+##endif
         sockaddr.sun_family = #2;
         strncpy(sockaddr.sun_path,#1,sizeof(sockaddr.sun_path));
 	sockaddr.sun_path[sizeof(sockaddr.sun_path)-1] = '\0';
@@ -855,9 +873,9 @@ also known as unix-domain sockets."))
 {
         struct sockaddr_un sockaddr;
 	int output;
-#ifdef BSD
+##ifdef BSD
         sockaddr.sun_len = sizeof(struct sockaddr_un);
-#endif
+##endif
         sockaddr.sun_family = #1;
         strncpy(sockaddr.sun_path,#2,sizeof(sockaddr.sun_path));
 	sockaddr.sun_path[sizeof(sockaddr.sun_path)-1] = '\0';
