@@ -609,11 +609,15 @@
 	 (let* ((k (read-char s))
 		(next-char (peek-char nil s nil nil))
 		(index (digit-char-p k 36)))
-	   (cond ((or (null index) (and next-char (alphanumericp next-char)))
+	   (cond ((eq k #\#)
+                  (wt #\#))
+                 ((or (null index) (and next-char (alphanumericp next-char)))
 		  (wt #\# k))
 		 ((< index (length coerced-arguments))
 		  (wt (nth index coerced-arguments)))
 		 (t
+                  (print k)
+                  (print index)
 		  (cmperr "C-INLINE: Variable code exceeds number of arguments")))))
 	(otherwise
 	 (write-char c *compiler-output1*))))))
