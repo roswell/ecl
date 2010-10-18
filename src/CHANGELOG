@@ -105,6 +105,10 @@ ECL 10.5.1:
 
  - ECL now captures SIGPIPE.
 
+ - In DEFMACRO forms, the &WHOLE argument may now be declared
+   ignorable. Formerly it was always referenced by the destructuring code of
+   the macro.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
