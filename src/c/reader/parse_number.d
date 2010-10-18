@@ -151,7 +151,10 @@ ecl_parse_number(cl_object str, cl_index start, cl_index end,
                         cl_object den;
                         if (sign < 0) _ecl_big_complement(num, num);
                         num = _ecl_big_register_normalize(num);
-                        den = ecl_parse_integer(str, ++i, end, ep, radix);
+                        c = ecl_char(str, ++i);
+                        if (ecl_digit_char(c, radix) < 0)
+                                goto NOT_A_NUMBER;
+                        den = ecl_parse_integer(str, i, end, ep, radix);
                         if (den == OBJNULL || (*ep < end)) {
                                 return OBJNULL;
                         } else if (den == MAKE_FIXNUM(0)) {

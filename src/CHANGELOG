@@ -109,6 +109,8 @@ ECL 10.5.1:
    ignorable. Formerly it was always referenced by the destructuring code of
    the macro.
 
+ - ECL mistakenly allowed the rational denominator to carry a sign, as in 1/-2.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
