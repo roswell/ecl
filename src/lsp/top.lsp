@@ -21,7 +21,7 @@
 
 (in-package "SYSTEM")
 
-(export '(*break-readtable* *break-on-warnings* *break-enable*
+(export '(*break-readtable* *break-on-warnings*
 	  *tpl-evalhook* *tpl-prompt-hook*))
 
 (defvar *quit-tag* (cons nil nil))
@@ -38,12 +38,6 @@
 (defvar *eof* (cons nil nil))
 
 (defvar *last-error* nil)
-
-(defvar *break-enable* t
-  "ECL specific.
-When an error is signaled, control enters a break loop only if the value of
-this variable is non-NIL.  The initial value is T, but ECL automatically
-rebinds this variable to NIL when control enters a break loop.")
 
 (defvar *break-message* nil)
 
@@ -400,9 +394,7 @@ The top-level loop of ECL. It is called by default when ECL is invoked."
       (in-package "CL-USER")
 
       (unless *lisp-initialized*
-	(let ((*break-enable* nil))
-	  ;; process command arguments
-	  (process-command-args))
+        (process-command-args)
 	(format t "ECL (Embeddable Common-Lisp) ~A" (lisp-implementation-version))
 	(format t "~%Copyright (C) 1984 Taiichi Yuasa and Masami Hagiya~@
 Copyright (C) 1993 Giuseppe Attardi~@
@@ -412,8 +404,7 @@ under certain conditions; see file 'Copyright' for details.")
 	(format *standard-output* "~%Type :h for Help.  ")
 	(setq *lisp-initialized* t))
 
-      (let ((*break-enable* t)
-	    (*tpl-level* -1))
+      (let ((*tpl-level* -1))
 	(tpl))
       0)))
 
@@ -476,8 +467,7 @@ under certain conditions; see file 'Copyright' for details.")
 (defvar *debug-status* nil)
 
 (defun simple-terminal-interrupt ()
-  (let ((*break-enable* t))
-    (error 'ext:interactive-interrupt)))
+  (error 'ext:interactive-interrupt))
 
 #+threads
 (defun show-process-list (&optional (process-list (mp:all-processes)))
@@ -1420,8 +1410,6 @@ package."
   (values))
 
 (defun default-debugger (condition)
-  (unless *break-enable*
-    (throw *quit-tag* nil))
   (let* ((*standard-input* *debug-io*)
          (*standard-output* *debug-io*)
          ;;(*tpl-prompt-hook* "[dbg] ")
@@ -1478,17 +1466,13 @@ package."
         (default-debugger condition)
         (let* (;; We do not have a si::top-level invocation above us
                ;; so we have to provide the environment for interactive use.
-               (*break-enable* *break-enable*)
                (*invoke-debugger-hook* *invoke-debugger-hook*)
                (*debugger-hook* *debugger-hook*)
-               (*quit-tags* (cons *quit-tag* *quit-tags*))
-               (*quit-tag* *quit-tags*)	; any unique new value
-               (*ihs-top* 0) ;; Or should it be 1?
-               (*tpl-level* (1+ *tpl-level*)) ;; Or should we simply say 0.
+               (*ihs-top* *ihs-top*) ;; Or should it be 1?
+               (*tpl-level* *tpl-level*) ;; Or should we simply say 0.
                (*tpl-commands* *tpl-commands*)
                + ++ +++ - * ** *** / // ///)
-          (catch *quit-tag*
-            (default-debugger condition)))))
+          (default-debugger condition))))
   (finish-output))
 
 (defun safe-eval (form env &optional (err-value nil err-value-p))
