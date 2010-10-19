@@ -105,9 +105,12 @@
 	     (fun-env fun) 0)))
     (otherwise
      (setf (fun-env fun) 0 (fun-level fun) 0)))
-  (let ((previous (dolist (old *local-funs*)
-		    (when (similar fun old)
-		      (return old)))))
+  (let ((previous
+         nil
+         #+(or)
+         (dolist (old *local-funs*)
+           (when (similar fun old)
+             (return old)))))
     (if previous
 	(progn
           (if (eq (fun-closure fun) 'CLOSURE)
