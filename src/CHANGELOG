@@ -35,6 +35,10 @@ ECL 10.5.1:
 
  - Detection of missing packages in the reader was accidentally deactivated.
 
+ - When entering the debugger the reader/printer environment is now reset
+   using with-standard-io-syntax. Formerly this was only done at a later
+   stage, causing the list of restarts to show garbage.
+
 * Visible changes:
 
  - "fasb" is now a valid FASL file type, accepted by ECL even in absence of
