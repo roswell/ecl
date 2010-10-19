@@ -128,6 +128,8 @@
      unless (and read-only-p
                 (or (c1let-unused-variable-p var form)
                     (c1let-constant-value-p var form rest-vars rest-forms)
+                    (c1let-constant-variable-p var form rest-vars rest-forms)
+                    #+(or)
                     (c1let-can-move-variable-value-p var form rest-vars rest-forms)))
      collect var into used-vars and
      collect form into used-forms
@@ -161,6 +163,18 @@
     (cmpdebug "Replacing variable ~A by its value ~A" (var-name var) form)
     (nsubst-var var form)
     t))
+
+(defun c1let-constant-variable-p (var form rest-vars rest-forms)
+  ;;  (let ((v1 e1) (v2 e2) (v3 e3)) (expr e4 v2 e5))
+  ;;  - v2 is a read only variable
+  ;;  - the value of e2 is not modified in e3 nor in following expressions
+  (when (eq (c1form-name form) 'VAR)
+    (let ((other-var (c1form-arg 0 form)))
+      (unless (or (member other-var rest-vars)
+                  (var-changed-in-form-list other-var rest-forms))
+        (cmpdebug "Replacing variable ~A by its value ~A" (var-name var) form)
+        (nsubst-var var form)
+        t))))
 
 (defun c2let-replaceable-var-ref-p (var form rest-forms)
   (when (and (eq (c1form-name form) 'VAR)
