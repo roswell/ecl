@@ -20,6 +20,8 @@
           command-args
           process-command-args))
 
+(defvar *command-break-enable* nil)
+
 (defvar *lisp-init-file-list* '("~/.ecl" "~/.eclrc")
   "List of files automatically loaded when ECL is invoked.")
 
@@ -57,8 +59,8 @@ Usage: ecl [-? | --help]
      (progn (setf quit 0)
             (format *standard-output* "ECL ~A~%" (lisp-implementation-version)))
      :noloadrc)
-    ("-debug" 0 (setf si::*break-enable* t))
-    ("-nodebug" 0 (setf si::*break-enable* nil))
+    ("-debug" 0 (setf *command-break-enable* t))
+    ("-nodebug" 0 (setf *command-break-enable* nil))
     ("-eval" 1 (eval (read-from-string 1)))
     ("-shell" 1 (progn (setq quit 0) (load 1 :verbose nil)))
     ("-load" 1 (load 1 :verbose verbose))
@@ -119,7 +121,8 @@ Usage: ecl [-? | --help]
 		       (data-file nil)
 		       (verbose t)
 		       (system-p nil)
-		       (quit nil))
+		       (quit nil)
+                       (*command-break-enable* nil))
 		   ,@(nreverse commands)
 		   (when quit (quit 0)))
 		loadrc
@@ -178,18 +181,24 @@ An excerpt of the rules used by ECL:
 "
   (multiple-value-bind (commands loadrc)
       (produce-init-code args rules)
-    (handler-bind ((error
-		    #'(lambda (c)
-			(if *break-enable*
-			    (invoke-debugger c)
-			    (progn
-			      (format *error-output*
-				      "An error occurred during initialization:~%~A.~%"
-				      c)
-			      (quit 1))))))
-      (progn
-	(when loadrc
-	  (dolist (file *lisp-init-file-list*)
-	    (when (load file :if-does-not-exist nil :search-list nil :verbose nil)
+    (restart-case
+        (handler-bind ((error
+                        #'(lambda (c)
+                            (if *command-break-enable*
+                                (invoke-debugger c)
+                                (progn
+                                  (format *error-output*
+                                          "An error occurred during initialization:~%~A.~%"
+                                          c)
+                                  (quit 1))))))
+          (progn
+            (when loadrc
+              (dolist (file *lisp-init-file-list*)
+                (when (load file :if-does-not-exist nil :search-list nil :verbose nil)
 	      (return))))
-	(eval commands)))))
+            (eval commands)))
+      (continue ()
+        :report "Ignore initialization errors and continue.")
+      (abort ()
+        :report "Quit ECL unsafely, ignoring all existing threads."
+        (si::quit -1 nil)))))

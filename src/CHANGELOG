@@ -39,6 +39,9 @@ ECL 10.5.1:
    using with-standard-io-syntax. Formerly this was only done at a later
    stage, causing the list of restarts to show garbage.
 
+ - We have removed the variable si::*break-enable* that was causing
+   INVOKE-DEBUGGER to return.
+
 * Visible changes:
 
  - "fasb" is now a valid FASL file type, accepted by ECL even in absence of
@@ -114,6 +117,9 @@ ECL 10.5.1:
    the macro.
 
  - ECL mistakenly allowed the rational denominator to carry a sign, as in 1/-2.
+
+ - When used with -debug and the command line options cause some error ECL
+   oferts an ABORT and a CONTINUE restarts.
 
 ;;; Local Variables: ***
 ;;; mode:text ***
