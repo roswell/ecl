@@ -294,11 +294,13 @@
   #+clos
   (when print-function
     (eval `(defmethod print-object ((obj ,name) stream)
-	     (,print-function obj stream 0))))
+	     (,print-function obj stream 0)
+	     obj)))
   #+clos
   (when print-object
     (eval `(defmethod print-object ((obj ,name) stream)
-	    (,print-object obj stream))))
+	    (,print-object obj stream)
+	    obj)))
   (when predicate
     (fset predicate (make-predicate name type named name-offset)))
   (put-sysprop name 'DEFSTRUCT-FORM `(defstruct ,name ,@slots))

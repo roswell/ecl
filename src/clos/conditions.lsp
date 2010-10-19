@@ -61,7 +61,8 @@
   (declare (ignore depth))
   (if *print-escape*
       (format stream "#<~s.~d>" (type-of restart) (unique-id restart))
-      (restart-report restart stream)))
+      (restart-report restart stream))
+  restart)
 
 (defstruct (restart (:PRINT-FUNCTION restart-print))
   name
