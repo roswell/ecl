@@ -127,6 +127,9 @@ typedef struct cl_compiler_env *cl_compiler_env_ptr;
 #define ECL_UCS_LOW_SURROGATE(c) ((c) >= 0xDC00 && (c) <= 0xDFFF)
 #endif
 
+/* error.d */
+
+extern void _ecl_unexpected_return() ecl_attr_noreturn;
 
 /* interpreter.d */
 

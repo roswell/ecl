@@ -35,6 +35,18 @@ cl_symbol_or_object(cl_object x)
 }
 
 void
+_ecl_unexpected_return()
+{
+        ecl_internal_error(
+"*** \n"
+"*** A call to ERROR returned without handling the error.\n"
+"*** This should have never happened and is usually a signal\n"
+"*** that the debugger or the universal error handler were\n"
+"*** improperly coded or altered. Please contact the maintainers\n"
+"***\n");
+}
+
+void
 ecl_internal_error(const char *s)
 {
         int saved_errno = errno;
@@ -94,6 +106,7 @@ FEerror(const char *s, int narg, ...)
 		Cnil,                    /*  not correctable  */
 		make_constant_base_string(s),	 /*  condition text  */
 		cl_grab_rest_args(args));
+        _ecl_unexpected_return();
 }
 
 cl_object
@@ -475,8 +488,10 @@ FEwin32_error(const char *msg, int narg, ...)
 @(defun error (eformat &rest args)
 @
 	ecl_enable_interrupts();
-	return funcall(4, @'si::universal-error-handler', Cnil, eformat,
-		       cl_grab_rest_args(args));
+	funcall(4, @'si::universal-error-handler', Cnil, eformat,
+                cl_grab_rest_args(args));
+	_ecl_unexpected_return();
+	@(return);
 @)
 
 @(defun cerror (cformat eformat &rest args)
