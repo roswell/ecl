@@ -2036,7 +2036,7 @@ init_read(void)
 
         {
                 cl_object var, val;
-                var = cl_list(23,
+                var = cl_list(24,
                               @'*print-pprint-dispatch*', /* See end of pprint.lsp */
                               @'*print-array*',
                               @'*print-base*',
@@ -2059,8 +2059,9 @@ init_read(void)
                               @'*readtable*',
                               @'si::*print-package*',
                               @'si::*print-structure*',
-                              @'si::*sharp-eq-context*');
-                val = cl_list(23,
+                              @'si::*sharp-eq-context*',
+			      @'si::*circle-counter*');
+                val = cl_list(24,
                               /**pprint-dispatch-table**/ Cnil,
                               /**print-array**/ Ct,
                               /**print-base**/ MAKE_FIXNUM(10),
@@ -2083,9 +2084,10 @@ init_read(void)
                               /**readtable**/ cl_core.standard_readtable,
                               /*si::*print-package**/ cl_core.lisp_package,
                               /*si::*print-structure**/ Ct,
-                              /*si::*sharp-eq-context**/ Cnil);
+                              /*si::*sharp-eq-context**/ Cnil,
+			      /*si::*cicle-counter**/ Cnil);
                 ECL_SET(@'si::+ecl-syntax-progv-list+', CONS(var,val));
-                var = cl_list(21,
+                var = cl_list(23,
                               @'*print-pprint-dispatch*', /* See end of pprint.lsp */
                               @'*print-array*',
                               @'*print-base*',
@@ -2106,8 +2108,10 @@ init_read(void)
                               @'*read-eval*',
                               @'*read-suppress*',
                               @'*readtable*',
-                              @'*package*');
-                val = cl_list(21,
+                              @'*package*',
+                              @'si::*sharp-eq-context*',
+			      @'si::*circle-counter*');
+                val = cl_list(23,
                               /**pprint-dispatch-table**/ Cnil,
                               /**print-array**/ Ct,
                               /**print-base**/ MAKE_FIXNUM(10),
@@ -2128,7 +2132,9 @@ init_read(void)
                               /**read-eval**/ Ct,
                               /**read-suppress**/ Cnil,
                               /**readtable**/ cl_core.standard_readtable,
-                              /**package**/ cl_core.user_package);
+                              /**package**/ cl_core.user_package,
+                              /*si::*sharp-eq-context**/ Cnil,
+			      /*si::*cicle-counter**/ Cnil);
                 ECL_SET(@'si::+io-syntax-progv-list+', CONS(var,val));
         }
 }
