@@ -41,7 +41,7 @@ insert_char(cl_object buffer, cl_index where, cl_fixnum c)
 {
         cl_fixnum end = buffer->base_string.fillp;
         ecl_string_push_extend(buffer, '.');
-        ecl_copy_subarray(buffer, where+1, buffer, where, end);
+        ecl_copy_subarray(buffer, where+1, buffer, where, end - where);
         ecl_char_set(buffer, where, c);
 }
 
