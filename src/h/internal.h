@@ -315,6 +315,13 @@ extern void cl_write_object(cl_object x, cl_object stream);
 # define PACKAGE_OP_UNLOCK() THREAD_OP_UNLOCK()
 # define ERROR_HANDLER_LOCK() THREAD_OP_LOCK()
 # define ERROR_HANDLER_UNLOCK() THREAD_OP_UNLOCK()
+# define ECL_WITH_GLOBAL_LOCK_BEGIN(the_env)    \
+        mp_get_lock_wait(cl_core.global_lock);  \
+        CL_UNWIND_PROTECT_BEGIN(the_env)
+# define ECL_WITH_GLOBAL_LOCK_END                       \
+        CL_UNWIND_PROTECT_EXIT {                        \
+                mp_giveup_lock(cl_core.global_lock);    \
+        } CL_UNWIND_PROTECT_END
 #else
 # define HASH_TABLE_LOCK(h)
 # define HASH_TABLE_UNLOCK(h)
@@ -322,6 +329,8 @@ extern void cl_write_object(cl_object x, cl_object stream);
 # define PACKAGE_OP_UNLOCK()
 # define ERROR_HANDLER_LOCK()
 # define ERROR_HANDLER_UNLOCK()
+# define ECL_WITH_GLOBAL_LOCK_BEGIN(the_env)
+# define ECL_WITH_GLOBAL_LOCK_END
 #endif /* ECL_THREADS */
 
 
