@@ -24,7 +24,8 @@
 (defun unoptimized-funcall (fun arguments)
   (let ((l (length arguments)))
     (if (<= l si::c-arguments-limit)
-	(make-c1form* 'FUNCALL :args (c1expr fun) (c1args* arguments))
+	(make-c1form* 'FUNCALL :sp-change t :side-effects t
+                      :args (c1expr fun) (c1args* arguments))
 	(unoptimized-long-call fun arguments))))
 
 (defun c1funcall (args)
