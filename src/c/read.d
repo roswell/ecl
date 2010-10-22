@@ -2177,6 +2177,7 @@ read_VV(cl_object block, void (*entry_point)(cl_object))
 		block->cblock.cfuns_size = 0;
 		block->cblock.cfuns = NULL;
                 block->cblock.source = Cnil;
+                block->cblock.refs = MAKE_FIXNUM(0);
 		si_set_finalizer(block, Ct);
 	}
 	block->cblock.entry = entry_point;

@@ -126,6 +126,50 @@ copy_object_file(cl_object original)
 }
 
 #ifdef ENABLE_DLOPEN
+static void
+dlopen_wrapper(cl_object filename, cl_object block)
+{
+        char *filename_string = (char*)filename->base_string.self;
+#ifdef HAVE_DLFCN_H
+	block->cblock.handle = dlopen(filename_string, RTLD_NOW|RTLD_GLOBAL);
+#endif
+#ifdef HAVE_MACH_O_DYLD_H
+	{
+	NSObjectFileImage file;
+        static NSObjectFileImageReturnCode code;
+	code = NSCreateObjectFileImageFromFile(filename_string, &file);
+	if (code != NSObjectFileImageSuccess) {
+		block->cblock.handle = NULL;
+	} else {
+		NSModule out = NSLinkModule(file, filename_string,
+					    NSLINKMODULE_OPTION_PRIVATE|
+					    NSLINKMODULE_OPTION_BINDNOW|
+					    NSLINKMODULE_OPTION_RETURN_ON_ERROR);
+		block->cblock.handle = out;
+	}}
+#endif
+#if defined(ECL_MS_WINDOWS_HOST)
+	block->cblock.handle = LoadLibrary(filename_string);
+#endif
+}
+
+static void
+dlclose_wrapper(cl_object block)
+{
+        if (block->cblock.handle != NULL) {
+#ifdef HAVE_DLFCN_H
+                dlclose(block->cblock.handle);
+#endif
+#ifdef HAVE_MACH_O_DYLD_H
+                NSUnLinkModule(block->cblock.handle, NSUNLINKMODULE_OPTION_NONE);
+#endif
+#if defined(ECL_MS_WINDOWS_HOST)
+                FreeLibrary(block->cblock.handle);
+#endif
+                block->cblock.handle = NULL;
+        }
+}
+
 static cl_object
 ecl_library_find_by_name(cl_object filename)
 {
@@ -151,6 +195,52 @@ ecl_library_find_by_handle(void *handle)
 		}
 	}
 	return Cnil;
+}
+
+static cl_object
+ecl_library_open_inner(cl_object filename, bool self_destruct)
+{
+        const cl_env_ptr the_env = ecl_process_env();
+	cl_object other, block = ecl_alloc_object(t_codeblock);
+	block->cblock.self_destruct = self_destruct;
+	block->cblock.locked = 0;
+	block->cblock.handle = NULL;
+	block->cblock.entry = NULL;
+	block->cblock.data = NULL;
+	block->cblock.data_size = 0;
+	block->cblock.temp_data = NULL;
+	block->cblock.temp_data_size = 0;
+	block->cblock.data_text = NULL;
+	block->cblock.data_text_size = 0;
+	block->cblock.name = filename;
+	block->cblock.next = Cnil;
+	block->cblock.links = Cnil;
+	block->cblock.cfuns_size = 0;
+	block->cblock.cfuns = NULL;
+        block->cblock.source = Cnil;
+        block->cblock.refs = MAKE_FIXNUM(1);
+
+        ECL_WITH_GLOBAL_LOCK_BEGIN(the_env) {
+	ecl_disable_interrupts();
+        dlopen_wrapper(filename, block);
+        if (block->cblock.handle != NULL) {
+                /* Have we already loaded this library? If so, then unload this
+                 * copy and increase the reference counter so that we can keep
+                 * track (in lisp) of how many copies we use.
+                 */
+                cl_object other = ecl_library_find_by_handle(block->cblock.handle);
+                if (other != Cnil) {
+                        dlclose_wrapper(block);
+                        block = other;
+                        block->cblock.refs = ecl_one_plus(block->cblock.refs);
+                } else {
+                        si_set_finalizer(block, Ct);
+                        cl_core.libraries = CONS(block, cl_core.libraries);
+                }
+        }
+	ecl_enable_interrupts();
+        } ECL_WITH_GLOBAL_LOCK_END;
+        return block;
 }
 
 cl_object
@@ -196,74 +286,20 @@ ecl_library_open(cl_object filename, bool force_reload) {
 #endif
 	}
  DO_LOAD:
-	block = ecl_alloc_object(t_codeblock);
-	block->cblock.self_destruct = self_destruct;
-	block->cblock.locked = 0;
-	block->cblock.handle = NULL;
-	block->cblock.entry = NULL;
-	block->cblock.data = NULL;
-	block->cblock.data_size = 0;
-	block->cblock.temp_data = NULL;
-	block->cblock.temp_data_size = 0;
-	block->cblock.data_text = NULL;
-	block->cblock.data_text_size = 0;
-	block->cblock.name = filename;
-	block->cblock.next = Cnil;
-	block->cblock.links = Cnil;
-	block->cblock.cfuns_size = 0;
-	block->cblock.cfuns = NULL;
-        block->cblock.source = Cnil;
-	filename_string = (char*)filename->base_string.self;
-
-	ecl_disable_interrupts();
-#ifdef HAVE_DLFCN_H
-	block->cblock.handle = dlopen(filename_string, RTLD_NOW|RTLD_GLOBAL);
-#endif
-#ifdef HAVE_MACH_O_DYLD_H
-	{
-	NSObjectFileImage file;
-        static NSObjectFileImageReturnCode code;
-	code = NSCreateObjectFileImageFromFile(filename_string, &file);
-	if (code != NSObjectFileImageSuccess) {
-		block->cblock.handle = NULL;
-	} else {
-		NSModule out = NSLinkModule(file, filename_string,
-					    NSLINKMODULE_OPTION_PRIVATE|
-					    NSLINKMODULE_OPTION_BINDNOW|
-					    NSLINKMODULE_OPTION_RETURN_ON_ERROR);
-		block->cblock.handle = out;
-	}}
-#endif
-#if defined(ECL_MS_WINDOWS_HOST)
-	block->cblock.handle = LoadLibrary(filename_string);
-#endif
-	ecl_enable_interrupts();
+        block = ecl_library_open_inner(filename, self_destruct);
 	/*
 	 * A second pass to ensure that the dlopen routine has not
 	 * returned a library that we had already loaded. If this is
 	 * the case, we close the new copy to ensure we do refcounting
 	 * right.
-	 *
-	 * INV: We can modify "libraries" in a multithread environment
-	 * because we have already taken the +load-compile-lock+
 	 */
-	{
-	cl_object other = ecl_library_find_by_handle(block->cblock.handle);
-	if (other != Cnil) {
-		ecl_library_close(block);
+	if (block->cblock.refs != MAKE_FIXNUM(1)) {
                 if (force_reload) {
+                        ecl_library_close(block);
                         filename = copy_object_file(filename);
                         self_destruct = 1;
                         goto DO_LOAD;
                 }
-		block = other;
-	} else {
-		si_set_finalizer(block, Ct);
-                if (block->cblock.handle != NULL)
-                        cl_core.libraries = CONS(block, cl_core.libraries);
-                else
-                        ecl_library_close(block);
-	}
 	}
 	return block;
 }
@@ -370,36 +406,24 @@ ecl_library_error(cl_object block) {
 
 void
 ecl_library_close(cl_object block) {
-	const char *filename;
-	bool verbose = ecl_symbol_value(@'si::*gc-verbose*') != Cnil;
-
-	if (Null(block->cblock.name))
-		filename = "<anonymous>";
-	else
-		filename = (char*)block->cblock.name->base_string.self;
-        if (block->cblock.handle != NULL) {
-		if (verbose) {
-			fprintf(stderr, ";;; Freeing library %s\n", filename);
-		}
-		ecl_disable_interrupts();
-#ifdef HAVE_DLFCN_H
-		dlclose(block->cblock.handle);
-#endif
-#ifdef HAVE_MACH_O_DYLD_H
-		NSUnLinkModule(block->cblock.handle, NSUNLINKMODULE_OPTION_NONE);
-#endif
-#if defined(ECL_MS_WINDOWS_HOST)
-		FreeLibrary(block->cblock.handle);
-#endif
-		ecl_enable_interrupts();
+        const cl_env_ptr the_env = ecl_process_env();
+        ECL_WITH_GLOBAL_LOCK_BEGIN(the_env) {
+                ecl_disable_interrupts();
+                if (block->cblock.refs != MAKE_FIXNUM(1)) {
+                        block->cblock.refs = ecl_one_minus(block->cblock.refs);
+                        block = Cnil;
+                } else if (block->cblock.handle != NULL) {
+                        dlclose_wrapper(block);
+                        cl_core.libraries = ecl_remove_eq(block, cl_core.libraries);
+                }
+                ecl_enable_interrupts();
+        } ECL_WITH_GLOBAL_LOCK_END;
+	if (block != Cnil && block->cblock.self_destruct) {
+                const char *filename;
+                if (!Null(block->cblock.name)) {
+                        unlink((char*)block->cblock.name->base_string.self);
+                }
         }
-	if (block->cblock.self_destruct) {
-		if (verbose) {
-			fprintf(stderr, ";;; Removing file %s\n", filename);
-		}
-		unlink(filename);
-        }
-	cl_core.libraries = ecl_remove_eq(block, cl_core.libraries);
 }
 
 void

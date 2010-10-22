@@ -724,6 +724,7 @@ struct ecl_codeblock {
 	cl_index cfuns_size;		/*  number of functions defined  */
 	const struct ecl_cfun *cfuns;
         cl_object source;		/*  common debug information for this block  */
+        cl_object refs;			/*  reference counter for the library  */
 };
 
 struct ecl_bytecodes {
