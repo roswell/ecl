@@ -1136,7 +1136,7 @@ Use special code 0 to cancel this operation.")
 (defun break-where ()
   (if (<= *tpl-level* 0)
       #-threads (format t "~&Top level.~%")
-      #+threads (format t "~&Top level in: ~S.~%" mp:*current-process*)
+      #+threads (format t "~&Top level in: ~A.~%" mp:*current-process*)
     (tpl-print-current)))
 
 (defun tpl-print-current ()
@@ -1146,7 +1146,7 @@ Use special code 0 to cancel this operation.")
       (format t " [Evaluation of: ~S]"
               (function-lambda-expression (ihs-fun *ihs-current*)))))
   #-threads (terpri)
-  #+threads (format t " In: ~S.~%" mp:*current-process*)
+  #+threads (format t " In: ~A.~%" mp:*current-process*)
   (let ((fun (ihs-fun *ihs-current*)))
     (when (and (symbolp fun) (fboundp fun))
       (setf fun (fdefinition fun)))
@@ -1371,7 +1371,7 @@ package."
     (progn
       (format *error-output*
 	      "~&Excessive debugger depth! Probable infinite recursion!~%~
-             Quitting process: ~S.~%" mp:*current-process*)
+             Quitting process: ~A.~%" mp:*current-process*)
       (when (< (+ *default-debugger-maximum-depth* 3) *break-level*)
 	;; we tried to be polite but it does not seem to work.
 	(quit -1))
@@ -1403,24 +1403,24 @@ package."
   (loop for process in *console-waiting-list*
      for rank from 1
      do (format t (if (eq process mp:*current-process*)
-                      "   >~D: ~s~%" 
-                      "    ~D: ~s~%")
+                      "   >~D: ~A~%" 
+                      "    ~D: ~A~%")
                 rank process))
   (terpri)
   (values))
 
 (defun default-debugger (condition)
-  (let* ((*standard-input* *debug-io*)
-         (*standard-output* *debug-io*)
-         ;;(*tpl-prompt-hook* "[dbg] ")
-         (*print-pretty* nil)
-         (*print-circle* t)
-         (*readtable* (or *break-readtable* *readtable*))
-         (*break-message* (format nil "~&~A~%" condition))
-         (*break-level* (1+ *break-level*))
-         (break-level *break-level*)
-         (*break-env* nil))
-    (with-standard-io-syntax
+  (with-standard-io-syntax
+    (let* ((*standard-input* *debug-io*)
+           (*standard-output* *debug-io*)
+           ;;(*tpl-prompt-hook* "[dbg] ")
+           (*print-pretty* nil)
+           (*print-circle* t)
+           (*readtable* (or *break-readtable* *readtable*))
+           (*break-message* (format nil "~&~A~%" condition))
+           (*break-level* (1+ *break-level*))
+           (break-level *break-level*)
+           (*break-env* nil))
       (check-default-debugger-runaway)
       #+threads
       ;; We give our process priority for grabbing the console.
