@@ -1004,6 +1004,6 @@ init_threads(cl_env_ptr env)
 
 	env->own_process = process;
 
-        cl_core.global_lock = ecl_make_lock(@'si::package-lock', 0);
+        cl_core.global_lock = ecl_make_lock(@'si::package-lock', 1);
 	cl_core.processes = ecl_list1(process);
 }
