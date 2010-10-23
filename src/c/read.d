@@ -252,17 +252,11 @@ LOOP:
 				   all referenced packages have been properly built.
 				*/
 				cl_object name = cl_copy_seq(token);
-				unlikely_if (cl_core.packages_to_be_created_p == Cnil) {
+				unlikely_if (Null(the_env->packages_to_be_created_p)) {
 					FEerror("There is no package with the name ~A.",
 						1, name);
-				} else if (!Null(p = ecl_assoc(name, cl_core.packages_to_be_created))) {
-					p = CDR(p);
-				} else {
-					p = ecl_make_package(name,Cnil,Cnil);
-					cl_core.packages = CDR(cl_core.packages);
-					cl_core.packages_to_be_created =
-						cl_acons(name, p, cl_core.packages_to_be_created);
 				}
+                                p = _ecl_package_to_be_created(the_env, name);
 			}
 			TOKEN_STRING_FILLP(token) = length = 0;
 			upcase = count = colon = 0;
@@ -2154,7 +2148,7 @@ cl_object
 read_VV(cl_object block, void (*entry_point)(cl_object))
 {
 	const cl_env_ptr env = ecl_process_env();
-	volatile cl_object old_eptbc = cl_core.packages_to_be_created;
+	volatile cl_object old_eptbc = env->packages_to_be_created;
 	volatile cl_object x;
 	cl_index i, len, perm_len, temp_len;
 	cl_object in;
@@ -2188,7 +2182,7 @@ read_VV(cl_object block, void (*entry_point)(cl_object))
                 cl_object progv_list;
 
 		ecl_bds_bind(env, @'si::*cblock*', block);
-                cl_core.packages_to_be_created_p = Ct;
+                env->packages_to_be_created_p = Ct;
 
 		/* Communicate the library which Cblock we are using, and get
 		 * back the amount of data to be processed.
@@ -2266,7 +2260,7 @@ read_VV(cl_object block, void (*entry_point)(cl_object))
                                        "binary file", in, 0);
 #endif
 	NO_DATA_LABEL:
-                cl_core.packages_to_be_created_p = Cnil;
+                env->packages_to_be_created_p = Cnil;
 
 		for (i = 0; i < block->cblock.cfuns_size; i++) {
 			const struct ecl_cfun *prototype = block->cblock.cfuns+i;
@@ -2290,8 +2284,8 @@ read_VV(cl_object block, void (*entry_point)(cl_object))
 		}
 		/* Execute top-level code */
 		(*entry_point)(MAKE_FIXNUM(0));
-		x = cl_set_difference(2, cl_core.packages_to_be_created, old_eptbc);
-                old_eptbc = cl_core.packages_to_be_created;
+		x = cl_set_difference(2, env->packages_to_be_created, old_eptbc);
+                old_eptbc = env->packages_to_be_created;
                 unlikely_if (!Null(x)) {
                         CEerror(Ct,
                                 Null(ECL_CONS_CDR(x))?
@@ -2310,8 +2304,8 @@ read_VV(cl_object block, void (*entry_point)(cl_object))
 	} CL_UNWIND_PROTECT_EXIT {
 		if (in != OBJNULL)
 			cl_close(1,in);
-		cl_core.packages_to_be_created = old_eptbc;
-                cl_core.packages_to_be_created_p = Cnil;
+		env->packages_to_be_created = old_eptbc;
+                env->packages_to_be_created_p = Cnil;
 	} CL_UNWIND_PROTECT_END;
 
 	return block;

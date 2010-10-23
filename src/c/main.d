@@ -177,6 +177,9 @@ ecl_init_env(cl_env_ptr env)
         }
 
         env->trap_fpe_bits = 0;
+
+        env->packages_to_be_created = Cnil;
+        env->packages_to_be_created_p = Cnil;
 }
 
 void
@@ -382,8 +385,6 @@ struct cl_core_struct cl_core = {
 #endif
 	Cnil, /* mp_package */
         Cnil, /* c_package */
-	Cnil, /* packages_to_be_created */
-        Cnil, /* packages_to_be_created_p */
 
 	Cnil, /* pathname_translations */
         Cnil, /* library_pathname */
@@ -538,6 +539,7 @@ cl_boot(int argc, char **argv)
 	cl_core.path_max = MAXPATHLEN;
 #endif
 
+        env->packages_to_be_created = Cnil;
 	cl_core.lisp_package =
 		ecl_make_package(str_common_lisp,
 				 cl_list(2, str_cl, str_LISP),

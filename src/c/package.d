@@ -120,9 +120,41 @@ make_package_hashtable()
 				   Cnil); /* lockable */
 }
 
+static cl_object
+alloc_package(cl_object name)
+{
+        cl_object p = ecl_alloc_object(t_package);
+        p->pack.internal = make_package_hashtable();
+	p->pack.external = make_package_hashtable();
+        p->pack.name = name;
+	p->pack.nicknames = Cnil;
+	p->pack.shadowings = Cnil;
+	p->pack.uses = Cnil;
+	p->pack.usedby = Cnil;
+	p->pack.locked = FALSE;
+        return p;
+}
+
+cl_object
+_ecl_package_to_be_created(cl_env_ptr env, cl_object name)
+{
+        cl_object package = ecl_assoc(name, env->packages_to_be_created);
+        if (Null(package)) {
+                const cl_env_ptr env = ecl_process_env();
+                package = alloc_package(name);
+                env->packages_to_be_created =
+                        cl_acons(name, package, env->packages_to_be_created);
+        } else {
+                package = ECL_CONS_CDR(package);
+        }
+        return package;
+}
+
+
 cl_object
 ecl_make_package(cl_object name, cl_object nicknames, cl_object use_list)
 {
+        const cl_env_ptr env = ecl_process_env();
 	cl_object x, y, other;
 
 	name = cl_string(name);
@@ -133,8 +165,8 @@ ecl_make_package(cl_object name, cl_object nicknames, cl_object use_list)
          *    created and use it.
 	 */
 	PACKAGE_OP_LOCK();
-	{
-		cl_object l = cl_core.packages_to_be_created;
+	if (ecl_get_option(ECL_OPT_BOOTED)) {
+		cl_object l = env->packages_to_be_created;
 		while (!Null(l)) {
 			cl_object pair = ECL_CONS_CAR(l);
 			cl_object other_name = ECL_CONS_CAR(pair);
@@ -143,9 +175,9 @@ ecl_make_package(cl_object name, cl_object nicknames, cl_object use_list)
 				    @':test', @'string=') != Cnil)
 			{
 				x = ECL_CONS_CDR(pair);
-                                cl_core.packages_to_be_created =
+                                env->packages_to_be_created =
                                         ecl_remove_eq(pair,
-                                                      cl_core.packages_to_be_created);
+                                                      env->packages_to_be_created);
 				goto INTERN;
 			}
 			l = ECL_CONS_CDR(l);
@@ -160,16 +192,8 @@ ecl_make_package(cl_object name, cl_object nicknames, cl_object use_list)
 				other, 1, name);
 		return other;
 	}
-	x = ecl_alloc_object(t_package);
-	x->pack.internal = make_package_hashtable();
-	x->pack.external = make_package_hashtable();
+	x = alloc_package(name);
  INTERN:
-	x->pack.name = name;
-	x->pack.nicknames = Cnil;
-	x->pack.shadowings = Cnil;
-	x->pack.uses = Cnil;
-	x->pack.usedby = Cnil;
-	x->pack.locked = FALSE;
 	loop_for_in(nicknames) {
 		cl_object nick = cl_string(ECL_CONS_CAR(nicknames));
 		if ((other = ecl_find_package_nolock(nick)) != Cnil) {

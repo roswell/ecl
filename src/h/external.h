@@ -135,6 +135,11 @@ struct cl_env_struct {
 
 	/* Old exception filter. Needed by windows. */
 	void *old_exception_filter;
+
+        /* List of packages interned when loading a FASL but which have
+         * to be explicitely created by the compiled code itself. */
+	cl_object packages_to_be_created;
+        cl_object packages_to_be_created_p;
 };
 
 #ifndef __GNUC__
@@ -173,8 +178,6 @@ struct cl_core_struct {
 #endif
 	cl_object mp_package;
         cl_object c_package;
-	cl_object packages_to_be_created;
-        cl_object packages_to_be_created_p;
 
 	cl_object pathname_translations;
         cl_object library_pathname;

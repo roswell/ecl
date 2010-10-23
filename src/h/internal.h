@@ -341,6 +341,10 @@ extern void cl_write_object(cl_object x, cl_object stream);
 #define	RTABSIZE	CHAR_CODE_LIMIT	/*  read table size  */
 #endif
 
+/* package.d */
+
+extern cl_object _ecl_package_to_be_created(const cl_env_ptr env, cl_object name);
+
 /* sequence.d */
 typedef struct { cl_index start, end, length; } cl_index_pair;
 extern ECL_API cl_index_pair ecl_sequence_start_end(cl_object fun, cl_object s, cl_object start, cl_object end);
