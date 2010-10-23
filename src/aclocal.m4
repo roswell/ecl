@@ -232,7 +232,7 @@ THREAD_CFLAGS=''
 THREAD_LIBS=''
 THREAD_GC_FLAGS='--enable-threads=posix'
 INSTALL_TARGET='install'
-THREAD_OBJ='threads threads_mutex'
+THREAD_OBJ='threads/process threads/mutex threads/condition_variable'
 clibs=''
 SONAME=''
 SONAME_LDFLAGS=''
@@ -823,6 +823,7 @@ AC_MSG_RESULT([$ECL_WORKING_SEM_INIT])
 if test $ECL_WORKING_SEM_INIT = yes ; then
   AC_DEFINE(ECL_SEMAPHORES)
   AC_DEFINE(HAVE_SEM_INIT)
+  THREAD_OBJ="$THREAD_OBJ threads/semaphore"
 fi
 ])
 

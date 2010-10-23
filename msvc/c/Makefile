@@ -14,7 +14,7 @@ ECL_FPE_CODE=fpe_x86.c
 
 !if "$(ECL_THREADS)" != ""
 ECL_THREADS_FLAG=1
-THREADS_OBJ= threads.obj threads_mutex.obj
+THREADS_OBJ= threads/process.obj threads/mutex.obj threads/condition_variable.obj
 !else
 ECL_THREADS_FLAG=0
 THREADS_OBJ=
