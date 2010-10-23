@@ -121,6 +121,11 @@ ECL 10.5.1:
  - When used with -debug and the command line options cause some error ECL
    oferts an ABORT and a CONTINUE restarts.
 
+ - Loading binary files is no longer locking and can be done from several
+   threads simultaneously. Note, however, that this may have unexpected
+   consequences regarding things like creation of packages or class and
+   function definition.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

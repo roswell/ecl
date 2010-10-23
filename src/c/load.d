@@ -446,13 +446,6 @@ si_load_binary(cl_object filename, cl_object verbose, cl_object print, cl_object
 	/* We need the full pathname */
 	filename = cl_truename(filename);
 
-#ifdef ECL_THREADS
-	/* Loading binary code is not thread safe. When another thread tries
-	   to load the same file, we may end up initializing twice the same
-	   module. */
-	mp_get_lock(1, ecl_symbol_value(@'mp::+load-compile-lock+'));
-	CL_UNWIND_PROTECT_BEGIN(the_env) {
-#endif
 	/* Try to load shared object file */
 	block = ecl_library_open(filename, 1);
 	if (block->cblock.handle == NULL) {
@@ -489,12 +482,6 @@ GO_ON:
 	read_VV(block, (void (*)(cl_object))(block->cblock.entry));
 	output = Cnil;
 OUTPUT:
-#ifdef ECL_THREADS
-	(void)0; /* MSVC complains about missing ';' before '}' */
-	} CL_UNWIND_PROTECT_EXIT {
-	mp_giveup_lock(ecl_symbol_value(@'mp::+load-compile-lock+'));
-	} CL_UNWIND_PROTECT_END;
-#endif
 	@(return output)
 }
 #endif /* !ENABLE_DLOPEN */
