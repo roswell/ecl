@@ -78,6 +78,7 @@ typedef enum {
 #ifdef ECL_THREADS
 	t_process,
 	t_lock,
+	t_rwlock,
 	t_condition_variable,
 # ifdef ECL_SEMAPHORES
         t_semaphore,
@@ -921,6 +922,16 @@ struct ecl_lock {
         pthread_mutex_t mutex;
 };
 
+struct ecl_rwlock {
+	HEADER;
+        cl_object name;
+#ifdef ECL_RWLOCK
+        pthread_rwlock_t mutex;
+#else
+        cl_object mutex;
+#endif
+};
+
 struct ecl_condition_variable {
         HEADER;
         pthread_cond_t cv;
@@ -1031,6 +1042,7 @@ union cl_lispunion {
 #ifdef ECL_THREADS
 	struct ecl_process	process; 	/*  process  */
 	struct ecl_lock		lock; 		/*  lock  */
+	struct ecl_rwlock	rwlock; 	/*  read/write lock  */
         struct ecl_condition_variable condition_variable; /*  condition-variable */
 #endif
 #ifdef ECL_SEMAPHORES

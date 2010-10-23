@@ -1740,6 +1740,17 @@ extern ECL_API cl_object mp_get_lock_nowait(cl_object lock);
 extern ECL_API cl_object mp_giveup_lock(cl_object lock);
 
 extern ECL_API cl_object ecl_make_lock(cl_object lock, bool recursive);
+
+/* threads/rwlock.d */
+
+extern ECL_API cl_object mp_make_rwlock _ARGS((cl_narg narg, ...));
+extern ECL_API cl_object mp_rwlock_name(cl_object lock);
+extern ECL_API cl_object mp_get_rwlock_read _ARGS((cl_narg narg, cl_object lock, ...));
+extern ECL_API cl_object mp_get_rwlock_write _ARGS((cl_narg narg, cl_object lock, ...));
+extern ECL_API cl_object mp_giveup_rwlock_read(cl_object lock);
+extern ECL_API cl_object mp_giveup_rwlock_write(cl_object lock);
+extern ECL_API cl_object ecl_make_rwlock(cl_object lock);
+
 #endif /* ECL_THREADS */
 
 /* time.c */

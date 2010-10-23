@@ -67,6 +67,7 @@
 #  define ECL_WINDOWS_THREADS
 # endif
 /* # udef ECL_SEMAPHORES */
+#undef ECL_RWLOCK
 #endif
 
 /* __thread thread-local variables?                                     */
@@ -399,6 +400,8 @@ typedef unsigned @CL_FIXNUM_TYPE@ cl_hashkey;
 #undef HAVE_SEMAPHORE_H
 /* whether we have a working sem_init()                                 */
 #undef HAVE_SEM_INIT
+/* whether we have read/write locks                                     */
+#undef HAVE_POSIX_RWLOCK
 /* uname() for system identification					*/
 #undef HAVE_UNAME
 #undef HAVE_UNISTD_H

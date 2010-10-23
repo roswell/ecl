@@ -1222,6 +1222,7 @@ if not possible."
 	       (READTABLE)
 	       #+threads (MP::PROCESS)
 	       #+threads (MP::LOCK)
+	       #+threads (MP::RWLOCK)
 	       #+ffi (FOREIGN-DATA)
 	       #+sse2 (EXT:SSE-PACK (OR EXT:INT-SSE-PACK
 				     EXT:FLOAT-SSE-PACK

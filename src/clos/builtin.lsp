@@ -85,6 +85,7 @@
 	    (si::weak-pointer)
 	    #+threads (mp::process)
 	    #+threads (mp::lock)
+	    #+threads (mp::rwlock)
 	    #+threads (mp::condition-variable)
 	    #+semaphores (mp::semaphore)
 	    #+sse2 (ext::sse-pack))))

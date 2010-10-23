@@ -1045,6 +1045,15 @@ standard_finalizer(cl_object o)
 		ecl_enable_interrupts_env(the_env);
 		break;
 	}
+#ifdef ECL_RWLOCK
+	case t_rwlock: {
+		const cl_env_ptr the_env = ecl_process_env();
+		ecl_disable_interrupts_env(the_env);
+		pthread_rwlock_destroy(&o->lock.mutex);
+		ecl_enable_interrupts_env(the_env);
+		break;
+	}
+#endif
 	case t_condition_variable: {
 		const cl_env_ptr the_env = ecl_process_env();
 		ecl_disable_interrupts_env(the_env);

@@ -232,7 +232,7 @@ THREAD_CFLAGS=''
 THREAD_LIBS=''
 THREAD_GC_FLAGS='--enable-threads=posix'
 INSTALL_TARGET='install'
-THREAD_OBJ='threads/process threads/mutex threads/condition_variable'
+THREAD_OBJ="$THREAD_OBJ threads/process threads/mutex threads/condition_variable"
 clibs=''
 SONAME=''
 SONAME_LDFLAGS=''
@@ -824,7 +824,18 @@ if test $ECL_WORKING_SEM_INIT = yes ; then
   AC_DEFINE(ECL_SEMAPHORES)
   AC_DEFINE(HAVE_SEM_INIT)
   THREAD_OBJ="$THREAD_OBJ threads/semaphore"
+  echo $THREAD_OBJ
 fi
+])
+
+dnl ----------------------------------------------------------------------
+dnl Check whether we have POSIX read/write locks are available
+AC_DEFUN([ECL_POSIX_RWLOCK],[
+AC_CHECK_FUNC( [pthread_rwlock_init], [
+  AC_DEFINE(ECL_RWLOCK)
+  AC_DEFINE(HAVE_POSIX_RWLOCK)
+  THREAD_OBJ="$THREAD_OBJ threads/rwlock"
+], [])
 ])
 
 

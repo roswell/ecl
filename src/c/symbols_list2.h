@@ -1535,6 +1535,13 @@ cl_symbols[] = {
 {MP_ "SEMAPHORE-SIGNAL","mp_semaphore_signal"},
 {MP_ "SEMAPHORE-CLOSE","mp_semaphore_close"},
 # endif
+{MP_ "MAKE-RWLOCK","mp_make_rwlock"},
+{MP_ "RWLOCK",NULL},
+{MP_ "RWLOCK-NAME","mp_rwlock_name"},
+{MP_ "GET-RWLOCK-READ","mp_get_rwlock_read"},
+{MP_ "GET-RWLOCK-WRITE","mp_get_rwlock_write"},
+{MP_ "GIVEUP-RWLOCK-READ","mp_giveup_rwlock_read"},
+{MP_ "GIVEUP-RWLOCK-WRITE","mp_giveup_rwlock_write"},
 #endif
 
 {SYS_ "WHILE",NULL},

@@ -34,9 +34,6 @@ ecl_def_string_array(feature_names,static,const) = {
 #ifdef ECL_THREADS
 	ecl_def_string_array_elt("THREADS"),
 #endif
-#ifdef ECL_SEMAPHORES
-	ecl_def_string_array_elt("SEMAPHORES"),
-#endif
 #ifdef CLOS
 	ecl_def_string_array_elt("CLOS"),
 #endif
@@ -110,6 +107,12 @@ ecl_def_string_array(feature_names,static,const) = {
 #endif
 #ifdef ECL_SSE2
 	ecl_def_string_array_elt("SSE2"),
+#endif
+#ifdef ECL_SEMAPHORES
+	ecl_def_string_array_elt("SEMAPHORES"),
+#endif
+#ifdef ECL_RWLOCK
+	ecl_def_string_array_elt("ECL-READ-WRITE-LOCK"),
 #endif
         ecl_def_string_array_elt(0)
 };
