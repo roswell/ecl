@@ -834,8 +834,8 @@ AC_DEFUN([ECL_POSIX_RWLOCK],[
 AC_CHECK_FUNC( [pthread_rwlock_init], [
   AC_DEFINE(ECL_RWLOCK)
   AC_DEFINE(HAVE_POSIX_RWLOCK)
-  THREAD_OBJ="$THREAD_OBJ threads/rwlock"
 ], [])
+THREAD_OBJ="$THREAD_OBJ threads/rwlock"
 ])
 
 

@@ -6186,10 +6186,10 @@ _ACEOF
 #define HAVE_POSIX_RWLOCK 1
 _ACEOF
 
-  THREAD_OBJ="$THREAD_OBJ threads/rwlock"
 
 fi
 
+THREAD_OBJ="$THREAD_OBJ threads/rwlock"
 
     boehm_configure_flags="${boehm_configure_flags} ${THREAD_GC_FLAGS}"
     for k in $THREAD_OBJ; do EXTRA_OBJS="$EXTRA_OBJS ${k}.${OBJEXT}"; done
