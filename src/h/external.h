@@ -219,6 +219,8 @@ struct cl_core_struct {
 #ifdef ECL_THREADS
 	cl_object processes;
 	cl_object global_lock;
+        cl_object error_lock;
+        cl_object package_lock;
 #endif
 	cl_object libraries;
 
@@ -896,7 +898,6 @@ extern ECL_API cl_object cl_assoc _ARGS((cl_narg narg, cl_object item, cl_object
 extern ECL_API cl_object ecl_last(cl_object x, cl_index n);
 extern ECL_API cl_object ecl_butlast(cl_object x, cl_index n);
 extern ECL_API cl_object ecl_nbutlast(cl_object x, cl_index n);
-extern ECL_API cl_object ecl_list_length(cl_object x);
 extern ECL_API cl_object ecl_append(cl_object x, cl_object y);
 extern ECL_API bool ecl_endp(cl_object x);
 extern ECL_API cl_object ecl_nth(cl_fixnum n, cl_object x);

@@ -123,11 +123,11 @@ thread_cleanup(void *aux)
         process->process.phase = ECL_PROCESS_EXITING;
 	process->process.active = 0;
 	process->process.env = NULL;
+	ECL_WITH_GLOBAL_LOCK_BEGIN(env) {
+                cl_core.processes = ecl_remove_eq(process, cl_core.processes);
+        } ECL_WITH_GLOBAL_LOCK_END;
         ecl_disable_interrupts_env(env);
 	mp_giveup_lock(process->process.exit_lock);
-	THREAD_OP_LOCK();
-	cl_core.processes = ecl_remove_eq(process, cl_core.processes);
-	THREAD_OP_UNLOCK();
 	ecl_set_process_env(NULL);
 	if (env) _ecl_dealloc_env(env);
         process->process.phase = ECL_PROCESS_DEAD;
@@ -160,11 +160,11 @@ thread_entry_point(void *arg)
 #ifndef ECL_WINDOWS_THREADS
 	pthread_cleanup_push(thread_cleanup, (void *)process);
 #endif
-	THREAD_OP_LOCK();
-	cl_core.processes = CONS(process, cl_core.processes);
-	THREAD_OP_UNLOCK();
 	ecl_cs_set_org(env);
         si_trap_fpe(@'last', Ct);
+        ECL_WITH_GLOBAL_LOCK_BEGIN(env) {
+                cl_core.processes = CONS(process, cl_core.processes);
+        } ECL_WITH_GLOBAL_LOCK_END;
 	ecl_enable_interrupts_env(env);
 
 	/* 2) Execute the code. The CATCH_ALL point is the destination
@@ -264,17 +264,17 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
 	process->process.active = 2;
 	process->process.thread = current;
 	process->process.env = env;
-	THREAD_OP_LOCK();
-	cl_core.processes = CONS(process, cl_core.processes);
-	THREAD_OP_UNLOCK();
 	ecl_init_env(env);
 	env->bindings_array = process->process.initial_bindings;
         env->thread_local_bindings_size = env->bindings_array->vector.dim;
         env->thread_local_bindings = env->bindings_array->vector.self.t;
+	ECL_WITH_GLOBAL_LOCK_BEGIN(env) {
+                cl_core.processes = CONS(process, cl_core.processes);
+        } ECL_WITH_GLOBAL_LOCK_END;
+	ecl_enable_interrupts_env(env);
 	mp_get_lock_wait(process->process.exit_lock);
 	process->process.active = 1;
         process->process.phase = ECL_PROCESS_ACTIVE;
-	ecl_enable_interrupts_env(env);
 	return 1;
 }
 
@@ -652,6 +652,8 @@ init_threads(cl_env_ptr env)
 
 	env->own_process = process;
 
-        cl_core.global_lock = ecl_make_lock(@'si::package-lock', 1);
+        cl_core.global_lock = ecl_make_lock(@'mp::global-lock', 1);
+        cl_core.error_lock = ecl_make_lock(@'mp::error-lock', 1);
+        cl_core.package_lock = ecl_make_lock(@'mp::package-lock', 1);
 	cl_core.processes = ecl_list1(process);
 }

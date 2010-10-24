@@ -1542,6 +1542,9 @@ cl_symbols[] = {
 {MP_ "GET-RWLOCK-WRITE","mp_get_rwlock_write"},
 {MP_ "GIVEUP-RWLOCK-READ","mp_giveup_rwlock_read"},
 {MP_ "GIVEUP-RWLOCK-WRITE","mp_giveup_rwlock_write"},
+{MP_ "GLOBAL-LOCK",NULL},
+{MP_ "ERROR-LOCK",NULL},
+{MP_ "PACKAGE-LOCK",NULL},
 #endif
 
 {SYS_ "WHILE",NULL},

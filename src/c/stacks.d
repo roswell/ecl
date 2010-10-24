@@ -246,22 +246,20 @@ ecl_new_binding_index(cl_env_ptr env, cl_object symbol)
 {
         cl_object pool;
         cl_index new_index;
-        ecl_disable_interrupts_env(env);
-        THREAD_OP_LOCK();
-        new_index = symbol->symbol.binding;
-        if (new_index == ECL_MISSING_SPECIAL_BINDING) {
-                pool = cl_core.reused_indices;
-                if (!Null(pool)) {
-                        new_index = fix(ECL_CONS_CAR(pool));
-                        cl_core.reused_indices = ECL_CONS_CDR(pool);
-                } else {
-                        new_index = ++cl_core.last_var_index;
+        ECL_WITH_GLOBAL_LOCK_BEGIN(env) {
+                new_index = symbol->symbol.binding;
+                if (new_index == ECL_MISSING_SPECIAL_BINDING) {
+                        pool = cl_core.reused_indices;
+                        if (!Null(pool)) {
+                                new_index = fix(ECL_CONS_CAR(pool));
+                                cl_core.reused_indices = ECL_CONS_CDR(pool);
+                        } else {
+                                new_index = ++cl_core.last_var_index;
+                        }
+                        symbol->symbol.binding = new_index;
+                        symbol->symbol.dynamic |= 1;
                 }
-                symbol->symbol.binding = new_index;
-                symbol->symbol.dynamic |= 1;
-        }
-        THREAD_OP_UNLOCK();
-        ecl_enable_interrupts_env(env);
+        } ECL_WITH_GLOBAL_LOCK_END;
         si_set_finalizer(symbol, Ct);
         return new_index;
 }

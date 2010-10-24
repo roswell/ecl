@@ -90,24 +90,28 @@ out_of_memory(size_t requested_bytes)
 	const cl_env_ptr the_env = ecl_process_env();
         int interrupts = the_env->disable_interrupts;
         int method = 0;
+        void *output;
         if (!interrupts)
                 ecl_disable_interrupts_env(the_env);
 	/* Free the input / output buffers */
 	the_env->string_pool = Cnil;
-#ifdef ECL_THREADS
+
 	/* The out of memory condition may happen in more than one thread */
         /* But then we have to ensure the error has not been solved */
-	ERROR_HANDLER_LOCK();
+#ifdef ECL_THREADS
+        mp_get_lock_wait(cl_core.error_lock);
+        CL_UNWIND_PROTECT_BEGIN(the_env)
 #endif
+{
         failure = 0;
         GC_gcollect();
         GC_oom_fn = out_of_memory_check;
         {
-                void *output = GC_MALLOC(requested_bytes);
+                output = GC_MALLOC(requested_bytes);
                 GC_oom_fn = out_of_memory;
                 if (output != 0 && failure == 0) {
-                        ERROR_HANDLER_UNLOCK();
-                        return output;
+                        method = 2;
+                        goto OUTPUT;
                 }
         }
         if (cl_core.max_heap_size == 0) {
@@ -129,14 +133,25 @@ out_of_memory(size_t requested_bytes)
                 GC_set_max_heap_size(cl_core.max_heap_size);
                 method = 1;
         }
-	ERROR_HANDLER_UNLOCK();
+ OUTPUT:
+        (void)0;
+}
+#ifdef ECL_THREADS
+        CL_UNWIND_PROTECT_EXIT {
+                mp_giveup_lock(cl_core.error_lock);
+                ecl_enable_interrupts_env(the_env);
+        } CL_UNWIND_PROTECT_END;
+#else
         ecl_enable_interrupts_env(the_env);
+#endif
         switch (method) {
         case 0:	cl_error(1, @'ext::storage-exhausted');
                 break;
         case 1: cl_cerror(2, make_constant_base_string("Extend heap size"),
                           @'ext::storage-exhausted');
                 break;
+        case 2:
+                return output;
         default:
                 ecl_internal_error("Memory exhausted, quitting program.");
                 break;
@@ -1079,12 +1094,10 @@ standard_finalizer(cl_object o)
         case t_symbol: {
                 cl_object cons = ecl_list1(MAKE_FIXNUM(o->symbol.binding));
 		const cl_env_ptr the_env = ecl_process_env();
-                ecl_disable_interrupts_env(the_env);
-                THREAD_OP_LOCK();
-                ECL_CONS_CDR(cons) = cl_core.reused_indices;
-                cl_core.reused_indices = cons;
-                THREAD_OP_UNLOCK();
-                ecl_enable_interrupts_env(the_env);
+                ECL_WITH_GLOBAL_LOCK_BEGIN(the_env) {
+                        ECL_CONS_CDR(cons) = cl_core.reused_indices;
+                        cl_core.reused_indices = cons;
+                } ECL_WITH_GLOBAL_LOCK_END;
         }
 #endif
 	default:;

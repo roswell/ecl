@@ -169,15 +169,16 @@ si_clear_gfun_hash(cl_object what)
 	 * operations and wait for the destination thread to update its own hash.
 	 */
 #ifdef ECL_THREADS
-	cl_object list;
-	THREAD_OP_LOCK();
-	list = cl_core.processes;
-	loop_for_on_unsafe(list) {
-		cl_object process = ECL_CONS_CAR(list);
-		struct cl_env_struct *env = process->process.env;
-		env->method_hash_clear_list = CONS(what, env->method_hash_clear_list);
-	} end_loop_for_on_unsafe(list);
-	THREAD_OP_UNLOCK();
+        const cl_env_ptr the_env = ecl_process_env();
+	ECL_WITH_GLOBAL_LOCK_BEGIN(the_env) {
+                cl_object list = cl_core.processes;
+                loop_for_on_unsafe(list) {
+                        cl_object process = ECL_CONS_CAR(list);
+                        struct cl_env_struct *env = process->process.env;
+                        env->method_hash_clear_list =
+                                CONS(what, env->method_hash_clear_list);
+                } end_loop_for_on_unsafe(list);
+        } ECL_WITH_GLOBAL_LOCK_END;
 #else
 	do_clear_method_hash(&cl_env, what);
 #endif
@@ -360,14 +361,13 @@ _ecl_standard_dispatch(cl_object frame, cl_object gf)
 #ifdef ECL_THREADS
 	/* See whether we have to clear the hash from some generic functions right now. */
 	if (env->method_hash_clear_list != Cnil) {
-		cl_object clear_list;
-		THREAD_OP_LOCK();
-		clear_list = env->method_hash_clear_list;
-		loop_for_on_unsafe(clear_list) {
-			do_clear_method_hash(&cl_env, ECL_CONS_CAR(clear_list));
-		} end_loop_for_on_unsafe(clear_list);
-		env->method_hash_clear_list = Cnil;
-		THREAD_OP_UNLOCK();
+		ECL_WITH_GLOBAL_LOCK_BEGIN(env) {
+                        cl_object clear_list = env->method_hash_clear_list;
+                        loop_for_on_unsafe(clear_list) {
+                                do_clear_method_hash(&cl_env, ECL_CONS_CAR(clear_list));
+                        } end_loop_for_on_unsafe(clear_list);
+                        env->method_hash_clear_list = Cnil;
+                } ECL_WITH_GLOBAL_LOCK_END;
 	}
 #endif
 	vector = get_spec_vector(env, frame, gf);

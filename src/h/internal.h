@@ -309,28 +309,37 @@ extern void cl_write_object(cl_object x, cl_object stream);
                 cl_object lock = (h)->hash.lock;                        \
                 if (lock != Cnil) mp_giveup_lock(lock);                 \
         } while (0);
-# define THREAD_OP_LOCK() mp_get_lock_wait(cl_core.global_lock)
-# define THREAD_OP_UNLOCK() mp_giveup_lock(cl_core.global_lock)
-# define PACKAGE_OP_LOCK() THREAD_OP_LOCK()
-# define PACKAGE_OP_UNLOCK() THREAD_OP_UNLOCK()
-# define ERROR_HANDLER_LOCK() THREAD_OP_LOCK()
-# define ERROR_HANDLER_UNLOCK() THREAD_OP_UNLOCK()
 # define ECL_WITH_GLOBAL_LOCK_BEGIN(the_env)    \
-        mp_get_lock_wait(cl_core.global_lock);  \
-        CL_UNWIND_PROTECT_BEGIN(the_env)
-# define ECL_WITH_GLOBAL_LOCK_END                       \
-        CL_UNWIND_PROTECT_EXIT {                        \
-                mp_giveup_lock(cl_core.global_lock);    \
-        } CL_UNWIND_PROTECT_END
+        ECL_WITH_LOCK_BEGIN(the_env, cl_core.global_lock)
+# define ECL_WITH_GLOBAL_LOCK_END               \
+        ECL_WITH_LOCK_END
+# define ECL_WITH_PACKAGE_LOCK_BEGIN(the_env) {                 \
+        const cl_env_ptr __ecl_pack_env = the_env;              \
+        ecl_disable_interrupts_env(__ecl_pack_env);             \
+        mp_get_lock_wait(cl_core.package_lock);
+# define ECL_WITH_PACKAGE_LOCK_END              \
+        mp_giveup_lock(cl_core.package_lock);   \
+        ecl_enable_interrupts_env(__ecl_pack_env); }
+# define ECL_WITH_LOCK_BEGIN(the_env,lock) {            \
+        const cl_env_ptr __ecl_the_env = the_env;       \
+        const cl_object __ecl_the_lock = lock;          \
+        ecl_disable_interrupts_env(the_env);            \
+        mp_get_lock_wait(__ecl_the_lock);               \
+        CL_UNWIND_PROTECT_BEGIN(__ecl_the_env)
+# define ECL_WITH_LOCK_END                                    \
+        CL_UNWIND_PROTECT_EXIT {                              \
+                mp_giveup_lock(__ecl_the_lock);               \
+                ecl_enable_interrupts_env(__ecl_the_env);     \
+        } CL_UNWIND_PROTECT_END; }
 #else
 # define HASH_TABLE_LOCK(h)
 # define HASH_TABLE_UNLOCK(h)
-# define PACKAGE_OP_LOCK()
-# define PACKAGE_OP_UNLOCK()
-# define ERROR_HANDLER_LOCK()
-# define ERROR_HANDLER_UNLOCK()
 # define ECL_WITH_GLOBAL_LOCK_BEGIN(the_env)
 # define ECL_WITH_GLOBAL_LOCK_END
+# define ECL_WITH_PACKAGE_LOCK_BEGIN(the_env)
+# define ECL_WITH_PACKAGE_LOCK_END
+# define ECL_WITH_LOCK_BEGIN(the_env,lock)
+# define ECL_WITH_LOCK_END
 #endif /* ECL_THREADS */
 
 
