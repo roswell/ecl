@@ -499,10 +499,10 @@ cl_boot(int argc, char **argv)
 	init_alloc();
 	GC_disable();
 	env = _ecl_alloc_env();
-#if !defined(ECL_THREADS) || defined(WITH__THREAD)
-	cl_env_p = env;
+#ifdef ECL_THREADS
+        init_threads(env);
 #else
-	init_threads(env);
+	cl_env_p = env;
 #endif
 
 	/*

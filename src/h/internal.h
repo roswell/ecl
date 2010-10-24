@@ -313,12 +313,19 @@ extern void cl_write_object(cl_object x, cl_object stream);
         ECL_WITH_LOCK_BEGIN(the_env, cl_core.global_lock)
 # define ECL_WITH_GLOBAL_LOCK_END               \
         ECL_WITH_LOCK_END
-# define ECL_WITH_PACKAGE_LOCK_BEGIN(the_env) {                 \
+# define ECL_WITH_PACKAGE_RDLOCK_BEGIN(the_env) {                 \
         const cl_env_ptr __ecl_pack_env = the_env;              \
         ecl_disable_interrupts_env(__ecl_pack_env);             \
-        mp_get_lock_wait(cl_core.package_lock);
-# define ECL_WITH_PACKAGE_LOCK_END              \
-        mp_giveup_lock(cl_core.package_lock);   \
+        mp_get_rwlock_read_wait(cl_core.package_lock);
+# define ECL_WITH_PACKAGE_RDLOCK_END              \
+        mp_giveup_rwlock_read(cl_core.package_lock);   \
+        ecl_enable_interrupts_env(__ecl_pack_env); }
+# define ECL_WITH_PACKAGE_WRLOCK_BEGIN(the_env) {                 \
+        const cl_env_ptr __ecl_pack_env = the_env;              \
+        ecl_disable_interrupts_env(__ecl_pack_env);             \
+        mp_get_rwlock_write_wait(cl_core.package_lock);
+# define ECL_WITH_PACKAGE_WRLOCK_END              \
+        mp_giveup_rwlock_write(cl_core.package_lock);   \
         ecl_enable_interrupts_env(__ecl_pack_env); }
 # define ECL_WITH_LOCK_BEGIN(the_env,lock) {            \
         const cl_env_ptr __ecl_the_env = the_env;       \
@@ -336,8 +343,10 @@ extern void cl_write_object(cl_object x, cl_object stream);
 # define HASH_TABLE_UNLOCK(h)
 # define ECL_WITH_GLOBAL_LOCK_BEGIN(the_env)
 # define ECL_WITH_GLOBAL_LOCK_END
-# define ECL_WITH_PACKAGE_LOCK_BEGIN(the_env)
-# define ECL_WITH_PACKAGE_LOCK_END
+# define ECL_WITH_PACKAGE_RDLOCK_BEGIN(the_env)
+# define ECL_WITH_PACKAGE_RDLOCK_END
+# define ECL_WITH_PACKAGE_WRLOCK_BEGIN(the_env)
+# define ECL_WITH_PACKAGE_WRLOCK_END
 # define ECL_WITH_LOCK_BEGIN(the_env,lock)
 # define ECL_WITH_LOCK_END
 #endif /* ECL_THREADS */

@@ -654,6 +654,6 @@ init_threads(cl_env_ptr env)
 
         cl_core.global_lock = ecl_make_lock(@'mp::global-lock', 1);
         cl_core.error_lock = ecl_make_lock(@'mp::error-lock', 1);
-        cl_core.package_lock = ecl_make_lock(@'mp::package-lock', 1);
+        cl_core.package_lock = ecl_make_rwlock(@'mp::package-lock');
 	cl_core.processes = ecl_list1(process);
 }
