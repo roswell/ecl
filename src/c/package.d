@@ -174,6 +174,26 @@ find_pending_package(cl_env_ptr env, cl_object name, cl_object nicknames)
         return Cnil;
 }
 
+static cl_object
+process_nicknames(cl_object nicknames)
+{
+        cl_object l;
+        nicknames = cl_copy_list(nicknames);
+        for (l = nicknames; l != Cnil; l = ECL_CONS_CDR(l))
+                ECL_RPLACA(l, cl_string(ECL_CONS_CAR(l)));
+        return nicknames;
+}
+
+static cl_object
+process_package_list(cl_object packages)
+{
+        cl_object l;
+        packages = cl_copy_list(packages);
+        for (l = packages; l != Cnil; l = ECL_CONS_CDR(l))
+                ECL_RPLACA(l, si_coerce_to_package(ECL_CONS_CAR(l)));
+        return packages;
+}
+
 cl_object
 ecl_make_package(cl_object name, cl_object nicknames, cl_object use_list)
 {
@@ -183,12 +203,8 @@ ecl_make_package(cl_object name, cl_object nicknames, cl_object use_list)
         /* Type checking, coercions, and the like, happen before we
          * acquire the lock */
 	name = cl_string(name);
-	assert_type_proper_list(nicknames);
-        for (l = nicknames = cl_copy_list(nicknames); !Null(l); l = ECL_CONS_CDR(l))
-                ECL_RPLACA(l, cl_string(ECL_CONS_CAR(l)));
-	assert_type_proper_list(use_list);
-        for (l = use_list = cl_copy_list(use_list); !Null(l); l = ECL_CONS_CDR(l))
-                ECL_RPLACA(l, si_coerce_to_package(ECL_CONS_CAR(l)));
+        nicknames = process_nicknames(nicknames);
+        use_list = process_package_list(use_list);
 
 	ECL_WITH_PACKAGE_WRLOCK_BEGIN(env) {
                 /* Find a similarly named package in the list of
@@ -237,29 +253,28 @@ ecl_rename_package(cl_object x, cl_object name, cl_object nicknames)
         bool error;
 
 	name = cl_string(name);
+        nicknames = process_nicknames(nicknames);
 	x = si_coerce_to_package(x);
 	if (x->pack.locked) {
 		CEpackage_error("Cannot rename locked package ~S.",
 				"Ignore lock and proceed", x, 0);
         }
-        if (Null(cl_list_length(nicknames))) {
-                FEtype_error_list(nicknames);
-        }
+        nicknames = ecl_cons(name, nicknames);
+        error = 0;
 	ECL_WITH_PACKAGE_WRLOCK_BEGIN(ecl_process_env()) {
-                cl_object y = ecl_find_package_nolock(name);
-                if ((y != Cnil) && (y != x)) {
-                        error = 1;
-                } else {
-                        x->pack.name = name;
-                        x->pack.nicknames = Cnil;
-                        for (; !Null(nicknames); nicknames = ECL_CONS_CDR(nicknames)) {
-                                cl_object nick = ECL_CONS_CAR(nicknames);
-                                y = ecl_find_package_nolock(nick);
-                                if (ecl_find_package_nolock(nick) != x)
-                                        x->pack.nicknames = CONS(cl_string(nick),
-                                                         x->pack.nicknames);
+                cl_object l;
+                for (l = nicknames; l != Cnil; l = ECL_CONS_CDR(l)) {
+                        cl_object nick = ECL_CONS_CAR(l);
+                        cl_object p = ecl_find_package_nolock(nick);
+                        if ((p != Cnil) && (p != x)) {
+                                name = nick;
+                                error = 1;
+                                break;
                         }
-                        error = 0;
+                }
+                if (!error) {
+                        x->pack.name = name;
+                        x->pack.nicknames = ECL_CONS_CDR(nicknames);
                 }
 	} ECL_WITH_PACKAGE_WRLOCK_END;
         if (error) {
