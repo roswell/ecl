@@ -44,7 +44,10 @@ OBJS	= main.o symbol.o package.o list.o\
 	file.o read.o print.o error.o string.o cfun.o\
 	reader/parse_integer.o reader/parse_number.o \
 	printer/float_to_digits.o printer/float_to_string.o \
-	printer/integer_to_string.o \
+	printer/integer_to_string.o printer/write_ugly.o \
+	printer/write_object.o printer/write_symbol.o \
+	printer/write_array.o printer/write_list.o printer/write_code.o \
+	printer/write_sse.o printer/print_unreadable.o \
 	typespec.o assignment.o \
 	predicate.o number.o\
 	num_pred.o num_comp.o num_arith.o num_sfun.o num_co.o\

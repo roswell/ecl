@@ -290,6 +290,20 @@ extern cl_object FEnot_funcallable_vararg(cl_narg narg, ...);
 
 /* print.d */
 
+extern cl_object _ecl_stream_or_default_output(cl_object stream);
+extern void _ecl_write_addr(cl_object x, cl_object stream);
+extern void _ecl_write_array(cl_object o, cl_object stream);
+extern void _ecl_write_vector(cl_object o, cl_object stream);
+extern void _ecl_write_string(cl_object o, cl_object stream);
+extern void _ecl_write_base_string(cl_object o, cl_object stream);
+extern void _ecl_write_list(cl_object o, cl_object stream);
+extern void _ecl_write_bclosure(cl_object o, cl_object stream);
+extern void _ecl_write_bytecodes(cl_object o, cl_object stream);
+extern void _ecl_write_symbol(cl_object o, cl_object stream);
+extern void _ecl_write_fixnum(cl_fixnum o, cl_object stream);
+extern void _ecl_write_sse(cl_fixnum o, cl_object stream);
+extern void _ecl_write_unreadable(cl_object x, const char *prefix, cl_object name, cl_object stream);
+extern bool _ecl_will_print_as_hash(cl_object o);
 extern cl_object _ecl_ensure_buffer(cl_object buffer, cl_fixnum length);
 extern void _ecl_string_push_c_string(cl_object s, const char *c);
 

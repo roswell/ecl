@@ -258,23 +258,6 @@ the one used internally by ECL compiled files."
   `#'(lambda (*standard-output* &rest args)
        (si::formatter-aux *standard-output* ,control-string args)))
 
-(defun print-unreadable-object-function (object stream type identity function)
-  (if *print-readably*
-    (error 'print-not-readable :object object)
-    (when (and *print-level* (zerop *print-level*))
-      (write-string "#" stream)
-      (return-from print-unreadable-object-function nil)))
-  (write-string "#<" stream)
-  (when type
-    (prin1 (type-of object) stream)
-    (write-string " " stream))
-  (when function (funcall function))
-  (when identity
-    (when (or function (not type)) (write-string " " stream))
-    (princ (si:pointer object) stream))
-  (write-string ">" stream)
-  nil)
-
 (defmacro print-unreadable-object
 	  ((object stream &key type identity) &body body)
   (if body

@@ -364,6 +364,12 @@ FEundefined_function(cl_object fname)
 	cl_error(3, @'undefined-function', @':name', fname);
 }
 
+void
+FEprint_not_readable(cl_object x)
+{
+	cl_error(3, @'print-not-readable', @':object', x);
+}
+
 /*************
  * Shortcuts *
  *************/

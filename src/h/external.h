@@ -86,12 +86,6 @@ struct cl_env_struct {
 	/* ... the formatter ... */
 	cl_object fmt_aux_stream;
 
-	/* ... the pretty printer ... */
-	bool print_pretty;
-	short *queue;
-	short *indent_stack;
-	int qh, qt, qc, isp, iisp;
-
 	/* ... arithmetics ... */
 	/* Note: if you change the size of these registers, change also
 	   BIGNUM_REGISTER_SIZE in config.h */
@@ -581,6 +575,7 @@ extern ECL_API void FEassignment_to_constant(cl_object v) ecl_attr_noreturn;
 extern ECL_API void FEundefined_function(cl_object fname) ecl_attr_noreturn;
 extern ECL_API void FEinvalid_function(cl_object obj) ecl_attr_noreturn;
 extern ECL_API void FEinvalid_function_name(cl_object obj) ecl_attr_noreturn;
+extern ECL_API void FEprint_not_readable(cl_object obj) ecl_attr_noreturn;
 extern ECL_API cl_object CEerror(cl_object c, const char *err_str, int narg, ...);
 extern ECL_API void FEillegal_index(cl_object x, cl_object i) ecl_attr_noreturn;
 extern ECL_API void FElibc_error(const char *msg, int narg, ...) ecl_attr_noreturn;
@@ -1435,6 +1430,17 @@ extern ECL_API void ecl_write_string(cl_object strng, cl_object strm);
 extern ECL_API void ecl_princ_str(const char *s, cl_object sym);
 extern ECL_API void ecl_princ_char(int c, cl_object sym);
 
+extern ECL_API cl_fixnum ecl_print_level(void);
+extern ECL_API cl_fixnum ecl_print_length(void);
+extern ECL_API int ecl_print_base(void);
+extern ECL_API bool ecl_print_radix(void);
+extern ECL_API cl_object ecl_print_case(void);
+extern ECL_API bool ecl_print_gensym(void);
+extern ECL_API bool ecl_print_array(void);
+extern ECL_API bool ecl_print_readably(void);
+extern ECL_API bool ecl_print_escape(void);
+extern ECL_API bool ecl_print_circle(void);
+
 /* printer/integer_to_string.d */
 extern ECL_API cl_object si_integer_to_string(cl_object buffer, cl_object integer, cl_object base, cl_object radix, cl_object decimalp);
 
@@ -1447,6 +1453,8 @@ extern ECL_API cl_object si_float_to_digits(cl_object digits, cl_object number, 
 /* printer/float_to_string.d */
 extern ECL_API cl_object si_float_to_string_free(cl_object buffer, cl_object number, cl_object e_min, cl_object e_max);
 
+/* printer/print_unreadable.d */
+extern ECL_API cl_object si_print_unreadable_object_function(cl_object o, cl_object stream, cl_object type, cl_object id, cl_object fn);
 
 /* profile.c */
 #ifdef PROFILE

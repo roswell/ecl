@@ -1963,5 +1963,7 @@ cl_symbols[] = {
 {SYS_ "FLOAT-TO-STRING-FREE", SI_ORDINARY, si_float_to_string_free, 4, OBJNULL},
 {SYS_ "INTEGER-TO-STRING", SI_ORDINARY, si_integer_to_string, 5, OBJNULL},
 
+{SYS_ "PRINT-UNREADABLE-OBJECT-FUNCTION", SI_ORDINARY, si_print_unreadable_object_function, 5, OBJNULL},
+
 /* Tag for end of list */
 {NULL, CL_ORDINARY, NULL, -1, OBJNULL}};
