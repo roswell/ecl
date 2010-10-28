@@ -35,6 +35,7 @@ typedef unsigned char byte;
 
 /*
 	Implementation types.
+        Verify that it matches printer/write_ugly.d
 */
 typedef enum {
 	t_start = 0,

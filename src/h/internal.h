@@ -294,6 +294,7 @@ extern cl_object _ecl_stream_or_default_output(cl_object stream);
 extern void _ecl_write_addr(cl_object x, cl_object stream);
 extern void _ecl_write_array(cl_object o, cl_object stream);
 extern void _ecl_write_vector(cl_object o, cl_object stream);
+extern void _ecl_write_bitvector(cl_object o, cl_object stream);
 extern void _ecl_write_string(cl_object o, cl_object stream);
 extern void _ecl_write_base_string(cl_object o, cl_object stream);
 extern void _ecl_write_list(cl_object o, cl_object stream);
