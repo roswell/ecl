@@ -173,12 +173,12 @@ write_stream(cl_object x, cl_object stream)
 {
         const char *prefix;
         cl_object tag;
-#ifdef ECL_UNICODE
-        ecl_character buffer[20];
-#else
-        ecl_base_char buffer[20];
-#endif
         union cl_lispunion str;
+#ifdef ECL_UNICODE
+        ecl_character buffer[10];
+#else
+        ecl_base_char buffer[10];
+#endif
         switch ((enum ecl_smmode)x->stream.mode) {
         case smm_input_file:
         case smm_input:
