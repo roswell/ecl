@@ -22,9 +22,9 @@ cl_object
 _ecl_stream_or_default_output(cl_object stream)
 {
 	if (Null(stream))
-		return ECL_SYM_VAL(ecl_process_env(),@'*standard-output*');
+		return ecl_symbol_value(@'*standard-output*');
 	else if (stream == Ct)
-		return ECL_SYM_VAL(ecl_process_env(),@'*terminal-io*');
+		return ecl_symbol_value(@'*terminal-io*');
 	return stream;
 }
 
