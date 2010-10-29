@@ -215,13 +215,7 @@ typedef unsigned @CL_FIXNUM_TYPE@ cl_hashkey;
 #define ECL_SLOTS_LIMIT	32768
 
 /* compiler understands long double                                     */
-#undef HAVE_LONG_DOUBLE
-#ifdef HAVE_LONG_DOUBLE
-# define ECL_LONG_FLOAT
-# define ECL_LARGE_FLOAT long double
-#else
-# define ECL_LARGE_FLOAT double
-#endif
+#undef ECL_LONG_FLOAT
 /* compiler understands complex                                         */
 #undef HAVE_DOUBLE_COMPLEX
 #undef HAVE_FLOAT_COMPLEX

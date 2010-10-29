@@ -1,6 +1,20 @@
 dnl -*- autoconf -*-
 
 dnl --------------------------------------------------------------
+dnl check existence of long double and supporting functions
+AC_DEFUN([ECL_LONG_DOUBLE],[
+if test "$enable_longdouble" != "no" ; then
+AC_CHECK_TYPES([long double],[enable_longdouble=yes],[enable_longdouble=no])
+if test "$enable_longdouble" != "no" ; then
+AC_CHECK_FUNCS([sinl cosl tanl logl expl],[],[enable_longdouble=no; break])
+if test "$enable_longdouble" != "no" ; then
+AC_DEFINE(ECL_LONG_FLOAT)
+fi
+fi
+fi
+])
+
+dnl --------------------------------------------------------------
 dnl http://autoconf-archive.cryp.to/ac_c_long_long_.html
 dnl Provides a test for the existance of the long long int type and defines HAVE_LONG_LONG if it is found.
 AC_DEFUN([ECL_LONG_LONG],

@@ -213,7 +213,7 @@ AC_ARG_ENABLE(unicode,
 AC_ARG_ENABLE(longdouble,
   AS_HELP_STRING( [--enable-longdouble],
                   [include support for long double]
-                  [(default=YES)]),
+                  [(yes|no|auto, default=AUTO)]),
   [enable_longdouble=${enableval}], [enable_longdouble=yes])
 
 AC_ARG_ENABLE(c99complex,
@@ -668,10 +668,7 @@ ECL_FFI
 fi
 ECL_FPE_MODEL
 ECL_SSE
-
-if test "$enable_longdouble" != "no" ; then
-AC_CHECK_TYPES([long double])
-fi
+ECL_LONG_DOUBLE
 if test "$enable_c99complex" != "no" ; then
 AC_CHECK_TYPES([double complex, float complex],[],[],[#include <complex.h>])
 fi

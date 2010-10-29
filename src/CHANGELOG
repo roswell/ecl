@@ -126,6 +126,9 @@ ECL 10.5.1:
    consequences regarding things like creation of packages or class and
    function definition.
 
+ - ECL will use long double whenever the type is avalailable AND the special
+   functions cosl, sinl and similar are defined.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
