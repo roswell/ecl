@@ -92,7 +92,7 @@ si_write_object(cl_object x, cl_object stream)
 		cl_object f = funcall(2, @'pprint-dispatch', x);
 		if (VALUES(1) != Cnil) {
 			funcall(3, f, stream, x);
-			return x;
+                        goto OUTPUT;
 		}
 	}
 	circle = ecl_print_circle();
@@ -116,13 +116,14 @@ si_write_object(cl_object x, cl_object stream)
 			si_write_object(x, stream);
 			cl_clrhash(hash);
 			ecl_bds_unwind_n(env, 2);
-			return x;
+			goto OUTPUT;
 		}
 		code = search_print_circle(x);
 		if (!FIXNUMP(circle_counter)) {
 			/* We are only inspecting the object to be printed. */
 			/* Only run X if it was not referenced before */
-			if (code != 0) return x;
+			if (code != 0)
+                                goto OUTPUT;
 		} else if (code == 0) {
 			/* Object is not referenced twice */
 		} else if (code < 0) {
@@ -135,8 +136,10 @@ si_write_object(cl_object x, cl_object stream)
 			ecl_write_char('#', stream);
 			_ecl_write_fixnum(code, stream);
 			ecl_write_char('#', stream);
-			return x;
+			goto OUTPUT;
 		}
 	}
 	return si_write_ugly_object(x, stream);
+ OUTPUT:
+        @(return x)
 }
