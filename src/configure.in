@@ -892,6 +892,8 @@ case "${enable_boehm}" in
     AC_MSG_ERROR([Not a valid argument for --enable-boehm $enable_boehm]);;
 esac
 
+ECL_LIBATOMIC_OPS
+
 AC_CONFIG_FILES([
   bare.lsp lsp/load.lsp clos/load.lsp cmp/load.lsp new-cmp/load.lsp
   ../Makefile Makefile c/Makefile doc/Makefile doc/ecl.man doc/ecl-config.man

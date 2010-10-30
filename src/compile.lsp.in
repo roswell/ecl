@@ -112,6 +112,9 @@
     ;; We need these two to force dllwrap to export the symbols
     ;; in these libraries. Otherwise it will not be possible to
     ;; call functions from GMP or GC in code that embeds ECL.
+    #+thread
+    (when (probe-file "@LIBPREFIX@atomic_ops.@LIBEXT@")
+      (push "@LIBPREFIX@atomic_ops.@LIBEXT@" extra-args))
     (when (probe-file "@LIBPREFIX@eclgc.@LIBEXT@")
       (push "@LIBPREFIX@eclgc.@LIBEXT@" extra-args))
     (when (probe-file "@LIBPREFIX@eclgmp.@LIBEXT@")

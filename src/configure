@@ -15219,6 +15219,24 @@ $as_echo "$as_me: error: Not a valid argument for --enable-boehm $enable_boehm" 
    { (exit 1); exit 1; }; };;
 esac
 
+
+if test "x$ecl_threads" != "xno"; then
+  if mkdir atomic; then
+    (destdir=`${PWDCMD}`; cd atomic; CC="${CC} ${PICFLAG}" \
+     $srcdir/gc/libatomic*/configure --disable-shared --prefix=${destdir} \
+	--infodir=${destdir}/doc --includedir=${destdir}/ecl --with-pic \
+        --libdir=${destdir} --build=${build_alias} --host=${host_alias} \
+        CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" CC="${CC} \
+        ${PICFLAG}")
+    SUBDIRS="${SUBDIRS} atomic"
+    CORE_LIBS="-leclatomic ${CORE_LIBS}"
+    if test "${enable_shared}" = "no"; then
+      LIBRARIES="${LIBRARIES} ${LIBPREFIX}eclatomic.${LIBEXT}"
+    fi
+  fi
+fi
+
+
 ac_config_files="$ac_config_files bare.lsp lsp/load.lsp clos/load.lsp cmp/load.lsp new-cmp/load.lsp ../Makefile Makefile c/Makefile doc/Makefile doc/ecl.man doc/ecl-config.man ecl/configpre.h:h/config.h.in bin/ecl-config.pre:util/ecl-config lsp/config.pre:lsp/config.lsp.in compile.pre:compile.lsp.in cmp/cmpdefs.pre:cmp/cmpdefs.lsp"
 
 ac_config_headers="$ac_config_headers ecl/config.h:ecl/configpre.h"
