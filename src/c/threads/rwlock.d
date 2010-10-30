@@ -79,7 +79,7 @@ ecl_make_rwlock(cl_object name)
         }
 	ecl_set_finalizer_unprotected(output, Ct);
 #else
-        output->rwlock.mutex = ecl_make_lock(name, false);
+        output->rwlock.mutex = ecl_make_lock(name, 0);
 #endif
 	output->rwlock.name = name;
         return output;
