@@ -288,6 +288,11 @@ extern cl_object ecl_extend_hashtable(cl_object hashtable);
 
 extern cl_object FEnot_funcallable_vararg(cl_narg narg, ...);
 
+/* load.d */
+
+extern cl_object _ecl_library_init_prefix(void);
+extern cl_object _ecl_library_default_entry(void);
+
 /* print.d */
 
 extern cl_object _ecl_stream_or_default_output(cl_object stream);
