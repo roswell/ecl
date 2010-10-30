@@ -371,6 +371,12 @@ extern void cl_write_object(cl_object x, cl_object stream);
 # define ECL_WITH_LOCK_END
 #endif /* ECL_THREADS */
 
+#ifdef ECL_THREADS
+# include <ecl/atomic_ops.h>
+#else
+# define AO_load(x) (x)
+# define AO_store(x,y) ((x)=(y))
+#endif
 
 /* read.d */
 #ifdef ECL_UNICODE

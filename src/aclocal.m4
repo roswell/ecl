@@ -893,3 +893,39 @@ if test "x$ecl_threads" != "xno"; then
   fi
 fi
 ])
+
+dnl ----------------------------------------------------------------------
+dnl Configure included Boehm GC if needed
+AC_DEFUN([ECL_BOEHM_GC],[
+AC_SUBST(ECL_BOEHM_GC_HEADER)
+case "${enable_boehm}" in
+  included)
+    AC_MSG_NOTICE([Configuring included Boehm GC library:])
+    test -d gc && rm -rf gc
+    if mkdir gc; then
+     (destdir=`${PWDCMD}`; cd gc; \
+      $srcdir/gc/configure --disable-shared --prefix=${destdir} \
+	--includedir=${destdir}/ecl/ --libdir=${destdir} --build=${build_alias} \
+	--host=${host_alias} --enable-large-config \
+        CC="${CC} ${PICFLAG}" CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" \
+        ${boehm_configure_flags})
+      ECL_BOEHM_GC_HEADER='ecl/gc/gc.h'
+    else
+      AC_MSG_ERROR([Unable to create 'gc' directory])
+    fi
+    ;;
+  system)
+    AC_CHECK_HEADER([gc.h],[ECL_BOEHM_GC_HEADER='gc.h'],[],[])
+    if test -z "$ECL_BOEHM_GC_HEADER"; then
+       AC_CHECK_HEADER([gc/gc.h],[ECL_BOEHM_GC_HEADER='gc/gc.h'],[],[])
+    fi
+    if test -z "$ECL_BOEHM_GC_HEADER"; then
+       AC_MSG_ERROR([Boehm-Weiser garbage collector's headers not found])
+    fi
+    ;;
+  no)
+    ECL_BOEHM_GC_HEADER='none';;
+  *)
+    AC_MSG_ERROR([Not a valid argument for --enable-boehm $enable_boehm]);;
+esac
+])

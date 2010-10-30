@@ -637,8 +637,8 @@ ac_includes_default="\
 #endif"
 
 ac_subst_vars='LTLIBOBJS
-ECL_BOEHM_GC_HEADER
 CLX_INFO
+ECL_BOEHM_GC_HEADER
 ECL_CC
 POW_LIB
 LIBOBJS
@@ -14705,218 +14705,23 @@ _ACEOF
 
 fi
 
-if test ${enable_shared} = "yes"; then
 
-cat >>confdefs.h <<\_ACEOF
-#define ENABLE_DLOPEN 1
-_ACEOF
-
-  LSP_LIBRARIES="${SHAREDPREFIX}ecl.${SHAREDEXT}"
-
-LSP_FEATURES="(cons :wants-dlopen ${LSP_FEATURES})"
-
-else
-  enable_soname=no
-  LSP_LIBRARIES="${LIBPREFIX}ecl.${LIBEXT}"
-  ECL_LDRPATH=''
-fi
-
-if test "x${enable_rpath}" = "xno"; then
-  ECL_LDRPATH=''
-fi
-
-if test "${with_cmuformat}" = "yes"; then
-  with_clos_streams="yes"
-
-cat >>confdefs.h <<\_ACEOF
-#define ECL_CMU_FORMAT 1
-_ACEOF
-
-fi
-
-if test "${with_clos_streams}" = "yes"; then
-
-cat >>confdefs.h <<\_ACEOF
-#define ECL_CLOS_STREAMS 1
-_ACEOF
-
-fi
-
-if test "${with_cmp}" = "builtin"; then
-
-
-LSP_FEATURES="(cons :builtin-cmp ${LSP_FEATURES})"
-
-
-  with_cmp=yes
-fi
-if test "${with_cmp}" = "yes"; then
-
-
-LSP_FEATURES="(cons :wants-cmp ${LSP_FEATURES})"
-
-
-fi
-
-
-if test "${with_clx}" = "builtin"; then
-
-
-LSP_FEATURES="(cons :builtin-clx ${LSP_FEATURES})"
-
-
-
-
-LSP_FEATURES="(cons :builtin-sockets ${LSP_FEATURES})"
-
-
-  with_clx=yes
-fi
-if test ${with_clx} = "yes"; then
-  tcp="yes"
-
-
-LSP_FEATURES="(cons :wants-clx ${LSP_FEATURES})"
-
-
-  CLX_INFO="clx.${INFOEXT}"
-else
-  CLX_INFO=""
-fi
-
-if test "${with_tcp}" = "yes"; then
-
-cat >>confdefs.h <<\_ACEOF
-#define TCP 1
-_ACEOF
-
-  EXTRA_OBJS="${EXTRA_OBJS} tcp.${OBJEXT}"
-
-
-LSP_FEATURES="(cons :wants-sockets ${LSP_FEATURES})"
-
-
-  LIBS="${LIBS} ${TCPLIBS}"
-fi
-
-if test "${with_serve_event}" = "builtin"; then
-
-
-LSP_FEATURES="(cons :builtin-serve_event ${LSP_FEATURES})"
-
-
-  with_serve_event=yes
-fi
-if test "${with_serve_event}" = "yes"; then
-  case "${host_os}" in
-    mingw*|cygwin*) ;;
-    *)
-
-
-LSP_FEATURES="(cons :wants-serve-event ${LSP_FEATURES})"
-
-
-    ;;
-  esac
-fi
-
-if test "${with_asdf}" = "builtin"; then
-
-
-LSP_FEATURES="(cons :builtin-asdf ${LSP_FEATURES})"
-
-
-  with_asdf=yes
-fi
-if test "${with_asdf}" = "yes"; then
-
-
-LSP_FEATURES="(cons :wants-asdf ${LSP_FEATURES})"
-
-
-fi
-
-if test "${with_defsystem}" = "builtin"; then
-
-
-LSP_FEATURES="(cons :builtin-defsystem ${LSP_FEATURES})"
-
-
-  with_defsystem=yes
-fi
-if test "${with_defsystem}" = "yes"; then
-
-
-LSP_FEATURES="(cons :wants-defsystem ${LSP_FEATURES})"
-
-
-fi
-
-if test "${with_profile}" = "builtin"; then
-
-
-LSP_FEATURES="(cons :builtin-profile ${LSP_FEATURES})"
-
-
-  with_profile=yes
-fi
-if test "${with_profile}" = "yes"; then
-  if test "${enable_boehm}" != "no"; then
-
-
-LSP_FEATURES="(cons :wants-profile ${LSP_FEATURES})"
-
-
+if test "x$ecl_threads" != "xno"; then
+  if mkdir atomic; then
+    (destdir=`${PWDCMD}`; cd atomic; CC="${CC} ${PICFLAG}" \
+     $srcdir/gc/libatomic*/configure --disable-shared --prefix=${destdir} \
+	--infodir=${destdir}/doc --includedir=${destdir}/ecl --with-pic \
+        --libdir=${destdir} --build=${build_alias} --host=${host_alias} \
+        CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" CC="${CC} \
+        ${PICFLAG}")
+    SUBDIRS="${SUBDIRS} atomic"
+    CORE_LIBS="-leclatomic ${CORE_LIBS}"
+    if test "${enable_shared}" = "no"; then
+      LIBRARIES="${LIBRARIES} ${LIBPREFIX}eclatomic.${LIBEXT}"
+    fi
   fi
 fi
 
-if test "${with_bytecmp}" = "builtin"; then
-
-
-LSP_FEATURES="(cons :builtin-bytecmp ${LSP_FEATURES})"
-
-
-  with_bytecmp=yes
-fi
-if test "${with_bytecmp}" = "yes"; then
-
-
-LSP_FEATURES="(cons :wants-bytecmp ${LSP_FEATURES})"
-
-
-fi
-
-if test "${with_rt}" = "builtin"; then
-
-
-LSP_FEATURES="(cons :builtin-rt ${LSP_FEATURES})"
-
-
-  with_rt=yes
-fi
-if test "${with_rt}" = "yes"; then
-
-
-LSP_FEATURES="(cons :wants-rt ${LSP_FEATURES})"
-
-
-fi
-
-if test "${enable_unicode}" = "yes"; then
-
-cat >>confdefs.h <<\_ACEOF
-#define ECL_UNICODE 1
-_ACEOF
-
-fi
-
-if test "${enable_hpack}" = "yes"; then
-
-cat >>confdefs.h <<\_ACEOF
-#define ECL_RELATIVE_PACKAGE_NAMES 1
-_ACEOF
-
-fi
 
 
 case "${enable_boehm}" in
@@ -15220,22 +15025,218 @@ $as_echo "$as_me: error: Not a valid argument for --enable-boehm $enable_boehm" 
 esac
 
 
-if test "x$ecl_threads" != "xno"; then
-  if mkdir atomic; then
-    (destdir=`${PWDCMD}`; cd atomic; CC="${CC} ${PICFLAG}" \
-     $srcdir/gc/libatomic*/configure --disable-shared --prefix=${destdir} \
-	--infodir=${destdir}/doc --includedir=${destdir}/ecl --with-pic \
-        --libdir=${destdir} --build=${build_alias} --host=${host_alias} \
-        CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" CC="${CC} \
-        ${PICFLAG}")
-    SUBDIRS="${SUBDIRS} atomic"
-    CORE_LIBS="-leclatomic ${CORE_LIBS}"
-    if test "${enable_shared}" = "no"; then
-      LIBRARIES="${LIBRARIES} ${LIBPREFIX}eclatomic.${LIBEXT}"
-    fi
+if test ${enable_shared} = "yes"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define ENABLE_DLOPEN 1
+_ACEOF
+
+  LSP_LIBRARIES="${SHAREDPREFIX}ecl.${SHAREDEXT}"
+
+LSP_FEATURES="(cons :wants-dlopen ${LSP_FEATURES})"
+
+else
+  enable_soname=no
+  LSP_LIBRARIES="${LIBPREFIX}ecl.${LIBEXT}"
+  ECL_LDRPATH=''
+fi
+
+if test "x${enable_rpath}" = "xno"; then
+  ECL_LDRPATH=''
+fi
+
+if test "${with_cmuformat}" = "yes"; then
+  with_clos_streams="yes"
+
+cat >>confdefs.h <<\_ACEOF
+#define ECL_CMU_FORMAT 1
+_ACEOF
+
+fi
+
+if test "${with_clos_streams}" = "yes"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define ECL_CLOS_STREAMS 1
+_ACEOF
+
+fi
+
+if test "${with_cmp}" = "builtin"; then
+
+
+LSP_FEATURES="(cons :builtin-cmp ${LSP_FEATURES})"
+
+
+  with_cmp=yes
+fi
+if test "${with_cmp}" = "yes"; then
+
+
+LSP_FEATURES="(cons :wants-cmp ${LSP_FEATURES})"
+
+
+fi
+
+
+if test "${with_clx}" = "builtin"; then
+
+
+LSP_FEATURES="(cons :builtin-clx ${LSP_FEATURES})"
+
+
+
+
+LSP_FEATURES="(cons :builtin-sockets ${LSP_FEATURES})"
+
+
+  with_clx=yes
+fi
+if test ${with_clx} = "yes"; then
+  tcp="yes"
+
+
+LSP_FEATURES="(cons :wants-clx ${LSP_FEATURES})"
+
+
+  CLX_INFO="clx.${INFOEXT}"
+else
+  CLX_INFO=""
+fi
+
+if test "${with_tcp}" = "yes"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define TCP 1
+_ACEOF
+
+  EXTRA_OBJS="${EXTRA_OBJS} tcp.${OBJEXT}"
+
+
+LSP_FEATURES="(cons :wants-sockets ${LSP_FEATURES})"
+
+
+  LIBS="${LIBS} ${TCPLIBS}"
+fi
+
+if test "${with_serve_event}" = "builtin"; then
+
+
+LSP_FEATURES="(cons :builtin-serve_event ${LSP_FEATURES})"
+
+
+  with_serve_event=yes
+fi
+if test "${with_serve_event}" = "yes"; then
+  case "${host_os}" in
+    mingw*|cygwin*) ;;
+    *)
+
+
+LSP_FEATURES="(cons :wants-serve-event ${LSP_FEATURES})"
+
+
+    ;;
+  esac
+fi
+
+if test "${with_asdf}" = "builtin"; then
+
+
+LSP_FEATURES="(cons :builtin-asdf ${LSP_FEATURES})"
+
+
+  with_asdf=yes
+fi
+if test "${with_asdf}" = "yes"; then
+
+
+LSP_FEATURES="(cons :wants-asdf ${LSP_FEATURES})"
+
+
+fi
+
+if test "${with_defsystem}" = "builtin"; then
+
+
+LSP_FEATURES="(cons :builtin-defsystem ${LSP_FEATURES})"
+
+
+  with_defsystem=yes
+fi
+if test "${with_defsystem}" = "yes"; then
+
+
+LSP_FEATURES="(cons :wants-defsystem ${LSP_FEATURES})"
+
+
+fi
+
+if test "${with_profile}" = "builtin"; then
+
+
+LSP_FEATURES="(cons :builtin-profile ${LSP_FEATURES})"
+
+
+  with_profile=yes
+fi
+if test "${with_profile}" = "yes"; then
+  if test "${enable_boehm}" != "no"; then
+
+
+LSP_FEATURES="(cons :wants-profile ${LSP_FEATURES})"
+
+
   fi
 fi
 
+if test "${with_bytecmp}" = "builtin"; then
+
+
+LSP_FEATURES="(cons :builtin-bytecmp ${LSP_FEATURES})"
+
+
+  with_bytecmp=yes
+fi
+if test "${with_bytecmp}" = "yes"; then
+
+
+LSP_FEATURES="(cons :wants-bytecmp ${LSP_FEATURES})"
+
+
+fi
+
+if test "${with_rt}" = "builtin"; then
+
+
+LSP_FEATURES="(cons :builtin-rt ${LSP_FEATURES})"
+
+
+  with_rt=yes
+fi
+if test "${with_rt}" = "yes"; then
+
+
+LSP_FEATURES="(cons :wants-rt ${LSP_FEATURES})"
+
+
+fi
+
+if test "${enable_unicode}" = "yes"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define ECL_UNICODE 1
+_ACEOF
+
+fi
+
+if test "${enable_hpack}" = "yes"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define ECL_RELATIVE_PACKAGE_NAMES 1
+_ACEOF
+
+fi
 
 ac_config_files="$ac_config_files bare.lsp lsp/load.lsp clos/load.lsp cmp/load.lsp new-cmp/load.lsp ../Makefile Makefile c/Makefile doc/Makefile doc/ecl.man doc/ecl-config.man ecl/configpre.h:h/config.h.in bin/ecl-config.pre:util/ecl-config lsp/config.pre:lsp/config.lsp.in compile.pre:compile.lsp.in cmp/cmpdefs.pre:cmp/cmpdefs.lsp"
 

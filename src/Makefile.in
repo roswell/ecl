@@ -117,7 +117,8 @@ bin/ecl-config: bin/ecl-config.pre
 	fi
 @LIBPREFIX@eclatomic.@LIBEXT@:
 	if (echo $(SUBDIRS) | grep atomic); then \
-	  cd atomic && $(MAKE) && $(MAKE) install && cd .. && rm -rf share && \
+	  cd atomic && $(MAKE) && $(MAKE) install && cd .. && \
+	  rm -rf share ecl/atomic_ops_stack.h ecl/atomic_ops_malloc.h *atomic*gpl* && \
 	  mv @LIBPREFIX@atomic_ops.@LIBEXT@ @LIBPREFIX@eclatomic.@LIBEXT@; \
 	fi
 @LIBPREFIX@eclgmp.@LIBEXT@:
