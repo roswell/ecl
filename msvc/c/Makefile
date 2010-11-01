@@ -61,7 +61,8 @@ HFILES	= ..\ecl\config.h $(HDIR)\ecl.h $(HDIR)\ecl-cmp.h\
 	$(HDIR)\object.h $(HDIR)\cs.h $(HDIR)\stacks.h\
 	$(HDIR)\external.h $(HDIR)\eval.h\
 	$(HDIR)\number.h $(HDIR)\page.h $(HDIR)\unify.h\
-	$(HDIR)\internal.h $(HDIR)\ecl-inl.h $(HDIR)\bytecodes.h
+	$(HDIR)\internal.h $(HDIR)\ecl-inl.h $(HDIR)\bytecodes.h \
+	$(HDIR)\impl\math_dispatch.h
 
 OBJS	= main.obj symbol.obj package.obj list.obj\
 	apply.obj eval.obj interpreter.obj compiler.obj disassembler.obj \
@@ -69,8 +70,16 @@ OBJS	= main.obj symbol.obj package.obj list.obj\
 	file.obj read.obj print.obj error.obj string.obj cfun.obj\
 	reader/parse_integer.o reader/parse_number.o \
 	printer/float_to_digits.o printer/float_to_string.o \
-	printer/integer_to_string.o \
+	printer/integer_to_string.o printer/write_ugly.o \
+	printer/write_object.o printer/write_symbol.o \
+	printer/write_array.o printer/write_list.o printer/write_code.o \
+	printer/write_sse.o printer/print_unreadable.o \
+	ffi/libraries.o \
 	typespec.obj assignment.obj \
+	numbers/cos.o numbers/sin.o numbers/tan.o numbers/atan.o \
+	numbers/cosh.o numbers/sinh.o numbers/tanh.o \
+	numbers/exp.o numbers/expt.o numbers/log.o \
+	numbers/sqrt.o numbers/abs.o \
 	predicate.obj big.obj number.obj\
 	num_pred.obj num_comp.obj num_arith.obj num_sfun.obj num_co.obj\
 	num_log.obj num_rand.obj array.obj sequence.obj cmpaux.obj\
@@ -120,7 +129,8 @@ clean:
 $(DPP): $(srcdir)/dpp.c $(srcdir)/symbols_list2.h ../ecl/config.h
 	$(TRUE_CC) -I.. -I./ $(srcdir)/dpp.c  -o $@
 ../ecl/config.h: ../ecl/config.h.msvc6 Makefile
-	for %i in ($(HFILES)) do $(CP) %i ..\ecl
+	-mkdir ecl\impl
+	for %i in ($(HFILES)) do $(CP) %i ..\ecl\%i
 	cut.exe "@ECL_FPE_CODE@" "$(srcdir:\=/)/arch/$(ECL_FPE_CODE)" \
 		"@ECL_VERSION_NUMBER@" "$(ECL_VERSION_NUMBER)" \
 		"@ECL_THREADS@" "$(ECL_THREADS_FLAG)" \
