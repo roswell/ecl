@@ -502,8 +502,9 @@ typedef unsigned @CL_FIXNUM_TYPE@ cl_hashkey;
 # endif
 # if defined(HAVE_FENV_H) && !defined(HAVE_FEENABLEEXCEPT) && !defined(ECL_AVOID_FPE_H)
 #  include <fenv.h>
+#  define ECL_USED_EXCEPTIONS FE_DIVBYZERO|FE_INVALID|FE_OVERFLOW|FE_UNDERFLOW
 #  define ECL_MATHERR_CLEAR feclearexcept(FE_ALL_EXCEPT)
-#  define ECL_MATHERR_TEST if (fetestexcept(FE_ALL_EXCEPT)) ecl_deliver_fpe();
+#  define ECL_MATHERR_TEST unlikely_if (fetestexcept(ECL_USED_EXCEPTIONS)) ecl_deliver_fpe();
 # else
 #  define ECL_MATHERR_CLEAR
 #  define ECL_MATHERR_TEST
