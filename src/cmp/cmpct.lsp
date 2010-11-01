@@ -124,7 +124,7 @@
     (LEAST-POSITIVE-NORMALIZED-LONG-FLOAT" LDBL_MIN")
     (LEAST-NEGATIVE-LONG-FLOAT "-LDBL_MIN")
     (LEAST-NEGATIVE-NORMALIZED-LONG-FLOAT "-LDBL_MIN")
-    (#.(coerce -0.0 'long-float) "cl_core.longfloat_minus_zero")
     (#.(coerce 0 'long-float) "cl_core.longfloat_zero")
+    (#.(coerce -0.0 'long-float) "cl_core.longfloat_minus_zero")
     )
    )))
