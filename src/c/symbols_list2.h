@@ -1747,7 +1747,7 @@ cl_symbols[] = {
 {GRAY_ "FUNDAMENTAL-BINARY-OUTPUT-STREAM",NULL},
 #endif
 
-{"LOG1P","si_log1p"},
+{SYS_ "LOG1P","si_log1p"},
 
 {EXT_ "BC-FILE","si_compiled_function_file"},
 {EXT_ "COMPILED-FUNCTION-FILE","si_compiled_function_file"},

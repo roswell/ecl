@@ -49,9 +49,13 @@ OBJS	= main.o symbol.o package.o list.o\
 	printer/write_array.o printer/write_list.o printer/write_code.o \
 	printer/write_sse.o printer/print_unreadable.o \
 	ffi/libraries.o \
+	numbers/cos.o numbers/sin.o numbers/tan.o numbers/atan.o \
+	numbers/cosh.o numbers/sinh.o numbers/tanh.o \
+	numbers/exp.o numbers/expt.o numbers/log.o \
+	numbers/sqrt.o numbers/abs.o \
 	typespec.o assignment.o \
 	predicate.o number.o\
-	num_pred.o num_comp.o num_arith.o num_sfun.o num_co.o\
+	num_pred.o num_comp.o num_arith.o num_co.o\
 	num_log.o num_rand.o array.o sequence.o cmpaux.o\
 	macros.o backq.o stacks.o \
 	time.o unixint.o\

@@ -65,7 +65,7 @@ c/ecl/external.h: $(top_srcdir)/h/external.h
 	test -d c/ecl || mkdir c/ecl
 	sed 's,__declspec(dllimport),,g' $(top_srcdir)/h/external.h > $@
 ecl/external.h: c/ecl/external.h c/ecl/external.h
-	cp $(srcdir)/h/*.h ecl/
+	cp -rf $(srcdir)/h/*.h $(srcdir)/h/impl ecl/
 
 bin/ecl$(EXE): ecl_min$(EXE) compile.lsp ecl/external.h build-stamp $(top_srcdir)/lsp/*.lsp
 	cp $(top_srcdir)/../contrib/unicode/ucd.dat .
