@@ -13,6 +13,9 @@
     See file '../Copyright' for full details.
 */
 
+#ifndef ECL_INTERNAL_H
+#define ECL_INTERNAL_H
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -537,3 +540,5 @@ void ecl_interrupt_process(cl_object process, cl_object function);
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* ECL_INTERNAL_H */
