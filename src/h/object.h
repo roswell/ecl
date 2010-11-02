@@ -198,14 +198,14 @@ struct ecl_singlefloat {
 	float SFVAL;	/*  singlefloat value  */
 };
 #define	sf(obje)	(obje)->SF.SFVAL
-#define ecl_single_float(o) ((o)->SF.value)
+#define ecl_single_float(o) ((o)->SF.SFVAL)
 
 struct ecl_doublefloat {
 	HEADER;
 	double DFVAL;	/*  doublefloat value  */
 };
 #define	df(obje)	(obje)->DF.DFVAL
-#define ecl_double_float(o) ((o)->DF.value)
+#define ecl_double_float(o) ((o)->DF.DFVAL)
 
 #ifdef ECL_LONG_FLOAT
 struct ecl_long_float {
