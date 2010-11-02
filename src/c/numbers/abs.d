@@ -93,7 +93,7 @@ ecl_abs_complex(cl_object x)
         }
 }
 
-MATH_DEF_DISPATCH1(abs, @[abs], @[number],
-                   ecl_abs_fixnum, ecl_abs_bignum, ecl_abs_rational,
-                   ecl_abs_single_float, ecl_abs_double_float, ecl_abs_long_float,
-                   ecl_abs_complex);
+MATH_DEF_DISPATCH1_NE(abs, @[abs], @[number],
+                      ecl_abs_fixnum, ecl_abs_bignum, ecl_abs_rational,
+                      ecl_abs_single_float, ecl_abs_double_float, ecl_abs_long_float,
+                      ecl_abs_complex);

@@ -1016,6 +1016,7 @@ extern ECL_API cl_object ecl_integer_divide(cl_object x, cl_object y);
 extern ECL_API cl_object ecl_gcd(cl_object x, cl_object y);
 extern ECL_API cl_object ecl_one_plus(cl_object x);
 extern ECL_API cl_object ecl_one_minus(cl_object x);
+extern ECL_API cl_object ecl_conjugate(cl_object x);
 
 
 /* number.c */
