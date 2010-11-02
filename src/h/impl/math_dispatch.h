@@ -25,7 +25,7 @@ typedef cl_object (*math_one_arg_fn)(cl_object);
 #else
 #define MATH_LONG_DOUBLE(opt)
 #endif
-#define MATH_DEF_DISPATCH1(name,id,type,rational,single_float,double_float,long_float,complex) \
+#define MATH_DEF_DISPATCH1(name,id,type,fix,big,ratio,single_float,double_float,long_float,complex) \
     static cl_object name##failed(cl_object x) {                        \
         FEwrong_type_only_arg(id, x, type);                             \
     }                                                                   \
@@ -33,7 +33,7 @@ typedef cl_object (*math_one_arg_fn)(cl_object);
         name##failed, /* t_start */                                     \
         name##failed, /* t_list */                                      \
         name##failed, /* t_character */                                 \
-        rational, rational, rational, /* t_fixnum, bignum, ratio */     \
+        fix, big, ratio, /* t_fixnum, bignum, ratio */                  \
         single_float, double_float, /* t_singlefloat, t_doublefloat */  \
         MATH_LONG_DOUBLE(long_float) /* t_longfloat, optional */        \
         complex };                                                      \

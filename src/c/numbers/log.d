@@ -51,22 +51,24 @@ ecl_log1_complex_inner(cl_object r, cl_object i)
 }
 
 static cl_object
+ecl_log1_bignum(cl_object x)
+{
+        if (ecl_minusp(x)) {
+                return ecl_log1_complex_inner(x, MAKE_FIXNUM(0));
+        } else {
+                cl_fixnum l = ecl_integer_length(x) - 1;
+                cl_object r = ecl_make_ratio(x, ecl_ash(MAKE_FIXNUM(1), l));
+                float d = logf(number_to_float(r)) + l * logf(2.0);
+                return ecl_make_singlefloat(d);
+        }
+}
+
+static cl_object
 ecl_log1_rational(cl_object x)
 {
-        if (type_of(x) == t_bignum) {
-                if (ecl_minusp(x)) {
-                        return ecl_log1_complex_inner(x, MAKE_FIXNUM(0));
-                } else {
-                        cl_fixnum l = ecl_integer_length(x) - 1;
-                        cl_object r = ecl_make_ratio(x, ecl_ash(MAKE_FIXNUM(1), l));
-                        float d = logf(number_to_float(r)) + l * logf(2.0);
-                        return ecl_make_singlefloat(d);
-                }
-        } else {
-  		float f = number_to_float(x);
-		if (f < 0) return ecl_log1_complex_inner(x, MAKE_FIXNUM(0));
-		return ecl_make_singlefloat(logf(number_to_float(x)));
-        }
+        float f = number_to_float(x);
+        if (f < 0) return ecl_log1_complex_inner(x, MAKE_FIXNUM(0));
+        return ecl_make_singlefloat(logf(number_to_float(x)));
 }
 
 static cl_object
@@ -105,8 +107,8 @@ ecl_log1_complex(cl_object x)
 }
 
 MATH_DEF_DISPATCH1(log1, @[log], @[number],
-                   ecl_log1_rational, ecl_log1_single_float,
-                   ecl_log1_double_float, ecl_log1_long_float,
+                   ecl_log1_rational, ecl_log1_bignum, ecl_log1_rational,
+                   ecl_log1_single_float, ecl_log1_double_float, ecl_log1_long_float,
                    ecl_log1_complex);
 
 cl_object
@@ -177,13 +179,9 @@ ecl_log1p_simple(cl_object x)
 static cl_object
 ecl_log1p_rational(cl_object x)
 {
-        if (type_of(x) == t_bignum) {
-                return ecl_log1p_simple(x);
-        } else {
-  		float f = number_to_float(x);
-		if (f < -1) return ecl_log1p_simple(x);
-		return ecl_make_singlefloat(log1pf(number_to_float(x)));
-        }
+        float f = number_to_float(x);
+        if (f < -1) return ecl_log1p_simple(x);
+        return ecl_make_singlefloat(log1pf(number_to_float(x)));
 }
 
 static cl_object
@@ -222,6 +220,6 @@ ecl_log1p_complex(cl_object x)
 }
 
 MATH_DEF_DISPATCH1(log1p, @[si::log1p], @[number],
-                   ecl_log1p_rational, ecl_log1p_single_float,
-                   ecl_log1p_double_float, ecl_log1p_long_float,
+                   ecl_log1p_rational, ecl_log1p_simple, ecl_log1p_rational,
+                   ecl_log1p_single_float, ecl_log1p_double_float, ecl_log1p_long_float,
                    ecl_log1p_complex);

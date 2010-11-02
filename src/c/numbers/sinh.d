@@ -71,6 +71,6 @@ ecl_sinh_complex(cl_object x)
 }
 
 MATH_DEF_DISPATCH1(sinh, @[sinh], @[number],
-                   ecl_sinh_rational, ecl_sinh_single_float,
-                   ecl_sinh_double_float, ecl_sinh_long_float,
+                   ecl_sinh_rational, ecl_sinh_rational, ecl_sinh_rational,
+                   ecl_sinh_single_float, ecl_sinh_double_float, ecl_sinh_long_float,
                    ecl_sinh_complex);

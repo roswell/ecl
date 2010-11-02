@@ -15,6 +15,7 @@
     See file '../Copyright' for full details.
 */
 
+#include <stdlib.h>
 #define ECL_INCLUDE_MATH_H
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
@@ -27,9 +28,22 @@ cl_abs(cl_object x)
 }
 
 static cl_object
+ecl_abs_fixnum(cl_object x)
+{
+        return ecl_fixnum_minusp(x)? ecl_make_integer(-fix(x)) : x;
+}
+
+static cl_object
+ecl_abs_bignum(cl_object x)
+{
+        return (_ecl_big_sign(x) < 0)? _ecl_big_negate(x) : x;
+}
+
+static cl_object
 ecl_abs_rational(cl_object x)
 {
-        return (ecl_minusp(x))? ecl_negate(x) : x;
+        return (ecl_minusp(x->ratio.num))?
+                ecl_make_ratio(ecl_negate(x->ratio.num), x->ratio.den) : x;
 }
 
 static cl_object
@@ -80,6 +94,6 @@ ecl_abs_complex(cl_object x)
 }
 
 MATH_DEF_DISPATCH1(abs, @[abs], @[number],
-                   ecl_abs_rational, ecl_abs_single_float,
-                   ecl_abs_double_float, ecl_abs_long_float,
+                   ecl_abs_fixnum, ecl_abs_bignum, ecl_abs_rational,
+                   ecl_abs_single_float, ecl_abs_double_float, ecl_abs_long_float,
                    ecl_abs_complex);

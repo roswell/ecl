@@ -63,6 +63,6 @@ ecl_tanh_complex(cl_object x)
 }
 
 MATH_DEF_DISPATCH1(tanh, @[tanh], @[number],
-                   ecl_tanh_rational, ecl_tanh_single_float,
-                   ecl_tanh_double_float, ecl_tanh_long_float,
+                   ecl_tanh_rational, ecl_tanh_rational, ecl_tanh_rational,
+                   ecl_tanh_single_float, ecl_tanh_double_float, ecl_tanh_long_float,
                    ecl_tanh_complex);
