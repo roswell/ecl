@@ -53,6 +53,7 @@ OBJS	= main.o symbol.o package.o list.o\
 	numbers/cosh.o numbers/sinh.o numbers/tanh.o \
 	numbers/exp.o numbers/expt.o numbers/log.o \
 	numbers/sqrt.o numbers/abs.o \
+	numbers/zerop.o numbers/plusp.o numbers/minusp.o \
 	typespec.o assignment.o \
 	predicate.o number.o\
 	num_pred.o num_comp.o num_arith.o num_co.o\
