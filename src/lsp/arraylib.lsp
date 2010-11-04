@@ -367,7 +367,6 @@ pointer is 0 already."
 Adjusts the dimensions of ARRAY to the given DIMENSIONS.  ARRAY must be an
 adjustable array."
   (declare (ignore initial-element
-                   initial-contents
                    displaced-index-offset))
   (when (integerp new-dimensions)
         (setq new-dimensions (list new-dimensions)))
