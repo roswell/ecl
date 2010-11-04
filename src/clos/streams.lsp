@@ -362,7 +362,7 @@
     t))
 
 (defmethod stream-fresh-line ((stream ansi-stream))
-  (cl:fresh-line ansi-stream))
+  (cl:fresh-line stream))
 
 
 ;; INPUT-STREAM-P
