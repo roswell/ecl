@@ -80,6 +80,10 @@ OBJS	= main.obj symbol.obj package.obj list.obj\
 	numbers/cosh.o numbers/sinh.o numbers/tanh.o \
 	numbers/exp.o numbers/expt.o numbers/log.o \
 	numbers/sqrt.o numbers/abs.o \
+	numbers/zerop.o numbers/plusp.o numbers/minusp.o \
+	numbers/negate.o numbers/conjugate.o \
+	numbers/one_plus.o numbers/one_minus.o \
+	numbers/plus.o numbers/minus.o numbers/times.o numbers/divide.o \
 	predicate.obj big.obj number.obj\
 	num_pred.obj num_comp.obj num_arith.obj num_sfun.obj num_co.obj\
 	num_log.obj num_rand.obj array.obj sequence.obj cmpaux.obj\
