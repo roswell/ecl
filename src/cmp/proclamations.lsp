@@ -232,7 +232,7 @@
 (proclamation notevery (function-designator sequence &rest sequence) gen-bool)
 (proclamation notany (function-designator sequence &rest sequence) gen-bool)
 (proclamation values-list (list) (values &rest t))
-(proclamation get-setf-expansion (t &optional enviroment) (values t t t t t))
+(proclamation get-setf-expansion (t &optional environment) (values t t t t t))
 
 ;; ECL extensions
 
