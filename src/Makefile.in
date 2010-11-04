@@ -203,8 +203,8 @@ uninstall:
 	for i in $(LSP_LIBRARIES) $(LIBRARIES) Copyright LGPL; do \
 	  $(RM) $(DESTDIR)$(libdir)/$$i || : ; \
 	done
-	rm $(DESTDIR)$(mandir)/man$(manext)/ecl.$(manext)
-	rm $(DESTDIR)$(mandir)/man$(manext)/ecl-config.$(manext)
+	rm -f $(DESTDIR)$(mandir)/man$(manext)/ecl.$(manext)
+	rm -f $(DESTDIR)$(mandir)/man$(manext)/ecl-config.$(manext)
 
 clean: mostlyclean
 	$(RM) -r *
