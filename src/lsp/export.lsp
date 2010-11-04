@@ -127,7 +127,7 @@
 	       (case (length c)
 		 ((1 2)
 		  (setq vl (cons c vl)))
-		 ((3)
+		 (3
 		  (setq vl (cons (butlast c) vl)
 			step (list* (third c) (first c) step)))
 		 (t
