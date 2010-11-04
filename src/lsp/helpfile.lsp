@@ -76,7 +76,7 @@
 	   (scan-for (char file)
 	     (do ((v #\space (read-char file nil nil))
 		  (n 0 (1+ n)))
-		 ((or (eql v #\^_) (not v)) (if v n -1))
+		 ((or (eql v char) (not v)) (if v n -1))
 	       (declare (fixnum n)))))
     (when (not (probe-file path))
       (return-from search-help-file nil))
