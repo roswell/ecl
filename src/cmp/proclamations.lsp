@@ -1091,9 +1091,13 @@
 ;; ECL extensions:
 (proclamation si:make-string-output-stream-from-string (string)
               string-stream :reader)
+#+wants-sockets
 (proclamation si:open-client-stream (t unsigned-byte) stream)
+#+wants-sockets
 (proclamation si:open-server-stream (unsigned-byte) stream)
+#+wants-sockets
 (proclamation si:open-unix-socket-stream (base-string) stream)
+#+wants-sockets
 (proclamation si:lookup-host-entry (t) (values (or null string) list list))
 (proclamation si:copy-stream (stream stream) t)
 
