@@ -146,8 +146,11 @@ typedef int16_t cl_oparg;
  * saves a range check on the opcode size and (ii) each opcode has a
  * dispatch instruction at the end, so that the processor may better
  * predict jumps.
+ *
+ * NOTE: We cannot use this in Solaris because GCC erroneously produces
+ * relocation tables.
  */
-#if (defined(__GNUC__) && !defined(__STRICT_ANSI__))
+#if (defined(__GNUC__) && !defined(__STRICT_ANSI__) && !defined(__sun__))
 #define ECL_THREADED_INTERPRETER
 #endif
 
