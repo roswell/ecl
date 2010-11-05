@@ -28,7 +28,7 @@
 	@(return num)
 @)
 
-#if 1
+#ifdef MATH_DISPATCH2_BEGIN
 
 static cl_object
 complex_divide(cl_object ar, cl_object ai, cl_object br, cl_object bi)

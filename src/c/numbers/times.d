@@ -25,7 +25,7 @@
 	@(return prod)
 @)
 
-#if 1
+#ifdef MATH_DISPATCH2_BEGIN
 
 cl_object
 ecl_times(cl_object x, cl_object y)

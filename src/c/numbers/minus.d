@@ -27,7 +27,7 @@
 	@(return diff)
 @)
 
-#if 1
+#ifdef MATH_DISPATCH2_BEGIN
 
 cl_object
 ecl_minus(cl_object x, cl_object y)
