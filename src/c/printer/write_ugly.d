@@ -127,15 +127,9 @@ write_character(cl_object x, cl_object stream)
 		ecl_write_char(i, stream);
 	} else {
 		writestr_stream("#\\", stream);
-		if (i < 32 || i == 127) {
+		if (i < 32 || i >= 127) {
 			cl_object name = cl_char_name(CODE_CHAR(i));
 			writestr_stream((char*)name->base_string.self, stream);
-		} else if (i >= 128) {
-                        int  index = 0;
-			char name[20];
-			sprintf(name, "U%04x", i); /* cleanup */
-                        while(name[index])
-				ecl_write_char(name[index++], stream);
 		} else {
 			ecl_write_char(i, stream);
 		}

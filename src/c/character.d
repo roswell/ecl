@@ -465,9 +465,22 @@ cl_char_name(cl_object c)
 	ecl_character code = ecl_char_code(c);
 	cl_object output;
 	if (code > 127) {
-		char name[20]; /* cleanup */
-		sprintf(name, "U%04x", code);
-		output = make_base_string_copy(name);
+		char name[7];
+                char *start;
+                name[7] = 0;
+                name[6] = ecl_digit_char(code & 0xF, 16); code >>= 4;
+                name[5] = ecl_digit_char(code & 0xF, 16); code >>= 4;
+                name[4] = ecl_digit_char(code & 0xF, 16); code >>= 4;
+                name[3] = ecl_digit_char(code & 0xF, 16); code >>= 4;
+                if (code == 0) {
+                        start = name + 2;
+                } else {
+                        name[2] = ecl_digit_char(code & 0xF, 16); code >>= 4;
+                        name[1] = ecl_digit_char(code & 0xF, 16);
+                        start = name;
+                }
+                start[0] = 'U';
+		output = make_base_string_copy(start);
 	} else {
 		output = ecl_gethash_safe(MAKE_FIXNUM(code), cl_core.char_names, Cnil);
 	}

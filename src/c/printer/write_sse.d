@@ -31,12 +31,12 @@ is_all_FF(void *ptr, int size) {
 static void
 write_sse_float(float v, cl_object stream)
 {
-	if (is_all_FF(&v, sizeof(float)))
+	if (is_all_FF(&v, sizeof(float))) {
 		writestr_stream(" TRUE", stream);
-	else {
-		char buf[60];
-		sprintf(buf, " %g", v);
-		writestr_stream(buf, stream);
+	} else {
+                ecl_def_ct_single_float(wrapped_f, v, ,);
+                ecl_write_char(' ', stream);
+                si_write_ugly_object(wrapped_f, stream);
 	}
 }
 
@@ -46,9 +46,9 @@ write_sse_double(double v, cl_object stream)
 	if (is_all_FF(&v, sizeof(double)))
 		writestr_stream(" TRUE", stream);
         else {
-		char buf[60];
-		sprintf(buf, " %lg", v);
-		writestr_stream(buf, stream);
+                ecl_def_ct_double_float(wrapped_f, v, ,);
+                ecl_write_char(' ', stream);
+                si_write_ugly_object(wrapped_f, stream);
 	}
 }
 
@@ -74,14 +74,20 @@ write_sse_pack(cl_object x, cl_object stream)
 		write_sse_double(x->sse.data.df[0], stream);
 		write_sse_double(x->sse.data.df[1], stream);
 		break;
-	default:
+	default: {
+                cl_object buffer = si_get_buffer_string();
 		for (i = 0; i < 16; i++) {
 			char buf[10];
 			int pad = 1 + (i%4 == 0);
-			sprintf(buf, "%*c%02x", pad, ' ', x->sse.data.b8[i]);
-			writestr_stream(buf, stream);
+                        ecl_string_push_extend(' ', buffer);
+                        if (i%4 == 0) ecl_string_push_extend(' ', buffer);
+                        si_integer_to_string(buffer, MAKE_FIXNUM(x->sse.data.b8[i]),
+                                             MAKE_FIXNUM(16), Cnil, Cnil);
 		}
-		break;
+                si_do_write_sequence(buffer, stream, MAKE_FIXNUM(0), Cnil);
+                si_put_buffer_string(buffer);
+                break;
+        }
 	}
 }
 
