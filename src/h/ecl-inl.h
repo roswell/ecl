@@ -76,48 +76,48 @@
                         (ecl_base_char*)(chars) }
 
 #define ecl_def_ct_base_string(name,chars,len,static,const)     \
-        static const struct ecl_base_string name ## data = {    \
+        static const struct ecl_base_string name ## _data = {    \
                 (int8_t)t_base_string, 0, aet_bc, 0,            \
                 Cnil, (cl_index)(len), (cl_index)(len),         \
                 (ecl_base_char*)(chars) };                      \
-        static const cl_object name = (cl_object)(& name ## data)
+        static const cl_object name = (cl_object)(& name ## _data)
 
 #define ecl_def_ct_single_float(name,f,static,const)            \
-        static const struct ecl_singlefloat name ## data = {    \
+        static const struct ecl_singlefloat name ## _data = {    \
                 (int8_t)t_singlefloat, 0, 0, 0,                 \
                 (float)(f) };                                   \
-        static const cl_object name = (cl_object)(& name ## data)
+        static const cl_object name = (cl_object)(& name ## _data)
 
 #define ecl_def_ct_double_float(name,f,static,const)            \
-        static const struct ecl_doublefloat name ## data = {    \
+        static const struct ecl_doublefloat name ## _data = {    \
                 (int8_t)t_doublefloat, 0, 0, 0,                 \
                 (double)(f) };                                  \
-        static const cl_object name = (cl_object)(& name ## data)
+        static const cl_object name = (cl_object)(& name ## _data)
 
 #define ecl_def_ct_long_float(name,f,static,const)			\
-        static const struct ecl_long_float name ## data = {		\
+        static const struct ecl_long_float name ## _data = {		\
                 (int8_t)t_longfloat, 0, 0, 0,				\
                 (long double)(f) };					\
-        static const cl_object name = (cl_object)(& name ## data)
+        static const cl_object name = (cl_object)(& name ## _data)
 
 #define ecl_def_ct_ratio(name,num,den,static,const)			\
-        static const struct ecl_ratio name ## data = {			\
+        static const struct ecl_ratio name ## _data = {			\
                 (int8_t)t_ratio, 0, 0, 0,				\
                 den, num };						\
-        static const cl_object name = (cl_object)(& name ## data)
+        static const cl_object name = (cl_object)(& name ## _data)
 
 #define ecl_def_ct_complex(name,real,imag,static,const)			\
-        static const struct ecl_complex name ## data = {		\
+        static const struct ecl_complex name ## _data = {		\
                 (int8_t)t_complex, 0, 0, 0,				\
                 (cl_object)real, (cl_object)imag };			\
-        static const cl_object name = (cl_object)(& name ## data)
+        static const cl_object name = (cl_object)(& name ## _data)
 
 #define ecl_def_ct_vector(name,type,raw,len,static,const)               \
-        static const struct ecl_vector name ## data = {                 \
+        static const struct ecl_vector name ## _data = {                 \
                 (int8_t)t_vector, 0, (type), 0,                         \
                 Cnil, (cl_index)(len), (cl_index)(len),                 \
                 ecl_cast_ptr(cl_object*,raw), 0 };                      \
-        static const cl_object name = (cl_object)(& name ## data)
+        static const cl_object name = (cl_object)(& name ## _data)
 
 #ifdef ECL_SSE2
 
@@ -126,11 +126,11 @@
  */
 
 #define ecl_def_ct_sse_pack(name,type,v0,v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15) \
-        static const struct ecl_sse_pack name ## data = {                 \
+        static const struct ecl_sse_pack name ## _data = {                 \
                 (int8_t)t_sse_pack, 0, (type), 0,                         \
                 {{v0,v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15}} \
         }; \
-        static const cl_object name = (cl_object)(& name ## data)
+        static const cl_object name = (cl_object)(& name ## _data)
 
 /*
  * Missing SSE intrinsics

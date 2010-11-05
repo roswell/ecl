@@ -25,6 +25,7 @@ struct {
 	const char *name, *translation;
 }
 #else
+#include "ecl_constants.h"
 #define CLOS_
 #define EXT_
 #define SYS_

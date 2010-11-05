@@ -367,9 +367,9 @@ ecl_def_ct_ratio(minus_half,MAKE_FIXNUM(-1),MAKE_FIXNUM(2),static,const);
 ecl_def_ct_single_float(flt_one,1,static,const);
 ecl_def_ct_single_float(flt_one_neg,-1,static,const);
 ecl_def_ct_single_float(flt_two,2,static,const);
-ecl_def_ct_complex(flt_imag_unit,&flt_zerodata,&flt_onedata,static,const);
-ecl_def_ct_complex(flt_imag_unit_neg,&flt_zerodata,&flt_one_negdata,static,const);
-ecl_def_ct_complex(flt_imag_two,&flt_zerodata,&flt_twodata,static,const);
+ecl_def_ct_complex(flt_imag_unit,&flt_zero_data,&flt_one_data,static,const);
+ecl_def_ct_complex(flt_imag_unit_neg,&flt_zero_data,&flt_one_neg_data,static,const);
+ecl_def_ct_complex(flt_imag_two,&flt_zero_data,&flt_two_data,static,const);
 
 struct cl_core_struct cl_core = {
 	Cnil, /* packages */
@@ -399,24 +399,24 @@ struct cl_core_struct cl_core = {
 	Cnil, /* default_dispatch_macro */
 
 	Cnil, /* char_names */
-	(cl_object)&str_emptydata, /* null_string */
+	(cl_object)&str_empty_data, /* null_string */
 
-	(cl_object)&plus_halfdata, /* plus_half */
-	(cl_object)&minus_halfdata, /* minus_half */
-	(cl_object)&flt_imag_unitdata, /* imag_unit */
-	(cl_object)&flt_imag_unit_negdata, /* minus_imag_unit */
-	(cl_object)&flt_imag_twodata, /* imag_two */
-	(cl_object)&flt_zerodata, /* singlefloat_zero */
-	(cl_object)&dbl_zerodata, /* doublefloat_zero */
-	(cl_object)&flt_zero_negdata, /* singlefloat_minus_zero */
-	(cl_object)&dbl_zero_negdata, /* doublefloat_minus_zero */
+	(cl_object)&plus_half_data, /* plus_half */
+	(cl_object)&minus_half_data, /* minus_half */
+	(cl_object)&flt_imag_unit_data, /* imag_unit */
+	(cl_object)&flt_imag_unit_neg_data, /* minus_imag_unit */
+	(cl_object)&flt_imag_two_data, /* imag_two */
+	(cl_object)&flt_zero_data, /* singlefloat_zero */
+	(cl_object)&dbl_zero_data, /* doublefloat_zero */
+	(cl_object)&flt_zero_neg_data, /* singlefloat_minus_zero */
+	(cl_object)&dbl_zero_neg_data, /* doublefloat_minus_zero */
 #ifdef ECL_LONG_FLOAT
-	(cl_object)&ldbl_zerodata, /* longfloat_zero */
-	(cl_object)&ldbl_zero_negdata, /* longfloat_minus_zero */
+	(cl_object)&ldbl_zero_data, /* longfloat_zero */
+	(cl_object)&ldbl_zero_neg_data, /* longfloat_minus_zero */
 #endif
 
-	(cl_object)&str_Gdata, /* gensym_prefix */
-	(cl_object)&str_Tdata, /* gentemp_prefix */
+	(cl_object)&str_G_data, /* gensym_prefix */
+	(cl_object)&str_T_data, /* gentemp_prefix */
 	MAKE_FIXNUM(0), /* gentemp_counter */
 
 	Cnil, /* Jan1st1970UT */
@@ -459,12 +459,12 @@ struct cl_core_struct cl_core = {
         0, /* last_var_index */
         Cnil, /* reused_indices */
 #endif
-	(cl_object)&str_slashdata, /* slash */
+	(cl_object)&str_slash_data, /* slash */
 
 	Cnil, /* compiler_dispatch */
 
-        (cl_object)&default_rehash_sizedata, /* rehash_size */
-        (cl_object)&default_rehash_thresholddata /* rehash_threshold */
+        (cl_object)&default_rehash_size_data, /* rehash_size */
+        (cl_object)&default_rehash_threshold_data /* rehash_threshold */
 };
 
 int
@@ -667,7 +667,7 @@ cl_boot(int argc, char **argv)
                                 cl_core.rehash_threshold,
 				Ct); /* thread-safe */
 
-	init_number();
+	ECL_SET(@'*random-state*', ecl_make_random_state(Ct));
 
 	ECL_SET(@'si::c-int-max', ecl_make_integer(INT_MAX));
 	ECL_SET(@'si::c-int-min', ecl_make_integer(INT_MIN));

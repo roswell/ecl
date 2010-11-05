@@ -41,7 +41,6 @@ extern void init_file(void);
 extern void init_GC(void);
 #endif
 extern void init_macros(void);
-extern void init_number(void);
 extern void init_read(void);
 extern void init_stacks(cl_env_ptr);
 extern void init_unixint(int pass);

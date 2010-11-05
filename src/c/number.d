@@ -1,6 +1,6 @@
 /* -*- mode: c; c-basic-offset: 8 -*- */
 /*
-    number.c -- Numeric constants.
+    number.c -- constructing numbers.
 */
 /*
     Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya.
@@ -944,87 +944,4 @@ float_to_integer(float d)
                 _ecl_big_set_d(z, d);
                 return _ecl_big_register_copy(z);
 	}
-}
-
-ecl_def_ct_single_float(flt_max,FLT_MAX,static,const);
-ecl_def_ct_single_float(flt_max_neg,-FLT_MAX,static,const);
-ecl_def_ct_single_float(flt_min,FLT_MIN,static,const);
-ecl_def_ct_single_float(flt_min_neg,-FLT_MIN,static,const);
-ecl_def_ct_double_float(dbl_max,DBL_MAX,static,const);
-ecl_def_ct_double_float(dbl_max_neg,-DBL_MAX,static,const);
-ecl_def_ct_double_float(dbl_min,DBL_MIN,static,const);
-ecl_def_ct_double_float(dbl_min_neg,-DBL_MIN,static,const);
-
-#ifdef ECL_LONG_FLOAT
-ecl_def_ct_long_float(ldbl_max,LDBL_MAX,static,const);
-ecl_def_ct_long_float(ldbl_max_neg,-LDBL_MAX,static,const);
-ecl_def_ct_long_float(ldbl_min,LDBL_MIN,static,const);
-ecl_def_ct_long_float(ldbl_min_neg,-LDBL_MIN,static,const);
-#endif
-
-#ifdef ECL_LONG_FLOAT
-ecl_def_ct_long_float(float_pi,ECL_PI_L,static,const);
-#else
-ecl_def_ct_double_float(float_pi,ECL_PI_D,static,const);
-#endif
-
-void
-init_number(void)
-{
-	cl_object num;
-
-	num = flt_max; /* ecl_make_singlefloat(FLT_MAX); */
-	ECL_SET(@'MOST-POSITIVE-SHORT-FLOAT', num);
-	ECL_SET(@'MOST-POSITIVE-SINGLE-FLOAT', num);
-
-	num = flt_max_neg; /* ecl_make_singlefloat(-FLT_MAX); */
-	ECL_SET(@'MOST-NEGATIVE-SHORT-FLOAT', num);
-	ECL_SET(@'MOST-NEGATIVE-SINGLE-FLOAT', num);
-
-	num = flt_min; /* ecl_make_singlefloat(FLT_MIN); */
-	ECL_SET(@'LEAST-POSITIVE-SHORT-FLOAT', num);
-	ECL_SET(@'LEAST-POSITIVE-SINGLE-FLOAT', num);
-	ECL_SET(@'LEAST-POSITIVE-NORMALIZED-SHORT-FLOAT', num);
-	ECL_SET(@'LEAST-POSITIVE-NORMALIZED-SINGLE-FLOAT', num);
-
-	num = flt_min_neg; /* ecl_make_singlefloat(-FLT_MIN); */
-	ECL_SET(@'LEAST-NEGATIVE-SHORT-FLOAT', num);
-	ECL_SET(@'LEAST-NEGATIVE-SINGLE-FLOAT', num);
-	ECL_SET(@'LEAST-NEGATIVE-NORMALIZED-SHORT-FLOAT', num);
-	ECL_SET(@'LEAST-NEGATIVE-NORMALIZED-SINGLE-FLOAT', num);
-
-	num = dbl_max; /* ecl_make_doublefloat(DBL_MAX); */
-	ECL_SET(@'MOST-POSITIVE-DOUBLE-FLOAT', num);
-#ifdef ECL_LONG_FLOAT
-	num = ldbl_max; /* ecl_make_longfloat(LDBL_MAX); */
-#endif
-	ECL_SET(@'MOST-POSITIVE-LONG-FLOAT', num);
-
-	num = dbl_max_neg; /* ecl_make_doublefloat(-DBL_MAX); */
-	ECL_SET(@'MOST-NEGATIVE-DOUBLE-FLOAT', num);
-#ifdef ECL_LONG_FLOAT
-	num = ldbl_max_neg; /* ecl_make_longfloat(-LDBL_MAX); */
-#endif
-	ECL_SET(@'MOST-NEGATIVE-LONG-FLOAT', num);
-
-	num = dbl_min; /* ecl_make_doublefloat(DBL_MIN); */
-	ECL_SET(@'LEAST-POSITIVE-DOUBLE-FLOAT', num);
-	ECL_SET(@'LEAST-POSITIVE-NORMALIZED-DOUBLE-FLOAT', num);
-#ifdef ECL_LONG_FLOAT
-	num = ldbl_min; /* ecl_make_longfloat(LDBL_MIN); */
-#endif
-	ECL_SET(@'LEAST-POSITIVE-LONG-FLOAT', num);
-	ECL_SET(@'LEAST-POSITIVE-NORMALIZED-LONG-FLOAT', num);
-
-	num = dbl_min_neg; /* ecl_make_doublefloat(-DBL_MIN); */
-	ECL_SET(@'LEAST-NEGATIVE-DOUBLE-FLOAT', num);
-	ECL_SET(@'LEAST-NEGATIVE-NORMALIZED-DOUBLE-FLOAT', num);
-#ifdef ECL_LONG_FLOAT
-	num = ldbl_min_neg; /* ecl_make_longfloat(-LDBL_MIN); */
-#endif
-	ECL_SET(@'LEAST-NEGATIVE-LONG-FLOAT', num);
-	ECL_SET(@'LEAST-NEGATIVE-NORMALIZED-LONG-FLOAT', num);
-
-	ECL_SET(@'pi', float_pi);
-        ECL_SET(@'*random-state*', ecl_make_random_state(Ct));
 }
