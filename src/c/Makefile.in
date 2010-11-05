@@ -57,9 +57,10 @@ OBJS	= main.o symbol.o package.o list.o\
 	numbers/negate.o numbers/conjugate.o \
 	numbers/one_plus.o numbers/one_minus.o \
 	numbers/plus.o numbers/minus.o numbers/times.o numbers/divide.o \
+	numbers/number_compare.o numbers/number_equalp.o numbers/minmax.o \
 	typespec.o assignment.o \
 	predicate.o number.o\
-	num_pred.o num_comp.o num_arith.o num_co.o\
+	num_pred.o num_arith.o num_co.o\
 	num_log.o num_rand.o array.o sequence.o cmpaux.o\
 	macros.o backq.o stacks.o \
 	time.o unixint.o\
