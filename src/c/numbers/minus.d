@@ -58,10 +58,12 @@ MATH_DISPATCH2_BEGIN(x,y)
         CASE_BIGNUM_BIGNUM {
                 return _ecl_big_minus_big(x, y);
         }
-        CASE_BIGNUM_SINGLE_FLOAT {
+        CASE_BIGNUM_SINGLE_FLOAT;
+        CASE_RATIO_SINGLE_FLOAT {
                 return ecl_make_singlefloat(ecl_to_float(x) - ecl_single_float(y));
         }
-        CASE_BIGNUM_DOUBLE_FLOAT {
+        CASE_BIGNUM_DOUBLE_FLOAT;
+        CASE_RATIO_DOUBLE_FLOAT {
                 return ecl_make_doublefloat(ecl_to_double(x) - ecl_double_float(y));
         }
         CASE_RATIO_FIXNUM;
@@ -76,12 +78,6 @@ MATH_DISPATCH2_BEGIN(x,y)
                 z = ecl_minus(z1, z);
                 z1 = ecl_times(x->ratio.den,y->ratio.den);
                 return ecl_make_ratio(z, z1);
-        }
-        CASE_RATIO_SINGLE_FLOAT {
-                return ecl_make_singlefloat(ecl_to_float(x) - ecl_single_float(y));
-        }
-        CASE_RATIO_DOUBLE_FLOAT {
-                return ecl_make_doublefloat(ecl_to_double(x) - ecl_double_float(y));
         }
         CASE_SINGLE_FLOAT_FIXNUM {
                 return ecl_make_singlefloat(ecl_single_float(x) - fix(y));
@@ -130,7 +126,7 @@ MATH_DISPATCH2_BEGIN(x,y)
         }
         CASE_LONG_FLOAT_BIGNUM;
         CASE_LONG_FLOAT_RATIO {
-                return ecl_make_longfloat(ecl_long_float(x) - ecl_to_double(y));
+                return ecl_make_longfloat(ecl_long_float(x) - ecl_to_long_double(y));
         }
         CASE_LONG_FLOAT_SINGLE_FLOAT {
                 return ecl_make_longfloat(ecl_long_float(x) - ecl_single_float(y));
