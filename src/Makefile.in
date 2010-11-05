@@ -118,7 +118,7 @@ bin/ecl-config: bin/ecl-config.pre
 @LIBPREFIX@eclatomic.@LIBEXT@:
 	if (echo $(SUBDIRS) | grep atomic); then \
 	  cd atomic && $(MAKE) && $(MAKE) install && cd .. && \
-	  rm -rf share ecl/atomic_ops_stack.h ecl/atomic_ops_malloc.h *atomic*gpl* && \
+	  $(RM) -rf share ecl/atomic_ops_stack.h ecl/atomic_ops_malloc.h *atomic*gpl* && \
 	  mv @LIBPREFIX@atomic_ops.@LIBEXT@ @LIBPREFIX@eclatomic.@LIBEXT@; \
 	fi
 @LIBPREFIX@eclgmp.@LIBEXT@:
@@ -156,7 +156,7 @@ install:
 	  $(INSTALL_DATA) ./ecl/gc/*.h $(DESTDIR)$(includedir)/ecl/gc; \
 	  $(INSTALL_DATA) ./ecl/gc/private/*.h $(DESTDIR)$(includedir)/ecl/gc/private; \
 	fi
-	rm $(DESTDIR)$(includedir)/ecl/config.h
+	$(RM) -f $(DESTDIR)$(includedir)/ecl/config.h
 	mv $(DESTDIR)$(includedir)/ecl/config-install.h $(DESTDIR)$(includedir)/ecl/config.h
 	$(INSTALL_SCRIPT) bin/ecl-config $(DESTDIR)$(bindir)
 	for i in build-stamp help.doc TAGS ; do \
@@ -171,7 +171,7 @@ install:
 	  fi \
 	done
 	if [ "x@SONAME@" != "x" -a -f "@SONAME@" ]; then \
-	  ( cd $(DESTDIR)$(libdir) && rm -f @SONAME3@ @SONAME2@ @SONAME1@ && \
+	  ( cd $(DESTDIR)$(libdir) && $(RM) -f @SONAME3@ @SONAME2@ @SONAME1@ && \
 	    mv @SONAME@ @SONAME3@ && \
 	    $(LN_S) @SONAME3@ @SONAME2@ && \
 	    $(LN_S) @SONAME3@ @SONAME1@ && \
@@ -203,8 +203,8 @@ uninstall:
 	for i in $(LSP_LIBRARIES) $(LIBRARIES) Copyright LGPL; do \
 	  $(RM) $(DESTDIR)$(libdir)/$$i || : ; \
 	done
-	rm -f $(DESTDIR)$(mandir)/man$(manext)/ecl.$(manext)
-	rm -f $(DESTDIR)$(mandir)/man$(manext)/ecl-config.$(manext)
+	$(RM) -f $(DESTDIR)$(mandir)/man$(manext)/ecl.$(manext)
+	$(RM) -f $(DESTDIR)$(mandir)/man$(manext)/ecl-config.$(manext)
 
 clean: mostlyclean
 	$(RM) -r *
