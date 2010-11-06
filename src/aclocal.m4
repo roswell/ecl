@@ -878,18 +878,17 @@ dnl Configure libatomic-ops
 dnl
 AC_DEFUN([ECL_LIBATOMIC_OPS],[
 if test "x$ecl_threads" != "xno"; then
-  if mkdir atomic; then
-    (destdir=`${PWDCMD}`; cd atomic; CC="${CC} ${PICFLAG}" \
-     $srcdir/gc/libatomic*/configure --disable-shared --prefix=${destdir} \
+  test -d atomic || mkdir atomic
+  (destdir=`${PWDCMD}`; cd atomic && CC="${CC} ${PICFLAG}" \
+   $srcdir/gc/libatomic*/configure --disable-shared --prefix=${destdir} \
 	--infodir=${destdir}/doc --includedir=${destdir}/ecl --with-pic \
         --libdir=${destdir} --build=${build_alias} --host=${host_alias} \
         CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" CC="${CC} \
         ${PICFLAG}")
-    SUBDIRS="${SUBDIRS} atomic"
-    CORE_LIBS="-leclatomic ${CORE_LIBS}"
-    if test "${enable_shared}" = "no"; then
-      LIBRARIES="${LIBRARIES} ${LIBPREFIX}eclatomic.${LIBEXT}"
-    fi
+  SUBDIRS="${SUBDIRS} atomic"
+  CORE_LIBS="-leclatomic ${CORE_LIBS}"
+  if test "${enable_shared}" = "no"; then
+    LIBRARIES="${LIBRARIES} ${LIBPREFIX}eclatomic.${LIBEXT}"
   fi
 fi
 ])

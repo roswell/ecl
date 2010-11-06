@@ -24,10 +24,8 @@ ecl_def_string_array(feature_names,static,const) = {
 #ifdef ECL_IEEE_FP
         ecl_def_string_array_elt("IEEE-FLOATING-POINT"),
 #endif
-#ifdef WITH_GMP
         ecl_def_string_array_elt("COMMON-LISP"),
         ecl_def_string_array_elt("ANSI-CL"),
-#endif /* WITH_GMP */
 #if defined(GBC_BOEHM)
 	ecl_def_string_array_elt("BOEHM-GC"),
 #endif

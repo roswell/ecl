@@ -215,8 +215,6 @@ struct ecl_long_float {
 #define ecl_long_float(o) ((o)->longfloat.value)
 #endif
 
-#ifdef WITH_GMP
-
 struct ecl_bignum {
 	HEADER;
 	mpz_t big_num;
@@ -224,21 +222,6 @@ struct ecl_bignum {
 #define big_dim		big_num->_mp_alloc
 #define big_size	big_num->_mp_size
 #define big_limbs	big_num->_mp_d
-
-#else  /* WITH_GMP */
-
-# ifdef ecl_long_long_t
-     typedef long long int big_num_t;
-# else
-     typedef long int big_num_t; /* would it work? */
-# endif /* ecl_long_long_t */
-
-struct ecl_bignum {
-	HEADER;
-        big_num_t big_num;
-};
-
-#endif /* WITH_GMP */
 
 struct ecl_ratio {
 	HEADER;

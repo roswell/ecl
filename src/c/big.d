@@ -365,6 +365,140 @@ _ecl_big_to_long_double(cl_object o)
 }
 #endif
 
+static void
+mpz_ior_op(cl_object out, cl_object i, cl_object j)
+{
+	mpz_ior(out->big.big_num, i->big.big_num, j->big.big_num);
+}
+
+static void
+mpz_xor_op(cl_object out, cl_object i, cl_object j)
+{
+	mpz_xor(out->big.big_num, i->big.big_num, j->big.big_num);
+}
+
+static void
+mpz_and_op(cl_object out, cl_object i, cl_object j)
+{
+	mpz_and(out->big.big_num, i->big.big_num, j->big.big_num);
+}
+
+static void
+mpz_eqv_op(cl_object out, cl_object i, cl_object j)
+{
+	mpz_xor(out->big.big_num, i->big.big_num, j->big.big_num);
+	mpz_com(out->big.big_num, out->big.big_num);
+}
+
+static void
+mpz_nand_op(cl_object out, cl_object i, cl_object j)
+{
+	mpz_and(out->big.big_num, i->big.big_num, j->big.big_num);
+	mpz_com(out->big.big_num, out->big.big_num);
+}
+
+static void
+mpz_nor_op(cl_object out, cl_object i, cl_object j)
+{
+	mpz_ior(out->big.big_num, i->big.big_num, j->big.big_num);
+	mpz_com(out->big.big_num, out->big.big_num);
+}
+
+static void
+mpz_andc1_op(cl_object out, cl_object i, cl_object j)
+{
+	mpz_com(out->big.big_num, i->big.big_num);
+	mpz_and(out->big.big_num, out->big.big_num, j->big.big_num);
+}
+
+static void
+mpz_orc1_op(cl_object out, cl_object i, cl_object j)
+{
+	mpz_com(out->big.big_num, i->big.big_num);
+	mpz_ior(out->big.big_num, out->big.big_num, j->big.big_num);
+}
+
+static void
+mpz_andc2_op(cl_object out, cl_object i, cl_object j)
+{
+	/* (i & ~j) = ~((~i) | j) */
+	mpz_orc1_op(out, i, j);
+	mpz_com(out->big.big_num, out->big.big_num);
+}
+
+static void
+mpz_orc2_op(cl_object out, cl_object i, cl_object j)
+{
+	/* (i | ~j) = ~((~i) & j) */
+	mpz_andc1_op(out, i, j);
+	mpz_com(out->big.big_num, out->big.big_num);
+}
+
+static void
+mpz_b_clr_op(cl_object out, cl_object i, cl_object j)
+{
+	mpz_set_si(out->big.big_num, 0);
+}
+
+static void
+mpz_b_set_op(cl_object o, cl_object i, cl_object j)
+{
+	mpz_set_si(o->big.big_num, -1);
+}
+
+static void
+mpz_b_1_op(cl_object out, cl_object i, cl_object j)
+{
+        if (i != out)
+                mpz_set(out->big.big_num, i->big.big_num);
+}
+
+static void
+mpz_b_2_op(cl_object out, cl_object i, cl_object j)
+{
+	mpz_set(out->big.big_num, j->big.big_num);
+}
+
+static void
+mpz_b_c1_op(cl_object out, cl_object i, cl_object j)
+{
+	mpz_com(out->big.big_num, i->big.big_num);
+}
+
+static void
+mpz_b_c2_op(cl_object out, cl_object i, cl_object j)
+{
+	mpz_com(out->big.big_num, j->big.big_num);
+}
+
+static _ecl_big_binary_op bignum_operations[16] = {
+	mpz_b_clr_op,
+	mpz_and_op,
+	mpz_andc2_op,
+	mpz_b_1_op,
+	mpz_andc1_op,
+	mpz_b_2_op,
+	mpz_xor_op,
+	mpz_ior_op,
+	mpz_nor_op,
+	mpz_eqv_op,
+	mpz_b_c2_op,
+	mpz_orc2_op,
+	mpz_b_c1_op,
+	mpz_orc1_op,
+	mpz_nand_op,
+	mpz_b_set_op};
+
+_ecl_big_binary_op
+_ecl_big_boole_operator(int operator)
+{
+        unlikely_if((operator < 0) || (operator >= 16)) {
+                ecl_internal_error("_ecl_big_boole_operator passed "
+                                   "an invalid operator");
+        }
+        return bignum_operations[operator];
+}
+
 void
 init_big()
 {

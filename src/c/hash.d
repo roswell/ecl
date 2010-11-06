@@ -45,12 +45,8 @@ _hash_eql(cl_hashkey h, cl_object x)
 {
 	switch (type_of(x)) {
 	case t_bignum:
-#ifdef WITH_GMP
 		return hash_string(h, (unsigned char*)x->big.big_limbs,
 				   labs(x->big.big_size) * sizeof(mp_limb_t));
-#else  /* WITH_GMP */
-                return hash_word(h, (cl_index)(x->big.big_num));
-#endif /* WITH_GMP */
 	case t_ratio:
 		h = _hash_eql(h, x->ratio.num);
 		return _hash_eql(h, x->ratio.den);

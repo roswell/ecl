@@ -4805,7 +4805,6 @@ ecl_off_t_to_integer(ecl_off_t offset)
 		output = MAKE_FIXNUM((cl_fixnum)offset);
 	} else {
 		cl_object y = _ecl_big_register0();
-#ifdef WITH_GMP
 		if (sizeof(y->big.big_limbs[0]) == sizeof(cl_index)) {
 			y->big.big_limbs[0] = (cl_index)offset;
 			offset >>= FIXNUM_BITS;
@@ -4815,9 +4814,6 @@ ecl_off_t_to_integer(ecl_off_t offset)
 			y->big.big_limbs[0] = offset;
 			y->big.big_size = 1;
 		}
-#else
-		y->big.big_num = offset;
-#endif
 		output = _ecl_big_register_normalize(y);
 	}
 	return output;
@@ -4832,7 +4828,6 @@ ecl_integer_to_off_t(cl_object offset)
 	} else if (FIXNUMP(offset)) {
 		output = fixint(offset);
 	} else if (ECL_BIGNUMP(offset)) {
-#ifdef WITH_GMP
 		if (sizeof(offset->big.big_limbs[0]) == sizeof(cl_index)) {
 			if (offset->big.big_size > 2) {
 				goto ERR;
@@ -4848,9 +4843,6 @@ ecl_integer_to_off_t(cl_object offset)
 			}
 			output = offset->big.big_limbs[0];
 		}
-#else
-		output = offset->big.big_num;
-#endif
 	} else {
 	ERR:	FEerror("Not a valid file offset: ~S", 1, offset);
 	}

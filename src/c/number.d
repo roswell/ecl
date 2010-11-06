@@ -73,14 +73,9 @@ fixint(cl_object x)
 	if (FIXNUMP(x))
 		return fix(x);
 	if (ECL_BIGNUMP(x)) {
-#ifdef WITH_GMP
 		if (mpz_fits_slong_p(x->big.big_num)) {
 			return mpz_get_si(x->big.big_num);
 		}
-#else  /* WITH_GMP */
-                if ( !((cl_fixnum)x->big.big_num < x->big.big_num) )
-                        return (cl_fixnum)x->big.big_num;
-#endif /* WITH_GMP */
 	}
 	FEwrong_type_argument(@[fixnum], x);
 }
@@ -93,15 +88,9 @@ fixnnint(cl_object x)
 		if (i >= 0)
 			return i;
 	} else if (ECL_BIGNUMP(x)) {
-#ifdef WITH_GMP
 		if (mpz_fits_ulong_p(x->big.big_num)) {
 			return mpz_get_ui(x->big.big_num);
 		}
-#else  /* WITH_GMP */
-                if ( x->big.big_num >= 0
-                     && !((cl_fixnum)x->big.big_num < x->big.big_num) )
-                        return (cl_fixnum)x->big.big_num;
-#endif /* WITH_GMP */
 	}
 	cl_error(9, @'simple-type-error', @':format-control',
 		    make_constant_base_string("Not a non-negative fixnum ~S"),
@@ -239,9 +228,6 @@ ecl_to_int32_t(cl_object x) {
 #endif /* ecl_uint32_t */
 
 #if defined(ecl_uint64_t) && (FIXNUM_BITS < 64)
-# if !defined(WITH_GMP) || FIXNUM_BITS != 32
-#  error "Cannot handle ecl_uint64_t without GMP or 32/64 bits integer"
-# endif
 ecl_uint64_t
 ecl_to_uint64_t(cl_object x) {
         do {
@@ -360,9 +346,6 @@ ecl_make_long_long(ecl_long_long_t i) {
         return ecl_make_int64_t(i);
 }
 #  else
-#  if !defined(WITH_GMP)
-#   error "Cannot handle ecl_ulong_long_t without GMP"
-#  endif
 ecl_ulong_long_t
 ecl_to_unsigned_long_long(cl_object x) {
         do {
@@ -659,7 +642,6 @@ ecl_make_complex(cl_object r, cl_object i)
 	return(c);
 }
 
-#ifdef WITH_GMP
 static cl_object
 into_bignum(cl_object bignum, cl_object integer)
 {
@@ -734,66 +716,50 @@ prepare_ratio_to_float(cl_object num, cl_object den, int digits, cl_fixnum *scal
                 scale++;
         } while (1);
 }
-#endif /* WITH_GMP */
 
 static float
 ratio_to_float(cl_object num, cl_object den)
 {
-#ifdef WITH_GMP
         cl_fixnum scale;
         cl_object bits = prepare_ratio_to_float(num, den, FLT_MANT_DIG, &scale);
-# if (FIXNUM_BITS-ECL_TAG_BITS) >= FLT_MANT_DIG
+#if (FIXNUM_BITS-ECL_TAG_BITS) >= FLT_MANT_DIG
         /* The output of prepare_ratio_to_float will always fit an integer */
         float output = fix(bits);
-# else
-        float output = FIXNUMP(bits)? fix(bits) : _ecl_big_to_double(bits);
-# endif
-        return ldexpf(output, scale);
 #else
-        return (float)(FIXNUMP(num) ? fix(num) : num->big.big_num) /
-                (float)(FIXNUMP(den) ? fix(den) : den->big.big_num);
+        float output = FIXNUMP(bits)? fix(bits) : _ecl_big_to_double(bits);
 #endif
+        return ldexpf(output, scale);
 }
 
 static double
 ratio_to_double(cl_object num, cl_object den)
 {
-#ifdef WITH_GMP
         cl_fixnum scale;
         cl_object bits = prepare_ratio_to_float(num, den, DBL_MANT_DIG, &scale);
-# if (FIXNUM_BITS-ECL_TAG_BITS) >= DBL_MANT_DIG
+#if (FIXNUM_BITS-ECL_TAG_BITS) >= DBL_MANT_DIG
         /* The output of prepare_ratio_to_float will always fit an integer */
         double output = fix(bits);
-# else
-        double output = FIXNUMP(bits)? fix(bits) : _ecl_big_to_double(bits);
-# endif
-        return ldexp(output, scale);
 #else
-        return (double)(FIXNUMP(num) ? fix(num) : num->big.big_num) /
-                (double)(FIXNUMP(den) ? fix(den) : den->big.big_num);
+        double output = FIXNUMP(bits)? fix(bits) : _ecl_big_to_double(bits);
 #endif
+        return ldexp(output, scale);
 }
 
 #ifdef ECL_LONG_FLOAT
 static long double
 ratio_to_long_double(cl_object num, cl_object den)
 {
-#ifdef WITH_GMP
         cl_fixnum scale;
         cl_object bits = prepare_ratio_to_float(num, den, LDBL_MANT_DIG, &scale);
-# if (FIXNUM_BITS-ECL_TAG_BITS) >= LDBL_MANT_DIG
+#if (FIXNUM_BITS-ECL_TAG_BITS) >= LDBL_MANT_DIG
         /* The output of prepare_ratio_to_float will always fit an integer */
         long double output = fix(bits);
-# else
+#else
         long double output = FIXNUMP(bits)?
                 (long double)fix(bits) :
                 _ecl_big_to_long_double(bits);
-# endif
-        return ldexpl(output, scale);
-#else
-        return (long double)(FIXNUMP(num) ? fix(num) : num->big.big_num) /
-                (long double)(FIXNUMP(den) ? fix(den) : den->big.big_num);
 #endif
+        return ldexpl(output, scale);
 }
 #endif /* ECL_LONG_FLOAT */
 

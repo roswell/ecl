@@ -1196,23 +1196,16 @@ si_gc_stats(cl_object enable)
                 GC_print_stats = (enable == @':full');
         }
 	if (cl_core.bytes_consed == Cnil) {
-#ifndef WITH_GMP
-		cl_core.bytes_consed = MAKE_FIXNUM(0);
-		cl_core.gc_counter = MAKE_FIXNUM(0);
-#else
 		cl_core.bytes_consed = ecl_alloc_object(t_bignum);
 		mpz_init2(cl_core.bytes_consed->big.big_num, 128);
 		cl_core.gc_counter = ecl_alloc_object(t_bignum);
 		mpz_init2(cl_core.gc_counter->big.big_num, 128);
-#endif
 	} else {
                 /* We need fresh copies of the bignums */
                 size1 = _ecl_big_plus_fix(cl_core.bytes_consed, 1);
                 size2 = _ecl_big_plus_fix(cl_core.gc_counter, 1);
-#ifdef WITH_GMP
                 mpz_set_ui(cl_core.bytes_consed->big.big_num, 0);
                 mpz_set_ui(cl_core.gc_counter->big.big_num, 0);
-#endif
         }
 	@(return size1 size2 old_status)
 }
@@ -1227,7 +1220,6 @@ static void
 gather_statistics()
 {
 	if (cl_core.gc_stats) {
-#ifdef WITH_GMP
 		/* Sorry, no gc stats if you do not use bignums */
 #if GBC_BOEHM == 0
 		mpz_add_ui(cl_core.bytes_consed->big.big_num,
@@ -1255,7 +1247,6 @@ gather_statistics()
 		mpz_add_ui(cl_core.gc_counter->big.big_num,
 			   cl_core.gc_counter->big.big_num,
 			   1);
-#endif
 	}
 }
 

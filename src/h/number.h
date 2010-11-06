@@ -16,7 +16,7 @@
 #ifndef ECL_NUMBER_H
 #define ECL_NUMBER_H
 #define ECL_BIG_REGISTER_SIZE	32
-#ifdef WITH_GMP
+
 #define ECL_WITH_TEMP_BIGNUM(name,n)                                    \
         mp_limb_t name##data[n];                                        \
         volatile struct ecl_bignum name##aux;                           \
@@ -30,6 +30,9 @@ extern ECL_API cl_object _ecl_big_set_index(cl_object x, cl_index f);
 #ifdef ECL_LONG_FLOAT
 extern ECL_API long double _ecl_big_to_long_double(cl_object x);
 #endif
+typedef void (*_ecl_big_binary_op)(cl_object out, cl_object o1, cl_object o2);
+extern ECL_API _ecl_big_binary_op _ecl_big_boole_operator(int operator);
+
 #if ECL_LONG_BITS >= FIXNUM_BITS
 #define _ecl_big_set_fixnum(x, f) mpz_set_si((x)->big.big_num,(f))
 #define _ecl_big_set_index(x, f) mpz_set_ui((x)->big.big_num,(f))
@@ -60,39 +63,4 @@ extern ECL_API long double _ecl_big_to_long_double(cl_object x);
 #define _ecl_big_tdiv_q_ui(q, x, y)	mpz_tdiv_q_ui((q)->big.big_num, (x)->big.big_num, (y))
 #define _ecl_big_set_d(x, d)		mpz_set_d((x)->big.big_num, (d))
 
-#else  /* WITH_GMP */
-
-#define ECL_WITH_TEMP_BIGNUM(name,n)                                    \
-        volatile struct ecl_bignum name##aux;                           \
-        const cl_object name = (name##aux.big_num = 0,                  \
-                                (cl_object)(&name##aux))
-#define _ecl_big_set_fixnum(x,f) ((x)->big.big_num=(f))
-#define _ecl_big_set_index(x,f) ((x)->big.big_num=(f))
-#define _ecl_big_init2(x,size)	((x)->big.big_num=0)
-#define _ecl_big_clear(x)		mpz_clear((x)->big.big_num)
-#define _ecl_big_set(x,y)		((x)->big.big_num = (y)->big.big_num)
-extern int _ecl_big_num_t_sgn(big_num_t x);
-#define _ecl_big_odd_p(x)		((int)((x)->big.big_num&1) != 0)
-#define _ecl_big_even_p(x)		((int)((x)->big.big_num&1) == 0)
-#define _ecl_big_zerop(x)		((x)->big.big_num == (big_num_t)0)
-#define _ecl_big_sign(x)		_ecl_big_num_t_sgn((x)->big.big_num)
-#define _ecl_big_compare(x,y)	_ecl_big_num_t_sgn((x)->big.big_num - (y)->big.big_num)
-#define _ecl_big_complement(z, x)	((z)->big.big_num = -((x)->big.big_num))
-#define _ecl_big_add(z, x, y)	(z)->big.big_num = (x)->big.big_num+(y)->big.big_num
-#define _ecl_big_sub(z, x, y)	(z)->big.big_num = (x)->big.big_num-(y)->big.big_num
-#define _ecl_big_mul(z, x, y)	(z)->big.big_num = (x)->big.big_num*(y)->big.big_num
-#define _ecl_big_add_ui(z, x, y)	((z)->big.big_num = (x)->big.big_num+(unsigned long)(y))
-#define _ecl_big_sub_ui(z, x, y)	((z)->big.big_num = (x)->big.big_num-(unsigned long)(y))
-#define _ecl_big_mul_ui(z, x, y)	((x)->big.big_num = (x)->big.big_num*(unsigned long)(y))
-#define _ecl_big_mul_si(z, x, y)	(z)->big.big_num = (x)->big.big_num*(y)
-#define _ecl_big_set_ui(x, i)	((x)->big.big_num = ((big_num_t)((unsigned long int)i)))
-#define _ecl_big_set_si(x, i)	((x)->big.big_num = ((big_num_t)((long int)i)))
-#define _ecl_big_to_double(x)	((double)((x)->big.big_num))
-#define _ecl_big_to_long(x)		((long int)((x)->big.big_num))
-#define _ecl_big_to_ulong(x)		((unsigned long int)((x)->big.big_num))
-#define _ecl_big_cmp_si(x, y)	((x)->big.big_num!=(y))
-#define _ecl_big_tdiv_q(q, x, y)	((q)->big.big_num = (x)->big.big_num / (y)->big.big_num)
-#define _ecl_big_tdiv_q_ui(q, x, y)	((q)->big.big_num = (x)->big.big_num / (y))
-#define _ecl_big_set_d(x, d)		((x)->big.big_num = (big_num_t)(d))
-#endif /* WITH_GMP */
 #endif /* ECL_NUMBER_H */

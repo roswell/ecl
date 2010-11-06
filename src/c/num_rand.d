@@ -128,7 +128,6 @@ generate_double(cl_object state)
 
 #endif
 
-#ifdef WITH_GMP
 static mp_limb_t
 generate_limb(cl_object state)
 {
@@ -149,12 +148,10 @@ generate_limb(cl_object state)
 # endif
 #endif
 }
-#endif
 
 static cl_object
 random_integer(cl_object limit, cl_object state)
 {
-#ifdef WITH_GMP
         cl_index bit_length = ecl_integer_length(limit);
         cl_object buffer;
         if (bit_length <= FIXNUM_BITS)
@@ -165,9 +162,6 @@ random_integer(cl_object limit, cl_object state)
                         generate_limb(state);
         }
         return cl_mod(buffer, limit);
-#else
-        return ecl_floor1(ecl_times(x, cl_rational(ecl_make_doublefloat(d))));
-#endif
 }
 
 static cl_object
