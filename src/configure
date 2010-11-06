@@ -741,6 +741,7 @@ enable_slow_config
 enable_soname
 with_system_boehm
 with_gmp
+with_gmp
 with_system_gmp
 with_gmp_prefix
 with_gmp_incdir
@@ -1449,6 +1450,7 @@ Optional Packages:
   --with-cross-config=f   supply configuration for a cross compiler
   --with-system-boehm     Deprecated! See --enable-boehm
   --with-gmp=args         supply arguments for configuring GMP library
+  --with-C-gmp=args       configure GMP without in portable C
   --with-system-gmp       use already installed GMP library (default=auto)
   --with-gmp-prefix=path  prefix for system GMP includes and libraries
   --with-gmp-incdir=path  path to system GMP includes (overrides prefix)
@@ -2616,6 +2618,15 @@ if test "${with_gmp+set}" = set; then :
   withval=$with_gmp;
 else
   with_gmp=""
+fi
+
+
+
+# Check whether --with-gmp was given.
+if test "${with_gmp+set}" = set; then :
+  withval=$with_gmp; with_c_gmp=yes; with_system_gmp=no
+else
+  with_c_gmp=no
 fi
 
 
@@ -5396,22 +5407,25 @@ $as_echo "$as_me: Configuring included GMP library:" >&6;}
   if test -z "$gmp_build"; then
     gmp_build="${build_alias}"
   fi
+  if test "w$with_c_gmp" = "xyes"; then
+    gmp_build=`echo ${gmp_build} | sed 's,^-\(-.*\),none-\1,'`
+    echo BUILDING WITH C $gmp_build
+  fi
   ECL_GMP_HEADER='ecl/gmp.h'
   if test "x$ABI" = "x"; then
     GMP_ABI=""
   else
     GMP_ABI="ABI=$ABI"
   fi
-  if mkdir gmp; then
-        (destdir=`${PWDCMD}`; cd gmp; CC="${CC} ${PICFLAG}" \
+  mkdir gmp
+    (destdir=`${PWDCMD}`; cd gmp && CC="${CC} ${PICFLAG}" \
      $srcdir/gmp/configure --disable-shared --prefix=${destdir} \
      -infodir=${destdir}/doc --includedir=${destdir}/ecl --with-pic \
      --libdir=${destdir} --build=${gmp_build} --host=${host_alias} \
      CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" CC="${CC} ${PICFLAG}" \
      "$GMP_ABI" $with_gmp)
-    if test ! -f gmp/config.status; then
-      as_fn_error $? "Failed to configure the GMP library." "$LINENO" 5
-    fi
+  if test ! -f gmp/config.status; then
+    as_fn_error $? "Failed to configure the GMP library." "$LINENO" 5
   fi
 else
   if test "x$ECL_GMP_HEADER" = "x"; then

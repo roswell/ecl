@@ -73,6 +73,11 @@ AC_ARG_WITH(gmp,
                   [supply arguments for configuring GMP library]),
   [], [with_gmp=""])
 
+AC_ARG_WITH(gmp,
+  AS_HELP_STRING( [--with-C-gmp=args],
+                  [configure GMP without in portable C]),
+  [with_c_gmp=yes; with_system_gmp=no], [with_c_gmp=no])
+
 AC_ARG_WITH(system-gmp,
   AS_HELP_STRING( [--with-system-gmp],
                   [use already installed GMP library (default=auto)]),
@@ -382,23 +387,26 @@ if test "${with_system_gmp}" = "no" ; then
   if test -z "$gmp_build"; then
     gmp_build="${build_alias}"
   fi
+  if test "w$with_c_gmp" = "xyes"; then
+    gmp_build=`echo ${gmp_build} | sed 's,[^-]\(-.*\),none-\1,'`
+    echo BUILDING WITH C $gmp_build
+  fi
   ECL_GMP_HEADER='ecl/gmp.h'
   if test "x$ABI" = "x"; then
     GMP_ABI=""
   else
     GMP_ABI="ABI=$ABI"
   fi
-  if mkdir gmp; then
-    dnl Notice we need -DPIC to force the assembler to generate PIC code
-    (destdir=`${PWDCMD}`; cd gmp; CC="${CC} ${PICFLAG}" \
+  mkdir gmp
+  dnl Notice we need -DPIC to force the assembler to generate PIC code
+  (destdir=`${PWDCMD}`; cd gmp && CC="${CC} ${PICFLAG}" \
      $srcdir/gmp/configure --disable-shared --prefix=${destdir} \
      -infodir=${destdir}/doc --includedir=${destdir}/ecl --with-pic \
      --libdir=${destdir} --build=${gmp_build} --host=${host_alias} \
      CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" CC="${CC} ${PICFLAG}" \
      "$GMP_ABI" $with_gmp)
-    if test ! -f gmp/config.status; then
-      AC_MSG_ERROR([Failed to configure the GMP library.])
-    fi
+  if test ! -f gmp/config.status; then
+    AC_MSG_ERROR([Failed to configure the GMP library.])
   fi
 else
   if test "x$ECL_GMP_HEADER" = "x"; then
