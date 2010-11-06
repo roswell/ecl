@@ -877,7 +877,7 @@ dnl ----------------------------------------------------------------------
 dnl Configure libatomic-ops
 dnl
 AC_DEFUN([ECL_LIBATOMIC_OPS],[
-if test "x$ecl_threads" != "xno"; then
+if test "x${enable_threads}" != "xno"; then
   test -d atomic || mkdir atomic
   (destdir=`${PWDCMD}`; cd atomic && CC="${CC} ${PICFLAG}" \
    $srcdir/gc/libatomic*/configure --disable-shared --prefix=${destdir} \
