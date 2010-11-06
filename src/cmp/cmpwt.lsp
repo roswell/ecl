@@ -237,7 +237,7 @@
     (static-constant-delegate name-imag (imagpart value) stream)
     (terpri stream)
     (format stream
-	    "ecl_def_ct_complex(~A,&~Adata,&~Adata,static,const);"
+	    "ecl_def_ct_complex(~A,&~A_data,&~A_data,static,const);"
 	    name name-real name-imag)))
 
 #+sse2
