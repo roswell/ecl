@@ -1966,5 +1966,7 @@ cl_symbols[] = {
 
 {SYS_ "PRINT-UNREADABLE-OBJECT-FUNCTION","si_print_unreadable_object_function"},
 
+{EXT_ "DUMP-C-BACKTRACE","si_dump_c_backtrace"},
+
 /* Tag for end of list */
 {NULL,NULL}};

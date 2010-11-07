@@ -401,6 +401,11 @@ typedef unsigned @CL_FIXNUM_TYPE@ cl_hashkey;
 #undef ECL_LONG_LONG_BITS
 /* existence of char **environ         					*/
 #undef HAVE_ENVIRON
+/* existence of pointer -> function name functions                      */
+#undef HAVE_DLADDR
+#undef HAVE_BACKTRACE
+#undef HAVE_BACKTRACE_SYMBOLS
+#undef HAVE___BUILTIN_RETURN_ADDRESS
 
 /*
  * we do not manage to get proper signal handling of floating point

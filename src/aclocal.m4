@@ -755,12 +755,26 @@ fi
 dnl --------------------------------------------------------------
 dnl Provides a test for the existance of the __thread declaration and
 dnl defines WITH___THREAD if it is found
-AC_DEFUN([ECL___THREAD],
-[AC_CACHE_CHECK(for __thread local data, ac_cv_ecl___thread,
+AC_DEFUN([ECL___THREAD],[
+AC_CACHE_CHECK(for __thread local data, ac_cv_ecl___thread,
 AC_TRY_COMPILE(,[static __thread void *data;],
    ac_cv_ecl___thread=yes,
    ac_cv_ecl___thread=no))
 dnl We deactivate this test because it seems to slow down ECL A LOT!!!
+])
+
+dnl --------------------------------------------------------------
+dnl Determine whether GCC supports backtraces
+dnl
+AC_DEFUN([ECL_GCC_BACKTRACE],[
+AC_RUN_IFELSE(
+  [AC_LANG_SOURCE([[
+    void *foo() { return __builtin_return_address(1); }
+    int main() {
+      return (foo() == 0);
+    }]])],
+  [AC_DEFINE(HAVE___BUILTIN_RETURN_ADDRESS)],
+  [])
 ])
 
 dnl ----------------------------------------------------------------------

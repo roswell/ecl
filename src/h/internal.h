@@ -207,6 +207,10 @@ extern void _ecl_unexpected_return() ecl_attr_noreturn;
 extern cl_object _ecl_bytecodes_dispatch_vararg(cl_narg narg, ...);
 extern cl_object _ecl_bclosure_dispatch_vararg(cl_narg narg, ...);
 
+/* ffi/backtrace.d */
+
+extern void _ecl_dump_c_backtrace();
+
 /* ffi.d */
 
 struct ecl_fficall {

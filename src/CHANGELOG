@@ -129,6 +129,9 @@ ECL 10.5.1:
  - ECL will use long double whenever the type is avalailable AND the special
    functions cosl, sinl and similar are defined.
 
+ - A new function, (EXT:DUMP-C-BACKTRACE suggested-depth) tries to print out
+   the sequence of compiled and C functions called up to the current point.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

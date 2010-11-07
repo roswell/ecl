@@ -48,7 +48,7 @@ OBJS	= main.o symbol.o package.o list.o\
 	printer/write_object.o printer/write_symbol.o \
 	printer/write_array.o printer/write_list.o printer/write_code.o \
 	printer/write_sse.o printer/print_unreadable.o \
-	ffi/libraries.o \
+	ffi/libraries.o ffi/backtrace.o \
 	numbers/cos.o numbers/sin.o numbers/tan.o numbers/atan.o \
 	numbers/cosh.o numbers/sinh.o numbers/tanh.o \
 	numbers/exp.o numbers/expt.o numbers/log.o \

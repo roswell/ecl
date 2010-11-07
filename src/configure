@@ -741,7 +741,7 @@ enable_slow_config
 enable_soname
 with_system_boehm
 with_gmp
-with_gmp
+with_C_gmp
 with_system_gmp
 with_gmp_prefix
 with_gmp_incdir
@@ -2622,9 +2622,9 @@ fi
 
 
 
-# Check whether --with-gmp was given.
-if test "${with_gmp+set}" = set; then :
-  withval=$with_gmp; with_c_gmp=yes; with_system_gmp=no
+# Check whether --with-C-gmp was given.
+if test "${with_C_gmp+set}" = set; then :
+  withval=$with_C_gmp; with_c_gmp=yes; with_system_gmp=no
 else
   with_c_gmp=no
 fi
@@ -4948,6 +4948,7 @@ SOFTWARE_VERSION=""
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${SOFTWARE_TYPE} / ${SOFTWARE_VERSION}" >&5
 $as_echo "${SOFTWARE_TYPE} / ${SOFTWARE_VERSION}" >&6; }
 
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for __thread local data" >&5
 $as_echo_n "checking for __thread local data... " >&6; }
 if ${ac_cv_ecl___thread+:} false; then :
@@ -5400,7 +5401,7 @@ fi
 
 
 EXTRA_OBJS="${EXTRA_OBJS} big.o"
-if test "${with_system_gmp}" = "no" ; then
+if test "x${with_system_gmp}" = "xno" ; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: Configuring included GMP library:" >&5
 $as_echo "$as_me: Configuring included GMP library:" >&6;}
   test -d gmp && rm -rf gmp
@@ -8914,7 +8915,7 @@ fi
 done
 
 
-for ac_func in sched_yield uname fseeko
+for ac_func in sched_yield uname fseeko dladdr backtrace backtrace_symbols
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -8990,6 +8991,30 @@ if test ! ${opcode8} = "no" ; then
 $as_echo "#define ECL_SMALL_BYTECODES 1" >>confdefs.h
 
 fi
+
+
+if test "$cross_compiling" = yes; then :
+  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "cannot run test program while cross compiling
+See \`config.log' for more details" "$LINENO" 5; }
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+    void *foo() { return __builtin_return_address(1); }
+    int main() {
+      return (foo() == 0);
+    }
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+  $as_echo "#define HAVE___BUILTIN_RETURN_ADDRESS 1" >>confdefs.h
+
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
 
 
 if test "x${enable_threads}" != "xno"; then

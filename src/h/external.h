@@ -602,6 +602,17 @@ extern ECL_API cl_object ecl_apply_from_stack_frame(cl_object f, cl_object o);
 extern ECL_API cl_objectfn ecl_function_dispatch(cl_env_ptr env, cl_object f);
 extern ECL_API cl_object _ecl_link_call(cl_object sym, cl_objectfn *pLK, cl_object cblock, int narg, cl_va_list args);
 
+/* ffi/libraries.d */
+extern ECL_API cl_object ecl_library_open(cl_object filename, bool force_reload);
+extern ECL_API void *ecl_library_symbol(cl_object block, const char *symbol, bool lock);
+extern ECL_API cl_object ecl_library_error(cl_object block);
+extern ECL_API void ecl_library_close(cl_object block);
+extern ECL_API void ecl_library_close_all(void);
+
+/* ffi/backtrace.d */
+extern ECL_API cl_object si_dump_c_backtrace(cl_object size);
+extern ECL_API cl_object si_backtrace(cl_object start, cl_object end);
+
 /* ffi.c */
 
 extern ECL_API cl_object si_allocate_foreign_data(cl_object tag, cl_object size);
@@ -912,11 +923,6 @@ extern ECL_API cl_object ecl_remove_eq(cl_object x, cl_object l);
 
 /* load.c */
 
-extern ECL_API cl_object ecl_library_open(cl_object filename, bool force_reload);
-extern ECL_API void *ecl_library_symbol(cl_object block, const char *symbol, bool lock);
-extern ECL_API cl_object ecl_library_error(cl_object block);
-extern ECL_API void ecl_library_close(cl_object block);
-extern ECL_API void ecl_library_close_all(void);
 extern ECL_API cl_object si_load_source(cl_object file, cl_object verbose, cl_object print, cl_object format);
 extern ECL_API cl_object si_load_binary(cl_object file, cl_object verbose, cl_object print, cl_object format);
 extern ECL_API cl_object cl_load _ARGS((cl_narg narg, cl_object pathname, ...));

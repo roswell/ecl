@@ -50,11 +50,13 @@ void
 ecl_internal_error(const char *s)
 {
         int saved_errno = errno;
-	printf("\nInternal or unrecoverable error in:\n%s\n", s);
+	fprintf(stderr, "\nInternal or unrecoverable error in:\n%s\n", s);
         if (saved_errno) {
-                printf("  [%d: %s]\n", saved_errno, strerror(saved_errno));
+                fprintf(stderr, "  [%d: %s]\n", saved_errno,
+                        strerror(saved_errno));
         }
-	fflush(stdout);
+	fflush(stderr);
+        si_dump_c_backtrace(MAKE_FIXNUM(32));
 #ifdef SIGIOT
 	signal(SIGIOT, SIG_DFL); /* avoid getting into a loop with abort */
 #endif
@@ -423,9 +425,33 @@ FEinvalid_function_name(cl_object fname)
 }
 
 /*      bootstrap version                */
+static int recursive_error = 0;
+
 static cl_object
-universal_error_handler(cl_narg narg, ...)
+universal_error_handler(cl_object continue_string, cl_object datum,
+                        cl_object args)
 {
+        const cl_env_ptr the_env = ecl_process_env();
+        cl_object stream;
+        if (recursive_error)
+                goto ABORT;
+        recursive_error = 1;
+        stream = cl_core.error_output;
+        if (!Null(stream)) {
+                ecl_bds_bind(the_env, @'*print-readably*', Cnil);
+                ecl_bds_bind(the_env, @'*print-level*', MAKE_FIXNUM(3));
+                ecl_bds_bind(the_env, @'*print-length*', MAKE_FIXNUM(3));
+                ecl_bds_bind(the_env, @'*print-circle*', Cnil);
+                ecl_bds_bind(the_env, @'*print-base*', MAKE_FIXNUM(10));
+                writestr_stream("\n;;; Unhandled lisp initialization error",
+                                stream);
+                writestr_stream("\n;;; Message:\n", stream);
+                si_write_ugly_object(datum, stream);
+                writestr_stream("\n;;; Arguments:\n", stream);
+                si_write_ugly_object(datum, args);
+                ecl_bds_unwind_n(the_env, 5);
+        }
+ ABORT:
 	ecl_internal_error("\nLisp initialization error.\n");
 }
 
@@ -512,5 +538,7 @@ FEwin32_error(const char *msg, int narg, ...)
 void
 init_error(void)
 {
-	ecl_def_c_function_va(@'si::universal-error-handler', universal_error_handler);
+	ecl_def_c_function(@'si::universal-error-handler',
+                           (cl_objectfn_fixed)universal_error_handler,
+                           3);
 }
