@@ -59,7 +59,8 @@ _hash_eql(cl_hashkey h, cl_object x)
                 /* We coerce to double because long double has extra bits
                  * that give rise to different hash key and are not
                  * meaningful */
-		long double d = ecl_long_float(x);
+		double d = ecl_long_float(x);
+                ECL_MATHERR_CLEAR;
 		return hash_string(h, (unsigned char*)&d, sizeof(d));
 	}
 #endif
@@ -136,7 +137,8 @@ _hash_equal(int depth, cl_hashkey h, cl_object x)
                 /* We coerce to double because long double has extra bits
                  * that give rise to different hash key and are not
                  * meaningful */
-		long double f = ecl_long_float(x);
+		double f = ecl_long_float(x);
+                ECL_MATHERR_CLEAR;
 		if (f == 0.0) f = 0.0;
 		return hash_string(h, (unsigned char*)&f, sizeof(f));
 	}
