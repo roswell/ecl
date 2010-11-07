@@ -32,7 +32,7 @@
 static int
 backtrace(void **buffer, int n)
 {
-        int nframes = (n > 10)? 10 : n;
+        int nframes = (n > 32)? 32 : n;
         int i;
         switch (nframes) {
 	case 32: buffer[31] = __builtin_return_address(31);
