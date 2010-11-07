@@ -132,6 +132,8 @@ ECL 10.5.1:
  - A new function, (EXT:DUMP-C-BACKTRACE suggested-depth) tries to print out
    the sequence of compiled and C functions called up to the current point.
 
+ - --enable-rpath now defaults to YES.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

@@ -37,7 +37,7 @@ AC_ARG_ENABLE(rpath,
   AS_HELP_STRING( [--enable-rpath],
 		  [hard-code the location of the ECL shared library.]
 		  [(no|yes, default=NO)]),
-  [], [enable_rpath=no] )
+  [], [enable_rpath=yes] )
 
 AC_ARG_ENABLE(threads,
   AS_HELP_STRING( [--enable-threads],
