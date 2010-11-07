@@ -77,7 +77,7 @@ backtrace(void **buffer, int n)
 #  define HAVE_BACKTRACE_SYMBOLS
 #  define BACKTRACE_SYMBOLS_SIMPLE
 static char **
-our_backtrace_symbols(void **buffer, int nframes)
+backtrace_symbols(void **buffer, int nframes)
 {
         Dl_info data[1];
         int i;
