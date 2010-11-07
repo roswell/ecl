@@ -509,6 +509,8 @@ do_clrhash(cl_object ht)
 	}
 }
 
+ecl_def_ct_single_float(min_threshold, 0.1, static, const);
+
 cl_object
 cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
 		    cl_object rehash_threshold, cl_object lockable)
@@ -594,10 +596,8 @@ cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
         h->hash.entries = 0;
 	h->hash.rehash_size = rehash_size;
 	h->hash.threshold = rehash_threshold;
+        rehash_threshold = cl_max(2, min_threshold, rehash_threshold);
 	h->hash.factor = ecl_to_double(rehash_threshold);
-	if (h->hash.factor < 0.1) {
-		h->hash.factor = 0.1;
-	}
 	h->hash.limit = h->hash.size * h->hash.factor;
 	h->hash.data = NULL;	/* for GC sake */
 	h->hash.data = (struct ecl_hashtable_entry *)
