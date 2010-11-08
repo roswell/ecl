@@ -228,7 +228,7 @@ AC_ARG_ENABLE(c99complex,
   [enable_c99complex=${enableval}], [enable_c99complex=no])
 
 AC_ARG_ENABLE(hpack,
-  AS_HELP_STRING( [--enable-hierarchical-packages],
+  AS_HELP_STRING( [--enable-hpack],
                   [hierarchical package names]
                   [(default=YES)]),
   [enable_hpack=${enableval}], [enable_hpack=yes])

@@ -1432,8 +1432,7 @@ Optional Features:
   --enable-longdouble     include support for long double (yes|no|auto,
                           default=AUTO)
   --enable-c99complex     include support for C complex type (default=NO)
-  --enable-hierarchical-packages
-                          hierarchical package names (default=YES)
+  --enable-hpack          hierarchical package names (default=YES)
   --enable-asmapply       enable optimizations written in assembler,
                           EXPERIMENTAL (default=NO)
   --enable-smallcons      use small (2 words) cons types. Requires
