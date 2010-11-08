@@ -18,6 +18,7 @@
 #define ECL_INCLUDE_MATH_H
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
+#include <ecl/impl/math_fenv.h>
 
 #pragma STDC FENV_ACCESS ON
 

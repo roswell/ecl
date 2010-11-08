@@ -15,6 +15,7 @@
     See file '../Copyright' for full details.
 */
 
+#include <limits.h>
 #include <time.h>
 #ifndef _MSC_VER
 # include <unistd.h>
@@ -37,6 +38,7 @@
 #ifdef HAVE_GETTIMEOFDAY
 # include <sys/time.h>
 #endif
+#include <ecl/impl/math_fenv.h>
 
 #if !defined(HAVE_GETTIMEOFDAY) && !defined(HAVE_GETRUSAGE) && !defined(ECL_MS_WINDOWS_HOST)
 struct timeval {
@@ -122,32 +124,40 @@ cl_sleep(cl_object z)
 #ifdef HAVE_NANOSLEEP
 	struct timespec tm;
 #endif
+        double time;
 	/* INV: ecl_minusp() makes sure `z' is real */
 	if (ecl_minusp(z))
 		cl_error(9, @'simple-type-error', @':format-control',
 			    make_constant_base_string("Not a non-negative number ~S"),
 			    @':format-arguments', cl_list(1, z),
 			    @':expected-type', @'real', @':datum', z);
+        /* Compute time without overflows */
+        ECL_WITHOUT_FPE_BEGIN {
+                time = ecl_to_double(z);
+                if (isnan(time) || isinf(time) || (time > INT_MAX)) {
+                        time = INT_MAX;
+                } else if (time < 1e-9) {
+                        time = 1e-9;
+                }
+        } ECL_WITHOUT_FPE_END;
 #ifdef HAVE_NANOSLEEP
         {
-                double r = ecl_to_double(z);
-                tm.tv_sec = (time_t)floor(r);
-                tm.tv_nsec = (long)((r - floor(r)) * 1e9);
+                tm.tv_sec = (time_t)floor(time);
+                tm.tv_nsec = (long)((time - floor(time)) * 1e9);
                 nanosleep(&tm, NULL);
         }
 #else
 #if defined (ECL_MS_WINDOWS_HOST)
         {
-                double r = ecl_to_double(z) * 1000;
-                SleepEx((long)r, TRUE);
+                SleepEx((long)(time * 1000), TRUE);
         }
 #else
-	z = ecl_round1(z);
-	if (FIXNUMP(z))
-		sleep(fix(z));
-	else
-		for(;;)
-			sleep(1000);
+        {
+                int t = (int)time;
+                for (t = (time + 0.5); t > 1000; t -= 1000)
+                        sleep(1000);
+                sleep(t);
+        }
 #endif
 #endif
 	@(return Cnil)

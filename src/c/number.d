@@ -15,19 +15,14 @@
     See file '../Copyright' for full details.
 */
 
-#define ECL_INCLUDE_MATH_H
-#include <ecl/ecl.h>
 #include <float.h>
 #include <limits.h>
 #include <signal.h>
-#ifdef HAVE_FENV_H
-# define _GNU_SOURCE
-# include <fenv.h>
-#endif
-#include <float.h>
-#define ECL_DEFINE_FENV_CONSTANTS
-#include <ecl/internal.h>
+#define ECL_INCLUDE_MATH_H
+#include <ecl/ecl.h>
 #include <ecl/ecl-inl.h>
+#include <ecl/internal.h>
+#include <ecl/impl/math_fenv.h>
 
 #if defined(ECL_IEEE_FP) && defined(HAVE_FEENABLEEXCEPT)
 /*
@@ -42,28 +37,18 @@
  * X, where the status of the FPE control word is changed by
  * printf. We have two alternatives.
  */
-# ifdef ECL_IEEE_FP
-#  if defined(HAVE_FENV_H) && !defined(ECL_AVOID_FENV_H)
-#   define DO_DETECT_FPE(f)                                             \
-        if (isnan(f) || !isfinite(f))                                   \
-                ecl_deliver_fpe();
-#  else
-#   define DO_DETECT_FPE(f)                                             \
-	if (isnan(f)) {                                                 \
-                if (ecl_process_env()->trap_fpe_bits & FE_INVALID)      \
-                        cl_error(1, @'floating-point-invalid-operation'); \
-	} else if (!isfinite(f)) {                                      \
-                if (ecl_process_env()->trap_fpe_bits & FE_DIVBYZERO)    \
-                        cl_error(1, @'division-by-zero');               \
-	}
-#  endif
+# ifdef HAVE_FENV_H
+#  define DO_DETECT_FPE(f) do {                                       \
+        unlikely_if (isnan(f)) ecl_deliver_fpe(FE_INVALID);           \
+        unlikely_if (!isfinite(f)) ecl_deliver_fpe(FE_OVERFLOW);      \
+        } while (0)
 # else
-#  define DO_DETECT_FPE(f)                                              \
+#  define DO_DETECT_FPE(f) do {                                         \
 	if (isnan(f)) {                                                 \
                 cl_error(1, @'floating-point-invalid-operation');       \
 	} else if (!isfinite(f)) {                                      \
                 cl_error(1, @'division-by-zero');                       \
-	}
+	} } while (0)
 # endif
 #endif
 
@@ -466,23 +451,23 @@ ecl_make_ratio(cl_object num, cl_object den)
 	return(r);
 }
 
-#if defined(HAVE_FENV_H) && !defined(ECL_AVOID_FENV_H)
+#ifdef HAVE_FENV_H
 void
-ecl_deliver_fpe(void)
+ecl_deliver_fpe(int status)
 {
         cl_env_ptr env = ecl_process_env();
-        int bits = env->trap_fpe_bits;
-        if (fetestexcept(env->trap_fpe_bits)) {
+        int bits = status & env->trap_fpe_bits;
+        if (bits) {
                 cl_object condition;
-		if (fetestexcept(bits & FE_DIVBYZERO))
+		if (bits & FE_DIVBYZERO)
 			condition = @'division-by-zero';
-		else if (fetestexcept(bits & FE_INVALID))
+		else if (bits & FE_INVALID)
 			condition = @'floating-point-invalid-operation';
-		else if (fetestexcept(bits & FE_OVERFLOW))
+		else if (bits & FE_OVERFLOW)
 			condition = @'floating-point-overflow';
-		else if (fetestexcept(bits & FE_UNDERFLOW))
+		else if (bits & FE_UNDERFLOW)
 			condition = @'floating-point-underflow';
-		else if (fetestexcept(bits & FE_INEXACT))
+		else if (bits & FE_INEXACT)
 			condition = @'floating-point-inexact';
                 else
                         condition = @'arithmetic-error';

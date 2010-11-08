@@ -98,9 +98,9 @@
 # endif
 # include <sys/mman.h>
 #endif
-#define ECL_DEFINE_FENV_CONSTANTS
 #include <ecl/internal.h>
 #include <ecl/ecl-inl.h>
+#include <ecl/impl/math_fenv.h>
 
 static struct {
 	int code;
@@ -291,26 +291,28 @@ handler_fn_protype(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
 			code = FE_DIVBYZERO;
                         break;
                 }
-#endif
-#if defined(HAVE_FENV_H) & !defined(ECL_AVOID_FENV_H)
-		if (fetestexcept(FE_DIVBYZERO)) {
+#else
+# if defined(HAVE_FENV_H) & !defined(ECL_AVOID_FENV_H)
+                code = fetestexcept(FE_ALL_EXCEPT);
+		if (code & FE_DIVBYZERO) {
 			condition = @'division-by-zero';
 			code = FE_DIVBYZERO;
-		} else if (fetestexcept(FE_INVALID)) {
+		} else if (code & FE_INVALID) {
 			condition = @'floating-point-invalid-operation';
 			code = FE_INVALID;
-		} else if (fetestexcept(FE_OVERFLOW)) {
+		} else if (code & FE_OVERFLOW) {
 			condition = @'floating-point-overflow';
 			code = FE_OVERFLOW;
-		} else if (fetestexcept(FE_UNDERFLOW)) {
+		} else if (code & FE_UNDERFLOW) {
 			condition = @'floating-point-underflow';
 			code = FE_UNDERFLOW;
-		} else if (fetestexcept(FE_INEXACT)) {
+		} else if (code & FE_INEXACT) {
 			condition = @'floating-point-inexact';
 			code = FE_INEXACT;
 		}
                 feclearexcept(FE_ALL_EXCEPT);
-#endif
+# endif
+#endif /* !_MSC_VER */
 #ifdef SA_SIGINFO
 		if (info) {
 			if (info->si_code == FPE_INTDIV || info->si_code == FPE_FLTDIV) {

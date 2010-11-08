@@ -18,13 +18,9 @@
 #include <string.h>
 #include <float.h>
 #define ECL_INCLUDE_MATH_H
-#define ECL_DEFINE_FENV_CONSTANTS
 #include <ecl/ecl.h>
 #include <limits.h>
-#if defined(HAVE_FENV_H)
-# include <fenv.h>
-#endif
-#include <ecl/internal.h>
+#include <ecl/impl/math_fenv.h>
 
 #if !defined(ECL_CMU_FORMAT)
 
@@ -790,10 +786,8 @@ edit_double(int n, DBL_TYPE d, int *sp, char *s, int *ep)
 {
 	char *exponent, buff[DBL_SIZE + 1];
 	int length;
-#if defined(HAVE_FENV_H) || defined(ECL_MS_WINDOWS_HOST)
-	fenv_t env;
-	feholdexcept(&env);
-#endif
+
+ECL_WITHOUT_FPE_BEGIN {
 	unlikely_if (isnan(d) || !isfinite(d)) {
 		FEerror("Can't print a non-number.", 0);
         }
@@ -844,9 +838,8 @@ edit_double(int n, DBL_TYPE d, int *sp, char *s, int *ep)
 			s[i] = '0';
 	}
 	s[n] = '\0';
-#if defined(HAVE_FENV_H) || defined(ECL_MS_WINDOWS_HOST)
-	feupdateenv(&env);
-#endif
+} ECL_WITHOUT_FPE_END;
+
 	return length;
 }
 

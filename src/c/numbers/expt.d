@@ -19,6 +19,7 @@
 #include <ecl/ecl.h>
 #include <ecl/ecl-inl.h>
 #include <ecl/internal.h>
+#include <ecl/impl/math_fenv.h>
 #include <ecl/impl/math_dispatch.h>
 
 #pragma STDC FENV_ACCESS ON
