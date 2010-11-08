@@ -61,9 +61,10 @@ _hash_eql(cl_hashkey h, cl_object x)
                 /* We coerce to double because long double has extra bits
                  * that give rise to different hash key and are not
                  * meaningful */
-		double d = ecl_long_float(x);
-                ECL_MATHERR_CLEAR;
-		return hash_string(h, (unsigned char*)&d, sizeof(d));
+                struct { double mantissa; int exponent; int sign; } aux;
+                aux.mantissa = frexpl(ecl_long_float(x), &aux.exponent);
+                aux.sign = (ecl_long_float(x) < 0)? -1: 1;
+		return hash_string(h, (unsigned char*)&aux, sizeof(aux));
 	}
 #endif
 	case t_complex:
@@ -139,10 +140,11 @@ _hash_equal(int depth, cl_hashkey h, cl_object x)
                 /* We coerce to double because long double has extra bits
                  * that give rise to different hash key and are not
                  * meaningful */
-		double f = ecl_long_float(x);
-                ECL_MATHERR_CLEAR;
-		if (f == 0.0) f = 0.0;
-		return hash_string(h, (unsigned char*)&f, sizeof(f));
+                struct { double mantissa; int exponent; int sign} aux;
+                aux.mantissa = frexpl(ecl_long_float(x), &aux.exponent);
+                aux.sign = (ecl_long_float(x) < 0)? -1: 1;
+		if (aux.mantissa == 0.0) aux.mantissa = 0.0;
+		return hash_string(h, (unsigned char*)&aux, sizeof(aux));
 	}
 # endif
 	case t_complex: {
