@@ -40,7 +40,7 @@
  * surround the computation with explicit checks for problems.
  */
 
-#ifdef HAVE_FEENABLEEXCEPT
+#if defined(HAVE_FEENABLEEXCEPT) && !defined(_GNU_SOURCE)
 # define _GNU_SOURCE
 #endif
 #ifdef HAVE_FENV_H
