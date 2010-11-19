@@ -1139,6 +1139,7 @@ utf_8_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
  * CLOS STREAMS
  */
 
+#ifdef ECL_CLOS_STREAMS
 static cl_index
 clos_stream_read_byte8(cl_object strm, unsigned char *c, cl_index n)
 {
@@ -1336,6 +1337,7 @@ const struct ecl_file_ops clos_stream_ops = {
 	clos_stream_column,
 	clos_stream_close
 };
+#endif /* ECL_CLOS_STREAMS */
 
 /**********************************************************************
  * STRING OUTPUT STREAMS
