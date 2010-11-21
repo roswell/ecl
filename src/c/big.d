@@ -490,13 +490,13 @@ static _ecl_big_binary_op bignum_operations[16] = {
 	mpz_b_set_op};
 
 _ecl_big_binary_op
-_ecl_big_boole_operator(int operator)
+_ecl_big_boole_operator(int op)
 {
-        unlikely_if((operator < 0) || (operator >= 16)) {
+        unlikely_if((op < 0) || (op >= 16)) {
                 ecl_internal_error("_ecl_big_boole_operator passed "
                                    "an invalid operator");
         }
-        return bignum_operations[operator];
+        return bignum_operations[op];
 }
 
 void
