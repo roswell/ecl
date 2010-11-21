@@ -17,10 +17,18 @@
 #+new-cmp
 (in-package "C-LOG")
 
-(defconstant +note-format+ "~&~@<  ~;~?~;~:@>")
-(defconstant +warn-format+ "~&~@<  ! ~;~?~;~:@>")
-(defconstant +error-format+ "~&~@<  * ~;~?~;~:@>")
-(defconstant +fatal-format+ "~&~@<  ** ~;~?~;~:@>")
+#+cmu-format
+(progn
+  (defconstant +note-format+ "~&~@<  ~;~?~;~:@>")
+  (defconstant +warn-format+ "~&~@<  ! ~;~?~;~:@>")
+  (defconstant +error-format+ "~&~@<  * ~;~?~;~:@>")
+  (defconstant +fatal-format+ "~&~@<  ** ~;~?~;~:@>"))
+#-cmu-format
+(progn
+  (defconstant +note-format+ "~&  ~?")
+  (defconstant +warn-format+ "~&  ! ~?")
+  (defconstant +error-format+ "~&  * ~?")
+  (defconstant +fatal-format+ "~&  ** ~?"))
 
 ;; Return a namestring for a path that is sufficiently
 ;; unambiguous (hopefully) for the C compiler (and associates)
@@ -112,7 +120,10 @@
 
 (defun print-compiler-message (c stream)
   (unless (typep c *suppress-compiler-messages*)
-    (format stream "~&~@<;;; ~@;~A~:>" c)))
+    #+cmu-format
+    (format stream "~&~@<;;; ~@;~A~:>" c)
+    #-cmu-format
+    (format stream "~&;;; ~A" c)))
 
 ;;; A few notes about the following handlers. We want the user to be
 ;;; able to capture, collect and perhaps abort on the different

@@ -155,6 +155,8 @@
 #define FIXNUM_BITS		@CL_FIXNUM_BITS@
 #define MOST_POSITIVE_FIXNUM	((cl_fixnum)@CL_FIXNUM_MAX@)
 #define MOST_NEGATIVE_FIXNUM	((cl_fixnum)@CL_FIXNUM_MIN@)
+#define MOST_POSITIVE_FIXNUM_VAL @CL_FIXNUM_MAX@
+#define MOST_NEGATIVE_FIXNUM_VAL @CL_FIXNUM_MIN@
 
 typedef @CL_FIXNUM_TYPE@ cl_fixnum;
 typedef unsigned @CL_FIXNUM_TYPE@ cl_index;
