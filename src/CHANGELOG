@@ -42,6 +42,11 @@ ECL 10.5.1:
  - We have removed the variable si::*break-enable* that was causing
    INVOKE-DEBUGGER to return.
 
+ - ECL's support of :CASE has improved. Filenames preferred case is downcase,
+   as in every Unix, while logical pathname's case is uppercase. Conversion
+   between cases has also been fixed: formerly, MAKE-PATHNAME did not interpret
+   :CASE as the original path case, but as the destination.
+
 * Visible changes:
 
  - "fasb" is now a valid FASL file type, accepted by ECL even in absence of
