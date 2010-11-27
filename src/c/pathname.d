@@ -86,6 +86,16 @@ to_local_case(cl_object str, cl_object cas)
 }
 
 static cl_object
+host_case(cl_object host)
+{
+        if (Null(host))
+                return @':local';
+        if (ecl_logical_hostname_p(host))
+                return @':upcase';
+        return @':downcase';
+}
+
+static cl_object
 to_antilocal_case(cl_object str, cl_object cas)
 {
         if (cas == @':downcase')
@@ -158,23 +168,6 @@ translate_list_case(cl_object list, cl_object fromcase, cl_object tocase)
 		}
 		return list;
 	}
-}
-
-static cl_object
-fix_pathname_case(cl_object p, cl_object fromcase)
-{
-        cl_object tocase = normalize_case(p, @':local');
-        p->pathname.host =
-                translate_component_case(p->pathname.host, fromcase, tocase);
-        p->pathname.device =
-                translate_component_case(p->pathname.device, fromcase, tocase);
-        p->pathname.directory =
-                translate_list_case(p->pathname.directory, fromcase, tocase);
-        p->pathname.name =
-                translate_component_case(p->pathname.name, fromcase, tocase);
-        p->pathname.type =
-                translate_component_case(p->pathname.type, fromcase, tocase);
-        return p;
 }
 
 static void
@@ -303,7 +296,7 @@ ecl_make_pathname(cl_object host, cl_object device, cl_object directory,
 	{
 		x = version;
 		component = @':version';
-	ERROR:	FEerror("~s is not a valid pathname-~a component", 2, x, component);
+	ERROR:	cl_print(1,x); cl_print(1,component); FEerror("~s is not a valid pathname-~a component", 2, x, component);
 	}
 	switch (type_of(directory)) {
 #ifdef ECL_UNICODE
@@ -327,15 +320,28 @@ ecl_make_pathname(cl_object host, cl_object device, cl_object directory,
 		component = @':directory';
 		goto ERROR;
 	}
-	p->pathname.host      = host;
-	p->pathname.device    = device;
-	p->pathname.directory = directory;
-	p->pathname.name      = name;
-	p->pathname.type      = type;
-	p->pathname.version   = version;
-        fix_pathname_case(p, p->pathname.logical? @':common' :
-                          normalize_case(p, fromcase));
-	if (destructively_check_directory(directory, p->pathname.logical) == @':error') {
+        p->pathname.host = host;
+        {
+                cl_object tocase = normalize_case(p, @':local');
+                if (p->pathname.logical)
+                        fromcase = @':common';
+                else
+                        fromcase = normalize_case(p, fromcase);
+                p->pathname.host =
+                        translate_component_case(host, fromcase, tocase);
+                p->pathname.device =
+                        translate_component_case(device, fromcase, tocase);
+                p->pathname.directory =
+                        translate_list_case(directory, fromcase, tocase);
+                p->pathname.name =
+                        translate_component_case(name, fromcase, tocase);
+                p->pathname.type =
+                        translate_component_case(type, fromcase, tocase);
+                p->pathname.version = version;
+        }
+        if (destructively_check_directory(directory, p->pathname.logical)
+            == @':error')
+        {
 		cl_error(3, @'file-error', @':pathname', p);
 	}
 	return(p);
@@ -908,33 +914,40 @@ cl_object
 ecl_merge_pathnames(cl_object path, cl_object defaults, cl_object default_version)
 {
 	cl_object host, device, directory, name, type, version;
+        cl_object tocase;
 
 	defaults = cl_pathname(defaults);
 	path = cl_parse_namestring(1, path, Cnil, defaults);
 	if (Null(host = path->pathname.host))
 		host = defaults->pathname.host;
-	if (Null(path->pathname.device))
+        tocase = host_case(host);
+	if (Null(path->pathname.device)) {
 		if (Null(path->pathname.host))
-			device = defaults->pathname.device;
+			device = cl_pathname_device(3, defaults, @':case', tocase);
 		else if (path->pathname.host == defaults->pathname.host)
 			device = defaults->pathname.device;
 		else
 			device = default_device(path->pathname.host);
-	else
+	} else {
 		device = path->pathname.device;
-	if (Null(path->pathname.directory))
-		directory = defaults->pathname.directory;
-	else if (ECL_CONS_CAR(path->pathname.directory) == @':absolute')
+        }
+	if (Null(path->pathname.directory)) {
+                directory = cl_pathname_directory(3, defaults, @':case', tocase);
+        } else if (ECL_CONS_CAR(path->pathname.directory) == @':absolute') {
 		directory = path->pathname.directory;
-	else if (!Null(defaults->pathname.directory))
-		directory = ecl_append(defaults->pathname.directory,
+        } else if (!Null(defaults->pathname.directory)) {
+		directory = ecl_append(cl_pathname_directory(3, defaults,
+                                                             @':case', tocase),
                                        CDR(path->pathname.directory));
-	else
+        } else {
 		directory = path->pathname.directory;
-	if (Null(name = path->pathname.name))
-		name = defaults->pathname.name;
-	if (Null(type = path->pathname.type))
-		type = defaults->pathname.type;
+        }
+	if (Null(name = path->pathname.name)) {
+		name = cl_pathname_name(3, defaults, @':case', tocase);
+        }
+	if (Null(type = path->pathname.type)) {
+		type = cl_pathname_type(3, defaults, @':case', tocase);
+        }
 	version = path->pathname.version;
 	if (Null(path->pathname.name)) {
 		if (Null(version))
@@ -954,7 +967,7 @@ ecl_merge_pathnames(cl_object path, cl_object defaults, cl_object default_versio
 		In this implementation, version is not considered
 	*/
 	defaults = ecl_make_pathname(host, device, directory, name,
-                                     type, version, @':local');
+                                     type, version, tocase);
 	return defaults;
 }
 
