@@ -163,7 +163,9 @@ translate_list_case(cl_object list, cl_object fromcase, cl_object tocase)
 			 * because it will only transform strings, leaving other
 			 * object (such as symbols) unchanged.*/
 			cl_object name = ECL_CONS_CAR(l);
-			name = translate_component_case(name, fromcase, tocase);
+                        name = ECL_LISTP(name)?
+                                translate_list_case(name, fromcase, tocase) :
+                                translate_component_case(name, fromcase, tocase);
 			ECL_RPLACA(l, name);
 		}
 		return list;
