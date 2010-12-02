@@ -37,19 +37,10 @@
  * X, where the status of the FPE control word is changed by
  * printf. We have two alternatives.
  */
-# ifdef HAVE_FENV_H
-#  define DO_DETECT_FPE(f) do {                                       \
-        unlikely_if (isnan(f)) ecl_deliver_fpe(FE_INVALID);           \
-        unlikely_if (!isfinite(f)) ecl_deliver_fpe(FE_OVERFLOW);      \
+# define DO_DETECT_FPE(f) do {						\
+		unlikely_if (isnan(f)) ecl_deliver_fpe(FE_INVALID);	\
+		unlikely_if (!isfinite(f)) ecl_deliver_fpe(FE_OVERFLOW); \
         } while (0)
-# else
-#  define DO_DETECT_FPE(f) do {                                         \
-	if (isnan(f)) {                                                 \
-                cl_error(1, @'floating-point-invalid-operation');       \
-	} else if (!isfinite(f)) {                                      \
-                cl_error(1, @'division-by-zero');                       \
-	} } while (0)
-# endif
 #endif
 
 cl_fixnum
@@ -451,12 +442,12 @@ ecl_make_ratio(cl_object num, cl_object den)
 	return(r);
 }
 
-#ifdef HAVE_FENV_H
 void
 ecl_deliver_fpe(int status)
 {
         cl_env_ptr env = ecl_process_env();
         int bits = status & env->trap_fpe_bits;
+	feclearexcept(FE_ALL_EXCEPT);
         if (bits) {
                 cl_object condition;
 		if (bits & FE_DIVBYZERO)
@@ -471,12 +462,9 @@ ecl_deliver_fpe(int status)
 			condition = @'floating-point-inexact';
                 else
                         condition = @'arithmetic-error';
-                feclearexcept(FE_ALL_EXCEPT);
 		cl_error(1, condition);
         }
-        feclearexcept(FE_ALL_EXCEPT);
 }
-#endif
 
 cl_object
 ecl_make_singlefloat(float f)

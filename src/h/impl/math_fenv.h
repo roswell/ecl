@@ -13,7 +13,7 @@
     See file '../../Copyright' for full details.
 */
 
-#if !defined(ECL_MATH_FENV_H) && defined(HAVE_FENV_H)
+#ifndef ECL_MATH_FENV_H
 #define ECL_MATH_FENV_H
 
 /*
@@ -61,6 +61,7 @@
 # define FE_UNDERFLOW 0
 # define ECL_WITHOUT_FPE_BEGIN
 # define ECL_WITHOUT_FPE_END
+# define feclearexcept(x)
 #endif /* !HAVE_FENV_H */
 
 #if defined(HAVE_FENV_H) && !defined(HAVE_FEENABLEEXCEPT) && !defined(ECL_AVOID_FPE_H)
@@ -104,6 +105,6 @@ static inline int myfetestexcept(cl_fixnum flags)
 }
 #endif /* __APPLE__ && __amd64__ */
 
-void ecl_deliver_fpe(int flags);
+extern void ecl_deliver_fpe(int flags);
 
-#endif /* !ECL_MATH_FENV_H && HAVE_FENV_H */
+#endif /* !ECL_MATH_FENV_H */
