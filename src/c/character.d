@@ -465,7 +465,7 @@ cl_char_name(cl_object c)
 	ecl_character code = ecl_char_code(c);
 	cl_object output;
 	if (code > 127) {
-		char name[7];
+		char name[8];
                 char *start;
                 name[7] = 0;
                 name[6] = ecl_digit_char(code & 0xF, 16); code >>= 4;
