@@ -88,7 +88,7 @@ cl_object
 si_write_object(cl_object x, cl_object stream)
 {
 	bool circle;
-#ifdef CMU_FORMAT
+#ifdef ECL_CMU_FORMAT
 	if (ecl_symbol_value(@'*print-pretty*') != Cnil) {
 		cl_object f = funcall(2, @'pprint-dispatch', x);
 		if (VALUES(1) != Cnil) {
@@ -96,7 +96,7 @@ si_write_object(cl_object x, cl_object stream)
                         goto OUTPUT;
 		}
 	}
-#endif /* CMU_FORMAT */
+#endif /* ECL_CMU_FORMAT */
 	circle = ecl_print_circle();
 	if (circle && !Null(x) && !FIXNUMP(x) && !CHARACTERP(x) &&
 	    (LISTP(x) || (x->d.t != t_symbol) || (Null(x->symbol.hpack))))
