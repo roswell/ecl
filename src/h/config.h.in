@@ -351,7 +351,7 @@ typedef unsigned @CL_FIXNUM_TYPE@ cl_hashkey;
 /* can activate individual traps in floating point environment		*/
 /* this flag has to be deactivated for the Itanium architecture, where  */
 /* the GNU libc functions are broken                                    */
-#ifndef __ia64__
+#if !defined(__ia64__) && !defined(PPC)
 #undef HAVE_FEENABLEEXCEPT
 #endif
 /* do we want to deactivate all support for floating point exceptions   */
