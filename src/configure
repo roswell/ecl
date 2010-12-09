@@ -1421,8 +1421,8 @@ Optional Features:
                           default=NO).
   --enable-boehm          use the Boehm-Weiser garbage collector
                           (no|included|system|auto, default=auto)
-  --enable-slow-config    use GMP to guess compiler/linker flags (no|yes,
-                          default=NO)
+  DEPRECATED: use --with-system-boehm=no
+
   --enable-soname         link and install the library using version numbers
                           (no|yes, default=yes)
   --enable-local-gmp      Deprecated! See --with-system-gmp
@@ -5437,7 +5437,10 @@ fi
 $as_echo_n "checking GMP autoconf... " >&6; }
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: \"${with_system_gmp}.${enable_slow_config}\"" >&5
 $as_echo "\"${with_system_gmp}.${enable_slow_config}\"" >&6; }
-if test "${with_system_gmp}.${enable_slow_config}" = "no.yes"; then
+if test "x${enable_slow_config}" = "xyes"; then
+  with_system_gmp=no
+fi
+if test "x${with_system_gmp}" = "xno"; then
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking Using the GMP library to guess good compiler/linker flags" >&5
 $as_echo_n "checking Using the GMP library to guess good compiler/linker flags... " >&6; }
