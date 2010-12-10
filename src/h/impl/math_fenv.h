@@ -57,7 +57,7 @@
 # define FE_INVALID 1
 # define FE_DIVBYZERO 2
 # define FE_INEXACT 0
-# define FE_OVERFLOW 0
+# define FE_OVERFLOW 3
 # define FE_UNDERFLOW 0
 # define ECL_WITHOUT_FPE_BEGIN
 # define ECL_WITHOUT_FPE_END
