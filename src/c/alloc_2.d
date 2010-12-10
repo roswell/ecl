@@ -456,6 +456,12 @@ cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl
                 MAYBE_MARK(o->lock.holder);
                 MAYBE_MARK(o->lock.name);
 		break;
+	case t_rwlock:
+		MAYBE_MARK(o->rwlock.name);
+#  ifndef ECL_RWLOCK
+		MAYBE_MARK(o->rwlock.mutex);
+		break;
+#  endif
 # endif
         case t_codeblock:
                 MAYBE_MARK(o->cblock.source);
@@ -834,7 +840,7 @@ init_alloc(void)
 #ifdef ECL_THREADS
 	init_tm(t_process, "PROCESS", sizeof(struct ecl_process), 8);
 	init_tm(t_lock, "LOCK", sizeof(struct ecl_lock), 2);
-	init_tm(t_rwlock, "LOCK", sizeof(struct ecl_rwlock), 2);
+	init_tm(t_rwlock, "LOCK", sizeof(struct ecl_rwlock), 0);
 	init_tm(t_condition_variable, "CONDITION-VARIABLE",
                 sizeof(struct ecl_condition_variable), 0);
 # ifdef ECL_SEMAPHORES
@@ -975,6 +981,14 @@ init_alloc(void)
         type_info[t_lock].descriptor =
                 to_bitmap(&o, &(o.lock.name)) |
                 to_bitmap(&o, &(o.lock.holder));
+#  ifdef ECL_RWLOCK
+        type_info[t_rwlock].descriptor =
+                to_bitmap(&o, &(o.rwlock.name));
+#  else
+        type_info[t_rwlock].descriptor =
+                to_bitmap(&o, &(o.rwlock.name)) |
+                to_bitmap(&o, &(o.rwlock.mutex));
+#  endif
 	type_info[t_condition_variable].descriptor = 0;
 #   ifdef ECL_SEMAPHORES
 	type_info[t_semaphore].descriptor = 0;

@@ -94,7 +94,7 @@ cl_object
 mp_rwlock_name(cl_object lock)
 {
 	const cl_env_ptr env = ecl_process_env();
-	if (type_of(lock) != t_lock)
+	if (type_of(lock) != t_rwlock)
 		FEerror_not_a_rwlock(lock);
         ecl_return1(env, lock->rwlock.name);
 }
