@@ -73,7 +73,7 @@ AC_ARG_WITH(gmp,
 
 AC_ARG_WITH(C-gmp,
   AS_HELP_STRING( [--with-C-gmp=args],
-                  [configure GMP without in portable C]),
+                  [configure GMP to build using portable C]),
   [with_c_gmp=yes; with_system_gmp=no], [with_c_gmp=no])
 
 AC_ARG_WITH(system-gmp,
@@ -366,7 +366,9 @@ if test "${with_system_gmp}" = "yes"; then
     [FASL_LIBS="${FASL_LIBS} -lgmp"],
     [AC_MSG_ERROR([System gmp library requested but not found.])])
   AC_CHECK_HEADER( [gmp.h], [ECL_GMP_HEADER='gmp.h'] )
-  AC_CHECK_HEADER( [gmp/gmp.h], [ECL_GMP_HEADER='gmp/gmp.h'] )
+  if test "x$ECL_GMP_HEADER" = "x"; then
+    AC_CHECK_HEADER( [gmp/gmp.h], [ECL_GMP_HEADER='gmp/gmp.h'] )
+  fi
 else
   SUBDIRS="${SUBDIRS} gmp"
   CORE_LIBS="-leclgmp ${CORE_LIBS}"

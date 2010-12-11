@@ -1449,7 +1449,7 @@ Optional Packages:
   --with-cross-config=f   supply configuration for a cross compiler
   --with-system-boehm     Deprecated! See --enable-boehm
   --with-gmp=args         supply arguments for configuring GMP library
-  --with-C-gmp=args       configure GMP without in portable C
+  --with-C-gmp=args       configure GMP to build using portable C
   --with-system-gmp       use already installed GMP library (default=auto)
   --with-gmp-prefix=path  prefix for system GMP includes and libraries
   --with-gmp-incdir=path  path to system GMP includes (overrides prefix)
@@ -5384,12 +5384,14 @@ if test "x$ac_cv_header_gmp_h" = xyes; then :
 fi
 
 
-  ac_fn_c_check_header_mongrel "$LINENO" "gmp/gmp.h" "ac_cv_header_gmp_gmp_h" "$ac_includes_default"
+  if test "x$ECL_GMP_HEADER" = "x"; then
+    ac_fn_c_check_header_mongrel "$LINENO" "gmp/gmp.h" "ac_cv_header_gmp_gmp_h" "$ac_includes_default"
 if test "x$ac_cv_header_gmp_gmp_h" = xyes; then :
   ECL_GMP_HEADER='gmp/gmp.h'
 fi
 
 
+  fi
 else
   SUBDIRS="${SUBDIRS} gmp"
   CORE_LIBS="-leclgmp ${CORE_LIBS}"
