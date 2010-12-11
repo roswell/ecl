@@ -98,6 +98,11 @@
       #-(or cross ecl-min) "cmp.so")
 
 ;;;
+;;; * Change the place where temporary files go to
+;;;
+(si::pathname-translations "TMP" '(("**;*.*.*" "@true_builddir@/**/*.*")))
+
+;;;
 ;;; * Remove documentation from compiled files
 ;;;
 (setq si::*keep-documentation* nil)
