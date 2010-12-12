@@ -133,7 +133,15 @@ translate_component_case(cl_object str, cl_object fromcase, cl_object tocase)
 {
         /* Pathnames may contain some other objects, such as symbols,
          * numbers, etc, which need not be translated */
-        if ((str == OBJNULL) || !ecl_stringp(str)) {
+        if (str == OBJNULL) {
+                return str;
+        } else if (!ECL_BASE_STRING_P(str)) {
+#ifdef ECL_UNICODE
+                if (ECL_EXTENDED_STRING_P(str) && ecl_fits_in_base_string(str)) {
+                        str = si_coerce_to_base_string(str);
+                        return translate_component_case(str, fromcase, tocase);
+                }
+#endif
                 return str;
         } else if (tocase == fromcase) {
                 return str;
