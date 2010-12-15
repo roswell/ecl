@@ -47,6 +47,10 @@ ECL 10.5.1:
    between cases has also been fixed: formerly, MAKE-PATHNAME did not interpret
    :CASE as the original path case, but as the destination.
 
+ - Out of the many pathname translations which are possible, ECL did not allow the
+   one in which missing components are replaced by the original ones, as in
+   '(("HM:HOME;*.*.*" "/home/user/")))
+
 * Visible changes:
 
  - "fasb" is now a valid FASL file type, accepted by ECL even in absence of

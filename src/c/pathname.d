@@ -1514,6 +1514,7 @@ coerce_to_from_pathname(cl_object x, cl_object host)
 	/* Check that host is a valid host name */
         if (ecl_unlikely(!ECL_STRINGP(host)))
                 FEwrong_type_nth_arg(@[si::pathname-translations], 1, host, @[string]);
+	host = cl_string_upcase(1, host);
 	len = ecl_length(host);
 	parse_word(host, is_null, WORD_LOGICAL, 0, len, &parsed_len);
 	if (parsed_len < len) {
@@ -1724,28 +1725,41 @@ copy_list_wildcards(cl_object *wilds, cl_object to)
 	wilds = find_list_wilds(source->pathname.directory,
 				from->pathname.directory);
 	if (wilds == @':error')	goto error;
-	wilds = translate_list_case(wilds, fromcase, tocase);
-	d = copy_list_wildcards(&wilds, to->pathname.directory);
-	if (d == @':error') goto error;
-	if (wilds != Cnil) goto error2;
+	if (Null(to->pathname.directory)) {
+                /* Missing components are replaced */
+                d = translate_list_case(from->pathname.directory, fromcase, tocase);
+        } else {
+                wilds = translate_list_case(wilds, fromcase, tocase);
+                d = copy_list_wildcards(&wilds, to->pathname.directory);
+                if (d == @':error') goto error;
+                if (wilds != Cnil) goto error2;
+        }
 	directory = d;
 
 	/* Match name */
 	wilds = find_wilds(Cnil, source->pathname.name, from->pathname.name);
 	if (wilds == @':error') goto error2;
-	wilds = translate_list_case(wilds, fromcase, tocase);
-	d = copy_wildcards(&wilds, to->pathname.name);
-	if (d == @':error') goto error;
-	if (wilds != Cnil) goto error2;
+	if (Null(to->pathname.name)) {
+                d = translate_component_case(from->pathname.name, fromcase, tocase);
+        } else {
+                wilds = translate_list_case(wilds, fromcase, tocase);
+                d = copy_wildcards(&wilds, to->pathname.name);
+                if (d == @':error') goto error;
+                if (wilds != Cnil) goto error2;
+        }
 	name = d;
 
 	/* Match type */
 	wilds = find_wilds(Cnil, source->pathname.type, from->pathname.type);
 	if (wilds == @':error') goto error2;
-	wilds = translate_list_case(wilds, fromcase, tocase);
-	d = copy_wildcards(&wilds, to->pathname.type);
-	if (d == @':error') goto error;
-	if (wilds != Cnil) goto error2;
+	if (Null(to->pathname.type)) {
+                d = translate_component_case(from->pathname.type, fromcase, tocase);
+        } else {
+                wilds = translate_list_case(wilds, fromcase, tocase);
+                d = copy_wildcards(&wilds, to->pathname.type);
+                if (d == @':error') goto error;
+                if (wilds != Cnil) goto error2;
+        }
 	type = d;
 
 	/* Match version */
