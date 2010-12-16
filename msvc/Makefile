@@ -18,7 +18,7 @@ SOFTWARE_VERSION  = 5.0
 THEHOST           = win32
 
 # Define to 1 to make a 64-bit build
-ECL_WIN64 =
+# ECL_WIN64 =
 
 # Define here the processor type to compile GMP library
 # with maximum optimization. Possible values are:
