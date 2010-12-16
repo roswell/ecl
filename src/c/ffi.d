@@ -61,16 +61,30 @@ static const cl_object ecl_aet_to_ffi_table[aet_bc+1] = {
 
 #define AUX_PTR(type) \
 	((struct { char a[1]; union { type c[1]; char d[sizeof(type)]; } b; } *)0)
-#define ALIGNMENT(type) \
-        (AUX_PTR(type)->b.d - AUX_PTR(type)->a)
+#ifdef __GNUC__
+typedef struct {
+	cl_object name;
+	cl_index size;
+	cl_index alignment;
+} ecl_foreign_type_record;
+# define ALIGNMENT(tag) (ecl_foreign_type_table[tag].alignment)
+# define FFI_DESC(symbol,type)			\
+  {symbol, sizeof(type), (AUX_PTR(type)->b.d - AUX_PTR(type)->a)}
+#else
+typedef struct {
+	cl_object name;
+	cl_index size;
+	char *d, *a;
+} ecl_foreign_type_record;
+#define ALIGNMENT(tag) (ecl_foreign_type_table[tag].d - ecl_foreign_type_table[tag].a)
+#define AUX_PTR(type) \
+	((struct { char a[1]; union { type c[1]; char d[sizeof(type)]; } b; } *)0)
 #define FFI_DESC(symbol,type) \
-        {symbol, sizeof(type), ALIGNMENT(type)}
+  {symbol, sizeof(type), AUX_PTR(type)->b.d, AUX_PTR(type)->a}
+#endif
 
-static const struct{
-        cl_object name;
-        cl_index size;
-        cl_index alignment;
-} ecl_foreign_type_table[] = {
+static const ecl_foreign_type_record
+ecl_foreign_type_table[] = {
 	FFI_DESC(@':char', char),
 	FFI_DESC(@':unsigned-char', unsigned char),
 	FFI_DESC(@':byte', ecl_int8_t),
@@ -107,12 +121,6 @@ static const struct{
 	FFI_DESC(@':float', float),
 	FFI_DESC(@':double', double),
 	{@':void', 0, 0}
-};
-
-static const int foreign_type_alignment[] = {
-        ALIGNMENT(char),
-        ALIGNMENT(unsigned char),
-        ALIGNMENT(int)
 };
 
 #ifdef ECL_DYNAMIC_FFI
@@ -645,7 +653,7 @@ cl_object
 si_alignment_of_foreign_elt_type(cl_object type)
 {
 	enum ecl_ffi_tag tag = ecl_foreign_type_code(type);
-	@(return MAKE_FIXNUM(ecl_foreign_type_table[tag].alignment))
+	@(return MAKE_FIXNUM(ALIGNMENT(tag)))
 }
 
 cl_object
