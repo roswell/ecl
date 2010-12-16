@@ -134,7 +134,7 @@ cl_sleep(cl_object z)
         /* Compute time without overflows */
         ECL_WITHOUT_FPE_BEGIN {
                 time = ecl_to_double(z);
-                if (isnan(time) || isinf(time) || (time > INT_MAX)) {
+                if (isnan(time) || !isfinite(time) || (time > INT_MAX)) {
                         time = INT_MAX;
                 } else if (time < 1e-9) {
                         time = 1e-9;
