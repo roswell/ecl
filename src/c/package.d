@@ -133,7 +133,7 @@ alloc_package(cl_object name)
 }
 
 cl_object
-_ecl_package_to_be_created(cl_env_ptr env, cl_object name)
+_ecl_package_to_be_created(const cl_env_ptr env, cl_object name)
 {
         cl_object package = ecl_assoc(name, env->packages_to_be_created);
         if (Null(package)) {
@@ -364,7 +364,7 @@ ecl_intern(cl_object name, cl_object p, int *intern_flag)
         if (ecl_unlikely(!ECL_STRINGP(name)))
                 FEwrong_type_nth_arg(@[intern], 1, name, @[string]);
 	p = si_coerce_to_package(p);
- TRY_AGAIN:
+ AGAIN:
         ECL_WITH_PACKAGE_WRLOCK_BEGIN(ecl_process_env()) {
                 s = find_symbol_inner(name, p, intern_flag);
                 if (*intern_flag) {
@@ -391,7 +391,7 @@ ecl_intern(cl_object name, cl_object p, int *intern_flag)
                 CEpackage_error("Cannot intern symbol ~S in locked package ~S.",
 				"Ignore lock and proceed", p, 2, name, p);
                 ignore_error = 1;
-                goto TRY_AGAIN;
+                goto AGAIN;
         }
 	return s;
 }
@@ -535,7 +535,7 @@ cl_export2(cl_object s, cl_object p)
 	if (p->pack.locked)
 		CEpackage_error("Cannot export symbol ~S from locked package ~S.",
 				"Ignore lock and proceed", p, 2, s, p);
- TRY_AGAIN:
+ AGAIN:
         ECL_WITH_PACKAGE_WRLOCK_BEGIN(ecl_process_env()) {
                 cl_object x = find_symbol_inner(name, p, &intern_flag);
                 if (!intern_flag) {
@@ -559,7 +559,7 @@ cl_export2(cl_object s, cl_object p)
 				"Import the symbol in the package and proceed.",
 				p, 2, s, p);
                 cl_import2(s, p);
-                goto TRY_AGAIN;
+                goto AGAIN;
         } else if (error == 2) {
 		FEpackage_error("Cannot export the symbol ~S from ~S,~%"
 				"because there is already a symbol with the same name~%"
