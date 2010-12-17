@@ -34,6 +34,13 @@
 ;; unambiguous (hopefully) for the C compiler (and associates)
 ;; to decipher.
 (defun brief-namestring (path)
+  ;; In Windows we cannot use enough-namestring in the compiler
+  ;; because it breaks down when using paths such as
+  ;; c:/docume~1/juanjo/locals~1/temp/foo.tmp. enough-namestring would
+  ;; return /docume~1/juanjo/locals~1/temp/foo.tmp which is not found
+  #+windows
+  (namestring (si::coerce-to-filename path))
+  #-windows
   (enough-namestring (si::coerce-to-filename path)))
 
 (defun innermost-non-expanded-form (form)
