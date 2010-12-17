@@ -27,7 +27,9 @@ bignum_to_string(cl_object buffer, cl_object x, cl_object base)
         }
         str_size = mpz_sizeinbase(x->big.big_num, b);
         buffer = _ecl_ensure_buffer(buffer, str_size+1);
-        if (str_size <= 63) {
+        if (str_size <= 62) {
+		/* With the leading sign and the trailing null character,
+		 * only 62 digits fit in this buffer. */
                 char txt[64];
                 mpz_get_str(txt, b, x->big.big_num);
                 _ecl_string_push_c_string(buffer, txt);
