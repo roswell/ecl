@@ -87,10 +87,10 @@ CFLAGS_SSE=/arch:SSE2
 
 !if "$(ECL_WIN64)" != ""
 GMP_BITS=64
-GC_CPU=AMD64
+GC_CPU=X64
 !else
 GMP_BITS=32
-GC_CPU=X86
+GC_CPU=i386
 !endif
 
 #

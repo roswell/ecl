@@ -44,7 +44,7 @@ all: gc.lib
 $(OBJS) tests\test.obj: $(srcdir)\include\private\gc_priv.h $(srcdir)\include\private\gc_hdrs.h $(srcdir)\include\gc.h $(srcdir)\include\private\gcconfig.h $(srcdir)\include\private\gc_locks.h $(srcdir)\include\private\gc_pmark.h $(srcdir)\include\gc_mark.h $(srcdir)\include\private\msvc_dbg.h
 
 gc.lib: $(OBJS)
-!if "$(CPU)" == "X386"
+!if "$(CPU)" == "i386"
 	lib /MACHINE:i386 /out:gc.lib $(OBJS)
 !else
 	lib /MACHINE:X64 /out:gc.lib $(OBJS)
