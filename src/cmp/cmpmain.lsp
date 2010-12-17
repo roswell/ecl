@@ -25,15 +25,18 @@
   ;; carries a file type -- this solves a problem with filesystems where
   ;; mkstemp may introduce one or more dots in the name causing several
   ;; functions below to ignore parts of the name.
-  (let* ((base (si::mkstemp template))
-         (output (and base (concatenate 'string (namestring base) ".tmp"))))
-    (when (or (null base)
-              (null (rename-file base output :if-exists nil)))
+  (let* ((base (si::mkstemp template)))
+    (when (and base (null (pathname-type base)))
+      (let ((output (make-pathname :type "tmp" :defaults base)))
+        (if (rename-file base output :if-exists nil)
+            (setf base output)
+            (progn (delete-file base) (setf base nil)))))
+    (unless base
       (error "Unable to create temporay file~%~
 	~AXXXXXX
 Make sure you have enough free space in disk, check permissions or set~%~
 the environment variable TMPDIR to a different value." template))
-    (truename output)))
+    (truename base)))
 
 (defun safe-system (string)
   (cmpnote "Invoking external command:~%  ~A~%" string)
