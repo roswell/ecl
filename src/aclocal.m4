@@ -330,7 +330,7 @@ case "${host_os}" in
 		clibs='-ldl'
 		# We should use C99 and _XOPEN_SOURCE=600, but Solaris 10
 		# ships with GCC 3.4.3 which does not support C99
-		# CFLAGS="${CFLAGS} -std=gnu99"
+                CFLAGS="${CFLAGS} -std=gnu99"
 		enable_slow_config=yes
 		;;
 	cygwin*)

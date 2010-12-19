@@ -486,9 +486,15 @@ typedef unsigned @CL_FIXNUM_TYPE@ cl_hashkey;
 # endif
 # ifndef isfinite
 #  ifdef __sun
-#   include <ieeefp.h>
+#   ifndef ECL_LONG_FLOAT
+#    include <ieeefp.h>
+#    define isfinite(x) finite(x)
+#   else
+#    error "Function isfinite() is missing"
+#   endif
+#  else
+#   define isfinite(x) finite(x)
 #  endif
-#  define isfinite(x) finite(x)
 # endif
 # ifndef signbit
 #  ifndef ECL_SIGNED_ZERO
