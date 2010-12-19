@@ -1156,6 +1156,7 @@ extern ECL_API cl_object ecl_floor1(cl_object x);
 extern ECL_API cl_object ecl_ceiling1(cl_object x);
 extern ECL_API cl_object ecl_truncate1(cl_object x);
 extern ECL_API cl_object ecl_round1(cl_object x);
+extern ECL_API int ecl_signbit(cl_object x);
 extern ECL_API cl_object ecl_floor2(cl_object x, cl_object y);
 extern ECL_API cl_object ecl_ceiling2(cl_object x, cl_object y);
 extern ECL_API cl_object ecl_truncate2(cl_object x, cl_object y);
