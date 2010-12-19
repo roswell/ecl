@@ -105,7 +105,7 @@ si_float_to_string_free(cl_object buffer_or_nil, cl_object number,
         buffer = VALUES(1);
         e = fix(exp);
 
-        if (ecl_minusp(number)) {
+        if (ecl_signbit(number)) {
                 insert_char(buffer, base++, '-');
         }
         /* Do we have to print in exponent notation? */
