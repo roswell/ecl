@@ -515,7 +515,8 @@ typedef unsigned @CL_FIXNUM_TYPE@ cl_hashkey;
  * if (f == 0.0) { if (signbit(f)) ... }
  */
 # if defined(__sun__) && defined(__GNUC__)
-#  undef signbit
+#  undef \
+   signbit /* Avoid autoconf removing this */
 #  define signbit(x) (copysign(1.0,(x)) < 0)
 # endif
 #endif
