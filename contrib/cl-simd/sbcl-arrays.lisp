@@ -157,7 +157,7 @@ Should be assumed to be SIMPLE-ARRAY, except that displacing with MAKE-SSE-ARRAY
                (array-bounding-indices-bad-error ,array ,index (+ ,index ,access-size)))
              ,@code))))))
 
-(defun sse-array-info-or-give-up (lvar)
+(defun sse-array-info-or-give-up (lvar ref-size)
   ;; Look up the SSE element size and check if it is definitely a vector
   (let ((type (lvar-type lvar)))
     (unless (and (array-type-p type)
@@ -170,12 +170,12 @@ Should be assumed to be SIMPLE-ARRAY, except that displacing with MAKE-SSE-ARRAY
       (unless shift
         (give-up-ir1-transform "not a known SSE-compatible array element type: ~S"
                                (type-specifier etype)))
-      (values (ash 1 shift)           ; step
-              (1- (ash 16 (- shift))) ; gap
+      (values (ash 1 shift)                 ; step
+              (ash (1- ref-size) (- shift)) ; gap
               (and (listp (array-type-dimensions type))
                    (if (null (cdr (array-type-dimensions type))) :yes :no))))))
 
-(defmacro def-aref-intrinsic (postfix rtype reader writer &key (check-bounds t))
+(defmacro def-aref-intrinsic (postfix rtype reader writer &key (ref-size 16))
   (let* ((rm-aref (symbolicate "ROW-MAJOR-AREF-" postfix))
          (rm-aset (if writer (symbolicate "ROW-MAJOR-ASET-" postfix)))
          (aref (symbolicate "AREF-" postfix))
@@ -186,10 +186,9 @@ Should be assumed to be SIMPLE-ARRAY, except that displacing with MAKE-SSE-ARRAY
          (writer/ix-vop (if writer (symbolicate "%" writer "/IX")))
          (rtype (or rtype '(values)))
          (index-expression
-          (ecase check-bounds
-            (t       ``(the index (%check-bound array (%sse-array-size array ,gap) index)))
-            ((nil)   ``(the index index))
-            (:no-gap ``(the index (%check-bound array (%sse-array-size array 0) index))))))
+          (if (= ref-size 0)
+              ``(the signed-word index)
+              ``(the signed-word (%check-bound array (%sse-array-size array ,gap) index)))))
     `(progn
        ;; ROW-MAJOR-AREF
        (export ',rm-aref)
@@ -197,11 +196,11 @@ Should be assumed to be SIMPLE-ARRAY, except that displacing with MAKE-SSE-ARRAY
        (defun ,rm-aref (array index)
          (with-sse-data ((sap data array)
                          (offset index))
-           (,reader-vop sap offset)))
+           (,reader-vop sap offset 1 0)))
        ;;
        (deftransform ,rm-aref ((array index) (simple-array t) * :important t)
          ,(format nil "open-code ~A" rm-aref)
-         (multiple-value-bind (step gap is-vector) (sse-array-info-or-give-up array)
+         (multiple-value-bind (step gap is-vector) (sse-array-info-or-give-up array ,ref-size)
            (declare (ignorable gap))
            `(,',reader/ix-vop (array-data-expr array ,is-vector)
                               ,,index-expression
@@ -213,14 +212,14 @@ Should be assumed to be SIMPLE-ARRAY, except that displacing with MAKE-SSE-ARRAY
          (declare (truly-dynamic-extent indices))
          (with-sse-data ((sap data array)
                          (offset (%array-row-major-index array indices)))
-           (,reader-vop sap offset)))
+           (,reader-vop sap offset 1 0)))
        ;;
        (defoptimizer (,aref derive-type) ((array &rest indices) node)
          (assert-array-rank array (length indices))
          (values-specifier-type ',rtype))
        (deftransform ,aref ((array &rest indices) (simple-array &rest t) * :important t)
          ,(format nil "open-code ~A" aref)
-         (multiple-value-bind (step gap is-vector) (sse-array-info-or-give-up array)
+         (multiple-value-bind (step gap is-vector) (sse-array-info-or-give-up array ,ref-size)
            (declare (ignorable gap))
            (let ((syms (make-gensym-list (length indices))))
              `(lambda (array ,@syms)
@@ -236,12 +235,12 @@ Should be assumed to be SIMPLE-ARRAY, except that displacing with MAKE-SSE-ARRAY
                (defun ,rm-aset (array index new-value)
                  (with-sse-data ((sap data array)
                                  (offset index))
-                   (,writer-vop sap offset (the ,rtype new-value))
+                   (,writer-vop sap offset 1 0 (the ,rtype new-value))
                    new-value))
                ;;
                (deftransform ,rm-aset ((array index value) (simple-array t t) * :important t)
                  ,(format nil "open-code ~A" rm-aset)
-                 (multiple-value-bind (step gap is-vector) (sse-array-info-or-give-up array)
+                 (multiple-value-bind (step gap is-vector) (sse-array-info-or-give-up array ,ref-size)
                    (declare (ignorable gap))
                    `(progn
                       (,',writer/ix-vop (array-data-expr array ,is-vector)
@@ -256,7 +255,7 @@ Should be assumed to be SIMPLE-ARRAY, except that displacing with MAKE-SSE-ARRAY
                  (let ((new-value (car (last stuff))))
                    (with-sse-data ((sap data array)
                                    (offset (%array-row-major-index array (nbutlast stuff))))
-                     (,writer-vop sap offset (the ,rtype new-value))
+                     (,writer-vop sap offset 1 0 (the ,rtype new-value))
                      new-value)))
                ;;
                (defoptimizer (,aset derive-type) ((array &rest stuff) node)
@@ -266,12 +265,12 @@ Should be assumed to be SIMPLE-ARRAY, except that displacing with MAKE-SSE-ARRAY
                  (specifier-type ',rtype))
                (deftransform ,aset ((array &rest stuff) (simple-array &rest t) * :important t)
                  ,(format nil "open-code ~A" aset)
-                 (multiple-value-bind (step gap is-vector) (sse-array-info-or-give-up array)
+                 (multiple-value-bind (step gap is-vector) (sse-array-info-or-give-up array ,ref-size)
                    (declare (ignorable gap))
                    (let ((syms (make-gensym-list (length stuff))))
                      `(lambda (array ,@syms)
-                        (let ((index (the index ,(if (eq is-vector :yes) (first syms)
-                                                     `(array-row-major-index array ,@(butlast syms))))))
+                        (let ((index ,(if (eq is-vector :yes) (first syms)
+                                          `(array-row-major-index array ,@(butlast syms)))))
                           (,',writer/ix-vop (array-data-expr array ,is-vector)
                                             ,,index-expression
                                             ,step ,+vector-data-fixup+

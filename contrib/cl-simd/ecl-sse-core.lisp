@@ -32,6 +32,7 @@
     (int-sse-pack :int-sse-pack)
     (float-sse-pack :float-sse-pack)
     (double-sse-pack :double-sse-pack)
+    (boolean :bool)
     (single-float :float)
     (double-float :double)
     (fixnum :fixnum)
@@ -107,7 +108,7 @@
      (c::def-inline ',name ',mode ',arg-types ',ret-type ,call-str ,@flags)))
 
 (defmacro def-intrinsic (name arg-types ret-type c-name
-                         &key (export t) ret-arg reorder-args immediate-args)
+                         &key (export t) ret-arg reorder-args immediate-args defun-body)
   "Defines and exports an SSE intrinsic function with matching open-coding rules."
   (let* ((anums (make-arg-nums arg-types))
          (asyms (mapcar #'make-arg-name anums))
@@ -130,7 +131,7 @@
        ,@(if (null immediate-args)
              `((defun ,name ,asyms
                  (declare (optimize (speed 0) (debug 0) (safety 1)))
-                 (ffi:c-inline ,asyms ,aftypes ,rftype ,call-str :one-liner t))))
+                 (ffi:c-inline ,asyms ,aftypes ,rftype ,(or defun-body call-str) :one-liner t))))
        (def-inline ,name :always ,(mapcar #'inline-arg-type-of arg-types) ,rftype
                    ,call-str :inline-or-warn t))))
 
@@ -155,10 +156,15 @@
      ,ret-type ,c-name :immediate-args ,(if immediate-arg `((arg2 ,immediate-arg)))))
 
 (defmacro def-sse-int-intrinsic (name int-type ret-type insn cost c-name
-                                &key (arg-type ret-type) immediate-arg make-temporary)
+                                 &key (arg-type ret-type) immediate-arg make-temporary defun-body)
   (declare (ignore insn cost make-temporary))
   `(def-intrinsic ,name (,arg-type ,int-type ,@(if immediate-arg (list immediate-arg)))
-     ,ret-type ,c-name :immediate-args ,(if immediate-arg `((arg2 ,immediate-arg)))))
+     ,ret-type ,c-name :immediate-args ,(if immediate-arg `((arg2 ,immediate-arg)))
+     :defun-body ,defun-body))
+
+(defmacro def-comparison-intrinsic (name arg-type insn cost c-name &key commutative tags)
+  (declare (ignore insn cost commutative tags))
+  `(def-intrinsic ,name (,arg-type ,arg-type) boolean ,c-name))
 
 (defmacro %def-aref-intrinsic (tag val-type c-type reader writer &key (aux-args "") (bsize 16))
   "Defines and exports macros and functios that implement vectorized array access."
@@ -236,11 +242,10 @@
                                           ,(fmtw "(&(#0)->array.self.~A[#1])" (second spec))))
                            known-elt-types)))))))
 
-(defmacro def-aref-intrinsic (tag val-type reader-fun writer-fun &key (check-bounds t))
+(defmacro def-aref-intrinsic (tag val-type reader-fun writer-fun &key (ref-size 16))
   `(%def-aref-intrinsic ,tag ,val-type ,(pointer-c-type-of val-type)
                         ,(get reader-fun 'c-function-name) ,(get writer-fun 'c-function-name)
-                        :bsize ,(ecase check-bounds
-                                  (t 16) ((nil) 0) (:no-gap 1))
+                        :bsize ,ref-size
                         :aux-args ,(get reader-fun 'c-call-aux-args)))
 
 (defmacro def-mem-intrinsic (name c-type ret-type c-name &key (public t)

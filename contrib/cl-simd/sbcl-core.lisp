@@ -59,27 +59,55 @@
 
 ;;; Index-offset splicing
 
-(defun fold-index-addressing (fun-name index scale &key setter-p)
-  (multiple-value-bind (func index-args) (extract-fun-args index '(+ - * ash) 2)
+(defun skip-casts (lvar)
+  (let ((inside (lvar-uses lvar)))
+    (if (and (cast-p inside)
+             (policy inside (= sb-c::type-check 0)))
+        (skip-casts (cast-value inside))
+        lvar)))
+
+(defun delete-casts (lvar)
+  (loop for inside = (lvar-uses lvar)
+     while (cast-p inside)
+     do (delete-filter inside lvar (cast-value inside))))
+
+(defun fold-index-addressing (fun-name index scale offset &key prefix-args postfix-args)
+  (multiple-value-bind (func index-args)
+      (extract-fun-args (skip-casts index) '(+ - * ash) 2)
     (destructuring-bind (x constant) index-args
       (declare (ignorable x))
       (unless (constant-lvar-p constant)
         (give-up-ir1-transform))
       (let ((value (lvar-value constant))
-            (scale-value (lvar-value scale)))
-        (case func
-          (*   (unless (typep (* value scale-value) '(signed-byte 32))
-                 (give-up-ir1-transform "constant is too large for inlining")))
-          (ash (unless (and (>= value 0)
-                            (typep (ash scale-value value) '(signed-byte 32)))
-                 (give-up-ir1-transform "index shift is unsuitable for inlining"))))
-        (splice-fun-args index func 2)
-        (let* ((value-arg (when setter-p '(value)))
-               (is-scale (member func '(* ash)))
-               (new-scale (if is-scale `(,func scale const) 'scale))
-               (new-offset (if is-scale 'offset `(,func offset (* const scale)))))
-          `(lambda (thing index const scale offset ,@value-arg)
-             (,fun-name thing index ,new-scale ,new-offset ,@value-arg)))))))
+            (scale-value (lvar-value scale))
+            (offset-value (lvar-value offset)))
+        (unless (integerp value)
+          (give-up-ir1-transform))
+        (multiple-value-bind (new-scale new-offset)
+            (ecase func
+              (+   (values scale-value (+ offset-value (* value scale-value))))
+              (-   (values scale-value (- offset-value (* value scale-value))))
+              (*   (values (* scale-value value) offset-value))
+              (ash (unless (>= value 0)
+                     (give-up-ir1-transform "negative index shift"))
+                   (values (ash scale-value value) offset-value)))
+          (unless (and (typep new-scale '(signed-byte 32))
+                       (typep new-offset 'signed-word))
+            (give-up-ir1-transform "constant is too large for inlining"))
+          (delete-casts index)
+          (splice-fun-args index func 2)
+          `(lambda (,@prefix-args thing index const scale offset ,@postfix-args)
+             (declare (ignore const scale offset))
+             (,fun-name ,@prefix-args thing (the signed-word index) ,new-scale ,new-offset ,@postfix-args)))))))
+
+(deftransform fold-ref-index-addressing ((thing index scale offset) * * :defun-only t :node node)
+  (fold-index-addressing (lvar-fun-name (basic-combination-fun node)) index scale offset))
+
+(deftransform fold-xmm-ref-index-addressing ((value thing index scale offset) * * :defun-only t :node node)
+  (fold-index-addressing (lvar-fun-name (basic-combination-fun node)) index scale offset :prefix-args '(value)))
+
+(deftransform fold-set-index-addressing ((thing index scale offset value) * * :defun-only t :node node)
+  (fold-index-addressing (lvar-fun-name (basic-combination-fun node)) index scale offset :postfix-args '(value)))
 
 ;;; Index-offset addressing
 
@@ -367,8 +395,8 @@ May emit additional instructions using the temporary register."
          (iv :scs (unsigned-reg unsigned-stack immediate)))
   (:arg-types sse-pack unsigned-num))
 
-(defmacro def-sse-int-intrinsic (&whole whole name itype rtype insn cost c-name &key make-temporary immediate-arg)
-  (declare (ignore c-name))
+(defmacro def-sse-int-intrinsic (&whole whole name itype rtype insn cost c-name &key make-temporary immediate-arg defun-body)
+  (declare (ignore c-name defun-body))
   (let* ((imm (if immediate-arg '(imm)))
          (immt (if immediate-arg (list immediate-arg)))
          (unsigned? (subtypep itype 'unsigned-byte)))
@@ -393,6 +421,40 @@ May emit additional instructions using the temporary register."
                  make-temporary)
            (inst ,insn r ,(if make-temporary 'tmp '(ensure-reg-or-mem iv)) ,@imm))))))
 
+;;; Comparison predicate intrinsics
+
+(define-vop (sse-comparison-op)
+  (:args (x :scs (sse-reg))
+         (y :scs (sse-reg sse-pack-immediate)))
+  (:arg-types sse-pack sse-pack)
+  (:policy :fast-safe)
+  (:note "inline SSE binary comparison predicate")
+  (:vop-var vop)
+  (:save-p :compute-only))
+
+(define-vop (sse-comparison-comm-op sse-comparison-op)
+  (:args (x :scs (sse-reg)
+            :load-if (not (and (sc-is x sse-pack-immediate)
+                               (sc-is y sse-reg))))
+         (y :scs (sse-reg sse-pack-immediate))))
+
+(defmacro def-comparison-intrinsic (&whole whole name arg-type insn cost c-name &key commutative tags)
+  (declare (ignore arg-type c-name))
+  (let* ()
+    `(progn
+       (export ',name)
+       (save-intrinsic-spec ,name ,whole)
+       (defknown ,name (sse-pack sse-pack) boolean (foldable flushable))
+       (define-vop (,name ,(if commutative 'sse-comparison-comm-op 'sse-comparison-op))
+         (:translate ,name)
+         (:conditional ,@tags)
+         (:generator ,cost
+           ,(if commutative
+                `(if (sc-is x sse-reg)
+                     (inst ,insn x y)
+                     (inst ,insn y x))
+                `(inst ,insn x y)))))))
+
 ;;; Memory intrinsics
 
 (define-vop (sse-load-base-op)
@@ -401,40 +463,50 @@ May emit additional instructions using the temporary register."
   (:note "inline SSE load operation"))
 
 (define-vop (sse-load-op sse-load-base-op)
-  (:args (sap :scs (sap-reg))
-         (offset :scs (signed-reg)))
-  (:arg-types system-area-pointer signed-num))
+  (:args (sap :scs (sap-reg) :to :eval)
+         (index :scs (signed-reg immediate) :target tmp))
+  (:arg-types system-area-pointer signed-num
+              (:constant fixnum) (:constant signed-word))
+  (:temporary (:sc signed-reg :from (:argument 1)) tmp)
+  (:info scale offset))
+
+(define-vop (sse-load-op/tag sse-load-base-op)
+  (:args (sap :scs (sap-reg) :to :eval)
+         (index :scs (any-reg signed-reg immediate) :target tmp))
+  (:arg-types system-area-pointer tagged-num
+              (:constant tagged-load-scale) (:constant signed-word))
+  (:temporary (:sc any-reg :from (:argument 1)) tmp)
+  (:info scale offset))
 
 (define-vop (sse-xmm-load-op sse-load-base-op)
   (:args (value :scs (sse-reg sse-pack-immediate) :target r)
-         (sap :scs (sap-reg))
-         (offset :scs (signed-reg)))
-  (:arg-types sse-pack system-area-pointer signed-num))
+         (sap :scs (sap-reg) :to :eval)
+         (index :scs (signed-reg immediate) :target tmp))
+  (:arg-types sse-pack system-area-pointer signed-num
+              (:constant fixnum) (:constant signed-word))
+  (:temporary (:sc signed-reg :from (:argument 2)) tmp)
+  (:info scale offset))
 
-(define-vop (sse-load-imm-op sse-load-base-op)
-  (:args (sap :scs (sap-reg)))
-  (:arg-types system-area-pointer
-              (:constant (signed-byte 32)))
-  (:info offset))
-
-(define-vop (sse-xmm-load-imm-op sse-load-base-op)
+(define-vop (sse-xmm-load-op/tag sse-load-base-op)
   (:args (value :scs (sse-reg sse-pack-immediate) :target r)
-         (sap :scs (sap-reg)))
-  (:arg-types sse-pack system-area-pointer
-              (:constant (signed-byte 32)))
-  (:info offset))
+         (sap :scs (sap-reg) :to :eval)
+         (index :scs (any-reg signed-reg immediate) :target tmp))
+  (:arg-types sse-pack system-area-pointer tagged-num
+              (:constant tagged-load-scale) (:constant signed-word))
+  (:temporary (:sc any-reg :from (:argument 2)) tmp)
+  (:info scale offset))
 
 (define-vop (sse-load-ix-op sse-load-base-op)
   (:args (sap :scs (descriptor-reg) :to :eval)
          (index :scs (signed-reg immediate) :target tmp))
-  (:arg-types * signed-num (:constant fixnum) (:constant fixnum))
+  (:arg-types * signed-num (:constant fixnum) (:constant signed-word))
   (:temporary (:sc signed-reg :from (:argument 1)) tmp)
   (:info scale offset))
 
 (define-vop (sse-load-ix-op/tag sse-load-base-op)
   (:args (sap :scs (descriptor-reg) :to :eval)
          (index :scs (any-reg signed-reg immediate) :target tmp))
-  (:arg-types * tagged-num (:constant tagged-load-scale) (:constant fixnum))
+  (:arg-types * tagged-num (:constant tagged-load-scale) (:constant signed-word))
   (:temporary (:sc any-reg :from (:argument 1)) tmp)
   (:info scale offset))
 
@@ -442,10 +514,8 @@ May emit additional instructions using the temporary register."
                               &key register-arg tags postfix-fmt (size :qword))
   (declare (ignore c-name postfix-fmt))
   (let* ((vop (symbolicate "%" name))
-         (c-vop (symbolicate vop "-C"))
          (ix-vop (symbolicate vop "/IX"))
          (valtype (if register-arg '(sse-pack)))
-         (valarg (if register-arg '(value)))
          (r-arg (if rtype '(r)))
          (rtypes (if rtype
                      `(:result-types ,(type-name-to-primitive rtype))
@@ -454,24 +524,26 @@ May emit additional instructions using the temporary register."
     `(progn
        (export ',name)
        (save-intrinsic-spec ,name ,whole)
-       (defknown ,vop (,@valtype system-area-pointer fixnum) ,(or rtype '(values)) (flushable always-translatable))
+       (defknown ,vop (,@valtype system-area-pointer signed-word fixnum signed-word)
+           ,(or rtype '(values)) (flushable always-translatable))
        (define-vop (,vop ,(if register-arg 'sse-xmm-load-op 'sse-load-op))
          (:translate ,vop)
          ,rtypes
          (:generator 5
            ,(if register-arg `(ensure-load ,rtype r value))
-           (inst ,insn ,@tags ,@r-arg (make-ea ,size :base sap :index offset))))
-       (define-vop (,c-vop ,(if register-arg 'sse-xmm-load-imm-op 'sse-load-imm-op))
+           (inst ,insn ,@tags ,@r-arg (make-scaled-ea ,size sap index scale offset tmp))))
+       (define-vop (,(symbolicate vop "/TAG") ,(if register-arg 'sse-xmm-load-op/tag 'sse-load-op/tag))
          (:translate ,vop)
          ,rtypes
          (:generator 4
            ,(if register-arg `(ensure-load ,rtype r value))
-           (inst ,insn ,@tags ,@r-arg (make-ea ,size :base sap :disp offset))))
-       (def-splice-transform ,vop (,@valarg (sap+ sap offset1) offset2)
-         (,vop ,@valarg sap (+ offset1 offset2)))
+           (inst ,insn ,@tags ,@r-arg (make-scaled-ea ,size sap index scale offset tmp :fixnum-index t))))
+       (%deftransform ',vop '(function * *)
+                      #',(if register-arg 'fold-xmm-ref-index-addressing 'fold-ref-index-addressing)
+                      "fold semi-constant offset expressions")
        ,@(if (null register-arg)
              `(;; Vector indexing version
-               (defknown ,ix-vop (simple-array fixnum fixnum fixnum) ,(or rtype '(values))
+               (defknown ,ix-vop (simple-array signed-word fixnum signed-word) ,(or rtype '(values))
                    (flushable always-translatable))
                (define-vop (,ix-vop sse-load-ix-op)
                  (:translate ,ix-vop)
@@ -483,33 +555,34 @@ May emit additional instructions using the temporary register."
                  ,rtypes
                  (:generator 3
                    (inst ,insn ,@tags ,@r-arg (make-scaled-ea ,size sap index scale offset tmp :fixnum-index t))))
-               (deftransform ,ix-vop ((thing index scale offset))
-                 "fold semi-constant index expressions"
-                 (fold-index-addressing ',ix-vop index scale)))))))
+               (%deftransform ',ix-vop '(function * *) #'fold-ref-index-addressing
+                              "fold semi-constant index expressions"))))))
 
 (define-vop (sse-store-base-op)
   (:policy :fast-safe)
   (:note "inline SSE store operation"))
 
 (define-vop (sse-store-op sse-store-base-op)
-  (:args (sap :scs (sap-reg))
-         (offset :scs (signed-reg))
+  (:args (sap :scs (sap-reg) :to :eval)
+         (index :scs (signed-reg immediate) :target tmp)
          (value :scs (sse-reg)))
-  (:arg-types system-area-pointer signed-num sse-pack))
+  (:arg-types system-area-pointer signed-num (:constant fixnum) (:constant signed-word) sse-pack)
+  (:temporary (:sc signed-reg :from (:argument 1)) tmp)
+  (:info scale offset))
 
-(define-vop (sse-store-imm-op sse-store-base-op)
-  (:args (sap :scs (sap-reg))
+(define-vop (sse-store-op/tag sse-store-base-op)
+  (:args (sap :scs (sap-reg) :to :eval)
+         (index :scs (any-reg signed-reg immediate) :target tmp)
          (value :scs (sse-reg)))
-  (:arg-types system-area-pointer
-              (:constant (signed-byte 32))
-              sse-pack)
-  (:info offset))
+  (:arg-types system-area-pointer tagged-num (:constant tagged-load-scale) (:constant signed-word) sse-pack)
+  (:temporary (:sc any-reg :from (:argument 1)) tmp)
+  (:info scale offset))
 
 (define-vop (sse-store-ix-op sse-store-base-op)
   (:args (sap :scs (descriptor-reg) :to :eval)
          (index :scs (signed-reg immediate) :target tmp)
          (value :scs (sse-reg)))
-  (:arg-types * signed-num (:constant fixnum) (:constant fixnum) sse-pack)
+  (:arg-types * signed-num (:constant fixnum) (:constant signed-word) sse-pack)
   (:temporary (:sc signed-reg :from (:argument 1)) tmp)
   (:info scale offset))
 
@@ -517,31 +590,31 @@ May emit additional instructions using the temporary register."
   (:args (sap :scs (descriptor-reg) :to :eval)
          (index :scs (any-reg signed-reg immediate) :target tmp)
          (value :scs (sse-reg)))
-  (:arg-types * tagged-num (:constant tagged-load-scale) (:constant fixnum) sse-pack)
+  (:arg-types * tagged-num (:constant tagged-load-scale) (:constant signed-word) sse-pack)
   (:temporary (:sc any-reg :from (:argument 1)) tmp)
   (:info scale offset))
 
 (defmacro def-store-intrinsic (&whole whole name rtype insn c-name &key setf-name)
   (declare (ignore rtype c-name))
   (let* ((vop (symbolicate "%" name))
-         (c-vop (symbolicate vop "-C"))
          (ix-vop (symbolicate vop "/IX")))
     `(progn
        ,(unless setf-name `(export ',name))
        (save-intrinsic-spec ,name ,whole)
-       (defknown ,vop (system-area-pointer fixnum sse-pack) (values) (unsafe always-translatable))
+       (defknown ,vop (system-area-pointer signed-word fixnum signed-word sse-pack) (values)
+           (unsafe always-translatable))
        (define-vop (,vop sse-store-op)
          (:translate ,vop)
          (:generator 5
-           (inst ,insn (make-ea :qword :base sap :index offset) value)))
-       (define-vop (,c-vop sse-store-imm-op)
+           (inst ,insn (make-scaled-ea :qword sap index scale offset tmp) value)))
+       (define-vop (,(symbolicate vop "/TAG") sse-store-op/tag)
          (:translate ,vop)
          (:generator 4
-           (inst ,insn (make-ea :qword :base sap :disp offset) value)))
-       (def-splice-transform ,vop ((sap+ sap offset1) offset2 new-value)
-         (,vop sap (+ offset1 offset2) new-value))
+           (inst ,insn (make-scaled-ea :qword sap index scale offset tmp :fixnum-index t) value)))
+       (%deftransform ',vop '(function * *) #'fold-set-index-addressing
+                      "fold semi-constant offset expressions")
        ;; Vector indexing version
-       (defknown ,ix-vop (simple-array fixnum fixnum fixnum sse-pack) (values)
+       (defknown ,ix-vop (simple-array signed-word fixnum signed-word sse-pack) (values)
            (unsafe always-translatable))
        (define-vop (,ix-vop sse-store-ix-op)
          (:translate ,ix-vop)
@@ -551,7 +624,6 @@ May emit additional instructions using the temporary register."
          (:translate ,ix-vop)
          (:generator 3
            (inst ,insn (make-scaled-ea :qword sap index scale offset tmp :fixnum-index t) value)))
-       (deftransform ,ix-vop ((thing index scale offset value))
-         "fold semi-constant index expressions"
-         (fold-index-addressing ',ix-vop index scale :setter-p t)))))
+       (%deftransform ',ix-vop '(function * *) #'fold-set-index-addressing
+                      "fold semi-constant index expressions"))))
 

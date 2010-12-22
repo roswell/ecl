@@ -198,7 +198,18 @@
 (def-binary-intrinsic cmpunord-ss float-sse-pack cmpss 3 "_mm_cmpunord_ss" :tags (:unord))
 (def-binary-intrinsic cmpunord-ps float-sse-pack cmpps 3 "_mm_cmpunord_ps" :tags (:unord) :commutative t)
 
-#| Skipped: _mm_u?comi.*_ss  |#
+(def-comparison-intrinsic =-ss? float-sse-pack comiss 3 "_mm_comieq_ss" :commutative t :tags (:e))
+(def-comparison-intrinsic =-ssu? float-sse-pack ucomiss 3 "_mm_ucomieq_ss" :commutative t :tags (:e))
+(def-comparison-intrinsic <-ss? float-sse-pack comiss 3 "_mm_comilt_ss" :tags (:b))
+(def-comparison-intrinsic <-ssu? float-sse-pack ucomiss 3 "_mm_ucomilt_ss" :tags (:b))
+(def-comparison-intrinsic <=-ss? float-sse-pack comiss 3 "_mm_comile_ss" :tags (:be))
+(def-comparison-intrinsic <=-ssu? float-sse-pack ucomiss 3 "_mm_ucomile_ss" :tags (:be))
+(def-comparison-intrinsic >-ss? float-sse-pack comiss 3 "_mm_comigt_ss" :tags (:a))
+(def-comparison-intrinsic >-ssu? float-sse-pack ucomiss 3 "_mm_ucomigt_ss" :tags (:a))
+(def-comparison-intrinsic >=-ss? float-sse-pack comiss 3 "_mm_comige_ss" :tags (:ae))
+(def-comparison-intrinsic >=-ssu? float-sse-pack ucomiss 3 "_mm_ucomige_ss" :tags (:ae))
+(def-comparison-intrinsic /=-ss? float-sse-pack comiss 3 "_mm_comineq_ss" :commutative t :tags (:ne))
+(def-comparison-intrinsic /=-ssu? float-sse-pack ucomiss 3 "_mm_ucomineq_ss" :commutative t :tags (:ne))
 
 ;; Misc
 
@@ -337,6 +348,19 @@
 (def-binary-intrinsic cmpord-pd double-sse-pack cmppd 3 "_mm_cmpord_pd" :tags (:ord) :commutative t)
 (def-binary-intrinsic cmpunord-sd double-sse-pack cmpsd 3 "_mm_cmpunord_sd" :tags (:unord))
 (def-binary-intrinsic cmpunord-pd double-sse-pack cmppd 3 "_mm_cmpunord_pd" :tags (:unord) :commutative t)
+
+(def-comparison-intrinsic =-sd? double-sse-pack comisd 3 "_mm_comieq_sd" :commutative t :tags (:e))
+(def-comparison-intrinsic =-sdu? double-sse-pack ucomisd 3 "_mm_ucomieq_sd" :commutative t :tags (:e))
+(def-comparison-intrinsic <-sd? double-sse-pack comisd 3 "_mm_comilt_sd" :tags (:b))
+(def-comparison-intrinsic <-sdu? double-sse-pack ucomisd 3 "_mm_ucomilt_sd" :tags (:b))
+(def-comparison-intrinsic <=-sd? double-sse-pack comisd 3 "_mm_comile_sd" :tags (:be))
+(def-comparison-intrinsic <=-sdu? double-sse-pack ucomisd 3 "_mm_ucomile_sd" :tags (:be))
+(def-comparison-intrinsic >-sd? double-sse-pack comisd 3 "_mm_comigt_sd" :tags (:a))
+(def-comparison-intrinsic >-sdu? double-sse-pack ucomisd 3 "_mm_ucomigt_sd" :tags (:a))
+(def-comparison-intrinsic >=-sd? double-sse-pack comisd 3 "_mm_comige_sd" :tags (:ae))
+(def-comparison-intrinsic >=-sdu? double-sse-pack ucomisd 3 "_mm_ucomige_sd" :tags (:ae))
+(def-comparison-intrinsic /=-sd? double-sse-pack comisd 3 "_mm_comineq_sd" :commutative t :tags (:ne))
+(def-comparison-intrinsic /=-sdu? double-sse-pack ucomisd 3 "_mm_ucomineq_sd" :commutative t :tags (:ne))
 
 ;; Misc
 
@@ -541,23 +565,31 @@
 
 (def-unary-intrinsic slli-pi int-sse-pack pslldq 1 "_mm_slli_si128" :partial :one-arg :immediate-arg (unsigned-byte 8))
 
-(def-sse-int-intrinsic slli-pi16 fixnum int-sse-pack psllw 3 "_mm_slli_epi16" :make-temporary t)
-(def-sse-int-intrinsic slli-pi32 fixnum int-sse-pack pslld 3 "_mm_slli_epi32" :make-temporary t)
-(def-sse-int-intrinsic slli-pi64 fixnum int-sse-pack psllq 3 "_mm_slli_epi64" :make-temporary t)
+(def-sse-int-intrinsic slli-pi16 fixnum int-sse-pack psllw 3 "_mm_slli_epi16" :make-temporary t
+                       :defun-body "_mm_sll_epi16(#0,_mm_cvtsi32_si128(#1))")
+(def-sse-int-intrinsic slli-pi32 fixnum int-sse-pack pslld 3 "_mm_slli_epi32" :make-temporary t
+                       :defun-body "_mm_sll_epi32(#0,_mm_cvtsi32_si128(#1))")
+(def-sse-int-intrinsic slli-pi64 fixnum int-sse-pack psllq 3 "_mm_slli_epi64" :make-temporary t
+                       :defun-body "_mm_sll_epi64(#0,_mm_cvtsi32_si128(#1))")
 (def-binary-intrinsic sll-pi16 int-sse-pack psllw 1 "_mm_sll_epi16")
 (def-binary-intrinsic sll-pi32 int-sse-pack pslld 1 "_mm_sll_epi32")
 (def-binary-intrinsic sll-pi64 int-sse-pack psllq 1 "_mm_sll_epi64")
 
-(def-sse-int-intrinsic srai-pi16 fixnum int-sse-pack psraw 3 "_mm_srai_epi16" :make-temporary t)
-(def-sse-int-intrinsic srai-pi32 fixnum int-sse-pack psrad 3 "_mm_srai_epi32" :make-temporary t)
+(def-sse-int-intrinsic srai-pi16 fixnum int-sse-pack psraw 3 "_mm_srai_epi16" :make-temporary t
+                       :defun-body "_mm_sra_epi16(#0,_mm_cvtsi32_si128(#1))")
+(def-sse-int-intrinsic srai-pi32 fixnum int-sse-pack psrad 3 "_mm_srai_epi32" :make-temporary t
+                       :defun-body "_mm_sra_epi32(#0,_mm_cvtsi32_si128(#1))")
 (def-binary-intrinsic sra-pi16 int-sse-pack psraw 1 "_mm_sra_epi16")
 (def-binary-intrinsic sra-pi32 int-sse-pack psrad 1 "_mm_sra_epi32")
 
 (def-unary-intrinsic srli-pi int-sse-pack psrldq 1 "_mm_srli_si128" :partial :one-arg :immediate-arg (unsigned-byte 8))
 
-(def-sse-int-intrinsic srli-pi16 fixnum int-sse-pack psrlw 3 "_mm_srli_epi16" :make-temporary t)
-(def-sse-int-intrinsic srli-pi32 fixnum int-sse-pack psrld 3 "_mm_srli_epi32" :make-temporary t)
-(def-sse-int-intrinsic srli-pi64 fixnum int-sse-pack psrlq 3 "_mm_srli_epi64" :make-temporary t)
+(def-sse-int-intrinsic srli-pi16 fixnum int-sse-pack psrlw 3 "_mm_srli_epi16" :make-temporary t
+                       :defun-body "_mm_srl_epi16(#0,_mm_cvtsi32_si128(#1))")
+(def-sse-int-intrinsic srli-pi32 fixnum int-sse-pack psrld 3 "_mm_srli_epi32" :make-temporary t
+                       :defun-body "_mm_srl_epi32(#0,_mm_cvtsi32_si128(#1))")
+(def-sse-int-intrinsic srli-pi64 fixnum int-sse-pack psrlq 3 "_mm_srli_epi64" :make-temporary t
+                       :defun-body "_mm_srl_epi64(#0,_mm_cvtsi32_si128(#1))")
 (def-binary-intrinsic srl-pi16 int-sse-pack psrlw 1 "_mm_srl_epi16")
 (def-binary-intrinsic srl-pi32 int-sse-pack psrld 1 "_mm_srl_epi32")
 (def-binary-intrinsic srl-pi64 int-sse-pack psrlq 1 "_mm_srl_epi64")

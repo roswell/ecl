@@ -30,8 +30,10 @@
                 #:GIVE-UP-IR1-TRANSFORM #:ABORT-IR1-TRANSFORM
                 #:INSERT-ARRAY-BOUNDS-CHECKS #:VECTOR-LENGTH
                 #:ASSERT-ARRAY-RANK #:ASSERT-LVAR-TYPE
-                #:CONSTANT-LVAR-P #:LVAR-VALUE #:LVAR-TYPE
-                #:LEXENV-POLICY #:NODE-LEXENV
+                #:CONSTANT-LVAR-P #:LVAR-VALUE #:LVAR-TYPE #:LVAR-USES
+                #:LVAR-FUN-NAME #:BASIC-COMBINATION-FUN
+                #:LEXENV-POLICY #:NODE-LEXENV #:POLICY
+                #:CAST-P #:CAST-VALUE #:DELETE-FILTER
                 #:FIND-SAETP #:FIND-SAETP-BY-CTYPE)
   #+sbcl
   (:import-from #:SB-IMPL
