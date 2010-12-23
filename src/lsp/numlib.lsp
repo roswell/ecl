@@ -183,13 +183,13 @@ Returns the arc cosine of NUMBER."
 	     (asinh (imagpart (* (conjugate sqrt-1+z)
 				 sqrt-1-z))))))
 
-#+(and (not ecl-min) win32)
+#+(and (not ecl-min) win32 (not mingw32))
 (progn
   (ffi:clines "double asinh(double x) { return log(x+sqrt(1.0+x*x)); }")
   (ffi:clines "double acosh(double x) { return log(x+sqrt((x-1)*(x+1))); }")
   (ffi:clines "double atanh(double x) { return log((1+x)/(1-x))/2; }"))
 
-#+(and long-float (not ecl-min) win32)
+#+(and long-float (not ecl-min) win32 (not mingw32))
 (progn
   (ffi:clines "double asinhl(long double x) { return logl(x+sqrtl(1.0+x*x)); }")
   (ffi:clines "double acoshl(long double x) { return logl(x+sqrtl((x-1)*(x+1))); }")
