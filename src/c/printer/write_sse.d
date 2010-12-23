@@ -34,9 +34,8 @@ write_sse_float(float v, cl_object stream)
 	if (is_all_FF(&v, sizeof(float))) {
 		writestr_stream(" TRUE", stream);
 	} else {
-                ecl_def_ct_single_float(wrapped_f, v, ,);
                 ecl_write_char(' ', stream);
-                si_write_ugly_object(wrapped_f, stream);
+                si_write_ugly_object(ecl_make_singlefloat(v), stream);
 	}
 }
 
@@ -46,9 +45,8 @@ write_sse_double(double v, cl_object stream)
 	if (is_all_FF(&v, sizeof(double)))
 		writestr_stream(" TRUE", stream);
         else {
-                ecl_def_ct_double_float(wrapped_f, v, ,);
                 ecl_write_char(' ', stream);
-                si_write_ugly_object(wrapped_f, stream);
+                si_write_ugly_object(ecl_make_doublefloat(v), stream);
 	}
 }
 
@@ -65,7 +63,7 @@ write_sse_pack(cl_object x, cl_object stream)
 		else etype = aet_b8;
 	}
 
-	switch (x->sse.elttype) {
+	switch (etype) {
 	case aet_sf:
 		for (i = 0; i < 4; i++)
                         write_sse_float(x->sse.data.sf[i], stream);
@@ -77,10 +75,8 @@ write_sse_pack(cl_object x, cl_object stream)
 	default: {
                 cl_object buffer = si_get_buffer_string();
 		for (i = 0; i < 16; i++) {
-			char buf[10];
-			int pad = 1 + (i%4 == 0);
-                        ecl_string_push_extend(' ', buffer);
-                        if (i%4 == 0) ecl_string_push_extend(' ', buffer);
+                        ecl_string_push_extend(buffer, ' ');
+                        if (i%4 == 0) ecl_string_push_extend(buffer, ' ');
                         si_integer_to_string(buffer, MAKE_FIXNUM(x->sse.data.b8[i]),
                                              MAKE_FIXNUM(16), Cnil, Cnil);
 		}
@@ -91,8 +87,8 @@ write_sse_pack(cl_object x, cl_object stream)
 	}
 }
 
-static void
-write_sse(cl_object x, cl_object stream)
+void
+_ecl_write_sse(cl_object x, cl_object stream)
 {
         if (ecl_print_readably()) FEprint_not_readable(x);
         writestr_stream("#<SSE", stream);

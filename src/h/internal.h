@@ -313,7 +313,7 @@ extern void _ecl_write_bclosure(cl_object o, cl_object stream);
 extern void _ecl_write_bytecodes(cl_object o, cl_object stream);
 extern void _ecl_write_symbol(cl_object o, cl_object stream);
 extern void _ecl_write_fixnum(cl_fixnum o, cl_object stream);
-extern void _ecl_write_sse(cl_fixnum o, cl_object stream);
+extern void _ecl_write_sse(cl_object o, cl_object stream);
 extern void _ecl_write_unreadable(cl_object x, const char *prefix, cl_object name, cl_object stream);
 extern bool _ecl_will_print_as_hash(cl_object o);
 extern cl_object _ecl_ensure_buffer(cl_object buffer, cl_fixnum length);
