@@ -5091,11 +5091,14 @@ init_file(void)
 						    external_format);
 #endif
 	cl_core.standard_input = standard_input;
+        ECL_SET(@'ext::+process-standard-input+', standard_input);
 	ECL_SET(@'*standard-input*', standard_input);
 	cl_core.standard_output = standard_output;
+        ECL_SET(@'ext::+process-standard-output+', standard_output);
 	ECL_SET(@'*standard-output*', standard_output);
 	ECL_SET(@'*trace-output*', standard_output);
 	cl_core.error_output = error_output;
+        ECL_SET(@'ext::+process-error-output+', error_output);
 	ECL_SET(@'*error-output*', error_output);
 
 	cl_core.terminal_io = aux 

@@ -56,6 +56,7 @@
   "src:cmp;cmpclos.lsp"
   "src:cmp;cmpstructures.lsp"
   "src:cmp;cmparray.lsp"
+  "src:cmp;cmpos-run.lsp"
   "src:cmp;cmpmain.lsp"
   "src:cmp;proclamations.lsp"
   "src:cmp;sysfun.lsp"))

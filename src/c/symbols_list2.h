@@ -1968,5 +1968,9 @@ cl_symbols[] = {
 
 {EXT_ "DUMP-C-BACKTRACE","si_dump_c_backtrace"},
 
+{EXT_ "+PROCESS-STANDARD-INPUT+",NULL},
+{EXT_ "+PROCESS-STANDARD-OUTPUT+",NULL},
+{EXT_ "+PROCESS-ERROR-OUTPUT+",NULL},
+
 /* Tag for end of list */
 {NULL,NULL}};

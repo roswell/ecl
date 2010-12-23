@@ -120,19 +120,19 @@
     (when (probe-file "@LIBPREFIX@eclgmp.@LIBEXT@")
       (push "@LIBPREFIX@eclgmp.@LIBEXT@" extra-args)))
   (print extra-args)
-  (apply #'c::shared-cc
-	 (compile-file-pathname "ecl" :type :dll)
-	 "c/main.@OBJEXT@"
-	 "c/all_symbols2.@OBJEXT@"
-	 "@LIBPREFIX@lsp.@LIBEXT@"
-	 "@LIBPREFIX@eclmin.@LIBEXT@"
-	 extra-args))
+  (c::shared-cc (compile-file-pathname "ecl" :type :dll)
+                (list* "c/main.@OBJEXT@"
+                       "c/all_symbols2.@OBJEXT@"
+                       "@LIBPREFIX@lsp.@LIBEXT@"
+                       "@LIBPREFIX@eclmin.@LIBEXT@"
+                       extra-args)))
 
 ;;;
 ;;; * Compile and link Common-Lisp to C compiler
 ;;;
 (mapc #'proclaim +ecl-optimization-settings+)
 
+#-mingw32
 (si::pathname-translations "SYS" '(("**;*.*.*" "@ecldir\@/**/*.*")))
 
 #+WANTS-CMP

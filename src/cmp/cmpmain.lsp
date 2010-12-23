@@ -38,15 +38,6 @@ Make sure you have enough free space in disk, check permissions or set~%~
 the environment variable TMPDIR to a different value." template))
     (truename base)))
 
-(defun safe-system (string)
-  (cmpnote "Invoking external command:~%  ~A~%" string)
-  (let ((result (si:system string)))
-    (unless (zerop result)
-      (cerror "Continues anyway."
-	      "(SYSTEM ~S) returned non-zero value ~D"
-	      string result))
-    result))
-
 (defun compile-file-pathname (name &key (output-file T) (type nil type-supplied-p)
                               verbose print c-file h-file data-file shared-data-file
                               system-p load external-format source-truename
@@ -121,107 +112,75 @@ the environment variable TMPDIR to a different value." template))
   (let ((x (string-right-trim '(#\\ #\/) directory-namestring)))
     (if (zerop (length x)) "/" x)))
 
-(defun linker-cc (o-pathname &rest options)
-  (safe-system
-   (format nil
-	   *ld-format*
-	   *ld*
-	   (brief-namestring o-pathname)
-	   (fix-for-mingw (ecl-library-directory))
-	   options
-           *ld-rpath*
-           *user-ld-flags*
-	   *ld-flags*))
-  #+msvc
-  (embed-manifest-file o-pathname :program)
-  #+msvc
+#+msvc
+(defun linker-cc (o-pathname object-files &key
+                  (type :program)
+                  (ld-flags (split-program-options *ld-flags*)))
+  (safe-run-program
+   *ld*
+   `(,(concatenate 'string "-Fe" o-pathname)
+     ,@object-files
+     ,@(split-program-options *ld-rpath*)
+     ,@(split-program-options *user-ld-flags*)
+     ,@ld-flags))
+  (embed-manifest-file o-pathname type)
   (delete-msvc-generated-files o-pathname))
+
+#-msvc
+(defun linker-cc (o-pathname object-files &key
+                  (type :program)
+                  (ld-flags (split-program-options *ld-flags*)))
+  (safe-run-program
+   *ld*
+   `("-o" ,(brief-namestring o-pathname)
+     ,(concatenate 'string "-L" (fix-for-mingw (ecl-library-directory)))
+     ,@object-files
+     ,@(and *ld-rpath* (list *ld-rpath*))
+     ,@(split-program-options *user-ld-flags*)
+     ,@ld-flags)))
 
 #+dlopen
 (defun dll-extra-flags (o-pathname)
-  #-msvc
-  *ld-shared-flags*
-  #+msvc
-  (let ((implib (si::coerce-to-filename
-		 (compile-file-pathname o-pathname :type :lib))))
-    (concatenate 'string
-		 *ld-shared-flags*
-		 " /LIBPATH:" (ecl-library-directory)
-		 " \"/IMPLIB:" implib "\"")))
-			       
+  `(,@(split-program-options *ld-shared-flags*)
+      #+msvc
+      ,@(let ((implib (si::coerce-to-filename
+                       (compile-file-pathname o-pathname :type :lib))))
+             (list (concatenate 'string "/LIBPATH:" (ecl-library-directory))
+                   (concatenate 'string "/IMPLIB:" implib)))))
+
+(defun static-lib-ar (lib object-files)
+  (let ((lib (brief-namestring lib)))
+    (safe-run-program *ar* (list* "cr" lib (mapcar #'brief-namestring object-files)))
+    (safe-run-program *ranlib* (list lib))))
 
 #+dlopen
-(defun shared-cc (o-pathname &rest options)
-  #-(or mingw32)
-  (safe-system
-   (format nil
-	   *ld-format*
-	   *ld*
-	   (brief-namestring o-pathname)
-	   (fix-for-mingw (ecl-library-directory))
-	   options
-           *ld-rpath*
-           *user-ld-flags*
-	   (dll-extra-flags o-pathname)))
-  #+msvc
-  (embed-manifest-file o-pathname :dll)
-  #+msvc
-  (delete-msvc-generated-files o-pathname)
-  #+(or mingw32)
-  (let ((lib-file (compile-file-pathname o-pathname :type :lib)))
-    (safe-system
-     (format nil
-	     "~S -shared -o ~S -L~S ~{~S ~} ~@[~S~]~{ '~A'~} ~@?"
-	     *cc*
-	     (brief-namestring o-pathname)
-	     (fix-for-mingw (ecl-library-directory))
-	     options
-             *ld-rpath*
-             *user-ld-flags*
-	     *ld-shared-flags*))))
+(defun shared-cc (o-pathname object-files)
+  (let ((ld-flags (split-program-options *ld-shared-flags*)))
+    #+msvc
+    (setf ld-flags
+          (let ((implib (si::coerce-to-filename
+                         (compile-file-pathname o-pathname :type :lib))))
+            (list* (concatenate 'string "/LIBPATH:" (ecl-library-directory))
+                   (concatenate 'string "/IMPLIB:" implib)
+                   ld-flags)))
+    #+mingw32
+    (setf ld-flags (list* "-shared" ld-flags))
+    (linker-cc o-pathname object-files :type :dll :ld-flags ld-flags)))
 
 #+dlopen
-(defun bundle-extra-flags (init-name o-pathname)
-  #-msvc
-  *ld-bundle-flags*
-  #+msvc
-  (let ((implib (si::coerce-to-filename
-		 (compile-file-pathname
-		  o-pathname :type :import-library))))
-    (concatenate 'string
-		 *ld-bundle-flags*
-		 " /EXPORT:" init-name
-		 " /LIBPATH:" (ecl-library-directory)
-		 " \"/IMPLIB:" implib "\"")))
-			       
-
-#+dlopen
-(defun bundle-cc (o-pathname init-name &rest options)
-  #-(or mingw32)
-  (safe-system
-   (format nil
-	   *ld-format*
-	   *ld*
-	   (brief-namestring o-pathname)
-	   (fix-for-mingw (ecl-library-directory))
-	   options
-           *ld-rpath*
-           *user-ld-flags*
-	   (bundle-extra-flags init-name o-pathname)))
-  #+msvc
-  (embed-manifest-file o-pathname :fasl)
-  #+msvc
-  (delete-msvc-generated-files o-pathname)
-  #+(or mingw32)
-  (safe-system
-   (format nil
-	   "gcc -shared -o ~S -Wl,--export-all-symbols -L~S ~{~S ~} ~@[~S~]~{ '~A'~} ~A"
-	   (brief-namestring o-pathname)
-	   (fix-for-mingw (ecl-library-directory))
-	   options
-           *ld-rpath*
-           *user-ld-flags*
-	   *ld-bundle-flags*)))
+(defun bundle-cc (o-pathname init-name object-files)
+  (let ((ld-flags (split-program-options *ld-bundle-flags*)))
+    #+msvc
+    (setf ld-flags
+          (let ((implib (si::coerce-to-filename
+                         (compile-file-pathname o-pathname :type :lib))))
+            (list* (concatenate 'string "/EXPORT:" init-name)
+                   (concatenate 'string "/LIBPATH:" (ecl-library-directory))
+                   (concatenate 'string "/IMPLIB:" implib)
+                   ld-flags)))
+    #+mingw32
+    (setf ld-flags (list* "-shared" "-Wl,--export-all-symbols" ld-flags))
+    (linker-cc o-pathname object-files :type :fasl :ld-flags ld-flags)))
 
 (defconstant +lisp-program-header+ "
 #include <ecl/ecl.h>
@@ -484,7 +443,7 @@ static cl_object VV[VM];
 		      prologue-code init-name epilogue-code)
        (close c-file)
        (compiler-cc c-name o-name)
-       (apply #'linker-cc output-name (namestring o-name) ld-flags))
+       (linker-cc output-name (list* (namestring o-name) ld-flags)))
       ((:library :static-library :lib)
        (format c-file +lisp-program-init+ init-name prologue-code
 	       shared-data-file submodules epilogue-code)
@@ -492,11 +451,8 @@ static cl_object VV[VM];
        (compiler-cc c-name o-name)
        (when (probe-file output-name) (delete-file output-name))
        #-msvc
-       (progn
-       (safe-system (format nil "~S cr ~S ~S ~{~S ~}"
-			    *ar* (namestring output-name)
-			    (brief-namestring o-name) ld-flags))
-       (safe-system (format nil "~S ~S" *ranlib* (namestring output-name))))
+       (static-lib-ar (namestring output-name)
+                      (list* (brief-namestring o-name) ld-flags))
        #+msvc
        (unwind-protect
          (progn
@@ -513,14 +469,14 @@ static cl_object VV[VM];
 	       shared-data-file submodules epilogue-code)
        (close c-file)
        (compiler-cc c-name o-name)
-       (apply #'shared-cc output-name o-name ld-flags))
+       (shared-cc output-name (list o-name ld-flags)))
       #+dlopen
       (:fasl
        (format c-file +lisp-program-init+ init-name prologue-code shared-data-file
 	       submodules epilogue-code)
        (close c-file)
        (compiler-cc c-name o-name)
-       (apply #'bundle-cc output-name init-name o-name ld-flags)))
+       (bundle-cc output-name init-name (list* o-name ld-flags))))
     (cmp-delete-file tmp-name)
     (cmp-delete-file c-name)
     (cmp-delete-file o-name)
@@ -673,7 +629,7 @@ compiled successfully, returns the pathname of the compiled file"
           (push o-pathname to-delete)
           (bundle-cc (si::coerce-to-filename output-file)
                      init-name
-                     (si::coerce-to-filename o-pathname))))
+                     (list (si::coerce-to-filename o-pathname)))))
 
       (if (setf true-output-file (probe-file output-file))
           (cmpprogress "~&;;; Finished compiling ~a.~%;;;~%"
@@ -787,7 +743,7 @@ after compilation."
       (compiler-cc c-pathname o-pathname)
       (bundle-cc (si::coerce-to-filename so-pathname)
 		 init-name
-		 (si::coerce-to-filename o-pathname))
+		 (list (si::coerce-to-filename o-pathname)))
       (cmp-delete-file c-pathname)
       (cmp-delete-file h-pathname)
       (cmp-delete-file o-pathname)
@@ -914,15 +870,20 @@ from the C language code.  NIL means \"do not create the file\"."
 	((error "Unable to find library directory"))))
 
 (defun compiler-cc (c-pathname o-pathname)
-  (safe-system
-   (format nil
-	   *cc-format*
-	   *cc*
-           (fix-for-mingw (ecl-include-directory))
-	   *cc-flags* (>= (cmp-env-optimization 'speed) 2) *cc-optimize*
-	   (brief-namestring c-pathname)
-	   (brief-namestring o-pathname)
-           *user-cc-flags*)
+  (safe-run-program
+   *cc*
+   `("-I."
+     ,(concatenate 'string "-I" (fix-for-mingw (ecl-include-directory)))
+     ,@(split-program-options *cc-flags*)
+     ,@(and (>= (cmp-env-optimization 'speed) 2)
+            (split-program-options *cc-optimize*))
+     "-w" "-c"
+     ,(brief-namestring c-pathname)
+     #-msvc
+     ,@(list "-o" (brief-namestring o-pathname))
+     #+msvc
+     ,(concatenate 'string "-Fo" (brief-namestring o-pathname))
+     ,@(split-program-options *user-cc-flags*))))
 ; Since the SUN4 assembler loops with big files, you might want to use this:
 ;   (format nil
 ;	   "~A ~@[~*-O1~] -S -I. -I~A -w ~A ; as -o ~A ~A"
@@ -931,7 +892,6 @@ from the C language code.  NIL means \"do not create the file\"."
 ;	   (namestring c-pathname)
 ;	   (namestring o-pathname)
 ;	   (namestring s-pathname))
-   ))
 
 (defun print-compiler-info ()
   (cmpprogress "~&;;; OPTIMIZE levels: Safety=~d, Space=~d, Speed=~d, Debug=~d~%;;;~%"
