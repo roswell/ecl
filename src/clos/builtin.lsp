@@ -173,8 +173,7 @@
   (let* ((class (si:instance-class obj))
 	 (slotds (class-slots class)))
     (declare (:read-only class))
-    (when (and slotds
-	       *print-level*
+    (when (and *print-level*
 	       ;; *p-readably* effectively disables *p-level*
 	       (not *print-readably*)
 	       (zerop *print-level*))
