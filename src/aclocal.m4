@@ -335,7 +335,6 @@ case "${host_os}" in
                   SHARED_LDFLAGS="-shared $SHARED_LDFLAGS"
                   BUNDLE_LDFLAGS="-shared $BUNDLE_LDFLAGS"
                 fi
-		enable_slow_config=yes
 		;;
 	cygwin*)
 		thehost='cygwin'
