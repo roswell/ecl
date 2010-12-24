@@ -22,12 +22,28 @@
 	      string result))
     result))
 
+(defun save-directory (forms)
+  (let ((directory
+         (probe-file (make-pathname :name nil :type nil
+                                    :defaults *default-pathname-defaults*))))
+    (if directory
+        (let ((*default-pathname-defaults* directory)
+              (old-directory (ext:chdir directory)))
+          (unwind-protect
+               (funcall forms)
+            (ext:chdir old-directory)))
+        (funcall forms))))    
+
+(defmacro with-current-directory (&body forms)
+  `(save-directory #'(lambda () ,@forms)))
+
 (defun safe-run-program (program args)
   (cmpnote "Invoking external command:~%  ~A ~{~A ~}" program args)
   (multiple-value-bind (stream result process)
-      (let ((*standard-output* ext:+process-standard-output+)
-            (*error-output* ext:+process-error-output+))
-        (ext:run-program program args :input nil :output t :error t :wait t))
+      (let* ((*standard-output* ext:+process-standard-output+)
+             (*error-output* ext:+process-error-output+))
+        (with-current-directory
+            (ext:run-program program args :input nil :output t :error t :wait t)))
     (cond ((null result)
            (cerror "Continues anyway."
                    "Unable to execute:~%(RUN-PROGRAM ~S ~S)"
