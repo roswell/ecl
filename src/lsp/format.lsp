@@ -895,7 +895,7 @@
 
 (defun format-print-named-character (char stream)
   (cond ((not (char-printing-p char))
-         (write-string (string-capitalize (char-name char)) stream))
+         (write-string (char-name char) stream))
         (t
          (write-char char stream))))
 
