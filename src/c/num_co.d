@@ -620,11 +620,9 @@ static double
 round_double(double d)
 {
 	if (d >= 0) {
-		double q = floor(d + 0.5);
-		d -= q;
-		if (d == -0.5) {
-			double x = q / 10;
-			int i = (int)(10 * (x - floor(x)));
+		double q = floor(d += 0.5);
+		if (q == d) {
+			int i = (int)fmod(q, 10);
 			if (i & 1) {
 				return q-1;
 			}
@@ -640,11 +638,9 @@ static long double
 round_long_double(long double d)
 {
 	if (d >= 0) {
-		long double q = floorl(d + 0.5);
-		d -= q;
-		if (d == -0.5) {
-			long double x = q / 10;
-			int i = (int)(10 * (x - floorl(x)));
+		long double q = floorl(d += 0.5);
+		if (q == d) {
+			int i = (int)fmodl(q, 10);
 			if (i & 1) {
 				return q-1;
 			}
