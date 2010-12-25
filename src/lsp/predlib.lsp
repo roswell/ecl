@@ -976,7 +976,7 @@ if not possible."
 ;; type T2.
 ;;
 (defun array-type-<= (t1 t2)
-  (unless (and (eq (first t2) (first t2))
+  (unless (and (eq (first t1) (first t2))
 	       (eq (second t1) (second t2)))
     (return-from array-type-<= nil))
   (let ((dim (third t1))
