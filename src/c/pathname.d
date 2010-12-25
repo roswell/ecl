@@ -204,6 +204,7 @@ destructively_check_directory(cl_object directory, bool logical)
 	 * 2) It ensures that all strings in the list are valid C strings without fill pointer
 	 *    All strings are copied, thus avoiding problems with the user modifying the
 	 *    list that was passed to MAKE-PATHNAME.
+         * 3) Redundant :back are removed.
 	 */
 	/* INV: directory is always a list */
 	cl_object ptr;
@@ -225,9 +226,12 @@ destructively_check_directory(cl_object directory, bool logical)
 			item = ecl_nth(i-1, directory);
 			if (item == @':absolute' || item == @':wild-inferiors')
 				return @':error';
-			if (i >= 2)
-				ECL_RPLACD(ecl_nthcdr(i-2, directory),
-					   ECL_CONS_CDR(ptr));
+			if (i >= 2) {
+                                cl_object next = ECL_CONS_CDR(ptr);
+                                ptr = ecl_nthcdr(i-2, directory);
+				ECL_RPLACD(ptr, next);
+                                i--;
+                        }
 		} else if (item == @':up') {
 			if (i == 0)
 				return @':error';
@@ -949,6 +953,8 @@ ecl_merge_pathnames(cl_object path, cl_object defaults, cl_object default_versio
 		directory = ecl_append(cl_pathname_directory(3, defaults,
                                                              @':case', tocase),
                                        CDR(path->pathname.directory));
+                /* Eliminate redundant :back */
+                directory = destructively_check_directory(directory, 1);
         } else {
 		directory = path->pathname.directory;
         }
