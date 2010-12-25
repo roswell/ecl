@@ -2011,11 +2011,7 @@ const struct ecl_file_ops broadcast_ops = {
 		streams = CONS(x, streams);
 	}
 	x = alloc_stream();
-	if (Null(streams)) {
-		x->stream.format = @':pass-through';
-	} else {
-		x->stream.format = cl_stream_external_format(ECL_CONS_CAR(streams));
-	}
+	x->stream.format = @':default';
 	x->stream.ops = duplicate_dispatch_table(&broadcast_ops);
 	x->stream.mode = (short)smm_broadcast;
 	BROADCAST_STREAM_LIST(x) = cl_nreverse(streams);
