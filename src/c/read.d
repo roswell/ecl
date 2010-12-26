@@ -953,17 +953,16 @@ sharp_dot_reader(cl_object in, cl_object c, cl_object d)
 {
 	if (d != Cnil && !read_suppress)
 		extra_argument('.', in, d);
-        /* FIXME! We should do something here to ensure that the #.
-         * only uses the #n# that have been defined */
 	c = ecl_read_object(in);
-        if (!Null(ECL_SYM_VAL(env, @'si::*sharp-eq-context*')))
-		c = patch_sharp(c);
 	unlikely_if (c == OBJNULL)
 		FEend_of_file(in);
 	if (read_suppress)
 		@(return Cnil);
 	unlikely_if (ecl_symbol_value(@'*read-eval*') == Cnil)
 		FEreader_error("Cannot evaluate the form #.~A", in, 1, c);
+        /* FIXME! We should do something here to ensure that the #.
+         * only uses the #n# that have been defined */
+        c = patch_sharp(c);
 	c = si_eval_with_env(1, c);
 	@(return c)
 }
