@@ -150,12 +150,14 @@ install:
 	  done \
 	fi
 	sed '/-CUT-/,$$d' ./ecl/config.h > ./ecl/config-install.h
-	$(INSTALL_DATA) ./ecl/*.h $(DESTDIR)$(includedir)/ecl
-	if (echo $(SUBDIRS) | grep gc); then \
-	 $(mkinstalldirs) $(DESTDIR)$(includedir)/ecl/gc/private; \
-	  $(INSTALL_DATA) ./ecl/gc/*.h $(DESTDIR)$(includedir)/ecl/gc; \
-	  $(INSTALL_DATA) ./ecl/gc/private/*.h $(DESTDIR)$(includedir)/ecl/gc/private; \
-	fi
+	$(mkinstalldirs) $(DESTDIR)$(includedir)/ecl
+	for i in `(cd ecl && find . -type d)`; do \
+	  k="$(DESTDIR)$(includedir)/ecl/$$i"; \
+	  test -d "$$k" || $(mkinstalldirs) $$k; \
+	done
+	for i in `(cd ecl && find . -name '*.h')`; do echo $$i; \
+	  $(INSTALL_DATA) ecl/$$i $(DESTDIR)$(includedir)/ecl/$$i; \
+	done
 	$(RM) -f $(DESTDIR)$(includedir)/ecl/config.h
 	mv $(DESTDIR)$(includedir)/ecl/config-install.h $(DESTDIR)$(includedir)/ecl/config.h
 	$(INSTALL_SCRIPT) bin/ecl-config $(DESTDIR)$(bindir)
