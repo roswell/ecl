@@ -194,6 +194,8 @@ ECL_FEATURES = (cons :wants-defsystem $(ECL_FEATURES))
 ECL_MODULES  = $(ECL_MODULES) profile
 ECL_FEATURES = (cons :wants-profile $(ECL_FEATURES))
 !endif
+ECL_MODULES  = $(ECL_MODULES) bytecmp
+ECL_FEATURES = (list* :builtin-bytemcmp :wants-bytecmp $(ECL_FEATURES))
 
 !MESSAGE ECL Modules: $(ECL_MODULES)
 !MESSAGE ECL Features: $(ECL_FEATURES)
