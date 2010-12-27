@@ -79,15 +79,19 @@ the environment variable TMPDIR to a different value." template))
     (when real-file
       (let* ((manifest-namestring (concatenate 'string (namestring o-file)
 					       ".manifest"))
+             (resource-code (ecase type
+                              ((:dll :shared-library :fasl :fas) 2)
+                              ((:program) 1)))
+             (resource-option (format nil "-outputresource:~A;~D"
+                                      (namestring real-file)
+                                      resource-code))
 	     (manifest (probe-file manifest-namestring)))
 	(when manifest
-	  (safe-system
-	   (format nil "mt -nologo -manifest ~S \"-outputresource:~A;~D\""
-		   manifest-namestring
-		   (namestring real-file)
-		   (ecase type
-		     ((:dll :shared-library :fasl :fas) 2)
-		     ((:program) 1))))
+	  (safe-run-program "mt"
+                            (list "-nologo"
+                                  "-manifest"
+                                  manifest-namestring
+                                  resource-option))
 	  (delete-file manifest))))))
 
 (defun cmp-delete-file (file)
@@ -139,15 +143,6 @@ the environment variable TMPDIR to a different value." template))
      ,@(split-program-options *user-ld-flags*)
      ,@ld-flags)))
 
-#+dlopen
-(defun dll-extra-flags (o-pathname)
-  `(,@(split-program-options *ld-shared-flags*)
-      #+msvc
-      ,@(let ((implib (si::coerce-to-filename
-                       (compile-file-pathname o-pathname :type :lib))))
-             (list (concatenate 'string "/LIBPATH:" (ecl-library-directory))
-                   (concatenate 'string "/IMPLIB:" implib)))))
-
 (defun static-lib-ar (lib object-files)
   (let ((lib (brief-namestring lib)))
     (safe-run-program *ar* (list* "cr" lib (mapcar #'brief-namestring object-files)))
@@ -160,9 +155,13 @@ the environment variable TMPDIR to a different value." template))
     (setf ld-flags
           (let ((implib (si::coerce-to-filename
                          (compile-file-pathname o-pathname :type :lib))))
-            (list* (concatenate 'string "/LIBPATH:" (ecl-library-directory))
-                   (concatenate 'string "/IMPLIB:" implib)
-                   ld-flags)))
+            ;; MSVC linker options are added at the end, after the
+            ;; /link flag, because they are not processed by the
+            ;; compiler, but by the linker
+	    (append ld-flags
+		    (list (concatenate 'string "/LIBPATH:"
+				       (ecl-library-directory))
+			  (concatenate 'string "/IMPLIB:" implib)))))
     #+mingw32
     (setf ld-flags (list* "-shared" ld-flags))
     (linker-cc o-pathname object-files :type :dll :ld-flags ld-flags)))
@@ -173,11 +172,15 @@ the environment variable TMPDIR to a different value." template))
     #+msvc
     (setf ld-flags
           (let ((implib (si::coerce-to-filename
-                         (compile-file-pathname o-pathname :type :lib))))
-            (list* (concatenate 'string "/EXPORT:" init-name)
-                   (concatenate 'string "/LIBPATH:" (ecl-library-directory))
-                   (concatenate 'string "/IMPLIB:" implib)
-                   ld-flags)))
+                         (compile-file-pathname o-pathname :type :import-library))))
+            ;; MSVC linker options are added at the end, after the
+            ;; /link flag, because they are not processed by the
+            ;; compiler, but by the linker
+            (append ld-flags
+		    (list (concatenate 'string "/EXPORT:" init-name)
+			  (concatenate 'string "/LIBPATH:"
+				       (ecl-library-directory))
+			  (concatenate 'string "/IMPLIB:" implib)))))
     #+mingw32
     (setf ld-flags (list* "-shared" "-Wl,--export-all-symbols" ld-flags))
     (linker-cc o-pathname object-files :type :fasl :ld-flags ld-flags)))
@@ -318,10 +321,12 @@ filesystem or in the database of ASDF modules."
                  (or (existing-system-output system :library)
                      (existing-system-output system :shared-library)))
              (fallback () (format nil #-msvc "-l~A" #+msvc "~A.lib" (string-downcase library))))
-      (or (and asdf
-               (setf system (asdfcall :find-system library nil))
-               (find-archive system))
-        (fallback)))))
+      (or
+       #-ecl-min
+       (and asdf
+            (setf system (asdfcall :find-system library nil))
+            (find-archive system))
+       (fallback)))))
 
 (defun builder (target output-name &key lisp-files ld-flags shared-data-file
 		(init-name nil)
