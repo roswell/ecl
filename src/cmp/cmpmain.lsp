@@ -118,7 +118,7 @@ the environment variable TMPDIR to a different value." template))
                   (ld-flags (split-program-options *ld-flags*)))
   (safe-run-program
    *ld*
-   `(,(concatenate 'string "-Fe" o-pathname)
+   `(,(concatenate 'string "-Fe" (brief-namestring o-pathname))
      ,@object-files
      ,@(split-program-options *ld-rpath*)
      ,@(split-program-options *user-ld-flags*)
