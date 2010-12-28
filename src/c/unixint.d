@@ -1135,6 +1135,7 @@ install_fpe_signal_handlers()
 		 * denormals in floating point computations */
 		si_trap_fpe(@'floating-point-invalid-operation', Cnil);
 		si_trap_fpe(@'division-by-zero', Cnil);
+		si_trap_fpe(@'floating-point-overflow', Cnil);
 # endif
 	}
 #endif
