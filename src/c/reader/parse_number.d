@@ -196,7 +196,15 @@ ecl_parse_number(cl_object str, cl_index start, cl_index end,
                 } else if (radix != 10) {
                         _ecl_big_register_free(num);
                         num = ecl_parse_number(str, start, end, ep, 10);
-                        if (num != OBJNULL && floatp(num)) return num;
+                        if (num != OBJNULL) {
+                                if (floatp(num))
+                                        return num;
+                                if (ECL_FIXNUMP(num) || ECL_BIGNUMP(num)) {
+                                        i = *ep;
+                                        if (i > start && ecl_char(str, i-1) == '.')
+                                                return num;
+                                }
+                        }
                         return OBJNULL;
                 } else {
                 NOT_A_NUMBER:
