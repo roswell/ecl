@@ -132,6 +132,9 @@
 ;;;
 (mapc #'proclaim +ecl-optimization-settings+)
 
+#+windows
+(setq *features* (cons :wants-bytecmp (cons :builtin-bytecmp *features*)))
+
 #-mingw32
 (si::pathname-translations "SYS" '(("**;*.*.*" "@ecldir\@/**/*.*")))
 
@@ -312,12 +315,22 @@
 
 (setq si::*init-function-prefix* NIL)
 
+#+windows
+(progn
+ (with-open-file (s "ecl.rc"
+                  :direction :output
+                  :if-exists :supersede
+                  :if-does-not-exist :create)
+  (write-line "id ICON \"ecl.ico\"" s))
+ (ext:copy-file #p"src:util;ecl.ico" "ecl.ico")
+ (ext:run-program "windres" '("ecl.rc" "-O" "coff" "ecl.res")))
+
 (compiler::build-program
  #+:msvc "ecl2"
  #+(and (or cross stage1) (not msvc)) "bin/ecl"
  #-(or cross stage1 msvc) "ecl2"
  :lisp-files *module-symbols*
- :ld-flags '(#-msvc "-L./"))
+ :ld-flags '(#-msvc "-L./" #+windows "ecl.res"))
 
 (with-open-file (modules-list #P"build:MODULES" :direction :output)
   (dolist (module-file *module-files*)

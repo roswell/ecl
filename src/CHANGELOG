@@ -145,6 +145,8 @@ ECL 10.5.1:
 
  - --enable-rpath now defaults to YES.
 
+ - ECL now ships a Windows icon which is added to the executable at build time.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
