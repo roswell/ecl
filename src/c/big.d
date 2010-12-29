@@ -107,7 +107,7 @@ _ecl_big_register_normalize(cl_object x)
 #if GMP_LIMB_BITS >= FIXNUM_BITS
 static const limbs_per_fixnum = 1;
 #else
-static conts limbs_per_fixnum = (FIXNUM_BITS + GMP_LIMB_BITS - 1) / GMP_LIMB_BITS;
+static const limbs_per_fixnum = (FIXNUM_BITS + GMP_LIMB_BITS - 1) / GMP_LIMB_BITS;
 #endif
 
 
