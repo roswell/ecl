@@ -1048,7 +1048,7 @@
               (values t gen-bool))
 (proclamation write-string (string &optional stream-designator &key) string)
 (proclamation write-line (string &optional stream-designator &key) string)
-(proclamation read-sequence (sequence stream &key) sequence-indexx)
+(proclamation read-sequence (sequence stream &key) sequence-index)
 (proclamation write-sequence (sequence stream &key) sequence)
 (proclamation file-length (stream) (or unsigned-byte null))
 (proclamation file-position (stream &optional file-position-designator) t)
