@@ -20,18 +20,6 @@ ECL is currently hosted at SourceForge. The home page of the project
 is http://ecls.sourceforge.net, and in it you will find source code
 releases, a CVS tree and some useful documentation.
 
-Known issues
-============
-
-- The Mingw port does not work with the stable version of the
-  Boehm-Weiser garbage collector. Users will have to download a more
-  recent version and build and install it in an accessible location
-  for ECL to compile.
-
-- The OpenBSD port does not support multithreaded builds because the
-  latest stable version that runs on it does not contain all the
-  required functionality.
-
 Changes since last release
 ==========================
 
