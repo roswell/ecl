@@ -323,6 +323,9 @@
                   :if-does-not-exist :create)
   (write-line "id ICON \"ecl.ico\"" s))
  (ext:copy-file #p"src:util;ecl.ico" "ecl.ico")
+ #+msvc
+ (ext:run-program "rc" '("/r" "ecl.rc"))
+ #-msvc
  (ext:run-program "windres" '("ecl.rc" "-O" "coff" "ecl.res")))
 
 (compiler::build-program
