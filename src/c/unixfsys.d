@@ -1085,9 +1085,9 @@ si_copy_file(cl_object orig, cl_object dest)
 	orig = si_coerce_to_filename(orig);
 	dest = si_coerce_to_filename(dest);
 	ecl_disable_interrupts();
-	in = fopen((char*)orig->base_string.self, "r");
+	in = fopen((char*)orig->base_string.self, OPEN_R);
 	if (in) {
-		out = fopen((char*)dest->base_string.self, "w");
+		out = fopen((char*)dest->base_string.self, OPEN_W);
 		if (out) {
 			unsigned char *buffer = ecl_alloc_atomic(1024);
 			cl_index size;
