@@ -1,7 +1,7 @@
 # Makefile for Windows NT.  Assumes Microsoft compiler.
 # DLLs are included in the root set under NT, but not under win32S.
 # Use "nmake nodebug=1 all" for optimized versions of library, gctest and editor.
-# MY_CPU=X86 for 32 bits or AMD64 for 64 bits
+# MY_CPU=i386 for 32 bits or AMD64 for 64 bits
 CPU=$(MY_CPU)
 !include <ntwin32.mak>
 
