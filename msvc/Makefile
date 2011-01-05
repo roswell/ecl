@@ -87,10 +87,12 @@ CFLAGS_SSE=/arch:SSE2
 
 !if "$(ECL_WIN64)" != ""
 GMP_BITS=64
-GC_CPU=X64
+GC_CPU=AMD64
+ARCHITECTURE=AMD64
 !else
 GMP_BITS=32
 GC_CPU=i386
+ARCHITECTURE=PENTIUM4
 !endif
 
 #
@@ -393,7 +395,7 @@ install:
 windows-nsi:
 	IF EXIST "$(TAR_DIR)" $(RMDIR) "$(TAR_DIR)"
 	$(MKDIR) "$(TAR_DIR)"
-	$(MAKE) prefix="$(TAR_DIR)" install
+	$(MAKE) prefix="$(TAR_DIR)" install ECL_UNICODE=$(ECL_UNICODE)
 	util\ecl_nsi.bat %%CD%%\"$(srcdir)"\util\ecl.nsi "$(TAR_DIR)" $(ECL_VERSION)
 	"$(MKNSI)" "$(TAR_DIR)/ecl.nsi"
 	$(MV) $(TAR_DIR)\Setup.exe ecl-$(ECL_VERSION).exe
