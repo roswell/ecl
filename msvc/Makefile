@@ -89,10 +89,12 @@ CFLAGS_SSE=/arch:SSE2
 GMP_BITS=64
 GC_CPU=AMD64
 ARCHITECTURE=AMD64
+VCREDIST=vcredist_x64.exe
 !else
 GMP_BITS=32
 GC_CPU=i386
 ARCHITECTURE=PENTIUM4
+VCREDIST=vcredist_x86.exe
 !endif
 
 #
@@ -396,10 +398,11 @@ windows-nsi:
 	IF EXIST "$(TAR_DIR)" $(RMDIR) "$(TAR_DIR)"
 	$(MKDIR) "$(TAR_DIR)"
 	$(MAKE) prefix="$(TAR_DIR)" install ECL_UNICODE=$(ECL_UNICODE)
+	IF EXIST "$(VCREDIST)" $(CP) "$(VCREDIST)" "$(TAR_DIR)"
 	util\ecl_nsi.bat %%CD%%\"$(srcdir)"\util\ecl.nsi "$(TAR_DIR)" $(ECL_VERSION)
 	"$(MKNSI)" "$(TAR_DIR)/ecl.nsi"
 	$(MV) $(TAR_DIR)\Setup.exe ecl-$(ECL_VERSION).exe
-	$(RMDIR) $(TAR_DIR)
+#	$(RMDIR) $(TAR_DIR)
 
 clean: clean_ecl clean_lisp
 	-$(RM) .gdbinit cinit.lib ecl_min.lib

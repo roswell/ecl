@@ -22,5 +22,4 @@ if exist ecl.exe.manifest @echo Delete "${ECLDIR}\ecl.exe.manifest" >> %dest%
 for /f %%i in (../aux_files) do @echo Delete "$INSTDIR\%%i" >> %dest%
 for /f %%i in (../aux_dirs) do @echo RMDir /r "$INSTDIR\%%i" >> %dest%
 type %source%3 >> %dest%
-
 ENDLOCAL
