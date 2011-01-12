@@ -319,7 +319,7 @@ values of the last FORM.  If no FORM is given, returns NIL."
 	 (error "DEFINE-SYMBOL-MACRO: cannot redefine a special variable, ~A"
 		symbol))
 	(t
-	 `(progn
+	 `(eval-when (:compile-toplevel :load-toplevel :execute)
 	   (put-sysprop ',symbol 'si::symbol-macro 
                         (lambda (form env) 
                           (declare (ignore form env))
