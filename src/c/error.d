@@ -25,6 +25,7 @@
 # include <windows.h>
 #endif
 #include <ecl/internal.h>
+#include <ecl/ecl-inl.h>
 
 static cl_object
 cl_symbol_or_object(cl_object x)
@@ -492,6 +493,8 @@ FElibc_error(const char *msg, int narg, ...)
 }
 
 #if defined(ECL_MS_WINDOWS_HOST) || defined(cygwin)
+ecl_def_ct-base_string(unknown_error,"[Unable to get error message]",28,static,const);
+
 void
 FEwin32_error(const char *msg, int narg, ...)
 {
@@ -501,7 +504,7 @@ FEwin32_error(const char *msg, int narg, ...)
 
 	if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_ALLOCATE_BUFFER,
 	                  0, GetLastError(), 0, (void*)&win_msg, 0, NULL) == 0)
-		win_msg_obj = make_simple_base_string("[Unable to get error message]");
+		win_msg_obj = unknown_error;
 	else {
 		win_msg_obj = make_base_string_copy(win_msg);
 		LocalFree(win_msg);

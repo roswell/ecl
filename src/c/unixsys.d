@@ -30,6 +30,7 @@
 #ifdef HAVE_SYS_WAIT_H
 # include <sys/wait.h>
 #endif
+#include <ecl/ecl-inl.h>
 
 /* Mingw defines 'environ' to be a macro instead of a global variable. */
 #ifdef environ
@@ -64,6 +65,9 @@ si_getuid(void)
 #endif
 }
 
+ecl_def_ct_base_string(fake_in_name, "PIPE-READ-ENDPOINT", 18, static, const);
+ecl_def_ct_base_string(fake_out_name, "PIPE-WRITE-ENDPOINT", 19, static, const);
+
 cl_object
 si_make_pipe()
 {
@@ -78,10 +82,8 @@ si_make_pipe()
 		FElibc_error("Unable to create pipe", 0);
 		output = Cnil;
 	} else {
-		cl_object fake_in_name = make_simple_base_string("PIPE-READ-ENDPOINT");
 		cl_object in = ecl_make_stream_from_fd(fake_in_name, fds[0], smm_input, 8,
 						       ECL_STREAM_DEFAULT_FORMAT, Cnil);
-		cl_object fake_out_name = make_simple_base_string("PIPE-WRITE-ENDPOINT");
 		cl_object out = ecl_make_stream_from_fd(fake_out_name, fds[1], smm_output, 8,
 						       ECL_STREAM_DEFAULT_FORMAT, Cnil);
 		output = cl_make_two_way_stream(in, out);
@@ -232,7 +234,8 @@ make_windows_handle(HANDLE h)
 @)
 
 @(defun ext::run-program (command argv &key (input @':stream') (output @':stream')
-	  		  (error @'t') (wait @'t') (environ Cnil))
+	  		  (error @'t') (wait @'t') (environ Cnil)
+                          (if_output_exists @':supersede'))
 	int parent_write = 0, parent_read = 0;
 	int child_pid;
 	cl_object pid, process;
@@ -260,7 +263,7 @@ make_windows_handle(HANDLE h)
 	   arguments or file names have spaces */
 	command =
 		cl_format(4, Cnil,
-			  make_simple_base_string("~S~{ ~S~}"),
+			  ecl_make_simple_base_string("~S~{ ~S~}", -1),
 			  command, argv);
 	command = si_copy_to_simple_base_string(command);
 	command = ecl_null_terminated_base_string(command);
@@ -273,6 +276,7 @@ make_windows_handle(HANDLE h)
 	attr.nLength = sizeof(SECURITY_ATTRIBUTES);
 	attr.lpSecurityDescriptor = NULL;
 	attr.bInheritHandle = TRUE;
+ AGAIN_INPUT:
 	if (input == @':stream') {
 		/* Creates a pipe that we can read from what the child
 		   writes to it. We duplicate one extreme of the pipe
@@ -295,20 +299,34 @@ make_windows_handle(HANDLE h)
 		/* The child inherits a duplicate of our input
 		   handle. Creating a duplicate avoids problems when
 		   the child closes it */
-		cl_object input_stream = ecl_symbol_value(@'*standard-input*');
-		int stream_handle = ecl_stream_to_handle(input_stream, 0);
-		if (stream_handle >= 0)
-			DuplicateHandle(current,
-                                        (HANDLE)_get_osfhandle(stream_handle)
-                                        /*GetStdHandle(STD_INPUT_HANDLE)*/,
-					current, &child_stdin, 0, TRUE,
-					DUPLICATE_SAME_ACCESS);
-		else
-			child_stdin = NULL;
-	} else {
+		input = ecl_symbol_value(@'*standard-input*');
+                goto AGAIN_INPUT;
+        } else if (Null(input)) {
 		child_stdin = NULL;
 		/*child_stdin = open("/dev/null", O_RDONLY);*/
-	}
+        } else if (!Null(cl_streamp(input))) {
+                /* If stream provides a handle, pass it to the child. Otherwise
+                 * complain. */
+		int stream_handle = ecl_stream_to_handle(input, 0);
+		unlikely_if (stream_handle < 0) {
+                        FEerror(":INPUT argument to RUN-PROGRAM does not "
+                                "have a file handle:~%~S", 1, input);
+                }
+                DuplicateHandle(current,
+                                (HANDLE)_get_osfhandle(stream_handle)
+                                /*GetStdHandle(STD_INPUT_HANDLE)*/,
+                                current, &child_stdin, 0, TRUE,
+                                DUPLICATE_SAME_ACCESS);
+	} else if (ECL_STRINGP(input) || ECL_PATHNAMEP(input)) {
+                input = cl_open(5, input,
+                                @':direction', @':input',
+                                @':if-does-not-exist', @':error');
+                goto AGAIN_INPUT;
+	} else {
+                FEerror("Invalid :INPUT argument to EXT:RUN-PROGRAM", 1,
+                        input);
+        }
+ AGAIN_OUTPUT:
 	if (output == @':stream') {
 		/* Creates a pipe that we can write to and the
 		   child reads from. We duplicate one extreme of the
@@ -331,20 +349,32 @@ make_windows_handle(HANDLE h)
 		/* The child inherits a duplicate of our output
 		   handle. Creating a duplicate avoids problems when
 		   the child closes it */
-		cl_object output_stream = ecl_symbol_value(@'*standard-output*');
-		int stream_handle = ecl_stream_to_handle(output_stream, 1);
-		if (stream_handle >= 0)
-			DuplicateHandle(current,
-                                        (HANDLE)_get_osfhandle(stream_handle)
-                                        /*GetStdHandle(STD_OUTPUT_HANDLE)*/,
-					current, &child_stdout, 0, TRUE,
-					DUPLICATE_SAME_ACCESS);
-		else
-			child_stdout = NULL;
+		output = ecl_symbol_value(@'*standard-output*');
+                goto AGAIN_OUTPUT;
+        } else if (Null(output)) {
+                child_stdout = NULL;
+        } else if (ECL_STRINGP(output) || ECL_PATHNAMEP(output)) {
+                output = cl_open(7, output,
+                                 @':direction', @':output',
+                                 @':if-exists', if_output_exists,
+                                 @':if-does-not-exist', @':create');
+                goto AGAIN_OUTPUT;
+        } else if (!Null(cl_streamp(output))) {
+		int stream_handle = ecl_stream_to_handle(output, 1);
+                unlikely_if(stream_handle < 0) {
+                        FEerror(":OUTPUT argument to RUN-PROGRAM does not "
+                                "have a file handle:~%~S", 1, output);
+                }
+                DuplicateHandle(current,
+                                (HANDLE)_get_osfhandle(stream_handle)
+                                /*GetStdHandle(STD_OUTPUT_HANDLE)*/,
+                                current, &child_stdout, 0, TRUE,
+                                DUPLICATE_SAME_ACCESS);
 	} else {
-		child_stdout = NULL;
-		/*child_stdout = open("/dev/null", O_WRONLY);*/
-	}
+                FEerror("Invalid :OUTPUT argument to EXT:RUN-PROGRAM", 1,
+                        output);
+        }
+ AGAIN_ERROR:
 	if (error == @':output') {
 		/* The child inherits a duplicate of its own output
 		   handle.*/
@@ -355,19 +385,24 @@ make_windows_handle(HANDLE h)
 		/* The child inherits a duplicate of our output
 		   handle. Creating a duplicate avoids problems when
 		   the child closes it */
-		cl_object error_stream = ecl_symbol_value(@'*error-output*');
-		int stream_handle = ecl_stream_to_handle(error_stream, 1);
-		if (stream_handle >= 0)
-			DuplicateHandle(current,
-                                        (HANDLE)_get_osfhandle(stream_handle)
-                                        /*GetStdHandle(STD_ERROR_HANDLE)*/,
-					current, &child_stderr, 0, TRUE,
-					DUPLICATE_SAME_ACCESS);
-		else
-			child_stderr = NULL;
-	} else {
+		error = ecl_symbol_value(@'*error-output*');
+                goto AGAIN_ERROR;
+        } else if (Null(error)) {
 		child_stderr = NULL;
-		/*child_stderr = open("/dev/null", O_WRONLY);*/
+        } else if (!Null(cl_streamp(error))) {
+		int stream_handle = ecl_stream_to_handle(error, 1);
+		unlikely_if (stream_handle < 0) {
+                        FEerror(":ERROR argument to RUN-PROGRAM does not "
+                                "have a file handle:~%~S", 1, error);
+                }
+                DuplicateHandle(current,
+                                (HANDLE)_get_osfhandle(stream_handle)
+                                /*GetStdHandle(STD_ERROR_HANDLE)*/,
+                                current, &child_stderr, 0, TRUE,
+                                DUPLICATE_SAME_ACCESS);
+	} else {
+                FEerror("Invalid :ERROR argument to EXT:RUN-PROGRAM:~%~S", 1,
+                        error);
 	}
 #if 1
 	ZeroMemory(&st_info, sizeof(STARTUPINFO));
@@ -434,50 +469,80 @@ make_windows_handle(HANDLE h)
 	int child_stdin, child_stdout, child_stderr;
 	argv = CONS(command, ecl_nconc(argv, ecl_list1(Cnil)));
 	argv = cl_funcall(3, @'coerce', argv, @'vector');
+ AGAIN_INPUT:
 	if (input == @':stream') {
 		int fd[2];
 		pipe(fd);
 		parent_write = fd[1];
 		child_stdin = fd[0];
-	} else {
-		child_stdin = -1;
-		if (input == @'t') {
-			cl_object input_stream = ecl_symbol_value(@'*standard-input*');
-			child_stdin = ecl_stream_to_handle(input_stream, 0);
-		}
-		if (child_stdin >= 0)
+	} else if (input == @'t') {
+                input = ecl_symbol_value(@'*standard-input*');
+                goto AGAIN_INPUT;
+        } else if (Null(input)) {
+                child_stdin = open("/dev/null", O_RDONLY);
+        } else if (!Null(cl_streamp(input))) {
+                child_stdin = ecl_stream_to_handle(input, 0);
+		if (child_stdin >= 0) {
 			child_stdin = dup(child_stdin);
-		else
-			child_stdin = open("/dev/null", O_RDONLY);
-	}
+                } else {
+                        FEerror(":INPUT argument to RUN-PROGRAM does not "
+                                "have a file handle:~%~S", 1, input);
+                }
+	} else if (ECL_STRINGP(input) || ECL_PATHNAMEP(input)) {
+                input = cl_open(5, input,
+                                @':direction', @':input',
+                                @':if-does-not-exist', @':error');
+                goto AGAIN_INPUT;
+	} else {
+                FEerror("Invalid :INPUT argument to EXT:RUN-PROGRAM:~%~S", 1,
+                        input);
+        }
+ AGAIN_OUTPUT:
 	if (output == @':stream') {
 		int fd[2];
 		pipe(fd);
 		parent_read = fd[0];
 		child_stdout = fd[1];
+	} else if (output == @'t') {
+                output = ecl_symbol_value(@'*standard-output*');
+                goto AGAIN_OUTPUT;
+        } else if (Null(output)) {
+                child_stdout = open("/dev/null", O_WRONLY);
+        } else if (ECL_STRINGP(output) || ECL_PATHNAMEP(output)) {
+                output = cl_open(7, output,
+                                 @':direction', @':output',
+                                 @':if-exists', if_output_exists,
+                                 @':if-does-not-exist', @':create');
+                goto AGAIN_OUTPUT;
+        } else if (!Null(cl_streamp(output))) {
+                child_stdout = ecl_stream_to_handle(output, 1);
+		unlikely_if (child_stdout < 0) {
+                        FEerror(":OUTPUT argument to RUN-PROGRAM does not "
+                                "have a file handle:~%~S", 1, output);
+                }
+                child_stdout = dup(child_stdout);
 	} else {
-		child_stdout = -1;
-		if (output == @'t') {
-			cl_object output_stream = ecl_symbol_value(@'*standard-output*');
-			child_stdout = ecl_stream_to_handle(output_stream, 1);
-		}
-		if (child_stdout >= 0)
-			child_stdout = dup(child_stdout);
-		else
-			child_stdout = open("/dev/null", O_WRONLY);
-	}
+                FEerror("Invalid :OUTPUT argument to EXT:RUN-PROGRAM:~%~S", 1,
+                        output);
+        }
+ AGAIN_ERROR:
 	if (error == @':output') {
 		child_stderr = child_stdout;
 	} else if (error == @'t') {
-		cl_object error_stream = ecl_symbol_value(@'*error-output*');
-		child_stderr = ecl_stream_to_handle(error_stream, 1);
-	} else {
-		child_stderr = -1;
-	}
-	if (child_stderr < 0) {
-		child_stderr = open("/dev/null", O_WRONLY);
-	} else {
+		error = ecl_symbol_value(@'*error-output*');
+                goto AGAIN_ERROR;
+        } else if (!Null(cl_streamp(error))) {
+		child_stderr = ecl_stream_to_handle(error, 1);
+		unlikely_if (child_stderr < 0) {
+                        FEerror(":ERROR argument to RUN-PROGRAM does not "
+                                "have a file handle:~%~S", 1, error);
+                }
 		child_stderr = dup(child_stderr);
+	} else if (Null(error)) {
+                child_stderr = open("/dev/null", O_WRONLY);
+        } else {
+                FEerror("Invalid :ERROR argument to EXT:RUN-PROGRAM:~%~S", 1,
+                        error);
 	}
 	child_pid = fork();
 	if (child_pid == 0) {

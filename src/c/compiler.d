@@ -612,6 +612,10 @@ c_tag_ref(cl_env_ptr env, cl_object the_tag, cl_object the_type)
 	return Cnil;
 }
 
+ecl_def_ct_base_string(undefined_variable,
+                       "Undefined variable referenced in interpreted code"
+                       ".~%Name: ~A", 60, static, const);				
+
 static cl_fixnum
 c_var_ref(cl_env_ptr env, cl_object var, int allow_symbol_macro, bool ensure_defined)
 {
@@ -649,8 +653,7 @@ c_var_ref(cl_env_ptr env, cl_object var, int allow_symbol_macro, bool ensure_def
 	if (ensure_defined) {
 		l = ecl_symbol_value(@'si::*action-on-undefined-variable*');
 		if (l != Cnil) {
-			funcall(3, l, make_simple_base_string("Undefined variable referenced in interpreted code.~%Name: ~A"),
-				var);
+			funcall(3, l, undefined_variable, var);
 		}
 	}
 	return ECL_UNDEFINED_VAR_REF;

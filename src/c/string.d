@@ -112,18 +112,15 @@ ecl_alloc_adjustable_extended_string(cl_index l)
 	Make_simple_base_string(s) makes a simple-base string from C string s.
 */
 cl_object
-make_simple_base_string(char *s)
+ecl_make_simple_base_string(char *s, cl_fixnum l)
 {
-	cl_object x;
-	cl_index l = strlen(s);
-
-	x = ecl_alloc_object(t_base_string);
+	cl_object x = ecl_alloc_object(t_base_string);
         x->base_string.elttype = aet_bc;
         x->base_string.flags = 0; /* no fill pointer, no adjustable */
 	x->base_string.displaced = Cnil;
+        if (l < 0) l = strlen(s);
 	x->base_string.dim = (x->base_string.fillp = l);
 	x->base_string.self = (ecl_base_char *)s;
-	
 	return x;
 }
 

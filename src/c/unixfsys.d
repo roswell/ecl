@@ -118,7 +118,7 @@ drive_host_prefix(cl_object pathname)
 cl_object
 ecl_cstring_to_pathname(char *s)
 {
-	cl_object string = make_simple_base_string(s);
+	cl_object string = ecl_make_simple_base_string(s, -1);
 	return cl_parse_namestring(1, string);
 }
 
@@ -411,13 +411,15 @@ ecl_backup_open(const char *filename, int option, int mode)
 	/* Windows' rename doesn't replace an existing file */
 	if (access(backupfilename, F_OK) == 0 && unlink(backupfilename)) {
 		ecl_enable_interrupts();
-		FElibc_error("Cannot remove the file ~S", 1, make_simple_base_string(backupfilename));
+		FElibc_error("Cannot remove the file ~S", 1,
+                             ecl_make_simple_base_string(backupfilename,-1));
 	}
 #endif
 	if (rename(filename, backupfilename)) {
 		ecl_enable_interrupts();
 		FElibc_error("Cannot rename the file ~S to ~S.", 2,
-			     make_constant_base_string(filename), make_simple_base_string(backupfilename));
+			     ecl_make_simple_base_string(filename,-1),
+                             ecl_make_simple_base_string(backupfilename,-1));
 	}
 	ecl_enable_interrupts();
 	ecl_dealloc(backupfilename);
