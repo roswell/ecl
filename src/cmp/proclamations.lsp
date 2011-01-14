@@ -1312,10 +1312,10 @@
 #+clos
 (proclamation si:sl-makunbound (t fixnum) t)
 #+clos
-(proclamation standard-instance-access (standard-object fixnum) t :reader)
+(proclamation clos:standard-instance-access (standard-object fixnum) t :reader)
 #+clos
-(proclamation funcallable-standard-instance-access
-              (funcallable-standard-object fixnum)
+(proclamation clos:funcallable-standard-instance-access
+              (clos:funcallable-standard-object fixnum)
               t :reader)
 #+clos
 (proclamation associate-methods-to-gfun (generic-function *)
