@@ -837,15 +837,19 @@
 (def-inline si:sl-boundp :always (t) :bool "(#0)!=ECL_UNBOUND")
 
 #+clos
-(def-inline standard-instance-access :always (standard-object fixnum) t "ecl_instance_ref((#0),(#1))")
+(def-inline clos:standard-instance-access :always (t t) t "ecl_instance_ref((#0),fixnnint(#1))")
 #+clos
-(def-inline standard-instance-access :unsafe (standard-object fixnum) t
+(def-inline clos:standard-instance-access :always (t fixnum) t "ecl_instance_ref((#0),(#1))")
+#+clos
+(def-inline clos:standard-instance-access :unsafe (standard-object fixnum) t
  "(#0)->instance.slots[#1]")
 
 #+clos
-(def-inline funcallable-standard-instance-access :always (funcallable-standard-object fixnum) t "ecl_instance_ref((#0),(#1))")
+(def-inline clos:funcallable-standard-instance-access :always (t t) t "ecl_instance_ref((#0),fixnnint(#1))")
 #+clos
-(def-inline funcallable-standard-instance-access :unsafe (funcallable-standard-object fixnum) t
+(def-inline clos:funcallable-standard-instance-access :always (t fixnum) t "ecl_instance_ref((#0),(#1))")
+#+clos
+(def-inline clos:funcallable-standard-instance-access :unsafe (clos:funcallable-standard-object fixnum) t
  "(#0)->instance.slots[#1]")
 
 ))) ; eval-when
@@ -917,8 +921,8 @@
     (;; combin.lsp
      method-combination-error
      invalid-method-error
-     #-(or) standard-instance-access ; this function is a synonym for si:instance-ref
-     #-(or) funcallable-standard-instance-access ; same for this one
+     ;; standard-instance-access ; this function is a synonym for si:instance-ref
+     ;; funcallable-standard-instance-access ; same for this one
      subclassp of-class-p
      ;; boot.lsp
      slot-boundp
