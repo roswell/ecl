@@ -493,7 +493,7 @@ FElibc_error(const char *msg, int narg, ...)
 }
 
 #if defined(ECL_MS_WINDOWS_HOST) || defined(cygwin)
-ecl_def_ct-base_string(unknown_error,"[Unable to get error message]",28,static,const);
+ecl_def_ct_base_string(unknown_error,"[Unable to get error message]",28,static,const);
 
 void
 FEwin32_error(const char *msg, int narg, ...)
