@@ -191,8 +191,8 @@ install:
 	  $(INSTALL_DATA) $(top_srcdir)/../$$i $(DESTDIR)$(ecldir); \
 	done
 	$(mkinstalldirs) $(DESTDIR)$(mandir)/man$(manext)
-	for i in doc/ecl.man doc/ecl-config.man; do \
-	    $(INSTALL_DATA) $$i $(DESTDIR)$(mandir)/man$(manext)/ecl.$(manext); \
+	$(INSTALL_DATA) doc/ecl.man $(DESTDIR)$(mandir)/man$(manext)/ecl.$(manext)
+	$(INSTALL_DATA) doc/ecl-config.man $(DESTDIR)$(mandir)/man$(manext)/ecl-config.$(manext)
 	done
 
 flatinstall: build-stamp
