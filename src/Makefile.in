@@ -246,12 +246,13 @@ selfbuild:
 # like "@si::foo" and "@(defun si::foo".
 # This rule is allowed to fail when etags does not exist.
 TAGS:
-	echo > $@;
-	test "x$(ETAGS)" != "x" && \
-	srcfiles=`find $(srcdir)/c $(srcdir)/h -name '*.[chd]'`; \
+	echo > $@
+	if test "x$(ETAGS)" != "x"; then \
+	srcfiles=`find $(srcdir)/c $(srcdir)/h -name '*.[chd]'` && \
 	$(ETAGS) --language=c    -o $@ $$srcfiles && \
 	$(ETAGS) --language=none -o $@ --append \
 	      --regex='/@\([-:*a-zA-z]+\)/\1/' \
 	      --regex='/@(defun \([-:*a-zA-z]+\)/\1/' \
-	      $$srcfiles
+	      $$srcfiles; \
+	fi
 
