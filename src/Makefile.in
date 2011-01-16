@@ -193,7 +193,6 @@ install:
 	$(mkinstalldirs) $(DESTDIR)$(mandir)/man$(manext)
 	$(INSTALL_DATA) doc/ecl.man $(DESTDIR)$(mandir)/man$(manext)/ecl.$(manext)
 	$(INSTALL_DATA) doc/ecl-config.man $(DESTDIR)$(mandir)/man$(manext)/ecl-config.$(manext)
-	done
 
 flatinstall: build-stamp
 	$(MAKE) DESTDIR=$(DESTDIR) bindir=$(prefix) libdir=$(prefix) \
