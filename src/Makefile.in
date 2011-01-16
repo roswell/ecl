@@ -18,6 +18,7 @@ LDFLAGS	= @LDFLAGS@
 RM	= @RM@
 LN_S	= @LN_S@
 EXE	= @EXEEXT@
+ETAGS	= @ETAGS@
 
 # ==================== Where To Install Things ====================
 
@@ -246,9 +247,10 @@ selfbuild:
 # This rule is allowed to fail when etags does not exist.
 TAGS:
 	echo > $@;
+	test $ETAGS && \
 	-srcfiles=`find $(srcdir)/c/ $(srcdir)/h/ -name '*.[chd]'`; \
-	etags --language=c    -o $@ $$srcfiles && \
-	etags --language=none -o $@ --append \
+	$ETAGS --language=c    -o $@ $$srcfiles && \
+	$ETAGS --language=none -o $@ --append \
 	      --regex='/@\([-:*a-zA-z]+\)/\1/' \
 	      --regex='/@(defun \([-:*a-zA-z]+\)/\1/' \
 	      $$srcfiles
