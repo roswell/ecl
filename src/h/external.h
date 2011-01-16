@@ -2142,7 +2142,7 @@ extern ECL_API cl_object clos_standard_instance_set _ARGS((cl_narg narg, cl_obje
 #endif
 
 #define make_simple_base_string(s) ecl_make_simple_base_string((s),-1)
-#define make_constant_base_string(s) ecl_make_simple_base_string((s),-1)
+#define make_constant_base_string(s) ecl_make_simple_base_string((char *)(s),-1)
 
 #ifdef __cplusplus
 }
