@@ -195,7 +195,7 @@ cl_object
 ecl_make_package(cl_object name, cl_object nicknames, cl_object use_list)
 {
         const cl_env_ptr env = ecl_process_env();
-	cl_object x, l, other;
+	cl_object x, l, other = Cnil;
 
         /* Type checking, coercions, and the like, happen before we
          * acquire the lock */
