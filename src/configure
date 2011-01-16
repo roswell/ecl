@@ -7631,7 +7631,7 @@ $as_echo "$as_me: WARNING: unable to find header file ffi.h; disabling dynamic F
   else
     $as_echo "#define HAVE_LIBFFI 1" >>confdefs.h
 
-    LDFLAGS="$LDFLAGS -lffi"
+    CORE_LIBS="-lffi $CORE_LIBS"
   fi
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: libffi is not installed; disabling dynamic FFI" >&5

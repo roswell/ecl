@@ -749,7 +749,7 @@ if test $has_ffi_lib = "yes"; then
     AC_MSG_WARN([unable to find header file ffi.h; disabling dynamic FFI])
   else
     AC_DEFINE(HAVE_LIBFFI)
-    LDFLAGS="$LDFLAGS -lffi"
+    CORE_LIBS="-lffi $CORE_LIBS"
   fi
 else
   AC_MSG_WARN([libffi is not installed; disabling dynamic FFI])
