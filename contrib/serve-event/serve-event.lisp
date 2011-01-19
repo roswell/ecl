@@ -75,7 +75,7 @@
 (defun coerce-to-descriptor (stream-or-fd direction)
   (etypecase stream-or-fd
     (fixnum stream-or-fd)
-    (file-stream (si:file-stream-fd stream))
+    (file-stream (si:file-stream-fd stream-or-fd))
     (two-way-stream
      (coerce-to-descriptor
       (case direction
