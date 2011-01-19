@@ -431,7 +431,7 @@ dnl Checks for libraries
 
 LIBS="${LIBS} -lm"
 AC_CHECK_LIB(sun, getpwnam)         # on IRIX adds -lsun
-AC_ISC_POSIX
+AC_SEARCH_LIBS([strerror],[cposix])
 
 dnl ----------------------------------------------------------------------
 dnl Profiling & debug flags
@@ -479,14 +479,14 @@ if test "${enable_threads}" = "yes" ; then
   if test -z "${THREAD_OBJ}"; then
     AC_MSG_ERROR([Threads aren't supported on this system.])
   else
+    LIBS="${THREAD_LIBS} ${LIBS}"
+    CFLAGS="${CFLAGS} ${THREAD_CFLAGS}"
     ECL_POSIX_SEMAPHORES
     ECL_POSIX_RWLOCK
     boehm_configure_flags="${boehm_configure_flags} ${THREAD_GC_FLAGS}"
     for k in $THREAD_OBJ; do EXTRA_OBJS="$EXTRA_OBJS ${k}.${OBJEXT}"; done
     AC_MSG_CHECKING([for thread object files])
     AC_MSG_RESULT([${THREAD_OBJ}])
-    LIBS="${THREAD_LIBS} ${LIBS}"
-    CFLAGS="${CFLAGS} ${THREAD_CFLAGS}"
     AC_DEFINE( [ECL_THREADS], [1], [Userland threads?])
     if test "${with___thread}" = "auto"; then
       with___thread=${ac_cv_ecl___thread}
@@ -532,7 +532,6 @@ else
     AC_CHECK_LIB( [gc], [GC_malloc],
       [FASL_LIBS="${FASL_LIBS} -lgc"],
       [AC_MSG_ERROR([System Boehm GC library requested but not found.])])
-    AC_MSG_CHECKING( [if we need to copy GC private headers] )
     AC_DEFINE(GBC_BOEHM, [1], [Use Boehm's garbage collector])
   else
     enable_boehm="included"

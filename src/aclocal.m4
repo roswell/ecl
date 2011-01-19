@@ -27,7 +27,7 @@ else
   if test "$GCC" = yes; then
     ac_cv_c_long_long=yes
   else
-    AC_TRY_COMPILE(,[long long int i;],
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[[long long int i;]])],
     ac_cv_c_long_long=yes,
     ac_cv_c_long_long=no)
   fi
@@ -446,23 +446,20 @@ AC_SUBST(ECL_FILE_CNT)
 if test -z "${ECL_FILE_CNT}"; then
 ECL_FILE_CNT=0
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdio.h>]], [[
-int main() {
   FILE *f = fopen("conftestval","w");
   if ((f)->_IO_read_end - (f)->_IO_read_ptr)
     return 1;
-}]])],[ECL_FILE_CNT=1],[])
+]])],[ECL_FILE_CNT=1],[])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdio.h>]], [[
-int main() {
   FILE *f = fopen("conftestval","w");
   if ((f)->_r)
     return 1;
-}]])],[ECL_FILE_CNT=2],[])
+]])],[ECL_FILE_CNT=2],[])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdio.h>]], [[
-int main() {
   FILE *f = fopen("conftestval","w");
   if ((f)->_cnt)
     return 1;
-}]])],[ECL_FILE_CNT=3],[])
+]])],[ECL_FILE_CNT=3],[])
 fi
 ])
 
@@ -761,7 +758,7 @@ dnl Provides a test for the existance of the __thread declaration and
 dnl defines WITH___THREAD if it is found
 AC_DEFUN([ECL___THREAD],[
 AC_CACHE_CHECK(for __thread local data, ac_cv_ecl___thread,
-AC_TRY_COMPILE(,[static __thread void *data;],
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[[static __thread void *data;]])],
    ac_cv_ecl___thread=yes,
    ac_cv_ecl___thread=no))
 dnl We deactivate this test because it seems to slow down ECL A LOT!!!
@@ -810,19 +807,19 @@ dnl
 AC_DEFUN([ECL_SSE],[
 if test "x$with_sse" = xyes; then
  AC_MSG_CHECKING([for SSE intrinsics])
- AC_TRY_LINK([
+ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <xmmintrin.h>
 #include <emmintrin.h>
-],[__m128 value;
-_mm_getcsr();],[sse_included=yes],[sse_included=no])
+]],[[__m128 value;
+_mm_getcsr();]])],[sse_included=yes],[sse_included=no])
  if test "$sse_included" = "no"; then
   OLD_CFLAGS="$CFLAGS"
   CFLAGS="$CFLAGS -msse2"
-  AC_TRY_LINK([
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <xmmintrin.h>
 #include <emmintrin.h>
-],[__m128 value;
-_mm_getcsr();],[sse_included=yes],[sse_included=no])
+]],[[__m128 value;
+_mm_getcsr();]])],[sse_included=yes],[sse_included=no])
   if test "$sse_included" = "no"; then
    CFLAGS="$OLD_CFLAGS"
    with_sse=no

@@ -5662,6 +5662,8 @@ if test "${enable_threads}" = "yes" ; then
   if test -z "${THREAD_OBJ}"; then
     as_fn_error $? "Threads aren't supported on this system." "$LINENO" 5
   else
+    LIBS="${THREAD_LIBS} ${LIBS}"
+    CFLAGS="${CFLAGS} ${THREAD_CFLAGS}"
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking working sem_init()" >&5
 $as_echo_n "checking working sem_init()... " >&6; }
@@ -5723,8 +5725,6 @@ THREAD_OBJ="$THREAD_OBJ threads/rwlock"
 $as_echo_n "checking for thread object files... " >&6; }
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${THREAD_OBJ}" >&5
 $as_echo "${THREAD_OBJ}" >&6; }
-    LIBS="${THREAD_LIBS} ${LIBS}"
-    CFLAGS="${CFLAGS} ${THREAD_CFLAGS}"
 
 $as_echo "#define ECL_THREADS 1" >>confdefs.h
 
@@ -5897,8 +5897,6 @@ else
   as_fn_error $? "System Boehm GC library requested but not found." "$LINENO" 5
 fi
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we need to copy GC private headers " >&5
-$as_echo_n "checking if we need to copy GC private headers ... " >&6; }
 
 $as_echo "#define GBC_BOEHM 1" >>confdefs.h
 
@@ -7508,11 +7506,10 @@ int
 main ()
 {
 
-int main() {
   FILE *f = fopen("conftestval","w");
   if ((f)->_IO_read_end - (f)->_IO_read_ptr)
     return 1;
-}
+
   ;
   return 0;
 }
@@ -7528,11 +7525,10 @@ int
 main ()
 {
 
-int main() {
   FILE *f = fopen("conftestval","w");
   if ((f)->_r)
     return 1;
-}
+
   ;
   return 0;
 }
@@ -7548,11 +7544,10 @@ int
 main ()
 {
 
-int main() {
   FILE *f = fopen("conftestval","w");
   if ((f)->_cnt)
     return 1;
-}
+
   ;
   return 0;
 }
