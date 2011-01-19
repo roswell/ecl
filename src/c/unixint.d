@@ -258,7 +258,7 @@ handler_fn_protype(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
 	cl_env_ptr the_env = ecl_process_env();
         /* The lisp environment might not be installed. */
         if (the_env == NULL)
-                return;
+                return Cnil;
 #if defined(ECL_THREADS) && !defined(ECL_MS_WINDOWS_HOST)
         if (sig == ecl_get_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL)) {
 		return pop_signal(the_env);
@@ -542,12 +542,14 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
                 "\n;;;\n;;; Stack overflow.\n"
                 ";;; Jumping to the outermost toplevel prompt\n"
                 ";;;\n\n";
+#ifndef HAVE_SIGPROCMASK
         static const char *segv_msg =
                 "\n;;;\n"
                 ";;; Detected access to protected memory, "
                 "also kwown as 'segmentation fault'.\n"
                 ";;; Jumping to the outermost toplevel prompt\n"
                 ";;;\n\n";
+#endif
 	cl_env_ptr the_env;
 	reinstall_signal(sig, sigsegv_handler);
 	if (!ecl_get_option(ECL_OPT_BOOTED)) {
@@ -688,7 +690,7 @@ si_catch_signal(cl_object code, cl_object boolean)
 	for (i = 0; known_signals[i].code >= 0; i++) {
 		if (known_signals[i].code == code_int) {
 			if (Null(boolean))
-				mysignal(code_int, SIG_DFL);
+				signal(code_int, SIG_DFL);
 			else if (code_int == SIGSEGV)
 				mysignal(code_int, sigsegv_handler);
 #ifdef SIGBUS
