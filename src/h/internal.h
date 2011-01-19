@@ -420,6 +420,13 @@ extern ECL_API cl_object mp_break_suspend_loop();
 #define UTC_time_to_universal_time(x) ecl_plus(ecl_make_integer(x),cl_core.Jan1st1970UT)
 extern cl_fixnum ecl_runtime(void);
 
+/* threads/rwlock.d */
+
+#ifdef ECL_RWLOCK
+extern cl_object mp_get_rwlock_read_wait(cl_object lock);
+extern cl_object mp_get_rwlock_write_wait(cl_object lock);
+#endif
+
 /* unixint.d */
 
 #define ECL_PI_D 3.14159265358979323846264338327950288

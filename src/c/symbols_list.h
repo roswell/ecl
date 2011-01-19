@@ -1535,6 +1535,7 @@ cl_symbols[] = {
 {MP_ "SEMAPHORE-TRYWAIT", MP_ORDINARY, mp_semaphore_trywait, 1, OBJNULL},
 {MP_ "SEMAPHORE-SIGNAL", MP_ORDINARY, mp_semaphore_signal, 1, OBJNULL},
 {MP_ "SEMAPHORE-CLOSE", MP_ORDINARY, mp_semaphore_close, 1, OBJNULL},
+{KEY_ "COUNT", KEYWORD, NULL, -1, OBJNULL},
 # endif
 {MP_ "MAKE-RWLOCK", MP_ORDINARY, mp_make_rwlock, -1, OBJNULL},
 {MP_ "RWLOCK", MP_ORDINARY, NULL, -1, OBJNULL},

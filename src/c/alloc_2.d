@@ -1080,7 +1080,7 @@ standard_finalizer(cl_object o)
 	case t_rwlock: {
 		const cl_env_ptr the_env = ecl_process_env();
 		ecl_disable_interrupts_env(the_env);
-		pthread_rwlock_destroy(&o->lock.mutex);
+		pthread_rwlock_destroy(&o->rwlock.mutex);
 		ecl_enable_interrupts_env(the_env);
 		break;
 	}
