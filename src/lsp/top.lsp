@@ -573,8 +573,9 @@ Use special code 0 to cancel this operation.")
 			    ;; We are told to let the debugger handle this.
 			    )
 			   (t
-			    (format t "~&Debugger received error: ~A~%~
-                                         Error flushed.~%" condition)
+			    (format t "~&Debugger received error of type: ~A~%~A~%~
+                                         Error flushed.~%"
+				    (type-of condition) condition)
 			    (clear-input)
 			    (return-from rep t) ;; go back into the debugger loop.
 			    )
@@ -660,7 +661,8 @@ Use special code 0 to cancel this operation.")
     (handler-bind 
      ((error (lambda (condition)
 	       (unless *debug-tpl-commands*
-		 (format t "~&Command aborted.~%Received condition: ~A" condition)
+		 (format t "~&Command aborted.~%Received condition of type: ~A~%~A"
+			 (type-of condition) condition)
 		 (clear-input)
 		 (return-from tpl-command nil)
 		 )
@@ -1417,7 +1419,8 @@ package."
            (*print-pretty* nil)
            (*print-circle* t)
            (*readtable* (or *break-readtable* *readtable*))
-           (*break-message* (format nil "~&~A~%" condition))
+           (*break-message* (format nil "~&Condition of type: ~A~%~A~%"
+				    (type-of condition) condition))
            (*break-level* (1+ *break-level*))
            (break-level *break-level*)
            (*break-env* nil))

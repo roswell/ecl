@@ -147,6 +147,14 @@ ECL 11.1.1:
 
  - ECL now ships a Windows icon which is added to the executable at build time.
 
+ECL 11.1.2
+==========
+
+* Visible changes:
+
+ - When printing error messages, the condition type is shown (M. Mondor)
+
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
