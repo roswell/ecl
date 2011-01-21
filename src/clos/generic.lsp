@@ -140,7 +140,7 @@
 	   :format-control "Not a valid documentation object ~"
 	   :format-arguments (list documentation)
 	   :datum documentation
-	   :expected-type (or nil string)))
+	   :expected-type '(or null string)))
   (unless (or (null method-combination)
 	      (and (listp method-combination)
 		   (member (first method-combination) *method-combinations*)))
