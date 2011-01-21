@@ -324,6 +324,7 @@ ecl_make_pathname(cl_object host, cl_object device, cl_object directory,
 			directory = cl_list(2, @':absolute', @':wild-inferiors');
 			break;
 		}
+		x = directory;
 		component = @':directory';
 		goto ERROR;
 	case t_list:
