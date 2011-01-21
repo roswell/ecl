@@ -123,7 +123,7 @@ that are susceptible to be changed by PROCLAIM."
 	(found nil))
     (dolist (record (cmp-env-functions env))
       (cond ((eq record 'CB)
-	     (setf ccbb t))
+	     (setf ccb t))
 	    ((eq record 'LB)
 	     (setf clb t))
 	    ((eq record 'UNWIND-PROTECT)
