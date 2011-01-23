@@ -380,14 +380,12 @@ mp_process_enable(cl_object process)
 	 */
 	cl_env_ptr process_env;
 	int ok;
-	if (Null(mp_get_lock_nowait(process->process.exit_lock))) {
+	unlikely_if (Null(mp_get_lock_nowait(process->process.exit_lock))) {
 		FEerror("Cannot enable the running process ~A.", 1, process);
-		return;
 	}
-	if (process->process.active) {
+	unlikely_if (process->process.active) {
 		mp_giveup_lock(process->process.exit_lock);
 		FEerror("Cannot enable the running process ~A.", 1, process);
-		return;
 	}
 	process_env = _ecl_alloc_env();
 	ecl_init_env(process_env);
