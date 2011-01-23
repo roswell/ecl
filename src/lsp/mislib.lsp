@@ -261,6 +261,8 @@ where CREATED is true only if we succeeded on creating all directories."
   (let* ((created nil)
 	 (full-pathname (merge-pathnames pathname))
 	 d)
+    (when (typep full-pathname 'logical-pathname)
+      (setf full-pathname (translate-logical-pathname full-pathname)))
     (when (or (wild-pathname-p full-pathname :directory)
 	      (wild-pathname-p full-pathname :host)
 	      (wild-pathname-p full-pathname :device))

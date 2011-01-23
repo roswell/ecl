@@ -150,6 +150,10 @@ ECL 11.1.1:
 ECL 11.1.2
 ==========
 
+* Bugs fixed:
+
+ - ENSURE-DIRECTORIES-EXIST did not work properly with logical pathnames.
+
 * Visible changes:
 
  - When printing error messages, the condition type is shown (M. Mondor)
