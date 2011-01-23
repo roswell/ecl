@@ -280,7 +280,9 @@
   nil
   #-:msvc
   ;; FIXME! The Microsoft compiler does not allow static initialization of bit fields.
-  (unless (or *compiler-constants* (not (listp *static-constants*)))
+  (unless (or *compiler-constants*
+              (not *use-static-constants-p*)
+              (not (listp *static-constants*)))
     (let ((record (find object *static-constants* :key #'first :test #'equal)))
       (if record
           (second record)
