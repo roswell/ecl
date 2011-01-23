@@ -50,6 +50,8 @@ static const cl_object ecl_aet_name[] = {
 
 static void check_displaced (cl_object dlist, cl_object orig, cl_index newdim);
 
+static void FEbad_aet() ecl_attr_noreturn;
+
 static void
 FEbad_aet()
 {

@@ -110,7 +110,7 @@ si_generic_function_p(cl_object x)
 #define RECORD_GEN(e) fix((e+2)[0])
 #define RECORD_GEN_SET(e,v) ((e+2)[0]=MAKE_FIXNUM(v))
 
-static cl_object
+static void
 do_clear_method_hash(struct cl_env_struct *env, cl_object target)
 {
 	cl_object table = env->method_hash;
@@ -182,6 +182,7 @@ si_clear_gfun_hash(cl_object what)
 #else
 	do_clear_method_hash(&cl_env, what);
 #endif
+        return0();
 }
 
 static cl_index

@@ -824,10 +824,8 @@ ucs_2be_decoder(cl_object stream, cl_eformat_read_byte8 read_byte8, cl_object so
 				if ((buffer[0] & 0xF8) != 0xDC) {
 					malformed_character(stream);
 				}
-				c = ((c & 0x3FFF) << 10) + (aux & 0x3FFF) + 0x10000;
+				return ((c & 0x3FFF) << 10) + (aux & 0x3FFF) + 0x10000;
 			}
-		} else {
-			return c;
 		}
 	}
 }
@@ -867,10 +865,8 @@ ucs_2le_decoder(cl_object stream, cl_eformat_read_byte8 read_byte8, cl_object so
 				if ((buffer[1] & 0xF8) != 0xDC) {
 					malformed_character(stream);
 				}
-				c = ((c & 0x3FFF) << 10) + (aux & 0x3FFF) + 0x10000;
+				return ((c & 0x3FFF) << 10) + (aux & 0x3FFF) + 0x10000;
 			}
-		} else {
-			return c;
 		}
 	}
 }
@@ -4563,6 +4559,7 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
 		case smm_input: fp = fopen(fname, OPEN_R); break;
 		case smm_output:
 		case smm_io: fp = fopen(fname, OPEN_RW); break;
+                default:; /* never reached */
 		}
 		x = ecl_make_stream_from_FILE(fn, fp, smm, byte_size, flags,
 					      external_format);

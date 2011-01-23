@@ -54,11 +54,11 @@ safe_chdir(const char *path, cl_object prefix)
 	if (prefix != Cnil) {
 		cl_object aux = make_constant_base_string(path);
 		aux = si_base_string_concatenate(2, prefix, aux);
-		return safe_chdir(aux->base_string.self, Cnil);
+		return safe_chdir((char *)aux->base_string.self, Cnil);
 	} else {
 		int output;
 		ecl_disable_interrupts();
-		output = chdir(path);
+		output = chdir((char *)path);
 		ecl_enable_interrupts();
 		return output;
 	}

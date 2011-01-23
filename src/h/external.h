@@ -421,7 +421,7 @@ extern ECL_API void ecl_def_c_function(cl_object sym, cl_objectfn_fixed c_functi
 extern ECL_API void ecl_def_c_macro(cl_object sym, cl_objectfn_fixed c_function, int narg);
 extern ECL_API void ecl_def_c_macro_va(cl_object sym, cl_objectfn c_function);
 extern ECL_API void ecl_def_c_function_va(cl_object sym, cl_objectfn c_function);
-extern ECL_API cl_object ecl_set_function_source_file_info(cl_object fun, cl_object source, cl_object position);
+extern ECL_API void ecl_set_function_source_file_info(cl_object fun, cl_object source, cl_object position);
 extern ECL_API void ecl_cmp_defmacro(cl_object data);
 extern ECL_API void ecl_cmp_defun(cl_object data);
 
@@ -944,7 +944,7 @@ extern ECL_API cl_object si_setenv(cl_object var, cl_object value);
 extern ECL_API cl_object si_environ(void);
 extern ECL_API cl_object si_pointer(cl_object x);
 extern ECL_API cl_object si_quit _ARGS((cl_narg narg, ...)) /*ecl_attr_noreturn*/;
-extern ECL_API cl_object si_exit _ARGS((cl_narg narg, ...)) /*ecl_attr_noreturn*/;
+extern ECL_API cl_object si_exit _ARGS((cl_narg narg, ...)) ecl_attr_noreturn;
 
 typedef enum {
 	ECL_OPT_INCREMENTAL_GC = 0,

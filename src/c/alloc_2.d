@@ -48,6 +48,7 @@ static void ecl_mark_env(struct cl_env_struct *env);
 static int cl_object_kind, cl_object_mark_proc_index;
 static void **cl_object_free_list;
 #  endif
+extern void GC_init_explicit_typing(void);
 # endif
 #endif
 
@@ -775,7 +776,7 @@ init_alloc(void)
 # else
 #  ifdef GBC_BOEHM_OWN_MARKER
         cl_object_free_list = (void **)GC_new_free_list_inner();
-	cl_object_mark_proc_index = GC_new_proc(cl_object_mark_proc);
+	cl_object_mark_proc_index = GC_new_proc((GC_mark_proc)cl_object_mark_proc);
         cl_object_kind = GC_new_kind_inner(cl_object_free_list,
                                            GC_MAKE_PROC(cl_object_mark_proc_index, 0),
                                            FALSE, TRUE);

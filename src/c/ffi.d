@@ -272,6 +272,7 @@ si_free_foreign_data(cl_object f)
 	}
 	f->foreign.size = 0;
 	f->foreign.data = NULL;
+        @(return)
 }
 
 cl_object
@@ -444,6 +445,14 @@ ecl_foreign_cc_code(cl_object cc)
 }
 #endif
 
+static void wrong_ffi_tag(enum ecl_ffi_tag tag) ecl_attr_noreturn;
+
+static void
+wrong_ffi_tag(enum ecl_ffi_tag tag)
+{
+	FEerror("Invalid ecl_ffi_tag code ~D", 1, ecl_make_integer(tag));
+}
+
 cl_object
 ecl_foreign_data_ref_elt(void *p, enum ecl_ffi_tag tag)
 {
@@ -511,6 +520,8 @@ ecl_foreign_data_ref_elt(void *p, enum ecl_ffi_tag tag)
 		return ecl_make_doublefloat(*(double *)p);
 	case ECL_FFI_VOID:
 		return Cnil;
+        default:
+                wrong_ffi_tag(tag);
 	}
 }
 
@@ -605,6 +616,8 @@ ecl_foreign_data_set_elt(void *p, enum ecl_ffi_tag tag, cl_object value)
 		break;
 	case ECL_FFI_VOID:
 		break;
+        default:
+                wrong_ffi_tag(tag);
 	}
 }
 

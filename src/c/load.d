@@ -41,7 +41,7 @@ si_load_binary(cl_object filename, cl_object verbose, cl_object print, cl_object
 	/* Fist try to call "init_CODE()" */
         init_prefix = _ecl_library_default_entry();
         block->cblock.entry =
-                ecl_library_symbol(block, init_prefix->base_string.self, 0);
+                ecl_library_symbol(block, (char *)init_prefix->base_string.self, 0);
 	if (block->cblock.entry != NULL)
 		goto GO_ON;
 

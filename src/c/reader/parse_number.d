@@ -23,12 +23,6 @@ exponent_charp(cl_fixnum c)
 }
 
 static cl_object
-read_exponent(cl_object str, cl_index start, cl_index end, cl_index *ep)
-{
-
-}
-
-static cl_object
 expt10(cl_index expt)
 {
         cl_object accum = _ecl_big_register0();

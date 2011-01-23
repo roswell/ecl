@@ -245,7 +245,7 @@ create_server_port(int port)
     fclose(fp);
   }
 #else
-  if ((conn = accept(request, (struct sockaddr *)NULL, (int *)NULL)) < 0)
+  if ((conn = accept(request, (struct sockaddr *)NULL, NULL)) < 0)
     FElibc_error("Accepting requests", 0);
 #endif	/* THREADS */
 

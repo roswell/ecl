@@ -204,7 +204,7 @@ si_compiled_function_file(cl_object b)
 	}
 }
 
-cl_object
+void
 ecl_set_function_source_file_info(cl_object b, cl_object source, cl_object position)
 {
 	cl_env_ptr the_env = ecl_process_env();

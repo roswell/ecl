@@ -333,18 +333,19 @@ mp_break_suspend_loop()
         if (frs_sch(@'mp::suspend-loop')) {
                 cl_throw(@'mp::suspend-loop');
         }
+        @(return)
 }
 
 cl_object
 mp_process_suspend(cl_object process)
 {
-        mp_interrupt_process(process, @'mp::suspend-loop');
+        return mp_interrupt_process(process, @'mp::suspend-loop');
 }
 
 cl_object
 mp_process_resume(cl_object process)
 {
-        mp_interrupt_process(process, @'mp::break-suspend-loop');
+        return mp_interrupt_process(process, @'mp::break-suspend-loop');
 }
 
 cl_object

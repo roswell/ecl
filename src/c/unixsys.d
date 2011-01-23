@@ -124,7 +124,7 @@ from_list_to_execve_argument(cl_object l, char ***environp)
                                 " changed during execution.", 0);
                         break;
                 }
-                environ[j++] = buffer->base_string.self + i;
+                environ[j++] = (char*)(buffer->base_string.self + i);
                 memcpy(buffer->base_string.self + i,
                        s->base_string.self,
                        l);

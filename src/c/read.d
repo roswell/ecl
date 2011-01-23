@@ -2238,7 +2238,7 @@ read_VV(cl_object block, void (*entry_point)(cl_object))
                 }
 #else
 		in=ecl_make_string_input_stream
-                        (ecl_make_simple_base_string(block->cblock.data_text,
+                        (ecl_make_simple_base_string((char *)block->cblock.data_text,
                                                      block->cblock.data_text_size),
                          0, block->cblock.data_text_size);
                 progv_list = ECL_SYM_VAL(env, @'si::+ecl-syntax-progv-list+');

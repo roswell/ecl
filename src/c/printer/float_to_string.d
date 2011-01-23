@@ -49,7 +49,7 @@ static cl_object
 push_base_string(cl_object buffer, cl_object s)
 {
         buffer = _ecl_ensure_buffer(buffer, s->base_string.fillp);
-        _ecl_string_push_c_string(buffer, s->base_string.self);
+        _ecl_string_push_c_string(buffer, (char *)s->base_string.self);
         return buffer;
 }
 
@@ -57,7 +57,7 @@ push_base_string(cl_object buffer, cl_object s)
  * FREE FORMAT (FIXED OR EXPONENT) OF FLOATS
  */
 
-static cl_object
+static void
 print_float_exponent(cl_object buffer, cl_object number, cl_fixnum exp)
 {
         cl_object r = ecl_symbol_value(@'*read-default-float-format*');

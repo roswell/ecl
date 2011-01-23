@@ -15,6 +15,7 @@
     See file '../Copyright' for full details.
 */
 
+#include <string.h>
 #define ECL_INCLUDE_MATH_H
 #include <ecl/ecl.h>
 

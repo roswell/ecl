@@ -541,7 +541,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 		Pops a singe value pushed by a OP_PUSH* operator, ignoring it.
 	*/
 	CASE(OP_POP1); {
-		ECL_STACK_POP_UNSAFE(the_env);
+		(void)ECL_STACK_POP_UNSAFE(the_env);
 		THREAD_NEXT;
 	}
 	/* OP_POPREQ
@@ -1155,7 +1155,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 	CASE(OP_PROTECT_NORMAL); {
 		ecl_bds_unwind(the_env, the_env->frs_top->frs_bds_top_index);
 		ecl_frs_pop(the_env);
-		ECL_STACK_POP_UNSAFE(the_env);
+		(void)ECL_STACK_POP_UNSAFE(the_env);
 		lex_env = ECL_STACK_POP_UNSAFE(the_env);
 		ECL_STACK_PUSH(the_env, MAKE_FIXNUM(1));
 		goto PUSH_VALUES;
