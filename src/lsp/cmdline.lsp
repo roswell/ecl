@@ -14,12 +14,6 @@
 
 (in-package "SYSTEM")
 
-(export '(*lisp-init-file-list*
-          *help-message*
-          +default-command-arg-rules+
-          command-args
-          process-command-args))
-
 (defvar *command-break-enable* nil)
 
 (defvar *lisp-init-file-list* '("~/.ecl" "~/.eclrc")
