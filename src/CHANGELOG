@@ -160,6 +160,13 @@ ECL 11.1.2
 
  - When printing error messages, the condition type is shown (M. Mondor)
 
+ - SI:TOP-LEVEL, when invoked without arguments, does not process the
+   command line.
+
+ - The command line used by EXT:PROCESS-COMMAND-ARGS is now by default
+   the one stored in *COMMAND-ARGS*, and this may be "cleared" by the
+   user.
+
 
 ;;; Local Variables: ***
 ;;; mode:text ***

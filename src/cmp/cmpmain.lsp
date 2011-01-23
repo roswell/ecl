@@ -331,7 +331,7 @@ filesystem or in the database of ASDF modules."
 (defun builder (target output-name &key lisp-files ld-flags shared-data-file
 		(init-name nil)
 		(prologue-code "")
-		(epilogue-code (when (eq target :program) '(SI::TOP-LEVEL)))
+		(epilogue-code (when (eq target :program) '(SI::TOP-LEVEL T)))
 		#+:win32 (system :console)
 		&aux
 		(*suppress-compiler-messages* (or *suppress-compiler-messages*
