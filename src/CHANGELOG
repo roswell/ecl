@@ -154,6 +154,8 @@ ECL 11.1.2
 
  - ENSURE-DIRECTORIES-EXIST did not work properly with logical pathnames.
 
+ - EXT:SET-LIMIT with option EXT:FRAME-STACK corrupted the frame stack.
+
 * Visible changes:
 
  - When printing error messages, the condition type is shown (M. Mondor)
