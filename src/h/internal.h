@@ -408,6 +408,9 @@ extern cl_object ecl_deserialize(uint8_t *data);
 /* string.d */
 #define ecl_vector_start_end ecl_sequence_start_end
 
+/* stacks.d */
+extern void ecl_cs_set_org(cl_env_ptr env);
+
 /* threads.d */
 
 #ifdef ECL_THREADS
