@@ -473,7 +473,7 @@ si_ihs_env(cl_object arg)
 static void
 frs_set_size(cl_env_ptr env, cl_index size)
 {
-	ecl_frame_ptr old_org = env->frs_top;
+	ecl_frame_ptr old_org = env->frs_org;
 	cl_index limit = env->frs_top - old_org;
 	if (size <= limit) {
 		FEerror("Cannot shrink frame stack below ~D.", 1,
