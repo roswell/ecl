@@ -224,12 +224,12 @@ ecl_make_package(cl_object name, cl_object nicknames, cl_object use_list)
                                 goto OUTPUT;
                         }
                         x->pack.nicknames = CONS(nick, x->pack.nicknames);
-                } end_loop_for_in(nicknames);
+                } end_loop_for_in;
                 loop_for_in(use_list) {
                         cl_object y = ECL_CONS_CAR(use_list);
                         x->pack.uses = CONS(y, x->pack.uses);
                         y->pack.usedby = CONS(x, y->pack.usedby);
-                } end_loop_for_in(use_list);
+                } end_loop_for_in;
                 /* Finally, add it to the list of packages */
                 cl_core.packages = CONS(x, cl_core.packages);
         OUTPUT:
