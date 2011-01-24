@@ -48,7 +48,7 @@
   ;; step. Otherwise the compiler macro will enter an infinite loop.
   (let* ((orig-type type)
 	 aux function
-	 first rest)
+	 first rest function)
     (cond ((not (and (constantp type) (setf type (cmp-eval type)) t))
 	   form)
 	  ;; Type is not known
