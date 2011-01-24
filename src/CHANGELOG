@@ -152,6 +152,8 @@ ECL 11.1.2
 
 * Bugs fixed:
 
+ - Fixed several dozens of typos.
+
  - ENSURE-DIRECTORIES-EXIST did not work properly with logical pathnames.
 
  - EXT:SET-LIMIT with option EXT:FRAME-STACK corrupted the frame stack.
@@ -167,6 +169,7 @@ ECL 11.1.2
    the one stored in *COMMAND-ARGS*, and this may be "cleared" by the
    user.
 
+ - SOCKET-MAKE-STREAM now accepts an :ELEMENT-TYPE argument.
 
 ;;; Local Variables: ***
 ;;; mode:text ***

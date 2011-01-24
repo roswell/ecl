@@ -1180,7 +1180,8 @@ also known as unix-domain sockets."))
 (defun dup (fd)
   (ffi:c-inline (fd) (:int) :int "dup(#0)" :one-liner t))
 
-(defun make-stream-from-fd (fd mode &key buffering external-format (name "FD-STREAM"))
+(defun make-stream-from-fd (fd mode &key buffering element-type external-format
+                            (name "FD-STREAM"))
   (assert (stringp name) (name) "name must be a string.")
   (let* ((smm-mode (ecase mode
 		       (:input (c-constant "smm_input"))
@@ -1193,9 +1194,13 @@ also known as unix-domain sockets."))
 		       #+:wsock
 		       (:input-output-wsock (c-constant "smm_io_wsock"))
 		       ))
-         (stream (ffi:c-inline (name fd smm-mode) (t :int :int) t
-                               "ecl_make_stream_from_fd(#0,#1,(enum ecl_smmode)#2,8,
-                                                        ECL_STREAM_DEFAULT_FORMAT,Cnil)"
+         (stream (ffi:c-inline (name fd smm-mode element-type)
+                               (t :int :int t)
+                               t
+                               "
+ecl_make_stream_from_fd(#0,#1,(enum ecl_smmode)#2,
+			ecl_normalize_stream_element_type(#3),
+                        ECL_STREAM_DEFAULT_FORMAT,Cnil)"
                                :one-liner t)))
     (when buffering
       (si::set-buffering-mode stream buffering))
@@ -1209,7 +1214,7 @@ also known as unix-domain sockets."))
                 "(#0)->stream.flags |= ECL_STREAM_CLOSE_COMPONENTS"
                 :one-liner t))
 
-(defun socket-make-stream-inner (fd input output buffering external-format)
+(defun socket-make-stream-inner (fd input output buffering element-type external-format)
   ;; In Unix we have to create one stream per channel. The reason is
   ;; that buffered I/O is done using ANSI C FILEs which do not support
   ;; concurrent reads and writes -- if one thread is listening to the
@@ -1221,25 +1226,36 @@ also known as unix-domain sockets."))
   (cond ((and input output)
          #+wsock
          (make-stream-from-fd fd :input-output-wsock
-                              :buffering buffering :external-format external-format)
+                              :buffering buffering
+                              :element-type element-type
+                              :external-format external-format)
          #-wsock
-         (let* ((in (socket-make-stream-inner (dup fd) t nil buffering external-format))
-                (out (socket-make-stream-inner fd nil t buffering external-format))
+         (let* ((in (socket-make-stream-inner (dup fd) t nil buffering
+                                              element-type external-format))
+                (out (socket-make-stream-inner fd nil t buffering
+                                               element-type external-format))
                 (stream (make-two-way-stream in out)))
            (auto-close-two-way-stream stream)
            stream))
         (input
          (make-stream-from-fd fd #-wsock :input #+wsock :input-wsock
-                              :buffering buffering :external-format external-format))
+                              :buffering buffering
+                              :element-type element-type
+                              :external-format external-format))
 	(output
 	 (make-stream-from-fd fd #-wsock :output #+wsock :output-wsock
-                              :buffering buffering :external-format external-format))
+                              :buffering buffering
+                              :element-type element-type
+                              :external-format external-format))
 	(t
 	 (error "SOCKET-MAKE-STREAM: at least one of :INPUT or :OUTPUT has to be true."))))
 
 (defmethod socket-make-stream ((socket socket)
-			       &key (input nil input-p) (output nil output-p)
-			       (buffering :full) (external-format :default))
+			       &key (input nil input-p)
+                               (output nil output-p)
+			       (buffering :full)
+                               (element-type 'base-char)
+                               (external-format :default))
   (let ((stream (and (slot-boundp socket 'stream)
 		     (slot-value socket 'stream))))
     (unless stream
@@ -1248,7 +1264,8 @@ also known as unix-domain sockets."))
       (unless (or input-p output-p)
 	(setf input t output t))
       (setf stream (socket-make-stream-inner (socket-file-descriptor socket)
-					     input output buffering external-format))
+					     input output buffering element-type
+                                             external-format))
       (setf (slot-value socket 'stream) stream)
       #+ ignore
       (sb-ext:cancel-finalization socket))
