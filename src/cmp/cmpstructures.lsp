@@ -37,7 +37,7 @@
 	       (inline-possible fname)
 	       (policy-inline-slot-access-p))
       ;(format t "~%;;; Optimizing structure accessor ~A" fname)
-      (let (struture-type slot-index)
+      (let (structure-type slot-index)
 	(unless (and (consp slot-description)
 		     (setf structure-type (car slot-description)
 			   slot-index (cdr slot-description))
