@@ -319,8 +319,8 @@
 (proclamation abort (&optional (or null condition)) (values))
 (proclamation continue (&optional (or null condition)) null)
 (proclamation muffle-warning (&optional (or null condition)) (values))
-(proclamation store-value (value &optional (or null condition)) null)
-(proclamation use-value (value &optional (or null condition)) null)
+(proclamation store-value (t &optional (or null condition)) null)
+(proclamation use-value (t &optional (or null condition)) null)
 
 ;; Slot accessors:
 ;; (proclamation cell-error-name (cell-error) t)
