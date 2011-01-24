@@ -598,7 +598,7 @@ because it contains a reference to the undefined class~%  ~A"
 
 (defun std-class-sealed-accessors (index)
   (declare (si::c-local)
-	   (fixnum slot-index))
+	   (fixnum index))
   (values #'(lambda (self)
               (declare (optimize (safety 1) (speed 3) (debug 0))
                        (standard-object self))
