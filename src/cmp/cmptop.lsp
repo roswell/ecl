@@ -778,7 +778,8 @@
 	  (let ((fun-object (c1form-arg 2 fun-form)))
 	    (when (fun-no-entry fun-object)
 	      (when macro
-		(cmperr "Declaration C-LOCAL used in macro ~a" (fun-name fun)))
+		(cmperr "Declaration C-LOCAL used in macro ~a"
+                        (fun-name fun-object)))
 	      (return-from c1fset
 		(make-c1form* 'SI:FSET :args fun-object nil nil nil nil)))
 	    (when (and (typep macro 'boolean)
