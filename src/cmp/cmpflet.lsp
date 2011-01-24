@@ -238,7 +238,7 @@
       (when (functionp fun) 
 	(when build-object
 	  ;; Macro definition appears in #'.... This should not happen.
-	  (cmperr "The name of a macro ~A was found in special form FUNCTION." name))
+	  (cmperr "The name of a macro ~A was found in special form FUNCTION." fname))
 	(return-from local-function-ref nil))
       (incf (fun-ref fun))
       (cond (build-object
