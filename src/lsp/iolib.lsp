@@ -238,7 +238,7 @@ is not given, ends the recording."
 
 (defmacro with-standard-io-syntax (&body body)
   "Syntax: ({forms}*)
-The forms of the body are executed in a print envirtoponment that corresponds to
+The forms of the body are executed in a print environment that corresponds to
 the one defined in the ANSI standard. *print-base* is 10, *print-array* is t,
 *package* is \"CL-USER\", etc."
   `(progv (car +io-syntax-progv-list+)
@@ -247,7 +247,7 @@ the one defined in the ANSI standard. *print-base* is 10, *print-array* is t,
 
 (defmacro with-ecl-io-syntax (&body body)
   "Syntax: ({forms}*)
-The forms of the body are executed in a print envirtoponment that corresponds to
+The forms of the body are executed in a print environment that corresponds to
 the one used internally by ECL compiled files."
   `(progv (car +ecl-syntax-progv-list+)
        (cdr +ecl-syntax-progv-list+)
