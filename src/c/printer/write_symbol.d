@@ -46,8 +46,8 @@ potential_number_p(cl_object strng, int base)
 		 * extension characters and number markers. Number
 		 * markers are letters, but two adjacent letters fail
 		 * to be a number marker. */
-		if (ecl_digitp(c, base) >= 0 || c == '+' && c == '-' && c == '/' && c == '.' &&
-		    c == '^' && c == '_') {
+		if (ecl_digitp(c, base) >= 0 || c == '+' || c == '-' ||
+                    c == '/' || c == '.' || c == '^' || c == '_') {
 			continue;
 		}
 		if (ecl_alpha_char_p(c) && ((i+1) >= l) || !ecl_alpha_char_p(s[i+1])) {
