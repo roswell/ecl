@@ -76,7 +76,7 @@
      ;; FIXME! IGNORED!
      (dolist (var (cdr decl))
        (unless (si::valid-function-name-p var)
-	 (error "Not a valid function name ~s in ~s proclamation" fun decl-name))))
+	 (error "Not a valid function name ~s in ~s proclamation" var decl-name))))
     (DECLARATION
      (validate-alien-declaration (rest decl) #'error)
      (setf si::*alien-declarations*
