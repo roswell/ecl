@@ -33,7 +33,7 @@
 
 (defun c1compiler-typecases (args)
   (let* ((all-types (mapcar #'compute-c1form-type (pop args)))
-         (match (find expr-type args
+         (match (find all-types args
                       :test #'(lambda (s1 s2) (every #'safe-typep<= s1 s2))
                       :key #'first)))
     (if match
