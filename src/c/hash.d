@@ -140,7 +140,7 @@ _hash_equal(int depth, cl_hashkey h, cl_object x)
                 /* We coerce to double because long double has extra bits
                  * that give rise to different hash key and are not
                  * meaningful */
-                struct { double mantissa; int exponent; int sign} aux;
+                struct { double mantissa; int exponent; int sign; } aux;
                 aux.mantissa = frexpl(ecl_long_float(x), &aux.exponent);
                 aux.sign = (ecl_long_float(x) < 0)? -1: 1;
 		if (aux.mantissa == 0.0) aux.mantissa = 0.0;
