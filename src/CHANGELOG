@@ -171,6 +171,11 @@ ECL 11.1.2
 
  - SOCKET-MAKE-STREAM now accepts an :ELEMENT-TYPE argument.
 
+ - When --enable-rpath is used in combination with --with-gmp-prefix, then the
+   path of the GMP library is hardcoded into ECL. If the remaining libraries
+   (GC, libffi) are in a similar location this will make ECL work without
+   further flags, and without modifying LD_LIBRARY_PATH or DYLD_LIBRARY_PATH.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

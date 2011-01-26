@@ -2642,21 +2642,21 @@ fi
 
 # Check whether --with-gmp-prefix was given.
 if test "${with_gmp_prefix+set}" = set; then :
-  withval=$with_gmp_prefix; GMP_CPPFLAGS="-I$withval/include"; GMP_LDFLAGS="-L$withval/lib"
+  withval=$with_gmp_prefix; GMP_INCDIR="$withval/include"; GMP_LIBDIR="$withval/lib"
 fi
 
 
 
 # Check whether --with-gmp-incdir was given.
 if test "${with_gmp_incdir+set}" = set; then :
-  withval=$with_gmp_incdir; GMP_CPPFLAGS="-I$withval"
+  withval=$with_gmp_incdir; GMP_INCDIR="$withval"
 fi
 
 
 
 # Check whether --with-gmp-libdir was given.
 if test "${with_gmp_libdir+set}" = set; then :
-  withval=$with_gmp_libdir; GMP_LDFLAGS="-L$withval"
+  withval=$with_gmp_libdir; GMP_LIBDIR="$withval"
 fi
 
 
@@ -5073,6 +5073,17 @@ else
   INFOEXT=info
 fi
 
+if test "x$GMP_INCDIR" != "x"; then
+  GMP_CPPFLAGS="-I$GMP_INCDIR"
+fi
+if test "x$GMP_LIBDIR" != "x"; then
+  GMP_LDFLAGS="-L$GMP_LIBDIR"
+  if test "$enable_rpath" = "yes"; then
+    if (echo "$ECL_LDRPATH" | grep '~A') > /dev/null; then
+      GMP_LDFLAGS=`echo $ECL_LDRPATH | sed "s,~A,$GMP_LIBDIR,"`" $GMP_LDFLAGS"
+    fi
+  fi
+fi
 CPPFLAGS="$CPPFLAGS $GMP_CPPFLAGS"
 LDFLAGS="$LDFLAGS $GMP_LDFLAGS"
 
