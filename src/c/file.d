@@ -94,12 +94,9 @@ static int restartable_io_error(cl_object strm);
 static void unread_error(cl_object strm);
 static void unread_twice(cl_object strm);
 static void io_error(cl_object strm) ecl_attr_noreturn;
-static void character_size_overflow(cl_object strm, ecl_character c) ecl_attr_noreturn;
 #ifdef ECL_UNICODE
-static void unsupported_character(cl_object strm) ecl_attr_noreturn;
-static void malformed_character(cl_object strm) ecl_attr_noreturn;
-static void too_long_utf8_sequence(cl_object strm);
-static void invalid_codepoint(cl_object strm, cl_fixnum c) ecl_attr_noreturn;
+static ecl_character encoding_error(cl_object strm, cl_object format, ecl_character c);
+static ecl_character decoding_error(cl_object strm, cl_object format, unsigned char *buffer, int length);
 #endif
 static void wrong_file_handler(cl_object strm) ecl_attr_noreturn;
 #if defined(ECL_WSOCK)
@@ -597,9 +594,9 @@ static ecl_character
 eformat_write_char(cl_object strm, ecl_character c)
 {
 	unsigned char buffer[ENCODING_BUFFER_MAX_SIZE];
-	ecl_character nbytes = strm->stream.encoder(strm, buffer, c);
-	if (nbytes == 0) {
-		character_size_overflow(strm, c);
+	ecl_character nbytes;
+        while (!(nbytes = strm->stream.encoder(strm, buffer, c))) {
+                c = encoding_error(strm, strm->stream.format, c);
 	}
 	strm->stream.ops->write_byte8(strm, buffer, nbytes);
 	if (c == '\n')
@@ -703,7 +700,7 @@ ascii_decoder(cl_object stream, cl_eformat_read_byte8 read_byte8, cl_object sour
 	if (read_byte8(source, &aux, 1) < 1) {
 		return EOF;
 	} else if (aux > 127) {
-		invalid_codepoint(stream, aux);
+                return decoding_error(stream, @':us-ascii', &aux, 1);
 	} else {
 		return aux;
 	}
@@ -822,7 +819,8 @@ ucs_2be_decoder(cl_object stream, cl_eformat_read_byte8 read_byte8, cl_object so
 			} else {
 				ecl_character aux = ((ecl_character)buffer[0] << 8) | buffer[1];
 				if ((buffer[0] & 0xF8) != 0xDC) {
-					malformed_character(stream);
+                                        return decoding_error(stream, @':ucs-2be',
+                                                              buffer, 1);
 				}
 				return ((c & 0x3FFF) << 10) + (aux & 0x3FFF) + 0x10000;
 			}
@@ -863,7 +861,8 @@ ucs_2le_decoder(cl_object stream, cl_eformat_read_byte8 read_byte8, cl_object so
 			} else {
 				ecl_character aux = ((ecl_character)buffer[1] << 8) | buffer[0];
 				if ((buffer[1] & 0xF8) != 0xDC) {
-					malformed_character(stream);
+                                        return decoding_error(stream, @':ucs-2le',
+                                                              buffer, 2);
 				}
 				return ((c & 0x3FFF) << 10) + (aux & 0x3FFF) + 0x10000;
 			}
@@ -934,7 +933,8 @@ user_decoder(cl_object stream, cl_eformat_read_byte8 read_byte8, cl_object sourc
 	}
 	character = ecl_gethash_safe(MAKE_FIXNUM(buffer[0]), table, Cnil);
 	unlikely_if (Null(character)) {
-		invalid_codepoint(stream, buffer[0]);
+                return decoding_error(stream, stream->stream.format,
+                                      buffer, 1);
 	}
 	if (character == Ct) {
 		if (read_byte8(source, buffer+1, 1) < 1) {
@@ -943,7 +943,8 @@ user_decoder(cl_object stream, cl_eformat_read_byte8 read_byte8, cl_object sourc
 			cl_fixnum byte = (buffer[0]<<8) + buffer[1];
 			character = ecl_gethash_safe(MAKE_FIXNUM(byte), table, Cnil);
 			unlikely_if (Null(character)) {
-				invalid_codepoint(stream, byte);
+                                return decoding_error(stream, stream->stream.format,
+                                                      buffer, 2);
 			}
 		}
 	}
@@ -992,7 +993,8 @@ user_multistate_decoder(cl_object stream, cl_eformat_read_byte8 read_byte8,
 			return CHAR_CODE(character);
 		}
 		unlikely_if (Null(character)) {
-			invalid_codepoint(stream, buffer[0]);
+                        return decoding_error(stream, stream->stream.format,
+                                              buffer, i);
 		}
 		if (character == Ct) {
 			/* Need more characters */
@@ -1067,7 +1069,7 @@ utf_8_decoder(cl_object stream, cl_eformat_read_byte8 read_byte8, cl_object sour
 		return buffer[0];
 	}
 	unlikely_if ((buffer[0] & 0x40) == 0)
-		malformed_character(stream);
+                return decoding_error(stream, @':utf-8', buffer, 1);
 	if ((buffer[0] & 0x20) == 0) {
 		buffer[0] &= 0x1F;
 		nbytes = 1;
@@ -1078,7 +1080,7 @@ utf_8_decoder(cl_object stream, cl_eformat_read_byte8 read_byte8, cl_object sour
 		buffer[0] &= 0x07;
 		nbytes = 3;
 	} else {
-		unsupported_character(stream);
+                return decoding_error(stream, @':utf-8', buffer, 1);
 	}
 	if (read_byte8(source, buffer+1, nbytes) < nbytes)
 		return EOF;
@@ -1086,16 +1088,16 @@ utf_8_decoder(cl_object stream, cl_eformat_read_byte8 read_byte8, cl_object sour
 		unsigned char c = buffer[i];
 		/*printf(": %04x :", c);*/
 		unlikely_if ((c & 0xC0) != 0x80)
-			malformed_character(stream);
+                        return decoding_error(stream, @':utf-8', buffer, i+1);
 		cum = (cum << 6) | (c & 0x3F);
 		unlikely_if (cum == 0)
-                        too_long_utf8_sequence(stream);
+                        return decoding_error(stream, @':utf-8', buffer, i+1);
 	}
 	if (cum >= 0xd800) {
 		unlikely_if (cum <= 0xdfff)
-			invalid_codepoint(stream, cum);
+                        return decoding_error(stream, @':utf-8', buffer, nbytes+1);
 		unlikely_if (cum >= 0xFFFE && cum <= 0xFFFF)
-			invalid_codepoint(stream, cum);
+                        return decoding_error(stream, @':utf-8', buffer, nbytes+1);
 	}
 	/*printf("; %04x ;", cum);*/
 	return cum;
@@ -4975,45 +4977,32 @@ character_size_overflow(cl_object strm, ecl_character c)
 		CODE_CHAR(c), cl_stream_external_format(strm));
 }
 
-#ifdef ECL_UNICODE
-static void
-unsupported_character(cl_object stream)
-{
-	FEerror("In stream ~A, found a Unicode character code that "
-		"exceeds the limit of 21 bits.",
-		1, stream);
-}
-
-static void
-invalid_codepoint(cl_object stream, cl_fixnum c)
-{
-	FEerror("When reading stream ~A with external format ~A,~%"
-		"found an invalid character code, ~D~@@[, at file position ~D~].",
-		4, stream, cl_stream_external_format(stream), MAKE_FIXNUM(c),
-                ecl_file_position(stream));
-}
-
-static void
-malformed_character(cl_object stream)
-{
-	FEerror("Stream ~A,~&with external format ~A contains an invalid"
-                " octet sequence~@@[~&at file position ~D~].",
-		3, stream, cl_stream_external_format(stream),
-                ecl_file_position(stream));
-}
-
-static void
-too_long_utf8_sequence(cl_object stream)
-{
-	CEerror(Cnil, "In stream ~S, found a too long UTF-8 sequence.", 1, stream);
-}
-#endif
-
 static void
 wrong_file_handler(cl_object strm)
 {
 	FEerror("Internal error: stream ~S has no valid C file handler.", 1, strm);
 }
+
+#ifdef ECL_UNICODE
+static ecl_character
+encoding_error(cl_object strm, cl_object format, ecl_character c)
+{
+        return ecl_char_code(cl_funcall(4, @'ext::encoding-error', strm, format,
+                                        ecl_make_integer(c)));
+}
+
+static ecl_character
+decoding_error(cl_object strm, cl_object format,
+               unsigned char *buffer, int length)
+{
+        cl_object octets = Cnil;
+        while (length > 0) {
+                octets = CONS(MAKE_FIXNUM(buffer[--length]), octets);
+        }
+        return ecl_char_code(cl_funcall(4, @'ext::decoding-error', strm,
+                                        format, octets));
+}
+#endif
 
 #if defined(ECL_WSOCK)
 static void

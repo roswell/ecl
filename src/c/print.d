@@ -215,7 +215,7 @@ ecl_print_circle(void)
 @
 	/* INV: ecl_char_code() checks the type of `c' */
  	strm = _ecl_stream_or_default_output(strm);
-	ecl_write_char(ecl_char_code(c), strm);
+	c = CODE_CHAR(ecl_write_char(ecl_char_code(c), strm));
 	@(return c)
 @)
 

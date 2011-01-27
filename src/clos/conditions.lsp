@@ -553,44 +553,6 @@ memory limits before executing the program again."))))
 (define-condition stream-error (error)
   ((stream :initarg :stream :reader stream-error-stream)))
 
-#+unicode
-(define-condition character-coding-error (error)
-  ((external-format :initarg :external-format :reader character-coding-error-external-format)))
-
-#+unicode
-(define-condition character-encoding-error (character-coding-error)
-  ((code :initarg :code :reader character-encoding-error-code)))
-
-#+unicode
-(define-condition character-decoding-error (character-coding-error)
-  ((octets :initarg :octets :reader character-decoding-error-octets)))
-
-#+unicode
-(define-condition stream-encoding-error (stream-error character-encoding-error)
-  ()
-  (:report
-   (lambda (c s)
-     (let ((stream (stream-error-stream c))
-           (code (character-encoding-error-code c)))
-       (format s "~@<encoding error on stream ~S (~S ~S): ~2I~_~
-                  the character with code ~D cannot be encoded.~@:>"
-               stream ':external-format
-               (character-coding-error-external-format c)
-               code)))))
-
-#+unicode
-(define-condition stream-decoding-error (stream-error character-decoding-error)
-  ()
-  (:report
-   (lambda (c s)
-     (let ((stream (stream-error-stream c))
-           (octets (character-decoding-error-octets c)))
-       (format s "~@<decoding error on stream ~S (~S ~S): ~2I~_~
-                  the octet sequence ~S cannot be decoded.~@:>"
-               stream ':external-format
-               (character-coding-error-external-format c)
-               octets)))))
-
 (define-condition end-of-file (stream-error)
   ()
   (:REPORT (lambda (condition stream)
