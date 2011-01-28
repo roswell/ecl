@@ -9038,6 +9038,7 @@ $as_echo "#define ECL_SMALL_BYTECODES 1" >>confdefs.h
 fi
 
 
+if test "x${cross_compiling}" != "xyes"; then
 if test "$cross_compiling" = yes; then :
   { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
@@ -9060,6 +9061,7 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 
+fi
 
 
 if test "x${enable_threads}" != "xno"; then
