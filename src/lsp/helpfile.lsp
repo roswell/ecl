@@ -52,8 +52,10 @@
     (setq entries (sort entries #'string-lessp :key #'car))
     (let* ((*package* (find-package "CL"))
 	   (file (open path :direction :output)))
-      (dolist (l entries)
-	(format file "~A~S~%~S~%" #\^_ (car l) (rest l)))
+      (progv (car +ecl-syntax-progv-list+)
+          (cdr +ecl-syntax-progv-list+)
+        (dolist (l entries)
+          (format file "~A~S~%~S~%" #\^_ (car l) (rest l))))
       (close file)
       path)))
 
