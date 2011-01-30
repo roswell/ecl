@@ -796,6 +796,7 @@ ecl_use_package(cl_object x, cl_object p)
                                 if (intern_flag && here != there
                                     && ! ecl_member_eq(there, p->pack.shadowings)) {
                                         error = 1;
+                                        break;
                                 }
                         }
                 }
