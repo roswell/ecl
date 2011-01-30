@@ -191,6 +191,8 @@ ECL 11.1.2
       ;; Collect all arguments including the first unknown one
       ("*DEFAULTS*" 1 (setf ext:*unprocessed-ecl-command-args* 1) :stop)
 
+ - ECL will always build, by default, with support for Unicode strings.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

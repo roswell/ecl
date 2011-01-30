@@ -1429,7 +1429,7 @@ Optional Features:
   --enable-local-gmp      Deprecated! See --with-system-gmp
   --enable-opcode8        interpreter uses 8-bit codes (default=NO, only works
                           on Intel)
-  --enable-unicode        enable support for unicode (default=NO)
+  --enable-unicode        enable support for unicode (default=YES)
   --enable-longdouble     include support for long double (yes|no|auto,
                           default=AUTO)
   --enable-c99complex     include support for C complex type (default=NO)
@@ -2842,7 +2842,7 @@ fi
 if test "${enable_unicode+set}" = set; then :
   enableval=$enable_unicode;
 else
-  enable_unicode=no
+  enable_unicode=yes
 fi
 
 

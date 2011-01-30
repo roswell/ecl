@@ -210,8 +210,8 @@ AC_ARG_WITH(sse,
 
 AC_ARG_ENABLE(unicode,
   AS_HELP_STRING( [--enable-unicode],
-                  [enable support for unicode (default=NO)]),
-  [], [enable_unicode=no])
+                  [enable support for unicode (default=YES)]),
+  [], [enable_unicode=yes])
 
 AC_ARG_ENABLE(longdouble,
   AS_HELP_STRING( [--enable-longdouble],
