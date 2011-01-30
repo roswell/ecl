@@ -307,7 +307,7 @@ or a loadable module."
 (defun system-ld-flag (library)
   "Given a symbol, try to find a library that matches it, either by looking in the
 filesystem or in the database of ASDF modules."
-  (let ((asdf (find-package "ASDF"))
+  (let ((asdf #+asdf (find-package "ASDF"))
         system)
     (labels ((asdfsym (x) (find-symbol (string x) asdf))
              (asdfcall (fun &rest rest) (apply (asdfsym fun) rest))
