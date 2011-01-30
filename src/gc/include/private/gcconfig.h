@@ -61,10 +61,15 @@
 #    define FREEBSD
 # endif
 
+/* And one for Darwin: */
+# if defined(macosx) || (defined(__APPLE__) && defined(__MACH__))
+#   define DARWIN
+# endif
+
 /* Determine the machine type: */
 # if defined(__arm__) || defined(__thumb__)
 #    define ARM32
-#    if !defined(LINUX) && !defined(NETBSD)
+#    if !defined(LINUX) && !defined(NETBSD) && !defined(DARWIN)
 #      define NOSYS
 #      define mach_type_known
 #    endif
@@ -290,8 +295,7 @@
 #   define MACOS
 #   define mach_type_known
 # endif
-# if defined(macosx) || (defined(__APPLE__) && defined(__MACH__))
-#   define DARWIN
+# if defined(DARWIN)
 #   if defined(__ppc__)  || defined(__ppc64__)
 #    define POWERPC
 #    define mach_type_known
@@ -301,6 +305,10 @@
 #   elif defined(__i386__)
 #    define I386
 #    define mach_type_known
+#   elif defined(__arm__)
+#    define ARM32
+#    define mach_type_known
+#    define DARWIN_DONT_PARSE_STACK
 #   endif
 # endif
 # if defined(NeXT) && defined(mc68000)
@@ -755,7 +763,11 @@
 #   endif
 #   ifdef DARWIN
 #     define OS_TYPE "DARWIN"
-#     define DYNAMIC_LOADING
+#     if defined(TARGET_OS_IPHONE)
+#       undef DYNAMIC_LOADING
+#     else
+#       define DYNAMIC_LOADING
+#     endif
 #     if defined(__ppc64__)
 #       define ALIGNMENT 8
 #       define CPP_WORDSZ 64
@@ -772,8 +784,13 @@
 	 These aren't used when dyld support is enabled (it is by default) */
 #     define DATASTART ((ptr_t) get_etext())
 #     define DATAEND	((ptr_t) get_end())
-#     define USE_MMAP
-#     define USE_MMAP_ANON
+#     if defined(TARGET_OS_IPHONE)
+#       undef USE_MMAP
+#       undef USE_MMAP_ANON
+#     else
+#       define USE_MMAP
+#       define USE_MMAP_ANON
+#     endif
 #     ifdef GC_DARWIN_THREADS
 #       define MPROTECT_VDB
 #     endif
@@ -1282,7 +1299,11 @@
 #   ifdef DARWIN
 #     define OS_TYPE "DARWIN"
 #     define DARWIN_DONT_PARSE_STACK
-#     define DYNAMIC_LOADING
+#     if defined(TARGET_OS_IPHONE)
+#       undef DYNAMIC_LOADING
+#     else
+#       define DYNAMIC_LOADING
+#     endif
       /* XXX: see get_end(3), get_etext() and get_end() should not be used.
 	 These aren't used when dyld support is enabled (it is by default) */
 #     define DATASTART ((ptr_t) get_etext())
@@ -1771,6 +1792,18 @@
 #     define OS_TYPE "MSWINCE"
 #     define DATAEND /* not needed */
 #   endif
+#   ifdef DARWIN
+      /* iPhone */
+#     define OS_TYPE "DARWIN"
+#     define DATASTART ((ptr_t) get_etext())
+#     define DATAEND    ((ptr_t) get_end())
+/* #define STACKBOTTOM ((ptr_t) 0x30000000) */ /* FIXME: Is this needed? */
+#     define HEURISTIC1
+#     ifndef USE_MMAP
+#       define USE_MMAP
+#     endif
+#     define USE_MMAP_ANON
+#   endif
 #   ifdef NOSYS
       /* __data_start is usually defined in the target linker script.  */
       extern int __data_start[];
@@ -1879,7 +1912,11 @@
 #   ifdef DARWIN
 #     define OS_TYPE "DARWIN"
 #     define DARWIN_DONT_PARSE_STACK
-#     define DYNAMIC_LOADING
+#     if defined(TARGET_OS_IPHONE)
+#       undef DYNAMIC_LOADING
+#     else
+#       define DYNAMIC_LOADING
+#     endif
       /* XXX: see get_end(3), get_etext() and get_end() should not be used.
 	 These aren't used when dyld support is enabled (it is by default) */
 #     define DATASTART ((ptr_t) get_etext())
