@@ -595,9 +595,7 @@ eformat_write_char(cl_object strm, ecl_character c)
 {
 	unsigned char buffer[ENCODING_BUFFER_MAX_SIZE];
 	ecl_character nbytes;
-        while (!(nbytes = strm->stream.encoder(strm, buffer, c))) {
-                c = encoding_error(strm, strm->stream.format, c);
-	}
+        nbytes = strm->stream.encoder(strm, buffer, c);
 	strm->stream.ops->write_byte8(strm, buffer, nbytes);
 	if (c == '\n')
 		IO_STREAM_COLUMN(strm) = 0;
