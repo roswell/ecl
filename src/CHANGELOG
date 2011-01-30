@@ -158,6 +158,10 @@ ECL 11.1.2
 
  - EXT:SET-LIMIT with option EXT:FRAME-STACK corrupted the frame stack.
 
+ - The array of boot-time symbols is fixed and independent of the features
+   that are compiled in. This is essential for cross-compilation and also
+   for sharing C code among different builds.
+
 * Visible changes:
 
  - When printing error messages, the condition type is shown (M. Mondor)

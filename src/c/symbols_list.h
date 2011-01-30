@@ -21,9 +21,9 @@
 #define MP_ "MP::"
 #define KEY_ ":"
 #define GRAY_ "GRAY::"
-struct {
+typedef struct {
 	const char *name, *translation;
-}
+} cl_symbol_initializer;
 #else
 #include "ecl_constants.h"
 #define CLOS_
@@ -32,8 +32,52 @@ struct {
 #define MP_
 #define KEY_
 #define GRAY_
-cl_symbol_initializer
 #endif
+/*
+ * Conditional addition of functions and symbols. The list of symbols can
+ * not depend on the features, because otherwise the sources will and we will
+ * not be able to cross-compile.
+ */
+#ifdef ECL_THREADS
+# define IF_MP(x) x
+#else
+# define IF_MP(x) NULL
+#endif
+#ifdef TCP
+# define IF_TCP(x) x
+#else
+# define IF_TCP(x) NULL
+#endif
+#ifdef PROFILE
+# define IF_PROFILE(x) x
+#else
+# define IF_PROFILE(x) NULL
+#endif
+#ifdef ECL_RELATIVE_PACKAGE_NAMES
+# define IF_RELPACK(x) x
+#else
+# define IF_RELPACK(x) NULL
+#endif
+#ifndef ECL_CLOS_STREAMS
+# define GRAY_ SYS_
+#endif
+#ifdef ECL_SSE2
+# define IF_SSE2(x) x
+#else
+# define IF_SSE2(x) NULL
+#endif
+#if defined(ECL_SEMAPHORE) && defined(ECL_THREADS)
+# define IF_SEM(x) x
+#else
+# define IF_SEM(x) NULL
+#endif
+#if defined(HAVE_LIBFFI) || defined(ECL_DYNAMIC_FFI)
+# define IF_DFFI(x) x
+#else
+# define IF_DFFI(x) NULL
+#endif
+
+cl_symbol_initializer
 cl_symbols[] = {
 
 {"NIL", CL_ORDINARY, NULL, -1, OBJNULL},
@@ -1152,9 +1196,7 @@ cl_symbols[] = {
 {SYS_ "PACKAGE-HASH-TABLES", SI_ORDINARY, si_package_hash_tables, 1, OBJNULL},
 {SYS_ "PATHNAME-TRANSLATIONS", SI_ORDINARY, si_pathname_translations, -1, OBJNULL},
 {SYS_ "POINTER", SI_ORDINARY, si_pointer, 1, OBJNULL},
-#ifndef ECL_CMU_FORMAT
 {SYS_ "PRETTY-PRINT-FORMAT", SI_ORDINARY, NULL, -1, OBJNULL},
-#endif
 {SYS_ "PROCESS-DECLARATIONS", SI_ORDINARY, si_process_declarations, -1, OBJNULL},
 {SYS_ "PROCESS-LAMBDA", SI_ORDINARY, si_process_lambda, 1, OBJNULL},
 {SYS_ "PROCESS-LAMBDA-LIST", SI_ORDINARY, si_process_lambda_list, 2, OBJNULL},
@@ -1177,6 +1219,8 @@ cl_symbols[] = {
 {SYS_ "SET-SYMBOL-PLIST", SI_ORDINARY, si_set_symbol_plist, 2, OBJNULL},
 #if defined(HAVE_PUTENV) || defined(HAVE_SETENV)
 {EXT_ "SETENV", SI_ORDINARY, si_setenv, 2, OBJNULL},
+#else
+{EXT_ "SETENV", SI_ORDINARY, NULL, -1, OBJNULL},
 #endif
 {SYS_ "SETF-LAMBDA", SI_ORDINARY, NULL, -1, OBJNULL},
 {SYS_ "SETF-METHOD", SI_ORDINARY, NULL, -1, OBJNULL},
@@ -1228,26 +1272,23 @@ cl_symbols[] = {
 /*{SYS_ "UNBOUND", SI_ORDINARY, si_unbound, 0, OBJNULL}, */
 #endif
 
-#ifdef PROFILE
-{SYS_ "*PROFILE-ARRAY*", SI_SPECIAL, NULL, -1, OBJNULL},
-#endif
-
 {EXT_ "*SOURCE-LOCATION*", EXT_SPECIAL, NULL, -1, Cnil},
 {EXT_ "*REGISTER-WITH-PDE-HOOK*", EXT_SPECIAL, NULL, -1, Cnil},
 {EXT_ "REGISTER-WITH-PDE", EXT_ORDINARY, NULL, -1, OBJNULL},
 
-#ifdef PROFILE
-{SYS_ "PROFILE", SI_ORDINARY, si_profile, -1, OBJNULL},
-{SYS_ "CLEAR-PROFILE", SI_ORDINARY, si_clear_profile, -1, OBJNULL},
-{SYS_ "DISPLAY-PROFILE", SI_ORDINARY, si_display_profile, -1, OBJNULL},
-#endif /* PROFILE */
+/* #ifdef PROFILE */
+{SYS_ "PROFILE", SI_ORDINARY, IF_PROFILE(si_profile), -1, OBJNULL},
+{SYS_ "CLEAR-PROFILE", SI_ORDINARY, IF_PROFILE(si_clear_profile), -1, OBJNULL},
+{SYS_ "DISPLAY-PROFILE", SI_ORDINARY, IF_PROFILE(si_display_profile), -1, OBJNULL},
+/* #endif PROFILE */
 
-#ifdef TCP
-{SYS_ "OPEN-CLIENT-STREAM", SI_ORDINARY, si_open_client_stream, 2, OBJNULL},
-{SYS_ "OPEN-SERVER-STREAM", SI_ORDINARY, si_open_server_stream, 1, OBJNULL},
-{SYS_ "OPEN-UNIX-SOCKET-STREAM", SI_ORDINARY, si_open_unix_socket_stream, 1, OBJNULL},
-{SYS_ "LOOKUP-HOST-ENTRY", SI_ORDINARY, si_lookup_host_entry, 1, OBJNULL},
-#endif
+/* #ifdef TCP */
+{SYS_ "*PROFILE-ARRAY*", SI_SPECIAL, NULL, -1, OBJNULL},
+{SYS_ "OPEN-CLIENT-STREAM", SI_ORDINARY, IF_TCP(si_open_client_stream), 2, OBJNULL},
+{SYS_ "OPEN-SERVER-STREAM", SI_ORDINARY, IF_TCP(si_open_server_stream), 1, OBJNULL},
+{SYS_ "OPEN-UNIX-SOCKET-STREAM", SI_ORDINARY, IF_TCP(si_open_unix_socket_stream), 1, OBJNULL},
+{SYS_ "LOOKUP-HOST-ENTRY", SI_ORDINARY, IF_TCP(si_lookup_host_entry), 1, OBJNULL},
+/* #endif TCP */
 
 {SYS_ "CATCH-SIGNAL", SI_ORDINARY, si_catch_signal, 2, OBJNULL},
 
@@ -1465,13 +1506,15 @@ cl_symbols[] = {
 {SYS_ "C-ULONG-LONG-MAX",SI_CONSTANT,NULL,-1,OBJNULL}, /* See main.d */
 #ifdef ecl_long_long_t
 {SYS_ "C-LONG-LONG-BIT", SI_CONSTANT, NULL, -1, MAKE_FIXNUM(ECL_LONG_LONG_BITS)},
+#else
+{SYS_ "C-LONG-LONG-BIT", SI_CONSTANT, NULL, -1, OBJNULL},
 #endif
+
 #ifdef GBC_BOEHM
 {SYS_ "GC", SI_ORDINARY, si_gc, -1, OBJNULL},
 {SYS_ "GC-DUMP", SI_ORDINARY, si_gc_dump, 0, OBJNULL},
-#endif
-
-#if !defined(GBC_BOEHM)
+{SYS_ "GC-STATS", SI_ORDINARY, si_gc_stats, 1, OBJNULL},
+#else
 {SYS_ "GC", SI_ORDINARY, si_gc, 1, OBJNULL},
 {SYS_ "ALLOCATE", SI_ORDINARY, si_allocate, -1, OBJNULL},
 {SYS_ "ALLOCATED-PAGES", SI_ORDINARY, si_allocated_pages, -1, OBJNULL},
@@ -1487,68 +1530,68 @@ cl_symbols[] = {
 {SYS_ "RESET-GC-COUNT", SI_ORDINARY, si_reset_gc_count, -1, OBJNULL},
 #endif /* !GBC_BOEHM */
 
-#ifdef ECL_THREADS
+/* #ifdef ECL_THREADS */
 {MP_ "PROCESS", MP_ORDINARY, NULL, -1, OBJNULL},
 {MP_ "LOCK", MP_ORDINARY, NULL, -1, OBJNULL},
 {MP_ "CONDITION-VARIABLE", MP_ORDINARY, NULL, -1, OBJNULL},
 {MP_ "*CURRENT-PROCESS*", MP_SPECIAL, NULL, -1, OBJNULL},
-{MP_ "ALL-PROCESSES", MP_ORDINARY, mp_all_processes, 0, OBJNULL},
-{MP_ "EXIT-PROCESS", MP_ORDINARY, mp_exit_process, 0, OBJNULL},
-{MP_ "MAKE-PROCESS", MP_ORDINARY, mp_make_process, -1, OBJNULL},
-{MP_ "PROCESS-ACTIVE-P", MP_ORDINARY, mp_process_active_p, 1, OBJNULL},
-{MP_ "PROCESS-ENABLE", MP_ORDINARY, mp_process_enable, 1, OBJNULL},
-{MP_ "PROCESS-YIELD", MP_ORDINARY, mp_process_yield, 0, OBJNULL},
-{MP_ "PROCESS-KILL", MP_ORDINARY, mp_process_kill, 1, OBJNULL},
-{MP_ "PROCESS-NAME", MP_ORDINARY, mp_process_name, 1, OBJNULL},
-{MP_ "PROCESS-PRESET", MP_ORDINARY, mp_process_preset, -1, OBJNULL},
-{MP_ "PROCESS-RUN-FUNCTION", MP_ORDINARY, mp_process_run_function, -1, OBJNULL},
-{MP_ "PROCESS-WHOSTATE", MP_ORDINARY, mp_process_whostate, 1, OBJNULL},
-{MP_ "PROCESS-JOIN", MP_ORDINARY, mp_process_join, 1, OBJNULL},
-{MP_ "MAKE-LOCK", MP_ORDINARY, mp_make_lock, -1, OBJNULL},
+{MP_ "ALL-PROCESSES", MP_ORDINARY, IF_MP(mp_all_processes), 0, OBJNULL},
+{MP_ "EXIT-PROCESS", MP_ORDINARY, IF_MP(mp_exit_process), 0, OBJNULL},
+{MP_ "MAKE-PROCESS", MP_ORDINARY, IF_MP(mp_make_process), -1, OBJNULL},
+{MP_ "PROCESS-ACTIVE-P", MP_ORDINARY, IF_MP(mp_process_active_p), 1, OBJNULL},
+{MP_ "PROCESS-ENABLE", MP_ORDINARY, IF_MP(mp_process_enable), 1, OBJNULL},
+{MP_ "PROCESS-YIELD", MP_ORDINARY, IF_MP(mp_process_yield), 0, OBJNULL},
+{MP_ "PROCESS-KILL", MP_ORDINARY, IF_MP(mp_process_kill), 1, OBJNULL},
+{MP_ "PROCESS-NAME", MP_ORDINARY, IF_MP(mp_process_name), 1, OBJNULL},
+{MP_ "PROCESS-PRESET", MP_ORDINARY, IF_MP(mp_process_preset), -1, OBJNULL},
+{MP_ "PROCESS-RUN-FUNCTION", MP_ORDINARY, IF_MP(mp_process_run_function), -1, OBJNULL},
+{MP_ "PROCESS-WHOSTATE", MP_ORDINARY, IF_MP(mp_process_whostate), 1, OBJNULL},
+{MP_ "PROCESS-JOIN", MP_ORDINARY, IF_MP(mp_process_join), 1, OBJNULL},
+{MP_ "MAKE-LOCK", MP_ORDINARY, IF_MP(mp_make_lock), -1, OBJNULL},
 {KEY_ "RECURSIVE", KEYWORD, NULL, -1, OBJNULL},
-{MP_ "RECURSIVE-LOCK-P", MP_ORDINARY, mp_recursive_lock_p, 1, OBJNULL},
-{MP_ "LOCK-NAME", MP_ORDINARY, mp_lock_name, 1, OBJNULL},
-{MP_ "LOCK-HOLDER", MP_ORDINARY, mp_lock_holder, 1, OBJNULL},
-{MP_ "LOCK-COUNT", MP_ORDINARY, mp_lock_count, 1, OBJNULL},
-{MP_ "LOCK-MINE-P", MP_ORDINARY, mp_lock_mine_p, 1, OBJNULL},
-{MP_ "LOCK-COUNT-MINE", MP_ORDINARY, mp_lock_count_mine, 1, OBJNULL},
-{MP_ "GET-LOCK", MP_ORDINARY, mp_get_lock, -1, OBJNULL},
-{MP_ "GIVEUP-LOCK", MP_ORDINARY, mp_giveup_lock, 1, OBJNULL},
-{MP_ "MAKE-CONDITION-VARIABLE", MP_ORDINARY, mp_make_condition_variable, 0, OBJNULL},
-{MP_ "CONDITION-VARIABLE-WAIT", MP_ORDINARY, mp_condition_variable_wait, 2, OBJNULL},
-{MP_ "CONDITION-VARIABLE-TIMEDWAIT", MP_ORDINARY, mp_condition_variable_timedwait, 3, OBJNULL},
-{MP_ "CONDITION-VARIABLE-SIGNAL", MP_ORDINARY, mp_condition_variable_signal, 1, OBJNULL},
-{MP_ "CONDITION-VARIABLE-BROADCAST", MP_ORDINARY, mp_condition_variable_broadcast, 1, OBJNULL},
+{MP_ "RECURSIVE-LOCK-P", MP_ORDINARY, IF_MP(mp_recursive_lock_p), 1, OBJNULL},
+{MP_ "LOCK-NAME", MP_ORDINARY, IF_MP(mp_lock_name), 1, OBJNULL},
+{MP_ "LOCK-HOLDER", MP_ORDINARY, IF_MP(mp_lock_holder), 1, OBJNULL},
+{MP_ "LOCK-COUNT", MP_ORDINARY, IF_MP(mp_lock_count), 1, OBJNULL},
+{MP_ "LOCK-MINE-P", MP_ORDINARY, IF_MP(mp_lock_mine_p), 1, OBJNULL},
+{MP_ "LOCK-COUNT-MINE", MP_ORDINARY, IF_MP(mp_lock_count_mine), 1, OBJNULL},
+{MP_ "GET-LOCK", MP_ORDINARY, IF_MP(mp_get_lock), -1, OBJNULL},
+{MP_ "GIVEUP-LOCK", MP_ORDINARY, IF_MP(mp_giveup_lock), 1, OBJNULL},
+{MP_ "MAKE-CONDITION-VARIABLE", MP_ORDINARY, IF_MP(mp_make_condition_variable), 0, OBJNULL},
+{MP_ "CONDITION-VARIABLE-WAIT", MP_ORDINARY, IF_MP(mp_condition_variable_wait), 2, OBJNULL},
+{MP_ "CONDITION-VARIABLE-TIMEDWAIT", MP_ORDINARY, IF_MP(mp_condition_variable_timedwait), 3, OBJNULL},
+{MP_ "CONDITION-VARIABLE-SIGNAL", MP_ORDINARY, IF_MP(mp_condition_variable_signal), 1, OBJNULL},
+{MP_ "CONDITION-VARIABLE-BROADCAST", MP_ORDINARY, IF_MP(mp_condition_variable_broadcast), 1, OBJNULL},
 {KEY_ "INITIAL-BINDINGS", KEYWORD, NULL, -1, OBJNULL},
-{MP_ "INTERRUPT-PROCESS", MP_ORDINARY, mp_interrupt_process, 2, OBJNULL},
+{MP_ "INTERRUPT-PROCESS", MP_ORDINARY, IF_MP(mp_interrupt_process), 2, OBJNULL},
 {MP_ "+LOAD-COMPILE-LOCK+", MP_CONSTANT, NULL, -1, OBJNULL},
 {MP_ "WITH-LOCK", MP_CONSTANT, NULL, -1, OBJNULL},
-{MP_ "BLOCK-SIGNALS", MP_ORDINARY, mp_block_signals, 0, OBJNULL},
-{MP_ "RESTORE-SIGNALS", MP_ORDINARY, mp_restore_signals, 1, OBJNULL},
-{MP_ "PROCESS-SUSPEND", MP_ORDINARY, mp_process_suspend, 1, OBJNULL},
-{MP_ "PROCESS-RESUME", MP_ORDINARY, mp_process_resume, 1, OBJNULL},
-{MP_ "SUSPEND-LOOP", MP_ORDINARY, mp_suspend_loop, 0, OBJNULL},
-{MP_ "BREAK-SUSPEND-LOOP", MP_ORDINARY, mp_break_suspend_loop, 0, OBJNULL},
-# ifdef ECL_SEMAPHORES
-{MP_ "SEMAPHORE", MP_ORDINARY, NULL, -1, OBJNULL},
-{MP_ "MAKE-SEMAPHORE", MP_ORDINARY, mp_make_semaphore, -1, OBJNULL},
-{MP_ "SEMAPHORE-WAIT", MP_ORDINARY, mp_semaphore_wait, 1, OBJNULL},
-{MP_ "SEMAPHORE-TRYWAIT", MP_ORDINARY, mp_semaphore_trywait, 1, OBJNULL},
-{MP_ "SEMAPHORE-SIGNAL", MP_ORDINARY, mp_semaphore_signal, 1, OBJNULL},
-{MP_ "SEMAPHORE-CLOSE", MP_ORDINARY, mp_semaphore_close, 1, OBJNULL},
-{KEY_ "COUNT", KEYWORD, NULL, -1, OBJNULL},
-# endif
-{MP_ "MAKE-RWLOCK", MP_ORDINARY, mp_make_rwlock, -1, OBJNULL},
+{MP_ "BLOCK-SIGNALS", MP_ORDINARY, IF_MP(mp_block_signals), 0, OBJNULL},
+{MP_ "RESTORE-SIGNALS", MP_ORDINARY, IF_MP(mp_restore_signals), 1, OBJNULL},
+{MP_ "PROCESS-SUSPEND", MP_ORDINARY, IF_MP(mp_process_suspend), 1, OBJNULL},
+{MP_ "PROCESS-RESUME", MP_ORDINARY, IF_MP(mp_process_resume), 1, OBJNULL},
+{MP_ "SUSPEND-LOOP", MP_ORDINARY, IF_MP(mp_suspend_loop), 0, OBJNULL},
+{MP_ "BREAK-SUSPEND-LOOP", MP_ORDINARY, IF_MP(mp_break_suspend_loop), 0, OBJNULL},
+{MP_ "MAKE-RWLOCK", MP_ORDINARY, IF_MP(mp_make_rwlock), -1, OBJNULL},
 {MP_ "RWLOCK", MP_ORDINARY, NULL, -1, OBJNULL},
-{MP_ "RWLOCK-NAME", MP_ORDINARY, mp_rwlock_name, 1, OBJNULL},
-{MP_ "GET-RWLOCK-READ", MP_ORDINARY, mp_get_rwlock_read, -1, OBJNULL},
-{MP_ "GET-RWLOCK-WRITE", MP_ORDINARY, mp_get_rwlock_write, -1, OBJNULL},
-{MP_ "GIVEUP-RWLOCK-READ", MP_ORDINARY, mp_giveup_rwlock_read, 1, OBJNULL},
-{MP_ "GIVEUP-RWLOCK-WRITE", MP_ORDINARY, mp_giveup_rwlock_write, 1, OBJNULL},
+{MP_ "RWLOCK-NAME", MP_ORDINARY, IF_MP(mp_rwlock_name), 1, OBJNULL},
+{MP_ "GET-RWLOCK-READ", MP_ORDINARY, IF_MP(mp_get_rwlock_read), -1, OBJNULL},
+{MP_ "GET-RWLOCK-WRITE", MP_ORDINARY, IF_MP(mp_get_rwlock_write), -1, OBJNULL},
+{MP_ "GIVEUP-RWLOCK-READ", MP_ORDINARY, IF_MP(mp_giveup_rwlock_read), 1, OBJNULL},
+{MP_ "GIVEUP-RWLOCK-WRITE", MP_ORDINARY, IF_MP(mp_giveup_rwlock_write), 1, OBJNULL},
 {MP_ "GLOBAL-LOCK", MP_ORDINARY, NULL, -1, OBJNULL},
 {MP_ "ERROR-LOCK", MP_ORDINARY, NULL, -1, OBJNULL},
-{MP_ "PACKAGE-LOCK", MP_ORDINARY, NULL, -1, OBJNULL},
-#endif
+/* #endif ECL_THREADS */
+
+/* #if defined(ECL_SEMAPHORES) && defined(ECL_THREADS) */
+{MP_ "SEMAPHORE", MP_ORDINARY, NULL, -1, OBJNULL},
+{MP_ "MAKE-SEMAPHORE", MP_ORDINARY, IF_SEM(mp_make_semaphore), -1, OBJNULL},
+{MP_ "SEMAPHORE-WAIT", MP_ORDINARY, IF_SEM(mp_semaphore_wait), 1, OBJNULL},
+{MP_ "SEMAPHORE-TRYWAIT", MP_ORDINARY, IF_SEM(mp_semaphore_trywait), 1, OBJNULL},
+{MP_ "SEMAPHORE-SIGNAL", MP_ORDINARY, IF_SEM(mp_semaphore_signal), 1, OBJNULL},
+{MP_ "SEMAPHORE-CLOSE", MP_ORDINARY, IF_SEM(mp_semaphore_close), 1, OBJNULL},
+{KEY_ "COUNT", KEYWORD, NULL, -1, OBJNULL},
+/* #endif defined(ECL_SEMAPHORES) && defined(ECL_THREADS) */
 
 {SYS_ "WHILE", SI_ORDINARY, NULL, -1, OBJNULL},
 {SYS_ "UNTIL", SI_ORDINARY, NULL, -1, OBJNULL},
@@ -1643,6 +1686,7 @@ cl_symbols[] = {
 {CLOS_ "UPDATE-DEPENDENT", CLOS_ORDINARY, NULL, -1, OBJNULL},
 {CLOS_ "VALIDATE-SUPERCLASS", CLOS_ORDINARY, NULL, -1, OBJNULL},
 {CLOS_ "WRITER-METHOD-CLASS", CLOS_ORDINARY, NULL, -1, OBJNULL},
+{SYS_ "CLEAR-GFUN-HASH", SI_ORDINARY, si_clear_gfun_hash, 1, OBJNULL},
 #endif
 
 {SYS_ "CL-FIXNUM-BITS", SI_CONSTANT, NULL, -1, MAKE_FIXNUM(FIXNUM_BITS)},
@@ -1655,15 +1699,17 @@ cl_symbols[] = {
 
 #ifdef ENABLE_DLOPEN
 {SYS_ "LOAD-BINARY", SI_ORDINARY, si_load_binary, 4, OBJNULL},
+#else
+{SYS_ "LOAD-BINARY", SI_ORDINARY, NULL, -1, OBJNULL},
 #endif
 
 {SYS_ "*CODE-WALKER*", SI_SPECIAL, NULL, -1, OBJNULL},
 
-#if defined(HAVE_LIBFFI) || defined(ECL_DYNAMIC_FFI)
-{SYS_ "CALL-CFUN", SI_ORDINARY, si_call_cfun, -1, OBJNULL},
+/* #if defined(HAVE_LIBFFI) || defined(ECL_DYNAMIC_FFI) */
+{SYS_ "CALL-CFUN", SI_ORDINARY, IF_DFFI(si_call_cfun), -1, OBJNULL},
 {KEY_ "CALLBACK", KEYWORD, NULL, -1, OBJNULL},
-{SYS_ "MAKE-DYNAMIC-CALLBACK", SI_ORDINARY, si_make_dynamic_callback, -1, OBJNULL},
-#endif
+{SYS_ "MAKE-DYNAMIC-CALLBACK", SI_ORDINARY, IF_DFFI(si_make_dynamic_callback), -1, OBJNULL},
+/* #endif defined(HAVE_LIBFFI) || defined(ECL_DYNAMIC_FFI) */
 {KEY_ "CDECL", KEYWORD, NULL, -1, OBJNULL},
 {KEY_ "STDCALL", KEYWORD, NULL, -1, OBJNULL},
 
@@ -1683,32 +1729,24 @@ cl_symbols[] = {
 {SYS_ "GET-FINALIZER", SI_ORDINARY, si_get_finalizer, 1, OBJNULL},
 {SYS_ "SET-FINALIZER", SI_ORDINARY, si_set_finalizer, 2, OBJNULL},
 
-#ifdef ECL_RELATIVE_PACKAGE_NAMES
+/* #ifdef ECL_RELATIVE_PACKAGE_NAMES */
 {SYS_ "*RELATIVE-PACKAGE-NAMES*", SI_SPECIAL, NULL, -1, RELATIVE_PACKAGES_P},
 {KEY_ "RELATIVE-PACKAGE-NAMES", KEYWORD, NULL, -1, OBJNULL},
-{SYS_ "FIND-RELATIVE-PACKAGE", SI_ORDINARY, si_find_relative_package, -1, OBJNULL},
+{SYS_ "FIND-RELATIVE-PACKAGE", SI_ORDINARY, IF_RELPACK(si_find_relative_package), -1, OBJNULL},
 {SYS_ "PACKAGE-PARENT", SI_ORDINARY, NULL, -1, OBJNULL},
 {SYS_ "PACKAGE-CHILDREN", SI_ORDINARY, NULL, -1, OBJNULL},
-#endif
+/* #endif ECL_RELATIVE_PACKAGE_NAMES */
 
 {SYS_ "WRONG-TYPE-ARGUMENT", SI_ORDINARY, NULL, -1, OBJNULL},
-
-#ifdef GBC_BOEHM
-{SYS_ "GC-STATS", SI_ORDINARY, si_gc_stats, 1, OBJNULL},
-#endif
 
 {SYS_ "*CURRENT-FORM*", SI_SPECIAL, NULL, -1, OBJNULL},
 
 {SYS_ "CODE-BLOCK", SI_ORDINARY, NULL, -1, OBJNULL},
 
-#ifdef CLOS
-{SYS_ "CLEAR-GFUN-HASH", SI_ORDINARY, si_clear_gfun_hash, 1, OBJNULL},
-#endif
-
 {SYS_ "FRAME", SI_ORDINARY, NULL, -1, OBJNULL},
 {SYS_ "APPLY-FROM-STACK-FRAME", SI_ORDINARY, si_apply_from_stack_frame, 2, OBJNULL},
 
-#ifdef ECL_CLOS_STREAMS
+/* #ifdef ECL_CLOS_STREAMS */
 {GRAY_ "CLOSE", GRAY_ORDINARY, NULL, -1, OBJNULL},
 {GRAY_ "STREAMP", GRAY_ORDINARY, NULL, -1, OBJNULL},
 {GRAY_ "INPUT-STREAM-P", GRAY_ORDINARY, NULL, 1, OBJNULL},
@@ -1748,7 +1786,7 @@ cl_symbols[] = {
 {GRAY_ "FUNDAMENTAL-CHARACTER-OUTPUT-STREAM", GRAY_ORDINARY, NULL, -1, OBJNULL},
 {GRAY_ "FUNDAMENTAL-BINARY-INPUT-STREAM", GRAY_ORDINARY, NULL, -1, OBJNULL},
 {GRAY_ "FUNDAMENTAL-BINARY-OUTPUT-STREAM", GRAY_ORDINARY, NULL, -1, OBJNULL},
-#endif
+/* #endif ECL_CLOS_STREAMS */
 
 {SYS_ "LOG1P", SI_ORDINARY, si_log1p, 1, OBJNULL},
 
@@ -1889,6 +1927,8 @@ cl_symbols[] = {
 
 #if defined(ECL_MS_WINDOWS_HOST)
 {SYS_ "CLOSE-WINDOWS-HANDLE", SI_ORDINARY, si_close_windows_handle, 1, OBJNULL},
+#else
+{SYS_ "CLOSE-WINDOWS-HANDLE", SI_ORDINARY, NULL, -1, OBJNULL},
 #endif
 
 {EXT_ "*INVOKE-DEBUGGER-HOOK*", EXT_SPECIAL, NULL, -1, Cnil},
@@ -1943,18 +1983,18 @@ cl_symbols[] = {
 
 {EXT_ "ARRAY-ELEMENT-TYPE-BYTE-SIZE", EXT_ORDINARY, si_array_element_type_byte_size, 1, OBJNULL},
 
-#ifdef ECL_SSE2
+/* #ifdef ECL_SSE2 */
 {EXT_ "SSE-PACK", EXT_ORDINARY, NULL, -1, OBJNULL},
-{EXT_ "SSE-PACK-P", EXT_ORDINARY, si_sse_pack_p, 1, OBJNULL},
-{EXT_ "SSE-PACK-AS-ELT-TYPE", EXT_ORDINARY, si_sse_pack_as_elt_type, 2, OBJNULL},
-{EXT_ "VECTOR-TO-SSE-PACK", EXT_ORDINARY, si_vector_to_sse_pack, 1, OBJNULL},
-{EXT_ "SSE-PACK-TO-VECTOR", EXT_ORDINARY, si_sse_pack_to_vector, 2, OBJNULL},
+{EXT_ "SSE-PACK-P", EXT_ORDINARY, IF_SSE2(si_sse_pack_p), 1, OBJNULL},
+{EXT_ "SSE-PACK-AS-ELT-TYPE", EXT_ORDINARY, IF_SSE2(si_sse_pack_as_elt_type), 2, OBJNULL},
+{EXT_ "VECTOR-TO-SSE-PACK", EXT_ORDINARY, IF_SSE2(si_vector_to_sse_pack), 1, OBJNULL},
+{EXT_ "SSE-PACK-TO-VECTOR", EXT_ORDINARY, IF_SSE2(si_sse_pack_to_vector), 2, OBJNULL},
 {EXT_ "INT-SSE-PACK", EXT_ORDINARY, NULL, -1, OBJNULL},
 {EXT_ "FLOAT-SSE-PACK", EXT_ORDINARY, NULL, -1, OBJNULL},
 {EXT_ "DOUBLE-SSE-PACK", EXT_ORDINARY, NULL, -1, OBJNULL},
-{EXT_ "SSE-PACK-ELEMENT-TYPE", EXT_ORDINARY, si_sse_pack_element_type, 1, OBJNULL},
+{EXT_ "SSE-PACK-ELEMENT-TYPE", EXT_ORDINARY, IF_SSE2(si_sse_pack_element_type), 1, OBJNULL},
 {EXT_ "*SSE-PACK-PRINT-MODE*", EXT_SPECIAL, NULL, -1, Cnil},
-#endif
+/* #endif ECL_SSE2 */
 
 {EXT_ "UNIX-SIGNAL-RECEIVED", EXT_ORDINARY, NULL, -1, OBJNULL},
 {EXT_ "UNIX-SIGNAL-RECEIVED-CODE", EXT_ORDINARY, NULL, -1, OBJNULL},
@@ -1982,7 +2022,7 @@ cl_symbols[] = {
 {EXT_ "PROCESS-COMMAND-ARGS", EXT_ORDINARY, NULL, -1, OBJNULL},
 {EXT_ "*UNPROCESSED-ECL-COMMAND-ARGS*", EXT_SPECIAL, NULL, -1, Cnil},
 
-#ifdef ECL_UNICODE
+/* #ifdef ECL_UNICODE */
 {KEY_ "OCTETS", KEYWORD, NULL, -1, OBJNULL},
 {EXT_ "CHARACTER-CODING-ERROR", EXT_ORDINARY, NULL, -1, OBJNULL},
 {EXT_ "CHARACTER-CODING-ERROR-EXTERNAL-FORMAT", EXT_ORDINARY, NULL, -1, OBJNULL},
@@ -1992,7 +2032,7 @@ cl_symbols[] = {
 {EXT_ "CHARACTER-DECODING-ERROR-OCTETS", EXT_ORDINARY, NULL, -1, OBJNULL},
 {EXT_ "DECODING-ERROR", EXT_ORDINARY, NULL, 3, OBJNULL},
 {EXT_ "ENCODING-ERROR", EXT_ORDINARY, NULL, 3, OBJNULL},
-#endif
+/* #endif ECL_UNICODE */
 
 /* Tag for end of list */
 {NULL, CL_ORDINARY, NULL, -1, OBJNULL}};
