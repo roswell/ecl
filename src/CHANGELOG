@@ -176,6 +176,17 @@ ECL 11.1.2
    (GC, libffi) are in a similar location this will make ECL work without
    further flags, and without modifying LD_LIBRARY_PATH or DYLD_LIBRARY_PATH.
 
+ - All arguments after the '--' command line option are stored in a global
+   variable, ext:*unprocessed-ecl-command-args*.
+
+ - In the rules passed to ext:process-command-args, :stop now implies that all
+   remaining arguments including the current one are collected and passed to
+   the rule code. An example of use of this option
+      ;; Collect all arguments _after_ the command line option --
+      ("--" 1 (setf ext:*unprocessed-ecl-command-args* (rest 1)) :stop)
+      ;; Collect all arguments including the first unknown one
+      ("*DEFAULTS*" 1 (setf ext:*unprocessed-ecl-command-args* 1) :stop)
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

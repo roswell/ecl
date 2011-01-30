@@ -23,7 +23,7 @@ ls [--help | -?] filename*
 (defconstant +ls-rules+
 '(("--help" 0 (progn (princ ext:*help-message* *standard-output*) (ext:quit 0)))
   ("-?" 0 (progn (princ ext:*help-message* *standard-output*) (ext:quit 0)))
-  ("*DEFAULT*" 1 (print-directory 1))))
+  ("*DEFAULT*" 1 (print-directory 1) :stop)))
 
 (let ((ext:*lisp-init-file-list* NIL)) ; No initialization files
   (handler-case (ext:process-command-args :rules +ls-rules+)
