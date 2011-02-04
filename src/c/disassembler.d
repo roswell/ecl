@@ -626,7 +626,8 @@ si_bc_split(cl_object b)
                 data = Cnil;
                 name = Cnil;
         } else {
-                vector = ecl_alloc_simple_vector(b->bytecodes.code_size, aet_b8);
+                vector = ecl_alloc_simple_vector(b->bytecodes.code_size *
+                                                 sizeof(cl_opcode), aet_b8);
                 vector->vector.self.b8 = (uint8_t*)b->bytecodes.code;
                 data = ecl_alloc_simple_vector(b->bytecodes.data_size, aet_object);
                 data->vector.self.t = b->bytecodes.data;
@@ -646,7 +647,7 @@ si_bc_join(cl_object lex, cl_object code, cl_object data, cl_object name)
                 output->bclosure.entry = _ecl_bclosure_dispatch_vararg;
         } else {
                 /* Ensure minimal sanity of data */
-                unlikely_if (Null(cl_simple_vector_p(code)) ||
+                unlikely_if (!ECL_VECTORP(code) ||
                              (code->vector.elttype != aet_b8)) {
                         FEwrong_type_nth_arg(@[si::bc-join],
                                              0, code,
@@ -654,7 +655,7 @@ si_bc_join(cl_object lex, cl_object code, cl_object data, cl_object name)
                                                      @'simple-array',
                                                      @'ext::byte8'));
                 }
-                unlikely_if (Null(cl_simple_vector_p(data)) ||
+                unlikely_if (!ECL_VECTORP(code) ||
                              (data->vector.elttype != aet_object)) {
                         FEwrong_type_nth_arg(@[si::bc-join],
                                              0, output,
@@ -669,7 +670,7 @@ si_bc_join(cl_object lex, cl_object code, cl_object data, cl_object name)
                 output->bytecodes.name = Cnil;
                 output->bytecodes.definition = Cnil;
                 output->bytecodes.entry = _ecl_bytecodes_dispatch_vararg;
-                output->bytecodes.code_size = code->vector.fillp;
+                output->bytecodes.code_size = code->vector.fillp / sizeof(cl_opcode);
                 output->bytecodes.code = (void*)code->vector.self.b8;
                 output->bytecodes.data_size = data->vector.fillp;
                 output->bytecodes.data = data->vector.self.t;
