@@ -344,7 +344,9 @@ ecl_def_ct_base_string(str_fas,"fas",3,static,const);
 ecl_def_ct_base_string(str_fasl,"fasl",4,static,const);
 #endif
 ecl_def_ct_base_string(str_fasb,"fasb",4,static,const);
+ecl_def_ct_base_string(str_fasc,"fasc",4,static,const);
 ecl_def_ct_base_string(str_FASB,"FASB",4,static,const);
+ecl_def_ct_base_string(str_FASC,"FASC",4,static,const);
 ecl_def_ct_base_string(str_lsp,"lsp",3,static,const);
 ecl_def_ct_base_string(str_LSP,"LSP",3,static,const);
 ecl_def_ct_base_string(str_lisp,"lisp",4,static,const);
@@ -695,6 +697,7 @@ cl_boot(int argc, char **argv)
 		10,CONS(str_fas, @'si::load-binary'),
 		CONS(str_fasl, @'si::load-binary'),
 		CONS(str_fasb, @'si::load-binary'),
+		CONS(str_FASB, @'si::load-binary'),
 #else
 		7,
 #endif
@@ -702,8 +705,8 @@ cl_boot(int argc, char **argv)
 		CONS(str_lisp, @'si::load-source'),
 		CONS(str_LSP, @'si::load-source'),
 		CONS(str_LISP, @'si::load-source'),
-		CONS(str_fasb, @'si::load-source'),
-		CONS(str_FASB, @'si::load-source'),
+		CONS(str_fasc, @'si::load-source'),
+		CONS(str_FASC, @'si::load-source'),
 		CONS(Cnil, @'si::load-source'));
 	ECL_SET(@'si::*load-hooks*', aux);
 	init_error();
