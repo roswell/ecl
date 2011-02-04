@@ -62,9 +62,8 @@
   (setf excl::*autoload-package-name-alist*
         (remove "asdf" excl::*autoload-package-name-alist*
                 :test 'equalp :key 'car))
-  #+ecl
-  (unless (member :bytecmp *modules* :test #'string=)
-    (require :cmp))
+  #-ecl-bytecmp
+  (require :cmp)
   #+(and (or win32 windows mswindows mingw32) (not cygwin)) (pushnew :asdf-windows *features*)
   #+(or unix cygwin) (pushnew :asdf-unix *features*))
 
@@ -3223,7 +3222,7 @@ effectively disabling the output translation facility."
          (setf output-truename nil)))
       (values output-truename warnings-p failure-p))))
 
-#+ecl
+#+(and ecl (not ecl-bytecmp))
 (let ((old-lambda #'compile-file*))
   (setf (fdefinition 'compile-file*)
         #'(lambda (input-file &rest keys)
