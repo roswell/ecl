@@ -3223,11 +3223,12 @@ effectively disabling the output translation facility."
       (values output-truename warnings-p failure-p))))
 
 #+(and ecl (not ecl-bytecmp))
-(let ((old-lambda #'compile-file*))
+(progn
+  (defparameter *asdf-compile-file* #'compile-file*)
   (setf (fdefinition 'compile-file*)
         #'(lambda (input-file &rest keys)
             (multiple-value-bind (object-file flags1 flags2)
-                (apply old-lambda input-file (list* :system-p t keys))
+                (apply *asdf-compile-file* input-file (list* :system-p t keys))
               (values (and object-file
                            (c::build-fasl (compile-file-pathname object-file :type :fasl)
                                           :lisp-files (list object-file))
