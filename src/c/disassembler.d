@@ -16,6 +16,7 @@
 #include <ecl/ecl.h>
 #include <ecl/ecl-inl.h>
 #include <ecl/bytecodes.h>
+#include <ecl/internal.h>
 
 static cl_opcode *disassemble(cl_object bytecodes, cl_opcode *vector);
 
@@ -614,20 +615,66 @@ si_bc_disassemble(cl_object v)
 cl_object
 si_bc_split(cl_object b)
 {
-	const cl_env_ptr the_env = ecl_process_env();
-	cl_object vector;
-	cl_object data;
-	cl_object lex = Cnil;
+	cl_object vector, data, name, lex = Cnil;
 
 	if (type_of(b) == t_bclosure) {
 		b = b->bclosure.code;
 		lex = b->bclosure.lex;
 	}
-	if (type_of(b) != t_bytecodes)
-		@(return Cnil Cnil)
-	vector = ecl_alloc_simple_vector(b->bytecodes.code_size, aet_b8);
-	vector->vector.self.b8 = (uint8_t*)b->bytecodes.code;
-	data = ecl_alloc_simple_vector(b->bytecodes.data_size, aet_object);
-	data->vector.self.t = b->bytecodes.data;
-	@(return lex vector data)
+	if (type_of(b) != t_bytecodes) {
+                vector = Cnil;
+                data = Cnil;
+                name = Cnil;
+        } else {
+                vector = ecl_alloc_simple_vector(b->bytecodes.code_size, aet_b8);
+                vector->vector.self.b8 = (uint8_t*)b->bytecodes.code;
+                data = ecl_alloc_simple_vector(b->bytecodes.data_size, aet_object);
+                data->vector.self.t = b->bytecodes.data;
+                name = b->bytecodes.name;
+        }
+	@(return lex vector data name)
+}
+
+cl_object
+si_bc_join(cl_object lex, cl_object code, cl_object data, cl_object name)
+{
+        cl_object output;
+        if (lex != Cnil) {
+                output = ecl_alloc_object(t_bclosure);
+                output->bclosure.code = si_bc_join(Cnil, code, data, name);
+                output->bclosure.lex = lex;
+                output->bclosure.entry = _ecl_bclosure_dispatch_vararg;
+        } else {
+                /* Ensure minimal sanity of data */
+                unlikely_if (Null(cl_simple_vector_p(code)) ||
+                             (code->vector.elttype != aet_b8)) {
+                        FEwrong_type_nth_arg(@[si::bc-join],
+                                             0, code,
+                                             cl_list(2,
+                                                     @'simple-array',
+                                                     @'ext::byte8'));
+                }
+                unlikely_if (Null(cl_simple_vector_p(data)) ||
+                             (data->vector.elttype != aet_object)) {
+                        FEwrong_type_nth_arg(@[si::bc-join],
+                                             0, output,
+                                             cl_list(2,
+                                                     @'simple-array',
+                                                     Ct));
+                }
+                /* Duplicate the vectors and steal their data pointers */
+                code = cl_copy_seq(code);
+                data = cl_copy_seq(data);
+                output = ecl_alloc_object(t_bytecodes);
+                output->bytecodes.name = Cnil;
+                output->bytecodes.definition = Cnil;
+                output->bytecodes.entry = _ecl_bytecodes_dispatch_vararg;
+                output->bytecodes.code_size = code->vector.fillp;
+                output->bytecodes.code = (void*)code->vector.self.b8;
+                output->bytecodes.data_size = data->vector.fillp;
+                output->bytecodes.data = data->vector.self.t;
+                output->bytecodes.file = Cnil;
+                output->bytecodes.file_position = Cnil;
+        }
+        @(return output)
 }

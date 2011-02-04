@@ -1121,6 +1121,7 @@ cl_symbols[] = {
 {SYS_ "BASE-STRING-P", SI_ORDINARY, si_base_string_p, 1, OBJNULL},
 {SYS_ "BC-DISASSEMBLE", SI_ORDINARY, si_bc_disassemble, 1, OBJNULL},
 {SYS_ "BC-SPLIT", SI_ORDINARY, si_bc_split, 1, OBJNULL},
+{SYS_ "BC-JOIN", SI_ORDINARY, si_bc_join, 4, OBJNULL},
 {SYS_ "BDS-TOP", SI_ORDINARY, si_bds_top, 0, OBJNULL},
 {SYS_ "BDS-VAL", SI_ORDINARY, si_bds_val, 1, OBJNULL},
 {SYS_ "BDS-VAR", SI_ORDINARY, si_bds_var, 1, OBJNULL},

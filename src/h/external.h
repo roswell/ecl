@@ -543,6 +543,7 @@ extern ECL_API cl_object _ecl_bclosure_dispatch(cl_narg narg, ...);
 
 extern ECL_API cl_object si_bc_disassemble(cl_object v);
 extern ECL_API cl_object si_bc_split(cl_object v);
+extern ECL_API cl_object si_bc_join(cl_object lex, cl_object code, cl_object data, cl_object name);
 
 /* error.c */
 
