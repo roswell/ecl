@@ -198,7 +198,7 @@ An excerpt of the rules used by ECL:
             (when loadrc
               (dolist (file *lisp-init-file-list*)
                 (when (load file :if-does-not-exist nil :search-list nil :verbose nil)
-	      (return))))
+                  (return))))
             (eval commands)))
       (continue ()
         :report "Ignore initialization errors and continue.")
