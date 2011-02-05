@@ -1,5 +1,5 @@
 ;;; -*- mode: common-lisp; package: asdf; -*-
-;;; This is ASDF 2.012.4: Another System Definition Facility.
+;;; This is ASDF 2.012.5: Another System Definition Facility.
 ;;;
 ;;; Feedback, bug reports, and patches are all welcome:
 ;;; please mail to <asdf-devel@common-lisp.net>.
@@ -62,8 +62,7 @@
   (setf excl::*autoload-package-name-alist*
         (remove "asdf" excl::*autoload-package-name-alist*
                 :test 'equalp :key 'car))
-  #-ecl-bytecmp
-  (require :cmp)
+  #+(and ecl (not ecl-bytecmp)) (require :cmp)
   #+(and (or win32 windows mswindows mingw32) (not cygwin)) (pushnew :asdf-windows *features*)
   #+(or unix cygwin) (pushnew :asdf-unix *features*))
 
@@ -84,7 +83,7 @@
          ;; "2.345.6" would be a development version in the official upstream
          ;; "2.345.0.7" would be your seventh local modification of official release 2.345
          ;; "2.345.6.7" would be your seventh local modification of development version 2.345.6
-         (asdf-version "2.012.4")
+         (asdf-version "2.012.5")
          (existing-asdf (fboundp 'find-system))
          (existing-version *asdf-version*)
          (already-there (equal asdf-version existing-version)))
@@ -190,7 +189,8 @@
            (#:perform #:explain #:output-files #:operation-done-p
             #:perform-with-restarts #:component-relative-pathname
             #:system-source-file #:operate #:find-component #:find-system
-            #:apply-output-translations #:translate-pathname* #:resolve-location)
+            #:apply-output-translations #:translate-pathname* #:resolve-location
+            #:compile-file*)
            :unintern
            (#:*asdf-revision* #:around #:asdf-method-combination
             #:split #:make-collector
@@ -563,26 +563,23 @@ pathnames."
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (ccl:define-entry-point (_getenv "getenv") ((name :string)) :string))
 
-#+mcl
-(defun %getenv (x)
-  (ccl:with-cstrs ((name x))
-    (let ((value (_getenv name)))
-      (unless (ccl:%null-ptr-p value)
-        (ccl:%get-cstring value)))))
-
 (defun* getenv (x)
-  (#+(or abcl clisp) ext:getenv
-   #+allegro sys:getenv
-   #+clozure ccl:getenv
-   #+(or cmu scl) (lambda (x) (cdr (assoc x ext:*environment-list* :test #'string=)))
-   #+ecl si:getenv
-   #+gcl system:getenv
-   #+lispworks lispworks:environment-variable
-   #+mcl %getenv
-   #+sbcl sb-ext:posix-getenv
-   #-(or abcl allegro clisp clozure cmu ecl gcl lispworks mcl sbcl scl)
-   (lambda (x) (declare (ignore x)) (error "getenv not available on your implementation"))
-   x))
+  (declare (ignorable x))
+  #+(or abcl clisp) (ext:getenv x)
+  #+allegro (sys:getenv x)
+  #+clozure (ccl:getenv x)
+  #+(or cmu scl) (cdr (assoc x ext:*environment-list* :test #'string=))
+  #+ecl (si:getenv x)
+  #+gcl (system:getenv x)
+  #+genera nil
+  #+lispworks (lispworks:environment-variable x)
+  #+mcl (ccl:with-cstrs ((name x))
+          (let ((value (_getenv name)))
+            (unless (ccl:%null-ptr-p value)
+              (ccl:%get-cstring value))))
+  #+sbcl (sb-ext:posix-getenv x)
+  #-(or abcl allegro clisp clozure cmu ecl gcl genera lispworks mcl sbcl scl)
+  (error "getenv not available on your implementation"))
 
 (defun* directory-pathname-p (pathname)
   "Does PATHNAME represent a directory?
@@ -725,7 +722,9 @@ with given pathname and if it exists return its truename."
 
 (defun* resolve-symlinks (path)
   #-allegro (truenamize path)
-  #+allegro (excl:pathname-resolve-symbolic-links path))
+  #+allegro (if (typep path 'logical-pathname)
+                path
+                (excl:pathname-resolve-symbolic-links path)))
 
 (defun* default-directory ()
   (truenamize (pathname-directory-pathname *default-pathname-defaults*)))
@@ -1906,10 +1905,7 @@ recursive calls to traverse.")
   (setf (gethash (type-of operation) (component-operation-times c))
         (get-universal-time)))
 
-(declaim (ftype (function ((or pathname string)
-                           &rest t &key (:output-file t) &allow-other-keys)
-                          (values t t t))
-                compile-file*))
+(defvar *compile-op-compile-file-function* 'compile-file*)
 
 ;;; perform is required to check output-files to find out where to put
 ;;; its answers, in case it has been overridden for site policy
@@ -1921,9 +1917,9 @@ recursive calls to traverse.")
         (output-file (first (output-files operation c)))
         (*compile-file-warnings-behaviour* (operation-on-warnings operation))
         (*compile-file-failure-behaviour* (operation-on-failure operation)))
-    (declare (notinline compile-file*)) ; allow redefinition
     (multiple-value-bind (output warnings-p failure-p)
-        (apply #'compile-file* source-file :output-file output-file
+        (apply *compile-op-compile-file-function*
+               source-file :output-file output-file
                (compile-op-flags operation))
       (when warnings-p
         (case (operation-on-warnings operation)
@@ -3223,18 +3219,18 @@ effectively disabling the output translation facility."
       (values output-truename warnings-p failure-p))))
 
 #+(and ecl (not ecl-bytecmp))
-(progn
-  (defparameter *asdf-compile-file* #'compile-file*)
-  (setf (fdefinition 'compile-file*)
-        #'(lambda (input-file &rest keys)
-            (multiple-value-bind (object-file flags1 flags2)
-                (apply *asdf-compile-file* input-file (list* :system-p t keys))
-              (values (and object-file
-                           (c::build-fasl (compile-file-pathname object-file :type :fasl)
-                                          :lisp-files (list object-file))
-                           object-file)
-                      flags1
-                      flags2)))))
+(setf
+ *compile-op-compile-file-function*
+ (lambda (input-file &rest keys &key output-file &allow-other-keys)
+   (declare (ignore output-file))
+   (multiple-value-bind (object-file flags1 flags2)
+       (apply 'compile-file* input-file :system-p t keys)
+     (values (and object-file
+                  (c::build-fasl (compile-file-pathname object-file :type :fasl)
+                                 :lisp-files (list object-file))
+                  object-file)
+             flags1
+             flags2))))
 
 #+abcl
 (defun* translate-jar-pathname (source wildcard)
