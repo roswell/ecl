@@ -162,6 +162,8 @@ ECL 11.1.2
    that are compiled in. This is essential for cross-compilation and also
    for sharing C code among different builds.
 
+ - Fixed externalization of bytecodes with literals that need MAKE-LOAD-FORM.
+
 * Visible changes:
 
  - When printing error messages, the condition type is shown (M. Mondor)

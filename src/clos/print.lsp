@@ -64,9 +64,16 @@ printer and we should rather use MAKE-LOAD-FORM."
 		      ((consp object)
 		       (recursive-test (car object))
 		       (setf object (rest object)))
-		      ((and (compiled-function-p object)
-			    (nth-value 2 (si::bc-split object)))
-		       (return nil))
+                      ((compiled-function-p object)
+                       (multiple-value-bind (lex code data name)
+                           (si::bc-split object)
+                         (when (or (null data)
+                                   (null code)
+                                   (recursive-test lex)
+                                   (recursive-test code)
+                                   (recursive-test name))
+                           (throw 'need-to-make-load-form t))
+                         (setf object data)))
 		      (t
 		       (throw 'need-to-make-load-form t))))))
       (catch 'need-to-make-load-form
@@ -81,6 +88,15 @@ printer and we should rather use MAKE-LOAD-FORM."
     (unless (need-to-make-load-form-p object)
       (return-from make-load-form (maybe-quote object)))
     (typecase object
+      (compiled-function
+       (multiple-value-bind (lex code data name)
+           (si::bc-split object)
+         (unless code
+           (error "Cannot externalize object ~a" object))
+         (values `(si::bc-join ,(make-load-form lex)
+                               ',code ; An specialized array, no load form
+                               ,(make-load-form data)
+                               ,(make-load-form name)))))
       (array
        (let ((init-forms '()))
 	 (values `(make-array ',(array-dimensions object)
