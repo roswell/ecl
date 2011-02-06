@@ -2035,5 +2035,7 @@ cl_symbols[] = {
 {EXT_ "ENCODING-ERROR",NULL},
 /* #endif ECL_UNICODE */
 
+{SYS_ "PROPER-LIST-P","si_proper_list_p"},
+
 /* Tag for end of list */
 {NULL,NULL}};

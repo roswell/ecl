@@ -2035,5 +2035,7 @@ cl_symbols[] = {
 {EXT_ "ENCODING-ERROR", EXT_ORDINARY, NULL, 3, OBJNULL},
 /* #endif ECL_UNICODE */
 
+{SYS_ "PROPER-LIST-P", SI_ORDINARY, si_proper_list_p, 1, OBJNULL},
+
 /* Tag for end of list */
 {NULL, CL_ORDINARY, NULL, -1, OBJNULL}};

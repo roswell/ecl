@@ -367,6 +367,30 @@ cl_list_length(cl_object x)
 }
 
 cl_object
+si_proper_list_p(cl_object x)
+{
+	cl_fixnum n;
+	cl_object fast, slow, test = Ct;
+	/* INV: A list's length always fits in a fixnum */
+	fast = slow = x;
+	for (n = 0; !Null(fast); n++, fast = ECL_CONS_CDR(fast)) {
+		if (!LISTP(fast)) {
+                        test = Cnil;
+                        break;
+		}
+		if (n & 1) {
+			/* Circular list? */
+			if (slow == fast) {
+                                test = Cnil;
+                                break;
+                        }
+			slow = ECL_CONS_CDR(slow);
+		}
+	}
+	@(return test);
+}
+
+cl_object
 cl_nth(cl_object n, cl_object x)
 {
 	@(return ecl_nth(fixint(n), x))

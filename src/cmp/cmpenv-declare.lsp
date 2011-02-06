@@ -18,10 +18,10 @@
 
 (in-package #-ecl-new "COMPILER" #+ecl-new "C-ENV")
 
-(defun proper-list-p (x &optional test)
-  (and (listp x)
-       (handler-case (list-length x) (type-error (c) nil))
-       (or (null test) (every test x))))
+(defun valid-form-p (x &optional test)
+  (and (si::proper-list-p x)
+       (or (null test)
+           (every test x))))
 
 (defun type-name-p (name)
   (or (get-sysprop name 'SI::DEFTYPE-DEFINITION)
@@ -54,7 +54,7 @@
 
 (defun collect-declared (type var-list tail)
   (declare (si::c-local))
-  (cmpassert (proper-list-p var-list #'symbolp)
+  (cmpassert (valid-form-p var-list #'symbolp)
              "Syntax error in declaration ~s" decl)
   (loop for var-name in var-list
      do (push (cons var-name type) tail))
@@ -71,27 +71,27 @@ and a possible documentation string (only accepted when DOC-P is true)."
        for decl in all-declarations
        for decl-name = (first decl)
        for decl-args = (rest decl)
-       do (cmpassert (and (proper-list-p decl-args) (symbolp decl-name))
+       do (cmpassert (and (valid-form-p decl-args) (symbolp decl-name))
                      "Syntax error in declaration ~s" decl)
        do (case decl-name
             (SPECIAL)
             (IGNORE
-             (cmpassert (proper-list-p decl-args)
+             (cmpassert (valid-form-p decl-args)
                         "Syntax error in declaration ~s" decl)
              (setf ignored (parse-ignore-declaration decl-args -1 ignored)))
             (IGNORABLE
-             (cmpassert (proper-list-p decl-args)
+             (cmpassert (valid-form-p decl-args)
                         "Syntax error in declaration ~s" decl)
              (setf ignored (parse-ignore-declaration decl-args 0 ignored)))
             (TYPE
              (cmpassert (and (consp decl-args)
-                             (proper-list-p (rest decl-args) #'symbolp))
+                             (valid-form-p (rest decl-args) #'symbolp))
                         "Syntax error in declaration ~s" decl)
              (setf types (collect-declared (first decl-args)
                                            (rest decl-args)
                                            types)))
             (OBJECT
-             (cmpassert (proper-list-p decl-args #'symbolp)
+             (cmpassert (valid-form-p decl-args #'symbolp)
                         "Syntax error in declaration ~s" decl)
              (setf types (collect-declared 'OBJECT decl-args types)))
             ((OPTIMIZE FTYPE INLINE NOTINLINE DECLARATION SI::C-LOCAL

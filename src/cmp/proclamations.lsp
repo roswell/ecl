@@ -710,6 +710,7 @@
 (proclamation si:memq (t proper-list) list)
 (proclamation si:cons-car (cons) t :reader)
 (proclamation si:cons-cdr (cons) t :reader)
+(proclamation si::proper-list-p (t) gen-bool :predicate)
 
 ;;;
 ;;; 15. ARRAYS

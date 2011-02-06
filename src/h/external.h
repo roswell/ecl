@@ -902,6 +902,7 @@ extern ECL_API cl_object cl_adjoin _ARGS((cl_narg narg, cl_object item, cl_objec
 extern ECL_API cl_object cl_pairlis _ARGS((cl_narg narg, cl_object keys, cl_object data, ...));
 extern ECL_API cl_object cl_rassoc _ARGS((cl_narg narg, cl_object item, cl_object alist, ...));
 extern ECL_API cl_object cl_assoc _ARGS((cl_narg narg, cl_object item, cl_object alist, ...));
+extern ECL_API cl_object si_proper_list_p(cl_object V1);
 
 extern ECL_API cl_object ecl_last(cl_object x, cl_index n);
 extern ECL_API cl_object ecl_butlast(cl_object x, cl_index n);
