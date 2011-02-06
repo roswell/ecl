@@ -53,8 +53,7 @@
                             ((vv-used-p vv-record)
                              object)
                             (t
-                             (cmpnote "Constant value optimized away or not used~%~A"
-                                      object)
+                             ;; Value optimized away or not used
                              0))))
   #+(or)
   (loop for i in (nconc (map 'list #'first *permanent-objects*)
