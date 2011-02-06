@@ -949,6 +949,7 @@
     si::coerce-to-list si::coerce-to-vector
     si::fill-array-with-seq
     si::assert-failure
+    si::traced-old-definition
     #+formatter
     ,@'(
     format-princ format-prin1 format-print-named-character

@@ -2036,6 +2036,8 @@ cl_symbols[] = {
 /* #endif ECL_UNICODE */
 
 {SYS_ "PROPER-LIST-P", SI_ORDINARY, si_proper_list_p, 1, OBJNULL},
+{SYS_ "TRACED-OLD-DEFINITION", SI_ORDINARY, ECL_NAME(si_traced_old_definition), 1, OBJNULL},
+{SYS_ "*TRACE-LIST*", SI_ORDINARY, NULL, -1, Cnil},
 
 /* Tag for end of list */
 {NULL, CL_ORDINARY, NULL, -1, OBJNULL}};

@@ -1291,6 +1291,7 @@
 (proclamation ext:weak-pointer-value (ext:weak-pointer) t)
 
 (proclamation si:unbound () t :pure)
+(proclamation si:traced-old-definition (t) t :no-side-effects)
 
 #+clos
 (proclamation si:allocate-raw-instance (t t fixnum) si:instance)

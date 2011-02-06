@@ -13,9 +13,8 @@
 (in-package "SYSTEM")
 
 (defvar *trace-level* 0)
-(defvar *trace-list* nil)
+;; (defvar *trace-list* nil) ; In all_symbols.d !
 (defvar *trace-max-indent* 20)
-(defconstant +tracing-block+ (gensym))
 
 (defmacro trace (&rest r)
 "Syntax: (trace ({function-name | ({function-name}+)} {keyword [form]\}*)
@@ -47,8 +46,8 @@ SI::ARGS."
 
 (defun trace* (r)
   (if (null r)
-    *trace-list*
-    (mapc #'trace-one r)))
+      (mapcar #'first *trace-list*)
+      (mapc #'trace-one r)))
 
 (defmacro untrace (&rest r)
   "Syntax: (untrace {function-name}*)
@@ -58,7 +57,7 @@ all functions."
   `(untrace* ',r))
 
 (defun untrace* (r)
-  (mapc #'untrace-one (if (null r) *trace-list* r)))
+  (mapc #'untrace-one (or r (trace* nil))))
 
 (defvar *inside-trace* nil)
 
@@ -67,6 +66,8 @@ all functions."
 	       step (barfp t) fname oldf)
     (cond ((si::valid-function-name-p spec)
 	   (setq fname spec))
+          ((si::proper-list-p spec)
+           (error "Not a valid argument to TRACE: ~S" spec))
 	  ((si::valid-function-name-p (first spec))
 	   (setq fname (first spec))
 	   (do ((specs (cdr spec) (cdr specs)))
@@ -83,32 +84,33 @@ all functions."
 	       (:print-after (setq barfp specs specs (cdr specs) exit (car specs)))
 	       (t (error "Meaningless TRACE keyword: ~S" (car specs))))
 	     (unless barfp (error "Parameter missing"))))
-	  (t
+	  ((si::proper-list-p (first spec))
 	   (let (results)
-	       (dolist (fname (car spec))
-		 (push (trace-one `(,fname . ,(cdr spec))) results))
-	       (return-from trace-one (nreverse results)))))
+             (dolist (fname (first spec))
+               (push (trace-one (list* fname (rest spec))) results))
+             (return-from trace-one (nreverse results))))
+          (t
+           (error "Not a valid argument to TRACE: ~S" spec)))
     (when (null (fboundp fname))
-      (format *trace-output* "The function ~S is not defined.~%" fname)
+      (warn "The function ~S is not defined." fname)
       (return-from trace-one nil))
     (when (symbolp fname)
       (when (special-operator-p fname)
-	(format *trace-output* "~S is a special form.~%" fname)
+	(warn "Unable to trace special form ~S." fname)
 	(return-from trace-one nil))
       (when (macro-function fname)
-	(format *trace-output* "~S is a macro.~%" fname)
+	(warn "Unable to trace macro ~S." fname)
 	(return-from trace-one nil)))
-    (when (get-sysprop fname 'TRACED)
-      (cond ((tracing-body fname)
-	     (format *trace-output*
-		     "The function ~S is already traced.~%" fname)
-	     (return-from trace-one nil))
-	    (t (untrace-one fname))))
-    (sys:fset (setq oldf (gensym)) (fdefinition fname))
-    (put-sysprop fname 'TRACED oldf)
+    (let ((record (trace-record fname)))
+      (when record
+        (cond ((traced-and-redefined-p record)
+               (delete-from-trace-list fname))
+              (t
+               (warn "The function ~S is already traced." fname)
+               (return-from trace-one nil)))))
+    (setq oldf (fdefinition fname))
     (eval
      `(defun ,fname (&rest args)
-	(block ,+tracing-block+		; used to recognize traced functions
 	  (let* (values (*trace-level* (1+ *trace-level*)))
 	    (if *inside-trace*
 		(setq values (multiple-value-list (apply ',oldf args)))
@@ -139,9 +141,9 @@ all functions."
 		      `((when ,exitbreak
 			  (let (*inside-trace*)
 			    (break "after tracing ~S" ',fname)))))))
-	    (values-list values)))))
-  (push fname *trace-list*)
-  (cons fname nil)))
+	    (values-list values))))
+  (add-to-trace-list fname oldf)
+  (list fname)))
 
 (defun trace-print (direction fname vals &rest extras)
   (let ((indent (min (* (1- *trace-level*) 2) *trace-max-indent*)))
@@ -174,29 +176,50 @@ all functions."
 	      "~0,4@T\\\\ ~{ ~S~}~%"
 	      extras))))
 
-(defun untrace-one (fname)
-  (cond ((get-sysprop fname 'TRACED)
-         (if (tracing-body fname)
-	   (sys:fset fname (fdefinition (get-sysprop fname 'TRACED)))
-	   (format *trace-output*
-		   "The function ~S was traced, but redefined.~%"
-		   fname))
-         (rem-sysprop fname 'TRACED)
-         (setq *trace-list* (delete fname *trace-list* :test #'eq))
-         (list fname))
-        (t
-         (format *trace-output* "The function ~S is not traced.~%" fname)
-         nil)))
+(defun trace-record (fname)
+  (declare (si::c-local))
+  (find fname *trace-list* :key #'first :test #'equal))
 
-(defun tracing-body (fname &aux (fun (fdefinition fname)))
-  (when (functionp fun)
-    (multiple-value-bind (env code data)
-	(si::bc-split fun)
-      (when data
-	(dotimes (i (length data))
-	  (when (eq (aref data i) +tracing-block+)
-	    (return-from tracing-body t))))))
-  nil)
+(defun trace-record-name (record)
+  (declare (si::c-local))
+  (first record))
+
+(defun trace-record-definition (record)
+  (declare (si::c-local))
+  (second record))
+
+(defun trace-record-old-definition (record)
+  (declare (si::c-local))
+  (third record))
+
+(defun traced-old-definition (fname)
+  (let ((record (trace-record fname)))
+    (when record
+      (unless (traced-and-redefined-p record)
+        (trace-record-old-definition record)))))
+
+(defun delete-from-trace-list (fname)
+  (setq *trace-list* (delete fname *trace-list* :key #'first :test #'equal)))
+
+(defun add-to-trace-list (fname old-definition)
+  (push (list fname (fdefinition fname) old-definition)
+        *trace-list*))
+
+(defun traced-and-redefined-p (record)
+  (declare (si::c-local))
+  (and record (not (eq (trace-record-definition record)
+                       (fdefinition (trace-record-name record))))))
+
+(defun untrace-one (fname)
+  (let ((record (trace-record fname)))
+    (cond ((null record)
+           (warn "The function ~S was not traced." fname))
+          ((traced-and-redefined-p record)
+           (warn "The function ~S was traced, but redefined." fname))
+          (t
+           (sys:fset fname (trace-record-old-definition record))))
+    (delete-from-trace-list fname)
+    (values)))
 
 (defvar *step-level* 0)
 (defvar *step-action* nil)
@@ -260,7 +283,7 @@ for Stepper mode commands."
     (or (gethash form *step-functions*)
 	(multiple-value-bind (f env name)
 	    (function-lambda-expression form)
-	  (if (and (not (get-sysprop name 'TRACED)) f)
+	  (if (and (not (trace-record name)) f)
 	      (setf (gethash form *step-functions*)
 		    (eval-with-env `(function ,f) env t))
 	      form)))))

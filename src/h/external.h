@@ -2049,6 +2049,10 @@ extern ECL_API cl_object cl_stable_sort _ARGS((cl_narg narg, cl_object V1, cl_ob
 extern ECL_API cl_object cl_merge _ARGS((cl_narg narg, cl_object V1, cl_object V2, cl_object V3, cl_object V4, ...));
 extern ECL_API cl_object cl_constantly(cl_object V1);
 
+/* trace.lsp */
+
+extern ECL_API cl_object si_traced_old_definition(cl_object V1);
+
 /* pprint.lsp */
 
 extern ECL_API cl_object cl_pprint_newline _ARGS((cl_narg narg, cl_object V1, ...));
