@@ -197,6 +197,10 @@ ECL 11.1.2
 
  - EXT:GETENV coerces its input argument to type BASE-STRING.
 
+ - The garbage collector would reset the counters on every call to
+   SI:GC-STATS. This made nested TIME calls not to work, as the statistics of
+   the inner call would spoil those of the outer one. This has been fixed.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

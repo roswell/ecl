@@ -1203,13 +1203,6 @@ si_gc_stats(cl_object enable)
         } else {
                 old_status = Ct;
         }
-        if (enable == Cnil) {
-                GC_print_stats = 0;
-                cl_core.gc_stats = 0;
-        } else {
-                cl_core.gc_stats = 1;
-                GC_print_stats = (enable == @':full');
-        }
 	if (cl_core.bytes_consed == Cnil) {
 		cl_core.bytes_consed = ecl_alloc_object(t_bignum);
 		mpz_init2(cl_core.bytes_consed->big.big_num, 128);
@@ -1219,8 +1212,16 @@ si_gc_stats(cl_object enable)
                 /* We need fresh copies of the bignums */
                 size1 = _ecl_big_plus_fix(cl_core.bytes_consed, 1);
                 size2 = _ecl_big_plus_fix(cl_core.gc_counter, 1);
+        }
+        if (enable == Cnil) {
+                GC_print_stats = 0;
+                cl_core.gc_stats = 0;
+        } else if (enable == MAKE_FIXNUM(0)) {
                 mpz_set_ui(cl_core.bytes_consed->big.big_num, 0);
                 mpz_set_ui(cl_core.gc_counter->big.big_num, 0);
+        } else {
+                cl_core.gc_stats = 1;
+                GC_print_stats = (enable == @':full');
         }
 	@(return size1 size2 old_status)
 }
