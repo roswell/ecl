@@ -195,6 +195,8 @@ ECL 11.1.2
 
  - ECL will always build, by default, with support for Unicode strings.
 
+ - EXT:GETENV coerces its input argument to type BASE-STRING.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

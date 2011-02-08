@@ -812,7 +812,8 @@ si_getenv(cl_object var)
 {
 	const char *value;
 
-	var = ecl_check_cl_type(@'ext::getenv', var, t_base_string);
+        /* Strings have to be null terminated base strings */
+	var = si_copy_to_simple_base_string(var);
 	value = getenv((char*)var->base_string.self);
 	@(return ((value == NULL)? Cnil : make_base_string_copy(value)))
 }
