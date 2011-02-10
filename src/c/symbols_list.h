@@ -2039,5 +2039,7 @@ cl_symbols[] = {
 {SYS_ "TRACED-OLD-DEFINITION", SI_ORDINARY, ECL_NAME(si_traced_old_definition), 1, OBJNULL},
 {SYS_ "*TRACE-LIST*", SI_ORDINARY, NULL, -1, Cnil},
 
+{SYS_ "FUNCTION-BOUNDARY", SI_ORDINARY, NULL, -1, OBJNULL},
+
 /* Tag for end of list */
 {NULL, CL_ORDINARY, NULL, -1, OBJNULL}};

@@ -105,11 +105,11 @@ struct cl_compiler_env {
 	cl_object macros;		/* Macros and function bindings */
 	cl_fixnum lexical_level;	/* =0 if toplevel form */
 	cl_object constants;		/* Constants for this form */
+	cl_index constants_size;	/* Number of constants registered */
 	cl_object lex_env;		/* Lexical env. for eval-when */
 	cl_index env_depth;
 	cl_index env_size;
         int mode;
-	bool coalesce;
 	bool stepping;
 };
 

@@ -167,7 +167,7 @@ asm_end(cl_env_ptr env, cl_index beginning, cl_object definition) {
 
 	/* Save bytecodes from this session in a new vector */
 	code_size = current_pc(env) - beginning;
-	data_size = ecl_length(c_env->constants);
+	data_size = c_env->constants_size;
 	bytecodes = ecl_alloc_object(t_bytecodes);
 	bytecodes->bytecodes.name = @'si::bytecodes';
         bytecodes->bytecodes.definition = definition;
@@ -177,10 +177,11 @@ asm_end(cl_env_ptr env, cl_index beginning, cl_object definition) {
 	bytecodes->bytecodes.data = (cl_object*)ecl_alloc(data_size * sizeof(cl_object));
 	for (i = 0, code = (cl_opcode *)bytecodes->bytecodes.code; i < code_size; i++) {
 		code[i] = (cl_opcode)(cl_fixnum)(env->stack[beginning+i]);
-	}
-	for (i=0; i < data_size; i++) {
-		bytecodes->bytecodes.data[i] = ECL_CONS_CAR(c_env->constants);
+ 	}
+	while (data_size--) {
+		bytecodes->bytecodes.data[data_size] = ECL_CONS_CAR(c_env->constants);
 		c_env->constants = ECL_CONS_CDR(c_env->constants);
+		c_env->constants_size--;
 	}
         bytecodes->bytecodes.entry =  _ecl_bytecodes_dispatch_vararg;
         ecl_set_function_source_file_info(bytecodes, (file == OBJNULL)? Cnil : file,
@@ -223,11 +224,12 @@ asm_op2(cl_env_ptr env, int code, int n) {
 	asm_arg(env, n);
 }
 
-static void
+static cl_index
 asm_constant(cl_env_ptr env, cl_object c)
 {
         const cl_compiler_ptr c_env = env->c_env;
-	c_env->constants = ecl_nconc(c_env->constants, ecl_list1(c));
+	c_env->constants = ecl_cons(c, c_env->constants);
+	return c_env->constants_size++;
 }
 
 static cl_index
@@ -354,13 +356,12 @@ c_register_constant(cl_env_ptr env, cl_object c)
         const cl_compiler_ptr c_env = env->c_env;
 	cl_object p = c_env->constants;
 	int n;
-	for (n = 0; !Null(p); n++, p = ECL_CONS_CDR(p)) {
-		if (c_env->coalesce && ecl_eql(ECL_CONS_CAR(p), c)) {
+	for (n = c_env->constants_size; n--; p = ECL_CONS_CDR(p)) {
+		if (ecl_eql(ECL_CONS_CAR(p), c)) {
 			return n;
 		}
 	}
-	asm_constant(env, c);
-	return n;
+	return asm_constant(env, c);
 }
 
 static void
@@ -537,9 +538,9 @@ c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_object env,
 {
 	the_env->c_env = new;
 	new->stepping = 0;
-	new->coalesce = TRUE;
 	new->lexical_level = 0;
 	new->constants = Cnil;
+	new->constants_size = 0;
 	new->env_depth = 0;
 	new->env_size = 0;
 	if (old) {
@@ -549,9 +550,9 @@ c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_object env,
 		new->macros = old->macros;
 		new->lexical_level = old->lexical_level;
 		new->constants = old->constants;
+		new->constants_size = old->constants_size;
 		new->lex_env = old->lex_env;
 		new->env_depth = old->env_depth + 1;
-		new->coalesce = old->coalesce;
 		new->stepping = old->stepping;
                 new->mode = old->mode;
 	} else {
@@ -2695,7 +2696,8 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
 	c_new_env(env, &new_c_env, Cnil, old_c_env);
 
 	new_c_env.lexical_level++;
-	new_c_env.coalesce = 0;
+	new_c_env.constants = Cnil;
+	new_c_env.constants_size = 0;
 
 	reqs = si_process_lambda(lambda);
 	opts = VALUES(1);
@@ -2718,11 +2720,8 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
 	/* We register as special variable a symbol which is not
 	 * to be used. We use this to mark the boundary of a function
 	 * environment and when code-walking */
-	c_register_var(env, cl_make_symbol(make_constant_base_string("FUNCTION")),
-		       TRUE, FALSE);
+	c_register_var(env, @'si::function-boundary', TRUE, FALSE);
 
-	new_c_env.constants = Cnil;
-        new_c_env.coalesce = TRUE;
 	asm_constant(env, doc);
 	asm_constant(env, decl);
 
