@@ -1069,20 +1069,20 @@ utf_8_decoder(cl_object stream, cl_eformat_read_byte8 read_byte8, cl_object sour
 	unlikely_if ((buffer[0] & 0x40) == 0)
                 return decoding_error(stream, @':utf-8', buffer, 1);
 	if ((buffer[0] & 0x20) == 0) {
-		buffer[0] &= 0x1F;
+		cum = buffer[0] & 0x1F;
 		nbytes = 1;
 	} else if ((buffer[0] & 0x10) == 0) {
-		buffer[0] &= 0x0F;
+		cum = buffer[0] & 0x0F;
 		nbytes = 2;
 	} else if ((buffer[0] & 0x08) == 0) {
-		buffer[0] &= 0x07;
+		cum = buffer[0] & 0x07;
 		nbytes = 3;
 	} else {
                 return decoding_error(stream, @':utf-8', buffer, 1);
 	}
 	if (read_byte8(source, buffer+1, nbytes) < nbytes)
 		return EOF;
-	for (i = 1, cum = buffer[0]; i <= nbytes; i++) {
+	for (i = 1; i <= nbytes; i++) {
 		unsigned char c = buffer[i];
 		/*printf(": %04x :", c);*/
 		unlikely_if ((c & 0xC0) != 0x80)
