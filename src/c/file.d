@@ -676,11 +676,11 @@ passthrough_decoder(cl_object stream)
 		return aux;
 }
 
-static ecl_character
+static int
 passthrough_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
 {
-	if (c > 0xFF) {
-		return 0;
+	unlikely_if (c > 0xFF) {
+                return encoding_error(stream, buffer, c);
 	}
 	buffer[0] = c;
 	return 1;
@@ -704,11 +704,11 @@ ascii_decoder(cl_object stream)
 	}
 }
 
-static ecl_character
+static int
 ascii_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
 {
-	if (c > 127) {
-		return 0;
+	unlikely_if (c > 127) {
+                return encoding_error(stream, buffer, c);
 	}
 	buffer[0] = c;
 	return 1;
@@ -729,7 +729,7 @@ ucs_4be_decoder(cl_object stream)
 	}
 }
 
-static ecl_character
+static int
 ucs_4be_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
 {
 	buffer[3] = c & 0xFF; c >>= 8;
@@ -754,7 +754,7 @@ ucs_4le_decoder(cl_object stream)
 	}
 }
 
-static ecl_character
+static int
 ucs_4le_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
 {
 	buffer[0] = c & 0xFF; c >>= 8;
@@ -787,7 +787,7 @@ ucs_4_decoder(cl_object stream)
 	}
 }
 
-static ecl_character
+static int
 ucs_4_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
 {
 	stream->stream.decoder = ucs_4be_decoder;
@@ -825,7 +825,7 @@ ucs_2be_decoder(cl_object stream)
 	}
 }
 
-static ecl_character
+static int
 ucs_2be_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
 {
 	if (c >= 0x10000) {
@@ -866,7 +866,7 @@ ucs_2le_decoder(cl_object stream)
 	}
 }
 
-static ecl_character
+static int
 ucs_2le_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
 {
 	if (c >= 0x10000) {
@@ -904,7 +904,7 @@ ucs_2_decoder(cl_object stream)
 	}
 }
 
-static ecl_character
+static int
 ucs_2_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
 {
 	stream->stream.decoder = ucs_2be_decoder;
@@ -945,12 +945,12 @@ user_decoder(cl_object stream)
 	return CHAR_CODE(character);
 }
 
-static ecl_character
+static int
 user_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
 {
 	cl_object byte = ecl_gethash_safe(CODE_CHAR(c), stream->stream.format_table, Cnil);
 	if (Null(byte)) {
-		return 0;
+		return encoding_error(stream, buffer, c);
 	} else {
 		cl_fixnum code = fix(byte);
 		if (code > 0xFF) {
@@ -1004,7 +1004,7 @@ user_multistate_decoder(cl_object stream)
 	FEerror("Internal error in decoder table.", 0);
 }
 
-static ecl_character
+static int
 user_multistate_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
 {
 	cl_object table_list = stream->stream.format_table;
@@ -1038,7 +1038,7 @@ user_multistate_encoder(cl_object stream, unsigned char *buffer, ecl_character c
 		p = ECL_CONS_CDR(p);
 	} while (p != table_list);
 	/* Exhausted all lists */
-	return 0;
+	return encoding_error(stream, buffer, c);
 }
 
 /*
@@ -1095,7 +1095,7 @@ utf_8_decoder(cl_object stream)
 	return cum;
 }
 
-static ecl_character
+static int
 utf_8_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
 {
 	int nbytes;
