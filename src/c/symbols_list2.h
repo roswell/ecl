@@ -2043,5 +2043,7 @@ cl_symbols[] = {
 
 {SYS_ "FUNCTION-BOUNDARY",NULL},
 
+{EXT_ "*INSPECTOR-HOOK*",NULL},
+
 /* Tag for end of list */
 {NULL,NULL}};

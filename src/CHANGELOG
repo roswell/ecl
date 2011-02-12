@@ -201,6 +201,9 @@ ECL 11.1.2
    SI:GC-STATS. This made nested TIME calls not to work, as the statistics of
    the inner call would spoil those of the outer one. This has been fixed.
 
+ - ECL implements CDR 6 (ext:*inspector-hook*) as described in
+   http://cdr.eurolisp.org/document/6/index.html
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
