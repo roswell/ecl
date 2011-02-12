@@ -581,7 +581,7 @@ eformat_unread_char(cl_object strm, ecl_character c)
 static ecl_character
 eformat_read_char(cl_object strm)
 {
-	ecl_character c = strm->stream.decoder(strm, strm->stream.ops->read_byte8, strm);
+	ecl_character c = strm->stream.decoder(strm);
 	if (c != EOF) {
 		strm->stream.last_char = c;
 		strm->stream.last_code[0] = c;
@@ -667,10 +667,10 @@ eformat_write_char_crlf(cl_object strm, ecl_character c)
  */
 
 static ecl_character
-passthrough_decoder(cl_object stream, cl_eformat_read_byte8 read_byte8, cl_object source)
+passthrough_decoder(cl_object stream)
 {
 	unsigned char aux;
-	if (read_byte8(source, &aux, 1) < 1)
+	if (ecl_read_byte8(stream, &aux, 1) < 1)
 		return EOF;
 	else
 		return aux;
@@ -692,10 +692,10 @@ passthrough_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
  */
 
 static ecl_character
-ascii_decoder(cl_object stream, cl_eformat_read_byte8 read_byte8, cl_object source)
+ascii_decoder(cl_object stream)
 {
 	unsigned char aux;
-	if (read_byte8(source, &aux, 1) < 1) {
+	if (ecl_read_byte8(stream, &aux, 1) < 1) {
 		return EOF;
 	} else if (aux > 127) {
                 return decoding_error(stream, @':us-ascii', &aux, 1);
@@ -719,10 +719,10 @@ ascii_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
  */
 
 static ecl_character
-ucs_4be_decoder(cl_object stream, cl_eformat_read_byte8 read_byte8, cl_object source)
+ucs_4be_decoder(cl_object stream)
 {
 	unsigned char buffer[4];
-	if (read_byte8(source, buffer, 4) < 4) {
+	if (ecl_read_byte8(stream, buffer, 4) < 4) {
 		return EOF;
 	} else {
 		return buffer[3]+(buffer[2]<<8)+(buffer[1]<<16)+(buffer[0]<<24);
@@ -744,10 +744,10 @@ ucs_4be_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
  */
 
 static ecl_character
-ucs_4le_decoder(cl_object stream, cl_eformat_read_byte8 read_byte8, cl_object source)
+ucs_4le_decoder(cl_object stream)
 {
 	unsigned char buffer[4];
-	if (read_byte8(source, buffer, 4) < 4) {
+	if (ecl_read_byte8(stream, buffer, 4) < 4) {
 		return EOF;
 	} else {
 		return buffer[0]+(buffer[1]<<8)+(buffer[2]<<16)+(buffer[3]<<24);
@@ -769,17 +769,17 @@ ucs_4le_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
  */
 
 static ecl_character
-ucs_4_decoder(cl_object stream, cl_eformat_read_byte8 read_byte8, cl_object source)
+ucs_4_decoder(cl_object stream)
 {
-	cl_fixnum c = ucs_4be_decoder(stream, read_byte8, source);
+	cl_fixnum c = ucs_4be_decoder(stream);
 	if (c == 0xFEFF) {
 		stream->stream.decoder = ucs_4be_decoder;
 		stream->stream.encoder = ucs_4be_encoder;
-		return ucs_4be_decoder(stream, read_byte8, source);
+		return ucs_4be_decoder(stream);
 	} else if (c == 0xFFFE0000) {
 		stream->stream.decoder = ucs_4le_decoder;
 		stream->stream.encoder = ucs_4le_encoder;
-		return ucs_4le_decoder(stream, read_byte8, source);
+		return ucs_4le_decoder(stream);
 	} else {
 		stream->stream.decoder = ucs_4be_decoder;
 		stream->stream.encoder = ucs_4be_encoder;
@@ -804,15 +804,15 @@ ucs_4_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
  */
 
 static ecl_character
-ucs_2be_decoder(cl_object stream, cl_eformat_read_byte8 read_byte8, cl_object source)
+ucs_2be_decoder(cl_object stream)
 {
 	unsigned char buffer[2];
-	if (read_byte8(source, buffer, 2) < 2) {
+	if (ecl_read_byte8(stream, buffer, 2) < 2) {
 		return EOF;
 	} else {
 		ecl_character c = ((ecl_character)buffer[0] << 8) | buffer[1];
 		if ((buffer[0] & 0xFC) == 0xD8) {
-			if (read_byte8(source, buffer, 2) < 2) {
+			if (ecl_read_byte8(stream, buffer, 2) < 2) {
 				return EOF;
 			} else {
 				ecl_character aux = ((ecl_character)buffer[0] << 8) | buffer[1];
@@ -846,15 +846,15 @@ ucs_2be_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
  */
 
 static ecl_character
-ucs_2le_decoder(cl_object stream, cl_eformat_read_byte8 read_byte8, cl_object source)
+ucs_2le_decoder(cl_object stream)
 {
 	unsigned char buffer[2];
-	if (read_byte8(source, buffer, 2) < 2) {
+	if (ecl_read_byte8(stream, buffer, 2) < 2) {
 		return EOF;
 	} else {
 		ecl_character c = ((ecl_character)buffer[1] << 8) | buffer[0];
 		if ((buffer[1] & 0xFC) == 0xD8) {
-			if (read_byte8(source, buffer, 2) < 2) {
+			if (ecl_read_byte8(stream, buffer, 2) < 2) {
 				return EOF;
 			} else {
 				ecl_character aux = ((ecl_character)buffer[1] << 8) | buffer[0];
@@ -888,17 +888,17 @@ ucs_2le_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
  */
 
 static ecl_character
-ucs_2_decoder(cl_object stream, cl_eformat_read_byte8 read_byte8, cl_object source)
+ucs_2_decoder(cl_object stream)
 {
-	ecl_character c = ucs_2be_decoder(stream, read_byte8, source);
+	ecl_character c = ucs_2be_decoder(stream);
 	if (c == 0xFEFF) {
 		stream->stream.decoder = ucs_2be_decoder;
 		stream->stream.encoder = ucs_2be_encoder;
-		return ucs_2be_decoder(stream, read_byte8, source);
+		return ucs_2be_decoder(stream);
 	} else if (c == 0xFFFE) {
 		stream->stream.decoder = ucs_2le_decoder;
 		stream->stream.encoder = ucs_2le_encoder;
-		return ucs_2le_decoder(stream, read_byte8, source);
+		return ucs_2le_decoder(stream);
 	} else {
 		stream->stream.decoder = ucs_2be_decoder;
 		stream->stream.encoder = ucs_2be_encoder;
@@ -921,12 +921,12 @@ ucs_2_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
  */
 
 static ecl_character
-user_decoder(cl_object stream, cl_eformat_read_byte8 read_byte8, cl_object source)
+user_decoder(cl_object stream)
 {
 	cl_object table = stream->stream.format_table;
 	cl_object character;
 	unsigned char buffer[2];
-	if (read_byte8(source, buffer, 1) < 1) {
+	if (ecl_read_byte8(stream, buffer, 1) < 1) {
 		return EOF;
 	}
 	character = ecl_gethash_safe(MAKE_FIXNUM(buffer[0]), table, Cnil);
@@ -935,7 +935,7 @@ user_decoder(cl_object stream, cl_eformat_read_byte8 read_byte8, cl_object sourc
                                       buffer, 1);
 	}
 	if (character == Ct) {
-		if (read_byte8(source, buffer+1, 1) < 1) {
+		if (ecl_read_byte8(stream, buffer+1, 1) < 1) {
 			return EOF;
 		} else {
 			cl_fixnum byte = (buffer[0]<<8) + buffer[1];
@@ -973,8 +973,7 @@ user_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
  */
 
 static ecl_character
-user_multistate_decoder(cl_object stream, cl_eformat_read_byte8 read_byte8,
-			cl_object source)
+user_multistate_decoder(cl_object stream)
 {
 	cl_object table_list = stream->stream.format_table;
 	cl_object table = ECL_CONS_CAR(table_list);
@@ -982,7 +981,7 @@ user_multistate_decoder(cl_object stream, cl_eformat_read_byte8 read_byte8,
 	cl_fixnum i, j;
 	unsigned char buffer[ENCODING_BUFFER_MAX_SIZE];
 	for (i = j = 0; i < ENCODING_BUFFER_MAX_SIZE; i++) {
-		if (read_byte8(source, buffer+i, 1) < 1) {
+		if (ecl_read_byte8(stream, buffer+i, 1) < 1) {
 			return EOF;
 		}
 		j = (j << 8) | buffer[i];
@@ -1052,7 +1051,7 @@ user_multistate_encoder(cl_object stream, unsigned char *buffer, ecl_character c
  */
 
 static ecl_character
-utf_8_decoder(cl_object stream, cl_eformat_read_byte8 read_byte8, cl_object source)
+utf_8_decoder(cl_object stream)
 {
 	/* In understanding this code:
 	 * 0x8 = 1000, 0xC = 1100, 0xE = 1110, 0xF = 1111
@@ -1061,7 +1060,7 @@ utf_8_decoder(cl_object stream, cl_eformat_read_byte8 read_byte8, cl_object sour
 	ecl_character cum = 0;
 	unsigned char buffer[5];
 	int nbytes, i;
-	if (read_byte8(source, buffer, 1) < 1)
+	if (ecl_read_byte8(stream, buffer, 1) < 1)
 		return EOF;
 	if ((buffer[0] & 0x80) == 0) {
 		return buffer[0];
@@ -1080,7 +1079,7 @@ utf_8_decoder(cl_object stream, cl_eformat_read_byte8 read_byte8, cl_object sour
 	} else {
                 return decoding_error(stream, @':utf-8', buffer, 1);
 	}
-	if (read_byte8(source, buffer+1, nbytes) < nbytes)
+	if (ecl_read_byte8(stream, buffer+1, nbytes) < nbytes)
 		return EOF;
 	for (i = 1; i <= nbytes; i++) {
 		unsigned char c = buffer[i];

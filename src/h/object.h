@@ -613,9 +613,9 @@ enum {
 	ECL_STREAM_CLOSE_COMPONENTS = 1024
 };
 
+typedef int (*cl_eformat_decoder)(cl_object stream);
 typedef int (*cl_eformat_encoder)(cl_object stream, unsigned char *buffer, int c);
 typedef cl_index (*cl_eformat_read_byte8)(cl_object object, unsigned char *buffer, cl_index n);
-typedef int (*cl_eformat_decoder)(cl_object stream, cl_eformat_read_byte8 read_byte8, cl_object source);
 
 #define ECL_ANSI_STREAM_P(o) \
         (IMMEDIATE(o) == 0 && ((o)->d.t == t_stream))
