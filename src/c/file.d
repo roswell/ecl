@@ -95,7 +95,7 @@ static void unread_error(cl_object strm);
 static void unread_twice(cl_object strm);
 static void io_error(cl_object strm) ecl_attr_noreturn;
 #ifdef ECL_UNICODE
-static ecl_character encoding_error(cl_object strm, ecl_character c);
+static cl_index encoding_error(cl_object strm, unsigned char *buffer, ecl_character c);
 static ecl_character decoding_error(cl_object strm, unsigned char *buffer, int length);
 #endif
 static void wrong_file_handler(cl_object strm) ecl_attr_noreturn;
@@ -4976,24 +4976,38 @@ wrong_file_handler(cl_object strm)
 }
 
 #ifdef ECL_UNICODE
-static ecl_character
-encoding_error(cl_object strm, ecl_character c)
+static cl_index
+encoding_error(cl_object stream, unsigned char *buffer, ecl_character c)
 {
-        return ecl_char_code(cl_funcall(4, @'ext::encoding-error', strm,
-                                        cl_stream_external_format(strm),
-                                        ecl_make_integer(c)));
+        cl_object code = cl_funcall(4, @'ext::encoding-error', stream,
+                                    cl_stream_external_format(stream),
+                                    ecl_make_integer(c));
+        if (Null(code)) {
+                /* Output nothing */
+                return 0;
+        } else {
+                /* Try with supplied character */
+                return stream->stream.encoder(stream, buffer, ecl_char_code(code));
+        }
 }
 
 static ecl_character
-decoding_error(cl_object strm, unsigned char *buffer, int length)
+decoding_error(cl_object stream, unsigned char *buffer, int length)
 {
-        cl_object octets = Cnil;
+        cl_object octets = Cnil, code;
         while (length > 0) {
                 octets = CONS(MAKE_FIXNUM(buffer[--length]), octets);
         }
-        return ecl_char_code(cl_funcall(4, @'ext::decoding-error', strm,
-                                        cl_stream_external_format(strm),
-                                        octets));
+        code = cl_funcall(4, @'ext::decoding-error', stream,
+                          cl_stream_external_format(stream),
+                          octets);
+        if (Null(code)) {
+                /* Go for next character */
+                return stream->stream.decoder(stream);
+        } else {
+                /* Return supplied character */
+                return ecl_char_code(code);
+        }
 }
 #endif
 

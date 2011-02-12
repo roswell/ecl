@@ -56,6 +56,9 @@
                        :stream stream
                        :external-format external-format
                        :code code)
+    (continue ()
+      :report "Ignore character"
+      nil)
     (use-value (c)
       :report "Store a different character code."
       (if (characterp c) c (code-char c)))))
@@ -65,6 +68,9 @@
                        :stream stream
                        :external-format external-format
                        :octets octets)
+    (continue ()
+      :report "Read next character"
+      nil)
     (use-value (c)
       :report "Replace the bogus sequence with a character"
       (if (characterp c) c (code-char c)))))
