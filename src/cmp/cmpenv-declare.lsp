@@ -158,21 +158,23 @@ special variable declarations, as these have been extracted before."
             env)))))
 
 (defun symbol-macro-declaration-p (name type)
-  (let* ((record (cmp-env-search-variables name 'si::symbol-macro *cmp-env*)))
+  (let* ((record (cmp-env-search-symbol-macro name)))
     (when (and record (functionp record))
       (let* ((expression (funcall record name nil)))
         (cmp-env-register-symbol-macro name `(the ,type ,expression)))
       t)))
 
 (defun check-vdecl (vnames ts is)
-  (loop for (var . type) in ts
-     unless (or (member var vnames :test #'eq)
-                (symbol-macro-declaration-p var type))
+  (loop for (name . type) in ts
+     unless (or (member name vnames :test #'eq)
+                (symbol-macro-declaration-p name type))
      do (cmpwarn "Declaration of type~&~4T~A~&was found for not bound variable ~s."
-                 type var))
-  (loop for (var . expected-uses) in is
-     unless (member var vnames :test #'eq)
+                 type name))
+  (loop for (name . expected-uses) in is
+     unless (or (member name vnames :test #'eq)
+                (cmp-env-search-symbol-macro name)
+                (cmp-env-search-macro name))
      do (cmpwarn (if (minusp expected-uses)
                      "IGNORE declaration was found for not bound variable ~s."
                      "IGNORABLE declaration was found for not bound variable ~s.")
-                 var)))
+                 name)))
