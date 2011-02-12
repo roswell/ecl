@@ -1080,10 +1080,10 @@ utf_8_decoder(cl_object stream)
 		unsigned char c = buffer[i];
 		/*printf(": %04x :", c);*/
 		unlikely_if ((c & 0xC0) != 0x80)
-                        return decoding_error(stream, buffer, i+1);
+                        return decoding_error(stream, buffer, nbytes+1);
 		cum = (cum << 6) | (c & 0x3F);
 		unlikely_if (cum == 0)
-                        return decoding_error(stream, buffer, i+1);
+                        return decoding_error(stream, buffer, nbytes+1);
 	}
 	if (cum >= 0xd800) {
 		unlikely_if (cum <= 0xdfff)
