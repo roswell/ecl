@@ -95,8 +95,8 @@ static void unread_error(cl_object strm);
 static void unread_twice(cl_object strm);
 static void io_error(cl_object strm) ecl_attr_noreturn;
 #ifdef ECL_UNICODE
-static ecl_character encoding_error(cl_object strm, cl_object format, ecl_character c);
-static ecl_character decoding_error(cl_object strm, cl_object format, unsigned char *buffer, int length);
+static ecl_character encoding_error(cl_object strm, ecl_character c);
+static ecl_character decoding_error(cl_object strm, unsigned char *buffer, int length);
 #endif
 static void wrong_file_handler(cl_object strm) ecl_attr_noreturn;
 #if defined(ECL_WSOCK)
@@ -698,7 +698,7 @@ ascii_decoder(cl_object stream)
 	if (ecl_read_byte8(stream, &aux, 1) < 1) {
 		return EOF;
 	} else if (aux > 127) {
-                return decoding_error(stream, @':us-ascii', &aux, 1);
+                return decoding_error(stream, &aux, 1);
 	} else {
 		return aux;
 	}
@@ -817,8 +817,7 @@ ucs_2be_decoder(cl_object stream)
 			} else {
 				ecl_character aux = ((ecl_character)buffer[0] << 8) | buffer[1];
 				if ((buffer[0] & 0xF8) != 0xDC) {
-                                        return decoding_error(stream, @':ucs-2be',
-                                                              buffer, 1);
+                                        return decoding_error(stream, buffer, 1);
 				}
 				return ((c & 0x3FFF) << 10) + (aux & 0x3FFF) + 0x10000;
 			}
@@ -859,8 +858,7 @@ ucs_2le_decoder(cl_object stream)
 			} else {
 				ecl_character aux = ((ecl_character)buffer[1] << 8) | buffer[0];
 				if ((buffer[1] & 0xF8) != 0xDC) {
-                                        return decoding_error(stream, @':ucs-2le',
-                                                              buffer, 2);
+                                        return decoding_error(stream, buffer, 2);
 				}
 				return ((c & 0x3FFF) << 10) + (aux & 0x3FFF) + 0x10000;
 			}
@@ -931,8 +929,7 @@ user_decoder(cl_object stream)
 	}
 	character = ecl_gethash_safe(MAKE_FIXNUM(buffer[0]), table, Cnil);
 	unlikely_if (Null(character)) {
-                return decoding_error(stream, stream->stream.format,
-                                      buffer, 1);
+                return decoding_error(stream, buffer, 1);
 	}
 	if (character == Ct) {
 		if (ecl_read_byte8(stream, buffer+1, 1) < 1) {
@@ -941,8 +938,7 @@ user_decoder(cl_object stream)
 			cl_fixnum byte = (buffer[0]<<8) + buffer[1];
 			character = ecl_gethash_safe(MAKE_FIXNUM(byte), table, Cnil);
 			unlikely_if (Null(character)) {
-                                return decoding_error(stream, stream->stream.format,
-                                                      buffer, 2);
+                                return decoding_error(stream, buffer, 2);
 			}
 		}
 	}
@@ -990,8 +986,7 @@ user_multistate_decoder(cl_object stream)
 			return CHAR_CODE(character);
 		}
 		unlikely_if (Null(character)) {
-                        return decoding_error(stream, stream->stream.format,
-                                              buffer, i);
+                        return decoding_error(stream, buffer, i);
 		}
 		if (character == Ct) {
 			/* Need more characters */
@@ -1066,7 +1061,7 @@ utf_8_decoder(cl_object stream)
 		return buffer[0];
 	}
 	unlikely_if ((buffer[0] & 0x40) == 0)
-                return decoding_error(stream, @':utf-8', buffer, 1);
+                return decoding_error(stream, buffer, 1);
 	if ((buffer[0] & 0x20) == 0) {
 		cum = buffer[0] & 0x1F;
 		nbytes = 1;
@@ -1077,7 +1072,7 @@ utf_8_decoder(cl_object stream)
 		cum = buffer[0] & 0x07;
 		nbytes = 3;
 	} else {
-                return decoding_error(stream, @':utf-8', buffer, 1);
+                return decoding_error(stream, buffer, 1);
 	}
 	if (ecl_read_byte8(stream, buffer+1, nbytes) < nbytes)
 		return EOF;
@@ -1085,16 +1080,16 @@ utf_8_decoder(cl_object stream)
 		unsigned char c = buffer[i];
 		/*printf(": %04x :", c);*/
 		unlikely_if ((c & 0xC0) != 0x80)
-                        return decoding_error(stream, @':utf-8', buffer, i+1);
+                        return decoding_error(stream, buffer, i+1);
 		cum = (cum << 6) | (c & 0x3F);
 		unlikely_if (cum == 0)
-                        return decoding_error(stream, @':utf-8', buffer, i+1);
+                        return decoding_error(stream, buffer, i+1);
 	}
 	if (cum >= 0xd800) {
 		unlikely_if (cum <= 0xdfff)
-                        return decoding_error(stream, @':utf-8', buffer, nbytes+1);
+                        return decoding_error(stream, buffer, nbytes+1);
 		unlikely_if (cum >= 0xFFFE && cum <= 0xFFFF)
-                        return decoding_error(stream, @':utf-8', buffer, nbytes+1);
+                        return decoding_error(stream, buffer, nbytes+1);
 	}
 	/*printf("; %04x ;", cum);*/
 	return cum;
@@ -4982,22 +4977,23 @@ wrong_file_handler(cl_object strm)
 
 #ifdef ECL_UNICODE
 static ecl_character
-encoding_error(cl_object strm, cl_object format, ecl_character c)
+encoding_error(cl_object strm, ecl_character c)
 {
-        return ecl_char_code(cl_funcall(4, @'ext::encoding-error', strm, format,
+        return ecl_char_code(cl_funcall(4, @'ext::encoding-error', strm,
+                                        cl_stream_external_format(strm),
                                         ecl_make_integer(c)));
 }
 
 static ecl_character
-decoding_error(cl_object strm, cl_object format,
-               unsigned char *buffer, int length)
+decoding_error(cl_object strm, unsigned char *buffer, int length)
 {
         cl_object octets = Cnil;
         while (length > 0) {
                 octets = CONS(MAKE_FIXNUM(buffer[--length]), octets);
         }
         return ecl_char_code(cl_funcall(4, @'ext::decoding-error', strm,
-                                        format, octets));
+                                        cl_stream_external_format(strm),
+                                        octets));
 }
 #endif
 
