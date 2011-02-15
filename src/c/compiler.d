@@ -50,10 +50,10 @@
 #define FLAG_IGNORE		0
 #define FLAG_USEFUL		(FLAG_PUSH | FLAG_VALUES | FLAG_REG0)
 
-#define MODE_EXECUTE		0
-#define MODE_LOAD		1
-#define MODE_COMPILE		2
-#define MODE_ONLY_LOAD		3
+#define FLAG_EXECUTE		16
+#define FLAG_LOAD		32
+#define FLAG_COMPILE		64
+#define FLAG_ONLY_LOAD		128
 
 #define ENV_RECORD_LOCATION(r)	CADDDR(r)
 
@@ -569,7 +569,7 @@ c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_object env,
 				break;
 			}
 		}
-                new->mode = MODE_EXECUTE;
+                new->mode = FLAG_EXECUTE;
 	}
 }
 
@@ -1215,49 +1215,58 @@ c_with_backend(cl_env_ptr env, cl_object args, int flags)
 }
 
 static int
-when_execute_p(cl_object situation)
+eval_when_flags(cl_object situation)
 {
-        return ecl_member_eq(@'eval', situation) ||
-                ecl_member_eq(@':execute', situation);
+        int code = 0;
+        cl_object p;
+        for (p = situation; p != Cnil; p = ECL_CONS_CDR(p)) {
+                cl_object keyword;
+                unlikely_if (!ECL_LISTP(p))
+                        FEtype_error_proper_list(situation);
+                keyword = ECL_CONS_CAR(p);
+                if (keyword == @'load')
+                        code |= FLAG_LOAD;
+                else if (keyword == @':load-toplevel')
+                        code |= FLAG_LOAD;
+                else if (keyword == @'compile')
+                        code |= FLAG_COMPILE;
+                else if (keyword == @':compile-toplevel')
+                        code |= FLAG_COMPILE;
+                else if (keyword == @'eval')
+                        code |= FLAG_EXECUTE;
+                else if (keyword == @':execute')
+                        code |= FLAG_EXECUTE;
+        }
+        return code;
 }
 
-static int
-when_compile_p(cl_object situation)
-{
-        return ecl_member_eq(@'compile', situation) ||
-                ecl_member_eq(@':compile-toplevel', situation);
-}
-
-static int
-when_load_p(cl_object situation)
-{
-        return ecl_member_eq(@'load', situation) ||
-                ecl_member_eq(@':load-toplevel', situation);
-}
+#define when_load_p(s) ((s) & FLAG_LOAD)
+#define when_compile_p(s) ((s) & FLAG_COMPILE)
+#define when_execute_p(s) ((s) & FLAG_EXECUTE)
 
 static int
 c_eval_when(cl_env_ptr env, cl_object args, int flags) {
-	cl_object situation = pop(&args);
+	int situation = eval_when_flags(pop(&args));
         int mode = env->c_env->mode;
-        if (mode == MODE_EXECUTE) {
+        if (mode == FLAG_EXECUTE) {
                 if (!when_execute_p(situation))
                         args = Cnil;
-        } else if (mode == MODE_LOAD) {
+        } else if (mode == FLAG_LOAD) {
                 if (when_compile_p(situation)) {
-                        env->c_env->mode = MODE_COMPILE;
+                        env->c_env->mode = FLAG_COMPILE;
                         eval_form(env, CONS(@'progn', args));
-                        env->c_env->mode = MODE_LOAD;
+                        env->c_env->mode = FLAG_LOAD;
                         if (!when_load_p(situation))
                                 args = Cnil;
                 } else if (when_load_p(situation)) {
-                        env->c_env->mode = MODE_ONLY_LOAD;
+                        env->c_env->mode = FLAG_ONLY_LOAD;
                         mode = compile_body(env, args, flags);
-                        env->c_env->mode = MODE_LOAD;
+                        env->c_env->mode = FLAG_LOAD;
                         return mode;
                 } else {
                         args = Cnil;
                 }
-        } else if (mode == MODE_ONLY_LOAD) {
+        } else if (mode == FLAG_ONLY_LOAD) {
                 if (!when_load_p(situation))
                         args = Cnil;
         } else {
@@ -2255,7 +2264,7 @@ compile_body(cl_env_ptr env, cl_object body, int flags) {
 	if (ecl_endp(body)) {
 		return compile_form(env, Cnil, flags);
 	}
-        if ((old_c_env->lexical_level == 0) && (old_c_env->mode == MODE_EXECUTE)) {
+        if ((old_c_env->lexical_level == 0) && (old_c_env->mode == FLAG_EXECUTE)) {
                 do {
                         cl_object form = ECL_CONS_CAR(body);
                         body = ECL_CONS_CDR(body);
@@ -2865,7 +2874,7 @@ si_make_lambda(cl_object name, cl_object rest)
 	guess_environment(the_env, interpreter_env);
 	new_c_env.lex_env = env;
 	new_c_env.stepping = stepping != Cnil;
-	new_c_env.mode = Null(execute)? MODE_LOAD : MODE_EXECUTE;
+	new_c_env.mode = Null(execute)? FLAG_LOAD : FLAG_EXECUTE;
 	handle = asm_begin(the_env);
 	CL_UNWIND_PROTECT_BEGIN(the_env) {
 		compile_form(the_env, form, FLAG_VALUES);
