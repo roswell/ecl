@@ -916,6 +916,26 @@ c_call(cl_env_ptr env, cl_object args, int flags) {
 	cl_index nargs;
 
 	name = pop(&args);
+	if (name >= (cl_object)cl_symbols
+	    && name < (cl_object)(cl_symbols + cl_num_symbols_in_core))
+	{
+		cl_object f = SYM_FUN(name);
+		cl_type t = (f == OBJNULL)? t_other : type_of(f);
+		if (t == t_cfunfixed) {
+			cl_index n = ecl_length(args);
+			if (f->cfun.narg == 1 && n == 1) {
+				compile_form(env, ECL_CONS_CAR(args), FLAG_REG0);
+				asm_op2c(env, OP_CALLG1, name);
+				return FLAG_VALUES;
+			} else if (f->cfun.narg == 2 && n == 2) {
+				compile_form(env, ECL_CONS_CAR(args), FLAG_PUSH);
+				args = ECL_CONS_CDR(args);
+				compile_form(env, ECL_CONS_CAR(args), FLAG_REG0);
+				asm_op2c(env, OP_CALLG2, name);
+				return FLAG_VALUES;
+			}
+		}
+	}
 	nargs = c_arguments(env, args);
 	if (env->c_env->stepping) {
 		/* When stepping, we only have one opcode to do function
@@ -2177,30 +2197,9 @@ for special form ~S.", 1, function);
 	 */
 	if (c_env->stepping)
 		asm_op2c(env, OP_STEPIN, stmt);
-	if (function >= (cl_object)cl_symbols
-	    && function < (cl_object)(cl_symbols + cl_num_symbols_in_core))
-	{
-		cl_object f = SYM_FUN(function);
-		cl_type t = (f == OBJNULL)? t_other : type_of(f);
-		if (t == t_cfunfixed) {
-			cl_object args = ECL_CONS_CDR(stmt);
-			cl_index n = ecl_length(args);
-			if (f->cfun.narg == 1 && n == 1) {
-				compile_form(env, ECL_CONS_CAR(args), FLAG_REG0);
-				asm_op2c(env, OP_CALLG1, function);
-				new_flags = FLAG_VALUES;
-				goto OUTPUT;
-			} else if (f->cfun.narg == 2 && n == 2) {
-				compile_form(env, ECL_CONS_CAR(args), FLAG_PUSH);
-				args = ECL_CONS_CDR(args);
-				compile_form(env, ECL_CONS_CAR(args), FLAG_REG0);
-				asm_op2c(env, OP_CALLG2, function);
-				new_flags = FLAG_VALUES;
-				goto OUTPUT;
-			}
-		}
-	}
+        c_env->lexical_level++;
 	new_flags = c_call(env, stmt, flags);
+        c_env->lexical_level--;
  OUTPUT:
 	/*
 		flags		new_flags		action
