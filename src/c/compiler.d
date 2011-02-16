@@ -128,15 +128,15 @@ static int c_listA(cl_env_ptr env, cl_object args, int push);
 
 static cl_object ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda);
 
-static void FEillegal_variable_name(cl_object) /*__attribute__((noreturn))*/;
-static void FEill_formed_input(void) /*__attribute__((noreturn))*/;
+static void FEillegal_variable_name(cl_object) __attribute__((noreturn));
+static void FEill_formed_input(void) __attribute__((noreturn));
 
 /* -------------------- SAFE LIST HANDLING -------------------- */
 
 static cl_object
 pop(cl_object *l) {
 	cl_object head, list = *l;
-	if (ATOM(list))
+	unlikely_if (ATOM(list))
 		FEill_formed_input();
 	head = ECL_CONS_CAR(list);
 	*l = ECL_CONS_CDR(list);
@@ -148,7 +148,7 @@ pop_maybe_nil(cl_object *l) {
 	cl_object head, list = *l;
 	if (list == Cnil)
 		return Cnil;
-	if (ATOM(list))
+	unlikely_if (!ECL_LISTP(list))
 		FEill_formed_input();
 	head = ECL_CONS_CAR(list);
 	*l = ECL_CONS_CDR(list);
@@ -903,7 +903,7 @@ c_block(cl_env_ptr env, cl_object body, int old_flags) {
 static int
 c_arguments(cl_env_ptr env, cl_object args) {
 	cl_index nargs;
-	for (nargs = 0; !ecl_endp(args); nargs++) {
+	for (nargs = 0; !Null(args); nargs++) {
 		compile_form(env, pop(&args), FLAG_PUSH);
 	}
 	return nargs;
@@ -1026,7 +1026,7 @@ perform_c_case(cl_env_ptr env, cl_object args, int flags) {
 		labeln = current_pc(env);
 		asm_arg(env, 0);
 		compile_body(env, clause, flags);
-		if (ecl_endp(args) && !(flags & FLAG_USEFUL)) {
+		if (Null(args) && !(flags & FLAG_USEFUL)) {
 			/* Ther is no otherwise. The test has failed and
 			   we need no output value. We simply close jumps. */
 			asm_complete(env, 0 & OP_JNEQL, labeln);
@@ -1090,7 +1090,7 @@ c_compiler_let(cl_env_ptr env, cl_object args, int flags) {
 	cl_object bindings;
 	cl_index old_bds_top_index = env->bds_top - env->bds_org;
 
-	for (bindings = pop(&args); !ecl_endp(bindings); ) {
+	for (bindings = pop(&args); !Null(bindings); ) {
 		cl_object form = pop(&bindings);
 		cl_object var = pop(&form);
 		cl_object value = pop_maybe_nil(&form);
@@ -1314,7 +1314,7 @@ static cl_index
 c_register_functions(cl_env_ptr env, cl_object l)
 {
 	cl_index nfun;
-	for (nfun = 0; !ecl_endp(l); nfun++) {
+	for (nfun = 0; !Null(l); nfun++) {
 		cl_object definition = pop(&l);
 		cl_object name = pop(&definition);
 		c_register_function(env, name);
@@ -1344,7 +1344,7 @@ c_labels_flet(cl_env_ptr env, int op, cl_object args, int flags) {
 	asm_op2(env, op, nfun);
 
 	/* Compile the local functions now. */
-	for (l = def_list; !ecl_endp(l); ) {
+	for (l = def_list; !Null(l); ) {
 		cl_object definition = pop(&l);
 		cl_object name = pop(&definition);
 		cl_object lambda = ecl_make_lambda(env, name, definition);
@@ -1391,7 +1391,7 @@ c_flet(cl_env_ptr env, cl_object args, int flags) {
 static int
 c_function(cl_env_ptr env, cl_object args, int flags) {
 	cl_object function = pop(&args);
-	if (!ecl_endp(args))
+	if (!Null(args))
 		FEprogram_error_noreturn("FUNCTION: Too many arguments.", 0);
 	return asm_function(env, function, flags);
 }
@@ -1516,7 +1516,7 @@ c_let_leta(cl_env_ptr env, int op, cl_object args, int flags) {
 	case 1:		op = OP_BIND; break;
 	}
 
-	for (vars=Cnil, l=bindings; !ecl_endp(l); ) {
+	for (vars=Cnil, l=bindings; !Null(l); ) {
 		cl_object aux = pop(&l);
 		cl_object var, value;
 		if (ATOM(aux)) {
@@ -1538,7 +1538,7 @@ c_let_leta(cl_env_ptr env, int op, cl_object args, int flags) {
 			c_bind(env, var, specials);
 		}
 	}
-	while (!ecl_endp(vars))
+	while (!Null(vars))
 		c_pbind(env, pop(&vars), specials);
 
 	/* We have to register all specials, because in the list
@@ -1665,12 +1665,12 @@ c_multiple_value_call(cl_env_ptr env, cl_object args, int flags) {
 	int op;
 
 	name = pop(&args);
-	if (ecl_endp(args)) {
+	if (Null(args)) {
 		/* If no arguments, just use ordinary call */
 		return c_funcall(env, cl_list(1, name), flags);
 	}
 	compile_form(env, name, FLAG_PUSH);
-	for (op = OP_PUSHVALUES; !ecl_endp(args); op = OP_PUSHMOREVALUES) {
+	for (op = OP_PUSHVALUES; !Null(args); op = OP_PUSHMOREVALUES) {
 		compile_form(env, pop(&args), FLAG_VALUES);
 		asm_op(env, op);
 	}
@@ -1684,7 +1684,7 @@ c_multiple_value_call(cl_env_ptr env, cl_object args, int flags) {
 static int
 c_multiple_value_prog1(cl_env_ptr env, cl_object args, int flags) {
 	compile_form(env, pop(&args), FLAG_VALUES);
-	if (!ecl_endp(args)) {
+	if (!Null(args)) {
 		asm_op(env, OP_PUSHVALUES);
 		compile_body(env, args, FLAG_IGNORE);
 		asm_op(env, OP_POPVALUES);
@@ -1703,7 +1703,7 @@ c_multiple_value_setq(cl_env_ptr env, cl_object orig_args, int flags) {
 
 	/* Look for symbol macros, building the list of variables
 	   and the list of late assignments. */
-	for (orig_vars = pop(&args); !ecl_endp(orig_vars); ) {
+	for (orig_vars = pop(&args); !Null(orig_vars); ) {
 		cl_object v = pop(&orig_vars);
 		if (!SYMBOLP(v))
 			FEillegal_variable_name(v);
@@ -1859,14 +1859,14 @@ c_psetq(cl_env_ptr env, cl_object old_args, int flags) {
 	bool use_psetf = FALSE;
 	cl_index nvars = 0;
 
-	if (ecl_endp(old_args))
+	if (Null(old_args))
 		return compile_body(env, Cnil, flags);
 	/* We have to make sure that non of the variables which
 	   are to be assigned is actually a symbol macro. If that
 	   is the case, we invoke (PSETF ...) to handle the
 	   macro expansions.
 	*/
-	while (!ecl_endp(old_args)) {
+	do {
 		cl_object var = pop(&old_args);
 		cl_object value = pop(&old_args);
 		if (!SYMBOLP(var))
@@ -1876,18 +1876,19 @@ c_psetq(cl_env_ptr env, cl_object old_args, int flags) {
 			use_psetf = TRUE;
 		args = ecl_nconc(args, cl_list(2, var, value));
 		nvars++;
-	}
+	} while (!Null(old_args));
 	if (use_psetf) {
 		return compile_form(env, CONS(@'psetf', args), flags);
 	}
-	while (!ecl_endp(args)) {
+	do {
 		cl_object var = pop(&args);
 		cl_object value = pop(&args);
 		vars = CONS(var, vars);
 		compile_form(env, value, FLAG_PUSH);
-	}
-	while (!ecl_endp(vars))
+	} while (!Null(args));
+	do {
 		compile_setq(env, OP_PSETQ, pop(&vars));
+        } while (!Null(vars));
 	return compile_form(env, Cnil, flags);
 }
 
@@ -1930,7 +1931,7 @@ c_return_from(cl_env_ptr env, cl_object stmt, int flags) {
 
 static int
 c_setq(cl_env_ptr env, cl_object args, int flags) {
-	if (ecl_endp(args))
+	if (Null(args))
 		return compile_form(env, Cnil, flags);
 	do {
 		cl_object var = pop(&args);
@@ -1946,7 +1947,7 @@ c_setq(cl_env_ptr env, cl_object args, int flags) {
 			flags = ecl_endp(args)? FLAG_VALUES : FLAG_REG0;
 			compile_form(env, cl_list(3, @'setf', var, value), flags);
 		}
-	} while (!ecl_endp(args));
+	} while (!Null(args));
 	return flags;
 }
 
@@ -1962,7 +1963,7 @@ c_symbol_macrolet(cl_env_ptr env, cl_object args, int flags)
 	specials = VALUES(3);
 
 	/* Scan the list of definitions */
-	for (; !ecl_endp(def_list); ) {
+	while (!Null(def_list)) {
 		cl_object definition = pop(&def_list);
 		cl_object name = pop(&definition);
 		cl_object expansion = pop(&definition);
@@ -1994,8 +1995,8 @@ c_tagbody(cl_env_ptr env, cl_object args, int flags)
 	int nt, i;
 
 	/* count the tags */
-	for (nt = 0, body = args; !ecl_endp(body); body = ECL_CONS_CDR(body)) {
-		label = ECL_CONS_CAR(body);
+	for (nt = 0, body = args; !Null(body); ) {
+		label = pop(&body);
 		item_type = type_of(label);
 		if (item_type == t_symbol || item_type == t_fixnum ||
 	            item_type == t_bignum) {
@@ -2014,8 +2015,8 @@ c_tagbody(cl_env_ptr env, cl_object args, int flags)
 	for (i = nt; i; i--)
 		asm_arg(env, 0);
 
-	for (body = args; !ecl_endp(body); body = ECL_CONS_CDR(body)) {
-		label = ECL_CONS_CAR(body);
+	for (body = args; !Null(body); ) {
+		label = pop(&body);
 		item_type = type_of(label);
 		if (item_type == t_symbol || item_type == t_fixnum ||
 	            item_type == t_bignum) {
@@ -2078,22 +2079,22 @@ c_values(cl_env_ptr env, cl_object args, int flags) {
 	if (!(flags & FLAG_USEFUL)) {
 		/* This value will be discarded. We do not care to
 		   push it or to save it in VALUES */
-		if (ecl_endp(args))
+		if (Null(args))
 			return flags;
 		return compile_body(env, args, flags);
 	} else if (flags & FLAG_PUSH) {
 		/* We only need the first value. However, the rest
 		   of arguments HAVE to be be evaluated */
-		if (ecl_endp(args))
+		if (Null(args))
 			return compile_form(env, Cnil, flags);
 		flags = compile_form(env, pop(&args), FLAG_PUSH);
 		compile_body(env, args, FLAG_IGNORE);
 		return flags;
-	} else if (ecl_endp(args)) {
+	} else if (Null(args)) {
 		asm_op(env, OP_NOP);
 	} else {
 		int n = 0;
-		while (!ecl_endp(args)) {
+		while (!Null(args)) {
 			compile_form(env, pop_maybe_nil(&args), FLAG_PUSH);
 			n++;
 		}
@@ -2743,13 +2744,13 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
 	asm_constant(env, decl);
 
 	reqs = ECL_CONS_CDR(reqs);		/* Required arguments */
-	while (!ecl_endp(reqs)) {
+	while (!Null(reqs)) {
 		cl_object var = pop(&reqs);
                 asm_op(env, OP_POPREQ);
                 c_bind(env, var, specials);
 	}
         opts = ECL_CONS_CDR(opts);
-        while (!ecl_endp(opts)) {		/* Optional arguments */
+        while (!Null(opts)) {			/* Optional arguments */
                 cl_object var = pop(&opts);
                 cl_object stmt = pop(&opts);
                 cl_object flag = pop(&opts);
@@ -2768,7 +2769,7 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
                 cl_object names = Cnil;
                 asm_op2c(env, OP_PUSHKEYS, aux);
                 keys = ECL_CONS_CDR(keys);
-                while (!ecl_endp(keys)) {
+                while (!Null(keys)) {
                         cl_object name = pop(&keys);
                         cl_object var = pop(&keys);
                         cl_object stmt = pop(&keys);
@@ -2780,7 +2781,7 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
                 ECL_RPLACD(aux, names);
         }
 
-	while (!ecl_endp(auxs)) {		/* Local bindings */
+	while (!Null(auxs)) {			/* Local bindings */
 		cl_object var = pop(&auxs);
 		cl_object value = pop(&auxs);
 		compile_form(env, value, FLAG_REG0);
