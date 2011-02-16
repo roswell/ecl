@@ -115,6 +115,7 @@ static int c_while(cl_env_ptr env, cl_object args, int flags);
 static int c_with_backend(cl_env_ptr env, cl_object args, int flags);
 static int c_until(cl_env_ptr env, cl_object args, int flags);
 static void eval_form(cl_env_ptr env, cl_object form);
+static int compile_toplevel_body(cl_env_ptr env, cl_object args, int flags);
 static int compile_body(cl_env_ptr env, cl_object args, int flags);
 static int compile_form(cl_env_ptr env, cl_object args, int push);
 
@@ -282,7 +283,7 @@ static compiler_record database[] = {
   {@'eval-when', c_eval_when, 0},
   {@'flet', c_flet, 1},
   {@'function', c_function, 1},
-  {@'funcall', c_funcall, 0},
+  {@'funcall', c_funcall, 1},
   {@'go', c_go, 1},
   {@'if', c_if, 1},
   {@'labels', c_labels, 1},
@@ -298,7 +299,7 @@ static compiler_record database[] = {
   {@'not', c_not, 1},
   {@'nth-value', c_nth_value, 1},
   {@'null', c_not, 1},
-  {@'progn', compile_body, 0},
+  {@'progn', compile_toplevel_body, 0},
   {@'prog1', c_prog1, 1},
   {@'progv', c_progv, 1},
   {@'psetq', c_psetq, 1},
@@ -1095,7 +1096,7 @@ c_compiler_let(cl_env_ptr env, cl_object args, int flags) {
 		cl_object value = pop_maybe_nil(&form);
 		ecl_bds_bind(env, var, value);
 	}
-	flags = compile_body(env, args, flags);
+	flags = compile_toplevel_body(env, args, flags);
 	ecl_bds_unwind(env, old_bds_top_index);
 	return flags;
 }
@@ -1231,7 +1232,7 @@ c_with_backend(cl_env_ptr env, cl_object args, int flags)
                 if (tag == @':bytecodes')
                         forms = CONS(form, forms);
         }
-        return compile_body(env, forms, flags);
+        return compile_toplevel_body(env, forms, flags);
 }
 
 static int
@@ -1267,10 +1268,13 @@ eval_when_flags(cl_object situation)
 static int
 c_eval_when(cl_env_ptr env, cl_object args, int flags) {
 	int situation = eval_when_flags(pop(&args));
-        int mode = env->c_env->mode;
+        const cl_compiler_ptr c_env = env->c_env;
+	int mode = c_env->mode;
         if (mode == FLAG_EXECUTE) {
                 if (!when_execute_p(situation))
                         args = Cnil;
+        } else if (c_env->lexical_level) {
+                args = Cnil;
         } else if (mode == FLAG_LOAD) {
                 if (when_compile_p(situation)) {
                         env->c_env->mode = FLAG_COMPILE;
@@ -1280,7 +1284,7 @@ c_eval_when(cl_env_ptr env, cl_object args, int flags) {
                                 args = Cnil;
                 } else if (when_load_p(situation)) {
                         env->c_env->mode = FLAG_ONLY_LOAD;
-                        mode = compile_body(env, args, flags);
+                        mode = compile_toplevel_body(env, args, flags);
                         env->c_env->mode = FLAG_LOAD;
                         return mode;
                 } else {
@@ -1293,7 +1297,7 @@ c_eval_when(cl_env_ptr env, cl_object args, int flags) {
                 if (!when_execute_p(situation) && !when_compile_p(situation))
                         args = Cnil;
         }
-        return compile_body(env, args, flags);
+        return compile_toplevel_body(env, args, flags);
 }
 
 
@@ -1575,7 +1579,7 @@ c_locally(cl_env_ptr env, cl_object args, int flags) {
 	c_declare_specials(env, VALUES(3));
 
 	/* ...and then process body */
-	flags = compile_body(env, args, flags);
+	flags = compile_toplevel_body(env, args, flags);
 
 	c_undo_bindings(env, old_env, 0);
 
@@ -1975,7 +1979,7 @@ declared special and appear in a symbol-macrolet.", 1, name);
 		c_register_symbol_macro(env, name, function);
 	}
 	c_declare_specials(env, specials);
-	flags = compile_body(env, body, flags);
+	flags = compile_toplevel_body(env, body, flags);
 	c_undo_bindings(env, old_variables, 0);
 	return flags;
 }
@@ -2175,6 +2179,7 @@ compile_form(cl_env_ptr env, cl_object stmt, int flags) {
 			if (c_env->stepping && function != @'function' &&
 			    c_env->lexical_level)
 				asm_op(env, OP_STEPOUT);
+			c_env->lexical_level -= l->lexical_increment;
 			goto OUTPUT;
 		}
 	}
@@ -2248,7 +2253,6 @@ eval_form(cl_env_ptr env, cl_object form) {
         NVALUES = 0;
         bytecodes = asm_end(env, handle, form);
         ecl_interpret((cl_object)&frame, new_c_env.lex_env, bytecodes);
-        asm_clear(env, handle);
         env->c_env = old_c_env;
 #ifdef GBC_BOEHM
         GC_free(bytecodes->bytecodes.code);
@@ -2258,30 +2262,35 @@ eval_form(cl_env_ptr env, cl_object form) {
 }
 
 static int
-compile_body(cl_env_ptr env, cl_object body, int flags) {
-        const cl_compiler_ptr old_c_env = env->c_env;
-	if (ecl_endp(body)) {
-		return compile_form(env, Cnil, flags);
-	}
-        if ((old_c_env->lexical_level == 0) && (old_c_env->mode == FLAG_EXECUTE)) {
-                do {
-                        cl_object form = ECL_CONS_CAR(body);
+compile_toplevel_body(cl_env_ptr env, cl_object body, int flags) {
+        const cl_compiler_ptr c_env = env->c_env;
+        if (!c_env->lexical_level && (c_env->mode == FLAG_EXECUTE)) {
+                cl_object form = Cnil, next_form;
+                for (form = Cnil; !Null(body); form = next_form) {
+                        unlikely_if (!ECL_LISTP(body))
+                                FEtype_error_proper_list(body);
+                        next_form = ECL_CONS_CAR(body);
                         body = ECL_CONS_CDR(body);
-                        if (ecl_endp(body)) {
-                                return compile_form(env, form, flags);
-                        }
                         eval_form(env, form);
-                } while (1);
+                }
+                return compile_form(env, form, flags);
         } else {
-                do {
-                        cl_object form = ECL_CONS_CAR(body);
-                        body = ECL_CONS_CDR(body);
-                        if (ecl_endp(body)) {
-                                return compile_form(env, form, flags);
-                        }
-                        compile_form(env, form, FLAG_IGNORE);
-                } while (1);
+                return compile_body(env, body, flags);
         }
+}
+
+static int
+compile_body(cl_env_ptr env, cl_object body, int flags)
+{
+        cl_object form = Cnil, next_form;
+        for (form = Cnil; !Null(body); form = next_form) {
+                unlikely_if (!ECL_LISTP(body))
+                        FEtype_error_proper_list(body);
+                next_form = ECL_CONS_CAR(body);
+                body = ECL_CONS_CDR(body);
+                compile_form(env, form, FLAG_IGNORE);
+        }
+        return compile_form(env, form, flags);
 }
 
 /* ------------------------ INLINED FUNCTIONS -------------------------------- */
