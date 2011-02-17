@@ -425,9 +425,8 @@ asm_op2c(cl_env_ptr env, int code, cl_object o) {
 #define new_location(env,x) MAKE_FIXNUM(0)
 #else
 static cl_object
-new_location(cl_env_ptr env, cl_object name)
+new_location(const cl_compiler_ptr c_env)
 {
-        const cl_compiler_ptr c_env = env->c_env;
 	return CONS(MAKE_FIXNUM(c_env->env_depth),
                     MAKE_FIXNUM(c_env->env_size++));
 }
@@ -436,8 +435,8 @@ new_location(cl_env_ptr env, cl_object name)
 static cl_index
 c_register_block(cl_env_ptr env, cl_object name)
 {
-	cl_object loc = new_location(env, name);
         const cl_compiler_ptr c_env = env->c_env;
+	cl_object loc = new_location(c_env);
 	c_env->variables = CONS(cl_list(4, @':block', name, Cnil, loc),
                                 c_env->variables);
 	return fix(ECL_CONS_CDR(loc));
@@ -446,8 +445,8 @@ c_register_block(cl_env_ptr env, cl_object name)
 static cl_index
 c_register_tags(cl_env_ptr env, cl_object all_tags)
 {
-	cl_object loc = new_location(env, @':tag');
         const cl_compiler_ptr c_env = env->c_env;
+	cl_object loc = new_location(c_env);
 	c_env->variables = CONS(cl_list(4, @':tag', all_tags, Cnil, loc),
                                 c_env->variables);
 	return fix(ECL_CONS_CDR(loc));
@@ -458,7 +457,7 @@ c_register_function(cl_env_ptr env, cl_object name)
 {
         const cl_compiler_ptr c_env = env->c_env;
 	c_env->variables = CONS(cl_list(4, @':function', name, Cnil,
-                                        new_location(env, name)),
+                                        new_location(c_env)),
                                 c_env->variables);
 	c_env->macros = CONS(cl_list(2, name, @'function'), c_env->macros);
 }
@@ -497,7 +496,7 @@ c_register_var(cl_env_ptr env, cl_object var, bool special, bool bound)
 		c_env->variables = CONS(cl_list(4, var,
                                                 special? @'special' : Cnil,
                                                 bound? Ct : Cnil,
-                                                new_location(env, var)),
+                                                new_location(c_env)),
                                         c_env->variables);
 	}
 }
