@@ -2410,40 +2410,34 @@ c_listA(cl_env_ptr env, cl_object args, int flags)
  */
 @(defun si::process-declarations (body &optional doc)
 	cl_object documentation = Cnil, declarations = Cnil, specials = Cnil;
-	cl_object decls, vars, v;
 @
-	/* BEGIN: SEARCH DECLARE */
-	for (; !ecl_endp(body); body = ECL_CONS_CDR(body)) {
-	  cl_object form = ECL_CONS_CAR(body);
-
-	  if (!Null(doc) && ecl_stringp(form) && !ecl_endp(CDR(body))) {
-	    if (documentation == Cnil)
-	      documentation = form;
-	    else
-	      break;
-	    continue;
-	  }
-
-	  if (ATOM(form) || (ECL_CONS_CAR(form) != @'declare'))
-	    break;
-
-	  for (decls = ECL_CONS_CDR(form); !ecl_endp(decls); decls = ECL_CONS_CDR(decls)) {
-	    cl_object sentence = ECL_CONS_CAR(decls);
-	    if (ATOM(sentence))
-	      FEill_formed_input();
-	    push(sentence, declarations);
-	    if (ECL_CONS_CAR(sentence) == @'special')
-	      for (vars = ECL_CONS_CDR(sentence); !ecl_endp(vars); vars = ECL_CONS_CDR(vars)) {
-		v = ECL_CONS_CAR(vars);
-		assert_type_symbol(v);
-		push(v,specials);
-	      }
-	  }
+	for (; !Null(body); body = ECL_CONS_CDR(body)) {
+                cl_object form;
+                unlikely_if (!ECL_LISTP(body))
+                        FEill_formed_input();
+                form = ECL_CONS_CAR(body);
+                if (!Null(doc) && ecl_stringp(form) && !Null(ECL_CONS_CDR(body))) {
+                        if (documentation != Cnil)
+                                break;
+                        documentation = form;
+                        continue;
+                }
+                if (ATOM(form) || (ECL_CONS_CAR(form) != @'declare')) {
+                        break;
+                }
+                for (form = ECL_CONS_CDR(form); !Null(form); ) {
+                        cl_object sentence = pop(&form);
+                        push(sentence, declarations);
+                        if (pop(&sentence) == @'special') {
+                                while (!Null(sentence)) {
+                                        cl_object v = pop(&sentence);
+                                        assert_type_symbol(v);
+                                        push(v,specials);
+                                }
+                        }
+                }
 	}
-	/* END: SEARCH DECLARE */
-
-        declarations = cl_nreverse(declarations);
-	@(return declarations body documentation specials)
+	@(return cl_nreverse(declarations) body documentation specials)
 @)
 
 static size_t si_process_lambda_ctr = 0;
