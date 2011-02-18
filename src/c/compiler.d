@@ -2235,7 +2235,7 @@ for special form ~S.", 1, function);
 }
 
 static void
-eval_form(cl_env_ptr env, cl_object form) {
+eval_nontrivial_form(cl_env_ptr env, cl_object form) {
         const cl_compiler_ptr old_c_env = env->c_env;
         struct cl_compiler_env new_c_env = *old_c_env;
         cl_index handle;
@@ -2263,6 +2263,16 @@ eval_form(cl_env_ptr env, cl_object form) {
 #endif
         }
         env->c_env = old_c_env;
+}
+
+static void
+eval_form(cl_env_ptr env, cl_object form) {
+        if (ECL_LISTP(form) || ECL_SYMBOLP(form)) {
+                eval_nontrivial_form(env, form);
+        } else {
+                env->values[0] = form;
+                env->nvalues = 1;
+        }
 }
 
 static int
