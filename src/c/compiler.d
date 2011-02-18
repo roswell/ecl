@@ -1283,9 +1283,9 @@ c_eval_when(cl_env_ptr env, cl_object args, int flags) {
                                 args = Cnil;
                 } else if (when_load_p(situation)) {
                         env->c_env->mode = FLAG_ONLY_LOAD;
-                        mode = compile_toplevel_body(env, args, flags);
+                        flags = compile_toplevel_body(env, args, flags);
                         env->c_env->mode = FLAG_LOAD;
-                        return mode;
+                        return flags;
                 } else {
                         args = Cnil;
                 }
@@ -2245,20 +2245,24 @@ eval_form(cl_env_ptr env, cl_object form) {
         frame.stack = frame.base = 0;
         frame.size = 0;
         frame.env = env;
+        env->nvalues = 0;
+        env->values[0] = Cnil;
         env->c_env = &new_c_env;
         handle = asm_begin(env);
         compile_form(env, form, FLAG_VALUES);
-        asm_op(env, OP_EXIT);
-        VALUES(0) = Cnil;
-        NVALUES = 0;
-        bytecodes = asm_end(env, handle, form);
-        ecl_interpret((cl_object)&frame, new_c_env.lex_env, bytecodes);
-        env->c_env = old_c_env;
+        if (current_pc(env) != handle) {
+                asm_op(env, OP_EXIT);
+                bytecodes = asm_end(env, handle, form);
+                VALUES(0) = ecl_interpret((cl_object)&frame,
+                                          new_c_env.lex_env,
+                                          bytecodes);
 #ifdef GBC_BOEHM
-        GC_free(bytecodes->bytecodes.code);
-        GC_free(bytecodes->bytecodes.data);
-        GC_free(bytecodes);
+                GC_free(bytecodes->bytecodes.code);
+                GC_free(bytecodes->bytecodes.data);
+                GC_free(bytecodes);
 #endif
+        }
+        env->c_env = old_c_env;
 }
 
 static int
@@ -2273,7 +2277,8 @@ compile_toplevel_body(cl_env_ptr env, cl_object body, int flags) {
                         body = ECL_CONS_CDR(body);
                         eval_form(env, form);
                 }
-                return compile_form(env, form, flags);
+                eval_form(env, form);
+                return FLAG_VALUES;
         } else {
                 return compile_body(env, body, flags);
         }
@@ -2858,8 +2863,7 @@ si_make_lambda(cl_object name, cl_object rest)
                            (compiler_env_p Cnil) (execute Ct))
 	volatile cl_compiler_env_ptr old_c_env;
 	struct cl_compiler_env new_c_env;
-	volatile cl_index handle;
-	cl_object bytecodes, interpreter_env, compiler_env;
+	cl_object interpreter_env, compiler_env;
 @
 	/*
 	 * Compile to bytecodes.
@@ -2876,40 +2880,23 @@ si_make_lambda(cl_object name, cl_object rest)
 	guess_environment(the_env, interpreter_env);
 	new_c_env.lex_env = env;
 	new_c_env.stepping = stepping != Cnil;
-	new_c_env.mode = Null(execute)? FLAG_LOAD : FLAG_EXECUTE;
-	handle = asm_begin(the_env);
 	CL_UNWIND_PROTECT_BEGIN(the_env) {
-		compile_form(the_env, form, FLAG_VALUES);
-		asm_op(the_env, OP_EXIT);
-		bytecodes = asm_end(the_env, handle, form);
+                if (Null(execute)) {
+                        cl_index handle = asm_begin(the_env);
+                        new_c_env.mode = FLAG_LOAD;
+                        compile_form(the_env, form, FLAG_VALUES);
+                        asm_op(the_env, OP_EXIT);
+                        the_env->values[0] = asm_end(the_env, handle, form);
+                        the_env->nvalues = 1;
+                } else {
+                        eval_form(the_env, form);
+                }
 	} CL_UNWIND_PROTECT_EXIT {
 		/* Clear up */
 		the_env->c_env = old_c_env;
 		memset(&new_c_env, 0, sizeof(new_c_env));
 	} CL_UNWIND_PROTECT_END;
-	if (Null(execute)) {
-                @(return bytecodes);
-        }
-	/*
-	 * Interpret using the given lexical environment.
-	 */
-	VALUES(0) = Cnil;
-	NVALUES = 0;
-	{
-                struct ecl_stack_frame frame;
-                cl_object output;
-                frame.t = t_frame;
-                frame.stack = frame.base = 0;
-                frame.size = 0;
-                frame.env = the_env;
-                output = ecl_interpret((cl_object)&frame, interpreter_env, bytecodes);
-#ifdef GBC_BOEHM
-                GC_free(bytecodes->bytecodes.code);
-                GC_free(bytecodes->bytecodes.data);
-                GC_free(bytecodes);
-#endif
-                return output;
-	}
+	return VALUES(0);
 @)
 
 void
