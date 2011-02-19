@@ -2412,13 +2412,6 @@ c_listA(cl_env_ptr env, cl_object args, int flags)
 
    ------------------------------------------------------------ */
 
-#define push(v,l) l = CONS(v, l)
-#define push_var(v, list) \
-	if (context == @'function') { \
-		unlikely_if (ecl_symbol_type(v) & stp_constant)	\
-			FEillegal_variable_name(v); } \
-	push(v, list)
-
 /*
   Handles special declarations, removes declarations from body
  */
@@ -2441,12 +2434,12 @@ c_listA(cl_env_ptr env, cl_object args, int flags)
                 }
                 for (form = ECL_CONS_CDR(form); !Null(form); ) {
                         cl_object sentence = pop(&form);
-                        push(sentence, declarations);
+                        declarations = ecl_cons(sentence, declarations);
                         if (pop(&sentence) == @'special') {
                                 while (!Null(sentence)) {
                                         cl_object v = pop(&sentence);
                                         assert_type_symbol(v);
-                                        push(v,specials);
+                                        specials = ecl_cons(v, specials);
                                 }
                         }
                 }
@@ -2513,18 +2506,25 @@ si_process_lambda(cl_object lambda)
 cl_object
 si_process_lambda_list(cl_object org_lambda_list, cl_object context)
 {
-#define AT_REQUIREDS	0
-#define AT_OPTIONALS	1
-#define AT_REST		2
-#define AT_KEYS		3
-#define AT_OTHER_KEYS	4
-#define AT_AUXS		5
+#define push(v,l) { cl_object c = *l = CONS(v, *l); l = &ECL_CONS_CDR(c); }
+#define assert_var_name(v) \
+	if (context == @'function') { \
+		unlikely_if (ecl_symbol_type(v) & stp_constant)	\
+			FEillegal_variable_name(v); }
 	const cl_env_ptr the_env = ecl_process_env();
-	cl_object v, key, init, spp, lambda_list = org_lambda_list;
-	cl_object reqs = Cnil, opts = Cnil, keys = Cnil, rest = Cnil, auxs = Cnil;
-	int nreq = 0, nopt = 0, nkey = 0, naux = 0, stage = 0;
+        cl_object lists[4] = {Cnil, Cnil, Cnil, Cnil};
+        cl_object *reqs = lists, *opts = lists+1, *keys = lists+2, *auxs = lists+3;
+	cl_object v, rest = Cnil, lambda_list = org_lambda_list;
+	int nreq = 0, nopt = 0, nkey = 0, naux = 0;
 	cl_object allow_other_keys = Cnil;
 	cl_object key_flag = Cnil;
+        enum {  AT_REQUIREDS,
+                AT_OPTIONALS,
+                AT_REST,
+                AT_KEYS,
+                AT_OTHER_KEYS,
+                AT_AUXS
+        } stage = AT_REQUIREDS;
 
 	if (!ECL_LISTP(lambda_list))
 		goto ILLEGAL_LAMBDA;
@@ -2547,8 +2547,8 @@ LOOP:
 		goto LOOP;
 	}
 	if (v == @'&rest' || (v == @'&body' && (context == @'si::macro' || context == @'destructuring-bind'))) {
-		if (ATOM(lambda_list))
-			goto ILLEGAL_LAMBDA;
+		unlikely_if (ATOM(lambda_list))
+                        goto ILLEGAL_LAMBDA;
 		v = ECL_CONS_CAR(lambda_list);
 		lambda_list = ECL_CONS_CDR(lambda_list);
 REST:		unlikely_if (stage >= AT_REST)
@@ -2580,42 +2580,46 @@ REST:		unlikely_if (stage >= AT_REST)
 	switch (stage) {
 	case AT_REQUIREDS:
 		nreq++;
-		push_var(v, reqs);
+                assert_var_name(v);
+		push(v, reqs);
 		break;
-	case AT_OPTIONALS:
-		spp = Cnil;
-		init = Cnil;
+	case AT_OPTIONALS: {
+		cl_object spp = Cnil;
+		cl_object init = Cnil;
 		if (!ATOM(v) && (context != @'ftype')) {
 			cl_object x = v;
+                        unlikely_if (!ECL_LISTP(x)) goto ILLEGAL_LAMBDA;
 			v = ECL_CONS_CAR(x);
                         x = ECL_CONS_CDR(x);
-			if (!ecl_endp(x)) {
+			if (!Null(x)) {
+                                unlikely_if (!ECL_LISTP(x)) goto ILLEGAL_LAMBDA;
 				init = ECL_CONS_CAR(x);
                                 x = ECL_CONS_CDR(x);
-				if (!ecl_endp(x)) {
+				if (!Null(x)) {
+                                        unlikely_if (!ECL_LISTP(x)) goto ILLEGAL_LAMBDA;
 					spp = ECL_CONS_CAR(x);
                                         x = ECL_CONS_CDR(x);
+                                        if (spp != Cnil) assert_var_name(spp);
 					unlikely_if (!Null(x))
 						goto ILLEGAL_LAMBDA;
 				}
 			}
 		}
 		nopt++;
-		push_var(v, opts);
+                assert_var_name(v);
+		push(v, opts);
 		push(init, opts);
-		if (spp != Cnil) {
-			push_var(spp, opts);
-		} else {
-			push(Cnil, opts);
-		}
+                push(spp, opts);
 		break;
+        }
 	case AT_REST:
 		/* If we get here, the user has declared more than one
 		 * &rest variable, as in (lambda (&rest x y) ...) */
 		goto ILLEGAL_LAMBDA;
-	case AT_KEYS:
-		init = Cnil;
-		spp = Cnil;
+	case AT_KEYS: {
+		cl_object init = Cnil;
+		cl_object spp = Cnil;
+                cl_object key;
                 if (context == @'ftype') {
                         unlikely_if (ATOM(v))
                                 goto ILLEGAL_LAMBDA;
@@ -2627,14 +2631,17 @@ REST:		unlikely_if (stage >= AT_REST)
 			cl_object x = v;
 			v = ECL_CONS_CAR(x);
                         x = ECL_CONS_CDR(x);
-			if (!ecl_endp(x)) {
+			if (!Null(x)) {
+                                unlikely_if (!ECL_LISTP(x)) goto ILLEGAL_LAMBDA;
 				init = ECL_CONS_CAR(x);
                                 x = ECL_CONS_CDR(x);
-				if (!ecl_endp(x)) {
+				if (!Null(x)) {
+                                        unlikely_if (!ECL_LISTP(x)) goto ILLEGAL_LAMBDA;
 					spp = ECL_CONS_CAR(x);
                                         x = ECL_CONS_CDR(x);
 					unlikely_if (!Null(x))
 						goto ILLEGAL_LAMBDA;
+                                        if (spp != Cnil) assert_var_name(spp);
 				}
 			}
 		}
@@ -2655,15 +2662,14 @@ REST:		unlikely_if (stage >= AT_REST)
         KEY_PUSH:
 		nkey++;
 		push(key, keys);
-		push_var(v, keys);
+                assert_var_name(v);
+		push(v, keys);
 		push(init, keys);
-		if (Null(spp)) {
-			push(Cnil, keys);
-		} else {
-			push_var(spp, keys);
-		}
+                push(spp, keys);
 		break;
-	default:
+        }
+	default: {
+                cl_object init;
 		if (ATOM(v)) {
 			init = Cnil;
 		} else if (Null(CDDR(v))) {
@@ -2673,8 +2679,10 @@ REST:		unlikely_if (stage >= AT_REST)
 		} else
 			goto ILLEGAL_LAMBDA;
 		naux++;
-		push_var(v, auxs);
+                assert_var_name(v);
+		push(v, auxs);
 		push(init, auxs);
+        }
 	}
 	goto LOOP;
 
@@ -2682,16 +2690,19 @@ OUTPUT:
 	if ((nreq+nopt+(!Null(rest))+nkey) >= CALL_ARGUMENTS_LIMIT)
 		FEprogram_error_noreturn("LAMBDA: Argument list ist too long, ~S.", 1,
 				org_lambda_list);
-	@(return CONS(MAKE_FIXNUM(nreq), cl_nreverse(reqs))
-		 CONS(MAKE_FIXNUM(nopt), cl_nreverse(opts))
+	@(return CONS(MAKE_FIXNUM(nreq), lists[0])
+		 CONS(MAKE_FIXNUM(nopt), lists[1])
 		 rest
 		 key_flag
-		 CONS(MAKE_FIXNUM(nkey), cl_nreverse(keys))
+		 CONS(MAKE_FIXNUM(nkey), lists[2])
 		 allow_other_keys
-		 cl_nreverse(auxs))
+		 lists[3])
 
 ILLEGAL_LAMBDA:
 	FEprogram_error_noreturn("LAMBDA: Illegal lambda list ~S.", 1, org_lambda_list);
+
+#undef push
+#undef assert_var_name
 }
 
 static void
