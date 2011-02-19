@@ -2415,7 +2415,7 @@ c_listA(cl_env_ptr env, cl_object args, int flags)
 #define push(v,l) l = CONS(v, l)
 #define push_var(v, list) \
 	if (context == @'function') { \
-		if (ecl_symbol_type(v) & stp_constant)	\
+		unlikely_if (ecl_symbol_type(v) & stp_constant)	\
 			FEillegal_variable_name(v); } \
 	push(v, list)
 
@@ -2526,24 +2526,22 @@ si_process_lambda_list(cl_object org_lambda_list, cl_object context)
 	cl_object allow_other_keys = Cnil;
 	cl_object key_flag = Cnil;
 
-	if (!CONSP(lambda_list) && lambda_list != Cnil)
+	if (!ECL_LISTP(lambda_list))
 		goto ILLEGAL_LAMBDA;
 LOOP:
-	if (ATOM(lambda_list)) {
-		if (lambda_list == Cnil)
-			goto OUTPUT;
-		else if (context == @'function' || context == @'ftype')
+        if (Null(lambda_list))
+                goto OUTPUT;
+	if (!ECL_LISTP(lambda_list)) {
+		unlikely_if (context == @'function' || context == @'ftype')
 			goto ILLEGAL_LAMBDA;
-		else {
-			v = lambda_list;
-			lambda_list = Cnil;
-			goto REST;
-		}
+                v = lambda_list;
+                lambda_list = Cnil;
+                goto REST;
 	}
 	v = ECL_CONS_CAR(lambda_list);
 	lambda_list = ECL_CONS_CDR(lambda_list);
 	if (v == @'&optional') {
-		if (stage >= AT_OPTIONALS)
+		unlikely_if (stage >= AT_OPTIONALS)
 			goto ILLEGAL_LAMBDA;
 		stage = AT_OPTIONALS;
 		goto LOOP;
@@ -2553,28 +2551,28 @@ LOOP:
 			goto ILLEGAL_LAMBDA;
 		v = ECL_CONS_CAR(lambda_list);
 		lambda_list = ECL_CONS_CDR(lambda_list);
-REST:		if (stage >= AT_REST)
+REST:		unlikely_if (stage >= AT_REST)
 			goto ILLEGAL_LAMBDA;
 		stage = AT_REST;
 		rest = v;
 		goto LOOP;
 	}
 	if (v == @'&key') {
-		if (stage >= AT_KEYS)
+		unlikely_if (stage >= AT_KEYS)
 			goto ILLEGAL_LAMBDA;
 		key_flag = Ct;
 		stage = AT_KEYS;
 		goto LOOP;
 	}
 	if (v == @'&aux') {
-		if (stage >= AT_AUXS)
+		unlikely_if (stage >= AT_AUXS)
 			goto ILLEGAL_LAMBDA;
 		stage = AT_AUXS;
 		goto LOOP;
 	}
 	if (v == @'&allow-other-keys') {
 		allow_other_keys = Ct;
-		if (stage != AT_KEYS)
+		unlikely_if (stage != AT_KEYS)
 			goto ILLEGAL_LAMBDA;
 		stage = AT_OTHER_KEYS;
 		goto LOOP;
@@ -2596,7 +2594,8 @@ REST:		if (stage >= AT_REST)
                                 x = ECL_CONS_CDR(x);
 				if (!ecl_endp(x)) {
 					spp = ECL_CONS_CAR(x);
-					if (!ecl_endp(ECL_CONS_CDR(x)))
+                                        x = ECL_CONS_CDR(x);
+					unlikely_if (!Null(x))
 						goto ILLEGAL_LAMBDA;
 				}
 			}
@@ -2618,7 +2617,7 @@ REST:		if (stage >= AT_REST)
 		init = Cnil;
 		spp = Cnil;
                 if (context == @'ftype') {
-                        if (!CONSP(v))
+                        unlikely_if (ATOM(v))
                                 goto ILLEGAL_LAMBDA;
                         key = ECL_CONS_CAR(v);
                         v = CADR(v);
@@ -2633,16 +2632,18 @@ REST:		if (stage >= AT_REST)
                                 x = ECL_CONS_CDR(x);
 				if (!ecl_endp(x)) {
 					spp = ECL_CONS_CAR(x);
-					if (!ecl_endp(ECL_CONS_CDR(x)))
+                                        x = ECL_CONS_CDR(x);
+					unlikely_if (!Null(x))
 						goto ILLEGAL_LAMBDA;
 				}
 			}
 		}
 		if (CONSP(v)) {
 			key = ECL_CONS_CAR(v);
-			if (ecl_endp(ECL_CONS_CDR(v)) || !ecl_endp(CDDR(v)))
+                        v = ECL_CONS_CDR(v);
+			unlikely_if (ATOM(v) || !Null(ECL_CONS_CDR(v)))
 				goto ILLEGAL_LAMBDA;
-			v = CADR(v);
+			v = ECL_CONS_CAR(v);
 			if (context == @'function')
 				assert_type_symbol(v);
 			assert_type_symbol(key);
@@ -2665,7 +2666,7 @@ REST:		if (stage >= AT_REST)
 	default:
 		if (ATOM(v)) {
 			init = Cnil;
-		} else if (ecl_endp(CDDR(v))) {
+		} else if (Null(CDDR(v))) {
 			cl_object x = v;
 			v = ECL_CONS_CAR(x);
 			init = CADR(x);
