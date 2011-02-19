@@ -128,8 +128,8 @@ static int c_listA(cl_env_ptr env, cl_object args, int push);
 
 static cl_object ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda);
 
-static void FEillegal_variable_name(cl_object) __attribute__((noreturn));
-static void FEill_formed_input(void) __attribute__((noreturn));
+static void FEillegal_variable_name(cl_object) ecl_attr_noreturn;
+static void FEill_formed_input(void) ecl_attr_noreturn;
 
 /* -------------------- SAFE LIST HANDLING -------------------- */
 
@@ -1506,8 +1506,8 @@ c_let_leta(cl_env_ptr env, int op, cl_object args, int flags) {
 	cl_object old_variables = env->c_env->variables;
 
 	bindings = cl_car(args);
-	body = c_process_declarations(CDR(args));
-	specials = VALUES(3);
+	body = c_process_declarations(ECL_CONS_CDR(args));
+	specials = env->values[3];
 
 	/* Optimize some common cases */
 	switch(ecl_length(bindings)) {
@@ -1575,7 +1575,7 @@ c_locally(cl_env_ptr env, cl_object args, int flags) {
 
 	/* First use declarations by declaring special variables... */
 	args = c_process_declarations(args);
-	c_declare_specials(env, VALUES(3));
+	c_declare_specials(env, env->values[3]);
 
 	/* ...and then process body */
 	flags = compile_toplevel_body(env, args, flags);
@@ -1642,7 +1642,7 @@ c_multiple_value_bind(cl_env_ptr env, cl_object args, int flags)
         default: {
                 cl_object old_variables = env->c_env->variables;
                 cl_object body = c_process_declarations(args);
-                cl_object specials = VALUES(3);
+                cl_object specials = env->values[3];
                 compile_form(env, value, FLAG_VALUES);
 		for (vars=cl_reverse(vars); n--; ) {
 			cl_object var = pop(&vars);
@@ -1959,7 +1959,7 @@ c_symbol_macrolet(cl_env_ptr env, cl_object args, int flags)
 
 	def_list = pop(&args);
 	body = c_process_declarations(args);
-	specials = VALUES(3);
+	specials = env->values[3];
 
 	/* Scan the list of definitions */
 	while (!Null(def_list)) {
@@ -2253,9 +2253,9 @@ eval_nontrivial_form(cl_env_ptr env, cl_object form) {
         if (current_pc(env) != handle) {
                 asm_op(env, OP_EXIT);
                 bytecodes = asm_end(env, handle, form);
-                VALUES(0) = ecl_interpret((cl_object)&frame,
-                                          new_c_env.lex_env,
-                                          bytecodes);
+                env->values[0] = ecl_interpret((cl_object)&frame,
+                                               new_c_env.lex_env,
+                                               bytecodes);
 #ifdef GBC_BOEHM
                 GC_free(bytecodes->bytecodes.code);
                 GC_free(bytecodes->bytecodes.data);
@@ -2454,31 +2454,33 @@ c_listA(cl_env_ptr env, cl_object args, int flags)
 	@(return cl_nreverse(declarations) body documentation specials)
 @)
 
-static size_t si_process_lambda_ctr = 0;
-
 cl_object
 si_process_lambda(cl_object lambda)
 {
 	cl_object documentation, declarations, specials;
 	cl_object lambda_list, body;
-
-	if (ATOM(lambda))
+        const cl_env_ptr env = ecl_process_env();
+	unlikely_if (ATOM(lambda))
 		FEprogram_error_noreturn("LAMBDA: No lambda list.", 0);
+
 	lambda_list = ECL_CONS_CAR(lambda);
+        body = ECL_CONS_CDR(lambda);
+	declarations = @si::process-declarations(2, body, Ct);
+	body = env->values[1];
+	documentation = env->values[2];
+	specials = env->values[3];
 
-	declarations = @si::process-declarations(2, CDR(lambda), Ct);
-	body = VALUES(1);
-	documentation = VALUES(2);
-	specials = VALUES(3);
-
-	si_process_lambda_ctr++;
-
-	VALUES(0) = si_process_lambda_list(lambda_list, @'function');
-	VALUES(NVALUES++) = documentation;
-	VALUES(NVALUES++) = specials;
-	VALUES(NVALUES++) = declarations;
-	VALUES(NVALUES++) = body;
-	return VALUES(0);
+        lambda_list = si_process_lambda_list(lambda_list, @'function');
+        {
+        cl_index n = env->nvalues;
+	env->values[0] = lambda_list;
+	env->values[n++] = documentation;
+	env->values[n++] = specials;
+	env->values[n++] = declarations;
+	env->values[n++] = body;
+        env->nvalues = n;
+        }
+	return lambda_list;
 }
 
 /*
@@ -2726,16 +2728,16 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
 	new_c_env.constants_size = 0;
 
 	reqs = si_process_lambda(lambda);
-	opts = VALUES(1);
-	rest = VALUES(2);
-	key  = VALUES(3);
-	keys = VALUES(4);
-	allow_other_keys = VALUES(5);
-	auxs = VALUES(6);
-	doc  = VALUES(7);
-	specials = VALUES(8);
-	decl = VALUES(9);
-	body = VALUES(10);
+	opts = env->values[1];
+	rest = env->values[2];
+	key  = env->values[3];
+	keys = env->values[4];
+	allow_other_keys = env->values[5];
+	auxs = env->values[6];
+	doc  = env->values[7];
+	specials = env->values[8];
+	decl = env->values[9];
+	body = env->values[10];
 
 	handle = asm_begin(env);
 
@@ -2906,7 +2908,7 @@ si_make_lambda(cl_object name, cl_object rest)
 		the_env->c_env = old_c_env;
 		memset(&new_c_env, 0, sizeof(new_c_env));
 	} CL_UNWIND_PROTECT_END;
-	return VALUES(0);
+	return the_env->values[0];
 @)
 
 void
