@@ -496,10 +496,6 @@ ECL_CHECK_SIZED_INTEGER_TYPE(16)
 ECL_CHECK_SIZED_INTEGER_TYPE(32)
 ECL_CHECK_SIZED_INTEGER_TYPE(64)
 
-if test "${ECL_UINT16_T}${CL_FIXNUM_BITS}" = "16"; then
-  ECL_UINT16_T="cl_index"
-  ECL_INT16_T="cl_fixnum"
-fi
 if test "${ECL_UINT32_T}${CL_FIXNUM_BITS}" = "32"; then
   ECL_UINT32_T="cl_index"
   ECL_INT32_T="cl_fixnum"
@@ -507,6 +503,10 @@ fi
 if test "${ECL_UINT64_T}${CL_FIXNUM_BITS}" = "64"; then
   ECL_UINT64_T="cl_index"
   ECL_INT64_T="cl_fixnum"
+fi
+if test "${ECL_UINT16_T}${CL_FIXNUM_BITS}" = "16"; then
+  ECL_UINT16_T=$ECL_UINT32_T
+  ECL_INT16_T=$ECL_INT32_T
 fi
 
 if test "x${ECL_UINT8_T}" = "x" -o "x${ECL_UINT8_T}" = xno; then

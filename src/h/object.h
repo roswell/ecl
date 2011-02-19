@@ -413,13 +413,6 @@ typedef enum {			/*  array element type  */
 	aet_last_type = aet_bc
 } cl_elttype;
 
-typedef unsigned char ecl_base_char;
-#ifdef ECL_UNICODE
-typedef int32_t ecl_character;
-#else
-typedef int ecl_character;
-#endif
-
 union ecl_array_data {
 	cl_object     *t;
         ecl_base_char *bc;

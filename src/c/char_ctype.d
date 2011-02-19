@@ -67,6 +67,11 @@ ecl_char_downcase(ecl_character code)
 
 #else /* ECL_UNICODE */
 
+/*
+ * 21-bits Unicode (0 to #x110000 char codes)
+ */
+
+#if ECL_UNICODE > 16
 static uint8_t *
 ucd_char_data(ecl_character code)
 {
@@ -80,14 +85,30 @@ ucd_value_0(ecl_character code)
 	return ucd_char_data(code)[0];
 }
 
-#define read_3bytes(c) c[0] + (c[1] << 8) + (c[2] << 16)
+#define read_case_bytes(c) (c[0] + (c[1] << 8) + (c[3] << 16))
+#endif
 
-static ecl_character
-ucd_value_1(ecl_character code)
+/*
+ * 16-bits Unicode (0 to #x110000 char codes)
+ * Each character occupies 3 bytes
+ */
+
+#if ECL_UNICODE <= 16
+static uint8_t *
+ucd_char_data(ecl_character code)
 {
-	uint8_t *c = ucd_char_data(code);
-	return read_3bytes(c);
+	unsigned char page = cl_core.ucd_pages[code >> 8];
+	return cl_core.ucd_data + ((cl_index)page * (256 * 3)) + 3 * (code & 0xFF);
 }
+
+static cl_index
+ucd_value_0(ecl_character code)
+{
+	return ucd_char_data(code)[0];
+}
+
+#define read_case_bytes(c) (c[0] + (c[1] << 8))
+#endif
 
 static int
 ucd_general_category(ecl_character code)
@@ -145,7 +166,7 @@ ecl_char_upcase(ecl_character code)
 	uint8_t *c = ucd_char_data(code);
 	if (c[0] == 1) {
 		c++;
-		return read_3bytes(c);
+		return read_case_bytes(c);
 	} else {
 		return code;
 	}
@@ -157,7 +178,7 @@ ecl_char_downcase(ecl_character code)
 	uint8_t *c = ucd_char_data(code);
 	if (c[0] == 0) {
 		c++;
-		return read_3bytes(c);
+		return read_case_bytes(c);
 	} else {
 		return code;
 	}

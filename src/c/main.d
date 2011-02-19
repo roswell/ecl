@@ -266,11 +266,17 @@ cl_shutdown(void)
 static void
 read_char_database()
 {
+#if ECL_UNICODE > 16
+#define UCD "ucd.dat"
+#else
+#define UCD "ucd16.dat"
+#endif
 	cl_object s = si_base_string_concatenate(2,
 						 si_get_library_pathname(),
-						 make_constant_base_string("ucd.dat"));
+						 make_constant_base_string(UCD));
 	cl_object output = Cnil;
 	FILE *f = fopen((char *)s->base_string.self, "rb");
+        printf("%s\n", UCD);
 	if (f) {
 		cl_index size, read;
 		if (!fseek(f, 0, SEEK_END)) {
@@ -299,7 +305,11 @@ read_char_database()
 		cl_core.unicode_database = output;
 		cl_core.ucd_misc = p + 2;
 		cl_core.ucd_pages = cl_core.ucd_misc + (p[0] + (p[1]<<8));
+#if ECL_UNICODE > 16
 		cl_core.ucd_data = cl_core.ucd_pages + (0x110000 / 256);
+#else
+		cl_core.ucd_data = cl_core.ucd_pages + (65536 / 256);
+#endif
 	}
 	ECL_SET(@'si::+unicode-database+', output);
 }
