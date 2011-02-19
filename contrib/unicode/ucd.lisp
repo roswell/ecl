@@ -1,9 +1,14 @@
 ;;; Common
 
-(defparameter *extension-directory*
+(defvar *extension-directory*
   (make-pathname :directory (pathname-directory *load-truename*)))
 
+(defparameter *unicode-char-limit* #x110000)
 (defparameter *page-size-exponent* 8)
+(defparameter *page-size* (ash 1 *page-size-exponent*))
+
+(defun total-ucd-pages ()
+  (floor *unicode-char-limit* *page-size*))
 
 (defun cp-high (cp)
   (ash cp (- *page-size-exponent*)))
@@ -90,16 +95,13 @@
   (setq *name-size* 0)
   (setq *misc-hash* (make-hash-table :test #'equal))
   (setq *misc-index* -1)
-  (setq *misc-table* (make-array 256 :fill-pointer 0))
+  (setq *misc-table* (make-array *page-size* :fill-pointer 0))
   (setq *both-cases* nil)
   (setq *decompositions* 0)
   (setq *decomposition-types* (make-hash-table :test #'equal))
   (setq *decomposition-length-max* 0)
-  (setq *decomposition-base* (make-array (ash #x110000
-                                              (- *page-size-exponent*))
-                                         :initial-element nil))
-  (setq *ucd-base* (make-array (ash #x110000 (- *page-size-exponent*))
-                               :initial-element nil))
+  (setq *decomposition-base* (make-array (total-ucd-pages) :initial-element nil))
+  (setq *ucd-base* (make-array (total-ucd-pages) :initial-element nil))
   (with-open-file (*standard-input*
 		   (make-pathname :name "UnicodeData" :type "txt"
 				  :defaults *extension-directory*)
@@ -286,39 +288,48 @@
                                        nil))))))
 
 (defun write-3-byte (triplet stream)
-  (write-byte (ldb (byte 8 0) triplet) stream)
-  (write-byte (ldb (byte 8 8) triplet) stream)
+  (write-2-byte triplet stream)
   (write-byte (ldb (byte 8 16) triplet) stream))
+
+(defun write-2-byte (doublet stream)
+  (write-byte (ldb (byte 8 0) doublet) stream)
+  (write-byte (ldb (byte 8 8) doublet) stream))
 
 (defun digit-to-byte (digit)
   (if (string= "" digit)
       255
       (parse-integer digit)))
 
-(defun output ()
-  (let ((hash (make-hash-table :test #'equalp))
-        (index 0))
+(defun output (&optional small-unicode)
+  (let* ((num-pages (/ (if small-unicode #x10000 *unicode-char-limit*)
+                       *page-size*))
+         (ucd-file-name (concatenate 'base-string "ucd" (if small-unicode "32" "")))
+         (hash (make-hash-table :test #'equalp))
+         (index 0))
+    (print num-pages)
     (loop for page across *ucd-base*
-          do (when page
-               (unless (gethash page hash)
-                 (setf (gethash page hash)
-                       (incf index)))))
+       for i from 0 below num-pages
+       do (when page
+            (unless (gethash page hash)
+              (setf (gethash page hash)
+                    (incf index)))))
     (let ((array (make-array (1+ index))))
       (maphash #'(lambda (key value)
                    (setf (aref array value) key))
                hash)
       (setf (aref array 0)
             (make-array (ash 1 *page-size-exponent*) :initial-element nil))
-      (with-open-file (stream (make-pathname :name "ucd"
+      (with-open-file (stream (make-pathname :name ucd-file-name
                                              :type "dat"
                                              :defaults *extension-directory*)
                               :direction :output
                               :element-type '(unsigned-byte 8)
                               :if-exists :supersede
                               :if-does-not-exist :create)
+        (print (truename stream))
 	(let ((offset (* (length *misc-table*) 8)))
-	  (write-byte (mod offset 256) stream)
-	  (write-byte (floor offset 256) stream))
+	  (write-byte (mod offset *page-size*) stream)
+	  (write-byte (floor offset *page-size*) stream))
         (loop for (gc-index bidi-index ccc-index decimal-digit digit
                             bidi-mirrored)
               across *misc-table*
@@ -331,15 +342,18 @@
               do (write-byte 0 stream)
               do (write-byte 0 stream))
         (loop for page across *ucd-base*
+           for i from 0 below num-pages
            do (write-byte (if page (gethash page hash) 0) stream))
         (loop for page across array
+           for i from 0 below num-pages
            do (loop for entry across page
                  do (write-byte (if entry
                                     (aref *misc-mapping* (ucd-misc entry))
                                     255)
                                 stream)
-                 do (write-3-byte (if entry (ucd-transform entry) 0)
-                                  stream))))))
+                 do (funcall (if small-unicode 'write-2-byte 'write-3-byte)
+                             (if entry (ucd-transform entry) 0)
+                             stream))))))
   #+(or)
   (with-open-file (f (make-pathname :name "ucd-names" :type "lisp-expr"
                                     :defaults *extension-directory*)
@@ -397,7 +411,7 @@
   (values))
 
 (defun read-compiled-ucd ()
-  (with-open-file (stream (make-pathname :name "ucd"
+  (with-open-file (stream (make-pathname :name *ucd-file-name*
                                          :type "dat"
                                          :defaults *extension-directory*)
                           :direction :input
@@ -410,3 +424,4 @@
 
 (slurp-ucd)
 (output)
+(output t)
