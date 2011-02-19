@@ -303,7 +303,7 @@
 (defun output (&optional small-unicode)
   (let* ((num-pages (/ (if small-unicode #x10000 *unicode-char-limit*)
                        *page-size*))
-         (ucd-file-name (concatenate 'base-string "ucd" (if small-unicode "32" "")))
+         (ucd-file-name (concatenate 'base-string "ucd" (if small-unicode "16" "")))
          (hash (make-hash-table :test #'equalp))
          (index 0))
     (print num-pages)
