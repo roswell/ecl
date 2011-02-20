@@ -262,61 +262,6 @@ cl_shutdown(void)
 	ecl_set_option(ECL_OPT_BOOTED, -1);
 }
 
-#ifdef ECL_UNICODE
-static void
-read_char_database()
-{
-#if ECL_UNICODE > 16
-#define UCD "ucd.dat"
-#else
-#define UCD "ucd16.dat"
-#endif
-	cl_object s = si_base_string_concatenate(2,
-						 si_get_library_pathname(),
-						 make_constant_base_string(UCD));
-	cl_object output = Cnil;
-	FILE *f = fopen((char *)s->base_string.self, "rb");
-        printf("%s\n", UCD);
-	if (f) {
-		cl_index size, read;
-		if (!fseek(f, 0, SEEK_END)) {
-			size = ftell(f);
-			fseek(f, 0, SEEK_SET);
-			output = ecl_alloc_simple_vector(size, aet_b8);	    
-			read = 0;
-			while (read < size) {
-				cl_index res;
-				res = fread(output->vector.self.b8 + read, 1, size - read, f);
-				if (res > 0) {
-					read += res;
-                                } else {
-					output = Cnil;
-					break;
-				}
-			}
-		}
-		fclose(f);
-	}
-	if (output == Cnil) {
-		printf("Unable to read Unicode database: %s\n", s->base_string.self);
-		abort();
-	} else {
-		uint8_t *p = output->vector.self.b8;
-		cl_core.unicode_database = output;
-		cl_core.ucd_misc = p + 2;
-		cl_core.ucd_pages = cl_core.ucd_misc + (p[0] + (p[1]<<8));
-#if ECL_UNICODE > 16
-		cl_core.ucd_data = cl_core.ucd_pages + (0x110000 / 256);
-#else
-		cl_core.ucd_data = cl_core.ucd_pages + (65536 / 256);
-#endif
-	}
-	ECL_SET(@'si::+unicode-database+', output);
-}
-#else
-#define read_char_database() (void)0
-#endif
-
 ecl_def_ct_single_float(default_rehash_size,1.5f,static,const);
 ecl_def_ct_single_float(default_rehash_threshold,0.75f,static,const);
 ecl_def_ct_base_string(str_common_lisp,"COMMON-LISP",11,static,const);
@@ -456,12 +401,6 @@ struct cl_core_struct cl_core = {
 #endif
 	Cnil, /* signal_queue */
 
-#ifdef ECL_UNICODE
-	Cnil, /* unicode_database */
-	NULL, /* ucd_misc */
-	NULL, /* ucd_pages */
-	NULL, /* ucd_data */
-#endif
 	NULL, /* default_sigmask */
 
 #ifdef ECL_THREADS
@@ -628,11 +567,6 @@ cl_boot(int argc, char **argv)
         env->thread_local_bindings = env->bindings_array->vector.self.t;
 	ECL_SET(@'mp::*current-process*', env->own_process);
 #endif
-
-        /*
-         * Initialize Unicode character database.
-         */
-	read_char_database();
 
 	/*
          * Load character names. The following hash table is a map

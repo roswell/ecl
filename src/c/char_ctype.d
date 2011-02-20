@@ -67,16 +67,20 @@ ecl_char_downcase(ecl_character code)
 
 #else /* ECL_UNICODE */
 
+extern const unsigned char ecl_ucd_misc_table[];
+extern const unsigned char *ecl_ucd_page_table[];
+extern const unsigned char ecl_ucd_page_table_1[];
+
 /*
  * 21-bits Unicode (0 to #x110000 char codes)
  */
 
 #if ECL_UNICODE > 16
-static uint8_t *
+const unsigned char *
 ucd_char_data(ecl_character code)
 {
-	unsigned char page = cl_core.ucd_pages[code >> 8];
-	return cl_core.ucd_data + ((cl_index)page << 10) + 4 * (code & 0xFF);
+	const unsigned char *page = ecl_ucd_page_table[code >> 8];
+        return page + (4 * (code & 0xFF));
 }
 
 static cl_index
@@ -85,7 +89,7 @@ ucd_value_0(ecl_character code)
 	return ucd_char_data(code)[0];
 }
 
-#define read_case_bytes(c) (c[0] + (c[1] << 8) + (c[3] << 16))
+#define read_case_bytes(c) (c[1] + (c[2] << 8) + (c[3] << 16))
 #endif
 
 /*
@@ -94,11 +98,11 @@ ucd_value_0(ecl_character code)
  */
 
 #if ECL_UNICODE <= 16
-static uint8_t *
+const unsigned char *
 ucd_char_data(ecl_character code)
 {
-	unsigned char page = cl_core.ucd_pages[code >> 8];
-	return cl_core.ucd_data + ((cl_index)page * (256 * 3)) + 3 * (code & 0xFF);
+	const unsigned char *page = ecl_ucd_page_table[code >> 8];
+        return page + (3 * (code & 0xFF));
 }
 
 static cl_index
@@ -107,19 +111,19 @@ ucd_value_0(ecl_character code)
 	return ucd_char_data(code)[0];
 }
 
-#define read_case_bytes(c) (c[0] + (c[1] << 8))
+#define read_case_bytes(c) (c[1] + (c[2] << 8))
 #endif
 
 static int
 ucd_general_category(ecl_character code)
 {
-	return cl_core.ucd_misc[8 * ucd_value_0(code)];
+	return ecl_ucd_misc_table[8 * ucd_value_0(code)];
 }
 
 static int
 ucd_decimal_digit(ecl_character code)
 {
-	return cl_core.ucd_misc[3 + 8 * ucd_value_0(code)];
+	return ecl_ucd_misc_table[3 + 8 * ucd_value_0(code)];
 }
 
 bool
@@ -163,9 +167,8 @@ ecl_alphanumericp(ecl_character i)
 ecl_character
 ecl_char_upcase(ecl_character code)
 {
-	uint8_t *c = ucd_char_data(code);
+	const unsigned char *c = ucd_char_data(code);
 	if (c[0] == 1) {
-		c++;
 		return read_case_bytes(c);
 	} else {
 		return code;
@@ -175,9 +178,8 @@ ecl_char_upcase(ecl_character code)
 ecl_character
 ecl_char_downcase(ecl_character code)
 {
-	uint8_t *c = ucd_char_data(code);
+	const unsigned char *c = ucd_char_data(code);
 	if (c[0] == 0) {
-		c++;
 		return read_case_bytes(c);
 	} else {
 		return code;

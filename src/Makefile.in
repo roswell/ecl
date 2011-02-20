@@ -69,8 +69,6 @@ ecl/external.h: c/ecl/external.h c/ecl/external.h
 	cp -rf $(srcdir)/h/*.h $(srcdir)/h/impl ecl/
 
 bin/ecl$(EXE): ecl_min$(EXE) compile.lsp ecl/external.h build-stamp $(top_srcdir)/lsp/*.lsp
-	cp $(top_srcdir)/../contrib/unicode/ucd.dat .
-	cp $(top_srcdir)/../contrib/unicode/ucd16.dat .
 	if [ -f CROSS-COMPILER ]; then \
 		./CROSS-COMPILER compile; \
 	else \
@@ -144,8 +142,6 @@ install:
 	for i in $(TARGETS); do \
 	  $(INSTALL_PROGRAM) $$i $(DESTDIR)$(bindir); \
 	done
-	$(INSTALL_DATA) ucd.dat $(DESTDIR)$(ecldir)/
-	$(INSTALL_DATA) ucd16.dat $(DESTDIR)$(ecldir)/
 	if [ -d encodings ]; then \
 	  $(mkinstalldirs) $(DESTDIR)$(ecldir)/encodings; \
 	  for i in ./encodings/*; do \

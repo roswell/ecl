@@ -231,12 +231,6 @@ struct cl_core_struct {
 #endif
 	cl_object signal_queue;
 
-#ifdef ECL_UNICODE
-	cl_object unicode_database;
-	uint8_t *ucd_misc;
-	uint8_t *ucd_pages;
-	uint8_t *ucd_data;
-#endif
 	void *default_sigmask;
 
 #ifdef ECL_THREADS

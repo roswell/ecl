@@ -871,10 +871,12 @@ if test "x${enable_unicode}" != "xno"; then
       AC_DEFINE(ECL_UNICODE, [16], [Support for Unicode])
       CHAR_CODE_LIMIT=65536
       ECL_CHARACTER=$ECL_INT16_T
+      EXTRA_OBJS="$EXTRA_OBJS unicode/ucd16.o unicode/ucd16-0000.o unicode/ucd16-0016.o unicode/ucd16-0032.o unicode/ucd16-0048.o unicode/ucd16-0064.o"
    else
       AC_DEFINE(ECL_UNICODE, [21], [Support for Unicode])
       CHAR_CODE_LIMIT=1114112
       ECL_CHARACTER=$ECL_INT32_T
+      EXTRA_OBJS="$EXTRA_OBJS unicode/ucd.o unicode/ucd-0000.o unicode/ucd-0016.o unicode/ucd-0032.o unicode/ucd-0048.o unicode/ucd-0064.o unicode/ucd-0080.o unicode/ucd-0096.o"
    fi
 else
    CHAR_CODE_LIMIT=256
