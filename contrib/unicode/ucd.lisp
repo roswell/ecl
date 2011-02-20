@@ -31,6 +31,7 @@
 (defparameter *different-titlecases* nil)
 (defparameter *different-numerics* nil)
 (defparameter *name-size* 0)
+(defparameter *misc-classless* 0)
 (defparameter *misc-hash* (make-hash-table :test #'equal))
 (defparameter *misc-index* -1)
 (defparameter *misc-table* nil)
@@ -105,10 +106,11 @@
   (with-open-file (*standard-input*
 		   (make-pathname :name "UnicodeData" :type "txt"
 				  :defaults *extension-directory*)
-                   :direction :input :external-format '(:utf-8 :crlf))
+                   :direction :input :external-format :default)
     (loop for line = (read-line nil nil)
           while line
           do (slurp-ucd-line line)))
+  (setf *misc-classless* (hash-misc 0 0 0 "" "" "N" nil))
   (second-pass)
   (build-misc-table)
   *decompositions*)
@@ -306,7 +308,6 @@
          (ucd-file-name (concatenate 'base-string "ucd" (if small-unicode "16" "")))
          (hash (make-hash-table :test #'equalp))
          (index 0))
-    (print num-pages)
     (loop for page across *ucd-base*
        for i from 0 below num-pages
        do (when page
@@ -326,7 +327,6 @@
                               :element-type '(unsigned-byte 8)
                               :if-exists :supersede
                               :if-does-not-exist :create)
-        (print (truename stream))
 	(let ((offset (* (length *misc-table*) 8)))
 	  (write-byte (mod offset *page-size*) stream)
 	  (write-byte (floor offset *page-size*) stream))
@@ -341,6 +341,7 @@
               do (write-byte (if (string= "N" bidi-mirrored) 0 1) stream)
               do (write-byte 0 stream)
               do (write-byte 0 stream))
+        (print (length *misc-table*))
         (loop for page across *ucd-base*
            for i from 0 below num-pages
            do (write-byte (if page (gethash page hash) 0) stream))
@@ -349,7 +350,7 @@
            do (loop for entry across page
                  do (write-byte (if entry
                                     (aref *misc-mapping* (ucd-misc entry))
-                                    255)
+                                    *misc-classless*)
                                 stream)
                  do (funcall (if small-unicode 'write-2-byte 'write-3-byte)
                              (if entry (ucd-transform entry) 0)
@@ -410,6 +411,98 @@
                                  collect i)))))
   (values))
 
+(defmacro with-c-file ((stream-var name) &rest body)
+  `(with-open-file (,stream-var ,name
+                                :direction :output
+                                :external-format #-unicode :default #+unicode :us-ascii
+                                :if-exists :supersede
+                                :if-does-not-exist :create)
+     ,@body))
+
+(defun output-c (&optional small-unicode)
+  (let* ((num-pages (/ (if small-unicode #x10000 *unicode-char-limit*)
+                       *page-size*))
+         (ucd-file-name (concatenate 'base-string "ucd" (if small-unicode "16" "")))
+         (hash (make-hash-table :test #'equalp))
+         (index 0)
+         array)
+    (with-c-file (stream (make-pathname :name ucd-file-name
+                                        :type "c"
+                                        :defaults *extension-directory*))
+      (format stream "~%extern const char ecl_ucd_page_table_0[];")
+      (loop for page across *ucd-base*
+         for i from 0 below num-pages
+         do (when page
+              (unless (gethash page hash)
+                (setf (gethash page hash) (incf index))
+                (print index)
+                (format stream "~%extern const char ecl_ucd_page_table_~D[];" index))))
+      (setf array (make-array (incf index)))
+      (maphash #'(lambda (key value)
+                   (setf (aref array value) key))
+               hash)
+      (setf (aref array 0)
+            (make-array (ash 1 *page-size-exponent*) :initial-element nil))
+      (format stream "~%~%const unsigned char ecl_ucd_misc_table[~D] = {"
+              (* 8 (length *misc-table*)))
+      (loop with comma = ""
+         for (gc-index bidi-index ccc-index decimal-digit digit
+                       bidi-mirrored)
+         across *misc-table*
+         do (format stream "~%~A~D, ~D, ~D, ~D, ~D, ~D, ~D, ~D"
+                    comma
+                    gc-index bidi-index ccc-index
+                    (digit-to-byte decimal-digit)
+                    (digit-to-byte digit)
+                    (if (string= "N" bidi-mirrored) 0 1)
+                    0
+                    0)
+         do (setf comma ","))
+      (print *misc-table*)
+      (print (length *misc-table*))
+      (format stream "~%};")
+      (format stream "~%~%const unsigned char *const ecl_ucd_page_table[~D] = {"
+              num-pages)
+      (loop with comma = ""
+         for page across *ucd-base*
+         for i from 0 below num-pages
+         for name = (if page
+                        (format nil "ecl_ucd_page_table_~D" (gethash page hash))
+                        ;; fixme, this was so previously
+                        "ecl_ucd_page_table_0")
+         do (format stream "~%~A~A"
+                    comma
+                    name)
+         do (setf comma ","))
+      (format stream "~%};"))
+    (print index)
+    (loop for i from 0 below index by 16
+       for next = (min index (+ i 16))
+       for c-file = (format nil "~A-~4,'0D" ucd-file-name i)
+       do (with-c-file (stream (make-pathname :name c-file
+                                              :type "c"
+                                              :defaults *extension-directory*))
+            (loop for j from i below next
+               for page = (aref array j)
+               do (format stream "~%const unsigned char ecl_ucd_page_table_~D[] = {" j)
+               do (loop with comma = ""
+                     for entry across page
+                     for other-case = (if entry (ucd-transform entry) 0)
+                     do (format stream
+                                (if small-unicode
+                                    "~%~A~D,~D,~D"
+                                    "~%~A~D,~D,~D,~D")
+                                comma
+                                (if entry
+                                    (aref *misc-mapping* (ucd-misc entry))
+                                    *misc-classless*)
+                                (ldb (byte 8 0) other-case)
+                                (ldb (byte 8 8) other-case)
+                                (ldb (byte 8 16) other-case))
+                     do (setf comma ","))
+               do (format stream "~%};")))))
+  (values))
+
 (defun read-compiled-ucd ()
   (with-open-file (stream (make-pathname :name *ucd-file-name*
                                          :type "dat"
@@ -422,6 +515,8 @@
       (read-sequence *compiled-ucd* stream)))
   (values))
 
+#|
 (slurp-ucd)
 (output)
 (output t)
+|#
