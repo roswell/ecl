@@ -299,7 +299,7 @@ INTGERP, STRINGP.")
 ;; DEBUG POLICY
 ;;
 
-(define-policy debug-variable-bindings :on safety 3
+(define-policy debug-variable-bindings :on debug 3
   :requires (policy-debug-ihs-frame env)
   ;; We can only create variable bindings when the function has an IHS frame!!!
   "Create a debug vector with the bindings of each LET/LET*/LAMBDA form?")
