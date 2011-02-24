@@ -103,6 +103,7 @@ static int c_nth_value(cl_env_ptr env, cl_object args, int flags);
 static int c_prog1(cl_env_ptr env, cl_object args, int flags);
 static int c_progv(cl_env_ptr env, cl_object args, int flags);
 static int c_psetq(cl_env_ptr env, cl_object args, int flags);
+static int c_quote(cl_env_ptr env, cl_object args, int flags);
 static int c_values(cl_env_ptr env, cl_object args, int flags);
 static int c_setq(cl_env_ptr env, cl_object args, int flags);
 static int c_return(cl_env_ptr env, cl_object args, int flags);
@@ -303,6 +304,7 @@ static compiler_record database[] = {
   {@'prog1', c_prog1, 1},
   {@'progv', c_progv, 1},
   {@'psetq', c_psetq, 1},
+  {@'quote', c_quote, 1},
   {@'return', c_return, 1},
   {@'return-from', c_return_from, 1},
   {@'setq', c_setq, 1},
@@ -2102,13 +2104,60 @@ c_values(cl_env_ptr env, cl_object args, int flags) {
 	return FLAG_VALUES;
 }
 
+static int
+compile_constant(cl_env_ptr env, cl_object stmt, int flags)
+{
+        if (flags & FLAG_USEFUL) {
+                bool push = flags & FLAG_PUSH;
+                cl_fixnum n;
+                if (stmt == Cnil) {
+                        asm_op(env, push? OP_PUSHNIL : OP_NIL);
+                } else if (FIXNUMP(stmt) && (n = fix(stmt)) <= MAX_OPARG
+                           && n >= -MAX_OPARG) {
+                        asm_op2(env, push? OP_PINT : OP_INT, n);
+                } else {
+                        asm_op2c(env, push? OP_PUSHQ : OP_QUOTE, stmt);
+                }
+                if (flags & FLAG_VALUES)
+                        flags = (flags & ~FLAG_VALUES) | FLAG_REG0;
+        }
+        return flags;
+}
+
+static int
+c_quote(cl_env_ptr env, cl_object args, int flags)
+{
+        if (ATOM(args) || ECL_CONS_CDR(args) != Cnil)
+                FEill_formed_input();
+        return compile_constant(env, ECL_CONS_CAR(args), flags);
+}
+
+static int
+compile_symbol(cl_env_ptr env, cl_object stmt, int flags)
+{
+        cl_object stmt1 = c_macro_expand1(env, stmt);
+        if (stmt1 != stmt) {
+                return compile_form(env, stmt1, flags);
+        } else {
+                cl_fixnum index = c_var_ref(env, stmt,0,FALSE);
+                bool push = flags & FLAG_PUSH;
+                if (index >= 0) {
+                        asm_op2(env, push? OP_PUSHV : OP_VAR, index);
+                } else {
+                        asm_op2c(env, push? OP_PUSHVS : OP_VARS, stmt);
+                }
+                if (flags & FLAG_VALUES)
+                        return (flags & ~FLAG_VALUES) | FLAG_REG0;
+                else
+                        return flags;
+        }
+}
 
 static int
 compile_form(cl_env_ptr env, cl_object stmt, int flags) {
         const cl_compiler_ptr c_env = env->c_env;
 	cl_object code_walker = ECL_SYM_VAL(env, @'si::*code-walker*');
 	cl_object function;
-	bool push = flags & FLAG_PUSH;
 	int new_flags;
 
 	ecl_bds_bind(env, @'si::*current-form*', stmt);
@@ -2120,54 +2169,23 @@ compile_form(cl_env_ptr env, cl_object stmt, int flags) {
 	/*
 	 * First try with variable references and quoted constants
 	 */
-	if (ATOM(stmt)) {
-		cl_fixnum index;
-		if (SYMBOLP(stmt) && stmt != Cnil) {
-			cl_object stmt1 = c_macro_expand1(env, stmt);
-			if (stmt1 != stmt) {
-				stmt = stmt1;
-				goto BEGIN;
-			}
-			index = c_var_ref(env, stmt,0,FALSE);
-			if (index >= 0) {
-				asm_op2(env, push? OP_PUSHV : OP_VAR, index);
-			} else {
-				asm_op2c(env, push? OP_PUSHVS : OP_VARS, stmt);
-			}
-		} else
-	QUOTED:
-		if ((flags & FLAG_USEFUL)) {
-			cl_fixnum n;
-			if (stmt == Cnil) {
-				asm_op(env, push? OP_PUSHNIL : OP_NIL);
-			} else if (FIXNUMP(stmt) && (n = fix(stmt)) <= MAX_OPARG
-                                   && n >= -MAX_OPARG) {
-				asm_op2(env, push? OP_PINT : OP_INT, n);
-			} else {
-				asm_op2c(env, push? OP_PUSHQ : OP_QUOTE, stmt);
-			}
-		}
-
-		if (flags & FLAG_VALUES)
-			new_flags = (flags & ~FLAG_VALUES) | FLAG_REG0;
-		else
-			new_flags = flags;
-		goto OUTPUT;
+        if (Null(stmt)) {
+                new_flags = compile_constant(env, stmt, flags);
+                goto OUTPUT;
+        }
+        if (!ECL_LISTP(stmt)) {
+                if (SYMBOLP(stmt)) {
+                        new_flags = compile_symbol(env, stmt, flags);
+                } else {
+                        new_flags = compile_constant(env, stmt, flags);
+                }
+                goto OUTPUT;
 	}
 	/*
 	 * Next try with special forms.
 	 */
 	function = ECL_CONS_CAR(stmt);
-	if (!SYMBOLP(function))
-		goto ORDINARY_CALL;
-	if (function == @'quote') {
-		stmt = ECL_CONS_CDR(stmt);
-		if (ATOM(stmt) || ECL_CONS_CDR(stmt) != Cnil)
-			FEprogram_error_noreturn("QUOTE: Ill formed.",0);
-		stmt = ECL_CONS_CAR(stmt);
-		goto QUOTED;
-	}
-	{
+	if (SYMBOLP(function)) {
 		cl_object index = ecl_gethash(function, cl_core.compiler_dispatch);
 		if (index != OBJNULL) {
 			compiler_record *l = database + fix(index);
@@ -2182,21 +2200,17 @@ compile_form(cl_env_ptr env, cl_object stmt, int flags) {
 			c_env->lexical_level -= l->lexical_increment;
 			goto OUTPUT;
 		}
-	}
-	/*
-	 * Next try to macroexpand
-	 */
-	{
-		cl_object new_stmt = c_macro_expand1(env, stmt);
-		if (new_stmt != stmt){
-			stmt = new_stmt;
-			goto BEGIN;
-		}
-	}
-	if (ecl_symbol_type(function) & stp_special_form)
-		FEprogram_error_noreturn("BYTECOMPILE-FORM: Found no macroexpander \
-for special form ~S.", 1, function);
- ORDINARY_CALL:
+                /*
+                 * Next try to macroexpand
+                 */
+                {
+                        cl_object new_stmt = c_macro_expand1(env, stmt);
+                        if (new_stmt != stmt){
+                                stmt = new_stmt;
+                                goto BEGIN;
+                        }
+                }
+        }
 	/*
 	 * Finally resort to ordinary function calls.
 	 */
@@ -2218,7 +2232,7 @@ for special form ~S.", 1, function);
 		REG0		VALUES			---
 		REG0		REG0			---
 	*/
-	if (push) {
+	if (flags & FLAG_PUSH) {
 		if (new_flags & (FLAG_REG0 | FLAG_VALUES))
 			asm_op(env, OP_PUSH);
 	} else if (flags & FLAG_VALUES) {
