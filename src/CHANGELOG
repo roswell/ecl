@@ -204,6 +204,8 @@ ECL 11.1.2
  - ECL implements CDR 6 (ext:*inspector-hook*) as described in
    http://cdr.eurolisp.org/document/6/index.html
 
+ - ECL ships libffi together with its source tree, much like GMP and GC.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

@@ -182,8 +182,8 @@ AC_ARG_WITH(profile,
 AC_ARG_WITH(dffi,
   AS_HELP_STRING( [--with-dffi],
                   [dynamic foreign function interface]
-                  [(auto|no, default=AUTO if libffi available or intel processor)]),
-  [], [with_dffi=auto])
+                  [(system|included|auto|no, default=AUTO if libffi available)]),
+  [enable_libffi=${withval}], [enable_libffi=auto])
 
 AC_ARG_WITH(fpe,
   AS_HELP_STRING( [--with-fpe],
@@ -527,6 +527,8 @@ if test ${enable_smallcons} = "yes" ; then
    AC_DEFINE(ECL_SMALL_CONS)
 fi
 
+ECL_LIBFFI
+
 dnl ----------------------------------------------------------------------
 dnl SONAME is only active when SONAME_LDFLAGS and SONAME are non nil
 dnl
@@ -632,9 +634,6 @@ ECL_INTEGER_TYPES
 ECL_LINEFEED_MODE
 ECL_FIND_SETJMP
 ECL_FILE_STRUCTURE
-if test "x$with_dffi" != "xno"; then
-ECL_FFI
-fi
 ECL_FPE_MODEL
 ECL_SSE
 ECL_LONG_DOUBLE
@@ -711,7 +710,6 @@ fi
 
 ECL_GCC_BACKTRACE
 ECL_LIBATOMIC_OPS
-ECL_BOEHM_GC
 
 dnl ----------------------------------------------------------------------
 dnl Lisp library and libecl features

@@ -729,30 +729,6 @@ AC_MSG_CHECKING([Linker flags])
 AC_MSG_RESULT([${LDFLAGS}])
 ])
 
-dnl
-dnl ------------------------------------------------------------
-dnl Do we have a non-portable implementation of calls to foreign
-dnl functions?
-dnl
-AC_DEFUN([ECL_FFI],[
-AC_SUBST(ECL_LIBFFI_HEADER)
-AC_CHECK_LIB( ffi, ffi_call, [has_ffi_lib=yes], [has_ffi_lib=no] )
-if test $has_ffi_lib = "yes"; then
-  AC_CHECK_HEADER( [ffi/ffi.h], [ECL_LIBFFI_HEADER='ffi/ffi.h'], [], [] )
-  if test -z "$ECL_LIBFFI_HEADER"; then
-    AC_CHECK_HEADER( [ffi.h], [ECL_LIBFFI_HEADER='ffi.h'], [], [] )
-  fi
-  if test -z "$ECL_LIBFFI_HEADER"; then
-    AC_MSG_WARN([unable to find header file ffi.h; disabling dynamic FFI])
-  else
-    AC_DEFINE(HAVE_LIBFFI)
-    CORE_LIBS="-lffi $CORE_LIBS"
-  fi
-else
-  AC_MSG_WARN([libffi is not installed; disabling dynamic FFI])
-fi
-])
-
 dnl --------------------------------------------------------------
 dnl Provides a test for the existance of the __thread declaration and
 dnl defines WITH___THREAD if it is found
@@ -977,7 +953,7 @@ if test "${enable_boehm}" = "included"; then
    fi
  fi
  if test -z "${ECL_BOEHM_GC_HEADER}"; then
-   AC_MSG_ERROR([Unable to create 'gc' directory])
+   AC_MSG_ERROR([Unable to configure Boehm-Weiser GC])
  fi
 fi
 if test "${enable_gengc}" != "no" ; then
@@ -991,3 +967,68 @@ else
   AC_MSG_RESULT([no])
 fi
 ])
+
+dnl ----------------------------------------------------------------------
+dnl Configure included Boehm GC if needed
+AC_DEFUN([ECL_LIBFFI],[
+AC_SUBST(ECL_LIBFFI_HEADER)
+case "${enable_libffi}" in
+  yes) enable_libffi=auto;;
+  no|auto|system|included) ;;
+  *) AC_MSG_ERROR( [Invalid value of --enable-dffi: ${enable_libffi}] );;
+esac
+if test "${enable_libffi}" = auto -o "${enable_libffi}" = system; then
+ dnl
+ dnl Try first with the prebuilt versions, if installed and accessible
+ dnl
+ AC_CHECK_LIB( ffi, ffi_call, [system_libffi=yes], [system_libffi=no] )
+ if test "${system_libffi}" = yes; then
+   AC_CHECK_HEADER([ffi/ffi.h],[ECL_LIBFFI_HEADER='ffi/ffi.h'],[system_libffi=no],[])
+   if test -z "$ECL_LIBFFI_HEADER"; then
+     AC_CHECK_HEADER([ffi.h],[ECL_LIBFFI_HEADER='ffi.h'],[system_libffi=no],[])
+   fi
+ fi
+ AC_MSG_CHECKING( [whether we can use the existing libffi library] )
+ AC_MSG_RESULT( [${system_libffi}] )
+ if test "${system_libffi}" = "no"; then
+   if test "${enable_libffi}" = "auto"; then
+     enable_libffi="included";
+   else
+     AC_MSG_ERROR([System libffi library requested but not found.])
+   fi
+ else
+   CORE_LIBS="${FASL_LIBS} -lffi"
+ fi
+fi
+if test "${enable_libffi}" = "included"; then
+ dnl
+ dnl Try here with the version shipped with ECL. Note that we have to use
+ dnl the same compiler flags and that we will not export this library: it
+ dnl is installed in the build directory.
+ dnl
+ AC_MSG_NOTICE([Configuring included libffi library:])
+ test -d libffi && rm -rf libffi
+ if mkdir libffi; then
+   if (destdir=`${PWDCMD}`; cd libffi; \
+       $srcdir/libffi/configure --disable-shared --prefix=${destdir} \
+	 --includedir=${destdir}/ecl/ --libdir=${destdir} --build=${build_alias} \
+	 --host=${host_alias} \
+         CC="${CC} ${PICFLAG}" CFLAGS="$CFLAGS" \
+	 LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS"); then
+     ECL_LIBFFI_HEADER='ecl/ffi.h'
+     SUBDIRS="${SUBDIRS} libffi"
+     CORE_LIBS="-leclffi ${CORE_LIBS}"
+     EXTRA_OBJS="${EXTRA_OBJS} alloc_2.${OBJEXT}"
+     if test "${enable_shared}" = "no"; then
+       LIBRARIES="${LIBRARIES} ${LIBPREFIX}eclffi.${LIBEXT}"
+     fi
+   fi
+ fi
+fi
+if test -z "${ECL_LIBFFI_HEADER}"; then
+  AC_MSG_WARN([Unable to configure or find libffi library; disabling dynamic FFI])
+else
+  AC_DEFINE(HAVE_LIBFFI)
+fi
+])
+

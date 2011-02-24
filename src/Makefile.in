@@ -105,7 +105,7 @@ bin/ecl-config: bin/ecl-config.pre
 	    -e 's,~A,$(libdir),' bin/ecl-config.pre > bin/ecl-config
 
 
-@LIBPREFIX@eclmin.@LIBEXT@: @LIBPREFIX@eclgmp.@LIBEXT@ @LIBPREFIX@eclatomic.@LIBEXT@ @LIBPREFIX@eclgc.@LIBEXT@ lsp/config.lsp $(ECL_CMPDIR)/cmpdefs.lsp ecl/external.h $(top_srcdir)/c/*.d
+@LIBPREFIX@eclmin.@LIBEXT@: @LIBPREFIX@eclgmp.@LIBEXT@ @LIBPREFIX@eclatomic.@LIBEXT@ @LIBPREFIX@eclgc.@LIBEXT@ @LIBPREFIX@eclffi.@LIBEXT@ lsp/config.lsp $(ECL_CMPDIR)/cmpdefs.lsp ecl/external.h $(top_srcdir)/c/*.d
 	cd c; $(MAKE)
 @LIBPREFIX@eclgc.@LIBEXT@:
 	test -d ecl/gc || mkdir ecl/gc
@@ -114,6 +114,13 @@ bin/ecl-config: bin/ecl-config.pre
 	  cd gc && $(MAKE) install && cd .. && \
 	  cp -rf $(srcdir)/gc/include/private/*.h ecl/gc/private/ && \
 	  mv @LIBPREFIX@gc.@LIBEXT@ @LIBPREFIX@eclgc.@LIBEXT@; \
+	fi
+@LIBPREFIX@eclffi.@LIBEXT@:
+	if (echo $(SUBDIRS) | grep libffi); then \
+	  cd libffi && $(MAKE) install && cd .. && \
+	  sed -e 's,<ffitarget,<ecl/ffitarget,' ecl/ffi.h > ecl/foo.h && \
+	  rm ecl/ffi.h && mv ecl/foo.h ecl/ffi.h && \
+	  mv @LIBPREFIX@ffi.@LIBEXT@ @LIBPREFIX@eclffi.@LIBEXT@; \
 	fi
 @LIBPREFIX@eclatomic.@LIBEXT@:
 	if (echo $(SUBDIRS) | grep atomic); then \
