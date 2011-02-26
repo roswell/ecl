@@ -106,6 +106,7 @@ struct cl_compiler_env {
 	cl_fixnum lexical_level;	/* =0 if toplevel form */
 	cl_object constants;		/* Constants for this form */
 	cl_index constants_size;	/* Number of constants registered */
+        cl_object load_time_forms;	/* Constants that have to be rebuilt */
 	cl_object lex_env;		/* Lexical env. for eval-when */
 	cl_index env_depth;
 	cl_index env_size;

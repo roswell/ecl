@@ -88,6 +88,7 @@ enum {
   OP_NIL,
   OP_NOT,
   OP_PUSHNIL,
+  OP_CSET,
   OP_STEPIN,
   OP_STEPCALL,
   OP_STEPOUT,
@@ -256,6 +257,7 @@ typedef int16_t cl_oparg;
   &&LBL_OP_NIL - &&LBL_OP_NOP,\
   &&LBL_OP_NOT - &&LBL_OP_NOP,\
   &&LBL_OP_PUSHNIL - &&LBL_OP_NOP,\
+  &&LBL_OP_CSET - &&LBL_OP_NOP,\
   &&LBL_OP_STEPIN - &&LBL_OP_NOP,\
   &&LBL_OP_STEPCALL - &&LBL_OP_NOP,\
   &&LBL_OP_STEPOUT - &&LBL_OP_NOP };

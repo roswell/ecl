@@ -553,6 +553,7 @@ c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_object env,
 		new->lexical_level = old->lexical_level;
 		new->constants = old->constants;
 		new->constants_size = old->constants_size;
+                new->load_time_forms = old->load_time_forms;
 		new->lex_env = old->lex_env;
 		new->env_depth = old->env_depth + 1;
 		new->stepping = old->stepping;
@@ -2290,19 +2291,96 @@ eval_form(cl_env_ptr env, cl_object form) {
 }
 
 static int
-compile_toplevel_body(cl_env_ptr env, cl_object body, int flags) {
-        const cl_compiler_ptr c_env = env->c_env;
-        if (!c_env->lexical_level && (c_env->mode == FLAG_EXECUTE)) {
-                cl_object form = Cnil, next_form;
-                for (form = Cnil; !Null(body); form = next_form) {
-                        unlikely_if (!ECL_LISTP(body))
-                                FEtype_error_proper_list(body);
-                        next_form = ECL_CONS_CAR(body);
-                        body = ECL_CONS_CDR(body);
-                        eval_form(env, form);
-                }
+execute_each_form(cl_env_ptr env, cl_object body, int flags)
+{
+        cl_object form = Cnil, next_form;
+        for (form = Cnil; !Null(body); form = next_form) {
+                unlikely_if (!ECL_LISTP(body))
+                        FEtype_error_proper_list(body);
+                next_form = ECL_CONS_CAR(body);
+                body = ECL_CONS_CDR(body);
                 eval_form(env, form);
-                return FLAG_VALUES;
+        }
+        eval_form(env, form);
+        return FLAG_VALUES;
+}
+
+static cl_object
+save_bytecodes(cl_env_ptr env, cl_index start, cl_index end)
+{
+        cl_object p;
+        for (p = Cnil; end > start; end--) {
+                cl_object o = ECL_STACK_POP_UNSAFE(env);
+                p = ecl_cons(o, p);
+        }
+}
+
+static void
+restore_bytecodes(cl_env_ptr env, cl_object list)
+{
+        cl_object p;
+        for (p = list; p != Cnil; p = ECL_CONS_CDR(p)) {
+                cl_object o = ECL_CONS_CAR(p);
+                ECL_STACK_PUSH(env, o);
+        }
+}
+
+static int
+compile_with_load_time_forms(cl_env_ptr env, cl_object form, int flags)
+{
+        /*
+         * First compile the form as usual.
+         */
+        const cl_compiler_ptr c_env = env->c_env;
+        cl_object old_load_time_forms = c_env->load_time_forms;
+        cl_index handle = asm_begin(env);
+        int output_flags = compile_form(env, form, FLAG_VALUES);
+        /*
+         * If some constants need to be built, we insert the
+         * code _before_ the actual forms;
+         */
+        if (c_env->load_time_forms != old_load_time_forms) {
+                cl_object bytecodes = save_bytecodes(env, handle, asm_begin(env));
+                cl_object p = c_env->load_time_forms;
+                do {
+                        cl_object r = ECL_CONS_CAR(p);
+                        cl_object constant = pop(&r);
+                        cl_object make_form = pop(&r);
+                        cl_object init_form = pop(&r);
+                        cl_index loc = asm_constant(env, constant);
+                        compile_with_load_time_forms(env, make_form, FLAG_REG0);
+                        asm_op2(env, OP_CSET, loc);
+                        compile_with_load_time_forms(env, init_form, FLAG_IGNORE);
+                        p = ECL_CONS_CDR(p);
+                } while (p != old_load_time_forms);
+                restore_bytecodes(env, bytecodes);
+        }
+        return output_flags;
+}
+
+static int
+compile_each_form(cl_env_ptr env, cl_object body, int flags)
+{
+        cl_object form = Cnil, next_form;
+        for (form = Cnil; !Null(body); form = next_form) {
+                unlikely_if (!ECL_LISTP(body))
+                        FEtype_error_proper_list(body);
+                next_form = ECL_CONS_CAR(body);
+                body = ECL_CONS_CDR(body);
+                compile_with_load_time_forms(env, form, FLAG_IGNORE);
+        }
+        return compile_with_load_time_forms(env, form, flags);
+}
+
+static int
+compile_toplevel_body(cl_env_ptr env, cl_object body, int flags)
+{
+        const cl_compiler_ptr c_env = env->c_env;
+        if (!c_env->lexical_level) {
+                if (c_env->mode == FLAG_EXECUTE)
+                        return execute_each_form(env, body, flags);
+                if (c_env->mode == FLAG_LOAD)
+                        return compile_each_form(env, body, flags);
         } else {
                 return compile_body(env, body, flags);
         }
@@ -2751,6 +2829,7 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
 
 	new_c_env.lexical_level++;
 	new_c_env.constants = Cnil;
+        new_c_env.load_time_forms = Cnil;
 	new_c_env.constants_size = 0;
 
 	reqs = si_process_lambda(lambda);

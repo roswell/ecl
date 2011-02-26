@@ -214,6 +214,13 @@ disassemble(cl_object bytecodes, cl_opcode *vector) {
 				GET_DATA(o, vector, data);
 				goto ARG;
 
+	/* OP_QUOTE
+		Replace constant with a computed value
+	*/
+	case OP_CSET:		string = "CSET\t";
+		                GET_OPARG(n, data);
+				goto OPARG;
+
 	/* OP_VAR	n{arg}
 		Sets NVALUES=1 and VALUES(0) to the value of the n-th local.
 	*/

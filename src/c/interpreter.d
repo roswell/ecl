@@ -1189,6 +1189,12 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 		ecl_bds_unwind(the_env, n);
 		THREAD_NEXT;
 	}
+	CASE(OP_CSET); {
+                cl_object *p;
+                GET_DATA_PTR(p, vector, data);
+                *p = reg0;
+		THREAD_NEXT;
+	}
 
 	CASE(OP_STEPIN); {
 		cl_object form;
