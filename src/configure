@@ -640,7 +640,6 @@ ac_subst_vars='LTLIBOBJS
 CHAR_CODE_LIMIT
 ECL_CHARACTER
 CLX_INFO
-ECL_BOEHM_GC_HEADER
 ECL_CC
 POW_LIB
 LIBOBJS
@@ -663,6 +662,7 @@ SONAME
 SONAME1
 SONAME2
 SONAME3
+ECL_BOEHM_GC_HEADER
 ECL_CMPDIR
 ECL_GMP_HEADER
 EGREP
@@ -6299,14 +6299,21 @@ if test ${enable_boehm} = "no" ; then
   { { $as_echo "$as_me:$LINENO: error: Boehm GC library is currently needed to build ECL" >&5
 $as_echo "$as_me: error: Boehm GC library is currently needed to build ECL" >&2;}
    { (exit 1); exit 1; }; };
-fi
-if test ${enable_boehm} = "no" ; then
   EXTRA_OBJS="${EXTRA_OBJS} alloc.${OBJEXT} gbc.${OBJEXT}"
   enable_smallcons="no"
 else
-  if test ${enable_boehm} = "auto"; then
-    if test ${enable_threads} = "no"; then
-      { $as_echo "$as_me:$LINENO: checking for GC_malloc in -lgc" >&5
+
+
+case "${enable_boehm}" in
+  yes) enable_boehm=auto;;
+  no|auto|system|included) ;;
+  *) { { $as_echo "$as_me:$LINENO: error: Invalid value of --enable-boehm: ${enable_boehm} " >&5
+$as_echo "$as_me: error: Invalid value of --enable-boehm: ${enable_boehm} " >&2;}
+   { (exit 1); exit 1; }; };;
+esac
+if test "${enable_boehm}" = auto -o "${enable_boehm}" = system; then
+    if test "${enable_threads}" = no; then
+   { $as_echo "$as_me:$LINENO: checking for GC_malloc in -lgc" >&5
 $as_echo_n "checking for GC_malloc in -lgc... " >&6; }
 if test "${ac_cv_lib_gc_GC_malloc+set}" = set; then
   $as_echo_n "(cached) " >&6
@@ -6372,13 +6379,13 @@ fi
 { $as_echo "$as_me:$LINENO: result: $ac_cv_lib_gc_GC_malloc" >&5
 $as_echo "$ac_cv_lib_gc_GC_malloc" >&6; }
 if test "x$ac_cv_lib_gc_GC_malloc" = x""yes; then
-  enable_boehm="system"
+  system_boehm="yes"
 else
-  enable_boehm="included"
+  system_boehm="no"
 fi
 
-    else
-      { $as_echo "$as_me:$LINENO: checking for GC_register_my_thread in -lgc" >&5
+ else
+   { $as_echo "$as_me:$LINENO: checking for GC_register_my_thread in -lgc" >&5
 $as_echo_n "checking for GC_register_my_thread in -lgc... " >&6; }
 if test "${ac_cv_lib_gc_GC_register_my_thread+set}" = set; then
   $as_echo_n "(cached) " >&6
@@ -6444,62 +6451,43 @@ fi
 { $as_echo "$as_me:$LINENO: result: $ac_cv_lib_gc_GC_register_my_thread" >&5
 $as_echo "$ac_cv_lib_gc_GC_register_my_thread" >&6; }
 if test "x$ac_cv_lib_gc_GC_register_my_thread" = x""yes; then
-  enable_boehm="system"
+  system_boehm="yes"
 else
-  enable_boehm="included"
+  system_boehm="no"
 fi
 
-    fi
-    { $as_echo "$as_me:$LINENO: checking whether we can use the existing Boehm-Weiser library " >&5
-$as_echo_n "checking whether we can use the existing Boehm-Weiser library ... " >&6; }
-    if test ${enable_boehm} = "system"; then
-      { $as_echo "$as_me:$LINENO: result: yes" >&5
-$as_echo "yes" >&6; }
-    else
-      { $as_echo "$as_me:$LINENO: result: no" >&5
-$as_echo "no" >&6; }
-    fi
-  fi
-
-  if test ${enable_boehm} = "system"; then
-    { $as_echo "$as_me:$LINENO: checking for GC_malloc in -lgc" >&5
-$as_echo_n "checking for GC_malloc in -lgc... " >&6; }
-if test "${ac_cv_lib_gc_GC_malloc+set}" = set; then
+ fi
+ if test "${system_boehm}" = yes; then
+   if test "${ac_cv_header_gc_h+set}" = set; then
+  { $as_echo "$as_me:$LINENO: checking for gc.h" >&5
+$as_echo_n "checking for gc.h... " >&6; }
+if test "${ac_cv_header_gc_h+set}" = set; then
   $as_echo_n "(cached) " >&6
+fi
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_header_gc_h" >&5
+$as_echo "$ac_cv_header_gc_h" >&6; }
 else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lgc  $LIBS"
+  # Is the header compilable?
+{ $as_echo "$as_me:$LINENO: checking gc.h usability" >&5
+$as_echo_n "checking gc.h usability... " >&6; }
 cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char GC_malloc ();
-int
-main ()
-{
-return GC_malloc ();
-  ;
-  return 0;
-}
+$ac_includes_default
+#include <gc.h>
 _ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (ac_try="$ac_link"
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
 case "(($ac_try" in
   *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
   *) ac_try_echo=$ac_try;;
 esac
 eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
 $as_echo "$ac_try_echo") >&5
-  (eval "$ac_link") 2>conftest.er1
+  (eval "$ac_compile") 2>conftest.er1
   ac_status=$?
   grep -v '^ *+' conftest.er1 >conftest.err
   rm -f conftest.er1
@@ -6508,52 +6496,292 @@ $as_echo "$ac_try_echo") >&5
   (exit $ac_status); } && {
 	 test -z "$ac_c_werror_flag" ||
 	 test ! -s conftest.err
-       } && test -s conftest$ac_exeext && {
-	 test "$cross_compiling" = yes ||
-	 $as_test_x conftest$ac_exeext
-       }; then
-  ac_cv_lib_gc_GC_malloc=yes
+       } && test -s conftest.$ac_objext; then
+  ac_header_compiler=yes
 else
   $as_echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-	ac_cv_lib_gc_GC_malloc=no
+	ac_header_compiler=no
 fi
 
-rm -rf conftest.dSYM
-rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
-      conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:$LINENO: result: $ac_cv_lib_gc_GC_malloc" >&5
-$as_echo "$ac_cv_lib_gc_GC_malloc" >&6; }
-if test "x$ac_cv_lib_gc_GC_malloc" = x""yes; then
-  FASL_LIBS="${FASL_LIBS} -lgc"
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+{ $as_echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+$as_echo "$ac_header_compiler" >&6; }
+
+# Is the header present?
+{ $as_echo "$as_me:$LINENO: checking gc.h presence" >&5
+$as_echo_n "checking gc.h presence... " >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <gc.h>
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_c_preproc_warn_flag$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+  ac_header_preproc=yes
 else
-  { { $as_echo "$as_me:$LINENO: error: System Boehm GC library requested but not found." >&5
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+
+rm -f conftest.err conftest.$ac_ext
+{ $as_echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+$as_echo "$ac_header_preproc" >&6; }
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { $as_echo "$as_me:$LINENO: WARNING: gc.h: accepted by the compiler, rejected by the preprocessor!" >&5
+$as_echo "$as_me: WARNING: gc.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: gc.h: proceeding with the compiler's result" >&5
+$as_echo "$as_me: WARNING: gc.h: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { $as_echo "$as_me:$LINENO: WARNING: gc.h: present but cannot be compiled" >&5
+$as_echo "$as_me: WARNING: gc.h: present but cannot be compiled" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: gc.h:     check for missing prerequisite headers?" >&5
+$as_echo "$as_me: WARNING: gc.h:     check for missing prerequisite headers?" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: gc.h: see the Autoconf documentation" >&5
+$as_echo "$as_me: WARNING: gc.h: see the Autoconf documentation" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: gc.h:     section \"Present But Cannot Be Compiled\"" >&5
+$as_echo "$as_me: WARNING: gc.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: gc.h: proceeding with the preprocessor's result" >&5
+$as_echo "$as_me: WARNING: gc.h: proceeding with the preprocessor's result" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: gc.h: in the future, the compiler will take precedence" >&5
+$as_echo "$as_me: WARNING: gc.h: in the future, the compiler will take precedence" >&2;}
+
+    ;;
+esac
+{ $as_echo "$as_me:$LINENO: checking for gc.h" >&5
+$as_echo_n "checking for gc.h... " >&6; }
+if test "${ac_cv_header_gc_h+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+  ac_cv_header_gc_h=$ac_header_preproc
+fi
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_header_gc_h" >&5
+$as_echo "$ac_cv_header_gc_h" >&6; }
+
+fi
+if test "x$ac_cv_header_gc_h" = x""yes; then
+  ECL_BOEHM_GC_HEADER='gc.h'
+else
+  system_boehm=no
+fi
+
+
+   if test -z "$ECL_BOEHM_GC_HEADER"; then
+     if test "${ac_cv_header_gc_gc_h+set}" = set; then
+  { $as_echo "$as_me:$LINENO: checking for gc/gc.h" >&5
+$as_echo_n "checking for gc/gc.h... " >&6; }
+if test "${ac_cv_header_gc_gc_h+set}" = set; then
+  $as_echo_n "(cached) " >&6
+fi
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_header_gc_gc_h" >&5
+$as_echo "$ac_cv_header_gc_gc_h" >&6; }
+else
+  # Is the header compilable?
+{ $as_echo "$as_me:$LINENO: checking gc/gc.h usability" >&5
+$as_echo_n "checking gc/gc.h usability... " >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <gc/gc.h>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_header_compiler=yes
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_header_compiler=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+{ $as_echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+$as_echo "$ac_header_compiler" >&6; }
+
+# Is the header present?
+{ $as_echo "$as_me:$LINENO: checking gc/gc.h presence" >&5
+$as_echo_n "checking gc/gc.h presence... " >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <gc/gc.h>
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_c_preproc_warn_flag$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+  ac_header_preproc=yes
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+
+rm -f conftest.err conftest.$ac_ext
+{ $as_echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+$as_echo "$ac_header_preproc" >&6; }
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { $as_echo "$as_me:$LINENO: WARNING: gc/gc.h: accepted by the compiler, rejected by the preprocessor!" >&5
+$as_echo "$as_me: WARNING: gc/gc.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: gc/gc.h: proceeding with the compiler's result" >&5
+$as_echo "$as_me: WARNING: gc/gc.h: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { $as_echo "$as_me:$LINENO: WARNING: gc/gc.h: present but cannot be compiled" >&5
+$as_echo "$as_me: WARNING: gc/gc.h: present but cannot be compiled" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: gc/gc.h:     check for missing prerequisite headers?" >&5
+$as_echo "$as_me: WARNING: gc/gc.h:     check for missing prerequisite headers?" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: gc/gc.h: see the Autoconf documentation" >&5
+$as_echo "$as_me: WARNING: gc/gc.h: see the Autoconf documentation" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: gc/gc.h:     section \"Present But Cannot Be Compiled\"" >&5
+$as_echo "$as_me: WARNING: gc/gc.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: gc/gc.h: proceeding with the preprocessor's result" >&5
+$as_echo "$as_me: WARNING: gc/gc.h: proceeding with the preprocessor's result" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: gc/gc.h: in the future, the compiler will take precedence" >&5
+$as_echo "$as_me: WARNING: gc/gc.h: in the future, the compiler will take precedence" >&2;}
+
+    ;;
+esac
+{ $as_echo "$as_me:$LINENO: checking for gc/gc.h" >&5
+$as_echo_n "checking for gc/gc.h... " >&6; }
+if test "${ac_cv_header_gc_gc_h+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+  ac_cv_header_gc_gc_h=$ac_header_preproc
+fi
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_header_gc_gc_h" >&5
+$as_echo "$ac_cv_header_gc_gc_h" >&6; }
+
+fi
+if test "x$ac_cv_header_gc_gc_h" = x""yes; then
+  ECL_BOEHM_GC_HEADER='gc/gc.h'
+else
+  system_boehm=no
+fi
+
+
+   fi
+ fi
+ { $as_echo "$as_me:$LINENO: checking whether we can use the existing Boehm-Weiser library " >&5
+$as_echo_n "checking whether we can use the existing Boehm-Weiser library ... " >&6; }
+ { $as_echo "$as_me:$LINENO: result: ${system_boehm} " >&5
+$as_echo "${system_boehm} " >&6; }
+ if test "${system_boehm}" = "no"; then
+   if test "${enable_boehm}" = "auto"; then
+     enable_boehm="included";
+   else
+     { { $as_echo "$as_me:$LINENO: error: System Boehm GC library requested but not found." >&5
 $as_echo "$as_me: error: System Boehm GC library requested but not found." >&2;}
    { (exit 1); exit 1; }; }
-fi
-
+   fi
+ else
+   FASL_LIBS="${FASL_LIBS} -lgc"
+   EXTRA_OBJS="${EXTRA_OBJS} alloc_2.${OBJEXT}"
 
 cat >>confdefs.h <<\_ACEOF
 #define GBC_BOEHM 1
 _ACEOF
 
-  else
-    enable_boehm="included"
-    SUBDIRS="${SUBDIRS} gc"
-    CORE_LIBS="-leclgc ${CORE_LIBS}"
-    if test "${enable_shared}" = "no"; then
-      LIBRARIES="${LIBRARIES} ${LIBPREFIX}eclgc.${LIBEXT}"
-    fi
+ fi
+fi
+if test "${enable_boehm}" = "included"; then
+      { $as_echo "$as_me:$LINENO: Configuring included Boehm GC library:" >&5
+$as_echo "$as_me: Configuring included Boehm GC library:" >&6;}
+ test -d gc && rm -rf gc
+ if mkdir gc; then
+   if (destdir=`${PWDCMD}`; cd gc; \
+       $srcdir/gc/configure --disable-shared --prefix=${destdir} \
+	 --includedir=${destdir}/ecl/ --libdir=${destdir} --build=${build_alias} \
+	 --host=${host_alias} --enable-large-config \
+         CC="${CC} ${PICFLAG}" CFLAGS="$CFLAGS" \
+	 LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" \
+         ${boehm_configure_flags}); then
+     ECL_BOEHM_GC_HEADER='ecl/gc/gc.h'
+     SUBDIRS="${SUBDIRS} gc"
+     CORE_LIBS="-leclgc ${CORE_LIBS}"
+     EXTRA_OBJS="${EXTRA_OBJS} alloc_2.${OBJEXT}"
+     if test "${enable_shared}" = "no"; then
+       LIBRARIES="${LIBRARIES} ${LIBPREFIX}eclgc.${LIBEXT}"
+     fi
 
 cat >>confdefs.h <<\_ACEOF
 #define GBC_BOEHM 0
 _ACEOF
 
-  fi
-  EXTRA_OBJS="${EXTRA_OBJS} alloc_2.${OBJEXT}"
+   fi
+ fi
+ if test -z "${ECL_BOEHM_GC_HEADER}"; then
+   { { $as_echo "$as_me:$LINENO: error: Unable to create 'gc' directory" >&5
+$as_echo "$as_me: error: Unable to create 'gc' directory" >&2;}
+   { (exit 1); exit 1; }; }
+ fi
 fi
 if test "${enable_gengc}" != "no" ; then
   cat >>confdefs.h <<\_ACEOF
@@ -6575,6 +6803,7 @@ else
 $as_echo "no" >&6; }
 fi
 
+fi
 if test ${enable_smallcons} = "yes" ; then
    cat >>confdefs.h <<\_ACEOF
 #define ECL_SMALL_CONS 1
@@ -14751,26 +14980,160 @@ fi
 
 
 case "${enable_boehm}" in
-  included)
-    { $as_echo "$as_me:$LINENO: Configuring included Boehm GC library:" >&5
-$as_echo "$as_me: Configuring included Boehm GC library:" >&6;}
-    test -d gc && rm -rf gc
-    if mkdir gc; then
-     (destdir=`${PWDCMD}`; cd gc; \
-      $srcdir/gc/configure --disable-shared --prefix=${destdir} \
-	--includedir=${destdir}/ecl/ --libdir=${destdir} --build=${build_alias} \
-	--host=${host_alias} --enable-large-config \
-        CC="${CC} ${PICFLAG}" CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" \
-        ${boehm_configure_flags})
-      ECL_BOEHM_GC_HEADER='ecl/gc/gc.h'
-    else
-      { { $as_echo "$as_me:$LINENO: error: Unable to create 'gc' directory" >&5
-$as_echo "$as_me: error: Unable to create 'gc' directory" >&2;}
-   { (exit 1); exit 1; }; }
-    fi
-    ;;
-  system)
-    if test "${ac_cv_header_gc_h+set}" = set; then
+  yes) enable_boehm=auto;;
+  no|auto|system|included) ;;
+  *) { { $as_echo "$as_me:$LINENO: error: Invalid value of --enable-boehm: ${enable_boehm} " >&5
+$as_echo "$as_me: error: Invalid value of --enable-boehm: ${enable_boehm} " >&2;}
+   { (exit 1); exit 1; }; };;
+esac
+if test "${enable_boehm}" = auto -o "${enable_boehm}" = system; then
+    if test "${enable_threads}" = no; then
+   { $as_echo "$as_me:$LINENO: checking for GC_malloc in -lgc" >&5
+$as_echo_n "checking for GC_malloc in -lgc... " >&6; }
+if test "${ac_cv_lib_gc_GC_malloc+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lgc  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char GC_malloc ();
+int
+main ()
+{
+return GC_malloc ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext && {
+	 test "$cross_compiling" = yes ||
+	 $as_test_x conftest$ac_exeext
+       }; then
+  ac_cv_lib_gc_GC_malloc=yes
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_lib_gc_GC_malloc=no
+fi
+
+rm -rf conftest.dSYM
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_lib_gc_GC_malloc" >&5
+$as_echo "$ac_cv_lib_gc_GC_malloc" >&6; }
+if test "x$ac_cv_lib_gc_GC_malloc" = x""yes; then
+  system_boehm="yes"
+else
+  system_boehm="no"
+fi
+
+ else
+   { $as_echo "$as_me:$LINENO: checking for GC_register_my_thread in -lgc" >&5
+$as_echo_n "checking for GC_register_my_thread in -lgc... " >&6; }
+if test "${ac_cv_lib_gc_GC_register_my_thread+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lgc  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char GC_register_my_thread ();
+int
+main ()
+{
+return GC_register_my_thread ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext && {
+	 test "$cross_compiling" = yes ||
+	 $as_test_x conftest$ac_exeext
+       }; then
+  ac_cv_lib_gc_GC_register_my_thread=yes
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_lib_gc_GC_register_my_thread=no
+fi
+
+rm -rf conftest.dSYM
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_lib_gc_GC_register_my_thread" >&5
+$as_echo "$ac_cv_lib_gc_GC_register_my_thread" >&6; }
+if test "x$ac_cv_lib_gc_GC_register_my_thread" = x""yes; then
+  system_boehm="yes"
+else
+  system_boehm="no"
+fi
+
+ fi
+ if test "${system_boehm}" = yes; then
+   if test "${ac_cv_header_gc_h+set}" = set; then
   { $as_echo "$as_me:$LINENO: checking for gc.h" >&5
 $as_echo_n "checking for gc.h... " >&6; }
 if test "${ac_cv_header_gc_h+set}" = set; then
@@ -14899,11 +15262,13 @@ $as_echo "$ac_cv_header_gc_h" >&6; }
 fi
 if test "x$ac_cv_header_gc_h" = x""yes; then
   ECL_BOEHM_GC_HEADER='gc.h'
+else
+  system_boehm=no
 fi
 
 
-    if test -z "$ECL_BOEHM_GC_HEADER"; then
-       if test "${ac_cv_header_gc_gc_h+set}" = set; then
+   if test -z "$ECL_BOEHM_GC_HEADER"; then
+     if test "${ac_cv_header_gc_gc_h+set}" = set; then
   { $as_echo "$as_me:$LINENO: checking for gc/gc.h" >&5
 $as_echo_n "checking for gc/gc.h... " >&6; }
 if test "${ac_cv_header_gc_gc_h+set}" = set; then
@@ -15032,23 +15397,86 @@ $as_echo "$ac_cv_header_gc_gc_h" >&6; }
 fi
 if test "x$ac_cv_header_gc_gc_h" = x""yes; then
   ECL_BOEHM_GC_HEADER='gc/gc.h'
+else
+  system_boehm=no
 fi
 
 
-    fi
-    if test -z "$ECL_BOEHM_GC_HEADER"; then
-       { { $as_echo "$as_me:$LINENO: error: Boehm-Weiser garbage collector's headers not found" >&5
-$as_echo "$as_me: error: Boehm-Weiser garbage collector's headers not found" >&2;}
+   fi
+ fi
+ { $as_echo "$as_me:$LINENO: checking whether we can use the existing Boehm-Weiser library " >&5
+$as_echo_n "checking whether we can use the existing Boehm-Weiser library ... " >&6; }
+ { $as_echo "$as_me:$LINENO: result: ${system_boehm} " >&5
+$as_echo "${system_boehm} " >&6; }
+ if test "${system_boehm}" = "no"; then
+   if test "${enable_boehm}" = "auto"; then
+     enable_boehm="included";
+   else
+     { { $as_echo "$as_me:$LINENO: error: System Boehm GC library requested but not found." >&5
+$as_echo "$as_me: error: System Boehm GC library requested but not found." >&2;}
    { (exit 1); exit 1; }; }
-    fi
-    ;;
-  no)
-    ECL_BOEHM_GC_HEADER='none';;
-  *)
-    { { $as_echo "$as_me:$LINENO: error: Not a valid argument for --enable-boehm $enable_boehm" >&5
-$as_echo "$as_me: error: Not a valid argument for --enable-boehm $enable_boehm" >&2;}
-   { (exit 1); exit 1; }; };;
-esac
+   fi
+ else
+   FASL_LIBS="${FASL_LIBS} -lgc"
+   EXTRA_OBJS="${EXTRA_OBJS} alloc_2.${OBJEXT}"
+
+cat >>confdefs.h <<\_ACEOF
+#define GBC_BOEHM 1
+_ACEOF
+
+ fi
+fi
+if test "${enable_boehm}" = "included"; then
+      { $as_echo "$as_me:$LINENO: Configuring included Boehm GC library:" >&5
+$as_echo "$as_me: Configuring included Boehm GC library:" >&6;}
+ test -d gc && rm -rf gc
+ if mkdir gc; then
+   if (destdir=`${PWDCMD}`; cd gc; \
+       $srcdir/gc/configure --disable-shared --prefix=${destdir} \
+	 --includedir=${destdir}/ecl/ --libdir=${destdir} --build=${build_alias} \
+	 --host=${host_alias} --enable-large-config \
+         CC="${CC} ${PICFLAG}" CFLAGS="$CFLAGS" \
+	 LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" \
+         ${boehm_configure_flags}); then
+     ECL_BOEHM_GC_HEADER='ecl/gc/gc.h'
+     SUBDIRS="${SUBDIRS} gc"
+     CORE_LIBS="-leclgc ${CORE_LIBS}"
+     EXTRA_OBJS="${EXTRA_OBJS} alloc_2.${OBJEXT}"
+     if test "${enable_shared}" = "no"; then
+       LIBRARIES="${LIBRARIES} ${LIBPREFIX}eclgc.${LIBEXT}"
+     fi
+
+cat >>confdefs.h <<\_ACEOF
+#define GBC_BOEHM 0
+_ACEOF
+
+   fi
+ fi
+ if test -z "${ECL_BOEHM_GC_HEADER}"; then
+   { { $as_echo "$as_me:$LINENO: error: Unable to create 'gc' directory" >&5
+$as_echo "$as_me: error: Unable to create 'gc' directory" >&2;}
+   { (exit 1); exit 1; }; }
+ fi
+fi
+if test "${enable_gengc}" != "no" ; then
+  cat >>confdefs.h <<\_ACEOF
+#define GBC_BOEHM_GENGC 1
+_ACEOF
+
+fi
+{ $as_echo "$as_me:$LINENO: checking if we use Boehm-Demers-Weiser precise garbage collector" >&5
+$as_echo_n "checking if we use Boehm-Demers-Weiser precise garbage collector... " >&6; };
+if test "${enable_precisegc}" != "no" ; then
+  cat >>confdefs.h <<\_ACEOF
+#define GBC_BOEHM_PRECISE 1
+_ACEOF
+
+  { $as_echo "$as_me:$LINENO: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:$LINENO: result: no" >&5
+$as_echo "no" >&6; }
+fi
 
 
 if test ${enable_shared} = "yes"; then

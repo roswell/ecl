@@ -915,33 +915,79 @@ dnl Configure included Boehm GC if needed
 AC_DEFUN([ECL_BOEHM_GC],[
 AC_SUBST(ECL_BOEHM_GC_HEADER)
 case "${enable_boehm}" in
-  included)
-    AC_MSG_NOTICE([Configuring included Boehm GC library:])
-    test -d gc && rm -rf gc
-    if mkdir gc; then
-     (destdir=`${PWDCMD}`; cd gc; \
-      $srcdir/gc/configure --disable-shared --prefix=${destdir} \
-	--includedir=${destdir}/ecl/ --libdir=${destdir} --build=${build_alias} \
-	--host=${host_alias} --enable-large-config \
-        CC="${CC} ${PICFLAG}" CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" \
-        ${boehm_configure_flags})
-      ECL_BOEHM_GC_HEADER='ecl/gc/gc.h'
-    else
-      AC_MSG_ERROR([Unable to create 'gc' directory])
-    fi
-    ;;
-  system)
-    AC_CHECK_HEADER([gc.h],[ECL_BOEHM_GC_HEADER='gc.h'],[],[])
-    if test -z "$ECL_BOEHM_GC_HEADER"; then
-       AC_CHECK_HEADER([gc/gc.h],[ECL_BOEHM_GC_HEADER='gc/gc.h'],[],[])
-    fi
-    if test -z "$ECL_BOEHM_GC_HEADER"; then
-       AC_MSG_ERROR([Boehm-Weiser garbage collector's headers not found])
-    fi
-    ;;
-  no)
-    ECL_BOEHM_GC_HEADER='none';;
-  *)
-    AC_MSG_ERROR([Not a valid argument for --enable-boehm $enable_boehm]);;
+  yes) enable_boehm=auto;;
+  no|auto|system|included) ;;
+  *) AC_MSG_ERROR( [Invalid value of --enable-boehm: ${enable_boehm}] );;
 esac
+if test "${enable_boehm}" = auto -o "${enable_boehm}" = system; then
+ dnl
+ dnl Try first with the prebuilt versions, if installed and accessible
+ dnl
+ if test "${enable_threads}" = no; then
+   AC_CHECK_LIB( [gc], [GC_malloc],
+                 [system_boehm="yes"], [system_boehm="no"] )
+ else
+   AC_CHECK_LIB( [gc], [GC_register_my_thread],
+                 [system_boehm="yes"], [system_boehm="no"] )
+ fi
+ if test "${system_boehm}" = yes; then
+   AC_CHECK_HEADER([gc.h],[ECL_BOEHM_GC_HEADER='gc.h'],[system_boehm=no],[])
+   if test -z "$ECL_BOEHM_GC_HEADER"; then
+     AC_CHECK_HEADER([gc/gc.h],[ECL_BOEHM_GC_HEADER='gc/gc.h'],[system_boehm=no],[])
+   fi
+ fi
+ AC_MSG_CHECKING( [whether we can use the existing Boehm-Weiser library] )
+ AC_MSG_RESULT( [${system_boehm}] )
+ if test "${system_boehm}" = "no"; then
+   if test "${enable_boehm}" = "auto"; then
+     enable_boehm="included";
+   else
+     AC_MSG_ERROR([System Boehm GC library requested but not found.])
+   fi
+ else
+   FASL_LIBS="${FASL_LIBS} -lgc"
+   EXTRA_OBJS="${EXTRA_OBJS} alloc_2.${OBJEXT}"
+   AC_DEFINE(GBC_BOEHM, [1], [Use Boehm's garbage collector])
+ fi
+fi
+if test "${enable_boehm}" = "included"; then
+ dnl
+ dnl Try here with the version shipped with ECL. Note that we have to use
+ dnl the same compiler flags and that we will not export this library: it
+ dnl is installed in the build directory.
+ dnl
+ AC_MSG_NOTICE([Configuring included Boehm GC library:])
+ test -d gc && rm -rf gc
+ if mkdir gc; then
+   if (destdir=`${PWDCMD}`; cd gc; \
+       $srcdir/gc/configure --disable-shared --prefix=${destdir} \
+	 --includedir=${destdir}/ecl/ --libdir=${destdir} --build=${build_alias} \
+	 --host=${host_alias} --enable-large-config \
+         CC="${CC} ${PICFLAG}" CFLAGS="$CFLAGS" \
+	 LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" \
+         ${boehm_configure_flags}); then
+     ECL_BOEHM_GC_HEADER='ecl/gc/gc.h'
+     SUBDIRS="${SUBDIRS} gc"
+     CORE_LIBS="-leclgc ${CORE_LIBS}"
+     EXTRA_OBJS="${EXTRA_OBJS} alloc_2.${OBJEXT}"
+     if test "${enable_shared}" = "no"; then
+       LIBRARIES="${LIBRARIES} ${LIBPREFIX}eclgc.${LIBEXT}"
+     fi
+     AC_DEFINE(GBC_BOEHM, [0], [Use Boehm's garbage collector])
+   fi
+ fi
+ if test -z "${ECL_BOEHM_GC_HEADER}"; then
+   AC_MSG_ERROR([Unable to create 'gc' directory])
+ fi
+fi
+if test "${enable_gengc}" != "no" ; then
+  AC_DEFINE(GBC_BOEHM_GENGC)
+fi
+AC_MSG_CHECKING([if we use Boehm-Demers-Weiser precise garbage collector]);
+if test "${enable_precisegc}" != "no" ; then
+  AC_DEFINE(GBC_BOEHM_PRECISE)
+  AC_MSG_RESULT([yes])
+else
+  AC_MSG_RESULT([no])
+fi
 ])

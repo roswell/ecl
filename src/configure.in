@@ -518,54 +518,11 @@ dnl ----------------------------------------------------------------------
 dnl		Boehm-Weiser garbage collector
 if test ${enable_boehm} = "no" ; then
   AC_MSG_ERROR([Boehm GC library is currently needed to build ECL]);
-fi
-if test ${enable_boehm} = "no" ; then
   EXTRA_OBJS="${EXTRA_OBJS} alloc.${OBJEXT} gbc.${OBJEXT}"
   enable_smallcons="no"
 else
-  if test ${enable_boehm} = "auto"; then
-    if test ${enable_threads} = "no"; then
-      AC_CHECK_LIB( [gc], [GC_malloc],
-                    [enable_boehm="system"], [enable_boehm="included"] )
-    else
-      AC_CHECK_LIB( [gc], [GC_register_my_thread],
-                    [enable_boehm="system"], [enable_boehm="included"] )
-    fi
-    AC_MSG_CHECKING( [whether we can use the existing Boehm-Weiser library] )
-    if test ${enable_boehm} = "system"; then
-      AC_MSG_RESULT([yes])
-    else
-      AC_MSG_RESULT([no])
-    fi
-  fi
-
-  if test ${enable_boehm} = "system"; then 
-    AC_CHECK_LIB( [gc], [GC_malloc],
-      [FASL_LIBS="${FASL_LIBS} -lgc"],
-      [AC_MSG_ERROR([System Boehm GC library requested but not found.])])
-    AC_DEFINE(GBC_BOEHM, [1], [Use Boehm's garbage collector])
-  else
-    enable_boehm="included"
-    SUBDIRS="${SUBDIRS} gc"
-    CORE_LIBS="-leclgc ${CORE_LIBS}"
-    if test "${enable_shared}" = "no"; then
-      LIBRARIES="${LIBRARIES} ${LIBPREFIX}eclgc.${LIBEXT}"
-    fi
-    AC_DEFINE(GBC_BOEHM, [0], [Use Boehm's garbage collector])
-  fi
-  EXTRA_OBJS="${EXTRA_OBJS} alloc_2.${OBJEXT}"
+  ECL_BOEHM_GC
 fi
-if test "${enable_gengc}" != "no" ; then
-  AC_DEFINE(GBC_BOEHM_GENGC)
-fi
-AC_MSG_CHECKING([if we use Boehm-Demers-Weiser precise garbage collector]);
-if test "${enable_precisegc}" != "no" ; then
-  AC_DEFINE(GBC_BOEHM_PRECISE)
-  AC_MSG_RESULT([yes])
-else
-  AC_MSG_RESULT([no])
-fi
-
 if test ${enable_smallcons} = "yes" ; then
    AC_DEFINE(ECL_SMALL_CONS)
 fi
