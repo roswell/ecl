@@ -180,11 +180,26 @@ asm_end(cl_env_ptr env, cl_index beginning, cl_object definition) {
 	for (i = 0, code = (cl_opcode *)bytecodes->bytecodes.code; i < code_size; i++) {
 		code[i] = (cl_opcode)(cl_fixnum)(env->stack[beginning+i]);
  	}
-	while (data_size--) {
-		bytecodes->bytecodes.data[data_size] = ECL_CONS_CAR(c_env->constants);
+	for (i = data_size; i--; ) {
+		bytecodes->bytecodes.data[i] = ECL_CONS_CAR(c_env->constants);
 		c_env->constants = ECL_CONS_CDR(c_env->constants);
 		c_env->constants_size--;
 	}
+        if (c_env->load_time_forms != Cnil) {
+                /* Objects with load-time constants are not saved, as
+                 * they will be rebuilt later on. */
+                cl_object p = c_env->load_time_forms;
+                do {
+                        cl_object o = ECL_CONS_CAR(p);
+                        for (i = 0; i < data_size; i++) {
+                                if (bytecodes->bytecodes.data[i] == o) {
+                                        bytecodes->bytecodes.data[i] = MAKE_FIXNUM(i);
+                                        break;
+                                }
+                        }
+                        p = ECL_CONS_CDR(p);
+                } while (p != Cnil);
+        }
         bytecodes->bytecodes.entry =  _ecl_bytecodes_dispatch_vararg;
         ecl_set_function_source_file_info(bytecodes, (file == OBJNULL)? Cnil : file,
                                           (file == OBJNULL)? Cnil : position);
@@ -543,6 +558,7 @@ c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_object env,
 	new->lexical_level = 0;
 	new->constants = Cnil;
 	new->constants_size = 0;
+        new->load_time_forms = Cnil;
 	new->env_depth = 0;
 	new->env_size = 0;
 	if (old) {
