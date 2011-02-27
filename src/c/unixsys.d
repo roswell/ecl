@@ -224,6 +224,13 @@ update_process_status(cl_env_ptr env, cl_object process, cl_object status, cl_ob
 	cl_object status, code;
 @
 {
+#if defined(ECL_MS_WINDOWS_HOST)
+        /* ext:external-process-wait may wait for a process structure,
+         * for a process id or for (-1), which means "any process". The
+         * last case is only implemented on POSIX platforms. */
+        if (process_or_pid == MAKE_FIXNUM(-1))
+                @(return Cnil Cnil);
+#endif
         if (type_of(process_or_pid) == T_STRUCTURE) {
                 cl_object pid = cl_funcall(2, @'ext::external-process-pid',
                                            process_or_pid);
@@ -236,7 +243,6 @@ update_process_status(cl_env_ptr env, cl_object process, cl_object status, cl_ob
                 code = VALUES(1);
                 update_process_status(the_env, process_or_pid, status, code);
         } else {
-                cl_object exit_status = Cnil;
 #if defined(ECL_MS_WINDOWS_HOST)
                 HANDLE *hProcess = ecl_foreign_data_pointer_safe(process_or_pid);
                 DWORD exitcode;
