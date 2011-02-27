@@ -13,8 +13,7 @@
 
 (in-package "EXT")
 
-(defstruct (external-process (:constructor make-external-process
-                                           (pid input output)))
+(defstruct (external-process (:constructor make-external-process ()))
   pid
   input
   output

@@ -139,9 +139,25 @@ from_list_to_execve_argument(cl_object l, char ***environp)
 }
 
 static cl_object
-make_external_process(cl_object pid, cl_object input, cl_object output)
+make_external_process()
 {
-        return cl_funcall(4, @'ext::make-external-process', pid, input, output);
+        return cl_funcall(1, @'ext::make-external-process');
+}
+
+static void
+set_external_process_pid(cl_object process, cl_object pid)
+{
+        ecl_structure_set(process, @'ext::external-process',
+                          0, pid);
+}
+
+static void
+set_external_process_streams(cl_object process, cl_object input, cl_object output)
+{
+        ecl_structure_set(process, @'ext::external-process',
+                          1, input);
+        ecl_structure_set(process, @'ext::external-process',
+                          2, output);
 }
 
 #if defined(SIGCHLD) && !defined(ECL_MS_WINDOWS_HOST)
@@ -217,7 +233,14 @@ update_process_status(cl_env_ptr env, cl_object process, cl_object status, cl_ob
                           3, status);
         ecl_structure_set(process, @'ext::external-process',
                           4, code);
-        remove_external_process(env, process);
+        if (status == @':exited' || status == @':error' || status == @':signaled')
+                remove_external_process(env, process);
+}
+
+static cl_object
+external_process_pid(cl_object p)
+{
+        return cl_funcall(2, @'ext::external-process-pid', p);
 }
 
 @(defun ext::external-process-wait (process_or_pid &optional (wait Cnil))
@@ -232,16 +255,21 @@ update_process_status(cl_env_ptr env, cl_object process, cl_object status, cl_ob
                 @(return Cnil Cnil);
 #endif
         if (type_of(process_or_pid) == T_STRUCTURE) {
-                cl_object pid = cl_funcall(2, @'ext::external-process-pid',
-                                           process_or_pid);
-                if (Null(pid)) {
-                        /* Process already exited */
-                        return cl_funcall(2, @'ext::external-process-status',
-                                          process_or_pid);
+                cl_object pid;
+                while (!Null(pid = external_process_pid(process_or_pid))) {
+                        status = si_external_process_wait(2, pid, wait);
+                        code = VALUES(1);
+                        if (status != @':abort') {
+                                update_process_status(the_env, process_or_pid,
+                                                      status, code);
+                                goto OUTPUT;
+                        } else if (Null(wait)) {
+                                goto OUTPUT;
+                        }
                 }
-                status = si_external_process_wait(2, pid, wait);
-                code = VALUES(1);
-                update_process_status(the_env, process_or_pid, status, code);
+                /* Process already exited */
+                return cl_funcall(2, @'ext::external-process-status',
+                                  process_or_pid);
         } else {
 #if defined(ECL_MS_WINDOWS_HOST)
                 HANDLE *hProcess = ecl_foreign_data_pointer_safe(process_or_pid);
@@ -265,10 +293,15 @@ update_process_status(cl_env_ptr env, cl_object process, cl_object status, cl_ob
                 ecl_enable_interrupts_env(the_env);
 #else
                 cl_fixnum pid = fixint(process_or_pid);
-                int code_int;
-                int error = waitpid(pid, &code_int, Null(wait)? WNOHANG : 0);
+                int code_int, error;
+        AGAIN:
+                error = waitpid(pid, &code_int, Null(wait)? WNOHANG : 0);
                 if (error < 0) {
-                        status = @':error';
+                        if (errno == EINTR) {
+                                status = @':abort';
+                        } else {
+                                status = @':error';
+                        }
                         code = Cnil;
                 } else if (WIFEXITED(code_int)) {
                         status = @':exited';
@@ -288,13 +321,14 @@ update_process_status(cl_env_ptr env, cl_object process, cl_object status, cl_ob
                 }
                 if (error > 0) {
                         cl_object process =
-                                find_external_process(the_env, process_or_pid);
+                                find_external_process(the_env, MAKE_FIXNUM(error));
                         if (!Null(process)) {
                                 update_process_status(the_env, process, status, code);
                         }
                 }
 #endif
         }
+ OUTPUT:
         @(return status code)
 }
 @)
@@ -312,6 +346,7 @@ update_process_status(cl_env_ptr env, cl_object process, cl_object status, cl_ob
 @
 	command = si_copy_to_simple_base_string(command);
 	argv = cl_mapcar(2, @'si::copy-to-simple-base-string', argv);
+	process = make_external_process();
 #if defined(ECL_MS_WINDOWS_HOST)
 {
 	BOOL ok;
@@ -470,6 +505,7 @@ update_process_status(cl_env_ptr env, cl_object process, cl_object status, cl_ob
                 FEerror("Invalid :ERROR argument to EXT:RUN-PROGRAM:~%~S", 1,
                         error);
 	}
+	add_external_process(the_env, process);
 #if 1
 	ZeroMemory(&st_info, sizeof(STARTUPINFO));
 	st_info.cb = sizeof(STARTUPINFO);
@@ -514,9 +550,6 @@ update_process_status(cl_env_ptr env, cl_object process, cl_object status, cl_ob
 #endif /* 1 */
 	/* Child handles must be closed in the parent process */
 	/* otherwise the created pipes are never closed       */
-	if (child_stdin) CloseHandle(child_stdin);
-	if (child_stdout) CloseHandle(child_stdout);
-	if (child_stderr) CloseHandle(child_stderr);
 	if (ok) {
 		CloseHandle(pr_info.hThread);
                 pid = make_windows_handle(pr_info.hProcess);
@@ -529,6 +562,10 @@ update_process_status(cl_env_ptr env, cl_object process, cl_object status, cl_ob
 		LocalFree(message);
 		pid = Cnil;
 	}
+        set_external_process_pid(process, pid);
+        if (child_stdin) CloseHandle(child_stdin);
+	if (child_stdout) CloseHandle(child_stdout);
+	if (child_stderr) CloseHandle(child_stderr);
 }
 #else /* mingw */
 {
@@ -610,6 +647,7 @@ update_process_status(cl_env_ptr env, cl_object process, cl_object status, cl_ob
                 FEerror("Invalid :ERROR argument to EXT:RUN-PROGRAM:~%~S", 1,
                         error);
 	}
+	add_external_process(the_env, process);
 	child_pid = fork();
 	if (child_pid == 0) {
 		/* Child */
@@ -640,14 +678,15 @@ update_process_status(cl_env_ptr env, cl_object process, cl_object status, cl_ob
 		perror("exec");
 		abort();
 	}
-	close(child_stdin);
-	close(child_stdout);
-	close(child_stderr);
         if (child_pid < 0) {
                 pid = Cnil;
         } else {
                 pid = MAKE_FIXNUM(child_pid);
         }
+        set_external_process_pid(process, pid);
+	close(child_stdin);
+	close(child_stdout);
+	close(child_stderr);
 }
 #endif /* mingw */
 	if (Null(pid)) {
@@ -655,6 +694,7 @@ update_process_status(cl_env_ptr env, cl_object process, cl_object status, cl_ob
 		if (parent_read) close(parent_read);
 		parent_write = 0;
 		parent_read = 0;
+                remove_external_process(the_env, process);
 		FEerror("Could not spawn subprocess to run ~S.", 1, command);
 	}
 	if (parent_write > 0) {
@@ -673,8 +713,7 @@ update_process_status(cl_env_ptr env, cl_object process, cl_object status, cl_ob
 		parent_read = 0;
 		stream_read = cl_core.null_stream;
 	}
-	process = make_external_process(pid, stream_write, stream_read);
-	add_external_process(the_env, process);
+	set_external_process_streams(process, stream_write, stream_read);
 	if (!Null(wait)) {
                 exit_status = si_external_process_wait(2, process, Ct);
                 exit_status = VALUES(1);

@@ -351,7 +351,8 @@ handler_fn_protype(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
                 cl_object status;
                 do {
                         status = si_external_process_wait(1, MAKE_FIXNUM(-1));
-                } while (!Null(status) && status != @':error');                
+                } while (!Null(status) && status != @':error');      
+                return Cnil;
         }
 #endif
 	default:
@@ -704,6 +705,10 @@ si_catch_signal(cl_object code, cl_object boolean)
 #ifdef SIGBUS
 			else if (code_int == SIGBUS)
 				mysignal(code_int, sigbus_handler);
+#endif
+#ifdef SIGCHLD
+                        else if (code_int == SIGCHLD)
+                                mysignal(SIGCHLD, non_evil_signal_handler);
 #endif
 			else
 				mysignal(code_int, non_evil_signal_handler);
