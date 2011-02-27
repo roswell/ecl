@@ -549,14 +549,11 @@ make_windows_handle(HANDLE h)
 		/* Child */
 		int j;
 		void **argv_ptr = (void **)argv->vector.self.t;
-		close(0);
-		dup(child_stdin);
+		dup2(child_stdin, STDIN_FILENO);
 		if (parent_write) close(parent_write);
-		close(1);
-		dup(child_stdout);
+		dup2(child_stdout, STDOUT_FILENO);
 		if (parent_read) close(parent_read);
-		close(2);
-		dup(child_stderr);
+		dup2(child_stderr, STDERR_FILENO);
 		for (j = 0; j < argv->vector.fillp; j++) {
 			cl_object arg = argv->vector.self.t[j];
 			if (arg == Cnil) {
