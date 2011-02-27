@@ -7178,7 +7178,7 @@ $as_echo "$as_me: error: System libffi library requested but not found." >&2;}
    { (exit 1); exit 1; }; }
    fi
  else
-   CORE_LIBS="${FASL_LIBS} -lffi"
+   FASL_LIBS="${FASL_LIBS} -lffi"
  fi
 fi
 if test "${enable_libffi}" = "included"; then

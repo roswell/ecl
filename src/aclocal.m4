@@ -997,7 +997,7 @@ if test "${enable_libffi}" = auto -o "${enable_libffi}" = system; then
      AC_MSG_ERROR([System libffi library requested but not found.])
    fi
  else
-   CORE_LIBS="${FASL_LIBS} -lffi"
+   FASL_LIBS="${FASL_LIBS} -lffi"
  fi
 fi
 if test "${enable_libffi}" = "included"; then
