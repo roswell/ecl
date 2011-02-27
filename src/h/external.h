@@ -243,6 +243,8 @@ struct cl_core_struct {
 
         cl_object rehash_size;
         cl_object rehash_threshold;
+
+        cl_object external_processes;
 };
 
 extern ECL_API struct cl_core_struct cl_core;
@@ -951,6 +953,7 @@ typedef enum {
 	ECL_OPT_TRAP_SIGILL,
 	ECL_OPT_TRAP_SIGBUS,
         ECL_OPT_TRAP_SIGPIPE,
+        ECL_OPT_TRAP_SIGCHLD,
 	ECL_OPT_TRAP_INTERRUPT_SIGNAL,
 	ECL_OPT_SIGNAL_HANDLING_THREAD,
 	ECL_OPT_SIGNAL_QUEUE_SIZE,

@@ -346,6 +346,14 @@ handler_fn_protype(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
 	case SIGBUS:
                 return @'ext::segmentation-violation';
 #endif
+#ifdef SIGCHLD
+        case SIGCHLD: {
+                cl_object status;
+                do {
+                        status = si_external_process_wait(1, MAKE_FIXNUM(-1));
+                } while (!Null(status) && status != @':error');                
+        }
+#endif
 	default:
 		return MAKE_FIXNUM(sig);
 	}
@@ -1116,6 +1124,11 @@ install_synchronous_signal_handlers()
 #ifdef SIGPIPE
 	if (ecl_get_option(ECL_OPT_TRAP_SIGPIPE)) {
 		mysignal(SIGPIPE, non_evil_signal_handler);
+	}
+#endif
+#ifdef SIGCHLD
+	if (ecl_get_option(ECL_OPT_TRAP_SIGCHLD)) {
+		mysignal(SIGCHLD, non_evil_signal_handler);
 	}
 #endif
 }

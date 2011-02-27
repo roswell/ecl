@@ -72,6 +72,7 @@ static cl_fixnum option_values[ECL_OPT_LIMIT+1] = {
 	1,		/* ECL_OPT_TRAP_SIGILL */
 	1,		/* ECL_OPT_TRAP_SIGBUS */
 	1,		/* ECL_OPT_TRAP_SIGPIPE */
+	0,		/* ECL_OPT_TRAP_SIGCHLD */
 	1,		/* ECL_OPT_TRAP_INTERRUPT_SIGNAL */
 	1,		/* ECL_OPT_SIGNAL_HANDLING_THREAD */
 	128,		/* ECL_OPT_SIGNAL_QUEUE_SIZE */
@@ -412,7 +413,9 @@ struct cl_core_struct cl_core = {
 	Cnil, /* compiler_dispatch */
 
         (cl_object)&default_rehash_size_data, /* rehash_size */
-        (cl_object)&default_rehash_threshold_data /* rehash_threshold */
+        (cl_object)&default_rehash_threshold_data, /* rehash_threshold */
+
+        Cnil /* external_processes */
 };
 
 int

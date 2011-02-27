@@ -206,6 +206,9 @@ ECL 11.1.2
 
  - ECL ships libffi together with its source tree, much like GMP and GC.
 
+ - On POSIX platforms ECL traps SIGCHLD and uses it to update the status of
+   external processes.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
