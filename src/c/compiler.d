@@ -189,8 +189,10 @@ asm_end(cl_env_ptr env, cl_index beginning, cl_object definition) {
                 /* Objects with load-time constants are not saved, as
                  * they will be rebuilt later on. */
                 cl_object p = c_env->load_time_forms;
+                cl_print(1,p);
                 do {
-                        cl_object o = ECL_CONS_CAR(p);
+                        cl_object record = ECL_CONS_CAR(p);
+                        cl_object o = ECL_CONS_CAR(record);
                         for (i = 0; i < data_size; i++) {
                                 if (bytecodes->bytecodes.data[i] == o) {
                                         bytecodes->bytecodes.data[i] = MAKE_FIXNUM(i);
@@ -2121,6 +2123,36 @@ c_values(cl_env_ptr env, cl_object args, int flags) {
 	return FLAG_VALUES;
 }
 
+static int
+need_to_make_load_form_p(cl_object o)
+{
+        switch (type_of(o)) {
+        case t_character:
+        case t_fixnum:
+        case t_bignum:
+        case t_ratio:
+        case t_singlefloat:
+        case t_doublefloat:
+#ifdef ECL_LONG_FLOAT
+        case t_longfloat:
+#endif
+        case t_complex:
+        case t_symbol:
+        case t_pathname:
+#ifdef ECL_UNICODE
+        case t_string:
+#endif
+        case t_base_string:
+        case t_bitvector:
+                return 0;
+        case t_list:
+                if (Null(o)) return 0;
+        default:
+                return cl_funcall(2, @'clos::need-to-make-load-form-p', o)
+                        != Cnil;
+        }
+}
+
 static void
 maybe_make_load_forms(cl_env_ptr env, cl_object constant)
 {
@@ -2128,10 +2160,13 @@ maybe_make_load_forms(cl_env_ptr env, cl_object constant)
         cl_object init, make;
         if (c_env->mode != FLAG_LOAD)
                 return;
-        if (Null(cl_funcall(2, @'clos::need-to-make-load-form-p', constant)))
+        if (ecl_memql(constant, c_env->constants) != Cnil)
+                return;
+        if (!need_to_make_load_form_p(constant))
                 return;
         make = cl_funcall(2, @'make-load-form', constant);
         init = env->values[1];
+        cl_print(1, cl_list(3, @'make-load-form', make, init));
         c_env->load_time_forms = ecl_cons(cl_list(3, constant, make, init),
                                           c_env->load_time_forms);
 }
@@ -2337,24 +2372,31 @@ execute_each_form(cl_env_ptr env, cl_object body, int flags)
         return FLAG_VALUES;
 }
 
-static cl_object
+static cl_index *
 save_bytecodes(cl_env_ptr env, cl_index start, cl_index end)
 {
-        cl_object p;
-        for (p = Cnil; end > start; end--) {
-                cl_object o = ECL_STACK_POP_UNSAFE(env);
-                p = ecl_cons(o, p);
+#ifdef GBC_BOEHM
+        cl_index l = end - start;
+        cl_index *bytecodes = ecl_alloc_atomic((l + 1) * sizeof(cl_index));
+        cl_index *p = bytecodes;
+        for (*(p++) = l; end > start; end--, p++) {
+                *p = ECL_STACK_POP_UNSAFE(env);
         }
+        return bytecodes;
+#else
+#error "Pointer references outside of recognizable object"
+#endif
 }
 
 static void
-restore_bytecodes(cl_env_ptr env, cl_object list)
+restore_bytecodes(cl_env_ptr env, cl_index *bytecodes)
 {
-        cl_object p;
-        for (p = list; p != Cnil; p = ECL_CONS_CDR(p)) {
-                cl_object o = ECL_CONS_CAR(p);
-                ECL_STACK_PUSH(env, o);
+        cl_index *p = bytecodes;
+        cl_index l;
+        for (l = *p; l; l--) {
+                ECL_STACK_PUSH(env, p[l]);
         }
+        ecl_dealloc(bytecodes);
 }
 
 static int
@@ -2366,21 +2408,22 @@ compile_with_load_time_forms(cl_env_ptr env, cl_object form, int flags)
         const cl_compiler_ptr c_env = env->c_env;
         cl_object old_load_time_forms = c_env->load_time_forms;
         cl_index handle = asm_begin(env);
-        int output_flags = compile_form(env, form, FLAG_VALUES);
+        int output_flags = compile_form(env, form, flags);
         /*
          * If some constants need to be built, we insert the
          * code _before_ the actual forms;
          */
         if (c_env->load_time_forms != old_load_time_forms) {
-                cl_object bytecodes = save_bytecodes(env, handle, asm_begin(env));
+                cl_index *bytecodes = save_bytecodes(env, handle, current_pc(env));
                 cl_object p = c_env->load_time_forms;
                 do {
                         cl_object r = ECL_CONS_CAR(p);
                         cl_object constant = pop(&r);
                         cl_object make_form = pop(&r);
                         cl_object init_form = pop(&r);
-                        cl_index loc = asm_constant(env, constant);
+                        cl_index loc = c_register_constant(env, constant);
                         compile_with_load_time_forms(env, make_form, FLAG_REG0);
+                        printf("\n= %lx", loc);
                         asm_op2(env, OP_CSET, loc);
                         compile_with_load_time_forms(env, init_form, FLAG_IGNORE);
                         p = ECL_CONS_CDR(p);
@@ -3033,7 +3076,8 @@ si_make_lambda(cl_object name, cl_object rest)
                 if (Null(execute)) {
                         cl_index handle = asm_begin(the_env);
                         new_c_env.mode = FLAG_LOAD;
-                        compile_form(the_env, form, FLAG_VALUES);
+                        cl_print(1,form);
+                        compile_with_load_time_forms(the_env, form, FLAG_VALUES);
                         asm_op(the_env, OP_EXIT);
                         the_env->values[0] = asm_end(the_env, handle, form);
                         the_env->nvalues = 1;
