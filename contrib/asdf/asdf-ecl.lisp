@@ -442,7 +442,7 @@
                        (and (first l) (register-pre-built-system name))
                        (values-list l)))))
 #+win32 (push '("asd" . si::load-source) si::*load-hooks*)
-(pushnew 'module-provide-asdf ext:*module-provider-functions*)
+(pushnew 'module-provide-asdf si:*module-provider-functions*)
 (pushnew (translate-logical-pathname "SYS:") *central-registry*)
 
 (provide 'asdf)

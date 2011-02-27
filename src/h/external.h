@@ -164,6 +164,7 @@ struct cl_core_struct {
 	cl_object user_package;
 	cl_object keyword_package;
 	cl_object system_package;
+        cl_object ext_package;
 #ifdef CLOS
 	cl_object clos_package;
 # ifdef ECL_CLOS_STREAMS

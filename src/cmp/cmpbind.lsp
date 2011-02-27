@@ -26,7 +26,7 @@
   (case (var-kind var)
     (CLOSURE
      (let ((var-loc (var-loc var)))
-       (unless (sys:fixnump var-loc)
+       (unless (typep var-loc 'fixnum)
 	 ;; first binding: assign location
 	 (setq var-loc (next-env))
 	 (setf (var-loc var) var-loc))

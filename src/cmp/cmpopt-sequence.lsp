@@ -102,7 +102,7 @@
                          test))))))
 
 #+(or)
-(define-compiler-macro ext::make-seq-iterator (seq &optional (start 0))
+(define-compiler-macro si::make-seq-iterator (seq &optional (start 0))
   (with-clean-symbols (%seq %start)
     `(let ((%seq (optional-type-check ,seq sequence))
            (%start ,start))
@@ -114,7 +114,7 @@
               nil)))))
 
 #+(or)
-(define-compiler-macro ext::seq-iterator-ref (seq iterator)
+(define-compiler-macro si::seq-iterator-ref (seq iterator)
   (with-clean-symbols (%seq %iterator)
     `(let* ((%seq ,seq)
             (%iterator ,iterator))
@@ -126,7 +126,7 @@
            (cons-car (assert-type-if-known %iterator cons))))))
 
 #+(or)
-(define-compiler-macro ext::seq-iterator-next (seq iterator)
+(define-compiler-macro si::seq-iterator-next (seq iterator)
   (with-clean-symbols (%seq %iterator)
     `(let* ((%seq ,seq)
             (%iterator ,iterator))
@@ -148,16 +148,16 @@
                      %iterator)))
       `(let* ((,%sequence ,sequence)
               (,%start ,start)
-              (,%iterator (ext::make-seq-iterator ,%sequence ,%start))
+              (,%iterator (si::make-seq-iterator ,%sequence ,%start))
               (,%counter ,counter))
          (declare (:read-only ,%sequence ,%start ,%counter)
                   (ignorable ,%counter)
                   (fixnum ,%counter))
          (loop
             (unless ,test (return ,output))
-            (let ((,%elt (ext::seq-iterator-ref ,%sequence ,%iterator)))
+            (let ((,%elt (si::seq-iterator-ref ,%sequence ,%iterator)))
               ,@body)
-            (setf ,%iterator (ext::seq-iterator-next ,%sequence ,%iterator)))))))
+            (setf ,%iterator (si::seq-iterator-next ,%sequence ,%iterator)))))))
 
 ;;;
 ;;; MEMBER

@@ -569,7 +569,7 @@ pathnames."
   #+allegro (sys:getenv x)
   #+clozure (ccl:getenv x)
   #+(or cmu scl) (cdr (assoc x ext:*environment-list* :test #'string=))
-  #+ecl (si:getenv x)
+  #+ecl (ext:getenv x)
   #+gcl (system:getenv x)
   #+genera nil
   #+lispworks (lispworks:environment-variable x)
@@ -2454,7 +2454,7 @@ output to *VERBOSE-OUT*.  Returns the shell's exit code."
                                  :wait t)))
 
     #+ecl ;; courtesy of Juan Jose Garcia Ripoll
-    (si:system command)
+    (ext:system command)
 
     #+gcl
     (lisp:system command)

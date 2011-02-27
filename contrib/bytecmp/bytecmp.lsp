@@ -68,7 +68,7 @@
          and ext:*bytecodes-compiler* = t
          for form = (read sin nil :EOF)
          until (eq form :EOF)
-         do (let ((bytecodes (ext:eval-with-env form nil nil nil)))
+         do (let ((bytecodes (si:eval-with-env form nil nil nil)))
               (with-standard-io-syntax
                 (write `(FUNCALL ,bytecodes) :stream sout :circle t
                        :escape t :readably t :pretty nil)

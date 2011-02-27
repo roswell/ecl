@@ -12,7 +12,7 @@
 ;;;;  CMPPACKAGE -- Package definitions and exported symbols
 ;;;;
 
-(si::package-lock "CL" nil)
+(ext:package-lock "CL" nil)
 
 (defpackage "C"
   (:nicknames "COMPILER")

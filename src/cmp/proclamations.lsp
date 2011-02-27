@@ -158,7 +158,7 @@
   'unsigned-byte)
 (deftype time-zone ()
   t)
-(deftype si::instance ()
+(deftype ext:instance ()
   'standard-object)
 
 
@@ -237,9 +237,9 @@
 ;; ECL extensions
 
 (proclamation si:fset (function-name function &optional gen-bool t) function)
-(proclamation si:compiled-function-name (function) (or null function-name))
+(proclamation ext:compiled-function-name (function) (or null function-name))
 (proclamation si:compiled-function-block (function) (or null si::codeblock))
-(proclamation si:compiled-function-file (function) (values t t))
+(proclamation ext:compiled-function-file (function) (values t t))
 
 (proclamation si:ihs-top () si::index)
 (proclamation si:ihs-fun (si::index) (or null function-designator))
@@ -404,7 +404,7 @@
 (proclamation si:select-package (package-designator) package)
 (proclamation si:package-hash-tables (package-designator)
                    (values hash-table hash-table list) :reader)
-(proclamation si:package-lock (package-designator gen-bool) package)
+(proclamation ext:package-lock (package-designator gen-bool) package)
 
 ;;;
 ;;; 12. NUMBERS
@@ -534,7 +534,7 @@
 
 ;; ECL extensions
 (proclamation si:bit-array-op (t t t t) (array bit))
-(proclamation si:fixnump (t) gen-bool :pure)
+(proclamation ext:fixnump (t) gen-bool :pure)
 
 ;; Virtual functions added by the compiler
 (proclamation shift>> (*) nil :pure)
@@ -1015,10 +1015,11 @@
 (proclamation ext:file-kind (pathname-designator gen-bool) symbol)
 (proclamation ext:chdir (pathname-designator &optional gen-bool) pathname)
 (proclamation ext:getcwd (&optional gen-bool) pathname)
-(proclamation ext:mkdir (pathname-designator unsigned-byte) string)
 (proclamation ext:mkstemp (pathname-designator) (or null pathname))
-(proclamation ext:rmdir (pathname-designator) null)
 (proclamation ext:copy-file (pathname-designator pathname-designator) gen-bool)
+
+(proclamation si:mkdir (pathname-designator unsigned-byte) string)
+(proclamation si:rmdir (pathname-designator) null)
 
 
 ;;;
@@ -1294,7 +1295,7 @@
 (proclamation si:traced-old-definition (t) t :no-side-effects)
 
 #+clos
-(proclamation si:allocate-raw-instance (t t fixnum) si:instance)
+(proclamation si:allocate-raw-instance (t t fixnum) ext:instance)
 #+clos
 (proclamation si:instance-ref-safe (t fixnum) t)
 #+clos

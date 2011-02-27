@@ -264,7 +264,7 @@
 ;;;
 
 (defun bug-or-error (stream fun)
-  (declare (ext::c-local))
+  (declare (si::c-local))
   (if (typep stream 'stream)
       (error "The stream ~S has no suitable method for ~S." stream fun)
       (error 'type-error :datum stream :expected-type 'stream)))

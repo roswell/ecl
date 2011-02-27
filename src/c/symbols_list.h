@@ -1114,8 +1114,8 @@ cl_symbols[] = {
 {SYS_ "UNQUOTE-NSPLICE", SI_ORDINARY, NULL, -1, OBJNULL},
 {SYS_ "UNQUOTE-SPLICE", SI_ORDINARY, NULL, -1, OBJNULL},
 {SYS_ "ALLOCATE-RAW-INSTANCE", SI_ORDINARY, si_allocate_raw_instance, 3, OBJNULL},
-{SYS_ "ARGC", SI_ORDINARY, si_argc, 0, OBJNULL},
-{SYS_ "ARGV", SI_ORDINARY, si_argv, 1, OBJNULL},
+{EXT_ "ARGC", EXT_ORDINARY, si_argc, 0, OBJNULL},
+{EXT_ "ARGV", EXT_ORDINARY, si_argv, 1, OBJNULL},
 {SYS_ "ASET", SI_ORDINARY, si_aset, -1, OBJNULL},
 {SYS_ "BASE-CHAR-P", SI_ORDINARY, si_base_char_p, 1, OBJNULL},
 {SYS_ "BASE-STRING-P", SI_ORDINARY, si_base_string_p, 1, OBJNULL},
@@ -1128,7 +1128,7 @@ cl_symbols[] = {
 {SYS_ "BIT-ARRAY-OP", SI_ORDINARY, si_bit_array_op, 4, OBJNULL},
 {SYS_ "C-ARGUMENTS-LIMIT", SI_ORDINARY, NULL, -1, MAKE_FIXNUM(C_ARGUMENTS_LIMIT)},
 {SYS_ "CHAR-SET", SI_ORDINARY, si_char_set, 3, OBJNULL},
-{EXT_ "CHDIR", SI_ORDINARY, si_chdir, -1, OBJNULL},
+{EXT_ "CHDIR", EXT_ORDINARY, si_chdir, -1, OBJNULL},
 {SYS_ "CLEAR-COMPILER-PROPERTIES", SI_ORDINARY, cl_identity, 1, OBJNULL},
 {SYS_ "COERCE-TO-BASE-STRING", SI_ORDINARY, si_coerce_to_base_string, 1, OBJNULL},
 {SYS_ "COERCE-TO-EXTENDED-STRING", SI_ORDINARY, si_coerce_to_extended_string, 1, OBJNULL},
@@ -1137,7 +1137,7 @@ cl_symbols[] = {
 {SYS_ "COERCE-TO-PACKAGE", SI_ORDINARY, si_coerce_to_package, 1, OBJNULL},
 {SYS_ "COPY-TO-SIMPLE-BASE-STRING", SI_ORDINARY, si_copy_to_simple_base_string, 1, OBJNULL},
 {SYS_ "COMPILED-FUNCTION-BLOCK", SI_ORDINARY, si_compiled_function_block, 1, OBJNULL},
-{SYS_ "COMPILED-FUNCTION-NAME", SI_ORDINARY, si_compiled_function_name, 1, OBJNULL},
+{EXT_ "COMPILED-FUNCTION-NAME", EXT_ORDINARY, si_compiled_function_name, 1, OBJNULL},
 {SYS_ "COPY-STREAM", SI_ORDINARY, si_copy_stream, 1, OBJNULL},
 {SYS_ "DO-READ-SEQUENCE", SI_ORDINARY, si_do_read_sequence, 4, OBJNULL},
 {SYS_ "DO-WRITE-SEQUENCE", SI_ORDINARY, si_do_write_sequence, 4, OBJNULL},
@@ -1145,10 +1145,10 @@ cl_symbols[] = {
 {SYS_ "EVAL-WITH-ENV", SI_ORDINARY, si_eval_with_env, -1, OBJNULL},
 {SYS_ "EXPAND-DEFMACRO", SI_ORDINARY, NULL, -1, OBJNULL},
 {SYS_ "FILE-COLUMN", SI_ORDINARY, si_file_column, 1, OBJNULL},
-{SYS_ "FILE-KIND", SI_ORDINARY, si_file_kind, 2, OBJNULL},
+{EXT_ "FILE-KIND", EXT_ORDINARY, si_file_kind, 2, OBJNULL},
 {SYS_ "FILL-POINTER-SET", SI_ORDINARY, si_fill_pointer_set, 2, OBJNULL},
 {SYS_ "FILE-STREAM-FD", SI_ORDINARY, si_file_stream_fd, 1, OBJNULL},
-{SYS_ "FIXNUMP", SI_ORDINARY, si_fixnump, 1, OBJNULL},
+{EXT_ "FIXNUMP", EXT_ORDINARY, si_fixnump, 1, OBJNULL},
 {SYS_ "FORMAT-ERROR", SI_ORDINARY, NULL, -1, OBJNULL},
 #ifdef ECL_CMU_FORMAT
 {SYS_ "FORMATTER-AUX", SI_ORDINARY, NULL, -1, OBJNULL},
@@ -1163,10 +1163,10 @@ cl_symbols[] = {
 {SYS_ "FUNCTION-BLOCK-NAME", SI_ORDINARY, si_function_block_name, 1, OBJNULL},
 {SYS_ "GET-LIBRARY-PATHNAME", SI_ORDINARY, si_get_library_pathname, 0, OBJNULL},
 {SYS_ "GET-SYSPROP", SI_ORDINARY, si_get_sysprop, 2, OBJNULL},
-{EXT_ "GETENV", SI_ORDINARY, si_getenv, 1, OBJNULL},
-{EXT_ "GETCWD", SI_ORDINARY, si_getcwd, -1, OBJNULL},
-{SYS_ "GETPID", SI_ORDINARY, si_getpid, 0, OBJNULL},
-{SYS_ "GETUID", SI_ORDINARY, si_getuid, 0, OBJNULL},
+{EXT_ "GETENV", EXT_ORDINARY, si_getenv, 1, OBJNULL},
+{EXT_ "GETCWD", EXT_ORDINARY, si_getcwd, -1, OBJNULL},
+{EXT_ "GETPID", EXT_ORDINARY, si_getpid, 0, OBJNULL},
+{EXT_ "GETUID", EXT_ORDINARY, si_getuid, 0, OBJNULL},
 {SYS_ "HASH-SET", SI_ORDINARY, si_hash_set, 3, OBJNULL},
 {SYS_ "HASH-TABLE-ITERATOR", SI_ORDINARY, si_hash_table_iterator, 1, OBJNULL},
 {SYS_ "IHS-BDS", SI_ORDINARY, si_ihs_bds, 1, OBJNULL},
@@ -1190,10 +1190,10 @@ cl_symbols[] = {
 {SYS_ "MEMBER1", SI_ORDINARY, si_member1, 5, OBJNULL},
 {SYS_ "MEMQ", SI_ORDINARY, si_memq, 2, OBJNULL},
 {SYS_ "MKDIR", SI_ORDINARY, si_mkdir, 2, OBJNULL},
-{SYS_ "MKSTEMP", SI_ORDINARY, si_mkstemp, 1, OBJNULL},
+{EXT_ "MKSTEMP", EXT_ORDINARY, si_mkstemp, 1, OBJNULL},
 {SYS_ "RMDIR", SI_ORDINARY, si_rmdir, 1, OBJNULL},
-{EXT_ "MAKE-PIPE", SI_ORDINARY, si_make_pipe, 0, OBJNULL},
-{SYS_ "PACKAGE-LOCK", SI_ORDINARY, si_package_lock, 2, OBJNULL},
+{EXT_ "MAKE-PIPE", EXT_ORDINARY, si_make_pipe, 0, OBJNULL},
+{EXT_ "PACKAGE-LOCK", EXT_ORDINARY, si_package_lock, 2, OBJNULL},
 {SYS_ "PACKAGE-HASH-TABLES", SI_ORDINARY, si_package_hash_tables, 1, OBJNULL},
 {SYS_ "PATHNAME-TRANSLATIONS", SI_ORDINARY, si_pathname_translations, -1, OBJNULL},
 {SYS_ "POINTER", SI_ORDINARY, si_pointer, 1, OBJNULL},
@@ -1210,8 +1210,8 @@ cl_symbols[] = {
 {SYS_ "REM-SYSPROP", SI_ORDINARY, si_rem_sysprop, 2, OBJNULL},
 {SYS_ "REPLACE-ARRAY", SI_ORDINARY, si_replace_array, 2, OBJNULL},
 {SYS_ "ROW-MAJOR-ASET", SI_ORDINARY, si_row_major_aset, 3, OBJNULL},
-{EXT_ "RUN-PROGRAM", SI_ORDINARY, si_run_program, -1, OBJNULL},
-{SYS_ "SAFE-EVAL", SI_ORDINARY, si_safe_eval, -1, OBJNULL},
+{EXT_ "RUN-PROGRAM", EXT_ORDINARY, si_run_program, -1, OBJNULL},
+{EXT_ "SAFE-EVAL", EXT_ORDINARY, si_safe_eval, -1, OBJNULL},
 {SYS_ "SCH-FRS-BASE", SI_ORDINARY, si_sch_frs_base, 2, OBJNULL},
 {SYS_ "SCHAR-SET", SI_ORDINARY, si_char_set, 3, OBJNULL},
 {SYS_ "SHARP-A-READER", SI_ORDINARY, NULL, -1, OBJNULL},
@@ -1219,9 +1219,9 @@ cl_symbols[] = {
 {SYS_ "SELECT-PACKAGE", SI_ORDINARY, si_select_package, 1, OBJNULL},
 {SYS_ "SET-SYMBOL-PLIST", SI_ORDINARY, si_set_symbol_plist, 2, OBJNULL},
 #if defined(HAVE_PUTENV) || defined(HAVE_SETENV)
-{EXT_ "SETENV", SI_ORDINARY, si_setenv, 2, OBJNULL},
+{EXT_ "SETENV", EXT_ORDINARY, si_setenv, 2, OBJNULL},
 #else
-{EXT_ "SETENV", SI_ORDINARY, NULL, -1, OBJNULL},
+{EXT_ "SETENV", EXT_ORDINARY, NULL, -1, OBJNULL},
 #endif
 {SYS_ "SETF-LAMBDA", SI_ORDINARY, NULL, -1, OBJNULL},
 {SYS_ "SETF-METHOD", SI_ORDINARY, NULL, -1, OBJNULL},
@@ -1245,7 +1245,7 @@ cl_symbols[] = {
 {SYS_ "STRUCTUREP", SI_ORDINARY, si_structurep, 1, OBJNULL},
 {SYS_ "SVSET", SI_ORDINARY, si_svset, 3, OBJNULL},
 {SYS_ "SYMBOL-MACRO", SI_ORDINARY, NULL, -1, OBJNULL},
-{SYS_ "SYSTEM", SI_ORDINARY, si_system, 1, OBJNULL},
+{EXT_ "SYSTEM", EXT_ORDINARY, si_system, 1, OBJNULL},
 {SYS_ "TERMINAL-INTERRUPT", SI_ORDINARY, NULL, -1, OBJNULL},
 {SYS_ "TOP-LEVEL", SI_ORDINARY, NULL, -1, OBJNULL},
 {SYS_ "UNIVERSAL-ERROR-HANDLER", SI_ORDINARY, NULL, -1, OBJNULL},
@@ -1291,7 +1291,7 @@ cl_symbols[] = {
 {SYS_ "LOOKUP-HOST-ENTRY", SI_ORDINARY, IF_TCP(si_lookup_host_entry), 1, OBJNULL},
 /* #endif TCP */
 
-{SYS_ "CATCH-SIGNAL", SI_ORDINARY, si_catch_signal, 2, OBJNULL},
+{EXT_ "CATCH-SIGNAL", EXT_ORDINARY, si_catch_signal, 2, OBJNULL},
 
 /* KEYWORD PACKAGE */
 {KEY_ "ADJUSTABLE", KEYWORD, NULL, -1, OBJNULL},
@@ -1512,11 +1512,11 @@ cl_symbols[] = {
 #endif
 
 #ifdef GBC_BOEHM
-{SYS_ "GC", SI_ORDINARY, si_gc, -1, OBJNULL},
+{EXT_ "GC", EXT_ORDINARY, si_gc, -1, OBJNULL},
 {SYS_ "GC-DUMP", SI_ORDINARY, si_gc_dump, 0, OBJNULL},
 {SYS_ "GC-STATS", SI_ORDINARY, si_gc_stats, 1, OBJNULL},
 #else
-{SYS_ "GC", SI_ORDINARY, si_gc, 1, OBJNULL},
+{EXT_ "GC", EXT_ORDINARY, si_gc, 1, OBJNULL},
 {SYS_ "ALLOCATE", SI_ORDINARY, si_allocate, -1, OBJNULL},
 {SYS_ "ALLOCATED-PAGES", SI_ORDINARY, si_allocated_pages, -1, OBJNULL},
 {SYS_ "MAXIMUM-ALLOCATABLE-PAGES", SI_ORDINARY, si_maximum_allocatable_pages, -1, OBJNULL},
@@ -1692,8 +1692,8 @@ cl_symbols[] = {
 #endif
 
 {SYS_ "CL-FIXNUM-BITS", SI_CONSTANT, NULL, -1, MAKE_FIXNUM(FIXNUM_BITS)},
-{EXT_ "CL-FIXNUM", SI_ORDINARY, NULL, -1, NULL},
-{EXT_ "CL-INDEX", SI_ORDINARY, NULL, -1, NULL},
+{EXT_ "CL-FIXNUM", EXT_ORDINARY, NULL, -1, NULL},
+{EXT_ "CL-INDEX", EXT_ORDINARY, NULL, -1, NULL},
 
 {SYS_ "DO-DEFTYPE", SI_ORDINARY, ECL_NAME(si_do_deftype), -1, OBJNULL},
 {SYS_ "CREATE-TYPE-NAME", SI_ORDINARY, NULL, -1, OBJNULL},
@@ -1852,7 +1852,7 @@ cl_symbols[] = {
 
 {SYS_ "+UNICODE-DATABASE+", SI_CONSTANT, NULL, -1, Cnil},
 
-{SYS_ "COPY-FILE", SI_ORDINARY, si_copy_file, 2, OBJNULL},
+{EXT_ "COPY-FILE", EXT_ORDINARY, si_copy_file, 2, OBJNULL},
 
 {EXT_ "FILL-ARRAY-WITH-ELT", EXT_ORDINARY, si_fill_array_with_elt, 4, OBJNULL},
 

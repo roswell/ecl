@@ -15,7 +15,7 @@
 
 (defun safe-system (string)
   (cmpnote "Invoking external command:~%  ~A~%" string)
-  (let ((result (si:system string)))
+  (let ((result (ext:system string)))
     (unless (zerop result)
       (cerror "Continues anyway."
 	      "(SYSTEM ~S) returned non-zero value ~D"

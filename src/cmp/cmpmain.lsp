@@ -905,6 +905,6 @@ from the C language code.  NIL means \"do not create the file\"."
 (defmacro with-compilation-unit (options &rest body)
   `(progn ,@body))
 
-(si::package-lock "CL" t)
+(ext:package-lock "CL" t)
 
 (provide 'cmp)

@@ -332,6 +332,7 @@ struct cl_core_struct cl_core = {
 	Cnil, /* user_package */
 	Cnil, /* keyword_package */
 	Cnil, /* system_package */
+        Cnil, /* ext_package */
 #ifdef CLOS
 	Cnil, /* clos_package */
 # ifdef ECL_CLOS_STREAMS
@@ -503,10 +504,14 @@ cl_boot(int argc, char **argv)
 				 ecl_list1(cl_core.lisp_package));
 	cl_core.keyword_package =
 		ecl_make_package(str_keyword, Cnil, Cnil);
+	cl_core.ext_package =
+		ecl_make_package(str_ext, Cnil,
+				 ecl_list1(cl_core.lisp_package));
 	cl_core.system_package =
 		ecl_make_package(str_si,
-                                 cl_list(3,str_system,str_sys,str_ext),
-				 ecl_list1(cl_core.lisp_package));
+                                 cl_list(2,str_system,str_sys),
+				 cl_list(2,cl_core.ext_package,
+                                         cl_core.lisp_package));
 	cl_core.c_package =
 		ecl_make_package(str_c,
                                  ecl_list1(str_compiler),

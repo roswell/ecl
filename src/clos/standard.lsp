@@ -450,7 +450,7 @@ because it contains a reference to the undefined class~%  ~A"
 	 (error "~a is not a valid class specifier." class-or-symbol))
 	((find-class class-or-symbol fail))
 	(t
-	 (warn 'ext::simple-style-warning
+	 (warn 'si::simple-style-warning
 	       :format-control "Class ~A has been forward referenced."
 	       :format-arguments (list class-or-symbol))
 	 (ensure-class class-or-symbol

@@ -1114,8 +1114,8 @@ cl_symbols[] = {
 {SYS_ "UNQUOTE-NSPLICE",NULL},
 {SYS_ "UNQUOTE-SPLICE",NULL},
 {SYS_ "ALLOCATE-RAW-INSTANCE","si_allocate_raw_instance"},
-{SYS_ "ARGC","si_argc"},
-{SYS_ "ARGV","si_argv"},
+{EXT_ "ARGC","si_argc"},
+{EXT_ "ARGV","si_argv"},
 {SYS_ "ASET","si_aset"},
 {SYS_ "BASE-CHAR-P","si_base_char_p"},
 {SYS_ "BASE-STRING-P","si_base_string_p"},
@@ -1137,7 +1137,7 @@ cl_symbols[] = {
 {SYS_ "COERCE-TO-PACKAGE","si_coerce_to_package"},
 {SYS_ "COPY-TO-SIMPLE-BASE-STRING","si_copy_to_simple_base_string"},
 {SYS_ "COMPILED-FUNCTION-BLOCK","si_compiled_function_block"},
-{SYS_ "COMPILED-FUNCTION-NAME","si_compiled_function_name"},
+{EXT_ "COMPILED-FUNCTION-NAME","si_compiled_function_name"},
 {SYS_ "COPY-STREAM","si_copy_stream"},
 {SYS_ "DO-READ-SEQUENCE","si_do_read_sequence"},
 {SYS_ "DO-WRITE-SEQUENCE","si_do_write_sequence"},
@@ -1145,10 +1145,10 @@ cl_symbols[] = {
 {SYS_ "EVAL-WITH-ENV","si_eval_with_env"},
 {SYS_ "EXPAND-DEFMACRO",NULL},
 {SYS_ "FILE-COLUMN","si_file_column"},
-{SYS_ "FILE-KIND","si_file_kind"},
+{EXT_ "FILE-KIND","si_file_kind"},
 {SYS_ "FILL-POINTER-SET","si_fill_pointer_set"},
 {SYS_ "FILE-STREAM-FD","si_file_stream_fd"},
-{SYS_ "FIXNUMP","si_fixnump"},
+{EXT_ "FIXNUMP","si_fixnump"},
 {SYS_ "FORMAT-ERROR",NULL},
 #ifdef ECL_CMU_FORMAT
 {SYS_ "FORMATTER-AUX",NULL},
@@ -1165,8 +1165,8 @@ cl_symbols[] = {
 {SYS_ "GET-SYSPROP","si_get_sysprop"},
 {EXT_ "GETENV","si_getenv"},
 {EXT_ "GETCWD","si_getcwd"},
-{SYS_ "GETPID","si_getpid"},
-{SYS_ "GETUID","si_getuid"},
+{EXT_ "GETPID","si_getpid"},
+{EXT_ "GETUID","si_getuid"},
 {SYS_ "HASH-SET","si_hash_set"},
 {SYS_ "HASH-TABLE-ITERATOR","si_hash_table_iterator"},
 {SYS_ "IHS-BDS","si_ihs_bds"},
@@ -1190,10 +1190,10 @@ cl_symbols[] = {
 {SYS_ "MEMBER1","si_member1"},
 {SYS_ "MEMQ","si_memq"},
 {SYS_ "MKDIR","si_mkdir"},
-{SYS_ "MKSTEMP","si_mkstemp"},
+{EXT_ "MKSTEMP","si_mkstemp"},
 {SYS_ "RMDIR","si_rmdir"},
 {EXT_ "MAKE-PIPE","si_make_pipe"},
-{SYS_ "PACKAGE-LOCK","si_package_lock"},
+{EXT_ "PACKAGE-LOCK","si_package_lock"},
 {SYS_ "PACKAGE-HASH-TABLES","si_package_hash_tables"},
 {SYS_ "PATHNAME-TRANSLATIONS","si_pathname_translations"},
 {SYS_ "POINTER","si_pointer"},
@@ -1211,7 +1211,7 @@ cl_symbols[] = {
 {SYS_ "REPLACE-ARRAY","si_replace_array"},
 {SYS_ "ROW-MAJOR-ASET","si_row_major_aset"},
 {EXT_ "RUN-PROGRAM","si_run_program"},
-{SYS_ "SAFE-EVAL","si_safe_eval"},
+{EXT_ "SAFE-EVAL","si_safe_eval"},
 {SYS_ "SCH-FRS-BASE","si_sch_frs_base"},
 {SYS_ "SCHAR-SET","si_char_set"},
 {SYS_ "SHARP-A-READER",NULL},
@@ -1245,7 +1245,7 @@ cl_symbols[] = {
 {SYS_ "STRUCTUREP","si_structurep"},
 {SYS_ "SVSET","si_svset"},
 {SYS_ "SYMBOL-MACRO",NULL},
-{SYS_ "SYSTEM","si_system"},
+{EXT_ "SYSTEM","si_system"},
 {SYS_ "TERMINAL-INTERRUPT",NULL},
 {SYS_ "TOP-LEVEL",NULL},
 {SYS_ "UNIVERSAL-ERROR-HANDLER",NULL},
@@ -1291,7 +1291,7 @@ cl_symbols[] = {
 {SYS_ "LOOKUP-HOST-ENTRY",IF_TCP("si_lookup_host_entry")},
 /* #endif TCP */
 
-{SYS_ "CATCH-SIGNAL","si_catch_signal"},
+{EXT_ "CATCH-SIGNAL","si_catch_signal"},
 
 /* KEYWORD PACKAGE */
 {KEY_ "ADJUSTABLE",NULL},
@@ -1512,11 +1512,11 @@ cl_symbols[] = {
 #endif
 
 #ifdef GBC_BOEHM
-{SYS_ "GC","si_gc"},
+{EXT_ "GC","si_gc"},
 {SYS_ "GC-DUMP","si_gc_dump"},
 {SYS_ "GC-STATS","si_gc_stats"},
 #else
-{SYS_ "GC","si_gc"},
+{EXT_ "GC","si_gc"},
 {SYS_ "ALLOCATE","si_allocate"},
 {SYS_ "ALLOCATED-PAGES","si_allocated_pages"},
 {SYS_ "MAXIMUM-ALLOCATABLE-PAGES","si_maximum_allocatable_pages"},
@@ -1852,7 +1852,7 @@ cl_symbols[] = {
 
 {SYS_ "+UNICODE-DATABASE+",NULL},
 
-{SYS_ "COPY-FILE","si_copy_file"},
+{EXT_ "COPY-FILE","si_copy_file"},
 
 {EXT_ "FILL-ARRAY-WITH-ELT","si_fill_array_with_elt"},
 

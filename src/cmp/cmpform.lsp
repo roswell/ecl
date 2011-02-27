@@ -93,7 +93,7 @@
        finally (return hash)))
 
 (defun print-c1form (form stream)
-  (format stream "#<form ~A ~X>" (c1form-name form) (ext::pointer form)))
+  (format stream "#<form ~A ~X>" (c1form-name form) (si:pointer form)))
 
 (defun make-c1form (name subform &rest args)
   (let ((form (do-make-c1form :name name :args args

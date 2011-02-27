@@ -41,9 +41,9 @@ si_safe_eval(cl_narg narg, cl_object form, cl_object env, ...)
                 cl_object err_value;
                 va_list args; va_start(args, env);
                 err_value = va_arg(args, cl_object);
-                return cl_funcall(4, @'si::safe-eval', form, env, err_value);
+                return cl_funcall(4, @'ext::safe-eval', form, env, err_value);
         }
-        return cl_funcall(3, @'si::safe-eval', form, env);
+        return cl_funcall(3, @'ext::safe-eval', form, env);
 }
 
 extern cl_object

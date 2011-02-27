@@ -794,8 +794,8 @@
 #+long-float
 (def-inline long-float-p :always (t) :bool "@0;ECL_LONG_FLOAT_P(#0)")
 
-(def-inline si:fixnump :always (t) :bool "FIXNUMP(#0)")
-(def-inline si:fixnump :always (fixnum) :bool "1")
+(def-inline ext:fixnump :always (t) :bool "FIXNUMP(#0)")
+(def-inline ext:fixnump :always (fixnum) :bool "1")
 
 (def-inline c::ldb1 :always (fixnum fixnum fixnum) :fixnum
  "((((~((cl_fixnum)-1 << (#0))) << (#1)) & (cl_fixnum)(#2)) >> (#1))")

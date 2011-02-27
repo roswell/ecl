@@ -35,8 +35,8 @@ Builds a new function which accepts any number of arguments but always outputs N
 (defvar *upgraded-array-element-type-cache* (si:make-vector t 128 nil nil nil 0))
 
 (defun subtypep-clear-cache ()
-  (si:fill-array-with-elt *subtypep-cache* nil 0 nil)
-  (si:fill-array-with-elt *upgraded-array-element-type-cache* nil 0 nil))
+  (ext:fill-array-with-elt *subtypep-cache* nil 0 nil)
+  (ext:fill-array-with-elt *upgraded-array-element-type-cache* nil 0 nil))
 
 (defun create-type-name (name)
   (when (member name *alien-declarations*)

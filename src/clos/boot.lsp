@@ -186,7 +186,7 @@
   (ensure-up-to-date-instance instance)
   (let* ((class (si:instance-class instance))
 	 (location (slot-definition-location slotd)))
-    (cond ((si:fixnump location)
+    (cond ((ext:fixnump location)
 	   ;; local slot
 	   (si:instance-ref instance (the fixnum location)))
 	  ((consp location)
@@ -200,7 +200,7 @@
   (ensure-up-to-date-instance instance)
   (let* ((class (si:instance-class instance))
 	 (location (slot-definition-location slotd)))
-    (cond ((si:fixnump location)
+    (cond ((ext:fixnump location)
 	   ;; local slot
 	   (si:instance-set instance (the fixnum location) val))
 	  ((consp location)
@@ -226,7 +226,7 @@
 (defmethod slot-makunbound-using-class ((class class) instance slotd)
   (ensure-up-to-date-instance instance)
   (let* ((location (slot-definition-location slotd)))
-    (cond ((si:fixnump location)
+    (cond ((ext:fixnump location)
 	   ;; local slot
 	   (si:sl-makunbound instance (the fixnum location)))
 	  ((consp location)

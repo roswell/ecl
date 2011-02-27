@@ -6,7 +6,7 @@
 
 #define CL_PACKAGE 0
 #define SI_PACKAGE 4
-#define EXT_PACKAGE SI_PACKAGE
+#define EXT_PACKAGE 64
 #define GRAY_PACKAGE 32
 #define KEYWORD_PACKAGE 8
 #define MP_PACKAGE 12
@@ -126,6 +126,8 @@ mangle_name(cl_object output, unsigned char *source, int l)
 		package = make_constant_base_string("cl");
 	else if (package == cl_core.system_package)
 		package = make_constant_base_string("si");
+	else if (package == cl_core.ext_package)
+		package = make_constant_base_string("si");
 	else if (package == cl_core.keyword_package)
 		package = Cnil;
 	else
@@ -180,6 +182,7 @@ make_this_symbol(int i, cl_object s, int code, const char *name,
 	switch (code & ~(int)3) {
 	case CL_PACKAGE: package = cl_core.lisp_package; break;
 	case SI_PACKAGE: package = cl_core.system_package; break;
+	case EXT_PACKAGE: package = cl_core.ext_package; break;
 	case KEYWORD_PACKAGE: package = cl_core.keyword_package; break;
 	case MP_PACKAGE: package = cl_core.mp_package; break;
 #ifdef CLOS
@@ -216,6 +219,8 @@ make_this_symbol(int i, cl_object s, int code, const char *name,
 			cl_import2(s, package);
 		}
 		cl_export2(s, package);
+                if (package == cl_core.ext_package)
+                        cl_export2(s, cl_core.system_package);
 	}
 	if (form) {
 		s->symbol.stype |= stp_special_form;
