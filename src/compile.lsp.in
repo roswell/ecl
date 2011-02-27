@@ -68,6 +68,11 @@
 (setq si::*init-function-prefix* "ECL")
 
 ;;;
+;;; * Clean up a little bit before moving on
+;;;
+(mapc #'delete-file (directory "eclinit*.*"))
+
+;;;
 ;;; * Compile and link Common-Lisp base library
 ;;;
 (setq si::*keep-documentation* nil)
