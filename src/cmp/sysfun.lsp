@@ -929,6 +929,7 @@
      slot-makunbound
      slot-value
      slot-exists-p
+     need-to-make-load-form-p
      )
 ))
 
@@ -991,5 +992,6 @@
      clos::associate-methods-to-gfun
      ;; method.lsp
      clos::pop-next-method
+     clos::need-to-make-load-form-p
      )))
 

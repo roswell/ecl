@@ -2071,6 +2071,9 @@ extern ECL_API cl_object cl_slot_makunbound(cl_object object, cl_object slot);
 extern ECL_API cl_object cl_slot_value(cl_object object, cl_object slot);
 extern ECL_API cl_object cl_slot_exists_p(cl_object object, cl_object slot);
 
+/* print.lsp */
+extern ECL_API cl_object clos_need_to_make_load_form_p(cl_object o);
+
 #if 0
 /* defclass.lsp */
 extern ECL_API cl_object clos_ensure_class _ARGS((cl_narg narg, cl_object V1, ...));

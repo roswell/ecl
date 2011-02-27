@@ -1322,6 +1322,8 @@
 #+clos
 (proclamation associate-methods-to-gfun (generic-function *)
               generic-function)
+#+clos
+(proclamation clos::need-to-make-load-form-p (t) gen-bool :pure)
 
 ;;;
 ;;; A. FFI

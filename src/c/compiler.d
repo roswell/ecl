@@ -2121,12 +2121,28 @@ c_values(cl_env_ptr env, cl_object args, int flags) {
 	return FLAG_VALUES;
 }
 
+static void
+maybe_make_load_forms(cl_env_ptr env, cl_object constant)
+{
+        const cl_compiler_ptr c_env = env->c_env;
+        cl_object init, make;
+        if (c_env->mode != FLAG_LOAD)
+                return;
+        if (Null(cl_funcall(2, @'clos::need-to-make-load-form-p', constant)))
+                return;
+        make = cl_funcall(2, @'make-load-form', constant);
+        init = env->values[1];
+        c_env->load_time_forms = ecl_cons(cl_list(3, constant, make, init),
+                                          c_env->load_time_forms);
+}
+
 static int
 compile_constant(cl_env_ptr env, cl_object stmt, int flags)
 {
         if (flags & FLAG_USEFUL) {
                 bool push = flags & FLAG_PUSH;
                 cl_fixnum n;
+                maybe_make_load_forms(env, stmt);
                 if (stmt == Cnil) {
                         asm_op(env, push? OP_PUSHNIL : OP_NIL);
                 } else if (FIXNUMP(stmt) && (n = fix(stmt)) <= MAX_OPARG
