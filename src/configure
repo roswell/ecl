@@ -6588,8 +6588,6 @@ $as_echo "$ac_cv_header_gc_h" >&6; }
 fi
 if test "x$ac_cv_header_gc_h" = x""yes; then
   ECL_BOEHM_GC_HEADER='gc.h'
-else
-  system_boehm=no
 fi
 
 
@@ -7023,8 +7021,6 @@ $as_echo "$ac_cv_header_ffi_ffi_h" >&6; }
 fi
 if test "x$ac_cv_header_ffi_ffi_h" = x""yes; then
   ECL_LIBFFI_HEADER='ffi/ffi.h'
-else
-  system_libffi=no
 fi
 
 

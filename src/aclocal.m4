@@ -907,7 +907,7 @@ if test "${enable_boehm}" = auto -o "${enable_boehm}" = system; then
                  [system_boehm="yes"], [system_boehm="no"] )
  fi
  if test "${system_boehm}" = yes; then
-   AC_CHECK_HEADER([gc.h],[ECL_BOEHM_GC_HEADER='gc.h'],[system_boehm=no],[])
+   AC_CHECK_HEADER([gc.h],[ECL_BOEHM_GC_HEADER='gc.h'],[],[])
    if test -z "$ECL_BOEHM_GC_HEADER"; then
      AC_CHECK_HEADER([gc/gc.h],[ECL_BOEHM_GC_HEADER='gc/gc.h'],[system_boehm=no],[])
    fi
@@ -983,7 +983,7 @@ if test "${enable_libffi}" = auto -o "${enable_libffi}" = system; then
  dnl
  AC_CHECK_LIB( ffi, ffi_call, [system_libffi=yes], [system_libffi=no] )
  if test "${system_libffi}" = yes; then
-   AC_CHECK_HEADER([ffi/ffi.h],[ECL_LIBFFI_HEADER='ffi/ffi.h'],[system_libffi=no],[])
+   AC_CHECK_HEADER([ffi/ffi.h],[ECL_LIBFFI_HEADER='ffi/ffi.h'],[],[])
    if test -z "$ECL_LIBFFI_HEADER"; then
      AC_CHECK_HEADER([ffi.h],[ECL_LIBFFI_HEADER='ffi.h'],[system_libffi=no],[])
    fi
