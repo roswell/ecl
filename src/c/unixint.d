@@ -247,7 +247,7 @@ static bool
 interrupts_disabled_by_lisp(cl_env_ptr the_env)
 {
 	return (ecl_get_option(ECL_OPT_BOOTED) &&
-		ecl_symbol_value(@'si::*interrupts-enabled*') == Cnil);
+		ecl_symbol_value(@'ext::*interrupts-enabled*') == Cnil);
 }
 
 static cl_object pop_signal(cl_env_ptr env);
@@ -1193,7 +1193,7 @@ init_unixint(int pass)
 		create_signal_code_constants();
 		install_fpe_signal_handlers();
 		install_signal_handling_thread();
-		ECL_SET(@'si::*interrupts-enabled*', Ct);
+		ECL_SET(@'ext::*interrupts-enabled*', Ct);
 		ecl_process_env()->disable_interrupts = 0;
 	}
 }
