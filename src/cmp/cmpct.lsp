@@ -40,11 +40,28 @@
    ((typep val 'LONG-FLOAT)
     (make-c1form* 'LOCATION :type 'LONG-FLOAT
 		  :args (list 'LONG-FLOAT-VALUE val (add-object val))))
+   #+sse2
+   ((typep val 'EXT:SSE-PACK)
+    (c1constant-value/sse val))
    (always
     (make-c1form* 'LOCATION :type (object-type val)
 		  :args (add-object val)))
    (only-small-values nil)
    (t nil)))
+
+#+sse2
+(defun c1constant-value/sse (value)
+  (let* ((bytes (ext:sse-pack-to-vector value '(unsigned-byte 8)))
+         (elt-type (ext:sse-pack-element-type value)))
+    (multiple-value-bind (wrapper rtype)
+        (case elt-type
+          (single-float (values "_mm_castsi128_ps" :float-sse-pack))
+          (double-float (values "_mm_castsi128_pd" :double-sse-pack))
+          (otherwise    (values ""                 :int-sse-pack)))
+      (c1expr `(c-inline () () ,rtype
+                         ,(format nil "~A(_mm_setr_epi8(~{~A~^,~}))"
+                                  wrapper (coerce bytes 'list))
+                         :one-liner t :side-effects nil)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
