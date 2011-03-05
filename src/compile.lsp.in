@@ -19,6 +19,11 @@
 (load "bare.lsp" :verbose nil)
 
 ;;;
+;;; * Force compiler constants only for the core library
+;;;
+(setf *use-static-constants-p* t)
+
+;;;
 ;;; * Dump documentation
 ;;;
 #+stage1

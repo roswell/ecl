@@ -277,10 +277,15 @@
 (defun add-static-constant (object)
   #+msvc
   nil
-  #-:msvc
+  #-msvc
   ;; FIXME! The Microsoft compiler does not allow static initialization of bit fields.
+  ;; SSE uses always unboxed static constants. No reference
+  ;; is kept to them -- it is thus safe to use them even on code
+  ;; that might be unloaded.
   (unless (or *compiler-constants*
-              (not *use-static-constants-p*)
+              (and (not *use-static-constants-p*)
+                   #+sse2
+                   (not (typep object 'ext:sse-pack)))
               (not (listp *static-constants*)))
     (let ((record (find object *static-constants* :key #'first :test #'equal)))
       (if record
