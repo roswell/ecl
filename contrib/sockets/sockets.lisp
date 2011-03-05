@@ -289,7 +289,7 @@ protocol. Other values are used as-is.")
    (stream)
    #+:wsock
    (non-blocking-p :initform nil))
-  (:documentation "Common base class of all sockets, not ment to be
+  (:documentation "Common base class of all sockets, not meant to be
 directly instantiated."))
 
 

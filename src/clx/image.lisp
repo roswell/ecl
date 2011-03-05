@@ -1308,7 +1308,7 @@
 	    (image-xy (eq format :xy-pixmap))
 	    (image-z (eq format :z-pixmap))
 	    (image-x t))
-    (error "Result-type ~s is incompatable with format ~s"
+    (error "Result-type ~s is incompatible with format ~s"
 	   result-type format))
   (unless plane-mask (setq plane-mask #xffffffff))
   (let ((display (drawable-display drawable)))

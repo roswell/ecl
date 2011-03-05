@@ -69,7 +69,7 @@
 (defgeneric stream-fresh-line (stream)
   (:documentation
    "Outputs a new line to the Stream if it is not positioned at the
-  begining of a line. Returns T if it output a new line, nil
+  beginning of a line. Returns T if it output a new line, nil
   otherwise. Used by FRESH-LINE. The default method uses
   STREAM-START-LINE-P and STREAM-TERPRI."))
 
