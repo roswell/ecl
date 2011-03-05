@@ -42,6 +42,7 @@
 #ifdef ENABLE_DLOPEN
 # ifdef cygwin
 #  include <w32api/windows.h>
+#  include <sys/stat.h>
 # endif
 # ifdef HAVE_DLFCN_H
 #  include <dlfcn.h>

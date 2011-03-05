@@ -19,6 +19,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <fcntl.h>
+#include <errno.h>
 #include <signal.h> /* to see whether we have SIGCHLD */
 #if !defined(_MSC_VER)
 # include <unistd.h>
