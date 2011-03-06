@@ -2046,5 +2046,7 @@ cl_symbols[] = {
 
 {EXT_ "*INSPECTOR-HOOK*",NULL},
 
+{KEY_ "RESOLVE-SYMLINKS",NULL},
+
 /* Tag for end of list */
 {NULL,NULL}};

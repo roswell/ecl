@@ -312,8 +312,10 @@ make_base_pathname(cl_object pathname)
 				 Cnil, Cnil, Cnil, @':local');
 }
 
+#define FOLLOW_SYMLINKS 1
+
 static cl_object
-file_truename(cl_object pathname, cl_object filename)
+file_truename(cl_object pathname, cl_object filename, int flags)
 {
 	cl_object kind;
 	if (Null(pathname)) {
@@ -332,7 +334,7 @@ file_truename(cl_object pathname, cl_object filename)
         if (kind == Cnil) {
                 FEcannot_open(pathname);
 #ifdef HAVE_LSTAT
-        } else if (kind == @':link') {
+        } else if (kind == @':link' && (flags & FOLLOW_SYMLINKS)) {
                 /* The link might be a relative pathname. In that case we have
                  * to merge with the original pathname */
                 filename = si_readlink(filename);
@@ -341,7 +343,7 @@ file_truename(cl_object pathname, cl_object filename)
 					     pathname->pathname.directory,
 					     Cnil, Cnil, Cnil, @':local');
                 pathname = ecl_merge_pathnames(filename, pathname, @':default');
-                return file_truename(pathname, Cnil);
+                return file_truename(pathname, Cnil, flags);
 #endif
         } else if (kind == @':directory'){
                 /* If the pathname is a directory but we have supplied
@@ -394,7 +396,7 @@ cl_truename(cl_object orig_pathname)
                 base_dir = enter_directory(base_dir, ECL_CONS_CAR(dir));
         }
         pathname = ecl_merge_pathnames(base_dir, pathname, @':default');
-	@(return file_truename(pathname, Cnil))
+	@(return file_truename(pathname, Cnil, FOLLOW_SYMLINKS))
 }
 
 int
@@ -662,7 +664,8 @@ string_match(const char *s, const char *p)
  * by following the symlinks.
  */
 static cl_object
-list_directory(cl_object base_dir, const char *text_mask, cl_object pathname_mask)
+list_directory(cl_object base_dir, const char *text_mask, cl_object pathname_mask,
+               int flags)
 {
 	cl_object out = Cnil;
 	cl_object prefix = ecl_namestring(base_dir, ECL_NAMESTRING_FORCE_BASE_STRING);
@@ -737,8 +740,8 @@ list_directory(cl_object base_dir, const char *text_mask, cl_object pathname_mas
                         if (Null(cl_pathname_match_p(component, pathname_mask)))
                                 continue;
                 }
-		component_path = file_truename(component_path, component);
-		kind = VALUES(1);
+                component_path = file_truename(component_path, component, flags);
+                kind = VALUES(1);
 		out = CONS(CONS(component_path, kind), out);
 	}
 #ifdef HAVE_DIRENT_H
@@ -762,10 +765,8 @@ OUTPUT:
  * of pathnames. BASEDIR is the truename of the current directory and it is
  * used to build these pathnames.
  */
-extern cl_object dir_files(cl_object base_dir, cl_object pathname);
-
-cl_object
-dir_files(cl_object base_dir, cl_object pathname)
+static cl_object
+dir_files(cl_object base_dir, cl_object pathname, int flags)
 {
 	cl_object all_files, output = Cnil;
 	cl_object mask;
@@ -777,7 +778,7 @@ dir_files(cl_object base_dir, cl_object pathname)
 	mask = ecl_make_pathname(Cnil, Cnil, Cnil,
                                  name, type, pathname->pathname.version,
                                  @':local');
-	for (all_files = list_directory(base_dir, NULL, mask);
+	for (all_files = list_directory(base_dir, NULL, mask, flags);
 	     !Null(all_files);
 	     all_files = ECL_CONS_CDR(all_files))
 	{
@@ -798,7 +799,7 @@ dir_files(cl_object base_dir, cl_object pathname)
  * list.
  */
 static cl_object
-dir_recursive(cl_object base_dir, cl_object directory, cl_object filemask)
+dir_recursive(cl_object base_dir, cl_object directory, cl_object filemask, int flags)
 {
 	cl_object item, output = Cnil;
  AGAIN:
@@ -810,7 +811,7 @@ dir_recursive(cl_object base_dir, cl_object directory, cl_object filemask)
 	 * we have to find a file which corresponds to the description.
 	 */
 	if (directory == Cnil) {
-		return ecl_nconc(dir_files(base_dir, filemask), output);
+		return ecl_nconc(dir_files(base_dir, filemask, flags), output);
 	}
 	/*
 	 * 2) We have not yet exhausted the DIRECTORY component of the
@@ -826,7 +827,7 @@ dir_recursive(cl_object base_dir, cl_object directory, cl_object filemask)
 		 */
 		const char *mask = (item == @':wild')? "*" :
 			(const char *)item->base_string.self;
-		cl_object next_dir = list_directory(base_dir, mask, Cnil);
+		cl_object next_dir = list_directory(base_dir, mask, Cnil, flags);
 		for (; !Null(next_dir); next_dir = ECL_CONS_CDR(next_dir)) {
 			cl_object record = ECL_CONS_CAR(next_dir);
 			cl_object component = ECL_CONS_CAR(record);
@@ -835,7 +836,7 @@ dir_recursive(cl_object base_dir, cl_object directory, cl_object filemask)
 				continue;
 			item = dir_recursive(cl_pathname(component),
 					     ECL_CONS_CDR(directory),
-					     filemask);
+					     filemask, flags);
 			output = ecl_nconc(item, output);
 		}
 	} else if (item == @':wild-inferiors') {
@@ -844,7 +845,7 @@ dir_recursive(cl_object base_dir, cl_object directory, cl_object filemask)
 		 * scan all subdirectories from _all_ levels, looking for a
 		 * tree that matches the remaining part of DIRECTORY.
 		 */
-		cl_object next_dir = list_directory(base_dir, "*", Cnil);
+		cl_object next_dir = list_directory(base_dir, "*", Cnil, flags);
 		for (; !Null(next_dir); next_dir = ECL_CONS_CDR(next_dir)) {
 			cl_object record = ECL_CONS_CAR(next_dir);
 			cl_object component = ECL_CONS_CAR(record);
@@ -852,8 +853,7 @@ dir_recursive(cl_object base_dir, cl_object directory, cl_object filemask)
 			if (kind != @':directory')
 				continue;
 			item = dir_recursive(cl_pathname(component),
-					     directory,
-					     filemask);
+					     directory, filemask, flags);
 			output = ecl_nconc(item, output);
 		}
 		directory = ECL_CONS_CDR(directory);
@@ -870,14 +870,15 @@ dir_recursive(cl_object base_dir, cl_object directory, cl_object filemask)
 	return output;
 }
 
-@(defun directory (mask &key &allow_other_keys)
+@(defun directory (mask &key resolve_symlinks &allow_other_keys)
         cl_object base_dir;
 	cl_object output;
 @
         mask = coerce_to_file_pathname(mask);
         mask = make_absolute_pathname(mask);
         base_dir = make_base_pathname(mask);
-        output = dir_recursive(base_dir, mask->pathname.directory, mask);
+	output = dir_recursive(base_dir, mask->pathname.directory, mask,
+                               Null(resolve_symlinks)? 0 : FOLLOW_SYMLINKS);
         @(return output)
 @)
 
