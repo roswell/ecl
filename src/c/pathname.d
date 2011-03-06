@@ -914,8 +914,19 @@ si_coerce_to_filename(cl_object pathname_orig)
                                     ECL_NAMESTRING_TRUNCATE_IF_ERROR |
                                     ECL_NAMESTRING_FORCE_BASE_STRING);
 	if (namestring == Cnil) {
-		FEerror("Pathname ~A does not have a physical namestring",
-			1, pathname_orig);
+		FEerror("Pathname without a physical namestring:"
+                        "~% :HOST ~A"
+                        "~% :DEVICE ~A"
+                        "~% :DIRECTORY ~A"
+                        "~% :NAME ~A"
+                        "~% :TYPE ~A"
+                        "~% :VERSION ~A",
+			6, pathname_orig->pathname.host,
+                        pathname_orig->pathname.device,
+                        pathname_orig->pathname.directory,
+                        pathname_orig->pathname.name,
+                        pathname_orig->pathname.type,
+                        pathname_orig->pathname.version);
 	}
 	if (cl_core.path_max != -1 &&
 	    ecl_length(namestring) >= cl_core.path_max - 16)
