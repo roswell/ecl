@@ -209,7 +209,7 @@ ECL 11.1.2
  - On POSIX platforms ECL traps SIGCHLD and uses it to update the status of
    external processes.
 
- - DIRECTORY accepts the keyword argument :FOLLOW-SYMLINKS.
+ - DIRECTORY accepts the keyword argument :RESOLVE-SYMLINKS.
 
 ;;; Local Variables: ***
 ;;; mode:text ***
