@@ -416,7 +416,8 @@ struct cl_core_struct cl_core = {
         (cl_object)&default_rehash_size_data, /* rehash_size */
         (cl_object)&default_rehash_threshold_data, /* rehash_threshold */
 
-        Cnil /* external_processes */
+        Cnil, /* external_processes */
+        Cnil /* external_processes_lock */
 };
 
 int

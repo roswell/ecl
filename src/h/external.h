@@ -246,6 +246,7 @@ struct cl_core_struct {
         cl_object rehash_threshold;
 
         cl_object external_processes;
+        cl_object external_processes_lock;
 };
 
 extern ECL_API struct cl_core_struct cl_core;

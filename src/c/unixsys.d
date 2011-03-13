@@ -145,63 +145,181 @@ make_external_process()
         return cl_funcall(1, @'ext::make-external-process');
 }
 
+static cl_object
+external_process_pid(cl_object p)
+{
+        return ecl_structure_ref(p, @'ext::external-process', 0);
+}
+
+static cl_object
+external_process_status(cl_object p)
+{
+        return ecl_structure_ref(p, @'ext::external-process', 3);
+}
+
+static cl_object
+external_process_code(cl_object p)
+{
+        return ecl_structure_ref(p, @'ext::external-process', 4);
+}
+
 static void
 set_external_process_pid(cl_object process, cl_object pid)
 {
-        ecl_structure_set(process, @'ext::external-process',
-                          0, pid);
+        ecl_structure_set(process, @'ext::external-process', 0, pid);
 }
 
 static void
 set_external_process_streams(cl_object process, cl_object input, cl_object output)
 {
-        ecl_structure_set(process, @'ext::external-process',
-                          1, input);
-        ecl_structure_set(process, @'ext::external-process',
-                          2, output);
+        ecl_structure_set(process, @'ext::external-process', 1, input);
+        ecl_structure_set(process, @'ext::external-process', 2, output);
+}
+
+
+static void
+update_process_status(cl_object process, cl_object status, cl_object code)
+{
+        ecl_structure_set(process, @'ext::external-process', 0, Cnil);
+        ecl_structure_set(process, @'ext::external-process', 3, status);
+        ecl_structure_set(process, @'ext::external-process', 4, code);
 }
 
 #if defined(SIGCHLD) && !defined(ECL_MS_WINDOWS_HOST)
 static void
 add_external_process(cl_env_ptr env, cl_object process)
 {
-        ECL_WITH_GLOBAL_LOCK_BEGIN(env) {
-                cl_core.external_processes = ecl_cons(process,
-                                                      cl_core.external_processes);
-        } ECL_WITH_GLOBAL_LOCK_END;
-}
-
-static cl_object
-find_external_process(cl_env_ptr env, cl_object pid)
-{
-        cl_object output = Cnil;
-        ECL_WITH_GLOBAL_LOCK_BEGIN(env) {
-                cl_object p;
-                for (p = cl_core.external_processes; p != Cnil; p = ECL_CONS_CDR(p)) {
-                        cl_object process = ECL_CONS_CAR(p);
-                        if (cl_funcall(2, @'ext::external-process-pid',
-                                       process) == pid) {
-                                output = process;
-                                break;
-                        }
-                }
-        } ECL_WITH_GLOBAL_LOCK_END;
-        return output;
+        cl_object l = ecl_list1(process);
+        ecl_disable_interrupts_env(env);
+        ECL_WITH_LOCK_BEGIN(env, cl_core.external_processes_lock) {
+                ECL_RPLACD(l, cl_core.external_processes);
+                cl_core.external_processes = l;
+        } ECL_WITH_LOCK_END;
+        ecl_enable_interrupts_env(env);
 }
 
 static void
 remove_external_process(cl_env_ptr env, cl_object process)
 {
-        ECL_WITH_GLOBAL_LOCK_BEGIN(env) {
+        ecl_disable_interrupts_env(env);
+        ECL_WITH_LOCK_BEGIN(env, cl_core.external_processes_lock) {
                 cl_core.external_processes =
-                        ecl_remove_eq(process, cl_core.external_processes);
-        } ECL_WITH_GLOBAL_LOCK_END;
+                        ecl_delete_eq(process, cl_core.external_processes);
+        } ECL_WITH_LOCK_END;
+        ecl_enable_interrupts_env(env);
+}
+
+static cl_object
+find_external_process(cl_object pid)
+{
+        cl_object p;
+        for (p = cl_core.external_processes; p != Cnil; p = ECL_CONS_CDR(p)) {
+                cl_object process = ECL_CONS_CAR(p);
+                if (external_process_pid(process) == pid) {
+                        return process;
+                }
+        }
+        return Cnil;
 }
 #else
 #define add_external_process(env,p)
 #define remove_external_process(env,p)
-#define find_external_process(env,p) Cnil
 #endif
+
+static cl_object
+ecl_waitpid(cl_object pid, cl_object wait)
+{
+        cl_object status, code;
+#if defined(ECL_MS_WINDOWS_HOST)
+        HANDLE *hProcess = ecl_foreign_data_pointer_safe(pid);
+        DWORD exitcode;
+        int ok;
+        WaitForSingleObject(*hProcess, Null(wait)? 0 : INFINITE);
+        ecl_disable_interrupts_env(the_env);
+        ok = GetExitCodeProcess(*hProcess, &exitcode);
+        if (!ok) {
+                status = @':error';
+                code = Cnil;
+        } else if (exitcode == STILL_ACTIVE) {
+                status = @':running';
+                code = Cnil;
+        } else {
+                status = @':exited';
+                code = MAKE_FIXNUM(exitcode);
+                pid->foreign.data = NULL;
+                CloseHandle(*hProcess);
+        }
+        ecl_enable_interrupts_env(the_env);
+#else
+        int code_int, error;
+        error = waitpid(fixint(pid), &code_int, Null(wait)? WNOHANG : 0);
+        if (error < 0) {
+                if (errno == EINTR) {
+                        status = @':abort';
+                } else {
+                        status = @':error';
+                }
+                code = Cnil;
+                pid = Cnil;
+        } else if (error == 0) {
+                status = Cnil;
+                code = Cnil;
+                pid = Cnil;
+        } else {
+                pid = MAKE_FIXNUM(error);
+                if (WIFEXITED(code_int)) {
+                        status = @':exited';
+                        code = MAKE_FIXNUM(WEXITSTATUS(code_int));
+                } else if (WIFSIGNALED(code_int)) {
+                        status = @':signaled';
+                        code = MAKE_FIXNUM(WTERMSIG(code_int));
+                } else if (WIFSTOPPED(code_int)) {
+                        status = @':stopped';
+                        code = MAKE_FIXNUM(WSTOPSIG(code_int));
+                } else {
+                        status = @':running';
+                        code = Cnil;
+                }
+        }
+#endif
+        @(return status code pid)
+}
+
+void
+ecl_query_all_processes_status(int lock)
+{
+#if defined(SIGCHLD) && !defined(ECL_WINDOWS_HOST)
+        const cl_env_ptr env = ecl_process_env();
+# ifdef ECL_THREADS
+        if (lock) {
+                ECL_WITH_LOCK_BEGIN(env, cl_core.external_processes_lock) {
+                        ecl_query_all_processes_status(0);
+                } ECL_WITH_LOCK_END(env, cl_core.external_processes_lock);
+                return;
+        }
+# endif
+        do {
+                cl_object status = ecl_waitpid(MAKE_FIXNUM(-1), Cnil);
+                cl_object code = env->values[1];
+                cl_object pid = env->values[2];
+                if (Null(pid)) {
+                        if (status != @':abort')
+                                break;
+                } else {
+                        cl_object p = find_external_process(pid);
+                        if (!Null(p)) {
+                                update_process_status(p, status, code);
+                        }
+                        if (status != @':running') {
+                                cl_core.external_processes =
+                                        ecl_delete_eq(p, cl_core.external_processes);
+                        }
+                }
+        } while (1);
+#else
+#error "FOO"
+#endif
+}
 
 #if defined(ECL_MS_WINDOWS_HOST)
 cl_object
@@ -225,111 +343,31 @@ make_windows_handle(HANDLE h)
 }
 #endif
 
-static void
-update_process_status(cl_env_ptr env, cl_object process, cl_object status, cl_object code)
-{
-        ecl_structure_set(process, @'ext::external-process',
-                          0, Cnil);
-        ecl_structure_set(process, @'ext::external-process',
-                          3, status);
-        ecl_structure_set(process, @'ext::external-process',
-                          4, code);
-        if (status == @':exited' || status == @':error' || status == @':signaled')
-                remove_external_process(env, process);
-}
-
-static cl_object
-external_process_pid(cl_object p)
-{
-        return cl_funcall(2, @'ext::external-process-pid', p);
-}
-
-@(defun ext::external-process-wait (process_or_pid &optional (wait Cnil))
-	cl_object status, code;
+@(defun ext::external-process-wait (process &optional (wait Cnil))
 @
 {
-#if defined(ECL_MS_WINDOWS_HOST)
-        /* ext:external-process-wait may wait for a process structure,
-         * for a process id or for (-1), which means "any process". The
-         * last case is only implemented on POSIX platforms. */
-        if (process_or_pid == MAKE_FIXNUM(-1))
-                @(return Cnil Cnil);
-#endif
-        if (type_of(process_or_pid) == T_STRUCTURE) {
-                cl_object pid;
-                while (!Null(pid = external_process_pid(process_or_pid))) {
-                        status = si_external_process_wait(2, pid, wait);
-                        code = VALUES(1);
-                        if (status != @':abort') {
-                                update_process_status(the_env, process_or_pid,
-                                                      status, code);
-                                goto OUTPUT;
-                        } else if (Null(wait)) {
-                                goto OUTPUT;
-                        }
-                }
-                /* Process already exited */
-                return cl_funcall(2, @'ext::external-process-status',
-                                  process_or_pid);
+        cl_object status, code, pid;
+ AGAIN:
+        pid = external_process_pid(process);
+        if (Null(pid)) {
+                status = external_process_status(process);
+                code = external_process_code(process);
         } else {
-#if defined(ECL_MS_WINDOWS_HOST)
-                HANDLE *hProcess = ecl_foreign_data_pointer_safe(process_or_pid);
-                DWORD exitcode;
-                int ok;
-                WaitForSingleObject(*hProcess, Null(wait)? 0 : INFINITE);
-                ecl_disable_interrupts_env(the_env);
-                ok = GetExitCodeProcess(*hProcess, &exitcode);
-                if (!ok) {
-                        status = @':error';
-                        code = Cnil;
-                } else if (exitcode == STILL_ACTIVE) {
-                        status = @':running';
-                        code = Cnil;
+                status = ecl_waitpid(pid, wait);
+                code = VALUES(1);
+                pid = VALUES(2);
+                /* A SIGCHLD interrupt may abort waitpid. If this
+                 * is the case, the signal handler may have consumed
+                 * the process status and we have to start over again */
+                if (Null(pid)) {
+                        if (!Null(wait)) goto AGAIN;
+                        status = external_process_status(process);
+                        code = external_process_code(process);
                 } else {
-                        status = @':exited';
-                        code = MAKE_FIXNUM(exitcode);
-                        process_or_pid->foreign.data = NULL;
-                        CloseHandle(*hProcess);
+                        update_process_status(process, status, code);
+                        remove_external_process(the_env, process);
                 }
-                ecl_enable_interrupts_env(the_env);
-#else
-                cl_fixnum pid = fixint(process_or_pid);
-                int code_int, error;
-        AGAIN:
-                error = waitpid(pid, &code_int, Null(wait)? WNOHANG : 0);
-                if (error < 0) {
-                        if (errno == EINTR) {
-                                status = @':abort';
-                        } else {
-                                status = @':error';
-                        }
-                        code = Cnil;
-                } else if (WIFEXITED(code_int)) {
-                        status = @':exited';
-                        code = MAKE_FIXNUM(WEXITSTATUS(code_int));
-                } else if (WIFSIGNALED(code_int)) {
-                        status = @':signaled';
-                        code = MAKE_FIXNUM(WTERMSIG(code_int));
-                } else if (WIFSTOPPED(code_int)) {
-                        status = @':stopped';
-                        code = MAKE_FIXNUM(WSTOPSIG(code_int));
-                } else if (error > 0) {
-                        status = @':running';
-                        code = Cnil;
-                } else {
-                        status = Cnil;
-                        code = Cnil;
-                }
-                if (error > 0) {
-                        cl_object process =
-                                find_external_process(the_env, MAKE_FIXNUM(error));
-                        if (!Null(process)) {
-                                update_process_status(the_env, process, status, code);
-                        }
-                }
-#endif
         }
- OUTPUT:
         @(return status code)
 }
 @)
@@ -649,6 +687,10 @@ external_process_pid(cl_object p)
                         error);
 	}
 	add_external_process(the_env, process);
+        /* We have to protect this, to avoid the signal being delivered or handled
+         * before we set the process pid */
+        ecl_disable_interrupts_env(the_env);
+        ECL_WITH_LOCK_BEGIN(the_env, cl_core.external_processes_lock) {
 	child_pid = fork();
 	if (child_pid == 0) {
 		/* Child */
@@ -685,6 +727,8 @@ external_process_pid(cl_object p)
                 pid = MAKE_FIXNUM(child_pid);
         }
         set_external_process_pid(process, pid);
+        } ECL_WITH_LOCK_END;
+        ecl_enable_interrupts_env(the_env);
 	close(child_stdin);
 	close(child_stdout);
 	close(child_stderr);

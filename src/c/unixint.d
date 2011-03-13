@@ -347,13 +347,9 @@ handler_fn_protype(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
                 return @'ext::segmentation-violation';
 #endif
 #ifdef SIGCHLD
-        case SIGCHLD: {
-                cl_object status;
-                do {
-                        status = si_external_process_wait(1, MAKE_FIXNUM(-1));
-                } while (!Null(status) && status != @':error');      
+        case SIGCHLD:
+                ecl_query_all_processes_status(0);
                 return Cnil;
-        }
 #endif
 	default:
 		return MAKE_FIXNUM(sig);
@@ -698,17 +694,26 @@ si_catch_signal(cl_object code, cl_object boolean)
 #endif
 	for (i = 0; known_signals[i].code >= 0; i++) {
 		if (known_signals[i].code == code_int) {
-			if (Null(boolean))
+			if (Null(boolean)) {
 				signal(code_int, SIG_DFL);
-			else if (code_int == SIGSEGV)
+                                break;
+                        } else if (code_int == SIGSEGV) {
 				mysignal(code_int, sigsegv_handler);
+                                break;
+                        }
 #ifdef SIGBUS
-			else if (code_int == SIGBUS)
+			else if (code_int == SIGBUS) {
 				mysignal(code_int, sigbus_handler);
+                                break;
+                        }
 #endif
 #ifdef SIGCHLD
-                        else if (code_int == SIGCHLD)
+                        else if (code_int == SIGCHLD) {
+#ifndef ECL_THREADS
                                 mysignal(SIGCHLD, non_evil_signal_handler);
+#endif
+                                break;
+                        }
 #endif
 			else
 				mysignal(code_int, non_evil_signal_handler);
@@ -921,6 +926,7 @@ asynchronous_signal_servicing_thread()
 	 * use to communicate process interrupts. For some unknown
 	 * reason those signals may get lost.
 	 */
+        sigaddset(&handled_set, SIGCHLD);
 	if (interrupt_signal) {
 		sigaddset(&handled_set, interrupt_signal);
 		pthread_sigmask(SIG_SETMASK, &handled_set, NULL);
@@ -930,8 +936,14 @@ asynchronous_signal_servicing_thread()
 		/* Waiting may fail! */
 		int status = sigwait(&handled_set, &signo);
 		if (status == 0) {
-			if (interrupt_signal == signo)
+			if (signo == interrupt_signal)
 				goto RETURN;
+#ifdef SIGCHLD
+                        if (signo == SIGCHLD) {
+                                ecl_query_all_processes_status(1);
+                                continue;
+                        }
+#endif
 			signal_code = call_handler(lisp_signal_handler, signo,
 						   NULL, NULL);
 			if (!Null(signal_code)) {
@@ -1033,6 +1045,14 @@ install_asynchronous_signal_handlers()
 		async_handler(SIGINT, non_evil_signal_handler, &sigmask);
 	}
 #endif
+#ifdef SIGCHLD
+	if (ecl_get_option(ECL_OPT_TRAP_SIGCHLD)) {
+                /* We have to set the process signal handler explicitly,
+                 * because on many platforms the default is SIG_IGN. */
+		mysignal(SIGCHLD, non_evil_signal_handler);
+		async_handler(SIGCHLD, non_evil_signal_handler, &sigmask);
+	}
+#endif
 #ifdef HAVE_SIGPROCMASK
 # if defined(ECL_THREADS)
 	pthread_sigmask(SIG_SETMASK, &sigmask, NULL);
@@ -1129,11 +1149,6 @@ install_synchronous_signal_handlers()
 #ifdef SIGPIPE
 	if (ecl_get_option(ECL_OPT_TRAP_SIGPIPE)) {
 		mysignal(SIGPIPE, non_evil_signal_handler);
-	}
-#endif
-#ifdef SIGCHLD
-	if (ecl_get_option(ECL_OPT_TRAP_SIGCHLD)) {
-		mysignal(SIGCHLD, non_evil_signal_handler);
 	}
 #endif
 }

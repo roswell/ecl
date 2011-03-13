@@ -438,7 +438,10 @@ extern cl_object mp_get_rwlock_write_wait(cl_object lock);
 #define ECL_PI2_D 1.57079632679489661923132169163975144
 #define ECL_PI2_L 1.57079632679489661923132169163975144l
 
-void ecl_interrupt_process(cl_object process, cl_object function);
+extern void ecl_interrupt_process(cl_object process, cl_object function);
+
+/* unixsys.d */
+extern void ecl_query_all_processes_status(int lock);
 
 /*
  * Fake several ISO C99 mathematical functions
