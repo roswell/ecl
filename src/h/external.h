@@ -917,6 +917,7 @@ extern ECL_API cl_object ecl_assql(cl_object x, cl_object l);
 extern ECL_API cl_object ecl_assoc(cl_object x, cl_object l);
 extern ECL_API cl_object ecl_assqlp(cl_object x, cl_object l);
 extern ECL_API cl_object ecl_remove_eq(cl_object x, cl_object l);
+extern ECL_API cl_object ecl_delete_eq(cl_object x, cl_object l);
 #define si_cons_car cl_car
 #define si_cons_cdr cl_cdr
 

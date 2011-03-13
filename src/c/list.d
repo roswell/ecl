@@ -1053,6 +1053,22 @@ ecl_remove_eq(cl_object x, cl_object l)
 	return head;
 }
 
+cl_object
+ecl_delete_eq(cl_object x, cl_object l)
+{
+	cl_object head = l;
+        cl_object *p = &head;
+        while (!ECL_ATOM(l)) {
+                if (ECL_CONS_CAR(l) == x) {
+                        *p = l = ECL_CONS_CDR(l);
+                } else {
+                        p = &ECL_CONS_CDR(l);
+                        l = *p;
+                }
+        }
+	return head;
+}
+
 /* Added for use by the compiler, instead of open coding them. Beppe */
 cl_object
 ecl_assq(cl_object x, cl_object l)
