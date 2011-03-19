@@ -285,13 +285,14 @@ ecl_waitpid(cl_object pid, cl_object wait)
         @(return status code pid)
 }
 
-void
-ecl_query_all_processes_status(int lock)
+@(defun si::wait-for-all-processes (&optional flag)
+@
 {
 #if defined(SIGCHLD) && !defined(ECL_WINDOWS_HOST)
         const cl_env_ptr env = ecl_process_env();
 # ifdef ECL_THREADS
-        if (lock) {
+        if (Null(flag)) {
+                /* We come from the parallel thread, must lock */
                 ECL_WITH_LOCK_BEGIN(env, cl_core.external_processes_lock) {
                         ecl_query_all_processes_status(0);
                 } ECL_WITH_LOCK_END(env, cl_core.external_processes_lock);
@@ -320,6 +321,7 @@ ecl_query_all_processes_status(int lock)
 #error "FOO"
 #endif
 }
+@)
 
 #if defined(ECL_MS_WINDOWS_HOST)
 cl_object
@@ -689,7 +691,7 @@ make_windows_handle(HANDLE h)
 	add_external_process(the_env, process);
         /* We have to protect this, to avoid the signal being delivered or handled
          * before we set the process pid */
-        ecl_disable_interrupts_env(the_env);
+        ecl_bds_bind(the_env, @'ext::*interrupts-enabled*', Cnil);
         ECL_WITH_LOCK_BEGIN(the_env, cl_core.external_processes_lock) {
 	child_pid = fork();
 	if (child_pid == 0) {
@@ -728,7 +730,8 @@ make_windows_handle(HANDLE h)
         }
         set_external_process_pid(process, pid);
         } ECL_WITH_LOCK_END;
-        ecl_enable_interrupts_env(the_env);
+        ecl_bds_unwind1(the_env);
+        ecl_check_pending_interrupts();
 	close(child_stdin);
 	close(child_stdout);
 	close(child_stderr);

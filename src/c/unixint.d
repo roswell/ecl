@@ -348,8 +348,7 @@ handler_fn_protype(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
 #endif
 #ifdef SIGCHLD
         case SIGCHLD:
-                ecl_query_all_processes_status(0);
-                return Cnil;
+                return SYM_FUN(@'si::wait-for-all-processes');
 #endif
 	default:
 		return MAKE_FIXNUM(sig);
@@ -926,7 +925,9 @@ asynchronous_signal_servicing_thread()
 	 * use to communicate process interrupts. For some unknown
 	 * reason those signals may get lost.
 	 */
+#ifdef SIGCHLD
         sigaddset(&handled_set, SIGCHLD);
+#endif
 	if (interrupt_signal) {
 		sigaddset(&handled_set, interrupt_signal);
 		pthread_sigmask(SIG_SETMASK, &handled_set, NULL);
@@ -940,7 +941,7 @@ asynchronous_signal_servicing_thread()
 				goto RETURN;
 #ifdef SIGCHLD
                         if (signo == SIGCHLD) {
-                                ecl_query_all_processes_status(1);
+                                si_wait_for_all_processes(0);
                                 continue;
                         }
 #endif
@@ -1049,8 +1050,8 @@ install_asynchronous_signal_handlers()
 	if (ecl_get_option(ECL_OPT_TRAP_SIGCHLD)) {
                 /* We have to set the process signal handler explicitly,
                  * because on many platforms the default is SIG_IGN. */
-		mysignal(SIGCHLD, non_evil_signal_handler);
-		async_handler(SIGCHLD, non_evil_signal_handler, &sigmask);
+		mysignal(SIGCHLD, lisp_signal_handler);
+		async_handler(SIGCHLD, lisp_signal_handler, &sigmask);
 	}
 #endif
 #ifdef HAVE_SIGPROCMASK

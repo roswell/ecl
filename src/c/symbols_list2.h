@@ -1211,6 +1211,7 @@ cl_symbols[] = {
 {SYS_ "REPLACE-ARRAY","si_replace_array"},
 {SYS_ "ROW-MAJOR-ASET","si_row_major_aset"},
 {EXT_ "RUN-PROGRAM","si_run_program"},
+{SYS_ "WAIT-FOR-ALL-PROCESSES","si_wait_for_all_processes"},
 {EXT_ "SAFE-EVAL","si_safe_eval"},
 {SYS_ "SCH-FRS-BASE","si_sch_frs_base"},
 {SYS_ "SCHAR-SET","si_char_set"},
@@ -1717,7 +1718,7 @@ cl_symbols[] = {
 
 {SYS_ "TRAP-FPE","si_trap_fpe"},
 
-{SYS_ "*ACTION-ON-UNDEFINED-VARIABLE*",NULL},
+{EXT_ "*ACTION-ON-UNDEFINED-VARIABLE*",NULL},
 
 {SYS_ "SET-BUFFERING-MODE","si_set_buffering_mode"},
 {KEY_ "NONE",NULL},

@@ -19,6 +19,7 @@
 #include <time.h>
 #ifndef _MSC_VER
 # include <unistd.h>
+# include <errno.h>
 #endif
 #if defined(_MSC_VER) || defined(__MINGW32__)
 # include <windows.h>
@@ -142,9 +143,19 @@ cl_sleep(cl_object z)
         } ECL_WITHOUT_FPE_END;
 #ifdef HAVE_NANOSLEEP
         {
+                int code;
                 tm.tv_sec = (time_t)floor(time);
                 tm.tv_nsec = (long)((time - floor(time)) * 1e9);
-                nanosleep(&tm, NULL);
+        AGAIN:
+                ecl_disable_interrupts();
+                code = nanosleep(&tm, NULL);
+                {
+                        int old_errno = errno;
+                        ecl_enable_interrupts();
+                        if (code < 0 && old_errno == EINTR) {
+                                goto AGAIN;
+                        }
+                }
         }
 #else
 #if defined (ECL_MS_WINDOWS_HOST)

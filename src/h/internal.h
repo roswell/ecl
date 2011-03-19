@@ -441,7 +441,7 @@ extern cl_object mp_get_rwlock_write_wait(cl_object lock);
 extern void ecl_interrupt_process(cl_object process, cl_object function);
 
 /* unixsys.d */
-extern void ecl_query_all_processes_status(int lock);
+extern cl_object si_wait_for_all_processes(cl_narg,...);
 
 /*
  * Fake several ISO C99 mathematical functions

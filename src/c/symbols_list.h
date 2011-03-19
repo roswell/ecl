@@ -1211,6 +1211,7 @@ cl_symbols[] = {
 {SYS_ "REPLACE-ARRAY", SI_ORDINARY, si_replace_array, 2, OBJNULL},
 {SYS_ "ROW-MAJOR-ASET", SI_ORDINARY, si_row_major_aset, 3, OBJNULL},
 {EXT_ "RUN-PROGRAM", EXT_ORDINARY, si_run_program, -1, OBJNULL},
+{SYS_ "WAIT-FOR-ALL-PROCESSES", SI_ORDINARY, si_wait_for_all_processes, -1, OBJNULL},
 {EXT_ "SAFE-EVAL", EXT_ORDINARY, si_safe_eval, -1, OBJNULL},
 {SYS_ "SCH-FRS-BASE", SI_ORDINARY, si_sch_frs_base, 2, OBJNULL},
 {SYS_ "SCHAR-SET", SI_ORDINARY, si_char_set, 3, OBJNULL},
@@ -1717,7 +1718,7 @@ cl_symbols[] = {
 
 {SYS_ "TRAP-FPE", SI_ORDINARY, si_trap_fpe, 2, OBJNULL},
 
-{SYS_ "*ACTION-ON-UNDEFINED-VARIABLE*", SI_SPECIAL, NULL, -1, Cnil},
+{EXT_ "*ACTION-ON-UNDEFINED-VARIABLE*", EXT_SPECIAL, NULL, -1, Cnil},
 
 {SYS_ "SET-BUFFERING-MODE", SI_ORDINARY, si_set_buffering_mode, 2, OBJNULL},
 {KEY_ "NONE", KEYWORD, NULL, -1, OBJNULL},
