@@ -673,7 +673,7 @@ c_var_ref(cl_env_ptr env, cl_object var, int allow_symbol_macro, bool ensure_def
 		}
 	}
 	if (ensure_defined) {
-		l = ecl_symbol_value(@'si::*action-on-undefined-variable*');
+		l = ecl_symbol_value(@'ext::*action-on-undefined-variable*');
 		if (l != Cnil) {
 			funcall(3, l, undefined_variable, var);
 		}
