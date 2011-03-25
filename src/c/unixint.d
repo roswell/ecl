@@ -85,13 +85,6 @@
 
 #include <ecl/ecl.h>
 
-#if defined(HAVE_FENV_H) && !defined(ECL_AVOID_FENV_H)
-# ifndef _GNU_SOURCE
-#  define _GNU_SOURCE
-# endif
-# include <fenv.h>
-#endif
-
 #ifdef ECL_USE_MPROTECT
 # ifndef SA_SIGINFO
 #  error "We cannot use the mmap code without siginfo"

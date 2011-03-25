@@ -65,7 +65,6 @@
 #endif /* !HAVE_FENV_H */
 
 #if defined(HAVE_FENV_H) && !defined(HAVE_FEENABLEEXCEPT) && !defined(ECL_AVOID_FPE_H)
-# include <fenv.h>
 # define ECL_USED_EXCEPTIONS (FE_DIVBYZERO|FE_INVALID|FE_OVERFLOW|FE_UNDERFLOW)
 # define ECL_MATHERR_CLEAR feclearexcept(FE_ALL_EXCEPT)
 # define ECL_MATHERR_TEST do {                                  \
