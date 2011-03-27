@@ -285,16 +285,16 @@ ecl_waitpid(cl_object pid, cl_object wait)
         @(return status code pid)
 }
 
-@(defun si::wait-for-all-processes (&optional flag)
+@(defun si::wait-for-all-processes (&optional unsafep)
 @
 {
 #if defined(SIGCHLD) && !defined(ECL_WINDOWS_HOST)
         const cl_env_ptr env = ecl_process_env();
 # ifdef ECL_THREADS
-        if (Null(flag)) {
+        if (Null(unsafep)) {
                 /* We come from the parallel thread, must lock */
                 ECL_WITH_LOCK_BEGIN(env, cl_core.external_processes_lock) {
-                        ecl_query_all_processes_status(0);
+                        si_wait_for_all_processes(1, Ct);
                 } ECL_WITH_LOCK_END(env, cl_core.external_processes_lock);
                 return;
         }
