@@ -542,6 +542,8 @@ disassemble(cl_object bytecodes, cl_opcode *vector) {
 
 	case OP_PROGV:		vector = disassemble_progv(bytecodes, vector);
 				break;
+        case OP_EXIT_PROGV:	print_noarg("PROGV\tEXIT");
+        			return vector;
 
 	/* OP_VALUES	n{arg}
 		Pop N values from the stack and store them in VALUES(...)
