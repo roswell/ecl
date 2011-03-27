@@ -164,16 +164,6 @@
       (write-byte (length mapping-array) s)
       (write-sequence mapping-array s))))
 
-(defun copy-file (in out)
-  (let ((buffer (make-array 8192 :element-type '(unsigned-byte 8))))
-    (format t "~%;;; Copying ~A to ~A" in out)
-    (with-open-file (sin in :direction :input :element-type '(unsigned-byte 8))
-      (with-open-file (sout out :direction :output :element-type '(unsigned-byte 8)
-			    :if-exists :supersede :if-does-not-exist :create)
-	(loop for nbytes = (read-sequence buffer sin)
-	   until (zerop nbytes)
-	   do (write-sequence buffer sout :end nbytes))))))
-
 (defun all-valid-unicode-chars (mapping)
   (cond ((consp mapping)
 	 (loop for sublist on mapping
