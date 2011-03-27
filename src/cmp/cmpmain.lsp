@@ -24,19 +24,24 @@
   ;; the other one is to ensure that the output of this function _always_
   ;; carries a file type -- this solves a problem with filesystems where
   ;; mkstemp may introduce one or more dots in the name causing several
-  ;; functions below to ignore parts of the name.
+  ;; functions below to ignore parts of the name. Note that this forces
+  ;; us to have two files per temp: one with and one without extension.
   (let* ((base (si::mkstemp template)))
-    (when (and base (null (pathname-type base)))
-      (let ((output (make-pathname :type "tmp" :defaults base)))
-        (if (rename-file base output :if-exists nil)
-            (setf base output)
+    (when base
+      (let ((output (make-pathname :name
+                                   (concatenate 'string (pathname-name base)
+                                                (or (pathname-type base) ""))
+                                   :type "tmp"
+                                   :defaults base)))
+        (if (and (not (probe-file output)) (si:copy-file base output))
+            (setf base (list (truename output) (truename base)))
             (progn (delete-file base) (setf base nil)))))
     (unless base
       (error "Unable to create temporay file~%~
 	~AXXXXXX
 Make sure you have enough free space in disk, check permissions or set~%~
 the environment variable TMPDIR to a different value." template))
-    (truename base)))
+    base))
 
 (defun compile-file-pathname (name &key (output-file T) (type nil type-supplied-p)
                               verbose print c-file h-file data-file shared-data-file
@@ -97,12 +102,12 @@ the environment variable TMPDIR to a different value." template))
 (defun cmp-delete-file (file)
   (cond ((null *delete-files*))
 	((ext:getenv "ECL_PRESERVE_FILES"))
+        ((null (probe-file file)))
 	(*debug-compiler*
 	 (cmpprogress "~%Postponing deletion of ~A" file)
-	 (push file *files-to-be-deleted*))
+         (push file *files-to-be-deleted*))
 	(t
-	 (and (probe-file file)
-	      (delete-file file)))))
+         (delete-file file))))
 
 (push #'(lambda () (mapc #'delete-file *files-to-be-deleted*))
       si::*exit-hooks*)
@@ -390,7 +395,8 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), Cnil);
   ;; To avoid name clashes, this object file will have a temporary
   ;; file name (tmp-name).
   ;;
-  (let* ((tmp-name (safe-mkstemp #P"TMP:ECLINIT"))
+  (let* ((tmp-names (safe-mkstemp #P"TMP:ECLINIT"))
+         (tmp-name (first tmp-names))
 	 (c-name (si::coerce-to-filename
 		  (compile-file-pathname tmp-name :type :c)))
 	 (o-name (si::coerce-to-filename
@@ -482,7 +488,7 @@ static cl_object VV[VM];
        (close c-file)
        (compiler-cc c-name o-name)
        (bundle-cc output-name init-name (list* o-name ld-flags))))
-    (cmp-delete-file tmp-name)
+    (mapc 'cmp-delete-file tmp-names)
     (cmp-delete-file c-name)
     (cmp-delete-file o-name)
     output-name))
@@ -724,9 +730,9 @@ after compilation."
 	(t
 	 (setq form `(setf (symbol-function ',name) #',form))))
 
-  (setq data-pathname (safe-mkstemp (format nil "TMP:ECL~3,'0x" (incf *gazonk-counter*))))
-
   (let*((*load-time-values* 'values) ;; Only the value is kept
+        (tmp-names (safe-mkstemp (format nil "TMP:ECL~3,'0x" (incf *gazonk-counter*))))
+        (data-pathname (first tmp-names))
 	(c-pathname (compile-file-pathname data-pathname :type :c))
 	(h-pathname (compile-file-pathname data-pathname :type :h))
 	(o-pathname (compile-file-pathname data-pathname :type :object))
@@ -752,7 +758,7 @@ after compilation."
       (cmp-delete-file c-pathname)
       (cmp-delete-file h-pathname)
       (cmp-delete-file o-pathname)
-      (cmp-delete-file data-pathname)
+      (mapc 'cmp-delete-file tmp-names)
       (cond ((probe-file so-pathname)
 	     (load so-pathname :verbose nil)
 	     (cmp-delete-file so-pathname)
@@ -765,11 +771,10 @@ after compilation."
 	    (t
 	     (cmperr "The C compiler failed to compile the intermediate code for ~s." name)))
       ) ; with-compiler-env
-
-    (when (probe-file c-pathname) (cmp-delete-file c-pathname))
-    (when (probe-file h-pathname) (cmp-delete-file h-pathname))
-    (when (probe-file so-pathname) (cmp-delete-file so-pathname))
-    (when (probe-file data-pathname) (cmp-delete-file data-pathname))
+    (cmp-delete-file c-pathname)
+    (cmp-delete-file h-pathname)
+    (cmp-delete-file so-pathname)
+    (mapc 'cmp-delete-file tmp-names)
     (compiler-output-values name compiler-conditions)))
 
 (defun disassemble (thing &key (h-file nil) (data-file nil)
