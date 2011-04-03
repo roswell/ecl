@@ -19,17 +19,16 @@
 #include <ecl/internal.h>
 
 static bool
-potential_number_p(cl_object strng, int base)
+potential_number_p(cl_object s, int base)
 {
 	/* See ANSI 2.3.1.1 */
-	int i, l, c;
-	char *s;
+	static cl_index i, l;
+        ecl_character c;
 
-	l = strng->base_string.fillp;
+	l = s->base_string.fillp;
 	if (l == 0)
 		return FALSE;
-	s = (char*)strng->base_string.self;
-	c = s[0];
+	c = ecl_char(s, 0);
 
 	/* A potential number must begin with a digit, sign or
            extension character (^ _) */
@@ -37,11 +36,12 @@ potential_number_p(cl_object strng, int base)
 		return FALSE;
 
 	/* A potential number cannot end with a sign */
-	if (s[l-1] == '+' || s[l-1] == '-')
+        c = ecl_char(s, l-1);
+	if (c == '+' || c == '-')
 		return FALSE;
 
 	for (i = 1;  i < l;  i++) {
-		c = s[i];
+		c = ecl_char(s, i);
 		/* It can only contain digits, signs, ratio markers,
 		 * extension characters and number markers. Number
 		 * markers are letters, but two adjacent letters fail
@@ -50,7 +50,8 @@ potential_number_p(cl_object strng, int base)
                     c == '/' || c == '.' || c == '^' || c == '_') {
 			continue;
 		}
-		if (ecl_alpha_char_p(c) && ((i+1) >= l) || !ecl_alpha_char_p(s[i+1])) {
+		if (ecl_alpha_char_p(c) &&
+                    (((i+1) >= l) || !ecl_alpha_char_p(ecl_char(s, i+1)))) {
 			continue;
 		}
 		return FALSE;
