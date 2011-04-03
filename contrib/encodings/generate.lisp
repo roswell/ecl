@@ -27,7 +27,7 @@
 			     (mapcar #'rest (read-mapping name 3))
 			     (read-mapping name))))
 	    (dump-mapping-array mapping orig)))
-	(copy-file orig copy)))
+	(copy-encoding-file orig copy)))
 
 (defconstant +aliases+
   '((:us-ascii :ascii)
@@ -94,8 +94,8 @@
 	      (format t "~%;;; Creating alias ~A -> ~A, ~A" alias name filename)
 	      (format out "(defparameter ext::~A (ext::make-encoding 'ext::~A))" alias name))))
 
-(copy-file "ext:encodings;tools.lisp" "build:encodings;tools.lisp")
-(copy-file (merge-pathnames "ISO-2022-JP" +encodings-root+)
-           "build:encodings;ISO-2022-JP")
-(copy-file (merge-pathnames "ISO-2022-JP-1" +encodings-root+)
-           "build:encodings;ISO-2022-JP-1")
+(copy-encoding-file "ext:encodings;tools.lisp" "build:encodings;tools.lisp")
+(copy-encoding-file (merge-pathnames "ISO-2022-JP" +encodings-root+)
+                    "build:encodings;ISO-2022-JP")
+(copy-encoding-file (merge-pathnames "ISO-2022-JP-1" +encodings-root+)
+                    "build:encodings;ISO-2022-JP-1")
