@@ -276,7 +276,7 @@
 (define-policy inline-slot-access :on speed 1 :off debug 2 :off safety 2
   "Inline access to structures and sealed classes")
 
-(define-policy inline-accessors :off debug 2
+(define-policy inline-accessors :off debug 2 :off space 2
   "Inline access to object slots, including conses and arrays")
 
 (define-policy open-code-aref/aset :alias inline-accessors
