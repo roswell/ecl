@@ -84,10 +84,10 @@ checked_index(cl_object function, cl_object a, int which, cl_object index,
               cl_index nonincl_limit)
 {
         cl_index output;
-        if (ecl_unlikely(!ECL_FIXNUMP(index) || ecl_fixnum_minusp(index)))
+        unlikely_if (!ECL_FIXNUMP(index) || ecl_fixnum_minusp(index))
                 FEwrong_index(function, a, which, index, nonincl_limit);
         output = fix(index);
-        if (ecl_unlikely(output >= nonincl_limit))
+        unlikely_if (output >= nonincl_limit)
                 FEwrong_index(function, a, which, index, nonincl_limit);
         return output;
 }

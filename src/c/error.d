@@ -345,14 +345,13 @@ FEwrong_index(cl_object function, cl_object a, int which, cl_object ndx,
         if (!Null(function) && env->ihs_top && env->ihs_top->function != function) {
                 ecl_ihs_push(env,&tmp_ihs,function,Cnil);
         }        
-        si_signal_simple_error(8,
-                               @'type-error', /* condition name */
-                               Cnil, /* not correctable */
-                               message, /* format control */
-                               cl_list(5, function, MAKE_FIXNUM(which+1), ndx,
-                                       a, type),
-                               @':expected-type', type,
-                               @':datum', ndx);
+        cl_error(9,
+                 @'simple-type-error', /* condition name */
+                 @':format-control', message,
+                 @':format-arguments',
+                 cl_list(5, function, MAKE_FIXNUM(which+1), a, ndx, type),
+                 @':expected-type', type,
+                 @':datum', ndx);
 }
 
 void
@@ -455,12 +454,6 @@ universal_error_handler(cl_object continue_string, cl_object datum,
         }
  ABORT:
 	ecl_internal_error("\nLisp initialization error.\n");
-}
-
-void
-FEillegal_index(cl_object x, cl_object i)
-{
-	FEerror("~S is an illegal index to ~S.", 2, i, x);
 }
 
 void

@@ -576,7 +576,6 @@ extern ECL_API void FEinvalid_function(cl_object obj) ecl_attr_noreturn;
 extern ECL_API void FEinvalid_function_name(cl_object obj) ecl_attr_noreturn;
 extern ECL_API void FEprint_not_readable(cl_object obj) ecl_attr_noreturn;
 extern ECL_API cl_object CEerror(cl_object c, const char *err_str, int narg, ...);
-extern ECL_API void FEillegal_index(cl_object x, cl_object i) ecl_attr_noreturn;
 extern ECL_API void FElibc_error(const char *msg, int narg, ...) ecl_attr_noreturn;
 #if defined(ECL_MS_WINDOWS_HOST) || defined(cygwin)
 extern ECL_API void FEwin32_error(const char *msg, int narg, ...) ecl_attr_noreturn;
@@ -1797,7 +1796,7 @@ extern ECL_API void FEtype_error_proper_list(cl_object x) ecl_attr_noreturn;
 extern ECL_API void FEtype_error_sequence(cl_object x) ecl_attr_noreturn;
 extern ECL_API void FEtype_error_vector(cl_object x) ecl_attr_noreturn;
 extern ECL_API void FEcircular_list(cl_object x) ecl_attr_noreturn;
-extern ECL_API void FEtype_error_index(cl_object seq, cl_object ndx) ecl_attr_noreturn;
+extern ECL_API void FEtype_error_index(cl_object seq, cl_fixnum ndx) ecl_attr_noreturn;
 extern ECL_API void FEtype_error_array(cl_object x) ecl_attr_noreturn;
 extern ECL_API void FEdivision_by_zero(cl_object x, cl_object y) ecl_attr_noreturn;
 extern ECL_API cl_object ecl_type_error(cl_object function, const char *place, cl_object o, cl_object type);

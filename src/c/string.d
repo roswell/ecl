@@ -311,12 +311,12 @@ ecl_char(cl_object object, cl_index index)
 #ifdef ECL_UNICODE
 	case t_string:
 		if (index >= object->string.dim)
-			FEillegal_index(object, MAKE_FIXNUM(index));
+			FEtype_error_index(object, index);
 		return object->string.self[index];
 #endif
 	case t_base_string:
 		if (index >= object->base_string.dim)
-			FEillegal_index(object, MAKE_FIXNUM(index));
+			FEtype_error_index(object, index);
 		return object->base_string.self[index];
 	default:
                 FEwrong_type_nth_arg(@[char],1,object,@[string]);
@@ -340,12 +340,12 @@ ecl_char_set(cl_object object, cl_index index, ecl_character value)
 #ifdef ECL_UNICODE
 	case t_string:
 		if (index >= object->string.dim)
-			FEillegal_index(object, MAKE_FIXNUM(index));
+			FEtype_error_index(object, index);
 		return object->string.self[index] = value;
 #endif
 	case t_base_string:
 		if (index >= object->base_string.dim)
-			FEillegal_index(object, MAKE_FIXNUM(index));
+			FEtype_error_index(object, index);
 		return object->base_string.self[index] = value;
 	default:
                 FEwrong_type_nth_arg(@[si::char-set],1,object,@[string]);

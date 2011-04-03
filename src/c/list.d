@@ -400,7 +400,7 @@ cl_object
 ecl_nth(cl_fixnum n, cl_object x)
 {
 	if (n < 0)
-		FEtype_error_index(x, MAKE_FIXNUM(n));
+		FEtype_error_index(x, n);
 	/* INV: No need to check for circularity since we visit
 	   at most `n' conses */
 	for (; n > 0 && CONSP(x); n--)
@@ -422,7 +422,7 @@ cl_object
 ecl_nthcdr(cl_fixnum n, cl_object x)
 {
 	if (n < 0)
-		FEtype_error_index(x, MAKE_FIXNUM(n));
+		FEtype_error_index(x, n);
 	while (n-- > 0 && !Null(x)) {
 		if (LISTP(x)) {
 			x = ECL_CONS_CDR(x);

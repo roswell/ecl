@@ -49,13 +49,14 @@ FEcircular_list(cl_object x)
 }
 
 void
-FEtype_error_index(cl_object seq, cl_object ndx)
+FEtype_error_index(cl_object seq, cl_fixnum ndx)
 {
+        cl_object n = MAKE_FIXNUM(ndx);
 	cl_error(9, @'simple-type-error', @':format-control',
 		    make_constant_base_string("~S is not a valid index into the object ~S"),
-		    @':format-arguments', cl_list(2, ndx, seq),
+		    @':format-arguments', cl_list(2, n, seq),
 		    @':expected-type', cl_list(3, @'integer', MAKE_FIXNUM(0), MAKE_FIXNUM(ecl_length(seq)-1)),
-		    @':datum', ndx);
+		    @':datum', n);
 }
 
 void

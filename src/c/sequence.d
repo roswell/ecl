@@ -98,7 +98,7 @@ ecl_elt(cl_object seq, cl_fixnum index)
 		FEtype_error_sequence(seq);
 	}
 E:
-	FEtype_error_index(seq, MAKE_FIXNUM(index));
+	FEtype_error_index(seq, index);
 }
 
 cl_object
@@ -140,7 +140,7 @@ ecl_elt_set(cl_object seq, cl_fixnum index, cl_object val)
 		FEtype_error_sequence(seq);
 	}
 E:
-	FEtype_error_index(seq, MAKE_FIXNUM(index));
+	FEtype_error_index(seq, index);
 }
 
 cl_object
