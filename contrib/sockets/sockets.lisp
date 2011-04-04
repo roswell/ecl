@@ -111,6 +111,28 @@
   +eagain+ "EAGAIN"
   +eintr+ "EINTR")
 
+#+:android
+(define-c-constants
+  +ipproto_ip+ "IPPROTO_IP"
+  +ipproto_icmp+ "IPPROTO_ICMP"
+  +ipproto_igmp+ "IPPROTO_IGMP"
+  +ipproto_ipip+ "IPPROTO_IPIP"
+  +ipproto_tcp+ "IPPROTO_TCP"
+  +ipproto_egp+ "IPPROTO_EGP"
+  +ipproto_pup+ "IPPROTO_PUP"
+  +ipproto_udp+ "IPPROTO_UDP"
+  +ipproto_idp+ "IPPROTO_IDP"
+  +ipproto_dccp+ "IPPROTO_DCCP"
+  +ipproto_rsvp+ "IPPROTO_RSVP"
+  +ipproto_gre+ "IPPROTO_GRE"
+  +ipproto_ipv6+ "IPPROTO_IPV6"
+  +ipproto_esp+ "IPPROTO_ESP"
+  +ipproto_ah+ "IPPROTO_AH"
+  +ipproto_pim+ "IPPROTO_PIM"
+  +ipproto_comp+ "IPPROTO_COMP"
+  +ipproto_sctp+ "IPPROTO_SCTP"
+  +ipproto_raw+ "IPPROTO_RAW")
+
 #+:wsock
 (defconstant +af-named-pipe+ -2)
 
@@ -516,16 +538,40 @@ safe_buffer_pointer(cl_object x, cl_index size)
 
 (defun get-protocol-by-name (string-or-symbol)
   "Calls getprotobyname"
+  #-:android
   (let ((string (string string-or-symbol)))
       (c-inline (string) (:cstring) :int
                 "{
                  struct protoent *pe;
-
                  pe = getprotobyname(#0);
                  @(return 0) = pe ? pe->p_proto : -1;
                  }
-               ")))
-
+               "))
+  ;; getprotobyname is not yet implemented on bionic
+  #+:android
+  (let ((proto (string-downcase (if (symbolp string-or-symbol)
+				    (symbol-name string-or-symbol)
+				    string-or-symbol))))
+    (cond
+      ((string= proto "ip") +ipproto_ip+)
+      ((string= proto "icmp") +ipproto_icmp+)
+      ((string= proto "igmp") +ipproto_igmp+)
+      ((string= proto "ipip") +ipproto_ipip+)
+      ((string= proto "tcp") +ipproto_tcp+)
+      ((string= proto "egp") +ipproto_egp+)
+      ((string= proto "pup") +ipproto_pup+)
+      ((string= proto "udp") +ipproto_udp+)
+      ((string= proto "idp") +ipproto_idp+)
+      ((string= proto "dccp") +ipproto_dccp+)
+      ((string= proto "rsvp") +ipproto_rsvp+)
+      ((string= proto "gre") +ipproto_gre+)
+      ((string= proto "ipv6") +ipproto_ipv6+)
+      ((string= proto "esp") +ipproto_esp+)
+      ((string= proto "ah") +ipproto_ah+)
+      ((string= proto "pim") +ipproto_pim+)
+      ((string= proto "comp") +ipproto_comp+)
+      ((string= proto "sctp") +ipproto_sctp+)
+      ((string= proto "raw") +ipproto_raw+))))
 
 (defun make-inet-address (dotted-quads)
   "Return a vector of octets given a string DOTTED-QUADS in the format
@@ -1656,7 +1702,7 @@ GET-NAME-SERVICE-ERRNO")
 (define-sockopt sockopt-dont-route "SOL_SOCKET" "SO_DONTROUTE" bool)
 (define-sockopt sockopt-linger "SOL_SOCKET" "SO_LINGER" linger)
 
-#-(or :sun4sol2 :linux :wsock :cygwin)
+#-(or :sun4sol2 :linux :android :wsock :cygwin)
 (define-sockopt sockopt-reuse-port "SOL_SOCKET" "SO_REUSEPORT" bool)
 
 (define-sockopt sockopt-tcp-nodelay "IPPROTO_TCP" "TCP_NODELAY" bool)
