@@ -87,23 +87,6 @@
 	  (t
 	   (c1funcall (list* '#'APPLY args))))))
 
-(defun c1rplacd (args)
-  (check-args-number 'RPLACD args 2 2)
-  (make-c1form* 'RPLACD :args (c1args* args)))
-
-(defun c2rplacd (args)
-  (let* ((*inline-blocks* 0)
-         (*temp* *temp*)
-         (args (coerce-locs (inline-args args)))
-         (x (first args))
-         (y (second args)))
-    (when (safe-compile)
-      (wt-nl "if (ecl_unlikely(ATOM(" x ")))"
-             "FEtype_error_cons(" x ");"))
-    (wt-nl "ECL_CONS_CDR(" x ") = " y ";")
-    (unwind-exit x)
-    (close-inline-blocks)))
-
 ;;----------------------------------------------------------------------
 ;; We transform BOOLE into the individual operations, which have
 ;; inliners

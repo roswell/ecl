@@ -78,7 +78,6 @@
     (princ . c1princ) ; c1
     (terpri . c1terpri) ; c1
     (apply . c1apply) ; c1
-    (rplacd . c1rplacd) ; c1
     ))
 
 (defconstant +t1-dispatch-alist+
@@ -186,7 +185,6 @@
     (sys:structure-set . c2structure-set) ; c2
 
     (c2princ . c2princ) ; c2
-    (rplacd . c2rplacd) ; c2
     ))
 
 (defconstant +t2-dispatch-alist+
@@ -215,7 +213,9 @@
     (multiple-value-bind . p1multiple-value-bind)
     (multiple-value-setq . p1multiple-value-setq)
     (progn . p1progn)
+    (progv . p1progv)
     (setq . p1setq)
+    (psetq . p1psetq)
     (tagbody . p1tagbody)
     (go . p1go)
     (unwind-protect . p1unwind-protect)
@@ -228,6 +228,9 @@
     (function . p1trivial)
     (funcall . p1trivial)
     (load-time-value . p1trivial)
+    (c::with-stack . p1with-stack)
+    (c::stack-push-values . p1stack-push-values)
+    (c::structure-set . p1structure-set)
     ))
 
 (defun make-dispatch-table (alist)

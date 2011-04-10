@@ -234,11 +234,37 @@ of the occurrences in those lists."
 (defun p1progn (c1form assumptions forms)
   (p1propagate-list forms assumptions))
 
+(defun p1progv (c1form assumptions variables values body)
+  (let (type)
+    (multiple-value-setq (type assumptions)
+      (p1propagate variables assumptions))
+    (multiple-value-setq (type assumptions)
+      (p1propagate values assumptions))
+    (p1propagate body assumptions)))
+
 (defun p1setq (c1form assumptions var c1form)
   (multiple-value-bind (value-type assumptions)
       (p1propagate c1form assumptions)
     (values (type-and (var-type var) (values-type-primary-type value-type))
 	    assumptions)))
+
+(defun p1psetq (c1form assumptions vars c1forms)
+  (loop for variable in vars
+     for new-type in (loop with new-type
+                        for form in c1forms
+                        do (multiple-value-setq (new-type assumptions)
+                             (p1propagate form assumptions))
+                        collect new-type)
+     do (type-and (var-type variable) new-type))
+  (values 'null assumptions))
+
+(defun p1with-stack (c1form assumptions body)
+  (p1propagate body assumptions))
+
+(defun p1stack-push-values (c1form assumptions form inline)
+  (multiple-value-bind (form-type assumptions)
+      (p1propagate form assumptions)
+    (values nil assumptions)))
 
 (defvar *tagbody-depth* -1
   "If n > 0, limit the number of passes to converge tagbody forms. If
@@ -281,6 +307,14 @@ as 2^*tagbody-limit* in the worst cases.")
       (p1propagate form assumptions)
     (p1propagate body assumptions)
     (values output-type assumptions)))
+
+(defun p1structure-set (c1form assumptions structure symbol vv-index value)
+  (multiple-value-bind (structure-type assumptions)
+      (p1propagate structure assumptions)
+    (multiple-value-bind (slot-type assumptions)
+        (p1propagate value assumptions)
+      (let ((old-slot-type (c1form-primary-type c1form)))
+        (values (type-and old-slot-type slot-type) assumptions)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
