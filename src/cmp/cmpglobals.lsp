@@ -55,7 +55,7 @@ each form it processes. The default value is NIL.")
   "This variable controls whether the compiler should display messages about its
 progress. The default value is T.")
 
-(defvar *compiler-features* #+ecl-min nil #-ecl-min #.*compiler-features*
+(defvar *compiler-features* #+ecl-min nil #-ecl-min '#.*compiler-features*
   "This alternative list of features contains keywords that were gathered from
 running the compiler. It may be updated by running ")
 
