@@ -220,7 +220,7 @@
     (go . p1go)
     (unwind-protect . p1unwind-protect)
     (ordinary . p1ordinary)
-    (si::fset . p1fset)
+    (sys::fset . p1fset)
     (var . p1var)
     (values . p1values)
     (location . p1trivial) ;; Some of these can be improved
@@ -230,7 +230,7 @@
     (load-time-value . p1trivial)
     (c::with-stack . p1with-stack)
     (c::stack-push-values . p1stack-push-values)
-    (c::structure-set . p1structure-set)
+    (sys::structure-set . p1structure-set)
     ))
 
 (defun make-dispatch-table (alist)
