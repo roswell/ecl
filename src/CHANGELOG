@@ -211,6 +211,10 @@ ECL 11.1.2
 
  - DIRECTORY accepts the keyword argument :RESOLVE-SYMLINKS.
 
+ - Compiling files now generates C headers with the extension "eclh". This
+   is done to avoid accidentally generating header files with the same name
+   as those in the C library. Take for instance, float.lsp -> float.h.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

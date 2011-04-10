@@ -57,7 +57,7 @@ the environment variable TMPDIR to a different value." template))
       (:data (setf extension "data"))
       (:sdata (setf extension "sdat"))
       (:c (setf extension "c"))
-      (:h (setf extension "h"))
+      (:h (setf extension "eclh"))
       (:object (setf extension +object-file-extension+))
       (:program (setf format +executable-file-format+))
       #+msvc
