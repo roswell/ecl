@@ -679,9 +679,11 @@ passthrough_decoder(cl_object stream)
 static int
 passthrough_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
 {
+#ifdef ECL_UNICODE
 	unlikely_if (c > 0xFF) {
                 return encoding_error(stream, buffer, c);
 	}
+#endif
 	buffer[0] = c;
 	return 1;
 }
