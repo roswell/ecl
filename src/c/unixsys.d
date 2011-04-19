@@ -40,18 +40,6 @@
 #endif
 
 cl_object
-si_system(cl_object cmd_string)
-{
-	cl_object cmd = si_copy_to_simple_base_string(cmd_string);
-	int code = system((const char *)(cmd->base_string.self));
-	/* FIXME! Are there any limits for system()? */
-	/* if (cmd->base_string.fillp >= 1024)
-		FEerror("Too long command line: ~S.", 1, cmd);*/
-	/* FIXME! This is a non portable way of getting the exit code */
-	@(return MAKE_FIXNUM(code >> 8))
-}
-
-cl_object
 si_getpid(void)
 {
 	@(return MAKE_FIXNUM(getpid()))

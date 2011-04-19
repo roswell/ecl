@@ -1246,7 +1246,7 @@ cl_symbols[] = {
 {SYS_ "STRUCTUREP","si_structurep"},
 {SYS_ "SVSET","si_svset"},
 {SYS_ "SYMBOL-MACRO",NULL},
-{EXT_ "SYSTEM","si_system"},
+{EXT_ "SYSTEM","ECL_NAME(si_system)"},
 {SYS_ "TERMINAL-INTERRUPT",NULL},
 {SYS_ "TOP-LEVEL",NULL},
 {SYS_ "UNIVERSAL-ERROR-HANDLER",NULL},

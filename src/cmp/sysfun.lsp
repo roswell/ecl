@@ -911,6 +911,8 @@
     nsubstitute nsubstitute-if nsubstitute-if-not find find-if find-if-not
     position position-if position-if-not remove-duplicates
     delete-duplicates mismatch search sort stable-sort merge constantly
+    ;; process.lsp
+    ext:system
     ;; pprint.lsp
     pprint-fill copy-pprint-dispatch pprint-dispatch
     pprint-linear pprint-newline pprint-tab pprint-tabular
