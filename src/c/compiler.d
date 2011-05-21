@@ -2166,7 +2166,6 @@ maybe_make_load_forms(cl_env_ptr env, cl_object constant)
                 return;
         make = cl_funcall(2, @'make-load-form', constant);
         init = env->values[1];
-        cl_print(1, cl_list(3, @'make-load-form', make, init));
         c_env->load_time_forms = ecl_cons(cl_list(3, constant, make, init),
                                           c_env->load_time_forms);
 }
@@ -2423,7 +2422,6 @@ compile_with_load_time_forms(cl_env_ptr env, cl_object form, int flags)
                         cl_object init_form = pop(&r);
                         cl_index loc = c_register_constant(env, constant);
                         compile_with_load_time_forms(env, make_form, FLAG_REG0);
-                        printf("\n= %lx", loc);
                         asm_op2(env, OP_CSET, loc);
                         compile_with_load_time_forms(env, init_form, FLAG_IGNORE);
                         p = ECL_CONS_CDR(p);
