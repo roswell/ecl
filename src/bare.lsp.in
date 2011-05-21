@@ -125,7 +125,7 @@
          do (with-open-file (sin file :direction :input)
               (loop for form = (read sin nil :eof)
                  until (eq form :eof)
-                 do (let ((bytecodes (ext::eval-with-env form nil nil nil nil)))
+                 do (let ((bytecodes (si::eval-with-env form nil nil nil nil)))
                       (with-standard-io-syntax
                         (write `(funcall ,bytecodes) :stream sout :circle t :escape t
                                :readably t :pretty nil)))))))
