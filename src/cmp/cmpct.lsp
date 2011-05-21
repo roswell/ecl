@@ -107,7 +107,9 @@
    (#.(coerce -0.0 'single-float) "cl_core.singlefloat_minus_zero")
    (#.(coerce -0.0 'double-float) "cl_core.doublefloat_minus_zero")
 
-   (#.(si::standard-readtable) "cl_core.standard_readtable")
+   ;; We temporarily remove this constant, because the bytecodes compiler
+   ;; does not know how to externalize it.
+   ;;(#.(si::standard-readtable) "cl_core.standard_readtable")
 
    (#.(find-package :cl) "cl_core.lisp_package")
    (#.(find-package :cl-user) "cl_core.user_package")
