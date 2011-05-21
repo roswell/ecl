@@ -3076,7 +3076,7 @@ si_make_lambda(cl_object name, cl_object rest)
                 if (Null(execute)) {
                         cl_index handle = asm_begin(the_env);
                         new_c_env.mode = FLAG_LOAD;
-                        cl_print(1,form);
+                        /*cl_print(1,form);*/
                         compile_with_load_time_forms(the_env, form, FLAG_VALUES);
                         asm_op(the_env, OP_EXIT);
                         the_env->values[0] = asm_end(the_env, handle, form);
