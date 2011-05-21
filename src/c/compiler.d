@@ -1313,7 +1313,7 @@ c_eval_when(cl_env_ptr env, cl_object args, int flags) {
         } else if (mode == FLAG_ONLY_LOAD) {
                 if (!when_load_p(situation))
                         args = Cnil;
-        } else {
+        } else { /* FLAG_COMPILE */
                 if (!when_execute_p(situation) && !when_compile_p(situation))
                         args = Cnil;
         }
@@ -2454,7 +2454,7 @@ compile_toplevel_body(cl_env_ptr env, cl_object body, int flags)
         if (!c_env->lexical_level) {
                 if (c_env->mode == FLAG_EXECUTE)
                         return execute_each_form(env, body, flags);
-                if (c_env->mode == FLAG_LOAD)
+                if (c_env->mode == FLAG_LOAD || c_env->mode == FLAG_COMPILE)
                         return compile_each_form(env, body, flags);
         } else {
                 return compile_body(env, body, flags);
