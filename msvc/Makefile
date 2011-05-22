@@ -279,6 +279,8 @@ compile.lsp: bare.lsp $(srcdir)/compile.lsp.in Makefile
             "@RANLIB@" "ranlib" \
 	    "@LSP_FEATURES@" "$(ECL_FEATURES)" \
 	    "@ECL_CMPDIR@" "cmp" \
+	    "@ECL_EXTRA_LISP_FILES@" "cmp" \
+	    "@ECL_INIT_FORM@" "(si::top-level t)" \
 	    < $(srcdir)\compile.lsp.in > compile.lsp
 bare.lsp: $(srcdir)/bare.lsp.in lsp/load.lsp clos/load.lsp cmp/load.lsp cmp/cmpdefs.lsp
 	c\cut "@true_srcdir@" "$(srcdir:\=/)" \
