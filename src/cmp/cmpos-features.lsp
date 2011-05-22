@@ -128,7 +128,9 @@ we are currently using with ECL."
                                      #+windows "sys:ecl_min.exe"
                                      #-windows "sys:ecl_min"))
   (let* ((ecl-binary (namestring (truename executable)))
-         (executable-features (run-and-collect-keywords "file" (list ecl-binary)))
+         (executable-features
+          #-windows
+           (run-and-collect-keywords "file" (list ecl-binary)))
          (compiler-version (run-and-collect-keywords c::*cc* '("--version")))
          (compiler-features (reduce #'append
                                     (mapcar #'rest
