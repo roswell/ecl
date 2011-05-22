@@ -471,7 +471,7 @@ static cl_object VV[VM];
 			      :if-does-not-exist :create :if-exists :supersede)
              (format f "/DEBUGTYPE:CV /OUT:~A ~A ~{~&\"~A\"~}"
                      output-name o-name ld-flags))
-           (safe-system "link -lib @static_lib.tmp"))
+           (safe-run-program "link" '("-lib" "@static_lib.tmp")))
          (when (probe-file "static_lib.tmp")
            (cmp-delete-file "static_lib.tmp"))))
       #+dlopen
