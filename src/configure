@@ -637,6 +637,8 @@ ac_includes_default="\
 #endif"
 
 ac_subst_vars='LTLIBOBJS
+ECL_INIT_FORM
+ECL_EXTRA_LISP_FILES
 CHAR_CODE_LIMIT
 ECL_CHARACTER
 CLX_INFO
@@ -814,6 +816,8 @@ enable_precisegc
 with_debug_cflags
 with_profile_cflags
 with_newcmp
+with_extra_files
+with_init_form
 with_x
 '
       ac_precious_vars='build_alias
@@ -826,9 +830,6 @@ LIBS
 CPPFLAGS
 CXX
 CXXFLAGS
-LDFLAGS
-LIBS
-CPPFLAGS
 CCC
 CPP
 XMKMF'
@@ -1540,6 +1541,9 @@ Optional Packages:
   --with-profile-cflags   add profiling flags to the compiler invocation
                           (yes,no,actual flags,default=NO)
   --with-newcmp           new compiler (yes|no, default=NO)
+  --with-extra-files      list of additional source files (default="")
+  --with-init-form        lisp forms to execute at startup
+                          (default="(si::top-level t)")
   --with-x                use the X Window System
 
 Some influential environment variables:
@@ -2425,6 +2429,24 @@ if test "${with_newcmp+set}" = set; then
   withval=$with_newcmp;
 else
   with_newcmp=no
+fi
+
+
+
+# Check whether --with-extra-files was given.
+if test "${with_extra_files+set}" = set; then
+  withval=$with_extra_files; with_extra_files="${withval}"
+else
+  with_extra_files=""
+fi
+
+
+
+# Check whether --with-init-form was given.
+if test "${with_init_form+set}" = set; then
+  withval=$with_init_form; with_init_form="${withval}"
+else
+  with_init_form=""
 fi
 
 
@@ -15406,6 +15428,19 @@ else
 fi
 
 
+
+
+ECL_EXTRA_LISP_FILES=""
+for i in $with_extra_files; do
+  ECL_EXTRA_LISP_FILES="${ECL_EXTRA_LISP_FILES} \"$i\""
+done
+
+echo ${with_init_form} = init form
+if test "x${with_init_form}" = "x"; then
+  ECL_INIT_FORM='(SI::TOP-LEVEL T)'
+else
+  ECL_INIT_FORM="${with_init_form}"
+fi
 
 if test "${enable_hpack}" = "yes"; then
 

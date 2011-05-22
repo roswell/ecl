@@ -278,6 +278,16 @@ AC_ARG_WITH(newcmp,
                   [new compiler (yes|no, default=NO)]),
   [], [with_newcmp=no])
 
+AC_ARG_WITH(extra-files,
+  AS_HELP_STRING( [--with-extra-files],
+                  [list of additional source files (default="")]),
+  [with_extra_files="${withval}"], [with_extra_files=""])
+
+AC_ARG_WITH(init-form,
+  AS_HELP_STRING( [--with-init-form],
+                  [lisp forms to execute at startup (default="(si::top-level t)")]),
+  [with_init_form="${withval}"], [with_init_form=""])
+
 dnl -----------------------------------------------------------------------
 dnl Installation directories
 ecldir="${libdir}/ecl-${PACKAGE_VERSION}"
@@ -839,6 +849,19 @@ else
 fi
 AC_SUBST(ECL_CHARACTER)
 AC_SUBST(CHAR_CODE_LIMIT)
+
+AC_SUBST(ECL_EXTRA_LISP_FILES)
+ECL_EXTRA_LISP_FILES=""
+for i in $with_extra_files; do
+  ECL_EXTRA_LISP_FILES="${ECL_EXTRA_LISP_FILES} \"$i\""
+done
+AC_SUBST(ECL_INIT_FORM)
+echo ${with_init_form} = init form
+if test "x${with_init_form}" = "x"; then
+  ECL_INIT_FORM='(SI::TOP-LEVEL T)'
+else
+  ECL_INIT_FORM="${with_init_form}"
+fi
 
 if test "${enable_hpack}" = "yes"; then
    AC_DEFINE(ECL_RELATIVE_PACKAGE_NAMES, [1], [Hierarchical package names])
