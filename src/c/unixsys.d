@@ -219,6 +219,7 @@ ecl_waitpid(cl_object pid, cl_object wait)
 {
         cl_object status, code;
 #if defined(ECL_MS_WINDOWS_HOST)
+        cl_env_ptr the_env = ecl_process_env();
         HANDLE *hProcess = ecl_foreign_data_pointer_safe(pid);
         DWORD exitcode;
         int ok;
@@ -306,7 +307,7 @@ ecl_waitpid(cl_object pid, cl_object wait)
                 }
         } while (1);
 #else
-#error "FOO"
+        @(return);
 #endif
 }
 @)
