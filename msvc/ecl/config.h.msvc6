@@ -163,6 +163,8 @@ typedef unsigned int cl_hashkey;
 #else
 #define	CHAR_CODE_LIMIT	256	/*  unicode character code limit  */
 #endif
+typedef int ecl_character;
+typedef unsigned char ecl_base_char;
 
 /*
  * Array limits
