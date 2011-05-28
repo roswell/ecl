@@ -18,16 +18,20 @@
            (loop for line = (read-line stream nil nil)
               while line
               collect line)))
-    (multiple-value-bind (stream process)
-        (ext:run-program command args :input nil :output :stream :error :output)
-      (let ((lines (collect-lines stream)))
-        (cond ((null file)
-               lines)
-              ((probe-file file)
-               (with-open-file (s file :direction :input)
-                 (collect-lines s)))
-              (t
-               (warn "Unable to find file ~A" file)))))))
+    (handler-case
+        (multiple-value-bind (stream process)
+            (ext:run-program command args :input nil :output :stream :error :output)
+          (let ((lines (collect-lines stream)))
+            (cond ((null file)
+                   lines)
+                  ((probe-file file)
+                   (with-open-file (s file :direction :input)
+                     (collect-lines s)))
+                  (t
+                   (warn "Unable to find file ~A" file)))))
+      (error (c)
+        (format t "~&;;; Unable to execute program ~S~&;;; Condition~&;;; ~A"
+                command c)))))
 
 (defun split-words (string)
   (loop with output = '()
@@ -125,8 +129,8 @@ we are currently using with ECL."
   (gather-keywords (apply #'run-and-collect args) +known-keywords+))
 
 (defun gather-system-features (&key (executable
-                                     #+windows "sys:ecl_min.exe"
-                                     #-windows "sys:ecl_min"))
+                                     #+(or windows cygwin) "sys:ecl_min.exe"
+                                     #-(or windows cygwin) "sys:ecl_min"))
   (let* ((ecl-binary (namestring (truename executable)))
          (executable-features
           #-windows
@@ -145,7 +149,9 @@ we are currently using with ECL."
 
 #+ecl-min
 (update-compiler-features
- :executable #+windows "build:ecl_min.exe" #-windows "build:ecl_min")
+ :executable
+ #+(or windows cygwin) "build:ecl_min.exe"
+ #-(or windows cygwin) "build:ecl_min")
 
 #+ecl-min
 (format t "~%;;; System features: ~A" *compiler-features*)
