@@ -284,6 +284,7 @@ compile.lsp: bare.lsp $(srcdir)/compile.lsp.in Makefile
 	    < $(srcdir)\compile.lsp.in > compile.lsp
 bare.lsp: $(srcdir)/bare.lsp.in lsp/load.lsp clos/load.lsp cmp/load.lsp cmp/cmpdefs.lsp
 	c\cut "@true_srcdir@" "$(srcdir:\=/)" \
+	    "@top_srcdir@" "$(srcdir:\=/)" \
 	    "@true_builddir@" "$(MAKEDIR:\=/)"\
 	    "@ECL_CMPDIR@" "cmp" < $(srcdir)\bare.lsp.in > bare.lsp
 lsp/load.lsp: $(srcdir)/lsp/load.lsp.in
