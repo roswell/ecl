@@ -26,6 +26,9 @@
 #endif
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
+#ifdef cygwin
+# include <sys/cygwin.h> /* For cygwin_attach_handle_to_fd() */
+#endif
 #if defined(ECL_MS_WINDOWS_HOST)
 # include <windows.h>
 #endif
@@ -312,7 +315,7 @@ ecl_waitpid(cl_object pid, cl_object wait)
 }
 @)
 
-#if defined(ECL_MS_WINDOWS_HOST)
+#if defined(ECL_MS_WINDOWS_HOST) || defined(cygwin)
 cl_object
 si_close_windows_handle(cl_object h)
 {
@@ -420,8 +423,14 @@ make_windows_handle(HANDLE h)
 					     DUPLICATE_CLOSE_SOURCE |
 					     DUPLICATE_SAME_ACCESS);
 			if (ok) {
+#ifdef cygwin
+				parent_write =
+                                        cygwin_attach_handle_to_fd
+                                        (0, -1, tmp, S_IRWXU, GENERIC_WRITE);
+#else
 				parent_write = _open_osfhandle((intptr_t)tmp,
                                                                _O_WRONLY /*| _O_TEXT*/);
+#endif
 				if (parent_write < 0)
 					printf("open_osfhandle failed\n");
 			}
@@ -470,8 +479,14 @@ make_windows_handle(HANDLE h)
 					     DUPLICATE_CLOSE_SOURCE |
 					     DUPLICATE_SAME_ACCESS);
 			if (ok) {
+#ifdef cygwin
+				parent_read =
+                                        cygwin_attach_handle_to_fd
+                                        (0, -1, tmp, S_IRWXU, GENERIC_READ);
+#else
 				parent_read = _open_osfhandle((intptr_t)tmp,
                                                               _O_RDONLY /*| _O_TEXT*/);
+#endif
 				if (parent_read < 0)
 					printf("open_osfhandle failed\n");
 			}

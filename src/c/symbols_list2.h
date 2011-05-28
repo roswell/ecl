@@ -1928,7 +1928,7 @@ cl_symbols[] = {
 
 {EXT_ "EXTERNAL-PROCESS-WAIT","si_external_process_wait"},
 
-#if defined(ECL_MS_WINDOWS_HOST)
+#if defined(ECL_MS_WINDOWS_HOST) || defined(cygwin)
 {SYS_ "CLOSE-WINDOWS-HANDLE","si_close_windows_handle"},
 #else
 {SYS_ "CLOSE-WINDOWS-HANDLE",NULL},
