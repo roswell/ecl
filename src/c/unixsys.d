@@ -29,7 +29,7 @@
 #ifdef cygwin
 # include <sys/cygwin.h> /* For cygwin_attach_handle_to_fd() */
 #endif
-#if defined(ECL_MS_WINDOWS_HOST)
+#if defined(ECL_MS_WINDOWS_HOST) || defined(cygwin)
 # include <windows.h>
 #endif
 #ifdef HAVE_SYS_WAIT_H
