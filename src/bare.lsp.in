@@ -166,13 +166,9 @@
 ;;; * Update version number now that SI:SYSTEM is available
 ;;;
 
-(when (and (not (member :windows *features*))
-           (probe-file "@top_srcdir@/../.git/"))
-  (when (probe-file "COMMIT-ID")
-    (delete-file "COMMIT-ID"))
-  (when (and (zerop (si::system "(cd \"@top_srcdir@\" && git log --format=oneline -1) > COMMIT-ID"))
-             (probe-file "COMMIT-ID"))
-    (let* ((file (open "COMMIT-ID" :direction :input :element-type :default
+(let ((commit-id (probe-file "@top_srcdir@/../.git/ORIG_HEAD")))
+  (when commit-id
+    (let* ((file (open commit-id :direction :input :element-type :default
                        :external-format :default))
            (line (read-line file))
            (l (length line)))

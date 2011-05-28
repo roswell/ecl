@@ -215,6 +215,9 @@ ECL 11.1.2
    is done to avoid accidentally generating header files with the same name
    as those in the C library. Take for instance, float.lsp -> float.h.
 
+ - ECL no longer relies on "git" being installed to gather the git commit id
+   and setting (ext:lisp-implementation-vcs-id).
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
