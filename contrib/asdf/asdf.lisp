@@ -62,7 +62,7 @@
   (setf excl::*autoload-package-name-alist*
         (remove "asdf" excl::*autoload-package-name-alist*
                 :test 'equalp :key 'car))
-  #+(and ecl (not ecl-bytecmp)) (require :cmp)
+  #+ecl (unless (member :ecl-bytecmp *features*) (require :cmp))
   #+(and (or win32 windows mswindows mingw32) (not cygwin)) (pushnew :asdf-windows *features*)
   #+(or unix cygwin) (pushnew :asdf-unix *features*))
 
@@ -3218,19 +3218,21 @@ effectively disabling the output translation facility."
          (setf output-truename nil)))
       (values output-truename warnings-p failure-p))))
 
-#+(and ecl (not ecl-bytecmp))
+#+ecl
 (setf
  *compile-op-compile-file-function*
  (lambda (input-file &rest keys &key output-file &allow-other-keys)
    (declare (ignore output-file))
-   (multiple-value-bind (object-file flags1 flags2)
-       (apply 'compile-file* input-file :system-p t keys)
-     (values (and object-file
-                  (c::build-fasl (compile-file-pathname object-file :type :fasl)
-                                 :lisp-files (list object-file))
-                  object-file)
-             flags1
-             flags2))))
+   (if (member :ecl-bytecmp *features*)
+       (apply 'compile-file input-file keys)
+       (multiple-value-bind (object-file flags1 flags2)
+           (apply 'compile-file* input-file :system-p t keys)
+         (values (and object-file
+                      (c::build-fasl (compile-file-pathname object-file :type :fasl)
+                                     :lisp-files (list object-file))
+                      object-file)
+                 flags1
+                 flags2)))))
 
 #+abcl
 (defun* translate-jar-pathname (source wildcard)

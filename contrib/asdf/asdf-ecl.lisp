@@ -12,7 +12,6 @@
 #+xcvb (module (:depends-on ("asdf")))
 
 (in-package :asdf)
-(require 'cmp)
 
 ;;;
 ;;; COMPILE-OP / LOAD-OP
@@ -419,7 +418,6 @@
 (export '(make-build load-fasl-op prebuilt-system))
 (push '("fasb" . si::load-binary) si::*load-hooks*)
 
-(require 'cmp)
 (defvar *require-asdf-operator* 'load-op)
 
 (defun module-provide-asdf (name)
