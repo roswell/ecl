@@ -43,9 +43,9 @@
 (defun cl:compile-file-pathname (name &key (output-file name) (type :fasl type-supplied-p)
 				 verbose print c-file h-file data-file shared-data-file
 				 system-p load)
-  (let ((extension "fasb"))
+  (let ((extension "fasc"))
     (case type
-      ((:fasl :fas) (setf extension "fasb"))
+      ((:fasl :fas) (setf extension "fasc"))
       (t (error "In COMPILE-FILE-PATHNAME, the type ~A is unsupported." type)))
     (make-pathname :type extension :defaults output-file)))
 
@@ -54,28 +54,30 @@
 			((:verbose *compile-verbose*) *compile-verbose*)
 			((:print *compile-print*) *compile-print*)
 			(load nil)
-			(output-pathname 't output-pathname-p)
+			(output-file 't output-file-p)
 			&allow-other-keys)
-  (setf output-pathname (if (eq output-pathname 't)
-			  (compile-file-pathname input-pathname)
-			  (pathname output-pathname)))
+  (setf output-file (if (or (null output-file-p) (eq output-file 't))
+                        (compile-file-pathname input-pathname)
+                        (pathname output-file)))
   (when *compile-verbose*
     (format t "~&;;; Compiling ~A" input-pathname))
   (with-open-file (sin input-pathname :direction :input)
-    (with-open-file (sout output-pathname :direction :output :if-exists :supersede
+    (with-open-file (sout output-file :direction :output :if-exists :supersede
 			  :if-does-not-exist :create)
       (loop with *package* = *package*
          and ext:*bytecodes-compiler* = t
          for form = (read sin nil :EOF)
          until (eq form :EOF)
-         do (let ((bytecodes (si:eval-with-env form nil nil nil)))
-              (with-standard-io-syntax
-                (write `(FUNCALL ,bytecodes) :stream sout :circle t
-                       :escape t :readably t :pretty nil)
-                (terpri sout))))))
+         do (handler-case
+                (let ((bytecodes (si:eval-with-env form nil nil nil nil)))
+                  (with-standard-io-syntax
+                    (write `(FUNCALL ,bytecodes) :stream sout :circle t
+                           :escape t :readably t :pretty nil)
+                    (terpri sout)))
+              (error (c) (let ((*print-readably* nil) (*print-pretty* nil) (*print-circle* t)) (break)))))))
   (when load
-    (load output-pathname :verbose *compile-verbose*))
-  (values output-pathname nil nil))
+    (load output-file :verbose *compile-verbose*))
+  (values output-file nil nil))
 
 (ext::package-lock (find-package :cl) t)
 
