@@ -189,7 +189,6 @@ asm_end(cl_env_ptr env, cl_index beginning, cl_object definition) {
                 /* Objects with load-time constants are not saved, as
                  * they will be rebuilt later on. */
                 cl_object p = c_env->load_time_forms;
-                cl_print(1,p);
                 do {
                         cl_object record = ECL_CONS_CAR(p);
                         cl_object o = ECL_CONS_CAR(record);
