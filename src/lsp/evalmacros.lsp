@@ -59,9 +59,11 @@ as a VARIABLE doc and can be retrieved by (documentation 'NAME 'variable)."
 	      (SETQ ,var ,form))))
     ,@(si::expand-set-documentation var 'variable doc-string)
     ,(ext:register-with-pde whole)
-    ,(unless *bytecodes-compiler*
-       `(eval-when (:compile-toplevel)
-          (si::register-global ',var)))
+    ,(if *bytecodes-compiler*
+         `(eval-when (:compile-toplevel)
+            (sys:*make-special ',var))
+         `(eval-when (:compile-toplevel)
+            (si::register-global ',var)))
     ',var))
 
 (defmacro defparameter (&whole whole var form &optional doc-string)
@@ -74,9 +76,11 @@ as a VARIABLE doc and can be retrieved by (documentation 'NAME 'variable)."
     (SETQ ,var ,form)
     ,@(si::expand-set-documentation var 'variable doc-string)
     ,(ext:register-with-pde whole)
-    ,(unless *bytecodes-compiler*
-       `(eval-when (:compile-toplevel)
-          (si::register-global ',var)))
+    ,(if *bytecodes-compiler*
+         `(eval-when (:compile-toplevel)
+            (sys:*make-special ',var))
+         `(eval-when (:compile-toplevel)
+            (si::register-global ',var)))
     ',var))
 
 (defmacro defconstant (&whole whole var form &optional doc-string)
@@ -89,10 +93,12 @@ VARIABLE doc and can be retrieved by (DOCUMENTATION 'SYMBOL 'VARIABLE)."
      (SYS:*MAKE-CONSTANT ',var ,form)
     ,@(si::expand-set-documentation var 'variable doc-string)
     ,(ext:register-with-pde whole)
-    ,(unless *bytecodes-compiler*
-       `(eval-when (:compile-toplevel)
-          (sys:*make-constant ',var ,form)
-          (si::register-global ',var)))
+    ,(if *bytecodes-compiler*
+         `(eval-when (:compile-toplevel)
+            (sys:*make-constant ',var ,form))
+         `(eval-when (:compile-toplevel)
+            (sys:*make-constant ',var ,form)
+            (si::register-global ',var)))
     ',var))
 
 ;;;
