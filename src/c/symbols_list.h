@@ -2049,5 +2049,7 @@ cl_symbols[] = {
 
 {KEY_ "RESOLVE-SYMLINKS", KEYWORD, NULL, -1, OBJNULL},
 
+{SYS_ "LOAD-BYTECODES", SI_ORDINARY, si_load_bytecodes, 4, OBJNULL},
+
 /* Tag for end of list */
 {NULL, CL_ORDINARY, NULL, -1, OBJNULL}};

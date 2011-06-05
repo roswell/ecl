@@ -122,6 +122,70 @@ si_load_source(cl_object source, cl_object verbose, cl_object print, cl_object e
 	@(return Cnil)
 }
 
+
+cl_object
+si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_object external_format)
+{
+	cl_env_ptr env = ecl_process_env();
+	cl_object forms, strm;
+	cl_object old_eptbc = env->packages_to_be_created;
+
+	/* Source may be either a stream or a filename */
+	if (type_of(source) != t_pathname && type_of(source) != t_base_string) {
+		/* INV: if "source" is not a valid stream, file.d will complain */
+		strm = source;
+	} else {
+		strm = ecl_open_stream(source, smm_input, Cnil, Cnil, 8,
+				       ECL_STREAM_C_STREAM, external_format);
+		if (Null(strm))
+			@(return Cnil)
+	}
+	CL_UNWIND_PROTECT_BEGIN(env) {
+                {
+                cl_object progv_list = ECL_SYM_VAL(env, @'si::+ecl-syntax-progv-list+');
+                cl_index bds_ndx = ecl_progv(env, ECL_CONS_CAR(progv_list),
+                                             ECL_CONS_CDR(progv_list));
+                env->packages_to_be_created_p = Ct;
+                forms = cl_read(1, strm);
+                env->packages_to_be_created_p = Cnil;
+                ecl_bds_unwind(env, bds_ndx);
+                }
+                while (!Null(forms)) {
+                        if (ECL_LISTP(forms)) {
+                                cl_object x = ECL_CONS_CAR(forms);
+                                forms = ECL_CONS_CDR(forms);
+                                if (type_of(x) == t_bytecodes) {
+                                        cl_funcall(1, x);
+                                        continue;
+                                }
+                        }
+                        FEerror("Corrupt bytecodes file ~S", 1, source);
+                }
+                {
+                cl_object x;
+                x = cl_set_difference(2, env->packages_to_be_created, old_eptbc);
+                old_eptbc = env->packages_to_be_created;
+                unlikely_if (!Null(x)) {
+                        CEerror(Ct,
+                                Null(ECL_CONS_CDR(x))?
+                                "Package ~A referenced in "
+				"compiled file~&  ~A~&but has not been created":
+                                "The packages~&  ~A~&were referenced in "
+				"compiled file~&  ~A~&but have not been created",
+				2, x, source);
+		}
+                }
+	} CL_UNWIND_PROTECT_EXIT {
+		/* We do not want to come back here if close_stream fails,
+		   therefore, first we frs_pop() current jump point, then
+		   try to close the stream, and then jump to next catch
+		   point */
+		if (strm != source)
+			cl_close(3, strm, @':abort', @'t');
+	} CL_UNWIND_PROTECT_END;
+	@(return Cnil)
+}
+
 @(defun load (source
 	      &key (verbose ecl_symbol_value(@'*load-verbose*'))
 		   (print ecl_symbol_value(@'*load-print*'))

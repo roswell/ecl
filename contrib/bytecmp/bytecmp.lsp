@@ -64,17 +64,17 @@
   (with-open-file (sin input-pathname :direction :input)
     (with-open-file (sout output-file :direction :output :if-exists :supersede
 			  :if-does-not-exist :create)
-      (loop with *package* = *package*
-         and ext:*bytecodes-compiler* = t
-         for form = (read sin nil :EOF)
-         until (eq form :EOF)
-         do (handler-case
-                (let ((bytecodes (si:eval-with-env form nil nil nil nil)))
-                  (with-standard-io-syntax
-                    (write `(FUNCALL ,bytecodes) :stream sout :circle t
-                           :escape t :readably t :pretty nil)
-                    (terpri sout)))
-              (error (c) (let ((*print-readably* nil) (*print-pretty* nil) (*print-circle* t)) (break)))))))
+      (handler-case
+          (sys:with-ecl-io-syntax
+              (write (loop with *package* = *package*
+                        and ext:*bytecodes-compiler* = t
+                        for form = (read sin nil :EOF)
+                        until (eq form :EOF)
+                        collect (si:eval-with-env form nil nil nil nil))
+                     :stream sout :circle t
+                     :escape t :readably t :pretty nil)
+            (terpri sout))
+        (error (c) (let ((*print-readably* nil) (*print-pretty* nil) (*print-circle* t)) (break))))))
   (when load
     (load output-file :verbose *compile-verbose*))
   (values output-file nil nil))

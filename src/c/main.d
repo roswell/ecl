@@ -659,8 +659,8 @@ cl_boot(int argc, char **argv)
 		CONS(str_lisp, @'si::load-source'),
 		CONS(str_LSP, @'si::load-source'),
 		CONS(str_LISP, @'si::load-source'),
-		CONS(str_fasc, @'si::load-source'),
-		CONS(str_FASC, @'si::load-source'),
+		CONS(str_fasc, @'si::load-bytecodes'),
+		CONS(str_FASC, @'si::load-bytecodes'),
 		CONS(Cnil, @'si::load-source'));
 	ECL_SET(@'si::*load-hooks*', aux);
 	init_error();

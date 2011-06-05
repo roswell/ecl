@@ -924,6 +924,7 @@ extern ECL_API cl_object ecl_delete_eq(cl_object x, cl_object l);
 
 /* load.c */
 
+extern ECL_API cl_object si_load_bytecodes(cl_object file, cl_object verbose, cl_object print, cl_object format);
 extern ECL_API cl_object si_load_source(cl_object file, cl_object verbose, cl_object print, cl_object format);
 extern ECL_API cl_object si_load_binary(cl_object file, cl_object verbose, cl_object print, cl_object format);
 extern ECL_API cl_object cl_load _ARGS((cl_narg narg, cl_object pathname, ...));
