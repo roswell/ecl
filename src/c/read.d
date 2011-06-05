@@ -713,7 +713,7 @@ sharp_Y_reader(cl_object in, cl_object c, cl_object d)
 	if (read_suppress) {
 		@(return Cnil);
         }
-	unlikely_if (!ECL_CONSP(x) || ecl_length(x) != 5) {
+	unlikely_if (!ECL_CONSP(x) || ecl_length(x) < 5) {
 		FEreader_error("Reader macro #Y should be followed by a list",
 			       in, 0);
         }
@@ -741,6 +741,21 @@ sharp_Y_reader(cl_object in, cl_object c, cl_object d)
         rv->bytecodes.data = ecl_alloc(rv->bytecodes.data_size * sizeof(cl_object));
         for ( i=0 ; !ecl_endp(nth) ; i++, nth=ECL_CONS_CDR(nth) )
              ((cl_object*)(rv->bytecodes.data))[i] = ECL_CONS_CAR(nth);
+
+        if (ECL_ATOM(x)) {
+                nth = Cnil;
+        } else {
+                nth = ECL_CONS_CAR(x);
+                x = ECL_CONS_CDR(x);
+        }
+        rv->bytecodes.file = nth;
+        if (ECL_ATOM(x)) {
+                nth = MAKE_FIXNUM(0);
+        } else {
+                nth = ECL_CONS_CAR(x);
+                x = ECL_CONS_CDR(x);
+        }
+        rv->bytecodes.file_position = nth;
 
         rv->bytecodes.entry = _ecl_bytecodes_dispatch_vararg;
 

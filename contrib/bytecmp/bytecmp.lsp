@@ -61,20 +61,23 @@
                         (pathname output-file)))
   (when *compile-verbose*
     (format t "~&;;; Compiling ~A" input-pathname))
-  (with-open-file (sin input-pathname :direction :input)
-    (with-open-file (sout output-file :direction :output :if-exists :supersede
-			  :if-does-not-exist :create)
-      (handler-case
-          (sys:with-ecl-io-syntax
-              (write (loop with *package* = *package*
-                        and ext:*bytecodes-compiler* = t
-                        for form = (read sin nil :EOF)
-                        until (eq form :EOF)
-                        collect (si:eval-with-env form nil nil nil nil))
-                     :stream sout :circle t
-                     :escape t :readably t :pretty nil)
-            (terpri sout))
-        (error (c) (let ((*print-readably* nil) (*print-pretty* nil) (*print-circle* t)) (break))))))
+  (let ((ext:*source-location* (cons (truename input-pathname) 0)))
+    (with-open-file (sin input-pathname :direction :input)
+      (with-open-file (sout output-file :direction :output :if-exists :supersede
+                            :if-does-not-exist :create)
+        (handler-case
+            (sys:with-ecl-io-syntax
+                (write (loop with *package* = *package*
+                          and ext:*bytecodes-compiler* = t
+                          for position = (file-position sin)
+                          for form = (read sin nil :EOF)
+                          until (eq form :EOF)
+                          do (rplacd ext:*source-location* position)
+                          collect (si:eval-with-env form nil nil nil nil))
+                       :stream sout :circle t
+                       :escape t :readably t :pretty nil)
+              (terpri sout))
+          (error (c) (let ((*print-readably* nil) (*print-pretty* nil) (*print-circle* t)) (break)))))))
   (when load
     (load output-file :verbose *compile-verbose*))
   (values output-file nil nil))

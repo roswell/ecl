@@ -33,9 +33,11 @@ _ecl_write_bclosure(cl_object x, cl_object stream)
                         data_l = ecl_cons(x->bytecodes.data[i], data_l);
                 
                 writestr_stream("#Y", stream);
-                si_write_ugly_object(cl_list(5, x->bytecodes.name, lex,
+                si_write_ugly_object(cl_list(7, x->bytecodes.name, lex,
                                              Cnil /* x->bytecodes.definition */,
-                                             code_l, data_l),
+                                             code_l, data_l,
+                                             x->bytecodes.file,
+                                             x->bytecodes.file_position),
                                      stream);
         } else {
                 cl_object name = x->bytecodes.name;
@@ -60,9 +62,11 @@ _ecl_write_bytecodes(cl_object x, cl_object stream)
                 for ( i=x->bytecodes.data_size-1 ; i<(cl_index)(-1l) ; i-- )
                         data_l = ecl_cons(x->bytecodes.data[i], data_l);
                 writestr_stream("#Y", stream);
-                si_write_ugly_object(cl_list(5, x->bytecodes.name, lex,
+                si_write_ugly_object(cl_list(7, x->bytecodes.name, lex,
                                              Cnil /* x->bytecodes.definition */,
-                                             code_l, data_l),
+                                             code_l, data_l,
+                                             x->bytecodes.file,
+                                             x->bytecodes.file_position),
                                      stream);
         } else {
                 cl_object name = x->bytecodes.name;

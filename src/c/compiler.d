@@ -164,8 +164,14 @@ asm_end(cl_env_ptr env, cl_index beginning, cl_object definition) {
 	cl_object bytecodes;
 	cl_index code_size, data_size, i;
 	cl_opcode *code;
-	cl_object file = ECL_SYM_VAL(env,@'*load-truename*');
-	cl_object position = cl_cdr(ECL_SYM_VAL(env,@'ext::*source-location*'));
+        cl_object file = ECL_SYM_VAL(env,@'ext::*source-location*'), position;
+        if (Null(file)) {
+                file = ECL_SYM_VAL(env,@'*load-truename*');
+                position = MAKE_FIXNUM(0);
+        } else {
+                position = cl_cdr(file);
+                file = cl_car(file);
+        }
 
 	/* Save bytecodes from this session in a new vector */
 	code_size = current_pc(env) - beginning;
