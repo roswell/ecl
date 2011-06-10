@@ -480,7 +480,7 @@ static cl_object VV[VM];
 	       shared-data-file submodules epilogue-code)
        (close c-file)
        (compiler-cc c-name o-name)
-       (shared-cc output-name (list o-name ld-flags)))
+       (shared-cc output-name (list* o-name ld-flags)))
       #+dlopen
       (:fasl
        (format c-file +lisp-program-init+ init-name prologue-code shared-data-file
