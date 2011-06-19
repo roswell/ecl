@@ -3,8 +3,7 @@
     mmap.d -- Mapping of binary files.
 */
 /*
-    Copyright (c) 1990, Giuseppe Attardi and William F. Schelter.
-    Copyright (c) 2001, Juan Jose Garcia Ripoll.
+    Copyright (c) 2011, Juan Jose Garcia Ripoll.
 
     ECL is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
