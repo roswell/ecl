@@ -397,6 +397,7 @@ typedef unsigned char ecl_base_char;
 #undef HAVE_UNAME
 #undef HAVE_UNISTD_H
 #undef HAVE_SYS_WAIT_H
+#undef HAVE_SYS_MMAN_H
 /* size of long long            					*/
 #undef ECL_LONG_LONG_BITS
 /* existence of char **environ         					*/

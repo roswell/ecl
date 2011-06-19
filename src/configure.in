@@ -688,7 +688,10 @@ AC_CHECK_FUNCS( [expf logf sqrtf cosf sinf tanf sinhf coshf tanhf] \
 
 AC_CHECK_FUNCS( [sched_yield uname fseeko dladdr backtrace backtrace_symbols] )
 
-AC_CHECK_HEADER( [sys/mman.h], AC_DEFINE(ECL_USE_MPROTECT) )
+AC_CHECK_HEADER( [sys/mman.h],
+                 AC_DEFINE(ECL_USE_MPROTECT)
+                 AC_DEFINE(HAVE_SYS_MMAN_H)
+               )
 
 ECL_POSIX_ENVIRON
 

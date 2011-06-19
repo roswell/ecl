@@ -2051,5 +2051,12 @@ cl_symbols[] = {
 
 {SYS_ "LOAD-BYTECODES","si_load_bytecodes"},
 
+{KEY_ "SHARED",NULL},
+{KEY_ "PRIVATE",NULL},
+
+{EXT_ "MMAP","si_mmap"},
+{EXT_ "MUNMAP","si_munmap"},
+{EXT_ "MMAP-ARRAY","si_mmap_array"},
+
 /* Tag for end of list */
 {NULL,NULL}};

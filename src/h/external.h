@@ -607,6 +607,11 @@ extern ECL_API cl_object ecl_library_error(cl_object block);
 extern ECL_API void ecl_library_close(cl_object block);
 extern ECL_API void ecl_library_close_all(void);
 
+/* ffi/mmap.d */
+extern ECL_API cl_object si_mmap _ARGS((cl_narg narg, cl_object filename, ...));
+extern ECL_API cl_object si_munmap(cl_object map);
+extern ECL_API cl_object si_mmap_array(cl_object map);
+
 /* ffi/backtrace.d */
 extern ECL_API cl_object si_dump_c_backtrace(cl_object size);
 extern ECL_API cl_object si_backtrace(cl_object start, cl_object end);
