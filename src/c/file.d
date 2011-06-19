@@ -3178,8 +3178,6 @@ ecl_make_file_stream_from_fd(cl_object fname, int fd, enum ecl_smmode smm,
 			     cl_fixnum byte_size, int flags, cl_object external_format)
 {
 	cl_object stream = alloc_stream();
-	stream->stream.mode = (short)smm;
-	stream->stream.closed = 0;
 	switch(smm) {
 	case smm_input:
 		smm = smm_input_file;
@@ -3200,6 +3198,8 @@ ecl_make_file_stream_from_fd(cl_object fname, int fd, enum ecl_smmode smm,
 	default:
 		FEerror("make_stream: wrong mode", 0);
 	}
+	stream->stream.mode = (short)smm;
+	stream->stream.closed = 0;
 	set_stream_elt_type(stream, byte_size, flags, external_format);
 	IO_FILE_FILENAME(stream) = fname; /* not really used */
 	IO_FILE_COLUMN(stream) = 0;
