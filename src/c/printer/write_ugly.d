@@ -175,11 +175,17 @@ write_stream(cl_object x, cl_object stream)
 #endif
         switch ((enum ecl_smmode)x->stream.mode) {
         case smm_input_file:
+                prefix = "closed input file";
+                tag = IO_STREAM_FILENAME(x);
+                break;
         case smm_input:
                 prefix = "closed input stream";
                 tag = IO_STREAM_FILENAME(x);
                 break;
         case smm_output_file:
+                prefix = "closed output file";
+                tag = IO_STREAM_FILENAME(x);
+                break;
         case smm_output:
                 prefix = "closed output stream";
                 tag = IO_STREAM_FILENAME(x);
@@ -199,6 +205,9 @@ write_stream(cl_object x, cl_object stream)
                 break;
 #endif
         case smm_io_file:
+                prefix = "closed io file";
+                tag = IO_STREAM_FILENAME(x);
+                break;
         case smm_io:
                 prefix = "closed io stream";
                 tag = IO_STREAM_FILENAME(x);
