@@ -56,16 +56,6 @@
 # include <sys/ioctl.h>
 #endif
 
-#ifndef HAVE_FSEEKO
-#define ecl_off_t int
-#define ecl_fseeko fseek
-#define ecl_ftello ftell
-#else
-#define ecl_off_t off_t
-#define ecl_fseeko fseeko
-#define ecl_ftello ftello
-#endif
-
 /* Maximum number of bytes required to encode a character.
  * This currently corresponds to (4 + 2) for the ISO-2022-JP-* encodings
  * with 4 being the charset prefix, 2 for the character.
@@ -80,8 +70,6 @@ const struct ecl_file_ops *stream_dispatch_table(cl_object strm);
 
 static int flisten(FILE *);
 static int file_listen(int);
-static cl_object ecl_off_t_to_integer(ecl_off_t offset);
-static ecl_off_t ecl_integer_to_off_t(cl_object offset);
 
 static cl_object alloc_stream();
 
@@ -4784,7 +4772,7 @@ flisten(FILE *fp)
 	return !ECL_LISTEN_AVAILABLE;
 }
 
-static cl_object
+cl_object
 ecl_off_t_to_integer(ecl_off_t offset)
 {
 	cl_object output;
@@ -4808,7 +4796,7 @@ ecl_off_t_to_integer(ecl_off_t offset)
 	return output;
 }
 
-static ecl_off_t
+ecl_off_t
 ecl_integer_to_off_t(cl_object offset)
 {
 	ecl_off_t output = 0;

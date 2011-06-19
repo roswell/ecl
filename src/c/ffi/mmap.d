@@ -24,6 +24,7 @@
 @(defun ext::mmap (filename
                    &key
                    (length Cnil)
+                   (offset MAKE_FIXNUM(0))
                    (direction @':input')
                    (element_type @'base-char')
                    (if_exists @':new-version')
@@ -65,7 +66,8 @@
         printf("%d %d %d %d\n", len, c_prot, fd, c_flags);
         output = si_make_vector(element_type, MAKE_FIXNUM(0), Cnil,
                                 Cnil, Cnil, Cnil);
-        pa = mmap(0, len, c_prot, c_flags | MAP_PRIVATE, fd, (off_t)0);
+        pa = mmap(0, len, c_prot, c_flags | MAP_PRIVATE, fd,
+                  ecl_integer_to_off_t(offset));
         if (pa == MAP_FAILED) {
                 FElibc_error("EXT::MMAP failed.", 0);
         } else {

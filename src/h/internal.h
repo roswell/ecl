@@ -278,6 +278,19 @@ extern void* ecl_dynamic_callback_make(cl_object data, enum ecl_ffi_calling_conv
 #define IO_FILE_ELT_TYPE(strm) (strm)->stream.object0
 #define IO_FILE_FILENAME(strm) (strm)->stream.object1
 
+#ifndef HAVE_FSEEKO
+#define ecl_off_t int
+#define ecl_fseeko fseek
+#define ecl_ftello ftell
+#else
+#define ecl_off_t off_t
+#define ecl_fseeko fseeko
+#define ecl_ftello ftello
+#endif
+
+extern cl_object ecl_off_t_to_integer(ecl_off_t offset);
+extern ecl_off_t ecl_integer_to_off_t(cl_object offset);
+
 /* format.d */
 
 #ifndef ECL_CMU_FORMAT
