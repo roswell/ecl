@@ -44,7 +44,7 @@ the environment variable TMPDIR to a different value." template))
     base))
 
 (defun compile-file-pathname (name &key (output-file T) (type nil type-supplied-p)
-                              verbose print c-file h-file data-file shared-data-file
+                              verbose print c-file h-file data-file
                               system-p load external-format source-truename
                               source-offset)
   (let* ((format '())
@@ -237,9 +237,8 @@ void ~A(cl_object cblock)
 	~A
 {
 	cl_object current, next = Cblock;
-~:[~{	current = read_VV(OBJNULL, ~A); current->cblock.next = next; next = current; ~%~}
+~{	current = read_VV(OBJNULL, ~A); current->cblock.next = next; next = current; ~%~}
 	Cblock->cblock.next = current;
-~;~{	~A(Cblock);~%~}~]
 }
 	~A
 }")
@@ -333,7 +332,7 @@ filesystem or in the database of ASDF modules."
             (find-archive system))
        (fallback)))))
 
-(defun builder (target output-name &key lisp-files ld-flags shared-data-file
+(defun builder (target output-name &key lisp-files ld-flags
 		(init-name nil)
 		(prologue-code "")
 		(epilogue-code (when (eq target :program) '(SI::TOP-LEVEL T)))
@@ -422,32 +421,18 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), Cnil);
 	     (push init-fn submodules))))))
     (setq c-file (open c-name :direction :output :external-format :default))
     (format c-file +lisp-program-header+ submodules)
-    (cond (shared-data-file
-	   (data-init shared-data-file)
-	   (format c-file "
-#define VM ~A
-#ifdef ECL_DYNAMIC_VV
-static cl_object *VV;
-#else
-static cl_object VV[VM];
-#endif
-#define ECL_SHARED_DATA_FILE 1
-" (data-permanent-storage-size))
-	   (data-dump c-file))
-	  (t
-	   (format c-file "
+    (format c-file "
 #define compiler_data_text NULL
 #define compiler_data_text_size 0
 #define VV NULL
-#define VM 0" c-file)))
+#define VM 0" c-file)
     (when (or (symbolp output-name) (stringp output-name))
       (setf output-name (compile-file-pathname output-name :type target)))
     (unless init-name
       (setf init-name (compute-init-name output-name :kind target)))
     (ecase target
       (:program
-       (format c-file +lisp-program-init+ init-name "" shared-data-file
-	       submodules "")
+       (format c-file +lisp-program-init+ init-name "" submodules "")
        (format c-file #+:win32 (ecase system (:console +lisp-program-main+)
 				             (:windows +lisp-program-winmain+))
 	              #-:win32 +lisp-program-main+
@@ -457,7 +442,7 @@ static cl_object VV[VM];
        (linker-cc output-name (list* (namestring o-name) ld-flags)))
       ((:library :static-library :lib)
        (format c-file +lisp-program-init+ init-name prologue-code
-	       shared-data-file submodules epilogue-code)
+	       submodules epilogue-code)
        (close c-file)
        (compiler-cc c-name o-name)
        (when (probe-file output-name) (delete-file output-name))
@@ -477,13 +462,13 @@ static cl_object VV[VM];
       #+dlopen
       ((:shared-library :dll)
        (format c-file +lisp-program-init+ init-name prologue-code
-	       shared-data-file submodules epilogue-code)
+	       submodules epilogue-code)
        (close c-file)
        (compiler-cc c-name o-name)
        (shared-cc output-name (list* o-name ld-flags)))
       #+dlopen
       (:fasl
-       (format c-file +lisp-program-init+ init-name prologue-code shared-data-file
+       (format c-file +lisp-program-init+ init-name prologue-code
 	       submodules epilogue-code)
        (close c-file)
        (compiler-cc c-name o-name)
@@ -517,7 +502,6 @@ static cl_object VV[VM];
 		      (c-file nil)
 		      (h-file nil)
 		      (data-file nil)
-		      (shared-data-file nil)
 		      (system-p nil)
 		      (load nil)
                       (external-format :default)
@@ -584,13 +568,10 @@ compiled successfully, returns the pathname of the compiled file"
                             :type :h args))
          (data-pathname (apply #'compile-file-pathname output-file
                                :output-file data-file :type :data args))
-	 (shared-data-pathname (apply #'compile-file-pathname output-file
-                                      :output-file shared-data-file :type :sdata args))
 	 (compiler-conditions nil)
          (to-delete (nconc (unless c-file (list c-pathname))
                            (unless h-file (list h-pathname))
-                           (unless (or data-file shared-data-file)
-                             (list data-pathname)))))
+                           (unless data-file (list data-pathname)))))
 
     (with-compiler-env (compiler-conditions)
 
@@ -599,12 +580,7 @@ compiled successfully, returns the pathname of the compiled file"
       (when (probe-file "./cmpinit.lsp")
 	(load "./cmpinit.lsp" :verbose *compile-verbose*))
 
-      (if shared-data-file
-	  (if system-p
-	      (data-init shared-data-pathname)
-	      (error "Shared data files are only allowed when compiling ~&
-		    with the flag :SYSTEM-P set to T."))
-	  (data-init))
+      (data-init)
 
       (with-open-file (*compiler-input* *compile-file-pathname*
                                         :external-format external-format)
@@ -624,12 +600,9 @@ compiled successfully, returns the pathname of the compiled file"
 					 (if system-p :object :fasl)))
       (compiler-pass2 c-pathname h-pathname data-pathname system-p
 		      init-name
-		      shared-data-file
                       :input-designator (namestring input-pathname))
 
-      (if shared-data-file
-	  (data-dump shared-data-pathname t)
-	  (data-dump data-pathname))
+      (data-dump data-pathname)
 
       (let ((o-pathname (if system-p
                             output-file
@@ -838,7 +811,7 @@ from the C language code.  NIL means \"do not create the file\"."
   nil)
 
 (defun compiler-pass2 (c-pathname h-pathname data-pathname system-p init-name
-		       shared-data &key input-designator)
+		       &key input-designator)
   (with-open-file (*compiler-output1* c-pathname :direction :output
 				      :if-does-not-exist :create :if-exists :supersede)
     (wt-comment-nl "Compiler: ~A ~A" (lisp-implementation-type) (lisp-implementation-version))
@@ -853,8 +826,7 @@ from the C language code.  NIL means \"do not create the file\"."
       (wt-nl1 "#include " *cmpinclude*)
       (catch *cmperr-tag* (ctop-write init-name
 				      h-pathname
-				      data-pathname
-				      :shared-data shared-data))
+				      data-pathname))
       (terpri *compiler-output1*)
       (terpri *compiler-output2*))))
 

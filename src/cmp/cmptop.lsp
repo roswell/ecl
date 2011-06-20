@@ -107,7 +107,6 @@
 	   (t3local-fun (first lfs)))))))
 
 (defun ctop-write (name h-pathname data-pathname
-		        &key shared-data
 			&aux def top-output-string
 			(*volatile* " volatile "))
 
@@ -134,8 +133,7 @@
 	 (*compiler-output1* (make-string-output-stream))
 	 (*emitted-local-funs* nil)
 	 (*compiler-declared-globals* (make-hash-table)))
-    (unless shared-data
-      (wt-nl1 "#include \"" (brief-namestring data-pathname) "\""))
+    (wt-nl1 "#include \"" (brief-namestring data-pathname) "\"")
     (wt-nl1 "#ifdef __cplusplus")
     (wt-nl1 "extern \"C\"")
     (wt-nl1 "#endif")
@@ -147,34 +145,31 @@
     (wt-nl "const cl_env_ptr cl_env_copy = ecl_process_env();")
     (wt-nl "cl_object value0;")
     (wt-nl "cl_object *VVtemp;")
-    (when shared-data
-      (wt-nl "Cblock=flag;")
-      (wt-nl "VV = flag->cblock.data;"))
-    (unless shared-data
-      (wt-nl "if (!FIXNUMP(flag)){")
-      (wt-nl "Cblock=flag;")
-      (wt-nl "#ifndef ECL_DYNAMIC_VV")
-      (wt-nl "flag->cblock.data = VV;")
-      (wt-nl "#endif")
-      (when *self-destructing-fasl*
-	(wt-nl "flag->cblock.self_destruct=1;"))
-      (wt-nl "flag->cblock.data_size = VM;")
-      (wt-nl "flag->cblock.temp_data_size = VMtemp;")
-      (wt-nl "flag->cblock.data_text = compiler_data_text;")
-      (wt-nl "flag->cblock.data_text_size = compiler_data_text_size;")
-      (wt-nl "flag->cblock.cfuns_size = compiler_cfuns_size;")
-      (wt-nl "flag->cblock.cfuns = compiler_cfuns;")
-      (when ext:*source-location*
-        (wt-nl "flag->cblock.source = make_constant_base_string(\""
-               (namestring (car ext:*source-location*)) "\");"))
-      (wt-nl "return;}")
-      (wt-nl "#ifdef ECL_DYNAMIC_VV")
-      (wt-nl "VV = Cblock->cblock.data;")
-      (wt-nl "#endif")
-      ;; With this we ensure creating a constant with the tag
-      ;; and the initialization file
-      (wt-nl "Cblock->cblock.data_text = \"" (init-name-tag name) "\";")
-      )
+
+    (wt-nl "if (!FIXNUMP(flag)){")
+    (wt-nl "Cblock=flag;")
+    (wt-nl "#ifndef ECL_DYNAMIC_VV")
+    (wt-nl "flag->cblock.data = VV;")
+    (wt-nl "#endif")
+    (when *self-destructing-fasl*
+      (wt-nl "flag->cblock.self_destruct=1;"))
+    (wt-nl "flag->cblock.data_size = VM;")
+    (wt-nl "flag->cblock.temp_data_size = VMtemp;")
+    (wt-nl "flag->cblock.data_text = compiler_data_text;")
+    (wt-nl "flag->cblock.data_text_size = compiler_data_text_size;")
+    (wt-nl "flag->cblock.cfuns_size = compiler_cfuns_size;")
+    (wt-nl "flag->cblock.cfuns = compiler_cfuns;")
+    (when ext:*source-location*
+      (wt-nl "flag->cblock.source = make_constant_base_string(\""
+             (namestring (car ext:*source-location*)) "\");"))
+    (wt-nl "return;}")
+    (wt-nl "#ifdef ECL_DYNAMIC_VV")
+    (wt-nl "VV = Cblock->cblock.data;")
+    (wt-nl "#endif")
+    ;; With this we ensure creating a constant with the tag
+    ;; and the initialization file
+    (wt-nl "Cblock->cblock.data_text = \"" (init-name-tag name) "\";")
+
     (wt-nl "VVtemp = Cblock->cblock.temp_data;")
 
     ;; Type propagation phase
