@@ -62,49 +62,36 @@
 		    0
 		    i)))
 
-(defun data-dump (stream &key as-lisp-file init-name &aux must-close)
-  (etypecase stream
-    (null (return-from data-dump))
-    ((or pathname string)
-     (setf stream (open stream :direction :output :if-does-not-exist :create
-			:if-exists :supersede :external-format :default)
-	   must-close stream))
-    (stream))
-  (si::with-ecl-io-syntax
-    (let ((output nil))
-      (cond (as-lisp-file
-             (print *permanent-objects* stream)
-             (print *temporary-objects* stream))
-            (*compiler-constants*
-             (format stream "~%#define compiler_data_text NULL~%#define compiler_data_text_size 0~%")
-             (setf output (concatenate 'vector (data-get-all-objects))))
-            #+externalizable
-            ((plusp (data-size))
-             (let* ((data (concatenate 'vector (data-get-all-objects)))
-                    (raw (si::serialize data))
-                    (l (length raw)))
-               (format stream "~%#define compiler_data_text_size ~D~%static const uint8_t compiler_data_text[~D] = {" l l)
-               (loop for byte across raw
-                  for i from 0
-                  when (zerop (mod i 20))
-                  do (terpri stream)
-                  do (format stream "~D," byte))
-               (format stream "};")))
-            #-externalizable
-            ((plusp (data-size))
-             (let ((*wt-string-size* 0)
-                   (*wt-data-column* 80))
-               (princ "static const char compiler_data_text[] = " stream)
-               (wt-filtered-data
-                (subseq (prin1-to-string (data-get-all-objects)) 1)
-                stream)
-               (princ #\; stream)
-               (format stream "~%#define compiler_data_text_size ~D~%"
-                       *wt-string-size*))))
-      (when must-close
-        (close must-close))
-      (data-init)
-      output)))
+(defun data-dump-array ()
+  (cond (*compiler-constants*
+         (setf *compiler-constants* (concatenate 'vector (data-get-all-objects)))
+         "")
+        #+externalizable
+        ((plusp (data-size))
+         (let* ((data-vector (concatenate 'vector (data-get-all-objects))))
+           (si::serialize data-vector)))
+        #-externalizable
+        ((plusp (data-size))
+         (let* ((*wt-string-size* 0)
+                (*wt-data-column* 80)
+                (data (data-get-all-objects))
+                (data-string (si::with-ecl-io-syntax
+                                 (prin1-to-string data)))
+                (l (length data-string)))
+           (subseq data-string 1 (1- l))))))
+
+(defun data-c-dump (filename)
+  (let ((string (data-dump-array)))
+    (with-open-file (stream filename :direction :output :if-does-not-exist :create
+                            :if-exists :supersede :external-format :default)
+      (when (plusp (data-size))
+        (let ((*wt-string-size* 0)
+              (*wt-data-column* 80))
+          (princ "static const char compiler_data_text[] = " stream)
+          (wt-filtered-data string stream)
+          (princ #\; stream)
+          (format stream "~%#define compiler_data_text_size ~D~%"
+                  *wt-string-size*))))))
 
 (defun wt-data-begin (stream)
   nil)

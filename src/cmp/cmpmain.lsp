@@ -602,7 +602,7 @@ compiled successfully, returns the pathname of the compiled file"
 		      init-name
                       :input-designator (namestring input-pathname))
 
-      (data-dump data-pathname)
+      (data-c-dump data-pathname)
 
       (let ((o-pathname (if system-p
                             output-file
@@ -722,7 +722,7 @@ after compilation."
 	(compiler-pass2 c-pathname h-pathname data-pathname nil
 			init-name nil
                         :input-designator (format nil "~A" def)))
-      (setf *compiler-constants* (data-dump data-pathname))
+      (data-c-dump data-pathname)
 
       (compiler-cc c-pathname o-pathname)
       (bundle-cc (si::coerce-to-filename so-pathname)
@@ -805,7 +805,7 @@ from the C language code.  NIL means \"do not create the file\"."
 	     (ctop-write (compute-init-name "foo" :kind :fasl)
 			 (if h-file h-file "")
 			 (if data-file data-file ""))
-	     (data-dump data-file))
+	     (data-c-dump data-file))
 	(setf (symbol-function 'T3LOCAL-FUN) t3local-fun)
 	(when h-file (close *compiler-output2*)))))
   nil)
