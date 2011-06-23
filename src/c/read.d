@@ -2176,26 +2176,8 @@ read_VV(cl_object block, void (*entry_point)(cl_object))
 	cl_object in;
 	cl_object *VV, *VVtemp = 0;
 
-	if (block == NULL) {
-		block = ecl_alloc_object(t_codeblock);
-		block->cblock.self_destruct = 0;
-		block->cblock.locked = 0;
-		block->cblock.handle = NULL;
-		block->cblock.data = NULL;
-		block->cblock.data_size = 0;
-		block->cblock.temp_data = NULL;
-		block->cblock.temp_data_size = 0;
-		block->cblock.data_text = NULL;
-		block->cblock.data_text_size = 0;
-		block->cblock.next = Cnil;
-		block->cblock.name = Cnil;
-		block->cblock.links = Cnil;
-		block->cblock.cfuns_size = 0;
-		block->cblock.cfuns = NULL;
-                block->cblock.source = Cnil;
-                block->cblock.refs = MAKE_FIXNUM(0);
-		si_set_finalizer(block, Ct);
-	}
+	if (block == NULL)
+                block = ecl_make_codeblock();
 	block->cblock.entry = entry_point;
 
 	in = OBJNULL;
@@ -2281,6 +2263,8 @@ read_VV(cl_object block, void (*entry_point)(cl_object))
 		unlikely_if (i < len)
 			FEreader_error("Not enough data while loading"
                                        "binary file", in, 0);
+                cl_close(1,in);
+                in = OBJNULL;
 #endif
 	NO_DATA_LABEL:
                 env->packages_to_be_created_p = Cnil;

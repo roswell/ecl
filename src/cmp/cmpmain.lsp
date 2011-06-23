@@ -199,7 +199,7 @@ the environment variable TMPDIR to a different value." template))
 #define ECL_CPP_TAG
 #endif
 
-~{	extern ECL_CPP_TAG void ~A(cl_object);~%~}
+~:{	extern ECL_CPP_TAG void ~*~A(cl_object);~%~}
 
 ")
 
@@ -223,21 +223,24 @@ void ~A(cl_object cblock)
 	static cl_object Cblock;
         if (!FIXNUMP(cblock)) {
 		Cblock = cblock;
-		cblock->cblock.data_text = compiler_data_text;
-		cblock->cblock.data_text_size = compiler_data_text_size;
 #ifndef ECL_DYNAMIC_VV
-		cblock->cblock.data = VV;
+		cblock->cblock.data = NULL;
 #endif
-		cblock->cblock.data_size = VM;
+		cblock->cblock.data_size = 0;
 		return;
 	}
-#if defined(ECL_DYNAMIC_VV) && defined(ECL_SHARED_DATA)
-	VV = Cblock->cblock.data;
-#endif
 	~A
 {
+	cl_index i = 0;
 	cl_object current, next = Cblock;
-~{	current = read_VV(OBJNULL, ~A); current->cblock.next = next; next = current; ~%~}
+~:{
+	current = ecl_make_codeblock();
+	current->cblock.data_text = next->cblock.data_text + i;
+	current->cblock.data_text_size = i = ~D;
+	current->cblock.next = next;
+	next = current;
+	read_VV(current, ~A);
+~}
 	Cblock->cblock.next = current;
 }
 	~A
@@ -401,6 +404,7 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), Cnil);
 	 (o-name (si::coerce-to-filename
 		  (compile-file-pathname tmp-name :type :object)))
 	 submodules
+         (submodules-data ())
 	 c-file)
     (dolist (item (reverse lisp-files))
       (etypecase item
@@ -418,14 +422,15 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), Cnil);
 		  (flags (guess-ld-flags path)))
 	     ;; We should give a warning that we cannot link this module in
 	     (when flags (push flags ld-flags))
-	     (push init-fn submodules))))))
+             (multiple-value-bind (map array)
+                 (si::get-cdata path)
+               (push (copy-seq array) submodules-data)
+               (push (list (length array) init-fn) submodules)
+               (si::munmap map)))))))
+    (setf submodules-data (apply #'concatenate '(array base-char (*))
+                                 submodules-data))
     (setq c-file (open c-name :direction :output :external-format :default))
     (format c-file +lisp-program-header+ submodules)
-    (format c-file "
-#define compiler_data_text NULL
-#define compiler_data_text_size 0
-#define VV NULL
-#define VM 0" c-file)
     (when (or (symbolp output-name) (stringp output-name))
       (setf output-name (compile-file-pathname output-name :type target)))
     (unless init-name
@@ -473,6 +478,7 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), Cnil);
        (close c-file)
        (compiler-cc c-name o-name)
        (bundle-cc output-name init-name (list* o-name ld-flags))))
+    (data-binary-dump output-name submodules-data)
     (mapc 'cmp-delete-file tmp-names)
     (cmp-delete-file c-name)
     (cmp-delete-file o-name)
@@ -608,12 +614,14 @@ compiled successfully, returns the pathname of the compiled file"
                             output-file
                             (compile-file-pathname output-file :type :object))))
         (compiler-cc c-pathname o-pathname)
+        (data-binary-dump o-pathname)
         #+dlopen
         (unless system-p
           (push o-pathname to-delete)
           (bundle-cc (si::coerce-to-filename output-file)
                      init-name
-                     (list (si::coerce-to-filename o-pathname)))))
+                     (list (si::coerce-to-filename o-pathname)))
+          (data-binary-dump output-file)))
 
       (if (setf true-output-file (probe-file output-file))
           (cmpprogress "~&;;; Finished compiling ~a.~%;;;~%"
@@ -720,7 +728,7 @@ after compilation."
       (cmpprogress "~&;;; End of Pass 1.")
       (let (#+(or mingw32 msvc cygwin)(*self-destructing-fasl* t))
 	(compiler-pass2 c-pathname h-pathname data-pathname nil
-			init-name nil
+			init-name
                         :input-designator (format nil "~A" def)))
       (data-c-dump data-pathname)
 
@@ -728,6 +736,7 @@ after compilation."
       (bundle-cc (si::coerce-to-filename so-pathname)
 		 init-name
 		 (list (si::coerce-to-filename o-pathname)))
+      (data-binary-dump so-pathname)
       (cmp-delete-file c-pathname)
       (cmp-delete-file h-pathname)
       (cmp-delete-file o-pathname)

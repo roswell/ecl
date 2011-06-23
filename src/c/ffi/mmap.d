@@ -62,7 +62,6 @@
                 if (Null(length))
                         len = ecl_to_unsigned_integer(ecl_file_length(stream));
         }
-        printf("%d %d %d %d\n", len, c_prot, fd, c_flags);
         output = si_make_vector(element_type, MAKE_FIXNUM(0), Cnil,
                                 Cnil, Cnil, Cnil);
         pa = mmap(0, len, c_prot, c_flags | MAP_PRIVATE, fd,
@@ -74,7 +73,6 @@
                 output->base_string.dim =
                         output->base_string.fillp = len;
         }
-        printf("%d %d %d\n", fd, pa, len);
         @(return CONS(output, stream))
 }
 #else
@@ -94,7 +92,7 @@
                 if (Null(length))
                         length = ecl_file_len(stream);
                 output = si_make_vector(element_type, length, Cnil,
-                                Cnil, Cnil, Cnil);
+                                        Cnil, Cnil, Cnil);
                 si_read_sequence(2, output, stream);
                 cl_close(1, stream);
         }

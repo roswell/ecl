@@ -64,7 +64,7 @@
 
 (defun data-dump-array ()
   (cond (*compiler-constants*
-         (setf *compiler-constants* (concatenate 'vector (data-get-all-objects)))
+         (setf si::*compiler-constants* (concatenate 'vector (data-get-all-objects)))
          "")
         #+externalizable
         ((plusp (data-size))
@@ -81,17 +81,24 @@
            (subseq data-string 1 (1- l))))))
 
 (defun data-c-dump (filename)
-  (let ((string (data-dump-array)))
-    (with-open-file (stream filename :direction :output :if-does-not-exist :create
-                            :if-exists :supersede :external-format :default)
-      (when (plusp (data-size))
-        (let ((*wt-string-size* 0)
-              (*wt-data-column* 80))
-          (princ "static const char compiler_data_text[] = " stream)
-          (wt-filtered-data string stream)
-          (princ #\; stream)
-          (format stream "~%#define compiler_data_text_size ~D~%"
-                  *wt-string-size*))))))
+  (with-open-file (stream filename :direction :output :if-does-not-exist :create
+                          :if-exists :supersede :external-format :default)
+    (let ((string (data-dump-array)))
+      (if (and *compile-in-constants* (plusp (data-size)))
+          (let ((*wt-string-size* 0)
+                (*wt-data-column* 80))
+            (princ "static const char compiler_data_text[] = " stream)
+            (wt-filtered-data string stream)
+            (princ #\; stream)
+            (format stream "~%#define compiler_data_text_size ~D~%"
+                    *wt-string-size*))
+          (princ "#define compiler_data_text NULL
+#define compiler_data_text_size 0" stream)))))
+
+(defun data-binary-dump (filename &optional (string (if *compile-in-constants*
+                                                        ""
+                                                        (data-dump-array))))
+  (si::add-cdata filename string))
 
 (defun wt-data-begin (stream)
   nil)

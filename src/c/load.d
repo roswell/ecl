@@ -20,10 +20,11 @@
 
 #ifdef ENABLE_DLOPEN
 cl_object
-si_load_binary(cl_object filename, cl_object verbose, cl_object print, cl_object external_format)
+si_load_binary(cl_object filename, cl_object verbose,
+               cl_object print, cl_object external_format)
 {
 	const cl_env_ptr the_env = ecl_process_env();
-	cl_object block;
+	cl_object block, map, array;
 	cl_object basename;
 	cl_object init_prefix, prefix;
 	cl_object output;
@@ -66,10 +67,25 @@ si_load_binary(cl_object filename, cl_object verbose, cl_object print, cl_object
 		goto OUTPUT;
 	}
 
-	/* Finally, perform initialization */
 GO_ON:	
+        /* Try to load the compiled data */
+        map = si_get_cdata(filename);
+        array = VALUES(1);
+        if (Null(map)) {
+                output = make_base_string_copy("Unable to load compiled data.");
+		ecl_library_close(block);
+                goto OUTPUT;
+        }
+        cl_print(1,filename);
+        printf("%p %d\n", array->base_string.self, array->base_string.dim);
+        block->cblock.data_text = array->base_string.self;
+        block->cblock.data_text_size = array->base_string.dim;
+
+	/* Finally, perform initialization */
 	read_VV(block, (void (*)(cl_object))(block->cblock.entry));
 	output = Cnil;
+
+        si_munmap(map);
 OUTPUT:
 	@(return output)
 }

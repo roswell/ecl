@@ -2058,5 +2058,8 @@ cl_symbols[] = {
 {EXT_ "MUNMAP","si_munmap"},
 {EXT_ "MMAP-ARRAY","si_mmap_array"},
 
+{SYS_ "GET-CDATA","si_get_cdata"},
+{SYS_ "ADD-CDATA","si_add_cdata"},
+
 /* Tag for end of list */
 {NULL,NULL}};

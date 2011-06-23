@@ -155,8 +155,9 @@
       (wt-nl "flag->cblock.self_destruct=1;"))
     (wt-nl "flag->cblock.data_size = VM;")
     (wt-nl "flag->cblock.temp_data_size = VMtemp;")
-    (wt-nl "flag->cblock.data_text = compiler_data_text;")
-    (wt-nl "flag->cblock.data_text_size = compiler_data_text_size;")
+    (when (or *compile-in-constants* si::*compiler-constants*)
+      (wt-nl "flag->cblock.data_text = compiler_data_text;")
+      (wt-nl "flag->cblock.data_text_size = compiler_data_text_size;"))
     (wt-nl "flag->cblock.cfuns_size = compiler_cfuns_size;")
     (wt-nl "flag->cblock.cfuns = compiler_cfuns;")
     (when ext:*source-location*
