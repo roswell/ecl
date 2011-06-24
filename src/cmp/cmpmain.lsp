@@ -407,26 +407,23 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), Cnil);
          (submodules-data ())
 	 c-file)
     (dolist (item (reverse lisp-files))
-      (etypecase item
-        (symbol
-         (push (system-ld-flag item) ld-flags)
-         (push (init-function-name item :kind :lib) submodules))
-        ((or string pathname)
-	 (let* ((pathname (parse-namestring item))
-		(kind (guess-kind pathname)))
-	   (unless (member kind '(:shared-library :dll :static-library :lib
-				  :object :c))
-	     (error "C::BUILDER does not accept a file ~s of kind ~s" item kind))
-	   (let* ((path (parse-namestring item))
-		  (init-fn (guess-init-name path (guess-kind path)))
-		  (flags (guess-ld-flags path)))
-	     ;; We should give a warning that we cannot link this module in
-	     (when flags (push flags ld-flags))
-             (multiple-value-bind (map array)
-                 (si::get-cdata path)
-               (push (copy-seq array) submodules-data)
-               (push (list (length array) init-fn) submodules)
-               (si::munmap map)))))))
+      (let* ((path (etypecase item
+		     (symbol (system-ld-flag item))
+		     (pathname item)
+		     (string (parse-namestring item))))
+	     (kind (guess-kind path)))
+	(unless (member kind '(:shared-library :dll :static-library :lib
+					       :object :c))
+	  (error "C::BUILDER does not accept a file ~s of kind ~s" item kind))
+	(let* ((init-fn (guess-init-name path (guess-kind path)))
+	       (flags (guess-ld-flags path)))
+	  ;; We should give a warning that we cannot link this module in
+	  (when flags (push flags ld-flags))
+	  (multiple-value-bind (map array)
+	      (si::get-cdata path)
+	    (push (copy-seq array) submodules-data)
+	    (push (list (length array) init-fn) submodules)
+	    (si::munmap map)))))
     (setf submodules-data (apply #'concatenate '(array base-char (*))
                                  submodules-data))
     (setq c-file (open c-name :direction :output :external-format :default))
