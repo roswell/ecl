@@ -74,7 +74,7 @@ OBJS	= main.obj symbol.obj package.obj list.obj\
 	write_object.obj write_symbol.obj \
 	write_array.obj write_list.obj write_code.obj \
 	write_sse.obj print_unreadable.obj \
-	libraries.obj backtrace.obj \
+	libraries.obj backtrace.obj mmap.obj cdata.obj \
 	cos.obj sin.obj tan.obj atan.obj \
 	cosh.obj sinh.obj tanh.obj \
 	exp.obj expt.obj log.obj \

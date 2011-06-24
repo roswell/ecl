@@ -77,7 +77,7 @@
 }
 #else
 {
-        cl_object vector;
+        cl_object output, vector;
         if (Null(filename)) {
                 output = si_make_vector(element_type, length, Cnil,
                                 Cnil, Cnil, Cnil);
@@ -90,13 +90,14 @@
                                            @':external-format', @':default',
                                            @':cstream', Ct);
                 if (Null(length))
-                        length = ecl_file_len(stream);
+                        length = ecl_file_length(stream);
                 output = si_make_vector(element_type, length, Cnil,
                                         Cnil, Cnil, Cnil);
-                si_read_sequence(2, output, stream);
+                cl_read_sequence(2, output, stream);
                 cl_close(1, stream);
         }
         @(return output)
+}
 #endif
 @)
 
@@ -106,7 +107,7 @@ si_mmap_array(cl_object map)
 #ifdef HAVE_SYS_MMAN_H
         @(return cl_car(map));
 #else
-        @(return map)
+        @(return map);
 #endif
 }
 
