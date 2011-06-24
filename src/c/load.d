@@ -76,8 +76,6 @@ GO_ON:
 		ecl_library_close(block);
                 goto OUTPUT;
         }
-        cl_print(1,filename);
-        printf("%p %d\n", array->base_string.self, array->base_string.dim);
         block->cblock.data_text = array->base_string.self;
         block->cblock.data_text_size = array->base_string.dim;
 
