@@ -103,25 +103,30 @@ the function name it precedes."
           (error "Cannot find out entry point for binary file ~A" pathname))
       (compute-init-name pathname :kind kind)))
 
-(defun compute-init-name (pathname &key (kind (guess-kind pathname)))
+(defun compute-init-name (pathname &key (kind (guess-kind pathname)) (prefix nil))
   (let ((filename (pathname-name (translate-logical-pathname pathname))))
     (case kind
       ((:object :c)
        (unique-init-name pathname))
       ((:fasl :fas)
-       (init-function-name "CODE" :kind :fas))
+       (init-function-name "CODE" :kind :fas :prefix prefix))
       ((:static-library :lib)
        (init-function-name (remove-prefix +static-library-prefix+ filename)
-			   :kind :lib))
+			   :kind :lib
+                           :prefix prefix))
       ((:shared-library :dll)
        (init-function-name (remove-prefix +shared-library-prefix+ filename)
-			   :kind :dll))
+			   :kind :dll
+                           :prefix prefix))
       ((:program)
-       "init_ECL_PROGRAM")
+       (concatenate 'string (or prefix "init_") "ECL_PROGRAM"))
       (otherwise
        (error "C::BUILDER cannot accept files of kind ~s" kind)))))
 
-(defun init-function-name (s &key (kind :object))
+(defun compute-main-name (pathname &rest args)
+  (apply #'compute-init-name pathname :prefix "main_" args))
+
+(defun init-function-name (s &key (kind :object) (prefix nil))
   (flet ((translate-char (c)
 	   (cond ((and (char>= c #\a) (char<= c #\z))
 		  (char-upcase c))
@@ -148,6 +153,6 @@ the function name it precedes."
 			       kind)))))
     (setq s (map 'string #'translate-char (string s)))
     (concatenate 'string
-		 "init_"
+		 (or prefix "init_")
 		 (disambiguation kind)
 		 (map 'string #'translate-char (string s)))))

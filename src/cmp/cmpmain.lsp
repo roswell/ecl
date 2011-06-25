@@ -148,6 +148,21 @@ the environment variable TMPDIR to a different value." template))
      ,@(split-program-options *user-ld-flags*)
      ,@ld-flags)))
 
+(defun linker-ar (output-name o-name ld-flags)
+  #-msvc
+  (static-lib-ar (namestring output-name)
+                 (list* (brief-namestring o-name) ld-flags))
+  #+msvc
+  (unwind-protect
+       (progn
+         (with-open-file (f "static_lib.tmp" :direction :output
+                            :if-does-not-exist :create :if-exists :supersede)
+           (format f "/DEBUGTYPE:CV /OUT:~A ~A ~{~&\"~A\"~}"
+                   output-name o-name ld-flags))
+         (safe-run-program "link" '("-lib" "@static_lib.tmp")))
+    (when (probe-file "static_lib.tmp")
+      (cmp-delete-file "static_lib.tmp"))))
+
 (defun static-lib-ar (lib object-files)
   (let ((lib (brief-namestring lib)))
     (safe-run-program *ar* (list* "cr" lib (mapcar #'brief-namestring object-files)))
@@ -247,7 +262,7 @@ void ~A(cl_object cblock)
 }")
 
 (defconstant +lisp-program-main+ "
-int
+extern int
 main(int argc, char **argv)
 {
 	cl_boot(argc, argv);
@@ -257,6 +272,18 @@ main(int argc, char **argv)
 	~A
 	} CL_CATCH_ALL_END;
 	si_exit(0);
+}")
+
+(defconstant +lisp-library-main+ "
+extern int
+~A(int argc, char **argv)
+{
+	cl_boot(argc, argv);
+	CL_CATCH_ALL_BEGIN(ecl_process_env()) {
+	~A
+	read_VV(OBJNULL, ~A);
+	~A
+	} CL_CATCH_ALL_END;
 }")
 
 #+:win32
@@ -302,9 +329,9 @@ or a loadable module."
      (brief-namestring pathname))
     ((:fasl :fas)
      nil)
-    ((:static-library :lib)
+    ((:static-library :lib :standalone-static-library :standalone-lib)
      (brief-namestring pathname))
-    ((:shared-library :dll)
+    ((:shared-library :dll :standalone-shared-library :standalone-dll)
      (brief-namestring pathname))
     ((:program)
      nil)
@@ -337,6 +364,7 @@ filesystem or in the database of ASDF modules."
 
 (defun builder (target output-name &key lisp-files ld-flags
 		(init-name nil)
+                (main-name nil)
 		(prologue-code "")
 		(epilogue-code (when (eq target :program) '(SI::TOP-LEVEL T)))
 		#+:win32 (system :console)
@@ -432,39 +460,35 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), Cnil);
       (setf output-name (compile-file-pathname output-name :type target)))
     (unless init-name
       (setf init-name (compute-init-name output-name :kind target)))
+    (unless main-name
+      (setf main-name (compute-main-name output-name :kind target)))
     (ecase target
       (:program
        (format c-file +lisp-program-init+ init-name "" submodules "")
        (format c-file #+:win32 (ecase system (:console +lisp-program-main+)
 				             (:windows +lisp-program-winmain+))
 	              #-:win32 +lisp-program-main+
-		      prologue-code init-name epilogue-code)
+                      prologue-code init-name epilogue-code)
        (close c-file)
        (compiler-cc c-name o-name)
        (linker-cc output-name (list* (namestring o-name) ld-flags)))
       ((:library :static-library :lib)
        (format c-file +lisp-program-init+ init-name prologue-code
 	       submodules epilogue-code)
+       (cmpnote "Library initialization function is ~A" main-name)
+       (format c-file +lisp-library-main+
+               main-name prologue-code init-name epilogue-code)
        (close c-file)
        (compiler-cc c-name o-name)
        (when (probe-file output-name) (delete-file output-name))
-       #-msvc
-       (static-lib-ar (namestring output-name)
-                      (list* (brief-namestring o-name) ld-flags))
-       #+msvc
-       (unwind-protect
-         (progn
-           (with-open-file (f "static_lib.tmp" :direction :output
-			      :if-does-not-exist :create :if-exists :supersede)
-             (format f "/DEBUGTYPE:CV /OUT:~A ~A ~{~&\"~A\"~}"
-                     output-name o-name ld-flags))
-           (safe-run-program "link" '("-lib" "@static_lib.tmp")))
-         (when (probe-file "static_lib.tmp")
-           (cmp-delete-file "static_lib.tmp"))))
+       (linker-ar output-name o-name ld-flags))
       #+dlopen
       ((:shared-library :dll)
        (format c-file +lisp-program-init+ init-name prologue-code
 	       submodules epilogue-code)
+       (cmpnote "Library initialization function is ~A" main-name)
+       (format c-file +lisp-library-main+
+               main-name prologue-code init-name epilogue-code)
        (close c-file)
        (compiler-cc c-name o-name)
        (shared-cc output-name (list* o-name ld-flags)))
