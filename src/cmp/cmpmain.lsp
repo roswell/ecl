@@ -450,7 +450,7 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), Cnil);
 	  (multiple-value-bind (map array)
 	      (si::get-cdata path)
 	    (push (copy-seq array) submodules-data)
-	    (push (list (length array) init-fn) submodules)
+	    (push (list (length array) init-fn path) submodules)
 	    (si::munmap map)))))
     (setf submodules-data (apply #'concatenate '(array base-char (*))
                                  submodules-data))
@@ -462,6 +462,18 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), Cnil);
       (setf init-name (compute-init-name output-name :kind target)))
     (unless main-name
       (setf main-name (compute-main-name output-name :kind target)))
+    (unless (eq target :fasl)
+      (let ((files-with-binary-data
+             (loop for (size name path) in submodules
+                when (plusp size)
+                collect path)))
+        (when files-with-binary-data
+          (error "In C:BUILDER, when building file~%~T~A~%~
+tried to link together files that contained split binary data.~%~
+Unfortunately this is currently not possible. To avoid this~%~
+recompile the files setting C::*COMPILE-IN-CONSTANTS* to T.~%~
+List of offending files:~{~%~T~S~}"
+             output-name files-with-binary-data))))
     (ecase target
       (:program
        (format c-file +lisp-program-init+ init-name "" submodules "")
