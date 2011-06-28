@@ -354,7 +354,12 @@ filesystem or in the database of ASDF modules."
              (find-archive (system)
                  (or (existing-system-output system :library)
                      (existing-system-output system :shared-library)))
-             (fallback () (format nil #-msvc "-l~A" #+msvc "~A.lib" (string-downcase library))))
+             (fallback ()
+		 (translate-logical-pathname
+		  (merge-pathnames
+		   "SYS:"
+		   (compile-file-pathname (string-downcase library)
+					  :type :library)))))
       (or
        #-ecl-min
        (and asdf
@@ -516,6 +521,8 @@ List of offending files:~{~%~T~S~}"
     (cmp-delete-file c-name)
     (cmp-delete-file o-name)
     output-name))
+
+(trace builder)
 
 (defun build-fasl (&rest args)
   (apply #'builder :fasl args))
