@@ -128,12 +128,6 @@ CFLAGS     = $(CFLAGS)
 DEF        = ecl-threads.def
 !endif
 
-# Additional configuration for Unicode support
-#
-!if "$(ECL_UNICODE)" != ""
-UCDDAT     = ucd.dat
-!endif
-
 !MESSAGE C++ compiler flags: $(CFLAGS)
 !MESSAGE C++ linker flags: $(LDFLAGS)
 
@@ -226,10 +220,7 @@ BUILD-STAMP: Makefile
 ecl-static.lib: $(TARGETS)
 	link /lib /out:$@ eclmin.lib c\all_symbols2.obj lsp.lib eclgmp.lib eclgc.lib
 
-ucd.dat: $(top_srcdir)\..\contrib\unicode\ucd.dat
-	copy $(top_srcdir)\..\contrib\unicode\ucd.dat .
-
-ecl_min$(EXE): $(LIBRARIES) eclmin.lib $(UCDDAT)
+ecl_min$(EXE): $(LIBRARIES) eclmin.lib
 	$(CC) /Fe$@ cinit.obj c\all_symbols.obj eclmin.lib $(LDFLAGS) $(LIBS)
 	if exist ecl_min$(EXE).manifest \
 	 mt -manifest ecl_min.exe.manifest -outputresource:ecl_min.exe;1
@@ -370,7 +361,7 @@ rt.lisp:
 install:
 	IF NOT EXIST "$(prefix)" $(MKDIR) "$(prefix)"
 	IF NOT EXIST "$(bindir)" $(MKDIR) "$(bindir)"
-	for %i in ($(TARGETS) ecl.dll $(UCDDAT)) do $(CP) %i "$(bindir)\%i"
+	for %i in ($(TARGETS) ecl.dll) do $(CP) %i "$(bindir)\%i"
 	IF EXIST "$(bindir)\ecl2$(EXE)" $(MV) "$(bindir)\ecl2$(EXE)" "$(bindir)\ecl$(EXE)"
 	IF EXIST ecl2$(EXE).manifest $(CP) ecl2$(EXE).manifest "$(bindir)\ecl$(EXE).manifest"
 	IF EXIST ecl.dll.manifest $(CP) ecl.dll.manifest "$(bindir)"
@@ -392,7 +383,6 @@ install:
 	IF NOT EXIST "$(docdir)" $(MKDIR) "$(docdir)"
 	for %i in (..\Copyright ..\ANNOUNCEMENT ..\LGPL ..\README.1st ..\src\CHANGELOG) do $(CP) %i "$(docdir)"
 !if "$(ECL_UNICODE)" != ""
-	$(CP) $(UCDDAT) "$(libdir)"
 	IF NOT EXIST "$(libdir)\encodings" $(MKDIR) "$(libdir)\encodings"
 	$(CP) encodings\*.* "$(libdir)\encodings"
 !endif
@@ -428,7 +418,7 @@ clean_ecl:
 	            lsp\load.lsp clos\load.lsp cmp\load.lsp cmp\cmpdefs.lsp \
 		    ecl.lib ecl.dll ecl_min$(EXE) eclmin.lib help.doc sysfun.lsp \
 		    BUILD-STAMP $(TARGETS) *.exp *.ilk *.manifest *.pdb *.c *.obj \
-		    ecl-config.bat ecl-static.lib $(UCDDAT)) \
+		    ecl-config.bat ecl-static.lib) \
 	     do $(RM) %i
 	cd c
 	-$(MAKE) ECL_THREADS=$(ECL_THREADS) clean

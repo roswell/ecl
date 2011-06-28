@@ -21,7 +21,10 @@ THREADS_OBJ=
 !endif
 
 !if "$(ECL_UNICODE)" != ""
-ECL_UNICODE_FLAG=1
+ECL_UNICODE_FLAG=21
+ECL_UCD_OBJ = ucd.obj ucd-0000.obj ucd-0016.obj \
+	      ucd-0032.obj ucd-0048.obj ucd-0064.obj \
+	      ucd-0080.obj ucd-0096.obj
 !else
 ECL_UNICODE_FLAG=0
 !endif
@@ -93,7 +96,7 @@ OBJS	= main.obj symbol.obj package.obj list.obj\
 	mapfun.obj multival.obj hash.obj format.obj pathname.obj\
 	structure.obj load.obj unixfsys.obj unixsys.obj \
 	ffi.obj alloc_2.obj tcp.obj $(THREADS_OBJ) serialize.obj \
-	$(ECL_FFI_OBJ)
+	$(ECL_FFI_OBJ) $(ECL_UCD_OBJ)
 
 all:	$(DPP) ..\eclmin.lib ..\cinit.obj
 
@@ -108,6 +111,8 @@ all:	$(DPP) ..\eclmin.lib ..\cinit.obj
 {$(srcdir:\=/)/printer}.d{}.c:
 	$(DPP) $< $@
 {$(srcdir:\=/)/ffi}.d{}.c:
+	$(DPP) $< $@
+{$(srcdir:\=/)/unicode}.c{}.c:
 	$(DPP) $< $@
 {$(srcdir:\=/)/numbers}.d{}.c:
 	$(DPP) $< $@
