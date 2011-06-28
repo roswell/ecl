@@ -166,7 +166,7 @@
 ;;; * Update version number now that SI:SYSTEM is available
 ;;;
 
-(let ((commit-id (probe-file "@top_srcdir@/../.git/ORIG_HEAD")))
+(let ((commit-id (probe-file "@true_srcdir@/../.git/ORIG_HEAD")))
   (when commit-id
     (let* ((file (open commit-id :direction :input :element-type :default
                        :external-format :default))
