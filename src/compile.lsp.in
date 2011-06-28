@@ -347,6 +347,8 @@
  #-msvc
  (ext:run-program "windres" '("ecl.rc" "-O" "coff" "ecl.res")))
 
+(si::pathname-translations "SYS" '(("**;*.*.*" "@true_builddir@/**/*.*")))
+
 (compiler::build-program
  #+:msvc "ecl2"
  #+(and (or cross stage1) (not msvc)) "bin/ecl"
