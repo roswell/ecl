@@ -87,7 +87,7 @@
                                            @':element-type', element_type,
                                            @':if-exists', if_exists,
                                            @':if-does-not-exist', if_does_not_exist,
-                                           @':external-format', @':default',
+                                           @':external-format', @':pass-through',
                                            @':cstream', Ct);
                 if (Null(length))
                         length = ecl_file_length(stream);
