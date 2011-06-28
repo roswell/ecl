@@ -34,12 +34,24 @@ sed_emulator(int narg, char **patterns)
 
 int
 main(int narg, char **argv) {
+  int i, j;
   char buffer[1024];
 
   narg--;
   argv++;
 
-   if (narg >= 2)
+  /* To make canonical paths in Windows */
+  for (i = 1; i < narg; i+=2) {
+    char *new = strdup(argv[i]);
+    for (j = 0; new[j]; j++) {
+      if (new[j] == '\\') {
+	new[j] = '/';
+      }
+    }
+    argv[i] = new;
+  }  
+
+  if (narg >= 2)
     sed_emulator(narg, argv);
 
   while(1) {
