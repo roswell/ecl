@@ -34,8 +34,8 @@ GMP_TYPE      = gc
 # Without them, ECL would be an even more fragile piece of software.
 ECL_THREADS   = 1
 
-# Set it to non-empty to include support for Unicode characters
-ECL_UNICODE   =
+# Set it to empty to remove support for Unicode characters
+ECL_UNICODE   = 1
 
 # Set it to non-empty to enable Win32 debug support
 #ECL_DEBUG = 1
