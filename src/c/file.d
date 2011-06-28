@@ -2920,7 +2920,11 @@ parse_external_format(cl_object stream, cl_object format, int flags)
 		return flags & ~ECL_STREAM_LITTLE_ENDIAN;
 	}
 	if (format == @':pass-through' || format == Ct) {
+#ifdef ECL_UNICODE
+		return (flags & ~ECL_STREAM_FORMAT) | ECL_STREAM_LATIN_1;
+#else
 		return (flags & ~ECL_STREAM_FORMAT) | ECL_STREAM_DEFAULT_FORMAT;
+#endif
 	}
 #ifdef ECL_UNICODE
 	if (format == @':UTF-8') {
