@@ -71,6 +71,31 @@
 #include <ecl/ecl-inl.h>
 #include <ecl/internal.h>
 
+cl_object
+ecl_make_codeblock()
+{
+        cl_object block = ecl_alloc(t_codeblock);
+        block = ecl_alloc_object(t_codeblock);
+        block->cblock.self_destruct = 0;
+        block->cblock.locked = 0;
+        block->cblock.handle = NULL;
+        block->cblock.data = NULL;
+        block->cblock.data_size = 0;
+        block->cblock.temp_data = NULL;
+        block->cblock.temp_data_size = 0;
+        block->cblock.data_text = NULL;
+        block->cblock.data_text_size = 0;
+        block->cblock.next = Cnil;
+        block->cblock.name = Cnil;
+        block->cblock.links = Cnil;
+        block->cblock.cfuns_size = 0;
+        block->cblock.cfuns = NULL;
+        block->cblock.source = Cnil;
+        block->cblock.refs = MAKE_FIXNUM(0);
+        si_set_finalizer(block, Ct);
+        return block;
+}
+
 static cl_object
 copy_object_file(cl_object original)
 {
@@ -231,31 +256,6 @@ ecl_library_open_inner(cl_object filename, bool self_destruct)
         }
 	ecl_enable_interrupts();
         } ECL_WITH_GLOBAL_LOCK_END;
-        return block;
-}
-
-cl_object
-ecl_make_codeblock()
-{
-        cl_object block = ecl_alloc(t_codeblock);
-        block = ecl_alloc_object(t_codeblock);
-        block->cblock.self_destruct = 0;
-        block->cblock.locked = 0;
-        block->cblock.handle = NULL;
-        block->cblock.data = NULL;
-        block->cblock.data_size = 0;
-        block->cblock.temp_data = NULL;
-        block->cblock.temp_data_size = 0;
-        block->cblock.data_text = NULL;
-        block->cblock.data_text_size = 0;
-        block->cblock.next = Cnil;
-        block->cblock.name = Cnil;
-        block->cblock.links = Cnil;
-        block->cblock.cfuns_size = 0;
-        block->cblock.cfuns = NULL;
-        block->cblock.source = Cnil;
-        block->cblock.refs = MAKE_FIXNUM(0);
-        si_set_finalizer(block, Ct);
         return block;
 }
 
