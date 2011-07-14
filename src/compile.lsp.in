@@ -151,9 +151,6 @@
 ;;;
 (mapc #'proclaim +ecl-optimization-settings+)
 
-#+windows
-(setq *features* (cons :wants-bytecmp (cons :builtin-bytecmp *features*)))
-
 #-mingw32
 (si::pathname-translations "SYS" '(("**;*.*.*" "@ecldir\@/**/*.*")))
 
@@ -166,18 +163,6 @@
 ;;;
 ;;; EXTENSIONS
 ;;;
-
-;;;
-;;; * BYTECMP
-;;;
-#+WANTS-BYTECMP
-(build-module "bytecmp"
-              '("ext:bytecmp;bytecmp.lsp")
-              :dir "build:ext;"
-              :prefix "EXT"
-              :builtin
-	      #+:BUILTIN-BYTECMP t
-	      #-:BUILTIN-BYTECMP nil)
 
 ;;;
 ;;; * SSE

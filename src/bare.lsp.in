@@ -116,19 +116,14 @@
 
 (defun build-fake-module (name lisp-files)
   (let* ((output (make-pathname :type "fasc" :defaults name))
-         (pack *package*))
-    (with-open-file (sout output :direction :output :if-exists :supersede
-			  :if-does-not-exist :create)
-      (loop for file in lisp-files
-         and *package* = pack
-         and si::*bytecodes-compiler* = t
-         do (with-open-file (sin file :direction :input)
-              (loop for form = (read sin nil :eof)
-                 until (eq form :eof)
-                 do (let ((bytecodes (si::eval-with-env form nil nil nil nil)))
-                      (with-standard-io-syntax
-                        (write `(funcall ,bytecodes) :stream sout :circle t :escape t
-                               :readably t :pretty nil)))))))
+         (files '()))
+    (unwind-protect
+         (let ((ext:*source-location* nil))
+           (loop for i in lisp-files do (push (open i :direction :input) files))
+           (setf files (nreverse files))
+           (let ((joined (apply #'make-concatenated-stream files)))
+             (ext::bc-compile-file joined :output-file output)))
+      (mapc #'close files))
     output))
 
 (make-package "ASDF")
