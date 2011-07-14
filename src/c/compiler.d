@@ -2333,6 +2333,11 @@ eval_nontrivial_form(cl_env_ptr env, cl_object form) {
         frame.env = env;
         env->nvalues = 0;
         env->values[0] = Cnil;
+        new_c_env.constants = Cnil;
+        new_c_env.constants_size = 0;
+        new_c_env.load_time_forms = Cnil;
+        new_c_env.env_depth = 0;
+        new_c_env.env_size = 0;
         env->c_env = &new_c_env;
         handle = asm_begin(env);
         compile_form(env, form, FLAG_VALUES);
