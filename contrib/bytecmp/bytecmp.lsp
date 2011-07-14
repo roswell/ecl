@@ -15,13 +15,12 @@
 ;;;;         want or can have the real native compiler.
 
 (in-package "EXT")
-(ext:package-lock (find-package :cl) nil)
 
-(defun cl:compile (name &optional (def nil supplied-p))
+(defun bc-compile (name &optional (def nil supplied-p))
  (cond ((and supplied-p def)
         (when (functionp def)
 	  (unless (function-lambda-expression def)
-          (return-from compile def))
+          (return-from bc-compile def))
 	  (setf def (function-lambda-expression def)))
         (setq form (if name
 		     `(setf (symbol-function ',name) #',def)
@@ -30,17 +29,17 @@
 	(error "Symbol ~s is unbound." name))
        ((typep (setf def (symbol-function name)) 'standard-generic-function)
 	(warn "COMPILE can not compile generic functions yet")
-	(return-from compile (values def t nil)))
+	(return-from bc-compile (values def t nil)))
        ((null (setq form (function-lambda-expression def)))
 	(warn "We have lost the original function definition for ~s. Compilation failed"
               name)
-	(return-from compile (values def t nil)))
+	(return-from bc-compile (values def t nil)))
        (t
 	(setq form `(setf (symbol-function ',name) #',form))))
  (eval form)
  (values name nil nil))
 
-(defun cl:compile-file-pathname (name &key (output-file name) (type :fasl type-supplied-p)
+(defun bc-compile-file-pathname (name &key (output-file name) (type :fasl type-supplied-p)
 				 verbose print c-file h-file data-file shared-data-file
 				 system-p load)
   (let ((extension "fasc"))
@@ -49,41 +48,71 @@
       (t (error "In COMPILE-FILE-PATHNAME, the type ~A is unsupported." type)))
     (make-pathname :type extension :defaults output-file)))
 
-(defun cl:compile-file (input-pathname
+(defun bc-compile-file (input
 			&key
 			((:verbose *compile-verbose*) *compile-verbose*)
 			((:print *compile-print*) *compile-print*)
 			(load nil)
-			(output-file 't output-file-p)
+			(output-file nil output-file-p)
 			&allow-other-keys)
-  (setf output-file (if (or (null output-file-p) (eq output-file 't))
-                        (compile-file-pathname input-pathname)
-                        (pathname output-file)))
+  (setf output-file (if output-file-p
+                        (pathname output-file)
+                        (bc-compile-file-pathname input)))
   (when *compile-verbose*
-    (format t "~&;;; Compiling ~A" input-pathname))
-  (let ((ext:*source-location* (cons (truename input-pathname) 0)))
-    (with-open-file (sin input-pathname :direction :input)
-      (with-open-file (sout output-file :direction :output :if-exists :supersede
-                            :if-does-not-exist :create)
-        (handler-case
-            (sys:with-ecl-io-syntax
-                (write (loop with *package* = *package*
-                          and ext:*bytecodes-compiler* = t
-                          for position = (file-position sin)
-                          for form = (read sin nil :EOF)
-                          until (eq form :EOF)
-                          do (rplacd ext:*source-location* position)
-                          collect (si:eval-with-env form nil nil nil nil))
-                       :stream sout :circle t
-                       :escape t :readably t :pretty nil)
-              (terpri sout))
-          (error (c) (let ((*print-readably* nil) (*print-pretty* nil) (*print-circle* t)) (break)))))))
+    (format t "~&;;; Compiling ~A" input))
+  (cond ((not (streamp input))
+         (let ((ext:*source-location* (cons (truename input) 0)))
+           (with-open-file (sin input :direction :input)
+             (bc-compile-file sin :output-file output-file))))
+        ((not output-file-p)
+         (error "COMPILE-FILE invoked with a stream input and no :OUTPUT-FILE"))
+        (t
+         (with-open-file (sout output-file :direction :output :if-exists :supersede
+                               :if-does-not-exist :create)
+           (handler-case
+               (sys:with-ecl-io-syntax
+                   (write (loop with *package* = *package*
+                             with x = (intern "+C1-FORM-HASH+" (find-package "C"))
+                             with ext:*bytecodes-compiler* = t
+                             for y = (and (boundp x) (symbol-value x))
+                             for position = (file-position input)
+                             for form = (read input nil :EOF)
+                             until (eq form :EOF)
+                             do (when ext::*source-location*
+                                  (rplacd ext:*source-location* position))
+                             do (unless (or (null x) (hash-table-p y))
+                                  (print y)
+                                  (print form)
+                                  (setf x nil))
+                             collect (si:eval-with-env form nil nil nil nil))
+                          :stream sout :circle t
+                          :escape t :readably t :pretty nil)
+                 (terpri sout))
+             (error (c) (let ((*print-readably* nil)
+                              (*print-pretty* nil)
+                              (*print-circle* t))
+                          (break)))))))
   (when load
     (load output-file :verbose *compile-verbose*))
   (values output-file nil nil))
 
-(ext::package-lock (find-package :cl) t)
+(defun install-bytecodes-compiler ()
+  (ext::package-lock (find-package :cl) nil)
+  (pushnew :ecl-bytecmp *features*)
+  (setf (fdefinition compile) #'bc-compile
+        (fdefinition compile-file) #'bc-compile-file
+        (fdefinition compile-file-pathname) #'bc-compile-file-pathname)
+  (ext::package-lock (find-package :cl) t))
 
-(pushnew :ecl-bytecmp *features*)
+#-ecl-min
+(progn
+#-windows
+(sys::autoload "SYS:cmp" 'compile-file 'compile 'compile-file-pathname 'disassemble)
+#+windows
+(ext:install-bytecodes-compiler)
+)
 
 (provide 'BYTECMP)
+
+#-ecl-min
+(package-lock "COMMON-LISP" t)
