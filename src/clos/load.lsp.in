@@ -26,6 +26,7 @@
   "src:lsp;process.lsp" ; Depends on defclass
   #+unicode
   "src:lsp;unicode.lsp" ; Depends on conditions.lsp
+  "ext:bytecmp;bytecmp.lsp"
   ))
 
 (mapc #'(lambda (x)

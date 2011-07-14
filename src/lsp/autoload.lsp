@@ -35,8 +35,6 @@ Returns the string \"ECL\"."
   "Args: (decl-spec)
 Gives a global declaration.  See DECLARE for possible DECL-SPECs."
   (when (eq (car d) 'SPECIAL) (mapc #'sys::*make-special (cdr d))))
-
-(autoload "SYS:cmp" 'compile-file 'compile 'compile-file-pathname 'disassemble)
 )
 
 (defmacro with-compilation-unit (options &rest body)

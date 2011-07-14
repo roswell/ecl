@@ -1496,6 +1496,3 @@ value."
            (setf output (si::eval-with-env form env)
                  ok t))
       (return-from safe-eval (if ok output err-value)))))
-
-#-ecl-min
-(package-lock "COMMON-LISP" t)

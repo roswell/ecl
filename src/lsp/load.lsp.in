@@ -21,7 +21,6 @@
   "src:lsp;defmacro.lsp"
   "src:lsp;helpfile.lsp"
   "src:lsp;evalmacros.lsp"
-  "src:lsp;autoload.lsp"
   "src:lsp;setf.lsp"
   "src:lsp;predlib.lsp"
   "src:lsp;seq.lsp"
@@ -49,6 +48,7 @@
   "build:lsp;config.lsp"
   "src:lsp;module.lsp"
   "src:lsp;cmdline.lsp"
+  "src:lsp;autoload.lsp"
 ))
 
 (mapc #'(lambda (x)
