@@ -99,17 +99,17 @@
 (defun install-bytecodes-compiler ()
   (ext::package-lock (find-package :cl) nil)
   (pushnew :ecl-bytecmp *features*)
-  (setf (fdefinition compile) #'bc-compile
-        (fdefinition compile-file) #'bc-compile-file
-        (fdefinition compile-file-pathname) #'bc-compile-file-pathname)
+  (setf (fdefinition 'compile) #'bc-compile
+        (fdefinition 'compile-file) #'bc-compile-file
+        (fdefinition 'compile-file-pathname) #'bc-compile-file-pathname)
   (ext::package-lock (find-package :cl) t))
 
 #-ecl-min
 (progn
-#-windows
+#+(and dlopen (not windows))
 (sys::autoload "SYS:cmp" 'compile-file 'compile 'compile-file-pathname 'disassemble)
-#+windows
-(ext:install-bytecodes-compiler)
+#-(or windows dlopen)
+(install-bytecodes-compiler)
 )
 
 (provide 'BYTECMP)
