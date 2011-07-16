@@ -13,6 +13,8 @@
 
 ;;;; CMPMAIN  Compiler main program.
 
+(ext:package-lock "CL" nil)
+
 (in-package "COMPILER")
 
 #-threads
@@ -930,5 +932,7 @@ from the C language code.  NIL means \"do not create the file\"."
   `(progn ,@body))
 
 (ext:package-lock "CL" t)
+
+(setf *features* (delete :ecl-bytecmp *features*))
 
 (provide 'cmp)
