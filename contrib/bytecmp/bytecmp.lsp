@@ -108,7 +108,7 @@
 (progn
 #+(and dlopen (not windows))
 (sys::autoload "SYS:cmp" 'compile-file 'compile 'compile-file-pathname 'disassemble)
-#-(or windows dlopen)
+#-(and dlopen (not windows))
 (install-bytecodes-compiler)
 )
 
