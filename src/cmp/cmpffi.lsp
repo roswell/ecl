@@ -17,12 +17,28 @@
 ;; REPRESENTATION TYPES
 ;;
 
+(defconstant +all-integer-rep-type-pairs+
+  '((:byte . -8)
+    (:unsigned-byte 8)
+    (:unsigned-short . #.(logcount si::c-ushort-max))
+    (:short . #.(- (logcount si::c-ushort-max)))
+    (:unsigned-int . #.(logcount si::c-uint-max))
+    (:int . #.(logcount si::c-uint-max))
+    (:unsigned-long . #.(logcount si::c-ulong-max))
+    (:long . #.(logcount si::c-ulong-max))
+    (:unsigned-long-long . #.(logcount si::c-ulong-long-max))
+    (:long-long . #.(logcount si::c-ulong-long-max))
+    (:cl-index . #.si::cl-fixnum-bits)
+    (:fixnum . #.(- si::cl-fixnum-bits))
+    (:uint16-t . 16)
+    (:int16-t . -16)
+    (:uint32-t . 32)
+    (:int32-t . -32)
+    (:uint64-t . 64)
+    (:int64-t . -64)))
+
 (defconstant +all-integer-rep-types+
-  '(:byte :unsigned-byte :short :unsigned-short :int :unsigned-int
-	  :long :unsigned-long :fixnum :cl-index
-	  :long-long :unsigned-long-long
-	  :int8-t :uint8-t :int16-t :uint16-t :int32-t :uint32-t
-	  :int64-t :uint64-t))
+  (mapcar #'car +all-integer-rep-type-pairs+))
 
 (defconstant +all-number-rep-types+
   (append +all-integer-rep-types+ '(:float :double :long-double)))
@@ -157,8 +173,20 @@
 (defun c-number-rep-type-p (rep-type)
   (member rep-type +all-number-rep-types+))
 
+(defun c-integer-rep-type-p (rep-type)
+  (member rep-type +all-integer-rep-types+))
+
+(defun c-integer-rep-type-bits (rep-type)
+  (abs (cdr (assoc rep-type +all-integer-rep-type-pairs+))))
+
 (defun c-number-type-p (type)
   (c-number-rep-type-p (lisp-type->rep-type type)))
+
+(defun c-integer-type-p (type)
+  (c-integer-rep-type-p (lisp-type->rep-type type)))
+
+(defun c-integer-type-bits (type)
+  (c-number-rep-type-bits (lisp-type->rep-type type)))
 
 (defun rep-type-record (rep-type)
   (gethash rep-type +representation-type-hash+))
