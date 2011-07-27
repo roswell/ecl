@@ -119,6 +119,9 @@
         (t
          (values nil nil))))
 
+(defun loc-immediate-value (loc)
+  (nth-value 1 (loc-immediate-value-p loc)))
+
 (defun unknown-location (where loc)
   (baboon :format-control "Unknown location found in ~A~%~S"
           :format-arguments (list where loc)))
