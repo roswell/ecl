@@ -1501,6 +1501,7 @@ cl_symbols[] = {
 {SYS_ "C-SHORT-MIN",NULL},
 {SYS_ "C-LONG-MAX",NULL}, /* See main.d */
 {SYS_ "C-LONG-MIN",NULL}, /* See main.d */
+{SYS_ "C-LONG-LONG-MAX",NULL}, /* See main.d */
 {SYS_ "C-UCHAR-MAX",NULL},
 {SYS_ "C-UINT-MAX",NULL}, /* See main.d */
 {SYS_ "C-USHORT-MAX",NULL},
