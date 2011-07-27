@@ -854,7 +854,8 @@ from the C language code.  NIL means \"do not create the file\"."
 	     (ctop-write (compute-init-name "foo" :kind :fasl)
 			 (if h-file h-file "")
 			 (if data-file data-file ""))
-	     (data-c-dump data-file))
+	     (when data-file
+               (data-c-dump data-file)))
 	(setf (symbol-function 'T3LOCAL-FUN) t3local-fun)
 	(when h-file (close *compiler-output2*)))))
   nil)
