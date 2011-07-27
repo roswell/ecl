@@ -31,3 +31,41 @@
 	     (subtypep (result-type (second args)) 'FIXNUM))
 	`(the fixnum (ldb1 ,size ,pos ,(second args)))
 	whole)))
+
+;;;
+;;; ASH
+;;; Bit fiddling. It is a bit tricky because C does not allow
+;;; shifts in << or >> which exceed the integer size. In those
+;;; cases the compiler may do whatever it wants (and gcc does!)
+;;;
+
+(define-compiler-macro ash (&whole whole argument shift)
+  (if (and (policy-assume-right-type)
+           (integerp shift))
+      (if (zerop shift)
+          argument
+          `(shift ,argument ,shift))
+      whole))
+
+(define-c-inliner shift (return-type argument orig-shift)
+  (let* ((arg-type (inlined-arg-type argument))
+         (arg-c-type (lisp-type->rep-type arg-type))
+         (shift (loc-immediate-value (inlined-arg-loc orig-shift))))
+    (if (or (not (c-integer-rep-type-p arg-c-type))
+            (not (c-integer-type-p return-type)))
+        (produce-inline-loc (list argument orig-shift) '(:object :fixnum) '(:object)
+                            "ecl_ash(#0,#1)" nil t)
+        (let ((n (c-integer-rep-type-bits arg-c-type)))
+          (cond ((<= shift (- n))
+                 (produce-inline-loc () () '(:fixnum) "0" nil t))
+                ((>= shift n)
+                 (produce-inline-loc (list argument) (list arg-c-type) (list return-type)
+                                     "((#0) < 0)? -1 : 0" nil t))
+                (t
+                 (produce-inline-loc (list argument) (list arg-c-type) (list return-type)
+                                     (format nil
+                                             (if (minusp shift)
+                                                 "((#0) >> (~D))"
+                                                 "((#0) << (~D))")
+                                             (abs shift))
+                                     nil t)))))))
