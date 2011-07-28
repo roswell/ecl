@@ -626,7 +626,6 @@ cl_boot(int argc, char **argv)
 	ECL_SET(@'si::c-long-max', ecl_make_integer(LONG_MAX));
 	ECL_SET(@'si::c-long-min', ecl_make_integer(LONG_MIN));
 	ECL_SET(@'si::c-uint-max', ecl_make_unsigned_integer(UINT_MAX));
-        printf("HOLA\n");
 	ECL_SET(@'si::c-ulong-max', ecl_make_unsigned_integer(ULONG_MAX));
 #ifdef ecl_long_long_t
 	ECL_SET(@'si::c-long-long-max', ecl_make_unsigned_integer(LLONG_MAX));
