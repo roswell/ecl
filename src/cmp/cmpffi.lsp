@@ -19,7 +19,7 @@
 
 (defconstant +all-integer-rep-type-pairs+
   '((:byte . -8)
-    (:unsigned-byte 8)
+    (:unsigned-byte . 8)
     (:unsigned-short . #.(logcount si::c-ushort-max))
     (:short . #.(- (logcount si::c-ushort-max)))
     (:unsigned-int . #.(logcount si::c-uint-max))
@@ -30,6 +30,8 @@
     (:long-long . #.(logcount si::c-ulong-long-max))
     (:cl-index . #.si::cl-fixnum-bits)
     (:fixnum . #.(- si::cl-fixnum-bits))
+    (:uint8-t . 8)
+    (:int8-t . -8)
     (:uint16-t . 16)
     (:int16-t . -16)
     (:uint32-t . 32)
@@ -315,6 +317,8 @@
                         loc-type loc-rep-type dest-type dest-rep-type))
 	     (ensure-valid-object-type (a-lisp-type)
 	       (when (subtypep `(AND ,loc-type ,a-lisp-type) NIL)
+                 (print (list a-lisp-type loc-type loc-rep-type
+                              dest-type dest-rep-type))
 		 (coercion-error))))
       (when (eq dest-rep-type loc-rep-type)
 	(wt loc)
