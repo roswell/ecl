@@ -60,7 +60,7 @@
                  (produce-inline-loc () () '(:fixnum) "0" nil t))
                 ((>= shift n)
                  (produce-inline-loc (list argument) (list arg-c-type) (list return-type)
-                                     "((#0) < 0)? -1 : 0" nil t))
+                                     "(((#0) < 0)? -1 : 0)" nil t))
                 (t
                  (produce-inline-loc (list argument) (list arg-c-type) (list return-type)
                                      (format nil
