@@ -2105,7 +2105,7 @@ fi
 if test "${with_asdf+set}" = set; then
   withval=$with_asdf;
 else
-  with_asdf=${enable_shared}
+  with_asdf=yes
 fi
 
 
@@ -2114,7 +2114,7 @@ fi
 if test "${with_defsystem+set}" = set; then
   withval=$with_defsystem;
 else
-  with_defsystem=${enable_shared}
+  with_defsystem=yes
 fi
 
 

@@ -149,13 +149,13 @@ AC_ARG_WITH(asdf,
   AS_HELP_STRING( [--with-asdf],
                   [include ASDF building facility]
                   [(yes|builtin|no, default=YES)]),
-  [], [with_asdf=${enable_shared}])
+  [], [with_asdf=yes])
 
 AC_ARG_WITH(defsystem,
   AS_HELP_STRING( [--with-defsystem],
                   [include DEFSYSTEM building facility]
                   [(yes|builtin|no, default=YES)]),
-  [], [with_defsystem=${enable_shared}])
+  [], [with_defsystem=yes])
 
 AC_ARG_WITH(cmp,
   AS_HELP_STRING( [--with-cmp],
