@@ -71,18 +71,12 @@
                                :if-does-not-exist :create)
            (handler-case
 	       (let ((binary (loop with *package* = *package*
-				with x = (intern "+C1-FORM-HASH+" (find-package "C"))
 				with ext:*bytecodes-compiler* = t
-				for y = (and (boundp x) (symbol-value x))
 				for position = (file-position input)
 				for form = (read input nil :EOF)
 				until (eq form :EOF)
 				do (when ext::*source-location*
 				     (rplacd ext:*source-location* position))
-				do (unless (or (null x) (hash-table-p y))
-				     (print y)
-				     (print form)
-				     (setf x nil))
 				collect (si:eval-with-env form nil nil nil nil))))
 		 (sys:with-ecl-io-syntax
 		     (write binary :stream sout :circle t :escape t :readably t :pretty nil))
