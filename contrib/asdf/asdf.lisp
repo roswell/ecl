@@ -1940,6 +1940,13 @@ recursive calls to traverse.")
 
 (defmethod output-files ((operation compile-op) (c cl-source-file))
   (declare (ignorable operation))
+  #+ecl
+  (let* ((p (lispize-pathname (component-pathname c)))
+	 (f (compile-file-pathname p)))
+    (if (member :ecl-bytecmp *features*)
+	(list f)
+	(list (compile-file-pathname p :type :object) f)))
+  #-ecl
   (let ((p (lispize-pathname (component-pathname c))))
     #-broken-fasl-loader
     (list (compile-file-pathname p #+ecl :type #+ecl :object)
