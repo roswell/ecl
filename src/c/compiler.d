@@ -1292,14 +1292,16 @@ eval_when_flags(cl_object situation)
 
 static int
 c_eval_when(cl_env_ptr env, cl_object args, int flags) {
-	int situation = eval_when_flags(pop(&args));
+        cl_object situation_list = pop(&args);
+	int situation = eval_when_flags(situation_list);
         const cl_compiler_ptr c_env = env->c_env;
 	int mode = c_env->mode;
         if (mode == FLAG_EXECUTE) {
                 if (!when_execute_p(situation))
                         args = Cnil;
         } else if (c_env->lexical_level) {
-                args = Cnil;
+                if (!when_execute_p(situation))
+                        args = Cnil;
         } else if (mode == FLAG_LOAD) {
                 if (when_compile_p(situation)) {
                         env->c_env->mode = FLAG_COMPILE;
@@ -1319,8 +1321,9 @@ c_eval_when(cl_env_ptr env, cl_object args, int flags) {
                 if (!when_load_p(situation))
                         args = Cnil;
         } else { /* FLAG_COMPILE */
-                if (!when_execute_p(situation) && !when_compile_p(situation))
+                if (!when_execute_p(situation) && !when_compile_p(situation)) {
                         args = Cnil;
+                }
         }
         return compile_toplevel_body(env, args, flags);
 }
@@ -2163,7 +2166,7 @@ maybe_make_load_forms(cl_env_ptr env, cl_object constant)
 {
         const cl_compiler_ptr c_env = env->c_env;
         cl_object init, make;
-        if (c_env->mode != FLAG_LOAD)
+        if (c_env->mode != FLAG_LOAD && c_env->mode != FLAG_ONLY_LOAD)
                 return;
         if (ecl_memql(constant, c_env->constants) != Cnil)
                 return;
@@ -2462,7 +2465,7 @@ compile_toplevel_body(cl_env_ptr env, cl_object body, int flags)
         if (!c_env->lexical_level) {
                 if (c_env->mode == FLAG_EXECUTE)
                         return execute_each_form(env, body, flags);
-                if (c_env->mode == FLAG_LOAD || c_env->mode == FLAG_COMPILE)
+                else
                         return compile_each_form(env, body, flags);
         } else {
                 return compile_body(env, body, flags);
