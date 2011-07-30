@@ -61,7 +61,9 @@
   (when *compile-verbose*
     (format t "~&;;; Compiling ~A" input))
   (cond ((not (streamp input))
-         (let ((ext:*source-location* (cons (truename input) 0)))
+         (let* ((ext:*source-location* (cons (truename input) 0))
+                (*compile-file-pathname* (pathname (merge-pathnames input)))
+                (*compile-file-truename* (truename input)))
            (with-open-file (sin input :direction :input)
              (bc-compile-file sin :output-file output-file))))
         ((not output-file-p)
