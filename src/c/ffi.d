@@ -136,17 +136,11 @@ static struct {
         ffi_abi abi;
 } ecl_foreign_cc_table[] = {
         {@':default', FFI_DEFAULT_ABI},
-#ifdef X86_ANY
-# ifdef X86_WIN32
-	{@':cdecl', FFI_SYSV},
-	{@':sysv', FFI_SYSV},
-        {@':stdcall', FFI_STDCALL}
-# else
-#  if !defined(X86_WIN64)
+#if !defined(X86_WIN64)
+# if defined(X86) || defined(X86_64) || defined(X86_WIN32) || defined(X86_ANY)
 	{@':cdecl', FFI_SYSV},
 	{@':sysv', FFI_SYSV},
 	{@':unix64', FFI_UNIX64}
-#  endif
 # endif
 #endif
 };
