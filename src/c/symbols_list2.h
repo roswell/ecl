@@ -1730,8 +1730,8 @@ cl_symbols[] = {
 
 {SYS_ "CMP-ENV-REGISTER-MACROLET",NULL},
 
-{SYS_ "GET-FINALIZER","si_get_finalizer"},
-{SYS_ "SET-FINALIZER","si_set_finalizer"},
+{EXT_ "GET-FINALIZER","si_get_finalizer"},
+{EXT_ "SET-FINALIZER","si_set_finalizer"},
 
 /* #ifdef ECL_RELATIVE_PACKAGE_NAMES */
 {SYS_ "*RELATIVE-PACKAGE-NAMES*",NULL},
