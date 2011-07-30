@@ -317,8 +317,6 @@
                         loc-type loc-rep-type dest-type dest-rep-type))
 	     (ensure-valid-object-type (a-lisp-type)
 	       (when (subtypep `(AND ,loc-type ,a-lisp-type) NIL)
-                 (print (list a-lisp-type loc-type loc-rep-type
-                              dest-type dest-rep-type))
 		 (coercion-error))))
       (when (eq dest-rep-type loc-rep-type)
 	(wt loc)
@@ -648,8 +646,6 @@
 		 ((< index (length coerced-arguments))
 		  (wt (nth index coerced-arguments)))
 		 (t
-                  (print k)
-                  (print index)
 		  (cmperr "C-INLINE: Variable code exceeds number of arguments")))))
 	(otherwise
 	 (write-char c *compiler-output1*))))))
