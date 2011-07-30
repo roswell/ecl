@@ -16,15 +16,32 @@
 
 (in-package "EXT")
 
+(defun bc-disassemble (thing)
+  (when (si::valid-function-name-p thing)
+    (setq thing (fdefinition thing)))
+  (cond ((null thing))
+	((functionp thing)
+	 (si::bc-disassemble thing))
+	((and (consp thing)
+              (member (car thing) '(LAMBDA 'EXT:LAMBDA-BLOCK)))
+	 (disassemble (compile nil thing)))
+	(t
+	 (error 'simple-type-error
+		:datum thing
+		:expected-type '(OR FUNCTION (SATISFIES SI:VALID-FUNCTION-NAME-P))
+		:format-control "DISASSEMBLE cannot accept ~A"
+		:format-arguments (list thing))))
+  nil)
+
 (defun bc-compile (name &optional (def nil supplied-p))
  (cond ((and supplied-p def)
         (when (functionp def)
 	  (unless (function-lambda-expression def)
-          (return-from bc-compile def))
+            (return-from bc-compile (values def nil nil)))
 	  (setf def (function-lambda-expression def)))
         (setq form (if name
-		     `(setf (symbol-function ',name) #',def)
-		     `(set 'GAZONK #',def))))
+		     `(progn (setf (symbol-function ',name) #',def) ',name)
+		     `(setq GAZONK #',def))))
        ((not (fboundp name))
 	(error "Symbol ~s is unbound." name))
        ((typep (setf def (symbol-function name)) 'standard-generic-function)
@@ -35,9 +52,8 @@
               name)
 	(return-from bc-compile (values def t nil)))
        (t
-	(setq form `(setf (symbol-function ',name) #',form))))
- (eval form)
- (values name nil nil))
+	(setq form `(progn (setf (symbol-function ',name) #',form) ',name))))
+ (values (eval form) nil nil))
 
 (defun bc-compile-file-pathname (name &key (output-file name) (type :fasl type-supplied-p)
 				 verbose print c-file h-file data-file shared-data-file
@@ -54,7 +70,7 @@
 			((:print *compile-print*) *compile-print*)
 			(load nil)
 			(output-file nil output-file-p)
-			&allow-other-keys)
+			&allow-other-keys &aux foo)
   (setf output-file (if output-file-p
                         (pathname output-file)
                         (bc-compile-file-pathname input)))
@@ -86,6 +102,8 @@
              (error (c) (let ((*print-readably* nil)
                               (*print-pretty* nil)
                               (*print-circle* t))
+                          (princ c)
+                          (print foo)
                           (break)))))))
   (when load
     (load output-file :verbose *compile-verbose*))
@@ -94,7 +112,8 @@
 (defun install-bytecodes-compiler ()
   (ext::package-lock (find-package :cl) nil)
   (pushnew :ecl-bytecmp *features*)
-  (setf (fdefinition 'compile) #'bc-compile
+  (setf (fdefinition 'disassemble) #'bc-disassemble
+        (fdefinition 'compile) #'bc-compile
         (fdefinition 'compile-file) #'bc-compile-file
         (fdefinition 'compile-file-pathname) #'bc-compile-file-pathname)
   (ext::package-lock (find-package :cl) t))
