@@ -383,7 +383,7 @@ struct cl_core_struct cl_core = {
 	Cnil, /* processes */
 	Cnil, /* global_lock */
         Cnil, /* error_lock */
-        Cnil, /* package_lock */
+        Cnil, /* global_env_lock */
 #endif
 	/* LIBRARIES is an adjustable vector of objects. It behaves as
 	   a vector of weak pointers thanks to the magic in

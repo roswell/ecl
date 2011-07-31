@@ -215,7 +215,7 @@ struct cl_core_struct {
 	cl_object processes;
 	cl_object global_lock;
         cl_object error_lock;
-        cl_object package_lock;
+        cl_object global_env_lock;
 #endif
 	cl_object libraries;
 

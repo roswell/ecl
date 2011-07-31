@@ -15,8 +15,9 @@
     See file '../Copyright' for full details.
 */
 
-#include <ecl/ecl.h>
 #include <string.h>
+#include <ecl/ecl.h>
+#include <ecl/internal.h>
 
 cl_object
 cl_set(cl_object var, cl_object val)
@@ -117,21 +118,25 @@ cl_object
 si_get_sysprop(cl_object sym, cl_object prop)
 {
 	cl_env_ptr the_env = ecl_process_env();
-	cl_object plist = ecl_gethash_safe(sym, cl_core.system_properties, Cnil);
-	prop = ecl_getf(plist, prop, OBJNULL);
-	if (prop == OBJNULL) {
-		@(return Cnil Cnil);
-	} else {
-		@(return prop Ct);
-	}
+        ECL_WITH_GLOBAL_ENV_RDLOCK_BEGIN(the_env) {
+                cl_object plist = ecl_gethash_safe(sym, cl_core.system_properties, Cnil);
+                prop = ecl_getf(plist, prop, OBJNULL);
+        } ECL_WITH_GLOBAL_ENV_RDLOCK_END;
+        if (prop == OBJNULL) {
+                @(return Cnil Cnil);
+        } else {
+                @(return prop Ct);
+        }
 }
 
 cl_object
 si_put_sysprop(cl_object sym, cl_object prop, cl_object value)
 {
-	cl_object plist;
-	plist = ecl_gethash_safe(sym, cl_core.system_properties, Cnil);
-	ecl_sethash(sym, cl_core.system_properties, si_put_f(plist, value, prop));
+	cl_env_ptr the_env = ecl_process_env();
+        ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(the_env) {
+                cl_object plist = ecl_gethash_safe(sym, cl_core.system_properties, Cnil);
+                ecl_sethash(sym, cl_core.system_properties, si_put_f(plist, value, prop));
+        } ECL_WITH_GLOBAL_ENV_WRLOCK_END;
 	@(return value);
 }
 
