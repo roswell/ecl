@@ -15,6 +15,9 @@ ECL 11.7.1:
 
  - Fixed externalization of bytecodes with literals that need MAKE-LOAD-FORM.
 
+ - When parsing a floating point number at least one digit should be
+   present. ECL parsed +.e0 as +0.0e0, instead of as a symbol.
+
 * Visible changes:
 
  - When printing error messages, the condition type is shown (M. Mondor)

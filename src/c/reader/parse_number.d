@@ -120,6 +120,7 @@ ecl_parse_number(cl_object str, cl_index start, cl_index end,
         int sign = -1, d;
 	cl_index c, i, decimal = end;
         cl_object num = _ecl_big_register0();
+        bool some_digit = 0;
 	if (end <= start || radix > 36) {
 		*ep = start;
 		return OBJNULL;
@@ -172,8 +173,11 @@ ecl_parse_number(cl_object str, cl_index start, cl_index end,
                 } else if ((d = ecl_digitp(c, radix)) >= 0) {
                         _ecl_big_mul_ui(num, num, radix);
                         _ecl_big_add_ui(num, num, d);
+                        some_digit = 1;
                 } else if (exponent_charp(c)) {
                         cl_object exp, decimals;
+                        if (!some_digit)
+                                goto NOT_A_NUMBER;
                         if (radix != 10) {
                                 radix = 10;
                                 goto AGAIN;
@@ -211,6 +215,7 @@ ecl_parse_number(cl_object str, cl_index start, cl_index end,
          * 1., 2, 13., etc) we return an integer */
         *ep = i;
         if (decimal < i) {
+                if (!some_digit) goto NOT_A_NUMBER;
                 return make_float(_ecl_big_register_normalize(num),
                                   MAKE_FIXNUM(decimal - i), 'e', sign);
         } else {
