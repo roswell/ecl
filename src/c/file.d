@@ -2897,10 +2897,20 @@ const struct ecl_file_ops input_file_ops = {
 static int
 parse_external_format(cl_object stream, cl_object format, int flags)
 {
+        if (format == @':default') {
+                format = ecl_symbol_value(@'ext::*default-external-format*');
+        }
 	if (CONSP(format)) {
 		flags = parse_external_format(stream, ECL_CONS_CDR(format), flags);
 		format = ECL_CONS_CAR(format);
 	}
+        if (format == Ct) {
+#ifdef ECL_UNICODE
+                return (flags & ~ECL_STREAM_FORMAT) | ECL_STREAM_UTF_8;
+#else
+                return (flags & ~ECL_STREAM_FORMAT) | ECL_STREAM_DEFAULT_FORMAT;
+#endif
+        }
 	if (format == Cnil) {
 		return flags;
 	}
@@ -2919,7 +2929,7 @@ parse_external_format(cl_object stream, cl_object format, int flags)
 	if (format == @':BIG-ENDIAN') {
 		return flags & ~ECL_STREAM_LITTLE_ENDIAN;
 	}
-	if (format == @':pass-through' || format == Ct) {
+	if (format == @':pass-through') {
 #ifdef ECL_UNICODE
 		return (flags & ~ECL_STREAM_FORMAT) | ECL_STREAM_LATIN_1;
 #else
@@ -2984,9 +2994,6 @@ set_stream_elt_type(cl_object stream, cl_fixnum byte_size, int flags,
 		flags &= ~ECL_STREAM_SIGNED_BYTES;
 		t = @'unsigned-byte';
 	}
-        if (external_format == @':default') {
-                external_format = ecl_symbol_value(@'ext::*default-external-format*');
-        }
 	flags = parse_external_format(stream, external_format, flags);
 	stream->stream.ops->read_char = eformat_read_char;
 	stream->stream.ops->write_char = eformat_write_char;
@@ -4593,7 +4600,7 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
 
 @(defun open (filename
 	      &key (direction @':input')
-		   (element_type @'base-char')
+		   (element_type @'character')
 		   (if_exists Cnil iesp)
 		   (if_does_not_exist Cnil idnesp)
                    (external_format @':default')

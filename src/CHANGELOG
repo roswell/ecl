@@ -83,6 +83,9 @@ ECL 11.7.1:
    the user side, just as in other programming languages, making use of
    WITH-LOCK and similar facilities.
 
+ - In OPEN the default format is :UTF-8 for Unicode builds and :LATIN-1 for
+   others, and the stream element type is always CHARACTER by default.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
