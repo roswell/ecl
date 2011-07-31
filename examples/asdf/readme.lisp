@@ -24,6 +24,15 @@
 (setf c::*suppress-compiler-warnings* t)
 (setf c::*suppress-compiler-notes* t)
 
+;;; This flag determines how lisp constants are compiled into the program.
+;;; The default scheme does not work well in statically linked libraries
+;;; yet.
+(setf c::*compile-in-constants* t)
+
+(push (make-pathname :name nil :type nil :version nil
+                     :defaults *load-truename*)
+      asdf:*central-registry*)
+
 ;;;
 ;;; This will show you what is running behind the walls of ASDF. Everything
 ;;; is built on top of the powerful C::BUILDER routine, which allows one
@@ -41,7 +50,7 @@
 Building FASL file 'example.fasb'
 
 ")
-(asdf:make-build :example :type :fasl :move-here t)
+(asdf:make-build :example :type :fasl :move-here "./")
 
 ;;;
 ;;; Now we load the previous file!
@@ -49,7 +58,7 @@ Building FASL file 'example.fasb'
 
 (princ "
 
-Loading FASL file example.fas
+Loading FASL file example.fasb
 
 ")
 (load "example.fasb")
@@ -60,12 +69,12 @@ Loading FASL file example.fas
 
 (princ "
 
-Building standalone executable 'example' ('example.exe' in Windows)
+Building standalone executable 'example-mono' ('example-mono.exe' in Windows)
 
 ")
 (asdf:make-build :example
                  :type :program :epilogue-code '(ext:quit 0)
-                 :move-here t)
+                 :move-here "./")
 
 ;;;
 ;;; Test the program
@@ -84,4 +93,4 @@ Executing standalone file 'example'
 
 (mapc #'delete-file (append (directory "*.o")
 			    (directory "*.obj")
-			    (directory "example.*")))
+			    (directory "example-mono*")))
