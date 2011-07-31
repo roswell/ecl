@@ -582,8 +582,8 @@ static void fill_inet_sockaddr(struct sockaddr_in *sockaddr, int port,
 
 (defmethod socket-accept ((socket inet-socket))
   (let ((sfd (socket-file-descriptor socket)))
-    (multiple-value-bind (fd vector)
-      (c-inline (sfd) (:int) (values :int :object)
+    (multiple-value-bind (fd vector port)
+      (c-inline (sfd) (:int) (values :int :object :int)
 "{
         struct sockaddr_in sockaddr;
         socklen_t addr_len = (socklen_t)sizeof(struct sockaddr_in);
@@ -595,6 +595,7 @@ static void fill_inet_sockaddr(struct sockaddr_in *sockaddr, int port,
 
 	@(return 0) = new_fd;
 	@(return 1) = Cnil;
+	@(return 2) = 0;
         if (new_fd != -1) {
                 uint32_t ip = ntohl(sockaddr.sin_addr.s_addr);
                 uint16_t port = ntohs(sockaddr.sin_port);
@@ -606,6 +607,7 @@ static void fill_inet_sockaddr(struct sockaddr_in *sockaddr, int port,
                 ecl_aset(vector,3, MAKE_FIXNUM( ip & 0xFF ));
 
 		@(return 1) = vector;
+		@(return 2) = port;
 	}
 }")
       (cond
@@ -617,7 +619,8 @@ static void fill_inet_sockaddr(struct sockaddr_in *sockaddr, int port,
 			  :type (socket-type socket)
 			  :protocol (socket-protocol socket)
 			  :descriptor fd)
-	   vector))))))
+	   vector
+	   port))))))
 
 (defmethod socket-connect ((socket inet-socket) &rest address)
   (let ((ip (first address))
