@@ -380,9 +380,6 @@ struct ecl_hashtable {		/*  hash table header  */
 	cl_object rehash_size;	/*  rehash size  */
 	cl_object threshold;	/*  rehash threshold  */
 	double factor;		/*  cached value of threshold  */
-#ifdef ECL_THREADS
-	cl_object lock;		/*  mutex to prevent race conditions  */
-#endif
 	struct ecl_hashtable_entry *(*get)(cl_object, cl_object);
 	cl_object (*set)(cl_object, cl_object, cl_object);
 };

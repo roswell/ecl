@@ -401,9 +401,7 @@ ecl_gethash(cl_object key, cl_object hashtable)
 	cl_object output;
 
 	assert_type_hash_table(@[gethash], 2, hashtable);
-	HASH_TABLE_LOCK(hashtable);
 	output = hashtable->hash.get(key, hashtable)->value;
-	HASH_TABLE_UNLOCK(hashtable);
 	return output;
 }
 
@@ -413,11 +411,9 @@ ecl_gethash_safe(cl_object key, cl_object hashtable, cl_object def)
 	struct ecl_hashtable_entry *e;
 
 	assert_type_hash_table(@[gethash], 2, hashtable);
-	HASH_TABLE_LOCK(hashtable);
 	e = hashtable->hash.get(key, hashtable);
 	if (e->key != OBJNULL)
 		def = e->value;
-	HASH_TABLE_UNLOCK(hashtable);
 	return def;
 }
 
@@ -431,9 +427,7 @@ cl_object
 ecl_sethash(cl_object key, cl_object hashtable, cl_object value)
 {
 	assert_type_hash_table(@[si::hash-set], 2, hashtable);
-	HASH_TABLE_LOCK(hashtable);
 	hashtable = hashtable->hash.set(key, hashtable, value);
-	HASH_TABLE_UNLOCK(hashtable);
 	return hashtable;
 }
 
@@ -492,11 +486,9 @@ ecl_extend_hashtable(cl_object hashtable)
 @(defun make_hash_table (&key (test @'eql')
 			      (size MAKE_FIXNUM(1024))
                               (rehash_size cl_core.rehash_size)
-			      (rehash_threshold cl_core.rehash_threshold)
-			      (lockable Cnil))
+			      (rehash_threshold cl_core.rehash_threshold))
 @
-	@(return cl__make_hash_table(test, size, rehash_size, rehash_threshold,
-				     lockable))
+	@(return cl__make_hash_table(test, size, rehash_size, rehash_threshold))
 @)
 
 static void
@@ -519,7 +511,7 @@ ecl_def_ct_single_float(min_threshold, 0.1, static, const);
 
 cl_object
 cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
-		    cl_object rehash_threshold, cl_object lockable)
+		    cl_object rehash_threshold)
 {
 	int htt;
 	cl_index hsize;
@@ -609,14 +601,6 @@ cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
 	h->hash.data = (struct ecl_hashtable_entry *)
 		ecl_alloc(hsize * sizeof(struct ecl_hashtable_entry));
 	do_clrhash(h);
-
-#ifdef ECL_THREADS
-	if (!Null(lockable)) {
-                h->hash.lock = mp_make_lock(2, @':recursive', Ct);
-	} else {
-                h->hash.lock = Cnil;
-        }
-#endif
 	return h;
 }
 
@@ -630,9 +614,7 @@ cl_hash_table_p(cl_object ht)
 	struct ecl_hashtable_entry e;
 @
 	assert_type_hash_table(@[gethash], 2, ht);
-	HASH_TABLE_LOCK(ht);
 	e = *(ht->hash.get(key, ht));
-	HASH_TABLE_UNLOCK(ht);
 	if (e.key != OBJNULL)
 		@(return e.value Ct)
 	else
@@ -654,7 +636,6 @@ ecl_remhash(cl_object key, cl_object hashtable)
 	bool output;
 
 	assert_type_hash_table(@[remhash], 2, hashtable);
-	HASH_TABLE_LOCK(hashtable);
 	e = hashtable->hash.get(key, hashtable);
 	if (e->key == OBJNULL) {
 		output = FALSE;
@@ -664,7 +645,6 @@ ecl_remhash(cl_object key, cl_object hashtable)
 		hashtable->hash.entries--;
 		output = TRUE;
 	}
-	HASH_TABLE_UNLOCK(hashtable);
 	return output;
 }
 
@@ -680,9 +660,7 @@ cl_clrhash(cl_object ht)
 {
 	assert_type_hash_table(@[clrhash], 1, ht);
 	if (ht->hash.entries) {
-		HASH_TABLE_LOCK(ht);
 		do_clrhash(ht);
-		HASH_TABLE_UNLOCK(ht);
 	}
 	@(return ht)
 }
@@ -821,20 +799,12 @@ cl_object
 si_copy_hash_table(cl_object orig)
 {
 	cl_object hash;
-#ifdef ECL_THREADS
-	cl_object lockable = orig->hash.lock;
-#else
-	cl_object lockable = Cnil;
-#endif
 	hash = cl__make_hash_table(cl_hash_table_test(orig),
 				   cl_hash_table_size(orig),
 				   cl_hash_table_rehash_size(orig),
-				   cl_hash_table_rehash_threshold(orig),
-				   lockable);
-	HASH_TABLE_LOCK(hash);
+				   cl_hash_table_rehash_threshold(orig));
 	memcpy(hash->hash.data, orig->hash.data,
 	       orig->hash.size * sizeof(*orig->hash.data));
 	hash->hash.entries = orig->hash.entries;
-	HASH_TABLE_UNLOCK(hash);
 	@(return hash)
 }

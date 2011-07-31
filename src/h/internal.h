@@ -341,14 +341,6 @@ extern void cl_write_object(cl_object x, cl_object stream);
 /* global locks */
 
 #ifdef ECL_THREADS
-# define HASH_TABLE_LOCK(h) do {                                        \
-                cl_object lock = (h)->hash.lock;                        \
-                if (lock != Cnil) mp_get_lock_wait(lock);               \
-        } while (0);
-# define HASH_TABLE_UNLOCK(h) do {                                      \
-                cl_object lock = (h)->hash.lock;                        \
-                if (lock != Cnil) mp_giveup_lock(lock);                 \
-        } while (0);
 # define ECL_WITH_GLOBAL_LOCK_BEGIN(the_env)    \
         ECL_WITH_LOCK_BEGIN(the_env, cl_core.global_lock)
 # define ECL_WITH_GLOBAL_LOCK_END               \
@@ -379,8 +371,6 @@ extern void cl_write_object(cl_object x, cl_object stream);
                 ecl_enable_interrupts_env(__ecl_the_env);     \
         } CL_UNWIND_PROTECT_END; }
 #else
-# define HASH_TABLE_LOCK(h)
-# define HASH_TABLE_UNLOCK(h)
 # define ECL_WITH_GLOBAL_LOCK_BEGIN(the_env)
 # define ECL_WITH_GLOBAL_LOCK_END
 # define ECL_WITH_PACKAGE_RDLOCK_BEGIN(the_env)

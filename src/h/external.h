@@ -777,7 +777,7 @@ extern ECL_API cl_object _ecl_standard_dispatch(cl_object frame, cl_object fun);
 
 /* hash.c */
 
-extern ECL_API cl_object cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size, cl_object rehash_threshold, cl_object lockable);
+extern ECL_API cl_object cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size, cl_object rehash_threshold);
 extern ECL_API cl_object cl_hash_table_p(cl_object ht);
 extern ECL_API cl_object si_hash_set(cl_object key, cl_object ht, cl_object val);
 extern ECL_API cl_object cl_remhash(cl_object key, cl_object ht);
@@ -1530,7 +1530,7 @@ extern ECL_API int ecl_current_read_base(void);
 extern ECL_API char ecl_current_read_default_float_format(void);
 #define ecl_read_from_cstring(s) si_string_to_object(1,make_constant_base_string(s))
 #define ecl_read_from_cstring_safe(s,v) si_string_to_object(2,make_constant_base_string(s),(v))
-extern ECL_API cl_object read_VV(cl_object block, void (*entry)(cl_object));
+extern ECL_API cl_object ecl_init_module(cl_object block, void (*entry)(cl_object));
 
 /* reference.c */
 
@@ -2157,6 +2157,8 @@ extern ECL_API cl_object clos_standard_instance_set _ARGS((cl_narg narg, cl_obje
 #define cl_alloc_simple_extended_string ecl_alloc_simple_extended_string
 
 #define ecl_search_hash _ecl_gethash
+
+#define ecl_init_module read_VV
 
 #endif
 

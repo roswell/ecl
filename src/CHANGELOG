@@ -75,6 +75,11 @@ ECL 11.7.1:
    libraries to be linked with other programs. The name of the function typically
    begins with main_dll or main_lib but it is output by ECL on screen.
 
+ - Hash tables do no longer have implicit locking. All complex structures in
+   ECL (arrays, hash tables, objects) should be dealt with sufficient care on
+   the user side, just as in other programming languages, making use of
+   WITH-LOCK and similar facilities.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

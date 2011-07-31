@@ -311,8 +311,7 @@ init_pool(pool_t pool, cl_object root)
                                     MAKE_FIXNUM(0));
         pool->hash = cl__make_hash_table(@'eql', MAKE_FIXNUM(256),
                                          cl_core.rehash_size,
-                                         cl_core.rehash_threshold,
-                                         Cnil);
+                                         cl_core.rehash_threshold);
         ecl_sethash(root, pool->hash, MAKE_FIXNUM(0));
         pool->queue = ecl_list1(root);
         pool->last = pool->queue;
