@@ -585,8 +585,7 @@ cl_boot(int argc, char **argv)
 	cl_core.char_names = aux =
 	    cl__make_hash_table(@'equalp', MAKE_FIXNUM(128), /* size */
 				cl_core.rehash_size,
-                                cl_core.rehash_threshold,
-				Cnil); /* thread-safe */
+                                cl_core.rehash_threshold);
 	for (i = 0; char_names[i].elt.self; i++) {
                 cl_object name = (cl_object)(char_names + i);
 		cl_object code = MAKE_FIXNUM(i);
@@ -616,8 +615,7 @@ cl_boot(int argc, char **argv)
 	cl_core.system_properties =
 	    cl__make_hash_table(@'equal', MAKE_FIXNUM(1024), /* size */
 				cl_core.rehash_size,
-                                cl_core.rehash_threshold,
-				Ct); /* thread-safe */
+                                cl_core.rehash_threshold);
 
 	ECL_SET(@'*random-state*', ecl_make_random_state(Ct));
 
@@ -678,8 +676,7 @@ cl_boot(int argc, char **argv)
 	ECL_SET(@'si::*class-name-hash-table*',
 		cl__make_hash_table(@'eq', MAKE_FIXNUM(1024), /* size */
                                     cl_core.rehash_size,
-                                    cl_core.rehash_threshold,
-				    Ct)); /* thread safe */
+                                    cl_core.rehash_threshold));
 #endif
 
 	/*

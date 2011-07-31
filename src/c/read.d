@@ -1172,8 +1172,7 @@ patch_sharp(cl_object x)
         cl_object table = 
                 cl__make_hash_table(@'eq', MAKE_FIXNUM(20), /* size */
                                     cl_core.rehash_size,
-                                    cl_core.rehash_threshold,
-                                    Cnil); /* thread-safe */
+                                    cl_core.rehash_threshold);
 
         pairs = ECL_SYM_VAL(the_env, @'si::*sharp-eq-context*');
         loop_for_in(pairs) {
@@ -1771,8 +1770,7 @@ ecl_readtable_set(cl_object readtable, int c, enum ecl_chattrib cat,
 		if (Null(hash)) {
 			hash = cl__make_hash_table(@'eql', MAKE_FIXNUM(128),
                                                    cl_core.rehash_size,
-                                                   cl_core.rehash_threshold,
-						   Ct);
+                                                   cl_core.rehash_threshold);
 			readtable->readtable.hash = hash;
 		}
 		_ecl_sethash(CODE_CHAR(c), hash,
@@ -1850,8 +1848,7 @@ ecl_invalid_character_p(int c)
 	cat = Null(non_terminating_p)? cat_terminating : cat_non_terminating;
 	table = cl__make_hash_table(@'eql', MAKE_FIXNUM(128),
                                     cl_core.rehash_size,
-                                    cl_core.rehash_threshold,
-				    Ct);
+                                    cl_core.rehash_threshold);
 	ecl_readtable_set(readtable, c, cat, table);
 	@(return Ct)
 @)

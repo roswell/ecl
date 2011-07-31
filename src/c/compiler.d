@@ -3110,8 +3110,7 @@ init_compiler()
 		cl_core.compiler_dispatch =
 		cl__make_hash_table(@'eq', MAKE_FIXNUM(128), /* size */
                                     cl_core.rehash_size,
-                                    cl_core.rehash_threshold,
-				    Cnil); /* thread-safe */
+                                    cl_core.rehash_threshold);
 	int i;
 	for (i = 0; database[i].symbol; i++) {
 		ecl_sethash(database[i].symbol, dispatch_table, MAKE_FIXNUM(i));

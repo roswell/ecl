@@ -110,7 +110,7 @@ si_write_object(cl_object x, cl_object stream)
 				cl__make_hash_table(@'eq',
 						    MAKE_FIXNUM(1024),
                                                     cl_core.rehash_size,
-                                                    cl_core.rehash_threshold, Cnil);
+                                                    cl_core.rehash_threshold);
 			ecl_bds_bind(env, @'si::*circle-counter*', Ct);
 			ecl_bds_bind(env, @'si::*circle-stack*', hash);
 			si_write_object(x, cl_core.null_stream);
