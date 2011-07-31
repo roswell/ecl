@@ -19,18 +19,37 @@
 
 (defconstant +ticks-per-second+ internal-time-units-per-second)
 
-(eval-when (:compile-toplevel)
+#+threads
+(defvar *profile-lock* (mp:make-lock))
+
+(eval-when (:compile-toplevel :execute)
   (defmacro get-internal-ticks () '(get-internal-run-time))
 
+  (defmacro gethash-locked (&rest args)
+    `(mp:with-lock (*profile-lock*) (gethash ,@args)))
+
+  (defmacro remhash-locked (&rest args)
+    `(mp:with-lock (*profile-lock*) (remhash ,@args)))
+
+  (defmacro remhash-locked (&rest args)
+    `(mp:with-lock (*profile-lock*) (remhash ,@args)))
+
+  (defmacro sethash-locked (hash key value)
+    `(mp:with-lock (*profile-lock*) (setf (gethash ,hash ,key) ,value)))
+
   (defmacro dohash (((key value) hash &key locked) &body body)
-    (let ((it (gensym))
-	  (entry (gensym)))
-    `(with-hash-table-iterator (,it ,hash)
-       (loop (multiple-value-bind (,entry ,key ,value)
-		 (,it)
-	       (unless ,entry (return))
-	       (let ()
-	       ,@body))))))
+    (let* ((it (gensym))
+           (entry (gensym))
+           (body
+            `(with-hash-table-iterator (,it ,hash)
+               (loop (multiple-value-bind (,entry ,key ,value)
+                         (,it)
+                       (unless ,entry (return))
+                       (let ()
+                         ,@body))))))
+      (if locked
+          `(mp:with-lock (*profile-lock*) ,body)
+          body)))
 
   (defmacro without-package-locks (&rest body)
     `(progn ,@body))
@@ -85,8 +104,7 @@ extern ECL_API size_t GC_get_total_bytes();
   (make-hash-table
    ;; EQL testing isn't good enough for generalized function names
    ;; like (SETF FOO).
-   :test 'equal
-   :lockable t))
+   :test 'equal))
 (defstruct (profile-info (:copier nil))
   (name              (missing-arg) :read-only t)
   (encapsulated-fun  (missing-arg) :type function :read-only t)
@@ -253,18 +271,18 @@ extern ECL_API size_t GC_get_total_bytes();
       (without-package-locks
        (setf (fdefinition name)
              encapsulation-fun))
-      (setf (gethash name *profiled-fun-name->info*)
-            (make-profile-info :name name
-                               :encapsulated-fun encapsulated-fun
-                               :encapsulation-fun encapsulation-fun
-                               :read-stats-fun read-stats-fun
-                               :clear-stats-fun clear-stats-fun))
+      (sethash-locked name *profiled-fun-name->info*
+                      (make-profile-info :name name
+                                         :encapsulated-fun encapsulated-fun
+                                         :encapsulation-fun encapsulation-fun
+                                         :read-stats-fun read-stats-fun
+                                         :clear-stats-fun clear-stats-fun))
       (values))))
 
 ;;; Profile the named function. If already profiled, unprofile first.
 (defun profile-1-fun (name)
   (cond ((fboundp name)
-         (when (gethash name *profiled-fun-name->info*)
+         (when (gethash-locked name *profiled-fun-name->info*)
            (warn "~S is already profiled, so unprofiling it first." name)
            (unprofile-1-fun name))
          (profile-1-unprofiled-fun name))
@@ -274,9 +292,9 @@ extern ECL_API size_t GC_get_total_bytes();
 
 ;;; Unprofile the named function, if it is profiled.
 (defun unprofile-1-fun (name)
-  (let ((pinfo (gethash name *profiled-fun-name->info*)))
+  (let ((pinfo (gethash-locked name *profiled-fun-name->info*)))
     (cond (pinfo
-           (remhash name *profiled-fun-name->info*)
+           (remhash-locked name *profiled-fun-name->info*)
            (if (eq (fdefinition name) (profile-info-encapsulation-fun pinfo))
                (without-package-locks
                 (setf (fdefinition name) (profile-info-encapsulated-fun pinfo)))
@@ -498,8 +516,8 @@ Lisp process."
             (profile compute-overhead-aux)
             (setf total-overhead
                   (- (frob) call-overhead)))
-        (let* ((pinfo (gethash 'compute-overhead-aux
-                               *profiled-fun-name->info*))
+        (let* ((pinfo (gethash-locked 'compute-overhead-aux
+                                      *profiled-fun-name->info*))
                (read-stats-fun (profile-info-read-stats-fun pinfo))
                (time (nth-value 1 (funcall read-stats-fun))))
           (setf internal-overhead
