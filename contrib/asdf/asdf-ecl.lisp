@@ -6,7 +6,7 @@
 ;;;   License as published by the Free Software Foundation; either
 ;;;   version 2 of the License, or (at your option) any later version.
 ;;;
-;;;   See file '../../Copyright' for full details.
+;;;   See file 'ecl/Copyright' for full details.
 ;;;
 ;;; ECL SPECIFIC OPERATIONS FOR ASDF
 ;;;
@@ -15,7 +15,7 @@
 (in-package :asdf)
 
 ;;;
-;;; COMPILE-OP / LOAD-OP
+;;; COMPILE-OP / LOAD-OP (in asdf.lisp)
 ;;;
 ;;; In ECL, these operations produce both FASL files and the
 ;;; object files that they are built from. Having both of them allows
@@ -101,11 +101,11 @@
          (*force-load-p* t)
          (tree (traverse (make-instance 'load-op) system)))
     (append
-     (loop for (op . component) in tree
-        when (and (typep op 'load-op)
+     (loop :for (op . component) :in tree
+       :when (and (typep op 'load-op)
                   (typep component filter-type)
                   (or (not filter-system) (eq (component-system component) filter-system)))
-        collect (progn
+       :collect (progn
                   (when (eq component system) (setf include-self nil))
                   (cons operation component)))
      (and include-self (list (cons operation system))))))
@@ -296,7 +296,7 @@
 (defclass compiled-file (component) ())
 (defmethod component-relative-pathname ((component compiled-file))
   (compile-file-pathname
-   (merge-component-name-type
+   (coerce-pathname
     (or (slot-value component 'relative-pathname)
         (component-name component))
     :type "fas")))
@@ -360,12 +360,10 @@
   ())
 
 (defun binary-op-dependencies (o s)
-  (let (lib-op fasl-op)
-    (if (bundle-op-monolithic-p o)
-        (setf lib-op 'monolithic-lib-op
-              fasl-op 'monolithic-fasl-op)
-        (setf lib-op 'lib-op
-              fasl-op 'fasl-op))
+  (multiple-value-bind (lib-op fasl-op)
+      (if (bundle-op-monolithic-p o)
+          (values 'monolithic-lib-op 'monolithic-fasl-op)
+          (values 'lib-op 'fasl-op))
     (list (list (make-instance lib-op :args (bundle-op-build-args o))
                 s)
           (list (make-instance fasl-op :args (bundle-op-build-args o))
@@ -417,9 +415,13 @@
 ;;;
 
 (export '(make-build load-fasl-op prebuilt-system))
-(push '("fasb" . si::load-binary) si::*load-hooks*)
+(push '("fasb" . si::load-binary) ext:*load-hooks*)
+
+(defun register-pre-built-system (name)
+  (register-system (make-instance 'system :name name :source-file nil)))
 
 (defvar *require-asdf-operator* 'load-op)
+(export '*require-asdf-operator*)
 
 (defun module-provide-asdf (name)
   (handler-bind ((style-warning #'muffle-warning))
@@ -429,19 +431,15 @@
         (asdf:operate *require-asdf-operator* name)
         t))))
 
-(defun register-pre-built-system (name)
-  (register-system name (make-instance 'system :name name
-                                       :source-file nil)))
-
-(setf si::*module-provider-functions*
-      (loop for f in si::*module-provider-functions*
-         unless (eq f 'module-provide-asdf)
-         collect #'(lambda (name)
+(setf ext:*module-provider-functions*
+      (loop :for f :in ext:*module-provider-functions*
+        :unless (eq f 'module-provide-asdf)
+        :collect #'(lambda (name)
                      (let ((l (multiple-value-list (funcall f name))))
                        (and (first l) (register-pre-built-system name))
                        (values-list l)))))
-#+win32 (push '("asd" . si::load-source) si::*load-hooks*)
-(pushnew 'module-provide-asdf si:*module-provider-functions*)
+#+win32 (push '("asd" . si::load-source) ext:*load-hooks*)
+(pushnew 'module-provide-asdf ext:*module-provider-functions*)
 (pushnew (translate-logical-pathname "SYS:") *central-registry*)
 
-(provide 'asdf)
+(provide :asdf)
