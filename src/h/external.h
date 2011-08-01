@@ -2158,7 +2158,7 @@ extern ECL_API cl_object clos_standard_instance_set _ARGS((cl_narg narg, cl_obje
 
 #define ecl_search_hash _ecl_gethash
 
-#define ecl_init_module read_VV
+#define read_VV ecl_init_module
 
 #endif
 

@@ -702,7 +702,7 @@ cl_boot(int argc, char **argv)
 	 * ecl_clear_compiler_properties() to work in init_CLOS(). */
 	ecl_set_option(ECL_OPT_BOOTED, 1);
 
-	read_VV(OBJNULL,init_lib_LSP);
+	ecl_init_module(OBJNULL,init_lib_LSP);
 
 	/* Jump to top level */
 	ECL_SET(@'*package*', cl_core.user_package);

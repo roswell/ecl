@@ -86,6 +86,8 @@ ECL 11.7.1:
  - In OPEN the default format is :UTF-8 for Unicode builds and :LATIN-1 for
    others, and the stream element type is always CHARACTER by default.
 
+ - Function read_VV is renamed to ecl_init_module()
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

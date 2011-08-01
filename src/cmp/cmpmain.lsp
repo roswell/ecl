@@ -256,7 +256,7 @@ void ~A(cl_object cblock)
 	current->cblock.data_text_size = i = ~D;
 	current->cblock.next = next;
 	next = current;
-	read_VV(current, ~A);
+	ecl_init_module(current, ~A);
 ~}
 	Cblock->cblock.next = current;
 }
@@ -270,7 +270,7 @@ main(int argc, char **argv)
 	cl_boot(argc, argv);
 	CL_CATCH_ALL_BEGIN(ecl_process_env()) {
 	~A
-	read_VV(OBJNULL, ~A);
+	ecl_init_module(OBJNULL, ~A);
 	~A
 	} CL_CATCH_ALL_END;
 	si_exit(0);
@@ -283,7 +283,7 @@ extern int
 	cl_boot(argc, argv);
 	CL_CATCH_ALL_BEGIN(ecl_process_env()) {
 	~A
-	read_VV(OBJNULL, ~A);
+	ecl_init_module(OBJNULL, ~A);
 	~A
 	} CL_CATCH_ALL_END;
 }")
@@ -300,7 +300,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
 	cl_boot(argc, argv);
 	CL_CATCH_ALL_BEGIN(ecl_process_env()) {
 	~A
-	read_VV(OBJNULL, ~A);
+	ecl_init_module(OBJNULL, ~A);
 	~A
 	} CL_CATCH_ALL_END;
 	si_exit(0);

@@ -80,7 +80,7 @@ GO_ON:
         block->cblock.data_text_size = array->base_string.dim;
 
 	/* Finally, perform initialization */
-	read_VV(block, (void (*)(cl_object))(block->cblock.entry));
+	ecl_init_module(block, (void (*)(cl_object))(block->cblock.entry));
 	output = Cnil;
 
         si_munmap(map);

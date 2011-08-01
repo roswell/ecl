@@ -248,7 +248,7 @@ LOOP:
 			if (Null(p) && !suppress) {
 				/* When loading binary files, we sometimes must create
 				   symbols whose package has not yet been maked. We
-				   allow it, but later on in read_VV we make sure that
+				   allow it, but later on in ecl_init_module we make sure that
 				   all referenced packages have been properly built.
 				*/
 				cl_object name = cl_copy_seq(token);
@@ -2155,7 +2155,7 @@ init_read(void)
 /*
  *----------------------------------------------------------------------
  *
- * read_VV --
+ * ecl_init_module --
  *     reads the data vector from stream into vector VV
  *
  * Results:
@@ -2164,7 +2164,7 @@ init_read(void)
  *----------------------------------------------------------------------
  */
 cl_object
-read_VV(cl_object block, void (*entry_point)(cl_object))
+ecl_init_module(cl_object block, void (*entry_point)(cl_object))
 {
 	const cl_env_ptr env = ecl_process_env();
 	volatile cl_object old_eptbc = env->packages_to_be_created;
