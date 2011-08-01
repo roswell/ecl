@@ -223,7 +223,7 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
 	pntype   = pathname->pathname.type;
 
 	filename = Cnil;
-	hooks = ecl_symbol_value(@'si::*load-hooks*');
+	hooks = ecl_symbol_value(@'ext::*load-hooks*');
 	if (Null(pathname->pathname.directory) &&
 	    Null(pathname->pathname.host) &&
 	    Null(pathname->pathname.device) &&

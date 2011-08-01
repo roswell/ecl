@@ -1100,7 +1100,7 @@ cl_symbols[] = {
 {SYS_ "*INIT-FUNCTION-PREFIX*",NULL},
 {EXT_ "*INTERRUPTS-ENABLED*",NULL},
 {SYS_ "*KEEP-DEFINITIONS*",NULL},
-{SYS_ "*LOAD-HOOKS*",NULL},
+{EXT_ "*LOAD-HOOKS*",NULL},
 {SYS_ "*LOAD-SEARCH-LIST*",NULL},
 {SYS_ "*MAKE-CONSTANT","si_Xmake_constant"},
 {SYS_ "*MAKE-SPECIAL","si_Xmake_special"},

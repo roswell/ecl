@@ -664,7 +664,7 @@ cl_boot(int argc, char **argv)
 		CONS(str_fasc, @'si::load-bytecodes'),
 		CONS(str_FASC, @'si::load-bytecodes'),
 		CONS(Cnil, @'si::load-source'));
-	ECL_SET(@'si::*load-hooks*', aux);
+	ECL_SET(@'ext::*load-hooks*', aux);
 	init_error();
 	init_macros();
 	init_compiler();
