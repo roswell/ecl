@@ -1194,7 +1194,8 @@ create_signal_code_constants()
 	for (i = 0; known_signals[i].code >= 0; i++) {
 		cl_object name =
 			_ecl_intern(known_signals[i].text,
-				    cl_core.system_package);
+				    cl_core.ext_package);
+                cl_export2(name, cl_core.ext_package);
 		si_Xmake_constant(name, MAKE_FIXNUM(known_signals[i].code));
 	}
 }
