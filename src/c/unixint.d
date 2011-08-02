@@ -661,9 +661,10 @@ ecl_check_pending_interrupts(void)
 	}
 }
 
-cl_object
-si_catch_signal(cl_object code, cl_object boolean)
+@(defun ext::catch-signal (code flag &key local)
+@
 {
+        cl_object output = Cnil;
 	int code_int = fixnnint(code);
 	int i;
 #ifdef GBC_BOEHM
@@ -686,17 +687,28 @@ si_catch_signal(cl_object code, cl_object boolean)
 #endif
 	for (i = 0; known_signals[i].code >= 0; i++) {
 		if (known_signals[i].code == code_int) {
-			if (Null(boolean)) {
-				signal(code_int, SIG_DFL);
+                        output = Ct;
+#if defined(ECL_THREADS) && defined(HAVE_SIGPROCMASK)
+                        if (local) {
+                                sigset_t handled_set;
+                                pthread_sigmask(SIG_SETMASK, NULL, &handled_set);
+                                if (Null(flag)) {
+                                        sigdelset(&handled_set, code_int);
+                                } else {
+                                        sigaddset(&handled_set, code_int);
+                                }
+                                pthread_sigmask(SIG_SETMASK, &handled_set, NULL);
                                 break;
+                        }
+#endif
+			if (Null(flag)) {
+				signal(code_int, SIG_DFL);
                         } else if (code_int == SIGSEGV) {
 				mysignal(code_int, sigsegv_handler);
-                                break;
                         }
 #ifdef SIGBUS
 			else if (code_int == SIGBUS) {
 				mysignal(code_int, sigbus_handler);
-                                break;
                         }
 #endif
 #ifdef SIGCHLD
@@ -704,16 +716,17 @@ si_catch_signal(cl_object code, cl_object boolean)
 #ifndef ECL_THREADS
                                 mysignal(SIGCHLD, non_evil_signal_handler);
 #endif
-                                break;
                         }
 #endif
-			else
+			else {
 				mysignal(code_int, non_evil_signal_handler);
-			@(return Ct)
+                        }
+                        break;
 		}
 	}
-	@(return Cnil)
+	@(return output)
 }
+@)
 
 #ifdef ECL_THREADS
 # ifdef ECL_WINDOWS_THREADS
