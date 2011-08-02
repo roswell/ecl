@@ -20,6 +20,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ecl/internal.h>
+#include <fcntl.h>
+#if !defined(_MSC_VER) && !defined(__MINGW32__)
+# include <sys/stat.h>
+/* it isn't pulled in by fcntl.h */
+#endif
 
 #if 0
 
@@ -66,22 +71,28 @@ init_random_state()
 	cl_index bytes = sizeof(ulong) * (MT_N + 1);
 	cl_object a = ecl_alloc_simple_base_string(bytes);
 	ulong *mt = (ulong*)a->base_string.self;
-	int j;
+	int j = 0;
 #if !defined(ECL_MS_WINDOWS_HOST)
-	FILE *fp = fopen("/dev/urandom","r");
-	if (fp) {
-		fread(mt, sizeof(*mt), MT_N, fp);
-		for (j=0; j < MT_N; j++){
-			mt[j] &= 0xffffffffUL;
+	/* fopen() might read full 4kB blocks and discard
+	 * a lot of entropy, so use open() */
+	int fh = open("/dev/urandom", O_RDONLY);
+	char buffer[16];
+	if (fh != -1) {
+		j = read(fh, buffer, sizeof(buffer));
+		for (; j < sizeof(buffer) && j < MT_N; j++){
+			mt[j] = buffer[j];
 		}
-		fclose(fp);
-	} else
+		close(fh);
+	}
 #endif	
 	{
 		/* cant get urandom, use crappy source */
-		mt[0] = (rand() + time(0)) & 0xffffffffUL;
-		for (j=1; j < MT_N; j++){
+		/* and/or fill rest of area */
+		mt[j++] = (rand() + time(0)) & 0xffffffffUL;
+		for (; j < MT_N; j++){
 			mt[j] = (1812433253UL * (mt[j-1] ^ (mt[j-1] >> 30)) + j);
+			if (j >= 16)
+				mt[j] ^= mt[j-16];
 			mt[j] &= 0xffffffffUL;
 		}
 	}

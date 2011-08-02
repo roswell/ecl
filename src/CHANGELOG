@@ -88,6 +88,9 @@ ECL 11.7.1:
 
  - Function read_VV is renamed to ecl_init_module()
 
+ - Initialization of random number generator is done using only 16 bytes from
+   /dev/urandom (Phillip Marek).
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
