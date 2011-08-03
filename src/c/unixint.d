@@ -689,7 +689,7 @@ ecl_check_pending_interrupts(void)
 		if (known_signals[i].code == code_int) {
                         output = Ct;
 #if defined(ECL_THREADS) && defined(HAVE_SIGPROCMASK)
-                        if (local) {
+                        if (!Null(local)) {
                                 sigset_t handled_set;
                                 pthread_sigmask(SIG_SETMASK, NULL, &handled_set);
                                 if (Null(flag)) {
