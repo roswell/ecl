@@ -2122,6 +2122,59 @@ extern ECL_API cl_object clos_standard_instance_set _ARGS((cl_narg narg, cl_obje
 #endif
 
 /*
+ * CDR-5
+ */
+extern ECL_API cl_object si_negative_fixnum_p(cl_object);
+extern ECL_API cl_object si_non_negative_fixnum_p(cl_object);
+extern ECL_API cl_object si_non_positive_fixnum_p(cl_object);
+extern ECL_API cl_object si_positive_fixnum_p(cl_object);
+
+extern ECL_API cl_object si_negative_integer_p(cl_object);
+extern ECL_API cl_object si_non_negative_integer_p(cl_object);
+extern ECL_API cl_object si_non_positive_integer_p(cl_object);
+extern ECL_API cl_object si_positive_integer_p(cl_object);
+
+extern ECL_API cl_object si_negative_rational_p(cl_object);
+extern ECL_API cl_object si_non_negative_rational_p(cl_object);
+extern ECL_API cl_object si_non_positive_rational_p(cl_object);
+extern ECL_API cl_object si_positive_rational_p(cl_object);
+
+extern ECL_API cl_object si_negative_ratio_p(cl_object);
+extern ECL_API cl_object si_non_negative_ratio_p(cl_object);
+extern ECL_API cl_object si_non_positive_ratio_p(cl_object);
+extern ECL_API cl_object si_positive_ratio_p(cl_object);
+
+extern ECL_API cl_object si_negative_real_p(cl_object);
+extern ECL_API cl_object si_non_negative_real_p(cl_object);
+extern ECL_API cl_object si_non_positive_real_p(cl_object);
+extern ECL_API cl_object si_positive_real_p(cl_object);
+
+extern ECL_API cl_object si_negative_float_p(cl_object);
+extern ECL_API cl_object si_non_negative_float_p(cl_object);
+extern ECL_API cl_object si_non_positive_float_p(cl_object);
+extern ECL_API cl_object si_positive_float_p(cl_object);
+
+extern ECL_API cl_object si_negative_short_float_p(cl_object);
+extern ECL_API cl_object si_non_negative_short_float_p(cl_object);
+extern ECL_API cl_object si_non_positive_short_float_p(cl_object);
+extern ECL_API cl_object si_positive_short_float_p(cl_object);
+
+extern ECL_API cl_object si_negative_single_float_p(cl_object);
+extern ECL_API cl_object si_non_negative_single_float_p(cl_object);
+extern ECL_API cl_object si_non_positive_single_float_p(cl_object);
+extern ECL_API cl_object si_positive_single_float_p(cl_object);
+
+extern ECL_API cl_object si_negative_double_float_p(cl_object);
+extern ECL_API cl_object si_non_negative_double_float_p(cl_object);
+extern ECL_API cl_object si_non_positive_double_float_p(cl_object);
+extern ECL_API cl_object si_positive_double_float_p(cl_object);
+
+extern ECL_API cl_object si_negative_long_float_p(cl_object);
+extern ECL_API cl_object si_non_negative_long_float_p(cl_object);
+extern ECL_API cl_object si_non_positive_long_float_p(cl_object);
+extern ECL_API cl_object si_positive_long_float_p(cl_object);
+
+/*
  * LEGACY
  */
 #ifndef ECL_NO_LEGACY

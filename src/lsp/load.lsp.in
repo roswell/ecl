@@ -49,6 +49,7 @@
   "src:lsp;module.lsp"
   "src:lsp;cmdline.lsp"
   "src:lsp;autoload.lsp"
+  "src:lsp;cdr-5.lsp"
 ))
 
 (mapc #'(lambda (x)

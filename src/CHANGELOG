@@ -58,6 +58,9 @@ ECL 11.7.1:
  - ECL implements CDR 6 (ext:*inspector-hook*) as described in
    http://cdr.eurolisp.org/document/6/index.html
 
+ - ECL implements CDR 5 (Sub-interval Numerical Types) as described in
+   http://cdr.eurolisp.org/document/5/index.html
+
  - ECL ships libffi together with its source tree, much like GMP and GC.
 
  - On POSIX platforms ECL traps SIGCHLD and uses it to update the status of

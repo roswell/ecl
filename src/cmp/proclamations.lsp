@@ -1333,6 +1333,60 @@
 (proclamation si:pointer (t) unsigned-byte)
 (proclamation si:foreign-data-p (t) gen-bool :pure)
 
+;;;
+;;; CDR-5 http://cdr.eurolisp.org/document/5/extra-num-types.html
+;;;
+
+(proclamation ext:negative-fixnum-p (t) gen-bool :pure) 
+(proclamation ext:non-negative-fixnum-p (t) gen-bool :pure) 
+(proclamation ext:non-positive-fixnum-p (t) gen-bool :pure) 
+(proclamation ext:positive-fixnum-p (t) gen-bool :pure) 
+
+(proclamation ext:negative-integer-p (t) gen-bool :pure) 
+(proclamation ext:non-negative-integer-p (t) gen-bool :pure) 
+(proclamation ext:non-positive-integer-p (t) gen-bool :pure) 
+(proclamation ext:positive-integer-p (t) gen-bool :pure) 
+
+(proclamation ext:negative-rational-p (t) gen-bool :pure) 
+(proclamation ext:non-negative-rational-p (t) gen-bool :pure) 
+(proclamation ext:non-positive-rational-p (t) gen-bool :pure) 
+(proclamation ext:positive-rational-p (t) gen-bool :pure) 
+
+(proclamation ext:negative-ratio-p (t) gen-bool :pure) 
+(proclamation ext:non-negative-ratio-p (t) gen-bool :pure) 
+(proclamation ext:non-positive-ratio-p (t) gen-bool :pure) 
+(proclamation ext:positive-ratio-p (t) gen-bool :pure) 
+
+(proclamation ext:negative-real-p (t) gen-bool :pure) 
+(proclamation ext:non-negative-real-p (t) gen-bool :pure) 
+(proclamation ext:non-positive-real-p (t) gen-bool :pure) 
+(proclamation ext:positive-real-p (t) gen-bool :pure) 
+
+(proclamation ext:negative-float-p (t) gen-bool :pure) 
+(proclamation ext:non-negative-float-p (t) gen-bool :pure) 
+(proclamation ext:non-positive-float-p (t) gen-bool :pure) 
+(proclamation ext:positive-float-p (t) gen-bool :pure) 
+
+(proclamation ext:negative-short-float-p (t) gen-bool :pure) 
+(proclamation ext:non-negative-short-float-p (t) gen-bool :pure) 
+(proclamation ext:non-positive-short-float-p (t) gen-bool :pure) 
+(proclamation ext:positive-short-float-p (t) gen-bool :pure) 
+
+(proclamation ext:negative-single-float-p (t) gen-bool :pure) 
+(proclamation ext:non-negative-single-float-p (t) gen-bool :pure) 
+(proclamation ext:non-positive-single-float-p (t) gen-bool :pure) 
+(proclamation ext:positive-single-float-p (t) gen-bool :pure) 
+
+(proclamation ext:negative-double-float-p (t) gen-bool :pure) 
+(proclamation ext:non-negative-double-float-p (t) gen-bool :pure) 
+(proclamation ext:non-positive-double-float-p (t) gen-bool :pure) 
+(proclamation ext:positive-double-float-p (t) gen-bool :pure) 
+
+(proclamation ext:negative-long-float-p (t) gen-bool :pure) 
+(proclamation ext:non-negative-long-float-p (t) gen-bool :pure) 
+(proclamation ext:non-positive-long-float-p (t) gen-bool :pure) 
+(proclamation ext:positive-long-float-p (t) gen-bool :pure) 
+
 ))) ; eval-when
 
 (loop for i in '#.(mapcar #'rest +proclamations+)

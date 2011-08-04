@@ -870,7 +870,7 @@
 (in-package "SI")
 
 (defvar c::*in-all-symbols-functions*
-  '(;; arraylib.lsp
+  `(;; arraylib.lsp
     make-array vector array-dimensions array-in-bounds-p array-row-major-index
     bit sbit bit-and bit-ior bit-xor bit-eqv bit-nand bit-nor bit-andc1
     bit-andc2 bit-orc1 bit-orc2 bit-not
@@ -916,11 +916,9 @@
     ;; pprint.lsp
     pprint-fill copy-pprint-dispatch pprint-dispatch
     pprint-linear pprint-newline pprint-tab pprint-tabular
-    set-pprint-dispatch pprint-indent .
-    #-clos
-    nil
+    set-pprint-dispatch pprint-indent 
     #+clos
-    (;; combin.lsp
+    ,@'(;; combin.lsp
      method-combination-error
      invalid-method-error
      ;; standard-instance-access ; this function is a synonym for si:instance-ref
@@ -933,6 +931,28 @@
      slot-exists-p
      need-to-make-load-form-p
      )
+
+    ;; cdr-5
+    ext:negative-fixnum-p ext:non-negative-fixnum-p
+    ext:non-positive-fixnum-p ext:positive-fixnum-p
+    ext:negative-integer-p ext:non-negative-integer-p
+    ext:non-positive-integer-p ext:positive-integer-p 
+    ext:negative-rational-p ext:non-negative-rational-p
+    ext:non-positive-rational-p ext:positive-rational-p 
+    ext:negative-ratio-p ext:non-negative-ratio-p
+    ext:non-positive-ratio-p ext:positive-ratio-p 
+    ext:negative-real-p ext:non-negative-real-p
+    ext:non-positive-real-p ext:positive-real-p 
+    ext:negative-float-p ext:non-negative-float-p
+    ext:non-positive-float-p ext:positive-float-p 
+    ext:negative-short-float-p ext:non-negative-short-float-p
+    ext:non-positive-short-float-p ext:positive-short-float-p 
+    ext:negative-single-float-p ext:non-negative-single-float-p
+    ext:non-positive-single-float-p ext:positive-single-float-p 
+    ext:negative-double-float-p ext:non-negative-double-float-p
+    ext:non-positive-double-float-p ext:positive-double-float-p 
+    ext:negative-long-float-p ext:non-negative-long-float-p
+    ext:non-positive-long-float-p ext:positive-long-float-p 
 ))
 
 (proclaim
@@ -953,6 +973,7 @@
     si::fill-array-with-seq
     si::assert-failure
     si::traced-old-definition
+
     #+formatter
     ,@'(
     format-princ format-prin1 format-print-named-character
