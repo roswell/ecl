@@ -933,6 +933,7 @@
      )
 
     ;; cdr-5
+    ext:array-index-p
     ext:negative-fixnum-p ext:non-negative-fixnum-p
     ext:non-positive-fixnum-p ext:positive-fixnum-p
     ext:negative-integer-p ext:non-negative-integer-p

@@ -85,6 +85,10 @@
 (defun non-positive-fixnum-p (p)
   (and (si::fixnump p) (not (plusp (the fixnum p)))))
 
+(defun array-index-p (p)
+  (and (si::fixnump p)
+       (<= 0 (the fixnum p) array-dimension-limit)))
+
 ;;;
 ;;; Integers
 ;;;

@@ -2156,5 +2156,7 @@ cl_symbols[] = {
 {EXT_ "NON-NEGATIVE-LONG-FLOAT-P","ECL_NAME(si_non_negative_long_float_p)"},
 {EXT_ "NON-POSITIVE-LONG-FLOAT-P","ECL_NAME(si_non_positive_long_float_p)"},
 
+{EXT_ "ARRAY-INDEX-P","ECL_NAME(si_array_index_p)"},
+
 /* Tag for end of list */
 {NULL,NULL}};

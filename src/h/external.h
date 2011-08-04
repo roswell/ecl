@@ -2128,6 +2128,7 @@ extern ECL_API cl_object si_negative_fixnum_p(cl_object);
 extern ECL_API cl_object si_non_negative_fixnum_p(cl_object);
 extern ECL_API cl_object si_non_positive_fixnum_p(cl_object);
 extern ECL_API cl_object si_positive_fixnum_p(cl_object);
+extern ECL_API cl_object si_array_index_p(cl_object);
 
 extern ECL_API cl_object si_negative_integer_p(cl_object);
 extern ECL_API cl_object si_non_negative_integer_p(cl_object);

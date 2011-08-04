@@ -1341,6 +1341,7 @@
 (proclamation ext:non-negative-fixnum-p (t) gen-bool :pure) 
 (proclamation ext:non-positive-fixnum-p (t) gen-bool :pure) 
 (proclamation ext:positive-fixnum-p (t) gen-bool :pure) 
+(proclamation ext:array-index-p (t) gen-bool :pure) 
 
 (proclamation ext:negative-integer-p (t) gen-bool :pure) 
 (proclamation ext:non-negative-integer-p (t) gen-bool :pure) 
