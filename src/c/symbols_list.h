@@ -1292,7 +1292,7 @@ cl_symbols[] = {
 {SYS_ "LOOKUP-HOST-ENTRY", SI_ORDINARY, IF_TCP(si_lookup_host_entry), 1, OBJNULL},
 /* #endif TCP */
 
-{EXT_ "CATCH-SIGNAL", EXT_ORDINARY, si_catch_signal, 2, OBJNULL},
+{EXT_ "CATCH-SIGNAL", EXT_ORDINARY, si_catch_signal, -1, OBJNULL},
 
 /* KEYWORD PACKAGE */
 {KEY_ "ADJUSTABLE", KEYWORD, NULL, -1, OBJNULL},
