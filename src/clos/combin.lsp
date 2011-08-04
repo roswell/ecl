@@ -237,6 +237,7 @@
 	(when (and (consp x) (eql (first x) :GENERIC-FUNCTION))
 	  (setf body (rest body))
 	  (unless (symbolp (setf generic-function (second x)))
+            (print 1)
 	    (syntax-error))))
       (dolist (group method-groups)
 	(destructuring-bind (group-name predicate &key description
@@ -256,7 +257,7 @@
 				(if (eql q '*)
 				    `(every #'equal ',p .METHOD-QUALIFIERS.)
 				    `(equal ',p .METHOD-QUALIFIERS.))))))
-		      (t (syntax-error)))))
+		      (t (print 2) (syntax-error)))))
 	    (push `(,condition (push .METHOD. ,group-name)) group-checks))
 	  (when required
 	    (push `(unless ,group-name
@@ -267,7 +268,12 @@
 	    (:most-specific-first
 	     (push `(setf ,group-name (nreverse ,group-name)) group-after))
 	    (:most-specific-last)
-	    (otherwise (syntax-error)))))
+	    (otherwise
+             (let ((order-var (gensym)))
+               (setf group-names (append group-names (list (list order-var order)))
+                     group-after (list* `(when (eq ,order-var :most-specific-first)
+                                           (setf ,group-name (nreverse ,group-name)))
+                                        group-after)))))))
       `(install-method-combination ',name
 	  (ext::lambda-block ,name (,generic-function .methods-list. ,@lambda-list)
 	    (let (,@group-names)
