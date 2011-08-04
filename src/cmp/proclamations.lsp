@@ -329,7 +329,7 @@
 ;; (proclamation restart-name (restart) t)
 
 ;; ECL extensions
-(proclamation ext:catch-signal (fixnum gen-bool) null)
+(proclamation ext:catch-signal (fixnum gen-bool &key) null)
 
 ;;;
 ;;; 10. SYMBOLS
