@@ -199,6 +199,7 @@ static struct {
 };
 
 #ifdef HAVE_SIGPROCMASK
+static sigset_t main_thread_sigmask;
 # define handler_fn_protype(name, sig, info, aux) name(sig, info, aux)
 # define call_handler(name, sig, info, aux) name(sig, info, aux)
 # define reinstall_signal(x,y) mysignal(x,y)
@@ -206,21 +207,26 @@ static struct {
 static void
 mysignal(int code, void (*handler)(int, siginfo_t *, void*))
 {
-	struct sigaction new_action, old_action;
+	struct sigaction action;
+	sigaction(code, NULL, &action);
+        if (handler == SIG_IGN || handler == SIG_DFL) {
+                action.sa_handler = handler;
+        } else {
 #ifdef SA_SIGINFO
-	new_action.sa_sigaction = handler;
-	new_action.sa_flags = SA_SIGINFO;
+                action.sa_sigaction = handler;
+                action.sa_flags = SA_SIGINFO;
 # if 0 && defined(SA_ONSTACK)
-	if (code == SIGSEGV) {
-		new_action.sa_flags |= SA_ONSTACK;
-	}
+                if (code == SIGSEGV) {
+                        action.sa_flags |= SA_ONSTACK;
+                }
 # endif
 #else
-	new_action.sa_handler = handler;
-	new_action.sa_flags = 0;
+                action.sa_handler = handler;
+                action.sa_flags = 0;
 #endif
-	sigfillset(&new_action.sa_mask);
-	sigaction(code, &new_action, &old_action);
+                sigfillset(&action.sa_mask);
+        }
+	sigaction(code, &action, NULL);
 }
 #else /* HAVE_SIGPROCMASK */
 # define handler_fn_protype(name, sig, info, aux) name(sig)
@@ -359,9 +365,9 @@ unblock_signal(int signal)
 	 * ECL's default sigmask.
 	 */
 # ifdef ECL_THREADS
-	pthread_sigmask(SIG_SETMASK, cl_core.default_sigmask, NULL);
+	pthread_sigmask(SIG_SETMASK, ecl_process_env()->default_sigmask, NULL);
 # else
-	sigprocmask(SIG_SETMASK, cl_core.default_sigmask, NULL);
+	sigprocmask(SIG_SETMASK, ecl_process_env()->default_sigmask, NULL);
 # endif
 }
 #endif
@@ -661,7 +667,74 @@ ecl_check_pending_interrupts(void)
 	}
 }
 
-@(defun ext::catch-signal (code flag &key local)
+static cl_object
+do_catch_signal(int code, cl_object action, cl_object process)
+{
+        if (action == Cnil || action == @':ignore') {
+                mysignal(code, SIG_IGN);
+                return Ct;
+        } else if (action == @':default') {
+                mysignal(code, SIG_DFL);
+                return Ct;
+        } else if (action == Ct || action == @':catch') {
+                if (code == SIGSEGV) {
+                        mysignal(code, sigsegv_handler);
+                }
+#ifdef SIGBUS
+                else if (code == SIGBUS) {
+                        mysignal(code, sigbus_handler);
+                }
+#endif
+#ifdef SIGCHLD
+                else if (code == SIGCHLD) {
+# ifndef ECL_THREADS
+                        mysignal(SIGCHLD, non_evil_signal_handler);
+# endif
+                }
+#endif
+                else {
+                        mysignal(code, non_evil_signal_handler);
+                }
+        }
+#ifdef HAVE_SIGPROCMASK
+# ifdef ECL_THREADS
+        if (type_of(process) == t_process) {
+                cl_env_ptr env = process->process.env;
+                sigset_t *handled_set = (sigset_t *)env->default_sigmask;
+                if (action == @':mask') {
+                        sigaddset(handled_set, code);
+                } else if (action == @':unmask') {
+                        sigdelset(handled_set, code);
+                } else {
+                        return do_catch_signal(code, Ct, process);
+                }
+                if (env == ecl_process_env()) {
+                        pthread_sigmask(SIG_SETMASK, handled_set, NULL);
+                }
+                return Ct;
+        }
+# endif
+        {
+                sigset_t handled_set;
+                sigprocmask(SIG_SETMASK, NULL, &handled_set);
+                if (action == @':mask') {
+                        sigaddset(&handled_set, code);
+                        printf(";;; %d masked\n", code);
+                } else if (action == @':unmask') {
+                        sigdelset(&handled_set, code);
+                        printf(";;; %d unmasked\n", code);
+                } else {
+                        return do_catch_signal(code, Ct, process);
+                }
+                sigprocmask(SIG_SETMASK, &handled_set, NULL);
+                return Ct;
+        }
+#else
+        return Cnil;
+#endif
+}
+
+@(defun ext::catch-signal (code flag &key process)
 @
 {
         cl_object output = Cnil;
@@ -687,40 +760,7 @@ ecl_check_pending_interrupts(void)
 #endif
 	for (i = 0; known_signals[i].code >= 0; i++) {
 		if (known_signals[i].code == code_int) {
-                        output = Ct;
-#if defined(ECL_THREADS) && defined(HAVE_SIGPROCMASK)
-                        if (!Null(local)) {
-                                sigset_t handled_set;
-                                pthread_sigmask(SIG_SETMASK, NULL, &handled_set);
-                                if (Null(flag)) {
-                                        sigdelset(&handled_set, code_int);
-                                } else {
-                                        sigaddset(&handled_set, code_int);
-                                }
-                                pthread_sigmask(SIG_SETMASK, &handled_set, NULL);
-                                break;
-                        }
-#endif
-			if (Null(flag)) {
-				signal(code_int, SIG_DFL);
-                        } else if (code_int == SIGSEGV) {
-				mysignal(code_int, sigsegv_handler);
-                        }
-#ifdef SIGBUS
-			else if (code_int == SIGBUS) {
-				mysignal(code_int, sigbus_handler);
-                        }
-#endif
-#ifdef SIGCHLD
-                        else if (code_int == SIGCHLD) {
-#ifndef ECL_THREADS
-                                mysignal(SIGCHLD, non_evil_signal_handler);
-#endif
-                        }
-#endif
-			else {
-				mysignal(code_int, non_evil_signal_handler);
-                        }
+                        output = do_catch_signal(code_int, flag, process);
                         break;
 		}
 	}
@@ -1039,17 +1079,17 @@ install_asynchronous_signal_handlers()
 # endif
 #endif
 #ifdef HAVE_SIGPROCMASK
-	static sigset_t sigmask;
+	sigset_t *sigmask = cl_core.default_sigmask = &main_thread_sigmask;
+        cl_core.default_sigmask_bytes = sizeof(sigset_t);
 # ifdef ECL_THREADS
-	pthread_sigmask(SIG_SETMASK, NULL, &sigmask);
+	pthread_sigmask(SIG_SETMASK, NULL, sigmask);
 # else
-        sigprocmask(SIG_SETMASK, NULL, &sigmask);
+        sigprocmask(SIG_SETMASK, NULL, sigmask);
 # endif
 #endif
-	cl_core.default_sigmask = NULL;
 #ifdef SIGINT
 	if (ecl_get_option(ECL_OPT_TRAP_SIGINT)) {
-		async_handler(SIGINT, non_evil_signal_handler, &sigmask);
+		async_handler(SIGINT, non_evil_signal_handler, sigmask);
 	}
 #endif
 #ifdef SIGCHLD
@@ -1057,16 +1097,15 @@ install_asynchronous_signal_handlers()
                 /* We have to set the process signal handler explicitly,
                  * because on many platforms the default is SIG_IGN. */
 		mysignal(SIGCHLD, lisp_signal_handler);
-		async_handler(SIGCHLD, lisp_signal_handler, &sigmask);
+		async_handler(SIGCHLD, lisp_signal_handler, sigmask);
 	}
 #endif
 #ifdef HAVE_SIGPROCMASK
 # if defined(ECL_THREADS)
-	pthread_sigmask(SIG_SETMASK, &sigmask, NULL);
+	pthread_sigmask(SIG_SETMASK, sigmask, NULL);
 # else
-	sigprocmask(SIG_SETMASK, &sigmask, NULL);
+	sigprocmask(SIG_SETMASK, sigmask, NULL);
 # endif
-	cl_core.default_sigmask = &sigmask;
 #endif
 #ifdef ECL_WINDOWS_THREADS
 	old_W32_exception_filter =
@@ -1086,6 +1125,7 @@ static void
 install_signal_handling_thread()
 {
 #if defined(ECL_THREADS) && defined(HAVE_SIGPROCMASK)
+        ecl_process_env()->default_sigmask = &main_thread_sigmask;
 	if (ecl_get_option(ECL_OPT_SIGNAL_HANDLING_THREAD)) {
 		cl_object fun =
 			ecl_make_cfun((cl_objectfn_fixed)
@@ -1128,8 +1168,8 @@ install_process_interrupt_handler()
 		}
 		mysignal(signal, non_evil_signal_handler);
 #ifdef HAVE_SIGROCMASK
-                sigdelset(cl_core.default_sigmask, signal);
-                pthread_sigmask(SIG_SETMASK, cl_core.default_sigmask, NULL);
+                sigdelset(ecl_process_env()->default_sigmask, signal);
+                pthread_sigmask(SIG_SETMASK, ecl_process_env()->default_sigmask, NULL);
 #endif
 	}
 #endif

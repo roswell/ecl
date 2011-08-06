@@ -94,6 +94,17 @@ ECL 11.7.1:
  - Initialization of random number generator is done using only 16 bytes from
    /dev/urandom (Phillip Marek).
 
+ - Each thread keeps a copy of the process sigmask (POSIX) and it is inherited
+   by children thread. The sigmask can be manipulated by the function
+   EXT:CATCH-SIGNAL which has the signature
+	(ext:catch-signal signal-code action &key process)
+   The ACTION is one of :IGNORE, :DEFAULT, :CATCH, determining what ECL does
+   when it receives the signal, or it can be :MASK/:UNMASK to determine whether
+   the process is blocking the signal or not. The optional argument :PROCESS
+   only applies to :MASK/:UNMASK and it can be the current process, some
+   process that has not been activated or any other value (indicating that
+   the function has a global effect, as sigprocmask).
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

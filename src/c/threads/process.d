@@ -427,7 +427,7 @@ mp_process_enable(cl_object process)
 #ifdef HAVE_SIGPROCMASK
 	{
 		sigset_t previous;
-		pthread_sigmask(SIG_SETMASK, cl_core.default_sigmask, &previous);
+		pthread_sigmask(SIG_SETMASK, process_env->default_sigmask, &previous);
 		code = pthread_create(&process->process.thread, &pthreadattr,
 				      thread_entry_point, process);
 		pthread_sigmask(SIG_SETMASK, &previous, NULL);

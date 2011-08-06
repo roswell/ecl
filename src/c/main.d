@@ -233,6 +233,19 @@ _ecl_alloc_env()
 	}
 # endif
 #endif
+        {
+                size_t bytes = cl_core.default_sigmask_bytes;
+                if (bytes == 0) {
+                        output->default_sigmask = 0;
+                } else if (ecl_get_option(ECL_OPT_BOOTED)) {
+                        output->default_sigmask = ecl_alloc_atomic(bytes);
+                        memcpy(output->default_sigmask,
+                               ecl_process_env()->default_sigmask,
+                               bytes);
+                } else {
+                        output->default_sigmask = cl_core.default_sigmask;
+                }
+        }
 	/*
 	 * An uninitialized environment _always_ disables interrupts. They
 	 * are activated later on by the thread entry point or init_unixint().
@@ -404,6 +417,7 @@ struct cl_core_struct cl_core = {
 	Cnil, /* signal_queue */
 
 	NULL, /* default_sigmask */
+        0, /* default_sigmask_bytes */
 
 #ifdef ECL_THREADS
         0, /* last_var_index */

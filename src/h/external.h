@@ -95,6 +95,7 @@ struct cl_env_struct {
 	cl_object own_process;
 #endif
 	cl_object pending_interrupt;
+        void *default_sigmask;
 
 	/* The following is a hash table for caching invocations of
 	   generic functions. In a multithreaded environment we must
@@ -231,8 +232,8 @@ struct cl_core_struct {
 	cl_object signal_queue_lock;
 #endif
 	cl_object signal_queue;
-
-	void *default_sigmask;
+        void *default_sigmask;
+        cl_index default_sigmask_bytes;
 
 #ifdef ECL_THREADS
         cl_index last_var_index;
