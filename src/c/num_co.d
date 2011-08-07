@@ -176,7 +176,7 @@ ecl_floor2(cl_object x, cl_object y)
 	cl_object v0, v1;
 	cl_type ty;
         ty = type_of(y);
-	if (ecl_unlikely(!ECL_NUMBER_TYPE_P(ty))) {
+	if (ecl_unlikely(!REAL_TYPE(ty))) {
                 FEwrong_type_nth_arg(@[floor],2,y,@[real]);
 	}
 	switch(type_of(x)) {
@@ -391,7 +391,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 	cl_object v0, v1;
 	cl_type ty;
         ty = type_of(y);
-	if (ecl_unlikely(!ECL_NUMBER_TYPE_P(ty))) {
+	if (ecl_unlikely(!REAL_TYPE(ty))) {
 		FEwrong_type_nth_arg(@[ceiling],2, y, @[real]);
 	}
 	switch(type_of(x)) {
