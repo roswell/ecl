@@ -1718,6 +1718,7 @@ cl_symbols[] = {
 {SYS_ "CALL-CFUN",IF_DFFI("si_call_cfun")},
 {KEY_ "CALLBACK",NULL},
 {SYS_ "MAKE-DYNAMIC-CALLBACK",IF_DFFI("si_make_dynamic_callback")},
+{SYS_ "FREE-FFI-CLOSURE",IF_DFFI("si_free_ffi_closure")},
 /* #endif defined(HAVE_LIBFFI) || defined(ECL_DYNAMIC_FFI) */
 {KEY_ "CDECL",NULL},
 {KEY_ "STDCALL",NULL},

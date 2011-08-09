@@ -979,6 +979,12 @@ callback_executor(ffi_cif *cif, void *result, void **args, void *userdata)
         ecl_foreign_data_set_elt(result, ecl_foreign_type_code(ret_type), x);
 }
 
+cl_object
+si_free_ffi_closure(cl_object closure)
+{
+        ffi_closure_free(ecl_foreign_data_pointer_safe(closure));
+}
+
 @(defun si::make-dynamic-callback (fun sym return_type arg_types
                                    &optional (cc_type @':default'))
 @
@@ -987,10 +993,19 @@ callback_executor(ffi_cif *cif, void *result, void **args, void *userdata)
         ffi_type **types;
         int n = prepare_cif(the_env, cif, return_type, arg_types, Cnil, cc_type,
                             &types);
-        ffi_closure *closure = ecl_alloc_atomic(sizeof(ffi_closure));
+
+	/* libffi allocates executable memory for us. ffi_closure_alloc()
+	 * returns a pointer to memory and a pointer to the beginning of
+	 * the actual executable region (executable_closure) which is
+	 * where the code resides. */
+        void *executable_region;
+        ffi_closure *closure = ffi_closure_alloc(sizeof(ffi_closure), &executable_region);
+
         cl_object closure_object = ecl_make_foreign_data(@':pointer-void',
                                                          sizeof(ffi_closure),
                                                          closure);
+        si_set_finalizer(closure_object, @'si::free-ffi-closure');
+
         cl_object data = cl_list(6, closure_object,
                                  fun, return_type, arg_types, cc_type,
                                  ecl_make_foreign_data(@':pointer-void',
@@ -998,8 +1013,9 @@ callback_executor(ffi_cif *cif, void *result, void **args, void *userdata)
                                  ecl_make_foreign_data(@':pointer-void',
                                                        (n + 1) * sizeof(ffi_type*),
                                                        types));
-        int status = ffi_prep_closure(closure, cif, callback_executor,
-                                      ECL_CONS_CDR(data));
+        int status = ffi_prep_closure_loc(closure, cif, callback_executor,
+                                          ECL_CONS_CDR(data), executable_region);
+
         if (status != FFI_OK) {
                 FEerror("Unable to build callback. libffi returns ~D", 1,
                         MAKE_FIXNUM(status));

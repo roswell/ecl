@@ -105,6 +105,9 @@ ECL 11.7.1:
    process that has not been activated or any other value (indicating that
    the function has a global effect, as sigprocmask).
 
+ - Allocate executable memory using libffi instead of using just the
+   Boehm-Weiser garbage collector.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

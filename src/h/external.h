@@ -645,6 +645,7 @@ extern ECL_API cl_object si_load_foreign_module(cl_object module);
 extern ECL_API cl_object si_find_foreign_symbol(cl_object var, cl_object module, cl_object type, cl_object size);
 extern ECL_API cl_object si_call_cfun(cl_narg, cl_object fun, cl_object return_type, cl_object arg_types, cl_object args, ...);
 extern ECL_API cl_object si_make_dynamic_callback(cl_narg, cl_object fun, cl_object sym, cl_object return_type, cl_object arg_types, ...);
+extern ECL_API cl_object si_free_ffi_closure(cl_object closure);
 
 /* Only foreign data types can be coerced to a pointer */
 #define ecl_make_pointer(x) ecl_make_foreign_data(Cnil,0,(x))
