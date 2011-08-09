@@ -7,8 +7,8 @@ VPATH	= @srcdir@
 
 # Programs used by "make":
 #
-TRUE_CC = @CC@
-CC	= @CC@
+CC	?= @CC@
+TRUE_CC = $(CC)
 CFLAGS	= -I. -I@true_builddir@ -I$(srcdir) -I../ecl/gc -DECL_API -DECL_NO_LEGACY  @CPPFLAGS@ @CFLAGS@ @ECL_CFLAGS@ -c
 
 # The following flags could be added and used by GCC
@@ -75,14 +75,12 @@ all:	$(DPP) ../libeclmin.a ../cinit.o
 
 .d.c: $(DPP)
 	if test -f ../CROSS-DPP ; then ../CROSS-DPP $< $@ ; else $(DPP) $< $@ ; fi
-.d.o: $(DPP)
-	if test -f ../CROSS-DPP ; then ../CROSS-DPP $< tmp.c ; else $(DPP) $< tmp.c ; fi
-	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -o $@ tmp.c
-	$(RM) tmp.c
+.c.o: $(DPP)
+	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -o $@ $<
 .c.s: $(HFILES)
 	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -S -o $@ $<
-.c.o: $(HFILES)
-	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -o $@ $<
+#.c.o: $(HFILES)
+#	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -o $@ $<
 apply_x86.c: $(srcdir)/arch/apply_x86.d $(DPP) $(HFILES)
 	if test -f ../CROSS-DPP ; then \
 	  ../CROSS-DPP $(srcdir)/arch/apply_x86.d $@ ; \
