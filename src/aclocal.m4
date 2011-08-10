@@ -981,7 +981,7 @@ if test "${enable_libffi}" = auto -o "${enable_libffi}" = system; then
  dnl
  dnl Try first with the prebuilt versions, if installed and accessible
  dnl
- AC_CHECK_LIB( ffi, ffi_call, [system_libffi=yes], [system_libffi=no] )
+ AC_CHECK_LIB( ffi, ffi_closure_alloc, [system_libffi=yes], [system_libffi=no] )
  if test "${system_libffi}" = yes; then
    AC_CHECK_HEADER([ffi/ffi.h],[ECL_LIBFFI_HEADER='ffi/ffi.h'],[],[])
    if test -z "$ECL_LIBFFI_HEADER"; then

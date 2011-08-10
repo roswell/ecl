@@ -6649,9 +6649,9 @@ echo "$as_me: error: Invalid value of --enable-dffi: ${enable_libffi} " >&2;}
    { (exit 1); exit 1; }; };;
 esac
 if test "${enable_libffi}" = auto -o "${enable_libffi}" = system; then
-    { echo "$as_me:$LINENO: checking for ffi_call in -lffi" >&5
-echo $ECHO_N "checking for ffi_call in -lffi... $ECHO_C" >&6; }
-if test "${ac_cv_lib_ffi_ffi_call+set}" = set; then
+    { echo "$as_me:$LINENO: checking for ffi_closure_alloc in -lffi" >&5
+echo $ECHO_N "checking for ffi_closure_alloc in -lffi... $ECHO_C" >&6; }
+if test "${ac_cv_lib_ffi_ffi_closure_alloc+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   ac_check_lib_save_LIBS=$LIBS
@@ -6669,11 +6669,11 @@ cat >>conftest.$ac_ext <<_ACEOF
 #ifdef __cplusplus
 extern "C"
 #endif
-char ffi_call ();
+char ffi_closure_alloc ();
 int
 main ()
 {
-return ffi_call ();
+return ffi_closure_alloc ();
   ;
   return 0;
 }
@@ -6696,21 +6696,21 @@ eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
 	 test ! -s conftest.err
        } && test -s conftest$ac_exeext &&
        $as_test_x conftest$ac_exeext; then
-  ac_cv_lib_ffi_ffi_call=yes
+  ac_cv_lib_ffi_ffi_closure_alloc=yes
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-	ac_cv_lib_ffi_ffi_call=no
+	ac_cv_lib_ffi_ffi_closure_alloc=no
 fi
 
 rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ echo "$as_me:$LINENO: result: $ac_cv_lib_ffi_ffi_call" >&5
-echo "${ECHO_T}$ac_cv_lib_ffi_ffi_call" >&6; }
-if test $ac_cv_lib_ffi_ffi_call = yes; then
+{ echo "$as_me:$LINENO: result: $ac_cv_lib_ffi_ffi_closure_alloc" >&5
+echo "${ECHO_T}$ac_cv_lib_ffi_ffi_closure_alloc" >&6; }
+if test $ac_cv_lib_ffi_ffi_closure_alloc = yes; then
   system_libffi=yes
 else
   system_libffi=no
