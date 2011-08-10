@@ -141,6 +141,10 @@
   (gather-components 'compile-op c
                      :filter-system (and (not (bundle-op-monolithic-p o)) c)
                      :filter-type '(not system)))
+(defmethod bundle-sub-operations ((o monolithic-lib-op) c)
+  (gather-components 'compile-op c
+                     :filter-system nil
+                     :filter-type '(not system)))
 ;;;
 ;;; SHARED LIBRARIES
 ;;;
