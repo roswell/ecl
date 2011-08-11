@@ -10,7 +10,7 @@ manext=1
 #
 
 @SET_MAKE@
-CC	= @ECL_CC@
+CC	?= @ECL_CC@
 LIBS	= @LIBS@
 FASL_LIBS = @FASL_LIBS@
 CORE_LIBS = @CORE_LIBS@
