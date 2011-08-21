@@ -108,6 +108,10 @@ ECL 11.7.1:
  - Allocate executable memory using libffi instead of using just the
    Boehm-Weiser garbage collector.
 
+ - In bytecodes.h, deactivate the threaded interpreter when using the LLVM
+   compiler. The problem is that llvm-gcc disguises itself as GCC but it is
+   not capable of properly compiling the jump table.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
