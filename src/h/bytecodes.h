@@ -151,7 +151,7 @@ typedef int16_t cl_oparg;
  * NOTE: We cannot use this in Solaris because GCC erroneously produces
  * relocation tables.
  */
-#if (defined(__GNUC__) && !defined(__STRICT_ANSI__) && !defined(__clang__))
+#if (defined(__GNUC__) && !defined(__STRICT_ANSI__) && !defined(__clang__) && !defined(__llvm__))
 #define ECL_THREADED_INTERPRETER
 # if defined(__sun__) && (FIXNUM_BITS > 32)
 #  undef ECL_THREADED_INTERPRETER
