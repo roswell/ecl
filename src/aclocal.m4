@@ -391,7 +391,7 @@ case "${host_os}" in
                 fi
                 # The Boehm-Weiser GC library shipped with Fink does not work
                 # well with our signal handler.
-                enable_boehm=included
+		# enable_boehm=included
 		SONAME="${SHAREDPREFIX}ecl.SOVERSION.${SHAREDEXT}"
 		SONAME_LDFLAGS="-Wl,-install_name,@libdir\@/SONAME -Wl,-compatibility_version,${PACKAGE_VERSION}"
 		;;
