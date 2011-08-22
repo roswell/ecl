@@ -18,6 +18,10 @@ ECL 11.7.1:
  - When parsing a floating point number at least one digit should be
    present. ECL parsed +.e0 as +0.0e0, instead of as a symbol.
 
+ - For OS X Lion we need a newer version of the garbage collector. Since the
+   maintainers' advise is that we use the unstable tree, we have made a copy
+   and use it _only_ for this port (src/gc-unstable).
+
 * Visible changes:
 
  - When printing error messages, the condition type is shown (M. Mondor)
