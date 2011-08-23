@@ -196,43 +196,46 @@ printed.  If FORMAT-STRING is NIL, however, no prompt will appear."
 (set-dispatch-macro-character #\# #\s 'sharp-s-reader)
 (set-dispatch-macro-character #\# #\S 'sharp-s-reader)
 
-(defvar *dribble-stream* nil)
-(defvar *dribble-io* nil)
-(defvar *dribble-namestring* nil)
-(defvar *dribble-saved-terminal-io* nil)
+(defvar *dribble-closure* nil)
 
 (defun dribble (&optional (pathname "DRIBBLE.LOG" psp))
   "Args: (&optional filespec)
 If FILESPEC is given, starts recording the interaction to the specified file.
 FILESPEC may be a symbol, a string, a pathname, or a file stream.  If FILESPEC
 is not given, ends the recording."
-  (cond ((not psp)
-         (when (null *dribble-stream*) (error "Not in dribble."))
-         (if (eq *dribble-io* *terminal-io*)
-             (setq *terminal-io* *dribble-saved-terminal-io*)
-             (warn "*TERMINAL-IO* was rebound while DRIBBLE is on.~%~
-                   You may miss some dribble output."))
-         (close *dribble-stream*)
-         (setq *dribble-stream* nil)
-         (format t "~&Finished dribbling to ~A." *dribble-namestring*))
-        (*dribble-stream*
-         (error "Already in dribble (to ~A)." *dribble-namestring*))
-        (t
-         (let* ((namestring (namestring pathname))
+  (cond (*dribble-closure*
+	 (funcall *dribble-closure* psp))
+	((null psp)
+	 (error "Not in dribble."))
+	(t
+	 (let* ((namestring (namestring pathname))
                 (stream (open pathname :direction :output
-                                       :if-exists :supersede
-                                       :if-does-not-exist :create)))
-           (setq *dribble-namestring* namestring
-                 *dribble-stream* stream
-                 *dribble-saved-terminal-io* *terminal-io*
-                 *dribble-io* (make-two-way-stream
-                               (make-echo-stream *terminal-io* stream)
-                               (make-broadcast-stream *terminal-io* stream))
-                 *terminal-io* *dribble-io*)
+			      :if-exists :supersede
+			      :if-does-not-exist :create))
+		(dribble-stream (make-two-way-stream
+				 (make-echo-stream *terminal-io* stream)
+				 (make-broadcast-stream *terminal-io* stream)))
+		(standard-input *standard-input*)
+		(standard-output *standard-output*)
+		(closure #'(lambda (pathname-p)
+			     (when pathname-p
+			       (error "Already in dribble (to ~A)" namestring))
+			     (unless (and (eq dribble-stream *standard-input*)
+					  (eq dribble-stream *standard-output*))
+			       (warn "Stream variables rebound while DRIBBLE is on.~%Some output may be lost."))
+			     (format stream "~&Finished dribbling to ~A." namestring)
+			     (close stream)
+			     (setq *standard-input* standard-input
+				   *standard-output* standard-output
+				   *dribble-closure* nil))))
            (multiple-value-bind (sec min hour day month year)
                (get-decoded-time)
-             (format t "~&Starts dribbling to ~A (~d/~d/~d, ~d:~d:~d)."
-                     namestring year month day hour min sec))))))
+             (format dribble-stream "~&Starts dribbling to ~A (~d/~d/~d, ~d:~d:~d)."
+                     namestring year month day hour min sec)
+	     (setq *standard-input* dribble-stream
+		   *standard-output* dribble-stream
+		   *dribble-closure* closure)))))
+  (values))
 
 ;(provide 'iolib)
 
