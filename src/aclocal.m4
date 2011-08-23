@@ -236,6 +236,8 @@ AC_SUBST(OBJEXT)dnl	These are set by autoconf
 AC_SUBST(EXEEXT)
 AC_SUBST(INSTALL_TARGET)dnl Which type of installation: flat directory or unix like.
 AC_SUBST(thehost)
+AC_SUBST(ECL_GC_DIR)dnl Which version of the Boehm-Weiser library to use
+ECL_GC_DIR=gc
 ECL_LDRPATH=''
 SHAREDEXT='so'
 SHAREDPREFIX='lib'
@@ -392,6 +394,9 @@ case "${host_os}" in
                 # The Boehm-Weiser GC library shipped with Fink does not work
                 # well with our signal handler.
 		# enable_boehm=included
+                if test `uname -r | cut -d '.' -f 1` -ge 11; then
+                  ECL_GC_DIR=gc-unstable
+                fi
 		SONAME="${SHAREDPREFIX}ecl.SOVERSION.${SHAREDEXT}"
 		SONAME_LDFLAGS="-Wl,-install_name,@libdir\@/SONAME -Wl,-compatibility_version,${PACKAGE_VERSION}"
 		;;
@@ -873,7 +878,7 @@ AC_DEFUN([ECL_LIBATOMIC_OPS],[
 if test "x${enable_threads}" != "xno"; then
   test -d atomic || mkdir atomic
   (destdir=`${PWDCMD}`; cd atomic && CC="${CC} ${PICFLAG}" \
-   $srcdir/gc/libatomic*/configure --disable-shared --prefix=${destdir} \
+   $srcdir/${ECL_GC_DIR}/libatomic*/configure --disable-shared --prefix=${destdir} \
 	--infodir=${destdir}/doc --includedir=${destdir}/ecl --with-pic \
         --libdir=${destdir} --build=${build_alias} --host=${host_alias} \
         CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" CC="${CC} \
@@ -936,7 +941,7 @@ if test "${enable_boehm}" = "included"; then
  test -d gc && rm -rf gc
  if mkdir gc; then
    if (destdir=`${PWDCMD}`; cd gc; \
-       $srcdir/gc/configure --disable-shared --prefix=${destdir} \
+       $srcdir/${ECL_GC_DIR}/configure --disable-shared --prefix=${destdir} \
 	 --includedir=${destdir}/ecl/ --libdir=${destdir} --build=${build_alias} \
 	 --host=${host_alias} --enable-large-config \
          CC="${CC} ${PICFLAG}" CFLAGS="$CFLAGS" \
