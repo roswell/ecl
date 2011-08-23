@@ -401,25 +401,15 @@ GC_API size_t GC_CALL GC_size(const void * p)
 
 GC_API size_t GC_CALL GC_get_heap_size(void)
 {
-    size_t value;
-    DCL_LOCK_STATE;
-    LOCK();
     /* ignore the memory space returned to OS (i.e. count only the      */
     /* space owned by the garbage collector)                            */
-    value = (size_t)(GC_heapsize - GC_unmapped_bytes);
-    UNLOCK();
-    return value;
+    return (size_t)(GC_heapsize - GC_unmapped_bytes);
 }
 
 GC_API size_t GC_CALL GC_get_free_bytes(void)
 {
-    size_t value;
-    DCL_LOCK_STATE;
-    LOCK();
     /* ignore the memory space returned to OS */
-    value = (size_t)(GC_large_free_bytes - GC_unmapped_bytes);
-    UNLOCK();
-    return value;
+    return (size_t)(GC_large_free_bytes - GC_unmapped_bytes);
 }
 
 /* The _inner versions assume the caller holds the allocation lock.     */
@@ -437,12 +427,7 @@ GC_API size_t GC_CALL GC_get_free_bytes_inner(void)
 GC_API size_t GC_CALL GC_get_unmapped_bytes(void)
 {
 # ifdef USE_MUNMAP
-    size_t value;
-    DCL_LOCK_STATE;
-    LOCK();
-    value = (size_t)GC_unmapped_bytes;
-    UNLOCK();
-    return value;
+    return (size_t)GC_unmapped_bytes;
 # else
     return 0;
 # endif
@@ -450,22 +435,12 @@ GC_API size_t GC_CALL GC_get_unmapped_bytes(void)
 
 GC_API size_t GC_CALL GC_get_bytes_since_gc(void)
 {
-    size_t value;
-    DCL_LOCK_STATE;
-    LOCK();
-    value = GC_bytes_allocd;
-    UNLOCK();
-    return value;
+    return GC_bytes_allocd;
 }
 
 GC_API size_t GC_CALL GC_get_total_bytes(void)
 {
-    size_t value;
-    DCL_LOCK_STATE;
-    LOCK();
-    value = GC_bytes_allocd+GC_bytes_allocd_before_gc;
-    UNLOCK();
-    return value;
+    return GC_bytes_allocd+GC_bytes_allocd_before_gc;
 }
 
 #ifdef THREADS
