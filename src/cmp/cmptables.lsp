@@ -228,6 +228,8 @@
     (function . p1trivial)
     (funcall . p1trivial)
     (load-time-value . p1trivial)
+    (make-form . p1trivial)
+    (init-form . p1trivial)
     (c::with-stack . p1with-stack)
     (c::stack-push-values . p1stack-push-values)
     (sys::structure-set . p1structure-set)
