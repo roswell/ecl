@@ -26,7 +26,9 @@
     (:int . #.(logcount si::c-uint-max))
     (:unsigned-long . #.(logcount si::c-ulong-max))
     (:long . #.(logcount si::c-ulong-max))
+    #+long-long
     (:unsigned-long-long . #.(logcount si::c-ulong-long-max))
+    #+long-long
     (:long-long . #.(logcount si::c-ulong-long-max))
     (:cl-index . #.si::cl-fixnum-bits)
     (:fixnum . #.(- si::cl-fixnum-bits))
