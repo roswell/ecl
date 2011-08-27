@@ -76,6 +76,11 @@ typedef struct {
 #else
 # define IF_DFFI(x) NULL
 #endif
+#if defined(HAVE_LIBFFI)
+# define IF_LIBFFI(x) x
+#else
+# define IF_LIBFFI(x) NULL
+#endif
 
 cl_symbol_initializer
 cl_symbols[] = {
@@ -1718,7 +1723,7 @@ cl_symbols[] = {
 {SYS_ "CALL-CFUN",IF_DFFI("si_call_cfun")},
 {KEY_ "CALLBACK",NULL},
 {SYS_ "MAKE-DYNAMIC-CALLBACK",IF_DFFI("si_make_dynamic_callback")},
-{SYS_ "FREE-FFI-CLOSURE",IF_DFFI("si_free_ffi_closure")},
+{SYS_ "FREE-FFI-CLOSURE",IF_LIBFFI("si_free_ffi_closure")},
 /* #endif defined(HAVE_LIBFFI) || defined(ECL_DYNAMIC_FFI) */
 {KEY_ "CDECL",NULL},
 {KEY_ "STDCALL",NULL},
