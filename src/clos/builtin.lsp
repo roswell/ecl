@@ -60,6 +60,7 @@
 		(synonym-stream ext:ansi-stream)
 		(broadcast-stream ext:ansi-stream)
 		(concatenated-stream ext:ansi-stream)
+		(ext:sequence-stream ext:ansi-stream)
 	    (character)
 	    (number)
 	      (real number)

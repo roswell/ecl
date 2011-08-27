@@ -689,6 +689,8 @@ extern ECL_API cl_object cl_broadcast_stream_streams(cl_object strm);
 extern ECL_API cl_object cl_make_concatenated_stream _ARGS((cl_narg narg, ...));
 extern ECL_API cl_object cl_concatenated_stream_streams(cl_object strm);
 extern ECL_API cl_object cl_make_string_input_stream _ARGS((cl_narg narg, cl_object strng, ...));
+extern ECL_API cl_object si_make_sequence_input_stream _ARGS((cl_narg narg, cl_object vector, ...));
+extern ECL_API cl_object si_make_sequence_output_stream _ARGS((cl_narg narg, cl_object vector, ...));
 extern ECL_API cl_object cl_close _ARGS((cl_narg narg, cl_object strm, ...));
 extern ECL_API cl_object cl_open _ARGS((cl_narg narg, cl_object filename, ...));
 extern ECL_API cl_object cl_file_position _ARGS((cl_narg narg, cl_object file_stream, ...));

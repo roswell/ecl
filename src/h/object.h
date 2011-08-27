@@ -532,13 +532,14 @@ enum ecl_smmode {		/*  stream mode  */
 	smm_echo,		/*  echo  */
 	smm_string_input,	/*  string input  */
 	smm_string_output,	/*  string output  */
-	smm_probe		/*  probe (only used in open_stream())  */
+	smm_probe,		/*  probe (only used in open_stream())  */
 #if defined(ECL_WSOCK)
-	,
 	smm_input_wsock,	/* input socket (Win32) */
 	smm_output_wsock,	/* output socket (Win32) */
-	smm_io_wsock		/* input/output socket (Win32) */
+	smm_io_wsock,		/* input/output socket (Win32) */
 #endif
+	smm_sequence_input,	/*  sequence input  */
+	smm_sequence_output	/*  sequence output  */
 };
 
 struct ecl_file_ops {

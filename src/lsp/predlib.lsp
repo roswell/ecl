@@ -1214,9 +1214,11 @@ if not possible."
 	       (STRING-STREAM)
 	       (SYNONYM-STREAM)
  	       (TWO-WAY-STREAM)
+	       (EXT:SEQUENCE-STREAM)
 	       (EXT:ANSI-STREAM (OR BROADCAST-STREAM CONCATENATED-STREAM ECHO-STREAM
-                             FILE-STREAM STRING-STREAM SYNONYM-STREAM TWO-WAY-STREAM
-                             #+clos-streams GRAY:FUNDAMENTAL-STREAM))
+                                 FILE-STREAM STRING-STREAM SYNONYM-STREAM TWO-WAY-STREAM
+                                 EXT:SEQUENCE-STREAM
+                                 #+clos-streams GRAY:FUNDAMENTAL-STREAM))
                (STREAM EXT:ANSI-STREAM)
 
 	       (READTABLE)

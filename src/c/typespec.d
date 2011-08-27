@@ -318,6 +318,8 @@ cl_type_of(cl_object x)
 		case smm_string_input:
 		case smm_string_output:	t = @'string-stream'; break;
 		case smm_echo:		t = @'echo-stream'; break;
+                case smm_sequence_input:
+                case smm_sequence_output: t = @'ext::sequence-stream'; break;
 		default:		t = @'file-stream'; break;
 		}
 		break;

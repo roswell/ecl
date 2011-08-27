@@ -36,6 +36,7 @@
 #include <stdio.h>
 #include <ecl/ecl.h>
 #include <ecl/ecl-inl.h>
+#define ECL_DEFINE_AET_SIZE
 #include <ecl/internal.h>
 
 #ifdef HAVE_SELECT
@@ -3943,6 +3944,256 @@ si_file_stream_fd(cl_object s)
 }
 
 /**********************************************************************
+ * SEQUENCE INPUT STREAMS
+ */
+
+static cl_index
+seq_in_read_byte8(cl_object strm, unsigned char *c, cl_index n)
+{
+	cl_fixnum curr_pos = SEQ_INPUT_POSITION(strm);
+        cl_fixnum last = SEQ_INPUT_LIMIT(strm);
+        cl_fixnum delta = last - curr_pos;
+        if (delta > 0) {
+                cl_object vector = SEQ_INPUT_VECTOR(strm);
+                if (delta > n) delta = n;
+                memcpy(c, vector->vector.self.bc, delta);
+                SEQ_INPUT_POSITION(strm) += delta;
+                return delta;
+        }
+        return 0;
+}
+
+static int
+seq_in_listen(cl_object strm)
+{
+	if (SEQ_INPUT_POSITION(strm) < SEQ_INPUT_LIMIT(strm))
+		return ECL_LISTEN_AVAILABLE;
+	else
+		return ECL_LISTEN_EOF;
+}
+
+static cl_object
+seq_in_get_position(cl_object strm)
+{
+	return ecl_make_unsigned_integer(SEQ_INPUT_POSITION(strm));
+}
+
+static cl_object
+seq_in_set_position(cl_object strm, cl_object pos)
+{
+	cl_fixnum disp;
+	if (Null(pos)) {
+		disp = SEQ_INPUT_LIMIT(strm);
+	}  else {
+		disp = fixnnint(pos);
+		if (disp >= SEQ_INPUT_LIMIT(strm)) {
+			disp = SEQ_INPUT_LIMIT(strm);
+		}
+	}
+	SEQ_INPUT_POSITION(strm) = disp;
+	return Ct;
+}
+
+const struct ecl_file_ops seq_in_ops = {
+	not_output_write_byte8,
+	seq_in_read_byte8,
+
+	not_output_write_byte,
+	generic_read_byte,
+
+	eformat_read_char,
+	not_output_write_char,
+	eformat_unread_char,
+	generic_peek_char,
+
+	generic_read_vector,
+	generic_write_vector,
+
+	seq_in_listen,
+	generic_void, /* clear-input */
+	not_output_clear_output,
+	not_output_finish_output,
+	not_output_force_output,
+
+	generic_always_true, /* input_p */
+	generic_always_false, /* output_p */
+	generic_always_false,
+	io_file_element_type,
+
+	not_a_file_stream, /* length */
+	seq_in_get_position,
+	seq_in_set_position,
+	generic_column,
+	generic_close
+};
+
+static cl_object
+make_sequence_input_stream(cl_object vector, cl_index istart, cl_index iend,
+                            cl_object external_format)
+{
+	cl_object strm;
+        cl_elttype type;
+        cl_object type_name;
+        int byte_size;
+        if (!ECL_VECTORP(vector) ||
+            (type = ecl_array_elttype(vector)) < aet_b8 ||
+            type > aet_bc)
+        {
+                FEerror("MAKE-SEQUENCE-INPUT-STREAM only accepts integer arrays or strings.~%~A", 1, vector);
+        }
+        type_name = ecl_elttype_to_symbol(type);
+        byte_size = ecl_normalize_stream_element_type(type_name);
+        /* Character streams always get some external format. For binary
+         * sequences it has to be explicitly mentioned. */
+        if (Null(external_format) && !byte_size) {
+                external_format = @':default';
+        }
+	strm = alloc_stream();
+	strm->stream.ops = duplicate_dispatch_table(&seq_in_ops);
+	strm->stream.mode = (short)smm_sequence_input;
+        set_stream_elt_type(strm, byte_size, 0, external_format);
+        /* Override byte size and elt type */
+        strm->stream.byte_size = byte_size;
+	SEQ_INPUT_VECTOR(strm) = vector;
+	SEQ_INPUT_POSITION(strm) = istart * ecl_aet_size[type];
+	SEQ_INPUT_LIMIT(strm) = iend * ecl_aet_size[type];
+	return strm;
+}
+
+@(defun ext::make_sequence_input_stream (vector &key
+                                         (start MAKE_FIXNUM(0))
+                                         (end Cnil)
+                                         (external_format Cnil))
+        cl_index_pair p;
+@
+        p = ecl_vector_start_end(@[ext::make-sequence-input-stream],
+                                 vector, start, end);
+	@(return make_sequence_input_stream(vector, p.start, p.end,
+                                            external_format))
+@)
+
+/**********************************************************************
+ * SEQUENCE OUTPUT STREAMS
+ */
+
+static cl_index
+seq_out_write_byte8(cl_object strm, unsigned char *c, cl_index n)
+{
+ AGAIN:
+        {
+	cl_object vector = SEQ_OUTPUT_VECTOR(strm);
+        cl_fixnum curr_pos = SEQ_OUTPUT_POSITION(strm);
+        cl_fixnum last = SEQ_OUTPUT_LIMIT(strm);
+        cl_fixnum delta = last - curr_pos;
+        int size = ecl_aet_size[vector->vector.elttype];
+        if (delta < n) {
+                /* Not enough space, enlarge */
+                cl_object dim = cl_array_total_size(vector);
+                vector = cl_funcall(3, @'adjust-array', vector, ecl_ash(dim, 1));
+                SEQ_OUTPUT_VECTOR(strm) = vector;
+                SEQ_OUTPUT_LIMIT(strm) = vector->vector.dim * size;
+                goto AGAIN;
+        }
+        memcpy(vector->vector.self.bc + curr_pos, c, n);
+        SEQ_OUTPUT_POSITION(strm) = curr_pos += n;
+        vector->vector.fillp = curr_pos / size;
+        }
+        return n;
+}
+
+static cl_object
+seq_out_get_position(cl_object strm)
+{
+	return ecl_make_unsigned_integer(SEQ_OUTPUT_POSITION(strm));
+}
+
+static cl_object
+seq_out_set_position(cl_object strm, cl_object pos)
+{
+	cl_fixnum disp;
+	if (Null(pos)) {
+		disp = SEQ_OUTPUT_LIMIT(strm);
+	}  else {
+		disp = fixnnint(pos);
+		if (disp >= SEQ_OUTPUT_LIMIT(strm)) {
+			disp = SEQ_OUTPUT_LIMIT(strm);
+		}
+	}
+	SEQ_OUTPUT_POSITION(strm) = disp;
+	return Ct;
+}
+
+const struct ecl_file_ops seq_out_ops = {
+	seq_out_write_byte8,
+	not_input_read_byte8,
+
+	generic_write_byte,
+	not_input_read_byte,
+
+	not_input_read_char,
+	eformat_write_char,
+	not_input_unread_char,
+	generic_peek_char,
+
+	generic_read_vector,
+	generic_write_vector,
+
+	not_input_listen,
+	not_input_clear_input,
+	generic_void, /* clear-output */
+	generic_void, /* finish-output */
+	generic_void, /* force-output */
+
+	generic_always_false, /* input_p */
+	generic_always_true, /* output_p */
+	generic_always_false,
+	io_file_element_type,
+
+	not_a_file_stream, /* length */
+	seq_out_get_position,
+	seq_out_set_position,
+	generic_column,
+	generic_close
+};
+
+static cl_object
+make_sequence_output_stream(cl_object vector, cl_object external_format)
+{
+	cl_object strm;
+        cl_elttype type;
+        cl_object type_name;
+        int byte_size;
+        if (!ECL_VECTORP(vector) ||
+            (type = ecl_array_elttype(vector)) < aet_b8 ||
+            type > aet_bc)
+        {
+                FEerror("MAKE-SEQUENCE-OUTPUT-STREAM only accepts integer arrays or strings.~%~A", 1, vector);
+        }
+        type_name = ecl_elttype_to_symbol(type);
+        byte_size = ecl_normalize_stream_element_type(type_name);
+        /* Character streams always get some external format. For binary
+         * sequences it has to be explicitly mentioned. */
+        if (Null(external_format) && !byte_size) {
+                external_format = @':default';
+        }
+	strm = alloc_stream();
+	strm->stream.ops = duplicate_dispatch_table(&seq_out_ops);
+	strm->stream.mode = (short)smm_sequence_output;
+        set_stream_elt_type(strm, byte_size, 0, external_format);
+        /* Override byte size and elt type */
+        strm->stream.byte_size = byte_size;
+	SEQ_OUTPUT_VECTOR(strm) = vector;
+	SEQ_OUTPUT_POSITION(strm) = vector->vector.fillp * ecl_aet_size[type];
+	SEQ_OUTPUT_LIMIT(strm) = vector->vector.dim * ecl_aet_size[type];
+	return strm;
+}
+
+@(defun ext::make_sequence_output_stream (vector &key (external_format Cnil))
+@
+	@(return make_sequence_output_stream(vector, external_format))
+@)
+
+/**********************************************************************
  * MEDIUM LEVEL INTERFACE
  */
 
@@ -4647,9 +4898,6 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
  	}
 	byte_size = ecl_normalize_stream_element_type(element_type);
 	if (byte_size != 0) {
-		if (flags & ECL_STREAM_FORMAT) {
-			FEerror("Cannot specify a character external format for binary streams.", 0);
-		}
 		external_format = Cnil;
 	}
 	if (!Null(cstream)) {

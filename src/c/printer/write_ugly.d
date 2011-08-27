@@ -265,6 +265,14 @@ write_stream(cl_object x, cl_object stream)
                 prefix = "closed string-output stream";
                 tag = Cnil;
                 break;
+        case smm_sequence_input:
+                prefix = "closed sequence-input stream";
+                tag = Cnil;
+                break;
+        case smm_sequence_output:
+                prefix = "closed sequence-output stream";
+                tag = Cnil;
+                break;
         default:
                 ecl_internal_error("illegal stream mode");
         }

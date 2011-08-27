@@ -233,6 +233,7 @@ enum ecl_built_in_classes {
 	ECL_BUILTIN_SYNONYM_STREAM,
 	ECL_BUILTIN_BROADCAST_STREAM,
 	ECL_BUILTIN_CONCATENATED_STREAM,
+	ECL_BUILTIN_SEQUENCE_STREAM,
 	ECL_BUILTIN_CHARACTER,
 	ECL_BUILTIN_NUMBER,
 	ECL_BUILTIN_REAL,
@@ -327,10 +328,12 @@ cl_class_of(cl_object x)
 		case smm_synonym:	index = ECL_BUILTIN_SYNONYM_STREAM; break;
 		case smm_broadcast:	index = ECL_BUILTIN_BROADCAST_STREAM; break;
 		case smm_concatenated:	index = ECL_BUILTIN_CONCATENATED_STREAM; break;
-		case smm_two_way:	index =  ECL_BUILTIN_TWO_WAY_STREAM; break;
+		case smm_two_way:	index = ECL_BUILTIN_TWO_WAY_STREAM; break;
 		case smm_string_input:
 		case smm_string_output:	index = ECL_BUILTIN_STRING_STREAM; break;
 		case smm_echo:		index = ECL_BUILTIN_ECHO_STREAM; break;
+                case smm_sequence_input:
+                case smm_sequence_output: index = ECL_BUILTIN_SEQUENCE_STREAM; break;
 		default:		index = ECL_BUILTIN_FILE_STREAM; break;
 		}
 		break;

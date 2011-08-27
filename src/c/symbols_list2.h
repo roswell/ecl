@@ -2164,5 +2164,9 @@ cl_symbols[] = {
 
 {EXT_ "ARRAY-INDEX-P","ECL_NAME(si_array_index_p)"},
 
+{EXT_ "SEQUENCE-STREAM",NULL},
+{EXT_ "MAKE-SEQUENCE-INPUT-STREAM","si_make_sequence_input_stream"},
+{EXT_ "MAKE-SEQUENCE-OUTPUT-STREAM","si_make_sequence_output_stream"},
+
 /* Tag for end of list */
 {NULL,NULL}};

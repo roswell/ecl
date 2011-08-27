@@ -116,6 +116,19 @@ ECL 11.7.1:
    compiler. The problem is that llvm-gcc disguises itself as GCC but it is
    not capable of properly compiling the jump table.
 
+ - Implemented SEQUENCE-STREAMs, which are input/output streams defined on some
+   specialized array type. The functions to create them are
+     (ext:make-sequence-input-stream vector &key :start :end :external-format)
+     (ext:make-sequence-output-stream vector &key :external-format)
+        * If the array is a string, it is a character stream
+        * If the array is specialized over integers and EXTERNAL-FORMAT is NIL
+          the stream is a binary stream.
+        * Otherwise, it is a binary string but READ/WRITE-CHAR may be used on it.
+   Reading and writing does not preserve the original word size of the array
+   but rather threads the array as a collection of bytes (octets), writing
+   sequentially over it. Thus, if you use encodings such as UCS2 and UCS4, make
+   sure that you choose the right endianness to match the shape of the array.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
