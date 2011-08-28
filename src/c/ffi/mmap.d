@@ -50,7 +50,7 @@
                 len = ecl_to_unsigned_integer(length);
                 stream = Cnil;
         } else {
-                c_flags = MAP_FILE;
+                c_flags = MAP_SHARED;
                 stream = cl_open(13, filename,
                                  @':direction', direction,
                                  @':element-type', element_type,
