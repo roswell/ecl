@@ -4245,7 +4245,7 @@ make_sequence_output_stream(cl_object vector, cl_object external_format)
                                 external_format = @':ucs-4le';
 # endif
                         } else {
-                                strm->stream.ops->read_byte8 = seq_out_write_chars;
+                                strm->stream.ops->write_byte8 = seq_out_write_chars;
                                 elt_byte_size = 1;
                         }
                 }
