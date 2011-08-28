@@ -354,9 +354,6 @@ cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl
                 MAYBE_MARK(o->pack.name);
 		break;
         case t_hashtable:
-# ifdef ECL_THREADS
-                MAYBE_MARK(o->hash.lock);
-# endif
                 MAYBE_MARK(o->hash.threshold);
                 MAYBE_MARK(o->hash.rehash_size);
                 MAYBE_MARK(o->hash.data);
@@ -887,9 +884,6 @@ init_alloc(void)
                 to_bitmap(&o, &(o.pack.internal)) |
                 to_bitmap(&o, &(o.pack.external));
         type_info[t_hashtable].descriptor =
-# ifdef ECL_THREADS
-                to_bitmap(&o, &(o.hash.lock)) |
-# endif
                 to_bitmap(&o, &(o.hash.data)) |
                 to_bitmap(&o, &(o.hash.rehash_size)) |
                 to_bitmap(&o, &(o.hash.threshold));
