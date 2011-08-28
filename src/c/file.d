@@ -3956,7 +3956,7 @@ seq_in_read_byte8(cl_object strm, unsigned char *c, cl_index n)
         if (delta > 0) {
                 cl_object vector = SEQ_INPUT_VECTOR(strm);
                 if (delta > n) delta = n;
-                memcpy(c, vector->vector.self.bc, delta);
+                memcpy(c, vector->vector.self.bc + curr_pos, delta);
                 SEQ_INPUT_POSITION(strm) += delta;
                 return delta;
         }
