@@ -120,7 +120,11 @@ ECL 11.7.1:
    specialized array type. The functions to create them are
      (ext:make-sequence-input-stream vector &key :start :end :external-format)
      (ext:make-sequence-output-stream vector &key :external-format)
-        * If the array is a string, it is a character stream
+        * If the array is a string, it is a character stream.
+          - When no external format is supplied, it defaults to the usual encoding
+            and the stream behaves like a string stream.
+          - When an external format is supplied, each character in the string
+            is interpreted as a single byte and used for that external format.
         * If the array is specialized over integers and EXTERNAL-FORMAT is NIL
           the stream is a binary stream.
         * Otherwise, it is a binary string but READ/WRITE-CHAR may be used on it.

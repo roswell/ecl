@@ -3963,6 +3963,25 @@ seq_in_read_byte8(cl_object strm, unsigned char *c, cl_index n)
         return 0;
 }
 
+static cl_index
+seq_in_read_chars(cl_object strm, unsigned char *c, cl_index n)
+{
+	cl_fixnum curr_pos = SEQ_INPUT_POSITION(strm);
+        cl_fixnum last = SEQ_INPUT_LIMIT(strm);
+        cl_fixnum delta = last - curr_pos;
+        if (delta > 0) {
+                cl_object vector = SEQ_INPUT_VECTOR(strm);
+                cl_index i;
+                if (delta > n) delta = n;
+                for (i = 0; i < delta; i++) {
+                        c[i] = ecl_char(vector, curr_pos++);
+                }
+                SEQ_INPUT_POSITION(strm) = curr_pos;
+                return i;
+        }
+        return 0;
+}
+
 static int
 seq_in_listen(cl_object strm)
 {
@@ -4034,7 +4053,7 @@ make_sequence_input_stream(cl_object vector, cl_index istart, cl_index iend,
 	cl_object strm;
         cl_elttype type;
         cl_object type_name;
-        int byte_size;
+        int byte_size, elt_byte_size;
         int flags = 0;
         if (!ECL_VECTORP(vector) ||
             (type = ecl_array_elttype(vector)) < aet_b8 ||
@@ -4042,39 +4061,43 @@ make_sequence_input_stream(cl_object vector, cl_index istart, cl_index iend,
         {
                 FEerror("MAKE-SEQUENCE-INPUT-STREAM only accepts integer arrays or strings.~%~A", 1, vector);
         }
+        elt_byte_size = ecl_aet_size[type];
         type_name = ecl_elttype_to_symbol(type);
         byte_size = ecl_normalize_stream_element_type(type_name);
         /* Character streams always get some external format. For binary
          * sequences it has to be explicitly mentioned. */
-        if (!byte_size) {
-#if !defined(ECL_UNICODE)
-                external_format = @':pass-through';
-                flags = ECL_STREAM_DEFAULT_FORMAT;
-                byte_size = 8;
-#else
-                if (ECL_BASE_STRING_P(vector)) {
-                        external_format = @':latin-1';
-                        flags = ECL_STREAM_LATIN_1;
-                        byte_size = 8;
-                } else {
-                        external_format = @':ucs-4';
-                        flags = ECL_STREAM_UCS_4;
-#if !defined(WORDS_BIGENDIAN)
-                        flags |= ECL_STREAM_LITTLE_ENDIAN;
-#endif
-                        byte_size = 32;
-                }
-#endif
-        }
         strm = alloc_stream();
 	strm->stream.ops = duplicate_dispatch_table(&seq_in_ops);
 	strm->stream.mode = (short)smm_sequence_input;
+        if (!byte_size) {
+#if defined(ECL_UNICODE)
+                if (ECL_BASE_STRING_P(vector)) {
+                        if (Null(external_format))
+                                external_format = @':default';
+                } else {
+                        if (Null(external_format)) {
+# ifdef WORDS_BIGENDIAN
+                                external_format = @':ucs-4be';
+# else
+                                external_format = @':ucs-4le';
+# endif
+                        } else {
+                                strm->stream.ops->read_byte8 = seq_in_read_chars;
+                                elt_byte_size = 1;
+                        }
+                }
+#else
+                if (Null(external_format)) {
+                        external_format = @':default';
+                }
+#endif
+        }
         set_stream_elt_type(strm, byte_size, flags, external_format);
         /* Override byte size and elt type */
-        strm->stream.byte_size = byte_size;
+        if (byte_size) strm->stream.byte_size = byte_size;
 	SEQ_INPUT_VECTOR(strm) = vector;
-	SEQ_INPUT_POSITION(strm) = istart * ecl_aet_size[type];
-	SEQ_INPUT_LIMIT(strm) = iend * ecl_aet_size[type];
+	SEQ_INPUT_POSITION(strm) = istart * elt_byte_size;
+	SEQ_INPUT_LIMIT(strm) = iend * elt_byte_size;
 	return strm;
 }
 
@@ -4115,6 +4138,19 @@ seq_out_write_byte8(cl_object strm, unsigned char *c, cl_index n)
         memcpy(vector->vector.self.bc + curr_pos, c, n);
         SEQ_OUTPUT_POSITION(strm) = curr_pos += n;
         vector->vector.fillp = curr_pos / size;
+        }
+        return n;
+}
+
+static cl_index
+seq_out_write_chars(cl_object strm, unsigned char *c, cl_index n)
+{
+	cl_object vector = SEQ_OUTPUT_VECTOR(strm);
+        int i;
+        for (i = 0; i < n; i++) {
+                ecl_string_push_extend(vector, *(c++));
+                SEQ_OUTPUT_POSITION(strm) = vector->vector.fillp;
+                SEQ_OUTPUT_LIMIT(strm) = vector->vector.dim;
         }
         return n;
 }
@@ -4180,7 +4216,7 @@ make_sequence_output_stream(cl_object vector, cl_object external_format)
 	cl_object strm;
         cl_elttype type;
         cl_object type_name;
-        int byte_size;
+        int byte_size, elt_byte_size;
         int flags = 0;
         if (!ECL_VECTORP(vector) ||
             (type = ecl_array_elttype(vector)) < aet_b8 ||
@@ -4188,39 +4224,43 @@ make_sequence_output_stream(cl_object vector, cl_object external_format)
         {
                 FEerror("MAKE-SEQUENCE-OUTPUT-STREAM only accepts integer arrays or strings.~%~A", 1, vector);
         }
+        elt_byte_size = ecl_aet_size[type];
         type_name = ecl_elttype_to_symbol(type);
         byte_size = ecl_normalize_stream_element_type(type_name);
         /* Character streams always get some external format. For binary
          * sequences it has to be explicitly mentioned. */
-        if (!byte_size) {
-#if !defined(ECL_UNICODE)
-                external_format = @':pass-through';
-                flags = ECL_STREAM_DEFAULT_FORMAT;
-                byte_size = 8;
-#else
-                if (ECL_BASE_STRING_P(vector)) {
-                        external_format = @':latin-1';
-                        flags = ECL_STREAM_LATIN_1;
-                        byte_size = 8;
-                } else {
-                        external_format = @':ucs-4';
-                        flags = ECL_STREAM_UCS_4;
-#if !defined(WORDS_BIGENDIAN)
-                        flags |= ECL_STREAM_LITTLE_ENDIAN;
-#endif
-                        byte_size = 32;
-                }
-#endif
-        }
 	strm = alloc_stream();
 	strm->stream.ops = duplicate_dispatch_table(&seq_out_ops);
 	strm->stream.mode = (short)smm_sequence_output;
+        if (!byte_size) {
+#if defined(ECL_UNICODE)
+                if (ECL_BASE_STRING_P(vector)) {
+                        if (Null(external_format))
+                                external_format = @':default';
+                } else {
+                        if (Null(external_format)) {
+# ifdef WORDS_BIGENDIAN
+                                external_format = @':ucs-4be';
+# else
+                                external_format = @':ucs-4le';
+# endif
+                        } else {
+                                strm->stream.ops->read_byte8 = seq_out_write_chars;
+                                elt_byte_size = 1;
+                        }
+                }
+#else
+                if (Null(external_format)) {
+                        external_format = @':default';
+                }
+#endif
+        }
         set_stream_elt_type(strm, byte_size, flags, external_format);
         /* Override byte size and elt type */
-        strm->stream.byte_size = byte_size;
+        if (byte_size) strm->stream.byte_size = byte_size;
 	SEQ_OUTPUT_VECTOR(strm) = vector;
-	SEQ_OUTPUT_POSITION(strm) = vector->vector.fillp * ecl_aet_size[type];
-	SEQ_OUTPUT_LIMIT(strm) = vector->vector.dim * ecl_aet_size[type];
+	SEQ_OUTPUT_POSITION(strm) = vector->vector.fillp * elt_byte_size;
+	SEQ_OUTPUT_LIMIT(strm) = vector->vector.dim * elt_byte_size;
 	return strm;
 }
 
