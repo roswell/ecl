@@ -45,7 +45,7 @@
         else
                 c_prot = PROT_NONE;
         if (Null(filename)) {
-                c_flags = MAP_ANON;
+                c_flags = MAP_ANON | MAP_PRIVATE;
                 fd = -1;
                 len = ecl_to_unsigned_integer(length);
                 stream = Cnil;
@@ -64,7 +64,7 @@
         }
         output = si_make_vector(element_type, MAKE_FIXNUM(0), Cnil,
                                 Cnil, Cnil, Cnil);
-        pa = mmap(0, len, c_prot, c_flags | MAP_PRIVATE, fd,
+        pa = mmap(0, len, c_prot, c_flags, fd,
                   ecl_integer_to_off_t(offset));
         if (pa == MAP_FAILED) {
                 FElibc_error("EXT::MMAP failed.", 0);
