@@ -7,7 +7,7 @@ VPATH	= @srcdir@
 
 # Programs used by "make":
 #
-CC	?= @CC@
+CC	= @CC@
 TRUE_CC = $(CC)
 CFLAGS	= -I. -I@true_builddir@ -I$(srcdir) -I../ecl/gc -DECL_API -DECL_NO_LEGACY  @CPPFLAGS@ @CFLAGS@ @ECL_CFLAGS@ -c
 
