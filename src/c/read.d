@@ -2287,7 +2287,7 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
                         }
 		}
 		/* Execute top-level code */
-		(*entry_point)(MAKE_FIXNUM(0));
+		(*entry_point)(OBJNULL);
 		x = cl_set_difference(2, env->packages_to_be_created, old_eptbc);
                 old_eptbc = env->packages_to_be_created;
                 unlikely_if (!Null(x)) {

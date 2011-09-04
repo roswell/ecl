@@ -146,7 +146,7 @@
     (wt-nl "cl_object value0;")
     (wt-nl "cl_object *VVtemp;")
 
-    (wt-nl "if (!FIXNUMP(flag)){")
+    (wt-nl "if (flag != OBJNULL){")
     (wt-nl "Cblock=flag;")
     (wt-nl "#ifndef ECL_DYNAMIC_VV")
     (wt-nl "flag->cblock.data = VV;")

@@ -226,10 +226,6 @@ the environment variable TMPDIR to a different value." template))
 ;; just like in a normal compiled file, but then adds all the codeblocks of
 ;; its corresponding modules.
 ;;
-;; IMPORTANT: Notice how the modules are linked to the parent forming a
-;; circular chain. This disables the garbage collection of the library until
-;; _ALL_ functions in all modules are unlinked.
-;;
 (defconstant +lisp-program-init+ "
 #ifdef __cplusplus
 extern \"C\"
@@ -237,8 +233,13 @@ extern \"C\"
 ECL_DLLEXPORT
 void ~A(cl_object cblock)
 {
-	static cl_object Cblock;
-        if (!FIXNUMP(cblock)) {
+        /*
+         * This function is first invoked with a pointer to a Cblock
+         * structure, so that the function initializes it, and then
+         * it is invoked with OBJNULL, to force initialization.
+         */
+	static cl_object Cblock = OBJNULL;
+        if (cblock != OBJNULL) {
 		Cblock = cblock;
 #ifndef ECL_DYNAMIC_VV
 		cblock->cblock.data = NULL;
@@ -248,6 +249,12 @@ void ~A(cl_object cblock)
 	}
 	~A
 {
+	/*
+         * At this point Cblock contains the cblock of the parent.
+         * Notice how the modules are linked to the parent forming a
+         * circular chain. This disables the garbage collection of
+         * the library until _ALL_ functions in all modules are unlinked.
+         */
 	cl_index i = 0;
 	cl_object current, next = Cblock;
 ~:{
