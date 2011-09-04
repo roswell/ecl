@@ -76,13 +76,13 @@ all:	$(DPP) ../libeclmin.a ../cinit.o
 .d.c: $(DPP)
 	if test -f ../CROSS-DPP ; then ../CROSS-DPP $< $@ ; else $(DPP) $< $@ ; fi
 .d.o: $(DPP)
-	if test -f ../CROSS-DPP ; then ../CROSS-DPP $< $@ ; else $(DPP) $< $@ ; fi
-	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -o $@ $<
+	if test -f ../CROSS-DPP ; then ../CROSS-DPP $< $@.c ; else $(DPP) $< $@.c ; fi
+	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -o $@ $@.c
 .c.o:
 	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -o $@ $<
 .d.s: $(HFILES)
-	if test -f ../CROSS-DPP ; then ../CROSS-DPP $< $@ ; else $(DPP) $< $@ ; fi
-	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -S -o $@ $<
+	if test -f ../CROSS-DPP ; then ../CROSS-DPP $< $@.c ; else $(DPP) $< $@.c ; fi
+	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -S -o $@ $@.c
 #.c.o: $(HFILES)
 #	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -o $@ $<
 apply_x86.c: $(srcdir)/arch/apply_x86.d $(DPP) $(HFILES)
