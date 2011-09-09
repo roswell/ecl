@@ -36,7 +36,8 @@
   ((type :reader bundle-op-type)
    (monolithic :initform nil :reader bundle-op-monolithic-p)
    (name-suffix :initarg :name-suffix :initform nil)
-   (build-args :initarg :args :initform nil :accessor bundle-op-build-args)))
+   (build-args :initarg :args :initform nil :accessor bundle-op-build-args)
+   (lisp-files :initform nil :accessor bundle-op-lisp-files)))
 
 (defclass fasl-op (bundle-op)
   ((type :initform :fasl)))
@@ -72,10 +73,12 @@
           (if (bundle-op-monolithic-p instance) "-mono" "")))
   (when (typep instance 'monolithic-bundle-op)
     (destructuring-bind (&rest original-initargs
-                         &key prologue-code epilogue-code &allow-other-keys)
+                         &key lisp-files prologue-code epilogue-code
+                         &allow-other-keys)
         (slot-value instance 'original-initargs)
       (setf (slot-value instance 'original-initargs)
-            (remove-keys '(epilogue-code prologue-code) original-initargs)
+            (remove-keys '(lisp-files epilogue-code prologue-code) original-initargs)
+            (bundle-op-lisp-files instance) lisp-files
             (monolithic-op-prologue-code instance) prologue-code
             (monolithic-op-epilogue-code instance) epilogue-code)))
   (setf (bundle-op-build-args instance)
@@ -206,7 +209,8 @@
                                :key #'pathname-type :test #'string=))
          (output (output-files o c)))
     (ensure-directories-exist (first output))
-    (apply #'c::builder (bundle-op-type o) (first output) :lisp-files object-files
+    (apply #'c::builder (bundle-op-type o) (first output)
+           :lisp-files (append object-files (bundle-op-lisp-files o))
            (append (bundle-op-build-args o)
                    (when (and (typep o 'monolithic-bundle-op)
                               (monolithic-op-prologue-code o))
