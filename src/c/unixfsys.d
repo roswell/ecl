@@ -536,18 +536,32 @@ SUCCESS:
 	@(return newn old_truename new_truename)
 @)
 
+static int
+directory_pathname_p(cl_object path)
+{
+        return (path->pathname.name == Cnil) &&
+                (path->pathname.type == Cnil);
+}
+
 cl_object
 cl_delete_file(cl_object file)
 {
-	cl_object filename = si_coerce_to_filename(file);
+        cl_object path = cl_pathname(file);
+        int isdir = directory_pathname_p(path);
+	cl_object filename = si_coerce_to_filename(path);
 	int ok;
 
 	ecl_disable_interrupts();
-	ok = unlink((char*)filename->base_string.self);
+        ok = (isdir? rmdir : unlink)((char*)filename->base_string.self);
 	ecl_enable_interrupts();
 
-	if (ok < 0)
-		FElibc_error("Cannot delete the file ~S.", 1, file);
+	if (ok < 0) {
+                const char *msg =
+                        isdir?
+                        "Cannot delete the file ~S." :
+                        "Cannot delete the directory ~S.";
+		FElibc_error(msg, 1, file);
+        }
 	@(return Ct)
 }
 
@@ -1068,16 +1082,9 @@ si_mkstemp(cl_object template)
 cl_object
 si_rmdir(cl_object directory)
 {
-	int code;
-	directory = si_coerce_to_filename(directory);
-
-	ecl_disable_interrupts();
-	code = rmdir((char*)directory->base_string.self);
-	ecl_enable_interrupts();
-
-        if (code != 0)
-             FElibc_error("Can't remove directory ~A.", 1, directory);
-        @(return Cnil)
+        return cl_delete_file(cl_make_pathname(6, @':name', Cnil,
+                                               @':type', Cnil,
+                                               @':defaults', directory));
 }
 
 cl_object

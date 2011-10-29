@@ -133,6 +133,8 @@ ECL 11.7.1:
    sequentially over it. Thus, if you use encodings such as UCS2 and UCS4, make
    sure that you choose the right endianness to match the shape of the array.
 
+ - DELETE-FILE works on empty directories.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
