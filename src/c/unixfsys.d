@@ -884,7 +884,7 @@ dir_recursive(cl_object base_dir, cl_object directory, cl_object filemask, int f
 	return output;
 }
 
-@(defun directory (mask &key resolve_symlinks &allow_other_keys)
+@(defun directory (mask &key (resolve_symlinks Ct) &allow_other_keys)
         cl_object base_dir;
 	cl_object output;
 @

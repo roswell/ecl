@@ -135,6 +135,8 @@ ECL 11.7.1:
 
  - DELETE-FILE works on empty directories.
 
+ - In DIRECTORY, :RESOLVE-SYMLINKS defaults to T.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
