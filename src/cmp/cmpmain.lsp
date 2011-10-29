@@ -317,9 +317,15 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
   "Given a file name, guess whether it is an object file, a library, a program
 or a loadable module."
   (let ((record (assoc (pathname-type pathname)
-		       '(("o" :object) ("obj" :object) ("c" :c)
+		       '((#.+object-file-extension+ :object)
+                         ("o" :object)
+                         ("obj" :object)
+                         ("c" :c)
+                         (#.+static-library-extension+ :static-library)
 			 ("lib" :static-library)
 			 ("a" :static-library)
+                         (#.+shared-library-extension+ :shared-library)
+                         ("dylib" :shared-library)
 			 ("dll" :shared-library)
 			 ("so" :shared-library)
 			 ("fas" :fasl))
