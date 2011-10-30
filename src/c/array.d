@@ -1123,29 +1123,27 @@ ecl_copy_subarray(cl_object dest, cl_index i0, cl_object orig,
 	if (i1 + l > orig->array.dim) {
 		l = orig->array.dim - i1;
 	}
-        if (dest == orig && i0 > i1) {
-                if (t != ecl_array_elttype(orig) || t == aet_bit) {
+        if (t != ecl_array_elttype(orig) || t == aet_bit) {
+                if (dest == orig && i0 > i1) {
                         for (i0 += l, i1 += l; l--; ) {
                                 ecl_aset_unsafe(dest, --i0,
                                                 ecl_aref_unsafe(orig, --i1));
                         }
                 } else {
-                        cl_index elt_size = ecl_aet_size[t];
-                        memmove(dest->array.self.bc + i0 * elt_size,
-                                orig->array.self.bc + i1 * elt_size,
-                                l * elt_size);
-                }
-        } else if (t != ecl_array_elttype(orig) || t == aet_bit) {
-                while (l--) {
-                        ecl_aset_unsafe(dest, i0++,
-                                        ecl_aref_unsafe(orig, i1++));
+                        while (l--) {
+                                ecl_aset_unsafe(dest, i0++,
+                                                ecl_aref_unsafe(orig, i1++));
+                        }
                 }
         } else {
-		cl_index elt_size = ecl_aet_size[t];
-		memcpy(dest->array.self.bc + i0 * elt_size,
-                       orig->array.self.bc + i1 * elt_size,
-                       l * elt_size);
-	}
+                /* We could have singled out also dest == orig and used memcpy
+                 * but gcc-4.6 breaks this code even when i0 < i1 if the regions
+                 * overlap sufficiently. */
+                cl_index elt_size = ecl_aet_size[t];
+                memmove(dest->array.self.bc + i0 * elt_size,
+                        orig->array.self.bc + i1 * elt_size,
+                        l * elt_size);
+        }
 }
 
 void
