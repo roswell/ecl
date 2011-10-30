@@ -395,7 +395,9 @@ The top-level loop of ECL. It is called by default when ECL is invoked."
 
       (unless (or *lisp-initialized* (null process-command-line))
         (process-command-args)
-	(format t "ECL (Embeddable Common-Lisp) ~A" (lisp-implementation-version))
+	(format t "ECL (Embeddable Common-Lisp) ~A (git:~D)"
+                (lisp-implementation-version)
+                (ext:lisp-implementation-vcs-id))
 	(format t "~%Copyright (C) 1984 Taiichi Yuasa and Masami Hagiya~@
 Copyright (C) 1993 Giuseppe Attardi~@
 Copyright (C) 2000 Juan J. Garcia-Ripoll
