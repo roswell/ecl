@@ -152,3 +152,6 @@
     (princ (if one-liner "\""  " \"") stream)
     string))
 
+(defun c-filtered-string (string)
+  (with-output-to-string (aux-stream)
+    (wt-filtered-data string aux-stream t)))
