@@ -1452,7 +1452,7 @@ extern ECL_API cl_object ecl_print(cl_object obj, cl_object strm);
 extern ECL_API cl_object ecl_terpri(cl_object strm);
 extern ECL_API void ecl_write_string(cl_object strng, cl_object strm);
 extern ECL_API void ecl_princ_str(const char *s, cl_object sym);
-extern ECL_API void ecl_princ_char(int c, cl_object sym);
+extern ECL_API int ecl_princ_char(int c, cl_object sym);
 
 extern ECL_API cl_fixnum ecl_print_level(void);
 extern ECL_API cl_fixnum ecl_print_length(void);

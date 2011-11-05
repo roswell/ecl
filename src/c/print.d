@@ -395,7 +395,7 @@ ecl_princ_str(const char *s, cl_object strm)
 	writestr_stream(s, strm);
 }
 
-void
+int
 ecl_princ_char(int c, cl_object strm)
 {
 	strm = _ecl_stream_or_default_output(strm);
@@ -403,4 +403,5 @@ ecl_princ_char(int c, cl_object strm)
 	if (c == '\n') {
 		ecl_force_output(strm);
 	}
+        return c;
 }
