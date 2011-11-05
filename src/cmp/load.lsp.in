@@ -50,6 +50,7 @@
   "src:cmp;cmpopt-bits.lsp"
   "src:cmp;cmpopt-constant.lsp"
   "src:cmp;cmpopt-cons.lsp"
+  "src:cmp;cmpopt-printer.lsp"
   "src:cmp;cmpopt-sequence.lsp"
   "src:cmp;cmpopt-type.lsp"
   "src:cmp;cmpprop.lsp"

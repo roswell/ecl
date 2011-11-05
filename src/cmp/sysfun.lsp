@@ -635,18 +635,6 @@
 
 (def-inline finish-output :always (stream) NULL "(ecl_force_output(#0),Cnil)")
 
-(def-inline prin1 :always (t t) t "ecl_prin1(#0,#1)")
-(def-inline prin1 :always (t) t "ecl_prin1(#0,Cnil)")
-
-(def-inline princ :always (t t) t "ecl_princ(#0,#1)")
-(def-inline princ :always (t) t "ecl_princ(#0,Cnil)")
-
-(def-inline print :always (t t) t "ecl_print(#0,#1)")
-(def-inline print :always (t) t "ecl_print(#0,Cnil)")
-
-(def-inline terpri :always (t) t "ecl_terpri(#0)")
-(def-inline terpri :always nil t "ecl_terpri(Cnil)")
-
 (def-inline write-char :always (t) t "@0;(ecl_princ_char(ecl_char_code(#0),Cnil),(#0))")
 
 (def-inline clear-input :always (stream) NULL "(ecl_clear_input(#0),Cnil)")
