@@ -17,6 +17,7 @@
 
 #include <ecl/ecl.h>
 #include <ecl/ecl-inl.h>
+#include <ecl/internal.h>
 
 /******************************* ------- ******************************/
 /* FIXME! CURRENTLY SYMBOLS ARE RESTRICTED TO HAVE NON-UNICODE NAMES */
@@ -138,7 +139,7 @@ ecl_symbol_value(cl_object s)
 		/* FIXME: Should we check symbol type? */
 		const cl_env_ptr the_env = ecl_process_env();
 		cl_object value = ECL_SYM_VAL(the_env, s);
-		if (value == OBJNULL)
+		unlikely_if (value == OBJNULL)
 			FEunbound_variable(s);
 		return value;
 	}
@@ -358,7 +359,7 @@ cl_symbol_name(cl_object x)
 	cl_object output, s;
 	int intern_flag;
 @
-        if (ecl_unlikely(!ECL_STRINGP(prefix)))
+        unlikely_if (!ECL_STRINGP(prefix))
                 FEwrong_type_nth_arg(@[gentemp], 1, prefix, @[string]);
 	pack = si_coerce_to_package(pack);
 ONCE_MORE:
