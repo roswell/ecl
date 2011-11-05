@@ -75,8 +75,6 @@
     (load-time-value . c1load-time-value) ; c1
     (si:fset . c1fset) ; c1
 
-    (princ . c1princ) ; c1
-    (terpri . c1terpri) ; c1
     (apply . c1apply) ; c1
     ))
 
@@ -183,8 +181,6 @@
 
     (sys:structure-ref . c2structure-ref) ; c2
     (sys:structure-set . c2structure-set) ; c2
-
-    (c2princ . c2princ) ; c2
     ))
 
 (defconstant +t2-dispatch-alist+
