@@ -259,7 +259,9 @@ lines are inserted, but the order is preserved")
 
 (defvar *compile-in-constants*          ; we either include constants as a C literal
   #+ecl-min t                           ; or as an bound-in binary segment in the
-  #-ecl-min nil)                        ; compiled file (si::{get,add}-cdata)
+                                        ; compiled file (si::{get,add}-cdata)
+  #+(and windows (not ecl-min)) nil
+  #+(and (not windows) (not ecl-min)) t)
 
 (defvar *proclaim-fixed-args* nil)	; proclaim automatically functions
 					; with fixed number of arguments.
