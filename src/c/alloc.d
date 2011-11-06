@@ -454,7 +454,7 @@ CALL_GC:
 		goto ONCE_MORE;
 	}
 	GC_disable();
-	{ cl_object s = make_simple_base_string(tm_table[(int)t].tm_name+1);
+	{ cl_object s = ecl_make_simple_base_string(tm_table[(int)t].tm_name+1, -1);
 	GC_enable();
 	CEerror(Ct, "The storage for ~A is exhausted.~%\
 Currently, ~D pages are allocated.~%\
