@@ -122,8 +122,8 @@ _ecl_fix_times_fix(cl_fixnum x, cl_fixnum y)
 #else
         ECL_WITH_TEMP_BIGNUM(z,4);
         ECL_WITH_TEMP_BIGNUM(w,4);
-        mpz_set_si(z->big.big_num, x);
-        mpz_set_si(w->big.big_num, y);
+        _ecl_big_set_fixnum(z, x);
+        _ecl_big_set_fixnum(w, y);
         mpz_mul(z->big.big_num, z->big.big_num, w->big.big_num);
 #endif
         {
@@ -210,7 +210,7 @@ _ecl_fix_minus_big(cl_fixnum a, cl_object b)
 	cl_index size_b = (b->big.big_size < 0)? -b->big.big_size : b->big.big_size;
         cl_index size_z = size_b + limbs_per_fixnum;
         cl_object z = _ecl_alloc_compact_bignum(size_z);
-        mpz_set_si(z->big.big_num, a);
+        _ecl_big_set_fixnum(z, a);
         mpz_sub(z->big.big_num, z->big.big_num, b->big.big_num);
         return big_normalize(z);
 }
@@ -318,8 +318,7 @@ _ecl_big_set_index(cl_object x, cl_index f)
         mpz_set_ui((x)->big.big_num,(f));
         return x;
 }
-#else
-# if GMP_LIMB_BITS >= FIXNUM_BITS
+#elif GMP_LIMB_BITS >= FIXNUM_BITS
 cl_object
 _ecl_big_set_fixnum(cl_object x, cl_fixnum f)
 {
@@ -347,10 +346,9 @@ _ecl_big_set_index(cl_object x, cl_index f)
                 x->big.big_limbs[0] = -f;
         }
 }
-# else
-#   error "ECL cannot build with GMP when both long and mp_limb_t are smaller than cl_fixnum"
-# endif /* GMP_LIMB_BITS >= FIXNUM_BITS */
-#endif /* ECL_LONG_BITS >= FIXNUM_BITS */
+#else
+# error "ECL cannot build with GMP when both long and mp_limb_t are smaller than cl_fixnum"
+#endif /* FIXNUM_BITS > GMP_LIMB_BITS, ECL_LONG_BITS */
 
 #ifdef ECL_LONG_FLOAT
 long double
