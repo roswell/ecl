@@ -26,6 +26,7 @@ MA 02110-1301, USA. */
 #include <iosfwd>   /* for std::istream, std::ostream, std::string */
 #endif
 
+
 /* Instantiated by configure. */
 #if ! defined (__GMP_WITHIN_CONFIGURE)
 #  if defined( _MSC_VER )
@@ -186,6 +187,16 @@ MA 02110-1301, USA. */
 #else
 /* all other cases */
 #define __GMP_DECLSPEC
+#endif
+
+/* In order to overcome issue with LL64 vias L64 on Windows 64 the next level
+   of indirection is introduced: gmp_long instead of long
+*/
+
+#ifdef _WIN64
+#define gmp_long __int64
+#else
+#define typedef gmp_long long
 #endif
 
 
@@ -1056,7 +1067,7 @@ __GMP_DECLSPEC void mpz_set_q __GMP_PROTO ((mpz_ptr, mpq_srcptr));
 #endif
 
 #define mpz_set_si __gmpz_set_si
-__GMP_DECLSPEC void mpz_set_si __GMP_PROTO ((mpz_ptr, signed long int));
+__GMP_DECLSPEC void mpz_set_si __GMP_PROTO ((mpz_ptr, gmp_long));
 
 #define mpz_set_str __gmpz_set_str
 __GMP_DECLSPEC int mpz_set_str __GMP_PROTO ((mpz_ptr, __gmp_const char *, int));
