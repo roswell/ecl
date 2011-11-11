@@ -192,13 +192,13 @@ MA 02110-1301, USA. */
 /* In order to overcome issue with LL64 vias L64 on Windows 64 the next level
    of indirection is introduced: gmp_long instead of long
 */
-
+/*
 #ifdef _WIN64
 #define gmp_long __int64
 #else
 #define typedef gmp_long long
 #endif
-
+*/
 
 #ifdef __GMP_SHORT_LIMB
 typedef unsigned int		mp_limb_t;
@@ -1067,7 +1067,7 @@ __GMP_DECLSPEC void mpz_set_q __GMP_PROTO ((mpz_ptr, mpq_srcptr));
 #endif
 
 #define mpz_set_si __gmpz_set_si
-__GMP_DECLSPEC void mpz_set_si __GMP_PROTO ((mpz_ptr, gmp_long));
+__GMP_DECLSPEC void mpz_set_si __GMP_PROTO ((mpz_ptr, long int));
 
 #define mpz_set_str __gmpz_set_str
 __GMP_DECLSPEC int mpz_set_str __GMP_PROTO ((mpz_ptr, __gmp_const char *, int));
