@@ -22,6 +22,7 @@
 # include <unistd.h>
 #else
 # include <io.h>
+# include <direct.h>
 # define access _access
 # define F_OK 0
 #endif
