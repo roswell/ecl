@@ -117,14 +117,14 @@ _ecl_fix_times_fix(cl_fixnum x, cl_fixnum y)
 {
 #if ECL_LONG_BITS >= FIXNUM_BITS
         ECL_WITH_TEMP_BIGNUM(z,4);
-        mpz_set_si(z->big.big_num, x);
-        mpz_mul_si(z->big.big_num, z->big.big_num, y);
+        _ecl_big_set_si(z, x);
+        _ecl_big_mul_si(z, z, y);
 #else
         ECL_WITH_TEMP_BIGNUM(z,4);
         ECL_WITH_TEMP_BIGNUM(w,4);
         _ecl_big_set_fixnum(z, x);
         _ecl_big_set_fixnum(w, y);
-        mpz_mul(z->big.big_num, z->big.big_num, w->big.big_num);
+        _ecl_big_mul(z, z, w);
 #endif
         {
                 cl_object y = big_normalize(z);
@@ -158,7 +158,15 @@ _ecl_big_times_fix(cl_object b, cl_fixnum i)
         size = (b->big.big_size < 0)? -b->big.big_size : b->big.big_size;
         size += limbs_per_fixnum;
         z = _ecl_alloc_compact_bignum(size);
+#if ECL_LONG_BITS >= FIXNUM_BITS
         _ecl_big_mul_si(z, b, i);
+#else
+	{
+		ECL_WITH_TEMP_BIGNUM(w,4);
+		_ecl_big_set_fixnum(w, i);
+		_ecl_big_mul(z, b, w);
+	}
+#endif
         return z;
 }
 
