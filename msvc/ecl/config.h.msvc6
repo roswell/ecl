@@ -119,10 +119,13 @@
 #define ecl_int16_t short
 #define ecl_uint32_t unsigned int
 #define ecl_int32_t int
-/* #undef ecl_uint64_t */
-/* #undef ecl_int64_t */
-/* #undef ecl_long_long_t */
-/* #undef ecl_ulong_long_t */
+
+#ifdef _WIN64
+# define ecl_uint64_t unsigned __int64
+# define ecl_int64_t __int64
+# define ecl_long_long_t long long
+# define ecl_ulong_long_t unsigned long long
+#endif
 
 /*
  * C TYPES AND SYSTEM LIMITS
@@ -367,7 +370,7 @@ typedef unsigned int uint32_t;
 /* #undef HAVE_UNISTD_H */
 /* #undef HAVE_SYS_WAIT_H */
 /* size of long long            					*/
-/* #undef ECL_LONG_LONG_BITS */
+#define ECL_LONG_LONG_BITS 64
 
 /*
  * we do not manage to get proper signal handling of floating point
