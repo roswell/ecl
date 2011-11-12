@@ -41,7 +41,7 @@
       (multiple-value-bind (constant-p value)
           (loc-immediate-value-p (c1form-arg 0 value))
         (when constant-p
-          (return-from c1not (c1expr (print (not value)))))))
+          (return-from c1not (c1expr (not value))))))
     (make-c1form* 'FMLA-NOT
                   :type '(member t nil)
                   :args value)))
