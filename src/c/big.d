@@ -173,21 +173,9 @@ _ecl_big_times_fix(cl_object b, cl_fixnum i)
 cl_object
 _ecl_big_plus_fix(cl_object a, cl_fixnum b)
 {
-        cl_object z;
-	if (b == 0) {
-		return a;
-        } else {
-                cl_index size_a = (a->big.big_size < 0)? -a->big.big_size
-                        : a->big.big_size;
-                cl_index size_z = size_a + limbs_per_fixnum;
-                cl_object z = _ecl_alloc_compact_bignum(size_z);
-                if (b < 0) {
-                        _ecl_big_sub_ui(z, a, (-b));
-                } else {
-                        _ecl_big_add_ui(z, a, b);
-                }
-                return big_normalize(z);
-        }
+	ECL_WITH_TEMP_BIGNUM(big_b, 2);
+	_ecl_big_set_fixnum(big_b, b);
+	return _ecl_big_plus_big(a, big_b);
 }
 
 cl_object
