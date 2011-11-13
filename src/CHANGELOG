@@ -137,6 +137,8 @@ ECL 11.7.1:
 
  - In DIRECTORY, :RESOLVE-SYMLINKS defaults to T.
 
+ - Added POSIX function (EXT:CHMOD filename mode)
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

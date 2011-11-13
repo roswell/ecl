@@ -2173,5 +2173,7 @@ cl_symbols[] = {
 {EXT_ "MAKE-SEQUENCE-INPUT-STREAM","si_make_sequence_input_stream"},
 {EXT_ "MAKE-SEQUENCE-OUTPUT-STREAM","si_make_sequence_output_stream"},
 
+{EXT_ "CHMOD","si_chmod"},
+
 /* Tag for end of list */
 {NULL,NULL}};

@@ -1830,6 +1830,7 @@ extern ECL_API cl_object si_getcwd _ARGS((cl_narg narg, ...));
 extern ECL_API cl_object si_getpid(void);
 extern ECL_API cl_object si_getuid(void);
 extern ECL_API cl_object si_chdir _ARGS((cl_narg narg, cl_object directory, ...));
+extern ECL_API cl_object si_chmod(cl_object filename, cl_object mode);
 extern ECL_API cl_object si_mkdir(cl_object directory, cl_object mode);
 extern ECL_API cl_object cl_directory _ARGS((cl_narg narg, cl_object directory, ...));
 extern ECL_API cl_object cl_user_homedir_pathname _ARGS((cl_narg narg, ...));

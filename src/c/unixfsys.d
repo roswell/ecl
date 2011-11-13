@@ -1114,3 +1114,15 @@ si_copy_file(cl_object orig, cl_object dest)
 	ecl_enable_interrupts();
 	@(return (ok? Ct : Cnil))
 }
+
+cl_object
+si_chmod(cl_object file, cl_object mode)
+{
+	mode_t code = fixnnint(mode);
+	cl_object filename = si_coerce_to_filename(file);
+	unlikely_if (!chmod((char*)filename->base_string.self, code)) {
+		FElibc_error("Unable to change mode of file~%~S~%to value ~O",
+			     2, file, mode);
+	}
+	@(return)
+}
