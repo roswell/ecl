@@ -141,31 +141,36 @@ ecl_to_int8_t(cl_object x) {
 #ifdef ecl_uint16_t
 ecl_uint16_t
 ecl_to_uint16_t(cl_object x) {
+	const uint16_t uint16_max = 0xFFFFL;
         do {
                 if (FIXNUMP(x)) {
                         cl_fixnum y = fix(x);
-                        if (y >= 0 && y <= 0xFFFFL) {
+                        if (y >= 0 && y <= uint16_max) {
                                 return (ecl_uint16_t)y;
                         }
                 }
 		x = ecl_type_error(@'coerce', "variable", x,
-                                   cl_list(3,@'integer',MAKE_FIXNUM(0),
-                                           MAKE_FIXNUM(0xFFFFL)));
+                                   cl_list(3,@'integer',
+					   MAKE_FIXNUM(0),
+                                           MAKE_FIXNUM(uint16_max)));
         } while(1);
 }
 
 ecl_int16_t
 ecl_to_int16_t(cl_object x) {
+	const int16_t int16_min = -0x8000;
+	const int16_t int16_max =  0x7FFF;
         do {
                 if (FIXNUMP(x)) {
                         cl_fixnum y = fix(x);
-                        if (y >= -0x8000 && y <= 0x7FFF) {
+                        if (y >= int16_min && y <= int16_max) {
                                 return (ecl_int16_t)y;
                         }
                 }
 		x = ecl_type_error(@'coerce', "variable", x,
-                                   cl_list(3,@'integer',MAKE_FIXNUM(-0x8000),
-                                           MAKE_FIXNUM(0x7FFF)));
+                                   cl_list(3,@'integer',
+					   MAKE_FIXNUM(int16_min),
+                                           MAKE_FIXNUM(int16_max)));
         } while(1);
 }
 #endif /* ecl_uint16_t */
@@ -173,32 +178,35 @@ ecl_to_int16_t(cl_object x) {
 #if defined(ecl_uint32_t) && (FIXNUM_BITS > 32)
 ecl_uint32_t
 ecl_to_uint32_t(cl_object x) {
+	const uint32_t uint32_max = 0xFFFFFFFFUL;
         do {
                 if (FIXNUMP(x)) {
                         cl_fixnum y = fix(x);
-                        if (y >= 0 && y <= 0xFFFFFFFFUL) {
+                        if (y >= 0 && y <= uint32_max) {
                                 return (ecl_uint32_t)y;
                         }
                 }
 		x = ecl_type_error(@'coerce', "variable", x,
                                    cl_list(3,@'integer',MAKE_FIXNUM(0),
-                                           ecl_make_unsigned_integer(0xFFFFFFFFUL)));
+                                           ecl_make_unsigned_integer(uint32_max)));
         } while(1);
 }
 
 ecl_int32_t
 ecl_to_int32_t(cl_object x) {
         do {
+		const int32_t int32_min = -0x80000000L;
+		const int32_t int32_max =  0x7FFFFFFFL;
                 if (FIXNUMP(x)) {
                         cl_fixnum y = fix(x);
-                        if (y >= -0x80000000L && y <= 0x7FFFFFFFL) {
+                        if (y >= int32_min && y <= int32_max) {
                                 return (ecl_int32_t)y;
                         }
                 }
 		x = ecl_type_error(@'coerce', "variable", x,
                                    cl_list(3,@'integer',
-                                           ecl_make_integer(-0x80000000L),
-                                           ecl_make_integer(0x7FFFFFFFL)));
+                                           ecl_make_integer(int32_min),
+                                           ecl_make_integer(int32_max)));
         } while(1);
 }
 #endif /* ecl_uint32_t */
