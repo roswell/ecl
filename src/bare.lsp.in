@@ -169,14 +169,11 @@
 	(loop for l = (read-line file nil nil nil)
 	   while l
 	   do (setf last l)))
-      (print last)
       (when last
 	(handler-case
 	    (let* ((start (position #\Space last)))
-	      (print start)
 	      (when start
 		(let ((end (position #\Space last :start (incf start))))
-		  (print end)
 		  (when end
 		    (setq si::+commit-id+ (subseq last start end))))))
 	  (serious-condition ()))))))
