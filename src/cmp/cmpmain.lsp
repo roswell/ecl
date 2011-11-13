@@ -199,10 +199,12 @@ the environment variable TMPDIR to a different value." template))
             ;; /link flag, because they are not processed by the
             ;; compiler, but by the linker
             (append ld-flags
-		    (list (concatenate 'string "/EXPORT:" init-name)
-			  (concatenate 'string "/LIBPATH:"
-				       (ecl-library-directory))
-			  (concatenate 'string "/IMPLIB:" implib)))))
+		    (list
+		     ;; Not needed because we use ECL_DLLEXPORT
+		     ;; (concatenate 'string "/EXPORT:" init-name)
+		     (concatenate 'string "/LIBPATH:"
+				  (ecl-library-directory))
+		     (concatenate 'string "/IMPLIB:" implib)))))
     #+mingw32
     (setf ld-flags (list* "-shared" "-Wl,--export-all-symbols" ld-flags))
     (linker-cc o-pathname object-files :type :fasl :ld-flags ld-flags)))
