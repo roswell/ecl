@@ -161,15 +161,25 @@
 ;;; * Update version number now that SI:SYSTEM is available
 ;;;
 
-(let ((commit-id (probe-file "@true_srcdir@/../.git/ORIG_HEAD")))
+(let ((commit-id (probe-file "@true_srcdir@/../.git/logs/HEAD")))
   (when commit-id
-    (let* ((file (open commit-id :direction :input :element-type :default
-                       :external-format :default))
-           (line (read-line file))
-           (l (length line)))
-      (setq si::+commit-id+ (subseq line 0 (min l 40)))
-      (close file))))
-
+    (let ((last nil))
+      (with-open-file (file commit-id :direction :input :element-type :default
+			    :external-format :default)
+	(loop for l = (read-line file nil nil nil)
+	   while l
+	   do (setf last l)))
+      (print last)
+      (when last
+	(handler-case
+	    (let* ((start (position #\Space last)))
+	      (print start)
+	      (when start
+		(let ((end (position #\Space last :start (incf start))))
+		  (print end)
+		  (when end
+		    (setq si::+commit-id+ (subseq last start end))))))
+	  (serious-condition ()))))))
 ;;;
 ;;; * Go back to build directory to start compiling
 ;;;
