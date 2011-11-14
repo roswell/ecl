@@ -95,10 +95,10 @@
           (princ "#define compiler_data_text NULL
 #define compiler_data_text_size 0" stream)))))
 
-(defun data-binary-dump (filename &optional (string (if *compile-in-constants*
-                                                        ""
-                                                        (data-dump-array))))
-  (si::add-cdata filename string))
+(defun data-binary-dump (filename &optional (string (unless *compile-in-constants*
+						      (data-dump-array))))
+  (unless *compile-in-constants*
+    (si::add-cdata filename string)))
 
 (defun wt-data-begin (stream)
   nil)

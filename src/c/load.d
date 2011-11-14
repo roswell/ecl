@@ -67,15 +67,11 @@ si_load_binary(cl_object filename, cl_object verbose,
 		goto OUTPUT;
 	}
 
-GO_ON:	
+GO_ON:
         /* Try to load the compiled data */
         map = si_get_cdata(filename);
         array = VALUES(1);
-        if (Null(map)) {
-                output = make_base_string_copy("Unable to load compiled data.");
-		ecl_library_close(block);
-                goto OUTPUT;
-        }
+
         block->cblock.data_text = array->base_string.self;
         block->cblock.data_text_size = array->base_string.dim;
 
