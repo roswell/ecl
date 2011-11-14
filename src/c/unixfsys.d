@@ -18,6 +18,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <limits.h>
+
 #ifndef _MSC_VER
 # include <unistd.h>
 #else
@@ -25,7 +26,9 @@
 # include <direct.h>
 # define access _access
 # define F_OK 0
+typedef int mode_t; 
 #endif
+
 #include <sys/types.h>
 #include <ecl/ecl.h>
 #ifdef HAVE_PWD_H
