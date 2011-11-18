@@ -92,7 +92,7 @@
     (long-float "long double" "ecl_make_longfloat" "ecl_to_long_double"
                    "ecl_to_long_double")
     :unsigned-char
-    (base-char "char" "CODE_CHAR" "ecl_base_char_code" "CHAR_CODE")
+    (base-char "unsigned char" "CODE_CHAR" "ecl_base_char_code" "CHAR_CODE")
     :char
     (base-char "char" "CODE_CHAR" "ecl_base_char_code" "CHAR_CODE")
     :wchar
