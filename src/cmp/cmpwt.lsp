@@ -92,7 +92,6 @@
 	    (princ "static const char compiler_data_text[] = " stream)
 	    (wt-filtered-data string stream)
 	    (princ #\; stream)
-	    (print *wt-string-size*)
 	    (format stream "~%#define compiler_data_text_size ~D~%"
 		    *wt-string-size*))
           (princ "#define compiler_data_text NULL
