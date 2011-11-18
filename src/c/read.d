@@ -2193,7 +2193,7 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
 		temp_len = block->cblock.temp_data_size;
 		len = perm_len + temp_len;
 
-                if (block->cblock.data_text == 0) {
+                if (block->cblock.data_text == 0 || block->cblock.data_text_size == 0) {
                         if (len) {
                                 /* Code from COMPILE uses data in *compiler-constants* */
                                 cl_object v = ECL_SYM_VAL(env,@'si::*compiler-constants*');

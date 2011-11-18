@@ -78,27 +78,29 @@
                 (data-string (si::with-ecl-io-syntax
                                  (prin1-to-string data)))
                 (l (length data-string)))
-           (subseq data-string 1 (1- l))))))
+           (subseq data-string 1 (1- l))))
+	(t
+	 "")))
 
 (defun data-c-dump (filename)
   (with-open-file (stream filename :direction :output :if-does-not-exist :create
                           :if-exists :supersede :external-format :default)
     (let ((string (data-dump-array)))
-      (if (and *compile-in-constants* (plusp (data-size)))
-          (let ((*wt-string-size* 0)
-                (*wt-data-column* 80))
-            (princ "static const char compiler_data_text[] = " stream)
-            (wt-filtered-data string stream)
-            (princ #\; stream)
-            (format stream "~%#define compiler_data_text_size ~D~%"
-                    *wt-string-size*))
+      (if (and *compile-in-constants* (plusp (length string)))
+	  (let ((*wt-string-size* 0)
+		(*wt-data-column* 80))
+	    (princ "static const char compiler_data_text[] = " stream)
+	    (wt-filtered-data string stream)
+	    (princ #\; stream)
+	    (print *wt-string-size*)
+	    (format stream "~%#define compiler_data_text_size ~D~%"
+		    *wt-string-size*))
           (princ "#define compiler_data_text NULL
 #define compiler_data_text_size 0" stream)))))
 
-(defun data-binary-dump (filename &optional (string (unless *compile-in-constants*
-						      (data-dump-array))))
+(defun data-binary-dump (filename &optional string)
   (unless *compile-in-constants*
-    (si::add-cdata filename string)))
+    (si::add-cdata filename (or string (data-dump-array)))))
 
 (defun wt-data-begin (stream)
   nil)
