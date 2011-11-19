@@ -50,22 +50,23 @@
 (define-c-inliner shift (return-type argument orig-shift)
   (let* ((arg-type (inlined-arg-type argument))
          (arg-c-type (lisp-type->rep-type arg-type))
+	 (return-c-type (lisp-type->rep-type return-type))
          (shift (loc-immediate-value (inlined-arg-loc orig-shift))))
     (if (or (not (c-integer-rep-type-p arg-c-type))
-            (not (c-integer-type-p return-type)))
+            (not (c-integer-rep-type-p return-c-type)))
         (produce-inline-loc (list argument orig-shift) '(:object :fixnum) '(:object)
                             "ecl_ash(#0,#1)" nil t)
-        (let ((n (c-integer-rep-type-bits arg-c-type)))
-          (cond ((<= shift (- n))
-                 (produce-inline-loc () () '(:fixnum) "0" nil t))
-                ((>= shift n)
-                 (produce-inline-loc (list argument) (list arg-c-type) (list return-type)
-                                     "(((#0) < 0)? -1 : 0)" nil t))
-                (t
-                 (produce-inline-loc (list argument) (list arg-c-type) (list return-type)
-                                     (format nil
-                                             (if (minusp shift)
-                                                 "((#0) >> (~D))"
-                                                 "((#0) << (~D))")
-                                             (abs shift))
-                                     nil t)))))))
+        (let* ((arg-bits (c-integer-rep-type-bits arg-c-type))
+	       (return-bits (c-integer-rep-type-bits return-c-type))
+	       (max-type (if (and (plusp shift)
+				  (< arg-bits return-bits))
+			   return-c-type
+			   arg-c-type)))
+	  (produce-inline-loc (list argument) (list max-type) (list return-type)
+			      (format nil
+				      (if (minusp shift)
+					  "((#0) >> (~D))"
+					  "((#0) << (~D))")
+				      (abs shift))
+			      nil t)))))
+
