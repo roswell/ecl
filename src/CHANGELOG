@@ -139,6 +139,10 @@ ECL 11.7.1:
 
  - Added POSIX function (EXT:CHMOD filename mode)
 
+ - ECL's compiler is now less verbose and hides performance notes, as well as
+   invocations of the C compiler. This can be modfied by changing the type
+   specifier in c:*suppress-compiler-messages*.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
