@@ -174,10 +174,26 @@
         value
         (with-clean-symbols (%value)
           `(let* ((%value ,value))
-             ,(type-error-check '%value type)
+             ,(type-error-check '%value (replace-invalid-types type))
              (the ,type %value))))))
+
+(defun replace-invalid-types (type)
+  ;; Some types which are acceptable in DECLARE are not
+  ;; accepted by TYPEP. We thus simplify the type replacing
+  ;; the offending ones by more general types. No problem
+  ;; doing this since the type checks are optional.
+  (if (atom type)
+      type
+      (let ((name (car type)))
+	(case name
+	  (FUNCTION 'FUNCTION)
+	  ((OR AND NOT CONS)
+	   (list* name (mapcar #'replace-invalid-types (rest type))))
+	  (otherwise
+	   type)))))
 
 (defmacro optional-type-check (&whole whole value type &environment env)
   (if (policy-assume-right-type)
       value
       `(assert-type-if-known ,value ,type)))
+
