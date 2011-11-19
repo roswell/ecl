@@ -103,7 +103,7 @@ ecl_string_case(cl_object s)
 {
 	int upcase;
 	cl_index i;
-	const char *text = (char*)s->base_string.self;
+	const ecl_base_char *text = (ecl_base_char*)s->base_string.self;
 	for (i = 0, upcase = 0; i <= s->base_string.dim; i++) {
 		if (ecl_upper_case_p(text[i])) {
 			if (upcase < 0)
@@ -465,8 +465,8 @@ cl_char_name(cl_object c)
 	ecl_character code = ecl_char_code(c);
 	cl_object output;
 	if (code > 127) {
-		char name[8];
-                char *start;
+		ecl_base_char name[8];
+                ecl_base_char *start;
                 name[7] = 0;
                 name[6] = ecl_digit_char(code & 0xF, 16); code >>= 4;
                 name[5] = ecl_digit_char(code & 0xF, 16); code >>= 4;
