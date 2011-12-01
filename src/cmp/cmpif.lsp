@@ -18,12 +18,11 @@
   (check-args-number 'IF args 2 3)
   (let ((test (c1expr (car args))))
     ;; Resolve IF expressions with constant arguments
-    (when (eq (c1form-name test) 'LOCATION)
-      (multiple-value-bind (constant-p value)
-          (loc-immediate-value-p (c1form-arg 0 test))
-        (when constant-p
-          (return-from c1if
-            (c1expr (if value (second args) (third args)))))))
+    (multiple-value-bind (constant-p value)
+	(c1form-constant-p test)
+      (when constant-p
+	(return-from c1if
+	  (c1expr (if value (second args) (third args))))))
     ;; Otherwise, normal IF form
     (let* ((true-branch (c1expr (second args)))
            (false-branch (c1expr (third args))))
@@ -37,11 +36,10 @@
   (let* ((value (c1expr (first args))))
     ;; When the argument is constant, we can just return
     ;; a constant as well.
-    (when (eq (c1form-name value) 'LOCATION)
-      (multiple-value-bind (constant-p value)
-          (loc-immediate-value-p (c1form-arg 0 value))
-        (when constant-p
-          (return-from c1not (c1expr (not value))))))
+    (multiple-value-bind (constant-p value)
+	(c1form-constant-p value)
+      (when constant-p
+	(return-from c1not (c1expr (not value)))))
     (make-c1form* 'FMLA-NOT
                   :type '(member t nil)
                   :args value)))

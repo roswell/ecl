@@ -318,3 +318,8 @@
 	       (when var
 		 (delete-from-read-nodes var form))))))
     (traverse-c1form-tree form #'eliminate-references)))
+
+(defun c1form-constant-p (form)
+  (when (eq (c1form-name form) 'LOCATION)
+    (loc-immediate-value-p (c1form-arg 0 form))))
+
