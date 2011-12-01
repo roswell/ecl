@@ -89,25 +89,42 @@
 		      :args fun forms)))))
 
 (defun c1call-global (fname args)
-  (let ((l (length args))
-	forms)
-    (cond ((> l si::c-arguments-limit)
-	   (unoptimized-long-call `#',fname args))
 #|
 	  ((maybe-optimize-structure-access fname args))
 	  #+clos
 	  ((maybe-optimize-generic-function fname args))
 |#
-	  (t
-	   (let* ((forms (c1args* args))
-		  (return-type (propagate-types fname forms)))
-	     (make-c1form* 'CALL-GLOBAL
-			   :sp-change (function-may-change-sp fname)
-                           :side-effects (function-may-have-side-effects fname)
-			   :type return-type
-			   :args fname forms
-                           ;; loc and type are filled by c2expr
-                           ))))))
+  ;; When the function takes many arguments, we will need a
+  ;; special C form to call it. It takes extra code for
+  ;; handling the stack
+  (when (> (length args) si::c-arguments-limit)
+    (return-from c1call-global
+      (unoptimized-long-call `#',fname args)))
+  (let* ((forms (c1args* args)))
+    ;; If all arguments are constants, try to precompute the function
+    ;; value
+    (when (and (get-sysprop fname 'pure)
+	       (policy-evaluate-forms)
+	       (inline-possible fname))
+      (loop with all-values = '()
+	    with constant-p
+	    with v
+	    for form in forms
+	    do (if (multiple-value-setq (constant-p v)
+		     (c1form-constant-p form))
+		   (push v all-values)
+		   (return nil))
+	    finally (return-from c1call-global
+		      (c1constant-value (apply fname (nreverse all-values))
+					:always t))))
+    ;; Otherwise emit a global function call
+    (make-c1form* 'CALL-GLOBAL
+		  :sp-change (function-may-change-sp fname)
+		  :side-effects (function-may-have-side-effects fname)
+		  :type (propagate-types fname forms)
+		  :args fname forms
+		  ;; loc and type are filled by c2expr
+		  )))
 
 (defun c2expr (form)
   (with-c1form-env (form form)
