@@ -113,9 +113,11 @@
         ((atom loc)
          (values nil nil))
         ((member (first loc)
-                 '(fixnum-value character-value long-float-value
+                 '(fixnum-value long-float-value
                    double-float-value single-float-value))
          (values t (second loc)))
+	((eq (first loc) 'character-value)
+	 (values t (code-char (second loc))))
         (t
          (values nil nil))))
 
