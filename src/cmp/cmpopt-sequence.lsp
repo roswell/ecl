@@ -225,7 +225,7 @@
 (defun expand-assoc (value list &rest sequence-args)
   (multiple-value-bind (key-function test-function init
                         key-flag test-flag test)
-      (seq-opt-parse-args 'member sequence-args :start-end nil)
+      (seq-opt-parse-args 'assoc sequence-args :start-end nil)
     (unless key-flag
       (when (or (null test-flag) (eq test-flag :test))
         (when (member test '('EQ #'EQ) :test #'equal)
@@ -268,7 +268,7 @@
 (defun expand-find (value sequence &rest sequence-args)
   (multiple-value-bind (key-function test-function init
                         key-flag test-flag test start end)
-      (seq-opt-parse-args 'member sequence-args)
+      (seq-opt-parse-args 'find sequence-args)
     (when test-function
       (ext:with-unique-names (%value %elt)
         `(let ((,%value ,value)
