@@ -236,13 +236,27 @@
     (abort)))
 
 (defun safe-list-length (l)
-  (cond ((null l)
-         0)
-        ((atom l)
-         nil)
-        (t
-         (handler-case (list-length l)
-           (error (c) nil)))))
+  ;; Computes the length of a proper list or returns NIL if it
+  ;; is a circular list or terminates with a non-NIL atom.
+  (declare (optimize (speed 3) (safety 0)))
+  (loop with slow = l
+	with fast = l
+	with flag = t
+	for l of-type fixnum from 0
+	do (cond ((null fast)
+		  (return l))
+		 ((not (consp fast))
+		  (return nil))
+		 (flag
+		  (setf flag nil
+			fast (cdr (the cons fast))))
+		 ((eq slow fast)
+		  (return nil))
+		 (t
+		  (setf flag t
+			slow (cdr (the cons slow))
+			fast (cdr (the cons fast)))))
+	finally (return l)))
 
 (defun check-args-number (operator args &optional (min 0) (max most-positive-fixnum))
 
