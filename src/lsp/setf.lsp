@@ -293,20 +293,25 @@ Does not check if the third gang is a single-element list."
 	         ,store-form ,store)
 	      `(mask-field ,btemp ,access-form)))))
 
+(defun trivial-setf-form (place vars stores store-form access-form)
+  (declare (si::c-local))
+  (and (atom place)
+       (null vars)
+       (eq access-form place)
+       (= (length stores) 1)
+       (listp store-form)
+       (= (length store-form) 3)
+       (member (first store-form) '(setq setf))
+       (eq (second store-form) place)
+       (eq (third store-form) (first stores))))
+
 ;;; The expansion function for SETF.
 (defun setf-expand-1 (place newvalue env)
   (declare (si::c-local))
   (multiple-value-bind (vars vals stores store-form access-form)
       (get-setf-expansion place env)
     (declare (ignore access-form))
-    (cond ((and (null vars) (null vals)
-                (eq access-form place)
-                (= (length stores) 1)
-                (listp store-form)
-                (= (length store-form) 3)
-                (eq (first store-form) 'setq)
-                (eq (second store-form) place)
-                (eq (third store-form) (first stores)))
+    (cond ((trivial-setf-form place vars stores store-form access-form)
            (list 'setq place newvalue))
           ((and (consp place)
                 (let* ((name (first place))
@@ -586,7 +591,7 @@ Evaluates FORM, conses the value of FORM to the value stored in PLACE, and
 makes it the new value of PLACE.  Returns the new value of PLACE."
   (multiple-value-bind (vars vals stores store-form access-form)
       (get-setf-expansion place env)
-    (when (and (null vars) (eq access-form place))
+    (when (trivial-setf-form place vars stores store-form access-form)
       (return-from push `(setq ,place (cons ,item ,place))))
     ;; The item to be pushed has to be evaluated before the destination
     (unless (constantp item)
@@ -608,7 +613,7 @@ check if the value of FORM is already in PLACE as if their values are passed
 to MEMBER."
   (multiple-value-bind (vars vals stores store-form access-form)
       (get-setf-expansion place env)
-    (when (and (null vars) (eq access-form place))
+    (when (trivial-setf-form place vars stores store-form access-form)
       (return-from pushnew `(setq ,place (adjoin ,item ,place ,@rest))))
     ;; The item to be pushed has to be evaluated before the destination
     (unless (constantp item)
@@ -628,14 +633,14 @@ Gets the cdr of the value stored in PLACE and makes it the new value of PLACE.
 Returns the car of the old value in PLACE."
   (multiple-value-bind (vars vals stores store-form access-form)
       (get-setf-expansion place env)
-    (if (and (null vars) (eq access-form place))
-	`(prog1 (car ,place) (setq ,place (cdr ,place)))
-	`(let* ,(mapcar #'list
-			(append vars stores)
-			(append vals (list (list 'cdr access-form))))
-	  (declare (:read-only ,@vars)) ; Beppe
-	  (prog1 (car ,access-form)
-	    ,store-form)))))
+    (let ((store-var (first stores)))
+      `(let* ,(mapcar #'list
+		      (append vars stores)
+		      (append vals (list access-form)))
+	 (declare (:read-only ,@vars)) ; Beppe
+	 (prog1 (car ,store-var)
+	   (setq ,store-var (cdr (the list ,store-var)))
+	   ,store-form)))))
 
 (define-setf-expander values (&rest values &environment env)
   (let ((all-vars '())
