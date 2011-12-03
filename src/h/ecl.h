@@ -79,9 +79,9 @@
 
 #include <ecl/object.h>
 #include <ecl/external.h>
+#include <ecl/eval.h>
 #include <ecl/cons.h>
 #include <ecl/stacks.h>
-#include <ecl/eval.h>
 #include <ecl/number.h>
 #ifdef LOCATIVE
 #include <ecl/unify.h>
