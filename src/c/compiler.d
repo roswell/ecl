@@ -110,6 +110,7 @@ static int c_return(cl_env_ptr env, cl_object args, int flags);
 static int c_return_from(cl_env_ptr env, cl_object args, int flags);
 static int c_symbol_macrolet(cl_env_ptr env, cl_object args, int flags);
 static int c_tagbody(cl_env_ptr env, cl_object args, int flags);
+static int c_the(cl_env_ptr env, cl_object args, int flags);
 static int c_throw(cl_env_ptr env, cl_object args, int flags);
 static int c_unwind_protect(cl_env_ptr env, cl_object args, int flags);
 static int c_while(cl_env_ptr env, cl_object args, int flags);
@@ -332,6 +333,7 @@ static compiler_record database[] = {
   {@'setq', c_setq, 1},
   {@'symbol-macrolet', c_symbol_macrolet, 0},
   {@'tagbody', c_tagbody, 1},
+  {@'the', c_the, 0},
   {@'throw', c_throw, 1},
   {@'unwind-protect', c_unwind_protect, 1},
   {@'values', c_values, 1},
@@ -2059,6 +2061,15 @@ c_tagbody(cl_env_ptr env, cl_object args, int flags)
 	return FLAG_REG0;
 }
 
+static int
+c_the(cl_env_ptr env, cl_object stmt, int flags) {
+	cl_object type = pop(&stmt);
+	cl_object value = pop(&stmt);
+	if (stmt != Cnil) {
+		FEprogram_error_noreturn("THE: Too many arguments",0);
+	}
+	return compile_form(env, value, flags);
+}
 
 /*
 	The OP_THROW jumps to an enclosing OP_CATCH whose tag

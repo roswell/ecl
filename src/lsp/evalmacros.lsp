@@ -312,11 +312,6 @@ values of the last FORM.  If no FORM is given, returns NIL."
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      (si::select-package ,(string name))))
 
-;; FIXME!
-(defmacro the (type value)
-  (declare (ignore type))
-  value)
-
 (defmacro define-symbol-macro (&whole whole symbol expansion)
   (cond ((not (symbolp symbol))
 	 (error "DEFINE-SYMBOL-MACRO: ~A is not a symbol"
