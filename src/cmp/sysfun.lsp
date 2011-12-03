@@ -360,10 +360,6 @@
 (def-inline nth :unsafe (t t) t "ecl_nth(fix(#0),#1)")
 (def-inline nth :unsafe (fixnum t) t "ecl_nth(#0,#1)")
 
-(def-inline rest :always (t) t "ecl_cdr(#0)")
-(def-inline rest :unsafe (cons) t "ECL_CONS_CDR(#0)")
-(def-inline rest :unsafe (t) t "_ecl_cdr(#0)")
-
 (def-inline nthcdr :always (t t) t "ecl_nthcdr(fixint(#0),#1)")
 (def-inline nthcdr :always (fixnum t) t "ecl_nthcdr(#0,#1)")
 (def-inline nthcdr :unsafe (t t) t "ecl_nthcdr(fix(#0),#1)")

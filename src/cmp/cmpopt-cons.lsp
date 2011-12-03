@@ -129,6 +129,8 @@
 	for i from 0
 	collect `(define-compiler-macro ,n (x) (list 'nth ,i x))))
 
+(define-compiler-macro rest (x) `(cdr ,x))
+
 ;;;
 ;;; POP
 ;;;
