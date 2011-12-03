@@ -121,6 +121,15 @@
       whole))
 
 ;;;
+;;; FIRST, SECOND, THIRD, ...
+;;;
+
+(progn .
+  #.(loop for n in '(first second third fourth fifth sixth seventh eighth ninth tenth)
+	for i from 0
+	collect `(define-compiler-macro ,n (x) (list 'nth ,i x))))
+
+;;;
 ;;; POP
 ;;;
 
