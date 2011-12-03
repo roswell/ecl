@@ -129,7 +129,7 @@
              (value (third scan))
              (supplied-value (si::search-keyword initargs initarg)))
         (when (or (eq supplied-value '+initform-unsupplied+)
-                  (eq supplied-value 'si::failed))
+                  (eq supplied-value 'si::missing-keyword))
           (when (eq supplied-value '+initform-unsupplied+)
             (remf initargs initarg))
           (setf output (list* (funcall value) initarg output)))))

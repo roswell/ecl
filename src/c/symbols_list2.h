@@ -2175,5 +2175,7 @@ cl_symbols[] = {
 
 {EXT_ "CHMOD","si_chmod"},
 
+{SYS_ "MISSING-KEYWORD",NULL},
+
 /* Tag for end of list */
 {NULL,NULL}};

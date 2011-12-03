@@ -13,20 +13,6 @@
 
 (in-package "SYSTEM")
 
-#-ecl-min
-(defvar *dl*)
-#-ecl-min
-(defvar *key-check*)
-#-ecl-min
-(defvar *arg-check*)
-
-#+ecl-min
-(sys:*make-special '*dl*)
-#+ecl-min
-(sys:*make-special '*key-check*)
-#+ecl-min
-(sys:*make-special '*arg-check*)
-
 #+ecl-min
 (si::fset 'push
 	  #'(ext::lambda-block push (args env)
@@ -66,8 +52,8 @@
 	  t)
 
 (defun sys::search-keyword (list key)
-  (cond ((atom list) 'failed)
-	((atom (cdr list)) 'failed)
+  (cond ((atom list) 'missing-keyword)
+	((atom (cdr list)) 'missing-keyword)
 	((eq (car list) key) (cadr list))
 	(t (search-keyword (cddr list) key))))
 
@@ -90,9 +76,8 @@
 	  ((not (member head keywords))
 	   (setq err head)))))
 
-(defun check-arg-length (list max-length)
-  (when (> (length list) max-length)
-    (error "Too many arguments supplied to a macro or a destructuring-bind form.")))
+(defun dm-too-many-arguments (extra)
+  (error "Too many arguments supplied to a macro:~%~s" extra))
 
 (defun dm-bad-key (key)
   (error "Defmacro-lambda-list contains illegal use of ~s." key))
@@ -101,59 +86,61 @@
   (error "Too few arguments supplied to a macro or a destructuring-bind form."))
 
 (defun sys::destructure (vl macro)
-  (declare (si::c-local))
+  (declare (si::c-local)
+	   (special *dl* *arg-check*))
   (labels ((dm-vl (vl whole macro)
-	     (let* ((n (if macro 1 0))
-		    (ppn 0)
-		    (no-check nil)
-		    all-keywords)
-	       (multiple-value-bind (reqs opts rest key-flag keys allow-other-keys auxs)
-		   (si::process-lambda-list vl (if macro 'macro 'destructuring-bind))
+	     (multiple-value-bind (reqs opts rest key-flag keys allow-other-keys auxs)
+		 (si::process-lambda-list vl (if macro 'macro 'destructuring-bind))
+	       (let* ((pointer (gensym))
+		      (cons-pointer `(the cons ,pointer))
+		      (unsafe-car `(car ,cons-pointer))
+		      (unsafe-cdr `(cdr ,cons-pointer))
+		      (unsafe-pop `(setq ,pointer ,unsafe-cdr))
+		      (no-check nil)
+		      (ppn (+ (length reqs) (first opts)))
+		      all-keywords)
+		 ;; In macros, eliminate the name of the macro from the list
+		 (dm-v pointer (if macro `(cdr (the cons ,whole)) whole))
 		 (dolist (v (cdr reqs))
-		   (dm-v v `(if ,(dm-nth-cdr n whole)
-			     ,(dm-nth n whole)
-			     (dm-too-few-arguments)))
-		   (incf n))
+		   (dm-v v `(progn
+			      (if (null ,pointer)
+				  (dm-too-few-arguments))
+			      (prog1 ,unsafe-car ,unsafe-pop))))
 		 (dotimes (i (pop opts))
 		   (let* ((x (first opts))
 			  (init (second opts))
 			  (sv (third opts)))
 		     (setq opts (cdddr opts))
-		     (dm-v x `(if ,(dm-nth-cdr n whole) ,(dm-nth n whole) ,init))
-		     (when sv (dm-v sv `(not (null ,(dm-nth-cdr n whole)))))
-		     (incf n)))
+		     (when sv (dm-v sv `(if ,pointer t nil)))
+		     (dm-v x `(prog1 (if ,pointer ,unsafe-car ,init)
+				,unsafe-pop))))
 		 (when rest
-		   (dm-v rest (dm-nth-cdr n whole))
-		   (setq no-check t
-			 rest nil)
-		   (when (and (null (last vl 0)) (member '&body vl))
-		     (setq ppn (if macro (1- n) n))))
+		   (dm-v rest pointer)
+		   (setq no-check t))
 		 (dotimes (i (pop keys))
-		   (when (null rest)
-		     (setq rest (gensym))
-		     (dm-v rest (dm-nth-cdr n whole))
-		     (setq no-check t))
 		   (let* ((temp (gensym))
 			  (k (first keys))
 			  (v (second keys))
 			  (init (third keys))
 			  (sv (fourth keys)))
+		     (setq no-check t)
 		     (setq keys (cddddr keys))
-		     (dm-v temp `(search-keyword ,rest ',k))
-		     (dm-v v `(if (eq ,temp 'failed) ,init ,temp))
-		     (when sv (dm-v sv `(not (eq ,temp 'failed))))
+		     (dm-v temp `(search-keyword ,pointer ',k))
+		     (dm-v v `(if (eq ,temp 'missing-keyword) ,init ,temp))
+		     (when sv (dm-v sv `(not (eq ,temp 'missing-keyword))))
 		     (push k all-keywords)))
 		 (do ((l auxs (cddr l))) ((endp l))
 		   (let* ((v (first l))
 			  (init (second l)))
 		     (dm-v v init)))
 		 (cond (key-flag
-			(push `(check-keyword ,rest ',all-keywords
+			(push `(check-keyword ,pointer ',all-keywords
 				,@(if allow-other-keys '(t) '()))
-			      *key-check*))
+			      *arg-check*))
 		       ((not no-check)
-			(push `(check-arg-length ,whole ,n) *arg-check*))))
-	       ppn))
+			(push `(if ,pointer (dm-too-many-arguments ,pointer))
+			      *arg-check*)))
+		  ppn)))
 
 	   (dm-v (v init)
 	     (cond ((and v (symbolp v))
@@ -172,34 +159,12 @@
 		   (t
 		    (let ((temp (gensym)))
 		      (push (if init (list temp init) temp) *dl*)
-		      (dm-vl v temp nil)))))
-
-	   (dm-nth (n v)
-	     (multiple-value-bind (q r) (floor n 4)
-	       (declare (fixnum q r))
-	       (dotimes (i q) (setq v (list 'CDDDDR v)))
-	       (case r
-		 (0 (list 'CAR v))
-		 (1 (list 'CADR v))
-		 (2 (list 'CADDR v))
-		 (3 (list 'CADDDR v))
-		 )))
-
-	   (dm-nth-cdr (n v)
-	     (multiple-value-bind (q r) (floor n 4)
-	       (declare (fixnum q r))
-	       (dotimes (i q) (setq v (list 'CDDDDR v)))
-	       (case r
-		 (0 v)
-		 (1 (list 'CDR v))
-		 (2 (list 'CDDR v))
-		 (3 (list 'CDDDR v))
-		 ))))
+		      (dm-vl v temp nil))))))
 
     (let* ((whole (gensym))
 	   (*dl* nil)
-	   (*key-check* nil)
 	   (*arg-check* nil))
+      (declare (special *dl* *arg-check*))
       (cond ((listp vl)
 	     (when (eq (first vl) '&whole)
                (let ((named-whole (second vl)))
@@ -210,8 +175,9 @@
 	    ((symbolp vl)
 	     (setq vl (list '&rest vl)))
 	    (t (error "The destructuring-lambda-list ~s is not a list." vl)))
-      (values (dm-vl vl whole macro) whole (nreverse *dl*)
-              *key-check* *arg-check*))))
+      (values (dm-vl vl whole macro) whole
+	      (nreverse *dl*)
+              *arg-check*))))
 
 ;;; valid lambda-list to DEFMACRO is:
 ;;;
@@ -255,8 +221,7 @@
     (values (if decls `((declare ,@decls)) nil)
 	    body doc)))
 
-(defun sys::expand-defmacro (name vl body
-			     &aux *dl* *key-check* *arg-check*)
+(defun sys::expand-defmacro (name vl body)
   (multiple-value-bind (decls body doc)
     (find-declarations body)
     ;; We turn (a . b) into (a &rest b)
@@ -272,12 +237,11 @@
                 env (second env))
           (setq env (gensym)
                 decls (list* `(declare (ignore ,env)) decls)))
-      (multiple-value-bind (ppn whole *dl* *key-check* *arg-check*)
+      (multiple-value-bind (ppn whole dl arg-check)
           (destructure vl t)
-        (values `(ext::lambda-block ,name (,whole ,env &aux ,@*dl*)
+        (values `(ext::lambda-block ,name (,whole ,env &aux ,@dl)
                                     ,@decls 
-                                    ,@*arg-check*
-                                    ,@*key-check*
+                                    ,@arg-check
                                     ,@body)
                 ppn
                 doc)))))
@@ -328,12 +292,11 @@
 (defmacro destructuring-bind (vl list &body body)
   (multiple-value-bind (decls body)
       (find-declarations body)
-    (multiple-value-bind (ppn whole *dl* *key-check* *arg-check*)
+    (multiple-value-bind (ppn whole dl arg-check)
         (destructure vl nil)
-      `(let* ((,whole ,list) ,@*dl*)
+      `(let* ((,whole ,list) ,@dl)
          ,@decls
-         ,@*arg-check*
-         ,@*key-check*
+         ,@arg-check
          ,@body))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
