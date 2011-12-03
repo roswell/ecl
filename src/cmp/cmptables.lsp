@@ -110,9 +110,6 @@
 
     (temp . wt-temp)
     (lcl . wt-lcl-loc)
-    (car . wt-car)
-    (cdr . wt-cdr)
-    (cadr . wt-cadr)
     (fixnum-value . wt-number)
     (long-float-value . wt-number)
     (double-float-value . wt-number)

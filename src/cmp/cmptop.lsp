@@ -736,7 +736,7 @@
 	    (wt-nl "CLV" n)
 	    (if first
 		(progn (wt "=env0;") (setf first nil))
-		(wt "=CDR(CLV" (1+ n) ");"))
+		(wt "=_ecl_cdr(CLV" (1+ n) ");"))
 	    (when (= n (var-loc (first bs)))
 	      (wt-comment (var-name (first clv-used)))
               (pop clv-used)))

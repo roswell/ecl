@@ -33,9 +33,6 @@
 ;;;	( CALL-INDIRECT fun narg args)	similar as CALL, but unknown function
 ;;;	( C-INLINE output-type fun/string locs side-effects output-var )
 ;;;	( COERCE-LOC representation-type location)
-;;;	( CAR lcl )
-;;;	( CDR lcl )
-;;;	( CADR lcl )
 ;;;	( FDEFINITION vv-index )
 ;;;	( MAKE-CCLOSURE cfun )
 ;;;	( FIXNUM-VALUE fixnum-value )
@@ -150,12 +147,6 @@
   (member *exit*
           '(RETURN RETURN-FIXNUM RETURN-CHARACTER RETURN-SINGLE-FLOAT
             RETURN-DOUBLE-FLOAT RETURN-LONG-FLOAT RETURN-OBJECT)))
-
-(defun wt-car (loc) (wt "CAR(" loc ")"))
-
-(defun wt-cdr (loc) (wt "CDR(" loc ")"))
-
-(defun wt-cadr (loc) (wt "CADR(" loc ")"))
 
 (defun lcl-name (lcl) (format nil "V~D" lcl))
 

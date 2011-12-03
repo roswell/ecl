@@ -275,15 +275,15 @@
 ;; file list.d
 
 (def-inline car :unsafe (cons) t "ECL_CONS_CAR(#0)")
-(def-inline car :unsafe (t) t "CAR(#0)")
+(def-inline car :unsafe (t) t "_ecl_car(#0)")
 
-(def-inline si::cons-car :always (t) t "CAR(#0)")
+(def-inline si::cons-car :always (t) t "_ecl_car(#0)")
 (def-inline si::cons-car :unsafe (t) t "ECL_CONS_CAR(#0)")
 
 (def-inline cdr :unsafe (cons) t "ECL_CONS_CDR(#0)")
-(def-inline cdr :unsafe (t) t "CDR(#0)")
+(def-inline cdr :unsafe (t) t "_ecl_cdr(#0)")
 
-(def-inline si::cons-cdr :always (t) t "CDR(#0)")
+(def-inline si::cons-cdr :always (t) t "_ecl_cdr(#0)")
 (def-inline si::cons-cdr :unsafe (t) t "ECL_CONS_CDR(#0)")
 
 ;; BEGIN-GENERATED (gen-cons-sysfun)
@@ -366,14 +366,14 @@
 (def-inline fourth :always (t) t "ecl_cadddr(#0)")
 
 (def-inline first :unsafe (cons) t "ECL_CONS_CAR(#0)")
-(def-inline first :unsafe (t) t "CAR(#0)")
-(def-inline second :unsafe (t) t "CADR(#0)")
-(def-inline third :unsafe (t) t "CADDR(#0)")
-(def-inline fourth :unsafe (t) t "CADDDR(#0)")
+(def-inline first :unsafe (t) t "_ecl_car(#0)")
+(def-inline second :unsafe (t) t "_ecl_cadr(#0)")
+(def-inline third :unsafe (t) t "_ecl_caddr(#0)")
+(def-inline fourth :unsafe (t) t "_ecl_cadddr(#0)")
 
 (def-inline rest :always (t) t "ecl_cdr(#0)")
 (def-inline rest :unsafe (cons) t "ECL_CONS_CDR(#0)")
-(def-inline rest :unsafe (t) t "CDR(#0)")
+(def-inline rest :unsafe (t) t "_ecl_cdr(#0)")
 
 (def-inline nthcdr :always (t t) t "ecl_nthcdr(fixint(#0),#1)")
 (def-inline nthcdr :always (fixnum t) t "ecl_nthcdr(#0,#1)")
