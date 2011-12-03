@@ -36,7 +36,7 @@ includedir=@includedir@
 HDIR	= ../ecl
 HFILES	= $(HDIR)/config.h $(HDIR)/ecl.h $(HDIR)/ecl-cmp.h\
 	$(HDIR)/object.h $(HDIR)/cs.h $(HDIR)/stacks.h\
-	$(HDIR)/external.h $(HDIR)/eval.h\
+	$(HDIR)/external.h $(HDIR)/cons.h $(HDIR)/legacy.h\
 	$(HDIR)/number.h $(HDIR)/page.h $(HDIR)/unify.h
 OBJS	= main.o symbol.o package.o cons.o list.o\
 	apply.o eval.o interpreter.o compiler.o disassembler.o \
