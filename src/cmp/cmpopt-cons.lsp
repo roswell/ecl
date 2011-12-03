@@ -120,3 +120,25 @@
 	(t whole))
       whole))
 
+;;;
+;;; POP
+;;;
+
+(define-compiler-macro pop (&whole whole place &environment env)
+  (if (policy-inline-accessors)
+      (multiple-value-bind (vars vals stores store-form access-form)
+	  (get-setf-expansion place env)
+	(let* ((store-var (first stores))
+	       (saved-place (gensym)))
+	  `(let* ,(mapcar #'list
+			  (append vars (list saved-place))
+			  (append vals (list access-form)))
+	     (declare (:read-only ,@vars)) ; Beppe
+	     (optional-type-check ,saved-place list)
+	     (when ,saved-place
+	       (let ((,store-var (cons-cdr ,saved-place)))
+		 (declare (:read-only ,store-var))
+		 ,store-form
+		 (setq ,saved-place (cons-car ,saved-place))))
+	     ,saved-place)))
+    whole))
