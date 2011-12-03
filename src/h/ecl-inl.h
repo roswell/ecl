@@ -1,4 +1,8 @@
 /* -*- mode: c; c-basic-offset: 8 -*- */
+
+#ifndef ECL_ECL_INL_H
+#define ECL_ECL_INL_H
+
 /*
  * Loops over a proper list. Complains on circularity
  */
@@ -170,3 +174,4 @@ _mm_castsi128_pd(__m128i __A) { return (__m128d) __A; }
 
 #endif /* ECL_SSE2 */
 
+#endif /* !ECL_ECL_INL_H */

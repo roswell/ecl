@@ -226,8 +226,10 @@ typedef unsigned char ecl_base_char;
  */
 #if defined(__cplusplus) || (defined(__GNUC__) && !defined(__STRICT_ANSI__))
 #define ECL_INLINE inline
+#define ECL_CAN_INLINE 1
 #else
 #define ECL_INLINE
+#define ECL_CAN_INLINE 0
 #endif
 
 #if !defined(__GNUC__)

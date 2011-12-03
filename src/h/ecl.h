@@ -14,8 +14,8 @@
     See file '../Copyright' for full details.
 */
 
-#ifndef ECL_H
-#define ECL_H
+#ifndef ECL_ECL_H
+#define ECL_ECL_H
 
 #include <sys/types.h>		/* size_t, pthread_t, pthread_mutex_t */
 #ifdef __OpenBSD__		/* same, but for OpenBSD (bug in OpenBSD!) */
@@ -79,6 +79,7 @@
 
 #include <ecl/object.h>
 #include <ecl/external.h>
+#include <ecl/cons.h>
 #include <ecl/stacks.h>
 #include <ecl/eval.h>
 #include <ecl/number.h>

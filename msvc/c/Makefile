@@ -67,7 +67,7 @@ HFILES	= ..\ecl\config.h ..\ecl\atomic_ops.h $(HDIR)\ecl.h $(HDIR)\ecl-cmp.h\
 	$(HDIR)\internal.h $(HDIR)\ecl-inl.h $(HDIR)\bytecodes.h \
 	$(HDIR)\impl\math_dispatch.h
 
-OBJS	= main.obj symbol.obj package.obj list.obj\
+OBJS	= main.obj symbol.obj package.obj cons.obj list.obj\
 	apply.obj eval.obj interpreter.obj compiler.obj disassembler.obj \
 	instance.obj gfun.obj reference.obj character.obj\
 	file.obj read.obj print.obj error.obj string.obj cfun.obj\

@@ -133,22 +133,6 @@ setup_test(struct cl_test *t, cl_object item, cl_object test,
 	}
 }
 
-cl_object
-cl_car(cl_object x)
-{
-	if (ecl_unlikely(!LISTP(x)))
-                FEwrong_type_only_arg(@[car], x, @[list]);
-	return1(Null(x)? x : ECL_CONS_CAR(x));
-}
-
-cl_object
-cl_cdr(cl_object x)
-{
-	if (ecl_unlikely(!LISTP(x)))
-                FEwrong_type_only_arg(@[car], x, @[list]);
-	return1(Null(x)? x : ECL_CONS_CDR(x));
-}
-
 @(defun list (&rest args)
 	cl_object head = Cnil;
 @
@@ -230,52 +214,6 @@ ecl_append(cl_object x, cl_object y)
         *tail = y;
 	return head;
 }
-
-/* Open coded CARs and CDRs */
-#define car(foo)                                \
-	foo;                                    \
-	if (ecl_unlikely(!LISTP(x))) goto E;    \
-	if (!Null(x)) x = ECL_CONS_CAR(x);
-#define cdr(foo)                                \
-	foo;                                    \
-	if (ecl_unlikely(!LISTP(x))) goto E;    \
-	if (!Null(x)) x = ECL_CONS_CDR(x);
-#define defcxr(name, arg, code)                                 \
-        cl_object cl_##name(cl_object foo) {                    \
-                register cl_object arg = foo;                   \
-                code; return1(arg);                             \
-        E:	FEwrong_type_only_arg(@[car],arg,@[list]);}
-
-defcxr(caar, x, car(car(x)))
-defcxr(cadr, x, car(cdr(x)))
-defcxr(cdar, x, cdr(car(x)))
-defcxr(cddr, x, cdr(cdr(x)))
-defcxr(caaar, x, car(car(car(x))))
-defcxr(caadr, x, car(car(cdr(x))))
-defcxr(cadar, x, car(cdr(car(x))))
-defcxr(caddr, x, car(cdr(cdr(x))))
-defcxr(cdaar, x, cdr(car(car(x))))
-defcxr(cdadr, x, cdr(car(cdr(x))))
-defcxr(cddar, x, cdr(cdr(car(x))))
-defcxr(cdddr, x, cdr(cdr(cdr(x))))
-defcxr(caaaar, x, car(car(car(car(x)))))
-defcxr(caaadr, x, car(car(car(cdr(x)))))
-defcxr(caadar, x, car(car(cdr(car(x)))))
-defcxr(caaddr, x, car(car(cdr(cdr(x)))))
-defcxr(cadaar, x, car(cdr(car(car(x)))))
-defcxr(cadadr, x, car(cdr(car(cdr(x)))))
-defcxr(caddar, x, car(cdr(cdr(car(x)))))
-defcxr(cadddr, x, car(cdr(cdr(cdr(x)))))
-defcxr(cdaaar, x, cdr(car(car(car(x)))))
-defcxr(cdaadr, x, cdr(car(car(cdr(x)))))
-defcxr(cdadar, x, cdr(car(cdr(car(x)))))
-defcxr(cdaddr, x, cdr(car(cdr(cdr(x)))))
-defcxr(cddaar, x, cdr(cdr(car(car(x)))))
-defcxr(cddadr, x, cdr(cdr(car(cdr(x)))))
-defcxr(cdddar, x, cdr(cdr(cdr(car(x)))))
-defcxr(cddddr, x, cdr(cdr(cdr(cdr(x)))))
-#undef car
-#undef cdr
 
 #define LENTH(n) (cl_object x) {\
 	return1(ecl_nth(n, x));\

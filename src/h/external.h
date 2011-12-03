@@ -1,4 +1,7 @@
 /* -*- mode: c; c-basic-offset: 8 -*- */
+#ifndef ECL_EXTERNAL_H
+#define ECL_EXTERNAL_H
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -836,36 +839,6 @@ extern ECL_API cl_object ecl_slot_value_set(cl_object x, const char *slot, cl_ob
 
 /* list.c */
 
-extern ECL_API cl_object cl_car(cl_object x);
-extern ECL_API cl_object cl_cdr(cl_object x);
-extern ECL_API cl_object cl_caar(cl_object x);
-extern ECL_API cl_object cl_cadr(cl_object x);
-extern ECL_API cl_object cl_cdar(cl_object x);
-extern ECL_API cl_object cl_cddr(cl_object x);
-extern ECL_API cl_object cl_caaar(cl_object x);
-extern ECL_API cl_object cl_caadr(cl_object x);
-extern ECL_API cl_object cl_cadar(cl_object x);
-extern ECL_API cl_object cl_caddr(cl_object x);
-extern ECL_API cl_object cl_cdaar(cl_object x);
-extern ECL_API cl_object cl_cdadr(cl_object x);
-extern ECL_API cl_object cl_cddar(cl_object x);
-extern ECL_API cl_object cl_cdddr(cl_object x);
-extern ECL_API cl_object cl_caaaar(cl_object x);
-extern ECL_API cl_object cl_caaadr(cl_object x);
-extern ECL_API cl_object cl_caadar(cl_object x);
-extern ECL_API cl_object cl_caaddr(cl_object x);
-extern ECL_API cl_object cl_cadaar(cl_object x);
-extern ECL_API cl_object cl_cadadr(cl_object x);
-extern ECL_API cl_object cl_caddar(cl_object x);
-extern ECL_API cl_object cl_cadddr(cl_object x);
-extern ECL_API cl_object cl_cdaaar(cl_object x);
-extern ECL_API cl_object cl_cdaadr(cl_object x);
-extern ECL_API cl_object cl_cdadar(cl_object x);
-extern ECL_API cl_object cl_cdaddr(cl_object x);
-extern ECL_API cl_object cl_cddaar(cl_object x);
-extern ECL_API cl_object cl_cddadr(cl_object x);
-extern ECL_API cl_object cl_cdddar(cl_object x);
-extern ECL_API cl_object cl_cddddr(cl_object x);
 #define cl_rest cl_cdr
 #define cl_first cl_car
 #define cl_second cl_cadr
@@ -2227,3 +2200,5 @@ extern ECL_API cl_object si_positive_long_float_p(cl_object);
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* !ECL_EXTERNAL_H */
