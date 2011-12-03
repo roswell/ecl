@@ -31,8 +31,7 @@
 			(let ((ndx (search "BEGIN-GENERATED" l)))
 			  (when ndx
 			    (let* ((*standard-output* out)
-				   (form-text (subseq l (+ ndx 15)
-						      (- (length l) 2)))
+				   (form-text (subseq l (+ ndx 15)))
 				   (form (read-from-string form-text)))
 			      (eval form)
 			      (setf skip t)))))))))
@@ -70,6 +69,10 @@
        (format t "~%extern ECL_API cl_object ecl_c~ar(cl_object);" string))
       (:declare-common-lisp
        (format t "~%extern ECL_API cl_object cl_c~ar(cl_object);" string))
+      (:common-lisp-inline
+       (format t "~%(def-inline c~ar :always (t) t \"ecl_c~ar(#0)\")" string string)
+       (format t "~%(def-inline c~ar :unsafe (t) t \"_ecl_c~ar(#0)\")" string string)
+       )
       )))
 
 (defun gen-cons-h ()
@@ -99,8 +102,14 @@
 	do (write-rec depth nil :common-lisp))
   (terpri))
 
+(defun gen-cons-sysfun ()
+  (loop for depth from 1 below 5
+	do (write-rec depth nil :common-lisp-inline))
+  (terpri))
 
 (process-file "src/c/cons.d")
 (process-file "src/h/cons.h")
+(process-file "src/cmp/sysfun.lsp")
 (terpri)
+#+ecl
 (ext:quit)

@@ -286,61 +286,69 @@
 (def-inline si::cons-cdr :always (t) t "CDR(#0)")
 (def-inline si::cons-cdr :unsafe (t) t "ECL_CONS_CDR(#0)")
 
-(def-inline caar :unsafe (t) t "CAAR(#0)")
+;; BEGIN-GENERATED (gen-cons-sysfun)
 
-(def-inline cadr :unsafe (t) t "CADR(#0)")
-
-(def-inline cdar :unsafe (t) t "CDAR(#0)")
-
-(def-inline cddr :unsafe (t) t "CDDR(#0)")
-
-(def-inline caaar :unsafe (t) t "CAAAR(#0)")
-
-(def-inline caadr :unsafe (t) t "CAADR(#0)")
-
-(def-inline cadar :unsafe (t) t "CADAR(#0)")
-
-(def-inline caddr :unsafe (t) t "CADDR(#0)")
-
-(def-inline cdaar :unsafe (t) t "CDAAR(#0)")
-
-(def-inline cdadr :unsafe (t) t "CDADR(#0)")
-
-(def-inline cddar :unsafe (t) t "CDDAR(#0)")
-
-(def-inline cdddr :unsafe (t) t "CDDDR(#0)")
-
-(def-inline caaaar :unsafe (t) t "CAAAAR(#0)")
-
-(def-inline caaadr :unsafe (t) t "CAAADR(#0)")
-
-(def-inline caadar :unsafe (t) t "CAADAR(#0)")
-
-(def-inline caaddr :unsafe (t) t "CAADDR(#0)")
-
-(def-inline cadaar :unsafe (t) t "CADAAR(#0)")
-
-(def-inline cadadr :unsafe (t) t "CADADR(#0)")
-
-(def-inline caddar :unsafe (t) t "CADDAR(#0)")
-
-(def-inline cadddr :unsafe (t) t "CADDDR(#0)")
-
-(def-inline cdaaar :unsafe (t) t "CDAAAR(#0)")
-
-(def-inline cdaadr :unsafe (t) t "CDAADR(#0)")
-
-(def-inline cdadar :unsafe (t) t "CDADAR(#0)")
-
-(def-inline cdaddr :unsafe (t) t "CDADDR(#0)")
-
-(def-inline cddaar :unsafe (t) t "CDDAAR(#0)")
-
-(def-inline cddadr :unsafe (t) t "CDDADR(#0)")
-
-(def-inline cdddar :unsafe (t) t "CDDDAR(#0)")
-
-(def-inline cddddr :unsafe (t) t "CDDDDR(#0)")
+(def-inline car :always (t) t "ecl_car(#0)")
+(def-inline car :unsafe (t) t "_ecl_car(#0)")
+(def-inline cdr :always (t) t "ecl_cdr(#0)")
+(def-inline cdr :unsafe (t) t "_ecl_cdr(#0)")
+(def-inline caar :always (t) t "ecl_caar(#0)")
+(def-inline caar :unsafe (t) t "_ecl_caar(#0)")
+(def-inline cdar :always (t) t "ecl_cdar(#0)")
+(def-inline cdar :unsafe (t) t "_ecl_cdar(#0)")
+(def-inline cadr :always (t) t "ecl_cadr(#0)")
+(def-inline cadr :unsafe (t) t "_ecl_cadr(#0)")
+(def-inline cddr :always (t) t "ecl_cddr(#0)")
+(def-inline cddr :unsafe (t) t "_ecl_cddr(#0)")
+(def-inline caaar :always (t) t "ecl_caaar(#0)")
+(def-inline caaar :unsafe (t) t "_ecl_caaar(#0)")
+(def-inline cdaar :always (t) t "ecl_cdaar(#0)")
+(def-inline cdaar :unsafe (t) t "_ecl_cdaar(#0)")
+(def-inline cadar :always (t) t "ecl_cadar(#0)")
+(def-inline cadar :unsafe (t) t "_ecl_cadar(#0)")
+(def-inline cddar :always (t) t "ecl_cddar(#0)")
+(def-inline cddar :unsafe (t) t "_ecl_cddar(#0)")
+(def-inline caadr :always (t) t "ecl_caadr(#0)")
+(def-inline caadr :unsafe (t) t "_ecl_caadr(#0)")
+(def-inline cdadr :always (t) t "ecl_cdadr(#0)")
+(def-inline cdadr :unsafe (t) t "_ecl_cdadr(#0)")
+(def-inline caddr :always (t) t "ecl_caddr(#0)")
+(def-inline caddr :unsafe (t) t "_ecl_caddr(#0)")
+(def-inline cdddr :always (t) t "ecl_cdddr(#0)")
+(def-inline cdddr :unsafe (t) t "_ecl_cdddr(#0)")
+(def-inline caaaar :always (t) t "ecl_caaaar(#0)")
+(def-inline caaaar :unsafe (t) t "_ecl_caaaar(#0)")
+(def-inline cdaaar :always (t) t "ecl_cdaaar(#0)")
+(def-inline cdaaar :unsafe (t) t "_ecl_cdaaar(#0)")
+(def-inline cadaar :always (t) t "ecl_cadaar(#0)")
+(def-inline cadaar :unsafe (t) t "_ecl_cadaar(#0)")
+(def-inline cddaar :always (t) t "ecl_cddaar(#0)")
+(def-inline cddaar :unsafe (t) t "_ecl_cddaar(#0)")
+(def-inline caadar :always (t) t "ecl_caadar(#0)")
+(def-inline caadar :unsafe (t) t "_ecl_caadar(#0)")
+(def-inline cdadar :always (t) t "ecl_cdadar(#0)")
+(def-inline cdadar :unsafe (t) t "_ecl_cdadar(#0)")
+(def-inline caddar :always (t) t "ecl_caddar(#0)")
+(def-inline caddar :unsafe (t) t "_ecl_caddar(#0)")
+(def-inline cdddar :always (t) t "ecl_cdddar(#0)")
+(def-inline cdddar :unsafe (t) t "_ecl_cdddar(#0)")
+(def-inline caaadr :always (t) t "ecl_caaadr(#0)")
+(def-inline caaadr :unsafe (t) t "_ecl_caaadr(#0)")
+(def-inline cdaadr :always (t) t "ecl_cdaadr(#0)")
+(def-inline cdaadr :unsafe (t) t "_ecl_cdaadr(#0)")
+(def-inline cadadr :always (t) t "ecl_cadadr(#0)")
+(def-inline cadadr :unsafe (t) t "_ecl_cadadr(#0)")
+(def-inline cddadr :always (t) t "ecl_cddadr(#0)")
+(def-inline cddadr :unsafe (t) t "_ecl_cddadr(#0)")
+(def-inline caaddr :always (t) t "ecl_caaddr(#0)")
+(def-inline caaddr :unsafe (t) t "_ecl_caaddr(#0)")
+(def-inline cdaddr :always (t) t "ecl_cdaddr(#0)")
+(def-inline cdaddr :unsafe (t) t "_ecl_cdaddr(#0)")
+(def-inline cadddr :always (t) t "ecl_cadddr(#0)")
+(def-inline cadddr :unsafe (t) t "_ecl_cadddr(#0)")
+(def-inline cddddr :always (t) t "ecl_cddddr(#0)")
+(def-inline cddddr :unsafe (t) t "_ecl_cddddr(#0)")
+;; END-GENERATED
 
 (def-inline cons :always (t t) t "CONS(#0,#1)")
 
