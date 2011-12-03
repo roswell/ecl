@@ -16,6 +16,8 @@
 
 #define CONS(a,d)	ecl_cons((a),(d))
 #define ACONS(a,b,c)	ecl_cons(ecl_cons((a),(b)),(c))
+
+/*
 #define CAR(x)		(Null(x)? (x) : ECL_CONS_CAR(x))
 #define CDR(x)		(Null(x)? (x) : ECL_CONS_CDR(x))
 
@@ -48,5 +50,6 @@
 #define CDDADR(x)	CDR(CDADR(x))
 #define CDDDAR(x)	CDR(CDDAR(x))
 #define CDDDDR(x)	CDR(CDDDR(x))
+*/
 
 #define Null(x)	((x)==Cnil)

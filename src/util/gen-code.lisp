@@ -47,6 +47,8 @@
     (case flag
       (:inline
        (write-rec depth list :unsafe "static ECL_INLINE "))
+      (:unsafe-macro
+       (format t "~%#define C~AR(x) _ecl_c~ar(x)" (string-upcase string) string))
       (:unsafe
        (format t "~%~acl_object _ecl_c~ar(cl_object x)~%{" prefix string)
        (loop for what in (reverse list)
@@ -86,6 +88,7 @@
   (loop for depth from 1 below 5
 	do (write-rec depth nil :declare-safe))
   (terpri)
+  (gen-cons-legacy-h)
   (loop for depth from 1 below 5
 	do (write-rec depth nil :declare-common-lisp))
   (terpri))
@@ -102,6 +105,11 @@
 	do (write-rec depth nil :common-lisp))
   (terpri))
 
+(defun gen-cons-legacy-h ()
+  (loop for depth from 1 below 5
+	do (write-rec depth nil :unsafe-macro))
+  (terpri))
+
 (defun gen-cons-sysfun ()
   (loop for depth from 1 below 5
 	do (write-rec depth nil :common-lisp-inline))
@@ -109,6 +117,7 @@
 
 (process-file "src/c/cons.d")
 (process-file "src/h/cons.h")
+;(process-file "src/h/legacy.h")
 (process-file "src/cmp/sysfun.lsp")
 (terpri)
 #+ecl

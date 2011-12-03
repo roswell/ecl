@@ -22,6 +22,10 @@
 extern "C" {
 #endif
 
+#define Null(x)		((x)==Cnil)
+#define CONS(a,d)	ecl_cons((a),(d))
+#define ACONS(a,b,c)	ecl_cons(ecl_cons((a),(b)),(c))
+
 /* BEGIN-GENERATED (gen-cons-h) */
 
 #if ECL_CAN_INLINE
@@ -434,6 +438,37 @@ extern ECL_API cl_object ecl_caaddr(cl_object);
 extern ECL_API cl_object ecl_cdaddr(cl_object);
 extern ECL_API cl_object ecl_cadddr(cl_object);
 extern ECL_API cl_object ecl_cddddr(cl_object);
+
+#define CAR(x) _ecl_car(x)
+#define CDR(x) _ecl_cdr(x)
+#define CAAR(x) _ecl_caar(x)
+#define CDAR(x) _ecl_cdar(x)
+#define CADR(x) _ecl_cadr(x)
+#define CDDR(x) _ecl_cddr(x)
+#define CAAAR(x) _ecl_caaar(x)
+#define CDAAR(x) _ecl_cdaar(x)
+#define CADAR(x) _ecl_cadar(x)
+#define CDDAR(x) _ecl_cddar(x)
+#define CAADR(x) _ecl_caadr(x)
+#define CDADR(x) _ecl_cdadr(x)
+#define CADDR(x) _ecl_caddr(x)
+#define CDDDR(x) _ecl_cdddr(x)
+#define CAAAAR(x) _ecl_caaaar(x)
+#define CDAAAR(x) _ecl_cdaaar(x)
+#define CADAAR(x) _ecl_cadaar(x)
+#define CDDAAR(x) _ecl_cddaar(x)
+#define CAADAR(x) _ecl_caadar(x)
+#define CDADAR(x) _ecl_cdadar(x)
+#define CADDAR(x) _ecl_caddar(x)
+#define CDDDAR(x) _ecl_cdddar(x)
+#define CAAADR(x) _ecl_caaadr(x)
+#define CDAADR(x) _ecl_cdaadr(x)
+#define CADADR(x) _ecl_cadadr(x)
+#define CDDADR(x) _ecl_cddadr(x)
+#define CAADDR(x) _ecl_caaddr(x)
+#define CDADDR(x) _ecl_cdaddr(x)
+#define CADDDR(x) _ecl_cadddr(x)
+#define CDDDDR(x) _ecl_cddddr(x)
 
 extern ECL_API cl_object cl_car(cl_object);
 extern ECL_API cl_object cl_cdr(cl_object);
