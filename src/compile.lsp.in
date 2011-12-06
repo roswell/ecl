@@ -244,6 +244,13 @@
 	      #+(or (NOT :WANTS-DLOPEN) :BUILTIN-SERVE-EVENT) t
 	      #-(or (NOT :WANTS-DLOPEN) :BUILTIN-SERVE-EVENT) nil)
 
+#+WANTS-SOCKETS
+(build-module "ecl-curl"
+	      '("ext:ecl-curl;ecl-curl.lisp")
+	      :dir "build:ext;"
+	      :prefix "EXT"
+	      :builtin nil)
+
 ;;;
 ;;; * Test suite
 ;;;
