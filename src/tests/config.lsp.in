@@ -1,0 +1,114 @@
+;;; -*- mode: common-lisp; Base: 10 ; Syntax: ANSI-Common-Lisp -*-
+;;;
+;;; (c) 2011, Juan Jose Garcia-Ripoll
+;;;
+;;; Set up the test environment.
+;;;
+
+(defpackage :ecl-tests
+  (:use :cl))
+
+(in-package :ecl-tests)
+
+(defvar *ecl-sources* "@top_srcdir@/")
+
+(defvar *test-sources* "@top_srcdir@/tests/")
+
+(defvar *here* (merge-pathnames "@builddir@/"))
+
+(defvar *quicklisp-sandbox* (merge-pathnames "./quicklisp/" *here*))
+
+(defvar *quicklisp-install-file* (merge-pathnames "./quicklisp.lsp" *here*))
+
+(defvar *quicklisp-setup-file* (merge-pathnames "./quicklisp/setup.lisp" *here*))
+
+(defvar *cache* (merge-pathnames "./cache/" *here*))
+
+(defvar *ansi-tests-mirror* "http://ecls.sourceforge.net/ansi-tests.tar.gz")
+
+(defvar *ansi-tests-sandbox* (merge-pathnames "./ansi-test/" *here*))
+
+(defvar *ansi-tests-tarball* (merge-pathnames "./cache/ansi-tests.tar.gz" *here*))
+
+(load "@top_srcdir@/../contrib/ecl-curl/ecl-curl.lisp")
+
+(defun setup-asdf ()
+  (require :asdf)
+  (ensure-directories-exist *cache*)
+  (setf (symbol-value (read-from-string "asdf::*user-cache*"))
+	(list *cache* :implementation)))
+		      
+
+(defun delete-everything (path)
+  ;; Recursively run through children
+  (labels ((recursive-deletion (path)
+             (mapc #'delete-everything
+                   (directory (merge-pathnames
+                               (make-pathname :name nil
+                                              :type nil
+                                              :directory '(:relative :wild)
+                                              :defaults path)
+                               path)))
+             ;; Delete files
+             (loop for f in (directory (make-pathname :name :wild
+                                                      :type :wild
+                                                      :defaults path))
+                do (delete-file f)
+                finally (delete-file path))))
+    (and (probe-file path)
+         (recursive-deletion path))))
+
+(defun download-and-setup-quicklisp ()
+  (when (probe-file *quicklisp-sandbox*)
+    (delete-everything *quicklisp-sandbox*))
+  (handler-case
+      (ecl-curl:download-url-to-file "http://beta.quicklisp.org/quicklisp.lisp"
+				     *quicklisp-install-file*)
+    (ecl-curl:download-error (c)
+      (format t "~&;;;~%;;; Unable to download quicklisp. Aborting. ~%;;;")
+      (ext:quit 1)))
+  (handler-case
+      (progn
+	(load *quicklisp-install-file*)
+	(let ((function (read-from-string "quicklisp-quickstart:install")))
+	  (eval (list function :path *quicklisp-sandbox*))))
+    (error (c)
+      (format t "~&;;;~%;;; Unable to setup quicklisp. Aborting.~%;;;")
+      (delete-everything *quicklisp-sandbox*))))
+
+(defun ensure-quicklisp ()
+  (unless (find-package "QL")
+    (unless (probe-file *quicklisp-sandbox*)
+      (setup-asdf)
+      (download-and-setup-quicklisp))
+    (load *quicklisp-setup-file*)))
+
+(defun extract-tarball (filename)
+  (format t "~&;;;~%;;; Extracting ~a~%;;;" filename)
+  (if (string-equal (pathname-type filename) "gz")
+      (let ((temp-filename (ext:mkstemp "fooXXXXXXX")))
+	(print temp-filename)
+	(unwind-protect
+	     (progn
+	       (format t "~&;;;~%;;; Deflating ~a to ~a~%;;;"
+		       filename temp-filename)
+	       (funcall (read-from-string "ql-gunzipper:gunzip")
+			filename temp-filename)
+	       (extract-tarball temp-filename))
+	  (delete-file temp-filename)))
+      (funcall (read-from-string "ql-minitar:unpack-tarball")
+	       filename)))
+
+(defun ensure-ansi-tests ()
+  (unless (probe-file *ansi-tests-sandbox*)
+    (ensure-quicklisp)
+    (unless (probe-file *ansi-tests-tarball*)
+      (handler-case
+	  (ecl-curl:download-url-to-file
+	   *ansi-tests-mirror*
+	   *ansi-tests-tarball*)
+	(ecl-curl:download-error (c)
+	  (format t "~&;;;~%;;; Unable to download ansi-tests. Aborting. ~%;;;")
+	  (ext:quit 1))))
+    (extract-tarball *ansi-tests-tarball*)))
+
