@@ -1,4 +1,4 @@
-ECL=DYLD_LIBRARY_PATH=../ LD_LIBRARY_PATH=../ ../bin/ecl
+ECL=ecl
 
 all: output.ecl/ansi.log output.ecl/regressions.log
 
