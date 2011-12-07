@@ -264,6 +264,10 @@
     (ql:quickload ~s)
     (princ \"ECL-BUILD-OK\"))
   (serious-condition (c) (princ c)))
+#+ecl
+(ext:quit)
+#+sbcl
+(sb-ext:quit)
 ")
 
 (defconstant +quicklisp-test-template+ "
@@ -279,6 +283,10 @@
     (asdf:oos 'asdf:test-op :$name)
     (princ \"ECL-TEST-OK\"))
   (serious-condition (c) (princ c)))
+#+ecl
+(ext:quit)
+#+sbcl
+(sb-ext:quit)
 ")
 
 (defun run-quicklisp-tests (&optional (output (merge-pathnames "quicklisp.log"
