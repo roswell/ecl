@@ -26,8 +26,8 @@
 (use-package :sb-rt)
 
 (load "tools.lsp")
-(load "../ansi/universe.lsp")
-(load "../ansi/ansi-aux.lsp")
+(load "../ansi-tests/universe.lsp")
+(load "../ansi-tests/ansi-aux.lsp")
 
 (load "cl-001.lsp")
 
