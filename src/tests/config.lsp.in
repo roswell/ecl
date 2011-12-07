@@ -280,7 +280,7 @@
   (progn
     (ql:quickload ~s)
     (princ \"ECL-BUILD-OK\")
-    (asdf:oos 'asdf:test-op :$name)
+    (asdf:oos 'asdf:test-op ~:*~s)
     (princ \"ECL-TEST-OK\"))
   (serious-condition (c) (princ c)))
 #+ecl
