@@ -2,7 +2,7 @@ ECL=ecl
 
 all: output.ecl/ansi.log output.ecl/regressions.log
 
-.PHONY: do-ansi do-regressions cleanup clean-sources update
+.PHONY: do-ansi do-regressions do-quicklisp cleanup clean-sources update
 
 output.ecl/ansi.log: config.lsp
 	$(MAKE) do-ansi
@@ -13,6 +13,8 @@ do-ansi: ansi-tests
 	$(ECL) -norc -load config.lsp -eval '(ecl-tests::run-ansi-tests)' -eval '(ext:quit)' < /dev/null
 do-regressions: regressions
 	$(ECL) -norc -load config.lsp -eval '(ecl-tests::run-regressions-tests)' -eval '(ext:quit)' < /dev/null
+do-quicklisp: quicklisp
+	$(ECL) -norc -load config.lsp -eval '(ecl-tests::run-quicklisp-tests)' -eval '(ext:quit)' < /dev/null
 
 #
 # Create directories
@@ -21,6 +23,8 @@ ansi-tests:
 	$(ECL) -norc -load config.lsp -eval '(ecl-tests::ensure-ansi-tests)' -eval '(ext:quit)' < /dev/null
 regressions:
 	$(ECL) -norc -load config.lsp -eval '(ecl-tests::ensure-regressions)' -eval '(ext:quit)' < /dev/null
+quicklisp:
+	$(ECL) -norc -load config.lsp -eval '(ecl-tests::ensure-quicklisp)' -eval '(ext:quit)' < /dev/null
 
 #
 # Test other implementations
@@ -43,4 +47,5 @@ clean-sources:
 distclean: clean-sources clean
 
 update: clean-sources
-	$(MAKE) ansi-tests regressions
+	$(MAKE) ansi-tests regressions quicklisp
+
