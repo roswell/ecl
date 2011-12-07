@@ -264,7 +264,6 @@
     (ql:quickload ~s)
     (princ \"ECL-BUILD-OK\"))
   (serious-condition (c) (princ c)))
-(si::quit)
 ")
 
 (defconstant +quicklisp-test-template+ "
