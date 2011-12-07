@@ -10,11 +10,15 @@
 
 (in-package :ecl-tests)
 
+(defvar *lisp-image* "ecl")
+
 (defvar *ecl-sources* "@top_srcdir@/")
 
 (defvar *test-sources* "@top_srcdir@/tests/")
 
 (defvar *here* (merge-pathnames "@builddir@/"))
+
+(defvar *output-directory* (merge-pathnames "output/" *here*))
 
 (defvar *quicklisp-sandbox* (merge-pathnames "./quicklisp/" *here*))
 
@@ -24,13 +28,34 @@
 
 (defvar *cache* (merge-pathnames "./cache/" *here*))
 
+(defvar *regressions-sources* "@top_srcdir@/tests/bugs/")
+
+(defvar *regressions-sandbox* (merge-pathnames "regressions/" *here*))
+
 (defvar *ansi-tests-mirror* "http://ecls.sourceforge.net/ansi-tests.tar.gz")
 
-(defvar *ansi-tests-sandbox* (merge-pathnames "./ansi-test/" *here*))
+(defvar *ansi-tests-sandbox* (merge-pathnames "./ansi-tests/" *here*))
 
-(defvar *ansi-tests-tarball* (merge-pathnames "./cache/ansi-tests.tar.gz" *here*))
+(defvar *ansi-tests-tarball* "ansi-tests.tar.gz")
+
+(defvar *fricas-mirror* "http://ecls.sourceforge.net/fricas.tar.gz")
+
+(defvar *fricas-sandbox* (merge-pathnames "./fricas/" *here*))
+
+(defvar *fricas-tarball* "fricas.tar.gz")
+
+(defvar *wild-inferiors* (make-pathname :name :wild
+					:type :wild
+					:version :wild
+					:directory '(:relative :wild-inferiors)))
+
+(defvar *cleanup-extensions* '("fasl" "fasb" "c" "h" "obj" "o" "a" "lib" "dll" "dylib" "data"))
 
 (load "@top_srcdir@/../contrib/ecl-curl/ecl-curl.lisp")
+
+;;;
+;;; PREPARATION OF DIRECTORIES AND FILES
+;;;
 
 (defun setup-asdf ()
   (require :asdf)
@@ -81,13 +106,21 @@
     (unless (probe-file *quicklisp-sandbox*)
       (setup-asdf)
       (download-and-setup-quicklisp))
-    (load *quicklisp-setup-file*)))
+    (load *quicklisp-setup-file*))
+  t)
+
+(defun copy-directory (orig dest)
+  (loop for f in (directory (merge-pathnames *wild-inferiors* orig))
+     for f2 = (enough-namestring f orig)
+     for f3 = (merge-pathnames f2 dest)
+     unless (probe-file f3)
+     do (ensure-directories-exist f3)
+     do (ext:copy-file f f3)))
 
 (defun extract-tarball (filename)
   (format t "~&;;;~%;;; Extracting ~a~%;;;" filename)
   (if (string-equal (pathname-type filename) "gz")
       (let ((temp-filename (ext:mkstemp "fooXXXXXXX")))
-	(print temp-filename)
 	(unwind-protect
 	     (progn
 	       (format t "~&;;;~%;;; Deflating ~a to ~a~%;;;"
@@ -99,16 +132,81 @@
       (funcall (read-from-string "ql-minitar:unpack-tarball")
 	       filename)))
 
+(defun extract-distribution (filename url)
+  (ensure-quicklisp)
+  (loop for base in (list *cache*
+			  *here*
+			  *test-sources*)
+     for file = (merge-pathnames filename base)
+     when (probe-file file)
+     do (progn
+	  (extract-tarball file)
+	  (return-from extract-distribution t)))
+  (let ((file (merge-pathnames filename *cache*)))
+    (handler-case
+	  (ecl-curl:download-url-to-file url filename)
+      (ecl-curl:download-error (c)
+	(format t "~&;;;~%;;; Unable to download ~a. Aborting. ~%;;;" url)
+	(ext:quit 1)))
+    (extract-tarball filename)))
+
+(defun ensure-regressions ()
+  (unless (probe-file *regressions-sandbox*)
+    (copy-directory *regressions-sources* *regressions-sandbox*)))
+
 (defun ensure-ansi-tests ()
   (unless (probe-file *ansi-tests-sandbox*)
-    (ensure-quicklisp)
-    (unless (probe-file *ansi-tests-tarball*)
-      (handler-case
-	  (ecl-curl:download-url-to-file
-	   *ansi-tests-mirror*
-	   *ansi-tests-tarball*)
-	(ecl-curl:download-error (c)
-	  (format t "~&;;;~%;;; Unable to download ansi-tests. Aborting. ~%;;;")
-	  (ext:quit 1))))
-    (extract-tarball *ansi-tests-tarball*)))
+    (extract-distribution *ansi-tests-tarball* *ansi-tests-mirror*))
+  t)
+
+(defun ensure-fricas ()
+  (unless (probe-file *fricas-sandbox*)
+    (extract-distribution *fricas-tarball* *fricas-url*)))
+
+(defun ensure-maxima ()
+  (unless (probe-file *fricas-sandbox*)
+    (extract-distribution *fricas-tarball* *fricas-url*)))
+
+(defun cleanup-directory (path)
+  (loop for i in (directory (merge-pathnames *wild-inferiors*
+					     path))
+     when (member (pathname-type i) *cleanup-extensions* :test #'string-equal)
+     do (delete-file i)))
+
+;;;
+;;; RUNNING TESTS
+;;;
+
+(defun run-ansi-tests (&optional (output (merge-pathnames "ansi.log"
+							  *output-directory*)))
+  ;; Cleanup stray files
+  (cleanup-directory *ansi-tests-sandbox*)
+  (delete-everything (merge-pathnames "scratch/" *ansi-tests-sandbox*))
+  ;; Run with given image
+  (ensure-directories-exist output)
+  (unwind-protect 
+       (progn
+	 (ext:chdir *ansi-tests-sandbox*)
+	 (ext:run-program *lisp-image*
+			  '()
+			  :input (merge-pathnames "doit.lsp" *ansi-tests-sandbox*)
+			  :output output
+			  :error :output))
+    (ext:chdir *here*)))
+
+(defun run-regressions-tests (&optional (output (merge-pathnames "regressions.log"
+								 *output-directory*)))
+  ;; Cleanup stray files
+  (cleanup-directory *regressions-sandbox*)
+  ;; Run with given image
+  (ensure-directories-exist output)
+  (unwind-protect 
+       (progn
+	 (ext:chdir *regressions-sandbox*)
+	 (ext:run-program *lisp-image*
+			  '()
+			  :input (merge-pathnames "doit.lsp" *regressions-sandbox*)
+			  :output output
+			  :error :output))
+    (ext:chdir *here*)))
 
