@@ -10,7 +10,7 @@
 
 (in-package :ecl-tests)
 
-(defvar *lisp-image* "ecl")
+(setf *load-verbose* nil *load-print* nil)
 
 (defvar *ecl-sources* "@top_srcdir@/")
 
@@ -18,7 +18,13 @@
 
 (defvar *here* (merge-pathnames "@builddir@/"))
 
-(defvar *output-directory* (merge-pathnames "output/" *here*))
+(defvar *test-image* (or (ext:getenv "TEST_IMAGE")
+			 (namestring (merge-pathnames "../bin/ecl" *here*))))
+
+(defvar *test-name* (or (ext:getenv "TEST_NAME") "ecl"))
+
+(defvar *output-directory*
+  (merge-pathnames (concatenate 'string "output." *test-name* "/") *here*))
 
 (defvar *quicklisp-sandbox* (merge-pathnames "./quicklisp/" *here*))
 
@@ -179,6 +185,7 @@
 
 (defun run-ansi-tests (&optional (output (merge-pathnames "ansi.log"
 							  *output-directory*)))
+  (ensure-ansi-tests)
   ;; Cleanup stray files
   (cleanup-directory *ansi-tests-sandbox*)
   (delete-everything (merge-pathnames "scratch/" *ansi-tests-sandbox*))
@@ -187,7 +194,7 @@
   (unwind-protect 
        (progn
 	 (ext:chdir *ansi-tests-sandbox*)
-	 (ext:run-program *lisp-image*
+	 (ext:run-program *test-image*
 			  '()
 			  :input (merge-pathnames "doit.lsp" *ansi-tests-sandbox*)
 			  :output output
@@ -196,6 +203,7 @@
 
 (defun run-regressions-tests (&optional (output (merge-pathnames "regressions.log"
 								 *output-directory*)))
+  (ensure-regressions)
   ;; Cleanup stray files
   (cleanup-directory *regressions-sandbox*)
   ;; Run with given image
@@ -203,7 +211,7 @@
   (unwind-protect 
        (progn
 	 (ext:chdir *regressions-sandbox*)
-	 (ext:run-program *lisp-image*
+	 (ext:run-program *test-image*
 			  '()
 			  :input (merge-pathnames "doit.lsp" *regressions-sandbox*)
 			  :output output
