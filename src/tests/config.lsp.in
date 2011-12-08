@@ -64,7 +64,9 @@
 
 (defvar *cleanup-extensions* '("fasl" "fasb" "c" "h" "obj" "o" "a" "lib" "dll" "dylib" "data"))
 
-(load "@top_srcdir@/../contrib/ecl-curl/ecl-curl.lisp")
+(require :ecl-curl)
+(require :deflate)
+(require :ql-minitar)
 
 ;;;
 ;;; PREPARATION OF DIRECTORIES AND FILES
@@ -129,14 +131,6 @@
     (load *quicklisp-setup-file*))
   t)
 
-(defun unpack-tarball-symbol ()
-  (ensure-quicklisp)
-  (intern "UNPACK-TARBALL" (find-package "QL-MINITAR")))
-
-(defun gunzip-symbol ()
-  (ensure-quicklisp)
-  (intern "GUNZIP" (find-package "QL-GUNZIPPER")))
-
 (defun copy-directory (orig dest)
   (loop for f in (directory (merge-pathnames *wild-inferiors* orig))
      for f2 = (enough-namestring f orig)
@@ -151,12 +145,10 @@
       (let ((temp-filename (ext:mkstemp "fooXXXXXXX")))
 	(unwind-protect
 	     (progn
-	       (format t "~&;;;~%;;; Deflating ~a to ~a~%;;;"
-		       filename temp-filename)
-	       (funcall (gunzip-symbol) filename temp-filename)
+	       (deflate:gunzip filename temp-filename)
 	       (extract-tarball temp-filename))
 	  (delete-file temp-filename)))
-      (funcall (unpack-tarball-symbol) filename)))
+      (ql-minitar:unpack-tarball filename)))
 
 (defun extract-distribution (filename url)
   (let ((distribution (loop for base in (list *cache*

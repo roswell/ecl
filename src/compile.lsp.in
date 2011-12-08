@@ -251,6 +251,20 @@
 	      :prefix "EXT"
 	      :builtin nil)
 
+#+WANTS-SOCKETS
+(build-module "ql-minitar"
+	      '("ext:quicklisp;minitar.lisp")
+	      :dir "build:ext;"
+	      :prefix "EXT"
+	      :builtin nil)
+
+#+WANTS-SOCKETS
+(build-module "deflate"
+	      '("ext:deflate;deflate.lisp")
+	      :dir "build:ext;"
+	      :prefix "EXT"
+	      :builtin nil)
+
 ;;;
 ;;; * Test suite
 ;;;
