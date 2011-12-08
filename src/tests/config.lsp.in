@@ -18,6 +18,8 @@
 
 (defvar *here* (merge-pathnames "@builddir@/"))
 
+(defvar *cache* (merge-pathnames "./cache/" *here*))
+
 (defvar *test-image* (or (ext:getenv "TEST_IMAGE") "ecl"))
 
 (defvar *test-image-args*
@@ -33,13 +35,11 @@
 (defvar *output-directory*
   (merge-pathnames (concatenate 'string "output." *test-name* "/") *here*))
 
-(defvar *quicklisp-sandbox* (merge-pathnames "./quicklisp/" *here*))
+(defvar *quicklisp-sandbox* (merge-pathnames "quicklisp/" *here*))
 
-(defvar *quicklisp-install-file* (merge-pathnames "./quicklisp.lsp" *here*))
+(defvar *quicklisp-install-file* (merge-pathnames "quicklisp.lsp" *cache*))
 
-(defvar *quicklisp-setup-file* (merge-pathnames "./quicklisp/setup.lisp" *here*))
-
-(defvar *cache* (merge-pathnames "./cache/" *here*))
+(defvar *quicklisp-setup-file* (merge-pathnames "setup.lisp" *quicklisp-sandbox*))
 
 (defvar *regressions-sources* "@top_srcdir@/tests/bugs/")
 
@@ -47,13 +47,13 @@
 
 (defvar *ansi-tests-mirror* "http://ecls.sourceforge.net/ansi-tests.tar.gz")
 
-(defvar *ansi-tests-sandbox* (merge-pathnames "./ansi-tests/" *here*))
+(defvar *ansi-tests-sandbox* (merge-pathnames "ansi-tests/" *here*))
 
 (defvar *ansi-tests-tarball* "ansi-tests.tar.gz")
 
 (defvar *fricas-mirror* "http://ecls.sourceforge.net/fricas.tar.gz")
 
-(defvar *fricas-sandbox* (merge-pathnames "./fricas/" *here*))
+(defvar *fricas-sandbox* (merge-pathnames "fricas/" *here*))
 
 (defvar *fricas-tarball* "fricas.tar.gz")
 
@@ -96,18 +96,25 @@
     (and (probe-file path)
          (recursive-deletion path))))
 
+(defun safe-download (url filename)
+  (ensure-directories-exist filename)
+  (handler-case
+      (ecl-curl:download-url-to-file url filename)
+    (ecl-curl:download-error (c)
+      (format t "~&;;;~%;;; Unable to download quicklisp. Aborting. ~%;;;")
+      (ext:quit 1)))
+  filename)
+
+(defun download-quicklisp-install ()
+  (safe-download "http://beta.quicklisp.org/quicklisp.lisp"
+		 *quicklisp-install-file*))
+
 (defun download-and-setup-quicklisp ()
   (when (probe-file *quicklisp-sandbox*)
     (delete-everything *quicklisp-sandbox*))
   (handler-case
-      (ecl-curl:download-url-to-file "http://beta.quicklisp.org/quicklisp.lisp"
-				     *quicklisp-install-file*)
-    (ecl-curl:download-error (c)
-      (format t "~&;;;~%;;; Unable to download quicklisp. Aborting. ~%;;;")
-      (ext:quit 1)))
-  (handler-case
       (progn
-	(load *quicklisp-install-file*)
+	(load (download-quicklisp-install))
 	(let ((function (read-from-string "quicklisp-quickstart:install")))
 	  (eval (list function :path *quicklisp-sandbox*))))
     (error (c)
@@ -121,6 +128,14 @@
       (download-and-setup-quicklisp))
     (load *quicklisp-setup-file*))
   t)
+
+(defun unpack-tarball-symbol ()
+  (ensure-quicklisp)
+  (intern "UNPACK-TARBALL" (find-package "QL-MINITAR")))
+
+(defun gunzip-symbol ()
+  (ensure-quicklisp)
+  (intern "GUNZIP" (find-package "QL-GUNZIPPER")))
 
 (defun copy-directory (orig dest)
   (loop for f in (directory (merge-pathnames *wild-inferiors* orig))
@@ -138,30 +153,21 @@
 	     (progn
 	       (format t "~&;;;~%;;; Deflating ~a to ~a~%;;;"
 		       filename temp-filename)
-	       (funcall (read-from-string "ql-gunzipper:gunzip")
-			filename temp-filename)
+	       (funcall (gunzip-symbol) filename temp-filename)
 	       (extract-tarball temp-filename))
 	  (delete-file temp-filename)))
-      (funcall (read-from-string "ql-minitar:unpack-tarball")
-	       filename)))
+      (funcall (unpack-tarball-symbol) filename)))
 
 (defun extract-distribution (filename url)
-  (ensure-quicklisp)
-  (loop for base in (list *cache*
-			  *here*
-			  *test-sources*)
-     for file = (merge-pathnames filename base)
-     when (probe-file file)
-     do (progn
-	  (extract-tarball file)
-	  (return-from extract-distribution t)))
-  (let ((file (merge-pathnames filename *cache*)))
-    (handler-case
-	  (ecl-curl:download-url-to-file url filename)
-      (ecl-curl:download-error (c)
-	(format t "~&;;;~%;;; Unable to download ~a. Aborting. ~%;;;" url)
-	(ext:quit 1)))
-    (extract-tarball filename)))
+  (let ((distribution (loop for base in (list *cache*
+					      *here*
+					      *test-sources*)
+			 for file = (merge-pathnames filename base)
+			 when (probe-file file)
+			 do (return file)
+			 finally (let ((tmp (merge-pathnames filename *cache*)))
+				   (return (safe-download url tmp))))))
+    (extract-tarball distribution)))
 
 (defun ensure-regressions ()
   (unless (probe-file *regressions-sandbox*)

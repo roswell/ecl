@@ -45,6 +45,7 @@ clean-sources:
 	test -f config.lsp.in || rm -rf bugs
 	rm -rf ansi-tests quicklisp
 distclean: clean-sources clean
+	rm -rf cache
 
 update: clean-sources
 	$(MAKE) ansi-tests regressions quicklisp
