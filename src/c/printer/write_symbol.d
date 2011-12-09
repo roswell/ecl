@@ -147,16 +147,23 @@ write_symbol_string(cl_object s, int action, cl_object print_case,
 		ecl_write_char('|', stream);
 }
 
+static bool
+forced_print_package(cl_object package)
+{
+	cl_object print_package = ecl_symbol_value(@'si::*print-package*');
+	return !Null(print_package) && (print_package != package);
+}
+
 void
 _ecl_write_symbol(cl_object x, cl_object stream)
 {
-	cl_object print_package = ecl_symbol_value(@'si::*print-package*');
 	cl_object readtable = ecl_current_readtable();
 	cl_object print_case = ecl_print_case();
 	cl_object package;
 	cl_object name;
 	int intern_flag;
 	bool print_readably = ecl_print_readably();
+	bool forced_package = 0;
 
 	if (Null(x)) {
 		package = Cnil_symbol->symbol.hpack;
@@ -176,14 +183,13 @@ _ecl_write_symbol(cl_object x, cl_object stream)
 	 * the standard readtable (which has readtable-case = :UPCASE)
 	 */
 	if (Null(package)) {
-		if (ecl_print_gensym() || print_readably)
+		if (print_readably || ecl_print_gensym())
 			writestr_stream("#:", stream);
 	} else if (package == cl_core.keyword_package) {
 		ecl_write_char(':', stream);
-	} else if ((print_package != Cnil && package != print_package)
-		   || ecl_find_symbol(ecl_symbol_name(x), ecl_current_package(),
-                                      &intern_flag)!=x
-		   || intern_flag == 0)
+	} else if ((forced_package = forced_print_package(package))
+		   || ecl_find_symbol(name, ecl_current_package(), &intern_flag) != x
+		   || (intern_flag == 0))
 	{
 		cl_object name = package->pack.name;
 		write_symbol_string(name, readtable->readtable.read_case,
@@ -191,8 +197,7 @@ _ecl_write_symbol(cl_object x, cl_object stream)
 				    needs_to_be_escaped(name, readtable, print_case));
 		if (ecl_find_symbol(ecl_symbol_name(x), package, &intern_flag) != x)
 			ecl_internal_error("can't print symbol");
-		if ((print_package != Cnil && package != print_package)
-		    || intern_flag == INTERNAL) {
+		if (intern_flag == INTERNAL || forced_package) {
 			writestr_stream("::", stream);
 		} else if (intern_flag == EXTERNAL) {
 			ecl_write_char(':', stream);
