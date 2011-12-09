@@ -114,6 +114,9 @@ distclean: clean
 #        begin to build the program.
 realclean: distclean
 
+check:
+	cd build; $(MAKE) check
+
 # ==================== Various means of distribution ====================
 
 TAR_DIR=ecl-$(VERSION)
