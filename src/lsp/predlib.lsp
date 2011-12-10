@@ -30,9 +30,9 @@ Builds a new function which accepts any number of arguments but always outputs N
     ((t) #'constantly-t)
     (t #'(lambda (&rest x) (declare (ignore x)) n))))
 
-(defvar *subtypep-cache* (si:make-vector t 256 nil nil nil 0))
+(defparameter *subtypep-cache* (si:make-vector t 256 nil nil nil 0))
 
-(defvar *upgraded-array-element-type-cache* (si:make-vector t 128 nil nil nil 0))
+(defparameter *upgraded-array-element-type-cache* (si:make-vector t 128 nil nil nil 0))
 
 (defun subtypep-clear-cache ()
   (ext:fill-array-with-elt *subtypep-cache* nil 0 nil)
@@ -820,8 +820,7 @@ if not possible."
 	(let ((tag (new-type-tag)))
 	  (update-types (logandc2 tag-super tag-sub) tag)
 	  (setf tag (logior tag tag-sub))
-	  (push-type type tag)
-	  tag))))
+	  (push-type type tag)))))
 
 ;;----------------------------------------------------------------------
 ;; MEMBER types. We register this object in a separate list, *MEMBER-TYPES*,
@@ -876,7 +875,8 @@ if not possible."
     (declare (cons i))
     (when (typep (car i) type)
       (setq tag (logior tag (cdr i)))))
-  (push (cons type tag) *elementary-types*))
+  (push (cons type tag) *elementary-types*)
+  tag)
 
 ;;----------------------------------------------------------------------
 ;; SATISFIES types. Here we should signal some error which is caught
@@ -1026,8 +1026,7 @@ if not possible."
 	(let ((tag (new-type-tag)))
 	  (update-types (logandc2 tag-super tag-sub) tag)
 	  (setq tag (logior tag tag-sub))
-	  (push-type type tag)
-	  tag))))
+	  (push-type type tag)))))
 
 (defun register-interval-type (interval)
   (declare (si::c-local))
@@ -1104,14 +1103,12 @@ if not possible."
     (upgraded-complex-part-type real-type))
   (or (find-registered-tag '(COMPLEX REAL))
       (let ((tag (new-type-tag)))
-	(push-type '(COMPLEX REAL) tag)
-	tag))
+	(push-type '(COMPLEX REAL) tag)))
   #+(or)
   (case real-type
     ((SINGLE-FLOAT DOUBLE-FLOAT INTEGER RATIO #+long-float LONG-FLOAT)
      (let ((tag (new-type-tag)))
-       (push-type `(COMPLEX ,real-type) tag)
-       tag))
+       (push-type `(COMPLEX ,real-type) tag)))
     ((RATIONAL) (canonical-type '(OR (COMPLEX INTEGER) (COMPLEX RATIO))))
     ((FLOAT) (canonical-type '(OR (COMPLEX SINGLE-FLOAT) (COMPLEX DOUBLE-FLOAT)
 			       #+long-float (COMPLEX LONG-FLOAT))))
@@ -1262,8 +1259,7 @@ if not possible."
 		   (setq tag (new-type-tag))
 		   (unless (eq strict-supertype 't)
 		     (extend-type-tag tag strict-supertype-tag))))
-	     (push-type name tag)
-	     tag)))))
+	     (push-type name tag))))))
 
 (defun extend-type-tag (tag minimal-supertype-tag)
   (declare (si::c-local))
