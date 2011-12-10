@@ -140,7 +140,7 @@ si_instance_set(cl_object x, cl_object index, cl_object value)
 cl_object
 si_instancep(cl_object x)
 {
-	@(return (ECL_INSTANCEP(x) ? Ct : Cnil))
+	@(return (ECL_INSTANCEP(x) ? MAKE_FIXNUM(x->instance.length) : Cnil))
 }
 
 cl_object
