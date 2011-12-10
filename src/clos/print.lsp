@@ -115,15 +115,22 @@ printer and we should rather use MAKE-LOAD-FORM."
        (values `(cons ,(maybe-quote (car object)) nil)
 	       (and (rest object) `(rplacd ,(maybe-quote object) ,(maybe-quote (cdr object))))))
       (hash-table
-       (values
-	`(make-hash-table :size ,(hash-table-size object)
-	  :rehash-size ,(hash-table-rehash-size object)
-	  :rehash-threshold ,(hash-table-rehash-threshold object)
-	  :test ',(hash-table-test object))
-	`(dolist (i ',(loop for key being each hash-key in object
-			 using (hash-value obj)
-			 collect (cons key obj)))
-	  (setf (gethash (car i) ,object) (cdr i)))))
+       (let* ((content (ext:hash-table-content object))
+	      (make-form `(make-hash-table
+			   :size ,(hash-table-size object)
+			   :rehash-size ,(hash-table-rehash-size object)
+			   :rehash-threshold ,(hash-table-rehash-threshold object)
+			   :test ',(hash-table-test object))))
+	 (if (need-to-make-load-form-p content)
+	     (values
+	      make-form
+	      `(dolist (i ',(loop for key being each hash-key in object
+			       using (hash-value obj)
+			       collect (cons key obj)))
+		 (setf (gethash (car i) ,object) (cdr i))))
+	     (values
+	      `(ext:hash-table-fill ,make-form ',content)
+	      nil))))
       (t
        (error "Cannot externalize object ~a" object)))))
 

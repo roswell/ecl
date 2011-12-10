@@ -143,6 +143,10 @@ ECL 11.7.1:
    invocations of the C compiler. This can be modfied by changing the type
    specifier in c:*suppress-compiler-messages*.
 
+ - Hash tables can now be printed readably when *READ-EVAL* is true. This is
+   done using two new functions, EXT:HASH-TABLE-CONTENT and
+   EXT:HASH-TABLE-FILL.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
