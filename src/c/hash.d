@@ -796,6 +796,35 @@ cl_maphash(cl_object fun, cl_object ht)
 }
 
 cl_object
+si_hash_table_content(cl_object ht)
+{
+	cl_index i;
+	cl_object output = Cnil;
+	assert_type_hash_table(@[ext::hash-table-content], 2, ht);
+	for (i = 0;  i < ht->hash.size;  i++) {
+		struct ecl_hashtable_entry e = ht->hash.data[i];
+		if (e.key != OBJNULL)
+			output = ecl_cons(ecl_cons(e.key, e.value), output);
+	}
+	@(return output)
+}
+
+cl_object
+si_hash_table_fill(cl_object ht, cl_object values)
+{
+	cl_object pair;
+	assert_type_hash_table(@[ext::hash-table-fill], 2, ht);
+	while (!Null(values)) {
+		cl_object pair = ecl_car(values);
+		cl_object key = ecl_car(pair);
+		cl_object value = ECL_CONS_CDR(pair);
+		values = ECL_CONS_CDR(values);
+		ecl_sethash(key, ht, value);
+	}
+	@(return ht)
+}
+
+cl_object
 si_copy_hash_table(cl_object orig)
 {
 	cl_object hash;

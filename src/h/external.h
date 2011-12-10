@@ -803,6 +803,8 @@ extern ECL_API cl_object si_copy_hash_table(cl_object orig);
 extern ECL_API cl_object si_hash_eql _ARGS((cl_narg narg, ...));
 extern ECL_API cl_object si_hash_equal _ARGS((cl_narg narg, ...));
 extern ECL_API cl_object si_hash_equalp _ARGS((cl_narg narg, ...));
+extern ECL_API cl_object si_hash_table_content(cl_object ht);
+extern ECL_API cl_object si_hash_table_fill(cl_object ht, cl_object values);
 
 extern ECL_API cl_object ecl_sethash(cl_object key, cl_object hashtable, cl_object value);
 extern ECL_API cl_object ecl_gethash(cl_object key, cl_object hash);

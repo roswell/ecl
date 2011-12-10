@@ -2191,5 +2191,8 @@ cl_symbols[] = {
 
 {SYS_ "MISSING-KEYWORD",NULL},
 
+{EXT_ "HASH-TABLE-CONTENT","si_hash_table_content"},
+{EXT_ "HASH-TABLE-FILL","si_hash_table_fill"},
+
 /* Tag for end of list */
 {NULL,NULL}};
