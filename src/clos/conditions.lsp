@@ -221,34 +221,39 @@
 ;;; ----------------------------------------------------------------------
 ;;; Condition Data Type
 
-#+nil
-(defun condition-print (condition stream depth)
-  (declare (ignore depth))
-  (if *print-escape*
-      (format stream "#<~S.~D>" (type-of condition) (unique-id condition))
-      (funcall (slot-value condition 'REPORT) condition stream)))
+(defclass condition ()
+  ((report :allocation :class :initform nil)))
 
-(defclass condition () ())
+(defmethod print-object ((c condition) stream)
+  (if *print-escape*
+      (call-next-method)
+      (let ((reporter (slot-value c 'report)))
+	(cond ((stringp reporter)
+	       (write-string reporter stream))
+	      ((null reporter)
+	       (call-next-method))
+	      (t
+	       (funcall reporter c stream))))))
 
 (defmacro define-condition (name parent-list slot-specs &rest options)
-  (let* ((report-function nil)
-	 (documentation nil)
-	 (default-initargs nil))
+  ;; CAUTION: ANSI states the equivalence between :REPORT and a method.
+  ;; Does this mean that CALL-NEXT-METHOD should be available? SBCL does
+  ;; not do it this way, and so don't we.
+  (let* ((class-options nil))
     (dolist (option options)
       (case (car option)
-	((:DEFAULT-INITARGS :DOCUMENTATION) (push option default-initargs))
-	(:REPORT (setq report-function (cadr option)))
+	((:DEFAULT-INITARGS :DOCUMENTATION)
+	 (push option class-options))
+	(:REPORT
+	 (let ((report-function (cadr option)))
+	   (push `(report :initform ,(if (symbolp report-function)
+					 (list 'quote report-function)
+					 report-function))
+		 slot-specs)))
 	(otherwise (cerror "Ignore this DEFINE-CONDITION option."
 			   "Invalid DEFINE-CONDITION option: ~S" option))))
     `(PROGN
-      (DEFCLASS ,name ,(or parent-list '(CONDITION)) ,slot-specs ,@default-initargs)
-      ,@(when report-function
-	      `((defmethod print-object ((X ,name) stream)
-		    (if *print-escape*
-		      (call-next-method)
-		      ,(if (stringp report-function)
-			   `(write-string ,report-function stream)
-			   `(,report-function x stream))))))
+      (DEFCLASS ,name ,(or parent-list '(CONDITION)) ,slot-specs ,@class-options)
       ',NAME)))
 
 (defun find-subclasses-of-type (type class)
@@ -383,7 +388,7 @@
     (loop (unless *handler-clusters* (return))
           (let ((cluster (pop *handler-clusters*)))
 	    (dolist (handler cluster)
-	      (when (typep condition (car handler))
+<	      (when (typep condition (car handler))
 		(funcall (cdr handler) condition)
 		))))
     nil))
