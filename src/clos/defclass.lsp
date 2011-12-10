@@ -14,16 +14,6 @@
 ;;; ----------------------------------------------------------------------
 ;;; DEFCLASS
 
-(defun self-evaluating-p (form)
-  ;; Output T when the form has the same value if it appears quoted
-  ;; or unquoted. It is used to check whether we can transform
-  ;; (LIST form) into '(form ...)
-  (declare (si::c-local))
-  (and (atom form)
-       (or (not (symbolp form))
-	   (member form '(t nil +initform-unsupplied+))
-	   (and (boundp form) (constantp form) (eq (symbol-value form) form)))))
-
 (defun parse-default-initargs (default-initargs)
   (declare (si::c-local))
   (do* ((output-list nil)
