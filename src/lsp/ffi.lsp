@@ -55,9 +55,9 @@
 ;;; FOREIGN TYPES
 ;;;
 
-(defvar *ffi-types* (make-hash-table :size 128))
+(defparameter *ffi-types* (make-hash-table :size 128))
 
-(defvar *use-dffi* t)
+(defparameter *use-dffi* t)
 
 (defmacro def-foreign-type (name definition)
   `(eval-when (:compile-toplevel :load-toplevel :execute)
@@ -310,7 +310,7 @@
 ;;; POINTERS
 ;;;
 
-(defvar +null-cstring-pointer+ (si:allocate-foreign-data :pointer-void 0))
+(defparameter +null-cstring-pointer+ (si:allocate-foreign-data :pointer-void 0))
 
 (defun pointer-address (ptr)
   (si::foreign-data-address ptr))
@@ -582,7 +582,7 @@
                (define-symbol-macro ,lisp-name
                  (ffi:deref-pointer (get-sysprop ',lisp-name 'ffi-foreign-var) ',type)
                  )))
-          `(defvar ,lisp-name ,inline-form))
+          `(defparameter ,lisp-name ,inline-form))
       )))
 
 (defun find-foreign-library (names directories &key drive-letters types)
@@ -619,7 +619,7 @@
 	  )))))
   nil)
 
-(defvar +loaded-libraries+ nil)
+(defparameter +loaded-libraries+ nil)
 
 (defun do-load-foreign-library (tmp &optional system-library)
  (let* ((path (cond ((pathnamep tmp) tmp)

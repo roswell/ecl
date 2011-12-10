@@ -145,7 +145,7 @@
   #-Genera `(copy-list ,l)
   )
 
-(defvar *loop-real-data-type* 'real)
+(defparameter *loop-real-data-type* 'real)
 
 (defun loop-optimization-quantities (env)
   (declare (si::c-local))
@@ -321,7 +321,7 @@ constructed.
   infinity-data)
 
 
-(defvar *loop-minimax-type-infinities-alist*
+(defparameter *loop-minimax-type-infinities-alist*
 	;; This is the sort of value this should take on for a Lisp that has
 	;; "eminently usable" infinities.  n.b. there are neither constants nor
 	;; printed representations for infinities defined by CL.
@@ -528,7 +528,7 @@ code to be loaded.
 ;;;; Setq Hackery
 
 
-(defvar *loop-destructuring-hooks*
+(defparameter *loop-destructuring-hooks*
 	nil
   "If not NIL, this must be a list of two things:
 a LET-like macro, and a SETQ-like macro, which perform LOOP-style destructuring.")
@@ -554,7 +554,7 @@ a LET-like macro, and a SETQ-like macro, which perform LOOP-style destructuring.
 	    var-val-pairs)))
 
 
-(defvar *loop-desetq-temporary*
+(defparameter *loop-desetq-temporary*
 	(make-symbol "LOOP-DESETQ-TEMP"))
 
 
@@ -764,11 +764,11 @@ a LET-like macro, and a SETQ-like macro, which perform LOOP-style destructuring.
 
 ;;;; LOOP Iteration Optimization
 
-(defvar *loop-duplicate-code*
+(defparameter *loop-duplicate-code*
 	nil)
 
 
-(defvar *loop-iteration-flag-variable*
+(defparameter *loop-iteration-flag-variable*
 	(make-symbol "LOOP-NOT-FIRST-TIME"))
 
 
@@ -868,7 +868,7 @@ a LET-like macro, and a SETQ-like macro, which perform LOOP-style destructuring.
 	ans)))
 
 
-(defvar *special-code-sizes*
+(defparameter *special-code-sizes*
 	'((return 0) (progn 0)
 	  (null 1) (not 1) (eq 1) (car 1) (cdr 1)
 	  (when 1) (unless 1) (if 1)
@@ -880,7 +880,7 @@ a LET-like macro, and a SETQ-like macro, which perform LOOP-style destructuring.
 	  (cddaar 4) (cddadr 4) (cdddar 4) (cddddr 4)))
 
 
-(defvar *estimate-code-size-punt*
+(defparameter *estimate-code-size-punt*
 	'(block
 	   do do* dolist
 	   flet

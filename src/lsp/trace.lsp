@@ -12,9 +12,9 @@
 
 (in-package "SYSTEM")
 
-(defvar *trace-level* 0)
-;; (defvar *trace-list* nil) ; In all_symbols.d !
-(defvar *trace-max-indent* 20)
+(defparameter *trace-level* 0)
+;; (defparameter *trace-list* nil) ; In all_symbols.d !
+(defparameter *trace-max-indent* 20)
 
 (defmacro trace (&rest r)
 "Syntax: (trace ({function-name | ({function-name}+)} {keyword [form]\}*)
@@ -59,7 +59,7 @@ all functions."
 (defun untrace* (r)
   (mapc #'untrace-one (or r (trace* nil))))
 
-(defvar *inside-trace* nil)
+(defparameter *inside-trace* nil)
 
 (defun trace-one (spec)
   (let* (break exitbreak (entrycond t) (exitcond t) entry exit
@@ -221,11 +221,11 @@ all functions."
     (delete-from-trace-list fname)
     (values)))
 
-(defvar *step-level* 0)
-(defvar *step-action* nil)
-(defvar *step-form* nil)
-(defvar *step-tag* (cons nil nil))
-(defvar *step-functions* nil)
+(defparameter *step-level* 0)
+(defparameter *step-action* nil)
+(defparameter *step-form* nil)
+(defparameter *step-tag* (cons nil nil))
+(defparameter *step-functions* nil)
 (defconstant step-commands
   `("Stepper commands"
      ((:newline) (step-next) :constant

@@ -190,7 +190,7 @@
 ;; and it outputs an anonymous function which is the effective method.
 ;;
 
-(defvar *method-combinations* '())
+(defparameter *method-combinations* '())
 
 (defun install-method-combination (name function)
   (setf (getf *method-combinations* name) function)

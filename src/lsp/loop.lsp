@@ -565,7 +565,7 @@ The offending clause"
   (declare (ignore data-type))
   substitutable-expression)
 
-(defvar loop-floating-point-types
+(defparameter loop-floating-point-types
 	'(flonum float short-float single-float double-float long-float))
 
 (defun loop-typed-init (data-type)
@@ -914,7 +914,7 @@ The offending clause"
 	  (declare (fixnum ans))
 	  (and (< ans 20.) ans)))))
 
-(defvar loop-simplep
+(defparameter loop-simplep
 	'(> < <= >= /= + - 1+ 1- ash equal atom setq prog1 prog2 and or = aref char schar sbit svref))
 
 (defun loop-simplep-1 (x)

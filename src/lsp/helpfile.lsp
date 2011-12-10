@@ -104,7 +104,7 @@
 (progn
   (setq *documentation-pool* (list (make-hash-table :test #'equal :size 128)
                                    "SYS:help.doc"))
-  (defvar *keep-documentation* t))
+  (defparameter *keep-documentation* t))
 
 (defun new-documentation-pool (&optional (size 1024))
   "Args: (&optional hash-size)

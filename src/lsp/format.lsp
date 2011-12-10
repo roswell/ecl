@@ -90,7 +90,7 @@
 ;;; DO NOT EVEN THINK OF ATTEMPTING TO UNDERSTAND THIS CODE WITHOUT READING 
 ;;; THE PAPER!
 
-(defvar *digits* "0123456789")
+(defparameter *digits* "0123456789")
 
 (defun flonum-to-string (x &optional width fdigits scale fmin)
   (declare (type float x))
@@ -225,18 +225,18 @@
 		  :end (format-directive-end struct))))
 
 #+formatter
-(defvar *format-directive-expanders*
+(defparameter *format-directive-expanders*
   (make-array char-code-limit :initial-element nil))
-(defvar *format-directive-interpreters*
+(defparameter *format-directive-interpreters*
   (make-array char-code-limit :initial-element nil))
 
-(defvar *default-format-error-control-string* nil)
-(defvar *default-format-error-offset* nil)
+(defparameter *default-format-error-control-string* nil)
+(defparameter *default-format-error-offset* nil)
 
 ;; If this flag is 1, directives ~W, ~_, ~<...~:>, ~I or ~T were found.
 ;; If the flag is 2, directive ~<...~:;...~> was found.
 ;; NIL otherwise.
-(defvar *output-layout-mode* nil)
+(defparameter *output-layout-mode* nil)
 
 ;; The condition FORMAT-ERROR is found later in conditions.lsp
 
@@ -358,14 +358,14 @@
 ;;; Used both by the expansion stuff and the interpreter stuff.  When it is
 ;;; non-NIL, up-up-and-out (~:^) is allowed.  Otherwise, ~:^ isn't allowed.
 ;;;
-(defvar *up-up-and-out-allowed* nil)
+(defparameter *up-up-and-out-allowed* nil)
 
 ;;; *LOGICAL-BLOCK-POPPER* -- internal.
 ;;;
 ;;; Used by the interpreter stuff.  When it non-NIL, its a function that will
 ;;; invoke PPRINT-POP in the right lexical environemnt.
 ;;;
-(defvar *logical-block-popper* nil)
+(defparameter *logical-block-popper* nil)
 
 ;;; *EXPANDER-NEXT-ARG-MACRO* -- internal.
 ;;;
@@ -373,7 +373,7 @@
 ;;; can change it.
 ;;;
 #+formatter
-(defvar *expander-next-arg-macro* 'expander-next-arg)
+(defparameter *expander-next-arg-macro* 'expander-next-arg)
 
 ;;; *ONLY-SIMPLE-ARGS* -- internal.
 ;;;
@@ -390,7 +390,7 @@
 ;;; again with it bound to T.  If this is T, we don't try to do anything
 ;;; fancy with args.
 ;;; 
-(defvar *orig-args-available* nil)
+(defparameter *orig-args-available* nil)
 
 ;;; *SIMPLE-ARGS* -- internal.
 ;;;

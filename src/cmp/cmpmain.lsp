@@ -167,6 +167,8 @@ the environment variable TMPDIR to a different value." template))
 
 (defun static-lib-ar (lib object-files)
   (let ((lib (brief-namestring lib)))
+    (when (probe-file lib)
+      (delete-file lib))
     (safe-run-program *ar* (list* "cr" lib (mapcar #'brief-namestring object-files)))
     (safe-run-program *ranlib* (list lib))))
 

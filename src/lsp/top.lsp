@@ -24,29 +24,29 @@
 (export '(*break-readtable* *break-on-warnings*
 	  *tpl-evalhook* *tpl-prompt-hook*))
 
-(defvar *quit-tag* (cons nil nil))
-(defvar *quit-tags* nil)
-(defvar *break-level* 0)		; nesting level of error loops
-(defvar *break-env* nil)
-(defvar *ihs-base* 0)
-(defvar *ihs-top* (ihs-top))
-(defvar *ihs-current* 0)
-(defvar *frs-base* 0)
-(defvar *frs-top* 0)
-(defvar *tpl-continuable* t)
-(defvar *tpl-prompt-hook* nil)
-(defvar *eof* (cons nil nil))
+(defparameter *quit-tag* (cons nil nil))
+(defparameter *quit-tags* nil)
+(defparameter *break-level* 0)		; nesting level of error loops
+(defparameter *break-env* nil)
+(defparameter *ihs-base* 0)
+(defparameter *ihs-top* (ihs-top))
+(defparameter *ihs-current* 0)
+(defparameter *frs-base* 0)
+(defparameter *frs-top* 0)
+(defparameter *tpl-continuable* t)
+(defparameter *tpl-prompt-hook* nil)
+(defparameter *eof* (cons nil nil))
 
-(defvar *last-error* nil)
+(defparameter *last-error* nil)
 
-(defvar *break-message* nil)
+(defparameter *break-message* nil)
 
-(defvar *break-readtable* nil)
-(defvar *tpl-level* -1)			; nesting level of top-level loops
-(defvar *step-level* 0)			; repeated from trace.lsp
+(defparameter *break-readtable* nil)
+(defparameter *tpl-level* -1)			; nesting level of top-level loops
+(defparameter *step-level* 0)			; repeated from trace.lsp
 
-(defvar *break-hidden-functions* '(error cerror apply funcall invoke-debugger))
-(defvar *break-hidden-packages* (list #-ecl-min (find-package 'system)))
+(defparameter *break-hidden-functions* '(error cerror apply funcall invoke-debugger))
+(defparameter *break-hidden-packages* (list #-ecl-min (find-package 'system)))
 
 (defconstant tpl-commands
    '(("Top level commands"
@@ -159,7 +159,7 @@
 	:exit &eval &optional status			[Top level Command]~%")
       )))
 
-(defvar *tpl-commands* tpl-commands)
+(defparameter *tpl-commands* tpl-commands)
 
 (defconstant break-commands
   '("Break commands"
@@ -381,7 +381,7 @@
         See also: :variables.~%")
   ))
 
-(defvar *lisp-initialized* nil)
+(defparameter *lisp-initialized* nil)
 
 (defun top-level (&optional (process-command-line nil))
   "Args: ()
@@ -413,11 +413,11 @@ under certain conditions; see file 'Copyright' for details.")
 #+threads
 (progn
 
-(defvar *console-lock* (mp:make-lock :name "Console lock"))
+(defparameter *console-lock* (mp:make-lock :name "Console lock"))
 #-:win32
-(defvar *console-available* (mp:make-condition-variable))
-(defvar *console-owner* nil)
-(defvar *console-waiting-list* '())
+(defparameter *console-available* (mp:make-condition-variable))
+(defparameter *console-owner* nil)
+(defparameter *console-waiting-list* '())
 
 (defun candidate-to-get-console-p (process)
   (or (null *console-owner*)
@@ -465,8 +465,8 @@ under certain conditions; see file 'Copyright' for details.")
      (delete-from-waiting-list mp:*current-process*)
      (release-console mp:*current-process*)))
 
-(defvar *allow-recursive-debug* nil)
-(defvar *debug-status* nil)
+(defparameter *allow-recursive-debug* nil)
+(defparameter *debug-status* nil)
 
 (defun simple-terminal-interrupt ()
   (error 'ext:interactive-interrupt))
@@ -496,7 +496,7 @@ Use special code 0 to cancel this operation.")
 		 (t
 		  (format t "~&Not a valid process number")))))
 
-(defvar *interrupt-lonely-threads-p* t)
+(defparameter *interrupt-lonely-threads-p* t)
 
 (defun single-threaded-terminal-interrupt ()
   (restart-case (simple-terminal-interrupt)
@@ -656,7 +656,7 @@ Use special code 0 to cancel this operation.")
       (t
        (return (read))))))
 
-(defvar *debug-tpl-commands* nil)
+(defparameter *debug-tpl-commands* nil)
 
 (defun harden-command (cmd-form)
   `(block 
@@ -1268,7 +1268,7 @@ Use special code 0 to cancel this operation.")
 (defun tpl-untrace-command (&rest functions)
   (untrace* functions))
 
-(defvar *tpl-last-load* nil)
+(defparameter *tpl-last-load* nil)
 
 (defun tpl-load-command (&rest files)
   (when files
@@ -1276,7 +1276,7 @@ Use special code 0 to cancel this operation.")
   (dolist (file *tpl-last-load*) (load file))
   *tpl-last-load*)
 
-(defvar *tpl-last-compile* nil)
+(defparameter *tpl-last-compile* nil)
 
 (defun tpl-compile-command (&rest files)
   (when files
@@ -1368,7 +1368,7 @@ package."
      commands)
     (nconc commands (list restart-commands))))
 
-(defvar *default-debugger-maximum-depth* 16)
+(defparameter *default-debugger-maximum-depth* 16)
 
 (defun check-default-debugger-runaway ()
   (when (< *default-debugger-maximum-depth* *break-level*)

@@ -35,8 +35,8 @@
 
 ;;; Restarts
 
-(defvar *restart-clusters* ())
-(defvar *condition-restarts* ())
+(defparameter *restart-clusters* ())
+(defparameter *condition-restarts* ())
 
 ;;; do we need copy-list if *restart-clusters* has only one element? Beppe
 (defun compute-restarts (&optional condition)
@@ -366,7 +366,7 @@
 |#
 
 
-(defvar *handler-clusters* nil)
+(defparameter *handler-clusters* nil)
 
 (defmacro handler-bind (bindings &body forms)
   (unless (every #'(lambda (x) (and (listp x) (= (length x) 2))) bindings)

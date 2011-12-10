@@ -196,7 +196,7 @@ printed.  If FORMAT-STRING is NIL, however, no prompt will appear."
 (set-dispatch-macro-character #\# #\s 'sharp-s-reader)
 (set-dispatch-macro-character #\# #\S 'sharp-s-reader)
 
-(defvar *dribble-closure* nil)
+(defparameter *dribble-closure* nil)
 
 (defun dribble (&optional (pathname "DRIBBLE.LOG" psp))
   "Args: (&optional filespec)

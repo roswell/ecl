@@ -13,18 +13,18 @@
 
 ;;; ----------------------------------------------------------------------
 
-(defvar *method-size* 32)		; Size of methods hash tables
+(defparameter *method-size* 32)		; Size of methods hash tables
 
 ;;; This holds fake methods created during bootstrap.
 ;;; It is  an alist of:
 ;;;	(method-name {method}+)
-(defvar *early-methods* nil)
+(defparameter *early-methods* nil)
 
 ;;;
 ;;; This is used by combined methods to communicate the next methods to
 ;;; the methods they call.
 ;;;
-(defvar *next-methods* nil)
+(defparameter *next-methods* nil)
 
 
 ;;; ----------------------------------------------------------------------

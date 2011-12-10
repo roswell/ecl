@@ -13,12 +13,12 @@
 
 (in-package "SYSTEM")
 
-(defvar *inspect-level* 0)
-(defvar *inspect-history* nil)
-(defvar *inspect-mode* nil)
+(defparameter *inspect-level* 0)
+(defparameter *inspect-history* nil)
+(defparameter *inspect-mode* nil)
 
-(defvar *old-print-level* nil)
-(defvar *old-print-length* nil)
+(defparameter *old-print-level* nil)
+(defparameter *old-print-length* nil)
 
 
 ;; Either the inspector reads and writes everything on *standard-output*,

@@ -19,11 +19,11 @@
 
 ;;;; exported specials
 
-(defvar *modules* ()
+(defparameter *modules* ()
   "This is a list of module names that have been loaded into Lisp so far.
 It is used by PROVIDE and REQUIRE.")
 
-(defvar *module-provider-functions* nil
+(defparameter *module-provider-functions* nil
   "See function documentation for REQUIRE")
 
 ;;;; PROVIDE and REQUIRE
@@ -34,7 +34,7 @@ Module-name is a string designator"
   (pushnew (string module-name) *modules* :test #'string=)
   t)
 
-(defvar *requiring* nil)
+(defparameter *requiring* nil)
 
 (defun require-error (control &rest arguments)
   (error "Module error: ~?" control arguments))
