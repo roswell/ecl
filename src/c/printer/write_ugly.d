@@ -148,7 +148,21 @@ write_package(cl_object x, cl_object stream)
 static void
 write_hashtable(cl_object x, cl_object stream)
 {
-        _ecl_write_unreadable(x, "hash-table", Cnil, stream);
+	if (ecl_print_readably() && !Null(ecl_symbol_value(@'*read-eval*'))) {
+		cl_object make =
+			cl_list(9, @'make-hash-table',
+				@':size', cl_hash_table_size(x),
+				@':rehash-size', cl_hash_table_rehash_size(x),
+				@':rehash-threshold', cl_hash_table_rehash_threshold(x),
+				@':test', cl_hash_table_test(x));
+		cl_object init =
+			cl_list(3, @'ext::hash-table-fill', make,
+				cl_list(2, @'quote', si_hash_table_content(x)));
+		writestr_stream("#.", stream);
+		si_write_ugly_object(init, stream);
+	} else {
+		_ecl_write_unreadable(x, "hash-table", Cnil, stream);
+	}
 }
 
 static void
