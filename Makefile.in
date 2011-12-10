@@ -116,6 +116,8 @@ realclean: distclean
 
 check:
 	cd build; $(MAKE) check
+recheck:
+	cd tests; $(MAKE) recheck
 
 # ==================== Various means of distribution ====================
 

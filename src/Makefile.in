@@ -240,6 +240,8 @@ test_changes:
 #
 check:
 	cd tests; $(MAKE)
+recheck:
+	cd tests; $(MAKE) clean; $(MAKE)
 #
 # Rebuild ECL using its own image and compare. Does not work
 # right now.
