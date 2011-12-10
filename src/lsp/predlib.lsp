@@ -1158,7 +1158,7 @@ if not possible."
 ;; Note 2: All built in types listed here have to be symbols.
 ;;
 #+ecl-min
-(defconstant +built-in-types+
+(defconstant +built-in-type-list+
 	     '((SYMBOL)
 	       (KEYWORD NIL SYMBOL)
 	       (PACKAGE)
@@ -1239,26 +1239,31 @@ if not possible."
                (CODE-BLOCK)
 	       ))
 
+(defconstant +built-in-types+
+  (ext:hash-table-fill
+     (make-hash-table :test 'eq :size 128)
+     '#.+built-in-type-list+))
+
 (defun find-built-in-tag (name)
   (declare (si::c-local))
-  (when (eq name T)
-    (return-from find-built-in-tag -1))
-  (dolist (i '#.+built-in-types+)
-    (declare (cons i))
-    (when (eq name (first i))
-      (let* ((alias (second i))
-	     (strict-supertype (or (third i) 'T))
-	     (tag))
-	(if alias
-	    (setq tag (canonical-type alias))
-	    (let* ((strict-supertype-tag (canonical-type strict-supertype)))
-	      (setq tag (new-type-tag))
-	      (unless (eq strict-supertype 't)
-		(extend-type-tag tag strict-supertype-tag))))
-	(push-type name tag)
-	(return-from find-built-in-tag tag)
-	)))
-  nil)
+  (let (record)
+    (cond ((eq name T)
+	   -1)
+	  ((eq (setf record (gethash name +built-in-types+ name))
+		    name)
+	   nil)
+	  (t
+	   (let* ((alias (pop record))
+		  tag)
+	     (if alias
+		 (setq tag (canonical-type alias))
+		 (let* ((strict-supertype (or (first record) 'T))
+			(strict-supertype-tag (canonical-type strict-supertype)))
+		   (setq tag (new-type-tag))
+		   (unless (eq strict-supertype 't)
+		     (extend-type-tag tag strict-supertype-tag))))
+	     (push-type name tag)
+	     tag)))))
 
 (defun extend-type-tag (tag minimal-supertype-tag)
   (declare (si::c-local))
