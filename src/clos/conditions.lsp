@@ -236,9 +236,8 @@
 	 (default-initargs nil))
     (dolist (option options)
       (case (car option)
-	(:DEFAULT-INITARGS (push option default-initargs))
+	((:DEFAULT-INITARGS :DOCUMENTATION) (push option default-initargs))
 	(:REPORT (setq report-function (cadr option)))
-	(:DOCUMENTATION (setq documentation (cadr option)))
 	(otherwise (cerror "Ignore this DEFINE-CONDITION option."
 			   "Invalid DEFINE-CONDITION option: ~S" option))))
     `(PROGN
@@ -250,9 +249,6 @@
 		      ,(if (stringp report-function)
 			   `(write-string ,report-function stream)
 			   `(,report-function x stream))))))
-      ,@(when documentation
-	      `((EVAL-WHEN (COMPILE LOAD EVAL)
-		  (SETF (DOCUMENTATION ',name 'TYPE) ',documentation))))
       ',NAME)))
 
 (defun find-subclasses-of-type (type class)
