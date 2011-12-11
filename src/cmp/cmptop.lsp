@@ -817,6 +817,7 @@
     (new-local fun)
     (wt-nl (if macro "ecl_cmp_defmacro(" "ecl_cmp_defun(")
 	   loc ");")
+    (wt-comment (loc-immediate-value fname))
     (close-inline-blocks)))
 
 (defun output-cfuns (stream)
