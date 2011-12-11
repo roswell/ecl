@@ -58,19 +58,32 @@
 	(output '())
 	(non-const nil))
     (dolist (slotd (parse-slots slot-definitions))
-      (let* ((initfun (getf slotd :initfunction nil)))
-	(cond (initfun
-	       (let ((copy (copy-list slotd)))
-		 (remf copy :initfunction)
-		 (push `(list* :initfunction ,initfun ,(ext:maybe-quote copy))
-		       output)
-		 (setf non-const t)))
+      (let* ((initfun (getf slotd :initfunction nil))
+	     (copy (copy-list slotd)))
+	(remf copy :initfunction)
+	(cond ((atom initfun)
+	       (push copy const)
+	       (push (ext:maybe-quote copy) output))
+	      ((eq (first initfun) 'constantly)
+	       (push copy const)
+	       (push (ext:maybe-quote copy) output))
 	      (t
-	       (push slotd const)
-	       (push (ext:maybe-quote slotd) output)))))
+	       (push `(list* :initfunction ,initfun ,(ext:maybe-quote copy))
+		     output)
+	       (setf non-const t)))))
     (if non-const
 	`(list ,@(nreverse output))
-	(ext:maybe-quote const))))
+	(ext:maybe-quote (nreverse const)))))
+
+(defun uncompress-slot-forms (slot-definitions)
+  (loop for slotd in slot-definitions
+     for initform = (getf slotd :initform slotd)
+     collect (if (eq initform slotd)
+		 slotd
+		 (if (getf slotd :initfunction)
+		     slotd
+		     (list* :initfunction (constantly (eval initform))
+			    slotd)))))
 
 (defun process-class-options (class-args)
   (let ((options '())
@@ -98,7 +111,8 @@
   
 (defun load-defclass (name superclasses slot-definitions options)
   (apply #'ensure-class name :direct-superclasses superclasses
-	 :direct-slots slot-definitions options))
+	 :direct-slots (uncompress-slot-forms slot-definitions)
+	 options))
 
 ;;; ----------------------------------------------------------------------
 ;;; ENSURE-CLASS
