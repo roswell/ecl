@@ -913,7 +913,7 @@
      slot-makunbound
      slot-value
      slot-exists-p
-     need-to-make-load-form-p
+     clos::need-to-make-load-form-p
      ;; defclass
      clos:load-defclass
      )
@@ -974,7 +974,6 @@
     #+clos
     ,@'(;; defclass.lsp
      clos::ensure-class
-     clos::load-defclass
      ;; combin.lsp
      clos::simple-code-walker
      ;; standard.lsp
@@ -1003,6 +1002,5 @@
      clos::associate-methods-to-gfun
      ;; method.lsp
      clos::pop-next-method
-     clos::need-to-make-load-form-p
      )))
 
