@@ -98,9 +98,12 @@
 
 (define-condition compiler-debug-note (compiler-note) ())
 
-(define-condition compiler-warning (compiler-message simple-condition style-warning)
+(define-condition compiler-warning (compiler-message style-warning)
   ((prefix :initform "Warning")
    (format :initform +warn-format+)))
+
+(define-condition compiler-macro-expansion-failed (compiler-warning)
+  ())
 
 (define-condition compiler-error (compiler-message)
   ((prefix :initform "Error")
@@ -364,6 +367,14 @@
               form c)
       (values nil nil))))
   
+(defun cmp-expand-compiler-macro (fd fname args &optional (env *cmp-env*))
+  (handler-case
+      (cmp-expand-macro fd (list* fname args))
+    (serious-condition (c)
+      (do-cmpwarn 'compiler-macro-expansion-failed
+	:format-control "The expansion of the compiler macro~%~T~A~%was aborted because of a serious condition~%~A" :format-arguments (list fname c))
+      (values nil nil))))
+
 (defun si::compiler-clear-compiler-properties (symbol)
   #-:CCL
   ;(sys::unlink-symbol symbol)

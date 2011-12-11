@@ -47,15 +47,15 @@
 (defvar *c1t* (make-c1form* 'LOCATION :type (object-type t) :args t))
 (defun c1t () *c1t*)
 
-(defun c1call-symbol (fname args &aux fd)
+(defun c1call-symbol (fname args &aux fd success)
   (cond ((setq fd (gethash fname *c1-dispatch-table*))
 	 (funcall fd args))
 	((c1call-local fname args))
 	((and (setq fd (compiler-macro-function fname))
 	      (inline-possible fname)
-	      (let ((success nil))
+	      (progn
 		(multiple-value-setq (fd success)
-		  (cmp-expand-macro fd (list* fname args)))
+		  (cmp-expand-compiler-macro fd fname args))
 		success))
 	 (c1expr fd))
 	((setq fd (cmp-macro-function fname))
