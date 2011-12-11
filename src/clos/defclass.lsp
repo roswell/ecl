@@ -32,39 +32,50 @@
 	    output-list))))
 
 (defmacro defclass (&whole form &rest args)
-  (let* (name superclasses slots options
-	 metaclass-name default-initargs documentation
-	 (processed-options '()))
-    (unless (>= (length args) 3)
-      (si::simple-program-error "Illegal defclass form: the class name, the superclasses and the slots should always be provided"))
-    (setq name (first args)
-	  superclasses (second args)
-	  slots (third args)
-	  args (cdddr args))
+  (unless (>= (length args) 3)
+    (si::simple-program-error "Illegal defclass form: the class name, the superclasses and the slots should always be provided"))
+  (let* ((name (pop args))
+	 (superclasses (pop args))
+	 (slots (pop args))
+	 (options args))
     (unless (and (listp superclasses) (listp slots))
       (si::simple-program-error "Illegal defclass form: superclasses and slots should be lists"))
     (unless (and (symbolp name) (every #'symbolp superclasses))
       (si::simple-program-error "Illegal defclass form: superclasses and class name are not valid"))
-    ;;
-    ;; Here we compose the final form. The slots list, and the default initargs
-    ;; may contain object that need to be evaluated. Hence, it cannot be always
-    ;; quoted.
-    ;;
-    (do ((l (setf slots (parse-slots slots)) (rest l)))
-	((endp l)
-	 (setf slots
-	       (if (every #'constantp slots)
-		   (ext:maybe-quote (mapcar #'ext:maybe-unquote slots))
-		   `(list ,@slots))))
-      (let* ((slotd (first l))
-	     (initfun (getf slotd :initfunction nil)))
-	(if initfun
-	    (progn
-	      (remf slotd :initfunction)
-	      (setf slotd (list* 'list :initfunction initfun (mapcar #'ext:maybe-quote slotd))))
-	    (setf slotd (ext:maybe-quote slotd)))
-	(setf (first l) slotd)))
-    (dolist (option args)
+    `(eval-when (compile load eval)
+       ,(ext:register-with-pde
+	 form
+	 `(load-defclass ',name ',superclasses
+			 ,(compress-slot-forms slots)
+			 ,(process-class-options options))))))
+
+(defun compress-slot-forms (slot-definitions)
+  (declare (si::c-local))
+  ;; Here we compose the final form. The slots list, and the default initargs
+  ;; may contain object that need to be evaluated. Hence, it cannot be always
+  ;; quoted.
+  (let ((const '())
+	(output '())
+	(non-const nil))
+    (dolist (slotd (parse-slots slot-definitions))
+      (let* ((initfun (getf slotd :initfunction nil)))
+	(cond (initfun
+	       (let ((copy (copy-list slotd)))
+		 (remf copy :initfunction)
+		 (push `(list* :initfunction ,initfun ,(ext:maybe-quote copy))
+		       output)
+		 (setf non-const t)))
+	      (t
+	       (push slotd const)
+	       (push (ext:maybe-quote slotd) output)))))
+    (if non-const
+	`(list ,@(nreverse output))
+	(ext:maybe-quote const))))
+
+(defun process-class-options (class-args)
+  (let ((options '())
+	(processed-options '()))
+    (dolist (option class-args)
       (let ((option-name (first option))
 	    option-value)
 	(if (member option-name processed-options)
@@ -80,13 +91,14 @@
 		 (setf option-name :direct-default-initargs)
 		 (parse-default-initargs (rest option)))
 		(otherwise
-		 (ext:maybe-quote (rest option)))))
-	(setf options (list* (ext:maybe-quote option-name) option-value options))))
-    `(eval-when (compile load eval)
-       ,(ext:register-with-pde form
-			       `(ensure-class ',name :direct-superclasses
-					      ',superclasses
-					      :direct-slots ,slots ,@options)))))
+		 (ext:maybe-quote (rest option))))
+	      options (list* (ext:maybe-quote option-name)
+			     option-value options))))
+    (and options `(list ,@options))))
+  
+(defun load-defclass (name superclasses slot-definitions options)
+  (apply #'ensure-class name :direct-superclasses superclasses
+	 :direct-slots slot-definitions options))
 
 ;;; ----------------------------------------------------------------------
 ;;; ENSURE-CLASS

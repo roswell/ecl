@@ -914,6 +914,8 @@
      slot-value
      slot-exists-p
      need-to-make-load-form-p
+     ;; defclass
+     clos:load-defclass
      )
 
     ;; cdr-5
@@ -972,6 +974,7 @@
     #+clos
     ,@'(;; defclass.lsp
      clos::ensure-class
+     clos::load-defclass
      ;; combin.lsp
      clos::simple-code-walker
      ;; standard.lsp

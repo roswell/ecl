@@ -1326,6 +1326,9 @@
 #+clos
 (proclamation clos::need-to-make-load-form-p (t) gen-bool :pure)
 
+#+clos
+(proclamation clos::load-defclass (t t t t) t)
+
 ;;;
 ;;; A. FFI
 ;;;
