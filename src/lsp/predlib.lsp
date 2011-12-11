@@ -53,7 +53,7 @@ Builds a new function which accepts any number of arguments but always outputs N
   name)
 
 ;;; DEFTYPE macro.
-(defmacro deftype (name lambda-list &rest body)
+(defmacro deftype (name lambda-list &rest body &environment env)
   "Syntax: (deftype name lambda-list {decl | doc}* {form}*)
 Defines a new type-specifier abbreviation in terms of an 'expansion' function
 	(lambda lambda-list1 {DECL}* {FORM}*)
@@ -79,7 +79,7 @@ by (documentation 'NAME 'type)."
     (let ((function `#'(LAMBDA-BLOCK ,name ,lambda-list ,@body)))
       (when (and (null lambda-list) (consp body) (null (rest body)))
         (let ((form (first body)))
-          (when (and (consp form) (eq (first form) 'quote))
+          (when (constantp form env)
             (setf function form))))
       `(eval-when (:compile-toplevel :load-toplevel :execute)
          ,@(si::expand-set-documentation name 'type doc)
@@ -90,16 +90,16 @@ by (documentation 'NAME 'type)."
 ;;; Some DEFTYPE definitions.
 (deftype boolean ()
   "A BOOLEAN is an object which is either NIL or T."
-  `(member nil t))
+  '(member nil t))
 
 (deftype index ()
-  `(INTEGER 0 #.array-dimension-limit))
+  '(INTEGER 0 #.array-dimension-limit))
 
 (deftype fixnum ()
   "A FIXNUM is an integer between MOST-NEGATIVE-FIXNUM (= - 2^29 in ECL) and
 MOST-POSITIVE-FIXNUM (= 2^29 - 1 in ECL) inclusive.  Other integers are
 bignums."
-  `(INTEGER #.most-negative-fixnum #.most-positive-fixnum))
+  '(INTEGER #.most-negative-fixnum #.most-positive-fixnum))
 (deftype bignum ()
   '(OR (INTEGER * (#.most-negative-fixnum)) (INTEGER (#.most-positive-fixnum) *)))
 
