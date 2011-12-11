@@ -1442,17 +1442,27 @@ asm_function(cl_env_ptr env, cl_object function, int flags) {
 	}
         if (CONSP(function)) {
                 cl_object kind = ECL_CONS_CAR(function);
-                cl_object form = ECL_CONS_CDR(function);
+                cl_object body = ECL_CONS_CDR(function);
+		cl_object name;
                 if (kind == @'lambda') {
-                        asm_op2c(env, OP_CLOSE, ecl_make_lambda(env, Cnil, form));
-                        return FLAG_REG0;
+			name = Cnil;
                 } else if (kind == @'ext::lambda-block') {
-                        cl_object name = ECL_CONS_CAR(form);
-                        cl_object body = ECL_CONS_CDR(form);
-                        asm_op2c(env, OP_CLOSE, ecl_make_lambda(env, name, body));
-                        return FLAG_REG0;
-                }
+                        name = ECL_CONS_CAR(body);
+                        body = ECL_CONS_CDR(body);
+                } else {
+			goto ERROR;
+		}
+		{
+			const cl_compiler_ptr c_env = env->c_env;
+			asm_op2c(env,
+				 (Null(c_env->variables) &&
+				  Null(c_env->macros))?
+				 OP_QUOTE : OP_CLOSE,
+				 ecl_make_lambda(env, name, body));
+		}
+		return FLAG_REG0;
         }
+ ERROR:
         FEprogram_error_noreturn("FUNCTION: Not a valid argument ~S.", 1, function);
 	return FLAG_REG0;
 }
