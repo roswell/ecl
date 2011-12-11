@@ -222,12 +222,12 @@
 ;;; Condition Data Type
 
 (defclass condition ()
-  ((report :allocation :class :initform nil)))
+  ((report-function :allocation :class :initform nil)))
 
 (defmethod print-object ((c condition) stream)
   (if *print-escape*
       (call-next-method)
-      (let ((reporter (slot-value c 'report)))
+      (let ((reporter (slot-value c 'report-function)))
 	(cond ((stringp reporter)
 	       (write-string reporter stream))
 	      ((null reporter)
@@ -246,9 +246,9 @@
 	 (push option class-options))
 	(:REPORT
 	 (let ((report-function (cadr option)))
-	   (push `(report :initform ,(if (symbolp report-function)
-					 (list 'quote report-function)
-					 report-function))
+	   (push `(report-function :initform ,(if (symbolp report-function)
+						  (list 'quote report-function)
+						  report-function))
 		 slot-specs)))
 	(otherwise (cerror "Ignore this DEFINE-CONDITION option."
 			   "Invalid DEFINE-CONDITION option: ~S" option))))
@@ -463,8 +463,6 @@ returns with NIL."
 ;;; only created when the error is signaled.
 ;;;
 
-(eval-when (compile eval)
-(defconstant +all-conditions+ (mapcar #'cdr '(
 (define-condition warning () ())
 
 (define-condition serious-condition () ())
@@ -493,9 +491,7 @@ returns with NIL."
 
 (define-condition ext:segmentation-violation (storage-condition)
   ()
-  (:REPORT
-   (lambda (condition stream)
-     (format stream "Detected access to an invalid or protected memory address."))))
+  (:REPORT "Detected access to an invalid or protected memory address."))
 
 (define-condition ext:stack-overflow (storage-condition)
   ((size :initarg :size :initform 0 :reader ext:stack-overflow-size)
@@ -512,10 +508,8 @@ or return to an outer frame, undoing all the function calls so far."
 		   type))))))
 
 (define-condition ext:storage-exhausted (storage-condition) ()
-  (:REPORT
-   (lambda (condition stream)
-     (format stream "Memory limit reached. Please jump to an outer pointer, quit program and enlarge the
-memory limits before executing the program again."))))
+  (:REPORT "Memory limit reached. Please jump to an outer pointer, quit program and enlarge the
+memory limits before executing the program again."))
 
 (define-condition ext:unix-signal-received ()
   ((code :type fixnum
@@ -565,7 +559,7 @@ memory limits before executing the program again."))))
   (:REPORT (lambda (condition stream)
 	     (format stream "Filesystem error with pathname ~S.~%Either
  1) the file does not exist, or
- 2) we are not allow to access the file, or
+ 2) we are not allowed to access the file, or
  3) the pathname points to a broken symbolic link."
 		     (file-error-pathname condition)))))
 
@@ -598,9 +592,9 @@ memory limits before executing the program again."))))
   ((operation :INITARG :OPERATION :READER arithmetic-error-operation)
    (operands :INITARG :OPERANDS :INITFORM '() :READER arithmetic-error-operands)))
 
-(define-condition division-by-zero         (arithmetic-error) ())
+(define-condition division-by-zero (arithmetic-error) ())
 
-(define-condition floating-point-overflow  (arithmetic-error) ())
+(define-condition floating-point-overflow (arithmetic-error) ())
 
 (define-condition floating-point-underflow (arithmetic-error) ())
 
@@ -609,8 +603,7 @@ memory limits before executing the program again."))))
 (define-condition floating-point-invalid-operation (arithmetic-error) ())
 
 (define-condition abort-failure (control-error) ()
-  (:REPORT (lambda (c s) (declare (ignore c))
-		   (write-string "Abort failed." s))))
+  (:REPORT "Abort failed."))
 
 (define-condition print-not-readable (error)
   ((object :INITARG :OBJECT :READER print-not-readable-object))
@@ -621,7 +614,6 @@ memory limits before executing the program again."))))
 (define-condition parse-error (error) ())
 
 (define-condition reader-error (parse-error stream-error) ())
-
 
 (define-condition format-error (simple-error)
   ((format-control :initarg :complaint)
@@ -647,15 +639,7 @@ memory limits before executing the program again."))))
 
 (define-condition ext:interactive-interrupt (serious-condition)
   ()
-  (:report (lambda (condition stream)
-	     (declare (ignore condition))
-	     (format stream "~&~@<Console interrupt~:@>"))))
-
-)))
-); nehw-lave
-
-(dolist (expression '#.+all-conditions+)
-  (eval (list* 'define-condition expression)))
+  (:report "Console interrupt."))
 
 
 (defun signal-simple-error (base-condition continue-message format-control format-args
@@ -825,173 +809,3 @@ strings."
 
 (defun sys::tpl-continue-command (&rest any)
   (apply #'invoke-restart 'continue any))
-
-#|
-;;; ----------------------------------------------------------------------
-;;; Interface
-;;;
-
-(defun sys::universal-error-handler
-  (error-name correctable function-name
-	      continue-format-string error-format-string
-	      args)
-  (declare (inline apply)) ;; So as not to get bogus frames in debugger
-  (if correctable
-      (apply #'cerror continue-format-string args)
-      (apply #'error error-format-string args)))
-
-(defun invoke-debugger (condition)
-  (let ((si::*tpl-prompt-hook*
-	 '(lambda 
-  (sys::break-level *restart-clusters*
-		    (format nil "~?"
-			    (simple-condition-format-control condition)
-			    (simple-condition-format-arguments condition))))
-
-(setq *restart-clusters*
-      (list (list
-	     (make-restart
-	      :NAME 'ABORT
-	      :FUNCTION #'(lambda () (throw si::*quit-tag* NIL))
-	      :REPORT-FUNCTION 
-	      #'(lambda (stream) 
-		  (format stream "Return to top level."))
-	      :INTERACTIVE-FUNCTION nil))))
-
-;;; ----------------------------------------------------------------------
-;;; Sample Debugger
-
-(defvar *debug-level* 0)
-(defvar *debug-abort* nil)
-(defvar *debug-continue* nil)
-(defvar *debug-condition* nil)
-(defvar *debug-restarts* nil)
-(defvar *number-of-debug-restarts* 0)
-(defvar *debug-eval* 'eval)
-(defvar *debug-print* #'(lambda (values) (format t "~&~{~s~^,~%~}" values)))
-
-(defmacro debug-command                (x) `(get ,x 'debug-command))
-(defmacro debug-command-argument-count (x) `(get ,x 'debug-command-argument-count))
-
-(defmacro define-debug-command (name bvl &rest body)
-  `(progn (setf (debug-command ',name) #'(lambda ,bvl ,@body))
-          (setf (debug-command-argument-count ',name) ,(length bvl))
-          ',name))
-
-(defun read-debug-command ()
-  (format t "~&debug ~d> " *debug-level*)
-  (cond ((char= (peek-char t) #\:)
-	 (read-char) ;Eat the ":" so that ":1" reliably reads a number.
-	 (with-input-from-string (stream (read-line))
-	   (let ((eof (list nil)))
-	     (do ((form (let ((*package* (find-package "keyword")))
-			  (read stream nil eof))
-			(read stream nil eof))
-		  (l '() (cons form l)))
-		 ((eq form eof) (nreverse l))))))
-	(t
-	 (list :eval (read)))))
-                   
-(define-debug-command :EVAL (form)
-  (funcall *debug-print* (multiple-value-list (funcall *debug-eval* form))))
-
-(define-debug-command :ABORT ()
-  (if *debug-abort*
-      (invoke-restart-interactively *debug-abort*)
-      (format T "~&There is no way to abort.~%")))
-
-(define-debug-command :CONTINUE ()
-  (if *debug-continue*
-      (invoke-restart-interactively *debug-continue*)
-      (format T "~&There is no way to continue.~%")))
-
-(define-debug-command :ERROR ()
-  (format T "~&~A~%" *debug-condition*))
-
-(define-debug-command :HELP ()
-  (format T "~&You are in a portable debugger.~
-             ~%Type a debugger command or a form to evaluate.~
-             ~%Commands are:~%")
-  (show-restarts *debug-restarts* *number-of-debug-restarts* 16)
-  (format T "~& :EVAL form     Evaluate a form.~
-             ~% :HELP          Show this text.~%")
-  (when *debug-abort*    (format T "~& :ABORT         Exit by ABORT.~%"))
-  (when *debug-continue* (format T "~& :CONTINUE      Exit by CONTINUE.~%"))
-  (format T "~& :ERROR         Reprint error message.~%"))
-
-
-
-(defvar *debug-command-prefix* ":")
-
-(defun show-restarts (&optional (restarts *debug-restarts*)
-		      		(max *number-of-debug-restarts*)
-				target-column)
-  (unless max (setq max (length restarts)))
-  (when restarts
-    (do ((w (if target-column
-		(- target-column 3)
-		(ceiling (log max 10))))
-         (p restarts (cdr p))
-         (i 0 (1+ i)))
-        ((or (not p) (= i max)))
-      (format T "~& ~A~A "
-	      *debug-command-prefix*
-	      (let ((s (format nil "~d" (+ i 1))))
-		(with-output-to-string (str)
-		  (format str "~A" s)
-		  (dotimes (i (- w (length s)))
-		    (write-char #\Space str)))))
-      (when (eq (car p) *debug-abort*) (format t "(Abort) "))
-      (when (eq (car p) *debug-continue*) (format T "(Continue) "))
-      (format T "~A" (car p))
-      (format T "~%"))))
-
-(defun invoke-debugger (&optional (datum "Debug") &rest arguments)
-  (let ((condition
-	 (coerce-to-condition datum arguments 'simple-condition 'debug)))
-    (when *debugger-hook*
-      (let ((hook *debugger-hook*)
-	    (*debugger-hook* nil))
-	(funcall hook condition hook)))
-    (standard-debugger condition)))
-
-(defun standard-debugger (condition)
-  (let* ((*debug-level* (1+ *debug-level*))
-	 (*debug-restarts* (compute-restarts))
-	 (*number-of-debug-restarts* (length *debug-restarts*))
-	 (*debug-abort*    (find-restart 'abort))
-	 (*debug-continue* (or (let ((c (find-restart 'continue)))
-				 (if (or (not *debug-continue*)
-					 (not (eq *debug-continue* c)))
-				     c nil))
-			       (let ((c (if *debug-restarts*
-					    (first *debug-restarts*) nil)))
-				 (if (not (eq c *debug-abort*)) c NIL))))
-	 (*debug-condition* condition))
-    (format T "~&~A~%" condition)
-    (show-restarts)
-    (do ((command (read-debug-command) (read-debug-command)))
-	(nil)
-      (execute-debugger-command (car command) (cdr command) *debug-level*))))
-
-(defun execute-debugger-command (cmd args level)
-  (with-simple-restart (abort "Return to debug level ~D." level)
-    (when cmd
-      (if (integerp cmd)
-	  (if (and (plusp cmd)
-		   (< cmd (+ *number-of-debug-restarts* 1)))
-	      (let ((restart (nth (- cmd 1) *debug-restarts*)))
-		(if args
-		    (apply #'invoke-restart restart (mapcar *debug-eval* args))
-		    (invoke-restart-interactively restart)))
-	      (format T "~&No such restart."))
-	  (let ((fn (debug-command cmd)))
-	    (if fn
-		(if (= (length args) (debug-command-argument-count cmd))
-		    (apply fn args)
-		    (format T "~&Too ~:[few~;many~] arguments to ~A."
-			    (> (length args) (debug-command-argument-count cmd))
-			    cmd))
-		(format T "~&~S is not a debugger command.~%" cmd)))))))
-
-|#
