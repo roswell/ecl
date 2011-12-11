@@ -1092,7 +1092,9 @@ cl_symbols[] = {
 {KEY_ "INITARG",NULL},
 {KEY_ "INITARGS",NULL},
 {KEY_ "INITFORM",NULL},
+{KEY_ "INITFUNCTION",NULL},
 {KEY_ "LAMBDA-LIST",NULL},
+{KEY_ "LOCATION",NULL},
 {KEY_ "METACLASS",NULL},
 {KEY_ "METHOD",NULL},
 {KEY_ "METHOD-CLASS",NULL},
@@ -1100,8 +1102,10 @@ cl_symbols[] = {
 {KEY_ "OPERATOR",NULL},
 {KEY_ "ORDER",NULL},
 {KEY_ "READER",NULL},
+{KEY_ "READERS",NULL},
 {KEY_ "REQUIRED",NULL},
 {KEY_ "WRITER",NULL},
+{KEY_ "WRITERS",NULL},
 #endif
 
 /* SYSTEM PACKAGE */
@@ -2193,6 +2197,8 @@ cl_symbols[] = {
 
 {EXT_ "HASH-TABLE-CONTENT","si_hash_table_content"},
 {EXT_ "HASH-TABLE-FILL","si_hash_table_fill"},
+
+{SYS_ "REPORT-FUNCTION",NULL},
 
 /* Tag for end of list */
 {NULL,NULL}};
