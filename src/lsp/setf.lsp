@@ -19,13 +19,35 @@
   (unless (= (length stores-list) n)
     (error "~d store-variables expected in setf form ~a." n context)))
 
-(defun do-defsetf-short (access-fn function)
-  (do-defsetf-long access-fn
-    #'(lambda (store &rest args) `(,function ,@args ,store))))
+(defun rename-arguments (vars)
+  (declare (si::c-local))
+  (let ((names '())
+	(values '())
+	(all-args '()))
+    (dolist (item vars)
+      (unless (or (fixnump item) (keywordp item))
+	(push item values)
+	(setq item (gensym))
+	(push item names))
+      (push item all-args))
+    (values (gensym) (nreverse names) (nreverse values) (nreverse all-args))))
 
-(defun do-defsetf-long (access-fn function)
-  (put-sysprop access-fn 'SETF-LAMBDA function)
-  (rem-sysprop access-fn 'SETF-METHOD))
+(defun setf-method-wrapper (name setf-lambda)
+  (declare (si::c-local))
+  #'(lambda (env &rest args)
+      (multiple-value-bind (store vars inits all)
+	  (rename-arguments args)
+	(values vars inits (list store)
+		(apply setf-lambda store all) ; store-form
+		(cons name all))))) ; access-form
+
+(defun do-defsetf (access-fn function)
+  (if (symbolp function)
+      (do-defsetf access-fn #'(lambda (store &rest args) `(,function ,@args ,store)))
+      (do-define-setf-method access-fn (setf-method-wrapper access-fn function))))
+
+(defun do-define-setf-method (access-fn function)
+  (put-sysprop access-fn 'SETF-METHOD function))
 
 ;;; DEFSETF macro.
 (defmacro defsetf (&whole whole access-fn &rest rest)
@@ -41,22 +63,20 @@ where REST is the value of the last FORM with parameters in LAMBDA-LIST bound
 to the symbols TEMP1 ... TEMPn and with STORE-VAR bound to the symbol TEMP0.
 The doc-string DOC, if supplied, is saved as a SETF doc and can be retrieved
 by (documentation 'SYMBOL 'setf)."
-  (cond ((and (car rest) (or (symbolp (car rest)) (functionp (car rest))))
-         `(eval-when (compile load eval)
-	    ,(ext:register-with-pde whole `(do-defsetf-short ',access-fn ',(car rest)))
-	    ,@(si::expand-set-documentation access-fn 'setf (cadr rest))
-	    ',access-fn))
-	(t
-	 (let* ((store (second rest))
-		(args (first rest))
-		(body (cddr rest))
-		(doc (find-documentation body))
-		(lambda `#'(lambda-block ,access-fn (,@store ,@args) ,@body)))
-	   (check-stores-number 'DEFSETF store 1)
-	   `(eval-when (compile load eval)
-	      ,(ext:register-with-pde whole `(do-defsetf-long ',access-fn ,lambda))
-	      ,@(si::expand-set-documentation access-fn 'setf doc)
-	      ',access-fn)))))
+  (let (function documentation)
+    (if (and (car rest) (or (symbolp (car rest)) (functionp (car rest))))
+	(setq function `',(car rest)
+	      documentation (cadr rest))
+	(let* ((store (second rest))
+	       (args (first rest))
+	       (body (cddr rest)))
+	  (setq documentation (find-documentation body)
+		function `#'(lambda-block ,access-fn (,@store ,@args) ,@body))
+	  (check-stores-number 'DEFSETF store 1)))
+    `(eval-when (compile load eval)
+       ,(ext:register-with-pde whole `(do-defsetf ',access-fn ,function))
+       ,@(si::expand-set-documentation access-fn 'setf documentation)
+       ',access-fn)))
 
 
 ;;; DEFINE-SETF-METHOD macro.
@@ -90,11 +110,10 @@ by (DOCUMENTATION 'SYMBOL 'SETF)."
 	  (setq args (cons env args))
 	  (push `(declare (ignore ,env)) body))))
   `(eval-when (compile load eval)
-	  (put-sysprop ',access-fn 'SETF-METHOD #'(ext::lambda-block ,access-fn ,args ,@body))
-          (rem-sysprop ',access-fn 'SETF-LAMBDA)
-	  ,@(si::expand-set-documentation access-fn 'setf
-					  (find-documentation body))
-          ',access-fn))
+     (do-define-setf-method ',access-fn #'(ext::lambda-block ,access-fn ,args ,@body))
+     ,@(si::expand-set-documentation access-fn 'setf
+				     (find-documentation body))
+     ',access-fn))
 
 
 ;;;; get-setf-expansion.
@@ -129,8 +148,6 @@ Does not check if the third gang is a single-element list."
 	       (setq writer
 		     (cond ((setq f (get-sysprop name 'STRUCTURE-ACCESS))
 			    (setf-structure-access (car all) (car f) (cdr f) store))
-			   ((setq f (get-sysprop (car form) 'SETF-LAMBDA))
-			    (apply f store all))
 			   ((and (setq f (macroexpand-1 form env)) (not (equal f form)))
 			    (return-from get-setf-expansion
 			      (get-setf-expansion f env)))
@@ -296,7 +313,8 @@ Does not check if the third gang is a single-element list."
 	      `(mask-field ,btemp ,access-form)))))
 
 (defun trivial-setf-form (place vars stores store-form access-form)
-  (declare (si::c-local))
+  (declare (si::c-local)
+	   (optimize (speed 3) (safety 0)))
   (and (atom place)
        (null vars)
        (eq access-form place)

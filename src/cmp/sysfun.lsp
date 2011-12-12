@@ -895,6 +895,8 @@
     nsubstitute nsubstitute-if nsubstitute-if-not find find-if find-if-not
     position position-if position-if-not remove-duplicates
     delete-duplicates mismatch search sort stable-sort merge constantly
+    ;; setf.lsp
+    si::do-defsetf si::do-define-setf-method
     ;; process.lsp
     ext:system
     ;; pprint.lsp

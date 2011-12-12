@@ -1992,6 +1992,11 @@ extern ECL_API cl_object cl_typep _ARGS((cl_narg narg, cl_object V1, cl_object V
 extern ECL_API cl_object cl_coerce(cl_object V1, cl_object V2);
 extern ECL_API cl_object cl_subtypep _ARGS((cl_narg narg, cl_object V1, cl_object V2, ...));
 
+/* setf.lsp */
+
+extern ECL_API cl_object si_do_defsetf(cl_object name, cl_object function);
+extern ECL_API cl_object si_do_define_setf_method(cl_object name, cl_object function);
+
 /* seq.lsp */
 
 extern ECL_API cl_object cl_make_sequence _ARGS((cl_narg narg, cl_object V1, cl_object V2, ...));

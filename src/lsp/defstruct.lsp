@@ -46,7 +46,6 @@
           (t (error "~S is an illegal structure type." type)))
     (if read-only
 	(progn
-	  (rem-sysprop access-function 'SETF-LAMBDA)
 	  (rem-sysprop access-function 'SETF-SYMBOL)
 	  (set-documentation access-function 'SETF nil))
 	(progn

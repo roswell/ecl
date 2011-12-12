@@ -66,7 +66,6 @@ cl_set(cl_object var, cl_object val)
 		if (mflag)
 			FEerror("~S is not a valid name for a macro.", 1, fname);
 		si_put_sysprop(sym, @'si::setf-symbol', def);
-		si_rem_sysprop(sym, @'si::setf-lambda');
 		si_rem_sysprop(sym, @'si::setf-method');
 	}
 	@(return def)
@@ -98,7 +97,6 @@ cl_fmakunbound(cl_object fname)
 		ecl_symbol_type_set(sym, ecl_symbol_type(sym) & ~stp_macro);
 	} else {
 		si_rem_sysprop(sym, @'si::setf-symbol');
-		si_rem_sysprop(sym, @'si::setf-lambda');
 		si_rem_sysprop(sym, @'si::setf-method');
 	}
 	@(return fname)

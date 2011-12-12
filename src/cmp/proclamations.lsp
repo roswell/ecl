@@ -188,6 +188,8 @@
 
 ;; ECL extensions:
 (proclamation si:specialp (symbol) gen-bool :predicate)
+(proclamation si::do-defsetf (symbol function) t)
+(proclamation si::do-define-setf-method (symbol function) t)
 
 ;;;
 ;;; 4. TYPES AND CLASSES

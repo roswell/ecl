@@ -1247,7 +1247,6 @@ cl_symbols[] = {
 #else
 {EXT_ "SETENV",NULL},
 #endif
-{SYS_ "SETF-LAMBDA",NULL},
 {SYS_ "SETF-METHOD",NULL},
 {SYS_ "SETF-NAMEP",NULL},
 {SYS_ "SETF-SYMBOL",NULL},
@@ -2199,6 +2198,9 @@ cl_symbols[] = {
 {EXT_ "HASH-TABLE-FILL","si_hash_table_fill"},
 
 {SYS_ "REPORT-FUNCTION",NULL},
+
+{SYS_ "DO-DEFSETF","ECL_NAME(si_do_defsetf)"},
+{SYS_ "DO-DEFINE-SETF-METHOD","ECL_NAME(si_do_define_setf_method)"},
 
 /* Tag for end of list */
 {NULL,NULL}};

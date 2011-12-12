@@ -543,11 +543,6 @@ Prints information about OBJECT to STREAM."
 
     (cond ((setq x (si::get-documentation symbol 'SETF))
            (doc1 x "[Setf]"))
-          ((setq x (get-sysprop symbol 'SETF-LAMBDA))
-           (let ((*package* (good-package)))
-             (doc1 (format nil "~%Defined as: ~S~%See the doc of DEFSETF."
-                           `(defsetf ,symbol ,@(get-sysprop symbol 'SETF-LAMBDA)))
-                   "[Setf]")))
           ((setq x (get-sysprop symbol 'SETF-METHOD))
            (let ((*package* (good-package)))
              (doc1
