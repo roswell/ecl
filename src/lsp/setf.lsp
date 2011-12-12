@@ -19,8 +19,16 @@
   (unless (= (length stores-list) n)
     (error "~d store-variables expected in setf form ~a." n context)))
 
+(defun do-defsetf-short (access-fn function)
+  (do-defsetf-long access-fn
+    #'(lambda (store &rest args) `(,function ,@args ,store))))
+
+(defun do-defsetf-long (access-fn function)
+  (put-sysprop access-fn 'SETF-LAMBDA function)
+  (rem-sysprop access-fn 'SETF-METHOD))
+
 ;;; DEFSETF macro.
-(defmacro defsetf (access-fn &rest rest)
+(defmacro defsetf (&whole whole access-fn &rest rest)
   "Syntax: (defsetf symbol update-fun [doc])
 	or
 	(defsetf symbol lambda-list (store-var) {decl | doc}* {form}*)
@@ -35,21 +43,18 @@ The doc-string DOC, if supplied, is saved as a SETF doc and can be retrieved
 by (documentation 'SYMBOL 'setf)."
   (cond ((and (car rest) (or (symbolp (car rest)) (functionp (car rest))))
          `(eval-when (compile load eval)
-		 (put-sysprop ',access-fn 'SETF-UPDATE-FN ',(car rest))
-                 (rem-sysprop ',access-fn 'SETF-LAMBDA)
-                 (rem-sysprop ',access-fn 'SETF-METHOD)
-		 ,@(si::expand-set-documentation access-fn 'setf (cadr rest))
-                 ',access-fn))
+	    ,(ext:register-with-pde whole `(do-defsetf-short ',access-fn ',(car rest)))
+	    ,@(si::expand-set-documentation access-fn 'setf (cadr rest))
+	    ',access-fn))
 	(t
 	 (let* ((store (second rest))
 		(args (first rest))
 		(body (cddr rest))
-		(doc (find-documentation body)))
+		(doc (find-documentation body))
+		(lambda `#'(lambda-block ,access-fn (,@store ,@args) ,@body)))
 	   (check-stores-number 'DEFSETF store 1)
 	   `(eval-when (compile load eval)
-	      (put-sysprop ',access-fn 'SETF-LAMBDA #'(lambda-block ,access-fn (,@store ,@args) ,@body))
-	      (rem-sysprop ',access-fn 'SETF-UPDATE-FN)
-	      (rem-sysprop ',access-fn 'SETF-METHOD)
+	      ,(ext:register-with-pde whole `(do-defsetf-long ',access-fn ,lambda))
 	      ,@(si::expand-set-documentation access-fn 'setf doc)
 	      ',access-fn)))))
 
@@ -87,7 +92,6 @@ by (DOCUMENTATION 'SYMBOL 'SETF)."
   `(eval-when (compile load eval)
 	  (put-sysprop ',access-fn 'SETF-METHOD #'(ext::lambda-block ,access-fn ,args ,@body))
           (rem-sysprop ',access-fn 'SETF-LAMBDA)
-          (rem-sysprop ',access-fn 'SETF-UPDATE-FN)
 	  ,@(si::expand-set-documentation access-fn 'setf
 					  (find-documentation body))
           ',access-fn))
@@ -123,9 +127,7 @@ Does not check if the third gang is a single-element list."
 	     (multiple-value-bind (store vars inits all)
 		 (rename-arguments (cdr form))
 	       (setq writer
-		     (cond ((setq f (get-sysprop name 'SETF-UPDATE-FN))
-			    `(,f ,@all ,store))
-			   ((setq f (get-sysprop name 'STRUCTURE-ACCESS))
+		     (cond ((setq f (get-sysprop name 'STRUCTURE-ACCESS))
 			    (setf-structure-access (car all) (car f) (cdr f) store))
 			   ((setq f (get-sysprop (car form) 'SETF-LAMBDA))
 			    (apply f store all))
@@ -303,7 +305,32 @@ Does not check if the third gang is a single-element list."
        (= (length store-form) 3)
        (member (first store-form) '(setq setf))
        (eq (second store-form) place)
-       (eq (third store-form) (first stores))))
+       (eq (third store-form) (first stores))
+       ))
+
+(defun try-simpler-expansion (place vars stores newvalue store-form)
+  ;; When the store form contains all the original arguments in order
+  ;; followed by a single stored value, we can produce an expansion
+  ;; without LET forms.
+  (declare (si::c-local)
+	   (optimize (speed 3) (safety 0)))
+  (when (and (consp place)
+	     (consp store-form)
+	     (= (length place) (the fixnum (1- (length store-form)))))
+    (let ((function (pop store-form))
+	  (output '())
+	  v)
+      (dolist (i (rest place)
+	       (when (eq (first stores) (first store-form))
+		 (list* function
+			(nreverse (cons newvalue output)))))
+	(unless (consp store-form)
+	  (return nil))
+	(setq v (car (the cons store-form))
+	      store-form (cdr (the cons store-form)))
+	(unless (or (eq v i) (eq v (pop vars)))
+	  (return nil))
+	(push i output)))))
 
 ;;; The expansion function for SETF.
 (defun setf-expand-1 (place newvalue env)
@@ -312,19 +339,14 @@ Does not check if the third gang is a single-element list."
       (get-setf-expansion place env)
     (declare (ignore access-form))
     (cond ((trivial-setf-form place vars stores store-form access-form)
-           (list 'setq place newvalue))
-          ((and (consp place)
-                (let* ((name (first place))
-                       (inverse (get-sysprop name 'setf-update-fn)))
-                  (and inverse
-                       (consp store-form)
-                       (eq inverse (first store-form))
-                       `(,inverse ,@(rest place) ,newvalue)))))
-          (t `(let* ,(mapcar #'list vars vals)
-                (declare (:read-only ,@vars))
-                (multiple-value-bind ,stores ,newvalue
-                  (declare (:read-only ,@stores))
-                  ,store-form))))))
+	   (list 'setq place newvalue))
+	  ((try-simpler-expansion place vars stores newvalue store-form))
+	  (t
+	   `(let* ,(mapcar #'list vars vals)
+	      (declare (:read-only ,@vars))
+	      (multiple-value-bind ,stores ,newvalue
+		(declare (:read-only ,@stores))
+		,store-form))))))
 
 (defun setf-structure-access (struct type index newvalue)
   (declare (si::c-local))

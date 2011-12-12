@@ -68,7 +68,6 @@ cl_set(cl_object var, cl_object val)
 		si_put_sysprop(sym, @'si::setf-symbol', def);
 		si_rem_sysprop(sym, @'si::setf-lambda');
 		si_rem_sysprop(sym, @'si::setf-method');
-		si_rem_sysprop(sym, @'si::setf-update');
 	}
 	@(return def)
 @)
@@ -101,7 +100,6 @@ cl_fmakunbound(cl_object fname)
 		si_rem_sysprop(sym, @'si::setf-symbol');
 		si_rem_sysprop(sym, @'si::setf-lambda');
 		si_rem_sysprop(sym, @'si::setf-method');
-		si_rem_sysprop(sym, @'si::setf-update');
 	}
 	@(return fname)
 }
