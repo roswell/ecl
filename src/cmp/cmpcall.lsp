@@ -187,8 +187,8 @@
 (defun call-unknown-global-loc (fname loc args &optional function-p)
   (unless loc
     (if (and (symbolp fname)
-                       (not (eql (symbol-package fname) 
-                                 (find-package "CL"))))
+	     (not (eql (symbol-package fname) 
+		       (find-package "CL"))))
         (setf loc (add-symbol fname)
               function-p nil)
         (setf loc (list 'FDEFINITION fname)
