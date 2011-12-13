@@ -214,6 +214,7 @@ struct cl_core_struct {
 	cl_object Jan1st1970UT;
 
 	cl_object system_properties;
+	cl_object setf_definitions;
 
 #ifdef ECL_THREADS
 	cl_object processes;
@@ -381,6 +382,8 @@ extern ECL_API cl_object si_fset _ARGS((cl_narg narg, cl_object fun, cl_object d
 extern ECL_API cl_object si_get_sysprop(cl_object sym, cl_object prop);
 extern ECL_API cl_object si_put_sysprop(cl_object sym, cl_object prop, cl_object value);
 extern ECL_API cl_object si_rem_sysprop(cl_object sym, cl_object prop);
+extern ECL_API cl_object ecl_setf_definition(cl_object fname, cl_object createp);
+extern ECL_API cl_object si_setf_definition(cl_object fname, cl_object createp);
 
 extern ECL_API void ecl_clear_compiler_properties(cl_object sym);
 

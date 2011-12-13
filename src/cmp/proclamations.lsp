@@ -239,6 +239,7 @@
 ;; ECL extensions
 
 (proclamation si:fset (function-name function &optional gen-bool t) function)
+(proclamation si:setf-definition (function-name createp) list)
 (proclamation ext:compiled-function-name (function) (or null function-name))
 (proclamation si:compiled-function-block (function) (or null si::codeblock))
 (proclamation ext:compiled-function-file (function) (values t t))

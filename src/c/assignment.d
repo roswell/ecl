@@ -28,6 +28,40 @@ cl_set(cl_object var, cl_object val)
 	return1(ECL_SETQ(env, var, val));
 }
 
+cl_object
+ecl_setf_definition(cl_object sym, cl_object createp)
+{
+	cl_env_ptr the_env = ecl_process_env();
+	cl_object pair;
+        ECL_WITH_GLOBAL_ENV_RDLOCK_BEGIN(the_env) {
+                pair = ecl_gethash_safe(sym, cl_core.setf_definitions, Cnil);
+		if (Null(pair) && !Null(createp)) {
+			pair = ecl_cons(createp, sym);
+			ecl_sethash(sym, cl_core.setf_definitions, pair);
+		}
+        } ECL_WITH_GLOBAL_ENV_RDLOCK_END;
+	return pair;
+}
+
+cl_object
+si_setf_definition(cl_object sym, cl_object value)
+{
+	@(return ecl_setf_definition(sym, value))
+}
+
+static void
+ecl_rem_setf_definition(cl_object sym)
+{
+	cl_env_ptr the_env = ecl_process_env();
+        ECL_WITH_GLOBAL_ENV_RDLOCK_BEGIN(the_env) {
+                cl_object pair = ecl_gethash_safe(sym, cl_core.setf_definitions, Cnil);
+		if (!Null(pair)) {
+			ECL_RPLACA(sym, Cnil);
+			ecl_remhash(sym, cl_core.setf_definitions);
+		}
+        } ECL_WITH_GLOBAL_ENV_RDLOCK_END;
+}
+
 @(defun si::fset (fname def &optional macro pprint)
 	cl_object sym = si_function_block_name(fname);
 	cl_object pack;
@@ -62,11 +96,11 @@ cl_set(cl_object var, cl_object val)
 		else
 			si_put_sysprop(sym, @'si::pretty-print-format', pprint);
 #endif
+	} else if (mflag) {
+		FEerror("~S is not a valid name for a macro.", 1, fname);
 	} else {
-		if (mflag)
-			FEerror("~S is not a valid name for a macro.", 1, fname);
-		si_put_sysprop(sym, @'si::setf-symbol', def);
-		si_rem_sysprop(sym, @'si::setf-method');
+		cl_object pair = ecl_setf_definition(sym, def);
+		ECL_RPLACA(pair, def);
 	}
 	@(return def)
 @)
@@ -96,7 +130,7 @@ cl_fmakunbound(cl_object fname)
 		SYM_FUN(sym) = Cnil;
 		ecl_symbol_type_set(sym, ecl_symbol_type(sym) & ~stp_macro);
 	} else {
-		si_rem_sysprop(sym, @'si::setf-symbol');
+		ecl_rem_setf_definition(sym);
 		si_rem_sysprop(sym, @'si::setf-method');
 	}
 	@(return fname)

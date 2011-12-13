@@ -391,6 +391,7 @@ struct cl_core_struct cl_core = {
 	Cnil, /* Jan1st1970UT */
 
 	Cnil, /* system_properties */
+	Cnil, /* setf_definition */
 
 #ifdef ECL_THREADS
 	Cnil, /* processes */
@@ -628,6 +629,10 @@ cl_boot(int argc, char **argv)
 	 */
 	cl_core.system_properties =
 	    cl__make_hash_table(@'equal', MAKE_FIXNUM(1024), /* size */
+				cl_core.rehash_size,
+                                cl_core.rehash_threshold);
+	cl_core.setf_definitions =
+	    cl__make_hash_table(@'eq', MAKE_FIXNUM(256), /* size */
 				cl_core.rehash_size,
                                 cl_core.rehash_threshold);
 

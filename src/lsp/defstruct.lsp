@@ -44,14 +44,14 @@
            (fset access-function
 		 #'(lambda (x) (elt x offset))))
           (t (error "~S is an illegal structure type." type)))
-    (if read-only
-	(progn
-	  (rem-sysprop access-function 'SETF-SYMBOL)
-	  (set-documentation access-function 'SETF nil))
-	;; The following is used by the compiler to expand inline
-	;; the accessor
-	(do-setf-structure-method access-function (or type name) offset))
-	))
+    (cond (read-only
+	   (fmakunbound `(setf ,access-function))
+	   (set-documentation access-function 'SETF nil))
+	  ;; The following is used by the compiler to expand inline
+	  ;; the accessor
+	  (t
+	   (do-setf-structure-method access-function (or type name)
+				     offset)))))
 
 
 (defun do-setf-structure-method (access-function type index)

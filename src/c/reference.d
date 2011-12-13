@@ -59,9 +59,10 @@ cl_fboundp(cl_object fname)
 		if (CAR(fname) == @'setf') {
 			cl_object sym = CDR(fname);
 			if (CONSP(sym) && CDR(sym) == Cnil) {
+				cl_object pair;
 				sym = CAR(sym);
-				if (SYMBOLP(sym))
-					@(return si_get_sysprop(sym, @'si::setf-symbol'))
+				pair = ecl_setf_definition(sym, Cnil);
+				@(return ecl_car(pair))
 			}
 		}
 	}
@@ -92,7 +93,8 @@ ecl_fdefinition(cl_object fun)
 			sym = CAR(sym);
 			if (type_of(sym) != t_symbol)
 				FEinvalid_function_name(fun);
-			output = si_get_sysprop(sym, @'si::setf-symbol');
+			output = ecl_setf_definition(sym, Cnil);
+			output = ecl_car(output);
 			if (Null(output))
 				FEundefined_function(fun);
 		} else if (CAR(fun) == @'lambda') {

@@ -1249,7 +1249,6 @@ cl_symbols[] = {
 #endif
 {SYS_ "SETF-METHOD", SI_ORDINARY, NULL, -1, OBJNULL},
 {SYS_ "SETF-NAMEP", SI_ORDINARY, NULL, -1, OBJNULL},
-{SYS_ "SETF-SYMBOL", SI_ORDINARY, NULL, -1, OBJNULL},
 {SYS_ "SIMPLE-PROGRAM-ERROR", SI_ORDINARY,  ECL_NAME(si_simple_program_error), -1, OBJNULL},
 {SYS_ "SIGNAL-SIMPLE-ERROR", SI_ORDINARY, si_signal_simple_error, -1, OBJNULL},
 {SYS_ "SIGNAL-TYPE-ERROR", SI_ORDINARY, si_signal_type_error, 2, OBJNULL},
@@ -2201,6 +2200,8 @@ cl_symbols[] = {
 
 {SYS_ "DO-DEFSETF", SI_ORDINARY, ECL_NAME(si_do_defsetf), 2, OBJNULL},
 {SYS_ "DO-DEFINE-SETF-METHOD", SI_ORDINARY, ECL_NAME(si_do_define_setf_method), 2, OBJNULL},
+
+{SYS_ "SETF-DEFINITION", SI_ORDINARY, ECL_NAME(si_setf_definition), 2, OBJNULL},
 
 /* Tag for end of list */
 {NULL, CL_ORDINARY, NULL, -1, OBJNULL}};
