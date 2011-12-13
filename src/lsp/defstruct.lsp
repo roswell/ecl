@@ -48,12 +48,26 @@
 	(progn
 	  (rem-sysprop access-function 'SETF-SYMBOL)
 	  (set-documentation access-function 'SETF nil))
-	(progn
-	  ;; The following is used by the compiler to expand inline
-	  ;; the accessor
-	  (put-sysprop access-function 'STRUCTURE-ACCESS (cons (or type name) offset)))
+	;; The following is used by the compiler to expand inline
+	;; the accessor
+	(do-setf-structure-method access-function (or type name) offset))
 	))
-  )
+
+
+(defun do-setf-structure-method (access-function type index)
+  (declare (si::c-local)
+	   (optimize (speed 3) (safety 0)))
+  (put-sysprop access-function 'STRUCTURE-ACCESS (cons type index))
+  (do-defsetf access-function
+    (cond ((or (eq type 'list) (eq type 'vector))
+	   #'(lambda (newvalue struct)
+	       `(sys::elt-set ,struct ,index ,newvalue)))
+	  ((consp type)
+	   #'(lambda (newvalue struct)
+	       `(si::aset (the ,type ,struct) ,index ,newvalue)))
+	  (t
+	   #'(lambda (newvalue struct)
+	       `(sys::structure-set ,struct ',type ,index ,newvalue))))))
 
 (defun process-boa-lambda-list (slot-names slot-descriptions boa-list assertions)
   (declare (si::c-local))

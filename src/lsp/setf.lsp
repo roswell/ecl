@@ -146,9 +146,7 @@ Does not check if the third gang is a single-element list."
 	     (multiple-value-bind (store vars inits all)
 		 (rename-arguments (cdr form))
 	       (setq writer
-		     (cond ((setq f (get-sysprop name 'STRUCTURE-ACCESS))
-			    (setf-structure-access (car all) (car f) (cdr f) store))
-			   ((and (setq f (macroexpand-1 form env)) (not (equal f form)))
+		     (cond ((and (setq f (macroexpand-1 form env)) (not (equal f form)))
 			    (return-from get-setf-expansion
 			      (get-setf-expansion f env)))
 			   (t
@@ -365,15 +363,6 @@ Does not check if the third gang is a single-element list."
 	      (multiple-value-bind ,stores ,newvalue
 		(declare (:read-only ,@stores))
 		,store-form))))))
-
-(defun setf-structure-access (struct type index newvalue)
-  (declare (si::c-local))
-  (cond
-    ((or (eq type 'list) (eq type 'vector))
-     `(sys:elt-set ,struct ,index ,newvalue))
-    ((consp type)
-     `(si::aset (the ,type ,struct) ,index ,newvalue))
-    (t `(sys::structure-set ,struct ',type ,index ,newvalue))))
 
 (defun setf-expand (l env)
   (declare (si::c-local))
