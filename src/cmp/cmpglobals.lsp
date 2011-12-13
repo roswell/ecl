@@ -248,6 +248,7 @@ lines are inserted, but the order is preserved")
 (defvar *load-time-values* nil)		; holds { ( vv-index form ) }*,
 ;;;  where each vv-index should be given an object before
 ;;;  defining the current function during loading process.
+(defvar *setf-definitions* nil)         ; C forms to find out (SETF fname) locations
 
 (defvar *use-static-constants-p* nil)   ; T/NIL flag to determine whether one may
                                         ; generate lisp constant values as C structs
@@ -326,6 +327,7 @@ be deleted if they have been opened with LoadLibrary.")
     (*next-cfun* 0)
     (*last-label* 0)
     (*load-objects* (make-hash-table :size 128 :test #'equal))
+    (*setf-definitions* nil)
     (*make-forms* nil)
     (*static-constants* nil)
     (*permanent-objects* nil)

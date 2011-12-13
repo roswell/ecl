@@ -173,6 +173,8 @@
 
     (wt-nl "VVtemp = Cblock->cblock.temp_data;")
 
+    (wt-nl "ECL_DEFINE_SETF_FUNCTIONS")
+
     ;; Type propagation phase
 
     (when *do-type-propagation*
@@ -232,6 +234,22 @@
 	   (lisp-name (third l)))
       (wt-nl1 "static cl_object " c-name "(cl_narg narg, ...)"
 	      "{TRAMPOLINK(narg," lisp-name ",&" var-name ",Cblock);}")))
+  #+(or)
+  (wt-nl-h "static cl_object ECL_SETF_DEFINITION(cl_object setf_vv, cl_object setf_form) {
+cl_object f1 = ecl_fdefinition(setf_form);
+cl_object f2 = ECL_CONS_CAR(setf_vv);
+if (f1 != f2) {
+cl_print(1,f1);
+cl_print(1,f2);
+cl_print(1,setf_form);
+FEundefined_function(setf_form);
+}
+return f2;
+}
+")
+  (wt-nl-h "#define ECL_DEFINE_SETF_FUNCTIONS ")
+  (loop for (name setf-vv name-vv) in *setf-definitions*
+     do (wt-h #\\ #\Newline setf-vv "=ecl_setf_definition(" name-vv ",Ct);"))
 
   (wt-nl-h "#ifdef __cplusplus")
   (wt-nl-h "}")

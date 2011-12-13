@@ -16,6 +16,7 @@
 */
 
 #include <ecl/ecl.h>
+#include <ecl/internal.h>
 #include <ecl/ecl-inl.h>
 
 /*
@@ -62,7 +63,7 @@ cl_fboundp(cl_object fname)
 				cl_object pair;
 				sym = CAR(sym);
 				pair = ecl_setf_definition(sym, Cnil);
-				@(return ecl_car(pair))
+				@(return ecl_cdr(pair))
 			}
 		}
 	}
@@ -77,26 +78,26 @@ ecl_fdefinition(cl_object fun)
 
 	if (t == t_symbol) {
 		output = SYM_FUN(fun);
-		if (output == Cnil)
+		unlikely_if (output == Cnil)
 			FEundefined_function(fun);
-		if (fun->symbol.stype & (stp_macro | stp_special_form))
+		unlikely_if (fun->symbol.stype & (stp_macro | stp_special_form))
 			FEundefined_function(fun);
-	} else if (Null(fun)) {
+	} else unlikely_if (Null(fun)) {
 		FEundefined_function(fun);
 	} else if (t == t_list) {
 		cl_object sym = CDR(fun);
-		if (!CONSP(sym))
+		unlikely_if (!CONSP(sym))
 			FEinvalid_function_name(fun);
 		if (CAR(fun) == @'setf') {
-			if (CDR(sym) != Cnil)
+			unlikely_if (CDR(sym) != Cnil)
 				FEinvalid_function_name(fun);
 			sym = CAR(sym);
-			if (type_of(sym) != t_symbol)
+			unlikely_if (type_of(sym) != t_symbol)
 				FEinvalid_function_name(fun);
 			output = ecl_setf_definition(sym, Cnil);
-			output = ecl_car(output);
-			if (Null(output))
+			unlikely_if (Null(ecl_cdr(output)))
 				FEundefined_function(fun);
+			output = ECL_CONS_CAR(output);
 		} else if (CAR(fun) == @'lambda') {
 			return si_make_lambda(Cnil, sym);
 		} else if (CAR(fun) == @'ext::lambda-block') {

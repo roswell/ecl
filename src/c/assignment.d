@@ -28,6 +28,21 @@ cl_set(cl_object var, cl_object val)
 	return1(ECL_SETQ(env, var, val));
 }
 
+static cl_object
+unbound_setf_function_error(cl_narg narg, ...)
+{
+	const cl_env_ptr the_env = ecl_process_env();
+        cl_object name = the_env->function->cclosure.env;
+	FEundefined_function(cl_list(2, @'setf', name));
+}
+
+static cl_object
+make_setf_function_error(cl_object name)
+{
+	return ecl_make_cclosure_va((cl_objectfn)unbound_setf_function_error,
+				    name, Cnil);
+}
+
 cl_object
 ecl_setf_definition(cl_object sym, cl_object createp)
 {
@@ -36,7 +51,8 @@ ecl_setf_definition(cl_object sym, cl_object createp)
         ECL_WITH_GLOBAL_ENV_RDLOCK_BEGIN(the_env) {
                 pair = ecl_gethash_safe(sym, cl_core.setf_definitions, Cnil);
 		if (Null(pair) && !Null(createp)) {
-			pair = ecl_cons(createp, sym);
+			createp = make_setf_function_error(sym);
+			pair = ecl_cons(createp, Cnil);
 			ecl_sethash(sym, cl_core.setf_definitions, pair);
 		}
         } ECL_WITH_GLOBAL_ENV_RDLOCK_END;
@@ -101,6 +117,7 @@ ecl_rem_setf_definition(cl_object sym)
 	} else {
 		cl_object pair = ecl_setf_definition(sym, def);
 		ECL_RPLACA(pair, def);
+		ECL_RPLACD(pair, sym);
 	}
 	@(return def)
 @)
