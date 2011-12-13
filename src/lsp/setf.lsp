@@ -19,27 +19,31 @@
   (unless (= (length stores-list) n)
     (error "~d store-variables expected in setf form ~a." n context)))
 
-(defun rename-arguments (vars)
+(defun do-setf-method-expansion (name lambda args)
   (declare (si::c-local))
-  (let ((names '())
-	(values '())
-	(all-args '()))
-    (dolist (item vars)
+  (let* ((vars '())
+	 (inits '())
+	 (all '()))
+    (dolist (item args)
       (unless (or (fixnump item) (keywordp item))
-	(push item values)
+	(push item inits)
 	(setq item (gensym))
-	(push item names))
-      (push item all-args))
-    (values (gensym) (nreverse names) (nreverse values) (nreverse all-args))))
+	(push item vars))
+      (push item all))
+    (let* ((store (gensym))
+	   (all (nreverse all)))
+      (values (nreverse vars)
+	      (nreverse inits)
+	      (list store)
+	      (if lambda
+		  (apply lambda store all)
+		  `(funcall #'(setf ,name) ,store ,@all))
+	      (cons name all)))))
 
 (defun setf-method-wrapper (name setf-lambda)
   (declare (si::c-local))
   #'(lambda (env &rest args)
-      (multiple-value-bind (store vars inits all)
-	  (rename-arguments args)
-	(values vars inits (list store)
-		(apply setf-lambda store all) ; store-form
-		(cons name all))))) ; access-form
+      (do-setf-method-expansion name setf-lambda args)))
 
 (defun do-defsetf (access-fn function)
   (if (symbolp function)
@@ -122,36 +126,21 @@ by (DOCUMENTATION 'SYMBOL 'SETF)."
   "Args: (form)
 Returns the 'five gangs' (see DEFINE-SETF-EXPANDER) for PLACE as five values.
 Does not check if the third gang is a single-element list."
-  (flet ((rename-arguments (vars &aux names values all-args)
-	   (dolist (item vars)
-	     (unless (or (fixnump item) (keywordp item))
-	       (push item values)
-	       (setq item (gensym))
-	       (push item names))
-	     (push item all-args))
-	   (values (gensym) (nreverse names) (nreverse values) (nreverse all-args))))
-    ;; Note that macroexpansion of SETF arguments can only be done via
-    ;; MACROEXPAND-1 [ANSI 5.1.2.7]
-    (cond ((symbolp form)
-	   (if (and (setq f (macroexpand-1 form env)) (not (equal f form)))
-	       (get-setf-expansion f env)
-	       (let ((store (gensym)))
-		 (values nil nil (list store) `(setq ,form ,store) form))))
-	  ((or (not (consp form)) (not (symbolp (car form))))
-	   (error "Cannot get the setf-method of ~S." form))
-	  ((setq f (get-sysprop (car form) 'SETF-METHOD))
-	   (apply f env (cdr form)))
-	  (t
-	   (let* ((name (car form)) writer)
-	     (multiple-value-bind (store vars inits all)
-		 (rename-arguments (cdr form))
-	       (setq writer
-		     (cond ((and (setq f (macroexpand-1 form env)) (not (equal f form)))
-			    (return-from get-setf-expansion
-			      (get-setf-expansion f env)))
-			   (t
-			    `(funcall #'(SETF ,name) ,store ,@all))))
-	       (values vars inits (list store) writer (cons name all))))))))
+  ;; Note that macroexpansion of SETF arguments can only be done via
+  ;; MACROEXPAND-1 [ANSI 5.1.2.7]
+  (cond ((symbolp form)
+	 (if (and (setq f (macroexpand-1 form env)) (not (equal f form)))
+	     (get-setf-expansion f env)
+	     (let ((store (gensym)))
+	       (values nil nil (list store) `(setq ,form ,store) form))))
+	((or (not (consp form)) (not (symbolp (car form))))
+	 (error "Cannot get the setf-method of ~S." form))
+	((setq f (get-sysprop (car form) 'SETF-METHOD))
+	 (apply f env (cdr form)))
+	((and (setq f (macroexpand-1 form env)) (not (equal f form)))
+	 (get-setf-expansion f env))
+	(t
+	 (do-setf-method-expansion (car form) nil (cdr form)))))
 
 ;;;; SETF definitions.
 
