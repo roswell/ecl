@@ -177,11 +177,13 @@ _ecl_standard_dispatch(cl_object frame, cl_object gf)
 		if (e->key != OBJNULL) {
 			func = e->value;
 		} else {
+			/* The keys and the cache may change while we
+			 * compute the applicable methods. We must save
+			 * the keys and recompute the cache location if
+			 * it was filled. */
 			cl_object keys = cl_copy_seq(vector);
 			func = compute_applicable_method(frame, gf);
 			if (e->key != OBJNULL) {
-				/* The cache might have changed while we
-				 * computed applicable methods */
 				e = ecl_search_cache(cache);
 			}
 			e->key = keys;
