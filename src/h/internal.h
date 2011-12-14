@@ -370,11 +370,11 @@ extern void cl_write_object(cl_object x, cl_object stream);
         const cl_object __ecl_the_lock = lock;          \
         ecl_disable_interrupts_env(the_env);            \
         mp_get_lock_wait(__ecl_the_lock);               \
-        CL_UNWIND_PROTECT_BEGIN(__ecl_the_env)
+        CL_UNWIND_PROTECT_BEGIN(__ecl_the_env);	        \
+	ecl_enable_interrupts_env(__ecl_the_env);
 # define ECL_WITH_LOCK_END                                    \
         CL_UNWIND_PROTECT_EXIT {                              \
                 mp_giveup_lock(__ecl_the_lock);               \
-                ecl_enable_interrupts_env(__ecl_the_env);     \
         } CL_UNWIND_PROTECT_END; }
 #else
 # define ECL_WITH_GLOBAL_LOCK_BEGIN(the_env)

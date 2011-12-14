@@ -105,12 +105,7 @@ struct cl_env_struct {
 	   queue operations in which the hash is cleared from updated
 	   generic functions. */
 #ifdef CLOS
-#ifdef ECL_THREADS
-	cl_object method_hash_clear_list;
-#endif
-	cl_object method_hash;
-	cl_object method_spec_vector;
-	cl_fixnum method_generation;
+	struct ecl_cache *method_cache;
 #endif
 
 	/* foreign function interface */

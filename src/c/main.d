@@ -40,6 +40,7 @@
 #endif
 #include <stdio.h>
 #include <stdlib.h>
+#include <ecl/cache.h>
 #include <ecl/internal.h>
 #include <ecl/ecl-inl.h>
 extern int GC_dont_gc;
@@ -153,13 +154,7 @@ ecl_init_env(cl_env_ptr env)
 #endif
 
 #ifdef CLOS
-	env->method_hash = Cnil;
-	env->method_spec_vector = Cnil;
-	env->method_generation = 0;
-	_ecl_set_method_hash_size(env, 4096);
-#ifdef ECL_THREADS
-	env->method_hash_clear_list = Cnil;
-#endif
+	env->method_cache = ecl_make_cache(64, 4096);
 #endif
         env->pending_interrupt = Cnil;
 
