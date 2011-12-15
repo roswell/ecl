@@ -1308,7 +1308,7 @@
 #+clos
 (proclamation si:instance-set (t fixnum t) t)
 #+clos
-(proclamation si:instance-class (t) t :reader)
+(proclamation si:instance-class (t) class :reader)
 #+clos
 (proclamation si:instance-class-set (t t) t)
 #+clos
