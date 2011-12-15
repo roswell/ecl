@@ -571,7 +571,7 @@ because it contains a reference to the undefined class~%  ~A"
 	       `(si::instance-ref ,slotd #.(position 'location +slot-definition-slots+
 						     :key #'first))))
     (values #'(lambda (self)
-                (declare (optimize (safety 1) (speed 3) (debug 0))
+                (declare (optimize (safety 0) (speed 3) (debug 0))
                          (standard-object self))
                 (ensure-up-to-date-instance self)
 		(let* ((class (si:instance-class self))
@@ -585,7 +585,7 @@ because it contains a reference to the undefined class~%  ~A"
 		      value
 		      (values (slot-unbound (class-of self) self slot-name)))))
 	    #'(lambda (value self)
-                (declare (optimize (safety 1) (speed 3) (debug 0))
+                (declare (optimize (safety 0) (speed 3) (debug 0))
                          (standard-object self))
                 (ensure-up-to-date-instance self)
 		(let* ((class (si:instance-class self))
@@ -634,8 +634,11 @@ because it contains a reference to the undefined class~%  ~A"
 	      (location (safe-slot-definition-location slotd)))
 	  (cond ((and (eq allocation :instance) (typep location 'fixnum))
 		 (std-class-sealed-accessors (slot-definition-location slotd)))
+		;; When a class is the specified STANDARD-CLASS, then the
+		;; user may not write any method around SLOT-VALUE-USING-CLASS
+		;; This allows us to write optimized versions of the accessors.
 		((and (eq allocation :instance)
-		      (slot-value standard-class 'optimize-slot-access))
+		      (eq standard-class +the-standard-class+))
 		 (std-class-optimized-accessors name))
 		(t
 		 (std-class-accessors name))))
