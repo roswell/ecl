@@ -129,13 +129,16 @@
          'FIXNUM)))
 
 (defun inline-type-matches (inline-info arg-types return-type)
+  (when (and (not (inline-info-multiple-values inline-info))
+	     (member *destination* '(VALUES RETURN)))
+    (return-from inline-type-matches nil))
   (let* ((rts nil)
          (number-max nil))
     ;;
     ;; Check that the argument types match those of the inline expression
     ;;
     (do* ((arg-types arg-types (cdr arg-types))
-          (types (inline-info-arg-types inline-info) (cdr types)))
+	  (types (inline-info-arg-types inline-info) (cdr types)))
          ((or (endp arg-types) (endp types))
           (when (or arg-types types)
             (return-from inline-type-matches nil)))

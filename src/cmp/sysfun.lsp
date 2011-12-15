@@ -24,6 +24,7 @@
 
 (defun def-inline (name safety arg-types return-rep-type expansion
                    &key (one-liner t) (exact-return-type nil) (inline-or-warn nil)
+		   (multiple-values t)
                    &aux arg-rep-types)
   (setf safety
 	(case safety
@@ -49,6 +50,7 @@
                             :return-type return-type
                             :arg-types arg-types
                             :exact-return-type exact-return-type
+			    :multiple-values multiple-values
                             ;; :side-effects (not (get-sysprop name 'no-side-effects))
                             :one-liner one-liner
                             :expansion expansion))
@@ -271,6 +273,11 @@
 (def-inline input-stream-p :always (stream) :bool "ecl_input_stream_p(#0)")
 
 (def-inline output-stream-p :always (stream) :bool "ecl_output_stream_p(#0)")
+
+;; file hash.d
+
+(def-inline gethash :always (t t t) t "ecl_gethash_safe(#0,#1,#2)" :multiple-values nil)
+(def-inline gethash :always (t t) t "ecl_gethash_safe(#0,#1,Cnil)" :multiple-values nil)
 
 ;; file list.d
 

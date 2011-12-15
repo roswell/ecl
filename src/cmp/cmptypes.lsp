@@ -229,6 +229,7 @@
   return-type		;;; Lisp type for the output
   exact-return-type	;;; Only use this expansion when the output is
 			;;; declared to have a subtype of RETURN-TYPE
+  multiple-values       ;;; Works with all destinations, including VALUES / RETURN
   expansion		;;; C template containing the expansion
   one-liner		;;; Whether the expansion spans more than one line
 )
