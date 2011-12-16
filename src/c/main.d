@@ -155,6 +155,7 @@ ecl_init_env(cl_env_ptr env)
 
 #ifdef CLOS
 	env->method_cache = ecl_make_cache(64, 4096);
+	env->slot_cache = ecl_make_cache(3, 4096);
 #endif
         env->pending_interrupt = Cnil;
 

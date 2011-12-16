@@ -196,7 +196,8 @@ their lambda lists ~A and ~A are not congruent."
   ;;  ECL does not need the discriminating function because we always use
   ;;  the same one, we just update the spec-how list of the generic function.
   (compute-g-f-spec-list gf)
-  ;; 
+  (set-generic-function-dispatch gf)
+  ;;
   ;; Finally update the dependent objects
   (map-dependents gf #'(lambda (dep) (update-dependents gf dep 'add-method method)))
   ;;

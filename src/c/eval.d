@@ -62,6 +62,9 @@ ecl_apply_from_stack_frame(cl_object frame, cl_object x)
 		case ECL_USER_DISPATCH:
 			fun = fun->instance.slots[fun->instance.length - 1];
                         break;
+		case ECL_READER_DISPATCH:
+		case ECL_WRITER_DISPATCH:
+			return APPLY(narg, fun->instance.entry, sp);
 		default:
 			FEinvalid_function(fun);
 		}

@@ -507,6 +507,11 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 			case ECL_USER_DISPATCH:
 				reg0 = reg0->instance.slots[reg0->instance.length - 1];
 				goto AGAIN;
+			case ECL_READER_DISPATCH:
+			case ECL_WRITER_DISPATCH:
+				the_env->function = reg0;
+				reg0 = APPLY(narg, reg0->instance.entry, frame_aux.base);
+				break;
 			default:
 				FEinvalid_function(reg0);
 			}

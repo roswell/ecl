@@ -106,6 +106,7 @@ struct cl_env_struct {
 	   generic functions. */
 #ifdef CLOS
 	struct ecl_cache *method_cache;
+	struct ecl_cache *slot_cache;
 #endif
 
 	/* foreign function interface */

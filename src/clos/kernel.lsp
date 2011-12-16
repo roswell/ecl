@@ -246,6 +246,35 @@
 	(setf (fdefinition name) gfun)
 	gfun)))
 
+(defun set-generic-function-dispatch (gfun)
+  (flet ((gf-type (gfun)
+	   (loop with common-class = nil
+	      for method in (generic-function-methods gfun)
+	      for class = (si::instance-class method)
+	      for specializers = (method-specializers method)
+	      do (cond ((null common-class)
+			(setf common-class class))
+		       ((not (eq common-class class))
+			(return t)))
+	      do (loop for spec in specializers
+		    unless (or (eq spec t)
+			       (null spec)
+			       (eq spec +the-t-class+)
+			       (and (si::instancep spec)
+				    (eq (si::instance-class spec)
+					+the-standard-class+)))
+		    do (return-from gf-type t))
+	      finally (cond ((null class)
+			     (return t))
+			    ((eq class (find-class 'standard-reader-method nil))
+			     (return 'standard-reader-method))
+			    ((eq class (find-class 'standard-writer-method nil))
+			     (return 'standard-writer-method))
+			    (t
+			     (return t))))))
+    (set-funcallable-instance-function gfun (gf-type gfun))))
+		    
+
 
 ;;; ----------------------------------------------------------------------
 ;;; COMPUTE-APPLICABLE-METHODS

@@ -84,6 +84,12 @@ clos_set_funcallable_instance_function(cl_object x, cl_object function_or_t)
 	} else if (function_or_t == Cnil) {
 		x->instance.isgf = ECL_NOT_FUNCALLABLE;
                 x->instance.entry = FEnot_funcallable_vararg;
+	} else if (function_or_t == @'clos::standard-reader-method') {
+		x->instance.isgf = ECL_READER_DISPATCH;
+		x->instance.entry = ecl_slot_reader_dispatch;
+	} else if (function_or_t == @'clos::standard-writer-method') {
+		x->instance.isgf = ECL_WRITER_DISPATCH;
+		x->instance.entry = ecl_slot_writer_dispatch;
 	} else if (Null(cl_functionp(function_or_t))) {
 		FEwrong_type_argument(@'function', function_or_t);
 	} else {
@@ -226,10 +232,13 @@ si_clear_gfun_hash(cl_object what)
 	for (list = mp_all_processes(); !Null(list); list = ECL_CONS_CDR(list)) {
 		cl_object process = ECL_CONS_CAR(list);
 		struct cl_env_struct *env = process->process.env;
-		if (the_env != env)
+		if (the_env != env) {
 			ecl_cache_remove_one(env->method_cache, what);
+			ecl_cache_remove_one(env->slot_cache, what);
+		}
 	}
 #endif
 	ecl_cache_remove_one(the_env->method_cache, what);
+	ecl_cache_remove_one(the_env->slot_cache, what);
         return0();
 }
