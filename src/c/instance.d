@@ -274,12 +274,10 @@ enum ecl_built_in_classes {
 cl_object
 cl_class_of(cl_object x)
 {
-	cl_env_ptr the_env = ecl_process_env();
 	size_t index;
-	cl_type tp = type_of(x);
-	if (tp == t_instance)
-		@(return CLASS_OF(x));
-	switch (tp) {
+	switch (type_of(x)) {
+	case t_instance:
+		@(return CLASS_OF(x))
 	case t_fixnum:
 	case t_bignum:
 		index = ECL_BUILTIN_INTEGER; break;
@@ -377,14 +375,13 @@ cl_class_of(cl_object x)
 		ecl_internal_error("not a lisp data object");
 	}
 	{
-		cl_object output;
-		x = ECL_SYM_VAL(the_env, @'clos::*builtin-classes*');
-		/* We have to be careful because *builtin-classes* might be empty! */
-		if (Null(x)) {
-			output = cl_find_class(1,@'t');
-		} else {
-			output = ecl_aref(x, index);
-		}
+		/* We have to be careful because +builtin-classes+ might be empty! */
+		/* In any case, since +builtin-classes+ is a constant, we may
+		 * optimize the slot access */
+		cl_object v = @'clos::+builtin-classes+'->symbol.value;
+		cl_object output = Null(v)?
+			cl_find_class(1,@'t') :
+			v->vector.self.t[index];
 		@(return output)
 	}
 }

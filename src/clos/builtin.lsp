@@ -40,7 +40,7 @@
   (error "The built-in class (~A) cannot be instantiated" class))
 
 (eval-when (:compile-toplevel :execute)
-  (defconstant +builtin-classes+
+  (defconstant +builtin-classes-list+
 	 '(;(t object)
 	    (sequence)
 	      (list sequence)
@@ -91,18 +91,19 @@
 	    #+semaphores (mp::semaphore)
 	    #+sse2 (ext::sse-pack))))
 
-(loop for (name . rest) in '#.+builtin-classes+
+(loop for (name . rest) in '#.+builtin-classes-list+
    with index = 1
    with built-in-class = (find-class 'built-in-class)
-   with array = (setf *builtin-classes* (make-array #.(1+ (length +builtin-classes+))
-						    :initial-element (find-class 't)))
+   with array = (make-array #.(1+ (length +builtin-classes-list+))
+			    :initial-element (find-class 't))
    do (let* ((direct-superclasses (mapcar #'find-class (or rest '(t))))
 	     (class (make-instance built-in-class :name name
 				   :direct-superclasses direct-superclasses
 				   :direct-slots nil)))
 	(setf (find-class name) class
 	      (aref array index) class
-	      index (1+ index))))
+	      index (1+ index)))
+   finally (si::*make-constant '+builtin-classes+ array))
 
 (defmethod ensure-class-using-class ((class null) name &rest rest)
   (multiple-value-bind (metaclass direct-superclasses options)

@@ -818,8 +818,8 @@
 
 #+clos
 (def-inline si:instance-class :always (standard-object) t "CLASS_OF(#0)")
-;;#+clos
-;;(def-inline class-of :unsafe (standard-object) t "CLASS_OF(#0)")
+#+clos
+(def-inline class-of :unsafe (standard-object) t "CLASS_OF(#0)")
 
 #+clos
 (def-inline si::instancep :always (t) :bool "@0;ECL_INSTANCEP(#0)")
