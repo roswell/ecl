@@ -69,13 +69,13 @@ static void
 ecl_rem_setf_definition(cl_object sym)
 {
 	cl_env_ptr the_env = ecl_process_env();
-        ECL_WITH_GLOBAL_ENV_RDLOCK_BEGIN(the_env) {
+        ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(the_env) {
                 cl_object pair = ecl_gethash_safe(sym, cl_core.setf_definitions, Cnil);
 		if (!Null(pair)) {
-			ECL_RPLACA(sym, Cnil);
+			ECL_RPLACA(pair, Cnil);
 			ecl_remhash(sym, cl_core.setf_definitions);
 		}
-        } ECL_WITH_GLOBAL_ENV_RDLOCK_END;
+        } ECL_WITH_GLOBAL_ENV_WRLOCK_END;
 }
 
 @(defun si::fset (fname def &optional macro pprint)

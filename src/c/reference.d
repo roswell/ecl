@@ -62,8 +62,10 @@ cl_fboundp(cl_object fname)
 			if (CONSP(sym) && CDR(sym) == Cnil) {
 				cl_object pair;
 				sym = CAR(sym);
-				pair = ecl_setf_definition(sym, Cnil);
-				@(return ecl_cdr(pair))
+				if (ECL_SYMBOLP(sym)) {
+					pair = ecl_setf_definition(sym, Cnil);
+					@(return ecl_cdr(pair));
+				}
 			}
 		}
 	}
