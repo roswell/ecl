@@ -95,12 +95,12 @@
 	  ;;
 	  ;; CONS types. They must be checked _before_ sequence types. We
 	  ;; do not produce optimized forms because they can be recursive.
-	  ((and (consp type) (eq (first type) 'CONS))
+	  ((and (consp type) (eq first 'CONS))
 	   form)
 	  ;;
 	  ;; The type denotes a known class and we can check it
 	  #+clos
-	  ((setf aux (find-class type nil))
+	  ((and (symbolp type) (setf aux (find-class type nil)))
 	   `(si::of-class-p ,object ',type))
 	  ;;
 	  ;; There are no other atomic types to optimize
@@ -108,7 +108,10 @@
 	   form)
 	  ;;
 	  ;; (TYPEP o '(NOT t)) => (NOT (TYPEP o 't))
-	  ((eq first 'NOT)
+	  ((progn
+	     (setf rest (rest type)
+		   first (first type))
+	     (eq first 'NOT))
 	   `(not (typep ,object ',(first rest))))
 	  ;;
 	  ;; (TYPEP o '(AND t1 t2 ...)) => (AND (TYPEP o 't1) (TYPEP o 't2) ...)
@@ -145,9 +148,7 @@
 	   `(,function ,object))
 	  ;;
 	  ;; Complex types with arguments.
-	  ((setf rest (rest type)
-		 first (first type)
-		 function (get-sysprop first 'SI::DEFTYPE-DEFINITION))
+	  ((setf function (get-sysprop first 'SI::DEFTYPE-DEFINITION))
 	   (expand-typep form object `',(apply function rest) env))
 	  (t
 	   form))))
