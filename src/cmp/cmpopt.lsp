@@ -54,6 +54,11 @@
 	  ;; Type is not known
 	  ((not (known-type-p type))
 	   form)
+	  ;; Variable declared with a given type
+	  ((and (symbolp object)
+		(setf aux (cmp-env-search-var object env))
+		(subtypep (var-type aux) type))
+	   t)
 	  ;; Simple ones
 	  ((subtypep 'T type) T)
 	  ((eq type 'NIL) NIL)
