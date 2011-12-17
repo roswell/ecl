@@ -58,6 +58,12 @@
 		  (cmp-expand-compiler-macro fd fname args))
 		success))
 	 (c1expr fd))
+	((and (inline-possible fname)
+	      (progn
+		(multiple-value-setq (fd success)
+		  (clos-compiler-macro-expand fname args))
+		success))
+	 (c1expr fd))
 	((setq fd (cmp-macro-function fname))
 	 (c1expr (cmp-expand-macro fd (list* fname args))))
 	(t (c1call-global fname args))))

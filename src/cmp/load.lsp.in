@@ -48,6 +48,7 @@
   "src:cmp;cmpname.lsp"
   "src:cmp;cmpopt.lsp"
   "src:cmp;cmpopt-bits.lsp"
+  "src:cmp;cmpopt-clos.lsp"
   "src:cmp;cmpopt-constant.lsp"
   "src:cmp;cmpopt-cons.lsp"
   "src:cmp;cmpopt-printer.lsp"
