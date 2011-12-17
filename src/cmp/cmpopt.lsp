@@ -130,16 +130,21 @@
 	  ;; (INTEGER * *), etc
 	  ((member first '(INTEGER RATIONAL FLOAT REAL SINGLE-FLOAT
 			   DOUBLE-FLOAT #+long-float LONG-FLOAT))
-	   (let ((var (gensym)))
+	   (let ((var1 (gensym))
+		 (var2 (gensym)))
 	     ;; Small optimization: it is easier to check for fixnum
 	     ;; than for integer. Use it when possible.
 	     (when (and (eq first 'integer)
 			(subtypep type 'fixnum))
 	       (setf first 'fixnum))
-	     `(LET ((,var ,object))
-                (declare (:read-only ,var))
-		(AND (TYPEP ,var ',first)
-		     ,@(expand-in-interval-p `(the ,first ,var) rest)))))
+	     `(LET ((,var1 ,object)
+		    (,var2 ,(coerce 0 first)))
+                (declare (:read-only ,var1)
+			 (type ,first ,var2))
+		(AND (TYPEP ,var1 ',first)
+		     (locally (declare (optimize (speed 3) (safety 0) (space 0)))
+		       (setf ,var2 (the ,first ,var1))
+		       (AND ,@(expand-in-interval-p var2 rest)))))))
           ;;
           ;; (SATISFIES predicate)
 	  ((and (eq first 'SATISFIES)
