@@ -144,14 +144,14 @@ compute_applicable_method(cl_object frame, cl_object gf)
              p != frame->frame.base; ) {
 		arglist = CONS(*(--p), arglist);
 	}
-	methods = funcall(3, @'compute-applicable-methods', gf, arglist);
+	methods = _ecl_funcall3(@'compute-applicable-methods', gf, arglist);
 	if (methods == Cnil) {
-		func = funcall(3, @'no-applicable-method', gf, arglist);
+		func = _ecl_funcall3(@'no-applicable-method', gf, arglist);
 		frame->frame.base[0] = OBJNULL;
 		return func;
 	} else {
-		return funcall(4, @'clos::compute-effective-method', gf,
-			       GFUN_COMB(gf), methods);
+		return _ecl_funcall4(@'clos::compute-effective-method', gf,
+				     GFUN_COMB(gf), methods);
 	}
 }
 
@@ -196,7 +196,7 @@ _ecl_standard_dispatch(cl_object frame, cl_object gf)
 			e->value = func;
 		}
 	}
-	func = cl_funcall(3, func, frame, Cnil);
+	func = _ecl_funcall3(func, frame, Cnil);
 	/* Only need to close the copy */
 #if !defined(ECL_USE_VARARG_AS_POINTER)
 	if (frame == (cl_object)&frame_aux)

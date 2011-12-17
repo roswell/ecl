@@ -90,9 +90,9 @@ si_write_object(cl_object x, cl_object stream)
 	bool circle;
 #ifdef ECL_CMU_FORMAT
 	if (ecl_symbol_value(@'*print-pretty*') != Cnil) {
-		cl_object f = funcall(2, @'pprint-dispatch', x);
+		cl_object f = _ecl_funcall2(@'pprint-dispatch', x);
 		if (VALUES(1) != Cnil) {
-			funcall(3, f, stream, x);
+			_ecl_funcall3(f, stream, x);
                         goto OUTPUT;
 		}
 	}

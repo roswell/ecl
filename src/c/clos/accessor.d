@@ -22,7 +22,7 @@
 static void
 no_applicable_method(cl_env_ptr env, cl_object gfun, cl_object args)
 {
-	env->values[0] = cl_funcall(3, @'no-applicable-method', gfun, args);
+	env->values[0] = _ecl_funcall3(@'no-applicable-method', gfun, args);
 }
 
 static cl_object
@@ -38,15 +38,15 @@ fill_spec_vector(cl_object vector, cl_object gfun, cl_object instance)
 static cl_object
 slot_method_name(cl_object gfun, cl_object args)
 {
-	cl_object methods = cl_funcall(3, @'compute-applicable-methods',
-				       gfun, args);
+	cl_object methods = _ecl_funcall3(@'compute-applicable-methods',
+					  gfun, args);
 	unlikely_if (Null(methods)) {
 		return OBJNULL;
 	} else {
 		cl_object first = ECL_CONS_CAR(methods);
-		cl_object slotd = cl_funcall(3, @'slot-value', first,
-					     @'clos::slot-definition');
-		return cl_funcall(2, @'clos::slot-definition-name', slotd);
+		cl_object slotd = _ecl_funcall3(@'slot-value', first,
+						@'clos::slot-definition');
+		return _ecl_funcall2(@'clos::slot-definition-name', slotd);
 	}
 }
 
@@ -57,11 +57,11 @@ slot_method_index(cl_object gfun, cl_object instance, cl_object args)
 	unlikely_if (slot_name == OBJNULL)
 		return OBJNULL;
 	else {
-		cl_object table = cl_funcall(3, @'slot-value',
-					     CLASS_OF(instance),
-					     @'clos::slot-table');
+		cl_object table = _ecl_funcall3(@'slot-value',
+						CLASS_OF(instance),
+						@'clos::slot-table');
 		cl_object slotd = ecl_gethash_safe(slot_name, table, OBJNULL);
-		return cl_funcall(2, @'clos::slot-definition-location', slotd);
+		return _ecl_funcall2(@'clos::slot-definition-location', slotd);
 	}
 }
 
@@ -131,10 +131,10 @@ ecl_slot_reader_dispatch(cl_narg narg, cl_object instance)
 	}
 	unlikely_if (value == ECL_UNBOUND) {
 		cl_object slot_name = slot_method_name(gfun, ecl_list1(instance));
-		value = cl_funcall(4, @'slot-unbound',
-				   CLASS_OF(instance),
-				   instance,
-				   slot_name);
+		value = _ecl_funcall4(@'slot-unbound',
+				      CLASS_OF(instance),
+				      instance,
+				      slot_name);
 	}
 	@(return value)
 }

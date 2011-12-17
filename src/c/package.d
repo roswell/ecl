@@ -17,7 +17,6 @@
 
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
-#include <ecl/ecl-inl.h>
 
 /******************************* ------- ******************************/
 /*
@@ -155,8 +154,8 @@ find_pending_package(cl_env_ptr env, cl_object name, cl_object nicknames)
 			cl_object pair = ECL_CONS_CAR(l);
 			cl_object other_name = ECL_CONS_CAR(pair);
 			if (ecl_equal(other_name, name) ||
-			    funcall(5, @'member', other_name, nicknames,
-				    @':test', @'string=') != Cnil)
+			    _ecl_funcall5(@'member', other_name, nicknames,
+					  @':test', @'string=') != Cnil)
 			{
 				cl_object x = ECL_CONS_CDR(pair);
                                 env->packages_to_be_created =

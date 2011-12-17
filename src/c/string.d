@@ -60,10 +60,10 @@ do_make_string(cl_index s, ecl_character code)
 	} else if (element_type == @'character') {
 		cl_index code = ecl_char_code(initial_element);
 		x = do_make_string(s, code);
-	} else if (funcall(3, @'subtypep', element_type, @'base-char') == Ct) {
+	} else if (_ecl_funcall3(@'subtypep', element_type, @'base-char') == Ct) {
 		int code = ecl_base_char_code(initial_element);
 		x = do_make_base_string(s, code);
-	} else if (funcall(3, @'subtypep', element_type, @'character') == Ct) {
+	} else if (_ecl_funcall3(@'subtypep', element_type, @'character') == Ct) {
 		cl_index code = ecl_char_code(initial_element);
 		x = do_make_string(s, code);
 	} else {

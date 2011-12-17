@@ -198,7 +198,7 @@ BEGIN:
 		if (ECL_HASH_TABLE_P(x)) {
 			o = dispatch_macro_character(x, in, c);
 		} else {
-			o = funcall(3, x, in, CODE_CHAR(c));
+			o = _ecl_funcall3(x, in, CODE_CHAR(c));
 		}
 		if (the_env->nvalues == 0) {
                         if (flags == ECL_READ_RETURN_IGNORABLE)
@@ -580,7 +580,7 @@ dispatch_macro_character(cl_object table, cl_object in, int c)
 				       "for character ~S",
 				       in, 1, dc);
 		}
-		return funcall(4, fun, in, dc, arg);
+		return _ecl_funcall4(fun, in, dc, arg);
 	}
 }
 
@@ -800,7 +800,7 @@ sharp_left_parenthesis_reader(cl_object in, cl_object c, cl_object d)
 				       in, 0);
                 }
 		if (a == QUOTE) {
-			v = funcall(4, @'make-array', cl_list(1, cl_length(x)),
+			v = _ecl_funcall4(@'make-array', cl_list(1, cl_length(x)),
 				    @':initial-contents', x);
 		} else {
 			v = cl_list(2, @'si::unquote', 
@@ -815,7 +815,7 @@ sharp_left_parenthesis_reader(cl_object in, cl_object c, cl_object d)
 		/* Third case: no dimension provided. Read a list and
 		   coerce it to vector. */
 		cl_object x = do_read_delimited_list(')', in, 1);
-		v = funcall(4, @'make-array', cl_list(1, cl_length(x)),
+		v = _ecl_funcall4(@'make-array', cl_list(1, cl_length(x)),
 			    @':initial-contents', x);
 	} else {
 		/* Finally: Both dimension and data are provided. The
@@ -1498,7 +1498,7 @@ do_read_delimited_list(int d, cl_object in, bool proper_list)
 	strm = stream_or_default_input(strm);
 #ifdef ECL_CLOS_STREAMS
         if (!ECL_ANSI_STREAM_P(strm)) {
-		value0 = funcall(2, @'gray::stream-read-line', strm);
+		value0 = _ecl_funcall2(@'gray::stream-read-line', strm);
 		value1 = VALUES(1);
 		if (!Null(value1)) {
 			if (!Null(eof_errorp))
@@ -1611,7 +1611,8 @@ do_read_delimited_list(int d, cl_object in, bool proper_list)
 	strm = stream_or_default_input(strm);
 #ifdef ECL_CLOS_STREAMS
 	if (!ECL_ANSI_STREAM_P(strm)) {
-		cl_object output = funcall(2,@'gray::stream-read-char-no-hang', strm);
+		cl_object output =
+			_ecl_funcall2(@'gray::stream-read-char-no-hang', strm);
 		if (output == @':eof')
 			goto END_OF_FILE;
 		@(return output);

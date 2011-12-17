@@ -226,7 +226,7 @@ ecl_print_circle(void)
 	strm = _ecl_stream_or_default_output(strm);
 #ifdef ECL_CLOS_STREAMS
         if (!ECL_ANSI_STREAM_P(strm))
-		funcall(5, @'gray::stream-write-string', strm, strng, start, end);
+		_ecl_funcall5(@'gray::stream-write-string', strm, strng, start, end);
 	else
 #endif
 		si_do_write_sequence(strng, strm, start, end);
@@ -240,8 +240,8 @@ ecl_print_circle(void)
 	strm = _ecl_stream_or_default_output(strm);
 #ifdef ECL_CLOS_STREAMS
 	if (!ECL_ANSI_STREAM_P(strm))
-		funcall(5, @'gray::stream-write-string', strm, strng,
-			start, end);
+		_ecl_funcall5(@'gray::stream-write-string', strm, strng,
+			      start, end);
 	else
 #endif
 		si_do_write_sequence(strng, strm, start, end);
@@ -260,7 +260,7 @@ ecl_print_circle(void)
  	strm = _ecl_stream_or_default_output(strm);
 #ifdef ECL_CLOS_STREAMS
 	if (!ECL_ANSI_STREAM_P(strm)) {
-		return funcall(2, @'gray::stream-fresh-line', strm);
+		return _ecl_funcall2(@'gray::stream-fresh-line', strm);
 	}
 #endif
 	if (ecl_file_column(strm) == 0)
@@ -275,7 +275,7 @@ ecl_print_circle(void)
  	strm = _ecl_stream_or_default_output(strm);
 #ifdef ECL_CLOS_STREAMS
         if (!ECL_ANSI_STREAM_P(strm)) {
-		return funcall(2, @'gray::stream-finish-output', strm);
+		return _ecl_funcall2(@'gray::stream-finish-output', strm);
 	}
 #endif
 	ecl_force_output(strm);
@@ -306,9 +306,10 @@ cl_write_byte(cl_object integer, cl_object binary_output_stream)
 @(defun write-sequence (sequence stream &key (start MAKE_FIXNUM(0)) end)
 @
 #ifdef ECL_CLOS_STREAMS
-	if (!ECL_ANSI_STREAM_P(stream))
-		return funcall(5, @'gray::stream-write-sequence', stream, sequence, start, end);
-	else
+	if (!ECL_ANSI_STREAM_P(stream)) {
+		return _ecl_funcall5(@'gray::stream-write-sequence',
+				     stream, sequence, start, end);
+	} else
 #endif
 		return si_do_write_sequence(sequence, stream, start, end);
 @)
@@ -353,7 +354,7 @@ ecl_terpri(cl_object strm)
 	strm = _ecl_stream_or_default_output(strm);
 #ifdef ECL_CLOS_STREAMS
 	if (!ECL_ANSI_STREAM_P(strm)) {
-		return funcall(2, @'gray::stream-terpri', strm);
+		return _ecl_funcall2(@'gray::stream-terpri', strm);
 	}
 #endif
 	ecl_write_char('\n', strm);

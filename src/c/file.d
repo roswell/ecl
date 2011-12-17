@@ -1126,7 +1126,7 @@ clos_stream_read_byte8(cl_object strm, unsigned char *c, cl_index n)
 {
 	cl_index i;
 	for (i = 0; i < n; i++) {
-		cl_object byte = funcall(2, @'gray::stream-read-byte', strm);
+		cl_object byte = _ecl_funcall2(@'gray::stream-read-byte', strm);
 		if (!FIXNUMP(byte))
 			break;
 		c[i] = fix(byte);
@@ -1139,7 +1139,7 @@ clos_stream_write_byte8(cl_object strm, unsigned char *c, cl_index n)
 {
 	cl_index i;
 	for (i = 0; i < n; i++) {
-		cl_object byte = funcall(3, @'gray::stream-write-byte', strm,
+		cl_object byte = _ecl_funcall3(@'gray::stream-write-byte', strm,
 					 MAKE_FIXNUM(c[i]));
 		if (!FIXNUMP(byte))
 			break;
@@ -1150,7 +1150,7 @@ clos_stream_write_byte8(cl_object strm, unsigned char *c, cl_index n)
 static cl_object
 clos_stream_read_byte(cl_object strm)
 {
-	cl_object b = funcall(2, @'gray::stream-read-byte', strm);
+	cl_object b = _ecl_funcall2(@'gray::stream-read-byte', strm);
         if (b == @':eof') b = Cnil;
         return b;
 }
@@ -1158,13 +1158,13 @@ clos_stream_read_byte(cl_object strm)
 static void
 clos_stream_write_byte(cl_object c, cl_object strm)
 {
-	funcall(3, @'gray::stream-write-byte', strm, c);
+	_ecl_funcall3(@'gray::stream-write-byte', strm, c);
 }
 
 static ecl_character
 clos_stream_read_char(cl_object strm)
 {
-	cl_object output = funcall(2, @'gray::stream-read-char', strm);
+	cl_object output = _ecl_funcall2(@'gray::stream-read-char', strm);
         cl_fixnum value;
 	if (CHARACTERP(output))
                 value = CHAR_CODE(output);
@@ -1182,20 +1182,20 @@ clos_stream_read_char(cl_object strm)
 static ecl_character
 clos_stream_write_char(cl_object strm, ecl_character c)
 {
-	funcall(3, @'gray::stream-write-char', strm, CODE_CHAR(c));
+	_ecl_funcall3(@'gray::stream-write-char', strm, CODE_CHAR(c));
 	return c;
 }
 
 static void
 clos_stream_unread_char(cl_object strm, ecl_character c)
 {
-	funcall(3, @'gray::stream-unread-char', strm, CODE_CHAR(c));
+	_ecl_funcall3(@'gray::stream-unread-char', strm, CODE_CHAR(c));
 }
 
 static int
 clos_stream_peek_char(cl_object strm)
 {
-	cl_object out = funcall(2, @'gray::stream-peek-char', strm);
+	cl_object out = _ecl_funcall2(@'gray::stream-peek-char', strm);
 	if (out == @':eof') return EOF;
 	return ecl_char_code(out);
 }
@@ -1203,57 +1203,57 @@ clos_stream_peek_char(cl_object strm)
 static int
 clos_stream_listen(cl_object strm)
 {
-	return !Null(funcall(2, @'gray::stream-listen', strm));
+	return !Null(_ecl_funcall2(@'gray::stream-listen', strm));
 }
 
 static void
 clos_stream_clear_input(cl_object strm)
 {
-	funcall(2, @'gray::stream-clear-input', strm);
+	_ecl_funcall2(@'gray::stream-clear-input', strm);
 }
 
 static void
 clos_stream_clear_output(cl_object strm)
 {
-	funcall(2, @'gray::stream-clear-output', strm);
+	_ecl_funcall2(@'gray::stream-clear-output', strm);
 	return;
 }
 
 static void
 clos_stream_force_output(cl_object strm)
 {
-	funcall(2, @'gray::stream-force-output', strm);
+	_ecl_funcall2(@'gray::stream-force-output', strm);
 }
 
 static void
 clos_stream_finish_output(cl_object strm)
 {
-	funcall(2, @'gray::stream-finish-output', strm);
+	_ecl_funcall2(@'gray::stream-finish-output', strm);
 }
 
 static int
 clos_stream_input_p(cl_object strm)
 {
-	return !Null(funcall(2, @'gray::input-stream-p', strm));
+	return !Null(_ecl_funcall2(@'gray::input-stream-p', strm));
 }
 
 static int
 clos_stream_output_p(cl_object strm)
 {
-	return !Null(funcall(2, @'gray::output-stream-p', strm));
+	return !Null(_ecl_funcall2(@'gray::output-stream-p', strm));
 }
 
 static int
 clos_stream_interactive_p(cl_object strm)
 {
-	return !Null(funcall(2, @'gray::stream-interactive-p', strm));
+	return !Null(_ecl_funcall2(@'gray::stream-interactive-p', strm));
 
 }
 
 static cl_object
 clos_stream_element_type(cl_object strm)
 {
-	return funcall(2, @'gray::stream-element-type', strm);
+	return _ecl_funcall2(@'gray::stream-element-type', strm);
 }
 
 #define clos_stream_length not_a_file_stream
@@ -1261,19 +1261,19 @@ clos_stream_element_type(cl_object strm)
 static cl_object
 clos_stream_get_position(cl_object strm)
 {
-	return funcall(2, @'gray::stream-file-position', strm);
+	return _ecl_funcall2(@'gray::stream-file-position', strm);
 }
 
 static cl_object
 clos_stream_set_position(cl_object strm, cl_object pos)
 {
-	return funcall(3, @'gray::stream-file-position', strm, pos);
+	return _ecl_funcall3(@'gray::stream-file-position', strm, pos);
 }
 
 static int
 clos_stream_column(cl_object strm)
 {
-	cl_object col = funcall(2, @'gray::stream-line-column', strm);
+	cl_object col = _ecl_funcall2(@'gray::stream-line-column', strm);
 	/* FIXME! The Gray streams specifies NIL is a valid
 	 * value but means "unknown". Should we make it
 	 * zero? */
@@ -1283,7 +1283,7 @@ clos_stream_column(cl_object strm)
 static cl_object
 clos_stream_close(cl_object strm)
 {
-	return funcall(2, @'gray::close', strm);
+	return _ecl_funcall2(@'gray::close', strm);
 }
 
 const struct ecl_file_ops clos_stream_ops = {
@@ -1463,9 +1463,9 @@ ecl_make_string_output_stream(cl_index line_length, int extended)
 #ifdef ECL_UNICODE
 		extended = 1;
 #endif
-	} else if (!Null(funcall(3, @'subtypep', element_type, @'base-char'))) {
+	} else if (!Null(_ecl_funcall3(@'subtypep', element_type, @'base-char'))) {
 		(void)0;
-	} else if (!Null(funcall(3, @'subtypep', element_type, @'character'))) {
+	} else if (!Null(_ecl_funcall3(@'subtypep', element_type, @'character'))) {
 #ifdef ECL_UNICODE
 		extended = 1;
 #endif
@@ -2973,7 +2973,7 @@ parse_external_format(cl_object stream, cl_object format, int flags)
 		return (flags & ~ECL_STREAM_FORMAT) | ECL_STREAM_USER_FORMAT;
 	}
 	if (SYMBOLP(format)) {
-		stream->stream.format_table = cl_funcall(2, @'ext::make-encoding',
+		stream->stream.format_table = _ecl_funcall2(@'ext::make-encoding',
 							 format);
 		return (flags & ~ECL_STREAM_FORMAT) | ECL_STREAM_USER_FORMAT;
 	}
@@ -4130,7 +4130,7 @@ seq_out_write_byte8(cl_object strm, unsigned char *c, cl_index n)
         if (delta < n) {
                 /* Not enough space, enlarge */
                 cl_object dim = cl_array_total_size(vector);
-                vector = cl_funcall(3, @'adjust-array', vector, ecl_ash(dim, 1));
+                vector = _ecl_funcall3(@'adjust-array', vector, ecl_ash(dim, 1));
                 SEQ_OUTPUT_VECTOR(strm) = vector;
                 SEQ_OUTPUT_LIMIT(strm) = vector->vector.dim * size;
                 goto AGAIN;
@@ -4687,7 +4687,7 @@ cl_open_stream_p(cl_object strm)
 	   when #'close has been applied on it */
 #ifdef ECL_CLOS_STREAMS
 	if (ECL_INSTANCEP(strm)) {
-		return funcall(2, @'gray::open-stream-p', strm);
+		return _ecl_funcall2(@'gray::open-stream-p', strm);
 	}
 #endif
 	unlikely_if (!ECL_ANSI_STREAM_P(strm))
@@ -4728,7 +4728,7 @@ cl_streamp(cl_object strm)
 {
 #ifdef ECL_CLOS_STREAMS
 	if (ECL_INSTANCEP(strm)) {
-		return funcall(2, @'gray::streamp', strm);
+		return _ecl_funcall2(@'gray::streamp', strm);
 	}
 #endif
 	@(return (ECL_ANSI_STREAM_P(strm) ? Ct : Cnil))
@@ -4767,11 +4767,11 @@ ecl_normalize_stream_element_type(cl_object element_type)
 		return 0;
         } else if (element_type == @'base-char' || element_type == @'character') {
                 return 0;
-	} else if (funcall(3, @'subtypep', element_type, @'character') != Cnil) {
+	} else if (_ecl_funcall3(@'subtypep', element_type, @'character') != Cnil) {
 		return 0;
-	} else if (funcall(3, @'subtypep', element_type, @'unsigned-byte') != Cnil) {
+	} else if (_ecl_funcall3(@'subtypep', element_type, @'unsigned-byte') != Cnil) {
 		sign = +1;
-	} else if (funcall(3, @'subtypep', element_type, @'signed-byte') != Cnil) {
+	} else if (_ecl_funcall3(@'subtypep', element_type, @'signed-byte') != Cnil) {
 		sign = -1;
 	} else {
 		FEerror("Not a valid stream element type: ~A", 1, element_type);
@@ -4786,7 +4786,7 @@ ecl_normalize_stream_element_type(cl_object element_type)
 		cl_object type;
 		type = cl_list(2, sign>0? @'unsigned-byte' : @'signed-byte',
 			       MAKE_FIXNUM(size));
-		if (funcall(3, @'subtypep', element_type, type) != Cnil) {
+		if (_ecl_funcall3(@'subtypep', element_type, type) != Cnil) {
 			return size * sign;
 		}
 	}
@@ -5304,9 +5304,9 @@ wrong_file_handler(cl_object strm)
 static cl_index
 encoding_error(cl_object stream, unsigned char *buffer, ecl_character c)
 {
-        cl_object code = cl_funcall(4, @'ext::encoding-error', stream,
-                                    cl_stream_external_format(stream),
-                                    ecl_make_integer(c));
+        cl_object code = _ecl_funcall4(@'ext::encoding-error', stream,
+				       cl_stream_external_format(stream),
+				       ecl_make_integer(c));
         if (Null(code)) {
                 /* Output nothing */
                 return 0;
@@ -5323,9 +5323,9 @@ decoding_error(cl_object stream, unsigned char *buffer, int length)
         while (length > 0) {
                 octets = CONS(MAKE_FIXNUM(buffer[--length]), octets);
         }
-        code = cl_funcall(4, @'ext::decoding-error', stream,
-                          cl_stream_external_format(stream),
-                          octets);
+        code = _ecl_funcall4(@'ext::decoding-error', stream,
+			    cl_stream_external_format(stream),
+			    octets);
         if (Null(code)) {
                 /* Go for next character */
                 return stream->stream.decoder(stream);

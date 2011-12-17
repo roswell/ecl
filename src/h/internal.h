@@ -134,6 +134,19 @@ typedef struct cl_compiler_env *cl_compiler_env_ptr;
 
 extern void _ecl_unexpected_return() ecl_attr_noreturn;
 
+/* eval.d */
+
+#define _ecl_funcall5(fun, a, b, c, d) \
+	ecl_function_dispatch(ecl_process_env(), (fun))(3, (a),(b),(c),(d))
+#define _ecl_funcall4(fun, a, b, c) \
+	ecl_function_dispatch(ecl_process_env(), (fun))(3, (a),(b),(c))
+#define _ecl_funcall3(fun, a, b) \
+	ecl_function_dispatch(ecl_process_env(), (fun))(2, (a),(b))
+#define _ecl_funcall2(fun, a) \
+	ecl_function_dispatch(ecl_process_env(), (fun))(1, (a))
+#define _ecl_funcall1(fun) \
+	ecl_function_dispatch(ecl_process_env(), (fun))(0)
+
 /* interpreter.d */
 
 #define ECL_BUILD_STACK_FRAME(env,name,frame)	\

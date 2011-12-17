@@ -108,9 +108,9 @@ search_macro_function(cl_object name, cl_object env)
 	if (!Null(exp_fun)) {
 		cl_object hook = ecl_symbol_value(@'*macroexpand-hook*');
 		if (hook == @'funcall')
-			form = funcall(3, exp_fun, form, env);
+			form = _ecl_funcall3(exp_fun, form, env);
 		else
-			form = funcall(4, hook, exp_fun, form, env);
+			form = _ecl_funcall4(hook, exp_fun, form, env);
 	}
 	@(return form exp_fun)
 @)
