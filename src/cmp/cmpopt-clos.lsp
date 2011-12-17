@@ -62,4 +62,4 @@
 	      (null (rest methods))
 	      (let* ((principal (first methods)))
 		(or (optimizable-slot-reader principal whole)
-		    (optimizable-slot-writer principal rest)))))))
+		    (optimizable-slot-writer principal whole)))))))
