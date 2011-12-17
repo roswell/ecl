@@ -111,12 +111,13 @@
 			  (init (second opts))
 			  (sv (third opts)))
 		     (setq opts (cdddr opts))
-		     (let ((pointer-value `(if ,pointer ,unsafe-car ,init)))
-		       (cond (sv
-			      (dm-v x pointer-value)
-			      (dm-v sv `(prog1 (not (null ,pointer)) ,unsafe-pop)))
-			     (t
-			      (dm-v x `(prog1 ,pointer-value ,unsafe-pop)))))))
+		     (cond (sv
+			    (dm-v x `(if ,pointer ,unsafe-car ,init))
+			    (dm-v sv `(and ,pointer (progn ,unsafe-pop t))))
+			   (t
+			    (dm-v x `(if ,pointer
+					 (prog1 ,unsafe-car ,unsafe-pop)
+					 ,init))))))
 		 (when rest
 		   (dm-v rest pointer)
 		   (setq no-check t))
