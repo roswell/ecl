@@ -294,19 +294,23 @@ values of the last FORM.  If no FORM is given, returns NIL."
 (defmacro return (&optional (val nil)) `(RETURN-FROM NIL ,val))
 
 ;; Declarations
+(let ()
 (defmacro declaim (&rest decl-specs)
   (if (cdr decl-specs)
     `(eval-when (:compile-toplevel :load-toplevel :execute)
        (mapcar #'proclaim ',decl-specs))
     `(eval-when (:compile-toplevel :load-toplevel :execute)
        (proclaim ',(car decl-specs)))))
+)
 
+(let ()
 (defmacro c-declaim (&rest decl-specs)
   (if (cdr decl-specs)
     `(eval-when (:compile-toplevel)
        (mapcar #'proclaim ',decl-specs))
     `(eval-when (:compile-toplevel)
        (proclaim ',(car decl-specs)))))
+)
 
 (defmacro in-package (name)
   `(eval-when (:compile-toplevel :load-toplevel :execute)
