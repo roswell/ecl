@@ -70,8 +70,11 @@
 	      (consp can-inline)
 	      (eq (first can-inline) 'function)
 	      (<= (cmp-env-optimization 'space) 1))
-	 (cmpnote "Inlining ~a" fname)
-	 (c1expr `(funcall ,can-inline ,@args)))
+	 (when (member fname *inlined-functions* :test #'eq)
+	   (cmperr "Recursive function ~A declared inline." fname))
+	 (let ((*inlined-functions* (cons fname *inlined-functions*)))
+	   (cmpnote "Inlining ~a" fname)
+	   (c1expr `(funcall ,can-inline ,@args))))
 	(t (c1call-global fname args))))
 
 (defun c1call-local (fname args)

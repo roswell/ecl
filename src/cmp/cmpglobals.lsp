@@ -29,6 +29,9 @@
 ;;; temporaries for intermediate results of the evaluation of inlined
 ;;; function calls.
 
+(defvar *inlined-functions* '()
+  "List of functions being inlined right now. Used to detect recursive inlines.")
+
 ;;; --cmputil.lsp--
 ;;;
 ;;; Variables and constants for error handling
