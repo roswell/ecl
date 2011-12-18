@@ -18,21 +18,6 @@ If TEST evaluates to NIL, then evaluates FORMs and returns all values of the
 last FORM.  If not, simply returns NIL."
   `(IF (NOT ,pred) (PROGN ,@body)))
 
-(defmacro defun (&whole whole name vl &body body &aux doc-string)
-  ;; Documentation in help.lsp
-  (multiple-value-setq (body doc-string) (remove-documentation body))
-  (let* ((function `#'(ext::lambda-block ,name ,vl ,@body))
-	 (global-function `#'(ext::lambda-block ,name ,vl
-                                                (declare (si::c-global))
-                                                ,@body)))
-    (when *dump-defun-definitions*
-      (print function)
-      (setq function `(si::bc-disassemble ,function)))
-    `(progn
-       ,(ext:register-with-pde whole `(si::fset ',name ,global-function))
-       ,@(si::expand-set-documentation name 'function doc-string)
-       ',name)))
-
 (defmacro defmacro (&whole whole name vl &body body &aux doc-string)
   ;; Documentation in help.lsp
   (multiple-value-bind (function pprint doc-string)
@@ -100,6 +85,25 @@ VARIABLE doc and can be retrieved by (DOCUMENTATION 'SYMBOL 'VARIABLE)."
             (sys:*make-constant ',var ,form)
             (si::register-global ',var)))
     ',var))
+
+(defparameter *defun-inline-hook* nil)
+
+(defmacro defun (&whole whole name vl &body body &environment env &aux doc-string)
+  ;; Documentation in help.lsp
+  (multiple-value-setq (body doc-string) (remove-documentation body))
+  (let* ((function `#'(ext::lambda-block ,name ,vl ,@body))
+	 (global-function `#'(ext::lambda-block ,name ,vl
+                                                (declare (si::c-global))
+                                                ,@body)))
+    (when *dump-defun-definitions*
+      (print function)
+      (setq function `(si::bc-disassemble ,function)))
+    `(progn
+       ,(ext:register-with-pde whole `(si::fset ',name ,global-function))
+       ,@(si::expand-set-documentation name 'function doc-string)
+       ,(let ((hook *defun-inline-hook*))
+	  (and hook (funcall hook name global-function env)))
+       ',name)))
 
 ;;;
 ;;; This is a no-op unless the compiler is installed
