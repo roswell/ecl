@@ -69,7 +69,7 @@
 	((and can-inline
 	      (setf fd (si::get-sysprop fname 'inline))
 	      (<=(cmp-env-optimization 'space) 1))
-	 (format t "~&;;; Inlining ~a" fname)
+	 (cmpnote "~&;;; Inlining ~a" fname)
 	 (c1expr `(funcall ,fd ,@args)))
 	(t (c1call-global fname args))))
 

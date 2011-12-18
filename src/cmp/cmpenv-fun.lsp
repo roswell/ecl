@@ -157,6 +157,6 @@
 		    (flag (assoc fname x :test #'same-fname-p)))
 	       (and flag (cdr flag)))
 	     (not (sys:get-sysprop fname 'CMP-NOTINLINE)))
-    (format t "~&;;; Storing inline form for ~a" fname)
+    (cmpnote "~&;;; Storing inline form for ~a" fname)
     `(eval-when (:compile-toplevel)
        (si::put-sysprop ',fname 'inline ',form))))
