@@ -358,5 +358,6 @@ be deleted if they have been opened with LoadLibrary.")
     (*values-type-primary-type-cache* (values-type-primary-type-empty-cache))
     #+new-cmp
     (*values-type-to-n-types-cache* (values-type-to-n-types-empty-cache))
+    (si::*defun-inline-hook* 'maybe-install-inline-function)
     ))
 

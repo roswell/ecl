@@ -47,18 +47,18 @@
 (defvar *c1t* (make-c1form* 'LOCATION :type (object-type t) :args t))
 (defun c1t () *c1t*)
 
-(defun c1call-symbol (fname args &aux fd success)
+(defun c1call-symbol (fname args &aux fd success can-inline)
   (cond ((setq fd (gethash fname *c1-dispatch-table*))
 	 (funcall fd args))
 	((c1call-local fname args))
-	((and (setq fd (compiler-macro-function fname))
-	      (inline-possible fname)
+	((and (setq can-inline (inline-possible fname))
+	      (setq fd (compiler-macro-function fname))
 	      (progn
 		(multiple-value-setq (fd success)
 		  (cmp-expand-compiler-macro fd fname args))
 		success))
 	 (c1expr fd))
-	((and (inline-possible fname)
+	((and can-inline
 	      (progn
 		(multiple-value-setq (fd success)
 		  (clos-compiler-macro-expand fname args))
@@ -66,6 +66,11 @@
 	 (c1expr fd))
 	((setq fd (cmp-macro-function fname))
 	 (c1expr (cmp-expand-macro fd (list* fname args))))
+	((and can-inline
+	      (setf fd (si::get-sysprop fname 'inline))
+	      (<=(cmp-env-optimization 'space) 1))
+	 (format t "~&;;; Inlining ~a" fname)
+	 (c1expr `(funcall ,fd ,@args)))
 	(t (c1call-global fname args))))
 
 (defun c1call-local (fname args)

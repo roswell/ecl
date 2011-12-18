@@ -130,7 +130,8 @@
             fname-list))
   (cmp-env-extend-declaration 'INLINE
                               (loop for name in fname-list
-                                 collect (cons name t))))
+                                 collect (cons name t))
+			      env))
 
 (defun declare-notinline (fname-list &optional (env *cmp-env*))
   (unless (every #'si::valid-function-name-p fname-list)
@@ -138,7 +139,8 @@
             fname-list))
   (cmp-env-extend-declaration 'INLINE
                               (loop for name in fname-list
-                                 collect (cons name nil))))
+                                 collect (cons name nil))
+			      env))
 
 (defun inline-possible (fname &optional (env *cmp-env*))
   (let* ((x (cmp-env-search-declaration 'inline env))
@@ -149,3 +151,12 @@
               ;;(>= *debug* 2) Breaks compilation of STACK-PUSH-VALUES
               (sys:get-sysprop fname 'CMP-NOTINLINE))))))
 
+;;; Install inline expansion of function
+(defun maybe-install-inline-function (fname form env)
+  (when (and (let* ((x (cmp-env-search-declaration 'inline env))
+		    (flag (assoc fname x :test #'same-fname-p)))
+	       (and flag (cdr flag)))
+	     (not (sys:get-sysprop fname 'CMP-NOTINLINE)))
+    (format t "~&;;; Storing inline form for ~a" fname)
+    `(eval-when (:compile-toplevel)
+       (si::put-sysprop ',fname 'inline ',form))))
