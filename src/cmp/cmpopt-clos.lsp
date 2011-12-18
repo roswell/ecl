@@ -32,6 +32,9 @@
 	(let* ((slotd (clos:accessor-method-slot-definition method))
 	       (location (clos:slot-definition-location slotd)))
 	  (let ((object (gentemp)))
+	    (cmpnote "Inlining read access to slot ~a from class ~a"
+		     (clos:slot-definition-name slotd)
+		     (class-name class))
 	    #+(or)
 	    `(let ((,object ,(second whole)))
 	       (locally (declare (notinline ,(first whole)))
@@ -46,12 +49,15 @@
 
 (defun optimizable-slot-writer (method whole)
   (when (typep method 'clos:standard-writer-method)
-    (let ((class (second (method-specializers method))))
+    (let ((class (second (clos:method-specializers method))))
       (when (clos::class-sealedp class)
 	(let* ((slotd (clos:accessor-method-slot-definition method))
 	       (location (clos:slot-definition-location slotd)))
 	  (let* ((object (gentemp))
 		 (value (gentemp)))
+	    (cmpnote "Inlining write access to slot ~a from class ~a"
+		     (clos:slot-definition-name slotd)
+		     (class-name class))
 	    #+(or)
 	    `(let ((,value ,(second whole))
 		   (,object ,(third whole)))
