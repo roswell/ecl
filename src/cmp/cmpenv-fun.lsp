@@ -156,25 +156,22 @@
     (sys:rem-sysprop fun 'INLINE)
     (sys:put-sysprop fun 'NOTINLINE t)))
 
-(defun inline-possible (fname &optional (env *cmp-env*))
-  ;; This function determines whether FNAME can be inlined in one
-  ;; of various forms: via compiler macros, via inline functions,
-  ;; via C code, etc.
-  ;;
-  ;; First investigate the compiler environment looking for an INLINE
-  ;; declaration or DECLAIM field
+(defun declared-inline-p (fname &optional (env *cmp-env*))
   (let* ((x (cmp-env-search-declaration 'inline env))
          (flag (assoc fname x :test #'same-fname-p)))
-    (cond (flag
-	   (cdr flag))
-	  ;; Then look up the global environment for some NOTINLINE
-	  ;; declaration.
-	  ((sys:get-sysprop fname 'NOTINLINE)
-	   nil)
-	  ;; Finally, return any possible INLINE expansion
-	  ((sys:get-sysprop fname 'INLINE))
-	  ;; or default to T
-	  (t))))
+    (if flag
+	(cdr flag)
+	(sys:get-sysprop fname 'INLINE))))
+
+(defun declared-notinline-p (fname &optional (env *cmp-env*))
+  (let* ((x (cmp-env-search-declaration 'inline env))
+         (flag (assoc fname x :test #'same-fname-p)))
+    (if flag
+	(null (cdr flag))
+	(sys:get-sysprop fname 'NOTINLINE))))
+
+(defun inline-possible (fname &optional (env *cmp-env*))
+  (not (declared-notinline-p fname env)))
 
 ;;; Install inline expansion of function. If the function is DECLAIMED
 ;;; inline, then we only keep the definition in the compiler environment.

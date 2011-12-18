@@ -66,7 +66,7 @@
 	 (c1expr fd))
 	((setq fd (cmp-macro-function fname))
 	 (c1expr (cmp-expand-macro fd (list* fname args))))
-	((and can-inline
+	((and (setq can-inline (declared-inline-p fname))
 	      (consp can-inline)
 	      (eq (first can-inline) 'function)
 	      (<= (cmp-env-optimization 'space) 1))
@@ -83,8 +83,12 @@
       (when (> (length args) si::c-arguments-limit)
 	(return-from c1call-local (unoptimized-long-call `#',fname args)))
       (let ((lambda (fun-lambda-expression fun)))
-	(when (and lambda (inline-possible fname))
-	  (return-from c1call-local (c1expr `(funcall #',lambda ,@args)))))
+	(when (and lambda (declared-inline-p fname))
+	  (when (member fname *inlined-functions* :test #'eq)
+	    (cmperr "Recursive function ~A declared inline." fname))
+	  (return-from c1call-local
+	    (let ((*inlined-functions* (cons fname *inlined-functions*)))
+	      (c1expr `(funcall #',lambda ,@args))))))
       (let* ((forms (c1args* args))
 	     (return-type (or (get-local-return-type fun) 'T))
 	     (arg-types (get-local-arg-types fun)))
