@@ -42,7 +42,7 @@
               :initial-value (add-variables *cmp-env-root* types specials)))))
 
 (defmacro declaim (&rest declarations)
-  `(progn
+  `(locally (declare (notinline mapc))
      (ext:with-backend
        :c/c++ (eval-when (:compile-toplevel)
                 (c::process-declaim-args ',declarations))
