@@ -17,6 +17,7 @@
 
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
+#include <ecl/ecl-inl.h>
 
 /******************************* ------- ******************************/
 /*
