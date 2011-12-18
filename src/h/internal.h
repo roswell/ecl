@@ -137,7 +137,7 @@ extern void _ecl_unexpected_return() ecl_attr_noreturn;
 /* eval.d */
 
 #define _ecl_funcall5(fun, a, b, c, d) \
-	ecl_function_dispatch(ecl_process_env(), (fun))(3, (a),(b),(c),(d))
+	ecl_function_dispatch(ecl_process_env(), (fun))(4, (a),(b),(c),(d))
 #define _ecl_funcall4(fun, a, b, c) \
 	ecl_function_dispatch(ecl_process_env(), (fun))(3, (a),(b),(c))
 #define _ecl_funcall3(fun, a, b) \
