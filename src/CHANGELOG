@@ -151,6 +151,11 @@ ECL 11.7.1:
    continues. This is more to the spirit of the compiler macros, as explained
    here http://lists.common-lisp.net/pipermail/pro/2011-December/000675.html
 
+ - INLINE declarations now actually cause the function to be inlined. If
+   the function is also proclaimed as INLINE, ECL will store a copy of its
+   definition for later use _in other files_. Otherwise INLINE declarations
+   remain local to the file being processed.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
