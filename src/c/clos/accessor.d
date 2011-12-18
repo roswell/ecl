@@ -73,7 +73,7 @@ search_slot_index(const cl_env_ptr env, cl_object gfun, cl_object instance)
 	return ecl_search_cache(cache);
 }
 
-static cl_object
+static ecl_cache_record_ptr
 add_new_index(const cl_env_ptr env, cl_object gfun, cl_object instance, cl_object args)
 {
 	/* The keys and the cache may change while we compute the
@@ -82,14 +82,15 @@ add_new_index(const cl_env_ptr env, cl_object gfun, cl_object instance, cl_objec
 	cl_object index = slot_method_index(gfun, instance, args);
 	unlikely_if (index == OBJNULL) {
 		no_applicable_method(env, gfun, args);
-		return OBJNULL;
+		return 0;
 	}
 	{
 		ecl_cache_ptr cache = env->slot_cache;
 		cl_object vector = fill_spec_vector(cache->keys, gfun, instance);
 		ecl_cache_record_ptr e = ecl_search_cache(cache);
 		e->key = cl_copy_seq(cache->keys);
-		return e->value = index;
+		e->value = index;
+		return e;
 	}
 }
 
@@ -109,25 +110,22 @@ ecl_slot_reader_dispatch(cl_narg narg, cl_object instance)
 	}
 
 	e = search_slot_index(env, gfun, instance);
-	if (e->key != OBJNULL) {
-		index = e->value;
-	} else {
+	unlikely_if (e->key == OBJNULL) {
 		cl_object args = ecl_list1(instance);
-		index = add_new_index(env, gfun, instance, args);
+		e = add_new_index(env, gfun, instance, args);
 		/* no_applicable_method() was called */
-		unlikely_if (index == OBJNULL) {
+		unlikely_if (e == 0) {
 			return env->values[0];
 		}
 	}
-	if (ECL_CONSP(index)) {
-		value = ECL_CONS_CAR(index);
-	} else unlikely_if (!FIXNUMP(index)) {
-		FEerror("Corrupt database ~A", 1, gfun);
+	index = e->value;
+	if (ECL_FIXNUMP(index)) {
+		value = instance->instance.slots[fix(index)];
 	} else {
-		cl_fixnum i = fix(index);
-		if (i >= instance->instance.length || i < 0)
-			FEtype_error_index(instance, i);
-		value = instance->instance.slots[i];
+		unlikely_if (!ECL_CONSP(index)) {
+			FEerror("Error when accessing method cache for ~A", 1, gfun);
+		}
+		value = ECL_CONS_CAR(index);
 	}
 	unlikely_if (value == ECL_UNBOUND) {
 		cl_object slot_name = slot_method_name(gfun, ecl_list1(instance));
@@ -155,25 +153,22 @@ ecl_slot_writer_dispatch(cl_narg narg, cl_object value, cl_object instance)
 		return env->values[0];
 	}
 	e = search_slot_index(env, gfun, instance);
-	if (e->key != OBJNULL) {
-		index = e->value;
-	} else {
+	unlikely_if (e->key == OBJNULL) {
 		cl_object args = cl_list(2, value, instance);
-		index = add_new_index(env, gfun, instance, args);
+		e = add_new_index(env, gfun, instance, args);
 		/* no_applicable_method() was called */
-		unlikely_if (index == OBJNULL) {
+		unlikely_if (e == 0) {
 			return env->values[0];
 		}
 	}
-	if (ECL_CONSP(index)) {
-		ECL_RPLACA(index, value);
-	} else unlikely_if (!FIXNUMP(index)) {
-		FEerror("Corrupt database ~A", 1, gfun);
+	index = e->value;
+	if (ECL_FIXNUMP(index)) {
+		instance->instance.slots[fix(index)] = value;
 	} else {
-		cl_fixnum i = fix(index);
-		if (i >= instance->instance.length || i < 0)
-			FEtype_error_index(instance, i);
-		instance->instance.slots[i] = value;
+		unlikely_if (!ECL_CONSP(index)) {
+			FEerror("Error when accessing method cache for ~A", 1, gfun);
+		}
+		ECL_RPLACA(index, value);
 	}
 	@(return value)
 }
