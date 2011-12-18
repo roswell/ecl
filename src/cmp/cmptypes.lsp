@@ -149,6 +149,7 @@
   lambda-list		;;; List of (requireds optionals rest-var keywords-p
 		        ;;;          keywords allow-other-keys-p)
   lambda		;;; Lambda c1-form for this function.
+  lambda-expression     ;;; LAMBDA or LAMBDA-BLOCK expression
   (minarg 0)		;;; Min. number arguments that the function receives.
   (maxarg call-arguments-limit)
 			;;; Max. number arguments that the function receives.

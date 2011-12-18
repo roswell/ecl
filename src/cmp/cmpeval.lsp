@@ -82,8 +82,10 @@
     (when fun
       (when (> (length args) si::c-arguments-limit)
 	(return-from c1call-local (unoptimized-long-call `#',fname args)))
+      (let ((lambda (fun-lambda-expression fun)))
+	(when (and lambda (inline-possible fname))
+	  (return-from c1call-local (c1expr `(funcall #',lambda ,@args)))))
       (let* ((forms (c1args* args))
-	     (lambda-form (fun-lambda fun))
 	     (return-type (or (get-local-return-type fun) 'T))
 	     (arg-types (get-local-arg-types fun)))
 	  ;; Add type information to the arguments.

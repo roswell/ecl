@@ -77,8 +77,12 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 
 (defun c1compile-function (lambda-list-and-body &key (fun (make-fun))
 			   (name (fun-name fun)) (CB/LB 'CB))
-  (setf (fun-name fun) name
-	(fun-parent fun) *current-function*)
+  (let ((lambda (if name
+		    `(ext:lambda-block ,name ,@lambda-list-and-body)
+		    `(lambda ,@lambda-list-and-body))))
+    (setf (fun-name fun) name
+	  (fun-lambda-expression fun) lambda 
+	  (fun-parent fun) *current-function*))
   (when *current-function*
     (push fun (fun-child-funs *current-function*)))
   (let* ((*current-function* fun)
