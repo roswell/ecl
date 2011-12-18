@@ -67,10 +67,11 @@
 	((setq fd (cmp-macro-function fname))
 	 (c1expr (cmp-expand-macro fd (list* fname args))))
 	((and can-inline
-	      (setf fd (si::get-sysprop fname 'inline))
-	      (<=(cmp-env-optimization 'space) 1))
-	 (cmpnote "~&;;; Inlining ~a" fname)
-	 (c1expr `(funcall ,fd ,@args)))
+	      (consp can-inline)
+	      (eq (first can-inline) 'function)
+	      (<= (cmp-env-optimization 'space) 1))
+	 (cmpnote "Inlining ~a" fname)
+	 (c1expr `(funcall ,can-inline ,@args)))
 	(t (c1call-global fname args))))
 
 (defun c1call-local (fname args)

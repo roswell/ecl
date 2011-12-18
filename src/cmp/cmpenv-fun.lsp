@@ -142,21 +142,50 @@
                                  collect (cons name nil))
 			      env))
 
+(defun proclaim-inline (fname)
+  (dolist (fun fname-list)
+    (unless (si::valid-function-name-p fun)
+      (error "Not a valid function name ~s in INLINE proclamation" fun))
+    (sys:put-sysprop fun 'INLINE t)
+    (sys:rem-sysprop fun 'NOTINLINE)))
+
+(defun proclaim-notinline (fname-list)
+  (dolist (fun fname-list)
+    (unless (si::valid-function-name-p fun)
+      (error "Not a valid function name ~s in NOTINLINE proclamation" fun))
+    (sys:rem-sysprop fun 'INLINE)
+    (sys:put-sysprop fun 'NOTINLINE t)))
+
 (defun inline-possible (fname &optional (env *cmp-env*))
+  ;; This function determines whether FNAME can be inlined in one
+  ;; of various forms: via compiler macros, via inline functions,
+  ;; via C code, etc.
+  ;;
+  ;; First investigate the compiler environment looking for an INLINE
+  ;; declaration or DECLAIM field
   (let* ((x (cmp-env-search-declaration 'inline env))
          (flag (assoc fname x :test #'same-fname-p)))
-    (if flag
-        (cdr flag)
-        (not (or ;; (compiler-<push-events)
-              ;;(>= *debug* 2) Breaks compilation of STACK-PUSH-VALUES
-              (sys:get-sysprop fname 'CMP-NOTINLINE))))))
+    (cond (flag
+	   (cdr flag))
+	  ;; Then look up the global environment for some NOTINLINE
+	  ;; declaration.
+	  ((sys:get-sysprop fname 'NOTINLINE)
+	   nil)
+	  ;; Finally, return any possible INLINE expansion
+	  ((sys:get-sysprop fname 'INLINE))
+	  ;; or default to T
+	  (t))))
 
-;;; Install inline expansion of function
+;;; Install inline expansion of function. If the function is DECLAIMED
+;;; inline, then we only keep the definition in the compiler environment.
+;;; If the function is PROCLAIMED inline, then we also keep a copy as
+;;; a symbol property.
 (defun maybe-install-inline-function (fname form env)
-  (when (and (let* ((x (cmp-env-search-declaration 'inline env))
-		    (flag (assoc fname x :test #'same-fname-p)))
-	       (and flag (cdr flag)))
-	     (not (sys:get-sysprop fname 'CMP-NOTINLINE)))
-    (cmpnote "~&;;; Storing inline form for ~a" fname)
-    `(eval-when (:compile-toplevel)
-       (si::put-sysprop ',fname 'inline ',form))))
+  (let* ((x (cmp-env-search-declaration 'inline env))
+	 (flag (assoc fname x :test #'same-fname-p)))
+    (when (and flag (cdr flag))
+      (rplacd flag form))
+    (when (sys:get-sysprop fname 'inline)
+      (cmpnote "Storing inline form for ~a" fname)
+      `(eval-when (:compile-toplevel :load-toplevel :execute)
+	 (si::put-sysprop ',fname 'inline ',form)))))

@@ -63,15 +63,9 @@
 	       (error "In an FTYPE proclamation, found ~A which is not a function type."
 		      (second decl))))))
     (INLINE
-     (dolist (fun (cdr decl))
-       (if (si::valid-function-name-p fun)
-	   (rem-sysprop fun 'CMP-NOTINLINE)
-	   (error "Not a valid function name ~s in proclamation ~s" fun decl))))
+     (proclaim-inline (cdr decl)))
     (NOTINLINE
-     (dolist (fun (cdr decl))
-       (if (si::valid-function-name-p fun)
-	   (put-sysprop fun 'CMP-NOTINLINE t)
-	   (error "Not a valid function name ~s in proclamation ~s" fun decl))))
+     (proclaim-notinline (cdr decl)))
     ((OBJECT IGNORE DYNAMIC-EXTENT IGNORABLE)
      ;; FIXME! IGNORED!
      (dolist (var (cdr decl))
