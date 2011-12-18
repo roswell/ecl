@@ -142,7 +142,7 @@
                                  collect (cons name nil))
 			      env))
 
-(defun proclaim-inline (fname)
+(defun proclaim-inline (fname-list)
   (dolist (fun fname-list)
     (unless (si::valid-function-name-p fun)
       (error "Not a valid function name ~s in INLINE proclamation" fun))
