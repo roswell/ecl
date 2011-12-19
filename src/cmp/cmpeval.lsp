@@ -124,21 +124,11 @@
       (unoptimized-long-call `#',fname args)))
   (let* ((forms (c1args* args)))
     ;; If all arguments are constants, try to precompute the function
-    ;; value
-    (when (and (get-sysprop fname 'pure)
-	       (policy-evaluate-forms)
-	       (inline-possible fname))
-      (loop with all-values = '()
-	    with constant-p
-	    with v
-	    for form in forms
-	    do (if (multiple-value-setq (constant-p v)
-		     (c1form-constant-p form))
-		   (push v all-values)
-		   (return nil))
-	    finally (return-from c1call-global
-		      (c1constant-value (apply fname (nreverse all-values))
-					:always t))))
+    ;; value. We abort when the function signals an error or the value
+    ;; is not printable.
+    (let ((value (c1call-constant-fold fname forms)))
+      (when value
+	(return-from c1call-global value)))
     ;; Otherwise emit a global function call
     (make-c1form* 'CALL-GLOBAL
 		  :sp-change (function-may-change-sp fname)
@@ -147,6 +137,26 @@
 		  :args fname forms
 		  ;; loc and type are filled by c2expr
 		  )))
+
+(defun c1call-constant-fold (fname forms)
+  (when (and (get-sysprop fname 'pure)
+	     (policy-evaluate-forms)
+	     (inline-possible fname))
+    (handler-case
+	(loop with all-values = '()
+	   with constant-p
+	   with v
+	   for form in forms
+	   do (if (multiple-value-setq (constant-p v)
+		    (c1form-constant-p form))
+		  (push v all-values)
+		  (return nil))
+	   finally
+	     (let ((value (c1constant-value
+			   (apply fname (nreverse all-values))
+			   :only-small-values nil)))
+	       (return values)))
+      (error (c)))))
 
 (defun c2expr (form)
   (with-c1form-env (form form)
