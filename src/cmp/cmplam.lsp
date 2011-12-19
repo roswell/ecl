@@ -581,6 +581,8 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 			     `(list ,@arguments))
 			 (if apply-p apply-var nil)))
 	    let-vars))
+    (loop while aux-vars
+       do (push (list (pop aux-vars) (pop aux-vars)) let-vars))
     (do ((scan (cdr keywords) (cddddr scan)))
 	((endp scan))
       (let ((keyword (first scan))
