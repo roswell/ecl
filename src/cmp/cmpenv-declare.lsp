@@ -138,9 +138,11 @@ special variable declarations, as these have been extracted before."
                         (second decl)))))
      env)
     (INLINE
-      (declare-inline (rest decl) env))
+      (loop for name in (rest decl) do (setf env (declare-inline name env)))
+      env)
     (NOTINLINE
-     (declare-notinline (rest decl) env))
+      (loop for name in (rest decl) do (setf env (declare-notinline name env)))
+      env)
     (DECLARATION
      (validate-alien-declaration (rest decl) #'cmperr)
      (cmp-env-extend-declaration 'alien (rest decl) env))

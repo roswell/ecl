@@ -124,30 +124,22 @@
 
 ;;; Proclamation and declaration handling.
 
-(defun declare-inline (fname-list &optional (env *cmp-env*))
-  (unless (every #'si::valid-function-name-p fname-list)
+(defun declare-inline (fname &optional (env *cmp-env*) (definition t))
+  (unless (si::valid-function-name-p fname)
     (cmperr "Not a valid argument to INLINE declaration~%~4I~A"
             fname-list))
-  (cmp-env-extend-declaration 'INLINE
-                              (loop for name in fname-list
-                                 collect (cons name t))
-			      env))
+  (cmp-env-extend-declaration 'INLINE (list (cons fname definition)) env))
 
-(defun declare-notinline (fname-list &optional (env *cmp-env*))
-  (unless (every #'si::valid-function-name-p fname-list)
-    (cmperr "Not a valid argument to NOTINLINE declaration~%~4I~A"
-            fname-list))
-  (cmp-env-extend-declaration 'INLINE
-                              (loop for name in fname-list
-                                 collect (cons name nil))
-			      env))
+(defun declare-notinline (fname &optional (env *cmp-env*))
+  (declare-inline fname env nil))
 
 (defun proclaim-inline (fname-list)
   (dolist (fun fname-list)
     (unless (si::valid-function-name-p fun)
       (error "Not a valid function name ~s in INLINE proclamation" fun))
-    (sys:put-sysprop fun 'INLINE t)
-    (sys:rem-sysprop fun 'NOTINLINE)))
+    (unless (sys:get-sysprop fun 'INLINE)
+      (sys:put-sysprop fun 'INLINE t)
+      (sys:rem-sysprop fun 'NOTINLINE))))
 
 (defun proclaim-notinline (fname-list)
   (dolist (fun fname-list)
@@ -179,10 +171,14 @@
 ;;; a symbol property.
 (defun maybe-install-inline-function (fname form env)
   (let* ((x (cmp-env-search-declaration 'inline env))
-	 (flag (assoc fname x :test #'same-fname-p)))
-    (when (and flag (cdr flag))
-      (rplacd flag form))
-    (when (sys:get-sysprop fname 'inline)
-      (cmpnote "Storing inline form for ~a" fname)
-      `(eval-when (:compile-toplevel :load-toplevel :execute)
-	 (si::put-sysprop ',fname 'inline ',form)))))
+	 (flag (assoc fname x :test #'same-fname-p))
+	 (declared (and flag (cdr flag)))
+	 (proclaimed (sys:get-sysprop fname 'inline)))
+    `(progn
+       ,(when declared
+	  `(eval-when (:compile-toplevel)
+	     (c::declare-inline ',fname *cmp-env-root* ',form)))
+       ,(when proclaimed
+	  `(eval-when (:compile-toplevel :load-toplevel :execute)
+	     (si::put-sysprop ',fname 'inline ',form))))))
+
