@@ -577,7 +577,7 @@ Returns T if X belongs to TYPE; NIL otherwise."
 	  (let ((x-cpl (class-precedence-list x-class)))
 	    (if (instancep class)
 		(member class x-cpl :test #'eq)
-		(dolist (c x-cpl nil)
+		(dolist (c x-cpl)
 		  (declare (class c))
 		  (when (eq (class-name c) class)
 		    (return t)))))))))
