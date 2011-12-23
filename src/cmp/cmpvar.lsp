@@ -345,9 +345,11 @@
     (return-from c1setq1 (c1expr `(setf ,name ,form))))
   (let* ((name1 (c1vref name))
 	 (form1 (c1expr form))
-	 (type (type-and (var-type name1) (c1form-primary-type form1))))
+	 (v-type (var-type name1))
+	 (f-type (c1form-primary-type form1))
+	 (type (type-and v-type f-type)))
     (unless type
-      (cmpwarn "Type mismatch between ~s and ~s." name form)
+      (cmpwarn "Variable ~s is declared to be of type~%~s~%and assigned an incompatible object of type~%~s." name v-type f-type)
       (setq type T))
     ;; Is this justified????
     #+nil(setf (c1form-type form1) type)
