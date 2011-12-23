@@ -62,7 +62,8 @@ progress. The default value is T.")
   "This alternative list of features contains keywords that were gathered from
 running the compiler. It may be updated by running ")
 
-(defvar *suppress-compiler-messages* #+ecl-min nil #-ecl-min 'compiler-note
+(defvar *suppress-compiler-messages*
+  #+ecl-min 'compiler-debug-note #-ecl-min 'compiler-note
   "A type denoting which compiler messages and conditions are _not_ displayed.")
 
 (defvar *suppress-compiler-notes* nil) ; Deprecated
