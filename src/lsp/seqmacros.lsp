@@ -59,11 +59,12 @@
 			   (funcall ,',%test-fn ,v1 ,v2)))))
 	 ,@(if key `((with-key (,key) ,@body)) body)))))
 
-(defmacro with-start-end ((start end seq &optional (length (gensym)))
+(defmacro with-start-end ((start end seq &optional (length (gensym) length-p))
                           &body body)
   `(multiple-value-bind (,start ,end ,length)
        (sequence-start-end 'subseq ,seq ,start ,end) 
-     (declare (fixnum ,start ,end ,length))
+     (declare (fixnum ,start ,end ,length)
+	      ,@(unless length-p `((ignorable ,length))))
      ,@body))
 
 (defmacro reckless (&body body)
