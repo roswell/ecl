@@ -182,15 +182,16 @@
 			  list-var
 			  `(the cons ,list-var))))
       `(block nil
-	 (let* ((,list-var ,expression)
-		,var)
-	   (declare ,@declarations)
+	 (let* ((,list-var ,expression))
 	   (si::while ,list-var
-	      (setq ,var (first ,typed-var))
-	      ,@body
+	      (let ((,var (first ,typed-var)))
+		(declare ,@declarations)
+		,@body)
 	      (setq ,list-var (rest ,typed-var)))
-	   ,(when output-form `(setq ,var nil))
-	   ,output-form)))))
+	   ,(when output-form
+	      `(let ((,var nil))
+		 (declare ,@declarations)
+		 ,output-form)))))))
 )
 
 ;;;
