@@ -154,7 +154,7 @@
 	     (let ((value (c1constant-value
 			   (apply fname (nreverse all-values))
 			   :only-small-values nil)))
-	       (return values)))
+	       (return value)))
       (error (c)))))
 
 (defun c2expr (form)
