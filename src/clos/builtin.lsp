@@ -106,8 +106,10 @@
    finally (si::*make-constant '+builtin-classes+ array))
 
 (defmethod ensure-class-using-class ((class null) name &rest rest)
+  (declare (ignore class))
   (multiple-value-bind (metaclass direct-superclasses options)
       (apply #'help-ensure-class rest)
+    (declare (ignore direct-superclasses))
     (apply #'make-instance metaclass :name name options)))
 
 (defmethod change-class ((instance t) (new-class symbol) &rest initargs)
@@ -121,18 +123,23 @@
   (apply #'make-instance (find-class class-name) initargs))
 
 (defmethod slot-makunbound-using-class ((class built-in-class) self slotd)
+  (declare (ignore class self slotd))
   (error "SLOT-MAKUNBOUND-USING-CLASS cannot be applied on built-in objects"))
 
 (defmethod slot-boundp-using-class ((class built-in-class) self slotd)
+  (declare (ignore class self slotd))
   (error "SLOT-BOUNDP-USING-CLASS cannot be applied on built-in objects"))
 
 (defmethod slot-value-using-class ((class built-in-class) self slotd)
+  (declare (ignore class self slotd))
   (error "SLOT-VALUE-USING-CLASS cannot be applied on built-in objects"))
 
 (defmethod (setf slot-value-using-class) (val (class built-in-class) self slotd)
+  (declare (ignore class self slotd val))
   (error "SLOT-VALUE-USING-CLASS cannot be applied on built-in objects"))
 
 (defmethod slot-exists-p-using-class ((class built-in-class) self slotd)
+  (declare (ignore class self slotd))
   nil)
 
 ;;; ======================================================================
@@ -169,7 +176,7 @@
   (:metaclass structure-class))
 
 (defmethod make-load-form ((object structure-object) &optional environment)
-  (make-load-form-saving-slots object))
+  (make-load-form-saving-slots object :key environment))
 
 (defmethod print-object ((obj structure-object) stream)
   (let* ((class (si:instance-class obj))

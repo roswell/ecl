@@ -111,6 +111,7 @@ VARIABLE doc and can be retrieved by (DOCUMENTATION 'SYMBOL 'VARIABLE)."
 (defmacro define-compiler-macro (&whole whole name vl &rest body)
   (multiple-value-bind (function pprint doc-string)
       (sys::expand-defmacro name vl body)
+    (declare (ignore pprint))
     (setq function `(function ,function))
     (when *dump-defun-definitions*
       (print function)

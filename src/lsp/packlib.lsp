@@ -56,6 +56,7 @@ is used."
 		AGAIN
 		 (multiple-value-bind (found key value)
 		     (funcall iterator)
+		   (declare (ignore key))
 		   (cond 
 		     (found
 		      (when (eq type :inherited)

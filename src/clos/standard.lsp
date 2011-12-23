@@ -138,9 +138,11 @@
         initargs)))
 
 (defmethod direct-slot-definition-class ((class T) &rest canonicalized-slot)
+  (declare (ignore class canonicalized-slot))
   (find-class 'standard-direct-slot-definition nil))
 
 (defmethod effective-slot-definition-class ((class T) &rest canonicalized-slot)
+  (declare (ignore class canonicalized-slot))
   (find-class 'standard-effective-slot-definition nil))
 
 (defun has-forward-referenced-parents (class)
@@ -155,6 +157,7 @@
 
 (defmethod initialize-instance ((class class) &rest initargs
 				&key sealedp direct-superclasses direct-slots)
+  (declare (ignore sealedp))
   ;; convert the slots from lists to direct slots
   (setf direct-slots (loop for s in direct-slots
                         collect (canonical-slot-to-direct-slot class s)))
@@ -194,6 +197,7 @@
 (defmethod shared-initialize ((class std-class) slot-names &rest initargs &key
                               (optimize-slot-access (list *optimize-slot-access*))
                               sealedp)
+  (declare (ignore initargs slot-names))
   (setf (slot-value class 'optimize-slot-access) (first optimize-slot-access)
 	(slot-value class 'sealedp) (and sealedp t))
   (setf class (call-next-method))
@@ -436,8 +440,10 @@ because it contains a reference to the undefined class~%  ~A"
 ;;;
 (defmethod ensure-class-using-class ((class class) name &rest rest
 				     &key direct-slots direct-default-initargs)
+  (declare (ignore direct-default-initargs direct-slots))
   (multiple-value-bind (metaclass direct-superclasses options)
       (apply #'help-ensure-class rest)
+    (declare (ignore direct-superclasses))
     (cond ((forward-referenced-class-p class)
 	   (change-class class metaclass))
 	  ((not (eq (class-of class) metaclass))
@@ -758,21 +764,22 @@ because it contains a reference to the undefined class~%  ~A"
 
 (defmethod describe-object ((obj std-class) (stream t))
   (let ((slotds (class-slots (si:instance-class obj))))
-    (format t "~%~A is an instance of class ~A"
+    (format stream "~%~A is an instance of class ~A"
 	    obj (class-name (si:instance-class obj)))
     (do ((scan slotds (cdr scan))
 	 (i 0 (1+ i)))
 	((null scan))
       (declare (fixnum i))
-      (print (slot-definition-name (car scan))) (princ ":	")
+      (print (slot-definition-name (car scan)) stream)
+      (princ ":	" stream)
       (case (slot-definition-name (car scan))
 	    ((SUPERIORS INFERIORS PRECEDENCE-LIST)
-	     (princ "(")
+	     (princ "(" stream)
 	     (do* ((scan (si:instance-ref obj i) (cdr scan))
 		   (e (car scan) (car scan)))
 		  ((null scan))
-		  (prin1 (class-name e))
-		  (when (cdr scan) (princ " ")))
+		  (prin1 (class-name e) stream)
+		  (when (cdr scan) (princ " " stream)))
 	     (princ ")"))
-	    (otherwise (prin1 (si:instance-ref obj i))))))
+	    (otherwise (prin1 (si:instance-ref obj i) stream)))))
   obj)

@@ -55,9 +55,10 @@
 	(setq form `(progn (setf (symbol-function ',name) #',form) ',name))))
  (values (eval form) nil nil))
 
-(defun bc-compile-file-pathname (name &key (output-file name) (type :fasl type-supplied-p)
-				 verbose print c-file h-file data-file shared-data-file
-				 system-p load)
+(defun bc-compile-file-pathname (name &key (output-file name) (type :fasl)
+				 verbose print c-file h-file data-file
+				 shared-data-file system-p load)
+  (declare (ignore load c-file h-file data-file shared-data-file system-p verbose print))
   (let ((extension "fasc"))
     (case type
       ((:fasl :fas) (setf extension "fasc"))

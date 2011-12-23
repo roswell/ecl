@@ -96,6 +96,7 @@
                  align (apply #'max (mapcar #'(lambda (field)
 	                                        (multiple-value-bind (field-size field-align)
                                                     (size-of-foreign-type (second field))
+						  (declare (ignore field-size))
 						  field-align))
 	                                    (rest type))))
 	   (%align-data size align))

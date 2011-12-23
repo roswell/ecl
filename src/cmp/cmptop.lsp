@@ -29,7 +29,6 @@
                      (*current-form* form)
                      (*first-error* t)
                      (*setjmps* 0))
-  ;(let ((*print-level* 3)) (print form))
   (catch *cmperr-tag*
     (when (consp form)
       (let ((fun (car form)) (args (cdr form)) fd)
@@ -110,7 +109,6 @@
 			&aux def top-output-string
 			(*volatile* " volatile "))
 
-  ;(let ((*print-level* 3)) (pprint *top-level-forms*))
   (setq *top-level-forms* (nreverse *top-level-forms*))
   (wt-nl1 "#include \"" (brief-namestring h-pathname) "\"")
 
@@ -376,7 +374,6 @@ return f2;
                     (equal (ref-ref-clb x) (ref-ref-clb y))
                     (equal (ref-ref x) (ref-ref y))))
              (similar-var (x y)
-               (print (list (var-loc x) (var-loc y)))
                (and! (similar-ref x y)
                     (equal (var-name x) (var-name y))
                     (equal (var-kind x) (var-kind y))
@@ -390,7 +387,6 @@ return f2;
                     (eql (c1form-sp-change x) (c1form-sp-change y))
                     (eql (c1form-volatile x) (c1form-volatile y))))
              (similar-fun (x y)
-               (print (list '? (fun-name x) (fun-name y)))
                (and! (similar-ref x y)
                     (eql (fun-global x) (fun-global y))
                     (eql (fun-exported x) (fun-exported y))

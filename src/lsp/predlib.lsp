@@ -362,6 +362,7 @@ and is not adjustable."
              '(SINGLE-FLOAT DOUBLE-FLOAT T)))
 
 (defun upgraded-array-element-type (element-type &optional env)
+  (declare (ignore env))
   (let* ((hash (logand 127 (si:hash-eql element-type)))
 	 (record (aref *upgraded-array-element-type-cache* hash)))
     (declare (type (integer 0 127) hash))
@@ -378,6 +379,7 @@ and is not adjustable."
 	  answer))))
 
 (defun upgraded-complex-part-type (real-type &optional env)
+  (declare (ignore env))
   ;; ECL does not have specialized complex types. If we had them, the
   ;; code would look as follows
   ;;   (dolist (v '(INTEGER RATIO RATIONAL SINGLE-FLOAT DOUBLE-FLOAT FLOAT REAL)
@@ -408,7 +410,6 @@ and is not adjustable."
 
 (defun error-type-specifier (type)
   (declare (si::c-local))
-  (print type)
   (error "~S is not a valid type specifier." type))
 
 (defun match-dimensions (array pat)
@@ -883,7 +884,8 @@ if not possible."
 ;; somewhere up, to denote failure of the decision procedure.
 ;;
 (defun register-satisfies-type (type)
-  (declare (si::c-local))
+  (declare (si::c-local)
+	   (ignore type))
   (throw '+canonical-type-failure+ 'satisfies))
 
 ;;----------------------------------------------------------------------
@@ -1391,6 +1393,7 @@ if not possible."
 	   (values nil nil)))))
 
 (defun subtypep (t1 t2 &optional env)
+  (declare (ignore env))
   ;; One easy case: types are equal
   (when (eq t1 t2)
     (return-from subtypep (values t t)))

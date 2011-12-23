@@ -203,6 +203,7 @@
      ,name (&optional (order :MOST-SPECIFIC-FIRST))
      ((around (:AROUND))
       (principal (,name) :REQUIRED t))
+     ,documentation
      (let ((main-effective-method
 	    `(,',operator ,@(mapcar #'(lambda (x) `(CALL-METHOD ,x NIL))
 				    (if (eql order :MOST-SPECIFIC-LAST)
@@ -237,7 +238,6 @@
 	(when (and (consp x) (eql (first x) :GENERIC-FUNCTION))
 	  (setf body (rest body))
 	  (unless (symbolp (setf generic-function (second x)))
-            (print 1)
 	    (syntax-error))))
       (dolist (group method-groups)
 	(destructuring-bind (group-name predicate &key description
@@ -257,7 +257,7 @@
 				(if (eql q '*)
 				    `(every #'equal ',p .METHOD-QUALIFIERS.)
 				    `(equal ',p .METHOD-QUALIFIERS.))))))
-		      (t (print 2) (syntax-error)))))
+		      (t (syntax-error)))))
 	    (push `(,condition (push .METHOD. ,group-name)) group-checks))
 	  (when required
 	    (push `(unless ,group-name
@@ -307,7 +307,6 @@
 ;;;
 
 (defun compute-effective-method (gf method-combination applicable-methods)
-  (declare (ignore method-combination-type method-combination-args))
   (let* ((method-combination-name (car method-combination))
 	 (method-combination-args (cdr method-combination)))
     (if (eq method-combination-name 'STANDARD)

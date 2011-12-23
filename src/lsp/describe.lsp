@@ -468,8 +468,6 @@ inspect commands, or type '?' to the inspector."
     (values)))
 
 (defun inspect (object)
-  (print 'hola)
-  (print ext:*inspector-hook*)
   (if ext:*inspector-hook*
       (funcall *inspector-hook* object)
       (default-inspector object))

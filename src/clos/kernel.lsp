@@ -162,6 +162,7 @@
     (warn "Ignoring class definition for ~S" class)))
 
 (defun setf-find-class (new-value name &optional errorp env)
+  (declare (ignore errorp env))
   (let ((old-class (find-class name nil)))
     (cond
       ((and old-class

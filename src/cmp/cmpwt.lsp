@@ -113,7 +113,7 @@
   (add-object 0 :duplicate t :permanent t))
 
 (defun add-load-form (object location)
-  (when (clos::need-to-make-load-form-p object)
+  (when (clos::need-to-make-load-form-p object *cmp-env*)
     (if (not (eq *compiler-phase* 't1))
 	(cmperr "Unable to internalize complex object ~A in ~a phase" object *compiler-phase*)
 	(multiple-value-bind (make-form init-form) (make-load-form object)

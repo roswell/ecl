@@ -38,6 +38,7 @@ Gives a global declaration.  See DECLARE for possible DECL-SPECs."
 )
 
 (defmacro with-compilation-unit (options &rest body)
+  (declare (ignore options))
   `(progn ,@body))
 
 ;;; Editor.
@@ -72,6 +73,7 @@ Displays information about storage allocation in the following format.
 	* number of pages ECL can use.
 The number of times the garbage collector has been called is not shown, if the
 number is zero.  The optional X is simply ignored."
+  (declare (ignorable x))
   #+boehm-gc
   (progn
     (format t "

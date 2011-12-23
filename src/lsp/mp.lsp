@@ -117,7 +117,7 @@ by ALLOW-WITH-INTERRUPTS."
   ;; the get-lock statement, to ensure that the unlocking is done with
   ;; interrupts disabled.
   #+threads
-  (ext:with-unique-names (lock count interrupts)
+  (ext:with-unique-names (lock count)
     `(let* ((,lock ,lock-form)
             (,count (mp:lock-count-mine ,lock)))
        (without-interrupts

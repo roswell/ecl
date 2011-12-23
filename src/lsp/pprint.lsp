@@ -136,6 +136,7 @@
   (pretty-out stream char))
 
 (defmethod gray::stream-force-output ((stream pretty-stream))
+  (declare (ignore stream))
   ;(force-pretty-output stream)
 )
 

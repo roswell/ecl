@@ -55,6 +55,7 @@
 ;; defmacro.lsp.
 ;;
 (let ((f #'(ext::lambda-block dolist (whole env)
+           (declare (ignore env))
 	   (let (body pop finished control var expr exit)
 	     (setq body (rest whole))
 	     (when (endp body)
@@ -81,6 +82,7 @@
   (si::fset 'dolist f t))
 
 (let ((f #'(ext::lambda-block dotimes (whole env)
+           (declare (ignore env))
 	   (let (body pop finished control var expr exit)
 	     (setq body (rest whole))
 	     (when (endp body)
@@ -108,6 +110,7 @@
   (si::fset 'dotimes f t))
 
 (let ((f #'(ext::lambda-block do/do*-expand (whole env)
+           (declare (ignore env))
            (let (do/do* control test result vl step let psetq body)
 	     (setq do/do* (first whole) body (rest whole))
 	     (if (eq do/do* 'do)

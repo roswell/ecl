@@ -68,6 +68,7 @@
   (let ((function (si::coerce-to-function function)))
     (declare (optimize (speed 3) (safety 0) (debug 0)))
     (with-start-end (start end sequence length)
+      (declare (ignore length))
       (with-key (key)
         (cond ((>= start end)
                (if ivsp
@@ -416,7 +417,8 @@
 (defun find (item sequence &key test test-not (start 0) end from-end key)
   (with-tests (test test-not key)
     (declare (optimize (speed 3) (safety 0) (debug 0)))
-    (with-start-end (start end sequence l)
+    (with-start-end (start end sequence length)
+      (declare (ignore length))
       (let ((output nil))
         (do-sequence (elt sequence start end
                           :output output :index index :specialize t)

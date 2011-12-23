@@ -62,8 +62,7 @@
     ;; unbound."
     ;; "The values of slots specified as shared in the class Cfrom and
     ;; as local in the class Cto are retained."
-    (let* ((old-local-slotds (class-slots (class-of old-instance)))
-	   (new-local-slotds (class-slots (class-of instance))))
+    (let* ((new-local-slotds (class-slots (class-of instance))))
       (dolist (new-slot new-local-slotds)
 	;; CHANGE-CLASS can only operate on the value of local slots.
 	(when (eq (slot-definition-allocation new-slot) :INSTANCE)
@@ -77,6 +76,7 @@
     instance))
 
 (defmethod change-class ((instance class) new-class &rest initargs)
+  (declare (ignore new-class initargs))
   (if (forward-referenced-class-p instance)
       (call-next-method)
       (error "The metaclass of a class metaobject cannot be changed.")))
@@ -114,7 +114,6 @@
 (defmethod update-instance-for-redefined-class
     ((instance standard-object) added-slots discarded-slots property-list
      &rest initargs)
-  (declare (ignore discarded-slots property-list))
   (check-initargs (class-of instance) initargs
 		  (valid-keywords-from-methods
                    (compute-applicable-methods

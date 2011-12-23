@@ -503,6 +503,7 @@ Use special code 0 to cancel this operation.")
     (continue ())))
 
 (defun terminal-interrupt (&optional (correctablep t))
+  (declare (ignore correctablep))
   #+threads
   (mp:without-interrupts
    (let* ((suspended '())
@@ -773,7 +774,7 @@ Use special code 0 to cancel this operation.")
     (terpri))
   (values))
 
-(defun tpl-disassemble-command (&optional no-values)
+(defun tpl-disassemble-command ()
   (let*((*print-level* 2)
 	(*print-length* 4)
 	(*print-pretty* t)
@@ -785,7 +786,7 @@ Use special code 0 to cancel this operation.")
       (format t " Function cannot be disassembled.~%"))
     (values)))
 
-(defun tpl-lambda-expression-command (&optional no-values)
+(defun tpl-lambda-expression-command ()
   (let*(;;(*print-level* 2)
 	;;(*print-length* 4)
 	;;(*print-pretty* t)
@@ -972,7 +973,8 @@ Use special code 0 to cancel this operation.")
            (blocks '())
            (local-variables '())
            (special-variables '())
-           (restarts '()))
+           (restarts '())
+	   record0 record1)
       (dolist (record (decode-ihs-env (ihs-env ihs-index)))
         (cond ((atom record)
                (push (compiled-function-name record) functions))
@@ -1494,7 +1496,8 @@ value."
     (unwind-protect
          (handler-bind ((serious-condition
                          (if err-value-p
-                             #'(lambda (c)
+                             #'(lambda (condition)
+				 (declare (ignore condition))
                                  (return-from safe-eval err-value))
                              #'invoke-debugger)))
            (setf output (si::eval-with-env form env)

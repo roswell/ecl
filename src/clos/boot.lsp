@@ -219,12 +219,15 @@
 	(values (slot-unbound class self (slot-definition-name slotd))))))
 
 (defmethod slot-boundp-using-class ((class class) self slotd)
+  (declare (ignore class))
   (si::sl-boundp (standard-instance-get self slotd)))
 
 (defmethod (setf slot-value-using-class) (val (class class) self slotd)
+  (declare (ignore class))
   (standard-instance-set val self slotd))
 
 (defmethod slot-makunbound-using-class ((class class) instance slotd)
+  (declare (ignore class))
   (ensure-up-to-date-instance instance)
   (let* ((location (slot-definition-location slotd)))
     (cond ((ext:fixnump location)
@@ -244,10 +247,11 @@
 
 (defmethod slot-missing ((class t) object slot-name operation 
 			 &optional new-value)
-  (declare (ignore operation new-value))
+  (declare (ignore operation new-value class))
   (error "~A is not a slot of ~A" slot-name object))
 
 (defmethod slot-unbound ((class t) object slot-name)
+  (declare (ignore class))
   (error 'unbound-slot :instance object :name slot-name))
 
 ;;;

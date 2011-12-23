@@ -139,7 +139,8 @@
     (> (count-if #'function-boundary (car env)) 1)))
 
 (defun walk-method-lambda (method-lambda required-parameters env)
-  (declare (si::c-local))
+  (declare (si::c-local)
+	   (ignore required-parameters))
   (let ((call-next-method-p nil)
 	(next-method-p-p nil)
 	(in-closure-p nil))
@@ -270,6 +271,7 @@ have disappeared."
 (defun add-method-keywords (method)
   (multiple-value-bind (reqs opts rest key-flag keywords allow-other-keys)
       (si::process-lambda-list (method-lambda-list method) t)
+    (declare (ignore reqs opts rest key-flag))
     (setf (method-keywords method)
           (if allow-other-keys
               't
@@ -322,8 +324,6 @@ have disappeared."
 (defun find-method (gf qualifiers specializers &optional (errorp t))
   (declare (notinline method-qualifiers))
   (let* ((method-list (generic-function-methods gf))
-	 (required-args (subseq (generic-function-lambda-list gf) 0
-				(length specializers)))
 	 found)
     (dolist (method method-list)
       (when (and (equal qualifiers (method-qualifiers method))

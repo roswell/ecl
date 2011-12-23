@@ -284,6 +284,7 @@
 ;; CLEAR-INPUT
 
 (defmethod stream-clear-input ((stream fundamental-character-input-stream))
+  (declare (ignore stream))
   nil)
 
 (defmethod stream-clear-input ((stream ansi-stream))
@@ -296,6 +297,7 @@
 ;; CLEAR-OUTPUT
 
 (defmethod stream-clear-output ((stream fundamental-output-stream))
+  (declare (ignore stream))
   nil)
 
 (defmethod stream-clear-output ((stream ansi-stream))
@@ -316,12 +318,14 @@
   (cl:close stream :abort abort))
 
 (defmethod close ((stream t) &key abort)
+  (declare (ignore abort))
   (bug-or-error stream 'close))
 
 
 ;; STREAM-ELEMENT-TYPE
 
 (defmethod stream-element-type ((stream fundamental-character-stream))
+  (declare (ignore stream))
   'character)
 
 (defmethod stream-element-type ((stream ansi-stream))
@@ -333,6 +337,7 @@
 ;; FINISH-OUTPUT
 
 (defmethod stream-finish-output ((stream fundamental-output-stream))
+  (declare (ignore stream))
   nil)
 
 (defmethod stream-finish-output ((stream ansi-stream))
@@ -345,6 +350,7 @@
 ;; FORCE-OUTPUT
 
 (defmethod stream-force-output ((stream fundamental-output-stream))
+  (declare (ignore stream))
   nil)
 
 (defmethod stream-force-output ((stream ansi-stream))
@@ -368,9 +374,11 @@
 ;; INPUT-STREAM-P
 
 (defmethod input-stream-p ((stream fundamental-stream))
+  (declare (ignore stream))
   nil)
 
 (defmethod input-stream-p ((stream fundamental-input-stream))
+  (declare (ignore stream))
   t)
 
 (defmethod input-stream-p ((stream ansi-stream))
@@ -392,7 +400,8 @@
 ;; LINE-COLUMN
 
 (defmethod stream-line-column ((stream fundamental-character-output-stream))
-   nil)
+  (declare (ignore stream))
+  nil)
 
 
 ;; LISTEN
@@ -422,9 +431,11 @@
 ;; OUTPUT-STREAM-P
 
 (defmethod output-stream-p ((stream fundamental-stream))
+  (declare (ignore stream))
   nil)
 
 (defmethod output-stream-p ((stream fundamental-output-stream))
+  (declare (ignore stream))
   t)
 
 (defmethod output-stream-p ((stream ansi-stream))
@@ -473,6 +484,7 @@
   (cl:unread-char character stream))
 
 (defmethod stream-unread-char ((stream ansi-stream) character)
+  (declare (ignore character))
   (bug-or-error stream 'stream-unread-char))
 
 
@@ -531,6 +543,7 @@
   (si:do-read-sequence stream sequence start end))
 
 (defmethod stream-read-sequence ((stream t) sequence &optional start end)
+  (declare (ignore sequence start end))
   (bug-or-error stream 'stream-read-sequence))
 
 
@@ -551,9 +564,11 @@
 ;; STREAM-P
 
 (defmethod streamp ((stream stream))
+  (declare (ignore stream))
   t)
 
 (defmethod streamp ((stream t))
+  (declare (ignore stream))
   nil)
 
 
@@ -563,6 +578,7 @@
   (cl:write-byte integer stream))
 
 (defmethod stream-write-byte ((stream t) integer)
+  (declare (ignore integer))
   (bug-or-error stream 'stream-write-byte))
 
 
@@ -572,6 +588,7 @@
   (cl:write-char character stream))
 
 (defmethod stream-write-char ((stream t) character)
+  (declare (ignore character))
   (bug-or-error stream 'stream-write-char))
 
 
@@ -589,6 +606,7 @@
   (si::do-write-sequence sequence stream start end))
 
 (defmethod stream-write-sequence ((stream t) sequence &optional start end)
+  (declare (ignore sequence start end))
   (bug-or-error stream 'stream-write-sequence))
 
 
@@ -612,6 +630,7 @@
   (cl:write-string string stream :start start :end end))
 
 (defmethod stream-write-string ((stream t) string &optional start end)
+  (declare (ignore string start end))
   (bug-or-error stream 'stream-write-string))
 
 
@@ -663,6 +682,7 @@
 
 (defmethod stream-file-descriptor ((stream file-stream) &optional (direction
                                                                    :input))
+  (declare (ignore direction))
   (si:file-stream-fd stream))
 
 

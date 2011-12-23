@@ -22,8 +22,7 @@
                           (EQ 'SI::HASH-EQ)
                           (EQL 'SI::HASH-EQL)
                           (EQUAL 'SI::HASH-EQUAL)
-                          (t (setf test 'EQUALP) 'SI::HASH-EQUALP)))
-         (hash (gensym "HASH")))
+                          (t (setf test 'EQUALP) 'SI::HASH-EQUALP))))
     `(progn
        (defparameter ,cache-name (make-array 1024 :element-type t :adjustable nil))
        (defun ,reset-name ()

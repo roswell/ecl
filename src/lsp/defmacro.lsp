@@ -250,14 +250,17 @@
                 ppn
                 doc)))))
 
+#+ecl-min
 (si::fset 'defmacro
 	  #'(ext::lambda-block defmacro (def env)
+              (declare (ignore env))
 	      (let* ((name (second def))
 		     (vl (third def))
 		     (body (cdddr def))
 		     (function))
 		(multiple-value-bind (function pprint doc)
 		    (sys::expand-defmacro name vl body)
+		  (declare (ignore doc))
 		  (setq function `(function ,function))
 		  (when *dump-defmacro-definitions*
 		    (print function)
@@ -298,6 +301,7 @@
       (find-declarations body)
     (multiple-value-bind (ppn whole dl arg-check)
         (destructure vl nil)
+      (declare (ignore ppn))
       `(let* ((,whole ,list) ,@dl)
          ,@decls
          ,@arg-check
@@ -317,11 +321,13 @@ or SYMBOL-MACRO forms, and also to evaluate other forms."
   (declare (si::c-local))
   (flet ((local-var-error-function (name)
 	  #'(lambda (whole env)
+	      (declare (ignore whole env))
 	      (error
 "In a MACROLET function you tried to access a local variable, ~A,
 from the function in which it appears." name)))
 	 (local-fun-error-function (name)
 	  #'(lambda (whole env)
+	      (declare (ignore whole env))
 	      (error
 "In a MACROLET function you tried to access a local function, ~A,
 from the function in which it appears." name))))

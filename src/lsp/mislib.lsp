@@ -296,6 +296,7 @@ hash table; otherwise it signals that we have reached the end of the hash table.
       ,@body)))
 
 (defun sharp-!-reader (stream subchar arg)
+  (declare (ignore arg subchar))
   (read-line stream)
   (values))
 

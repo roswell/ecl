@@ -775,7 +775,6 @@ that caused the error.  CONTINUE-FORMAT-STRING and ERROR-FORMAT-STRING are the
 format strings of the error message.  ARGS are the arguments to the format
 strings."
   (declare (inline apply) ;; So as not to get bogus frames in debugger
-	   (ignore error-name)
 	   #-ecl-min
            (c::policy-debug-ihs-frame))
   (let ((condition (coerce-to-condition datum args 'simple-error 'error)))

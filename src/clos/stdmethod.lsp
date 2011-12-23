@@ -41,6 +41,7 @@
 (defun function-keywords (method)
   (multiple-value-bind (reqs opts rest-var key-flag keywords)
       (si::process-lambda-list (slot-value method 'lambda-list) 'function)
+    (declare (ignore reqs opts rest-var))
     (when key-flag
       (do* ((output '())
 	    (l (cdr keywords) (cddddr l)))
@@ -58,4 +59,5 @@
 (defclass standard-writer-method (standard-accessor-method) ())
 
 (defmethod shared-initialize ((method standard-method) slot-names &rest initargs)
+  (declare (ignore initargs method slot-names))
   (add-method-keywords (call-next-method)))

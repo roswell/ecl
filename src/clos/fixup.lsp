@@ -68,11 +68,13 @@
 (defmethod reader-method-class ((class std-class)
 				(direct-slot direct-slot-definition)
 				&rest initargs)
+  (declare (ignore class direct-slot initargs))
   (find-class 'standard-reader-method))
 
 (defmethod writer-method-class ((class std-class)
 				(direct-slot direct-slot-definition)
 				&rest initargs)
+  (declare (ignore class direct-slot initargs))
   (find-class 'standard-writer-method))
 
 ;;; ----------------------------------------------------------------------
@@ -96,7 +98,7 @@
 				(cond ((null old-class)
 				       (find-class 'standard-method))
 				      ((symbolp old-class)
-				       (find-class old-class))
+				       (find-class (the symbol old-class)))
 				      (t
 				       old-class))))
       (si::instance-sig-set gfun)
@@ -133,6 +135,7 @@
 (defun congruent-lambda-p (l1 l2)
   (multiple-value-bind (r1 opts1 rest1 key-flag1 keywords1 a-o-k1)
       (si::process-lambda-list l1 'FUNCTION)
+    (declare (ignore a-o-k1))
     (multiple-value-bind (r2 opts2 rest2 key-flag2 keywords2 a-o-k2)
 	(si::process-lambda-list l2 'FUNCTION)
 	(and (= (length r2) (length r1))
@@ -145,7 +148,7 @@
 		 (null key-flag2)
 		 a-o-k2
 		 (null (set-difference (all-keywords keywords1)
-					   (all-keywords keywords2))))
+				       (all-keywords keywords2))))
 	     t))))
 
 (defun add-method (gf method)
@@ -232,7 +235,7 @@ their lambda lists ~A and ~A are not congruent."
          (mapcar #'type-of args)))
 
 (defmethod no-next-method (gf method &rest args)
-  (declare (ignore gf args))
+  (declare (ignore gf))
   (error "In method ~A~%No next method given arguments ~A" method args))
 
 (defun no-primary-method (gf &rest args)
@@ -242,7 +245,8 @@ their lambda lists ~A and ~A are not congruent."
 ;;; Now we protect classes from redefinition:
 (eval-when (compile load)
 (defun setf-find-class (new-value name &optional errorp env)
-  (let ((old-class (find-class name nil)))
+  (declare (ignore errorp))
+  (let ((old-class (find-class name nil env)))
     (cond
       ((typep old-class 'built-in-class)
        (error "The class associated to the CL specifier ~S cannot be changed."
@@ -269,7 +273,7 @@ their lambda lists ~A and ~A are not congruent."
 (function-to-method 'add-dependent '((c standard-generic-function) function))
 
 (defmethod add-dependent ((c class) dep)
-  (pushnew c (class-dependents c)))
+  (pushnew dep (class-dependents c)))
 
 (defmethod remove-dependent ((c standard-generic-function) dep)
   (setf (generic-function-dependents c)
@@ -290,6 +294,7 @@ their lambda lists ~A and ~A are not congruent."
 
 (defmethod update-dependents ((object generic-function) (dep initargs-updater)
                                &rest initargs)
+  (declare (ignore dep initargs))
   (recursively-update-classes +the-class+))
 
 (setf *clos-booted* t)

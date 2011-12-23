@@ -123,6 +123,7 @@
 			      method-combination
 			      (method-class (find-class 'method))
 			      )
+  (declare (ignore initargs slot-names))
   ;;
   ;; Check the validity of several fields.
   ;;
@@ -173,6 +174,7 @@
 
 (defmethod shared-initialize ((gfun standard-generic-function) slot-names
 			      &rest initargs)
+  (declare (ignore initargs slot-names))
   (call-next-method)
   (compute-g-f-spec-list gfun)
   gfun)
@@ -216,6 +218,7 @@
      (method-class 'STANDARD-METHOD method-class-p)
      (generic-function-class 'STANDARD-GENERIC-FUNCTION)
      (delete-methods nil))
+  (declare (ignore delete-methods gfun))
   ;; else create a new generic function object
   (setf args (copy-list args))
   (remf args :generic-function-class)
@@ -242,7 +245,7 @@
 	  ((macro-function name)
 	   (simple-program-error "The symbol ~A is bound to a macro and is not a valid name for a generic function" name))
           ((not *clos-booted*)
-           (setf (fdefinition (or traced name))
+           (setf (fdefinition name)
 		 (apply #'ensure-generic-function-using-class nil name args))
            (fdefinition name))
 	  (t

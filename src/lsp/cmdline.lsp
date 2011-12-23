@@ -184,6 +184,7 @@ An excerpt of the rules used by ECL:
 "
   (multiple-value-bind (commands loadrc unprocessed-options)
       (produce-init-code args rules)
+    (declare (ignore unprocessed-options))
     (restart-case
         (handler-bind ((error
                         #'(lambda (c)

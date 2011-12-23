@@ -43,6 +43,7 @@
 (defun setf-method-wrapper (name setf-lambda)
   (declare (si::c-local))
   #'(lambda (env &rest args)
+      (declare (ignore env))
       (do-setf-method-expansion name setf-lambda args)))
 
 (defun do-defsetf (access-fn function)
@@ -342,7 +343,6 @@ Does not check if the third gang is a single-element list."
   (declare (si::c-local))
   (multiple-value-bind (vars vals stores store-form access-form)
       (get-setf-expansion place env)
-    (declare (ignore access-form))
     (cond ((trivial-setf-form place vars stores store-form access-form)
 	   (list 'setq place newvalue))
 	  ((try-simpler-expansion place vars stores newvalue store-form))
