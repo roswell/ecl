@@ -972,6 +972,7 @@
     si::coerce-to-list si::coerce-to-vector
     si::fill-array-with-seq
     si::assert-failure
+    si::ecase-error si::etypecase-error
     si::traced-old-definition
 
     #+formatter

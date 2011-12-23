@@ -87,7 +87,7 @@ for the error message and ARGs are arguments to the format string."
   `(while (not ,test-form)
      ,repl)))
 
-(defun accumulate-cases (macro-name cases list-is-atom-p)
+(defun accumulate-cases (cases list-is-atom-p)
   (declare (si::c-local))
   (do ((c cases (cdr c))
        (l '()))
@@ -97,7 +97,7 @@ for the error message and ARGs are arguments to the format string."
 	    (list-is-atom-p (push keys l))
 	    (t (setq l (append keys l)))))))
 
-(defun ecase-error (keyform value values)
+(defun ecase-error (value values)
   (error 'CASE-FAILURE :name 'ECASE
 	 :datum value
 	 :expected-type (cons 'MEMBER values)
@@ -113,7 +113,7 @@ signals an error."
   (let ((key (gensym)))
     `(let ((,key ,keyform))
        (case ,key ,@clauses
-	 (t (si::ecase-error ',keyform ,key ',(accumulate-cases 'ECASE clauses nil)))))))
+	 (t (si::ecase-error ,key ',(accumulate-cases clauses nil)))))))
 
 (defun ccase-error (keyform key values)
   (restart-case (error 'CASE-FAILURE
@@ -155,7 +155,7 @@ becomes EQL to one of the KEYs."
 	     (case ,key ,@clauses
 	       (t (setf ,keyplace
 			(si::ccase-error ',keyplace ,key
-					 ',(accumulate-cases 'CCASE clauses nil)))
+					 ',(accumulate-cases clauses nil)))
 		  (go ,repeat)))))))))
 
 (defmacro typecase (keyform &rest clauses)
@@ -175,7 +175,7 @@ be used as a TYPE to specify the default case."
                      ,form))))
   )
 
-(defun etypecase-error (keyform value types)
+(defun etypecase-error (value types)
   (error 'CASE-FAILURE :name 'ETYPECASE
 	 :datum value
 	 :expected-type (cons 'OR types)
@@ -188,8 +188,7 @@ If found, then evaluates FORMs that follow the TYPE and returns all values of
 the last FORM.  If not, signals an error."
    (setq clauses (remove-otherwise-from-clauses clauses))
    (do ((l (reverse clauses) (cdr l))	; Beppe
-        (form `(etypecase-error ',keyform ,key
-				',(accumulate-cases 'ETYPECASE clauses t))))
+        (form `(etypecase-error ,key ',(accumulate-cases clauses t))))
        ((endp l) `(let ((,key ,keyform)) ,form))
        (setq form `(if (typep ,key ',(caar l))
                        (progn ,@(cdar l))
@@ -224,4 +223,4 @@ Repeats this process until the value of PLACE becomes of one of the TYPEs."
 		      (return (progn ,@(cdr l)))))
 		clauses)
       (setf ,keyplace (ctypecase-error ',keyplace ,key
-				       ',(accumulate-cases 'CTYPECASE clauses t))))))
+				       ',(accumulate-cases clauses t))))))

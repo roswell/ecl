@@ -2014,6 +2014,8 @@ cl_symbols[] = {
 {EXT_ "COMPILER-TYPECASE",NULL},
 
 {SYS_ "ASSERT-FAILURE",NULL},
+{SYS_ "ECASE-ERROR",NULL},
+{SYS_ "ETYPECASE-ERROR",NULL},
 
 {SYS_ "SERIALIZE","si_serialize"},
 {SYS_ "DESERIALIZE","si_deserialize"},

@@ -256,6 +256,10 @@
 (proclamation si:bds-val (si::index) t)
 (proclamation si:sch-frs-base (si::index si::index) (or null si::index))
 
+(proclamation si::ecase-error (t t) t)
+(proclamation si::etypecase-error (t t) t)
+(proclamation si::do-check-type (t t t t) t)
+
 ;;;
 ;;; 7. OBJECTS
 ;;;
@@ -1327,7 +1331,7 @@
 (proclamation associate-methods-to-gfun (generic-function *)
               generic-function)
 #+clos
-(proclamation clos::need-to-make-load-form-p (t) gen-bool :pure)
+(proclamation clos::need-to-make-load-form-p (t t) gen-bool :pure)
 
 #+clos
 (proclamation clos::load-defclass (t t t t) t)
