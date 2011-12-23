@@ -117,16 +117,13 @@
 
 (declaim (inline index-posn posn-index posn-column))
 (defun index-posn (index stream)
-  (declare (type index index) (type pretty-stream stream)
-	   (values posn))
+  (declare (type index index) (type pretty-stream stream))
   (+ index (pretty-stream-buffer-offset stream)))
 (defun posn-index (posn stream)
-  (declare (type posn posn) (type pretty-stream stream)
-	   (values index))
+  (declare (type posn posn) (type pretty-stream stream))
   (- posn (pretty-stream-buffer-offset stream)))
 (defun posn-column (posn stream)
-  (declare (type posn posn) (type pretty-stream stream)
-	   (values posn))
+  (declare (type posn posn) (type pretty-stream stream))
   (index-column (posn-index posn stream) stream))
 
 

@@ -191,7 +191,7 @@ Does not check if the third gang is a single-element list."
 (defsetf symbol-value set)
 (defsetf symbol-function sys:fset)
 (defsetf fdefinition sys:fset)
-(defsetf macro-function (s &optional env) (v) `(sys:fset ,s ,v t))
+(defsetf macro-function (s &optional env) (v) (declare (ignore env)) `(sys:fset ,s ,v t))
 (defsetf aref si::aset)
 (defsetf row-major-aref sys:row-major-aset)
 (defsetf get (s p &optional d) (v)
@@ -204,7 +204,7 @@ Does not check if the third gang is a single-element list."
 (defsetf sbit sys:aset)
 (defsetf fill-pointer sys:fill-pointer-set)
 (defsetf symbol-plist sys:set-symbol-plist)
-(defsetf gethash (k h &optional d) (v) `(sys:hash-set ,k ,h ,v))
+(defsetf gethash (k h &optional d) (v) (declare (ignore d)) `(sys:hash-set ,k ,h ,v))
 #-clos
 (defsetf documentation sys::set-documentation)
 #+clos

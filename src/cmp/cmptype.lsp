@@ -32,6 +32,7 @@
     form))
 
 (defun default-init (var &optional warn)
+  (declare (ignore warn))
   (let ((new-value (cdr (assoc (var-type var)
 			       '((fixnum . 0) (character . #\space)
                                  #+long-float (long-float 0.0L1)
@@ -63,6 +64,7 @@
         (multiple-value-bind (req-types opt-types rest-flag key-flag
                                         key-types allow-other-keys)
             (si::process-lambda-list arg-types 'ftype)
+	  (declare (ignore rest-flag key-flag allow-other-keys))
           (nconc 
            (loop for var in requireds
               for type in (rest req-types)
@@ -193,6 +195,7 @@
 	   type)))))
 
 (defmacro optional-type-check (&whole whole value type &environment env)
+  (declare (ignore env))
   (if (policy-assume-right-type)
       value
       `(assert-type-if-known ,value ,type)))

@@ -24,7 +24,8 @@
                           (EQUAL 'SI::HASH-EQUAL)
                           (t (setf test 'EQUALP) 'SI::HASH-EQUALP))))
     `(progn
-       (defparameter ,cache-name (make-array 1024 :element-type t :adjustable nil))
+       (eval-when (:compile-toplevel :load-toplevel :execute)
+	 (defparameter ,cache-name (make-array 1024 :element-type t :adjustable nil)))
        (defun ,reset-name ()
          (make-array 1024 :element-type t :adjustable nil))
        (defun ,name ,lambda-list

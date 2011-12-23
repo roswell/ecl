@@ -146,6 +146,7 @@
 ;;; we can not derive the compiler conditions from SERIOUS-CONDITION.
 ;;;
 (defun handle-compiler-note (c)
+  (declare (ignore c))
   nil)
 
 (defun handle-compiler-warning (c)
@@ -369,7 +370,7 @@
   
 (defun cmp-expand-compiler-macro (fd fname args &optional (env *cmp-env*))
   (handler-case
-      (cmp-expand-macro fd (list* fname args))
+      (cmp-expand-macro fd (list* fname args) env)
     (serious-condition (c)
       (do-cmpwarn 'compiler-macro-expansion-failed
 	:format-control "The expansion of the compiler macro~%~T~A~%was aborted because of a serious condition~%~A" :format-arguments (list fname c))

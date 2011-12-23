@@ -50,7 +50,6 @@
   (and (inline-possible fname)
        (not (gethash fname *c2-dispatch-table*))
        (let* ((dest-rep-type (loc-representation-type *destination*))
-              (dest-type (rep-type->lisp-type dest-rep-type))
               (ii (get-inline-info fname arg-types return-type return-rep-type)))
          ii)))
 
@@ -65,6 +64,7 @@
                         fun side-effects-p one-liner)))
 
 (defun choose-inline-info (ia ib return-type return-rep-type)
+  (declare (ignore return-type))
   (cond
     ;; Only accept inliners that have the right rep type
     ((not (or (eq return-rep-type 'any)

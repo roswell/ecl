@@ -294,7 +294,7 @@ their lambda lists ~A and ~A are not congruent."
 
 (defmethod update-dependents ((object generic-function) (dep initargs-updater)
                                &rest initargs)
-  (declare (ignore dep initargs))
+  (declare (ignore dep initargs object))
   (recursively-update-classes +the-class+))
 
 (setf *clos-booted* t)

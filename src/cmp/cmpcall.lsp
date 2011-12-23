@@ -152,6 +152,7 @@
   (call-unknown-global-loc fname nil args))
 
 (defun call-loc (fname fun args)
+  (declare (ignore fname))
   `(CALL-NORMAL ,fun ,(coerce-locs args)))
 
 (defun call-exported-function-loc (fname args fun-c-name minarg maxarg in-core)
@@ -159,6 +160,7 @@
     ;; We only write declarations for functions which are not in lisp_external.h
     (multiple-value-bind (val declared)
 	(gethash fun-c-name *compiler-declared-globals*)
+      (declare (ignore val))
       (unless declared
 	(if (= maxarg minarg)
 	    (progn

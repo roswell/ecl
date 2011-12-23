@@ -91,7 +91,7 @@
             (sys:get-sysprop fname 'PROCLAIMED-RETURN-TYPE))))))
 
 (defun get-local-arg-types (fun &optional (env *cmp-env*))
-  (let ((x (cmp-env-search-ftype (fun-name fun))))
+  (let ((x (cmp-env-search-ftype (fun-name fun) env)))
     (if x
         (values (first x) t)
         (values nil nil))))
@@ -127,7 +127,7 @@
 (defun declare-inline (fname &optional (env *cmp-env*) (definition t))
   (unless (si::valid-function-name-p fname)
     (cmperr "Not a valid argument to INLINE declaration~%~4I~A"
-            fname-list))
+            fname))
   (cmp-env-extend-declaration 'INLINE (list (cons fname definition)) env))
 
 (defun declare-notinline (fname &optional (env *cmp-env*))

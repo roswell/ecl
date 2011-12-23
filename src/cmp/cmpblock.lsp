@@ -104,6 +104,7 @@
 	  output)))))
 
 (defun c2return-from (blk type val var)
+  (declare (ignore var))
   (case type
     (CCB
      (let ((*destination* 'VALUES)) (c2expr* val))

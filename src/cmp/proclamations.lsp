@@ -382,7 +382,7 @@
 (proclamation find-symbol (string &optional package-designator)
               (values symbol (member :inherited :external :internal nil)))
 (proclamation find-package (package-designator) (or package null))
-(proclamation find-all-symbols (string) list)
+(proclamation find-all-symbols (string-designator) list)
 (proclamation import (list &optional package-designator) t)
 (proclamation list-all-packages () list)
 (proclamation rename-package (package-designator package-designator

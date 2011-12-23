@@ -125,7 +125,7 @@
 
 ;;;  Bootstrap problem: proclaim needs this function:
 (defun sch-global (name)
-  (dolist (var *undefined-vars* nil)
+  (dolist (var *undefined-vars*)
     (declare (type var var))
     (when (eq (var-name var) name)
       (return-from sch-global var))))
