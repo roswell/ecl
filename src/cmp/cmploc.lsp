@@ -234,10 +234,22 @@
          (wt-nl "value0=") (wt-coerce-loc :object loc)
          (wt "; cl_env_copy->nvalues=1;"))))
 
-(defun set-trash-loc (loc)
-  (cond ((uses-values loc) (wt-nl "(void)" loc ";"))
-        ((and (consp loc)
-              (eq (first loc) 'C-INLINE)
-              (fifth loc)) ; side effects?
-         (wt-nl loc ";"))))
+(defun loc-with-side-effects-p (loc &aux name)
+  (cond ((var-p loc)
+	 (and (global-var-p loc)
+	      (policy-global-var-checking)))
+	((atom loc)
+	 nil)
+	((member (setf name (first loc)) '(CALL CALL-NORMAL CALL-INDIRECT)
+		 :test #'eq)
+	 t)
+	((eq name 'FDEFINITION)
+	 (policy-global-function-checking))
+	((eq name 'C-INLINE)
+	 (or (eq (sixth loc) 'VALUES) ;; Uses VALUES
+	     (fifth loc))))) ;; or side effects
 
+(defun set-trash-loc (loc)
+  (when (loc-with-side-effects-p loc)
+    (wt-nl loc ";")
+    t))

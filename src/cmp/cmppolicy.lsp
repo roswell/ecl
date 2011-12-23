@@ -257,10 +257,10 @@
 (define-policy array-bounds-check :on safety 1
   "Check out of bounds access to arrays")
 
-(define-policy global-var-checking :alias assume-no-errors
+(define-policy global-var-checking :on safety 3
   "Read the value of a global variable even if it is discarded, ensuring it is bound")
 
-(define-policy global-function-checking :alias assume-no-errors
+(define-policy global-function-checking :on safety 3
   "Read the binding of a global function even if it is discarded")
 
 (define-policy check-nargs :on safety 1 :only-on ext:check-arguments-type 1
