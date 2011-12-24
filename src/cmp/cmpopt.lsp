@@ -67,9 +67,7 @@
 	  ;; safety, we will simply assume the user knows what she's doing.
 	  ((subtypep type NIL)
 	   (cmpwarn "TYPEP form contains an empty type ~S and cannot be optimized" type)
-	   (if (policy-assume-no-errors)
-	       NIL
-	       form))
+	   form)
 	  ;;
 	  ;; There exists a function which checks for this type?
 	  ((setf function (get-sysprop type 'si::type-predicate))
