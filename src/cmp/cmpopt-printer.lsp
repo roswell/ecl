@@ -30,7 +30,7 @@
                      "_ecl_stream_or_default_output(#0)"
                      :one-liner t)))
 
-(define-compiler-macro princ (expression &optional stream &env env)
+(define-compiler-macro princ (expression &optional stream &environment env)
   (if (constantp expression env)
       (let ((value (cmp-eval expression env)))
         (cond ((eql value #\Newline)
@@ -62,19 +62,19 @@
                      "ecl_princ(#0,#1)"
                      :one-liner t)))
 
-(define-compiler-macro terpri (&optional stream &env env)
+(define-compiler-macro terpri (&optional stream &environment env)
   `(ffi:c-inline (,stream)
                  (:object) :object
                  "ecl_terpri(#0)"
                  :one-liner t))
 
-(define-compiler-macro print (value &optional stream &env env)
+(define-compiler-macro print (value &optional stream &environment env)
   `(ffi:c-inline (,value ,stream)
                  (:object :object) :object
                  "ecl_print(#0,#1)"
                  :one-liner t))
 
-(define-compiler-macro prin1 (value &optional stream &env env)
+(define-compiler-macro prin1 (value &optional stream &environment env)
   `(ffi:c-inline (,value ,stream)
                  (:object :object) :object
                  "ecl_prin1(#0,#1)"
