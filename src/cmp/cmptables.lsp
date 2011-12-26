@@ -13,6 +13,74 @@
 
 (in-package "COMPILER")
 
+(eval-when (:compile-toplevel :execute)
+(defconstant +all-c1-forms+
+  '((LOCATION		loc :pure :single-valued)
+    (VAR		var :single-valued)
+    (SETQ		var value-c1form :side-effects)
+    (PSETQ		var-list value-c1form-list :side-effects)
+    (BLOCK		blk-var progn-c1form :pure)
+    (PROGN		body :pure)
+    (PROGV		symbols values form :side-effects)
+    (TAGBODY		tag-var tag-body :pure)
+    (RETURN-FROM	blk-var return-type value variable-or-nil :side-effects)
+    (FUNCALL		fun-value (arg-value*) :side-effects)
+    (CALL-LOCAL		obj-fun (arg-value*) :side-effects)
+    (CALL-GLOBAL	fun-name (arg-value*))
+    (CATCH		catch-value body :side-effects)
+    (UNWIND-PROTECT	protected-c1form body :side-effects)
+    (THROW		catch-value output-value :side-effects)
+    (GO			tag-var return-type :side-effects)
+    (C-INLINE		(arg-c1form*)
+			(arg-type-symbol*)
+			output-rep-type
+			c-expression-string
+			side-effects-p
+			one-liner-p)
+    (LOCALS		local-fun-list body labels-p :pure)
+    (IF			fmla-c1form true-c1form false-c1form :pure)
+    (FMLA-NOT		fmla-c1form :pure)
+    (FMLA-AND		* :pure)
+    (FMLA-OR		* :pure)
+    (LAMBDA		lambda-list doc body-c1form)
+    (LET*		vars-list var-init-c1form-list decl-body-c1form :pure)
+    (VALUES		values-c1form-list :pure)
+    (MULTIPLE-VALUE-SETQ vars-list values-c1form-list :side-effects)
+    (MULTIPLE-VALUE-BIND vars-list init-c1form body :pure)
+    (COMPILER-LET	symbols values body)
+    (FUNCTION		(GLOBAL/CLOSURE) lambda-form fun-object :single-valued)
+    (RPLACD		(dest-c1form value-c1form) :side-effects)
+
+    (SI:STRUCTURE-REF	struct-c1form type-name slot-index (:UNSAFE/NIL) :pure)
+    (SI:STRUCTURE-SET	struct-c1form type-name slot-index value-c1form :side-effects)
+
+    (WITH-STACK		body :side-effects)
+    (STACK-PUSH-VALUES value-c1form push-statement-c1form :side-effects)
+
+    (ORDINARY		c1form :pure)
+    (LOAD-TIME-VALUE	dest-loc value-c1form :pure :single-valued)
+    (SI:FSET		function-object vv-loc macro-p pprint-p lambda-form
+			:side-effects)
+    (MAKE-FORM		vv-loc value-c1form :side-effects)
+    (INIT-FORM		vv-loc value-c1form :side-effects)
+    (EXT:COMPILER-TYPECASE var expressions))))
+
+(defconstant +c1-form-hash+
+  #.(loop with hash = (make-hash-table :size 128 :test #'eq)
+       for (name . rest) in +all-c1-forms+
+       for length = (if (member '* rest) nil (length rest))
+       for side-effects = (if (member :side-effects rest)
+                              (progn (and length (decf length)) t)
+                              nil)
+       for movable = (if (member :pure rest)
+                         (progn (and length (decf length)) t)
+                         nil)
+       for single-valued = (if (member :single-valued rest)
+                               (progn (and length (decf length)) t)
+                               nil)
+       do (setf (gethash name hash) (list length side-effects movable single-valued))
+       finally (return hash)))
+
 (defconstant +c1-dispatch-alist+
   '((block . c1block) ; c1special
     (return-from . c1return-from) ; c1special
@@ -46,7 +114,6 @@
     (multiple-value-bind . c1multiple-value-bind) ; c1
 
     (ext:compiler-typecase . c1compiler-typecase) ; c1special
-    (c::compiler-typecases . c1compiler-typecases) ; c1special
 
     (quote . c1quote) ; c1special
     (function . c1function) ; c1special
@@ -178,6 +245,8 @@
 
     (sys:structure-ref . c2structure-ref) ; c2
     (sys:structure-set . c2structure-set) ; c2
+
+    (ext:compiler-typecase . c2compiler-typecase)
     ))
 
 (defconstant +t2-dispatch-alist+
@@ -226,6 +295,7 @@
     (c::with-stack . p1with-stack)
     (c::stack-push-values . p1stack-push-values)
     (sys::structure-set . p1structure-set)
+    (ext:compiler-typecase . p1compiler-typecase) ; c1special
     ))
 
 (defun make-dispatch-table (alist)

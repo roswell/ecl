@@ -234,6 +234,16 @@ of the occurrences in those lists."
 (defun p1progn (c1form assumptions forms)
   (p1propagate-list forms assumptions))
 
+(defun p1compiler-typecase (c1form assumptions variable expressions)
+  (let ((var-type (var-type variable)))
+    (loop with output-type = t
+       for (a-type c1form) in expressions
+       for c1form-type = (p1propagate c1form assumptions)
+       when (or (member a-type '(t otherwise))
+		(subtypep var-type a-type))
+       do (setf output-type c1form-type)
+       finally (return (values output-type assumptions)))))
+
 (defun p1progv (c1form assumptions variables values body)
   (let (type)
     (multiple-value-setq (type assumptions)

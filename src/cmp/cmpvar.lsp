@@ -138,12 +138,21 @@
   (member name *global-vars* :test #'eq :key #'var-name))
 
 (defun special-variable-p (name)
+  "Return true if NAME is associated to a special variable in the lexical environment."
   (or (si::specialp name)
       (check-global name)
       (let ((v (cmp-env-search-var name *cmp-env-root*)))
         ;; Fixme! Revise the declamation code to ensure whether
         ;; we also have to consider 'GLOBAL here.
         (and v (eq (var-kind v) 'SPECIAL)))))
+
+(defun local-variable-p (name &optional (env *cmp-env*))
+  (let ((record (cmp-env-search-var name env)))
+    (and record (var-p record))))
+
+(defun symbol-macro-p (name &optional (env *cmp-env*))
+  (let ((record (cmp-env-search-var name env)))
+    (and record (not (var-p record)))))
 
 ;;;
 ;;; Check if the symbol has a symbol macro
