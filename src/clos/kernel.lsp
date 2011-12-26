@@ -431,7 +431,6 @@
 	    (nupdate-spec-how-list spec-how-list (method-specializers method) gf)))
     (setf (generic-function-spec-list gf)
 	  (loop for type in spec-how-list
-		for name in (generic-function-lambda-list gf)
 		for i from 0
 		when type collect (cons type i)))
     (let* ((g-f-l-l (generic-function-lambda-list gf)))
