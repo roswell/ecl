@@ -65,7 +65,7 @@
 (in-package "SYSTEM")
 
 (defmacro DEFPACKAGE (name &rest options)
-  (declare (type (or symbol string) name))
+  (declare (type (or symbol string character) name))
   "DEFPACKAGE - DEFINED-PACKAGE-NAME {OPTION}*			[Macro]
 
    This creates a new package, or modifies an existing one, whose name is
