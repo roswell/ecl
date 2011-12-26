@@ -377,15 +377,12 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
              (do-decl (var)
 	       (when (local var) ; no LCL needed for SPECIAL or LEX
 		 (setf (var-loc var) (wt-decl var)))))
-      (do ((reqs requireds (cdr reqs))
-	   (reqi (1+ req0) (1+ reqi)) (var))
-	  ((endp reqs))
-	(declare (fixnum reqi) (type cons reqs) (type var var))
-	(setq var (first reqs))
-	(cond (local-entry-p
-	       (bind `(LCL ,reqi) var))
-	      ((unboxed var) ; create unboxed variable
-	       (setf (var-loc var) (wt-decl var)))))
+      (loop for var in requireds
+	 for reqi of-type fixnum from (1+ req0)
+	 do (cond (local-entry-p
+		   (bind `(LCL ,reqi) var))
+		  ((unboxed var) ; create unboxed variable
+		   (setf (var-loc var) (wt-decl var)))))
       ;; dont create rest or varargs if not used
       (when (and rest (< (var-ref rest) 1))
 	(setq rest nil
@@ -413,11 +410,10 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 	     first-arg nreq))))
 
     ;; Bind required parameters.
-    (do ((reqs requireds (cdr reqs))
-	 (reqi (1+ req0) (1+ reqi)))
-	((or local-entry-p (endp reqs)))
-      (declare (fixnum reqi) (type cons reqs))
-      (bind `(LCL ,reqi) (first reqs)))
+    (unless local-entry-p
+      (loop for var in requireds
+	 for reqi of-type fixnum from (1+ req0)
+	 do (bind `(LCL ,reqi) var)))
 
     (when fname-in-ihs-p
       (wt-nl "{")
