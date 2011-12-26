@@ -244,6 +244,13 @@ of the occurrences in those lists."
        do (setf output-type c1form-type)
        finally (return (values output-type assumptions)))))
 
+(defun p1checked-value (c1form assumptions type value let-form)
+  (let* ((value-type (p1propagate value assumptions))
+	 (alt-type (p1propagate let-form assumptions)))
+    (if (subtypep value-type type)
+	value-type
+	type)))
+
 (defun p1progv (c1form assumptions variables values body)
   (let (type)
     (multiple-value-setq (type assumptions)

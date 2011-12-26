@@ -63,7 +63,8 @@
 			:side-effects)
     (MAKE-FORM		vv-loc value-c1form :side-effects)
     (INIT-FORM		vv-loc value-c1form :side-effects)
-    (EXT:COMPILER-TYPECASE var expressions))))
+    (EXT:COMPILER-TYPECASE var expressions)
+    (CHECKED-VALUE  type value-c1form let-form))))
 
 (defconstant +c1-form-hash+
   #.(loop with hash = (make-hash-table :size 128 :test #'eq)
@@ -114,6 +115,7 @@
     (multiple-value-bind . c1multiple-value-bind) ; c1
 
     (ext:compiler-typecase . c1compiler-typecase) ; c1special
+    (checked-value . c1checked-value) ; c1special
 
     (quote . c1quote) ; c1special
     (function . c1function) ; c1special
@@ -247,6 +249,7 @@
     (sys:structure-set . c2structure-set) ; c2
 
     (ext:compiler-typecase . c2compiler-typecase)
+    (checked-value . c2checked-value)
     ))
 
 (defconstant +t2-dispatch-alist+
@@ -295,7 +298,8 @@
     (c::with-stack . p1with-stack)
     (c::stack-push-values . p1stack-push-values)
     (sys::structure-set . p1structure-set)
-    (ext:compiler-typecase . p1compiler-typecase) ; c1special
+    (ext:compiler-typecase . p1compiler-typecase)
+    (checked-value . p1checked-value)
     ))
 
 (defun make-dispatch-table (alist)
