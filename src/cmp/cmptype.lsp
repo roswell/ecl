@@ -130,7 +130,7 @@
             ;; We remove assumption about types, which will be checked
             ;; later due to this assertion...
             (setf (var-type var) t
-                  checks (list* `(assert-type-if-known ,name ,type) checks)
+                  checks (list* `(type-assertion ,name ,type) checks)
                   new-auxs (list* `(the ,type ,name) name new-auxs))
             ;; Or simply enforce the variable's type.
             (setf (var-type var) (type-and (var-type var) type)))

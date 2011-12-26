@@ -13,6 +13,7 @@
   "src:cmp;cmptype-arith.lsp"
   "src:cmp;cmptype-prop.lsp"
   "src:cmp;cmptype.lsp"
+  "src:cmp;cmptype-assert.lsp"
   "src:cmp;cmpc-wt.lsp"
   "src:cmp;cmpc-inliner.lsp"
   "src:cmp;cmpbind.lsp"
