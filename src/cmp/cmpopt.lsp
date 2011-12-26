@@ -39,7 +39,6 @@
     forms))
 
 (defun expand-typep (form object type env)
-  (declare (si::c-local))
   ;; This function is reponsible for expanding (TYPEP object type)
   ;; forms into a reasonable set of system calls. When it fails to
   ;; match the compiler constraints on speed and space, it simply
@@ -171,8 +170,8 @@
 ;;; other possible type checks.
 ;;;
 
-(eval-when (:load-toplevel)
-(defmacro dolist ((var expression &optional output-form) &body body &environment env)
+(define-compiler-macro dolist
+    ((var expression &optional output-form) &body body &environment env)
   (multiple-value-bind (declarations body)
       (si:process-declarations body nil)
     (let* ((list-var (gensym))
@@ -184,13 +183,13 @@
 	   (si::while ,list-var
 	      (let ((,var (first ,typed-var)))
 		(declare ,@declarations)
-		,@body)
+		(tagbody
+		   ,@body))
 	      (setq ,list-var (rest ,typed-var)))
 	   ,(when output-form
 	      `(let ((,var nil))
 		 (declare ,@declarations)
 		 ,output-form)))))))
-)
 
 ;;;
 ;;; COERCE
