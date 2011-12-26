@@ -16,11 +16,21 @@
 (defun c1compiler-typecase (args)
   (let* ((var-name (pop args))
 	 (var (c1vref var-name))
-	 (expressions (loop for (type . forms) in args
-			 collect (list type (c1progn forms)))))
-    (make-c1form* 'EXT:COMPILER-TYPECASE
-		  :type 't
-		  :args var expressions)))
+	 (first-case (car args)))
+    ;; If the first type, which is supposedly the most specific
+    ;; already includes the form, we keep it. This optimizes
+    ;; most cases of CHECKED-VALUE.
+    (if (subtypep (var-type var) (car first-case))
+	(c1progn (cdr first-case))
+	(let* ((types '())
+	       (expressions (loop for (type . forms) in args
+			       for c1form = (c1progn forms)
+			       for c1form-type = (c1form-primary-type c1form)
+			       do (push c1form-type types)
+			       collect (list type c1form))))
+	  (make-c1form* 'EXT:COMPILER-TYPECASE
+			:type (reduce #'type-or types)
+			:args var expressions)))))
 
 (defun c2compiler-typecase (var expressions)
   (loop with var-type = (var-type var)
@@ -28,10 +38,6 @@
      when (or (member type '(t otherwise))
 	      (subtypep var-type type))
      return (c2expr form)))
-
-(defun variable-or-constant-p (value env)
-  (or (when (symbolp value) (known-variable-p value env))
-      (constantp value env)))
 
 (defun simple-type-assertion (value type env)
   (case type
@@ -71,10 +77,10 @@
 	     (symbol-macro-p value))
 	 ;; If multiple references to the value cost time and space,
 	 ;; or may cause side effects, we save it.
-	 (with-clean-symbols (%value)
-	   `(let* ((%value ,value))
-	      (declare (:read-only %value))
-	      ,(expand-type-assertion '%value type env compulsory))))
+	 (with-clean-symbols (%asserted-value)
+	   `(let* ((%asserted-value ,value))
+	      (declare (:read-only %asserted-value))
+	      ,(expand-type-assertion '%asserted-value type env compulsory))))
 	(compulsory
 	 ;; The check has to be produced, independent of the declared
 	 ;; value of the variable (for instance, in LAMBDA arguments).
@@ -108,6 +114,7 @@
 	(t
 	 (with-clean-symbols (%checked-value)
 	   `(let* ((%checked-value ,value))
+	      (declare (:read-only %checked-value))
 	      ,(expand-type-assertion '%checked-value type env nil)
-	      (the ,type ,value))))))
+	      (the ,type %checked-value))))))
 
