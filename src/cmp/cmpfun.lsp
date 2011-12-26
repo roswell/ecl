@@ -32,7 +32,13 @@
 		(member (caadr fun) '(LAMBDA EXT::LAMBDA-BLOCK)))
 	   (c1apply (list* (second fun) arguments)))
 	  (t
-	   (c1funcall (list* '#'APPLY args))))))
+	   (let ((form (c1funcall (list* '#'APPLY args))))
+	     (when (and (consp fun) (eq (first fun) 'FUNCTION))
+	       (let* ((fname (second fun))
+		      (type (get-return-type fname)))
+		 (when type
+		   (setf (c1form-type form) type))))
+	     form)))))
 
 ;;----------------------------------------------------------------------
 ;; We transform BOOLE into the individual operations, which have
