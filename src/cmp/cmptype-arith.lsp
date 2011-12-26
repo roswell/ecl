@@ -72,7 +72,10 @@
     (error (c) (values nil nil))))
 
 (defun known-type-p (type)
-  (subtypep type 'T))
+  (subtypep type T))
+
+(defun trivial-type-p (type)
+  (subtypep T type))
 
 (defun-equal-cached type-and (t1 t2)
   ;; FIXME! Should we allow "*" as type name???

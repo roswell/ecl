@@ -94,17 +94,21 @@
 
 (defmacro optional-type-assertion (&whole whole value type &environment env)
   "Generates a type check on an expression, ensuring that it is satisfied."
-  (when (policy-type-assertions env)
+  (when (and (policy-type-assertions env)
+	     (not (trivial-type-p type)))
     (cmpnote "Checking type ~A for expression~&~A" type value)
     (expand-type-assertion value type env nil)))
 
 (defmacro type-assertion (&whole whole value type &environment env)
   "Generates a type check on an expression, ensuring that it is satisfied."
   (cmpnote "Checking type ~A for expression~&~A" type value)
-  (expand-type-assertion value type env t))
+  (unless (trivial-type-p type)
+    (expand-type-assertion value type env t)))
 
 (defmacro checked-value (&whole whole value type &environment env)
-  (cond ((not (policy-type-assertions env))
+  (cond ((trivial-type-p type)
+	 value)
+	((not (policy-type-assertions env))
 	 `(the ,type ,value))
 	((or (constantp value type)
 	     (and (symbolp value) (local-variable-p value env)))
