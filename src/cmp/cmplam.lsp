@@ -163,8 +163,8 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
   (cmpck (endp lambda-expr)
          "The lambda expression ~s is illegal." (cons 'LAMBDA lambda-expr))
 
-  (multiple-value-setq (body ss ts is other-decls doc all-declarations)
-                       (c1body (cdr lambda-expr) t))
+  (multiple-value-setq (body ss ts is other-decls doc)
+    (c1body (cdr lambda-expr) t))
 
   (when block-name (setq body (list (cons 'BLOCK (cons block-name body)))))
 
@@ -359,7 +359,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
     (setf optionals (nconc (reduce #'nconc (mapcar #'(lambda (var) (list var *c1nil* NIL))
 						   (subseq requireds si::c-arguments-limit)))
 				  (rest optionals))
-	  required (subseq requireds 0 si::c-arguments-limit)
+	  requireds (subseq requireds 0 si::c-arguments-limit)
 	  varargs t))
 
   ;; For each variable, set its var-loc.

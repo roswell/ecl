@@ -251,9 +251,8 @@
 	  ;;
 	  ;; Complex types defined with DEFTYPE.
 	  ((and (atom type)
-		(get-sysprop type 'SI::DEFTYPE-DEFINITION)
-		(setq function (get-sysprop type 'SI::DEFTYPE-DEFINITION)))
-	   (expand-coerce form value `',(funcall function) env))
+		(setq first (get-sysprop type 'SI::DEFTYPE-DEFINITION)))
+	   (expand-coerce form value `',(funcall first) env))
 	  ;;
 	  ;; CONS types are not coercible.
 	  ((and (consp type)

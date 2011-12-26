@@ -33,7 +33,7 @@
 		:format-arguments (list thing))))
   nil)
 
-(defun bc-compile (name &optional (def nil supplied-p))
+(defun bc-compile (name &optional (def nil supplied-p) &aux form)
  (cond ((and supplied-p def)
         (when (functionp def)
 	  (unless (function-lambda-expression def)

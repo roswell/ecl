@@ -135,13 +135,14 @@
   ;; Call to a function whose C language function name is known,
   ;; either because it has been proclaimed so, or because it belongs
   ;; to the runtime.
-  (when (and (policy-use-direct-C-call)
-             (setf fd (get-sysprop fname 'Lfun)))
-    (multiple-value-bind (minarg maxarg) (get-proclaimed-narg fname)
-      (return-from call-global-loc
-        (call-exported-function-loc
-         fname args fd minarg maxarg
-         (member fname *in-all-symbols-functions*)))))
+  (when (policy-use-direct-C-call)
+    (let ((fd (get-sysprop fname 'Lfun)))
+      (when fd
+	(multiple-value-bind (minarg maxarg) (get-proclaimed-narg fname)
+	  (return-from call-global-loc
+	    (call-exported-function-loc
+	     fname args fd minarg maxarg
+	     (member fname *in-all-symbols-functions*)))))))
 
   (multiple-value-bind (found fd minarg maxarg)
       (si::mangle-name fname t)

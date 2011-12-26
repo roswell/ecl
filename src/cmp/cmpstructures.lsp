@@ -73,7 +73,7 @@
 	       (type (get-slot-type name index)))
 	  (make-c1form* 'SYS:STRUCTURE-REF :type type
 			:args c-form (add-symbol name) index
-			(if (or (subtypep (c1form-type c-form) structure-type)
+			(if (or (subtypep (c1form-type c-form) name)
 				(policy-assume-no-errors))
 			    :unsafe
 			    nil)))

@@ -55,7 +55,7 @@
 (defun collect-declared (type var-list tail)
   (declare (si::c-local))
   (cmpassert (valid-form-p var-list #'symbolp)
-             "Syntax error in declaration ~s" decl)
+             "Syntax error in declaration ~s" `(TYPE ,type ,var-list))
   (loop for var-name in var-list
      do (push (cons var-name type) tail))
   tail)

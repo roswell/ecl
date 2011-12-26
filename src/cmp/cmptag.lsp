@@ -197,17 +197,17 @@
 	(cmp-env-search-tag name)
       (unless tag
 	(cmperr "Undefined tag ~A" name))
-      (setq var (tag-var tag))
-      (cond (ccb (setf (tag-ref-ccb tag) t
-		       (var-ref-ccb var) T
-		       (var-kind var) 'CLOSURE))
-	    (clb (setf (tag-ref-clb tag) t
-		       (var-ref-clb var) t
-		       (var-kind var) 'LEXICAL))
-	    (unw (unless (var-kind var)
-		   (setf (var-kind var) :OBJECT))))
-      (incf (tag-ref tag))
-      (add-to-read-nodes var (make-c1form* 'GO :args tag (or ccb clb unw))))))
+      (let ((var (tag-var tag)))
+	(cond (ccb (setf (tag-ref-ccb tag) t
+			 (var-ref-ccb var) T
+			 (var-kind var) 'CLOSURE))
+	      (clb (setf (tag-ref-clb tag) t
+			 (var-ref-clb var) t
+			 (var-kind var) 'LEXICAL))
+	      (unw (unless (var-kind var)
+		     (setf (var-kind var) :OBJECT))))
+	(incf (tag-ref tag))
+	(add-to-read-nodes var (make-c1form* 'GO :args tag (or ccb clb unw)))))))
 
 (defun c2go (tag nonlocal)
   (if nonlocal

@@ -286,8 +286,10 @@ as 2^*tagbody-limit* in the worst cases.")
     (values 'null (append (p1merge-branches nil ass-list) orig-assumptions))))
 
 (defun p1tagbody-one-pass (c1form assumptions tag-loc body)
+  (declare (ignore tag-loc))
   (loop with local-ass = assumptions
      with ass-list = '()
+     with aux
      for f in body
      do (if (tag-p f)
             (let ((diff (ldiff local-ass assumptions)))
@@ -303,14 +305,17 @@ as 2^*tagbody-limit* in the worst cases.")
                      ass-list)))))
 
 (defun p1unwind-protect (c1form assumptions form body)
+  (declare (ignore c1form))
   (multiple-value-bind (output-type assumptions)
       (p1propagate form assumptions)
     (p1propagate body assumptions)
     (values output-type assumptions)))
 
 (defun p1structure-set (c1form assumptions structure symbol vv-index value)
+  (declare (ignore vv-index symbol))
   (multiple-value-bind (structure-type assumptions)
       (p1propagate structure assumptions)
+    (declare (ignore structure-type))
     (multiple-value-bind (slot-type assumptions)
         (p1propagate value assumptions)
       (let ((old-slot-type (c1form-primary-type c1form)))
