@@ -87,13 +87,13 @@
               (check-args-number "LET/LET* binding" form 1 2)
               (setf name (first form) form (rest form))))
         (let* ((var (c1make-var name specials ignoreds types))
-               (init (if form
-                         (and-form-type (var-type var)
-                                        (c1expr (setf form (first form)))
-                                        form
-                                        :unsafe
-                                        "In LET/LET* bindings")
-                         (default-init var))))
+	       (type (var-type var))
+               (init (cond ((null form)
+			    (default-init var))
+			   ((trivial-type-p type)
+			    (c1expr (first form)))
+			   (t
+			    (c1expr `(checked-value ,(first form) ,type))))))
           ;; :read-only variable handling. Beppe
           (if (read-only-variable-p name other-decls)
 	      (if (global-var-p var)
