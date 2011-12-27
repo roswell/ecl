@@ -797,23 +797,25 @@ after compilation."
       (cmp-delete-file h-pathname)
       (cmp-delete-file o-pathname)
       (mapc 'cmp-delete-file tmp-names)
+
       (cond ((probe-file so-pathname)
 	     (load so-pathname :verbose nil)
-	     (cmp-delete-file so-pathname)
-	     (setf name (or name (symbol-value 'GAZONK)))
-	     ;; By unsetting GAZONK we avoid spurious references to the
-	     ;; loaded code.
-	     (set 'GAZONK nil)
-	     (si::gc t)
-	     (values name nil nil))
+	     (cmp-delete-file so-pathname))
 	    (t
+	     (setf name nil)
+	     (set 'GAZONK nil)
 	     (cmperr "The C compiler failed to compile the intermediate code for ~s." name)))
       ) ; with-compiler-env
     (cmp-delete-file c-pathname)
     (cmp-delete-file h-pathname)
     (cmp-delete-file so-pathname)
     (mapc 'cmp-delete-file tmp-names)
-    (compiler-output-values name compiler-conditions)))
+    (let ((output (or name (symbol-value 'GAZONK))))
+      ;; By unsetting GAZONK we avoid spurious references to the
+      ;; loaded code.
+      (set 'GAZONK nil)
+      (si::gc t)
+      (compiler-output-values output compiler-conditions))))
 
 (defun disassemble (thing &key (h-file nil) (data-file nil)
 		    &aux def disassembled-form
