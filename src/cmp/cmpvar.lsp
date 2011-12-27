@@ -350,19 +350,16 @@
   (cmpck (not (symbolp name)) "The variable ~s is not a symbol." name)
   (cmpck (constantp name) "The constant ~s is being assigned a value." name)
   (setq name (chk-symbol-macrolet name))
-  (unless (symbolp name)
-    (return-from c1setq1 `(setf ,name ,form)))
-  (let* ((name1 (c1vref name))
-	 (form1 (c1expr form))
-	 (v-type (var-type name1))
-	 (f-type (c1form-primary-type form1))
-	 (type (type-and v-type f-type)))
-    (unless type
-      (cmpwarn "Variable ~s is declared to be of type~%~s~%and assigned an incompatible object of type~%~s." name v-type f-type)
-      (setq type T))
-    ;; Is this justified????
-    #+nil(setf (c1form-type form1) type)
-    (add-to-set-nodes name1 (make-c1form* 'SETQ :type type :args name1 form1))))
+  (if (symbolp name)
+      (let* ((name (c1vref name))
+	     (type (var-type name))
+	     (form (c1expr (if (trivial-type-p type)
+			       form
+			       `(checked-value ,form ,type)))))
+	(add-to-set-nodes name (make-c1form* 'SETQ
+					     :type (c1form-type form)
+					     :args name form)))
+      `(setf name ,form)))
 
 (defun c2setq (vref form)
   (let ((*destination* vref)) (c2expr* form))
