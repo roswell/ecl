@@ -41,9 +41,6 @@
 (defvar *current-c2form* nil)
 (defvar *compile-file-position* -1)
 (defvar *first-error* t)
-(defconstant *cmperr-tag* (cons nil nil))
-
-(defvar *active-handlers* nil)
 (defvar *active-protection* nil)
 (defvar *pending-actions* nil)
 

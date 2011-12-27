@@ -17,9 +17,9 @@
 
 (defun unoptimized-long-call (fun arguments)
   (let ((frame (gensym)))
-    (c1expr `(with-stack ,frame
-	       ,@(loop for i in arguments collect `(stack-push ,frame ,i))
-	       (si::apply-from-stack-frame ,frame ,fun)))))
+    `(with-stack ,frame
+       ,@(loop for i in arguments collect `(stack-push ,frame ,i))
+       (si::apply-from-stack-frame ,frame ,fun))))
 
 (defun unoptimized-funcall (fun arguments)
   (let ((l (length arguments)))
@@ -36,12 +36,12 @@
     (cond ;; (FUNCALL (LAMBDA ...) ...)
           ((and (consp fun)
 		(eq (first fun) 'LAMBDA))
-	   (c1expr (optimize-funcall/apply-lambda (cdr fun) arguments nil)))
+	   (optimize-funcall/apply-lambda (cdr fun) arguments nil))
 	  ;; (FUNCALL (EXT::LAMBDA-BLOCK ...) ...)
           ((and (consp fun)
 		(eq (first fun) 'EXT::LAMBDA-BLOCK))
 	   (setf fun (macroexpand-1 fun))
-	   (c1expr (optimize-funcall/apply-lambda (cdr fun) arguments nil)))
+	   (optimize-funcall/apply-lambda (cdr fun) arguments nil))
 	  ;; (FUNCALL atomic-expression ...)
 	  ((atom fun)
 	   (unoptimized-funcall fun arguments))
@@ -60,11 +60,11 @@
 	   (c1call fun arguments nil))
 	  ;; (FUNCALL #'(LAMBDA ...) ...)
 	  ((and (consp fun) (eq (first fun) 'LAMBDA))
-	   (c1expr (optimize-funcall/apply-lambda (rest fun) arguments nil)))
+	   (optimize-funcall/apply-lambda (rest fun) arguments nil))
 	  ;; (FUNCALL #'(EXT::LAMBDA-BLOCK ...) ...)
 	  ((and (consp fun) (eq (first fun) 'EXT::LAMBDA-BLOCK))
 	   (setf fun (macroexpand-1 fun))
-	   (c1expr (optimize-funcall/apply-lambda (rest fun) arguments nil)))
+	   (optimize-funcall/apply-lambda (rest fun) arguments nil))
 	  (t
 	   (cmperr "Malformed function name: ~A" fun)))))
 

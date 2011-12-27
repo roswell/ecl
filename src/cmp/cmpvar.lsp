@@ -351,7 +351,7 @@
   (cmpck (constantp name) "The constant ~s is being assigned a value." name)
   (setq name (chk-symbol-macrolet name))
   (unless (symbolp name)
-    (return-from c1setq1 (c1expr `(setf ,name ,form))))
+    (return-from c1setq1 `(setf ,name ,form)))
   (let* ((name1 (c1vref name))
 	 (form1 (c1expr form))
 	 (v-type (var-type name1))
@@ -409,7 +409,7 @@
 	       "The constant ~s is being assigned a value." var)
 	(setq use-psetf t)))
   (when use-psetf
-    (return-from c1psetq (c1expr `(psetf ,@args))))
+    (return-from c1psetq `(psetf ,@args)))
   (do ((l args (cddr l))
        (vrefs '())
        (forms '()))

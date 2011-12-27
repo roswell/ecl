@@ -423,7 +423,7 @@
   (unless (every #'stringp args)
     (cmperr "The argument to CLINES, ~s, is not a list of strings." args))
   (setf *clines-string-list* (nconc *clines-string-list* (copy-list args)))
-  (c1expr '(progn)))
+  '(progn))
 
 (defun output-clines (output-stream)
   (flet ((parse-one-string (s output-stream)

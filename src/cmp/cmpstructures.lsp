@@ -51,13 +51,13 @@
 	(setf args (first args))
 	(cond
 	  ((eq structure-type 'list)
-	   (c1expr `(elt ,args ,slot-index)))
+	   `(elt ,args ,slot-index))
 	  ((eq structure-type 'vector)
-	   (c1expr `(svref ,args ,slot-index)))
+	   `(svref ,args ,slot-index))
 	  ((consp structure-type)
-	   (c1expr `(aref (the ,structure-type ,args) ,slot-index)))
+	   `(aref (the ,structure-type ,args) ,slot-index))
 	  (t
-           (c1structure-ref `(,args ',structure-type ,slot-index))))))))
+           `(,args ',structure-type ,slot-index)))))))
 
 (defun c1structure-ref (args)
   (check-args-number 'sys:structure-ref args 3)

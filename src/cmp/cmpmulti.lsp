@@ -21,7 +21,8 @@
   (check-args-number 'MULTIPLE-VALUE-CALL args 1)
   (cond
    ;; (M-V-C #'FUNCTION) => (FUNCALL #'FUNCTION)
-   ((endp (rest args)) (c1funcall args))
+   ((endp (rest args))
+    (c1funcall args))
    ;; (M-V-C #'FUNCTION (VALUES A ... Z)) => (FUNCALL #'FUNCTION A ... Z)
    ((and (= (length args) 2)
 	 (consp (setq forms (second args)))
@@ -29,22 +30,21 @@
     (c1funcall (list* (first args) (rest forms))))
    ;; More complicated case.
    (t
-    (c1expr
-     (let ((function (gensym))
-	   (frame (gensym)))
-     `(with-stack ,frame
-       (let* ((,function ,(first args)))
-	 ,@(loop for i in (rest args)
-	      collect `(stack-push-values ,frame ,i))
-	 (si::apply-from-stack-frame ,frame ,function))))))))
+    (let ((function (gensym))
+	  (frame (gensym)))
+      `(with-stack ,frame
+	 (let* ((,function ,(first args)))
+	   ,@(loop for i in (rest args)
+		collect `(stack-push-values ,frame ,i))
+	   (si::apply-from-stack-frame ,frame ,function)))))))
 
 (defun c1multiple-value-prog1 (args)
   (check-args-number 'MULTIPLE-VALUE-PROG1 args 1)
-  (c1expr (let ((frame (gensym)))
-	    `(with-stack ,frame
-	       (stack-push-values ,frame ,(first args))
-	       ,@(rest args)
-	       (stack-pop ,frame)))))
+  (let ((frame (gensym)))
+    `(with-stack ,frame
+       (stack-push-values ,frame ,(first args))
+       ,@(rest args)
+       (stack-pop ,frame))))
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -132,13 +132,13 @@
 	       (push `(setf ,var ,new-var) late-bindings)))))
   (let ((value (second args)))
     (cond (temp-vars
-	   (c1expr `(let* (,@temp-vars)
-		     (multiple-value-setq ,vars ,value)
-		     ,@late-bindings)))
+	   `(let* (,@temp-vars)
+	      (multiple-value-setq ,vars ,value)
+	      ,@late-bindings))
 	  ((endp vars)
-	   (c1expr `(values ,value)))
+	   `(values ,value))
 	  ((= (length vars) 1)
-	   (c1expr `(setq ,(first vars) ,value)))
+	   `(setq ,(first vars) ,value))
 	  (t
 	   (setq value (c1expr value)
 		 vars (mapcar #'c1vref vars))
@@ -236,8 +236,8 @@
          (init-form (pop args)))
     (when (= (length variables) 1)
       (return-from c1multiple-value-bind
-        (c1expr `(let* ((,(first variables) ,init-form))
-                   ,@args))))
+        `(let* ((,(first variables) ,init-form))
+	   ,@args)))
     (multiple-value-bind (body ss ts is other-decls)
         (c1body args nil)
       (c1declare-specials ss)

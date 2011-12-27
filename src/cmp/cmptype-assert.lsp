@@ -91,12 +91,12 @@
 	 (type (pop args))
 	 form form-type and-type)
     (cond ((or (trivial-type-p args) (not (policy-type-assertions)))
-	   (c1expr value))
+	   value)
 	  ((and (policy-evaluate-forms) (constantp value))
 	   (unless (typep (cmp-eval value) type)
 	     (cmpwarning "Failed type assertion for value ~A and type ~A"
 			 value type))
-	   (c1expr value))
+	   value)
 	  ;; Is the form type contained in the test?
 	  ((progn
 	     (setf form (c1expr value)

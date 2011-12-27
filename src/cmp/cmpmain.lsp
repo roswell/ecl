@@ -891,9 +891,7 @@ from the C language code.  NIL means \"do not create the file\"."
     (with-open-file (*compiler-output2* h-pathname :direction :output
 					:if-does-not-exist :create :if-exists :supersede)
       (wt-nl1 "#include " *cmpinclude*)
-      (catch *cmperr-tag* (ctop-write init-name
-				      h-pathname
-				      data-pathname))
+      (ctop-write init-name h-pathname data-pathname)
       (terpri *compiler-output1*)
       (terpri *compiler-output2*))))
 

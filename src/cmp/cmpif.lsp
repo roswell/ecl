@@ -22,7 +22,7 @@
 	(c1form-constant-p test)
       (when constant-p
 	(return-from c1if
-	  (c1expr (if value (second args) (third args))))))
+	  (if value (second args) (third args)))))
     ;; Otherwise, normal IF form
     (let* ((true-branch (c1expr (second args)))
            (false-branch (c1expr (third args))))
@@ -39,7 +39,7 @@
     (multiple-value-bind (constant-p value)
 	(c1form-constant-p value)
       (when constant-p
-	(return-from c1not (c1expr (not value)))))
+	(return-from c1not (not value))))
     (make-c1form* 'FMLA-NOT
                   :type '(member t nil)
                   :args value)))
