@@ -56,7 +56,13 @@
 (defun c1t () *c1t*)
 
 (defun c1call (fname args macros-allowed &aux fd success can-inline)
-  (cond ((c1call-local fname args))
+  (cond ((> (length args) si::c-arguments-limit)
+	 ;; When the function takes many arguments, we will need a
+	 ;; special C form to call it. It takes extra code for
+	 ;; handling the stack
+	 (unoptimized-long-call `#',fname args))
+	((setq fd (local-function-ref fname))
+	 (c1call-local fname fd args))
 	((and (setq can-inline (inline-possible fname))
 	      (setq fd (compiler-macro-function fname))
 	      (progn
@@ -83,50 +89,36 @@
 	   `(funcall ,can-inline ,@args)))
 	(t (c1call-global fname args))))
 
-(defun c1call-local (fname args)
-  (let ((fun (local-function-ref fname)))
-    (when fun
-      (when (> (length args) si::c-arguments-limit)
-	(return-from c1call-local (unoptimized-long-call `#',fname args)))
-      (let ((lambda (fun-lambda-expression fun)))
-	(when (and lambda
-		   (declared-inline-p fname)
-		   (plusp *inline-max-depth*))
-	  (return-from c1call-local
-	    (let ((*inline-max-depth* (1- *inline-max-depth*)))
-	      `(funcall #',lambda ,@args)))))
-      (let* ((forms (c1args* args))
-	     (return-type (or (get-local-return-type fun) 'T))
-	     (arg-types (get-local-arg-types fun)))
-	  ;; Add type information to the arguments.
-	(when arg-types
-	  (let ((fl nil))
-	    (dolist (form forms)
-	      (cond ((endp arg-types) (push form fl))
-		    (t (push (and-form-type (car arg-types) form (car args)
-					    :safe "In a call to ~a" fname)
-			     fl)
-		       (pop arg-types)
-		       (pop args))))
-	    (setq forms (nreverse fl))))
-	(make-c1form* 'CALL-LOCAL
-                      :sp-change t ; conservative estimate
-                      :side-effects t ; conservative estimate
-                      :type return-type
-		      :args fun forms)))))
+(defun c1call-local (fname fun args)
+  (declare (si::c-local))
+  (let ((lambda (fun-lambda-expression fun)))
+    (when (and lambda
+	       (declared-inline-p fname)
+	       (plusp *inline-max-depth*))
+      (return-from c1call-local
+	(let ((*inline-max-depth* (1- *inline-max-depth*)))
+	  `(funcall #',lambda ,@args)))))
+  (let* ((forms (c1args* args))
+	 (return-type (or (get-local-return-type fun) 'T))
+	 (arg-types (get-local-arg-types fun)))
+    ;; Add type information to the arguments.
+    (when arg-types
+      (let ((fl nil))
+	(dolist (form forms)
+	  (cond ((endp arg-types) (push form fl))
+		(t (push (and-form-type (car arg-types) form (car args)
+					:safe "In a call to ~a" fname)
+			 fl)
+		   (pop arg-types)
+		   (pop args))))
+	(setq forms (nreverse fl))))
+    (make-c1form* 'CALL-LOCAL
+		  :sp-change t ; conservative estimate
+		  :side-effects t ; conservative estimate
+		  :type return-type
+		  :args fun forms)))
 
 (defun c1call-global (fname args)
-#|
-	  ((maybe-optimize-structure-access fname args))
-	  #+clos
-	  ((maybe-optimize-generic-function fname args))
-|#
-  ;; When the function takes many arguments, we will need a
-  ;; special C form to call it. It takes extra code for
-  ;; handling the stack
-  (when (> (length args) si::c-arguments-limit)
-    (return-from c1call-global
-      (unoptimized-long-call `#',fname args)))
   (let* ((forms (c1args* args)))
     ;; If all arguments are constants, try to precompute the function
     ;; value. We abort when the function signals an error or the value
