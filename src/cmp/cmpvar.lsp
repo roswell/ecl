@@ -154,6 +154,14 @@
   (let ((record (cmp-env-search-var name env)))
     (and record (not (var-p record)))))
 
+(defun variable-type-in-env (name &optional (env *cmp-env*))
+  (multiple-value-bind (var ccb clb unw)
+      (cmp-env-search-var name)
+    (cond ((var-p var)
+	   (var-type var))
+	  ((get-sysprop name 'CMP-TYPE))
+	  (t))))
+
 ;;;
 ;;; Check if the symbol has a symbol macro
 ;;;
@@ -391,39 +399,40 @@
     ))
 
 (defun c1psetq (old-args &aux (args nil) (use-psetf nil))
-  (do (var (l old-args (cddr l)))
+  ;; A first pass ensures that none of the assigned locations is
+  ;; a SETF form. Otherwise we have to resort to PSETF.
+  (do ((l old-args))
       ((endp l))
-      (declare (object l))
-      (setq var (car l))
+    (let ((var (pop l)))
       (cmpck (not (symbolp var))
-             "The variable ~s is not a symbol." var)
-      (cmpck (endp (cdr l))
-             "No form was given for the value of ~s." var)
+	     "The variable ~s is not a symbol." var)
+      (cmpck (endp l)
+	   "No form was given for the value of ~s." var)
       (setq var (chk-symbol-macrolet var))
-      (setq args (nconc args (list var (second l))))
+      (setq args (nconc args (list var (pop l))))
       (if (symbolp var)
-	(cmpck (constantp var)
-	       "The constant ~s is being assigned a value." var)
-	(setq use-psetf t)))
+	  (cmpck (constantp var)
+		 "The constant ~s is being assigned a value." var)
+	  (setq use-psetf t))))
   (when use-psetf
     (return-from c1psetq `(psetf ,@args)))
-  (do ((l args (cddr l))
-       (vrefs '())
+  ;; In the second pass we compile the variable references and the
+  ;; assignments. Here we may need to create checked values if the
+  ;; variables have been proclaimed.
+  (do ((vrefs '())
        (forms '()))
-      ((endp l)
+      ((endp args)
        (add-to-set-nodes-of-var-list
 	vrefs (make-c1form* 'PSETQ :type '(MEMBER NIL)
 			    :args (reverse vrefs) (nreverse forms))))
-    (let* ((vref (c1vref (first l)))
-	   (form (c1expr (second l)))
-	   (type (type-and (var-type vref) (c1form-primary-type form))))
-      (unless type
-	(cmpwarn "Type mismatch between ~s and ~s." (var-name vref) form)
-	(setq type T))
-	;; Is this justified????
-	#+nil(setf (c1form-type form) type)
-	(push vref vrefs)
-	(push form forms))))
+    (let* ((vref (c1vref (pop args)))
+	   (type (var-type vref))
+	   (form (pop args)))
+      (push vref vrefs)
+      (push (c1expr (if (trivial-type-p type)
+			form
+			`(checked-value ,form ,type)))
+	    forms))))
 
 (defun c2psetq (vrefs forms &aux (*lcl* *lcl*) (saves nil) (blocks 0))
   ;; similar to inline-args
