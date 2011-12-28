@@ -138,9 +138,6 @@
     (progv . c1progv) ; c1special
     (psetq . c1psetq) ; c1special
 
-    (sys:structure-ref . c1structure-ref) ; c1
-    (sys:structure-set . c1structure-set) ; c1
-
     (load-time-value . c1load-time-value) ; c1
     (si:fset . c1fset) ; c1
 
@@ -246,9 +243,6 @@
 
     (si:fset . c2fset) ; c2
 
-    (sys:structure-ref . c2structure-ref) ; c2
-    (sys:structure-set . c2structure-set) ; c2
-
     (ext:compiler-typecase . c2compiler-typecase)
     (checked-value . c2checked-value)
     ))
@@ -298,7 +292,6 @@
     (init-form . p1trivial)
     (c::with-stack . p1with-stack)
     (c::stack-push-values . p1stack-push-values)
-    (sys::structure-set . p1structure-set)
     (ext:compiler-typecase . p1compiler-typecase)
     (checked-value . p1checked-value)
     ))
