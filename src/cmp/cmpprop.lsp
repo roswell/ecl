@@ -266,13 +266,9 @@ of the occurrences in those lists."
 	    assumptions)))
 
 (defun p1psetq (c1form assumptions vars c1forms)
-  (loop for variable in vars
-     for new-type in (loop with new-type
-                        for form in c1forms
-                        do (multiple-value-setq (new-type assumptions)
-                             (p1propagate form assumptions))
-                        collect new-type)
-     do (type-and (var-type variable) new-type))
+  (loop for form in c1forms
+     do (multiple-value-setq (new-type assumptions)
+	  (p1propagate form assumptions)))
   (values 'null assumptions))
 
 (defun p1with-stack (c1form assumptions body)
@@ -328,16 +324,6 @@ as 2^*tagbody-limit* in the worst cases.")
     (p1propagate body assumptions)
     (values output-type assumptions)))
 
-(defun p1structure-set (c1form assumptions structure symbol vv-index value)
-  (declare (ignore vv-index symbol))
-  (multiple-value-bind (structure-type assumptions)
-      (p1propagate structure assumptions)
-    (declare (ignore structure-type))
-    (multiple-value-bind (slot-type assumptions)
-        (p1propagate value assumptions)
-      (let ((old-slot-type (c1form-primary-type c1form)))
-        (values (type-and old-slot-type slot-type) assumptions)))))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun type-from-array-elt (array &aux name)
@@ -365,7 +351,8 @@ compute it. This version only handles the simplest cases."
                 ((null (rest array))
                  t)
                 (t
-                 (second array)))
+		 (let ((x (second array)))
+		   (if (eq x '*) t x))))
           array))
 
 (def-type-propagator si::aset (fname array-type &rest indices-and-object)
