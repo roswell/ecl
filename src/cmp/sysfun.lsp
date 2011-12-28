@@ -391,11 +391,13 @@
 ;; file num_arith.d
 
 (def-inline 1+ :always (t) t "ecl_one_plus(#0)")
+(def-inline 1+ :always (fixnum) t "ecl_make_integer((#0)+1)")
 (def-inline 1+ :always (double-loat) :double "(double)(#0)+1")
 (def-inline 1+ :always (single-float) :float "(float)(#0)+1")
 (def-inline 1+ :always (fixnum) :fixnum "(#0)+1" :exact-return-type t)
 
 (def-inline 1- :always (t) t "ecl_one_minus(#0)")
+(def-inline 1- :always (fixnum) t "ecl_make_integer((#0)-1)")
 (def-inline 1- :always (double-float) :double "(double)(#0)-1")
 (def-inline 1- :always (single-float) :float "(float)(#0)-1")
 (def-inline 1- :always (fixnum) :fixnum "(#0)-1" :exact-return-type t)
