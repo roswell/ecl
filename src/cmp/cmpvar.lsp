@@ -262,22 +262,23 @@
     (or (eq kind 'global)
         (eq kind 'special))))
 
-(defun c2var (c1form vref)
-  (unwind-exit vref))
+(defun c2var/location (c1form loc)
+  #+(or)
+  (unwind-exit loc)
+  (unwind-exit (precise-loc-type loc (c1form-primary-type c1form))))
 
-(defun c2location (c1form loc) (unwind-exit loc))
-
-(defun wt-var (var &aux (var-loc (var-loc var))) ; ccb
+(defun wt-var (var)
   (declare (type var var))
-  (case (var-kind var)
-    (CLOSURE (wt-env var-loc))
-    (LEXICAL (wt-lex var-loc))
-    ((SPECIAL GLOBAL)
-     (if (safe-compile)
-	 (wt "ecl_symbol_value(" var-loc ")")
-	 (wt "ECL_SYM_VAL(cl_env_copy," var-loc ")")))
-    (t (wt var-loc))
-    ))
+  (let ((var-loc (var-loc var)))
+    (case (var-kind var)
+      (CLOSURE (wt-env var-loc))
+      (LEXICAL (wt-lex var-loc))
+      ((SPECIAL GLOBAL)
+       (if (safe-compile)
+	   (wt "ecl_symbol_value(" var-loc ")")
+	   (wt "ECL_SYM_VAL(cl_env_copy," var-loc ")")))
+      (t (wt var-loc))
+      )))
 
 (defun var-rep-type (var)
   (case (var-kind var)
@@ -371,11 +372,13 @@
       `(setf name ,form)))
 
 (defun c2setq (c1form vref form)
-  (let ((*destination* vref)) (c2expr* form))
+  ;; First comes the assignement
+  (let ((*destination* vref))
+    (c2expr* form))
+  ;; Then the returned value
   (if (eq (c1form-name form) 'LOCATION)
-    (c2location form (c1form-arg 0 form))
-    (unwind-exit vref))
-  )
+      (c2var/location form (c1form-arg 0 form))
+      (unwind-exit vref)))
 
 (defun c1progv (args)
   (check-args-number 'PROGV args 2)

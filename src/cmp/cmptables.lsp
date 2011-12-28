@@ -238,8 +238,8 @@
     (tagbody . c2tagbody) ; c2
     (go . c2go) ; c2
 
-    (var . c2var) ; c2
-    (location . c2location) ; c2
+    (var . c2var/location) ; c2
+    (location . c2var/location) ; c2
     (setq . c2setq) ; c2
     (progv . c2progv) ; c2
     (psetq . c2psetq) ; c2

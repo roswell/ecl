@@ -117,7 +117,7 @@
 		    `(let* ((%checked-value ,value))
 		       (declare (:read-only %checked-value))
 		       ,(expand-type-assertion '%checked-value type *cmp-env* nil)
-		       %checked-value))))
+		       (the ,type %checked-value)))))
 	     (make-c1form* 'CHECKED-VALUE
 			   :type type
 			   :args type form (c1expr full-check)))))))

@@ -27,10 +27,10 @@
   (let* ((form (c1expr (second args)))
 	 (the-type (first args))
 	 type)
-    (setf type (values-type-and the-type (c1form-primary-type form)))
+    (setf type (values-type-and the-type (c1form-type form)))
     (if (values-type-primary-type type)
         (setf (c1form-type form) type)
-      (cmpwarn "Type mismatch was found in ~s." (cons 'THE args)))
+	(cmpwarn "Type mismatch was found in ~s." (cons 'THE args)))
     form))
 
 (defun c1compiler-let (args &aux (symbols nil) (values nil))

@@ -42,6 +42,7 @@
 ;;;	( SINGLE-FLOAT-VALUE single-float-value vv )
 ;;;	( STACK-POINTER index )	retrieve a value from the stack
 ;;;	( SYS:STRUCTURE-REF loc slot-name-vv slot-index )
+;;;     ( THE type location )
 ;;;	( KEYVARS n )
 ;;;	VA-ARG
 ;;;	CL-VA-ARG
@@ -65,6 +66,11 @@
     (TRASH 'TRASH)
     (T 'RETURN)))
 
+(defun precise-loc-type (loc new-type)
+  (if (subtypep (loc-type loc) new-type)
+      loc
+      `(the ,new-type ,loc)))
+
 (defun loc-in-c1form-movable-p (loc)
   "A location that is in a C1FORM and can be moved"
   (cond ((member loc '(t nil))
@@ -80,6 +86,8 @@
 	((atom loc)
 	 (baboon :format-control "Unknown location ~A found in C1FORM"
 		 :format-arguments (list loc)))
+	((eq (first loc) 'THE)
+	 (loc-in-c1form-movable-p (third loc)))
 	((member (setf loc (car loc))
 		 '(VV VV-TEMP FIXNUM-VALUE CHARACTER-VALUE
 		   DOUBLE-FLOAT-VALUE SINGLE-FLOAT-VALUE #+long-float LONG-FLOAT-VALUE
@@ -109,6 +117,8 @@
                (values t value))))
         ((atom loc)
          (values nil nil))
+	((eq (first loc) 'THE)
+	 (loc-immediate-value-p (third loc)))
         ((member (first loc)
                  '(fixnum-value long-float-value
                    double-float-value single-float-value))
@@ -136,6 +146,8 @@
            (when (eq txt :not-found)
              (unknown-location 'wt-loc loc))
            (wt txt)))
+	((stringp loc)
+	 (wt loc))
         ((var-p loc)
          (wt-var loc))
         ((vv-p loc)
@@ -170,11 +182,15 @@
 
 (defun wt-keyvars (i) (wt "keyvars[" i "]"))
 
+(defun wt-the (type loc) (wt-loc loc))
+
 (defun loc-refers-to-special (loc)
   (cond ((var-p loc)
 	 (member (var-kind loc) '(SPECIAL GLOBAL)))
 	((atom loc)
 	 nil)
+	((eq (first loc) 'THE)
+	 (loc-refers-to-special (third loc)))
 	((eq (setf loc (first loc)) 'BIND)
 	 t)
 	((eq loc 'C-INLINE)
@@ -212,6 +228,10 @@
                    (wt-nl) (wt-loc destination) (wt "= ")
                    (wt-coerce-loc (loc-representation-type *destination*) loc)
                    (wt ";"))))))))
+
+(defun set-the-loc (loc type orig-loc)
+  (let ((*destination* orig-loc))
+    (set-loc loc)))
                  
 (defun set-values-loc (loc)
   (cond ((eq loc 'VALUES))
@@ -243,6 +263,8 @@
 	((member (setf name (first loc)) '(CALL CALL-NORMAL CALL-INDIRECT)
 		 :test #'eq)
 	 t)
+	((eq name 'THE)
+	 (loc-with-side-effects-p (third loc)))
 	((eq name 'FDEFINITION)
 	 (policy-global-function-checking))
 	((eq name 'C-INLINE)

@@ -281,6 +281,7 @@
                              (t (rep-type->lisp-type type)))))
 	   (BIND (var-type (second loc)))
 	   (LCL (or (third loc) T))
+	   (THE (second loc))
 	   (otherwise T)))))
 
 (defun loc-representation-type (loc)
@@ -304,6 +305,7 @@
 	   (BIND (var-rep-type (second loc)))
 	   (LCL (lisp-type->rep-type (or (third loc) T)))
            ((JUMP-TRUE JUMP-FALSE) :bool)
+	   (THE (loc-representation-type (third loc)))
 	   (otherwise :object)))))
 
 (defun wt-coerce-loc (dest-rep-type loc)
