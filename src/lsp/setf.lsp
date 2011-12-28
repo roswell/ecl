@@ -47,11 +47,13 @@
       (do-setf-method-expansion name setf-lambda args)))
 
 (defun do-defsetf (access-fn function)
+  (declare (type-assertions nil))
   (if (symbolp function)
       (do-defsetf access-fn #'(lambda (store &rest args) `(,function ,@args ,store)))
       (do-define-setf-method access-fn (setf-method-wrapper access-fn function))))
 
 (defun do-define-setf-method (access-fn function)
+  (declare (type-assertions nil))
   (put-sysprop access-fn 'SETF-METHOD function))
 
 ;;; DEFSETF macro.
@@ -127,6 +129,7 @@ by (DOCUMENTATION 'SYMBOL 'SETF)."
   "Args: (form)
 Returns the 'five gangs' (see DEFINE-SETF-EXPANDER) for PLACE as five values.
 Does not check if the third gang is a single-element list."
+  (declare (check-arguments-type nil))
   ;; Note that macroexpansion of SETF arguments can only be done via
   ;; MACROEXPAND-1 [ANSI 5.1.2.7]
   (cond ((symbolp form)
@@ -340,7 +343,8 @@ Does not check if the third gang is a single-element list."
 
 ;;; The expansion function for SETF.
 (defun setf-expand-1 (place newvalue env)
-  (declare (si::c-local))
+  (declare (si::c-local)
+	   (notinline mapcar))
   (multiple-value-bind (vars vals stores store-form access-form)
       (get-setf-expansion place env)
     (cond ((trivial-setf-form place vars stores store-form access-form)
@@ -396,6 +400,7 @@ Each PLACE may be any one of the following:
   "Syntax: (psetf {place form}*)
 Similar to SETF, but evaluates all FORMs first, and then assigns each value to
 the corresponding PLACE.  Returns NIL."
+  (declare (notinline mapcar))
   (cond ((endp rest) nil)
         ((endp (cdr rest)) (error "~S is an illegal PSETF form." rest))
         ((endp (cddr rest))
@@ -427,6 +432,7 @@ the corresponding PLACE.  Returns NIL."
 Saves the values of PLACE and FORM, and then assigns the value of each PLACE
 to the PLACE on its left.  The rightmost PLACE gets the value of FORM.
 Returns the original value of the leftmost PLACE."
+  (declare (notinline mapcar))
   (do ((r rest (cdr r))
        (pairs nil)
        (stores nil)
@@ -457,6 +463,7 @@ Returns the original value of the leftmost PLACE."
 Saves the values of PLACEs, and then assigns to each PLACE the saved value of
 the PLACE to its right.  The rightmost PLACE gets the value of the leftmost
 PLACE.  Returns NIL."
+  (declare (notinline mapcar))
   (do ((r rest (cdr r))
        (pairs nil)
        (stores nil)
@@ -521,7 +528,9 @@ retrieved by (DOCUMENTATION 'SYMBOL 'FUNCTION)."
             )  )
     ) )
     (setq varlist (nreverse varlist))
-    `(DEFMACRO ,name (&ENVIRONMENT ENV %REFERENCE ,@lambdalist) ,docstring
+    `(DEFMACRO ,name (&ENVIRONMENT ENV %REFERENCE ,@lambdalist)
+       ,@(and docstring (list docstring))
+       (DECLARE (NOTINLINE MAPCAR))
        (MULTIPLE-VALUE-BIND (VARS VALS STORES SETTER GETTER)
            (GET-SETF-EXPANSION %REFERENCE ENV)
 	 (LET ((ALL-VARS (MAPCAR #'(LAMBDA (V) (LIST (GENSYM) V)) (LIST* ,@varlist ,restvar))))
@@ -585,6 +594,7 @@ retrieved by (DOCUMENTATION 'SYMBOL 'FUNCTION)."
   "Syntax: (remf place form)
 Removes the property specified by FORM from the property list stored in PLACE.
 Returns T if the property list had the specified property; NIL otherwise."
+  (declare (notinline mapcar))
   (multiple-value-bind (vars vals stores store-form access-form)
       (get-setf-expansion place env)
     (let ((s (gensym)))
@@ -607,6 +617,7 @@ Decrements the value of PLACE by the value of FORM.  FORM defaults to 1.")
   "Syntax: (push form place)
 Evaluates FORM, conses the value of FORM to the value stored in PLACE, and
 makes it the new value of PLACE.  Returns the new value of PLACE."
+  (declare (notinline mapcar))
   (multiple-value-bind (vars vals stores store-form access-form)
       (get-setf-expansion place env)
     (when (trivial-setf-form place vars stores store-form access-form)
@@ -629,6 +640,7 @@ does nothing.  Else, conses the value onto the list and makes the result the
 new value of PLACE.  Returns NIL.  KEYWORD-FORMs and VALUE-FORMs are used to
 check if the value of FORM is already in PLACE as if their values are passed
 to MEMBER."
+  (declare (notinline mapcar))
   (multiple-value-bind (vars vals stores store-form access-form)
       (get-setf-expansion place env)
     (when (trivial-setf-form place vars stores store-form access-form)
@@ -649,6 +661,7 @@ to MEMBER."
   "Syntax: (pop place)
 Gets the cdr of the value stored in PLACE and makes it the new value of PLACE.
 Returns the car of the old value in PLACE."
+  (declare (notinline mapcar))
   (multiple-value-bind (vars vals stores store-form access-form)
       (get-setf-expansion place env)
     (let ((store-var (first stores)))

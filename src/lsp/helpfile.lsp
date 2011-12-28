@@ -60,6 +60,7 @@
       path)))
 
 (defun search-help-file (key path &aux (pos 0))
+  (declare (ext:type-assertions nil))
   (when (not (or (stringp key) (symbolp key)))
     (return-from search-help-file nil))
   (labels ((bin-search (file start end &aux (delta 0) (middle 0) sym)

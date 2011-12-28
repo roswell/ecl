@@ -759,9 +759,9 @@ if not possible."
 ;; us in recognizing these supertypes.
 ;;
 (defun update-types (type-mask new-tag)
+  (declare (ext:assume-no-errors))
   (maybe-save-types)
   (dolist (i *elementary-types*)
-    (declare (cons i))
     (unless (zerop (logand (cdr i) type-mask))
       (setf (cdr i) (logior new-tag (cdr i))))))
 
@@ -851,7 +851,8 @@ if not possible."
 	   (number-member-type object)))))
 
 (defun simple-member-type (object)
-  (declare (si::c-local))
+  (declare (si::c-local)
+	   (ext:assume-no-errors))
   (let* ((tag (new-type-tag)))
     (maybe-save-types)
     (setq *member-types* (acons object tag *member-types*))
@@ -871,7 +872,8 @@ if not possible."
 	(register-interval-type type))))
 
 (defun push-type (type tag)
-  (declare (si::c-local))
+  (declare (si::c-local)
+	   (ext:assume-no-errors))
   (dolist (i *member-types*)
     (declare (cons i))
     (when (typep (car i) type)
@@ -1264,7 +1266,8 @@ if not possible."
 	     (push-type name tag))))))
 
 (defun extend-type-tag (tag minimal-supertype-tag)
-  (declare (si::c-local))
+  (declare (si::c-local)
+	   (ext:assume-no-errors))
   (dolist (type *elementary-types*)
     (let ((other-tag (cdr type)))
       (when (zerop (logandc2 minimal-supertype-tag other-tag))
@@ -1403,9 +1406,8 @@ if not possible."
     (return-from subtypep (values (subclassp t1 t2) t)))
   ;; Finally, cached results.
   (let* ((cache *subtypep-cache*)
-	 (hash (logand (hash-eql t1 t2) 255))
+	 (hash (the (integer 0 255) (logand (hash-eql t1 t2) 255)))
 	 (elt (aref cache hash)))
-    (declare (type (integer 0 255) hash))
     (when (and elt (eq (caar elt) t1) (eq (cdar elt) t2))
       (setf elt (cdr elt))
       (return-from subtypep (values (car elt) (cdr elt))))

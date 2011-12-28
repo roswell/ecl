@@ -123,7 +123,7 @@ VARIABLE doc and can be retrieved by (DOCUMENTATION 'SYMBOL 'VARIABLE)."
        ',name)))
 
 (defun compiler-macro-function (name &optional env)
-  (declare (ignore env))
+  (declare (ignorable env))
   (get-sysprop name 'sys::compiler-macro))
 
 ;;; Each of the following macros is also defined as a special form,
@@ -246,11 +246,10 @@ FORM returns no value, NIL."
   (do ((vl vars (cdr vl))
        (sym (gensym))
        (forms nil)
-       (n 0 (1+ n)))
+       (n 0 (the fixnum (1+ n))))
       ((endp vl) `(LET ((,sym (MULTIPLE-VALUE-LIST ,form))) ,@forms))
-      (declare (fixnum n))
-      (push `(SETQ ,(car vl) (NTH ,n ,sym)) forms))
-  )
+    (declare (fixnum n))
+    (push `(SETQ ,(car vl) (NTH ,n ,sym)) forms)))
 
 ;; We do not use this macroexpanso, and thus we do not care whether
 ;; it is efficiently compiled by ECL or not.
@@ -260,6 +259,7 @@ FORM returns no value, NIL."
 Evaluates INIT and binds the N-th VAR to the N-th value of INIT or, if INIT
 returns less than N values, to NIL.  Then evaluates FORMs, and returns all
 values of the last FORM.  If no FORM is given, returns NIL."
+  (declare (notinline mapcar))
   `(multiple-value-call #'(lambda (&optional ,@(mapcar #'list vars)) ,@body) ,form))
 
 (defun while-until (test body jmp-op)
