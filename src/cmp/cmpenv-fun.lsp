@@ -25,19 +25,6 @@
 ;;; The valid return type declaration is:
 ;;;	(( VALUES {type}* )) or ( {type}* ).
 
-(defun function-return-type (return-types)
-  (cond ((endp return-types) t)
-        ((and (consp (car return-types))
-              (eq (caar return-types) 'VALUES))
-         (cond ((not (endp (cdr return-types)))
-                (warn "The function return types ~s is illegal." return-types)
-                t)
-               ((or (endp (cdar return-types))
-                    (member (cadar return-types) '(&optional &rest &key)))
-                t)
-               (t (car return-types))))
-        (t (car return-types))))
-
 (defun proclaim-function (fname decl)
   (if (si:valid-function-name-p fname)
       (let* ((arg-types '*)
@@ -49,10 +36,11 @@
 	      (t (warn "The function proclamation ~s ~s is not valid."
 		       fname decl)))
 	(cond ((null l))
-	      ((and (consp l) (null (rest l)))
-	       (setf return-types (function-return-type l)))
-	      (t (warn "The function proclamation ~s ~s is not valid."
-		       fname decl)))
+	      ((or (atom l) (rest l))
+	       (warn "The function proclamation ~s ~s is not valid."
+		     fname decl))
+	      (t
+	       (setf return-types (first l))))
         (when (eq arg-types '())
           (setf arg-types '(&optional)))
 	(if (eq arg-types '*)
@@ -64,12 +52,12 @@
 	    (put-sysprop fname 'PROCLAIMED-RETURN-TYPE return-types)))
       (warn "The function proclamation ~s ~s is not valid." fname decl)))
 
-(defun add-function-declaration (fname arg-types return-types &optional (env *cmp-env*))
+(defun add-function-declaration (fname ftype &optional (env *cmp-env*))
   (if (si::valid-function-name-p fname)
       (let ((fun (cmp-env-search-function fname)))
 	(if (functionp fun)
 	    (warn "Found function declaration for local macro ~A" fname)
-            (cmp-env-register-ftype fname (list arg-types return-types) env)))
+            (cmp-env-register-ftype fname ftype env)))
       (warn "In (DECLARE (FTYPE ...)): ~s is not a valid function name" fname))
   env)
 

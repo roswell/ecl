@@ -132,8 +132,7 @@ special variable declarations, as these have been extracted before."
              (si::normalize-type (second decl))
            (if (eq type-name 'FUNCTION)
                (dolist (v (cddr decl))
-                 (setf env (add-function-declaration v (first args)
-                                                     (rest args) env)))
+                 (setf env (add-function-declaration v args env)))
                (cmpwarn "In an FTYPE declaration, found ~A which is not a function type."
                         (second decl)))))
      env)
