@@ -16,7 +16,7 @@
 
 (defpackage "C"
   (:nicknames "COMPILER")
-  (:use "FFI" "CL" #+threads "MP")
+  (:use "FFI" "EXT" #+threads "MP" "CL")
   (:export "*COMPILER-BREAK-ENABLE*"
 	   "*COMPILE-PRINT*"
 	   "*COMPILE-TO-LINKING-CALL*"

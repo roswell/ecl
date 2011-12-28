@@ -289,7 +289,7 @@
 (defun delete (which sequence &key test test-not (start 0) end
                from-end count key)
   (declare (optimize (speed 3) (safety 1) (debug 0))
-           (ext:no-check-arguments-type))
+           (ext:check-arguments-type nil))
   (cond ((listp sequence)
          (if from-end
              (let ((l (length sequence)))

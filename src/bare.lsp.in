@@ -17,7 +17,7 @@
 
 (sys:*make-constant '+ecl-optimization-settings+ 
   '((optimize (safety 2) (speed 1) (debug 1) (space 1))
-    (ext:no-check-arguments-type)))
+    (ext:check-arguments-type nil)))
 (sys:*make-constant '+ecl-unsafe-declarations+
   '(optimize (safety 0) (speed 3) (debug 0) (space 0)))
 (sys:*make-constant '+ecl-safe-declarations+
