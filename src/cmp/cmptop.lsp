@@ -73,9 +73,8 @@
                 (*compile-file-position* (c1form-file-position form))
                 (*current-toplevel-form* (c1form-form form))
                 (*current-form* (c1form-form form))
-                (*current-c2form* form)
                 (*cmp-env* (c1form-env form)))
-            (apply def (c1form-args form)))
+            (apply def form (c1form-args form)))
           (cmperr "Unhandled T2FORM found at the toplevel:~%~4I~A"
                   form)))))
 
@@ -299,10 +298,10 @@ return f2;
 	  (t
 	   (c1progn 'NIL)))))
 
-(defun t2compiler-let (symbols values body)
+(defun t2compiler-let (c1form symbols values body)
   (progv symbols values (c2expr body)))
 
-(defun t2progn (args)
+(defun t2progn (c1form args)
   (mapc #'t2expr args))
 
 (defun exported-fname (name)
@@ -510,7 +509,7 @@ return f2;
 (defun p1ordinary (c1form assumptions form)
   (p1propagate form assumptions))
 
-(defun t2ordinary (form)
+(defun t2ordinary (c1form form)
   (let* ((*exit* (next-label))
 	 (*unwind-exit* (list *exit*))
          (*destination* 'TRASH))
@@ -554,19 +553,19 @@ return f2;
 	   (setf loc (add-object (cmp-eval form)))))
     (make-c1form* 'LOCATION :type t :args loc)))
 
-(defun t2load-time-value (vv-loc form)
+(defun t2load-time-value (c1form vv-loc form)
   (let* ((*exit* (next-label)) (*unwind-exit* (list *exit*))
          (*destination* vv-loc))
     (c2expr form)
     (wt-label *exit*)))
 
-(defun t2make-form (vv-loc form)
+(defun t2make-form (c1form vv-loc form)
   (let* ((*exit* (next-label)) (*unwind-exit* (list *exit*))
          (*destination* vv-loc))
     (c2expr form)
     (wt-label *exit*)))
 
-(defun t2init-form (vv-loc form)
+(defun t2init-form (c1form vv-loc form)
   (let* ((*exit* (next-label)) (*unwind-exit* (list *exit*))
          (*destination* 'TRASH))
     (c2expr form)
@@ -811,7 +810,7 @@ return f2;
 (defun p1fset (c1form assumptions fun fname macro pprint c1forms)
   (p1propagate (fun-lambda fun) assumptions))
 
-(defun c2fset (fun fname macro pprint c1forms)
+(defun c2fset (c1form fun fname macro pprint c1forms)
   (when (fun-no-entry fun)
     (wt-nl "(void)0; /* No entry created for "
 	   (format nil "~A" (fun-name fun))
@@ -822,7 +821,7 @@ return f2;
   (unless (and (not (fun-closure fun))
 	       (eq *destination* 'TRASH))
     (return-from c2fset
-      (c2call-global 'SI:FSET c1forms (c1form-primary-type (second c1forms)))))
+      (c2call-global c1form 'SI:FSET c1forms)))
   (let ((*inline-blocks* 0)
 	(loc (data-empty-loc)))
     (push (list loc fname fun) *global-cfuns-array*)

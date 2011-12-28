@@ -68,7 +68,7 @@
 	  (t
 	   (cmperr "Malformed function name: ~A" fun)))))
 
-(defun c2funcall (form args)
+(defun c2funcall (c1form form args)
   (let* ((*inline-blocks* 0)
          (*temp* *temp*)
          (form-type (c1form-primary-type form))
@@ -83,13 +83,13 @@
 ;;;   ARGS is the list of arguments
 ;;;   LOC is either NIL or the location of the function object
 ;;;
-(defun c2call-global (fname args &optional (return-type T))
+(defun c2call-global (c1form fname args)
   (let ((fun (find fname *global-funs* :key #'fun-name :test #'same-fname-p)))
     (when (and fun (c2try-tail-recursive-call fun args))
       (return-from c2call-global))
     (let* ((*inline-blocks* 0)
            (*temp* *temp*))
-      (unwind-exit (call-global-loc fname fun args return-type
+      (unwind-exit (call-global-loc fname fun args (c1form-type c1form)
                                     (loc-type *destination*)))
       (close-inline-blocks))))
 

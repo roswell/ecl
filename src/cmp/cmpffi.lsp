@@ -583,7 +583,7 @@
 	       (wt "cl_env_copy->nvalues=" (length output-vars) ";")
 	       'VALUES))))))
 
-(defun c2c-inline (arguments &rest rest)
+(defun c2c-inline (c1form arguments &rest rest)
   (let ((*inline-blocks* 0)
         (*temp* *temp*))
     (unwind-exit (apply #'produce-inline-loc (inline-args arguments) rest))

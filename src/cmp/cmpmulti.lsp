@@ -58,7 +58,7 @@
 (defun c1values (args)
   (make-c1form* 'VALUES :args (c1args* args)))
 
-(defun c2values (forms)
+(defun c2values (c1form forms)
   (when (and (eq *destination* 'RETURN-OBJECT)
              (rest forms)
              (consp *current-form*)
@@ -224,7 +224,7 @@
 	(when labels (wt-label label))))
     output))
 
-(defun c2multiple-value-setq (vars form)
+(defun c2multiple-value-setq (c1form vars form)
   (multiple-value-bind (min-values max-values)
       (c1form-values-number form)
     (unwind-exit 
@@ -257,7 +257,7 @@
                       :local-vars vars
                       :args vars init-form body)))))
 
-(defun c2multiple-value-bind (vars init-form body)
+(defun c2multiple-value-bind (c1form vars init-form body)
   ;; 0) Compile the form which is going to give us the values
   (let ((*destination* 'VALUES)) (c2expr* init-form))
 

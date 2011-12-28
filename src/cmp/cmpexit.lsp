@@ -204,7 +204,8 @@
     (let* ((*destination* 'TRASH)
 	   (*exit* (next-label))
 	   (*unwind-exit* (cons *exit* *unwind-exit*)))
-      (c2psetq (cdr *tail-recursion-info*) args)
+      (c2psetq nil ;; We do not provide any C2FORM
+	       (cdr *tail-recursion-info*) args)
       (wt-label *exit*))
     (unwind-no-exit 'TAIL-RECURSION-MARK)
     (wt-nl "goto TTL;")

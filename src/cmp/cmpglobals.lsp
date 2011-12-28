@@ -38,7 +38,6 @@
 ;;;
 (defvar *current-form* '|compiler preprocess|)
 (defvar *current-toplevel-form* '|compiler preprocess|)
-(defvar *current-c2form* nil)
 (defvar *compile-file-position* -1)
 (defvar *first-error* t)
 (defvar *active-protection* nil)

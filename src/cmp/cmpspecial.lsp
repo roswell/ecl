@@ -52,7 +52,7 @@
   (setq args (progv symbols values (c1progn (cdr args))))
   (make-c1form 'COMPILER-LET args symbols values args))
 
-(defun c2compiler-let (symbols values body)
+(defun c2compiler-let (c1form symbols values body)
   (progv symbols values (c2expr body)))
 
 (defun c1function (args &aux fd)
@@ -82,7 +82,7 @@
 	       (make-c1form 'FUNCTION lambda-form 'CLOSURE lambda-form funob))))
 	  (t (cmperr "The function ~s is illegal." fun)))))
 
-(defun c2function (kind funob fun)
+(defun c2function (c1form kind funob fun)
   (case kind
     (GLOBAL
      (unwind-exit (list 'FDEFINITION fun)))

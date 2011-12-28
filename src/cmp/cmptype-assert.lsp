@@ -32,7 +32,7 @@
 			:type (reduce #'type-or types)
 			:args var expressions)))))
 
-(defun c2compiler-typecase (var expressions)
+(defun c2compiler-typecase (c1form var expressions)
   (loop with var-type = (var-type var)
      for (type form) in expressions
      when (or (member type '(t otherwise))
@@ -122,7 +122,7 @@
 			   :type type
 			   :args type form (c1expr full-check)))))))
 
-(defun c2checked-value (type value let-form)
+(defun c2checked-value (c1form type value let-form)
   (c2expr (if (subtypep (c1form-primary-type value) type)
 	      value
 	      let-form)))      

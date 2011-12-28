@@ -168,6 +168,8 @@
     (value0 . set-value0-loc)
     (return . set-return-loc)
     (trash . set-trash-loc)
+
+    (the . set-the-loc)
     ))
 
 (defconstant +wt-loc-dispatch-alist+
@@ -187,6 +189,7 @@
     (character-value . wt-character)
     (value . wt-value)
     (keyvars . wt-keyvars)
+    (the . wt-the)
 
     (fdefinition . wt-fdefinition)
     (make-cclosure . wt-make-closure)
@@ -222,8 +225,6 @@
 
     (let* . c2let*)
 
-    (multiple-value-call . c2multiple-value-call) ; c2
-    (multiple-value-prog1 . c2multiple-value-prog1) ; c2
     (values . c2values) ; c2
     (multiple-value-setq . c2multiple-value-setq) ; c2
     (multiple-value-bind . c2multiple-value-bind) ; c2

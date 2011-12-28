@@ -190,7 +190,6 @@
           (*compile-file-position* (c1form-file-position ,form))
           (*current-toplevel-form* (c1form-toplevel-form ,form))
           (*current-form* (c1form-form ,form))
-          (*current-c2form* ,form)
           (*cmp-env* (c1form-env ,form)))
      ,@body))
 

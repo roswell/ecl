@@ -159,11 +159,7 @@
     (let* ((name (c1form-name form))
            (args (c1form-args form))
            (dispatch (gethash name *c2-dispatch-table*)))
-      (if (or (eq name 'LET) (eq name 'LET*))
-          (let ((*volatile* (c1form-volatile* form)))
-            (declare (special *volatile*))
-            (apply dispatch args))
-          (apply dispatch args)))))
+      (apply dispatch form args))))
 
 (defun c2expr* (form)
   (let* ((*exit* (next-label))
@@ -190,7 +186,7 @@
 		  (output-type (and output-form (c1form-type output-form))))
 	     (make-c1form* 'PROGN :type output-type :args fl)))))
 
-(defun c2progn (forms)
+(defun c2progn (c1form forms)
   ;; c1progn ensures that the length of forms is not less than 1.
   (do ((l forms (cdr l))
        (lex *lex*))

@@ -105,7 +105,7 @@ of the occurrences in those lists."
 			     values-type))
     (values values-type assumptions)))
 
-(defun p1call-global (c1form assumptions fname args &optional (return-type t))
+(defun p1call-global (c1form assumptions fname args)
   (loop for v in args
      do (multiple-value-bind (arg-type local-ass)
             (p1propagate v assumptions)
@@ -116,7 +116,7 @@ of the occurrences in those lists."
 		       type (c1form-type c1form))
                (return (values type assumptions)))))
 
-(defun p1call-local (c1form assumptions fun args &optional (return-type t))
+(defun p1call-local (c1form assumptions fun args)
   (loop for v in args
      do (multiple-value-bind (arg-type local-ass)
             (p1propagate v assumptions)

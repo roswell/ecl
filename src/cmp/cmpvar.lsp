@@ -262,9 +262,10 @@
     (or (eq kind 'global)
         (eq kind 'special))))
 
-(defun c2var (vref) (unwind-exit vref))
+(defun c2var (c1form vref)
+  (unwind-exit vref))
 
-(defun c2location (loc) (unwind-exit loc))
+(defun c2location (c1form loc) (unwind-exit loc))
 
 (defun wt-var (var &aux (var-loc (var-loc var))) ; ccb
   (declare (type var var))
@@ -284,28 +285,28 @@
     (t (var-kind var))))
 
 (defun set-var (loc var &aux (var-loc (var-loc var))) ;  ccb
-  (if (var-p var)
-    (case (var-kind var)
-      (CLOSURE
-       (wt-nl)(wt-env var-loc)(wt "= ")
-       (wt-coerce-loc (var-rep-type var) loc)
-       (wt #\;))
-      (LEXICAL
-       (wt-nl)(wt-lex var-loc)(wt "= ")
-       (wt-coerce-loc (var-rep-type var) loc)
-       (wt #\;))
-      ((SPECIAL GLOBAL)
-       (if (safe-compile)
-	   (wt-nl "cl_set(" var-loc ",")
-	   (wt-nl "ECL_SETQ(cl_env_copy," var-loc ","))
-       (wt-coerce-loc (var-rep-type var) loc)
-       (wt ");"))
-      (t
-       (wt-nl var-loc "= ")
-       (wt-coerce-loc (var-rep-type var) loc)
-       (wt #\;))
-    )
-    (baboon)))
+  (unless (var-p var)
+    (baboon))
+  (case (var-kind var)
+    (CLOSURE
+     (wt-nl)(wt-env var-loc)(wt "= ")
+     (wt-coerce-loc (var-rep-type var) loc)
+     (wt #\;))
+    (LEXICAL
+     (wt-nl)(wt-lex var-loc)(wt "= ")
+     (wt-coerce-loc (var-rep-type var) loc)
+     (wt #\;))
+    ((SPECIAL GLOBAL)
+     (if (safe-compile)
+	 (wt-nl "cl_set(" var-loc ",")
+	 (wt-nl "ECL_SETQ(cl_env_copy," var-loc ","))
+     (wt-coerce-loc (var-rep-type var) loc)
+     (wt ");"))
+    (t
+     (wt-nl var-loc "= ")
+     (wt-coerce-loc (var-rep-type var) loc)
+     (wt #\;))
+    ))
 
 (defun wt-lex (lex)
   (if (consp lex)
@@ -369,10 +370,10 @@
 					     :args name form)))
       `(setf name ,form)))
 
-(defun c2setq (vref form)
+(defun c2setq (c1form vref form)
   (let ((*destination* vref)) (c2expr* form))
   (if (eq (c1form-name form) 'LOCATION)
-    (c2location (c1form-arg 0 form))
+    (c2location form (c1form-arg 0 form))
     (unwind-exit vref))
   )
 
@@ -384,7 +385,7 @@
     (make-c1form* 'PROGV :type (c1form-type forms)
 		  :args symbols values forms)))
 
-(defun c2progv (symbols values body)
+(defun c2progv (c1form symbols values body)
   (let* ((*lcl* *lcl*)
          (lcl (next-lcl))
          (sym-loc (make-lcl-var))
@@ -434,7 +435,7 @@
 			`(checked-value ,form ,type)))
 	    forms))))
 
-(defun c2psetq (vrefs forms &aux (*lcl* *lcl*) (saves nil) (blocks 0))
+(defun c2psetq (c1form vrefs forms &aux (*lcl* *lcl*) (saves nil) (blocks 0))
   ;; similar to inline-args
   (do ((vrefs vrefs (cdr vrefs))
        (forms forms (cdr forms))

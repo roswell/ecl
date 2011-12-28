@@ -241,8 +241,9 @@
     (baboon :format-control "In REPLACEABLE, variable ~A not found. Form:~%~A"
             :format-arguments (list (var-name var) *current-form*))))
 
-(defun c2let* (vars forms body
+(defun c2let* (c1form vars forms body
 	       &aux
+	       (*volatile* (c1form-volatile* c1form))
 	       (*unwind-exit* *unwind-exit*)
 	       (*env* *env*)
 	       (*env-lvl* *env-lvl*)

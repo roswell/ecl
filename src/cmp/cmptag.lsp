@@ -123,7 +123,7 @@
   (make-c1form* 'TAGBODY :local-vars (list tag-var)
 		:args tag-var body))
 
-(defun c2tagbody (tag-loc body)
+(defun c2tagbody (c1form tag-loc body)
   (declare (type var tag-loc))
   (if (null (var-kind tag-loc))
       ;; only local goto's
@@ -209,7 +209,7 @@
 	(incf (tag-ref tag))
 	(add-to-read-nodes var (make-c1form* 'GO :args tag (or ccb clb unw)))))))
 
-(defun c2go (tag nonlocal)
+(defun c2go (c1form tag nonlocal)
   (if nonlocal
       (let ((var (tag-var tag)))
 	(wt-nl "cl_go(" var ",MAKE_FIXNUM(" (tag-index tag) "));"))

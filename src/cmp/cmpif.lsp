@@ -81,7 +81,7 @@
      ,@body
      (wt-label ,label))))
 
-(defun c2if (fmla form1 form2)
+(defun c2if (c1form fmla form1 form2)
   ;; FIXME! Optimize when FORM1 or FORM2 are constants
   (with-exit-label (normal-exit)
     (with-exit-label (false-label)
@@ -105,7 +105,7 @@
                  (:object '((:object) (:object) "Null(#0)?Ct:Cnil" nil t))
                  (otherwise (return-from negate-argument nil)))))))
 
-(defun c2fmla-not (arg)
+(defun c2fmla-not (c1form arg)
   (let ((dest *destination*))
     (cond ((and (consp dest) (eq (car dest) 'JUMP-TRUE))
            (let ((*destination* `(JUMP-FALSE ,@(cdr dest))))
@@ -129,7 +129,7 @@
   (let ((dest *destination*))
     (and (consp dest) (eq (car dest) 'JUMP-FALSE))))
 
-(defun c2fmla-and (butlast last)
+(defun c2fmla-and (c1form butlast last)
   (if (jump-false-destination?)
       (progn
 	(mapc #'c2expr* butlast)
@@ -141,7 +141,7 @@
 	  (c2expr last))
 	(unwind-exit nil))))
 
-(defun c2fmla-or (butlast last)
+(defun c2fmla-or (c1form butlast last)
   (cond ((jump-true-destination?)
 	 (mapc #'c2expr* butlast)
 	 (c2expr last))

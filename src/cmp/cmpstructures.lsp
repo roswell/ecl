@@ -79,7 +79,7 @@
 			    nil)))
 	(c1call-global 'sys:structure-ref args))))
 
-(defun c2structure-ref (form name-vv index unsafe)
+(defun c2structure-ref (c1form form name-vv index unsafe)
   (let* ((*inline-blocks* 0)
          (*temp* *temp*)
 	 (loc (first (coerce-locs (inline-args (list form))))))
@@ -125,8 +125,7 @@
 		      :args x (add-symbol name) (third args) y))
       (c1call-global 'SYS:STRUCTURE-SET args)))
 
-(defun c2structure-set (x name-vv index y
-			  &aux locs (*inline-blocks* 0))
+(defun c2structure-set (c1form x name-vv index y)
   ;; the third argument here *c1t* is just a hack to ensure that
   ;; a variable is introduced for y if it is an expression with side effects
   (let* ((*inline-blocks* 0)

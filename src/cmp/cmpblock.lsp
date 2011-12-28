@@ -44,7 +44,7 @@
 			:args blk body)
 	  body))))
 
-(defun c2block (blk body)
+(defun c2block (c1form blk body)
   (if (plusp (var-ref (blk-var blk)))
       (let* ((blk-var (blk-var blk))
 	     (*env-lvl* *env-lvl*))
@@ -103,7 +103,7 @@
 	  (when var (add-to-read-nodes var output))
 	  output)))))
 
-(defun c2return-from (blk type val var)
+(defun c2return-from (c1form blk type val var)
   (declare (ignore var))
   (case type
     (CCB
