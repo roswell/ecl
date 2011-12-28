@@ -93,10 +93,11 @@
 
 (defun maybe-add-policy (decl &optional (env *cmp-env*))
   (when (and (consp decl)
-             (eql (list-length decl) 1)
+             (<= (list-length decl) 2)
              (gethash (first decl) *optimization-quality-switches*))
     (let* ((old (cmp-env-policy env))
-           (new (compute-policy (list (first decl)) old)))
+	   (flag (if (or (endp (rest decl)) (second decl)) 3 0))
+           (new (compute-policy (list (list (first decl) flag)) old)))
       (cmp-env-add-declaration 'optimization (list new) env))))
 
 (defun add-default-optimizations (env)
