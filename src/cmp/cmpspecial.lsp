@@ -53,6 +53,7 @@
   (make-c1form 'COMPILER-LET args symbols values args))
 
 (defun c2compiler-let (c1form symbols values body)
+  (declare (ignore c1form))
   (progv symbols values (c2expr body)))
 
 (defun c1function (args &aux fd)
@@ -83,6 +84,7 @@
 	  (t (cmperr "The function ~s is illegal." fun)))))
 
 (defun c2function (c1form kind funob fun)
+  (declare (ignore c1form))
   (case kind
     (GLOBAL
      (unwind-exit (list 'FDEFINITION fun)))

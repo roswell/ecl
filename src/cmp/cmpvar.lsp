@@ -372,6 +372,7 @@
       `(setf name ,form)))
 
 (defun c2setq (c1form vref form)
+  (declare (ignore c1form))
   ;; First comes the assignement
   (let ((*destination* vref))
     (c2expr* form))
@@ -389,6 +390,7 @@
 		  :args symbols values forms)))
 
 (defun c2progv (c1form symbols values body)
+  (declare (ignore c1form))
   (let* ((*lcl* *lcl*)
          (lcl (next-lcl))
          (sym-loc (make-lcl-var))
@@ -439,6 +441,7 @@
 	    forms))))
 
 (defun c2psetq (c1form vrefs forms &aux (*lcl* *lcl*) (saves nil) (blocks 0))
+  (declare (ignore c1form))
   ;; similar to inline-args
   (do ((vrefs vrefs (cdr vrefs))
        (forms forms (cdr forms))

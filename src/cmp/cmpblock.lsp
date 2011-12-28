@@ -45,6 +45,7 @@
 	  body))))
 
 (defun c2block (c1form blk body)
+  (declare (ignore c1form))
   (if (plusp (var-ref (blk-var blk)))
       (let* ((blk-var (blk-var blk))
 	     (*env-lvl* *env-lvl*))
@@ -104,7 +105,7 @@
 	  output)))))
 
 (defun c2return-from (c1form blk type val var)
-  (declare (ignore var))
+  (declare (ignore var c1form))
   (case type
     (CCB
      (let ((*destination* 'VALUES)) (c2expr* val))

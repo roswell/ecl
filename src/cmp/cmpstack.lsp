@@ -36,6 +36,7 @@
 		    :args body)))
 
 (defun c2with-stack (c1form body)
+  (declare (ignore c1form))
   (let* ((new-destination (tmp-destination *destination*))
 	 (*temp* *temp*))
     (wt-nl "{ struct ecl_stack_frame _ecl_inner_frame_aux;")
@@ -66,6 +67,7 @@
 				     :one-liner t :side-effects t)))))
 
 (defun c2stack-push-values (c1form form push-statement)
+  (declare (ignore c1form))
   (let ((*destination* 'VALUES))
     (c2expr* form))
   (c2expr push-statement))

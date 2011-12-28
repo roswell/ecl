@@ -299,9 +299,11 @@ return f2;
 	   (c1progn 'NIL)))))
 
 (defun t2compiler-let (c1form symbols values body)
+  (declare (ignore c1form))
   (progv symbols values (c2expr body)))
 
 (defun t2progn (c1form args)
+  (declare (ignore c1form))
   (mapc #'t2expr args))
 
 (defun exported-fname (name)
@@ -510,6 +512,7 @@ return f2;
   (p1propagate form assumptions))
 
 (defun t2ordinary (c1form form)
+  (declare (ignore c1form))
   (let* ((*exit* (next-label))
 	 (*unwind-exit* (list *exit*))
          (*destination* 'TRASH))
@@ -554,18 +557,21 @@ return f2;
     (make-c1form* 'LOCATION :type t :args loc)))
 
 (defun t2load-time-value (c1form vv-loc form)
+  (declare (ignore c1form))
   (let* ((*exit* (next-label)) (*unwind-exit* (list *exit*))
          (*destination* vv-loc))
     (c2expr form)
     (wt-label *exit*)))
 
 (defun t2make-form (c1form vv-loc form)
+  (declare (ignore c1form))
   (let* ((*exit* (next-label)) (*unwind-exit* (list *exit*))
          (*destination* vv-loc))
     (c2expr form)
     (wt-label *exit*)))
 
 (defun t2init-form (c1form vv-loc form)
+  (declare (ignore c1form))
   (let* ((*exit* (next-label)) (*unwind-exit* (list *exit*))
          (*destination* 'TRASH))
     (c2expr form)

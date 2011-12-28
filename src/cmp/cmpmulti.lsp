@@ -59,6 +59,7 @@
   (make-c1form* 'VALUES :args (c1args* args)))
 
 (defun c2values (c1form forms)
+  (declare (ignore c1form))
   (when (and (eq *destination* 'RETURN-OBJECT)
              (rest forms)
              (consp *current-form*)
@@ -225,6 +226,7 @@
     output))
 
 (defun c2multiple-value-setq (c1form vars form)
+  (declare (ignore c1form))
   (multiple-value-bind (min-values max-values)
       (c1form-values-number form)
     (unwind-exit 
@@ -258,6 +260,7 @@
                       :args vars init-form body)))))
 
 (defun c2multiple-value-bind (c1form vars init-form body)
+  (declare (ignore c1form))
   ;; 0) Compile the form which is going to give us the values
   (let ((*destination* 'VALUES)) (c2expr* init-form))
 

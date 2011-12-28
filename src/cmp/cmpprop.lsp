@@ -267,7 +267,7 @@ of the occurrences in those lists."
 
 (defun p1psetq (c1form assumptions vars c1forms)
   (loop for form in c1forms
-     do (multiple-value-setq (new-type assumptions)
+     do (multiple-value-bind (new-type assumptions)
 	  (p1propagate form assumptions)))
   (values 'null assumptions))
 

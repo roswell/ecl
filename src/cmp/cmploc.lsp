@@ -182,7 +182,9 @@
 
 (defun wt-keyvars (i) (wt "keyvars[" i "]"))
 
-(defun wt-the (type loc) (wt-loc loc))
+(defun wt-the (type loc)
+  (declare (ignore type))
+  (wt-loc loc))
 
 (defun loc-refers-to-special (loc)
   (cond ((var-p loc)
@@ -230,6 +232,7 @@
                    (wt ";"))))))))
 
 (defun set-the-loc (loc type orig-loc)
+  (declare (ignore type))
   (let ((*destination* orig-loc))
     (set-loc loc)))
                  

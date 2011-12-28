@@ -586,6 +586,7 @@
 	       'VALUES))))))
 
 (defun c2c-inline (c1form arguments &rest rest)
+  (declare (ignore c1form))
   (let ((*inline-blocks* 0)
         (*temp* *temp*))
     (unwind-exit (apply #'produce-inline-loc (inline-args arguments) rest))

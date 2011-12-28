@@ -33,6 +33,7 @@
 			:args var expressions)))))
 
 (defun c2compiler-typecase (c1form var expressions)
+  (declare (ignore c1form))
   (loop with var-type = (var-type var)
      for (type form) in expressions
      when (or (member type '(t otherwise))

@@ -164,6 +164,7 @@
 		 &aux block-p
 		 (*env* *env*)
 		 (*env-lvl* *env-lvl*) env-grows)
+  (declare (ignore c1form))
   ;; create location for each function which is returned,
   ;; either in lexical:
   (dolist (fun funs)
@@ -257,7 +258,8 @@
     fun))
 
 (defun c2call-local (c1form fun args)
-  (declare (type fun fun))
+  (declare (type fun fun)
+	   (ignore c1form))
   (unless (c2try-tail-recursive-call fun args)
     (let ((*inline-blocks* 0)
           (*temp* *temp*))

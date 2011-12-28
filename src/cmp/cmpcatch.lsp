@@ -21,6 +21,7 @@
 		(c1progn (rest args))))
 
 (defun c2catch (c1form tag body)
+  (declare (ignore c1form))
   (let* ((new-destination (tmp-destination *destination*)))
     (let* ((*destination* 'VALUE0))
       (c2expr* tag))
@@ -55,6 +56,7 @@
 		  :args form (c1progn (rest args)))))
 
 (defun c2unwind-protect (c1form form body)
+  (declare (ignore c1form))
   (let* ((sp (make-lcl-var :rep-type :cl-index))
 	 (nargs (make-lcl-var :rep-type :cl-index))
 	 (*unwind-exit* `((STACK ,sp) ,@*unwind-exit*)))
@@ -91,6 +93,7 @@
   (make-c1form* 'THROW :args (c1expr (first args)) (c1expr (second args))))
 
 (defun c2throw (c1form tag val &aux loc)
+  (declare (ignore c1form))
   (case (c1form-name tag)
     ((VAR LOCATION) (setq loc (c1form-arg 0 tag)))
     (t (setq loc (make-temp-var))

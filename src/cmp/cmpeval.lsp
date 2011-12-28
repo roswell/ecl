@@ -187,6 +187,7 @@
 	     (make-c1form* 'PROGN :type output-type :args fl)))))
 
 (defun c2progn (c1form forms)
+  (declare (ignore c1form))
   ;; c1progn ensures that the length of forms is not less than 1.
   (do ((l forms (cdr l))
        (lex *lex*))

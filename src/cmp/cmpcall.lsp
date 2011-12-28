@@ -69,6 +69,7 @@
 	   (cmperr "Malformed function name: ~A" fun)))))
 
 (defun c2funcall (c1form form args)
+  (declare (ignore c1form))
   (let* ((*inline-blocks* 0)
          (*temp* *temp*)
          (form-type (c1form-primary-type form))
