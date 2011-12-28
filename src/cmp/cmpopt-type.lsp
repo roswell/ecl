@@ -18,18 +18,21 @@
   (multiple-value-bind (declarations body)
       (si:process-declarations body nil)
     (ext:with-unique-names (%limit)
-      (setf body `(si::while (< ,variable ,%limit)
-                    ,@body
-                    (setq ,variable (1+ ,variable))))
       `(block nil
          (let ((,%limit ,limit))
            (declare (:read-only ,%limit))
            (ext:compiler-typecase ,%limit
-             (fixnum (let ((,variable 0))
-                       (declare (fixnum ,variable)
-                                ,@declarations)
-                       ,body))
-             (t (let ((,variable 0))
-                  (declare ,@declarations)
-                  ,body)))
+             (fixnum
+	      (let ((,variable 0))
+		(declare (fixnum ,variable)
+			 ,@declarations)
+		(si::while (< ,variable ,%limit)
+                  ,@body
+		  (setq ,variable (the fixnum (1+ ,variable))))))
+             (t
+	      (let ((,variable 0))
+		(declare ,@declarations)
+                (si::while (< ,variable ,%limit)
+                  ,@body
+		  (setq ,variable (1+ ,variable))))))
            ,@output)))))
