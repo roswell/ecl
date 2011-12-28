@@ -89,7 +89,7 @@
       (return-from c2call-global))
     (let* ((*inline-blocks* 0)
            (*temp* *temp*))
-      (unwind-exit (call-global-loc fname fun args (c1form-type c1form)
+      (unwind-exit (call-global-loc fname fun args (c1form-primary-type c1form)
                                     (loc-type *destination*)))
       (close-inline-blocks))))
 
