@@ -65,24 +65,23 @@
 	   (constantp structure-name env)
 	   (constantp index env))
       (let* ((index (cmp-eval structure-name index))
+	     (aux (gentmp))
 	     (form `(ffi:c-inline (,aux ,index) (:object :index) :object
 				  "(#0)->instance.slots[#1]"
 				  :one-liner t)))
 	(unless (policy-assume-no-errors env)
-	  (let ((structure-name (cmp-eval structure-name env))
-		(aux (gentmp)))
+	  (let ((structure-name (cmp-eval structure-name env)))
 	    (setf form
-		  `(let ((,aux ,object))
-		     (declare (:read-only ,aux))
-		     (ext:compiler-typecase
-		      ,aux
+		  `(ext:compiler-typecase ,aux
 		      (,structure-name ,whole)
 		      (t (ffi:c-inline (,aux ,structure-name ,index)
 				       (:object :object :fixnum)
 				       :object
 				       "ecl_structure_ref(#0,#1,#2)"
-				       :one-liner t)))))))
-	form)
+				       :one-liner t))))))
+	`(let ((,aux ,object))
+	   (declare (:read-only ,aux))
+	   ,form))
       whole))
 
 (define-compiler-macro structure-set (&whole whole object structure-name index value
@@ -91,22 +90,22 @@
 	   (constantp structure-name env)
 	   (constantp index env))
       (let* ((index (cmp-eval structure-name index))
+	     (aux (gentmp))
 	     (form `(ffi:c-inline (,aux ,index ,value) (:object :index :object) :object
 				  "(#0)->instance.slots[#1]=#2"
 				  :one-liner t)))
 	(unless (policy-assume-no-errors env)
-	  (let ((structure-name (cmp-eval structure-name env))
-		(aux (gentmp)))
+	  (let ((structure-name (cmp-eval structure-name env)))
 	    (setf form
-		  `(let ((,aux ,object))
-		     (declare (:read-only ,aux))
-		     (ext:compiler-typecase
-		      ,aux
-		      (,structure-name ,whole)
-		      (t (ffi:c-inline (,aux ,structure-name ,index ,value)
-				       (:object :object :fixnum :object)
-				       :object
-				       "ecl_structure_ref(#0,#1,#2,#3)"
-				       :one-liner t)))))))
-	form)
+		  `(ext:compiler-typecase
+		    ,aux
+		    (,structure-name ,whole)
+		    (t (ffi:c-inline (,aux ,structure-name ,index ,value)
+				     (:object :object :fixnum :object)
+				     :object
+				     "ecl_structure_ref(#0,#1,#2,#3)"
+				     :one-liner t))))))
+	`(let ((,aux ,object))
+	   (declare (:read-only ,aux))
+	   ,form))
       whole))
