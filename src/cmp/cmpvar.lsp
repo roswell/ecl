@@ -342,19 +342,13 @@
 
 (defun c1setq (args)
   (let ((l (length args)))
-    (declare (fixnum l))
     (cmpck (oddp l) "SETQ requires an even number of arguments.")
     (cond ((zerop l) (c1nil))
 	  ((= l 2) (c1setq1 (first args) (second args)))
 	  (t
-	   (do ((pairs args (cddr pairs))
-		(forms nil))
-	       ((endp pairs)
-		(make-c1form* 'PROGN
-			      :type (c1form-type (first forms))
-			      :args (nreverse forms)))
-             (push (c1setq1 (first pairs) (second pairs)) forms)
-             )))))
+	   (c1progn
+	    (loop while args
+	       collect `(setq ,(pop args) ,(pop args))))))))
 
 (defun c1setq1 (name form)
   (cmpck (not (symbolp name)) "The variable ~s is not a symbol." name)
