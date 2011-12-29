@@ -59,21 +59,21 @@
 	  (t
            `(,args ',structure-type ,slot-index)))))))
 
-(define-compiler-macro structure-ref (&whole whole object structure-name index
-				      &environment env)
+(define-compiler-macro si::structure-ref (&whole whole object structure-name index
+					  &environment env)
   (if (and (policy-inline-slot-access env)
 	   (constantp structure-name env)
 	   (constantp index env))
-      (let* ((index (cmp-eval structure-name index))
-	     (aux (gentmp))
-	     (form `(ffi:c-inline (,aux ,index) (:object :index) :object
+      (let* ((index (cmp-eval index env))
+	     (aux (gensym))
+	     (form `(ffi:c-inline (,aux ,index) (:object :fixnum) :object
 				  "(#0)->instance.slots[#1]"
 				  :one-liner t)))
 	(unless (policy-assume-no-errors env)
 	  (let ((structure-name (cmp-eval structure-name env)))
 	    (setf form
 		  `(ext:compiler-typecase ,aux
-		      (,structure-name ,whole)
+		      (,structure-name ,form)
 		      (t (ffi:c-inline (,aux ,structure-name ,index)
 				       (:object :object :fixnum)
 				       :object
@@ -84,14 +84,14 @@
 	   ,form))
       whole))
 
-(define-compiler-macro structure-set (&whole whole object structure-name index value
-				      &environment env)
+(define-compiler-macro si::structure-set (&whole whole object structure-name index value
+					  &environment env)
   (if (and (policy-inline-slot-access env)
 	   (constantp structure-name env)
 	   (constantp index env))
-      (let* ((index (cmp-eval structure-name index))
-	     (aux (gentmp))
-	     (form `(ffi:c-inline (,aux ,index ,value) (:object :index :object) :object
+      (let* ((index (cmp-eval index env))
+	     (aux (gensym))
+	     (form `(ffi:c-inline (,aux ,index ,value) (:object :fixnum :object) :object
 				  "(#0)->instance.slots[#1]=#2"
 				  :one-liner t)))
 	(unless (policy-assume-no-errors env)
@@ -99,11 +99,11 @@
 	    (setf form
 		  `(ext:compiler-typecase
 		    ,aux
-		    (,structure-name ,whole)
+		    (,structure-name ,form)
 		    (t (ffi:c-inline (,aux ,structure-name ,index ,value)
 				     (:object :object :fixnum :object)
 				     :object
-				     "ecl_structure_ref(#0,#1,#2,#3)"
+				     "ecl_structure_set(#0,#1,#2,#3)"
 				     :one-liner t))))))
 	`(let ((,aux ,object))
 	   (declare (:read-only ,aux))
