@@ -809,7 +809,6 @@ extern ECL_API cl_object ecl_sethash(cl_object key, cl_object hashtable, cl_obje
 extern ECL_API cl_object ecl_gethash(cl_object key, cl_object hash);
 extern ECL_API cl_object ecl_gethash_safe(cl_object key, cl_object hash, cl_object def);
 extern ECL_API bool ecl_remhash(cl_object key, cl_object hash);
-extern ECL_API struct ecl_hashtable_entry *_ecl_gethash(cl_object key, cl_object hashtable);
 extern ECL_API cl_object _ecl_sethash(cl_object key, cl_object hashtable, cl_object value);
 
 /* instance.c */

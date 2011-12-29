@@ -263,6 +263,10 @@ _hash_equalp(int depth, cl_hashkey h, cl_object x)
 	}
 #endif
 
+#ifdef ECL_WEAK_HASH
+#include "weak_hash.d"
+#endif
+
 /*
  * EQ HASHTABLES
  */
@@ -279,14 +283,30 @@ _ecl_hash_loop_eq(cl_hashkey h, cl_object key, cl_object hashtable)
         HASH_TABLE_LOOP(hkey, hvalue, h, key == hkey);
 }
 
-struct ecl_hashtable_entry *
-_ecl_gethash_eq(cl_object key, cl_object hashtable)
+static cl_object
+_ecl_gethash_eq(cl_object key, cl_object hashtable, cl_object def)
 {
 	cl_hashkey h = _hash_eq(key);
-	return _ecl_hash_loop_eq(h, key, hashtable);
+	struct ecl_hashtable_entry *e = _ecl_hash_loop_eq(h, key, hashtable);
+	return (e->key == OBJNULL)? def : e->value;
 }
 
-cl_object
+static bool
+_ecl_remhash_eq(cl_object key, cl_object hashtable)
+{
+	cl_hashkey h = _hash_eq(key);
+	struct ecl_hashtable_entry *e = _ecl_hash_loop_eq(h, key, hashtable);
+	if (e->key == OBJNULL) {
+		return 0;
+	} else {
+		e->key = OBJNULL;
+		e->value = Cnil;
+		hashtable->hash.entries--;
+		return 1;
+	}
+}
+
+static cl_object
 _ecl_sethash_eq(cl_object key, cl_object hashtable, cl_object value)
 {
 	HASH_TABLE_SET(h, _ecl_hash_loop_eq, _hash_eq(key), key);
@@ -302,17 +322,33 @@ _ecl_hash_loop_eql(cl_hashkey h, cl_object key, cl_object hashtable)
         HASH_TABLE_LOOP(hkey, hvalue, h, ecl_eql(key, hkey));
 }
 
-static struct ecl_hashtable_entry *
-_ecl_gethash_eql(cl_object key, cl_object hashtable)
+static cl_object
+_ecl_gethash_eql(cl_object key, cl_object hashtable, cl_object def)
 {
 	cl_hashkey h = _hash_eql(0, key);
-	return _ecl_hash_loop_eql(h, key, hashtable);
+	struct ecl_hashtable_entry *e = _ecl_hash_loop_eql(h, key, hashtable);
+	return (e->key == OBJNULL)? def : e->value;
 }
 
 static cl_object
 _ecl_sethash_eql(cl_object key, cl_object hashtable, cl_object value)
 {
 	HASH_TABLE_SET(h, _ecl_hash_loop_eql, _hash_eql(0, key), key);
+}
+
+static bool
+_ecl_remhash_eql(cl_object key, cl_object hashtable)
+{
+	cl_hashkey h = _hash_eql(0, key);
+	struct ecl_hashtable_entry *e = _ecl_hash_loop_eql(h, key, hashtable);
+	if (e->key == OBJNULL) {
+		return 0;
+	} else {
+		e->key = OBJNULL;
+		e->value = Cnil;
+		hashtable->hash.entries--;
+		return 1;
+	}
 }
 
 /*
@@ -325,17 +361,33 @@ _ecl_hash_loop_equal(cl_hashkey h, cl_object key, cl_object hashtable)
         HASH_TABLE_LOOP(hkey, hvalue, h, ecl_equal(key, hkey));
 }
 
-static struct ecl_hashtable_entry *
-_ecl_gethash_equal(cl_object key, cl_object hashtable)
+static cl_object
+_ecl_gethash_equal(cl_object key, cl_object hashtable, cl_object def)
 {
 	cl_hashkey h = _hash_equal(3, 0, key);
-	return _ecl_hash_loop_equal(h, key, hashtable);
+	struct ecl_hashtable_entry *e = _ecl_hash_loop_equal(h, key, hashtable);
+	return (e->key == OBJNULL)? def : e->value;
 }
 
 static cl_object
 _ecl_sethash_equal(cl_object key, cl_object hashtable, cl_object value)
 {
 	HASH_TABLE_SET(h, _ecl_hash_loop_equal, _hash_equal(3, 0, key), key);
+}
+
+static bool
+_ecl_remhash_equal(cl_object key, cl_object hashtable)
+{
+	cl_hashkey h = _hash_equal(3, 0, key);
+	struct ecl_hashtable_entry *e = _ecl_hash_loop_equal(h, key, hashtable);
+	if (e->key == OBJNULL) {
+		return 0;
+	} else {
+		e->key = OBJNULL;
+		e->value = Cnil;
+		hashtable->hash.entries--;
+		return 1;
+	}
 }
 
 /*
@@ -348,17 +400,33 @@ _ecl_hash_loop_equalp(cl_hashkey h, cl_object key, cl_object hashtable)
         HASH_TABLE_LOOP(hkey, hvalue, h, ecl_equalp(key, hkey));
 }
 
-static struct ecl_hashtable_entry *
-_ecl_gethash_equalp(cl_object key, cl_object hashtable)
+static cl_object
+_ecl_gethash_equalp(cl_object key, cl_object hashtable, cl_object def)
 {
 	cl_hashkey h = _hash_equalp(3, 0, key);
-	return _ecl_hash_loop_equalp(h, key, hashtable);
+	struct ecl_hashtable_entry *e = _ecl_hash_loop_equalp(h, key, hashtable);
+	return (e->key == OBJNULL)? def : e->value;
 }
 
 static cl_object
 _ecl_sethash_equalp(cl_object key, cl_object hashtable, cl_object value)
 {
 	HASH_TABLE_SET(h, _ecl_hash_loop_equalp, _hash_equalp(3, 0, key), key);
+}
+
+static bool
+_ecl_remhash_equalp(cl_object key, cl_object hashtable)
+{
+	cl_hashkey h = _hash_equalp(3, 0, key);
+	struct ecl_hashtable_entry *e = _ecl_hash_loop_equalp(h, key, hashtable);
+	if (e->key == OBJNULL) {
+		return 0;
+	} else {
+		e->key = OBJNULL;
+		e->value = Cnil;
+		hashtable->hash.entries--;
+		return 1;
+	}
 }
 
 /*
@@ -372,11 +440,12 @@ _ecl_hash_loop_pack(cl_hashkey h, cl_object key, cl_object hashtable)
         HASH_TABLE_LOOP(hkey, hvalue, h, (ho==hkey) && ecl_string_eq(key,SYMBOL_NAME(hvalue)));
 }
 
-static struct ecl_hashtable_entry *
-_ecl_gethash_pack(cl_object key, cl_object hashtable)
+static cl_object
+_ecl_gethash_pack(cl_object key, cl_object hashtable, cl_object def)
 {
 	cl_hashkey h = _hash_equal(3, 0, key);
-	return _ecl_hash_loop_pack(h, key, hashtable);
+	struct ecl_hashtable_entry *e = _ecl_hash_loop_pack(h, key, hashtable);
+	return (e->key == OBJNULL)? def : e->value;
 }
 
 static cl_object
@@ -385,36 +454,37 @@ _ecl_sethash_pack(cl_object key, cl_object hashtable, cl_object value)
 	HASH_TABLE_SET(h, _ecl_hash_loop_pack, _hash_equal(3, 0, key), MAKE_FIXNUM(h & 0xFFFFFFF));
 }
 
+static bool
+_ecl_remhash_pack(cl_object key, cl_object hashtable)
+{
+	cl_hashkey h = _hash_equal(3, 0, key);
+	struct ecl_hashtable_entry *e = _ecl_hash_loop_pack(h, key, hashtable);
+	if (e->key == OBJNULL) {
+		return 0;
+	} else {
+		e->key = OBJNULL;
+		e->value = Cnil;
+		hashtable->hash.entries--;
+		return 1;
+	}
+}
+
 /*
  * HIGHER LEVEL INTERFACE
  */
 
-struct ecl_hashtable_entry *
-_ecl_gethash(cl_object key, cl_object hashtable)
-{
-	return hashtable->hash.get(key, hashtable);
-}
-
 cl_object
 ecl_gethash(cl_object key, cl_object hashtable)
 {
-	cl_object output;
-
 	assert_type_hash_table(@[gethash], 2, hashtable);
-	output = hashtable->hash.get(key, hashtable)->value;
-	return output;
+	return hashtable->hash.get(key, hashtable, OBJNULL);
 }
 
 cl_object
 ecl_gethash_safe(cl_object key, cl_object hashtable, cl_object def)
 {
-	struct ecl_hashtable_entry *e;
-
 	assert_type_hash_table(@[gethash], 2, hashtable);
-	e = hashtable->hash.get(key, hashtable);
-	if (e->key != OBJNULL)
-		def = e->value;
-	return def;
+	return hashtable->hash.get(key, hashtable, def);
 }
 
 cl_object
@@ -516,8 +586,9 @@ cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
 	int htt;
 	cl_index hsize;
 	cl_object h;
-	struct ecl_hashtable_entry *(*get)(cl_object, cl_object);
+	cl_object (*get)(cl_object, cl_object, cl_object);
 	cl_object (*set)(cl_object, cl_object, cl_object);
+	bool (*rem)(cl_object, cl_object);
 	/*
 	 * Argument checking
 	 */
@@ -525,22 +596,27 @@ cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
 		htt = htt_eq;
 		get = _ecl_gethash_eq;
 		set = _ecl_sethash_eq;
+		rem = _ecl_remhash_eq;
 	} else if (test == @'eql' || test == SYM_FUN(@'eql')) {
 		htt = htt_eql;
 		get = _ecl_gethash_eql;
 		set = _ecl_sethash_eql;
+		rem = _ecl_remhash_eql;
 	} else if (test == @'equal' || test == SYM_FUN(@'equal')) {
 		htt = htt_equal;
 		get = _ecl_gethash_equal;
 		set = _ecl_sethash_equal;
+		rem = _ecl_remhash_equal;
 	} else if (test == @'equalp' || test == SYM_FUN(@'equalp')) {
 		htt = htt_equalp;
 		get = _ecl_gethash_equalp;
 		set = _ecl_sethash_equalp;
+		rem = _ecl_remhash_equalp;
 	} else if (test == @'package') {
 		htt = htt_pack;
 		get = _ecl_gethash_pack;
 		set = _ecl_sethash_pack;
+		rem = _ecl_remhash_pack;
 	} else {
 		FEerror("~S is an illegal hash-table test function.",
 			1, test);
@@ -590,6 +666,7 @@ cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
 	h->hash.test = htt;
 	h->hash.get = get;
 	h->hash.set = set;
+	h->hash.rem = rem;
 	h->hash.size = hsize;
         h->hash.entries = 0;
 	h->hash.rehash_size = rehash_size;
@@ -611,14 +688,18 @@ cl_hash_table_p(cl_object ht)
 }
 
 @(defun gethash (key ht &optional (no_value Cnil))
-	struct ecl_hashtable_entry e;
 @
+{
 	assert_type_hash_table(@[gethash], 2, ht);
-	e = *(ht->hash.get(key, ht));
-	if (e.key != OBJNULL)
-		@(return e.value Ct)
-	else
-		@(return no_value Cnil)
+	{
+		cl_object v = ht->hash.get(key, ht, OBJNULL);
+		if (v != OBJNULL) {
+			@(return v Ct);
+		} else {
+			@(return no_value Cnil);
+		}
+	}
+}
 @)
 
 cl_object
@@ -632,20 +713,8 @@ si_hash_set(cl_object key, cl_object ht, cl_object val)
 bool
 ecl_remhash(cl_object key, cl_object hashtable)
 {
-	struct ecl_hashtable_entry *e;
-	bool output;
-
 	assert_type_hash_table(@[remhash], 2, hashtable);
-	e = hashtable->hash.get(key, hashtable);
-	if (e->key == OBJNULL) {
-		output = FALSE;
-	} else {
-		e->key = OBJNULL;
-		e->value = Cnil;
-		hashtable->hash.entries--;
-		output = TRUE;
-	}
-	return output;
+	return hashtable->hash.rem(key, hashtable);
 }
 
 cl_object

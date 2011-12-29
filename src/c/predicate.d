@@ -495,21 +495,25 @@ BEGIN:
 	case t_pathname:
 		return (tx == ty) && ecl_equal(x, y);
 	case t_hashtable: {
-		cl_index i;
-		struct ecl_hashtable_entry *ex, *ey;
 		if (tx != ty ||
                     x->hash.entries != y->hash.entries ||
 		    x->hash.test != y->hash.test)
 			return(FALSE);
-		ex = x->hash.data;
-		for (i = 0;  i < x->hash.size;  i++) {
-			if (ex[i].key != OBJNULL) {
-				ey = _ecl_gethash(ex[i].key, y);
-				if (ey->key == OBJNULL || !ecl_equalp(ex[i].value, ey->value))
-					return(FALSE);
-			}
+		{
+			cl_env_ptr env = ecl_process_env();
+			cl_object iterator = si_hash_table_iterator(x);
+			do {
+				cl_object ndx = cl_funcall(1, iterator);
+				if (Null(ndx)) {
+					return TRUE;
+				} else {
+					cl_object key = env->values[1];
+					cl_object value = env->values[2];
+					if (ecl_gethash_safe(key, y, OBJNULL) == OBJNULL)
+						return FALSE;
+				}
+			} while (1);
 		}
-		return TRUE;
 	}
 	case t_random:
 		return (tx == ty) && ecl_equalp(x->random.value, y->random.value);

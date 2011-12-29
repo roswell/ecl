@@ -366,13 +366,20 @@ enum ecl_httest {		/*  hash table key test function  */
 	htt_pack		/*  symbol hash  */
 };
 
+enum ecl_htweak {
+	htt_not_weak = 0,
+	htt_weak_key,
+	htt_weak_value,
+	htt_weak_key_and_value
+};
+
 struct ecl_hashtable_entry {	/*  hash table entry  */
 	cl_object key;		/*  key  */
 	cl_object value;	/*  value  */
 };
 
 struct ecl_hashtable {		/*  hash table header  */
-	HEADER1(test);
+	HEADER2(test,weak);
 	struct ecl_hashtable_entry *data; /*  pointer to the hash table  */
 	cl_index entries;	/*  number of entries  */
 	cl_index size;		/*  hash table size  */
@@ -380,8 +387,9 @@ struct ecl_hashtable {		/*  hash table header  */
 	cl_object rehash_size;	/*  rehash size  */
 	cl_object threshold;	/*  rehash threshold  */
 	double factor;		/*  cached value of threshold  */
-	struct ecl_hashtable_entry *(*get)(cl_object, cl_object);
+	cl_object (*get)(cl_object, cl_object, cl_object);
 	cl_object (*set)(cl_object, cl_object, cl_object);
+	bool (*rem)(cl_object, cl_object);
 };
 
 typedef enum {			/*  array element type  */
