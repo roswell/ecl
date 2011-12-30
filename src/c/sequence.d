@@ -47,7 +47,8 @@ ecl_sequence_start_end(cl_object fun, cl_object sequence,
 	}
         unlikely_if (p.end < p.start) {
                 FEwrong_type_key_arg(fun, @[:start], start,
-                                     ecl_make_integer_type(MAKE_FIXNUM(0), end));
+                                     ecl_make_integer_type(MAKE_FIXNUM(0),
+							   MAKE_FIXNUM(p.end)));
         }
         return p;
 }
