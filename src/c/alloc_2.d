@@ -1221,10 +1221,9 @@ si_gc_stats(cl_object enable)
 }
 
 /*
- * This procedure is invoked after garbage collection. It invokes
- * finalizers for all objects that are to be reclaimed by the
- * colector. Note that we cannot cons because this procedure is
- * invoked with the garbage collection lock on.
+ * This procedure is invoked after garbage collection. Note that we
+ * cannot cons because this procedure is invoked with the garbage
+ * collection lock on.
  */
 static void
 gather_statistics()
