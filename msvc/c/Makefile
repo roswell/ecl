@@ -68,8 +68,10 @@ HFILES	= ..\ecl\config.h ..\ecl\atomic_ops.h $(HDIR)\ecl.h $(HDIR)\ecl-cmp.h\
 	$(HDIR)\impl\math_dispatch.h
 
 OBJS	= main.obj symbol.obj package.obj cons.obj list.obj\
-	apply.obj eval.obj interpreter.obj compiler.obj disassembler.obj \
-	instance.obj gfun.obj reference.obj character.obj\
+	apply.obj eval.obj \
+	interpreter.obj compiler.obj disassembler.obj \
+	instance.obj gfun.obj cache.obj accessor.obj \
+	reference.obj character.obj\
 	file.obj read.obj print.obj error.obj string.obj cfun.obj\
 	parse_integer.obj parse_number.obj \
 	float_to_digits.obj float_to_string.obj \
@@ -105,6 +107,8 @@ all:	$(DPP) ..\eclmin.lib ..\cinit.obj
 {$(srcdir:\=/)}.d{}.c:
 	$(DPP) $< $@
 {$(srcdir:\=/)/arch}.d{}.c:
+	$(DPP) $< $@
+{$(srcdir:\=/)/clos/}.d{}.c:
 	$(DPP) $< $@
 {$(srcdir:\=/)/reader}.d{}.c:
 	$(DPP) $< $@
