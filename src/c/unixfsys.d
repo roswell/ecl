@@ -52,6 +52,18 @@ typedef int mode_t;
 #include <fcntl.h>
 #include <errno.h>
 
+ecl_def_ct_base_string(str_slash,"/",1,static,const);
+
+static cl_object
+coerce_to_posix_filename(cl_object filename)
+{
+	/* This converts a pathname designator into a namestring, with the
+	 * particularity that directories do not end with a slash '/', because
+	 * this is not supported on all POSIX platforms (most notably Windows)
+	 */
+	return cl_string_right_trim(str_slash, si_coerce_to_filename(filename));
+}
+
 static int
 safe_chdir(const char *path, cl_object prefix)
 {
@@ -208,7 +220,7 @@ file_kind(char *filename, bool follow_links) {
 
 cl_object
 si_file_kind(cl_object filename, cl_object follow_links) {
-	filename = si_coerce_to_filename(filename);
+	filename = coerce_to_posix_filename(filename);
 	@(return file_kind((char*)filename->base_string.self, !Null(follow_links)))
 }
 
@@ -451,8 +463,6 @@ ecl_file_len(int f)
 	 *    or if it does not exist. Notice that the filename to be renamed
 	 *    is not the truename, because we might be renaming a symbolic link.
 	 */
-	old_filename = cl_string_right_trim(ecl_list1(CODE_CHAR('/')),
-                                            si_coerce_to_filename(oldn));
 	old_truename = cl_truename(oldn);
 
 	/* 2) Create the new file name. */
@@ -552,7 +562,7 @@ cl_delete_file(cl_object file)
 {
         cl_object path = cl_pathname(file);
         int isdir = directory_pathname_p(path);
-	cl_object filename = si_coerce_to_filename(path);
+	cl_object filename = coerce_to_posix_filename(path);
 	int ok;
 
 	ecl_disable_interrupts();
@@ -579,19 +589,20 @@ cl_probe_file(cl_object file)
 cl_object
 cl_file_write_date(cl_object file)
 {
-	cl_object time, filename = si_coerce_to_filename(file);
+	cl_object time, filename = coerce_to_posix_filename(file);
 	struct stat filestatus;
-	if (safe_stat((char*)filename->base_string.self, &filestatus) < 0)
+	if (safe_stat((char*)filename->base_string.self, &filestatus) < 0) {
 		time = Cnil;
-	else
+	} else {
 		time = UTC_time_to_universal_time(filestatus.st_mtime);
+	}
 	@(return time)
 }
 
 cl_object
 cl_file_author(cl_object file)
 {
-	cl_object output, filename = si_coerce_to_filename(file);
+	cl_object output, filename = coerce_to_posix_filename(file);
 	struct stat filestatus;
 	if (safe_stat((char*)filename->base_string.self, &filestatus) < 0)
 		FElibc_error("Cannot get the file status of ~S.", 1, file);
@@ -1122,7 +1133,7 @@ cl_object
 si_chmod(cl_object file, cl_object mode)
 {
 	mode_t code = fixnnint(mode);
-	cl_object filename = si_coerce_to_filename(file);
+	cl_object filename = coerce_to_posix_filename(file);
 	unlikely_if (chmod((char*)filename->base_string.self, code)) {
 		FElibc_error("Unable to change mode of file~%~S~%to value ~O",
 			     2, file, mode);
