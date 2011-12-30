@@ -100,7 +100,7 @@
 		  `(ext:compiler-typecase
 		    ,aux
 		    (,structure-name ,form)
-		    (t (ffi:c-inline (,aux ,structure-name ,index ,value)
+		    (t (ffi:c-inline (,aux ',structure-name ,index ,value)
 				     (:object :object :fixnum :object)
 				     :object
 				     "ecl_structure_set(#0,#1,#2,#3)"
