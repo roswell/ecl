@@ -61,7 +61,8 @@ coerce_to_posix_filename(cl_object filename)
 	 * particularity that directories do not end with a slash '/', because
 	 * this is not supported on all POSIX platforms (most notably Windows)
 	 */
-	return cl_string_right_trim(str_slash, si_coerce_to_filename(filename));
+	filename = si_coerce_to_filename(filename);
+	return cl_string_right_trim(str_slash, filename);
 }
 
 static int
@@ -464,6 +465,7 @@ ecl_file_len(int f)
 	 *    is not the truename, because we might be renaming a symbolic link.
 	 */
 	old_truename = cl_truename(oldn);
+	old_filename = coerce_to_posix_filename(old_truename);
 
 	/* 2) Create the new file name. */
 	newn = ecl_merge_pathnames(newn, oldn, @':newest');
