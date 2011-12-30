@@ -797,7 +797,7 @@ ucs_4_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
 static ecl_character
 ucs_2be_decoder(cl_object stream)
 {
-	unsigned char buffer[2];
+	unsigned char buffer[2] = {0,0};
 	if (ecl_read_byte8(stream, buffer, 2) < 2) {
 		return EOF;
 	} else {
@@ -813,6 +813,7 @@ ucs_2be_decoder(cl_object stream)
 				return ((c & 0x3FFF) << 10) + (aux & 0x3FFF) + 0x10000;
 			}
 		}
+		return c;
 	}
 }
 
@@ -854,6 +855,7 @@ ucs_2le_decoder(cl_object stream)
 				return ((c & 0x3FFF) << 10) + (aux & 0x3FFF) + 0x10000;
 			}
 		}
+		return c;
 	}
 }
 
