@@ -21,7 +21,10 @@
 (defvar *cache* (merge-pathnames "./cache/" *here*))
 
 (defvar *test-image* (or (ext:getenv "TEST_IMAGE")
-			 (namestring (truename "sys:ecl.exe"))))
+			 #+windows
+			 (namestring (truename #+windows "sys:ecl.exe"))
+			 #-windows
+			 "ecl"))
 
 (defvar *test-image-args*
   (cond ((search "ecl" *test-image*)
@@ -32,7 +35,7 @@
 	 '())))
 
 #+ecl
-(ext:setenv "ECLDIR" (print (namestring (truename "SYS:"))))
+(ext:setenv "ECLDIR" (namestring (truename "SYS:")))
 
 (defvar *test-name* (or (ext:getenv "TEST_NAME") "ecl"))
 
@@ -207,7 +210,7 @@
 	 (ext:run-program *test-image*
 			  *test-image-args*
 			  :input (merge-pathnames "doit.lsp" *ansi-tests-sandbox*)
-			  :output t ; output
+			  :output output
 			  :error :output))
     (ext:chdir *here*)))
 
