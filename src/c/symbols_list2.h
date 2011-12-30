@@ -2213,5 +2213,10 @@ cl_symbols[] = {
 {EXT_ "CHECK-STACK-OVERFLOW",NULL},
 {EXT_ "ARRAY-BOUNDS-CHECK",NULL},
 
+{KEY_ "VALUE",NULL},
+{KEY_ "KEY-AND-VALUE",NULL},
+{KEY_ "WEAKNESS",NULL},
+{EXT_ "HASH-TABLE-WEAKNESS","si_hash_table_weakness"},
+
 /* Tag for end of list */
 {NULL,NULL}};

@@ -298,6 +298,11 @@ typedef unsigned char ecl_base_char;
 /* Activate Boehm-Weiser precise garbage collector			*/
 #undef GBC_BOEHM_PRECISE
 
+/* Weak hash tables need the garbage collector and weak	pointers	*/
+#ifdef GBC_BOEHM
+#define ECL_WEAK_HASH
+#endif
+
 /*
  * SYSTEM FEATURES:
  */

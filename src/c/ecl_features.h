@@ -117,6 +117,9 @@ ecl_def_string_array(feature_names,static,const) = {
 #else
 	ecl_def_string_array_elt("LITTLE-ENDIAN"),
 #endif
+#ifdef ECL_WEAK_HASH
+	ecl_def_string_array_elt("ECL-WEAK-HASH"),
+#endif
         ecl_def_string_array_elt(0)
 };
 

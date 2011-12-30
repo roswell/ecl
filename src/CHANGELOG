@@ -156,6 +156,13 @@ ECL 11.7.1:
    definition for later use _in other files_. Otherwise INLINE declarations
    remain local to the file being processed.
 
+ - ECL now implements weak hash tables. They are built as ordinary hash tables
+   with an extra argument, :WEAKNESS, which may be :KEY, :VALUE,
+   :KEY-AND-VALUE, or NIL, for the default behavior. The status of the hash
+   table is returned by EXT:HASH-TABLE-WEAKNESS. Note that these associations
+   are no substitute for proper management of resources, as the time of
+   collection can not be guaranteed.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
