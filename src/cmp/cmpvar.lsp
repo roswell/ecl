@@ -363,7 +363,7 @@
 	(add-to-set-nodes name (make-c1form* 'SETQ
 					     :type (c1form-type form)
 					     :args name form)))
-      `(setf name ,form)))
+      `(setf ,name ,form)))
 
 (defun c2setq (c1form vref form)
   (declare (ignore c1form))
