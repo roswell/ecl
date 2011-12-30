@@ -20,15 +20,19 @@
 
 (defvar *cache* (merge-pathnames "./cache/" *here*))
 
-(defvar *test-image* (or (ext:getenv "TEST_IMAGE") "ecl"))
+(defvar *test-image* (or (ext:getenv "TEST_IMAGE")
+			 (namestring (truename "sys:ecl.exe"))))
 
 (defvar *test-image-args*
   (cond ((search "ecl" *test-image*)
-	 '("-norc"))
+	 '("-norc" "-eval" "(print (ext:getenv \"ECLDIR\"))" #+windows "-eval" #+windows "(require :cmp)"))
 	((search "sbcl" *test-image*)
 	 '("--no-userinit" "--no-sysinit"))
 	(t
 	 '())))
+
+#+ecl
+(ext:setenv "ECLDIR" (print (namestring (truename "SYS:"))))
 
 (defvar *test-name* (or (ext:getenv "TEST_NAME") "ecl"))
 
@@ -64,6 +68,7 @@
 
 (defvar *cleanup-extensions* '("fasl" "fasb" "c" "h" "obj" "o" "a" "lib" "dll" "dylib" "data"))
 
+(require :cmp)
 (require :ecl-curl)
 (require :deflate)
 (require :ql-minitar)
@@ -202,7 +207,7 @@
 	 (ext:run-program *test-image*
 			  *test-image-args*
 			  :input (merge-pathnames "doit.lsp" *ansi-tests-sandbox*)
-			  :output output
+			  :output t ; output
 			  :error :output))
     (ext:chdir *here*)))
 

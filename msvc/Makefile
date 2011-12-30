@@ -35,7 +35,7 @@ GMP_TYPE      = gc
 ECL_THREADS   = 1
 
 # Set it to empty to remove support for Unicode characters
-ECL_UNICODE   = 1
+ECL_UNICODE = 1
 
 # Set it to non-empty to enable Win32 debug support
 #ECL_DEBUG = 1
@@ -194,6 +194,10 @@ ECL_FEATURES = (cons :wants-profile $(ECL_FEATURES))
 !endif
 ECL_MODULES  = $(ECL_MODULES) bytecmp
 ECL_FEATURES = (list* :builtin-bytecmp :wants-bytecmp $(ECL_FEATURES))
+ECL_MODULES  = $(ECL_MODULES) ecl-curl
+ECL_FEATURES = (cons :wants-ecl-curl $(ECL_FEATURES))
+ECL_MODULES  = $(ECL_MODULES) deflate
+ECL_FEATURES = (cons :wants-deflate $(ECL_FEATURES))
 
 !MESSAGE ECL Modules: $(ECL_MODULES)
 !MESSAGE ECL Features: $(ECL_FEATURES)
@@ -386,6 +390,16 @@ install:
 	IF NOT EXIST "$(libdir)\encodings" $(MKDIR) "$(libdir)\encodings"
 	$(CP) encodings\*.* "$(libdir)\encodings"
 !endif
+
+check: package\ecl.exe
+	cd tests
+	$(MAKE)
+recheck: package\ecl.exe
+	cd tests
+	$(MAKE) clean
+	$(MAKE)
+package\ecl.exe: ecl2$(EXE)
+	$(MAKE) install ECL_THREADS=$(ECL_THREADS) ECL_UNICODE=$(ECL_UNICODE) 
 
 windows-nsi:
 	IF EXIST "$(TAR_DIR)" $(RMDIR) "$(TAR_DIR)"

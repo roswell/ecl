@@ -9,21 +9,21 @@ output.ecl/ansi.log: config.lsp
 output.ecl/regressions.log: config.lsp
 	$(MAKE) do-regressions
 
-do-ansi: ansi-tests
+do-ansi: ansi-tests config.lsp
 	$(ECL) -norc -load config.lsp -eval '(ecl-tests::run-ansi-tests)' -eval '(ext:quit)' < /dev/null
-do-regressions: regressions
+do-regressions: regressions config.lsp
 	$(ECL) -norc -load config.lsp -eval '(ecl-tests::run-regressions-tests)' -eval '(ext:quit)' < /dev/null
-do-quicklisp: quicklisp
+do-quicklisp: quicklisp config.lsp
 	$(ECL) -norc -load config.lsp -eval '(ecl-tests::run-quicklisp-tests)' -eval '(ext:quit)' < /dev/null
 
 #
 # Create directories
 #
-ansi-tests:
+ansi-tests: config.lsp
 	$(ECL) -norc -load config.lsp -eval '(ecl-tests::ensure-ansi-tests)' -eval '(ext:quit)' < /dev/null
-regressions:
+regressions: config.lsp
 	$(ECL) -norc -load config.lsp -eval '(ecl-tests::ensure-regressions)' -eval '(ext:quit)' < /dev/null
-quicklisp:
+quicklisp: config.lsp
 	$(ECL) -norc -load config.lsp -eval '(ecl-tests::ensure-quicklisp)' -eval '(ext:quit)' < /dev/null
 
 #
