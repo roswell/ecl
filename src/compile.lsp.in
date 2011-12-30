@@ -361,7 +361,7 @@
  #-(or cross stage1 msvc) "ecl2"
  :epilogue-code '@ECL_INIT_FORM@
  :lisp-files *module-symbols*
- :ld-flags '(#-msvc "-L./" #+windows "ecl.res"))
+ :ld-flags #-msvc '("-L./") #+windows '("ecl.res" "/F 10485760"))
 
 (with-open-file (modules-list #P"build:MODULES" :direction :output)
   (dolist (module-file *module-files*)
