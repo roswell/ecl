@@ -88,8 +88,8 @@
 	    (t ,(simple-type-assertion value type env))))))
 
 (defun c1checked-value (args)
-  (let* ((value (pop args))
-	 (type (pop args))
+  (let* ((type (pop args))
+	 (value (pop args))
 	 form form-type and-type)
     (cond ((or (trivial-type-p args) (not (policy-type-assertions)))
 	   value)
@@ -134,7 +134,7 @@ expression, ensuring that it is satisfied."
   (when (and (policy-type-assertions env)
 	     (not (trivial-type-p type)))
     (cmpnote "Checking type of ~A to be ~A" value type)
-    `(checked-value ,value ,type)))
+    `(checked-value ,type ,value)))
 
 (defmacro type-assertion (&whole whole value type &environment env)
   "Generates a type check on an expression, ensuring that it is satisfied."

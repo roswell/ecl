@@ -135,7 +135,7 @@
 	(let ((new-var (gensym)))
 	  (push new-var vars)
 	  (push new-var temp-vars)
-	  (push `(setf ,var-or-form (checked-value ,new-var ,type)) late-bindings)))))
+	  (push `(setf ,var-or-form (checked-value ,type ,new-var)) late-bindings)))))
   (let ((value (second args)))
     (cond (temp-vars
 	   `(let* (,@temp-vars)

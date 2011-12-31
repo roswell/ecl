@@ -93,7 +93,7 @@
 			   ((trivial-type-p type)
 			    (c1expr (first form)))
 			   (t
-			    (c1expr `(checked-value ,(first form) ,type))))))
+			    (c1expr `(checked-value ,type ,(first form)))))))
           ;; :read-only variable handling. Beppe
           (if (read-only-variable-p name other-decls)
 	      (if (global-var-p var)

@@ -359,7 +359,7 @@
 	     (type (var-type name))
 	     (form (c1expr (if (trivial-type-p type)
 			       form
-			       `(checked-value ,form ,type)))))
+			       `(checked-value ,type ,form)))))
 	(add-to-set-nodes name (make-c1form* 'SETQ
 					     :type (c1form-type form)
 					     :args name form)))
@@ -431,7 +431,7 @@
       (push vref vrefs)
       (push (c1expr (if (trivial-type-p type)
 			form
-			`(checked-value ,form ,type)))
+			`(checked-value ,type ,form)))
 	    forms))))
 
 (defun c2psetq (c1form vrefs forms &aux (*lcl* *lcl*) (saves nil) (blocks 0))

@@ -123,7 +123,7 @@
            ;; Fixnum iterators are always fine
            (aref %seq %iterator)
            ;; Error check in case we may have been passed an improper list
-           (cons-car (checked-value %iterator cons))))))
+           (cons-car (checked-value cons %iterator))))))
 
 #+(or)
 (define-compiler-macro si::seq-iterator-next (seq iterator)
