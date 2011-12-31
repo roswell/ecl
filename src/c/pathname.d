@@ -211,12 +211,12 @@ destructively_check_directory(cl_object directory, bool logical)
 	int i;
 
 	if (!LISTP(directory))
-		return Cnil;
+		return @':error';
 	if (Null(directory))
-		return Ct;
+		return directory;
 	if (ECL_CONS_CAR(directory) != @':absolute' &&
 	    ECL_CONS_CAR(directory) != @':relative')
-		return Cnil;
+		return @':error';
  BEGIN:
 	for (i=0, ptr=directory; CONSP(ptr); ptr = ECL_CONS_CDR(ptr), i++) {
 		cl_object item = ECL_CONS_CAR(ptr);
@@ -260,7 +260,7 @@ destructively_check_directory(cl_object directory, bool logical)
 					ECL_RPLACD(ecl_nthcdr(--i, directory),
 						   ECL_CONS_CDR(ptr));
 				} else if (l == 2 && ecl_char(item,1) == '.') {
-					ECL_RPLACA(ptr, @':back');
+					ECL_RPLACA(ptr, @':up');
 					goto BEGIN;
 				}
 			}
@@ -310,7 +310,7 @@ ecl_make_pathname(cl_object host, cl_object device, cl_object directory,
 	{
 		x = version;
 		component = @':version';
-	ERROR:	cl_print(1,x); cl_print(1,component); FEerror("~s is not a valid pathname-~a component", 2, x, component);
+	ERROR:	FEerror("~s is not a valid pathname-~a component", 2, x, component);
 	}
 	switch (type_of(directory)) {
 #ifdef ECL_UNICODE
@@ -347,6 +347,7 @@ ecl_make_pathname(cl_object host, cl_object device, cl_object directory,
                 p->pathname.device =
                         translate_component_case(device, fromcase, tocase);
                 p->pathname.directory =
+			directory =
                         translate_list_case(directory, fromcase, tocase);
                 p->pathname.name =
                         translate_component_case(name, fromcase, tocase);
@@ -354,11 +355,11 @@ ecl_make_pathname(cl_object host, cl_object device, cl_object directory,
                         translate_component_case(type, fromcase, tocase);
                 p->pathname.version = version;
         }
-        if (destructively_check_directory(directory, p->pathname.logical)
-            == @':error')
-        {
+	directory = destructively_check_directory(directory, p->pathname.logical);
+        unlikely_if (directory == @':error') {
 		cl_error(3, @'file-error', @':pathname', p);
 	}
+	p->pathname.directory = directory;
 	return(p);
 }
 

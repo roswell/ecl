@@ -163,6 +163,8 @@ ECL 11.7.1:
    are no substitute for proper management of resources, as the time of
    collection can not be guaranteed.
 
+ - In pathnames, ".." is translated to :UP, not :BACK.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
