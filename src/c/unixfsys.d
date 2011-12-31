@@ -360,7 +360,7 @@ file_truename(cl_object pathname, cl_object filename, int flags)
 					     pathname->pathname.directory,
 					     Cnil, Cnil, Cnil, @':local');
                 pathname = ecl_merge_pathnames(filename, pathname, @':default');
-                return file_truename(pathname, Cnil, flags);
+                return cl_truename(pathname);
 #endif
         } else if (kind == @':directory'){
                 /* If the pathname is a directory but we have supplied
