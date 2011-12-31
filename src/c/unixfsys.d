@@ -301,7 +301,7 @@ enter_directory(cl_object base_dir, cl_object subdir)
         }
         if (subdir == @':up') {
                 cl_object newdir= output->pathname.directory;
-                newdir = ecl_nbutlast(newdir, 1);
+                newdir = ecl_nbutlast(newdir, 2);
                 if (Null(newdir)) {
                         FEerror("Pathname contained an :UP component  "
                                 "that goes above the base directory:"
