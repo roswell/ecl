@@ -257,7 +257,7 @@ destructively_check_directory(cl_object directory, bool logical)
 					/* Single dot */
 					if (i == 0)
 						return @':error';
-					ECL_RPLACD(ecl_nthcdr(i-1, directory),
+					ECL_RPLACD(ecl_nthcdr(--i, directory),
 						   ECL_CONS_CDR(ptr));
 				} else if (l == 2 && ecl_char(item,1) == '.') {
 					ECL_RPLACA(ptr, @':back');
