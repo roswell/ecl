@@ -299,7 +299,6 @@ enter_directory(cl_object base_dir, cl_object subdir)
                         "actually points to a file or special device.",
                         2, subdir, base_dir);
         }
-	cl_print(1,subdir);
         if (subdir == @':up') {
                 cl_object newdir= output->pathname.directory;
                 newdir = ecl_nbutlast(newdir, 1);
