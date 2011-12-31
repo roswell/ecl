@@ -2218,5 +2218,8 @@ cl_symbols[] = {
 {KEY_ "WEAKNESS",NULL},
 {EXT_ "HASH-TABLE-WEAKNESS","si_hash_table_weakness"},
 
+{EXT_ "TRULY-THE",NULL},
+{EXT_ "CHECKED-VALUE",NULL},
+
 /* Tag for end of list */
 {NULL,NULL}};

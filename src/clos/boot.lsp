@@ -189,7 +189,7 @@
 	 (location (slot-definition-location slotd)))
     (cond ((ext:fixnump location)
 	   ;; local slot
-	   (si:instance-ref instance (the fixnum location)))
+	   (si:instance-ref instance (truly-the fixnum location)))
 	  ((consp location)
 	   ;; shared slot
 	   (car location))
@@ -203,7 +203,7 @@
 	 (location (slot-definition-location slotd)))
     (cond ((ext:fixnump location)
 	   ;; local slot
-	   (si:instance-set instance (the fixnum location) val))
+	   (si:instance-set instance (truly-the fixnum location) val))
 	  ((consp location)
 	   ;; shared slot
 	   (setf (car location) val))
@@ -232,7 +232,7 @@
   (let* ((location (slot-definition-location slotd)))
     (cond ((ext:fixnump location)
 	   ;; local slot
-	   (si:sl-makunbound instance (the fixnum location)))
+	   (si:sl-makunbound instance (truly-the fixnum location)))
 	  ((consp location)
 	   ;; shared slot
 	   (setf (car location) (unbound)))

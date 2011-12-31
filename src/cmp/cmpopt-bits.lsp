@@ -29,7 +29,7 @@
 	     (integerp (setq pos (third arg1)))
 	     (<= (+ size pos) len)
 	     (subtypep (result-type (second args)) 'FIXNUM))
-	`(the fixnum (ldb1 ,size ,pos ,(second args)))
+	`(truly-the fixnum (ldb1 ,size ,pos ,(second args)))
 	whole)))
 
 ;;;

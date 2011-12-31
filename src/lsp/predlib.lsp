@@ -1406,7 +1406,7 @@ if not possible."
     (return-from subtypep (values (subclassp t1 t2) t)))
   ;; Finally, cached results.
   (let* ((cache *subtypep-cache*)
-	 (hash (the (integer 0 255) (logand (hash-eql t1 t2) 255)))
+	 (hash (truly-the (integer 0 255) (logand (hash-eql t1 t2) 255)))
 	 (elt (aref cache hash)))
     (when (and elt (eq (caar elt) t1) (eq (cdar elt) t2))
       (setf elt (cdr elt))

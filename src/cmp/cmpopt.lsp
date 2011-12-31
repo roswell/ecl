@@ -145,7 +145,7 @@
 			 (type ,first ,var2))
 		(AND (TYPEP ,var1 ',first)
 		     (locally (declare (optimize (speed 3) (safety 0) (space 0)))
-		       (setf ,var2 (the ,first ,var1))
+		       (setf ,var2 (truly-the ,first ,var1))
 		       (AND ,@(expand-in-interval-p var2 rest)))))))
           ;;
           ;; (SATISFIES predicate)
@@ -177,7 +177,7 @@
     (let* ((list-var (gensym))
 	   (typed-var (if (policy-assume-no-errors env)
 			  list-var
-			  `(the cons ,list-var))))
+			  `(truly-the cons ,list-var))))
       `(block nil
 	 (let* ((,list-var ,expression))
 	   (si::while ,list-var

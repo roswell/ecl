@@ -253,13 +253,13 @@
 		  (return nil))
 		 (flag
 		  (setf flag nil
-			fast (cdr (the cons fast))))
+			fast (cdr (truly-the cons fast))))
 		 ((eq slow fast)
 		  (return nil))
 		 (t
 		  (setf flag t
-			slow (cdr (the cons slow))
-			fast (cdr (the cons fast)))))
+			slow (cdr (truly-the cons slow))
+			fast (cdr (truly-the cons fast)))))
 	finally (return l)))
 
 (defun check-args-number (operator args &optional (min 0) (max most-positive-fixnum))

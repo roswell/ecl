@@ -10,7 +10,7 @@
 ;;;;    See file '../Copyright' for full details.
 
 (defpackage "CLOS"
-  (:use "CL")
+  (:use "CL" "EXT")
   (:import-from "SI" "UNBOUND" "GET-SYSPROP" "PUT-SYSPROP" "REM-SYSPROP"
 		"SIMPLE-PROGRAM-ERROR"))
 

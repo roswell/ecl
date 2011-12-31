@@ -165,6 +165,13 @@ ECL 11.7.1:
 
  - In pathnames, ".." is translated to :UP, not :BACK.
 
+ - ECL introduces two special forms, EXT:CHECKED-VALUE and EXT:TRULY-THE, which
+   have the same syntax as THE, but in the first case lead to a type assertion
+   at low safety levels and in the second case lead to an unchecked
+   declaration. By default THE maps to EXT:CHECKED-VALUE (as in SBCL), but this
+   may be controlled globally using the declaration/proclamation
+   EXT:THE-IS-CHECKED.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

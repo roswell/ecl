@@ -334,6 +334,7 @@ static compiler_record database[] = {
   {@'symbol-macrolet', c_symbol_macrolet, 0},
   {@'tagbody', c_tagbody, 1},
   {@'the', c_the, 0},
+  {@'ext::truly-the', c_the, 0},
   {@'throw', c_throw, 1},
   {@'unwind-protect', c_unwind_protect, 1},
   {@'values', c_values, 1},

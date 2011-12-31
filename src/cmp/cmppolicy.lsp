@@ -266,6 +266,9 @@
 (define-policy check-nargs :on safety 1 :only-on check-arguments-type 1
   "Check that the number of arguments a function receives is within bounds")
 
+(define-policy the-is-checked :on safety 1
+  "THE is equivalent to EXT:CHECKED-VALUE. Otherwise THE is equivalent to EXT:TRULY-THE.")
+
 ;;
 ;; INLINING POLICY
 ;;

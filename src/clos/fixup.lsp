@@ -98,7 +98,7 @@
 				(cond ((null old-class)
 				       (find-class 'standard-method))
 				      ((symbolp old-class)
-				       (find-class (the symbol old-class)))
+				       (find-class (truly-the symbol old-class)))
 				      (t
 				       old-class))))
       (si::instance-sig-set gfun)

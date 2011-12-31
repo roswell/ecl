@@ -92,7 +92,7 @@
 	     (multiple-value-bind (reqs opts rest key-flag keys allow-other-keys auxs)
 		 (si::process-lambda-list vl (if macro 'macro 'destructuring-bind))
 	       (let* ((pointer (gensym))
-		      (cons-pointer `(the cons ,pointer))
+		      (cons-pointer `(truly-the cons ,pointer))
 		      (unsafe-car `(car ,cons-pointer))
 		      (unsafe-cdr `(cdr ,cons-pointer))
 		      (unsafe-pop `(setq ,pointer ,unsafe-cdr))
@@ -100,7 +100,7 @@
 		      (ppn (+ (length reqs) (first opts)))
 		      all-keywords)
 		 ;; In macros, eliminate the name of the macro from the list
-		 (dm-v pointer (if macro `(cdr (the cons ,whole)) whole))
+		 (dm-v pointer (if macro `(cdr (truly-the cons ,whole)) whole))
 		 (dolist (v (cdr reqs))
 		   (dm-v v `(progn
 			      (if (null ,pointer)
@@ -370,4 +370,4 @@ from the function in which it appears." name))))
     (dolist (record (macrolet-functions definitions old-env))
       (push (list (first record) 'si::macro (second record))
 	    macros))
-    (rplacd (the cons old-env) macros)))
+    (rplacd (truly-the cons old-env) macros)))

@@ -353,3 +353,9 @@ values of the last FORM.  If no FORM is given, returns NIL."
 	  (not (eq (first form) 'quote)))
       (list 'quote form)
       form))
+
+(defmacro ext:truly-the (&rest args)
+  `(the ,@args))
+
+(defmacro ext:checked-value (&rest args)
+  `(the ,@args))

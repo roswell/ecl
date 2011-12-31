@@ -199,7 +199,7 @@ If PACKAGE is non-NIL, then only the specified PACKAGE is searched."
                (plusp (length name))
                (char= #\. (char name 0)))
       (let* ((last-dot-position (or (find-non-dot name) (length name)))
-	     (n-dots (the fixnum last-dot-position))
+	     (n-dots (truly-the fixnum last-dot-position))
 	     (name (subseq name last-dot-position)))
 	;; relative to our (- n-dots 1)'th parent
 	(let ((p *package*))

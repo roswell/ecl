@@ -131,7 +131,7 @@
             ;; later due to this assertion...
             (setf (var-type var) t
                   checks (list* `(type-assertion ,name ,type) checks)
-                  new-auxs (list* `(the ,type ,name) name new-auxs))
+                  new-auxs (list* `(truly-the ,type ,name) name new-auxs))
             ;; Or simply enforce the variable's type.
             (setf (var-type var) (type-and (var-type var) type)))
      finally
@@ -177,7 +177,7 @@
         (with-clean-symbols (%value)
           `(let* ((%value ,value))
              ,(type-error-check '%value (replace-invalid-types type))
-             (the ,type %value))))))
+             (truly-the ,type %value))))))
 
 (defun replace-invalid-types (type)
   ;; Some types which are acceptable in DECLARE are not

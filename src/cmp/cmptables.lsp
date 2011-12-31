@@ -120,6 +120,7 @@
     (quote . c1quote) ; c1special
     (function . c1function) ; c1special
     (the . c1the) ; c1special
+    (ext:truly-the . c1truly-the) ; c1special
     (eval-when . c1eval-when) ; c1special
     (declare . c1declare) ; c1special
     (ext:compiler-let . c1compiler-let) ; c1special

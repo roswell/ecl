@@ -132,9 +132,9 @@
             (%iterator ,iterator))
        (declare (optimize (safety 0)))
        (if (si::fixnump %iterator)
-           (let ((%iterator (1+ (the fixnum %iterator))))
+           (let ((%iterator (1+ (truly-the fixnum %iterator))))
              (declare (fixnum %iterator))
-             (and (< %iterator (length (the vector %seq)))
+             (and (< %iterator (length (truly-the vector %seq)))
                   %iterator))
            (cons-cdr %iterator)))))
 

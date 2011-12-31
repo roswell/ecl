@@ -301,16 +301,16 @@
 		(entry `(,constructor :posn
 				      (index-posn
 				       (pretty-stream-buffer-fill-pointer
-					(the pretty-stream ,stream))
+					(truly-the pretty-stream ,stream))
 				       ,stream)
 				      ,@args))
 		(op `(list ,entry))
-		(head `(pretty-stream-queue-head (the pretty-stream ,stream))))
+		(head `(pretty-stream-queue-head (truly-the pretty-stream ,stream))))
       `(progn
 	 (if ,head
 	     (setf (cdr ,head) ,op)
-	     (setf (pretty-stream-queue-tail (the pretty-stream ,stream)) ,op))
-	 (setf (pretty-stream-queue-head (the pretty-stream ,stream)) ,op)
+	     (setf (pretty-stream-queue-tail (truly-the pretty-stream ,stream)) ,op))
+	 (setf (pretty-stream-queue-head (truly-the pretty-stream ,stream)) ,op)
 	 ,entry))))
 )
 

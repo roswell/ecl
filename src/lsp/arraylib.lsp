@@ -127,7 +127,7 @@ INDEXes must be equal to the rank of ARRAY."
     (do* ((r (array-rank array))
           (i 0 (1+ i))
           (j 0)
-          (s indices (cdr (the cons s))))
+          (s indices (cdr (truly-the cons s))))
          ((null s)
           (when (< i r)
             (indexing-error array indices))
@@ -135,7 +135,7 @@ INDEXes must be equal to the rank of ARRAY."
       (declare (ext:array-index j)
                (fixnum i r))
       (let* ((d (array-dimension array i))
-             (o (car (the cons s)))
+             (o (car (truly-the cons s)))
              ndx)
         (declare (ext:array-index ndx))
         (unless (and (typep o 'fixnum)
@@ -267,11 +267,11 @@ value of the fill-pointer becomes too large.  Otherwise, returns the new fill-
 pointer as the value."
   ;; FILL-POINTER asserts vector is a vector
   (let* ((fp (fill-pointer vector))
-         (vector (the vector vector)))
+         (vector (truly-the vector vector)))
     (declare (optimize (safety 0)))
     (cond ((< fp (array-total-size vector))
            (sys:aset vector fp new-element)
-           (sys:fill-pointer-set vector (the ext:array-index (1+ fp)))
+           (sys:fill-pointer-set vector (truly-the ext:array-index (1+ fp)))
 	   fp)
 	  (t nil))))
 
@@ -283,7 +283,7 @@ the fill-pointer becomes too large, extends VECTOR for N more elements.
 Returns the new value of the fill-pointer."
   ;; FILL-POINTER asserts vector is a vector
   (let* ((fp (fill-pointer vector))
-         (vector (the vector vector)))
+         (vector (truly-the vector vector)))
     (declare (optimize (safety 0)))
     (let ((d (array-total-size vector)))
       (unless (< fp d)
@@ -302,7 +302,7 @@ to by the new fill-pointer.  Signals an error if the old value of the fill-
 pointer is 0 already."
   ;; FILL-POINTER asserts vector is a vector and has fill pointer
   (let* ((fp (fill-pointer vector))
-         (vector (the vector vector)))
+         (vector (truly-the vector vector)))
     (declare (ext:array-index fp)
              (optimize (safety 0)))
     (when (zerop fp)

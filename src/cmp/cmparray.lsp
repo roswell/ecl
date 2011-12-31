@@ -80,7 +80,7 @@
       ;; Then we may fill the array with a given value
       (when initial-element-supplied-p
         (setf form `(si::fill-array-with-elt ,form ,initial-element 0 nil)))
-      (setf form `(the (array ,guessed-element-type ,dimensions-type)
+      (setf form `(truly-the (array ,guessed-element-type ,dimensions-type)
                     ,form))))
   form)
 
@@ -106,7 +106,7 @@
                    (declare (fixnum index dimension)
                             (:read-only index dimension))
                    (cond ((< index dimension)
-                          (sys::fill-pointer-set vector (the fixnum (+ 1 index)))
+                          (sys::fill-pointer-set vector (truly-the fixnum (+ 1 index)))
                           (sys::aset vector index value)
                           index)
                          (t ,(if extend
@@ -216,12 +216,12 @@
 	      for dim-var in dim-names
 	      when (plusp i)
 	      collect `(setf %output-var
-			     (the ext:array-index (* %output-var ,dim-var)))
+			     (truly-the ext:array-index (* %output-var ,dim-var)))
 	      collect `(let ((%ndx-var ,index))
 			 (declare (ext:array-index %ndx-var))
 			 ,(and check `(check-index-in-bounds ,a %ndx-var ,dim-var))
 			 (setf %output-var
-			       (the ext:array-index (+ %output-var %ndx-var)))))
+			       (truly-the ext:array-index (+ %output-var %ndx-var)))))
          %output-var))))
 
 ;(trace c::expand-row-major-index c::expand-aset c::expand-aref)

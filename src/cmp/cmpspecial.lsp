@@ -23,7 +23,12 @@
   (cmperr "The declaration ~s was found in a bad place." (cons 'DECLARE args)))
 
 (defun c1the (args)
-  (check-args-number 'THE args 2 2)
+  (if (policy-the-is-checked)
+      (c1checked-value args)
+      (c1truly-the args)))
+
+(defun c1truly-the (args)
+  (check-args-number 'TRULY-THE args 2 2)
   (let* ((form (c1expr (second args)))
 	 (the-type (first args))
 	 type)
