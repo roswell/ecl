@@ -2177,7 +2177,7 @@ need_to_make_load_form_p(cl_object o)
         case t_list:
                 if (Null(o)) return 0;
         default:
-                return cl_funcall(2, @'clos::need-to-make-load-form-p', o)
+                return cl_funcall(3, @'clos::need-to-make-load-form-p', o, Cnil)
                         != Cnil;
         }
 }
