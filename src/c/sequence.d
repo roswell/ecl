@@ -64,7 +64,7 @@ si_sequence_start_end(cl_object fun, cl_object sequence, cl_object start, cl_obj
 cl_object
 cl_elt(cl_object x, cl_object i)
 {
-	@(return ecl_elt(x, fixint(i)))
+	@(return ecl_elt(x, ecl_to_size(i)))
 }
 
 cl_object
@@ -105,7 +105,7 @@ E:
 cl_object
 si_elt_set(cl_object seq, cl_object index, cl_object val)
 {
-	@(return ecl_elt_set(seq, fixint(index), val))
+	@(return ecl_elt_set(seq, ecl_to_size(index), val))
 }
 
 cl_object

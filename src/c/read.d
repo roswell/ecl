@@ -730,14 +730,14 @@ sharp_Y_reader(cl_object in, cl_object c, cl_object d)
 
         nth = ECL_CONS_CAR(x);
         x = ECL_CONS_CDR(x);
-        rv->bytecodes.code_size = fixint(cl_list_length(nth));
+        rv->bytecodes.code_size = ecl_to_fix(cl_list_length(nth));
         rv->bytecodes.code = ecl_alloc_atomic(rv->bytecodes.code_size * sizeof(uint16_t));
         for ( i=0; !ecl_endp(nth) ; i++, nth=ECL_CONS_CDR(nth) )
-             ((cl_opcode*)(rv->bytecodes.code))[i] = fixint(ECL_CONS_CAR(nth));
+             ((cl_opcode*)(rv->bytecodes.code))[i] = ecl_to_fix(ECL_CONS_CAR(nth));
 
         nth = ECL_CONS_CAR(x);
         x = ECL_CONS_CDR(x);
-        rv->bytecodes.data_size = fixint(cl_list_length(nth));
+        rv->bytecodes.data_size = ecl_to_fix(cl_list_length(nth));
         rv->bytecodes.data = ecl_alloc(rv->bytecodes.data_size * sizeof(cl_object));
         for ( i=0 ; !ecl_endp(nth) ; i++, nth=ECL_CONS_CDR(nth) )
              ((cl_object*)(rv->bytecodes.data))[i] = ECL_CONS_CAR(nth);

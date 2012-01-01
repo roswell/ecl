@@ -244,7 +244,7 @@ ecl_waitpid(cl_object pid, cl_object wait)
         ecl_enable_interrupts_env(the_env);
 #else
         int code_int, error;
-        error = waitpid(fixint(pid), &code_int, Null(wait)? WNOHANG : 0);
+        error = waitpid(ecl_to_fix(pid), &code_int, Null(wait)? WNOHANG : 0);
         if (error < 0) {
                 if (errno == EINTR) {
                         status = @':abort';

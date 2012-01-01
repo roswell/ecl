@@ -58,7 +58,7 @@
                                  @':if-does-not-exist', if_does_not_exist,
                                  @':external-format', @':default',
                                  @':cstream', Cnil);
-                fd = fixint(si_file_stream_fd(stream));
+                fd = ecl_to_int(si_file_stream_fd(stream));
                 if (Null(length))
                         len = ecl_to_unsigned_integer(ecl_file_length(stream));
         }

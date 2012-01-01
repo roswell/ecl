@@ -331,7 +331,7 @@ si_proper_list_p(cl_object x)
 cl_object
 cl_nth(cl_object n, cl_object x)
 {
-	@(return ecl_nth(fixint(n), x))
+	@(return ecl_nth(ecl_to_size(n), x))
 }
 
 cl_object
@@ -353,7 +353,7 @@ ecl_nth(cl_fixnum n, cl_object x)
 cl_object
 cl_nthcdr(cl_object n, cl_object x)
 {
-	@(return ecl_nthcdr(fixint(n), x))
+	@(return ecl_nthcdr(ecl_to_size(n), x))
 }
 
 cl_object

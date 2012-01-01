@@ -359,7 +359,7 @@ static int
 coerce_to_logical_operator(cl_object o)
 {
 	cl_fixnum op;
-	op = fixint(o);
+	op = ecl_to_fix(o);
 	if (op < 0 || op > ECL_BOOLSET)
 		FEerror("~S is an invalid logical operator.", 1, o);
 	return op;
