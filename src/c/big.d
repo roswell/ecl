@@ -364,28 +364,24 @@ _ecl_big_set_index(cl_object x, cl_index f)
 cl_fixnum
 _ecl_big_get_fixnum(cl_object x)
 {
-	if (x->big.big_size == 0) {
-		return 0;
-	} else {
-		cl_fixnum n = x->big.big_limbs[0];
-		return (x->big.big_size > 0) ? n : -n;
-        }
+	/* INV: x is a bignum and thus size != 0 */
+	cl_fixnum output = x->big.big_limbs[0];
+	return (x->big.big_size > 0) ? output : -output;
 }
 
 cl_index
 _ecl_big_get_index(cl_object x)
 {
-	if (x->big.big_size == 0) {
-		return 0;
-	} else {
-		return (cl_index)x->big.big_limbs[0];
-        }
+	/* INV: x is a bignum and thus size != 0 */
+	cl_index output = x->big.big_limbs[0];
+	return (x->big.big_size > 0)? output : ~(output - 1);
 }
 
 bool
 _ecl_big_fits_in_index(cl_object x)
 {
-	return (x->big.big_size & (~1)) == 0;
+	/* INV: x is a bignum and thus size != 0 */
+	return (x->big.big_size ^ 1) == 0;
 }
 #else
 # error "ECL cannot build with GMP when both long and mp_limb_t are smaller than cl_fixnum"
