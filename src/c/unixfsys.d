@@ -371,7 +371,7 @@ file_truename(cl_object pathname, cl_object filename, int flags)
                         pathname = si_base_string_concatenate
                                 (2, filename,
                                  make_constant_base_string("/"));
-                        pathname = cl_pathname(pathname);
+                        pathname = cl_truename(pathname);
                 }
         }
         /* ECL does not contemplate version numbers
