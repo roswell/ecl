@@ -798,7 +798,7 @@ t_from_type(cl_object type)
 	cl_index i;
 @
 	tm = tm_of(t_from_type(type));
-	i = fixnnint(qty);
+	i = ecl_to_size(qty);
 	if (tm->tm_npage > i) i = tm->tm_npage;
 	tm->tm_maxpage = i;
 	if (now == Cnil || tm->tm_maxpage <= tm->tm_npage)
@@ -826,7 +826,7 @@ t_from_type(cl_object type)
 	cl_index i, m;
 	cl_ptr p;
 @
-	i = fixnnint(qty);
+	i = ecl_to_size(qty);
 	if (ncbpage > i)
 	  FEerror("Can't set the limit for contiguous blocks to ~D,~%\
 since ~D pages are already allocated.",
@@ -863,7 +863,7 @@ since ~D pages are already allocated.",
 @(defun si::set-hole-size (size)
 	cl_index i;
 @
-	i = fixnnint(size);
+	i = ecl_to_size(size);
 	if (i == 0 || i > available_pages() + new_holepage)
 	  FEerror("Illegal value for the hole size.", 0);
 	new_holepage = i;

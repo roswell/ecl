@@ -403,14 +403,14 @@ ecl_last(cl_object l, cl_index n)
 @
 	if (type_of(k) == t_bignum)
 		@(return l)
-	@(return ecl_last(l, fixnnint(k)))
+	@(return ecl_last(l, ecl_to_size(k)))
 @)
 
 @(defun make_list (size &key initial_element &aux x)
 	cl_fixnum i;
 @
-	/* INV: fixnnint() signals a type-error if SIZE is not a integer >=0 */
-	i = fixnnint(size);
+	/* INV: ecl_to_size() signals a type-error if SIZE is not a integer >=0 */
+	i = ecl_to_size(size);
 	while (i-- > 0)
 		x = CONS(initial_element, x);
 	@(return x)
@@ -578,8 +578,8 @@ ecl_butlast(cl_object l, cl_index n)
 	/* INV: No list has more than MOST_POSITIVE_FIXNUM elements */
 	if (type_of(nn) == t_bignum)
 		@(return Cnil);
-	/* INV: fixnnint() signals a type-error if NN is not an integer >=0 */
-	@(return ecl_butlast(lis, fixnnint(nn)))
+	/* INV: ecl_to_size() signals a type-error if NN is not an integer >=0 */
+	@(return ecl_butlast(lis, ecl_to_size(nn)))
 @)
 
 cl_object
@@ -607,8 +607,8 @@ ecl_nbutlast(cl_object l, cl_index n)
 	/* INV: No list has more than MOST_POSITIVE_FIXNUM elements */
 	if (type_of(nn) == t_bignum)
 		@(return Cnil)
-	/* INV: fixnnint() signas a type-error if NN is not an integer >=0 */
-	@(return ecl_nbutlast(lis, fixnnint(nn)))
+	/* INV: ecl_to_size() signas a type-error if NN is not an integer >=0 */
+	@(return ecl_nbutlast(lis, ecl_to_size(nn)))
 @)
 
 cl_object

@@ -112,14 +112,14 @@ ecl_to_index(cl_object n)
 cl_object
 cl_row_major_aref(cl_object x, cl_object indx)
 {
-	cl_index j = fixnnint(indx);
+	cl_index j = ecl_to_size(indx);
 	@(return ecl_aref(x, j))
 }
 
 cl_object
 si_row_major_aset(cl_object x, cl_object indx, cl_object val)
 {
-	cl_index j = fixnnint(indx);
+	cl_index j = ecl_to_size(indx);
 	@(return ecl_aset(x, j, val))
 }
 
@@ -325,10 +325,10 @@ ecl_aset_unsafe(cl_object x, cl_index index, cl_object value)
 		break;
 	}
 	case aet_fix:
-		x->array.self.fix[index] = fixint(value);
+		x->array.self.fix[index] = ecl_to_fix(value);
 		break;
 	case aet_index:
-		x->array.self.index[index] = fixnnint(value);
+		x->array.self.index[index] = ecl_to_size(value);
 		break;
 	case aet_sf:
 		x->array.self.sf[index] = ecl_to_float(value);
@@ -854,7 +854,7 @@ cl_array_rank(cl_object a)
 cl_object
 cl_array_dimension(cl_object a, cl_object index)
 {
-	@(return MAKE_FIXNUM(ecl_array_dimension(a, fixnnint(index))))
+	@(return MAKE_FIXNUM(ecl_array_dimension(a, ecl_to_size(index))))
 }
 
 cl_index
@@ -1264,9 +1264,9 @@ cl_object
 si_copy_subarray(cl_object dest, cl_object start0,
                  cl_object orig, cl_object start1, cl_object length)
 {
-        ecl_copy_subarray(dest, fixnnint(start0),
-                          orig, fixnnint(start1),
-                          fixnnint(length));
+        ecl_copy_subarray(dest, ecl_to_size(start0),
+                          orig, ecl_to_size(start1),
+                          ecl_to_size(length));
         @(return dest)
 }
 
@@ -1274,8 +1274,8 @@ cl_object
 si_fill_array_with_elt(cl_object x, cl_object elt, cl_object start, cl_object end)
 {
 	cl_elttype t = ecl_array_elttype(x);
-        cl_index first = fixnnint(start);
-        cl_index last = Null(end)? x->array.dim : fixnnint(end);
+        cl_index first = ecl_to_size(start);
+        cl_index last = Null(end)? x->array.dim : ecl_to_size(end);
         if (first >= last) {
                 goto END;
         }
@@ -1300,13 +1300,13 @@ si_fill_array_with_elt(cl_object x, cl_object elt, cl_object start, cl_object en
         }
 #endif
 	case aet_fix: {
-                cl_fixnum e = fixint(elt);
+                cl_fixnum e = ecl_to_fix(elt);
                 cl_fixnum *p = x->vector.self.fix + first;
 		for (first = last - first; first; --first, ++p) { *p = e; }
 		break;
         }
 	case aet_index: {
-                cl_index e = fixnnint(elt);
+                cl_index e = ecl_to_size(elt);
                 cl_index *p = x->vector.self.index + first;
 		for (first = last - first; first; --first, ++p) { *p = e; }
 		break;

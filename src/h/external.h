@@ -1035,10 +1035,10 @@ extern ECL_API ecl_int16_t ecl_to_int16_t(cl_object o);
 # define ecl_make_uint16_t(i) MAKE_FIXNUM(i)
 # define ecl_make_int16_t(i) MAKE_FIXNUM(i)
 #endif /* ecl_uint16_t */
+extern ECL_API unsigned short ecl_to_ushort(cl_object o);
+extern ECL_API short ecl_to_short(cl_object o);
 #define ecl_make_short(n) MAKE_FIXNUM(n)
-#define ecl_to_short(n) (short)fixint(n)
 #define ecl_make_ushort(n) MAKE_FIXNUM(n)
-#define ecl_to_ushort(n) (unsigned short)fixnnint(n)
 #ifdef ecl_uint32_t
 # if FIXNUM_BITS == 32
 #  define ecl_to_uint32_t fixnnint
@@ -1779,6 +1779,8 @@ extern ECL_API void assert_type_non_negative_integer(cl_object p);
 extern ECL_API void assert_type_proper_list(cl_object p);
 extern ECL_API cl_object cl_type_of(cl_object x);
 
+extern ECL_API void FEtype_error_fixnum(cl_object x) ecl_attr_noreturn;
+extern ECL_API void FEtype_error_size(cl_object x) ecl_attr_noreturn;
 extern ECL_API void FEtype_error_cons(cl_object x) ecl_attr_noreturn;
 extern ECL_API void FEtype_error_list(cl_object x) ecl_attr_noreturn;
 extern ECL_API void FEtype_error_proper_list(cl_object x) ecl_attr_noreturn;

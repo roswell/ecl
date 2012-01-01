@@ -140,6 +140,7 @@ typedef cl_object (*cl_objectfn_fixed)();
 #define ecl_fixnum_geq(a,b)     ((cl_fixnum)(a) >= (cl_fixnum)(b))
 #define ecl_fixnum_plusp(a)     ((cl_fixnum)(a) > (cl_fixnum)MAKE_FIXNUM(0))
 #define ecl_fixnum_minusp(a)    ((cl_fixnum)(a) < (cl_fixnum)(0))
+#define ecl_fix(a)              (((cl_fixnum)(a)) >> 2)
 
 /* Immediate characters:	*/
 #define CHARACTER_TAG		t_character

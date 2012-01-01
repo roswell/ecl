@@ -832,7 +832,7 @@
 (def-inline si:sl-boundp :always (t) :bool "(#0)!=ECL_UNBOUND")
 
 #+clos
-(def-inline clos:standard-instance-access :always (t t) t "ecl_instance_ref((#0),fixnnint(#1))")
+(def-inline clos:standard-instance-access :always (t t) t "ecl_instance_ref((#0),ecl_to_size(#1))")
 #+clos
 (def-inline clos:standard-instance-access :always (t fixnum) t "ecl_instance_ref((#0),(#1))")
 #+clos
@@ -840,7 +840,7 @@
  "(#0)->instance.slots[#1]")
 
 #+clos
-(def-inline clos:funcallable-standard-instance-access :always (t t) t "ecl_instance_ref((#0),fixnnint(#1))")
+(def-inline clos:funcallable-standard-instance-access :always (t t) t "ecl_instance_ref((#0),ecl_to_size(#1))")
 #+clos
 (def-inline clos:funcallable-standard-instance-access :always (t fixnum) t "ecl_instance_ref((#0),(#1))")
 #+clos

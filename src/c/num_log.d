@@ -379,7 +379,7 @@ cl_logbitp(cl_object p, cl_object x)
 
 	assert_type_integer(x);
 	if (FIXNUMP(p)) {
-		cl_index n = fixnnint(p);
+		cl_index n = ecl_to_size(p);
 		if (FIXNUMP(x)) {
 			cl_fixnum y = fix(x);
 			if (n >= FIXNUM_BITS) {

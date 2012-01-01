@@ -43,37 +43,27 @@
         } while (0)
 #endif
 
+#if !ECL_CAN_INLINE
 cl_fixnum
-fixint(cl_object x)
+ecl_to_fix(cl_object f)
 {
-	if (FIXNUMP(x))
-		return fix(x);
-	if (ECL_BIGNUMP(x)) {
-		if (_ecl_big_fits_in_index(x)) {
-			return _ecl_big_get_fixnum(x);
-		}
-	}
-	FEwrong_type_argument(@[fixnum], x);
+	if (ecl_unlikely(!ECL_FIXNUMP(f)))
+		FEtype_error_fixnum(f);
+	return ecl_fix(f);
 }
 
 cl_index
-fixnnint(cl_object x)
+ecl_to_size(cl_object f)
 {
-	if (FIXNUMP(x)) {
-		cl_fixnum i = fix(x);
-		if (i >= 0)
-			return i;
-	} else if (ECL_BIGNUMP(x)) {
-		if (_ecl_big_fits_in_index(x)) {
-			return _ecl_big_get_index(x);
-		}
+	cl_fixnum aux;
+	if (ecl_likely(ECL_FIXNUMP(f))) {
+		cl_fixnum aux = ecl_fix(f);
+		if (ecl_likely(aux >= 0))
+			return aux;
 	}
-	cl_error(9, @'simple-type-error', @':format-control',
-		    make_constant_base_string("Not a non-negative fixnum ~S"),
-		    @':format-arguments', cl_list(1,x),
-		    @':expected-type', cl_list(3, @'integer', MAKE_FIXNUM(0), MAKE_FIXNUM(MOST_POSITIVE_FIXNUM)),
-		    @':datum', x);
+	FEtype_error_object_index(f);
 }
+#endif /* !ECL_CAN_INLINE */
 
 cl_object
 ecl_make_integer(cl_fixnum l)
@@ -106,32 +96,57 @@ ecl_to_bit(cl_object x) {
 
 ecl_uint8_t
 ecl_to_uint8_t(cl_object x) {
-        do {
-                if (FIXNUMP(x)) {
-                        cl_fixnum y = fix(x);
-                        if (y >= 0 && y < 256) {
-                                return (uint8_t)y;
-                        }
-                }
-		x = ecl_type_error(@'coerce', "variable", x,
-                                   cl_list(3,@'integer',MAKE_FIXNUM(-128),
-                                           MAKE_FIXNUM(127)));
-        } while(1);
+	cl_fixnum aux;
+	if (ecl_likely(ECL_FIXNUMP(x))) {
+		cl_fixnum aux = ecl_fix(x);
+		if (ecl_likely(aux >= 0 && aux <= 255))
+			return (ecl_uint8_t)aux;
+	}
+	FEwrong_type_argument(cl_list(2, @'unsigned-byte', MAKE_FIXNUM(8)),
+			      x);
 }
 
 ecl_int8_t
 ecl_to_int8_t(cl_object x) {
-        do {
-                if (FIXNUMP(x)) {
-                        cl_fixnum y = fix(x);
-                        if (y >= -128 && y <= 127) {
-                                return (int8_t)y;
-                        }
+	cl_fixnum aux;
+	if (ecl_likely(ECL_FIXNUMP(x))) {
+		cl_fixnum aux = ecl_fix(x);
+		if (ecl_likely(aux >= -128 && aux <= 127))
+			return (ecl_uint8_t)aux;
+	}
+	FEwrong_type_argument(cl_list(2, @'signed-byte', MAKE_FIXNUM(8)),
+			      x);
+}
+
+unsigned short
+ecl_to_ushort(cl_object x) {
+	const unsigned short ushort_max = USHRT_MAX;
+        if (ecl_likely(ECL_FIXNUMP(x))) {
+		cl_fixnum y = ecl_fix(x);
+		if (ecl_likely(y >= 0 && y <= ushort_max)) {
+			return (unsigned short)y;
                 }
-		x = ecl_type_error(@'coerce', "variable", x,
-                                   cl_list(3,@'integer',MAKE_FIXNUM(-128),
-                                           MAKE_FIXNUM(127)));
-        } while(1);
+	}
+	FEwrong_type_argument(cl_list(3,@'integer',
+				      MAKE_FIXNUM(0),
+				      MAKE_FIXNUM(ushort_max)),
+			      x);
+}
+
+short
+ecl_to_short(cl_object x) {
+	const short short_min = SHRT_MIN;
+	const short short_max = SHRT_MAX;
+	if (ecl_likely(ECL_FIXNUMP(x))) {
+		cl_fixnum y = ecl_fix(x);
+		if (ecl_likely(y >= short_min && y <= short_max)) {
+			return (short)y;
+                }
+	}
+	FEwrong_type_argument(cl_list(3,@'integer',
+				      MAKE_FIXNUM(short_min),
+				      MAKE_FIXNUM(short_max)),
+			      x);
 }
 
 #if FIXNUM_BITS < 32
@@ -142,36 +157,32 @@ ecl_to_int8_t(cl_object x) {
 ecl_uint16_t
 ecl_to_uint16_t(cl_object x) {
 	const uint16_t uint16_max = 0xFFFFL;
-        do {
-                if (FIXNUMP(x)) {
-                        cl_fixnum y = fix(x);
-                        if (y >= 0 && y <= uint16_max) {
-                                return (ecl_uint16_t)y;
-                        }
+        if (ecl_likely(ECL_FIXNUMP(x))) {
+		cl_fixnum y = ecl_fix(x);
+		if (ecl_likely(y >= 0 && y <= uint16_max)) {
+			return (ecl_uint16_t)y;
                 }
-		x = ecl_type_error(@'coerce', "variable", x,
-                                   cl_list(3,@'integer',
-					   MAKE_FIXNUM(0),
-                                           MAKE_FIXNUM(uint16_max)));
-        } while(1);
+	}
+	FEwrong_type_argument(cl_list(3,@'integer',
+				      MAKE_FIXNUM(0),
+				      MAKE_FIXNUM(uint16_max)),
+			      x);
 }
 
 ecl_int16_t
 ecl_to_int16_t(cl_object x) {
 	const int16_t int16_min = -0x8000;
 	const int16_t int16_max =  0x7FFF;
-        do {
-                if (FIXNUMP(x)) {
-                        cl_fixnum y = fix(x);
-                        if (y >= int16_min && y <= int16_max) {
-                                return (ecl_int16_t)y;
-                        }
+	if (ecl_likely(ECL_FIXNUMP(x))) {
+		cl_fixnum y = ecl_fix(x);
+		if (ecl_likely(y >= int16_min && y <= int16_max)) {
+			return (ecl_int16_t)y;
                 }
-		x = ecl_type_error(@'coerce', "variable", x,
-                                   cl_list(3,@'integer',
-					   MAKE_FIXNUM(int16_min),
-                                           MAKE_FIXNUM(int16_max)));
-        } while(1);
+	}
+	FEwrong_type_argument(cl_list(3,@'integer',
+				      MAKE_FIXNUM(int16_min),
+				      MAKE_FIXNUM(int16_max)),
+			      x);
 }
 #endif /* ecl_uint16_t */
 
@@ -179,86 +190,79 @@ ecl_to_int16_t(cl_object x) {
 ecl_uint32_t
 ecl_to_uint32_t(cl_object x) {
 	const uint32_t uint32_max = 0xFFFFFFFFUL;
-        do {
-                if (FIXNUMP(x)) {
-                        cl_fixnum y = fix(x);
-                        if (y >= 0 && y <= uint32_max) {
-                                return (ecl_uint32_t)y;
-                        }
+	if (ecl_likely(ECL_FIXNUMP(x))) {
+		cl_fixnum y = fix(x);
+		if (ecl_likely(y >= 0 && y <= uint32_max)) {
+			return (ecl_uint32_t)y;
                 }
-		x = ecl_type_error(@'coerce', "variable", x,
-                                   cl_list(3,@'integer',MAKE_FIXNUM(0),
-                                           ecl_make_unsigned_integer(uint32_max)));
-        } while(1);
+	}
+	FEwrong_type_argument(cl_list(3,@'integer',MAKE_FIXNUM(0),
+				      ecl_make_unsigned_integer(uint32_max)),
+			      x);
 }
 
 ecl_int32_t
 ecl_to_int32_t(cl_object x) {
-        do {
-		const int32_t int32_min = -0x80000000L;
-		const int32_t int32_max =  0x7FFFFFFFL;
-                if (FIXNUMP(x)) {
-                        cl_fixnum y = fix(x);
-                        if (y >= int32_min && y <= int32_max) {
-                                return (ecl_int32_t)y;
-                        }
+	const int32_t int32_min = -0x80000000L;
+	const int32_t int32_max =  0x7FFFFFFFL;
+	if (ecl_likely(FIXNUMP(x))) {
+		cl_fixnum y = fix(x);
+		if (ecl_likely(y >= int32_min && y <= int32_max)) {
+			return (ecl_int32_t)y;
                 }
-		x = ecl_type_error(@'coerce', "variable", x,
-                                   cl_list(3,@'integer',
-                                           ecl_make_integer(int32_min),
-                                           ecl_make_integer(int32_max)));
-        } while(1);
+	}
+	FEwrong_type_argument(cl_list(3,@'integer',
+				      ecl_make_integer(int32_min),
+				      ecl_make_integer(int32_max)),
+			      x);
 }
 #endif /* ecl_uint32_t */
 
 #if defined(ecl_uint64_t) && (FIXNUM_BITS < 64)
 ecl_uint64_t
 ecl_to_uint64_t(cl_object x) {
-        do {
-                if (!ecl_minusp(x)) {
-                        if (FIXNUMP(x)) {
-                                return (ecl_uint64_t)fix(x);
-                        } else if (!ECL_BIGNUMP(x)) {
-                                (void)0;
-                        } else if (mpz_fits_ulong_p(x->big.big_num)) {
-                                return (ecl_uint64_t)mpz_get_ui(x->big.big_num);
-                        } else {
-                                cl_object copy = _ecl_big_register0();
-                                mpz_fdiv_q_2exp(copy->big.big_num, x->big.big_num, 32);
-                                if (mpz_fits_ulong_p(copy->big.big_num)) {
-                                        volatile ecl_uint64_t output;
-                                        output = (ecl_uint64_t)mpz_get_ui(copy->big.big_num);
-                                        output = (output << 32) +
-                                                (ecl_uint64_t)mpz_get_ui(x->big.big_num);
-                                        return output;
-                                }
-                        }
-                }
-		x = ecl_type_error(@'coerce', "variable", x,
-                                   cl_list(3,@'integer',MAKE_FIXNUM(0),
-                                           ecl_one_minus(ecl_ash(MAKE_FIXNUM(1), 64))));
-        } while(1);
+	if (!ecl_minusp(x)) {
+		if (FIXNUMP(x)) {
+			return (ecl_uint64_t)ecl_fix(x);
+		} else if (!ECL_BIGNUMP(x)) {
+			(void)0;
+		} else if (mpz_fits_ulong_p(x->big.big_num)) {
+			return (ecl_uint64_t)mpz_get_ui(x->big.big_num);
+		} else {
+			cl_object copy = _ecl_big_register0();
+			mpz_fdiv_q_2exp(copy->big.big_num, x->big.big_num, 32);
+			if (mpz_fits_ulong_p(copy->big.big_num)) {
+				volatile ecl_uint64_t output;
+				output = (ecl_uint64_t)mpz_get_ui(copy->big.big_num);
+				output = (output << 32) +
+					(ecl_uint64_t)mpz_get_ui(x->big.big_num);
+				return output;
+			}
+		}
+	}
+	FEwrong_type_argument(cl_list(3,@'integer',MAKE_FIXNUM(0),
+				      ecl_one_minus(ecl_ash(MAKE_FIXNUM(1), 64))),
+			      x);
 }
 
 ecl_int64_t
 ecl_to_int64_t(cl_object x) {
-        do {
-                if (FIXNUMP(x)) {
-                        return (ecl_int64_t)fix(x);
-                } else if (!ECL_BIGNUMP(x)) {
-                        (void)0;
-                } else if (mpz_fits_slong_p(x->big.big_num)) {
-                        return (ecl_int64_t)mpz_get_si(x->big.big_num);
-                } else {
-                        cl_object copy = _ecl_big_register0();
-                        mpz_fdiv_q_2exp(copy->big.big_num, x->big.big_num, 32);
-                        if (mpz_fits_slong_p(copy->big.big_num)) {
-                                ecl_int64_t output;
-                                output = (ecl_int64_t)mpz_get_si(copy->big.big_num);
-                                mpz_fdiv_r_2exp(copy->big.big_num, x->big.big_num, 32);
-                                return (output << 32) + mpz_get_ui(copy->big.big_num);
-                        }
-                }
+	if (FIXNUMP(x)) {
+		return (ecl_int64_t)fix(x);
+	} else if (!ECL_BIGNUMP(x)) {
+		(void)0;
+	} else if (mpz_fits_slong_p(x->big.big_num)) {
+		return (ecl_int64_t)mpz_get_si(x->big.big_num);
+	} else {
+		cl_object copy = _ecl_big_register0();
+		mpz_fdiv_q_2exp(copy->big.big_num, x->big.big_num, 32);
+		if (mpz_fits_slong_p(copy->big.big_num)) {
+			ecl_int64_t output;
+			output = (ecl_int64_t)mpz_get_si(copy->big.big_num);
+			mpz_fdiv_r_2exp(copy->big.big_num, x->big.big_num, 32);
+			return (output << 32) + mpz_get_ui(copy->big.big_num);
+		}
+	}
 		x = ecl_type_error(@'coerce', "variable", x,
                                    cl_list(3,@'integer',
                                            ecl_negate(ecl_ash(MAKE_FIXNUM(1), 63)),
@@ -332,65 +336,61 @@ ecl_make_long_long(ecl_long_long_t i) {
 #  else
 ecl_ulong_long_t
 ecl_to_unsigned_long_long(cl_object x) {
-        do {
-                if (!ecl_minusp(x)) {
-                        if (FIXNUMP(x)) {
-                                return (ecl_ulong_long_t)fix(x);
-                        } else if (!ECL_BIGNUMP(x)) {
-                                (void)0;
-                        } else if (mpz_fits_ulong_p(x->big.big_num)) {
-                                return (ecl_ulong_long_t)mpz_get_ui(x->big.big_num);
-                        } else {
-                                cl_object copy = _ecl_big_register0();
-                                int i = ECL_LONG_LONG_BITS - FIXNUM_BITS;
-                                mpz_fdiv_q_2exp(copy->bit.big_num, x->big.big_num, i);
-                                if (mpz_fits_ulong_p(copy->big.big_num)) {
-                                        volatile ecl_ulong_long_t output;
-                                        output = mpz_get_ui(copy->big.big_num);
-                                        for (i -= FIXNUM_BITS; i; i-= FIXNUM_BITS) {
-                                                output = (output << FIXNUM_BITS);
-                                                output += mpz_get_ui(x->big.big_num);
-                                        }
-                                        return output;
-                                }
-                        }
-                }
-		x = ecl_type_error(@'coerce', "variable", x,
-                                   cl_list(3,@'integer',MAKE_FIXNUM(0),
-                                           ecl_one_minus(ecl_ash(MAKE_FIXNUM(1),
-                                                                 ECL_LONG_LONG_BITS))));
-        } while(1);
+	if (!ecl_minusp(x)) {
+		if (FIXNUMP(x)) {
+			return (ecl_ulong_long_t)fix(x);
+		} else if (!ECL_BIGNUMP(x)) {
+			(void)0;
+		} else if (mpz_fits_ulong_p(x->big.big_num)) {
+			return (ecl_ulong_long_t)mpz_get_ui(x->big.big_num);
+		} else {
+			cl_object copy = _ecl_big_register0();
+			int i = ECL_LONG_LONG_BITS - FIXNUM_BITS;
+			mpz_fdiv_q_2exp(copy->bit.big_num, x->big.big_num, i);
+			if (mpz_fits_ulong_p(copy->big.big_num)) {
+				volatile ecl_ulong_long_t output;
+				output = mpz_get_ui(copy->big.big_num);
+				for (i -= FIXNUM_BITS; i; i-= FIXNUM_BITS) {
+					output = (output << FIXNUM_BITS);
+					output += mpz_get_ui(x->big.big_num);
+				}
+				return output;
+			}
+		}
+	}
+	FEwrong_type_argument(cl_list(3,@'integer',MAKE_FIXNUM(0),
+				      ecl_one_minus(ecl_ash(MAKE_FIXNUM(1),
+							    ECL_LONG_LONG_BITS))),
+			      x);
 }
 
 ecl_long_long_t
 ecl_to_long_long(cl_object x)
 {
-        do {
-                if (FIXNUMP(x)) {
-                        return (ecl_long_long_t)fix(x);
-                } else if (!ECL_BIGNUMP(x)) {
-                        (void)0;
-                } else if (mpz_fits_slong_p(x->big.big_num)) {
-                        return (ecl_long_long_t)mpz_get_si(x->big.big_num);
-                } else {
-                        cl_object copy = _ecl_big_register0();
-                        int i = ECL_LONG_LONG_BITS - FIXNUM_BITS;
-                        mpz_fdiv_q_2exp(copy->bit.big_num, x->big.big_num, i);
-                        if (mpz_fits_ulong_p(copy->big.big_num)) {
-                                volatile ecl_long_long_t output;
-                                output = mpz_get_si(copy->big.big_num);
-                                for (i -= FIXNUM_BITS; i; i-= FIXNUM_BITS) {
-                                        output = (output << FIXNUM_BITS);
-                                        output += mpz_get_ui(x->big.big_num);
-                                }
-                                return output;
-                        }
-                }
-		x = ecl_type_error(@'coerce', "variable", x,
-                                   cl_list(3,@'integer',
-                                           ecl_negate(ecl_ash(MAKE_FIXNUM(1), ECL_LONG_LONG_BITS-1)),
-                                           ecl_one_minus(ecl_ash(MAKE_FIXNUM(1), ECL_LONG_LONG_BITS-1))));
-        } while(1);
+	if (FIXNUMP(x)) {
+		return (ecl_long_long_t)fix(x);
+	} else if (!ECL_BIGNUMP(x)) {
+		(void)0;
+	} else if (mpz_fits_slong_p(x->big.big_num)) {
+		return (ecl_long_long_t)mpz_get_si(x->big.big_num);
+	} else {
+		cl_object copy = _ecl_big_register0();
+		int i = ECL_LONG_LONG_BITS - FIXNUM_BITS;
+		mpz_fdiv_q_2exp(copy->bit.big_num, x->big.big_num, i);
+		if (mpz_fits_ulong_p(copy->big.big_num)) {
+			volatile ecl_long_long_t output;
+			output = mpz_get_si(copy->big.big_num);
+			for (i -= FIXNUM_BITS; i; i-= FIXNUM_BITS) {
+				output = (output << FIXNUM_BITS);
+				output += mpz_get_ui(x->big.big_num);
+			}
+			return output;
+		}
+	}
+	FEwrong_type_argument(cl_list(3,@'integer',
+				      ecl_negate(ecl_ash(MAKE_FIXNUM(1), ECL_LONG_LONG_BITS-1)),
+				      ecl_one_minus(ecl_ash(MAKE_FIXNUM(1), ECL_LONG_LONG_BITS-1))),
+			      x);
 }
 
 cl_object

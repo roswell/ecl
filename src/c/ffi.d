@@ -250,7 +250,7 @@ cl_object
 si_allocate_foreign_data(cl_object tag, cl_object size)
 {
 	cl_object output = ecl_alloc_object(t_foreign);
-	cl_index bytes = fixnnint(size);
+	cl_index bytes = ecl_to_size(size);
 	output->foreign.tag = tag;
 	output->foreign.size = bytes;
 	/* FIXME! Should be atomic uncollectable or malloc, but we do not export
@@ -337,8 +337,8 @@ cl_object
 si_foreign_data_pointer(cl_object f, cl_object andx, cl_object asize,
 			cl_object tag)
 {
-	cl_index ndx = fixnnint(andx);
-	cl_index size = fixnnint(asize);
+	cl_index ndx = ecl_to_size(andx);
+	cl_index size = ecl_to_size(asize);
 	cl_object output;
 
 	if (ecl_unlikely(type_of(f) != t_foreign)) {
@@ -358,8 +358,8 @@ si_foreign_data_pointer(cl_object f, cl_object andx, cl_object asize,
 cl_object
 si_foreign_data_ref(cl_object f, cl_object andx, cl_object asize, cl_object tag)
 {
-	cl_index ndx = fixnnint(andx);
-	cl_index size = fixnnint(asize);
+	cl_index ndx = ecl_to_size(andx);
+	cl_index size = ecl_to_size(asize);
 	cl_object output;
 
 	if (ecl_unlikely(type_of(f) != t_foreign)) {
@@ -377,7 +377,7 @@ si_foreign_data_ref(cl_object f, cl_object andx, cl_object asize, cl_object tag)
 cl_object
 si_foreign_data_set(cl_object f, cl_object andx, cl_object value)
 {
-	cl_index ndx = fixnnint(andx);
+	cl_index ndx = ecl_to_size(andx);
 	cl_index size, limit;
 
 	if (ecl_unlikely(type_of(f) != t_foreign)) {
@@ -537,37 +537,35 @@ ecl_foreign_data_set_elt(void *p, enum ecl_ffi_tag tag, cl_object value)
 		*(unsigned char*)p = (unsigned char)ecl_base_char_code(value);
 		break;
 	case ECL_FFI_BYTE:
-		*(int8_t *)p = fixint(value);
+		*(int8_t *)p = ecl_to_int8_t(value);
 		break;
 	case ECL_FFI_UNSIGNED_BYTE:
-		*(uint8_t *)p = fixnnint(value);
+		*(uint8_t *)p = ecl_to_uint8_t(value);
 		break;
 	case ECL_FFI_SHORT:
-		*(short *)p = fixint(value);
+		*(short *)p = ecl_to_short(value);
 		break;
 	case ECL_FFI_UNSIGNED_SHORT:
-		*(unsigned short *)p = fixnnint(value);
+		*(unsigned short *)p = ecl_to_ushort(value);
 		break;
 	case ECL_FFI_INT:
-		*(int *)p = fixint(value);
+		*(int *)p = ecl_to_int(value);
 		break;
 	case ECL_FFI_UNSIGNED_INT:
-		*(unsigned int *)p = fixnnint(value);
+		*(unsigned int *)p = ecl_to_uint(value);
 		break;
 	case ECL_FFI_LONG:
-		*(long *)p = fixint(value);
+		*(long *)p = ecl_to_long(value);
 		break;
 	case ECL_FFI_UNSIGNED_LONG:
-		*(unsigned long *)p = fixnnint(value);
+		*(unsigned long *)p = ecl_to_ulong(value);
 		break;
-#ifdef ecl_uint8_t
         case ECL_FFI_INT8_T:
-                *(ecl_int8_t *)p = fixint(value);
+                *(ecl_int8_t *)p = ecl_to_int8_t(value);
                 break;
         case ECL_FFI_UINT8_T:
-                *(ecl_uint8_t *)p = fixnnint(value);
+                *(ecl_uint8_t *)p = ecl_to_uint8_t(value);
                 break;
-#endif
 #ifdef ecl_uint16_t
         case ECL_FFI_INT16_T:
                 *(ecl_int16_t *)p = ecl_to_int16_t(value);
@@ -625,7 +623,7 @@ ecl_foreign_data_set_elt(void *p, enum ecl_ffi_tag tag, cl_object value)
 cl_object
 si_foreign_data_ref_elt(cl_object f, cl_object andx, cl_object type)
 {
-	cl_index ndx = fixnnint(andx);
+	cl_index ndx = ecl_to_size(andx);
 	cl_index limit = f->foreign.size;
 	enum ecl_ffi_tag tag = ecl_foreign_type_code(type);
 	if (ecl_unlikely(ndx >= limit ||
@@ -642,7 +640,7 @@ si_foreign_data_ref_elt(cl_object f, cl_object andx, cl_object type)
 cl_object
 si_foreign_data_set_elt(cl_object f, cl_object andx, cl_object type, cl_object value)
 {
-	cl_index ndx = fixnnint(andx);
+	cl_index ndx = ecl_to_size(andx);
 	cl_index limit = f->foreign.size;
 	enum ecl_ffi_tag tag = ecl_foreign_type_code(type);
 	if (ecl_unlikely(ndx >= limit ||
@@ -692,7 +690,7 @@ si_foreign_data_recast(cl_object f, cl_object size, cl_object tag)
 	if (ecl_unlikely(type_of(f) != t_foreign))
                 FEwrong_type_nth_arg(@[si::foreign-data-recast], 1, f,
                                      @[si::foreign-data]);
-	f->foreign.size = fixnnint(size);
+	f->foreign.size = ecl_to_size(size);
 	f->foreign.tag = tag;
 	@(return f)
 }

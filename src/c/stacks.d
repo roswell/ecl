@@ -453,19 +453,19 @@ si_ihs_next(cl_object x)
 cl_object
 si_ihs_bds(cl_object arg)
 {
-	@(return MAKE_FIXNUM(get_ihs_ptr(fixnnint(arg))->bds))
+	@(return MAKE_FIXNUM(get_ihs_ptr(ecl_to_size(arg))->bds))
 }
 
 cl_object
 si_ihs_fun(cl_object arg)
 {
-	@(return get_ihs_ptr(fixnnint(arg))->function)
+	@(return get_ihs_ptr(ecl_to_size(arg))->function)
 }
 
 cl_object
 si_ihs_env(cl_object arg)
 {
-	@(return get_ihs_ptr(fixnnint(arg))->lex_env)
+	@(return get_ihs_ptr(ecl_to_size(arg))->lex_env)
 }
 
 /********************** FRAME STACK *************************/
@@ -599,7 +599,7 @@ si_sch_frs_base(cl_object fr, cl_object ihs)
 {
 	cl_env_ptr env = ecl_process_env();
 	ecl_frame_ptr x;
-	cl_index y = fixnnint(ihs);
+	cl_index y = ecl_to_size(ihs);
 	for (x = get_frame_ptr(fr); 
 	     x <= env->frs_top && x->frs_ihs->index < y;
 	     x++);
@@ -612,7 +612,7 @@ cl_object
 si_set_limit(cl_object type, cl_object size)
 {
 	cl_env_ptr env = ecl_process_env();
-	cl_index the_size = fixnnint(size);
+	cl_index the_size = ecl_to_size(size);
 	if (type == @'ext::frame-stack') {
 		frs_set_size(env, the_size);
 	} else if (type == @'ext::binding-stack') {

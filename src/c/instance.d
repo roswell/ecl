@@ -31,7 +31,7 @@ ecl_allocate_instance(cl_object clas, cl_index size)
 cl_object
 si_allocate_raw_instance(cl_object orig, cl_object clas, cl_object size)
 {
-	cl_object output = ecl_allocate_instance(clas, fixnnint(size));
+	cl_object output = ecl_allocate_instance(clas, ecl_to_size(size));
 	if (orig == Cnil) {
 		orig = output;
 	} else {

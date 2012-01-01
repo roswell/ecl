@@ -51,11 +51,11 @@
   '(;; These types can be used by ECL to unbox data
     ;; They are sorted from the most specific, to the least specific one.
     :byte
-    #1=((signed-byte 8) "int8_t" "ecl_make_int8_t" "ecl_to_int8_t" "fix")
+    #1=((signed-byte 8) "int8_t" "ecl_make_int8_t" "ecl_to_int8_t" "ecl_fix")
     :unsigned-byte
-    #2=((unsigned-byte 8) "uint8_t" "ecl_make_uint8_t" "ecl_to_uint8_t" "fix")
+    #2=((unsigned-byte 8) "uint8_t" "ecl_make_uint8_t" "ecl_to_uint8_t" "ecl_fix")
     :fixnum
-    (fixnum "cl_fixnum" "MAKE_FIXNUM" "ecl_to_fixnum" "fix")
+    (fixnum "cl_fixnum" "MAKE_FIXNUM" "ecl_to_fixnum" "ecl_fix")
     :int
     ((integer #.si:c-int-min #.si:c-int-max) "int"
      "ecl_make_int" "ecl_to_int" "ecl_to_int")
@@ -70,7 +70,7 @@
      "ecl_make_ulong" "ecl_to_ulong" "ecl_to_ulong")
     :cl-index
     ((integer 0 #.most-positive-fixnum) "cl_index"
-     "ecl_make_unsigned_integer" "fixnnint" "fix")
+     "ecl_make_unsigned_integer" "ecl_to_cl_index" "ecl_fix")
     #+long-long
     :long-long
     #+long-long
@@ -133,33 +133,33 @@
     #+:uint16-t
     :int16-t
     #+:uint16-t
-    ((signed-byte 16) "ecl_int16_t" "ecl_make_int16_t" "ecl_to_int16_t" "fix")
+    ((signed-byte 16) "ecl_int16_t" "ecl_make_int16_t" "ecl_to_int16_t" "ecl_fix")
     #+:uint16-t
     :uint16-t
     #+:uint16-t
-    ((signed-byte 16) "ecl_uint16_t" "ecl_make_uint16_t" "ecl_to_uint16_t" "fix")
+    ((signed-byte 16) "ecl_uint16_t" "ecl_make_uint16_t" "ecl_to_uint16_t" "ecl_fix")
     #+:uint32-t
     :int32-t
     #+:uint32-t
-    ((signed-byte 32) "ecl_int32_t" "ecl_make_int32_t" "ecl_to_int32_t" "fix")
+    ((signed-byte 32) "ecl_int32_t" "ecl_make_int32_t" "ecl_to_int32_t" "ecl_fix")
     #+:uint32-t
     :uint32-t
     #+:uint32-t
-    ((signed-byte 32) "ecl_uint32_t" "ecl_make_uint32_t" "ecl_to_uint32_t" "fix")
+    ((signed-byte 32) "ecl_uint32_t" "ecl_make_uint32_t" "ecl_to_uint32_t" "ecl_fix")
     #+:uint64-t
     :int64-t
     #+:uint64-t
-    ((signed-byte 64) "ecl_int64_t" "ecl_make_int64_t" "ecl_to_int64_t" "fix")
+    ((signed-byte 64) "ecl_int64_t" "ecl_make_int64_t" "ecl_to_int64_t" "ecl_fix")
     #+:uint64-t
     :uint64-t
     #+:uint64-t
-    ((signed-byte 64) "ecl_uint64_t" "ecl_make_uint64_t" "ecl_to_uint64_t" "fix")
+    ((signed-byte 64) "ecl_uint64_t" "ecl_make_uint64_t" "ecl_to_uint64_t" "ecl_fix")
     :short
     ((integer #.si:c-short-min #.si:c-short-max) "short"
-     "ecl_make_short" "ecl_to_short" "fix")
+     "ecl_make_short" "ecl_to_short" "ecl_fix")
     :unsigned-short
     ((integer 0 #.si:c-ushort-max) "unsigned short"
-     "ecl_make_ushort" "ecl_to_ushort" "fix")
+     "ecl_make_ushort" "ecl_to_ushort" "ecl_fix")
     ))
 
 (defparameter +representation-type-hash+

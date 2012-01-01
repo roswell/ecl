@@ -298,6 +298,36 @@ mp_free(void *ptr, size_t size)
         ecl_dealloc(ptr);
 }
 
+cl_fixnum
+fixint(cl_object x)
+{
+        if (FIXNUMP(x))
+                return ecl_fix(x);
+        if (ECL_BIGNUMP(x)) {
+                if (mpz_fits_slong_p(x->big.big_num)) {
+                        return mpz_get_si(x->big.big_num);
+                }
+        }
+	FEwrong_type_argument(@[fixnum], x);
+}
+
+cl_index
+fixnnint(cl_object x)
+{
+        if (FIXNUMP(x)) {
+                cl_fixnum i = ecl_fix(x);
+                if (i >= 0)
+                        return i;
+        } else if (ECL_BIGNUMP(x)) {
+                if (mpz_fits_ulong_p(x->big.big_num)) {
+                        return mpz_get_ui(x->big.big_num);
+                }
+        }
+	FEwrong_type_argument(cl_list(3, @'integer', MAKE_FIXNUM(0),
+				      MAKE_FIXNUM(MOST_POSITIVE_FIXNUM)),
+			      x);
+}
+
 #undef _ecl_big_set_fixnum
 #undef _ecl_big_set_index
 #if ECL_LONG_BITS >= FIXNUM_BITS
@@ -325,12 +355,6 @@ cl_index
 _ecl_big_get_index(cl_object x)
 {
 	return mpz_get_ui((x)->big.big_num);
-}
-
-bool
-_ecl_big_fits_in_index(cl_object x)
-{
-	return mpz_fits_ulong_p(x->big.big_num);
 }
 #elif GMP_LIMB_BITS >= FIXNUM_BITS
 cl_object

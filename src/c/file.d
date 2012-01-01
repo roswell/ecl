@@ -313,7 +313,7 @@ generic_read_byte_unsigned8(cl_object strm)
 static void
 generic_write_byte_unsigned8(cl_object byte, cl_object strm)
 {
-	unsigned char c = fixnnint(byte);
+	unsigned char c = ecl_to_uint8_t(byte);
 	strm->stream.ops->write_byte8(strm, &c, 1);
 }
 
@@ -1279,7 +1279,7 @@ clos_stream_column(cl_object strm)
 	/* FIXME! The Gray streams specifies NIL is a valid
 	 * value but means "unknown". Should we make it
 	 * zero? */
-	return Null(col)? 0 : fixnnint(col);
+	return Null(col)? 0 : ecl_to_size(col);
 }
 
 static cl_object
@@ -1363,7 +1363,7 @@ str_out_set_position(cl_object strm, cl_object pos)
 	if (Null(pos)) {
 		disp = strm->base_string.dim;
 	} else {
-		disp = fixnnint(pos);
+		disp = ecl_to_size(pos);
 	}
 	if (disp < string->base_string.fillp) {
 		string->base_string.fillp = disp;
@@ -1560,7 +1560,7 @@ str_in_set_position(cl_object strm, cl_object pos)
 	if (Null(pos)) {
 		disp = STRING_INPUT_LIMIT(strm);
 	}  else {
-		disp = fixnnint(pos);
+		disp = ecl_to_size(pos);
 		if (disp >= STRING_INPUT_LIMIT(strm)) {
 			disp = STRING_INPUT_LIMIT(strm);
 		}
@@ -4006,7 +4006,7 @@ seq_in_set_position(cl_object strm, cl_object pos)
 	if (Null(pos)) {
 		disp = SEQ_INPUT_LIMIT(strm);
 	}  else {
-		disp = fixnnint(pos);
+		disp = ecl_to_size(pos);
 		if (disp >= SEQ_INPUT_LIMIT(strm)) {
 			disp = SEQ_INPUT_LIMIT(strm);
 		}
@@ -4170,7 +4170,7 @@ seq_out_set_position(cl_object strm, cl_object pos)
 	if (Null(pos)) {
 		disp = SEQ_OUTPUT_LIMIT(strm);
 	}  else {
-		disp = fixnnint(pos);
+		disp = ecl_to_size(pos);
 		if (disp >= SEQ_OUTPUT_LIMIT(strm)) {
 			disp = SEQ_OUTPUT_LIMIT(strm);
 		}
@@ -4780,9 +4780,9 @@ ecl_normalize_stream_element_type(cl_object element_type)
 	}
 	if (CONSP(element_type)) {
 		if (CAR(element_type) == @'unsigned-byte')
-			return fixnnint(cl_cadr(element_type));
+			return ecl_to_size(cl_cadr(element_type));
 		if (CAR(element_type) == @'signed-byte')
-			return -fixnnint(cl_cadr(element_type));
+			return -ecl_to_size(cl_cadr(element_type));
 	}
 	for (size = 8; 1; size++) {
 		cl_object type;

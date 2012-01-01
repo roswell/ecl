@@ -738,7 +738,7 @@ do_catch_signal(int code, cl_object action, cl_object process)
 @
 {
         cl_object output = Cnil;
-	int code_int = fixnnint(code);
+	int code_int = ecl_to_int(code);
 	int i;
 #ifdef GBC_BOEHM
 # ifdef SIGSEGV

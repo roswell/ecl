@@ -18,6 +18,18 @@
 #include <ecl/ecl.h>
 
 void
+FEtype_error_fixnum(cl_object x) {
+	FEwrong_type_argument(@[fixnum], x);
+}
+
+void
+FEtype_error_size(cl_object x) {
+	FEwrong_type_argument(cl_list(3, @'integer', MAKE_FIXNUM(0),
+				      MAKE_FIXNUM(MOST_POSITIVE_FIXNUM)),
+			      x);
+}
+
+void
 FEtype_error_cons(cl_object x) {
 	FEwrong_type_argument(@[cons], x);
 }
