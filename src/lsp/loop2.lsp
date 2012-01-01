@@ -565,6 +565,14 @@ a LET-like macro, and a SETQ-like macro, which perform LOOP-style destructuring.
 	     (do ((tail var)) ((not (consp tail)) tail)
 	       (when (find-non-null (pop tail)) (return t))))
 	   (loop-desetq-internal (var val &optional temp)
+	     ;; if the value is declared 'unsafe', then the assignemnt
+	     ;; is also unsafe.
+	     (when (and (consp val)
+			(eq (first val) 'LOOP-UNSAFE))
+	       (let ((forms (rest val)))
+		 (setf forms (if (rest forms) `(progn ,@forms) (first forms)))
+		 (return-from loop-desetq-internal
+		   `((LOOP-UNSAFE ,@(loop-desetq-internal var forms))))))
 	     ;; returns a list of actions to be performed
 	     (typecase var
 	       (null
