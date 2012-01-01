@@ -70,3 +70,14 @@
 				      (abs shift))
 			      nil t)))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; TYPE PROPAGATION
+;;;
+
+(def-type-propagator logand (a b)
+  (let ((output (dolist (int-type '((UNSIGNED-BYTE 8) FIXNUM) 'INTEGER)
+		  (when (or (subtypep a int-type)
+			    (subtypep b int-type))
+		    (return int-type)))))
+    (values (list a b) output)))
