@@ -27,6 +27,9 @@
 
 extern ECL_API cl_object _ecl_big_set_fixnum(cl_object x, cl_fixnum f);
 extern ECL_API cl_object _ecl_big_set_index(cl_object x, cl_index f);
+extern ECL_API cl_fixnum _ecl_big_get_fixnum(cl_object x);
+extern ECL_API cl_index _ecl_big_get_index(cl_object x);
+extern bool _ecl_big_fits_in_index(cl_object x);
 #ifdef ECL_LONG_FLOAT
 extern ECL_API long double _ecl_big_to_long_double(cl_object x);
 #endif
@@ -62,5 +65,4 @@ extern ECL_API _ecl_big_binary_op _ecl_big_boole_operator(int op);
 #define _ecl_big_tdiv_q(q, x, y)	mpz_tdiv_q((q)->big.big_num,(x)->big.big_num,(y)->big.big_num)
 #define _ecl_big_tdiv_q_ui(q, x, y)	mpz_tdiv_q_ui((q)->big.big_num, (x)->big.big_num, (y))
 #define _ecl_big_set_d(x, d)		mpz_set_d((x)->big.big_num, (d))
-
 #endif /* ECL_NUMBER_H */

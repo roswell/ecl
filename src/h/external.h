@@ -1208,6 +1208,7 @@ extern ECL_API cl_object cl_logxor _ARGS((cl_narg narg, ...));
 extern ECL_API cl_object cl_logand _ARGS((cl_narg narg, ...));
 extern ECL_API cl_object cl_logeqv _ARGS((cl_narg narg, ...));
 
+extern ECL_API cl_fixnum ecl_logand_index(cl_object n, cl_index i);
 extern ECL_API cl_object ecl_boole(int op, cl_object x, cl_object y);
 extern ECL_API cl_object ecl_ash(cl_object x, cl_fixnum w);
 extern ECL_API int ecl_fixnum_bit_length(cl_fixnum l);

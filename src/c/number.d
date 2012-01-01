@@ -49,8 +49,8 @@ fixint(cl_object x)
 	if (FIXNUMP(x))
 		return fix(x);
 	if (ECL_BIGNUMP(x)) {
-		if (mpz_fits_slong_p(x->big.big_num)) {
-			return mpz_get_si(x->big.big_num);
+		if (_ecl_big_fits_in_index(x)) {
+			return _ecl_big_get_fixnum(x);
 		}
 	}
 	FEwrong_type_argument(@[fixnum], x);
@@ -64,8 +64,8 @@ fixnnint(cl_object x)
 		if (i >= 0)
 			return i;
 	} else if (ECL_BIGNUMP(x)) {
-		if (mpz_fits_ulong_p(x->big.big_num)) {
-			return mpz_get_ui(x->big.big_num);
+		if (_ecl_big_fits_in_index(x)) {
+			return _ecl_big_get_index(x);
 		}
 	}
 	cl_error(9, @'simple-type-error', @':format-control',

@@ -314,6 +314,24 @@ _ecl_big_set_index(cl_object x, cl_index f)
         mpz_set_ui((x)->big.big_num,(f));
         return x;
 }
+
+cl_fixnum
+_ecl_big_get_fixnum(cl_object x)
+{
+	return mpz_get_si((x)->big.big_num);
+}
+
+cl_index
+_ecl_big_get_index(cl_object x)
+{
+	return mpz_get_ui((x)->big.big_num);
+}
+
+bool
+_ecl_big_fits_in_index(cl_object x)
+{
+	return mpz_fits_ulong_p(x->big.big_num);
+}
 #elif GMP_LIMB_BITS >= FIXNUM_BITS
 cl_object
 _ecl_big_set_fixnum(cl_object x, cl_fixnum f)
@@ -341,6 +359,33 @@ _ecl_big_set_index(cl_object x, cl_index f)
                 x->big.big_size = -1;
                 x->big.big_limbs[0] = -f;
         }
+}
+
+cl_fixnum
+_ecl_big_get_fixnum(cl_object x)
+{
+	if (x->big.big_size == 0) {
+		return 0;
+	} else {
+		cl_fixnum n = x->big.big_limbs[0];
+		return (x->big.big_size > 0) ? n : -n;
+        }
+}
+
+cl_index
+_ecl_big_get_index(cl_object x)
+{
+	if (x->big.big_size == 0) {
+		return 0;
+	} else {
+		return (cl_index)x->big.big_limbs[0];
+        }
+}
+
+bool
+_ecl_big_fits_in_index(cl_object x)
+{
+	return (x->big.big_size & (~1)) == 0;
 }
 #else
 # error "ECL cannot build with GMP when both long and mp_limb_t are smaller than cl_fixnum"
