@@ -216,7 +216,7 @@ uninstall:
 clean: mostlyclean
 	$(RM) -r *
 mostlyclean: clean_lisp
-	(cd tests; $(MAKE) clean)
+	(cd tests && $(MAKE) clean)
 	for i in $(SUBDIRS); do (test -d $$i && cd $$i && $(MAKE) clean); done
 	$(RM) ecl_min$(EXE) bin/ecl$(EXE) help.doc core a.out TAGS
 	$(RM) config.version config.log config.cache
@@ -239,9 +239,9 @@ test_changes:
 # Run test suite
 #
 check:
-	cd tests; $(MAKE)
+	cd tests && $(MAKE)
 recheck:
-	cd tests; $(MAKE) clean; $(MAKE)
+	cd tests && $(MAKE) clean && $(MAKE)
 #
 # Rebuild ECL using its own image and compare. Does not work
 # right now.
