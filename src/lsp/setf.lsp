@@ -317,7 +317,7 @@ Does not check if the third gang is a single-element list."
        (eq (third store-form) (first stores))
        ))
 
-(defun try-simpler-expansion (place vars stores newvalue store-form)
+(defun try-simpler-expansion (place vars vals stores newvalue store-form)
   ;; When the store form contains all the original arguments in order
   ;; followed by a single stored value, we can produce an expansion
   ;; without LET forms.
@@ -337,7 +337,12 @@ Does not check if the third gang is a single-element list."
 	  (return nil))
 	(setq v (car (truly-the cons store-form))
 	      store-form (cdr (truly-the cons store-form)))
-	(unless (or (eq v i) (eq v (pop vars)))
+	;; This checks that the argument at this position coincides with
+	;; the corresponding value in the original list. Note that the
+	;; variable list need not be in order.
+	(unless (or (eq v i)
+		    (and (eq v (pop vars))
+			 (eq (pop vals) i)))
 	  (return nil))
 	(push i output)))))
 
@@ -349,7 +354,7 @@ Does not check if the third gang is a single-element list."
       (get-setf-expansion place env)
     (cond ((trivial-setf-form place vars stores store-form access-form)
 	   (list 'setq place newvalue))
-	  ((try-simpler-expansion place vars stores newvalue store-form))
+	  ((try-simpler-expansion place vars vals stores newvalue store-form))
 	  (t
 	   `(let* ,(mapcar #'list vars vals)
 	      (declare (:read-only ,@vars))
