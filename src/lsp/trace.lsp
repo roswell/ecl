@@ -146,7 +146,8 @@ all functions."
   (list fname)))
 
 (defun trace-print (direction fname vals &rest extras)
-  (let ((indent (min (* (1- *trace-level*) 2) *trace-max-indent*)))
+  (let ((indent (min (* (1- *trace-level*) 2) *trace-max-indent*))
+	(*print-circle* t))
     (fresh-line *trace-output*)
     (case direction
       (ENTER

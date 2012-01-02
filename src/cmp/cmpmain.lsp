@@ -785,7 +785,10 @@ after compilation."
       (cmpprogress "~&;;; End of Pass 1.")
       (let (#+(or mingw32 msvc cygwin)(*self-destructing-fasl* t))
 	(compiler-pass2 c-pathname h-pathname data-pathname init-name
-                        :input-designator (format nil "~A" def)))
+                        :input-designator (let* ((*print-circle* t)
+						 (*print-length* 8)
+						 (*print-depth* 4))
+					    (format nil "~W" def))))
       (data-c-dump data-pathname)
 
       (compiler-cc c-pathname o-pathname)
