@@ -2547,20 +2547,26 @@ cl_synonym_stream_symbol(cl_object strm)
  */
 
 static cl_index
-io_file_read_byte8(cl_object strm, unsigned char *c, cl_index n)
+consume_byte_stack(cl_object strm, unsigned char *c, cl_index n)
 {
 	cl_object l = strm->stream.byte_stack;
-	if (l != Cnil) {
-		cl_index out = 0;
-		do {
-			*c = fix(ECL_CONS_CAR(l));
-			l = ECL_CONS_CDR(l);
-			out++;
-			c++;
-			n--;
-		} while (l != Cnil);
-		strm->stream.byte_stack = Cnil;
-		return out + io_file_read_byte8(strm, c, n);
+	cl_index out = 0;
+	do {
+		*c = fix(ECL_CONS_CAR(l));
+		l = ECL_CONS_CDR(l);
+		out++;
+		c++;
+		n--;
+	} while (l != Cnil);
+	strm->stream.byte_stack = Cnil;
+	return out + strm->stream.ops->read_byte8(strm, c, n);
+}
+
+static cl_index
+io_file_read_byte8(cl_object strm, unsigned char *c, cl_index n)
+{
+	unlikely_if (strm->stream.byte_stack != Cnil) {
+		return consume_byte_stack(strm, c, n);
 	} else {
 		int f = IO_FILE_DESCRIPTOR(strm);
 		cl_fixnum out = 0;
@@ -2589,7 +2595,7 @@ output_file_write_byte8(cl_object strm, unsigned char *c, cl_index n)
 static cl_index
 io_file_write_byte8(cl_object strm, unsigned char *c, cl_index n)
 {
-	if (strm->stream.byte_stack != Cnil) {
+	unlikely_if (strm->stream.byte_stack != Cnil) {
 		/* Try to move to the beginning of the unread characters */
 		cl_object aux = ecl_file_position(strm);
 		if (!Null(aux))
@@ -3218,18 +3224,8 @@ ecl_make_file_stream_from_fd(cl_object fname, int fd, enum ecl_smmode smm,
 static cl_index
 input_stream_read_byte8(cl_object strm, unsigned char *c, cl_index n)
 {
-	cl_object l = strm->stream.byte_stack;
-	if (l != Cnil) {
-		cl_index out = 0;
-		do {
-			*c = fix(ECL_CONS_CAR(l));
-			l = ECL_CONS_CDR(l);
-			out++;
-			c++;
-			n--;
-		} while (l != Cnil);
-		strm->stream.byte_stack = Cnil;
-		return out + input_stream_read_byte8(strm, c, n);
+	unlikely_if (strm->stream.byte_stack != Cnil) {
+		return consume_byte_stack(strm, c, n);
 	} else {
 		FILE *f = IO_STREAM_FILE(strm);
 		cl_index out = 0;
@@ -3560,11 +3556,9 @@ winsock_stream_read_byte8(cl_object strm, unsigned char *c, cl_index n)
 	cl_index len = 0;
 	cl_object l;
 
-	for(l = strm->stream.byte_stack; l != Cnil && n > 0; ++out, ++c, --n) {
-		*c = fix(ECL_CONS_CAR(l));
-		strm->stream.byte_stack = l = ECL_CONS_CDR(l);
+	unlikely_if (strm->stream.byte_stack != Cnil) {
+		return consume_byte_stack(strm, c, n);
 	}
-	
 	if(n > 0) {
 		SOCKET s = (SOCKET)IO_FILE_DESCRIPTOR(strm);
 		unlikely_if (INVALID_SOCKET == s) {
@@ -3953,35 +3947,24 @@ static cl_index
 seq_in_read_byte8(cl_object strm, unsigned char *c, cl_index n)
 {
 	cl_fixnum curr_pos = SEQ_INPUT_POSITION(strm);
-        cl_fixnum last = SEQ_INPUT_LIMIT(strm);
-        cl_fixnum delta = last - curr_pos;
-        if (delta > 0) {
-                cl_object vector = SEQ_INPUT_VECTOR(strm);
-                if (delta > n) delta = n;
-                memcpy(c, vector->vector.self.bc + curr_pos, delta);
-                SEQ_INPUT_POSITION(strm) += delta;
-                return delta;
-        }
-        return 0;
+	cl_fixnum last = SEQ_INPUT_LIMIT(strm);
+	cl_fixnum delta = last - curr_pos;
+	if (delta > 0) {
+		cl_object vector = SEQ_INPUT_VECTOR(strm);
+		if (delta > n) delta = n;
+		memcpy(c, vector->vector.self.bc + curr_pos, delta);
+		SEQ_INPUT_POSITION(strm) += delta;
+		return delta;
+	}
+	return 0;
 }
 
-static cl_index
-seq_in_read_chars(cl_object strm, unsigned char *c, cl_index n)
+static void
+seq_in_unread_char(cl_object strm, ecl_character c)
 {
-	cl_fixnum curr_pos = SEQ_INPUT_POSITION(strm);
-        cl_fixnum last = SEQ_INPUT_LIMIT(strm);
-        cl_fixnum delta = last - curr_pos;
-        if (delta > 0) {
-                cl_object vector = SEQ_INPUT_VECTOR(strm);
-                cl_index i;
-                if (delta > n) delta = n;
-                for (i = 0; i < delta; i++) {
-                        c[i] = ecl_char(vector, curr_pos++);
-                }
-                SEQ_INPUT_POSITION(strm) = curr_pos;
-                return i;
-        }
-        return 0;
+	eformat_unread_char(strm, c);
+	SEQ_INPUT_POSITION(strm) -= ecl_length(strm->stream.byte_stack);
+	strm->stream.byte_stack = Cnil;
 }
 
 static int
@@ -4024,7 +4007,7 @@ const struct ecl_file_ops seq_in_ops = {
 
 	eformat_read_char,
 	not_output_write_char,
-	eformat_unread_char,
+	seq_in_unread_char,
 	generic_peek_char,
 
 	generic_read_vector,
@@ -4741,9 +4724,9 @@ ecl_normalize_stream_element_type(cl_object element_type)
 {
 	cl_fixnum sign = 0;
 	cl_index size;
-	if (element_type == @'signed-byte') {
+	if (element_type == @'signed-byte' || element_type == @'ext::integer8') {
 		return -8;
-	} else if (element_type == @'unsigned-byte') {
+	} else if (element_type == @'unsigned-byte' || element_type == @'ext::byte8') {
 		return 8;
 	} else if (element_type == @':default') {
 		return 0;
