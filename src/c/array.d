@@ -816,18 +816,29 @@ si_array_raw_data(cl_object x)
         data = x->vector.self.b8;
         to_array = x->array.displaced;
         if (to_array == Cnil || ((to_array = ECL_CONS_CAR(to_array)) == Cnil)) {
+		cl_index used_size = total_size;
+		int flags = 0;
+		if (ECL_ARRAY_HAS_FILL_POINTER_P(x)) {
+			used_size = x->vector.fillp * ecl_aet_size[et];
+			flags = ECL_FLAG_HAS_FILL_POINTER;
+		}
                 output = ecl_alloc_object(t_vector);
                 output->vector.elttype = aet_b8;
                 output->vector.self.b8 = data;
-                output->vector.dim = output->vector.fillp = total_size;
-                output->vector.flags = 0; /* no fill pointer, not adjustable */
+                output->vector.dim = total_size;
+		output->vector.fillp = used_size;
+                output->vector.flags = flags;
                 output->vector.displaced = Cnil;
         } else {
                 cl_index displ = data - to_array->vector.self.b8;
+		cl_object fillp = Cnil;
+		if (ECL_ARRAY_HAS_FILL_POINTER_P(x)) {
+			fillp = MAKE_FIXNUM(x->vector.fillp * ecl_aet_size[et]);
+		}
                 output = si_make_vector(@'ext::byte8',
                                         MAKE_FIXNUM(total_size),
                                         Cnil,
-                                        Cnil,
+                                        fillp,
                                         si_array_raw_data(to_array),
                                         MAKE_FIXNUM(displ));
         }
