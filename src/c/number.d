@@ -263,11 +263,10 @@ ecl_to_int64_t(cl_object x) {
 			return (output << 32) + mpz_get_ui(copy->big.big_num);
 		}
 	}
-		x = ecl_type_error(@'coerce', "variable", x,
-                                   cl_list(3,@'integer',
-                                           ecl_negate(ecl_ash(MAKE_FIXNUM(1), 63)),
-                                           ecl_one_minus(ecl_ash(MAKE_FIXNUM(1), 63))));
-        } while(1);
+	FEwrong_type_argument(cl_list(3,@'integer',
+				      ecl_negate(ecl_ash(MAKE_FIXNUM(1), 63)),
+				      ecl_one_minus(ecl_ash(MAKE_FIXNUM(1), 63))),
+			      x);
 }
 
 cl_object
