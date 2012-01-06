@@ -84,8 +84,7 @@
 (defun write-vector (vector stream)
   (declare (type (array (unsigned-byte 8) (*)) vector))
   (loop for v across vector
-     do (write-word v stream))
-  (length vector))
+     do (write-word v stream)))
 
 (defun to-cdb-hash (key-vector)
   (declare (type (array (unsigned-byte 8) (*)) vector))
@@ -144,7 +143,8 @@
   ;; file table can be a bit larger, to avoid many coincidences.
   ;; Here we use a factor 2.
   (loop with length = (* 2 (length table))
-     with vector = (make-array (* 2 length) :initial-element 0)
+     with vector = (make-array (* 2 length) :initial-element 0
+			       :element-type '(unsigned-byte 32))
      for (hash-key . pos) in table
      for index = (mod (ash hash-key -8) length)
      do (loop for disp from 0 below length
@@ -152,7 +152,8 @@
 	   for record-pos = (aref vector (1+ i))
 	   until (zerop record-pos)
 	   finally (setf (aref vector i) hash-key (aref vector (1+ i)) pos))
-     finally (return (write-vector vector stream))))
+     finally (progn (write-vector vector stream)
+		    (return length))))
 
 (defun dump-cdb (cdb)
   ;; After we have dumped all the records in the file, we append the
