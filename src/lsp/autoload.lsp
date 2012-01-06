@@ -146,6 +146,8 @@ in Windows) to learn this.")
 
 ;;; Help.
 
+(autoload "sys:ecl-help" 'dump-help-file 'search-help-file)
+
 (defun help (&optional (symbol 'help))
   "Args: (&optional symbol)
 ECL specific.

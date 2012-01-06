@@ -28,6 +28,8 @@
 ;;;
 #+stage1
 (progn
+  (load "ext:ecl-cdb;ecl-cdb")
+  (load "ext:ecl-cdb;ecl-help")
   (load "@true_srcdir@/doc/help.lsp")
   (si::dump-documentation "@true_builddir@/help.doc"))
 
@@ -158,6 +160,15 @@
 (build-module "cmp" +cmp-module-files+ 
               :dir "build:@ECL_CMPDIR@;" :prefix "CMP"
               :builtin #+:BUILTIN-CMP t #-:BUILTIN-CMP nil)
+
+(build-module "ecl-cdb" '("ext:ecl-cdb;ecl-cdb.lisp")
+              :dir "build:ext;" :prefix "EXT"
+              :builtin #+:WANTS-DLOPEN nil #-:WANTS-DLOPEN t)
+
+(build-module "ecl-help" '("ext:ecl-cdb;ecl-cdb.lisp"
+                           "ext:ecl-cdb;ecl-help.lisp")
+              :dir "build:ext;" :prefix "EXT"
+              :builtin #+:WANTS-DLOPEN nil #-:WANTS-DLOPEN t)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
