@@ -292,10 +292,8 @@ extern void* ecl_dynamic_callback_make(cl_object data, enum ecl_ffi_calling_conv
 #define IO_FILE_FILENAME(strm) (strm)->stream.object1
 #define SEQ_OUTPUT_VECTOR(strm) (strm)->stream.object1
 #define SEQ_OUTPUT_POSITION(strm) (strm)->stream.int0
-#define SEQ_OUTPUT_LIMIT(strm) (strm)->stream.int1
 #define SEQ_INPUT_VECTOR(strm) (strm)->stream.object1
 #define SEQ_INPUT_POSITION(strm) (strm)->stream.int0
-#define SEQ_INPUT_LIMIT(strm) (strm)->stream.int1
 
 #ifndef HAVE_FSEEKO
 #define ecl_off_t int

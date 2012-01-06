@@ -4055,15 +4055,15 @@ make_sequence_input_stream(cl_object vector, cl_index istart, cl_index iend,
 	cl_object strm;
         cl_elttype type;
         cl_object type_name;
-        int byte_size, elt_byte_size;
+        int byte_size;
         int flags = 0;
         if (!ECL_VECTORP(vector) ||
-            (type = ecl_array_elttype(vector)) < aet_b8 ||
-            type > aet_bc)
+            ((type = ecl_array_elttype(vector)) < aet_b8 &&
+	     type > aet_bc) ||
+	    ecl_aet_size[type] != 1)
         {
-                FEerror("MAKE-SEQUENCE-INPUT-STREAM only accepts integer arrays or strings.~%~A", 1, vector);
+                FEerror("MAKE-SEQUENCE-INPUT-STREAM only accepts vectors whose element has a size of 1 byte.~%~A", 1, vector);
         }
-        elt_byte_size = ecl_aet_size[type];
         type_name = ecl_elttype_to_symbol(type);
         byte_size = ecl_normalize_stream_element_type(type_name);
         /* Character streams always get some external format. For binary
@@ -4083,9 +4083,6 @@ make_sequence_input_stream(cl_object vector, cl_index istart, cl_index iend,
 # else
                                 external_format = @':ucs-4le';
 # endif
-                        } else {
-                                strm->stream.ops->read_byte8 = seq_in_read_chars;
-                                elt_byte_size = 1;
                         }
                 }
 #else
@@ -4098,8 +4095,8 @@ make_sequence_input_stream(cl_object vector, cl_index istart, cl_index iend,
         /* Override byte size and elt type */
         if (byte_size) strm->stream.byte_size = byte_size;
 	SEQ_INPUT_VECTOR(strm) = vector;
-	SEQ_INPUT_POSITION(strm) = istart * elt_byte_size;
-	SEQ_INPUT_LIMIT(strm) = iend * elt_byte_size;
+	SEQ_INPUT_POSITION(strm) = istart;
+	SEQ_INPUT_LIMIT(strm) = iend;
 	return strm;
 }
 
@@ -4126,33 +4123,19 @@ seq_out_write_byte8(cl_object strm, unsigned char *c, cl_index n)
         {
 	cl_object vector = SEQ_OUTPUT_VECTOR(strm);
         cl_fixnum curr_pos = SEQ_OUTPUT_POSITION(strm);
-        cl_fixnum last = SEQ_OUTPUT_LIMIT(strm);
+	cl_fixnum last = vector->vector.dim;
         cl_fixnum delta = last - curr_pos;
-        int size = ecl_aet_size[vector->vector.elttype];
         if (delta < n) {
                 /* Not enough space, enlarge */
-                cl_object dim = cl_array_total_size(vector);
-                vector = _ecl_funcall3(@'adjust-array', vector, ecl_ash(dim, 1));
+                vector = _ecl_funcall3(@'adjust-array', vector,
+				       ecl_ash(MAKE_FIXNUM(last), 1));
                 SEQ_OUTPUT_VECTOR(strm) = vector;
-                SEQ_OUTPUT_LIMIT(strm) = vector->vector.dim * size;
                 goto AGAIN;
         }
         memcpy(vector->vector.self.bc + curr_pos, c, n);
         SEQ_OUTPUT_POSITION(strm) = curr_pos += n;
-        vector->vector.fillp = curr_pos / size;
-        }
-        return n;
-}
-
-static cl_index
-seq_out_write_chars(cl_object strm, unsigned char *c, cl_index n)
-{
-	cl_object vector = SEQ_OUTPUT_VECTOR(strm);
-        int i;
-        for (i = 0; i < n; i++) {
-                ecl_string_push_extend(vector, *(c++));
-                SEQ_OUTPUT_POSITION(strm) = vector->vector.fillp;
-                SEQ_OUTPUT_LIMIT(strm) = vector->vector.dim;
+	if (vector->vector.fillp < curr_pos)
+		vector->vector.fillp = curr_pos;
         }
         return n;
 }
@@ -4166,13 +4149,14 @@ seq_out_get_position(cl_object strm)
 static cl_object
 seq_out_set_position(cl_object strm, cl_object pos)
 {
+	cl_object vector = SEQ_OUTPUT_VECTOR(strm);
 	cl_fixnum disp;
 	if (Null(pos)) {
-		disp = SEQ_OUTPUT_LIMIT(strm);
-	}  else {
+		disp = vector->vector.fillp;
+	} else {
 		disp = ecl_to_size(pos);
-		if (disp >= SEQ_OUTPUT_LIMIT(strm)) {
-			disp = SEQ_OUTPUT_LIMIT(strm);
+		if (disp >= vector->vector.dim) {
+			disp = vector->vector.fillp;
 		}
 	}
 	SEQ_OUTPUT_POSITION(strm) = disp;
@@ -4218,15 +4202,15 @@ make_sequence_output_stream(cl_object vector, cl_object external_format)
 	cl_object strm;
         cl_elttype type;
         cl_object type_name;
-        int byte_size, elt_byte_size;
+        int byte_size;
         int flags = 0;
         if (!ECL_VECTORP(vector) ||
-            (type = ecl_array_elttype(vector)) < aet_b8 ||
-            type > aet_bc)
+            ((type = ecl_array_elttype(vector)) < aet_b8 &&
+	     type > aet_bc) ||
+	    ecl_aet_size[type] != 1)
         {
-                FEerror("MAKE-SEQUENCE-OUTPUT-STREAM only accepts integer arrays or strings.~%~A", 1, vector);
+                FEerror("MAKE-SEQUENCE-OUTPUT-STREAM only accepts vectors whose element has a size of 1 byte.~%~A", 1, vector);
         }
-        elt_byte_size = ecl_aet_size[type];
         type_name = ecl_elttype_to_symbol(type);
         byte_size = ecl_normalize_stream_element_type(type_name);
         /* Character streams always get some external format. For binary
@@ -4246,9 +4230,6 @@ make_sequence_output_stream(cl_object vector, cl_object external_format)
 # else
                                 external_format = @':ucs-4le';
 # endif
-                        } else {
-                                strm->stream.ops->write_byte8 = seq_out_write_chars;
-                                elt_byte_size = 1;
                         }
                 }
 #else
@@ -4261,8 +4242,7 @@ make_sequence_output_stream(cl_object vector, cl_object external_format)
         /* Override byte size and elt type */
         if (byte_size) strm->stream.byte_size = byte_size;
 	SEQ_OUTPUT_VECTOR(strm) = vector;
-	SEQ_OUTPUT_POSITION(strm) = vector->vector.fillp * elt_byte_size;
-	SEQ_OUTPUT_LIMIT(strm) = vector->vector.dim * elt_byte_size;
+	SEQ_OUTPUT_POSITION(strm) = vector->vector.fillp;
 	return strm;
 }
 
