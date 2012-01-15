@@ -4816,12 +4816,18 @@ ecl_normalize_stream_element_type(cl_object element_type)
 	FEerror("Not a valid stream element type: ~A", 1, element_type);
 }
 
+static void
+FEinvalid_option(cl_object option, cl_object value)
+{
+	FEerror("Invalid value op option ~A: ~A", 2, option, value);
+}
+
 cl_object
 ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
 		cl_object if_does_not_exist, cl_fixnum byte_size,
 		int flags, cl_object external_format)
 {
-	cl_object x;
+	cl_object output;
 	int f;
 #if defined(ECL_MS_WINDOWS_HOST)
         ecl_mode_t mode = _S_IREAD | _S_IWRITE;
@@ -4831,74 +4837,70 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
 	cl_object filename = si_coerce_to_filename(fn);
 	char *fname = (char*)filename->base_string.self;
 	bool appending = 0;
-
+	bool exists = si_file_kind(filename, Ct) != Cnil;
 	if (smm == smm_input || smm == smm_probe) {
-		f = safe_open(fname, O_RDONLY, mode);
-		if (f < 0) {
+		if (!exists) {
 			if (if_does_not_exist == @':error') {
-				goto CANNOT_OPEN;
+				FEcannot_open(fn);
 			} else if (if_does_not_exist == @':create') {
 				f = safe_open(fname, O_WRONLY|O_CREAT, mode);
-				if (f < 0) goto CANNOT_OPEN;
+				unlikely_if (f < 0) FEcannot_open(fn);
 				safe_close(f);
-				f = safe_open(fname, O_RDONLY, mode);
-				if (f < 0) goto CANNOT_OPEN;
 			} else if (Null(if_does_not_exist)) {
 				return Cnil;
 			} else {
-				x = @':if-does-not-exist';
-				fn = if_does_not_exist;
-				goto INVALID_OPTION;
+				FEinvalid_option(@':if-does-not-exist',
+						 if_does_not_exist);
 			}
 		}
+		f = safe_open(fname, O_RDONLY, mode);
+		unlikely_if (f < 0) FEcannot_open(fn);
 	} else if (smm == smm_output || smm == smm_io) {
 		int base = (smm == smm_output)? O_WRONLY : O_RDWR;
-		if (if_exists == @':new_version' && if_does_not_exist == @':create')
-			goto CREATE;
-		f = safe_open(fname, O_RDONLY, mode);
-		if (f >= 0) {
-			safe_close(f);
+		if (if_exists == @':new_version' &&
+		    if_does_not_exist == @':create') {
+			exists = 0;
+			if_does_not_exist = @':create';
+		}
+		if (exists) {
 			if (if_exists == @':error') {
-				goto CANNOT_OPEN;
+				FEcannot_open(fn);
 			} else if (if_exists == @':rename') {
 				f = ecl_backup_open(fname, base|O_CREAT, mode);
-				if (f < 0) goto CANNOT_OPEN;
+				unlikely_if (f < 0) FEcannot_open(fn);
 			} else if (if_exists == @':rename_and_delete' ||
 				   if_exists == @':new_version' ||
 				   if_exists == @':supersede') {
 				f = safe_open(fname, base|O_TRUNC, mode);
-				if (f < 0) goto CANNOT_OPEN;
+				unlikely_if (f < 0) FEcannot_open(fn);
 			} else if (if_exists == @':overwrite' || if_exists == @':append') {
 				f = safe_open(fname, base, mode);
-				if (f < 0) goto CANNOT_OPEN;
+				unlikely_if (f < 0) FEcannot_open(fn);
 				appending = (if_exists == @':append');
 			} else if (Null(if_exists)) {
 				return Cnil;
 			} else {
-				x = @':if-exists';
-				fn = if_exists;
-				goto INVALID_OPTION;
+				FEinvalid_option(@':if-exists', if_exists);
 			}
 		} else {
 			if (if_does_not_exist == @':error') {
-				goto CANNOT_OPEN;
+				FEcannot_open(fn);
 			} else if (if_does_not_exist == @':create') {
-			CREATE:	f = safe_open(fname, base | O_CREAT | O_TRUNC, mode);
-				if (f < 0) goto CANNOT_OPEN;
+				f = safe_open(fname, base | O_CREAT | O_TRUNC, mode);
+				unlikely_if (f < 0) FEcannot_open(fn);
 			} else if (Null(if_does_not_exist)) {
 				return Cnil;
 			} else {
-				x = @':if-does-not-exist';
-				fn = if_does_not_exist;
-				goto INVALID_OPTION;
+				FEinvalid_option(@':if-does-not-exist',
+						 if_does_not_exist);
 			}
 		}
 	} else {
-		goto INVALID_MODE;
+		FEerror("Illegal stream mode ~S", 1, MAKE_FIXNUM(smm));
 	}
 	if (flags & ECL_STREAM_C_STREAM) {
 		FILE *fp;
-		close(f);
+		safe_close(f);
 		/* We do not use fdopen() because Windows seems to
 		 * have problems with the resulting streams. Furthermore, even for
 		 * output we open with w+ because we do not want to
@@ -4910,31 +4912,22 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
 		case smm_io: fp = safe_fopen(fname, OPEN_RW); break;
                 default:; /* never reached */
 		}
-		x = ecl_make_stream_from_FILE(fn, fp, smm, byte_size, flags,
-					      external_format);
-		si_set_buffering_mode(x, byte_size? @':full' : @':line');
+		output = ecl_make_stream_from_FILE(fn, fp, smm, byte_size, flags,
+						   external_format);
+		si_set_buffering_mode(output, byte_size? @':full' : @':line');
 	} else {
-		x = ecl_make_file_stream_from_fd(fn, f, smm, byte_size, flags,
-                                                 external_format);
+		output = ecl_make_file_stream_from_fd(fn, f, smm, byte_size, flags,
+						      external_format);
 	}
 	if (smm == smm_probe) {
-		cl_close(1, x);
+		cl_close(1, output);
 	} else {
-		x->stream.flags |= ECL_STREAM_MIGHT_SEEK;
-		si_set_finalizer(x, Ct);
+		output->stream.flags |= ECL_STREAM_MIGHT_SEEK;
+		si_set_finalizer(output, Ct);
 		/* Set file pointer to the correct position */
-		ecl_file_position_set(x, appending? Cnil : MAKE_FIXNUM(0));
+		ecl_file_position_set(output, appending? Cnil : MAKE_FIXNUM(0));
 	}
-	return x;
- CANNOT_OPEN:
-	FEcannot_open(fn);
-	return Cnil;
- INVALID_OPTION:
-	FEerror("Invalid value op option ~A: ~A", 2, x, fn);
-	return Cnil;
- INVALID_MODE:
-	FEerror("Illegal stream mode ~S", 1, MAKE_FIXNUM(smm));
-	return Cnil;
+	return output;
 }
 
 @(defun open (filename
