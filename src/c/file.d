@@ -2543,6 +2543,70 @@ cl_synonym_stream_symbol(cl_object strm)
 }
 
 /**********************************************************************
+ * UNINTERRUPTED OPERATIONS
+ */
+
+#ifdef ECL_WINDOWS_HOST
+#define ecl_mode_t int
+#else
+#define ecl_mode_t mode_t
+#endif
+
+static int
+safe_open(const char *filename, int flags, ecl_mode_t mode)
+{
+	const cl_env_ptr the_env = ecl_process_env();
+	int output;
+	ecl_disable_interrupts_env(the_env);
+	output = open(filename, flags, mode);
+	ecl_enable_interrupts_env(the_env);
+	return output;
+}
+
+static int
+safe_close(int f)
+{
+	const cl_env_ptr the_env = ecl_process_env();
+	int output;
+	ecl_disable_interrupts_env(the_env);
+	output = close(f);
+	ecl_enable_interrupts_env(the_env);
+}
+
+static FILE *
+safe_fopen(const char *filename, const char *mode)
+{
+	const cl_env_ptr the_env = ecl_process_env();
+	FILE *output;
+	ecl_disable_interrupts_env(the_env);
+	output = fopen(filename, mode);
+	ecl_enable_interrupts_env(the_env);
+	return output;
+}
+
+static FILE *
+safe_fdopen(int fildes, const char *mode)
+{
+	const cl_env_ptr the_env = ecl_process_env();
+	FILE *output;
+	ecl_disable_interrupts_env(the_env);
+	output = fdopen(fildes, mode);
+	ecl_enable_interrupts_env(the_env);
+	return output;
+}
+
+static int
+safe_fclose(FILE *stream)
+{
+	const cl_env_ptr the_env = ecl_process_env();
+	int output;
+	ecl_disable_interrupts_env(the_env);
+	output = fclose(stream);
+	ecl_enable_interrupts_env(the_env);
+	return output;
+}
+
+/**********************************************************************
  * POSIX FILE STREAM
  */
 
@@ -2750,9 +2814,7 @@ io_file_close(cl_object strm)
 		FEerror("Cannot close the standard output", 0);
 	unlikely_if (f == STDIN_FILENO)
 		FEerror("Cannot close the standard input", 0);
-	ecl_disable_interrupts();
-	failed = close(f);
-	ecl_enable_interrupts();
+	failed = safe_close(f);
 	unlikely_if (failed < 0)
 		FElibc_error("Cannot close stream ~S.", 1, strm);
 	IO_FILE_DESCRIPTOR(strm) = -1;
@@ -3423,9 +3485,7 @@ io_stream_close(cl_object strm)
 	if (ecl_output_stream_p(strm)) {
 		ecl_force_output(strm);
 	}
-	ecl_disable_interrupts();
-	failed = fclose(f);
-	ecl_enable_interrupts();
+	failed = safe_fclose(f);
 	unlikely_if (failed)
 		FElibc_error("Cannot close stream ~S.", 1, strm);
 #if !defined(GBC_BOEHM)
@@ -3862,20 +3922,18 @@ ecl_make_stream_from_fd(cl_object fname, int fd, enum ecl_smmode smm,
 	default:
 		FEerror("make_stream: wrong mode", 0);
 	}
-	ecl_disable_interrupts();
 #if defined(ECL_WSOCK)
 	if (smm == smm_input_wsock || smm == smm_output_wsock || smm == smm_io_wsock)
 		fp = (FILE*)fd;
 	else
-		fp = fdopen(fd, mode);
+		fp = safe_fdopen(fd, mode);
 #else
-	fp = fdopen(fd, mode);
+	fp = safe_fdopen(fd, mode);
 #endif
         if (fp == NULL) {
                 FElibc_error("Unable to create stream for file descriptor ~D",
                              1, ecl_make_integer(fd));
         }
-	ecl_enable_interrupts();
 	return ecl_make_stream_from_FILE(fname, fp, smm, byte_size, flags,
 					 external_format);
 }
@@ -4763,33 +4821,30 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
 		cl_object if_does_not_exist, cl_fixnum byte_size,
 		int flags, cl_object external_format)
 {
-	cl_env_ptr the_env = &cl_env;
 	cl_object x;
 	int f;
 #if defined(ECL_MS_WINDOWS_HOST)
-        int mode = _S_IREAD | _S_IWRITE;
+        ecl_mode_t mode = _S_IREAD | _S_IWRITE;
 #else
-	mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+	ecl_mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
 #endif
 	cl_object filename = si_coerce_to_filename(fn);
 	char *fname = (char*)filename->base_string.self;
 	bool appending = 0;
 
-	ecl_disable_interrupts_env(the_env);
 	if (smm == smm_input || smm == smm_probe) {
-		f = open(fname, O_RDONLY, mode);
+		f = safe_open(fname, O_RDONLY, mode);
 		if (f < 0) {
 			if (if_does_not_exist == @':error') {
 				goto CANNOT_OPEN;
 			} else if (if_does_not_exist == @':create') {
-				f = open(fname, O_WRONLY|O_CREAT, mode);
+				f = safe_open(fname, O_WRONLY|O_CREAT, mode);
 				if (f < 0) goto CANNOT_OPEN;
-				close(f);
-				f = open(fname, O_RDONLY, mode);
+				safe_close(f);
+				f = safe_open(fname, O_RDONLY, mode);
 				if (f < 0) goto CANNOT_OPEN;
 			} else if (Null(if_does_not_exist)) {
-				x = Cnil;
-				goto OUTPUT;
+				return Cnil;
 			} else {
 				x = @':if-does-not-exist';
 				fn = if_does_not_exist;
@@ -4800,9 +4855,9 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
 		int base = (smm == smm_output)? O_WRONLY : O_RDWR;
 		if (if_exists == @':new_version' && if_does_not_exist == @':create')
 			goto CREATE;
-		f = open(fname, O_RDONLY, mode);
+		f = safe_open(fname, O_RDONLY, mode);
 		if (f >= 0) {
-			close(f);
+			safe_close(f);
 			if (if_exists == @':error') {
 				goto CANNOT_OPEN;
 			} else if (if_exists == @':rename') {
@@ -4811,15 +4866,14 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
 			} else if (if_exists == @':rename_and_delete' ||
 				   if_exists == @':new_version' ||
 				   if_exists == @':supersede') {
-				f = open(fname, base|O_TRUNC, mode);
+				f = safe_open(fname, base|O_TRUNC, mode);
 				if (f < 0) goto CANNOT_OPEN;
 			} else if (if_exists == @':overwrite' || if_exists == @':append') {
-				f = open(fname, base, mode);
+				f = safe_open(fname, base, mode);
 				if (f < 0) goto CANNOT_OPEN;
 				appending = (if_exists == @':append');
 			} else if (Null(if_exists)) {
-				x = Cnil;
-				goto OUTPUT;
+				return Cnil;
 			} else {
 				x = @':if-exists';
 				fn = if_exists;
@@ -4829,11 +4883,10 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
 			if (if_does_not_exist == @':error') {
 				goto CANNOT_OPEN;
 			} else if (if_does_not_exist == @':create') {
-			CREATE:	f = open(fname, base | O_CREAT | O_TRUNC, mode);
+			CREATE:	f = safe_open(fname, base | O_CREAT | O_TRUNC, mode);
 				if (f < 0) goto CANNOT_OPEN;
 			} else if (Null(if_does_not_exist)) {
-				x = Cnil;
-				goto OUTPUT;
+				return Cnil;
 			} else {
 				x = @':if-does-not-exist';
 				fn = if_does_not_exist;
@@ -4843,7 +4896,6 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
 	} else {
 		goto INVALID_MODE;
 	}
-	ecl_enable_interrupts_env(the_env);
 	if (flags & ECL_STREAM_C_STREAM) {
 		FILE *fp;
 		close(f);
@@ -4853,9 +4905,9 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
 		 * overwrite the file. */
 		switch (smm) {
 		case smm_probe:
-		case smm_input: fp = fopen(fname, OPEN_R); break;
+		case smm_input: fp = safe_fopen(fname, OPEN_R); break;
 		case smm_output:
-		case smm_io: fp = fopen(fname, OPEN_RW); break;
+		case smm_io: fp = safe_fopen(fname, OPEN_RW); break;
                 default:; /* never reached */
 		}
 		x = ecl_make_stream_from_FILE(fn, fp, smm, byte_size, flags,
@@ -4873,19 +4925,14 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
 		/* Set file pointer to the correct position */
 		ecl_file_position_set(x, appending? Cnil : MAKE_FIXNUM(0));
 	}
- OUTPUT:
-	ecl_enable_interrupts_env(the_env);
 	return x;
  CANNOT_OPEN:
-	ecl_enable_interrupts_env(the_env);
 	FEcannot_open(fn);
 	return Cnil;
  INVALID_OPTION:
-	ecl_enable_interrupts_env(the_env);
 	FEerror("Invalid value op option ~A: ~A", 2, x, fn);
 	return Cnil;
  INVALID_MODE:
-	ecl_enable_interrupts_env(the_env);
 	FEerror("Illegal stream mode ~S", 1, MAKE_FIXNUM(smm));
 	return Cnil;
 }
