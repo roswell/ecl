@@ -2232,10 +2232,14 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
                         memcpy(VV, v->vector.self.t, len * sizeof(cl_object));
                 }
 #else
-		in=ecl_make_string_input_stream
-                        (ecl_make_simple_base_string((char *)block->cblock.data_text,
-                                                     block->cblock.data_text_size),
-                         0, block->cblock.data_text_size);
+		in = ecl_make_simple_base_string((char *)block->cblock.data_text,
+						 block->cblock.data_text_size);
+# ifdef ECL_UNICODE
+		in = si_make_sequence_input_stream(3, in, @':external-format',
+						   @':utf-8');
+# else
+		in=ecl_make_string_input_stream(in, 0, block->cblock.data_text_size);
+# endif
                 progv_list = ECL_SYM_VAL(env, @'si::+ecl-syntax-progv-list+');
                 bds_ndx = ecl_progv(env, ECL_CONS_CAR(progv_list),
                                     ECL_CONS_CDR(progv_list));

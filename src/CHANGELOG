@@ -172,6 +172,8 @@ ECL 11.7.1:
    may be controlled globally using the declaration/proclamation
    EXT:THE-IS-CHECKED.
 
+ - Unicode strings were not properly saved in C compiled code.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

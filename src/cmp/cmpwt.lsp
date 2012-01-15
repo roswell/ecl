@@ -188,7 +188,7 @@
 
 (defun static-base-string-builder (name value stream)
   (format stream "ecl_def_ct_base_string(~A," name)
-  (wt-filtered-data value stream t)
+  (wt-filtered-data value stream :one-liner t)
   (format stream ",~D,static,const);" (length value)))
 
 (defun static-single-float-builder (name value stream)
