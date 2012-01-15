@@ -139,9 +139,6 @@
   (and-form-type (var-type var) form (var-name var) :unsafe "In LET body")
   (let ((form-type (c1form-primary-type form)))
     (setf (var-type var) form-type)
-    (unless (var-type var)
-      (setf c::*compiler-break-enable* t)
-      (break))
     (update-variable-type var form-type)))
 
 (defun c1let-unused-variable-p (var form)
