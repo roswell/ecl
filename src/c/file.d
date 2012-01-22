@@ -2546,7 +2546,7 @@ cl_synonym_stream_symbol(cl_object strm)
  * UNINTERRUPTED OPERATIONS
  */
 
-#ifdef ECL_WINDOWS_HOST
+#ifdef ECL_MS_WINDOWS_HOST
 #define ecl_mode_t int
 #else
 #define ecl_mode_t mode_t
