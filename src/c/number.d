@@ -61,7 +61,7 @@ ecl_to_size(cl_object f)
 		if (ecl_likely(aux >= 0))
 			return aux;
 	}
-	FEtype_error_object_index(f);
+	FEtype_error_size(f);
 }
 #endif /* !ECL_CAN_INLINE */
 
