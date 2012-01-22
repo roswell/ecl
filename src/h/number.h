@@ -15,6 +15,11 @@
 
 #ifndef ECL_NUMBER_H
 #define ECL_NUMBER_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define ECL_BIG_REGISTER_SIZE	32
 
 #define ECL_WITH_TEMP_BIGNUM(name,n)                                    \
@@ -84,8 +89,12 @@ ecl_to_size(cl_object f)
 	return aux;
 }
 #else
-cl_fixnum ecl_fixnum_value(cl_object f);
-cl_index ecl_to_size(cl_object f);
+extern ECL_API cl_fixnum ecl_fixnum_value(cl_object f);
+extern ECL_API cl_index ecl_to_size(cl_object f);
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* ECL_NUMBER_H */
