@@ -210,8 +210,6 @@
               :dir "build:ext;"
               :prefix "EXT"
               :builtin #+:BUILTIN-ASDF t #-:BUILTIN-ASDF nil)
-(push (build-fake-asdf "prebuilt-asdf" "asdf")
-      *module-files*)
 
 ;;;
 ;;; * PROFILE

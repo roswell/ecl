@@ -128,14 +128,21 @@
 
 (make-package "ASDF")
 
-(defun build-fake-asdf (name &optional (filename (string name)))
-  (let ((path (make-pathname :name name :type "asd")))
+(defun build-fake-asdf (name static-library compiled-filename)
+  (let ((path (make-pathname :name name :type "asd"))
+	(compiled (make-pathname :host "SYS"
+				 :name (pathname-name compiled-filename)
+				 :type (pathname-type compiled-filename)))
+	(library (make-pathname :host "SYS"
+				:name (pathname-name static-library)
+				:type (pathname-type static-library))))
     (with-open-file (*standard-output* path
                      :direction :output :if-exists :supersede
                      :if-does-not-exist :create)
       (print `(defsystem ,name :class asdf::prebuilt-system
-                         :lib ,(format nil "SYS:~A" filename)
-                         :components ((:compiled-file ,filename)))))
+                         :lib ,library
+                         :components ((:compiled-file ,(string name)
+				       :pathname ,compiled)))))
     path))
 
 (defun build-module (name sources &key additional-files
@@ -146,16 +153,21 @@
     (when additional-files
       (setf *module-files* (append additional-files *module-files*)))
     (let* ((objects (compile-if-old dir sources :system-p t :c-file t
-                                    :data-file t :h-file t)))
-      (push (c::build-static-library name :lisp-files objects) *module-files*)
+                                    :data-file t :h-file t))
+	   (compiled-file-name (string name))
+	   (static-library (c::build-static-library name :lisp-files objects)))
+      (push static-library *module-files*)
       (when builtin
         (push (intern name) *module-symbols*))
-      (unless (equalp name "asdf")
-        (push (build-fake-asdf name) *module-files*))
       #-:wants-dlopen
       (push (build-fake-module name sources) *module-files*)
       #+:wants-dlopen
-      (push (c::build-fasl name :lisp-files objects) *module-files*))))
+      (push (setf compiled-file-name (c::build-fasl name :lisp-files objects))
+	    *module-files*)
+      (push (build-fake-asdf (if (equalp name "asdf") "prebuilt-asdf" name)
+			     static-library compiled-file-name)
+	    *module-files*)
+      )))
 
 ;;;
 ;;; * Update version number now that SI:SYSTEM is available
