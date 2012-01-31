@@ -20,15 +20,22 @@ ECL is currently hosted at SourceForge. The home page of the project
 is http://ecls.sourceforge.net, and in it you will find source code
 releases, a CVS tree and some useful documentation.
 
+
 Known issues
 ============
 
-ECL's dynamic FFI (the one that does not rely on a C compiler) is now
-implemented using libffi (See http://sourceware.org/libffi/). Until
-another release in which the library might be bundled together with
-ECL, users will have to make sure that this library is built and
-available for this feature to be linked in (#+dffi). Otherwise only
-the C-based foreign function interface will be available.
+ECL builds fine on all supported platforms, but there are two types
+of issues with Windows:
+
+* Mingw32's latest compiler, gcc-4.6.2, miscompiles several files and
+  breaks down while building ECL. This is not due to wrong C code but
+  a problem in that version of GCC. The solution is to install an
+  older version of GCC. It suffices with gcc-core, g++ and libgcc
+  http://sourceforge.net/projects/mingw/files/MinGW/Base/gcc/Version4/gcc-4.5.2-1/
+
+* Cygwin's fork routine is very fragile. Unfortunately it is the only
+  mean that ECL has to implement EXT:RUN-PROGRAM on that platform.
+
 
 Changes since last release
 ==========================
