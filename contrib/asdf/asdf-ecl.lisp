@@ -303,11 +303,13 @@
 
 (defclass compiled-file (component) ())
 (defmethod component-relative-pathname ((component compiled-file))
-  (compile-file-pathname
-   (coerce-pathname
-    (or (slot-value component 'relative-pathname)
-        (component-name component))
-    :type "fas")))
+  (let* ((pathname (or (slot-value component 'relative-pathname)
+		       (component-name component))))
+    (coerce-pathname
+     pathname
+     :type (or (pathname-type pathname)
+	       (compile-file-pathname pathname))
+     :defaults (component-parent-pathname component))))
 
 (defmethod output-files (o (c compiled-file))
   (declare (ignore o c))
