@@ -428,7 +428,7 @@
 (push '("fasb" . si::load-binary) ext:*load-hooks*)
 
 (defun register-pre-built-system (name)
-  (register-system (make-instance 'system :name name :source-file nil)))
+  (register-system (make-instance 'system :name (string name) :source-file nil)))
 
 (defvar *require-asdf-operator* 'load-op)
 (export '*require-asdf-operator*)
