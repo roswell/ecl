@@ -2571,6 +2571,7 @@ safe_close(int f)
 	ecl_disable_interrupts_env(the_env);
 	output = close(f);
 	ecl_enable_interrupts_env(the_env);
+	return output;
 }
 
 static FILE *
