@@ -1606,9 +1606,14 @@ c_leta(cl_env_ptr env, cl_object args, int flags) {
 static int
 c_load_time_value(cl_env_ptr env, cl_object args, int flags)
 {
+	cl_object value;
 	if (Null(args) || cl_cddr(args) != Cnil)
 		FEprogram_error_noreturn("LOAD-TIME-VALUE: Wrong number of arguments.", 0);
-	return c_values(env, ECL_CONS_CAR(args), flags);
+	value = ECL_CONS_CAR(args);
+	if (ECL_SYMBOLP(value) || ECL_LISTP(value)) {
+		value = si_eval_with_env(1, value);
+	}
+	return c_quote(env, ecl_list1(value), flags);
 }
 
 static int
