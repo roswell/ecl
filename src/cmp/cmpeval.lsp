@@ -57,10 +57,13 @@
 
 (defun c1call (fname args macros-allowed &aux fd success can-inline)
   (cond ((> (length args) si::c-arguments-limit)
-	 ;; When the function takes many arguments, we will need a
-	 ;; special C form to call it. It takes extra code for
-	 ;; handling the stack
-	 (unoptimized-long-call `#',fname args))
+	 (if (and macros-allowed
+		  (setf fd (cmp-macro-function fname)))
+	     (cmp-expand-macro fd (list* fname args))
+	     ;; When it is a function and takes many arguments, we will
+	     ;; need a special C form to call it. It takes extra code for
+	     ;; handling the stack
+	     (unoptimized-long-call `#',fname args)))
 	((setq fd (local-function-ref fname))
 	 (c1call-local fname fd args))
 	((and (setq can-inline (inline-possible fname))
