@@ -1606,9 +1606,9 @@ c_leta(cl_env_ptr env, cl_object args, int flags) {
 static int
 c_load_time_value(cl_env_ptr env, cl_object args, int flags)
 {
-	if (cl_cddr(args) != Cnil)
-		FEprogram_error_noreturn("LOAD-TIME-VALUE: Too many arguments.", 0);
-	return c_values(env, args, flags);
+	if (Null(args) || cl_cddr(args) != Cnil)
+		FEprogram_error_noreturn("LOAD-TIME-VALUE: Wrong number of arguments.", 0);
+	return c_values(env, ECL_CONS_CAR(args), flags);
 }
 
 static int
