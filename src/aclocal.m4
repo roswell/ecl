@@ -527,18 +527,28 @@ AC_DEFUN(ECL_STACK_DIRECTION,[
   AC_MSG_CHECKING(whether stack growns downwards)
 if test -z "${ECL_STACK_DIR}" ; then
   AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <stdlib.h>
+
 char *f2() {
-  char c;
-  return &c;
+  char c[2];
+  return c;
 }
 
-int f1() {
-  char d;
-  return f2() - &d;
+char *f1() {
+  char c[2];
+  return c+1;
+}
+
+typedef char *(*f_ptr)();
+f_ptr f[2] = { f1, f2 };
+
+int signo() {
+  char d[1];
+  return f[rand() & 1]() - d;
 }
 
 int main() {
-  if (f1() > 0)
+  if (signo() > 0)
     return 1;
   else
     return 0;

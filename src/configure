@@ -11128,18 +11128,28 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
+#include <stdlib.h>
+
 char *f2() {
-  char c;
-  return &c;
+  char c[2];
+  return c;
 }
 
-int f1() {
-  char d;
-  return f2() - &d;
+char *f1() {
+  char c[2];
+  return c+1;
+}
+
+typedef char *(*f_ptr)();
+f_ptr f[2] = { f1, f2 };
+
+int signo() {
+  char d[1];
+  return f[rand() & 1]() - d;
 }
 
 int main() {
-  if (f1() > 0)
+  if (signo() > 0)
     return 1;
   else
     return 0;
@@ -15746,7 +15756,7 @@ do
     cat >>$CONFIG_STATUS <<_ACEOF
     # First, check the format of the line:
     cat >"\$tmp/defines.sed" <<\\CEOF
-/^[	 ]*#[	 ]*undef[	 ][	 ]*$ac_word_re[	 ]*\$/b def
+/^[	 ]*#[	 ]*undef[	 ][	 ]*$ac_word_re[	 ]*/b def
 /^[	 ]*#[	 ]*define[	 ][	 ]*$ac_word_re[(	 ]/b def
 b
 :def
