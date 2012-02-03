@@ -2051,6 +2051,7 @@ echo_read_char(cl_object strm)
 			ecl_write_char(c, ECHO_STREAM_OUTPUT(strm));
 	} else {
 		strm->stream.last_code[0] = EOF;
+		ecl_read_char(ECHO_STREAM_INPUT(strm));
 	}
 	return c;
 }
@@ -2068,6 +2069,7 @@ echo_unread_char(cl_object strm, ecl_character c)
 		unread_twice(strm);
 	}
 	strm->stream.last_code[0] = c;
+	ecl_unread_char(c, ECHO_STREAM_INPUT(strm));
 }
 
 static ecl_character
