@@ -18,7 +18,7 @@
 			     :element-type '(unsigned-byte 8)
 			     :initial-element 0))
 	 (stream (ext:make-sequence-output-stream
-		  vector :external-format :utf-8)))
+		  vector :external-format #+unicode :utf-8 #-unicode :default)))
     (with-standard-io-syntax
       (let ((si::*print-package* (find-package "CL")))
 	(write object :stream stream :pretty nil
