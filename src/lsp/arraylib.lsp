@@ -259,42 +259,6 @@ RESULT is a bit-array."
   (bit-array-op boole-c1 bit-array bit-array result-bit-array))
 
 
-(defun vector-push (new-element vector)
-  "Args: (item vector)
-Replaces ITEM for the element of VECTOR that is pointed to by the fill-pointer
-of VECTOR and then increments the fill-pointer by one.  Returns NIL if the new
-value of the fill-pointer becomes too large.  Otherwise, returns the new fill-
-pointer as the value."
-  ;; FILL-POINTER asserts vector is a vector
-  (let* ((fp (fill-pointer vector))
-         (vector (truly-the vector vector)))
-    (declare (optimize (safety 0)))
-    (cond ((< fp (array-total-size vector))
-           (sys:aset vector fp new-element)
-           (sys:fill-pointer-set vector (truly-the ext:array-index (1+ fp)))
-	   fp)
-	  (t nil))))
-
-(defun vector-push-extend (new-element vector &optional (extension 1))
-  "Args: (item vector &optional (n (length vector)))
-Replaces ITEM for the element of VECTOR that is pointed to by the fill-pointer
-of VECTOR and then increments the fill-pointer by one.  If the new value of
-the fill-pointer becomes too large, extends VECTOR for N more elements.
-Returns the new value of the fill-pointer."
-  ;; FILL-POINTER asserts vector is a vector
-  (let* ((fp (fill-pointer vector))
-         (vector (truly-the vector vector)))
-    (declare (optimize (safety 0)))
-    (let ((d (array-total-size vector)))
-      (unless (< fp d)
-        (adjust-array vector
-                      (list (+ d (max extension (max d 4))))
-                      :element-type (array-element-type vector)
-                      :fill-pointer fp))
-      (sys:aset vector fp new-element)
-      (sys:fill-pointer-set vector (1+ fp))
-      fp)))
-
 (defun vector-pop (vector)
   "Args: (vector)
 Decrements the fill-pointer of VECTOR by one and returns the element pointed

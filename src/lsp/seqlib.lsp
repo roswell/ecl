@@ -769,7 +769,7 @@ evaluates to NIL.  See STABLE-SORT."
 	predicate (si::coerce-to-function predicate))
   (if (listp sequence)
       (list-merge-sort sequence predicate key)
-      (quick-sort sequence 0 (truly-the fixnum (1- (length sequence))) predicate key)))
+      (quick-sort sequence 0 (truly-the fixnum (length sequence)) predicate key)))
 
 
 (defun list-merge-sort (l predicate key)
@@ -831,41 +831,26 @@ evaluates to NIL.  See STABLE-SORT."
 	   (function pred key)
 	   (optimize (safety 0))
 	   (si::c-local))
-  (if (< start end)
-      (let* ((j (1+ end)))
-	(declare (fixnum j))
-	(let* ((i start)
-	       (l (- end start))
-	       (l-half (ash l -1))
-	       (p (+ start l-half))
-	       (d (elt seq p))
-	       (kd (funcall key d)))
-	  (declare (fixnum i p l l-half))
-	  (rotatef (elt seq p) (elt seq start))
-	  (block outer-loop
-	    (loop
-	       (loop 
-		  (unless (> (decf j) i) (return-from outer-loop))
-		  (when (funcall pred 
-				 (funcall key (elt seq j)) kd)
-		    (return)))
-	       (loop 
-	      (unless (< (incf i) j) (return-from outer-loop))
-		  (unless (funcall pred
-				   (funcall key (elt seq i)) kd)
-		    (return)))
-	       (rotatef (elt seq i) (elt seq j))))
-	  (setf (elt seq start) (elt seq j)
-		(elt seq j) d))
-	(if (< (truly-the fixnum (- j start))
-	       (truly-the fixnum (- end j)))
-	    (progn
-	      (quick-sort seq start (1- j) pred key)
-	      (quick-sort seq (1+ j) end pred key))
-	    (progn
-	      (quick-sort seq (1+ j) end pred key)
-	      (quick-sort seq start (1- j) pred key))))
-      seq))
+  (if (<= end (truly-the fixnum (1+ start)))
+      seq
+      (let* ((j start) (k end) (d (elt seq start)) (kd (funcall key d)))
+            (declare (fixnum j k))
+        (block outer-loop
+          (loop (loop (decf k)
+                      (unless (< j k) (return-from outer-loop))
+                      (when (funcall pred (funcall key (elt seq k)) kd)
+                            (return)))
+                (loop (incf j)
+                      (unless (< j k) (return-from outer-loop))
+                      (unless (funcall pred (funcall key (elt seq j)) kd)
+                              (return)))
+                (let ((temp (elt seq j)))
+                  (setf (elt seq j) (elt seq k)
+                        (elt seq k) temp))))
+        (setf (elt seq start) (elt seq j)
+              (elt seq j) d)
+        (quick-sort seq start j pred key)
+        (quick-sort seq (1+ j) end pred key))))
 
 
 (defun stable-sort (sequence predicate &key key)

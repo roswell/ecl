@@ -3158,6 +3158,18 @@ being the N-th value.")
 (docfun vectorp function (x) "
 Returns T if X is a vector; NIL otherwise.")
 
+(docfun vector-push function (new-element vector) "
+Replaces ITEM for the element of VECTOR that is pointed to by the fill-pointer
+of VECTOR and then increments the fill-pointer by one.  Returns NIL if the new
+value of the fill-pointer becomes too large.  Otherwise, returns the new fill-
+pointer as the value.")
+
+(docfun vector-push-extend function (new-element vector &optional (extension 1)) "
+Replaces ITEM for the element of VECTOR that is pointed to by the fill-pointer
+of VECTOR and then increments the fill-pointer by one.  If the new value of
+the fill-pointer becomes too large, extends VECTOR for N more elements.
+Returns the new value of the fill-pointer.")
+
 (docfun when macro "(when test {form}*)" "
 If TEST evaluates to non-NIL, then evaluates FORMs and returns all values of
 the last FORM.  If not, simply returns NIL.")

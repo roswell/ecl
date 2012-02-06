@@ -896,38 +896,3 @@ nstring_case(cl_narg narg, cl_object fun, ecl_casefun casefun, cl_va_list ARGS)
 	}
 	@(return output);
 @)
-
-ecl_character
-ecl_string_push_extend(cl_object s, ecl_character c)
-{
-	switch(type_of(s)) {
-#ifdef ECL_UNICODE
-	case t_string:
-#endif
-	case t_base_string:
-		/* We use the fact that both string types are
-		   byte-compatible except for the data. */
-		if (s->base_string.fillp >= s->base_string.dim) {
-			cl_object other;
-			cl_index new_length;
-			if (!ECL_ADJUSTABLE_ARRAY_P(s))
-				FEerror("string-push-extend: the string ~S is not adjustable.",
-					1, s);
-			if (s->base_string.dim >= ADIMLIM)
-				FEerror("Can't extend the string.", 0);
-			new_length = 1 + s->base_string.dim + (s->base_string.dim / 2);
-			if (new_length > ADIMLIM)
-				new_length = ADIMLIM;
-			other = si_make_vector(cl_array_element_type(s),
-					       MAKE_FIXNUM(new_length), Ct,
-					       MAKE_FIXNUM(s->base_string.fillp),
-					       Cnil, MAKE_FIXNUM(0));
-			ecl_copy_subarray(other, 0, s, 0, s->base_string.fillp);
-			s = si_replace_array(s, other);
-		}
-		ecl_char_set(s, s->base_string.fillp++, c);
-		return c;
-	default:
-                FEwrong_type_nth_arg(@[vector-push-extend],1,s,@[string]);
-	}
-}

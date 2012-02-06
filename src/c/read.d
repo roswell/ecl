@@ -1826,7 +1826,7 @@ ecl_invalid_character_p(int c)
 	@(return Ct)
 @)
 
-@(defun get_macro_character (c &optional (readtable ecl_current_readtable()))
+@(defun get_macro_character (c &optional readtable)
 	enum ecl_chattrib cat;
 	cl_object dispatch;
 @

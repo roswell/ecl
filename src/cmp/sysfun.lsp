@@ -869,7 +869,7 @@
     make-array vector array-dimensions array-in-bounds-p array-row-major-index
     bit sbit bit-and bit-ior bit-xor bit-eqv bit-nand bit-nor bit-andc1
     bit-andc2 bit-orc1 bit-orc2 bit-not
-    vector-push vector-push-extend vector-pop adjust-array
+    vector-pop adjust-array
     ;; assignment.lsp
     si::setf-definition
     ;; conditions.lsp

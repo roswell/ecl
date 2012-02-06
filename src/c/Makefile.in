@@ -62,7 +62,7 @@ OBJS	= main.o symbol.o package.o cons.o list.o\
 	typespec.o assignment.o \
 	predicate.o number.o\
 	num_pred.o num_arith.o num_co.o\
-	num_log.o num_rand.o array.o sequence.o cmpaux.o\
+	num_log.o num_rand.o array.o vector_push.o sequence.o cmpaux.o\
 	macros.o backq.o stacks.o \
 	time.o unixint.o\
 	mapfun.o multival.o hash.o format.o pathname.o\
