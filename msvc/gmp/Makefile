@@ -570,7 +570,8 @@ CFLAGS = $(CFLAGS_CONFIG) /nologo /W3 /EHsc /I "." /I $(srcdir) /I "$(srcdir)\mp
 	cl -c $(CFLAGS) /Fo$@ $?
 
 .asm.obj:
-	E:\src\yasm-1.2.0-win32.exe -O9 -Xvc -f win32 -i $(@D)\ -o $@ $?
+	nasm -O9 -Xvc -f win32 -i $(@D)\ -o $@ $?
+#	yasm-1.2.0-win32.exe -O9 -Xvc -f win32 -i $(@D)\ -o $@ $?
 
 gen-bases.exe: build.vc8\gen-bases\gen-bases.c
 	cl $(CFLAGS) /Fe$@ $?
