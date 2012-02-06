@@ -79,10 +79,12 @@ cl_vector_push(cl_object value, cl_object v)
 
 @(defun vector-push-extend (value v &optional (extent MAKE_FIXNUM(0)))
 @
+{
 	cl_index f = fix(cl_fill_pointer(v));
 	if (f >= v->vector.dim) {
 		v = extend_vector(v, ecl_to_size(extent));
 	}
 	ecl_aset1(v, v->vector.fillp, value);
 	@(return MAKE_FIXNUM(v->vector.fillp++));
+}
 @)
