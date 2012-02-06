@@ -222,13 +222,15 @@
   ;;	(expt number-type integer) -> number-type
   ;;	(expt number-type1 number-type2) -> (max-float number-type1 number-type2)
   ;;
-  (multiple-value-bind (simplified-exponent exponent)
-      (ensure-real-type exponent)
-    (unless (eql simplified-exponent 'integer)
-      (setf simplified-exponent (ensure-nonrational-type simplified-exponent)))
-    (multiple-value-bind (result-type base aux)
-        (maximum-number-type base simplified-exponent)
-      (values (list base exponent) result-type))))
+  (let ((exponent (ensure-real-type exponent)))
+    (values (list base exponent)
+	    (cond ((eql exponent 'integer)
+		   base)
+		  ((type>= '(real 0 *) base)
+		   (let* ((exponent (ensure-nonrational-type exponent)))
+		     (maximum-number-type exponent base)))
+		  (t
+		   'number)))))
 
 (def-type-propagator abs (fname arg)
   (multiple-value-bind (output arg)
