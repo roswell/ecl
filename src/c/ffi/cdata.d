@@ -13,6 +13,7 @@
     See file '../Copyright' for full details.
 */
 
+#include <string.h>
 #include <ecl/ecl.h>
 #include <ecl/ecl-inl.h>
 

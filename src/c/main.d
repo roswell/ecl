@@ -40,6 +40,7 @@
 #endif
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <ecl/cache.h>
 #include <ecl/internal.h>
 #include <ecl/ecl-inl.h>

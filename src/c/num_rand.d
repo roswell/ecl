@@ -21,6 +21,9 @@
 #include <stdlib.h>
 #include <ecl/internal.h>
 #include <fcntl.h>
+#if !defined(ECL_MS_WINDOWS_HOST)
+# include <unistd.h>
+#endif
 #if !defined(_MSC_VER) && !defined(__MINGW32__)
 # include <sys/stat.h>
 /* it isn't pulled in by fcntl.h */
