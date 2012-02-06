@@ -7,6 +7,88 @@ BITS=32
 
 AUTO_SUBDIRS = mpf mpq printf scanf
 
+# for p4
+MPN_P4_C_SOURCES = \
+    mpn\generic\add.c \
+    mpn\generic\add_1.c \
+    mpn\generic\addsub_n.c \
+    mpn\generic\bdivmod.c \
+    mpn\generic\cmp.c \
+    mpn\generic\dc_divrem_n.c \
+    mpn\generic\diveby3.c \
+    mpn\generic\divis.c \
+    mpn\generic\divrem.c \
+    mpn\generic\divrem_2.c \
+    mpn\generic\dump.c \
+    mpn\generic\fib2_ui.c \
+    mpn\generic\gcd.c \
+    mpn\generic\gcd_1.c \
+    mpn\generic\gcdext.c \
+    mpn\generic\get_d.c \
+    mpn\generic\get_str.c \
+    mpn\generic\jacbase.c \
+    mpn\generic\mul.c \
+    mpn\generic\mul_fft.c \
+    mpn\generic\mul_n.c \
+    mpn\generic\mullow_basecase.c \
+    mpn\generic\mullow_n.c \
+    mpn\generic\perfsqr.c \
+    mpn\generic\pow_1.c \
+    mpn\generic\pre_divrem_1.c \
+    mpn\generic\pre_mod_1.c \
+    mpn\generic\random.c \
+    mpn\generic\random2.c \
+    mpn\generic\rootrem.c \
+    mpn\generic\sb_divrem_mn.c \
+    mpn\generic\scan0.c \
+    mpn\generic\scan1.c \
+    mpn\generic\set_str.c \
+    mpn\generic\sizeinbase.c \
+    mpn\generic\sqrtrem.c \
+    mpn\generic\sub.c \
+    mpn\generic\sub_1.c \
+    mpn\generic\tdiv_qr.c
+
+# for p3
+MPN_P3_C_SOURCES = \
+    mpn\generic\add.c \
+    mpn\generic\add_1.c \
+    mpn\generic\addsub_n.c \
+    mpn\generic\bdivmod.c \
+    mpn\generic\cmp.c \
+    mpn\generic\dc_divrem_n.c \
+    mpn\generic\diveby3.c \
+    mpn\generic\divis.c \
+    mpn\generic\divrem.c \
+    mpn\generic\divrem_2.c \
+    mpn\generic\dump.c \
+    mpn\generic\fib2_ui.c \
+    mpn\generic\gcd.c \
+    mpn\generic\gcd_1.c \
+    mpn\generic\gcdext.c \
+    mpn\generic\get_d.c \
+    mpn\generic\get_str.c \
+    mpn\generic\jacbase.c \
+    mpn\generic\mul.c \
+    mpn\generic\mul_fft.c \
+    mpn\generic\mul_n.c \
+    mpn\generic\mullow_basecase.c \
+    mpn\generic\mullow_n.c \
+    mpn\generic\perfsqr.c \
+    mpn\generic\pow_1.c \
+    mpn\generic\random.c \
+    mpn\generic\random2.c \
+    mpn\generic\rootrem.c \
+    mpn\generic\sb_divrem_mn.c \
+    mpn\generic\scan0.c \
+    mpn\generic\scan1.c \
+    mpn\generic\set_str.c \
+    mpn\generic\sizeinbase.c \
+    mpn\generic\sqrtrem.c \
+    mpn\generic\sub.c \
+    mpn\generic\sub_1.c \
+    mpn\generic\tdiv_qr.c
+
 MPN_GC_SOURCES = \
     mpn\generic\add.c \
     mpn\generic\add_1.c \
@@ -373,10 +455,65 @@ GMP_SOURCES = \
     mp_bases.c \
     fib_table.c
 
+MPN_P4_ASM_SOURCES = \
+    mpn\x86i\aors_n.asm \
+    mpn\x86i\aorsmul_1.asm \
+    mpn\x86i\pentium4\copyd.asm \
+    mpn\x86i\pentium4\copyi.asm \
+    mpn\x86i\dive_1.asm \
+    mpn\x86i\diveby3.asm \
+    mpn\x86i\divrem_1.asm \
+    mpn\x86i\lshift.asm \
+    mpn\x86i\mod_1.asm \
+    mpn\x86i\mod_34lsub1.asm \
+    mpn\x86i\mul_1.asm \
+    mpn\x86i\mul_basecase.asm \
+    mpn\x86i\rshift.asm \
+    mpn\x86i\udiv.asm \
+    mpn\x86i\umul.asm \
+    mpn\x86i\pentium4\mmx\lshift.asm \
+    mpn\x86i\pentium4\mmx\popham.asm \
+    mpn\x86i\pentium4\mmx\rshift.asm \
+    mpn\x86i\pentium4\sse2\add_n.asm \
+    mpn\x86i\pentium4\sse2\addmul_1.asm \
+    mpn\x86i\pentium4\sse2\dive_1.asm \
+    mpn\x86i\pentium4\sse2\diveby3.asm \
+    mpn\x86i\pentium4\sse2\mod_34lsub1.asm \
+    mpn\x86i\pentium4\sse2\mode1o.asm \
+    mpn\x86i\pentium4\sse2\mul_1.asm \
+    mpn\x86i\pentium4\sse2\mul_basecase.asm \
+    mpn\x86i\pentium4\sse2\sqr_basecase.asm \
+    mpn\x86i\pentium4\sse2\sub_n.asm \
+    mpn\x86i\pentium4\sse2\submul_1.asm
+
+MPN_P3_ASM_SOURCES = \
+    mpn\x86i\aors_n.asm \
+    mpn\x86i\p6\aorsmul_1.asm \
+    mpn\x86i\p6\copyd.asm \
+    mpn\x86i\copyi.asm \
+    mpn\x86i\p6\dive_1.asm \
+    mpn\x86i\p6\diveby3.asm \
+    mpn\x86i\divrem_1.asm \
+    mpn\x86i\lshift.asm \
+    mpn\x86i\p6\mod_1.asm \
+    mpn\x86i\mod_34lsub1.asm \
+    mpn\x86i\p6\mode1o.asm \
+    mpn\x86i\mul_1.asm \
+    mpn\x86i\mul_basecase.asm \
+    mpn\x86i\rshift.asm \
+    mpn\x86i\p6\sqr_basecase.asm \
+    mpn\x86i\udiv.asm \
+    mpn\x86i\umul.asm \
+    mpn\x86i\p6\mmx\divrem_1.asm \
+    mpn\x86i\p6\mmx\lshift.asm \
+    mpn\x86i\p6\mmx\popham.asm \
+    mpn\x86i\p6\p3mmx\popham.asm \
+    mpn\x86i\p6\mmx\rshift.asm
+
 MPN_GC_OBJS = $(MPN_GC_SOURCES:.c=.obj)
 #MPN_P0_OBJS = $(MPN_P0_ASM_SOURCES:.asm=.obj) $(MPN_P0_C_SOURCES:.c=.obj)
-#MPN_P3_OBJS = $(MPN_P3_ASM_SOURCES:.asm=.obj) $(MPN_P3_C_SOURCES:.c=.obj)
-#MPN_P4_OBJS = $(MPN_P4_ASM_SOURCES:.asm=.obj) $(MPN_P4_C_SOURCES:.c=.obj)
+MPN_P3_OBJS = $(MPN_P3_ASM_SOURCES:.asm=.obj) $(MPN_P3_C_SOURCES:.c=.obj)
+MPN_P4_OBJS = $(MPN_P4_ASM_SOURCES:.asm=.obj) $(MPN_P4_C_SOURCES:.c=.obj)
 MPF_OBJS = $(MPF_SOURCES:.c=.obj)
 MPQ_OBJS = $(MPQ_SOURCES:.c=.obj)
 MPZ_OBJS = $(MPZ_SOURCES:.c=.obj)
@@ -389,7 +526,7 @@ GMP_ALL_OBJS = $(MPF_OBJS) $(MPQ_OBJS) $(MPZ_OBJS) \
 
 AUTO_FILES = mp_bases.h mp_bases.c fac_ui.h fib_table.h fib_table.c perfsqr.h
 
-MPN_TYPE = gc
+MPN_TYPE = p3
 
 all: $(AUTO_FILES) gmp.lib
 
@@ -433,7 +570,7 @@ CFLAGS = $(CFLAGS_CONFIG) /nologo /W3 /EHsc /I "." /I $(srcdir) /I "$(srcdir)\mp
 	cl -c $(CFLAGS) /Fo$@ $?
 
 .asm.obj:
-	nasm -O9 -Xvc -f win32 -i $(@D)\ -o $@ $?
+	E:\src\yasm-1.2.0-win32.exe -O9 -Xvc -f win32 -i $(@D)\ -o $@ $?
 
 gen-bases.exe: build.vc8\gen-bases\gen-bases.c
 	cl $(CFLAGS) /Fe$@ $?
