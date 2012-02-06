@@ -889,8 +889,8 @@ sharp_asterisk_reader(cl_object in, cl_object c, cl_object d)
 			FEreader_error("Too many elements in #*.", in, 0);
 		unlikely_if (dim && (dimcount == 0))
 			FEreader_error("Cannot fill the bit-vector #*.", in, 0);
-		last = ECL_STACK_REF(env,-1);
 	}
+	last = ECL_STACK_REF(env,-1);
 	x = ecl_alloc_simple_vector(dim, aet_bit);
 	for (i = 0; i < dim; i++) {
 		elt = (i < dimcount) ? env->stack[sp+i] : last;
