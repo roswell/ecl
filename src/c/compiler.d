@@ -117,9 +117,12 @@ static int c_while(cl_env_ptr env, cl_object args, int flags);
 static int c_with_backend(cl_env_ptr env, cl_object args, int flags);
 static int c_until(cl_env_ptr env, cl_object args, int flags);
 static void eval_form(cl_env_ptr env, cl_object form);
+static int execute_each_form(cl_env_ptr env, cl_object body);
 static int compile_toplevel_body(cl_env_ptr env, cl_object args, int flags);
 static int compile_body(cl_env_ptr env, cl_object args, int flags);
 static int compile_form(cl_env_ptr env, cl_object args, int push);
+static int compile_with_load_time_forms(cl_env_ptr env, cl_object form, int flags);
+static int compile_constant(cl_env_ptr env, cl_object stmt, int flags);
 
 static int c_cons(cl_env_ptr env, cl_object args, int push);
 static int c_endp(cl_env_ptr env, cl_object args, int push);
@@ -1297,7 +1300,7 @@ c_eval_when(cl_env_ptr env, cl_object args, int flags) {
         } else if (mode == FLAG_LOAD) {
                 if (when_compile_p(situation)) {
                         env->c_env->mode = FLAG_COMPILE;
-                        eval_form(env, CONS(@'progn', args));
+			execute_each_form(env, args);
                         env->c_env->mode = FLAG_LOAD;
                         if (!when_load_p(situation))
                                 args = Cnil;
@@ -1313,9 +1316,10 @@ c_eval_when(cl_env_ptr env, cl_object args, int flags) {
                 if (!when_load_p(situation))
                         args = Cnil;
         } else { /* FLAG_COMPILE */
-                if (!when_execute_p(situation) && !when_compile_p(situation)) {
-                        args = Cnil;
+                if (when_execute_p(situation) || when_compile_p(situation)) {
+			execute_each_form(env, args);
                 }
+		args = Cnil;
         }
         return compile_toplevel_body(env, args, flags);
 }
@@ -1592,14 +1596,22 @@ c_leta(cl_env_ptr env, cl_object args, int flags) {
 static int
 c_load_time_value(cl_env_ptr env, cl_object args, int flags)
 {
+	const cl_compiler_ptr c_env = env->c_env;
 	cl_object value;
-	if (Null(args) || cl_cddr(args) != Cnil)
+	unlikely_if (Null(args) || cl_cddr(args) != Cnil)
 		FEprogram_error_noreturn("LOAD-TIME-VALUE: Wrong number of arguments.", 0);
 	value = ECL_CONS_CAR(args);
-	if (ECL_SYMBOLP(value) || ECL_LISTP(value)) {
+        if (c_env->mode != FLAG_LOAD && c_env->mode != FLAG_ONLY_LOAD) {
 		value = si_eval_with_env(1, value);
+	} else if (ECL_SYMBOLP(value) || ECL_LISTP(value)) {
+		/* Using the form as constant, we force the system to coalesce multiple
+		 * copies of the same load-time-value form */
+		c_env->load_time_forms =
+			ecl_cons(cl_list(3, args, value, Cnil),
+				 c_env->load_time_forms);
+		value = args;
 	}
-	return c_quote(env, ecl_list1(value), flags);
+	return compile_constant(env, value, flags);
 }
 
 static int
@@ -2359,7 +2371,7 @@ eval_nontrivial_form(cl_env_ptr env, cl_object form) {
         new_c_env.env_size = 0;
         env->c_env = &new_c_env;
         handle = asm_begin(env);
-        compile_form(env, form, FLAG_VALUES);
+        compile_with_load_time_forms(env, form, FLAG_VALUES);
         if (current_pc(env) != handle) {
                 asm_op(env, OP_EXIT);
                 bytecodes = asm_end(env, handle, form);
@@ -2385,7 +2397,7 @@ eval_form(cl_env_ptr env, cl_object form) {
 }
 
 static int
-execute_each_form(cl_env_ptr env, cl_object body, int flags)
+execute_each_form(cl_env_ptr env, cl_object body)
 {
         cl_object form = Cnil, next_form;
         for (form = Cnil; !Null(body); form = next_form) {
@@ -2455,6 +2467,7 @@ compile_with_load_time_forms(cl_env_ptr env, cl_object form, int flags)
                         p = ECL_CONS_CDR(p);
                 } while (p != old_load_time_forms);
                 restore_bytecodes(env, bytecodes);
+		c_env->load_time_forms = p;
         }
         return output_flags;
 }
@@ -2479,7 +2492,7 @@ compile_toplevel_body(cl_env_ptr env, cl_object body, int flags)
         const cl_compiler_ptr c_env = env->c_env;
         if (!c_env->lexical_level) {
                 if (c_env->mode == FLAG_EXECUTE)
-                        return execute_each_form(env, body, flags);
+                        return execute_each_form(env, body);
                 else
                         return compile_each_form(env, body, flags);
         } else {
