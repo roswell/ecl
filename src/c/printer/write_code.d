@@ -29,8 +29,8 @@ _ecl_write_bclosure(cl_object x, cl_object stream)
                 x = x->bclosure.code;
                 for ( i=x->bytecodes.code_size-1 ; i<(cl_index)(-1l) ; i-- )
                         code_l = ecl_cons(MAKE_FIXNUM(((cl_opcode*)(x->bytecodes.code))[i]), code_l);
-                for ( i=x->bytecodes.data_size-1 ; i<(cl_index)(-1l) ; i-- )
-                        data_l = ecl_cons(x->bytecodes.data[i], data_l);
+		data_l = cl_funcall(3, @'concatenate', @'list',
+				    x->bytecodes.data);
                 
                 writestr_stream("#Y", stream);
                 si_write_ugly_object(cl_list(7, x->bytecodes.name, lex,
@@ -59,8 +59,8 @@ _ecl_write_bytecodes(cl_object x, cl_object stream)
                 cl_object code_l=Cnil, data_l=Cnil;
                 for ( i=x->bytecodes.code_size-1 ; i<(cl_index)(-1l) ; i-- )
                         code_l = ecl_cons(MAKE_FIXNUM(((cl_opcode*)(x->bytecodes.code))[i]), code_l);
-                for ( i=x->bytecodes.data_size-1 ; i<(cl_index)(-1l) ; i-- )
-                        data_l = ecl_cons(x->bytecodes.data[i], data_l);
+		data_l = cl_funcall(3, @'concatenate', @'list',
+				    x->bytecodes.data);
                 writestr_stream("#Y", stream);
                 si_write_ugly_object(cl_list(7, x->bytecodes.name, lex,
                                              Cnil /* x->bytecodes.definition */,

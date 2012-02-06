@@ -737,11 +737,9 @@ sharp_Y_reader(cl_object in, cl_object c, cl_object d)
 
         nth = ECL_CONS_CAR(x);
         x = ECL_CONS_CDR(x);
-        rv->bytecodes.data_size = ecl_to_fix(cl_list_length(nth));
-        rv->bytecodes.data = ecl_alloc(rv->bytecodes.data_size * sizeof(cl_object));
-        for ( i=0 ; !ecl_endp(nth) ; i++, nth=ECL_CONS_CDR(nth) )
-             ((cl_object*)(rv->bytecodes.data))[i] = ECL_CONS_CAR(nth);
-
+        rv->bytecodes.data =
+		cl_funcall(4, @'make-array', cl_list_length(nth),
+			   @':initial-contents', nth);
         if (ECL_ATOM(x)) {
                 nth = Cnil;
         } else {
@@ -1152,10 +1150,7 @@ do_patch_sharp(cl_object x, cl_object table)
                 cl_index i = 0;
                 x->bytecodes.name = do_patch_sharp(x->bytecodes.name, table);
                 x->bytecodes.definition = do_patch_sharp(x->bytecodes.definition, table);
-                for (i = 0; i < x->bytecodes.data_size; i++) {
-                        x->bytecodes.data[i] =
-                                do_patch_sharp(x->bytecodes.data[i], table);
-                }
+		x->bytecodes.data = do_patch_sharp(x->bytecodes.data, table);
                 break;
         }
 	default:;
@@ -1826,7 +1821,7 @@ ecl_invalid_character_p(int c)
 	@(return Ct)
 @)
 
-@(defun get_macro_character (c &optional readtable)
+@(defun get_macro_character (c &optional (readtable ecl_current_readtable()))
 	enum ecl_chattrib cat;
 	cl_object dispatch;
 @

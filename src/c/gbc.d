@@ -352,9 +352,8 @@ BEGIN:
 		mark_object(x->bytecodes.specials);
 		mark_object(x->bytecodes.definition);
 		mark_contblock(x->bytecodes.code, x->bytecodes.code_size * sizeof(cl_opcode));
-		p = x->bytecodes.data;
-		i = x->bytecodes.data_size;
-		goto MARK_DATA;
+		mark_next(x->bytecodes.data);
+		break;
 
 	case t_bclosure:
 		mark_object(x->bclosure.code);

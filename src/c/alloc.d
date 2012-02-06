@@ -368,7 +368,6 @@ ONCE_MORE:
 	  obj->bytecodes.specials = Cnil;
 	  obj->bytecodes.code_size = 0;
 	  obj->bytecodes.code = NULL;
-	  obj->bytecodes.data_size = 0;
 	  obj->bytecodes.data = NULL;
 	  break;
 	case t_bclosure:

@@ -47,6 +47,13 @@ print_oparg_arg(const char *s, cl_fixnum n, cl_object x) {
 	ecl_princ(x, Cnil);
 }
 
+#define GET_DATA(r,v,data) { \
+	cl_oparg ndx; \
+	GET_OPARG(ndx, v); \
+	printf("oparg: %d\n", ndx); \
+	r = data[ndx]; \
+}
+
 static void
 disassemble_lambda(cl_object bytecodes) {
 	const cl_env_ptr env = ecl_process_env();
@@ -56,7 +63,8 @@ disassemble_lambda(cl_object bytecodes) {
 	ecl_bds_bind(env, @'*print-pretty*', Cnil);
 
 	/* Print required arguments */
-	data = bytecodes->bytecodes.data;
+	data = bytecodes->bytecodes.data->vector.self.t;
+	cl_print(1,bytecodes->bytecodes.data);
 
 	/* Name of LAMBDA */
 	print_arg("\nName:\t\t", bytecodes->bytecodes.name);
@@ -65,10 +73,6 @@ disassemble_lambda(cl_object bytecodes) {
 		print_noarg("\nEvaluated form:");
 		goto NO_ARGS;
 	}
-
-	/* Print aux arguments */
-	print_arg("\nDocumentation:\t", *(data++));
-	print_arg("\nDeclarations:\t", *(data++));
 
  NO_ARGS:
 	base = vector = (cl_opcode *)bytecodes->bytecodes.code;
@@ -88,13 +92,12 @@ disassemble_lambda(cl_object bytecodes) {
 static cl_opcode *
 disassemble_flet(cl_object bytecodes, cl_opcode *vector) {
 	cl_index nfun, first;
-	cl_object *data;
+	cl_object *data = bytecodes->bytecodes.data->vector.self.t;
 	GET_OPARG(nfun, vector);
-	GET_OPARG(first, vector);
-	data = bytecodes->bytecodes.data + first;
 	print_noarg("FLET");
 	while (nfun--) {
-		cl_object fun = *(data++);
+		cl_object fun;
+		GET_DATA(fun, vector, data);
 		print_arg("\n\tFLET\t", fun->bytecodes.name);
 	}
 	return vector;
@@ -109,13 +112,12 @@ disassemble_flet(cl_object bytecodes, cl_opcode *vector) {
 static cl_opcode *
 disassemble_labels(cl_object bytecodes, cl_opcode *vector) {
 	cl_index nfun, first;
-	cl_object *data;
+	cl_object *data = bytecodes->bytecodes.data->vector.self.t;
 	GET_OPARG(nfun, vector);
-	GET_OPARG(first, vector);
-	data = bytecodes->bytecodes.data + first;
 	print_noarg("LABELS");
 	while (nfun--) {
-		cl_object fun = *(data++);
+		cl_object fun;
+		GET_DATA(fun, vector, data);
 		print_arg("\n\tLABELS\t", fun->bytecodes.name);
 	}
 	return vector;
@@ -172,7 +174,7 @@ disassemble(cl_object bytecodes, cl_opcode *vector) {
 	cl_object o;
 	cl_fixnum n, m;
 	cl_object line_format;
-	cl_object *data = bytecodes->bytecodes.data;
+	cl_object *data = bytecodes->bytecodes.data->vector.self.t;
 	cl_object line_no;
 
 	if (cl_fboundp(@'si::formatter-aux') != Cnil)
@@ -638,8 +640,7 @@ si_bc_split(cl_object b)
                 vector = ecl_alloc_simple_vector(b->bytecodes.code_size *
                                                  sizeof(cl_opcode), aet_b8);
                 vector->vector.self.b8 = (uint8_t*)b->bytecodes.code;
-                data = ecl_alloc_simple_vector(b->bytecodes.data_size, aet_object);
-                data->vector.self.t = b->bytecodes.data;
+                data = cl_copy_seq(b->bytecodes.data);
                 name = b->bytecodes.name;
         }
 	@(return lex vector data name)
@@ -681,8 +682,7 @@ si_bc_join(cl_object lex, cl_object code, cl_object data, cl_object name)
                 output->bytecodes.entry = _ecl_bytecodes_dispatch_vararg;
                 output->bytecodes.code_size = code->vector.fillp / sizeof(cl_opcode);
                 output->bytecodes.code = (void*)code->vector.self.b8;
-                output->bytecodes.data_size = data->vector.fillp;
-                output->bytecodes.data = data->vector.self.t;
+                output->bytecodes.data = data;
                 output->bytecodes.file = Cnil;
                 output->bytecodes.file_position = Cnil;
         }

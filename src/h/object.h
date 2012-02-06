@@ -719,9 +719,8 @@ struct ecl_bytecodes {
 	cl_objectfn entry;	/*  entry address (must match the position of
                                  *  the equivalent field in cfun) */
 	cl_index code_size;	/*  number of bytecodes  */
-	cl_index data_size;	/*  number of constants  */
 	char *code;		/*  the intermediate language  */
-	cl_object *data;	/*  non-inmediate constants used in the code  */
+	cl_object data;		/*  non-inmediate constants used in the code  */
 	cl_object file;		/*  file where it was defined...  */
 	cl_object file_position;/*  and where it was created  */
 };

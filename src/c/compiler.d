@@ -163,7 +163,7 @@ static cl_object
 asm_end(cl_env_ptr env, cl_index beginning, cl_object definition) {
         const cl_compiler_ptr c_env = env->c_env;
 	cl_object bytecodes;
-	cl_index code_size, data_size, i;
+	cl_index code_size, i;
 	cl_opcode *code;
         cl_object file = ECL_SYM_VAL(env,@'ext::*source-location*'), position;
         if (Null(file)) {
@@ -176,38 +176,15 @@ asm_end(cl_env_ptr env, cl_index beginning, cl_object definition) {
 
 	/* Save bytecodes from this session in a new vector */
 	code_size = current_pc(env) - beginning;
-	data_size = c_env->constants_size;
 	bytecodes = ecl_alloc_object(t_bytecodes);
 	bytecodes->bytecodes.name = @'si::bytecodes';
         bytecodes->bytecodes.definition = definition;
 	bytecodes->bytecodes.code_size = code_size;
-	bytecodes->bytecodes.data_size = data_size;
 	bytecodes->bytecodes.code = ecl_alloc_atomic(code_size * sizeof(cl_opcode));
-	bytecodes->bytecodes.data = (cl_object*)ecl_alloc(data_size * sizeof(cl_object));
+	bytecodes->bytecodes.data = c_env->constants;
 	for (i = 0, code = (cl_opcode *)bytecodes->bytecodes.code; i < code_size; i++) {
 		code[i] = (cl_opcode)(cl_fixnum)(env->stack[beginning+i]);
  	}
-	for (i = data_size; i--; ) {
-		bytecodes->bytecodes.data[i] = ECL_CONS_CAR(c_env->constants);
-		c_env->constants = ECL_CONS_CDR(c_env->constants);
-		c_env->constants_size--;
-	}
-        if (c_env->load_time_forms != Cnil) {
-                /* Objects with load-time constants are not saved, as
-                 * they will be rebuilt later on. */
-                cl_object p = c_env->load_time_forms;
-                do {
-                        cl_object record = ECL_CONS_CAR(p);
-                        cl_object o = ECL_CONS_CAR(record);
-                        for (i = 0; i < data_size; i++) {
-                                if (bytecodes->bytecodes.data[i] == o) {
-                                        bytecodes->bytecodes.data[i] = MAKE_FIXNUM(i);
-                                        break;
-                                }
-                        }
-                        p = ECL_CONS_CDR(p);
-                } while (p != Cnil);
-        }
         bytecodes->bytecodes.entry =  _ecl_bytecodes_dispatch_vararg;
         ecl_set_function_source_file_info(bytecodes, (file == OBJNULL)? Cnil : file,
                                           (file == OBJNULL)? Cnil : position);
@@ -253,8 +230,9 @@ static cl_index
 asm_constant(cl_env_ptr env, cl_object c)
 {
         const cl_compiler_ptr c_env = env->c_env;
-	c_env->constants = ecl_cons(c, c_env->constants);
-	return c_env->constants_size++;
+	cl_object constants = c_env->constants;
+	cl_vector_push_extend(2, c, constants);
+	return constants->vector.fillp-1;
 }
 
 static cl_index
@@ -379,17 +357,26 @@ FEill_formed_input()
 }
 
 static int
-c_register_constant(cl_env_ptr env, cl_object c)
+c_search_constant(cl_env_ptr env, cl_object c)
 {
         const cl_compiler_ptr c_env = env->c_env;
 	cl_object p = c_env->constants;
 	int n;
-	for (n = c_env->constants_size; n--; p = ECL_CONS_CDR(p)) {
-		if (ecl_eql(ECL_CONS_CAR(p), c)) {
+	for (n = 0; n < p->vector.fillp; n++) {
+		if (ecl_eql(p->vector.self.t[n], c)) {
 			return n;
 		}
 	}
-	return asm_constant(env, c);
+	return -1;
+}
+
+static int
+c_register_constant(cl_env_ptr env, cl_object c)
+{
+	int n = c_search_constant(env, c);
+	return (n < 0)?
+		asm_constant(env, c) :
+		n;
 }
 
 static void
@@ -566,8 +553,6 @@ c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_object env,
 	the_env->c_env = new;
 	new->stepping = 0;
 	new->lexical_level = 0;
-	new->constants = Cnil;
-	new->constants_size = 0;
         new->load_time_forms = Cnil;
 	new->env_depth = 0;
 	new->env_size = 0;
@@ -578,13 +563,17 @@ c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_object env,
 		new->macros = old->macros;
 		new->lexical_level = old->lexical_level;
 		new->constants = old->constants;
-		new->constants_size = old->constants_size;
                 new->load_time_forms = old->load_time_forms;
 		new->lex_env = old->lex_env;
 		new->env_depth = old->env_depth + 1;
 		new->stepping = old->stepping;
                 new->mode = old->mode;
 	} else {
+		new->constants = si_make_vector(Ct, MAKE_FIXNUM(16),
+						Ct, /* Adjustable */
+						MAKE_FIXNUM(0), /* Fillp */
+						Cnil, /* displacement */
+						Cnil);
 		new->variables = CAR(env);
 		new->macros = CDR(env);
 		for (env = new->variables; !Null(env); env = CDR(env)) {
@@ -1380,10 +1369,7 @@ c_labels_flet(cl_env_ptr env, int op, cl_object args, int flags) {
 		cl_object name = pop(&definition);
 		cl_object lambda = ecl_make_lambda(env, name, definition);
 		cl_index c = c_register_constant(env, lambda);
-		if (first == 0) {
-			asm_arg(env, c);
-			first = 1;
-		}
+		asm_arg(env, c);
 	}
 
 	/* If compiling a FLET form, add the function names to the lexical
@@ -2195,7 +2181,7 @@ maybe_make_load_forms(cl_env_ptr env, cl_object constant)
         cl_object init, make;
         if (c_env->mode != FLAG_LOAD && c_env->mode != FLAG_ONLY_LOAD)
                 return;
-        if (ecl_memql(constant, c_env->constants) != Cnil)
+        if (c_search_constant(env, constant) < 0)
                 return;
         if (!need_to_make_load_form_p(constant))
                 return;
@@ -2363,8 +2349,11 @@ eval_nontrivial_form(cl_env_ptr env, cl_object form) {
         frame.env = env;
         env->nvalues = 0;
         env->values[0] = Cnil;
-        new_c_env.constants = Cnil;
-        new_c_env.constants_size = 0;
+        new_c_env.constants = si_make_vector(Ct, MAKE_FIXNUM(16),
+					     Ct, /* Adjustable */
+					     MAKE_FIXNUM(0), /* Fillp */
+					     Cnil, /* displacement */
+					     Cnil);
         new_c_env.load_time_forms = Cnil;
         new_c_env.env_depth = 0;
         new_c_env.env_size = 0;
@@ -2379,7 +2368,6 @@ eval_nontrivial_form(cl_env_ptr env, cl_object form) {
                                                bytecodes);
 #ifdef GBC_BOEHM
                 GC_free(bytecodes->bytecodes.code);
-                GC_free(bytecodes->bytecodes.data);
                 GC_free(bytecodes);
 #endif
         }
@@ -2939,11 +2927,7 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
 
 	old_c_env = env->c_env;
 	c_new_env(env, &new_c_env, Cnil, old_c_env);
-
 	new_c_env.lexical_level++;
-	new_c_env.constants = Cnil;
-        new_c_env.load_time_forms = Cnil;
-	new_c_env.constants_size = 0;
 
 	reqs = si_process_lambda(lambda);
 	opts = env->values[1];
@@ -2967,9 +2951,6 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
 	 * to be used. We use this to mark the boundary of a function
 	 * environment and when code-walking */
 	c_register_var(env, @'si::function-boundary', TRUE, FALSE);
-
-	asm_constant(env, doc);
-	asm_constant(env, decl);
 
 	reqs = ECL_CONS_CDR(reqs);		/* Required arguments */
 	while (!Null(reqs)) {
@@ -3033,6 +3014,7 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
 	output = asm_end(env, handle, lambda);
 	output->bytecodes.name = name;
 
+	old_c_env->load_time_forms = env->c_env->load_time_forms;
 	env->c_env = old_c_env;
 
 	ecl_bds_unwind1(env);

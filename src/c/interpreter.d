@@ -209,6 +209,8 @@ _ecl_bclosure_dispatch_vararg(cl_narg narg, ...)
 static cl_object
 close_around(cl_object fun, cl_object lex) {
 	cl_object v = ecl_alloc_object(t_bclosure);
+	if (type_of(fun) != t_bytecodes)
+		FEerror("!!!", 0);
 	v->bclosure.code = fun;
 	v->bclosure.lex = lex;
         v->bclosure.entry = _ecl_bclosure_dispatch_vararg;
@@ -270,7 +272,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
         const cl_env_ptr the_env = frame->frame.env;
         volatile cl_index frame_index = 0;
 	cl_opcode *vector = (cl_opcode*)bytecodes->bytecodes.code;
-	cl_object *data = bytecodes->bytecodes.data;
+	cl_object *data = bytecodes->bytecodes.data->vector.self.t;
 	cl_object reg0, reg1, lex_env = env;
 	cl_index narg;
 	struct ecl_stack_frame frame_aux;
@@ -660,14 +662,15 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 	*/
 	CASE(OP_FLET); {
 		int nfun;
-		cl_object old_lex, *fun;
+		cl_object old_lex;
 		GET_OPARG(nfun, vector);
-		GET_DATA_PTR(fun, vector, data);
 		/* Copy the environment so that functions get it without references
 		   to themselves, and then add new closures to the environment. */
 		old_lex = lex_env;
 		do {
-			cl_object f = close_around(*(fun++), old_lex);
+			cl_object f;
+			GET_DATA(f, vector, data);
+			f = close_around(f, old_lex);
 			lex_env = bind_function(lex_env, f->bytecodes.name, f);
 		} while (--nfun);
 		THREAD_NEXT;
@@ -684,14 +687,13 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 	*/
 	CASE(OP_LABELS); {
 		cl_index nfun;
-		cl_object *fun;
 		GET_OPARG(nfun, vector);
-		GET_DATA_PTR(fun, vector, data);
 		/* Build up a new environment with all functions */
                 {
                         cl_index i = nfun;
                         do {
-                                cl_object f = *(fun++);
+                                cl_object f;
+				GET_DATA(f, vector, data);
                                 lex_env = bind_function(lex_env, f->bytecodes.name, f);
                         } while (--i);
                 }
