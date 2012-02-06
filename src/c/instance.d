@@ -90,9 +90,11 @@ si_instance_ref(cl_object x, cl_object index)
 
 	if (ecl_unlikely(!ECL_INSTANCEP(x)))
                 FEwrong_type_nth_arg(@[si::instance-ref], 1, x, @[ext::instance]);
-	if (ecl_unlikely(!FIXNUMP(index) ||
-                         (i = fix(index)) < 0 || i >= (cl_fixnum)x->instance.length))
-	        FEtype_error_index(x, index);
+	if (ecl_unlikely(!FIXNUMP(index)))
+		FEwrong_type_nth_arg(@[si::instance-ref], 2, index, @[fixnum]);
+	i = fix(index);
+	if (ecl_unlikely(i < 0 || i >= (cl_fixnum)x->instance.length))
+		FEtype_error_index(x, i);
 	@(return x->instance.slots[i])
 }
 
@@ -103,9 +105,11 @@ si_instance_ref_safe(cl_object x, cl_object index)
 
 	if (ecl_unlikely(!ECL_INSTANCEP(x)))
                 FEwrong_type_nth_arg(@[si::instance-ref], 1, x, @[ext::instance]);
-	if (ecl_unlikely(!FIXNUMP(index) ||
-                         (i = fix(index)) < 0 || i >= x->instance.length))
-	        FEtype_error_index(x, index);
+	if (ecl_unlikely(!FIXNUMP(index)))
+		FEwrong_type_nth_arg(@[si::instance-ref], 2, index, @[fixnum]);
+	i = fix(index);
+	if (ecl_unlikely(i < 0 || i >= x->instance.length))
+		FEtype_error_index(x, i);
 	x = x->instance.slots[i];
 	if (ecl_unlikely(x == ECL_UNBOUND))
 		cl_error(5, @'unbound-slot', @':name', index, @':instance', x);
@@ -130,9 +134,11 @@ si_instance_set(cl_object x, cl_object index, cl_object value)
 
 	if (ecl_unlikely(!ECL_INSTANCEP(x)))
                 FEwrong_type_nth_arg(@[si::instance-set], 1, x, @[ext::instance]);
-	if (ecl_unlikely(!FIXNUMP(index) ||
-                         (i = fix(index)) >= (cl_fixnum)x->instance.length || i < 0))
-		FEtype_error_index(x, index);
+	if (ecl_unlikely(!FIXNUMP(index)))
+		FEwrong_type_nth_arg(@[si::instance-set], 2, index, @[fixnum]);
+	i = fix(index);
+	if (ecl_unlikely(i >= (cl_fixnum)x->instance.length || i < 0))
+		FEtype_error_index(x, i);
 	x->instance.slots[i] = value;
 	@(return value)
 }
@@ -164,9 +170,11 @@ si_sl_makunbound(cl_object x, cl_object index)
 
 	if (ecl_unlikely(!ECL_INSTANCEP(x)))
                 FEwrong_type_nth_arg(@[si::sl-makunbound], 1, x, @[ext::instance]);
-	if (ecl_unlikely(!FIXNUMP(index) ||
-                         (i = fix(index)) >= x->instance.length || i < 0))
-		FEtype_error_index(x, index);
+	if (ecl_unlikely(!FIXNUMP(index)))
+		FEwrong_type_nth_arg(@[si::sl-makunbound], 2, index, @[fixnum]);
+	i = fix(index);
+	if (ecl_unlikely((i >= x->instance.length || i < 0))
+		FEtype_error_index(x, i);
 	x->instance.slots[i] = ECL_UNBOUND;
 	@(return x)
 }

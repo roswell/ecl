@@ -99,13 +99,11 @@ ecl_to_index(cl_object n)
 	case t_fixnum: {
 		cl_fixnum out = fix(n);
 		if (out < 0 || out >= ADIMLIM)
-			FEtype_error_index(Cnil, n);
+			FEtype_error_index(Cnil, out);
 		return out;
 	}
-	case t_bignum:
-		FEtype_error_index(Cnil, n);
 	default:
-                FEwrong_type_only_arg(@[coerce], n, @[integer]);
+		FEwrong_type_only_arg(@[coerce], n, @[fixnum]);
 	}
 }
 
