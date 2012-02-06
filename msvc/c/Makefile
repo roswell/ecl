@@ -92,7 +92,8 @@ OBJS	= main.obj symbol.obj package.obj cons.obj list.obj\
 	typespec.obj assignment.obj \
 	predicate.obj big.obj number.obj\
 	num_pred.obj num_arith.obj num_co.obj\
-	num_log.obj num_rand.obj array.obj sequence.obj cmpaux.obj\
+	num_log.obj num_rand.obj array.obj vector_push.obj \
+	sequence.obj cmpaux.obj\
 	macros.obj backq.obj stacks.obj \
 	time.obj unixint.obj\
 	mapfun.obj multival.obj hash.obj format.obj pathname.obj\
