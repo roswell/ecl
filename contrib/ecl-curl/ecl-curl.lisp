@@ -111,7 +111,7 @@
      :input t 
      :output t
      :buffering :full
-     :external-format :iso-8859-1)))
+     :external-format #+unicode :iso-8859-1 #-unicode :default)))
 
 ;;;---------------------------------------------------------------------------
 ;;; URL handling.
@@ -250,7 +250,9 @@
              (progn
                (setf o (open file-name 
                               :direction :output :if-exists :supersede
-                              :external-format :latin-1))
+                              :external-format
+			      #-unicode :default
+			      #+unicode :latin-1))
                (if length
                    (let ((buf (make-array length
                                           :element-type
