@@ -668,7 +668,7 @@ si_bc_join(cl_object lex, cl_object code, cl_object data, cl_object name)
                 unlikely_if (!ECL_VECTORP(code) ||
                              (data->vector.elttype != aet_object)) {
                         FEwrong_type_nth_arg(@[si::bc-join],
-                                             0, output,
+                                             0, code,
                                              cl_list(2,
                                                      @'simple-array',
                                                      Ct));
