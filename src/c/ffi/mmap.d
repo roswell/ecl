@@ -61,6 +61,8 @@
                 fd = ecl_to_int(si_file_stream_fd(stream));
                 if (Null(length))
                         len = ecl_to_unsigned_integer(ecl_file_length(stream));
+                else
+                        len = ecl_to_unsigned_integer(length);
         }
         output = si_make_vector(element_type, MAKE_FIXNUM(0), Cnil,
                                 Cnil, Cnil, Cnil);
@@ -91,6 +93,8 @@
                                            @':cstream', Ct);
                 if (Null(length))
                         length = ecl_file_length(stream);
+                else
+                        len = ecl_to_unsigned_integer(length);
                 output = si_make_vector(element_type, length, Cnil,
                                         Cnil, Cnil, Cnil);
                 cl_read_sequence(2, output, stream);
