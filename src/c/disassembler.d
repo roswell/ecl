@@ -50,7 +50,6 @@ print_oparg_arg(const char *s, cl_fixnum n, cl_object x) {
 #define GET_DATA(r,v,data) { \
 	cl_oparg ndx; \
 	GET_OPARG(ndx, v); \
-	printf("oparg: %d\n", ndx); \
 	r = data[ndx]; \
 }
 
