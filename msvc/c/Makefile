@@ -31,8 +31,10 @@ ECL_UNICODE_FLAG=0
 
 !if "$(ECL_SSE)" != ""
 ECL_SSE_FLAG=1
+ECL_SSE_OBJ=sse2.obj
 !else
 ECL_SSE_FLAG=0
+ECL_SSE_OBJ=
 !endif
 
 # Programs used by "make":
@@ -99,7 +101,7 @@ OBJS	= main.obj symbol.obj package.obj cons.obj list.obj\
 	mapfun.obj multival.obj hash.obj format.obj pathname.obj\
 	structure.obj load.obj unixfsys.obj unixsys.obj \
 	ffi.obj alloc_2.obj tcp.obj $(THREADS_OBJ) serialize.obj \
-	$(ECL_FFI_OBJ) $(ECL_UCD_OBJ) mmap.obj cdata.obj
+	$(ECL_FFI_OBJ) $(ECL_UCD_OBJ) $(ECL_SSE_OBJ) mmap.obj cdata.obj
 
 all:	$(DPP) ..\eclmin.lib ..\cinit.obj
 
