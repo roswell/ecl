@@ -715,6 +715,16 @@ sharp_Y_reader(cl_object in, cl_object c, cl_object d)
 		FEreader_error("Reader macro #Y should be followed by a list",
 			       in, 0);
         }
+
+	if (ecl_length(x) == 2) {
+		rv = ecl_alloc_object(t_bclosure);
+		rv->bclosure.code = ECL_CONS_CAR(x);
+		x = ECL_CONS_CDR(x);
+		rv->bclosure.lex = ECL_CONS_CAR(x);
+                rv->bclosure.entry = _ecl_bclosure_dispatch_vararg;
+		@(return rv);
+	}
+
         rv = ecl_alloc_object(t_bytecodes);
 
         rv->bytecodes.name = ECL_CONS_CAR(x);
@@ -735,9 +745,8 @@ sharp_Y_reader(cl_object in, cl_object c, cl_object d)
 
         nth = ECL_CONS_CAR(x);
         x = ECL_CONS_CDR(x);
-        rv->bytecodes.data =
-		cl_funcall(4, @'make-array', cl_list_length(nth),
-			   @':initial-contents', nth);
+        rv->bytecodes.data = nth;
+
         if (ECL_ATOM(x)) {
                 nth = Cnil;
         } else {
@@ -754,14 +763,6 @@ sharp_Y_reader(cl_object in, cl_object c, cl_object d)
         rv->bytecodes.file_position = nth;
 
         rv->bytecodes.entry = _ecl_bytecodes_dispatch_vararg;
-
-	if (lex != Cnil) {
-		cl_object x = ecl_alloc_object(t_bclosure);
-		x->bclosure.code = rv;
-		x->bclosure.lex = lex;
-                x->bclosure.entry = _ecl_bclosure_dispatch_vararg;
-		rv = x;
-	}
         @(return rv);
 }
 
