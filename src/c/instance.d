@@ -14,8 +14,9 @@
     See file '../Copyright' for full details.
 */
 
-#include <ecl/ecl.h>
 #include <string.h>
+#include <ecl/ecl.h>
+#include <ecl/internal.h>
 
 cl_object
 ecl_allocate_instance(cl_object clas, cl_index size)
@@ -173,7 +174,7 @@ si_sl_makunbound(cl_object x, cl_object index)
 	if (ecl_unlikely(!FIXNUMP(index)))
 		FEwrong_type_nth_arg(@[si::sl-makunbound], 2, index, @[fixnum]);
 	i = fix(index);
-	if (ecl_unlikely((i >= x->instance.length || i < 0))
+	unlikely_if (i >= x->instance.length || i < 0)
 		FEtype_error_index(x, i);
 	x->instance.slots[i] = ECL_UNBOUND;
 	@(return x)
