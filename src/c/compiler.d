@@ -871,13 +871,14 @@ c_block(cl_env_ptr env, cl_object body, int old_flags) {
 	struct cl_compiler_env old_env;
 	cl_object name = pop(&body);
 	cl_object block_record;
-	cl_index labelz, pc, loc;
+	cl_index labelz, pc, loc, constants;
 	int flags;
 
 	if (!SYMBOLP(name))
 		FEprogram_error_noreturn("BLOCK: Not a valid block name, ~S", 1, name);
 
 	old_env = *(env->c_env);
+	constants = old_env.constants->vector.fillp;
 	pc = current_pc(env);
 
 	flags = maybe_values_or_reg0(old_flags);
@@ -892,6 +893,9 @@ c_block(cl_env_ptr env, cl_object body, int old_flags) {
 	compile_body(env, body, flags);
 	if (CADDR(block_record) == Cnil) {
 		/* Block unused. We remove the enclosing OP_BLOCK/OP_DO */
+		/* We also have to remove the constants we compiled, because */
+		/* some of them might be from load-time-value */
+		old_env.constants->vector.fillp = constants;
 		*(env->c_env) = old_env;
 		set_pc(env, pc);
 		return compile_body(env, body, old_flags);
@@ -2193,7 +2197,7 @@ maybe_make_load_forms(cl_env_ptr env, cl_object constant)
         cl_object init, make;
         if (c_env->mode != FLAG_LOAD && c_env->mode != FLAG_ONLY_LOAD)
                 return;
-        if (c_search_constant(env, constant) < 0)
+        if (c_search_constant(env, constant) >= 0)
                 return;
         if (!need_to_make_load_form_p(constant))
                 return;
@@ -2445,16 +2449,17 @@ compile_with_load_time_forms(cl_env_ptr env, cl_object form, int flags)
          * First compile the form as usual.
          */
         const cl_compiler_ptr c_env = env->c_env;
-        cl_object old_load_time_forms = c_env->load_time_forms;
         cl_index handle = asm_begin(env);
         int output_flags = compile_form(env, form, flags);
         /*
          * If some constants need to be built, we insert the
          * code _before_ the actual forms;
          */
-        if (c_env->load_time_forms != old_load_time_forms) {
+        if (c_env->load_time_forms != Cnil) {
                 cl_index *bytecodes = save_bytecodes(env, handle, current_pc(env));
-                cl_object p = c_env->load_time_forms;
+                cl_object p, forms_list = c_env->load_time_forms;
+		c_env->load_time_forms = Cnil;
+		p = forms_list;
                 do {
                         cl_object r = ECL_CONS_CAR(p);
                         cl_object constant = pop(&r);
@@ -2464,10 +2469,17 @@ compile_with_load_time_forms(cl_env_ptr env, cl_object form, int flags)
                         compile_with_load_time_forms(env, make_form, FLAG_REG0);
                         asm_op2(env, OP_CSET, loc);
                         compile_with_load_time_forms(env, init_form, FLAG_IGNORE);
+			ECL_RPLACA(p, MAKE_FIXNUM(loc));
                         p = ECL_CONS_CDR(p);
-                } while (p != old_load_time_forms);
+                } while (p != Cnil);
+		p = forms_list;
+		do {
+			cl_index loc = fix(ECL_CONS_CAR(p));
+			/* Clear created constants (they cannot be printed) */
+			c_env->constants->vector.self.t[loc] = MAKE_FIXNUM(0);
+			p = ECL_CONS_CDR(p);
+		} while (p != Cnil);
                 restore_bytecodes(env, bytecodes);
-		c_env->load_time_forms = p;
         }
         return output_flags;
 }
