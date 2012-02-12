@@ -59,6 +59,7 @@ extern ECL_API _ecl_big_binary_op _ecl_big_boole_operator(int op);
 #define _ecl_big_add_ui(z, x, i)	mpz_add_ui(z->big.big_num, x->big.big_num, i)
 #define _ecl_big_sub_ui(z, x, i)	mpz_sub_ui(z->big.big_num, x->big.big_num, i)
 #define _ecl_big_mul_ui(z, x, y)	mpz_mul_ui((z)->big.big_num,(x)->big.big_num,(y))
+#define _ecl_big_div_ui(z, x, y)	mpz_div_ui((z)->big.big_num,(x)->big.big_num,(y))
 #define _ecl_big_mul_si(z, x, y)	mpz_mul_si((z)->big.big_num,(x)->big.big_num,(y))
 #define _ecl_big_set_ui(x, i)	mpz_set_ui(x->big.big_num, (unsigned long int)i)
 #define _ecl_big_set_si(x, i)	mpz_set_si(x->big.big_num, (long int)i)

@@ -900,9 +900,8 @@ struct ecl_process {
 struct ecl_lock {
 	HEADER1(recursive);
         cl_object name;
-        cl_object holder;       /* thread holding the lock or NIL */
-	cl_index counter;
-        pthread_mutex_t mutex;
+        cl_object owner;       /* thread holding the lock or NIL */
+	cl_fixnum counter;
 };
 
 struct ecl_rwlock {

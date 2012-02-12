@@ -29,6 +29,7 @@
 #define ECL_INCLUDE_MATH_H
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
+#include <ecl/number.h>
 #ifdef HAVE_TIMES
 # include <sys/times.h>
 #endif
@@ -41,21 +42,17 @@
 #endif
 #include <ecl/impl/math_fenv.h>
 
-#if !defined(HAVE_GETTIMEOFDAY) && !defined(HAVE_GETRUSAGE) && !defined(ECL_MS_WINDOWS_HOST)
-struct timeval {
-	long tv_sec;
-	long tv_usec;
-};
-#endif
+static struct ecl_timeval beginning;
 
-static struct timeval beginning;
-
-static void
-get_real_time(struct timeval *tv)
+void
+ecl_get_internal_real_time(struct ecl_timeval *tv)
 {
 #if defined(HAVE_GETTIMEOFDAY) && !defined(ECL_MS_WINDOWS_HOST)
 	struct timezone tz;
-	gettimeofday(tv, &tz);
+	struct timeval aux;
+	gettimeofday(&aux, &tz);
+	tv->tv_usec = aux.tv_usec;
+	tv->tv_sec = aux.tv_sec;
 #else
 # if defined(ECL_MS_WINDOWS_HOST)
 	DWORD x = GetTickCount();
@@ -69,13 +66,14 @@ get_real_time(struct timeval *tv)
 #endif
 }
 
-static void
-get_run_time(struct timeval *tv)
+void
+ecl_get_internal_run_time(struct ecl_timeval *tv)
 {
 #ifdef HAVE_GETRUSAGE
 	struct rusage r;
 	getrusage(RUSAGE_SELF, &r);
-	*tv = r.ru_utime;
+	tv->tv_usec = r.ru_utime.tv_usec;
+	tv->tv_sec = r.ru_utime.tv_sec;
 #else
 # ifdef HAVE_TIMES
 	struct tms buf;
@@ -105,44 +103,58 @@ get_run_time(struct timeval *tv)
 	tv->tv_sec = ui_kernel_time.QuadPart / 1000;
 	tv->tv_usec = (ui_kernel_time.QuadPart % 1000) * 1000;
 #  else
-	get_real_time(tv);
+	ecl_get_internal_real_time(tv);
 #  endif
 # endif
 #endif
 }
 
-cl_fixnum
-ecl_runtime(void)
+static cl_object
+bignum_set_time(cl_object bignum, struct ecl_timeval *time)
 {
-	struct timeval tv;
-	get_run_time(&tv);
-	return tv.tv_sec * 1000 + tv.tv_usec / 1000;
+	_ecl_big_set_index(bignum, time->tv_sec);
+	_ecl_big_mul_ui(bignum, bignum, 1000);
+	_ecl_big_add_ui(bignum, bignum, (time->tv_usec + 999) / 1000);
+	return bignum;
 }
 
-cl_object
-cl_sleep(cl_object z)
+static cl_object
+elapsed_time(struct ecl_timeval *start)
+{
+	cl_object delta_big = _ecl_big_register0();
+	cl_object aux_big = _ecl_big_register1();
+	struct ecl_timeval now;
+	ecl_get_internal_real_time(&now);
+	bignum_set_time(aux_big, start);
+	bignum_set_time(delta_big, &now);
+	_ecl_big_sub(delta_big, delta_big, aux_big);
+	_ecl_big_register_free(aux_big);
+	return delta_big;
+}
+
+static double
+waiting_time(cl_index iteration, struct ecl_timeval *start)
+{
+	/* Waiting time is smaller than 0.10 s */
+	double time;
+	cl_object top = MAKE_FIXNUM(10 * 1000);
+	cl_object delta_big = elapsed_time(start);
+	_ecl_big_div_ui(delta_big, delta_big, iteration);
+	if (ecl_number_compare(delta_big, top) < 0) {
+		time = ecl_to_double(delta_big);
+	} else {
+		time = 0.10;
+	}
+	_ecl_big_register_free(delta_big);
+	return time;
+}
+
+static void
+musleep(double time)
 {
 #ifdef HAVE_NANOSLEEP
-	struct timespec tm;
-#endif
-        double time;
-	/* INV: ecl_minusp() makes sure `z' is real */
-	if (ecl_minusp(z))
-		cl_error(9, @'simple-type-error', @':format-control',
-			    make_constant_base_string("Not a non-negative number ~S"),
-			    @':format-arguments', cl_list(1, z),
-			    @':expected-type', @'real', @':datum', z);
-        /* Compute time without overflows */
-        ECL_WITHOUT_FPE_BEGIN {
-                time = ecl_to_double(z);
-                if (isnan(time) || !isfinite(time) || (time > INT_MAX)) {
-                        time = INT_MAX;
-                } else if (time < 1e-9) {
-                        time = 1e-9;
-                }
-        } ECL_WITHOUT_FPE_END;
-#ifdef HAVE_NANOSLEEP
         {
+		struct timespec tm;
                 int code;
                 tm.tv_sec = (time_t)floor(time);
                 tm.tv_nsec = (long)((time - floor(time)) * 1e9);
@@ -171,34 +183,71 @@ cl_sleep(cl_object z)
         }
 #endif
 #endif
+}
+
+void
+ecl_wait_for(cl_index iteration, struct ecl_timeval *start)
+{
+	musleep((iteration > 3) ?
+		waiting_time(iteration, start) :
+		0.0);
+}
+
+cl_fixnum
+ecl_runtime(void)
+{
+	struct ecl_timeval tv;
+	ecl_get_internal_run_time(&tv);
+	return tv.tv_sec * 1000 + tv.tv_usec / 1000;
+}
+
+cl_object
+cl_sleep(cl_object z)
+{
+        double time;
+	/* INV: ecl_minusp() makes sure `z' is real */
+	if (ecl_minusp(z))
+		cl_error(9, @'simple-type-error', @':format-control',
+			    make_constant_base_string("Not a non-negative number ~S"),
+			    @':format-arguments', cl_list(1, z),
+			    @':expected-type', @'real', @':datum', z);
+        /* Compute time without overflows */
+        ECL_WITHOUT_FPE_BEGIN {
+                time = ecl_to_double(z);
+                if (isnan(time) || !isfinite(time) || (time > INT_MAX)) {
+                        time = INT_MAX;
+                } else if (time < 1e-9) {
+                        time = 1e-9;
+                }
+        } ECL_WITHOUT_FPE_END;
+	musleep(time);
 	@(return Cnil)
 }
 
 static cl_object
 timeval_to_time(long sec, long usec)
 {
-	/* This can be probably improved.  Right now, too many
-	   rounding errors, but if we use the lisp routines then it
-	   slows downs and measures become too imprecise. */
-	double x = sec * 1000.0 + usec / 1000.0;
-	return MAKE_FIXNUM((cl_fixnum)x);
+	cl_object milliseconds = ecl_plus(ecl_times(ecl_make_integer(sec),
+						    MAKE_FIXNUM(1000)),
+					  ecl_make_integer(usec / 1000));
+	@(return milliseconds);
 }
 
 cl_object
 cl_get_internal_run_time()
 {
-	struct timeval tv;
-	get_run_time(&tv);
-	@(return timeval_to_time(tv.tv_sec, tv.tv_usec))
+	struct ecl_timeval tv;
+	ecl_get_internal_run_time(&tv);
+	return timeval_to_time(tv.tv_sec, tv.tv_usec);
 }
 
 cl_object
 cl_get_internal_real_time()
 {
-	struct timeval tv;
-	get_real_time(&tv);
-	@(return timeval_to_time(tv.tv_sec - beginning.tv_sec,
-				 tv.tv_usec - beginning.tv_usec))
+	struct ecl_timeval tv;
+	ecl_get_internal_real_time(&tv);
+	return timeval_to_time(tv.tv_sec - beginning.tv_sec,
+			       tv.tv_usec - beginning.tv_usec);
 }
 
 cl_object
@@ -211,7 +260,7 @@ cl_get_universal_time()
 void
 init_unixtime(void)
 {
-	get_real_time(&beginning);
+	ecl_get_internal_real_time(&beginning);
 
 	ECL_SET(@'internal-time-units-per-second', MAKE_FIXNUM(1000));
 

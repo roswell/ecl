@@ -451,7 +451,7 @@ cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl
                         ecl_mark_env(o->process.env);
 		break;
         case t_lock:
-                MAYBE_MARK(o->lock.holder);
+                MAYBE_MARK(o->lock.owner);
                 MAYBE_MARK(o->lock.name);
 		break;
 	case t_rwlock:
@@ -975,7 +975,7 @@ init_alloc(void)
                 to_bitmap(&o, &(o.process.exit_values));
         type_info[t_lock].descriptor =
                 to_bitmap(&o, &(o.lock.name)) |
-                to_bitmap(&o, &(o.lock.holder));
+                to_bitmap(&o, &(o.lock.owner));
 #  ifdef ECL_RWLOCK
         type_info[t_rwlock].descriptor =
                 to_bitmap(&o, &(o.rwlock.name));
@@ -1060,17 +1060,6 @@ standard_finalizer(cl_object o)
 		GC_unregister_disappearing_link((void**)&(o->weak.value));
 		break;
 #ifdef ECL_THREADS
-	case t_lock: {
-		const cl_env_ptr the_env = ecl_process_env();
-		ecl_disable_interrupts_env(the_env);
-#if defined(ECL_MS_WINDOWS_HOST)
-		CloseHandle(o->lock.mutex);
-#else
-		pthread_mutex_destroy(&o->lock.mutex);
-#endif
-		ecl_enable_interrupts_env(the_env);
-		break;
-	}
 #ifdef ECL_RWLOCK
 	case t_rwlock: {
 		const cl_env_ptr the_env = ecl_process_env();

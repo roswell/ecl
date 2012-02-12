@@ -13,6 +13,7 @@
     See file '../Copyright' for full details.
 */
 
+#if 0
 #ifndef __sun__ /* See unixinit.d for this */
 #define _XOPEN_SOURCE 600	/* For pthread mutex attributes */
 #endif
@@ -187,3 +188,4 @@ mp_condition_variable_broadcast(cl_object cv)
 	@(return Ct)
 }
 
+#endif

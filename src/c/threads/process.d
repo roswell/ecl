@@ -499,8 +499,7 @@ mp_process_join(cl_object process)
 		if (!Null(l)) {
                         while (process->process.active > 1)
                                 cl_sleep(MAKE_FIXNUM(0));
-			l = mp_get_lock_wait(l);
-			if (Null(l)) {
+			if (Null(mp_get_lock_wait(l))) {
 				FEerror("MP:PROCESS-JOIN: Error when "
 					"joining process ~A",
 					1, process);

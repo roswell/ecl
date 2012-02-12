@@ -844,10 +844,10 @@ ecl_interrupt_process(cl_object process, cl_object function)
         if (process->process.active == 1) {
                 int ok;
                 function = si_coerce_to_function(function);
-                lock = mp_get_lock_wait(cl_core.signal_queue_lock);
+                mp_get_lock_wait(cl_core.signal_queue_lock);
                 queue_signal(process->process.env, function);
                 ok = do_interrupt_thread(process);
-                mp_giveup_lock(lock);
+                mp_giveup_lock(cl_core.signal_queue_lock);
                 if (ok) return;
         }
         FEerror("Cannot interrupt process ~A", 1, process);

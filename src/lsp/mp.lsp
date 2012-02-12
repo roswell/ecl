@@ -103,7 +103,6 @@ by ALLOW-WITH-INTERRUPTS."
          (si::check-pending-interrupts))
        (locally ,@body))))
 
-
 (defmacro with-lock ((lock-form &rest options) &body body)
   #-threads
   `(progn ,@body)
@@ -117,13 +116,16 @@ by ALLOW-WITH-INTERRUPTS."
   ;; the get-lock statement, to ensure that the unlocking is done with
   ;; interrupts disabled.
   #+threads
-  (ext:with-unique-names (lock count)
+  (ext:with-unique-names (lock owner count)
     `(let* ((,lock ,lock-form)
-            (,count (mp:lock-count-mine ,lock)))
+            (,owner (mp:lock-owner ,lock))
+	    (,count (mp:lock-count ,lock)))
        (without-interrupts
            (unwind-protect
                 (with-restored-interrupts
                     (mp::get-lock ,lock)
                   (locally ,@body))
-             (when (> (mp:lock-count-mine ,lock) ,count)
+             (when (and (eq mp:*current-process* (mp:lock-owner ,lock))
+			(or (not (eq ,owner mp:*current-process*))
+			    (> (mp:lock-count ,lock) ,count)))
                (mp::giveup-lock ,lock)))))))
