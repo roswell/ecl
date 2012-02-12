@@ -94,7 +94,7 @@
                 if (Null(length))
                         length = ecl_file_length(stream);
                 else
-                        len = ecl_to_unsigned_integer(length);
+                        length = ecl_to_unsigned_integer(length);
                 output = si_make_vector(element_type, length, Cnil,
                                         Cnil, Cnil, Cnil);
                 cl_read_sequence(2, output, stream);
