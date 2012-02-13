@@ -73,7 +73,7 @@ cl_object
 mp_recursive_lock_p(cl_object lock)
 {
 	cl_env_ptr env = ecl_process_env();
-	if (type_of(lock) != t_lock)
+	unlikely_if (type_of(lock) != t_lock)
 		FEerror_not_a_lock(lock);
 	ecl_return1(env, lock->lock.recursive? Ct : Cnil);
 }
@@ -82,7 +82,7 @@ cl_object
 mp_lock_name(cl_object lock)
 {
 	cl_env_ptr env = ecl_process_env();
-	if (type_of(lock) != t_lock) {
+	unlikely_if (type_of(lock) != t_lock) {
 		FEerror_not_a_lock(lock);
 	}
         ecl_return1(env, lock->lock.name);
@@ -92,7 +92,7 @@ cl_object
 mp_lock_owner(cl_object lock)
 {
 	cl_env_ptr env = ecl_process_env();
-	if (type_of(lock) != t_lock) {
+	unlikely_if (type_of(lock) != t_lock) {
 		FEerror_not_a_lock(lock);
 	}
         ecl_return1(env, lock->lock.owner);
@@ -102,7 +102,7 @@ cl_object
 mp_lock_count(cl_object lock)
 {
 	cl_env_ptr env = ecl_process_env();
-	if (type_of(lock) != t_lock) {
+	unlikely_if (type_of(lock) != t_lock) {
 		FEerror_not_a_lock(lock);
 	}
 	ecl_return1(env, MAKE_FIXNUM(lock->lock.counter));
@@ -114,10 +114,10 @@ mp_giveup_lock(cl_object lock)
         /* Must be called with interrupts disabled. */
         cl_env_ptr env = ecl_process_env();
 	cl_object own_process = env->own_process;
-	if (type_of(lock) != t_lock) {
+	unlikely_if (type_of(lock) != t_lock) {
 		FEerror_not_a_lock(lock);
 	}
-	if (lock->lock.owner != own_process) {
+	unlikely_if (lock->lock.owner != own_process) {
                 FEerror_not_owned(lock);
 	}
 	ecl_disable_interrupts_env(env);
@@ -150,13 +150,13 @@ mp_get_lock_nowait(cl_object lock)
         cl_env_ptr env = ecl_process_env();
 	cl_object own_process = env->own_process;
 	cl_fixnum code;
-	if (type_of(lock) != t_lock) {
+	unlikely_if (type_of(lock) != t_lock) {
 		FEerror_not_a_lock(lock);
 	}
 	ecl_disable_interrupts_env(env);
 	code = get_lock_inner(lock, own_process);
 	ecl_enable_interrupts_env(env);
-	if (code < 0)
+	unlikely_if (code < 0)
 		FEerror_not_a_recursive_lock(lock);
 	ecl_return1(env, code? Ct : Cnil);
 }
@@ -168,7 +168,7 @@ mp_get_lock_wait(cl_object lock)
         cl_env_ptr env = ecl_process_env();
 	cl_object own_process = env->own_process;
 	cl_fixnum code, iteration;
-	if (type_of(lock) != t_lock) {
+	unlikely_if (type_of(lock) != t_lock) {
 		FEerror_not_a_lock(lock);
 	}
 	iteration = 0;
@@ -178,7 +178,7 @@ mp_get_lock_wait(cl_object lock)
 		for (n = 0, code = 0; n < 100 && code == 0; n++)
 			code = get_lock_inner(lock, own_process);
 		ecl_enable_interrupts_env(env);
-		if (code < 0)
+		unlikely_if (code < 0)
 			FEerror_not_a_recursive_lock(lock);
 		if (code > 0)
 			@(return Ct);
