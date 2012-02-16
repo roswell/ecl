@@ -207,7 +207,7 @@ BEGIN:
                 }
 		unlikely_if (the_env->nvalues > 1) {
                         FEerror("The readmacro ~S returned ~D values.",
-                                2, x, MAKE_FIXNUM(i));
+                                2, x, MAKE_FIXNUM(the_env->nvalues));
                 }
 		return o;
 	}
