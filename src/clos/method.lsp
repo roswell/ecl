@@ -26,6 +26,10 @@
 ;;;
 (defparameter *next-methods* nil)
 
+;;; Add type declarations for the arguments of a METHOD. This implies
+;;; copying the method arguments because the arguments may be modified.
+(defparameter *add-method-argument-declarations* nil)
+
 
 ;;; ----------------------------------------------------------------------
 ;;; DEFMETHOD
@@ -70,12 +74,15 @@
 			'(&allow-other-keys)
 			(and x (subseq lambda-list x))
                         nil))))
-    (let* ((class-declarations
-	    (nconc (loop for name in required-parameters
-		      for type in specializers
-		      when (and (not (eq type t)) (symbolp type))
-		      nconc `((type ,type ,name)
-			      (si::no-check-type ,name)))
+    (let* ((copied-variables '())
+	   (class-declarations
+	    (nconc (when *add-method-argument-declarations*
+		     (loop for name in required-parameters
+			for type in specializers
+			when (and (not (eq type t)) (symbolp type))
+			do (push `(,name ,name) copied-variables) and
+			nconc `((type ,type ,name)
+				(si::no-check-type ,name))))
 		   (cdar declarations)))
 	   (method-lambda
 	    ;; Remove the documentation string and insert the
@@ -89,10 +96,6 @@
 	      ,lambda-list
 	      ,@(and class-declarations `((declare ,@class-declarations)))
 	      ,@real-body))
-	   
-	   (aux-bindings ())	; Suffice to say that &aux is one of
-				; damndest things to have put in a
-				; language.
 	   (plist ()))
       (multiple-value-bind (call-next-method-p next-method-p-p in-closure-p)
 	  (walk-method-lambda method-lambda required-parameters env)
@@ -121,7 +124,9 @@
 	 `#'(ext::lambda-block ,generic-function-name
 	      ,lambda-list
 	      ,@(and class-declarations `((declare ,@class-declarations)))
-	      ,@real-body)
+	      ,@(if copied-variables
+		    `((let* ,copied-variables ,@real-body))
+		    real-body))
 	 documentation
 	 plist)))))
 
