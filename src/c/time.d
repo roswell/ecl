@@ -55,9 +55,14 @@ ecl_get_internal_real_time(struct ecl_timeval *tv)
 	tv->tv_sec = aux.tv_sec;
 #else
 # if defined(ECL_MS_WINDOWS_HOST)
-	DWORD x = GetTickCount();
-	tv->tv_sec = x / 1000;
-	tv->tv_usec = (x % 1000) * 1000;
+	union {
+		FILETIME filetime;
+		DWORDLONG hundred_ns;
+	} system_time;
+	GetSystemTimeAsFileTime(&system_time.filetime);
+	system_time.hundred_ns /= 10000;
+	tv->tv_sec = system_time.hundred_ns / 1000;
+	tv->tv_usec = (system_time.hundred_ns % 1000) * 1000;
 # else
 	time_t = time(0);
 	tv->tv_sec = time_t;
@@ -82,26 +87,20 @@ ecl_get_internal_run_time(struct ecl_timeval *tv)
 	tv->tv_usec = (buf.tms_utime % CLK_TCK) * 1000000;
 # else
 #  if defined(ECL_MS_WINDOWS_HOST)
-	FILETIME creation_time;
-	FILETIME exit_time;
-	FILETIME kernel_time;
-	FILETIME user_time;
-	ULARGE_INTEGER ui_kernel_time;
-	ULARGE_INTEGER ui_user_time;
+	union {
+		FILETIME filetime;
+		DWORDLONG hundred_ns;
+	} kernel_time, user_time, creation_time, exit_time;
 	if (!GetProcessTimes(GetCurrentProcess(),
-	                     &creation_time,
-	                     &exit_time,
-	                     &kernel_time,
-	                     &user_time))
+	                     &creation_time.filetime,
+	                     &exit_time.filetime,
+	                     &kernel_time.filetime,
+	                     &user_time.filetime))
 	    FEwin32_error("GetProcessTimes() failed", 0);
-	ui_kernel_time.HighPart = kernel_time.dwHighDateTime;
-	ui_kernel_time.LowPart  = kernel_time.dwLowDateTime;
-	ui_user_time.HighPart = user_time.dwHighDateTime;
-	ui_user_time.LowPart  = user_time.dwLowDateTime;
-	ui_kernel_time.QuadPart += ui_user_time.QuadPart;
-	ui_kernel_time.QuadPart /= 10000;
-	tv->tv_sec = ui_kernel_time.QuadPart / 1000;
-	tv->tv_usec = (ui_kernel_time.QuadPart % 1000) * 1000;
+	kernel_time.hundred_ns += user_time.hundred_ns;
+	kernel_time.hundred_ns /= 10000;
+	tv->tv_sec = kernel_time.hundred_ns / 1000;
+	tv->tv_usec = (kernel_time.hundred_ns % 1000) * 1000;
 #  else
 	ecl_get_internal_real_time(tv);
 #  endif
@@ -153,34 +152,61 @@ static void
 musleep(double time, bool alertable)
 {
 #ifdef HAVE_NANOSLEEP
-        {
-		struct timespec tm;
-                int code;
-                tm.tv_sec = (time_t)floor(time);
-                tm.tv_nsec = (long)((time - floor(time)) * 1e9);
-        AGAIN:
-                ecl_disable_interrupts();
-                code = nanosleep(&tm, &tm);
-                {
-                        int old_errno = errno;
-                        ecl_enable_interrupts();
-                        if (code < 0 && old_errno == EINTR && !alertable) {
-                                goto AGAIN;
-                        }
-                }
-        }
+	struct timespec tm;
+	int code;
+	tm.tv_sec = (time_t)floor(time);
+	tm.tv_nsec = (long)((time - floor(time)) * 1e9);
+ AGAIN:
+	ecl_disable_interrupts();
+	code = nanosleep(&tm, &tm);
+	{
+		int old_errno = errno;
+		ecl_enable_interrupts();
+		if (code < 0 && old_errno == EINTR && !alertable) {
+			goto AGAIN;
+		}
+	}
 #else
 #if defined (ECL_MS_WINDOWS_HOST)
-        {
-                SleepEx((long)(time * 1000), TRUE);
-        }
+	/* Maximum waiting time that fits in SleepEx. This is the
+	 * largest integer that fits safely in DWORD in milliseconds
+	 * and has to be converted to 100ns (1e-3 / 100e-9 = 1e4) */
+	const DWORDLONG maxtime = (DWORDLONG)0xfffffff * (DWORDLONG)10000;
+	DWORDLONG wait = time * 1e7;
+	union {
+		FILETIME filetime;
+		DWORDLONG hundred_ns;
+	} end, now;
+	if (alertable) {
+		GetSystemTimeAsFileTime(&end.filetime);
+		end.hundred_ns += wait;
+	}
+	do {
+		DWORDLONG interval;
+		if (wait > maxtime) {
+			interval = maxtime;
+			wait -= maxtime;
+		} else {
+			interval = wait;
+			wait = 0;
+		}
+		if (SleepEx(interval/10000, alertable) != 0) {
+			if (alertable) {
+				break;
+			} else {
+				GetSystemTimeAsFileTime(&now.filetime);
+				if (now.hundred_ns >= end.hundred_ns)
+					break;
+				else
+					wait = end.hundred_ns - now.hundred_ns;
+			}
+		}
+	} while (wait);
 #else
-        {
-                int t = (int)time;
-                for (t = (time + 0.5); t > 1000; t -= 1000)
-                        sleep(1000);
-                sleep(t);
-        }
+	int t = (int)time;
+	for (t = (time + 0.5); t > 1000; t -= 1000)
+		sleep(1000);
+	sleep(t);
 #endif
 #endif
 }
