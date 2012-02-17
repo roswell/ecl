@@ -150,7 +150,7 @@ waiting_time(cl_index iteration, struct ecl_timeval *start)
 }
 
 static void
-musleep(double time)
+musleep(double time, bool alertable)
 {
 #ifdef HAVE_NANOSLEEP
         {
@@ -160,11 +160,11 @@ musleep(double time)
                 tm.tv_nsec = (long)((time - floor(time)) * 1e9);
         AGAIN:
                 ecl_disable_interrupts();
-                code = nanosleep(&tm, NULL);
+                code = nanosleep(&tm, &tm);
                 {
                         int old_errno = errno;
                         ecl_enable_interrupts();
-                        if (code < 0 && old_errno == EINTR) {
+                        if (code < 0 && old_errno == EINTR && !alertable) {
                                 goto AGAIN;
                         }
                 }
@@ -190,7 +190,8 @@ ecl_wait_for(cl_index iteration, struct ecl_timeval *start)
 {
 	musleep((iteration > 3) ?
 		waiting_time(iteration, start) :
-		0.0);
+		0.0,
+		1);
 }
 
 cl_fixnum
@@ -220,7 +221,7 @@ cl_sleep(cl_object z)
                         time = 1e-9;
                 }
         } ECL_WITHOUT_FPE_END;
-	musleep(time);
+	musleep(time, 0);
 	@(return Cnil)
 }
 
