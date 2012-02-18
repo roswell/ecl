@@ -95,6 +95,80 @@ mp_current_process(void)
 }
 
 /*----------------------------------------------------------------------
+ * PROCESS LIST
+ */
+
+static void
+extend_process_vector(cl_object v)
+{
+	cl_env_ptr the_env = ecl_process_env();
+	cl_index new_size = v->vector.dim + v->vector.dim/2;
+	cl_object new = si_make_vector(cl_array_element_type(v),
+				       MAKE_FIXNUM(new_size),
+				       Ct, Cnil, Cnil, MAKE_FIXNUM(0));
+	ECL_WITH_GLOBAL_LOCK_BEGIN(the_env) {
+		cl_object other = cl_core.processes;
+		if (other == v || other->vector.dim < new->vector.dim) {
+			ecl_copy_subarray(new, 0, other, 0, other->vector.dim);
+			cl_core.processes = new;
+		}
+	} ECL_WITH_GLOBAL_LOCK_END;
+}
+
+static void
+ecl_list_process(cl_object process)
+{
+ AGAIN:
+	do {
+		cl_object vector = cl_core.processes;
+		cl_object *data = vector->vector.self.t;
+		cl_index size, i;
+		for (i = 0, size = vector->vector.dim; i < size; i++) {
+			if (AO_compare_and_swap_full((AO_t*)(data+i),
+						     (AO_t)Cnil,
+						     (AO_t)process)) {
+				if (vector != cl_core.processes)
+					goto AGAIN;
+				return;
+			}
+		}
+		extend_process_vector(vector);
+	} while (1);
+}
+
+static void
+ecl_unlist_process(cl_object process)
+{
+	cl_object vector, *data;
+	cl_index size, i;
+	do {
+		vector = cl_core.processes;
+		data = vector->vector.self.t;
+		for (i = 0, size = vector->vector.dim; i < size; i++) {
+			if (data[i] == process) {
+				data[i] = Cnil;
+				break;
+			}
+		}
+	} while (cl_core.processes != vector);
+}
+
+static cl_object
+ecl_process_list()
+{
+	cl_object vector = cl_core.processes;
+	cl_object *data = vector->vector.self.t;
+	cl_index size, i;
+	cl_object output = Cnil;
+	for (i = 0, size = vector->vector.dim; i < size; i++) {
+		cl_object p = data[i];
+		if (p != Cnil)
+			output = ecl_cons(p, output);
+	}
+	return output;
+}
+
+/*----------------------------------------------------------------------
  * THREAD OBJECT
  */
 
@@ -123,9 +197,7 @@ thread_cleanup(void *aux)
         process->process.phase = ECL_PROCESS_EXITING;
 	process->process.active = 0;
 	process->process.env = NULL;
-	ECL_WITH_GLOBAL_LOCK_BEGIN(env) {
-                cl_core.processes = ecl_remove_eq(process, cl_core.processes);
-        } ECL_WITH_GLOBAL_LOCK_END;
+	ecl_unlist_process(process);
         ecl_disable_interrupts_env(env);
 	mp_giveup_lock(process->process.exit_lock);
 	ecl_set_process_env(NULL);
@@ -162,9 +234,7 @@ thread_entry_point(void *arg)
 #endif
 	ecl_cs_set_org(env);
         si_trap_fpe(@'last', Ct);
-        ECL_WITH_GLOBAL_LOCK_BEGIN(env) {
-                cl_core.processes = CONS(process, cl_core.processes);
-        } ECL_WITH_GLOBAL_LOCK_END;
+	ecl_list_process(process);
 	ecl_enable_interrupts_env(env);
 
 	/* 2) Execute the code. The CATCH_ALL point is the destination
@@ -251,26 +321,28 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
 #ifdef GBC_BOEHM
 	GC_register_my_thread((void*)&name);
 #endif
-	for (l = cl_core.processes; l != Cnil; l = ECL_CONS_CDR(l)) {
-		cl_object p = ECL_CONS_CAR(l);
-		if (p->process.thread == current) {
-			return 0;
+	{
+		cl_object processes = cl_core.processes;
+		cl_index i, size;
+		for (i = 0, size = processes->vector.dim; i < size; i++) {
+			cl_object p = processes->vector.self.t[i];
+			if (!Null(p) && p->process.thread == current)
+				return 0;
 		}
 	}
 	env = _ecl_alloc_env();
 	ecl_set_process_env(env);
-	env->own_process = process = alloc_process(name, bindings);
+	process = alloc_process(name, bindings);
         process->process.phase = ECL_PROCESS_BOOTING;
 	process->process.active = 2;
 	process->process.thread = current;
 	process->process.env = env;
+	env->own_process = process;
 	ecl_init_env(env);
+	ecl_list_process(process);
 	env->bindings_array = process->process.initial_bindings;
         env->thread_local_bindings_size = env->bindings_array->vector.dim;
         env->thread_local_bindings = env->bindings_array->vector.self.t;
-	ECL_WITH_GLOBAL_LOCK_BEGIN(env) {
-                cl_core.processes = CONS(process, cl_core.processes);
-        } ECL_WITH_GLOBAL_LOCK_END;
 	ecl_enable_interrupts_env(env);
 	mp_get_lock_wait(process->process.exit_lock);
 	process->process.active = 1;
@@ -465,7 +537,7 @@ mp_all_processes(void)
 {
 	/* No race condition here because this list is never destructively
 	 * modified. When we add or remove processes, we create new lists. */
-	@(return cl_copy_list(cl_core.processes))
+	@(return ecl_process_list())
 }
 
 cl_object
@@ -650,9 +722,12 @@ init_threads(cl_env_ptr env)
 
 	env->own_process = process;
 
+	cl_core.processes = si_make_vector(Ct, /* Element type */
+					   MAKE_FIXNUM(256), /* Size */
+					   Cnil, Cnil, Cnil, Cnil);
         cl_core.global_lock = ecl_make_lock(@'mp::global-lock', 1);
         cl_core.external_processes_lock = ecl_make_lock(@'ext::run-program', 1);
         cl_core.error_lock = ecl_make_lock(@'mp::error-lock', 1);
         cl_core.global_env_lock = ecl_make_rwlock(@'ext::package-lock');
-	cl_core.processes = ecl_list1(process);
+	ecl_list_process(process);
 }

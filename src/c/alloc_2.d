@@ -1303,11 +1303,14 @@ stacks_scanner()
 #ifdef ECL_THREADS
 	l = cl_core.processes;
 	if (l != OBJNULL) {
-		loop_for_on_unsafe(l) {
-			cl_object process = ECL_CONS_CAR(l);
-			cl_env_ptr env = process->process.env;
-			if (env != the_env) ecl_mark_env(env);
-		} end_loop_for_on_unsafe(l);
+		cl_index i, size;
+		for (i = 0, size = l->vector.dim; i < size; i++) {
+			cl_object process = l->vector.self.t[i];
+			if (!Null(process)) {
+				cl_env_ptr env = process->process.env;
+				if (env != the_env) ecl_mark_env(env);
+			}
+		}
 	}
 #endif
 	if (old_GC_push_other_roots)
