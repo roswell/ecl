@@ -554,6 +554,7 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
                 ";;;\n\n";
 #endif
 	cl_env_ptr the_env;
+	ecl_internal_error("SIGSEGV");
 	reinstall_signal(sig, sigsegv_handler);
 	if (!ecl_get_option(ECL_OPT_BOOTED)) {
 		ecl_internal_error("Got signal before environment was installed"
@@ -844,10 +845,8 @@ ecl_interrupt_process(cl_object process, cl_object function)
         if (process->process.active == 1) {
                 int ok;
                 function = si_coerce_to_function(function);
-                mp_get_lock_wait(cl_core.signal_queue_lock);
                 queue_signal(process->process.env, function);
                 ok = do_interrupt_thread(process);
-                mp_giveup_lock(cl_core.signal_queue_lock);
                 if (ok) return;
         }
         FEerror("Cannot interrupt process ~A", 1, process);
