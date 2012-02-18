@@ -1284,6 +1284,7 @@ ecl_mark_env(struct cl_env_struct *env)
 static void
 stacks_scanner()
 {
+	cl_env_ptr the_env = ecl_process_env();
 	cl_object l;
 	l = cl_core.libraries;
 	if (l) {
@@ -1297,20 +1298,17 @@ stacks_scanner()
 	}
 	GC_push_all((void *)(&cl_core), (void *)(&cl_core + 1));
 	GC_push_all((void *)cl_symbols, (void *)(cl_symbols + cl_num_symbols_in_core));
+	if (the_env != NULL)
+		ecl_mark_env(the_env);
 #ifdef ECL_THREADS
 	l = cl_core.processes;
-	if (l == OBJNULL) {
-		ecl_mark_env(&cl_env);
-	} else {
-		l = cl_core.processes;
+	if (l != OBJNULL) {
 		loop_for_on_unsafe(l) {
 			cl_object process = ECL_CONS_CAR(l);
-			struct cl_env_struct *env = process->process.env;
-			ecl_mark_env(env);
+			cl_env_ptr env = process->process.env;
+			if (env != the_env) ecl_mark_env(env);
 		} end_loop_for_on_unsafe(l);
 	}
-#else
-	ecl_mark_env(&cl_env);
 #endif
 	if (old_GC_push_other_roots)
 		(*old_GC_push_other_roots)();
