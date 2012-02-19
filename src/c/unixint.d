@@ -648,10 +648,8 @@ void
 ecl_check_pending_interrupts(void)
 {
 	const cl_env_ptr env = ecl_process_env();
-	cl_object sig;
 	env->disable_interrupts = 0;
-	sig = env->pending_interrupt;
-	if (sig != Cnil && sig != NULL) {
+	while (env->pending_interrupt != Cnil) {
 		handle_signal_now(pop_signal(env));
 	}
 }
@@ -812,7 +810,10 @@ do_interrupt_thread(cl_object process)
         return ok;
 # else
         int signal = ecl_get_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL);
-        return pthread_kill(process->process.thread, signal) == 0;
+        if (pthread_kill(process->process.thread, signal)) {
+		FElibc_error("Unable to interrupt process ~A", 1,
+			     process);
+	}
 # endif
 }
 
@@ -829,15 +830,17 @@ ecl_interrupt_process(cl_object process, cl_object function)
          * - In POSIX systems it sends a user level interrupt to
          *   the thread, which then decides how to act.
          */
-        cl_object lock;
-        if (process->process.active == 1) {
-                int ok;
-                function = si_coerce_to_function(function);
-                queue_signal(process->process.env, function);
-                ok = do_interrupt_thread(process);
-                if (ok) return;
-        }
-        FEerror("Cannot interrupt process ~A", 1, process);
+        unlikely_if (process->process.active != 1) {
+		FEerror("Cannot interrupt non-active process ~A",
+			1, process);
+	}
+	/* If FUNCTION is NIL, we just intend to wake up the
+	 * process from some call to ecl_musleep() */
+	if (!Null(function)) {
+		function = si_coerce_to_function(function);
+		queue_signal(process->process.env, function);
+	}
+	do_interrupt_thread(process);
 }
 #endif /* ECL_THREADS */
 
