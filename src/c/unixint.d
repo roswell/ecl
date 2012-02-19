@@ -407,66 +407,54 @@ static void
 create_signal_queue(cl_index size)
 {
 	cl_object base = cl_make_list(1, MAKE_FIXNUM(size));
-#ifdef ECL_THREADS
-	{
-		cl_object lock = mp_make_lock(2, @':name', @'mp::interrupt-process');
-		mp_get_lock(1, lock);
-		cl_core.signal_queue = base;
-		cl_core.signal_queue_lock = lock;
-		mp_giveup_lock(lock);
-	}
-#else
 	cl_core.signal_queue = base;
-#endif
 }
 
 static void
 queue_signal(cl_env_ptr env, cl_object code)
 {
-	cl_object record = Cnil;
-#ifdef ECL_THREADS
-	cl_object lock = cl_core.signal_queue_lock;
-	/* The queue only exists when we have booted */
-	if (lock == Cnil) {
-                return;
-        }
-        mp_get_lock(1, lock);
-#endif
-        record = cl_core.signal_queue;
-	if (record == OBJNULL)
+	cl_object record;
+ AGAIN:
+	if (Null(record = cl_core.signal_queue))
 		return;
-        cl_core.signal_queue = CDR(record);
 #ifdef ECL_THREADS
-        mp_giveup_lock(lock);
+	if (!AO_compare_and_swap_full((AO_t*)&cl_core.signal_queue,
+				      (AO_t)record,
+				      (AO_t)ECL_CONS_CDR(record)))
+		goto AGAIN;
+#else
+        cl_core.signal_queue = ECL_CONS_CDR(record);
 #endif
         /* If record == Cnil, signal is lost! The queue was
          * too small.  We can no allocate further memory,
          * since we are in a signal handler. */
-	if (record != Cnil) {
-		ECL_CONS_CDR(record) = env->pending_interrupt;
-		ECL_CONS_CAR(record) = code;
-		env->pending_interrupt = record;
-	}
+	ECL_CONS_CDR(record) = env->pending_interrupt;
+	ECL_CONS_CAR(record) = code;
+	env->pending_interrupt = record;
 }
 
 static cl_object
 pop_signal(cl_env_ptr env)
 {
 	cl_object record = env->pending_interrupt;
-	if (record != Cnil && record != NULL) {
-#ifdef ECL_THREADS
-		cl_object lock = cl_core.signal_queue_lock;
-		mp_get_lock(1, lock);
-#endif
+	if (record == Cnil) {
+		return Cnil;
+	} else {
+		cl_object free, output = ECL_CONS_CAR(record);
                 env->pending_interrupt = ECL_CONS_CDR(record);
-		ECL_CONS_CDR(record) = cl_core.signal_queue;
-		cl_core.signal_queue = record;
-		record = ECL_CONS_CAR(record);
 #ifdef ECL_THREADS
-		mp_giveup_lock(lock);
+		do {
+			free = cl_core.signal_queue;
+			ECL_RPLACD(record, free);
+		} while (!AO_compare_and_swap_full((AO_t*)&cl_core.signal_queue,
+						   (AO_t)free,
+						   (AO_t)record));
+#else
+		ECL_RPLACD(record, cl_core.signal_queue);
+		cl_core.signal_queue = record;
 #endif
+		return output;
 	}
-	return record;
 }
 
 static void
@@ -1243,10 +1231,6 @@ void
 init_unixint(int pass)
 {
 	if (pass == 0) {
-#ifdef ECL_THREADS
-		cl_core.signal_queue_lock = Cnil;
-#endif
-		cl_core.signal_queue = OBJNULL;
 		install_asynchronous_signal_handlers();
 		install_process_interrupt_handler();
 		install_synchronous_signal_handlers();

@@ -228,9 +228,6 @@ struct cl_core_struct {
 #ifdef GBC_BOEHM
         char *safety_region;
 #endif
-#ifdef ECL_THREADS
-	cl_object signal_queue_lock;
-#endif
 	cl_object signal_queue;
         void *default_sigmask;
         cl_index default_sigmask_bytes;
