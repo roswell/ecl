@@ -1,6 +1,6 @@
 /* -*- mode: c; c-basic-offset: 8 -*- */
 /*
-    threads_mutex.d -- Native mutually exclusive locks.
+    mutex.d -- mutually exclusive locks.
 */
 /*
     Copyright (c) 2003, Juan Jose Garcia Ripoll.
@@ -13,17 +13,8 @@
     See file '../Copyright' for full details.
 */
 
-#ifndef __sun__ /* See unixinit.d for this */
-#define _XOPEN_SOURCE 600	/* For pthread mutex attributes */
-#endif
-#include <errno.h>
 #define AO_ASSUME_WINDOWS98 /* We need this for CAS */
 #include <ecl/ecl.h>
-#ifdef ECL_WINDOWS_THREADS
-# include <windows.h>
-#else
-# include <pthread.h>
-#endif
 #include <ecl/internal.h>
 
 /*----------------------------------------------------------------------
@@ -53,14 +44,12 @@ FEerror_not_owned(cl_object lock)
 cl_object
 ecl_make_lock(cl_object name, bool recursive)
 {
-        cl_env_ptr the_env = ecl_process_env();
 	cl_object output = ecl_alloc_object(t_lock);
-	ecl_disable_interrupts_env(the_env);
 	output->lock.name = name;
 	output->lock.owner = Cnil;
 	output->lock.counter = 0;
+	output->lock.waiter = Cnil;
 	output->lock.recursive = recursive;
-	ecl_enable_interrupts_env(the_env);
         return output;
 }
 
@@ -123,6 +112,10 @@ mp_giveup_lock(cl_object lock)
 	ecl_disable_interrupts_env(env);
 	if (--lock->lock.counter == 0) {
 		lock->lock.owner = Cnil;
+		if (lock->lock.waiter != Cnil) {
+			lock->lock.waiter = Cnil;
+			ecl_wakeup_waiters(lock, 1);
+		}
 	}
 	ecl_enable_interrupts_env(env);
         ecl_return1(env, Ct);
@@ -164,28 +157,10 @@ mp_get_lock_nowait(cl_object lock)
 cl_object
 mp_get_lock_wait(cl_object lock)
 {
-	struct ecl_timeval start;
-        cl_env_ptr env = ecl_process_env();
-	cl_object own_process = env->own_process;
-	cl_fixnum code, iteration;
-	unlikely_if (type_of(lock) != t_lock) {
-		FEerror_not_a_lock(lock);
+	if (mp_get_lock_nowait(lock) == Cnil) {
+		ecl_wait_on(mp_get_lock_nowait, lock);
 	}
-	iteration = 0;
-	do {
-		int n;
-		ecl_disable_interrupts_env(env);
-		for (n = 0, code = 0; n < 100 && code == 0; n++)
-			code = get_lock_inner(lock, own_process);
-		ecl_enable_interrupts_env(env);
-		unlikely_if (code < 0)
-			FEerror_not_a_recursive_lock(lock);
-		if (code > 0)
-			@(return Ct);
-		if (!iteration)
-			ecl_get_internal_real_time(&start);
-		ecl_wait_for(++iteration, &start);
-	} while (1);
+	@(return Ct)
 }
 
 @(defun mp::get-lock (lock &optional (wait Ct))

@@ -409,9 +409,6 @@ struct cl_core_struct cl_core = {
 #ifdef GBC_BOEHM
         NULL, /* safety_region */
 #endif
-#ifdef ECL_THREADS
-        Cnil, /* signal_queue_lock */
-#endif
 	Cnil, /* signal_queue */
 
 	NULL, /* default_sigmask */

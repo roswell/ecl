@@ -895,12 +895,14 @@ struct ecl_process {
 	cl_object exit_lock;
 	int trap_fpe_bits;
         cl_object exit_values;
+	cl_object waiting_for;
 };
 
 struct ecl_lock {
 	HEADER1(recursive);
         cl_object name;
         cl_object owner;       /* thread holding the lock or NIL */
+	cl_object waiter;
 	cl_fixnum counter;
 };
 

@@ -108,48 +108,8 @@ ecl_get_internal_run_time(struct ecl_timeval *tv)
 #endif
 }
 
-static cl_object
-bignum_set_time(cl_object bignum, struct ecl_timeval *time)
-{
-	_ecl_big_set_index(bignum, time->tv_sec);
-	_ecl_big_mul_ui(bignum, bignum, 1000);
-	_ecl_big_add_ui(bignum, bignum, (time->tv_usec + 999) / 1000);
-	return bignum;
-}
-
-static cl_object
-elapsed_time(struct ecl_timeval *start)
-{
-	cl_object delta_big = _ecl_big_register0();
-	cl_object aux_big = _ecl_big_register1();
-	struct ecl_timeval now;
-	ecl_get_internal_real_time(&now);
-	bignum_set_time(aux_big, start);
-	bignum_set_time(delta_big, &now);
-	_ecl_big_sub(delta_big, delta_big, aux_big);
-	_ecl_big_register_free(aux_big);
-	return delta_big;
-}
-
-static double
-waiting_time(cl_index iteration, struct ecl_timeval *start)
-{
-	/* Waiting time is smaller than 0.10 s */
-	double time;
-	cl_object top = MAKE_FIXNUM(10 * 1000);
-	cl_object delta_big = elapsed_time(start);
-	_ecl_big_div_ui(delta_big, delta_big, iteration);
-	if (ecl_number_compare(delta_big, top) < 0) {
-		time = ecl_to_double(delta_big);
-	} else {
-		time = 0.10;
-	}
-	_ecl_big_register_free(delta_big);
-	return time;
-}
-
-static void
-musleep(double time, bool alertable)
+void
+ecl_musleep(double time, bool alertable)
 {
 #ifdef HAVE_NANOSLEEP
 	struct timespec tm;
@@ -211,15 +171,6 @@ musleep(double time, bool alertable)
 #endif
 }
 
-void
-ecl_wait_for(cl_index iteration, struct ecl_timeval *start)
-{
-	musleep((iteration > 3) ?
-		waiting_time(iteration, start) :
-		0.0,
-		1);
-}
-
 cl_fixnum
 ecl_runtime(void)
 {
@@ -247,7 +198,7 @@ cl_sleep(cl_object z)
                         time = 1e-9;
                 }
         } ECL_WITHOUT_FPE_END;
-	musleep(time, 0);
+	ecl_musleep(time, 0);
 	@(return Cnil)
 }
 

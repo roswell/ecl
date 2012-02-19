@@ -450,10 +450,17 @@ struct ecl_timeval {
 
 extern void ecl_get_internal_real_time(struct ecl_timeval *time);
 extern void ecl_get_internal_run_time(struct ecl_timeval *time);
-extern void ecl_wait_for(cl_index iteration, struct ecl_timeval *start);
+extern void ecl_musleep(double time, bool alertable);
 
 #define UTC_time_to_universal_time(x) ecl_plus(ecl_make_integer(x),cl_core.Jan1st1970UT)
 extern cl_fixnum ecl_runtime(void);
+
+/* threads/mutex.d */
+
+#ifdef ECL_THREADS
+extern void ecl_wait_on(cl_object (*condition)(cl_object), cl_object o);
+extern void ecl_wakeup_waiters(cl_object o, bool all);
+#endif
 
 /* threads/rwlock.d */
 
