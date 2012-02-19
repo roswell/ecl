@@ -1735,6 +1735,7 @@ extern ECL_API void mp_semaphore_close(cl_object);
 /* threads/atomic.c */
 
 #ifdef ECL_THREADS
+extern ECL_API cl_object ecl_atomic_get(cl_object *slot);
 extern ECL_API void ecl_atomic_push(cl_object *slot, cl_object o);
 extern ECL_API cl_object ecl_atomic_pop(cl_object *slot);
 extern ECL_API cl_index ecl_atomic_index_incf(cl_index *slot);
