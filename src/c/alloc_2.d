@@ -1094,12 +1094,8 @@ standard_finalizer(cl_object o)
 #endif
 #ifdef ECL_THREADS
         case t_symbol: {
-                cl_object cons = ecl_list1(MAKE_FIXNUM(o->symbol.binding));
-		const cl_env_ptr the_env = ecl_process_env();
-                ECL_WITH_GLOBAL_LOCK_BEGIN(the_env) {
-                        ECL_CONS_CDR(cons) = cl_core.reused_indices;
-                        cl_core.reused_indices = cons;
-                } ECL_WITH_GLOBAL_LOCK_END;
+		ecl_atomic_push(&cl_core.reused_indices,
+				MAKE_FIXNUM(o->symbol.binding));
         }
 #endif
 	default:;
