@@ -59,22 +59,18 @@ clear_one_from_cache(ecl_cache_ptr cache, cl_object target)
 static void
 clear_list_from_cache(ecl_cache_ptr cache)
 {
-        const cl_env_ptr the_env = ecl_process_env();
-	ECL_WITH_GLOBAL_LOCK_BEGIN(the_env) {
-		cl_object table = cache->table;
-		cl_index i, total_size = table->vector.dim;
-		cl_object list = cache->clear_list;
-		for (i = 0; i < total_size; i+=3) {
-			cl_object key = table->vector.self.t[i];
-			if (key != OBJNULL) {
-				if (ecl_member_eq(key->vector.self.t[0], list)) {
-					table->vector.self.t[i] = OBJNULL;
-					table->vector.self.fix[i+2] = 0;
-				}
+	cl_object list = ecl_atomic_get(&cache->clear_list);
+	cl_object table = cache->table;
+	cl_index i, total_size = table->vector.dim;
+	for (i = 0; i < total_size; i+=3) {
+		cl_object key = table->vector.self.t[i];
+		if (key != OBJNULL) {
+			if (ecl_member_eq(key->vector.self.t[0], list)) {
+				table->vector.self.t[i] = OBJNULL;
+				table->vector.self.fix[i+2] = 0;
 			}
 		}
-		cache->clear_list = Cnil;
-	} ECL_WITH_GLOBAL_LOCK_END;
+	}
 }
 #endif
 
@@ -105,10 +101,7 @@ void
 ecl_cache_remove_one(ecl_cache_ptr cache, cl_object first_key)
 {
 #ifdef ECL_THREADS
-        const cl_env_ptr the_env = ecl_process_env();
-	ECL_WITH_GLOBAL_LOCK_BEGIN(the_env) {
-		cache->clear_list = CONS(first_key, cache->clear_list);
-	} ECL_WITH_GLOBAL_LOCK_END;
+	ecl_atomic_push(&cache->clear_list, first_key);
 #else
 	clear_one_from_cache(cache, first_key);
 #endif
