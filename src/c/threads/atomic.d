@@ -20,23 +20,38 @@
 
 #ifdef ECL_THREADS
 
-cl_object
+void
 ecl_atomic_push(cl_object *slot, cl_object c)
 {
-        cl_object cons = ecl_list1(c);
-        cl_object car;
+        cl_object cons = ecl_list1(c), car;
         do {
-                car = AO_load(slot);
+                car = (cl_object)AO_load((AO_t*)slot);
                 ECL_RPLACD(cons, car);
-        } while (!AO_compare_and_swap_full(slot, car, cons));
+        } while (!AO_compare_and_swap_full((AO_t*)slot, (AO_t)car, (AO_t)cons));
         return cons;
 }
 
-bool
-ecl_compare_and_swap(cl_object *slot, cl_object old, cl_object new)
+cl_object
+ecl_atomic_pop(cl_object *slot)
 {
-        return AO_compare_and_swap_full(slot, car, cons);
+        cl_object cons, rest;
+        do {
+                cons = (cl_object)AO_load((AO_t*)slot);
+		rest = CDR(cons);
+        } while (!AO_compare_and_swap_full((AO_t*)slot, (AO_t)cons, (AO_t)rest));
+        return cons;
 }
 
+cl_index
+ecl_atomic_index_incf(cl_index *slot)
+{
+	AO_t old;
+	AO_t next;
+	do {
+		old = AO_load((AO_t*)slot);
+		next = old+1;
+	} while (!AO_compare_and_swap_full((AO_t*)slot, (AO_t)old, (AO_t)next));
+	return (cl_index)next;
+}
 
 #endif /* ECL_THREADS */

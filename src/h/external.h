@@ -1732,8 +1732,17 @@ extern ECL_API void mp_semaphore_signal(cl_object);
 extern ECL_API void mp_semaphore_close(cl_object);
 # endif
 
-/* threads_mutex.c */
+/* threads/atomic.c */
 
+#ifdef ECL_THREADS
+extern ECL_API void ecl_atomic_push(cl_object *slot, cl_object o);
+extern ECL_API cl_object ecl_atomic_pop(cl_object *slot);
+extern ECL_API cl_index ecl_atomic_index_incf(cl_index *slot);
+#endif
+
+/* threads/mutex.c */
+
+#ifdef ECL_THREADS
 extern ECL_API cl_object mp_make_lock _ARGS((cl_narg narg, ...));
 extern ECL_API cl_object mp_recursive_lock_p(cl_object lock);
 extern ECL_API cl_object mp_lock_name(cl_object lock);
@@ -1745,6 +1754,7 @@ extern ECL_API cl_object mp_get_lock_nowait(cl_object lock);
 extern ECL_API cl_object mp_giveup_lock(cl_object lock);
 
 extern ECL_API cl_object ecl_make_lock(cl_object lock, bool recursive);
+#endif
 
 /* threads/rwlock.d */
 
