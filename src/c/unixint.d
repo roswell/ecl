@@ -542,7 +542,6 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
                 ";;;\n\n";
 #endif
 	cl_env_ptr the_env;
-	ecl_internal_error("SIGSEGV");
 	reinstall_signal(sig, sigsegv_handler);
 	if (!ecl_get_option(ECL_OPT_BOOTED)) {
 		ecl_internal_error("Got signal before environment was installed"
