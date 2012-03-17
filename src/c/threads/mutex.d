@@ -114,7 +114,7 @@ mp_giveup_lock(cl_object lock)
 		lock->lock.owner = Cnil;
 		if (lock->lock.waiter != Cnil) {
 			lock->lock.waiter = Cnil;
-			ecl_wakeup_waiters(lock, 1);
+			ecl_wakeup_waiters(lock, 0);
 		}
 	}
 	ecl_enable_interrupts_env(env);
