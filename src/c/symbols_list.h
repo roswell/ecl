@@ -1583,13 +1583,11 @@ cl_symbols[] = {
 {MP_ "LOCK-COUNT", MP_ORDINARY, IF_MP(mp_lock_count), 1, OBJNULL},
 {MP_ "GET-LOCK", MP_ORDINARY, IF_MP(mp_get_lock), -1, OBJNULL},
 {MP_ "GIVEUP-LOCK", MP_ORDINARY, IF_MP(mp_giveup_lock), 1, OBJNULL},
-/*
 {MP_ "MAKE-CONDITION-VARIABLE", MP_ORDINARY, IF_MP(mp_make_condition_variable), 0, OBJNULL},
 {MP_ "CONDITION-VARIABLE-WAIT", MP_ORDINARY, IF_MP(mp_condition_variable_wait), 2, OBJNULL},
 {MP_ "CONDITION-VARIABLE-TIMEDWAIT", MP_ORDINARY, IF_MP(mp_condition_variable_timedwait), 3, OBJNULL},
 {MP_ "CONDITION-VARIABLE-SIGNAL", MP_ORDINARY, IF_MP(mp_condition_variable_signal), 1, OBJNULL},
 {MP_ "CONDITION-VARIABLE-BROADCAST", MP_ORDINARY, IF_MP(mp_condition_variable_broadcast), 1, OBJNULL},
-*/
 {KEY_ "INITIAL-BINDINGS", KEYWORD, NULL, -1, OBJNULL},
 {MP_ "INTERRUPT-PROCESS", MP_ORDINARY, IF_MP(mp_interrupt_process), 2, OBJNULL},
 {MP_ "+LOAD-COMPILE-LOCK+", MP_CONSTANT, NULL, -1, OBJNULL},

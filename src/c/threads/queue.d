@@ -101,7 +101,7 @@ wakeup_process(cl_object p)
 }
 
 void
-ecl_wakeup_waiters(cl_object o, bool all)
+ecl_wakeup_waiters(cl_object o, int flags)
 {
 	cl_object v = cl_core.processes;
 	cl_index size = v->vector.fillp;
@@ -113,7 +113,10 @@ ecl_wakeup_waiters(cl_object o, bool all)
 		if (!Null(p)) {
 			if (p->process.waiting_for == o && p->process.active == 1) {
 				wakeup_process(p);
-				if (!all) return;
+				if (flags & ECL_WAKEUP_RESET_FLAG)
+					p->process.waiting_for = Cnil;
+				if (flags & ECL_WAKEUP_ALL == 0)
+					return;
 			}
 		}
 		if (++ndx >= size)

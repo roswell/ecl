@@ -414,7 +414,6 @@ under certain conditions; see file 'Copyright' for details.")
 (progn
 
 (defparameter *console-lock* (mp:make-lock :name "Console lock"))
-#+condition-variable
 (defparameter *console-available* (mp:make-condition-variable))
 (defparameter *console-owner* nil)
 (defparameter *console-waiting-list* '())
@@ -440,15 +439,11 @@ under certain conditions; see file 'Copyright' for details.")
                  (setf *console-owner* process)
                  (setf repeat nil))
                 (t
-                 #-condition-variable
-                 (sleep 0.1)
-                 #+condition-variable
                  (mp:condition-variable-wait *console-available* *console-lock*))))))
 
 (defun release-console (process)
   (mp:with-lock (*console-lock*)
     (and (eq process *console-owner*) (setf *console-owner* nil))
-    #+condition-variable
     (mp:condition-variable-signal *console-available*)))
 
 ) ; #+threads

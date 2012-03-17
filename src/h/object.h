@@ -898,11 +898,15 @@ struct ecl_process {
 	cl_object waiting_for;
 };
 
+#define ECL_WAKEUP_ONE 0
+#define ECL_WAKEUP_ALL 1
+#define ECL_WAKEUP_RESET_FLAG 2
+
 struct ecl_lock {
 	HEADER1(recursive);
-        cl_object name;
-        cl_object owner;       /* thread holding the lock or NIL */
 	cl_object waiter;
+        cl_object owner;       /* thread holding the lock or NIL */
+        cl_object name;
 	cl_fixnum counter;
 };
 
@@ -918,7 +922,8 @@ struct ecl_rwlock {
 
 struct ecl_condition_variable {
         HEADER;
-        pthread_cond_t cv;
+	cl_object waiter;
+	cl_object lock;
 };
 
 struct ecl_semaphore {

@@ -452,8 +452,13 @@ cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl
                         ecl_mark_env(o->process.env);
 		break;
         case t_lock:
+                MAYBE_MARK(o->lock.waiter);
                 MAYBE_MARK(o->lock.owner);
                 MAYBE_MARK(o->lock.name);
+		break;
+        case t_condition_variable:
+                MAYBE_MARK(o->condition_variable.waiter);
+                MAYBE_MARK(o->condition_variable.lock);
 		break;
 	case t_rwlock:
 		MAYBE_MARK(o->rwlock.name);
@@ -986,7 +991,9 @@ init_alloc(void)
                 to_bitmap(&o, &(o.rwlock.name)) |
                 to_bitmap(&o, &(o.rwlock.mutex));
 #  endif
-	type_info[t_condition_variable].descriptor = 0;
+	type_info[t_condition_variable].descriptor =
+		to_bitmap(&o, &(o.condition_variable.lock)) |
+		to_bitmap(&o, &(o.condition_variable.waiter));
 #   ifdef ECL_SEMAPHORES
 	type_info[t_semaphore].descriptor = 0;
 #   endif
@@ -1071,17 +1078,6 @@ standard_finalizer(cl_object o)
 		break;
 	}
 #endif
-	case t_condition_variable: {
-		const cl_env_ptr the_env = ecl_process_env();
-		ecl_disable_interrupts_env(the_env);
-#if defined(ECL_MS_WINDOWS_HOST)
-		CloseHandle(o->condition_variable.cv);
-#else
-		pthread_cond_destroy(&o->condition_variable.cv);
-#endif
-		ecl_enable_interrupts_env(the_env);
-		break;
-	}
 #endif
 #ifdef ECL_SEMAPHORES
 	case t_semaphore: {
