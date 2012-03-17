@@ -974,7 +974,7 @@ init_alloc(void)
                 to_bitmap(&o, &(o.process.parent)) |
                 to_bitmap(&o, &(o.process.exit_lock)) |
                 to_bitmap(&o, &(o.process.exit_values)) |
-                to_bitmap(&o, &(o.process.waiting_for)));
+                to_bitmap(&o, &(o.process.waiting_for));
         type_info[t_lock].descriptor =
                 to_bitmap(&o, &(o.lock.name)) |
                 to_bitmap(&o, &(o.lock.owner));
