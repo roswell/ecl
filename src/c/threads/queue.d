@@ -62,36 +62,36 @@ waiting_time(cl_index iteration, struct ecl_timeval *start)
 }
 
 void
-spinlock(cl_index iteration, struct ecl_timeval *start)
-{
-	ecl_musleep((iteration > 3) ?
-		    waiting_time(iteration, start) :
-		    0.0,
-		    1);
-}
-
-void
 ecl_wait_on(cl_object (*condition)(cl_object), cl_object o)
 {
-	cl_env_ptr env = ecl_process_env();
-	cl_object process = env->own_process;
+	cl_fixnum iteration = 0;
 	struct ecl_timeval start;
-	ecl_bds_bind(env, @'ext::*interrupts-enabled*', Cnil);
 	ecl_get_internal_real_time(&start);
-	CL_UNWIND_PROTECT_BEGIN(env) {
-		cl_fixnum iteration = 0;
-		process->process.waiting_for = o;
-		o->lock.waiter = process;
-		ecl_bds_bind(env, @'ext::*interrupts-enabled*', Ct);
-		ecl_check_pending_interrupts();
-		do {
-			spinlock(iteration++, &start);
-		} while (condition(o) == Cnil);
+	/* Fast spinlock */
+	for (iteration = 0; iteration < 100; iteration++) {
+		if (condition(o) != Cnil)
+			return;
+		ecl_musleep(0.0, 1);
+	}
+	/* Slow path */
+	{
+		cl_env_ptr env = ecl_process_env();
+		cl_object process = env->own_process;
+		ecl_bds_bind(env, @'ext::*interrupts-enabled*', Cnil);
+		CL_UNWIND_PROTECT_BEGIN(env) {
+			process->process.waiting_for = o;
+			o->lock.waiter = process;
+			ecl_bds_bind(env, @'ext::*interrupts-enabled*', Ct);
+			ecl_check_pending_interrupts();
+			do {
+				ecl_musleep(waiting_time(iteration++, &start), 1);
+			} while (condition(o) == Cnil);
+			ecl_bds_unwind1(env);
+		} CL_UNWIND_PROTECT_EXIT {
+			process->process.waiting_for = Cnil;
+		} CL_UNWIND_PROTECT_END;
 		ecl_bds_unwind1(env);
-	} CL_UNWIND_PROTECT_EXIT {
-		process->process.waiting_for = Cnil;
-	} CL_UNWIND_PROTECT_END;
-	ecl_bds_unwind1(env);
+	}
 }
 
 static void
@@ -104,9 +104,10 @@ void
 ecl_wakeup_waiters(cl_object o, bool all)
 {
 	cl_object v = cl_core.processes;
-	cl_index size = v->vector.dim;
+	cl_index size = v->vector.fillp;
 	cl_index i = size;
 	cl_index ndx = rand() % size;
+	o->lock.waiter = Cnil;
 	while (i--) {
 		cl_object p = v->vector.self.t[ndx];
 		if (!Null(p)) {
