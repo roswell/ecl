@@ -105,9 +105,10 @@ extend_process_vector(cl_object v)
 	cl_index new_size = v->vector.dim + v->vector.dim/2;
 	cl_object new = si_make_vector(cl_array_element_type(v),
 				       MAKE_FIXNUM(new_size),
-				       Ct, Cnil, Cnil, MAKE_FIXNUM(0));
+				       MAKE_FIXNUM(0), Cnil, Cnil, MAKE_FIXNUM(0));
 	ECL_WITH_GLOBAL_LOCK_BEGIN(the_env) {
 		cl_object other = cl_core.processes;
+		new->vector.fillp = other->vector.fillp;
 		if (other == v || other->vector.dim < new->vector.dim) {
 			ecl_copy_subarray(new, 0, other, 0, other->vector.dim);
 			cl_core.processes = new;
@@ -724,7 +725,8 @@ init_threads(cl_env_ptr env)
 
 	cl_core.processes = si_make_vector(Ct, /* Element type */
 					   MAKE_FIXNUM(256), /* Size */
-					   Cnil, Cnil, Cnil, Cnil);
+					   MAKE_FIXNUM(0), /* fill pointer */
+					   Cnil, Cnil, Cnil);
         cl_core.global_lock = ecl_make_lock(@'mp::global-lock', 1);
         cl_core.external_processes_lock = ecl_make_lock(@'ext::run-program', 1);
         cl_core.error_lock = ecl_make_lock(@'mp::error-lock', 1);
