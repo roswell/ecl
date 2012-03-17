@@ -117,11 +117,9 @@ ecl_musleep(double time, bool alertable)
 	tm.tv_sec = (time_t)floor(time);
 	tm.tv_nsec = (long)((time - floor(time)) * 1e9);
  AGAIN:
-	ecl_disable_interrupts();
 	code = nanosleep(&tm, &tm);
 	{
 		int old_errno = errno;
-		ecl_enable_interrupts();
 		if (code < 0 && old_errno == EINTR && !alertable) {
 			goto AGAIN;
 		}
