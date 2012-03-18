@@ -121,44 +121,44 @@ mp_giveup_lock(cl_object lock)
         ecl_return1(env, Ct);
 }
 
-static cl_fixnum
-get_lock_inner(cl_object lock, cl_object own_process)
+static cl_object
+get_lock_inner(cl_env_ptr env, cl_object lock)
 {
+	cl_object output;
+	cl_object own_process = env->own_process;
+	ecl_disable_interrupts_env(env);
         if (AO_compare_and_swap_full((AO_t*)&(lock->lock.owner),
 				     (AO_t)Cnil, (AO_t)own_process)) {
-		return lock->lock.counter = 1;
+		lock->lock.counter = 1;
+		output = Ct;
 	} else if (lock->lock.owner == own_process) {
-                if (!lock->lock.recursive) {
-			return -1;
+                unlikely_if (!lock->lock.recursive) {
+			FEerror_not_a_recursive_lock(lock);
 		}
-                return ++lock->lock.counter;
+                ++lock->lock.counter;
+		output = Ct;
         } else {
-		return 0;
+		output = Cnil;
 	}
+	ecl_enable_interrupts_env(env);
+	return output;
 }
 
 cl_object
 mp_get_lock_nowait(cl_object lock)
 {
         cl_env_ptr env = ecl_process_env();
-	cl_object own_process = env->own_process;
-	cl_fixnum code;
 	unlikely_if (type_of(lock) != t_lock) {
 		FEerror_not_a_lock(lock);
 	}
-	ecl_disable_interrupts_env(env);
-	code = get_lock_inner(lock, own_process);
-	ecl_enable_interrupts_env(env);
-	unlikely_if (code < 0)
-		FEerror_not_a_recursive_lock(lock);
-	ecl_return1(env, code? Ct : Cnil);
+	ecl_return1(env, get_lock_inner(env, lock));
 }
 
 cl_object
 mp_get_lock_wait(cl_object lock)
 {
 	if (mp_get_lock_nowait(lock) == Cnil) {
-		ecl_wait_on(mp_get_lock_nowait, lock);
+		ecl_wait_on(get_lock_inner, lock);
 	}
 	@(return Ct)
 }

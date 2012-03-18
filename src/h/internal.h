@@ -458,7 +458,7 @@ extern cl_fixnum ecl_runtime(void);
 /* threads/mutex.d */
 
 #ifdef ECL_THREADS
-extern void ecl_wait_on(cl_object (*condition)(cl_object), cl_object o);
+extern void ecl_wait_on(cl_object (*condition)(cl_env_ptr, cl_object), cl_object o);
 extern void ecl_wakeup_waiters(cl_object o, bool all);
 #endif
 

@@ -30,9 +30,8 @@ mp_make_condition_variable(void)
 }
 
 static cl_object
-condition_variable_wait(cl_object cv)
+condition_variable_wait(cl_env_ptr env, cl_object cv)
 {
-        cl_env_ptr env = ecl_process_env();
 	cl_object own_process = env->own_process;
 	if (own_process->process.waiting_for != cv) {
 		/* We have been signaled */
@@ -87,15 +86,19 @@ mp_condition_variable_timedwait(cl_object cv, cl_object lock, cl_object seconds)
 cl_object
 mp_condition_variable_signal(cl_object cv)
 {
-	if (cv->condition_variable.waiter != Cnil)
+	if (cv->condition_variable.waiter != Cnil) {
+		cv->condition_variable.waiter = Cnil;
 		ecl_wakeup_waiters(cv, ECL_WAKEUP_ONE | ECL_WAKEUP_RESET_FLAG);
+	}
 	@(return Ct)
 }
 
 cl_object
 mp_condition_variable_broadcast(cl_object cv)
 {
-	if (cv->condition_variable.waiter != Cnil)
+	if (cv->condition_variable.waiter != Cnil) {
+		cv->condition_variable.waiter = Cnil;
 		ecl_wakeup_waiters(cv, ECL_WAKEUP_ALL | ECL_WAKEUP_RESET_FLAG);
+	}
 	@(return Ct)
 }

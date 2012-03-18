@@ -62,20 +62,19 @@ waiting_time(cl_index iteration, struct ecl_timeval *start)
 }
 
 void
-ecl_wait_on(cl_object (*condition)(cl_object), cl_object o)
+ecl_wait_on(cl_object (*condition)(cl_env_ptr, cl_object), cl_object o)
 {
+	cl_env_ptr env = ecl_process_env();
 	cl_fixnum iteration = 0;
 	struct ecl_timeval start;
 	ecl_get_internal_real_time(&start);
 	/* Fast spinlock */
-	for (iteration = 0; iteration < 100; iteration++) {
-		if (condition(o) != Cnil)
+	for (iteration = 0; iteration < 10; iteration++) {
+		if (condition(env, o) != Cnil)
 			return;
-		ecl_musleep(0.0, 1);
 	}
 	/* Slow path */
 	{
-		cl_env_ptr env = ecl_process_env();
 		cl_object process = env->own_process;
 		ecl_bds_bind(env, @'ext::*interrupts-enabled*', Cnil);
 		CL_UNWIND_PROTECT_BEGIN(env) {
@@ -85,7 +84,7 @@ ecl_wait_on(cl_object (*condition)(cl_object), cl_object o)
 			ecl_check_pending_interrupts();
 			do {
 				ecl_musleep(waiting_time(iteration++, &start), 1);
-			} while (condition(o) == Cnil);
+			} while (condition(env, o) == Cnil);
 			ecl_bds_unwind1(env);
 		} CL_UNWIND_PROTECT_EXIT {
 			process->process.waiting_for = Cnil;
@@ -107,17 +106,14 @@ ecl_wakeup_waiters(cl_object o, int flags)
 	cl_index size = v->vector.fillp;
 	cl_index i = size;
 	cl_index ndx = rand() % size;
-	o->lock.waiter = Cnil;
 	while (i--) {
 		cl_object p = v->vector.self.t[ndx];
-		if (!Null(p)) {
-			if (p->process.waiting_for == o && p->process.active == 1) {
-				wakeup_process(p);
-				if (flags & ECL_WAKEUP_RESET_FLAG)
-					p->process.waiting_for = Cnil;
-				if (flags & ECL_WAKEUP_ALL == 0)
-					return;
-			}
+		if (!Null(p) && p->process.waiting_for == o && p->process.active == 1) {
+			if (flags & ECL_WAKEUP_RESET_FLAG)
+				p->process.waiting_for = Cnil;
+			wakeup_process(p);
+			if (flags & ECL_WAKEUP_ALL == 0)
+				return;
 		}
 		if (++ndx >= size)
 			ndx = 0;
