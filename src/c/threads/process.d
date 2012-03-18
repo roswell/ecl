@@ -99,17 +99,18 @@ mp_current_process(void)
  */
 
 static void
-extend_process_vector(cl_object v)
+extend_process_vector()
 {
-	cl_env_ptr the_env = ecl_process_env();
+	cl_object v = cl_core.processes;
 	cl_index new_size = v->vector.dim + v->vector.dim/2;
-	cl_object new = si_make_vector(cl_array_element_type(v),
-				       MAKE_FIXNUM(new_size),
-				       MAKE_FIXNUM(0), Cnil, Cnil, MAKE_FIXNUM(0));
+	cl_env_ptr the_env = ecl_process_env();
 	ECL_WITH_GLOBAL_LOCK_BEGIN(the_env) {
 		cl_object other = cl_core.processes;
-		new->vector.fillp = other->vector.fillp;
-		if (other == v || other->vector.dim < new->vector.dim) {
+		if (new_size > other->vector.dim) {
+			cl_object new = si_make_vector(Ct,
+						       MAKE_FIXNUM(new_size),
+						       MAKE_FIXNUM(other->vector.fillp),
+						       Cnil, Cnil, Cnil);
 			ecl_copy_subarray(new, 0, other, 0, other->vector.dim);
 			cl_core.processes = new;
 		}
@@ -119,39 +120,42 @@ extend_process_vector(cl_object v)
 static void
 ecl_list_process(cl_object process)
 {
- AGAIN:
+	cl_env_ptr the_env = ecl_process_env();
+	bool ok = 0;
 	do {
-		cl_object vector = cl_core.processes;
-		cl_object *data = vector->vector.self.t;
-		cl_index size, i;
-		for (i = 0, size = vector->vector.dim; i < size; i++) {
-			if (AO_compare_and_swap_full((AO_t*)(data+i),
-						     (AO_t)Cnil,
-						     (AO_t)process)) {
-				if (vector != cl_core.processes)
-					goto AGAIN;
-				return;
+		ECL_WITH_GLOBAL_LOCK_BEGIN(the_env) {
+			cl_object vector = cl_core.processes;
+			cl_index size = vector->vector.dim;
+			cl_index ndx = vector->vector.fillp;
+			if (ndx < size) {
+				vector->vector.self.t[ndx++] = process;
+				vector->vector.fillp = ndx;
+				ok = 1;
 			}
-		}
-		extend_process_vector(vector);
+		} ECL_WITH_GLOBAL_LOCK_END;
+		if (ok) break;
+		extend_process_vector();
 	} while (1);
 }
 
 static void
 ecl_unlist_process(cl_object process)
 {
-	cl_object vector, *data;
-	cl_index size, i;
-	do {
-		vector = cl_core.processes;
-		data = vector->vector.self.t;
-		for (i = 0, size = vector->vector.dim; i < size; i++) {
-			if (data[i] == process) {
-				data[i] = Cnil;
+	cl_env_ptr the_env = ecl_process_env();
+	ECL_WITH_GLOBAL_LOCK_BEGIN(the_env) {
+		cl_object vector = cl_core.processes;
+		cl_index i;
+		for (i = 0; i < vector->vector.fillp; i++) {
+			if (vector->vector.self.t[i] == process) {
+				vector->vector.fillp--;
+				do {
+					vector->vector.self.t[i] =
+						vector->vector.self.t[i+1];
+				} while (++i < vector->vector.fillp);
 				break;
 			}
 		}
-	} while (cl_core.processes != vector);
+	} ECL_WITH_GLOBAL_LOCK_END;
 }
 
 static cl_object
@@ -159,9 +163,9 @@ ecl_process_list()
 {
 	cl_object vector = cl_core.processes;
 	cl_object *data = vector->vector.self.t;
-	cl_index size, i;
 	cl_object output = Cnil;
-	for (i = 0, size = vector->vector.dim; i < size; i++) {
+	cl_index i;
+	for (i = 0; i < vector->vector.fillp; i++) {
 		cl_object p = data[i];
 		if (p != Cnil)
 			output = ecl_cons(p, output);
@@ -723,13 +727,17 @@ init_threads(cl_env_ptr env)
 
 	env->own_process = process;
 
-	cl_core.processes = si_make_vector(Ct, /* Element type */
+	{
+		cl_object v = si_make_vector(Ct, /* Element type */
 					   MAKE_FIXNUM(256), /* Size */
 					   MAKE_FIXNUM(0), /* fill pointer */
 					   Cnil, Cnil, Cnil);
-        cl_core.global_lock = ecl_make_lock(@'mp::global-lock', 1);
-        cl_core.external_processes_lock = ecl_make_lock(@'ext::run-program', 1);
-        cl_core.error_lock = ecl_make_lock(@'mp::error-lock', 1);
-        cl_core.global_env_lock = ecl_make_rwlock(@'ext::package-lock');
-	ecl_list_process(process);
+		v->vector.self.t[0] = process;
+		v->vector.fillp = 1;
+		cl_core.processes = v;
+		cl_core.global_lock = ecl_make_lock(@'mp::global-lock', 1);
+		cl_core.external_processes_lock = ecl_make_lock(@'ext::run-program', 1);
+		cl_core.error_lock = ecl_make_lock(@'mp::error-lock', 1);
+		cl_core.global_env_lock = ecl_make_rwlock(@'ext::package-lock');
+	}
 }
