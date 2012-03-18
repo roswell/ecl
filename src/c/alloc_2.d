@@ -982,7 +982,8 @@ init_alloc(void)
                 to_bitmap(&o, &(o.process.waiting_for));
         type_info[t_lock].descriptor =
                 to_bitmap(&o, &(o.lock.name)) |
-                to_bitmap(&o, &(o.lock.owner));
+                to_bitmap(&o, &(o.lock.owner)) |
+                to_bitmap(&o, &(o.lock.waiter));
 #  ifdef ECL_RWLOCK
         type_info[t_rwlock].descriptor =
                 to_bitmap(&o, &(o.rwlock.name));
