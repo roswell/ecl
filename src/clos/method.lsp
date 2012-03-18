@@ -132,16 +132,18 @@
 
 (defun environment-contains-closure (env)
   ;;
-  ;; As explained in compiler.d (make_lambda()), we use a symbol with name
-  ;; "FUNCTION" to mark the beginning of a function. If we find that symbol
-  ;; twice, it is quite likely that this form will end up in a closure.
+  ;; As explained in compiler.d (make_lambda()), we use a symbol with
+  ;; name "FUNCTION-BOUNDARY" to mark the beginning of a function. If
+  ;; we find that symbol twice, it is quite likely that this form will
+  ;; end up in a closure.
   ;;
-  (flet ((function-boundary (s)
-	   (and (consp s)
-		(symbolp (setf s (first s)))
-		(null (symbol-package s))
-		(equal (symbol-name s) "FUNCTION"))))
-    (> (count-if #'function-boundary (car env)) 1)))
+  (let ((counter 0))
+    (declare (fixnum counter))
+    (dolist (item (car env))
+      (when (and (consp item)
+		 (eq (first (the cons item)) 'si::function-boundary)
+		 (> (incf counter) 1)) 
+	(return t)))))
 
 (defun walk-method-lambda (method-lambda required-parameters env)
   (declare (si::c-local)
