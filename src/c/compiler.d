@@ -550,24 +550,9 @@ c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_object env,
           cl_compiler_env_ptr old)
 {
 	the_env->c_env = new;
-	new->stepping = 0;
-	new->lexical_level = 0;
-        new->load_time_forms = Cnil;
-	new->env_depth = 0;
-	new->env_size = 0;
 	if (old) {
-		if (!Null(env))
-			ecl_internal_error("c_new_env with both ENV and OLD");
-		new->variables = old->variables;
-		new->macros = old->macros;
-		new->lexical_level = old->lexical_level;
-		new->constants = old->constants;
-                new->load_time_forms = old->load_time_forms;
-		new->lex_env = old->lex_env;
+		*new = *old;
 		new->env_depth = old->env_depth + 1;
-		new->stepping = old->stepping;
-                new->mode = old->mode;
-		new->code_walker = old->code_walker;
 	} else {
 		new->code_walker = ECL_SYM_VAL(the_env, @'si::*code-walker*');
 		new->constants = si_make_vector(Ct, MAKE_FIXNUM(16),
@@ -575,8 +560,12 @@ c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_object env,
 						MAKE_FIXNUM(0), /* Fillp */
 						Cnil, /* displacement */
 						Cnil);
-		new->variables = CAR(env);
+		new->stepping = 0;
+		new->lexical_level = 0;
+		new->load_time_forms = Cnil;
+		new->env_depth = 0;
 		new->macros = CDR(env);
+		new->variables = CAR(env);
 		for (env = new->variables; !Null(env); env = CDR(env)) {
 			cl_object record = CAR(env);
 			if (ATOM(record))
@@ -590,6 +579,7 @@ c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_object env,
 		}
                 new->mode = FLAG_EXECUTE;
 	}
+	new->env_size = 0;
 }
 
 static cl_object
