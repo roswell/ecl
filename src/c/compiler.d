@@ -567,7 +567,9 @@ c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_object env,
 		new->env_depth = old->env_depth + 1;
 		new->stepping = old->stepping;
                 new->mode = old->mode;
+		new->code_walker = old->code_walker;
 	} else {
+		new->code_walker = ECL_SYM_VAL(the_env, @'si::*code-walker*');
 		new->constants = si_make_vector(Ct, MAKE_FIXNUM(16),
 						Ct, /* Adjustable */
 						MAKE_FIXNUM(0), /* Fillp */
@@ -2256,14 +2258,13 @@ compile_symbol(cl_env_ptr env, cl_object stmt, int flags)
 static int
 compile_form(cl_env_ptr env, cl_object stmt, int flags) {
         const cl_compiler_ptr c_env = env->c_env;
-	cl_object code_walker = ECL_SYM_VAL(env, @'si::*code-walker*');
 	cl_object function;
 	int new_flags;
 
 	ecl_bds_bind(env, @'si::*current-form*', stmt);
  BEGIN:
-	if (code_walker != OBJNULL) {
-		stmt = funcall(3, ECL_SYM_VAL(env,@'si::*code-walker*'), stmt,
+	if (c_env->code_walker != OBJNULL) {
+		stmt = funcall(3, c_env->code_walker, stmt,
 			       CONS(c_env->variables, c_env->macros));
 	}
 	/*

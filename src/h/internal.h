@@ -107,6 +107,7 @@ struct cl_compiler_env {
 	cl_object constants;		/* Constants for this form */
         cl_object load_time_forms;	/* Constants that have to be rebuilt */
 	cl_object lex_env;		/* Lexical env. for eval-when */
+	cl_object code_walker;		/* Value of SI:*CODE-WALKER* */
 	cl_index env_depth;
 	cl_index env_size;
         int mode;
