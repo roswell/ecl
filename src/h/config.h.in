@@ -224,7 +224,9 @@ typedef unsigned char ecl_base_char;
  * C macros for inlining, denoting probable code paths and other stuff
  * that makes better code. Most of it is GCC specific.
  */
-#if defined(__cplusplus) || (defined(__GNUC__) && !defined(__STRICT_ANSI__))
+#if defined(__cplusplus) || \
+    (defined(__GNUC__) &&   \
+    (defined(__GNUC_GNU_INLINE__) || defined(__GNUC_STDC_INLINE__)))
 #define ECL_INLINE inline
 #define ECL_CAN_INLINE 1
 #else
