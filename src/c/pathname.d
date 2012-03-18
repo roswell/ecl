@@ -824,14 +824,14 @@ cl_logical_pathname(cl_object x)
 	if (component == Cnil || component == @':name') {
 		cl_object name = pathname->pathname.name;
 		if (name != Cnil &&
-		    (name == @':wild' || (!SYMBOLP(name) && ecl_member_char('*', name))))
+		    (name == @':wild' || ecl_wild_string_p(name)))
 			@(return Ct);
 		checked = 1;
 	}
 	if (component == Cnil || component == @':type') {
 		cl_object name = pathname->pathname.type;
 		if (name != Cnil &&
-		    (name == @':wild' || (!SYMBOLP(name) && ecl_member_char('*', name))))
+		    (name == @':wild' || ecl_wild_string_p(name)))
 			@(return Ct);
 		checked = 1;
 	}
@@ -842,7 +842,7 @@ cl_logical_pathname(cl_object x)
 			cl_object name = ECL_CONS_CAR(list);
 			if (name != Cnil &&
 			    (name == @':wild' || name == @':wild-inferiors' ||
-			     (!SYMBOLP(name) && ecl_member_char('*', name))))
+			     ecl_wild_string_p(name)))
 			{
 				@(return Ct)
 			}
@@ -1378,6 +1378,20 @@ cl_host_namestring(cl_object pname)
 #undef EN_MATCH
 
 /* --------------- PATHNAME MATCHING ------------------ */
+
+bool
+ecl_wild_string_p(cl_object item)
+{
+	if (ECL_STRINGP(item)) {
+		cl_index i, l = ecl_length(item);
+		for (i = 0; i < l; i++) {
+			ecl_character c = ecl_char(item, i);
+			if (c == '\\' || c == '*' || c == '?')
+				return 1;
+		}
+	}
+	return 0;
+}
 
 /*
  * Take two C strings and check if the first (s) one matches against
