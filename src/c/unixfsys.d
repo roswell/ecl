@@ -851,7 +851,7 @@ dir_recursive(cl_object base_dir, cl_object directory, cl_object filemask, int f
 	 */
 	item = ECL_CONS_CAR(directory);
 
-	if (ECL_BASE_STRING_P(item) || item == @':wild') {
+	if (item == @':wild' || ecl_wild_string_p(item)) {
 		/*
 		 * 2.1) If CAR(DIRECTORY) is a string or :WILD, we have to
 		 * enter & scan all subdirectories in our curent directory.
@@ -889,7 +889,7 @@ dir_recursive(cl_object base_dir, cl_object directory, cl_object filemask, int f
 		}
 		directory = ECL_CONS_CDR(directory);
 		goto AGAIN;
-	} else { /* :ABSOLUTE, :RELATIVE, :UP */
+	} else { /* :ABSOLUTE, :RELATIVE, :UP, component without wildcards */
 		/*
 		 * 2.2) If CAR(DIRECTORY) is :ABSOLUTE, :RELATIVE or :UP we update
 		 * the directory to reflect the root, the current or the parent one.
