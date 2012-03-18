@@ -119,13 +119,10 @@
 #define ecl_int16_t short
 #define ecl_uint32_t unsigned int
 #define ecl_int32_t int
-
-#ifdef _WIN64
-# define ecl_uint64_t unsigned __int64
-# define ecl_int64_t __int64
-# define ecl_long_long_t long long
-# define ecl_ulong_long_t unsigned long long
-#endif
+#define ecl_uint64_t unsigned __int64
+#define ecl_int64_t __int64
+#define ecl_long_long_t long long
+#define ecl_ulong_long_t unsigned long long
 
 /*
  * C TYPES AND SYSTEM LIMITS
