@@ -506,16 +506,12 @@ c_register_macro(cl_env_ptr env, cl_object name, cl_object exp_fun)
 static void
 c_register_var(cl_env_ptr env, cl_object var, bool special, bool bound)
 {
-	/* If this is just a declaration, ensure that the variable was not
-	 * declared before as special, to save memory. */
-	if (bound || (c_var_ref(env, var, 1, FALSE) >= ECL_UNDEFINED_VAR_REF)) {
-                const cl_compiler_ptr c_env = env->c_env;
-		c_env->variables = CONS(cl_list(4, var,
-                                                special? @'special' : Cnil,
-                                                bound? Ct : Cnil,
-                                                new_location(c_env)),
-                                        c_env->variables);
-	}
+	const cl_compiler_ptr c_env = env->c_env;
+	c_env->variables = CONS(cl_list(4, var,
+					special? @'special' : Cnil,
+					bound? Ct : Cnil,
+					new_location(c_env)),
+				c_env->variables);
 }
 
 static void
