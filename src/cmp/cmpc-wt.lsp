@@ -124,19 +124,20 @@
 
 (defvar *wt-string-size* 0)
 
-(defun utf8-encoded-string (string)
+#+unicode
+(defun encode-string (string format)
   (let* ((output (make-array (round (* 1.2 (length string)))
 			     :element-type 'base-char
+			     :adjustable t
 			     :fill-pointer 0))
-	 (stream (make-sequence-output-stream output :external-format :utf-8)))
+	 (stream (make-sequence-output-stream output :external-format format)))
     (write-string string stream)
     output))
 
-(defun wt-filtered-data (string stream &key one-liner (external-format :default))
+(defun wt-filtered-data (string stream &key one-liner
+			 (external-format #-unicode :default #+unicode :utf-8))
   #+unicode
-  (unless (loop with max = (if (eq external-format :default) 255 127)
-	     for c across string always (<= (char-code c) max))
-    (setf string (utf8-encoded-string string)))
+  (setf string (encode-string string external-format))
   (let ((N (length string))
 	(wt-data-column 80))
     (incf *wt-string-size* (1+ N)) ; 1+ accounts for a blank space
@@ -164,7 +165,6 @@
     (princ (if one-liner "\""  " \"") stream)
     string))
 
-(defun c-filtered-string (string &key (external-format :utf-8))
+(defun c-filtered-string (string &rest args)
   (with-output-to-string (aux-stream)
-    (wt-filtered-data string aux-stream :one-liner t
-		      :external-format external-format)))
+    (apply #'wt-filtered-data string aux-stream :one-liner t args)))
