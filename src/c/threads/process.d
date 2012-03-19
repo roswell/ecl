@@ -199,13 +199,12 @@ thread_cleanup(void *aux)
 	 */
 	cl_object process = (cl_object)aux;
 	cl_env_ptr env = process->process.env;
+	/* The following flags will disable all interrupts. */
         process->process.phase = ECL_PROCESS_EXITING;
 	process->process.active = 0;
-	process->process.env = NULL;
 	ecl_unlist_process(process);
-        ecl_disable_interrupts_env(env);
 	mp_giveup_lock(process->process.exit_lock);
-	ecl_set_process_env(NULL);
+	ecl_set_process_env(process->process.env = NULL);
 	if (env) _ecl_dealloc_env(env);
         process->process.phase = ECL_PROCESS_DEAD;
 }
@@ -428,7 +427,9 @@ mp_process_resume(cl_object process)
 cl_object
 mp_process_kill(cl_object process)
 {
-	return mp_interrupt_process(process, @'mp::exit-process');
+	if (process->process.active &&
+	    process->process.phase != ECL_PROCESS_EXITING)
+		return mp_interrupt_process(process, @'mp::exit-process');
 }
 
 cl_object

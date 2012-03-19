@@ -248,6 +248,7 @@ _ecl_alloc_env()
 	 * are activated later on by the thread entry point or init_unixint().
 	 */
 	output->disable_interrupts = 1;
+	output->pending_interrupt = Cnil;
 	return output;
 }
 
@@ -734,12 +735,12 @@ cl_boot(int argc, char **argv)
                 cl_object p, all_threads = mp_all_processes();
                 for (p = all_threads; !Null(p); p = ECL_CONS_CDR(p)) {
                         cl_object process = ECL_CONS_CAR(p);
-                        if (process != this && process->process.active)
+                        if (process != this)
                                 mp_process_kill(process);
                 }
                 for (p = all_threads; !Null(p); p = ECL_CONS_CDR(p)) {
                         cl_object process = ECL_CONS_CAR(p);
-                        if (process != this && process->process.active)
+                        if (process != this)
                                 mp_process_join(process);
                 }
         }
