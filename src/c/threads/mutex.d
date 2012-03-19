@@ -109,12 +109,10 @@ mp_giveup_lock(cl_object lock)
 	unlikely_if (lock->lock.owner != own_process) {
                 FEerror_not_owned(lock);
 	}
-	ecl_disable_interrupts_env(env);
 	if (--lock->lock.counter == 0) {
 		lock->lock.owner = Cnil;
 		ecl_wakeup_waiters(lock, ECL_WAKEUP_ONE);
 	}
-	ecl_enable_interrupts_env(env);
         ecl_return1(env, Ct);
 }
 
