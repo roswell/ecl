@@ -463,6 +463,12 @@ extern cl_fixnum ecl_runtime(void);
 /* threads/mutex.d */
 
 #ifdef ECL_THREADS
+extern cl_object ecl_make_atomic_queue();
+extern void ecl_atomic_queue_push(cl_object queue, cl_object item);
+extern cl_object ecl_atomic_queue_pop_last(cl_object queue);
+extern cl_object ecl_atomic_queue_pop_all(cl_object queue);
+extern void ecl_atomic_queue_delete(cl_object queue, cl_object item);
+
 extern void ecl_wait_on(cl_object (*condition)(cl_env_ptr, cl_object), cl_object o);
 extern void ecl_wakeup_waiters(cl_object o, bool all);
 #endif

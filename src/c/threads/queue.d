@@ -17,6 +17,93 @@
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
 
+static void
+get_spinlock(cl_env_ptr the_env, cl_object *lock)
+{
+	cl_object own_process = the_env->own_process;
+	while (!AO_compare_and_swap_full((AO_t*)lock, (AO_t)Cnil,
+					 (AO_t)own_process)) {
+		ecl_musleep(0.0, 0);
+	}
+}
+
+cl_object
+ecl_make_atomic_queue()
+{
+	return ecl_list1(Cnil);
+}
+
+void
+ecl_atomic_queue_push(cl_object lock_list_pair, cl_object item)
+{
+	cl_object new_head = ecl_list1(item);
+	cl_env_ptr the_env = ecl_process_env();
+	ecl_disable_interrupts_env(the_env);
+	{
+		cl_object *lock = &ECL_CONS_CAR(lock_list_pair);
+		cl_object *queue = &ECL_CONS_CDR(lock_list_pair);
+		get_spinlock(the_env, lock);
+		ECL_RPLACD(new_head, *queue);
+		*queue = new_head;
+		*lock = Cnil;
+	}
+	ecl_enable_interrupts_env(the_env);
+}
+
+cl_object
+ecl_atomic_queue_pop_last(cl_object lock_list_pair)
+{
+	cl_object output;
+	cl_env_ptr the_env = ecl_process_env();
+	ecl_disable_interrupts_env(the_env);
+	{
+		cl_object *lock = &ECL_CONS_CAR(lock_list_pair);
+		cl_object *queue = &ECL_CONS_CDR(lock_list_pair);
+		get_spinlock(the_env, lock);
+		output = ecl_last(*queue, 1);
+		if (!Null(output)) {
+			output = ECL_CONS_CAR(output);
+			*queue = ecl_nbutlast(*queue, 1);
+		}
+		*lock = Cnil;
+	}
+	ecl_enable_interrupts_env(the_env);
+	return output;
+}
+
+cl_object
+ecl_atomic_queue_pop_all(cl_object lock_list_pair)
+{
+	cl_object output;
+	cl_env_ptr the_env = ecl_process_env();
+	ecl_disable_interrupts_env(the_env);
+	{
+		cl_object *lock = &ECL_CONS_CAR(lock_list_pair);
+		cl_object *queue = &ECL_CONS_CDR(lock_list_pair);
+		get_spinlock(the_env, lock);
+		output = *queue;
+		*queue = Cnil;
+		*lock = Cnil;
+	}
+	ecl_enable_interrupts_env(the_env);
+	return output;
+}
+
+void
+ecl_atomic_queue_delete(cl_object lock_list_pair, cl_object item)
+{
+	cl_env_ptr the_env = ecl_process_env();
+	ecl_disable_interrupts_env(the_env);
+	{
+		cl_object *lock = &ECL_CONS_CAR(lock_list_pair);
+		cl_object *queue = &ECL_CONS_CDR(lock_list_pair);
+		get_spinlock(the_env, lock);
+		*queue = ecl_delete_eq(item, *queue);
+		*lock = Cnil;
+	}
+	ecl_enable_interrupts_env(the_env);
+}
+
 /*----------------------------------------------------------------------
  * THREAD SCHEDULER & WAITING
  */
@@ -53,7 +140,7 @@ waiting_time(cl_index iteration, struct ecl_timeval *start)
 	cl_object delta_big = elapsed_time(start);
 	_ecl_big_div_ui(delta_big, delta_big, iteration);
 	if (ecl_number_compare(delta_big, top) < 0) {
-		time = ecl_to_double(delta_big);
+		time = ecl_to_double(delta_big) * 1.5;
 	} else {
 		time = 0.10;
 	}
@@ -64,58 +151,77 @@ waiting_time(cl_index iteration, struct ecl_timeval *start)
 void
 ecl_wait_on(cl_object (*condition)(cl_env_ptr, cl_object), cl_object o)
 {
-	cl_env_ptr env = ecl_process_env();
+	cl_env_ptr the_env = ecl_process_env();
+	cl_object own_process = the_env->own_process;
+	cl_object queue = o->lock.waiter;
 	cl_fixnum iteration = 0;
 	struct ecl_timeval start;
 	ecl_get_internal_real_time(&start);
-	/* Fast spinlock */
 	for (iteration = 0; iteration < 10; iteration++) {
-		if (condition(env, o) != Cnil)
+		if (condition(the_env,o) != Cnil)
 			return;
 	}
-	/* Slow path */
-	{
-		cl_object process = env->own_process;
-		ecl_bds_bind(env, @'ext::*interrupts-enabled*', Cnil);
-		CL_UNWIND_PROTECT_BEGIN(env) {
-			process->process.waiting_for = o;
-			o->lock.waiter = process;
-			ecl_bds_bind(env, @'ext::*interrupts-enabled*', Ct);
-			ecl_check_pending_interrupts();
-			do {
-				ecl_musleep(waiting_time(iteration++, &start), 1);
-			} while (condition(env, o) == Cnil);
-			ecl_bds_unwind1(env);
-		} CL_UNWIND_PROTECT_EXIT {
-			process->process.waiting_for = Cnil;
-		} CL_UNWIND_PROTECT_END;
-		ecl_bds_unwind1(env);
+	ecl_bds_bind(the_env, @'ext::*interrupts-enabled*', Cnil);
+	CL_UNWIND_PROTECT_BEGIN(the_env) {
+		ecl_atomic_queue_push(o->lock.waiter, own_process);
+		own_process->process.waiting_for = o;
+		ecl_bds_bind(the_env, @'ext::*interrupts-enabled*', Ct);
+		ecl_check_pending_interrupts();
+		do {
+			ecl_musleep(waiting_time(iteration++, &start), 1);
+		} while (condition(the_env, o) == Cnil);
+		ecl_bds_unwind1(the_env);
+	} CL_UNWIND_PROTECT_EXIT {
+		own_process->process.waiting_for = Cnil;
+		ecl_atomic_queue_delete(o->lock.waiter, own_process);
+	} CL_UNWIND_PROTECT_END;
+	ecl_bds_unwind1(the_env);
+}
+
+static void
+wakeup_this(cl_object p, int flags)
+{
+	if (flags & ECL_WAKEUP_RESET_FLAG)
+		p->process.waiting_for = Cnil;
+	mp_interrupt_process(p, @'+');
+}
+
+static void
+wakeup_all(cl_object waiter, int flags)
+{
+	cl_object queue = ecl_atomic_queue_pop_all(waiter);
+	queue = cl_nreverse(queue);
+	while (!Null(queue)) {
+		cl_object process = ECL_CONS_CAR(queue);
+		queue = ECL_CONS_CDR(queue);
+		if (process->process.active)
+			wakeup_this(ECL_CONS_CAR(queue), flags);
 	}
 }
 
 static void
-wakeup_process(cl_object p)
+wakeup_one(cl_object waiter, int flags)
 {
-	mp_interrupt_process(p, @'+');
+	do {
+		cl_object next = ecl_atomic_queue_pop_last(waiter);
+		if (Null(next))
+			return;
+		if (next->process.active) {
+			wakeup_this(next, flags);
+			return;
+		}
+	} while (1);
 }
 
 void
 ecl_wakeup_waiters(cl_object o, int flags)
 {
-	cl_object v = cl_core.processes;
-	cl_index size = v->vector.fillp;
-	cl_index i = size;
-	cl_index ndx = rand() % size;
-	while (i--) {
-		cl_object p = v->vector.self.t[ndx];
-		if (!Null(p) && p->process.waiting_for == o && p->process.active == 1) {
-			if (flags & ECL_WAKEUP_RESET_FLAG)
-				p->process.waiting_for = Cnil;
-			wakeup_process(p);
-			if (flags & ECL_WAKEUP_ALL == 0)
-				return;
+	cl_object waiter = o->lock.waiter;
+	if (ECL_CONS_CDR(waiter) != Cnil) {
+		if (flags & ECL_WAKEUP_ALL) {
+			wakeup_all(waiter, flags);
+		} else {
+			wakeup_one(waiter, flags);
 		}
-		if (++ndx >= size)
-			ndx = 0;
 	}
 }

@@ -48,7 +48,7 @@ ecl_make_lock(cl_object name, bool recursive)
 	output->lock.name = name;
 	output->lock.owner = Cnil;
 	output->lock.counter = 0;
-	output->lock.waiter = Cnil;
+	output->lock.waiter = ecl_make_atomic_queue();
 	output->lock.recursive = recursive;
         return output;
 }
@@ -112,10 +112,7 @@ mp_giveup_lock(cl_object lock)
 	ecl_disable_interrupts_env(env);
 	if (--lock->lock.counter == 0) {
 		lock->lock.owner = Cnil;
-		if (lock->lock.waiter != Cnil) {
-			lock->lock.waiter = Cnil;
-			ecl_wakeup_waiters(lock, ECL_WAKEUP_ONE);
-		}
+		ecl_wakeup_waiters(lock, ECL_WAKEUP_ONE);
 	}
 	ecl_enable_interrupts_env(env);
         ecl_return1(env, Ct);
