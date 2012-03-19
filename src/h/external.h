@@ -1834,7 +1834,7 @@ extern ECL_API cl_object si_copy_file(cl_object orig, cl_object end);
 #define ecl_enable_interrupts_env(env) ((env)->disable_interrupts=0)
 #else
 #define ecl_disable_interrupts_env(env) ((env)->disable_interrupts=1)
-#define ecl_enable_interrupts_env(env) (((env)->disable_interrupts^=1) && (ecl_check_pending_interrupts(),0))
+#define ecl_enable_interrupts_env(env) (((env)->disable_interrupts^=1) && (ecl_check_pending_interrupts(env),0))
 #endif
 #define ecl_clear_interrupts_env(env) ((env)->pendinginterrupts=0)
 #define ecl_clear_interrupts() ecl_clear_interrupts(&cl_env)
@@ -1851,7 +1851,7 @@ extern ECL_API cl_object si_trap_fpe(cl_object condition, cl_object flag);
 #if defined(ECL_MS_WINDOWS_HOST)
 extern ECL_API LONG WINAPI _ecl_w32_exception_filter(struct _EXCEPTION_POINTERS*);
 #endif
-extern ECL_API void ecl_check_pending_interrupts(void);
+extern ECL_API void ecl_check_pending_interrupts(cl_env_ptr env);
 
 /* unixsys.c */
 

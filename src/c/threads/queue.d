@@ -166,7 +166,7 @@ ecl_wait_on(cl_object (*condition)(cl_env_ptr, cl_object), cl_object o)
 		ecl_atomic_queue_push(o->lock.waiter, own_process);
 		own_process->process.waiting_for = o;
 		ecl_bds_bind(the_env, @'ext::*interrupts-enabled*', Ct);
-		ecl_check_pending_interrupts();
+		ecl_check_pending_interrupts(the_env);
 		do {
 			ecl_musleep(waiting_time(iteration++, &start), 1);
 		} while (condition(the_env, o) == Cnil);
@@ -183,7 +183,7 @@ wakeup_this(cl_object p, int flags)
 {
 	if (flags & ECL_WAKEUP_RESET_FLAG)
 		p->process.waiting_for = Cnil;
-	mp_interrupt_process(p, @'+');
+	mp_interrupt_process(p, Cnil);
 }
 
 static void

@@ -735,7 +735,7 @@ make_windows_handle(HANDLE h)
         set_external_process_pid(process, pid);
         } ECL_WITH_LOCK_END;
         ecl_bds_unwind1(the_env);
-        ecl_check_pending_interrupts();
+        ecl_check_pending_interrupts(the_env);
 	close(child_stdin);
 	close(child_stdout);
 	close(child_stderr);
