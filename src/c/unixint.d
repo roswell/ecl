@@ -465,6 +465,15 @@ handle_or_queue(cl_object signal_code, int code)
         if (Null(signal_code) || signal_code == NULL)
                 return;
         the_env = ecl_process_env();
+#ifdef ECL_THREADS
+	/* When we are exiting a thread, we simply ingnore all signals. */
+	{
+		cl_object process = the_env->own_process;
+		if (!process->process.active ||
+		    process->process.phase == ECL_PROCESS_EXITING)
+			return;
+	}
+#endif
 	/*
 	 * If interrupts are disabled by lisp we are not so eager on
 	 * detecting when the interrupts become enabled again. We
@@ -639,15 +648,13 @@ handler_fn_protype(sigbus_handler, int sig, siginfo_t *info, void *aux)
 cl_object
 si_check_pending_interrupts(void)
 {
-	ecl_check_pending_interrupts();
+	ecl_check_pending_interrupts(ecl_process_env());
 	@(return)
 }
 
 void
-ecl_check_pending_interrupts(void)
+ecl_check_pending_interrupts(cl_env_ptr env)
 {
-	const cl_env_ptr env = ecl_process_env();
-	env->disable_interrupts = 0;
 	while (env->pending_interrupt != Cnil) {
 		handle_signal_now(pop_signal(env));
 	}
