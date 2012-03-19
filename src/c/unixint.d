@@ -829,7 +829,7 @@ ecl_interrupt_process(cl_object process, cl_object function)
          * - In POSIX systems it sends a user level interrupt to
          *   the thread, which then decides how to act.
          */
-        unlikely_if (process->process.active != 1) {
+        unlikely_if (!process->process.active) {
 		FEerror("Cannot interrupt non-active process ~A",
 			1, process);
 	}
