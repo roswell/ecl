@@ -225,7 +225,7 @@ thread_entry_point(void *arg)
 	 *	process.active = 2
 	 *	signals are disabled in the environment
 	 *
-	 * Since process.active = 2, this process will not recevie
+	 * Since process.active = 2, this process will not receive
 	 * signals that originate from other processes. Furthermore,
 	 * we expect not to get any other interrupts (SIGSEGV, SIGFPE)
 	 * if we do things right.
@@ -237,18 +237,18 @@ thread_entry_point(void *arg)
 	pthread_cleanup_push(thread_cleanup, (void *)process);
 #endif
 	ecl_cs_set_org(env);
-        si_trap_fpe(@'last', Ct);
 	ecl_list_process(process);
-	ecl_enable_interrupts_env(env);
 
 	/* 2) Execute the code. The CATCH_ALL point is the destination
 	*     provides us with an elegant way to exit the thread: we just
 	*     do an unwind up to frs_top.
 	*/
-	mp_get_lock_wait(process->process.exit_lock);
-	process->process.active = 1;
-        process->process.phase = ECL_PROCESS_ACTIVE;
 	CL_CATCH_ALL_BEGIN(env) {
+		mp_get_lock_wait(process->process.exit_lock);
+		process->process.active = 1;
+		process->process.phase = ECL_PROCESS_ACTIVE;
+		ecl_enable_interrupts_env(env);
+		si_trap_fpe(@'last', Ct);
 		ecl_bds_bind(env, @'mp::*current-process*', process);
 		env->values[0] = cl_apply(2, process->process.function,
                                           process->process.args);
@@ -260,6 +260,9 @@ thread_entry_point(void *arg)
                         }
                         process->process.exit_values = output;
                 }
+		/* This will disable interrupts during the exit
+		 * so that the unwinding is not interrupted. */
+		process->process.phase = ECL_PROCESS_EXITING;
 		ecl_bds_unwind1(env);
 	} CL_CATCH_ALL_END;
 
@@ -267,7 +270,6 @@ thread_entry_point(void *arg)
 	 *    through this point. thread_cleanup is automatically invoked
 	 *    marking the process as inactive.
 	 */
-        process->process.phase = ECL_PROCESS_EXITING;
 #ifdef ECL_WINDOWS_THREADS
 	thread_cleanup(process);
 	return 1;
@@ -427,9 +429,11 @@ mp_process_resume(cl_object process)
 cl_object
 mp_process_kill(cl_object process)
 {
+	assert_type_process(process);
 	if (process->process.active &&
-	    process->process.phase != ECL_PROCESS_EXITING)
+	    process->process.phase != ECL_PROCESS_EXITING) {
 		return mp_interrupt_process(process, @'mp::exit-process');
+	}
 }
 
 cl_object
@@ -570,20 +574,21 @@ mp_process_whostate(cl_object process)
 cl_object
 mp_process_join(cl_object process)
 {
+	bool again = 1;
 	assert_type_process(process);
-	/* We only wait for threads that we have created */
-        if (process->process.active) {
+	/* We try to acquire a lock that is only owned by the process
+	 * while it is active. */
+        while (process->process.active && again) {
 		cl_object l = process->process.exit_lock;
-		if (!Null(l)) {
-                        while (process->process.active > 1)
-                                cl_sleep(MAKE_FIXNUM(0));
-			if (Null(mp_get_lock_wait(l))) {
-				FEerror("MP:PROCESS-JOIN: Error when "
-					"joining process ~A",
-					1, process);
-			}
-			mp_giveup_lock(l);
-                }
+		if (Null(mp_get_lock_wait(l))) {
+			FEerror("MP:PROCESS-JOIN: Error when "
+				"joining process ~A",
+				1, process);
+		}
+		/* Wait until process has moved past
+		 * initialization phase */
+		again = process->process.phase == ECL_PROCESS_BOOTING;
+		mp_giveup_lock(l);
         }
         return cl_values_list(process->process.exit_values);
 }

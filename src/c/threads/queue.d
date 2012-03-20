@@ -183,7 +183,7 @@ wakeup_this(cl_object p, int flags)
 {
 	if (flags & ECL_WAKEUP_RESET_FLAG)
 		p->process.waiting_for = Cnil;
-	mp_interrupt_process(p, Cnil);
+	ecl_interrupt_process(p, Cnil);
 }
 
 static void

@@ -237,6 +237,23 @@ mysignal(int code, void (*handler)(int, siginfo_t *, void*))
 #endif
 
 static bool
+zombie_process(cl_env_ptr the_env)
+{
+	if (the_env == NULL) {
+		return 1;
+	} else {
+#ifdef ECL_THREADS
+		/* When we are exiting a thread, we simply ignore all signals. */
+		cl_object process = the_env->own_process;
+		return (!process->process.active ||
+			process->process.phase == ECL_PROCESS_EXITING);
+#else
+		return 0;
+#endif
+	}
+}
+
+static bool
 interrupts_disabled_by_C(cl_env_ptr the_env)
 {
 	return the_env->disable_interrupts;
@@ -256,7 +273,7 @@ handler_fn_protype(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
 {
 	cl_env_ptr the_env = ecl_process_env();
         /* The lisp environment might not be installed. */
-        if (the_env == NULL)
+        if (zombie_process(the_env))
                 return Cnil;
 #if defined(ECL_THREADS) && !defined(ECL_MS_WINDOWS_HOST)
         if (sig == ecl_get_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL)) {
@@ -465,15 +482,8 @@ handle_or_queue(cl_object signal_code, int code)
         if (Null(signal_code) || signal_code == NULL)
                 return;
         the_env = ecl_process_env();
-#ifdef ECL_THREADS
-	/* When we are exiting a thread, we simply ingnore all signals. */
-	{
-		cl_object process = the_env->own_process;
-		if (!process->process.active ||
-		    process->process.phase == ECL_PROCESS_EXITING)
-			return;
-	}
-#endif
+        if (zombie_process(the_env))
+                return;
 	/*
 	 * If interrupts are disabled by lisp we are not so eager on
 	 * detecting when the interrupts become enabled again. We
@@ -558,8 +568,8 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
 	}
 	the_env = ecl_process_env();
         /* The lisp environment might not be installed. */
-        if (the_env == NULL)
-                return;
+	if (zombie_process(the_env))
+		return;
 #if defined(SA_SIGINFO) && defined(ECL_USE_MPROTECT)
 	/* We access the environment when it was protected. That
 	 * means there was a pending signal. */
@@ -622,7 +632,7 @@ handler_fn_protype(sigbus_handler, int sig, siginfo_t *info, void *aux)
 	reinstall_signal(sig, sigsegv_handler);
 	the_env = ecl_process_env();
         /* The lisp environment might not be installed. */
-        if (the_env == NULL)
+        if (zombie_process(the_env))
                 return;
 #if defined(SA_SIGINFO) && defined(ECL_USE_MPROTECT)
 	/* We access the environment when it was protected. That
@@ -827,26 +837,29 @@ void
 ecl_interrupt_process(cl_object process, cl_object function)
 {
         /*
-         * We first get the lock to ensure that we do not interrupt
-         * the thread while acquiring the queue lock. Then the code
-         * takes two different approaches depending on the platform:
-         *
+         * We first ensure that the process is active and running
+	 * and past the initialization phase, where it has set up
+	 * the environment. Then:
          * - In Windows it sets up a trap in the stack, so that the
          *   uncaught exception handler can catch it and process it.
          * - In POSIX systems it sends a user level interrupt to
          *   the thread, which then decides how to act.
          */
-        unlikely_if (!process->process.active) {
-		FEerror("Cannot interrupt non-active process ~A",
-			1, process);
+	/* Trivial spinlock to ensure that the process is past
+	 * the section where it establishes a CATCH */
+	while (process->process.phase == ECL_PROCESS_BOOTING)
+		ecl_musleep(0.0, 0);
+	/* And then only care when the process is really active, for
+	 * otherwise the signal will be ignored. */
+	if (process->process.phase == ECL_PROCESS_ACTIVE) {
+		/* If FUNCTION is NIL, we just intend to wake up the
+		 * process from some call to ecl_musleep() */
+		if (!Null(function)) {
+			function = si_coerce_to_function(function);
+			queue_signal(process->process.env, function);
+		}
+		do_interrupt_thread(process);
 	}
-	/* If FUNCTION is NIL, we just intend to wake up the
-	 * process from some call to ecl_musleep() */
-	if (!Null(function)) {
-		function = si_coerce_to_function(function);
-		queue_signal(process->process.env, function);
-	}
-	do_interrupt_thread(process);
 }
 #endif /* ECL_THREADS */
 
