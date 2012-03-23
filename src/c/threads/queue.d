@@ -40,7 +40,7 @@ ecl_make_atomic_queue()
 }
 
 void
-ecl_atomic_queue_push(cl_object lock_list_pair, cl_object item)
+ecl_atomic_queue_nconc(cl_object lock_list_pair, cl_object item)
 {
 	cl_object new_head = ecl_list1(item);
 	cl_env_ptr the_env = ecl_process_env();
@@ -49,15 +49,14 @@ ecl_atomic_queue_push(cl_object lock_list_pair, cl_object item)
 		cl_object *lock = &ECL_CONS_CAR(lock_list_pair);
 		cl_object *queue = &ECL_CONS_CDR(lock_list_pair);
 		ecl_get_spinlock(the_env, lock);
-		ECL_RPLACD(new_head, *queue);
-		*queue = new_head;
-		*lock = Cnil;
+		ecl_nconc(lock_list_pair, new_head);
+		ecl_giveup_spinlock(lock);
 	}
 	ecl_enable_interrupts_env(the_env);
 }
 
 cl_object
-ecl_atomic_queue_pop_last(cl_object lock_list_pair)
+ecl_atomic_queue_pop(cl_object lock_list_pair)
 {
 	cl_object output;
 	cl_env_ptr the_env = ecl_process_env();
@@ -66,12 +65,12 @@ ecl_atomic_queue_pop_last(cl_object lock_list_pair)
 		cl_object *lock = &ECL_CONS_CAR(lock_list_pair);
 		cl_object *queue = &ECL_CONS_CDR(lock_list_pair);
 		ecl_get_spinlock(the_env, lock);
-		output = ecl_last(*queue, 1);
+		output = *queue;
 		if (!Null(output)) {
+			*queue = ECL_CONS_CDR(output);
 			output = ECL_CONS_CAR(output);
-			*queue = ecl_nbutlast(*queue, 1);
 		}
-		*lock = Cnil;
+		ecl_giveup_spinlock(lock);
 	}
 	ecl_enable_interrupts_env(the_env);
 	return output;
@@ -89,7 +88,7 @@ ecl_atomic_queue_pop_all(cl_object lock_list_pair)
 		ecl_get_spinlock(the_env, lock);
 		output = *queue;
 		*queue = Cnil;
-		*lock = Cnil;
+		ecl_giveup_spinlock(lock);
 	}
 	ecl_enable_interrupts_env(the_env);
 	return output;
@@ -169,7 +168,7 @@ ecl_wait_on(cl_object (*condition)(cl_env_ptr, cl_object), cl_object o)
 	}
 	ecl_bds_bind(the_env, @'ext::*interrupts-enabled*', Cnil);
 	CL_UNWIND_PROTECT_BEGIN(the_env) {
-		ecl_atomic_queue_push(o->lock.waiter, own_process);
+		ecl_atomic_queue_nconc(o->lock.waiter, own_process);
 		own_process->process.waiting_for = o;
 		ecl_bds_bind(the_env, @'ext::*interrupts-enabled*', Ct);
 		ecl_check_pending_interrupts(the_env);
@@ -209,7 +208,7 @@ static void
 wakeup_one(cl_object waiter, int flags)
 {
 	do {
-		cl_object next = ecl_atomic_queue_pop_last(waiter);
+		cl_object next = ecl_atomic_queue_pop(waiter);
 		if (Null(next))
 			return;
 		if (next->process.active) {
@@ -219,11 +218,23 @@ wakeup_one(cl_object waiter, int flags)
 	} while (1);
 }
 
+static cl_object print_lock = Cnil;
+#define PRINT(l,x) \
+	if (l->lock.name == MAKE_FIXNUM(0)) {				\
+		cl_env_ptr env = ecl_process_env();			\
+		ecl_get_spinlock(env, &print_lock);			\
+		cl_terpri(0); cl_princ(1,env->own_process->process.name); \
+		cl_princ(1,(x)); cl_force_output(0);			\
+		fflush(stdout);						\
+		ecl_giveup_spinlock(&print_lock);			\
+	}
+
 void
 ecl_wakeup_waiters(cl_object o, int flags)
 {
 	cl_object waiter = o->lock.waiter;
 	if (ECL_CONS_CDR(waiter) != Cnil) {
+		PRINT(o, waiter);
 		if (flags & ECL_WAKEUP_ALL) {
 			wakeup_all(waiter, flags);
 		} else {
