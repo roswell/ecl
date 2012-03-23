@@ -17,14 +17,20 @@
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
 
-static void
-get_spinlock(cl_env_ptr the_env, cl_object *lock)
+void ECL_INLINE
+ecl_get_spinlock(cl_env_ptr the_env, cl_object *lock)
 {
 	cl_object own_process = the_env->own_process;
 	while (!AO_compare_and_swap_full((AO_t*)lock, (AO_t)Cnil,
 					 (AO_t)own_process)) {
-		ecl_musleep(0.0, 0);
+		ecl_musleep(0.0,1);
 	}
+}
+
+void ECL_INLINE
+ecl_giveup_spinlock(cl_object *lock)
+{
+	*lock = Cnil;
 }
 
 cl_object
@@ -42,7 +48,7 @@ ecl_atomic_queue_push(cl_object lock_list_pair, cl_object item)
 	{
 		cl_object *lock = &ECL_CONS_CAR(lock_list_pair);
 		cl_object *queue = &ECL_CONS_CDR(lock_list_pair);
-		get_spinlock(the_env, lock);
+		ecl_get_spinlock(the_env, lock);
 		ECL_RPLACD(new_head, *queue);
 		*queue = new_head;
 		*lock = Cnil;
@@ -59,7 +65,7 @@ ecl_atomic_queue_pop_last(cl_object lock_list_pair)
 	{
 		cl_object *lock = &ECL_CONS_CAR(lock_list_pair);
 		cl_object *queue = &ECL_CONS_CDR(lock_list_pair);
-		get_spinlock(the_env, lock);
+		ecl_get_spinlock(the_env, lock);
 		output = ecl_last(*queue, 1);
 		if (!Null(output)) {
 			output = ECL_CONS_CAR(output);
@@ -80,7 +86,7 @@ ecl_atomic_queue_pop_all(cl_object lock_list_pair)
 	{
 		cl_object *lock = &ECL_CONS_CAR(lock_list_pair);
 		cl_object *queue = &ECL_CONS_CDR(lock_list_pair);
-		get_spinlock(the_env, lock);
+		ecl_get_spinlock(the_env, lock);
 		output = *queue;
 		*queue = Cnil;
 		*lock = Cnil;
@@ -97,7 +103,7 @@ ecl_atomic_queue_delete(cl_object lock_list_pair, cl_object item)
 	{
 		cl_object *lock = &ECL_CONS_CAR(lock_list_pair);
 		cl_object *queue = &ECL_CONS_CDR(lock_list_pair);
-		get_spinlock(the_env, lock);
+		ecl_get_spinlock(the_env, lock);
 		*queue = ecl_delete_eq(item, *queue);
 		*lock = Cnil;
 	}
