@@ -416,6 +416,7 @@ typedef unsigned char ecl_base_char;
 #undef HAVE_BACKTRACE
 #undef HAVE_BACKTRACE_SYMBOLS
 #undef HAVE___BUILTIN_RETURN_ADDRESS
+#undef HAVE_SCHED_H
 
 /*
  * we do not manage to get proper signal handling of floating point
