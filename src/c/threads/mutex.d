@@ -152,7 +152,8 @@ mp_get_lock_nowait(cl_object lock)
 cl_object
 mp_get_lock_wait(cl_object lock)
 {
-	if (mp_get_lock_nowait(lock) == Cnil) {
+	if (ecl_atomic_queue_list(lock->lock.waiter) != Cnil ||
+	    mp_get_lock_nowait(lock) == Cnil) {
 		ecl_wait_on(get_lock_inner, lock);
 	}
 	@(return Ct)

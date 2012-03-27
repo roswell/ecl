@@ -14,6 +14,9 @@
 */
 
 #define AO_ASSUME_WINDOWS98 /* We need this for CAS */
+#ifdef HAVE_SCHED_H
+#include <sched.h>
+#endif
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
 
@@ -23,9 +26,17 @@ ecl_get_spinlock(cl_env_ptr the_env, cl_object *lock)
 	cl_object own_process = the_env->own_process;
 	while (!AO_compare_and_swap_full((AO_t*)lock, (AO_t)Cnil,
 					 (AO_t)own_process)) {
-		ecl_musleep(0.0,1);
+		sched_yield();
 	}
 }
+
+#ifndef HAVE_SCHED_H
+int
+sched_yield()
+{
+	ecl_musleep(0.0, 1);
+}
+#endif
 
 void ECL_INLINE
 ecl_giveup_spinlock(cl_object *lock)
@@ -159,13 +170,15 @@ ecl_wait_on(cl_object (*condition)(cl_env_ptr, cl_object), cl_object o)
 	cl_env_ptr the_env = ecl_process_env();
 	cl_object own_process = the_env->own_process;
 	cl_object queue = o->lock.waiter;
-	cl_fixnum iteration = 0;
+	cl_fixnum iteration = 1;
 	struct ecl_timeval start;
 	ecl_get_internal_real_time(&start);
+#if 0
 	for (iteration = 0; iteration < 10; iteration++) {
-		if (condition(the_env,o) != Cnil)
+		if (condition(the_env, o) != Cnil)
 			return;
 	}
+#endif
 	ecl_bds_bind(the_env, @'ext::*interrupts-enabled*', Cnil);
 	CL_UNWIND_PROTECT_BEGIN(the_env) {
 		ecl_atomic_queue_nconc(o->lock.waiter, own_process);
@@ -218,27 +231,35 @@ wakeup_one(cl_object waiter, int flags)
 	} while (1);
 }
 
-static cl_object print_lock = Cnil;
-#define PRINT(l,x) \
-	if (l->lock.name == MAKE_FIXNUM(0)) {				\
-		cl_env_ptr env = ecl_process_env();			\
-		ecl_get_spinlock(env, &print_lock);			\
-		cl_terpri(0); cl_princ(1,env->own_process->process.name); \
-		cl_princ(1,(x)); cl_force_output(0);			\
-		fflush(stdout);						\
-		ecl_giveup_spinlock(&print_lock);			\
+void
+print_lock(char *prefix, cl_object l, cl_object x)
+{
+	static cl_object lock = Cnil;
+	if (l->lock.name == MAKE_FIXNUM(0)) {
+		cl_env_ptr env = ecl_process_env();
+		ecl_get_spinlock(env, &lock);
+		cl_terpri(0);
+		ecl_princ_str(prefix, cl_core.standard_output);
+		cl_princ(1,env->own_process->process.name);
+		ecl_princ_str("\t", cl_core.standard_output);
+		cl_princ(1,(x)); cl_force_output(0);
+		fflush(stdout);
+		ecl_giveup_spinlock(&lock);
 	}
+}
+#define print_lock(a,b,c) (void)0
 
 void
 ecl_wakeup_waiters(cl_object o, int flags)
 {
 	cl_object waiter = o->lock.waiter;
 	if (ECL_CONS_CDR(waiter) != Cnil) {
-		PRINT(o, waiter);
+		print_lock("wakeup ", o, waiter);
 		if (flags & ECL_WAKEUP_ALL) {
 			wakeup_all(waiter, flags);
 		} else {
 			wakeup_one(waiter, flags);
 		}
 	}
+	sched_yield();
 }
