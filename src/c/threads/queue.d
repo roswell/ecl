@@ -235,7 +235,7 @@ void
 print_lock(char *prefix, cl_object l, cl_object x)
 {
 	static cl_object lock = Cnil;
-	if (l->lock.name == MAKE_FIXNUM(0)) {
+	if (l == Cnil || l->lock.name == MAKE_FIXNUM(0)) {
 		cl_env_ptr env = ecl_process_env();
 		ecl_get_spinlock(env, &lock);
 		cl_terpri(0);
@@ -247,14 +247,13 @@ print_lock(char *prefix, cl_object l, cl_object x)
 		ecl_giveup_spinlock(&lock);
 	}
 }
-#define print_lock(a,b,c) (void)0
+/*#define print_lock(a,b,c) (void)0*/
 
 void
 ecl_wakeup_waiters(cl_object o, int flags)
 {
 	cl_object waiter = o->lock.waiter;
 	if (ECL_CONS_CDR(waiter) != Cnil) {
-		print_lock("wakeup ", o, waiter);
 		if (flags & ECL_WAKEUP_ALL) {
 			wakeup_all(waiter, flags);
 		} else {
