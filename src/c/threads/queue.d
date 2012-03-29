@@ -50,38 +50,16 @@ ecl_giveup_spinlock(cl_object *lock)
 void
 ecl_make_atomic_queue(cl_object q)
 {
-	q->queue.list = ecl_list1(Cnil);
+	q->queue.list = Cnil;
 	q->queue.spinlock = Cnil;
 }
 
 static ECL_INLINE void
 ecl_atomic_queue_nconc(cl_env_ptr the_env, cl_object q, cl_object new_tail)
 {
-	cl_object lock_list_pair = q->queue.list;
-	cl_object *queue = &ECL_CONS_CDR(lock_list_pair);
 	ecl_get_spinlock(the_env, &q->queue.spinlock);
-	ecl_nconc(lock_list_pair, new_tail);
+	q->queue.list = ecl_nconc(q->queue.list, new_tail);
 	ecl_giveup_spinlock(&q->queue.spinlock);
-}
-
-static ECL_INLINE cl_object
-ecl_atomic_queue_pop(cl_env_ptr the_env, cl_object q)
-{
-	cl_object output;
-	ecl_disable_interrupts_env(the_env);
-	{
-		cl_object lock_list_pair = q->queue.list;
-		cl_object *queue = &ECL_CONS_CDR(lock_list_pair);
-		ecl_get_spinlock(the_env, &q->queue.spinlock);
-		output = *queue;
-		if (!Null(output)) {
-			*queue = ECL_CONS_CDR(output);
-			output = ECL_CONS_CAR(output);
-		}
-		ecl_giveup_spinlock(&q->queue.spinlock);
-	}
-	ecl_enable_interrupts_env(the_env);
-	return output;
 }
 
 static ECL_INLINE cl_object
@@ -90,11 +68,9 @@ ecl_atomic_queue_pop_all(cl_env_ptr the_env, cl_object q)
 	cl_object output;
 	ecl_disable_interrupts_env(the_env);
 	{
-		cl_object lock_list_pair = q->queue.list;
-		cl_object *queue = &ECL_CONS_CDR(lock_list_pair);
 		ecl_get_spinlock(the_env, &q->queue.spinlock);
-		output = *queue;
-		*queue = Cnil;
+		output = q->queue.list;
+		q->queue.list = Cnil;
 		ecl_giveup_spinlock(&q->queue.spinlock);
 	}
 	ecl_enable_interrupts_env(the_env);
@@ -104,10 +80,8 @@ ecl_atomic_queue_pop_all(cl_env_ptr the_env, cl_object q)
 static ECL_INLINE void
 ecl_atomic_queue_delete(cl_env_ptr the_env, cl_object q, cl_object item)
 {
-	cl_object lock_list_pair = q->queue.list;
-	cl_object *queue = &ECL_CONS_CDR(lock_list_pair);
 	ecl_get_spinlock(the_env, &q->queue.spinlock);
-	*queue = ecl_delete_eq(item, *queue);
+	q->queue.list = ecl_delete_eq(item, q->queue.list);
 	ecl_giveup_spinlock(&q->queue.spinlock);
 }
 
@@ -149,8 +123,7 @@ ecl_wait_on(cl_object (*condition)(cl_env_ptr, cl_object), cl_object o)
 		 * might have missed a wakeup event if that happened
 		 * between 0) and 2), which is why we start with the
 		 * check*/
-		cl_object queue = ECL_CONS_CDR(o->lock.queue_list);
-		if (ECL_CONS_CAR(queue) != own_process ||
+		if (ECL_CONS_CAR(o->queue.list) != own_process ||
 		    condition(the_env, o) == Cnil)
 		{
 			do {
@@ -193,7 +166,7 @@ wakeup_all(cl_env_ptr the_env, cl_object q, int flags)
 		cl_object process = ECL_CONS_CAR(queue);
 		queue = ECL_CONS_CDR(queue);
 		if (process->process.active)
-			wakeup_this(ECL_CONS_CAR(queue), flags);
+			wakeup_this(process, flags);
 	}
 }
 
@@ -201,7 +174,7 @@ static void
 wakeup_one(cl_env_ptr the_env, cl_object q, int flags)
 {
 	do {
-		cl_object next = ECL_CONS_CDR(q->queue.list);
+		cl_object next = q->queue.list;
 		if (Null(next))
 			return;
 		next = ECL_CONS_CAR(next);
@@ -216,7 +189,7 @@ void
 ecl_wakeup_waiters(cl_env_ptr the_env, cl_object q, int flags)
 {
 	print_lock("releasing\t", o);
-	if (ECL_CONS_CDR(q->queue.list) != Cnil) {
+	if (q->queue.list != Cnil) {
 		if (flags & ECL_WAKEUP_ALL) {
 			wakeup_all(the_env, q, flags);
 		} else {
@@ -240,7 +213,7 @@ print_lock(char *prefix, cl_object l, ...)
 		printf("\n%d\t", fix(env->own_process->process.name));
 		vprintf(prefix, args);
 		if (l != Cnil) {
-			cl_object p = ECL_CONS_CDR(l->lock.queue_list);
+			cl_object p = l->lock.queue_list;
 			while (p != Cnil) {
 				printf(" %d", fix(ECL_CONS_CAR(p)->process.name));
 				p = ECL_CONS_CDR(p);
