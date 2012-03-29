@@ -50,18 +50,18 @@ ecl_giveup_spinlock(cl_object *lock)
 void
 ecl_make_atomic_queue(cl_object q)
 {
-	q->lock.queue_list = ecl_list1(Cnil);
+	q->queue.list = ecl_list1(Cnil);
+	q->queue.spinlock = Cnil;
 }
 
 static ECL_INLINE void
 ecl_atomic_queue_nconc(cl_env_ptr the_env, cl_object q, cl_object new_tail)
 {
 	cl_object lock_list_pair = q->queue.list;
-	cl_object *lock = &ECL_CONS_CAR(lock_list_pair);
 	cl_object *queue = &ECL_CONS_CDR(lock_list_pair);
-	ecl_get_spinlock(the_env, lock);
+	ecl_get_spinlock(the_env, &q->queue.spinlock);
 	ecl_nconc(lock_list_pair, new_tail);
-	ecl_giveup_spinlock(lock);
+	ecl_giveup_spinlock(&q->queue.spinlock);
 }
 
 static ECL_INLINE cl_object
@@ -71,15 +71,14 @@ ecl_atomic_queue_pop(cl_env_ptr the_env, cl_object q)
 	ecl_disable_interrupts_env(the_env);
 	{
 		cl_object lock_list_pair = q->queue.list;
-		cl_object *lock = &ECL_CONS_CAR(lock_list_pair);
 		cl_object *queue = &ECL_CONS_CDR(lock_list_pair);
-		ecl_get_spinlock(the_env, lock);
+		ecl_get_spinlock(the_env, &q->queue.spinlock);
 		output = *queue;
 		if (!Null(output)) {
 			*queue = ECL_CONS_CDR(output);
 			output = ECL_CONS_CAR(output);
 		}
-		ecl_giveup_spinlock(lock);
+		ecl_giveup_spinlock(&q->queue.spinlock);
 	}
 	ecl_enable_interrupts_env(the_env);
 	return output;
@@ -92,12 +91,11 @@ ecl_atomic_queue_pop_all(cl_env_ptr the_env, cl_object q)
 	ecl_disable_interrupts_env(the_env);
 	{
 		cl_object lock_list_pair = q->queue.list;
-		cl_object *lock = &ECL_CONS_CAR(lock_list_pair);
 		cl_object *queue = &ECL_CONS_CDR(lock_list_pair);
-		ecl_get_spinlock(the_env, lock);
+		ecl_get_spinlock(the_env, &q->queue.spinlock);
 		output = *queue;
 		*queue = Cnil;
-		ecl_giveup_spinlock(lock);
+		ecl_giveup_spinlock(&q->queue.spinlock);
 	}
 	ecl_enable_interrupts_env(the_env);
 	return output;
@@ -107,11 +105,10 @@ static ECL_INLINE void
 ecl_atomic_queue_delete(cl_env_ptr the_env, cl_object q, cl_object item)
 {
 	cl_object lock_list_pair = q->queue.list;
-	cl_object *lock = &ECL_CONS_CAR(lock_list_pair);
 	cl_object *queue = &ECL_CONS_CDR(lock_list_pair);
-	ecl_get_spinlock(the_env, lock);
+	ecl_get_spinlock(the_env, &q->queue.spinlock);
 	*queue = ecl_delete_eq(item, *queue);
-	*lock = Cnil;
+	ecl_giveup_spinlock(&q->queue.spinlock);
 }
 
 /*----------------------------------------------------------------------
