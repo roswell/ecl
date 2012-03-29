@@ -333,6 +333,10 @@ extern cl_object ecl_slot_writer_dispatch(cl_narg narg, cl_object value, cl_obje
 extern cl_object _ecl_library_init_prefix(void);
 extern cl_object _ecl_library_default_entry(void);
 
+/* main.d */
+
+extern cl_fixnum ecl_option_values[ECL_OPT_LIMIT+1];
+
 /* print.d */
 
 extern cl_object _ecl_stream_or_default_output(cl_object stream);

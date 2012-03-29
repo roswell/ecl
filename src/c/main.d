@@ -62,7 +62,7 @@ const char *ecl_self;
 
 static int ARGC;
 static char **ARGV;
-static cl_fixnum option_values[ECL_OPT_LIMIT+1] = {
+cl_fixnum ecl_option_values[ECL_OPT_LIMIT+1] = {
 #ifdef GBC_BOEHM_GENGC
 	1,		/* ECL_OPT_INCREMENTAL_GC */
 #else
@@ -109,7 +109,7 @@ ecl_get_option(int option)
 	if (option >= ECL_OPT_LIMIT || option < 0) {
 		FEerror("Invalid boot option ~D", 1, MAKE_FIXNUM(option));
 	}
-        return option_values[option];
+        return ecl_option_values[option];
 }
 
 void
@@ -119,11 +119,11 @@ ecl_set_option(int option, cl_fixnum value)
 		FEerror("Invalid boot option ~D", 1, MAKE_FIXNUM(option));
 	} else {
 		if (option < ECL_OPT_BOOTED &&
-		    option_values[ECL_OPT_BOOTED]) {
+		    ecl_option_values[ECL_OPT_BOOTED]) {
 			FEerror("Cannot change option ~D while ECL is running",
 				1, MAKE_FIXNUM(option));
 		}
-		option_values[option] = value;
+		ecl_option_values[option] = value;
 	}
 }
 
@@ -138,7 +138,7 @@ ecl_init_env(cl_env_ptr env)
 	env->stack_top = NULL;
 	env->stack_limit = NULL;
 	env->stack_size = 0;
-	ecl_stack_set_size(env, ecl_get_option(ECL_OPT_LISP_STACK_SIZE));
+	ecl_stack_set_size(env, ecl_option_values[ECL_OPT_LISP_STACK_SIZE]);
 
 #if !defined(ECL_CMU_FORMAT)
 	env->fmt_aux_stream = ecl_make_string_output_stream(64, 1);
@@ -220,7 +220,7 @@ _ecl_alloc_env()
 		ecl_internal_error("Unable to allocate environment structure.");
 # else
 	static struct cl_env_struct first_env;
-	if (!ecl_get_option(ECL_OPT_BOOTED)) {
+	if (!ecl_option_values[ECL_OPT_BOOTED]) {
 		/* We have not set up any environment. Hence, we cannot call ecl_alloc()
 		 * because it will need to stop interrupts and currently we rely on
 		 * the environment for that */
@@ -234,7 +234,7 @@ _ecl_alloc_env()
                 size_t bytes = cl_core.default_sigmask_bytes;
                 if (bytes == 0) {
                         output->default_sigmask = 0;
-                } else if (ecl_get_option(ECL_OPT_BOOTED)) {
+                } else if (ecl_option_values[ECL_OPT_BOOTED]) {
                         output->default_sigmask = ecl_alloc_atomic(bytes);
                         memcpy(output->default_sigmask,
                                ecl_process_env()->default_sigmask,
@@ -255,7 +255,7 @@ _ecl_alloc_env()
 void
 cl_shutdown(void)
 {
-	if (ecl_get_option(ECL_OPT_BOOTED) > 0) {
+	if (ecl_option_values[ECL_OPT_BOOTED] > 0) {
 		cl_object l = ecl_symbol_value(@'si::*exit-hooks*');
 		cl_object form = cl_list(2, @'funcall', Cnil);
 		while (CONSP(l)) {
@@ -438,7 +438,7 @@ cl_boot(int argc, char **argv)
 	int i;
 	cl_env_ptr env;
 
-	i = ecl_get_option(ECL_OPT_BOOTED);
+	i = ecl_option_values[ECL_OPT_BOOTED];
 	if (i) {
 		if (i < 0) {
 			/* We have called cl_shutdown and want to use ECL again. */

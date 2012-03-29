@@ -156,7 +156,7 @@ cl_fmakunbound(cl_object fname)
 void
 ecl_clear_compiler_properties(cl_object sym)
 {
-	if (ecl_get_option(ECL_OPT_BOOTED)) {
+	if (ecl_option_values[ECL_OPT_BOOTED]) {
 		funcall(2, @'si::clear-compiler-properties', sym);
 	}
 }

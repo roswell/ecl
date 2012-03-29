@@ -149,7 +149,7 @@ _ecl_package_to_be_created(const cl_env_ptr env, cl_object name)
 static cl_object
 find_pending_package(cl_env_ptr env, cl_object name, cl_object nicknames)
 {
-        if (ecl_get_option(ECL_OPT_BOOTED)) {
+        if (ecl_option_values[ECL_OPT_BOOTED]) {
                 cl_object l = env->packages_to_be_created;
 		while (!Null(l)) {
 			cl_object pair = ECL_CONS_CAR(l);
@@ -310,7 +310,7 @@ ecl_find_package_nolock(cl_object name)
 #ifdef ECL_RELATIVE_PACKAGE_NAMES
 	/* Note that this function may actually be called _before_ symbols are set up
 	 * and bound! */
-	if (ecl_get_option(ECL_OPT_BOOTED) &&
+	if (ecl_option_values[ECL_OPT_BOOTED] &&
 	    ECL_SYM_VAL(ecl_process_env(), @'si::*relative-package-names*') != Cnil) {
 		return si_find_relative_package(1, name);
 	}

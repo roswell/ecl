@@ -562,6 +562,6 @@ _ecl_big_boole_operator(int op)
 void
 init_big()
 {
-        if (ecl_get_option(ECL_OPT_SET_GMP_MEMORY_FUNCTIONS))
+        if (ecl_option_values[ECL_OPT_SET_GMP_MEMORY_FUNCTIONS])
                 mp_set_memory_functions(mp_alloc, mp_realloc, mp_free);
 }

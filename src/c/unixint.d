@@ -263,7 +263,7 @@ interrupts_disabled_by_C(cl_env_ptr the_env)
 static ECL_INLINE bool
 interrupts_disabled_by_lisp(cl_env_ptr the_env)
 {
-	return (ecl_get_option(ECL_OPT_BOOTED) &&
+	return (ecl_option_values[ECL_OPT_BOOTED] &&
 		ecl_symbol_value(@'ext::*interrupts-enabled*') == Cnil);
 }
 
@@ -537,7 +537,7 @@ handler_fn_protype(non_evil_signal_handler, int sig, siginfo_t *siginfo, void *d
         the_env = ecl_process_env();
         if (zombie_process(the_env))
                 return;
-	if (!ecl_get_option(ECL_OPT_BOOTED)) {
+	if (!ecl_option_values[ECL_OPT_BOOTED]) {
 		ecl_internal_error("Got signal before environment was installed"
 				   " on our thread.");
 	}
@@ -582,7 +582,7 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
 #endif
 	cl_env_ptr the_env;
 	reinstall_signal(sig, sigsegv_handler);
-	if (!ecl_get_option(ECL_OPT_BOOTED)) {
+	if (!ecl_option_values[ECL_OPT_BOOTED]) {
 		ecl_internal_error("Got signal before environment was installed"
 				   " on our thread.");
 	}
@@ -716,7 +716,7 @@ do_catch_signal(int code, cl_object action, cl_object process)
                 }
 #endif
 #if defined(ECL_THREADS) && !defined(ECL_MS_WINDOWS_HOST)
-		else if (code == ecl_get_option(ECL_OPT_TRAP_INTERRUPT_SIGNAL)) {
+		else if (code == ecl_option_values[ECL_OPT_TRAP_INTERRUPT_SIGNAL]) {
 			mysignal(code, process_interrupt_handler);
 		}
 #endif
@@ -770,7 +770,7 @@ do_catch_signal(int code, cl_object action, cl_object process)
 	int i;
 #ifdef GBC_BOEHM
 # ifdef SIGSEGV
-	if ((code_int == SIGSEGV) && ecl_get_option(ECL_OPT_INCREMENTAL_GC))
+	if ((code_int == SIGSEGV) && ecl_option_values[ECL_OPT_INCREMENTAL_GC])
 		FEerror("It is not allowed to change the behavior of SIGSEGV.",
 			0);
 # endif
@@ -781,7 +781,7 @@ do_catch_signal(int code, cl_object action, cl_object process)
 # endif
 #endif
 #if defined(ECL_THREADS) && !defined(ECL_MS_WINDOWS_HOST)
-	if (code_int == ecl_get_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL)) {
+	if (code_int == ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL]) {
 		FEerror("It is not allowed to change the behavior of ~D", 1,
                         MAKE_FIXNUM(code_int));
 	}
@@ -850,7 +850,7 @@ do_interrupt_thread(cl_object process)
  EXIT:
         return ok;
 # else
-        int signal = ecl_get_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL);
+        int signal = ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL];
         if (pthread_kill(process->process.thread, signal)) {
 		FElibc_error("Unable to interrupt process ~A", 1,
 			     process);
@@ -991,8 +991,8 @@ asynchronous_signal_servicing_thread()
 	cl_object signal_code;
 	int signo;
 	int interrupt_signal = 0;
-	if (ecl_get_option(ECL_OPT_TRAP_INTERRUPT_SIGNAL)) {
-		interrupt_signal = ecl_get_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL);
+	if (ecl_option_values[ECL_OPT_TRAP_INTERRUPT_SIGNAL]) {
+		interrupt_signal = ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL];
 	}
         /*
          * We wait here for all signals that are blocked in all other
@@ -1102,7 +1102,7 @@ install_asynchronous_signal_handlers()
 #else
 # if defined(ECL_THREADS) && defined(HAVE_SIGPROCMASK)
 #  define async_handler(signal,handler,mask)  {				\
-		if (ecl_get_option(ECL_OPT_SIGNAL_HANDLING_THREAD)) {	\
+		if (ecl_option_values[ECL_OPT_SIGNAL_HANDLING_THREAD]) {	\
 			sigaddset(mask, signal);			\
 		} else {						\
 			mysignal(signal,handler);			\
@@ -1122,12 +1122,12 @@ install_asynchronous_signal_handlers()
 # endif
 #endif
 #ifdef SIGINT
-	if (ecl_get_option(ECL_OPT_TRAP_SIGINT)) {
+	if (ecl_option_values[ECL_OPT_TRAP_SIGINT]) {
 		async_handler(SIGINT, non_evil_signal_handler, sigmask);
 	}
 #endif
 #ifdef SIGCHLD
-	if (ecl_get_option(ECL_OPT_TRAP_SIGCHLD)) {
+	if (ecl_option_values[ECL_OPT_TRAP_SIGCHLD]) {
                 /* We have to set the process signal handler explicitly,
                  * because on many platforms the default is SIG_IGN. */
 		mysignal(SIGCHLD, lisp_signal_handler);
@@ -1144,7 +1144,7 @@ install_asynchronous_signal_handlers()
 #ifdef ECL_WINDOWS_THREADS
 	old_W32_exception_filter =
 		SetUnhandledExceptionFilter(_ecl_w32_exception_filter);
-	if (ecl_get_option(ECL_OPT_TRAP_SIGINT)) {
+	if (ecl_option_values[ECL_OPT_TRAP_SIGINT]) {
 		SetConsoleCtrlHandler(W32_console_ctrl_handler, TRUE);
 	}
 #endif
@@ -1160,7 +1160,7 @@ install_signal_handling_thread()
 {
 #if defined(ECL_THREADS) && defined(HAVE_SIGPROCMASK)
         ecl_process_env()->default_sigmask = &main_thread_sigmask;
-	if (ecl_get_option(ECL_OPT_SIGNAL_HANDLING_THREAD)) {
+	if (ecl_option_values[ECL_OPT_SIGNAL_HANDLING_THREAD]) {
 		cl_object fun =
 			ecl_make_cfun((cl_objectfn_fixed)
 				      asynchronous_signal_servicing_thread,
@@ -1188,22 +1188,22 @@ static void
 install_synchronous_signal_handlers()
 {
 #ifdef SIGBUS
-	if (ecl_get_option(ECL_OPT_TRAP_SIGBUS)) {
+	if (ecl_option_values[ECL_OPT_TRAP_SIGBUS]) {
 		mysignal(SIGBUS, sigbus_handler);
 	}
 #endif
 #ifdef SIGSEGV
-	if (ecl_get_option(ECL_OPT_TRAP_SIGSEGV)) {
+	if (ecl_option_values[ECL_OPT_TRAP_SIGSEGV]) {
 		mysignal(SIGSEGV, sigsegv_handler);
 	}
 #endif
 #ifdef SIGPIPE
-	if (ecl_get_option(ECL_OPT_TRAP_SIGPIPE)) {
+	if (ecl_option_values[ECL_OPT_TRAP_SIGPIPE]) {
 		mysignal(SIGPIPE, non_evil_signal_handler);
 	}
 #endif
 #ifdef SIGILL
-	if (ecl_get_option(ECL_OPT_TRAP_SIGILL)) {
+	if (ecl_option_values[ECL_OPT_TRAP_SIGILL]) {
 		mysignal(SIGILL, non_evil_signal_handler);
 	}
 #endif
@@ -1217,8 +1217,8 @@ install_synchronous_signal_handlers()
 # define DEFAULT_THREAD_INTERRUPT_SIGNAL SIGUSR1
 #endif
 #if defined(ECL_THREADS) && !defined(ECL_MS_WINDOWS_HOST)
-	if (ecl_get_option(ECL_OPT_TRAP_INTERRUPT_SIGNAL)) {
-		int signal = ecl_get_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL);
+	if (ecl_option_values[ECL_OPT_TRAP_INTERRUPT_SIGNAL]) {
+		int signal = ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL];
 		if (signal == 0) {
 			signal = DEFAULT_THREAD_INTERRUPT_SIGNAL;
 			ecl_set_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL,
@@ -1242,7 +1242,7 @@ static void
 install_fpe_signal_handlers()
 {
 #ifdef SIGFPE
-	if (ecl_get_option(ECL_OPT_TRAP_SIGFPE)) {
+	if (ecl_option_values[ECL_OPT_TRAP_SIGFPE]) {
 		mysignal(SIGFPE, non_evil_signal_handler);
 		si_trap_fpe(Ct, Ct);
 # ifdef ECL_IEEE_FP
@@ -1280,7 +1280,7 @@ init_unixint(int pass)
 		install_asynchronous_signal_handlers();
 		install_synchronous_signal_handlers();
 	} else {
-		create_signal_queue(ecl_get_option(ECL_OPT_SIGNAL_QUEUE_SIZE));
+		create_signal_queue(ecl_option_values[ECL_OPT_SIGNAL_QUEUE_SIZE]);
 		create_signal_code_constants();
 		install_fpe_signal_handlers();
 		install_signal_handling_thread();

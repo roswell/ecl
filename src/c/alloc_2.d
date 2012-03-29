@@ -63,7 +63,7 @@ _ecl_set_max_heap_size(cl_index new_size)
 	ecl_disable_interrupts_env(the_env);
 	GC_set_max_heap_size(cl_core.max_heap_size = new_size);
 	if (new_size == 0) {
-		cl_index size = ecl_get_option(ECL_OPT_HEAP_SAFETY_AREA);
+		cl_index size = ecl_option_values[ECL_OPT_HEAP_SAFETY_AREA];
 		cl_core.safety_region = ecl_alloc_atomic_unprotected(size);
 	} else if (cl_core.safety_region) {
 		GC_FREE(cl_core.safety_region);
@@ -130,7 +130,7 @@ out_of_memory(size_t requested_bytes)
                         method = 2;
                 }
         } else {
-                cl_core.max_heap_size += ecl_get_option(ECL_OPT_HEAP_SAFETY_AREA);
+                cl_core.max_heap_size += ecl_option_values[ECL_OPT_HEAP_SAFETY_AREA];
                 GC_set_max_heap_size(cl_core.max_heap_size);
                 method = 1;
         }
@@ -763,7 +763,7 @@ init_alloc(void)
 	GC_all_interior_pointers = 0;
 	GC_time_limit = GC_TIME_UNLIMITED;
 	GC_init();
-	if (ecl_get_option(ECL_OPT_INCREMENTAL_GC)) {
+	if (ecl_option_values[ECL_OPT_INCREMENTAL_GC]) {
 		GC_enable_incremental();
 	}
 	GC_register_displacement(1);
@@ -790,10 +790,10 @@ init_alloc(void)
 # endif
 #endif /* !GBC_BOEHM_PRECISE */
 
-	GC_set_max_heap_size(cl_core.max_heap_size = ecl_get_option(ECL_OPT_HEAP_SIZE));
+	GC_set_max_heap_size(cl_core.max_heap_size = ecl_option_values[ECL_OPT_HEAP_SIZE]);
         /* Save some memory for the case we get tight. */
 	if (cl_core.max_heap_size == 0) {
-		cl_index size = ecl_get_option(ECL_OPT_HEAP_SAFETY_AREA);
+		cl_index size = ecl_option_values[ECL_OPT_HEAP_SAFETY_AREA];
 		cl_core.safety_region = ecl_alloc_atomic_unprotected(size);
 	} else if (cl_core.safety_region) {
 		cl_core.safety_region = 0;

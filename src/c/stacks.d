@@ -30,7 +30,7 @@ static void
 cs_set_size(cl_env_ptr env, cl_index new_size)
 {
 	volatile char foo = 0;
-	cl_index safety_area = ecl_get_option(ECL_OPT_C_STACK_SAFETY_AREA);
+	cl_index safety_area = ecl_option_values[ECL_OPT_C_STACK_SAFETY_AREA];
 	new_size += 2*safety_area;
 #ifdef ECL_DOWN_STACK
 	if (&foo > env->cs_org - new_size + 16) {
@@ -58,7 +58,7 @@ ecl_cs_overflow(void)
                 ";;; Jumping to the outermost toplevel prompt\n"
                 ";;;\n\n";
 	cl_env_ptr env = ecl_process_env();
-	cl_index safety_area = ecl_get_option(ECL_OPT_C_STACK_SAFETY_AREA);
+	cl_index safety_area = ecl_option_values[ECL_OPT_C_STACK_SAFETY_AREA];
 	cl_index size = env->cs_size;
 #ifdef ECL_DOWN_STACK
 	if (env->cs_limit > env->cs_org - size)
@@ -91,7 +91,7 @@ ecl_cs_set_org(cl_env_ptr env)
 		getrlimit(RLIMIT_STACK, &rl);
 		if (rl.rlim_cur != RLIM_INFINITY) {
 			size = rl.rlim_cur / 2;
-			if (size > (cl_index)ecl_get_option(ECL_OPT_C_STACK_SIZE))
+			if (size > (cl_index)ecl_option_values[ECL_OPT_C_STACK_SIZE])
 				ecl_set_option(ECL_OPT_C_STACK_SIZE, size);
 #ifdef ECL_DOWN_STACK
 			env->cs_barrier = env->cs_org - rl.rlim_cur - 1024;
@@ -101,7 +101,7 @@ ecl_cs_set_org(cl_env_ptr env)
 		}
 	}
 #endif
-	cs_set_size(env, ecl_get_option(ECL_OPT_C_STACK_SIZE));
+	cs_set_size(env, ecl_option_values[ECL_OPT_C_STACK_SIZE]);
 }
 
 
@@ -122,7 +122,7 @@ ecl_bds_set_size(cl_env_ptr env, cl_index size)
 		FEerror("Cannot shrink the binding stack below ~D.", 1,
 			ecl_make_unsigned_integer(limit));
 	} else {
-		cl_index margin = ecl_get_option(ECL_OPT_BIND_STACK_SAFETY_AREA);
+		cl_index margin = ecl_option_values[ECL_OPT_BIND_STACK_SAFETY_AREA];
 		bds_ptr org;
 		org = ecl_alloc_atomic(size * sizeof(*org));
 
@@ -146,7 +146,7 @@ ecl_bds_overflow(void)
                 ";;; Jumping to the outermost toplevel prompt\n"
                 ";;;\n\n";
 	cl_env_ptr env = ecl_process_env();
-	cl_index margin = ecl_get_option(ECL_OPT_BIND_STACK_SAFETY_AREA);
+	cl_index margin = ecl_option_values[ECL_OPT_BIND_STACK_SAFETY_AREA];
 	cl_index size = env->bds_size;
 	bds_ptr org = env->bds_org;
 	bds_ptr last = org + size;
@@ -475,7 +475,7 @@ frs_set_size(cl_env_ptr env, cl_index size)
 		FEerror("Cannot shrink frame stack below ~D.", 1,
 			ecl_make_unsigned_integer(limit));
 	} else {
-		cl_index margin = ecl_get_option(ECL_OPT_FRAME_STACK_SAFETY_AREA);
+		cl_index margin = ecl_option_values[ECL_OPT_FRAME_STACK_SAFETY_AREA];
 		ecl_frame_ptr org;
 		size += 2*margin;
 		org = ecl_alloc_atomic(size * sizeof(*org));
@@ -500,7 +500,7 @@ frs_overflow(void)		/* used as condition in list.d */
                 ";;; Jumping to the outermost toplevel prompt\n"
                 ";;;\n\n";
 	cl_env_ptr env = ecl_process_env();
-	cl_index margin = ecl_get_option(ECL_OPT_FRAME_STACK_SAFETY_AREA);
+	cl_index margin = ecl_option_values[ECL_OPT_FRAME_STACK_SAFETY_AREA];
 	cl_index size = env->frs_size;
 	ecl_frame_ptr org = env->frs_org;
 	ecl_frame_ptr last = org + size;
@@ -648,15 +648,15 @@ init_stacks(cl_env_ptr env)
 	static struct ihs_frame ihs_org = { NULL, NULL, NULL, 0};
 	cl_index size, margin;
 
-	margin = ecl_get_option(ECL_OPT_FRAME_STACK_SAFETY_AREA);
-	size = ecl_get_option(ECL_OPT_FRAME_STACK_SIZE) + 2 * margin;
+	margin = ecl_option_values[ECL_OPT_FRAME_STACK_SAFETY_AREA];
+	size = ecl_option_values[ECL_OPT_FRAME_STACK_SIZE] + 2 * margin;
 	env->frs_size = size;
 	env->frs_org = (ecl_frame_ptr)ecl_alloc_atomic(size * sizeof(*env->frs_org));
 	env->frs_top = env->frs_org-1;
 	env->frs_limit = &env->frs_org[size - 2*margin];
 
-	margin = ecl_get_option(ECL_OPT_BIND_STACK_SAFETY_AREA);
-	size = ecl_get_option(ECL_OPT_BIND_STACK_SIZE) + 2 * margin;
+	margin = ecl_option_values[ECL_OPT_BIND_STACK_SAFETY_AREA];
+	size = ecl_option_values[ECL_OPT_BIND_STACK_SIZE] + 2 * margin;
 	env->bds_size = size;
 	env->bds_org = (bds_ptr)ecl_alloc_atomic(size * sizeof(*env->bds_org));
 	env->bds_top = env->bds_org-1;
@@ -668,9 +668,9 @@ init_stacks(cl_env_ptr env)
 	ihs_org.index = 0;
 
 #if 0 /* defined(HAVE_SIGPROCMASK) && defined(SA_SIGINFO) && defined(SA_ONSTACK) */
-	if (ecl_get_option(ECL_OPT_SIGALTSTACK_SIZE)) {
+	if (ecl_option_values[ECL_OPT_SIGALTSTACK_SIZE]) {
 		stack_t new_stack;
-		cl_index size = ecl_get_option(ECL_OPT_SIGALTSTACK_SIZE);
+		cl_index size = ecl_option_values[ECL_OPT_SIGALTSTACK_SIZE];
 		if (size < SIGSTKSZ) {
 			size = SIGSTKSZ + (sizeof(double)*16) +
 				(sizeof(cl_object)*4);

@@ -28,7 +28,7 @@ ecl_stack_set_size(cl_env_ptr env, cl_index tentative_new_size)
 {
 	cl_index top = env->stack_top - env->stack;
 	cl_object *new_stack, *old_stack;
-	cl_index safety_area = ecl_get_option(ECL_OPT_LISP_STACK_SAFETY_AREA);
+	cl_index safety_area = ecl_option_values[ECL_OPT_LISP_STACK_SAFETY_AREA];
 	cl_index new_size = tentative_new_size + 2*safety_area;
 
         /* Round to page size */
