@@ -362,6 +362,10 @@ handler_fn_protype(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
 	case SIGBUS:
                 return @'ext::segmentation-violation';
 #endif
+#ifdef SIGILL
+	case SIGILL:
+                return @'ext::illegal-instruction';
+#endif
 #ifdef SIGCHLD
         case SIGCHLD:
                 return SYM_FUN(@'si::wait-for-all-processes');
@@ -845,21 +849,21 @@ ecl_interrupt_process(cl_object process, cl_object function)
          * - In POSIX systems it sends a user level interrupt to
          *   the thread, which then decides how to act.
          */
-	/* Trivial spinlock to ensure that the process is past
-	 * the section where it establishes a CATCH */
-	while (process->process.phase == ECL_PROCESS_BOOTING)
-		ecl_musleep(0.0, 0);
-	/* And then only care when the process is really active, for
-	 * otherwise the signal will be ignored. */
-	if (process->process.phase == ECL_PROCESS_ACTIVE) {
-		/* If FUNCTION is NIL, we just intend to wake up the
-		 * process from some call to ecl_musleep() */
-		if (!Null(function)) {
+	if (!Null(function)) {
+		/* Trivial spinlock to ensure that the process is past
+		 * the section where it establishes a CATCH */
+		while (process->process.phase == ECL_PROCESS_BOOTING)
+			ecl_musleep(0.0, 0);
+		/* And then only care when the process is really active, for
+		 * otherwise the signal will be ignored. */
+		if (process->process.phase == ECL_PROCESS_ACTIVE) {
+			/* If FUNCTION is NIL, we just intend to wake up the
+			 * process from some call to ecl_musleep() */
 			function = si_coerce_to_function(function);
 			queue_signal(process->process.env, function);
 		}
-		do_interrupt_thread(process);
 	}
+	do_interrupt_thread(process);
 }
 #endif /* ECL_THREADS */
 
@@ -920,7 +924,7 @@ _ecl_w32_exception_filter(struct _EXCEPTION_POINTERS* ep)
                         return EXCEPTION_CONTINUE_EXECUTION;
 		/* Catch illegal instruction */
 		case EXCEPTION_ILLEGAL_INSTRUCTION:
-			handle_or_queue(MAKE_FIXNUM(SIGILL), 0);
+			handle_or_queue(@'ext::illegal-instruction', 0);
 			return EXCEPTION_CONTINUE_EXECUTION;
 		/* Do not catch anything else */
 		default:
@@ -1205,6 +1209,11 @@ install_synchronous_signal_handlers()
 #ifdef SIGPIPE
 	if (ecl_get_option(ECL_OPT_TRAP_SIGPIPE)) {
 		mysignal(SIGPIPE, non_evil_signal_handler);
+	}
+#endif
+#ifdef SIGILL
+	if (ecl_get_option(ECL_OPT_TRAP_SIGILL)) {
+		mysignal(SIGILL, non_evil_signal_handler);
 	}
 #endif
 }

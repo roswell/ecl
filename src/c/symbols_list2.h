@@ -1847,6 +1847,7 @@ cl_symbols[] = {
 {EXT_ "LISP-STACK",NULL},
 {EXT_ "C-STACK",NULL},
 {EXT_ "HEAP-SIZE",NULL},
+{EXT_ "ILLEGAL-INSTRUCTION",NULL},
 {EXT_ "SET-LIMIT","si_set_limit"},
 {EXT_ "GET-LIMIT","si_get_limit"},
 {EXT_ "SEGMENTATION-VIOLATION",NULL},

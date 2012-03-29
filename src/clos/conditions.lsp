@@ -511,6 +511,10 @@ or return to an outer frame, undoing all the function calls so far."
   (:REPORT "Memory limit reached. Please jump to an outer pointer, quit program and enlarge the
 memory limits before executing the program again."))
 
+(define-condition ext:illegal-instruction (serious-condition)
+  ()
+  (:REPORT "Illegal instruction."))
+
 (define-condition ext:unix-signal-received ()
   ((code :type fixnum
          :initform 0
