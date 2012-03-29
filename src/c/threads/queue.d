@@ -23,6 +23,14 @@
 
 #define print_lock(a,b,...) (void)0
 
+#ifndef HAVE_SCHED_H
+static int
+sched_yield()
+{
+	ecl_musleep(0.0, 1);
+}
+#endif
+
 void ECL_INLINE
 ecl_get_spinlock(cl_env_ptr the_env, cl_object *lock)
 {
@@ -32,14 +40,6 @@ ecl_get_spinlock(cl_env_ptr the_env, cl_object *lock)
 		sched_yield();
 	}
 }
-
-#ifndef HAVE_SCHED_H
-int
-sched_yield()
-{
-	ecl_musleep(0.0, 1);
-}
-#endif
 
 void ECL_INLINE
 ecl_giveup_spinlock(cl_object *lock)
