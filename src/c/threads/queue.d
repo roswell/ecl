@@ -103,7 +103,8 @@ ecl_wait_on(cl_object (*condition)(cl_env_ptr, cl_object), cl_object o)
 	{
 		sigset_t empty;
 		sigemptyset(&empty);
-		pthread_sigmask(SIG_SETMASK, &original, &empty);
+		sigaddset(&empty, ecl_option_values[ECL_OPT_TRAP_INTERRUPT_SIGNAL]);
+		pthread_sigmask(SIG_BLOCK, &original, &empty);
 	}
 
 	/* 2) Now we add ourselves to the queue. In order to avoid a
