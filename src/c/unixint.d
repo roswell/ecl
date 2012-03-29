@@ -1180,36 +1180,6 @@ install_signal_handling_thread()
 }
 
 /*
- * In order to implement MP:INTERRUPT-PROCESS, MP:PROCESS-KILL and the
- * like, we use signals. This routine sets up a synchronous signal
- * handler for that particular signal.
- */
-static void
-install_process_interrupt_handler()
-{
-#ifdef SIGRTMIN
-# define DEFAULT_THREAD_INTERRUPT_SIGNAL SIGRTMIN + 2
-#else
-# define DEFAULT_THREAD_INTERRUPT_SIGNAL SIGUSR1
-#endif
-#if defined(ECL_THREADS) && !defined(ECL_MS_WINDOWS_HOST)
-	if (ecl_get_option(ECL_OPT_TRAP_INTERRUPT_SIGNAL)) {
-		int signal = ecl_get_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL);
-		if (signal == 0) {
-			signal = DEFAULT_THREAD_INTERRUPT_SIGNAL;
-			ecl_set_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL,
-				       signal);
-		}
-		mysignal(signal, process_interrupt_handler);
-#ifdef HAVE_SIGROCMASK
-                sigdelset(ecl_process_env()->default_sigmask, signal);
-                pthread_sigmask(SIG_SETMASK, ecl_process_env()->default_sigmask, NULL);
-#endif
-	}
-#endif
-}
-
-/*
  * This routine sets up handlers for all exceptions, such as access to
  * restricted regions of memory. They have to be set up before we call
  * init_GC().
@@ -1235,6 +1205,30 @@ install_synchronous_signal_handlers()
 #ifdef SIGILL
 	if (ecl_get_option(ECL_OPT_TRAP_SIGILL)) {
 		mysignal(SIGILL, non_evil_signal_handler);
+	}
+#endif
+	/* In order to implement MP:INTERRUPT-PROCESS, MP:PROCESS-KILL
+	 * and the like, we use signals. This sets up a synchronous
+	 * signal handler for that particular signal.
+	 */
+#ifdef SIGRTMIN
+# define DEFAULT_THREAD_INTERRUPT_SIGNAL SIGRTMIN + 2
+#else
+# define DEFAULT_THREAD_INTERRUPT_SIGNAL SIGUSR1
+#endif
+#if defined(ECL_THREADS) && !defined(ECL_MS_WINDOWS_HOST)
+	if (ecl_get_option(ECL_OPT_TRAP_INTERRUPT_SIGNAL)) {
+		int signal = ecl_get_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL);
+		if (signal == 0) {
+			signal = DEFAULT_THREAD_INTERRUPT_SIGNAL;
+			ecl_set_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL,
+				       signal);
+		}
+		mysignal(signal, process_interrupt_handler);
+#ifdef HAVE_SIGROCMASK
+                sigdelset(ecl_process_env()->default_sigmask, signal);
+                pthread_sigmask(SIG_SETMASK, ecl_process_env()->default_sigmask, NULL);
+#endif
 	}
 #endif
 }
@@ -1284,7 +1278,6 @@ init_unixint(int pass)
 {
 	if (pass == 0) {
 		install_asynchronous_signal_handlers();
-		install_process_interrupt_handler();
 		install_synchronous_signal_handlers();
 	} else {
 		create_signal_queue(ecl_get_option(ECL_OPT_SIGNAL_QUEUE_SIZE));
