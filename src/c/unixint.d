@@ -202,7 +202,7 @@ static struct {
 static sigset_t main_thread_sigmask;
 # define handler_fn_protype(name, sig, info, aux) name(sig, info, aux)
 # define call_handler(name, sig, info, aux) name(sig, info, aux)
-# define reinstall_signal(x,y) mysignal(x,y)
+# define reinstall_signal(x,y)
 # define copy_siginfo(x,y) memcpy(x, y, sizeof(struct sigaction))
 static void
 mysignal(int code, void (*handler)(int, siginfo_t *, void*))
@@ -239,27 +239,28 @@ mysignal(int code, void (*handler)(int, siginfo_t *, void*))
 static bool
 zombie_process(cl_env_ptr the_env)
 {
+#ifdef ECL_THREADS
 	if (the_env == NULL) {
 		return 1;
 	} else {
-#ifdef ECL_THREADS
 		/* When we are exiting a thread, we simply ignore all signals. */
 		cl_object process = the_env->own_process;
 		return (!process->process.active ||
 			process->process.phase == ECL_PROCESS_EXITING);
-#else
 		return 0;
-#endif
 	}
+#else
+	return !the_env;
+#endif
 }
 
-static bool
+static ECL_INLINE bool
 interrupts_disabled_by_C(cl_env_ptr the_env)
 {
 	return the_env->disable_interrupts;
 }
 
-static bool
+static ECL_INLINE bool
 interrupts_disabled_by_lisp(cl_env_ptr the_env)
 {
 	return (ecl_get_option(ECL_OPT_BOOTED) &&
@@ -271,15 +272,10 @@ static cl_object pop_signal(cl_env_ptr env);
 static cl_object
 handler_fn_protype(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
 {
-	cl_env_ptr the_env = ecl_process_env();
         /* The lisp environment might not be installed. */
+	cl_env_ptr the_env = ecl_process_env();
         if (zombie_process(the_env))
                 return Cnil;
-#if defined(ECL_THREADS) && !defined(ECL_MS_WINDOWS_HOST)
-        if (sig == ecl_get_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL)) {
-		return pop_signal(the_env);
-        }
-#endif
 	switch (sig) {
 	case SIGINT: {
                 cl_object function = SYM_FUN(@'si::terminal-interrupt');
@@ -375,20 +371,20 @@ handler_fn_protype(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
 	}
 }
 
-#define unblock_signal(sig)
+#define unblock_signal(env, sig)
 #ifdef HAVE_SIGPROCMASK
 # undef unblock_signal
 static void
-unblock_signal(int signal)
+unblock_signal(cl_env_ptr the_env, int signal)
 {
 	/*
 	 * We do not really "unblock" the signal, but rather restore
 	 * ECL's default sigmask.
 	 */
 # ifdef ECL_THREADS
-	pthread_sigmask(SIG_SETMASK, ecl_process_env()->default_sigmask, NULL);
+	pthread_sigmask(SIG_SETMASK, the_env->default_sigmask, NULL);
 # else
-	sigprocmask(SIG_SETMASK, ecl_process_env()->default_sigmask, NULL);
+	sigprocmask(SIG_SETMASK, the_env->default_sigmask, NULL);
 # endif
 }
 #endif
@@ -479,14 +475,10 @@ pop_signal(cl_env_ptr env)
 }
 
 static void
-handle_or_queue(cl_object signal_code, int code)
+handle_or_queue(cl_env_ptr the_env, cl_object signal_code, int code)
 {
 	int old_errno = errno;
-	cl_env_ptr the_env;
         if (Null(signal_code) || signal_code == NULL)
-                return;
-        the_env = ecl_process_env();
-        if (zombie_process(the_env))
                 return;
 	/*
 	 * If interrupts are disabled by lisp we are not so eager on
@@ -528,7 +520,7 @@ handle_or_queue(cl_object signal_code, int code)
 	 */
 	else {
                 errno = old_errno;
-                if (code) unblock_signal(code);
+                if (code) unblock_signal(the_env, code);
 		si_trap_fpe(@'last', Ct); /* Clear FPE exception flag */
                 handle_signal_now(signal_code);
         }
@@ -538,16 +530,40 @@ static void
 handler_fn_protype(non_evil_signal_handler, int sig, siginfo_t *siginfo, void *data)
 {
         int old_errno = errno;
+	cl_env_ptr the_env;
         cl_object signal_object;
 	reinstall_signal(sig, non_evil_signal_handler);
+        /* The lisp environment might not be installed. */
+        the_env = ecl_process_env();
+        if (zombie_process(the_env))
+                return;
 	if (!ecl_get_option(ECL_OPT_BOOTED)) {
 		ecl_internal_error("Got signal before environment was installed"
 				   " on our thread.");
 	}
         signal_object = call_handler(lisp_signal_handler, sig, siginfo, data);
         errno = old_errno;
-        handle_or_queue(signal_object, sig);
+        handle_or_queue(the_env, signal_object, sig);
 }
+
+#if defined(ECL_THREADS) && !defined(ECL_MS_WINDOWS_HOST)
+static void
+handler_fn_protype(process_interrupt_handler, int sig, siginfo_t *siginfo, void *data)
+{
+        int old_errno = errno;
+	cl_env_ptr the_env;
+        cl_object signal_object;
+	reinstall_signal(sig, process_interrupt_handler);
+        /* The lisp environment might not be installed. */
+        the_env = ecl_process_env();
+        if (zombie_process(the_env))
+                return;
+	signal_object = pop_signal(the_env);
+        errno = old_errno;
+	if (signal_object != Cnil)
+		handle_or_queue(the_env, signal_object, sig);
+}
+#endif
 
 static void
 handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
@@ -570,8 +586,8 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
 		ecl_internal_error("Got signal before environment was installed"
 				   " on our thread.");
 	}
-	the_env = ecl_process_env();
         /* The lisp environment might not be installed. */
+	the_env = ecl_process_env();
 	if (zombie_process(the_env))
 		return;
 #if defined(SA_SIGINFO) && defined(ECL_USE_MPROTECT)
@@ -583,7 +599,7 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
 		cl_object signal;
 		mprotect(the_env, sizeof(*the_env), PROT_READ | PROT_WRITE);
                 the_env->disable_interrupts = 0;
-                unblock_signal(SIGBUS);
+                unblock_signal(the_env, SIGBUS);
                 for (signal = pop_signal(the_env); !Null(signal) && signal; ) {
                         handle_signal_now(signal);
                         signal = pop_signal(the_env);
@@ -595,14 +611,14 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
 # ifdef ECL_DOWN_STACK
 	if ((char*)info->si_addr > the_env->cs_barrier &&
 	    (char*)info->si_addr <= the_env->cs_org) {
-                unblock_signal(SIGSEGV);
+                unblock_signal(the_env, SIGSEGV);
 		ecl_unrecoverable_error(the_env, stack_overflow_msg);
                 return;
 	}
 # else
 	if ((char*)info->si_addr < the_env->cs_barrier &&
 	    (char*)info->si_addr >= the_env->cs_org) {
-                unblock_signal(SIGSEGV);
+                unblock_signal(the_env, SIGSEGV);
 		ecl_unrecoverable_error(the_env, stack_overflow_msg);
                 return;
 	}
@@ -612,10 +628,10 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
          * thus it is not safe to execute lisp code here. We just bounce
          * up to the outermost toplevel.
 	 */
-        unblock_signal(SIGSEGV);
+        unblock_signal(the_env, SIGSEGV);
 	ecl_unrecoverable_error(the_env, segv_msg);
 # else
-        handle_or_queue(@'ext::segmentation-violation', SIGSEGV);
+        handle_or_queue(the_env, @'ext::segmentation-violation', SIGSEGV);
 # endif
 #else
 	/*
@@ -623,7 +639,7 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
 	 * access violation. Thus we assume the worst case and jump to
 	 * the outermost handler.
 	 */
-        unblock_signal(SIGSEGV);
+        unblock_signal(the_env, SIGSEGV);
 	ecl_unrecoverable_error(the_env, segv_msg);
 #endif
 }
@@ -634,8 +650,8 @@ handler_fn_protype(sigbus_handler, int sig, siginfo_t *info, void *aux)
 {
         cl_env_ptr the_env;
 	reinstall_signal(sig, sigsegv_handler);
-	the_env = ecl_process_env();
         /* The lisp environment might not be installed. */
+	the_env = ecl_process_env();
         if (zombie_process(the_env))
                 return;
 #if defined(SA_SIGINFO) && defined(ECL_USE_MPROTECT)
@@ -647,7 +663,7 @@ handler_fn_protype(sigbus_handler, int sig, siginfo_t *info, void *aux)
 		cl_object signal;
 		mprotect(the_env, sizeof(*the_env), PROT_READ | PROT_WRITE);
                 the_env->disable_interrupts = 0;
-                unblock_signal(SIGBUS);
+                unblock_signal(the_env, SIGBUS);
                 for (signal = pop_signal(the_env); !Null(signal) && signal; ) {
                         handle_signal_now(signal);
                         signal = pop_signal(the_env);
@@ -655,7 +671,7 @@ handler_fn_protype(sigbus_handler, int sig, siginfo_t *info, void *aux)
                 return;
 	}
 #endif
-        handle_or_queue(@'ext::segmentation-violation', SIGBUS);
+        handle_or_queue(the_env, @'ext::segmentation-violation', SIGBUS);
 }
 #endif
 
@@ -695,9 +711,14 @@ do_catch_signal(int code, cl_object action, cl_object process)
 #ifdef SIGCHLD
                 else if (code == SIGCHLD) {
 # ifndef ECL_THREADS
-                        mysignal(SIGCHLD, non_evil_signal_handler);
+                        mysignal(code, non_evil_signal_handler);
 # endif
                 }
+#endif
+#if defined(ECL_THREADS) && !defined(ECL_MS_WINDOWS_HOST)
+		else if (code == ecl_get_option(ECL_OPT_TRAP_INTERRUPT_SIGNAL)) {
+			mysignal(code, process_interrupt_handler);
+		}
 #endif
                 else {
                         mysignal(code, non_evil_signal_handler);
@@ -894,37 +915,37 @@ _ecl_w32_exception_filter(struct _EXCEPTION_POINTERS* ep)
                 }
 		/* Catch all arithmetic exceptions */
 		case EXCEPTION_INT_DIVIDE_BY_ZERO:
-                        handle_or_queue(@'division-by-zero', 0);
+                        handle_or_queue(the_env, @'division-by-zero', 0);
                         return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_INT_OVERFLOW:
-                        handle_or_queue(@'arithmetic-error', 0);
+                        handle_or_queue(the_env, @'arithmetic-error', 0);
                         return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_FLT_DIVIDE_BY_ZERO:
-                        handle_or_queue(@'floating-point-overflow', 0);
+                        handle_or_queue(the_env, @'floating-point-overflow', 0);
                         return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_FLT_OVERFLOW:
-                        handle_or_queue(@'floating-point-overflow', 0);
+                        handle_or_queue(the_env, @'floating-point-overflow', 0);
                         return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_FLT_UNDERFLOW:
-                        handle_or_queue(@'floating-point-underflow', 0);
+                        handle_or_queue(the_env, @'floating-point-underflow', 0);
                         return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_FLT_INEXACT_RESULT:
-                        handle_or_queue(@'floating-point-inexact', 0);
+                        handle_or_queue(the_env, @'floating-point-inexact', 0);
                         return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_FLT_DENORMAL_OPERAND:
 		case EXCEPTION_FLT_INVALID_OPERATION:
-                        handle_or_queue(@'floating-point-invalid-operation', 0);
+                        handle_or_queue(the_env, @'floating-point-invalid-operation', 0);
                         return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_FLT_STACK_CHECK:
-                        handle_or_queue(@'arithmetic-error', 0);
+                        handle_or_queue(the_env, @'arithmetic-error', 0);
                         return EXCEPTION_CONTINUE_EXECUTION;
 		/* Catch segmentation fault */
 		case EXCEPTION_ACCESS_VIOLATION:
-                        handle_or_queue(@'ext::segmentation-violation', 0);
+                        handle_or_queue(the_env, @'ext::segmentation-violation', 0);
                         return EXCEPTION_CONTINUE_EXECUTION;
 		/* Catch illegal instruction */
 		case EXCEPTION_ILLEGAL_INSTRUCTION:
-			handle_or_queue(@'ext::illegal-instruction', 0);
+			handle_or_queue(the_env, @'ext::illegal-instruction', 0);
 			return EXCEPTION_CONTINUE_EXECUTION;
 		/* Do not catch anything else */
 		default:
@@ -1179,7 +1200,7 @@ install_process_interrupt_handler()
 			ecl_set_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL,
 				       signal);
 		}
-		mysignal(signal, non_evil_signal_handler);
+		mysignal(signal, process_interrupt_handler);
 #ifdef HAVE_SIGROCMASK
                 sigdelset(ecl_process_env()->default_sigmask, signal);
                 pthread_sigmask(SIG_SETMASK, ecl_process_env()->default_sigmask, NULL);
