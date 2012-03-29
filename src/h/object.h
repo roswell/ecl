@@ -903,6 +903,12 @@ struct ecl_process {
 #define ECL_WAKEUP_ALL 1
 #define ECL_WAKEUP_RESET_FLAG 2
 
+struct ecl_queue {
+	HEADER1(recursive);
+	cl_object list;
+	cl_object spinlock;
+};
+
 struct ecl_lock {
 	HEADER1(recursive);
 	cl_object queue_list;
@@ -1035,6 +1041,7 @@ union cl_lispunion {
 #endif /* CLOS */
 #ifdef ECL_THREADS
 	struct ecl_process	process; 	/*  process  */
+	struct ecl_queue	queue; 		/*  lock  */
 	struct ecl_lock		lock; 		/*  lock  */
 	struct ecl_rwlock	rwlock; 	/*  read/write lock  */
         struct ecl_condition_variable condition_variable; /*  condition-variable */
