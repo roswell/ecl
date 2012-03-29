@@ -47,27 +47,23 @@ ecl_giveup_spinlock(cl_object *lock)
 	*lock = Cnil;
 }
 
-cl_object
-ecl_make_atomic_queue()
+void
+ecl_make_atomic_queue(cl_object q)
 {
-	return ecl_list1(Cnil);
+	q->lock.waiter = ecl_list1(Cnil);
 }
 
-void
+static ECL_INLINE void
 ecl_atomic_queue_nconc(cl_env_ptr the_env, cl_object lock_list_pair, cl_object new_tail)
 {
-	ecl_disable_interrupts_env(the_env);
-	{
-		cl_object *lock = &ECL_CONS_CAR(lock_list_pair);
-		cl_object *queue = &ECL_CONS_CDR(lock_list_pair);
-		ecl_get_spinlock(the_env, lock);
-		ecl_nconc(lock_list_pair, new_tail);
-		ecl_giveup_spinlock(lock);
-	}
-	ecl_enable_interrupts_env(the_env);
+	cl_object *lock = &ECL_CONS_CAR(lock_list_pair);
+	cl_object *queue = &ECL_CONS_CDR(lock_list_pair);
+	ecl_get_spinlock(the_env, lock);
+	ecl_nconc(lock_list_pair, new_tail);
+	ecl_giveup_spinlock(lock);
 }
 
-cl_object
+static ECL_INLINE cl_object
 ecl_atomic_queue_pop(cl_env_ptr the_env, cl_object lock_list_pair)
 {
 	cl_object output;
@@ -87,7 +83,7 @@ ecl_atomic_queue_pop(cl_env_ptr the_env, cl_object lock_list_pair)
 	return output;
 }
 
-cl_object
+static ECL_INLINE cl_object
 ecl_atomic_queue_pop_all(cl_env_ptr the_env, cl_object lock_list_pair)
 {
 	cl_object output;
@@ -104,63 +100,19 @@ ecl_atomic_queue_pop_all(cl_env_ptr the_env, cl_object lock_list_pair)
 	return output;
 }
 
-void
+static ECL_INLINE void
 ecl_atomic_queue_delete(cl_env_ptr the_env, cl_object lock_list_pair, cl_object item)
 {
-	ecl_disable_interrupts_env(the_env);
-	{
-		cl_object *lock = &ECL_CONS_CAR(lock_list_pair);
-		cl_object *queue = &ECL_CONS_CDR(lock_list_pair);
-		ecl_get_spinlock(the_env, lock);
-		*queue = ecl_delete_eq(item, *queue);
-		*lock = Cnil;
-	}
-	ecl_enable_interrupts_env(the_env);
+	cl_object *lock = &ECL_CONS_CAR(lock_list_pair);
+	cl_object *queue = &ECL_CONS_CDR(lock_list_pair);
+	ecl_get_spinlock(the_env, lock);
+	*queue = ecl_delete_eq(item, *queue);
+	*lock = Cnil;
 }
 
 /*----------------------------------------------------------------------
  * THREAD SCHEDULER & WAITING
  */
-
-static cl_object
-bignum_set_time(cl_object bignum, struct ecl_timeval *time)
-{
-	_ecl_big_set_index(bignum, time->tv_sec);
-	_ecl_big_mul_ui(bignum, bignum, 1000);
-	_ecl_big_add_ui(bignum, bignum, (time->tv_usec + 999) / 1000);
-	return bignum;
-}
-
-static cl_object
-elapsed_time(struct ecl_timeval *start)
-{
-	cl_object delta_big = _ecl_big_register0();
-	cl_object aux_big = _ecl_big_register1();
-	struct ecl_timeval now;
-	ecl_get_internal_real_time(&now);
-	bignum_set_time(aux_big, start);
-	bignum_set_time(delta_big, &now);
-	_ecl_big_sub(delta_big, delta_big, aux_big);
-	_ecl_big_register_free(aux_big);
-	return delta_big;
-}
-
-static double
-waiting_time(cl_index iteration, struct ecl_timeval *start)
-{
-	/* Waiting time is smaller than 0.10 s */
-	double time;
-	cl_object top = MAKE_FIXNUM(10 * 1000);
-	cl_object delta_big = elapsed_time(start);
-	_ecl_big_div_ui(delta_big, delta_big, iteration);
-	if (ecl_number_compare(delta_big, top) < 0) {
-		time = ecl_to_double(delta_big) * 1.5;
-	} else {
-		time = 0.10;
-	}
-	_ecl_big_register_free(delta_big);
-	return time;
-}
 
 void
 ecl_wait_on(cl_object (*condition)(cl_env_ptr, cl_object), cl_object o)

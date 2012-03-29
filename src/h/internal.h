@@ -467,12 +467,8 @@ extern void print_lock(char *s, cl_object lock, ...);
 extern void ecl_get_spinlock(cl_env_ptr env, cl_object *lock);
 extern void ecl_giveup_spinlock(cl_object *lock);
 
-extern cl_object ecl_make_atomic_queue();
-#define ecl_atomic_queue_list(queue) ECL_CONS_CDR(queue)
-extern void ecl_atomic_queue_nconc(cl_env_ptr the_env, cl_object queue, cl_object item);
-extern cl_object ecl_atomic_queue_pop(cl_env_ptr the_env, cl_object queue);
-extern cl_object ecl_atomic_queue_pop_all(cl_env_ptr the_env, cl_object queue);
-extern void ecl_atomic_queue_delete(cl_env_ptr the_env, cl_object queue, cl_object item);
+extern void ecl_make_atomic_queue(cl_object);
+#define ecl_atomic_queue_list(queue) ECL_CONS_CDR((queue)->lock.waiter)
 
 extern void ecl_wait_on(cl_object (*condition)(cl_env_ptr, cl_object), cl_object o);
 extern void ecl_wakeup_waiters(cl_env_ptr the_env, cl_object o, bool all);

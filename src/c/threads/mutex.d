@@ -48,8 +48,8 @@ ecl_make_lock(cl_object name, bool recursive)
 	output->lock.name = name;
 	output->lock.owner = Cnil;
 	output->lock.counter = 0;
-	output->lock.waiter = ecl_make_atomic_queue();
 	output->lock.recursive = recursive;
+	ecl_make_atomic_queue(output);
         return output;
 }
 
@@ -155,7 +155,7 @@ mp_get_lock_nowait(cl_object lock)
 cl_object
 mp_get_lock_wait(cl_object lock)
 {
-	if (ecl_atomic_queue_list(lock->lock.waiter) != Cnil ||
+	if (ecl_atomic_queue_list(lock) != Cnil ||
 	    mp_get_lock_nowait(lock) == Cnil) {
 		ecl_wait_on(get_lock_inner, lock);
 	}
