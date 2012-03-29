@@ -82,15 +82,114 @@ wait_queue_delete(cl_env_ptr the_env, cl_object q, cl_object item)
  * THREAD SCHEDULER & WAITING
  */
 
+static cl_object
+bignum_set_time(cl_object bignum, struct ecl_timeval *time)
+{
+	_ecl_big_set_index(bignum, time->tv_sec);
+	_ecl_big_mul_ui(bignum, bignum, 1000);
+	_ecl_big_add_ui(bignum, bignum, (time->tv_usec + 999) / 1000);
+	return bignum;
+}
+
+static cl_object
+elapsed_time(struct ecl_timeval *start)
+{
+	cl_object delta_big = _ecl_big_register0();
+	cl_object aux_big = _ecl_big_register1();
+	struct ecl_timeval now;
+	ecl_get_internal_real_time(&now);
+	bignum_set_time(aux_big, start);
+	bignum_set_time(delta_big, &now);
+	_ecl_big_sub(delta_big, delta_big, aux_big);
+	_ecl_big_register_free(aux_big);
+	return delta_big;
+}
+
+static double
+waiting_time(cl_index iteration, struct ecl_timeval *start)
+{
+	/* Waiting time is smaller than 0.10 s */
+	double time;
+	cl_object top = MAKE_FIXNUM(10 * 1000);
+	cl_object delta_big = elapsed_time(start);
+	_ecl_big_div_ui(delta_big, delta_big, iteration);
+	if (ecl_number_compare(delta_big, top) < 0) {
+		time = ecl_to_double(delta_big) * 1.5;
+	} else {
+		time = 0.10;
+	}
+	_ecl_big_register_free(delta_big);
+	return time;
+}
+
+static void
+ecl_wait_on_timed(cl_object (*condition)(cl_env_ptr, cl_object), cl_object o)
+{
+	volatile const cl_env_ptr the_env = ecl_process_env();
+	volatile cl_object own_process = the_env->own_process;
+	volatile cl_object record;
+	cl_fixnum iteration = 0;
+	struct ecl_timeval start;
+	ecl_get_internal_real_time(&start);
+
+	/* This spinlock is here because the default path (fair) is
+	 * too slow */
+	for (iteration = 0; iteration < 10; iteration++) {
+		if (condition(the_env,o) != Cnil)
+			return;
+	}
+
+	/* 0) We reserve a record for the queue. In order to a void
+	 * using the garbage collector, we reuse records */
+	record = own_process->process.queue_record;
+	unlikely_if (record == Cnil) {
+		record = ecl_list1(own_process);
+	} else {
+		own_process->process.queue_record = Cnil;
+	}
+
+	ecl_bds_bind(the_env, @'ext::*interrupts-enabled*', Cnil);
+	CL_UNWIND_PROTECT_BEGIN(the_env) {
+		/* 2) Now we add ourselves to the queue. In order to
+		 * avoid a call to the GC, we try to reuse records. */
+		wait_queue_nconc(the_env, o, record);
+		own_process->process.waiting_for = o;
+		ecl_bds_bind(the_env, @'ext::*interrupts-enabled*', Ct);
+		ecl_check_pending_interrupts(the_env);
+
+		/* 3) Unlike the sigsuspend() implementation, this
+		 * implementation does not block signals and the
+		 * wakeup event might be lost before the sleep
+		 * function is invoked. We must thus spin over short
+		 * intervals of time to ensure that we check the
+		 * condition periodically. */
+		do {
+			ecl_musleep(waiting_time(iteration++, &start), 1);
+		} while (condition(the_env, o) == Cnil);
+		ecl_bds_unwind1(the_env);
+	} CL_UNWIND_PROTECT_EXIT {
+		/* 4) At this point we wrap up. We remove ourselves
+		 * from the queue and restore signals, which were
+		 * blocked. */
+		wait_queue_delete(the_env, o, own_process);
+		own_process->process.waiting_for = Cnil;
+		own_process->process.queue_record = record;
+		ECL_RPLACD(record, Cnil);
+	} CL_UNWIND_PROTECT_END;
+	ecl_bds_unwind1(the_env);
+}
+
+
 void
 ecl_wait_on(cl_object (*condition)(cl_env_ptr, cl_object), cl_object o)
 {
-	const cl_env_ptr the_env = ecl_process_env();
+#if defined(HAVE_SIGPROCMASK)
+	volatile const cl_env_ptr the_env = ecl_process_env();
 	volatile cl_object own_process = the_env->own_process;
 	volatile cl_object record;
 	volatile sigset_t original;
 
-	/* 0) We reserve a record for the queue. In order to a void
+	/* 0) We reserve a record for the queue. In order to avoid
 	 * using the garbage collector, we reuse records */
 	record = own_process->process.queue_record;
 	unlikely_if (record == Cnil) {
@@ -134,12 +233,15 @@ ecl_wait_on(cl_object (*condition)(cl_env_ptr, cl_object), cl_object o)
 	} CL_UNWIND_PROTECT_EXIT {
 		/* 4) At this point we wrap up. We remove ourselves
 		   from the queue and restore signals, which were */
-		own_process->process.waiting_for = Cnil;
 		wait_queue_delete(the_env, o, own_process);
+		own_process->process.waiting_for = Cnil;
 		own_process->process.queue_record = record;
 		ECL_RPLACD(record, Cnil);
 		pthread_sigmask(SIG_SETMASK, NULL, &original);
 	} CL_UNWIND_PROTECT_END;
+#else
+	ecl_wait_on_timed(condition, o);
+#endif
 }
 
 static void
