@@ -453,12 +453,14 @@ cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl
                         ecl_mark_env(o->process.env);
 		break;
         case t_lock:
-                MAYBE_MARK(o->lock.waiter);
+                MAYBE_MARK(o->lock.queue_list);
+                MAYBE_MARK(o->lock.queue_spinlock);
                 MAYBE_MARK(o->lock.owner);
                 MAYBE_MARK(o->lock.name);
 		break;
         case t_condition_variable:
-                MAYBE_MARK(o->condition_variable.waiter);
+                MAYBE_MARK(o->condition_variable.queue_spinlock);
+                MAYBE_MARK(o->condition_variable.queue_list);
                 MAYBE_MARK(o->condition_variable.lock);
 		break;
 	case t_rwlock:
@@ -985,7 +987,8 @@ init_alloc(void)
         type_info[t_lock].descriptor =
                 to_bitmap(&o, &(o.lock.name)) |
                 to_bitmap(&o, &(o.lock.owner)) |
-                to_bitmap(&o, &(o.lock.waiter));
+                to_bitmap(&o, &(o.lock.queue_spinlock)) |
+                to_bitmap(&o, &(o.lock.queue_list));
 #  ifdef ECL_RWLOCK
         type_info[t_rwlock].descriptor =
                 to_bitmap(&o, &(o.rwlock.name));
@@ -996,7 +999,8 @@ init_alloc(void)
 #  endif
 	type_info[t_condition_variable].descriptor =
 		to_bitmap(&o, &(o.condition_variable.lock)) |
-		to_bitmap(&o, &(o.condition_variable.waiter));
+		to_bitmap(&o, &(o.condition_variable.queue_list)) |
+		to_bitmap(&o, &(o.condition_variable.queue_spinlock));
 #   ifdef ECL_SEMAPHORES
 	type_info[t_semaphore].descriptor = 0;
 #   endif

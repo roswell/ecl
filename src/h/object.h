@@ -905,7 +905,8 @@ struct ecl_process {
 
 struct ecl_lock {
 	HEADER1(recursive);
-	cl_object waiter;
+	cl_object queue_list;
+	cl_object queue_spinlock;
         cl_object owner;       /* thread holding the lock or NIL */
         cl_object name;
 	cl_fixnum counter;
@@ -923,7 +924,8 @@ struct ecl_rwlock {
 
 struct ecl_condition_variable {
         HEADER;
-	cl_object waiter;
+	cl_object queue_list;
+	cl_object queue_spinlock;
 	cl_object lock;
 };
 

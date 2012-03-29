@@ -50,7 +50,7 @@ ecl_giveup_spinlock(cl_object *lock)
 void
 ecl_make_atomic_queue(cl_object q)
 {
-	q->lock.waiter = ecl_list1(Cnil);
+	q->lock.queue_list = ecl_list1(Cnil);
 }
 
 static ECL_INLINE void
@@ -140,7 +140,7 @@ ecl_wait_on(cl_object (*condition)(cl_env_ptr, cl_object), cl_object o)
 
 	/* 2) Now we add ourselves to the queue. In order to avoid a
 	 * call to the GC, we try to reuse records. */
-	ecl_atomic_queue_nconc(the_env, o->lock.waiter, record);
+	ecl_atomic_queue_nconc(the_env, o->lock.queue_list, record);
 	own_process->process.waiting_for = o;
 
 	CL_UNWIND_PROTECT_BEGIN(the_env) {
@@ -148,7 +148,7 @@ ecl_wait_on(cl_object (*condition)(cl_env_ptr, cl_object), cl_object o)
 		 * might have missed a wakeup event if that happened
 		 * between 0) and 2), which is why we start with the
 		 * check*/
-		cl_object queue = ECL_CONS_CDR(o->lock.waiter);
+		cl_object queue = ECL_CONS_CDR(o->lock.queue_list);
 		if (ECL_CONS_CAR(queue) != own_process ||
 		    condition(the_env, o) == Cnil)
 		{
@@ -167,7 +167,7 @@ ecl_wait_on(cl_object (*condition)(cl_env_ptr, cl_object), cl_object o)
 		/* 4) At this point we wrap up. We remove ourselves
 		   from the queue and restore signals, which were */
 		own_process->process.waiting_for = Cnil;
-		ecl_atomic_queue_delete(the_env, o->lock.waiter, own_process);
+		ecl_atomic_queue_delete(the_env, o->lock.queue_list, own_process);
 		own_process->process.queue_record = record;
 		ECL_RPLACD(record, Cnil);
 		pthread_sigmask(SIG_SETMASK, NULL, &original);
@@ -214,7 +214,7 @@ wakeup_one(cl_env_ptr the_env, cl_object waiter, int flags)
 void
 ecl_wakeup_waiters(cl_env_ptr the_env, cl_object o, int flags)
 {
-	cl_object waiter = o->lock.waiter;
+	cl_object waiter = o->lock.queue_list;
 	print_lock("releasing\t", o);
 	if (ECL_CONS_CDR(waiter) != Cnil) {
 		if (flags & ECL_WAKEUP_ALL) {
@@ -240,7 +240,7 @@ print_lock(char *prefix, cl_object l, ...)
 		printf("\n%d\t", fix(env->own_process->process.name));
 		vprintf(prefix, args);
 		if (l != Cnil) {
-			cl_object p = ECL_CONS_CDR(l->lock.waiter);
+			cl_object p = ECL_CONS_CDR(l->lock.queue_list);
 			while (p != Cnil) {
 				printf(" %d", fix(ECL_CONS_CAR(p)->process.name));
 				p = ECL_CONS_CDR(p);
