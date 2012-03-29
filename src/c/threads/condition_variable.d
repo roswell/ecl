@@ -24,7 +24,8 @@ cl_object
 mp_make_condition_variable(void)
 {
 	cl_object output = ecl_alloc_object(t_condition_variable);
-	ecl_make_atomic_queue(output);
+	output->condition_variable.queue_list = Cnil;
+	output->condition_variable.queue_spinlock = Cnil;
 	output->condition_variable.lock = Cnil;
 	@(return output)
 }
