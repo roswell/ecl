@@ -439,6 +439,7 @@ cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl
 # endif
 # ifdef ECL_THREADS
         case t_process:
+                MAYBE_MARK(o->process.queue_record);
                 MAYBE_MARK(o->process.waiting_for);
                 MAYBE_MARK(o->process.exit_values);
                 MAYBE_MARK(o->process.exit_lock);
@@ -979,7 +980,8 @@ init_alloc(void)
                 to_bitmap(&o, &(o.process.parent)) |
                 to_bitmap(&o, &(o.process.exit_lock)) |
                 to_bitmap(&o, &(o.process.exit_values)) |
-                to_bitmap(&o, &(o.process.waiting_for));
+                to_bitmap(&o, &(o.process.waiting_for)) |
+                to_bitmap(&o, &(o.process.queue_record));
         type_info[t_lock].descriptor =
                 to_bitmap(&o, &(o.lock.name)) |
                 to_bitmap(&o, &(o.lock.owner)) |

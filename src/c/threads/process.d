@@ -300,6 +300,8 @@ alloc_process(cl_object name, cl_object initial_bindings)
 	}
         process->process.initial_bindings = array;
 	process->process.exit_lock = mp_make_lock(0);
+	process->process.waiting_for = Cnil;
+	process->process.queue_record = ecl_list1(process);
 	return process;
 }
 
@@ -730,6 +732,8 @@ init_threads(cl_env_ptr env)
 	process->process.args = Cnil;
 	process->process.thread = main_thread;
 	process->process.env = env;
+	process->process.waiting_for = Cnil;
+	process->process.queue_record = ecl_list1(process);
 
 	env->own_process = process;
 

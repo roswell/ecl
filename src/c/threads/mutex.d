@@ -111,7 +111,7 @@ mp_giveup_lock(cl_object lock)
 	}
 	if (--lock->lock.counter == 0) {
 		lock->lock.owner = Cnil;
-		ecl_wakeup_waiters(lock, ECL_WAKEUP_ONE);
+		ecl_wakeup_waiters(env, lock, ECL_WAKEUP_ONE);
 	}
         ecl_return1(env, Ct);
 }

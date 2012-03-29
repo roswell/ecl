@@ -88,7 +88,8 @@ mp_condition_variable_signal(cl_object cv)
 {
 	if (cv->condition_variable.waiter != Cnil) {
 		cv->condition_variable.waiter = Cnil;
-		ecl_wakeup_waiters(cv, ECL_WAKEUP_ONE | ECL_WAKEUP_RESET_FLAG);
+		ecl_wakeup_waiters(ecl_process_env(), cv,
+				   ECL_WAKEUP_ONE | ECL_WAKEUP_RESET_FLAG);
 	}
 	@(return Ct)
 }
@@ -98,7 +99,8 @@ mp_condition_variable_broadcast(cl_object cv)
 {
 	if (cv->condition_variable.waiter != Cnil) {
 		cv->condition_variable.waiter = Cnil;
-		ecl_wakeup_waiters(cv, ECL_WAKEUP_ALL | ECL_WAKEUP_RESET_FLAG);
+		ecl_wakeup_waiters(ecl_process_env(), cv,
+				   ECL_WAKEUP_ALL | ECL_WAKEUP_RESET_FLAG);
 	}
 	@(return Ct)
 }

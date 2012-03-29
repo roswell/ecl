@@ -896,6 +896,7 @@ struct ecl_process {
 	int trap_fpe_bits;
         cl_object exit_values;
 	cl_object waiting_for;
+	cl_object queue_record;
 };
 
 #define ECL_WAKEUP_ONE 0

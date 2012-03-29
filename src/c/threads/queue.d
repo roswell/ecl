@@ -54,26 +54,23 @@ ecl_make_atomic_queue()
 }
 
 void
-ecl_atomic_queue_nconc(cl_object lock_list_pair, cl_object item)
+ecl_atomic_queue_nconc(cl_env_ptr the_env, cl_object lock_list_pair, cl_object new_tail)
 {
-	cl_object new_head = ecl_list1(item);
-	cl_env_ptr the_env = ecl_process_env();
 	ecl_disable_interrupts_env(the_env);
 	{
 		cl_object *lock = &ECL_CONS_CAR(lock_list_pair);
 		cl_object *queue = &ECL_CONS_CDR(lock_list_pair);
 		ecl_get_spinlock(the_env, lock);
-		ecl_nconc(lock_list_pair, new_head);
+		ecl_nconc(lock_list_pair, new_tail);
 		ecl_giveup_spinlock(lock);
 	}
 	ecl_enable_interrupts_env(the_env);
 }
 
 cl_object
-ecl_atomic_queue_pop(cl_object lock_list_pair)
+ecl_atomic_queue_pop(cl_env_ptr the_env, cl_object lock_list_pair)
 {
 	cl_object output;
-	cl_env_ptr the_env = ecl_process_env();
 	ecl_disable_interrupts_env(the_env);
 	{
 		cl_object *lock = &ECL_CONS_CAR(lock_list_pair);
@@ -91,10 +88,9 @@ ecl_atomic_queue_pop(cl_object lock_list_pair)
 }
 
 cl_object
-ecl_atomic_queue_pop_all(cl_object lock_list_pair)
+ecl_atomic_queue_pop_all(cl_env_ptr the_env, cl_object lock_list_pair)
 {
 	cl_object output;
-	cl_env_ptr the_env = ecl_process_env();
 	ecl_disable_interrupts_env(the_env);
 	{
 		cl_object *lock = &ECL_CONS_CAR(lock_list_pair);
@@ -109,9 +105,8 @@ ecl_atomic_queue_pop_all(cl_object lock_list_pair)
 }
 
 void
-ecl_atomic_queue_delete(cl_object lock_list_pair, cl_object item)
+ecl_atomic_queue_delete(cl_env_ptr the_env, cl_object lock_list_pair, cl_object item)
 {
-	cl_env_ptr the_env = ecl_process_env();
 	ecl_disable_interrupts_env(the_env);
 	{
 		cl_object *lock = &ECL_CONS_CAR(lock_list_pair);
@@ -170,24 +165,41 @@ waiting_time(cl_index iteration, struct ecl_timeval *start)
 void
 ecl_wait_on(cl_object (*condition)(cl_env_ptr, cl_object), cl_object o)
 {
-	cl_env_ptr the_env = ecl_process_env();
-	cl_object own_process = the_env->own_process;
-	sigset_t original, empty;
+	const cl_env_ptr the_env = ecl_process_env();
+	volatile cl_object own_process = the_env->own_process;
+	volatile cl_object record;
+	volatile sigset_t original;
+
+	/* 0) We reserve a record for the queue. In order to a void
+	 * using the garbage collector, we reuse records */
+	record = own_process->process.queue_record;
+	unlikely_if (record == Cnil) {
+		record = ecl_list1(own_process);
+	} else {
+		own_process->process.queue_record = Cnil;
+	}
 
 	/* 1) First we block all signals. */
-	sigemptyset(&empty);
-	pthread_sigmask(SIG_SETMASK, &original, &empty);
+	{
+		sigset_t empty;
+		sigemptyset(&empty);
+		pthread_sigmask(SIG_SETMASK, &original, &empty);
+	}
+
+	/* 2) Now we add ourselves to the queue. In order to avoid a
+	 * call to the GC, we try to reuse records. */
+	ecl_atomic_queue_nconc(the_env, o->lock.waiter, record);
+	own_process->process.waiting_for = o;
 
 	CL_UNWIND_PROTECT_BEGIN(the_env) {
-		/* 2) Now we add ourselves to the queue. */
-		ecl_atomic_queue_nconc(o->lock.waiter, own_process);
-		own_process->process.waiting_for = o;
-
 		/* 3) At this point we may receive signals, but we
-		 * might have missed the wakeup one that happened
-		 * before 1), which is why we start with the check*/
-		if (cl_second(o->lock.waiter) != own_process ||
-		    condition(the_env, o) == Cnil) {
+		 * might have missed a wakeup event if that happened
+		 * between 0) and 2), which is why we start with the
+		 * check*/
+		cl_object queue = ECL_CONS_CDR(o->lock.waiter);
+		if (ECL_CONS_CAR(queue) != own_process ||
+		    condition(the_env, o) == Cnil)
+		{
 			do {
 				/* This will wait until we get a signal that
 				 * demands some code being executed. Note that
@@ -203,7 +215,9 @@ ecl_wait_on(cl_object (*condition)(cl_env_ptr, cl_object), cl_object o)
 		/* 4) At this point we wrap up. We remove ourselves
 		   from the queue and restore signals, which were */
 		own_process->process.waiting_for = Cnil;
-		ecl_atomic_queue_delete(o->lock.waiter, own_process);
+		ecl_atomic_queue_delete(the_env, o->lock.waiter, own_process);
+		own_process->process.queue_record = record;
+		ECL_RPLACD(record, Cnil);
 		pthread_sigmask(SIG_SETMASK, NULL, &original);
 	} CL_UNWIND_PROTECT_END;
 }
@@ -218,9 +232,9 @@ wakeup_this(cl_object p, int flags)
 }
 
 static void
-wakeup_all(cl_object waiter, int flags)
+wakeup_all(cl_env_ptr the_env, cl_object waiter, int flags)
 {
-	cl_object queue = ecl_atomic_queue_pop_all(waiter);
+	cl_object queue = ecl_atomic_queue_pop_all(the_env, waiter);
 	queue = cl_nreverse(queue);
 	while (!Null(queue)) {
 		cl_object process = ECL_CONS_CAR(queue);
@@ -231,12 +245,13 @@ wakeup_all(cl_object waiter, int flags)
 }
 
 static void
-wakeup_one(cl_object waiter, int flags)
+wakeup_one(cl_env_ptr the_env, cl_object waiter, int flags)
 {
 	do {
-		cl_object next = ecl_atomic_queue_pop(waiter);
+		cl_object next = ECL_CONS_CDR(waiter);
 		if (Null(next))
 			return;
+		next = ECL_CONS_CAR(next);
 		if (next->process.active) {
 			wakeup_this(next, flags);
 			return;
@@ -245,15 +260,15 @@ wakeup_one(cl_object waiter, int flags)
 }
 
 void
-ecl_wakeup_waiters(cl_object o, int flags)
+ecl_wakeup_waiters(cl_env_ptr the_env, cl_object o, int flags)
 {
 	cl_object waiter = o->lock.waiter;
 	print_lock("releasing\t", o);
 	if (ECL_CONS_CDR(waiter) != Cnil) {
 		if (flags & ECL_WAKEUP_ALL) {
-			wakeup_all(waiter, flags);
+			wakeup_all(the_env, waiter, flags);
 		} else {
-			wakeup_one(waiter, flags);
+			wakeup_one(the_env, waiter, flags);
 		}
 	}
 	sched_yield();

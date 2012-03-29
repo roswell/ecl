@@ -607,6 +607,7 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
                 return;
 	}
 # endif
+	si_dump_c_backtrace(MAKE_FIXNUM(30));
 # if 0 && defined(SA_ONSTACK)
 	/* The handler is executed in an externally allocated stack, and
          * thus it is not safe to execute lisp code here. We just bounce
