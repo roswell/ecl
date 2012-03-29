@@ -17,8 +17,11 @@
 #ifdef HAVE_SCHED_H
 #include <sched.h>
 #endif
+#include <signal.h>
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
+
+#define print_lock(a,b,...) (void)0
 
 void ECL_INLINE
 ecl_get_spinlock(cl_env_ptr the_env, cl_object *lock)
@@ -169,31 +172,40 @@ ecl_wait_on(cl_object (*condition)(cl_env_ptr, cl_object), cl_object o)
 {
 	cl_env_ptr the_env = ecl_process_env();
 	cl_object own_process = the_env->own_process;
-	cl_object queue = o->lock.waiter;
-	cl_fixnum iteration = 1;
-	struct ecl_timeval start;
-	ecl_get_internal_real_time(&start);
-#if 0
-	for (iteration = 0; iteration < 10; iteration++) {
-		if (condition(the_env, o) != Cnil)
-			return;
-	}
-#endif
-	ecl_bds_bind(the_env, @'ext::*interrupts-enabled*', Cnil);
+	sigset_t original, empty;
+
+	/* 1) First we block all signals. */
+	sigemptyset(&empty);
+	pthread_sigmask(SIG_SETMASK, &original, &empty);
+
 	CL_UNWIND_PROTECT_BEGIN(the_env) {
+		/* 2) Now we add ourselves to the queue. */
 		ecl_atomic_queue_nconc(o->lock.waiter, own_process);
 		own_process->process.waiting_for = o;
-		ecl_bds_bind(the_env, @'ext::*interrupts-enabled*', Ct);
-		ecl_check_pending_interrupts(the_env);
-		do {
-			ecl_musleep(waiting_time(iteration++, &start), 1);
-		} while (condition(the_env, o) == Cnil);
-		ecl_bds_unwind1(the_env);
+
+		/* 3) At this point we may receive signals, but we
+		 * might have missed the wakeup one that happened
+		 * before 1), which is why we start with the check*/
+		if (cl_second(o->lock.waiter) != own_process ||
+		    condition(the_env, o) == Cnil) {
+			do {
+				/* This will wait until we get a signal that
+				 * demands some code being executed. Note that
+				 * this includes our communication signals and
+				 * the signals used by the GC. Note also that
+				 * as a consequence we might throw / return
+				 * which is why need to protect it all with
+				 * UNWIND-PROTECT. */
+				sigsuspend(&original);
+			} while (condition(the_env, o) == Cnil);
+		}
 	} CL_UNWIND_PROTECT_EXIT {
+		/* 4) At this point we wrap up. We remove ourselves
+		   from the queue and restore signals, which were */
 		own_process->process.waiting_for = Cnil;
 		ecl_atomic_queue_delete(o->lock.waiter, own_process);
+		pthread_sigmask(SIG_SETMASK, NULL, &original);
 	} CL_UNWIND_PROTECT_END;
-	ecl_bds_unwind1(the_env);
 }
 
 static void
@@ -201,6 +213,7 @@ wakeup_this(cl_object p, int flags)
 {
 	if (flags & ECL_WAKEUP_RESET_FLAG)
 		p->process.waiting_for = Cnil;
+	print_lock("awaking\t\t%d", Cnil, fix(p->process.name));
 	ecl_interrupt_process(p, Cnil);
 }
 
@@ -232,27 +245,10 @@ wakeup_one(cl_object waiter, int flags)
 }
 
 void
-print_lock(char *prefix, cl_object l, cl_object x)
-{
-	static cl_object lock = Cnil;
-	if (l == Cnil || l->lock.name == MAKE_FIXNUM(0)) {
-		cl_env_ptr env = ecl_process_env();
-		ecl_get_spinlock(env, &lock);
-		cl_terpri(0);
-		ecl_princ_str(prefix, cl_core.standard_output);
-		cl_princ(1,env->own_process->process.name);
-		ecl_princ_str("\t", cl_core.standard_output);
-		cl_princ(1,(x)); cl_force_output(0);
-		fflush(stdout);
-		ecl_giveup_spinlock(&lock);
-	}
-}
-/*#define print_lock(a,b,c) (void)0*/
-
-void
 ecl_wakeup_waiters(cl_object o, int flags)
 {
 	cl_object waiter = o->lock.waiter;
+	print_lock("releasing\t", o);
 	if (ECL_CONS_CDR(waiter) != Cnil) {
 		if (flags & ECL_WAKEUP_ALL) {
 			wakeup_all(waiter, flags);
@@ -262,3 +258,29 @@ ecl_wakeup_waiters(cl_object o, int flags)
 	}
 	sched_yield();
 }
+
+#undef print_lock
+
+void
+print_lock(char *prefix, cl_object l, ...)
+{
+	static cl_object lock = Cnil;
+	va_list args;
+	va_start(args, lock);
+	if (l == Cnil || l->lock.name == MAKE_FIXNUM(0)) {
+		cl_env_ptr env = ecl_process_env();
+		ecl_get_spinlock(env, &lock);
+		printf("\n%d\t", fix(env->own_process->process.name));
+		vprintf(prefix, args);
+		if (l != Cnil) {
+			cl_object p = ECL_CONS_CDR(l->lock.waiter);
+			while (p != Cnil) {
+				printf(" %d", fix(ECL_CONS_CAR(p)->process.name));
+				p = ECL_CONS_CDR(p);
+			}
+		}
+		fflush(stdout);
+		ecl_giveup_spinlock(&lock);
+	}
+}
+/*#define print_lock(a,b,c) (void)0*/

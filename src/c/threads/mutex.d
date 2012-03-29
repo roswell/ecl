@@ -116,6 +116,8 @@ mp_giveup_lock(cl_object lock)
         ecl_return1(env, Ct);
 }
 
+#define print_lock(a,b,...) (void)0
+
 static cl_object
 get_lock_inner(cl_env_ptr env, cl_object lock)
 {
@@ -126,6 +128,7 @@ get_lock_inner(cl_env_ptr env, cl_object lock)
 				     (AO_t)Cnil, (AO_t)own_process)) {
 		lock->lock.counter = 1;
 		output = Ct;
+		print_lock("acquiring\t", lock, lock);
 	} else if (lock->lock.owner == own_process) {
                 unlikely_if (!lock->lock.recursive) {
 			FEerror_not_a_recursive_lock(lock);
