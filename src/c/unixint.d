@@ -599,7 +599,7 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
 		cl_object signal;
 		mprotect(the_env, sizeof(*the_env), PROT_READ | PROT_WRITE);
                 the_env->disable_interrupts = 0;
-                unblock_signal(the_env, SIGBUS);
+                unblock_signal(the_env, SIGSEGV);
                 for (signal = pop_signal(the_env); !Null(signal) && signal; ) {
                         handle_signal_now(signal);
                         signal = pop_signal(the_env);
