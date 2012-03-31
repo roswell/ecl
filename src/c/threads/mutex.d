@@ -156,8 +156,11 @@ mp_get_lock_nowait(cl_object lock)
 cl_object
 mp_get_lock_wait(cl_object lock)
 {
-	if (lock->lock.queue_list != Cnil ||
-	    mp_get_lock_nowait(lock) == Cnil) {
+        cl_env_ptr env = ecl_process_env();
+	unlikely_if (type_of(lock) != t_lock) {
+		FEerror_not_a_lock(lock);
+	}
+	if (lock->lock.queue_list != Cnil || get_lock_inner(env, lock) == Cnil) {
 		ecl_wait_on(get_lock_inner, lock);
 	}
 	@(return Ct)
