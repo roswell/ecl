@@ -5392,7 +5392,7 @@ init_file(void)
 
         /* We choose C streams by default only when _not_ using threads.
          * The reason is that C streams block on I/O operations. */
-#if 1 /*ndef ECL_THREADS*/
+#if !defined(ECL_THREADS)
 	standard_input = ecl_make_stream_from_FILE(make_constant_base_string("stdin"),
 						   stdin, smm_input, 8, flags, external_format);
 	standard_output = ecl_make_stream_from_FILE(make_constant_base_string("stdout"),
