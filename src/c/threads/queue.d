@@ -233,9 +233,10 @@ ecl_wait_on(cl_object (*condition)(cl_env_ptr, cl_object), cl_object o)
 		}
 		aborting = 0;
 	} CL_UNWIND_PROTECT_EXIT {
-		/* 4) If we are aborting and we are the first waiting process
-		 * in the queue, it may happen that our wakeup signal got lost
-		 * We must wake up another process after removing ourselves. */
+		/* 4) If we are aborting and we are the first waiting
+		 * process in the queue, it may happen that our wakeup
+		 * signal got lost We must wake up another process
+		 * after removing ourselves. */
 		cl_object firstone = o->queue.list;
 
 		/* 5) At this point we wrap up. We remove ourselves
@@ -247,8 +248,9 @@ ecl_wait_on(cl_object (*condition)(cl_env_ptr, cl_object), cl_object o)
 		pthread_sigmask(SIG_SETMASK, NULL, &original);
 
 		/* 6) ... we continue wat was started in 4) */
-		unlikely_if (aborting && firstone == record)
+		if (0 && aborting &&  (firstone == record)) {
 			ecl_wakeup_waiters(the_env, o, 0);
+		}
 	} CL_UNWIND_PROTECT_END;
 #else
 	ecl_wait_on_timed(condition, o);
