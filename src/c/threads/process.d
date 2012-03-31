@@ -727,6 +727,7 @@ init_threads(cl_env_ptr env)
 #endif
 	process = ecl_alloc_object(t_process);
 	process->process.active = 1;
+	process->process.phase = ECL_PROCESS_ACTIVE;
 	process->process.name = @'si::top-level';
 	process->process.function = Cnil;
 	process->process.args = Cnil;
