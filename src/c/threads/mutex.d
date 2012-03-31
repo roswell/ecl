@@ -161,7 +161,7 @@ mp_get_lock_wait(cl_object lock)
 		FEerror_not_a_lock(lock);
 	}
 	if (lock->lock.queue_list != Cnil || get_lock_inner(env, lock) == Cnil) {
-		ecl_wait_on(get_lock_inner, lock);
+		ecl_wait_on(env, get_lock_inner, lock);
 	}
 	@(return Ct)
 }

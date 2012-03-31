@@ -123,9 +123,9 @@ waiting_time(cl_index iteration, struct ecl_timeval *start)
 }
 
 static void
-ecl_wait_on_timed(cl_object (*condition)(cl_env_ptr, cl_object), cl_object o)
+ecl_wait_on_timed(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_object o)
 {
-	volatile const cl_env_ptr the_env = ecl_process_env();
+	volatile const cl_env_ptr the_env = env;
 	volatile cl_object own_process = the_env->own_process;
 	volatile cl_object record;
 	cl_fixnum iteration = 0;
@@ -181,10 +181,10 @@ ecl_wait_on_timed(cl_object (*condition)(cl_env_ptr, cl_object), cl_object o)
 
 
 void
-ecl_wait_on(cl_object (*condition)(cl_env_ptr, cl_object), cl_object o)
+ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_object o)
 {
 #if defined(HAVE_SIGPROCMASK)
-	volatile const cl_env_ptr the_env = ecl_process_env();
+	volatile const cl_env_ptr the_env = env;
 	volatile cl_object own_process = the_env->own_process;
 	volatile cl_object record;
 	volatile sigset_t original;
@@ -253,7 +253,7 @@ ecl_wait_on(cl_object (*condition)(cl_env_ptr, cl_object), cl_object o)
 		}
 	} CL_UNWIND_PROTECT_END;
 #else
-	ecl_wait_on_timed(condition, o);
+	ecl_wait_on_timed(env, condition, o);
 #endif
 }
 

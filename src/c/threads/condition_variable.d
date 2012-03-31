@@ -74,7 +74,7 @@ mp_condition_variable_wait(cl_object cv, cl_object lock)
         }
 	env->own_process->process.waiting_for = cv;
 	mp_giveup_lock(cv->condition_variable.lock = lock);
-	ecl_wait_on(condition_variable_wait, cv);
+	ecl_wait_on(env, condition_variable_wait, cv);
 	@(return Ct)
 }
 

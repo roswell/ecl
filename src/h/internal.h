@@ -471,7 +471,7 @@ extern void print_lock(char *s, cl_object lock, ...);
 extern void ecl_get_spinlock(cl_env_ptr env, cl_object *lock);
 extern void ecl_giveup_spinlock(cl_object *lock);
 
-extern void ecl_wait_on(cl_object (*condition)(cl_env_ptr, cl_object), cl_object o);
+extern void ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_object o);
 extern void ecl_wakeup_waiters(cl_env_ptr the_env, cl_object o, bool all);
 #endif
 
