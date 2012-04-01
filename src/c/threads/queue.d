@@ -245,12 +245,15 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 		own_process->process.waiting_for = Cnil;
 		own_process->process.queue_record = record;
 		ECL_RPLACD(record, Cnil);
-		pthread_sigmask(SIG_SETMASK, NULL, &original);
 
 		/* 6) ... we continue wat was started in 4) */
-		if (0 && aborting &&  (firstone == record)) {
+		if (aborting && (firstone == record)) {
 			ecl_wakeup_waiters(the_env, o, 0);
 		}
+
+		/* 7) Restoring signals is done last, to ensure that
+		   all cleanup steps are performed. */
+		pthread_sigmask(SIG_SETMASK, NULL, &original);
 	} CL_UNWIND_PROTECT_END;
 #else
 	ecl_wait_on_timed(env, condition, o);
