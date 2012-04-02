@@ -4524,7 +4524,7 @@ THREAD_CFLAGS=''
 THREAD_LIBS=''
 THREAD_GC_FLAGS='--enable-threads=posix'
 INSTALL_TARGET='install'
-THREAD_OBJ="$THREAD_OBJ threads/process threads/queue threads/mutex threads/condition_variable"
+THREAD_OBJ="$THREAD_OBJ threads/process threads/queue threads/mutex threads/condition_variable threads/semaphore"
 clibs=''
 SONAME=''
 SONAME_LDFLAGS=''
@@ -5937,81 +5937,6 @@ echo "$as_me: error: Threads aren't supported on this system." >&2;}
   else
     LIBS="${THREAD_LIBS} ${LIBS}"
     CFLAGS="${CFLAGS} ${THREAD_CFLAGS}"
-
-{ echo "$as_me:$LINENO: checking working sem_init()" >&5
-echo $ECHO_N "checking working sem_init()... $ECHO_C" >&6; }
-if test -z "$ECL_WORKING_SEM_INIT"; then
-  if test "$cross_compiling" = yes; then
-  { { echo "$as_me:$LINENO: error: cannot run test program while cross compiling
-See \`config.log' for more details." >&5
-echo "$as_me: error: cannot run test program while cross compiling
-See \`config.log' for more details." >&2;}
-   { (exit 1); exit 1; }; }
-else
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-#include <semaphore.h>
-int main() {
-  sem_t aux;
-  if (sem_init(&aux, 0, 0))
-    exit(1);
-  exit(0);
-}
-_ACEOF
-rm -f conftest$ac_exeext
-if { (ac_try="$ac_link"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_link") 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && { ac_try='./conftest$ac_exeext'
-  { (case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_try") 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ECL_WORKING_SEM_INIT=yes
-else
-  echo "$as_me: program exited with status $ac_status" >&5
-echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-( exit $ac_status )
-ECL_WORKING_SEM_INIT=no
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
-fi
-
-
-fi
-{ echo "$as_me:$LINENO: result: $ECL_WORKING_SEM_INIT" >&5
-echo "${ECHO_T}$ECL_WORKING_SEM_INIT" >&6; }
-if test $ECL_WORKING_SEM_INIT = yes ; then
-  cat >>confdefs.h <<\_ACEOF
-#define ECL_SEMAPHORES 1
-_ACEOF
-
-  cat >>confdefs.h <<\_ACEOF
-#define HAVE_SEM_INIT 1
-_ACEOF
-
-  THREAD_OBJ="$THREAD_OBJ threads/semaphore"
-  echo $THREAD_OBJ
-fi
-
 
 { echo "$as_me:$LINENO: checking for pthread_rwlock_init" >&5
 echo $ECHO_N "checking for pthread_rwlock_init... $ECHO_C" >&6; }
@@ -15758,7 +15683,7 @@ do
     cat >>$CONFIG_STATUS <<_ACEOF
     # First, check the format of the line:
     cat >"\$tmp/defines.sed" <<\\CEOF
-/^[	 ]*#[	 ]*undef[	 ][	 ]*$ac_word_re[	 ]*\$/b def
+/^[	 ]*#[	 ]*undef[	 ][	 ]*$ac_word_re[	 ]*/b def
 /^[	 ]*#[	 ]*define[	 ][	 ]*$ac_word_re[(	 ]/b def
 b
 :def

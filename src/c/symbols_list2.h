@@ -66,11 +66,6 @@ typedef struct {
 #else
 # define IF_SSE2(x) NULL
 #endif
-#if defined(ECL_SEMAPHORE) && defined(ECL_THREADS)
-# define IF_SEM(x) x
-#else
-# define IF_SEM(x) NULL
-#endif
 #if defined(HAVE_LIBFFI) || defined(ECL_DYNAMIC_FFI)
 # define IF_DFFI(x) x
 #else
@@ -1607,17 +1602,16 @@ cl_symbols[] = {
 {MP_ "GIVEUP-RWLOCK-WRITE",IF_MP("mp_giveup_rwlock_write")},
 {MP_ "GLOBAL-LOCK",NULL},
 {MP_ "ERROR-LOCK",NULL},
-/* #endif ECL_THREADS */
 
-/* #if defined(ECL_SEMAPHORES) && defined(ECL_THREADS) */
 {MP_ "SEMAPHORE",NULL},
-{MP_ "MAKE-SEMAPHORE",IF_SEM("mp_make_semaphore")},
-{MP_ "SEMAPHORE-WAIT",IF_SEM("mp_semaphore_wait")},
-{MP_ "SEMAPHORE-TRYWAIT",IF_SEM("mp_semaphore_trywait")},
-{MP_ "SEMAPHORE-SIGNAL",IF_SEM("mp_semaphore_signal")},
-{MP_ "SEMAPHORE-CLOSE",IF_SEM("mp_semaphore_close")},
+{MP_ "MAKE-SEMAPHORE",IF_MP("mp_make_semaphore")},
+{MP_ "SIGNAL-SEMAPHORE",IF_MP("mp_signal_semaphore")},
+{MP_ "WAIT-ON-SEMAPHORE",IF_MP("mp_wait_on_semaphore")},
+{MP_ "SEMAPHORE-COUNT",IF_MP("mp_semaphore_count")},
+{MP_ "SEMAPHORE-NAME",IF_MP("mp_semaphore_name")},
+{MP_ "SEMAPHORE-WAIT-COUNT",IF_MP("mp_semaphore_wait_count")},
 {KEY_ "COUNT",NULL},
-/* #endif defined(ECL_SEMAPHORES) && defined(ECL_THREADS) */
+/* #endif defined(ECL_THREADS) */
 
 {SYS_ "WHILE",NULL},
 {SYS_ "UNTIL",NULL},

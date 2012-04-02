@@ -66,11 +66,6 @@ typedef struct {
 #else
 # define IF_SSE2(x) NULL
 #endif
-#if defined(ECL_SEMAPHORE) && defined(ECL_THREADS)
-# define IF_SEM(x) x
-#else
-# define IF_SEM(x) NULL
-#endif
 #if defined(HAVE_LIBFFI) || defined(ECL_DYNAMIC_FFI)
 # define IF_DFFI(x) x
 #else
@@ -1607,17 +1602,16 @@ cl_symbols[] = {
 {MP_ "GIVEUP-RWLOCK-WRITE", MP_ORDINARY, IF_MP(mp_giveup_rwlock_write), 1, OBJNULL},
 {MP_ "GLOBAL-LOCK", MP_ORDINARY, NULL, -1, OBJNULL},
 {MP_ "ERROR-LOCK", MP_ORDINARY, NULL, -1, OBJNULL},
-/* #endif ECL_THREADS */
 
-/* #if defined(ECL_SEMAPHORES) && defined(ECL_THREADS) */
 {MP_ "SEMAPHORE", MP_ORDINARY, NULL, -1, OBJNULL},
-{MP_ "MAKE-SEMAPHORE", MP_ORDINARY, IF_SEM(mp_make_semaphore), -1, OBJNULL},
-{MP_ "SEMAPHORE-WAIT", MP_ORDINARY, IF_SEM(mp_semaphore_wait), 1, OBJNULL},
-{MP_ "SEMAPHORE-TRYWAIT", MP_ORDINARY, IF_SEM(mp_semaphore_trywait), 1, OBJNULL},
-{MP_ "SEMAPHORE-SIGNAL", MP_ORDINARY, IF_SEM(mp_semaphore_signal), 1, OBJNULL},
-{MP_ "SEMAPHORE-CLOSE", MP_ORDINARY, IF_SEM(mp_semaphore_close), 1, OBJNULL},
+{MP_ "MAKE-SEMAPHORE", MP_ORDINARY, IF_MP(mp_make_semaphore), -1, OBJNULL},
+{MP_ "SIGNAL-SEMAPHORE", MP_ORDINARY, IF_MP(mp_signal_semaphore), -1, OBJNULL},
+{MP_ "WAIT-ON-SEMAPHORE", MP_ORDINARY, IF_MP(mp_wait_on_semaphore), 1, OBJNULL},
+{MP_ "SEMAPHORE-COUNT", MP_ORDINARY, IF_MP(mp_semaphore_count), 1, OBJNULL},
+{MP_ "SEMAPHORE-NAME", MP_ORDINARY, IF_MP(mp_semaphore_name), 1, OBJNULL},
+{MP_ "SEMAPHORE-WAIT-COUNT", MP_ORDINARY, IF_MP(mp_semaphore_wait_count), 1, OBJNULL},
 {KEY_ "COUNT", KEYWORD, NULL, -1, OBJNULL},
-/* #endif defined(ECL_SEMAPHORES) && defined(ECL_THREADS) */
+/* #endif defined(ECL_THREADS) */
 
 {SYS_ "WHILE", SI_ORDINARY, NULL, -1, OBJNULL},
 {SYS_ "UNTIL", SI_ORDINARY, NULL, -1, OBJNULL},

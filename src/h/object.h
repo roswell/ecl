@@ -81,9 +81,7 @@ typedef enum {
 	t_lock,
 	t_rwlock,
 	t_condition_variable,
-# ifdef ECL_SEMAPHORES
         t_semaphore,
-# endif
 #endif
 	t_codeblock,
 	t_foreign,
@@ -909,6 +907,14 @@ struct ecl_queue {
 	cl_object spinlock;
 };
 
+struct ecl_semaphore {
+	HEADER;
+	cl_object queue_list;
+	cl_object queue_spinlock;
+        cl_object name;
+	cl_fixnum counter;
+};
+
 struct ecl_lock {
 	HEADER1(recursive);
 	cl_object queue_list;
@@ -933,11 +939,6 @@ struct ecl_condition_variable {
 	cl_object queue_list;
 	cl_object queue_spinlock;
 	cl_object lock;
-};
-
-struct ecl_semaphore {
-        HEADER;
-        void *handle;
 };
 #endif /* ECL_THREADS */
 
@@ -1046,9 +1047,7 @@ union cl_lispunion {
 	struct ecl_rwlock	rwlock; 	/*  read/write lock  */
         struct ecl_condition_variable condition_variable; /*  condition-variable */
 #endif
-#ifdef ECL_SEMAPHORES
         struct ecl_semaphore	semaphore;	/*  semaphore  */
-#endif
 	struct ecl_codeblock	cblock;		/*  codeblock  */
 	struct ecl_foreign	foreign; 	/*  user defined data type */
 	struct ecl_stack_frame	frame;		/*  stack frame  */

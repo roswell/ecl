@@ -248,7 +248,7 @@ THREAD_CFLAGS=''
 THREAD_LIBS=''
 THREAD_GC_FLAGS='--enable-threads=posix'
 INSTALL_TARGET='install'
-THREAD_OBJ="$THREAD_OBJ threads/process threads/queue threads/mutex threads/condition_variable"
+THREAD_OBJ="$THREAD_OBJ threads/process threads/queue threads/mutex threads/condition_variable threads/semaphore"
 clibs=''
 SONAME=''
 SONAME_LDFLAGS=''
@@ -824,29 +824,6 @@ _mm_getcsr();]])],[sse_included=yes],[sse_included=no])
  else
   AC_MSG_RESULT([no])
  fi
-fi
-])
-
-dnl ----------------------------------------------------------------------
-dnl Check whether we have unnamed POSIX semaphores available
-AC_DEFUN([ECL_POSIX_SEMAPHORES],[
-AC_MSG_CHECKING(working sem_init())
-if test -z "$ECL_WORKING_SEM_INIT"; then
-  AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <semaphore.h>
-int main() {
-  sem_t aux;
-  if (sem_init(&aux, 0, 0))
-    exit(1);
-  exit(0);
-}]])],[ECL_WORKING_SEM_INIT=yes],[ECL_WORKING_SEM_INIT=no],[])
-fi
-AC_MSG_RESULT([$ECL_WORKING_SEM_INIT])
-if test $ECL_WORKING_SEM_INIT = yes ; then
-  AC_DEFINE(ECL_SEMAPHORES)
-  AC_DEFINE(HAVE_SEM_INIT)
-  THREAD_OBJ="$THREAD_OBJ threads/semaphore"
-  echo $THREAD_OBJ
 fi
 ])
 

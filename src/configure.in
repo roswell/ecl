@@ -502,7 +502,6 @@ if test "${enable_threads}" = "yes" ; then
   else
     LIBS="${THREAD_LIBS} ${LIBS}"
     CFLAGS="${CFLAGS} ${THREAD_CFLAGS}"
-    ECL_POSIX_SEMAPHORES
     ECL_POSIX_RWLOCK
     boehm_configure_flags="${boehm_configure_flags} ${THREAD_GC_FLAGS}"
     for k in $THREAD_OBJ; do EXTRA_OBJS="$EXTRA_OBJS ${k}.${OBJEXT}"; done

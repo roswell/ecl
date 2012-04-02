@@ -1724,26 +1724,26 @@ extern ECL_API cl_object mp_restore_signals(cl_object sigmask);
 
 extern ECL_API bool ecl_import_current_thread(cl_object process_name, cl_object process_binding);
 extern ECL_API void ecl_release_current_thread(void);
-# ifdef ECL_SEMAPHORES
-extern ECL_API void mp_make_semaphore _ARGS((cl_narg, cl_object, ...));
-extern ECL_API void mp_semaphore_trywait(cl_object);
-extern ECL_API void mp_semaphore_wait(cl_object);
-extern ECL_API void mp_semaphore_signal(cl_object);
-extern ECL_API void mp_semaphore_close(cl_object);
-# endif
+
+/* threads/semaphore.d */
+
+extern ECL_API cl_object mp_make_semaphore _ARGS((cl_narg, ...));
+extern ECL_API cl_object mp_semaphore_count(cl_object);
+extern ECL_API cl_object mp_semaphore_name(cl_object);
+extern ECL_API cl_object mp_semaphore_wait_count(cl_object);
+extern ECL_API cl_object mp_wait_on_semaphore(cl_object);
+extern ECL_API cl_object mp_signal_semaphore _ARGS((cl_narg, cl_object, ...));
+extern ECL_API cl_object ecl_make_semaphore(cl_object name, cl_fixnum count);
 
 /* threads/atomic.c */
 
-#ifdef ECL_THREADS
 extern ECL_API cl_object ecl_atomic_get(cl_object *slot);
 extern ECL_API void ecl_atomic_push(cl_object *slot, cl_object o);
 extern ECL_API cl_object ecl_atomic_pop(cl_object *slot);
 extern ECL_API cl_index ecl_atomic_index_incf(cl_index *slot);
-#endif
 
 /* threads/mutex.c */
 
-#ifdef ECL_THREADS
 extern ECL_API cl_object mp_make_lock _ARGS((cl_narg narg, ...));
 extern ECL_API cl_object mp_recursive_lock_p(cl_object lock);
 extern ECL_API cl_object mp_lock_name(cl_object lock);
@@ -1755,7 +1755,6 @@ extern ECL_API cl_object mp_get_lock_nowait(cl_object lock);
 extern ECL_API cl_object mp_giveup_lock(cl_object lock);
 
 extern ECL_API cl_object ecl_make_lock(cl_object lock, bool recursive);
-#endif
 
 /* threads/rwlock.d */
 
