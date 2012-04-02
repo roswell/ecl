@@ -17,10 +17,6 @@
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
 
-/*----------------------------------------------------------------------
- * LOCKS or MUTEX
- */
-
 #if !defined(AO_HAVE_fetch_and_add_full)
 #error "Cannot implement semaphores without AO_fetch_and_add_full"
 #endif
