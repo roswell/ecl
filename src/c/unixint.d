@@ -988,6 +988,7 @@ BOOL WINAPI W32_console_ctrl_handler(DWORD type)
 static cl_object
 asynchronous_signal_servicing_thread()
 {
+	const cl_env_ptr the_env = ecl_process_env();
 	sigset_t handled_set;
 	cl_object signal_code;
 	int signo;
@@ -1013,13 +1014,30 @@ asynchronous_signal_servicing_thread()
 		sigaddset(&handled_set, interrupt_signal);
 		pthread_sigmask(SIG_SETMASK, &handled_set, NULL);
 	}
-	CL_CATCH_ALL_BEGIN(ecl_process_env()) {
+	CL_CATCH_ALL_BEGIN(the_env) {
 	for (;;) {
 		/* Waiting may fail! */
 		int status = sigwait(&handled_set, &signo);
 		if (status == 0) {
-			if (signo == interrupt_signal)
-				goto RETURN;
+#if 0
+			if (signo == interrupt_signal) {
+				/* If we get this signal it may be because
+				 * of two reasons. One is that it is just
+				 * an awake message. Then the queue is empty
+				 * and we continue ... */
+				signal_code = pop_signal(the_env);
+				if (Null(signal_code))
+					continue;
+				/* ... the other one is that we are being
+				 * interrupted, but this only happens when
+				 * we quit */
+				break;
+			}
+#else
+			if (signo == interrupt_signal) {
+				break;
+			}
+#endif
 #ifdef SIGCHLD
                         if (signo == SIGCHLD) {
                                 si_wait_for_all_processes(0);
