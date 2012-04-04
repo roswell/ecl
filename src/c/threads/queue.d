@@ -203,8 +203,8 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 	{
 		sigset_t empty;
 		sigemptyset(&empty);
-		sigaddset(&empty, ecl_option_values[ECL_OPT_TRAP_INTERRUPT_SIGNAL]);
-		pthread_sigmask(SIG_BLOCK, &original, &empty);
+		sigaddset(&empty, ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL]);
+		pthread_sigmask(SIG_BLOCK, &empty, &original);
 	}
 
 	/* 2) Now we add ourselves to the queue. In order to avoid a
@@ -253,7 +253,7 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 
 		/* 7) Restoring signals is done last, to ensure that
 		   all cleanup steps are performed. */
-		pthread_sigmask(SIG_SETMASK, NULL, &original);
+		pthread_sigmask(SIG_SETMASK, &original, NULL);
 	} CL_UNWIND_PROTECT_END;
 #else
 	ecl_wait_on_timed(env, condition, o);
