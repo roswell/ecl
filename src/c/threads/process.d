@@ -736,7 +736,6 @@ init_threads(cl_env_ptr env)
 		v->vector.fillp = 1;
 		cl_core.processes = v;
 		cl_core.global_lock = ecl_make_lock(@'mp::global-lock', 1);
-		cl_core.external_processes_lock = ecl_make_lock(@'ext::run-program', 1);
 		cl_core.error_lock = ecl_make_lock(@'mp::error-lock', 1);
 		cl_core.global_env_lock = ecl_make_rwlock(@'ext::package-lock');
 	}

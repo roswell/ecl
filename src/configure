@@ -4524,7 +4524,7 @@ THREAD_CFLAGS=''
 THREAD_LIBS=''
 THREAD_GC_FLAGS='--enable-threads=posix'
 INSTALL_TARGET='install'
-THREAD_OBJ="$THREAD_OBJ threads/process threads/queue threads/mutex threads/condition_variable threads/semaphore"
+THREAD_OBJ="$THREAD_OBJ threads/process threads/queue threads/mutex threads/condition_variable threads/semaphore threads/barrier"
 clibs=''
 SONAME=''
 SONAME_LDFLAGS=''
@@ -15683,7 +15683,7 @@ do
     cat >>$CONFIG_STATUS <<_ACEOF
     # First, check the format of the line:
     cat >"\$tmp/defines.sed" <<\\CEOF
-/^[	 ]*#[	 ]*undef[	 ][	 ]*$ac_word_re[	 ]*/b def
+/^[	 ]*#[	 ]*undef[	 ][	 ]*$ac_word_re[	 ]*\$/b def
 /^[	 ]*#[	 ]*define[	 ][	 ]*$ac_word_re[(	 ]/b def
 b
 :def

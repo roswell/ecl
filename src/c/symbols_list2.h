@@ -1611,6 +1611,18 @@ cl_symbols[] = {
 {MP_ "SEMAPHORE-NAME",IF_MP("mp_semaphore_name")},
 {MP_ "SEMAPHORE-WAIT-COUNT",IF_MP("mp_semaphore_wait_count")},
 {KEY_ "COUNT",NULL},
+
+{MP_ "BARRIER",NULL},
+{MP_ "MAKE-BARRIER",IF_MP("mp_make_barrier")},
+{MP_ "BARRIER-UNBLOCK",IF_MP("mp_barrier_unblock")},
+{MP_ "BARRIER-WAIT",IF_MP("mp_barrier_wait")},
+{MP_ "BARRIER-COUNT",IF_MP("mp_barrier_count")},
+{MP_ "BARRIER-NAME",IF_MP("mp_barrier_name")},
+{MP_ "BARRIER-ARRIVERS-COUNT",IF_MP("mp_barrier_arrivers_count")},
+{KEY_ "DISABLE",NULL},
+{KEY_ "RESET-COUNT",NULL},
+{KEY_ "KILL-WAITING",NULL},
+{KEY_ "UNBLOCKED",NULL},
 /* #endif defined(ECL_THREADS) */
 
 {SYS_ "WHILE",NULL},

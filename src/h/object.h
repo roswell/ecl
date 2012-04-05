@@ -82,6 +82,7 @@ typedef enum {
 	t_rwlock,
 	t_condition_variable,
         t_semaphore,
+        t_barrier,
 #endif
 	t_codeblock,
 	t_foreign,
@@ -900,9 +901,10 @@ struct ecl_process {
 #define ECL_WAKEUP_ONE 0
 #define ECL_WAKEUP_ALL 1
 #define ECL_WAKEUP_RESET_FLAG 2
+#define ECL_WAKEUP_KILL 4
 
 struct ecl_queue {
-	HEADER1(recursive);
+	HEADER;
 	cl_object list;
 	cl_object spinlock;
 };
@@ -913,6 +915,15 @@ struct ecl_semaphore {
 	cl_object queue_spinlock;
         cl_object name;
 	cl_fixnum counter;
+};
+
+struct ecl_barrier {
+	HEADER;
+	cl_object queue_list;
+	cl_object queue_spinlock;
+        cl_object name;
+	cl_fixnum count;
+	cl_fixnum arrivers_count;
 };
 
 struct ecl_lock {
@@ -1046,8 +1057,9 @@ union cl_lispunion {
 	struct ecl_lock		lock; 		/*  lock  */
 	struct ecl_rwlock	rwlock; 	/*  read/write lock  */
         struct ecl_condition_variable condition_variable; /*  condition-variable */
-#endif
         struct ecl_semaphore	semaphore;	/*  semaphore  */
+        struct ecl_barrier	barrier;	/*  barrier  */
+#endif
 	struct ecl_codeblock	cblock;		/*  codeblock  */
 	struct ecl_foreign	foreign; 	/*  user defined data type */
 	struct ecl_stack_frame	frame;		/*  stack frame  */

@@ -163,10 +163,10 @@ ecl_type_to_symbol(cl_type t)
 		return @'mp::lock';
 	case t_condition_variable:
 		return @'mp::condition-variable';
-#endif
-#ifdef ECL_SEMAPHORES
 	case t_semaphore:
 		return @'mp::semaphore';
+	case t_barrier:
+		return @'mp::barrier';
 #endif
 	case t_codeblock:
 		return @'si::code-block';

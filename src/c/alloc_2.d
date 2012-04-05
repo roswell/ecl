@@ -469,6 +469,16 @@ cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl
 		MAYBE_MARK(o->rwlock.mutex);
 		break;
 #  endif
+        case t_semaphore:
+                MAYBE_MARK(o->semaphore.queue_list);
+                MAYBE_MARK(o->semaphore.queue_spinlock);
+                MAYBE_MARK(o->semaphore.name);
+		break;
+        case t_barrier:
+                MAYBE_MARK(o->barrier.queue_list);
+                MAYBE_MARK(o->barrier.queue_spinlock);
+                MAYBE_MARK(o->barrier.name);
+		break;
 # endif
         case t_codeblock:
                 MAYBE_MARK(o->cblock.source);
@@ -574,9 +584,8 @@ ecl_alloc_object(cl_type t)
         case t_lock:
         case t_rwlock:
         case t_condition_variable:
-#endif
-#ifdef ECL_SEMAPHORES
-        case t_semaphores:
+        case t_semaphore:
+        case t_barrier:
 #endif
 	case t_foreign:
 	case t_codeblock: {
@@ -850,9 +859,8 @@ init_alloc(void)
 	init_tm(t_rwlock, "LOCK", sizeof(struct ecl_rwlock), 0);
 	init_tm(t_condition_variable, "CONDITION-VARIABLE",
                 sizeof(struct ecl_condition_variable), 0);
-# ifdef ECL_SEMAPHORES
-	init_tm(t_semaphore, "SEMAPHORES", sizeof(struct ecl_semaphores), 0);
-# endif
+	init_tm(t_semaphore, "SEMAPHORES", sizeof(struct ecl_semaphore), 0);
+	init_tm(t_barrier, "BARRIER", sizeof(struct ecl_barrier), 0);
 #endif
 	init_tm(t_codeblock, "CODEBLOCK", sizeof(struct ecl_codeblock), -1);
 	init_tm(t_foreign, "FOREIGN", sizeof(struct ecl_foreign), 2);
@@ -1001,9 +1009,14 @@ init_alloc(void)
 		to_bitmap(&o, &(o.condition_variable.lock)) |
 		to_bitmap(&o, &(o.condition_variable.queue_list)) |
 		to_bitmap(&o, &(o.condition_variable.queue_spinlock));
-#   ifdef ECL_SEMAPHORES
-	type_info[t_semaphore].descriptor = 0;
-#   endif
+	type_info[t_semaphore].descriptor = 
+		to_bitmap(&o, &(o.semaphore.name)) |
+		to_bitmap(&o, &(o.semaphore.queue_list)) |
+		to_bitmap(&o, &(o.semaphore.queue_spinlock));
+	type_info[t_barrier].descriptor = 
+		to_bitmap(&o, &(o.barrier.name)) |
+		to_bitmap(&o, &(o.barrier.queue_list)) |
+		to_bitmap(&o, &(o.barrier.queue_spinlock));
 # endif
         type_info[t_codeblock].descriptor =
                 to_bitmap(&o, &(o.cblock.data)) |
@@ -1076,7 +1089,7 @@ standard_finalizer(cl_object o)
 		GC_unregister_disappearing_link((void**)&(o->weak.value));
 		break;
 #ifdef ECL_THREADS
-#ifdef ECL_RWLOCK
+# ifdef ECL_RWLOCK
 	case t_rwlock: {
 		const cl_env_ptr the_env = ecl_process_env();
 		ecl_disable_interrupts_env(the_env);
@@ -1084,23 +1097,12 @@ standard_finalizer(cl_object o)
 		ecl_enable_interrupts_env(the_env);
 		break;
 	}
-#endif
-#endif
-#ifdef ECL_SEMAPHORES
-	case t_semaphore: {
-		const cl_env_ptr the_env = ecl_process_env();
-                ecl_disable_interrupts_env(the_env);
-                mp_semaphore_close(o);
-                ecl_enable_interrupts_env(the_env);
-		break;
-	}
-#endif
-#ifdef ECL_THREADS
+# endif
         case t_symbol: {
 		ecl_atomic_push(&cl_core.reused_indices,
 				MAKE_FIXNUM(o->symbol.binding));
         }
-#endif
+#endif /* ECL_THREADS */
 	default:;
 	}
 }

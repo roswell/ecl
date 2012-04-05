@@ -1230,6 +1230,9 @@ if not possible."
 	       #+threads (MP::PROCESS)
 	       #+threads (MP::LOCK)
 	       #+threads (MP::RWLOCK)
+	       #+threads (MP::CONDITION-VARIABLE)
+	       #+threads (MP::SEMAPHORE)
+	       #+threads (MP::BARRIER)
 	       #+ffi (FOREIGN-DATA)
 	       #+sse2 (EXT:SSE-PACK (OR EXT:INT-SSE-PACK
 				     EXT:FLOAT-SSE-PACK

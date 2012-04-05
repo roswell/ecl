@@ -1040,7 +1040,7 @@ asynchronous_signal_servicing_thread()
 #endif
 #ifdef SIGCHLD
                         if (signo == SIGCHLD) {
-                                si_wait_for_all_processes(0);
+                                si_wait_for_all_processes();
                                 continue;
                         }
 #endif

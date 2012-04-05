@@ -248,7 +248,7 @@ THREAD_CFLAGS=''
 THREAD_LIBS=''
 THREAD_GC_FLAGS='--enable-threads=posix'
 INSTALL_TARGET='install'
-THREAD_OBJ="$THREAD_OBJ threads/process threads/queue threads/mutex threads/condition_variable threads/semaphore"
+THREAD_OBJ="$THREAD_OBJ threads/process threads/queue threads/mutex threads/condition_variable threads/semaphore threads/barrier"
 clibs=''
 SONAME=''
 SONAME_LDFLAGS=''

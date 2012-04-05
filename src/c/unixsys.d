@@ -182,10 +182,12 @@ add_external_process(cl_env_ptr env, cl_object process)
 {
         cl_object l = ecl_list1(process);
         ecl_disable_interrupts_env(env);
-        ECL_WITH_LOCK_BEGIN(env, cl_core.external_processes_lock) {
+	ecl_get_spinlock(env, &cl_core.external_processes_lock);
+	{
                 ECL_RPLACD(l, cl_core.external_processes);
                 cl_core.external_processes = l;
-        } ECL_WITH_LOCK_END;
+        }
+	ecl_giveup_spinlock(&cl_core.external_processes_lock);
         ecl_enable_interrupts_env(env);
 }
 
@@ -193,24 +195,34 @@ static void
 remove_external_process(cl_env_ptr env, cl_object process)
 {
         ecl_disable_interrupts_env(env);
-        ECL_WITH_LOCK_BEGIN(env, cl_core.external_processes_lock) {
+	ecl_get_spinlock(env, &cl_core.external_processes_lock);
+	{
                 cl_core.external_processes =
                         ecl_delete_eq(process, cl_core.external_processes);
-        } ECL_WITH_LOCK_END;
+        }
+	ecl_giveup_spinlock(&cl_core.external_processes_lock);
         ecl_enable_interrupts_env(env);
 }
 
 static cl_object
-find_external_process(cl_object pid)
+find_external_process(cl_env_ptr env, cl_object pid)
 {
-        cl_object p;
-        for (p = cl_core.external_processes; p != Cnil; p = ECL_CONS_CDR(p)) {
-                cl_object process = ECL_CONS_CAR(p);
-                if (external_process_pid(process) == pid) {
-                        return process;
-                }
-        }
-        return Cnil;
+	cl_object output = Cnil;
+	ecl_disable_interrupts_env(env);
+	ecl_get_spinlock(env, &cl_core.external_processes_lock);
+	{
+		cl_object p;
+		for (p = cl_core.external_processes; p != Cnil; p = ECL_CONS_CDR(p)) {
+			cl_object process = ECL_CONS_CAR(p);
+			if (external_process_pid(process) == pid) {
+				output = process;
+				break;
+			}
+		}
+	}
+	ecl_giveup_spinlock(&cl_core.external_processes_lock);
+	ecl_enable_interrupts_env(env);
+        return output;
 }
 #else
 #define add_external_process(env,p)
@@ -277,20 +289,11 @@ ecl_waitpid(cl_object pid, cl_object wait)
         @(return status code pid)
 }
 
-@(defun si::wait-for-all-processes (&optional unsafep)
-@
+cl_object
+si_wait_for_all_processes()
 {
 #if defined(SIGCHLD) && !defined(ECL_WINDOWS_HOST)
         const cl_env_ptr env = ecl_process_env();
-# ifdef ECL_THREADS
-        if (Null(unsafep)) {
-                /* We come from the parallel thread, must lock */
-                ECL_WITH_LOCK_BEGIN(env, cl_core.external_processes_lock) {
-                        si_wait_for_all_processes(1, Ct);
-                } ECL_WITH_LOCK_END(env, cl_core.external_processes_lock);
-                return;
-        }
-# endif
         do {
                 cl_object status = ecl_waitpid(MAKE_FIXNUM(-1), Cnil);
                 cl_object code = env->values[1];
@@ -299,13 +302,13 @@ ecl_waitpid(cl_object pid, cl_object wait)
                         if (status != @':abort')
                                 break;
                 } else {
-                        cl_object p = find_external_process(pid);
+                        cl_object p = find_external_process(env, pid);
                         if (!Null(p)) {
+				set_external_process_pid(p, Cnil);
                                 update_process_status(p, status, code);
                         }
                         if (status != @':running') {
-                                cl_core.external_processes =
-                                        ecl_delete_eq(p, cl_core.external_processes);
+				remove_external_process(env, p);                                        ecl_delete_eq(p, cl_core.external_processes);
                         }
                 }
         } while (1);
@@ -313,7 +316,6 @@ ecl_waitpid(cl_object pid, cl_object wait)
         @(return);
 #endif
 }
-@)
 
 #if defined(ECL_MS_WINDOWS_HOST) || defined(cygwin)
 cl_object
@@ -696,7 +698,6 @@ make_windows_handle(HANDLE h)
         /* We have to protect this, to avoid the signal being delivered or handled
          * before we set the process pid */
         ecl_bds_bind(the_env, @'ext::*interrupts-enabled*', Cnil);
-        ECL_WITH_LOCK_BEGIN(the_env, cl_core.external_processes_lock) {
 	child_pid = fork();
 	if (child_pid == 0) {
 		/* Child */
@@ -733,7 +734,6 @@ make_windows_handle(HANDLE h)
                 pid = MAKE_FIXNUM(child_pid);
         }
         set_external_process_pid(process, pid);
-        } ECL_WITH_LOCK_END;
         ecl_bds_unwind1(the_env);
         ecl_check_pending_interrupts(the_env);
 	close(child_stdin);

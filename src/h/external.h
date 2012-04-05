@@ -1735,6 +1735,16 @@ extern ECL_API cl_object mp_wait_on_semaphore(cl_object);
 extern ECL_API cl_object mp_signal_semaphore _ARGS((cl_narg, cl_object, ...));
 extern ECL_API cl_object ecl_make_semaphore(cl_object name, cl_fixnum count);
 
+/* threads/barrier.d */
+
+extern ECL_API cl_object ecl_make_barrier(cl_object name, cl_index count);
+extern ECL_API cl_object mp_make_barrier _ARGS((cl_narg, cl_object, ...));
+extern ECL_API cl_object mp_barrier_count(cl_object);
+extern ECL_API cl_object mp_barrier_name(cl_object);
+extern ECL_API cl_object mp_barrier_arrivers_count(cl_object);
+extern ECL_API cl_object mp_barrier_wait _ARGS((cl_narg, cl_object, ...));
+extern ECL_API cl_object mp_barrier_unblock _ARGS((cl_narg, cl_object, ...));
+
 /* threads/atomic.c */
 
 extern ECL_API cl_object ecl_atomic_get(cl_object *slot);

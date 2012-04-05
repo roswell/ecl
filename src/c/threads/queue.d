@@ -27,7 +27,7 @@
 void ECL_INLINE
 ecl_process_yield()
 {
-#if defined(HAVE_SCHED_YIELD)
+#if defined(HAVE_SCHED_H)
 	sched_yield();
 #elif defined(ECL_WINDOWS_THREADS)
 	Sleep(0);
@@ -49,7 +49,7 @@ ecl_get_spinlock(cl_env_ptr the_env, cl_object *lock)
 void ECL_INLINE
 ecl_giveup_spinlock(cl_object *lock)
 {
-	*lock = Cnil;
+	AO_store((AO_t*)lock, (AO_t)Cnil);
 }
 
 static ECL_INLINE void
@@ -158,7 +158,6 @@ ecl_wait_on_timed(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object),
 		/* 2) Now we add ourselves to the queue. In order to
 		 * avoid a call to the GC, we try to reuse records. */
 		wait_queue_nconc(the_env, o, record);
-		own_process->process.waiting_for = o;
 		ecl_bds_bind(the_env, @'ext::*interrupts-enabled*', Ct);
 		ecl_check_pending_interrupts(the_env);
 
@@ -215,7 +214,6 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 	/* 2) Now we add ourselves to the queue. In order to avoid a
 	 * call to the GC, we try to reuse records. */
 	wait_queue_nconc(the_env, o, record);
-	own_process->process.waiting_for = o;
 
 	CL_UNWIND_PROTECT_BEGIN(the_env) {
 		/* 3) At this point we may receive signals, but we
@@ -271,7 +269,10 @@ wakeup_this(cl_object p, int flags)
 	if (flags & ECL_WAKEUP_RESET_FLAG)
 		p->process.waiting_for = Cnil;
 	print_lock("awaking\t\t%d", Cnil, fix(p->process.name));
-	ecl_interrupt_process(p, Cnil);
+	if (flags & ECL_WAKEUP_KILL)
+		mp_process_kill(p);
+	else
+		ecl_interrupt_process(p, Cnil);
 }
 
 static void
