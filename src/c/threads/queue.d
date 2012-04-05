@@ -23,13 +23,18 @@
 
 #define print_lock(a,b,...) (void)0
 
-#ifndef HAVE_SCHED_H
-static int
-sched_yield()
+
+void ECL_INLINE
+ecl_process_yield()
 {
-	ecl_musleep(0.0, 1);
-}
+#if defined(HAVE_SCHED_YIELD)
+	sched_yield();
+#elif defined(ECL_WINDOWS_THREADS)
+	Sleep(0);
+#else
+	ecl_musleep(0.0, 1);*/
 #endif
+}
 
 void ECL_INLINE
 ecl_get_spinlock(cl_env_ptr the_env, cl_object *lock)
@@ -37,7 +42,7 @@ ecl_get_spinlock(cl_env_ptr the_env, cl_object *lock)
 	cl_object own_process = the_env->own_process;
 	while (!AO_compare_and_swap_full((AO_t*)lock, (AO_t)Cnil,
 					 (AO_t)own_process)) {
-		sched_yield();
+		ecl_process_yield();
 	}
 }
 
@@ -308,7 +313,7 @@ ecl_wakeup_waiters(cl_env_ptr the_env, cl_object q, int flags)
 			wakeup_one(the_env, q, flags);
 		}
 	}
-	sched_yield();
+	ecl_process_yield();
 }
 
 #undef print_lock

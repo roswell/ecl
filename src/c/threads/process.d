@@ -29,9 +29,6 @@
 #ifdef HAVE_GETTIMEOFDAY
 # include <sys/time.h>
 #endif
-#ifdef HAVE_SCHED_YIELD
-# include <sched.h>
-#endif
 #include <ecl/internal.h>
 #include <ecl/ecl-inl.h>
 
@@ -441,15 +438,7 @@ mp_process_kill(cl_object process)
 cl_object
 mp_process_yield(void)
 {
-#ifdef HAVE_SCHED_YIELD
-	sched_yield();
-#else
-# ifdef ECL_WINDOWS_THREADS
-	Sleep(0);
-# else
-	sleep(0); /* Use sleep(0) to yield to a >= priority thread */
-# endif
-#endif
+	ecl_process_yield();
 	@(return)
 }
 

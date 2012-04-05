@@ -467,6 +467,7 @@ extern cl_fixnum ecl_runtime(void);
 /* threads/mutex.d */
 
 #ifdef ECL_THREADS
+extern void ecl_process_yield(void);
 extern void print_lock(char *s, cl_object lock, ...);
 extern void ecl_get_spinlock(cl_env_ptr env, cl_object *lock);
 extern void ecl_giveup_spinlock(cl_object *lock);
