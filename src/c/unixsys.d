@@ -172,8 +172,8 @@ static void
 update_process_status(cl_object process, cl_object status, cl_object code)
 {
         ecl_structure_set(process, @'ext::external-process', 0, Cnil);
-        ecl_structure_set(process, @'ext::external-process', 3, status);
         ecl_structure_set(process, @'ext::external-process', 4, code);
+        ecl_structure_set(process, @'ext::external-process', 3, status);
 }
 
 #if defined(SIGCHLD) && !defined(ECL_MS_WINDOWS_HOST)
@@ -346,8 +346,16 @@ make_windows_handle(HANDLE h)
  AGAIN:
         pid = external_process_pid(process);
         if (Null(pid)) {
-                status = external_process_status(process);
-                code = external_process_code(process);
+		/* If PID is NIL, it may be because the process failed,
+		 * or because it is being updated by a separate thread,
+		 * which is why we have to spin here. Note also the order
+		 * here: status is updated _after_ code, and hence we
+		 * check it _before_ code. */
+		do {
+			status = external_process_status(process);
+			code = external_process_code(process);
+			ecl_musleep(0.0, 1);
+		} while (status == @':running');
         } else {
                 status = ecl_waitpid(pid, wait);
                 code = VALUES(1);
