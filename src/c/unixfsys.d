@@ -252,7 +252,7 @@ si_readlink(cl_object filename) {
 #endif /* HAVE_LSTAT */
 
 static cl_object
-enter_directory(cl_object base_dir, cl_object subdir)
+enter_directory(cl_object base_dir, cl_object subdir, bool ignore_if_failure)
 {
         /* Assuming we start in "base_dir", enter a subdirectory named by
          * "subdir", which may be a string, :UP, :ABSOLUTE or :RELATIVE.
@@ -283,7 +283,8 @@ enter_directory(cl_object base_dir, cl_object subdir)
         aux->base_string.self[aux->base_string.fillp-1] = 0;
         kind = file_kind((char*)aux->base_string.self, FALSE);
         if (kind == Cnil) {
-		FEcannot_open(base_dir);
+		if (ignore_if_failure) return Cnil;
+		FEcannot_open(aux);
 #ifdef HAVE_LSTAT
         } else if (kind == @':link') {
                 output = cl_truename(ecl_merge_pathnames(si_readlink(aux),
@@ -295,6 +296,7 @@ enter_directory(cl_object base_dir, cl_object subdir)
 #endif
         } else if (kind != @':directory') {
         WRONG_DIR:
+		if (ignore_if_failure) return Cnil;
                 FEerror("The directory~&  ~S~&in pathname~&  ~S~&"
                         "actually points to a file or special device.",
                         2, subdir, base_dir);
@@ -303,7 +305,8 @@ enter_directory(cl_object base_dir, cl_object subdir)
                 cl_object newdir= output->pathname.directory;
                 newdir = ecl_nbutlast(newdir, 2);
                 if (Null(newdir)) {
-                        FEerror("Pathname contained an :UP component  "
+			if (ignore_if_failure) return Cnil;
+			FEerror("Pathname contained an :UP component  "
                                 "that goes above the base directory:"
                                 "~&  ~S", 1, output);
                 }
@@ -349,7 +352,7 @@ file_truename(cl_object pathname, cl_object filename, int flags)
 	}
         kind = file_kind((char*)filename->base_string.self, FALSE);
         if (kind == Cnil) {
-                FEcannot_open(pathname);
+                FEcannot_open(filename);
 #ifdef HAVE_LSTAT
         } else if (kind == @':link' && (flags & FOLLOW_SYMLINKS)) {
                 /* The link might be a relative pathname. In that case we have
@@ -410,7 +413,7 @@ cl_truename(cl_object orig_pathname)
 	 */
         for (dir = pathname->pathname.directory; !Null(dir); dir = ECL_CONS_CDR(dir))
 	{
-                base_dir = enter_directory(base_dir, ECL_CONS_CAR(dir));
+                base_dir = enter_directory(base_dir, ECL_CONS_CAR(dir), 0);
         }
         pathname = ecl_merge_pathnames(base_dir, pathname, @':default');
 	@(return file_truename(pathname, Cnil, FOLLOW_SYMLINKS))
@@ -896,7 +899,14 @@ dir_recursive(cl_object base_dir, cl_object directory, cl_object filemask, int f
 		 * 2.2) If CAR(DIRECTORY) is :ABSOLUTE, :RELATIVE or :UP we update
 		 * the directory to reflect the root, the current or the parent one.
 		 */
-		base_dir = enter_directory(base_dir, item);
+		base_dir = enter_directory(base_dir, item, 1);
+		/*
+		 * If enter_directory() fails, we simply ignore this path. This is
+		 * what other implementations do and is consistent with the behavior
+		 * for the file part.
+		 */
+		if (Null(base_dir))
+			return Cnil;
 		directory = ECL_CONS_CDR(directory);
 		goto AGAIN;
 	}
