@@ -12,6 +12,8 @@ ECL 12.2.2:
  - DIRECTORY no longer complains when it finds an inexistent directory
    component: it simply returns NIL as the list of pathnames.
 
+ - CASE now complains when the OTHERWISE/T clause is not the last one.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

@@ -279,22 +279,31 @@ values of the last FORM.  If no FORM is given, returns NIL."
 (defmacro sys::until (test &body body)
   (while-until test body 'unless))
 
-(defmacro case (keyform &rest clauses &aux (form nil) (key (gensym)))
-  (dolist (clause (reverse clauses)
-	   `(LET ((,key ,keyform))
-;	     (DECLARE (:READ-ONLY ,key)) ; Beppe
-	     ,form))
-    (if (or (eq (car clause) 'T) (eq (car clause) 'OTHERWISE))
-	(setq form `(PROGN ,@(cdr clause)))
-	(if (consp (car clause))
-	    (setq form `(IF (MEMBER ,key ',(car clause))
-			 (PROGN ,@(cdr clause))
-			 ,form))
-	    (if (car clause)
-		(setq form `(IF (EQL ,key ',(car clause))
-			     (PROGN ,@(cdr clause))
-			     ,form))))))
-  )
+(defmacro case (keyform &rest clauses)
+  (let* ((last t)
+	 (form nil)
+	 (key (gensym)))
+    (dolist (clause (reverse clauses)
+	     `(LET ((,key ,keyform))
+		;;(DECLARE (:READ-ONLY ,key)) ; Beppe
+		,form))
+      (let ((selector (car clause)))
+	(cond ((or (eq selector T) (eq selector 'OTHERWISE))
+	       (unless last
+		 (si::signal-simple-error
+		  'program-error nil
+		  "CASE: The selector ~A can only appear at the last position."
+		  (list selector)))
+	       (setq form `(PROGN ,@(cdr clause))))
+	      ((consp selector)
+	       (setq form `(IF (MEMBER ,key ',selector)
+			       (PROGN ,@(cdr clause))
+			       ,form)))
+	      (selector
+	       (setq form `(IF (EQL ,key ',selector)
+			       (PROGN ,@(cdr clause))
+			       ,form))))
+	(setq last nil)))))
 
 (defmacro return (&optional (val nil)) `(RETURN-FROM NIL ,val))
 
