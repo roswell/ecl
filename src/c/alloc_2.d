@@ -442,7 +442,7 @@ cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl
                 MAYBE_MARK(o->process.queue_record);
                 MAYBE_MARK(o->process.waiting_for);
                 MAYBE_MARK(o->process.exit_values);
-                MAYBE_MARK(o->process.exit_lock);
+                MAYBE_MARK(o->process.exit_barrier);
                 MAYBE_MARK(o->process.parent);
                 MAYBE_MARK(o->process.initial_bindings);
                 MAYBE_MARK(o->process.interrupt);
@@ -988,7 +988,7 @@ init_alloc(void)
                 to_bitmap(&o, &(o.process.interrupt)) |
                 to_bitmap(&o, &(o.process.initial_bindings)) |
                 to_bitmap(&o, &(o.process.parent)) |
-                to_bitmap(&o, &(o.process.exit_lock)) |
+                to_bitmap(&o, &(o.process.exit_barrier)) |
                 to_bitmap(&o, &(o.process.exit_values)) |
                 to_bitmap(&o, &(o.process.waiting_for)) |
                 to_bitmap(&o, &(o.process.queue_record));
@@ -1311,7 +1311,7 @@ stacks_scanner()
 			cl_object process = l->vector.self.t[i];
 			if (!Null(process)) {
 				cl_env_ptr env = process->process.env;
-				if (env != the_env) ecl_mark_env(env);
+				if (env && (env != the_env)) ecl_mark_env(env);
 			}
 		}
 	}
