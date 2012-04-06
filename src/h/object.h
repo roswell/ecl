@@ -878,24 +878,24 @@ enum {
         ECL_PROCESS_INACTIVE = 0,
         ECL_PROCESS_BOOTING,
         ECL_PROCESS_ACTIVE,
-        ECL_PROCESS_EXITING,
-        ECL_PROCESS_DEAD
+        ECL_PROCESS_EXITING
 };
 struct ecl_process {
-	HEADER2(active, phase);
+	HEADER1(active);
 	cl_object name;
 	cl_object function;
 	cl_object args;
-	pthread_t thread;
 	struct cl_env_struct *env;
 	cl_object interrupt;
 	cl_object initial_bindings;
         cl_object parent;
-	cl_object exit_lock;
-	int trap_fpe_bits;
+	cl_object exit_barrier;
         cl_object exit_values;
 	cl_object waiting_for;
 	cl_object queue_record;
+	cl_index phase;
+	pthread_t thread;
+	int trap_fpe_bits;
 };
 
 #define ECL_WAKEUP_ONE 0

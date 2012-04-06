@@ -197,13 +197,13 @@ thread_cleanup(void *aux)
 	cl_object process = (cl_object)aux;
 	cl_env_ptr env = process->process.env;
 	/* The following flags will disable all interrupts. */
-        process->process.phase = ECL_PROCESS_EXITING;
+        AO_store((AO_t*)&process->process.phase, ECL_PROCESS_EXITING);
 	process->process.active = 0;
 	ecl_unlist_process(process);
-	mp_giveup_lock(process->process.exit_lock);
+	mp_barrier_unblock(3, process->process.exit_barrier, @':disable', Ct);
 	ecl_set_process_env(process->process.env = NULL);
 	if (env) _ecl_dealloc_env(env);
-        process->process.phase = ECL_PROCESS_DEAD;
+        AO_store((AO_t*)&process->process.phase, ECL_PROCESS_INACTIVE);
 }
 
 #ifdef ECL_WINDOWS_THREADS
@@ -220,15 +220,14 @@ thread_entry_point(void *arg)
 	 * Upon entering this routine
 	 *	process.env = our environment for lisp
 	 *	process.active = 2
+	 *	process.phase = ECL_PROCESS_BOOTING
 	 *	signals are disabled in the environment
 	 *
-	 * Since process.active = 2, this process will not receive
-	 * signals that originate from other processes. Furthermore,
-	 * we expect not to get any other interrupts (SIGSEGV, SIGFPE)
-	 * if we do things right.
+	 * This process will not receive signals that originate from
+	 * other processes. Furthermore, we expect not to get any
+	 * other interrupts (SIGSEGV, SIGFPE) if we do things right.
 	 */
 	/* 1) Setup the environment for the execution of the thread */
-        process->process.phase = ECL_PROCESS_BOOTING;
 	ecl_set_process_env(env = process->process.env);
 #ifndef ECL_WINDOWS_THREADS
 	pthread_cleanup_push(thread_cleanup, (void *)process);
@@ -241,7 +240,6 @@ thread_entry_point(void *arg)
 	*     do an unwind up to frs_top.
 	*/
 	CL_CATCH_ALL_BEGIN(env) {
-		mp_get_lock_wait(process->process.exit_lock);
 		process->process.active = 1;
 		process->process.phase = ECL_PROCESS_ACTIVE;
 		ecl_enable_interrupts_env(env);
@@ -296,9 +294,12 @@ alloc_process(cl_object name, cl_object initial_bindings)
 		array = cl_copy_seq(ecl_process_env()->bindings_array);
 	}
         process->process.initial_bindings = array;
-	process->process.exit_lock = mp_make_lock(0);
 	process->process.waiting_for = Cnil;
 	process->process.queue_record = ecl_list1(process);
+	/* Creates the exit barrier so that processes can wait for termination,
+	 * but it is created in a disabled state. */
+	process->process.exit_barrier = ecl_make_barrier(name, MOST_POSITIVE_FIXNUM);
+	mp_barrier_unblock(3, process->process.exit_barrier, @':disable', Ct);
 	return process;
 }
 
@@ -349,7 +350,6 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
         env->thread_local_bindings_size = env->bindings_array->vector.dim;
         env->thread_local_bindings = env->bindings_array->vector.self.t;
 	ecl_enable_interrupts_env(env);
-	mp_get_lock_wait(process->process.exit_lock);
 	process->process.active = 1;
         process->process.phase = ECL_PROCESS_ACTIVE;
 	return 1;
@@ -454,11 +454,9 @@ mp_process_enable(cl_object process)
 	 */
 	cl_env_ptr process_env;
 	int ok;
-	unlikely_if (Null(mp_get_lock_nowait(process->process.exit_lock))) {
-		FEerror("Cannot enable the running process ~A.", 1, process);
-	}
-	unlikely_if (process->process.active) {
-		mp_giveup_lock(process->process.exit_lock);
+	unlikely_if (!AO_compare_and_swap_full((AO_t*)&process->process.phase,
+					       ECL_PROCESS_INACTIVE,
+					       ECL_PROCESS_BOOTING)) {
 		FEerror("Cannot enable the running process ~A.", 1, process);
 	}
 	process_env = _ecl_alloc_env();
@@ -476,6 +474,9 @@ mp_process_enable(cl_object process)
 	process->process.trap_fpe_bits =
 		process->process.parent->process.env->trap_fpe_bits;
 	process->process.active = 2;
+
+	/* Activate the barrier so that processes can immediately start waiting. */
+	mp_barrier_unblock(1, process->process.exit_barrier);
 
 #ifdef ECL_WINDOWS_THREADS
 	{
@@ -513,12 +514,14 @@ mp_process_enable(cl_object process)
 	}
 #endif
 	if (!ok) {
+		/* Disable the barrier and alert possible waiting processes. */
+		mp_barrier_unblock(3, process->process.exit_barrier,
+				   @':disable', Ct);
+		process->process.phase = ECL_PROCESS_INACTIVE;
 		process->process.active = 0;
 		process->process.env = NULL;
 		_ecl_dealloc_env(process_env);
 	}
-	mp_giveup_lock(process->process.exit_lock);
-
 	@(return (ok? process : Cnil))
 }
 
@@ -567,20 +570,11 @@ mp_process_join(cl_object process)
 {
 	bool again = 1;
 	assert_type_process(process);
-	/* We try to acquire a lock that is only owned by the process
-	 * while it is active. */
-        while (process->process.active && again) {
-		cl_object l = process->process.exit_lock;
-		if (Null(mp_get_lock_wait(l))) {
-			FEerror("MP:PROCESS-JOIN: Error when "
-				"joining process ~A",
-				1, process);
-		}
-		/* Wait until process has moved past
-		 * initialization phase */
-		again = process->process.phase == ECL_PROCESS_BOOTING;
-		mp_giveup_lock(l);
-        }
+	if (process->process.phase) {
+		/* We try to acquire a lock that is only owned by the process
+		 * while it is active. */
+		mp_barrier_wait(1, process->process.exit_barrier);
+	}
         return cl_values_list(process->process.exit_values);
 }
 
