@@ -104,7 +104,11 @@ static cl_object
 barrier_wait_condition(cl_env_ptr env, cl_object barrier)
 {
 	cl_object output;
+	/* We were signaled */
 	if (env->own_process->process.waiting_for != barrier)
+		return Ct;
+	/* Disabled barrier */
+	else if (barrier->barrier.arrivers_count < 0)
 		return Ct;
 	else
 		return Cnil;
