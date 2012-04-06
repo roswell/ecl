@@ -119,5 +119,5 @@ mp_wait_on_semaphore(cl_object semaphore)
 	if (get_semaphore_inner(env, semaphore) == Cnil) {
 		ecl_wait_on(env, get_semaphore_inner, semaphore);
 	}
-	@(return Ct)
+	ecl_return1(env, Ct);
 }
