@@ -145,7 +145,8 @@ decrement_counter(cl_fixnum *counter)
 	}
 	ecl_disable_interrupts_env(the_env);
 	own_process->process.waiting_for = barrier;
-	if (decrement_counter(&barrier->barrier.arrivers_count) == 0) {
+	counter = decrement_counter(&barrier->barrier.arrivers_count);
+	if (counter == 0) {
 		/* There are (count-1) threads in the queue and we
 		 * are the last one. We thus unblock all threads and
 		 * proceed. */
@@ -153,10 +154,13 @@ decrement_counter(cl_fixnum *counter)
 		mp_barrier_unblock(1, barrier);
 		ecl_enable_interrupts_env(the_env);
 		output = @':unblocked';
-	} else {
+	} else if (counter > 0) {
 		ecl_enable_interrupts_env(the_env);
 		ecl_wait_on(the_env, barrier_wait_condition, barrier);
 		output = Ct;
+	} else {
+		/* Barrier disabled */
+		output = Cnil;
 	}
 	@(return output)
 }
