@@ -140,12 +140,13 @@ waiting_time(cl_index iteration, struct ecl_timeval *start)
 	return time;
 }
 
-static void
+static cl_object
 ecl_wait_on_timed(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_object o)
 {
 	volatile const cl_env_ptr the_env = env;
 	volatile cl_object own_process = the_env->own_process;
 	volatile cl_object record;
+	volatile cl_object output;
 	cl_fixnum iteration = 0;
 	struct ecl_timeval start;
 	ecl_get_internal_real_time(&start);
@@ -153,11 +154,12 @@ ecl_wait_on_timed(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object),
 	/* This spinlock is here because the default path (fair) is
 	 * too slow */
 	for (iteration = 0; iteration < 10; iteration++) {
-		if (condition(the_env,o) != Cnil)
-			return;
+		cl_object output = condition(the_env,o);
+		if (output != Cnil)
+			return output;
 	}
 
-	/* 0) We reserve a record for the queue. In order to a void
+	/* 0) We reserve a record for the queue. In order to avoid
 	 * using the garbage collector, we reuse records */
 	record = own_process->process.queue_record;
 	unlikely_if (record == Cnil) {
@@ -182,7 +184,7 @@ ecl_wait_on_timed(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object),
 		 * condition periodically. */
 		do {
 			ecl_musleep(waiting_time(iteration++, &start), 1);
-		} while (condition(the_env, o) == Cnil);
+		} while (Null(output = condition(the_env, o)));
 		ecl_bds_unwind1(the_env);
 	} CL_UNWIND_PROTECT_EXIT {
 		/* 4) At this point we wrap up. We remove ourselves
@@ -194,10 +196,11 @@ ecl_wait_on_timed(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object),
 		ECL_RPLACD(record, Cnil);
 	} CL_UNWIND_PROTECT_END;
 	ecl_bds_unwind1(the_env);
+	return output;
 }
 
 
-void
+cl_object
 ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_object o)
 {
 #if defined(HAVE_SIGPROCMASK)
@@ -206,6 +209,7 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 	volatile cl_object record;
 	volatile sigset_t original;
 	volatile aborting = 1;
+	volatile output;
 
 	/* 0) We reserve a record for the queue. In order to avoid
 	 * using the garbage collector, we reuse records */
@@ -234,7 +238,7 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 		 * between 0) and 2), which is why we start with the
 		 * check*/
 		if (ECL_CONS_CAR(o->queue.list) != own_process ||
-		    condition(the_env, o) == Cnil)
+		    Null(output = condition(the_env, o)))
 		{
 			print_lock("suspending %p", o, o);
 			do {
@@ -246,7 +250,7 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 				 * which is why need to protect it all with
 				 * UNWIND-PROTECT. */
 				sigsuspend(&original);
-			} while (condition(the_env, o) == Cnil);
+			} while (Null(output = condition(the_env, o)));
 		}
 		aborting = 0;
 	} CL_UNWIND_PROTECT_EXIT {
@@ -272,8 +276,9 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 		   all cleanup steps are performed. */
 		pthread_sigmask(SIG_SETMASK, &original, NULL);
 	} CL_UNWIND_PROTECT_END;
+	return output;
 #else
-	ecl_wait_on_timed(env, condition, o);
+	return ecl_wait_on_timed(env, condition, o);
 #endif
 }
 

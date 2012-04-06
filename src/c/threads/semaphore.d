@@ -98,14 +98,14 @@ get_semaphore_inner(cl_env_ptr env, cl_object semaphore)
 	cl_object output;
 	ecl_disable_interrupts_env(env);
 	do {
-		cl_fixnum counter = semaphre->semaphore.counter;
+		cl_fixnum counter = semaphore->semaphore.counter;
 		if (!counter) {
 			output = Cnil;
 			break;
 		}
 		if (AO_compare_and_swap_full((AO_t*)&(semaphore->semaphore.counter),
 					     (AO_t)counter, (AO_t)(counter-1))) {
-			output = Ct;
+			output = MAKE_FIXNUM(counter);
 			break;
 		}
 		ecl_process_yield();
@@ -118,11 +118,13 @@ cl_object
 mp_wait_on_semaphore(cl_object semaphore)
 {
         cl_env_ptr env = ecl_process_env();
+	cl_object output;
 	unlikely_if (type_of(semaphore) != t_semaphore) {
 		FEerror_not_a_semaphore(semaphore);
 	}
-	if (get_semaphore_inner(env, semaphore) == Cnil) {
-		ecl_wait_on(env, get_semaphore_inner, semaphore);
+	output = get_semaphore_inner(env, semaphore);
+	if (Null(output)) {
+		output = ecl_wait_on(env, get_semaphore_inner, semaphore);
 	}
-	ecl_return1(env, Ct);
+	ecl_return1(env, output);
 }
