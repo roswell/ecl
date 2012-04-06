@@ -87,7 +87,7 @@ mp_mailbox_empty_p(cl_object mailbox)
 	unlikely_if (type_of(mailbox) != t_mailbox) {
 		FEerror_not_a_mailbox(mailbox);
 	}
-	ecl_return1(env, mailbox->mailbox.reader_semaphore->semaphore.counter? Ct : Cnil);
+	ecl_return1(env, mailbox->mailbox.reader_semaphore->semaphore.counter? Cnil : Ct);
 }
 
 cl_object
