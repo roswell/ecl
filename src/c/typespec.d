@@ -167,6 +167,8 @@ ecl_type_to_symbol(cl_type t)
 		return @'mp::semaphore';
 	case t_barrier:
 		return @'mp::barrier';
+	case t_mailbox:
+		return @'mp::mailbox';
 #endif
 	case t_codeblock:
 		return @'si::code-block';

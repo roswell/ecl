@@ -90,6 +90,7 @@
 	    #+threads (mp::condition-variable)
 	    #+threads (mp::semaphore)
 	    #+threads (mp::barrier)
+	    #+threads (mp::mailbox)
 	    #+sse2 (ext::sse-pack))))
 
 (loop for (name . rest) in '#.+builtin-classes-list+

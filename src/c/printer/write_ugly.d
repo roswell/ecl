@@ -387,13 +387,24 @@ write_condition_variable(cl_object x, cl_object stream)
         _ecl_write_unreadable(x, "semaphore", Cnil, stream);
 }
 
-# ifdef ECL_SEMAPHORES
 static void
 write_semaphore(cl_object x, cl_object stream)
 {
         _ecl_write_unreadable(x, "semaphore", Cnil, stream);
 }
-# endif
+
+static void
+write_barrier(cl_object x, cl_object stream)
+{
+        _ecl_write_unreadable(x, "barrier", Cnil, stream);
+}
+
+static void
+write_mailbox(cl_object x, cl_object stream)
+{
+        _ecl_write_unreadable(x, "mailbox", Cnil, stream);
+}
+
 #endif /* ECL_THREADS */
 
 static void
@@ -446,9 +457,9 @@ static printer dispatch[FREE+1] = {
 	write_lock, /* t_lock */
 	write_lock, /* t_rwlock */
 	write_condition_variable, /* t_condition_variable */
-# ifdef ECL_SEMAPHORES
         write_semaphore, /* t_semaphore */
-# endif
+        write_barrier, /* t_barrier */
+        write_mailbox, /* t_mailbox */
 #endif
 	write_codeblock, /* t_codeblock */
 	write_foreign, /* t_foreign */

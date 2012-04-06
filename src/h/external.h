@@ -1745,6 +1745,15 @@ extern ECL_API cl_object mp_barrier_arrivers_count(cl_object);
 extern ECL_API cl_object mp_barrier_wait _ARGS((cl_narg, cl_object, ...));
 extern ECL_API cl_object mp_barrier_unblock _ARGS((cl_narg, cl_object, ...));
 
+/* threads/mailbox.d */
+
+extern ECL_API cl_object mp_make_mailbox _ARGS((cl_narg, ...));
+extern ECL_API cl_object mp_mailbox_name(cl_object mailbox);
+extern ECL_API cl_object mp_mailbox_count(cl_object mailbox);
+extern ECL_API cl_object mp_mailbox_empty_p(cl_object);
+extern ECL_API cl_object mp_mailbox_read(cl_object mailbox);
+extern ECL_API cl_object mp_mailbox_send(cl_object mailbox, cl_object msg);
+
 /* threads/atomic.c */
 
 extern ECL_API cl_object ecl_atomic_get(cl_object *slot);

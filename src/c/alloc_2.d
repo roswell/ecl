@@ -479,6 +479,12 @@ cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl
                 MAYBE_MARK(o->barrier.queue_spinlock);
                 MAYBE_MARK(o->barrier.name);
 		break;
+        case t_mailbox:
+                MAYBE_MARK(o->mailbox.data);
+		MAYBE_MARK(o->mailbox.name);
+		MAYBE_MARK(o->mailbox.reader_semaphore);
+		MAYBE_MARK(o->mailbox.writer_semaphore);
+		break;
 # endif
         case t_codeblock:
                 MAYBE_MARK(o->cblock.source);
@@ -586,6 +592,7 @@ ecl_alloc_object(cl_type t)
         case t_condition_variable:
         case t_semaphore:
         case t_barrier:
+	case t_mailbox:
 #endif
 	case t_foreign:
 	case t_codeblock: {
@@ -861,6 +868,7 @@ init_alloc(void)
                 sizeof(struct ecl_condition_variable), 0);
 	init_tm(t_semaphore, "SEMAPHORES", sizeof(struct ecl_semaphore), 0);
 	init_tm(t_barrier, "BARRIER", sizeof(struct ecl_barrier), 0);
+	init_tm(t_mailbox, "MAILBOX", sizeof(struct ecl_mailbox), 0);
 #endif
 	init_tm(t_codeblock, "CODEBLOCK", sizeof(struct ecl_codeblock), -1);
 	init_tm(t_foreign, "FOREIGN", sizeof(struct ecl_foreign), 2);
@@ -1017,6 +1025,11 @@ init_alloc(void)
 		to_bitmap(&o, &(o.barrier.name)) |
 		to_bitmap(&o, &(o.barrier.queue_list)) |
 		to_bitmap(&o, &(o.barrier.queue_spinlock));
+	type_info[t_mailbox].descriptor = 
+		to_bitmap(&o, &(o.mailbox.name)) |
+		to_bitmap(&o, &(o.mailbox.data)) |
+		to_bitmap(&o, &(o.mailbox.reader_semaphore)) |
+		to_bitmap(&o, &(o.mailbox.writer_semaphore));
 # endif
         type_info[t_codeblock].descriptor =
                 to_bitmap(&o, &(o.cblock.data)) |

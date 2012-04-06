@@ -1623,6 +1623,14 @@ cl_symbols[] = {
 {KEY_ "RESET-COUNT",NULL},
 {KEY_ "KILL-WAITING",NULL},
 {KEY_ "UNBLOCKED",NULL},
+
+{MP_ "MAILBOX",NULL},
+{MP_ "MAKE-MAILBOX",IF_MP("mp_make_mailbox")},
+{MP_ "MAILBOX-NAME",IF_MP("mp_mailbox_name")},
+{MP_ "MAILBOX-COUNT",IF_MP("mp_mailbox_count")},
+{MP_ "MAILBOX-EMPTY-P",IF_MP("mp_mailbox_empty_p")},
+{MP_ "MAILBOX-READ",IF_MP("mp_mailbox_read")},
+{MP_ "MAILBOX-SEND",IF_MP("mp_mailbox_send")},
 /* #endif defined(ECL_THREADS) */
 
 {SYS_ "WHILE",NULL},

@@ -83,6 +83,7 @@ typedef enum {
 	t_condition_variable,
         t_semaphore,
         t_barrier,
+        t_mailbox,
 #endif
 	t_codeblock,
 	t_foreign,
@@ -935,6 +936,17 @@ struct ecl_lock {
 	cl_fixnum counter;
 };
 
+struct ecl_mailbox {
+	HEADER;
+	cl_object name;
+        cl_object data;
+        cl_object reader_semaphore;
+        cl_object writer_semaphore;
+	cl_index read_pointer;
+	cl_index write_pointer;
+	cl_index mask;
+};
+
 struct ecl_rwlock {
 	HEADER;
         cl_object name;
@@ -1059,6 +1071,7 @@ union cl_lispunion {
         struct ecl_condition_variable condition_variable; /*  condition-variable */
         struct ecl_semaphore	semaphore;	/*  semaphore  */
         struct ecl_barrier	barrier;	/*  barrier  */
+        struct ecl_mailbox	mailbox;	/*  mailbox  */
 #endif
 	struct ecl_codeblock	cblock;		/*  codeblock  */
 	struct ecl_foreign	foreign; 	/*  user defined data type */

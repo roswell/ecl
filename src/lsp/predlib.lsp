@@ -1233,6 +1233,7 @@ if not possible."
 	       #+threads (MP::CONDITION-VARIABLE)
 	       #+threads (MP::SEMAPHORE)
 	       #+threads (MP::BARRIER)
+	       #+threads (MP::MAILBOX)
 	       #+ffi (FOREIGN-DATA)
 	       #+sse2 (EXT:SSE-PACK (OR EXT:INT-SSE-PACK
 				     EXT:FLOAT-SSE-PACK
