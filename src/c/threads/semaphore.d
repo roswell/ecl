@@ -95,16 +95,21 @@ mp_semaphore_wait_count(cl_object semaphore)
 static cl_object
 get_semaphore_inner(cl_env_ptr env, cl_object semaphore)
 {
-	cl_fixnum counter;
 	cl_object output;
 	ecl_disable_interrupts_env(env);
-	if ((counter = semaphore->semaphore.counter) &&
-	    AO_compare_and_swap_full((AO_t*)&(semaphore->semaphore.counter),
-				     (AO_t)counter, (AO_t)(counter-1))) {
-		output = Ct;
-	} else {
-		output = Cnil;
-	}
+	do {
+		cl_fixnum counter = semaphre->semaphore.counter;
+		if (!counter) {
+			output = Cnil;
+			break;
+		}
+		if (AO_compare_and_swap_full((AO_t*)&(semaphore->semaphore.counter),
+					     (AO_t)counter, (AO_t)(counter-1))) {
+			output = Ct;
+			break;
+		}
+		ecl_process_yield();
+	} while (1);
 	ecl_enable_interrupts_env(env);
 	return output;
 }
