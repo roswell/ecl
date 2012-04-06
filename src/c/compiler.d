@@ -1019,6 +1019,10 @@ perform_c_case(cl_env_ptr env, cl_object args, int flags) {
 	} while (test == Cnil);
 
 	if (@'otherwise' == test || test == Ct) {
+		unlikely_if (args != Cnil) {
+			FEprogram_error_noreturn("CASE: The selector ~A can only appear at the last position.",
+						 1, test);
+		}
 		compile_body(env, clause, flags);
 	} else {
 		cl_index labeln, labelz;
