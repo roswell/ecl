@@ -75,6 +75,23 @@ wait_queue_pop_all(cl_env_ptr the_env, cl_object q)
 	return output;
 }
 
+static ECL_INLINE cl_object
+wait_queue_pop_one(cl_env_ptr the_env, cl_object q)
+{
+	cl_object output;
+	ecl_disable_interrupts_env(the_env);
+	ecl_get_spinlock(the_env, &q->queue.spinlock);
+	{
+		output = q->queue.list;
+		if (output != Cnil)
+			q->queue.list = ECL_CONS_CDR(output);
+		output = ECL_CONS_CAR(output);
+	}
+	ecl_giveup_spinlock(&q->queue.spinlock);
+	ecl_enable_interrupts_env(the_env);
+	return output;
+}
+
 static ECL_INLINE void
 wait_queue_delete(cl_env_ptr the_env, cl_object q, cl_object item)
 {
@@ -279,7 +296,6 @@ static void
 wakeup_all(cl_env_ptr the_env, cl_object q, int flags)
 {
 	cl_object queue = wait_queue_pop_all(the_env, q);
-	queue = cl_nreverse(queue);
 	while (!Null(queue)) {
 		cl_object process = ECL_CONS_CAR(queue);
 		queue = ECL_CONS_CDR(queue);
@@ -292,10 +308,9 @@ static void
 wakeup_one(cl_env_ptr the_env, cl_object q, int flags)
 {
 	do {
-		cl_object next = q->queue.list;
+		cl_object next = wait_queue_pop_one(the_env, q);
 		if (Null(next))
 			return;
-		next = ECL_CONS_CAR(next);
 		if (next->process.active) {
 			wakeup_this(next, flags);
 			return;
