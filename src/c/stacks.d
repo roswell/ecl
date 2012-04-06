@@ -153,6 +153,8 @@ ecl_bds_overflow(void)
 	if (env->bds_limit >= last) {
                 ecl_unrecoverable_error(env, stack_overflow_msg);
 	}
+	print_lock("BDS OVERFLOW %p %p %p", Cnil,
+		   env->bds_org, env->bds_top, env->bds_limit);
 	env->bds_limit += margin;
 	cl_cerror(6, make_constant_base_string("Extend stack size"),
 		  @'ext::stack-overflow', @':size', MAKE_FIXNUM(size),

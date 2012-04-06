@@ -21,9 +21,6 @@
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
 
-#define print_lock(a,b,...) (void)0
-
-
 void ECL_INLINE
 ecl_process_yield()
 {
@@ -76,7 +73,7 @@ wait_queue_pop_all(cl_env_ptr the_env, cl_object q)
 }
 
 static ECL_INLINE cl_object
-wait_queue_pop_one(cl_env_ptr the_env, cl_object q)
+wait_queue_first_one(cl_env_ptr the_env, cl_object q)
 {
 	cl_object output;
 	ecl_disable_interrupts_env(the_env);
@@ -84,8 +81,7 @@ wait_queue_pop_one(cl_env_ptr the_env, cl_object q)
 	{
 		output = q->queue.list;
 		if (output != Cnil)
-			q->queue.list = ECL_CONS_CDR(output);
-		output = ECL_CONS_CAR(output);
+			output = ECL_CONS_CAR(output);
 	}
 	ecl_giveup_spinlock(&q->queue.spinlock);
 	ecl_enable_interrupts_env(the_env);
@@ -240,6 +236,7 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 		if (ECL_CONS_CAR(o->queue.list) != own_process ||
 		    condition(the_env, o) == Cnil)
 		{
+			print_lock("suspending %p", o, o);
 			do {
 				/* This will wait until we get a signal that
 				 * demands some code being executed. Note that
@@ -285,7 +282,7 @@ wakeup_this(cl_object p, int flags)
 {
 	if (flags & ECL_WAKEUP_RESET_FLAG)
 		p->process.waiting_for = Cnil;
-	print_lock("awaking\t\t%d", Cnil, fix(p->process.name));
+	print_lock("awaking %p", p, p);
 	if (flags & ECL_WAKEUP_KILL)
 		mp_process_kill(p);
 	else
@@ -299,7 +296,7 @@ wakeup_all(cl_env_ptr the_env, cl_object q, int flags)
 	while (!Null(queue)) {
 		cl_object process = ECL_CONS_CAR(queue);
 		queue = ECL_CONS_CDR(queue);
-		if (process->process.active)
+		if (process->process.phase != ECL_PROCESS_INACTIVE)
 			wakeup_this(process, flags);
 	}
 }
@@ -308,10 +305,13 @@ static void
 wakeup_one(cl_env_ptr the_env, cl_object q, int flags)
 {
 	do {
-		cl_object next = wait_queue_pop_one(the_env, q);
-		if (Null(next))
+		cl_object next = wait_queue_first_one(the_env, q);
+		if (Null(next)) {
+			print_lock("no process to awake", q);
 			return;
-		if (next->process.active) {
+		}
+		print_lock("awaking %p", q, next);
+		if (next->process.phase != ECL_PROCESS_INACTIVE) {
 			wakeup_this(next, flags);
 			return;
 		}
@@ -321,7 +321,6 @@ wakeup_one(cl_env_ptr the_env, cl_object q, int flags)
 void
 ecl_wakeup_waiters(cl_env_ptr the_env, cl_object q, int flags)
 {
-	print_lock("releasing\t", o);
 	if (q->queue.list != Cnil) {
 		if (flags & ECL_WAKEUP_ALL) {
 			wakeup_all(the_env, q, flags);
@@ -340,7 +339,8 @@ print_lock(char *prefix, cl_object l, ...)
 	static cl_object lock = Cnil;
 	va_list args;
 	va_start(args, lock);
-	if (l == Cnil || l->lock.name == MAKE_FIXNUM(0)) {
+	return;
+	if (l == Cnil || FIXNUMP(l->lock.name)) {
 		cl_env_ptr env = ecl_process_env();
 		ecl_get_spinlock(env, &lock);
 		printf("\n%d\t", fix(env->own_process->process.name));
@@ -348,7 +348,7 @@ print_lock(char *prefix, cl_object l, ...)
 		if (l != Cnil) {
 			cl_object p = l->lock.queue_list;
 			while (p != Cnil) {
-				printf(" %d", fix(ECL_CONS_CAR(p)->process.name));
+				printf(" %x", fix(ECL_CONS_CAR(p)->process.name));
 				p = ECL_CONS_CDR(p);
 			}
 		}

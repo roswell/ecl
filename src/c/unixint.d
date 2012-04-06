@@ -245,9 +245,7 @@ zombie_process(cl_env_ptr the_env)
 	} else {
 		/* When we are exiting a thread, we simply ignore all signals. */
 		cl_object process = the_env->own_process;
-		return (!process->process.active ||
-			process->process.phase == ECL_PROCESS_EXITING);
-		return 0;
+		return (process->process.phase == ECL_PROCESS_INACTIVE);
 	}
 #else
 	return !the_env;

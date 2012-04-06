@@ -881,7 +881,7 @@ enum {
         ECL_PROCESS_EXITING
 };
 struct ecl_process {
-	HEADER1(active);
+	HEADER;
 	cl_object name;
 	cl_object function;
 	cl_object args;

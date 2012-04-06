@@ -579,7 +579,7 @@ cl_boot(int argc, char **argv)
 #endif
 
 #ifdef ECL_THREADS
-	env->bindings_array = si_make_vector(Ct, MAKE_FIXNUM(256),
+	env->bindings_array = si_make_vector(Ct, MAKE_FIXNUM(1024),
                                             Cnil, Cnil, Cnil, Cnil);
         si_fill_array_with_elt(env->bindings_array, OBJNULL, MAKE_FIXNUM(0), Cnil);
         env->thread_local_bindings_size = env->bindings_array->vector.dim;

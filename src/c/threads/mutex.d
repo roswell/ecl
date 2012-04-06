@@ -54,7 +54,7 @@ ecl_make_lock(cl_object name, bool recursive)
         return output;
 }
 
-@(defun mp::make-lock (&key name ((:recursive recursive) Ct))
+@(defun mp::make-lock (&key name ((:recursive recursive) Cnil))
 @
 	@(return ecl_make_lock(name, !Null(recursive)))
 @)
@@ -112,12 +112,13 @@ mp_giveup_lock(cl_object lock)
 	}
 	if (--lock->lock.counter == 0) {
 		lock->lock.owner = Cnil;
+		print_lock("releasing %p\t", lock, lock);
 		ecl_wakeup_waiters(env, lock, ECL_WAKEUP_ONE);
+	} else {
+		print_lock("released %p\t", lock, lock);
 	}
         ecl_return1(env, Ct);
 }
-
-#define print_lock(a,b,...) (void)0
 
 static cl_object
 get_lock_inner(cl_env_ptr env, cl_object lock)
@@ -129,7 +130,7 @@ get_lock_inner(cl_env_ptr env, cl_object lock)
 				     (AO_t)Cnil, (AO_t)own_process)) {
 		lock->lock.counter = 1;
 		output = Ct;
-		print_lock("acquiring\t", lock, lock);
+		print_lock("acquired %p\t", lock, lock);
 	} else if (lock->lock.owner == own_process) {
                 unlikely_if (!lock->lock.recursive) {
 			FEerror_not_a_recursive_lock(lock);
@@ -137,6 +138,8 @@ get_lock_inner(cl_env_ptr env, cl_object lock)
                 ++lock->lock.counter;
 		output = Ct;
         } else {
+		print_lock("failed acquiring %p for %d\t", lock, lock,
+			   lock->lock.owner);
 		output = Cnil;
 	}
 	ecl_enable_interrupts_env(env);

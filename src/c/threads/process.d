@@ -198,7 +198,6 @@ thread_cleanup(void *aux)
 	cl_env_ptr env = process->process.env;
 	/* The following flags will disable all interrupts. */
         AO_store((AO_t*)&process->process.phase, ECL_PROCESS_EXITING);
-	process->process.active = 0;
 	ecl_unlist_process(process);
 	mp_barrier_unblock(3, process->process.exit_barrier, @':disable', Ct);
 	ecl_set_process_env(process->process.env = NULL);
@@ -219,9 +218,9 @@ thread_entry_point(void *arg)
 	/*
 	 * Upon entering this routine
 	 *	process.env = our environment for lisp
-	 *	process.active = 2
 	 *	process.phase = ECL_PROCESS_BOOTING
 	 *	signals are disabled in the environment
+	 *	the communication interrupt is disabled (sigmasked)
 	 *
 	 * This process will not receive signals that originate from
 	 * other processes. Furthermore, we expect not to get any
@@ -233,6 +232,8 @@ thread_entry_point(void *arg)
 	pthread_cleanup_push(thread_cleanup, (void *)process);
 #endif
 	ecl_cs_set_org(env);
+	print_lock("ENVIRON %p %p %p %p", Cnil, process,
+		   env->bds_org, env->bds_top, env->bds_limit);
 	ecl_list_process(process);
 
 	/* 2) Execute the code. The CATCH_ALL point is the destination
@@ -240,7 +241,14 @@ thread_entry_point(void *arg)
 	*     do an unwind up to frs_top.
 	*/
 	CL_CATCH_ALL_BEGIN(env) {
-		process->process.active = 1;
+#ifdef HAVE_SIGPROCMASK
+		{
+		sigset_t new;
+		sigemptyset(&new);
+		sigaddset(&new, ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL]);
+		pthread_sigmask(SIG_UNBLOCK, &new, NULL);
+		}
+#endif
 		process->process.phase = ECL_PROCESS_ACTIVE;
 		ecl_enable_interrupts_env(env);
 		si_trap_fpe(@'last', Ct);
@@ -279,7 +287,6 @@ alloc_process(cl_object name, cl_object initial_bindings)
 {
 	cl_object process = ecl_alloc_object(t_process), array;
         process->process.phase = ECL_PROCESS_INACTIVE;
-	process->process.active = 0;
 	process->process.name = name;
 	process->process.function = Cnil;
 	process->process.args = Cnil;
@@ -340,7 +347,6 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
 	ecl_set_process_env(env);
 	process = alloc_process(name, bindings);
         process->process.phase = ECL_PROCESS_BOOTING;
-	process->process.active = 2;
 	process->process.thread = current;
 	process->process.env = env;
 	env->own_process = process;
@@ -350,7 +356,6 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
         env->thread_local_bindings_size = env->bindings_array->vector.dim;
         env->thread_local_bindings = env->bindings_array->vector.self.t;
 	ecl_enable_interrupts_env(env);
-	process->process.active = 1;
         process->process.phase = ECL_PROCESS_ACTIVE;
 	return 1;
 }
@@ -387,7 +392,7 @@ mp_process_preset(cl_narg narg, cl_object process, cl_object function, ...)
 cl_object
 mp_interrupt_process(cl_object process, cl_object function)
 {
-	if (mp_process_active_p(process) == Cnil)
+	unlikely_if (mp_process_active_p(process) == Cnil)
 		FEerror("Cannot interrupt the inactive process ~A", 1, process);
         ecl_interrupt_process(process, function);
 	@(return Ct)
@@ -428,11 +433,7 @@ mp_process_resume(cl_object process)
 cl_object
 mp_process_kill(cl_object process)
 {
-	assert_type_process(process);
-	if (process->process.active &&
-	    process->process.phase != ECL_PROCESS_EXITING) {
-		return mp_interrupt_process(process, @'mp::exit-process');
-	}
+	return mp_interrupt_process(process, @'mp::exit-process');
 }
 
 cl_object
@@ -445,15 +446,12 @@ mp_process_yield(void)
 cl_object
 mp_process_enable(cl_object process)
 {
-	/*
-	 * We try to grab the process exit lock. If we achieve it that
-	 * means the 1) process is not running or in the finalization
-	 * or 2) it is in the initialization phase. The second case we
-	 * can distinguish because process.active != 0. The first one
-	 * is ok.
-	 */
 	cl_env_ptr process_env;
 	int ok;
+	/* Try to gain exclusive access to the process at the same
+	 * time we ensure that it is inactive. This prevents two
+	 * concurrent calls to process-enable from different threads
+	 * on the same process */
 	unlikely_if (!AO_compare_and_swap_full((AO_t*)&process->process.phase,
 					       ECL_PROCESS_INACTIVE,
 					       ECL_PROCESS_BOOTING)) {
@@ -473,7 +471,6 @@ mp_process_enable(cl_object process)
         process->process.parent = mp_current_process();
 	process->process.trap_fpe_bits =
 		process->process.parent->process.env->trap_fpe_bits;
-	process->process.active = 2;
 
 	/* Activate the barrier so that processes can immediately start waiting. */
 	mp_barrier_unblock(1, process->process.exit_barrier);
@@ -500,8 +497,9 @@ mp_process_enable(cl_object process)
 	 */
 #ifdef HAVE_SIGPROCMASK
 	{
-		sigset_t previous;
-		pthread_sigmask(SIG_SETMASK, process_env->default_sigmask, &previous);
+		sigset_t previous, new = process_env->default_sigmask;
+		sigaddset(&new, ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL]);
+		pthread_sigmask(SIG_SETMASK, new, &previous);
 		code = pthread_create(&process->process.thread, &pthreadattr,
 				      thread_entry_point, process);
 		pthread_sigmask(SIG_SETMASK, &previous, NULL);
@@ -518,7 +516,6 @@ mp_process_enable(cl_object process)
 		mp_barrier_unblock(3, process->process.exit_barrier,
 				   @':disable', Ct);
 		process->process.phase = ECL_PROCESS_INACTIVE;
-		process->process.active = 0;
 		process->process.env = NULL;
 		_ecl_dealloc_env(process_env);
 	}
@@ -555,7 +552,7 @@ cl_object
 mp_process_active_p(cl_object process)
 {
 	assert_type_process(process);
-	@(return (process->process.active? Ct : Cnil))
+	@(return (process->process.phase? Ct : Cnil))
 }
 
 cl_object
@@ -709,7 +706,6 @@ init_threads(cl_env_ptr env)
 	main_thread = pthread_self();
 #endif
 	process = ecl_alloc_object(t_process);
-	process->process.active = 1;
 	process->process.phase = ECL_PROCESS_ACTIVE;
 	process->process.name = @'si::top-level';
 	process->process.function = Cnil;
