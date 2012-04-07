@@ -497,9 +497,9 @@ mp_process_enable(cl_object process)
 	 */
 #ifdef HAVE_SIGPROCMASK
 	{
-		sigset_t previous, new = process_env->default_sigmask;
+		sigset_t previous, new = *((sigset_t*)process_env->default_sigmask);
 		sigaddset(&new, ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL]);
-		pthread_sigmask(SIG_SETMASK, new, &previous);
+		pthread_sigmask(SIG_SETMASK, &new, &previous);
 		code = pthread_create(&process->process.thread, &pthreadattr,
 				      thread_entry_point, process);
 		pthread_sigmask(SIG_SETMASK, &previous, NULL);
