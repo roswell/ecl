@@ -243,10 +243,8 @@ thread_entry_point(void *arg)
 	CL_CATCH_ALL_BEGIN(env) {
 #ifdef HAVE_SIGPROCMASK
 		{
-		sigset_t new;
-		sigemptyset(&new);
-		sigaddset(&new, ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL]);
-		pthread_sigmask(SIG_UNBLOCK, &new, NULL);
+		sigset_t *new = (sigset_t*)env->default_sigmask;
+		pthread_sigmask(SIG_SETMASK, new, NULL);
 		}
 #endif
 		process->process.phase = ECL_PROCESS_ACTIVE;
@@ -497,9 +495,9 @@ mp_process_enable(cl_object process)
 	 */
 #ifdef HAVE_SIGPROCMASK
 	{
-		sigset_t previous, new = *((sigset_t*)process_env->default_sigmask);
-		sigaddset(&new, ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL]);
-		pthread_sigmask(SIG_SETMASK, &new, &previous);
+		sigset_t new, previous;
+		sigfillset(&new);
+		pthread_sigmask(SIG_BLOCK, &new, &previous);
 		code = pthread_create(&process->process.thread, &pthreadattr,
 				      thread_entry_point, process);
 		pthread_sigmask(SIG_SETMASK, &previous, NULL);
