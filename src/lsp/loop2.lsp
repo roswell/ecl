@@ -981,7 +981,9 @@ a LET-like macro, and a SETQ-like macro, which perform LOOP-style destructuring.
 
 (defun loop-warn (format-string &rest format-args)
   (declare (si::c-local))
-  (warn "~?~%Current LOOP context:~{ ~S~}." format-string format-args (loop-context)))
+  (warn 'sys::simple-style-warning
+	:format-control "~?~%Current LOOP context:~{ ~S~}."
+	:format-arguments (list format-string format-args (loop-context))))
 
 
 (defun loop-check-data-type (specified-type required-type
@@ -1606,7 +1608,7 @@ collected result will be returned as the value of the LOOP."
       (setq pseudo-steps (nconc pseudo-steps (loop-copylist* (car (setq tem (cdr tem))))))
       (setq tem (cdr tem))
       (when *loop-emitted-body*
-	(loop-error "Iteration in LOOP follows body code."))
+	(loop-warn "Iteration in LOOP follows body code."))
       (unless tem (setq tem data))
       (when (car tem) (push (car tem) pre-loop-pre-step-tests))
       (setq pre-loop-steps (nconc pre-loop-steps (loop-copylist* (car (setq tem (cdr tem))))))

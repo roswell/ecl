@@ -14,6 +14,10 @@ ECL 12.2.2:
 
  - CASE now complains when the OTHERWISE/T clause is not the last one.
 
+ - Instead of issuing an error, LOOP now only produces a STYLE-WARNING
+   when iteration forms appear at the wrong place, as in (LOOP WHILE ...)
+   followed by some assignment.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
