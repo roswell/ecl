@@ -134,6 +134,9 @@ struct cl_env_struct {
          * to be explicitely created by the compiled code itself. */
 	cl_object packages_to_be_created;
         cl_object packages_to_be_created_p;
+
+	/* Segmentation fault address */
+	void *fault_address;
 };
 
 #ifndef __GNUC__
@@ -1758,6 +1761,7 @@ extern ECL_API cl_object mp_mailbox_send(cl_object mailbox, cl_object msg);
 
 extern ECL_API cl_object ecl_atomic_get(cl_object *slot);
 extern ECL_API void ecl_atomic_push(cl_object *slot, cl_object o);
+extern ECL_API void ecl_atomic_nconc(cl_object l, cl_object *slot);
 extern ECL_API cl_object ecl_atomic_pop(cl_object *slot);
 extern ECL_API cl_index ecl_atomic_index_incf(cl_index *slot);
 

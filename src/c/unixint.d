@@ -571,14 +571,12 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
                 "\n;;;\n;;; Stack overflow.\n"
                 ";;; Jumping to the outermost toplevel prompt\n"
                 ";;;\n\n";
-#ifndef HAVE_SIGPROCMASK
         static const char *segv_msg =
                 "\n;;;\n"
                 ";;; Detected access to protected memory, "
                 "also kwown as 'segmentation fault'.\n"
                 ";;; Jumping to the outermost toplevel prompt\n"
                 ";;;\n\n";
-#endif
 	cl_env_ptr the_env;
 	reinstall_signal(sig, sigsegv_handler);
 	if (!ecl_option_values[ECL_OPT_BOOTED]) {
@@ -622,16 +620,16 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
                 return;
 	}
 # endif
-# if 0 && defined(SA_ONSTACK)
-	/* The handler is executed in an externally allocated stack, and
-         * thus it is not safe to execute lisp code here. We just bounce
-         * up to the outermost toplevel.
-	 */
-        unblock_signal(the_env, SIGSEGV);
-	ecl_unrecoverable_error(the_env, segv_msg);
-# else
-        handle_or_queue(the_env, @'ext::segmentation-violation', SIGSEGV);
-# endif
+	/* Do not attempt an error handler if we nest two serious 
+	 * errors in the same thread */
+	if (the_env->fault_address == info->si_addr) {
+		the_env->fault_address = info->si_addr;
+		unblock_signal(the_env, SIGSEGV);
+		ecl_unrecoverable_error(the_env, segv_msg);
+	} else {
+		the_env->fault_address = info->si_addr;
+		handle_or_queue(the_env, @'ext::segmentation-violation', SIGSEGV);
+	}
 #else
 	/*
 	 * We cannot distinguish between a stack overflow and a simple
@@ -647,13 +645,20 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
 static void
 handler_fn_protype(sigbus_handler, int sig, siginfo_t *info, void *aux)
 {
+        static const char *sigbus_msg =
+                "\n;;;\n"
+                ";;; Detected access to invalid or protected memory, "
+                "also kwown as 'SIGBUS'.\n"
+                ";;; Jumping to the outermost toplevel prompt\n"
+                ";;;\n\n";
         cl_env_ptr the_env;
 	reinstall_signal(sig, sigsegv_handler);
         /* The lisp environment might not be installed. */
 	the_env = ecl_process_env();
         if (zombie_process(the_env))
                 return;
-#if defined(SA_SIGINFO) && defined(ECL_USE_MPROTECT)
+#if defined(SA_SIGINFO)
+# if defined(ECL_USE_MPROTECT)
 	/* We access the environment when it was protected. That
 	 * means there was a pending signal. */
 	if (((char*)the_env <= (char*)info->si_addr) &&
@@ -669,8 +674,20 @@ handler_fn_protype(sigbus_handler, int sig, siginfo_t *info, void *aux)
                 }
                 return;
 	}
-#endif
-        handle_or_queue(the_env, @'ext::segmentation-violation', SIGBUS);
+# endif /* ECL_USE_MPROTECT */
+	/* Do not attempt an error handler if we nest two serious 
+	 * errors in the same thread */
+	if (the_env->fault_address == info->si_addr) {
+		the_env->fault_address = info->si_addr;
+		unblock_signal(the_env, SIGBUS);
+		ecl_unrecoverable_error(the_env, sigbus_msg);
+	} else {
+		the_env->fault_address = info->si_addr;
+		handle_or_queue(the_env, @'ext::segmentation-violation', SIGSEGV);
+	}
+#endif /* SA_SIGINFO */
+	unblock_signal(the_env, SIGBUS);
+	ecl_unrecoverable_error(the_env, sigbus_msg);
 }
 #endif
 

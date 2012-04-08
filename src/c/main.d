@@ -175,6 +175,7 @@ ecl_init_env(cl_env_ptr env)
 
         env->packages_to_be_created = Cnil;
         env->packages_to_be_created_p = Cnil;
+	env->fault_address = env;
 }
 
 void
