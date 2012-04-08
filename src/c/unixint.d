@@ -265,6 +265,24 @@ interrupts_disabled_by_lisp(cl_env_ptr the_env)
 		ecl_symbol_value(@'ext::*interrupts-enabled*') == Cnil);
 }
 
+/* On platforms in which mprotect() works, we block all write access
+ * to the environment for a cheap check of pending interrupts. On
+ * other platforms we change the value of disable_interrupts to 3, so
+ * that we detect changes. */
+static ECL_INLINE void
+set_guard_page(cl_env_ptr the_env)
+{
+#if defined(ECL_USE_MPROTECT)
+	if (mprotect(the_env, sizeof(*the_env), PROT_READ) < 0) {
+		ecl_internal_error("Unable to mprotect environment.");
+	}
+#elif defined(ECL_USE_GUARD_PAGE)
+	if (!VirtualProtect(the_env, sizeof(*the_env), PAGE_GUARD, NULL)) {
+		ecl_internal_error("Unable to mprotect environment.");
+	}
+#endif
+}
+
 static cl_object pop_signal(cl_env_ptr env);
 
 static cl_object
@@ -426,6 +444,14 @@ create_signal_queue(cl_index size)
 }
 
 static void
+handle_all_queued(cl_env_ptr env)
+{
+	while (env->pending_interrupt != Cnil) {
+		handle_signal_now(pop_signal(env));
+	}
+}
+
+static void
 queue_signal(cl_env_ptr env, cl_object code)
 {
 	cl_object record;
@@ -489,26 +515,12 @@ handle_or_queue(cl_env_ptr the_env, cl_object signal_code, int code)
 	}
 	/*
 	 * If interrupts are disabled by C, and we have not pushed a
-	 * pending signal, save this signal and return. On platforms
-	 * in which mprotect() works, we block all write access to the
-	 * environment for a cheap check of pending interrupts. On other
-	 * platforms we change the value of disable_interrupts to 3, so
-	 * that we detect changes.
+	 * pending signal, save this signal and return.
 	 */
 	else if (interrupts_disabled_by_C(the_env)) {
 		the_env->disable_interrupts = 3;
 		queue_signal(the_env, signal_code);
-#ifdef ECL_USE_MPROTECT
-		if (mprotect(the_env, sizeof(*the_env), PROT_READ) < 0) {
-			ecl_internal_error("Unable to mprotect environment.");
-		}
-#else
-# ifdef ECL_USE_GUARD_PAGE
-                if (!VirtualProtect(the_env, sizeof(*the_env), PAGE_GUARD, NULL)) {
-			ecl_internal_error("Unable to mprotect environment.");
-		}
-# endif
-#endif
+		set_guard_page(the_env);
 		errno = old_errno;
 	}
 	/*
@@ -540,8 +552,8 @@ handler_fn_protype(non_evil_signal_handler, int sig, siginfo_t *siginfo, void *d
 				   " on our thread.");
 	}
         signal_object = call_handler(lisp_signal_handler, sig, siginfo, data);
-        errno = old_errno;
         handle_or_queue(the_env, signal_object, sig);
+        errno = old_errno;
 }
 
 #if defined(ECL_THREADS) && !defined(ECL_MS_WINDOWS_HOST)
@@ -556,11 +568,14 @@ handler_fn_protype(process_interrupt_handler, int sig, siginfo_t *siginfo, void 
         the_env = ecl_process_env();
         if (zombie_process(the_env))
                 return;
-	signal_object = pop_signal(the_env);
-        errno = old_errno;
-	if (signal_object != Cnil) {
-		handle_or_queue(the_env, signal_object, sig);
+	if (!Null(the_env->pending_interrupt)) {
+		if (interrupts_disabled_by_C(the_env)) {
+			set_guard_page(the_env);
+		} else if (!interrupts_disabled_by_lisp(the_env)) {
+			handle_all_queued(the_env);
+		}
 	}
+        errno = old_errno;
 }
 #endif
 
@@ -598,10 +613,7 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
 		mprotect(the_env, sizeof(*the_env), PROT_READ | PROT_WRITE);
                 the_env->disable_interrupts = 0;
                 unblock_signal(the_env, sig);
-                for (signal = pop_signal(the_env); !Null(signal) && signal; ) {
-                        handle_signal_now(signal);
-                        signal = pop_signal(the_env);
-                }
+		handle_all_queued(the_env);
                 return;
 	}
 # endif /* ECL_USE_MPROTECT */
@@ -646,16 +658,14 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
 cl_object
 si_check_pending_interrupts(void)
 {
-	ecl_check_pending_interrupts(ecl_process_env());
+	handle_all_queued(ecl_process_env());
 	@(return)
 }
 
 void
 ecl_check_pending_interrupts(cl_env_ptr env)
 {
-	while (env->pending_interrupt != Cnil) {
-		handle_signal_now(pop_signal(env));
-	}
+	handle_all_queued(env);
 }
 
 static cl_object
