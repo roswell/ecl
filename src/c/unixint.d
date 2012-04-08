@@ -574,7 +574,7 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
         static const char *segv_msg =
                 "\n;;;\n"
                 ";;; Detected access to protected memory, "
-                "also kwown as 'segmentation fault'.\n"
+                "also kwown as 'bus or segmentation fault'.\n"
                 ";;; Jumping to the outermost toplevel prompt\n"
                 ";;;\n\n";
 	cl_env_ptr the_env;
@@ -587,76 +587,6 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
 	the_env = ecl_process_env();
 	if (zombie_process(the_env))
 		return;
-#if defined(SA_SIGINFO) && defined(ECL_USE_MPROTECT)
-	/* We access the environment when it was protected. That
-	 * means there was a pending signal. */
-	if (((char*)the_env <= (char*)info->si_addr) &&
-            ((char*)info->si_addr <= (char*)(the_env+1)))
-        {
-		cl_object signal;
-		mprotect(the_env, sizeof(*the_env), PROT_READ | PROT_WRITE);
-                the_env->disable_interrupts = 0;
-                unblock_signal(the_env, SIGSEGV);
-                for (signal = pop_signal(the_env); !Null(signal) && signal; ) {
-                        handle_signal_now(signal);
-                        signal = pop_signal(the_env);
-                }
-                return;
-	}
-#endif
-#ifdef HAVE_SIGPROCMASK
-# ifdef ECL_DOWN_STACK
-	if ((char*)info->si_addr > the_env->cs_barrier &&
-	    (char*)info->si_addr <= the_env->cs_org) {
-                unblock_signal(the_env, SIGSEGV);
-		ecl_unrecoverable_error(the_env, stack_overflow_msg);
-                return;
-	}
-# else
-	if ((char*)info->si_addr < the_env->cs_barrier &&
-	    (char*)info->si_addr >= the_env->cs_org) {
-                unblock_signal(the_env, SIGSEGV);
-		ecl_unrecoverable_error(the_env, stack_overflow_msg);
-                return;
-	}
-# endif
-	/* Do not attempt an error handler if we nest two serious 
-	 * errors in the same thread */
-	if (the_env->fault_address == info->si_addr) {
-		the_env->fault_address = info->si_addr;
-		unblock_signal(the_env, SIGSEGV);
-		ecl_unrecoverable_error(the_env, segv_msg);
-	} else {
-		the_env->fault_address = info->si_addr;
-		handle_or_queue(the_env, @'ext::segmentation-violation', SIGSEGV);
-	}
-#else
-	/*
-	 * We cannot distinguish between a stack overflow and a simple
-	 * access violation. Thus we assume the worst case and jump to
-	 * the outermost handler.
-	 */
-        unblock_signal(the_env, SIGSEGV);
-	ecl_unrecoverable_error(the_env, segv_msg);
-#endif
-}
-
-#ifdef SIGBUS
-static void
-handler_fn_protype(sigbus_handler, int sig, siginfo_t *info, void *aux)
-{
-        static const char *sigbus_msg =
-                "\n;;;\n"
-                ";;; Detected access to invalid or protected memory, "
-                "also kwown as 'SIGBUS'.\n"
-                ";;; Jumping to the outermost toplevel prompt\n"
-                ";;;\n\n";
-        cl_env_ptr the_env;
-	reinstall_signal(sig, sigsegv_handler);
-        /* The lisp environment might not be installed. */
-	the_env = ecl_process_env();
-        if (zombie_process(the_env))
-                return;
 #if defined(SA_SIGINFO)
 # if defined(ECL_USE_MPROTECT)
 	/* We access the environment when it was protected. That
@@ -667,7 +597,7 @@ handler_fn_protype(sigbus_handler, int sig, siginfo_t *info, void *aux)
 		cl_object signal;
 		mprotect(the_env, sizeof(*the_env), PROT_READ | PROT_WRITE);
                 the_env->disable_interrupts = 0;
-                unblock_signal(the_env, SIGBUS);
+                unblock_signal(the_env, sig);
                 for (signal = pop_signal(the_env); !Null(signal) && signal; ) {
                         handle_signal_now(signal);
                         signal = pop_signal(the_env);
@@ -675,21 +605,43 @@ handler_fn_protype(sigbus_handler, int sig, siginfo_t *info, void *aux)
                 return;
 	}
 # endif /* ECL_USE_MPROTECT */
+# ifdef ECL_DOWN_STACK
+	if (sig == SIGSEGV &&
+	    (char*)info->si_addr > the_env->cs_barrier &&
+	    (char*)info->si_addr <= the_env->cs_org) {
+                unblock_signal(the_env, sig);
+		ecl_unrecoverable_error(the_env, stack_overflow_msg);
+                return;
+	}
+# else
+	if (sig == SIGSEGV &&
+	    (char*)info->si_addr < the_env->cs_barrier &&
+	    (char*)info->si_addr >= the_env->cs_org) {
+                unblock_signal(the_env, sig);
+		ecl_unrecoverable_error(the_env, stack_overflow_msg);
+                return;
+	}
+# endif /* ECL_DOWN_STACK */
 	/* Do not attempt an error handler if we nest two serious 
 	 * errors in the same thread */
 	if (the_env->fault_address == info->si_addr) {
 		the_env->fault_address = info->si_addr;
-		unblock_signal(the_env, SIGBUS);
-		ecl_unrecoverable_error(the_env, sigbus_msg);
+		unblock_signal(the_env, sig);
+		ecl_unrecoverable_error(the_env, segv_msg);
 	} else {
 		the_env->fault_address = info->si_addr;
-		handle_or_queue(the_env, @'ext::segmentation-violation', SIGSEGV);
+		handle_or_queue(the_env, @'ext::segmentation-violation', sig);
 	}
+#else
+	/*
+	 * We cannot distinguish between a stack overflow and a simple
+	 * access violation. Thus we assume the worst case and jump to
+	 * the outermost handler.
+	 */
+        unblock_signal(the_env, sig);
+	ecl_unrecoverable_error(the_env, segv_msg);
 #endif /* SA_SIGINFO */
-	unblock_signal(the_env, SIGBUS);
-	ecl_unrecoverable_error(the_env, sigbus_msg);
 }
-#endif
 
 cl_object
 si_check_pending_interrupts(void)
@@ -721,7 +673,7 @@ do_catch_signal(int code, cl_object action, cl_object process)
                 }
 #ifdef SIGBUS
                 else if (code == SIGBUS) {
-                        mysignal(code, sigbus_handler);
+                        mysignal(code, sigsegv_handler);
                 }
 #endif
 #ifdef SIGCHLD
@@ -1220,7 +1172,7 @@ install_synchronous_signal_handlers()
 {
 #ifdef SIGBUS
 	if (ecl_option_values[ECL_OPT_TRAP_SIGBUS]) {
-		mysignal(SIGBUS, sigbus_handler);
+		mysignal(SIGBUS, sigsegv_handler);
 	}
 #endif
 #ifdef SIGSEGV
