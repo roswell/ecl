@@ -668,22 +668,4 @@ init_stacks(cl_env_ptr env)
 	ihs_org.function = Cnil;
 	ihs_org.lex_env = Cnil;
 	ihs_org.index = 0;
-
-#if 0 /* defined(HAVE_SIGPROCMASK) && defined(SA_SIGINFO) && defined(SA_ONSTACK) */
-	if (ecl_option_values[ECL_OPT_SIGALTSTACK_SIZE]) {
-		stack_t new_stack;
-		cl_index size = ecl_option_values[ECL_OPT_SIGALTSTACK_SIZE];
-		if (size < SIGSTKSZ) {
-			size = SIGSTKSZ + (sizeof(double)*16) +
-				(sizeof(cl_object)*4);
-		}
-		env->altstack_size = size;
-		env->altstack = ecl_alloc_atomic(size);
-		memset(&new_stack, 0, sizeof(new_stack));
-		new_stack.ss_size = env->altstack_size;
-		new_stack.ss_sp = env->altstack;
-		new_stack.ss_flags = 0;
-		sigaltstack(&new_stack, NULL);
-	}
-#endif
 }

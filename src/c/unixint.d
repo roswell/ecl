@@ -215,11 +215,6 @@ mysignal(int code, void (*handler)(int, siginfo_t *, void*))
 #ifdef SA_SIGINFO
                 action.sa_sigaction = handler;
                 action.sa_flags = SA_SIGINFO;
-# if 0 && defined(SA_ONSTACK)
-                if (code == SIGSEGV) {
-                        action.sa_flags |= SA_ONSTACK;
-                }
-# endif
 #else
                 action.sa_handler = handler;
                 action.sa_flags = 0;
