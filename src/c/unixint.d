@@ -288,10 +288,8 @@ handler_fn_protype(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
         if (zombie_process(the_env))
                 return Cnil;
 	switch (sig) {
-	case SIGINT: {
-                cl_object function = SYM_FUN(@'si::terminal-interrupt');
-                return function? function : Cnil;
-        }
+	case SIGINT:
+                return @'si::terminal-interrupt';
 	case SIGFPE: {
 		cl_object condition = @'arithmetic-error';
 		int code = 0;
@@ -375,7 +373,7 @@ handler_fn_protype(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
 #endif
 #ifdef SIGCHLD
         case SIGCHLD:
-                return SYM_FUN(@'si::wait-for-all-processes');
+                return @'si::wait-for-all-processes';
 #endif
 	default:
 		return MAKE_FIXNUM(sig);
@@ -432,13 +430,6 @@ si_handle_signal(cl_object signal_code)
 }
 
 static void
-create_signal_queue(cl_index size)
-{
-	cl_object base = cl_make_list(1, MAKE_FIXNUM(size));
-	cl_core.signal_queue = base;
-}
-
-static void
 handle_all_queued(cl_env_ptr env)
 {
 	while (env->pending_interrupt != Cnil) {
@@ -447,56 +438,49 @@ handle_all_queued(cl_env_ptr env)
 }
 
 static void
-queue_signal(cl_env_ptr env, cl_object code)
+queue_signal(cl_env_ptr env, cl_object code, int allocate)
 {
-	cl_object record;
- AGAIN:
-	if (Null(record = cl_core.signal_queue))
-		return;
-#ifdef ECL_THREADS
-	if (!AO_compare_and_swap_full((AO_t*)&cl_core.signal_queue,
-				      (AO_t)record,
-				      (AO_t)ECL_CONS_CDR(record)))
-		goto AGAIN;
-#else
-        cl_core.signal_queue = ECL_CONS_CDR(record);
-#endif
-        /* If record == Cnil, signal is lost! The queue was
-         * too small.  We can no allocate further memory,
-         * since we are in a signal handler. */
-	ECL_CONS_CDR(record) = env->pending_interrupt;
-	ECL_CONS_CAR(record) = code;
-	env->pending_interrupt = record;
+	ECL_WITH_SPINLOCK_BEGIN(env, &env->signal_queue_spinlock) {
+		cl_object record;
+		if (allocate) {
+			record = ecl_list1(Cnil);
+		} else {
+			record = ECL_CONS_CAR(env->signal_queue);
+			if (record != Cnil) {
+				env->signal_queue = ECL_CONS_CDR(record);
+			}
+		}
+		if (record != Cnil) {
+			ECL_RPLACD(record, env->pending_interrupt);
+			ECL_RPLACA(record, code);
+			env->pending_interrupt = record;
+		}
+	} ECL_WITH_SPINLOCK_END;
 }
 
 static cl_object
 pop_signal(cl_env_ptr env)
 {
-	cl_object record = env->pending_interrupt;
-	if (record == Cnil) {
+	cl_object record, value;
+	if (env->pending_interrupt == Cnil) {
 		return Cnil;
-	} else {
-		cl_object free, output = ECL_CONS_CAR(record);
-                env->pending_interrupt = ECL_CONS_CDR(record);
-#ifdef ECL_THREADS
-		do {
-			free = cl_core.signal_queue;
-			ECL_RPLACD(record, free);
-		} while (!AO_compare_and_swap_full((AO_t*)&cl_core.signal_queue,
-						   (AO_t)free,
-						   (AO_t)record));
-#else
-		ECL_RPLACD(record, cl_core.signal_queue);
-		cl_core.signal_queue = record;
-#endif
-		return output;
 	}
+	ECL_WITH_SPINLOCK_BEGIN(env, &env->signal_queue_spinlock) {
+		record = env->pending_interrupt;
+		value = ECL_CONS_CAR(record);
+		env->pending_interrupt = ECL_CONS_CDR(record);
+		/* Save some conses for future use, to avoid allocating */
+		if (ECL_SYMBOLP(value) || ECL_FIXNUMP(value)) {
+			ECL_RPLACD(record, env->signal_queue);
+			env->signal_queue = record;
+		}
+	} ECL_WITH_SPINLOCK_END;
+	return value;
 }
 
 static void
 handle_or_queue(cl_env_ptr the_env, cl_object signal_code, int code)
 {
-	int old_errno = errno;
         if (Null(signal_code) || signal_code == NULL)
                 return;
 	/*
@@ -505,8 +489,7 @@ handle_or_queue(cl_env_ptr the_env, cl_object signal_code, int code)
 	 * queue the signal and are done with that.
 	 */
 	if (interrupts_disabled_by_lisp(the_env)) {
-		queue_signal(the_env, signal_code);
-		errno = old_errno;
+		queue_signal(the_env, signal_code, 0);
 	}
 	/*
 	 * If interrupts are disabled by C, and we have not pushed a
@@ -514,9 +497,8 @@ handle_or_queue(cl_env_ptr the_env, cl_object signal_code, int code)
 	 */
 	else if (interrupts_disabled_by_C(the_env)) {
 		the_env->disable_interrupts = 3;
-		queue_signal(the_env, signal_code);
+		queue_signal(the_env, signal_code, 0);
 		set_guard_page(the_env);
-		errno = old_errno;
 	}
 	/*
 	 * If interrupts are enabled, that means we are in a safe area
@@ -524,7 +506,6 @@ handle_or_queue(cl_env_ptr the_env, cl_object signal_code, int code)
 	 * appropriate handlers.
 	 */
 	else {
-                errno = old_errno;
                 if (code) unblock_signal(the_env, code);
 		si_trap_fpe(@'last', Ct); /* Clear FPE exception flag */
                 handle_signal_now(signal_code);
@@ -567,6 +548,7 @@ handler_fn_protype(process_interrupt_handler, int sig, siginfo_t *siginfo, void 
 		if (interrupts_disabled_by_C(the_env)) {
 			set_guard_page(the_env);
 		} else if (!interrupts_disabled_by_lisp(the_env)) {
+			unblock_signal(the_env, sig);
 			handle_all_queued(the_env);
 		}
 	}
@@ -577,6 +559,7 @@ handler_fn_protype(process_interrupt_handler, int sig, siginfo_t *siginfo, void 
 static void
 handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
 {
+	int old_errno = errno;
         static const char *stack_overflow_msg =
                 "\n;;;\n;;; Stack overflow.\n"
                 ";;; Jumping to the outermost toplevel prompt\n"
@@ -648,6 +631,7 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
         unblock_signal(the_env, sig);
 	ecl_unrecoverable_error(the_env, segv_msg);
 #endif /* SA_SIGINFO */
+	errno = old_errno;
 }
 
 cl_object
@@ -850,7 +834,7 @@ ecl_interrupt_process(cl_object process, cl_object function)
 	    (process->process.phase >= ECL_PROCESS_BOOTING))
 	{
 		function = si_coerce_to_function(function);
-		queue_signal(process->process.env, function);
+		queue_signal(process->process.env, function, 1);
 	}
 	/* ... but only deliver if the process is still alive */
 	if (process->process.phase == ECL_PROCESS_ACTIVE)
@@ -1268,7 +1252,6 @@ init_unixint(int pass)
 		install_asynchronous_signal_handlers();
 		install_synchronous_signal_handlers();
 	} else {
-		create_signal_queue(ecl_option_values[ECL_OPT_SIGNAL_QUEUE_SIZE]);
 		create_signal_code_constants();
 		install_fpe_signal_handlers();
 		install_signal_handling_thread();

@@ -394,6 +394,12 @@ extern void cl_write_object(cl_object x, cl_object stream);
         CL_UNWIND_PROTECT_EXIT {                              \
                 mp_giveup_lock(__ecl_the_lock);               \
         } CL_UNWIND_PROTECT_END; }
+# define ECL_WITH_SPINLOCK_BEGIN(the_env,lock) {	\
+        const cl_env_ptr __ecl_the_env = the_env;       \
+        const cl_object *__ecl_the_lock = lock;		\
+        ecl_get_spinlock(__ecl_the_env, __ecl_the_lock);
+# define ECL_WITH_SPINLOCK_END			\
+	ecl_giveup_spinlock(__ecl_the_lock); }
 #else
 # define ECL_WITH_GLOBAL_LOCK_BEGIN(the_env)
 # define ECL_WITH_GLOBAL_LOCK_END
@@ -403,6 +409,8 @@ extern void cl_write_object(cl_object x, cl_object stream);
 # define ECL_WITH_GLOBAL_ENV_WRLOCK_END
 # define ECL_WITH_LOCK_BEGIN(the_env,lock)
 # define ECL_WITH_LOCK_END
+# define ECL_WITH_SPINLOCK_BEGIN(the_env,lock)
+# define ECL_WITH_SPINLOCK_END
 #endif /* ECL_THREADS */
 
 #ifdef ECL_THREADS
@@ -472,7 +480,6 @@ extern void print_lock(char *s, cl_object lock, ...);
 #define print_lock(a,b,...) ((void)0)
 extern void ecl_get_spinlock(cl_env_ptr env, cl_object *lock);
 extern void ecl_giveup_spinlock(cl_object *lock);
-
 extern cl_object ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_object o);
 extern void ecl_wakeup_waiters(cl_env_ptr the_env, cl_object o, bool all);
 #endif

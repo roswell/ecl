@@ -77,7 +77,7 @@ cl_fixnum ecl_option_values[ECL_OPT_LIMIT+1] = {
 	1,		/* ECL_OPT_TRAP_SIGCHLD */
 	1,		/* ECL_OPT_TRAP_INTERRUPT_SIGNAL */
 	1,		/* ECL_OPT_SIGNAL_HANDLING_THREAD */
-	128,		/* ECL_OPT_SIGNAL_QUEUE_SIZE */
+	16,		/* ECL_OPT_SIGNAL_QUEUE_SIZE */
 	0,		/* ECL_OPT_BOOTED */
 	8192,		/* ECL_OPT_BIND_STACK_SIZE */
 	128,		/* ECL_OPT_BIND_STACK_SAFETY_AREA */
@@ -159,6 +159,10 @@ ecl_init_env(cl_env_ptr env)
 	env->slot_cache = ecl_make_cache(3, 4096);
 #endif
         env->pending_interrupt = Cnil;
+	{
+		int size = ecl_option_values[ECL_OPT_SIGNAL_QUEUE_SIZE];
+		env->signal_queue = cl_make_list(Cnil, MAKE_FIXNUM(size));
+	}
 
 	init_stacks(env);
 
@@ -250,6 +254,7 @@ _ecl_alloc_env()
 	 */
 	output->disable_interrupts = 1;
 	output->pending_interrupt = Cnil;
+	output->signal_queue_spinlock = Cnil;
 	return output;
 }
 
@@ -411,7 +416,6 @@ struct cl_core_struct cl_core = {
 #ifdef GBC_BOEHM
         NULL, /* safety_region */
 #endif
-	Cnil, /* signal_queue */
 
 	NULL, /* default_sigmask */
         0, /* default_sigmask_bytes */

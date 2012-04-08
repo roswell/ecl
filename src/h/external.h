@@ -98,6 +98,8 @@ struct cl_env_struct {
 	cl_object own_process;
 #endif
 	cl_object pending_interrupt;
+	cl_object signal_queue;
+	cl_object signal_queue_spinlock;
         void *default_sigmask;
 
 	/* The following is a hash table for caching invocations of
@@ -231,7 +233,6 @@ struct cl_core_struct {
 #ifdef GBC_BOEHM
         char *safety_region;
 #endif
-	cl_object signal_queue;
         void *default_sigmask;
         cl_index default_sigmask_bytes;
 
