@@ -234,7 +234,6 @@ thread_entry_point(void *arg)
 	ecl_cs_set_org(env);
 	print_lock("ENVIRON %p %p %p %p", Cnil, process,
 		   env->bds_org, env->bds_top, env->bds_limit);
-	ecl_list_process(process);
 
 	/* 2) Execute the code. The CATCH_ALL point is the destination
 	*     provides us with an elegant way to exit the thread: we just
@@ -341,19 +340,22 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
 				return 0;
 		}
 	}
-	env = _ecl_alloc_env();
-	ecl_set_process_env(env);
 	process = alloc_process(name, bindings);
         process->process.phase = ECL_PROCESS_BOOTING;
 	process->process.thread = current;
-	process->process.env = env;
-	env->own_process = process;
-	ecl_init_env(env);
 	ecl_list_process(process);
+
+	process->process.env = env = _ecl_alloc_env();
+	env->own_process = process;
+	ecl_set_process_env(env);
+	ecl_init_env(env);
 	env->bindings_array = process->process.initial_bindings;
         env->thread_local_bindings_size = env->bindings_array->vector.dim;
         env->thread_local_bindings = env->bindings_array->vector.self.t;
 	ecl_enable_interrupts_env(env);
+
+	/* Activate the barrier so that processes can immediately start waiting. */
+	mp_barrier_unblock(1, process->process.exit_barrier);
         process->process.phase = ECL_PROCESS_ACTIVE;
 	return 1;
 }
@@ -455,20 +457,20 @@ mp_process_enable(cl_object process)
 					       ECL_PROCESS_BOOTING)) {
 		FEerror("Cannot enable the running process ~A.", 1, process);
 	}
-	process_env = _ecl_alloc_env();
+        process->process.parent = mp_current_process();
+	process->process.trap_fpe_bits =
+		process->process.parent->process.env->trap_fpe_bits;
+	ecl_list_process(process);
+
+	process->process.env = process_env = _ecl_alloc_env();
 	ecl_init_env(process_env);
+	process_env->own_process = process;
 	process_env->trap_fpe_bits = process->process.trap_fpe_bits;
 	process_env->bindings_array = process->process.initial_bindings;
         process_env->thread_local_bindings_size = 
                 process_env->bindings_array->vector.dim;
         process_env->thread_local_bindings =
                 process_env->bindings_array->vector.self.t;
-	process_env->own_process = process;
-
-	process->process.env = process_env;
-        process->process.parent = mp_current_process();
-	process->process.trap_fpe_bits =
-		process->process.parent->process.env->trap_fpe_bits;
 
 	/* Activate the barrier so that processes can immediately start waiting. */
 	mp_barrier_unblock(1, process->process.exit_barrier);
@@ -510,6 +512,7 @@ mp_process_enable(cl_object process)
 	}
 #endif
 	if (!ok) {
+		ecl_unlist_process(process);
 		/* Disable the barrier and alert possible waiting processes. */
 		mp_barrier_unblock(3, process->process.exit_barrier,
 				   @':disable', Ct);
