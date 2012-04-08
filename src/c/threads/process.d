@@ -345,8 +345,11 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
 	process->process.thread = current;
 	ecl_list_process(process);
 
-	process->process.env = env = _ecl_alloc_env();
+	/* Link environment and process together */
+	env = _ecl_alloc_env();
 	env->own_process = process;
+	process->process.env = env;
+
 	ecl_set_process_env(env);
 	ecl_init_env(env);
 	env->bindings_array = process->process.initial_bindings;
@@ -462,9 +465,12 @@ mp_process_enable(cl_object process)
 		process->process.parent->process.env->trap_fpe_bits;
 	ecl_list_process(process);
 
-	process->process.env = process_env = _ecl_alloc_env();
-	ecl_init_env(process_env);
+	/* Link environment and process together */
+	process_env = _ecl_alloc_env();
 	process_env->own_process = process;
+	process->process.env = process_env;
+
+	ecl_init_env(process_env);
 	process_env->trap_fpe_bits = process->process.trap_fpe_bits;
 	process_env->bindings_array = process->process.initial_bindings;
         process_env->thread_local_bindings_size = 
