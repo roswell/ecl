@@ -434,14 +434,14 @@ ecl_backup_open(const char *filename, int option, int mode)
 	if (access(backupfilename, F_OK) == 0 && unlink(backupfilename)) {
 		ecl_enable_interrupts();
 		FElibc_error("Cannot remove the file ~S", 1,
-                             ecl_make_simple_base_string(backupfilename,-1));
+                             ecl_make_constant_base_string(backupfilename,-1));
 	}
 #endif
 	if (rename(filename, backupfilename)) {
 		ecl_enable_interrupts();
 		FElibc_error("Cannot rename the file ~S to ~S.", 2,
-			     ecl_make_simple_base_string(filename,-1),
-                             ecl_make_simple_base_string(backupfilename,-1));
+			     ecl_make_constant_base_string(filename,-1),
+                             ecl_make_constant_base_string(backupfilename,-1));
 	}
 	ecl_enable_interrupts();
 	ecl_dealloc(backupfilename);

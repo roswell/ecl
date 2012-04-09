@@ -1624,7 +1624,7 @@ extern ECL_API cl_object si_copy_to_simple_base_string(cl_object s);
 #define ecl_alloc_simple_base_string(l) ecl_alloc_simple_vector((l),aet_bc)
 extern ECL_API cl_object ecl_alloc_adjustable_base_string(cl_index l);
 extern ECL_API cl_object ecl_make_simple_base_string(char *s, cl_fixnum i);
-#define ecl_make_constant_base_string(s,n) ecl_make_simple_base_string(s,n)
+#define ecl_make_constant_base_string(s,n) ecl_make_simple_base_string((char*)s,n)
 extern ECL_API cl_object make_base_string_copy(const char *s);
 extern ECL_API cl_object ecl_cstring_to_base_string_or_nil(const char *s);
 extern ECL_API bool ecl_string_eq(cl_object x, cl_object y);

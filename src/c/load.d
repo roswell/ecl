@@ -72,7 +72,7 @@ GO_ON:
         map = si_get_cdata(filename);
         array = VALUES(1);
 
-        block->cblock.data_text = array->base_string.self;
+        block->cblock.data_text = (char*)array->base_string.self;
         block->cblock.data_text_size = array->base_string.dim;
 
 	/* Finally, perform initialization */

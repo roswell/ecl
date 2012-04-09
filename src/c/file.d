@@ -2650,7 +2650,7 @@ static cl_index
 output_file_write_byte8(cl_object strm, unsigned char *c, cl_index n)
 {
 	int f = IO_FILE_DESCRIPTOR(strm);
-	cl_index out;
+	cl_fixnum out;
 	ecl_disable_interrupts();
 	do {
 		out = write(f, c, sizeof(char)*n);

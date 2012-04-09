@@ -35,7 +35,7 @@ si_get_cdata(cl_object filename)
         map = si_mmap(3, filename, @':direction', @':input');
         array = si_mmap_array(map);
         {
-                char *v = array->base_string.self
+                char *v = (char*)array->base_string.self
                         + array->base_string.dim
                         - sizeof(cdata_header);
                 header = (cdata_header*)v;

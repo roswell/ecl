@@ -205,7 +205,7 @@ static sigset_t main_thread_sigmask;
 # define reinstall_signal(x,y)
 # define copy_siginfo(x,y) memcpy(x, y, sizeof(struct sigaction))
 static void
-mysignal(int code, void (*handler)(int, siginfo_t *, void*))
+mysignal(int code, void *handler)
 {
 	struct sigaction action;
 	sigaction(code, NULL, &action);
@@ -213,9 +213,11 @@ mysignal(int code, void (*handler)(int, siginfo_t *, void*))
                 action.sa_handler = handler;
         } else {
 #ifdef SA_SIGINFO
+		/* void (*handler)(int, siginfo_t *, void*) */
                 action.sa_sigaction = handler;
                 action.sa_flags = SA_SIGINFO;
 #else
+		/* void (*handler)(int) */
                 action.sa_handler = handler;
                 action.sa_flags = 0;
 #endif

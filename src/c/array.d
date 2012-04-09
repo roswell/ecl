@@ -506,7 +506,8 @@ si_make_vector(cl_object etype, cl_object dim, cl_object adj,
 	} else if (fillp == Ct) {
 		x->vector.flags |= ECL_FLAG_HAS_FILL_POINTER;
 		f = d;
-	} else if (FIXNUMP(fillp) && ((f = fix(fillp)) <= d) && (f >= 0)) {
+	} else if (FIXNUMP(fillp) && ecl_fixnum_geq(fillp,MAKE_FIXNUM(0)) &&
+		   ((f = fix(fillp)) <= d)) {
 		x->vector.flags |= ECL_FLAG_HAS_FILL_POINTER;
 	} else {
 		fillp = ecl_type_error(@'make-array',"fill pointer",fillp,

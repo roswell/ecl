@@ -424,6 +424,7 @@ compare_base(unsigned char *s1, cl_index l1, unsigned char *s2, cl_index l2,
         cl_index_pair p;
 	cl_index s1, e1, s2, e2;
 @
+{
   AGAIN:
 	string1 = cl_string(string1);
 	string2 = cl_string(string2);
@@ -432,44 +433,40 @@ compare_base(unsigned char *s1, cl_index l1, unsigned char *s2, cl_index l2,
 	p = ecl_vector_start_end(@[string=], string2, start2, end2);
         s2 = p.start; e2 = p.end;
 	if (e1 - s1 != e2 - s2)
-		@(return Cnil)
+		@(return Cnil);
 #ifdef ECL_UNICODE
-	switch(type_of(string1)) {
-	case t_string:
-		switch(type_of(string2)) {
-		case t_string:
+	if (string1->string.t == t_string) {
+		if (string2->string.t == t_string) {
 			while (s1 < e1)
 				if (string1->string.self[s1++] != string2->string.self[s2++])
-					@(return Cnil)
-			@(return Ct)
-		case t_base_string:
+					@(return Cnil);
+			@(return Ct);
+		} else {
 			while (s1 < e1)
 				if (string1->string.self[s1++] != string2->base_string.self[s2++])
-					@(return Cnil)
-			@(return Ct)
+					@(return Cnil);
+			@(return Ct);
 		}
-		break;
-	case t_base_string:
-		switch(type_of(string2)) {
-		case t_string:
+	} else {
+		if (string2->string.t == t_string) {
 			while (s1 < e1)
 				if (string1->base_string.self[s1++] != string2->string.self[s2++])
-					@(return Cnil)
-			@(return Ct)
-		case t_base_string:
+					@(return Cnil);
+			@(return Ct);
+		} else {
 			while (s1 < e1)
 				if (string1->base_string.self[s1++] != string2->base_string.self[s2++])
-					@(return Cnil)
-			@(return Ct)
+					@(return Cnil);
+			@(return Ct);
 		}
-		break;
  	}
 #else
 	while (s1 < e1)
 		if (string1->base_string.self[s1++] != string2->base_string.self[s2++])
-			@(return Cnil)
+			@(return Cnil);
 #endif
-	@(return Ct)
+	@(return Ct);
+}
 @)
 
 /*

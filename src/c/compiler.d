@@ -2414,7 +2414,7 @@ save_bytecodes(cl_env_ptr env, cl_index start, cl_index end)
         cl_index *bytecodes = ecl_alloc_atomic((l + 1) * sizeof(cl_index));
         cl_index *p = bytecodes;
         for (*(p++) = l; end > start; end--, p++) {
-                *p = ECL_STACK_POP_UNSAFE(env);
+                *p = (cl_index)ECL_STACK_POP_UNSAFE(env);
         }
         return bytecodes;
 #else
@@ -2428,7 +2428,7 @@ restore_bytecodes(cl_env_ptr env, cl_index *bytecodes)
         cl_index *p = bytecodes;
         cl_index l;
         for (l = *p; l; l--) {
-                ECL_STACK_PUSH(env, p[l]);
+                ECL_STACK_PUSH(env, (cl_object)p[l]);
         }
         ecl_dealloc(bytecodes);
 }

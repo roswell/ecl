@@ -38,7 +38,6 @@ ecl_atomic_push(cl_object *slot, cl_object c)
                 car = (cl_object)AO_load((AO_t*)slot);
                 ECL_RPLACD(cons, car);
         } while (!AO_compare_and_swap_full((AO_t*)slot, (AO_t)car, (AO_t)cons));
-        return cons;
 }
 
 cl_object

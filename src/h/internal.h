@@ -394,9 +394,9 @@ extern void cl_write_object(cl_object x, cl_object stream);
         CL_UNWIND_PROTECT_EXIT {                              \
                 mp_giveup_lock(__ecl_the_lock);               \
         } CL_UNWIND_PROTECT_END; }
-# define ECL_WITH_SPINLOCK_BEGIN(the_env,lock) {	\
-        const cl_env_ptr __ecl_the_env = the_env;       \
-        const cl_object *__ecl_the_lock = lock;		\
+# define ECL_WITH_SPINLOCK_BEGIN(the_env,lock) {		\
+        const cl_env_ptr __ecl_the_env = (the_env);		\
+        cl_object *__ecl_the_lock = (lock);			\
         ecl_get_spinlock(__ecl_the_env, __ecl_the_lock);
 # define ECL_WITH_SPINLOCK_END			\
 	ecl_giveup_spinlock(__ecl_the_lock); }
@@ -433,7 +433,7 @@ extern cl_object _ecl_package_to_be_created(const cl_env_ptr env, cl_object name
 
 /* pathname.d */
 
-extern ecl_wild_string_p(cl_object item);
+extern bool ecl_wild_string_p(cl_object item);
 
 /* sequence.d */
 typedef struct { cl_index start, end, length; } cl_index_pair;

@@ -208,8 +208,8 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 	volatile cl_object own_process = the_env->own_process;
 	volatile cl_object record;
 	volatile sigset_t original;
-	volatile aborting = 1;
-	volatile output;
+	volatile int aborting = 1;
+	volatile cl_object output;
 
 	/* 0) We reserve a record for the queue. In order to avoid
 	 * using the garbage collector, we reuse records */
@@ -343,17 +343,17 @@ print_lock(char *prefix, cl_object l, ...)
 {
 	static cl_object lock = Cnil;
 	va_list args;
-	va_start(args, lock);
+	va_start(args, l);
 	return;
 	if (l == Cnil || FIXNUMP(l->lock.name)) {
 		cl_env_ptr env = ecl_process_env();
 		ecl_get_spinlock(env, &lock);
-		printf("\n%d\t", fix(env->own_process->process.name));
+		printf("\n%ld\t", fix(env->own_process->process.name));
 		vprintf(prefix, args);
 		if (l != Cnil) {
 			cl_object p = l->lock.queue_list;
 			while (p != Cnil) {
-				printf(" %x", fix(ECL_CONS_CAR(p)->process.name));
+				printf(" %lx", fix(ECL_CONS_CAR(p)->process.name));
 				p = ECL_CONS_CDR(p);
 			}
 		}

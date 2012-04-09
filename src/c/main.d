@@ -161,7 +161,7 @@ ecl_init_env(cl_env_ptr env)
         env->pending_interrupt = Cnil;
 	{
 		int size = ecl_option_values[ECL_OPT_SIGNAL_QUEUE_SIZE];
-		env->signal_queue = cl_make_list(Cnil, MAKE_FIXNUM(size));
+		env->signal_queue = cl_make_list(1, MAKE_FIXNUM(size));
 	}
 
 	init_stacks(env);

@@ -480,7 +480,7 @@ cl_char_name(cl_object c)
                         start = name;
                 }
                 start[0] = 'U';
-		output = make_base_string_copy(start);
+		output = make_base_string_copy((const char*)start);
 	} else {
 		output = ecl_gethash_safe(MAKE_FIXNUM(code), cl_core.char_names, Cnil);
 	}
