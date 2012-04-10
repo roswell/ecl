@@ -305,7 +305,6 @@ si_open_server_stream(cl_object port)
 {
    int fd;			/* file descriptor */
    cl_index p;
-   cl_object output;
 
    if (ecl_unlikely(!ECL_FIXNUMP(port) ||
                     ecl_fixnum_minusp(port) ||
@@ -332,7 +331,6 @@ si_open_unix_socket_stream(cl_object path)
 	FEerror("UNIX socket not supported under Win32 platform", 0);
 #else
 	int fd;			/* file descriptor */
-	cl_object stream;
 	struct sockaddr_un addr;
 
 	if (ecl_unlikely(type_of(path) != t_base_string))
@@ -367,7 +365,6 @@ si_open_unix_socket_stream(cl_object path)
 cl_object
 si_lookup_host_entry(cl_object host_or_address)
 {
-	const cl_env_ptr the_env = ecl_process_env();
 	struct hostent *he;
 	unsigned long l;
 	char address[4];

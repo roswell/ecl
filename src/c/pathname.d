@@ -70,14 +70,6 @@ in_antilocal_case_p(cl_object str, cl_object cas)
 }
 
 static cl_object
-ensure_local_case(cl_object str, cl_object cas)
-{
-        if (cas == @':downcase')
-                return str;
-        return cl_string_upcase(1, str);
-}
-
-static cl_object
 to_local_case(cl_object str, cl_object cas)
 {
         if (cas == @':downcase')
@@ -277,7 +269,6 @@ ecl_make_pathname(cl_object host, cl_object device, cl_object directory,
                   cl_object fromcase)
 {
 	cl_object x, p, component;
-        cl_object (*translator)(cl_object);
 
 	p = ecl_alloc_object(t_pathname);
 	if (ecl_stringp(host))
@@ -1802,8 +1793,8 @@ copy_list_wildcards(cl_object *wilds, cl_object to)
 			version = source->pathname.version;
 		}
 	}
-	return ecl_make_pathname(host, device, directory, name, type,
-                                 version, tocase);
+	@(return ecl_make_pathname(host, device, directory, name, type,
+				   version, tocase));
  error:
 	FEerror("~S is not a specialization of path ~S", 2, source, from);
  error2:

@@ -96,7 +96,6 @@ ecl_to_bit(cl_object x) {
 
 ecl_uint8_t
 ecl_to_uint8_t(cl_object x) {
-	cl_fixnum aux;
 	if (ecl_likely(ECL_FIXNUMP(x))) {
 		cl_fixnum aux = ecl_fix(x);
 		if (ecl_likely(aux >= 0 && aux <= 255))
@@ -108,7 +107,6 @@ ecl_to_uint8_t(cl_object x) {
 
 ecl_int8_t
 ecl_to_int8_t(cl_object x) {
-	cl_fixnum aux;
 	if (ecl_likely(ECL_FIXNUMP(x))) {
 		cl_fixnum aux = ecl_fix(x);
 		if (ecl_likely(aux >= -128 && aux <= 127))
@@ -697,6 +695,7 @@ prepare_ratio_to_float(cl_object num, cl_object den, int digits, cl_fixnum *scal
         } while (1);
 }
 
+#if 0 /* Unused, we do not have ecl_to_float() */
 static float
 ratio_to_float(cl_object num, cl_object den)
 {
@@ -710,6 +709,7 @@ ratio_to_float(cl_object num, cl_object den)
 #endif
         return ldexpf(output, scale);
 }
+#endif
 
 static double
 ratio_to_double(cl_object num, cl_object den)

@@ -189,9 +189,9 @@ cl_object
 _ecl_bytecodes_dispatch_vararg(cl_narg narg, ...)
 {
         cl_object output;
-        ECL_STACK_FRAME_VARARGS_BEGIN(narg, narg, frame);
-        output = ecl_interpret(frame, Cnil, frame->frame.env->function);
-        ECL_STACK_FRAME_VARARGS_END(frame);
+        ECL_STACK_FRAME_VARARGS_BEGIN(narg, narg, frame) {
+		output = ecl_interpret(frame, Cnil, frame->frame.env->function);
+	} ECL_STACK_FRAME_VARARGS_END(frame);
         return output;
 }
 

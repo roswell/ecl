@@ -269,7 +269,6 @@ cl_eq(cl_object x, cl_object y)
 bool
 ecl_eql(cl_object x, cl_object y)
 {
-	cl_type t;
 	if (x == y)
 		return TRUE;
         if (IMMEDIATE(x) || IMMEDIATE(y))
@@ -508,7 +507,6 @@ BEGIN:
 					return TRUE;
 				} else {
 					cl_object key = env->values[1];
-					cl_object value = env->values[2];
 					if (ecl_gethash_safe(key, y, OBJNULL) == OBJNULL)
 						return FALSE;
 				}

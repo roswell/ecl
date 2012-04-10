@@ -90,7 +90,7 @@ disassemble_lambda(cl_object bytecodes) {
 */
 static cl_opcode *
 disassemble_flet(cl_object bytecodes, cl_opcode *vector) {
-	cl_index nfun, first;
+	cl_index nfun;
 	cl_object *data = bytecodes->bytecodes.data->vector.self.t;
 	GET_OPARG(nfun, vector);
 	print_noarg("FLET");
@@ -110,7 +110,7 @@ disassemble_flet(cl_object bytecodes, cl_opcode *vector) {
 */
 static cl_opcode *
 disassemble_labels(cl_object bytecodes, cl_opcode *vector) {
-	cl_index nfun, first;
+	cl_index nfun;
 	cl_object *data = bytecodes->bytecodes.data->vector.self.t;
 	GET_OPARG(nfun, vector);
 	print_noarg("LABELS");

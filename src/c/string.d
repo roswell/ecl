@@ -425,7 +425,6 @@ compare_base(unsigned char *s1, cl_index l1, unsigned char *s2, cl_index l2,
 	cl_index s1, e1, s2, e2;
 @
 {
-  AGAIN:
 	string1 = cl_string(string1);
 	string2 = cl_string(string2);
 	p = ecl_vector_start_end(@[string=], string1, start1, end1);
@@ -521,7 +520,6 @@ ecl_string_eq(cl_object x, cl_object y)
         cl_index_pair p;
 	int output;
 @
-AGAIN:
 	string1 = cl_string(string1);
 	string2 = cl_string(string2);
 	p = ecl_vector_start_end(@[string=], string1, start1, end1);

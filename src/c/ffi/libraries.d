@@ -217,7 +217,7 @@ static cl_object
 ecl_library_open_inner(cl_object filename, bool self_destruct)
 {
         const cl_env_ptr the_env = ecl_process_env();
-	cl_object other, block = ecl_alloc_object(t_codeblock);
+	cl_object block = ecl_alloc_object(t_codeblock);
 	block->cblock.self_destruct = self_destruct;
 	block->cblock.locked = 0;
 	block->cblock.handle = NULL;
@@ -435,7 +435,6 @@ ecl_library_close(cl_object block) {
                 ecl_enable_interrupts();
         } ECL_WITH_GLOBAL_LOCK_END;
 	if (block != Cnil && block->cblock.self_destruct) {
-                const char *filename;
                 if (!Null(block->cblock.name)) {
                         unlink((char*)block->cblock.name->base_string.self);
                 }

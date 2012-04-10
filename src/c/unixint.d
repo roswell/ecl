@@ -540,7 +540,6 @@ handler_fn_protype(process_interrupt_handler, int sig, siginfo_t *siginfo, void 
 {
         int old_errno = errno;
 	cl_env_ptr the_env;
-        cl_object signal_object;
 	reinstall_signal(sig, process_interrupt_handler);
         /* The lisp environment might not be installed. */
         the_env = ecl_process_env();
@@ -589,7 +588,6 @@ handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
 	if (((char*)the_env <= (char*)info->si_addr) &&
             ((char*)info->si_addr <= (char*)(the_env+1)))
         {
-		cl_object signal;
 		mprotect(the_env, sizeof(*the_env), PROT_READ | PROT_WRITE);
                 the_env->disable_interrupts = 0;
                 unblock_signal(the_env, sig);
@@ -814,6 +812,7 @@ do_interrupt_thread(cl_object process)
 		FElibc_error("Unable to interrupt process ~A", 1,
 			     process);
 	}
+	return 1;
 # endif
 }
 
@@ -1009,8 +1008,7 @@ asynchronous_signal_servicing_thread()
 		}
 	}
 	} CL_CATCH_ALL_END;
- RETURN:
-	@(return)
+	ecl_return0(the_env);
 }
 #endif
 

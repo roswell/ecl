@@ -292,18 +292,18 @@ cl_get_properties(cl_object place, cl_object indicator_list)
 		if (!CONSP(cdr_l))
 			break;
 		if (ecl_member_eq(ECL_CONS_CAR(l), indicator_list))
-			@(return ECL_CONS_CAR(l) ECL_CONS_CAR(cdr_l) l)
+			ecl_return3(the_env,ECL_CONS_CAR(l),ECL_CONS_CAR(cdr_l),l);
 		l = ECL_CONS_CDR(cdr_l);
 	}
 	if (l != Cnil)
 		FEtype_error_plist(place);
-	@(return Cnil Cnil Cnil)
+	ecl_return3(the_env, Cnil, Cnil, Cnil);
 }
 
 cl_object
 cl_symbol_name(cl_object x)
 {
-	@(return ecl_symbol_name(x))
+	ecl_return1(ecl_process_env(), ecl_symbol_name(x));
 }
 
 @(defun copy_symbol (sym &optional cp &aux x)
@@ -406,7 +406,7 @@ si_rem_f(cl_object plist, cl_object indicator)
 {
 	cl_env_ptr the_env = ecl_process_env();
 	bool found = remf(&plist, indicator);
-	@(return plist (found? Ct : Cnil))
+	ecl_return2(the_env, plist, (found? Ct : Cnil));
 }
 
 cl_object

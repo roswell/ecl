@@ -234,7 +234,7 @@ ecl_aref1(cl_object x, cl_index index)
 void *
 ecl_row_major_ptr(cl_object x, cl_index index, cl_index bytes)
 {
-	cl_index idx, elt_size, offset;
+	cl_index elt_size, offset;
 	cl_elttype elt_type;
 
 	if (ecl_unlikely(!ECL_ARRAYP(x))) {
@@ -539,7 +539,7 @@ void
 ecl_array_allocself(cl_object x)
 {
         cl_elttype t = x->array.elttype;
-	cl_index i, d = x->array.dim;
+	cl_index d = x->array.dim;
 	switch (t) {
 	/* assign self field only after it has been filled, for GC sake  */
 	case aet_object:
@@ -979,7 +979,7 @@ cl_array_displacement(cl_object a)
 			FEbad_aet();
 		}
 	}
-	@(return to_array MAKE_FIXNUM(offset));
+	ecl_return2(the_env, to_array, MAKE_FIXNUM(offset));
 }
 
 cl_object
@@ -996,7 +996,7 @@ cl_svref(cl_object x, cl_object index)
                 FEwrong_type_nth_arg(@[svref],1,x,@[simple-vector]);
 	}
         i = checked_index(@[svref], x, -1, index, x->vector.dim);
-	@(return x->vector.self.t[i])
+	ecl_return1(the_env, x->vector.self.t[i]);
 }
 
 cl_object
@@ -1013,7 +1013,7 @@ si_svset(cl_object x, cl_object index, cl_object v)
 		FEwrong_type_nth_arg(@[si::svset],1,x,@[simple-vector]);
 	}
         i = checked_index(@[svref], x, -1, index, x->vector.dim);
-	@(return (x->vector.self.t[i] = v))
+	ecl_return1(the_env, x->vector.self.t[i] = v);
 }
 
 cl_object
@@ -1035,7 +1035,7 @@ cl_array_has_fill_pointer_p(cl_object a)
 	default:
                 FEwrong_type_nth_arg(@[array-has-fill-pointer-p],1,a,@[array]);
 	}
-	@(return r)
+	ecl_return1(the_env, r);
 }
 
 cl_object
@@ -1048,7 +1048,7 @@ cl_fill_pointer(cl_object a)
                 const char *type = "(AND VECTOR (SATISFIES ARRAY-HAS-FILL-POINTER-P))";
 		FEwrong_type_nth_arg(@[fill-pointer], 1, a, ecl_read_from_cstring(type));
 	}
-	@(return MAKE_FIXNUM(a->vector.fillp))
+	ecl_return1(the_env, MAKE_FIXNUM(a->vector.fillp));
 }
 
 /*
@@ -1071,7 +1071,7 @@ si_fill_pointer_set(cl_object a, cl_object fp)
                 FEwrong_type_key_arg(@[adjust-array], @[:fill-pointer], fp, type);
         }
         a->vector.fillp = i;
-	@(return fp)
+	ecl_return1(the_env, fp);
 }
 
 /*
@@ -1119,7 +1119,7 @@ si_replace_array(cl_object olda, cl_object newa)
 			2, olda, newa);
 	}
  OUTPUT:
-	@(return olda)
+	ecl_return1(the_env, olda);
 }
 
 void

@@ -292,8 +292,8 @@ ecl_waitpid(cl_object pid, cl_object wait)
 cl_object
 si_wait_for_all_processes()
 {
-#if defined(SIGCHLD) && !defined(ECL_WINDOWS_HOST)
         const cl_env_ptr env = ecl_process_env();
+#if defined(SIGCHLD) && !defined(ECL_WINDOWS_HOST)
         do {
                 cl_object status = ecl_waitpid(MAKE_FIXNUM(-1), Cnil);
                 cl_object code = env->values[1];
@@ -312,9 +312,8 @@ si_wait_for_all_processes()
                         }
                 }
         } while (1);
-#else
-        @(return);
 #endif
+        ecl_return0(env);
 }
 
 #if defined(ECL_MS_WINDOWS_HOST) || defined(cygwin)

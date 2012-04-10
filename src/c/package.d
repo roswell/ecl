@@ -194,7 +194,7 @@ cl_object
 ecl_make_package(cl_object name, cl_object nicknames, cl_object use_list)
 {
         const cl_env_ptr env = ecl_process_env();
-	cl_object x, l, other = Cnil;
+	cl_object x, other = Cnil;
 
         /* Type checking, coercions, and the like, happen before we
          * acquire the lock */
@@ -357,7 +357,7 @@ _ecl_intern(const char *s, cl_object p)
 cl_object
 ecl_intern(cl_object name, cl_object p, int *intern_flag)
 {
-	cl_object s, ul;
+	cl_object s;
         bool error, ignore_error = 0;
 
         if (ecl_unlikely(!ECL_STRINGP(name)))
@@ -466,7 +466,7 @@ potential_unintern_conflict(cl_object name, cl_object s, cl_object p)
 bool
 ecl_unintern(cl_object s, cl_object p)
 {
-	cl_object conflict, l, hash;
+	cl_object conflict;
 	bool output = FALSE;
 	cl_object name = ecl_symbol_name(s);
 
@@ -527,7 +527,7 @@ potential_export_conflict(cl_object name, cl_object s, cl_object p)
 void
 cl_export2(cl_object s, cl_object p)
 {
-	cl_object x, l, hash = OBJNULL;
+	cl_object x;
 	int intern_flag, error;
 	cl_object other_p, name = ecl_symbol_name(s);
 	p = si_coerce_to_package(p);
@@ -838,7 +838,7 @@ si_select_package(cl_object pack_name)
 {
 	const cl_env_ptr the_env = ecl_process_env();
 	cl_object p = si_coerce_to_package(pack_name);
-	@(return (ECL_SETQ(the_env, @'*package*', p)))
+	ecl_return1(the_env, ECL_SETQ(the_env, @'*package*', p));
 }
 
 cl_object
@@ -1037,7 +1037,6 @@ cl_list_all_packages()
 
 @(defun use_package (pack &o (pa ecl_current_package()))
 @
-BEGIN:
 	switch (type_of(pack)) {
 	case t_symbol:
 	case t_character:
@@ -1060,7 +1059,6 @@ BEGIN:
 
 @(defun unuse_package (pack &o (pa ecl_current_package()))
 @
-BEGIN:
 	switch (type_of(pack)) {
 	case t_symbol:
 	case t_character:

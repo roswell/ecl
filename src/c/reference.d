@@ -163,7 +163,7 @@ cl_object
 cl_boundp(cl_object sym)
 {
 	const cl_env_ptr the_env = ecl_process_env();
-	@(return (ecl_boundp(the_env,sym)? Ct : Cnil))
+	ecl_return1(the_env, ecl_boundp(the_env,sym)? Ct : Cnil);
 }
 
 cl_object
@@ -171,5 +171,5 @@ cl_special_operator_p(cl_object form)
 {
 	const cl_env_ptr the_env = ecl_process_env();
 	int special = ecl_symbol_type(form) & stp_special_form;
-	@(return (special? Ct : Cnil))
+	ecl_return1(the_env, special? Ct : Cnil);
 }

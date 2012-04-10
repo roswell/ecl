@@ -829,7 +829,7 @@ si_setenv(cl_object var, cl_object value)
 	if (ret_val == -1)
 		CEerror(Ct, "SI:SETENV failed: insufficient space in environment.",
 			1, Cnil);
-	@(return value)
+	ecl_return1(the_env, value);
 }
 #endif
 
@@ -861,7 +861,7 @@ cl_object
 si_pointer(cl_object x)
 {
 	const cl_env_ptr the_env = ecl_process_env();
-	@(return ecl_make_unsigned_integer((cl_index)x))
+	ecl_return1(the_env, ecl_make_unsigned_integer((cl_index)x));
 }
 
 #if defined(ECL_MS_WINDOWS_HOST)

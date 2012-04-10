@@ -981,6 +981,7 @@ cl_object
 si_free_ffi_closure(cl_object closure)
 {
         ffi_closure_free(ecl_foreign_data_pointer_safe(closure));
+	@(return);
 }
 
 @(defun si::make-dynamic-callback (fun sym return_type arg_types

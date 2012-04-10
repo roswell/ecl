@@ -117,7 +117,7 @@ si_compiled_function_name(cl_object fun)
 	default:
 		FEinvalid_function(fun);
 	}
-	@(return output)
+	ecl_return1(the_env, output);
 }
 
 cl_object
@@ -161,7 +161,7 @@ cl_function_lambda_expression(cl_object fun)
 	default:
 		FEinvalid_function(fun);
 	}
-	@(return output lex name)
+	ecl_return3(the_env, output, lex, name);
 }
 
 cl_object
@@ -192,22 +192,21 @@ si_compiled_function_file(cl_object b)
                 b = b->bclosure.code;
                 goto BEGIN;
         case t_bytecodes:
-		@(return b->bytecodes.file b->bytecodes.file_position);
+		ecl_return2(the_env, b->bytecodes.file, b->bytecodes.file_position);
         case t_cfun:
-		@(return b->cfun.file b->cfun.file_position);
+		ecl_return2(the_env, b->cfun.file, b->cfun.file_position);
         case t_cfunfixed:
-		@(return b->cfunfixed.file b->cfunfixed.file_position);
+		ecl_return2(the_env, b->cfunfixed.file, b->cfunfixed.file_position);
         case t_cclosure:
-		@(return b->cclosure.file b->cclosure.file_position);
+		ecl_return2(the_env, b->cclosure.file, b->cclosure.file_position);
         default:
-		@(return Cnil Cnil);
+		ecl_return2(the_env, Cnil, Cnil);
 	}
 }
 
 void
 ecl_set_function_source_file_info(cl_object b, cl_object source, cl_object position)
 {
-	cl_env_ptr the_env = ecl_process_env();
  BEGIN:
         switch (type_of(b)) {
         case t_bclosure:

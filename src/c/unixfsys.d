@@ -401,9 +401,9 @@ file_truename(cl_object pathname, cl_object filename, int flags)
 cl_object
 cl_truename(cl_object orig_pathname)
 {
-        cl_object kind, filename, dir;
 	cl_object pathname = make_absolute_pathname(orig_pathname);
 	cl_object base_dir = make_base_pathname(pathname);
+        cl_object dir;
 	/* We process the directory part of the filename, removing all
 	 * possible symlinks. To do so, we inspect recursively the
 	 * directory which contains our file, and come back. We also have to

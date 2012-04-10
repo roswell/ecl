@@ -201,7 +201,6 @@ extern void _ecl_unexpected_return() ecl_attr_noreturn;
         frame->frame.env = env;                                         \
         frame->frame.size = narg;                                       \
         if (narg < C_ARGUMENTS_LIMIT) {                                 \
-                cl_index i;                                             \
                 cl_object *p = frame->frame.base = env->values;         \
                 va_list args;                                           \
                 va_start(args, lastarg);                                \

@@ -276,8 +276,6 @@ ecl_extend_bindings_array(cl_object vector)
 static cl_index
 invalid_or_too_large_binding_index(cl_env_ptr env, cl_object s)
 {
-        cl_object *location;
-        struct bds_bd *slot;
         cl_index index = s->symbol.binding;
         if (index == ECL_MISSING_SPECIAL_BINDING) {
                 index = ecl_new_binding_index(env, s);

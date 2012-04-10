@@ -292,7 +292,22 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_obje
 #define ecl_return0(env) \
 	do { (env)->nvalues = 0; return Cnil; } while (0)
 #define ecl_return1(env,x) \
-	do { cl_object __aux = (x); (env)->nvalues = 0; return __aux; } while (0)
+	do { (env)->nvalues = 1; return (x); } while (0)
+#define ecl_return2(env,x,y)						\
+	do {								\
+		cl_env_ptr __ecl_env = (env);				\
+		cl_object __aux1 = (x), __aux2=(y);			\
+		__ecl_env->values[1] = __aux2;				\
+		__ecl_env->nvalues = 2; return __aux1;			\
+	} while (0)
+#define ecl_return3(env,x,y,z)						\
+	do {								\
+		cl_env_ptr __ecl_env = (env);				\
+		cl_object __aux1=(x), __aux2=(y), __aux3=(z);		\
+		__ecl_env->values[1] = __aux2;				\
+		__ecl_env->values[2] = __aux3;				\
+		__ecl_env->nvalues = 3; return __aux1;			\
+	} while (0)
 
 /*****************************
  * LEXICAL ENVIRONMENT STACK

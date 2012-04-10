@@ -211,9 +211,9 @@ static cl_object
 generic_function_dispatch_vararg(cl_narg narg, ...)
 {
         cl_object output;
-        ECL_STACK_FRAME_VARARGS_BEGIN(narg, narg, frame);
-	output = _ecl_standard_dispatch(frame, frame->frame.env->function);
-        ECL_STACK_FRAME_VARARGS_END(frame);
+        ECL_STACK_FRAME_VARARGS_BEGIN(narg, narg, frame) {
+		output = _ecl_standard_dispatch(frame, frame->frame.env->function);
+	} ECL_STACK_FRAME_VARARGS_END(frame);
         return output;
 }
 

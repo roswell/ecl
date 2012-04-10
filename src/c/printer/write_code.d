@@ -25,7 +25,7 @@ _ecl_write_bytecodes(cl_object x, cl_object stream)
         if (ecl_print_readably()) {
                 cl_index i;
                 cl_object lex = Cnil;
-                cl_object code_l=Cnil, data_l=Cnil;
+                cl_object code_l=Cnil;
                 for ( i=x->bytecodes.code_size-1 ; i<(cl_index)(-1l) ; i-- )
                         code_l = ecl_cons(MAKE_FIXNUM(((cl_opcode*)(x->bytecodes.code))[i]), code_l);
                 writestr_stream("#Y", stream);

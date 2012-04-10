@@ -81,7 +81,7 @@ GO_ON:
 
         si_munmap(map);
 OUTPUT:
-	@(return output)
+	ecl_return1(the_env, output);
 }
 #endif /* !ENABLE_DLOPEN */
 

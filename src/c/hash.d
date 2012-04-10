@@ -25,8 +25,6 @@
 #include <ecl/internal.h>
 #include "newhash.h"
 
-static void corrupted_hash(cl_object hashtable) /*__attribute__((noreturn))*/;
-
 #define SYMBOL_NAME(x) (Null(x)? Cnil_symbol->symbol.name : (x)->symbol.name)
 
 static void ECL_INLINE
@@ -34,12 +32,6 @@ assert_type_hash_table(cl_object function, cl_narg narg, cl_object p)
 {
 	unlikely_if (!ECL_HASH_TABLE_P(p))
 		FEwrong_type_nth_arg(function, narg, p, @[hash-table]);
-}
-
-static void
-corrupted_hash(cl_object hashtable)
-{
-	FEerror("internal error, corrupted hashtable ~S", 1, hashtable);
 }
 
 static cl_hashkey
@@ -1105,7 +1097,6 @@ si_hash_table_content(cl_object ht)
 cl_object
 si_hash_table_fill(cl_object ht, cl_object values)
 {
-	cl_object pair;
 	assert_type_hash_table(@[ext::hash-table-fill], 2, ht);
 	while (!Null(values)) {
 		cl_object pair = ecl_car(values);

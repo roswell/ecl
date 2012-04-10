@@ -652,7 +652,7 @@ sharp_C_reader(cl_object in, cl_object c, cl_object d)
 static cl_object
 sharp_backslash_reader(cl_object in, cl_object c, cl_object d)
 {
-	const cl_env_ptr env = ecl_process_env();
+	const cl_env_ptr the_env = ecl_process_env();
 	cl_object token;
 	if (d != Cnil && !read_suppress) {
 		unlikely_if (!FIXNUMP(d) || d != MAKE_FIXNUM(0)) {
@@ -676,7 +676,7 @@ sharp_backslash_reader(cl_object in, cl_object c, cl_object d)
 		c = nc;
 	}
 	si_put_buffer_string(token);
-	@(return c)
+	ecl_return1(the_env, c);
 }
 
 static cl_object
@@ -1052,7 +1052,7 @@ static cl_object
 sharp_eq_reader(cl_object in, cl_object c, cl_object d)
 {
 	const cl_env_ptr the_env = ecl_process_env();
-	cl_object definition, pair, value;
+	cl_object pair, value;
 	cl_object sharp_eq_context = ECL_SYM_VAL(the_env, @'si::*sharp-eq-context*');
 
 	if (read_suppress) @(return);
@@ -1069,7 +1069,7 @@ sharp_eq_reader(cl_object in, cl_object c, cl_object d)
 		FEreader_error("#~D# is defined by itself.", in, 1, d);
         }
 	ECL_RPLACD(pair, value);
-	@(return value)
+	ecl_return1(the_env, value);
 }
 
 static cl_object
@@ -1146,7 +1146,6 @@ do_patch_sharp(cl_object x, cl_object table)
                 break;
         }
         case t_bytecodes: {
-                cl_index i = 0;
                 x->bytecodes.name = do_patch_sharp(x->bytecodes.name, table);
                 x->bytecodes.definition = do_patch_sharp(x->bytecodes.definition, table);
 		x->bytecodes.data = do_patch_sharp(x->bytecodes.data, table);
@@ -1721,10 +1720,6 @@ cl_readtablep(cl_object readtable)
 	@(return (ECL_READTABLEP(readtable) ? Ct : Cnil))
 }
 
-#ifdef ECL_UNICODE
-static struct ecl_readtable_entry default_readtable_entry;
-#endif
-
 int
 ecl_readtable_get(cl_object readtable, int c, cl_object *macro_or_table)
 {
@@ -2270,7 +2265,6 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
 			cl_index fname_location = fix(prototype->block);
 			cl_object fname = VV[fname_location];
 			cl_index location = fix(prototype->name);
-                        cl_object source = prototype->file;
                         cl_object position = prototype->file_position;
 			int narg = prototype->narg;
 			VV[location] = narg<0?

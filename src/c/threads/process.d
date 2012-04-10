@@ -310,7 +310,7 @@ alloc_process(cl_object name, cl_object initial_bindings)
 bool
 ecl_import_current_thread(cl_object name, cl_object bindings)
 {
-	cl_object process, l;
+	cl_object process;
 	pthread_t current;
 	cl_env_ptr env;
 #ifdef ECL_WINDOWS_THREADS
@@ -410,15 +410,17 @@ mp_suspend_loop()
                         cl_sleep(MAKE_FIXNUM(100));
                 }
         } CL_CATCH_END;
+	ecl_return0(env);
 }
 
 cl_object
 mp_break_suspend_loop()
 {
+        cl_env_ptr the_env = ecl_process_env();
         if (frs_sch(@'mp::suspend-loop')) {
                 cl_throw(@'mp::suspend-loop');
         }
-        @(return)
+	ecl_return0(the_env);
 }
 
 cl_object
@@ -536,8 +538,8 @@ mp_exit_process(void)
 	   back to the thread entry point, going through all possible
 	   UNWIND-PROTECT.
 	*/
-	const cl_env_ptr env = ecl_process_env();
-	ecl_unwind(env, env->frs_org);
+	const cl_env_ptr the_env = ecl_process_env();
+	ecl_unwind(the_env, the_env->frs_org);
 }
 
 cl_object
@@ -572,7 +574,6 @@ mp_process_whostate(cl_object process)
 cl_object
 mp_process_join(cl_object process)
 {
-	bool again = 1;
 	assert_type_process(process);
 	if (process->process.phase) {
 		/* We try to acquire a lock that is only owned by the process

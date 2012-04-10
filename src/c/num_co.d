@@ -166,7 +166,7 @@ ecl_floor1(cl_object x)
 	default:
                 FEwrong_type_nth_arg(@[floor],1,x,@[real]);
 	}
-	@(return v0 v1)
+	ecl_return2(the_env, v0, v1);
 }
 
 cl_object
@@ -329,16 +329,15 @@ ecl_floor2(cl_object x, cl_object y)
 	default:
                 FEwrong_type_nth_arg(@[floor], 1, x, @[real]);
 	}
-	@(return v0 v1)
+	ecl_return2(the_env, v0, v1);
 }
 
 @(defun floor (x &optional (y OBJNULL))
 @
 	if (narg == 1)
-		x = ecl_floor1(x);
+		return ecl_floor1(x);
 	else
-		x = ecl_floor2(x, y);
-	returnn(x);
+		return ecl_floor2(x, y);
 @)
 
 cl_object
@@ -541,16 +540,15 @@ ecl_ceiling2(cl_object x, cl_object y)
 	default:
                 FEwrong_type_nth_arg(@[ceiling], 1, x, @[real]);
 	}
-	@(return v0 v1)
+	ecl_return2(the_env, v0, v1);
 }
 
 @(defun ceiling (x &optional (y OBJNULL))
 @
 	if (narg == 1)
-		x = ecl_ceiling1(x);
+		return ecl_ceiling1(x);
 	else
-		x = ecl_ceiling2(x, y);
-	returnn(x);
+		return ecl_ceiling2(x, y);
 @)
 
 cl_object
@@ -594,13 +592,12 @@ ecl_truncate1(cl_object x)
 	default:
                 FEwrong_type_nth_arg(@[truncate],1,x,@[real]);
 	}
-	@(return v0 v1)
+	ecl_return2(the_env, v0, v1);
 }
 
 cl_object
 ecl_truncate2(cl_object x, cl_object y)
 {
-	const cl_env_ptr the_env = ecl_process_env();
 	if (ecl_plusp(x) != ecl_plusp(y))
 		return ecl_ceiling2(x, y);
 	else
@@ -610,10 +607,9 @@ ecl_truncate2(cl_object x, cl_object y)
 @(defun truncate (x &optional (y OBJNULL))
 @
 	if (narg == 1)
-		x = ecl_truncate1(x);
+		return ecl_truncate1(x);
 	else
-		x = ecl_truncate2(x, y);
-	returnn(x);
+		return ecl_truncate2(x, y);
 @)
 
 static double
@@ -693,7 +689,7 @@ ecl_round1(cl_object x)
 	default:
                 FEwrong_type_nth_arg(@[round],1,x,@[real]);
 	}
-	@(return v0 v1)
+	ecl_return2(the_env, v0, v1);
 }
 
 cl_object
@@ -732,16 +728,15 @@ ecl_round2(cl_object x, cl_object y)
 		v0 = q = ecl_round1(q);
 		v1 = number_remainder(x, y, q);
 	}
-	@(return v0 v1)
+	ecl_return2(the_env, v0, v1);
 }
 
 @(defun round (x &optional (y OBJNULL))
 @
 	if (narg == 1)
-		x = ecl_round1(x);
+		return ecl_round1(x);
 	else
-		x = ecl_round2(x, y);
-	returnn(x);
+		return ecl_round2(x, y);
 @)
 
 
@@ -751,7 +746,7 @@ cl_mod(cl_object x, cl_object y)
 	const cl_env_ptr the_env = ecl_process_env();
 	/* INV: #'floor always outputs two values */
 	@floor(2, x, y);
-	@(return VALUES(1))
+	ecl_return1(the_env, the_env->values[1]);
 }
 
 cl_object
@@ -759,7 +754,7 @@ cl_rem(cl_object x, cl_object y)
 {
 	const cl_env_ptr the_env = ecl_process_env();
 	@truncate(2, x, y);
-	@(return VALUES(1))
+	ecl_return1(the_env, the_env->values[1]);
 }
 
 cl_object
@@ -813,7 +808,7 @@ cl_decode_float(cl_object x)
 	default:
                 FEwrong_type_nth_arg(@[decode-float],1,x,@[float]);
 	}
-	@(return x MAKE_FIXNUM(e) ecl_make_singlefloat(s))
+	ecl_return3(the_env, x, MAKE_FIXNUM(e), ecl_make_singlefloat(s));
 }
 
 cl_object
@@ -842,7 +837,7 @@ cl_scale_float(cl_object x, cl_object y)
 	default:
                 FEwrong_type_nth_arg(@[scale-float],1,x,@[float]);
 	}
-	@(return x)
+	ecl_return1(the_env, x);
 }
 
 cl_object
@@ -852,7 +847,7 @@ cl_float_radix(cl_object x)
 	if (ecl_unlikely(cl_floatp(x) != Ct)) {
 		FEwrong_type_nth_arg(@[float-radix],1,x,@[float]);
 	}
-	@(return MAKE_FIXNUM(FLT_RADIX))
+	ecl_return1(the_env, MAKE_FIXNUM(FLT_RADIX));
 }
 
 int
@@ -922,7 +917,7 @@ cl_float_digits(cl_object x)
 	default:
                 FEwrong_type_nth_arg(@[float-digits],1,x,@[float]);
 	}
-	@(return x)
+	ecl_return1(the_env, x);
 }
 
 cl_object
@@ -981,7 +976,7 @@ cl_float_precision(cl_object x)
 	default:
 		FEwrong_type_nth_arg(@[float-precision],1,x,@[float]);
 	}
-	@(return MAKE_FIXNUM(precision))
+	ecl_return1(the_env, MAKE_FIXNUM(precision));
 }
 
 cl_object
@@ -1044,7 +1039,7 @@ cl_integer_decode_float(cl_object x)
 	default:
 		FEwrong_type_nth_arg(@[integer-decode-float],1,x,@[float]);
 	}
-	@(return x MAKE_FIXNUM(e) MAKE_FIXNUM(s))
+	ecl_return3(the_env, x, MAKE_FIXNUM(e), MAKE_FIXNUM(s));
 }
 
 

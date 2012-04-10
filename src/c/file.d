@@ -209,6 +209,7 @@ not_output_finish_output(cl_object strm)
 	not_an_output_stream(strm);
 }
 
+#if defined(ECL_WSOCK)
 static cl_object
 not_implemented_get_position(cl_object strm)
 {
@@ -222,6 +223,7 @@ not_implemented_set_position(cl_object strm, cl_object pos)
 	FEerror("file-position not implemented for stream ~S", 1, strm);
 	return Cnil;
 }
+#endif
 
 /**********************************************************************
  * CLOSED STREAM OPS
@@ -1093,7 +1095,7 @@ utf_8_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
 {
 	int nbytes;
 	if (c < 0) {
-		return 0;
+		nbytes = 0;
 	} else if (c <= 0x7F) {
 		buffer[0] = c;
 		nbytes = 1;
@@ -5008,7 +5010,7 @@ file_listen(int fileno)
 #if !defined(ECL_MS_WINDOWS_HOST)
 # if defined(HAVE_SELECT)
 	fd_set fds;
-	int retv, fd;
+	int retv;
 	struct timeval tv = { 0, 0 };
         /*
          * Note that the following code is fragile. If the file is closed (/dev/null)

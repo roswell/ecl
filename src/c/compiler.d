@@ -745,7 +745,7 @@ c_undo_bindings(cl_env_ptr the_env, cl_object old_vars, int only_specials)
 		if (name == @':block' || name == @':tag') {
 			(void)0;
 		} else if (name == @':function' || Null(special)) {
-			only_specials || num_lexical++;
+			if (!only_specials) ++num_lexical;
 		} else if (name == @':declare') {
 			/* Ignored */
 		} else if (special != @'si::symbol-macro') {
@@ -1347,7 +1347,7 @@ c_labels_flet(cl_env_ptr env, int op, cl_object args, int flags) {
 	cl_object l, def_list = pop(&args);
 	cl_object old_vars = env->c_env->variables;
 	cl_object old_funs = env->c_env->macros;
-	cl_index nfun, first = 0;
+	cl_index nfun;
 
 	if (ecl_length(def_list) == 0) {
 		return c_locally(env, args, flags);
@@ -2720,7 +2720,6 @@ si_process_lambda_list(cl_object org_lambda_list, cl_object context)
 	if (context == @'function') { \
 		unlikely_if (ecl_symbol_type(v) & stp_constant)	\
 			FEillegal_variable_name(v); }
-	const cl_env_ptr the_env = ecl_process_env();
         cl_object lists[4] = {Cnil, Cnil, Cnil, Cnil};
         cl_object *reqs = lists, *opts = lists+1, *keys = lists+2, *auxs = lists+3;
 	cl_object v, rest = Cnil, lambda_list = org_lambda_list;
