@@ -79,7 +79,7 @@ static void not_an_input_stream(cl_object fn) ecl_attr_noreturn;
 static void not_an_output_stream(cl_object fn) ecl_attr_noreturn;
 static void not_a_character_stream(cl_object s) ecl_attr_noreturn;
 static void not_a_binary_stream(cl_object s) ecl_attr_noreturn;
-static int restartable_io_error(cl_object strm);
+static int restartable_io_error(cl_object strm, const char *s);
 static void unread_error(cl_object strm);
 static void unread_twice(cl_object strm);
 static void io_error(cl_object strm) ecl_attr_noreturn;
@@ -2640,7 +2640,7 @@ io_file_read_byte8(cl_object strm, unsigned char *c, cl_index n)
 		ecl_disable_interrupts();
 		do {
 			out = read(f, c, sizeof(char)*n);
-		} while (out < 0 && restartable_io_error(strm));
+		} while (out < 0 && restartable_io_error(strm, "read"));
 		ecl_enable_interrupts();
 		return out;
 	}
@@ -2654,7 +2654,7 @@ output_file_write_byte8(cl_object strm, unsigned char *c, cl_index n)
 	ecl_disable_interrupts();
 	do {
 		out = write(f, c, sizeof(char)*n);
-	} while (out < 0 && restartable_io_error(strm));
+	} while (out < 0 && restartable_io_error(strm, "write"));
 	ecl_enable_interrupts();
 	return out;
 }
@@ -3293,11 +3293,11 @@ input_stream_read_byte8(cl_object strm, unsigned char *c, cl_index n)
 		return consume_byte_stack(strm, c, n);
 	} else {
 		FILE *f = IO_STREAM_FILE(strm);
-		cl_index out = 0;
+		cl_fixnum out = 0;
 		ecl_disable_interrupts();
 		do {
 			out = fread(c, sizeof(char), n, f);
-		} while (out < n && ferror(f) && restartable_io_error(strm));
+		} while (out < n && ferror(f) && restartable_io_error(strm, "fread"));
 		ecl_enable_interrupts();
 		return out;
 	}
@@ -3310,7 +3310,7 @@ output_stream_write_byte8(cl_object strm, unsigned char *c, cl_index n)
 	ecl_disable_interrupts();
 	do {
 		out = fwrite(c, sizeof(char), n, IO_STREAM_FILE(strm));
-	} while (out < n && restartable_io_error(strm));
+	} while (out < n && restartable_io_error(strm, "fwrite"));
 	ecl_enable_interrupts();
 	return out;
 }
@@ -3384,7 +3384,7 @@ io_stream_force_output(cl_object strm)
 {
 	FILE *f = IO_STREAM_FILE(strm);
 	ecl_disable_interrupts();
-	while ((fflush(f) == EOF) && restartable_io_error(strm))
+	while ((fflush(f) == EOF) && restartable_io_error(strm, "fflush"))
 		(void)0;
 	ecl_enable_interrupts();
 }
@@ -5268,7 +5268,7 @@ maybe_clearerr(cl_object strm)
 }
 
 static int
-restartable_io_error(cl_object strm)
+restartable_io_error(cl_object strm, const char *s)
 {
 	cl_env_ptr the_env = ecl_process_env();
 	volatile int old_errno = errno;
@@ -5278,8 +5278,9 @@ restartable_io_error(cl_object strm)
 	if (old_errno == EINTR) {
 		return 1;
 	} else {
-		FElibc_error("Read or write operation to stream ~S signaled an error.",
-			     1, strm);
+		FElibc_error("C operation (~A) to stream ~S signaled an error.",
+			     2, ecl_make_constant_base_string(s, strlen(s)),
+			     strm);
 		return 0;
 	}
 }
