@@ -16,29 +16,38 @@
 
 
 #include <ecl/ecl.h>
+#include <ecl/internal.h>
 
 @(defun values (&rest args)
-	int i;
+	cl_object output;
 @
-	if (narg > ECL_MULTIPLE_VALUES_LIMIT)
+	unlikely_if (narg > ECL_MULTIPLE_VALUES_LIMIT)
 		FEerror("Too many values in VALUES",0);
-	NVALUES = narg;
-	if (narg == 0)
-		VALUES(0) = Cnil;
-	else for (i = 0; i < narg; i++)
-		VALUES(i) = cl_va_arg(args);
-	returnn(VALUES(0));
+	the_env->nvalues = narg;
+	output = Cnil;
+	if (narg) {
+		int i = 0;
+		do { 
+			the_env->values[i] = cl_va_arg(args);
+		} while (++i < narg);
+		output = the_env->values[0];
+	}
+	return output;
 @)
 
 cl_object
 cl_values_list(cl_object list)
 {
-	VALUES(0) = Cnil;
-	for (NVALUES=0; !Null(list); list=ECL_CONS_CDR(list)) {
-                if (!LISTP(list)) FEtype_error_list(list);
-		if (NVALUES == ECL_MULTIPLE_VALUES_LIMIT)
+	cl_env_ptr the_env = ecl_process_env();
+	int i;
+	the_env->values[0] = Cnil;
+	for (i = 0; !Null(list); list=ECL_CONS_CDR(list)) {
+                unlikely_if (!LISTP(list))
+			FEtype_error_list(list);
+		unlikely_if (i == ECL_MULTIPLE_VALUES_LIMIT)
 			FEerror("Too many values in VALUES-LIST",0);
-		VALUES(NVALUES++) = ECL_CONS_CAR(list);
+		the_env->values[i++] = ECL_CONS_CAR(list);
 	}
-	returnn(VALUES(0));
+	the_env->nvalues = i;
+	return the_env->values[0];
 }
