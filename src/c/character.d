@@ -200,7 +200,7 @@ ecl_char_eq(cl_object x, cl_object y)
 @)
 
 static cl_object
-Lchar_cmp(cl_narg narg, int s, int t, cl_va_list args)
+Lchar_cmp(cl_env_ptr env, cl_narg narg, int s, int t, cl_va_list args)
 {
 	cl_object c, d;
 
@@ -210,9 +210,9 @@ Lchar_cmp(cl_narg narg, int s, int t, cl_va_list args)
 	for (; --narg; c = d) {
 		d = cl_va_arg(args);
 		if (s*ecl_char_cmp(d, c) < t)
-			@(return Cnil)
+			ecl_return1(env, Cnil);
 	}
-	@(return Ct)
+	ecl_return1(env, Ct);
 }
 
 int
@@ -226,22 +226,22 @@ ecl_char_cmp(cl_object x, cl_object y)
 
 @(defun char< (&rest args)
 @
-	return Lchar_cmp(narg, 1, 1, args);
+	return Lchar_cmp(the_env, narg, 1, 1, args);
 @)
 
 @(defun char> (&rest args)
 @
-	return Lchar_cmp(narg,-1, 1, args);
+	return Lchar_cmp(the_env, narg,-1, 1, args);
 @)
 
 @(defun char<= (&rest args)
 @
-	return Lchar_cmp(narg, 1, 0, args);
+	return Lchar_cmp(the_env, narg, 1, 0, args);
 @)
 
 @(defun char>= (&rest args)
 @
-	return Lchar_cmp(narg,-1, 0, args);
+	return Lchar_cmp(the_env, narg,-1, 0, args);
 @)
 
 @(defun char_equal (c &rest cs)
@@ -283,7 +283,7 @@ ecl_char_equal(cl_object x, cl_object y)
 @)
 
 static cl_object
-Lchar_compare(cl_narg narg, int s, int t, cl_va_list args)
+Lchar_compare(cl_env_ptr env, cl_narg narg, int s, int t, cl_va_list args)
 {
 	cl_object c, d;
 
@@ -294,9 +294,9 @@ Lchar_compare(cl_narg narg, int s, int t, cl_va_list args)
 	for (; --narg; c = d) {
 		d = cl_va_arg(args);
 		if (s*ecl_char_compare(d, c) < t)
-			@(return Cnil)
+			ecl_return1(env, Cnil);
 	}
-	@(return Ct)
+	ecl_return1(env, Ct);
 }
 
 int
@@ -315,22 +315,22 @@ ecl_char_compare(cl_object x, cl_object y)
 
 @(defun char-lessp (&rest args)
 @
-	return Lchar_compare(narg, 1, 1, args);
+	return Lchar_compare(the_env, narg, 1, 1, args);
 @)
 
 @(defun char-greaterp (&rest args)
 @
-	return Lchar_compare(narg,-1, 1, args);
+	return Lchar_compare(the_env, narg,-1, 1, args);
 @)
 
 @(defun char-not-greaterp (&rest args)
 @
-	return Lchar_compare(narg, 1, 0, args);
+	return Lchar_compare(the_env, narg, 1, 0, args);
 @)
 
 @(defun char-not-lessp (&rest args)
 @
-	return Lchar_compare(narg,-1, 0, args);
+	return Lchar_compare(the_env, narg,-1, 0, args);
 @)
 
 

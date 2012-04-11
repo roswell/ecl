@@ -474,7 +474,6 @@ static printer dispatch[FREE+1] = {
 cl_object
 si_write_ugly_object(cl_object x, cl_object stream)
 {
-        int t;
 	if (x == OBJNULL) {
 		if (ecl_print_readably())
                         FEprint_not_readable(x);

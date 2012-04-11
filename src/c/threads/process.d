@@ -200,6 +200,7 @@ thread_cleanup(void *aux)
 	/* No signals from here on */
 	{
 		sigset_t new[1];
+		sigemptyset(new);
 		sigaddset(new, ecl_option_values[ECL_OPT_SIGNAL_HANDLING_THREAD]);
 		pthread_sigmask(SIG_BLOCK, new, NULL);
 	}
@@ -548,6 +549,7 @@ mp_exit_process(void)
 	*/
 	const cl_env_ptr the_env = ecl_process_env();
 	ecl_unwind(the_env, the_env->frs_org);
+	/* Never reached */
 }
 
 cl_object

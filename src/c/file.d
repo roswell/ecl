@@ -5299,13 +5299,6 @@ io_error(cl_object strm)
 }
 
 static void
-character_size_overflow(cl_object strm, ecl_character c)
-{
-	FEerror("Tried to write a character ~S in a ~A stream.", 2,
-		CODE_CHAR(c), cl_stream_external_format(strm));
-}
-
-static void
 wrong_file_handler(cl_object strm)
 {
 	FEerror("Internal error: stream ~S has no valid C file handler.", 1, strm);

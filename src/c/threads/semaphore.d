@@ -80,7 +80,6 @@ mp_semaphore_wait_count(cl_object semaphore)
 {
 	cl_fixnum n = fixnnint(count);
         cl_env_ptr env = ecl_process_env();
-	cl_object own_process = env->own_process;
 	unlikely_if (type_of(semaphore) != t_semaphore) {
 		FEerror_not_a_semaphore(semaphore);
 	}

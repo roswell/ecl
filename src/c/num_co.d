@@ -768,7 +768,6 @@ cl_decode_float(cl_object x)
 	switch (tx) {
 	case t_singlefloat: {
 		f = sf(x);
-	FLOAT:
 		if (f >= 0.0) {
 			s = 1;
 		} else {

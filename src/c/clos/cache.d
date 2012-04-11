@@ -78,7 +78,6 @@ ecl_cache_ptr
 ecl_make_cache(cl_index key_size, cl_index cache_size)
 {
 	ecl_cache_ptr cache = ecl_alloc(sizeof(struct ecl_cache));
-	cl_object table;
 	cache->keys =
 		si_make_vector(Ct, /* element type */
 			       MAKE_FIXNUM(key_size), /* Maximum size */

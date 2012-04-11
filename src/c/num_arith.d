@@ -67,7 +67,6 @@ ecl_integer_divide(cl_object x, cl_object y)
 cl_object
 ecl_gcd(cl_object x, cl_object y)
 {
-	cl_object gcd;
         ECL_WITH_TEMP_BIGNUM(x_big,1);
         ECL_WITH_TEMP_BIGNUM(y_big,1);
 

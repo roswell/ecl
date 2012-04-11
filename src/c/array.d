@@ -48,8 +48,6 @@ static const cl_object ecl_aet_name[] = {
         @'base-char'          /* aet_bc */
 };
 
-static void check_displaced (cl_object dlist, cl_object orig, cl_index newdim);
-
 static void FEbad_aet() ecl_attr_noreturn;
 
 static void
@@ -729,12 +727,6 @@ address_inc(void *address, cl_fixnum inc, cl_elttype elt_type)
 	default:
 		FEbad_aet();
 	}
-}
-
-static void *
-array_address(cl_object x, cl_index inc)
-{
-	return address_inc(x->array.self.t, inc, x->array.elttype);
 }
 
 cl_object

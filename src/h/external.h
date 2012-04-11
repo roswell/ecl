@@ -1701,7 +1701,7 @@ extern ECL_API void ecl_tcp_close_all(void);
 #ifdef ECL_THREADS
 extern ECL_API cl_object mp_own_process(void) __attribute__((const));
 extern ECL_API cl_object mp_all_processes(void);
-extern ECL_API cl_object mp_exit_process(void) /*ecl_attr_noreturn*/;
+extern ECL_API cl_object mp_exit_process(void) ecl_attr_noreturn;
 extern ECL_API cl_object mp_interrupt_process(cl_object process, cl_object function);
 extern ECL_API cl_object mp_make_process _ARGS((cl_narg narg, ...));
 extern ECL_API cl_object mp_process_active_p(cl_object process);

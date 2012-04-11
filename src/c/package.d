@@ -527,7 +527,6 @@ potential_export_conflict(cl_object name, cl_object s, cl_object p)
 void
 cl_export2(cl_object s, cl_object p)
 {
-	cl_object x;
 	int intern_flag, error;
 	cl_object other_p, name = ecl_symbol_name(s);
 	p = si_coerce_to_package(p);

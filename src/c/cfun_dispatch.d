@@ -451,13 +451,6 @@ static cl_object dispatch63 (cl_narg narg, cl_object x0, cl_object x1, cl_object
   return fun->cfunfixed.entry_fixed(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62);
 }
 
-static cl_object dispatch64 (cl_narg narg, cl_object x0, cl_object x1, cl_object x2, cl_object x3, cl_object x4, cl_object x5, cl_object x6, cl_object x7, cl_object x8, cl_object x9, cl_object x10, cl_object x11, cl_object x12, cl_object x13, cl_object x14, cl_object x15, cl_object x16, cl_object x17, cl_object x18, cl_object x19, cl_object x20, cl_object x21, cl_object x22, cl_object x23, cl_object x24, cl_object x25, cl_object x26, cl_object x27, cl_object x28, cl_object x29, cl_object x30, cl_object x31, cl_object x32, cl_object x33, cl_object x34, cl_object x35, cl_object x36, cl_object x37, cl_object x38, cl_object x39, cl_object x40, cl_object x41, cl_object x42, cl_object x43, cl_object x44, cl_object x45, cl_object x46, cl_object x47, cl_object x48, cl_object x49, cl_object x50, cl_object x51, cl_object x52, cl_object x53, cl_object x54, cl_object x55, cl_object x56, cl_object x57, cl_object x58, cl_object x59, cl_object x60, cl_object x61, cl_object x62, cl_object x63) {
-  const cl_env_ptr the_env = ecl_process_env();
-  cl_object fun = the_env->function;
-  if (ecl_unlikely(narg != 64)) FEwrong_num_arguments(fun);
-  return fun->cfunfixed.entry_fixed(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63);
-}
-
 static cl_objectfn dispatch_table[64] = {
 (cl_objectfn)dispatch0, 
 (cl_objectfn)dispatch1, 
