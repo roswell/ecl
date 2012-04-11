@@ -196,6 +196,14 @@ thread_cleanup(void *aux)
 	 */
 	cl_object process = (cl_object)aux;
 	cl_env_ptr env = process->process.env;
+#ifdef HAVE_SIGPROCMASK
+	/* No signals from here on */
+	{
+		sigset_t new[1];
+		sigaddset(new, ecl_option_values[ECL_OPT_SIGNAL_HANDLING_THREAD]);
+		pthread_sigmask(SIG_BLOCK, new, NULL);
+	}
+#endif
 	/* The following flags will disable all interrupts. */
         AO_store((AO_t*)&process->process.phase, ECL_PROCESS_EXITING);
 	ecl_unlist_process(process);
