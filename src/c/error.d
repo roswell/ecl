@@ -486,7 +486,7 @@ FElibc_error(const char *msg, int narg, ...)
 	cl_va_start(args, narg, narg, 0);
 	rest = cl_grab_rest_args(args);
 
-	FEerror("~?~%Explanation: ~A.", 3, make_constant_base_string(msg), rest,
+	FEerror("~?~%C library explanation: ~A.", 3, make_constant_base_string(msg), rest,
 		make_constant_base_string(error));
 }
 
@@ -510,7 +510,7 @@ FEwin32_error(const char *msg, int narg, ...)
 
 	cl_va_start(args, narg, narg, 0);
 	rest = cl_grab_rest_args(args);
-	FEerror("~?~%Explanation: ~A.", 3,
+	FEerror("~?~%Windows library explanation: ~A.", 3,
 		make_constant_base_string(msg), rest,
 		win_msg_obj);
 }
