@@ -294,43 +294,20 @@ wakeup_this(cl_object p, int flags)
 		ecl_interrupt_process(p, Cnil);
 }
 
-static void
-wakeup_all(cl_env_ptr the_env, cl_object q, int flags)
+void
+ecl_wakeup_waiters(cl_env_ptr the_env, cl_object q, int flags)
 {
-	cl_object queue = wait_queue_pop_all(the_env, q);
-	while (!Null(queue)) {
-		cl_object process = ECL_CONS_CAR(queue);
-		queue = ECL_CONS_CDR(queue);
-		if (process->process.phase != ECL_PROCESS_INACTIVE)
-			wakeup_this(process, flags);
-	}
-}
-
-static void
-wakeup_one(cl_env_ptr the_env, cl_object q, int flags)
-{
-	do {
+	while (q->queue.list != Cnil) {
 		cl_object next = wait_queue_first_one(the_env, q);
 		if (Null(next)) {
 			print_lock("no process to awake", q);
-			return;
+			break;
 		}
 		print_lock("awaking %p", q, next);
 		if (next->process.phase != ECL_PROCESS_INACTIVE) {
 			wakeup_this(next, flags);
-			return;
-		}
-	} while (1);
-}
-
-void
-ecl_wakeup_waiters(cl_env_ptr the_env, cl_object q, int flags)
-{
-	if (q->queue.list != Cnil) {
-		if (flags & ECL_WAKEUP_ALL) {
-			wakeup_all(the_env, q, flags);
-		} else {
-			wakeup_one(the_env, q, flags);
+			if ((flags & ECL_WAKEUP_ALL) == 0)
+				break;
 		}
 	}
 	ecl_process_yield();
