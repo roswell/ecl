@@ -1027,8 +1027,11 @@ si_mkdir(cl_object directory, cl_object mode)
 		/* Ensure a clean string, without trailing slashes,
 		 * and null terminated. */
 		cl_index last = filename->base_string.fillp;
-		while (last > 1 && IS_DIR_SEPARATOR(ecl_char(filename, --last)))
-			{}
+		if (last > 1) {
+			ecl_character c = filename->base_string.self[last-1];
+			if (IS_DIR_SEPARATOR(c))
+				last--;
+		}
 		filename = ecl_subseq(filename, 0, last);
 	}
 	ecl_disable_interrupts();
