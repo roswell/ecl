@@ -21,6 +21,9 @@ ECL 12.2.2:
  - EXT:MKDIR no longer accepts pathnames as inputs to avoid problems with
    pathnames that contain name or type components.
 
+ - ENSURE-DIRECTORIES-EXIST accepts the keyword argument :MODE which is
+   passed to MKDIR.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
