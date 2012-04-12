@@ -18,6 +18,9 @@ ECL 12.2.2:
    when iteration forms appear at the wrong place, as in (LOOP WHILE ...)
    followed by some assignment.
 
+ - EXT:MKDIR no longer accepts pathnames as inputs to avoid problems with
+   pathnames that contain name or type components.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

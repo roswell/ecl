@@ -1012,8 +1012,8 @@ si_get_library_pathname(void)
 cl_object
 si_mkdir(cl_object directory, cl_object mode)
 {
-	cl_object filename = si_coerce_to_filename(directory);
 	int modeint, ok;
+	cl_object filename = si_coerce_to_base_string(directory);
 
         if (ecl_unlikely(!ECL_FIXNUMP(mode) ||
                          ecl_fixnum_minusp(mode) ||
@@ -1023,9 +1023,14 @@ si_mkdir(cl_object directory, cl_object mode)
                                                            MAKE_FIXNUM(0777)));
         }
         modeint = fix(mode);
-	if (filename->base_string.fillp)
-	    filename->base_string.self[--filename->base_string.fillp] = 0;
-
+	{
+		/* Ensure a clean string, without trailing slashes,
+		 * and null terminated. */
+		cl_index last = filename->base_string.fillp;
+		while (last > 1 && IS_DIR_SEPARATOR(ecl_char(filename, --last)))
+			{}
+		filename = ecl_subseq(filename, 0, last);
+	}
 	ecl_disable_interrupts();
 #if defined(ECL_MS_WINDOWS_HOST)
 	ok = mkdir((char*)filename->base_string.self);
