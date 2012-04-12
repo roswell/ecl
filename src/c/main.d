@@ -399,6 +399,7 @@ struct cl_core_struct cl_core = {
 
 #ifdef ECL_THREADS
 	Cnil, /* processes */
+	Cnil, /* processes_spinlock */
 	Cnil, /* global_lock */
         Cnil, /* error_lock */
         Cnil, /* global_env_lock */

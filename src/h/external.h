@@ -219,6 +219,7 @@ struct cl_core_struct {
 
 #ifdef ECL_THREADS
 	cl_object processes;
+	cl_object processes_spinlock;
 	cl_object global_lock;
         cl_object error_lock;
         cl_object global_env_lock;

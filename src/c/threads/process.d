@@ -101,7 +101,7 @@ extend_process_vector()
 	cl_object v = cl_core.processes;
 	cl_index new_size = v->vector.dim + v->vector.dim/2;
 	cl_env_ptr the_env = ecl_process_env();
-	ECL_WITH_GLOBAL_LOCK_BEGIN(the_env) {
+	ECL_WITH_SPINLOCK_BEGIN(the_env, &cl_core.processes_spinlock) {
 		cl_object other = cl_core.processes;
 		if (new_size > other->vector.dim) {
 			cl_object new = si_make_vector(Ct,
@@ -111,7 +111,7 @@ extend_process_vector()
 			ecl_copy_subarray(new, 0, other, 0, other->vector.dim);
 			cl_core.processes = new;
 		}
-	} ECL_WITH_GLOBAL_LOCK_END;
+	} ECL_WITH_SPINLOCK_END;
 }
 
 static void
@@ -120,7 +120,7 @@ ecl_list_process(cl_object process)
 	cl_env_ptr the_env = ecl_process_env();
 	bool ok = 0;
 	do {
-		ECL_WITH_GLOBAL_LOCK_BEGIN(the_env) {
+		ECL_WITH_SPINLOCK_BEGIN(the_env, &cl_core.processes_spinlock) {
 			cl_object vector = cl_core.processes;
 			cl_index size = vector->vector.dim;
 			cl_index ndx = vector->vector.fillp;
@@ -129,7 +129,7 @@ ecl_list_process(cl_object process)
 				vector->vector.fillp = ndx;
 				ok = 1;
 			}
-		} ECL_WITH_GLOBAL_LOCK_END;
+		} ECL_WITH_SPINLOCK_END;
 		if (ok) break;
 		extend_process_vector();
 	} while (1);
@@ -139,7 +139,7 @@ static void
 ecl_unlist_process(cl_object process)
 {
 	cl_env_ptr the_env = ecl_process_env();
-	ECL_WITH_GLOBAL_LOCK_BEGIN(the_env) {
+	ECL_WITH_SPINLOCK_BEGIN(the_env, &cl_core.processes_spinlock) {
 		cl_object vector = cl_core.processes;
 		cl_index i;
 		for (i = 0; i < vector->vector.fillp; i++) {
@@ -152,21 +152,24 @@ ecl_unlist_process(cl_object process)
 				break;
 			}
 		}
-	} ECL_WITH_GLOBAL_LOCK_END;
+	} ECL_WITH_SPINLOCK_END;
 }
 
 static cl_object
 ecl_process_list()
 {
-	cl_object vector = cl_core.processes;
-	cl_object *data = vector->vector.self.t;
+	cl_env_ptr the_env = ecl_process_env();
 	cl_object output = Cnil;
-	cl_index i;
-	for (i = 0; i < vector->vector.fillp; i++) {
-		cl_object p = data[i];
-		if (p != Cnil)
-			output = ecl_cons(p, output);
-	}
+	ECL_WITH_SPINLOCK_BEGIN(the_env, &cl_core.processes_spinlock) {
+		cl_object vector = cl_core.processes;
+		cl_object *data = vector->vector.self.t;
+		cl_index i;
+		for (i = 0; i < vector->vector.fillp; i++) {
+			cl_object p = data[i];
+			if (p != Cnil)
+				output = ecl_cons(p, output);
+		}
+	} ECL_WITH_SPINLOCK_END;
 	return output;
 }
 
@@ -196,8 +199,11 @@ thread_cleanup(void *aux)
 	 */
 	cl_object process = (cl_object)aux;
 	cl_env_ptr env = process->process.env;
+	/* The following flags will disable all interrupts. */
+        AO_store_full((AO_t*)&process->process.phase, ECL_PROCESS_EXITING);
+	ecl_disable_interrupts_env(env);
 #ifdef HAVE_SIGPROCMASK
-	/* No signals from here on */
+	/* ...but we might get stray signals. */
 	{
 		sigset_t new[1];
 		sigemptyset(new);
@@ -205,13 +211,12 @@ thread_cleanup(void *aux)
 		pthread_sigmask(SIG_BLOCK, new, NULL);
 	}
 #endif
-	/* The following flags will disable all interrupts. */
-        AO_store((AO_t*)&process->process.phase, ECL_PROCESS_EXITING);
-	ecl_unlist_process(process);
 	mp_barrier_unblock(3, process->process.exit_barrier, @':disable', Ct);
-	ecl_set_process_env(process->process.env = NULL);
+	process->process.env = NULL;
+	ecl_unlist_process(process);
+	ecl_set_process_env(NULL);
 	if (env) _ecl_dealloc_env(env);
-        AO_store((AO_t*)&process->process.phase, ECL_PROCESS_INACTIVE);
+        AO_store_release((AO_t*)&process->process.phase, ECL_PROCESS_INACTIVE);
 }
 
 #ifdef ECL_WINDOWS_THREADS
