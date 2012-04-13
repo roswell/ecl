@@ -99,8 +99,7 @@
 ;;; * Timed compilation facility.
 ;;;
 (defun compile-if-old (destdir sources &rest options)
-  (unless (probe-file destdir)
-    (si::mkdir destdir #o0777))
+  (ensure-directories-exist destdir :mode #o0777)
   (mapcar #'(lambda (source)
 	      (let ((object (merge-pathnames destdir (compile-file-pathname source :type :object))))
 		(unless (and (probe-file object)
