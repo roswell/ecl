@@ -182,12 +182,12 @@ add_external_process(cl_env_ptr env, cl_object process)
 {
         cl_object l = ecl_list1(process);
         ecl_disable_interrupts_env(env);
-	ecl_get_spinlock(env, &cl_core.external_processes_lock);
+	ECL_WITH_SPINLOCK_BEGIN(env, &cl_core.external_processes_lock);
 	{
                 ECL_RPLACD(l, cl_core.external_processes);
                 cl_core.external_processes = l;
         }
-	ecl_giveup_spinlock(&cl_core.external_processes_lock);
+	ECL_WITH_SPINLOCK_END;
         ecl_enable_interrupts_env(env);
 }
 
@@ -195,12 +195,12 @@ static void
 remove_external_process(cl_env_ptr env, cl_object process)
 {
         ecl_disable_interrupts_env(env);
-	ecl_get_spinlock(env, &cl_core.external_processes_lock);
+	ECL_WITH_SPINLOCK_BEGIN(env, &cl_core.external_processes_lock);
 	{
                 cl_core.external_processes =
                         ecl_delete_eq(process, cl_core.external_processes);
         }
-	ecl_giveup_spinlock(&cl_core.external_processes_lock);
+	ECL_WITH_SPINLOCK_END;
         ecl_enable_interrupts_env(env);
 }
 
@@ -209,7 +209,7 @@ find_external_process(cl_env_ptr env, cl_object pid)
 {
 	cl_object output = Cnil;
 	ecl_disable_interrupts_env(env);
-	ecl_get_spinlock(env, &cl_core.external_processes_lock);
+	ECL_WITH_SPINLOCK_BEGIN(env, &cl_core.external_processes_lock);
 	{
 		cl_object p;
 		for (p = cl_core.external_processes; p != Cnil; p = ECL_CONS_CDR(p)) {
@@ -220,7 +220,7 @@ find_external_process(cl_env_ptr env, cl_object pid)
 			}
 		}
 	}
-	ecl_giveup_spinlock(&cl_core.external_processes_lock);
+	ECL_WITH_SPINLOCK_END(&cl_core.external_processes_lock);
 	ecl_enable_interrupts_env(env);
         return output;
 }
