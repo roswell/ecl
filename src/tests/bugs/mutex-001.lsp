@@ -5,6 +5,18 @@
 
 (in-package :cl-test)
 
+(defun kill-and-wait (process-list &optional original)
+  "Kills a list of processes, which may be the difference between two lists,
+waiting for all processes to finish. Currently it has no timeout, meaning
+it may block hard the lisp image."
+  (let ((process-list (set-difference process-list original)))
+    (when (member mp:*current-process* process-list)
+      (error "Found myself in the kill list"))
+    (mapc #'mp:process-kill process-list)
+    (loop for i in process-list
+       do (mp:process-join i))
+    process-list))
+
 ;;; Date: 12/04/2012
 ;;;	Non-recursive mutexes should signal an error when they
 ;;;	cannot be relocked.
@@ -45,8 +57,9 @@
 ;;;	When multiple threads compete for a mutex, they should
 ;;;	all get the same chance of accessing the resource
 ;;;
-(deftest mutex-001-fairness
-    (let* ((mutex (mp:make-lock :name 'mutex-001-fairness))
+(deftest mutex-003-fairness
+    (let* ((zero-processes (mp:all-processes))
+	   (mutex (mp:make-lock :name 'mutex-001-fairness))
 	   (nthreads 10)
 	   (count 10)
 	   (counter (* nthreads count))
@@ -73,6 +86,41 @@
 	  ;; the same share of counts.
 	  (loop for p in all-processes
 	     do (mp:process-join p))
-	  (loop for i from 0 below nthreads
-	     always (= (aref array i) count)))))
+	  (and (loop for i from 0 below nthreads
+		  always (= (aref array i) count))
+	       (null (kill-and-wait (mp:all-processes) zero-processes))))))
+  t)
+
+;;; Date: 12/04/2012
+;;;	It is possible to kill processes waiting for a lock. We launch a lot of
+;;;	processes, 50% of which are zombies: they acquire the lock and do not
+;;;	do anything. These processes are then killed, resulting in the others
+;;;	doing their job.
+;;;
+(deftest mutex-004-interruptible
+    (let* ((zero-processes (mp:all-processes))
+	   (mutex (mp:make-lock :name "mutex-003-fairness"))
+	   (nprocesses 20)
+	   (counter 0))
+      (flet ((normal-thread ()
+	       (mp:with-lock (mutex)
+		 (incf counter)))
+	     (zombie-thread ()
+	       (mp:with-lock (mutex)
+		 (loop (sleep 10)))))
+	(let* ((all-processes (loop for i from 0 below nprocesses
+				 for zombie = (zerop (mod i 2))
+				 for fn = (if zombie #'zombie-thread #'normal-thread)
+				 collect (cons zombie
+					       (mp:process-run-function
+						"mutex-003-fairness"
+						fn))))
+	       (zombies (mapcar #'cdr (remove-if-not #'car all-processes))))
+	  (and (zerop counter) ; No proces works because the first one is a zombie
+	       (kill-and-wait zombies)
+	       (progn (sleep 0.2) (= counter (/ nprocesses 2)))
+	       (null (kill-and-wait (mp:all-processes) zero-processes))
+	       (not (mp:lock-owner mutex))
+	       (zerop (mp:lock-count mutex))
+	       t))))
   t)
