@@ -356,9 +356,9 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
   (when (> nreq si::c-arguments-limit)
     (setf nopt (+ nopt (- nreq si::c-arguments-limit))
 	  nreq si::c-arguments-limit)
-    (setf optionals (nconc (reduce #'nconc (mapcar #'(lambda (var) (list var *c1nil* NIL))
-						   (subseq requireds si::c-arguments-limit)))
-				  (rest optionals))
+    (setf optionals (nconc (loop for var in (subseq requireds si::c-arguments-limit)
+			      nconc (list var *c1nil* NIL))
+			   optionals)
 	  requireds (subseq requireds 0 si::c-arguments-limit)
 	  varargs t))
 

@@ -692,12 +692,12 @@ return f2;
       (wt-h comma "volatile cl_object  *")
       (wt comma "volatile cl_object *lex" n)
       (setf comma ", "))
-    (let ((lcl 0))
-      (declare (fixnum lcl))
-      (dolist (var requireds)
-	(wt-h comma "cl_object " *volatile*)
-	(wt comma "cl_object " *volatile*) (wt-lcl (incf lcl))
-	(setf comma ", ")))
+    (loop for lcl from 1 upto si:c-arguments-limit
+       for var in requireds
+       do
+	 (wt-h comma "cl_object " *volatile*)
+	 (wt comma "cl_object " *volatile*) (wt-lcl lcl)
+	 (setf comma ", "))
     (when narg
       (wt-h ", ...")
       (wt ", ..."))
@@ -853,9 +853,12 @@ return f2;
                 do (let* ((cfun (fun-cfun fun))
                           (minarg (fun-minarg fun))
                           (maxarg (fun-maxarg fun))
-                          (narg (if (= minarg maxarg) maxarg nil)))
+                          (narg (if (and (= minarg maxarg)
+					 (<= maxarg si:c-arguments-limit))
+				    maxarg
+				    -1)))
                      (format stream "~%{0,0,~D,0,MAKE_FIXNUM(~D),MAKE_FIXNUM(~D),(cl_objectfn)~A,Cnil,MAKE_FIXNUM(~D)},"
-                             (or narg -1)
+                             narg
                              (vv-location loc)
                              (vv-location fname-loc)
                              cfun (fun-file-position fun))))
