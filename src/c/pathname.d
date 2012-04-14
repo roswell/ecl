@@ -189,7 +189,7 @@ push_string(cl_object buffer, cl_object string)
 }
 
 static cl_object
-destructively_check_directory(cl_object directory, bool logical)
+destructively_check_directory(cl_object directory, bool logical, bool delete_back)
 {
 	/* This function performs two tasks
 	 * 1) It ensures that the list is a valid directory list
@@ -218,7 +218,7 @@ destructively_check_directory(cl_object directory, bool logical)
 			item = ecl_nth(i-1, directory);
 			if (item == @':absolute' || item == @':wild-inferiors')
 				return @':error';
-			if (i >= 2) {
+			if (delete_back && i >= 2) {
                                 cl_object next = ECL_CONS_CDR(ptr);
                                 ptr = ecl_nthcdr(i-2, directory);
 				ECL_RPLACD(ptr, next);
@@ -346,7 +346,7 @@ ecl_make_pathname(cl_object host, cl_object device, cl_object directory,
                         translate_component_case(type, fromcase, tocase);
                 p->pathname.version = version;
         }
-	directory = destructively_check_directory(directory, p->pathname.logical);
+	directory = destructively_check_directory(directory, p->pathname.logical, 0);
         unlikely_if (directory == @':error') {
 		cl_error(3, @'file-error', @':pathname', p);
 	}
@@ -603,7 +603,7 @@ ecl_parse_namestring(cl_object s, cl_index start, cl_index end, cl_index *ep,
 		if (ECL_CONS_CAR(path) != @':relative' &&
 		    ECL_CONS_CAR(path) != @':absolute')
 			path = CONS(@':absolute', path);
-		path = destructively_check_directory(path, TRUE);
+		path = destructively_check_directory(path, TRUE, FALSE);
 	} else {
 		path = CONS(@':absolute', path);
 	}
@@ -697,7 +697,7 @@ ecl_parse_namestring(cl_object s, cl_index start, cl_index end, cl_index *ep,
 		if (ECL_CONS_CAR(path) != @':relative' &&
 		    ECL_CONS_CAR(path) != @':absolute')
 			path = CONS(@':relative', path);
-		path = destructively_check_directory(path, FALSE);
+		path = destructively_check_directory(path, FALSE, FALSE);
 	}
 	if (path == @':error')
 		return Cnil;
@@ -958,7 +958,7 @@ ecl_merge_pathnames(cl_object path, cl_object defaults, cl_object default_versio
                                                              @':case', tocase),
                                        CDR(path->pathname.directory));
                 /* Eliminate redundant :back */
-                directory = destructively_check_directory(directory, 1);
+                directory = destructively_check_directory(directory, TRUE, TRUE);
         } else {
 		directory = path->pathname.directory;
         }
