@@ -161,7 +161,6 @@
 
 (defmethod make-load-form ((x cmp-007-class) &optional environment)
   (declare (ignore environment))
-  (print x)
   (values
     ;; creation form
     `(make-instance ',(class-of x) :children ',(slot-value x 'children))
