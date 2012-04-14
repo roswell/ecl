@@ -72,22 +72,6 @@ wait_queue_pop_all(cl_env_ptr the_env, cl_object q)
 	return output;
 }
 
-static ECL_INLINE cl_object
-wait_queue_first_one(cl_env_ptr the_env, cl_object q)
-{
-	cl_object output;
-	ecl_disable_interrupts_env(the_env);
-	ecl_get_spinlock(the_env, &q->queue.spinlock);
-	{
-		output = q->queue.list;
-		if (output != Cnil)
-			output = ECL_CONS_CAR(output);
-	}
-	ecl_giveup_spinlock(&q->queue.spinlock);
-	ecl_enable_interrupts_env(the_env);
-	return output;
-}
-
 static ECL_INLINE void
 wait_queue_delete(cl_env_ptr the_env, cl_object q, cl_object item)
 {
@@ -199,6 +183,28 @@ ecl_wait_on_timed(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object),
 	return output;
 }
 
+/**********************************************************************
+ * BLOCKING WAIT QUEUE ALGORITHM
+ *
+ * This object keeps a list of processes waiting for a condition to
+ * happen. The queue is ordered and the only processes that check for
+ * the condition are
+ *	- The first process to arrive to the queue,
+ *	- Each process which is awoken.
+ *
+ * The idea is that this will ensure some fairness when unblocking the
+ * processes, which is important for abstractions such as mutexes or
+ * semaphores, where we want equal sharing of resources among processes.
+ *
+ * This also implies that the waiting processes depend on others to signal
+ * when to check for a condition, which is whenever the fields that are
+ * checked for change.
+ *
+ * The critical part of this algorithm is the fact that processes
+ * communicating the change of conditions may do so before, during or
+ * after a process has been registered. Since we do not want those signals
+ * to be lost, a proper ordering of steps is required.
+ */
 
 cl_object
 ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_object o)
@@ -208,7 +214,6 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 	volatile cl_object own_process = the_env->own_process;
 	volatile cl_object record;
 	volatile sigset_t original;
-	volatile int aborting = 1;
 	volatile cl_object output;
 
 	/* 0) We reserve a record for the queue. In order to avoid
@@ -220,16 +225,17 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 		own_process->process.queue_record = Cnil;
 	}
 
-	/* 1) First we block all signals. */
+	/* 1) First we block lisp interrupt signals. This ensures that
+	 * any awake signal that is issued from here is not lost. */
 	{
+		int code = ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL];
 		sigset_t empty;
 		sigemptyset(&empty);
-		sigaddset(&empty, ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL]);
+		sigaddset(&empty, code);
 		pthread_sigmask(SIG_BLOCK, &empty, &original);
 	}
 
-	/* 2) Now we add ourselves to the queue. In order to avoid a
-	 * call to the GC, we try to reuse records. */
+	/* 2) Now we add ourselves to the queue. */
 	wait_queue_nconc(the_env, o, record);
 
 	CL_UNWIND_PROTECT_BEGIN(the_env) {
@@ -237,7 +243,7 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 		 * might have missed a wakeup event if that happened
 		 * between 0) and 2), which is why we start with the
 		 * check*/
-		if (ECL_CONS_CAR(o->queue.list) != own_process ||
+		if (o->queue.list != record ||
 		    Null(output = condition(the_env, o)))
 		{
 			print_lock("suspending %p", o, o);
@@ -252,23 +258,26 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 				sigsuspend(&original);
 			} while (Null(output = condition(the_env, o)));
 		}
-		aborting = 0;
 	} CL_UNWIND_PROTECT_EXIT {
 		/* 4) If we are aborting and we are the first waiting
 		 * process in the queue, it may happen that our wakeup
-		 * signal got lost We must wake up another process
+		 * signal got lost. We must wake up another process
 		 * after removing ourselves. */
-		cl_object firstone = o->queue.list;
-
-		/* 5) At this point we wrap up. We remove ourselves
+		/* 4) At this point we wrap up. We remove ourselves
 		   from the queue and restore signals, which were */
+		cl_object firstone = o->queue.list;
 		wait_queue_delete(the_env, o, own_process);
 		own_process->process.waiting_for = Cnil;
 		own_process->process.queue_record = record;
 		ECL_RPLACD(record, Cnil);
 
-		/* 6) ... we continue wat was started in 4) */
-		if (aborting && (firstone == record)) {
+		/* 5) We know that we are aborting when we exit this
+		 * function with output == Cnil. In this case, if we
+		 * got a wakeup signal, this could be lost. The safe
+		 * thing to do is to wakeup the first process, because
+		 * first processes are always allowed to check for the
+		 * condition */
+		if (Null(output) && (firstone == record)) {
 			ecl_wakeup_waiters(the_env, o, 0);
 		}
 
@@ -282,34 +291,41 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 #endif
 }
 
-static void
-wakeup_this(cl_object p, int flags)
-{
-	if (flags & ECL_WAKEUP_RESET_FLAG)
-		p->process.waiting_for = Cnil;
-	print_lock("awaking %p", p, p);
-	if (flags & ECL_WAKEUP_KILL)
-		mp_process_kill(p);
-	else
-		ecl_interrupt_process(p, Cnil);
-}
-
 void
 ecl_wakeup_waiters(cl_env_ptr the_env, cl_object q, int flags)
 {
-	while (q->queue.list != Cnil) {
-		cl_object next = wait_queue_first_one(the_env, q);
-		if (Null(next)) {
-			print_lock("no process to awake", q);
-			break;
-		}
-		print_lock("awaking %p", q, next);
-		if (next->process.phase != ECL_PROCESS_INACTIVE) {
-			wakeup_this(next, flags);
-			if ((flags & ECL_WAKEUP_ALL) == 0)
-				break;
+	ecl_disable_interrupts_env(the_env);
+	ecl_get_spinlock(the_env, &q->queue.spinlock);
+	{
+		/* We scan the list of waiting processes, awaking one
+		 * or more, depending on flags. In running through the list
+		 * we eliminate zombie processes --- they should not be here
+		 * because of the UNWIND-PROTECT in ecl_wait_on(), but
+		 * sometimes shit happens */
+		cl_object *tail, l;
+		for (tail = &q->queue.list; (l = *tail) != Cnil; ) {
+			cl_object p = ECL_CONS_CAR(l);
+			if (p->process.phase == ECL_PROCESS_INACTIVE ||
+			    p->process.phase == ECL_PROCESS_EXITING) {
+				print_lock("removing %p", q, next);
+				*tail = ECL_CONS_CDR(l);
+			} else {
+				/* If the process is active, we then
+				 * simply awake it with a signal.*/
+				print_lock("awaking %p", q, next);
+				if (flags & ECL_WAKEUP_RESET_FLAG)
+					p->process.waiting_for = Cnil;
+				if (flags & ECL_WAKEUP_KILL)
+					mp_process_kill(p);
+				else
+					ecl_interrupt_process(p, Cnil);
+				if ((flags & ECL_WAKEUP_ALL) == 0)
+					break;
+				tail = &ECL_CONS_CDR(l);
+			}
 		}
 	}
+	ecl_giveup_spinlock(&q->queue.spinlock);
 	ecl_process_yield();
 }
 
