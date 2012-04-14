@@ -43,6 +43,8 @@
 
 #+threads
 (load "mp-001.lsp")
+#+threads
+(load "mutex-001.lsp")
 
 #+unicode
 (progn
