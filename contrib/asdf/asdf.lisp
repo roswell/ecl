@@ -1,5 +1,5 @@
 ;;; -*- mode: common-lisp; Base: 10 ; Syntax: ANSI-Common-Lisp -*-
-;;; This is ASDF 2.017: Another System Definition Facility.
+;;; This is ASDF 2.017.5: Another System Definition Facility.
 ;;;
 ;;; Feedback, bug reports, and patches are all welcome:
 ;;; please mail to <asdf-devel@common-lisp.net>.
@@ -67,8 +67,11 @@
             (and (= system::*gcl-major-version* 2)
                  (< system::*gcl-minor-version* 7)))
     (pushnew :gcl-pre2.7 *features*))
-  #+(and (or win32 windows mswindows mingw32) (not cygwin)) (pushnew :asdf-windows *features*)
-  #+(or unix cygwin) (pushnew :asdf-unix *features*)
+  (cond
+    ((intersection *features* '(:asdf-unix :unix :cygwin :darwin))
+     (pushnew :asdf-unix *features*))
+    ((intersection *features* '(:asdf-windows :win32 :windows :mswindows :mingw32))
+     (pushnew :asdf-windows *features*)))
   ;;; make package if it doesn't exist yet.
   ;;; DEFPACKAGE may cause errors on discrepancies, so we avoid it.
   (unless (find-package :asdf)
@@ -112,7 +115,7 @@
          ;; "2.345.6" would be a development version in the official upstream
          ;; "2.345.0.7" would be your seventh local modification of official release 2.345
          ;; "2.345.6.7" would be your seventh local modification of development version 2.345.6
-         (asdf-version "2.017")
+         (asdf-version "2.017.5")
          (existing-asdf (find-class 'component nil))
          (existing-version *asdf-version*)
          (already-there (equal asdf-version existing-version)))
@@ -201,7 +204,7 @@
                (loop :for x :in newly-exported-symbols :do
                  (export (intern* x package)))))
            (ensure-package (name &key nicknames use unintern fmakunbound
-				 shadow export redefined-functions)
+                                 shadow export redefined-functions)
              (let* ((p (ensure-exists name nicknames use)))
                (ensure-unintern p unintern)
                (ensure-shadow p shadow)
@@ -215,7 +218,7 @@
                    ',name :nicknames ',nicknames :use ',use :export ',export
                    :shadow ',shadow
                    :unintern ',unintern
-		   :redefined-functions ',redefined-functions
+                   :redefined-functions ',redefined-functions
                    :fmakunbound ',fmakunbound)))
           (pkgdcl
            :asdf
@@ -298,6 +301,7 @@
             #:*compile-file-warnings-behaviour*
             #:*compile-file-failure-behaviour*
             #:*resolve-symlinks*
+            #:*require-asdf-operator*
             #:*asdf-verbose*
 
             #:asdf-version
@@ -689,7 +693,7 @@ pathnames."
                (ct:c-string-to-lisp-string buffer1))
       (ct:free buffer)
       (ct:free buffer1)))
-  #+ecl (ext:getenv x)
+  #+ecl (si:getenv x)
   #+gcl (system:getenv x)
   #+genera nil
   #+lispworks (lispworks:environment-variable x)
@@ -1166,6 +1170,7 @@ processed in order by OPERATE."))
    ;; no direct accessor for pathname, we do this as a method to allow
    ;; it to default in funky ways if not supplied
    (relative-pathname :initarg :pathname)
+   ;; the absolute-pathname is computed based on relative-pathname...
    (absolute-pathname)
    (operation-times :initform (make-hash-table)
                     :accessor component-operation-times)
@@ -1173,6 +1178,45 @@ processed in order by OPERATE."))
    ;; component properties
    (properties :accessor component-properties :initarg :properties
                :initform nil)))
+
+;;; I believe that the following could probably be more efficiently done
+;;; by a primary method that invokes SHARED-INITIALIZE in a way that would
+;;; appropriately pass the slots to have their initforms re-applied, but I
+;;; do not know how to write such a method. [2011/09/02:rpg]
+(defmethod reinitialize-instance :after ((obj component) &rest initargs
+                                         &key (version nil version-suppliedp)
+                                              (description nil description-suppliedp)
+                                              (long-description nil
+                                                                long-description-suppliedp)
+                                              (load-dependencies nil
+                                                                 ld-suppliedp)
+                                              in-order-to
+                                              do-first
+                                              inline-methods
+                                              parent
+                                              properties)
+  "We reuse component objects from previously-existing systems, so we need to
+make sure we clear them thoroughly."
+  (declare (ignore initargs load-dependencies
+                   long-description description version))
+  ;; this is a cache and should be cleared
+  (slot-makunbound obj 'absolute-pathname)
+  ;; component operation times are no longer valid when the component changes
+  (clrhash (component-operation-times obj))
+  (unless version-suppliedp (slot-makunbound obj 'version))
+  (unless description-suppliedp
+    (slot-makunbound obj 'description))
+  (unless long-description-suppliedp
+    (slot-makunbound obj 'long-description))
+  ;; replicate the logic of the initforms...
+  (unless ld-suppliedp
+    (setf (component-load-dependencies obj) nil))
+  (setf (component-in-order-to obj) in-order-to
+        (component-do-first obj) do-first
+        (component-inline-methods obj) inline-methods
+        (slot-value obj 'parent) parent
+        (slot-value obj 'properties) properties))
+
 
 (defun* component-find-path (component)
   (reverse
@@ -1246,6 +1290,21 @@ processed in order by OPERATE."))
     :initarg :default-component-class
     :accessor module-default-component-class)))
 
+;;; see comment with REINITIALIZE-INSTANCE method on COMPONENT
+;;; [2011/09/02:rpg]
+(defmethod reinitialize-instance :after ((obj module) &rest initargs &key)
+  "Clear MODULE's slots so it can be reused."
+  (slot-makunbound obj 'components-by-name)
+  ;; this may be a more elegant approach than in the
+  ;; COMPONENT method [2011/09/02:rpg]
+  (loop :for (initarg slot-name default) :in
+        `((:components components nil)
+          (:if-component-dep-fails if-component-dep-fails :fail)
+          (:default-component-class default-component-class
+              ,*default-component-class*))
+        :unless (member initarg initargs)
+        :do (setf (slot-value obj slot-name) default)))
+
 (defun* component-parent-pathname (component)
   ;; No default anymore (in particular, no *default-pathname-defaults*).
   ;; If you force component to have a NULL pathname, you better arrange
@@ -1291,6 +1350,25 @@ processed in order by OPERATE."))
    (source-file :reader system-source-file :initarg :source-file
                 :writer %set-system-source-file)
    (defsystem-depends-on :reader system-defsystem-depends-on :initarg :defsystem-depends-on)))
+
+
+;;; see comment with REINITIALIZE-INSTANCE method on COMPONENT
+;;; [2011/09/02:rpg]
+(defmethod reinitialize-instance :after ((obj system) &rest initargs &key)
+  "Clear SYSTEM's slots so it can be reused."
+  ;; note that SYSTEM-SOURCE-FILE is very specially handled,
+  ;; by DO-DEFSYSTEM, so we need to *PRESERVE* its value and
+  ;; not squash it.  SYSTEM COMPONENTS are handled very specially,
+  ;; because they are always, effectively, reused, since the system component
+  ;; is made early in DO-DEFSYSTEM, instead of being made later, in
+  ;; PARSE-COMPONENT-FORM [2011/09/02:rpg]
+  (loop :for (initarg slot-name) :in
+        `((:author author)
+          (:maintainer maintainer)
+          (:licence licence)
+          (:defsystem-depends-on defsystem-depends-on))
+        :unless (member initarg initargs)
+        :do (slot-makunbound obj slot-name)))
 
 ;;;; -------------------------------------------------------------------------
 ;;;; version-satisfies
@@ -2622,18 +2700,23 @@ Returns the new tree (which probably shares structure with the old one)"
                           weakly-depends-on
                           depends-on serial in-order-to)
                         rest))
-           (ret
-            (or (find-component parent name)
-                (make-instance (class-for-type parent type)))))
+           (ret (find-component parent name)))
       (when weakly-depends-on
         (appendf depends-on (remove-if (complement #'find-system) weakly-depends-on)))
       (when *serial-depends-on*
         (push *serial-depends-on* depends-on))
-      (apply 'reinitialize-instance ret
-             :name (coerce-name name)
-             :pathname pathname
-             :parent parent
-             other-args)
+      (if ret
+          (apply 'reinitialize-instance ret
+                 :name (coerce-name name)
+                 :pathname pathname
+                 :parent parent
+                 other-args)
+          (setf ret
+                (apply 'make-instance (class-for-type parent type)
+                       :name (coerce-name name)
+                       :pathname pathname
+                       :parent parent
+                       other-args)))
       (component-pathname ret) ; eagerly compute the absolute pathname
       (when (typep ret 'module)
         (setf (module-default-component-class ret)
@@ -2660,7 +2743,7 @@ Returns the new tree (which probably shares structure with the old one)"
       (setf (component-do-first ret)
             (union-of-dependencies
              do-first
-	     `((compile-op (load-op ,@depends-on)))))
+             `((compile-op (load-op ,@depends-on)))))
 
       (%refresh-component-inline-methods ret rest)
       ret)))
@@ -2752,7 +2835,7 @@ output to *VERBOSE-OUT*.  Returns the shell's exit code."
       :input nil :output *verbose-out*))
 
     #+ecl ;; courtesy of Juan Jose Garcia Ripoll
-    (ext:system command)
+    (si:system command)
 
     #+gcl
     (lisp:system command)
@@ -2869,24 +2952,24 @@ located."
     (or
      #+allegro
      (format nil "~A~A~@[~A~]"
-	     excl::*common-lisp-version-number*
-	     ;; ANSI vs MoDeRn - thanks to Robert Goldman and Charley Cox
-	     (if (eq excl:*current-case-mode* :case-sensitive-lower) "M" "A")
-	     ;; Note if not using International ACL
-	     ;; see http://www.franz.com/support/documentation/8.1/doc/operators/excl/ics-target-case.htm
-	     (excl:ics-target-case (:-ics "8")))
+             excl::*common-lisp-version-number*
+             ;; ANSI vs MoDeRn - thanks to Robert Goldman and Charley Cox
+             (if (eq excl:*current-case-mode* :case-sensitive-lower) "M" "A")
+             ;; Note if not using International ACL
+             ;; see http://www.franz.com/support/documentation/8.1/doc/operators/excl/ics-target-case.htm
+             (excl:ics-target-case (:-ics "8")))
      #+armedbear (format nil "~a-fasl~a" s system::*fasl-version*)
      #+clisp
      (subseq s 0 (position #\space s)) ; strip build information (date, etc.)
      #+clozure
      (format nil "~d.~d-f~d" ; shorten for windows
-	     ccl::*openmcl-major-version*
-	     ccl::*openmcl-minor-version*
-	     (logand ccl::fasl-version #xFF))
+             ccl::*openmcl-major-version*
+             ccl::*openmcl-minor-version*
+             (logand ccl::fasl-version #xFF))
      #+cmu (substitute #\- #\/ s)
      #+ecl (format nil "~A~@[-~A~]" s
-		   (let ((vcs-id (ext:lisp-implementation-vcs-id)))
-		     (subseq vcs-id 0 (min (length vcs-id) 8))))
+                   (let ((vcs-id (ext:lisp-implementation-vcs-id)))
+                     (subseq vcs-id 0 (min (length vcs-id) 8))))
      #+gcl (subseq s (1+ (position #\space s)))
      #+genera
      (multiple-value-bind (major minor) (sct:get-system-version "System")
@@ -2901,7 +2984,7 @@ located."
   (substitute-if
    #\_ #'(lambda (x) (find x " /:;&^\\|?<>(){}[]$#`'\""))
    (format nil "~(~a~@{~@[-~a~]~}~)"
-	   (or *implementation-type* (lisp-implementation-type))
+           (or *implementation-type* (lisp-implementation-type))
            (or *lisp-version-string* (lisp-implementation-version))
            (or *operating-system* (software-type))
            (or *architecture* (machine-type)))))
@@ -4041,26 +4124,28 @@ with a different configuration, so the configuration would be re-read then."
 ;;;
 #+ecl
 (progn
-  (setf *compile-op-compile-file-function*
-        (lambda (input-file &rest keys &key output-file &allow-other-keys)
-          (declare (ignore output-file))
-          (if (member :ecl-bytecmp *features*)
-              (apply 'compile-file input-file keys)
-              (multiple-value-bind (object-file flags1 flags2)
-                  (apply 'compile-file* input-file :system-p t keys)
-                (values (and object-file
-                             (c::build-fasl (compile-file-pathname object-file :type :fasl)
-                                            :lisp-files (list object-file))
-                             object-file)
-                        flags1
-                        flags2)))))
-  
+  (setf *compile-op-compile-file-function* 'ecl-compile-file)
+
+  (defun use-ecl-byte-compiler-p ()
+    (member :ecl-bytecmp *features*))
+
+  (defun ecl-compile-file (input-file &rest keys &key &allow-other-keys)
+    (if (use-ecl-byte-compiler-p)
+        (apply 'compile-file* input-file keys)
+        (multiple-value-bind (object-file flags1 flags2)
+            (apply 'compile-file* input-file :system-p t keys)
+          (values (and object-file
+                       (c::build-fasl (compile-file-pathname object-file :type :fasl)
+                                      :lisp-files (list object-file))
+                       object-file)
+                  flags1
+                  flags2))))
 
   (defmethod output-files ((operation compile-op) (c cl-source-file))
     (declare (ignorable operation))
     (let* ((p (lispize-pathname (component-pathname c)))
            (f (compile-file-pathname p :type :fasl)))
-      (if (member :ecl-bytecmp *features*)
+      (if (use-ecl-byte-compiler-p)
           (list f)
           (list (compile-file-pathname p :type :object) f))))
 
@@ -4068,7 +4153,7 @@ with a different configuration, so the configuration would be re-read then."
     (map () #'load
          (loop :for i :in (input-files o c)
            :unless (string= (pathname-type i) "fas")
-           :collect (compile-file-pathname (lispize-pathname i))))))
+               :collect (compile-file-pathname (lispize-pathname i))))))
 
 ;;;; -----------------------------------------------------------------
 ;;;; Hook into REQUIRE for ABCL, CLISP, ClozureCL, CMUCL, ECL and SBCL
@@ -4096,7 +4181,7 @@ with a different configuration, so the configuration would be re-read then."
             #+clisp ,x
             #+clozure ccl:*module-provider-functions*
             #+cmu ext:*module-provider-functions*
-            #+ecl ext:*module-provider-functions*
+            #+ecl si:*module-provider-functions*
             #+sbcl sb-ext:*module-provider-functions*))))
 
 
