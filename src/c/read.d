@@ -1092,6 +1092,101 @@ sharp_sharp_reader(cl_object in, cl_object c, cl_object d)
 
 static cl_object
 do_patch_sharp(cl_object x, cl_object table)
+#if 1
+{
+	/* The hash table maintains an association as follows:
+	 *
+	 * [1] object -> itself
+	 *	The object has been processed by patch_sharp, us as it is.
+	 * [2] object -> nothing
+	 *	The object has to be processed by do_patch_sharp.
+	 * [3] (# . object) -> object
+	 *	This is the value of a #n# statement. The object migt
+	 *	or might not yet be processed by do_patch_sharp().
+	 */
+ AGAIN:
+	switch (type_of(x)) {
+	case t_list: {
+		cl_object y;
+                if (Null(x))
+                        return x;
+		y = ecl_gethash_safe(x, table, table);
+                if (y == table) {
+			/* case [2] */
+                        break;
+		} else if (y == x) {
+			/* case [1] */
+			return x;
+		} else {
+			/* case [3] */
+			x = y;
+			goto AGAIN;
+		}
+	}
+	case t_vector:
+	case t_array:
+	case t_complex:
+        case t_bclosure:
+        case t_bytecodes: {
+                cl_object y = ecl_gethash_safe(x, table, table);
+		if (y == table) {
+			/* case [2] */
+			break;
+		}
+		/* it can only be case [1] */
+        }
+	default:
+                return x;
+	}
+	/* We eagerly mark the object as processed, to avoid infinite
+	 * recursion. */
+        _ecl_sethash(x, table, x);
+	switch (type_of(x)) {
+	case t_list:
+                ECL_RPLACA(x, do_patch_sharp(ECL_CONS_CAR(x), table));
+                ECL_RPLACD(x, do_patch_sharp(ECL_CONS_CDR(x), table));
+		break;
+	case t_vector:
+		if (x->vector.elttype == aet_object) {
+			cl_index i;
+			for (i = 0;  i < x->vector.fillp;  i++)
+				x->vector.self.t[i] =
+                                        do_patch_sharp(x->vector.self.t[i], table);
+		}
+		break;
+	case t_array:
+		if (x->vector.elttype == aet_object) {
+			cl_index i, j = x->array.dim;
+			for (i = 0;  i < j;  i++)
+				x->array.self.t[i] =
+                                        do_patch_sharp(x->array.self.t[i], table);
+		}
+		break;
+	case t_complex: {
+		cl_object r = do_patch_sharp(x->complex.real, table);
+		cl_object i = do_patch_sharp(x->complex.imag, table);
+		if (r != x->complex.real || i != x->complex.imag) {
+			cl_object c = ecl_make_complex(r, i);
+			x->complex = c->complex;
+		}
+                break;
+	}
+        case t_bclosure: {
+                x->bclosure.lex = do_patch_sharp(x->bclosure.lex, table);
+                x = x->bclosure.code = do_patch_sharp(x->bclosure.code, table);
+                break;
+        }
+        case t_bytecodes: {
+                x->bytecodes.name = do_patch_sharp(x->bytecodes.name, table);
+                x->bytecodes.definition = do_patch_sharp(x->bytecodes.definition, table);
+		x->bytecodes.data = do_patch_sharp(x->bytecodes.data, table);
+                break;
+        }
+	default:;
+	}
+        return x;
+}
+#else
 {
 	switch (type_of(x)) {
 	case t_list:
@@ -1156,6 +1251,7 @@ do_patch_sharp(cl_object x, cl_object table)
         _ecl_sethash(x, table, x);
         return x;
 }
+#endif
 
 static cl_object
 patch_sharp(cl_object x)
