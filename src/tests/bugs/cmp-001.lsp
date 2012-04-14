@@ -170,12 +170,13 @@
      ))
 
 (deftest cmp-0007-circular-load-form
-    (mapcar #'clos::need-to-make-load-form-p
-	    (let ((l (list 1 2 3)))
-	      (list l
-		    (subst 3 l l)
-		    (make-instance 'cmp-007-class)
-		    (subst (make-instance 'cmp-007-class) 3 l))))
+    (loop for object in
+	 (let ((l (list 1 2 3)))
+	   (list l
+		 (subst 3 l l)
+		 (make-instance 'cmp-007-class)
+		 (subst (make-instance 'cmp-007-class) 3 l)))
+       collect (clos::need-to-make-load-form-p object nil))
   (nil nil t t))
 
 ;;; Date: 18/05/2005
