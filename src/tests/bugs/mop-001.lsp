@@ -287,4 +287,4 @@
 				       (slot-value (make-instance 'foo) 'a)))
 			  (cl-test::delete-class 'foo))))
   ((#.most-positive-fixnum #1# 12 "hola" :a t nil)
-   (most-positive-fixnum #1# 12 "hola" :a t nil))
+   (most-positive-fixnum #1# 12 "hola" :a t nil)))
