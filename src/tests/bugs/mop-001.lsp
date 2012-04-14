@@ -143,7 +143,7 @@
 ;;;	Readers and writers for slot documentation.
 ;;;
 
-(deftest mop-0004-defclass-options
+(deftest mop-0004b-slot-documentation
     (eval '(progn
 	    (defclass fee ()
 	      ((a :initform *aux* :initarg :a)))
@@ -193,7 +193,7 @@
       (prog1
 	  (method-specializers (first (generic-function-methods #'mop-0006-foo)))
 	(fmakunbound 'mop-0006-foo)))
-  '(#.(find-class t)))
+  (#.(find-class t)))
 
 ;;; Date: 22/04/2006
 ;;; From: M. Goffioul
@@ -288,4 +288,3 @@
 			  (cl-test::delete-class 'foo))))
   ((#.most-positive-fixnum #1# 12 "hola" :a t nil)
    (most-positive-fixnum #1# 12 "hola" :a t nil))
-)
