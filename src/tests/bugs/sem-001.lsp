@@ -67,6 +67,32 @@
   t)
 
 ;;; Date: 14/04/2012
+;;;	When we signal N processes and N+M are waiting, only N awake
+(def-mp-test sem-signal-only-n-processes
+    (loop for m from 1 upto 3 always
+      (loop for n from 1 upto 4 always
+	 (let* ((counter 0)
+		(lock (mp:make-lock :name "sem-signal-n-processes"))
+		(sem (mp:make-semaphore :name "sem-signal-n-processs"))
+		(all-process
+		 (loop for i from 1 upto (+ n m)
+		    collect (mp:process-run-function
+			     "sem-signal-n-processes"
+			     #'(lambda ()
+				 (mp:wait-on-semaphore sem)
+				 (mp:with-lock (lock) (incf counter)))))))
+	   (and (zerop counter)
+		(every #'mp:process-active-p all-process)
+		(= (mp:semaphore-wait-count sem) (+ m n))
+		(progn (mp:signal-semaphore sem n) (sleep 0.2)
+		       (= counter n))
+		(= (mp:semaphore-wait-count sem) m)
+		(progn (mp:signal-semaphore sem m) (sleep 0.2)
+			      (= counter (+ n m)))
+		))))
+  t)
+
+;;; Date: 14/04/2012
 ;;;	It is possible to kill processes waiting for a semaphore.
 ;;;
 (def-mp-test sem-interruptible
