@@ -174,3 +174,53 @@
 	   flag2
 	   t))
   t)
+
+;;; Date: 14/04/2012
+;;;	1 producer and N consumers, non-blocking, because the initial count
+;;;	is larger than the consumed data.
+(def-mp-test sem-1-to-n-non-blocking
+    (loop with counter = 0
+       with lock = (mp:make-lock :name "sem-1-to-n-communication")
+       for n from 1 to 10
+       for m = (round 128 n)
+       for length = (* n m)
+       for sem = (mp:make-semaphore :name "sem-1-to-n-communication" :count length)
+       for producers = (progn
+			 (setf counter 0)
+			 (loop for i from 0 below n
+			    collect (mp:process-run-function
+				     "sem-1-to-n-consumer"
+				     #'(lambda ()
+					 (loop for i from 0 below m
+					    do (mp:wait-on-semaphore sem)
+					    do (mp:with-lock (lock) (incf counter)))))))
+       do (mapc #'mp:process-join producers)
+       always (and (= counter length)
+		   (zerop (mp:semaphore-count sem))
+		   (zerop (mp:semaphore-wait-count sem))))
+  t)
+
+;;; Date: 14/04/2012
+;;;	1 producer and N consumers, blocking due to a slow producer.
+(def-mp-test sem-1-to-n-blocking
+    (loop with lock = (mp:make-lock :name "sem-1-to-n-communication")
+       for n from 1 to 10
+       for m = (round 10000 n)
+       for length = (* n m)
+       for sem = (mp:make-semaphore :name "sem-1-to-n-communication" :count 0)
+       for counter = 0
+       for producers = (loop for i from 0 below n
+			  collect (mp:process-run-function
+				   "sem-1-to-n-consumer"
+				   #'(lambda ()
+				       (loop for i from 0 below m
+					  do (mp:wait-on-semaphore sem))
+				       (mp:with-lock (lock) (incf counter)))))
+       do (loop for i from 0 below length
+	     do (mp:signal-semaphore sem))
+       do (mapc #'mp:process-join producers)
+       always (and (= counter n)
+		   (zerop (mp:semaphore-count sem))
+		   (zerop (mp:semaphore-wait-count sem))))
+  t)
+4
