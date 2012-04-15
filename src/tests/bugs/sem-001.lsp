@@ -66,7 +66,7 @@
 		(= (mp:semaphore-count sem) 0))))
   t)
 
-;;; Date: 12/04/2012
+;;; Date: 14/04/2012
 ;;;	It is possible to kill processes waiting for a semaphore.
 ;;;
 (def-mp-test sem-interruptible
@@ -87,4 +87,64 @@
 		   (null flag)
 		   (zerop (mp:semaphore-wait-count sem))
 		   t))
+  t)
+
+;;; Date: 14/04/2012
+;;;	When we kill a process, it is removed from the wait queue.
+;;;
+(def-mp-test sem-interrupt-updates-queue
+    (let* ((sem (mp:make-semaphore :name "sem-interrupt-updates-queue"))
+	   (process (mp:process-run-function
+		     "sem-interrupt-updates-queue"
+		     #'(lambda () (mp:wait-on-semaphore sem)))))
+      (sleep 0.2)
+      (and (= (mp:semaphore-wait-count sem) 1)
+	   (mp:process-active-p process)
+	   (progn (mp:process-kill process)
+		  (sleep 0.2)
+		  (not (mp:process-active-p process)))
+	   (zerop (mp:semaphore-wait-count sem))
+	   t))
+  t)
+
+;;; Date: 14/04/2012
+;;;	When we kill a process, it signals another one. This is tricky,
+;;;     because we need the awake signal to arrive _after_ the process is
+;;;	killed, but the process must still be in the queue for the semaphore
+;;;	to awake it. The way we solve this is by intercepting the kill signal.
+;;;
+(def-mp-test sem-interrupted-resignals
+    (let* ((sem (mp:make-semaphore :name "sem-interrupted-resignals"))
+	   (flag1 nil)
+	   (flag2 nil)
+	   (process1 (mp:process-run-function
+		      "sem-interrupted-resignals"
+		      #'(lambda ()
+			  (unwind-protect
+			       (mp:wait-on-semaphore sem)
+			    (sleep 4)
+			    (setf flag1 t)
+			    ))))
+	   (process2 (mp:process-run-function
+		      "sem-interrupted-resignals"
+		      #'(lambda ()
+			  (mp:wait-on-semaphore sem)
+			  (setf flag2 t)))))
+      (sleep 0.2)
+      (and (= (mp:semaphore-wait-count sem) 2)
+	   (mp:process-active-p process1)
+	   (mp:process-active-p process2)
+	   ;; We kill the process but ensure it is still running
+	   (progn (mp:process-kill process1)
+		  (mp:process-active-p process1))
+	   (null flag1)
+	   ;; ... and in the queue
+	   (= (mp:semaphore-wait-count sem) 2)
+	   ;; We awake it and it should awake the other one
+	   (progn (format t "~%;;; Signaling semaphore")
+		  (mp:signal-semaphore sem)
+		  (sleep 1)
+		  (zerop (mp:semaphore-wait-count sem)))
+	   flag2
+	   t))
   t)
