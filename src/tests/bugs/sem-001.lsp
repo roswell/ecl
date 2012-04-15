@@ -8,7 +8,7 @@
 ;;; Date: 14/04/2012
 ;;;	Ensure that at creation name and counter are set
 (deftest sem-make-and-counter
-    (loop with name = "sem-001-make-and-counter"
+    (loop with name = "sem-make-and-counter"
        for count from 0 to 10
        for sem = (mp:make-semaphore :name name :count count)
        always (and (eq (mp:semaphore-name sem) name)
@@ -19,7 +19,7 @@
 ;;; Date: 14/04/2012
 ;;;	Ensure that signal changes the counter by the specified amount
 (deftest sem-signal-semaphore-count
-    (loop with name = "sem-002-signal-semaphore-count"
+    (loop with name = "sem-signal-semaphore-count"
        for count from 0 to 10
        always (loop for delta from 0 to 10
 		 for sem = (mp:make-semaphore :name name :count count)
@@ -84,10 +84,10 @@
 	   (and (zerop counter)
 		(every #'mp:process-active-p all-process)
 		(= (mp:semaphore-wait-count sem) (+ m n))
-		(progn (mp:signal-semaphore sem n) (sleep 0.2)
+		(progn (mp:signal-semaphore sem n) (sleep 0.02)
 		       (= counter n))
 		(= (mp:semaphore-wait-count sem) m)
-		(progn (mp:signal-semaphore sem m) (sleep 0.2)
+		(progn (mp:signal-semaphore sem m) (sleep 0.02)
 			      (= counter (+ n m)))
 		))))
   t)
