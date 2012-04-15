@@ -87,15 +87,15 @@ mp_condition_variable_timedwait(cl_object cv, cl_object lock, cl_object seconds)
 cl_object
 mp_condition_variable_signal(cl_object cv)
 {
-	ecl_wakeup_waiters(ecl_process_env(), cv, ECL_WAKEUP_RESET_FLAG,
-			   ECL_WAKEUP_ONE);
+	ecl_wakeup_waiters(ecl_process_env(), cv,
+			   ECL_WAKEUP_RESET_FLAG | ECL_WAKEUP_ONE);
 	@(return Ct)
 }
 
 cl_object
 mp_condition_variable_broadcast(cl_object cv)
 {
-	ecl_wakeup_waiters(ecl_process_env(), cv, ECL_WAKEUP_RESET_FLAG,
-			   ECL_WAKEUP_ALL);
+	ecl_wakeup_waiters(ecl_process_env(), cv,
+			   ECL_WAKEUP_RESET_FLAG | ECL_WAKEUP_ALL);
 	@(return Ct)
 }

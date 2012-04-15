@@ -899,10 +899,10 @@ struct ecl_process {
 	int trap_fpe_bits;
 };
 
-#define ECL_WAKEUP_ONE 1
-#define ECL_WAKEUP_ALL MOST_POSITIVE_FIXNUM
-#define ECL_WAKEUP_RESET_FLAG 1
-#define ECL_WAKEUP_KILL 2
+#define ECL_WAKEUP_ONE 0
+#define ECL_WAKEUP_ALL 1
+#define ECL_WAKEUP_RESET_FLAG 2
+#define ECL_WAKEUP_KILL 4
 
 struct ecl_queue {
 	HEADER;

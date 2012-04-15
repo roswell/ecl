@@ -113,7 +113,7 @@ mp_giveup_lock(cl_object lock)
 	if (--lock->lock.counter == 0) {
 		lock->lock.owner = Cnil;
 		print_lock("releasing %p\t", lock, lock);
-		ecl_wakeup_waiters(env, lock, 0, ECL_WAKEUP_ONE);
+		ecl_wakeup_waiters(env, lock, ECL_WAKEUP_ONE);
 	} else {
 		print_lock("released %p\t", lock, lock);
 	}
