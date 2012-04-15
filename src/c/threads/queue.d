@@ -191,14 +191,20 @@ ecl_wait_on_timed(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object),
  * the condition are
  *	- The first process to arrive to the queue,
  *	- Each process which is awoken.
+ *	- The first process after the list of awoken processes.
  *
  * The idea is that this will ensure some fairness when unblocking the
  * processes, which is important for abstractions such as mutexes or
  * semaphores, where we want equal sharing of resources among processes.
  *
  * This also implies that the waiting processes depend on others to signal
- * when to check for a condition, which is whenever the fields that are
- * checked for change.
+ * when to check for a condition. This happens in two situations
+ *	- External code that changes the fields of the queue object
+ *	  must signal ecl_wakeup_waiters() (See mutex.d, semaphore.d, etc)
+ *	- When a process exits ecl_wait_on() it always resignals the next
+ *	  process in the queue, because a condition may be satisfied more
+ *	  than once (for instance when a semaphore is changed, more than
+ *	  one process may be released)
  *
  * The critical part of this algorithm is the fact that processes
  * communicating the change of conditions may do so before, during or
@@ -259,12 +265,9 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 			} while (Null(output = condition(the_env, o)));
 		}
 	} CL_UNWIND_PROTECT_EXIT {
-		/* 4) If we are aborting and we are the first waiting
-		 * process in the queue, it may happen that our wakeup
-		 * signal got lost. We must wake up another process
-		 * after removing ourselves. */
 		/* 4) At this point we wrap up. We remove ourselves
-		   from the queue and restore signals, which were */
+		 * from the queue and unblock the lisp interrupt
+		 * signal. Note that we recover the cons for later use.*/
 		cl_object firstone = o->queue.list;
 		wait_queue_delete(the_env, o, own_process);
 		own_process->process.waiting_for = Cnil;
@@ -282,8 +285,8 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 			ecl_wakeup_waiters(the_env, o, 0, ECL_WAKEUP_ONE);
 		}
 
-		/* 7) Restoring signals is done last, to ensure that
-		   all cleanup steps are performed. */
+		/* 6) Restoring signals is done last, to ensure that
+		 * all cleanup steps are performed. */
 		pthread_sigmask(SIG_SETMASK, &original, NULL);
 	} CL_UNWIND_PROTECT_END;
 	return output;
