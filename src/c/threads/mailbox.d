@@ -34,8 +34,9 @@ ecl_make_mailbox(cl_object name, cl_fixnum count)
 	cl_fixnum mask;
 	for (mask = 1; mask < count; mask <<= 1) {}
 	if (mask == 1)
-	  mask = 63;
-	count = mask + 1;
+		mask = 63;
+	count = mask;
+	mask = count - 1;
 	output->mailbox.name = name;
 	output->mailbox.data = si_make_vector(Ct, /* element type */
 					      MAKE_FIXNUM(count), /* size */
@@ -48,7 +49,7 @@ ecl_make_mailbox(cl_object name, cl_fixnum count)
 	output->mailbox.writer_semaphore =
 	  ecl_make_semaphore(name, count);
 	output->mailbox.read_pointer = 0;
-	output->mailbox.write_pointer = 1;
+	output->mailbox.write_pointer = 0;
 	output->mailbox.mask = mask;
         return output;
 }
