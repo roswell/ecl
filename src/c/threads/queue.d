@@ -278,7 +278,7 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 		 * first processes are always allowed to check for the
 		 * condition */
 		if (Null(output) && (firstone == record)) {
-			ecl_wakeup_waiters(the_env, o, 0);
+			ecl_wakeup_waiters(the_env, o, 0, ECL_WAKEUP_ONE);
 		}
 
 		/* 7) Restoring signals is done last, to ensure that
@@ -292,7 +292,7 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 }
 
 void
-ecl_wakeup_waiters(cl_env_ptr the_env, cl_object q, int flags)
+ecl_wakeup_waiters(cl_env_ptr the_env, cl_object q, int flags, cl_fixnum n)
 {
 	ecl_disable_interrupts_env(the_env);
 	ecl_get_spinlock(the_env, &q->queue.spinlock);
@@ -303,7 +303,7 @@ ecl_wakeup_waiters(cl_env_ptr the_env, cl_object q, int flags)
 		 * because of the UNWIND-PROTECT in ecl_wait_on(), but
 		 * sometimes shit happens */
 		cl_object *tail, l;
-		for (tail = &q->queue.list; (l = *tail) != Cnil; ) {
+		for (tail = &q->queue.list; n && ((l = *tail) != Cnil); ) {
 			cl_object p = ECL_CONS_CAR(l);
 			if (p->process.phase == ECL_PROCESS_INACTIVE ||
 			    p->process.phase == ECL_PROCESS_EXITING) {
@@ -319,9 +319,8 @@ ecl_wakeup_waiters(cl_env_ptr the_env, cl_object q, int flags)
 					mp_process_kill(p);
 				else
 					ecl_interrupt_process(p, Cnil);
-				if ((flags & ECL_WAKEUP_ALL) == 0)
-					break;
 				tail = &ECL_CONS_CDR(l);
+				--n;
 			}
 		}
 	}

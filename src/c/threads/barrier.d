@@ -84,8 +84,8 @@ mp_barrier_arrivers_count(cl_object barrier)
 }
 
 @(defun mp::barrier-unblock (barrier &key reset_count disable kill_waiting)
-	int ping_flags = ECL_WAKEUP_ALL | ECL_WAKEUP_RESET_FLAG;
-	int kill_flags = ECL_WAKEUP_ALL | ECL_WAKEUP_RESET_FLAG | ECL_WAKEUP_KILL;
+	int ping_flags = ECL_WAKEUP_RESET_FLAG;
+	int kill_flags = ECL_WAKEUP_RESET_FLAG | ECL_WAKEUP_KILL;
 @
 	unlikely_if (type_of(barrier) != t_barrier) {
 		FEerror_not_a_barrier(barrier);
@@ -96,7 +96,9 @@ mp_barrier_arrivers_count(cl_object barrier)
 		barrier->barrier.arrivers_count = -1;
 	else
 		barrier->barrier.arrivers_count = barrier->barrier.count;
-	ecl_wakeup_waiters(the_env, barrier, Null(kill_waiting)? ping_flags : kill_flags);
+	ecl_wakeup_waiters(the_env, barrier,
+			   Null(kill_waiting)? ping_flags : kill_flags,
+			   ECL_WAKEUP_ALL);
         @(return)
 @)
 

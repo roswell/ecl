@@ -83,9 +83,9 @@ mp_semaphore_wait_count(cl_object semaphore)
 	unlikely_if (type_of(semaphore) != t_semaphore) {
 		FEerror_not_a_semaphore(semaphore);
 	}
-	AO_fetch_and_add((AO_t*)&semaphore->semaphore.counter, 1);
-	while (n-- && semaphore->semaphore.queue_list != Cnil) {
-		ecl_wakeup_waiters(env, semaphore, ECL_WAKEUP_ONE);
+	AO_fetch_and_add((AO_t*)&semaphore->semaphore.counter, n);
+	if (semaphore->semaphore.queue_list != Cnil) {
+		ecl_wakeup_waiters(env, semaphore, 0, n);
 	}
         @(return)
 }
