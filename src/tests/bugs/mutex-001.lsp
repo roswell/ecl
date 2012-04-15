@@ -1,21 +1,9 @@
 ;-*- Mode:     Lisp -*-
 ;;;; Author:   Juan Jose Garcia-Ripoll
-;;;; Created:  Fri Apr 14 11:13:17 CEST 2006
-;;;; Contains: Multithreading API regression tests
+;;;; Created:  Fri Apr 12 CEST 2012
+;;;; Contains: Mutex tests
 
 (in-package :cl-test)
-
-(defun kill-and-wait (process-list &optional original)
-  "Kills a list of processes, which may be the difference between two lists,
-waiting for all processes to finish. Currently it has no timeout, meaning
-it may block hard the lisp image."
-  (let ((process-list (set-difference process-list original)))
-    (when (member mp:*current-process* process-list)
-      (error "Found myself in the kill list"))
-    (mapc #'mp:process-kill process-list)
-    (loop for i in process-list
-       do (mp:process-join i))
-    process-list))
 
 ;;; Date: 12/04/2012
 ;;;	Non-recursive mutexes should signal an error when they
@@ -57,9 +45,8 @@ it may block hard the lisp image."
 ;;;	When multiple threads compete for a mutex, they should
 ;;;	all get the same chance of accessing the resource
 ;;;
-(deftest mutex-003-fairness
-    (let* ((zero-processes (mp:all-processes))
-	   (mutex (mp:make-lock :name 'mutex-001-fairness))
+(def-mp-test mutex-003-fairness
+    (let* ((mutex (mp:make-lock :name 'mutex-001-fairness))
 	   (nthreads 10)
 	   (count 10)
 	   (counter (* nthreads count))
@@ -86,9 +73,8 @@ it may block hard the lisp image."
 	  ;; the same share of counts.
 	  (loop for p in all-processes
 	     do (mp:process-join p))
-	  (and (loop for i from 0 below nthreads
-		  always (= (aref array i) count))
-	       (null (kill-and-wait (mp:all-processes) zero-processes))))))
+	  (loop for i from 0 below nthreads
+	     always (= (aref array i) count)))))
   t)
 
 ;;; Date: 12/04/2012
@@ -97,9 +83,8 @@ it may block hard the lisp image."
 ;;;	do anything. These processes are then killed, resulting in the others
 ;;;	doing their job.
 ;;;
-(deftest mutex-004-interruptible
-    (let* ((zero-processes (mp:all-processes))
-	   (mutex (mp:make-lock :name "mutex-003-fairness"))
+(def-mp-test mutex-004-interruptible
+    (let* ((mutex (mp:make-lock :name "mutex-003-fairness"))
 	   (nprocesses 20)
 	   (counter 0))
       (flet ((normal-thread ()
@@ -119,8 +104,6 @@ it may block hard the lisp image."
 	  (and (zerop counter) ; No proces works because the first one is a zombie
 	       (kill-and-wait zombies)
 	       (progn (sleep 0.2) (= counter (/ nprocesses 2)))
-	       (null (kill-and-wait (mp:all-processes) zero-processes))
 	       (not (mp:lock-owner mutex))
-	       (zerop (mp:lock-count mutex))
 	       t))))
   t)

@@ -42,11 +42,12 @@
 (load "ffi-001.lsp")
 
 #+threads
-(load "mp-001.lsp")
-#+threads
-(load "mutex-001.lsp")
+(progn
+ (load "mp-tools.lsp")
+ (load "mp-001.lsp")
+ (load "mutex-001.lsp"))
 
-#+unicode
+#+(or) ;unicode
 (progn
  ;; In Windows SYSTEM does not fail with a nonzero code when it
  ;; fails to execute a command. Hence in that case we assume

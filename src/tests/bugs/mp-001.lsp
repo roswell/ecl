@@ -14,32 +14,31 @@
 ;;;	the resulting lock and an error is signaled.
 ;;;
 
-(deftest mp-0001-with-lock
-    (progn
-      (defparameter *mp-0001-with-lock-a* t)
-      (defparameter *mp-0001-with-lock-b* (mp:make-lock))
-      (mp:with-lock (*mp-0001-with-lock-b*)
+(def-mp-test mp-0001-with-lock
+    (let ((flag t)
+	  (lock (mp:make-lock :name "mp-0001-with-lock" :recursive nil)))
+      (mp:with-lock (lock)
         (let ((background-process
                (mp:process-run-function
-                'mp-0001-with-lock
-                (coerce '(lambda ()
-                          (handler-case
-                              (progn
-                                (setf *mp-0001-with-lock-a* 1)
-                                (mp:with-lock (*mp-0001-with-lock-b*)
-                                  (setf *mp-0001-with-lock-a* 1)))
-                            (error (c)
-                              (princ c)(terpri)
-                              (setf *mp-0001-with-lock-a* c)))
-                          (setf *mp-0001-with-lock-a* 2))
-                        'function))))
+                "mp-0001-with-lock"
+                #'(lambda ()
+		    (handler-case
+			(progn
+			  (setf flag 1)
+			  (mp:with-lock (lock)
+			    (setf flag 2)))
+		      (error (c)
+			(princ c)(terpri)
+			(setf flag c)))
+		    (setf flag 2)))))
           ;; The background process should not be able to get
           ;; the lock, and will simply wait. Now we interrupt it
           ;; and the process should gracefully quit, without
           ;; signalling any serious condition
-          (and (sleep 1)
-               (mp:process-kill background-process)
+          (and (progn (sleep 1)
+		      (mp:process-kill background-process))
                (progn (sleep 1)
                       (not (mp:process-active-p background-process)))
-               (eq *mp-0001-with-lock-a* 1)))))
+               (eq flag 1)
+	       t))))
   t)
