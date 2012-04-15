@@ -271,13 +271,14 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 		own_process->process.queue_record = record;
 		ECL_RPLACD(record, Cnil);
 
-		/* 5) We know that we are aborting when we exit this
-		 * function with output == Cnil. In this case, if we
-		 * got a wakeup signal, this could be lost. The safe
-		 * thing to do is to wakeup the first process, because
-		 * first processes are always allowed to check for the
-		 * condition */
-		if (Null(output) && (firstone == record)) {
+		/* 5) When this process exits, it may be because it
+		 * aborts (which we know because output == Cnil), or
+		 * because the condition is satisfied. In both cases
+		 * we allow the first in the queue to test again its
+		 * condition. This is needed for objects, such as
+		 * semaphores, where the condition may be satisfied
+		 * more than once. */
+		if (/*Null(output) &&*/ (firstone == record)) {
 			ecl_wakeup_waiters(the_env, o, 0, ECL_WAKEUP_ONE);
 		}
 
