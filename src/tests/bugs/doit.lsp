@@ -45,9 +45,11 @@
 (progn
  (load "mp-tools.lsp")
  (load "mp-001.lsp")
- (load "mutex-001.lsp"))
+ (load "mutex-001.lsp")
+ (load "mailbox-001.lsp")
+ )
 
-#+(or) ;unicode
+#+unicode
 (progn
  ;; In Windows SYSTEM does not fail with a nonzero code when it
  ;; fails to execute a command. Hence in that case we assume
