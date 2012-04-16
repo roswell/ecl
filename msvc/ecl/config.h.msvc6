@@ -65,6 +65,9 @@
 /* __thread thread-local variables?                                     */
 /* #undef WITH___THREAD */
 
+/* Use Windows's interlocked operations to define compare-and-swap      */
+#define AO_ASSUME_WINDOWS98
+
 /* Use Boehm's garbage collector					*/
 #define GBC_BOEHM 0
 #ifdef GBC_BOEHM

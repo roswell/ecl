@@ -762,6 +762,11 @@ wakeup_function(ULONG_PTR foo)
 	volatile i = env->nvalues;
 	env->nvalues = i;
 }
+
+static VOID CALLBACK
+wakeup_noop(ULONG_PTR foo)
+{
+}
 # endif
 
 static bool
@@ -841,6 +846,20 @@ ecl_interrupt_process(cl_object process, cl_object function)
 	if (process->process.phase == ECL_PROCESS_ACTIVE)
 		do_interrupt_thread(process);
 }
+
+void
+ecl_wakeup_process(cl_object process)
+{
+# ifdef ECL_WINDOWS_THREADS
+        HANDLE thread = (HANDLE)process->process.thread;
+	if (!QueueUserAPC(wakeup_noop, thread, 0)) {
+		FEwin32_error("Unable to queue APC call to thread ~A",
+			      1, process);
+	}
+# else
+	do_interrupt_thread(process);
+# endif
+}
 #endif /* ECL_THREADS */
 
 #ifdef ECL_WINDOWS_THREADS
@@ -850,20 +869,20 @@ LONG WINAPI
 _ecl_w32_exception_filter(struct _EXCEPTION_POINTERS* ep)
 {
 	LONG excpt_result;
+	cl_env_ptr the_env = ecl_process_env();
 
 	excpt_result = EXCEPTION_CONTINUE_EXECUTION;
 	switch (ep->ExceptionRecord->ExceptionCode)
 	{
                 /* Access to guard page */
         	case STATUS_GUARD_PAGE_VIOLATION: {
-                        cl_env_ptr env = ecl_process_env();
-                        cl_object process = env->own_process;
+                        cl_object process = the_env->own_process;
                         if (!Null(process->process.interrupt)) {
-                                cl_object signal = pop_signal(env);
+                                cl_object signal = pop_signal(the_env);
                                 process->process.interrupt = Cnil;
                                 while (signal != Cnil && signal) {
                                         handle_signal_now(signal);
-                                        signal = pop_signal(env);
+                                        signal = pop_signal(the_env);
                                 }
                                 return EXCEPTION_CONTINUE_EXECUTION;
                         }

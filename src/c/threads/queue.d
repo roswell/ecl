@@ -13,13 +13,13 @@
     See file '../Copyright' for full details.
 */
 
-#define AO_ASSUME_WINDOWS98 /* We need this for CAS */
 #ifdef HAVE_SCHED_H
 #include <sched.h>
 #endif
 #include <signal.h>
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
+#include "threads/ecl_atomics.h"
 
 void ECL_INLINE
 ecl_process_yield()
@@ -156,6 +156,7 @@ ecl_wait_on_timed(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object),
 	CL_UNWIND_PROTECT_BEGIN(the_env) {
 		/* 2) Now we add ourselves to the queue. In order to
 		 * avoid a call to the GC, we try to reuse records. */
+		print_lock("adding to queue", o);
 		wait_queue_nconc(the_env, o, record);
 		ecl_bds_bind(the_env, @'ext::*interrupts-enabled*', Ct);
 		ecl_check_pending_interrupts(the_env);
@@ -172,12 +173,24 @@ ecl_wait_on_timed(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object),
 		ecl_bds_unwind1(the_env);
 	} CL_UNWIND_PROTECT_EXIT {
 		/* 4) At this point we wrap up. We remove ourselves
-		 * from the queue and restore signals, which were
-		 * blocked. */
+		 * from the queue and unblock the lisp interrupt
+		 * signal. Note that we recover the cons for later use.*/
+		cl_object firstone = o->queue.list;
 		wait_queue_delete(the_env, o, own_process);
 		own_process->process.waiting_for = Cnil;
 		own_process->process.queue_record = record;
 		ECL_RPLACD(record, Cnil);
+
+		/* 5) When this process exits, it may be because it
+		 * aborts (which we know because output == Cnil), or
+		 * because the condition is satisfied. In both cases
+		 * we allow the first in the queue to test again its
+		 * condition. This is needed for objects, such as
+		 * semaphores, where the condition may be satisfied
+		 * more than once. */
+		if (/*Null(output) &&*/ (firstone == record)) {
+			ecl_wakeup_waiters(the_env, o, ECL_WAKEUP_ONE);
+		}
 	} CL_UNWIND_PROTECT_END;
 	ecl_bds_unwind1(the_env);
 	return output;
@@ -298,6 +311,8 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 void
 ecl_wakeup_waiters(cl_env_ptr the_env, cl_object q, int flags)
 {
+	if (Null(q->queue.list))
+		return;
 	ecl_disable_interrupts_env(the_env);
 	ecl_get_spinlock(the_env, &q->queue.spinlock);
 	{
@@ -311,18 +326,18 @@ ecl_wakeup_waiters(cl_env_ptr the_env, cl_object q, int flags)
 			cl_object p = ECL_CONS_CAR(l);
 			if (p->process.phase == ECL_PROCESS_INACTIVE ||
 			    p->process.phase == ECL_PROCESS_EXITING) {
-				print_lock("removing %p", q, next);
+				print_lock("removing %p", q, p);
 				*tail = ECL_CONS_CDR(l);
 			} else {
 				/* If the process is active, we then
 				 * simply awake it with a signal.*/
-				print_lock("awaking %p", q, next);
+				print_lock("awaking %p", q, p);
 				if (flags & ECL_WAKEUP_RESET_FLAG)
 					p->process.waiting_for = Cnil;
 				if (flags & ECL_WAKEUP_KILL)
 					mp_process_kill(p);
 				else
-					ecl_interrupt_process(p, Cnil);
+					ecl_wakeup_process(p);
 				if (!(flags & ECL_WAKEUP_ALL))
 					break;
 				tail = &ECL_CONS_CDR(l);

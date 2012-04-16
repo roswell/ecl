@@ -16,10 +16,7 @@
 #define AO_ASSUME_WINDOWS98 /* We need this for CAS */
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
-
-#if !defined(AO_HAVE_fetch_and_add_full)
-#error "Cannot implement barriers without AO_fetch_and_add_full"
-#endif
+#include "threads/ecl_atomics.h"
 
 static ECL_INLINE void
 FEerror_not_a_barrier(cl_object barrier)

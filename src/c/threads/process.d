@@ -31,6 +31,7 @@
 #endif
 #include <ecl/internal.h>
 #include <ecl/ecl-inl.h>
+#include "threads/ecl_atomics.h"
 
 #ifdef ECL_WINDOWS_THREADS
 /*
@@ -211,9 +212,9 @@ thread_cleanup(void *aux)
 		pthread_sigmask(SIG_BLOCK, new, NULL);
 	}
 #endif
-	mp_barrier_unblock(3, process->process.exit_barrier, @':disable', Ct);
 	process->process.env = NULL;
 	ecl_unlist_process(process);
+	mp_barrier_unblock(3, process->process.exit_barrier, @':disable', Ct);
 	ecl_set_process_env(NULL);
 	if (env) _ecl_dealloc_env(env);
         AO_store_release((AO_t*)&process->process.phase, ECL_PROCESS_INACTIVE);
@@ -684,7 +685,7 @@ mp_restore_signals(cl_object sigmask)
 #ifdef ECL_WINDOWS_THREADS
         cl_env_ptr the_env = ecl_process_env();
         ECL_SETQ(the_env, @'ext::*interrupts-enabled*', sigmask);
-        ecl_check_pending_interrupts();
+        ecl_check_pending_interrupts(the_env);
         @(return sigmask)
 #else
         return mp_set_sigmask(sigmask);

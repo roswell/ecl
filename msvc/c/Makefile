@@ -14,7 +14,8 @@ ECL_FPE_CODE=fpe_x86.c
 
 !if "$(ECL_THREADS)" != ""
 ECL_THREADS_FLAG=1
-THREADS_OBJ= process.obj mutex.obj condition_variable.obj rwlock.obj
+THREADS_OBJ= process.obj mutex.obj condition_variable.obj rwlock.obj \
+             semaphore.obj barrier.obj mailbox.obj atomic.obj queue.obj
 !else
 ECL_THREADS_FLAG=0
 THREADS_OBJ=
