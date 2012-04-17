@@ -12,9 +12,13 @@
 
 (setf *load-verbose* nil *load-print* nil)
 
-(defvar *ecl-sources* "@top_srcdir@/")
+(defvar *ecl-sources*
+  (loop for *default-pathname-defaults* in
+	'(#p"@top_srcdir@/" #p"../../" #p"../../src/")
+	when (probe-file "CHANGELOG")
+	return *default-pathname-defaults*))
 
-(defvar *test-sources* "@top_srcdir@/tests/")
+(defvar *test-sources* (merge-pathnames "tests/" *ecl-sources*))
 
 (defvar *here* (merge-pathnames "@builddir@/"))
 
@@ -48,7 +52,7 @@
 
 (defvar *quicklisp-setup-file* (merge-pathnames "setup.lisp" *quicklisp-sandbox*))
 
-(defvar *regressions-sources* "@top_srcdir@/tests/bugs/")
+(defvar *regressions-sources* (merge-pathnames "bugs/" *test-sources*))
 
 (defvar *regressions-sandbox* (merge-pathnames "regressions/" *here*))
 
@@ -140,6 +144,8 @@
   t)
 
 (defun copy-directory (orig dest)
+  (setf orig (truename orig))
+  (print dest)
   (loop for f in (directory (merge-pathnames *wild-inferiors* orig))
      for f2 = (enough-namestring f orig)
      for f3 = (merge-pathnames f2 dest)
