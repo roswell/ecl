@@ -33,6 +33,7 @@
 
 (load "int-001.lsp")
 
+#-ecl-bytecmp
 (load "cmp-001.lsp")
 
 #+clos
