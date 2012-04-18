@@ -304,6 +304,7 @@
 ;;;	parsed as a hostname.
 ;;;
 
+#-windows
 (deftest cl-0013-truename
     (progn
       (si:system "rm -rf foo; ln -sf //usr/ foo")
