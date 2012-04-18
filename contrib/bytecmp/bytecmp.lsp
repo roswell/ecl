@@ -16,6 +16,12 @@
 
 (in-package "EXT")
 
+(defpackage "C"
+  (:use "CL")
+  (:export
+   "*SUPPRESS-COMPILER-WARNINGS*"
+   "*SUPPRESS-COMPILER-NOTES*"))
+
 (defun bc-disassemble (thing)
   (when (si::valid-function-name-p thing)
     (setq thing (fdefinition thing)))
