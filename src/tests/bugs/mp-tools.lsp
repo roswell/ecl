@@ -20,12 +20,13 @@ it may block hard the lisp image."
 
 (defun mp-test-run (closure)
   (let* ((all-processes (mp:all-processes))
-	 (output (multiple-value-list (funcall closure)))
-	 (leftovers (kill-and-wait (mp:all-processes) all-processes)))
-    (cond (leftovers
-	   (format t "~%;;; Stray processes: ~A" leftovers))
-	  (t
-	   (values-list output)))))
+	 (output (multiple-value-list (funcall closure))))
+    (sleep 0.2) ; time to exit some processes
+    (let ((leftovers (kill-and-wait (mp:all-processes) all-processes)))
+      (cond (leftovers
+	     (format t "~%;;; Stray processes: ~A" leftovers))
+	    (t
+	     (values-list output))))))
 
 (defmacro def-mp-test (name body expected-value)
   "Runs some test code and only returns the output when the code exited without
