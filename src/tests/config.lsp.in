@@ -32,7 +32,9 @@
 
 (defvar *test-image-args*
   (cond ((search "ecl" *test-image*)
-	 '("-norc" "-eval" "(print (ext:getenv \"ECLDIR\"))" #+windows "-eval" #+windows "(require :cmp)"))
+	 '("-norc" "-eval" "(print (ext:getenv \"ECLDIR\"))"
+	   ;#+windows "-eval" #+windows "(require :cmp)"
+	   ))
 	((search "sbcl" *test-image*)
 	 '("--no-userinit" "--no-sysinit"))
 	(t
