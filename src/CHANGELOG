@@ -7,6 +7,8 @@ ECL 12.2.2:
    was not safe under interrupts. It has all been reimplemented using atomic
    userspace operations plus a new wait queue.
 
+ - :CDECL was not accepted as an FFI declaration due to a typo.
+
 * Visible changes:
 
  - DIRECTORY no longer complains when it finds an inexistent directory
