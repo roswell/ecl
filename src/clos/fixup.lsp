@@ -226,6 +226,26 @@ their lambda lists ~A and ~A are not congruent."
   (map-dependents gf #'(lambda (dep) (update-dependents gf dep 'remove-method method)))
   gf)
 
+(defgeneric compute-applicable-methods-using-classes (gf classes)
+  (:method ((gf standard-generic-function) classes)
+    (sort-applicable-methods gf (applicable-method-list-with-classes gf classes)
+			     classes)))
+
+(defun applicable-method-list-with-classes (gf classes)
+  (declare (optimize (safety 0) (speed 3))
+	   (si::c-local))
+  (flet ((applicable-method-p (method classes)
+	   (loop for spec in (method-specializers method)
+	      for class in classes
+	      always (cond ((null spec))
+			   ((listp spec)
+			    ;; EQL specializer
+			    (si::of-class-p (second spec) class))
+			   ((si::subclassp class spec))))))
+    (loop for method in (generic-function-methods gf)
+       when (applicable-method-p method classes)
+       collect method)))
+
 ;;; ----------------------------------------------------------------------
 ;;; Error messages
 

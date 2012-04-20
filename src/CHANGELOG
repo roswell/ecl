@@ -26,6 +26,8 @@ ECL 12.2.2:
  - ENSURE-DIRECTORIES-EXIST accepts the keyword argument :MODE which is
    passed to MKDIR.
 
+ - Implemented CLOS:COMPUTE-APPLICABLE-METHODS-USING-CLASSES.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

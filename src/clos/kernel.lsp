@@ -287,33 +287,27 @@
 ;;;
 (defun compute-applicable-methods (gf args)
   (declare (optimize (safety 0) (speed 3)))
-  (let* ((methods (generic-function-methods gf))
-	 (f (generic-function-a-p-o-function gf))
-	 applicable-list
-	 args-specializers)
-    ;; first compute the applicable method list
-    (dolist (method methods)
-      ;; for each method in the list
-      (do* ((scan-args args (cdr scan-args))
-	    (scan-specializers (method-specializers method)
-			       (cdr scan-specializers))
-	    (arg)
-	    (spec))
-	  ;; check if the method is applicable verifying
-	  ;; if each argument satisfies the corresponding
-	  ;; parameter specializers
-	  ((null scan-args) (push method applicable-list))
-	(setq arg (first scan-args)
-	      spec (first scan-specializers))
-	(cond ((null spec))
-	      ((listp spec)
-	       (unless (eql arg (second spec))
-		 (return)))
-	      ((not (si::of-class-p arg spec))
-	       (return)))))
-    (dolist (arg args)
-      (push (class-of arg) args-specializers))
-    (setq args-specializers (nreverse args-specializers))
+  (sort-applicable-methods gf (applicable-method-list gf args) args))
+
+(defun applicable-method-list (gf args)
+  (declare (optimize (safety 0) (speed 3))
+	   (si::c-local))
+  (flet ((applicable-method-p (method args)
+	   (loop for spec in (method-specializers method)
+	      for arg in args
+	      always (cond ((null spec) t)
+			   ((listp spec)
+			    ;; EQL specializer
+			    (eql arg (second spec)))
+			   ((si::of-class-p arg spec))))))
+    (loop for method in (generic-function-methods gf)
+       when (applicable-method-p method args)
+       collect method)))
+
+(defun sort-applicable-methods (gf applicable-list args)
+  (declare (optimize (safety 0) (speed 3)))
+  (let ((f (generic-function-a-p-o-function gf))
+	(args-specializers (mapcar #'class-of args)))
     ;; reorder args to match the precedence order
     (when f
       (setf args-specializers
@@ -323,21 +317,17 @@
     (do* ((scan applicable-list)
 	  (most-specific (first scan) (first scan))
 	  (ordered-list))
-	 ((null (cdr scan)) (when most-specific
-			      ;; at least one method
-			      ;(print (mapcar #'method-specializers
-			      ;		     (reverse (cons most-specific ordered-list))))
-			      (nreverse
-			       (push most-specific ordered-list))))
+	 ((null (cdr scan))
+	  (when most-specific
+	    ;; at least one method
+	    (nreverse
+	     (push most-specific ordered-list))))
       (dolist (meth (cdr scan))
 	(when (eq (compare-methods most-specific
 				   meth args-specializers f) 2)
 	  (setq most-specific meth)))
       (setq scan (delete most-specific scan))
       (push most-specific ordered-list))))
-
-;;; ----------------------------------------------------------------------
-;;;                                                      method comparison
 
 (defun compare-methods (method-1 method-2 args-specializers f)
   (declare (si::c-local))
@@ -375,9 +365,9 @@
       (if (atom spec2)
 	  (si::subclassp spec1 spec2)
 	  ;; There is only one class with a single element, which
-	  ;; is NIL = (MEMBER NIL).
+	  ;; is NULL = (MEMBER NIL).
 	  (and (null (second spec2))
-	       (eq (class-name (first spec1)) 'nil)))
+	       (eq (class-name spec1) 'null)))
       (if (atom spec2)
 	  (si::of-class-p (second spec1) spec2)
 	  (eql (second spec1) (second spec2)))))
