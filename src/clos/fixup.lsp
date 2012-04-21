@@ -78,6 +78,36 @@
   (find-class 'standard-writer-method))
 
 ;;; ----------------------------------------------------------------------
+;;; DEPENDENT MAINTENANCE PROTOCOL
+;;;
+
+(defmethod add-dependent ((c class) dep)
+  (pushnew dep (class-dependents c)))
+
+(defmethod add-dependent ((c generic-function) dependent)
+  (pushnew dependent (generic-function-dependents c)))
+
+(defmethod remove-dependent ((c class) dep)
+  (setf (class-dependents c)
+        (remove dep (class-dependents c))))
+
+(defmethod remove-dependent ((c standard-generic-function) dep)
+  (setf (generic-function-dependents c)
+        (remove dep (generic-function-dependents c))))
+
+(defmethod map-dependents ((c class) function)
+  (dolist (d (class-dependents c))
+    (funcall function c)))
+
+(defmethod map-dependents ((c standard-generic-function) function)
+  (dolist (d (generic-function-dependents c))
+    (funcall function c)))
+
+(defmethod update-dependent ((object t) (dependents t) &rest initargs)
+  ;; By default UPDATE-DEPENDENT does nothing
+  )
+
+;;; ----------------------------------------------------------------------
 ;;; Fixup
 
 (dolist (method-info *early-methods*)
@@ -201,9 +231,6 @@ their lambda lists ~A and ~A are not congruent."
   (compute-g-f-spec-list gf)
   (set-generic-function-dispatch gf)
   ;;
-  ;; Finally update the dependent objects
-  (map-dependents gf #'(lambda (dep) (update-dependents gf dep 'add-method method)))
-  ;;
   gf)
 
 (defun function-to-method (name signature)
@@ -215,16 +242,17 @@ their lambda lists ~A and ~A are not congruent."
     (setf (generic-function-name generic-function) name)
     (fmakunbound aux-name)))
 
-(function-to-method 'add-method '((gf standard-generic-function)
-                                  (method standard-method)))
-
 (defun remove-method (gf method)
   (setf (generic-function-methods gf)
 	(delete method (generic-function-methods gf))
 	(method-generic-function method) nil)
   (si:clear-gfun-hash gf)
-  (map-dependents gf #'(lambda (dep) (update-dependents gf dep 'remove-method method)))
   gf)
+
+(function-to-method 'add-method '((gf standard-generic-function)
+                                  (method standard-method)))
+(function-to-method 'remove-method '((gf standard-generic-function)
+				     (method standard-method)))
 
 ;;; COMPUTE-APPLICABLE-METHODS is used by the core in various places,
 ;;; including instance initialization. This means we cannot just redefine it.
@@ -268,6 +296,8 @@ their lambda lists ~A and ~A are not congruent."
   (error "In method ~A~%No next method given arguments ~A" method args))
 
 (defun no-primary-method (gf &rest args)
+  (print gf)
+  (print args)
   (error "Generic function: ~A. No primary method given arguments: ~S"
 	 (generic-function-name gf) args))
 
@@ -289,30 +319,21 @@ their lambda lists ~A and ~A are not congruent."
   new-value)
 )
 
-;;; ----------------------------------------------------------------------
-;;; DEPENDENT MAINTENANCE PROTOCOL
-;;;
+(defun update-dependents-with-initargs (object initargs)
+  (declare (si::c-local))
+  (map-dependents object #'(lambda (dep) (apply #'update-dependent object dep initargs))))
 
-(function-to-method 'map-dependents '((c standard-generic-function) function))
+(defmethod reinitialize-instance :after ((object class) &rest initargs)
+  (update-dependents-with-initargs object initargs))
 
-(defmethod map-dependents ((c class) function)
-  (dolist (d (class-dependents c))
-    (funcall function c)))
+(defmethod reinitialize-instance :after ((object standard-generic-function) &rest initargs)
+  (update-dependents-with-initargs object initargs))
 
-(function-to-method 'add-dependent '((c standard-generic-function) function))
+(defmethod add-method :after ((gf standard-generic-function) method)
+  (update-dependents-with-initargs gf (list 'add-method method)))
 
-(defmethod add-dependent ((c class) dep)
-  (pushnew dep (class-dependents c)))
-
-(defmethod remove-dependent ((c standard-generic-function) dep)
-  (setf (generic-function-dependents c)
-        (remove dep (generic-function-dependents c))))
-
-(defmethod remove-dependent ((c class) dep)
-  (setf (class-dependents c)
-        (remove dep (class-dependents c))))
-
-(defgeneric update-dependents (object dependents &rest initargs))
+(defmethod remove-method :after ((gf standard-generic-function) method)
+  (update-dependents-with-initargs gf (list 'remove-method method)))
 
 (defclass initargs-updater ()
   ())
@@ -321,14 +342,15 @@ their lambda lists ~A and ~A are not congruent."
   (slot-makunbound a-class 'valid-initargs)
   (mapc #'recursively-update-classes (class-direct-subclasses a-class)))
 
-(defmethod update-dependents ((object generic-function) (dep initargs-updater)
-                               &rest initargs)
+(defmethod update-dependent ((object generic-function) (dep initargs-updater)
+			     &rest initargs)
   (declare (ignore dep initargs object))
   (recursively-update-classes +the-class+))
-
-(setf *clos-booted* 'built-in-class)
 
 (let ((x (make-instance 'initargs-updater)))
   (add-dependent #'shared-initialize x)
   (add-dependent #'initialize-instance x)
   (add-dependent #'allocate-instance x))
+
+(setf *clos-booted* 'map-dependents)
+

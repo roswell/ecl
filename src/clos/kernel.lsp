@@ -212,17 +212,6 @@
 ;;; ----------------------------------------------------------------------
 ;;;                                                         early versions
 
-(defun map-dependents (c function)
-  (dolist (d (if (classp c)
-                 (class-dependents c)
-                 (generic-function-dependents c)))
-    (funcall function d)))
-
-(defun add-dependent (c d)
-  (if (classp c)
-      (pushnew d (class-dependents c))
-      (pushnew d (generic-function-dependents c))))
-
 ;;; early version used during bootstrap
 (defun ensure-generic-function (name &key (lambda-list (si::unbound) l-l-p))
   (if (and (fboundp name) (si::instancep (fdefinition name)))

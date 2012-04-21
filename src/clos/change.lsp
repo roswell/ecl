@@ -198,10 +198,6 @@
   (setf (class-finalized-p class) nil)
   (finalize-unless-forward class)
 
-  ;; Now we can call the dependents
-  (map-dependents class #'(lambda (dep)
-                            (apply #'update-dependent class dep initargs)))
-
   class)
 
 (defmethod make-instances-obsolete ((class class))

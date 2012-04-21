@@ -9,6 +9,8 @@ ECL 12.2.2:
 
  - :CDECL was not accepted as an FFI declaration due to a typo.
 
+ - REMOVE-METHOD was not a generic function.
+
 * Visible changes:
 
  - DIRECTORY no longer complains when it finds an inexistent directory
@@ -32,6 +34,10 @@ ECL 12.2.2:
    generic functions.
 
  - Implemented and used in the core: VALIDATE-SUPERCLASSES
+
+ - UPDATE-DEPENDENT, MAP-DEPENDENTS and related functions have been fixed. They
+   are now invoked by REMOVE-METHOD and REINITIALIZE-INSTANCE, when acting on
+   generic functions, standard classes, etc.
 
 ;;; Local Variables: ***
 ;;; mode:text ***
