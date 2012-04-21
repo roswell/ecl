@@ -194,6 +194,10 @@
            return t
            append k)))
 
+(defun update-dependents (object initargs)
+  (when *clos-booted*
+    (map-dependents object #'(lambda (dep) (apply #'update-dependent object dep initargs)))))
+
 (defmethod shared-initialize ((class std-class) slot-names &rest initargs &key
                               (optimize-slot-access (list *optimize-slot-access*))
                               sealedp)
@@ -201,6 +205,7 @@
   (setf (slot-value class 'optimize-slot-access) (first optimize-slot-access)
 	(slot-value class 'sealedp) (and sealedp t))
   (setf class (call-next-method))
+  (update-dependents class initargs)
   class)
 
 (defmethod add-direct-subclass ((parent class) child)
