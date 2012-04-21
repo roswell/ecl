@@ -247,13 +247,13 @@ their lambda lists ~A and ~A are not congruent."
      (std-compute-applicable-methods gf args)))
 (setf (fdefinition 'compute-applicable-methods) #'aux-compute-applicable-methods)
 
-(defgeneric compute-applicable-methods-using-classes (gf classes)
-  (:method ((gf standard-generic-function) classes)
-    (std-compute-applicable-methods-using-classes gf classes)))
+(defmethod compute-applicable-methods-using-classes
+    ((gf standard-generic-function) classes)
+  (std-compute-applicable-methods-using-classes gf classes))
 
-(defgeneric compute-effective-method (gf method-combination applicable-methods)
-  (:method ((gf standard-generic-function) method-combination applicable-methods)
-    (std-compute-effective-method gf method-combination applicable-methods)))
+(defmethod compute-effective-method
+    ((gf standard-generic-function) method-combination applicable-methods)
+  (std-compute-effective-method gf method-combination applicable-methods))
 
 
 ;;; ----------------------------------------------------------------------
