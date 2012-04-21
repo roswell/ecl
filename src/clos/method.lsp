@@ -210,6 +210,12 @@
 	 (values name (nreverse qualifiers) (first args) (rest args)))
       (push (pop args) qualifiers))))
 
+(defun extract-lambda-list (specialized-lambda-list)
+  (values (parse-specialized-lambda-list specialized-lambda-list)))
+
+(defun extract-specializer-names (specialized-lambda-list)
+  (nth-value 2 (parse-specialized-lambda-list specialized-lambda-list)))
+
 (defun parse-specialized-lambda-list (specialized-lambda-list)
   "This function takes a method lambda list and outputs the list of required
 arguments, the list of specializers and a new lambda list where the specializer

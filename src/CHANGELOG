@@ -46,6 +46,8 @@ ECL 12.2.2:
  - ENSURE-CLASS-USING-CLASS now registers the class with
    FIND-CLASS. ENSURE-CLASS relies on E-C-U-C doing that.
 
+ - EXTRACT-LAMBDA-LIST and EXTRACT-SPECIALIZER-NAMES implemented.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
