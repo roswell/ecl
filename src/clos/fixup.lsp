@@ -226,6 +226,8 @@ their lambda lists ~A and ~A are not congruent."
                                   (method standard-method)))
 (function-to-method 'remove-method '((gf standard-generic-function)
 				     (method standard-method)))
+(function-to-method 'find-method '((gf standard-generic-function)
+				   qualifiers specializers &optional error))
 
 ;;; COMPUTE-APPLICABLE-METHODS is used by the core in various places,
 ;;; including instance initialization. This means we cannot just redefine it.

@@ -9,7 +9,7 @@ ECL 12.2.2:
 
  - :CDECL was not accepted as an FFI declaration due to a typo.
 
- - REMOVE-METHOD was not a generic function.
+ - REMOVE-METHOD and FIND-METHOD were not generic functions.
 
 * Visible changes:
 
