@@ -306,7 +306,7 @@
 ;;; COMPUTE-EFFECTIVE-METHOD
 ;;;
 
-(defun compute-effective-method (gf method-combination applicable-methods)
+(defun std-compute-effective-method (gf method-combination applicable-methods)
   (let* ((method-combination-name (car method-combination))
 	 (method-combination-args (cdr method-combination)))
     (if (eq method-combination-name 'STANDARD)

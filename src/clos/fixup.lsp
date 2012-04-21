@@ -226,25 +226,34 @@ their lambda lists ~A and ~A are not congruent."
   (map-dependents gf #'(lambda (dep) (update-dependents gf dep 'remove-method method)))
   gf)
 
+;;; COMPUTE-APPLICABLE-METHODS is used by the core in various places,
+;;; including instance initialization. This means we cannot just redefine it.
+;;; Instead, we create an auxiliary function and move definitions from one to
+;;; the other.
+#+(or)
+(defgeneric aux-compute-applicable-methods (gf args)
+  (:method ((gf standard-generic-function) args)
+    (std-compute-applicable-methods gf args)))
+
+(install-method
+ 'aux-compute-applicable-methods
+ 'nil
+ '(standard-generic-function t)
+ '(gf args)
+ 'nil
+ 'nil
+ #'(ext:lambda-block compute-applicable-methods (gf args)
+     (std-compute-applicable-methods gf args)))
+(setf (fdefinition 'compute-applicable-methods) #'aux-compute-applicable-methods)
+
 (defgeneric compute-applicable-methods-using-classes (gf classes)
   (:method ((gf standard-generic-function) classes)
-    (sort-applicable-methods gf (applicable-method-list-with-classes gf classes)
-			     classes)))
+    (std-compute-applicable-methods-using-classes gf classes)))
 
-(defun applicable-method-list-with-classes (gf classes)
-  (declare (optimize (safety 0) (speed 3))
-	   (si::c-local))
-  (flet ((applicable-method-p (method classes)
-	   (loop for spec in (method-specializers method)
-	      for class in classes
-	      always (cond ((null spec))
-			   ((listp spec)
-			    ;; EQL specializer
-			    (si::of-class-p (second spec) class))
-			   ((si::subclassp class spec))))))
-    (loop for method in (generic-function-methods gf)
-       when (applicable-method-p method classes)
-       collect method)))
+(defgeneric compute-effective-method (gf method-combination applicable-methods)
+  (:method ((gf standard-generic-function) method-combination applicable-methods)
+    (std-compute-effective-method gf method-combination applicable-methods)))
+
 
 ;;; ----------------------------------------------------------------------
 ;;; Error messages

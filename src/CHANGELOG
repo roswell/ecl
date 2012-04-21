@@ -28,6 +28,9 @@ ECL 12.2.2:
 
  - Implemented CLOS:COMPUTE-APPLICABLE-METHODS-USING-CLASSES.
 
+ - COMPUTE-APPLICABLE-METHODS and CLOS:COMPUTE-EFFECTIVE-METHOD are now
+   generic functions.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

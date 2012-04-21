@@ -285,9 +285,11 @@
 ;;; version does not check _any_ of the arguments but it is
 ;;; nevertheless exported by the ANSI specification!
 ;;;
-(defun compute-applicable-methods (gf args)
+(defun std-compute-applicable-methods (gf args)
   (declare (optimize (safety 0) (speed 3)))
   (sort-applicable-methods gf (applicable-method-list gf args) args))
+
+(setf (fdefinition 'compute-applicable-methods) #'std-compute-applicable-methods)
 
 (defun applicable-method-list (gf args)
   (declare (optimize (safety 0) (speed 3))
@@ -302,6 +304,25 @@
 			   ((si::of-class-p arg spec))))))
     (loop for method in (generic-function-methods gf)
        when (applicable-method-p method args)
+       collect method)))
+
+(defun std-compute-applicable-methods-using-classes (gf args)
+  (declare (optimize (safety 0) (speed 3)))
+  (sort-applicable-methods gf (applicable-method-list gf args) args))
+
+(defun applicable-method-list-with-classes (gf classes)
+  (declare (optimize (safety 0) (speed 3))
+	   (si::c-local))
+  (flet ((applicable-method-p (method classes)
+	   (loop for spec in (method-specializers method)
+	      for class in classes
+	      always (cond ((null spec))
+			   ((listp spec)
+			    ;; EQL specializer
+			    (si::of-class-p (second spec) class))
+			   ((si::subclassp class spec))))))
+    (loop for method in (generic-function-methods gf)
+       when (applicable-method-p method classes)
        collect method)))
 
 (defun sort-applicable-methods (gf applicable-list args)

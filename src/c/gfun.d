@@ -146,13 +146,13 @@ compute_applicable_method(cl_object frame, cl_object gf)
              p != frame->frame.base; ) {
 		arglist = CONS(*(--p), arglist);
 	}
-	methods = _ecl_funcall3(@'compute-applicable-methods', gf, arglist);
+	methods = _ecl_funcall3(@'clos::std-compute-applicable-methods', gf, arglist);
 	if (methods == Cnil) {
 		func = _ecl_funcall3(@'no-applicable-method', gf, arglist);
 		frame->frame.base[0] = OBJNULL;
 		return func;
 	} else {
-		return _ecl_funcall4(@'clos::compute-effective-method', gf,
+		return _ecl_funcall4(@'clos::std-compute-effective-method', gf,
 				     GFUN_COMB(gf), methods);
 	}
 }
