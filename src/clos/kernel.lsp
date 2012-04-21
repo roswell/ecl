@@ -275,13 +275,12 @@
 ;;; nevertheless exported by the ANSI specification!
 ;;;
 (defun std-compute-applicable-methods (gf args)
-  (declare (optimize (safety 0) (speed 3)))
   (sort-applicable-methods gf (applicable-method-list gf args) args))
 
 (setf (fdefinition 'compute-applicable-methods) #'std-compute-applicable-methods)
 
 (defun applicable-method-list (gf args)
-  (declare (optimize (safety 0) (speed 3))
+  (declare (optimize (speed 3))
 	   (si::c-local))
   (flet ((applicable-method-p (method args)
 	   (loop for spec in (method-specializers method)
@@ -295,24 +294,27 @@
        when (applicable-method-p method args)
        collect method)))
 
-(defun std-compute-applicable-methods-using-classes (gf args)
-  (declare (optimize (safety 0) (speed 3)))
-  (sort-applicable-methods gf (applicable-method-list gf args) args))
-
-(defun applicable-method-list-with-classes (gf classes)
-  (declare (optimize (safety 0) (speed 3))
-	   (si::c-local))
+(defun std-compute-applicable-methods-using-classes (gf classes)
+  (declare (optimize (speed 3)))
   (flet ((applicable-method-p (method classes)
 	   (loop for spec in (method-specializers method)
 	      for class in classes
 	      always (cond ((null spec))
 			   ((listp spec)
-			    ;; EQL specializer
-			    (si::of-class-p (second spec) class))
+			    ;; EQL specializer invalidate computation
+			    ;; we return NIL
+			    (when (si::of-class-p (second spec) class)
+			      (return-from std-compute-applicable-methods-using-classes
+				(values nil nil)))
+			    nil)
 			   ((si::subclassp class spec))))))
-    (loop for method in (generic-function-methods gf)
-       when (applicable-method-p method classes)
-       collect method)))
+    (values (sort-applicable-methods
+	     gf
+	     (loop for method in (generic-function-methods gf)
+		when (applicable-method-p method classes)
+		collect method)
+	     classes)
+	    t)))
 
 (defun sort-applicable-methods (gf applicable-list args)
   (declare (optimize (safety 0) (speed 3)))
