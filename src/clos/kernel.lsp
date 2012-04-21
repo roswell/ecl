@@ -168,8 +168,9 @@
       ((and old-class
 	    (or (typep old-class 'built-in-class)
 		(member name '(class built-in-class) :test #'eq)))
-       (error "The class associated to the CL specifier ~S cannot be changed."
-	      name))
+       (unless (eq new-value old-class)
+	 (error "The class associated to the CL specifier ~S cannot be changed."
+		name)))
       ((classp new-value)
        (setf (gethash name si:*class-name-hash-table*) new-value))
       ((null new-value) (remhash name si:*class-name-hash-table*))

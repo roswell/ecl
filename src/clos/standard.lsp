@@ -196,7 +196,9 @@
 
 (defun update-dependents (object initargs)
   (when *clos-booted*
-    (map-dependents object #'(lambda (dep) (apply #'update-dependent object dep initargs)))))
+    (map-dependents
+     object
+     #'(lambda (dep) (apply #'update-dependent object dep initargs)))))
 
 (defmethod shared-initialize ((class std-class) slot-names &rest initargs &key
                               (optimize-slot-access (list *optimize-slot-access*))
@@ -470,7 +472,11 @@ because it contains a reference to the undefined class~%  ~A"
 	   (change-class class metaclass))
 	  ((not (eq (class-of class) metaclass))
 	   (error "When redefining a class, the metaclass can not change.")))
-    (apply #'reinitialize-instance class :name name options)))
+    (setf class (apply #'reinitialize-instance class :name name options))
+    (when name
+      (si:create-type-name name)
+      (setf (find-class name) class))
+    class))
 
 (defun coerce-to-class (class-or-symbol &optional (fail nil))
   (cond ((si:instancep class-or-symbol) class-or-symbol)

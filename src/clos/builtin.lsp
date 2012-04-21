@@ -112,7 +112,10 @@
   (multiple-value-bind (metaclass direct-superclasses options)
       (apply #'help-ensure-class rest)
     (declare (ignore direct-superclasses))
-    (apply #'make-instance metaclass :name name options)))
+    (setf class (apply #'make-instance metaclass :name name options))
+    (when name
+      (si:create-type-name name)
+      (setf (find-class name) class))))
 
 (defmethod change-class ((instance t) (new-class symbol) &rest initargs)
   (apply #'change-class instance (find-class new-class) initargs))

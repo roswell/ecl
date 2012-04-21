@@ -43,6 +43,9 @@ ECL 12.2.2:
 
  - (SETF CLASS-NAME) is now implemented using REINITIALIZE-INSTANCE.
 
+ - ENSURE-CLASS-USING-CLASS now registers the class with
+   FIND-CLASS. ENSURE-CLASS relies on E-C-U-C doing that.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
