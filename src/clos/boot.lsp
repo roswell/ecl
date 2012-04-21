@@ -262,4 +262,6 @@
   (class-id class))
 
 (defmethod (setf class-name) (new-value (class class))
-  (setf (class-id class) new-value))
+  (reinitialize-instance class :name new-value)
+  new-value)
+

@@ -28,6 +28,8 @@ ECL 12.2.2:
  - ENSURE-DIRECTORIES-EXIST accepts the keyword argument :MODE which is
    passed to MKDIR.
 
+* Metaobject protocol:
+
  - Implemented CLOS:COMPUTE-APPLICABLE-METHODS-USING-CLASSES.
 
  - COMPUTE-APPLICABLE-METHODS and CLOS:COMPUTE-EFFECTIVE-METHOD are now
@@ -38,6 +40,8 @@ ECL 12.2.2:
  - UPDATE-DEPENDENT, MAP-DEPENDENTS and related functions have been fixed. They
    are now invoked by REMOVE-METHOD and REINITIALIZE-INSTANCE, when acting on
    generic functions, standard classes, etc.
+
+ - (SETF CLASS-NAME) is now implemented using REINITIALIZE-INSTANCE.
 
 ;;; Local Variables: ***
 ;;; mode:text ***
