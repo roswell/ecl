@@ -122,6 +122,10 @@
       (documentation :initarg :documentation :initform nil)
       (methods :initform nil :accessor generic-function-methods)
       (a-p-o-function :initform nil :accessor generic-function-a-p-o-function)
+      (declarations
+       :initarg :declarations
+       :initform nil
+       :accessor generic-function-declarations)
       (dependents :initform nil :accessor generic-function-dependents))))
 
 #.(create-accessors +standard-generic-function-slots+
