@@ -181,8 +181,8 @@ their lambda lists ~A and ~A are not congruent."
   (when (generic-function-methods gf)
     (let* ((method-qualifiers (method-qualifiers method)) 
 	   (specializers (method-specializers method))
-	   found)
-      (when (setq found (find-method gf method-qualifiers specializers nil))
+	   (found (find-method gf method-qualifiers specializers nil)))
+      (when found
 	(remove-method gf found))))
   ;;
   ;; We install the method by:
