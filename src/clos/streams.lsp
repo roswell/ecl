@@ -711,3 +711,6 @@
 	      (export cl-symbol gray-package))))
     (si::package-lock "COMMON-LISP" x)
     nil))
+
+(setf *clos-booted* t)
+

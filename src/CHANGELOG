@@ -31,6 +31,8 @@ ECL 12.2.2:
  - COMPUTE-APPLICABLE-METHODS and CLOS:COMPUTE-EFFECTIVE-METHOD are now
    generic functions.
 
+ - Implemented and used in the core: VALIDATE-SUPERCLASSES
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

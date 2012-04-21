@@ -326,7 +326,7 @@ their lambda lists ~A and ~A are not congruent."
   (declare (ignore dep initargs object))
   (recursively-update-classes +the-class+))
 
-(setf *clos-booted* t)
+(setf *clos-booted* 'built-in-class)
 
 (let ((x (make-instance 'initargs-updater)))
   (add-dependent #'shared-initialize x)

@@ -210,20 +210,37 @@
   (setf (class-direct-subclasses parent)
 	(remove child (class-direct-subclasses parent))))
 
-(defmethod check-direct-superclasses (class supplied-superclasses)
-  (unless supplied-superclasses
-    (setf supplied-superclasses
-	  (list (find-class (typecase class
-			      (STANDARD-CLASS 'STANDARD-OBJECT)
-			      (STRUCTURE-CLASS 'STRUCTURE-OBJECT)
-			      (FUNCALLABLE-STANDARD-CLASS 'FUNCALLABLE-STANDARD-OBJECT)
-			      (otherwise (error "No :DIRECT-SUPERCLASS ~
+(defun check-direct-superclasses (class supplied-superclasses)
+  (if supplied-superclasses
+      (loop for superclass in supplied-superclasses
+	 ;; Until we process streams.lsp there are some invalid combinations
+	 ;; using built-in-class, which here we simply ignore.
+	 unless (or (validate-superclass class superclass)
+		    (not (eq *clos-booted* T)))
+	 do (error "Class ~A is not a valid superclass for ~A" superclass class))
+      (setf supplied-superclasses
+	    (list (find-class (typecase class
+				(STANDARD-CLASS 'STANDARD-OBJECT)
+				(STRUCTURE-CLASS 'STRUCTURE-OBJECT)
+				(FUNCALLABLE-STANDARD-CLASS 'FUNCALLABLE-STANDARD-OBJECT)
+				(otherwise (error "No :DIRECT-SUPERCLASS ~
 argument was supplied for metaclass ~S." (class-of class))))))))
   ;; FIXME!!! Here should come the invocation of VALIDATE-SUPERCLASS!
   ;; FIXME!!! We should check that structures and standard objects are
   ;; not mixed, and that STANDARD-CLASS, or STANDARD-GENERIC-FUNCTION,
   ;; etc, are the first classes.
   supplied-superclasses)
+
+(defmethod validate-superclass ((class class) (superclass class))
+  (or (eq superclass +the-t-class+)
+      (let ((c1 (class-of class))
+	    (c2 (class-of superclass)))
+	(or (eq c1 c2)
+	    (and (eq c1 +the-standard-class+) (eq c2 +the-funcallable-standard-class+))
+	    (and (eq c2 +the-standard-class+) (eq c1 +the-funcallable-standard-class+))
+	    ))
+      (forward-referenced-class-p superclass)
+      ))
 
 ;;; ----------------------------------------------------------------------
 ;;; FINALIZATION OF CLASS INHERITANCE
