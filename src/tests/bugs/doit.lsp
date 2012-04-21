@@ -39,6 +39,7 @@
 #+clos
 (progn
  (load "mop-001.lsp")
+ (load "mop-dispatch.lsp")
  (load "mop-dependents.lsp"))
 
 #+(and ffi (not ecl-bytecmp))
