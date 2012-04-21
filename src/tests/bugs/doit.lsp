@@ -37,7 +37,9 @@
 (load "cmp-001.lsp")
 
 #+clos
-(load "mop-001.lsp")
+(progn
+ (load "mop-001.lsp")
+ (load "mop-dependents.lsp"))
 
 #+(and ffi (not ecl-bytecmp))
 (load "ffi-001.lsp")
