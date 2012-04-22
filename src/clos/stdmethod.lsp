@@ -12,15 +12,6 @@
 (in-package "CLOS")
 
 ;;; ----------------------------------------------------------------------
-;;; Metaobject (an abstract class, not used)
-;;; ----------------------------------------------------------------------
-;;;
-;;; We cannot evaluate this when compiling, because redefining the metaobject
-;;; class causes a lot of trouble -- slot definitions have to be finalized
-;;; again and as a result a lot of functions break down.
-(let () (defclass metaobject (standard-object) ()))
-
-;;; ----------------------------------------------------------------------
 ;;; Funcallable object
 ;;; ----------------------------------------------------------------------
 

@@ -188,6 +188,7 @@
        (let ((topmost (find-class 'CLASS nil)))
 	 ;; All instances can be classes until the class CLASS has
 	 ;; been installed. Otherwise, we check the parents.
+	 ;(print (list (class-id (class-of obj))topmost (and topmost (class-precedence-list topmost))))
 	 (or (null topmost)
 	     (si::subclassp (si::instance-class obj) topmost)))
        t))
