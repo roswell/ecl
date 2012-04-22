@@ -58,6 +58,21 @@
 
 (defclass standard-writer-method (standard-accessor-method) ())
 
-(defmethod shared-initialize ((method standard-method) slot-names &rest initargs)
+(defmethod shared-initialize ((method standard-method) slot-names &rest initargs
+			      &key (specializers nil spec-supplied-p)
+			      (lambda-list nil lambda-supplied-p)
+			      generic-function)
   (declare (ignore initargs method slot-names))
+  (unless spec-supplied-p
+    (error "Specializer list not supplied in method initialization"))
+  (unless lambda-supplied-p
+    (error "Lambda list not supplied in method initialization"))
+  (unless (= (first (si::process-lambda-list lambda-list 'method))
+	     (length specializers))
+    (error "The list of specializers does not match the number of required arguments in the lambda list ~A"
+	   lambda-list))
+  (loop for s in specializers
+     unless (or (typep s 'specializer)
+		(consp s))
+     do (error "Object ~A is not a valid specializer" s))
   (add-method-keywords (call-next-method)))

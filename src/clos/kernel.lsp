@@ -222,10 +222,11 @@
 ;  (record-definition 'method `(method ,name ,@qualifiers ,specializers))
   (let* ((gf (ensure-generic-function name))
 	 (specializers (mapcar #'(lambda (x)
-				   (cond ((null x) x)
-					 ((consp x) x)
-					 ((si::instancep x) x)
-					 (t (find-class x))))
+				   (cond ((consp x) x)
+					 ((typep x 'specializer) x)
+					 ((find-class x nil))
+					 (t
+					  (error "In method definition for ~A, found an invalid specializer ~A" name specializers))))
 			       specializers))
 	 (method (make-method (or method-class
 				  (generic-function-method-class gf))
