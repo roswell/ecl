@@ -967,11 +967,13 @@ struct ecl_condition_variable {
 
 #ifdef CLOS
 #define CLASS_OF(x)		(x)->instance.clas
-#define CLASS_NAME(x)		(x)->instance.slots[0]
-#define CLASS_SUPERIORS(x)	(x)->instance.slots[1]
-#define CLASS_INFERIORS(x)	(x)->instance.slots[2]
-#define CLASS_SLOTS(x)		(x)->instance.slots[3]
-#define CLASS_CPL(x)		(x)->instance.slots[4]
+#define ECL_SPEC_FLAG(x)	(x)->instance.slots[0]
+#define ECL_SPEC_OBJECT(x)	(x)->instance.slots[3]
+#define CLASS_NAME(x)		(x)->instance.slots[3+0]
+#define CLASS_SUPERIORS(x)	(x)->instance.slots[3+1]
+#define CLASS_INFERIORS(x)	(x)->instance.slots[3+2]
+#define CLASS_SLOTS(x)		(x)->instance.slots[3+3]
+#define CLASS_CPL(x)		(x)->instance.slots[3+4]
 #define ECL_INSTANCEP(x)	((IMMEDIATE(x)==0) && ((x)->d.t==t_instance))
 #define ECL_NOT_FUNCALLABLE	0
 #define ECL_STANDARD_DISPATCH	1

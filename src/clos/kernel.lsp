@@ -31,29 +31,26 @@
 
 (eval-when (compile eval)
 (defun create-accessors (slotds type)
-  (let ((i 0)
-	(output '())
-        (names '())
-	name)	
-    (dolist (s slotds)
-      (when (setf name (getf (cdr s) :accessor))
-        (push name names)
-	(setf output
-	      (append output
-		      `((defun ,name (obj)
-			  (si:instance-ref obj ,i))
-			(defsetf ,name (obj) (x)
-			  `(si:instance-set ,obj ,,i ,x))
-			#+nil
-			(define-compiler-macro ,name (obj)
-			  `(si:instance-ref ,obj ,,i))
-			))))
-      (incf i))
+  (let* ((names '())
+	 (forms (loop for i from 0
+		   for s in slotds
+		   for accessor = (getf (cdr s) :accessor)
+		   for reader = (getf (cdr s) :reader)
+		   when reader
+		   do (pushnew reader names)
+		   and collect `(defun ,reader (obj)
+				  (si::instance-ref obj ,i))
+		   when accessor
+		   do (pushnew accessor names)
+		   and collect `(defun ,accessor (obj)
+				  (si::instance-ref obj ,i))
+		   and collect `(defsetf ,accessor (obj) (x)
+				  `(si::instance-set ,obj ,,i ,x)))))
     `(progn
        #+nil
        (eval-when (:compile-toplevel :execute)
          (proclaim '(notinline ,@names)))
-       ,@output)))
+       ,@forms)))
 (defun remove-accessors (slotds)
   (loop for i in slotds
      for j = (copy-list i)
@@ -62,11 +59,28 @@
 )
 
 ;;; ----------------------------------------------------------------------
+;;; Class SPECIALIZER
+
+(eval-when (compile eval)
+  (defparameter +specializer-slots+
+    '((flag :initform nil :accessor specializer-flag)
+      (direct-methods :initform nil :accessor specializer-direct-methods)
+      (direct-generic-functions :initform nil :accessor specializer-direct-generic-functions)))
+  (defparameter +eql-specializer-slots+
+    '((flag :initform t :accessor specializer-flag)
+      (direct-methods :initform nil :accessor specializer-direct-methods)
+      (direct-generic-functions :initform nil :accessor specializer-direct-generic-functions)
+      (object :initarg :object :accessor eql-specializer-object))))
+
+#.(create-accessors +eql-specializer-slots+ 'eql-specializer)
+
+;;; ----------------------------------------------------------------------
 ;;; Class CLASS
 
 (eval-when (compile eval)
   (defparameter +class-slots+
-    '((name :initarg :name :initform nil :accessor class-id)
+    `(,@+specializer-slots+
+      (name :initarg :name :initform nil :accessor class-id)
       (direct-superclasses :initarg :direct-superclasses
        :accessor class-direct-superclasses)
       (direct-subclasses :initform nil :accessor class-direct-subclasses)
@@ -82,7 +96,12 @@
       (sealedp :initarg :sealedp :initform nil :accessor class-sealedp)
       (prototype)
       (dependents :initform nil :accessor class-dependents)
-      (valid-initargs :accessor class-valid-initargs))))
+      (valid-initargs :accessor class-valid-initargs)))
+
+  (defconstant +class-name-ndx+
+    (position 'name +class-slots+ :key #'first))
+  (defconstant +class-precedence-list-ndx+
+    (position 'precedence-list +class-slots+ :key #'first)))
 
 ;#.(create-accessors +class-slots+ 'class)
 

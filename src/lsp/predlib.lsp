@@ -557,19 +557,16 @@ Returns T if X belongs to TYPE; NIL otherwise."
 #+clos
 (defun subclassp (low high)
   (or (eq low high)
-      (member high (sys:instance-ref low 4) :test #'eq)) ; (class-precedence-list low)
-  #+(or)
-  (or (eq low high)
-      (dolist (class (sys:instance-ref low 1)) ; (class-superiors low)
-	(when (si::subclassp class high) (return t)))))
+      (member high (sys:instance-ref low clos::+class-precedence-list-ndx+)
+	      :test #'eq))) ; (class-precedence-list low)
 
 #+clos
 (defun of-class-p (object class)
   (declare (optimize (speed 3) (safety 0)))
   (macrolet ((class-precedence-list (x)
-	       `(instance-ref ,x 4))
+	       `(si::instance-ref ,x clos::+class-precedence-list-ndx+))
 	     (class-name (x)
-	       `(instance-ref ,x 0)))
+	       `(si::instance-ref ,x clos::+class-name-ndx+)))
     (let* ((x-class (class-of object)))
       (declare (class x-class))
       (if (eq x-class class)

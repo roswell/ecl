@@ -271,8 +271,6 @@ their lambda lists ~A and ~A are not congruent."
   (error "In method ~A~%No next method given arguments ~A" method args))
 
 (defun no-primary-method (gf &rest args)
-  (print gf)
-  (print args)
   (error "Generic function: ~A. No primary method given arguments: ~S"
 	 (generic-function-name gf) args))
 

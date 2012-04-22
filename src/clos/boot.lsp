@@ -53,10 +53,18 @@
        (the-t (make-empty-standard-class 'T the-class))
        ;; It does not matter that we pass NIL instead of a class object,
        ;; because CANONICAL-SLOT-TO-DIRECT-SLOT will make simple slots.
-       (class-slots (loop for s in (parse-slots '#.(remove-accessors +class-slots+))
-			  collect (canonical-slot-to-direct-slot nil s)))
-       (standard-slots (loop for s in (parse-slots '#.(remove-accessors +standard-class-slots+))
-			     collect (canonical-slot-to-direct-slot nil s)))
+       (specializer-slots
+	(loop for s in (parse-slots '#.(remove-accessors +specializer-slots+))
+	   collect (canonical-slot-to-direct-slot nil s)))
+       (eql-specializer-slots
+	(loop for s in (parse-slots '#.(remove-accessors +eql-specializer-slots+))
+	   collect (canonical-slot-to-direct-slot nil s)))
+       (class-slots
+	(loop for s in (parse-slots '#.(remove-accessors +class-slots+))
+	   collect (canonical-slot-to-direct-slot nil s)))
+       (standard-slots
+	(loop for s in (parse-slots '#.(remove-accessors +standard-class-slots+))
+	   collect (canonical-slot-to-direct-slot nil s)))
        (hash-table (make-hash-table :size 24)))
 
   ;; 2) STANDARD-CLASS and CLASS and others are classes with slots. Create a
@@ -76,6 +84,14 @@
 	(class-size                the-class) (length class-slots)
 	(slot-table                the-class) hash-table
 	(class-direct-slots        the-class) class-slots)
+  (setf (class-slots               specializer) (copy-list specializer-slots)
+	(class-size                specializer) (length specializer-slots)
+	(slot-table                specializer) hash-table
+	(class-direct-slots        specializer) specializer-slots)
+  (setf (class-slots               eql-specializer) (copy-list eql-specializer-slots)
+	(class-size                eql-specializer) (length eql-specializer-slots)
+	(slot-table                eql-specializer) hash-table
+	(class-direct-slots        eql-specializer) eql-specializer-slots)
   (setf (class-slots               standard-class) standard-slots
 	(class-size                standard-class) (length standard-slots)
 	(slot-table                standard-class) hash-table
@@ -128,7 +144,7 @@
 	(class-direct-superclasses metaobject) (list standard-object)
 	(class-direct-subclasses metaobject) (list specializer)
 	(class-direct-superclasses specializer) (list metaobject)
-	(class-direct-subclasses specializer) (list the-class)
+	(class-direct-subclasses specializer) (list the-class eql-specializer)
 	(class-direct-superclasses eql-specializer) (list specializer)
 	(class-direct-superclasses the-class) (list specializer)
 	(class-direct-subclasses the-class) (list std-class)
