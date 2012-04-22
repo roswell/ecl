@@ -51,6 +51,8 @@ ECL 12.2.2:
  - CLOS:GENERIC-FUNCTION-DECLARATIONS and slot CLOS:DECLARATIONS are now
    implemented (even if not used by ECL itself).
 
+ - Implemented the class CLOS:METAOBJECT
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

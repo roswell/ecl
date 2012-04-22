@@ -12,6 +12,15 @@
 (in-package "CLOS")
 
 ;;; ----------------------------------------------------------------------
+;;; Metaobject (an abstract class, not used)
+;;; ----------------------------------------------------------------------
+;;;
+;;; We cannot evaluate this when compiling, because redefining the metaobject
+;;; class causes a lot of trouble -- slot definitions have to be finalized
+;;; again and as a result a lot of functions break down.
+(let () (defclass metaobject (standard-object) ()))
+
+;;; ----------------------------------------------------------------------
 ;;; Funcallable object
 ;;; ----------------------------------------------------------------------
 
@@ -21,7 +30,7 @@
 ;;; Generic Functions
 ;;; ----------------------------------------------------------------------
 
-(defclass generic-function (standard-object function) ()
+(defclass generic-function (metaobject funcallable-standard-object) ()
   (:metaclass 'funcallable-standard-class))
 
 (defclass standard-generic-function (generic-function)
@@ -32,7 +41,7 @@
 ;;; Method
 ;;; ----------------------------------------------------------------------
 
-(defclass method () ())
+(defclass method (metaobject) ())
 
 (defclass standard-method (method)
   #.(remove-accessors +standard-method-slots+))

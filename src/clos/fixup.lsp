@@ -55,7 +55,7 @@
 (eval-when (:load-toplevel :execute)
   (eval
    `(progn
-     (defclass slot-definition ()
+     (defclass slot-definition (metaobject)
        ,(mapcar #'(lambda (x) (butlast x 2)) +slot-definition-slots+))
      (defclass standard-slot-definition (slot-definition) ())
      (defclass direct-slot-definition (slot-definition) ())
