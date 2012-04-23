@@ -215,12 +215,13 @@
 ;;; ----------------------------------------------------------------------
 ;;; Methods
 
-(defun install-method (name qualifiers specializers lambda-list doc plist fun
+(defun install-method (name qualifiers specializers lambda-list doc plist fun wrap
 		       &optional method-class &rest options)
   (declare (ignore doc)
 	   (notinline ensure-generic-function))
 ;  (record-definition 'method `(method ,name ,@qualifiers ,specializers))
   (let* ((gf (ensure-generic-function name))
+	 (fun (if wrap (wrapped-method-function fun) fun))
 	 (specializers (mapcar #'(lambda (x)
 				   (cond ((consp x) (intern-eql-specializer (second x)))
 					 ((typep x 'specializer) x)
@@ -234,6 +235,11 @@
 			      fun plist options)))
     (add-method gf method)
     method))
+
+(defun wrapped-method-function (method-function)
+  #'(lambda (.combined-method-args. *next-methods*)
+      (declare (special .combined-method-args. *next-methods*))
+      (apply method-function .combined-method-args.)))
 
 ;;; ----------------------------------------------------------------------
 ;;;                                                         early versions

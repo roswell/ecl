@@ -254,9 +254,9 @@ their lambda lists ~A and ~A are not congruent."
  '(gf args)
  'nil
  'nil
- (wrapped-method-function
-  #'(ext:lambda-block compute-applicable-methods (gf args)
-     (std-compute-applicable-methods gf args))))
+ #'(ext:lambda-block compute-applicable-methods (gf args)
+     (std-compute-applicable-methods gf args))
+ t)
 (setf (fdefinition 'compute-applicable-methods) #'aux-compute-applicable-methods)
 
 (defmethod compute-applicable-methods-using-classes
