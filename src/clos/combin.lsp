@@ -50,7 +50,7 @@
   (cond ((functionp form)
 	 form)
 	((method-p form)
-	 (wrapped-method-function (method-function form)))
+	 (method-function form))
 	((atom form)
 	 (error "Malformed effective method form:~%~A" form))
 	((eq (first form) 'MAKE-METHOD)
@@ -69,11 +69,6 @@
 		 'function))
 	(t
 	 (error "Malformed effective method form:~%~A" form))))
-
-(defun wrapped-method-function (method-function)
-  #'(lambda (.combined-method-args. *next-methods*)
-      (declare (special .combined-method-args. *next-methods*))
-      (apply method-function .combined-method-args.)))
 
 ;;;
 ;;; This function is a combinator of effective methods. It creates a
@@ -140,7 +135,7 @@
 	 (around ()))
     (dolist (m methods)
       (let* ((qualifiers (method-qualifiers m))
-	     (f (wrapped-method-function (method-function m))))
+	     (f (method-function m)))
 	(cond ((null qualifiers) (push f primary))
 	      ((rest qualifiers) (error-qualifier m qualifiers))
 	      ((eq (setq qualifiers (first qualifiers)) :BEFORE)

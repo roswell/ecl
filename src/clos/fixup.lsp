@@ -80,7 +80,6 @@
 ;;; ----------------------------------------------------------------------
 ;;; Fixup
 
-
 (defun register-method-with-specializers (method)
   (declare (si::c-local))
   (loop for spec in (method-specializers method)
@@ -217,7 +216,7 @@ their lambda lists ~A and ~A are not congruent."
   (let* ((aux-name 'temp-method)
          (method (eval `(defmethod ,aux-name ,signature)))
          (generic-function (fdefinition aux-name)))
-    (setf (method-function method) (fdefinition name))
+    (setf (method-function method) (wrapped-method-function (fdefinition name)))
     (setf (fdefinition name) generic-function)
     (setf (generic-function-name generic-function) name)
     (fmakunbound aux-name)))
@@ -255,8 +254,9 @@ their lambda lists ~A and ~A are not congruent."
  '(gf args)
  'nil
  'nil
- #'(ext:lambda-block compute-applicable-methods (gf args)
-     (std-compute-applicable-methods gf args)))
+ (wrapped-method-function
+  #'(ext:lambda-block compute-applicable-methods (gf args)
+     (std-compute-applicable-methods gf args))))
 (setf (fdefinition 'compute-applicable-methods) #'aux-compute-applicable-methods)
 
 (defmethod compute-applicable-methods-using-classes
@@ -272,8 +272,6 @@ their lambda lists ~A and ~A are not congruent."
 ;;; Error messages
 
 (defmethod no-applicable-method (gf args)
-  (print (generic-function-name gf))
-  (print (mapcar #'type-of args))
   (error "No applicable method for ~S with arguments of types~{~& ~A~}" 
 	 (generic-function-name gf)
          (mapcar #'type-of args)))

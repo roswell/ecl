@@ -54,6 +54,11 @@
 ;;; ----------------------------------------------------------------------
 ;;;                                                  method body expansion
 
+(defun wrapped-method-function (method-function)
+  #'(lambda (.combined-method-args. *next-methods*)
+      (declare (special .combined-method-args. *next-methods*))
+      (apply method-function .combined-method-args.)))
+
 (defun expand-defmethod (generic-function-name qualifiers lambda-list
 			 required-parameters specializers body env)
   (declare (ignore qualifiers)
@@ -121,12 +126,13 @@
 			     .next-methods.))
 		      ,@real-body)))))
 	(values
-	 `#'(ext::lambda-block ,generic-function-name
+	 `(wrapped-method-function
+	   #'(ext::lambda-block ,generic-function-name
 	      ,lambda-list
 	      ,@(and class-declarations `((declare ,@class-declarations)))
 	      ,@(if copied-variables
 		    `((let* ,copied-variables ,@real-body))
-		    real-body))
+		    real-body)))
 	 documentation
 	 plist)))))
 
