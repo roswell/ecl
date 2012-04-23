@@ -30,6 +30,9 @@
 	  (class-default-initargs    class) nil
 	  (class-precedence-list     class) nil
 	  (class-finalized-p         class) t
+	  (eql-specializer-flag      class) nil
+	  (specializer-direct-methods class) nil
+	  (specializer-direct-generic-functions class) nil
 	  (find-class name) class)
     (unless (eq name 'T)
       (setf (slot-table class) (make-hash-table :size 2)))
@@ -72,12 +75,21 @@
   ;; make a intentional mistake: CLASS and STANDARD-CLASS share the same
   ;; hashtable!!
   (do* ((i 0 (1+ i))
+	(slots eql-specializer-slots (cdr slots)))
+       ((endp slots))
+    (let ((slotd (first slots)))
+      (setf (slot-definition-location slotd) i)
+      (setf (gethash (slot-definition-name slotd) hash-table) slotd)))
+  (do* ((i 0 (1+ i))
 	(slots standard-slots (cdr slots)))
        ((endp slots))
     (let ((slotd (first slots)))
       (setf (slot-definition-location slotd) i)
       (setf (gethash (slot-definition-name slotd) hash-table) slotd)))
   (dolist (slotd class-slots)
+    (setf (slot-definition-location slotd)
+	  (slot-definition-location (gethash (slot-definition-name slotd) hash-table))))
+  (dolist (slotd specializer-slots)
     (setf (slot-definition-location slotd)
 	  (slot-definition-location (gethash (slot-definition-name slotd) hash-table))))
   (setf (class-slots               the-class) (copy-list class-slots)
@@ -261,8 +273,7 @@
 	   ;; shared slot
 	   (car location))
 	  (t
- 	   (error "Effective slot definition lacks a valid location:~%~A"
-		  slotd)))))
+	   (invalid-slot-definition instance slotd)))))
 
 (defun standard-instance-set (val instance slotd)
   (ensure-up-to-date-instance instance)
@@ -275,9 +286,14 @@
 	   ;; shared slot
 	   (setf (car location) val))
 	  (t
-	   (error "Effective slot definition lacks a valid location:~%~A"
-		  slotd)))
-    val))
+	   (invalid-slot-definition instance slotd))))
+  val)
+
+(defun invalid-slot-definition (instance slotd)
+  (error "Effective slot definition lacks a valid location.
+Class name: ~A
+Slot name: ~A"
+	 (type-of instance) (slot-definition-name slotd)))
 
 (defmethod slot-value-using-class ((class class) self slotd)
   (let ((value (standard-instance-get self slotd)))

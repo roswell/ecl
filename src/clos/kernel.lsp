@@ -63,11 +63,11 @@
 
 (eval-when (compile eval)
   (defparameter +specializer-slots+
-    '((flag :initform nil :accessor specializer-flag)
+    '((flag :initform nil :accessor eql-specializer-flag)
       (direct-methods :initform nil :accessor specializer-direct-methods)
       (direct-generic-functions :initform nil :accessor specializer-direct-generic-functions)))
   (defparameter +eql-specializer-slots+
-    '((flag :initform t :accessor specializer-flag)
+    '((flag :initform t :accessor eql-specializer-flag)
       (direct-methods :initform nil :accessor specializer-direct-methods)
       (direct-generic-functions :initform nil :accessor specializer-direct-generic-functions)
       (object :initarg :object :accessor eql-specializer-object))))
@@ -222,7 +222,7 @@
 ;  (record-definition 'method `(method ,name ,@qualifiers ,specializers))
   (let* ((gf (ensure-generic-function name))
 	 (specializers (mapcar #'(lambda (x)
-				   (cond ((consp x) x)
+				   (cond ((consp x) (intern-eql-specializer (second x)))
 					 ((typep x 'specializer) x)
 					 ((find-class x nil))
 					 (t
@@ -273,9 +273,7 @@
 		       ((not (eq common-class class))
 			(return t)))
 	      do (loop for spec in specializers
-		    unless (or (eq spec t)
-			       (null spec)
-			       (eq spec +the-t-class+)
+		    unless (or (eq spec +the-t-class+)
 			       (and (si::instancep spec)
 				    (eq (si::instance-class spec)
 					+the-standard-class+)))
@@ -289,7 +287,7 @@
 			    (t
 			     (return t))))))
     (set-funcallable-instance-function gfun (gf-type gfun))))
-		    
+
 
 
 ;;; ----------------------------------------------------------------------
@@ -311,11 +309,9 @@
   (flet ((applicable-method-p (method args)
 	   (loop for spec in (method-specializers method)
 	      for arg in args
-	      always (cond ((null spec) t)
-			   ((listp spec)
-			    ;; EQL specializer
-			    (eql arg (second spec)))
-			   ((si::of-class-p arg spec))))))
+	      always (if (eql-specializer-flag spec)
+			 (eql arg (eql-specializer-object spec))
+			 (si::of-class-p arg spec)))))
     (loop for method in (generic-function-methods gf)
        when (applicable-method-p method args)
        collect method)))
@@ -325,11 +321,10 @@
   (flet ((applicable-method-p (method classes)
 	   (loop for spec in (method-specializers method)
 	      for class in classes
-	      always (cond ((null spec))
-			   ((listp spec)
+	      always (cond ((eql-specializer-flag spec)
 			    ;; EQL specializer invalidate computation
 			    ;; we return NIL
-			    (when (si::of-class-p (second spec) class)
+			    (when (si::of-class-p (eql-specializer-object spec) class)
 			      (return-from std-compute-applicable-methods-using-classes
 				(values nil nil)))
 			    nil)
@@ -399,6 +394,18 @@
   (declare (si::c-local))
   ;; Specialized version of subtypep which uses the fact that spec1
   ;; and spec2 are either classes or of the form (EQL x)
+  (if (eql-specializer-flag spec1)
+      (if (eql-specializer-flag spec2)
+	  (eql (eql-specializer-object spec1)
+	       (eql-specializer-object spec2))
+	  (si::of-class-p (eql-specializer-object spec1) spec2))
+      (if (eql-specializer-flag spec2)
+	  ;; There is only one class with a single element, which
+	  ;; is NULL = (MEMBER NIL).
+	  (and (null (eql-specializer-object spec2))
+	       (eq (class-name spec1) 'null))
+	  (si::subclassp spec1 spec2)))
+  #+(or)
   (if (atom spec1)
       (if (atom spec2)
 	  (si::subclassp spec1 spec2)
@@ -413,13 +420,11 @@
 (defun compare-specializers (spec-1 spec-2 arg-class)
   (declare (si::c-local))
   (let* ((cpl (class-precedence-list arg-class)))
-    (cond ((equal spec-1 spec-2) '=)
-	  ((null spec-1) '2)
-	  ((null spec-2) '1)
+    (cond ((eq spec-1 spec-2) '=)
 	  ((fast-subtypep spec-1 spec-2) '1)
 	  ((fast-subtypep spec-2 spec-1) '2)
-	  ((and (listp spec-1) (eq (car spec-1) 'eql)) '1) ; is this engough?
-	  ((and (listp spec-2) (eq (car spec-2) 'eql)) '2) ; Beppe
+	  ((eql-specializer-flag spec-1) '1) ; is this engough?
+	  ((eql-specializer-flag spec-2) '2) ; Beppe
 	  ((member spec-1 (member spec-2 cpl)) '2)
 	  ((member spec-2 (member spec-1 cpl)) '1)
 	  ;; This will force an error in the caller
@@ -427,15 +432,10 @@
 
 (defun compute-g-f-spec-list (gf)
   (flet ((nupdate-spec-how-list (spec-how-list specializers gf)
-	   ;; FIXME! This check should have happened before, shouldn't it???
-	   (let ((l (length specializers)))
-	     (if spec-how-list
-		 (unless (= (length spec-how-list) l)
-		   (error "The generic function ~A~%has ~D required arguments, but the new specialization provides ~D."
-			  gf (length spec-how-list) l))
-		 (setf spec-how-list (make-list l))))
 	   ;; update the spec-how of the gfun 
 	   ;; computing the or of the previous value and the new one
+	   (setf spec-how-list (or spec-how-list
+				   (copy-list specializers)))
 	   (do* ((l specializers (cdr l))
 		 (l2 spec-how-list (cdr l2))
 		 (spec-how)
@@ -443,13 +443,12 @@
 		((null l))
 	     (setq spec-how (first l) spec-how-old (first l2))
 	     (setf (first l2)
-		   (if (consp spec-how)	; an eql list
-		       (if (consp spec-how-old)
-			   (list* (second spec-how) spec-how-old)
-			   (cdr spec-how))
+		   (if (eql-specializer-flag spec-how)
+		       (list* (eql-specializer-object spec-how)
+			      (and (consp spec-how-old) spec-how-old))
 		       (if (consp spec-how-old)
 			   spec-how-old
-			   (or spec-how spec-how-old)))))
+			   spec-how))))
 	   spec-how-list))
   (let* ((spec-how-list nil)
 	 (function nil)

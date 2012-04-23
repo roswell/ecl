@@ -63,16 +63,29 @@
 			      (lambda-list nil lambda-supplied-p)
 			      generic-function)
   (declare (ignore initargs method slot-names))
-  (unless spec-supplied-p
-    (error "Specializer list not supplied in method initialization"))
-  (unless lambda-supplied-p
-    (error "Lambda list not supplied in method initialization"))
-  (unless (= (first (si::process-lambda-list lambda-list 'method))
-	     (length specializers))
-    (error "The list of specializers does not match the number of required arguments in the lambda list ~A"
-	   lambda-list))
-  (loop for s in specializers
-     unless (or (typep s 'specializer)
-		(consp s))
-     do (error "Object ~A is not a valid specializer" s))
+  (when slot-names
+    (unless spec-supplied-p
+      (error "Specializer list not supplied in method initialization"))
+    (unless lambda-supplied-p
+      (error "Lambda list not supplied in method initialization"))
+    (unless (= (first (si::process-lambda-list lambda-list 'method))
+	       (length specializers))
+      (error "The list of specializers does not match the number of required arguments in the lambda list ~A"
+	     lambda-list)))
+  (when spec-supplied-p
+    (loop for s in specializers
+       unless (typep s 'specializer)
+       do (error "Object ~A is not a valid specializer" s)))
   (add-method-keywords (call-next-method)))
+
+#+threads
+(defparameter *eql-specializer-lock* (mp:make-lock :name 'eql-specializer))
+(defparameter *eql-specializer-hash*
+  (make-hash-table :size 128 :test #'eql))
+
+(defun intern-eql-specializer (object)
+  (let ((table *eql-specializer-hash*))
+    (mp:with-lock (*eql-specializer-lock*)
+      (or (gethash object table nil)
+	  (setf (gethash object table)
+		(make-instance 'eql-specializer :object object))))))

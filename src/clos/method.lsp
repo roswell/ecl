@@ -334,25 +334,43 @@ have disappeared."
 
 (defun find-method (gf qualifiers specializers &optional (errorp t))
   (declare (notinline method-qualifiers))
-  (let* ((method-list (generic-function-methods gf))
-	 found)
-    (dolist (method method-list)
-      (when (and (equal qualifiers (method-qualifiers method))
-		 (equal specializers (method-specializers method)))
-	(return-from find-method method)))
+  (flet ((filter-specializer (name)
+	   (cond ((typep name 'specializer)
+		  name)
+		 ((atom name)
+		  (let ((class (find-class name nil)))
+		    (unless class
+		      (error "~A is not a valid specializer name" name))
+		    class))
+		 ((and (eq (first name) 'EQL)
+		       (null (cddr name)))
+		  (cdr name))
+		 (t
+		  (error "~A is not a valid specializer name" name))))
+	 (specializer= (cons-or-class specializer)
+	   (if (consp cons-or-class)
+	       (and (eql-specializer-flag specializer)
+		    (eql (car cons-or-class)
+			 (eql-specializer-object specializer)))
+	       (eq cons-or-class specializer))))
+    (when (/= (length specializers)
+	      (length (generic-function-argument-precedence-order gf)))
+      (error
+       "The specializers list~%~A~%does not match the number of required arguments in ~A"
+       specializers (generic-function-name gf)))
+    (loop with specializers = (mapcar #'filter-specializer specializers)
+       for method in (generic-function-methods gf)
+       when (and (equal qualifiers (method-qualifiers method))
+		 (every #'specializer= specializers (method-specializers method)))
+       do (return-from find-method method))
     ;; If we did not find any matching method, then the list of
     ;; specializers might have the wrong size and we must signal
     ;; an error.
-    (cond ((/= (length specializers)
-	       (length (generic-function-argument-precedence-order gf)))
-	   (error
-	    "The specializers list~%~A~%does not match the number of required arguments in ~A"
-	    specializers (generic-function-name gf)))
-	  (errorp
-	   (error "There is no method on the generic function ~S that agrees on qualifiers ~S and specializers ~S"
-		  (generic-function-name gf)
-		  qualifiers specializers)))
-    nil))
+    (when errorp
+      (error "There is no method on the generic function ~S that agrees on qualifiers ~S and specializers ~S"
+	     (generic-function-name gf)
+	     qualifiers specializers)))
+  nil)
 
 
 ;;; ----------------------------------------------------------------------
