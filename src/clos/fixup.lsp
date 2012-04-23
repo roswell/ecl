@@ -80,7 +80,13 @@
 ;;; ----------------------------------------------------------------------
 ;;; Fixup
 
-(dolist (method-info *early-methods*)
+
+(defun register-method-with-specializers (method)
+  (declare (si::c-local))
+  (loop for spec in (method-specializers method)
+     do (add-direct-method spec method)))
+
+(dolist (method-info *early-methods* (makunbound '*EARLY-METHODS*))
   (let* ((method-name (car method-info))
 	 (gfun (fdefinition method-name))
 	 (standard-method-class (find-class 'standard-method)))
@@ -102,8 +108,9 @@
 				      (t
 				       old-class))))
       (si::instance-sig-set gfun)
+      (register-method-with-specializers method)
       )
-    (makunbound '*EARLY-METHODS*)))
+    ))
 
 
 ;;; ----------------------------------------------------------------------
@@ -202,7 +209,8 @@ their lambda lists ~A and ~A are not congruent."
   (set-generic-function-dispatch gf)
   ;;  iv) Update dependents.
   (update-dependents gf (list 'add-method method))
-  ;;
+  ;;  v) Register with specializers
+  (register-method-with-specializers method)
   gf)
 
 (defun function-to-method (name signature)
@@ -219,6 +227,8 @@ their lambda lists ~A and ~A are not congruent."
 	(delete method (generic-function-methods gf))
 	(method-generic-function method) nil)
   (si:clear-gfun-hash gf)
+  (loop for spec in (method-specializers method)
+     do (add-direct-method spec method))
   (update-dependents gf (list 'remove-method method))
   gf)
 

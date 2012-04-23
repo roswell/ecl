@@ -56,6 +56,11 @@ ECL 12.2.2:
 
  - Implemented the class CLOS:METAOBJECT
 
+ - Implemented SPECIALIZER and EQL-SPECIALIZER, together with
+   ADD-DIRECT-METHOD, REMOVE-DIRECT-METHOD, SPECIALIZER-DIRECT-METHODS,
+   SPECIALIZER-DIRECT-GENERIC-FUNCTIONS and EQL-SPECIALIZER-OBJECT. ECL now
+   uses these objects internally for method dispatch.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***
