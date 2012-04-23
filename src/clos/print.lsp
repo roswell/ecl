@@ -134,10 +134,21 @@ printer and we should rather use MAKE-LOAD-FORM."
 	      `(ext:hash-table-fill ,make-form ',content)
 	      nil))))
       (t
-       (error "Cannot externalize object ~a" object)))))
+       (no-make-load-form object)))))
 
 (defmethod make-load-form ((object standard-object) &optional environment)
-  (make-load-form-saving-slots object :environment environment))
+  (no-make-load-form object))
+
+(defmethod make-load-form ((object structure-object) &optional environment)
+  (no-make-load-form object))
+
+(defmethod make-load-form ((object condition) &optional environment)
+  (no-make-load-form object))
+
+(defun no-make-load-form (object)
+  (declare (si::c-local))
+  (error "No adequate specialization of MAKE-LOAD-FORM for an object of type"
+	 (type-of object)))
 
 (defmethod make-load-form ((class class) &optional environment)
   (declare (ignore environment))

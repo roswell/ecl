@@ -11,6 +11,9 @@ ECL 12.2.2:
 
  - REMOVE-METHOD and FIND-METHOD were not generic functions.
 
+ - MAKE-LOAD-FORM's methods for standard-object, structure-object and
+   condition did not signal an error).
+
 * Visible changes:
 
  - DIRECTORY no longer complains when it finds an inexistent directory
