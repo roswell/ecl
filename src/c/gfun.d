@@ -81,6 +81,9 @@ clos_set_funcallable_instance_function(cl_object x, cl_object function_or_t)
 	if (function_or_t == Ct) {
 		x->instance.isgf = ECL_STANDARD_DISPATCH;
                 x->instance.entry = generic_function_dispatch_vararg;
+	} else if (function_or_t == @'standard-generic-function') {
+		x->instance.isgf = ECL_RESTRICTED_DISPATCH;
+                x->instance.entry = generic_function_dispatch_vararg;
 	} else if (function_or_t == Cnil) {
 		x->instance.isgf = ECL_NOT_FUNCALLABLE;
                 x->instance.entry = FEnot_funcallable_vararg;
@@ -137,24 +140,77 @@ fill_spec_vector(cl_object vector, cl_object frame, cl_object gf)
 }
 
 static cl_object
-compute_applicable_method(cl_object frame, cl_object gf)
+frame_to_list(cl_object frame)
 {
-	/* method not cached */
-	cl_object methods, arglist, func;
-	cl_object *p;
+	cl_object arglist, *p;
 	for (p = frame->frame.base + frame->frame.size, arglist = Cnil;
              p != frame->frame.base; ) {
 		arglist = CONS(*(--p), arglist);
 	}
-	methods = _ecl_funcall3(@'clos::std-compute-applicable-methods', gf, arglist);
-	if (methods == Cnil) {
-		func = _ecl_funcall3(@'no-applicable-method', gf, arglist);
-		frame->frame.base[0] = OBJNULL;
-		return func;
-	} else {
-		return _ecl_funcall4(@'clos::std-compute-effective-method', gf,
-				     GFUN_COMB(gf), methods);
+	return arglist;
+}
+
+static cl_object
+frame_to_classes(cl_object frame)
+{
+	cl_object arglist, *p;
+	for (p = frame->frame.base + frame->frame.size, arglist = Cnil;
+             p != frame->frame.base; ) {
+		arglist = CONS(cl_class_of(*(--p)), arglist);
 	}
+	return arglist;
+}
+
+static cl_object
+generic_compute_applicable_method(cl_env_ptr env, cl_object frame, cl_object gf)
+{
+	/* method not cached */
+	cl_object memoize;
+	cl_object methods = _ecl_funcall3(@'clos::compute-applicable-methods-using-classes',
+					  gf, frame_to_classes(frame));
+	if (Null(memoize = env->values[1])) {
+		cl_object arglist = frame_to_list(frame);
+		methods = _ecl_funcall3(@'compute-applicable-methods',
+					gf, arglist);
+		if (methods == Cnil) {
+			cl_object func = _ecl_funcall3(@'no-applicable-method',
+						       gf, arglist);
+			frame->frame.base[0] = OBJNULL;
+			env->values[1] = Cnil;
+			return func;
+		}
+	}
+	methods = _ecl_funcall4(@'clos::std-compute-effective-method', gf,
+				GFUN_COMB(gf), methods);
+	env->values[1] = Ct;
+	return methods;
+}
+
+static cl_object
+restricted_compute_applicable_method(cl_env_ptr env, cl_object frame, cl_object gf)
+{
+	/* method not cached */
+	cl_object arglist = frame_to_list(frame);
+	cl_object methods = _ecl_funcall3(@'clos::std-compute-applicable-methods', gf, arglist);
+	if (methods == Cnil) {
+		cl_object func = _ecl_funcall3(@'no-applicable-method', gf, arglist);
+		frame->frame.base[0] = OBJNULL;
+		env->values[1] = Cnil;
+		return func;
+	}
+	methods = _ecl_funcall4(@'clos::std-compute-effective-method', gf,
+				GFUN_COMB(gf), methods);
+	env->values[1] = Ct;
+	return methods;
+}
+
+static cl_object
+compute_applicable_method(cl_env_ptr env, cl_object frame, cl_object gf)
+{
+	if (gf->instance.isgf == ECL_RESTRICTED_DISPATCH)
+		return restricted_compute_applicable_method(env, frame, gf);
+	else
+		return generic_compute_applicable_method(env, frame, gf);
 }
 
 cl_object
@@ -179,7 +235,7 @@ _ecl_standard_dispatch(cl_object frame, cl_object gf)
 	
 	vector = fill_spec_vector(cache->keys, frame, gf);
 	if (vector == OBJNULL) {
-		func = compute_applicable_method(frame, gf);
+		func = compute_applicable_method(env, frame, gf);
 	} else {
 		ecl_cache_record_ptr e = ecl_search_cache(cache);
 		if (e->key != OBJNULL) {
@@ -189,13 +245,15 @@ _ecl_standard_dispatch(cl_object frame, cl_object gf)
 			 * compute the applicable methods. We must save
 			 * the keys and recompute the cache location if
 			 * it was filled. */
-			cl_object keys = cl_copy_seq(vector);
-			func = compute_applicable_method(frame, gf);
-			if (e->key != OBJNULL) {
-				e = ecl_search_cache(cache);
+			func = compute_applicable_method(env, frame, gf);
+			if (env->values[1] != Cnil) {
+				cl_object keys = cl_copy_seq(vector);
+				if (e->key != OBJNULL) {
+					e = ecl_search_cache(cache);
+				}
+				e->key = keys;
+				e->value = func;
 			}
-			e->key = keys;
-			e->value = func;
 		}
 	}
 	func = _ecl_funcall3(func, frame, Cnil);

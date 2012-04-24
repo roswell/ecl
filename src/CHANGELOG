@@ -66,6 +66,11 @@ ECL 12.2.2:
 
  - Implemented COMPUTE-DISCRIMINATING-FUNCTION.
 
+ - ECL's discriminating functions use COMPUTE-APPLICABLE-METHODS-USING-CLASSES
+   on those classes in which the user may redefine or extend the
+   method. Elsewhere, ECL relies on the internal equivalent of
+   COMPUTE-APPLICABLE-METHODS, which _always_ memoizes results.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

@@ -504,6 +504,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 		case t_instance:
 			switch (reg0->instance.isgf) {
 			case ECL_STANDARD_DISPATCH:
+			case ECL_RESTRICTED_DISPATCH:
 				reg0 = _ecl_standard_dispatch(frame, reg0);
 				break;
 			case ECL_USER_DISPATCH:

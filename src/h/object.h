@@ -977,9 +977,10 @@ struct ecl_condition_variable {
 #define ECL_INSTANCEP(x)	((IMMEDIATE(x)==0) && ((x)->d.t==t_instance))
 #define ECL_NOT_FUNCALLABLE	0
 #define ECL_STANDARD_DISPATCH	1
-#define ECL_READER_DISPATCH	2
-#define ECL_WRITER_DISPATCH	3
-#define ECL_USER_DISPATCH	4
+#define ECL_RESTRICTED_DISPATCH	2
+#define ECL_READER_DISPATCH	3
+#define ECL_WRITER_DISPATCH	4
+#define ECL_USER_DISPATCH	5
 
 struct ecl_instance {		/*  instance header  */
 	HEADER1(isgf);

@@ -226,8 +226,6 @@
 					 ((typep x 'specializer) x)
 					 ((find-class x nil))
 					 (t
-					  (print name)
-					  (print specializers)
 					  (error "In method definition for ~A, found an invalid specializer ~A" name specializers))))
 			       specializers))
 	 (method (make-method (generic-function-method-class gf)
@@ -268,6 +266,14 @@
 	(setf (fdefinition name) gfun)
 	gfun)))
 
+(defun default-dispatch (generic-function)
+  (cond ((null *clos-booted*)
+	 'standard-generic-function)
+	((eq (class-id (class-of generic-function))
+	     'standard-generic-function)
+	 'standard-generic-function)
+	(t)))
+
 (defun compute-discriminating-function (generic-function)
   (values #'(lambda (&rest args)
 	      (multiple-value-bind (method-list ok)
@@ -288,30 +294,31 @@
 	  t))
 
 (defun set-generic-function-dispatch (gfun)
-  (let ((gf-type
-	   (loop named gf-type
-	      with common-class = nil
-	      for method in (generic-function-methods gfun)
-	      for class = (si::instance-class method)
-	      for specializers = (method-specializers method)
-	      do (cond ((null common-class)
-			(setf common-class class))
-		       ((not (eq common-class class))
-			(return-from gf-type t)))
-	      do (loop for spec in specializers
-		    unless (or (eq spec +the-t-class+)
-			       (and (si::instancep spec)
-				    (eq (si::instance-class spec)
-					+the-standard-class+)))
-		    do (return-from gf-type t))
-	      finally (cond ((null class)
-			     (return-from gf-type t))
-			    ((eq class (find-class 'standard-reader-method nil))
-			     (return-from gf-type 'standard-reader-method))
-			    ((eq class (find-class 'standard-writer-method nil))
-			     (return-from gf-type 'standard-writer-method))
-			    (t
-			     (return-from gf-type t))))))
+  (let* ((base (default-dispatch gfun))
+	 (gf-type
+	  (loop named gf-type
+	     with common-class = nil
+	     for method in (generic-function-methods gfun)
+	     for class = (si::instance-class method)
+	     for specializers = (method-specializers method)
+	     do (cond ((null common-class)
+		       (setf common-class class))
+		      ((not (eq common-class class))
+		       (return-from gf-type base)))
+	     do (loop for spec in specializers
+		   unless (or (eq spec +the-t-class+)
+			      (and (si::instancep spec)
+				   (eq (si::instance-class spec)
+				       +the-standard-class+)))
+		   do (return-from gf-type base))
+	     finally (cond ((null class)
+			    (return-from gf-type base))
+			   ((eq class (find-class 'standard-reader-method nil))
+			    (return-from gf-type 'standard-reader-method))
+			   ((eq class (find-class 'standard-writer-method nil))
+			    (return-from gf-type 'standard-writer-method))
+			   (t
+			    (return-from gf-type base))))))
     (when (and *clos-booted* (eq gf-type t))
       (multiple-value-bind (function optimize)
 	  (compute-discriminating-function gfun)

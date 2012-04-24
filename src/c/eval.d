@@ -58,6 +58,7 @@ ecl_apply_from_stack_frame(cl_object frame, cl_object x)
 	case t_instance:
 		switch (fun->instance.isgf) {
 		case ECL_STANDARD_DISPATCH:
+		case ECL_RESTRICTED_DISPATCH:
 			return _ecl_standard_dispatch(frame, fun);
 		case ECL_USER_DISPATCH:
 			fun = fun->instance.slots[fun->instance.length - 1];
