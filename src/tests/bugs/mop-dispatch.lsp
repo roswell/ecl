@@ -116,3 +116,54 @@
 	     (plusp *mop-discriminator-recomputation*))
 	   t))
   t)
+
+;;; Date: 24/04/2012
+;;; Description:
+;;;
+;;;	Verify ECL calls COMPUTE-APPLICABLE-METHODS-USING-CLASSES for
+;;;	user-defined generic function classes.
+;;;
+(deftest mop-compute-applicable-methods-using-classes-is-honored
+    (progn
+      (defparameter *mop-dispatch-used* 0)
+      (fmakunbound 'foo)
+      (defclass my-generic-function (standard-generic-function)
+	())
+      (defmethod clos:compute-applicable-methods-using-classes
+	  ((gf my-generic-function) classes)
+	(incf *mop-dispatch-used*)
+	(call-next-method))
+      (defgeneric foo (a)
+	(:generic-function-class my-generic-function)
+	(:method ((a number)) (cos 1.0)))
+      (and (zerop *mop-dispatch-used*)
+	   (progn (foo 1.0) (plusp *mop-dispatch-used*))))
+  t)
+
+;;; Date: 24/04/2012
+;;; Description:
+;;;
+;;;	Verify ECL calls COMPUTE-APPLICABLE-METHODS for
+;;;	user-defined generic function classes.
+;;;
+(deftest mop-compute-applicable-methods-is-honored
+    (progn
+      (defparameter *mop-dispatch-used* 0)
+      (fmakunbound 'foo)
+      (defclass my-generic-function (standard-generic-function)
+	())
+      (defmethod clos:compute-applicable-methods-using-classes
+	  ((gf my-generic-function) classes)
+	(incf *mop-dispatch-used*)
+	(values nil nil))
+      (defmethod compute-applicable-methods
+	  ((gf my-generic-function) args)
+	(incf *mop-dispatch-used*)
+	(call-next-method))
+      (defgeneric foo (a)
+	(:generic-function-class my-generic-function)
+	(:method ((a number)) (cos 1.0)))
+      (and (zerop *mop-dispatch-used*)
+	   (progn (foo 1.0) (= *mop-dispatch-used* 2))))
+  t)
+
