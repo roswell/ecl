@@ -162,7 +162,7 @@
       (specializers :initarg :specializers :accessor method-specializers)
       (qualifiers :initform nil :initarg :qualifiers :accessor method-qualifiers)
       (function :initarg :function :accessor method-function)
-      (documentation :initform nil :initarg documentation)
+      (documentation :initarg :documentation :initform nil)
       (plist :initform nil :initarg :plist :accessor method-plist)
       (keywords :initform nil :accessor method-keywords))))
 

@@ -62,7 +62,7 @@
 	  (multiple-value-bind (fn-form options)
 	      (make-method-lambda generic-function method lambda-form env)
 	    (when documentation
-	      (setf options (list* 'documentation documentation options)))
+	      (setf options (list* :documentation documentation options)))
 	    (multiple-value-bind (wrapped-lambda wrapped-p)
 		(simplify-lambda name fn-form)
 	      (unless wrapped-p
