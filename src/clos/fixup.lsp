@@ -225,7 +225,9 @@ their lambda lists ~A and ~A are not congruent."
 	(method-generic-function method) nil)
   (si:clear-gfun-hash gf)
   (loop for spec in (method-specializers method)
-     do (add-direct-method spec method))
+     do (remove-direct-method spec method))
+  (compute-g-f-spec-list gf)
+  (set-generic-function-dispatch gf)
   (update-dependents gf (list 'remove-method method))
   gf)
 
@@ -344,3 +346,5 @@ their lambda lists ~A and ~A are not congruent."
 
 (function-to-method 'make-method-lambda
   '((gf standard-generic-function) (method standard-method) lambda-form environment))
+(function-to-method 'compute-discriminating-function
+  '((gf standard-generic-function)))

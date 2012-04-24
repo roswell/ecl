@@ -64,6 +64,8 @@ ECL 12.2.2:
  - DEFMETHOD now relies on MAKE-METHOD-LAMBDA to create the appropriate
    function.
 
+ - Implemented COMPUTE-DISCRIMINATING-FUNCTION.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

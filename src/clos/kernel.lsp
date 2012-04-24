@@ -268,16 +268,36 @@
 	(setf (fdefinition name) gfun)
 	gfun)))
 
+(defun compute-discriminating-function (generic-function)
+  (values #'(lambda (&rest args)
+	      (multiple-value-bind (method-list ok)
+		  (compute-applicable-methods-using-classes
+		   generic-function
+		   (mapcar #'class-of args))
+		(unless ok
+		  (setf method-list
+			(compute-applicable-methods generic-function args))
+		  (unless method-list
+		    (no-applicable-methods generic-function args)))
+		(funcall (compute-effective-method
+			  generic-function
+			  (generic-function-method-combination generic-function)
+			  method-list)
+			 args
+			 nil)))
+	  t))
+
 (defun set-generic-function-dispatch (gfun)
-  (flet ((gf-type (gfun)
-	   (loop with common-class = nil
+  (let ((gf-type
+	   (loop named gf-type
+	      with common-class = nil
 	      for method in (generic-function-methods gfun)
 	      for class = (si::instance-class method)
 	      for specializers = (method-specializers method)
 	      do (cond ((null common-class)
 			(setf common-class class))
 		       ((not (eq common-class class))
-			(return t)))
+			(return-from gf-type t)))
 	      do (loop for spec in specializers
 		    unless (or (eq spec +the-t-class+)
 			       (and (si::instancep spec)
@@ -285,17 +305,22 @@
 					+the-standard-class+)))
 		    do (return-from gf-type t))
 	      finally (cond ((null class)
-			     (return t))
+			     (return-from gf-type t))
 			    ((eq class (find-class 'standard-reader-method nil))
-			     (return 'standard-reader-method))
+			     (return-from gf-type 'standard-reader-method))
 			    ((eq class (find-class 'standard-writer-method nil))
-			     (return 'standard-writer-method))
+			     (return-from gf-type 'standard-writer-method))
 			    (t
-			     (return t))))))
-    (set-funcallable-instance-function gfun (gf-type gfun))))
+			     (return-from gf-type t))))))
+    (when (and *clos-booted* (eq gf-type t))
+      (multiple-value-bind (function optimize)
+	  (compute-discriminating-function gfun)
+	(unless optimize
+	  (setf gf-type function))))
+    ;(print (list (generic-function-name gfun) gf-type))
+    (set-funcallable-instance-function gfun gf-type)))
 
 
-
 ;;; ----------------------------------------------------------------------
 ;;; COMPUTE-APPLICABLE-METHODS
 ;;;

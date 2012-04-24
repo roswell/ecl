@@ -170,6 +170,7 @@
   (when (and l-l-p (not a-o-p))
     (setf (generic-function-argument-precedence-order gfun)
 	  (lambda-list-required-arguments lambda-list)))
+  (set-generic-function-dispatch gfun)
   gfun)
 
 (defmethod shared-initialize ((gfun standard-generic-function) slot-names
@@ -228,9 +229,7 @@
   (remf args :delete-methods)
   (when (and method-class-p (symbolp generic-function-class))
     (setf args (list* :method-class (find-class method-class) args)))
-  (set-funcallable-instance-function
-   (apply #'make-instance generic-function-class :name name args)
-   t))
+  (apply #'make-instance generic-function-class :name name args))
 
 (defun ensure-generic-function (name &rest args &key &allow-other-keys)
   (let ((gfun (si::traced-old-definition name)))
