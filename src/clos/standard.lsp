@@ -699,11 +699,13 @@ because it contains a reference to the undefined class~%  ~A"
 	(dolist (fname (slot-definition-readers slotd))
 	  (add-method (ensure-generic-function fname)
 		      (make-method reader-class nil `(,standard-class) '(self)
-				   reader (list :slot-definition slotd))))
+				   (wrapped-method-function reader)
+				   (list :slot-definition slotd))))
 	(dolist (fname (slot-definition-writers slotd))
 	  (add-method (ensure-generic-function fname)
 		      (make-method writer-class nil `(,(find-class t) ,standard-class) '(value self)
-				   writer (list :slot-definition slotd))))))))
+				   (wrapped-method-function writer)
+				   (list :slot-definition slotd))))))))
 
 ;;; ======================================================================
 ;;; STANDARD-OBJECT
