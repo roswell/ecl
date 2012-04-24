@@ -215,8 +215,7 @@
 ;;; ----------------------------------------------------------------------
 ;;; Methods
 
-(defun install-method (name qualifiers specializers lambda-list doc fun wrap
-		       &optional method-class &rest options)
+(defun install-method (name qualifiers specializers lambda-list fun wrap &rest options)
   (declare (ignore doc)
 	   (notinline ensure-generic-function))
 ;  (record-definition 'method `(method ,name ,@qualifiers ,specializers))
@@ -231,10 +230,9 @@
 					  (print specializers)
 					  (error "In method definition for ~A, found an invalid specializer ~A" name specializers))))
 			       specializers))
-	 (method (make-method (or method-class
-				  (generic-function-method-class gf))
+	 (method (make-method (generic-function-method-class gf)
 			      qualifiers specializers lambda-list
-			      fun nil options)))
+			      fun options)))
     (add-method gf method)
     method))
 
@@ -347,6 +345,9 @@
 
 (defun sort-applicable-methods (gf applicable-list args)
   (declare (optimize (safety 0) (speed 3)))
+  (when (null applicable-list)
+    (print `(not-applicable ,(generic-function-name gf)
+			    ,(mapcar #'type-of args))))
   (let ((f (generic-function-a-p-o-function gf))
 	(args-specializers (mapcar #'class-of args)))
     ;; reorder args to match the precedence order

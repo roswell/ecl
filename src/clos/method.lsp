@@ -61,8 +61,8 @@
 		       (type-of generic-function))))
 	  (multiple-value-bind (fn-form options)
 	      (make-method-lambda generic-function method lambda-form env)
-	    (when options
-	      (setf options (list* nil (mapcar #'si::maybe-quote options))))
+	    (when documentation
+	      (setf options (list* 'documentation documentation options)))
 	    (multiple-value-bind (wrapped-lambda wrapped-p)
 		(simplify-lambda name fn-form)
 	      (unless wrapped-p
@@ -70,10 +70,10 @@
 	      (ext:register-with-pde whole
 				     `(install-method ',name ',qualifiers
 						      ,(list 'si::quasiquote specializers)
-						      ',lambda-list ',documentation
+						      ',lambda-list
 						      ,(maybe-remove-block wrapped-lambda)
 						      ,wrapped-p
-						      ,@options)))))))))
+						      ,@(mapcar #'si::maybe-quote options))))))))))
 
 (defun maybe-remove-block (method-lambda)
   (when (eq (first method-lambda) 'lambda)
@@ -338,8 +338,7 @@ have disappeared."
                  collect k)))
     method))
 
-(defun make-method (method-class qualifiers specializers lambda-list
-				 fun plist options)
+(defun make-method (method-class qualifiers specializers lambda-list fun options)
   (declare (ignore options))
   (let* ((instance-size (+ #.(length +standard-method-slots+)
 			   (if (eq method-class 'standard-method)
@@ -349,8 +348,7 @@ have disappeared."
 	  (method-lambda-list method) lambda-list
 	  (method-function method) fun
 	  (method-specializers method) specializers
-	  (method-qualifiers method) qualifiers
-	  (method-plist method) plist)
+	  (method-qualifiers method) qualifiers)
     (add-method-keywords method)))
 
 ;;; early version used during bootstrap

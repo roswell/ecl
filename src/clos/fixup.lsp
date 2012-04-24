@@ -117,8 +117,7 @@
 
 (defun method-p (method) (typep method 'METHOD))
 
-(defun make-method (method-class qualifiers specializers arglist
-				 function plist options)
+(defun make-method (method-class qualifiers specializers arglist function options)
   (apply #'make-instance
 	 method-class
 	 :generic-function nil
@@ -126,7 +125,6 @@
 	 :lambda-list arglist
 	 :specializers specializers
 	 :function function
-	 :plist plist
 	 :allow-other-keys t
 	 options))
 
@@ -247,16 +245,11 @@ their lambda lists ~A and ~A are not congruent."
   (:method ((gf standard-generic-function) args)
     (std-compute-applicable-methods gf args)))
 
-(install-method
- 'aux-compute-applicable-methods
- 'nil
- '(standard-generic-function t)
- '(gf args)
- 'nil
- #'(ext:lambda-block compute-applicable-methods (gf args)
-     (std-compute-applicable-methods gf args))
- t)
-(setf (fdefinition 'compute-applicable-methods) #'aux-compute-applicable-methods)
+(defmethod aux-compute-applicable-methods ((gf standard-generic-function) args)
+  (std-compute-applicable-methods gf args))
+(let ((aux #'aux-compute-applicable-methods))
+  (setf (generic-function-name aux) 'compute-applicable-methods
+	(fdefinition 'compute-applicable-methods) aux))
 
 (defmethod compute-applicable-methods-using-classes
     ((gf standard-generic-function) classes)
@@ -348,3 +341,6 @@ their lambda lists ~A and ~A are not congruent."
   (add-dependent #'shared-initialize x)
   (add-dependent #'initialize-instance x)
   (add-dependent #'allocate-instance x))
+
+(function-to-method 'make-method-lambda
+  '((gf standard-generic-function) (method standard-method) lambda-form environment))

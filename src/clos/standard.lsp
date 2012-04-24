@@ -697,11 +697,13 @@ because it contains a reference to the undefined class~%  ~A"
 			     (apply #'writer-method-class standard-class slotd
 				    writer-args))))
 	(dolist (fname (slot-definition-readers slotd))
-	  (install-method fname nil `(,standard-class) '(self) nil
-			  reader t reader-class :slot-definition slotd))
+	  (add-method (ensure-generic-function fname)
+		      (make-method reader-class nil `(,standard-class) '(self)
+				   reader (list :slot-definition slotd))))
 	(dolist (fname (slot-definition-writers slotd))
-	  (install-method fname nil `(,(find-class t) ,standard-class) '(value self)
-			  nil writer t writer-class :slot-definition slotd))))))
+	  (add-method (ensure-generic-function fname)
+		      (make-method writer-class nil `(,(find-class t) ,standard-class) '(value self)
+				   writer (list :slot-definition slotd))))))))
 
 ;;; ======================================================================
 ;;; STANDARD-OBJECT
