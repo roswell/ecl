@@ -61,6 +61,9 @@ ECL 12.2.2:
    SPECIALIZER-DIRECT-GENERIC-FUNCTIONS and EQL-SPECIALIZER-OBJECT. ECL now
    uses these objects internally for method dispatch.
 
+ - DEFMETHOD now relies on MAKE-METHOD-LAMBDA to create the appropriate
+   function.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

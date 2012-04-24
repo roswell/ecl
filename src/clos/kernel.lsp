@@ -215,7 +215,7 @@
 ;;; ----------------------------------------------------------------------
 ;;; Methods
 
-(defun install-method (name qualifiers specializers lambda-list doc plist fun wrap
+(defun install-method (name qualifiers specializers lambda-list doc fun wrap
 		       &optional method-class &rest options)
   (declare (ignore doc)
 	   (notinline ensure-generic-function))
@@ -227,12 +227,14 @@
 					 ((typep x 'specializer) x)
 					 ((find-class x nil))
 					 (t
+					  (print name)
+					  (print specializers)
 					  (error "In method definition for ~A, found an invalid specializer ~A" name specializers))))
 			       specializers))
 	 (method (make-method (or method-class
 				  (generic-function-method-class gf))
 			      qualifiers specializers lambda-list
-			      fun plist options)))
+			      fun nil options)))
     (add-method gf method)
     method))
 

@@ -35,29 +35,76 @@
 ;;; DEFMETHOD
 ;;;
 
-(defmacro defmethod (&whole whole &rest args &environment env)
-  (multiple-value-bind (name qualifiers specialized-lambda-list body)
-      (parse-defmethod args)
+(defmacro defmethod (&whole whole name &rest args &environment env)
+  (let* ((*print-length* 3)
+	 (*print-depth* 2)
+	 (qualifiers (loop while (and args (not (listp (first args))))
+			collect (pop args)))
+	 (specialized-lambda-list
+	  (if args
+	      (pop args)
+	      (error "Illegal defmethod form: missing lambda list")))
+	 (body args))
     (multiple-value-bind (lambda-list required-parameters specializers)
 	(parse-specialized-lambda-list specialized-lambda-list)
-      (multiple-value-bind (fn-form doc plist)
-	  (expand-defmethod name qualifiers lambda-list
-			    required-parameters specializers body env)
-	(declare (ignore required-parameters))
-	(ext:register-with-pde whole
-			       `(install-method ',name ',qualifiers
-						,(list 'si::quasiquote specializers)
-						',lambda-list ',doc
-						',plist ,fn-form t))))))
+      (multiple-value-bind (lambda-form declarations documentation)
+	  (make-raw-lambda name lambda-list required-parameters specializers body env)
+	(let* ((generic-function (ensure-generic-function name))
+	       (method-class (generic-function-method-class generic-function))
+	       method)
+	  (when *clos-booted*
+	    (when (symbolp method-class)
+	      (setf method-class (find-class method-class nil)))
+	    (if method-class
+		(setf method (class-prototype method-class))
+		(error "Cannot determine the method class for generic functions of type ~A"
+		       (type-of generic-function))))
+	  (multiple-value-bind (fn-form options)
+	      (make-method-lambda generic-function method lambda-form env)
+	    (when options
+	      (setf options (list* nil (mapcar #'si::maybe-quote options))))
+	    (multiple-value-bind (wrapped-lambda wrapped-p)
+		(simplify-lambda name fn-form)
+	      (unless wrapped-p
+		(error "Unable to unwrap function"))
+	      (ext:register-with-pde whole
+				     `(install-method ',name ',qualifiers
+						      ,(list 'si::quasiquote specializers)
+						      ',lambda-list ',documentation
+						      ,(maybe-remove-block wrapped-lambda)
+						      ,wrapped-p
+						      ,@options)))))))))
 
-
-;;; ----------------------------------------------------------------------
-;;;                                                  method body expansion
+(defun maybe-remove-block (method-lambda)
+  (when (eq (first method-lambda) 'lambda)
+    (multiple-value-bind (declarations body documentation)
+	(si::find-declarations (cddr method-lambda))
+      (let (block)
+	(when (and (null (rest body))
+		   (listp (setf block (first body)))
+		   (eq (first block) 'block))
+	  (setf method-lambda `(ext:lambda-block ,(second block) ,(second method-lambda)
+				,@declarations
+				,@(cddr block)))
+	  ))))
+  method-lambda)
 
-(defun expand-defmethod (generic-function-name qualifiers lambda-list
-			 required-parameters specializers body env)
-  (declare (ignore qualifiers)
-	   (si::c-local))
+(defun simplify-lambda (method-name fn-form)
+  (let ((aux fn-form))
+    (if (and (eq (pop aux) 'lambda)
+	     (equalp (pop aux) '(.combined-method-args. *next-methods*))
+	     (equalp (pop aux) '(declare (special .combined-method-args. *next-methods*)))
+	     (null (rest aux))
+	     (= (length (setf aux (first aux))) 3)
+	     (eq (first aux) 'apply)
+	     (eq (third aux) '.combined-method-args.)
+	     (listp (setf aux (second aux)))
+	     (eq (first aux) 'lambda))
+	(values aux t)
+	(values fn-form nil))))
+
+(defun make-raw-lambda (name lambda-list required-parameters specializers body env)
+  (declare (si::c-local))
   (multiple-value-bind (declarations real-body documentation)
       (sys::find-declarations body)
     ;; FIXME!! This deactivates the checking of keyword arguments
@@ -84,6 +131,7 @@
 			nconc `((type ,type ,name)
 				(si::no-check-type ,name))))
 		   (cdar declarations)))
+	   (block `(block ,(si::function-block-name name) ,@real-body))
 	   (method-lambda
 	    ;; Remove the documentation string and insert the
 	    ;; appropriate class declarations.  The documentation
@@ -92,43 +140,42 @@
 	    ;; second of the method lambda.  The class declarations
 	    ;; are inserted to communicate the class of the method's
 	    ;; arguments to the code walk.
-	    `(ext::lambda-block ,generic-function-name
-	      ,lambda-list
-	      ,@(and class-declarations `((declare ,@class-declarations)))
-	      ,@real-body))
-	   (plist ()))
-      (multiple-value-bind (call-next-method-p next-method-p-p in-closure-p)
-	  (walk-method-lambda method-lambda required-parameters env)
+	    `(lambda ,lambda-list
+	       ,@(and class-declarations `((declare ,@class-declarations)))
+	       ,(if copied-variables
+		    `(let* ,copied-variables ,block)
+		     block))))
+      (values method-lambda declarations documentation))))
 
-	(when (or call-next-method-p next-method-p-p)
-	  (setf plist '(:needs-next-method-p t)))
+(defun make-method-lambda (gf method method-lambda env)
+  (multiple-value-bind (call-next-method-p next-method-p-p in-closure-p)
+      (walk-method-lambda method-lambda env)
+    (values `(lambda (.combined-method-args. *next-methods*)
+	       (declare (special .combined-method-args. *next-methods*))
+	       (apply ,(if in-closure-p
+			   (add-call-next-method-closure method-lambda)
+			   method-lambda)
+		      .combined-method-args.))
+	    nil)))
 
-	(when in-closure-p
-	  (setf plist '(:needs-next-method-p FUNCTION))
-	  (setf real-body
-		`((let* ((.closed-combined-method-args.
-                          (if (listp .combined-method-args.)
-                              .combined-method-args.
-                              (apply #'list .combined-method-args.)))
-			 (.next-methods. *next-methods*))
-		    (flet ((call-next-method (&rest args)
-			     (unless .next-methods.
-			       (error "No next method"))
-			     (funcall (car .next-methods.)
-				      (or args .closed-combined-method-args.)
-				      (rest .next-methods.)))
-			   (next-method-p ()
-			     .next-methods.))
-		      ,@real-body)))))
-	(values
-	 `#'(ext::lambda-block ,generic-function-name
-	      ,lambda-list
-	      ,@(and class-declarations `((declare ,@class-declarations)))
-	      ,@(if copied-variables
-		    `((let* ,copied-variables ,@real-body))
-		    real-body))
-	 documentation
-	 plist)))))
+(defun add-call-next-method-closure (method-lambda)
+  (multiple-value-bind (declarations real-body documentation)
+      (si::find-declarations (cddr method-lambda))
+    `(lambda ,(second method-lambda)
+       (let* ((.closed-combined-method-args.
+	       (if (listp .combined-method-args.)
+		   .combined-method-args.
+		   (apply #'list .combined-method-args.)))
+	      (.next-methods. *next-methods*))
+	 (flet ((call-next-method (&rest args)
+		  (unless .next-methods.
+		    (error "No next method"))
+		  (funcall (car .next-methods.)
+			   (or args .closed-combined-method-args.)
+			   (rest .next-methods.)))
+		(next-method-p ()
+		  .next-methods.))
+	   ,@real-body)))))
 
 (defun environment-contains-closure (env)
   ;;
@@ -145,9 +192,8 @@
 		 (> (incf counter) 1)) 
 	(return t)))))
 
-(defun walk-method-lambda (method-lambda required-parameters env)
-  (declare (si::c-local)
-	   (ignore required-parameters))
+(defun walk-method-lambda (method-lambda env)
+  (declare (si::c-local))
   (let ((call-next-method-p nil)
 	(next-method-p-p nil)
 	(in-closure-p nil))
@@ -310,9 +356,6 @@ have disappeared."
 ;;; early version used during bootstrap
 (defun method-p (x)
   (si::instancep x))
-
-(defun method-needs-next-methods-p (method)
-  (getf (method-plist method) :needs-next-methods-p))
 
 ;;; early version used during bootstrap
 (defun add-method (gf method)

@@ -253,7 +253,6 @@ their lambda lists ~A and ~A are not congruent."
  '(standard-generic-function t)
  '(gf args)
  'nil
- 'nil
  #'(ext:lambda-block compute-applicable-methods (gf args)
      (std-compute-applicable-methods gf args))
  t)
