@@ -57,3 +57,62 @@
 	       (= (length m3) 1)
 	       t))))
   t)
+
+;;; Date: 24/04/2012
+;;; Description:
+;;;
+;;;	COMPUTE-DISCRIMINATING-FUNCTION is invoked and honored by ECL.
+;;;
+(deftest mop-discriminator
+    (progn
+      (fmakunbound 'foo)
+      (defclass my-generic-function (standard-generic-function)
+	())
+      (defmethod clos:compute-discriminating-function ((gf my-generic-function))
+	;; We compute the invocaions of c-d-f. Note that it is invoked
+	;; quite often -- we could probably optimize this.
+	#'(lambda (&rest args)
+	    args))
+      (defgeneric foo (a)
+	(:generic-function-class my-generic-function))
+      (unwind-protect
+	   (foo 2)
+	(fmakunbound 'foo)))
+  (2))
+
+;;; Date: 24/04/2012
+;;; Description:
+;;;
+;;;	COMPUTE-DISCRIMINATING-FUNCTION is invoked on ADD-METHOD, REMOVE-METHOD,
+;;;	DEFGENERIC, INITIALIZE-INSTANCE and REINITIALIZE-INSTANCE acting on
+;;;	generic functions.
+;;;
+(deftest mop-discriminator-recomputation
+    (progn
+      (defparameter *mop-discriminator-recomputation* 0)
+      (fmakunbound 'foo)
+      (defclass my-generic-function (standard-generic-function)
+	())
+      (defmethod clos:compute-discriminating-function ((gf my-generic-function))
+	;; We compute the invocaions of c-d-f. Note that it is invoked
+	;; quite often -- we could probably optimize this.
+	(incf *mop-discriminator-recomputation*)
+	(call-next-method))
+      (and (progn
+	     (setf *mop-discriminator-recomputation* 0)
+	     (eval '(defgeneric foo (a)
+		     (:generic-function-class my-generic-function)))
+	     (plusp *mop-discriminator-recomputation* ))
+	   (typep #'foo 'my-generic-function)
+	   (progn
+	     (setf *mop-discriminator-recomputation* 0)
+	     (eval '(defmethod foo ((a number)) (print a)))
+	     (plusp *mop-discriminator-recomputation*))
+	   (progn
+	     (setf *mop-discriminator-recomputation* 0)
+	     (eval '(remove-method #'foo (first (compute-applicable-methods
+						 #'foo
+						 (list 1.0)))))
+	     (plusp *mop-discriminator-recomputation*))
+	   t))
+  t)
