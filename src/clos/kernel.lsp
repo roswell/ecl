@@ -321,10 +321,10 @@
 			    (return-from gf-type base))))))
     (when (and *clos-booted* (eq gf-type t))
       (multiple-value-bind (function optimize)
-	  (compute-discriminating-function gfun)
+	  (locally (declare (notinline compute-discriminating-function))
+	    (compute-discriminating-function gfun))
 	(unless optimize
 	  (setf gf-type function))))
-    ;(print (list (generic-function-name gfun) gf-type))
     (set-funcallable-instance-function gfun gf-type)))
 
 
@@ -377,9 +377,6 @@
 
 (defun sort-applicable-methods (gf applicable-list args)
   (declare (optimize (safety 0) (speed 3)))
-  (when (null applicable-list)
-    (print `(not-applicable ,(generic-function-name gf)
-			    ,(mapcar #'type-of args))))
   (let ((f (generic-function-a-p-o-function gf))
 	(args-specializers (mapcar #'class-of args)))
     ;; reorder args to match the precedence order
