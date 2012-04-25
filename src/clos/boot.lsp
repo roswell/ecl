@@ -38,6 +38,22 @@
       (setf (slot-table class) (make-hash-table :size 2)))
     class))
 
+(defun add-slots (class slots)
+  ;; It does not matter that we pass NIL instead of a class object,
+  ;; because CANONICAL-SLOT-TO-DIRECT-SLOT will make simple slots.
+  (let* ((all-slots (loop for s in (parse-slots slots)
+		       collect (canonical-slot-to-direct-slot nil s)))
+	 (table (make-hash-table :size 24)))
+    (loop for i from 0
+       for s in all-slots
+       for name = (slot-definition-name s)
+       do (setf (slot-definition-location s) i
+		(gethash name table) s))
+    (setf (class-slots class) all-slots
+	  (class-size class) (length all-slots)
+	  (slot-table class) table
+	  (class-direct-slots class) all-slots)))
+
 ;; 1) Create the classes
 ;;
 ;; Notice that, due to circularity in the definition, STANDARD-CLASS has
@@ -53,72 +69,18 @@
        (specializer (make-empty-standard-class 'SPECIALIZER standard-class))
        (eql-specializer (make-empty-standard-class 'EQL-SPECIALIZER standard-class))
        (the-class (make-empty-standard-class 'CLASS standard-class))
-       (the-t (make-empty-standard-class 'T the-class))
-       ;; It does not matter that we pass NIL instead of a class object,
-       ;; because CANONICAL-SLOT-TO-DIRECT-SLOT will make simple slots.
-       (specializer-slots
-	(loop for s in (parse-slots '#.(remove-accessors +specializer-slots+))
-	   collect (canonical-slot-to-direct-slot nil s)))
-       (eql-specializer-slots
-	(loop for s in (parse-slots '#.(remove-accessors +eql-specializer-slots+))
-	   collect (canonical-slot-to-direct-slot nil s)))
-       (class-slots
-	(loop for s in (parse-slots '#.(remove-accessors +class-slots+))
-	   collect (canonical-slot-to-direct-slot nil s)))
-       (standard-slots
-	(loop for s in (parse-slots '#.(remove-accessors +standard-class-slots+))
-	   collect (canonical-slot-to-direct-slot nil s)))
-       (hash-table (make-hash-table :size 24)))
+       (the-t (make-empty-standard-class 'T the-class)))
 
   ;; 2) STANDARD-CLASS and CLASS and others are classes with slots. Create a
   ;; hash table for them, so that SLOT-VALUE works. Notice that we
   ;; make a intentional mistake: CLASS and STANDARD-CLASS share the same
   ;; hashtable!!
-  (do* ((i 0 (1+ i))
-	(slots eql-specializer-slots (cdr slots)))
-       ((endp slots))
-    (let ((slotd (first slots)))
-      (setf (slot-definition-location slotd) i)
-      (setf (gethash (slot-definition-name slotd) hash-table) slotd)))
-  (do* ((i 0 (1+ i))
-	(slots standard-slots (cdr slots)))
-       ((endp slots))
-    (let ((slotd (first slots)))
-      (setf (slot-definition-location slotd) i)
-      (setf (gethash (slot-definition-name slotd) hash-table) slotd)))
-  (dolist (slotd class-slots)
-    (setf (slot-definition-location slotd)
-	  (slot-definition-location (gethash (slot-definition-name slotd) hash-table))))
-  (dolist (slotd specializer-slots)
-    (setf (slot-definition-location slotd)
-	  (slot-definition-location (gethash (slot-definition-name slotd) hash-table))))
-  (setf (class-slots               the-class) (copy-list class-slots)
-	(class-size                the-class) (length class-slots)
-	(slot-table                the-class) hash-table
-	(class-direct-slots        the-class) class-slots)
-  (setf (class-slots               specializer) (copy-list specializer-slots)
-	(class-size                specializer) (length specializer-slots)
-	(slot-table                specializer) hash-table
-	(class-direct-slots        specializer) specializer-slots)
-  (setf (class-slots               eql-specializer) (copy-list eql-specializer-slots)
-	(class-size                eql-specializer) (length eql-specializer-slots)
-	(slot-table                eql-specializer) hash-table
-	(class-direct-slots        eql-specializer) eql-specializer-slots)
-  (setf (class-slots               standard-class) standard-slots
-	(class-size                standard-class) (length standard-slots)
-	(slot-table                standard-class) hash-table
-	(class-direct-slots        standard-class)
-        (set-difference standard-slots class-slots))
-  (setf	(class-slots               funcallable-standard-class) standard-slots
-	(class-size                funcallable-standard-class) (length standard-slots)
-	(slot-table                funcallable-standard-class) hash-table
-	(class-direct-slots        funcallable-standard-class)
-        (class-direct-slots        standard-class))
-  (setf	(class-slots               std-class) standard-slots
-	(class-size                std-class) (length standard-slots)
-	(slot-table                std-class) hash-table
-	(class-direct-slots        std-class)
-        (class-direct-slots        standard-class))
+  (add-slots the-class '#.(remove-accessors +class-slots+))
+  (add-slots std-class #1='#.(remove-accessors +standard-class-slots+))
+  (add-slots standard-class #1#)
+  (add-slots funcallable-standard-class #1#)
+  (add-slots specializer '#.(remove-accessors +specializer-slots+))
+  (add-slots eql-specializer '#.(remove-accessors +eql-specializer-slots+))
 
   ;; 3) Fix the class hierarchy
   ;; FROM AMOP:
@@ -331,6 +293,8 @@ Slot name: ~A"
 (defmethod slot-missing ((class t) object slot-name operation 
 			 &optional new-value)
   (declare (ignore operation new-value class))
+  (print slot-name)
+  (print (class-id class))
   (error "~A is not a slot of ~A" slot-name object))
 
 (defmethod slot-unbound ((class t) object slot-name)
