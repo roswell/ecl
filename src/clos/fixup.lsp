@@ -93,7 +93,7 @@
       ;; complete the generic function object
       (si:instance-class-set gfun (find-class 'STANDARD-GENERIC-FUNCTION))
       (si::instance-sig-set gfun)
-      (setf (generic-function-method-class gfun) standard-method-class)
+      (setf (slot-value gfun 'method-class) standard-method-class)
       (setf (slot-value gfun 'documentation) nil)
       )
     (dolist (method (cdr method-info))
@@ -347,4 +347,6 @@ their lambda lists ~A and ~A are not congruent."
 (function-to-method 'make-method-lambda
   '((gf standard-generic-function) (method standard-method) lambda-form environment))
 (function-to-method 'compute-discriminating-function
+  '((gf standard-generic-function)))
+(function-to-method 'generic-function-method-class
   '((gf standard-generic-function)))

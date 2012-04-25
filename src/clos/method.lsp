@@ -35,6 +35,11 @@
 ;;; DEFMETHOD
 ;;;
 
+(defun generic-function-method-class (generic-function)
+  (if *clos-booted*
+      (slot-value generic-function 'method-class)
+      'standard-method))
+
 (defmacro defmethod (&whole whole name &rest args &environment env)
   (let* ((*print-length* 3)
 	 (*print-depth* 2)

@@ -136,8 +136,7 @@
        :accessor generic-function-argument-precedence-order)
       (method-class
        :initarg :method-class
-       :initform (find-class 'standard-method)
-       :accessor generic-function-method-class)
+       :initform (find-class 'standard-method))
       (documentation :initarg :documentation :initform nil)
       (methods :initform nil :accessor generic-function-methods)
       (a-p-o-function :initform nil :accessor generic-function-a-p-o-function)
@@ -257,7 +256,6 @@
 	      (generic-function-method-combination gfun) '(standard)
 	      (generic-function-methods gfun) nil
 	      (generic-function-spec-list gfun) nil
-	      (generic-function-method-class gfun) 'standard-method
               (generic-function-dependents gfun) nil)
 	(when l-l-p
 	  (setf (generic-function-argument-precedence-order gfun)
