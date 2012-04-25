@@ -71,6 +71,9 @@ ECL 12.2.2:
    method. Elsewhere, ECL relies on the internal equivalent of
    COMPUTE-APPLICABLE-METHODS, which _always_ memoizes results.
 
+ - When reinitializing a class instance, ECL would not remove the class from
+   its former superclasses.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

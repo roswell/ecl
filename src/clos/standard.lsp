@@ -155,28 +155,30 @@
   (unless (find-if #'has-forward-referenced-parents (class-direct-superclasses class))
     (finalize-inheritance class)))
 
-(defmethod initialize-instance ((class class) &rest initargs
-				&key sealedp direct-superclasses direct-slots)
+(defmethod initialize-instance ((class class) &rest initargs &key direct-slots)
   (declare (ignore sealedp))
   ;; convert the slots from lists to direct slots
-  (setf direct-slots (loop for s in direct-slots
-                        collect (canonical-slot-to-direct-slot class s)))
+  (apply #'call-next-method class
+         :direct-slots
+	 (loop for s in direct-slots
+	    collect (canonical-slot-to-direct-slot class s))
+         initargs)
+  (finalize-unless-forward class)
+  class)
 
+(defmethod shared-initialize ((class class) slot-names &rest initargs &key direct-superclasses)
   ;; verify that the inheritance list makes sense
   (setf direct-superclasses
         (check-direct-superclasses class direct-superclasses))
-
-  (apply #'call-next-method class
-         :direct-slots direct-slots
-         :direct-superclasses direct-superclasses
-         initargs)
-
-  ;; record the inheritance in parents
-  (dolist (l (setf direct-superclasses (class-direct-superclasses class)))
-    (add-direct-subclass l class))
-
-  (finalize-unless-forward class)
-
+  (when (slot-boundp class 'direct-superclasses)
+    (loop for c in (class-direct-superclasses class)
+       unless (member c direct-superclasses :test #'eq)
+       do (remove-direct-subclass c class)))
+  (setf class (apply #'call-next-method class slot-names
+		     :direct-superclasses direct-superclasses
+		     initargs))
+  (loop for c in (class-direct-superclasses class)
+     do (add-direct-subclass c class))
   class)
 
 (defun precompute-valid-initarg-keywords (class)
