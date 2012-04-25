@@ -221,6 +221,9 @@ ecl_slot_value_set(cl_object x, const char *slot, cl_object value)
 	return funcall(4, ecl_fdefinition(slot_setter), value, x, slot_name);
 }
 
+/**********************************************************************
+ * IMPORTANT: THE FOLLOWING LIST IS LINKED TO src/clos/builtin.lsp
+ **********************************************************************/
 enum ecl_built_in_classes {
 	ECL_BUILTIN_T = 0,
 	ECL_BUILTIN_SEQUENCE,
@@ -270,10 +273,11 @@ enum ecl_built_in_classes {
         ,
 	ECL_BUILTIN_PROCESS,
 	ECL_BUILTIN_LOCK,
-	ECL_BUILTIN_CONDITION_VARIABLE
-#endif
-#ifdef ECL_SEMAPHORES
-        , ECL_BUILTIN_SEMAPHORE
+	ECL_BUILTIN_RWLOCK,
+	ECL_BUILTIN_CONDITION_VARIABLE,
+        ECL_BUILTIN_SEMAPHORE,
+	ECL_BUILTIN_BARRIER,
+	ECL_BUILTIN_MAILBOX
 #endif
 #ifdef ECL_SSE2
 	, ECL_BUILTIN_SSE_PACK
@@ -363,10 +367,12 @@ cl_class_of(cl_object x)
 		index = ECL_BUILTIN_LOCK; break;
 	case t_condition_variable:
 		index = ECL_BUILTIN_CONDITION_VARIABLE; break;
-#endif
-#ifdef ECL_SEMAPHORES
-	case t_semaphores:
+	case t_semaphore:
 		index = ECL_BUILTIN_SEMAPHORE; break;
+	case t_barrier:
+		index = ECL_BUILTIN_BARRIER; break;
+	case t_mailbox:
+		index = ECL_BUILTIN_MAILBOX; break;
 #endif
 	case t_codeblock:
 		index = ECL_BUILTIN_CODE_BLOCK; break;

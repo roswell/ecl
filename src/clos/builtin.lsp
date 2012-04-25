@@ -40,6 +40,10 @@
   (error "The built-in class (~A) cannot be instantiated" class))
 
 (eval-when (:compile-toplevel :execute)
+  ;;
+  ;; All changes to this are connected to the changes in 
+  ;; the code of cl_class_of() in src/instance.d
+  ;;
   (defconstant +builtin-classes-list+
 	 '(;(t object)
 	    (sequence)
