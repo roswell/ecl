@@ -128,7 +128,6 @@
 	(funcall (first primary) .combined-method-args. (rest primary)))))
 
 (defun standard-compute-effective-method (gf methods)
-  (declare (si::c-local))
   (let* ((before ())
 	 (primary ())
 	 (after ())
@@ -185,11 +184,31 @@
 ;; and it outputs an anonymous function which is the effective method.
 ;;
 
-(defparameter *method-combinations* '())
+#+threads
+(defparameter *method-combinations-lock* (mp:make-lock :name 'find-method-combination))
+(defparameter *method-combinations* (make-hash-table :size 32 :test 'eq))
+
+(defun search-method-combination (name)
+  (mp:with-lock (*method-combinations-lock*)
+    (or (gethash name *method-combinations*)
+	(error "~A does not name a method combination" name))))
 
 (defun install-method-combination (name function)
-  (setf (getf *method-combinations* name) function)
+  (mp:with-lock (*method-combinations-lock*)
+    (setf (gethash name *method-combinations*) function))
   name)
+
+(defun method-combination-object-p (o)
+  (and (listp o)
+       (= (length o) 3)
+       (eq (first o)
+	   (mp:with-lock (*method-combinations-lock*)
+	     (gethash (third o) *method-combinations*)))))
+
+(defun find-method-combination (gf method-combination-type-name method-combination-options)
+  (list (search-method-combination method-combination-type-name)
+	method-combination-options
+	method-combination-type-name))
 
 (defun define-simple-method-combination (name &key documentation
 					 identity-with-one-argument
@@ -302,19 +321,19 @@
 ;;;
 
 (defun std-compute-effective-method (gf method-combination applicable-methods)
-  (let* ((method-combination-name (car method-combination))
-	 (method-combination-args (cdr method-combination)))
-    (if (eq method-combination-name 'STANDARD)
-	(standard-compute-effective-method gf applicable-methods)
-	(apply (or (getf *method-combinations* method-combination-name)
-		   (error "~S is not a valid method combination object"
-			  method-combination))
+  (let* ((method-combination-function (first method-combination))
+	 (method-combination-args (second method-combination)))
+    (if method-combination-args
+	(apply method-combination-function
 	       gf applicable-methods
-	       method-combination-args))))
+	       method-combination-args)
+	(funcall method-combination-function
+		 gf applicable-methods))))
 
 ;;
 ;; These method combinations are bytecompiled, for simplicity.
 ;;
+(install-method-combination 'standard 'standard-compute-effective-method)
 (eval '(progn
 	(define-method-combination progn :identity-with-one-argument t)
 	(define-method-combination and :identity-with-one-argument t)

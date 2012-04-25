@@ -126,7 +126,7 @@
        :accessor generic-function-name)
       (spec-list :initform nil :accessor generic-function-spec-list)
       (method-combination 
-       :initarg :method-combination :initform '(standard)
+       :initarg :method-combination :initform '(standard-compute-effective-method nil standard)
        :accessor generic-function-method-combination)
       (lambda-list :initarg :lambda-list
        :accessor generic-function-lambda-list)
@@ -253,7 +253,8 @@
 	(si::instance-sig-set gfun)
 	(setf (generic-function-name gfun) name
 	      (generic-function-lambda-list gfun) lambda-list
-	      (generic-function-method-combination gfun) '(standard)
+	      (generic-function-method-combination gfun)
+	      (find-method-combination gfun 'standard nil)
 	      (generic-function-methods gfun) nil
 	      (generic-function-spec-list gfun) nil
               (generic-function-dependents gfun) nil)

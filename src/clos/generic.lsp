@@ -120,7 +120,6 @@
 			      (argument-precedence-order nil a-o-p)
 			      (documentation nil)
 			      (declarations nil)
-			      method-combination
 			      (method-class (find-class 'method))
 			      )
   (declare (ignore initargs slot-names))
@@ -142,14 +141,6 @@
 	   :format-arguments (list documentation)
 	   :datum documentation
 	   :expected-type '(or null string)))
-  (unless (or (null method-combination)
-	      (and (listp method-combination)
-		   (member (first method-combination) *method-combinations*)))
-    (error 'simple-type-error
-	   :format-control "Not a valid method combination, ~A"
-	   :format-arguments (list method-combination)
-	   :datum method-combination
-	   :expected-type 'list))
   (unless (si::subclassp method-class (find-class 'method))
     (error 'simple-type-error
 	   :format-control "Not a valid method class, ~A"
@@ -167,6 +158,10 @@
       (simple-program-error "Cannot replace the lambda list of ~A with ~A because it is incongruent with some of the methods"
 			    gfun lambda-list)))
   (call-next-method)
+  (let ((combination (generic-function-method-combination gfun)))
+    (unless (method-combination-object-p combination)
+      (setf (generic-function-method-combination gfun)
+	    (find-method-combination gfun (first combination) (rest combination)))))
   (when (and l-l-p (not a-o-p))
     (setf (generic-function-argument-precedence-order gfun)
 	  (lambda-list-required-arguments lambda-list)))
