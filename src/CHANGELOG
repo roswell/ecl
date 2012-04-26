@@ -84,6 +84,9 @@ ECL 12.2.2:
  - METHOD-COMBINATION is now a class with slots and it is used by ECL for
    computing effective methods.
 
+ - The MOP and CL classes and metaclasses do not contain any slot whose name
+   is exported by any of the CL or CL-USER packages.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

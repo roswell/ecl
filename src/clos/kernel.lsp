@@ -103,7 +103,7 @@
        :initform nil :accessor class-direct-default-initargs)
       (default-initargs :accessor class-default-initargs)
       (finalized :initform nil :accessor class-finalized-p)
-      (documentation :initarg :documentation :initform nil)
+      (docstring :initarg :documentation :initform nil)
       (size :accessor class-size)
       (sealedp :initarg :sealedp :initform nil :accessor class-sealedp)
       (prototype)
@@ -149,7 +149,7 @@
       (method-class
        :initarg :method-class
        :initform (find-class 'standard-method))
-      (documentation :initarg :documentation :initform nil)
+      (docstring :initarg :documentation :initform nil)
       (methods :initform nil :accessor generic-function-methods)
       (a-p-o-function :initform nil :accessor generic-function-a-p-o-function)
       (declarations
@@ -166,14 +166,14 @@
 
 (eval-when (compile eval)
   (defparameter +standard-method-slots+
-    '((generic-function :initarg :generic-function :initform nil
+    '((the-generic-function :initarg :generic-function :initform nil
        :accessor method-generic-function)
       (lambda-list :initarg :lambda-list
        :accessor method-lambda-list)
       (specializers :initarg :specializers :accessor method-specializers)
       (qualifiers :initform nil :initarg :qualifiers :accessor method-qualifiers)
-      (function :initarg :function :accessor method-function)
-      (documentation :initarg :documentation :initform nil)
+      (the-function :initarg :function :accessor method-function)
+      (docstring :initarg :documentation :initform nil)
       (plist :initform nil :initarg :plist :accessor method-plist)
       (keywords :initform nil :accessor method-keywords))))
 

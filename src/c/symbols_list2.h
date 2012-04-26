@@ -1738,6 +1738,7 @@ cl_symbols[] = {
 {SYS_ "CLEAR-GFUN-HASH","si_clear_gfun_hash"},
 {CLOS_ "NEED-TO-MAKE-LOAD-FORM-P","ECL_NAME(clos_need_to_make_load_form_p)"},
 {CLOS_ "LOAD-DEFCLASS","ECL_NAME(clos_load_defclass)"},
+{CLOS_ "DOCSTRING",NULL},
 #endif
 
 {SYS_ "CL-FIXNUM-BITS",NULL},

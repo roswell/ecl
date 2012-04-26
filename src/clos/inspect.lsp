@@ -394,12 +394,12 @@ q (or Q):             quits the inspection.~%~
     (si::set-documentation object 'package new-value)))
 
 (defmethod documentation ((object class) doc-type)
-  (when (and (member doc-type '(t type)) (slot-boundp object 'documentation))
-    (slot-value object 'documentation)))
+  (when (and (member doc-type '(t type)) (slot-boundp object 'docstring))
+    (slot-value object 'docstring)))
 
 (defmethod (setf documentation) (new-value (object class) doc-type)
   (when (member doc-type '(t type))
-    (setf (slot-value object 'documentation) new-value)))
+    (setf (slot-value object 'docstring) new-value)))
 
 (defmethod documentation ((object structure-class) doc-type)
   (when (member doc-type '(t type))
@@ -419,19 +419,19 @@ q (or Q):             quits the inspection.~%~
 
 (defmethod documentation ((object standard-generic-function) doc-type)
   (when (member doc-type '(t function))
-    (slot-value object 'documentation)))
+    (slot-value object 'docstring)))
 
 (defmethod (setf documentation) (new-value (object standard-generic-function) doc-type)
   (when (member doc-type '(t function))
-    (setf (slot-value object 'documentation) new-value)))
+    (setf (slot-value object 'docstring) new-value)))
 
 (defmethod documentation ((object standard-method) doc-type)
   (when (member doc-type '(t function))
-    (slot-value object 'documentation)))
+    (slot-value object 'docstring)))
 
 (defmethod (setf documentation) (new-value (object standard-method) doc-type)
   (when (member doc-type '(t function))
-    (setf (slot-value object 'documentation) new-value)))
+    (setf (slot-value object 'docstring) new-value)))
 
 (defmethod documentation ((object function) doc-type)
   (when (member doc-type '(t function))
@@ -443,9 +443,9 @@ q (or Q):             quits the inspection.~%~
 
 (defmethod documentation ((object slot-definition) doc-type)
   (when (member doc-type '(t function))
-    (slot-value object 'documentation)))
+    (slot-value object 'docstring)))
 
 (defmethod (setf documentation) (new-value (object slot-definition) doc-type)
   (when (member doc-type '(t function))
-    (setf (slot-value object 'documentation) new-value)))
+    (setf (slot-value object 'docstring) new-value)))
 
