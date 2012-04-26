@@ -17,24 +17,6 @@
 ;;; ======================================================================
 ;;; Built-in classes
 ;;; ----------------------------------------------------------------------
-;;;
-;;; IMPORTANT!
-;;; This class did not exist until now. This was no problem, because it is
-;;; not used anywhere in ECL. However, we have to define and we have to
-;;; ensure that "T" becomes an instance of BUILT-IN-CLASS.
-
-;;; We have to build the class manually, because
-;;;	(ENSURE-CLASS-USING-CLASS NIL ...)
-;;; does not work yet, since the class NULL does not exist.
-;;;
-(setf (find-class 'built-in-class)
-      (make-instance (find-class 'standard-class)
-		     :name 'built-in-class
-		     :direct-superclasses (list (find-class 'class))
-		     :direct-slots nil))
-
-(si:instance-class-set +the-t-class+ (find-class 'built-in-class))
-(si::instance-sig-set +the-t-class+)
 
 (defmethod make-instance ((class built-in-class) &rest initargs)
   (declare (ignore initargs))

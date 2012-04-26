@@ -60,15 +60,18 @@
       (class
        :direct-superclasses (specializer)
        :direct-slots #.(remove-accessors +class-slots+))
+      (built-in-class
+       :direct-superclasses (class)
+       :direct-slots #1=#.(remove-accessors +standard-class-slots+))
       (std-class
        :direct-superclasses (class)
-       :direct-slots #.(remove-accessors +standard-class-slots+))
+       :direct-slots #1#)
       (standard-class
        :direct-superclasses (std-class)
-       :direct-slots #.(remove-accessors +standard-class-slots+))
+       :direct-slots #1#)
       (funcallable-standard-class
        :direct-superclasses (std-class)
-       :direct-slots #.(remove-accessors +standard-class-slots+)))))
+       :direct-slots #1#))))
 
 ;;; ----------------------------------------------------------------------
 ;;; Building the classes T, CLASS, STANDARD-OBJECT and STANDARD-CLASS.
@@ -77,7 +80,8 @@
 ;;; DIRECT-SLOTS, etc are empty and therefore SLOT-VALUE does not work.
 
 (defun make-empty-standard-class (name metaclass)
-  (let ((class (or (find-class name nil)
+  (declare (si::c-local))
+  (let ((class (or (gethash name si::*class-name-hash-table*)
 		   (si:allocate-raw-instance nil metaclass
 					     #.(length +standard-class-slots+)))))
     (unless metaclass
@@ -100,11 +104,12 @@
     class))
 
 (defun add-slots (class slots)
+  (declare (si::c-local))
   ;; It does not matter that we pass NIL instead of a class object,
   ;; because CANONICAL-SLOT-TO-DIRECT-SLOT will make simple slots.
   (let* ((all-slots (loop for s in (parse-slots slots)
 		       collect (canonical-slot-to-direct-slot nil s)))
-	 (table (make-hash-table :size 24)))
+	 (table (make-hash-table :size (if slots 24 0))))
     (loop for i from 0
        for s in all-slots
        for name = (slot-definition-name s)
@@ -118,33 +123,30 @@
 ;; 1) Create the classes
 ;;
 ;; Notice that, due to circularity in the definition, STANDARD-CLASS has
-;; itself as metaclass. MAKE-EMPTY-CLASS takes care of that.
+;; itself as metaclass. MAKE-EMPTY-STANDARD-CLASS takes care of that.
 ;;
-(let ((all-classes '#.+class-hierarchy+))
+(let ((all-classes 
+       (loop with standard-class = (make-empty-standard-class 'standard-class nil)
+	  for c in '#.+class-hierarchy+
+	  for name = (first c)
+	  for class = (make-empty-standard-class name standard-class)
+	  for superclasses = (loop for name in (getf (rest c) :direct-superclasses)
+				for parent = (find-class name)
+				do (push class (class-direct-subclasses parent))
+				collect parent)
+	  do (setf (class-direct-superclasses class) superclasses
+		   (class-precedence-list class)
+		   (compute-clos-class-precedence-list class superclasses))
+	  do (add-slots class (getf (rest c) :direct-slots))
+	  collect class)))
   ;;
-  ;; 1) Create the classes, fix their inheritance chain and add their slots
+  ;; 2) Class T had its metaclass wrong. Fix it.
   ;;
-  (loop with standard-class = (make-empty-standard-class 'standard-class nil)
-     for c in all-classes
-     for name = (first c)
-     for class = (make-empty-standard-class name standard-class)
-     for superclasses-names = (getf (rest c) :direct-superclasses)
-     for superclasses = (mapcar #'find-class superclasses-names)
-     for slots = (getf (rest c) :direct-slots)
-     do (setf (class-direct-superclasses class)
-	      (loop for parent in superclasses
-		 do (push class (class-direct-subclasses parent))
-		 collect parent)
-	      (class-precedence-list class)
-	      (compute-clos-class-precedence-list class superclasses))
-     when slots
-     do (add-slots class slots))
+  (si:instance-class-set (find-class 't) (find-class 'built-in-class))
   ;;
   ;; 3) Finalize
   ;;
-  (loop for c in all-classes
-     do (si::instance-sig-set (find-class (first c))))
-)
+  (mapc #'si::instance-sig-set all-classes))
 
 (defconstant +the-t-class+ (find-class 't nil))
 (defconstant +the-class+ (find-class 'class nil))
