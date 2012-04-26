@@ -31,6 +31,10 @@ ECL 12.2.2:
  - ENSURE-DIRECTORIES-EXIST accepts the keyword argument :MODE which is
    passed to MKDIR.
 
+ - In EXT:RUN-PROGRAM the child process is delayed until the parent has created
+   the process structure and stored the process id in it. Formerly we had race
+   conditions due to the child exiting before the parent was able to call sigwait().
+
 * Metaobject protocol:
 
  - Implemented CLOS:COMPUTE-APPLICABLE-METHODS-USING-CLASSES.

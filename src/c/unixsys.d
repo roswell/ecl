@@ -623,6 +623,7 @@ make_windows_handle(HANDLE h)
 #else /* mingw */
 {
 	int child_stdin, child_stdout, child_stderr;
+	int pipe_fd[2];
 	argv = CONS(command, ecl_nconc(argv, ecl_list1(Cnil)));
 	argv = cl_funcall(3, @'coerce', argv, @'vector');
  AGAIN_INPUT:
@@ -701,14 +702,22 @@ make_windows_handle(HANDLE h)
                         error);
 	}
 	add_external_process(the_env, process);
-        /* We have to protect this, to avoid the signal being delivered or handled
-         * before we set the process pid */
-        ecl_bds_bind(the_env, @'ext::*interrupts-enabled*', Cnil);
+	pipe(pipe_fd);
 	child_pid = fork();
 	if (child_pid == 0) {
 		/* Child */
 		int j;
 		void **argv_ptr = (void **)argv->vector.self.t;
+		{
+			/* Wait for the parent to set up its process structure */
+			char sync[1];
+			close(pipe_fd[1]);
+			while (read(pipe_fd[0], sync, 1) < 1) {
+				printf("\nError reading child pipe %d", errno);
+				fflush(stdout);
+			}
+			close(pipe_fd[0]);
+		}
 		dup2(child_stdin, STDIN_FILENO);
 		if (parent_write) close(parent_write);
 		dup2(child_stdout, STDOUT_FILENO);
@@ -740,8 +749,20 @@ make_windows_handle(HANDLE h)
                 pid = MAKE_FIXNUM(child_pid);
         }
         set_external_process_pid(process, pid);
-        ecl_bds_unwind1(the_env);
-        ecl_check_pending_interrupts(the_env);
+	{
+		/* This guarantees that the child process does not exit
+		 * before we have created the process structure. If we do not
+		 * do this, the SIGPIPE signal may arrive before
+		 * set_external_process_pid() and our call to external-process-wait
+		 * down there may block indefinitely. */
+		char sync[1];
+		close(pipe_fd[0]);
+		while (write(pipe_fd[1], sync, 1) < 1) {
+			printf("\nError writing child pipe %d", errno);
+			fflush(stdout);
+		}
+		close(pipe_fd[1]);
+	}
 	close(child_stdin);
 	close(child_stdout);
 	close(child_stderr);
