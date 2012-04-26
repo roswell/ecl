@@ -12,13 +12,74 @@
 (in-package "CLOS")
 
 ;;; ----------------------------------------------------------------------
+
+;;; FROM AMOP:
+;;;
+;;;	Metaobject Class		Direct Superclasses
+;;; 	standard-object			(t)
+;;; 	funcallable-standard-object	(standard-object function)
+;;; *	metaobject			(standard-object)
+;;; *	generic-function		(metaobject funcallable-standard-object)
+;;; 	standard-generic-function	(generic-function)
+;;; *	method				(metaobject)
+;;; 	standard-method			(method)
+;;; *	standard-accessor-method	(standard-method)
+;;; 	standard-reader-method		(standard-accessor-method)
+;;; 	standard-writer-method		(standard-accessor-method)
+;;; *	method-combination		(metaobject)
+;;; *	slot-definition			(metaobject)
+;;; *	direct-slot-definition		(slot-definition)
+;;; *	effective-slot-definition	(slot-definition)
+;;; *	standard-slot-definition	(slot-definition)
+;;; 	standard-direct-slot-definition	(standard-slot-definition direct-slot-definition)
+;;; 	standard-effective-slot-definition	(standard-slot-definition effective-slot-definition)
+;;; *	specializer			(metaobject)
+;;; 	eql-specializer			(specializer)
+;;; *	class				(specializer)
+;;; 	built-in-class			(class)
+;;; 	forward-referenced-class	(class)
+;;; 	standard-class			(class)
+;;; 	funcallable-standard-class	(class)
+;;;
+(eval-when (compile eval)
+  (defconstant +class-hierarchy+
+    '((t)
+      (standard-object
+       :direct-superclasses (t))
+      (metaobject
+       :direct-superclasses (standard-object))
+      (method-combination
+       :direct-superclasses (metaobject)
+       :direct-slots #.(remove-accessors +method-combination-slots+))
+      (specializer
+       :direct-superclasses (metaobject)
+       :direct-slots #.(remove-accessors +specializer-slots+))
+      (eql-specializer
+       :direct-superclasses (specializer)
+       :direct-slots #.(remove-accessors +eql-specializer-slots+))
+      (class
+       :direct-superclasses (specializer)
+       :direct-slots #.(remove-accessors +class-slots+))
+      (std-class
+       :direct-superclasses (class)
+       :direct-slots #.(remove-accessors +standard-class-slots+))
+      (standard-class
+       :direct-superclasses (std-class)
+       :direct-slots #.(remove-accessors +standard-class-slots+))
+      (funcallable-standard-class
+       :direct-superclasses (std-class)
+       :direct-slots #.(remove-accessors +standard-class-slots+)))))
+
+;;; ----------------------------------------------------------------------
 ;;; Building the classes T, CLASS, STANDARD-OBJECT and STANDARD-CLASS.
 ;;;
 ;;; We cannot use the functions CREATE-STANDARD-CLASS and others because SLOTS,
 ;;; DIRECT-SLOTS, etc are empty and therefore SLOT-VALUE does not work.
 
 (defun make-empty-standard-class (name metaclass)
-  (let ((class (si:allocate-raw-instance nil metaclass #.(length +standard-class-slots+))))
+  (let ((class (or (find-class name nil)
+		   (si:allocate-raw-instance nil metaclass
+					     #.(length +standard-class-slots+)))))
     (unless metaclass
       (si:instance-class-set class class))
     (setf (class-id                  class) name
@@ -33,7 +94,7 @@
 	  (eql-specializer-flag      class) nil
 	  (specializer-direct-methods class) nil
 	  (specializer-direct-generic-functions class) nil
-	  (find-class name) class)
+	  (gethash name si::*class-name-hash-table*) class)
     (unless (eq name 'T)
       (setf (slot-table class) (make-hash-table :size 2)))
     class))
@@ -59,112 +120,30 @@
 ;; Notice that, due to circularity in the definition, STANDARD-CLASS has
 ;; itself as metaclass. MAKE-EMPTY-CLASS takes care of that.
 ;;
-(let* ((standard-class (make-empty-standard-class 'STANDARD-CLASS nil))
-       (std-class (make-empty-standard-class 'STD-CLASS standard-class))
-       (standard-object (make-empty-standard-class 'STANDARD-OBJECT standard-class))
-       (funcallable-standard-class
-        (make-empty-standard-class 'FUNCALLABLE-STANDARD-CLASS
-                                   standard-class))
-       (metaobject (make-empty-standard-class 'METAOBJECT standard-class))
-       (method-combination (make-empty-standard-class 'METHOD-COMBINATION standard-class))
-       (specializer (make-empty-standard-class 'SPECIALIZER standard-class))
-       (eql-specializer (make-empty-standard-class 'EQL-SPECIALIZER standard-class))
-       (the-class (make-empty-standard-class 'CLASS standard-class))
-       (the-t (make-empty-standard-class 'T the-class)))
-
-  ;; 2) STANDARD-CLASS and CLASS and others are classes with slots. Create a
-  ;; hash table for them, so that SLOT-VALUE works. Notice that we
-  ;; make a intentional mistake: CLASS and STANDARD-CLASS share the same
-  ;; hashtable!!
-  (add-slots the-class '#.(remove-accessors +class-slots+))
-  (add-slots std-class #1='#.(remove-accessors +standard-class-slots+))
-  (add-slots standard-class #1#)
-  (add-slots funcallable-standard-class #1#)
-  (add-slots method-combination '#.(remove-accessors +method-combination-slots+))
-  (add-slots specializer '#.(remove-accessors +specializer-slots+))
-  (add-slots eql-specializer '#.(remove-accessors +eql-specializer-slots+))
-
-  ;; 3) Fix the class hierarchy
-  ;; FROM AMOP:
+(let ((all-classes '#.+class-hierarchy+))
   ;;
-  ;;	Metaobject Class		Direct Superclasses
-  ;; 	standard-object			(t)
-  ;; 	funcallable-standard-object	(standard-object function)
-  ;; *	metaobject			(standard-object)
-  ;; *	generic-function		(metaobject funcallable-standard-object)
-  ;; 	standard-generic-function	(generic-function)
-  ;; *	method				(metaobject)
-  ;; 	standard-method			(method)
-  ;; *	standard-accessor-method	(standard-method)
-  ;; 	standard-reader-method		(standard-accessor-method)
-  ;; 	standard-writer-method		(standard-accessor-method)
-  ;; *	method-combination		(metaobject)
-  ;; *	slot-definition			(metaobject)
-  ;; *	direct-slot-definition		(slot-definition)
-  ;; *	effective-slot-definition	(slot-definition)
-  ;; *	standard-slot-definition	(slot-definition)
-  ;; 	standard-direct-slot-definition	(standard-slot-definition direct-slot-definition)
-  ;; 	standard-effective-slot-definition	(standard-slot-definition effective-slot-definition)
-  ;; *	specializer			(metaobject)
-  ;; 	eql-specializer			(specializer)
-  ;; *	class				(specializer)
-  ;; 	built-in-class			(class)
-  ;; 	forward-referenced-class	(class)
-  ;; 	standard-class			(class)
-  ;; 	funcallable-standard-class	(class)
+  ;; 1) Create the classes, fix their inheritance chain and add their slots
   ;;
-  (setf (class-direct-superclasses the-t) nil
-	(class-direct-subclasses the-t) (list standard-object)
-	(class-direct-superclasses standard-object) (list the-t)
-	(class-direct-subclasses standard-object) (list metaobject)
-	(class-direct-superclasses metaobject) (list standard-object)
-	(class-direct-subclasses metaobject) (list specializer method-combination)
-	(class-direct-superclasses method-combination) (list metaobject)
-	(class-direct-superclasses specializer) (list metaobject)
-	(class-direct-subclasses specializer) (list the-class eql-specializer)
-	(class-direct-superclasses eql-specializer) (list specializer)
-	(class-direct-superclasses the-class) (list specializer)
-	(class-direct-subclasses the-class) (list std-class)
-	(class-direct-superclasses std-class) (list the-class)
-	(class-direct-subclasses std-class) (list standard-class funcallable-standard-class)
-	(class-direct-superclasses standard-class) (list std-class)
-	(class-direct-superclasses funcallable-standard-class) (list std-class))
-
-  (si::instance-sig-set the-t)
-  (si::instance-sig-set standard-object)
-  (si::instance-sig-set metaobject)
-  (si::instance-sig-set method-combination)
-  (si::instance-sig-set specializer)
-  (si::instance-sig-set eql-specializer)
-  (si::instance-sig-set the-class)
-  (si::instance-sig-set std-class)
-  (si::instance-sig-set standard-class)
-  (si::instance-sig-set funcallable-standard-class)
-
-  ;; 4) Fix the class precedence list
-  (let ((cpl (list std-class the-class metaobject standard-object the-t)))
-    (setf (class-precedence-list the-t)
-	  (setf cpl (list the-t))
-	  (class-precedence-list standard-object)
-	  (setf cpl (list* standard-object cpl))
-	  (class-precedence-list metaobject)
-	  (setf cpl (list* metaobject cpl))
-	  (class-precedence-list method-combination)
-	  (list* method-combination cpl)
-	  (class-precedence-list specializer)
-	  (setf cpl (list* specializer cpl))
-	  (class-precedence-list eql-specializer)
-	  (list* eql-specializer cpl)
-	  (class-precedence-list the-class)
-	  (setf cpl (list* the-class cpl))
-	  (class-precedence-list std-class)
-	  (setf cpl (list* std-class cpl))
-	  (class-precedence-list standard-class)
-	  (list* standard-class cpl)
-          (class-precedence-list funcallable-standard-class)
-	  (list* funcallable-standard-class cpl)))
-
-  ;; 5) Generate accessors (In macros.lsp)
+  (loop with standard-class = (make-empty-standard-class 'standard-class nil)
+     for c in all-classes
+     for name = (first c)
+     for class = (make-empty-standard-class name standard-class)
+     for superclasses-names = (getf (rest c) :direct-superclasses)
+     for superclasses = (mapcar #'find-class superclasses-names)
+     for slots = (getf (rest c) :direct-slots)
+     do (setf (class-direct-superclasses class)
+	      (loop for parent in superclasses
+		 do (push class (class-direct-subclasses parent))
+		 collect parent)
+	      (class-precedence-list class)
+	      (compute-clos-class-precedence-list class superclasses))
+     when slots
+     do (add-slots class slots))
+  ;;
+  ;; 3) Finalize
+  ;;
+  (loop for c in all-classes
+     do (si::instance-sig-set (find-class (first c))))
 )
 
 (defconstant +the-t-class+ (find-class 't nil))
