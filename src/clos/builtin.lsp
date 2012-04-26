@@ -33,7 +33,8 @@
 		     :direct-superclasses (list (find-class 'class))
 		     :direct-slots nil))
 
-(si:instance-class-set (find-class 't) (find-class 'built-in-class))
+(si:instance-class-set +the-t-class+ (find-class 'built-in-class))
+(si::instance-sig-set +the-t-class+)
 
 (defmethod make-instance ((class built-in-class) &rest initargs)
   (declare (ignore initargs))
@@ -76,7 +77,6 @@
 	    (symbol)
 	      (null symbol list)
 	      (keyword symbol)
-	    (method-combination)
 	    (package)
 	    (function)
 	    (pathname)

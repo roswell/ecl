@@ -77,6 +77,9 @@ ECL 12.2.2:
  - The method combination slot of a generic function is now precomputed by
    using FIND-METHOD-COMBINATION in SHARED-INITIALIZE.
 
+ - METHOD-COMBINATION is now a class with slots and it is used by ECL for
+   computing effective methods.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

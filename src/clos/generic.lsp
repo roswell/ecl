@@ -159,7 +159,7 @@
 			    gfun lambda-list)))
   (call-next-method)
   (let ((combination (generic-function-method-combination gfun)))
-    (unless (method-combination-object-p combination)
+    (unless (typep combination 'method-combination)
       (setf (generic-function-method-combination gfun)
 	    (find-method-combination gfun (first combination) (rest combination)))))
   (when (and l-l-p (not a-o-p))

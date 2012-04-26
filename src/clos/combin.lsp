@@ -198,17 +198,19 @@
     (setf (gethash name *method-combinations*) function))
   name)
 
-(defun method-combination-object-p (o)
-  (and (listp o)
-       (= (length o) 3)
-       (eq (first o)
-	   (mp:with-lock (*method-combinations-lock*)
-	     (gethash (third o) *method-combinations*)))))
+(defun make-method-combination (name compiler options)
+  (let ((o (si:allocate-raw-instance nil (find-class 'method-combination)
+				     #.(length +method-combination-slots+))))
+    (setf (method-combination-compiler o) compiler
+	  (method-combination-name o) name
+	  (method-combination-options o) options)
+    o))
 
 (defun find-method-combination (gf method-combination-type-name method-combination-options)
-  (list (search-method-combination method-combination-type-name)
-	method-combination-options
-	method-combination-type-name))
+  (make-method-combination method-combination-type-name
+			   (search-method-combination method-combination-type-name)
+			   method-combination-options
+			   ))
 
 (defun define-simple-method-combination (name &key documentation
 					 identity-with-one-argument
@@ -321,14 +323,11 @@
 ;;;
 
 (defun std-compute-effective-method (gf method-combination applicable-methods)
-  (let* ((method-combination-function (first method-combination))
-	 (method-combination-args (second method-combination)))
-    (if method-combination-args
-	(apply method-combination-function
-	       gf applicable-methods
-	       method-combination-args)
-	(funcall method-combination-function
-		 gf applicable-methods))))
+  (let* ((compiler (method-combination-compiler method-combination))
+	 (options (method-combination-options method-combination)))
+    (if options
+	(apply compiler gf applicable-methods options)
+	(funcall compiler gf applicable-methods))))
 
 ;;
 ;; These method combinations are bytecompiled, for simplicity.

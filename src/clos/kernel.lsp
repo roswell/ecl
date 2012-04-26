@@ -75,6 +75,17 @@
 #.(create-accessors +eql-specializer-slots+ 'eql-specializer)
 
 ;;; ----------------------------------------------------------------------
+;;; Class METHOD-COMBINATION
+
+(eval-when (compile eval)
+  (defparameter +method-combination-slots+
+    `((name :initform :name :accessor method-combination-name)
+      (compiler :initform :compiler :accessor method-combination-compiler)
+      (options :initform :options :accessor method-combination-options))))
+
+#.(create-accessors +method-combination-slots+ 'method-combination)
+
+;;; ----------------------------------------------------------------------
 ;;; Class CLASS
 
 (eval-when (compile eval)
@@ -126,7 +137,7 @@
        :accessor generic-function-name)
       (spec-list :initform nil :accessor generic-function-spec-list)
       (method-combination 
-       :initarg :method-combination :initform '(standard-compute-effective-method nil standard)
+       :initarg :method-combination :initform (find-method-combination nil 'standard nil)
        :accessor generic-function-method-combination)
       (lambda-list :initarg :lambda-list
        :accessor generic-function-lambda-list)
