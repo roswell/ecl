@@ -41,7 +41,11 @@
 ;;; 	standard-class			(class)
 ;;; 	funcallable-standard-class	(class)
 ;;;
-(eval-when (compile eval)
+(eval-when (eval)
+  (defun canonical-slots (slots)
+    (loop for s in (parse-slots (remove-accessors slots))
+       collect (canonical-slot-to-direct-slot nil s))))
+(eval-when (eval)
   (defconstant +class-hierarchy+
     '((t)
       (standard-object
@@ -50,19 +54,19 @@
        :direct-superclasses (standard-object))
       (method-combination
        :direct-superclasses (metaobject)
-       :direct-slots #.(remove-accessors +method-combination-slots+))
+       :direct-slots #.(canonical-slots +method-combination-slots+))
       (specializer
        :direct-superclasses (metaobject)
-       :direct-slots #.(remove-accessors +specializer-slots+))
+       :direct-slots #.(canonical-slots +specializer-slots+))
       (eql-specializer
        :direct-superclasses (specializer)
-       :direct-slots #.(remove-accessors +eql-specializer-slots+))
+       :direct-slots #.(canonical-slots +eql-specializer-slots+))
       (class
        :direct-superclasses (specializer)
-       :direct-slots #.(remove-accessors +class-slots+))
+       :direct-slots #.(canonical-slots +class-slots+))
       (built-in-class
        :direct-superclasses (class)
-       :direct-slots #1=#.(remove-accessors +standard-class-slots+))
+       :direct-slots #1=#.(canonical-slots +standard-class-slots+))
       (std-class
        :direct-superclasses (class)
        :direct-slots #1#)
@@ -107,18 +111,17 @@
   (declare (si::c-local))
   ;; It does not matter that we pass NIL instead of a class object,
   ;; because CANONICAL-SLOT-TO-DIRECT-SLOT will make simple slots.
-  (let* ((all-slots (loop for s in (parse-slots slots)
-		       collect (canonical-slot-to-direct-slot nil s)))
-	 (table (make-hash-table :size (if slots 24 0))))
-    (loop for i from 0
-       for s in all-slots
-       for name = (slot-definition-name s)
-       do (setf (slot-definition-location s) i
-		(gethash name table) s))
-    (setf (class-slots class) all-slots
-	  (class-size class) (length all-slots)
-	  (slot-table class) table
-	  (class-direct-slots class) all-slots)))
+  (loop with all-slots = (copy-list slots)
+     with table = (make-hash-table :size (if all-slots 24 0))
+     for i from 0
+     for s in all-slots
+     for name = (slot-definition-name s)
+     do (setf (slot-definition-location s) i
+	      (gethash name table) s)
+     finally (setf (class-slots class) all-slots
+		   (class-size class) (length all-slots)
+		   (slot-table class) table
+		   (class-direct-slots class) all-slots)))
 
 ;; 1) Create the classes
 ;;
@@ -129,6 +132,7 @@
        (loop with standard-class = (make-empty-standard-class 'standard-class nil)
 	  for c in '#.+class-hierarchy+
 	  for name = (first c)
+	  for cpl = (getf (rest c) 'precedence-list)
 	  for class = (make-empty-standard-class name standard-class)
 	  for superclasses = (loop for name in (getf (rest c) :direct-superclasses)
 				for parent = (find-class name)
