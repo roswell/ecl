@@ -64,6 +64,9 @@
       (class
        :direct-superclasses (specializer)
        :direct-slots #.(canonical-slots +class-slots+))
+      (forward-referenced-class
+       :direct-superclasses (class)
+       :direct-slots #.(canonical-slots +class-slots+))
       (built-in-class
        :direct-superclasses (class)
        :direct-slots #1=#.(canonical-slots +standard-class-slots+))
@@ -91,20 +94,14 @@
     (unless metaclass
       (si:instance-class-set class class))
     (setf (class-id                  class) name
-	  (class-direct-superclasses class) nil
 	  (class-direct-subclasses   class) nil
-	  (class-slots               class) nil
-	  (class-direct-slots        class) nil
 	  (class-direct-default-initargs class) nil
 	  (class-default-initargs    class) nil
-	  (class-precedence-list     class) nil
 	  (class-finalized-p         class) t
 	  (eql-specializer-flag      class) nil
 	  (specializer-direct-methods class) nil
 	  (specializer-direct-generic-functions class) nil
 	  (gethash name si::*class-name-hash-table*) class)
-    (unless (eq name 'T)
-      (setf (slot-table class) (make-hash-table :size 2)))
     class))
 
 (defun add-slots (class slots)
@@ -121,7 +118,7 @@
      finally (setf (class-slots class) all-slots
 		   (class-size class) (length all-slots)
 		   (slot-table class) table
-		   (class-direct-slots class) all-slots)))
+		   (class-direct-slots class) (copy-list all-slots))))
 
 ;; 1) Create the classes
 ;;
@@ -132,7 +129,6 @@
        (loop with standard-class = (make-empty-standard-class 'standard-class nil)
 	  for c in '#.+class-hierarchy+
 	  for name = (first c)
-	  for cpl = (getf (rest c) 'precedence-list)
 	  for class = (make-empty-standard-class name standard-class)
 	  for superclasses = (loop for name in (getf (rest c) :direct-superclasses)
 				for parent = (find-class name)

@@ -11,10 +11,6 @@
 
 (in-package "CLOS")
 
-;;; The mechanism for updating classes.
-
-(defclass forward-referenced-class (class) ())
-
 ;;; ----------------------------------------------------------------------
 ;;; INSTANCE UPDATE PROTOCOL
 ;;;
