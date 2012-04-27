@@ -168,11 +168,11 @@ generic_compute_applicable_method(cl_env_ptr env, cl_object frame, cl_object gf)
 	cl_object memoize;
 	cl_object methods = _ecl_funcall3(@'clos::compute-applicable-methods-using-classes',
 					  gf, frame_to_classes(frame));
-	if (Null(memoize = env->values[1])) {
+	unlikely_if (Null(memoize = env->values[1])) {
 		cl_object arglist = frame_to_list(frame);
 		methods = _ecl_funcall3(@'compute-applicable-methods',
 					gf, arglist);
-		if (methods == Cnil) {
+		unlikely_if (methods == Cnil) {
 			cl_object func = _ecl_funcall3(@'no-applicable-method',
 						       gf, arglist);
 			frame->frame.base[0] = OBJNULL;
@@ -180,8 +180,7 @@ generic_compute_applicable_method(cl_env_ptr env, cl_object frame, cl_object gf)
 			return func;
 		}
 	}
-	methods = _ecl_funcall4(@'clos::compute-effective-method-function', gf,
-				GFUN_COMB(gf), methods);
+	methods = clos_compute_effective_method_function(gf, GFUN_COMB(gf), methods);
 	env->values[1] = Ct;
 	return methods;
 }
@@ -191,15 +190,14 @@ restricted_compute_applicable_method(cl_env_ptr env, cl_object frame, cl_object 
 {
 	/* method not cached */
 	cl_object arglist = frame_to_list(frame);
-	cl_object methods = _ecl_funcall3(@'clos::std-compute-applicable-methods', gf, arglist);
-	if (methods == Cnil) {
+	cl_object methods = clos_std_compute_applicable_methods(gf, arglist);
+	unlikely_if (methods == Cnil) {
 		cl_object func = _ecl_funcall3(@'no-applicable-method', gf, arglist);
 		frame->frame.base[0] = OBJNULL;
 		env->values[1] = Cnil;
 		return func;
 	}
-	methods = _ecl_funcall4(@'clos::std-compute-effective-method', gf,
-				GFUN_COMB(gf), methods);
+	methods = clos_std_compute_effective_method(gf, GFUN_COMB(gf), methods);
 	env->values[1] = Ct;
 	return methods;
 }

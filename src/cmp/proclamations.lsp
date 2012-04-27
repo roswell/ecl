@@ -285,6 +285,13 @@
 ;; Slot accessors:
 ; (proclamation unbound-slot-instance (condition) si::instance :predicate)
 
+#+clos
+(proclamation clos:std-compute-applicable-methods (generic-function list) list)
+#+clos
+(proclamation clos:std-compute-effective-method (generic-function method-combination list) function)
+#+clos
+(proclamation clos:compute-effective-method-function (generic-function method-combination list) function)
+
 ;;;
 ;;; 8. STRUCTURES
 ;;;

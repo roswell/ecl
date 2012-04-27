@@ -47,6 +47,24 @@ si_safe_eval(cl_narg narg, cl_object form, cl_object env, ...)
 }
 
 extern cl_object
+clos_std_compute_applicable_methods(cl_object gf, cl_object arglist)
+{
+	return _ecl_funcall3(@'clos::std-compute-applicable-methods', gf, arglist);
+}
+
+extern cl_object
+clos_std_compute_effective_method(cl_object gf, cl_object combination, cl_object methods_list)
+{
+	return _ecl_funcall4(@'clos::std-compute-effective-method', gf, combination, methods_list);
+}
+
+extern cl_object
+clos_compute_effective_method_function(cl_object gf, cl_object combination, cl_object methods_list)
+{
+	return _ecl_funcall4(@'clos::compute-effective-method-function', gf, combination, methods_list);
+}
+
+extern cl_object
 si_string_to_object(cl_narg narg, cl_object string, ...)
 {
         if (narg == 2) {

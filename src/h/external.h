@@ -2099,6 +2099,9 @@ extern ECL_API cl_object cl_set_pprint_dispatch _ARGS((cl_narg narg, cl_object V
 /* combin.lsp */
 extern ECL_API cl_object cl_method_combination_error _ARGS((cl_narg narg, cl_object format, ...));
 extern ECL_API cl_object cl_invalid_method_error _ARGS((cl_narg narg, cl_object method, cl_object format, ...));
+extern ECL_API cl_object clos_std_compute_applicable_methods(cl_object gf, cl_object arglist);
+extern ECL_API cl_object clos_std_compute_effective_method(cl_object gf, cl_object combination, cl_object methods_list);
+extern ECL_API cl_object clos_compute_effective_method_function(cl_object gf, cl_object combination, cl_object methods_list);
 
 /* boot.lsp */
 extern ECL_API cl_object cl_slot_boundp(cl_object object, cl_object slot);

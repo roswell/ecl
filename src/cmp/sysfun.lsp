@@ -920,6 +920,9 @@
     ,@'(;; combin.lsp
      method-combination-error
      invalid-method-error
+     clos:std-compute-applicable-methods
+     clos:std-compute-effective-method
+     clos:compute-effective-method-function
      ;; standard-instance-access ; this function is a synonym for si:instance-ref
      ;; funcallable-standard-instance-access ; same for this one
      subclassp of-class-p
