@@ -273,7 +273,7 @@
 	(when l-l-p
 	  (setf (generic-function-argument-precedence-order gfun)
 		(rest (si::process-lambda-list lambda-list t))))
-	(set-funcallable-instance-function gfun t)
+	(set-funcallable-instance-function gfun 'standard-generic-function)
 	(setf (fdefinition name) gfun)
 	gfun)))
 
@@ -296,7 +296,7 @@
 			(compute-applicable-methods generic-function args))
 		  (unless method-list
 		    (no-applicable-methods generic-function args)))
-		(funcall (compute-effective-method
+		(funcall (compute-effective-method-function
 			  generic-function
 			  (generic-function-method-combination generic-function)
 			  method-list)
@@ -305,39 +305,57 @@
 	  t))
 
 (defun set-generic-function-dispatch (gfun)
-  (let* ((base (default-dispatch gfun))
-	 (gf-type
-	  (loop named gf-type
-	     with common-class = nil
-	     for method in (generic-function-methods gfun)
-	     for class = (si::instance-class method)
-	     for specializers = (method-specializers method)
-	     do (cond ((null common-class)
-		       (setf common-class class))
-		      ((not (eq common-class class))
-		       (return-from gf-type base)))
-	     do (loop for spec in specializers
-		   unless (or (eq spec +the-t-class+)
-			      (and (si::instancep spec)
-				   (eq (si::instance-class spec)
-				       +the-standard-class+)))
-		   do (return-from gf-type base))
-	     finally (cond ((null class)
-			    (return-from gf-type base))
-			   ((eq class (find-class 'standard-reader-method nil))
-			    (return-from gf-type 'standard-reader-method))
-			   ((eq class (find-class 'standard-writer-method nil))
-			    (return-from gf-type 'standard-writer-method))
-			   (t
-			    (return-from gf-type base))))))
-    (when (and *clos-booted* (eq gf-type t))
-      (multiple-value-bind (function optimize)
-	  (locally (declare (notinline compute-discriminating-function))
-	    (compute-discriminating-function gfun))
-	(unless optimize
-	  (setf gf-type function))))
-    (set-funcallable-instance-function gfun gf-type)))
-
+  ;;
+  ;; We have to decide which discriminating function to install:
+  ;;	1* One supplied by the user
+  ;;	2* One coded in C that follows the MOP
+  ;;	3* One in C specialized for slot accessors
+  ;;	4* One in C that does not use generic versions of compute-applicable-...
+  ;; Respectively
+  ;;	1* The user supplies a discriminating function, or the number of arguments
+  ;;	   is so large that they cannot be handled by the C dispatchers with
+  ;;	   with memoization.
+  ;;	2* The generic function is not a s-g-f but takes less than 64 arguments
+  ;;	3* The generic function is a standard-generic-function and all its slots
+  ;;	   are standard-{reader,writer}-slots
+  ;;	4* The generic function is a standard-generic-function with less
+  ;;	   than 64 arguments
+  ;;
+  ;; This chain of reasoning uses the fact that the user cannot override methods
+  ;; such as COMPUTE-APPLICABLE-METHODS, or COMPUTE-EFFECTIVE-METHOD, or
+  ;; COMPUTE-DISCRIMINATING-FUNCTION acting on STANDARD-GENERIC-FUNCTION.
+  ;;
+  (multiple-value-bind (default-function optimizable)
+      ;;
+      ;; If the class is not a standard-generic-function, we must honor whatever function
+      ;; the user provides. However, we still recognize the case without user-computed
+      ;; function, where we can replace the output of COMPUTE-DISCRIMINATING-FUNCTION with
+      ;; a similar implementation in C
+      (compute-discriminating-function gfun)
+    (set-funcallable-instance-function
+     gfun
+     (cond
+       ;; Case 1*
+       ((or (not optimizable)
+	    (> (length (generic-function-spec-list gfun))
+	       si::c-arguments-limit))
+	default-function)
+       ;; Case 2*
+       ((and (not (eq (class-id (class-of gfun)) 'standard-generic-function))
+	     *clos-booted*)
+	t)
+       ;; Cases 3*
+       ((loop with class = (find-class 'standard-reader-method nil)
+	   for m in (generic-function-methods gfun)
+	   always (eq class (class-of m)))
+	'standard-reader-method)
+       ((loop with class = (find-class 'standard-writer-method nil)
+	   for m in (generic-function-methods gfun)
+	   always (eq class (class-of m)))
+	'standard-writer-method)
+       ;; Case 4*
+       (t
+	'standard-generic-function)))))
 
 ;;; ----------------------------------------------------------------------
 ;;; COMPUTE-APPLICABLE-METHODS

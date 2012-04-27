@@ -147,7 +147,12 @@
   ;;
   ;; 3) Finalize
   ;;
-  (mapc #'si::instance-sig-set all-classes))
+  (mapc #'si::instance-sig-set all-classes)
+  ;;
+  ;; This is needed for further optimization
+  ;;
+  (setf (class-sealedp (find-class 'method-combination)) t)
+  )
 
 (defconstant +the-t-class+ (find-class 't nil))
 (defconstant +the-class+ (find-class 'class nil))

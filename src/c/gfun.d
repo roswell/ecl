@@ -125,15 +125,15 @@ fill_spec_vector(cl_object vector, cl_object frame, cl_object gf)
 		cl_object spec_how = ECL_CONS_CAR(spec_how_list);
 		cl_object spec_type = ECL_CONS_CAR(spec_how);
 		int spec_position = fix(ECL_CONS_CDR(spec_how));
-		if (spec_position >= narg)
+		unlikely_if (spec_position >= narg)
 			FEwrong_num_arguments(gf);
+		unlikely_if (spec_no >= vector->vector.dim)
+			ecl_internal_error("Too many arguments to fill_spec_vector()");
 		argtype[spec_no++] =
-			(ATOM(spec_type) ||
+			(!ECL_LISTP(spec_type) ||
 			 Null(ecl_memql(args[spec_position], spec_type))) ?
 			cl_class_of(args[spec_position]) :
 			args[spec_position];
-		if (spec_no > vector->vector.dim)
-			return OBJNULL;
 	} end_loop_for_on_unsafe(spec_how_list);
 	vector->vector.fillp = spec_no;
 	return vector;
@@ -217,6 +217,7 @@ _ecl_standard_dispatch(cl_object frame, cl_object gf)
 	cl_object func, vector;
         const cl_env_ptr env = frame->frame.env;
 	ecl_cache_ptr cache = env->method_cache;
+	ecl_cache_record_ptr e;
 	/*
 	 * We have to copy the frame because it might be stored in cl_env.values
 	 * which will be wiped out by the next function call. However this only
@@ -232,26 +233,22 @@ _ecl_standard_dispatch(cl_object frame, cl_object gf)
 #endif
 	
 	vector = fill_spec_vector(cache->keys, frame, gf);
-	if (vector == OBJNULL) {
-		func = compute_applicable_method(env, frame, gf);
+	e = ecl_search_cache(cache);
+	if (e->key != OBJNULL) {
+		func = e->value;
 	} else {
-		ecl_cache_record_ptr e = ecl_search_cache(cache);
-		if (e->key != OBJNULL) {
-			func = e->value;
-		} else {
-			/* The keys and the cache may change while we
-			 * compute the applicable methods. We must save
-			 * the keys and recompute the cache location if
-			 * it was filled. */
-			func = compute_applicable_method(env, frame, gf);
-			if (env->values[1] != Cnil) {
-				cl_object keys = cl_copy_seq(vector);
-				if (e->key != OBJNULL) {
-					e = ecl_search_cache(cache);
-				}
-				e->key = keys;
-				e->value = func;
+		/* The keys and the cache may change while we
+		 * compute the applicable methods. We must save
+		 * the keys and recompute the cache location if
+		 * it was filled. */
+		func = compute_applicable_method(env, frame, gf);
+		if (env->values[1] != Cnil) {
+			cl_object keys = cl_copy_seq(vector);
+			if (e->key != OBJNULL) {
+				e = ecl_search_cache(cache);
 			}
+			e->key = keys;
+			e->value = func;
 		}
 	}
 	func = _ecl_funcall3(func, frame, Cnil);

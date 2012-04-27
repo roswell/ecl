@@ -12,7 +12,7 @@
 
 (in-package "CLOS")
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; COMPILING EFFECTIVE METHODS
 ;;;
 ;;; The following functions take care of transforming the forms
@@ -323,7 +323,17 @@
 ;;; COMPUTE-EFFECTIVE-METHOD
 ;;;
 
+(eval-when (compile)
+  (let* ((class (find-class 'method-combination)))
+    (define-compiler-macro method-combination-compiler (o)
+      `(si::instance-ref ,o ,(slot-definition-location (gethash 'compiler (slot-table class)))))
+    (define-compiler-macro method-combination-options (o)
+      `(si::instance-ref ,o ,(slot-definition-location (gethash 'options (slot-table class)))))))
+
 (defun std-compute-effective-method (gf method-combination applicable-methods)
+  (declare (type method-combination method-combination)
+	   (type generic-function gf)
+	   (optimize speed (safety 0)))
   (let* ((compiler (method-combination-compiler method-combination))
 	 (options (method-combination-options method-combination)))
     (if options
@@ -335,11 +345,11 @@
   (declare (notinline compute-effective-method))
   (let ((form (compute-effective-method gf method-combination applicable-methods)))
     (let ((aux form) f)
-      (if (and (listp form)
-		 (eq (pop form) 'funcall)
-		 (functionp (setf f (pop form)))
-		 (eq (second form) '.combined-method-args.)
-		 (eq (third form) '*next-methods*))
+      (if (and (listp aux)
+		 (eq (pop aux) 'funcall)
+		 (functionp (setf f (pop aux)))
+		 (eq (pop aux) '.combined-method-args.)
+		 (eq (pop aux) '*next-methods*))
 	  f
 	  (effective-method-function form t)))))
 
