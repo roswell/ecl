@@ -114,7 +114,7 @@
 	    (value nil)
 	    (extra nil))
 	   ((null options)
-	    (nconc output (nreverse extra)))
+	    (nconc output extra))
 	(let ((option (pop options)))
 	  (when (endp options)
 	    (si::simple-program-error
@@ -138,7 +138,7 @@
 	      (:allocation (setf (getf output :allocation) value))
 	      (:type       (setf (getf output :type) value))
 	      (:documentation  (push value (getf output :documentation)))
-	      (otherwise   (setf extra (list* value option extra)))))))))
+	      (otherwise   (push value (getf extra option)))))))))
 
 (defun parse-slots (slots)
   (do ((scan slots (cdr scan))
