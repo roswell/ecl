@@ -180,7 +180,7 @@ generic_compute_applicable_method(cl_env_ptr env, cl_object frame, cl_object gf)
 			return func;
 		}
 	}
-	methods = _ecl_funcall4(@'clos::std-compute-effective-method', gf,
+	methods = _ecl_funcall4(@'clos::compute-effective-method-function', gf,
 				GFUN_COMB(gf), methods);
 	env->values[1] = Ct;
 	return methods;

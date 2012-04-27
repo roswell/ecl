@@ -258,10 +258,8 @@ their lambda lists ~A and ~A are not congruent."
     ((gf standard-generic-function) classes)
   (std-compute-applicable-methods-using-classes gf classes))
 
-(defmethod compute-effective-method
-    ((gf standard-generic-function) method-combination applicable-methods)
-  (std-compute-effective-method gf method-combination applicable-methods))
-
+(function-to-method 'compute-effective-method
+  '((gf standard-generic-function) method-combination applicable-methods))
 
 ;;; ----------------------------------------------------------------------
 ;;; Error messages

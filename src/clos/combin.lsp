@@ -47,19 +47,19 @@
 ;;;  5) Ordinary forms are turned into lambda forms, much like
 ;;;	what happens with the content of MAKE-METHOD.
 ;;;
-(defun effective-method-function (form &optional top-level)
+(defun effective-method-function (form &optional top-level &aux first)
   (cond ((functionp form)
 	 form)
 	((method-p form)
 	 (method-function form))
 	((atom form)
 	 (error "Malformed effective method form:~%~A" form))
-	((eq (first form) 'MAKE-METHOD)
+	((eq (setf first (first form)) 'MAKE-METHOD)
 	 (coerce `(lambda (.combined-method-args. *next-methods*)
 		    (declare (special .combined-method-args. *next-methods*))
 		    ,(second form))
 		 'function))
-	((eq (first form) 'CALL-METHOD)
+	((eq first 'CALL-METHOD)
 	 (combine-method-functions
 	  (effective-method-function (second form))
 	  (mapcar #'effective-method-function (third form))))
@@ -329,6 +329,23 @@
     (if options
 	(apply compiler gf applicable-methods options)
 	(funcall compiler gf applicable-methods))))
+
+(defun compute-effective-method-function (gf method-combination applicable-methods)
+  ;; Cannot be inlined because it will be a method
+  (declare (notinline compute-effective-method))
+  (let ((form (compute-effective-method gf method-combination applicable-methods)))
+    (let ((aux form) f)
+      (if (and (listp form)
+		 (eq (pop form) 'funcall)
+		 (functionp (setf f (pop form)))
+		 (eq (second form) '.combined-method-args.)
+		 (eq (third form) '*next-methods*))
+	  f
+	  (effective-method-function form t)))))
+
+(defun compute-effective-method (gf method-combination applicable-methods)
+  `(funcall ,(std-compute-effective-method gf method-combination applicable-methods)
+	    .combined-method-args. *next-methods*))
 
 ;;
 ;; These method combinations are bytecompiled, for simplicity.
