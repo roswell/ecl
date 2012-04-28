@@ -138,7 +138,7 @@
        :accessor generic-function-name)
       (spec-list :initform nil :accessor generic-function-spec-list)
       (method-combination 
-       :initarg :method-combination :initform (find-method-combination nil 'standard nil)
+       :initarg :method-combination :initform (find-method-combination (class-prototype (find-class 'standard-generic-function)) 'standard nil)
        :accessor generic-function-method-combination)
       (lambda-list :initarg :lambda-list
        :accessor generic-function-lambda-list)
@@ -406,6 +406,10 @@
 
 (defun sort-applicable-methods (gf applicable-list args)
   (declare (optimize (safety 0) (speed 3)))
+  #+(or)
+  (unless applicable-list
+    (print (generic-function-name gf))
+    (print (mapcar #'type-of args)))
   (let ((f (generic-function-a-p-o-function gf))
 	(args-specializers (mapcar #'class-of args)))
     ;; reorder args to match the precedence order
