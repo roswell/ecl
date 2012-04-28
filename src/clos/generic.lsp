@@ -25,9 +25,12 @@
       (let* ((output `(ensure-generic-function ',function-specifier
 		       :delete-methods t ,@option-list)))
 	(when method-list
-	  (setf method-list (mapcar #'(lambda (m) `(defmethod ,function-specifier ,@m))
-				    method-list)
-		output `(associate-methods-to-gfun ,output ,@method-list)))
+	  (let* ((method-list (mapcar #'(lambda (m) `(defmethod ,function-specifier ,@m))
+				      method-list))
+		 (gf (gensym)))
+	    `(progn
+	       ,output
+	       (associate-methods-to-gfun ',function-specifier ,@method-list))))
 	(ext:register-with-pde whole output)))))
 
 (defun parse-defgeneric (args)
@@ -176,10 +179,11 @@
   (update-dependents gfun initargs)
   gfun)
 
-(defun associate-methods-to-gfun (gfun &rest methods)
-  (dolist (method methods)
-    (setf (getf (method-plist method) :method-from-defgeneric-p) t))
-  gfun)
+(defun associate-methods-to-gfun (name &rest methods)
+  (let ((gfun (fdefinition name)))
+    (dolist (method methods)
+      (setf (getf (method-plist method) :method-from-defgeneric-p) t))
+    gfun))
 
 (defmethod ensure-generic-function-using-class
     ((gfun generic-function) name &rest args &key
