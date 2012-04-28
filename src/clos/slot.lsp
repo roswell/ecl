@@ -138,7 +138,10 @@
 	      (:allocation (setf (getf output :allocation) value))
 	      (:type       (setf (getf output :type) value))
 	      (:documentation  (push value (getf output :documentation)))
-	      (otherwise   (push value (getf extra option)))))))))
+	      (otherwise   (if (or (getf extra option)
+				   (getf options option))
+			       (push value (getf extra option))
+			       (setf (getf extra option) value)))))))))
 
 (defun parse-slots (slots)
   (do ((scan slots (cdr scan))
