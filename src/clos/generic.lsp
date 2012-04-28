@@ -24,14 +24,15 @@
 	(parse-generic-options options lambda-list)
       (let* ((output `(ensure-generic-function ',function-specifier
 		       :delete-methods t ,@option-list)))
-	(when method-list
-	  (let* ((method-list (mapcar #'(lambda (m) `(defmethod ,function-specifier ,@m))
-				      method-list))
-		 (gf (gensym)))
-	    `(progn
-	       ,output
-	       (associate-methods-to-gfun ',function-specifier ,@method-list))))
-	(ext:register-with-pde whole output)))))
+	(ext:register-with-pde
+	 whole
+	 (if method-list
+	     `(progn
+		,output
+		(associate-methods-to-gfun
+		 ',function-specifier
+		 ,@(loop for m in method-list collect `(defmethod ,function-specifier ,@m))))
+	    output))))))
 
 (defun parse-defgeneric (args)
   (declare (si::c-local))
