@@ -349,3 +349,6 @@ their lambda lists ~A and ~A are not congruent."
   '((gf standard-generic-function)))
 (function-to-method 'generic-function-method-class
   '((gf standard-generic-function)))
+
+(function-to-method 'find-method-combination
+  '((gf standard-generic-function) method-combination-type-name method-combination-options))
