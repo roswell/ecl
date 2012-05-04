@@ -325,6 +325,7 @@
   ;; such as COMPUTE-APPLICABLE-METHODS, or COMPUTE-EFFECTIVE-METHOD, or
   ;; COMPUTE-DISCRIMINATING-FUNCTION acting on STANDARD-GENERIC-FUNCTION.
   ;;
+  (declare (notinline compute-discriminating-function))
   (multiple-value-bind (default-function optimizable)
       ;;
       ;; If the class is not a standard-generic-function, we must honor whatever function
