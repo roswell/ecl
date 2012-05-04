@@ -64,6 +64,12 @@
 
 (defvar *ansi-tests-tarball* "ansi-tests.tar.gz")
 
+(defvar *mop-tests-mirror* "http://ecls.sourceforge.net/mop-features.tar.gz")
+
+(defvar *mop-tests-sandbox* (merge-pathnames "mop-features/" *here*))
+
+(defvar *mop-tests-tarball* "mop-features.tar.gz")
+
 (defvar *fricas-mirror* "http://ecls.sourceforge.net/fricas.tar.gz")
 
 (defvar *fricas-sandbox* (merge-pathnames "fricas/" *here*))
@@ -186,6 +192,11 @@
     (extract-distribution *ansi-tests-tarball* *ansi-tests-mirror*))
   t)
 
+(defun ensure-mop-tests ()
+  (unless (probe-file *mop-tests-sandbox*)
+    (extract-distribution *mop-tests-tarball* *mop-tests-mirror*))
+  t)
+
 (defun ensure-fricas ()
   (unless (probe-file *fricas-sandbox*)
     (extract-distribution *fricas-tarball* *fricas-url*)))
@@ -238,6 +249,42 @@
 			  :output output
 			  :error :output))
     (ext:chdir *here*)))
+
+(defun run-mop-tests (&optional (output (merge-pathnames "mop-features.log"
+							 *output-directory*)))
+  (ensure-mop-tests)
+  ;; Cleanup stray files
+  (cleanup-directory *mop-tests-sandbox*)
+  ;; Create the script we are going to run
+  (let ((mop-script (merge-pathnames "./run-mop-tests.lisp" *mop-tests-sandbox*)))
+    (with-open-file (s mop-script :direction :output
+		       :if-exists :supersede
+		       :if-does-not-exist :create)
+      (pprint '(progn
+		(require :asdf)
+		(load "lw-compat-package")
+		(load "lw-compat")
+		(load "mop-features-packages.lisp")
+		(load "mop-feature-tests.lisp")
+		(handler-case
+		    (progn
+		      (funcall (read-from-string "mop-feature-tests::run-feature-tests"))
+		      (format t "~%~%~%MOP-FEATURE-TESTS: OK"))
+		  (error (error)
+		    (format t "~%~%~%MOP-FEATURE-TESTS: Failed"))))
+	      s))
+    ;; Run with given image
+    (ensure-directories-exist output)
+    (unwind-protect 
+	 (progn
+	   (ext:chdir *mop-tests-sandbox*)
+	   (ext:run-program *test-image*
+			    *test-image-args*
+			    :input mop-script
+			    :output output
+			    :error :output))
+      (ext:chdir *here*))))
+
 
 (defvar *quicklisp-library-list*
   '(trivial-features

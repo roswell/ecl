@@ -15,6 +15,8 @@ do-regressions: regressions config.lsp
 	$(ECL) -norc -load config.lsp -eval '(ecl-tests::run-regressions-tests)' -eval '(ext:quit)' < /dev/null
 do-quicklisp: quicklisp config.lsp
 	$(ECL) -norc -load config.lsp -eval '(ecl-tests::run-quicklisp-tests)' -eval '(ext:quit)' < /dev/null
+do-mop-tests: mop-features config.lsp
+	$(ECL) -norc -load config.lsp -eval '(ecl-tests::run-mop-tests)' -eval '(ext:quit)' < /dev/null
 
 #
 # Create directories
@@ -25,6 +27,8 @@ regressions: config.lsp
 	$(ECL) -norc -load config.lsp -eval '(ecl-tests::ensure-regressions)' -eval '(ext:quit)' < /dev/null
 quicklisp: config.lsp
 	$(ECL) -norc -load config.lsp -eval '(ecl-tests::ensure-quicklisp)' -eval '(ext:quit)' < /dev/null
+mop-features: config.lsp
+	$(ECL) -norc -load config.lsp -eval '(ecl-tests::ensure-mop-tests)' -eval '(ext:quit)' < /dev/null
 
 #
 # Test other implementations
@@ -43,10 +47,10 @@ clean:
 	rm -rf output*
 clean-sources:
 	test -f config.lsp.in || rm -rf bugs
-	rm -rf ansi-tests quicklisp
+	rm -rf ansi-tests quicklisp mop-features regressions
 distclean: clean-sources clean
 	rm -rf cache
 
 update: clean-sources
-	$(MAKE) ansi-tests regressions quicklisp
+	$(MAKE) ansi-tests regressions quicklisp mop-features
 
