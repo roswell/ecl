@@ -19,8 +19,6 @@
 
 (defparameter *clos-booted* nil)
 
-(defconstant *default-method-cache-size* 64 "Size of hash tables for methods")
-
 ;;;----------------------------------------------------------------------
 ;;; BOOTSTRAP FUNCTIONS TO ACCESS SLOTS
 ;;;
