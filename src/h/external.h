@@ -250,6 +250,8 @@ struct cl_core_struct {
 
         cl_object external_processes;
         cl_object external_processes_lock;
+
+	cl_object known_signals;
 };
 
 extern ECL_API struct cl_core_struct cl_core;

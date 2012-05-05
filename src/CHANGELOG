@@ -33,7 +33,12 @@ ECL 12.2.2:
 
  - In EXT:RUN-PROGRAM the child process is delayed until the parent has created
    the process structure and stored the process id in it. Formerly we had race
-   conditions due to the child exiting before the parent was able to call sigwait().
+   conditions due to the child exiting before the parent was able to call
+   sigwait().
+
+ - Where available, ECL now defines the constants EXT:+SIGRTMIN+ and
+   EXT:+SIGRTMAX+, as well as EXT:+SIGRT0+ through EXT:+RTMINn+ where n =
+   SIGRTMAX - SIGRTMIN Those signals can be then trapped.
 
 * Metaobject protocol:
 

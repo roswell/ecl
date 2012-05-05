@@ -97,105 +97,106 @@
 
 static struct {
 	int code;
-	char *text;
+	char *name;
+	cl_object handler;
 } known_signals[] = {
 #ifdef SIGHUP
-	{ SIGHUP, "+SIGHUP+" },
+	{ SIGHUP, "+SIGHUP+", Cnil},
 #endif
 #ifdef SIGINT
-	{ SIGINT, "+SIGINT+" },
+	{ SIGINT, "+SIGINT+", Cnil},
 #endif
 #ifdef SIGQUIT
-	{ SIGQUIT, "+SIGQUIT+" },
+	{ SIGQUIT, "+SIGQUIT+", Cnil},
 #endif
 #ifdef SIGILL
-	{ SIGILL, "+SIGILL+" },
+	{ SIGILL, "+SIGILL+", Cnil},
 #endif
 #ifdef SIGTRAP
-	{ SIGTRAP, "+SIGTRAP+" },
+	{ SIGTRAP, "+SIGTRAP+", Cnil},
 #endif
 #ifdef SIGABRT
-	{ SIGABRT, "+SIGABRT+" },
+	{ SIGABRT, "+SIGABRT+", Cnil},
 #endif
 #ifdef SIGEMT
-	{ SIGEMT, "+SIGEMT+" },
+	{ SIGEMT, "+SIGEMT+", Cnil},
 #endif
 #ifdef SIGFPE
-	{ SIGFPE, "+SIGFPE+" },
+	{ SIGFPE, "+SIGFPE+", Cnil},
 #endif
 #ifdef SIGKILL
-	{ SIGKILL, "+SIGKILL+" },
+	{ SIGKILL, "+SIGKILL+", Cnil},
 #endif
 #ifdef SIGBUS
-	{ SIGBUS, "+SIGBUS+" },
+	{ SIGBUS, "+SIGBUS+", Cnil},
 #endif
 #ifdef SIGSEGV
-	{ SIGSEGV, "+SIGSEGV+" },
+	{ SIGSEGV, "+SIGSEGV+", Cnil},
 #endif
 #ifdef SIGSYS
-	{ SIGSYS, "+SIGSYS+" },
+	{ SIGSYS, "+SIGSYS+", Cnil},
 #endif
 #ifdef SIGPIPE
-	{ SIGPIPE, "+SIGPIPE+" },
+	{ SIGPIPE, "+SIGPIPE+", Cnil},
 #endif
 #ifdef SIGALRM
-	{ SIGALRM, "+SIGALRM+" },
+	{ SIGALRM, "+SIGALRM+", Cnil},
 #endif
 #ifdef SIGTERM
-	{ SIGTERM, "+SIGTERM+" },
+	{ SIGTERM, "+SIGTERM+", Cnil},
 #endif
 #ifdef SIGURG
-	{ SIGURG, "+SIGURG+" },
+	{ SIGURG, "+SIGURG+", Cnil},
 #endif
 #ifdef SIGSTOP
-	{ SIGSTOP, "+SIGSTOP+" },
+	{ SIGSTOP, "+SIGSTOP+", Cnil},
 #endif
 #ifdef SIGTSTP
-	{ SIGTSTP, "+SIGTSTP+" },
+	{ SIGTSTP, "+SIGTSTP+", Cnil},
 #endif
 #ifdef SIGCONT
-	{ SIGCONT, "+SIGCONT+" },
+	{ SIGCONT, "+SIGCONT+", Cnil},
 #endif
 #ifdef SIGCHLD
-	{ SIGCHLD, "+SIGCHLD+" },
+	{ SIGCHLD, "+SIGCHLD+", Cnil},
 #endif
 #ifdef SIGTTIN
-	{ SIGTTIN, "+SIGTTIN+" },
+	{ SIGTTIN, "+SIGTTIN+", Cnil},
 #endif
 #ifdef SIGTTOU
-	{ SIGTTOU, "+SIGTTOU+" },
+	{ SIGTTOU, "+SIGTTOU+", Cnil},
 #endif
 #ifdef SIGIO
-	{ SIGIO, "+SIGIO+" },
+	{ SIGIO, "+SIGIO+", Cnil},
 #endif
 #ifdef SIGXCPU
-	{ SIGXCPU, "+SIGXCPU+" },
+	{ SIGXCPU, "+SIGXCPU+", Cnil},
 #endif
 #ifdef SIGXFSZ
-	{ SIGXFSZ, "+SIGXFSZ+" },
+	{ SIGXFSZ, "+SIGXFSZ+", Cnil},
 #endif
 #ifdef SIGVTALRM
-	{ SIGVTALRM, "+SIGVTALRM+" },
+	{ SIGVTALRM, "+SIGVTALRM+", Cnil},
 #endif
 #ifdef SIGPROF
-	{ SIGPROF, "+SIGPROF+" },
+	{ SIGPROF, "+SIGPROF+", Cnil},
 #endif
 #ifdef SIGWINCH
-	{ SIGWINCH, "+SIGWINCH+" },
+	{ SIGWINCH, "+SIGWINCH+", Cnil},
 #endif
 #ifdef SIGINFO
-	{ SIGINFO, "+SIGINFO+" },
+	{ SIGINFO, "+SIGINFO+", Cnil},
 #endif
 #ifdef SIGUSR1
-	{ SIGUSR1, "+SIGUSR1+" },
+	{ SIGUSR1, "+SIGUSR1+", Cnil},
 #endif
 #ifdef SIGUSR2
-	{ SIGUSR2, "+SIGUSR2+" },
+	{ SIGUSR2, "+SIGUSR2+", Cnil},
 #endif
 #ifdef SIGTHR
-	{ SIGTHR, "+SIGTHR+" },
+	{ SIGTHR, "+SIGTHR+", Cnil},
 #endif
-	{ -1, "" }
+	{ -1, "", Cnil }
 };
 
 #ifdef HAVE_SIGPROCMASK
@@ -739,15 +740,17 @@ do_catch_signal(int code, cl_object action, cl_object process)
 #endif
 #if defined(ECL_THREADS) && !defined(ECL_MS_WINDOWS_HOST)
 	if (code_int == ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL]) {
-		FEerror("It is not allowed to change the behavior of ~D", 1,
+		FEerror("It is not allowed to change the behavior of signal ~D", 1,
                         MAKE_FIXNUM(code_int));
 	}
 #endif
-	for (i = 0; known_signals[i].code >= 0; i++) {
-		if (known_signals[i].code == code_int) {
-                        output = do_catch_signal(code_int, flag, process);
-                        break;
-		}
+	output = ecl_gethash_safe(MAKE_FIXNUM(code_int),
+				  cl_core.known_signals,
+				  OBJNULL);
+	if (output == OBJNULL) {
+		output = Cnil;
+	} else {
+		output = do_catch_signal(code_int, flag, process);
 	}
 	@(return output)
 }
@@ -1252,16 +1255,47 @@ install_fpe_signal_handlers()
  * such as +SIGINT+ for SIGINT, etc.
  */
 static void
+add_one_signal(cl_object hash_table, int signal, cl_object name, cl_object handler)
+{
+	cl_object code = MAKE_FIXNUM(signal);
+	cl_export2(name, cl_core.ext_package);
+	si_Xmake_constant(name, code);
+	ecl_sethash(code, hash_table, handler);
+}
+
+static void
 create_signal_code_constants()
 {
+	cl_object hash =
+		cl_core.known_signals =
+		cl__make_hash_table(@'eql', MAKE_FIXNUM(128),
+				    cl_core.rehash_size,
+				    cl_core.rehash_threshold);
 	int i;
 	for (i = 0; known_signals[i].code >= 0; i++) {
-		cl_object name =
-			_ecl_intern(known_signals[i].text,
-				    cl_core.ext_package);
-                cl_export2(name, cl_core.ext_package);
-		si_Xmake_constant(name, MAKE_FIXNUM(known_signals[i].code));
+		add_one_signal(hash, known_signals[i].code,
+			       _ecl_intern(known_signals[i].name,
+					   cl_core.ext_package),
+			       known_signals[i].handler);
 	}
+#ifdef SIGRTMIN
+	for (i = SIGRTMIN; i <= SIGRTMAX; i++) {
+		int intern_flag[1];
+		char buffer[64];
+		cl_object name;
+		sprintf(buffer, "+SIGRT%d+", i-SIGRTMIN);
+		name = ecl_intern(make_base_string_copy(buffer),
+				  cl_core.ext_package,
+				  intern_flag);
+		add_one_signal(hash, i, name, Cnil);
+	}
+	add_one_signal(hash, SIGRTMIN,
+		       _ecl_intern("+SIGRTMIN+", cl_core.ext_package),
+		       Cnil);
+	add_one_signal(hash, SIGRTMAX,
+		       _ecl_intern("+SIGRTMAX+", cl_core.ext_package),
+		       Cnil);
+#endif
 }
 
 void
