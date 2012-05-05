@@ -32,7 +32,7 @@ write_readable_pathname(cl_object path, cl_object stream)
                         @':host', path->pathname.host,
                         @':device', path->pathname.device,
                         @':directory',
-                        cl_funcall(2, @'ext::maybe-quote', path->pathname.directory),
+                        _ecl_funcall2(@'ext::maybe-quote', path->pathname.directory),
                         @':name', path->pathname.name,
                         @':type', path->pathname.type,
                         @':version', path->pathname.version,
@@ -299,7 +299,7 @@ write_stream(cl_object x, cl_object stream)
 static void
 write_instance(cl_object x, cl_object stream)
 {
-        cl_funcall(3, @'print-object', x, stream);
+        _ecl_funcall3(@'print-object', x, stream);
 }
 #else
 static void
@@ -319,7 +319,7 @@ write_structure(cl_object x, cl_object stream)
                 x = structure_to_list(x);
                 si_write_object(x, stream);
         } else {
-                cl_funcall(4, print_function, x, stream, MAKE_FIXNUM(0));
+                _ecl_funcall4(print_function, x, stream, MAKE_FIXNUM(0));
         }
 }
 #endif /* !CLOS */

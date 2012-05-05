@@ -70,7 +70,7 @@ si_print_unreadable_object_function(cl_object o, cl_object stream, cl_object typ
                         ecl_write_char(' ', stream);
 		}
 		if (!Null(function)) {
-			cl_funcall(1, function);
+			_ecl_funcall1(function);
 		}
 		if (!Null(id)) {
 			ecl_write_char(' ', stream);

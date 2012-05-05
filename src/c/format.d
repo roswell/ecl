@@ -2229,8 +2229,8 @@ DIRECTIVE:
 		cl_apply(3, string, strm, cl_grab_rest_args(args));
 	} else {
 #ifdef ECL_CMU_FORMAT
-		cl_funcall(4, @'si::formatter-aux', strm, string,
-			   cl_grab_rest_args(args));
+		_ecl_funcall4(@'si::formatter-aux', strm, string,
+			      cl_grab_rest_args(args));
 #else
 		doformat(narg, strm, string, args, FALSE);
 #endif

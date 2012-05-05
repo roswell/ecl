@@ -31,7 +31,7 @@
 extern cl_object
 cl_upgraded_array_element_type(cl_narg narg, cl_object type, ...)
 {
-	return cl_funcall(2, @'upgraded-array-element-type', type);
+	return _ecl_funcall2(@'upgraded-array-element-type', type);
 }
 
 extern cl_object
@@ -41,9 +41,9 @@ si_safe_eval(cl_narg narg, cl_object form, cl_object env, ...)
                 cl_object err_value;
                 va_list args; va_start(args, env);
                 err_value = va_arg(args, cl_object);
-                return cl_funcall(4, @'ext::safe-eval', form, env, err_value);
+                return _ecl_funcall4(@'ext::safe-eval', form, env, err_value);
         }
-        return cl_funcall(3, @'ext::safe-eval', form, env);
+        return _ecl_funcall3(@'ext::safe-eval', form, env);
 }
 
 extern cl_object
@@ -71,9 +71,9 @@ si_string_to_object(cl_narg narg, cl_object string, ...)
                 cl_object err_value;
                 va_list args; va_start(args, string);
                 err_value = va_arg(args, cl_object);
-                return cl_funcall(3, @'si::string-to-object', string, err_value);
+                return _ecl_funcall3(@'si::string-to-object', string, err_value);
         }
-        return cl_funcall(2, @'si::string-to-object', string);
+        return _ecl_funcall2(@'si::string-to-object', string);
 }
 
 extern cl_object

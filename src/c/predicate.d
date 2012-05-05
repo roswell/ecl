@@ -18,6 +18,7 @@
 #include <string.h>
 #define ECL_INCLUDE_MATH_H
 #include <ecl/ecl.h>
+#include <ecl/internal.h>
 
 cl_object
 cl_identity(cl_object x)
@@ -502,7 +503,7 @@ BEGIN:
 			cl_env_ptr env = ecl_process_env();
 			cl_object iterator = si_hash_table_iterator(x);
 			do {
-				cl_object ndx = cl_funcall(1, iterator);
+				cl_object ndx = _ecl_funcall1(iterator);
 				if (Null(ndx)) {
 					return TRUE;
 				} else {

@@ -2177,7 +2177,7 @@ need_to_make_load_form_p(cl_object o)
         case t_list:
                 if (Null(o)) return 0;
         default:
-                return cl_funcall(3, @'clos::need-to-make-load-form-p', o, Cnil)
+                return _ecl_funcall3(@'clos::need-to-make-load-form-p', o, Cnil)
                         != Cnil;
         }
 }
@@ -2193,7 +2193,7 @@ maybe_make_load_forms(cl_env_ptr env, cl_object constant)
                 return;
         if (!need_to_make_load_form_p(constant))
                 return;
-        make = cl_funcall(2, @'make-load-form', constant);
+        make = _ecl_funcall2(@'make-load-form', constant);
         init = env->values[1];
         c_env->load_time_forms = ecl_cons(cl_list(3, constant, make, init),
                                           c_env->load_time_forms);

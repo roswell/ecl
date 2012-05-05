@@ -418,7 +418,7 @@ handle_signal_now(cl_object signal_code)
         case t_cclosure:
         case t_bytecodes:
         case t_bclosure:
-                cl_funcall(1, signal_code);
+                _ecl_funcall1(signal_code);
         default:
                 break;
         }

@@ -133,7 +133,7 @@ from_list_to_execve_argument(cl_object l, char ***environp)
 static cl_object
 make_external_process()
 {
-        return cl_funcall(1, @'ext::make-external-process');
+        return _ecl_funcall1(@'ext::make-external-process');
 }
 
 static cl_object
@@ -625,7 +625,7 @@ make_windows_handle(HANDLE h)
 	int child_stdin, child_stdout, child_stderr;
 	int pipe_fd[2];
 	argv = CONS(command, ecl_nconc(argv, ecl_list1(Cnil)));
-	argv = cl_funcall(3, @'coerce', argv, @'vector');
+	argv = _ecl_funcall3(@'coerce', argv, @'vector');
  AGAIN_INPUT:
 	if (input == @':stream') {
 		int fd[2];
