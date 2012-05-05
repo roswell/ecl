@@ -258,8 +258,8 @@ interrupts_disabled_by_C(cl_env_ptr the_env)
 static ECL_INLINE bool
 interrupts_disabled_by_lisp(cl_env_ptr the_env)
 {
-	return (ecl_option_values[ECL_OPT_BOOTED] &&
-		ecl_symbol_value(@'ext::*interrupts-enabled*') == Cnil);
+	return !ecl_option_values[ECL_OPT_BOOTED] ||
+		Null(ECL_SYM_VAL(the_env, @'ext::*interrupts-enabled*'));
 }
 
 /* On platforms in which mprotect() works, we block all write access
