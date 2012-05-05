@@ -263,6 +263,23 @@ interrupts_disabled_by_lisp(cl_env_ptr the_env)
 		Null(ECL_SYM_VAL(the_env, @'ext::*interrupts-enabled*'));
 }
 
+static void early_signal_error() ecl_attr_noreturn;
+
+static void
+early_signal_error()
+{
+	ecl_internal_error("Got signal before environment was installed"
+			   " on our thread");
+}
+
+static void illegal_signal_code(cl_object code) ecl_attr_noreturn;
+
+static void
+illegal_signal_code(cl_object code)
+{
+	FEerror("Unknown signal code: ~D", 1, code);
+}
+
 /* On platforms in which mprotect() works, we block all write access
  * to the environment for a cheap check of pending interrupts. On
  * other platforms we change the value of disable_interrupts to 3, so
@@ -432,16 +449,30 @@ handler_fn_prototype(non_evil_signal_handler, int sig, siginfo_t *siginfo, void 
 	reinstall_signal(sig, non_evil_signal_handler);
         /* The lisp environment might not be installed. */
         the_env = ecl_process_env();
-        if (zombie_process(the_env))
+        unlikely_if (zombie_process(the_env))
                 return;
-	if (!ecl_option_values[ECL_OPT_BOOTED]) {
-		ecl_internal_error("Got signal before environment was installed"
-				   " on our thread.");
-	}
         signal_object = ecl_gethash_safe(MAKE_FIXNUM(sig),
 					 cl_core.known_signals,
 					 Cnil);
         handle_or_queue(the_env, signal_object, sig);
+        errno = old_errno;
+}
+
+static void
+handler_fn_prototype(evil_signal_handler, int sig, siginfo_t *siginfo, void *data)
+{
+        int old_errno = errno;
+	cl_env_ptr the_env;
+        cl_object signal_object;
+	reinstall_signal(sig, evil_signal_handler);
+        /* The lisp environment might not be installed. */
+        the_env = ecl_process_env();
+        unlikely_if (zombie_process(the_env))
+                return;
+        signal_object = ecl_gethash_safe(MAKE_FIXNUM(sig),
+					 cl_core.known_signals,
+					 Cnil);
+        handle_signal_now(signal_object);
         errno = old_errno;
 }
 
@@ -474,10 +505,13 @@ handler_fn_prototype(fpe_signal_handler, int sig, siginfo_t *info, void *data)
 	cl_object condition;
         int code, old_errno = errno;
 	cl_env_ptr the_env;
-	reinstall_signal(sig, process_interrupt_handler);
+	reinstall_signal(sig, fpe_interrupt_handler);
         /* The lisp environment might not be installed. */
+	unlikely_if (!ecl_option_values[ECL_OPT_BOOTED]) {
+		early_signal_error();
+	}
         the_env = ecl_process_env();
-        if (zombie_process(the_env))
+        unlikely_if (zombie_process(the_env))
                 return;
 	condition = @'arithmetic-error';
 	code = 0;
@@ -549,6 +583,7 @@ handler_fn_prototype(fpe_signal_handler, int sig, siginfo_t *info, void *data)
 	si_trap_fpe(@'last', Ct); /* Clear FPE exception flag */
 	unblock_signal(the_env, code);
 	handle_signal_now(condition);
+	/* We will not reach past this point. */
 }
 
 static void
@@ -567,13 +602,12 @@ handler_fn_prototype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
                 ";;;\n\n";
 	cl_env_ptr the_env;
 	reinstall_signal(sig, sigsegv_handler);
-	if (!ecl_option_values[ECL_OPT_BOOTED]) {
-		ecl_internal_error("Got signal before environment was installed"
-				   " on our thread.");
-	}
         /* The lisp environment might not be installed. */
+	unlikely_if (!ecl_option_values[ECL_OPT_BOOTED]) {
+		early_signal_error();
+	}
 	the_env = ecl_process_env();
-	if (zombie_process(the_env))
+	unlikely_if (zombie_process(the_env))
 		return;
 #if defined(SA_SIGINFO)
 # if defined(ECL_USE_MPROTECT)
@@ -702,6 +736,11 @@ do_catch_signal(int code, cl_object action, cl_object process)
                         mysignal(code, sigsegv_handler);
                 }
 #endif
+#ifdef SIGILL
+		else if (code == SIGILL) {
+			mysignal(SIGILL, evil_signal_handler);
+		}
+#endif
 #if defined(SIGCHLD) && defined(ECL_THREADS)
                 else if (code == SIGCHLD &&
 			 ecl_option_values[ECL_OPT_SIGNAL_HANDLING_THREAD])
@@ -715,7 +754,7 @@ do_catch_signal(int code, cl_object action, cl_object process)
                 }
 		return Ct;
         } else {
-		FEerror("Unknown action argument to EXT:CATCH-SIGNAL: ~A", 1,
+		FEerror("Unknown 2nd argument to EXT:CATCH-SIGNAL: ~A", 1,
 			action);
 	}
 }
@@ -725,7 +764,7 @@ si_get_signal_handler(cl_object code)
 {
 	cl_object handler = ecl_gethash_safe(code, cl_core.known_signals, OBJNULL);
 	unlikely_if (handler == OBJNULL) {
-		FEerror("Unknown signal code: ~D", 1, code);
+		illegal_signal_code(code);
 	}
 	@(return handler)
 }
@@ -735,7 +774,7 @@ si_set_signal_handler(cl_object code, cl_object handler)
 {
 	cl_object action = ecl_gethash_safe(code, cl_core.known_signals, OBJNULL);
 	unlikely_if (action == OBJNULL) {
-		FEerror("Unknown signal code: ~D", 1, code);
+		illegal_signal_code(code);
 	}
 	ecl_sethash(code, cl_core.known_signals, handler);
 	si_catch_signal(2, code, Ct);
@@ -745,15 +784,15 @@ si_set_signal_handler(cl_object code, cl_object handler)
 @(defun ext::catch-signal (code flag &key process)
 @
 {
-        cl_object output = Cnil;
-	int code_int = ecl_to_int(code);
-	int i;
+	int code_int;
 	unlikely_if (ecl_gethash_safe(code, cl_core.known_signals, OBJNULL) == OBJNULL) {
-		FEerror("Unknown signal code: ~D", 1, code);
+		illegal_signal_code(code);
 	}
+	code_int = fix(code);
 #ifdef GBC_BOEHM
 # ifdef SIGSEGV
-	unlikely_if ((code_int == SIGSEGV) && ecl_option_values[ECL_OPT_INCREMENTAL_GC])
+	unlikely_if ((code == MAKE_FIXNUM(SIGSEGV)) &&
+		     ecl_option_values[ECL_OPT_INCREMENTAL_GC])
 		FEerror("It is not allowed to change the behavior of SIGSEGV.",
 			0);
 # endif
@@ -774,8 +813,7 @@ si_set_signal_handler(cl_object code, cl_object handler)
 		FEerror("The signal handler for SIGPFE cannot be uninstalled. Use SI:TRAP-FPE instead.", 0);
 	}
 #endif
-	output = do_catch_signal(code_int, flag, process);
-	@(return output)
+	@(return do_catch_signal(code_int, flag, process));
 }
 @)
 
@@ -1006,9 +1044,6 @@ asynchronous_signal_servicing_thread()
 	 * use to communicate process interrupts. For some unknown
 	 * reason those signals may get lost.
 	 */
-#ifdef SIGCHLD
-        sigaddset(&handled_set, SIGCHLD);
-#endif
 	if (interrupt_signal) {
 		sigaddset(&handled_set, interrupt_signal);
 		pthread_sigmask(SIG_SETMASK, &handled_set, NULL);
@@ -1148,6 +1183,7 @@ install_asynchronous_signal_handlers()
 	if (ecl_option_values[ECL_OPT_TRAP_SIGCHLD]) {
                 /* We have to set the process signal handler explicitly,
                  * because on many platforms the default is SIG_IGN. */
+		mysignal(SIGCHLD, non_evil_signal_handler);
 		async_handler(SIGCHLD, non_evil_signal_handler, sigmask);
 	}
 #endif
@@ -1206,22 +1242,22 @@ install_synchronous_signal_handlers()
 {
 #ifdef SIGBUS
 	if (ecl_option_values[ECL_OPT_TRAP_SIGBUS]) {
-		mysignal(SIGBUS, sigsegv_handler);
+		do_catch_signal(SIGBUS, Ct, Cnil);
 	}
 #endif
 #ifdef SIGSEGV
 	if (ecl_option_values[ECL_OPT_TRAP_SIGSEGV]) {
-		mysignal(SIGSEGV, sigsegv_handler);
+		do_catch_signal(SIGSEGV, Ct, Cnil);
 	}
 #endif
 #ifdef SIGPIPE
 	if (ecl_option_values[ECL_OPT_TRAP_SIGPIPE]) {
-		mysignal(SIGPIPE, non_evil_signal_handler);
+		do_catch_signal(SIGPIPE, Ct, Cnil);
 	}
 #endif
 #ifdef SIGILL
 	if (ecl_option_values[ECL_OPT_TRAP_SIGILL]) {
-		mysignal(SIGILL, non_evil_signal_handler);
+		do_catch_signal(SIGILL, Ct, Cnil);
 	}
 #endif
 	/* In order to implement MP:INTERRUPT-PROCESS, MP:PROCESS-KILL
