@@ -104,13 +104,13 @@ static struct {
 	{ SIGHUP, "+SIGHUP+", Cnil},
 #endif
 #ifdef SIGINT
-	{ SIGINT, "+SIGINT+", Cnil},
+	{ SIGINT, "+SIGINT+", @'si::terminal-interrupt'},
 #endif
 #ifdef SIGQUIT
 	{ SIGQUIT, "+SIGQUIT+", Cnil},
 #endif
 #ifdef SIGILL
-	{ SIGILL, "+SIGILL+", Cnil},
+	{ SIGILL, "+SIGILL+", @'ext::illegal-instruction'},
 #endif
 #ifdef SIGTRAP
 	{ SIGTRAP, "+SIGTRAP+", Cnil},
@@ -128,10 +128,10 @@ static struct {
 	{ SIGKILL, "+SIGKILL+", Cnil},
 #endif
 #ifdef SIGBUS
-	{ SIGBUS, "+SIGBUS+", Cnil},
+	{ SIGBUS, "+SIGBUS+", @'ext::segmentation-violation'},
 #endif
 #ifdef SIGSEGV
-	{ SIGSEGV, "+SIGSEGV+", Cnil},
+	{ SIGSEGV, "+SIGSEGV+", @'ext::segmentation-violation'},
 #endif
 #ifdef SIGSYS
 	{ SIGSYS, "+SIGSYS+", Cnil},
@@ -158,7 +158,7 @@ static struct {
 	{ SIGCONT, "+SIGCONT+", Cnil},
 #endif
 #ifdef SIGCHLD
-	{ SIGCHLD, "+SIGCHLD+", Cnil},
+	{ SIGCHLD, "+SIGCHLD+", @'si::wait-for-all-processes'},
 #endif
 #ifdef SIGTTIN
 	{ SIGTTIN, "+SIGTTIN+", Cnil},
@@ -201,7 +201,7 @@ static struct {
 
 #ifdef HAVE_SIGPROCMASK
 static sigset_t main_thread_sigmask;
-# define handler_fn_protype(name, sig, info, aux) name(sig, info, aux)
+# define handler_fn_prototype(name, sig, info, aux) name(sig, info, aux)
 # define call_handler(name, sig, info, aux) name(sig, info, aux)
 # define reinstall_signal(x,y)
 # define copy_siginfo(x,y) memcpy(x, y, sizeof(struct sigaction))
@@ -227,7 +227,7 @@ mysignal(int code, void *handler)
 	sigaction(code, &action, NULL);
 }
 #else /* HAVE_SIGPROCMASK */
-# define handler_fn_protype(name, sig, info, aux) name(sig)
+# define handler_fn_prototype(name, sig, info, aux) name(sig)
 # define call_handler(name, sig, info, aux) name(sig)
 # define mysignal(x,y) signal(x,y)
 # define reinstall_signal(x,y) signal(x,y)
@@ -283,106 +283,6 @@ set_guard_page(cl_env_ptr the_env)
 
 static cl_object pop_signal(cl_env_ptr env);
 
-static cl_object
-handler_fn_protype(lisp_signal_handler, int sig, siginfo_t *info, void *aux)
-{
-        /* The lisp environment might not be installed. */
-	cl_env_ptr the_env = ecl_process_env();
-        if (zombie_process(the_env))
-                return Cnil;
-	switch (sig) {
-	case SIGINT:
-                return @'si::terminal-interrupt';
-	case SIGFPE: {
-		cl_object condition = @'arithmetic-error';
-		int code = 0;
-#ifdef _MSC_VER
-                switch (_fpecode) {
-                case _FPE_INVALID:
-                        condition = @'floating-point-invalid-operation';
-			code = FE_INVALID;
-                        break;
-                case _FPE_OVERFLOW:
-                        condition = @'floating-point-overflow';
-			code = FE_OVERFLOW;
-                        break;
-                case _FPE_UNDERFLOW:
-                        condition = @'floating-point-underflow';
-			code = FE_UNDERFLOW;
-                        break;
-                case _FPE_ZERODIVIDE:
-                        condition = @'division-by-zero';
-			code = FE_DIVBYZERO;
-                        break;
-                }
-#else
-# if defined(HAVE_FENV_H) & !defined(ECL_AVOID_FENV_H)
-                code = fetestexcept(FE_ALL_EXCEPT);
-		if (code & FE_DIVBYZERO) {
-			condition = @'division-by-zero';
-			code = FE_DIVBYZERO;
-		} else if (code & FE_INVALID) {
-			condition = @'floating-point-invalid-operation';
-			code = FE_INVALID;
-		} else if (code & FE_OVERFLOW) {
-			condition = @'floating-point-overflow';
-			code = FE_OVERFLOW;
-		} else if (code & FE_UNDERFLOW) {
-			condition = @'floating-point-underflow';
-			code = FE_UNDERFLOW;
-		} else if (code & FE_INEXACT) {
-			condition = @'floating-point-inexact';
-			code = FE_INEXACT;
-		}
-                feclearexcept(FE_ALL_EXCEPT);
-# endif
-#endif /* !_MSC_VER */
-#ifdef SA_SIGINFO
-		if (info) {
-			if (info->si_code == FPE_INTDIV || info->si_code == FPE_FLTDIV) {
-				condition = @'division-by-zero';
-				code = FE_DIVBYZERO;
-			} else if (info->si_code == FPE_FLTOVF) {
-				condition = @'floating-point-overflow';
-				code = FE_OVERFLOW;
-			} else if (info->si_code == FPE_FLTUND) {
-				condition = @'floating-point-underflow';
-				code = FE_UNDERFLOW;
-			} else if (info->si_code == FPE_FLTRES) {
-				condition = @'floating-point-inexact';
-				code = FE_INEXACT;
-			} else if (info->si_code == FPE_FLTINV) {
-				condition = @'floating-point-invalid-operation';
-				code = FE_INVALID;
-			}
-		}
-#endif
-                /*
-		if (code && !(code & the_env->trap_fpe_bits))
-			condition = Cnil;
-                */
-		si_trap_fpe(@'last', Ct);
-                return condition;
-	}
-	case SIGSEGV:
-                return @'ext::segmentation-violation';
-#ifdef SIGBUS
-	case SIGBUS:
-                return @'ext::segmentation-violation';
-#endif
-#ifdef SIGILL
-	case SIGILL:
-                return @'ext::illegal-instruction';
-#endif
-#ifdef SIGCHLD
-        case SIGCHLD:
-                return @'si::wait-for-all-processes';
-#endif
-	default:
-		return MAKE_FIXNUM(sig);
-	}
-}
-
 #define unblock_signal(env, sig)
 #ifdef HAVE_SIGPROCMASK
 # undef unblock_signal
@@ -412,7 +312,15 @@ handle_signal_now(cl_object signal_code)
                           @':code', signal_code);
                 break;
         case t_symbol:
-                cl_cerror(2, str_ignore_signal, signal_code);
+		/*
+		 * When we bind a handler to a signal, it may either
+		 * be a function, a symbol denoting a function or
+		 * a symbol denoting a condition.
+		 */
+		if (cl_find_class(2, signal_code, Cnil) != Cnil)
+			cl_cerror(2, str_ignore_signal, signal_code);
+		else
+			_ecl_funcall1(signal_code);
                 break;
         case t_cfun:
         case t_cfunfixed:
@@ -516,7 +424,7 @@ handle_or_queue(cl_env_ptr the_env, cl_object signal_code, int code)
 }
 
 static void
-handler_fn_protype(non_evil_signal_handler, int sig, siginfo_t *siginfo, void *data)
+handler_fn_prototype(non_evil_signal_handler, int sig, siginfo_t *siginfo, void *data)
 {
         int old_errno = errno;
 	cl_env_ptr the_env;
@@ -530,14 +438,16 @@ handler_fn_protype(non_evil_signal_handler, int sig, siginfo_t *siginfo, void *d
 		ecl_internal_error("Got signal before environment was installed"
 				   " on our thread.");
 	}
-        signal_object = call_handler(lisp_signal_handler, sig, siginfo, data);
+        signal_object = ecl_gethash_safe(MAKE_FIXNUM(sig),
+					 cl_core.known_signals,
+					 Cnil);
         handle_or_queue(the_env, signal_object, sig);
         errno = old_errno;
 }
 
 #if defined(ECL_THREADS) && !defined(ECL_MS_WINDOWS_HOST)
 static void
-handler_fn_protype(process_interrupt_handler, int sig, siginfo_t *siginfo, void *data)
+handler_fn_prototype(process_interrupt_handler, int sig, siginfo_t *siginfo, void *data)
 {
         int old_errno = errno;
 	cl_env_ptr the_env;
@@ -556,10 +466,93 @@ handler_fn_protype(process_interrupt_handler, int sig, siginfo_t *siginfo, void 
 	}
         errno = old_errno;
 }
-#endif
+#endif /* ECL_THREADS && !ECL_MS_WINDOWS_HOST */
 
 static void
-handler_fn_protype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
+handler_fn_prototype(fpe_signal_handler, int sig, siginfo_t *info, void *data)
+{
+	cl_object condition;
+        int code, old_errno = errno;
+	cl_env_ptr the_env;
+	reinstall_signal(sig, process_interrupt_handler);
+        /* The lisp environment might not be installed. */
+        the_env = ecl_process_env();
+        if (zombie_process(the_env))
+                return;
+	condition = @'arithmetic-error';
+	code = 0;
+#ifdef _MSC_VER
+	switch (_fpecode) {
+	case _FPE_INVALID:
+		condition = @'floating-point-invalid-operation';
+		code = FE_INVALID;
+		break;
+	case _FPE_OVERFLOW:
+		condition = @'floating-point-overflow';
+		code = FE_OVERFLOW;
+		break;
+	case _FPE_UNDERFLOW:
+		condition = @'floating-point-underflow';
+		code = FE_UNDERFLOW;
+		break;
+	case _FPE_ZERODIVIDE:
+		condition = @'division-by-zero';
+		code = FE_DIVBYZERO;
+		break;
+	}
+#else /* !_MSC_VER */
+# if defined(HAVE_FENV_H) & !defined(ECL_AVOID_FENV_H)
+	code = fetestexcept(FE_ALL_EXCEPT);
+	if (code & FE_DIVBYZERO) {
+		condition = @'division-by-zero';
+		code = FE_DIVBYZERO;
+	} else if (code & FE_INVALID) {
+		condition = @'floating-point-invalid-operation';
+		code = FE_INVALID;
+	} else if (code & FE_OVERFLOW) {
+		condition = @'floating-point-overflow';
+		code = FE_OVERFLOW;
+	} else if (code & FE_UNDERFLOW) {
+		condition = @'floating-point-underflow';
+		code = FE_UNDERFLOW;
+	} else if (code & FE_INEXACT) {
+		condition = @'floating-point-inexact';
+		code = FE_INEXACT;
+	}
+	feclearexcept(FE_ALL_EXCEPT);
+# endif
+#endif /* !_MSC_VER */
+#ifdef SA_SIGINFO
+	if (info) {
+		if (info->si_code == FPE_INTDIV || info->si_code == FPE_FLTDIV) {
+			condition = @'division-by-zero';
+			code = FE_DIVBYZERO;
+		} else if (info->si_code == FPE_FLTOVF) {
+			condition = @'floating-point-overflow';
+			code = FE_OVERFLOW;
+		} else if (info->si_code == FPE_FLTUND) {
+			condition = @'floating-point-underflow';
+			code = FE_UNDERFLOW;
+		} else if (info->si_code == FPE_FLTRES) {
+			condition = @'floating-point-inexact';
+			code = FE_INEXACT;
+		} else if (info->si_code == FPE_FLTINV) {
+			condition = @'floating-point-invalid-operation';
+			code = FE_INVALID;
+		}
+	}
+#endif /* SA_SIGINFO */
+	/*
+	  if (code && !(code & the_env->trap_fpe_bits))
+	  condition = Cnil;
+	*/
+	si_trap_fpe(@'last', Ct); /* Clear FPE exception flag */
+	unblock_signal(the_env, code);
+	handle_signal_now(condition);
+}
+
+static void
+handler_fn_prototype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
 {
 	int old_errno = errno;
         static const char *stack_overflow_msg =
@@ -651,13 +644,56 @@ ecl_check_pending_interrupts(cl_env_ptr env)
 static cl_object
 do_catch_signal(int code, cl_object action, cl_object process)
 {
+	cl_object code_fixnum = MAKE_FIXNUM(code);
         if (action == Cnil || action == @':ignore') {
                 mysignal(code, SIG_IGN);
                 return Ct;
         } else if (action == @':default') {
                 mysignal(code, SIG_DFL);
                 return Ct;
-        } else if (action == Ct || action == @':catch') {
+        } else if (action == @':mask' || action == @':unmask') {
+#ifdef HAVE_SIGPROCMASK
+# ifdef ECL_THREADS
+		/* When a process object is supplied, the changes take care
+		 * on the process structure and will only take effect when
+		 * the process is enabled. */
+		if (type_of(process) == t_process) {
+			cl_env_ptr env = process->process.env;
+			sigset_t *handled_set = (sigset_t *)env->default_sigmask;
+			if (action == @':mask') {
+				sigaddset(handled_set, code);
+			} else {
+				sigdelset(handled_set, code);
+			}
+			return Ct;
+		} else {
+			sigset_t handled_set;
+			pthread_sigmask(SIG_SETMASK, NULL, &handled_set);
+			if (action == @':mask') {
+				sigaddset(&handled_set, code);
+			} else {
+				sigdelset(&handled_set, code);
+			}
+			pthread_sigmask(SIG_SETMASK, &handled_set, NULL);
+			return Ct;
+		}
+# else
+		{
+			sigset_t handled_set;
+			sigprocmask(SIG_SETMASK, NULL, &handled_set);
+			if (action == @':mask') {
+				sigaddset(&handled_set, code);
+			} else {
+				sigdelset(&handled_set, code);
+			}
+			sigprocmask(SIG_SETMASK, &handled_set, NULL);
+			return Ct;
+		}
+# endif /* !ECL_THREADS */
+#else /* !HAVE_SIGPROCMASK */
+		return Cnil;
+#endif /* !HAVE_SIGPROCMASK */
+	} else if (action == Ct || action == @':catch') {
                 if (code == SIGSEGV) {
                         mysignal(code, sigsegv_handler);
                 }
@@ -666,58 +702,44 @@ do_catch_signal(int code, cl_object action, cl_object process)
                         mysignal(code, sigsegv_handler);
                 }
 #endif
-#ifdef SIGCHLD
-                else if (code == SIGCHLD) {
-# ifndef ECL_THREADS
-                        mysignal(code, non_evil_signal_handler);
-# endif
+#if defined(SIGCHLD) && defined(ECL_THREADS)
+                else if (code == SIGCHLD &&
+			 ecl_option_values[ECL_OPT_SIGNAL_HANDLING_THREAD])
+		{
+			/* Do nothing. This is taken care of in
+			 * the asynchronous signal handler. */
                 }
-#endif
-#if defined(ECL_THREADS) && !defined(ECL_MS_WINDOWS_HOST)
-		else if (code == ecl_option_values[ECL_OPT_TRAP_INTERRUPT_SIGNAL]) {
-			mysignal(code, process_interrupt_handler);
-		}
 #endif
                 else {
                         mysignal(code, non_evil_signal_handler);
                 }
-        }
-#ifdef HAVE_SIGPROCMASK
-# ifdef ECL_THREADS
-        if (type_of(process) == t_process) {
-                cl_env_ptr env = process->process.env;
-                sigset_t *handled_set = (sigset_t *)env->default_sigmask;
-                if (action == @':mask') {
-                        sigaddset(handled_set, code);
-                } else if (action == @':unmask') {
-                        sigdelset(handled_set, code);
-                } else {
-                        return do_catch_signal(code, Ct, process);
-                }
-                if (env == ecl_process_env()) {
-                        pthread_sigmask(SIG_SETMASK, handled_set, NULL);
-                }
-                return Ct;
-        }
-# endif
-        {
-                sigset_t handled_set;
-                sigprocmask(SIG_SETMASK, NULL, &handled_set);
-                if (action == @':mask') {
-                        sigaddset(&handled_set, code);
-                        printf(";;; %d masked\n", code);
-                } else if (action == @':unmask') {
-                        sigdelset(&handled_set, code);
-                        printf(";;; %d unmasked\n", code);
-                } else {
-                        return do_catch_signal(code, Ct, process);
-                }
-                sigprocmask(SIG_SETMASK, &handled_set, NULL);
-                return Ct;
-        }
-#else
-        return Cnil;
-#endif
+		return Ct;
+        } else {
+		FEerror("Unknown action argument to EXT:CATCH-SIGNAL: ~A", 1,
+			action);
+	}
+}
+
+cl_object
+si_get_signal_handler(cl_object code)
+{
+	cl_object handler = ecl_gethash_safe(code, cl_core.known_signals, OBJNULL);
+	unlikely_if (handler == OBJNULL) {
+		FEerror("Unknown signal code: ~D", 1, code);
+	}
+	@(return handler)
+}
+
+cl_object
+si_set_signal_handler(cl_object code, cl_object handler)
+{
+	cl_object action = ecl_gethash_safe(code, cl_core.known_signals, OBJNULL);
+	unlikely_if (action == OBJNULL) {
+		FEerror("Unknown signal code: ~D", 1, code);
+	}
+	ecl_sethash(code, cl_core.known_signals, handler);
+	si_catch_signal(2, code, Ct);
+	@(return handler)
 }
 
 @(defun ext::catch-signal (code flag &key process)
@@ -726,32 +748,33 @@ do_catch_signal(int code, cl_object action, cl_object process)
         cl_object output = Cnil;
 	int code_int = ecl_to_int(code);
 	int i;
+	unlikely_if (ecl_gethash_safe(code, cl_core.known_signals, OBJNULL) == OBJNULL) {
+		FEerror("Unknown signal code: ~D", 1, code);
+	}
 #ifdef GBC_BOEHM
 # ifdef SIGSEGV
-	if ((code_int == SIGSEGV) && ecl_option_values[ECL_OPT_INCREMENTAL_GC])
+	unlikely_if ((code_int == SIGSEGV) && ecl_option_values[ECL_OPT_INCREMENTAL_GC])
 		FEerror("It is not allowed to change the behavior of SIGSEGV.",
 			0);
 # endif
 # ifdef SIGBUS
-	if (code_int == SIGBUS)
+	unlikely_if (code_int == SIGBUS)
 		FEerror("It is not allowed to change the behavior of SIGBUS.",
 			0);
 # endif
 #endif
 #if defined(ECL_THREADS) && !defined(ECL_MS_WINDOWS_HOST)
-	if (code_int == ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL]) {
+	unlikely_if (code_int == ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL]) {
 		FEerror("It is not allowed to change the behavior of signal ~D", 1,
-                        MAKE_FIXNUM(code_int));
+                        code);
 	}
 #endif
-	output = ecl_gethash_safe(MAKE_FIXNUM(code_int),
-				  cl_core.known_signals,
-				  OBJNULL);
-	if (output == OBJNULL) {
-		output = Cnil;
-	} else {
-		output = do_catch_signal(code_int, flag, process);
+#ifdef SIGFPE
+	unlikely_if (code_int == SIGFPE) {
+		FEerror("The signal handler for SIGPFE cannot be uninstalled. Use SI:TRAP-FPE instead.", 0);
 	}
+#endif
+	output = do_catch_signal(code_int, flag, process);
 	@(return output)
 }
 @)
@@ -892,37 +915,37 @@ _ecl_w32_exception_filter(struct _EXCEPTION_POINTERS* ep)
                 }
 		/* Catch all arithmetic exceptions */
 		case EXCEPTION_INT_DIVIDE_BY_ZERO:
-                        handle_or_queue(the_env, @'division-by-zero', 0);
+                        handle_signal_now(@'division-by-zero');
                         return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_INT_OVERFLOW:
-                        handle_or_queue(the_env, @'arithmetic-error', 0);
+                        handle_signal_now(@'arithmetic-error');
                         return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_FLT_DIVIDE_BY_ZERO:
-                        handle_or_queue(the_env, @'floating-point-overflow', 0);
+                        handle_signal_now(@'floating-point-overflow');
                         return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_FLT_OVERFLOW:
-                        handle_or_queue(the_env, @'floating-point-overflow', 0);
+                        handle_signal_now(@'floating-point-overflow');
                         return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_FLT_UNDERFLOW:
-                        handle_or_queue(the_env, @'floating-point-underflow', 0);
+                        handle_signal_now(@'floating-point-underflow');
                         return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_FLT_INEXACT_RESULT:
-                        handle_or_queue(the_env, @'floating-point-inexact', 0);
+                        handle_signal_now(@'floating-point-inexact');
                         return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_FLT_DENORMAL_OPERAND:
 		case EXCEPTION_FLT_INVALID_OPERATION:
-                        handle_or_queue(the_env, @'floating-point-invalid-operation', 0);
+                        handle_signal_now(@'floating-point-invalid-operation');
                         return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_FLT_STACK_CHECK:
-                        handle_or_queue(the_env, @'arithmetic-error', 0);
+                        handle_signal_now(@'arithmetic-error');
                         return EXCEPTION_CONTINUE_EXECUTION;
 		/* Catch segmentation fault */
 		case EXCEPTION_ACCESS_VIOLATION:
-                        handle_or_queue(the_env, @'ext::segmentation-violation', 0);
+                        handle_signal_now(@'ext::segmentation-violation');
                         return EXCEPTION_CONTINUE_EXECUTION;
 		/* Catch illegal instruction */
 		case EXCEPTION_ILLEGAL_INSTRUCTION:
-			handle_or_queue(the_env, @'ext::illegal-instruction', 0);
+			handle_signal_now(@'ext::illegal-instruction');
 			return EXCEPTION_CONTINUE_EXECUTION;
 		/* Do not catch anything else */
 		default:
@@ -1020,8 +1043,9 @@ asynchronous_signal_servicing_thread()
                                 continue;
                         }
 #endif
-			signal_code = call_handler(lisp_signal_handler, signo,
-						   NULL, NULL);
+			signal_code = ecl_gethash_safe(MAKE_FIXNUM(signo),
+						       cl_core.known_signals,
+						       Cnil);
 			if (!Null(signal_code)) {
 				mp_process_run_function(3, @'si::handle-signal',
 							@'si::handle-signal',
@@ -1124,8 +1148,7 @@ install_asynchronous_signal_handlers()
 	if (ecl_option_values[ECL_OPT_TRAP_SIGCHLD]) {
                 /* We have to set the process signal handler explicitly,
                  * because on many platforms the default is SIG_IGN. */
-		mysignal(SIGCHLD, lisp_signal_handler);
-		async_handler(SIGCHLD, lisp_signal_handler, sigmask);
+		async_handler(SIGCHLD, non_evil_signal_handler, sigmask);
 	}
 #endif
 #ifdef HAVE_SIGPROCMASK
@@ -1237,7 +1260,7 @@ install_fpe_signal_handlers()
 {
 #ifdef SIGFPE
 	if (ecl_option_values[ECL_OPT_TRAP_SIGFPE]) {
-		mysignal(SIGFPE, non_evil_signal_handler);
+		mysignal(SIGFPE, fpe_signal_handler);
 		si_trap_fpe(Ct, Ct);
 # ifdef ECL_IEEE_FP
 		/* By default deactivate errors and accept

@@ -1308,6 +1308,8 @@ cl_symbols[] = {
 /* #endif TCP */
 
 {EXT_ "CATCH-SIGNAL", EXT_ORDINARY, si_catch_signal, -1, OBJNULL},
+{EXT_ "GET-SIGNAL-HANDLER", EXT_ORDINARY, si_get_signal_handler, 1, OBJNULL},
+{EXT_ "SET-SIGNAL-HANDLER", EXT_ORDINARY, si_set_signal_handler, 2, OBJNULL},
 
 /* KEYWORD PACKAGE */
 {KEY_ "ADJUSTABLE", KEYWORD, NULL, -1, OBJNULL},

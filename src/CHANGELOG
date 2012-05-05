@@ -40,6 +40,16 @@ ECL 12.2.2:
    EXT:+SIGRTMAX+, as well as EXT:+SIGRT0+ through EXT:+RTMINn+ where n =
    SIGRTMAX - SIGRTMIN Those signals can be then trapped.
 
+ - The interrupt handler for floating point exceptions does not care about
+   the value of EXT:*INTERRUPTS-ENABLED* or similar mechanisms because such
+   interrupt has to be treated as an error, not as something optional. The
+   same applies to other evil signals, such as SIGSEGV or SIGBUS.
+
+ - New functions (EXT:GET-INTERRUPT-HANDLER code) and
+   (EXT:SET-INTERRUPT-HANDLER code function-designator) allow the user to
+   customize how these interrupts are caught. SET-INTERRUPT-HANDLER runs an
+   implicit EXT:CATCH-SIGNAL.
+
 * Metaobject protocol:
 
  - Implemented CLOS:COMPUTE-APPLICABLE-METHODS-USING-CLASSES.
