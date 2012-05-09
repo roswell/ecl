@@ -14,7 +14,7 @@
 
 (defvar *ecl-sources*
   (loop for *default-pathname-defaults* in
-	'(#p"@top_srcdir@/" #p"../../" #p"../../src/")
+	'(#p"@true_srcdir@/" #p"../../" #p"../../src/")
 	when (probe-file "CHANGELOG")
 	return *default-pathname-defaults*))
 
@@ -82,6 +82,19 @@
 					:directory '(:relative :wild-inferiors)))
 
 (defvar *cleanup-extensions* '("fasl" "fasb" "c" "h" "obj" "o" "a" "lib" "dll" "dylib" "data"))
+
+(defun lisp-system-directory ()
+  (loop with root = (si::get-library-pathname)
+	with lib-name = (format nil "../lib/ecl-~A/" (lisp-implementation-version))
+	for base in (list root (merge-pathnames lib-name root))
+	for p = (merge-pathnames "./LGPL" base)
+	when (probe-file p)
+	do (return base)))
+
+(setf (logical-pathname-translations "SYS")
+      (list (list #p"sys:**;*.*"
+		  (merge-pathnames "**/*.*"
+				   (lisp-system-directory)))))
 
 (require :cmp)
 (require :ecl-curl)
@@ -223,15 +236,25 @@
   (delete-everything (merge-pathnames "scratch/" *ansi-tests-sandbox*))
   ;; Run with given image
   (ensure-directories-exist output)
-  (unwind-protect 
-       (progn
-	 (ext:chdir *ansi-tests-sandbox*)
-	 (ext:run-program *test-image*
-			  *test-image-args*
-			  :input (merge-pathnames "doit.lsp" *ansi-tests-sandbox*)
-			  :output output
-			  :error :output))
-    (ext:chdir *here*)))
+  (let* ((input (merge-pathnames "doit.lsp" *ansi-tests-sandbox*))
+	 (tmp (merge-pathnames "ecl-tmp-doit.lsp" *ansi-tests-sandbox*)))
+    (with-open-file (s tmp :direction :output
+		       :if-exists :supersede
+		       :if-does-not-exist :create)
+      (format s "(require :cmp)(pprint (ext:getcwd))(load ~S)#+ecl(quit)"
+	      (namestring input)))
+    (unwind-protect
+	(progn
+	  (ext:chdir *ansi-tests-sandbox*)
+	  (ext:run-program *test-image*
+			   *test-image-args*
+			   :input tmp
+			   :output output
+			   :error :output
+			   :wait t))
+      (when (probe-file tmp)
+	(delete-file tmp))
+      (ext:chdir *here*))))
 
 (defun run-regressions-tests (&optional (output (merge-pathnames "regressions.log"
 								 *output-directory*)))

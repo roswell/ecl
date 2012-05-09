@@ -1,4 +1,4 @@
-ECL=ecl
+ECL=ecl@EXEEXT@
 
 all: output.ecl/ansi.log output.ecl/regressions.log
 
