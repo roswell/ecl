@@ -77,16 +77,18 @@
 	  ((not (member head keywords))
 	   (setq err head)))))
 
-(defun dm-too-many-arguments (extra)
-  (error "Too many arguments supplied to a macro:~%~s" extra))
+(defun dm-too-many-arguments (*current-form*)
+  (error "Too many arguments supplied to a macro or a destructuring-bind form:~%~s"
+	 *current-form*))
 
-(defun dm-bad-key (key)
-  (error "Defmacro-lambda-list contains illegal use of ~s." key))
+(defun dm-too-few-arguments (form-or-nil)
+  (if form-or-nil
+      (let ((*current-form* form-or-nil))
+	(error "Too few arguments supplied to a macro or a destructuring-bind form:~%~S"
+	       *current-form*))
+      (error "Too few arguments supplied to a inlined lambda form.")))
 
-(defun dm-too-few-arguments ()
-  (error "Too few arguments supplied to a macro or a destructuring-bind form."))
-
-(defun sys::destructure (vl macro)
+(defun sys::destructure (vl macro &aux (basis-form (gensym)))
   (declare (si::c-local)
 	   (special *dl* *arg-check*))
   (labels ((dm-vl (vl whole macro)
@@ -105,7 +107,7 @@
 		 (dolist (v (cdr reqs))
 		   (dm-v v `(progn
 			      (if (null ,pointer)
-				  (dm-too-few-arguments))
+				  (dm-too-few-arguments ,basis-form))
 			      (prog1 ,unsafe-car ,unsafe-pop))))
 		 (dotimes (i (pop opts))
 		   (let* ((x (first opts))
@@ -143,7 +145,7 @@
 				,@(if allow-other-keys '(t) '()))
 			      *arg-check*))
 		       ((not no-check)
-			(push `(if ,pointer (dm-too-many-arguments ,pointer))
+			(push `(if ,pointer (dm-too-many-arguments ,basis-form))
 			      *arg-check*)))
 		  ppn)))
 
@@ -166,7 +168,7 @@
 		      (push (if init (list temp init) temp) *dl*)
 		      (dm-vl v temp nil))))))
 
-    (let* ((whole (gensym))
+    (let* ((whole basis-form)
 	   (*dl* nil)
 	   (*arg-check* nil))
       (declare (special *dl* *arg-check*))

@@ -539,8 +539,8 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 			 (pop arguments))
 			(apply-p
 			 `(if ,apply-var
-			   (pop ,apply-var)
-			   (si::dm-too-few-arguments)))
+			      (pop ,apply-var)
+			      (si::dm-too-few-arguments nil)))
 			(t
 			 (cmperr "Too few arguments for lambda form ~S"
                                  (cons 'LAMBDA lambda-form)))))

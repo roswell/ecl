@@ -260,6 +260,9 @@
 (proclamation si::etypecase-error (t t) t)
 (proclamation si::do-check-type (t t t t) t)
 
+(proclamation si::dm-too-many-arguments (t) t)
+(proclamation si::dm-too-few-arguments (t) t)
+
 ;;;
 ;;; 7. OBJECTS
 ;;;

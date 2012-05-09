@@ -965,7 +965,7 @@
     si::ecase-error si::etypecase-error si::do-check-type
     ccase-error typecase-error-string find-documentation find-declarations
     si::search-keyword si::check-keyword
-    si::dm-too-many-arguments si::dm-too-few-arguments si::dm-bad-key
+    si::dm-too-many-arguments si::dm-too-few-arguments
     remove-documentation si::get-documentation
     si::set-documentation si::expand-set-documentation
     si::packages-iterator
