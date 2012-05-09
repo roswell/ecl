@@ -505,7 +505,7 @@ handler_fn_prototype(fpe_signal_handler, int sig, siginfo_t *info, void *data)
 	cl_object condition;
         int code, old_errno = errno;
 	cl_env_ptr the_env;
-	reinstall_signal(sig, fpe_interrupt_handler);
+	reinstall_signal(sig, fpe_signal_handler);
         /* The lisp environment might not be installed. */
 	unlikely_if (!ecl_option_values[ECL_OPT_BOOTED]) {
 		early_signal_error();
