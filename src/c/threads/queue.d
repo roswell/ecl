@@ -24,10 +24,10 @@
 void ECL_INLINE
 ecl_process_yield()
 {
-#if defined(HAVE_SCHED_H)
-	sched_yield();
-#elif defined(ECL_WINDOWS_THREADS)
+#if defined(ECL_WINDOWS_THREADS)
 	Sleep(0);
+#elif defined(HAVE_SCHED_H)
+	sched_yield();
 #else
 	ecl_musleep(0.0, 1);*/
 #endif
