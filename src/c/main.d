@@ -131,7 +131,9 @@ void
 ecl_init_env(cl_env_ptr env)
 {
 	env->c_env = NULL;
-
+#if !defined(ECL_THREADS)
+	env->own_process = Cnil;
+#endif
 	env->string_pool = Cnil;
 
 	env->stack = NULL;

@@ -321,7 +321,7 @@ unblock_signal(cl_env_ptr the_env, int signal)
 ecl_def_ct_base_string(str_ignore_signal,"Ignore signal",13,static,const);
 
 static void
-handle_signal_now(cl_object signal_code)
+handle_signal_now(cl_object signal_code, cl_object process)
 {
         switch (type_of(signal_code)) {
         case t_fixnum:
@@ -336,6 +336,10 @@ handle_signal_now(cl_object signal_code)
 		 */
 		if (cl_find_class(2, signal_code, Cnil) != Cnil)
 			cl_cerror(2, str_ignore_signal, signal_code);
+#ifdef ECL_THREADS
+		else if (!Null(process))
+			_ecl_funcall3(signal_code, @':process', process);
+#endif
 		else
 			_ecl_funcall1(signal_code);
                 break;
@@ -351,9 +355,9 @@ handle_signal_now(cl_object signal_code)
 }
 
 cl_object
-si_handle_signal(cl_object signal_code)
+si_handle_signal(cl_object signal_code, cl_object process)
 {
-	handle_signal_now(signal_code);
+	handle_signal_now(signal_code, process);
 	@(return)
 }
 
@@ -361,7 +365,7 @@ static void
 handle_all_queued(cl_env_ptr env)
 {
 	while (env->pending_interrupt != Cnil) {
-		handle_signal_now(pop_signal(env));
+		handle_signal_now(pop_signal(env), env->own_process);
 	}
 }
 
@@ -436,7 +440,7 @@ handle_or_queue(cl_env_ptr the_env, cl_object signal_code, int code)
 	else {
                 if (code) unblock_signal(the_env, code);
 		si_trap_fpe(@'last', Ct); /* Clear FPE exception flag */
-                handle_signal_now(signal_code);
+                handle_signal_now(signal_code, the_env->own_process);
         }
 }
 
@@ -472,9 +476,110 @@ handler_fn_prototype(evil_signal_handler, int sig, siginfo_t *siginfo, void *dat
         signal_object = ecl_gethash_safe(MAKE_FIXNUM(sig),
 					 cl_core.known_signals,
 					 Cnil);
-        handle_signal_now(signal_object);
+        handle_signal_now(signal_object, the_env->own_process);
         errno = old_errno;
 }
+
+#if defined(ECL_THREADS) && !defined(ECL_MS_WINDOWS_HOST)
+typedef struct {
+	cl_object process;
+	int signo;
+} signal_thread_message;
+static cl_object signal_thread_process = Cnil;
+static signal_thread_message signal_thread_msg;
+static cl_object signal_thread_spinlock = Cnil;
+static int signal_thread_pipe[2] = {-1,-1};
+
+static void
+handler_fn_prototype(deferred_signal_handler, int sig, siginfo_t *siginfo, void *data)
+{
+        int old_errno = errno;
+	cl_env_ptr the_env;
+	signal_thread_message msg;
+	reinstall_signal(sig, deferred_signal_handler);
+        /* The lisp environment might not be installed. */
+        the_env = ecl_process_env();
+        unlikely_if (zombie_process(the_env))
+                return;
+	msg.signo = sig;
+	msg.process = the_env->own_process;
+	if (msg.process == signal_thread_process) {
+		/* The signal handling thread may also receive signals. In
+		 * this case we do not use the pipe, but just copy the message
+		 * Note that read() will abort the thread will get notified. */
+		signal_thread_msg = msg;
+	} else if (signal_thread_pipe[1] > 0) {
+		ecl_get_spinlock(the_env, &signal_thread_spinlock);
+		write(signal_thread_pipe[1], &msg, sizeof(msg));
+		ecl_giveup_spinlock(&signal_thread_spinlock);
+	} else {
+		/* Nothing to do. There is no way to handle this signal because
+		 * the responsible thread is not running */
+	}
+        errno = old_errno;
+}
+
+static cl_object
+asynchronous_signal_servicing_thread()
+{
+	const cl_env_ptr the_env = ecl_process_env();
+	int interrupt_signal;
+	/*
+	 * We block all signals except the usual interrupt thread.
+	 */
+	{
+		sigset_t handled_set;
+		sigfillset(&handled_set);
+		if (ecl_option_values[ECL_OPT_TRAP_INTERRUPT_SIGNAL]) {
+			interrupt_signal =
+				ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL];
+			sigdelset(&handled_set, interrupt_signal);
+		}
+		pthread_sigmask(SIG_BLOCK, &handled_set, NULL);
+	}
+	/*
+	 * We create the object for communication. We need a lock to prevent other
+	 * threads from writing before the pipe is created.
+	 */
+	ecl_get_spinlock(the_env, &signal_thread_spinlock);
+	pipe(signal_thread_pipe);
+	ecl_giveup_spinlock(&signal_thread_spinlock);
+	signal_thread_msg.process = Cnil;
+	for (;;) {
+		cl_object signal_code;
+		signal_thread_msg.process = Cnil;
+		if (read(signal_thread_pipe[0], &signal_thread_msg,
+			 sizeof(signal_thread_msg)) < 0)
+		{
+			if (errno != EINTR ||
+			    signal_thread_msg.process != the_env->own_process)
+				break;
+		}
+		if (signal_thread_msg.signo == interrupt_signal &&
+		    signal_thread_msg.process == the_env->own_process) {
+			break;
+		}
+#ifdef SIGCHLD
+		if (signal_thread_msg.signo == SIGCHLD) {
+			si_wait_for_all_processes();
+			continue;
+		}
+#endif
+		signal_code = ecl_gethash_safe(MAKE_FIXNUM(signal_thread_msg.signo),
+					       cl_core.known_signals,
+					       Cnil);
+		if (!Null(signal_code)) {
+			mp_process_run_function(4, @'si::handle-signal',
+						@'si::handle-signal',
+						signal_code,
+						signal_thread_msg.process);
+		}
+	}
+	close(signal_thread_pipe[0]);
+	close(signal_thread_pipe[1]);
+	ecl_return0(the_env);
+}
+#endif /* ECL_THREADS && !ECL_MS_WINDOWS_HOST */
 
 #if defined(ECL_THREADS) && !defined(ECL_MS_WINDOWS_HOST)
 static void
@@ -582,7 +687,7 @@ handler_fn_prototype(fpe_signal_handler, int sig, siginfo_t *info, void *data)
 	*/
 	si_trap_fpe(@'last', Ct); /* Clear FPE exception flag */
 	unblock_signal(the_env, code);
-	handle_signal_now(condition);
+	handle_signal_now(condition, the_env->own_process);
 	/* We will not reach past this point. */
 }
 
@@ -945,7 +1050,7 @@ _ecl_w32_exception_filter(struct _EXCEPTION_POINTERS* ep)
                                 cl_object signal = pop_signal(the_env);
                                 process->process.interrupt = Cnil;
                                 while (signal != Cnil && signal) {
-                                        handle_signal_now(signal);
+                                        handle_signal_now(signal, the_env->own_process);
                                         signal = pop_signal(the_env);
                                 }
                                 return EXCEPTION_CONTINUE_EXECUTION;
@@ -953,37 +1058,37 @@ _ecl_w32_exception_filter(struct _EXCEPTION_POINTERS* ep)
                 }
 		/* Catch all arithmetic exceptions */
 		case EXCEPTION_INT_DIVIDE_BY_ZERO:
-                        handle_signal_now(@'division-by-zero');
+                        handle_signal_now(@'division-by-zero', the_env->own_process);
                         return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_INT_OVERFLOW:
-                        handle_signal_now(@'arithmetic-error');
+                        handle_signal_now(@'arithmetic-error', the_env->own_process);
                         return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_FLT_DIVIDE_BY_ZERO:
-                        handle_signal_now(@'floating-point-overflow');
+                        handle_signal_now(@'floating-point-overflow', the_env->own_process);
                         return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_FLT_OVERFLOW:
-                        handle_signal_now(@'floating-point-overflow');
+                        handle_signal_now(@'floating-point-overflow', the_env->own_process);
                         return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_FLT_UNDERFLOW:
-                        handle_signal_now(@'floating-point-underflow');
+                        handle_signal_now(@'floating-point-underflow', the_env->own_process);
                         return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_FLT_INEXACT_RESULT:
-                        handle_signal_now(@'floating-point-inexact');
+                        handle_signal_now(@'floating-point-inexact', the_env->own_process);
                         return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_FLT_DENORMAL_OPERAND:
 		case EXCEPTION_FLT_INVALID_OPERATION:
-                        handle_signal_now(@'floating-point-invalid-operation');
+                        handle_signal_now(@'floating-point-invalid-operation', the_env->own_process);
                         return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_FLT_STACK_CHECK:
-                        handle_signal_now(@'arithmetic-error');
+                        handle_signal_now(@'arithmetic-error', the_env->own_process);
                         return EXCEPTION_CONTINUE_EXECUTION;
 		/* Catch segmentation fault */
 		case EXCEPTION_ACCESS_VIOLATION:
-                        handle_signal_now(@'ext::segmentation-violation');
+                        handle_signal_now(@'ext::segmentation-violation', the_env->own_process);
                         return EXCEPTION_CONTINUE_EXECUTION;
 		/* Catch illegal instruction */
 		case EXCEPTION_ILLEGAL_INSTRUCTION:
-			handle_signal_now(@'ext::illegal-instruction');
+			handle_signal_now(@'ext::illegal-instruction', the_env->own_process);
 			return EXCEPTION_CONTINUE_EXECUTION;
 		/* Do not catch anything else */
 		default:
@@ -999,9 +1104,9 @@ static cl_object
 W32_handle_in_new_thread(cl_object signal_code)
 {
 	int outside_ecl = ecl_import_current_thread(@'si::handle-signal', Cnil);
-	mp_process_run_function(3, @'si::handle-signal',
+	mp_process_run_function(4, @'si::handle-signal',
 				@'si::handle-signal',
-				signal_code);
+				signal_code, Cnil);
 	if (outside_ecl) ecl_release_current_thread();
 }
 
@@ -1021,7 +1126,7 @@ BOOL WINAPI W32_console_ctrl_handler(DWORD type)
 }
 #endif /* ECL_WINDOWS_THREADS */
 
-#if defined(ECL_THREADS) && defined(HAVE_SIGPROCMASK)
+#if 0
 static cl_object
 asynchronous_signal_servicing_thread()
 {
@@ -1155,8 +1260,8 @@ install_asynchronous_signal_handlers()
 #else
 # if defined(ECL_THREADS) && defined(HAVE_SIGPROCMASK)
 #  define async_handler(signal,handler,mask)  {				\
-		if (ecl_option_values[ECL_OPT_SIGNAL_HANDLING_THREAD]) {	\
-			sigaddset(mask, signal);			\
+		if (ecl_option_values[ECL_OPT_SIGNAL_HANDLING_THREAD]) { \
+			mysignal(signal, deferred_signal_handler);	\
 		} else {						\
 			mysignal(signal,handler);			\
 		}}
@@ -1221,6 +1326,7 @@ install_signal_handling_thread()
 				      Cnil,
 				      0);
 		cl_object process =
+			signal_thread_process =
 			mp_process_run_function_wait(2,
                                                      @'si::signal-servicing',
                                                      fun);
