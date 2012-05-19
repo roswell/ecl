@@ -124,7 +124,8 @@ static cl_object si_simple_toplevel ()
                         sentence = @read(3, Cnil, Cnil, OBJNULL);
                         if (sentence == OBJNULL)
                                 @(return);
-                        ecl_prin1(si_eval_with_env(1, sentence), output);
+			sentence = si_eval_with_env(1, sentence);
+                        ecl_prin1(sentence, output);
                 }
         } CL_CATCH_ALL_END;
 }

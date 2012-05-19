@@ -217,6 +217,10 @@ write_stream(cl_object x, cl_object stream)
                 prefix = "closed i/o win32 socket stream";
                 tag = IO_STREAM_FILENAME(x);
                 break;
+        case smm_io_wcon:
+                prefix = "closed i/o win32 console stream";
+                tag = IO_STREAM_FILENAME(x);
+                break;
 #endif
         case smm_io_file:
                 prefix = "closed io file";

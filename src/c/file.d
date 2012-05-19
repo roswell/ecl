@@ -48,6 +48,7 @@
 # include <unistd.h>
 #elif defined(ECL_MS_WINDOWS_HOST)
 # include <winsock.h>
+# include <windows.h>
 # include <sys/stat.h>
 # define STDIN_FILENO 0
 # define STDOUT_FILENO 1
@@ -550,21 +551,21 @@ eformat_unread_char(cl_object strm, ecl_character c)
 		unread_twice(strm);
 	}
 	{
-		cl_object l = Cnil;
 		unsigned char buffer[2*ENCODING_BUFFER_MAX_SIZE];
 		int ndx = 0;
+		cl_object l = strm->stream.byte_stack;
 		cl_fixnum i = strm->stream.last_code[0];
 		if (i != EOF) {
 			ndx += strm->stream.encoder(strm, buffer, i);
 		}
 		i = strm->stream.last_code[1];
 		if (i != EOF) {
-			ndx += strm->stream.encoder(strm, buffer, i);
+			ndx += strm->stream.encoder(strm, buffer+ndx, i);
 		}
 		while (ndx != 0) {
 			l = CONS(MAKE_FIXNUM(buffer[--ndx]), l);
 		}
-		strm->stream.byte_stack = ecl_nconc(strm->stream.byte_stack, l);
+		strm->stream.byte_stack = l;
 		strm->stream.last_char = EOF;
 	}
 }
@@ -573,6 +574,8 @@ static ecl_character
 eformat_read_char(cl_object strm)
 {
 	ecl_character c = strm->stream.decoder(strm);
+	if (c == strm->stream.eof_char)
+		return EOF;
 	if (c != EOF) {
 		strm->stream.last_char = c;
 		strm->stream.last_code[0] = c;
@@ -626,6 +629,7 @@ eformat_read_char_crlf(cl_object strm)
 	if (c == ECL_CHAR_CODE_RETURN) {
 		c = eformat_read_char(strm);
 		if (c == ECL_CHAR_CODE_LINEFEED) {
+			strm->stream.last_code[0] = ECL_CHAR_CODE_RETURN;
 			strm->stream.last_code[1] = c;
 			c = ECL_CHAR_CODE_NEWLINE;
 		} else {
@@ -1442,6 +1446,7 @@ si_make_string_output_stream_from_string(cl_object s)
 		strm->stream.byte_size = 32;
 	}
 #endif
+	strm->stream.eof_char = EOF;
 	@(return strm)
 }
 
@@ -2618,17 +2623,17 @@ safe_fclose(FILE *stream)
 static cl_index
 consume_byte_stack(cl_object strm, unsigned char *c, cl_index n)
 {
-	cl_object l = strm->stream.byte_stack;
 	cl_index out = 0;
-	do {
-		*c = fix(ECL_CONS_CAR(l));
-		l = ECL_CONS_CDR(l);
+	while (n) {
+		cl_object l = strm->stream.byte_stack;
+		if (l == Cnil)
+			return out + strm->stream.ops->read_byte8(strm, c, n);
+		*(c++) = fix(ECL_CONS_CAR(l));
 		out++;
-		c++;
 		n--;
-	} while (l != Cnil);
-	strm->stream.byte_stack = Cnil;
-	return out + strm->stream.ops->read_byte8(strm, c, n);
+		strm->stream.byte_stack = l = ECL_CONS_CDR(l);
+	}
+	return out;
 }
 
 static cl_index
@@ -2700,6 +2705,17 @@ io_file_listen(cl_object strm)
 	}
 	return file_listen(IO_FILE_DESCRIPTOR(strm));
 }
+
+#if defined(ECL_MS_WINDOWS_HOST)
+static int
+isaconsole(int i)
+{
+	HANDLE h = (HANDLE)_get_osfhandle(i);
+	DWORD mode;
+	return !!GetConsoleMode(h, &mode);
+}
+#define isatty isaconsole
+#endif
 
 static void
 io_file_clear_input(cl_object strm)
@@ -3231,6 +3247,7 @@ si_stream_external_format_set(cl_object stream, cl_object format)
         case smm_input_wsock:
         case smm_output_wsock:
         case smm_io_wsock:
+	case smm_io_wcon:
 #endif
                 {
                         cl_object elt_type = ecl_stream_element_type(stream);
@@ -3617,9 +3634,7 @@ const struct ecl_file_ops input_stream_ops = {
 static cl_index
 winsock_stream_read_byte8(cl_object strm, unsigned char *c, cl_index n)
 {
-	cl_index out = 0;
 	cl_index len = 0;
-	cl_object l;
 
 	unlikely_if (strm->stream.byte_stack != Cnil) {
 		return consume_byte_stack(strm, c, n);
@@ -3637,9 +3652,7 @@ winsock_stream_read_byte8(cl_object strm, unsigned char *c, cl_index n)
 			ecl_enable_interrupts();
 		}
 	}
-	return (out > 0) 
-		? (out + (len > 0 ? len : 0))
-		: (len > 0) ? len : EOF;
+	return (len > 0) ? len : EOF;
 }
 
 static cl_index
@@ -3827,6 +3840,175 @@ const struct ecl_file_ops winsock_stream_input_ops = {
 };
 #endif
 
+/**********************************************************************
+ * WINCONSOLE STREAM
+ */
+
+#if defined(ECL_MS_WINDOWS_HOST)
+
+#define wcon_stream_element_type io_file_element_type
+
+static cl_index
+wcon_stream_read_byte8(cl_object strm, unsigned char *c, cl_index n)
+{
+	unlikely_if (strm->stream.byte_stack != Cnil) {
+		return consume_byte_stack(strm, c, n);
+	} else {
+		cl_index len = 0;
+		cl_env_ptr the_env = ecl_process_env();
+		HANDLE h = (HANDLE)IO_FILE_DESCRIPTOR(strm);
+		DWORD nchars;
+		unsigned char aux[4];
+		for (len = 0; len < n; ) {
+			int i, ok;
+			ecl_disable_interrupts_env(the_env);
+			ok = ReadConsole(h, &aux, 1, &nchars, NULL);
+			ecl_enable_interrupts_env(the_env);
+			unlikely_if (!ok) {
+				FEwin32_error("Cannot read from console", 0);
+			}
+			for (i = 0; i < nchars; i++) {
+				if (len < n) {
+					c[len++] = aux[i];
+				} else {
+					strm->stream.byte_stack =
+						ecl_nconc(strm->stream.byte_stack,
+							  ecl_list1(MAKE_FIXNUM(aux[i])));
+				}
+			}
+		}
+		return (len > 0) ? len : EOF;
+	}
+}
+
+static cl_index
+wcon_stream_write_byte8(cl_object strm, unsigned char *c, cl_index n)
+{
+	HANDLE h = (HANDLE)IO_FILE_DESCRIPTOR(strm);
+	DWORD nchars;
+	unlikely_if(!WriteConsole(h, c, n, &nchars, NULL)) {
+		FEwin32_error("Cannot write to console.", 0);
+	}
+	return nchars;
+}
+
+static int
+wcon_stream_listen(cl_object strm) 
+{
+	HANDLE h = (HANDLE)IO_FILE_DESCRIPTOR(strm);
+	INPUT_RECORD aux;
+	DWORD nevents;
+	do {
+		unlikely_if(!PeekConsoleInput(h, &aux, 1, &nevents))
+			FEwin32_error("Cannot read from console.", 0);
+		if (nevents == 0)
+			return 0;
+		if (aux.EventType == KEY_EVENT)
+			return 1;
+		unlikely_if(!ReadConsoleInput(h, &aux, 1, &nevents))
+			FEwin32_error("Cannot read from console.", 0);
+	} while (1);
+}
+
+static void
+wcon_stream_clear_input(cl_object strm)
+{
+	FlushConsoleInputBuffer((HANDLE)IO_FILE_DESCRIPTOR(strm));
+}
+
+static void
+wcon_stream_force_output(cl_object strm)
+{
+	DWORD nchars;
+	WriteConsole((HANDLE)IO_FILE_DESCRIPTOR(strm), 0, 0, &nchars, NULL);
+}
+
+const struct ecl_file_ops wcon_stream_io_ops = {
+	wcon_stream_write_byte8,
+	wcon_stream_read_byte8,
+
+	generic_write_byte,
+	generic_read_byte,
+
+	eformat_read_char,
+	eformat_write_char,
+	eformat_unread_char,
+	generic_peek_char,
+
+	generic_read_vector,
+	generic_write_vector,
+
+	wcon_stream_listen,
+	wcon_stream_clear_input,
+	generic_void,
+	wcon_stream_force_output,
+	wcon_stream_force_output,
+
+	generic_always_true, /* input_p */
+	generic_always_true, /* output_p */
+	generic_always_false,
+	wcon_stream_element_type,
+
+	not_a_file_stream,
+	not_implemented_get_position,
+	not_implemented_set_position,
+	generic_column,
+
+	generic_close,
+};
+
+#define CONTROL_Z 26
+
+static cl_object
+maybe_make_windows_console_FILE(cl_object fname, FILE *f, enum ecl_smmode smm,
+				cl_fixnum byte_size, int flags,
+				cl_object external_format)
+{
+	int desc = fileno(f);
+	cl_object output;
+	if (isatty(desc)) {
+		output = ecl_make_stream_from_FILE
+			(fname,
+			 (void*)_get_osfhandle(desc),
+			 smm_io_wcon,
+			 byte_size, flags,
+			 external_format);
+		output->stream.eof_char = CONTROL_Z;
+	} else {
+		output = ecl_make_stream_from_FILE
+			(fname, f, smm, byte_size, flags,
+			 external_format);
+	}
+	return output;
+}
+
+static cl_object
+maybe_make_windows_console_fd(cl_object fname, int desc, enum ecl_smmode smm,
+			      cl_fixnum byte_size, int flags,
+			      cl_object external_format)
+{
+	cl_object output;
+	if (isatty(desc)) {
+		output = ecl_make_stream_from_FILE
+			(fname,
+			 (void*)_get_osfhandle(desc),
+			 smm_io_wcon,
+			 byte_size, flags,
+			 external_format);
+		output->stream.eof_char = CONTROL_Z;
+	} else {
+		output = ecl_make_stream_from_fd
+			(fname, desc, smm,
+			 byte_size, flags,
+			 external_format);
+	}
+	return output;
+}
+#else
+#define maybe_make_windows_console_FILE ecl_make_stream_from_file
+#define maybe_make_windows_console_fd ecl_make_file_stream_from_fd
+#endif
+
 cl_object
 si_set_buffering_mode(cl_object stream, cl_object buffer_mode_symbol)
 {
@@ -3889,6 +4071,9 @@ ecl_make_stream_from_FILE(cl_object fname, void *f, enum ecl_smmode smm,
 	case smm_io_wsock:
 		stream->stream.ops = duplicate_dispatch_table(&winsock_stream_io_ops);
 		break;
+	case smm_io_wcon:
+		stream->stream.ops = duplicate_dispatch_table(&wcon_stream_io_ops);
+		break;
 #endif
 	default:
 		FEerror("Not a valid mode ~D for ecl_make_stream_from_FILE", 1, MAKE_FIXNUM(smm));
@@ -3922,13 +4107,14 @@ ecl_make_stream_from_fd(cl_object fname, int fd, enum ecl_smmode smm,
 	case smm_input_wsock:
 	case smm_output_wsock:
 	case smm_io_wsock:
+	case smm_io_wcon:
 		break;
 #endif
 	default:
 		FEerror("make_stream: wrong mode", 0);
 	}
 #if defined(ECL_WSOCK)
-	if (smm == smm_input_wsock || smm == smm_output_wsock || smm == smm_io_wsock)
+	if (smm == smm_input_wsock || smm == smm_output_wsock || smm == smm_io_wsock || smm == smm_io_wcon)
 		fp = (FILE*)fd;
 	else
 		fp = safe_fdopen(fd, mode);
@@ -5389,22 +5575,22 @@ init_file(void)
         /* We choose C streams by default only when _not_ using threads.
          * The reason is that C streams block on I/O operations. */
 #if !defined(ECL_THREADS)
-	standard_input = ecl_make_stream_from_FILE(make_constant_base_string("stdin"),
-						   stdin, smm_input, 8, flags, external_format);
-	standard_output = ecl_make_stream_from_FILE(make_constant_base_string("stdout"),
-						    stdout, smm_output, 8, flags, external_format);
-	error_output = ecl_make_stream_from_FILE(make_constant_base_string("stderr"),
-						 stderr, smm_output, 8, flags, external_format);
+	standard_input = maybe_make_windows_console_FILE(make_constant_base_string("stdin"),
+							 stdin, smm_input, 8, flags, external_format);
+	standard_output = maybe_make_windows_console_FILE(make_constant_base_string("stdout"),
+							  stdout, smm_output, 8, flags, external_format);
+	error_output = maybe_make_windows_console_FILE(make_constant_base_string("stderr"),
+						       stderr, smm_output, 8, flags, external_format);
 #else
-	standard_input = ecl_make_file_stream_from_fd(make_constant_base_string("stdin"),
-						      STDIN_FILENO, smm_input_file, 8, flags,
-						      external_format);
-	standard_output = ecl_make_file_stream_from_fd(make_constant_base_string("stdout"),
-						       STDOUT_FILENO, smm_output_file, 8, flags,
+	standard_input = maybe_make_windows_console_fd(make_constant_base_string("stdin"),
+						       STDIN_FILENO, smm_input_file, 8, flags,
 						       external_format);
-	error_output = ecl_make_file_stream_from_fd(make_constant_base_string("stderr"),
-						    STDERR_FILENO, smm_output_file, 8, flags,
-						    external_format);
+	standard_output = maybe_make_windows_console_fd(make_constant_base_string("stdout"),
+							STDOUT_FILENO, smm_output_file, 8, flags,
+							external_format);
+	error_output = maybe_make_windows_console_fd(make_constant_base_string("stderr"),
+						     STDERR_FILENO, smm_output_file, 8, flags,
+						     external_format);
 #endif
 	cl_core.standard_input = standard_input;
         ECL_SET(@'ext::+process-standard-input+', standard_input);

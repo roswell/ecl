@@ -543,9 +543,12 @@ enum ecl_smmode {		/*  stream mode  */
 	smm_string_output,	/*  string output  */
 	smm_probe,		/*  probe (only used in open_stream())  */
 #if defined(ECL_WSOCK)
-	smm_input_wsock,	/* input socket (Win32) */
-	smm_output_wsock,	/* output socket (Win32) */
-	smm_io_wsock,		/* input/output socket (Win32) */
+	smm_input_wsock,	/*  input socket (Win32) */
+	smm_output_wsock,	/*  output socket (Win32) */
+	smm_io_wsock,		/*  input/output socket (Win32) */
+#endif
+#if defined(ECL_MS_WINDOWS_HOST)
+	smm_io_wcon,		/*  windows console (Win32) */
 #endif
 	smm_sequence_input,	/*  sequence input  */
 	smm_sequence_output	/*  sequence output  */
@@ -645,6 +648,7 @@ struct ecl_stream {
 	cl_eformat_decoder decoder;
 	cl_object format_table;
 	int flags;		/*  character table, flags, etc  */
+	ecl_character eof_char;
 };
 
 struct ecl_random {
