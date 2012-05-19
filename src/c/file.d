@@ -3997,7 +3997,7 @@ maybe_make_windows_console_fd(cl_object fname, int desc, enum ecl_smmode smm,
 			 external_format);
 		output->stream.eof_char = CONTROL_Z;
 	} else {
-		output = ecl_make_stream_from_fd
+		output = ecl_make_file_stream_from_fd
 			(fname, desc, smm,
 			 byte_size, flags,
 			 external_format);

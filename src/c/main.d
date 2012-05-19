@@ -439,6 +439,50 @@ struct cl_core_struct cl_core = {
 	Cnil /* known_signals */
 };
 
+#if !defined(ECL_MS_WINDOWS_HOST)
+#define maybe_fix_console_stream(strm) (void)0
+#else
+static void
+maybe_fix_console_stream(cl_object stream)
+{
+	DWORD cp = GetConsoleCP();
+	const char *encoding;
+	cl_object external_format;
+	int i;
+	static const struct {
+		int code;
+		const char *name;
+	} known_cp[] = {
+		{874, "WINDOWS-CP874"},
+		{932, "WINDOWS-CP932"},
+		{936, "WINDOWS-CP936"},
+		{949, "WINDOWS-CP949"},
+		{950, "WINDOWS-CP950"},
+		{1200, "WINDOWS-CP1200"},
+		{1201, "WINDOWS-CP1201"},
+		{1250, "WINDOWS-CP1250"},
+		{1251, "WINDOWS-CP1251"},
+		{1252, "WINDOWS-CP1252"},
+		{1253, "WINDOWS-CP1253"},
+		{1254, "WINDOWS-CP1254"},
+		{1255, "WINDOWS-CP1255"},
+		{1256, "WINDOWS-CP1256"},
+		{1257, "WINDOWS-CP1257"},
+		{1258, "WINDOWS-CP1258"},
+		{65001, "UTF8"},
+		{0,"LATIN-1"}
+	};
+	if (stream->stream.mode != smm_io_wcon)
+		return;
+	for (i = 0; known_cp[i].code && known_cp[i].code != cp; i++)
+		{}
+	external_format = cl_list(2, ecl_make_keyword(known_cp[i].name),
+				  @':crlf');
+	si_stream_external_format_set(stream, external_format);
+	stream->stream.eof_char = 26;
+}
+#endif
+
 int
 cl_boot(int argc, char **argv)
 {
@@ -726,6 +770,12 @@ cl_boot(int argc, char **argv)
 	ecl_set_option(ECL_OPT_BOOTED, 1);
 
 	ecl_init_module(OBJNULL,init_lib_LSP);
+
+	if (cl_fboundp(@'ext::make-encoding') != Cnil) {
+		maybe_fix_console_stream(cl_core.standard_input);
+		maybe_fix_console_stream(cl_core.standard_output);
+		maybe_fix_console_stream(cl_core.error_output);
+	}
 
 	/* Jump to top level */
 	ECL_SET(@'*package*', cl_core.user_package);

@@ -59,6 +59,11 @@ ECL 12.2.2:
    translate the input/output to and from the corresponding codepage.
    (EXPERIMENTAL)
 
+ - ECL detects the codepage that the console is using and applies it as
+   the appropriate external format (with :CRLF convention).
+
+ - ECL's console stream signals EOF when Ctrl-Z is detected.
+
 * Metaobject protocol:
 
  - Implemented CLOS:COMPUTE-APPLICABLE-METHODS-USING-CLASSES.
