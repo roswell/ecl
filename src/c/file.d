@@ -4005,7 +4005,7 @@ maybe_make_windows_console_fd(cl_object fname, int desc, enum ecl_smmode smm,
 	return output;
 }
 #else
-#define maybe_make_windows_console_FILE ecl_make_stream_from_file
+#define maybe_make_windows_console_FILE ecl_make_stream_from_FILE
 #define maybe_make_windows_console_fd ecl_make_file_stream_from_fd
 #endif
 
