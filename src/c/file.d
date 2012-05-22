@@ -574,7 +574,7 @@ static ecl_character
 eformat_read_char(cl_object strm)
 {
 	ecl_character c = strm->stream.decoder(strm);
-	if (c == strm->stream.eof_char)
+	unlikely_if (c == strm->stream.eof_char)
 		return EOF;
 	if (c != EOF) {
 		strm->stream.last_char = c;
@@ -1446,7 +1446,6 @@ si_make_string_output_stream_from_string(cl_object s)
 		strm->stream.byte_size = 32;
 	}
 #endif
-	strm->stream.eof_char = EOF;
 	@(return strm)
 }
 
@@ -5375,6 +5374,7 @@ alloc_stream()
 	x->stream.last_char = EOF;
 	x->stream.byte_stack = Cnil;
 	x->stream.last_code[0] = x->stream.last_code[1] = EOF;
+	x->stream.eof_char = EOF;
 	return x;
 }
 
