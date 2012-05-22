@@ -480,7 +480,7 @@ handler_fn_prototype(evil_signal_handler, int sig, siginfo_t *siginfo, void *dat
         errno = old_errno;
 }
 
-#if defined(ECL_THREADS) && !defined(ECL_MS_WINDOWS_HOST)
+#if defined(ECL_THREADS) && defined(HAVE_SIGPROCMASK)
 typedef struct {
 	cl_object process;
 	int signo;
