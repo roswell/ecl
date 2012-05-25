@@ -375,6 +375,32 @@ make_windows_handle(HANDLE h)
 }
 @)
 
+#if defined(ECL_MS_WINDOWS_HOST)
+HANDLE
+ecl_stream_to_HANDLE(cl_object s, bool output)
+{
+	if (ecl_unlikely(!ECL_ANSI_STREAM_P(s)))
+		return INVALID_HANDLE_VALUE;
+	switch ((enum ecl_smmode)s->stream.mode) {
+#if defined(ECL_WSOCK)
+	case smm_input_wsock:
+	case smm_output_wsock:
+	case smm_io_wsock:
+#endif
+#if defined(ECL_MS_WINDOWS_HOST)
+	case smm_io_wcon:
+#endif
+		return (HANDLE)IO_FILE_DESCRIPTOR(s);
+	default: {
+		int stream_descriptor = ecl_stream_to_handle(s, output);
+		return (stream_descriptor < 0)?
+			INVALID_HANDLE_VALUE:
+			(HANDLE)_get_osfhandle(stream_descriptor);
+	}
+	}
+}
+#endif
+
 @(defun ext::run-program (command argv &key (input @':stream') (output @':stream')
 	  		  (error @'t') (wait @'t') (environ Cnil)
                           (if_output_exists @':supersede'))
@@ -455,14 +481,13 @@ make_windows_handle(HANDLE h)
         } else if (!Null(cl_streamp(input))) {
                 /* If stream provides a handle, pass it to the child. Otherwise
                  * complain. */
-		int stream_handle = ecl_stream_to_handle(input, 0);
-		unlikely_if (stream_handle < 0) {
+		HANDLE stream_handle = ecl_stream_to_HANDLE(input, 0);
+		unlikely_if (stream_handle == INVALID_HANDLE_VALUE) {
                         FEerror(":INPUT argument to RUN-PROGRAM does not "
                                 "have a file handle:~%~S", 1, input);
                 }
-                DuplicateHandle(current,
-                                (HANDLE)_get_osfhandle(stream_handle)
-                                /*GetStdHandle(STD_INPUT_HANDLE)*/,
+                DuplicateHandle(current, stream_handle,
+                                /*GetStdHandle(STD_INPUT_HANDLE)*/
                                 current, &child_stdin, 0, TRUE,
                                 DUPLICATE_SAME_ACCESS);
 	} else if (ECL_STRINGP(input) || ECL_PATHNAMEP(input)) {
@@ -514,14 +539,13 @@ make_windows_handle(HANDLE h)
                                  @':if-does-not-exist', @':create');
                 goto AGAIN_OUTPUT;
         } else if (!Null(cl_streamp(output))) {
-		int stream_handle = ecl_stream_to_handle(output, 1);
-                unlikely_if(stream_handle < 0) {
+		HANDLE stream_handle = ecl_stream_to_HANDLE(output, 1);
+                unlikely_if(stream_handle == INVALID_HANDLE_VALUE) {
                         FEerror(":OUTPUT argument to RUN-PROGRAM does not "
                                 "have a file handle:~%~S", 1, output);
                 }
-                DuplicateHandle(current,
-                                (HANDLE)_get_osfhandle(stream_handle)
-                                /*GetStdHandle(STD_OUTPUT_HANDLE)*/,
+                DuplicateHandle(current, stream_handle,
+                                /*GetStdHandle(STD_OUTPUT_HANDLE)*/
                                 current, &child_stdout, 0, TRUE,
                                 DUPLICATE_SAME_ACCESS);
 	} else {
@@ -544,14 +568,13 @@ make_windows_handle(HANDLE h)
         } else if (Null(error)) {
 		child_stderr = NULL;
         } else if (!Null(cl_streamp(error))) {
-		int stream_handle = ecl_stream_to_handle(error, 1);
-		unlikely_if (stream_handle < 0) {
+		HANDLE stream_handle = ecl_stream_to_HANDLE(error, 1);
+		unlikely_if (stream_handle == INVALID_HANDLE_VALUE) {
                         FEerror(":ERROR argument to RUN-PROGRAM does not "
                                 "have a file handle:~%~S", 1, error);
                 }
-                DuplicateHandle(current,
-                                (HANDLE)_get_osfhandle(stream_handle)
-                                /*GetStdHandle(STD_ERROR_HANDLE)*/,
+                DuplicateHandle(current, stream_handle,
+                                /*GetStdHandle(STD_ERROR_HANDLE)*/
                                 current, &child_stderr, 0, TRUE,
                                 DUPLICATE_SAME_ACCESS);
 	} else {
