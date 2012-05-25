@@ -4157,6 +4157,15 @@ ecl_stream_to_handle(cl_object s, bool output)
 	case smm_two_way:
 		s = output? TWO_WAY_STREAM_OUTPUT(s) : TWO_WAY_STREAM_INPUT(s);
 		goto BEGIN;
+#if defined(ECL_WSOCK)
+	case smm_input_wsock:
+	case smm_output_wsock:
+	case smm_io_wsock:
+#endif
+#if defined(ECL_MS_WINDOWS_HOST)
+	case smm_io_wcon:
+#endif
+		return -1;
 	default:
 		ecl_internal_error("illegal stream mode");
 	}
