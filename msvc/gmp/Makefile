@@ -3,9 +3,86 @@ srcdir = ..\..\src\gmp
 #
 # Change for other configurations
 #
+!if "$(BITS)" == "64"
+YASM_TARGET=win64
+YASM_FLAGS=-D PIC
+D_WIN64=/D "WIN64"
+!if "$(MPN_TYPE)" == ""
+MPN_TYPE=amd64
+!endif
+BITS=64
+!else
+YASM_TARGET=win32
+YASM_FLAGS=
+D_WIN64=
 BITS=32
+!if "$(MPN_TYPE)" == ""
+MPN_TYPE=p3
+!endif
+!endif
+
+!if "$(YASM)" == ""
+YASM=yasm-1.2.0-win$(BITS).exe
+!endif
 
 AUTO_SUBDIRS = mpf mpq printf scanf
+
+# for amd
+MPN_AMD64_C_SOURCES = \
+    mpn\generic\popham_amd64.c \
+    mpn\generic\add.c \
+    mpn\generic\add_1.c \
+    mpn\generic\add_n.c \
+    mpn\generic\addmul_1.c \
+    mpn\generic\addsub_n.c \
+    mpn\generic\bdivmod.c \
+    mpn\generic\cmp.c \
+    mpn\generic\dc_divrem_n.c \
+    mpn\generic\dive_1.c \
+    mpn\generic\diveby3.c \
+    mpn\generic\divis.c \
+    mpn\generic\divrem.c \
+    mpn\generic\divrem_1.c \
+    mpn\generic\divrem_2.c \
+    mpn\generic\dump.c \
+    mpn\generic\fib2_ui.c \
+    mpn\generic\gcd.c \
+    mpn\generic\gcd_1.c \
+    mpn\generic\gcdext.c \
+    mpn\generic\get_d.c \
+    mpn\generic\get_str.c \
+    mpn\generic\jacbase.c \
+    mpn\generic\lshift.c \
+    mpn\generic\mod_1.c \
+    mpn\generic\mod_34lsub1.c \
+    mpn\generic\mode1o.c \
+    mpn\generic\mul.c \
+    mpn\generic\mul_1.c \
+    mpn\generic\mul_basecase.c \
+    mpn\generic\mul_fft.c \
+    mpn\generic\mul_n.c \
+    mpn\generic\mullow_basecase.c \
+    mpn\generic\mullow_n.c \
+    mpn\generic\perfsqr.c \
+    mpn\generic\pow_1.c \
+    mpn\generic\pre_divrem_1.c \
+    mpn\generic\pre_mod_1.c \
+    mpn\generic\random.c \
+    mpn\generic\random2.c \
+    mpn\generic\rootrem.c \
+    mpn\generic\rshift.c \
+    mpn\generic\sb_divrem_mn.c \
+    mpn\generic\scan0.c \
+    mpn\generic\scan1.c \
+    mpn\generic\set_str.c \
+    mpn\generic\sizeinbase.c \
+    mpn\generic\sqr_basecase.c \
+    mpn\generic\sqrtrem.c \
+    mpn\generic\sub.c \
+    mpn\generic\sub_1.c \
+    mpn\generic\sub_n.c \
+    mpn\generic\submul_1.c \
+    mpn\generic\tdiv_qr.c
 
 # for p4
 MPN_P4_C_SOURCES = \
@@ -455,6 +532,19 @@ GMP_SOURCES = \
     mp_bases.c \
     fib_table.c
 
+MPN_AMD64_ASM_SOURCES = \
+    mpn\amd64i\aors_n.asm \
+    mpn\amd64i\aorsmul_1.asm \
+    mpn\amd64i\copyd.asm \
+    mpn\amd64i\copyi.asm \
+    mpn\amd64i\dive_1.asm \
+    mpn\amd64i\lshift.asm \
+    mpn\amd64i\mode1o.asm \
+    mpn\amd64i\mul_1.asm \
+    mpn\amd64i\mul_basecase.asm \
+    mpn\amd64i\rshift.asm \
+    mpn\amd64i\sqr_basecase.asm
+
 MPN_P4_ASM_SOURCES = \
     mpn\x86i\aors_n.asm \
     mpn\x86i\aorsmul_1.asm \
@@ -514,6 +604,7 @@ MPN_GC_OBJS = $(MPN_GC_SOURCES:.c=.obj)
 #MPN_P0_OBJS = $(MPN_P0_ASM_SOURCES:.asm=.obj) $(MPN_P0_C_SOURCES:.c=.obj)
 MPN_P3_OBJS = $(MPN_P3_ASM_SOURCES:.asm=.obj) $(MPN_P3_C_SOURCES:.c=.obj)
 MPN_P4_OBJS = $(MPN_P4_ASM_SOURCES:.asm=.obj) $(MPN_P4_C_SOURCES:.c=.obj)
+MPN_AMD64_OBJS = $(MPN_AMD64_ASM_SOURCES:.asm=.obj) $(MPN_AMD64_C_SOURCES:.c=.obj)
 MPF_OBJS = $(MPF_SOURCES:.c=.obj)
 MPQ_OBJS = $(MPQ_SOURCES:.c=.obj)
 MPZ_OBJS = $(MPZ_SOURCES:.c=.obj)
@@ -525,8 +616,6 @@ GMP_ALL_OBJS = $(MPF_OBJS) $(MPQ_OBJS) $(MPZ_OBJS) \
 	       $(PRINTF_OBJS) $(SCANF_OBJS) $(GMP_OBJS)
 
 AUTO_FILES = mp_bases.h mp_bases.c fac_ui.h fib_table.h fib_table.c perfsqr.h
-
-MPN_TYPE = p3
 
 all: $(AUTO_FILES) gmp.lib
 
@@ -542,11 +631,14 @@ mpn_p3.lib: msvc-build $(MPN_P3_OBJS)
 mpn_p4.lib: msvc-build $(MPN_P4_OBJS)
 	link -lib /NOLOGO /OUT:$@ $(MPN_P4_OBJS)
 
+mpn_amd64.lib: msvc-build $(MPN_AMD64_OBJS)
+	link -lib /NOLOGO /OUT:$@ $(MPN_AMD64_OBJS)
+
 gmp.lib: mpn_$(MPN_TYPE).lib $(GMP_ALL_OBJS)
 	link -lib /NOLOGO /OUT:$@ *.obj mpf\*.obj mpz\*.obj mpq\*.obj $(PRINTF_OBJS) $(SCANF_OBJS) mpn_$(MPN_TYPE).lib
 
 #CFLAGS = $(CFLAGS_CONFIG) /nologo /W3 /EHsc /I "." /I $(srcdir) /I "$(srcdir)\mpn\generic" /D "WIN32" /D "_LIB" /D "_WIN32" /D "_MBCS"
-CFLAGS = $(CFLAGS_CONFIG) /nologo /W3 /EHsc /I "." /I $(srcdir) /I "$(srcdir)\mpn\generic" /D "_LIB" /D "_MBCS"
+CFLAGS = $(CFLAGS_CONFIG) /nologo /W3 /EHsc /I "." /I $(srcdir) /I "$(srcdir)\mpn\generic" /D "_LIB" /D "_MBCS" $(D_WIN64)
 
 {.\mpn\generic}.c{.\mpn\generic}.obj:
 	cl -c $(CFLAGS) /Fo$@ $?
@@ -570,8 +662,8 @@ CFLAGS = $(CFLAGS_CONFIG) /nologo /W3 /EHsc /I "." /I $(srcdir) /I "$(srcdir)\mp
 	cl -c $(CFLAGS) /Fo$@ $?
 
 .asm.obj:
-	nasm -O9 -Xvc -f win32 -i $(@D)\ -o $@ $?
-#	yasm-1.2.0-win32.exe -O9 -Xvc -f win32 -i $(@D)\ -o $@ $?
+#	nasm -O9 -Xvc -f win32 -i $(@D)\ -o $@ $?
+	$(YASM) -O9 $(YASM_FLAGS) -Xvc -f $(YASM_TARGET) -i $(@D)\ -o $@ $?
 
 gen-bases.exe: build.vc8\gen-bases\gen-bases.c
 	cl $(CFLAGS) /Fe$@ $?
