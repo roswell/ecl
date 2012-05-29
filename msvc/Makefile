@@ -26,7 +26,9 @@ THEHOST           = win32
 # 	p0 -> Pentium processor
 # 	p3 -> Pentium III processor
 # 	p4 -> Pentium IV processor
-GMP_TYPE      = gc
+!if "$(GMP_TYPE)" == ""
+GMP_TYPE = gc
+!endif
 
 # Set it to non-empty to include Win32 thread support
 # Currently it is NOT SUPPORTED to build ECL without threads. The reason
@@ -81,10 +83,6 @@ MKNSI   = makensis.exe
 
 # ==================== Flags ====================
 
-!if "$(ECL_SSE)" != ""
-CFLAGS_SSE=/arch:SSE2
-!endif
-
 !if "$(ECL_WIN64)" != ""
 GMP_BITS=64
 GC_CPU=AMD64
@@ -95,6 +93,9 @@ GMP_BITS=32
 GC_CPU=i386
 ARCHITECTURE=PENTIUM4
 VCREDIST=vcredist_x86.exe
+!if "$(ECL_SSE)" != ""
+CFLAGS_SSE=/arch:SSE2
+!endif
 !endif
 
 #
@@ -334,7 +335,8 @@ eclmin.lib: eclgmp.lib eclgc.lib lsp/config.lsp
 	cd c
 	$(MAKE) ECL_VERSION_NUMBER=$(ECL_VERSION_NUMBER) \
 	        ECL_THREADS=$(ECL_THREADS) ECL_UNICODE=$(ECL_UNICODE) \
-		ECL_SSE=$(ECL_SSE) "ECL_CFLAGS=$(CFLAGS) -DGC_BUILD"
+		ECL_SSE=$(ECL_SSE) ECL_WIN64=$(ECL_WIN64) \
+		"ECL_CFLAGS=$(CFLAGS) -DGC_BUILD"
 	cd ..
 eclgc.lib:
 	cd gc
@@ -352,7 +354,7 @@ eclgc.lib:
 eclgmp.lib:
 	cd gmp
 	$(MAKE) "MPN_TYPE=$(GMP_TYPE)" "CFLAGS_CONFIG=$(CFLAGS_CONFIG)" \
-		"BITS=$(GMP_BITS)"
+		"BITS=$(GMP_BITS)" "YASM=$(YASM)"
 	$(CP) gmp.lib ..\eclgmp.lib
 	$(CP) gmp.h ..\ecl\gmp.h
 	cd ..
