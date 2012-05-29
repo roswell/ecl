@@ -18,7 +18,11 @@
  */
 
 #ifdef _MSC_VER
-#define ecl_detect_fpe() __asm fwait
+# ifdef _WIN64
+#  error "This file shouldn't have been included!"
+# else
+#  define ecl_detect_fpe() __asm fwait
+# endif
 #endif
 
 #ifdef __GNUC__
