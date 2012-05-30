@@ -1937,7 +1937,7 @@ fi
 if test "${enable_threads+set}" = set; then
   enableval=$enable_threads;
 else
-  enable_threads=no
+  enable_threads=auto
 fi
 
 
@@ -15683,7 +15683,7 @@ do
     cat >>$CONFIG_STATUS <<_ACEOF
     # First, check the format of the line:
     cat >"\$tmp/defines.sed" <<\\CEOF
-/^[	 ]*#[	 ]*undef[	 ][	 ]*$ac_word_re[	 ]*\$/b def
+/^[	 ]*#[	 ]*undef[	 ][	 ]*$ac_word_re[	 ]*/b def
 /^[	 ]*#[	 ]*define[	 ][	 ]*$ac_word_re[(	 ]/b def
 b
 :def

@@ -42,7 +42,7 @@ AC_ARG_ENABLE(rpath,
 AC_ARG_ENABLE(threads,
   AS_HELP_STRING( [--enable-threads],
                   [support for native threads (yes|no|auto, default=NO).]),
-  [], [enable_threads=no])
+  [], [enable_threads=auto])
 
 AC_ARG_ENABLE(boehm,
   AS_HELP_STRING( [--enable-boehm],

@@ -16,6 +16,8 @@ ECL 12.2.2:
 
 * Visible changes:
 
+ - ECL builds with support for threads by default (where available).
+
  - DIRECTORY no longer complains when it finds an inexistent directory
    component: it simply returns NIL as the list of pathnames.
 
