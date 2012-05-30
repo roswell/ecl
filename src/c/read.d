@@ -2117,9 +2117,13 @@ init_read(void)
 	/*  This is specific to this implementation  */
 	cl_set_dispatch_macro_character(4, CODE_CHAR('#'), CODE_CHAR('$'),
 					make_cf3(sharp_dollar_reader), r);
-	/*  This is specific to this implimentation  */
+	/*  This is specific to this implementation  */
 	cl_set_dispatch_macro_character(4, CODE_CHAR('#'), CODE_CHAR('Y'),
 					make_cf3(sharp_Y_reader), r);
+	/*  This is specific to this implementation: ignore BOM  */
+#ifdef ECL_UNICODE
+	ecl_readtable_set(r, 0xfeff, cat_whitespace, Cnil);
+#endif
 
         /* Lock the standard read table so that we do not have to make copies
          * to keep it unchanged */
