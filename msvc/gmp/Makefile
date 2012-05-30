@@ -22,14 +22,13 @@ MPN_TYPE=p3
 !endif
 
 !if "$(YASM)" == ""
-YASM=yasm-1.2.0-win$(BITS).exe
+YASM=yasm-1.2.0-win32.exe
 !endif
 
 AUTO_SUBDIRS = mpf mpq printf scanf
 
 # for amd
 MPN_AMD64_C_SOURCES = \
-    mpn\generic\popham_amd64.c \
     mpn\generic\add.c \
     mpn\generic\add_1.c \
     mpn\generic\add_n.c \
@@ -64,6 +63,7 @@ MPN_AMD64_C_SOURCES = \
     mpn\generic\mullow_basecase.c \
     mpn\generic\mullow_n.c \
     mpn\generic\perfsqr.c \
+    .\mpn\generic\popham2.c \
     mpn\generic\pow_1.c \
     mpn\generic\pre_divrem_1.c \
     mpn\generic\pre_mod_1.c \

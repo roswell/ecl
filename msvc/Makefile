@@ -81,6 +81,10 @@ MV      = move /Y
 MSDEV   = msdev
 MKNSI   = makensis.exe
 
+!if "$(YASM)" == ""
+YASM=yasm-1.2.0-win32.exe
+!endif
+
 # ==================== Flags ====================
 
 !if "$(ECL_WIN64)" != ""
