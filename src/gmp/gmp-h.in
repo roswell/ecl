@@ -24,6 +24,7 @@ MA 02110-1301, USA. */
 
 #if defined (__cplusplus)
 #include <iosfwd>   /* for std::istream, std::ostream, std::string */
+#include <cstdio>
 #endif
 
 
