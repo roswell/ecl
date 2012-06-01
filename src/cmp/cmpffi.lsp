@@ -63,11 +63,14 @@
     ((integer 0 #.si:c-uint-max) "unsigned int"
      "ecl_make_uint" "ecl_to_uint" "ecl_to_uint")
     :long
-    ((integer #.si:c-long-min #.si:c-long-max) "long"
-     "ecl_make_long" "ecl_to_long" "ecl_to_long")
+    ((integer #.si:c-long-min #.si:c-long-max) "long" "ecl_make_long" "ecl_to_long"
+     #.(if (<= si::c-long-min most-negative-fixnum most-positive-fixnum si::c-long-max)
+	   "ecl_fix"
+	   "ecl_to_long"))
     :unsigned-long
     ((integer 0 #.si:c-ulong-max) "unsigned long"
-     "ecl_make_ulong" "ecl_to_ulong" "ecl_to_ulong")
+     "ecl_make_ulong" "ecl_to_ulong"
+     #.(if (<= most-positive-fixnum si::c-long-max) "ecl_fix" "ecl_to_ulong"))
     :cl-index
     ((integer 0 #.most-positive-fixnum) "cl_index"
      "ecl_make_unsigned_integer" "ecl_to_cl_index" "ecl_fix")
@@ -83,14 +86,13 @@
          "ecl_make_unsigned_long_long"
          "ecl_to_unsigned_long_long" "ecl_to_unsigned_long_long")
     :float
-    (single-float "float" "ecl_make_singlefloat" "ecl_to_float" "ecl_to_float")
+    (single-float "float" "ecl_make_singlefloat" "ecl_to_float" "ecl_single_float")
     :double
-    (double-float "double" "ecl_make_doublefloat" "ecl_to_double" "ecl_to_double")
+    (double-float "double" "ecl_make_doublefloat" "ecl_to_double" "ecl_double_float")
     #+:long-float
     :long-double
     #+:long-float
-    (long-float "long double" "ecl_make_longfloat" "ecl_to_long_double"
-                   "ecl_to_long_double")
+    (long-float "long double" "ecl_make_longfloat" "ecl_to_long_double" "ecl_long_float")
     :unsigned-char
     (base-char "unsigned char" "CODE_CHAR" "ecl_base_char_code" "CHAR_CODE")
     :char
@@ -133,27 +135,31 @@
     #+:uint16-t
     :int16-t
     #+:uint16-t
-    ((signed-byte 16) "ecl_int16_t" "ecl_make_int16_t" "ecl_to_int16_t" "ecl_fix")
+    ((unsigned-byte 16) "ecl_int16_t" "ecl_make_int16_t" "ecl_to_int16_t"
+     #.(if (subtypep '(unsigned-byte 16) 'fixnum) "ecl_fix" "ecl_to_int32_t"))
     #+:uint16-t
     :uint16-t
     #+:uint16-t
-    ((signed-byte 16) "ecl_uint16_t" "ecl_make_uint16_t" "ecl_to_uint16_t" "ecl_fix")
+    ((signed-byte 16) "ecl_uint16_t" "ecl_make_uint16_t" "ecl_to_uint16_t" "ecl_fix"
+     #.(if (subtypep '(signed-byte 16) 'fixnum) "ecl_fix" "ecl_to_unt16_t"))
     #+:uint32-t
     :int32-t
     #+:uint32-t
-    ((signed-byte 32) "ecl_int32_t" "ecl_make_int32_t" "ecl_to_int32_t" "ecl_fix")
+    ((unsigned-byte 32) "ecl_int32_t" "ecl_make_int32_t" "ecl_to_int32_t"
+     #.(if (subtypep '(unsigned-byte 32) 'fixnum) "ecl_fix" "ecl_to_int32_t"))
     #+:uint32-t
     :uint32-t
     #+:uint32-t
-    ((signed-byte 32) "ecl_uint32_t" "ecl_make_uint32_t" "ecl_to_uint32_t" "ecl_fix")
+    ((signed-byte 32) "ecl_uint32_t" "ecl_make_uint32_t" "ecl_to_uint32_t"
+     #.(if (subtypep '(signed-byte 32) 'fixnum) "ecl_fix" "ecl_to_uint32_t"))
     #+:uint64-t
     :int64-t
     #+:uint64-t
-    ((signed-byte 64) "ecl_int64_t" "ecl_make_int64_t" "ecl_to_int64_t" "ecl_fix")
+    ((signed-byte 64) "ecl_int64_t" "ecl_make_int64_t" "ecl_to_int64_t" "ecl_to_int64_t")
     #+:uint64-t
     :uint64-t
     #+:uint64-t
-    ((signed-byte 64) "ecl_uint64_t" "ecl_make_uint64_t" "ecl_to_uint64_t" "ecl_fix")
+    ((signed-byte 64) "ecl_uint64_t" "ecl_make_uint64_t" "ecl_to_uint64_t" "ecl_to_uint64_t")
     :short
     ((integer #.si:c-short-min #.si:c-short-max) "short"
      "ecl_make_short" "ecl_to_short" "ecl_fix")
