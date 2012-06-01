@@ -406,6 +406,8 @@
 
 (def-inline float :always (t single-float) :float "ecl_to_float(#0)")
 (def-inline float :always (t double-float) :double "ecl_to_double(#0)")
+#+long-float
+(def-inline float :always (t long-float) :long-double "ecl_to_long_double(#0)")
 (def-inline float :always (fixnum-float) :double "((double)(#0))" :exact-return-type t)
 (def-inline float :always (fixnum-float) :float "((float)(#0))" :exact-return-type t)
 
