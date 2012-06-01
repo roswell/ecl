@@ -2241,5 +2241,8 @@ cl_symbols[] = {
 {EXT_ "TRULY-THE",NULL},
 {EXT_ "CHECKED-VALUE",NULL},
 
+{EXT_ "INSTALL-BYTECODES-COMPILER",NULL},
+{EXT_ "INSTALL-C-COMPILER",NULL},
+
 /* Tag for end of list */
 {NULL,NULL}};

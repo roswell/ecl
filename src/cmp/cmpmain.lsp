@@ -960,7 +960,7 @@ from the C language code.  NIL means \"do not create the file\"."
        (disassemble #'disassemble)
        (compile-file #'compile-file)
        (compile-file-pathname #'compile-file-pathname))
-  (defun install-c-compiler ()
+  (defun ext:install-c-compiler ()
     (ext::package-lock (find-package :cl) nil)
     (setf *features* (delete :ecl-bytecmp *features*))
     (setf (fdefinition 'disassemble) disassemble
