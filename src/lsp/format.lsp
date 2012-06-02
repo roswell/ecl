@@ -169,11 +169,11 @@
 ;;; lesser precisions as well as avoiding generic arithmetic.
 ;;;
 (defun scale-exponent (original-x)
+  (declare (optimize (debug 0) (safety 0)))
   (let* ((x (coerce original-x 'long-float))
 	 (delta 0))
     (declare (long-float x)
-	     (fixnum delta)
-	     (optimize (debug 0) (safety 0)))
+	     (fixnum delta))
     (multiple-value-bind (sig exponent)
 	(decode-float x)
       (declare (ignore sig)
