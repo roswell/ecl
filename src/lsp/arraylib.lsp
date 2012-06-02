@@ -98,9 +98,9 @@ Returns a list whose N-th element is the length of the N-th dimension of ARRAY."
   (do ((i (array-rank array))
        (d nil))
       ((= i 0) d)
-    (declare (fixnum i))
-    (setq i (1- i))
-    (setq d (cons (array-dimension array i) d))))
+    (declare (fixnum i)
+	     (optimize (safety 0)))
+    (push (array-dimension array (decf i)) d)))
 
 
 (defun array-in-bounds-p (array &rest indices &aux (r (array-rank array)))
