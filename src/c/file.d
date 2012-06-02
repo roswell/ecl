@@ -3028,6 +3028,7 @@ parse_external_format(cl_object stream, cl_object format, int flags)
 #endif
 	}
 #ifdef ECL_UNICODE
+ PARSE_SYMBOLS:
 	if (format == @':UTF-8') {
 		return (flags & ~ECL_STREAM_FORMAT) | ECL_STREAM_UTF_8; 
 	}
@@ -3064,7 +3065,10 @@ parse_external_format(cl_object stream, cl_object format, int flags)
 	}
 	if (SYMBOLP(format)) {
 		format = _ecl_funcall2(@'ext::make-encoding', format);
-		return parse_external_format(stream, format, flags);
+		if (SYMBOLP(format))
+			goto PARSE_SYMBOLS;
+		stream->stream.format_table = format;
+		return (flags & ~ECL_STREAM_FORMAT) | ECL_STREAM_USER_FORMAT;
 	}
 #endif
 	FEerror("Unknown or unsupported external format: ~A", 1, format);
