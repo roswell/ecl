@@ -127,7 +127,7 @@
                  (and (null fun)
                       (setf fun (find fname *global-funs* :test #'same-fname-p
 				      :key #'fun-name)))))
-    (return-from call-global-loc (call-loc fname fun args)))
+    (return-from call-global-loc (call-loc fname fun args return-type)))
 
   ;; Call to a global (SETF ...) function
   (when (not (symbolp fname))
@@ -143,21 +143,24 @@
 	  (return-from call-global-loc
 	    (call-exported-function-loc
 	     fname args fd minarg maxarg
-	     (member fname *in-all-symbols-functions*)))))))
+	     (member fname *in-all-symbols-functions*)
+	     return-type))))))
 
   (multiple-value-bind (found fd minarg maxarg)
       (si::mangle-name fname t)
     (when found
       (return-from call-global-loc
-        (call-exported-function-loc fname args fd minarg maxarg t))))
+        (call-exported-function-loc fname args fd minarg maxarg t
+				    return-type))))
 
   (call-unknown-global-loc fname nil args))
 
-(defun call-loc (fname fun args)
+(defun call-loc (fname fun args type)
   (declare (ignore fname))
-  `(CALL-NORMAL ,fun ,(coerce-locs args)))
+  `(CALL-NORMAL ,fun ,(coerce-locs args) ,type))
 
-(defun call-exported-function-loc (fname args fun-c-name minarg maxarg in-core)
+(defun call-exported-function-loc (fname args fun-c-name minarg maxarg in-core
+				   return-type)
   (unless in-core
     ;; We only write declarations for functions which are not in lisp_external.h
     (multiple-value-bind (val declared)
@@ -180,7 +183,7 @@
 	(setf (gethash fun-c-name *compiler-declared-globals*) 1))))
   (let ((fun (make-fun :name fname :global t :cfun fun-c-name :lambda 'NIL
 		       :minarg minarg :maxarg maxarg)))
-    (call-loc fname fun args)))
+    (call-loc fname fun args return-type)))
 
 ;;;
 ;;; call-unknown-global-loc
@@ -252,7 +255,7 @@
     (wt ")")
     (when fname (wt-comment fname))))
 
-(defun wt-call-normal (fun args)
+(defun wt-call-normal (fun args type)
   (unless (fun-cfun fun)
     (baboon "Function without a C name: ~A" (fun-name fun)))
   (let* ((minarg (fun-minarg fun))

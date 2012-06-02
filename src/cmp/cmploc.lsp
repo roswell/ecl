@@ -29,7 +29,7 @@
 ;;;	( TEMP temp )			local variable, type object
 ;;;	( FRAME ndx )			variable in local frame stack
 ;;;	( CALL c-fun-name args fname )	locs are locations containing the arguments
-;;;	( CALL-NORMAL fun locs)		similar as CALL, but number of arguments is fixed
+;;;	( CALL-NORMAL fun locs 1st-type ) similar as CALL, but number of arguments is fixed
 ;;;	( CALL-INDIRECT fun narg args)	similar as CALL, but unknown function
 ;;;	( C-INLINE output-type fun/string locs side-effects output-var )
 ;;;	( COERCE-LOC representation-type location)

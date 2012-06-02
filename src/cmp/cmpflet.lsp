@@ -263,5 +263,6 @@
   (unless (c2try-tail-recursive-call fun args)
     (let ((*inline-blocks* 0)
           (*temp* *temp*))
-      (unwind-exit (list 'CALL-NORMAL fun (coerce-locs (inline-args args))))
+      (unwind-exit (call-loc (fun-name fun) fun (inline-args args)
+			     (c1form-primary-type c1form)))
       (close-inline-blocks))))

@@ -288,6 +288,7 @@
 	   (BIND (var-type (second loc)))
 	   (LCL (or (third loc) T))
 	   (THE (second loc))
+	   (CALL-NORMAL (fourth loc))
 	   (otherwise T)))))
 
 (defun loc-representation-type (loc)
