@@ -250,8 +250,8 @@ lines are inserted, but the order is preserved")
 ;;;  defining the current function during loading process.
 (defvar *setf-definitions* nil)         ; C forms to find out (SETF fname) locations
 
-(defvar *use-static-constants-p* nil)   ; T/NIL flag to determine whether one may
-                                        ; generate lisp constant values as C structs
+(defvar *use-static-constants-p*        ; T/NIL flag to determine whether one may
+  #+ecl-min t #-ecl-min nil)            ; generate lisp constant values as C structs
 (defvar *static-constants* nil)		; constants that can be built as C values
                                         ; holds { ( object c-variable constant ) }*
 
