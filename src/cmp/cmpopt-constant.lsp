@@ -29,3 +29,9 @@
         (error (c) failure))
       failure))
 
+(defun constant-value-p (form &optional env)
+  (if (constant-expression-p form)
+      (handler-case
+	  (values t (cmp-eval form))
+	(error (c) (values nil form)))
+      (values nil form)))
