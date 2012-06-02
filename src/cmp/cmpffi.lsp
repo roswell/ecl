@@ -507,8 +507,8 @@
       (unless (and (listp arguments)
 		   (listp arg-types)
 		   (stringp c-expression))
-	(cmperr "C-INLINE: wrong type of arguments ~S"
-		arguments arg-types c-expression))
+	(cmperr "C-INLINE: syntax error in ~S"
+		(list* 'c-inline args)))
       (do ((processed-arguments '())
 	   (processed-arg-types '()))
 	  ((and (endp arguments) (endp arg-types))
