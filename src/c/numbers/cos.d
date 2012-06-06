@@ -37,13 +37,13 @@ ecl_cos_rational(cl_object x)
 static cl_object
 ecl_cos_single_float(cl_object x)
 {
-        return ecl_make_singlefloat(cosf(sf(x)));
+        return ecl_make_singlefloat(cosf(ecl_single_float(x)));
 }
 
 static cl_object
 ecl_cos_double_float(cl_object x)
 {
-        return ecl_make_doublefloat(cos(df(x)));
+        return ecl_make_doublefloat(cos(ecl_double_float(x)));
 }
 
 #ifdef ECL_LONG_FLOAT

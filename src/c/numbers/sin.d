@@ -37,13 +37,13 @@ ecl_sin_rational(cl_object x)
 static cl_object
 ecl_sin_single_float(cl_object x)
 {
-        return ecl_make_singlefloat(sinf(sf(x)));
+        return ecl_make_singlefloat(sinf(ecl_single_float(x)));
 }
 
 static cl_object
 ecl_sin_double_float(cl_object x)
 {
-        return ecl_make_doublefloat(sin(df(x)));
+        return ecl_make_doublefloat(sin(ecl_double_float(x)));
 }
 
 #ifdef ECL_LONG_FLOAT

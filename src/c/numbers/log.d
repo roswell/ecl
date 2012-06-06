@@ -74,7 +74,7 @@ ecl_log1_rational(cl_object x)
 static cl_object
 ecl_log1_single_float(cl_object x)
 {
-        float f = sf(x);
+        float f = ecl_single_float(x);
         if (isnan(f)) return x;
         if (f < 0) return ecl_log1_complex_inner(x, ecl_make_fixnum(0));
         return ecl_make_singlefloat(logf(f));
@@ -83,7 +83,7 @@ ecl_log1_single_float(cl_object x)
 static cl_object
 ecl_log1_double_float(cl_object x)
 {
-        double f = df(x);
+        double f = ecl_double_float(x);
         if (isnan(f)) return x;
         if (f < 0) return ecl_log1_complex_inner(x, ecl_make_fixnum(0));
         return ecl_make_doublefloat(log(f));
@@ -187,7 +187,7 @@ ecl_log1p_rational(cl_object x)
 static cl_object
 ecl_log1p_single_float(cl_object x)
 {
-        float f = sf(x);
+        float f = ecl_single_float(x);
         if (isnan(f)) return x;
         if (f < -1) return ecl_log1p_simple(x);
         return ecl_make_singlefloat(log1pf(f));
@@ -196,7 +196,7 @@ ecl_log1p_single_float(cl_object x)
 static cl_object
 ecl_log1p_double_float(cl_object x)
 {
-        double f = df(x);
+        double f = ecl_double_float(x);
         if (isnan(f)) return x;
         if (f < -1) return ecl_log1p_simple(x);
         return ecl_make_doublefloat(log1p(f));

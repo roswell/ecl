@@ -240,10 +240,10 @@ serialize_one(pool_t pool, cl_object what)
                 break;
 #endif
         case t_bignum: {
-                cl_fixnum size = buffer->big.big_size;
+                cl_fixnum size = ECL_BIGNUM_SIZE(buffer);
                 cl_index dim = ((size < 0) ? (-size) : size);
                 cl_index bytes = dim * sizeof(mp_limb_t);
-                serialize_bits(pool, buffer->big.big_limbs, bytes);
+                serialize_bits(pool, ECL_BIGNUM_LIMBS(buffer), bytes);
                 break;
         }
         case t_ratio: {

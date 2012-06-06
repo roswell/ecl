@@ -267,8 +267,8 @@ ONCE_MORE:
 	 */
 	switch (t) {
 	case t_bignum:
-	  obj->big.big_dim = obj->big.big_size = 0;
-	  obj->big.big_limbs = NULL;
+	  ECL_BIGNUM_DIM(obj) = ECL_BIGNUM_SIZE(obj) = 0;
+	  ECL_BIGNUM_LIMBS(obj) = NULL;
 	  break;
 	case t_ratio:
 	  obj->ratio.num = OBJNULL;

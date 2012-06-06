@@ -78,9 +78,9 @@ ecl_to_fixnum(cl_object x)
 	case t_ratio:
 		return (cl_fixnum)ecl_to_double(x);
 	case t_singlefloat:
-		return (cl_fixnum)sf(x);
+		return (cl_fixnum)ecl_single_float(x);
 	case t_doublefloat:
-		return (cl_fixnum)df(x);
+		return (cl_fixnum)ecl_double_float(x);
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
 		return (cl_fixnum)ecl_long_float(x);
@@ -100,9 +100,9 @@ ecl_to_unsigned_integer(cl_object x)
 	case t_ratio:
 		return (cl_index)ecl_to_double(x);
 	case t_singlefloat:
-		return (cl_index)sf(x);
+		return (cl_index)ecl_single_float(x);
 	case t_doublefloat:
-		return (cl_index)df(x);
+		return (cl_index)ecl_double_float(x);
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
 		return (cl_index)ecl_long_float(x);
@@ -124,9 +124,9 @@ ecl_to_float(cl_object x)
 	case t_ratio:
 		return ecl_to_double(x);
 	case t_singlefloat:
-		return sf(x);
+		return ecl_single_float(x);
 	case t_doublefloat:
-		return df(x);
+		return ecl_double_float(x);
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
 		return ecl_long_float(x);

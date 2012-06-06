@@ -172,7 +172,7 @@ random_integer(cl_object limit, cl_object state)
                 bit_length = FIXNUM_BITS;
         buffer = ecl_ash(ecl_make_fixnum(1), bit_length);
         for (bit_length = mpz_size(buffer->big.big_num); bit_length; ) {
-                buffer->big.big_limbs[--bit_length] =
+                ECL_BIGNUM_LIMBS(buffer)[--bit_length] =
                         generate_limb(state);
         }
         return cl_mod(buffer, limit);
@@ -195,11 +195,11 @@ rando(cl_object x, cl_object rs)
 		z = random_integer(x, rs->random.value);
 		break;
 	case t_singlefloat:
-		z = ecl_make_singlefloat(sf(x) *
+		z = ecl_make_singlefloat(ecl_single_float(x) *
                                          (float)generate_double(rs->random.value));
 		break;
 	case t_doublefloat:
-		z = ecl_make_doublefloat(df(x) *
+		z = ecl_make_doublefloat(ecl_double_float(x) *
                                          generate_double(rs->random.value));
 		break;
 #ifdef ECL_LONG_FLOAT

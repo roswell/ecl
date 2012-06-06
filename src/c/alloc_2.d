@@ -327,7 +327,7 @@ cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl
 	const GC_word gpa = (GC_word)GC_greatest_plausible_heap_addr;
 	switch (o->d.t) {
 	case t_bignum:
-                MAYBE_MARK(o->big.big_limbs);
+                MAYBE_MARK(ECL_BIGNUN_LIMBS(o));
 		break;
         case t_ratio:
                 MAYBE_MARK(o->ratio.num);
@@ -882,7 +882,7 @@ init_alloc(void)
                 to_bitmap(&c, &(c.car)) |
                 to_bitmap(&c, &(c.cdr));
         type_info[t_bignum].descriptor =
-                to_bitmap(&o, &(o.big.big_limbs));
+                to_bitmap(&o, &(ECL_BIGNUM_LIMBS(&o)));
         type_info[t_ratio].descriptor =
                 to_bitmap(&o, &(o.ratio.num)) |
                 to_bitmap(&o, &(o.ratio.den));

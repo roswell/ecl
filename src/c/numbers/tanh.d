@@ -37,13 +37,13 @@ ecl_tanh_rational(cl_object x)
 static cl_object
 ecl_tanh_single_float(cl_object x)
 {
-        return ecl_make_singlefloat(tanhf(sf(x)));
+        return ecl_make_singlefloat(tanhf(ecl_single_float(x)));
 }
 
 static cl_object
 ecl_tanh_double_float(cl_object x)
 {
-        return ecl_make_doublefloat(tanh(df(x)));
+        return ecl_make_doublefloat(tanh(ecl_double_float(x)));
 }
 
 #ifdef ECL_LONG_FLOAT

@@ -37,13 +37,13 @@ ecl_cosh_rational(cl_object x)
 static cl_object
 ecl_cosh_single_float(cl_object x)
 {
-        return ecl_make_singlefloat(coshf(sf(x)));
+        return ecl_make_singlefloat(coshf(ecl_single_float(x)));
 }
 
 static cl_object
 ecl_cosh_double_float(cl_object x)
 {
-        return ecl_make_doublefloat(cosh(df(x)));
+        return ecl_make_doublefloat(cosh(ecl_double_float(x)));
 }
 
 #ifdef ECL_LONG_FLOAT

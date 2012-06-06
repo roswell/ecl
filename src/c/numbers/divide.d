@@ -199,9 +199,9 @@ ecl_divide(cl_object x, cl_object y)
 			z = ecl_times(x, y->ratio.den);
 			return ecl_make_ratio(z, y->ratio.num);
 		case t_singlefloat:
-			return ecl_make_singlefloat(ecl_to_double(x) / sf(y));
+			return ecl_make_singlefloat(ecl_to_double(x) / ecl_single_float(y));
 		case t_doublefloat:
-			return ecl_make_doublefloat(ecl_to_double(x) / df(y));
+			return ecl_make_doublefloat(ecl_to_double(x) / ecl_double_float(y));
 #ifdef ECL_LONG_FLOAT
 		case t_longfloat:
 			return ecl_make_longfloat(ecl_to_double(x) / ecl_long_float(y));
@@ -224,9 +224,9 @@ ecl_divide(cl_object x, cl_object y)
 			z1 = ecl_times(x->ratio.den,y->ratio.num);
 			return ecl_make_ratio(z, z1);
 		case t_singlefloat:
-			return ecl_make_singlefloat(ecl_to_double(x) / sf(y));
+			return ecl_make_singlefloat(ecl_to_double(x) / ecl_single_float(y));
 		case t_doublefloat:
-			return ecl_make_doublefloat(ecl_to_double(x) / df(y));
+			return ecl_make_doublefloat(ecl_to_double(x) / ecl_double_float(y));
 #ifdef ECL_LONG_FLOAT
 		case t_longfloat:
 			return ecl_make_longfloat(ecl_to_double(x) / ecl_long_float(y));
@@ -239,17 +239,17 @@ ecl_divide(cl_object x, cl_object y)
 	case t_singlefloat:
 		switch (type_of(y)) {
 		case t_fixnum:
-			return ecl_make_singlefloat(sf(x) / ecl_fix(y));
+			return ecl_make_singlefloat(ecl_single_float(x) / ecl_fix(y));
 		case t_bignum:
 		case t_ratio:
-			return ecl_make_singlefloat(sf(x) / ecl_to_double(y));
+			return ecl_make_singlefloat(ecl_single_float(x) / ecl_to_double(y));
 		case t_singlefloat:
-			return ecl_make_singlefloat(sf(x) / sf(y));
+			return ecl_make_singlefloat(ecl_single_float(x) / ecl_single_float(y));
 		case t_doublefloat:
-			return ecl_make_doublefloat(sf(x) / df(y));
+			return ecl_make_doublefloat(ecl_single_float(x) / ecl_double_float(y));
 #ifdef ECL_LONG_FLOAT
 		case t_longfloat:
-			return ecl_make_longfloat(sf(x) / ecl_long_float(y));
+			return ecl_make_longfloat(ecl_single_float(x) / ecl_long_float(y));
 #endif
 		case t_complex:
 			goto COMPLEX;
@@ -259,17 +259,17 @@ ecl_divide(cl_object x, cl_object y)
 	case t_doublefloat:
 		switch (type_of(y)) {
 		case t_fixnum:
-			return ecl_make_doublefloat(df(x) / ecl_fix(y));
+			return ecl_make_doublefloat(ecl_double_float(x) / ecl_fix(y));
 		case t_bignum:
 		case t_ratio:
-			return ecl_make_doublefloat(df(x) / ecl_to_double(y));
+			return ecl_make_doublefloat(ecl_double_float(x) / ecl_to_double(y));
 		case t_singlefloat:
-			return ecl_make_doublefloat(df(x) / sf(y));
+			return ecl_make_doublefloat(ecl_double_float(x) / ecl_single_float(y));
 		case t_doublefloat:
-			return ecl_make_doublefloat(df(x) / df(y));
+			return ecl_make_doublefloat(ecl_double_float(x) / ecl_double_float(y));
 #ifdef ECL_LONG_FLOAT
 		case t_longfloat:
-			return ecl_make_longfloat(df(x) / ecl_long_float(y));
+			return ecl_make_longfloat(ecl_double_float(x) / ecl_long_float(y));
 #endif
 		case t_complex:
 			goto COMPLEX;
@@ -285,9 +285,9 @@ ecl_divide(cl_object x, cl_object y)
 		case t_ratio:
 			return ecl_make_longfloat(ecl_long_float(x) / ecl_to_double(y));
 		case t_singlefloat:
-			return ecl_make_longfloat(ecl_long_float(x) / sf(y));
+			return ecl_make_longfloat(ecl_long_float(x) / ecl_single_float(y));
 		case t_doublefloat:
-			return ecl_make_longfloat(ecl_long_float(x) / df(y));
+			return ecl_make_longfloat(ecl_long_float(x) / ecl_double_float(y));
 		case t_longfloat:
 			return ecl_make_longfloat(ecl_long_float(x) / ecl_long_float(y));
 		case t_complex:

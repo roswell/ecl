@@ -37,13 +37,13 @@ ecl_sinh_rational(cl_object x)
 static cl_object
 ecl_sinh_single_float(cl_object x)
 {
-        return ecl_make_singlefloat(sinhf(sf(x)));
+        return ecl_make_singlefloat(sinhf(ecl_single_float(x)));
 }
 
 static cl_object
 ecl_sinh_double_float(cl_object x)
 {
-        return ecl_make_doublefloat(sinh(df(x)));
+        return ecl_make_doublefloat(sinh(ecl_double_float(x)));
 }
 
 #ifdef ECL_LONG_FLOAT

@@ -39,15 +39,16 @@ _hash_eql(cl_hashkey h, cl_object x)
 {
 	switch (type_of(x)) {
 	case t_bignum:
-		return hash_string(h, (unsigned char*)x->big.big_limbs,
-				   labs(x->big.big_size) * sizeof(mp_limb_t));
+		return hash_string(h, (unsigned char*)ECL_BIGNUM_LIMBS(x),
+				   labs(ECL_BIGNUM_SIZE(x)) *
+				   sizeof(mp_limb_t));
 	case t_ratio:
 		h = _hash_eql(h, x->ratio.num);
 		return _hash_eql(h, x->ratio.den);
 	case t_singlefloat:
-		return hash_string(h, (unsigned char*)&sf(x), sizeof(sf(x)));
+		return hash_string(h, (unsigned char*)&ecl_single_float(x), sizeof(ecl_signle_float(x)));
 	case t_doublefloat:
-		return hash_string(h, (unsigned char*)&df(x), sizeof(df(x)));
+		return hash_string(h, (unsigned char*)&ecl_double_float(x), sizeof(ecl_double_float(x)));
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat: {
                 /* We coerce to double because long double has extra bits
@@ -118,12 +119,12 @@ _hash_equal(int depth, cl_hashkey h, cl_object x)
 		return _hash_equal(0, h, x->random.value);
 #ifdef ECL_SIGNED_ZERO
 	case t_singlefloat: {
-		float f = sf(x);
+		float f = ecl_single_float(x);
 		if (f == 0.0) f = 0.0;
 		return hash_string(h, (unsigned char*)&f, sizeof(f));
 	}
 	case t_doublefloat: {
-		double f = df(x);
+		double f = ecl_double_float(x);
 		if (f == 0.0) f = 0.0;
 		return hash_string(h, (unsigned char*)&f, sizeof(f));
 	}
@@ -186,10 +187,10 @@ _hash_equalp(int depth, cl_hashkey h, cl_object x)
 		return hash_word(h, ecl_fix(x));
 	case t_singlefloat:
 		/* FIXME! We should be more precise here! */
-		return hash_word(h, (cl_index)sf(x));
+		return hash_word(h, (cl_index)ecl_single_float(x));
 	case t_doublefloat:
 		/* FIXME! We should be more precise here! */
-		return hash_word(h, (cl_index)df(x));
+		return hash_word(h, (cl_index)ecl_double_float(x));
 	case t_bignum:
 		/* FIXME! We should be more precise here! */
 	case t_ratio:

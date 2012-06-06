@@ -35,7 +35,14 @@
 #define	fix(o)			ecl_fix(o)
 #define FIXNUMP(o)		ECL_FINXUMP(o)
 
+#define	sf(obje)	(obje)->SF.SFVAL
+#define	df(obje)	(obje)->DF.DFVAL
 #define make_shortfloat(x) ecl_make_shortfloat(x);
+
+#define big_dim		big_num->_mp_alloc
+#define big_size	big_num->_mp_size
+#define big_limbs	big_num->_mp_d
+
 #define cl_def_c_function_va(sym,function) ecl_def_c_function_va(sym,function)
 #define cl_def_c_function(sym,function,narg) ecl_def_c_function(sym,function,narg)
 #define cl_def_c_macro(sym,function,narg) {                     \

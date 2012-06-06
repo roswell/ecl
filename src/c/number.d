@@ -485,7 +485,7 @@ ecl_make_singlefloat(float f)
                 return cl_core.singlefloat_zero;
 	}
 	x = ecl_alloc_object(t_singlefloat);
-	sf(x) = f;
+	ecl_single_float(x) = f;
 	return(x);
 }
 
@@ -503,7 +503,7 @@ ecl_make_doublefloat(double f)
                 return cl_core.doublefloat_zero;
 	}
 	x = ecl_alloc_object(t_doublefloat);
-	df(x) = f;
+	ecl_double_float(x) = f;
 	return(x);
 }
 
@@ -572,11 +572,11 @@ ecl_make_complex(cl_object r, cl_object i)
 		case t_singlefloat:
 			break;
 		case t_doublefloat:
-			r = ecl_make_doublefloat((double)(sf(r)));
+			r = ecl_make_doublefloat((double)(ecl_single_float(r)));
 			break;
 #ifdef ECL_LONG_FLOAT
 		case t_longfloat:
-			r = ecl_make_longfloat((long double)sf(r));
+			r = ecl_make_longfloat((long double)ecl_single_float(r));
 			break;
 #endif
 		default:
@@ -595,7 +595,7 @@ ecl_make_complex(cl_object r, cl_object i)
 			break;
 #ifdef ECL_LONG_FLOAT
 		case t_longfloat:
-			r = ecl_make_longfloat((long double)df(r));
+			r = ecl_make_longfloat((long double)ecl_double_float(r));
 			break;
 #endif
 		default:
@@ -754,9 +754,9 @@ ecl_to_double(cl_object x)
 	case t_ratio:
                 return ratio_to_double(x->ratio.num, x->ratio.den);
 	case t_singlefloat:
-		return (double)sf(x);
+		return (double)ecl_single_float(x);
 	case t_doublefloat:
-		return(df(x));
+		return(ecl_double_float(x));
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
 		return (double)ecl_long_float(x);
@@ -778,9 +778,9 @@ ecl_to_long_double(cl_object x)
 	case t_ratio:
                 return ratio_to_long_double(x->ratio.num, x->ratio.den);
 	case t_singlefloat:
-		return (long double)sf(x);
+		return (long double)ecl_single_float(x);
 	case t_doublefloat:
-		return (long double)df(x);
+		return (long double)ecl_double_float(x);
 	case t_longfloat:
 		return ecl_long_float(x);
 	default:
@@ -800,10 +800,10 @@ cl_rational(cl_object x)
 	case t_ratio:
 		break;
 	case t_singlefloat:
-		d = sf(x);
+		d = ecl_single_float(x);
 		goto GO_ON;
 	case t_doublefloat:
-		d = df(x);
+		d = ecl_double_float(x);
 	GO_ON:	if (d == 0) {
 			x = ecl_make_fixnum(0);
 		} else {

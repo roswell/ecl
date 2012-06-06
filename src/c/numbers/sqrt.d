@@ -42,7 +42,7 @@ ecl_sqrt_rational(cl_object x)
 static cl_object
 ecl_sqrt_single_float(cl_object x)
 {
-        float f = sf(x);
+        float f = ecl_single_float(x);
         if (f < 0) {
                 return ecl_make_complex(ecl_make_fixnum(0),
                                         ecl_make_singlefloat(sqrtf(-f)));
@@ -54,7 +54,7 @@ ecl_sqrt_single_float(cl_object x)
 static cl_object
 ecl_sqrt_double_float(cl_object x)
 {
-        double f = df(x);
+        double f = ecl_double_float(x);
         if (f < 0) {
                 return ecl_make_complex(ecl_make_fixnum(0),
                                         ecl_make_doublefloat(sqrt(-f)));

@@ -49,13 +49,13 @@ ecl_tan_rational(cl_object x)
 static cl_object
 ecl_tan_single_float(cl_object x)
 {
-        return ecl_make_singlefloat(safe_tanf(sf(x)));
+        return ecl_make_singlefloat(safe_tanf(ecl_single_float(x)));
 }
 
 static cl_object
 ecl_tan_double_float(cl_object x)
 {
-        return ecl_make_doublefloat(tan(df(x)));
+        return ecl_make_doublefloat(tan(ecl_double_float(x)));
 }
 
 #ifdef ECL_LONG_FLOAT

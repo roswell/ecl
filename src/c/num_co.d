@@ -141,14 +141,14 @@ ecl_floor1(cl_object x)
 		v1 = ecl_make_ratio(VALUES(1), x->ratio.den);
 		break;
 	case t_singlefloat: {
-		float d = sf(x);
+		float d = ecl_single_float(x);
 		float y = floorf(d);
 		v0 = float_to_integer(y);
 		v1 = ecl_make_singlefloat(d - y);
 		break;
 	}
 	case t_doublefloat: {
-		double d = df(x);
+		double d = ecl_double_float(x);
 		double y = floor(d);
 		v0 = double_to_integer(y);
 		v1 = ecl_make_doublefloat(d - y);
@@ -210,7 +210,7 @@ ecl_floor2(cl_object x, cl_object y)
 		  v1 = ecl_make_ratio(VALUES(1), y->ratio.den);
 		  break;
 		case t_singlefloat: {	/* FIX / SF */
-		  float n = sf(y);
+		  float n = ecl_single_float(y);
 		  float p = ecl_fix(x) / n;
 		  float q = floorf(p);
 		  v0 = float_to_integer(q);
@@ -218,7 +218,7 @@ ecl_floor2(cl_object x, cl_object y)
 		  break;
 		}
 		case t_doublefloat: {	/* FIX / DF */
-		  double n = df(y);
+		  double n = ecl_double_float(y);
 		  double p = ecl_fix(x) / n;
 		  double q = floor(p);
 		  v0 = double_to_integer(q);
@@ -256,7 +256,7 @@ ecl_floor2(cl_object x, cl_object y)
 		  v1 = ecl_make_ratio(VALUES(1), y->ratio.den);
 		  break;
 		case t_singlefloat: {	/* BIG / SF */
-		  float n = sf(y);
+		  float n = ecl_single_float(y);
 		  float p = _ecl_big_to_double(x) / n;
 		  float q = floorf(p);
 		  v0 = float_to_integer(q);
@@ -264,7 +264,7 @@ ecl_floor2(cl_object x, cl_object y)
 		  break;
 		}
 		case t_doublefloat: {	/* BIG / DF */
-		  double n = df(y);
+		  double n = ecl_double_float(y);
 		  double p = _ecl_big_to_double(x) / n;
 		  double q = floor(p);
 		  v0 = double_to_integer(q);
@@ -299,7 +299,7 @@ ecl_floor2(cl_object x, cl_object y)
 		break;
 	case t_singlefloat: {		/* SF / ANY */
 		float n = ecl_to_double(y);
-		float p = sf(x)/n;
+		float p = ecl_single_float(x)/n;
 		float q = floorf(p);
 		v0 = float_to_integer(q);
 		/* We cannot factor these two multiplications because
@@ -310,7 +310,7 @@ ecl_floor2(cl_object x, cl_object y)
 	}
 	case t_doublefloat: {		/* DF / ANY */
 		double n = ecl_to_double(y);
-		double p = df(x)/n;
+		double p = ecl_double_float(x)/n;
 		double q = floor(p);
 		v0 = double_to_integer(q);
 		v1 = ecl_make_doublefloat(p*n - q*n);
@@ -355,14 +355,14 @@ ecl_ceiling1(cl_object x)
 		v1 = ecl_make_ratio(VALUES(1), x->ratio.den);
 		break;
 	case t_singlefloat: {
-		float d = sf(x);
+		float d = ecl_single_float(x);
 		float y = ceilf(d);
 		v0 = float_to_integer(y);
 		v1 = ecl_make_singlefloat(d - y);
 		break;
 	}
 	case t_doublefloat: {
-		double d = df(x);
+		double d = ecl_double_float(x);
 		double y = ceil(d);
 		v0 = double_to_integer(y);
 		v1 = ecl_make_doublefloat(d - y);
@@ -424,7 +424,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 		  v1 = ecl_make_ratio(VALUES(1), y->ratio.den);
 		  break;
 		case t_singlefloat: {	/* FIX / SF */
-		  float n = sf(y);
+		  float n = ecl_single_float(y);
 		  float p = ecl_fix(x)/n;
 		  float q = ceilf(p);
 		  v0 = float_to_integer(q);
@@ -432,7 +432,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 		  break;
 		}
 		case t_doublefloat: {	/* FIX / DF */
-		  double n = df(y);
+		  double n = ecl_double_float(y);
 		  double p = ecl_fix(x)/n;
 		  double q = ceil(p);
 		  v0 = double_to_integer(q);
@@ -470,7 +470,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 		  v1 = ecl_make_ratio(VALUES(1), y->ratio.den);
 		  break;
 		case t_singlefloat: {	/* BIG / SF */
-		  float n = sf(y);
+		  float n = ecl_single_float(y);
 		  float p = _ecl_big_to_double(x)/n;
 		  float q = ceilf(p);
 		  v0 = float_to_integer(q);
@@ -478,7 +478,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 		  break;
 		}
 		case t_doublefloat: {	/* BIG / DF */
-		  double n = df(y);
+		  double n = ecl_double_float(y);
 		  double p = _ecl_big_to_double(x)/n;
 		  double q = ceil(p);
 		  v0 = double_to_integer(q);
@@ -513,7 +513,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 		break;
 	case t_singlefloat: {		/* SF / ANY */
 		float n = ecl_to_double(y);
-		float p = sf(x)/n;
+		float p = ecl_single_float(x)/n;
 		float q = ceilf(p);
 		v0 = float_to_integer(q);
 		v1 = ecl_make_singlefloat(p*n - q*n);
@@ -521,7 +521,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 	}
 	case t_doublefloat: {		/* DF / ANY */
 		double n = ecl_to_double(y);
-		double p = df(x)/n;
+		double p = ecl_double_float(x)/n;
 		double q = ceil(p);
 		v0 = double_to_integer(q);
 		v1 = ecl_make_doublefloat(p*n - q*n);
@@ -567,14 +567,14 @@ ecl_truncate1(cl_object x)
 		v1 = ecl_make_ratio(VALUES(1), x->ratio.den);
 		break;
 	case t_singlefloat: {
-		float d = sf(x);
+		float d = ecl_single_float(x);
 		float y = d > 0? floorf(d) : ceilf(d);
 		v0 = float_to_integer(y);
 		v1 = ecl_make_singlefloat(d - y);
 		break;
 	}
 	case t_doublefloat: {
-		double d = df(x);
+		double d = ecl_double_float(x);
 		double y = d > 0? floor(d) : ceil(d);
 		v0 = double_to_integer(y);
 		v1 = ecl_make_doublefloat(d - y);
@@ -664,14 +664,14 @@ ecl_round1(cl_object x)
 		v1 = ecl_make_ratio(VALUES(1), x->ratio.den);
 		break;
 	case t_singlefloat: {
-		float d = sf(x);
+		float d = ecl_single_float(x);
 		float q = round_double(d);
 		v0 = float_to_integer(q);
 		v1 = ecl_make_singlefloat(d - q);
 		break;
 	}
 	case t_doublefloat: {
-		double d = df(x);
+		double d = ecl_double_float(x);
 		double q = round_double(d);
 		v0 = double_to_integer(q);
 		v1 = ecl_make_doublefloat(d - q);
@@ -767,7 +767,7 @@ cl_decode_float(cl_object x)
 
 	switch (tx) {
 	case t_singlefloat: {
-		f = sf(x);
+		f = ecl_single_float(x);
 		if (f >= 0.0) {
 			s = 1;
 		} else {
@@ -779,7 +779,7 @@ cl_decode_float(cl_object x)
 		break;
 	}
 	case t_doublefloat: {
-		double d = df(x);
+		double d = ecl_double_float(x);
 		if (d >= 0.0) {
 			s = 1;
 		} else {
@@ -823,10 +823,10 @@ cl_scale_float(cl_object x, cl_object y)
 	}
 	switch (type_of(x)) {
 	case t_singlefloat:
-		x = ecl_make_singlefloat(ldexpf(sf(x), k));
+		x = ecl_make_singlefloat(ldexpf(ecl_single_float(x), k));
 		break;
 	case t_doublefloat:
-		x = ecl_make_doublefloat(ldexp(df(x), k));
+		x = ecl_make_doublefloat(ldexp(ecl_double_float(x), k));
 		break;
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
@@ -854,9 +854,9 @@ ecl_signbit(cl_object x)
 {
 	switch (type_of(x)) {
 	case t_singlefloat:
-		return signbit(sf(x));
+		return signbit(ecl_single_float(x));
 	case t_doublefloat:
-		return signbit(df(x));
+		return signbit(ecl_double_float(x));
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
 		return signbit(ecl_long_float(x));
@@ -875,12 +875,12 @@ ecl_signbit(cl_object x)
 	negativep = ecl_signbit(x);
 	switch (type_of(y)) {
 	case t_singlefloat: {
-		float f = sf(y);
+		float f = ecl_single_float(y);
                 if (signbit(f) != negativep) y = ecl_make_singlefloat(-f);
 		break;
 	}
 	case t_doublefloat: {
-		double f = df(y);
+		double f = ecl_double_float(y);
                 if (signbit(f) != negativep) y = ecl_make_doublefloat(-f);
 		break;
 	}
@@ -926,7 +926,7 @@ cl_float_precision(cl_object x)
 	int precision;
 	switch (type_of(x)) {
 	case t_singlefloat: {
-		float f = sf(x);
+		float f = ecl_single_float(x);
 		if (f == 0.0) {
 			precision = 0;
 		} else {
@@ -941,7 +941,7 @@ cl_float_precision(cl_object x)
 		break;
 	}
 	case t_doublefloat: {
-		double f = df(x);
+		double f = ecl_double_float(x);
 		if (f == 0.0) {
 			precision = 0;
 		} else {
@@ -1004,7 +1004,7 @@ cl_integer_decode_float(cl_object x)
 	}
 #endif
 	case t_doublefloat: {
-		double d = df(x);
+		double d = ecl_double_float(x);
                 if (signbit(d)) {
                         s = -1;
                         d = -d;
@@ -1020,7 +1020,7 @@ cl_integer_decode_float(cl_object x)
 		break;
 	}
 	case t_singlefloat: {
-		float d = sf(x);
+		float d = ecl_single_float(x);
                 if (signbit(d)) {
                         s = -1;
                         d = -d;
@@ -1079,13 +1079,13 @@ cl_imagpart(cl_object x)
 		x = ecl_make_fixnum(0);
 		break;
 	case t_singlefloat:
-                if (signbit(sf(x)))
+                if (signbit(ecl_single_float(x)))
                         x = cl_core.singlefloat_minus_zero;
                 else
                         x = cl_core.singlefloat_zero;
 		break;
 	case t_doublefloat:
-                if (signbit(df(x)))
+                if (signbit(ecl_double_float(x)))
                         x = cl_core.doublefloat_minus_zero;
                 else
                         x = cl_core.doublefloat_zero;

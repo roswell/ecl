@@ -49,14 +49,14 @@ ecl_abs_rational(cl_object x)
 static cl_object
 ecl_abs_single_float(cl_object x)
 {
-	float f = sf(x);
+	float f = ecl_single_float(x);
         return (f < 0)? ecl_make_singlefloat(-f) : x;
 }
 
 static cl_object
 ecl_abs_double_float(cl_object x)
 {
-	double f = df(x);
+	double f = ecl_double_float(x);
         return (f < 0)? ecl_make_doublefloat(-f) : x;
 }
 

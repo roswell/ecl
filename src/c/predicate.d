@@ -290,9 +290,9 @@ ecl_eql(cl_object x, cl_object y)
 		return (ecl_eql(x->ratio.num, y->ratio.num) &&
 			ecl_eql(x->ratio.den, y->ratio.den));
 	case t_singlefloat:
-		FLOAT_EQL(sf(x), sf(y), float);
+		FLOAT_EQL(ecl_single_float(x), ecl_single_float(y), float);
 	case t_doublefloat:
-		FLOAT_EQL(df(x), df(y), double);
+		FLOAT_EQL(ecl_double_float(x), ecl_double_float(y), double);
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
 		FLOAT_EQL(ecl_long_float(x), ecl_long_float(y), long double);
@@ -347,11 +347,11 @@ BEGIN:
 			ecl_eql(x->ratio.den, y->ratio.den);
 	case t_singlefloat: {
                 if (tx != ty) return 0;
-                FLOAT_EQL(sf(x), sf(y), float);
+                FLOAT_EQL(ecl_single_float(x), ecl_single_float(y), float);
         }
         case t_doublefloat: {
                 if (tx != ty) return 0;
-                FLOAT_EQL(df(x), df(y), double);
+                FLOAT_EQL(ecl_double_float(x), ecl_double_float(y), double);
         }
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat: {

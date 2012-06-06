@@ -39,13 +39,13 @@ ecl_negate_ratio(cl_object x)
 static cl_object
 ecl_negate_single_float(cl_object x)
 {
-        return ecl_make_singlefloat(-sf(x));
+        return ecl_make_singlefloat(-ecl_single_float(x));
 }
 
 static cl_object
 ecl_negate_double_float(cl_object x)
 {
-        return ecl_make_doublefloat(-df(x));
+        return ecl_make_doublefloat(-ecl_double_float(x));
 }
 
 #ifdef ECL_LONG_FLOAT

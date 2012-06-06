@@ -75,9 +75,9 @@ ecl_float_infinity_p(cl_object x)
 {
 	switch (type_of(x)) {
 	case t_singlefloat:
-		return !isfinite(sf(x));
+		return !isfinite(ecl_single_float(x));
 	case t_doublefloat:
-		return !isfinite(df(x));
+		return !isfinite(ecl_double_float(x));
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
 		return !isfinite(ecl_long_float(x));

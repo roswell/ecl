@@ -193,14 +193,12 @@ struct ecl_singlefloat {
 	_ECL_HDR;
 	float SFVAL;	/*  singlefloat value  */
 };
-#define	sf(obje)	(obje)->SF.SFVAL
 #define ecl_single_float(o) ((o)->SF.SFVAL)
 
 struct ecl_doublefloat {
 	_ECL_HDR;
 	double DFVAL;	/*  doublefloat value  */
 };
-#define	df(obje)	(obje)->DF.DFVAL
 #define ecl_double_float(o) ((o)->DF.DFVAL)
 
 #ifdef ECL_LONG_FLOAT
@@ -215,9 +213,10 @@ struct ecl_bignum {
 	_ECL_HDR;
 	mpz_t big_num;
 };
-#define big_dim		big_num->_mp_alloc
-#define big_size	big_num->_mp_size
-#define big_limbs	big_num->_mp_d
+
+#define ECL_BIGNUM_DIM(x)	((x)->big.big_num->_mp_alloc)
+#define ECL_BIGNUM_SIZE(x)	((x)->big.big_num->_mp_size)
+#define ECL_BIGNUM_LIMBS(x)	((x)->big.big_num->_mp_d)
 
 struct ecl_ratio {
 	_ECL_HDR;

@@ -37,13 +37,13 @@ ecl_exp_rational(cl_object x)
 static cl_object
 ecl_exp_single_float(cl_object x)
 {
-        return ecl_make_singlefloat(expf(sf(x)));
+        return ecl_make_singlefloat(expf(ecl_single_float(x)));
 }
 
 static cl_object
 ecl_exp_double_float(cl_object x)
 {
-        return ecl_make_doublefloat(exp(df(x)));
+        return ecl_make_doublefloat(exp(ecl_double_float(x)));
 }
 
 #ifdef ECL_LONG_FLOAT
