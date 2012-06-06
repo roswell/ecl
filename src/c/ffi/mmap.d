@@ -23,7 +23,7 @@
 @(defun ext::mmap (filename
                    &key
                    (length Cnil)
-                   (offset MAKE_FIXNUM(0))
+                   (offset ecl_make_fixnum(0))
                    (direction @':input')
                    (element_type @'base-char')
                    (if_exists @':new-version')
@@ -64,7 +64,7 @@
                 else
                         len = ecl_to_unsigned_integer(length);
         }
-        output = si_make_vector(element_type, MAKE_FIXNUM(0), Cnil,
+        output = si_make_vector(element_type, ecl_make_fixnum(0), Cnil,
                                 Cnil, Cnil, Cnil);
         pa = mmap(0, len, c_prot, c_flags, fd,
                   ecl_integer_to_off_t(offset));

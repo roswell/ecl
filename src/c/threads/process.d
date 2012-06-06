@@ -106,8 +106,8 @@ extend_process_vector()
 		cl_object other = cl_core.processes;
 		if (new_size > other->vector.dim) {
 			cl_object new = si_make_vector(Ct,
-						       MAKE_FIXNUM(new_size),
-						       MAKE_FIXNUM(other->vector.fillp),
+						       ecl_make_fixnum(new_size),
+						       ecl_make_fixnum(other->vector.fillp),
 						       Cnil, Cnil, Cnil);
 			ecl_copy_subarray(new, 0, other, 0, other->vector.dim);
 			cl_core.processes = new;
@@ -306,9 +306,9 @@ alloc_process(cl_object name, cl_object initial_bindings)
         process->process.exit_values = Cnil;
 	process->process.env = NULL;
 	if (initial_bindings != OBJNULL) {
-		array = si_make_vector(Ct, MAKE_FIXNUM(256),
+		array = si_make_vector(Ct, ecl_make_fixnum(256),
                                        Cnil, Cnil, Cnil, Cnil);
-                si_fill_array_with_elt(array, OBJNULL, MAKE_FIXNUM(0), Cnil);
+                si_fill_array_with_elt(array, OBJNULL, ecl_make_fixnum(0), Cnil);
 	} else {
 		array = cl_copy_seq(ecl_process_env()->bindings_array);
 	}
@@ -422,7 +422,7 @@ mp_suspend_loop()
         cl_env_ptr env = ecl_process_env();
         CL_CATCH_BEGIN(env,@'mp::suspend-loop') {
                 for ( ; ; ) {
-                        cl_sleep(MAKE_FIXNUM(100));
+                        cl_sleep(ecl_make_fixnum(100));
                 }
         } CL_CATCH_END;
 	ecl_return0(env);
@@ -743,8 +743,8 @@ init_threads(cl_env_ptr env)
 
 	{
 		cl_object v = si_make_vector(Ct, /* Element type */
-					   MAKE_FIXNUM(256), /* Size */
-					   MAKE_FIXNUM(0), /* fill pointer */
+					   ecl_make_fixnum(256), /* Size */
+					   ecl_make_fixnum(0), /* fill pointer */
 					   Cnil, Cnil, Cnil);
 		v->vector.self.t[0] = process;
 		v->vector.fillp = 1;

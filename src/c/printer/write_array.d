@@ -60,7 +60,7 @@ write_array_inner(bool vector, cl_object x, cl_object stream)
 		if (n > 0) {
 			ecl_write_char('(', stream);
 			for (j=0; j<n; j++) {
-				si_write_object(MAKE_FIXNUM(adims[j]), stream);
+				si_write_object(ecl_make_fixnum(adims[j]), stream);
 				if (j < n-1)
 					ecl_write_char(' ', stream);
 			}
@@ -76,7 +76,7 @@ write_array_inner(bool vector, cl_object x, cl_object stream)
 	if (print_level >= n) {
 		/* We can write the elements of the array */
 		print_level -= n;
-		ecl_bds_bind(env, @'*print-level*', MAKE_FIXNUM(print_level));
+		ecl_bds_bind(env, @'*print-level*', ecl_make_fixnum(print_level));
 	} else {
 		/* The elements of the array are not printed */
 		n = print_level;

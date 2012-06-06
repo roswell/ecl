@@ -459,17 +459,17 @@ ecl_foreign_data_ref_elt(void *p, enum ecl_ffi_tag tag)
 {
 	switch (tag) {
 	case ECL_FFI_CHAR:
-		return CODE_CHAR(*(char *)p);
+		return ECL_CODE_CHAR(*(char *)p);
 	case ECL_FFI_UNSIGNED_CHAR:
-		return CODE_CHAR(*(unsigned char *)p);
+		return ECL_CODE_CHAR(*(unsigned char *)p);
 	case ECL_FFI_BYTE:
-		return MAKE_FIXNUM(*(int8_t *)p);
+		return ecl_make_fixnum(*(int8_t *)p);
 	case ECL_FFI_UNSIGNED_BYTE:
-		return MAKE_FIXNUM(*(uint8_t *)p);
+		return ecl_make_fixnum(*(uint8_t *)p);
 	case ECL_FFI_SHORT:
-		return MAKE_FIXNUM(*(short *)p);
+		return ecl_make_fixnum(*(short *)p);
 	case ECL_FFI_UNSIGNED_SHORT:
-		return MAKE_FIXNUM(*(unsigned short *)p);
+		return ecl_make_fixnum(*(unsigned short *)p);
 	case ECL_FFI_INT:
 		return ecl_make_integer(*(int *)p);
 	case ECL_FFI_UNSIGNED_INT:
@@ -478,9 +478,9 @@ ecl_foreign_data_ref_elt(void *p, enum ecl_ffi_tag tag)
 		return ecl_make_integer(*(long *)p);
 #ifdef ecl_uint8_t
         case ECL_FFI_INT8_T:
-                return MAKE_FIXNUM(*(ecl_int8_t *)p);
+                return ecl_make_fixnum(*(ecl_int8_t *)p);
         case ECL_FFI_UINT8_T:
-                return MAKE_FIXNUM(*(ecl_uint8_t *)p);
+                return ecl_make_fixnum(*(ecl_uint8_t *)p);
 #endif
 #ifdef ecl_uint16_t
         case ECL_FFI_INT16_T:
@@ -659,14 +659,14 @@ cl_object
 si_size_of_foreign_elt_type(cl_object type)
 {
 	enum ecl_ffi_tag tag = ecl_foreign_type_code(type);
-	@(return MAKE_FIXNUM(ecl_foreign_type_table[tag].size))
+	@(return ecl_make_fixnum(ecl_foreign_type_table[tag].size))
 }
 
 cl_object
 si_alignment_of_foreign_elt_type(cl_object type)
 {
 	enum ecl_ffi_tag tag = ecl_foreign_type_code(type);
-	@(return MAKE_FIXNUM(ALIGNMENT(tag)))
+	@(return ecl_make_fixnum(ALIGNMENT(tag)))
 }
 
 cl_object
@@ -1017,7 +1017,7 @@ si_free_ffi_closure(cl_object closure)
 
         if (status != FFI_OK) {
                 FEerror("Unable to build callback. libffi returns ~D", 1,
-                        MAKE_FIXNUM(status));
+                        ecl_make_fixnum(status));
         }
 	si_put_sysprop(sym, @':callback', data);
         @(return closure_object);

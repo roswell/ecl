@@ -22,17 +22,17 @@
 ecl_character
 ecl_char_code(cl_object c)
 {
-	if (ecl_unlikely(!CHARACTERP(c)))
+	if (ecl_unlikely(!ECL_CHARACTERP(c)))
                 FEwrong_type_only_arg(@[char-code], c, @[character]);
-        return CHAR_CODE(c);
+        return ECL_CHAR_CODE(c);
 }
 
 ecl_base_char
 ecl_base_char_code(cl_object c)
 {
 #ifdef ECL_UNICODE
-	if (CHARACTERP(c)) {
-		cl_fixnum code = CHAR_CODE(c);
+	if (ECL_CHARACTERP(c)) {
+		cl_fixnum code = ECL_CHAR_CODE(c);
 		if (code <= 255) {
 			return (int)code;
 		}
@@ -118,19 +118,19 @@ ecl_string_case(cl_object s)
 	return upcase;
 }
 
-@(defun digit_char_p (c &optional (radix MAKE_FIXNUM(10)))
+@(defun digit_char_p (c &optional (radix ecl_make_fixnum(10)))
 @ {
 	cl_fixnum basis, value;
         if (ecl_unlikely(!ECL_FIXNUMP(radix) ||
-                         ecl_fixnum_lower(radix, MAKE_FIXNUM(2)) ||
-                         ecl_fixnum_greater(radix, MAKE_FIXNUM(36)))) {
+                         ecl_fixnum_lower(radix, ecl_make_fixnum(2)) ||
+                         ecl_fixnum_greater(radix, ecl_make_fixnum(36)))) {
                 FEwrong_type_nth_arg(@[digit-char-p], 2, radix,
-                                     ecl_make_integer_type(MAKE_FIXNUM(2),
-                                                           MAKE_FIXNUM(36)));
+                                     ecl_make_integer_type(ecl_make_fixnum(2),
+                                                           ecl_make_fixnum(36)));
         }
-        basis = fix(radix);
+        basis = ecl_fix(radix);
 	value = ecl_digitp(ecl_char_code(c), basis);
-	@(return ((value < 0)? Cnil: MAKE_FIXNUM(value)));
+	@(return ((value < 0)? Cnil: ecl_make_fixnum(value)));
 } @)
 
 /*
@@ -345,14 +345,14 @@ cl_character(cl_object x)
 #ifdef ECL_UNICODE
 	case t_string:
 		if (x->string.fillp == 1) {
-			x = CODE_CHAR(x->string.self[0]);
+			x = ECL_CODE_CHAR(x->string.self[0]);
 			break;
 		}
 		goto ERROR;
 #endif
 	case t_base_string:
 		if (x->base_string.fillp == 1) {
-			x = CODE_CHAR(x->base_string.self[0]);
+			x = ECL_CODE_CHAR(x->base_string.self[0]);
 			break;
 		}
 	default: ERROR:
@@ -365,7 +365,7 @@ cl_object
 cl_char_code(cl_object c)
 {
 	/* INV: ecl_char_code() checks the type of `c' */
-	@(return MAKE_FIXNUM(ecl_char_code(c)))
+	@(return ecl_make_fixnum(ecl_char_code(c)))
 }
 
 cl_object
@@ -375,9 +375,9 @@ cl_code_char(cl_object c)
 
 	switch (type_of(c)) {
 	case t_fixnum:
-		fc = fix(c);
+		fc = ecl_fix(c);
 		if (fc < CHAR_CODE_LIMIT && fc >= 0) {
-			c = CODE_CHAR(fc);
+			c = ECL_CODE_CHAR(fc);
 			break;
 		}
 	case t_bignum:
@@ -394,7 +394,7 @@ cl_char_upcase(cl_object c)
 {
 	/* INV: ecl_char_code() checks the type of `c' */
 	cl_fixnum code = ecl_char_code(c);
-	@(return CODE_CHAR(ecl_char_upcase(code)))
+	@(return ECL_CODE_CHAR(ecl_char_upcase(code)))
 }
 
 cl_object
@@ -402,28 +402,28 @@ cl_char_downcase(cl_object c)
 {
 	/* INV: ecl_char_code() checks the type of `c' */
 	cl_fixnum code = ecl_char_code(c);
-	@(return CODE_CHAR(ecl_char_downcase(code)))
+	@(return ECL_CODE_CHAR(ecl_char_downcase(code)))
 }
 
-@(defun digit_char (weight &optional (radix MAKE_FIXNUM(10)))
+@(defun digit_char (weight &optional (radix ecl_make_fixnum(10)))
 @ {
         cl_fixnum basis;
         cl_object output = Cnil;
         if (ecl_unlikely(!ECL_FIXNUMP(radix) ||
-                         ecl_fixnum_lower(radix, MAKE_FIXNUM(2)) ||
-                         ecl_fixnum_greater(radix, MAKE_FIXNUM(36)))) {
+                         ecl_fixnum_lower(radix, ecl_make_fixnum(2)) ||
+                         ecl_fixnum_greater(radix, ecl_make_fixnum(36)))) {
                 FEwrong_type_nth_arg(@[digit-char], 2, radix,
-                                     ecl_make_integer_type(MAKE_FIXNUM(2),
-                                                           MAKE_FIXNUM(36)));
+                                     ecl_make_integer_type(ecl_make_fixnum(2),
+                                                           ecl_make_fixnum(36)));
         }
-        basis = fix(radix);
+        basis = ecl_fix(radix);
 	switch (type_of(weight)) {
 	case t_fixnum: {
-		cl_fixnum value = fix(weight);
+		cl_fixnum value = ecl_fix(weight);
 		if (value >= 0) {
 			int dw = ecl_digit_char(value, basis);
 			if (dw >= 0) {
-				output = CODE_CHAR(dw);
+				output = ECL_CODE_CHAR(dw);
 			}
 		}
 		break;
@@ -451,7 +451,7 @@ cl_object
 cl_char_int(cl_object c)
 {
 	/* INV: ecl_char_code() checks the type of `c' */
-	return1(MAKE_FIXNUM(ecl_char_code(c)));
+	return1(ecl_make_fixnum(ecl_char_code(c)));
 }
 
 /* here we give every character an implicit name of the form 'u#' where # is a hexadecimal number,
@@ -482,7 +482,7 @@ cl_char_name(cl_object c)
                 start[0] = 'U';
 		output = make_base_string_copy((const char*)start);
 	} else {
-		output = ecl_gethash_safe(MAKE_FIXNUM(code), cl_core.char_names, Cnil);
+		output = ecl_gethash_safe(ecl_make_fixnum(code), cl_core.char_names, Cnil);
 	}
 	@(return output);
 }
@@ -495,12 +495,12 @@ cl_name_char(cl_object name)
 	name = cl_string(name);
 	c = ecl_gethash_safe(name, cl_core.char_names, Cnil);
         if (c != Cnil) {
-                c = CODE_CHAR(fix(c));
+                c = ECL_CODE_CHAR(ecl_fix(c));
         } else if (ecl_stringp(name) && (l = ecl_length(name))) {
-		c = cl_char(name, MAKE_FIXNUM(0));
+		c = cl_char(name, ecl_make_fixnum(0));
 		if (l == 1) {
 			(void)0;
-		} else if (c != CODE_CHAR('u') && c != CODE_CHAR('U')) {
+		} else if (c != ECL_CODE_CHAR('u') && c != ECL_CODE_CHAR('U')) {
 			c = Cnil;
 		} else {
 			cl_index used_l;
@@ -508,10 +508,10 @@ cl_name_char(cl_object name)
 			cl_index real_end = end;
 			c = ecl_parse_integer(name, 1, end, &real_end, 16);
 			used_l = real_end;
-			if (!FIXNUMP(c) || (used_l == (l - 1))) {
+			if (!ECL_FIXNUMP(c) || (used_l == (l - 1))) {
 				c = Cnil;
 			} else {
-				c = CODE_CHAR(fix(c));
+				c = ECL_CODE_CHAR(ecl_fix(c));
 			}
 		}
 	}

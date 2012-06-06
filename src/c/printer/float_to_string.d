@@ -19,9 +19,9 @@ cl_object
 _ecl_ensure_buffer(cl_object buffer, cl_fixnum length)
 {
         if (Null(buffer)) {
-                buffer = si_make_vector(@'base-char', MAKE_FIXNUM(length),
+                buffer = si_make_vector(@'base-char', ecl_make_fixnum(length),
                                         Ct /* adjustable */,
-                                        MAKE_FIXNUM(0) /* fill pointer */,
+                                        ecl_make_fixnum(0) /* fill pointer */,
                                         Cnil /* displacement */,
                                         Cnil /* displ. offset */);
         }
@@ -81,7 +81,7 @@ print_float_exponent(cl_object buffer, cl_object number, cl_fixnum exp)
         }
         if (e != 'e' || exp != 0) {
                 ecl_string_push_extend(buffer, e);
-                si_integer_to_string(buffer, MAKE_FIXNUM(exp), MAKE_FIXNUM(10),
+                si_integer_to_string(buffer, ecl_make_fixnum(exp), ecl_make_fixnum(10),
                                      Cnil, Cnil);
         }
 }
@@ -103,7 +103,7 @@ si_float_to_string_free(cl_object buffer_or_nil, cl_object number,
         base = ecl_length(buffer_or_nil);
         exp = si_float_to_digits(buffer_or_nil, number, Cnil, Cnil);
         buffer = VALUES(1);
-        e = fix(exp);
+        e = ecl_fix(exp);
 
         if (ecl_signbit(number)) {
                 insert_char(buffer, base++, '-');

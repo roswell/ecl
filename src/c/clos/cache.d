@@ -20,8 +20,8 @@
 
 #define RECORD_KEY(e) ((e)[0])
 #define RECORD_VALUE(e) ((e)[1])
-#define RECORD_GEN(e) fix((e+2)[0])
-#define RECORD_GEN_SET(e,v) ((e+2)[0]=MAKE_FIXNUM(v))
+#define RECORD_GEN(e) ecl_fix((e+2)[0])
+#define RECORD_GEN_SET(e,v) ((e+2)[0]=ecl_make_fixnum(v))
 
 static void
 empty_cache(ecl_cache_ptr cache)
@@ -80,14 +80,14 @@ ecl_make_cache(cl_index key_size, cl_index cache_size)
 	ecl_cache_ptr cache = ecl_alloc(sizeof(struct ecl_cache));
 	cache->keys =
 		si_make_vector(Ct, /* element type */
-			       MAKE_FIXNUM(key_size), /* Maximum size */
+			       ecl_make_fixnum(key_size), /* Maximum size */
 			       Ct, /* adjustable */
-			       MAKE_FIXNUM(0), /* fill pointer */
+			       ecl_make_fixnum(0), /* fill pointer */
 			       Cnil, /* displaced */
 			       Cnil);
 	cache->table =
 		si_make_vector(Ct, /* element type */
-			       MAKE_FIXNUM(3*cache_size), /* Maximum size */
+			       ecl_make_fixnum(3*cache_size), /* Maximum size */
 			       Cnil, /* adjustable */
 			       Cnil, /* fill pointer */
 			       Cnil, /* displaced */

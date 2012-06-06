@@ -164,12 +164,12 @@ ecl_boole(int op, cl_object x, cl_object y)
 	case t_fixnum:
 		switch (type_of(y)) {
 		case t_fixnum: {
-			cl_fixnum z = fixnum_operations[op](fix(x), fix(y));
-			return MAKE_FIXNUM(z);
+			cl_fixnum z = fixnum_operations[op](ecl_fix(x), ecl_fix(y));
+			return ecl_make_fixnum(z);
 		}
 		case t_bignum: {
                         cl_object x_copy = _ecl_big_register0();
-                        _ecl_big_set_fixnum(x_copy, fix(x));
+                        _ecl_big_set_fixnum(x_copy, ecl_fix(x));
                         (_ecl_big_boole_operator(op))(x_copy, x_copy, y);
                         return _ecl_big_register_normalize(x_copy);
 		}
@@ -182,7 +182,7 @@ ecl_boole(int op, cl_object x, cl_object y)
 		switch (type_of(y)) {
 		case t_fixnum: {
 			cl_object z = _ecl_big_register1();
-                        _ecl_big_set_fixnum(z,fix(y));
+                        _ecl_big_set_fixnum(z,ecl_fix(y));
                         (_ecl_big_boole_operator(op))(x_copy, x, z);
 			_ecl_big_register_free(z);
 			break;
@@ -204,7 +204,7 @@ ecl_boole(int op, cl_object x, cl_object y)
 cl_object
 cl_lognot(cl_object x)
 {
-	return @logxor(2,x,MAKE_FIXNUM(-1));
+	return @logxor(2,x,ecl_make_fixnum(-1));
 }
 
 static cl_fixnum
@@ -214,7 +214,7 @@ count_bits(cl_object x)
 
 	switch (type_of(x)) {
 	case t_fixnum: {
-		cl_fixnum i = fix(x);
+		cl_fixnum i = ecl_fix(x);
 		cl_fixnum j = (i < 0) ? ~i : i;
 		for (count=0 ; j ; j >>= 1)
 			if (j & 1) count++;
@@ -249,7 +249,7 @@ ecl_ash(cl_object x, cl_fixnum w)
 	y = _ecl_big_register0();
 	if (w < 0) {
 		cl_index bits = -w;
-		if (FIXNUMP(x)) {
+		if (ECL_FIXNUMP(x)) {
 			/* The result of shifting a number further than the number
 			 * of digits it has is unpredictable in C. For instance, GCC
 			 * on intel masks out all bits of "bits" beyond the 5 and
@@ -257,18 +257,18 @@ ecl_ash(cl_object x, cl_fixnum w)
 			 * Furthermore, in general, shifting negative numbers leads
 			 * to implementation-specific results :-/
 			 */
-			cl_fixnum y = fix(x);
+			cl_fixnum y = ecl_fix(x);
 			if (bits >= FIXNUM_BITS) {
 				y = (y < 0)? -1 : 0;
 			} else {
 				y >>= bits;
 			}
-			return MAKE_FIXNUM(y);
+			return ecl_make_fixnum(y);
 		}
 		mpz_div_2exp(y->big.big_num, x->big.big_num, bits);
 	} else {
-		if (FIXNUMP(x)) {
-			_ecl_big_set_fixnum(y, fix(x));
+		if (ECL_FIXNUMP(x)) {
+			_ecl_big_set_fixnum(y, ecl_fix(x));
 			x = y;
 		}
 		mpz_mul_2exp(y->big.big_num, x->big.big_num, (unsigned long)w);
@@ -290,7 +290,7 @@ ecl_fixnum_bit_length(cl_fixnum i)
 @(defun logior (&rest nums)
 @
 	if (narg == 0)
-		@(return MAKE_FIXNUM(0))
+		@(return ecl_make_fixnum(0))
 	/* INV: log_op() checks types and outputs first argument as default. */
 	@(return log_op(narg, ECL_BOOLIOR, nums))
 @)
@@ -298,7 +298,7 @@ ecl_fixnum_bit_length(cl_fixnum i)
 @(defun logxor (&rest nums)
 @
 	if (narg == 0)
-		@(return MAKE_FIXNUM(0))
+		@(return ecl_make_fixnum(0))
 	/* INV: log_op() checks types and outputs first argument as default. */
 	@(return log_op(narg, ECL_BOOLXOR, nums))
 @)
@@ -306,7 +306,7 @@ ecl_fixnum_bit_length(cl_fixnum i)
 @(defun logand (&rest nums)
 @
 	if (narg == 0)
-		@(return MAKE_FIXNUM(-1))
+		@(return ecl_make_fixnum(-1))
 	/* INV: log_op() checks types and outputs first argument as default. */
 	@(return log_op(narg, ECL_BOOLAND, nums))
 @)
@@ -314,7 +314,7 @@ ecl_fixnum_bit_length(cl_fixnum i)
 @(defun logeqv (&rest nums)
 @
 	if (narg == 0)
-		@(return MAKE_FIXNUM(-1))
+		@(return ecl_make_fixnum(-1))
 	/* INV: log_op() checks types and outputs first argument as default. */
 	@(return log_op(narg, ECL_BOOLEQV, nums))
 @)
@@ -378,10 +378,10 @@ cl_logbitp(cl_object p, cl_object x)
 	bool i;
 
 	assert_type_integer(x);
-	if (FIXNUMP(p)) {
+	if (ECL_FIXNUMP(p)) {
 		cl_index n = ecl_to_size(p);
-		if (FIXNUMP(x)) {
-			cl_fixnum y = fix(x);
+		if (ECL_FIXNUMP(x)) {
+			cl_fixnum y = ecl_fix(x);
 			if (n >= FIXNUM_BITS) {
 				i = (y < 0);
 			} else {
@@ -392,8 +392,8 @@ cl_logbitp(cl_object p, cl_object x)
 		}
 	} else {
 		assert_type_non_negative_integer(p);
-		if (FIXNUMP(x))
-			i = (fix(x) < 0);
+		if (ECL_FIXNUMP(x))
+			i = (ecl_fix(x) < 0);
 		else
 			i = (_ecl_big_sign(x) < 0);
 	}
@@ -408,18 +408,18 @@ cl_ash(cl_object x, cl_object y)
 
         assert_type_integer(x);
 	assert_type_integer(y);
-	if (FIXNUMP(y))
-	  r = ecl_ash(x, fix(y));
+	if (ECL_FIXNUMP(y))
+	  r = ecl_ash(x, ecl_fix(y));
 	else {
 	  /*
 	    bit position represented by bignum is probably
 	    out of our address space. So, result is returned
 	    according to sign of integer.
 	    */
-	  if (FIXNUMP(x))
-	    if (FIXNUM_MINUSP(x))
+	  if (ECL_FIXNUMP(x))
+	    if (ecl_fixnum_minusp(x))
 	      sign_x = -1;
-	    else if (x == MAKE_FIXNUM(0))
+	    else if (x == ecl_make_fixnum(0))
 	      sign_x = 0;
 	    else
 	      sign_x = 1;
@@ -427,9 +427,9 @@ cl_ash(cl_object x, cl_object y)
 	    sign_x = _ecl_big_sign(x);
 	  if (_ecl_big_sign(y) < 0)
 	    if (sign_x < 0)
-	      r = MAKE_FIXNUM(-1);
+	      r = ecl_make_fixnum(-1);
 	    else
-	      r = MAKE_FIXNUM(0);
+	      r = ecl_make_fixnum(0);
 	  else if (sign_x == 0)
 	    r = x;
 	  else
@@ -441,7 +441,7 @@ cl_ash(cl_object x, cl_object y)
 cl_object
 cl_logcount(cl_object x)
 {
-	@(return MAKE_FIXNUM(count_bits(x)))
+	@(return ecl_make_fixnum(count_bits(x)))
 }
 
 cl_index
@@ -452,7 +452,7 @@ ecl_integer_length(cl_object x)
 
 	switch (type_of(x)) {
 	case t_fixnum:
-		i = fix(x);
+		i = ecl_fix(x);
 		count = ecl_fixnum_bit_length(i);
 		break;
 	case t_bignum:
@@ -469,7 +469,7 @@ ecl_integer_length(cl_object x)
 cl_object
 cl_integer_length(cl_object x)
 {
-	@(return MAKE_FIXNUM(ecl_integer_length(x)))
+	@(return ecl_make_fixnum(ecl_integer_length(x)))
 }
 
 cl_object

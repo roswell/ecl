@@ -27,7 +27,7 @@ _ecl_write_bytecodes(cl_object x, cl_object stream)
                 cl_object lex = Cnil;
                 cl_object code_l=Cnil;
                 for ( i=x->bytecodes.code_size-1 ; i<(cl_index)(-1l) ; i-- )
-                        code_l = ecl_cons(MAKE_FIXNUM(((cl_opcode*)(x->bytecodes.code))[i]), code_l);
+                        code_l = ecl_cons(ecl_make_fixnum(((cl_opcode*)(x->bytecodes.code))[i]), code_l);
                 writestr_stream("#Y", stream);
                 si_write_ugly_object(cl_list(7, x->bytecodes.name, lex,
                                              Cnil /* x->bytecodes.definition */,

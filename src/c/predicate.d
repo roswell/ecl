@@ -105,7 +105,14 @@ cl_object
 cl_realp(cl_object x)
 {
 	cl_type t = type_of(x);
-	@(return (REAL_TYPE(t) ? Ct : Cnil))
+	@(return (ECL_REAL_TYPE_P(t) ? Ct : Cnil))
+}
+
+bool
+ecl_realp(cl_object x)
+{
+        cl_type t = type_of(x);
+        return ECL_REAL_TYPE_P(t);
 }
 
 cl_object
@@ -117,14 +124,14 @@ cl_complexp(cl_object x)
 cl_object
 cl_characterp(cl_object x)
 {
-	@(return (CHARACTERP(x) ? Ct : Cnil))
+	@(return (ECL_CHARACTERP(x) ? Ct : Cnil))
 }
 
 #ifdef ECL_UNICODE
 cl_object
 si_base_char_p(cl_object c)
 {
-	@(return ((CHARACTERP(c) && BASE_CHAR_P(c))? Ct : Cnil))
+	@(return ((ECL_CHARACTERP(c) && ECL_BASE_CHAR_P(c))? Ct : Cnil))
 }
 #endif
 
@@ -272,7 +279,7 @@ ecl_eql(cl_object x, cl_object y)
 {
 	if (x == y)
 		return TRUE;
-        if (IMMEDIATE(x) || IMMEDIATE(y))
+        if (ECL_IMMEDIATE(x) || ECL_IMMEDIATE(y))
                 return FALSE;
         if (x->d.t != y->d.t)
                 return FALSE;
@@ -356,7 +363,7 @@ BEGIN:
 		return (tx == ty) && ecl_eql(x->complex.real, y->complex.real) &&
 			ecl_eql(x->complex.imag, y->complex.imag);
 	case t_character:
-		return (tx == ty) && (CHAR_CODE(x) == CHAR_CODE(y));
+		return (tx == ty) && (ECL_CHAR_CODE(x) == ECL_CHAR_CODE(y));
 	case t_base_string:
 #ifdef ECL_UNICODE
 	case t_string:
@@ -530,5 +537,5 @@ cl_equalp(cl_object x, cl_object y)
 cl_object
 si_fixnump(cl_object x)
 {
-	@(return (FIXNUMP(x) ? Ct : Cnil))
+	@(return (ECL_FIXNUMP(x) ? Ct : Cnil))
 }

@@ -131,8 +131,8 @@ ecl_atan1(cl_object y)
 #if 0 /* ANSI states it should be this first part */
 		cl_object z = ecl_times(cl_core.imag_unit, y);
 		z = ecl_plus(ecl_log1(ecl_one_plus(z)),
-			     ecl_log1(ecl_minus(MAKE_FIXNUM(1), z)));
-		z = ecl_divide(z, ecl_times(MAKE_FIXNUM(2),
+			     ecl_log1(ecl_minus(ecl_make_fixnum(1), z)));
+		z = ecl_divide(z, ecl_times(ecl_make_fixnum(2),
 					    cl_core.imag_unit));
 #else
 		cl_object z1, z = ecl_times(cl_core.imag_unit, y);
@@ -146,7 +146,7 @@ ecl_atan1(cl_object y)
 #endif /* ANSI */
 		return z;
 	} else {
-		return ecl_atan2(y, MAKE_FIXNUM(1));
+		return ecl_atan2(y, ecl_make_fixnum(1));
 	}
 }
 

@@ -30,7 +30,7 @@ cl_abs(cl_object x)
 static cl_object
 ecl_abs_fixnum(cl_object x)
 {
-        return ecl_fixnum_minusp(x)? ecl_make_integer(-fix(x)) : x;
+        return ecl_fixnum_minusp(x)? ecl_make_integer(-ecl_fix(x)) : x;
 }
 
 static cl_object
@@ -88,7 +88,7 @@ ecl_abs_complex(cl_object x)
                         i = r; r = aux;
                 }
                 r = ecl_divide(r, i);
-                r = ecl_plus(MAKE_FIXNUM(1), ecl_times(r, r));
+                r = ecl_plus(ecl_make_fixnum(1), ecl_times(r, r));
                 return ecl_times(cl_sqrt(r), i);
         }
 }

@@ -114,7 +114,7 @@ ecl_read_object_non_recursive(cl_object in)
 	const cl_env_ptr env = ecl_process_env();
 
 	ecl_bds_bind(env, @'si::*sharp-eq-context*', Cnil);
-	ecl_bds_bind(env, @'si::*backq-level*', MAKE_FIXNUM(0));
+	ecl_bds_bind(env, @'si::*backq-level*', ecl_make_fixnum(0));
 	x = ecl_read_object(in);
 	if (!Null(ECL_SYM_VAL(env, @'si::*sharp-eq-context*')))
 		x = patch_sharp(x);
@@ -137,8 +137,8 @@ invert_buffer_case(cl_object x, cl_object escape_list, int sign)
 	do {
 		if (escape_list != Cnil) {
 			cl_object escape_interval = CAR(escape_list);
-			high_limit = fix(CAR(escape_interval));
-			low_limit = fix(CDR(escape_interval));
+			high_limit = ecl_fix(CAR(escape_interval));
+			low_limit = ecl_fix(CDR(escape_interval));
 			escape_list = CDR(escape_list);
 		} else {
 			high_limit = low_limit = -1;
@@ -198,7 +198,7 @@ BEGIN:
 		if (ECL_HASH_TABLE_P(x)) {
 			o = dispatch_macro_character(x, in, c);
 		} else {
-			o = _ecl_funcall3(x, in, CODE_CHAR(c));
+			o = _ecl_funcall3(x, in, ECL_CODE_CHAR(c));
 		}
 		if (the_env->nvalues == 0) {
                         if (flags == ECL_READ_RETURN_IGNORABLE)
@@ -207,7 +207,7 @@ BEGIN:
                 }
 		unlikely_if (the_env->nvalues > 1) {
                         FEerror("The readmacro ~S returned ~D values.",
-                                2, x, MAKE_FIXNUM(the_env->nvalues));
+                                2, x, ecl_make_fixnum(the_env->nvalues));
                 }
 		return o;
 	}
@@ -266,8 +266,8 @@ LOOP:
 			c = ecl_read_char_noeof(in);
 			a = cat_constituent;
 			if (read_case == ecl_case_invert) {
-				escape_list = CONS(CONS(MAKE_FIXNUM(length),
-							MAKE_FIXNUM(length)),
+				escape_list = CONS(CONS(ecl_make_fixnum(length),
+							ecl_make_fixnum(length)),
 						   escape_list);
 			} else {
 				escape_list = Ct;
@@ -290,8 +290,8 @@ LOOP:
 				length++;
 			}
 			if (read_case == ecl_case_invert) {
-				escape_list = CONS(CONS(MAKE_FIXNUM(begin),
-							MAKE_FIXNUM(length-1)),
+				escape_list = CONS(CONS(ecl_make_fixnum(begin),
+							ecl_make_fixnum(length-1)),
 						   escape_list);
 			} else {
 				escape_list = Ct;
@@ -304,7 +304,7 @@ LOOP:
 		}
 		unlikely_if (ecl_invalid_character_p(c)) {
 			FEreader_error("Found invalid character ~:C", in,
-                                       1, CODE_CHAR(c));
+                                       1, ECL_CODE_CHAR(c));
 		}
 		if (read_case != ecl_case_preserve) {
 			if (ecl_upper_case_p(c)) {
@@ -410,7 +410,7 @@ si_read_object_or_ignore(cl_object in, cl_object eof)
 	const cl_env_ptr env = ecl_process_env();
 
 	ecl_bds_bind(env, @'si::*sharp-eq-context*', Cnil);
-	ecl_bds_bind(env, @'si::*backq-level*', MAKE_FIXNUM(0));
+	ecl_bds_bind(env, @'si::*backq-level*', ecl_make_fixnum(0));
         x = ecl_read_object_with_delimiter(in, EOF, ECL_READ_RETURN_IGNORABLE, 
                                            cat_constituent);
         if (x == OBJNULL) {
@@ -446,24 +446,24 @@ cl_object comma_reader(cl_object in, cl_object c)
 {
 	cl_object x, y;
 	const cl_env_ptr env = ecl_process_env();
-	cl_fixnum backq_level = fix(ECL_SYM_VAL(env, @'si::*backq-level*'));
+	cl_fixnum backq_level = ecl_fix(ECL_SYM_VAL(env, @'si::*backq-level*'));
 
 	unlikely_if (backq_level <= 0)
 		FEreader_error("A comma has appeared out of a backquote.", in, 0);
 	/* Read character & complain at EOF */
 	c = cl_peek_char(2,Cnil,in);
-	if (c == CODE_CHAR('@@')) {
+	if (c == ECL_CODE_CHAR('@@')) {
 		x = @'si::unquote-splice';
 		ecl_read_char(in);
-	} else if (c == CODE_CHAR('.')) {
+	} else if (c == ECL_CODE_CHAR('.')) {
 		x = @'si::unquote-nsplice';
 		ecl_read_char(in);
 	} else {
 		x = @'si::unquote';
 	}
-	ECL_SETQ(env, @'si::*backq-level*', MAKE_FIXNUM(backq_level-1));
+	ECL_SETQ(env, @'si::*backq-level*', ecl_make_fixnum(backq_level-1));
 	y = ecl_read_object(in);
-	ECL_SETQ(env, @'si::*backq-level*', MAKE_FIXNUM(backq_level));
+	ECL_SETQ(env, @'si::*backq-level*', ecl_make_fixnum(backq_level));
 	return cl_list(2, x, y);
 }
 
@@ -471,10 +471,10 @@ static
 cl_object backquote_reader(cl_object in, cl_object c)
 {
 	const cl_env_ptr the_env = ecl_process_env();
-	cl_fixnum backq_level = fix(ECL_SYM_VAL(the_env, @'si::*backq-level*'));
-	ECL_SETQ(the_env, @'si::*backq-level*', MAKE_FIXNUM(backq_level+1));
+	cl_fixnum backq_level = ecl_fix(ECL_SYM_VAL(the_env, @'si::*backq-level*'));
+	ECL_SETQ(the_env, @'si::*backq-level*', ecl_make_fixnum(backq_level+1));
 	in = ecl_read_object(in);
-	ECL_SETQ(the_env, @'si::*backq-level*', MAKE_FIXNUM(backq_level));
+	ECL_SETQ(the_env, @'si::*backq-level*', ecl_make_fixnum(backq_level));
 #if 0
 	@(return cl_macroexpand_1(2, cl_list(2, @'si::quasiquote', in), Cnil));
 #else
@@ -519,7 +519,7 @@ read_constituent(cl_object in)
 static cl_object
 double_quote_reader(cl_object in, cl_object c)
 {
-	int delim = CHAR_CODE(c);
+	int delim = ECL_CHAR_CODE(c);
 	cl_object rtbl = ecl_current_readtable();
 	cl_object token = si_get_buffer_string();
 	cl_object output;
@@ -568,12 +568,12 @@ dispatch_macro_character(cl_object table, cl_object in, int c)
 			c = ecl_read_char_noeof(in);
 			d = ecl_digitp(c, 10);
 		} while (d >= 0);
-		arg = MAKE_FIXNUM(i);
+		arg = ecl_make_fixnum(i);
 	} else {
 		arg = Cnil;
 	}
 	{
-		cl_object dc = CODE_CHAR(c);
+		cl_object dc = ECL_CODE_CHAR(c);
 		cl_object fun = ecl_gethash_safe(dc, table, Cnil);
 		unlikely_if (Null(fun)) {
 			FEreader_error("No dispatch function defined "
@@ -655,7 +655,7 @@ sharp_backslash_reader(cl_object in, cl_object c, cl_object d)
 	const cl_env_ptr the_env = ecl_process_env();
 	cl_object token;
 	if (d != Cnil && !read_suppress) {
-		unlikely_if (!FIXNUMP(d) || d != MAKE_FIXNUM(0)) {
+		unlikely_if (!ECL_FIXNUMP(d) || d != ecl_make_fixnum(0)) {
 			FEreader_error("~S is an illegal CHAR-FONT.", in, 1, d);
                 }
         }
@@ -664,10 +664,10 @@ sharp_backslash_reader(cl_object in, cl_object c, cl_object d)
 	if (token == Cnil) {
 		c = Cnil;
 	} else if (TOKEN_STRING_FILLP(token) == 1) {
-		c = CODE_CHAR(TOKEN_STRING_CHAR(token,0));
+		c = ECL_CODE_CHAR(TOKEN_STRING_CHAR(token,0));
 	} else if (TOKEN_STRING_FILLP(token) == 2 && TOKEN_STRING_CHAR_CMP(token,0,'^')) {
 		/*	#\^x	*/
-		c = CODE_CHAR(TOKEN_STRING_CHAR(token,1) & 037);
+		c = ECL_CODE_CHAR(TOKEN_STRING_CHAR(token,1) & 037);
 	} else {
 		cl_object nc = cl_name_char(token);
 		unlikely_if (Null(nc)) {
@@ -755,7 +755,7 @@ sharp_Y_reader(cl_object in, cl_object c, cl_object d)
         }
         rv->bytecodes.file = nth;
         if (ECL_ATOM(x)) {
-                nth = MAKE_FIXNUM(0);
+                nth = ecl_make_fixnum(0);
         } else {
                 nth = ECL_CONS_CAR(x);
                 x = ECL_CONS_CDR(x);
@@ -786,7 +786,7 @@ sharp_left_parenthesis_reader(cl_object in, cl_object c, cl_object d)
 	extern int _cl_backq_car(cl_object *);
 	const cl_env_ptr the_env = ecl_process_env();
 	cl_object v;
-	if (fix(ECL_SYM_VAL(the_env, @'si::*backq-level*')) > 0) {
+	if (ecl_fix(ECL_SYM_VAL(the_env, @'si::*backq-level*')) > 0) {
 		/* First case: ther might be unquoted elements in the vector.
 		 * Then we just create a form that generates the vector.
 		 */
@@ -820,7 +820,7 @@ sharp_left_parenthesis_reader(cl_object in, cl_object c, cl_object d)
 		   be smaller, and in that case...*/
 		cl_object last;
 		cl_index dim, i;
-                unlikely_if (!ECL_FIXNUMP(d) || ((dim = fix(d)) < 0) ||
+                unlikely_if (!ECL_FIXNUMP(d) || ((dim = ecl_fix(d)) < 0) ||
                              (dim > ADIMLIM)) {
                         FEreader_error("Invalid dimension size ~D in #()", in, 1, d);
                 }
@@ -871,14 +871,14 @@ sharp_asterisk_reader(cl_object in, cl_object c, cl_object d)
                              (x != '0' && x != '1'))
 		{
 			FEreader_error("Character ~:C is not allowed after #*",
-				       in, 1, CODE_CHAR(x));
+				       in, 1, ECL_CODE_CHAR(x));
 		}
-		ECL_STACK_PUSH(env, MAKE_FIXNUM(x == '1'));
+		ECL_STACK_PUSH(env, ecl_make_fixnum(x == '1'));
 	}
 	if (Null(d)) {
 		dim = dimcount;
 	} else {
-                unlikely_if (!ECL_FIXNUMP(d) || ((dim = fix(d)) < 0) ||
+                unlikely_if (!ECL_FIXNUMP(d) || ((dim = ecl_fix(d)) < 0) ||
                              (dim > ADIMLIM))
                 {
                         FEreader_error("Wrong vector dimension size ~D in #*.",
@@ -893,7 +893,7 @@ sharp_asterisk_reader(cl_object in, cl_object c, cl_object d)
 	x = ecl_alloc_simple_vector(dim, aet_bit);
 	for (i = 0; i < dim; i++) {
 		elt = (i < dimcount) ? env->stack[sp+i] : last;
-		if (elt == MAKE_FIXNUM(0))
+		if (elt == ecl_make_fixnum(0))
 			x->vector.self.bit[i/CHAR_BIT] &= ~(0200 >> i%CHAR_BIT);
 		else
 			x->vector.self.bit[i/CHAR_BIT] |= 0200 >> i%CHAR_BIT;
@@ -1009,7 +1009,7 @@ sharp_B_reader(cl_object in, cl_object c, cl_object d)
 {
 	if(d != Cnil && !read_suppress)
 		extra_argument('B', in, d);
-	@(return (read_number(in, 2, CODE_CHAR('B'))))
+	@(return (read_number(in, 2, ECL_CODE_CHAR('B'))))
 }
 
 static cl_object
@@ -1017,7 +1017,7 @@ sharp_O_reader(cl_object in, cl_object c, cl_object d)
 {
 	if(d != Cnil && !read_suppress)
 		extra_argument('O', in, d);
-	@(return (read_number(in, 8, CODE_CHAR('O'))))
+	@(return (read_number(in, 8, ECL_CODE_CHAR('O'))))
 }
 
 static cl_object
@@ -1025,7 +1025,7 @@ sharp_X_reader(cl_object in, cl_object c, cl_object d)
 {
 	if(d != Cnil && !read_suppress)
 		extra_argument('X', in, d);
-	@(return (read_number(in, 16, CODE_CHAR('X'))))
+	@(return (read_number(in, 16, ECL_CODE_CHAR('X'))))
 }
 
 static cl_object
@@ -1034,15 +1034,15 @@ sharp_R_reader(cl_object in, cl_object c, cl_object d)
 	int radix;
 	if (read_suppress) {
 		radix = 10;
-        } else unlikely_if (!FIXNUMP(d)) {
+        } else unlikely_if (!ECL_FIXNUMP(d)) {
 		FEreader_error("No radix was supplied in the #R readmacro.", in, 0);
         } else {
-		radix = fix(d);
+		radix = ecl_fix(d);
 		unlikely_if (radix > 36 || radix < 2) {
 			FEreader_error("~S is an illegal radix.", in, 1, d);
                 }
 	}
-	@(return (read_number(in, radix, CODE_CHAR('R'))))
+	@(return (read_number(in, radix, ECL_CODE_CHAR('R'))))
 }
 
 #define sharp_A_reader void_reader
@@ -1259,7 +1259,7 @@ patch_sharp(cl_object x)
 	const cl_env_ptr the_env = ecl_process_env();
 	cl_object pairs;
         cl_object table = 
-                cl__make_hash_table(@'eq', MAKE_FIXNUM(20), /* size */
+                cl__make_hash_table(@'eq', ecl_make_fixnum(20), /* size */
                                     cl_core.rehash_size,
                                     cl_core.rehash_threshold);
 
@@ -1428,9 +1428,9 @@ ecl_current_read_base(void)
 	cl_object x = ECL_SYM_VAL(the_env, @'*read-base*');
         cl_fixnum b;
 
-        unlikely_if (!ECL_FIXNUMP(x) || ((b = fix(x)) < 2) || (b > 36))
+        unlikely_if (!ECL_FIXNUMP(x) || ((b = ecl_fix(x)) < 2) || (b > 36))
         {
-                ECL_SETQ(the_env, @'*read-base*', MAKE_FIXNUM(10));
+                ECL_SETQ(the_env, @'*read-base*', ecl_make_fixnum(10));
                 FEerror("The value of *READ-BASE*~&  ~S~%"
                         "is not in the range (INTEGER 2 36)", 1, x);
         }
@@ -1571,7 +1571,7 @@ do_read_delimited_list(int d, cl_object in, bool proper_list)
 		l = do_read_delimited_list(delimiter, strm, 1);
 	} else {
 		ecl_bds_bind(the_env, @'si::*sharp-eq-context*', Cnil);
-		ecl_bds_bind(the_env, @'si::*backq-level*', MAKE_FIXNUM(0));
+		ecl_bds_bind(the_env, @'si::*backq-level*', ecl_make_fixnum(0));
 		l = do_read_delimited_list(delimiter, strm, 1);
 		if (!Null(ECL_SYM_VAL(the_env, @'si::*sharp-eq-context*')))
 			l = patch_sharp(l);
@@ -1634,7 +1634,7 @@ do_read_delimited_list(int d, cl_object in, bool proper_list)
 	strm = stream_or_default_input(strm);
 	c = ecl_read_char(strm);
 	if (c != EOF)
-		output = CODE_CHAR(c);
+		output = ECL_CODE_CHAR(c);
 	else if (Null(eof_errorp))
 		output = eof_value;
 	else
@@ -1671,7 +1671,7 @@ do_read_delimited_list(int d, cl_object in, bool proper_list)
 			do {
 				/* If the character belongs to the given class,
 				 * we're done. */
-				if (ecl_char_eq(CODE_CHAR(c), peek_type))
+				if (ecl_char_eq(ECL_CODE_CHAR(c), peek_type))
 					break;
 				/* Otherwise, consume the character and
 				 * peek the next one. */
@@ -1681,7 +1681,7 @@ do_read_delimited_list(int d, cl_object in, bool proper_list)
 		}
 	}
 	if (c != EOF) {
-		eof_value = CODE_CHAR(c);
+		eof_value = ECL_CODE_CHAR(c);
 	} else if (!Null(eof_errorp)) {
 		FEend_of_file(strm);
 	}
@@ -1711,7 +1711,7 @@ do_read_delimited_list(int d, cl_object in, bool proper_list)
 	if (f == ECL_LISTEN_AVAILABLE) {
 		int c = ecl_read_char(strm);
 		if (c != EOF) {
-			@(return CODE_CHAR(c));
+			@(return ECL_CODE_CHAR(c));
 		}
 	} else if (f == ECL_LISTEN_NO_CHAR) {
 		@(return @'nil');
@@ -1744,7 +1744,7 @@ do_read_delimited_list(int d, cl_object in, bool proper_list)
 	@(return c)
 @)
 
-@(defun read_sequence (sequence stream &key (start MAKE_FIXNUM(0)) end)
+@(defun read_sequence (sequence stream &key (start ecl_make_fixnum(0)) end)
 @
 #ifdef ECL_CLOS_STREAMS
 	if (!ECL_ANSI_STREAM_P(stream))
@@ -1827,9 +1827,9 @@ ecl_readtable_get(cl_object readtable, int c, cl_object *macro_or_table)
 		cat = cat_constituent;
 		m = Cnil;
 		if (!Null(hash)) {
-			cl_object pair = ecl_gethash_safe(CODE_CHAR(c), hash, Cnil);
+			cl_object pair = ecl_gethash_safe(ECL_CODE_CHAR(c), hash, Cnil);
 			if (!Null(pair)) {
-				cat = fix(ECL_CONS_CAR(pair));
+				cat = ecl_fix(ECL_CONS_CAR(pair));
 				m = ECL_CONS_CDR(pair);
 			}
 		}
@@ -1854,13 +1854,13 @@ ecl_readtable_set(cl_object readtable, int c, enum ecl_chattrib cat,
 	if (c >= RTABSIZE) {
 		cl_object hash = readtable->readtable.hash;
 		if (Null(hash)) {
-			hash = cl__make_hash_table(@'eql', MAKE_FIXNUM(128),
+			hash = cl__make_hash_table(@'eql', ecl_make_fixnum(128),
                                                    cl_core.rehash_size,
                                                    cl_core.rehash_threshold);
 			readtable->readtable.hash = hash;
 		}
-		_ecl_sethash(CODE_CHAR(c), hash,
-			    CONS(MAKE_FIXNUM(cat), macro_or_table));
+		_ecl_sethash(ECL_CODE_CHAR(c), hash,
+			    CONS(ecl_make_fixnum(cat), macro_or_table));
 	} else
 #endif
 	{
@@ -1932,7 +1932,7 @@ ecl_invalid_character_p(int c)
         assert_type_readtable(@[make-dispatch-macro-character], 3, readtable);
 	c = ecl_char_code(chr);
 	cat = Null(non_terminating_p)? cat_terminating : cat_non_terminating;
-	table = cl__make_hash_table(@'eql', MAKE_FIXNUM(128),
+	table = cl__make_hash_table(@'eql', ecl_make_fixnum(128),
                                     cl_core.rehash_size,
                                     cl_core.rehash_threshold);
 	ecl_readtable_set(readtable, c, cat, table);
@@ -1954,9 +1954,9 @@ ecl_invalid_character_p(int c)
 	}
 	subcode = ecl_char_code(subchr);
 	if (Null(fnc)) {
-		ecl_remhash(CODE_CHAR(subcode), table);
+		ecl_remhash(ECL_CODE_CHAR(subcode), table);
 	} else {
-		_ecl_sethash(CODE_CHAR(subcode), table, fnc);
+		_ecl_sethash(ECL_CODE_CHAR(subcode), table, fnc);
 	}
 	if (ecl_lower_case_p(subcode)) {
 		subcode = ecl_char_upcase(subcode);
@@ -1964,9 +1964,9 @@ ecl_invalid_character_p(int c)
 		subcode = ecl_char_downcase(subcode);
 	}
 	if (Null(fnc)) {
-		ecl_remhash(CODE_CHAR(subcode), table);
+		ecl_remhash(ECL_CODE_CHAR(subcode), table);
 	} else {
-		_ecl_sethash(CODE_CHAR(subcode), table, fnc);
+		_ecl_sethash(ECL_CODE_CHAR(subcode), table, fnc);
 	}
 	@(return Ct)
 @)
@@ -2015,7 +2015,7 @@ static void
 extra_argument(int c, cl_object stream, cl_object d)
 {
 	FEreader_error("~S is an extra argument for the #~C readmacro.",
-		       stream, 2, d, CODE_CHAR(c));
+		       stream, 2, d, ECL_CODE_CHAR(c));
 }
 
 
@@ -2071,54 +2071,54 @@ init_read(void)
 
 	cl_core.default_dispatch_macro = make_cf3(default_dispatch_macro_fun);
 
-	cl_make_dispatch_macro_character(3, CODE_CHAR('#'),
+	cl_make_dispatch_macro_character(3, ECL_CODE_CHAR('#'),
 					 Ct /* non terminating */, r);
 
-	cl_set_dispatch_macro_character(4, CODE_CHAR('#'), CODE_CHAR('C'),
+	cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('C'),
 					make_cf3(sharp_C_reader), r);
-	cl_set_dispatch_macro_character(4, CODE_CHAR('#'), CODE_CHAR('\\'),
+	cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('\\'),
 					make_cf3(sharp_backslash_reader), r);
-	cl_set_dispatch_macro_character(4, CODE_CHAR('#'), CODE_CHAR('\''),
+	cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('\''),
 					make_cf3(sharp_single_quote_reader), r);
-	cl_set_dispatch_macro_character(4, CODE_CHAR('#'), CODE_CHAR('('),
+	cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('('),
 					make_cf3(sharp_left_parenthesis_reader), r);
-	cl_set_dispatch_macro_character(4, CODE_CHAR('#'), CODE_CHAR('*'),
+	cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('*'),
 					make_cf3(sharp_asterisk_reader), r);
-	cl_set_dispatch_macro_character(4, CODE_CHAR('#'), CODE_CHAR(':'),
+	cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR(':'),
 					make_cf3(sharp_colon_reader), r);
-	cl_set_dispatch_macro_character(4, CODE_CHAR('#'), CODE_CHAR('.'),
+	cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('.'),
 					make_cf3(sharp_dot_reader), r);
 	/*  Used for fasload only. */
-	cl_set_dispatch_macro_character(4, CODE_CHAR('#'), CODE_CHAR('B'),
+	cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('B'),
 					make_cf3(sharp_B_reader), r);
-	cl_set_dispatch_macro_character(4, CODE_CHAR('#'), CODE_CHAR('O'),
+	cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('O'),
 					make_cf3(sharp_O_reader), r);
-	cl_set_dispatch_macro_character(4, CODE_CHAR('#'), CODE_CHAR('X'),
+	cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('X'),
 					make_cf3(sharp_X_reader), r);
-	cl_set_dispatch_macro_character(4, CODE_CHAR('#'), CODE_CHAR('R'),
+	cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('R'),
 					make_cf3(sharp_R_reader), r);
-	cl_set_dispatch_macro_character(4, CODE_CHAR('#'), CODE_CHAR('A'),
+	cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('A'),
 					@'si::sharp-a-reader', r);
-	cl_set_dispatch_macro_character(4, CODE_CHAR('#'), CODE_CHAR('S'),
+	cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('S'),
 					@'si::sharp-s-reader', r);
-	cl_set_dispatch_macro_character(4, CODE_CHAR('#'), CODE_CHAR('P'),
+	cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('P'),
 					make_cf3(sharp_P_reader), r);
 
-	cl_set_dispatch_macro_character(4, CODE_CHAR('#'), CODE_CHAR('='),
+	cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('='),
 					make_cf3(sharp_eq_reader), r);
-	cl_set_dispatch_macro_character(4, CODE_CHAR('#'), CODE_CHAR('#'),
+	cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('#'),
 					make_cf3(sharp_sharp_reader), r);
-	cl_set_dispatch_macro_character(4, CODE_CHAR('#'), CODE_CHAR('+'),
+	cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('+'),
 					make_cf3(sharp_plus_reader), r);
-	cl_set_dispatch_macro_character(4, CODE_CHAR('#'), CODE_CHAR('-'),
+	cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('-'),
 					make_cf3(sharp_minus_reader), r);
-	cl_set_dispatch_macro_character(4, CODE_CHAR('#'), CODE_CHAR('|'),
+	cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('|'),
 					make_cf3(sharp_vertical_bar_reader), r);
 	/*  This is specific to this implementation  */
-	cl_set_dispatch_macro_character(4, CODE_CHAR('#'), CODE_CHAR('$'),
+	cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('$'),
 					make_cf3(sharp_dollar_reader), r);
 	/*  This is specific to this implementation  */
-	cl_set_dispatch_macro_character(4, CODE_CHAR('#'), CODE_CHAR('Y'),
+	cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('Y'),
 					make_cf3(sharp_Y_reader), r);
 	/*  This is specific to this implementation: ignore BOM  */
 #ifdef ECL_UNICODE
@@ -2133,7 +2133,7 @@ init_read(void)
 
 	ECL_SET(@'*readtable*',
 		r=ecl_copy_readtable(cl_core.standard_readtable, Cnil));
-	cl_set_dispatch_macro_character(4, CODE_CHAR('#'), CODE_CHAR('!'),
+	cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('!'),
 					Cnil, r);
 	ECL_SET(@'*read-default-float-format*', @'single-float');
 
@@ -2167,7 +2167,7 @@ init_read(void)
                 val = cl_list(24,
                               /**pprint-dispatch-table**/ Cnil,
                               /**print-array**/ Ct,
-                              /**print-base**/ MAKE_FIXNUM(10),
+                              /**print-base**/ ecl_make_fixnum(10),
                               /**print-case**/ @':downcase',
                               /**print-circle**/ Ct,
                               /**print-escape**/ Ct,
@@ -2180,7 +2180,7 @@ init_read(void)
                               /**print-radix**/ Cnil,
                               /**print-readably**/ Ct,
                               /**print-right-margin**/ Cnil,
-                              /**read-base**/ MAKE_FIXNUM(10),
+                              /**read-base**/ ecl_make_fixnum(10),
                               /**read-default-float-format**/ @'single-float',
                               /**read-eval**/ Ct,
                               /**read-suppress**/ Cnil,
@@ -2217,7 +2217,7 @@ init_read(void)
                 val = cl_list(23,
                               /**pprint-dispatch-table**/ Cnil,
                               /**print-array**/ Ct,
-                              /**print-base**/ MAKE_FIXNUM(10),
+                              /**print-base**/ ecl_make_fixnum(10),
                               /**print-case**/ @':upcase',
                               /**print-circle**/ Cnil,
                               /**print-escape**/ Ct,
@@ -2230,7 +2230,7 @@ init_read(void)
                               /**print-radix**/ Cnil,
                               /**print-readably**/ Ct,
                               /**print-right-margin**/ Cnil,
-                              /**read-base**/ MAKE_FIXNUM(10),
+                              /**read-base**/ ecl_make_fixnum(10),
                               /**read-default-float-format**/ @'single-float',
                               /**read-eval**/ Ct,
                               /**read-suppress**/ Cnil,
@@ -2362,9 +2362,9 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
 
 		for (i = 0; i < block->cblock.cfuns_size; i++) {
 			const struct ecl_cfun *prototype = block->cblock.cfuns+i;
-			cl_index fname_location = fix(prototype->block);
+			cl_index fname_location = ecl_fix(prototype->block);
 			cl_object fname = VV[fname_location];
-			cl_index location = fix(prototype->name);
+			cl_index location = ecl_fix(prototype->name);
                         cl_object position = prototype->file_position;
 			int narg = prototype->narg;
 			VV[location] = narg<0?
@@ -2373,7 +2373,7 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
 				ecl_make_cfun((cl_objectfn_fixed)prototype->entry,
                                               fname, block, narg);
                         /* Add source file info */
-                        if (position != MAKE_FIXNUM(-1)) {
+                        if (position != ecl_make_fixnum(-1)) {
                                 ecl_set_function_source_file_info(VV[location],
                                                                   block->cblock.source,
                                                                   position);

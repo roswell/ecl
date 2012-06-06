@@ -38,7 +38,7 @@ ecl_make_semaphore(cl_object name, cl_fixnum count)
         return output;
 }
 
-@(defun mp::make-semaphore (&key name (count MAKE_FIXNUM(0)))
+@(defun mp::make-semaphore (&key name (count ecl_make_fixnum(0)))
 @
 {
 	@(return ecl_make_semaphore(name, fixnnint(count)))
@@ -62,7 +62,7 @@ mp_semaphore_count(cl_object semaphore)
 	unlikely_if (type_of(semaphore) != t_semaphore) {
 		FEerror_not_a_semaphore(semaphore);
 	}
-	ecl_return1(env, MAKE_FIXNUM(semaphore->semaphore.counter));
+	ecl_return1(env, ecl_make_fixnum(semaphore->semaphore.counter));
 }
 
 cl_object
@@ -75,7 +75,7 @@ mp_semaphore_wait_count(cl_object semaphore)
 	ecl_return1(env, cl_length(semaphore->semaphore.queue_list));
 }
 
-@(defun mp::signal-semaphore (semaphore &optional (count MAKE_FIXNUM(1)))
+@(defun mp::signal-semaphore (semaphore &optional (count ecl_make_fixnum(1)))
 @
 {
 	cl_fixnum n = fixnnint(count);
@@ -104,7 +104,7 @@ get_semaphore_inner(cl_env_ptr env, cl_object semaphore)
 		}
 		if (AO_compare_and_swap_full((AO_t*)&(semaphore->semaphore.counter),
 					     (AO_t)counter, (AO_t)(counter-1))) {
-			output = MAKE_FIXNUM(counter);
+			output = ecl_make_fixnum(counter);
 			break;
 		}
 		ecl_process_yield();

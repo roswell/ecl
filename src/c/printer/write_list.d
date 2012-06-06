@@ -87,7 +87,7 @@ _ecl_write_list(cl_object x, cl_object stream)
                 ecl_write_char('#', stream);
                 return;
         }
-        ecl_bds_bind(env, @'*print-level*', MAKE_FIXNUM(print_level-1));
+        ecl_bds_bind(env, @'*print-level*', ecl_make_fixnum(print_level-1));
         ecl_write_char('(', stream);
         for (i = 0;  ;  i++) {
                 if (i >= print_length) {

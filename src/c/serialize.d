@@ -19,12 +19,12 @@
 #include <ecl/internal.h>
 
 struct fake_package {
-        HEADER;
+        _ECL_HDR;
         cl_object name;
 };
 
 struct fake_symbol {
-        HEADER;
+        _ECL_HDR;
         cl_object name;
         cl_object pack;
 };
@@ -104,7 +104,7 @@ alloc(pool_t pool, cl_index size)
         if (next_fillp >= pool->data->vector.dim) {
                 cl_index new_dim = next_fillp + next_fillp / 2;
                 pool->data = _ecl_funcall3(@'adjust-array', pool->data,
-					   MAKE_FIXNUM(new_dim));
+					   ecl_make_fixnum(new_dim));
         }
         pool->data->vector.fillp = next_fillp;
         return fillp;
@@ -114,14 +114,14 @@ static cl_object
 fix_to_ptr(cl_object ptr)
 {
         cl_fixnum i = (cl_fixnum)ptr;
-        return (cl_object)(i & ~IMMEDIATE_TAG);
+        return (cl_object)(i & ~ECL_IMMEDIATE_TAG);
 }
 
 static cl_object
 enqueue(pool_t pool, cl_object what)
 {
         cl_object record, index;
-        if (FIXNUMP(what) || CHARACTERP(what) || what == OBJNULL) {
+        if (ECL_FIXNUMP(what) || ECL_CHARACTERP(what) || what == OBJNULL) {
                 return what;
         }
 #ifdef ECL_SMALL_CONS
@@ -131,7 +131,7 @@ enqueue(pool_t pool, cl_object what)
         index = ecl_gethash_safe(what, pool->hash, OBJNULL);
         if (index == OBJNULL) {
                 cl_object cons;
-                index = MAKE_FIXNUM(pool->hash->hash.entries);
+                index = ecl_make_fixnum(pool->hash->hash.entries);
                 ecl_sethash(what, pool->hash, index);
                 cons = ecl_cons(what, Cnil);
                 ECL_RPLACD(pool->last, cons);
@@ -142,7 +142,7 @@ enqueue(pool_t pool, cl_object what)
 
 #ifdef ECL_SMALL_CONS
 typedef struct {
-        HEADER;
+        _ECL_HDR;
         cl_object car, cdr;
 } large_cons;
 typedef large_cons *large_cons_ptr;
@@ -304,15 +304,15 @@ static void
 init_pool(pool_t pool, cl_object root)
 {
         pool->data = si_make_vector(@'ext::byte8',
-                                    MAKE_FIXNUM(1024),
+                                    ecl_make_fixnum(1024),
                                     Ct,
-                                    MAKE_FIXNUM(2 * sizeof(cl_index)),
+                                    ecl_make_fixnum(2 * sizeof(cl_index)),
                                     Cnil,
-                                    MAKE_FIXNUM(0));
-        pool->hash = cl__make_hash_table(@'eql', MAKE_FIXNUM(256),
+                                    ecl_make_fixnum(0));
+        pool->hash = cl__make_hash_table(@'eql', ecl_make_fixnum(256),
                                          cl_core.rehash_size,
                                          cl_core.rehash_threshold);
-        ecl_sethash(root, pool->hash, MAKE_FIXNUM(0));
+        ecl_sethash(root, pool->hash, ecl_make_fixnum(0));
         pool->queue = ecl_list1(root);
         pool->last = pool->queue;
 }
@@ -433,7 +433,7 @@ reconstruct_one(uint8_t *data, cl_object *output)
 static cl_object
 get_object(cl_object o_or_index, cl_object *o_list)
 {
-        if (IMMEDIATE(o_or_index)) {
+        if (ECL_IMMEDIATE(o_or_index)) {
                 return o_or_index;
         } else {
                 cl_index i = (cl_index)o_or_index >> 2;
@@ -444,13 +444,13 @@ get_object(cl_object o_or_index, cl_object *o_list)
 static void
 fixup_vector(cl_object v, cl_object *o_list)
 {
-        if (!IMMEDIATE(v->vector.displaced)) {
+        if (!ECL_IMMEDIATE(v->vector.displaced)) {
                 cl_object disp = get_object(v->vector.displaced, o_list);
                 cl_object to = ECL_CONS_CAR(disp);
                 if (to != Cnil) {
                         cl_index offset = (cl_index)v->vector.self.b8;
                         v->vector.displaced = Cnil;
-                        ecl_displace(v, to, MAKE_FIXNUM(offset));
+                        ecl_displace(v, to, ecl_make_fixnum(offset));
                         return;
                 }
         }
@@ -519,7 +519,7 @@ ecl_deserialize(uint8_t *raw)
         }
         for (i = 0; i < num_el; i++) {
                 cl_object package = output[i];
-                if (!IMMEDIATE(package) && package->d.t == t_package) {
+                if (!ECL_IMMEDIATE(package) && package->d.t == t_package) {
                         cl_object name = get_object(package->pack.name,
                                                     output);
                         output[i] = ecl_find_package_nolock(name);
@@ -527,7 +527,7 @@ ecl_deserialize(uint8_t *raw)
         }
         for (i = 0; i < num_el; i++) {
                 cl_object symbol = output[i];
-                if (!IMMEDIATE(symbol) && symbol->d.t == t_symbol) {
+                if (!ECL_IMMEDIATE(symbol) && symbol->d.t == t_symbol) {
                         struct fake_symbol *s = (struct fake_symbol *)symbol;
                         cl_object name = get_object(s->name, output);
                         cl_object pack = get_object(s->pack, output);

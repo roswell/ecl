@@ -301,7 +301,7 @@ cl_list_length(cl_object x)
 			slow = ECL_CONS_CDR(slow);
 		}
 	}
-	@(return MAKE_FIXNUM(n));
+	@(return ecl_make_fixnum(n));
 }
 
 cl_object
@@ -399,7 +399,7 @@ ecl_last(cl_object l, cl_index n)
 	}
 }
 
-@(defun last (l &optional (k MAKE_FIXNUM(1)))
+@(defun last (l &optional (k ecl_make_fixnum(1)))
 @
 	if (type_of(k) == t_bignum)
 		@(return l)
@@ -573,7 +573,7 @@ ecl_butlast(cl_object l, cl_index n)
 	}
 }
 
-@(defun butlast (lis &optional (nn MAKE_FIXNUM(1)))
+@(defun butlast (lis &optional (nn ecl_make_fixnum(1)))
 @
 	/* INV: No list has more than MOST_POSITIVE_FIXNUM elements */
 	if (type_of(nn) == t_bignum)
@@ -602,7 +602,7 @@ ecl_nbutlast(cl_object l, cl_index n)
 	return Cnil;
 }
 
-@(defun nbutlast (lis &optional (nn MAKE_FIXNUM(1)))
+@(defun nbutlast (lis &optional (nn ecl_make_fixnum(1)))
 @
 	/* INV: No list has more than MOST_POSITIVE_FIXNUM elements */
 	if (type_of(nn) == t_bignum)

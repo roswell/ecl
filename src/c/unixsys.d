@@ -45,14 +45,14 @@
 cl_object
 si_getpid(void)
 {
-	@(return MAKE_FIXNUM(getpid()))
+	@(return ecl_make_fixnum(getpid()))
 }
 
 cl_object
 si_getuid(void)
 {
 #if defined(ECL_MS_WINDOWS_HOST)
-        @(return MAKE_FIXNUM(0));
+        @(return ecl_make_fixnum(0));
 #else
 	@(return ecl_make_integer(getuid()));
 #endif
@@ -249,7 +249,7 @@ ecl_waitpid(cl_object pid, cl_object wait)
                 code = Cnil;
         } else {
                 status = @':exited';
-                code = MAKE_FIXNUM(exitcode);
+                code = ecl_make_fixnum(exitcode);
                 pid->foreign.data = NULL;
                 CloseHandle(*hProcess);
         }
@@ -270,16 +270,16 @@ ecl_waitpid(cl_object pid, cl_object wait)
                 code = Cnil;
                 pid = Cnil;
         } else {
-                pid = MAKE_FIXNUM(error);
+                pid = ecl_make_fixnum(error);
                 if (WIFEXITED(code_int)) {
                         status = @':exited';
-                        code = MAKE_FIXNUM(WEXITSTATUS(code_int));
+                        code = ecl_make_fixnum(WEXITSTATUS(code_int));
                 } else if (WIFSIGNALED(code_int)) {
                         status = @':signaled';
-                        code = MAKE_FIXNUM(WTERMSIG(code_int));
+                        code = ecl_make_fixnum(WTERMSIG(code_int));
                 } else if (WIFSTOPPED(code_int)) {
                         status = @':stopped';
-                        code = MAKE_FIXNUM(WSTOPSIG(code_int));
+                        code = ecl_make_fixnum(WSTOPSIG(code_int));
                 } else {
                         status = @':running';
                         code = Cnil;
@@ -295,7 +295,7 @@ si_wait_for_all_processes()
         const cl_env_ptr env = ecl_process_env();
 #if defined(SIGCHLD) && !defined(ECL_WINDOWS_HOST)
         do {
-                cl_object status = ecl_waitpid(MAKE_FIXNUM(-1), Cnil);
+                cl_object status = ecl_waitpid(ecl_make_fixnum(-1), Cnil);
                 cl_object code = env->values[1];
                 cl_object pid = env->values[2];
                 if (Null(pid)) {
@@ -769,7 +769,7 @@ ecl_stream_to_HANDLE(cl_object s, bool output)
         if (child_pid < 0) {
                 pid = Cnil;
         } else {
-                pid = MAKE_FIXNUM(child_pid);
+                pid = ecl_make_fixnum(child_pid);
         }
         set_external_process_pid(process, pid);
 	{

@@ -21,15 +21,15 @@
 static cl_object
 ecl_one_minus_fix(cl_object x)
 {
-        if (x == MAKE_FIXNUM(MOST_NEGATIVE_FIXNUM))
+        if (x == ecl_make_fixnum(MOST_NEGATIVE_FIXNUM))
                 return ecl_make_integer(MOST_NEGATIVE_FIXNUM-1);
-        return (cl_object)((cl_fixnum)x - ((cl_fixnum)MAKE_FIXNUM(1) - FIXNUM_TAG));
+        return (cl_object)((cl_fixnum)x - ((cl_fixnum)ecl_make_fixnum(1) - ECL_FIXNUM_TAG));
 }
 
 static cl_object
 ecl_one_minus_big(cl_object x)
 {
-        return ecl_minus(x, MAKE_FIXNUM(1));
+        return ecl_minus(x, ecl_make_fixnum(1));
 }
 
 static cl_object

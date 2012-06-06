@@ -15,8 +15,8 @@
 #include <ecl/ecl.h>
 #include <ecl/ecl-inl.h>
 
-#define PRINT_BASE MAKE_FIXNUM(10)
-#define EXPT_RADIX(x) ecl_ash(MAKE_FIXNUM(1),x)
+#define PRINT_BASE ecl_make_fixnum(10)
+#define EXPT_RADIX(x) ecl_ash(ecl_make_fixnum(1),x)
 
 typedef struct {
         cl_object r;
@@ -37,7 +37,7 @@ static float_approx *
 setup(cl_object number, float_approx *approx)
 {
         cl_object f = cl_integer_decode_float(number);
-        cl_fixnum e = fix(VALUES(1)), min_e;
+        cl_fixnum e = ecl_fix(VALUES(1)), min_e;
         bool limit_f = 0;
         switch (type_of(number)) {
         case t_singlefloat:
@@ -61,27 +61,27 @@ setup(cl_object number, float_approx *approx)
         if (e > 0) {
                 cl_object be = EXPT_RADIX(e);
                 if (limit_f) {
-                        cl_object be1 = ecl_times(be, MAKE_FIXNUM(FLT_RADIX));
+                        cl_object be1 = ecl_times(be, ecl_make_fixnum(FLT_RADIX));
                         approx->r = times2(ecl_times(f, be1));
-                        approx->s = MAKE_FIXNUM(FLT_RADIX*2);
+                        approx->s = ecl_make_fixnum(FLT_RADIX*2);
                         approx->mm = be;
                         approx->mp = be1;
                 } else {
                         approx->r = times2(ecl_times(f, be));
-                        approx->s = MAKE_FIXNUM(2);
+                        approx->s = ecl_make_fixnum(2);
                         approx->mm = be;
                         approx->mp = be;
                 }
         } else if (!limit_f || (e == min_e)) {
                 approx->r = times2(f);
                 approx->s = times2(EXPT_RADIX(-e));
-                approx->mp = MAKE_FIXNUM(1);
-                approx->mm = MAKE_FIXNUM(1);
+                approx->mp = ecl_make_fixnum(1);
+                approx->mm = ecl_make_fixnum(1);
         } else {
-                approx->r = times2(MAKE_FIXNUM(FLT_RADIX));
+                approx->r = times2(ecl_make_fixnum(FLT_RADIX));
                 approx->s = times2(EXPT_RADIX(1-e));
-                approx->mp = MAKE_FIXNUM(FLT_RADIX);
-                approx->mm = MAKE_FIXNUM(1);
+                approx->mp = ecl_make_fixnum(FLT_RADIX);
+                approx->mm = ecl_make_fixnum(1);
         }
         return approx;
 }
@@ -143,16 +143,16 @@ generate(cl_object digits, float_approx *approx)
                 if (tc1 || tc2) {
                         break;
                 }
-                ecl_string_push_extend(digits, ecl_digit_char(fix(d), 10));
+                ecl_string_push_extend(digits, ecl_digit_char(ecl_fix(d), 10));
         } while (1);
         if (tc2 && !tc1) {
-                digit = fix(d) + 1;
+                digit = ecl_fix(d) + 1;
         } else if (tc1 && !tc2) {
-                digit = fix(d);
+                digit = ecl_fix(d);
         } else if (ecl_lower(times2(approx->r), approx->s)) {
-                digit = fix(d);
+                digit = ecl_fix(d);
         } else {
-                digit = fix(d) + 1;
+                digit = ecl_fix(d) + 1;
         }
         ecl_string_push_extend(digits, ecl_digit_char(digit, 10));
         return digits;
@@ -164,10 +164,10 @@ change_precision(float_approx *approx, cl_object position, cl_object relativep)
         cl_fixnum pos;
         if (Null(position))
                 return;
-        pos = fix(position);
+        pos = ecl_fix(position);
         if (!Null(relativep)) {
-                cl_object k = MAKE_FIXNUM(0);
-                cl_object l = MAKE_FIXNUM(1);
+                cl_object k = ecl_make_fixnum(0);
+                cl_object l = ecl_make_fixnum(1);
                 while (ecl_lower(ecl_times(approx->s, l),
                                  ecl_plus(approx->r, approx->mp))) {
                         k = ecl_one_plus(k);
@@ -176,7 +176,7 @@ change_precision(float_approx *approx, cl_object position, cl_object relativep)
                 position = ecl_minus(k, position);
                 {
                         cl_object e1 = cl_expt(PRINT_BASE, position);
-                        cl_object e2 = ecl_divide(e1, MAKE_FIXNUM(2));
+                        cl_object e2 = ecl_divide(e1, ecl_make_fixnum(2));
                         cl_object e3 = cl_expt(PRINT_BASE, k); 
                         if (ecl_greatereq(ecl_plus(approx->r, ecl_times(approx->s, e1)),
                                           ecl_times(approx->s, e2)))
@@ -185,7 +185,7 @@ change_precision(float_approx *approx, cl_object position, cl_object relativep)
         }
         {
                 cl_object x = ecl_times(approx->s, cl_expt(PRINT_BASE, position));
-                cl_object e = ecl_divide(x, MAKE_FIXNUM(2));
+                cl_object e = ecl_divide(x, ecl_make_fixnum(2));
                 cl_object low = cl_max(2, approx->mm, e);
                 cl_object high = cl_max(2, approx->mp, e);
                 if (ecl_lowereq(approx->mm, low)) {
@@ -209,11 +209,11 @@ si_float_to_digits(cl_object digits, cl_object number, cl_object position,
         change_precision(approx, position, relativep);
         k = scale(approx);
         if (Null(digits))
-                digits = si_make_vector(@'base-char', MAKE_FIXNUM(10),
+                digits = si_make_vector(@'base-char', ecl_make_fixnum(10),
                                         Ct /* adjustable */,
-                                        MAKE_FIXNUM(0) /* fill pointer */,
+                                        ecl_make_fixnum(0) /* fill pointer */,
                                         Cnil /* displacement */,
                                         Cnil /* displ. offset */);
         generate(digits, approx);
-        @(return MAKE_FIXNUM(k) digits)
+        @(return ecl_make_fixnum(k) digits)
 }

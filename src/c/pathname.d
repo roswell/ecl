@@ -297,7 +297,7 @@ ecl_make_pathname(cl_object host, cl_object device, cl_object directory,
 		goto ERROR;
 	}
 	if (version != @':unspecific' && version != @':newest' &&
-	    version != @':wild' && version != Cnil && !FIXNUMP(version))
+	    version != @':wild' && version != Cnil && !ECL_FIXNUMP(version))
 	{
 		x = version;
 		component = @':version';
@@ -395,7 +395,7 @@ tilde_expand(cl_object pathname)
 static cl_object
 make_one(cl_object s, cl_index start, cl_index end)
 {
-	return cl_subseq(3, s, MAKE_FIXNUM(start), MAKE_FIXNUM(end));
+	return cl_subseq(3, s, ecl_make_fixnum(start), ecl_make_fixnum(end));
 }
 
 static int is_colon(int c) { return c == ':'; }
@@ -632,7 +632,7 @@ ecl_parse_namestring(cl_object s, cl_index start, cl_index end, cl_index *ep,
 	} else {
 		version = cl_parse_integer(3, aux, @':junk-allowed', Ct);
 		if (cl_integerp(version) != Cnil && ecl_plusp(version) &&
-		    fix(VALUES(1)) == ecl_length(aux))
+		    ecl_fix(VALUES(1)) == ecl_length(aux))
 			;
 		else if (cl_string_equal(2, aux, @':newest') != Cnil)
 			version = @':newest';
@@ -1020,12 +1020,12 @@ ecl_namestring(cl_object x, int flags)
 		    truncate_if_unreadable)
 			return Cnil;
 		if (host != Cnil) {
-			si_do_write_sequence(host, buffer, MAKE_FIXNUM(0), Cnil);
+			si_do_write_sequence(host, buffer, ecl_make_fixnum(0), Cnil);
 			writestr_stream(":", buffer);
 		}
 	} else {
 		if ((y = x->pathname.device) != Cnil) {
-			si_do_write_sequence(y, buffer, MAKE_FIXNUM(0), Cnil);
+			si_do_write_sequence(y, buffer, ecl_make_fixnum(0), Cnil);
 			writestr_stream(":", buffer);
 		}
 		if (host != Cnil) {
@@ -1035,7 +1035,7 @@ ecl_namestring(cl_object x, int flags)
 			}
 #endif
 			writestr_stream("//", buffer);
-			si_do_write_sequence(host, buffer, MAKE_FIXNUM(0), Cnil);
+			si_do_write_sequence(host, buffer, ecl_make_fixnum(0), Cnil);
 		}
 	}
 	l = x->pathname.directory;
@@ -1059,7 +1059,7 @@ ecl_namestring(cl_object x, int flags)
 		} else if (y == @':wild-inferiors') {
 			writestr_stream("**", buffer);
 		} else if (y != @':back') {
-			si_do_write_sequence(y, buffer, MAKE_FIXNUM(0), Cnil);
+			si_do_write_sequence(y, buffer, ecl_make_fixnum(0), Cnil);
 		} else {
 			/* Directory :back has no namestring representation */
 			return Cnil;
@@ -1067,7 +1067,7 @@ ecl_namestring(cl_object x, int flags)
 		ecl_write_char(logical? ';' : DIR_SEPARATOR, buffer);
 	} end_loop_for_in;
 NO_DIRECTORY:
-	if (ecl_file_position(buffer) == MAKE_FIXNUM(0)) {
+	if (ecl_file_position(buffer) == ecl_make_fixnum(0)) {
 		if ((ecl_stringp(x->pathname.name) &&
 		     ecl_member_char(':', x->pathname.name)) ||
 		    (ecl_stringp(x->pathname.type) &&
@@ -1079,7 +1079,7 @@ NO_DIRECTORY:
 		if (y == @':wild') {
 			writestr_stream("*", buffer);
 		} else {
-			si_do_write_sequence(y, buffer, MAKE_FIXNUM(0), Cnil);
+			si_do_write_sequence(y, buffer, ecl_make_fixnum(0), Cnil);
 		}
 	} else if (!logical && !Null(x->pathname.type)) {
                 /* #P".txt" is :NAME = ".txt" :TYPE = NIL and
@@ -1095,7 +1095,7 @@ NO_DIRECTORY:
 			writestr_stream(".*", buffer);
 		} else {
 			writestr_stream(".", buffer);
-			si_do_write_sequence(y, buffer, MAKE_FIXNUM(0), Cnil);
+			si_do_write_sequence(y, buffer, ecl_make_fixnum(0), Cnil);
 		}
 	}
 	y = x->pathname.version;
@@ -1106,12 +1106,12 @@ NO_DIRECTORY:
 				writestr_stream("*", buffer);
 			} else if (y == @':newest') {
 				si_do_write_sequence(ecl_symbol_name(y), buffer,
-						     MAKE_FIXNUM(0), Cnil);
+						     ecl_make_fixnum(0), Cnil);
 			} else {
 				/* Since the printer is not reentrant,
 				 * we cannot use cl_write and friends.
 				 */
-				int n = fix(y), i;
+				int n = ecl_fix(y), i;
 				char b[FIXNUM_BITS/2];
 				for (i = 0; n; i++) {
 					b[i] = n%10 + '0';
@@ -1157,7 +1157,7 @@ cl_namestring(cl_object x)
 
 @(defun parse_namestring (thing
 	&o host (defaults si_default_pathname_defaults())
-	&k (start MAKE_FIXNUM(0)) end junk_allowed
+	&k (start ecl_make_fixnum(0)) end junk_allowed
 	&a output)
 @
 	if (host != Cnil) {
@@ -1178,7 +1178,7 @@ cl_namestring(cl_object x)
 #endif
 		p = ecl_vector_start_end(@[parse-namestring], thing, start, end);
 		output = ecl_parse_namestring(thing, p.start, p.end, &ee, default_host);
-		start = MAKE_FIXNUM(ee);
+		start = ecl_make_fixnum(ee);
 		if (output == Cnil || ee != p.end) {
 			if (Null(junk_allowed)) {
 				FEparse_error("Cannot parse the namestring ~S~%"

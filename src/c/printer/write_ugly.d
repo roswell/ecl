@@ -68,10 +68,10 @@ write_integer(cl_object number, cl_object stream)
         cl_object s = si_get_buffer_string();
         int print_base = ecl_print_base();
         si_integer_to_string(s, number,
-                             MAKE_FIXNUM(print_base),
+                             ecl_make_fixnum(print_base),
                              ecl_symbol_value(@'*print-radix*'),
                              Ct /* decimal syntax */);
-        si_do_write_sequence(s, stream, MAKE_FIXNUM(0), Cnil);
+        si_do_write_sequence(s, stream, ecl_make_fixnum(0), Cnil);
         si_put_buffer_string(s);
 }
 
@@ -79,8 +79,8 @@ void
 _ecl_write_fixnum(cl_fixnum i, cl_object stream)
 {
         cl_object s = si_get_buffer_string();
-        si_integer_to_string(s, MAKE_FIXNUM(i), MAKE_FIXNUM(10), Cnil, Cnil);
-        si_do_write_sequence(s, stream, MAKE_FIXNUM(0), Cnil);
+        si_integer_to_string(s, ecl_make_fixnum(i), ecl_make_fixnum(10), Cnil, Cnil);
+        si_do_write_sequence(s, stream, ecl_make_fixnum(0), Cnil);
         si_put_buffer_string(s);
 }
 
@@ -89,14 +89,14 @@ write_ratio(cl_object r, cl_object stream)
 {
         cl_object s = si_get_buffer_string();
         int print_base = ecl_print_base();
-        si_integer_to_string(s, r->ratio.num, MAKE_FIXNUM(print_base),
+        si_integer_to_string(s, r->ratio.num, ecl_make_fixnum(print_base),
                              ecl_symbol_value(@'*print-radix*'),
                              Cnil /* decimal syntax */);
         ecl_string_push_extend(s, '/');
         si_integer_to_string(s, r->ratio.den,
-                             MAKE_FIXNUM(print_base),
+                             ecl_make_fixnum(print_base),
                              Cnil, Cnil);
-        si_do_write_sequence(s, stream, MAKE_FIXNUM(0), Cnil);
+        si_do_write_sequence(s, stream, ecl_make_fixnum(0), Cnil);
         si_put_buffer_string(s);
 }
 
@@ -114,21 +114,21 @@ static void
 write_float(cl_object f, cl_object stream)
 {
         cl_object s = si_get_buffer_string();
-        s = si_float_to_string_free(s, f, MAKE_FIXNUM(-3), MAKE_FIXNUM(8));
-        si_do_write_sequence(s, stream, MAKE_FIXNUM(0), Cnil);
+        s = si_float_to_string_free(s, f, ecl_make_fixnum(-3), ecl_make_fixnum(8));
+        si_do_write_sequence(s, stream, ecl_make_fixnum(0), Cnil);
         si_put_buffer_string(s);
 }
 
 static void
 write_character(cl_object x, cl_object stream)
 {
-        int i = CHAR_CODE(x);
+        int i = ECL_CHAR_CODE(x);
 	if (!ecl_print_escape() && !ecl_print_readably()) {
 		ecl_write_char(i, stream);
 	} else {
 		writestr_stream("#\\", stream);
 		if (i < 32 || i >= 127) {
-			cl_object name = cl_char_name(CODE_CHAR(i));
+			cl_object name = cl_char_name(ECL_CODE_CHAR(i));
 			writestr_stream((char*)name->base_string.self, stream);
 		} else {
 			ecl_write_char(i, stream);
@@ -323,7 +323,7 @@ write_structure(cl_object x, cl_object stream)
                 x = structure_to_list(x);
                 si_write_object(x, stream);
         } else {
-                _ecl_funcall4(print_function, x, stream, MAKE_FIXNUM(0));
+                _ecl_funcall4(print_function, x, stream, ecl_make_fixnum(0));
         }
 }
 #endif /* !CLOS */
@@ -361,7 +361,7 @@ write_foreign(cl_object x, cl_object stream)
 static void
 write_frame(cl_object x, cl_object stream)
 {
-        _ecl_write_unreadable(x, "frame", MAKE_FIXNUM(x->frame.size), stream);
+        _ecl_write_unreadable(x, "frame", ecl_make_fixnum(x->frame.size), stream);
 }
 
 static void

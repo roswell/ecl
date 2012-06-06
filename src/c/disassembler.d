@@ -30,7 +30,7 @@ print_noarg(const char *s) {
 static void
 print_oparg(const char *s, cl_fixnum n) {
 	ecl_princ_str(s, Cnil);
-	ecl_princ(MAKE_FIXNUM(n), Cnil);
+	ecl_princ(ecl_make_fixnum(n), Cnil);
 }
 
 static void
@@ -42,7 +42,7 @@ print_arg(const char *s, cl_object x) {
 static void
 print_oparg_arg(const char *s, cl_fixnum n, cl_object x) {
 	ecl_princ_str(s, Cnil);
-	ecl_princ(MAKE_FIXNUM(n), Cnil);
+	ecl_princ(ecl_make_fixnum(n), Cnil);
 	ecl_princ_str(",", Cnil);
 	ecl_princ(x, Cnil);
 }
@@ -157,9 +157,9 @@ disassemble_tagbody(cl_object bytecodes, cl_opcode *vector) {
 	for (i=0; i<ntags; i++) {
 		GET_LABEL(destination, vector);
 		ecl_princ_str("\n\tTAG\t", Ct);
-		ecl_princ(MAKE_FIXNUM(i), Ct);
+		ecl_princ(ecl_make_fixnum(i), Ct);
 		ecl_princ_str(" @@ ", Ct);
-		ecl_princ(MAKE_FIXNUM(destination - base), Ct);
+		ecl_princ(ecl_make_fixnum(destination - base), Ct);
 	}
 	vector = disassemble(bytecodes, vector);
 	print_noarg("\t\t; tagbody");
@@ -182,7 +182,7 @@ disassemble(cl_object bytecodes, cl_opcode *vector) {
 		line_format = Cnil;
  BEGIN:
 	if (1) {
-		line_no = MAKE_FIXNUM(vector-base);
+		line_no = ecl_make_fixnum(vector-base);
 	} else {
 		line_no = @'*';
 	}
@@ -527,7 +527,7 @@ disassemble(cl_object bytecodes, cl_opcode *vector) {
 				goto OPARG;
 	case OP_VSETQ:		string = "VSETQ\t";
 				GET_OPARG(m, vector);
-				o = MAKE_FIXNUM(m);
+				o = ecl_make_fixnum(m);
 				GET_OPARG(n, vector);
 				goto OPARG_ARG;
 	case OP_SETQS:		string = "SETQS\t";
@@ -594,7 +594,7 @@ disassemble(cl_object bytecodes, cl_opcode *vector) {
 				goto ARG;
 
 	default:
-		FEerror("Unknown code ~S", 1, MAKE_FIXNUM(*(vector-1)));
+		FEerror("Unknown code ~S", 1, ecl_make_fixnum(*(vector-1)));
 		return vector;
 	NOARG:			print_noarg(string);
 				break;

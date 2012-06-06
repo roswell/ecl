@@ -70,7 +70,7 @@ ecl_cs_overflow(void)
 	else
                 ecl_unrecoverable_error(env, stack_overflow_msg);
 	cl_cerror(6, make_constant_base_string("Extend stack size"),
-		  @'ext::stack-overflow', @':size', MAKE_FIXNUM(size),
+		  @'ext::stack-overflow', @':size', ecl_make_fixnum(size),
 		  @':type', @'ext::c-stack');
 	size += size / 2;
 	cs_set_size(env, size);
@@ -155,7 +155,7 @@ ecl_bds_overflow(void)
 	}
 	env->bds_limit += margin;
 	cl_cerror(6, make_constant_base_string("Extend stack size"),
-		  @'ext::stack-overflow', @':size', MAKE_FIXNUM(size),
+		  @'ext::stack-overflow', @':size', ecl_make_fixnum(size),
 		  @':type', @'ext::binding-stack');
 	ecl_bds_set_size(env, size + (size / 2));
         return env->bds_top;
@@ -201,9 +201,9 @@ ecl_progv(cl_env_ptr env, cl_object vars0, cl_object values0)
 static bds_ptr
 get_bds_ptr(cl_object x)
 {
-	if (FIXNUMP(x)) {
+	if (ECL_FIXNUMP(x)) {
 		cl_env_ptr env = ecl_process_env();
-		bds_ptr p = env->bds_org + fix(x);
+		bds_ptr p = env->bds_org + ecl_fix(x);
 		if (env->bds_org <= p && p <= env->bds_top)
 			return(p);
 	}
@@ -214,7 +214,7 @@ cl_object
 si_bds_top()
 {
 	cl_env_ptr env = ecl_process_env();
-	@(return MAKE_FIXNUM(env->bds_top - env->bds_org))
+	@(return ecl_make_fixnum(env->bds_top - env->bds_org))
 }
 
 cl_object
@@ -249,7 +249,7 @@ ecl_new_binding_index(cl_env_ptr env, cl_object symbol)
 	if (new_index == ECL_MISSING_SPECIAL_BINDING) {
 		pool = ecl_atomic_pop(&cl_core.reused_indices);
 		if (!Null(pool)) {
-			new_index = fix(ECL_CONS_CAR(pool));
+			new_index = ecl_fix(ECL_CONS_CAR(pool));
 		} else {
 			new_index = ecl_atomic_index_incf(&cl_core.last_var_index);
 		}
@@ -264,9 +264,9 @@ static cl_object
 ecl_extend_bindings_array(cl_object vector)
 {
         cl_index new_size = cl_core.last_var_index * 1.25;
-        cl_object new_vector = si_make_vector(Ct, MAKE_FIXNUM(new_size), Cnil,
+        cl_object new_vector = si_make_vector(Ct, ecl_make_fixnum(new_size), Cnil,
                                               Cnil, Cnil, Cnil);
-        si_fill_array_with_elt(new_vector, OBJNULL, MAKE_FIXNUM(0), Cnil);
+        si_fill_array_with_elt(new_vector, OBJNULL, ecl_make_fixnum(0), Cnil);
         ecl_copy_subarray(new_vector, 0, vector, 0, vector->vector.dim);
         return new_vector;
 }
@@ -412,7 +412,7 @@ get_ihs_ptr(cl_index n)
 	cl_env_ptr env = ecl_process_env();
 	ihs_ptr p = env->ihs_top;
 	if (n > p->index)
-		FEerror("~D is an illegal IHS index.", 1, MAKE_FIXNUM(n));
+		FEerror("~D is an illegal IHS index.", 1, ecl_make_fixnum(n));
 	while (n < p->index)
 		p = p->next;
 	return p;
@@ -429,7 +429,7 @@ cl_object
 si_ihs_top(void)
 {
 	cl_env_ptr env = ecl_process_env();
-	@(return MAKE_FIXNUM(env->ihs_top->index))
+	@(return ecl_make_fixnum(env->ihs_top->index))
 }
 
 cl_object
@@ -447,7 +447,7 @@ si_ihs_next(cl_object x)
 cl_object
 si_ihs_bds(cl_object arg)
 {
-	@(return MAKE_FIXNUM(get_ihs_ptr(ecl_to_size(arg))->bds))
+	@(return ecl_make_fixnum(get_ihs_ptr(ecl_to_size(arg))->bds))
 }
 
 cl_object
@@ -507,7 +507,7 @@ frs_overflow(void)		/* used as condition in list.d */
 	}
 	env->frs_limit += margin;
 	cl_cerror(6, make_constant_base_string("Extend stack size"),
-		  @'ext::stack-overflow', @':size', MAKE_FIXNUM(size),
+		  @'ext::stack-overflow', @':size', ecl_make_fixnum(size),
 		  @':type', @'ext::frame-stack');
 	frs_set_size(env, size + size / 2);
 }
@@ -554,9 +554,9 @@ frs_sch (cl_object frame_id)
 static ecl_frame_ptr
 get_frame_ptr(cl_object x)
 {
-	if (FIXNUMP(x)) {
+	if (ECL_FIXNUMP(x)) {
 		cl_env_ptr env = ecl_process_env();
-		ecl_frame_ptr p = env->frs_org + fix(x);
+		ecl_frame_ptr p = env->frs_org + ecl_fix(x);
 		if (env->frs_org <= p && p <= env->frs_top)
 			return p;
 	}
@@ -567,13 +567,13 @@ cl_object
 si_frs_top()
 {
 	cl_env_ptr env = ecl_process_env();
-	@(return MAKE_FIXNUM(env->frs_top - env->frs_org))
+	@(return ecl_make_fixnum(env->frs_top - env->frs_org))
 }
 
 cl_object
 si_frs_bds(cl_object arg)
 {
-	@(return MAKE_FIXNUM(get_frame_ptr(arg)->frs_bds_top_index))
+	@(return ecl_make_fixnum(get_frame_ptr(arg)->frs_bds_top_index))
 }
 
 cl_object
@@ -585,7 +585,7 @@ si_frs_tag(cl_object arg)
 cl_object
 si_frs_ihs(cl_object arg)
 {
-	@(return MAKE_FIXNUM(get_frame_ptr(arg)->frs_ihs->index))
+	@(return ecl_make_fixnum(get_frame_ptr(arg)->frs_ihs->index))
 }
 
 cl_object
@@ -597,7 +597,7 @@ si_sch_frs_base(cl_object fr, cl_object ihs)
 	for (x = get_frame_ptr(fr); 
 	     x <= env->frs_top && x->frs_ihs->index < y;
 	     x++);
-	@(return ((x > env->frs_top) ? Cnil : MAKE_FIXNUM(x - env->frs_org)))
+	@(return ((x > env->frs_top) ? Cnil : ecl_make_fixnum(x - env->frs_org)))
 }
 
 /********************* INITIALIZATION ***********************/

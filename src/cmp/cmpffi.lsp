@@ -55,7 +55,7 @@
     :unsigned-byte
     #2=((unsigned-byte 8) "uint8_t" "ecl_make_uint8_t" "ecl_to_uint8_t" "ecl_fix")
     :fixnum
-    (fixnum "cl_fixnum" "MAKE_FIXNUM" "ecl_to_fixnum" "ecl_fix")
+    (fixnum "cl_fixnum" "ecl_make_fixnum" "ecl_to_fixnum" "ecl_fix")
     :int
     ((integer #.si:c-int-min #.si:c-int-max) "int"
      "ecl_make_int" "ecl_to_int" "ecl_to_int")

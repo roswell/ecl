@@ -147,7 +147,7 @@ Evaluates FORM, outputs the realtime and runtime used for the evaluation to
   else if (gtm.tm_wday == (ltm.tm_wday + 1) % 7)
     mw += 24*60;
 #endif
-  @(return) = ecl_make_ratio(MAKE_FIXNUM(mw),MAKE_FIXNUM(60));
+  @(return) = ecl_make_ratio(ecl_make_fixnum(mw),ecl_make_fixnum(60));
 }"
 		 :one-liner nil))
 

@@ -40,7 +40,7 @@ typedef cl_object (*math_one_arg_fn)(cl_object);
         complex };                                                      \
     cl_object ecl_##name(cl_object arg)                                 \
     {                                                                   \
-        int t = IMMEDIATE(arg);                                         \
+        int t = ECL_IMMEDIATE(arg);                                         \
         if (t == 0) {                                                   \
             t = arg->d.t;                                               \
             unlikely_if (t > t_complex) return name##failed(arg);       \
@@ -73,7 +73,7 @@ typedef int (*math_one_arg_bool_fn)(cl_object);
         complex };                                                      \
     int ecl_##name(cl_object arg)                                       \
     {                                                                   \
-        int t = IMMEDIATE(arg);                                         \
+        int t = ECL_IMMEDIATE(arg);                                         \
         if (t == 0) {                                                   \
             t = arg->d.t;                                               \
             unlikely_if (t > t_complex) return name##failed(arg);       \

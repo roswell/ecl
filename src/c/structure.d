@@ -76,7 +76,7 @@ si_structure_subtype_p(cl_object x, cl_object y)
 #endif
 	if (narg >= ECL_SLOTS_LIMIT)
 		FEerror("Limit on structure size exceeded: ~S slots requested.",
-			1, MAKE_FIXNUM(narg));
+			1, ecl_make_fixnum(narg));
 	for (i = 0;  i < narg;  i++)
 		SLOT(x, i) = cl_va_arg(args);
 	@(return x)
@@ -145,7 +145,7 @@ si_structure_ref(cl_object x, cl_object type, cl_object index)
 	if (ecl_unlikely(type_of(x) != T_STRUCTURE ||
                          !structure_subtypep(STYPE(x), type)))
                 FEwrong_type_nth_arg(@[si::structure-ref], 1, x, type);
-	@(return SLOT(x, fix(index)))
+	@(return SLOT(x, ecl_fix(index)))
 }
 
 cl_object
@@ -164,7 +164,7 @@ si_structure_set(cl_object x, cl_object type, cl_object index, cl_object val)
 	if (ecl_unlikely(type_of(x) != T_STRUCTURE ||
                          !structure_subtypep(STYPE(x), type)))
                 FEwrong_type_nth_arg(@[si::structure-set], 1, x, type);
-	SLOT(x, fix(index)) = val;
+	SLOT(x, ecl_fix(index)) = val;
 	@(return val)
 }
 

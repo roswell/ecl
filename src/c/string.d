@@ -47,7 +47,7 @@ do_make_string(cl_index s, ecl_character code)
 #define do_make_string do_make_base_string
 #endif
 
-@(defun make_string (size &key (initial_element CODE_CHAR(' '))
+@(defun make_string (size &key (initial_element ECL_CODE_CHAR(' '))
 		     (element_type @'character'))
 	cl_index s;
 	cl_object x;
@@ -152,7 +152,7 @@ ecl_fits_in_base_string(cl_object s)
 	case t_string: {
 		cl_index i;
 		for (i = 0; i < s->string.fillp; i++) {
-			if (!BASE_CHAR_CODE_P(s->string.self[i]))
+			if (!ECL_BASE_CHAR_CODE_P(s->string.self[i]))
 				return 0;
 		}
 		return 1;
@@ -183,7 +183,7 @@ si_copy_to_simple_base_string(cl_object x)
 		y = ecl_alloc_simple_base_string(length);
 		for (index=0; index < length; index++) {
 			ecl_character c = x->string.self[index];
-			if (!BASE_CHAR_CODE_P(c))
+			if (!ECL_BASE_CHAR_CODE_P(c))
 				FEerror("Cannot coerce string ~A to a base-string", 1, x);
 			y->base_string.self[index] = c;
 		}
@@ -216,9 +216,9 @@ cl_string(cl_object x)
 		break;
 	case t_character: {
 		cl_object y;
-                ecl_character c = CHAR_CODE(x);
+                ecl_character c = ECL_CHAR_CODE(x);
 #ifdef ECL_UNICODE
-		if (BASE_CHAR_CODE_P(c)) {
+		if (ECL_BASE_CHAR_CODE_P(c)) {
 			y = ecl_alloc_simple_base_string(1);
 			y->base_string.self[0] = c;
 			x = y;
@@ -271,7 +271,7 @@ si_coerce_to_extended_string(cl_object x)
 		goto AGAIN;
 	case t_character:
 		y = ecl_alloc_simple_extended_string(1);
-		y->string.self[0] = CHAR_CODE(x);
+		y->string.self[0] = ECL_CHAR_CODE(x);
 		break;
 	case t_base_string: {
 		cl_index index, len = x->base_string.dim;
@@ -300,7 +300,7 @@ cl_object
 cl_char(cl_object object, cl_object index)
 {
 	cl_index position = ecl_to_index(index);
-	@(return CODE_CHAR(ecl_char(object, position)))
+	@(return ECL_CODE_CHAR(ecl_char(object, position)))
 }
 
 ecl_character
@@ -419,8 +419,8 @@ compare_base(unsigned char *s1, cl_index l1, unsigned char *s2, cl_index l2,
 	}
 }
 
-@(defun string= (string1 string2 &key (start1 MAKE_FIXNUM(0)) end1
-		                      (start2 MAKE_FIXNUM(0)) end2)
+@(defun string= (string1 string2 &key (start1 ecl_make_fixnum(0)) end1
+		                      (start2 ecl_make_fixnum(0)) end2)
         cl_index_pair p;
 	cl_index s1, e1, s2, e2;
 @
@@ -514,8 +514,8 @@ ecl_string_eq(cl_object x, cl_object y)
 }
 
 
-@(defun string_equal (string1 string2 &key (start1 MAKE_FIXNUM(0)) end1
-		                           (start2 MAKE_FIXNUM(0)) end2)
+@(defun string_equal (string1 string2 &key (start1 ecl_make_fixnum(0)) end1
+		                           (start2 ecl_make_fixnum(0)) end2)
 	cl_index s1, e1, s2, e2;
         cl_index_pair p;
 	int output;
@@ -566,8 +566,8 @@ string_compare(cl_narg narg, int sign1, int sign2, int case_sensitive, cl_va_lis
 
 	string1 = cl_string(string1);
 	string2 = cl_string(string2);
-	if (start1p == Cnil) start1 = MAKE_FIXNUM(0);
-	if (start2p == Cnil) start2 = MAKE_FIXNUM(0);
+	if (start1p == Cnil) start1 = ecl_make_fixnum(0);
+	if (start2p == Cnil) start2 = ecl_make_fixnum(0);
 	p = ecl_vector_start_end(@[string=], string1, start1, end1);
         s1 = p.start; e1 = p.end;
 	p = ecl_vector_start_end(@[string=], string2, start2, end2);
@@ -585,7 +585,7 @@ string_compare(cl_narg narg, int sign1, int sign2, int case_sensitive, cl_va_lis
 		e1 += s1;
 	}
 	if (output == sign1 || output == sign2) {
-		result = MAKE_FIXNUM(e1);
+		result = ecl_make_fixnum(e1);
 	} else {
 		result = Cnil;
 	}
@@ -656,14 +656,14 @@ ecl_member_char(ecl_character c, cl_object char_bag)
 	case t_list:
 		loop_for_in(char_bag) {
 			cl_object other = CAR(char_bag);
-			if (CHARACTERP(other) && c == CHAR_CODE(other))
+			if (ECL_CHARACTERP(other) && c == ECL_CHAR_CODE(other))
 				return(TRUE);
 		} end_loop_for_in;
 		return(FALSE);
 	case t_vector:
 		for (i = 0, f = char_bag->vector.fillp;  i < f;  i++) {
 			cl_object other = char_bag->vector.self.t[i];
-			if (CHARACTERP(other) && c == CHAR_CODE(other))
+			if (ECL_CHARACTERP(other) && c == ECL_CHAR_CODE(other))
 				return(TRUE);
 		}
 		return(FALSE);
@@ -711,7 +711,7 @@ string_trim0(bool left_trim, bool right_trim, cl_object char_bag, cl_object strn
 			}
 		}
 	}
-	return cl_subseq(3, strng, MAKE_FIXNUM(i), MAKE_FIXNUM(j));
+	return cl_subseq(3, strng, ecl_make_fixnum(i), ecl_make_fixnum(j));
 }
 
 cl_object
@@ -753,7 +753,7 @@ string_case(cl_narg narg, cl_object fun, ecl_casefun casefun, cl_va_list ARGS)
         strng = cl_string(strng);
         strng = cl_copy_seq(strng);
 	if (kstartp == Cnil)
-                kstart = MAKE_FIXNUM(0);
+                kstart = ecl_make_fixnum(0);
 	p = ecl_vector_start_end(fun, strng, kstart, kend);
 	b = TRUE;
 #ifdef ECL_UNICODE
@@ -836,7 +836,7 @@ nstring_case(cl_narg narg, cl_object fun, ecl_casefun casefun, cl_va_list ARGS)
         if (ecl_unlikely(!ECL_STRINGP(strng)))
                 FEwrong_type_nth_arg(fun, 1, strng, @[string]);
 	if (kstartp == Cnil)
-                kstart = MAKE_FIXNUM(0);
+                kstart = ecl_make_fixnum(0);
 	p = ecl_vector_start_end(fun, strng, kstart, kend);
 	b = TRUE;
 #ifdef ECL_UNICODE

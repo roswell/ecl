@@ -97,12 +97,12 @@ large_mantissa(cl_object r, cl_object mp, cl_object s)
 static cl_fixnum
 assert_floating_point_width(cl_object width)
 {
-        if (!FIXNUMP(width) || ecl_lower(width,MAKE_FIXNUM(1))) {
+        if (!ECL_FIXNUMP(width) || ecl_lower(width,ecl_make_fixnum(1))) {
                 FEerror("Invalid number of floating point digits."
                         "~%~A~%is not an integer within bounds",
                         1, width);
         }
-        return fix(width);
+        return ecl_fix(width);
 }
 
 static cl_object
@@ -111,7 +111,7 @@ float_string(cl_object digits_string,
              cl_object width, cl_object fdigits, cl_object scale, cl_object fmin)
 {
         cl_object r = fraction;
-        cl_object s = MAKE_FIXNUM(1);
+        cl_object s = ecl_make_fixnum(1);
         cl_object mm = s;
         cl_object mp = s;
         cl_fixnum i, k = 0, digits = 0, decpnt = 0, cutoff = 0;
@@ -120,9 +120,9 @@ float_string(cl_object digits_string,
         bool roundup = 0, cutoffp = 0, low = 0, high = 0;
 
         if (Null(digits_string)) {
-                digits_string = si_make_vector(@'base-char', MAKE_FIXNUM(10),
+                digits_string = si_make_vector(@'base-char', ecl_make_fixnum(10),
                                                Ct /* adjustable */,
-                                               MAKE_FIXNUM(0) /* fill pointer */,
+                                               ecl_make_fixnum(0) /* fill pointer */,
                                                Cnil /* displacement */,
                                                Cnil /* displ. offset */);
         }
@@ -131,17 +131,17 @@ float_string(cl_object digits_string,
          * calculations.
          */
         {
-                int sign = ecl_number_compare(exponent, MAKE_FIXNUM(0));
+                int sign = ecl_number_compare(exponent, ecl_make_fixnum(0));
                 if (sign > 0) {
                         r = cl_ash(fraction, exponent);
-                        mm = cl_ash(MAKE_FIXNUM(1), exponent);
+                        mm = cl_ash(ecl_make_fixnum(1), exponent);
                         mp = mm;
                 } else if (sign < 0) {
-                        s = cl_ash(MAKE_FIXNUM(1), ecl_negate(exponent));
+                        s = cl_ash(ecl_make_fixnum(1), ecl_negate(exponent));
                 }
         }
         /* Adjust error bounds m+ and m- for unequal gaps */
-        if (ecl_number_equalp(fraction, cl_ash(MAKE_FIXNUM(1), precision))) {
+        if (ecl_number_equalp(fraction, cl_ash(ecl_make_fixnum(1), precision))) {
                 mp = ecl_ash(mm, 1);
                 r = ecl_ash(r, 1);
                 s = ecl_ash(s, 1);
@@ -149,26 +149,26 @@ float_string(cl_object digits_string,
         /* Scale value by requested amount and update error bounds */
         if (!Null(scale)) {
                 if (ecl_minusp(scale)) {
-                        cl_object factor = cl_expt(MAKE_FIXNUM(10),
+                        cl_object factor = cl_expt(ecl_make_fixnum(10),
                                                    ecl_negate(scale));
                         s = ecl_times(s, factor);
                 } else {
-                        cl_object factor = cl_expt(MAKE_FIXNUM(10), scale);
+                        cl_object factor = cl_expt(ecl_make_fixnum(10), scale);
                         r = ecl_times(r, factor);
                         mm = ecl_times(mm, factor);
                         mp = ecl_times(mp, factor);
                 }
         }
-        while (ecl_lower(r, ecl_ceiling2(s, MAKE_FIXNUM(10)))) {
+        while (ecl_lower(r, ecl_ceiling2(s, ecl_make_fixnum(10)))) {
                 k--;
-                r = ecl_times(r, MAKE_FIXNUM(10));
-                mm = ecl_times(r, MAKE_FIXNUM(10));
-                mp = ecl_times(r, MAKE_FIXNUM(10));
+                r = ecl_times(r, ecl_make_fixnum(10));
+                mm = ecl_times(r, ecl_make_fixnum(10));
+                mp = ecl_times(r, ecl_make_fixnum(10));
         }
         do {
                 /* Ensure mantissa (r + m+)/s is smaller than one */
                 while (large_mantissa(r, mp, s)) {
-                        s = ecl_times(s, MAKE_FIXNUM(10));
+                        s = ecl_times(s, ecl_make_fixnum(10));
                         k++;
                 }
                 /* Determine the number of digits to generate */
@@ -203,11 +203,11 @@ float_string(cl_object digits_string,
                         y = s;
                         if (a < 0) {
                                 for (i = 0, a = -a; i < a; i++) {
-                                        y = ecl_ceiling2(y, MAKE_FIXNUM(10));
+                                        y = ecl_ceiling2(y, ecl_make_fixnum(10));
                                 } 
                         } else {
                                 for (i = 0, a = -a; i < a; i++) {
-                                        y = ecl_times(y, MAKE_FIXNUM(10));
+                                        y = ecl_times(y, ecl_make_fixnum(10));
                                 } 
                         }
                         mm = cl_max(2, y, mm);
@@ -231,10 +231,10 @@ float_string(cl_object digits_string,
                         ecl_string_push_extend(digits_string, '.');
                         decpnt = digits;
                 }
-                u = ecl_truncate2(ecl_times(r, MAKE_FIXNUM(10)), s);
+                u = ecl_truncate2(ecl_times(r, ecl_make_fixnum(10)), s);
                 r = VALUES(1);
-                mm = ecl_times(mm, MAKE_FIXNUM(10));
-                mp = ecl_times(mp, MAKE_FIXNUM(10));
+                mm = ecl_times(mm, ecl_make_fixnum(10));
+                mp = ecl_times(mp, ecl_make_fixnum(10));
                 low = ecl_lower(ecl_ash(r,1), mm);
                 sign = ecl_number_compare(ecl_ash(r,1), ecl_minus(ecl_ash(s,1),mp));
                 high = roundup? (sign >= 0) : (sign > 0);
@@ -242,21 +242,21 @@ float_string(cl_object digits_string,
                  * fraction digits as permitted */
                 if (low || high || (cutoffp && (k + cutoff <= 0)))
                         break;
-                ecl_string_push_extend(digits_string, ecl_digit_char(fix(u), 10));
+                ecl_string_push_extend(digits_string, ecl_digit_char(ecl_fix(u), 10));
                 digits++;
         } while(1);
         /* If cutof occured before first digit, then no digits generated at all */
         if (!cutoffp || (k + cutoff) >= 0) {
                 /* Last digit may need rounding */
-                int digit = fix(u);
+                int digit = ecl_fix(u);
                 if (low && !high)
-                        digit = fix(u);
+                        digit = ecl_fix(u);
                 else if (high && !low)
-                        digit = fix(u)+1;
+                        digit = ecl_fix(u)+1;
                 else if (ecl_lower(ecl_ash(r,1), s))
-                        digit = fix(u);
+                        digit = ecl_fix(u);
                 else
-                        digit = fix(u) + 1;
+                        digit = ecl_fix(u) + 1;
                 ecl_string_push_extend(digits_string, ecl_digit_char(digit, 10));
                 digits++;
         }
@@ -280,10 +280,10 @@ float_string(cl_object digits_string,
         /* All done */
         @(return
           digits_string
-          MAKE_FIXNUM(1+digits)
+          ecl_make_fixnum(1+digits)
           ((decpnt == 0)? Ct : Cnil)
           ((decpnt == digits)? Ct : Cnil)
-          MAKE_FIXNUM(decpnt))
+          ecl_make_fixnum(decpnt))
 }
 
 ecl_def_ct_base_string(str_dot,".",1,static,const);
@@ -295,11 +295,11 @@ ecl_def_ct_base_string(str_dot,".",1,static,const);
                 if (Null(fdigits)) {
                         cl_object s = cl_make_string(3, ecl_one_plus(fdigits),
                                                      @':initial-element',
-                                                     CODE_CHAR('0'));
+                                                     ECL_CODE_CHAR('0'));
                         ecl_char_set(s, 0, '.');
-                        @(return s cl_length(s) Ct cl_zerop(fdigits) MAKE_FIXNUM(0));
+                        @(return s cl_length(s) Ct cl_zerop(fdigits) ecl_make_fixnum(0));
                 } else {
-                        @(return str_dot MAKE_FIXNUM(1) Ct Ct MAKE_FIXNUM(0));
+                        @(return str_dot ecl_make_fixnum(1) Ct Ct ecl_make_fixnum(0));
                 }
         } else {
                 cl_object sig = cl_integer_decode_float(x);
@@ -307,7 +307,7 @@ ecl_def_ct_base_string(str_dot,".",1,static,const);
                 cl_object precision = cl_float_precision(x);
                 cl_object digits = cl_float_digits(x);
                 cl_object fudge = ecl_minus(digits, precision);
-                cl_object w = Null(width)? Cnil : cl_max(2, width, MAKE_FIXNUM(1));
+                cl_object w = Null(width)? Cnil : cl_max(2, width, ecl_make_fixnum(1));
                 return float_string(string, cl_ash(sig, ecl_negate(fudge)),
                                     ecl_plus(exp, fudge), precision, w,
                                     fdigits, scale, fmin);

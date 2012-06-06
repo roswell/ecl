@@ -118,7 +118,7 @@ fmt_error(format_stack fmt, const char *s)
 	cl_error(7, @'si::format-error',
 		 @':format-control', make_constant_base_string(s),
 		 @':control-string', fmt->ctl_str,
-		 @':offset', MAKE_FIXNUM(fmt->ctl_index));
+		 @':offset', ecl_make_fixnum(fmt->ctl_index));
 }
 
 static ecl_character
@@ -284,7 +284,7 @@ set_param(format_stack fmt, int i, int t, cl_object v)
 		return v;
 	else if ((t != INT && t != CHAR) ||
 		 (t == INT && !cl_integerp(fmt->param[i])) ||
-		 (t == CHAR && !CHARACTERP(fmt->param[i])))
+		 (t == CHAR && !ECL_CHARACTERP(fmt->param[i])))
 		fmt_error(fmt, "illegal parameter type");
 	return fmt->param[i];
 }
@@ -338,10 +338,10 @@ fmt_ascii(format_stack fmt, bool colon, bool atsign)
 	int l, i;
 
 	ensure_param(fmt, 4);
-	mincol = ecl_to_fix(set_param(fmt, 0, INT, MAKE_FIXNUM(0)));
-	colinc = ecl_to_fix(set_param(fmt, 1, INT, MAKE_FIXNUM(1)));
-	minpad = ecl_to_fix(set_param(fmt, 2, INT, MAKE_FIXNUM(0)));
-	padchar = CHAR_CODE(set_param(fmt, 3, CHAR, CODE_CHAR(' ')));
+	mincol = ecl_to_fix(set_param(fmt, 0, INT, ecl_make_fixnum(0)));
+	colinc = ecl_to_fix(set_param(fmt, 1, INT, ecl_make_fixnum(1)));
+	minpad = ecl_to_fix(set_param(fmt, 2, INT, ecl_make_fixnum(0)));
+	padchar = ECL_CHAR_CODE(set_param(fmt, 3, CHAR, ECL_CODE_CHAR(' ')));
 
 	fmt_prepare_aux_stream(fmt);
 	x = fmt_advance(fmt);
@@ -375,10 +375,10 @@ fmt_S_expression(format_stack fmt, bool colon, bool atsign)
 	int l, i;
 
 	ensure_param(fmt, 4);
-	mincol = ecl_to_fix(set_param(fmt, 0, INT, MAKE_FIXNUM(0)));
-	colinc = ecl_to_fix(set_param(fmt, 1, INT, MAKE_FIXNUM(1)));
-	minpad = ecl_to_fix(set_param(fmt, 2, INT, MAKE_FIXNUM(0)));
-	padchar = CHAR_CODE(set_param(fmt, 3, CHAR, CODE_CHAR(' ')));
+	mincol = ecl_to_fix(set_param(fmt, 0, INT, ecl_make_fixnum(0)));
+	colinc = ecl_to_fix(set_param(fmt, 1, INT, ecl_make_fixnum(1)));
+	minpad = ecl_to_fix(set_param(fmt, 2, INT, ecl_make_fixnum(0)));
+	padchar = ECL_CHAR_CODE(set_param(fmt, 3, CHAR, ECL_CODE_CHAR(' ')));
 
 	fmt_prepare_aux_stream(fmt);
 	x = fmt_advance(fmt);
@@ -412,10 +412,10 @@ fmt_integer(format_stack fmt, cl_object x, bool colon, bool atsign,
 	int l, l1;
 	int s;
 
-	if (!FIXNUMP(x) && type_of(x) != t_bignum) {
+	if (!ECL_FIXNUMP(x) && type_of(x) != t_bignum) {
 		fmt_prepare_aux_stream(fmt);
 		ecl_bds_bind(env, @'*print-escape*', Cnil);
-		ecl_bds_bind(env, @'*print-base*', MAKE_FIXNUM(radix));
+		ecl_bds_bind(env, @'*print-base*', ecl_make_fixnum(radix));
 		si_write_object(x, fmt->aux_stream);
 		ecl_bds_unwind_n(env, 2);
 		l = fmt->aux_string->base_string.fillp;
@@ -427,7 +427,7 @@ fmt_integer(format_stack fmt, cl_object x, bool colon, bool atsign,
 	}
 	fmt_prepare_aux_stream(fmt);
 	ecl_bds_bind(env, @'*print-radix*', Cnil);
-	ecl_bds_bind(env, @'*print-base*', MAKE_FIXNUM(radix));
+	ecl_bds_bind(env, @'*print-base*', ecl_make_fixnum(radix));
 	si_write_object(x, fmt->aux_stream);
 	ecl_bds_unwind_n(env, 2);
 	l = l1 = fmt->aux_string->base_string.fillp;
@@ -460,9 +460,9 @@ fmt_decimal(format_stack fmt, bool colon, bool atsign)
 	ecl_character padchar, commachar;
 
 	ensure_param(fmt, 3);
-	mincol = ecl_to_fix(set_param(fmt, 0, INT, MAKE_FIXNUM(0)));
-	padchar = CHAR_CODE(set_param(fmt, 1, CHAR, CODE_CHAR(' ')));
-	commachar = CHAR_CODE(set_param(fmt, 2, CHAR, CODE_CHAR(',')));
+	mincol = ecl_to_fix(set_param(fmt, 0, INT, ecl_make_fixnum(0)));
+	padchar = ECL_CHAR_CODE(set_param(fmt, 1, CHAR, ECL_CODE_CHAR(' ')));
+	commachar = ECL_CHAR_CODE(set_param(fmt, 2, CHAR, ECL_CODE_CHAR(',')));
 	fmt_integer(fmt, fmt_advance(fmt), colon, atsign,
 		    10, mincol, padchar, commachar);
 }
@@ -474,9 +474,9 @@ fmt_binary(format_stack fmt, bool colon, bool atsign)
 	ecl_character padchar, commachar;
 
 	ensure_param(fmt, 3);
-	mincol = ecl_to_fix(set_param(fmt, 0, INT, MAKE_FIXNUM(0)));
-	padchar = CHAR_CODE(set_param(fmt, 1, CHAR, CODE_CHAR(' ')));
-	commachar = CHAR_CODE(set_param(fmt, 2, CHAR, CODE_CHAR(',')));
+	mincol = ecl_to_fix(set_param(fmt, 0, INT, ecl_make_fixnum(0)));
+	padchar = ECL_CHAR_CODE(set_param(fmt, 1, CHAR, ECL_CODE_CHAR(' ')));
+	commachar = ECL_CHAR_CODE(set_param(fmt, 2, CHAR, ECL_CODE_CHAR(',')));
 	fmt_integer(fmt, fmt_advance(fmt), colon, atsign,
 		    2, mincol, padchar, commachar);
 }
@@ -488,9 +488,9 @@ fmt_octal(format_stack fmt, bool colon, bool atsign)
 	ecl_character padchar, commachar;
 
 	ensure_param(fmt, 3);
-	mincol = ecl_to_fix(set_param(fmt, 0, INT, MAKE_FIXNUM(0)));
-	padchar = CHAR_CODE(set_param(fmt, 1, CHAR, CODE_CHAR(' ')));
-	commachar = CHAR_CODE(set_param(fmt, 2, CHAR, CODE_CHAR(',')));
+	mincol = ecl_to_fix(set_param(fmt, 0, INT, ecl_make_fixnum(0)));
+	padchar = ECL_CHAR_CODE(set_param(fmt, 1, CHAR, ECL_CODE_CHAR(' ')));
+	commachar = ECL_CHAR_CODE(set_param(fmt, 2, CHAR, ECL_CODE_CHAR(',')));
 	fmt_integer(fmt, fmt_advance(fmt), colon, atsign,
 		    8, mincol, padchar, commachar);
 }
@@ -502,9 +502,9 @@ fmt_hexadecimal(format_stack fmt, bool colon, bool atsign)
 	ecl_character padchar, commachar;
 
 	ensure_param(fmt, 3);
-	mincol = ecl_to_fix(set_param(fmt, 0, INT, MAKE_FIXNUM(0)));
-	padchar = CHAR_CODE(set_param(fmt, 1, CHAR, CODE_CHAR(' ')));
-	commachar = CHAR_CODE(set_param(fmt, 2, CHAR, CODE_CHAR(',')));
+	mincol = ecl_to_fix(set_param(fmt, 0, INT, ecl_make_fixnum(0)));
+	padchar = ECL_CHAR_CODE(set_param(fmt, 1, CHAR, ECL_CODE_CHAR(' ')));
+	commachar = ECL_CHAR_CODE(set_param(fmt, 2, CHAR, ECL_CODE_CHAR(',')));
 	fmt_integer(fmt, fmt_advance(fmt), colon, atsign,
 		    16, mincol, padchar, commachar);
 }
@@ -637,8 +637,8 @@ fmt_radix(format_stack fmt, bool colon, bool atsign)
 		x = fmt_advance(fmt);
 		assert_type_integer(x);
 		if (atsign) {
-			if (FIXNUMP(x))
-				i = fix(x);
+			if (ECL_FIXNUMP(x))
+				i = ecl_fix(x);
 			else
 				i = -1;
 			if ((!colon && (i <= 0 || i >= 4000)) ||
@@ -654,7 +654,7 @@ fmt_radix(format_stack fmt, bool colon, bool atsign)
 		}
 		fmt_prepare_aux_stream(fmt);
 		ecl_bds_bind(env, @'*print-radix*', Cnil);
-		ecl_bds_bind(env, @'*print-base*', MAKE_FIXNUM(10));
+		ecl_bds_bind(env, @'*print-base*', ecl_make_fixnum(10));
 		si_write_object(x, fmt->aux_stream);
 		ecl_bds_unwind_n(env, 2);
 		s = 0;
@@ -686,14 +686,14 @@ fmt_radix(format_stack fmt, bool colon, bool atsign)
 		return;
 	}
 	ensure_param(fmt, 4);
-	radix = ecl_to_fix(set_param(fmt, 0, INT, MAKE_FIXNUM(10)));
-	mincol = ecl_to_fix(set_param(fmt, 1, INT, MAKE_FIXNUM(0)));
-	padchar = CHAR_CODE(set_param(fmt, 2, CHAR, CODE_CHAR(' ')));
-	commachar = CHAR_CODE(set_param(fmt, 3, CHAR, CODE_CHAR(',')));
+	radix = ecl_to_fix(set_param(fmt, 0, INT, ecl_make_fixnum(10)));
+	mincol = ecl_to_fix(set_param(fmt, 1, INT, ecl_make_fixnum(0)));
+	padchar = ECL_CHAR_CODE(set_param(fmt, 2, CHAR, ECL_CODE_CHAR(' ')));
+	commachar = ECL_CHAR_CODE(set_param(fmt, 3, CHAR, ECL_CODE_CHAR(',')));
 	x = fmt_advance(fmt);
 	assert_type_integer(x);
 	if (radix < 0 || radix > 36)
-		FEerror("~D is illegal as a radix.", 1, MAKE_FIXNUM(radix));
+		FEerror("~D is illegal as a radix.", 1, ecl_make_fixnum(radix));
 	fmt_integer(fmt, x, colon, atsign, radix, mincol, padchar, commachar);
 }
 
@@ -704,7 +704,7 @@ fmt_plural(format_stack fmt, bool colon, bool atsign)
 	if (colon) {
 		fmt_back_up(fmt);
 	}
-	if (ecl_eql(fmt_advance(fmt), MAKE_FIXNUM(1))) {
+	if (ecl_eql(fmt_advance(fmt), ecl_make_fixnum(1))) {
 		if (atsign)
 			ecl_write_char('y', fmt->stream);
 	      }
@@ -725,7 +725,7 @@ fmt_character(format_stack fmt, bool colon, bool atsign)
 	x = fmt_advance(fmt);
 	x = ecl_check_cl_type(@'format',x,t_character);
 	if (!colon && !atsign) {
-		ecl_write_char(CHAR_CODE(x), fmt->stream);
+		ecl_write_char(ECL_CHAR_CODE(x), fmt->stream);
 	} else {
 		fmt_prepare_aux_stream(fmt);
 		ecl_prin1(x, fmt->aux_stream);
@@ -861,16 +861,16 @@ fmt_fix_float(format_stack fmt, bool colon, bool atsign)
 	ensure_param(fmt, 5);
 	w = set_param_positive(fmt, 0, "illegal width");
 	d = set_param_positive(fmt, 1, "illegal number of digits");
-	k = ecl_to_fix(set_param(fmt, 2, INT, MAKE_FIXNUM(0)));
-	overflowchar = CHAR_CODE(set_param(fmt, 3, CHAR, CODE_CHAR('\0')));
-	padchar = CHAR_CODE(set_param(fmt, 4, CHAR, CODE_CHAR(' ')));
+	k = ecl_to_fix(set_param(fmt, 2, INT, ecl_make_fixnum(0)));
+	overflowchar = ECL_CHAR_CODE(set_param(fmt, 3, CHAR, ECL_CODE_CHAR('\0')));
+	padchar = ECL_CHAR_CODE(set_param(fmt, 4, CHAR, ECL_CODE_CHAR(' ')));
 
 	x = fmt_advance(fmt);
-	if (FIXNUMP(x) ||
+	if (ECL_FIXNUMP(x) ||
 	    type_of(x) == t_bignum ||
 	    type_of(x) == t_ratio)
 		x = ecl_make_singlefloat(ecl_to_float(x));
-	if (!REAL_TYPE(type_of(x))) {
+	if (!ECL_REAL_TYPE_P(type_of(x))) {
 		if (fmt->nparam > 1) fmt->nparam = 1;
 		fmt_back_up(fmt);
 		fmt_decimal(fmt, colon, atsign);
@@ -946,7 +946,7 @@ fmt_fix_float(format_stack fmt, bool colon, bool atsign)
 		if (sign < 0 || atsign)
 			--w;
 		if (j > w && overflowchar != '\0') {
-			w = ecl_to_fix(set_param(fmt, 0, INT, MAKE_FIXNUM(0)));
+			w = ecl_to_fix(set_param(fmt, 0, INT, ecl_make_fixnum(0)));
 			for (i = 0;  i < w;  i++)
 				ecl_write_char(overflowchar, fmt->stream);
 			return;
@@ -1034,17 +1034,17 @@ fmt_exponential_float(format_stack fmt, bool colon, bool atsign)
 	w = set_param_positive(fmt, 0, "illegal width");
 	d = set_param_positive(fmt, 1, "illegal number of digits");
 	e = set_param_positive(fmt, 2, "illegal number of digits in exponent");
-	k = ecl_to_fix(set_param(fmt, 3, INT, MAKE_FIXNUM(1)));
-	overflowchar = CHAR_CODE(set_param(fmt, 4, CHAR, CODE_CHAR('\0')));
-	padchar = CHAR_CODE(set_param(fmt, 5, CHAR, CODE_CHAR(' ')));
-	exponentchar = CHAR_CODE(set_param(fmt, 6, CHAR, CODE_CHAR('\0')));
+	k = ecl_to_fix(set_param(fmt, 3, INT, ecl_make_fixnum(1)));
+	overflowchar = ECL_CHAR_CODE(set_param(fmt, 4, CHAR, ECL_CODE_CHAR('\0')));
+	padchar = ECL_CHAR_CODE(set_param(fmt, 5, CHAR, ECL_CODE_CHAR(' ')));
+	exponentchar = ECL_CHAR_CODE(set_param(fmt, 6, CHAR, ECL_CODE_CHAR('\0')));
 
 	x = fmt_advance(fmt);
-	if (FIXNUMP(x) ||
+	if (ECL_FIXNUMP(x) ||
 	    type_of(x) == t_bignum ||
 	    type_of(x) == t_ratio)
 		x = ecl_make_singlefloat(ecl_to_float(x));
-	if (!REAL_TYPE(type_of(x))) {
+	if (!ECL_REAL_TYPE_P(type_of(x))) {
 		if (fmt->nparam > 1) fmt->nparam = 1;
 		fmt_back_up(fmt);
 		fmt_decimal(fmt, colon, atsign);
@@ -1197,7 +1197,7 @@ fmt_exponential_float(format_stack fmt, bool colon, bool atsign)
 	return;
 
 OVER:
-	w = ecl_to_fix(set_param(fmt, 0, INT, MAKE_FIXNUM(0)));
+	w = ecl_to_fix(set_param(fmt, 0, INT, ecl_make_fixnum(0)));
 	for (i = 0;  i < w;  i++)
 		ecl_write_char(overflowchar, fmt->stream);
 	return;
@@ -1218,13 +1218,13 @@ fmt_general_float(format_stack fmt, bool colon, bool atsign)
 	w = set_param_positive(fmt, 0, "illegal width");
 	d = set_param_positive(fmt, 1, "illegal number of digits");
 	e = set_param_positive(fmt, 2, "illegal number of digits in exponent");
-	k = ecl_to_fix(set_param(fmt, 3, INT, MAKE_FIXNUM(1)));
-	overflowchar = CHAR_CODE(set_param(fmt, 4, CHAR, CODE_CHAR('\0')));
-	padchar = CHAR_CODE(set_param(fmt, 5, CHAR, CODE_CHAR(' ')));
-	exponentchar = CHAR_CODE(set_param(fmt, 6, CHAR, CODE_CHAR('\0')));
+	k = ecl_to_fix(set_param(fmt, 3, INT, ecl_make_fixnum(1)));
+	overflowchar = ECL_CHAR_CODE(set_param(fmt, 4, CHAR, ECL_CODE_CHAR('\0')));
+	padchar = ECL_CHAR_CODE(set_param(fmt, 5, CHAR, ECL_CODE_CHAR(' ')));
+	exponentchar = ECL_CHAR_CODE(set_param(fmt, 6, CHAR, ECL_CODE_CHAR('\0')));
 
 	x = fmt_advance(fmt);
-	if (!REAL_TYPE(type_of(x))) {
+	if (!ECL_REAL_TYPE_P(type_of(x))) {
 		if (fmt->nparam > 1) fmt->nparam = 1;
 		fmt_back_up(fmt);
 		fmt_decimal(fmt, colon, atsign);
@@ -1253,8 +1253,8 @@ fmt_general_float(format_stack fmt, bool colon, bool atsign)
 	dd = d - n;
 	if (0 <= dd && dd <= d) {
 		fmt->nparam = 5;
-		fmt->param[0] = MAKE_FIXNUM(ww);
-		fmt->param[1] = MAKE_FIXNUM(dd);
+		fmt->param[0] = ecl_make_fixnum(ww);
+		fmt->param[1] = ecl_make_fixnum(dd);
 		fmt->param[2] = Cnil;
 		fmt->param[3] = fmt->param[4];
 		fmt->param[4] = fmt->param[5];
@@ -1265,7 +1265,7 @@ fmt_general_float(format_stack fmt, bool colon, bool atsign)
 				ecl_write_char(padchar, fmt->stream);
 		return;
 	}
-	fmt->param[1] = MAKE_FIXNUM(d);
+	fmt->param[1] = ecl_make_fixnum(d);
 	fmt_back_up(fmt);
 	fmt_exponential_float(fmt, colon, atsign);
 }
@@ -1289,9 +1289,9 @@ fmt_dollars_float(format_stack fmt, bool colon, bool atsign)
 	if (n < 0) n = 1;
 	w = set_param_positive(fmt, 2, "illegal width");
 	if (w < 0) w = 0;
-	padchar = CHAR_CODE(set_param(fmt, 3, CHAR, CODE_CHAR(' ')));
+	padchar = ECL_CHAR_CODE(set_param(fmt, 3, CHAR, ECL_CODE_CHAR(' ')));
 	x = fmt_advance(fmt);
-	if (!REAL_TYPE(type_of(x))) {
+	if (!ECL_REAL_TYPE_P(type_of(x))) {
 		if (fmt->nparam < 3)
 			fmt->nparam = 0;
 		else {
@@ -1313,7 +1313,7 @@ fmt_dollars_float(format_stack fmt, bool colon, bool atsign)
 	if (w > 100 || exp > 100 || exp < -100) {
 		fmt->nparam = 6;
 		fmt->param[0] = fmt->param[2];
-		fmt->param[1] = MAKE_FIXNUM(d + n - 1);
+		fmt->param[1] = ecl_make_fixnum(d + n - 1);
 		fmt->param[5] = fmt->param[3];
 		fmt->param[2] =
 		fmt->param[3] =
@@ -1355,7 +1355,7 @@ fmt_percent(format_stack fmt, bool colon, bool atsign)
 	int n, i;
 
 	ensure_param(fmt, 1);
-	n = ecl_to_fix(set_param(fmt, 0, INT, MAKE_FIXNUM(1)));
+	n = ecl_to_fix(set_param(fmt, 0, INT, ecl_make_fixnum(1)));
 	fmt_not_colon(fmt, colon);
 	fmt_not_atsign(fmt, atsign);
 	while (n-- > 0) {
@@ -1372,7 +1372,7 @@ fmt_ampersand(format_stack fmt, bool colon, bool atsign)
 	int n;
 
 	ensure_param(fmt, 1);
-	n = ecl_to_fix(set_param(fmt, 0, INT, MAKE_FIXNUM(1)));
+	n = ecl_to_fix(set_param(fmt, 0, INT, ecl_make_fixnum(1)));
 	fmt_not_colon(fmt, colon);
 	fmt_not_atsign(fmt, atsign);
 	if (n == 0)
@@ -1390,7 +1390,7 @@ fmt_bar(format_stack fmt, bool colon, bool atsign)
 	int n;
 
 	ensure_param(fmt, 1);
-	n = ecl_to_fix(set_param(fmt, 0, INT, MAKE_FIXNUM(1)));
+	n = ecl_to_fix(set_param(fmt, 0, INT, ecl_make_fixnum(1)));
 	fmt_not_colon(fmt, colon);
 	fmt_not_atsign(fmt, atsign);
 	while (n-- > 0)
@@ -1403,7 +1403,7 @@ fmt_tilde(format_stack fmt, bool colon, bool atsign)
 	int n;
 
 	ensure_param(fmt, 1);
-	n = ecl_to_fix(set_param(fmt, 0, INT, MAKE_FIXNUM(1)));
+	n = ecl_to_fix(set_param(fmt, 0, INT, ecl_make_fixnum(1)));
 	fmt_not_colon(fmt, colon);
 	fmt_not_atsign(fmt, atsign);
 	while (n-- > 0)
@@ -1432,8 +1432,8 @@ fmt_tabulate(format_stack fmt, bool colon, bool atsign)
 
 	ensure_param(fmt, 2);
 	fmt_not_colon(fmt, colon);
-	colnum = ecl_to_fix(set_param(fmt, 0, INT, MAKE_FIXNUM(1)));
-	colinc = ecl_to_fix(set_param(fmt, 1, INT, MAKE_FIXNUM(1)));
+	colnum = ecl_to_fix(set_param(fmt, 0, INT, ecl_make_fixnum(1)));
+	colinc = ecl_to_fix(set_param(fmt, 1, INT, ecl_make_fixnum(1)));
 	if (!atsign) {
 		c = ecl_file_column(fmt->stream);
 		if (c < 0) {
@@ -1468,13 +1468,13 @@ fmt_asterisk(format_stack fmt, bool colon, bool atsign)
 	ensure_param(fmt, 1);
 	fmt_not_colon_atsign(fmt, colon, atsign);
 	if (atsign) {
-		n = ecl_to_fix(set_param(fmt, 0, INT, MAKE_FIXNUM(0)));
+		n = ecl_to_fix(set_param(fmt, 0, INT, ecl_make_fixnum(0)));
 		fmt_go(fmt, n);
 	} else if (colon) {
-		n = ecl_to_fix(set_param(fmt, 0, INT, MAKE_FIXNUM(1)));
+		n = ecl_to_fix(set_param(fmt, 0, INT, ecl_make_fixnum(1)));
 		fmt_go(fmt, fmt_index(fmt) - n);
 	} else {
-		n = ecl_to_fix(set_param(fmt, 0, INT, MAKE_FIXNUM(1)));
+		n = ecl_to_fix(set_param(fmt, 0, INT, ecl_make_fixnum(1)));
 		while (n-- > 0)
 			fmt_advance(fmt);
 	}
@@ -1632,11 +1632,11 @@ fmt_conditional(format_stack fmt, bool colon, bool atsign)
 		ensure_param(fmt, 1);
 		if (fmt->nparam == 0) {
 			x = fmt_advance(fmt);
-			if (!FIXNUMP(x))
+			if (!ECL_FIXNUMP(x))
 				fmt_error(fmt, "illegal argument for conditional");
-			n = fix(x);
+			n = ecl_fix(x);
 		} else
-			n = ecl_to_fix(set_param(fmt, 0, INT, MAKE_FIXNUM(0)));
+			n = ecl_to_fix(set_param(fmt, 0, INT, ecl_make_fixnum(0)));
 		i = fmt->ctl_index;
 		for (done = FALSE;;  --n) {
 			j = fmt_skip(fmt);
@@ -1688,7 +1688,7 @@ fmt_iteration(format_stack fmt, bool colon, bool atsign)
 	int up_colon;
 
 	ensure_param(fmt, 1);
-	n = ecl_to_fix(set_param(fmt, 0, INT, MAKE_FIXNUM(1000000)));
+	n = ecl_to_fix(set_param(fmt, 0, INT, ecl_make_fixnum(1000000)));
 	i = fmt->ctl_index;
 	j = fmt_skip(fmt);
 	if (ecl_char(fmt->ctl_str, --j) != '}')
@@ -1800,10 +1800,10 @@ fmt_justification(format_stack fmt, volatile bool colon, bool atsign)
 	volatile int spare_spaces, line_length;
 
 	ensure_param(fmt, 4);
-	mincol = ecl_to_fix(set_param(fmt, 0, INT, MAKE_FIXNUM(0)));
-	colinc = ecl_to_fix(set_param(fmt, 1, INT, MAKE_FIXNUM(1)));
-	minpad = ecl_to_fix(set_param(fmt, 2, INT, MAKE_FIXNUM(0)));
-	padchar = CHAR_CODE(set_param(fmt, 3, CHAR, CODE_CHAR(' ')));
+	mincol = ecl_to_fix(set_param(fmt, 0, INT, ecl_make_fixnum(0)));
+	colinc = ecl_to_fix(set_param(fmt, 1, INT, ecl_make_fixnum(1)));
+	minpad = ecl_to_fix(set_param(fmt, 2, INT, ecl_make_fixnum(0)));
+	padchar = ECL_CHAR_CODE(set_param(fmt, 3, CHAR, ECL_CODE_CHAR(' ')));
 
 	fields = Cnil;
 	for (;;) {
@@ -1913,18 +1913,18 @@ fmt_up_and_out(format_stack fmt, bool colon, bool atsign)
 		if (!fmt_more_args_p(fmt))
 			ecl_longjmp(*fmt->jmp_buf, ++colon);
 	} else if (fmt->nparam == 1) {
-		i = ecl_to_fix(set_param(fmt, 0, INT, MAKE_FIXNUM(0)));
+		i = ecl_to_fix(set_param(fmt, 0, INT, ecl_make_fixnum(0)));
 		if (i == 0)
 			ecl_longjmp(*fmt->jmp_buf, ++colon);
 	} else if (fmt->nparam == 2) {
-		i = ecl_to_fix(set_param(fmt, 0, INT, MAKE_FIXNUM(0)));
-		j = ecl_to_fix(set_param(fmt, 1, INT, MAKE_FIXNUM(0)));
+		i = ecl_to_fix(set_param(fmt, 0, INT, ecl_make_fixnum(0)));
+		j = ecl_to_fix(set_param(fmt, 1, INT, ecl_make_fixnum(0)));
 		if (i == j)
 			ecl_longjmp(*fmt->jmp_buf, ++colon);
 	} else {
-		i = ecl_to_fix(set_param(fmt, 0, INT, MAKE_FIXNUM(0)));
-		j = ecl_to_fix(set_param(fmt, 1, INT, MAKE_FIXNUM(0)));
-		k = ecl_to_fix(set_param(fmt, 2, INT, MAKE_FIXNUM(0)));
+		i = ecl_to_fix(set_param(fmt, 0, INT, ecl_make_fixnum(0)));
+		j = ecl_to_fix(set_param(fmt, 1, INT, ecl_make_fixnum(0)));
+		k = ecl_to_fix(set_param(fmt, 2, INT, ecl_make_fixnum(0)));
 		if (i <= j && j <= k)
 			ecl_longjmp(*fmt->jmp_buf, ++colon);
 	}
@@ -1937,8 +1937,8 @@ fmt_semicolon(format_stack fmt, bool colon, bool atsign)
 	if (!colon)
 		fmt_error(fmt, "~~:; expected");
 	ensure_param(fmt, 2);
-	fmt->spare_spaces = ecl_to_fix(set_param(fmt, 0, INT, MAKE_FIXNUM(0)));
-	fmt->line_length = ecl_to_fix(set_param(fmt, 1, INT, MAKE_FIXNUM(72)));
+	fmt->spare_spaces = ecl_to_fix(set_param(fmt, 0, INT, ecl_make_fixnum(0)));
+	fmt->line_length = ecl_to_fix(set_param(fmt, 1, INT, ecl_make_fixnum(72)));
 }
 
 @(defun si::formatter-aux (strm string &rest args)
@@ -2020,24 +2020,24 @@ LOOP:
 			/* FIXME! A hack to solve the problem of bignums in arguments */
 			if (x == OBJNULL || !ecl_numberp(x))
 				fmt_error(fmt, "integer expected");
-			if (ecl_number_compare(x, MAKE_FIXNUM(FMT_VALUE_UPPER_LIMIT)) > 0) {
-				fmt->param[n] = MAKE_FIXNUM(FMT_VALUE_UPPER_LIMIT);
-			} else if (ecl_number_compare(x, MAKE_FIXNUM(FMT_VALUE_LOWER_LIMIT)) < 0) {
-				fmt->param[n] = MAKE_FIXNUM(FMT_VALUE_LOWER_LIMIT);
+			if (ecl_number_compare(x, ecl_make_fixnum(FMT_VALUE_UPPER_LIMIT)) > 0) {
+				fmt->param[n] = ecl_make_fixnum(FMT_VALUE_UPPER_LIMIT);
+			} else if (ecl_number_compare(x, ecl_make_fixnum(FMT_VALUE_LOWER_LIMIT)) < 0) {
+				fmt->param[n] = ecl_make_fixnum(FMT_VALUE_LOWER_LIMIT);
 			} else {
 				fmt->param[n] = x;
 			}
-			if (FIXNUMP(x)) {
+			if (ECL_FIXNUMP(x)) {
 				fmt->param[n] = x;
 			} else if (ecl_plusp(x)) {
-				fmt->param[n] = MAKE_FIXNUM(MOST_POSITIVE_FIXNUM);
+				fmt->param[n] = ecl_make_fixnum(MOST_POSITIVE_FIXNUM);
 			} else {
-				fmt->param[n] = MAKE_FIXNUM(MOST_NEGATIVE_FIXNUM);
+				fmt->param[n] = ecl_make_fixnum(MOST_NEGATIVE_FIXNUM);
 			}
 			break;
 
 		case '\'':
-			fmt->param[n] = CODE_CHAR(ctl_advance(fmt));
+			fmt->param[n] = ECL_CODE_CHAR(ctl_advance(fmt));
 			c = ctl_advance(fmt);
 			break;
 
@@ -2052,7 +2052,7 @@ LOOP:
 			break;
 
 		case '#':
-			fmt->param[n] = MAKE_FIXNUM(fmt_args_left(fmt));
+			fmt->param[n] = ecl_make_fixnum(fmt_args_left(fmt));
 			c = ctl_advance(fmt);
 			break;
 
@@ -2219,7 +2219,7 @@ DIRECTIVE:
 				 make_constant_base_string(
 "Cannot output to a non adjustable string."),
 				 @':control-string', string,
-				 @':offset', MAKE_FIXNUM(0));
+				 @':offset', ecl_make_fixnum(0));
                 }
 		strm = si_make_string_output_stream_from_string(strm);
 		if (null_strm == 0)

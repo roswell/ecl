@@ -33,8 +33,8 @@ ecl_print_base(void)
 {
 	cl_object object = ecl_symbol_value(@'*print-base*');
 	cl_fixnum base;
-	unlikely_if (!FIXNUMP(object) || (base = fix(object)) < 2 || base > 36) {
-		ECL_SETQ(ecl_process_env(), @'*print-base*', MAKE_FIXNUM(10));
+	unlikely_if (!ECL_FIXNUMP(object) || (base = ecl_fix(object)) < 2 || base > 36) {
+		ECL_SETQ(ecl_process_env(), @'*print-base*', ecl_make_fixnum(10));
 		FEerror("The value of *PRINT-BASE*~%  ~S~%"
                         "is not of the expected type (INTEGER 2 36)", 1, object);
 	}
@@ -49,7 +49,7 @@ ecl_print_level(void)
 	if (object == Cnil) {
 		level = MOST_POSITIVE_FIXNUM;
 	} else if (ECL_FIXNUMP(object)) {
-		level = fix(object);
+		level = ecl_fix(object);
 		if (level < 0) {
 		ERROR:	ECL_SETQ(ecl_process_env(), @'*print-level*', Cnil);
 			FEerror("The value of *PRINT-LEVEL*~%  ~S~%"
@@ -71,8 +71,8 @@ ecl_print_length(void)
 	cl_fixnum length;
 	if (object == Cnil) {
 		length = MOST_POSITIVE_FIXNUM;
-	} else if (FIXNUMP(object)) {
-		length = fix(object);
+	} else if (ECL_FIXNUMP(object)) {
+		length = ecl_fix(object);
 		unlikely_if (length < 0) {
 		ERROR:	ECL_SETQ(ecl_process_env(), @'*print-length*', Cnil);
 			FEerror("The value of *PRINT-LENGTH*~%  ~S~%"
@@ -215,11 +215,11 @@ ecl_print_circle(void)
 @
 	/* INV: ecl_char_code() checks the type of `c' */
  	strm = _ecl_stream_or_default_output(strm);
-	c = CODE_CHAR(ecl_write_char(ecl_char_code(c), strm));
+	c = ECL_CODE_CHAR(ecl_write_char(ecl_char_code(c), strm));
 	@(return c)
 @)
 
-@(defun write-string (strng &o strm &k (start MAKE_FIXNUM(0)) end)
+@(defun write-string (strng &o strm &k (start ecl_make_fixnum(0)) end)
 @
         unlikely_if (!ECL_STRINGP(strng))
                 FEwrong_type_nth_arg(@[write-string], 1, strng, @[string]);
@@ -233,7 +233,7 @@ ecl_print_circle(void)
 	@(return strng)
 @)
 
-@(defun write-line (strng &o strm &k (start MAKE_FIXNUM(0)) end)
+@(defun write-line (strng &o strm &k (start ecl_make_fixnum(0)) end)
 @
         unlikely_if (!ECL_STRINGP(strng))
                 FEwrong_type_nth_arg(@[write-line], 1, strng, @[string]);
@@ -303,7 +303,7 @@ cl_write_byte(cl_object integer, cl_object binary_output_stream)
 	@(return integer)
 }
 
-@(defun write-sequence (sequence stream &key (start MAKE_FIXNUM(0)) end)
+@(defun write-sequence (sequence stream &key (start ecl_make_fixnum(0)) end)
 @
 #ifdef ECL_CLOS_STREAMS
 	if (!ECL_ANSI_STREAM_P(stream)) {

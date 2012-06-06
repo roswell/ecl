@@ -214,7 +214,7 @@
   (let* ((*read-default-float-format* 'double-float)
 	 (*print-readably* t))
     (format stream
-	    "ecl_def_ct_ratio(~A,MAKE_FIXNUM(~D),MAKE_FIXNUM(~D),static,const);"
+	    "ecl_def_ct_ratio(~A,ecl_make_fixnum(~D),ecl_make_fixnum(~D),static,const);"
 	    name (numerator value) (denominator value))))
 
 (defun static-constant-delegate (name value stream)

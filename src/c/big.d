@@ -74,15 +74,15 @@ big_normalize(cl_object x)
 {
 	int s = x->big.big_size;
 	if (s == 0)
-                return(MAKE_FIXNUM(0));
+                return(ecl_make_fixnum(0));
 	if (s == 1) {
                 mp_limb_t y = x->big.big_limbs[0];
                 if (y <= MOST_POSITIVE_FIXNUM)
-                        return MAKE_FIXNUM(y);
+                        return ecl_make_fixnum(y);
 	} else if (s == -1) {
                 mp_limb_t y = x->big.big_limbs[0];
                 if (y <= -MOST_NEGATIVE_FIXNUM)
-                        return MAKE_FIXNUM(-y);
+                        return ecl_make_fixnum(-y);
 	}
 	return x;
 }
@@ -92,15 +92,15 @@ _ecl_big_register_normalize(cl_object x)
 {
 	int s = x->big.big_size;
 	if (s == 0)
-                return(MAKE_FIXNUM(0));
+                return(ecl_make_fixnum(0));
 	if (s == 1) {
                 mp_limb_t y = x->big.big_limbs[0];
                 if (y <= MOST_POSITIVE_FIXNUM)
-                        return MAKE_FIXNUM(y);
+                        return ecl_make_fixnum(y);
 	} else if (s == -1) {
                 mp_limb_t y = x->big.big_limbs[0];
                 if (y <= -MOST_NEGATIVE_FIXNUM)
-                        return MAKE_FIXNUM(-y);
+                        return ecl_make_fixnum(-y);
 	}
 	return _ecl_big_register_copy(x);
 }
@@ -152,7 +152,7 @@ _ecl_big_times_fix(cl_object b, cl_fixnum i)
 	cl_object z;
 
         if (i == 0)
-                return MAKE_FIXNUM(0);
+                return ecl_make_fixnum(0);
 	if (i == 1)
 		return b;
         size = (b->big.big_size < 0)? -b->big.big_size : b->big.big_size;
@@ -301,7 +301,7 @@ mp_free(void *ptr, size_t size)
 cl_fixnum
 fixint(cl_object x)
 {
-        if (FIXNUMP(x))
+        if (ECL_FIXNUMP(x))
                 return ecl_fix(x);
         if (ECL_BIGNUMP(x)) {
                 if (mpz_fits_slong_p(x->big.big_num)) {
@@ -314,7 +314,7 @@ fixint(cl_object x)
 cl_index
 fixnnint(cl_object x)
 {
-        if (FIXNUMP(x)) {
+        if (ECL_FIXNUMP(x)) {
                 cl_fixnum i = ecl_fix(x);
                 if (i >= 0)
                         return i;
@@ -323,8 +323,8 @@ fixnnint(cl_object x)
                         return mpz_get_ui(x->big.big_num);
                 }
         }
-	FEwrong_type_argument(cl_list(3, @'integer', MAKE_FIXNUM(0),
-				      MAKE_FIXNUM(MOST_POSITIVE_FIXNUM)),
+	FEwrong_type_argument(cl_list(3, @'integer', ecl_make_fixnum(0),
+				      ecl_make_fixnum(MOST_POSITIVE_FIXNUM)),
 			      x);
 }
 

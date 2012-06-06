@@ -25,7 +25,7 @@ _ecl_will_print_as_hash(cl_object x)
 	cl_object circle_counter = ecl_symbol_value(@'si::*circle-counter*');
 	cl_object circle_stack = ecl_symbol_value(@'si::*circle-stack*');
 	cl_object code = ecl_gethash_safe(x, circle_stack, OBJNULL);
-	if (FIXNUMP(circle_counter)) {
+	if (ECL_FIXNUMP(circle_counter)) {
 		return !(code == OBJNULL || code == Cnil);
 	} else if (code == OBJNULL) {
 		/* Was not found before */
@@ -51,7 +51,7 @@ search_print_circle(cl_object x)
 	cl_object circle_stack = ecl_symbol_value(@'si::*circle-stack*');
 	cl_object code;
 
-	if (!FIXNUMP(circle_counter)) {
+	if (!ECL_FIXNUMP(circle_counter)) {
 		code = ecl_gethash_safe(x, circle_stack, OBJNULL);
 		if (code == OBJNULL) {
 			/* Was not found before */
@@ -72,14 +72,14 @@ search_print_circle(cl_object x)
 			return 0;
 		} else if (code == Ct) {
 			/* This object is referenced twice, but has no code yet */
-			cl_fixnum new_code = fix(circle_counter) + 1;
-			circle_counter = MAKE_FIXNUM(new_code);
+			cl_fixnum new_code = ecl_fix(circle_counter) + 1;
+			circle_counter = ecl_make_fixnum(new_code);
 			_ecl_sethash(x, circle_stack, circle_counter);
 			ECL_SETQ(ecl_process_env(), @'si::*circle-counter*',
 				 circle_counter);
 			return -new_code;
 		} else {
-			return fix(code);
+			return ecl_fix(code);
 		}
 	}
 }
@@ -98,7 +98,7 @@ si_write_object(cl_object x, cl_object stream)
 	}
 #endif /* ECL_CMU_FORMAT */
 	circle = ecl_print_circle();
-	if (circle && !Null(x) && !FIXNUMP(x) && !CHARACTERP(x) &&
+	if (circle && !Null(x) && !ECL_FIXNUMP(x) && !ECL_CHARACTERP(x) &&
 	    (LISTP(x) || (x->d.t != t_symbol) || (Null(x->symbol.hpack))))
 	{
 		cl_object circle_counter;
@@ -108,20 +108,20 @@ si_write_object(cl_object x, cl_object stream)
 			cl_env_ptr env = ecl_process_env();
 			cl_object hash =
 				cl__make_hash_table(@'eq',
-						    MAKE_FIXNUM(1024),
+						    ecl_make_fixnum(1024),
                                                     cl_core.rehash_size,
                                                     cl_core.rehash_threshold);
 			ecl_bds_bind(env, @'si::*circle-counter*', Ct);
 			ecl_bds_bind(env, @'si::*circle-stack*', hash);
 			si_write_object(x, cl_core.null_stream);
-			ECL_SETQ(env, @'si::*circle-counter*', MAKE_FIXNUM(0));
+			ECL_SETQ(env, @'si::*circle-counter*', ecl_make_fixnum(0));
 			si_write_object(x, stream);
 			cl_clrhash(hash);
 			ecl_bds_unwind_n(env, 2);
 			goto OUTPUT;
 		}
 		code = search_print_circle(x);
-		if (!FIXNUMP(circle_counter)) {
+		if (!ECL_FIXNUMP(circle_counter)) {
 			/* We are only inspecting the object to be printed. */
 			/* Only run X if it was not referenced before */
 			if (code != 0)

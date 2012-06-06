@@ -17,7 +17,7 @@
 #include <ecl/impl/math_dispatch2.h>
 
 @(defun + (&rest nums)
-	cl_object sum = MAKE_FIXNUM(0);
+	cl_object sum = ecl_make_fixnum(0);
 @
 	/* INV: type check is in ecl_plus() */
 	while (narg--)
@@ -33,10 +33,10 @@ ecl_plus(cl_object x, cl_object y)
 MATH_DISPATCH2_BEGIN(x,y)
 {
         CASE_FIXNUM_FIXNUM {
-                return ecl_make_integer(fix(x) + fix(y));
+                return ecl_make_integer(ecl_fix(x) + ecl_fix(y));
         }
         CASE_FIXNUM_BIGNUM {
-                return _ecl_big_plus_fix(y, fix(x));
+                return _ecl_big_plus_fix(y, ecl_fix(x));
         }
         CASE_FIXNUM_RATIO;
         CASE_BIGNUM_RATIO {
@@ -45,13 +45,13 @@ MATH_DISPATCH2_BEGIN(x,y)
                 return ecl_make_ratio(z, y->ratio.den);
         }
         CASE_FIXNUM_SINGLE_FLOAT {
-                return ecl_make_singlefloat(fix(x) + ecl_single_float(y));
+                return ecl_make_singlefloat(ecl_fix(x) + ecl_single_float(y));
         }
         CASE_FIXNUM_DOUBLE_FLOAT {
-                return ecl_make_doublefloat(fix(x) + ecl_double_float(y));
+                return ecl_make_doublefloat(ecl_fix(x) + ecl_double_float(y));
         }
         CASE_BIGNUM_FIXNUM {
-                return _ecl_big_plus_fix(x, fix(y));
+                return _ecl_big_plus_fix(x, ecl_fix(y));
         }
         CASE_BIGNUM_BIGNUM {
                 return _ecl_big_plus_big(x, y);
@@ -78,7 +78,7 @@ MATH_DISPATCH2_BEGIN(x,y)
                 return ecl_make_ratio(z, z1);
         }
         CASE_SINGLE_FLOAT_FIXNUM {
-                return ecl_make_singlefloat(ecl_single_float(x) + fix(y));
+                return ecl_make_singlefloat(ecl_single_float(x) + ecl_fix(y));
         }
         CASE_SINGLE_FLOAT_BIGNUM;
         CASE_SINGLE_FLOAT_RATIO {
@@ -91,7 +91,7 @@ MATH_DISPATCH2_BEGIN(x,y)
                 return ecl_make_doublefloat(ecl_single_float(x) + ecl_double_float(y));
         }
         CASE_DOUBLE_FLOAT_FIXNUM {
-                return ecl_make_doublefloat(ecl_double_float(x) + fix(y));
+                return ecl_make_doublefloat(ecl_double_float(x) + ecl_fix(y));
         }
         CASE_DOUBLE_FLOAT_BIGNUM;
         CASE_DOUBLE_FLOAT_RATIO {
@@ -105,7 +105,7 @@ MATH_DISPATCH2_BEGIN(x,y)
         }
 #ifdef ECL_LONG_FLOAT
         CASE_FIXNUM_LONG_FLOAT {
-                return ecl_make_longfloat(fix(x) + ecl_long_float(y));
+                return ecl_make_longfloat(ecl_fix(x) + ecl_long_float(y));
         }
         CASE_BIGNUM_LONG_FLOAT {
                 return ecl_make_longfloat(ecl_to_long_double(x) + ecl_long_float(y));
@@ -120,7 +120,7 @@ MATH_DISPATCH2_BEGIN(x,y)
                 return ecl_make_longfloat(ecl_double_float(x) + ecl_long_float(y));
         }
         CASE_LONG_FLOAT_FIXNUM {
-                return ecl_make_longfloat(ecl_long_float(x) + fix(y));
+                return ecl_make_longfloat(ecl_long_float(x) + ecl_fix(y));
         }
         CASE_LONG_FLOAT_BIGNUM;
         CASE_LONG_FLOAT_RATIO {
@@ -182,20 +182,20 @@ ecl_plus(cl_object x, cl_object y)
 	case t_fixnum:
 	        switch (type_of(y)) {
 		case t_fixnum:
-                        return ecl_make_integer(fix(x) + fix(y));
+                        return ecl_make_integer(ecl_fix(x) + ecl_fix(y));
 		case t_bignum:
-                        return _ecl_big_plus_fix(y, fix(x));
+                        return _ecl_big_plus_fix(y, ecl_fix(x));
 		case t_ratio:
 			z = ecl_times(x, y->ratio.den);
 			z = ecl_plus(z, y->ratio.num);
 			return ecl_make_ratio(z, y->ratio.den);
 		case t_singlefloat:
-			return ecl_make_singlefloat(fix(x) + sf(y));
+			return ecl_make_singlefloat(ecl_fix(x) + sf(y));
 		case t_doublefloat:
-			return ecl_make_doublefloat(fix(x) + df(y));
+			return ecl_make_doublefloat(ecl_fix(x) + df(y));
 #ifdef ECL_LONG_FLOAT
 		case t_longfloat:
-			return ecl_make_longfloat(fix(x) + ecl_long_float(y));
+			return ecl_make_longfloat(ecl_fix(x) + ecl_long_float(y));
 #endif
 		case t_complex:
 		COMPLEX: /* INV: x is real, y is complex */
@@ -207,7 +207,7 @@ ecl_plus(cl_object x, cl_object y)
 	case t_bignum:
 		switch (type_of(y)) {
 		case t_fixnum:
-                        return _ecl_big_plus_fix(x, fix(y));
+                        return _ecl_big_plus_fix(x, ecl_fix(y));
 		case t_bignum:
                         return _ecl_big_plus_big(x, y);
 		case t_ratio:
@@ -256,7 +256,7 @@ ecl_plus(cl_object x, cl_object y)
 	case t_singlefloat:
 		switch (type_of(y)) {
 		case t_fixnum:
-			return ecl_make_singlefloat(sf(x) + fix(y));
+			return ecl_make_singlefloat(sf(x) + ecl_fix(y));
 		case t_bignum:
 		case t_ratio:
 			return ecl_make_singlefloat(sf(x) + ecl_to_double(y));
@@ -276,7 +276,7 @@ ecl_plus(cl_object x, cl_object y)
 	case t_doublefloat:
 		switch (type_of(y)) {
 		case t_fixnum:
-			return ecl_make_doublefloat(df(x) + fix(y));
+			return ecl_make_doublefloat(df(x) + ecl_fix(y));
 		case t_bignum:
 		case t_ratio:
 			return ecl_make_doublefloat(df(x) + ecl_to_double(y));
@@ -297,7 +297,7 @@ ecl_plus(cl_object x, cl_object y)
 	case t_longfloat:
 		switch (type_of(y)) {
 		case t_fixnum:
-			return ecl_make_longfloat(ecl_long_float(x) + fix(y));
+			return ecl_make_longfloat(ecl_long_float(x) + ecl_fix(y));
 		case t_bignum:
 		case t_ratio:
 			return ecl_make_longfloat(ecl_long_float(x) + ecl_to_double(y));

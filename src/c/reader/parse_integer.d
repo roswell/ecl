@@ -58,9 +58,9 @@ ecl_parse_integer(cl_object str, cl_index start, cl_index end,
 }
 
 @(defun parse_integer (strng
-		       &key (start MAKE_FIXNUM(0))
+		       &key (start ecl_make_fixnum(0))
 			    end
-			    (radix MAKE_FIXNUM(10))
+			    (radix ecl_make_fixnum(10))
 			    junk_allowed
 		       &aux x)
 	cl_index s, e, ep;
@@ -69,9 +69,9 @@ ecl_parse_integer(cl_object str, cl_index start, cl_index end,
         unlikely_if (!ECL_STRINGP(strng)) {
                 FEwrong_type_nth_arg(@[parse-integer], 1, strng, @[string]);
         }
-	unlikely_if (!FIXNUMP(radix) ||
-                     ecl_fixnum_lower(radix, MAKE_FIXNUM(2)) ||
-                     ecl_fixnum_greater(radix, MAKE_FIXNUM(36)))
+	unlikely_if (!ECL_FIXNUMP(radix) ||
+                     ecl_fixnum_lower(radix, ecl_make_fixnum(2)) ||
+                     ecl_fixnum_greater(radix, ecl_make_fixnum(36)))
         {
 		FEerror("~S is an illegal radix.", 1, radix);
         }
@@ -87,20 +87,20 @@ ecl_parse_integer(cl_object str, cl_index start, cl_index end,
 	}
 	if (s >= e) {
 		if (junk_allowed != Cnil)
-			@(return Cnil MAKE_FIXNUM(s))
+			@(return Cnil ecl_make_fixnum(s))
 		else
 			goto CANNOT_PARSE;
 	}
-	x = ecl_parse_integer(strng, s, e, &ep, fix(radix));
+	x = ecl_parse_integer(strng, s, e, &ep, ecl_fix(radix));
 	if (x == OBJNULL) {
 		if (junk_allowed != Cnil) {
-			@(return Cnil MAKE_FIXNUM(ep));
+			@(return Cnil ecl_make_fixnum(ep));
 		} else {
 			goto CANNOT_PARSE;
 		}
 	}
 	if (junk_allowed != Cnil) {
-		@(return x MAKE_FIXNUM(ep));
+		@(return x ecl_make_fixnum(ep));
 	}
 	for (s = ep; s < e; s++) {
 		unlikely_if (ecl_readtable_get(rtbl, ecl_char(strng, s), NULL)
@@ -110,5 +110,5 @@ CANNOT_PARSE:		FEparse_error("Cannot parse an integer in the string ~S.",
 				      Cnil, 1, strng);
 		}
 	}
-	@(return x MAKE_FIXNUM(e));
+	@(return x ecl_make_fixnum(e));
 } @)

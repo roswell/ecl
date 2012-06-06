@@ -117,7 +117,7 @@ cl_denominator(cl_object x)
 		break;
 	case t_fixnum:
 	case t_bignum:
-		x = MAKE_FIXNUM(1);
+		x = ecl_make_fixnum(1);
 		break;
 	default:
                 FEwrong_type_nth_arg(@[numerator],1,x,@[rational]);
@@ -134,7 +134,7 @@ ecl_floor1(cl_object x)
 	case t_fixnum:
 	case t_bignum:
 		v0 = x;
-		v1 = MAKE_FIXNUM(0);
+		v1 = ecl_make_fixnum(0);
 		break;
 	case t_ratio:
 		v0 = ecl_floor2(x->ratio.num, x->ratio.den);
@@ -176,21 +176,21 @@ ecl_floor2(cl_object x, cl_object y)
 	cl_object v0, v1;
 	cl_type ty;
         ty = type_of(y);
-	if (ecl_unlikely(!REAL_TYPE(ty))) {
+	if (ecl_unlikely(!ECL_REAL_TYPE_P(ty))) {
                 FEwrong_type_nth_arg(@[floor],2,y,@[real]);
 	}
 	switch(type_of(x)) {
 	case t_fixnum:
 		switch(ty) {
 		case t_fixnum: {	/* FIX / FIX */
-		  cl_fixnum a = fix(x), b = fix(y);
+		  cl_fixnum a = ecl_fix(x), b = ecl_fix(y);
 		  cl_fixnum q = a / b,  r = a % b;
 		  if ((r^b) < 0 && r) {	/* opposite sign and some remainder*/
-		    v0 = MAKE_FIXNUM(q-1);
-		    v1 = MAKE_FIXNUM(r+b);
+		    v0 = ecl_make_fixnum(q-1);
+		    v1 = ecl_make_fixnum(r+b);
 		  } else {
-		    v0 = MAKE_FIXNUM(q);
-		    v1 = MAKE_FIXNUM(r);
+		    v0 = ecl_make_fixnum(q);
+		    v1 = ecl_make_fixnum(r);
 		  }
 		  break;
 		}
@@ -201,7 +201,7 @@ ecl_floor2(cl_object x, cl_object y)
 		   *    y = - MOST_NEGATIVE_FIXNUM
 		   */
                   ECL_WITH_TEMP_BIGNUM(bx,4);
-                  _ecl_big_set_fixnum(bx, fix(x));
+                  _ecl_big_set_fixnum(bx, ecl_fix(x));
                   v0 = _ecl_big_floor(bx, y, &v1);
 		  break;
 		}
@@ -211,7 +211,7 @@ ecl_floor2(cl_object x, cl_object y)
 		  break;
 		case t_singlefloat: {	/* FIX / SF */
 		  float n = sf(y);
-		  float p = fix(x) / n;
+		  float p = ecl_fix(x) / n;
 		  float q = floorf(p);
 		  v0 = float_to_integer(q);
 		  v1 = ecl_make_singlefloat((p - q)*n);
@@ -219,7 +219,7 @@ ecl_floor2(cl_object x, cl_object y)
 		}
 		case t_doublefloat: {	/* FIX / DF */
 		  double n = df(y);
-		  double p = fix(x) / n;
+		  double p = ecl_fix(x) / n;
 		  double q = floor(p);
 		  v0 = double_to_integer(q);
 		  v1 = ecl_make_doublefloat((p - q)*n);
@@ -228,7 +228,7 @@ ecl_floor2(cl_object x, cl_object y)
 #ifdef ECL_LONG_FLOAT
 		case t_longfloat: {	/* FIX / LF */
 		  long double n = ecl_long_float(y);
-		  long double p = fix(x) / n;
+		  long double p = ecl_fix(x) / n;
 		  long double q = floorl(p);
 		  v0 = long_double_to_integer(q);
 		  v1 = ecl_make_longfloat((p - q)*n);
@@ -243,7 +243,7 @@ ecl_floor2(cl_object x, cl_object y)
 		switch(ty) {
 		case t_fixnum: {	/* BIG / FIX */
                   ECL_WITH_TEMP_BIGNUM(by,4);
-                  _ecl_big_set_fixnum(by, fix(y));
+                  _ecl_big_set_fixnum(by, ecl_fix(y));
                   v0 = _ecl_big_floor(x, by, &v1);
 		  break;
 		}
@@ -348,7 +348,7 @@ ecl_ceiling1(cl_object x)
 	case t_fixnum:
 	case t_bignum:
 		v0 = x;
-		v1 = MAKE_FIXNUM(0);
+		v1 = ecl_make_fixnum(0);
 		break;
 	case t_ratio:
 		v0 = ecl_ceiling2(x->ratio.num, x->ratio.den);
@@ -390,21 +390,21 @@ ecl_ceiling2(cl_object x, cl_object y)
 	cl_object v0, v1;
 	cl_type ty;
         ty = type_of(y);
-	if (ecl_unlikely(!REAL_TYPE(ty))) {
+	if (ecl_unlikely(!ECL_REAL_TYPE_P(ty))) {
 		FEwrong_type_nth_arg(@[ceiling],2, y, @[real]);
 	}
 	switch(type_of(x)) {
 	case t_fixnum:
 		switch(ty) {
 		case t_fixnum: {	/* FIX / FIX */
-		  cl_fixnum a = fix(x); cl_fixnum b = fix(y);
+		  cl_fixnum a = ecl_fix(x); cl_fixnum b = ecl_fix(y);
 		  cl_fixnum q = a / b;  cl_fixnum r = a % b;
 		  if ((r^b) > 0 && r) {	/* same signs and some remainder */
-		    v0 = MAKE_FIXNUM(q+1);
-		    v1 = MAKE_FIXNUM(r-b);
+		    v0 = ecl_make_fixnum(q+1);
+		    v1 = ecl_make_fixnum(r-b);
 		  } else {
-		    v0 = MAKE_FIXNUM(q);
-		    v1 = MAKE_FIXNUM(r);
+		    v0 = ecl_make_fixnum(q);
+		    v1 = ecl_make_fixnum(r);
 		  }
 		  break;
 		}
@@ -415,7 +415,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 		   *    y = - MOST_NEGATIVE_FIXNUM
 		   */
                   ECL_WITH_TEMP_BIGNUM(bx,4);
-                  _ecl_big_set_fixnum(bx, fix(x));
+                  _ecl_big_set_fixnum(bx, ecl_fix(x));
                   v0 = _ecl_big_ceiling(bx, y, &v1);
 		  break;
 		}
@@ -425,7 +425,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 		  break;
 		case t_singlefloat: {	/* FIX / SF */
 		  float n = sf(y);
-		  float p = fix(x)/n;
+		  float p = ecl_fix(x)/n;
 		  float q = ceilf(p);
 		  v0 = float_to_integer(q);
 		  v1 = ecl_make_singlefloat(p*n - q*n);
@@ -433,7 +433,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 		}
 		case t_doublefloat: {	/* FIX / DF */
 		  double n = df(y);
-		  double p = fix(x)/n;
+		  double p = ecl_fix(x)/n;
 		  double q = ceil(p);
 		  v0 = double_to_integer(q);
 		  v1 = ecl_make_doublefloat(p*n - q*n);
@@ -442,7 +442,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 #ifdef ECL_LONG_FLOAT
 		case t_longfloat: {	/* FIX / LF */
 		  long double n = ecl_long_float(y);
-		  long double p = fix(x)/n;
+		  long double p = ecl_fix(x)/n;
 		  long double q = ceill(p);
 		  v0 = long_double_to_integer(q);
 		  v1 = ecl_make_longfloat(p*n - q*n);
@@ -457,7 +457,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 		switch(type_of(y)) {
 		case t_fixnum: {	/* BIG / FIX */
                   ECL_WITH_TEMP_BIGNUM(by,4);
-                  _ecl_big_set_fixnum(by, fix(y));
+                  _ecl_big_set_fixnum(by, ecl_fix(y));
                   v0 = _ecl_big_ceiling(x, by, &v1);
 		  break;
 		}
@@ -560,7 +560,7 @@ ecl_truncate1(cl_object x)
 	case t_fixnum:
 	case t_bignum:
 		v0 = x;
-		v1 = MAKE_FIXNUM(0);
+		v1 = ecl_make_fixnum(0);
 		break;
 	case t_ratio:
 		v0 = ecl_truncate2(x->ratio.num, x->ratio.den);
@@ -657,7 +657,7 @@ ecl_round1(cl_object x)
 	case t_fixnum:
 	case t_bignum:
 		v0 = x;
-		v1 = MAKE_FIXNUM(0);
+		v1 = ecl_make_fixnum(0);
 		break;
 	case t_ratio:
 		v0 = ecl_round2(x->ratio.num, x->ratio.den);
@@ -704,7 +704,7 @@ ecl_round2(cl_object x, cl_object y)
 	case t_fixnum:
 	case t_bignum:
 		v0 = q;
-		v1 = MAKE_FIXNUM(0);
+		v1 = ecl_make_fixnum(0);
 		break;
 	case t_ratio: {
 		cl_object q1 = ecl_integer_divide(q->ratio.num, q->ratio.den);
@@ -807,7 +807,7 @@ cl_decode_float(cl_object x)
 	default:
                 FEwrong_type_nth_arg(@[decode-float],1,x,@[float]);
 	}
-	ecl_return3(the_env, x, MAKE_FIXNUM(e), ecl_make_singlefloat(s));
+	ecl_return3(the_env, x, ecl_make_fixnum(e), ecl_make_singlefloat(s));
 }
 
 cl_object
@@ -816,8 +816,8 @@ cl_scale_float(cl_object x, cl_object y)
 	const cl_env_ptr the_env = ecl_process_env();
 	cl_fixnum k;
 
-	if (FIXNUMP(y)) {
-		k = fix(y);
+	if (ECL_FIXNUMP(y)) {
+		k = ecl_fix(y);
 	} else {
 		FEwrong_type_nth_arg(@[scale-float],2,y,@[fixnum]);
 	}
@@ -846,7 +846,7 @@ cl_float_radix(cl_object x)
 	if (ecl_unlikely(cl_floatp(x) != Ct)) {
 		FEwrong_type_nth_arg(@[float-radix],1,x,@[float]);
 	}
-	ecl_return1(the_env, MAKE_FIXNUM(FLT_RADIX));
+	ecl_return1(the_env, ecl_make_fixnum(FLT_RADIX));
 }
 
 int
@@ -870,7 +870,7 @@ ecl_signbit(cl_object x)
 	int negativep;
 @
 	if (!yp) {
-		y = cl_float(2, MAKE_FIXNUM(1), x);
+		y = cl_float(2, ecl_make_fixnum(1), x);
 	}
 	negativep = ecl_signbit(x);
 	switch (type_of(y)) {
@@ -903,14 +903,14 @@ cl_float_digits(cl_object x)
 	const cl_env_ptr the_env = ecl_process_env();
 	switch (type_of(x)) {
 	case t_singlefloat:
-		x = MAKE_FIXNUM(FLT_MANT_DIG);
+		x = ecl_make_fixnum(FLT_MANT_DIG);
 		break;
 	case t_doublefloat:
-		x = MAKE_FIXNUM(DBL_MANT_DIG);
+		x = ecl_make_fixnum(DBL_MANT_DIG);
 		break;
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
-		x = MAKE_FIXNUM(LDBL_MANT_DIG);
+		x = ecl_make_fixnum(LDBL_MANT_DIG);
 		break;
 #endif
 	default:
@@ -975,7 +975,7 @@ cl_float_precision(cl_object x)
 	default:
 		FEwrong_type_nth_arg(@[float-precision],1,x,@[float]);
 	}
-	ecl_return1(the_env, MAKE_FIXNUM(precision));
+	ecl_return1(the_env, ecl_make_fixnum(precision));
 }
 
 cl_object
@@ -994,7 +994,7 @@ cl_integer_decode_float(cl_object x)
                 }
 		if (d == 0.0) {
 			e = 0;
-			x = MAKE_FIXNUM(0);
+			x = ecl_make_fixnum(0);
 		} else {
                         d = frexpl(d, &e);
 			x = long_double_to_integer(ldexpl(d, LDBL_MANT_DIG));
@@ -1011,7 +1011,7 @@ cl_integer_decode_float(cl_object x)
                 }
 		if (d == 0.0) {
 			e = 0;
-			x = MAKE_FIXNUM(0);
+			x = ecl_make_fixnum(0);
 		} else {
                         d = frexp(d, &e);
 			x = double_to_integer(ldexp(d, DBL_MANT_DIG));
@@ -1027,7 +1027,7 @@ cl_integer_decode_float(cl_object x)
                 }
 		if (d == 0.0) {
 			e = 0;
-			x = MAKE_FIXNUM(0);
+			x = ecl_make_fixnum(0);
 		} else {
                         d = frexpf(d, &e);
 			x = double_to_integer(ldexp(d, FLT_MANT_DIG));
@@ -1038,11 +1038,11 @@ cl_integer_decode_float(cl_object x)
 	default:
 		FEwrong_type_nth_arg(@[integer-decode-float],1,x,@[float]);
 	}
-	ecl_return3(the_env, x, MAKE_FIXNUM(e), MAKE_FIXNUM(s));
+	ecl_return3(the_env, x, ecl_make_fixnum(e), ecl_make_fixnum(s));
 }
 
 
-@(defun complex (r &optional (i MAKE_FIXNUM(0)))
+@(defun complex (r &optional (i ecl_make_fixnum(0)))
 @	/* INV: ecl_make_complex() checks types */
 	@(return ecl_make_complex(r, i))
 @)
@@ -1076,7 +1076,7 @@ cl_imagpart(cl_object x)
 	case t_fixnum:
 	case t_bignum:
 	case t_ratio:
-		x = MAKE_FIXNUM(0);
+		x = ecl_make_fixnum(0);
 		break;
 	case t_singlefloat:
                 if (signbit(sf(x)))

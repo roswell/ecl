@@ -38,9 +38,9 @@ extend_vector(cl_object v, cl_index amount)
 	if (new_length > ADIMLIM)
 		new_length = ADIMLIM;
 	other = si_make_vector(cl_array_element_type(v),
-			       MAKE_FIXNUM(new_length), Ct,
-			       MAKE_FIXNUM(v->vector.fillp),
-			       Cnil, MAKE_FIXNUM(0));
+			       ecl_make_fixnum(new_length), Ct,
+			       ecl_make_fixnum(v->vector.fillp),
+			       Cnil, ecl_make_fixnum(0));
 	ecl_copy_subarray(other, 0, v, 0, v->vector.fillp);
 	return si_replace_array(v, other);
 }
@@ -68,23 +68,23 @@ ecl_string_push_extend(cl_object s, ecl_character c)
 cl_object
 cl_vector_push(cl_object value, cl_object v)
 {
-	cl_index f = fix(cl_fill_pointer(v));
+	cl_index f = ecl_fix(cl_fill_pointer(v));
 	if (f >= v->vector.dim) {
 		@(return Cnil);
 	} else {
 		ecl_aset1(v, v->vector.fillp, value);
-		@(return MAKE_FIXNUM(v->vector.fillp++));
+		@(return ecl_make_fixnum(v->vector.fillp++));
 	}
 }
 
-@(defun vector-push-extend (value v &optional (extent MAKE_FIXNUM(0)))
+@(defun vector-push-extend (value v &optional (extent ecl_make_fixnum(0)))
 @
 {
-	cl_index f = fix(cl_fill_pointer(v));
+	cl_index f = ecl_fix(cl_fill_pointer(v));
 	if (f >= v->vector.dim) {
 		v = extend_vector(v, ecl_to_size(extent));
 	}
 	ecl_aset1(v, v->vector.fillp, value);
-	@(return MAKE_FIXNUM(v->vector.fillp++));
+	@(return ecl_make_fixnum(v->vector.fillp++));
 }
 @)

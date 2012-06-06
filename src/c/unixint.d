@@ -455,7 +455,7 @@ handler_fn_prototype(non_evil_signal_handler, int sig, siginfo_t *siginfo, void 
         the_env = ecl_process_env();
         unlikely_if (zombie_process(the_env))
                 return;
-        signal_object = ecl_gethash_safe(MAKE_FIXNUM(sig),
+        signal_object = ecl_gethash_safe(ecl_make_fixnum(sig),
 					 cl_core.known_signals,
 					 Cnil);
         handle_or_queue(the_env, signal_object, sig);
@@ -473,7 +473,7 @@ handler_fn_prototype(evil_signal_handler, int sig, siginfo_t *siginfo, void *dat
         the_env = ecl_process_env();
         unlikely_if (zombie_process(the_env))
                 return;
-        signal_object = ecl_gethash_safe(MAKE_FIXNUM(sig),
+        signal_object = ecl_gethash_safe(ecl_make_fixnum(sig),
 					 cl_core.known_signals,
 					 Cnil);
         handle_signal_now(signal_object, the_env->own_process);
@@ -565,7 +565,7 @@ asynchronous_signal_servicing_thread()
 			continue;
 		}
 #endif
-		signal_code = ecl_gethash_safe(MAKE_FIXNUM(signal_thread_msg.signo),
+		signal_code = ecl_gethash_safe(ecl_make_fixnum(signal_thread_msg.signo),
 					       cl_core.known_signals,
 					       Cnil);
 		if (!Null(signal_code)) {
@@ -783,7 +783,7 @@ ecl_check_pending_interrupts(cl_env_ptr env)
 static cl_object
 do_catch_signal(int code, cl_object action, cl_object process)
 {
-	cl_object code_fixnum = MAKE_FIXNUM(code);
+	cl_object code_fixnum = ecl_make_fixnum(code);
         if (action == Cnil || action == @':ignore') {
                 mysignal(code, SIG_IGN);
                 return Ct;
@@ -893,10 +893,10 @@ si_set_signal_handler(cl_object code, cl_object handler)
 	unlikely_if (ecl_gethash_safe(code, cl_core.known_signals, OBJNULL) == OBJNULL) {
 		illegal_signal_code(code);
 	}
-	code_int = fix(code);
+	code_int = ecl_fix(code);
 #ifdef GBC_BOEHM
 # ifdef SIGSEGV
-	unlikely_if ((code == MAKE_FIXNUM(SIGSEGV)) &&
+	unlikely_if ((code == ecl_make_fixnum(SIGSEGV)) &&
 		     ecl_option_values[ECL_OPT_INCREMENTAL_GC])
 		FEerror("It is not allowed to change the behavior of SIGSEGV.",
 			0);
@@ -1183,7 +1183,7 @@ asynchronous_signal_servicing_thread()
                                 continue;
                         }
 #endif
-			signal_code = ecl_gethash_safe(MAKE_FIXNUM(signo),
+			signal_code = ecl_gethash_safe(ecl_make_fixnum(signo),
 						       cl_core.known_signals,
 						       Cnil);
 			if (!Null(signal_code)) {
@@ -1222,8 +1222,8 @@ si_trap_fpe(cl_object condition, cl_object flag)
                         bits = FE_INVALID;
                 else if (condition == @'floating-point-inexact')
                         bits = FE_INEXACT;
-                else if (FIXNUMP(condition))
-			bits = fix(condition) & all;
+                else if (ECL_FIXNUMP(condition))
+			bits = ecl_fix(condition) & all;
                 if (flag == Cnil) {
                         bits = the_env->trap_fpe_bits & ~bits;
                 } else {
@@ -1243,7 +1243,7 @@ si_trap_fpe(cl_object condition, cl_object flag)
 # endif
 #endif
         the_env->trap_fpe_bits = bits;
-	@(return MAKE_FIXNUM(bits))
+	@(return ecl_make_fixnum(bits))
 }
 
 /*
@@ -1422,7 +1422,7 @@ install_fpe_signal_handlers()
 static void
 add_one_signal(cl_object hash_table, int signal, cl_object name, cl_object handler)
 {
-	cl_object code = MAKE_FIXNUM(signal);
+	cl_object code = ecl_make_fixnum(signal);
 	cl_export2(name, cl_core.ext_package);
 	si_Xmake_constant(name, code);
 	ecl_sethash(code, hash_table, handler);
@@ -1433,7 +1433,7 @@ create_signal_code_constants()
 {
 	cl_object hash =
 		cl_core.known_signals =
-		cl__make_hash_table(@'eql', MAKE_FIXNUM(128),
+		cl__make_hash_table(@'eql', ecl_make_fixnum(128),
 				    cl_core.rehash_size,
 				    cl_core.rehash_threshold);
 	int i;

@@ -91,7 +91,7 @@ ecl_make_codeblock()
         block->cblock.cfuns_size = 0;
         block->cblock.cfuns = NULL;
         block->cblock.source = Cnil;
-        block->cblock.refs = MAKE_FIXNUM(0);
+        block->cblock.refs = ecl_make_fixnum(0);
         si_set_finalizer(block, Ct);
         return block;
 }
@@ -234,7 +234,7 @@ ecl_library_open_inner(cl_object filename, bool self_destruct)
 	block->cblock.cfuns_size = 0;
 	block->cblock.cfuns = NULL;
         block->cblock.source = Cnil;
-        block->cblock.refs = MAKE_FIXNUM(1);
+        block->cblock.refs = ecl_make_fixnum(1);
 
         ECL_WITH_GLOBAL_LOCK_BEGIN(the_env) {
 	ecl_disable_interrupts();
@@ -309,7 +309,7 @@ ecl_library_open(cl_object filename, bool force_reload) {
 	 * the case, we close the new copy to ensure we do refcounting
 	 * right.
 	 */
-	if (block->cblock.refs != MAKE_FIXNUM(1)) {
+	if (block->cblock.refs != ecl_make_fixnum(1)) {
                 if (force_reload) {
                         ecl_library_close(block);
                         filename = copy_object_file(filename);
@@ -425,7 +425,7 @@ ecl_library_close(cl_object block) {
         const cl_env_ptr the_env = ecl_process_env();
         ECL_WITH_GLOBAL_LOCK_BEGIN(the_env) {
                 ecl_disable_interrupts();
-                if (block->cblock.refs != MAKE_FIXNUM(1)) {
+                if (block->cblock.refs != ecl_make_fixnum(1)) {
                         block->cblock.refs = ecl_one_minus(block->cblock.refs);
                         block = Cnil;
                 } else if (block->cblock.handle != NULL) {

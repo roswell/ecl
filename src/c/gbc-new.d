@@ -50,7 +50,7 @@ get_mark_bit(void *x) {
 
 #define	inheap(pp)	((unsigned long)(pp) < (unsigned long)heap_end)
 #define VALID_DATA_ADDRESS(pp) \
-  !IMMEDIATE(pp) && (cl_index)DATA_START <= (cl_index)(pp) && (cl_index)(pp) < (cl_index)heap_end
+  !ECL_IMMEDIATE(pp) && (cl_index)DATA_START <= (cl_index)(pp) && (cl_index)(pp) < (cl_index)heap_end
 
 cl_object siVgc_verbose;
 cl_object siVgc_message;
@@ -101,8 +101,8 @@ register_root(cl_object *p)
 #define mark_displaced(ar) mark_object(ar)
 #define mark_contblock(x,s) {if (collect_blocks) _mark_contblock(x,s); }
 #if 1
-#define mark_object(x) if ((x != OBJNULL) && !IMMEDIATE(x)) _mark_object(x)
-#define mark_next(a) if ((a != OBJNULL) && !IMMEDIATE(a)) { x=(a); goto BEGIN; }
+#define mark_object(x) if ((x != OBJNULL) && !ECL_IMMEDIATE(x)) _mark_object(x)
+#define mark_next(a) if ((a != OBJNULL) && !ECL_IMMEDIATE(a)) { x=(a); goto BEGIN; }
 #else
 #define mark_object(x) _mark_object(x)
 #define mark_next(a) x=(a); goto BEGIN
@@ -123,7 +123,7 @@ _mark_object(cl_object x)
 BEGIN:
 #if 0
 	/* We cannot get here because mark_object() and mark_next() already check this */
-	if (IMMEDIATE(x)) return;	/* fixnum, character or locative */
+	if (ECL_IMMEDIATE(x)) return;	/* fixnum, character or locative */
 	if (x == OBJNULL)
 		return;
 #endif
@@ -946,25 +946,25 @@ _mark_contblock(void *x, size_t s)
 	cl_object *tl;
 @
 	NValues = 8;
-	VALUES(0) = MAKE_FIXNUM(real_maxpage);
-	VALUES(1) = MAKE_FIXNUM(available_pages());
-	VALUES(2) = MAKE_FIXNUM(ncbpage);
-	VALUES(3) = MAKE_FIXNUM(maxcbpage);
-	VALUES(4) = MAKE_FIXNUM(ncb);
-	VALUES(5) = MAKE_FIXNUM(cbgccount);
-	VALUES(6) = MAKE_FIXNUM(holepage);
+	VALUES(0) = ecl_make_fixnum(real_maxpage);
+	VALUES(1) = ecl_make_fixnum(available_pages());
+	VALUES(2) = ecl_make_fixnum(ncbpage);
+	VALUES(3) = ecl_make_fixnum(maxcbpage);
+	VALUES(4) = ecl_make_fixnum(ncb);
+	VALUES(5) = ecl_make_fixnum(cbgccount);
+	VALUES(6) = ecl_make_fixnum(holepage);
 	VALUES(7) = Cnil;
 	tl = &VALUES(7);
 	for (i = 0;  i < (int)t_end;  i++) {
 	  if (tm_table[i].tm_type == (enum type)i) {
-	    tl = &CDR(*tl = CONS(MAKE_FIXNUM(tm_table[i].tm_nused), Cnil));
-	    tl = &CDR(*tl = CONS(MAKE_FIXNUM(tm_table[i].tm_nfree), Cnil));
-	    tl = &CDR(*tl = CONS(MAKE_FIXNUM(tm_table[i].tm_npage), Cnil));
-	    tl = &CDR(*tl = CONS(MAKE_FIXNUM(tm_table[i].tm_maxpage), Cnil));
-	    tl = &CDR(*tl = CONS(MAKE_FIXNUM(tm_table[i].tm_gccount), Cnil));
+	    tl = &CDR(*tl = CONS(ecl_make_fixnum(tm_table[i].tm_nused), Cnil));
+	    tl = &CDR(*tl = CONS(ecl_make_fixnum(tm_table[i].tm_nfree), Cnil));
+	    tl = &CDR(*tl = CONS(ecl_make_fixnum(tm_table[i].tm_npage), Cnil));
+	    tl = &CDR(*tl = CONS(ecl_make_fixnum(tm_table[i].tm_maxpage), Cnil));
+	    tl = &CDR(*tl = CONS(ecl_make_fixnum(tm_table[i].tm_gccount), Cnil));
 	  } else {
 	    tl = &CDR(*tl = CONS(Cnil, Cnil));
-	    tl = &CDR(*tl = CONS(MAKE_FIXNUM(tm_table[i].tm_type), Cnil));
+	    tl = &CDR(*tl = CONS(ecl_make_fixnum(tm_table[i].tm_type), Cnil));
 	    tl = &CDR(*tl = CONS(Cnil, Cnil));
 	    tl = &CDR(*tl = CONS(Cnil, Cnil));
 	    tl = &CDR(*tl = CONS(Cnil, Cnil));
@@ -984,7 +984,7 @@ _mark_contblock(void *x, size_t s)
 
 @(defun si::gc-time ()
 @
-	@(return MAKE_FIXNUM(gc_time))
+	@(return ecl_make_fixnum(gc_time))
 @)
 
 void

@@ -24,8 +24,8 @@ FEtype_error_fixnum(cl_object x) {
 
 void
 FEtype_error_size(cl_object x) {
-	FEwrong_type_argument(cl_list(3, @'integer', MAKE_FIXNUM(0),
-				      MAKE_FIXNUM(MOST_POSITIVE_FIXNUM)),
+	FEwrong_type_argument(cl_list(3, @'integer', ecl_make_fixnum(0),
+				      ecl_make_fixnum(MOST_POSITIVE_FIXNUM)),
 			      x);
 }
 
@@ -63,12 +63,12 @@ FEcircular_list(cl_object x)
 void
 FEtype_error_index(cl_object seq, cl_fixnum ndx)
 {
-        cl_object n = MAKE_FIXNUM(ndx);
+        cl_object n = ecl_make_fixnum(ndx);
 	cl_index l = ECL_INSTANCEP(seq)? seq->instance.length : ecl_length(seq);
 	cl_error(9, @'simple-type-error', @':format-control',
 		    make_constant_base_string("~S is not a valid index into the object ~S"),
 		    @':format-arguments', cl_list(2, n, seq),
-		    @':expected-type', cl_list(3, @'integer', MAKE_FIXNUM(0), MAKE_FIXNUM(l-1)),
+		    @':expected-type', cl_list(3, @'integer', ecl_make_fixnum(0), ecl_make_fixnum(l-1)),
 		    @':datum', n);
 }
 
@@ -210,13 +210,13 @@ assert_type_non_negative_integer(cl_object p)
 	cl_type t = type_of(p);
 
 	if (t == t_fixnum) {
-		if (FIXNUM_PLUSP(p))
+		if (ecl_fixnum_plusp(p))
 			return;
 	} else if (t == t_bignum) {
 		if (_ecl_big_sign(p) >= 0)
 			return;
 	}
-	FEwrong_type_argument(cl_list(3,@'integer',MAKE_FIXNUM(0),@'*'), p);
+	FEwrong_type_argument(cl_list(3,@'integer',ecl_make_fixnum(0),@'*'), p);
 }
 
 void
@@ -249,7 +249,7 @@ cl_type_of(cl_object x)
 		t = cl_list(3, @'integer', x, x); break;
 #endif
 	case t_character: {
-		int i = CHAR_CODE(x);
+		int i = ECL_CHAR_CODE(x);
 		if (ecl_standard_char_p(i)) {
 			t = @'standard-char';
 		} else if (ecl_base_char_p(i)) {
@@ -281,14 +281,14 @@ cl_type_of(cl_object x)
 		if (ECL_ADJUSTABLE_ARRAY_P(x) ||
 		    !Null(CAR(x->vector.displaced))) {
 			t = cl_list(3, @'vector', ecl_elttype_to_symbol(ecl_array_elttype(x)),
-				    MAKE_FIXNUM(x->vector.dim));
+				    ecl_make_fixnum(x->vector.dim));
 		} else if (ECL_ARRAY_HAS_FILL_POINTER_P(x) ||
 			   (cl_elttype)x->vector.elttype != aet_object) {
 			t = cl_list(3, @'simple-array',
                                     ecl_elttype_to_symbol(ecl_array_elttype(x)),
 				    cl_array_dimensions(x));
 		} else {
-			t = cl_list(2, @'simple-vector', MAKE_FIXNUM(x->vector.dim));
+			t = cl_list(2, @'simple-vector', ecl_make_fixnum(x->vector.dim));
 		}
 		break;
 #ifdef ECL_UNICODE
@@ -299,7 +299,7 @@ cl_type_of(cl_object x)
 			t = @'array';
 		else
 			t = @'simple-array';
-		t = cl_list(3, t, @'character', cl_list(1, MAKE_FIXNUM(x->string.dim)));
+		t = cl_list(3, t, @'character', cl_list(1, ecl_make_fixnum(x->string.dim)));
 		break;
 #endif
 	case t_base_string:
@@ -309,7 +309,7 @@ cl_type_of(cl_object x)
 			t = @'array';
 		else
 			t = @'simple-array';
-		t = cl_list(3, t, @'base-char', cl_list(1, MAKE_FIXNUM(x->base_string.dim)));
+		t = cl_list(3, t, @'base-char', cl_list(1, ecl_make_fixnum(x->base_string.dim)));
 		break;
 	case t_bitvector:
 		if (ECL_ADJUSTABLE_ARRAY_P(x) ||
@@ -318,7 +318,7 @@ cl_type_of(cl_object x)
 			t = @'array';
 		else
 			t = @'simple-array';
-		t = cl_list(3, t, @'bit', cl_list(1, MAKE_FIXNUM(x->vector.dim)));
+		t = cl_list(3, t, @'bit', cl_list(1, ecl_make_fixnum(x->vector.dim)));
 		break;
 #ifndef CLOS
 	case t_structure:

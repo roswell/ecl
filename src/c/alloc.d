@@ -234,7 +234,7 @@ ecl_alloc_object(cl_type t)
 	case t_fixnum:
 	  return MAKE_FIXNUM(0); /* Immediate fixnum */
 	case t_character:
-	  return CODE_CHAR('\0'); /* Immediate character */
+	  return ECL_CODE_CHAR('\0'); /* Immediate character */
 	default:;
 	}
 

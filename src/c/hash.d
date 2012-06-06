@@ -63,7 +63,7 @@ _hash_eql(cl_hashkey h, cl_object x)
 		h = _hash_eql(h, x->complex.real);
 		return _hash_eql(h, x->complex.imag);
 	case t_character:
-		return hash_word(h, CHAR_CODE(x));
+		return hash_word(h, ECL_CHAR_CODE(x));
 #ifdef ECL_SSE2
 	case t_sse_pack:
 		return hash_string(h, x->sse.data.b8, 16);
@@ -155,7 +155,7 @@ _hash_equalp(int depth, cl_hashkey h, cl_object x)
 	cl_index i, len;
 	switch (type_of(x)) {
 	case t_character:
-		return hash_word(h, ecl_char_upcase(CHAR_CODE(x)));
+		return hash_word(h, ecl_char_upcase(ECL_CHAR_CODE(x)));
 	case t_list:
 		if (Null(x)) {
 			return _hash_equalp(depth, h, Cnil_symbol->symbol.name);
@@ -183,7 +183,7 @@ _hash_equalp(int depth, cl_hashkey h, cl_object x)
 		}
 		return h;
 	case t_fixnum:
-		return hash_word(h, fix(x));
+		return hash_word(h, ecl_fix(x));
 	case t_singlefloat:
 		/* FIXME! We should be more precise here! */
 		return hash_word(h, (cl_index)sf(x));
@@ -423,7 +423,7 @@ _ecl_remhash_equalp(cl_object key, cl_object hashtable)
 static struct ecl_hashtable_entry *
 _ecl_hash_loop_pack(cl_hashkey h, cl_object key, cl_object hashtable)
 {
-        cl_object ho = MAKE_FIXNUM(h & 0xFFFFFFF);
+        cl_object ho = ecl_make_fixnum(h & 0xFFFFFFF);
         HASH_TABLE_LOOP(hkey, hvalue, h, (ho==hkey) && ecl_string_eq(key,SYMBOL_NAME(hvalue)));
 }
 
@@ -438,7 +438,7 @@ _ecl_gethash_pack(cl_object key, cl_object hashtable, cl_object def)
 static cl_object
 _ecl_sethash_pack(cl_object key, cl_object hashtable, cl_object value)
 {
-	HASH_TABLE_SET(h, _ecl_hash_loop_pack, _hash_equal(3, 0, key), MAKE_FIXNUM(h & 0xFFFFFFF));
+	HASH_TABLE_SET(h, _ecl_hash_loop_pack, _hash_equal(3, 0, key), ecl_make_fixnum(h & 0xFFFFFFF));
 }
 
 static bool
@@ -682,19 +682,19 @@ ecl_extend_hashtable(cl_object hashtable)
 	old_size = hashtable->hash.size;
 	/* We do the computation with lisp datatypes, just in case the sizes contain
 	 * weird numbers */
-	if (FIXNUMP(hashtable->hash.rehash_size)) {
+	if (ECL_FIXNUMP(hashtable->hash.rehash_size)) {
 		new_size_obj = ecl_plus(hashtable->hash.rehash_size,
-					MAKE_FIXNUM(old_size));
+					ecl_make_fixnum(old_size));
 	} else {
 		new_size_obj = ecl_times(hashtable->hash.rehash_size,
-					 MAKE_FIXNUM(old_size));
+					 ecl_make_fixnum(old_size));
 		new_size_obj = ecl_ceiling1(new_size_obj);
 	}
-	if (!FIXNUMP(new_size_obj)) {
+	if (!ECL_FIXNUMP(new_size_obj)) {
 		/* New size is too large */
 		new_size = old_size * 2;
 	} else {
-		new_size = fix(new_size_obj);
+		new_size = ecl_fix(new_size_obj);
 	}
         if (hashtable->hash.test == htt_pack) {
                 new = ecl_alloc_object(t_hashtable);
@@ -729,7 +729,7 @@ ecl_extend_hashtable(cl_object hashtable)
 
 @(defun make_hash_table (&key (test @'eql')
 			      (weakness Cnil)
-			      (size MAKE_FIXNUM(1024))
+			      (size ecl_make_fixnum(1024))
                               (rehash_size cl_core.rehash_size)
 			      (rehash_threshold cl_core.rehash_threshold))
 @
@@ -822,12 +822,12 @@ cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
 	}
         if (ecl_unlikely(!ECL_FIXNUMP(size) ||
                          ecl_fixnum_minusp(size) ||
-                         ecl_fixnum_geq(size,MAKE_FIXNUM(ATOTLIM)))) {
+                         ecl_fixnum_geq(size,ecl_make_fixnum(ATOTLIM)))) {
             FEwrong_type_key_arg(@[make-hash-table], @[:size], size,
-                                 ecl_make_integer_type(MAKE_FIXNUM(0),
-                                                       MAKE_FIXNUM(ATOTLIM)));
+                                 ecl_make_integer_type(ecl_make_fixnum(0),
+                                                       ecl_make_fixnum(ATOTLIM)));
         }
-        hsize = fix(size);
+        hsize = ecl_fix(size);
 	if (hsize < 16) {
 		hsize = 16;
 	}
@@ -841,17 +841,17 @@ cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
 		goto AGAIN;
 	}
 	if (floatp(rehash_size)) {
-		if (ecl_number_compare(rehash_size, MAKE_FIXNUM(1)) < 0 ||
+		if (ecl_number_compare(rehash_size, ecl_make_fixnum(1)) < 0 ||
 		    ecl_minusp(rehash_size)) {
 			goto ERROR1;
 		}
 		rehash_size = ecl_make_doublefloat(ecl_to_double(rehash_size));
-	} else if (!FIXNUMP(rehash_size)) {
+	} else if (!ECL_FIXNUMP(rehash_size)) {
 		goto ERROR1;
 	}
 	while (!ecl_numberp(rehash_threshold) ||
 	       ecl_minusp(rehash_threshold) ||
-	       ecl_number_compare(rehash_threshold, MAKE_FIXNUM(1)) > 0)
+	       ecl_number_compare(rehash_threshold, ecl_make_fixnum(1)) > 0)
 	{
 		rehash_threshold =
 			ecl_type_error(@'make-hash-table',"rehash-threshold",
@@ -969,14 +969,14 @@ cl_object
 cl_hash_table_size(cl_object ht)
 {
 	assert_type_hash_table(@[hash-table-size], 1, ht);
-	@(return MAKE_FIXNUM(ht->hash.size))
+	@(return ecl_make_fixnum(ht->hash.size))
 }
 
 cl_object
 cl_hash_table_count(cl_object ht)
 {
 	assert_type_hash_table(@[hash-table-count], 1, ht);
-	@(return (MAKE_FIXNUM(ht->hash.entries)))
+	@(return (ecl_make_fixnum(ht->hash.entries)))
 }
 
 static cl_object
@@ -988,14 +988,14 @@ si_hash_table_iterate(cl_narg narg)
 	cl_object ht = CADR(env);
 	cl_fixnum i;
 	if (!Null(index)) {
-		i = fix(index);
+		i = ecl_fix(index);
 		if (i < 0)
 			i = -1;
 		for (; ++i < ht->hash.size; ) {
 			struct ecl_hashtable_entry e =
 				copy_entry(ht->hash.data + i, ht);
 			if (e.key != OBJNULL) {
-				cl_object ndx = MAKE_FIXNUM(i);
+				cl_object ndx = ecl_make_fixnum(i);
 				ECL_RPLACA(env, ndx);
 				@(return ndx e.key e.value)
 			}
@@ -1010,7 +1010,7 @@ si_hash_table_iterator(cl_object ht)
 {
 	assert_type_hash_table(@[si::hash-table-iterator], 1, ht);
 	@(return ecl_make_cclosure_va((cl_objectfn)si_hash_table_iterate,
-                                      cl_list(2, MAKE_FIXNUM(-1), ht),
+                                      cl_list(2, ecl_make_fixnum(-1), ht),
                                       @'si::hash-table-iterator'))
 }
 
@@ -1033,7 +1033,7 @@ cl_sxhash(cl_object key)
 {
 	cl_index output = _hash_equal(3, 0, key);
 	const cl_index mask = ((cl_index)1 << (FIXNUM_BITS - 3)) - 1;
-	@(return MAKE_FIXNUM(output & mask))
+	@(return ecl_make_fixnum(output & mask))
 }
 
 @(defun si::hash-eql (&rest args)
@@ -1043,7 +1043,7 @@ cl_sxhash(cl_object key)
 		cl_object o = cl_va_arg(args);
 		h = _hash_eql(h, o);
 	}
-	@(return MAKE_FIXNUM(h))
+	@(return ecl_make_fixnum(h))
 @)
 
 @(defun si::hash-equal (&rest args)
@@ -1053,7 +1053,7 @@ cl_sxhash(cl_object key)
 		cl_object o = cl_va_arg(args);
 		h = _hash_equal(3, h, o);
 	}
-	@(return MAKE_FIXNUM(h))
+	@(return ecl_make_fixnum(h))
 @)
 
 @(defun si::hash-equalp (&rest args)
@@ -1063,7 +1063,7 @@ cl_sxhash(cl_object key)
 		cl_object o = cl_va_arg(args);
 		h = _hash_equalp(3, h, o);
 	}
-	@(return MAKE_FIXNUM(h))
+	@(return ecl_make_fixnum(h))
 @)
 
 cl_object

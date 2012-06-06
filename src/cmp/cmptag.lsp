@@ -157,7 +157,7 @@
 	  (when (and (tag-p tag) (plusp (tag-ref tag)))
 	    (setf (tag-label tag) (next-label))
 	    (setf (tag-unwind-exit tag) label)
-	    (wt-nl "if (cl_env_copy->values[0]==MAKE_FIXNUM(" (tag-index tag) "))")
+	    (wt-nl "if (cl_env_copy->values[0]==ecl_make_fixnum(" (tag-index tag) "))")
 	    (wt-go (tag-label tag))))
 	(when (var-ref-ccb tag-loc)
 	  (wt-nl "ecl_internal_error(\"GO found an inexistent tag\");"))
@@ -214,7 +214,7 @@
   (declare (ignore c1form))
   (if nonlocal
       (let ((var (tag-var tag)))
-	(wt-nl "cl_go(" var ",MAKE_FIXNUM(" (tag-index tag) "));"))
+	(wt-nl "cl_go(" var ",ecl_make_fixnum(" (tag-index tag) "));"))
       ;; local go
       (progn
 	(unwind-no-exit (tag-unwind-exit tag))

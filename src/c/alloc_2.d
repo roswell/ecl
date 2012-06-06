@@ -189,10 +189,10 @@ ecl_object_byte_size(cl_type t)
 {
         if (t == t_fixnum || t == t_character)
                 FEerror("ecl_object_byte_size invoked with an immediate type ~D",
-                        1, MAKE_FIXNUM(1));
+                        1, ecl_make_fixnum(1));
         if (t >= t_end)
                 FEerror("ecl_object_byte_size invoked with an unkown type ~D",
-                        1, MAKE_FIXNUM(1));
+                        1, ecl_make_fixnum(1));
         return type_info[t].size;
 }
 
@@ -277,7 +277,7 @@ allocate_object_own(register struct ecl_type_information *type_info)
 #endif /* GBC_BOEHM_OWN_ALLOCATOR */
 
 #ifdef GBC_BOEHM_OWN_MARKER
-#define IGNORABLE_POINTER(obj) (IMMEDIATE(obj) & 2)
+#define IGNORABLE_POINTER(obj) (ECL_IMMEDIATE(obj) & 2)
 #define GC_MARK_AND_PUSH(obj, msp, lim, src) \
         ((!IGNORABLE_POINTER(obj) &&				      \
 	  (GC_word)obj >= (GC_word)GC_least_plausible_heap_addr &&    \
@@ -540,9 +540,9 @@ ecl_alloc_object(cl_type t)
 	/* GC_MALLOC already resets objects */
 	switch (t) {
 	case t_fixnum:
-		return MAKE_FIXNUM(0); /* Immediate fixnum */
+		return ecl_make_fixnum(0); /* Immediate fixnum */
 	case t_character:
-		return CODE_CHAR(' '); /* Immediate character */
+		return ECL_CODE_CHAR(' '); /* Immediate character */
 #ifdef ECL_SSE2
 	case t_sse_pack:
 #endif
@@ -1113,7 +1113,7 @@ standard_finalizer(cl_object o)
 # endif
         case t_symbol: {
 		ecl_atomic_push(&cl_core.reused_indices,
-				MAKE_FIXNUM(o->symbol.binding));
+				ecl_make_fixnum(o->symbol.binding));
         }
 #endif /* ECL_THREADS */
 	default:;
@@ -1193,8 +1193,8 @@ cl_object
 si_gc_stats(cl_object enable)
 {
 	cl_object old_status;
-        cl_object size1 = MAKE_FIXNUM(0);
-        cl_object size2 = MAKE_FIXNUM(0);
+        cl_object size1 = ecl_make_fixnum(0);
+        cl_object size2 = ecl_make_fixnum(0);
         if (cl_core.gc_stats == 0) {
                 old_status = Cnil;
         } else if (GC_print_stats) {
@@ -1215,7 +1215,7 @@ si_gc_stats(cl_object enable)
         if (enable == Cnil) {
                 GC_print_stats = 0;
                 cl_core.gc_stats = 0;
-        } else if (enable == MAKE_FIXNUM(0)) {
+        } else if (enable == ecl_make_fixnum(0)) {
                 mpz_set_ui(cl_core.bytes_consed->big.big_num, 0);
                 mpz_set_ui(cl_core.gc_counter->big.big_num, 0);
         } else {
@@ -1380,7 +1380,7 @@ ecl_alloc_weak_pointer(cl_object o)
 	ecl_enable_interrupts_env(the_env);
 	obj->t = t_weak_pointer;
 	obj->value = o;
-        if (!FIXNUMP(o) && !CHARACTERP(o) && !Null(o)) {
+        if (!ECL_FIXNUMP(o) && !ECL_CHARACTERP(o) && !Null(o)) {
                 GC_general_register_disappearing_link((void**)&(obj->value), (void*)o);
                 si_set_finalizer((cl_object)obj, Ct);
         }

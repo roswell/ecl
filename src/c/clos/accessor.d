@@ -121,7 +121,7 @@ ecl_slot_reader_dispatch(cl_narg narg, cl_object instance)
 	}
 	index = e->value;
 	if (ECL_FIXNUMP(index)) {
-		value = instance->instance.slots[fix(index)];
+		value = instance->instance.slots[ecl_fix(index)];
 	} else {
 		unlikely_if (!ECL_CONSP(index)) {
 			FEerror("Error when accessing method cache for ~A", 1, gfun);
@@ -164,7 +164,7 @@ ecl_slot_writer_dispatch(cl_narg narg, cl_object value, cl_object instance)
 	}
 	index = e->value;
 	if (ECL_FIXNUMP(index)) {
-		instance->instance.slots[fix(index)] = value;
+		instance->instance.slots[ecl_fix(index)] = value;
 	} else {
 		unlikely_if (!ECL_CONSP(index)) {
 			FEerror("Error when accessing method cache for ~A", 1, gfun);

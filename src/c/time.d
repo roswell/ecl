@@ -204,7 +204,7 @@ static cl_object
 timeval_to_time(long sec, long usec)
 {
 	cl_object milliseconds = ecl_plus(ecl_times(ecl_make_integer(sec),
-						    MAKE_FIXNUM(1000)),
+						    ecl_make_fixnum(1000)),
 					  ecl_make_integer(usec / 1000));
 	@(return milliseconds);
 }
@@ -238,9 +238,9 @@ init_unixtime(void)
 {
 	ecl_get_internal_real_time(&beginning);
 
-	ECL_SET(@'internal-time-units-per-second', MAKE_FIXNUM(1000));
+	ECL_SET(@'internal-time-units-per-second', ecl_make_fixnum(1000));
 
 	cl_core.Jan1st1970UT =
-	    ecl_times(MAKE_FIXNUM(24 * 60 * 60),
-			 MAKE_FIXNUM(17 + 365 * 70));
+	    ecl_times(ecl_make_fixnum(24 * 60 * 60),
+			 ecl_make_fixnum(17 + 365 * 70));
 }

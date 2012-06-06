@@ -22,7 +22,7 @@
 	if (narg == 0)
 		FEwrong_num_arguments(@[/]);
 	if (narg == 1)
-		@(return ecl_divide(MAKE_FIXNUM(1), num))
+		@(return ecl_divide(ecl_make_fixnum(1), num))
 	while (--narg)
 		num = ecl_divide(num, cl_va_arg(nums));
 	@(return num)
@@ -47,7 +47,7 @@ MATH_DISPATCH2_BEGIN(x,y)
 {
         CASE_FIXNUM_FIXNUM;
         CASE_BIGNUM_FIXNUM {
-                if (y == MAKE_FIXNUM(0))
+                if (y == ecl_make_fixnum(0))
                         FEdivision_by_zero(x, y);
         }
         CASE_FIXNUM_BIGNUM;
@@ -60,10 +60,10 @@ MATH_DISPATCH2_BEGIN(x,y)
                                       y->ratio.num);
         }
         CASE_FIXNUM_SINGLE_FLOAT {
-                return ecl_make_singlefloat(fix(x) / ecl_single_float(y));
+                return ecl_make_singlefloat(ecl_fix(x) / ecl_single_float(y));
         }
         CASE_FIXNUM_DOUBLE_FLOAT {
-                return ecl_make_doublefloat(fix(x) / ecl_double_float(y));
+                return ecl_make_doublefloat(ecl_fix(x) / ecl_double_float(y));
         }
         CASE_BIGNUM_SINGLE_FLOAT;
         CASE_RATIO_SINGLE_FLOAT {
@@ -74,7 +74,7 @@ MATH_DISPATCH2_BEGIN(x,y)
                 return ecl_make_doublefloat(ecl_to_double(x) / ecl_double_float(y));
         }
         CASE_RATIO_FIXNUM {
-                if (y == MAKE_FIXNUM(0)) {
+                if (y == ecl_make_fixnum(0)) {
                         FEdivision_by_zero(x,y);
                 }
         }
@@ -88,7 +88,7 @@ MATH_DISPATCH2_BEGIN(x,y)
                 return ecl_make_ratio(num, den);
         }
         CASE_SINGLE_FLOAT_FIXNUM {
-                return ecl_make_singlefloat(ecl_single_float(x) / fix(y));
+                return ecl_make_singlefloat(ecl_single_float(x) / ecl_fix(y));
         }
         CASE_SINGLE_FLOAT_BIGNUM;
         CASE_SINGLE_FLOAT_RATIO {
@@ -101,7 +101,7 @@ MATH_DISPATCH2_BEGIN(x,y)
                 return ecl_make_doublefloat(ecl_single_float(x) / ecl_double_float(y));
         }
         CASE_DOUBLE_FLOAT_FIXNUM {
-                return ecl_make_doublefloat(ecl_double_float(x) / fix(y));
+                return ecl_make_doublefloat(ecl_double_float(x) / ecl_fix(y));
         }
         CASE_DOUBLE_FLOAT_BIGNUM;
         CASE_DOUBLE_FLOAT_RATIO {
@@ -115,7 +115,7 @@ MATH_DISPATCH2_BEGIN(x,y)
         }
 #ifdef ECL_LONG_FLOAT
         CASE_FIXNUM_LONG_FLOAT {
-                return ecl_make_longfloat(fix(x) / ecl_long_float(y));
+                return ecl_make_longfloat(ecl_fix(x) / ecl_long_float(y));
         }
         CASE_BIGNUM_LONG_FLOAT;
         CASE_RATIO_LONG_FLOAT {
@@ -128,7 +128,7 @@ MATH_DISPATCH2_BEGIN(x,y)
                 return ecl_make_longfloat(ecl_double_float(x) / ecl_long_float(y));
         }
         CASE_LONG_FLOAT_FIXNUM {
-                return ecl_make_longfloat(ecl_long_float(x) / fix(y));
+                return ecl_make_longfloat(ecl_long_float(x) / ecl_fix(y));
         }
         CASE_LONG_FLOAT_BIGNUM;
         CASE_LONG_FLOAT_RATIO {
@@ -164,7 +164,7 @@ MATH_DISPATCH2_BEGIN(x,y)
         CASE_DOUBLE_FLOAT_COMPLEX;
         CASE_FIXNUM_COMPLEX {
         COMPLEX_Y:
-                return complex_divide(x, MAKE_FIXNUM(0), y->complex.real, y->complex.imag);
+                return complex_divide(x, ecl_make_fixnum(0), y->complex.real, y->complex.imag);
         }
         CASE_COMPLEX_COMPLEX {
                 return complex_divide(x->complex.real, x->complex.imag,
@@ -187,7 +187,7 @@ ecl_divide(cl_object x, cl_object y)
 	case t_bignum:
 		switch (type_of(y)) {
 		case t_fixnum:
-			if (y == MAKE_FIXNUM(0))
+			if (y == ecl_make_fixnum(0))
 				FEdivision_by_zero(x, y);
 		case t_bignum:
 			if (ecl_minusp(y) == TRUE) {
@@ -214,7 +214,7 @@ ecl_divide(cl_object x, cl_object y)
 	case t_ratio:
 		switch (type_of(y)) {
 		case t_fixnum:
-			if (y == MAKE_FIXNUM(0))
+			if (y == ecl_make_fixnum(0))
 				FEdivision_by_zero(x, y);
 		case t_bignum:
 			z = ecl_times(x->ratio.den, y);
@@ -239,7 +239,7 @@ ecl_divide(cl_object x, cl_object y)
 	case t_singlefloat:
 		switch (type_of(y)) {
 		case t_fixnum:
-			return ecl_make_singlefloat(sf(x) / fix(y));
+			return ecl_make_singlefloat(sf(x) / ecl_fix(y));
 		case t_bignum:
 		case t_ratio:
 			return ecl_make_singlefloat(sf(x) / ecl_to_double(y));
@@ -259,7 +259,7 @@ ecl_divide(cl_object x, cl_object y)
 	case t_doublefloat:
 		switch (type_of(y)) {
 		case t_fixnum:
-			return ecl_make_doublefloat(df(x) / fix(y));
+			return ecl_make_doublefloat(df(x) / ecl_fix(y));
 		case t_bignum:
 		case t_ratio:
 			return ecl_make_doublefloat(df(x) / ecl_to_double(y));
@@ -280,7 +280,7 @@ ecl_divide(cl_object x, cl_object y)
 	case t_longfloat:
 		switch (type_of(y)) {
 		case t_fixnum:
-			return ecl_make_longfloat(ecl_long_float(x) / fix(y));
+			return ecl_make_longfloat(ecl_long_float(x) / ecl_fix(y));
 		case t_bignum:
 		case t_ratio:
 			return ecl_make_longfloat(ecl_long_float(x) / ecl_to_double(y));

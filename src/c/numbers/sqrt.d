@@ -33,7 +33,7 @@ ecl_sqrt_rational(cl_object x)
 {
         if (ecl_minusp(x)) {
                 x = ecl_sqrt_rational(ecl_negate(x));
-                return ecl_make_complex(MAKE_FIXNUM(0), x);
+                return ecl_make_complex(ecl_make_fixnum(0), x);
         } else {
                 return ecl_make_singlefloat(sqrtf(number_to_float(x)));
         }
@@ -44,7 +44,7 @@ ecl_sqrt_single_float(cl_object x)
 {
         float f = sf(x);
         if (f < 0) {
-                return ecl_make_complex(MAKE_FIXNUM(0),
+                return ecl_make_complex(ecl_make_fixnum(0),
                                         ecl_make_singlefloat(sqrtf(-f)));
         } else {
                 return ecl_make_singlefloat(sqrtf(f));
@@ -56,7 +56,7 @@ ecl_sqrt_double_float(cl_object x)
 {
         double f = df(x);
         if (f < 0) {
-                return ecl_make_complex(MAKE_FIXNUM(0),
+                return ecl_make_complex(ecl_make_fixnum(0),
                                         ecl_make_doublefloat(sqrt(-f)));
         } else {
                 return ecl_make_doublefloat(sqrt(f));
@@ -69,7 +69,7 @@ ecl_sqrt_long_float(cl_object x)
 {
         long double f = ecl_long_float(x);
         if (f < 0) {
-                return ecl_make_complex(MAKE_FIXNUM(0),
+                return ecl_make_complex(ecl_make_fixnum(0),
                                         ecl_make_longfloat(sqrtl(-f)));
         } else {
                 return ecl_make_longfloat(sqrtl(f));

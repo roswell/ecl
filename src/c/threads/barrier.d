@@ -39,7 +39,7 @@ ecl_make_barrier(cl_object name, cl_index count)
 @(defun mp::make-barrier (count &key name)
 @
 	if (count == Ct)
-		count = MAKE_FIXNUM(MOST_POSITIVE_FIXNUM);
+		count = ecl_make_fixnum(MOST_POSITIVE_FIXNUM);
 	@(return ecl_make_barrier(name, fixnnint(count)))
 @)
 
@@ -60,7 +60,7 @@ mp_barrier_count(cl_object barrier)
 	unlikely_if (type_of(barrier) != t_barrier) {
 		FEerror_not_a_barrier(barrier);
 	}
-	ecl_return1(env, MAKE_FIXNUM(barrier->barrier.count));
+	ecl_return1(env, ecl_make_fixnum(barrier->barrier.count));
 }
 
 cl_object
@@ -77,7 +77,7 @@ mp_barrier_arrivers_count(cl_object barrier)
 		arrivers = 0; /* Disabled barrier */
 	else
 		arrivers = count - arrivers;
-	ecl_return1(env, MAKE_FIXNUM(arrivers));
+	ecl_return1(env, ecl_make_fixnum(arrivers));
 }
 
 @(defun mp::barrier-unblock (barrier &key reset_count disable kill_waiting)

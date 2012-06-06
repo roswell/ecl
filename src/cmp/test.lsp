@@ -1,4 +1,4 @@
-;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: C -*-
+y;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: C -*-
 ;;;;
 
 (in-package 'system)

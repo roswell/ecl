@@ -30,8 +30,8 @@
 static cl_object
 cl_symbol_or_object(cl_object x)
 {
-        if (FIXNUMP(x))
-                return (cl_object)(cl_symbols + fix(x));
+        if (ECL_FIXNUMP(x))
+                return (cl_object)(cl_symbols + ecl_fix(x));
         return x;
 }
 
@@ -57,7 +57,7 @@ ecl_internal_error(const char *s)
                         strerror(saved_errno));
         }
 	fflush(stderr);
-        si_dump_c_backtrace(MAKE_FIXNUM(32));
+        si_dump_c_backtrace(ecl_make_fixnum(32));
 #ifdef SIGIOT
 	signal(SIGIOT, SIG_DFL); /* avoid getting into a loop with abort */
 #endif
@@ -298,7 +298,7 @@ FEwrong_type_nth_arg(cl_object function, cl_narg narg, cl_object value, cl_objec
                                @'type-error', /* condition name */
                                Cnil, /* not correctable */
                                make_constant_base_string(message), /* format control */
-                               cl_list(4, function, MAKE_FIXNUM(narg),
+                               cl_list(4, function, ecl_make_fixnum(narg),
                                        value, type),
                                @':expected-type', type,
                                @':datum', value);
@@ -341,7 +341,7 @@ FEwrong_index(cl_object function, cl_object a, int which, cl_object ndx,
                 "the ~:R index into the object~% ~A~%"
                 "takes a value ~D out of the range ~A.";
         cl_object limit = ecl_make_integer(nonincl_limit-1);
-	cl_object type = ecl_make_integer_type(MAKE_FIXNUM(0), limit);
+	cl_object type = ecl_make_integer_type(ecl_make_fixnum(0), limit);
         cl_object message = make_constant_base_string((which<0) ? message1 : message2);
         cl_env_ptr env = ecl_process_env();
         struct ihs_frame tmp_ihs;
@@ -353,7 +353,7 @@ FEwrong_index(cl_object function, cl_object a, int which, cl_object ndx,
                  @'simple-type-error', /* condition name */
                  @':format-control', message,
                  @':format-arguments',
-                 cl_list(5, function, MAKE_FIXNUM(which+1), a, ndx, type),
+                 cl_list(5, function, ecl_make_fixnum(which+1), a, ndx, type),
                  @':expected-type', type,
                  @':datum', ndx);
 }
@@ -445,10 +445,10 @@ universal_error_handler(cl_object continue_string, cl_object datum,
         stream = cl_core.error_output;
         if (!Null(stream)) {
                 ecl_bds_bind(the_env, @'*print-readably*', Cnil);
-                ecl_bds_bind(the_env, @'*print-level*', MAKE_FIXNUM(3));
-                ecl_bds_bind(the_env, @'*print-length*', MAKE_FIXNUM(3));
+                ecl_bds_bind(the_env, @'*print-level*', ecl_make_fixnum(3));
+                ecl_bds_bind(the_env, @'*print-length*', ecl_make_fixnum(3));
                 ecl_bds_bind(the_env, @'*print-circle*', Cnil);
-                ecl_bds_bind(the_env, @'*print-base*', MAKE_FIXNUM(10));
+                ecl_bds_bind(the_env, @'*print-base*', ecl_make_fixnum(10));
                 writestr_stream("\n;;; Unhandled lisp initialization error",
                                 stream);
                 writestr_stream("\n;;; Message:\n", stream);

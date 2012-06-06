@@ -20,10 +20,10 @@ bignum_to_string(cl_object buffer, cl_object x, cl_object base)
 {
         cl_index str_size;
         int b;
-        if (!FIXNUMP(base) || ((b = fix(base)) < 2) || (b > 36)) {
+        if (!ECL_FIXNUMP(base) || ((b = ecl_fix(base)) < 2) || (b > 36)) {
                 FEwrong_type_nth_arg(@[si::integer-to-string], 3, base,
-                                     cl_list(3, @'integer', MAKE_FIXNUM(2),
-                                             MAKE_FIXNUM(36)));
+                                     cl_list(3, @'integer', ecl_make_fixnum(2),
+                                             ecl_make_fixnum(36)));
         }
         str_size = mpz_sizeinbase(x->big.big_num, b);
         buffer = _ecl_ensure_buffer(buffer, str_size+1);
@@ -68,12 +68,12 @@ si_integer_to_string(cl_object buffer, cl_object integer,
                      cl_object base, cl_object radix, cl_object decimalp)
 {
         if (!Null(radix)) {
-                if (Null(decimalp) || base != MAKE_FIXNUM(10)) {
+                if (Null(decimalp) || base != ecl_make_fixnum(10)) {
                         buffer = _ecl_ensure_buffer(buffer, 10);
-                        write_base_prefix(buffer, fix(base));
+                        write_base_prefix(buffer, ecl_fix(base));
                 }
                 buffer = si_integer_to_string(buffer, integer, base, Cnil, Cnil);
-                if (!Null(decimalp) && base == MAKE_FIXNUM(10)) {
+                if (!Null(decimalp) && base == ecl_make_fixnum(10)) {
                         _ecl_string_push_c_string(buffer, ".");
                 }
                 @(return buffer)
@@ -81,7 +81,7 @@ si_integer_to_string(cl_object buffer, cl_object integer,
         switch (type_of(integer)) {
         case t_fixnum: {
                 cl_object big = _ecl_big_register0();
-                _ecl_big_set_fixnum(big, fix(integer));
+                _ecl_big_set_fixnum(big, ecl_fix(integer));
                 buffer = bignum_to_string(buffer, big, base);
                 _ecl_big_register_free(big);
                 return buffer;

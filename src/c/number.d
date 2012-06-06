@@ -73,7 +73,7 @@ ecl_make_integer(cl_fixnum l)
                 _ecl_big_set_fixnum(z, l);
                 return _ecl_big_register_copy(z);
 	}
-	return MAKE_FIXNUM(l);
+	return ecl_make_fixnum(l);
 }
 
 cl_object
@@ -84,14 +84,14 @@ ecl_make_unsigned_integer(cl_index l)
                 _ecl_big_set_index(z, l);
                 return _ecl_big_register_copy(z);
 	}
-	return MAKE_FIXNUM(l);
+	return ecl_make_fixnum(l);
 }
 
 int
 ecl_to_bit(cl_object x) {
-        if (ecl_unlikely((x != MAKE_FIXNUM(0)) && (x != MAKE_FIXNUM(1))))
+        if (ecl_unlikely((x != ecl_make_fixnum(0)) && (x != ecl_make_fixnum(1))))
                 FEwrong_type_nth_arg(@[coerce], 1, x, @[bit]);
-        return x == MAKE_FIXNUM(1);
+        return x == ecl_make_fixnum(1);
 }
 
 ecl_uint8_t
@@ -101,7 +101,7 @@ ecl_to_uint8_t(cl_object x) {
 		if (ecl_likely(aux >= 0 && aux <= 255))
 			return (ecl_uint8_t)aux;
 	}
-	FEwrong_type_argument(cl_list(2, @'unsigned-byte', MAKE_FIXNUM(8)),
+	FEwrong_type_argument(cl_list(2, @'unsigned-byte', ecl_make_fixnum(8)),
 			      x);
 }
 
@@ -112,7 +112,7 @@ ecl_to_int8_t(cl_object x) {
 		if (ecl_likely(aux >= -128 && aux <= 127))
 			return (ecl_uint8_t)aux;
 	}
-	FEwrong_type_argument(cl_list(2, @'signed-byte', MAKE_FIXNUM(8)),
+	FEwrong_type_argument(cl_list(2, @'signed-byte', ecl_make_fixnum(8)),
 			      x);
 }
 
@@ -126,8 +126,8 @@ ecl_to_ushort(cl_object x) {
                 }
 	}
 	FEwrong_type_argument(cl_list(3,@'integer',
-				      MAKE_FIXNUM(0),
-				      MAKE_FIXNUM(ushort_max)),
+				      ecl_make_fixnum(0),
+				      ecl_make_fixnum(ushort_max)),
 			      x);
 }
 
@@ -142,8 +142,8 @@ ecl_to_short(cl_object x) {
                 }
 	}
 	FEwrong_type_argument(cl_list(3,@'integer',
-				      MAKE_FIXNUM(short_min),
-				      MAKE_FIXNUM(short_max)),
+				      ecl_make_fixnum(short_min),
+				      ecl_make_fixnum(short_max)),
 			      x);
 }
 
@@ -162,8 +162,8 @@ ecl_to_uint16_t(cl_object x) {
                 }
 	}
 	FEwrong_type_argument(cl_list(3,@'integer',
-				      MAKE_FIXNUM(0),
-				      MAKE_FIXNUM(uint16_max)),
+				      ecl_make_fixnum(0),
+				      ecl_make_fixnum(uint16_max)),
 			      x);
 }
 
@@ -178,8 +178,8 @@ ecl_to_int16_t(cl_object x) {
                 }
 	}
 	FEwrong_type_argument(cl_list(3,@'integer',
-				      MAKE_FIXNUM(int16_min),
-				      MAKE_FIXNUM(int16_max)),
+				      ecl_make_fixnum(int16_min),
+				      ecl_make_fixnum(int16_max)),
 			      x);
 }
 #endif /* ecl_uint16_t */
@@ -189,12 +189,12 @@ ecl_uint32_t
 ecl_to_uint32_t(cl_object x) {
 	const uint32_t uint32_max = 0xFFFFFFFFUL;
 	if (ecl_likely(ECL_FIXNUMP(x))) {
-		cl_fixnum y = fix(x);
+		cl_fixnum y = ecl_fix(x);
 		if (ecl_likely(y >= 0 && y <= uint32_max)) {
 			return (ecl_uint32_t)y;
                 }
 	}
-	FEwrong_type_argument(cl_list(3,@'integer',MAKE_FIXNUM(0),
+	FEwrong_type_argument(cl_list(3,@'integer',ecl_make_fixnum(0),
 				      ecl_make_unsigned_integer(uint32_max)),
 			      x);
 }
@@ -203,8 +203,8 @@ ecl_int32_t
 ecl_to_int32_t(cl_object x) {
 	const int32_t int32_min = -0x80000000L;
 	const int32_t int32_max =  0x7FFFFFFFL;
-	if (ecl_likely(FIXNUMP(x))) {
-		cl_fixnum y = fix(x);
+	if (ecl_likely(ECL_FIXNUMP(x))) {
+		cl_fixnum y = ecl_fix(x);
 		if (ecl_likely(y >= int32_min && y <= int32_max)) {
 			return (ecl_int32_t)y;
                 }
@@ -220,7 +220,7 @@ ecl_to_int32_t(cl_object x) {
 ecl_uint64_t
 ecl_to_uint64_t(cl_object x) {
 	if (!ecl_minusp(x)) {
-		if (FIXNUMP(x)) {
+		if (ECL_FIXNUMP(x)) {
 			return (ecl_uint64_t)ecl_fix(x);
 		} else if (!ECL_BIGNUMP(x)) {
 			(void)0;
@@ -238,15 +238,15 @@ ecl_to_uint64_t(cl_object x) {
 			}
 		}
 	}
-	FEwrong_type_argument(cl_list(3,@'integer',MAKE_FIXNUM(0),
-				      ecl_one_minus(ecl_ash(MAKE_FIXNUM(1), 64))),
+	FEwrong_type_argument(cl_list(3,@'integer',ecl_make_fixnum(0),
+				      ecl_one_minus(ecl_ash(ecl_make_fixnum(1), 64))),
 			      x);
 }
 
 ecl_int64_t
 ecl_to_int64_t(cl_object x) {
-	if (FIXNUMP(x)) {
-		return (ecl_int64_t)fix(x);
+	if (ECL_FIXNUMP(x)) {
+		return (ecl_int64_t)ecl_fix(x);
 	} else if (!ECL_BIGNUMP(x)) {
 		(void)0;
 	} else if (mpz_fits_slong_p(x->big.big_num)) {
@@ -262,8 +262,8 @@ ecl_to_int64_t(cl_object x) {
 		}
 	}
 	FEwrong_type_argument(cl_list(3,@'integer',
-				      ecl_negate(ecl_ash(MAKE_FIXNUM(1), 63)),
-				      ecl_one_minus(ecl_ash(MAKE_FIXNUM(1), 63))),
+				      ecl_negate(ecl_ash(ecl_make_fixnum(1), 63)),
+				      ecl_one_minus(ecl_ash(ecl_make_fixnum(1), 63))),
 			      x);
 }
 
@@ -271,7 +271,7 @@ cl_object
 ecl_make_uint64_t(ecl_uint64_t i)
 {
         if (i <= MOST_POSITIVE_FIXNUM) {
-                return MAKE_FIXNUM(i);
+                return ecl_make_fixnum(i);
         } else if (i <= ~(ecl_uint32_t)0) {
                 return ecl_make_uint32_t(i);
         } else {
@@ -285,7 +285,7 @@ cl_object
 ecl_make_int64_t(ecl_int64_t i)
 {
         if (i >= MOST_NEGATIVE_FIXNUM && i <= MOST_POSITIVE_FIXNUM) {
-                return MAKE_FIXNUM(i);
+                return ecl_make_fixnum(i);
         } else {
                 cl_object aux = ecl_make_int32_t(i >> 32);
                 return cl_logior(2, ecl_ash(aux, 32), ecl_make_uint32_t((ecl_uint32_t)i));
@@ -334,8 +334,8 @@ ecl_make_long_long(ecl_long_long_t i) {
 ecl_ulong_long_t
 ecl_to_unsigned_long_long(cl_object x) {
 	if (!ecl_minusp(x)) {
-		if (FIXNUMP(x)) {
-			return (ecl_ulong_long_t)fix(x);
+		if (ECL_FIXNUMP(x)) {
+			return (ecl_ulong_long_t)ecl_fix(x);
 		} else if (!ECL_BIGNUMP(x)) {
 			(void)0;
 		} else if (mpz_fits_ulong_p(x->big.big_num)) {
@@ -355,8 +355,8 @@ ecl_to_unsigned_long_long(cl_object x) {
 			}
 		}
 	}
-	FEwrong_type_argument(cl_list(3,@'integer',MAKE_FIXNUM(0),
-				      ecl_one_minus(ecl_ash(MAKE_FIXNUM(1),
+	FEwrong_type_argument(cl_list(3,@'integer',ecl_make_fixnum(0),
+				      ecl_one_minus(ecl_ash(ecl_make_fixnum(1),
 							    ECL_LONG_LONG_BITS))),
 			      x);
 }
@@ -364,8 +364,8 @@ ecl_to_unsigned_long_long(cl_object x) {
 ecl_long_long_t
 ecl_to_long_long(cl_object x)
 {
-	if (FIXNUMP(x)) {
-		return (ecl_long_long_t)fix(x);
+	if (ECL_FIXNUMP(x)) {
+		return (ecl_long_long_t)ecl_fix(x);
 	} else if (!ECL_BIGNUMP(x)) {
 		(void)0;
 	} else if (mpz_fits_slong_p(x->big.big_num)) {
@@ -385,8 +385,8 @@ ecl_to_long_long(cl_object x)
 		}
 	}
 	FEwrong_type_argument(cl_list(3,@'integer',
-				      ecl_negate(ecl_ash(MAKE_FIXNUM(1), ECL_LONG_LONG_BITS-1)),
-				      ecl_one_minus(ecl_ash(MAKE_FIXNUM(1), ECL_LONG_LONG_BITS-1))),
+				      ecl_negate(ecl_ash(ecl_make_fixnum(1), ECL_LONG_LONG_BITS-1)),
+				      ecl_one_minus(ecl_ash(ecl_make_fixnum(1), ECL_LONG_LONG_BITS-1))),
 			      x);
 }
 
@@ -394,7 +394,7 @@ cl_object
 ecl_make_unsigned_long_long(ecl_ulong_long_t i)
 {
         if (i <= MOST_POSITIVE_FIXNUM) {
-                return MAKE_FIXNUM(i);
+                return ecl_make_fixnum(i);
         } else if (i <= ~(ecl_uint32_t)0) {
                 return ecl_make_uint32_t(i);
         } else {
@@ -408,7 +408,7 @@ cl_object
 ecl_make_long_long(ecl_long_long_t i)
 {
         if (i >= MOST_NEGATIVE_FIXNUM && i <= MOST_POSITIVE_FIXNUM) {
-                return MAKE_FIXNUM(i);
+                return ecl_make_fixnum(i);
         } else {
                 cl_object aux = ecl_make_int32_t(i >> 32);
                 return cl_logior(2, ecl_ash(aux, 32), ecl_make_uint32_t((ecl_uint32_t)i));
@@ -424,22 +424,22 @@ ecl_make_ratio(cl_object num, cl_object den)
 	cl_object g, r;
 
 	/* INV: the arguments NUM & DEN are integers */
-	if (den == MAKE_FIXNUM(0))
+	if (den == ecl_make_fixnum(0))
 		FEdivision_by_zero(num, den);
-	if (num == MAKE_FIXNUM(0) || den == MAKE_FIXNUM(1))
+	if (num == ecl_make_fixnum(0) || den == ecl_make_fixnum(1))
 		return(num);
 	if (ecl_minusp(den)) {
 		num = ecl_negate(num);
 		den = ecl_negate(den);
 	}
 	g = ecl_gcd(num, den);
-        if (g != MAKE_FIXNUM(1)) {
+        if (g != ecl_make_fixnum(1)) {
                 num = ecl_integer_divide(num, g);
                 den = ecl_integer_divide(den, g);
         }
-	if (den == MAKE_FIXNUM(1))
+	if (den == ecl_make_fixnum(1))
 		return num;
-	if (den == MAKE_FIXNUM(-1))
+	if (den == ecl_make_fixnum(-1))
 		return ecl_negate(num);
 	r = ecl_alloc_object(t_ratio);
 	r->ratio.num = num;
@@ -541,7 +541,7 @@ ecl_make_complex(cl_object r, cl_object i)
 	case t_ratio:
 		switch (ti) {
 		case t_fixnum:
-			if (i == MAKE_FIXNUM(0))
+			if (i == ecl_make_fixnum(0))
 				return(r);
 		case t_bignum:
 		case t_ratio:
@@ -623,8 +623,8 @@ ecl_make_complex(cl_object r, cl_object i)
 static cl_object
 into_bignum(cl_object bignum, cl_object integer)
 {
-        if (FIXNUMP(integer)) {
-                _ecl_big_set_fixnum(bignum, fix(integer));
+        if (ECL_FIXNUMP(integer)) {
+                _ecl_big_set_fixnum(bignum, ecl_fix(integer));
         } else {
                 mpz_set(bignum->big.big_num, integer->big.big_num);
         }
@@ -677,10 +677,10 @@ prepare_ratio_to_float(cl_object num, cl_object den, int digits, cl_fixnum *scal
                 if ((len - digits) == 1) {
                         if (ecl_oddp(fraction)) {
                                 cl_object one = ecl_minusp(num)?
-                                        MAKE_FIXNUM(-1) :
-                                        MAKE_FIXNUM(1);
-                                if (rem == MAKE_FIXNUM(0)) {
-                                        if (cl_logbitp(MAKE_FIXNUM(1), fraction)
+                                        ecl_make_fixnum(-1) :
+                                        ecl_make_fixnum(1);
+                                if (rem == ecl_make_fixnum(0)) {
+                                        if (cl_logbitp(ecl_make_fixnum(1), fraction)
                                             != Cnil)
                                                 fraction = ecl_plus(fraction, one);
                                 } else {
@@ -703,9 +703,9 @@ ratio_to_float(cl_object num, cl_object den)
         cl_object bits = prepare_ratio_to_float(num, den, FLT_MANT_DIG, &scale);
 #if (FIXNUM_BITS-ECL_TAG_BITS) >= FLT_MANT_DIG
         /* The output of prepare_ratio_to_float will always fit an integer */
-        float output = fix(bits);
+        float output = ecl_fix(bits);
 #else
-        float output = FIXNUMP(bits)? fix(bits) : _ecl_big_to_double(bits);
+        float output = ECL_FIXNUMP(bits)? ecl_fix(bits) : _ecl_big_to_double(bits);
 #endif
         return ldexpf(output, scale);
 }
@@ -718,9 +718,9 @@ ratio_to_double(cl_object num, cl_object den)
         cl_object bits = prepare_ratio_to_float(num, den, DBL_MANT_DIG, &scale);
 #if (FIXNUM_BITS-ECL_TAG_BITS) >= DBL_MANT_DIG
         /* The output of prepare_ratio_to_float will always fit an integer */
-        double output = fix(bits);
+        double output = ecl_fix(bits);
 #else
-        double output = FIXNUMP(bits)? fix(bits) : _ecl_big_to_double(bits);
+        double output = ECL_FIXNUMP(bits)? ecl_fix(bits) : _ecl_big_to_double(bits);
 #endif
         return ldexp(output, scale);
 }
@@ -733,10 +733,10 @@ ratio_to_long_double(cl_object num, cl_object den)
         cl_object bits = prepare_ratio_to_float(num, den, LDBL_MANT_DIG, &scale);
 #if (FIXNUM_BITS-ECL_TAG_BITS) >= LDBL_MANT_DIG
         /* The output of prepare_ratio_to_float will always fit an integer */
-        long double output = fix(bits);
+        long double output = ecl_fix(bits);
 #else
-        long double output = FIXNUMP(bits)?
-                (long double)fix(bits) :
+        long double output = ECL_FIXNUMP(bits)?
+                (long double)ecl_fix(bits) :
                 _ecl_big_to_long_double(bits);
 #endif
         return ldexpl(output, scale);
@@ -748,9 +748,9 @@ ecl_to_double(cl_object x)
 {
 	switch(type_of(x)) {
 	case t_fixnum:
-		return((double)(fix(x)));
+		return((double)(ecl_fix(x)));
 	case t_bignum:
-		return ratio_to_double(x, MAKE_FIXNUM(1));
+		return ratio_to_double(x, ecl_make_fixnum(1));
 	case t_ratio:
                 return ratio_to_double(x->ratio.num, x->ratio.den);
 	case t_singlefloat:
@@ -772,9 +772,9 @@ ecl_to_long_double(cl_object x)
 {
 	switch(type_of(x)) {
 	case t_fixnum:
-		return (long double)fix(x);
+		return (long double)ecl_fix(x);
 	case t_bignum:
-                return ratio_to_long_double(x, MAKE_FIXNUM(1));
+                return ratio_to_long_double(x, ecl_make_fixnum(1));
 	case t_ratio:
                 return ratio_to_long_double(x->ratio.num, x->ratio.den);
 	case t_singlefloat:
@@ -805,15 +805,15 @@ cl_rational(cl_object x)
 	case t_doublefloat:
 		d = df(x);
 	GO_ON:	if (d == 0) {
-			x = MAKE_FIXNUM(0);
+			x = ecl_make_fixnum(0);
 		} else {
 			int e;
 			d = frexp(d, &e);
 			e -= DBL_MANT_DIG;
 			x = double_to_integer(ldexp(d, DBL_MANT_DIG));
                         if (e != 0) {
-                                x = ecl_times(ecl_expt(MAKE_FIXNUM(FLT_RADIX),
-                                                       MAKE_FIXNUM(e)),
+                                x = ecl_times(ecl_expt(ecl_make_fixnum(FLT_RADIX),
+                                                       ecl_make_fixnum(e)),
                                               x);
                         }
 		}
@@ -822,7 +822,7 @@ cl_rational(cl_object x)
 	case t_longfloat: {
 		long double d = ecl_long_float(x);
 		if (d == 0) {
-			x = MAKE_FIXNUM(0);
+			x = ecl_make_fixnum(0);
 		} else {
 			int e;
 			d = frexpl(d, &e);
@@ -830,8 +830,8 @@ cl_rational(cl_object x)
                         d = ldexpl(d, LDBL_MANT_DIG);
 			x = long_double_to_integer(d);
 			if (e != 0) {
-				x = ecl_times(ecl_expt(MAKE_FIXNUM(FLT_RADIX),
-                                                       MAKE_FIXNUM(e)),
+				x = ecl_times(ecl_expt(ecl_make_fixnum(FLT_RADIX),
+                                                       ecl_make_fixnum(e)),
                                               x);
 			}
 		}
@@ -853,7 +853,7 @@ long_double_to_integer(long double d0)
         int e;
         long double d = frexpl(d0, &e);
         if (e <= fb) {
-                return MAKE_FIXNUM((cl_fixnum)d0);
+                return ecl_make_fixnum((cl_fixnum)d0);
         } else if (e > LDBL_MANT_DIG) {
                 return ecl_ash(long_double_to_integer(ldexp(d, LDBL_MANT_DIG)),
                                e - LDBL_MANT_DIG);
@@ -872,7 +872,7 @@ cl_object
 double_to_integer(double d)
 {
 	if (d <= MOST_POSITIVE_FIXNUM && d >= MOST_NEGATIVE_FIXNUM)
-		return MAKE_FIXNUM((cl_fixnum)d);
+		return ecl_make_fixnum((cl_fixnum)d);
 	else {
                 cl_object z = _ecl_big_register0();
                 _ecl_big_set_d(z, d);
@@ -884,7 +884,7 @@ cl_object
 float_to_integer(float d)
 {
 	if (d <= MOST_POSITIVE_FIXNUM && d >= MOST_NEGATIVE_FIXNUM)
-		return MAKE_FIXNUM((cl_fixnum)d);
+		return ecl_make_fixnum((cl_fixnum)d);
 	else {
                 cl_object z = _ecl_big_register0();
                 _ecl_big_set_d(z, d);

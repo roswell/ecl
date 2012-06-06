@@ -80,8 +80,8 @@ mangle_name(cl_object output, unsigned char *source, int l)
 	cl_object output;
 	cl_object package;
 	cl_object found = Cnil;
-	cl_object maxarg = MAKE_FIXNUM(CALL_ARGUMENTS_LIMIT);
-	cl_object minarg = MAKE_FIXNUM(0);
+	cl_object maxarg = ecl_make_fixnum(CALL_ARGUMENTS_LIMIT);
+	cl_object minarg = ecl_make_fixnum(0);
 	bool is_symbol;
 	cl_object name;
 @
@@ -98,7 +98,7 @@ mangle_name(cl_object output, unsigned char *source, int l)
 			found = Ct;
 			output = cl_format(4, Cnil,
 					   make_constant_base_string("ECL_SYM(~S,~D)"),
-					   name, MAKE_FIXNUM(p));
+					   name, ecl_make_fixnum(p));
 			@(return found output maxarg)
 		}
 	} else if (!Null(symbol)) {
@@ -112,7 +112,7 @@ mangle_name(cl_object output, unsigned char *source, int l)
 					found = Ct;
 					if (fun->cfun.narg >= 0) {
 					    minarg =
-					    maxarg = MAKE_FIXNUM(fun->cfun.narg);
+					    maxarg = ecl_make_fixnum(fun->cfun.narg);
 					}
 					break;
 				}

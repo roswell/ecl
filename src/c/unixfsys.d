@@ -672,7 +672,7 @@ ecl_homedir_pathname(cl_object user)
 	i = namestring->base_string.fillp;
 	if (!IS_DIR_SEPARATOR(namestring->base_string.self[i-1]))
 		namestring = si_base_string_concatenate(2, namestring,
-						        CODE_CHAR(DIR_SEPARATOR));
+						        ECL_CODE_CHAR(DIR_SEPARATOR));
 	return cl_parse_namestring(3, namestring, Cnil, Cnil);
 }
 
@@ -961,7 +961,7 @@ si_get_library_pathname(void)
 	ecl_enable_interrupts();
 	if (len == 0) {
 		FEerror("GetModuleFileName failed (last error = ~S)",
-			1, MAKE_FIXNUM(GetLastError()));
+			1, ecl_make_fixnum(GetLastError()));
 	}
 	s->base_string.fillp = len;
         /* GetModuleFileName returns a file name. We have to strip
@@ -1017,12 +1017,12 @@ si_mkdir(cl_object directory, cl_object mode)
 
         if (ecl_unlikely(!ECL_FIXNUMP(mode) ||
                          ecl_fixnum_minusp(mode) ||
-                         ecl_fixnum_greater(mode, MAKE_FIXNUM(0777)))) {
+                         ecl_fixnum_greater(mode, ecl_make_fixnum(0777)))) {
                 FEwrong_type_nth_arg(@[si::mkdir], 2, mode,
-                                     ecl_make_integer_type(MAKE_FIXNUM(0),
-                                                           MAKE_FIXNUM(0777)));
+                                     ecl_make_integer_type(ecl_make_fixnum(0),
+                                                           ecl_make_fixnum(0777)));
         }
-        modeint = fix(mode);
+        modeint = ecl_fix(mode);
 	{
 		/* Ensure a clean string, without trailing slashes,
 		 * and null terminated. */

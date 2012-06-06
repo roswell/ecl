@@ -97,7 +97,7 @@ mp_lock_count(cl_object lock)
 	unlikely_if (type_of(lock) != t_lock) {
 		FEerror_not_a_lock(lock);
 	}
-	ecl_return1(env, MAKE_FIXNUM(lock->lock.counter));
+	ecl_return1(env, ecl_make_fixnum(lock->lock.counter));
 }
 
 cl_object

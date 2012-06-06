@@ -58,7 +58,7 @@ si_load_binary(cl_object filename, cl_object verbose,
                                                       make_constant_base_string("_"));
         }
 	basename = cl_pathname_name(1,filename);
-	basename = @si::base-string-concatenate(2, prefix, @string-upcase(1, funcall(4, @'nsubstitute', CODE_CHAR('_'), CODE_CHAR('-'), basename)));
+	basename = @si::base-string-concatenate(2, prefix, @string-upcase(1, funcall(4, @'nsubstitute', ECL_CODE_CHAR('_'), ECL_CODE_CHAR('-'), basename)));
 	block->cblock.entry = ecl_library_symbol(block, (char*)basename->base_string.self, 0);
 
 	if (block->cblock.entry == NULL) {
@@ -102,7 +102,7 @@ si_load_source(cl_object source, cl_object verbose, cl_object print, cl_object e
 			@(return Cnil)
 	}
 	CL_UNWIND_PROTECT_BEGIN(the_env) {
-		cl_object form_index = MAKE_FIXNUM(0);
+		cl_object form_index = ecl_make_fixnum(0);
                 cl_object pathname = ECL_SYM_VAL(the_env, @'*load-pathname*');
 		cl_object location = CONS(pathname, form_index);
 		ecl_bds_bind(the_env, @'ext::*source-location*', location);

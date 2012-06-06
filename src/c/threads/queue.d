@@ -112,7 +112,7 @@ waiting_time(cl_index iteration, struct ecl_timeval *start)
 {
 	/* Waiting time is smaller than 0.10 s */
 	double time;
-	cl_object top = MAKE_FIXNUM(10 * 1000);
+	cl_object top = ecl_make_fixnum(10 * 1000);
 	cl_object delta_big = elapsed_time(start);
 	_ecl_big_div_ui(delta_big, delta_big, iteration);
 	if (ecl_number_compare(delta_big, top) < 0) {
@@ -357,15 +357,15 @@ print_lock(char *prefix, cl_object l, ...)
 	va_list args;
 	va_start(args, l);
 	return;
-	if (l == Cnil || FIXNUMP(l->lock.name)) {
+	if (l == Cnil || ECL_FIXNUMP(l->lock.name)) {
 		cl_env_ptr env = ecl_process_env();
 		ecl_get_spinlock(env, &lock);
-		printf("\n%ld\t", fix(env->own_process->process.name));
+		printf("\n%ld\t", ecl_fix(env->own_process->process.name));
 		vprintf(prefix, args);
 		if (l != Cnil) {
 			cl_object p = l->lock.queue_list;
 			while (p != Cnil) {
-				printf(" %lx", fix(ECL_CONS_CAR(p)->process.name));
+				printf(" %lx", ecl_fix(ECL_CONS_CAR(p)->process.name));
 				p = ECL_CONS_CDR(p);
 			}
 		}

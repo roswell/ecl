@@ -107,7 +107,7 @@ cl_fixnum
 ecl_get_option(int option)
 {
 	if (option >= ECL_OPT_LIMIT || option < 0) {
-		FEerror("Invalid boot option ~D", 1, MAKE_FIXNUM(option));
+		FEerror("Invalid boot option ~D", 1, ecl_make_fixnum(option));
 	}
         return ecl_option_values[option];
 }
@@ -116,12 +116,12 @@ void
 ecl_set_option(int option, cl_fixnum value)
 {
 	if (option > ECL_OPT_LIMIT || option < 0) {
-		FEerror("Invalid boot option ~D", 1, MAKE_FIXNUM(option));
+		FEerror("Invalid boot option ~D", 1, ecl_make_fixnum(option));
 	} else {
 		if (option < ECL_OPT_BOOTED &&
 		    ecl_option_values[ECL_OPT_BOOTED]) {
 			FEerror("Cannot change option ~D while ECL is running",
-				1, MAKE_FIXNUM(option));
+				1, ecl_make_fixnum(option));
 		}
 		ecl_option_values[option] = value;
 	}
@@ -163,7 +163,7 @@ ecl_init_env(cl_env_ptr env)
         env->pending_interrupt = Cnil;
 	{
 		int size = ecl_option_values[ECL_OPT_SIGNAL_QUEUE_SIZE];
-		env->signal_queue = cl_make_list(1, MAKE_FIXNUM(size));
+		env->signal_queue = cl_make_list(1, ecl_make_fixnum(size));
 	}
 
 	init_stacks(env);
@@ -336,8 +336,8 @@ ecl_def_ct_double_float(dbl_zero_neg,-0.0,static,const);
 ecl_def_ct_long_float(ldbl_zero,0,static,const);
 ecl_def_ct_long_float(ldbl_zero_neg,-0.0l,static,const);
 #endif
-ecl_def_ct_ratio(plus_half,MAKE_FIXNUM(1),MAKE_FIXNUM(2),static,const);
-ecl_def_ct_ratio(minus_half,MAKE_FIXNUM(-1),MAKE_FIXNUM(2),static,const);
+ecl_def_ct_ratio(plus_half,ecl_make_fixnum(1),ecl_make_fixnum(2),static,const);
+ecl_def_ct_ratio(minus_half,ecl_make_fixnum(-1),ecl_make_fixnum(2),static,const);
 ecl_def_ct_single_float(flt_one,1,static,const);
 ecl_def_ct_single_float(flt_one_neg,-1,static,const);
 ecl_def_ct_single_float(flt_two,2,static,const);
@@ -392,7 +392,7 @@ struct cl_core_struct cl_core = {
 
 	(cl_object)&str_G_data, /* gensym_prefix */
 	(cl_object)&str_T_data, /* gentemp_prefix */
-	MAKE_FIXNUM(0), /* gentemp_counter */
+	ecl_make_fixnum(0), /* gentemp_counter */
 
 	Cnil, /* Jan1st1970UT */
 
@@ -632,9 +632,9 @@ cl_boot(int argc, char **argv)
 #endif
 
 #ifdef ECL_THREADS
-	env->bindings_array = si_make_vector(Ct, MAKE_FIXNUM(1024),
+	env->bindings_array = si_make_vector(Ct, ecl_make_fixnum(1024),
                                             Cnil, Cnil, Cnil, Cnil);
-        si_fill_array_with_elt(env->bindings_array, OBJNULL, MAKE_FIXNUM(0), Cnil);
+        si_fill_array_with_elt(env->bindings_array, OBJNULL, ecl_make_fixnum(0), Cnil);
         env->thread_local_bindings_size = env->bindings_array->vector.dim;
         env->thread_local_bindings = env->bindings_array->vector.self.t;
 	ECL_SET(@'mp::*current-process*', env->own_process);
@@ -646,12 +646,12 @@ cl_boot(int argc, char **argv)
          * need EQUALP because it has to be case insensitive.
 	 */
 	cl_core.char_names = aux =
-	    cl__make_hash_table(@'equalp', MAKE_FIXNUM(128), /* size */
+	    cl__make_hash_table(@'equalp', ecl_make_fixnum(128), /* size */
 				cl_core.rehash_size,
                                 cl_core.rehash_threshold);
 	for (i = 0; char_names[i].elt.self; i++) {
                 cl_object name = (cl_object)(char_names + i);
-		cl_object code = MAKE_FIXNUM(i);
+		cl_object code = ecl_make_fixnum(i);
 		ecl_sethash(name, aux, code);
 		ecl_sethash(code, aux, name);
 	}
@@ -659,10 +659,10 @@ cl_boot(int argc, char **argv)
          * iso_latin_names.h, but it can not be associated to the code
          * 10, because the default name must be Newline. Similar to
          * the other codes. */
-        ecl_sethash(str_null, aux, MAKE_FIXNUM(0));
-        ecl_sethash(str_linefeed, aux, MAKE_FIXNUM(10));
-        ecl_sethash(str_bell, aux, MAKE_FIXNUM(7));
-        ecl_sethash(str_escape, aux, MAKE_FIXNUM(27));
+        ecl_sethash(str_null, aux, ecl_make_fixnum(0));
+        ecl_sethash(str_linefeed, aux, ecl_make_fixnum(10));
+        ecl_sethash(str_bell, aux, ecl_make_fixnum(7));
+        ecl_sethash(str_escape, aux, ecl_make_fixnum(27));
 
         /*
          * Initialize logical pathname translations. This must come after
@@ -676,11 +676,11 @@ cl_boot(int argc, char **argv)
 	 * Initialize constants (strings, numbers and time).
 	 */
 	cl_core.system_properties =
-	    cl__make_hash_table(@'equal', MAKE_FIXNUM(1024), /* size */
+	    cl__make_hash_table(@'equal', ecl_make_fixnum(1024), /* size */
 				cl_core.rehash_size,
                                 cl_core.rehash_threshold);
 	cl_core.setf_definitions =
-	    cl__make_hash_table(@'eq', MAKE_FIXNUM(256), /* size */
+	    cl__make_hash_table(@'eq', ecl_make_fixnum(256), /* size */
 				cl_core.rehash_size,
                                 cl_core.rehash_threshold);
 
@@ -741,7 +741,7 @@ cl_boot(int argc, char **argv)
 	 */
 #ifdef CLOS
 	ECL_SET(@'si::*class-name-hash-table*',
-		cl__make_hash_table(@'eq', MAKE_FIXNUM(1024), /* size */
+		cl__make_hash_table(@'eq', ecl_make_fixnum(1024), /* size */
                                     cl_core.rehash_size,
                                     cl_core.rehash_threshold));
 #endif
@@ -785,7 +785,7 @@ cl_boot(int argc, char **argv)
 
 /************************* ENVIRONMENT ROUTINES ***********************/
 
-@(defun ext::quit (&optional (code MAKE_FIXNUM(0)) (kill_all_threads Ct))
+@(defun ext::quit (&optional (code ecl_make_fixnum(0)) (kill_all_threads Ct))
 @
 {
 #ifdef ECL_THREADS
@@ -814,20 +814,20 @@ cl_boot(int argc, char **argv)
 @(defun ext::exit (&optional (code ECL_SYM_VAL(ecl_process_env(),@'ext::*program-exit-code*')))
 @
         cl_shutdown();
-        exit(FIXNUMP(code)? fix(code) : 0);
+        exit(ECL_FIXNUMP(code)? ecl_fix(code) : 0);
 @)
 
 cl_object
 si_argc()
 {
-	@(return MAKE_FIXNUM(ARGC))
+	@(return ecl_make_fixnum(ARGC))
 }
 
 cl_object
 si_argv(cl_object index)
 {
-	if (FIXNUMP(index)) {
-		cl_fixnum i = fix(index);
+	if (ECL_FIXNUMP(index)) {
+		cl_fixnum i = ecl_fix(index);
 		if (i >= 0 && i < ARGC)
 			@(return make_base_string_copy(ARGV[i]));
 	}

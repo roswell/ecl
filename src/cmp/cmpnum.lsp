@@ -184,7 +184,7 @@
 (define-c-inliner / (return-type arg1 &rest arguments &aux arg2)
   (when (null arguments)
     (return (inline-arith-unop return-type arg1
-                               "ecl_divide(MAKE_FIXNUM(1),(#0))" "1/(#0)")))
+                               "ecl_divide(ecl_make_fixnum(1),(#0))" "1/(#0)")))
   (loop for arg2 = (pop arguments)
      for result = (inline-binop return-type arg1 arg2 'rational
 				"ecl_divide(#0,#1)" "(#0)/(#1)")

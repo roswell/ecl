@@ -27,7 +27,7 @@ cl_zerop(cl_object x)
 static int
 ecl_zerop_fixnum(cl_object x)
 {
-        return x == MAKE_FIXNUM(0);
+        return x == ecl_make_fixnum(0);
 }
 
 static int

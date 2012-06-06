@@ -48,12 +48,12 @@ ecl_number_equalp(cl_object x, cl_object y)
 		case t_ratio:
 			return 0;
 		case t_singlefloat:
-			return double_fix_compare(fix(x), ecl_single_float(y)) == 0;
+			return double_fix_compare(ecl_fix(x), ecl_single_float(y)) == 0;
 		case t_doublefloat:
-			return double_fix_compare(fix(x), ecl_double_float(y)) == 0;
+			return double_fix_compare(ecl_fix(x), ecl_double_float(y)) == 0;
 #ifdef ECL_LONG_FLOAT
 		case t_longfloat:
-			return long_double_fix_compare(fix(x), ecl_long_float(y)) == 0;
+			return long_double_fix_compare(ecl_fix(x), ecl_long_float(y)) == 0;
 #endif
 		case t_complex:
 			goto Y_COMPLEX;
@@ -108,7 +108,7 @@ ecl_number_equalp(cl_object x, cl_object y)
 	FLOAT:
 		switch (type_of(y)) {
 		case t_fixnum:
-			return double_fix_compare(fix(y), dx) == 0;
+			return double_fix_compare(ecl_fix(y), dx) == 0;
 		case t_bignum:
 		case t_ratio:
 			x = cl_rational(x);
@@ -131,7 +131,7 @@ ecl_number_equalp(cl_object x, cl_object y)
 		long double dx = ecl_long_float(x);
 		switch (type_of(y)) {
 		case t_fixnum:
-			return long_double_fix_compare(fix(y), dx) == 0;
+			return long_double_fix_compare(ecl_fix(y), dx) == 0;
 		case t_bignum:
 		case t_ratio:
 			x = cl_rational(x);

@@ -171,7 +171,7 @@ asm_end(cl_env_ptr env, cl_index beginning, cl_object definition) {
         cl_object file = ECL_SYM_VAL(env,@'ext::*source-location*'), position;
         if (Null(file)) {
                 file = ECL_SYM_VAL(env,@'*load-truename*');
-                position = MAKE_FIXNUM(0);
+                position = ecl_make_fixnum(0);
         } else {
                 position = cl_cdr(file);
                 file = cl_car(file);
@@ -439,13 +439,13 @@ asm_op2c(cl_env_ptr env, int code, cl_object o) {
  */
 
 #if 0
-#define new_location(env,x) MAKE_FIXNUM(0)
+#define new_location(env,x) ecl_make_fixnum(0)
 #else
 static cl_object
 new_location(const cl_compiler_ptr c_env)
 {
-	return CONS(MAKE_FIXNUM(c_env->env_depth),
-                    MAKE_FIXNUM(c_env->env_size++));
+	return CONS(ecl_make_fixnum(c_env->env_depth),
+                    ecl_make_fixnum(c_env->env_size++));
 }
 #endif
 
@@ -456,7 +456,7 @@ c_register_block(cl_env_ptr env, cl_object name)
 	cl_object loc = new_location(c_env);
 	c_env->variables = CONS(cl_list(4, @':block', name, Cnil, loc),
                                 c_env->variables);
-	return fix(ECL_CONS_CDR(loc));
+	return ecl_fix(ECL_CONS_CDR(loc));
 }
 
 static cl_index
@@ -466,7 +466,7 @@ c_register_tags(cl_env_ptr env, cl_object all_tags)
 	cl_object loc = new_location(c_env);
 	c_env->variables = CONS(cl_list(4, @':tag', all_tags, Cnil, loc),
                                 c_env->variables);
-	return fix(ECL_CONS_CDR(loc));
+	return ecl_fix(ECL_CONS_CDR(loc));
 }
 
 static void
@@ -536,7 +536,7 @@ guess_environment(cl_env_ptr env, cl_object interpreter_env)
                         cl_object record1 = ECL_CONS_CDR(record);
                         if (SYMBOLP(record0)) {
                                 c_register_var(env, record0, FALSE, TRUE);
-                        } else if (record1 == MAKE_FIXNUM(0)) {
+                        } else if (record1 == ecl_make_fixnum(0)) {
                                 c_register_tags(env, Cnil);
                         } else {
                                 c_register_block(env, record1);
@@ -555,9 +555,9 @@ c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_object env,
 		new->env_depth = old->env_depth + 1;
 	} else {
 		new->code_walker = ECL_SYM_VAL(the_env, @'si::*code-walker*');
-		new->constants = si_make_vector(Ct, MAKE_FIXNUM(16),
+		new->constants = si_make_vector(Ct, ecl_make_fixnum(16),
 						Ct, /* Adjustable */
-						MAKE_FIXNUM(0), /* Fillp */
+						ecl_make_fixnum(0), /* Fillp */
 						Cnil, /* displacement */
 						Cnil);
 		new->stepping = 0;
@@ -599,7 +599,7 @@ c_tag_ref(cl_env_ptr env, cl_object the_tag, cl_object the_type)
 			if (type == the_type) {
 				cl_object label = ecl_assql(the_tag, name);
 				if (!Null(label)) {
-					return CONS(MAKE_FIXNUM(n), ECL_CONS_CDR(label));
+					return CONS(ecl_make_fixnum(n), ECL_CONS_CDR(label));
 				}
 			}
 			n++;
@@ -609,7 +609,7 @@ c_tag_ref(cl_env_ptr env, cl_object the_tag, cl_object the_type)
 				/* Mark as used */
                                 record = ECL_CONS_CDR(record);
 				ECL_RPLACA(record, Ct);
-				return MAKE_FIXNUM(n);
+				return ecl_make_fixnum(n);
 			}
 			n++;
 		} else if (Null(name)) {
@@ -980,13 +980,13 @@ c_funcall(cl_env_ptr env, cl_object args, int flags) {
 	if (CONSP(name)) {
                 cl_object kind = ECL_CONS_CAR(name);
 		if (kind == @'function') {
-			if (cl_list_length(name) != MAKE_FIXNUM(2))
+			if (cl_list_length(name) != ecl_make_fixnum(2))
 				FEprogram_error_noreturn("FUNCALL: Invalid function name ~S",
                                                          1, name);
 			return c_call(env, CONS(CADR(name), args), flags);
 		}
 		if (kind == @'quote') {
-			if (cl_list_length(name) != MAKE_FIXNUM(2))
+			if (cl_list_length(name) != ecl_make_fixnum(2))
 				FEprogram_error_noreturn("FUNCALL: Invalid function name ~S",
                                                          1, name);
 			return c_call(env, CONS(CADR(name), args), flags | FLAG_GLOBAL);
@@ -1085,7 +1085,7 @@ c_catch(cl_env_ptr env, cl_object args, int flags) {
 
 	/* Compile binding of tag */
 	old_env = env->c_env->variables;
-	loc = c_register_block(env, MAKE_FIXNUM(0));
+	loc = c_register_block(env, ecl_make_fixnum(0));
 	asm_op(env, OP_CATCH);
 
 	/* Compile jump point */
@@ -1423,7 +1423,7 @@ asm_function(cl_env_ptr env, cl_object function, int flags) {
                         return FLAG_REG0;
 		} else {
 			/* Function from a FLET/LABELS form */
-			asm_op2(env, OP_LFUNCTION, fix(ndx));
+			asm_op2(env, OP_LFUNCTION, ecl_fix(ndx));
                         return FLAG_REG0;
 		}
 	}
@@ -1463,8 +1463,8 @@ c_go(cl_env_ptr env, cl_object args, int flags) {
 		FEprogram_error_noreturn("GO: Unknown tag ~S.", 1, tag);
 	if (!Null(args))
 		FEprogram_error_noreturn("GO: Too many arguments.",0);
-	asm_op2(env, OP_GO, fix(CAR(info)));
-	asm_arg(env, fix(CDR(info)));
+	asm_op2(env, OP_GO, ecl_fix(CAR(info)));
+	asm_arg(env, ecl_fix(CDR(info)));
 	return flags;
 }
 
@@ -1952,7 +1952,7 @@ c_return_aux(cl_env_ptr env, cl_object name, cl_object stmt, int flags)
 	if (stmt != Cnil)
 		FEprogram_error_noreturn("RETURN-FROM: Too many arguments.", 0);
 	compile_form(env, output, FLAG_VALUES);
-	asm_op2(env, OP_RETURN, fix(ndx));
+	asm_op2(env, OP_RETURN, ecl_fix(ndx));
 	return FLAG_VALUES;
 }
 
@@ -2040,7 +2040,7 @@ c_tagbody(cl_env_ptr env, cl_object args, int flags)
 		item_type = type_of(label);
 		if (item_type == t_symbol || item_type == t_fixnum ||
 	            item_type == t_bignum) {
-			labels = CONS(CONS(label,MAKE_FIXNUM(nt)), labels);
+			labels = CONS(CONS(label,ecl_make_fixnum(nt)), labels);
 			nt += 1;
 		}
 	}
@@ -2048,7 +2048,7 @@ c_tagbody(cl_env_ptr env, cl_object args, int flags)
 		compile_body(env, args, 0);
 		return compile_form(env, Cnil, flags);
 	}
-	asm_op2c(env, OP_BLOCK, MAKE_FIXNUM(0));
+	asm_op2c(env, OP_BLOCK, ecl_make_fixnum(0));
 	c_register_tags(env, labels);
 	asm_op2(env, OP_TAGBODY, nt);
 	tag_base = current_pc(env);
@@ -2208,7 +2208,7 @@ compile_constant(cl_env_ptr env, cl_object stmt, int flags)
                 maybe_make_load_forms(env, stmt);
                 if (stmt == Cnil) {
                         asm_op(env, push? OP_PUSHNIL : OP_NIL);
-                } else if (FIXNUMP(stmt) && (n = fix(stmt)) <= MAX_OPARG
+                } else if (ECL_FIXNUMP(stmt) && (n = ecl_fix(stmt)) <= MAX_OPARG
                            && n >= -MAX_OPARG) {
                         asm_op2(env, push? OP_PINT : OP_INT, n);
                 } else {
@@ -2283,7 +2283,7 @@ compile_form(cl_env_ptr env, cl_object stmt, int flags) {
 	if (SYMBOLP(function)) {
 		cl_object index = ecl_gethash(function, cl_core.compiler_dispatch);
 		if (index != OBJNULL) {
-			compiler_record *l = database + fix(index);
+			compiler_record *l = database + ecl_fix(index);
 			c_env->lexical_level += l->lexical_increment;
 			if (c_env->stepping && function != @'function' &&
 			    c_env->lexical_level)
@@ -2356,9 +2356,9 @@ eval_nontrivial_form(cl_env_ptr env, cl_object form) {
         frame.env = env;
         env->nvalues = 0;
         env->values[0] = Cnil;
-        new_c_env.constants = si_make_vector(Ct, MAKE_FIXNUM(16),
+        new_c_env.constants = si_make_vector(Ct, ecl_make_fixnum(16),
 					     Ct, /* Adjustable */
-					     MAKE_FIXNUM(0), /* Fillp */
+					     ecl_make_fixnum(0), /* Fillp */
 					     Cnil, /* displacement */
 					     Cnil);
         new_c_env.load_time_forms = Cnil;
@@ -2460,14 +2460,14 @@ compile_with_load_time_forms(cl_env_ptr env, cl_object form, int flags)
                         compile_with_load_time_forms(env, make_form, FLAG_REG0);
                         asm_op2(env, OP_CSET, loc);
                         compile_with_load_time_forms(env, init_form, FLAG_IGNORE);
-			ECL_RPLACA(p, MAKE_FIXNUM(loc));
+			ECL_RPLACA(p, ecl_make_fixnum(loc));
                         p = ECL_CONS_CDR(p);
                 } while (p != Cnil);
 		p = forms_list;
 		do {
-			cl_index loc = fix(ECL_CONS_CAR(p));
+			cl_index loc = ecl_fix(ECL_CONS_CAR(p));
 			/* Clear created constants (they cannot be printed) */
-			c_env->constants->vector.self.t[loc] = MAKE_FIXNUM(0);
+			c_env->constants->vector.self.t[loc] = ecl_make_fixnum(0);
 			p = ECL_CONS_CDR(p);
 		} while (p != Cnil);
                 restore_bytecodes(env, bytecodes);
@@ -2898,11 +2898,11 @@ OUTPUT:
 	if ((nreq+nopt+(!Null(rest))+nkey) >= CALL_ARGUMENTS_LIMIT)
 		FEprogram_error_noreturn("LAMBDA: Argument list ist too long, ~S.", 1,
 				org_lambda_list);
-	@(return CONS(MAKE_FIXNUM(nreq), lists[0])
-		 CONS(MAKE_FIXNUM(nopt), lists[1])
+	@(return CONS(ecl_make_fixnum(nreq), lists[0])
+		 CONS(ecl_make_fixnum(nopt), lists[1])
 		 rest
 		 key_flag
-		 CONS(MAKE_FIXNUM(nkey), lists[2])
+		 CONS(ecl_make_fixnum(nkey), lists[2])
 		 allow_other_keys
 		 lists[3])
 
@@ -3132,11 +3132,11 @@ init_compiler()
 {
 	cl_object dispatch_table =
 		cl_core.compiler_dispatch =
-		cl__make_hash_table(@'eq', MAKE_FIXNUM(128), /* size */
+		cl__make_hash_table(@'eq', ecl_make_fixnum(128), /* size */
                                     cl_core.rehash_size,
                                     cl_core.rehash_threshold);
 	int i;
 	for (i = 0; database[i].symbol; i++) {
-		ecl_sethash(database[i].symbol, dispatch_table, MAKE_FIXNUM(i));
+		ecl_sethash(database[i].symbol, dispatch_table, ecl_make_fixnum(i));
 	}
 }

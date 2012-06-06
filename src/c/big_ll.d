@@ -31,9 +31,9 @@ static cl_object
 big_normalize(cl_object x)
 {
 	if (x->big.big_num == 0ll)
-                return(MAKE_FIXNUM(0));
+                return(ecl_make_fixnum(0));
         if (x->big.big_num <= MOST_POSITIVE_FIXNUM && x->big.big_num >= MOST_NEGATIVE_FIXNUM)
-                return(MAKE_FIXNUM(x->big.big_num));
+                return(ecl_make_fixnum(x->big.big_num));
         return x;
 }
 
@@ -41,9 +41,9 @@ cl_object
 _ecl_big_register_normalize(cl_object x)
 {
 	if (x->big.big_num == 0ll)
-                return(MAKE_FIXNUM(0));
+                return(ecl_make_fixnum(0));
         if (x->big.big_num <= MOST_POSITIVE_FIXNUM && x->big.big_num >= MOST_NEGATIVE_FIXNUM)
-                return(MAKE_FIXNUM(x->big.big_num));
+                return(ecl_make_fixnum(x->big.big_num));
 	return _ecl_big_register_copy(x);
 }
 

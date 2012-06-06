@@ -31,7 +31,7 @@ ecl_make_cfun(cl_objectfn_fixed c_function, cl_object name, cl_object cblock, in
 	cf->cfunfixed.name = name;
 	cf->cfunfixed.block = cblock;
         cf->cfunfixed.file = Cnil;
-        cf->cfunfixed.file_position = MAKE_FIXNUM(-1);
+        cf->cfunfixed.file_position = ecl_make_fixnum(-1);
 	cf->cfunfixed.narg = narg;
 	if (ecl_unlikely(narg < 0 || narg > C_ARGUMENTS_LIMIT))
                 FEprogram_error_noreturn("ecl_make_cfun: function requires "
@@ -50,7 +50,7 @@ ecl_make_cfun_va(cl_objectfn c_function, cl_object name, cl_object cblock)
 	cf->cfun.block = cblock;
 	cf->cfun.narg = -1;
         cf->cfun.file = Cnil;
-        cf->cfun.file_position = MAKE_FIXNUM(-1);
+        cf->cfun.file_position = ecl_make_fixnum(-1);
 	return cf;
 }
 
@@ -64,7 +64,7 @@ ecl_make_cclosure_va(cl_objectfn c_function, cl_object env, cl_object block)
 	cc->cclosure.env = env;
 	cc->cclosure.block = block;
         cc->cclosure.file = Cnil;
-        cc->cclosure.file_position = MAKE_FIXNUM(-1);
+        cc->cclosure.file_position = ecl_make_fixnum(-1);
 	return cc;
 }
 

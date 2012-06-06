@@ -66,7 +66,7 @@ expt_zero(cl_object x, cl_object y)
         case t_fixnum:
         case t_bignum:
         case t_ratio:
-                return MAKE_FIXNUM(1);
+                return ecl_make_fixnum(1);
         case t_singlefloat:
                 return singlefloat_one;
         case t_doublefloat:
@@ -78,7 +78,7 @@ expt_zero(cl_object x, cl_object y)
         case t_complex:
                 z = expt_zero((tx == t_complex)? x->complex.real : x,
                               (ty == t_complex)? y->complex.real : y);
-                return ecl_make_complex(z, MAKE_FIXNUM(0));
+                return ecl_make_complex(z, ecl_make_fixnum(0));
         default:
                 /* We will never reach this */
                 (void)0;
@@ -101,7 +101,7 @@ ecl_expt(cl_object x, cl_object y)
         if (ecl_zerop(x)) {
 		z = ecl_times(x, y);
 		if (!ecl_plusp(ty==t_complex?y->complex.real:y))
-			z = ecl_divide(MAKE_FIXNUM(1), z);
+			z = ecl_divide(ecl_make_fixnum(1), z);
 	} else if (ty != t_fixnum && ty != t_bignum) {
                 /* The following could be just
                    z = ecl_log1(x);
@@ -114,15 +114,15 @@ ecl_expt(cl_object x, cl_object y)
 	} else if (ecl_minusp(y)) {
 		z = ecl_negate(y);
 		z = ecl_expt(x, z);
-		z = ecl_divide(MAKE_FIXNUM(1), z);
+		z = ecl_divide(ecl_make_fixnum(1), z);
 	} else {
                 ECL_MATHERR_CLEAR;
-		z = MAKE_FIXNUM(1);
+		z = ecl_make_fixnum(1);
 		do {
 			/* INV: ecl_integer_divide outputs an integer */
 			if (!ecl_evenp(y))
 				z = ecl_times(z, x);
-			y = ecl_integer_divide(y, MAKE_FIXNUM(2));
+			y = ecl_integer_divide(y, ecl_make_fixnum(2));
 			if (ecl_zerop(y)) break;
 			x = ecl_times(x, x);
 		} while (1);

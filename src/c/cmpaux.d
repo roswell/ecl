@@ -59,9 +59,9 @@ ecl_to_char(cl_object x)
 {
 	switch (type_of(x)) {
 	case t_fixnum:
-		return fix(x);
+		return ecl_fix(x);
 	case t_character:
-		return CHAR_CODE(x);
+		return ECL_CHAR_CODE(x);
 	default:
 		FEerror("~S cannot be coerced to a C char.", 1, x);
 	}
@@ -74,7 +74,7 @@ ecl_to_fixnum(cl_object x)
 	case t_fixnum:
 	case t_bignum:
 		return fixint(x);
-/*	case t_character: return (cl_fixnum)CHAR_CODE(x); */
+/*	case t_character: return (cl_fixnum)ECL_CHAR_CODE(x); */
 	case t_ratio:
 		return (cl_fixnum)ecl_to_double(x);
 	case t_singlefloat:
@@ -115,11 +115,11 @@ ecl_to_unsigned_integer(cl_object x)
 float
 ecl_to_float(cl_object x)
 {
-	if (FIXNUMP(x)) return(fix(x));	/* Immediate fixnum */
+	if (ECL_FIXNUMP(x)) return(ecl_fix(x));	/* Immediate fixnum */
 
 	switch (type_of(x)) {
-/*	case t_fixnum: return fix(x);	*/
-/*	case t_character: return CHAR_CODE(x); */
+/*	case t_fixnum: return ecl_fix(x);	*/
+/*	case t_character: return ECL_CHAR_CODE(x); */
 	case t_bignum:
 	case t_ratio:
 		return ecl_to_double(x);

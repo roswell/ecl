@@ -92,7 +92,7 @@ si_sse_pack_element_type(cl_object x)
                 FEwrong_type_nth_arg(@[ext::sse-pack-element-type], 1, x, @[ext::sse-pack]);
 	}
 
-	@(return ecl_elttype_to_symbol(x->sse.elttype) MAKE_FIXNUM(x->sse.elttype));
+	@(return ecl_elttype_to_symbol(x->sse.elttype) ecl_make_fixnum(x->sse.elttype));
 }
 
 /* Conversion to and from specialized vectors */
@@ -129,7 +129,7 @@ si_vector_to_sse_pack(cl_object x)
 	verify_sse_elttype(x->vector.elttype);
 
 	if (ecl_unlikely(x->vector.dim * ecl_aet_size[x->vector.elttype] != 16))
-		FEerror("Wrong vector size in VECTOR-TO-SSE-PACK: ~S",1,MAKE_FIXNUM(x->vector.dim));
+		FEerror("Wrong vector size in VECTOR-TO-SSE-PACK: ~S",1,ecl_make_fixnum(x->vector.dim));
 
 	ssev = ecl_alloc_object(t_sse_pack);
 	ssev->sse.elttype = x->vector.elttype;

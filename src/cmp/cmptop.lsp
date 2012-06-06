@@ -469,7 +469,7 @@ return f2;
       (wt-nl "check_arg(" (length arg-types) ");"))
     (wt-nl "cl_env_copy->nvalues=1;")
     (wt-nl "return " (case return-type
-                            (FIXNUM "MAKE_FIXNUM")
+                            (FIXNUM "ecl_make_fixnum")
                             (CHARACTER "CODE_CHAR")
                             (DOUBLE-FLOAT "ecl_make_doublefloat")
                             (SINGLE-FLOAT "ecl_make_singlefloat")
@@ -857,7 +857,7 @@ return f2;
 					 (<= maxarg si:c-arguments-limit))
 				    maxarg
 				    -1)))
-                     (format stream "~%{0,0,~D,0,MAKE_FIXNUM(~D),MAKE_FIXNUM(~D),(cl_objectfn)~A,Cnil,MAKE_FIXNUM(~D)},"
+                     (format stream "~%{0,0,~D,0,ecl_make_fixnum(~D),ecl_make_fixnum(~D),(cl_objectfn)~A,Cnil,ecl_make_fixnum(~D)},"
                              narg
                              (vv-location loc)
                              (vv-location fname-loc)

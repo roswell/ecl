@@ -53,7 +53,7 @@ ecl_stack_set_size(cl_env_ptr env, cl_index tentative_new_size)
 	 * and friends, which take a sp=0 to have no arguments.
 	 */
 	if (top == 0) {
-                *(env->stack_top++) = MAKE_FIXNUM(0);
+                *(env->stack_top++) = ecl_make_fixnum(0);
         }
         return env->stack_top;
 }
@@ -363,14 +363,14 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 	CASE(OP_INT); {
 		cl_fixnum n;
 		GET_OPARG(n, vector);
-		reg0 = MAKE_FIXNUM(n);
+		reg0 = ecl_make_fixnum(n);
 		THREAD_NEXT;
 	}
 
 	CASE(OP_PINT); {
 		cl_fixnum n;
 		GET_OPARG(n, vector);
-		ECL_STACK_PUSH(the_env, MAKE_FIXNUM(n));
+		ECL_STACK_PUSH(the_env, ecl_make_fixnum(n));
 		THREAD_NEXT;
 	}
 
@@ -472,7 +472,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 		the stack (They all have been deposited by OP_PUSHVALUES)
 	*/
 	CASE(OP_MCALL); {
-		narg = fix(ECL_STACK_POP_UNSAFE(the_env));
+		narg = ecl_fix(ECL_STACK_POP_UNSAFE(the_env));
 		reg0 = ECL_STACK_REF(the_env,-narg-1);
 		goto DO_CALL;
 	}
@@ -751,7 +751,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 		GET_OPARG(lex_env_index, vector);
 		GET_OPARG(tag_ndx, vector);
 		cl_go(ecl_lex_env_get_tag(lex_env, lex_env_index),
-		      MAKE_FIXNUM(tag_ndx));
+		      ecl_make_fixnum(tag_ndx));
 		THREAD_NEXT;
 	}
 	/* OP_RETURN	n{arg}
@@ -976,13 +976,13 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 
 	CASE(OP_BLOCK); {
 		GET_DATA(reg0, vector, data);
-		reg1 = MAKE_FIXNUM(the_env->frame_id++);
+		reg1 = ecl_make_fixnum(the_env->frame_id++);
 		lex_env = bind_frame(lex_env, reg1, reg0);
 		THREAD_NEXT;
 	}
 	CASE(OP_DO); {
 		reg0 = Cnil;
-		reg1 = MAKE_FIXNUM(the_env->frame_id++);
+		reg1 = ecl_make_fixnum(the_env->frame_id++);
 		lex_env = bind_frame(lex_env, reg1, reg0);
 		THREAD_NEXT;
 	}
@@ -1032,7 +1032,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 			   are computed at compile time. */
 			cl_opcode *table = (cl_opcode *)ECL_STACK_REF(the_env,-1);
 			lex_env = ECL_STACK_REF(the_env,-2);
-			table = table + fix(the_env->values[0]) * OPARG_SIZE;
+			table = table + ecl_fix(the_env->values[0]) * OPARG_SIZE;
 			vector = table + *(cl_oparg *)table;
 		}
 		THREAD_NEXT;
@@ -1070,19 +1070,19 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 		ECL_STACK_PUSH_N(the_env, i+1);
 		the_env->values[0] = reg0;
 		memcpy(&ECL_STACK_REF(the_env, -(i+1)), the_env->values, i * sizeof(cl_object));
-		ECL_STACK_REF(the_env, -1) = MAKE_FIXNUM(the_env->nvalues);
+		ECL_STACK_REF(the_env, -1) = ecl_make_fixnum(the_env->nvalues);
 		THREAD_NEXT;
 	}
 	/* OP_PUSHMOREVALUES
 		Adds more values to the ones pushed by OP_PUSHVALUES.
 	*/
 	CASE(OP_PUSHMOREVALUES); {
-		cl_index n = fix(ECL_STACK_REF(the_env,-1));
+		cl_index n = ecl_fix(ECL_STACK_REF(the_env,-1));
 		cl_index i = the_env->nvalues;
 		ECL_STACK_PUSH_N(the_env, i);
 		the_env->values[0] = reg0;
 		memcpy(&ECL_STACK_REF(the_env, -(i+1)), the_env->values, i * sizeof(cl_object));
-		ECL_STACK_REF(the_env, -1) = MAKE_FIXNUM(n + i);
+		ECL_STACK_REF(the_env, -1) = ecl_make_fixnum(n + i);
 		THREAD_NEXT;
 	}
 	/* OP_POPVALUES
@@ -1090,7 +1090,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 	*/
 	CASE(OP_POPVALUES); {
 		cl_object *dest = the_env->values;
-		int n = the_env->nvalues = fix(ECL_STACK_POP_UNSAFE(the_env));
+		int n = the_env->nvalues = ecl_fix(ECL_STACK_POP_UNSAFE(the_env));
 		if (n == 0) {
 			*dest = reg0 = Cnil;
 			THREAD_NEXT;
@@ -1122,9 +1122,9 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 		The index N-th is extracted from the top of the stack.
 	*/
 	CASE(OP_NTHVAL); {
-		cl_fixnum n = fix(ECL_STACK_POP_UNSAFE(the_env));
+		cl_fixnum n = ecl_fix(ECL_STACK_POP_UNSAFE(the_env));
 		if (ecl_unlikely(n < 0)) {
-			FEerror("Wrong index passed to NTH-VAL", 1, MAKE_FIXNUM(n));
+			FEerror("Wrong index passed to NTH-VAL", 1, ecl_make_fixnum(n));
 		} else if ((cl_index)n >= the_env->nvalues) {
 			reg0 = Cnil;
 		} else if (n) {
@@ -1155,7 +1155,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 			vector = (cl_opcode *)ECL_STACK_POP_UNSAFE(the_env);
 			lex_env = ECL_STACK_POP_UNSAFE(the_env);
 			reg0 = the_env->values[0];
-			ECL_STACK_PUSH(the_env, MAKE_FIXNUM(the_env->nlj_fr - the_env->frs_top));
+			ECL_STACK_PUSH(the_env, ecl_make_fixnum(the_env->nlj_fr - the_env->frs_top));
 			goto PUSH_VALUES;
 		}
 		THREAD_NEXT;
@@ -1165,15 +1165,15 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 		ecl_frs_pop(the_env);
 		(void)ECL_STACK_POP_UNSAFE(the_env);
 		lex_env = ECL_STACK_POP_UNSAFE(the_env);
-		ECL_STACK_PUSH(the_env, MAKE_FIXNUM(1));
+		ECL_STACK_PUSH(the_env, ecl_make_fixnum(1));
 		goto PUSH_VALUES;
 	}
 	CASE(OP_PROTECT_EXIT); {
-		volatile cl_fixnum n = the_env->nvalues = fix(ECL_STACK_POP_UNSAFE(the_env));
+		volatile cl_fixnum n = the_env->nvalues = ecl_fix(ECL_STACK_POP_UNSAFE(the_env));
 		while (n--)
 			the_env->values[n] = ECL_STACK_POP_UNSAFE(the_env);
 		reg0 = the_env->values[0];
-		n = fix(ECL_STACK_POP_UNSAFE(the_env));
+		n = ecl_fix(ECL_STACK_POP_UNSAFE(the_env));
 		if (n <= 0)
 			ecl_unwind(the_env, the_env->frs_top + n);
 		THREAD_NEXT;
@@ -1189,11 +1189,11 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 		cl_object values = reg0;
 		cl_object vars = ECL_STACK_POP_UNSAFE(the_env);
 		cl_index n = ecl_progv(the_env, vars, values);
-		ECL_STACK_PUSH(the_env, MAKE_FIXNUM(n));
+		ECL_STACK_PUSH(the_env, ecl_make_fixnum(n));
 		THREAD_NEXT;
 	}
 	CASE(OP_EXIT_PROGV); {
-		cl_index n = fix(ECL_STACK_POP_UNSAFE(the_env));
+		cl_index n = ecl_fix(ECL_STACK_POP_UNSAFE(the_env));
 		ecl_bds_unwind(the_env, n);
 		THREAD_NEXT;
 	}
@@ -1255,7 +1255,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 			/* We exit one stepping level */
 			ECL_SETQ(the_env, @'si::*step-level*',
 				 cl_1M(ECL_SYM_VAL(the_env, @'si::*step-level*')));
-		} else if (a == MAKE_FIXNUM(0)) {
+		} else if (a == ecl_make_fixnum(0)) {
 			/* We are back to the level in which the user
 			 * selected to step over. */
 			ECL_SETQ(the_env, @'si::*step-action*', Ct);

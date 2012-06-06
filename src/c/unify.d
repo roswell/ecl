@@ -148,7 +148,7 @@ RETRY:	switch (type_of(x)) {
 
 @(defun get_instance (x class arity)
 @
-	@(return (get_instance(x, class, fix(arity))?Ct:Cnil))
+	@(return (get_instance(x, class, ecl_fix(arity))?Ct:Cnil))
 @)
 
 
@@ -248,7 +248,7 @@ unify(object x, object y)
 
 @(defun make_locative (&optional (n 0))
 @
-	@(return (MAKE_LOCATIVE(fix(n))))
+	@(return (MAKE_LOCATIVE(ecl_fix(n))))
 @)
 
 @(defun locativep (obje)

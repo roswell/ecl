@@ -910,7 +910,7 @@ Use special code 0 to cancel this operation.")
 #endif
 	default: {
 		ecl_base_char *p = (ecl_base_char*)value;
-		output = CODE_CHAR(*p);
+		output = ECL_CODE_CHAR(*p);
 		break;
 	}
 	}

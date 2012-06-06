@@ -77,10 +77,10 @@ write_sse_pack(cl_object x, cl_object stream)
 		for (i = 0; i < 16; i++) {
                         ecl_string_push_extend(buffer, ' ');
                         if (i%4 == 0) ecl_string_push_extend(buffer, ' ');
-                        si_integer_to_string(buffer, MAKE_FIXNUM(x->sse.data.b8[i]),
-                                             MAKE_FIXNUM(16), Cnil, Cnil);
+                        si_integer_to_string(buffer, ecl_make_fixnum(x->sse.data.b8[i]),
+                                             ecl_make_fixnum(16), Cnil, Cnil);
 		}
-                si_do_write_sequence(buffer, stream, MAKE_FIXNUM(0), Cnil);
+                si_do_write_sequence(buffer, stream, ecl_make_fixnum(0), Cnil);
                 si_put_buffer_string(buffer);
                 break;
         }

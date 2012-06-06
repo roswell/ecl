@@ -344,7 +344,7 @@ cl_symbol_name(cl_object x)
 	output = ecl_make_string_output_stream(64, 1);
 	ecl_bds_bind(the_env, @'*print-escape*', Cnil);
 	ecl_bds_bind(the_env, @'*print-readably*', Cnil);
-	ecl_bds_bind(the_env, @'*print-base*', MAKE_FIXNUM(10));
+	ecl_bds_bind(the_env, @'*print-base*', ecl_make_fixnum(10));
 	ecl_bds_bind(the_env, @'*print-radix*', Cnil);
 	si_write_ugly_object(prefix, output);
 	si_write_ugly_object(counter, output);
@@ -366,7 +366,7 @@ ONCE_MORE:
 	output = ecl_make_string_output_stream(64, 1);
 	ecl_bds_bind(the_env, @'*print-escape*', Cnil);
 	ecl_bds_bind(the_env, @'*print-readably*', Cnil);
-	ecl_bds_bind(the_env, @'*print-base*', MAKE_FIXNUM(10));
+	ecl_bds_bind(the_env, @'*print-base*', ecl_make_fixnum(10));
 	ecl_bds_bind(the_env, @'*print-radix*', Cnil);
 	si_write_ugly_object(prefix, output);
 	si_write_ugly_object(cl_core.gentemp_counter, output);

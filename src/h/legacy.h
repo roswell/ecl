@@ -19,6 +19,21 @@
 /*
  * LEGACY
  */
+#define CHARACTERP(o)		ECL_CHARACTERP(o)
+#define BASE_CHAR_P(o)		ECL_BASE_CHAR_P(o)
+#define BASE_CHAR_CODE_P(o)	ECL_BASE_CHAR_CODE_P(o)
+#define CODE_CHAR(o)		ECL_CODE_CHAR(o)
+#define CHAR_CODE(o)		ECL_CHAR_CODE(o)
+#define REAL_TYPE(t)		ECL_REAL_TYPE_P(t)
+#define IMMEDIATE(o)		ECL_IMMEDIATE(o)
+#define IMMEDIATE_TAG		ECL_IMMEDIATE_TAG
+
+#define FIXNUM_TAG		t_fixnum
+#define MAKE_FIXNUM(n)		ecl_make_fixnum(n)
+#define FIXNUM_MINUSP(n)	ecl_fixnum_minusp(n)
+#define FIXNUM_PLUSP(n)		ecl_fixnum_plusp(n)
+#define	fix(o)			ecl_fix(o)
+#define FIXNUMP(o)		ECL_FINXUMP(o)
 
 #define make_shortfloat(x) ecl_make_shortfloat(x);
 #define cl_def_c_function_va(sym,function) ecl_def_c_function_va(sym,function)
@@ -35,6 +50,7 @@
 #define si_bc_file(o) si_compiled_function_file(o)
 #define ARRAYP ECL_ARRAYP
 #define VECTORP ECL_VECTORP
+#define ARRAY_TYPE(t) (t >= t_array && t <= t_bitvector)
 #define c_string_to_object ecl_read_from_cstring
 
 #define big_register0_get _ecl_big_register0

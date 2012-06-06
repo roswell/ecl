@@ -30,25 +30,25 @@ ecl_sequence_start_end(cl_object fun, cl_object sequence,
 	unlikely_if (!ECL_FIXNUMP(start) || ecl_fixnum_minusp(start)) {
                 FEwrong_type_key_arg(fun, @[:start], start, @[unsigned-byte]);
         }
-        p.start = fix(start);
+        p.start = ecl_fix(start);
 	if (Null(end)) {
 		p.end = l;
 	} else {
-                unlikely_if (!FIXNUMP(end) || ecl_fixnum_minusp(end)) {
+                unlikely_if (!ECL_FIXNUMP(end) || ecl_fixnum_minusp(end)) {
                         FEwrong_type_key_arg(fun, @[:end], end,
                                              ecl_read_from_cstring("(OR NULL UNSIGNED-BYTE)"));
                 }
-		p.end = fix(end);
+		p.end = ecl_fix(end);
 		unlikely_if (p.end > l) {
-                        cl_object fillp = MAKE_FIXNUM(l);
+                        cl_object fillp = ecl_make_fixnum(l);
                         FEwrong_type_key_arg(fun, @[:end], end,
                                              ecl_make_integer_type(start, fillp));
                 }
 	}
         unlikely_if (p.end < p.start) {
                 FEwrong_type_key_arg(fun, @[:start], start,
-                                     ecl_make_integer_type(MAKE_FIXNUM(0),
-							   MAKE_FIXNUM(p.end)));
+                                     ecl_make_integer_type(ecl_make_fixnum(0),
+							   ecl_make_fixnum(p.end)));
         }
         return p;
 }
@@ -57,8 +57,8 @@ cl_object
 si_sequence_start_end(cl_object fun, cl_object sequence, cl_object start, cl_object end)
 {
 	cl_index_pair p = ecl_sequence_start_end(fun, sequence, start, end);
-	@(return MAKE_FIXNUM(p.start) MAKE_FIXNUM(p.end)
-          MAKE_FIXNUM(p.length));
+	@(return ecl_make_fixnum(p.start) ecl_make_fixnum(p.end)
+          ecl_make_fixnum(p.length));
 }
 
 cl_object
@@ -209,7 +209,7 @@ cl_copy_seq(cl_object x)
 cl_object
 cl_length(cl_object x)
 {
-	@(return MAKE_FIXNUM(ecl_length(x)))
+	@(return ecl_make_fixnum(ecl_length(x)))
 }
 
 cl_fixnum

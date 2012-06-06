@@ -36,7 +36,7 @@ ecl_make_mailbox(cl_object name, cl_fixnum count)
 	mask = count - 1;
 	output->mailbox.name = name;
 	output->mailbox.data = si_make_vector(Ct, /* element type */
-					      MAKE_FIXNUM(count), /* size */
+					      ecl_make_fixnum(count), /* size */
 					      Cnil, /* adjustable */
 					      Cnil, /* fill pointer */
 					      Cnil, /* displaced to */
@@ -51,7 +51,7 @@ ecl_make_mailbox(cl_object name, cl_fixnum count)
         return output;
 }
 
-@(defun mp::make-mailbox (&key name (count MAKE_FIXNUM(128)))
+@(defun mp::make-mailbox (&key name (count ecl_make_fixnum(128)))
 @
 {
 	@(return ecl_make_mailbox(name, fixnnint(count)))
@@ -75,7 +75,7 @@ mp_mailbox_count(cl_object mailbox)
 	unlikely_if (type_of(mailbox) != t_mailbox) {
 		FEerror_not_a_mailbox(mailbox);
 	}
-	ecl_return1(env, MAKE_FIXNUM(mailbox->mailbox.data->vector.dim));
+	ecl_return1(env, ecl_make_fixnum(mailbox->mailbox.data->vector.dim));
 }
 
 cl_object
