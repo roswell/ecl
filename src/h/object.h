@@ -352,18 +352,18 @@ struct ecl_cons {
 #endif
 
 enum ecl_httest {		/*  hash table key test function  */
-	htt_eq,			/*  eq  */
-	htt_eql,		/*  eql  */
-	htt_equal,		/*  equal  */
-	htt_equalp,		/*  equalp  */
-	htt_pack		/*  symbol hash  */
+	ecl_htt_eq,			/*  eq  */
+	ecl_htt_eql,		/*  eql  */
+	ecl_htt_equal,		/*  equal  */
+	ecl_htt_equalp,		/*  equalp  */
+	ecl_htt_pack		/*  symbol hash  */
 };
 
 enum ecl_htweak {
-	htt_not_weak = 0,
-	htt_weak_key,
-	htt_weak_value,
-	htt_weak_key_and_value
+	ecl_htt_not_weak = 0,
+	ecl_htt_weak_key,
+	ecl_htt_weak_value,
+	ecl_htt_weak_key_and_value
 };
 
 struct ecl_hashtable_entry {	/*  hash table entry  */

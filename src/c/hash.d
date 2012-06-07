@@ -468,10 +468,10 @@ _ecl_remhash_pack(cl_object key, cl_object hashtable)
 static cl_hashkey
 _ecl_hash_key(cl_object h, cl_object o) {
 	switch (h->hash.test) {
-	case htt_eq: return _hash_eq(o);
-	case htt_eql: return _hash_eql(0, o);
-	case htt_equal: return _hash_equal(3, 0, o);
-	case htt_equalp:
+	case ecl_htt_eq: return _hash_eq(o);
+	case ecl_htt_eql: return _hash_eql(0, o);
+	case ecl_htt_equal: return _hash_equal(3, 0, o);
+	case ecl_htt_equalp:
 	default: return _hash_equalp(3, 0, o);
 	}
 }
@@ -502,25 +502,25 @@ copy_entry(struct ecl_hashtable_entry *e, cl_object h)
 	} else {
 		struct ecl_hashtable_entry output = *e;
 		switch (h->hash.weak) {
-		case htt_weak_key:
+		case ecl_htt_weak_key:
 			if (GC_call_with_alloc_lock(normalize_weak_key_entry,
 						    &output)) {
 				return output;
 			}
 			break;
-		case htt_weak_value:
+		case ecl_htt_weak_value:
 			if (GC_call_with_alloc_lock(normalize_weak_value_entry,
 						    &output)) {
 				return output;
 			}
 			break;
-		case htt_weak_key_and_value:
+		case ecl_htt_weak_key_and_value:
 			if (GC_call_with_alloc_lock(normalize_weak_key_and_value_entry,
 						    &output)) {
 				return output;
 			}
 			break;
-		case htt_not_weak:
+		case ecl_htt_not_weak:
 		default:
 			return output;
 		}
@@ -560,13 +560,13 @@ _ecl_weak_hash_loop(cl_hashkey h, cl_object key, cl_object hashtable,
 			continue;
 		}
 		switch (hashtable->hash.test) {
-		case htt_eq:
+		case ecl_htt_eq:
 			if (e.key == key) return p;
-		case htt_eql:
+		case ecl_htt_eql:
 			if (ecl_eql(e.key, key)) return p;
-		case htt_equal:
+		case ecl_htt_equal:
 			if (ecl_equal(e.key, key)) return p;
-		case htt_equalp:
+		case ecl_htt_equalp:
 			if (ecl_equalp(e.key, key)) return p;
 		}
 	}
@@ -602,13 +602,13 @@ _ecl_sethash_weak(cl_object key, cl_object hashtable, cl_object value)
 		}
 		hashtable->hash.entries = i;
 		switch (hashtable->hash.weak) {
-		case htt_weak_key:
+		case ecl_htt_weak_key:
 			key = si_make_weak_pointer(key);
 			break;
-		case htt_weak_value:
+		case ecl_htt_weak_value:
 			value = si_make_weak_pointer(value);
 			break;
-		case htt_weak_key_and_value:
+		case ecl_htt_weak_key_and_value:
 		default:
 			key = si_make_weak_pointer(key);
 			value = si_make_weak_pointer(value);
@@ -697,7 +697,7 @@ ecl_extend_hashtable(cl_object hashtable)
 	} else {
 		new_size = ecl_fixnum(new_size_obj);
 	}
-        if (hashtable->hash.test == htt_pack) {
+        if (hashtable->hash.test == ecl_htt_pack) {
                 new = ecl_alloc_object(t_hashtable);
                 new->hash = hashtable->hash;
                 old = hashtable;
@@ -720,7 +720,7 @@ ecl_extend_hashtable(cl_object hashtable)
 		struct ecl_hashtable_entry e =
 			copy_entry(old->hash.data + i, old);
 		if (e.key != OBJNULL) {
-			new = new->hash.set(new->hash.test == htt_pack?
+			new = new->hash.set(new->hash.test == ecl_htt_pack?
 					    SYMBOL_NAME(e.value) : e.key,
 					    new, e.value);
 		}
@@ -739,11 +739,11 @@ ecl_extend_hashtable(cl_object hashtable)
 #ifdef ECL_WEAK_HASH
 	if (!Null(weakness)) {
 		if (weakness == @':key') {
-			hash->hash.weak = htt_weak_key;
+			hash->hash.weak = ecl_htt_weak_key;
 		} else if (weakness == @':value') {
-			hash->hash.weak = htt_weak_value;
+			hash->hash.weak = ecl_htt_weak_value;
 		} else if (weakness == @':key-and-value') {
-			hash->hash.weak = htt_weak_key_and_value;
+			hash->hash.weak = ecl_htt_weak_key_and_value;
 		} else {
 			FEwrong_type_key_arg(@[make-hash-table],
 					     @[:weakness],
@@ -793,27 +793,27 @@ cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
 	 * Argument checking
 	 */
 	if (test == @'eq' || test == SYM_FUN(@'eq')) {
-		htt = htt_eq;
+		htt = ecl_htt_eq;
 		get = _ecl_gethash_eq;
 		set = _ecl_sethash_eq;
 		rem = _ecl_remhash_eq;
 	} else if (test == @'eql' || test == SYM_FUN(@'eql')) {
-		htt = htt_eql;
+		htt = ecl_htt_eql;
 		get = _ecl_gethash_eql;
 		set = _ecl_sethash_eql;
 		rem = _ecl_remhash_eql;
 	} else if (test == @'equal' || test == SYM_FUN(@'equal')) {
-		htt = htt_equal;
+		htt = ecl_htt_equal;
 		get = _ecl_gethash_equal;
 		set = _ecl_sethash_equal;
 		rem = _ecl_remhash_equal;
 	} else if (test == @'equalp' || test == SYM_FUN(@'equalp')) {
-		htt = htt_equalp;
+		htt = ecl_htt_equalp;
 		get = _ecl_gethash_equalp;
 		set = _ecl_sethash_equalp;
 		rem = _ecl_remhash_equalp;
 	} else if (test == @'package') {
-		htt = htt_pack;
+		htt = ecl_htt_pack;
 		get = _ecl_gethash_pack;
 		set = _ecl_sethash_pack;
 		rem = _ecl_remhash_pack;
@@ -864,7 +864,7 @@ cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
 	 */
 	h = ecl_alloc_object(t_hashtable);
 	h->hash.test = htt;
-	h->hash.weak = htt_not_weak;
+	h->hash.weak = ecl_htt_not_weak;
 	h->hash.get = get;
 	h->hash.set = set;
 	h->hash.rem = rem;
@@ -894,10 +894,10 @@ si_hash_table_weakness(cl_object ht)
 	cl_object output = Cnil;
 #ifdef ECL_WEAK_HASH
 	switch (ht->hash.weak) {
-	case htt_weak_key: output = @':key'; break;
-	case htt_weak_value: output = @':value'; break;
-	case htt_weak_key_and_value: output = @':key-and-value'; break;
-	case htt_not_weak: default: output = Cnil; break;
+	case ecl_htt_weak_key: output = @':key'; break;
+	case ecl_htt_weak_value: output = @':value'; break;
+	case ecl_htt_weak_key_and_value: output = @':key-and-value'; break;
+	case ecl_htt_not_weak: default: output = Cnil; break;
 	}
 #endif
 	@(return output)
@@ -956,11 +956,11 @@ cl_hash_table_test(cl_object ht)
 	cl_object output;
 	assert_type_hash_table(@[hash-table-test], 1, ht);
 	switch(ht->hash.test) {
-	    case htt_eq: output = @'eq'; break;
-	    case htt_eql: output = @'eql'; break;
-	    case htt_equal: output = @'equal'; break;
-	    case htt_equalp: output = @'equalp'; break;
-	    case htt_pack:
+	    case ecl_htt_eq: output = @'eq'; break;
+	    case ecl_htt_eql: output = @'eql'; break;
+	    case ecl_htt_equal: output = @'equal'; break;
+	    case ecl_htt_equalp: output = @'equalp'; break;
+	    case ecl_htt_pack:
 	    default: output = @'equal';
 	}
 	@(return output)

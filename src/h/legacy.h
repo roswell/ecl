@@ -104,3 +104,12 @@
 #define aet_i64 ecl_aet_i64
 #define aet_ch ecl_aet_ch
 #define aet_bc ecl_aet_bc
+
+#define htt_eq ecl_htt_eq
+#define htt_eql ecl_htt_eql
+#define htt_equal ecl_htt_equal
+#define htt_equalp ecl_htt_equalp
+#define htt_not_weak ecl_htt_not_weak
+#define htt_weak_key ecl_htt_weak_key
+#define htt_weak_value ecl_htt_weak_value
+#define htt_weak_key_and_value ecl_htt_weak_key_and_value
