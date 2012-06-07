@@ -248,9 +248,6 @@ enum ecl_stype {		/*  symbol type  */
 #define ECL_UNBOUND		((cl_object)(cl_symbols+2))
 #define ECL_PROTECT_TAG		((cl_object)(cl_symbols+3))
 
-#define ECL_FLAG_MACRO        1
-#define ECLF_LAG_SPECIAL_VAR  4
-
 struct ecl_symbol {
 	_ECL_HDR2(stype, dynamic);/*  symbol type, special-variable-p */
 	cl_object value;	/*  global value of the symbol  */
