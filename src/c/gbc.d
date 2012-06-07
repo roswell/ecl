@@ -217,9 +217,9 @@ BEGIN:
 			break;
 		switch ((cl_elttype)x->array.elttype) {
 #ifdef ECL_UNICODE
-		case aet_ch:
+		case ecl_aet_ch:
 #endif
-		case aet_object:
+		case ecl_aet_object:
 			if (x->array.displaced == Cnil || CAR(x->array.displaced) == Cnil) {
 				i = x->vector.dim;
 				p = x->array.self.t;
@@ -227,28 +227,28 @@ BEGIN:
 			}
 			j = sizeof(cl_object)*x->array.dim;
 			break;
-		case aet_bc:
+		case ecl_aet_bc:
 			j = x->array.dim;
 			break;
-		case aet_bit:
+		case ecl_aet_bit:
 			j = sizeof(int) * ((x->vector.offset + x->vector.dim + W_SIZE -1)/W_SIZE);
 			break;
-		case aet_fix:
+		case ecl_aet_fix:
 			j = x->array.dim * sizeof(cl_fixnum);
 			break;
-		case aet_index:
+		case ecl_aet_index:
 			j = x->array.dim * sizeof(cl_index);
 			break;
-		case aet_sf:
+		case ecl_aet_sf:
 			j = x->array.dim * sizeof(float);
 			break;
-		case aet_df:
+		case ecl_aet_df:
 			j = x->array.dim * sizeof(double);
 			break;
-		case aet_b8:
+		case ecl_aet_b8:
 			j = x->array.dim * sizeof(uint8_t);
 			break;
-		case aet_i8:
+		case ecl_aet_i8:
 			j = x->array.dim * sizeof(int8_t);
 			break;
 		default:
@@ -584,9 +584,9 @@ mark_phase(void)
 				mark_object(dll);
 			}
 		}
-		s->vector.elttype = aet_fix;
+		s->vector.elttype = ecl_aet_fix;
 		mark_object(s);
-		s->vector.elttype = aet_object;
+		s->vector.elttype = ecl_aet_object;
 	}
 	mark_stack_conservative((cl_ptr)&cl_core, (cl_ptr)(&cl_core + 1));
 	/* mark roots */

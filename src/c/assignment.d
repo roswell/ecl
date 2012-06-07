@@ -23,7 +23,7 @@ cl_object
 cl_set(cl_object var, cl_object val)
 {
 	const cl_env_ptr env = ecl_process_env();
-	if (ecl_symbol_type(var) & stp_constant)
+	if (ecl_symbol_type(var) & ecl_stp_constant)
 		FEinvalid_variable("Cannot assign to the constant ~S.", var);
 	return1(ECL_SETQ(env, var, val));
 }
@@ -93,15 +93,15 @@ ecl_rem_setf_definition(cl_object sym)
 	}
 	mflag = !Null(macro);
 	type = ecl_symbol_type(sym);
-	if ((type & stp_special_form) && !mflag) {
+	if ((type & ecl_stp_special_form) && !mflag) {
 		FEerror("Given that ~S is a special form, ~S cannot be defined as a function.",
 			2, sym, fname);
 	}
 	if (SYMBOLP(fname)) {
 		if (mflag) {
-			type |= stp_macro;
+			type |= ecl_stp_macro;
 		} else {
-			type &= ~stp_macro;
+			type &= ~ecl_stp_macro;
 		}
 		ecl_symbol_type_set(sym, type);
 		SYM_FUN(sym) = def;
@@ -125,7 +125,7 @@ ecl_rem_setf_definition(cl_object sym)
 cl_object
 cl_makunbound(cl_object sym)
 {
-	if (ecl_symbol_type(sym) & stp_constant)
+	if (ecl_symbol_type(sym) & ecl_stp_constant)
 		FEinvalid_variable("Cannot unbind the constant ~S.", sym);
 	/* FIXME! The semantics of MAKUNBOUND is not very clear with local
 	   bindings ... */
@@ -145,7 +145,7 @@ cl_fmakunbound(cl_object fname)
 	if (SYMBOLP(fname)) {
 		ecl_clear_compiler_properties(sym);
 		SYM_FUN(sym) = Cnil;
-		ecl_symbol_type_set(sym, ecl_symbol_type(sym) & ~stp_macro);
+		ecl_symbol_type_set(sym, ecl_symbol_type(sym) & ~ecl_stp_macro);
 	} else {
 		ecl_rem_setf_definition(sym);
 		si_rem_sysprop(sym, @'si::setf-method');

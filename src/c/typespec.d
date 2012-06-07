@@ -283,7 +283,7 @@ cl_type_of(cl_object x)
 			t = cl_list(3, @'vector', ecl_elttype_to_symbol(ecl_array_elttype(x)),
 				    ecl_make_fixnum(x->vector.dim));
 		} else if (ECL_ARRAY_HAS_FILL_POINTER_P(x) ||
-			   (cl_elttype)x->vector.elttype != aet_object) {
+			   (cl_elttype)x->vector.elttype != ecl_aet_object) {
 			t = cl_list(3, @'simple-array',
                                     ecl_elttype_to_symbol(ecl_array_elttype(x)),
 				    cl_array_dimensions(x));

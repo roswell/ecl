@@ -189,7 +189,7 @@ serialize_vector(pool_t pool, cl_object v)
 {
         if (!Null(v->vector.displaced)) {
                 serialize_displaced_vector(pool, v);
-        } else if (v->vector.elttype == aet_object) {
+        } else if (v->vector.elttype == ecl_aet_object) {
                 serialize_object_ptr(pool, v->vector.self.t, v->vector.dim);
         } else {
                 serialize_bits(pool, v->vector.self.b8,
@@ -361,7 +361,7 @@ reconstruct_vector(cl_object v, uint8_t *data)
                 cl_type t = v->vector.elttype;
                 cl_index size = v->vector.dim * ecl_aet_size[t];
                 cl_index bytes = ROUND_TO_WORD(size);
-                if (t == aet_object) {
+                if (t == ecl_aet_object) {
                         v->vector.self.t = reconstruct_object_ptr(data, bytes);
                 } else {
                         v->vector.self.t = reconstruct_bits(data, size);
@@ -454,7 +454,7 @@ fixup_vector(cl_object v, cl_object *o_list)
                         return;
                 }
         }
-        if (v->vector.elttype == aet_object) {
+        if (v->vector.elttype == ecl_aet_object) {
                 cl_index i;
                 cl_object *p = v->vector.self.t;
                 for (i = v->vector.dim; i; i--, p++) {

@@ -74,14 +74,14 @@
         } name[]
 
 #define ecl_def_string_array_elt(chars) {                      \
-                (int8_t)t_base_string, 0, aet_bc, 0,            \
+                (int8_t)t_base_string, 0, ecl_aet_bc, 0,            \
                         Cnil, (cl_index)(sizeof(chars))-1,      \
                         (cl_index)(sizeof(chars))-1,            \
                         (ecl_base_char*)(chars) }
 
 #define ecl_def_ct_base_string(name,chars,len,static,const)     \
         static const struct ecl_base_string name ## _data = {    \
-                (int8_t)t_base_string, 0, aet_bc, 0,            \
+                (int8_t)t_base_string, 0, ecl_aet_bc, 0,            \
                 Cnil, (cl_index)(len), (cl_index)(len),         \
                 (ecl_base_char*)(chars) };                      \
         static const cl_object name = (cl_object)(& name ## _data)

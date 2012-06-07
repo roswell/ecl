@@ -637,7 +637,7 @@ si_bc_split(cl_object b)
                 name = Cnil;
         } else {
                 vector = ecl_alloc_simple_vector(b->bytecodes.code_size *
-                                                 sizeof(cl_opcode), aet_b8);
+                                                 sizeof(cl_opcode), ecl_aet_b8);
                 vector->vector.self.b8 = (uint8_t*)b->bytecodes.code;
                 data = cl_copy_seq(b->bytecodes.data);
                 name = b->bytecodes.name;
@@ -657,7 +657,7 @@ si_bc_join(cl_object lex, cl_object code, cl_object data, cl_object name)
         } else {
                 /* Ensure minimal sanity of data */
                 unlikely_if (!ECL_VECTORP(code) ||
-                             (code->vector.elttype != aet_b8)) {
+                             (code->vector.elttype != ecl_aet_b8)) {
                         FEwrong_type_nth_arg(@[si::bc-join],
                                              0, code,
                                              cl_list(2,
@@ -665,7 +665,7 @@ si_bc_join(cl_object lex, cl_object code, cl_object data, cl_object name)
                                                      @'ext::byte8'));
                 }
                 unlikely_if (!ECL_VECTORP(code) ||
-                             (data->vector.elttype != aet_object)) {
+                             (data->vector.elttype != ecl_aet_object)) {
                         FEwrong_type_nth_arg(@[si::bc-join],
                                              0, code,
                                              cl_list(2,

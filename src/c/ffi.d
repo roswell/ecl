@@ -18,45 +18,45 @@
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
 
-static const cl_object ecl_aet_to_ffi_table[aet_bc+1] = {
-	@':void', /* aet_object */
-	@':float', /* aet_df */
-	@':double', /* aet_df */
-	@':void', /* aet_bit */
+static const cl_object ecl_aet_to_ffi_table[ecl_aet_bc+1] = {
+	@':void', /* ecl_aet_object */
+	@':float', /* ecl_aet_df */
+	@':double', /* ecl_aet_df */
+	@':void', /* ecl_aet_bit */
 #if ECL_FIXNUM_BITS == 32 && defined(ecl_uint32_t)
-        @':int32-t', /* aet_fix */
-        @':uint32-t', /* aet_index */
+        @':int32-t', /* ecl_aet_fix */
+        @':uint32-t', /* ecl_aet_index */
 #else
 # if ECL_FIXNUM_BITS == 64 && defined(ecl_uint64_t)
-        @':int64-t', /* aet_fix */
-        @':uint64-t', /* aet_index */
+        @':int64-t', /* ecl_aet_fix */
+        @':uint64-t', /* ecl_aet_index */
 # else
-        @':void', /* aet_fix */
-        @':void', /* aet_index */
+        @':void', /* ecl_aet_fix */
+        @':void', /* ecl_aet_index */
 # endif
 #endif
-	@':uint8-t', /* aet_b8 */
-        @':int8-t', /* aet_i8 */
+	@':uint8-t', /* ecl_aet_b8 */
+        @':int8-t', /* ecl_aet_i8 */
 #ifdef ecl_uint16_t
-        @':uint16-t', /* aet_b16 */
-        @':int16-t', /* aet_i16 */
+        @':uint16-t', /* ecl_aet_b16 */
+        @':int16-t', /* ecl_aet_i16 */
 #endif
 #ifdef ecl_uint32_t
-        @':uint32-t', /* aet_b32 */
-        @':int32-t', /* aet_i32 */
+        @':uint32-t', /* ecl_aet_b32 */
+        @':int32-t', /* ecl_aet_i32 */
 #endif
 #ifdef ecl_uint64_t
-        @':uint64-t', /* aet_b64 */
-        @':int64-t', /* aet_i64 */
+        @':uint64-t', /* ecl_aet_b64 */
+        @':int64-t', /* ecl_aet_i64 */
 #endif
 #ifdef ECL_UNICODE
 # ifdef ecl_int32_t
-	@':int32-t', /* aet_ch */
+	@':int32-t', /* ecl_aet_ch */
 # else
-        @':void', /* aet_ch */
+        @':void', /* ecl_aet_ch */
 # endif
 #endif
-	@':char' /* aet_bc */
+	@':char' /* ecl_aet_bc */
 };
 
 #define AUX_PTR(type) \

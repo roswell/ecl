@@ -495,11 +495,11 @@ generic_write_vector(cl_object strm, cl_object data, cl_index start, cl_index en
 		return start;
 	ops = stream_dispatch_table(strm);
         elttype = ecl_array_elttype(data);
-	if (elttype == aet_bc ||
+	if (elttype == ecl_aet_bc ||
 #ifdef ECL_UNICODE
-	    elttype == aet_ch ||
+	    elttype == ecl_aet_ch ||
 #endif
-	    (elttype == aet_object && ECL_CHARACTERP(ecl_elt(data, 0)))) {
+	    (elttype == ecl_aet_object && ECL_CHARACTERP(ecl_elt(data, 0)))) {
 		ecl_character (*write_char)(cl_object, ecl_character) = ops->write_char;			
 		for (; start < end; start++) {
 			write_char(strm, ecl_char_code(ecl_elt(data, start)));
@@ -2847,12 +2847,12 @@ io_file_read_vector(cl_object strm, cl_object data, cl_index start, cl_index end
 	cl_elttype t = ecl_array_elttype(data);
 	if (start >= end)
 		return start;
-	if (t == aet_b8 || t == aet_i8) {
+	if (t == ecl_aet_b8 || t == ecl_aet_i8) {
 		if (strm->stream.byte_size == 8) {
 			void *aux = data->vector.self.bc + start;
 			return start + strm->stream.ops->read_byte8(strm, aux, end-start);
 		}
-	} else if (t == aet_fix || t == aet_index) {
+	} else if (t == ecl_aet_fix || t == ecl_aet_index) {
 		if (strm->stream.byte_size == sizeof(cl_fixnum)*8) {
 			void *aux = data->vector.self.fix + start;
 			cl_index bytes = (end - start) * sizeof(cl_fixnum);
@@ -2869,12 +2869,12 @@ io_file_write_vector(cl_object strm, cl_object data, cl_index start, cl_index en
 	cl_elttype t = ecl_array_elttype(data);
 	if (start >= end)
 		return start;
-	if (t == aet_b8 || t == aet_i8) {
+	if (t == ecl_aet_b8 || t == ecl_aet_i8) {
 		if (strm->stream.byte_size == 8) {
 			void *aux = data->vector.self.bc + start;
 			return strm->stream.ops->write_byte8(strm, aux, end-start);
 		}
-	} else if (t == aet_fix || t == aet_index) {
+	} else if (t == ecl_aet_fix || t == ecl_aet_index) {
 		if (strm->stream.byte_size == sizeof(cl_fixnum)*8) {
 			void *aux = data->vector.self.fix + start;
 			cl_index bytes = (end - start) * sizeof(cl_fixnum);
@@ -4301,8 +4301,8 @@ make_sequence_input_stream(cl_object vector, cl_index istart, cl_index iend,
         int byte_size;
         int flags = 0;
         if (!ECL_VECTORP(vector) ||
-            ((type = ecl_array_elttype(vector)) < aet_b8 &&
-	     type > aet_bc) ||
+            ((type = ecl_array_elttype(vector)) < ecl_aet_b8 &&
+	     type > ecl_aet_bc) ||
 	    ecl_aet_size[type] != 1)
         {
                 FEerror("MAKE-SEQUENCE-INPUT-STREAM only accepts vectors whose element has a size of 1 byte.~%~A", 1, vector);
@@ -4448,8 +4448,8 @@ make_sequence_output_stream(cl_object vector, cl_object external_format)
         int byte_size;
         int flags = 0;
         if (!ECL_VECTORP(vector) ||
-            ((type = ecl_array_elttype(vector)) < aet_b8 &&
-	     type > aet_bc) ||
+            ((type = ecl_array_elttype(vector)) < ecl_aet_b8 &&
+	     type > ecl_aet_bc) ||
 	    ecl_aet_size[type] != 1)
         {
                 FEerror("MAKE-SEQUENCE-OUTPUT-STREAM only accepts vectors whose element has a size of 1 byte.~%~A", 1, vector);

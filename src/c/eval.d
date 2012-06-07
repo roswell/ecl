@@ -71,7 +71,7 @@ ecl_apply_from_stack_frame(cl_object frame, cl_object x)
 		}
 #endif
 	case t_symbol:
-		if (ecl_unlikely(fun->symbol.stype & stp_macro))
+		if (ecl_unlikely(fun->symbol.stype & ecl_stp_macro))
 			FEundefined_function(x);
 		fun = SYM_FUN(fun);
 		goto AGAIN;
@@ -107,7 +107,7 @@ ecl_function_dispatch(cl_env_ptr env, cl_object x)
                 return fun->instance.entry;
 #endif
 	case t_symbol:
-		if (ecl_unlikely(fun->symbol.stype & stp_macro))
+		if (ecl_unlikely(fun->symbol.stype & ecl_stp_macro))
 			FEundefined_function(x);
 		fun = SYM_FUN(fun);
 		goto AGAIN;
@@ -189,7 +189,7 @@ cl_eval(cl_object form)
 		}
 		break;
 	case t_symbol:
-		flag = (arg->symbol.stype & stp_constant) ? Ct : Cnil;
+		flag = (arg->symbol.stype & ecl_stp_constant) ? Ct : Cnil;
 		break;
 	default:
 		flag = Ct;

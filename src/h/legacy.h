@@ -82,3 +82,25 @@
 #define make_simple_base_string(s) ecl_make_simple_base_string((s),-1)
 #define make_constant_base_string(s) ecl_make_simple_base_string((char *)(s),-1)
 
+#define stp_ordinary ecl_stp_ordinary
+#define stp_constant ecl_stp_constant
+#define stp_special ecl_stp_special
+#define stp_macro ecl_stp_macro
+#define stp_special_form ecl_stp_special_form
+
+#define aet_object ecl_aet_object
+#define aet_sf ecl_aet_sf
+#define aet_df ecl_aet_df
+#define aet_bit ecl_aet_bit
+#define aet_fix ecl_aet_fix
+#define aet_index ecl_aet_index
+#define aet_b8 ecl_aet_b8
+#define aet_i8 ecl_aet_i8
+#define aet_b16 ecl_aet_b16
+#define aet_i16 ecl_aet_i16
+#define aet_b32 ecl_aet_b32
+#define aet_i32 ecl_aet_i32
+#define aet_b64 ecl_aet_b64
+#define aet_i64 ecl_aet_i64
+#define aet_ch ecl_aet_ch
+#define aet_bc ecl_aet_bc

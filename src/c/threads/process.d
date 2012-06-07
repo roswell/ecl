@@ -642,7 +642,7 @@ mp_process_run_function_wait(cl_narg narg, ...)
 static cl_object
 mp_get_sigmask(void)
 {
-        cl_object data = ecl_alloc_simple_vector(sizeof(sigset_t), aet_b8);
+        cl_object data = ecl_alloc_simple_vector(sizeof(sigset_t), ecl_aet_b8);
         sigset_t *mask_ptr = (sigset_t*)data->vector.self.b8;
         sigset_t no_signals;
         sigemptyset(&no_signals);

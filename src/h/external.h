@@ -1623,7 +1623,7 @@ extern ECL_API cl_object cl_nstring_capitalize _ARGS((cl_narg narg, ...));
 extern ECL_API cl_object si_base_string_concatenate _ARGS((cl_narg narg, ...));
 extern ECL_API cl_object si_copy_to_simple_base_string(cl_object s);
 
-#define ecl_alloc_simple_base_string(l) ecl_alloc_simple_vector((l),aet_bc)
+#define ecl_alloc_simple_base_string(l) ecl_alloc_simple_vector((l),ecl_aet_bc)
 extern ECL_API cl_object ecl_alloc_adjustable_base_string(cl_index l);
 extern ECL_API cl_object ecl_make_simple_base_string(char *s, cl_fixnum i);
 #define ecl_make_constant_base_string(s,n) ecl_make_simple_base_string((char*)s,n)
@@ -1896,7 +1896,7 @@ extern ECL_API cl_object si_base_char_p(cl_object x);
 extern ECL_API cl_object si_base_string_p(cl_object x);
 extern ECL_API cl_object si_coerce_to_base_string(cl_object x);
 extern ECL_API cl_object si_coerce_to_extended_string(cl_object x);
-#define ecl_alloc_simple_extended_string(l) ecl_alloc_simple_vector((l),aet_ch)
+#define ecl_alloc_simple_extended_string(l) ecl_alloc_simple_vector((l),ecl_aet_ch)
 extern ECL_API cl_object ecl_alloc_adjustable_extended_string(cl_index l);
 #else
 #define si_base_char_p cl_characterp

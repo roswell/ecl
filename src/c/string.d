@@ -85,7 +85,7 @@ ecl_alloc_adjustable_base_string(cl_index l)
 	output->base_string.self       = (ecl_base_char *)ecl_alloc_atomic(l+1);
         output->base_string.self[l]    = 0;
 	output->base_string.flags      = ECL_FLAG_HAS_FILL_POINTER | ECL_FLAG_ADJUSTABLE;
-        output->base_string.elttype    = aet_bc;
+        output->base_string.elttype    = ecl_aet_bc;
 	output->base_string.displaced  = Cnil;
 	output->base_string.dim        = l;
 	output->base_string.fillp      = 0;
@@ -100,7 +100,7 @@ ecl_alloc_adjustable_extended_string(cl_index l)
 	cl_object output = ecl_alloc_object(t_string);
 	output->string.self       = (ecl_character *)ecl_alloc_atomic(bytes);
 	output->string.flags      = ECL_FLAG_HAS_FILL_POINTER | ECL_FLAG_ADJUSTABLE;
-        output->string.elttype    = aet_ch;
+        output->string.elttype    = ecl_aet_ch;
 	output->string.displaced  = Cnil;
 	output->string.dim        = l;
         output->string.fillp      = 0;
@@ -115,7 +115,7 @@ cl_object
 ecl_make_simple_base_string(char *s, cl_fixnum l)
 {
 	cl_object x = ecl_alloc_object(t_base_string);
-        x->base_string.elttype = aet_bc;
+        x->base_string.elttype = ecl_aet_bc;
         x->base_string.flags = 0; /* no fill pointer, no adjustable */
 	x->base_string.displaced = Cnil;
         if (l < 0) l = strlen(s);

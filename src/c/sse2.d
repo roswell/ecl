@@ -35,21 +35,21 @@ si_sse_pack_p(cl_object x)
 
 static void verify_sse_elttype(cl_elttype eltt) {
 	switch (eltt) {
-	case aet_sf:
-	case aet_df:
-	case aet_b8:
-	case aet_i8:
+	case ecl_aet_sf:
+	case ecl_aet_df:
+	case ecl_aet_b8:
+	case ecl_aet_i8:
 #ifdef ecl_uint16_t
-	case aet_b16:
-	case aet_i16:
+	case ecl_aet_b16:
+	case ecl_aet_i16:
 #endif
 #ifdef ecl_uint32_t
-	case aet_b32:
-	case aet_i32:
+	case ecl_aet_b32:
+	case ecl_aet_i32:
 #endif
 #ifdef ecl_uint64_t
-	case aet_b64:
-	case aet_i64:
+	case ecl_aet_b64:
+	case ecl_aet_i64:
 #endif
 		break; /* OK */
 	default:
@@ -146,7 +146,7 @@ cl_object
 ecl_make_int_sse_pack(__m128i value)
 {
 	cl_object obj = ecl_alloc_object(t_sse_pack);
-	obj->sse.elttype = aet_b8;
+	obj->sse.elttype = ecl_aet_b8;
 	obj->sse.data.vi = value;
 	@(return obj);
 }
@@ -165,7 +165,7 @@ cl_object
 ecl_make_float_sse_pack(__m128 value)
 {
 	cl_object obj = ecl_alloc_object(t_sse_pack);
-	obj->sse.elttype = aet_sf;
+	obj->sse.elttype = ecl_aet_sf;
 	obj->sse.data.vf = value;
 	@(return obj);
 }
@@ -184,7 +184,7 @@ cl_object
 ecl_make_double_sse_pack(__m128d value)
 {
 	cl_object obj = ecl_alloc_object(t_sse_pack);
-	obj->sse.elttype = aet_df;
+	obj->sse.elttype = ecl_aet_df;
 	obj->sse.data.vd = value;
 	@(return obj);
 }

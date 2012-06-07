@@ -235,11 +235,11 @@ struct ecl_complex {
 };
 
 enum ecl_stype {		/*  symbol type  */
-	stp_ordinary = 0,
-	stp_constant = 1,
-        stp_special = 2,
-	stp_macro = 4,
-	stp_special_form = 8
+	ecl_stp_ordinary = 0,
+	ecl_stp_constant = 1,
+        ecl_stp_special = 2,
+	ecl_stp_macro = 4,
+	ecl_stp_special_form = 8
 };
 
 #define	Cnil			((cl_object)t_list)
@@ -389,29 +389,29 @@ struct ecl_hashtable {		/*  hash table header  */
 };
 
 typedef enum {			/*  array element type  */
-	aet_object,		/*  t                */
-	aet_sf,			/*  single-float     */
-	aet_df,			/*  double-float     */
-	aet_bit,		/*  bit              */
-	aet_fix,		/*  cl_fixnum        */
-	aet_index,		/*  cl_index         */
+	ecl_aet_object,		/*  t                */
+	ecl_aet_sf,			/*  single-float     */
+	ecl_aet_df,			/*  double-float     */
+	ecl_aet_bit,		/*  bit              */
+	ecl_aet_fix,		/*  cl_fixnum        */
+	ecl_aet_index,		/*  cl_index         */
 	/* Below here, list types accepted by streams (i.e. OPEN) */
-	aet_b8,			/*  byte8	     */
-	aet_i8,			/*  integer8	     */
+	ecl_aet_b8,			/*  byte8	     */
+	ecl_aet_i8,			/*  integer8	     */
 #ifdef ecl_uint16_t
-        aet_b16, aet_i16,
+        ecl_aet_b16, ecl_aet_i16,
 #endif
 #ifdef ecl_uint32_t
-        aet_b32, aet_i32,
+        ecl_aet_b32, ecl_aet_i32,
 #endif
 #ifdef ecl_uint64_t
-        aet_b64, aet_i64,
+        ecl_aet_b64, ecl_aet_i64,
 #endif
 #ifdef ECL_UNICODE
-	aet_ch,			/*  character        */
+	ecl_aet_ch,			/*  character        */
 #endif
-	aet_bc,			/*  base-char        */
-	aet_last_type = aet_bc
+	ecl_aet_bc,			/*  base-char        */
+	ecl_aet_last_type = ecl_aet_bc
 } cl_elttype;
 
 union ecl_array_data {

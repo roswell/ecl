@@ -672,7 +672,7 @@ c_var_ref(cl_env_ptr env, cl_object var, int allow_symbol_macro, bool ensure_def
 static bool
 c_declared_special(register cl_object var, register cl_object specials)
 {
-	return ((ecl_symbol_type(var) & stp_special) || ecl_member_eq(var, specials));
+	return ((ecl_symbol_type(var) & ecl_stp_special) || ecl_member_eq(var, specials));
 }
 
 static void
@@ -771,7 +771,7 @@ compile_setq(cl_env_ptr env, int op, cl_object var)
 		FEillegal_variable_name(var);
 	ndx = c_var_ref(env, var,0,TRUE);
 	if (ndx < 0) { /* Not a lexical variable */
-		if (ecl_symbol_type(var) & stp_constant) {
+		if (ecl_symbol_type(var) & ecl_stp_constant) {
 			FEassignment_to_constant(var);
 		}
 		ndx = c_register_constant(env, var);
@@ -2009,7 +2009,7 @@ c_symbol_macrolet(cl_env_ptr env, cl_object args, int flags)
 		cl_object expansion = pop(&definition);
 		cl_object arglist = cl_list(2, @gensym(0), @gensym(0));
 		cl_object function;
-		if ((ecl_symbol_type(name) & (stp_constant|stp_special)) ||
+		if ((ecl_symbol_type(name) & (ecl_stp_constant|ecl_stp_special)) ||
                     ecl_member_eq(name, specials))
 		{
 			FEprogram_error_noreturn("SYMBOL-MACROLET: Symbol ~A cannot be \
@@ -2718,7 +2718,7 @@ si_process_lambda_list(cl_object org_lambda_list, cl_object context)
 #define push(v,l) { cl_object c = *l = CONS(v, *l); l = &ECL_CONS_CDR(c); }
 #define assert_var_name(v) \
 	if (context == @'function') { \
-		unlikely_if (ecl_symbol_type(v) & stp_constant)	\
+		unlikely_if (ecl_symbol_type(v) & ecl_stp_constant)	\
 			FEillegal_variable_name(v); }
         cl_object lists[4] = {Cnil, Cnil, Cnil, Cnil};
         cl_object *reqs = lists, *opts = lists+1, *keys = lists+2, *auxs = lists+3;

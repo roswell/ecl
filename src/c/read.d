@@ -824,7 +824,7 @@ sharp_left_parenthesis_reader(cl_object in, cl_object c, cl_object d)
                              (dim > ADIMLIM)) {
                         FEreader_error("Invalid dimension size ~D in #()", in, 1, d);
                 }
-		v = ecl_alloc_simple_vector(dim, aet_object);
+		v = ecl_alloc_simple_vector(dim, ecl_aet_object);
 		for (i = 0, last = Cnil;; i++) {
 			cl_object aux = ecl_read_object_with_delimiter(in, ')', 0,
                                                                        cat_constituent);
@@ -890,7 +890,7 @@ sharp_asterisk_reader(cl_object in, cl_object c, cl_object d)
 			FEreader_error("Cannot fill the bit-vector #*.", in, 0);
 	}
 	last = ECL_STACK_REF(env,-1);
-	x = ecl_alloc_simple_vector(dim, aet_bit);
+	x = ecl_alloc_simple_vector(dim, ecl_aet_bit);
 	for (i = 0; i < dim; i++) {
 		elt = (i < dimcount) ? env->stack[sp+i] : last;
 		if (elt == ecl_make_fixnum(0))
@@ -1147,7 +1147,7 @@ do_patch_sharp(cl_object x, cl_object table)
                 ECL_RPLACD(x, do_patch_sharp(ECL_CONS_CDR(x), table));
 		break;
 	case t_vector:
-		if (x->vector.elttype == aet_object) {
+		if (x->vector.elttype == ecl_aet_object) {
 			cl_index i;
 			for (i = 0;  i < x->vector.fillp;  i++)
 				x->vector.self.t[i] =
@@ -1155,7 +1155,7 @@ do_patch_sharp(cl_object x, cl_object table)
 		}
 		break;
 	case t_array:
-		if (x->vector.elttype == aet_object) {
+		if (x->vector.elttype == ecl_aet_object) {
 			cl_index i, j = x->array.dim;
 			for (i = 0;  i < j;  i++)
 				x->array.self.t[i] =
@@ -1211,7 +1211,7 @@ do_patch_sharp(cl_object x, cl_object table)
                 ECL_RPLACD(x, do_patch_sharp(ECL_CONS_CDR(x), table));
 		break;
 	case t_vector:
-		if (x->vector.elttype == aet_object) {
+		if (x->vector.elttype == ecl_aet_object) {
 			cl_index i;
 			for (i = 0;  i < x->vector.fillp;  i++)
 				x->vector.self.t[i] =
@@ -1219,7 +1219,7 @@ do_patch_sharp(cl_object x, cl_object table)
 		}
 		break;
 	case t_array:
-		if (x->vector.elttype == aet_object) {
+		if (x->vector.elttype == ecl_aet_object) {
 			cl_index i, j = x->array.dim;
 			for (i = 0;  i < j;  i++)
 				x->array.self.t[i] =
@@ -2289,7 +2289,7 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
                                 cl_object v = ECL_SYM_VAL(env,@'si::*compiler-constants*');
                                 unlikely_if (type_of(v) != t_vector ||
                                              v->vector.dim != len ||
-                                             v->vector.elttype != aet_object)
+                                             v->vector.elttype != ecl_aet_object)
                                         FEerror("Internal error: corrupted data in "
                                                 "si::*compiler-constants*", 0);
                                 VV = block->cblock.data = v->vector.self.t;

@@ -521,7 +521,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 			break;
 #endif
 		case t_symbol:
-			if (ecl_unlikely(reg0->symbol.stype & stp_macro))
+			if (ecl_unlikely(reg0->symbol.stype & ecl_stp_macro))
 				FEundefined_function(x);
 			reg0 = SYM_FUN(reg0);
 			goto AGAIN;
@@ -926,7 +926,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 		cl_object var;
 		GET_DATA(var, vector, data);
 		/* INV: Not NIL, and of type t_symbol */
-		if (ecl_unlikely(var->symbol.stype & stp_constant))
+		if (ecl_unlikely(var->symbol.stype & ecl_stp_constant))
 			FEassignment_to_constant(var);
 		ECL_SETQ(the_env, var, reg0);
 		THREAD_NEXT;

@@ -30,11 +30,11 @@ cl_symbol_function(cl_object sym)
 {
 	cl_object output;
 	int type = ecl_symbol_type(sym);
-	if (type & stp_special_form) {
+	if (type & ecl_stp_special_form) {
 		output = @'special';
 	} else if (Null(sym) || (SYM_FUN(sym) == Cnil)) {
 		FEundefined_function(sym);
-	} else if (type & stp_macro) {
+	} else if (type & ecl_stp_macro) {
 		output = CONS(@'si::macro', SYM_FUN(sym));
 	} else {
 		output = SYM_FUN(sym);
@@ -54,7 +54,7 @@ cl_fboundp(cl_object fname)
 	if (Null(fname)) {
 		@(return Cnil);
 	} else if (SYMBOLP(fname)) {
-		@(return (((fname->symbol.stype & stp_special_form)
+		@(return (((fname->symbol.stype & ecl_stp_special_form)
 			   || SYM_FUN(fname) != Cnil)? Ct : Cnil))
 	} else if (LISTP(fname)) {
 		if (CAR(fname) == @'setf') {
@@ -82,7 +82,7 @@ ecl_fdefinition(cl_object fun)
 		output = SYM_FUN(fun);
 		unlikely_if (output == Cnil)
 			FEundefined_function(fun);
-		unlikely_if (fun->symbol.stype & (stp_macro | stp_special_form))
+		unlikely_if (fun->symbol.stype & (ecl_stp_macro | ecl_stp_special_form))
 			FEundefined_function(fun);
 	} else unlikely_if (Null(fun)) {
 		FEundefined_function(fun);
@@ -170,6 +170,6 @@ cl_object
 cl_special_operator_p(cl_object form)
 {
 	const cl_env_ptr the_env = ecl_process_env();
-	int special = ecl_symbol_type(form) & stp_special_form;
+	int special = ecl_symbol_type(form) & ecl_stp_special_form;
 	ecl_return1(the_env, special? Ct : Cnil);
 }

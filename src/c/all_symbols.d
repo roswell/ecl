@@ -174,10 +174,10 @@ make_this_symbol(int i, cl_object s, int code, const char *name,
 	bool form = 0;
 
 	switch (code & 3) {
-	case ORDINARY_SYMBOL: stp = stp_ordinary; break;
-	case SPECIAL_SYMBOL: stp = stp_special; break;
-	case CONSTANT_SYMBOL: stp = stp_constant; break;
-	case FORM_SYMBOL: form = 1; stp = stp_ordinary;
+	case ORDINARY_SYMBOL: stp = ecl_stp_ordinary; break;
+	case SPECIAL_SYMBOL: stp = ecl_stp_special; break;
+	case CONSTANT_SYMBOL: stp = ecl_stp_constant; break;
+	case FORM_SYMBOL: form = 1; stp = ecl_stp_ordinary;
 	}
 	switch (code & ~(int)3) {
 	case CL_PACKAGE: package = cl_core.lisp_package; break;
@@ -223,7 +223,7 @@ make_this_symbol(int i, cl_object s, int code, const char *name,
                         cl_export2(s, cl_core.system_package);
 	}
 	if (form) {
-		s->symbol.stype |= stp_special_form;
+		s->symbol.stype |= ecl_stp_special_form;
 	} else if (fun) {
 		cl_object f;
 		if (narg >= 0) {

@@ -516,19 +516,19 @@ si_bit_array_op(cl_object o, cl_object x, cl_object y, cl_object r)
 		}
 	L1:
 		if (Null(r)) {
-			r = ecl_alloc_simple_vector(d, aet_bit);
+			r = ecl_alloc_simple_vector(d, ecl_aet_bit);
 		}
 	} else {
 		if (type_of(x) != t_array)
 			goto ERROR;
-		if ((cl_elttype)x->array.elttype != aet_bit)
+		if ((cl_elttype)x->array.elttype != ecl_aet_bit)
 			goto ERROR;
 		d = x->array.dim;
 		xp = x->vector.self.bit;
 		xo = x->vector.offset;
 		if (type_of(y) != t_array)
 			goto ERROR;
-		if ((cl_elttype)y->array.elttype != aet_bit)
+		if ((cl_elttype)y->array.elttype != ecl_aet_bit)
 			goto ERROR;
 		if (x->array.rank != y->array.rank)
 			goto ERROR;
@@ -542,7 +542,7 @@ si_bit_array_op(cl_object o, cl_object x, cl_object y, cl_object r)
 		if (r != Cnil) {
 			if (type_of(r) != t_array)
 				goto ERROR;
-			if ((cl_elttype)r->array.elttype != aet_bit)
+			if ((cl_elttype)r->array.elttype != ecl_aet_bit)
 				goto ERROR;
 			if (r->array.rank != x->array.rank)
 				goto ERROR;
@@ -570,7 +570,7 @@ si_bit_array_op(cl_object o, cl_object x, cl_object y, cl_object r)
 		  r->array.displaced = Cnil;
 		  r->array.rank = x->array.rank;
 		  r->array.dims = x->array.dims;
-		  r->array.elttype = aet_bit;
+		  r->array.elttype = ecl_aet_bit;
 		  r->array.dim = x->array.dim;
 		  r->array.flags = 0; /* no fill pointer, not adjustable */
 		  ecl_array_allocself(r);

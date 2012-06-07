@@ -58,17 +58,17 @@ write_sse_pack(cl_object x, cl_object stream)
 	cl_object mode = ecl_symbol_value(@'ext::*sse-pack-print-mode*');
 
 	if (mode != Cnil) {
-		if (mode == @':float') etype = aet_sf;
-		else if (mode == @':double') etype = aet_df;
-		else etype = aet_b8;
+		if (mode == @':float') etype = ecl_aet_sf;
+		else if (mode == @':double') etype = ecl_aet_df;
+		else etype = ecl_aet_b8;
 	}
 
 	switch (etype) {
-	case aet_sf:
+	case ecl_aet_sf:
 		for (i = 0; i < 4; i++)
                         write_sse_float(x->sse.data.sf[i], stream);
 		break;
-	case aet_df:
+	case ecl_aet_df:
 		write_sse_double(x->sse.data.df[0], stream);
 		write_sse_double(x->sse.data.df[1], stream);
 		break;

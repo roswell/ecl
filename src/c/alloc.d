@@ -316,7 +316,7 @@ ONCE_MORE:
 	case t_array:
 	  obj->array.dims = NULL;
 	  obj->array.displaced = Cnil;
-	  obj->array.elttype = (short)aet_object;
+	  obj->array.elttype = (short)ecl_aet_object;
 	  obj->array.self.t = NULL;
 	  break;
 #ifdef ECL_UNICODE
@@ -324,7 +324,7 @@ ONCE_MORE:
 #endif
 	case t_vector:
 	  obj->array.displaced = Cnil;
-	  obj->array.elttype = (short)aet_object;
+	  obj->array.elttype = (short)ecl_aet_object;
 	  obj->array.self.t = NULL;
 	  break;
 	case t_base_string:

@@ -215,9 +215,9 @@ BEGIN:
 			break;
 		switch ((enum aelttype)x->array.elttype) {
 #ifdef ECL_UNICODE
-		case aet_ch:
+		case ecl_aet_ch:
 #endif
-		case aet_object:
+		case ecl_aet_object:
 			if (x->array.displaced == Cnil || CAR(x->array.displaced) == Cnil) {
 				cl_object *p = x->array.self.t;
 				cl_index i;
@@ -230,19 +230,19 @@ BEGIN:
 			}
 			j = sizeof(cl_object)*x->array.dim;
 			break;
-		case aet_bc:
+		case ecl_aet_bc:
 			j = x->array.dim;
 			break;
-		case aet_bit:
+		case ecl_aet_bit:
 			j = sizeof(int) * ((x->vector.offset + x->vector.dim + W_SIZE -1)/W_SIZE);
 			break;
-		case aet_fix:
+		case ecl_aet_fix:
 			j = x->array.dim * sizeof(cl_fixnum);
 			break;
-		case aet_sf:
+		case ecl_aet_sf:
 			j = x->array.dim * sizeof(float);
 			break;
-		case aet_df:
+		case ecl_aet_df:
 			j = x->array.dim * sizeof(double);
 			break;
 		default:

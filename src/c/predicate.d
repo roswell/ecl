@@ -198,7 +198,7 @@ cl_simple_vector_p(cl_object x)
                    !ECL_ADJUSTABLE_ARRAY_P(x) &&
                    !ECL_ARRAY_HAS_FILL_POINTER_P(x) &&
                    Null(CAR(x->vector.displaced)) &&
-                   (cl_elttype)x->vector.elttype == aet_object) ? Ct : Cnil))
+                   (cl_elttype)x->vector.elttype == ecl_aet_object) ? Ct : Cnil))
 }
 
 cl_object

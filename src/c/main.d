@@ -532,7 +532,7 @@ cl_boot(int argc, char **argv)
 	Cnil_symbol->symbol.gfdef = Cnil;
 	Cnil_symbol->symbol.plist = Cnil;
 	Cnil_symbol->symbol.hpack = Cnil;
-	Cnil_symbol->symbol.stype = stp_constant;
+	Cnil_symbol->symbol.stype = ecl_stp_constant;
 #ifdef ECL_THREADS
 	Cnil_symbol->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
 #endif
@@ -545,7 +545,7 @@ cl_boot(int argc, char **argv)
 	Ct->symbol.gfdef = Cnil;
 	Ct->symbol.plist = Cnil;
 	Ct->symbol.hpack = Cnil;
-	Ct->symbol.stype = stp_constant;
+	Ct->symbol.stype = ecl_stp_constant;
 #ifdef ECL_THREADS
 	Ct->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
 #endif

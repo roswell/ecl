@@ -639,7 +639,7 @@ return f2;
       (loop for var-loc in filtered-locations
             do (wt ",(cl_index)(&" (lcl-name var-loc) ")"))
       (wt "};")
-      (wt-nl "ecl_def_ct_vector(_ecl_debug_env,aet_index,_ecl_debug_info_raw,"
+      (wt-nl "ecl_def_ct_vector(_ecl_debug_env,ecl_aet_index,_ecl_debug_info_raw,"
              (+ 2 (length filtered-locations))
              ",,);")
       (unless first

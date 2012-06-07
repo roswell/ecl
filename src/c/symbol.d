@@ -115,7 +115,7 @@ cl_make_symbol(cl_object str)
 	SYM_FUN(x) = Cnil;
 	x->symbol.plist = Cnil;
 	x->symbol.hpack = Cnil;
-	x->symbol.stype = stp_ordinary;
+	x->symbol.stype = ecl_stp_ordinary;
 	@(return x)
 }
 
@@ -439,9 +439,9 @@ cl_object
 @si::*make-special(cl_object sym)
 {
 	int type = ecl_symbol_type(sym);
-	if (type & stp_constant)
+	if (type & ecl_stp_constant)
 		FEerror("~S is a constant.", 1, sym);
-	ecl_symbol_type_set(sym, type | stp_special);
+	ecl_symbol_type_set(sym, type | ecl_stp_special);
 	cl_remprop(sym, @'si::symbol-macro');
 	@(return sym)
 }
@@ -450,10 +450,10 @@ cl_object
 @si::*make-constant(cl_object sym, cl_object val)
 {
 	int type = ecl_symbol_type(sym);
-	if (type & stp_special)
+	if (type & ecl_stp_special)
 		FEerror("The argument ~S to DEFCONSTANT is a special variable.",
 			1, sym);
-	ecl_symbol_type_set(sym, type | stp_constant);
+	ecl_symbol_type_set(sym, type | ecl_stp_constant);
 	ECL_SET(sym, val);
 	@(return sym)
 }

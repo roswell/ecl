@@ -69,14 +69,14 @@ extern cl_index ecl_object_byte_size(cl_type t);
 #ifdef ECL_DEFINE_AET_SIZE
 #undef ECL_DEFINE_AET_SIZE
 static const cl_index ecl_aet_size[] = {
-  sizeof(cl_object),          /* aet_object */
-  sizeof(float),              /* aet_sf */
-  sizeof(double),             /* aet_df */
-  0,                          /* aet_bit: cannot be handled with this code */
-  sizeof(cl_fixnum),          /* aet_fix */
-  sizeof(cl_index),           /* aet_index */
-  sizeof(uint8_t),            /* aet_b8 */
-  sizeof(int8_t),             /* aet_i8 */
+  sizeof(cl_object),          /* ecl_aet_object */
+  sizeof(float),              /* ecl_aet_sf */
+  sizeof(double),             /* ecl_aet_df */
+  0,                          /* ecl_aet_bit: cannot be handled with this code */
+  sizeof(cl_fixnum),          /* ecl_aet_fix */
+  sizeof(cl_index),           /* ecl_aet_index */
+  sizeof(uint8_t),            /* ecl_aet_b8 */
+  sizeof(int8_t),             /* ecl_aet_i8 */
 #ifdef ecl_uint16_t
   sizeof(ecl_uint16_t),
   sizeof(ecl_int16_t),
@@ -90,9 +90,9 @@ static const cl_index ecl_aet_size[] = {
   sizeof(ecl_int64_t),
 #endif
 #ifdef ECL_UNICODE
-  sizeof(ecl_character),      /* aet_ch */
+  sizeof(ecl_character),      /* ecl_aet_ch */
 #endif
-  sizeof(unsigned char)       /* aet_bc */
+  sizeof(unsigned char)       /* ecl_aet_bc */
 };
 #endif /* ECL_DEFINE_AET_SIZE */
 
