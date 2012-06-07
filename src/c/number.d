@@ -49,7 +49,7 @@ ecl_to_fix(cl_object f)
 {
 	if (ecl_unlikely(!ECL_FIXNUMP(f)))
 		FEtype_error_fixnum(f);
-	return ecl_fix(f);
+	return ecl_fixnum(f);
 }
 
 cl_index
@@ -57,7 +57,7 @@ ecl_to_size(cl_object f)
 {
 	cl_fixnum aux;
 	if (ecl_likely(ECL_FIXNUMP(f))) {
-		cl_fixnum aux = ecl_fix(f);
+		cl_fixnum aux = ecl_fixnum(f);
 		if (ecl_likely(aux >= 0))
 			return aux;
 	}
@@ -97,7 +97,7 @@ ecl_to_bit(cl_object x) {
 ecl_uint8_t
 ecl_to_uint8_t(cl_object x) {
 	if (ecl_likely(ECL_FIXNUMP(x))) {
-		cl_fixnum aux = ecl_fix(x);
+		cl_fixnum aux = ecl_fixnum(x);
 		if (ecl_likely(aux >= 0 && aux <= 255))
 			return (ecl_uint8_t)aux;
 	}
@@ -108,7 +108,7 @@ ecl_to_uint8_t(cl_object x) {
 ecl_int8_t
 ecl_to_int8_t(cl_object x) {
 	if (ecl_likely(ECL_FIXNUMP(x))) {
-		cl_fixnum aux = ecl_fix(x);
+		cl_fixnum aux = ecl_fixnum(x);
 		if (ecl_likely(aux >= -128 && aux <= 127))
 			return (ecl_uint8_t)aux;
 	}
@@ -120,7 +120,7 @@ unsigned short
 ecl_to_ushort(cl_object x) {
 	const unsigned short ushort_max = USHRT_MAX;
         if (ecl_likely(ECL_FIXNUMP(x))) {
-		cl_fixnum y = ecl_fix(x);
+		cl_fixnum y = ecl_fixnum(x);
 		if (ecl_likely(y >= 0 && y <= ushort_max)) {
 			return (unsigned short)y;
                 }
@@ -136,7 +136,7 @@ ecl_to_short(cl_object x) {
 	const short short_min = SHRT_MIN;
 	const short short_max = SHRT_MAX;
 	if (ecl_likely(ECL_FIXNUMP(x))) {
-		cl_fixnum y = ecl_fix(x);
+		cl_fixnum y = ecl_fixnum(x);
 		if (ecl_likely(y >= short_min && y <= short_max)) {
 			return (short)y;
                 }
@@ -156,7 +156,7 @@ ecl_uint16_t
 ecl_to_uint16_t(cl_object x) {
 	const uint16_t uint16_max = 0xFFFFL;
         if (ecl_likely(ECL_FIXNUMP(x))) {
-		cl_fixnum y = ecl_fix(x);
+		cl_fixnum y = ecl_fixnum(x);
 		if (ecl_likely(y >= 0 && y <= uint16_max)) {
 			return (ecl_uint16_t)y;
                 }
@@ -172,7 +172,7 @@ ecl_to_int16_t(cl_object x) {
 	const int16_t int16_min = -0x8000;
 	const int16_t int16_max =  0x7FFF;
 	if (ecl_likely(ECL_FIXNUMP(x))) {
-		cl_fixnum y = ecl_fix(x);
+		cl_fixnum y = ecl_fixnum(x);
 		if (ecl_likely(y >= int16_min && y <= int16_max)) {
 			return (ecl_int16_t)y;
                 }
@@ -189,7 +189,7 @@ ecl_uint32_t
 ecl_to_uint32_t(cl_object x) {
 	const uint32_t uint32_max = 0xFFFFFFFFUL;
 	if (ecl_likely(ECL_FIXNUMP(x))) {
-		cl_fixnum y = ecl_fix(x);
+		cl_fixnum y = ecl_fixnum(x);
 		if (ecl_likely(y >= 0 && y <= uint32_max)) {
 			return (ecl_uint32_t)y;
                 }
@@ -204,7 +204,7 @@ ecl_to_int32_t(cl_object x) {
 	const int32_t int32_min = -0x80000000L;
 	const int32_t int32_max =  0x7FFFFFFFL;
 	if (ecl_likely(ECL_FIXNUMP(x))) {
-		cl_fixnum y = ecl_fix(x);
+		cl_fixnum y = ecl_fixnum(x);
 		if (ecl_likely(y >= int32_min && y <= int32_max)) {
 			return (ecl_int32_t)y;
                 }
@@ -221,7 +221,7 @@ ecl_uint64_t
 ecl_to_uint64_t(cl_object x) {
 	if (!ecl_minusp(x)) {
 		if (ECL_FIXNUMP(x)) {
-			return (ecl_uint64_t)ecl_fix(x);
+			return (ecl_uint64_t)ecl_fixnum(x);
 		} else if (!ECL_BIGNUMP(x)) {
 			(void)0;
 		} else if (mpz_fits_ulong_p(x->big.big_num)) {
@@ -246,7 +246,7 @@ ecl_to_uint64_t(cl_object x) {
 ecl_int64_t
 ecl_to_int64_t(cl_object x) {
 	if (ECL_FIXNUMP(x)) {
-		return (ecl_int64_t)ecl_fix(x);
+		return (ecl_int64_t)ecl_fixnum(x);
 	} else if (!ECL_BIGNUMP(x)) {
 		(void)0;
 	} else if (mpz_fits_slong_p(x->big.big_num)) {
@@ -335,7 +335,7 @@ ecl_ulong_long_t
 ecl_to_unsigned_long_long(cl_object x) {
 	if (!ecl_minusp(x)) {
 		if (ECL_FIXNUMP(x)) {
-			return (ecl_ulong_long_t)ecl_fix(x);
+			return (ecl_ulong_long_t)ecl_fixnum(x);
 		} else if (!ECL_BIGNUMP(x)) {
 			(void)0;
 		} else if (mpz_fits_ulong_p(x->big.big_num)) {
@@ -365,7 +365,7 @@ ecl_long_long_t
 ecl_to_long_long(cl_object x)
 {
 	if (ECL_FIXNUMP(x)) {
-		return (ecl_long_long_t)ecl_fix(x);
+		return (ecl_long_long_t)ecl_fixnum(x);
 	} else if (!ECL_BIGNUMP(x)) {
 		(void)0;
 	} else if (mpz_fits_slong_p(x->big.big_num)) {
@@ -624,7 +624,7 @@ static cl_object
 into_bignum(cl_object bignum, cl_object integer)
 {
         if (ECL_FIXNUMP(integer)) {
-                _ecl_big_set_fixnum(bignum, ecl_fix(integer));
+                _ecl_big_set_fixnum(bignum, ecl_fixnum(integer));
         } else {
                 mpz_set(bignum->big.big_num, integer->big.big_num);
         }
@@ -703,9 +703,9 @@ ratio_to_float(cl_object num, cl_object den)
         cl_object bits = prepare_ratio_to_float(num, den, FLT_MANT_DIG, &scale);
 #if (FIXNUM_BITS-ECL_TAG_BITS) >= FLT_MANT_DIG
         /* The output of prepare_ratio_to_float will always fit an integer */
-        float output = ecl_fix(bits);
+        float output = ecl_fixnum(bits);
 #else
-        float output = ECL_FIXNUMP(bits)? ecl_fix(bits) : _ecl_big_to_double(bits);
+        float output = ECL_FIXNUMP(bits)? ecl_fixnum(bits) : _ecl_big_to_double(bits);
 #endif
         return ldexpf(output, scale);
 }
@@ -718,9 +718,9 @@ ratio_to_double(cl_object num, cl_object den)
         cl_object bits = prepare_ratio_to_float(num, den, DBL_MANT_DIG, &scale);
 #if (FIXNUM_BITS-ECL_TAG_BITS) >= DBL_MANT_DIG
         /* The output of prepare_ratio_to_float will always fit an integer */
-        double output = ecl_fix(bits);
+        double output = ecl_fixnum(bits);
 #else
-        double output = ECL_FIXNUMP(bits)? ecl_fix(bits) : _ecl_big_to_double(bits);
+        double output = ECL_FIXNUMP(bits)? ecl_fixnum(bits) : _ecl_big_to_double(bits);
 #endif
         return ldexp(output, scale);
 }
@@ -733,10 +733,10 @@ ratio_to_long_double(cl_object num, cl_object den)
         cl_object bits = prepare_ratio_to_float(num, den, LDBL_MANT_DIG, &scale);
 #if (FIXNUM_BITS-ECL_TAG_BITS) >= LDBL_MANT_DIG
         /* The output of prepare_ratio_to_float will always fit an integer */
-        long double output = ecl_fix(bits);
+        long double output = ecl_fixnum(bits);
 #else
         long double output = ECL_FIXNUMP(bits)?
-                (long double)ecl_fix(bits) :
+                (long double)ecl_fixnum(bits) :
                 _ecl_big_to_long_double(bits);
 #endif
         return ldexpl(output, scale);
@@ -748,7 +748,7 @@ ecl_to_double(cl_object x)
 {
 	switch(type_of(x)) {
 	case t_fixnum:
-		return((double)(ecl_fix(x)));
+		return((double)(ecl_fixnum(x)));
 	case t_bignum:
 		return ratio_to_double(x, ecl_make_fixnum(1));
 	case t_ratio:
@@ -772,7 +772,7 @@ ecl_to_long_double(cl_object x)
 {
 	switch(type_of(x)) {
 	case t_fixnum:
-		return (long double)ecl_fix(x);
+		return (long double)ecl_fixnum(x);
 	case t_bignum:
                 return ratio_to_long_double(x, ecl_make_fixnum(1));
 	case t_ratio:

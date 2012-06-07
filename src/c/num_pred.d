@@ -24,7 +24,7 @@ int
 ecl_oddp(cl_object x)
 {
 	if (ECL_FIXNUMP(x))
-		return ecl_fix(x) & 1;
+		return ecl_fixnum(x) & 1;
 	unlikely_if (!ECL_BIGNUMP(x))
                 FEwrong_type_only_arg(@[oddp], x, @[integer]);
         return _ecl_big_odd_p(x);
@@ -34,7 +34,7 @@ int
 ecl_evenp(cl_object x)
 {
 	if (ECL_FIXNUMP(x))
-		return ~ecl_fix(x) & 1;
+		return ~ecl_fixnum(x) & 1;
 	unlikely_if (!ECL_BIGNUMP(x))
                 FEwrong_type_only_arg(@[evenp], x, @[integer]);
         return _ecl_big_even_p(x);

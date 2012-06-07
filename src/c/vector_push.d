@@ -68,7 +68,7 @@ ecl_string_push_extend(cl_object s, ecl_character c)
 cl_object
 cl_vector_push(cl_object value, cl_object v)
 {
-	cl_index f = ecl_fix(cl_fill_pointer(v));
+	cl_index f = ecl_fixnum(cl_fill_pointer(v));
 	if (f >= v->vector.dim) {
 		@(return Cnil);
 	} else {
@@ -80,7 +80,7 @@ cl_vector_push(cl_object value, cl_object v)
 @(defun vector-push-extend (value v &optional (extent ecl_make_fixnum(0)))
 @
 {
-	cl_index f = ecl_fix(cl_fill_pointer(v));
+	cl_index f = ecl_fixnum(cl_fill_pointer(v));
 	if (f >= v->vector.dim) {
 		v = extend_vector(v, ecl_to_size(extent));
 	}

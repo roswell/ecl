@@ -184,7 +184,7 @@ _hash_equalp(int depth, cl_hashkey h, cl_object x)
 		}
 		return h;
 	case t_fixnum:
-		return hash_word(h, ecl_fix(x));
+		return hash_word(h, ecl_fixnum(x));
 	case t_singlefloat:
 		/* FIXME! We should be more precise here! */
 		return hash_word(h, (cl_index)ecl_single_float(x));
@@ -695,7 +695,7 @@ ecl_extend_hashtable(cl_object hashtable)
 		/* New size is too large */
 		new_size = old_size * 2;
 	} else {
-		new_size = ecl_fix(new_size_obj);
+		new_size = ecl_fixnum(new_size_obj);
 	}
         if (hashtable->hash.test == htt_pack) {
                 new = ecl_alloc_object(t_hashtable);
@@ -828,7 +828,7 @@ cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
                                  ecl_make_integer_type(ecl_make_fixnum(0),
                                                        ecl_make_fixnum(ATOTLIM)));
         }
-        hsize = ecl_fix(size);
+        hsize = ecl_fixnum(size);
 	if (hsize < 16) {
 		hsize = 16;
 	}
@@ -989,7 +989,7 @@ si_hash_table_iterate(cl_narg narg)
 	cl_object ht = CADR(env);
 	cl_fixnum i;
 	if (!Null(index)) {
-		i = ecl_fix(index);
+		i = ecl_fixnum(index);
 		if (i < 0)
 			i = -1;
 		for (; ++i < ht->hash.size; ) {

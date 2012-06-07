@@ -145,7 +145,7 @@ si_structure_ref(cl_object x, cl_object type, cl_object index)
 	if (ecl_unlikely(type_of(x) != T_STRUCTURE ||
                          !structure_subtypep(STYPE(x), type)))
                 FEwrong_type_nth_arg(@[si::structure-ref], 1, x, type);
-	@(return SLOT(x, ecl_fix(index)))
+	@(return SLOT(x, ecl_fixnum(index)))
 }
 
 cl_object
@@ -164,7 +164,7 @@ si_structure_set(cl_object x, cl_object type, cl_object index, cl_object val)
 	if (ecl_unlikely(type_of(x) != T_STRUCTURE ||
                          !structure_subtypep(STYPE(x), type)))
                 FEwrong_type_nth_arg(@[si::structure-set], 1, x, type);
-	SLOT(x, ecl_fix(index)) = val;
+	SLOT(x, ecl_fixnum(index)) = val;
 	@(return val)
 }
 

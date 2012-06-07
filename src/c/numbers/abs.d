@@ -30,7 +30,7 @@ cl_abs(cl_object x)
 static cl_object
 ecl_abs_fixnum(cl_object x)
 {
-        return ecl_fixnum_minusp(x)? ecl_make_integer(-ecl_fix(x)) : x;
+        return ecl_fixnum_minusp(x)? ecl_make_integer(-ecl_fixnum(x)) : x;
 }
 
 static cl_object

@@ -30,7 +30,7 @@ ecl_sequence_start_end(cl_object fun, cl_object sequence,
 	unlikely_if (!ECL_FIXNUMP(start) || ecl_fixnum_minusp(start)) {
                 FEwrong_type_key_arg(fun, @[:start], start, @[unsigned-byte]);
         }
-        p.start = ecl_fix(start);
+        p.start = ecl_fixnum(start);
 	if (Null(end)) {
 		p.end = l;
 	} else {
@@ -38,7 +38,7 @@ ecl_sequence_start_end(cl_object fun, cl_object sequence,
                         FEwrong_type_key_arg(fun, @[:end], end,
                                              ecl_read_from_cstring("(OR NULL UNSIGNED-BYTE)"));
                 }
-		p.end = ecl_fix(end);
+		p.end = ecl_fixnum(end);
 		unlikely_if (p.end > l) {
                         cl_object fillp = ecl_make_fixnum(l);
                         FEwrong_type_key_arg(fun, @[:end], end,

@@ -188,7 +188,7 @@ rando(cl_object x, cl_object rs)
 	switch (type_of(x)) {
 	case t_fixnum:
 #if FIXNUM_BITS <= 32
-                z = ecl_make_fixnum(generate_int32(rs->random.value) % ecl_fix(x));
+                z = ecl_make_fixnum(generate_int32(rs->random.value) % ecl_fixnum(x));
                 break;
 #endif
 	case t_bignum:

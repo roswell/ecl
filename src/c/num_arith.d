@@ -29,9 +29,9 @@ ecl_integer_divide(cl_object x, cl_object y)
  		if (ty == t_fixnum) {
 			if (y == ecl_make_fixnum(0))
 				FEdivision_by_zero(x, y);
-			return ecl_make_fixnum(ecl_fix(x) / ecl_fix(y));
+			return ecl_make_fixnum(ecl_fixnum(x) / ecl_fixnum(y));
 		} else if (ty == t_bignum) {
-                        return _ecl_fix_divided_by_big(ecl_fix(x), y);
+                        return _ecl_fix_divided_by_big(ecl_fixnum(x), y);
 		} else {
                         FEwrong_type_nth_arg(@[round], 2, y, @[integer]);
                 }
@@ -40,7 +40,7 @@ ecl_integer_divide(cl_object x, cl_object y)
 		if (ty == t_bignum) {
 			return _ecl_big_divided_by_big(x, y);
 		} else if (ty == t_fixnum) {
-                        return _ecl_big_divided_by_fix(x, ecl_fix(y));
+                        return _ecl_big_divided_by_fix(x, ecl_fixnum(y));
 		} else {
                         FEwrong_type_nth_arg(@[round], 2, y, @[integer]);
 		}
@@ -72,7 +72,7 @@ ecl_gcd(cl_object x, cl_object y)
 
 	switch (type_of(x)) {
 	case t_fixnum:
-                _ecl_big_set_fixnum(x_big, ecl_fix(x));
+                _ecl_big_set_fixnum(x_big, ecl_fixnum(x));
                 x = x_big;
 	case t_bignum:
 		break;
@@ -81,7 +81,7 @@ ecl_gcd(cl_object x, cl_object y)
 	}
 	switch (type_of(y)) {
 	case t_fixnum:
-                _ecl_big_set_fixnum(y_big, ecl_fix(y));
+                _ecl_big_set_fixnum(y_big, ecl_fixnum(y));
                 y = y_big;
 	case t_bignum:
                 break;

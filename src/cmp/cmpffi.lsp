@@ -51,11 +51,11 @@
   '(;; These types can be used by ECL to unbox data
     ;; They are sorted from the most specific, to the least specific one.
     :byte
-    #1=((signed-byte 8) "int8_t" "ecl_make_int8_t" "ecl_to_int8_t" "ecl_fix")
+    #1=((signed-byte 8) "int8_t" "ecl_make_int8_t" "ecl_to_int8_t" "ecl_fixnum")
     :unsigned-byte
-    #2=((unsigned-byte 8) "uint8_t" "ecl_make_uint8_t" "ecl_to_uint8_t" "ecl_fix")
+    #2=((unsigned-byte 8) "uint8_t" "ecl_make_uint8_t" "ecl_to_uint8_t" "ecl_fixnum")
     :fixnum
-    (fixnum "cl_fixnum" "ecl_make_fixnum" "ecl_to_fixnum" "ecl_fix")
+    (fixnum "cl_fixnum" "ecl_make_fixnum" "ecl_to_fixnum" "ecl_fixnum")
     :int
     ((integer #.si:c-int-min #.si:c-int-max) "int"
      "ecl_make_int" "ecl_to_int" "ecl_to_int")
@@ -65,15 +65,15 @@
     :long
     ((integer #.si:c-long-min #.si:c-long-max) "long" "ecl_make_long" "ecl_to_long"
      #.(if (<= si::c-long-min most-negative-fixnum most-positive-fixnum si::c-long-max)
-	   "ecl_fix"
+	   "ecl_fixnum"
 	   "ecl_to_long"))
     :unsigned-long
     ((integer 0 #.si:c-ulong-max) "unsigned long"
      "ecl_make_ulong" "ecl_to_ulong"
-     #.(if (<= most-positive-fixnum si::c-long-max) "ecl_fix" "ecl_to_ulong"))
+     #.(if (<= most-positive-fixnum si::c-long-max) "ecl_fixnum" "ecl_to_ulong"))
     :cl-index
     ((integer 0 #.most-positive-fixnum) "cl_index"
-     "ecl_make_unsigned_integer" "ecl_to_cl_index" "ecl_fix")
+     "ecl_make_unsigned_integer" "ecl_to_cl_index" "ecl_fixnum")
     #+long-long
     :long-long
     #+long-long
@@ -136,22 +136,22 @@
     :int16-t
     #+:uint16-t
     ((unsigned-byte 16) "ecl_int16_t" "ecl_make_int16_t" "ecl_to_int16_t"
-     #.(if (subtypep '(unsigned-byte 16) 'fixnum) "ecl_fix" "ecl_to_int32_t"))
+     #.(if (subtypep '(unsigned-byte 16) 'fixnum) "ecl_fixnum" "ecl_to_int32_t"))
     #+:uint16-t
     :uint16-t
     #+:uint16-t
-    ((signed-byte 16) "ecl_uint16_t" "ecl_make_uint16_t" "ecl_to_uint16_t" "ecl_fix"
-     #.(if (subtypep '(signed-byte 16) 'fixnum) "ecl_fix" "ecl_to_unt16_t"))
+    ((signed-byte 16) "ecl_uint16_t" "ecl_make_uint16_t" "ecl_to_uint16_t" "ecl_fixnum"
+     #.(if (subtypep '(signed-byte 16) 'fixnum) "ecl_fixnum" "ecl_to_unt16_t"))
     #+:uint32-t
     :int32-t
     #+:uint32-t
     ((unsigned-byte 32) "ecl_int32_t" "ecl_make_int32_t" "ecl_to_int32_t"
-     #.(if (subtypep '(unsigned-byte 32) 'fixnum) "ecl_fix" "ecl_to_int32_t"))
+     #.(if (subtypep '(unsigned-byte 32) 'fixnum) "ecl_fixnum" "ecl_to_int32_t"))
     #+:uint32-t
     :uint32-t
     #+:uint32-t
     ((signed-byte 32) "ecl_uint32_t" "ecl_make_uint32_t" "ecl_to_uint32_t"
-     #.(if (subtypep '(signed-byte 32) 'fixnum) "ecl_fix" "ecl_to_uint32_t"))
+     #.(if (subtypep '(signed-byte 32) 'fixnum) "ecl_fixnum" "ecl_to_uint32_t"))
     #+:uint64-t
     :int64-t
     #+:uint64-t
@@ -162,10 +162,10 @@
     ((signed-byte 64) "ecl_uint64_t" "ecl_make_uint64_t" "ecl_to_uint64_t" "ecl_to_uint64_t")
     :short
     ((integer #.si:c-short-min #.si:c-short-max) "short"
-     "ecl_make_short" "ecl_to_short" "ecl_fix")
+     "ecl_make_short" "ecl_to_short" "ecl_fixnum")
     :unsigned-short
     ((integer 0 #.si:c-ushort-max) "unsigned short"
-     "ecl_make_ushort" "ecl_to_ushort" "ecl_fix")
+     "ecl_make_ushort" "ecl_to_ushort" "ecl_fixnum")
     ))
 
 (defparameter +representation-type-hash+

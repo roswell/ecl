@@ -103,7 +103,7 @@ si_float_to_string_free(cl_object buffer_or_nil, cl_object number,
         base = ecl_length(buffer_or_nil);
         exp = si_float_to_digits(buffer_or_nil, number, Cnil, Cnil);
         buffer = VALUES(1);
-        e = ecl_fix(exp);
+        e = ecl_fixnum(exp);
 
         if (ecl_signbit(number)) {
                 insert_char(buffer, base++, '-');

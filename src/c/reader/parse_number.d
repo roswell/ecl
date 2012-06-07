@@ -76,7 +76,7 @@ make_float(cl_object num, cl_object exp, cl_index exp_char, int sign)
         if (!ECL_FIXNUMP(exp)) {
                 return infinity(exp_char, sign);
         } else {
-                cl_fixnum fix_exp = ecl_fix(exp);
+                cl_fixnum fix_exp = ecl_fixnum(exp);
                 if (fix_exp > 0) {
                         num = ecl_times(num, expt10(fix_exp));
                 } else if (fix_exp < 0) {

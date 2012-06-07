@@ -124,7 +124,7 @@ fill_spec_vector(cl_object vector, cl_object frame, cl_object gf)
 	loop_for_on_unsafe(spec_how_list) {
 		cl_object spec_how = ECL_CONS_CAR(spec_how_list);
 		cl_object spec_type = ECL_CONS_CAR(spec_how);
-		int spec_position = ecl_fix(ECL_CONS_CDR(spec_how));
+		int spec_position = ecl_fixnum(ECL_CONS_CDR(spec_how));
 		unlikely_if (spec_position >= narg)
 			FEwrong_num_arguments(gf);
 		unlikely_if (spec_no >= vector->vector.dim)

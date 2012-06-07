@@ -31,7 +31,7 @@ static cl_object
 cl_symbol_or_object(cl_object x)
 {
         if (ECL_FIXNUMP(x))
-                return (cl_object)(cl_symbols + ecl_fix(x));
+                return (cl_object)(cl_symbols + ecl_fixnum(x));
         return x;
 }
 

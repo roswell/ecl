@@ -102,7 +102,7 @@ assert_floating_point_width(cl_object width)
                         "~%~A~%is not an integer within bounds",
                         1, width);
         }
-        return ecl_fix(width);
+        return ecl_fixnum(width);
 }
 
 static cl_object
@@ -242,21 +242,21 @@ float_string(cl_object digits_string,
                  * fraction digits as permitted */
                 if (low || high || (cutoffp && (k + cutoff <= 0)))
                         break;
-                ecl_string_push_extend(digits_string, ecl_digit_char(ecl_fix(u), 10));
+                ecl_string_push_extend(digits_string, ecl_digit_char(ecl_fixnum(u), 10));
                 digits++;
         } while(1);
         /* If cutof occured before first digit, then no digits generated at all */
         if (!cutoffp || (k + cutoff) >= 0) {
                 /* Last digit may need rounding */
-                int digit = ecl_fix(u);
+                int digit = ecl_fixnum(u);
                 if (low && !high)
-                        digit = ecl_fix(u);
+                        digit = ecl_fixnum(u);
                 else if (high && !low)
-                        digit = ecl_fix(u)+1;
+                        digit = ecl_fixnum(u)+1;
                 else if (ecl_lower(ecl_ash(r,1), s))
-                        digit = ecl_fix(u);
+                        digit = ecl_fixnum(u);
                 else
-                        digit = ecl_fix(u) + 1;
+                        digit = ecl_fixnum(u) + 1;
                 ecl_string_push_extend(digits_string, ecl_digit_char(digit, 10));
                 digits++;
         }

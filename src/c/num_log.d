@@ -164,12 +164,12 @@ ecl_boole(int op, cl_object x, cl_object y)
 	case t_fixnum:
 		switch (type_of(y)) {
 		case t_fixnum: {
-			cl_fixnum z = fixnum_operations[op](ecl_fix(x), ecl_fix(y));
+			cl_fixnum z = fixnum_operations[op](ecl_fixnum(x), ecl_fixnum(y));
 			return ecl_make_fixnum(z);
 		}
 		case t_bignum: {
                         cl_object x_copy = _ecl_big_register0();
-                        _ecl_big_set_fixnum(x_copy, ecl_fix(x));
+                        _ecl_big_set_fixnum(x_copy, ecl_fixnum(x));
                         (_ecl_big_boole_operator(op))(x_copy, x_copy, y);
                         return _ecl_big_register_normalize(x_copy);
 		}
@@ -182,7 +182,7 @@ ecl_boole(int op, cl_object x, cl_object y)
 		switch (type_of(y)) {
 		case t_fixnum: {
 			cl_object z = _ecl_big_register1();
-                        _ecl_big_set_fixnum(z,ecl_fix(y));
+                        _ecl_big_set_fixnum(z,ecl_fixnum(y));
                         (_ecl_big_boole_operator(op))(x_copy, x, z);
 			_ecl_big_register_free(z);
 			break;
@@ -214,7 +214,7 @@ count_bits(cl_object x)
 
 	switch (type_of(x)) {
 	case t_fixnum: {
-		cl_fixnum i = ecl_fix(x);
+		cl_fixnum i = ecl_fixnum(x);
 		cl_fixnum j = (i < 0) ? ~i : i;
 		for (count=0 ; j ; j >>= 1)
 			if (j & 1) count++;
@@ -257,7 +257,7 @@ ecl_ash(cl_object x, cl_fixnum w)
 			 * Furthermore, in general, shifting negative numbers leads
 			 * to implementation-specific results :-/
 			 */
-			cl_fixnum y = ecl_fix(x);
+			cl_fixnum y = ecl_fixnum(x);
 			if (bits >= FIXNUM_BITS) {
 				y = (y < 0)? -1 : 0;
 			} else {
@@ -268,7 +268,7 @@ ecl_ash(cl_object x, cl_fixnum w)
 		mpz_div_2exp(y->big.big_num, x->big.big_num, bits);
 	} else {
 		if (ECL_FIXNUMP(x)) {
-			_ecl_big_set_fixnum(y, ecl_fix(x));
+			_ecl_big_set_fixnum(y, ecl_fixnum(x));
 			x = y;
 		}
 		mpz_mul_2exp(y->big.big_num, x->big.big_num, (unsigned long)w);
@@ -381,7 +381,7 @@ cl_logbitp(cl_object p, cl_object x)
 	if (ECL_FIXNUMP(p)) {
 		cl_index n = ecl_to_size(p);
 		if (ECL_FIXNUMP(x)) {
-			cl_fixnum y = ecl_fix(x);
+			cl_fixnum y = ecl_fixnum(x);
 			if (n >= FIXNUM_BITS) {
 				i = (y < 0);
 			} else {
@@ -393,7 +393,7 @@ cl_logbitp(cl_object p, cl_object x)
 	} else {
 		assert_type_non_negative_integer(p);
 		if (ECL_FIXNUMP(x))
-			i = (ecl_fix(x) < 0);
+			i = (ecl_fixnum(x) < 0);
 		else
 			i = (_ecl_big_sign(x) < 0);
 	}
@@ -409,7 +409,7 @@ cl_ash(cl_object x, cl_object y)
         assert_type_integer(x);
 	assert_type_integer(y);
 	if (ECL_FIXNUMP(y))
-	  r = ecl_ash(x, ecl_fix(y));
+	  r = ecl_ash(x, ecl_fixnum(y));
 	else {
 	  /*
 	    bit position represented by bignum is probably
@@ -452,7 +452,7 @@ ecl_integer_length(cl_object x)
 
 	switch (type_of(x)) {
 	case t_fixnum:
-		i = ecl_fix(x);
+		i = ecl_fixnum(x);
 		count = ecl_fixnum_bit_length(i);
 		break;
 	case t_bignum:

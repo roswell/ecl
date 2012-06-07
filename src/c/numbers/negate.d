@@ -21,7 +21,7 @@
 static cl_object
 ecl_negate_fix(cl_object x)
 {
-        return ecl_make_integer(-ecl_fix(x));
+        return ecl_make_integer(-ecl_fixnum(x));
 }
 
 static cl_object

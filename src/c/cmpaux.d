@@ -59,7 +59,7 @@ ecl_to_char(cl_object x)
 {
 	switch (type_of(x)) {
 	case t_fixnum:
-		return ecl_fix(x);
+		return ecl_fixnum(x);
 	case t_character:
 		return ECL_CHAR_CODE(x);
 	default:
@@ -115,10 +115,10 @@ ecl_to_unsigned_integer(cl_object x)
 float
 ecl_to_float(cl_object x)
 {
-	if (ECL_FIXNUMP(x)) return(ecl_fix(x));	/* Immediate fixnum */
+	if (ECL_FIXNUMP(x)) return(ecl_fixnum(x));	/* Immediate fixnum */
 
 	switch (type_of(x)) {
-/*	case t_fixnum: return ecl_fix(x);	*/
+/*	case t_fixnum: return ecl_fixnum(x);	*/
 /*	case t_character: return ECL_CHAR_CODE(x); */
 	case t_bignum:
 	case t_ratio:

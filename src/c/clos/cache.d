@@ -20,7 +20,7 @@
 
 #define RECORD_KEY(e) ((e)[0])
 #define RECORD_VALUE(e) ((e)[1])
-#define RECORD_GEN(e) ecl_fix((e+2)[0])
+#define RECORD_GEN(e) ecl_fixnum((e+2)[0])
 #define RECORD_GEN_SET(e,v) ((e+2)[0]=ecl_make_fixnum(v))
 
 static void

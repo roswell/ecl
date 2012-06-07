@@ -814,7 +814,7 @@ cl_boot(int argc, char **argv)
 @(defun ext::exit (&optional (code ECL_SYM_VAL(ecl_process_env(),@'ext::*program-exit-code*')))
 @
         cl_shutdown();
-        exit(ECL_FIXNUMP(code)? ecl_fix(code) : 0);
+        exit(ECL_FIXNUMP(code)? ecl_fixnum(code) : 0);
 @)
 
 cl_object
@@ -827,7 +827,7 @@ cl_object
 si_argv(cl_object index)
 {
 	if (ECL_FIXNUMP(index)) {
-		cl_fixnum i = ecl_fix(index);
+		cl_fixnum i = ecl_fixnum(index);
 		if (i >= 0 && i < ARGC)
 			@(return make_base_string_copy(ARGV[i]));
 	}

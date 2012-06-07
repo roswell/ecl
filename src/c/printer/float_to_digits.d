@@ -37,7 +37,7 @@ static float_approx *
 setup(cl_object number, float_approx *approx)
 {
         cl_object f = cl_integer_decode_float(number);
-        cl_fixnum e = ecl_fix(VALUES(1)), min_e;
+        cl_fixnum e = ecl_fixnum(VALUES(1)), min_e;
         bool limit_f = 0;
         switch (type_of(number)) {
         case t_singlefloat:
@@ -143,16 +143,16 @@ generate(cl_object digits, float_approx *approx)
                 if (tc1 || tc2) {
                         break;
                 }
-                ecl_string_push_extend(digits, ecl_digit_char(ecl_fix(d), 10));
+                ecl_string_push_extend(digits, ecl_digit_char(ecl_fixnum(d), 10));
         } while (1);
         if (tc2 && !tc1) {
-                digit = ecl_fix(d) + 1;
+                digit = ecl_fixnum(d) + 1;
         } else if (tc1 && !tc2) {
-                digit = ecl_fix(d);
+                digit = ecl_fixnum(d);
         } else if (ecl_lower(times2(approx->r), approx->s)) {
-                digit = ecl_fix(d);
+                digit = ecl_fixnum(d);
         } else {
-                digit = ecl_fix(d) + 1;
+                digit = ecl_fixnum(d) + 1;
         }
         ecl_string_push_extend(digits, ecl_digit_char(digit, 10));
         return digits;
@@ -164,7 +164,7 @@ change_precision(float_approx *approx, cl_object position, cl_object relativep)
         cl_fixnum pos;
         if (Null(position))
                 return;
-        pos = ecl_fix(position);
+        pos = ecl_fixnum(position);
         if (!Null(relativep)) {
                 cl_object k = ecl_make_fixnum(0);
                 cl_object l = ecl_make_fixnum(1);

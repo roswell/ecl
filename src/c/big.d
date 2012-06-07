@@ -304,7 +304,7 @@ cl_fixnum
 fixint(cl_object x)
 {
         if (ECL_FIXNUMP(x))
-                return ecl_fix(x);
+                return ecl_fixnum(x);
         if (ECL_BIGNUMP(x)) {
                 if (mpz_fits_slong_p(x->big.big_num)) {
                         return mpz_get_si(x->big.big_num);
@@ -317,7 +317,7 @@ cl_index
 fixnnint(cl_object x)
 {
         if (ECL_FIXNUMP(x)) {
-                cl_fixnum i = ecl_fix(x);
+                cl_fixnum i = ecl_fixnum(x);
                 if (i >= 0)
                         return i;
         } else if (ECL_BIGNUMP(x)) {

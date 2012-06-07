@@ -91,7 +91,7 @@ ecl_parse_integer(cl_object str, cl_index start, cl_index end,
 		else
 			goto CANNOT_PARSE;
 	}
-	x = ecl_parse_integer(strng, s, e, &ep, ecl_fix(radix));
+	x = ecl_parse_integer(strng, s, e, &ep, ecl_fixnum(radix));
 	if (x == OBJNULL) {
 		if (junk_allowed != Cnil) {
 			@(return Cnil ecl_make_fixnum(ep));

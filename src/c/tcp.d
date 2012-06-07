@@ -279,13 +279,13 @@ si_open_client_stream(cl_object host, cl_object port)
            FEwrong_type_nth_arg(@[si::open-client-stream], 2, port,
                                 ecl_read_from_cstring("(INTEGER 0 65535)"));
    }
-   p = ecl_fix(port);
+   p = ecl_fixnum(port);
 
    if (host->base_string.fillp > BUFSIZ - 1)
      FEerror("~S is a too long file name.", 1, host);
 
    ecl_disable_interrupts();
-   fd = connect_to_server((char*)host->base_string.self, ecl_fix(port)); 
+   fd = connect_to_server((char*)host->base_string.self, ecl_fixnum(port)); 
    ecl_enable_interrupts();
 
    if (fd == 0)
@@ -312,7 +312,7 @@ si_open_server_stream(cl_object port)
            FEwrong_type_only_arg(@[si::open-client-stream], port,
                                  ecl_read_from_cstring("(INTEGER 0 65535)"));
    }
-   p = ecl_fix(port);
+   p = ecl_fixnum(port);
    ecl_disable_interrupts();
    fd = create_server_port(p);
    ecl_enable_interrupts();
@@ -379,7 +379,7 @@ si_lookup_host_entry(cl_object host_or_address)
 		he = gethostbyname((char*)host_or_address->base_string.self);
 		break;
 	case t_fixnum:
-		l = ecl_fix(host_or_address);
+		l = ecl_fixnum(host_or_address);
 		goto addr;
 	case t_bignum:
 		l = _ecl_big_to_ulong(host_or_address);

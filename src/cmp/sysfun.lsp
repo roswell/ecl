@@ -71,11 +71,11 @@
 ;;;
 
 (def-inline aref :unsafe (t t t) t
- "@0;ecl_aref_unsafe(#0,ecl_fix(#1)*(#0)->array.dims[1]+ecl_fix(#2))")
+ "@0;ecl_aref_unsafe(#0,ecl_fixnum(#1)*(#0)->array.dims[1]+ecl_fixnum(#2))")
 (def-inline aref :unsafe ((array t) t t) t
- "@0;(#0)->array.self.t[ecl_fix(#1)*(#0)->array.dims[1]+ecl_fix(#2)]")
+ "@0;(#0)->array.self.t[ecl_fixnum(#1)*(#0)->array.dims[1]+ecl_fixnum(#2)]")
 (def-inline aref :unsafe ((array bit) t t) :fixnum
- "@0;ecl_aref_bv(#0,ecl_fix(#1)*(#0)->array.dims[1]+ecl_fix(#2))")
+ "@0;ecl_aref_bv(#0,ecl_fixnum(#1)*(#0)->array.dims[1]+ecl_fixnum(#2))")
 (def-inline aref :unsafe ((array t) fixnum fixnum) t
  "@0;(#0)->array.self.t[#1*(#0)->array.dims[1]+#2]")
 (def-inline aref :unsafe ((array bit) fixnum fixnum) :fixnum
@@ -91,8 +91,8 @@
 
 (def-inline aref :always (t t) t "ecl_aref1(#0,ecl_to_size(#1))")
 (def-inline aref :always (t fixnum) t "ecl_aref1(#0,#1)")
-(def-inline aref :unsafe (t t) t "ecl_aref1(#0,ecl_fix(#1))")
-(def-inline aref :unsafe ((array bit) t) :fixnum "ecl_aref_bv(#0,ecl_fix(#1))")
+(def-inline aref :unsafe (t t) t "ecl_aref1(#0,ecl_fixnum(#1))")
+(def-inline aref :unsafe ((array bit) t) :fixnum "ecl_aref_bv(#0,ecl_fixnum(#1))")
 (def-inline aref :unsafe ((array bit) fixnum) :fixnum "ecl_aref_bv(#0,#1)")
 #+unicode
 (def-inline aref :unsafe ((array character) fixnum) :wchar
@@ -108,9 +108,9 @@
 
 (def-inline row-major-aref :always (t t) t "ecl_aref(#0,ecl_to_size(#1))")
 (def-inline row-major-aref :always (t fixnum) t "ecl_aref(#0,#1)")
-(def-inline row-major-aref :unsafe (t t) t "ecl_aref_unsafe(#0,ecl_fix(#1))")
+(def-inline row-major-aref :unsafe (t t) t "ecl_aref_unsafe(#0,ecl_fixnum(#1))")
 (def-inline row-major-aref :unsafe (t fixnum) t "ecl_aref_unsafe(#0,#1)")
-(def-inline row-major-aref :unsafe ((array bit) t) :fixnum "ecl_aref_bv(#0,ecl_fix(#1))")
+(def-inline row-major-aref :unsafe ((array bit) t) :fixnum "ecl_aref_bv(#0,ecl_fixnum(#1))")
 (def-inline row-major-aref :unsafe ((array bit) fixnum) :fixnum "ecl_aref_bv(#0,#1)")
 #+unicode
 (def-inline row-major-aref :unsafe ((array character) fixnum) :wchar
@@ -148,12 +148,12 @@
 
 (def-inline si:row-major-aset :always (t t t) t "ecl_aset(#0,ecl_to_size(#1),#2)")
 (def-inline si:row-major-aset :always (t fixnum t) t "ecl_aset(#0,#1,#2)")
-(def-inline si:row-major-aset :unsafe (t t t) t "ecl_aset_unsafe(#0,ecl_fix(#1),#2)")
+(def-inline si:row-major-aset :unsafe (t t t) t "ecl_aset_unsafe(#0,ecl_fixnum(#1),#2)")
 (def-inline si:row-major-aset :unsafe (t fixnum t) t "ecl_aset_unsafe(#0,#1,#2)")
 (def-inline si:row-major-aset :unsafe ((array t) fixnum t) t
  "(#0)->vector.self.t[#1]= #2")
 (def-inline si:row-major-aset :unsafe ((array bit) fixnum t) :fixnum
- "ecl_aset_bv(#0,#1,ecl_fix(#2))")
+ "ecl_aset_bv(#0,#1,ecl_fixnum(#2))")
 (def-inline si:row-major-aset :unsafe ((array bit) fixnum fixnum) :fixnum
  "ecl_aset_bv(#0,#1,#2)")
 (def-inline si:row-major-aset :unsafe ((array base-char) fixnum base-char) :unsigned-char
@@ -205,12 +205,12 @@
 
 (def-inline svref :always (t t) t "ecl_aref1(#0,ecl_to_size(#1))")
 (def-inline svref :always (t fixnum) t "ecl_aref1(#0,#1)")
-(def-inline svref :unsafe (t t) t "(#0)->vector.self.t[ecl_fix(#1)]")
+(def-inline svref :unsafe (t t) t "(#0)->vector.self.t[ecl_fixnum(#1)]")
 (def-inline svref :unsafe (t fixnum) t "(#0)->vector.self.t[#1]")
 
 (def-inline si:svset :always (t t t) t "ecl_aset1(#0,ecl_to_size(#1),#2)")
 (def-inline si:svset :always (t fixnum t) t "ecl_aset1(#0,#1,#2)")
-(def-inline si:svset :unsafe (t t t) t "((#0)->vector.self.t[ecl_fix(#1)]=(#2))")
+(def-inline si:svset :unsafe (t t t) t "((#0)->vector.self.t[ecl_fixnum(#1)]=(#2))")
 (def-inline si:svset :unsafe (t fixnum t) t "(#0)->vector.self.t[#1]= #2")
 
 (def-inline array-has-fill-pointer-p :always (t) :bool "@0;(ECL_ARRAYP(#0)?(void)0:FEtype_error_array(#0),ECL_ARRAY_HAS_FILL_POINTER_P(#0))")
@@ -364,12 +364,12 @@
 
 (def-inline nth :always (t t) t "ecl_nth(ecl_to_size(#0),#1)")
 (def-inline nth :always (fixnum t) t "ecl_nth(#0,#1)")
-(def-inline nth :unsafe (t t) t "ecl_nth(ecl_fix(#0),#1)")
+(def-inline nth :unsafe (t t) t "ecl_nth(ecl_fixnum(#0),#1)")
 (def-inline nth :unsafe (fixnum t) t "ecl_nth(#0,#1)")
 
 (def-inline nthcdr :always (t t) t "ecl_nthcdr(ecl_to_size(#0),#1)")
 (def-inline nthcdr :always (fixnum t) t "ecl_nthcdr(#0,#1)")
-(def-inline nthcdr :unsafe (t t) t "ecl_nthcdr(ecl_fix(#0),#1)")
+(def-inline nthcdr :unsafe (t t) t "ecl_nthcdr(ecl_fixnum(#0),#1)")
 (def-inline nthcdr :unsafe (fixnum t) t "ecl_nthcdr(#0,#1)")
 
 (def-inline last :always (t) t "ecl_last(#0,1)")
@@ -655,16 +655,16 @@
 
 ;; file sequence.d
 
-(def-inline elt :always (t t) t "ecl_elt(#0,ecl_fix(#1))")
+(def-inline elt :always (t t) t "ecl_elt(#0,ecl_fixnum(#1))")
 (def-inline elt :always (t fixnum) t "ecl_elt(#0,#1)")
-(def-inline elt :always (vector t) t "ecl_aref1(#0,ecl_fix(#1))")
+(def-inline elt :always (vector t) t "ecl_aref1(#0,ecl_fixnum(#1))")
 (def-inline elt :always (vector fixnum) t "ecl_aref1(#0,#1)")
 
-(def-inline elt :unsafe (t t) t "ecl_elt(#0,ecl_fix(#1))")
+(def-inline elt :unsafe (t t) t "ecl_elt(#0,ecl_fixnum(#1))")
 (def-inline elt :unsafe (t fixnum) t "ecl_elt(#0,#1)")
-(def-inline elt :unsafe (vector t) t "ecl_aref_unsafe(#0,ecl_fix(#1))")
+(def-inline elt :unsafe (vector t) t "ecl_aref_unsafe(#0,ecl_fixnum(#1))")
 (def-inline elt :unsafe (vector fixnum) t "ecl_aref_unsafe(#0,#1)")
-(def-inline aref :unsafe ((array bit) t) :fixnum "ecl_aref_bv(#0,ecl_fix(#1))")
+(def-inline aref :unsafe ((array bit) t) :fixnum "ecl_aref_bv(#0,ecl_fixnum(#1))")
 (def-inline aref :unsafe ((array bit) fixnum) :fixnum "ecl_aref_bv(#0,#1)")
 #+unicode
 (def-inline aref :unsafe ((array character) fixnum) :wchar
@@ -683,7 +683,7 @@
 (def-inline si:elt-set :always (vector t t) t "ecl_aset1(#0,ecl_to_size(#1),#2)")
 (def-inline si:elt-set :always (vector fixnum t) t "ecl_aset1(#0,#1,#2)")
 
-(def-inline si:elt-set :unsafe (t t t) t "ecl_elt_set(#0,ecl_fix(#1),#2)")
+(def-inline si:elt-set :unsafe (t t t) t "ecl_elt_set(#0,ecl_fixnum(#1),#2)")
 (def-inline si:elt-set :unsafe (vector t t) t "ecl_aset_unsafe(#0,ecl_to_size(#1),#2)")
 (def-inline si:elt-set :unsafe (vector fixnum t) t "ecl_aset_unsafe(#0,#1,#2)")
 
@@ -697,7 +697,7 @@
 (def-inline char :always (t fixnum) t "ecl_aref1(#0,#1)")
 (def-inline char :always (t fixnum) :wchar "ecl_char(#0,#1)")
 #-unicode
-(def-inline char :unsafe (t t) t "ECL_CODE_CHAR((#0)->base_string.self[ecl_fix(#1)])")
+(def-inline char :unsafe (t t) t "ECL_CODE_CHAR((#0)->base_string.self[ecl_fixnum(#1)])")
 #-unicode
 (def-inline char :unsafe (t fixnum) :unsigned-char "(#0)->base_string.self[#1]")
 (def-inline char :unsafe (base-string fixnum) :unsigned-char "(#0)->base_string.self[#1]")
@@ -709,23 +709,23 @@
 (def-inline si:char-set :always (t fixnum character) :wchar "ecl_char_set(#0,#1,#2)")
 #-unicode
 (def-inline si:char-set :unsafe (t t t) t
- "@2;((#0)->base_string.self[ecl_fix(#1)]=ecl_char_code(#2),(#2))")
+ "@2;((#0)->base_string.self[ecl_fixnum(#1)]=ecl_char_code(#2),(#2))")
 #-unicode
 (def-inline si:char-set :unsafe (t fixnum character) :unsigned-char
  "(#0)->base_string.self[#1]= #2")
 (def-inline si:char-set :unsafe (base-string t t) t
- "@2;((#0)->base_string.self[ecl_fix(#1)]=ecl_char_code(#2),(#2))")
+ "@2;((#0)->base_string.self[ecl_fixnum(#1)]=ecl_char_code(#2),(#2))")
 (def-inline si:char-set :unsafe (base-string fixnum base-char) :unsigned-char
  "(#0)->base_string.self[#1]= #2")
 (def-inline si:char-set :unsafe (ext:extended-string t t) t
- "@2;((#0)->string.self[ecl_fix(#1)]=ecl_char_code(#2),(#2))")
+ "@2;((#0)->string.self[ecl_fixnum(#1)]=ecl_char_code(#2),(#2))")
 (def-inline si:char-set :unsafe (ext:extended-string fixnum character) :unsigned-char
  "(#0)->string.self[#1]= #2")
 
 (def-inline schar :always (t t) t "ecl_elt(#0,ecl_to_size(#1))")
 (def-inline schar :always (t fixnum) t "ecl_elt(#0,#1)")
 (def-inline schar :always (t fixnum) :wchar "ecl_char(#0,#1)")
-(def-inline schar :unsafe (base-string t) t "ECL_CODE_CHAR((#0)->base_string.self[ecl_fix(#1)])")
+(def-inline schar :unsafe (base-string t) t "ECL_CODE_CHAR((#0)->base_string.self[ecl_fixnum(#1)])")
 #-unicode
 (def-inline schar :unsafe (t fixnum) :unsigned-char "(#0)->base_string.self[#1]")
 (def-inline schar :unsafe (base-string fixnum) :unsigned-char "(#0)->base_string.self[#1]")
@@ -737,12 +737,12 @@
 (def-inline si:schar-set :always (t fixnum character) :wchar "ecl_char_set(#0,#1,#2)")
 #-unicode
 (def-inline si:schar-set :unsafe (t t t) t
- "@2;((#0)->base_string.self[ecl_fix(#1)]=ecl_char_code(#2),(#2))")
+ "@2;((#0)->base_string.self[ecl_fixnum(#1)]=ecl_char_code(#2),(#2))")
 #-unicode
 (def-inline si:schar-set :unsafe (t fixnum base-char) :unsigned-char
  "(#0)->base_string.self[#1]= #2")
 (def-inline si:schar-set :unsafe (base-string t t) t
- "@2;((#0)->base_string.self[ecl_fix(#1)]=ecl_char_code(#2),(#2))")
+ "@2;((#0)->base_string.self[ecl_fixnum(#1)]=ecl_char_code(#2),(#2))")
 (def-inline si:schar-set :unsafe (base-string fixnum base-char) :unsigned-char
  "(#0)->base_string.self[#1]= #2")
 #+unicode

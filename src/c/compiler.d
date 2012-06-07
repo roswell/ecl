@@ -456,7 +456,7 @@ c_register_block(cl_env_ptr env, cl_object name)
 	cl_object loc = new_location(c_env);
 	c_env->variables = CONS(cl_list(4, @':block', name, Cnil, loc),
                                 c_env->variables);
-	return ecl_fix(ECL_CONS_CDR(loc));
+	return ecl_fixnum(ECL_CONS_CDR(loc));
 }
 
 static cl_index
@@ -466,7 +466,7 @@ c_register_tags(cl_env_ptr env, cl_object all_tags)
 	cl_object loc = new_location(c_env);
 	c_env->variables = CONS(cl_list(4, @':tag', all_tags, Cnil, loc),
                                 c_env->variables);
-	return ecl_fix(ECL_CONS_CDR(loc));
+	return ecl_fixnum(ECL_CONS_CDR(loc));
 }
 
 static void
@@ -1423,7 +1423,7 @@ asm_function(cl_env_ptr env, cl_object function, int flags) {
                         return FLAG_REG0;
 		} else {
 			/* Function from a FLET/LABELS form */
-			asm_op2(env, OP_LFUNCTION, ecl_fix(ndx));
+			asm_op2(env, OP_LFUNCTION, ecl_fixnum(ndx));
                         return FLAG_REG0;
 		}
 	}
@@ -1463,8 +1463,8 @@ c_go(cl_env_ptr env, cl_object args, int flags) {
 		FEprogram_error_noreturn("GO: Unknown tag ~S.", 1, tag);
 	if (!Null(args))
 		FEprogram_error_noreturn("GO: Too many arguments.",0);
-	asm_op2(env, OP_GO, ecl_fix(CAR(info)));
-	asm_arg(env, ecl_fix(CDR(info)));
+	asm_op2(env, OP_GO, ecl_fixnum(CAR(info)));
+	asm_arg(env, ecl_fixnum(CDR(info)));
 	return flags;
 }
 
@@ -1952,7 +1952,7 @@ c_return_aux(cl_env_ptr env, cl_object name, cl_object stmt, int flags)
 	if (stmt != Cnil)
 		FEprogram_error_noreturn("RETURN-FROM: Too many arguments.", 0);
 	compile_form(env, output, FLAG_VALUES);
-	asm_op2(env, OP_RETURN, ecl_fix(ndx));
+	asm_op2(env, OP_RETURN, ecl_fixnum(ndx));
 	return FLAG_VALUES;
 }
 
@@ -2208,7 +2208,7 @@ compile_constant(cl_env_ptr env, cl_object stmt, int flags)
                 maybe_make_load_forms(env, stmt);
                 if (stmt == Cnil) {
                         asm_op(env, push? OP_PUSHNIL : OP_NIL);
-                } else if (ECL_FIXNUMP(stmt) && (n = ecl_fix(stmt)) <= MAX_OPARG
+                } else if (ECL_FIXNUMP(stmt) && (n = ecl_fixnum(stmt)) <= MAX_OPARG
                            && n >= -MAX_OPARG) {
                         asm_op2(env, push? OP_PINT : OP_INT, n);
                 } else {
@@ -2283,7 +2283,7 @@ compile_form(cl_env_ptr env, cl_object stmt, int flags) {
 	if (SYMBOLP(function)) {
 		cl_object index = ecl_gethash(function, cl_core.compiler_dispatch);
 		if (index != OBJNULL) {
-			compiler_record *l = database + ecl_fix(index);
+			compiler_record *l = database + ecl_fixnum(index);
 			c_env->lexical_level += l->lexical_increment;
 			if (c_env->stepping && function != @'function' &&
 			    c_env->lexical_level)
@@ -2465,7 +2465,7 @@ compile_with_load_time_forms(cl_env_ptr env, cl_object form, int flags)
                 } while (p != Cnil);
 		p = forms_list;
 		do {
-			cl_index loc = ecl_fix(ECL_CONS_CAR(p));
+			cl_index loc = ecl_fixnum(ECL_CONS_CAR(p));
 			/* Clear created constants (they cannot be printed) */
 			c_env->constants->vector.self.t[loc] = ecl_make_fixnum(0);
 			p = ECL_CONS_CDR(p);

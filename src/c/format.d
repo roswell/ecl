@@ -638,7 +638,7 @@ fmt_radix(format_stack fmt, bool colon, bool atsign)
 		assert_type_integer(x);
 		if (atsign) {
 			if (ECL_FIXNUMP(x))
-				i = ecl_fix(x);
+				i = ecl_fixnum(x);
 			else
 				i = -1;
 			if ((!colon && (i <= 0 || i >= 4000)) ||
@@ -1634,7 +1634,7 @@ fmt_conditional(format_stack fmt, bool colon, bool atsign)
 			x = fmt_advance(fmt);
 			if (!ECL_FIXNUMP(x))
 				fmt_error(fmt, "illegal argument for conditional");
-			n = ecl_fix(x);
+			n = ecl_fixnum(x);
 		} else
 			n = ecl_to_fix(set_param(fmt, 0, INT, ecl_make_fixnum(0)));
 		i = fmt->ctl_index;

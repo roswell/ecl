@@ -191,7 +191,7 @@ ecl_dynamic_callback_execute(cl_object cbk_info, char *arg_buffer)
 	arg_buffer += 4; /* Skip return address */
 	for (i=0; !ecl_endp(argtypes); argtypes = CDR(argtypes), i++) {
 		tag = ecl_foreign_type_code(CAR(argtypes));
-		size = ecl_fix(si_size_of_foreign_elt_type(CAR(argtypes)));
+		size = ecl_fixnum(si_size_of_foreign_elt_type(CAR(argtypes)));
 		result = ecl_foreign_data_ref_elt(arg_buffer, tag);
 		ecl_stack_frame_push(frame,result);
 		{
@@ -325,7 +325,7 @@ ecl_dynamic_callback_make(cl_object data, enum ecl_ffi_calling_convention cc_typ
 		int mask = 3;
 
 		while (CONSP(arg_types)) {
-			int sz = ecl_fix(si_size_of_foreign_elt_type(CAR(arg_types)));
+			int sz = ecl_fixnum(si_size_of_foreign_elt_type(CAR(arg_types)));
 			byte_size += ((sz+mask)&(~mask));
 			arg_types = CDR(arg_types);
 		}

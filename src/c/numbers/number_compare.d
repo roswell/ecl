@@ -41,10 +41,10 @@ ecl_number_compare(cl_object x, cl_object y)
 	ty = type_of(y);
 	switch (type_of(x)) {
 	case t_fixnum:
-	  	ix = ecl_fix(x);
+	  	ix = ecl_fixnum(x);
 		switch (ty) {
 		case t_fixnum:
-		  	iy = ecl_fix(y);
+		  	iy = ecl_fixnum(y);
 			if (ix < iy)
 				return(-1);
 			else return(ix != iy);
@@ -116,7 +116,7 @@ ecl_number_compare(cl_object x, cl_object y)
 	DOUBLEFLOAT0:
 		switch (ty) {
 		case t_fixnum:
-			return -double_fix_compare(ecl_fix(y), dx);
+			return -double_fix_compare(ecl_fixnum(y), dx);
 		case t_bignum:
 		case t_ratio:
 			x = cl_rational(x);
@@ -148,7 +148,7 @@ ecl_number_compare(cl_object x, cl_object y)
 		ldx = ecl_long_float(x);
 		switch (ty) {
 		case t_fixnum:
-			return -long_double_fix_compare(ecl_fix(y), ldx);
+			return -long_double_fix_compare(ecl_fixnum(y), ldx);
 		case t_bignum:
 		case t_ratio:
 			x = cl_rational(x);

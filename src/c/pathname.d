@@ -632,7 +632,7 @@ ecl_parse_namestring(cl_object s, cl_index start, cl_index end, cl_index *ep,
 	} else {
 		version = cl_parse_integer(3, aux, @':junk-allowed', Ct);
 		if (cl_integerp(version) != Cnil && ecl_plusp(version) &&
-		    ecl_fix(VALUES(1)) == ecl_length(aux))
+		    ecl_fixnum(VALUES(1)) == ecl_length(aux))
 			;
 		else if (cl_string_equal(2, aux, @':newest') != Cnil)
 			version = @':newest';
@@ -1111,7 +1111,7 @@ NO_DIRECTORY:
 				/* Since the printer is not reentrant,
 				 * we cannot use cl_write and friends.
 				 */
-				int n = ecl_fix(y), i;
+				int n = ecl_fixnum(y), i;
 				char b[FIXNUM_BITS/2];
 				for (i = 0; n; i++) {
 					b[i] = n%10 + '0';

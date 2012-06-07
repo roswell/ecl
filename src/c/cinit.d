@@ -115,7 +115,7 @@ static cl_object si_simple_toplevel ()
                                 "ECL (Embeddable Common Lisp)\n",
                                 output);
                 ecl_force_output(output);
-                for (i = 1; i<ecl_fix(si_argc()); i++) {
+                for (i = 1; i<ecl_fixnum(si_argc()); i++) {
                         cl_object arg = si_argv(ecl_make_fixnum(i));
                         cl_load(1, arg);
                 }

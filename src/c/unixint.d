@@ -893,7 +893,7 @@ si_set_signal_handler(cl_object code, cl_object handler)
 	unlikely_if (ecl_gethash_safe(code, cl_core.known_signals, OBJNULL) == OBJNULL) {
 		illegal_signal_code(code);
 	}
-	code_int = ecl_fix(code);
+	code_int = ecl_fixnum(code);
 #ifdef GBC_BOEHM
 # ifdef SIGSEGV
 	unlikely_if ((code == ecl_make_fixnum(SIGSEGV)) &&
@@ -1223,7 +1223,7 @@ si_trap_fpe(cl_object condition, cl_object flag)
                 else if (condition == @'floating-point-inexact')
                         bits = FE_INEXACT;
                 else if (ECL_FIXNUMP(condition))
-			bits = ecl_fix(condition) & all;
+			bits = ecl_fixnum(condition) & all;
                 if (flag == Cnil) {
                         bits = the_env->trap_fpe_bits & ~bits;
                 } else {

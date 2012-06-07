@@ -1022,7 +1022,7 @@ si_mkdir(cl_object directory, cl_object mode)
                                      ecl_make_integer_type(ecl_make_fixnum(0),
                                                            ecl_make_fixnum(0777)));
         }
-        modeint = ecl_fix(mode);
+        modeint = ecl_fixnum(mode);
 	{
 		/* Ensure a clean string, without trailing slashes,
 		 * and null terminated. */

@@ -128,7 +128,7 @@ ecl_string_case(cl_object s)
                                      ecl_make_integer_type(ecl_make_fixnum(2),
                                                            ecl_make_fixnum(36)));
         }
-        basis = ecl_fix(radix);
+        basis = ecl_fixnum(radix);
 	value = ecl_digitp(ecl_char_code(c), basis);
 	@(return ((value < 0)? Cnil: ecl_make_fixnum(value)));
 } @)
@@ -375,7 +375,7 @@ cl_code_char(cl_object c)
 
 	switch (type_of(c)) {
 	case t_fixnum:
-		fc = ecl_fix(c);
+		fc = ecl_fixnum(c);
 		if (fc < CHAR_CODE_LIMIT && fc >= 0) {
 			c = ECL_CODE_CHAR(fc);
 			break;
@@ -416,10 +416,10 @@ cl_char_downcase(cl_object c)
                                      ecl_make_integer_type(ecl_make_fixnum(2),
                                                            ecl_make_fixnum(36)));
         }
-        basis = ecl_fix(radix);
+        basis = ecl_fixnum(radix);
 	switch (type_of(weight)) {
 	case t_fixnum: {
-		cl_fixnum value = ecl_fix(weight);
+		cl_fixnum value = ecl_fixnum(weight);
 		if (value >= 0) {
 			int dw = ecl_digit_char(value, basis);
 			if (dw >= 0) {
@@ -495,7 +495,7 @@ cl_name_char(cl_object name)
 	name = cl_string(name);
 	c = ecl_gethash_safe(name, cl_core.char_names, Cnil);
         if (c != Cnil) {
-                c = ECL_CODE_CHAR(ecl_fix(c));
+                c = ECL_CODE_CHAR(ecl_fixnum(c));
         } else if (ecl_stringp(name) && (l = ecl_length(name))) {
 		c = cl_char(name, ecl_make_fixnum(0));
 		if (l == 1) {
@@ -511,7 +511,7 @@ cl_name_char(cl_object name)
 			if (!ECL_FIXNUMP(c) || (used_l == (l - 1))) {
 				c = Cnil;
 			} else {
-				c = ECL_CODE_CHAR(ecl_fix(c));
+				c = ECL_CODE_CHAR(ecl_fixnum(c));
 			}
 		}
 	}

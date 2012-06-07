@@ -203,7 +203,7 @@ get_bds_ptr(cl_object x)
 {
 	if (ECL_FIXNUMP(x)) {
 		cl_env_ptr env = ecl_process_env();
-		bds_ptr p = env->bds_org + ecl_fix(x);
+		bds_ptr p = env->bds_org + ecl_fixnum(x);
 		if (env->bds_org <= p && p <= env->bds_top)
 			return(p);
 	}
@@ -249,7 +249,7 @@ ecl_new_binding_index(cl_env_ptr env, cl_object symbol)
 	if (new_index == ECL_MISSING_SPECIAL_BINDING) {
 		pool = ecl_atomic_pop(&cl_core.reused_indices);
 		if (!Null(pool)) {
-			new_index = ecl_fix(ECL_CONS_CAR(pool));
+			new_index = ecl_fixnum(ECL_CONS_CAR(pool));
 		} else {
 			new_index = ecl_atomic_index_incf(&cl_core.last_var_index);
 		}
@@ -556,7 +556,7 @@ get_frame_ptr(cl_object x)
 {
 	if (ECL_FIXNUMP(x)) {
 		cl_env_ptr env = ecl_process_env();
-		ecl_frame_ptr p = env->frs_org + ecl_fix(x);
+		ecl_frame_ptr p = env->frs_org + ecl_fixnum(x);
 		if (env->frs_org <= p && p <= env->frs_top)
 			return p;
 	}

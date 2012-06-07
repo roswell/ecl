@@ -73,6 +73,7 @@ typedef enum {
 	t_cclosure,
 #ifdef CLOS
 	t_instance,
+	t_structure = t_instance,
 #else
 	t_structure,
 #endif /* CLOS */
@@ -135,7 +136,7 @@ typedef cl_object (*cl_objectfn_fixed)();
 #define ecl_fixnum_geq(a,b)     ((cl_fixnum)(a) >= (cl_fixnum)(b))
 #define ecl_fixnum_plusp(a)     ((cl_fixnum)(a) > (cl_fixnum)ecl_make_fixnum(0))
 #define ecl_fixnum_minusp(a)    ((cl_fixnum)(a) < (cl_fixnum)(0))
-#define ecl_fix(a)              (((cl_fixnum)(a)) >> 2)
+#define ecl_fixnum(a)              (((cl_fixnum)(a)) >> 2)
 
 /* Immediate characters:	*/
 #define ECL_CHARACTER_TAG	t_character

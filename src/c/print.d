@@ -33,7 +33,7 @@ ecl_print_base(void)
 {
 	cl_object object = ecl_symbol_value(@'*print-base*');
 	cl_fixnum base;
-	unlikely_if (!ECL_FIXNUMP(object) || (base = ecl_fix(object)) < 2 || base > 36) {
+	unlikely_if (!ECL_FIXNUMP(object) || (base = ecl_fixnum(object)) < 2 || base > 36) {
 		ECL_SETQ(ecl_process_env(), @'*print-base*', ecl_make_fixnum(10));
 		FEerror("The value of *PRINT-BASE*~%  ~S~%"
                         "is not of the expected type (INTEGER 2 36)", 1, object);
@@ -49,7 +49,7 @@ ecl_print_level(void)
 	if (object == Cnil) {
 		level = MOST_POSITIVE_FIXNUM;
 	} else if (ECL_FIXNUMP(object)) {
-		level = ecl_fix(object);
+		level = ecl_fixnum(object);
 		if (level < 0) {
 		ERROR:	ECL_SETQ(ecl_process_env(), @'*print-level*', Cnil);
 			FEerror("The value of *PRINT-LEVEL*~%  ~S~%"
@@ -72,7 +72,7 @@ ecl_print_length(void)
 	if (object == Cnil) {
 		length = MOST_POSITIVE_FIXNUM;
 	} else if (ECL_FIXNUMP(object)) {
-		length = ecl_fix(object);
+		length = ecl_fixnum(object);
 		unlikely_if (length < 0) {
 		ERROR:	ECL_SETQ(ecl_process_env(), @'*print-length*', Cnil);
 			FEerror("The value of *PRINT-LENGTH*~%  ~S~%"

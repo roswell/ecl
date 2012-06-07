@@ -367,7 +367,7 @@ generic_write_byte_le(cl_object c, cl_object strm)
 	bs = strm->stream.byte_size;
 	do {
 		cl_object b = cl_logand(2, c, ecl_make_fixnum(0xFF));
-		unsigned char aux = (unsigned char)ecl_fix(b);
+		unsigned char aux = (unsigned char)ecl_fixnum(b);
 		if (write_byte8(strm, &aux, 1) < 1)
 			break;
 		c = cl_ash(c, ecl_make_fixnum(-8));
@@ -411,7 +411,7 @@ generic_write_byte(cl_object c, cl_object strm)
 		cl_object b;
 		bs -= 8;
 		b = cl_logand(2, ecl_make_fixnum(0xFF), bs? cl_ash(c, ecl_make_fixnum(-bs)) : c);
-		aux = (unsigned char)ecl_fix(b);
+		aux = (unsigned char)ecl_fixnum(b);
 		if (write_byte8(strm, &aux, 1) < 1)
 			break;
 	} while (bs);
@@ -951,7 +951,7 @@ user_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
 	if (Null(byte)) {
 		return encoding_error(stream, buffer, c);
 	} else {
-		cl_fixnum code = ecl_fix(byte);
+		cl_fixnum code = ecl_fixnum(byte);
 		if (code > 0xFF) {
 			buffer[1] = code & 0xFF; code >>= 8;
 			buffer[0] = code;
@@ -1012,13 +1012,13 @@ user_multistate_encoder(cl_object stream, unsigned char *buffer, ecl_character c
 		cl_object table = ECL_CONS_CAR(p);
 		cl_object byte = ecl_gethash_safe(ECL_CODE_CHAR(c), table, Cnil);
 		if (!Null(byte)) {
-			cl_fixnum code = ecl_fix(byte);
+			cl_fixnum code = ecl_fixnum(byte);
 			ecl_character n = 0;
 			if (p != table_list) {
 				/* Must output a escape sequence */
 				cl_object x = ecl_gethash_safe(Ct, table, Cnil);
 				while (!Null(x)) {
-					buffer[0] = ecl_fix(ECL_CONS_CAR(x));
+					buffer[0] = ecl_fixnum(ECL_CONS_CAR(x));
 					buffer++;
 					x = ECL_CONS_CDR(x);
 					n++;
@@ -1137,7 +1137,7 @@ clos_stream_read_byte8(cl_object strm, unsigned char *c, cl_index n)
 		cl_object byte = _ecl_funcall2(@'gray::stream-read-byte', strm);
 		if (!ECL_FIXNUMP(byte))
 			break;
-		c[i] = ecl_fix(byte);
+		c[i] = ecl_fixnum(byte);
 	}
 	return i;
 }
@@ -1177,7 +1177,7 @@ clos_stream_read_char(cl_object strm)
 	if (ECL_CHARACTERP(output))
                 value = ECL_CHAR_CODE(output);
         else if (ECL_FIXNUMP(output))
-                value = ecl_fix(output);
+                value = ecl_fixnum(output);
 	else if (output == Cnil || output == @':eof')
 		return EOF;
         else
@@ -2627,7 +2627,7 @@ consume_byte_stack(cl_object strm, unsigned char *c, cl_index n)
 		cl_object l = strm->stream.byte_stack;
 		if (l == Cnil)
 			return out + strm->stream.ops->read_byte8(strm, c, n);
-		*(c++) = ecl_fix(ECL_CONS_CAR(l));
+		*(c++) = ecl_fixnum(ECL_CONS_CAR(l));
 		out++;
 		n--;
 		strm->stream.byte_stack = l = ECL_CONS_CDR(l);
@@ -4754,7 +4754,7 @@ si_do_write_sequence(cl_object seq, cl_object stream, cl_object s, cl_object e)
 	   object, and seq == Cnil i.f.f. t = t_symbol */
 	limit = ecl_length(seq);
         if (ecl_unlikely(!ECL_FIXNUMP(s) ||
-                         ((start = ecl_fix(s)) < 0) ||
+                         ((start = ecl_fixnum(s)) < 0) ||
                          (start > limit))) {
                 FEwrong_type_key_arg(@[write-sequence], @[:start], s,
                                      ecl_make_integer_type(ecl_make_fixnum(0),
@@ -4763,7 +4763,7 @@ si_do_write_sequence(cl_object seq, cl_object stream, cl_object s, cl_object e)
 	if (e == Cnil) {
 		end = limit;
 	} else if (ecl_unlikely(!ECL_FIXNUMP(e) ||
-                                ((end = ecl_fix(e)) < 0) ||
+                                ((end = ecl_fixnum(e)) < 0) ||
                                 (end > limit))) {
                 FEwrong_type_key_arg(@[write-sequence], @[:end], e,
                                      ecl_make_integer_type(ecl_make_fixnum(0),
@@ -4807,7 +4807,7 @@ si_do_read_sequence(cl_object seq, cl_object stream, cl_object s, cl_object e)
 	   object, and seq == Cnil i.f.f. t = t_symbol */
 	limit = ecl_length(seq);
         if (ecl_unlikely(!ECL_FIXNUMP(s) ||
-                         ((start = ecl_fix(s)) < 0) ||
+                         ((start = ecl_fixnum(s)) < 0) ||
                          (start > limit))) {
                 FEwrong_type_key_arg(@[read-sequence], @[:start], s,
                                      ecl_make_integer_type(ecl_make_fixnum(0),
@@ -4816,7 +4816,7 @@ si_do_read_sequence(cl_object seq, cl_object stream, cl_object s, cl_object e)
 	if (e == Cnil) {
 		end = limit;
 	} else if (ecl_unlikely(!ECL_FIXNUMP(e) ||
-                                ((end = ecl_fix(e)) < 0) ||
+                                ((end = ecl_fixnum(e)) < 0) ||
                                 (end > limit))) {
                 FEwrong_type_key_arg(@[read-sequence], @[:end], e,
                                      ecl_make_integer_type(ecl_make_fixnum(0),

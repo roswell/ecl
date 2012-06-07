@@ -137,8 +137,8 @@ invert_buffer_case(cl_object x, cl_object escape_list, int sign)
 	do {
 		if (escape_list != Cnil) {
 			cl_object escape_interval = CAR(escape_list);
-			high_limit = ecl_fix(CAR(escape_interval));
-			low_limit = ecl_fix(CDR(escape_interval));
+			high_limit = ecl_fixnum(CAR(escape_interval));
+			low_limit = ecl_fixnum(CDR(escape_interval));
 			escape_list = CDR(escape_list);
 		} else {
 			high_limit = low_limit = -1;
@@ -446,7 +446,7 @@ cl_object comma_reader(cl_object in, cl_object c)
 {
 	cl_object x, y;
 	const cl_env_ptr env = ecl_process_env();
-	cl_fixnum backq_level = ecl_fix(ECL_SYM_VAL(env, @'si::*backq-level*'));
+	cl_fixnum backq_level = ecl_fixnum(ECL_SYM_VAL(env, @'si::*backq-level*'));
 
 	unlikely_if (backq_level <= 0)
 		FEreader_error("A comma has appeared out of a backquote.", in, 0);
@@ -471,7 +471,7 @@ static
 cl_object backquote_reader(cl_object in, cl_object c)
 {
 	const cl_env_ptr the_env = ecl_process_env();
-	cl_fixnum backq_level = ecl_fix(ECL_SYM_VAL(the_env, @'si::*backq-level*'));
+	cl_fixnum backq_level = ecl_fixnum(ECL_SYM_VAL(the_env, @'si::*backq-level*'));
 	ECL_SETQ(the_env, @'si::*backq-level*', ecl_make_fixnum(backq_level+1));
 	in = ecl_read_object(in);
 	ECL_SETQ(the_env, @'si::*backq-level*', ecl_make_fixnum(backq_level));
@@ -786,7 +786,7 @@ sharp_left_parenthesis_reader(cl_object in, cl_object c, cl_object d)
 	extern int _cl_backq_car(cl_object *);
 	const cl_env_ptr the_env = ecl_process_env();
 	cl_object v;
-	if (ecl_fix(ECL_SYM_VAL(the_env, @'si::*backq-level*')) > 0) {
+	if (ecl_fixnum(ECL_SYM_VAL(the_env, @'si::*backq-level*')) > 0) {
 		/* First case: ther might be unquoted elements in the vector.
 		 * Then we just create a form that generates the vector.
 		 */
@@ -820,7 +820,7 @@ sharp_left_parenthesis_reader(cl_object in, cl_object c, cl_object d)
 		   be smaller, and in that case...*/
 		cl_object last;
 		cl_index dim, i;
-                unlikely_if (!ECL_FIXNUMP(d) || ((dim = ecl_fix(d)) < 0) ||
+                unlikely_if (!ECL_FIXNUMP(d) || ((dim = ecl_fixnum(d)) < 0) ||
                              (dim > ADIMLIM)) {
                         FEreader_error("Invalid dimension size ~D in #()", in, 1, d);
                 }
@@ -878,7 +878,7 @@ sharp_asterisk_reader(cl_object in, cl_object c, cl_object d)
 	if (Null(d)) {
 		dim = dimcount;
 	} else {
-                unlikely_if (!ECL_FIXNUMP(d) || ((dim = ecl_fix(d)) < 0) ||
+                unlikely_if (!ECL_FIXNUMP(d) || ((dim = ecl_fixnum(d)) < 0) ||
                              (dim > ADIMLIM))
                 {
                         FEreader_error("Wrong vector dimension size ~D in #*.",
@@ -1037,7 +1037,7 @@ sharp_R_reader(cl_object in, cl_object c, cl_object d)
         } else unlikely_if (!ECL_FIXNUMP(d)) {
 		FEreader_error("No radix was supplied in the #R readmacro.", in, 0);
         } else {
-		radix = ecl_fix(d);
+		radix = ecl_fixnum(d);
 		unlikely_if (radix > 36 || radix < 2) {
 			FEreader_error("~S is an illegal radix.", in, 1, d);
                 }
@@ -1428,7 +1428,7 @@ ecl_current_read_base(void)
 	cl_object x = ECL_SYM_VAL(the_env, @'*read-base*');
         cl_fixnum b;
 
-        unlikely_if (!ECL_FIXNUMP(x) || ((b = ecl_fix(x)) < 2) || (b > 36))
+        unlikely_if (!ECL_FIXNUMP(x) || ((b = ecl_fixnum(x)) < 2) || (b > 36))
         {
                 ECL_SETQ(the_env, @'*read-base*', ecl_make_fixnum(10));
                 FEerror("The value of *READ-BASE*~&  ~S~%"
@@ -1829,7 +1829,7 @@ ecl_readtable_get(cl_object readtable, int c, cl_object *macro_or_table)
 		if (!Null(hash)) {
 			cl_object pair = ecl_gethash_safe(ECL_CODE_CHAR(c), hash, Cnil);
 			if (!Null(pair)) {
-				cat = ecl_fix(ECL_CONS_CAR(pair));
+				cat = ecl_fixnum(ECL_CONS_CAR(pair));
 				m = ECL_CONS_CDR(pair);
 			}
 		}
@@ -2362,9 +2362,9 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
 
 		for (i = 0; i < block->cblock.cfuns_size; i++) {
 			const struct ecl_cfun *prototype = block->cblock.cfuns+i;
-			cl_index fname_location = ecl_fix(prototype->block);
+			cl_index fname_location = ecl_fixnum(prototype->block);
 			cl_object fname = VV[fname_location];
-			cl_index location = ecl_fix(prototype->name);
+			cl_index location = ecl_fixnum(prototype->name);
                         cl_object position = prototype->file_position;
 			int narg = prototype->narg;
 			VV[location] = narg<0?

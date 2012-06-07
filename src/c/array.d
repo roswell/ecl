@@ -84,7 +84,7 @@ checked_index(cl_object function, cl_object a, int which, cl_object index,
         cl_index output;
         unlikely_if (!ECL_FIXNUMP(index) || ecl_fixnum_minusp(index))
                 FEwrong_index(function, a, which, index, nonincl_limit);
-        output = ecl_fix(index);
+        output = ecl_fixnum(index);
         unlikely_if (output >= nonincl_limit)
                 FEwrong_index(function, a, which, index, nonincl_limit);
         return output;
@@ -95,7 +95,7 @@ ecl_to_index(cl_object n)
 {
 	switch (type_of(n)) {
 	case t_fixnum: {
-		cl_fixnum out = ecl_fix(n);
+		cl_fixnum out = ecl_fixnum(n);
 		if (out < 0 || out >= ADIMLIM)
 			FEtype_error_index(Cnil, out);
 		return out;
@@ -435,7 +435,7 @@ si_make_pure_array(cl_object etype, cl_object dims, cl_object adj,
                                                                ecl_make_fixnum(ADIMLIM));
                         FEwrong_type_nth_arg(@[make-array], 1, d, type);
                 }
-                j = ecl_fix(d);
+                j = ecl_fixnum(d);
 		s *= (x->array.dims[i] = j);
 		if (ecl_unlikely(s > ATOTLIM)) {
                         cl_object type = ecl_make_integer_type(ecl_make_fixnum(0),
@@ -476,7 +476,7 @@ si_make_vector(cl_object etype, cl_object dim, cl_object adj,
                                                        ecl_make_fixnum(ADIMLIM));
                 FEwrong_type_nth_arg(@[make-array], 1, dim, type);
         }
-        d = ecl_fix(dim);
+        d = ecl_fixnum(dim);
 	if (aet == aet_bc) {
 		x = ecl_alloc_object(t_base_string);
                 x->base_string.elttype = (short)aet;
@@ -505,7 +505,7 @@ si_make_vector(cl_object etype, cl_object dim, cl_object adj,
 		x->vector.flags |= ECL_FLAG_HAS_FILL_POINTER;
 		f = d;
 	} else if (ECL_FIXNUMP(fillp) && ecl_fixnum_geq(fillp,ecl_make_fixnum(0)) &&
-		   ((f = ecl_fix(fillp)) <= d)) {
+		   ((f = ecl_fixnum(fillp)) <= d)) {
 		x->vector.flags |= ECL_FLAG_HAS_FILL_POINTER;
 	} else {
 		fillp = ecl_type_error(@'make-array',"fill pointer",fillp,
@@ -751,7 +751,7 @@ ecl_displace(cl_object from, cl_object to, cl_object offset)
 	void *base;
 	cl_elttype totype, fromtype;
 	fromtype = from->array.elttype;
-        if (ecl_unlikely(!ECL_FIXNUMP(offset) || ((j = ecl_fix(offset)) < 0))) {
+        if (ecl_unlikely(!ECL_FIXNUMP(offset) || ((j = ecl_fixnum(offset)) < 0))) {
                 FEwrong_type_key_arg(@[adjust-array], @[:displaced-index-offset],
                                      offset, @[fixnum]);
         }
@@ -1056,7 +1056,7 @@ si_fill_pointer_set(cl_object a, cl_object fp)
 		FEwrong_type_nth_arg(@[adjust-array], 1, a,
                                      ecl_read_from_cstring(type));
         }
-        if (ecl_unlikely(!ECL_FIXNUMP(fp) || ((i = ecl_fix(fp)) < 0) ||
+        if (ecl_unlikely(!ECL_FIXNUMP(fp) || ((i = ecl_fixnum(fp)) < 0) ||
                          (i > a->vector.dim))) {
                 cl_object type = ecl_make_integer_type(ecl_make_fixnum(0),
                                                        ecl_make_fixnum(a->vector.dim-1));

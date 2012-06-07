@@ -183,7 +183,7 @@ ecl_floor2(cl_object x, cl_object y)
 	case t_fixnum:
 		switch(ty) {
 		case t_fixnum: {	/* FIX / FIX */
-		  cl_fixnum a = ecl_fix(x), b = ecl_fix(y);
+		  cl_fixnum a = ecl_fixnum(x), b = ecl_fixnum(y);
 		  cl_fixnum q = a / b,  r = a % b;
 		  if ((r^b) < 0 && r) {	/* opposite sign and some remainder*/
 		    v0 = ecl_make_fixnum(q-1);
@@ -201,7 +201,7 @@ ecl_floor2(cl_object x, cl_object y)
 		   *    y = - MOST_NEGATIVE_FIXNUM
 		   */
                   ECL_WITH_TEMP_BIGNUM(bx,4);
-                  _ecl_big_set_fixnum(bx, ecl_fix(x));
+                  _ecl_big_set_fixnum(bx, ecl_fixnum(x));
                   v0 = _ecl_big_floor(bx, y, &v1);
 		  break;
 		}
@@ -211,7 +211,7 @@ ecl_floor2(cl_object x, cl_object y)
 		  break;
 		case t_singlefloat: {	/* FIX / SF */
 		  float n = ecl_single_float(y);
-		  float p = ecl_fix(x) / n;
+		  float p = ecl_fixnum(x) / n;
 		  float q = floorf(p);
 		  v0 = float_to_integer(q);
 		  v1 = ecl_make_singlefloat((p - q)*n);
@@ -219,7 +219,7 @@ ecl_floor2(cl_object x, cl_object y)
 		}
 		case t_doublefloat: {	/* FIX / DF */
 		  double n = ecl_double_float(y);
-		  double p = ecl_fix(x) / n;
+		  double p = ecl_fixnum(x) / n;
 		  double q = floor(p);
 		  v0 = double_to_integer(q);
 		  v1 = ecl_make_doublefloat((p - q)*n);
@@ -228,7 +228,7 @@ ecl_floor2(cl_object x, cl_object y)
 #ifdef ECL_LONG_FLOAT
 		case t_longfloat: {	/* FIX / LF */
 		  long double n = ecl_long_float(y);
-		  long double p = ecl_fix(x) / n;
+		  long double p = ecl_fixnum(x) / n;
 		  long double q = floorl(p);
 		  v0 = long_double_to_integer(q);
 		  v1 = ecl_make_longfloat((p - q)*n);
@@ -243,7 +243,7 @@ ecl_floor2(cl_object x, cl_object y)
 		switch(ty) {
 		case t_fixnum: {	/* BIG / FIX */
                   ECL_WITH_TEMP_BIGNUM(by,4);
-                  _ecl_big_set_fixnum(by, ecl_fix(y));
+                  _ecl_big_set_fixnum(by, ecl_fixnum(y));
                   v0 = _ecl_big_floor(x, by, &v1);
 		  break;
 		}
@@ -397,7 +397,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 	case t_fixnum:
 		switch(ty) {
 		case t_fixnum: {	/* FIX / FIX */
-		  cl_fixnum a = ecl_fix(x); cl_fixnum b = ecl_fix(y);
+		  cl_fixnum a = ecl_fixnum(x); cl_fixnum b = ecl_fixnum(y);
 		  cl_fixnum q = a / b;  cl_fixnum r = a % b;
 		  if ((r^b) > 0 && r) {	/* same signs and some remainder */
 		    v0 = ecl_make_fixnum(q+1);
@@ -415,7 +415,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 		   *    y = - MOST_NEGATIVE_FIXNUM
 		   */
                   ECL_WITH_TEMP_BIGNUM(bx,4);
-                  _ecl_big_set_fixnum(bx, ecl_fix(x));
+                  _ecl_big_set_fixnum(bx, ecl_fixnum(x));
                   v0 = _ecl_big_ceiling(bx, y, &v1);
 		  break;
 		}
@@ -425,7 +425,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 		  break;
 		case t_singlefloat: {	/* FIX / SF */
 		  float n = ecl_single_float(y);
-		  float p = ecl_fix(x)/n;
+		  float p = ecl_fixnum(x)/n;
 		  float q = ceilf(p);
 		  v0 = float_to_integer(q);
 		  v1 = ecl_make_singlefloat(p*n - q*n);
@@ -433,7 +433,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 		}
 		case t_doublefloat: {	/* FIX / DF */
 		  double n = ecl_double_float(y);
-		  double p = ecl_fix(x)/n;
+		  double p = ecl_fixnum(x)/n;
 		  double q = ceil(p);
 		  v0 = double_to_integer(q);
 		  v1 = ecl_make_doublefloat(p*n - q*n);
@@ -442,7 +442,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 #ifdef ECL_LONG_FLOAT
 		case t_longfloat: {	/* FIX / LF */
 		  long double n = ecl_long_float(y);
-		  long double p = ecl_fix(x)/n;
+		  long double p = ecl_fixnum(x)/n;
 		  long double q = ceill(p);
 		  v0 = long_double_to_integer(q);
 		  v1 = ecl_make_longfloat(p*n - q*n);
@@ -457,7 +457,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 		switch(type_of(y)) {
 		case t_fixnum: {	/* BIG / FIX */
                   ECL_WITH_TEMP_BIGNUM(by,4);
-                  _ecl_big_set_fixnum(by, ecl_fix(y));
+                  _ecl_big_set_fixnum(by, ecl_fixnum(y));
                   v0 = _ecl_big_ceiling(x, by, &v1);
 		  break;
 		}
@@ -817,7 +817,7 @@ cl_scale_float(cl_object x, cl_object y)
 	cl_fixnum k;
 
 	if (ECL_FIXNUMP(y)) {
-		k = ecl_fix(y);
+		k = ecl_fixnum(y);
 	} else {
 		FEwrong_type_nth_arg(@[scale-float],2,y,@[fixnum]);
 	}

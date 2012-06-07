@@ -72,14 +72,14 @@ search_print_circle(cl_object x)
 			return 0;
 		} else if (code == Ct) {
 			/* This object is referenced twice, but has no code yet */
-			cl_fixnum new_code = ecl_fix(circle_counter) + 1;
+			cl_fixnum new_code = ecl_fixnum(circle_counter) + 1;
 			circle_counter = ecl_make_fixnum(new_code);
 			_ecl_sethash(x, circle_stack, circle_counter);
 			ECL_SETQ(ecl_process_env(), @'si::*circle-counter*',
 				 circle_counter);
 			return -new_code;
 		} else {
-			return ecl_fix(code);
+			return ecl_fixnum(code);
 		}
 	}
 }

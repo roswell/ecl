@@ -360,12 +360,12 @@ print_lock(char *prefix, cl_object l, ...)
 	if (l == Cnil || ECL_FIXNUMP(l->lock.name)) {
 		cl_env_ptr env = ecl_process_env();
 		ecl_get_spinlock(env, &lock);
-		printf("\n%ld\t", ecl_fix(env->own_process->process.name));
+		printf("\n%ld\t", ecl_fixnum(env->own_process->process.name));
 		vprintf(prefix, args);
 		if (l != Cnil) {
 			cl_object p = l->lock.queue_list;
 			while (p != Cnil) {
-				printf(" %lx", ecl_fix(ECL_CONS_CAR(p)->process.name));
+				printf(" %lx", ecl_fixnum(ECL_CONS_CAR(p)->process.name));
 				p = ECL_CONS_CDR(p);
 			}
 		}
