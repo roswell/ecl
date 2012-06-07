@@ -43,6 +43,17 @@
       (perform-replace from-string to-string t nil delimited nil nil
 		       start end))))
 
+(defun query-replace-regexp-ecl (from-string to-string &optional delimited start end)
+  (interactive (query-replace-read-args "Query replace" nil))
+  (setq ecl-search-string from-string)
+  (let ((remaining (member (buffer-file-name (current-buffer)) ecl-files)))
+    (dolist (i (or remaining ecl-files))
+      (let ((b (find-buffer-visiting i)))
+	(unless (equal b (current-buffer))
+	  (switch-to-buffer b)
+	  (beginning-of-buffer)))
+      (query-replace-regexp from-string to-string delimited start end))))
+
 (defun search-ecl (string)
   (interactive "sString: ")
   (setq ecl-search-string string)
