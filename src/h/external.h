@@ -1116,11 +1116,6 @@ extern ECL_API double ecl_to_double(cl_object x);
 extern ECL_API long double ecl_to_long_double(cl_object x);
 extern ECL_API cl_object ecl_make_long_float(long double f);
 #endif
-extern ECL_API cl_object double_to_integer(double d);
-extern ECL_API cl_object float_to_integer(float d);
-#ifdef ECL_LONG_FLOAT
-extern ECL_API cl_object long_double_to_integer(long double d);
-#endif
 
 /* num_co.c */
 

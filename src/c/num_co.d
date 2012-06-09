@@ -40,6 +40,7 @@
 # define tanf tan
 # define tanhf tanh
 #endif
+#include <ecl/internal.h>
 
 static cl_object
 number_remainder(cl_object x, cl_object y, cl_object q)
@@ -143,14 +144,14 @@ ecl_floor1(cl_object x)
 	case t_singlefloat: {
 		float d = ecl_single_float(x);
 		float y = floorf(d);
-		v0 = float_to_integer(y);
+		v0 = _ecl_float_to_integer(y);
 		v1 = ecl_make_single_float(d - y);
 		break;
 	}
 	case t_doublefloat: {
 		double d = ecl_double_float(x);
 		double y = floor(d);
-		v0 = double_to_integer(y);
+		v0 = _ecl_double_to_integer(y);
 		v1 = ecl_make_double_float(d - y);
 		break;
 	}
@@ -158,7 +159,7 @@ ecl_floor1(cl_object x)
 	case t_longfloat: {
 		long double d = ecl_long_float(x);
 		long double y = floorl(d);
-		v0 = long_double_to_integer(y);
+		v0 = _ecl_long_double_to_integer(y);
 		v1 = ecl_make_long_float(d - y);
 		break;
 	}
@@ -213,7 +214,7 @@ ecl_floor2(cl_object x, cl_object y)
 		  float n = ecl_single_float(y);
 		  float p = ecl_fixnum(x) / n;
 		  float q = floorf(p);
-		  v0 = float_to_integer(q);
+		  v0 = _ecl_float_to_integer(q);
 		  v1 = ecl_make_single_float((p - q)*n);
 		  break;
 		}
@@ -221,7 +222,7 @@ ecl_floor2(cl_object x, cl_object y)
 		  double n = ecl_double_float(y);
 		  double p = ecl_fixnum(x) / n;
 		  double q = floor(p);
-		  v0 = double_to_integer(q);
+		  v0 = _ecl_double_to_integer(q);
 		  v1 = ecl_make_double_float((p - q)*n);
 		  break;
 		}
@@ -230,7 +231,7 @@ ecl_floor2(cl_object x, cl_object y)
 		  long double n = ecl_long_float(y);
 		  long double p = ecl_fixnum(x) / n;
 		  long double q = floorl(p);
-		  v0 = long_double_to_integer(q);
+		  v0 = _ecl_long_double_to_integer(q);
 		  v1 = ecl_make_long_float((p - q)*n);
 		  break;
 		}
@@ -259,7 +260,7 @@ ecl_floor2(cl_object x, cl_object y)
 		  float n = ecl_single_float(y);
 		  float p = _ecl_big_to_double(x) / n;
 		  float q = floorf(p);
-		  v0 = float_to_integer(q);
+		  v0 = _ecl_float_to_integer(q);
 		  v1 = ecl_make_single_float((p - q)*n);
 		  break;
 		}
@@ -267,7 +268,7 @@ ecl_floor2(cl_object x, cl_object y)
 		  double n = ecl_double_float(y);
 		  double p = _ecl_big_to_double(x) / n;
 		  double q = floor(p);
-		  v0 = double_to_integer(q);
+		  v0 = _ecl_double_to_integer(q);
 		  v1 = ecl_make_double_float((p - q)*n);
 		  break;
 		}
@@ -276,7 +277,7 @@ ecl_floor2(cl_object x, cl_object y)
 		  long double n = ecl_long_float(y);
 		  long double p = _ecl_big_to_double(x) / n;
 		  long double q = floorl(p);
-		  v0 = long_double_to_integer(q);
+		  v0 = _ecl_long_double_to_integer(q);
 		  v1 = ecl_make_long_float((p - q)*n);
 		  break;
 		}
@@ -301,7 +302,7 @@ ecl_floor2(cl_object x, cl_object y)
 		float n = ecl_to_double(y);
 		float p = ecl_single_float(x)/n;
 		float q = floorf(p);
-		v0 = float_to_integer(q);
+		v0 = _ecl_float_to_integer(q);
 		/* We cannot factor these two multiplications because
 		 * if we have signed zeros (1 - 1) * (-1) = -0 while
 		 * 1*(-1) - 1*(-1) = +0 */
@@ -312,7 +313,7 @@ ecl_floor2(cl_object x, cl_object y)
 		double n = ecl_to_double(y);
 		double p = ecl_double_float(x)/n;
 		double q = floor(p);
-		v0 = double_to_integer(q);
+		v0 = _ecl_double_to_integer(q);
 		v1 = ecl_make_double_float(p*n - q*n);
 		break;
 	}
@@ -321,7 +322,7 @@ ecl_floor2(cl_object x, cl_object y)
 		long double n = ecl_to_long_double(y);
 		long double p = ecl_long_float(x)/n;
 		long double q = floorl(p);
-		v0 = long_double_to_integer(q);
+		v0 = _ecl_long_double_to_integer(q);
 		v1 = ecl_make_long_float(p*n - q*n);
 		break;
 	}
@@ -357,14 +358,14 @@ ecl_ceiling1(cl_object x)
 	case t_singlefloat: {
 		float d = ecl_single_float(x);
 		float y = ceilf(d);
-		v0 = float_to_integer(y);
+		v0 = _ecl_float_to_integer(y);
 		v1 = ecl_make_single_float(d - y);
 		break;
 	}
 	case t_doublefloat: {
 		double d = ecl_double_float(x);
 		double y = ceil(d);
-		v0 = double_to_integer(y);
+		v0 = _ecl_double_to_integer(y);
 		v1 = ecl_make_double_float(d - y);
 		break;
 	}
@@ -372,7 +373,7 @@ ecl_ceiling1(cl_object x)
 	case t_longfloat: {
 		long double d = ecl_long_float(x);
 		long double y = ceill(d);
-		v0 = long_double_to_integer(y);
+		v0 = _ecl_long_double_to_integer(y);
 		v1 = ecl_make_long_float(d - y);
 		break;
 	}
@@ -427,7 +428,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 		  float n = ecl_single_float(y);
 		  float p = ecl_fixnum(x)/n;
 		  float q = ceilf(p);
-		  v0 = float_to_integer(q);
+		  v0 = _ecl_float_to_integer(q);
 		  v1 = ecl_make_single_float(p*n - q*n);
 		  break;
 		}
@@ -435,7 +436,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 		  double n = ecl_double_float(y);
 		  double p = ecl_fixnum(x)/n;
 		  double q = ceil(p);
-		  v0 = double_to_integer(q);
+		  v0 = _ecl_double_to_integer(q);
 		  v1 = ecl_make_double_float(p*n - q*n);
 		  break;
 		}
@@ -444,7 +445,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 		  long double n = ecl_long_float(y);
 		  long double p = ecl_fixnum(x)/n;
 		  long double q = ceill(p);
-		  v0 = long_double_to_integer(q);
+		  v0 = _ecl_long_double_to_integer(q);
 		  v1 = ecl_make_long_float(p*n - q*n);
 		  break;
 		}
@@ -473,7 +474,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 		  float n = ecl_single_float(y);
 		  float p = _ecl_big_to_double(x)/n;
 		  float q = ceilf(p);
-		  v0 = float_to_integer(q);
+		  v0 = _ecl_float_to_integer(q);
 		  v1 = ecl_make_single_float(p*n - q*n);
 		  break;
 		}
@@ -481,7 +482,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 		  double n = ecl_double_float(y);
 		  double p = _ecl_big_to_double(x)/n;
 		  double q = ceil(p);
-		  v0 = double_to_integer(q);
+		  v0 = _ecl_double_to_integer(q);
 		  v1 = ecl_make_double_float(p*n - q*n);
 		  break;
 		}
@@ -490,7 +491,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 		  long double n = ecl_long_float(y);
 		  long double p = _ecl_big_to_double(x)/n;
 		  long double q = ceill(p);
-		  v0 = long_double_to_integer(q);
+		  v0 = _ecl_long_double_to_integer(q);
 		  v1 = ecl_make_long_float(p*n - q*n);
 		  break;
 		}
@@ -515,7 +516,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 		float n = ecl_to_double(y);
 		float p = ecl_single_float(x)/n;
 		float q = ceilf(p);
-		v0 = float_to_integer(q);
+		v0 = _ecl_float_to_integer(q);
 		v1 = ecl_make_single_float(p*n - q*n);
 		break;
 	}
@@ -523,7 +524,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 		double n = ecl_to_double(y);
 		double p = ecl_double_float(x)/n;
 		double q = ceil(p);
-		v0 = double_to_integer(q);
+		v0 = _ecl_double_to_integer(q);
 		v1 = ecl_make_double_float(p*n - q*n);
 		break;
 	}
@@ -532,7 +533,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 		long double n = ecl_to_long_double(y);
 		long double p = ecl_long_float(x)/n;
 		long double q = ceill(p);
-		v0 = long_double_to_integer(q);
+		v0 = _ecl_long_double_to_integer(q);
 		v1 = ecl_make_long_float(p*n - q*n);
 		break;
 	}
@@ -569,14 +570,14 @@ ecl_truncate1(cl_object x)
 	case t_singlefloat: {
 		float d = ecl_single_float(x);
 		float y = d > 0? floorf(d) : ceilf(d);
-		v0 = float_to_integer(y);
+		v0 = _ecl_float_to_integer(y);
 		v1 = ecl_make_single_float(d - y);
 		break;
 	}
 	case t_doublefloat: {
 		double d = ecl_double_float(x);
 		double y = d > 0? floor(d) : ceil(d);
-		v0 = double_to_integer(y);
+		v0 = _ecl_double_to_integer(y);
 		v1 = ecl_make_double_float(d - y);
 		break;
 	}
@@ -584,7 +585,7 @@ ecl_truncate1(cl_object x)
 	case t_longfloat: {
 		long double d = ecl_long_float(x);
 		long double y = d > 0? floorl(d) : ceill(d);
-		v0 = long_double_to_integer(y);
+		v0 = _ecl_long_double_to_integer(y);
 		v1 = ecl_make_long_float(d - y);
 		break;
 	}
@@ -666,14 +667,14 @@ ecl_round1(cl_object x)
 	case t_singlefloat: {
 		float d = ecl_single_float(x);
 		float q = round_double(d);
-		v0 = float_to_integer(q);
+		v0 = _ecl_float_to_integer(q);
 		v1 = ecl_make_single_float(d - q);
 		break;
 	}
 	case t_doublefloat: {
 		double d = ecl_double_float(x);
 		double q = round_double(d);
-		v0 = double_to_integer(q);
+		v0 = _ecl_double_to_integer(q);
 		v1 = ecl_make_double_float(d - q);
 		break;
 	}
@@ -681,7 +682,7 @@ ecl_round1(cl_object x)
 	case t_longfloat: {
 		long double d = ecl_long_float(x);
 		long double q = round_long_double(d);
-		v0 = long_double_to_integer(q);
+		v0 = _ecl_long_double_to_integer(q);
 		v1 = ecl_make_long_float(d - q);
 		break;
 	}
@@ -997,7 +998,7 @@ cl_integer_decode_float(cl_object x)
 			x = ecl_make_fixnum(0);
 		} else {
                         d = frexpl(d, &e);
-			x = long_double_to_integer(ldexpl(d, LDBL_MANT_DIG));
+			x = _ecl_long_double_to_integer(ldexpl(d, LDBL_MANT_DIG));
 			e -= LDBL_MANT_DIG;
 		}
 		break;
@@ -1014,7 +1015,7 @@ cl_integer_decode_float(cl_object x)
 			x = ecl_make_fixnum(0);
 		} else {
                         d = frexp(d, &e);
-			x = double_to_integer(ldexp(d, DBL_MANT_DIG));
+			x = _ecl_double_to_integer(ldexp(d, DBL_MANT_DIG));
 			e -= DBL_MANT_DIG;
 		}
 		break;
@@ -1030,7 +1031,7 @@ cl_integer_decode_float(cl_object x)
 			x = ecl_make_fixnum(0);
 		} else {
                         d = frexpf(d, &e);
-			x = double_to_integer(ldexp(d, FLT_MANT_DIG));
+			x = _ecl_double_to_integer(ldexp(d, FLT_MANT_DIG));
 			e -= FLT_MANT_DIG;
 		}
 		break;

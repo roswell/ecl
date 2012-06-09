@@ -332,6 +332,14 @@ extern cl_object ecl_slot_writer_dispatch(cl_narg narg, cl_object value, cl_obje
 extern cl_object _ecl_library_init_prefix(void);
 extern cl_object _ecl_library_default_entry(void);
 
+/* number.d */
+
+extern cl_object _ecl_double_to_integer(double d);
+extern cl_object _ecl_float_to_integer(float d);
+#ifdef ECL_LONG_FLOAT
+extern cl_object _ecl_long_double_to_integer(long double d);
+#endif
+
 /* main.d */
 
 extern cl_fixnum ecl_option_values[ECL_OPT_LIMIT+1];

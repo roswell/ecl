@@ -810,7 +810,7 @@ cl_rational(cl_object x)
 			int e;
 			d = frexp(d, &e);
 			e -= DBL_MANT_DIG;
-			x = double_to_integer(ldexp(d, DBL_MANT_DIG));
+			x = _ecl_double_to_integer(ldexp(d, DBL_MANT_DIG));
                         if (e != 0) {
                                 x = ecl_times(ecl_expt(ecl_make_fixnum(FLT_RADIX),
                                                        ecl_make_fixnum(e)),
@@ -828,7 +828,7 @@ cl_rational(cl_object x)
 			d = frexpl(d, &e);
 			e -= LDBL_MANT_DIG;
                         d = ldexpl(d, LDBL_MANT_DIG);
-			x = long_double_to_integer(d);
+			x = _ecl_long_double_to_integer(d);
 			if (e != 0) {
 				x = ecl_times(ecl_expt(ecl_make_fixnum(FLT_RADIX),
                                                        ecl_make_fixnum(e)),
@@ -847,7 +847,7 @@ cl_rational(cl_object x)
 
 #ifdef ECL_LONG_FLOAT
 cl_object
-long_double_to_integer(long double d0)
+_ecl_long_double_to_integer(long double d0)
 {
         const int fb = FIXNUM_BITS - 3;
         int e;
@@ -855,21 +855,21 @@ long_double_to_integer(long double d0)
         if (e <= fb) {
                 return ecl_make_fixnum((cl_fixnum)d0);
         } else if (e > LDBL_MANT_DIG) {
-                return ecl_ash(long_double_to_integer(ldexp(d, LDBL_MANT_DIG)),
+                return ecl_ash(_ecl_long_double_to_integer(ldexp(d, LDBL_MANT_DIG)),
                                e - LDBL_MANT_DIG);
         } else {
                 long double d1 = floorl(d = ldexpl(d, fb));
                 int newe = e - fb;
-                cl_object o = ecl_ash(long_double_to_integer(d1), newe);
+                cl_object o = ecl_ash(_ecl_long_double_to_integer(d1), newe);
                 long double d2 = ldexpl(d - d1, newe);
-                if (d2) o = ecl_plus(o, long_double_to_integer(d2));
+                if (d2) o = ecl_plus(o, _ecl_long_double_to_integer(d2));
                 return o;
         }
 }
 #endif
 
 cl_object
-double_to_integer(double d)
+_ecl_double_to_integer(double d)
 {
 	if (d <= MOST_POSITIVE_FIXNUM && d >= MOST_NEGATIVE_FIXNUM)
 		return ecl_make_fixnum((cl_fixnum)d);
@@ -881,7 +881,7 @@ double_to_integer(double d)
 }
 
 cl_object
-float_to_integer(float d)
+_ecl_float_to_integer(float d)
 {
 	if (d <= MOST_POSITIVE_FIXNUM && d >= MOST_NEGATIVE_FIXNUM)
 		return ecl_make_fixnum((cl_fixnum)d);
