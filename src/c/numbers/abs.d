@@ -50,14 +50,14 @@ static cl_object
 ecl_abs_single_float(cl_object x)
 {
 	float f = ecl_single_float(x);
-        return (f < 0)? ecl_make_singlefloat(-f) : x;
+        return (f < 0)? ecl_make_single_float(-f) : x;
 }
 
 static cl_object
 ecl_abs_double_float(cl_object x)
 {
 	double f = ecl_double_float(x);
-        return (f < 0)? ecl_make_doublefloat(-f) : x;
+        return (f < 0)? ecl_make_double_float(-f) : x;
 }
 
 #ifdef ECL_LONG_FLOAT
@@ -65,7 +65,7 @@ static cl_object
 ecl_abs_long_float(cl_object x)
 {
 	long double f = ecl_long_float(x);
-        return (f < 0)? ecl_make_longfloat(-f) : x;
+        return (f < 0)? ecl_make_long_float(-f) : x;
 }
 #endif
 

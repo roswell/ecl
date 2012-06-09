@@ -31,26 +31,26 @@ cl_exp(cl_object x)
 static cl_object
 ecl_exp_rational(cl_object x)
 {
-        return ecl_make_singlefloat(expf(number_to_float(x)));
+        return ecl_make_single_float(expf(number_to_float(x)));
 }
 
 static cl_object
 ecl_exp_single_float(cl_object x)
 {
-        return ecl_make_singlefloat(expf(ecl_single_float(x)));
+        return ecl_make_single_float(expf(ecl_single_float(x)));
 }
 
 static cl_object
 ecl_exp_double_float(cl_object x)
 {
-        return ecl_make_doublefloat(exp(ecl_double_float(x)));
+        return ecl_make_double_float(exp(ecl_double_float(x)));
 }
 
 #ifdef ECL_LONG_FLOAT
 static cl_object
 ecl_exp_long_float(cl_object x)
 {
-        return ecl_make_longfloat(expl(ecl_long_float(x)));
+        return ecl_make_long_float(expl(ecl_long_float(x)));
 }
 #endif
 

@@ -90,13 +90,13 @@ make_float(cl_object num, cl_object exp, cl_index exp_char, int sign)
                 goto AGAIN;
         case 's':  case 'S':
         case 'f':  case 'F':
-                return ecl_make_singlefloat(sign * ecl_to_double(num));
+                return ecl_make_single_float(sign * ecl_to_double(num));
         case 'l':  case 'L':
 #ifdef ECL_LONG_FLOAT
-                return ecl_make_longfloat(sign * ecl_to_long_double(num));
+                return ecl_make_long_float(sign * ecl_to_long_double(num));
 #endif
         case 'd':  case 'D': {
-                return ecl_make_doublefloat(sign * ecl_to_double(num));
+                return ecl_make_double_float(sign * ecl_to_double(num));
         }
         default:
                 return OBJNULL;

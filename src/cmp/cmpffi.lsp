@@ -86,13 +86,13 @@
          "ecl_make_unsigned_long_long"
          "ecl_to_unsigned_long_long" "ecl_to_unsigned_long_long")
     :float
-    (single-float "float" "ecl_make_singlefloat" "ecl_to_float" "ecl_single_float")
+    (single-float "float" "ecl_make_single_float" "ecl_to_float" "ecl_single_float")
     :double
-    (double-float "double" "ecl_make_doublefloat" "ecl_to_double" "ecl_double_float")
+    (double-float "double" "ecl_make_double_float" "ecl_to_double" "ecl_double_float")
     #+:long-float
     :long-double
     #+:long-float
-    (long-float "long double" "ecl_make_longfloat" "ecl_to_long_double" "ecl_long_float")
+    (long-float "long double" "ecl_make_long_float" "ecl_to_long_double" "ecl_long_float")
     :unsigned-char
     (base-char "unsigned char" "CODE_CHAR" "ecl_base_char_code" "CHAR_CODE")
     :char

@@ -31,26 +31,26 @@ cl_cosh(cl_object x)
 static cl_object
 ecl_cosh_rational(cl_object x)
 {
-        return ecl_make_singlefloat(coshf(number_to_float(x)));
+        return ecl_make_single_float(coshf(number_to_float(x)));
 }
 
 static cl_object
 ecl_cosh_single_float(cl_object x)
 {
-        return ecl_make_singlefloat(coshf(ecl_single_float(x)));
+        return ecl_make_single_float(coshf(ecl_single_float(x)));
 }
 
 static cl_object
 ecl_cosh_double_float(cl_object x)
 {
-        return ecl_make_doublefloat(cosh(ecl_double_float(x)));
+        return ecl_make_double_float(cosh(ecl_double_float(x)));
 }
 
 #ifdef ECL_LONG_FLOAT
 static cl_object
 ecl_cosh_long_float(cl_object x)
 {
-        return ecl_make_longfloat(coshl(ecl_long_float(x)));
+        return ecl_make_long_float(coshl(ecl_long_float(x)));
 }
 #endif
 

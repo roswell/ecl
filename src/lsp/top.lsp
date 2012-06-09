@@ -883,12 +883,12 @@ Use special code 0 to cancel this operation.")
 	}
 	case _ecl_float_loc: {
 		float *p = (float*)value;
-		output = ecl_make_singlefloat(*p);
+		output = ecl_make_single_float(*p);
 		break;
 	}
 	case _ecl_double_loc: {
 		double *p = (double*)value;
-		output = ecl_make_doublefloat(*p);
+		output = ecl_make_double_float(*p);
 		break;
 	}
 #ifdef ECL_SSE2

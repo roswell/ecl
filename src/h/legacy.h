@@ -113,3 +113,7 @@
 #define htt_weak_key ecl_htt_weak_key
 #define htt_weak_value ecl_htt_weak_value
 #define htt_weak_key_and_value ecl_htt_weak_key_and_value
+
+#define ecl_make_singlefloat ecl_make_single_float
+#define ecl_make_doublefloat ecl_make_double_float
+#define ecl_make_longfloat ecl_make_long_float

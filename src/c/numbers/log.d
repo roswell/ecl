@@ -59,7 +59,7 @@ ecl_log1_bignum(cl_object x)
                 cl_fixnum l = ecl_integer_length(x) - 1;
                 cl_object r = ecl_make_ratio(x, ecl_ash(ecl_make_fixnum(1), l));
                 float d = logf(number_to_float(r)) + l * logf(2.0);
-                return ecl_make_singlefloat(d);
+                return ecl_make_single_float(d);
         }
 }
 
@@ -68,7 +68,7 @@ ecl_log1_rational(cl_object x)
 {
         float f = number_to_float(x);
         if (f < 0) return ecl_log1_complex_inner(x, ecl_make_fixnum(0));
-        return ecl_make_singlefloat(logf(number_to_float(x)));
+        return ecl_make_single_float(logf(number_to_float(x)));
 }
 
 static cl_object
@@ -77,7 +77,7 @@ ecl_log1_single_float(cl_object x)
         float f = ecl_single_float(x);
         if (isnan(f)) return x;
         if (f < 0) return ecl_log1_complex_inner(x, ecl_make_fixnum(0));
-        return ecl_make_singlefloat(logf(f));
+        return ecl_make_single_float(logf(f));
 }
 
 static cl_object
@@ -86,7 +86,7 @@ ecl_log1_double_float(cl_object x)
         double f = ecl_double_float(x);
         if (isnan(f)) return x;
         if (f < 0) return ecl_log1_complex_inner(x, ecl_make_fixnum(0));
-        return ecl_make_doublefloat(log(f));
+        return ecl_make_double_float(log(f));
 }
 
 #ifdef ECL_LONG_FLOAT
@@ -96,7 +96,7 @@ ecl_log1_long_float(cl_object x)
         long double f = ecl_long_float(x);
         if (isnan(f)) return x;
         if (f < 0) return ecl_log1_complex_inner(x, ecl_make_fixnum(0));
-        return ecl_make_longfloat(logl(f));
+        return ecl_make_long_float(logl(f));
 }
 #endif
 
@@ -181,7 +181,7 @@ ecl_log1p_rational(cl_object x)
 {
         float f = number_to_float(x);
         if (f < -1) return ecl_log1p_simple(x);
-        return ecl_make_singlefloat(log1pf(number_to_float(x)));
+        return ecl_make_single_float(log1pf(number_to_float(x)));
 }
 
 static cl_object
@@ -190,7 +190,7 @@ ecl_log1p_single_float(cl_object x)
         float f = ecl_single_float(x);
         if (isnan(f)) return x;
         if (f < -1) return ecl_log1p_simple(x);
-        return ecl_make_singlefloat(log1pf(f));
+        return ecl_make_single_float(log1pf(f));
 }
 
 static cl_object
@@ -199,7 +199,7 @@ ecl_log1p_double_float(cl_object x)
         double f = ecl_double_float(x);
         if (isnan(f)) return x;
         if (f < -1) return ecl_log1p_simple(x);
-        return ecl_make_doublefloat(log1p(f));
+        return ecl_make_double_float(log1p(f));
 }
 
 #ifdef ECL_LONG_FLOAT
@@ -209,7 +209,7 @@ ecl_log1p_long_float(cl_object x)
         long double f = ecl_long_float(x);
         if (isnan(f)) return x;
         if (f < -1) return ecl_log1p_simple(x);
-        return ecl_make_longfloat(log1pl(f));
+        return ecl_make_long_float(log1pl(f));
 }
 #endif
 

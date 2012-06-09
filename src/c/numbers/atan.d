@@ -98,15 +98,15 @@ ecl_atan2(cl_object y, cl_object x)
 	if (tx == t_longfloat) {
                 long double d = ecl_atan2_long_double(ecl_to_long_double(y),
                                                       ecl_to_long_double(x));
-		output = ecl_make_longfloat(d);
+		output = ecl_make_long_float(d);
 	} else {
 		double dx = ecl_to_double(x);
 		double dy = ecl_to_double(y);
 		double dz = ecl_atan2_double(dy, dx);
 		if (tx == t_doublefloat) {
-			output = ecl_make_doublefloat(dz);
+			output = ecl_make_double_float(dz);
 		} else {
-			output = ecl_make_singlefloat(dz);
+			output = ecl_make_single_float(dz);
 		}
 	}
 #else
@@ -114,9 +114,9 @@ ecl_atan2(cl_object y, cl_object x)
 	double dx = ecl_to_double(x);
 	double dz = ecl_atan2_double(dy, dx);
 	if (ECL_DOUBLE_FLOAT_P(x) || ECL_DOUBLE_FLOAT_P(y)) {
-		output = ecl_make_doublefloat(dz);
+		output = ecl_make_double_float(dz);
 	} else {
-		output = ecl_make_singlefloat(dz);
+		output = ecl_make_single_float(dz);
 	}
 #endif
         }

@@ -35,7 +35,7 @@ ecl_sqrt_rational(cl_object x)
                 x = ecl_sqrt_rational(ecl_negate(x));
                 return ecl_make_complex(ecl_make_fixnum(0), x);
         } else {
-                return ecl_make_singlefloat(sqrtf(number_to_float(x)));
+                return ecl_make_single_float(sqrtf(number_to_float(x)));
         }
 }
 
@@ -45,9 +45,9 @@ ecl_sqrt_single_float(cl_object x)
         float f = ecl_single_float(x);
         if (f < 0) {
                 return ecl_make_complex(ecl_make_fixnum(0),
-                                        ecl_make_singlefloat(sqrtf(-f)));
+                                        ecl_make_single_float(sqrtf(-f)));
         } else {
-                return ecl_make_singlefloat(sqrtf(f));
+                return ecl_make_single_float(sqrtf(f));
         }
 }
 
@@ -57,9 +57,9 @@ ecl_sqrt_double_float(cl_object x)
         double f = ecl_double_float(x);
         if (f < 0) {
                 return ecl_make_complex(ecl_make_fixnum(0),
-                                        ecl_make_doublefloat(sqrt(-f)));
+                                        ecl_make_double_float(sqrt(-f)));
         } else {
-                return ecl_make_doublefloat(sqrt(f));
+                return ecl_make_double_float(sqrt(f));
         }
 }
 
@@ -70,9 +70,9 @@ ecl_sqrt_long_float(cl_object x)
         long double f = ecl_long_float(x);
         if (f < 0) {
                 return ecl_make_complex(ecl_make_fixnum(0),
-                                        ecl_make_longfloat(sqrtl(-f)));
+                                        ecl_make_long_float(sqrtl(-f)));
         } else {
-                return ecl_make_longfloat(sqrtl(f));
+                return ecl_make_long_float(sqrtl(f));
         }
 }
 #endif

@@ -1105,8 +1105,8 @@ extern ECL_API cl_object ecl_make_long_long(ecl_long_long_t i);
 #endif /* ecl_long_long_t */
 
 extern ECL_API cl_object ecl_make_ratio(cl_object num, cl_object den);
-extern ECL_API cl_object ecl_make_singlefloat(float f);
-extern ECL_API cl_object ecl_make_doublefloat(double f);
+extern ECL_API cl_object ecl_make_single_float(float f);
+extern ECL_API cl_object ecl_make_double_float(double f);
 extern ECL_API cl_object ecl_make_complex(cl_object r, cl_object i);
 extern ECL_API cl_object cl_rational(cl_object x);
 #define cl_rationalize cl_rational
@@ -1114,7 +1114,7 @@ extern ECL_API double ecl_to_double(cl_object x);
 #define number_to_float(x) ((float)ecl_to_double(x))
 #ifdef ECL_LONG_FLOAT
 extern ECL_API long double ecl_to_long_double(cl_object x);
-extern ECL_API cl_object ecl_make_longfloat(long double f);
+extern ECL_API cl_object ecl_make_long_float(long double f);
 #endif
 extern ECL_API cl_object double_to_integer(double d);
 extern ECL_API cl_object float_to_integer(float d);

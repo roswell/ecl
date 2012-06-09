@@ -195,16 +195,16 @@ rando(cl_object x, cl_object rs)
 		z = random_integer(x, rs->random.value);
 		break;
 	case t_singlefloat:
-		z = ecl_make_singlefloat(ecl_single_float(x) *
+		z = ecl_make_single_float(ecl_single_float(x) *
                                          (float)generate_double(rs->random.value));
 		break;
 	case t_doublefloat:
-		z = ecl_make_doublefloat(ecl_double_float(x) *
+		z = ecl_make_double_float(ecl_double_float(x) *
                                          generate_double(rs->random.value));
 		break;
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
-		z = ecl_make_longfloat(ecl_long_float(x) *
+		z = ecl_make_long_float(ecl_long_float(x) *
                                        (long double)generate_double(rs->random.value));
 		break;
 #endif

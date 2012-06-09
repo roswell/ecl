@@ -31,26 +31,26 @@ cl_sin(cl_object x)
 static cl_object
 ecl_sin_rational(cl_object x)
 {
-        return ecl_make_singlefloat(sinf(number_to_float(x)));
+        return ecl_make_single_float(sinf(number_to_float(x)));
 }
 
 static cl_object
 ecl_sin_single_float(cl_object x)
 {
-        return ecl_make_singlefloat(sinf(ecl_single_float(x)));
+        return ecl_make_single_float(sinf(ecl_single_float(x)));
 }
 
 static cl_object
 ecl_sin_double_float(cl_object x)
 {
-        return ecl_make_doublefloat(sin(ecl_double_float(x)));
+        return ecl_make_double_float(sin(ecl_double_float(x)));
 }
 
 #ifdef ECL_LONG_FLOAT
 static cl_object
 ecl_sin_long_float(cl_object x)
 {
-        return ecl_make_longfloat(sinl(ecl_long_float(x)));
+        return ecl_make_long_float(sinl(ecl_long_float(x)));
 }
 #endif
 

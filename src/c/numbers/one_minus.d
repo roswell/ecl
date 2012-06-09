@@ -41,20 +41,20 @@ ecl_one_minus_ratio(cl_object x)
 static cl_object
 ecl_one_minus_single_float(cl_object x)
 {
-        return ecl_make_singlefloat(ecl_single_float(x) - 1);
+        return ecl_make_single_float(ecl_single_float(x) - 1);
 }
 
 static cl_object
 ecl_one_minus_double_float(cl_object x)
 {
-        return ecl_make_doublefloat(ecl_double_float(x) - 1);
+        return ecl_make_double_float(ecl_double_float(x) - 1);
 }
 
 #ifdef ECL_LONG_FLOAT
 static cl_object
 ecl_one_minus_long_float(cl_object x)
 {
-        return ecl_make_longfloat(ecl_long_float(x) - 1);
+        return ecl_make_long_float(ecl_long_float(x) - 1);
 }
 #endif
 

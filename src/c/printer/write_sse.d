@@ -35,7 +35,7 @@ write_sse_float(float v, cl_object stream)
 		writestr_stream(" TRUE", stream);
 	} else {
                 ecl_write_char(' ', stream);
-                si_write_ugly_object(ecl_make_singlefloat(v), stream);
+                si_write_ugly_object(ecl_make_single_float(v), stream);
 	}
 }
 
@@ -46,7 +46,7 @@ write_sse_double(double v, cl_object stream)
 		writestr_stream(" TRUE", stream);
         else {
                 ecl_write_char(' ', stream);
-                si_write_ugly_object(ecl_make_doublefloat(v), stream);
+                si_write_ugly_object(ecl_make_double_float(v), stream);
 	}
 }
 

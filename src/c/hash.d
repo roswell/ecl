@@ -846,7 +846,7 @@ cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
 		    ecl_minusp(rehash_size)) {
 			goto ERROR1;
 		}
-		rehash_size = ecl_make_doublefloat(ecl_to_double(rehash_size));
+		rehash_size = ecl_make_double_float(ecl_to_double(rehash_size));
 	} else if (!ECL_FIXNUMP(rehash_size)) {
 		goto ERROR1;
 	}

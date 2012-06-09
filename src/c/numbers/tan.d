@@ -43,26 +43,26 @@ cl_tan(cl_object x)
 static cl_object
 ecl_tan_rational(cl_object x)
 {
-        return ecl_make_singlefloat(safe_tanf(number_to_float(x)));
+        return ecl_make_single_float(safe_tanf(number_to_float(x)));
 }
 
 static cl_object
 ecl_tan_single_float(cl_object x)
 {
-        return ecl_make_singlefloat(safe_tanf(ecl_single_float(x)));
+        return ecl_make_single_float(safe_tanf(ecl_single_float(x)));
 }
 
 static cl_object
 ecl_tan_double_float(cl_object x)
 {
-        return ecl_make_doublefloat(tan(ecl_double_float(x)));
+        return ecl_make_double_float(tan(ecl_double_float(x)));
 }
 
 #ifdef ECL_LONG_FLOAT
 static cl_object
 ecl_tan_long_float(cl_object x)
 {
-        return ecl_make_longfloat(tanl(ecl_long_float(x)));
+        return ecl_make_long_float(tanl(ecl_long_float(x)));
 }
 #endif
 

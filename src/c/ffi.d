@@ -516,9 +516,9 @@ ecl_foreign_data_ref_elt(void *p, enum ecl_ffi_tag tag)
 	case ECL_FFI_OBJECT:
 		return *(cl_object *)p;
 	case ECL_FFI_FLOAT:
-		return ecl_make_singlefloat(*(float *)p);
+		return ecl_make_single_float(*(float *)p);
 	case ECL_FFI_DOUBLE:
-		return ecl_make_doublefloat(*(double *)p);
+		return ecl_make_double_float(*(double *)p);
 	case ECL_FFI_VOID:
 		return Cnil;
         default:

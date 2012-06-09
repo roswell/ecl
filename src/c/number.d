@@ -472,7 +472,7 @@ ecl_deliver_fpe(int status)
 }
 
 cl_object
-ecl_make_singlefloat(float f)
+ecl_make_single_float(float f)
 {
 	cl_object x;
 
@@ -490,7 +490,7 @@ ecl_make_singlefloat(float f)
 }
 
 cl_object
-ecl_make_doublefloat(double f)
+ecl_make_double_float(double f)
 {
 	cl_object x;
 
@@ -509,7 +509,7 @@ ecl_make_doublefloat(double f)
 
 #ifdef ECL_LONG_FLOAT
 cl_object
-ecl_make_longfloat(long double f)
+ecl_make_long_float(long double f)
 {
 	cl_object x;
 
@@ -547,14 +547,14 @@ ecl_make_complex(cl_object r, cl_object i)
 		case t_ratio:
 			break;
 		case t_singlefloat:
-			r = ecl_make_singlefloat((float)ecl_to_double(r));
+			r = ecl_make_single_float((float)ecl_to_double(r));
 			break;
 		case t_doublefloat:
-			r = ecl_make_doublefloat(ecl_to_double(r));
+			r = ecl_make_double_float(ecl_to_double(r));
 			break;
 #ifdef ECL_LONG_FLOAT
 		case t_longfloat:
-			r = ecl_make_longfloat(ecl_to_double(r));
+			r = ecl_make_long_float(ecl_to_double(r));
 			break;
 #endif
 		default:
@@ -567,16 +567,16 @@ ecl_make_complex(cl_object r, cl_object i)
 		case t_fixnum:
 		case t_bignum:
 		case t_ratio:
-			i = ecl_make_singlefloat((float)ecl_to_double(i));
+			i = ecl_make_single_float((float)ecl_to_double(i));
 			break;
 		case t_singlefloat:
 			break;
 		case t_doublefloat:
-			r = ecl_make_doublefloat((double)(ecl_single_float(r)));
+			r = ecl_make_double_float((double)(ecl_single_float(r)));
 			break;
 #ifdef ECL_LONG_FLOAT
 		case t_longfloat:
-			r = ecl_make_longfloat((long double)ecl_single_float(r));
+			r = ecl_make_long_float((long double)ecl_single_float(r));
 			break;
 #endif
 		default:
@@ -590,12 +590,12 @@ ecl_make_complex(cl_object r, cl_object i)
 		case t_bignum:
 		case t_ratio:
 		case t_singlefloat:
-			i = ecl_make_doublefloat(ecl_to_double(i));
+			i = ecl_make_double_float(ecl_to_double(i));
 		case t_doublefloat:
 			break;
 #ifdef ECL_LONG_FLOAT
 		case t_longfloat:
-			r = ecl_make_longfloat((long double)ecl_double_float(r));
+			r = ecl_make_long_float((long double)ecl_double_float(r));
 			break;
 #endif
 		default:
@@ -606,7 +606,7 @@ ecl_make_complex(cl_object r, cl_object i)
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
 		if (ti != t_longfloat)
-			i = ecl_make_longfloat((long double)ecl_to_double(i));
+			i = ecl_make_long_float((long double)ecl_to_double(i));
 		break;
 #endif
 	default:

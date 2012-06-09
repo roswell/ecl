@@ -31,26 +31,26 @@ cl_tanh(cl_object x)
 static cl_object
 ecl_tanh_rational(cl_object x)
 {
-        return ecl_make_singlefloat(tanhf(number_to_float(x)));
+        return ecl_make_single_float(tanhf(number_to_float(x)));
 }
 
 static cl_object
 ecl_tanh_single_float(cl_object x)
 {
-        return ecl_make_singlefloat(tanhf(ecl_single_float(x)));
+        return ecl_make_single_float(tanhf(ecl_single_float(x)));
 }
 
 static cl_object
 ecl_tanh_double_float(cl_object x)
 {
-        return ecl_make_doublefloat(tanh(ecl_double_float(x)));
+        return ecl_make_double_float(tanh(ecl_double_float(x)));
 }
 
 #ifdef ECL_LONG_FLOAT
 static cl_object
 ecl_tanh_long_float(cl_object x)
 {
-        return ecl_make_longfloat(tanhl(ecl_long_float(x)));
+        return ecl_make_long_float(tanhl(ecl_long_float(x)));
 }
 #endif
 

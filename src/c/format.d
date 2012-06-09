@@ -869,7 +869,7 @@ fmt_fix_float(format_stack fmt, bool colon, bool atsign)
 	if (ECL_FIXNUMP(x) ||
 	    type_of(x) == t_bignum ||
 	    type_of(x) == t_ratio)
-		x = ecl_make_singlefloat(ecl_to_float(x));
+		x = ecl_make_single_float(ecl_to_float(x));
 	if (!ECL_REAL_TYPE_P(type_of(x))) {
 		if (fmt->nparam > 1) fmt->nparam = 1;
 		fmt_back_up(fmt);
@@ -1043,7 +1043,7 @@ fmt_exponential_float(format_stack fmt, bool colon, bool atsign)
 	if (ECL_FIXNUMP(x) ||
 	    type_of(x) == t_bignum ||
 	    type_of(x) == t_ratio)
-		x = ecl_make_singlefloat(ecl_to_float(x));
+		x = ecl_make_single_float(ecl_to_float(x));
 	if (!ECL_REAL_TYPE_P(type_of(x))) {
 		if (fmt->nparam > 1) fmt->nparam = 1;
 		fmt_back_up(fmt);

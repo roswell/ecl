@@ -173,9 +173,9 @@ ecl_aref_unsafe(cl_object x, cl_index index)
 	case ecl_aet_index:
 		return ecl_make_unsigned_integer(x->array.self.index[index]);
 	case ecl_aet_sf:
-		return(ecl_make_singlefloat(x->array.self.sf[index]));
+		return(ecl_make_single_float(x->array.self.sf[index]));
 	case ecl_aet_df:
-		return(ecl_make_doublefloat(x->array.self.df[index]));
+		return(ecl_make_double_float(x->array.self.df[index]));
 	case ecl_aet_b8:
 		return ecl_make_uint8_t(x->array.self.b8[index]);
 	case ecl_aet_i8:
