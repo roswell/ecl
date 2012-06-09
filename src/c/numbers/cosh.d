@@ -31,7 +31,7 @@ cl_cosh(cl_object x)
 static cl_object
 ecl_cosh_rational(cl_object x)
 {
-        return ecl_make_single_float(coshf(number_to_float(x)));
+        return ecl_make_single_float(coshf(ecl_to_float(x)));
 }
 
 static cl_object

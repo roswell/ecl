@@ -58,7 +58,7 @@ ecl_log1_bignum(cl_object x)
         } else {
                 cl_fixnum l = ecl_integer_length(x) - 1;
                 cl_object r = ecl_make_ratio(x, ecl_ash(ecl_make_fixnum(1), l));
-                float d = logf(number_to_float(r)) + l * logf(2.0);
+                float d = logf(ecl_to_float(r)) + l * logf(2.0);
                 return ecl_make_single_float(d);
         }
 }
@@ -66,9 +66,9 @@ ecl_log1_bignum(cl_object x)
 static cl_object
 ecl_log1_rational(cl_object x)
 {
-        float f = number_to_float(x);
+        float f = ecl_to_float(x);
         if (f < 0) return ecl_log1_complex_inner(x, ecl_make_fixnum(0));
-        return ecl_make_single_float(logf(number_to_float(x)));
+        return ecl_make_single_float(logf(ecl_to_float(x)));
 }
 
 static cl_object
@@ -179,9 +179,9 @@ ecl_log1p_simple(cl_object x)
 static cl_object
 ecl_log1p_rational(cl_object x)
 {
-        float f = number_to_float(x);
+        float f = ecl_to_float(x);
         if (f < -1) return ecl_log1p_simple(x);
-        return ecl_make_single_float(log1pf(number_to_float(x)));
+        return ecl_make_single_float(log1pf(ecl_to_float(x)));
 }
 
 static cl_object

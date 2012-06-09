@@ -743,6 +743,31 @@ ratio_to_long_double(cl_object num, cl_object den)
 }
 #endif /* ECL_LONG_FLOAT */
 
+float
+ecl_to_float(cl_object x)
+{
+	if (ECL_FIXNUMP(x)) return(ecl_fixnum(x));	/* Immediate fixnum */
+
+	switch (type_of(x)) {
+	case t_fixnum:
+		return (float)ecl_fixnum(x);
+	case t_bignum:
+		return (float)ratio_to_double(x, ecl_make_fixnum(1));
+	case t_ratio:
+                return (float)ratio_to_double(x->ratio.num, x->ratio.den);
+	case t_singlefloat:
+		return ecl_single_float(x);
+	case t_doublefloat:
+		return (float)ecl_double_float(x);
+#ifdef ECL_LONG_FLOAT
+	case t_longfloat:
+		return (float)ecl_long_float(x);
+#endif
+	default:
+                FEwrong_type_nth_arg(@[coerce], 1, x, @[real]);
+	}
+}
+
 double
 ecl_to_double(cl_object x)
 {

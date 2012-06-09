@@ -31,7 +31,7 @@ cl_sinh(cl_object x)
 static cl_object
 ecl_sinh_rational(cl_object x)
 {
-        return ecl_make_single_float(sinhf(number_to_float(x)));
+        return ecl_make_single_float(sinhf(ecl_to_float(x)));
 }
 
 static cl_object

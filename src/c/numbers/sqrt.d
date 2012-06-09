@@ -35,7 +35,7 @@ ecl_sqrt_rational(cl_object x)
                 x = ecl_sqrt_rational(ecl_negate(x));
                 return ecl_make_complex(ecl_make_fixnum(0), x);
         } else {
-                return ecl_make_single_float(sqrtf(number_to_float(x)));
+                return ecl_make_single_float(sqrtf(ecl_to_float(x)));
         }
 }
 

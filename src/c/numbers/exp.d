@@ -31,7 +31,7 @@ cl_exp(cl_object x)
 static cl_object
 ecl_exp_rational(cl_object x)
 {
-        return ecl_make_single_float(expf(number_to_float(x)));
+        return ecl_make_single_float(expf(ecl_to_float(x)));
 }
 
 static cl_object

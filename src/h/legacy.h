@@ -117,3 +117,8 @@
 #define ecl_make_singlefloat ecl_make_single_float
 #define ecl_make_doublefloat ecl_make_double_float
 #define ecl_make_longfloat ecl_make_long_float
+
+#define number_to_float(x) ((float)ecl_to_double(x))
+
+#define ecl_make_unsigned_long_Long(o) ecl_make_ulong_long(o)
+#define ecl_to_unsigned_long_long(o) ecl_to_ulong_long(o)

@@ -31,7 +31,7 @@ cl_sin(cl_object x)
 static cl_object
 ecl_sin_rational(cl_object x)
 {
-        return ecl_make_single_float(sinf(number_to_float(x)));
+        return ecl_make_single_float(sinf(ecl_to_float(x)));
 }
 
 static cl_object

@@ -112,30 +112,6 @@ ecl_to_unsigned_integer(cl_object x)
 	}
 }
 
-float
-ecl_to_float(cl_object x)
-{
-	if (ECL_FIXNUMP(x)) return(ecl_fixnum(x));	/* Immediate fixnum */
-
-	switch (type_of(x)) {
-/*	case t_fixnum: return ecl_fixnum(x);	*/
-/*	case t_character: return ECL_CHAR_CODE(x); */
-	case t_bignum:
-	case t_ratio:
-		return ecl_to_double(x);
-	case t_singlefloat:
-		return ecl_single_float(x);
-	case t_doublefloat:
-		return ecl_double_float(x);
-#ifdef ECL_LONG_FLOAT
-	case t_longfloat:
-		return ecl_long_float(x);
-#endif
-	default:
-                FEwrong_type_nth_arg(@[coerce], 1, x, @[real]);
-	}
-}
-
 int
 ecl_aref_bv(cl_object x, cl_index index)
 {

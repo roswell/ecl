@@ -500,8 +500,6 @@ extern ECL_API cl_fixnum ecl_imod(cl_fixnum x, cl_fixnum y);
 extern ECL_API char ecl_to_char(cl_object x);
 extern ECL_API cl_fixnum ecl_to_fixnum(cl_object x);
 extern ECL_API cl_index ecl_to_unsigned_integer(cl_object x);
-extern ECL_API float ecl_to_float(cl_object x);
-extern ECL_API double ecl_to_double(cl_object x);
 extern ECL_API int ecl_aref_bv(cl_object x, cl_index index);
 extern ECL_API int ecl_aset_bv(cl_object x, cl_index index, int value);
 extern ECL_API void cl_throw(cl_object tag) /*ecl_attr_noreturn*/;
@@ -1110,8 +1108,8 @@ extern ECL_API cl_object ecl_make_double_float(double f);
 extern ECL_API cl_object ecl_make_complex(cl_object r, cl_object i);
 extern ECL_API cl_object cl_rational(cl_object x);
 #define cl_rationalize cl_rational
+extern ECL_API float ecl_to_float(cl_object x);
 extern ECL_API double ecl_to_double(cl_object x);
-#define number_to_float(x) ((float)ecl_to_double(x))
 #ifdef ECL_LONG_FLOAT
 extern ECL_API long double ecl_to_long_double(cl_object x);
 extern ECL_API cl_object ecl_make_long_float(long double f);
