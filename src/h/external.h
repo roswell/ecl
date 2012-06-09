@@ -1096,9 +1096,9 @@ extern ECL_API cl_object ecl_make_int64_t(ecl_int64_t i);
 # endif
 #endif
 #ifdef ecl_long_long_t
-extern ECL_API ecl_ulong_long_t ecl_to_unsigned_long_long(cl_object p);
+extern ECL_API ecl_ulong_long_t ecl_to_ulong_Long(cl_object p);
 extern ECL_API ecl_long_long_t ecl_to_long_long(cl_object p);
-extern ECL_API cl_object ecl_make_unsigned_long_long(ecl_ulong_long_t i);
+extern ECL_API cl_object ecl_make_ulong_long(ecl_ulong_long_t i);
 extern ECL_API cl_object ecl_make_long_long(ecl_long_long_t i);
 #endif /* ecl_long_long_t */
 
