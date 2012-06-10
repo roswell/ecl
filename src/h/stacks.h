@@ -289,6 +289,8 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_obje
 #define return0()	return ((NVALUES = 0),Cnil)
 #define return1(x)	return ((VALUES(0)=(x)),(NVALUES=1),VALUES(0))
 #define returnn(x)	return x
+#define ecl_nth_value(env,n) ((env)->values[n])
+#define ecl_nvalues(env) ((env)->nvalues)
 #define ecl_return0(env) \
 	do { (env)->nvalues = 0; return Cnil; } while (0)
 #define ecl_return1(env,x) \
