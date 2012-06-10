@@ -21,6 +21,7 @@
 #define MP_ "MP::"
 #define KEY_ ":"
 #define GRAY_ "GRAY::"
+#define FFI_ "FFI::"
 typedef struct {
 	const char *name, *translation;
 } cl_symbol_initializer;
@@ -32,6 +33,7 @@ typedef struct {
 #define MP_
 #define KEY_
 #define GRAY_
+#define FFI_
 #endif
 /*
  * Conditional addition of functions and symbols. The list of symbols can
@@ -1514,26 +1516,6 @@ cl_symbols[] = {
 {KEY_ "UNSIGNED-LONG",NULL},
 {KEY_ "UNSIGNED-LONG-LONG",NULL},
 {KEY_ "UNSIGNED-SHORT",NULL},
-{SYS_ "C-CHAR-BIT",NULL},
-{SYS_ "C-CHAR-MAX",NULL},
-{SYS_ "C-CHAR-MIN",NULL},
-{SYS_ "C-INT-MAX",NULL}, /* See main.d */
-{SYS_ "C-INT-MIN",NULL}, /* See main.d */
-{SYS_ "C-SHORT-MAX",NULL},
-{SYS_ "C-SHORT-MIN",NULL},
-{SYS_ "C-LONG-MAX",NULL}, /* See main.d */
-{SYS_ "C-LONG-MIN",NULL}, /* See main.d */
-{SYS_ "C-LONG-LONG-MAX",NULL}, /* See main.d */
-{SYS_ "C-UCHAR-MAX",NULL},
-{SYS_ "C-UINT-MAX",NULL}, /* See main.d */
-{SYS_ "C-USHORT-MAX",NULL},
-{SYS_ "C-ULONG-MAX",NULL}, /* See main.d */
-{SYS_ "C-ULONG-LONG-MAX",NULL}, /* See main.d */
-#ifdef ecl_long_long_t
-{SYS_ "C-LONG-LONG-BIT",NULL},
-#else
-{SYS_ "C-LONG-LONG-BIT",NULL},
-#endif
 
 #ifdef GBC_BOEHM
 {EXT_ "GC","si_gc"},
@@ -2243,6 +2225,84 @@ cl_symbols[] = {
 
 {EXT_ "INSTALL-BYTECODES-COMPILER",NULL},
 {EXT_ "INSTALL-C-COMPILER",NULL},
+
+{FFI_ "C-CHAR-BIT",NULL},
+{FFI_ "C-CHAR-MAX",NULL},
+{FFI_ "C-CHAR-MIN",NULL},
+{FFI_ "C-INT-MAX",NULL}, /* See main.d */
+{FFI_ "C-INT-MIN",NULL}, /* See main.d */
+{FFI_ "C-SHORT-MAX",NULL},
+{FFI_ "C-SHORT-MIN",NULL},
+{FFI_ "C-LONG-MAX",NULL}, /* See main.d */
+{FFI_ "C-LONG-MIN",NULL}, /* See main.d */
+{FFI_ "C-LONG-LONG-MAX",NULL}, /* See main.d */
+{FFI_ "C-UCHAR-MAX",NULL},
+{FFI_ "C-UINT-MAX",NULL}, /* See main.d */
+{FFI_ "C-USHORT-MAX",NULL},
+{FFI_ "C-ULONG-MAX",NULL}, /* See main.d */
+{FFI_ "C-ULONG-LONG-MAX",NULL}, /* See main.d */
+#ifdef ecl_long_long_t
+{FFI_ "C-LONG-LONG-BIT",NULL},
+#else
+{FFI_ "C-LONG-LONG-BIT",NULL},
+#endif
+
+{FFI_ "*USE-DFFI*",NULL},
+{FFI_ "+NULL-CSTRING-POINTER+",NULL},
+{FFI_ "ALLOCATE-FOREIGN-OBJECT",NULL},
+{FFI_ "ALLOCATE-FOREIGN-STRING",NULL},
+{FFI_ "C-INLINE",NULL},
+{FFI_ "CALLBACK",NULL},
+{FFI_ "CHAR*",NULL},
+{FFI_ "CHAR-ARRAY-TO-POINTER",NULL},
+{FFI_ "CLINES",NULL},
+{FFI_ "CONVERT-FROM-CSTRING",NULL},
+{FFI_ "CONVERT-FROM-FOREIGN-STRING",NULL},
+{FFI_ "CONVERT-TO-CSTRING",NULL},
+{FFI_ "CONVERT-TO-FOREIGN-STRING",NULL},
+{FFI_ "DEF-ARRAY",NULL},
+{FFI_ "DEF-ARRAY-POINTER",NULL},
+{FFI_ "DEF-CONSTANT",NULL},
+{FFI_ "DEF-ENUM",NULL},
+{FFI_ "DEF-FOREIGN-TYPE",NULL},
+{FFI_ "DEF-FOREIGN-VAR",NULL},
+{FFI_ "DEF-FUNCTION",NULL},
+{FFI_ "DEF-STRUCT",NULL},
+{FFI_ "DEF-TYPE",NULL},
+{FFI_ "DEF-UNION",NULL},
+{FFI_ "DEFCALLBACK",NULL},
+{FFI_ "DEFCBODY",NULL},
+{FFI_ "DEFENTRY",NULL},
+{FFI_ "DEFINLINE",NULL},
+{FFI_ "DEFLA",NULL},
+{FFI_ "DEREF-ARRAY",NULL},
+{FFI_ "DEREF-POINTER",NULL},
+{FFI_ "DOUBLE",NULL},
+{FFI_ "ENSURE-CHAR-CHARACTER",NULL},
+{FFI_ "ENSURE-CHAR-INTEGER",NULL},
+{FFI_ "ENSURE-CHAR-STORABLE",NULL},
+{FFI_ "FIND-FOREIGN-LIBRARY",NULL},
+{FFI_ "FOREIGN-STRING-LENGTH",NULL},
+{FFI_ "FREE-CSTRING",NULL},
+{FFI_ "FREE-FOREIGN-OBJECT",NULL},
+{FFI_ "GET-SLOT-POINTER",NULL},
+{FFI_ "GET-SLOT-VALUE",NULL},
+{FFI_ "INT",NULL},
+{FFI_ "LOAD-FOREIGN-LIBRARY",NULL},
+{FFI_ "MAKE-NULL-POINTER",NULL},
+{FFI_ "MAKE-POINTER",NULL},
+{FFI_ "NULL-CHAR-P",NULL},
+{FFI_ "OBJECT",NULL},
+{FFI_ "POINTER-ADDRESS",NULL},
+{FFI_ "SIZE-OF-FOREIGN-TYPE",NULL},
+{FFI_ "VOID",NULL},
+{FFI_ "WITH-CAST-POINTER",NULL},
+{FFI_ "WITH-CSTRING",NULL},
+{FFI_ "WITH-CSTRINGS",NULL},
+{FFI_ "WITH-FOREIGN-OBJECT",NULL},
+{FFI_ "WITH-FOREIGN-OBJECTS",NULL},
+{FFI_ "WITH-FOREIGN-STRING",NULL},
+{FFI_ "WITH-FOREIGN-STRINGS",NULL},
 
 /* Tag for end of list */
 {NULL,NULL}};

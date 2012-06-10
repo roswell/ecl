@@ -291,6 +291,8 @@ ecl_def_ct_base_string(str_cl_user,"CL-USER",7,static,const);
 ecl_def_ct_base_string(str_LISP,"LISP",4,static,const);
 ecl_def_ct_base_string(str_c,"C",1,static,const);
 ecl_def_ct_base_string(str_compiler,"COMPILER",11,static,const);
+ecl_def_ct_base_string(str_ffi,"FFI",3,static,const);
+ecl_def_ct_base_string(str_uffi,"UFFI",4,static,const);
 ecl_def_ct_base_string(str_user,"USER",4,static,const);
 ecl_def_ct_base_string(str_keyword,"KEYWORD",7,static,const);
 ecl_def_ct_base_string(str_si,"SI",2,static,const);
@@ -360,6 +362,7 @@ struct cl_core_struct cl_core = {
 #endif
 	Cnil, /* mp_package */
         Cnil, /* c_package */
+        Cnil, /* ffi_package */
 
 	Cnil, /* pathname_translations */
         Cnil, /* library_pathname */
@@ -592,6 +595,12 @@ cl_boot(int argc, char **argv)
 	cl_core.gray_package = ecl_make_package(str_gray, Cnil,
 						CONS(cl_core.lisp_package, Cnil));
 #endif
+	cl_core.ffi_package =
+		ecl_make_package(str_ffi,
+                                 ecl_list1(str_uffi),
+				 cl_list(3,cl_core.lisp_package,
+					 cl_core.system_package,
+					 cl_core.ext_package));
 
 	Cnil_symbol->symbol.hpack = cl_core.lisp_package;
 	cl_import2(Cnil, cl_core.lisp_package);
@@ -686,15 +695,15 @@ cl_boot(int argc, char **argv)
 
 	ECL_SET(@'*random-state*', ecl_make_random_state(Ct));
 
-	ECL_SET(@'si::c-int-max', ecl_make_integer(INT_MAX));
-	ECL_SET(@'si::c-int-min', ecl_make_integer(INT_MIN));
-	ECL_SET(@'si::c-long-max', ecl_make_integer(LONG_MAX));
-	ECL_SET(@'si::c-long-min', ecl_make_integer(LONG_MIN));
-	ECL_SET(@'si::c-uint-max', ecl_make_unsigned_integer(UINT_MAX));
-	ECL_SET(@'si::c-ulong-max', ecl_make_unsigned_integer(ULONG_MAX));
+	ECL_SET(@'ffi::c-int-max', ecl_make_integer(INT_MAX));
+	ECL_SET(@'ffi::c-int-min', ecl_make_integer(INT_MIN));
+	ECL_SET(@'ffi::c-long-max', ecl_make_integer(LONG_MAX));
+	ECL_SET(@'ffi::c-long-min', ecl_make_integer(LONG_MIN));
+	ECL_SET(@'ffi::c-uint-max', ecl_make_unsigned_integer(UINT_MAX));
+	ECL_SET(@'ffi::c-ulong-max', ecl_make_unsigned_integer(ULONG_MAX));
 #ifdef ecl_long_long_t
-	ECL_SET(@'si::c-long-long-max', ecl_make_unsigned_integer(LLONG_MAX));
-	ECL_SET(@'si::c-ulong-long-max', ecl_make_unsigned_integer(ULLONG_MAX));
+	ECL_SET(@'ffi::c-long-long-max', ecl_make_unsigned_integer(LLONG_MAX));
+	ECL_SET(@'ffi::c-ulong-long-max', ecl_make_unsigned_integer(ULLONG_MAX));
 #endif
 
 	init_unixtime();

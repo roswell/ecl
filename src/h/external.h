@@ -176,6 +176,7 @@ struct cl_core_struct {
 #endif
 	cl_object mp_package;
         cl_object c_package;
+	cl_object ffi_package;
 
 	cl_object pathname_translations;
         cl_object library_pathname;

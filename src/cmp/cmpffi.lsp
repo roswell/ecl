@@ -20,16 +20,16 @@
 (defconstant +all-integer-rep-type-pairs+
   '((:byte . -8)
     (:unsigned-byte . 8)
-    (:unsigned-short . #.(logcount si::c-ushort-max))
-    (:short . #.(- (logcount si::c-ushort-max)))
-    (:unsigned-int . #.(logcount si::c-uint-max))
-    (:int . #.(logcount si::c-uint-max))
-    (:unsigned-long . #.(logcount si::c-ulong-max))
-    (:long . #.(logcount si::c-ulong-max))
+    (:unsigned-short . #.(logcount ffi:c-ushort-max))
+    (:short . #.(- (logcount ffi:c-ushort-max)))
+    (:unsigned-int . #.(logcount ffi:c-uint-max))
+    (:int . #.(logcount ffi:c-uint-max))
+    (:unsigned-long . #.(logcount ffi:c-ulong-max))
+    (:long . #.(logcount ffi:c-ulong-max))
     #+long-long
-    (:unsigned-long-long . #.(logcount si::c-ulong-long-max))
+    (:unsigned-long-long . #.(logcount ffi:c-ulong-long-max))
     #+long-long
-    (:long-long . #.(logcount si::c-ulong-long-max))
+    (:long-long . #.(logcount ffi:c-ulong-long-max))
     (:cl-index . #.si::cl-fixnum-bits)
     (:fixnum . #.(- si::cl-fixnum-bits))
     (:uint8-t . 8)
@@ -57,32 +57,32 @@
     :fixnum
     (fixnum "cl_fixnum" "ecl_make_fixnum" "ecl_to_fixnum" "ecl_fixnum")
     :int
-    ((integer #.si:c-int-min #.si:c-int-max) "int"
+    ((integer #.ffi:c-int-min #.ffi:c-int-max) "int"
      "ecl_make_int" "ecl_to_int" "ecl_to_int")
     :unsigned-int
-    ((integer 0 #.si:c-uint-max) "unsigned int"
+    ((integer 0 #.ffi:c-uint-max) "unsigned int"
      "ecl_make_uint" "ecl_to_uint" "ecl_to_uint")
     :long
-    ((integer #.si:c-long-min #.si:c-long-max) "long" "ecl_make_long" "ecl_to_long"
-     #.(if (<= si::c-long-min most-negative-fixnum most-positive-fixnum si::c-long-max)
+    ((integer #.ffi:c-long-min #.ffi:c-long-max) "long" "ecl_make_long" "ecl_to_long"
+     #.(if (<= ffi:c-long-min most-negative-fixnum most-positive-fixnum ffi:c-long-max)
 	   "ecl_fixnum"
 	   "ecl_to_long"))
     :unsigned-long
-    ((integer 0 #.si:c-ulong-max) "unsigned long"
+    ((integer 0 #.ffi:c-ulong-max) "unsigned long"
      "ecl_make_ulong" "ecl_to_ulong"
-     #.(if (<= most-positive-fixnum si::c-long-max) "ecl_fixnum" "ecl_to_ulong"))
+     #.(if (<= most-positive-fixnum ffi:c-long-max) "ecl_fixnum" "ecl_to_ulong"))
     :cl-index
     ((integer 0 #.most-positive-fixnum) "cl_index"
      "ecl_make_unsigned_integer" "ecl_to_cl_index" "ecl_fixnum")
     #+long-long
     :long-long
     #+long-long
-    ((signed-byte #.si:c-long-long-bit) "ecl_long_long_t" "ecl_make_long_long"
+    ((signed-byte #.ffi:c-long-long-bit) "ecl_long_long_t" "ecl_make_long_long"
      "ecl_to_long_long" "ecl_to_long_long")
     #+long-long
     :unsigned-long-long
     #+long-long
-    ((unsigned-byte #.si:c-long-long-bit) "ecl_ulong_long_t"
+    ((unsigned-byte #.ffi:c-long-long-bit) "ecl_ulong_long_t"
          "ecl_make_ulong_Long"
          "ecl_to_ulong_Long" "ecl_to_ulong_Long")
     :float
@@ -161,10 +161,10 @@
     #+:uint64-t
     ((signed-byte 64) "ecl_uint64_t" "ecl_make_uint64_t" "ecl_to_uint64_t" "ecl_to_uint64_t")
     :short
-    ((integer #.si:c-short-min #.si:c-short-max) "short"
+    ((integer #.ffi:c-short-min #.ffi:c-short-max) "short"
      "ecl_make_short" "ecl_to_short" "ecl_fixnum")
     :unsigned-short
-    ((integer 0 #.si:c-ushort-max) "unsigned short"
+    ((integer 0 #.ffi:c-ushort-max) "unsigned short"
      "ecl_make_ushort" "ecl_to_ushort" "ecl_fixnum")
     ))
 

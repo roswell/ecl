@@ -52,6 +52,10 @@ ECL 12.2.2:
    customize how these interrupts are caught. SET-INTERRUPT-HANDLER runs an
    implicit EXT:CATCH-SIGNAL.
 
+ - ECL now exports the symbols FFI:C-INT-MAX, FFI:C-INT-MIN, FFI:C-LONG-MAX,
+   etc, which correspond to the POSIX C constants INT_MAX, INT_MIN, LONG_MAX,
+   and similar ones.
+
 * Windows:
 
  - ECL guesses whether the input / output / error streams are consoles. If

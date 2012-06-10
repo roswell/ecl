@@ -8,6 +8,7 @@
 #define SI_PACKAGE 4
 #define EXT_PACKAGE 64
 #define GRAY_PACKAGE 32
+#define FFI_PACKAGE 128
 #define KEYWORD_PACKAGE 8
 #define MP_PACKAGE 12
 #define CLOS_PACKAGE 16
@@ -34,6 +35,8 @@
 #define CLOS_SPECIAL	CLOS_PACKAGE | SPECIAL_SYMBOL
 #define KEYWORD		KEYWORD_PACKAGE | CONSTANT_SYMBOL
 #define GRAY_ORDINARY	GRAY_PACKAGE | ORDINARY_SYMBOL
+#define FFI_ORDINARY	FFI_PACKAGE | ORDINARY_SYMBOL
+#define FFI_CONSTANT	FFI_PACKAGE | CONSTANT_SYMBOL
 
 #include "symbols_list.h"
 
@@ -191,6 +194,7 @@ make_this_symbol(int i, cl_object s, int code, const char *name,
 #ifdef ECL_CLOS_STREAMS
 	case GRAY_PACKAGE: package = cl_core.gray_package; break;
 #endif
+	case FFI_PACKAGE: package = cl_core.ffi_package; break;
 	default: printf("%d\n", code & ~(int)3); ecl_internal_error("Unknown package code in init_all_symbols()");
 	}
 	s->symbol.t = t_symbol;
