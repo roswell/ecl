@@ -131,6 +131,15 @@ ecl_make_keyword(const char *s)
 }
 
 cl_object
+ecl_make_symbol(const char *s, const char *p)
+{
+	cl_object package = ecl_find_package(p);
+	cl_object x = _ecl_intern(s, package);
+	/* cl_export(x, keyword_package); this is implicit in ecl_intern() */
+	return x;
+}
+
+cl_object
 ecl_symbol_value(cl_object s)
 {
 	if (Null(s)) {

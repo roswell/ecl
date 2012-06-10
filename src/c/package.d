@@ -15,6 +15,7 @@
     See file '../Copyright' for full details.
 */
 
+#include <string.h>
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
 #include <ecl/ecl-inl.h>
@@ -316,6 +317,13 @@ ecl_find_package_nolock(cl_object name)
 	}
 #endif
 	return Cnil;
+}
+
+cl_object
+ecl_find_package(const char *p)
+{
+	ecl_def_ct_base_string(pack_name,p,strlen(p),,);
+	return cl_find_package(pack_name);
 }
 
 cl_object

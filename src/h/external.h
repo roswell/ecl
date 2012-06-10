@@ -1301,6 +1301,7 @@ extern ECL_API cl_object cl_unuse_package _ARGS((cl_narg narg, cl_object pack, .
 extern ECL_API cl_object ecl_make_package(cl_object n, cl_object ns, cl_object ul);
 extern ECL_API cl_object ecl_rename_package(cl_object x, cl_object n, cl_object ns);
 extern ECL_API cl_object ecl_find_package_nolock(cl_object n);
+extern ECL_API cl_object ecl_find_package(const char *p);
 extern ECL_API cl_object si_coerce_to_package(cl_object p);
 extern ECL_API cl_object ecl_current_package(void);
 extern ECL_API cl_object ecl_find_symbol(cl_object n, cl_object p, int *intern_flag);
@@ -1670,6 +1671,7 @@ extern ECL_API cl_object si_put_properties _ARGS((cl_narg narg, cl_object sym, .
 
 extern ECL_API void ecl_defvar(cl_object s, cl_object v);
 extern ECL_API void ecl_defparameter(cl_object s, cl_object v);
+extern ECL_API cl_object ecl_make_symbol(const char *s, const char*p);
 extern ECL_API cl_object ecl_make_keyword(const char *s);
 extern ECL_API cl_object ecl_symbol_value(cl_object s);
 extern ECL_API cl_object ecl_symbol_name(cl_object s);
