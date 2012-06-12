@@ -30,13 +30,13 @@ extend_vector(cl_object v, cl_index amount)
 	if (!ECL_ADJUSTABLE_ARRAY_P(v))
 		FEerror("vector-push-extend: the array ~S is not adjustable.",
 			1, v);
-	if (v->vector.dim >= ADIMLIM)
+	if (v->vector.dim >= ECL_ARRAY_DIMENSION_LIMIT)
 		FEerror("Can't extend the array.", 0);
 	if (amount == 0)
 		amount = v->vector.dim / 2 + 1;
 	new_length = v->vector.dim + amount;
-	if (new_length > ADIMLIM)
-		new_length = ADIMLIM;
+	if (new_length > ECL_ARRAY_DIMENSION_LIMIT)
+		new_length = ECL_ARRAY_DIMENSION_LIMIT;
 	other = si_make_vector(cl_array_element_type(v),
 			       ecl_make_fixnum(new_length), Ct,
 			       ecl_make_fixnum(v->vector.fillp),

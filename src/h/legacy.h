@@ -122,3 +122,7 @@
 
 #define ecl_make_unsigned_long_Long(o) ecl_make_ulong_long(o)
 #define ecl_to_unsigned_long_long(o) ecl_to_ulong_long(o)
+
+#define ADIMLIM ECL_ARRAY_DIMENSION_LIMIT
+#define ATOTLIM ECL_ARRAY_TOTAL_LIMIT
+#define ARANKLIM ECL_ARRAY_RANK_LIMIT

@@ -23,7 +23,7 @@ write_array_inner(bool vector, cl_object x, cl_object stream)
 {
 	cl_env_ptr env = ecl_process_env();
 	const cl_index *adims;
-	cl_index subscripts[ARANKLIM];
+	cl_index subscripts[ECL_ARRAY_RANK_LIMIT];
 	cl_fixnum n, j, m, k, i;
 	cl_fixnum print_length;
 	cl_fixnum print_level;

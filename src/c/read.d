@@ -821,7 +821,7 @@ sharp_left_parenthesis_reader(cl_object in, cl_object c, cl_object d)
 		cl_object last;
 		cl_index dim, i;
                 unlikely_if (!ECL_FIXNUMP(d) || ((dim = ecl_fixnum(d)) < 0) ||
-                             (dim > ADIMLIM)) {
+                             (dim > ECL_ARRAY_DIMENSION_LIMIT)) {
                         FEreader_error("Invalid dimension size ~D in #()", in, 1, d);
                 }
 		v = ecl_alloc_simple_vector(dim, ecl_aet_object);
@@ -879,7 +879,7 @@ sharp_asterisk_reader(cl_object in, cl_object c, cl_object d)
 		dim = dimcount;
 	} else {
                 unlikely_if (!ECL_FIXNUMP(d) || ((dim = ecl_fixnum(d)) < 0) ||
-                             (dim > ADIMLIM))
+                             (dim > ECL_ARRAY_DIMENSION_LIMIT))
                 {
                         FEreader_error("Wrong vector dimension size ~D in #*.",
                                        in, 1, d);

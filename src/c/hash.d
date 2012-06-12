@@ -823,10 +823,10 @@ cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
 	}
         if (ecl_unlikely(!ECL_FIXNUMP(size) ||
                          ecl_fixnum_minusp(size) ||
-                         ecl_fixnum_geq(size,ecl_make_fixnum(ATOTLIM)))) {
+                         ecl_fixnum_geq(size,ecl_make_fixnum(ECL_ARRAY_TOTAL_LIMIT)))) {
             FEwrong_type_key_arg(@[make-hash-table], @[:size], size,
                                  ecl_make_integer_type(ecl_make_fixnum(0),
-                                                       ecl_make_fixnum(ATOTLIM)));
+                                                       ecl_make_fixnum(ECL_ARRAY_TOTAL_LIMIT)));
         }
         hsize = ecl_fixnum(size);
 	if (hsize < 16) {

@@ -96,7 +96,7 @@ ecl_to_index(cl_object n)
 	switch (type_of(n)) {
 	case t_fixnum: {
 		cl_fixnum out = ecl_fixnum(n);
-		if (out < 0 || out >= ADIMLIM)
+		if (out < 0 || out >= ECL_ARRAY_DIMENSION_LIMIT)
 			FEtype_error_index(Cnil, out);
 		return out;
 	}
@@ -409,7 +409,7 @@ si_make_pure_array(cl_object etype, cl_object dims, cl_object adj,
                                      cl_list(3, @'or', @'list', @'fixnum'));
         }
 	r = ecl_length(dims);
-	if (ecl_unlikely(r >= ARANKLIM)) {
+	if (ecl_unlikely(r >= ECL_ARRAY_RANK_LIMIT)) {
 		FEerror("The array rank, ~R, is too large.", 1, ecl_make_fixnum(r));
 	} else if (r == 1) {
 		return si_make_vector(etype, ECL_CONS_CAR(dims), adj, fillp,
@@ -429,17 +429,17 @@ si_make_pure_array(cl_object etype, cl_object dims, cl_object adj,
                 cl_object d = ECL_CONS_CAR(dims);
                 if (ecl_unlikely(!ECL_FIXNUMP(d) ||
                                  ecl_fixnum_minusp(d) ||
-                                 ecl_fixnum_greater(d, ecl_make_fixnum(ADIMLIM))))
+                                 ecl_fixnum_greater(d, ecl_make_fixnum(ECL_ARRAY_DIMENSION_LIMIT))))
                 {
                         cl_object type = ecl_make_integer_type(ecl_make_fixnum(0),
-                                                               ecl_make_fixnum(ADIMLIM));
+                                                               ecl_make_fixnum(ECL_ARRAY_DIMENSION_LIMIT));
                         FEwrong_type_nth_arg(@[make-array], 1, d, type);
                 }
                 j = ecl_fixnum(d);
 		s *= (x->array.dims[i] = j);
-		if (ecl_unlikely(s > ATOTLIM)) {
+		if (ecl_unlikely(s > ECL_ARRAY_TOTAL_LIMIT)) {
                         cl_object type = ecl_make_integer_type(ecl_make_fixnum(0),
-                                                               ecl_make_fixnum(ATOTLIM));
+                                                               ecl_make_fixnum(ECL_ARRAY_TOTAL_LIMIT));
                         FEwrong_type_key_arg(@[make-array], @[array-total-size],
                                              ecl_make_fixnum(s), type);
                 }
@@ -471,9 +471,9 @@ si_make_vector(cl_object etype, cl_object dim, cl_object adj,
  AGAIN:
 	aet = ecl_symbol_to_elttype(etype);
         if (ecl_unlikely(!ECL_FIXNUMP(dim) || ecl_fixnum_minusp(dim) ||
-                         ecl_fixnum_greater(dim, ADIMLIM))) {
+                         ecl_fixnum_greater(dim, ECL_ARRAY_DIMENSION_LIMIT))) {
                 cl_object type = ecl_make_integer_type(ecl_make_fixnum(0),
-                                                       ecl_make_fixnum(ADIMLIM));
+                                                       ecl_make_fixnum(ECL_ARRAY_DIMENSION_LIMIT));
                 FEwrong_type_nth_arg(@[make-array], 1, dim, type);
         }
         d = ecl_fixnum(dim);
