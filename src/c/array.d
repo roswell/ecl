@@ -847,10 +847,25 @@ ecl_array_elttype(cl_object x)
 cl_object
 cl_array_rank(cl_object a)
 {
-        if (ecl_unlikely(!ECL_ARRAYP(a)))
-                FEwrong_type_only_arg(@[array-rank], a, @[array]);
-	@(return ((type_of(a) == t_array) ? ecl_make_fixnum(a->array.rank)
-					  : ecl_make_fixnum(1)))
+	@(return ecl_make_fixnum(ecl_array_rank(a)))
+}
+
+cl_index
+ecl_array_rank(cl_object a)
+{
+	switch (type_of(a)) {
+	case t_array:
+		return a->array.rank;
+#ifdef ECL_UNICODE
+	case t_string:
+#endif
+	case t_base_string:
+	case t_vector:
+	case t_bitvector:
+                return 1;
+	default:
+                FEwrong_type_only_arg(@[array-dimension], a, @[array]);
+	}
 }
 
 cl_object

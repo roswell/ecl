@@ -357,6 +357,7 @@ extern ECL_API cl_object si_fill_array_with_elt(cl_object array, cl_object elt, 
 extern ECL_API void FEwrong_dimensions(cl_object a, cl_index rank) ecl_attr_noreturn;
 extern ECL_API cl_index ecl_to_index(cl_object n);
 extern ECL_API cl_index ecl_array_dimension(cl_object x, cl_index n);
+extern ECL_API cl_index ecl_array_rank(cl_object x);
 extern ECL_API cl_object ecl_aref_unsafe(cl_object x, cl_index index);
 extern ECL_API cl_object ecl_aset_unsafe(cl_object x, cl_index index, cl_object value);
 extern ECL_API cl_object ecl_aref(cl_object x, cl_index index);
