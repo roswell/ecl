@@ -875,7 +875,7 @@
     ;; assignment.lsp
     si::setf-definition
     ;; conditions.lsp
-    si::safe-eval
+    si::safe-eval abort continue muffle-warning store-value use-value
     ;; iolib.lsp
     read-from-string write-to-string prin1-to-string princ-to-string
     y-or-n-p yes-or-no-p string-to-object

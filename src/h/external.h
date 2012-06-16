@@ -2147,6 +2147,13 @@ extern ECL_API cl_object clos_standard_instance_set _ARGS((cl_narg narg, cl_obje
 
 #endif
 
+/* conditions.lsp */
+extern ECL_API cl_object cl_abort _ARGS((cl_narg narg, ...));
+extern ECL_API cl_object cl_continue _ARGS((cl_narg narg, ...));
+extern ECL_API cl_object cl_muffle_warning _ARGS((cl_narg narg, ...));
+extern ECL_API cl_object cl_store_value _ARGS((cl_narg narg, cl_object value, ...));
+extern ECL_API cl_object cl_use_value _ARGS((cl_narg narg, cl_object value, ...));
+
 /*
  * CDR-5
  */
