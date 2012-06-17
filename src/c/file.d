@@ -2658,6 +2658,19 @@ output_file_write_byte8(cl_object strm, unsigned char *c, cl_index n)
 	int f = IO_FILE_DESCRIPTOR(strm);
 	cl_fixnum out;
 	ecl_disable_interrupts();
+	{
+		int i;
+		char buffer[3];
+		for (i = 0; i < n; i++) {
+			if (c[i] < 32) {
+				fprintf(stderr, "\nChar: %x", c[i]);
+			} else {
+				fprintf(stderr, "\nChar: '%c' %x", c[i],
+					c[i]);
+			}
+		}
+		fflush(stderr);
+	}
 	do {
 		out = write(f, c, sizeof(char)*n);
 	} while (out < 0 && restartable_io_error(strm, "write"));
@@ -3999,6 +4012,13 @@ maybe_make_windows_console_fd(cl_object fname, int desc, enum ecl_smmode smm,
 			 external_format);
 		output->stream.eof_char = CONTROL_Z;
 	} else {
+		/* Windows changes the newline characters for \r\n
+		 * even when using read()/write() */
+		if (ecl_option_values[ECL_OPT_USE_SETMODE_ON_FILES]) {
+			_setmode(desc, _O_BINARY);
+		} else {
+			external_format = ECL_CONS_CDR(external_format);
+		}
 		output = ecl_make_file_stream_from_fd
 			(fname, desc, smm,
 			 byte_size, flags,
@@ -5571,7 +5591,7 @@ init_file(void)
 	external_format = cl_list(2, @':latin-1', @':crlf');
 	flags = 0;
 # else
-	external_format = @':crlf';
+	external_format = cl_list(2, @':crlf', @':pass-through');
 	flags = ECL_STREAM_DEFAULT_FORMAT;
 # endif
 #else

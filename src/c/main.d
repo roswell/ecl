@@ -96,6 +96,7 @@ cl_fixnum ecl_option_values[ECL_OPT_LIMIT+1] = {
 	1024*1024, 	/* ECL_OPT_HEAP_SAFETY_AREA */
         0,		/* ECL_OPT_THREAD_INTERRUPT_SIGNAL */
         1,		/* ECL_OPT_SET_GMP_MEMORY_FUNCTIONS */
+	1,		/* ECL_OPT_USE_SETMODE_ON_FILES */
 	0};
 
 #if !defined(GBC_BOEHM)
