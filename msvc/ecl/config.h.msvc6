@@ -172,14 +172,13 @@ typedef unsigned char ecl_base_char;
 /*
  * Array limits
  */
-#define	ARANKLIM	64		/*  array rank limit  		*/
+#define	ECL_ARRAY_RANK_LIMIT 64
 #ifdef GBC_BOEHM
-#define	ADIMLIM		536870911	/*  array dimension limit	*/
-#define	ATOTLIM		536870911	/*  array total limit		*/
+#define	ECL_ARRAY_DIMENSION_LIMIT 536870911
 #else
-#define	ADIMLIM		16*1024*1024	/*  array dimension limit	*/
-#define	ATOTLIM		16*1024*1024	/*  array total limit		*/
+#define ECL_ARRAY_DIMENSION_LIMIT 16*1024*1024
 #endif
+#define ECL_ARRAY_TOTAL_LIMIT ECL_ARRAY_DIMENSION_LIMIT
 
 /*
  * Function limits.
