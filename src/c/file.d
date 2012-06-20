@@ -2658,19 +2658,6 @@ output_file_write_byte8(cl_object strm, unsigned char *c, cl_index n)
 	int f = IO_FILE_DESCRIPTOR(strm);
 	cl_fixnum out;
 	ecl_disable_interrupts();
-	{
-		int i;
-		char buffer[3];
-		for (i = 0; i < n; i++) {
-			if (c[i] < 32) {
-				fprintf(stderr, "\nChar: %x", c[i]);
-			} else {
-				fprintf(stderr, "\nChar: '%c' %x", c[i],
-					c[i]);
-			}
-		}
-		fflush(stderr);
-	}
 	do {
 		out = write(f, c, sizeof(char)*n);
 	} while (out < 0 && restartable_io_error(strm, "write"));
