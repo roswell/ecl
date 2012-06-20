@@ -335,8 +335,7 @@
 
 (defmethod output-files ((o lib-op) (c prebuilt-system))
   (declare (ignore o))
-  (values (list (compile-file-pathname (prebuilt-system-static-library c)
-                                       :type :lib))
+  (values (list (prebuilt-system-static-library c))
           t ; Advertise that we do not want this path renamed
           ))
 
