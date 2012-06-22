@@ -245,7 +245,7 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_obje
  *******************
  * Here we define how we handle the incoming arguments for a
  * function. Our calling conventions specify that at most
- * C_ARGUMENTS_LIMIT ar pushed onto the C stack. If the function
+ * ECL_C_ARGUMENTS_LIMIT_LIMIT ar pushed onto the C stack. If the function
  * receives more than this number of arguments it will keep a copy of
  * _all_ those arguments _plus_ the remaining ones in the lisp
  * stack. The caller is responsible for storing and removing such
@@ -267,7 +267,7 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_obje
 #define cl_va_start(a,p,n,k) { \
 	a[0].narg = (n)-(k); \
 	va_start(a[0].args,p); \
-	a[0].sp = ((n) <= C_ARGUMENTS_LIMIT)? 0 : _ecl_va_sp(a[0].narg); }
+	a[0].sp = ((n) <= ECL_C_ARGUMENTS_LIMIT_LIMIT)? 0 : _ecl_va_sp(a[0].narg); }
 #define cl_va_arg(a) \
 	(a[0].narg--,(a[0].sp? *(a[0].sp++) : va_arg(a[0].args,cl_object)))
 #define cl_va_copy(dest,orig) { \

@@ -249,6 +249,7 @@
 "h/bytecodes.h"
 "h/cache.h"
 "h/config.h.in"
+"../msvc/ecl/config.h.msvc6"
 "h/cons.h"
 "h/cs.h"
 "h/ecl-cmp.h"

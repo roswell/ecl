@@ -2895,7 +2895,7 @@ REST:		unlikely_if (stage >= AT_REST)
 	goto LOOP;
 
 OUTPUT:
-	if ((nreq+nopt+(!Null(rest))+nkey) >= CALL_ARGUMENTS_LIMIT)
+	if ((nreq+nopt+(!Null(rest))+nkey) >= ECL_CALL_ARGUMENTS__LIMITLIMIT)
 		FEprogram_error_noreturn("LAMBDA: Argument list ist too long, ~S.", 1,
 				org_lambda_list);
 	@(return CONS(ecl_make_fixnum(nreq), lists[0])

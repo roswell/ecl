@@ -187,16 +187,16 @@ typedef unsigned char ecl_base_char;
  * In general, any of these limits must fit in a "signed int".
  */
 /*	Maximum number of function arguments (arbitrary)		*/
-#define CALL_ARGUMENTS_LIMIT 65536
+#define ECL_CALL_ARGUMENTS__LIMITLIMIT 65536
 
 /*	Maximum number of required arguments				*/
-#define LAMBDA_PARAMETERS_LIMIT CALL_ARGUMENTS_LIMIT
+#define ECL_LAMBDA_PARAMETERS_LIMIT_LIMIT ECL_CALL_ARGUMENTS__LIMITLIMIT
 
 /*	Numb. of args. which will be passed using the C stack		*/
 /*	See cmplam.lsp if you change this value				*/
-#define C_ARGUMENTS_LIMIT 63
+#define ECL_C_ARGUMENTS_LIMIT_LIMIT 63
 
-/*	Maximum number of output arguments (>= C_ARGUMENTS_LIMIT)	*/
+/*	Maximum number of output arguments (>= ECL_C_ARGUMENTS_LIMIT_LIMIT)	*/
 #define ECL_MULTIPLE_VALUES_LIMIT 64
 
 /* A setjmp that does not save signals					*/
@@ -205,7 +205,7 @@ typedef unsigned char ecl_base_char;
 
 /*
  * Structure/Instance limits. The index to a slot must fit in the
- * "int" type. We also require ECL_SLOTS_LIMIT <= CALL_ARGUMENTS_LIMIT
+ * "int" type. We also require ECL_SLOTS_LIMIT <= ECL_CALL_ARGUMENTS__LIMITLIMIT
  * because constructors typically require as many arguments as slots,
  * or more.
  */

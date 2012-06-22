@@ -186,14 +186,14 @@ typedef unsigned char ecl_base_char;
  * In general, any of these limits must fit in a "signed int".
  */
 /*	Maximum number of function arguments 				*/
-#define CALL_ARGUMENTS_LIMIT 65536
+#define ECL_CALL_ARGUMENTS_LIMIT 65536
 
 /*	Maximum number of required arguments				*/
-#define LAMBDA_PARAMETERS_LIMIT CALL_ARGUMENTS_LIMIT
+#define ECL_LAMBDA_PARAMETERS_LIMIT ECL_CALL_ARGUMENTS_LIMIT
 
 /*	Numb. of args. which can be passed using the C stack		*/
 /*	See cmplam.lsp if you change this value				*/
-#define C_ARGUMENTS_LIMIT 64
+#define ECL_C_ARGUMENTS_LIMIT 64
 
 /*	Maximum number of output arguments				*/
 #define ECL_MULTIPLE_VALUES_LIMIT 64
