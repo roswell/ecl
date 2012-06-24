@@ -33,7 +33,7 @@
 #define FIXNUM_MINUSP(n)	ecl_fixnum_minusp(n)
 #define FIXNUM_PLUSP(n)		ecl_fixnum_plusp(n)
 #define	fix(o)			ecl_fixnum(o)
-#define FIXNUMP(o)		ECL_FINXUMP(o)
+#define FIXNUMP(o)		ECL_FIXNUMP(o)
 
 #define	sf(obje)	(obje)->SF.SFVAL
 #define	df(obje)	(obje)->DF.DFVAL
