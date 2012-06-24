@@ -180,15 +180,15 @@ ecl_number_compare(cl_object x, cl_object y)
 }
 
 static cl_object
-monotonic(int s, int t, int narg, cl_va_list nums)
+monotonic(int s, int t, int narg, ecl_va_list nums)
 {
 	cl_object c, d;
 
 	if (narg == 0)
 		FEwrong_num_arguments_anonym();
 	/* INV: type check occurs in ecl_number_compare() */
-	for (c = cl_va_arg(nums); --narg; c = d) {
-		d = cl_va_arg(nums);
+	for (c = ecl_va_arg(nums); --narg; c = d) {
+		d = ecl_va_arg(nums);
 		if (s*ecl_number_compare(d, c) < t)
 			return1(Cnil);
 	}
@@ -196,7 +196,7 @@ monotonic(int s, int t, int narg, cl_va_list nums)
 }
 
 #define MONOTONIC(i, j) (cl_narg narg, ...) \
-{ cl_va_list nums; cl_va_start(nums, narg, narg, 0); \
+{ ecl_va_list nums; ecl_va_start(nums, narg, narg, 0); \
   return monotonic(i, j, narg, nums); }
 
 cl_object @<= MONOTONIC( 1, 0)

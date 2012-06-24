@@ -169,7 +169,7 @@ extern void _ecl_unexpected_return() ecl_attr_noreturn;
                 cl_index i, __nargs = va[0].narg;                       \
                 ecl_stack_frame_open((e), __frame, __nargs);            \
                 for (i = 0; i < __nargs; i++) {                         \
-                        __frame->frame.base[i] = cl_va_arg(va);         \
+                        __frame->frame.base[i] = ecl_va_arg(va);         \
                 }                                                       \
         } while (0)
 #endif

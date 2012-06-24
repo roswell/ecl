@@ -198,7 +198,7 @@
     (return . "value0")
     (values . "cl_env_copy->values[0]")
     (va-arg . "va_arg(args,cl_object)")
-    (cl-va-arg . "cl_va_arg(args)")
+    (cl-va-arg . "ecl_va_arg(args)")
     (value0 . "value0")
     ))
 

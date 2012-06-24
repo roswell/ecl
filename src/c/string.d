@@ -540,10 +540,10 @@ ecl_string_eq(cl_object x, cl_object y)
 @)
 
 static cl_object
-string_compare(cl_narg narg, int sign1, int sign2, int case_sensitive, cl_va_list ARGS)
+string_compare(cl_narg narg, int sign1, int sign2, int case_sensitive, ecl_va_list ARGS)
 {
-	cl_object string1 = cl_va_arg(ARGS);
-	cl_object string2 = cl_va_arg(ARGS);
+	cl_object string1 = ecl_va_arg(ARGS);
+	cl_object string2 = ecl_va_arg(ARGS);
 	cl_index s1, e1, s2, e2;
         cl_index_pair p;
 	int output;
@@ -733,9 +733,9 @@ cl_string_right_trim(cl_object char_bag, cl_object strng)
 }
 
 static cl_object
-string_case(cl_narg narg, cl_object fun, ecl_casefun casefun, cl_va_list ARGS)
+string_case(cl_narg narg, cl_object fun, ecl_casefun casefun, ecl_va_list ARGS)
 {
-	cl_object strng = cl_va_arg(ARGS);
+	cl_object strng = ecl_va_arg(ARGS);
         cl_index_pair p;
 	cl_index i;
 	bool b;
@@ -816,9 +816,9 @@ char_capitalize(ecl_character c, bool *bp)
 
 
 static cl_object
-nstring_case(cl_narg narg, cl_object fun, ecl_casefun casefun, cl_va_list ARGS)
+nstring_case(cl_narg narg, cl_object fun, ecl_casefun casefun, ecl_va_list ARGS)
 {
-	cl_object strng = cl_va_arg(ARGS);
+	cl_object strng = ecl_va_arg(ARGS);
         cl_index_pair p;
 	cl_index i;
 	bool b;
@@ -875,7 +875,7 @@ nstring_case(cl_narg narg, cl_object fun, ecl_casefun casefun, cl_va_list ARGS)
 @
 	/* Compute final size and store NONEMPTY coerced strings. */
 	for (i = 0, l = 0; i < narg; i++) {
-		cl_object s = si_coerce_to_base_string(cl_va_arg(args));
+		cl_object s = si_coerce_to_base_string(ecl_va_arg(args));
 		if (s->base_string.fillp) {
 			ECL_STACK_PUSH(the_env, s);
 			l += s->base_string.fillp;

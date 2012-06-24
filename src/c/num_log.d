@@ -141,16 +141,16 @@ static bit_operator fixnum_operations[16] = {
 
 
 static cl_object
-log_op(cl_narg narg, int op, cl_va_list ARGS)
+log_op(cl_narg narg, int op, ecl_va_list ARGS)
 {
 	cl_object x, y;
 	/* FIXME! This can be optimized */
-	x = cl_va_arg(ARGS);
+	x = ecl_va_arg(ARGS);
 	if (narg-- == 1) {
 		assert_type_integer(x);
 	} else {
 		do {
-			y = cl_va_arg(ARGS);
+			y = ecl_va_arg(ARGS);
 			x = ecl_boole(op, x, y);
 		} while (--narg);
 	}

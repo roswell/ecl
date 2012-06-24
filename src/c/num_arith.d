@@ -54,13 +54,13 @@ ecl_integer_divide(cl_object x, cl_object y)
 	if (narg == 0)
 		@(return ecl_make_fixnum(0))
 	/* INV: ecl_gcd() checks types */
-	gcd = cl_va_arg(nums);
+	gcd = ecl_va_arg(nums);
 	if (narg == 1) {
 		assert_type_integer(gcd);
 		@(return (ecl_minusp(gcd) ? ecl_negate(gcd) : gcd))
 	}
 	while (--narg)
-		gcd = ecl_gcd(gcd, cl_va_arg(nums));
+		gcd = ecl_gcd(gcd, ecl_va_arg(nums));
 	@(return gcd)
 @)
 
@@ -98,10 +98,10 @@ ecl_gcd(cl_object x, cl_object y)
 		@(return ecl_make_fixnum(1))
 	/* INV: ecl_gcd() checks types. By placing `numi' before `lcm' in
 	   this call, we make sure that errors point to `numi' */
-	lcm = cl_va_arg(nums);
+	lcm = ecl_va_arg(nums);
 	assert_type_integer(lcm);
 	while (narg-- > 1) {
-		cl_object numi = cl_va_arg(nums);
+		cl_object numi = ecl_va_arg(nums);
 		cl_object t = ecl_times(lcm, numi);
 		cl_object g = ecl_gcd(numi, lcm);
 		if (g != ecl_make_fixnum(0))

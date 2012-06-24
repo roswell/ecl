@@ -25,7 +25,7 @@
 	/* ANSI: Need not signal error for 1 argument */
 	/* INV: For >= 2 arguments, ecl_number_equalp() performs checks */
 	for (i = 1; i < narg; i++)
-		if (!ecl_number_equalp(num, cl_va_arg(nums)))
+		if (!ecl_number_equalp(num, ecl_va_arg(nums)))
 			@(return Cnil)
 	@(return Ct)
 @)
@@ -180,13 +180,13 @@ ecl_number_equalp(cl_object x, cl_object y)
 @
 	if (narg == 0)
 		FEwrong_num_arguments_anonym();
-	numi = cl_va_arg(nums);
+	numi = ecl_va_arg(nums);
 	for (i = 2; i<=narg; i++) {
-		cl_va_list numb;
-		cl_va_start(numb, narg, narg, 0);
-		numi = cl_va_arg(nums);
+		ecl_va_list numb;
+		ecl_va_start(numb, narg, narg, 0);
+		numi = ecl_va_arg(nums);
 		for (j = 1; j<i; j++)
-			if (ecl_number_equalp(numi, cl_va_arg(numb)))
+			if (ecl_number_equalp(numi, ecl_va_arg(numb)))
 				@(return Cnil)
 	}
 	@(return Ct)

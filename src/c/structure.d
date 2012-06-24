@@ -78,7 +78,7 @@ si_structure_subtype_p(cl_object x, cl_object y)
 		FEerror("Limit on structure size exceeded: ~S slots requested.",
 			1, ecl_make_fixnum(narg));
 	for (i = 0;  i < narg;  i++)
-		SLOT(x, i) = cl_va_arg(args);
+		SLOT(x, i) = ecl_va_arg(args);
 	@(return x)
 @)
 

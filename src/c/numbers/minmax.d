@@ -24,7 +24,7 @@
 	if (narg-- == 1) {
 		ecl_zerop(max);
 	} else do {
-		cl_object numi = cl_va_arg(nums);
+		cl_object numi = ecl_va_arg(nums);
 		if (ecl_number_compare(max, numi) < 0)
 			max = numi;
 	} while (--narg);
@@ -38,7 +38,7 @@
 	if (narg-- == 1) {
 		ecl_zerop(min);
 	} else do {
-		cl_object numi = cl_va_arg(nums);
+		cl_object numi = ecl_va_arg(nums);
 		if (ecl_number_compare(min, numi) > 0)
 			min = numi;
 	} while (--narg);

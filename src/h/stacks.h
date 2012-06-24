@@ -252,7 +252,7 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_obje
  * values.
  *
  * Given this structure, we need our own object for handling variable
- * argument list, cl_va_list. This object joins the C data type for
+ * argument list, ecl_va_list. This object joins the C data type for
  * handling vararg lists and a pointer to the lisp stack, in case the
  * arguments were passed there.
  *
@@ -264,18 +264,18 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_obje
  * stored somewhere.
  */
 
-#define cl_va_start(a,p,n,k) { \
+#define ecl_va_start(a,p,n,k) { \
 	a[0].narg = (n)-(k); \
 	va_start(a[0].args,p); \
 	a[0].sp = ((n) <= ECL_C_ARGUMENTS_LIMIT_LIMIT)? 0 : _ecl_va_sp(a[0].narg); }
-#define cl_va_arg(a) \
+#define ecl_va_arg(a) \
 	(a[0].narg--,(a[0].sp? *(a[0].sp++) : va_arg(a[0].args,cl_object)))
-#define cl_va_copy(dest,orig) { \
+#define ecl_va_copy(dest,orig) { \
 	dest[0].narg = orig[0].narg; \
 	dest[0].sp = orig[0].sp; \
 	va_copy(dest[0].args,orig[0].args); \
 }
-#define cl_va_end(a) \
+#define ecl_va_end(a) \
 	va_end(a[0].args)
 #define	check_arg(n) \
 	do { if (ecl_unlikely(narg != (n))) FEwrong_num_arguments_anonym();} while(0)

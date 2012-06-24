@@ -1101,7 +1101,7 @@ typedef struct {
 	va_list args;
 	cl_object *sp;
 	int narg;
-} cl_va_list[1];
+} ecl_va_list[1];
 
 #ifdef __cplusplus
 }

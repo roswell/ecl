@@ -45,9 +45,9 @@ user_function_dispatch(cl_narg narg, ...)
 	cl_object fun = env->function;
 	struct ecl_stack_frame frame_aux;
 	const cl_object frame = ecl_stack_frame_open(env, (cl_object)&frame_aux, narg);
-        cl_va_list args; cl_va_start(args, narg, narg, 0);
+        ecl_va_list args; ecl_va_start(args, narg, narg, 0);
         for (i = 0; i < narg; i++) {
-                ECL_STACK_FRAME_SET(frame, i, cl_va_arg(args));
+                ECL_STACK_FRAME_SET(frame, i, ecl_va_arg(args));
         }
         fun = fun->instance.slots[fun->instance.length - 1];
         output = ecl_apply_from_stack_frame(frame, fun);

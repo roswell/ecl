@@ -406,7 +406,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 	     (if (setq simple-varargs (and (not (or rest keywords allow-other-keys))
 					   (< (+ nreq nopt) 30)))
 		 "va_list args; va_start(args,~a);"
-		 "cl_va_list args; cl_va_start(args,~a,narg,~d);")
+		 "ecl_va_list args; ecl_va_start(args,~a,narg,~d);")
 	     first-arg nreq))))
 
     ;; Bind required parameters.
@@ -464,7 +464,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
     (when rest (bind rest-loc rest)))
 
   (when varargs
-    (wt-nl (if simple-varargs "va_end(args);" "cl_va_end(args);")))
+    (wt-nl (if simple-varargs "va_end(args);" "ecl_va_end(args);")))
 
   ;;; Bind keywords.
   (do ((kwd keywords (cddddr kwd))

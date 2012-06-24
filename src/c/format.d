@@ -93,7 +93,7 @@ static const char *fmt_ordinal[] = {
 };
 
 static void format(format_stack, cl_index, cl_index);
-static cl_object doformat(cl_narg narg, cl_object strm, cl_object string, cl_va_list args, bool in_formatter);
+static cl_object doformat(cl_narg narg, cl_object strm, cl_object string, ecl_va_list args, bool in_formatter);
 
 static cl_object
 get_aux_stream(void)
@@ -1948,7 +1948,7 @@ fmt_semicolon(format_stack fmt, bool colon, bool atsign)
 
 
 static cl_object
-doformat(cl_narg narg, cl_object strm, cl_object string, cl_va_list args, bool in_formatter)
+doformat(cl_narg narg, cl_object strm, cl_object string, ecl_va_list args, bool in_formatter)
 {
 	struct format_stack_struct fmt;
 	jmp_buf fmt_jmp_buf0;

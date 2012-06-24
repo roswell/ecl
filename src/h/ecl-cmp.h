@@ -20,7 +20,7 @@
 #include <ecl/ecl-inl.h>
 
 #define TRAMPOLINK(narg, vv, lk, cblock) \
-	cl_va_list args; cl_va_start(args, narg, narg, 0); \
+	ecl_va_list args; ecl_va_start(args, narg, narg, 0); \
 	return(_ecl_link_call(vv, (cl_objectfn *)lk, cblock, narg, args))
 
 enum ecl_locative_type {

@@ -28,7 +28,7 @@
 	if (narg) {
 		int i = 0;
 		do { 
-			the_env->values[i] = cl_va_arg(args);
+			the_env->values[i] = ecl_va_arg(args);
 		} while (++i < narg);
 		output = the_env->values[0];
 	}

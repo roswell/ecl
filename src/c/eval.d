@@ -148,7 +148,7 @@ cl_funcall(cl_narg narg, cl_object function, ...)
 							     narg -= 2);
 		for (i = 0; i < narg; i++) {
 			ECL_STACK_FRAME_SET(frame, i, lastarg);
-			lastarg = cl_va_arg(args);
+			lastarg = ecl_va_arg(args);
 		}
 		if (type_of(lastarg) == t_frame) {
 			/* This could be replaced with a memcpy() */

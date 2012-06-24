@@ -106,8 +106,8 @@ ecl_unrecoverable_error(cl_env_ptr the_env, const char *message)
 void
 FEerror(const char *s, int narg, ...)
 {
-	cl_va_list args;
-	cl_va_start(args, narg, narg, 0);
+	ecl_va_list args;
+	ecl_va_start(args, narg, narg, 0);
 	ecl_enable_interrupts();
 	funcall(4, @'si::universal-error-handler',
 		Cnil,                    /*  not correctable  */
@@ -119,8 +119,8 @@ FEerror(const char *s, int narg, ...)
 cl_object
 CEerror(cl_object c, const char *err, int narg, ...)
 {
-	cl_va_list args;
-	cl_va_start(args, narg, narg, 0);
+	ecl_va_list args;
+	ecl_va_start(args, narg, narg, 0);
 	ecl_enable_interrupts();
 	return funcall(4, @'si::universal-error-handler',
 		       c,			/*  correctable  */
@@ -136,8 +136,8 @@ void
 FEprogram_error(const char *s, int narg, ...)
 {
 	cl_object real_args, text;
-	cl_va_list args;
-	cl_va_start(args, narg, narg, 0);
+	ecl_va_list args;
+	ecl_va_start(args, narg, narg, 0);
 	text = make_constant_base_string(s);
 	real_args = cl_grab_rest_args(args);
 	if (cl_boundp(@'si::*current-form*') != Cnil) {
@@ -161,8 +161,8 @@ void
 FEprogram_error_noreturn(const char *s, int narg, ...)
 {
 	cl_object real_args, text;
-	cl_va_list args;
-	cl_va_start(args, narg, narg, 0);
+	ecl_va_list args;
+	ecl_va_start(args, narg, narg, 0);
 	text = make_constant_base_string(s);
 	real_args = cl_grab_rest_args(args);
 	if (cl_boundp(@'si::*current-form*') != Cnil) {
@@ -185,8 +185,8 @@ FEprogram_error_noreturn(const char *s, int narg, ...)
 void
 FEcontrol_error(const char *s, int narg, ...)
 {
-	cl_va_list args;
-	cl_va_start(args, narg, narg, 0);
+	ecl_va_list args;
+	ecl_va_start(args, narg, narg, 0);
 	si_signal_simple_error(4,
 			       @'control-error', /* condition name */
 			       Cnil, /* not correctable */
@@ -199,8 +199,8 @@ FEreader_error(const char *s, cl_object stream, int narg, ...)
 {
         cl_object message = make_constant_base_string(s);
         cl_object args_list;
-	cl_va_list args;
-	cl_va_start(args, narg, narg, 0);
+	ecl_va_list args;
+	ecl_va_start(args, narg, narg, 0);
         args_list = cl_grab_rest_args(args);
         if (Null(stream)) {
                 /* Parser error */
@@ -479,11 +479,11 @@ FEdivision_by_zero(cl_object x, cl_object y)
 void
 FElibc_error(const char *msg, int narg, ...)
 {
-	cl_va_list args;
+	ecl_va_list args;
 	cl_object rest;
         const char *error = strerror(errno);
 
-	cl_va_start(args, narg, narg, 0);
+	ecl_va_start(args, narg, narg, 0);
 	rest = cl_grab_rest_args(args);
 
 	FEerror("~?~%C library explanation: ~A.", 3, make_constant_base_string(msg), rest,
@@ -496,7 +496,7 @@ ecl_def_ct_base_string(unknown_error,"[Unable to get error message]",28,static,c
 void
 FEwin32_error(const char *msg, int narg, ...)
 {
-	cl_va_list args;
+	ecl_va_list args;
 	cl_object rest, win_msg_obj;
 	char *win_msg;
 
@@ -508,7 +508,7 @@ FEwin32_error(const char *msg, int narg, ...)
 		LocalFree(win_msg);
 	}
 
-	cl_va_start(args, narg, narg, 0);
+	ecl_va_start(args, narg, narg, 0);
 	rest = cl_grab_rest_args(args);
 	FEerror("~?~%Windows library explanation: ~A.", 3,
 		make_constant_base_string(msg), rest,

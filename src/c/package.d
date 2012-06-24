@@ -43,8 +43,8 @@ static cl_object find_symbol_inner(cl_object name, cl_object p, int *intern_flag
 static void
 FEpackage_error(const char *message, cl_object package, int narg, ...)
 {
-	cl_va_list args;
-	cl_va_start(args, narg, narg, 0);
+	ecl_va_list args;
+	ecl_va_start(args, narg, narg, 0);
 	si_signal_simple_error(6,
 			       @'package-error',
 			       Cnil, /* not correctable */
@@ -56,8 +56,8 @@ FEpackage_error(const char *message, cl_object package, int narg, ...)
 void
 CEpackage_error(const char *message, const char *continue_message, cl_object package, int narg, ...)
 {
-	cl_va_list args;
-	cl_va_start(args, narg, narg, 0);
+	ecl_va_list args;
+	ecl_va_start(args, narg, narg, 0);
 	si_signal_simple_error(6,
 			       @'package-error',
 			       make_constant_base_string(continue_message),

@@ -1994,7 +1994,7 @@ const struct ecl_file_ops broadcast_ops = {
 @
 	streams = Cnil;
 	for (i = 0; i < narg; i++) {
-		x = cl_va_arg(ap);
+		x = ecl_va_arg(ap);
 		unlikely_if (!ecl_output_stream_p(x))
 			not_an_output_stream(x);
 		streams = CONS(x, streams);
@@ -2325,7 +2325,7 @@ const struct ecl_file_ops concatenated_ops = {
 @
 	streams = Cnil;
 	for (i = 0; i < narg; i++) {
-		x = cl_va_arg(ap);
+		x = ecl_va_arg(ap);
 		unlikely_if (!ecl_input_stream_p(x))
 			not_an_input_stream(x);
 		streams = CONS(x, streams);

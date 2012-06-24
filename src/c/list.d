@@ -137,9 +137,9 @@ setup_test(struct cl_test *t, cl_object item, cl_object test,
 	cl_object head = Cnil;
 @
 	if (narg--) {
-		cl_object tail = head = ecl_list1(cl_va_arg(args));
+		cl_object tail = head = ecl_list1(ecl_va_arg(args));
 		while (narg--) {
-			cl_object cons = ecl_list1(cl_va_arg(args));
+			cl_object cons = ecl_list1(ecl_va_arg(args));
 			ECL_RPLACD(tail, cons);
 			tail = cons;
 		}
@@ -152,15 +152,15 @@ setup_test(struct cl_test *t, cl_object item, cl_object test,
 @
 	if (narg == 0)
 		FEwrong_num_arguments(@[list*]);
-	head = cl_va_arg(args);
+	head = ecl_va_arg(args);
 	if (--narg) {
 		cl_object tail = head = ecl_list1(head);
 		while (--narg) {
-			cl_object cons = ecl_list1(cl_va_arg(args));
+			cl_object cons = ecl_list1(ecl_va_arg(args));
 			ECL_RPLACD(tail, cons);
 			tail = cons;
 		}
-		ECL_RPLACD(tail, cl_va_arg(args));
+		ECL_RPLACD(tail, ecl_va_arg(args));
 	}
 	@(return head)
 @)
@@ -186,7 +186,7 @@ append_into(cl_object head, cl_object *tail, cl_object l)
 	cl_object head = Cnil, *tail = &head;
 @
 	for (; narg > 1; narg--) {
-		cl_object other = cl_va_arg(rest);
+		cl_object other = ecl_va_arg(rest);
                 tail = append_into(head, tail, other);
 	}
         if (narg) {
@@ -194,7 +194,7 @@ append_into(cl_object head, cl_object *tail, cl_object l)
                         /* (APPEND '(1 . 2) 3) */
                         FEtype_error_proper_list(head);
                 }
-                *tail = cl_va_arg(rest);
+                *tail = ecl_va_arg(rest);
         }
 	@(return head)
 @)
@@ -497,7 +497,7 @@ cl_revappend(cl_object x, cl_object y)
 	cl_object head = Cnil, tail = Cnil;
 @	
 	while (narg--) {
-		cl_object new_tail, other = cl_va_arg(lists);
+		cl_object new_tail, other = ecl_va_arg(lists);
 		if (Null(other)) {
 			new_tail = tail;
 		} else if (CONSP(other)) {

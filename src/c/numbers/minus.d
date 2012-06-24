@@ -23,7 +23,7 @@
 	if (narg == 1)
 		@(return ecl_negate(num))
 	for (diff = num;  --narg; )
-		diff = ecl_minus(diff, cl_va_arg(nums));
+		diff = ecl_minus(diff, ecl_va_arg(nums));
 	@(return diff)
 @)
 

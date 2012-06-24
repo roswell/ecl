@@ -1041,7 +1041,7 @@ cl_sxhash(cl_object key)
 	cl_index h;
 @
 	for (h = 0; narg; narg--) {
-		cl_object o = cl_va_arg(args);
+		cl_object o = ecl_va_arg(args);
 		h = _hash_eql(h, o);
 	}
 	@(return ecl_make_fixnum(h))
@@ -1051,7 +1051,7 @@ cl_sxhash(cl_object key)
 	cl_index h;
 @
 	for (h = 0; narg; narg--) {
-		cl_object o = cl_va_arg(args);
+		cl_object o = ecl_va_arg(args);
 		h = _hash_equal(3, h, o);
 	}
 	@(return ecl_make_fixnum(h))
@@ -1061,7 +1061,7 @@ cl_sxhash(cl_object key)
 	cl_index h;
 @
 	for (h = 0; narg; narg--) {
-		cl_object o = cl_va_arg(args);
+		cl_object o = ecl_va_arg(args);
 		h = _hash_equalp(3, h, o);
 	}
 	@(return ecl_make_fixnum(h))

@@ -397,8 +397,8 @@ ecl_release_current_thread(void)
 cl_object
 mp_process_preset(cl_narg narg, cl_object process, cl_object function, ...)
 {
-	cl_va_list args;
-	cl_va_start(args, function, narg, 2);
+	ecl_va_list args;
+	ecl_va_start(args, function, narg, 2);
 	if (narg < 2)
 		FEwrong_num_arguments(@[mp::process-preset]);
 	assert_type_process(process);
@@ -603,8 +603,8 @@ cl_object
 mp_process_run_function(cl_narg narg, cl_object name, cl_object function, ...)
 {
 	cl_object process;
-	cl_va_list args;
-	cl_va_start(args, function, narg, 2);
+	ecl_va_list args;
+	ecl_va_start(args, function, narg, 2);
 	if (narg < 2)
 		FEwrong_num_arguments(@[mp::process-run-function]);
 	if (CONSP(name)) {
@@ -621,8 +621,8 @@ cl_object
 mp_process_run_function_wait(cl_narg narg, ...)
 {
 	cl_object process;
-	cl_va_list args;
-	cl_va_start(args, narg, narg, 0);
+	ecl_va_list args;
+	ecl_va_start(args, narg, narg, 0);
 	process = cl_apply(2, @'mp::process-run-function',
                            cl_grab_rest_args(args));
         if (!Null(process)) {

@@ -507,8 +507,8 @@ extern ECL_API int ecl_aset_bv(cl_object x, cl_index index, int value);
 extern ECL_API void cl_throw(cl_object tag) /*ecl_attr_noreturn*/;
 extern ECL_API void cl_return_from(cl_object block_id, cl_object block_name) /*ecl_attr_noreturn*/;
 extern ECL_API void cl_go(cl_object tag_id, cl_object label) /*ecl_attr_noreturn*/;
-extern ECL_API void cl_parse_key(cl_va_list args, int nkey, cl_object *keys, cl_object *vars, cl_object *rest, bool allow_other_keys);
-extern ECL_API cl_object cl_grab_rest_args(cl_va_list args);
+extern ECL_API void cl_parse_key(ecl_va_list args, int nkey, cl_object *keys, cl_object *vars, cl_object *rest, bool allow_other_keys);
+extern ECL_API cl_object cl_grab_rest_args(ecl_va_list args);
 
 /* compiler.c */
 
@@ -603,7 +603,7 @@ extern ECL_API cl_object cl_constantp(cl_narg narg, cl_object arg, ...);
 extern ECL_API cl_object cl_apply_from_stack(cl_index narg, cl_object fun);
 extern ECL_API cl_object ecl_apply_from_stack_frame(cl_object f, cl_object o);
 extern ECL_API cl_objectfn ecl_function_dispatch(cl_env_ptr env, cl_object f);
-extern ECL_API cl_object _ecl_link_call(cl_object sym, cl_objectfn *pLK, cl_object cblock, int narg, cl_va_list args);
+extern ECL_API cl_object _ecl_link_call(cl_object sym, cl_objectfn *pLK, cl_object cblock, int narg, ecl_va_list args);
 
 /* ffi/cdata.d */
 extern ECL_API cl_object si_get_cdata(cl_object filename);

@@ -24,7 +24,7 @@
 	if (narg == 1)
 		@(return ecl_divide(ecl_make_fixnum(1), num))
 	while (--narg)
-		num = ecl_divide(num, cl_va_arg(nums));
+		num = ecl_divide(num, ecl_va_arg(nums));
 	@(return num)
 @)
 

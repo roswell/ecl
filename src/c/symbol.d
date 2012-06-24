@@ -437,8 +437,8 @@ si_putprop(cl_object sym, cl_object value, cl_object indicator)
 @(defun si::put-properties (sym &rest ind_values)
 @
 	while (--narg >= 2) {
-		cl_object prop = cl_va_arg(ind_values);
-		si_putprop(sym, cl_va_arg(ind_values), prop);
+		cl_object prop = ecl_va_arg(ind_values);
+		si_putprop(sym, ecl_va_arg(ind_values), prop);
 		narg--;
 	}
 	@(return sym)

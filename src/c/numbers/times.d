@@ -21,7 +21,7 @@
 @
 	/* INV: type check in ecl_times() */
 	while (narg--)
-		prod = ecl_times(prod, cl_va_arg(nums));
+		prod = ecl_times(prod, ecl_va_arg(nums));
 	@(return prod)
 @)
 

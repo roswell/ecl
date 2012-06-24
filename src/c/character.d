@@ -169,7 +169,7 @@ cl_alphanumericp(cl_object c)
 @
 	/* INV: ecl_char_eq() checks types of `c' and `cs' */
 	while (--narg)
-		if (!ecl_char_eq(c, cl_va_arg(cs)))
+		if (!ecl_char_eq(c, ecl_va_arg(cs)))
 			@(return Cnil)
 	@(return Ct)
 @)
@@ -187,28 +187,28 @@ ecl_char_eq(cl_object x, cl_object y)
 	/* INV: ecl_char_eq() checks types of its arguments */
 	if (narg == 0)
 		FEwrong_num_arguments(@[char/=]);
-	c = cl_va_arg(cs);
+	c = ecl_va_arg(cs);
 	for (i = 2; i<=narg; i++) {
-		cl_va_list ds;
-		cl_va_start(ds, narg, narg, 0);
-		c = cl_va_arg(cs);
+		ecl_va_list ds;
+		ecl_va_start(ds, narg, narg, 0);
+		c = ecl_va_arg(cs);
 		for (j = 1; j<i; j++)
-			if (ecl_char_eq(cl_va_arg(ds), c))
+			if (ecl_char_eq(ecl_va_arg(ds), c))
 				@(return Cnil)
 	}
 	@(return Ct)
 @)
 
 static cl_object
-Lchar_cmp(cl_env_ptr env, cl_narg narg, int s, int t, cl_va_list args)
+Lchar_cmp(cl_env_ptr env, cl_narg narg, int s, int t, ecl_va_list args)
 {
 	cl_object c, d;
 
 	if (narg == 0)
 		FEwrong_num_arguments_anonym();
-	c = cl_va_arg(args);
+	c = ecl_va_arg(args);
 	for (; --narg; c = d) {
-		d = cl_va_arg(args);
+		d = ecl_va_arg(args);
 		if (s*ecl_char_cmp(d, c) < t)
 			ecl_return1(env, Cnil);
 	}
@@ -249,7 +249,7 @@ ecl_char_cmp(cl_object x, cl_object y)
 @
 	/* INV: ecl_char_equal() checks the type of its arguments */
 	for (narg--, i = 0;  i < narg;  i++) {
-		if (!ecl_char_equal(c, cl_va_arg(cs)))
+		if (!ecl_char_equal(c, ecl_va_arg(cs)))
 			@(return Cnil)
 	}
 	@(return Ct)
@@ -270,29 +270,29 @@ ecl_char_equal(cl_object x, cl_object y)
 	/* INV: ecl_char_equal() checks the type of its arguments */
 	if (narg == 0)
 		FEwrong_num_arguments(@[char-not-equal]);
-	c = cl_va_arg(cs);
+	c = ecl_va_arg(cs);
 	for (i = 2;  i<=narg;  i++) {
-		cl_va_list ds;
-		cl_va_start(ds, narg, narg, 0);
-		c = cl_va_arg(cs);
+		ecl_va_list ds;
+		ecl_va_start(ds, narg, narg, 0);
+		c = ecl_va_arg(cs);
 		for (j=1;  j<i;  j++)
-			if (ecl_char_equal(c, cl_va_arg(ds)))
+			if (ecl_char_equal(c, ecl_va_arg(ds)))
 				@(return Cnil)
 	}
 	@(return Ct)
 @)
 
 static cl_object
-Lchar_compare(cl_env_ptr env, cl_narg narg, int s, int t, cl_va_list args)
+Lchar_compare(cl_env_ptr env, cl_narg narg, int s, int t, ecl_va_list args)
 {
 	cl_object c, d;
 
 	/* INV: ecl_char_compare() checks the types of its arguments */
 	if (narg == 0)
 		FEwrong_num_arguments_anonym();
-	c = cl_va_arg(args);
+	c = ecl_va_arg(args);
 	for (; --narg; c = d) {
-		d = cl_va_arg(args);
+		d = ecl_va_arg(args);
 		if (s*ecl_char_compare(d, c) < t)
 			ecl_return1(env, Cnil);
 	}

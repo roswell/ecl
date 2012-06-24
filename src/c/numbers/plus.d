@@ -21,7 +21,7 @@
 @
 	/* INV: type check is in ecl_plus() */
 	while (narg--)
-		sum = ecl_plus(sum, cl_va_arg(nums));
+		sum = ecl_plus(sum, ecl_va_arg(nums));
 	@(return sum)
 @)
 

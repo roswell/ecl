@@ -713,7 +713,7 @@ put_declaration(void)
 	fprintf(out,"\tva_list %s;\n\tva_start(%s, %s);\n",
 		rest_var, rest_var, ((nreq > 0) ? required[nreq-1] : "narg"));
     else
-	fprintf(out,"\tcl_va_list %s;\n\tcl_va_start(%s, %s, narg, %d);\n",
+	fprintf(out,"\tecl_va_list %s;\n\tecl_va_start(%s, %s, narg, %d);\n",
 		rest_var, rest_var, ((nreq > 0) ? required[nreq-1] : "narg"),
 		nreq);
     put_lineno();
@@ -728,7 +728,7 @@ put_declaration(void)
       put_lineno();
       fprintf(out, simple_varargs?
 	      "\t\t%s = va_arg(%s,cl_object);\n":
-	      "\t\t%s = cl_va_arg(%s);\n",
+	      "\t\t%s = ecl_va_arg(%s);\n",
 	      optional[i].o_var, rest_var);
       if (optional[i].o_svar) {
 	put_lineno();

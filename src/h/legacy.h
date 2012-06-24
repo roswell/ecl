@@ -130,3 +130,8 @@
 #define CALL_ARGUMENTS_LIMIT ECL_CALL_ARGUMENTS_LIMIT
 #define LAMBDA_PARAMETERS_LIMIT ECL_LAMBDA_PARAMETERS_LIMIT
 #define C_ARGUMENTS_LIMIT ECL_C_ARGUMENTS_LIMIT
+
+#define cl_va_start ecl_va_start
+#define cl_va_list ecl_va_list
+#define cl_va_arg ecl_va_arg
+#define cl_va_end ecl_va_end

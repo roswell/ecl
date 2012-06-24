@@ -161,12 +161,12 @@ cl_go(cl_object tag_id, cl_object label)
 }
 
 cl_object
-cl_grab_rest_args(cl_va_list args)
+cl_grab_rest_args(ecl_va_list args)
 {
 	cl_object rest = Cnil;
 	cl_object *r = &rest;
 	while (args[0].narg) {
-		*r = ecl_list1(cl_va_arg(args));
+		*r = ecl_list1(ecl_va_arg(args));
 		r = &ECL_CONS_CDR(*r);
 	}
 	return rest;
@@ -174,7 +174,7 @@ cl_grab_rest_args(cl_va_list args)
 
 void
 cl_parse_key(
-     cl_va_list args,		/* actual args */
+     ecl_va_list args,		/* actual args */
      int nkey,			/* number of keywords */
      cl_object *keys,		/* keywords for the function */
      cl_object *vars,		/* where to put values (vars[0..nkey-1])
@@ -193,8 +193,8 @@ cl_parse_key(
 	if (args[0].narg <= 0) return;
 
 	for (; args[0].narg > 1; ) {
-		cl_object keyword = cl_va_arg(args);
-		cl_object value = cl_va_arg(args);
+		cl_object keyword = ecl_va_arg(args);
+		cl_object value = ecl_va_arg(args);
 		if (ecl_unlikely(!SYMBOLP(keyword)))
 			FEprogram_error_noreturn("LAMBDA: Keyword expected, got ~S.",
                                                  1, keyword);

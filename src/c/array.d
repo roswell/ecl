@@ -129,7 +129,7 @@ si_row_major_aset(cl_object x, cl_object indx, cl_object val)
 			FEerror("Wrong number of indices.", 0);
 		for (i = j = 0;  i < r;  i++) {
 			cl_index s = checked_index(@[aref], x, i,
-                                                   cl_va_arg(indx),
+                                                   ecl_va_arg(indx),
                                                    x->array.dims[i]);
 			j = j*(x->array.dims[i]) + s;
 		}
@@ -142,7 +142,7 @@ si_row_major_aset(cl_object x, cl_object indx, cl_object val)
 	case t_bitvector:
 		if (r != 1)
 			FEerror("Wrong number of indices.", 0);
-		j = checked_index(@[aref], x, -1, cl_va_arg(indx), x->vector.dim);
+		j = checked_index(@[aref], x, -1, ecl_va_arg(indx), x->vector.dim);
 		break;
 	default:
                 FEwrong_type_nth_arg(@[aref], 1, x, @[array]);
@@ -272,7 +272,7 @@ ecl_row_major_ptr(cl_object x, cl_index index, cl_index bytes)
 			FEerror("Wrong number of indices.", 0);
 		for (i = j = 0;  i < r;  i++) {
 			cl_index s = checked_index(@[si::aset], x, i,
-                                                   cl_va_arg(dims),
+                                                   ecl_va_arg(dims),
                                                    x->array.dims[i]);
 			j = j*(x->array.dims[i]) + s;
 		}
@@ -285,13 +285,13 @@ ecl_row_major_ptr(cl_object x, cl_index index, cl_index bytes)
 	case t_bitvector:
 		if (ecl_unlikely(r != 1))
 			FEerror("Wrong number of indices.", 0);
-		j = checked_index(@[si::aset], x, -1, cl_va_arg(dims),
+		j = checked_index(@[si::aset], x, -1, ecl_va_arg(dims),
                                   x->vector.dim);
 		break;
 	default:
                 FEwrong_type_nth_arg(@[si::aset], 1, x, @[array]);
 	}
-	v = cl_va_arg(dims);
+	v = ecl_va_arg(dims);
 	@(return ecl_aset_unsafe(x, j, v))
 } @)
 
