@@ -183,7 +183,7 @@ extern void _ecl_unexpected_return() ecl_attr_noreturn;
         frame->frame.stack = 0;                                         \
         frame->frame.env = env;                                         \
         frame->frame.size = narg;                                       \
-        if (narg < ECL_C_ARGUMENTS_LIMIT_LIMIT) {                                 \
+        if (narg < ECL_C_ARGUMENTS_LIMIT) {                                 \
                 va_list args;                                           \
                 va_start(args, lastarg);                                \
                 frame->frame.base = (void*)args;                        \
@@ -200,7 +200,7 @@ extern void _ecl_unexpected_return() ecl_attr_noreturn;
         frame->frame.t = t_frame;                                       \
         frame->frame.env = env;                                         \
         frame->frame.size = narg;                                       \
-        if (narg < ECL_C_ARGUMENTS_LIMIT_LIMIT) {                                 \
+        if (narg < ECL_C_ARGUMENTS_LIMIT) {                                 \
                 cl_object *p = frame->frame.base = env->values;         \
                 va_list args;                                           \
                 va_start(args, lastarg);                                \

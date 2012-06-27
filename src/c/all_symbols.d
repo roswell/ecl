@@ -83,7 +83,7 @@ mangle_name(cl_object output, unsigned char *source, int l)
 	cl_object output;
 	cl_object package;
 	cl_object found = Cnil;
-	cl_object maxarg = ecl_make_fixnum(ECL_CALL_ARGUMENTS__LIMITLIMIT);
+	cl_object maxarg = ecl_make_fixnum(ECL_CALL_ARGUMENTS_LIMIT);
 	cl_object minarg = ecl_make_fixnum(0);
 	bool is_symbol;
 	cl_object name;
