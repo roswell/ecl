@@ -18,7 +18,9 @@
   (typecase form
     ((or STRING INTEGER CHARACTER)
      (princ form *compiler-output1*))
-    ((or DOUBLE-FLOAT SINGLE-FLOAT)
+    (SINGLE-FLOAT
+     (format *compiler-output1* "(float)~10,,,,,,'eG" form))
+    (DOUBLE-FLOAT
      (format *compiler-output1* "~10,,,,,,'eG" form))
     (LONG-FLOAT
      (format *compiler-output1* "~,,,,,,'eEl" form))
