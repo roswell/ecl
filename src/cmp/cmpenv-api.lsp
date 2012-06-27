@@ -81,10 +81,8 @@ that are susceptible to be changed by PROCLAIM."
   env)
 
 (defun cmp-env-register-global-macro (name function)
-  (unless (tailp (cmp-env-functions *cmp-env-root*) *cmp-env*)
-    (break))
-  (nconc (cmp-env-functions *cmp-env-root*)
-         (list (list name 'si::macro function)))
+  (cmp-env-register-macro name function *cmp-env*)
+  (cmp-env-register-macro name function *cmp-env-root*)
   (values))
 
 (defun cmp-env-register-macro (name function &optional (env *cmp-env*))
