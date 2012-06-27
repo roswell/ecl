@@ -64,7 +64,7 @@
      "ecl_make_uint" "ecl_to_uint" "ecl_to_uint")
     :long
     ((integer #.ffi:c-long-min #.ffi:c-long-max) "long" "ecl_make_long" "ecl_to_long"
-     #.(if (<= ffi:c-long-min most-negative-fixnum most-positive-fixnum ffi:c-long-max)
+     #.(if (<= most-negative-fixnum ffi:c-long-min ffi:c-long-max most-positive-fixnum)
 	   "ecl_fixnum"
 	   "ecl_to_long"))
     :unsigned-long
