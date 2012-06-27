@@ -50,7 +50,7 @@
                   (ffi:c-inline ,(list stream) (:object) :void
                                 ,(concatenate 'string
                                               "ecl_princ_str("
-                                              (c-filtered-string value)
+                                              (c-inline-safe-string value)
                                               ",#0)")
                                 :one-liner t)
                   ,value))
