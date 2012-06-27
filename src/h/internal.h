@@ -431,7 +431,7 @@ extern void cl_write_object(cl_object x, cl_object stream);
 #ifdef ECL_UNICODE
 #define	RTABSIZE	256		/*  read table size  */
 #else
-#define	RTABSIZE	CHAR_CODE_LIMIT	/*  read table size  */
+#define	RTABSIZE	ECL_CHAR_CODE_LIMIT	/*  read table size  */
 #endif
 
 /* package.d */

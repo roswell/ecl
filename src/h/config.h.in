@@ -165,7 +165,7 @@ typedef unsigned @CL_FIXNUM_TYPE@ cl_hashkey;
 /*
  * The character type
  */
-#define	CHAR_CODE_LIMIT	@CHAR_CODE_LIMIT@ /* ASCII or unicode character code limit  */
+#define	ECL_CHAR_CODE_LIMIT	@CHAR_CODE_LIMIT@ /* ASCII or unicode character code limit  */
 typedef @ECL_CHARACTER@ ecl_character;
 typedef unsigned char ecl_base_char;
 

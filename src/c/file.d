@@ -1182,7 +1182,7 @@ clos_stream_read_char(cl_object strm)
 		return EOF;
         else
                 value = -1;
-        unlikely_if (value < 0 || value > CHAR_CODE_LIMIT)
+        unlikely_if (value < 0 || value > ECL_CHAR_CODE_LIMIT)
                 FEerror("Unknown character ~A", 1, output);
         return value;
 }

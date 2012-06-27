@@ -376,7 +376,7 @@ cl_code_char(cl_object c)
 	switch (type_of(c)) {
 	case t_fixnum:
 		fc = ecl_fixnum(c);
-		if (fc < CHAR_CODE_LIMIT && fc >= 0) {
+		if (fc < ECL_CHAR_CODE_LIMIT && fc >= 0) {
 			c = ECL_CODE_CHAR(fc);
 			break;
 		}

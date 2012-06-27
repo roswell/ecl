@@ -135,3 +135,5 @@
 #define cl_va_list ecl_va_list
 #define cl_va_arg ecl_va_arg
 #define cl_va_end ecl_va_end
+
+#define CHAR_CODE_LIMIT ECL_CHAR_CODE_LIMIT

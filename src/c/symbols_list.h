@@ -295,7 +295,7 @@ cl_symbols[] = {
 {"CERROR", CL_ORDINARY, cl_cerror, -1, OBJNULL},
 {"CHAR", CL_ORDINARY, cl_char, 2, OBJNULL},
 {"CHAR-CODE", CL_ORDINARY, cl_char_code, 1, OBJNULL},
-{"CHAR-CODE-LIMIT", CL_CONSTANT, NULL, -1, ecl_make_fixnum(CHAR_CODE_LIMIT)},
+{"CHAR-CODE-LIMIT", CL_CONSTANT, NULL, -1, ecl_make_fixnum(ECL_CHAR_CODE_LIMIT)},
 {"CHAR-DOWNCASE", CL_ORDINARY, cl_char_downcase, 1, OBJNULL},
 {"CHAR-EQUAL", CL_ORDINARY, cl_char_equal, -1, OBJNULL},
 {"CHAR-GREATERP", CL_ORDINARY, cl_char_greaterp, -1, OBJNULL},
