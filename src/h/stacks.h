@@ -382,14 +382,7 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_obje
  * HIGH LEVEL CONTROL STRUCTURES *
  *********************************/
 
-#define CL_NEWENV_BEGIN {\
-	const cl_env_ptr the_env = ecl_process_env(); \
-	cl_index __i = ecl_stack_push_values(the_env); \
-
-#define CL_NEWENV_END \
-	ecl_stack_pop_values(the_env,__i); }
-
-#define CL_UNWIND_PROTECT_BEGIN(the_env) do {	   \
+#define ECL_UNWIND_PROTECT_BEGIN(the_env) do {	   \
 	bool __unwinding; ecl_frame_ptr __next_fr; \
 	const cl_env_ptr __the_env = (the_env);	   \
 	cl_index __nr; \
@@ -397,49 +390,49 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_obje
 		__unwinding=1; __next_fr=__the_env->nlj_fr; \
 	} else {
 
-#define CL_UNWIND_PROTECT_EXIT \
+#define ECL_UNWIND_PROTECT_EXIT \
 	__unwinding=0; } \
 	ecl_frs_pop(__the_env); \
 	__nr = ecl_stack_push_values(__the_env);
 
-#define CL_UNWIND_PROTECT_END \
+#define ECL_UNWIND_PROTECT_END \
 	ecl_stack_pop_values(__the_env,__nr);	\
 	if (__unwinding) ecl_unwind(__the_env,__next_fr); } while(0)
 
 #define ECL_NEW_FRAME_ID(env) ecl_make_fixnum(env->frame_id++)
 
-#define CL_BLOCK_BEGIN(the_env,id) do {   			\
+#define ECL_BLOCK_BEGIN(the_env,id) do {   			\
 	const cl_object __id = ECL_NEW_FRAME_ID(the_env);	\
 	const cl_env_ptr __the_env = (the_env);			\
 	if (ecl_frs_push(__the_env,__id) == 0)
 
-#define CL_BLOCK_END \
+#define ECL_BLOCK_END \
 	ecl_frs_pop(__the_env); } while(0)
 
-#define CL_CATCH_BEGIN(the_env,tag) do {	\
+#define ECL_CATCH_BEGIN(the_env,tag) do {	\
 	const cl_env_ptr __the_env = (the_env);	\
 	if (ecl_frs_push(__the_env,tag) == 0) {
 
-#define CL_CATCH_END } \
+#define ECL_CATCH_END } \
 	ecl_frs_pop(__the_env); } while (0)
 
 #if defined(_MSC_VER)
-# define CL_CATCH_ALL_BEGIN(the_env) do {			\
+# define ECL_CATCH_ALL_BEGIN(the_env) do {			\
 	const cl_env_ptr __the_env = (the_env);			\
 	_try {							\
 	const cl_env_ptr __the_env = (the_env);			\
 	if (ecl_frs_push(__the_env,ECL_PROTECT_TAG) == 0) {
-# define CL_CATCH_ALL_IF_CAUGHT } else {
-# define CL_CATCH_ALL_END }}						\
+# define ECL_CATCH_ALL_IF_CAUGHT } else {
+# define ECL_CATCH_ALL_END }}						\
 	_except(_ecl_w32_exception_filter(GetExceptionInformation())) \
 	{ (void)0; }							\
 	ecl_frs_pop(__the_env); } while(0)
 #else
-# define CL_CATCH_ALL_BEGIN(the_env) do {	\
+# define ECL_CATCH_ALL_BEGIN(the_env) do {	\
 	const cl_env_ptr __the_env = (the_env);	\
 	if (ecl_frs_push(__the_env,ECL_PROTECT_TAG) == 0) {
-# define CL_CATCH_ALL_IF_CAUGHT } else {
-# define CL_CATCH_ALL_END } \
+# define ECL_CATCH_ALL_IF_CAUGHT } else {
+# define ECL_CATCH_ALL_END } \
 	ecl_frs_pop(__the_env); } while(0)
 #endif
 

@@ -153,7 +153,7 @@ ecl_wait_on_timed(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object),
 	}
 
 	ecl_bds_bind(the_env, @'ext::*interrupts-enabled*', Cnil);
-	CL_UNWIND_PROTECT_BEGIN(the_env) {
+	ECL_UNWIND_PROTECT_BEGIN(the_env) {
 		/* 2) Now we add ourselves to the queue. In order to
 		 * avoid a call to the GC, we try to reuse records. */
 		print_lock("adding to queue", o);
@@ -171,7 +171,7 @@ ecl_wait_on_timed(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object),
 			ecl_musleep(waiting_time(iteration++, &start), 1);
 		} while (Null(output = condition(the_env, o)));
 		ecl_bds_unwind1(the_env);
-	} CL_UNWIND_PROTECT_EXIT {
+	} ECL_UNWIND_PROTECT_EXIT {
 		/* 4) At this point we wrap up. We remove ourselves
 		 * from the queue and unblock the lisp interrupt
 		 * signal. Note that we recover the cons for later use.*/
@@ -191,7 +191,7 @@ ecl_wait_on_timed(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object),
 		if (/*Null(output) &&*/ (firstone == record)) {
 			ecl_wakeup_waiters(the_env, o, ECL_WAKEUP_ONE);
 		}
-	} CL_UNWIND_PROTECT_END;
+	} ECL_UNWIND_PROTECT_END;
 	ecl_bds_unwind1(the_env);
 	return output;
 }
@@ -257,7 +257,7 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 	/* 2) Now we add ourselves to the queue. */
 	wait_queue_nconc(the_env, o, record);
 
-	CL_UNWIND_PROTECT_BEGIN(the_env) {
+	ECL_UNWIND_PROTECT_BEGIN(the_env) {
 		/* 3) At this point we may receive signals, but we
 		 * might have missed a wakeup event if that happened
 		 * between 0) and 2), which is why we start with the
@@ -277,7 +277,7 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 				sigsuspend(&original);
 			} while (Null(output = condition(the_env, o)));
 		}
-	} CL_UNWIND_PROTECT_EXIT {
+	} ECL_UNWIND_PROTECT_EXIT {
 		/* 4) At this point we wrap up. We remove ourselves
 		 * from the queue and unblock the lisp interrupt
 		 * signal. Note that we recover the cons for later use.*/
@@ -301,7 +301,7 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 		/* 6) Restoring signals is done last, to ensure that
 		 * all cleanup steps are performed. */
 		pthread_sigmask(SIG_SETMASK, &original, NULL);
-	} CL_UNWIND_PROTECT_END;
+	} ECL_UNWIND_PROTECT_END;
 	return output;
 #else
 	return ecl_wait_on_timed(env, condition, o);

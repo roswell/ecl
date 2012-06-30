@@ -3079,11 +3079,11 @@ si_make_lambda(cl_object name, cl_object rest)
 	struct cl_compiler_env new_c_env;
 
 	c_new_env(the_env, &new_c_env, Cnil, 0);
-	CL_UNWIND_PROTECT_BEGIN(the_env) {
+	ECL_UNWIND_PROTECT_BEGIN(the_env) {
 		lambda = ecl_make_lambda(the_env, name, rest);
-	} CL_UNWIND_PROTECT_EXIT {
+	} ECL_UNWIND_PROTECT_EXIT {
 		the_env->c_env = old_c_env;
-	} CL_UNWIND_PROTECT_END;
+	} ECL_UNWIND_PROTECT_END;
 	@(return lambda)
 }
 
@@ -3108,7 +3108,7 @@ si_make_lambda(cl_object name, cl_object rest)
 	guess_environment(the_env, interpreter_env);
 	new_c_env.lex_env = env;
 	new_c_env.stepping = stepping != Cnil;
-	CL_UNWIND_PROTECT_BEGIN(the_env) {
+	ECL_UNWIND_PROTECT_BEGIN(the_env) {
                 if (Null(execute)) {
                         cl_index handle = asm_begin(the_env);
                         new_c_env.mode = FLAG_LOAD;
@@ -3120,11 +3120,11 @@ si_make_lambda(cl_object name, cl_object rest)
                 } else {
                         eval_form(the_env, form);
                 }
-	} CL_UNWIND_PROTECT_EXIT {
+	} ECL_UNWIND_PROTECT_EXIT {
 		/* Clear up */
 		the_env->c_env = old_c_env;
 		memset(&new_c_env, 0, sizeof(new_c_env));
-	} CL_UNWIND_PROTECT_END;
+	} ECL_UNWIND_PROTECT_END;
 	return the_env->values[0];
 @)
 

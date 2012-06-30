@@ -395,12 +395,12 @@ extern void cl_write_object(cl_object x, cl_object stream);
         const cl_object __ecl_the_lock = lock;          \
         ecl_disable_interrupts_env(the_env);            \
         mp_get_lock_wait(__ecl_the_lock);               \
-        CL_UNWIND_PROTECT_BEGIN(__ecl_the_env);	        \
+        ECL_UNWIND_PROTECT_BEGIN(__ecl_the_env);	        \
 	ecl_enable_interrupts_env(__ecl_the_env);
 # define ECL_WITH_LOCK_END                                    \
-        CL_UNWIND_PROTECT_EXIT {                              \
+        ECL_UNWIND_PROTECT_EXIT {                              \
                 mp_giveup_lock(__ecl_the_lock);               \
-        } CL_UNWIND_PROTECT_END; }
+        } ECL_UNWIND_PROTECT_END; }
 # define ECL_WITH_SPINLOCK_BEGIN(the_env,lock) {		\
         const cl_env_ptr __ecl_the_env = (the_env);		\
         cl_object *__ecl_the_lock = (lock);			\
@@ -456,6 +456,13 @@ extern cl_object ecl_deserialize(uint8_t *data);
 #define ecl_vector_start_end ecl_sequence_start_end
 
 /* stacks.d */
+#define CL_NEWENV_BEGIN {\
+	const cl_env_ptr the_env = ecl_process_env(); \
+	cl_index __i = ecl_stack_push_values(the_env); \
+
+#define CL_NEWENV_END \
+	ecl_stack_pop_values(the_env,__i); }
+
 extern void ecl_cs_set_org(cl_env_ptr env);
 
 /* threads.d */

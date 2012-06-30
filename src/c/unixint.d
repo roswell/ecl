@@ -1153,7 +1153,7 @@ asynchronous_signal_servicing_thread()
 		sigaddset(&handled_set, interrupt_signal);
 		pthread_sigmask(SIG_SETMASK, &handled_set, NULL);
 	}
-	CL_CATCH_ALL_BEGIN(the_env) {
+	ECL_CATCH_ALL_BEGIN(the_env) {
 	for (;;) {
 		/* Waiting may fail! */
 		int status = sigwait(&handled_set, &signo);
@@ -1193,7 +1193,7 @@ asynchronous_signal_servicing_thread()
 			}
 		}
 	}
-	} CL_CATCH_ALL_END;
+	} ECL_CATCH_ALL_END;
 	ecl_return0(the_env);
 }
 #endif

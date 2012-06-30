@@ -101,7 +101,7 @@ out_of_memory(size_t requested_bytes)
         /* But then we have to ensure the error has not been solved */
 #ifdef ECL_THREADS
         mp_get_lock_wait(cl_core.error_lock);
-        CL_UNWIND_PROTECT_BEGIN(the_env)
+        ECL_UNWIND_PROTECT_BEGIN(the_env)
 #endif
 {
         failure = 0;
@@ -138,10 +138,10 @@ out_of_memory(size_t requested_bytes)
         (void)0;
 }
 #ifdef ECL_THREADS
-        CL_UNWIND_PROTECT_EXIT {
+        ECL_UNWIND_PROTECT_EXIT {
                 mp_giveup_lock(cl_core.error_lock);
                 ecl_enable_interrupts_env(the_env);
-        } CL_UNWIND_PROTECT_END;
+        } ECL_UNWIND_PROTECT_END;
 #else
         ecl_enable_interrupts_env(the_env);
 #endif

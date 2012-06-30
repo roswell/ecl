@@ -2268,7 +2268,7 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
 	block->cblock.entry = entry_point;
 
 	in = OBJNULL;
-	CL_UNWIND_PROTECT_BEGIN(env) {
+	ECL_UNWIND_PROTECT_BEGIN(env) {
                 cl_index bds_ndx;
                 cl_object progv_list;
 
@@ -2398,12 +2398,12 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
 			ecl_dealloc(VVtemp);
 		}
 		ecl_bds_unwind1(env);
-	} CL_UNWIND_PROTECT_EXIT {
+	} ECL_UNWIND_PROTECT_EXIT {
 		if (in != OBJNULL)
 			cl_close(1,in);
 		env->packages_to_be_created = old_eptbc;
                 env->packages_to_be_created_p = Cnil;
-	} CL_UNWIND_PROTECT_END;
+	} ECL_UNWIND_PROTECT_END;
 
 	return block;
 }

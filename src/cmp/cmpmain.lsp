@@ -279,11 +279,11 @@ extern int
 main(int argc, char **argv)
 {
 	cl_boot(argc, argv);
-	CL_CATCH_ALL_BEGIN(ecl_process_env()) {
+	ECL_CATCH_ALL_BEGIN(ecl_process_env()) {
 	~A
 	ecl_init_module(OBJNULL, ~A);
 	~A
-	} CL_CATCH_ALL_END;
+	} ECL_CATCH_ALL_END;
 	si_exit(0);
 }")
 
@@ -292,11 +292,11 @@ extern int
 ~A(int argc, char **argv)
 {
 	cl_boot(argc, argv);
-	CL_CATCH_ALL_BEGIN(ecl_process_env()) {
+	ECL_CATCH_ALL_BEGIN(ecl_process_env()) {
 	~A
 	ecl_init_module(OBJNULL, ~A);
 	~A
-	} CL_CATCH_ALL_END;
+	} ECL_CATCH_ALL_END;
 }")
 
 #+:win32
@@ -309,11 +309,11 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
 	int argc;
 	ecl_get_commandline_args(&argc, &argv);
 	cl_boot(argc, argv);
-	CL_CATCH_ALL_BEGIN(ecl_process_env()) {
+	ECL_CATCH_ALL_BEGIN(ecl_process_env()) {
 	~A
 	ecl_init_module(OBJNULL, ~A);
 	~A
-	} CL_CATCH_ALL_END;
+	} ECL_CATCH_ALL_END;
 	si_exit(0);
 }")
 

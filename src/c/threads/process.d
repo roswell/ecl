@@ -254,7 +254,7 @@ thread_entry_point(void *arg)
 	*     provides us with an elegant way to exit the thread: we just
 	*     do an unwind up to frs_top.
 	*/
-	CL_CATCH_ALL_BEGIN(env) {
+	ECL_CATCH_ALL_BEGIN(env) {
 #ifdef HAVE_SIGPROCMASK
 		{
 		sigset_t *new = (sigset_t*)env->default_sigmask;
@@ -279,7 +279,7 @@ thread_entry_point(void *arg)
 		 * so that the unwinding is not interrupted. */
 		process->process.phase = ECL_PROCESS_EXITING;
 		ecl_bds_unwind1(env);
-	} CL_CATCH_ALL_END;
+	} ECL_CATCH_ALL_END;
 
 	/* 4) If everything went right, we should be exiting the thread
 	 *    through this point. thread_cleanup is automatically invoked
@@ -420,11 +420,11 @@ cl_object
 mp_suspend_loop()
 {
         cl_env_ptr env = ecl_process_env();
-        CL_CATCH_BEGIN(env,@'mp::suspend-loop') {
+        ECL_CATCH_BEGIN(env,@'mp::suspend-loop') {
                 for ( ; ; ) {
                         cl_sleep(ecl_make_fixnum(100));
                 }
-        } CL_CATCH_END;
+        } ECL_CATCH_END;
 	ecl_return0(env);
 }
 

@@ -101,7 +101,7 @@ si_load_source(cl_object source, cl_object verbose, cl_object print, cl_object e
 		if (Null(strm))
 			@(return Cnil)
 	}
-	CL_UNWIND_PROTECT_BEGIN(the_env) {
+	ECL_UNWIND_PROTECT_BEGIN(the_env) {
 		cl_object form_index = ecl_make_fixnum(0);
                 cl_object pathname = ECL_SYM_VAL(the_env, @'*load-pathname*');
 		cl_object location = CONS(pathname, form_index);
@@ -121,14 +121,14 @@ si_load_source(cl_object source, cl_object verbose, cl_object print, cl_object e
                         }
 		}
 		ecl_bds_unwind1(the_env);
-	} CL_UNWIND_PROTECT_EXIT {
+	} ECL_UNWIND_PROTECT_EXIT {
 		/* We do not want to come back here if close_stream fails,
 		   therefore, first we frs_pop() current jump point, then
 		   try to close the stream, and then jump to next catch
 		   point */
 		if (strm != source)
 			cl_close(3, strm, @':abort', @'t');
-	} CL_UNWIND_PROTECT_END;
+	} ECL_UNWIND_PROTECT_END;
 	@(return Cnil)
 }
 
@@ -150,7 +150,7 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
 		if (Null(strm))
 			@(return Cnil)
 	}
-	CL_UNWIND_PROTECT_BEGIN(env) {
+	ECL_UNWIND_PROTECT_BEGIN(env) {
                 {
                 cl_object progv_list = ECL_SYM_VAL(env, @'si::+ecl-syntax-progv-list+');
                 cl_index bds_ndx = ecl_progv(env, ECL_CONS_CAR(progv_list),
@@ -185,14 +185,14 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
 				2, x, source);
 		}
                 }
-	} CL_UNWIND_PROTECT_EXIT {
+	} ECL_UNWIND_PROTECT_EXIT {
 		/* We do not want to come back here if close_stream fails,
 		   therefore, first we frs_pop() current jump point, then
 		   try to close the stream, and then jump to next catch
 		   point */
 		if (strm != source)
 			cl_close(3, strm, @':abort', @'t');
-	} CL_UNWIND_PROTECT_END;
+	} ECL_UNWIND_PROTECT_END;
 	@(return Cnil)
 }
 

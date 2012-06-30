@@ -110,7 +110,7 @@ static cl_object si_simple_toplevel ()
 	int i;
 
 	/* Simple minded top level loop */
-        CL_CATCH_ALL_BEGIN(env) {
+        ECL_CATCH_ALL_BEGIN(env) {
                 writestr_stream(";*** Lisp core booted ****\n"
                                 "ECL (Embeddable Common Lisp)\n",
                                 output);
@@ -127,7 +127,7 @@ static cl_object si_simple_toplevel ()
 			sentence = si_eval_with_env(1, sentence);
                         ecl_prin1(sentence, output);
                 }
-        } CL_CATCH_ALL_END;
+        } ECL_CATCH_ALL_END;
 }
 
 int

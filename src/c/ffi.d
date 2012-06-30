@@ -705,7 +705,7 @@ si_load_foreign_module(cl_object filename)
 
 # ifdef ECL_THREADS
 	mp_get_lock(1, ecl_symbol_value(@'mp::+load-compile-lock+'));
-	CL_UNWIND_PROTECT_BEGIN(ecl_process_env()) {
+	ECL_UNWIND_PROTECT_BEGIN(ecl_process_env()) {
 # endif
 	output = ecl_library_open(filename, 0);
 	if (output->cblock.handle == NULL) {
@@ -714,9 +714,9 @@ si_load_foreign_module(cl_object filename)
 	}
 # ifdef ECL_THREADS
 	(void)0; /* MSVC complains about missing ';' before '}' */
-	} CL_UNWIND_PROTECT_EXIT {
+	} ECL_UNWIND_PROTECT_EXIT {
 	mp_giveup_lock(ecl_symbol_value(@'mp::+load-compile-lock+'));
-	} CL_UNWIND_PROTECT_END;
+	} ECL_UNWIND_PROTECT_END;
 # endif
 	if (ecl_unlikely(type_of(output) != t_codeblock)) {
 		FEerror("LOAD-FOREIGN-MODULE: Could not load "
