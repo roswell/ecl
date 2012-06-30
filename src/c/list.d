@@ -102,13 +102,13 @@ setup_test(struct cl_test *t, cl_object item, cl_object test,
 		if (test_not != ECL_NIL)
 		    FEerror("Both :TEST and :TEST-NOT are specified.", 0);
 		t->test_function = test = si_coerce_to_function(test);
-		if (test == SYM_FUN(@'eq')) {
+		if (test == ECL_SYM_FUN(@'eq')) {
 			t->test_c_function = test_eq;
-		} else if (test == SYM_FUN(@'eql')) {
+		} else if (test == ECL_SYM_FUN(@'eql')) {
 			t->test_c_function = test_eql;
-		} else if (test == SYM_FUN(@'equal')) {
+		} else if (test == ECL_SYM_FUN(@'equal')) {
 			t->test_c_function = test_equal;
-		} else if (test == SYM_FUN(@'equalp')) {
+		} else if (test == ECL_SYM_FUN(@'equalp')) {
 			t->test_c_function = test_equalp;
 		} else {
 			t->test_c_function = test_compare;

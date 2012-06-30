@@ -30,7 +30,7 @@ fill_spec_vector(cl_object vector, cl_object gfun, cl_object instance)
 {
 	cl_object *argtype = vector->vector.self.t;
 	argtype[0] = gfun;
-	argtype[1] = CLASS_OF(instance);
+	argtype[1] = ECL_CLASS_OF(instance);
 	vector->vector.fillp = 2;
 	return vector;
 }
@@ -58,7 +58,7 @@ slot_method_index(cl_object gfun, cl_object instance, cl_object args)
 		return OBJNULL;
 	else {
 		cl_object table = _ecl_funcall3(@'slot-value',
-						CLASS_OF(instance),
+						ECL_CLASS_OF(instance),
 						@'clos::slot-table');
 		cl_object slotd = ecl_gethash_safe(slot_name, table, OBJNULL);
 		return _ecl_funcall2(@'clos::slot-definition-location', slotd);
@@ -131,7 +131,7 @@ ecl_slot_reader_dispatch(cl_narg narg, cl_object instance)
 	unlikely_if (value == ECL_UNBOUND) {
 		cl_object slot_name = slot_method_name(gfun, ecl_list1(instance));
 		value = _ecl_funcall4(@'slot-unbound',
-				      CLASS_OF(instance),
+				      ECL_CLASS_OF(instance),
 				      instance,
 				      slot_name);
 	}

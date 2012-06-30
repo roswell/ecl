@@ -110,7 +110,7 @@ mangle_name(cl_object output, unsigned char *source, int l)
 		if ((t == t_cfun || t == t_cfunfixed) && fun->cfun.block == OBJNULL) {
 			for (l = 0; l <= cl_num_symbols_in_core; l++) {
 				cl_object s = (cl_object)(cl_symbols + l);
-				if (fun == SYM_FUN(s)) {
+				if (fun == ECL_SYM_FUN(s)) {
 					symbol = s;
 					found = ECL_T;
 					if (fun->cfun.narg >= 0) {
@@ -203,7 +203,7 @@ make_this_symbol(int i, cl_object s, int code, const char *name,
 	s->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
 #endif
 	ECL_SET(s, OBJNULL);
-	SYM_FUN(s) = ECL_NIL;
+	ECL_SYM_FUN(s) = ECL_NIL;
 	s->symbol.plist = ECL_NIL;
 	s->symbol.hpack = ECL_NIL;
 	s->symbol.stype = stp;
@@ -235,7 +235,7 @@ make_this_symbol(int i, cl_object s, int code, const char *name,
 		} else {
 			f = ecl_make_cfun_va(fun, s, NULL);
 		}
-		SYM_FUN(s) = f;
+		ECL_SYM_FUN(s) = f;
 	}
 	cl_num_symbols_in_core = i + 1;
 }

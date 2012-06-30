@@ -171,7 +171,7 @@ BEGIN:
 	case t_symbol:
 		mark_object(x->symbol.name);
 		mark_object(x->symbol.plist);
-		mark_object(SYM_FUN(x));
+		mark_object(ECL_SYM_FUN(x));
 		mark_next(SYM_VAL(x));
 		break;
 

@@ -236,8 +236,8 @@ cl_type_of(cl_object x)
 	switch (tx) {
 #ifdef CLOS
         case t_instance: {
-		cl_object cl = CLASS_OF(x);
-		t = CLASS_NAME(cl);
+		cl_object cl = ECL_CLASS_OF(x);
+		t = ECL_CLASS_NAME(cl);
 		if (t == ECL_NIL || cl != cl_find_class(2, t, ECL_NIL))
 			t = cl;
 		break;

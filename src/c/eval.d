@@ -73,7 +73,7 @@ ecl_apply_from_stack_frame(cl_object frame, cl_object x)
 	case t_symbol:
 		if (ecl_unlikely(fun->symbol.stype & ecl_stp_macro))
 			FEundefined_function(x);
-		fun = SYM_FUN(fun);
+		fun = ECL_SYM_FUN(fun);
 		goto AGAIN;
 	case t_bytecodes:
 		return ecl_interpret(frame, ECL_NIL, fun);
@@ -109,7 +109,7 @@ ecl_function_dispatch(cl_env_ptr env, cl_object x)
 	case t_symbol:
 		if (ecl_unlikely(fun->symbol.stype & ecl_stp_macro))
 			FEundefined_function(x);
-		fun = SYM_FUN(fun);
+		fun = ECL_SYM_FUN(fun);
 		goto AGAIN;
 	case t_bytecodes:
 		env->function = fun;

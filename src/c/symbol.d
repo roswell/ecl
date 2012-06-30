@@ -112,7 +112,7 @@ cl_make_symbol(cl_object str)
 	x->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
 #endif	/*  */
 	ECL_SET(x,OBJNULL);
-	SYM_FUN(x) = ECL_NIL;
+	ECL_SYM_FUN(x) = ECL_NIL;
 	x->symbol.plist = ECL_NIL;
 	x->symbol.hpack = ECL_NIL;
 	x->symbol.stype = ecl_stp_ordinary;

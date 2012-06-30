@@ -77,7 +77,7 @@ search_macro_function(cl_object name, cl_object env)
 		}
 	}
 	if (type & ecl_stp_macro) {
-		return SYM_FUN(name);
+		return ECL_SYM_FUN(name);
 	} else {
 		return ECL_NIL;
 	}

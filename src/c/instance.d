@@ -23,7 +23,7 @@ ecl_allocate_instance(cl_object clas, cl_index size)
 {
 	cl_object x = ecl_alloc_instance(size);
 	cl_index i;
-	CLASS_OF(x) = clas;
+	ECL_CLASS_OF(x) = clas;
 	for (i = 0;  i < size;  i++)
 		x->instance.slots[i] = ECL_UNBOUND;
 	return x;
@@ -52,7 +52,7 @@ si_instance_sig(cl_object x)
 cl_object
 si_instance_sig_set(cl_object x)
 {
-	@(return (x->instance.sig = CLASS_SLOTS(CLASS_OF(x))));
+	@(return (x->instance.sig = ECL_CLASS_SLOTS(ECL_CLASS_OF(x))));
 }
 
 cl_object
@@ -60,7 +60,7 @@ si_instance_class(cl_object x)
 {
 	if (ecl_unlikely(!ECL_INSTANCEP(x)))
                 FEwrong_type_only_arg(@[class-of], x, @[ext::instance]);
-	@(return CLASS_OF(x))
+	@(return ECL_CLASS_OF(x))
 }
 
 cl_object
@@ -70,7 +70,7 @@ si_instance_class_set(cl_object x, cl_object y)
                 FEwrong_type_nth_arg(@[si::instance-class-set], 1, x, @[ext::instance]);
 	if (ecl_unlikely(!ECL_INSTANCEP(y)))
                 FEwrong_type_nth_arg(@[si::instance-class-set], 2, y, @[ext::instance]);
-	CLASS_OF(x) = y;
+	ECL_CLASS_OF(x) = y;
 	@(return x)
 }
 
@@ -289,7 +289,7 @@ cl_class_of(cl_object x)
 	size_t index;
 	switch (type_of(x)) {
 	case t_instance:
-		@(return CLASS_OF(x))
+		@(return ECL_CLASS_OF(x))
 	case t_fixnum:
 	case t_bignum:
 		index = ECL_BUILTIN_INTEGER; break;

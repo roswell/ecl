@@ -104,7 +104,7 @@ ecl_rem_setf_definition(cl_object sym)
 			type &= ~ecl_stp_macro;
 		}
 		ecl_symbol_type_set(sym, type);
-		SYM_FUN(sym) = def;
+		ECL_SYM_FUN(sym) = def;
 		ecl_clear_compiler_properties(sym);
 #ifndef ECL_CMU_FORMAT
 		if (pprint == ECL_NIL)
@@ -144,7 +144,7 @@ cl_fmakunbound(cl_object fname)
 	}
 	if (ECL_SYMBOLP(fname)) {
 		ecl_clear_compiler_properties(sym);
-		SYM_FUN(sym) = ECL_NIL;
+		ECL_SYM_FUN(sym) = ECL_NIL;
 		ecl_symbol_type_set(sym, ecl_symbol_type(sym) & ~ecl_stp_macro);
 	} else {
 		ecl_rem_setf_definition(sym);

@@ -29,10 +29,10 @@
 static bool
 structure_subtypep(cl_object x, cl_object y)
 {
-	if (CLASS_NAME(x) == y) {
+	if (ECL_CLASS_NAME(x) == y) {
 		return TRUE;
 	} else {
-		cl_object superiors = CLASS_SUPERIORS(x);
+		cl_object superiors = ECL_CLASS_SUPERIORS(x);
 		loop_for_on_unsafe(superiors) {
 			if (structure_subtypep(ECL_CONS_CAR(superiors), y))
 				return TRUE;
@@ -183,7 +183,7 @@ cl_object
 si_structurep(cl_object s)
 {
 #ifdef CLOS
-	if (ECL_INSTANCEP(s) && structure_subtypep(CLASS_OF(s), @'structure-object'))
+	if (ECL_INSTANCEP(s) && structure_subtypep(ECL_CLASS_OF(s), @'structure-object'))
 		return ECL_T;
 #else
 	if (type_of(s) == t_structure)

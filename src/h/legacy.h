@@ -191,3 +191,12 @@ enum {	/*  stream mode  */
 
 #define Cnil ECL_NIL
 #define Ct ECL_T
+
+#define SYM_FUN(x) ECL_SYM_FUN(x)
+
+#define CLASS_OF(x) ECL_CLASS_OF(x)
+#define CLASS_NAME(x) ECL_CLASS_NAME(x)
+#define CLASS_SUPERIORS(x) ECL_CLASS_SUPERIORS(x)
+#define CLASS_INFERIORS(x) ECL_CLASS_INFERIORS(x)
+#define CLASS_SLOTS(x) ECL_CLASS_SLOTS(x)
+#define CLASS_CPL(x) ECL_CLASS_CPL(x)

@@ -266,7 +266,7 @@ struct ecl_symbol {
         cl_index binding;	/*  index into the bindings array  */
 #endif
 };
-#define SYM_FUN(sym)	((sym)->symbol.gfdef)
+#define ECL_SYM_FUN(sym)	((sym)->symbol.gfdef)
 
 struct ecl_package {
 	_ECL_HDR1(locked);
@@ -490,11 +490,11 @@ struct ecl_string {		/*  string header  */
 
 #ifdef CLOS
 #define T_STRUCTURE	t_instance
-#define STYPE(x)	CLASS_OF(x)
+#define STYPE(x)	ECL_CLASS_OF(x)
 #define SLOTS(x)	(x)->instance.slots
 #define SLENGTH(x)	(x)->instance.length
 #define SLOT(x,i)	(x)->instance.slots[i]
-#define SNAME(x)	CLASS_NAME(CLASS_OF(x))
+#define SNAME(x)	ECL_CLASS_NAME(ECL_CLASS_OF(x))
 #else
 struct ecl_structure {		/*  structure header  */
 	_ECL_HDR;
@@ -956,14 +956,14 @@ struct ecl_condition_variable {
 #endif /* ECL_THREADS */
 
 #ifdef CLOS
-#define CLASS_OF(x)		(x)->instance.clas
+#define ECL_CLASS_OF(x)		(x)->instance.clas
 #define ECL_SPEC_FLAG(x)	(x)->instance.slots[0]
 #define ECL_SPEC_OBJECT(x)	(x)->instance.slots[3]
-#define CLASS_NAME(x)		(x)->instance.slots[3+0]
-#define CLASS_SUPERIORS(x)	(x)->instance.slots[3+1]
-#define CLASS_INFERIORS(x)	(x)->instance.slots[3+2]
-#define CLASS_SLOTS(x)		(x)->instance.slots[3+3]
-#define CLASS_CPL(x)		(x)->instance.slots[3+4]
+#define ECL_CLASS_NAME(x)		(x)->instance.slots[3+0]
+#define ECL_CLASS_SUPERIORS(x)	(x)->instance.slots[3+1]
+#define ECL_CLASS_INFERIORS(x)	(x)->instance.slots[3+2]
+#define ECL_CLASS_SLOTS(x)		(x)->instance.slots[3+3]
+#define ECL_CLASS_CPL(x)		(x)->instance.slots[3+4]
 #define ECL_INSTANCEP(x)	((ECL_IMMEDIATE(x)==0) && ((x)->d.t==t_instance))
 #define ECL_NOT_FUNCALLABLE	0
 #define ECL_STANDARD_DISPATCH	1

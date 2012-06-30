@@ -32,12 +32,12 @@ cl_symbol_function(cl_object sym)
 	int type = ecl_symbol_type(sym);
 	if (type & ecl_stp_special_form) {
 		output = @'special';
-	} else if (Null(sym) || (SYM_FUN(sym) == ECL_NIL)) {
+	} else if (Null(sym) || (ECL_SYM_FUN(sym) == ECL_NIL)) {
 		FEundefined_function(sym);
 	} else if (type & ecl_stp_macro) {
-		output = CONS(@'si::macro', SYM_FUN(sym));
+		output = CONS(@'si::macro', ECL_SYM_FUN(sym));
 	} else {
-		output = SYM_FUN(sym);
+		output = ECL_SYM_FUN(sym);
 	}
 	@(return output)
 }
@@ -55,7 +55,7 @@ cl_fboundp(cl_object fname)
 		@(return ECL_NIL);
 	} else if (ECL_SYMBOLP(fname)) {
 		@(return (((fname->symbol.stype & ecl_stp_special_form)
-			   || SYM_FUN(fname) != ECL_NIL)? ECL_T : ECL_NIL))
+			   || ECL_SYM_FUN(fname) != ECL_NIL)? ECL_T : ECL_NIL))
 	} else if (LISTP(fname)) {
 		if (CAR(fname) == @'setf') {
 			cl_object sym = CDR(fname);
@@ -79,7 +79,7 @@ ecl_fdefinition(cl_object fun)
 	cl_object output;
 
 	if (t == t_symbol) {
-		output = SYM_FUN(fun);
+		output = ECL_SYM_FUN(fun);
 		unlikely_if (output == ECL_NIL)
 			FEundefined_function(fun);
 		unlikely_if (fun->symbol.stype & (ecl_stp_macro | ecl_stp_special_form))

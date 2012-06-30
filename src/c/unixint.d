@@ -1116,7 +1116,7 @@ BOOL WINAPI W32_console_ctrl_handler(DWORD type)
 	{
 		/* Catch CTRL-C */
 	case CTRL_C_EVENT: {
-		cl_object function = SYM_FUN(@'si::terminal-interrupt');
+		cl_object function = ECL_SYM_FUN(@'si::terminal-interrupt');
 		if (function)
 			W32_handle_in_new_thread(function);
 		return TRUE;

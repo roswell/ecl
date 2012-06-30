@@ -409,7 +409,7 @@ ONCE_MORE:
 #ifdef CLOS
 	case t_instance:
 	  obj->instance.length = 0;
-	  CLASS_OF(obj) = OBJNULL;
+	  ECL_CLASS_OF(obj) = OBJNULL;
 	  obj->instance.sig = ECL_NIL;
 	  obj->instance.isgf = 0;
 	  obj->instance.slots = NULL;

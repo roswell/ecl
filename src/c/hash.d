@@ -792,22 +792,22 @@ cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
 	/*
 	 * Argument checking
 	 */
-	if (test == @'eq' || test == SYM_FUN(@'eq')) {
+	if (test == @'eq' || test == ECL_SYM_FUN(@'eq')) {
 		htt = ecl_htt_eq;
 		get = _ecl_gethash_eq;
 		set = _ecl_sethash_eq;
 		rem = _ecl_remhash_eq;
-	} else if (test == @'eql' || test == SYM_FUN(@'eql')) {
+	} else if (test == @'eql' || test == ECL_SYM_FUN(@'eql')) {
 		htt = ecl_htt_eql;
 		get = _ecl_gethash_eql;
 		set = _ecl_sethash_eql;
 		rem = _ecl_remhash_eql;
-	} else if (test == @'equal' || test == SYM_FUN(@'equal')) {
+	} else if (test == @'equal' || test == ECL_SYM_FUN(@'equal')) {
 		htt = ecl_htt_equal;
 		get = _ecl_gethash_equal;
 		set = _ecl_sethash_equal;
 		rem = _ecl_remhash_equal;
-	} else if (test == @'equalp' || test == SYM_FUN(@'equalp')) {
+	} else if (test == @'equalp' || test == ECL_SYM_FUN(@'equalp')) {
 		htt = ecl_htt_equalp;
 		get = _ecl_gethash_equalp;
 		set = _ecl_sethash_equalp;

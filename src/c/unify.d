@@ -123,7 +123,7 @@ get_instance(object x, object class, int arity)
 {
 RETRY:	switch (type_of(x)) {
 	case t_instance: 
-	if (CLASS_OF(x) == class) {
+	if (ECL_CLASS_OF(x) == class) {
 	  slot = x->instance.slots;
 	  slotf = get_slot;
 	  return(TRUE);
@@ -188,7 +188,7 @@ unify(object x, object y)
        L2: switch (type_of(y)) {
 
        case t_instance:
-	 if (CLASS_OF(x) == CLASS_OF(y)) {
+	 if (ECL_CLASS_OF(x) == ECL_CLASS_OF(y)) {
 	   int l = x->instance.length; int i;
 	   object *slotx = x->instance.slots;
 	   object *sloty = y->instance.slots;
@@ -288,7 +288,7 @@ object Ssetq, Sunify_slot;
 
 #define make_si_macro(name, cfun)	\
 	{object x = make_si_ordinary(name); \
-	   SYM_FUN(x) = make_cfun(cfun, ECL_NIL, NULL); \
+	   ECL_SYM_FUN(x) = make_cfun(cfun, ECL_NIL, NULL); \
 	   x->symbol.mflag = TRUE; \
 	 }
 

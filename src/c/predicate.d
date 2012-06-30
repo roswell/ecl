@@ -481,7 +481,7 @@ BEGIN:
 #ifdef CLOS
 	case t_instance: {
 		cl_index i;
-		if ((ty != tx) || (CLASS_OF(x) != CLASS_OF(y)))
+		if ((ty != tx) || (ECL_CLASS_OF(x) != ECL_CLASS_OF(y)))
 			return(FALSE);
 		for (i = 0;  i < x->instance.length;  i++)
 			if (!ecl_equalp(x->instance.slots[i], y->instance.slots[i]))

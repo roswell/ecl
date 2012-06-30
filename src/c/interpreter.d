@@ -419,7 +419,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 		cl_object s;
 		cl_objectfn_fixed f;
 		GET_DATA(s, vector, data);
-		f = SYM_FUN(s)->cfunfixed.entry_fixed;
+		f = ECL_SYM_FUN(s)->cfunfixed.entry_fixed;
 		SETUP_ENV(the_env);
 		reg0 = f(reg0);
 		THREAD_NEXT;
@@ -429,7 +429,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 		cl_object s;
 		cl_objectfn_fixed f;
 		GET_DATA(s, vector, data);
-		f = SYM_FUN(s)->cfunfixed.entry_fixed;
+		f = ECL_SYM_FUN(s)->cfunfixed.entry_fixed;
 		SETUP_ENV(the_env);
 		reg0 = f(ECL_STACK_POP_UNSAFE(the_env), reg0);
 		THREAD_NEXT;
@@ -523,7 +523,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 		case t_symbol:
 			if (ecl_unlikely(reg0->symbol.stype & ecl_stp_macro))
 				FEundefined_function(x);
-			reg0 = SYM_FUN(reg0);
+			reg0 = ECL_SYM_FUN(reg0);
 			goto AGAIN;
 		case t_bytecodes:
 			reg0 = ecl_interpret(frame, ECL_NIL, reg0);
