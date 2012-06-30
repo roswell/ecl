@@ -56,6 +56,8 @@ ECL 12.2.2:
    etc, which correspond to the POSIX C constants INT_MAX, INT_MIN, LONG_MAX,
    and similar ones.
 
+ - APROPOS-LIST no longer returns duplicate symbols.
+
 * Windows:
 
  - ECL guesses whether the input / output / error streams are consoles. If
