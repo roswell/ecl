@@ -426,7 +426,7 @@ return f2;
     (wt-h ";"))
   (when *ihs-used-p*
     (wt-h " \\")
-    (wt-nl-h "struct ihs_frame ihs; \\")
+    (wt-nl-h "struct ecl_ihs_frame ihs; \\")
     (wt-nl-h "const cl_object _ecl_debug_env = Cnil;"))
   (wt-nl-h "#define VLEX" *reservation-cmacro*)
   ;; There should be no need to mark lex as volatile, since we

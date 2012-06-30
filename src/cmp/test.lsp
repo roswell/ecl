@@ -1,4 +1,4 @@
-y;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: C -*-
+all_y;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: C -*-
 ;;;;
 
 (in-package 'system)

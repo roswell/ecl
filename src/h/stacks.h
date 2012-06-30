@@ -35,17 +35,17 @@ extern "C" {
  * BIND STACK
  **************/
 
-typedef struct bds_bd {
+typedef struct ecl_bds_bd {
 	cl_object symbol;	/*  symbol  */
 	cl_object value;	/*  previous value of the symbol  */
-} *bds_ptr;
+} *ecl_bds_ptr;
 
 #define	ecl_bds_check(env) \
 	(ecl_unlikely(env->bds_top >= env->bds_limit)? (ecl_bds_overflow(),1) : 0)
 
 #define ECL_MISSING_SPECIAL_BINDING (~((cl_index)0))
 
-extern ECL_API struct bds_bd *ecl_bds_overflow(void);
+extern ECL_API ecl_bds_ptr ecl_bds_overflow(void);
 extern ECL_API void ecl_bds_bind(cl_env_ptr env, cl_object symbol, cl_object v);
 extern ECL_API void ecl_bds_push(cl_env_ptr env, cl_object symbol);
 extern ECL_API void ecl_bds_unwind1(cl_env_ptr env);
@@ -65,7 +65,7 @@ extern ECL_API cl_object ecl_bds_set(cl_env_ptr env, cl_object s, cl_object v);
 #ifdef __GNUC__
 static inline void ecl_bds_bind_inl(cl_env_ptr env, cl_object s, cl_object v)
 {
-        struct bds_bd *slot;
+        ecl_bds_ptr slot;
 # ifdef ECL_THREADS
         cl_object *location;
         const cl_index index = s->symbol.binding;
@@ -90,7 +90,7 @@ static inline void ecl_bds_bind_inl(cl_env_ptr env, cl_object s, cl_object v)
 
 static inline void ecl_bds_push_inl(cl_env_ptr env, cl_object s)
 {
-        struct bds_bd *slot;
+        ecl_bds_ptr slot;
 # ifdef ECL_THREADS
         cl_object *location;
         const cl_index index = s->symbol.binding;
@@ -114,7 +114,7 @@ static inline void ecl_bds_push_inl(cl_env_ptr env, cl_object s)
 
 static inline void ecl_bds_unwind1_inl(cl_env_ptr env)
 {
-	struct bds_bd *slot = env->bds_top--;
+	ecl_bds_ptr slot = env->bds_top--;
 	cl_object s = slot->symbol;
 # ifdef ECL_THREADS
         cl_object *location = env->thread_local_bindings + s->symbol.binding;
@@ -178,17 +178,17 @@ static inline cl_object ecl_bds_set_inl(cl_env_ptr env, cl_object s, cl_object v
  * INVOCATION HISTORY STACK
  ****************************/
 
-typedef struct ihs_frame {
-	struct ihs_frame *next;
+typedef struct ecl_ihs_frame {
+	struct ecl_ihs_frame *next;
 	cl_object function;
 	cl_object lex_env;
 	cl_index index;
         cl_index bds;
-} *ihs_ptr;
+} *ecl_ihs_ptr;
 
 #define ecl_ihs_push(env,rec,fun,lisp_env) do { \
 	const cl_env_ptr __the_env = (env);	\
-	struct ihs_frame * const r = (rec);	\
+	ecl_ihs_ptr  const r = (rec);	\
 	r->next=__the_env->ihs_top;		\
 	r->function=(fun);			\
 	r->lex_env=(lisp_env);			\
@@ -199,7 +199,7 @@ typedef struct ihs_frame {
 
 #define ecl_ihs_pop(env) do {				\
 	const cl_env_ptr __the_env = (env);		\
-	struct ihs_frame *r = __the_env->ihs_top;	\
+	ecl_ihs_ptr r = __the_env->ihs_top;	\
 	if (r) __the_env->ihs_top = r->next;		\
 } while(0)
 
@@ -232,7 +232,7 @@ typedef struct ecl_frame {
 	jmp_buf		frs_jmpbuf;
 	cl_object	frs_val;
 	cl_index	frs_bds_top_index;
-	ihs_ptr		frs_ihs;
+	ecl_ihs_ptr		frs_ihs;
 	cl_index	frs_sp;
 } *ecl_frame_ptr;
 

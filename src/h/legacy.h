@@ -153,3 +153,6 @@
 #define CL_CATCH_END ECL_CATCH_END
 #define CL_CATCH_ALL_BEGIN ECL_CATCH_ALL_BEGIN
 #define CL_CATCH_ALL_END ECL_CATCH_ALL_END
+
+typedef struct ecl_bds_bd *bds_ptr;
+typedef struct ecl_ihs_frame *ihs_ptr;

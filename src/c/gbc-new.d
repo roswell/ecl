@@ -450,9 +450,9 @@ mark_phase(void)
 {
 	register int i;
 	register struct package *pp;
-	register bds_ptr bdp;
+	register ecl_bds_ptr bdp;
 	register ecl_frame_ptr frp;
-	register ihs_ptr ihsp;
+	register ecl_ihs_ptr ihsp;
 
 	mark_object(Cnil);
 	mark_object(Ct);

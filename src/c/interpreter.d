@@ -276,7 +276,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 	cl_object reg0, reg1, lex_env = env;
 	cl_index narg;
 	struct ecl_stack_frame frame_aux;
-	volatile struct ihs_frame ihs;
+	volatile struct ecl_ihs_frame ihs;
 
         /* INV: bytecodes is of type t_bytecodes */
 

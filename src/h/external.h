@@ -45,16 +45,16 @@ struct cl_env_struct {
 	cl_object bindings_array;
 #endif
 	cl_index bds_size;
-	struct bds_bd *bds_org;
-	struct bds_bd *bds_top;
-	struct bds_bd *bds_limit;
+	struct ecl_bds_bd *bds_org;
+	struct ecl_bds_bd *bds_top;
+	struct ecl_bds_bd *bds_limit;
 
 	/*
 	 * The Invocation History Stack (IHS) keeps a list of the names of the
 	 * functions that are invoked, together with their lexical
 	 * environments.
 	 */
-	struct ihs_frame *ihs_top;
+	struct ecl_ihs_frame *ihs_top;
 
 	/*
 	 * The FRames Stack (FRS) is a list of frames or jump points, and it

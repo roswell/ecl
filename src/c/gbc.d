@@ -476,9 +476,9 @@ mark_cl_env(struct cl_env_struct *env)
 {
 	int i = 0;
 	cl_object where = 0;
-	bds_ptr bdp = 0;
+	ecl_bds_ptr bdp = 0;
 	ecl_frame_ptr frp = 0;
-	struct ihs_frame *ihs = 0;
+	ecl_ihs_ptr ihs = 0;
 
 	mark_contblock(env, sizeof(*env));
 

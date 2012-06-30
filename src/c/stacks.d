@@ -116,14 +116,14 @@ ecl_bds_unwind_n(cl_env_ptr env, int n)
 static void
 ecl_bds_set_size(cl_env_ptr env, cl_index size)
 {
-	bds_ptr old_org = env->bds_org;
+	ecl_bds_ptr old_org = env->bds_org;
 	cl_index limit = env->bds_top - old_org;
 	if (size <= limit) {
 		FEerror("Cannot shrink the binding stack below ~D.", 1,
 			ecl_make_unsigned_integer(limit));
 	} else {
 		cl_index margin = ecl_option_values[ECL_OPT_BIND_STACK_SAFETY_AREA];
-		bds_ptr org;
+		ecl_bds_ptr org;
 		org = ecl_alloc_atomic(size * sizeof(*org));
 
 		ecl_disable_interrupts_env(env);
@@ -138,7 +138,7 @@ ecl_bds_set_size(cl_env_ptr env, cl_index size)
 	}
 }
 
-struct bds_bd *
+ecl_bds_ptr 
 ecl_bds_overflow(void)
 {
         static const char *stack_overflow_msg =
@@ -148,8 +148,8 @@ ecl_bds_overflow(void)
 	cl_env_ptr env = ecl_process_env();
 	cl_index margin = ecl_option_values[ECL_OPT_BIND_STACK_SAFETY_AREA];
 	cl_index size = env->bds_size;
-	bds_ptr org = env->bds_org;
-	bds_ptr last = org + size;
+	ecl_bds_ptr org = env->bds_org;
+	ecl_bds_ptr last = org + size;
 	if (env->bds_limit >= last) {
                 ecl_unrecoverable_error(env, stack_overflow_msg);
 	}
@@ -164,8 +164,8 @@ ecl_bds_overflow(void)
 void
 ecl_bds_unwind(cl_env_ptr env, cl_index new_bds_top_index)
 {
-	bds_ptr new_bds_top = new_bds_top_index + env->bds_org;
-	bds_ptr bds = env->bds_top;
+	ecl_bds_ptr new_bds_top = new_bds_top_index + env->bds_org;
+	ecl_bds_ptr bds = env->bds_top;
 	for (;  bds > new_bds_top;  bds--)
 #ifdef ECL_THREADS
 		ecl_bds_unwind1(env);
@@ -198,12 +198,12 @@ ecl_progv(cl_env_ptr env, cl_object vars0, cl_object values0)
                 2, vars0, values0);
 }
 
-static bds_ptr
+static ecl_bds_ptr
 get_bds_ptr(cl_object x)
 {
 	if (ECL_FIXNUMP(x)) {
 		cl_env_ptr env = ecl_process_env();
-		bds_ptr p = env->bds_org + ecl_fixnum(x);
+		ecl_bds_ptr p = env->bds_org + ecl_fixnum(x);
 		if (env->bds_org <= p && p <= env->bds_top)
 			return(p);
 	}
@@ -296,7 +296,7 @@ ecl_bds_bind(cl_env_ptr env, cl_object s, cl_object v)
 {
 #ifdef ECL_THREADS
         cl_object *location;
-        struct bds_bd *slot;
+        ecl_bds_ptr slot;
         cl_index index = s->symbol.binding;
         if (index >= env->thread_local_bindings_size) {
                 index = invalid_or_too_large_binding_index(env,s);
@@ -320,7 +320,7 @@ ecl_bds_push(cl_env_ptr env, cl_object s)
 {
 #ifdef ECL_THREADS
         cl_object *location;
-        struct bds_bd *slot;
+        ecl_bds_ptr slot;
         cl_index index = s->symbol.binding;
         if (index >= env->thread_local_bindings_size) {
                 index = invalid_or_too_large_binding_index(env,s);
@@ -341,7 +341,7 @@ ecl_bds_push(cl_env_ptr env, cl_object s)
 void
 ecl_bds_unwind1(cl_env_ptr env)
 {
-	struct bds_bd *slot = env->bds_top--;
+	ecl_bds_ptr slot = env->bds_top--;
 	cl_object s = slot->symbol;
 #ifdef ECL_THREADS
         cl_object *location = env->thread_local_bindings + s->symbol.binding;
@@ -406,11 +406,11 @@ ihs_function_name(cl_object x)
 	}
 }
 
-static ihs_ptr
+static ecl_ihs_ptr
 get_ihs_ptr(cl_index n)
 {
 	cl_env_ptr env = ecl_process_env();
-	ihs_ptr p = env->ihs_top;
+	ecl_ihs_ptr p = env->ihs_top;
 	if (n > p->index)
 		FEerror("~D is an illegal IHS index.", 1, ecl_make_fixnum(n));
 	while (n < p->index)
@@ -643,7 +643,7 @@ si_get_limit(cl_object type)
 void
 init_stacks(cl_env_ptr env)
 {
-	static struct ihs_frame ihs_org = { NULL, NULL, NULL, 0};
+	static struct ecl_ihs_frame ihs_org = { NULL, NULL, NULL, 0};
 	cl_index size, margin;
 
 	margin = ecl_option_values[ECL_OPT_FRAME_STACK_SAFETY_AREA];
@@ -656,7 +656,7 @@ init_stacks(cl_env_ptr env)
 	margin = ecl_option_values[ECL_OPT_BIND_STACK_SAFETY_AREA];
 	size = ecl_option_values[ECL_OPT_BIND_STACK_SIZE] + 2 * margin;
 	env->bds_size = size;
-	env->bds_org = (bds_ptr)ecl_alloc_atomic(size * sizeof(*env->bds_org));
+	env->bds_org = (ecl_bds_ptr)ecl_alloc_atomic(size * sizeof(*env->bds_org));
 	env->bds_top = env->bds_org-1;
 	env->bds_limit = &env->bds_org[size - 2*margin];
 

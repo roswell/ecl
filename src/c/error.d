@@ -265,7 +265,7 @@ FEwrong_type_only_arg(cl_object function, cl_object value, cl_object type)
                 "the value of the only argument is~&  ~S~&which is "
                 "not of the expected type ~A";
         cl_env_ptr env = ecl_process_env();
-        struct ihs_frame tmp_ihs;
+        struct ecl_ihs_frame tmp_ihs;
         function = cl_symbol_or_object(function);
         type = cl_symbol_or_object(type);
         if (!Null(function) && env->ihs_top && env->ihs_top->function != function) {
@@ -288,7 +288,7 @@ FEwrong_type_nth_arg(cl_object function, cl_narg narg, cl_object value, cl_objec
                 "the value of the ~:R argument is~&  ~S~&which is "
                 "not of the expected type ~A";
         cl_env_ptr env = ecl_process_env();
-        struct ihs_frame tmp_ihs;
+        struct ecl_ihs_frame tmp_ihs;
         function = cl_symbol_or_object(function);
         type = cl_symbol_or_object(type);
         if (!Null(function) && env->ihs_top && env->ihs_top->function != function) {
@@ -312,7 +312,7 @@ FEwrong_type_key_arg(cl_object function, cl_object key, cl_object value, cl_obje
                 "the value of the argument ~S is~&  ~S~&which is "
                 "not of the expected type ~A";
         cl_env_ptr env = ecl_process_env();
-        struct ihs_frame tmp_ihs;
+        struct ecl_ihs_frame tmp_ihs;
         function = cl_symbol_or_object(function);
         type = cl_symbol_or_object(type);
         key = cl_symbol_or_object(key);
@@ -344,7 +344,7 @@ FEwrong_index(cl_object function, cl_object a, int which, cl_object ndx,
 	cl_object type = ecl_make_integer_type(ecl_make_fixnum(0), limit);
         cl_object message = make_constant_base_string((which<0) ? message1 : message2);
         cl_env_ptr env = ecl_process_env();
-        struct ihs_frame tmp_ihs;
+        struct ecl_ihs_frame tmp_ihs;
         function = cl_symbol_or_object(function);
         if (!Null(function) && env->ihs_top && env->ihs_top->function != function) {
                 ecl_ihs_push(env,&tmp_ihs,function,Cnil);
