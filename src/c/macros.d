@@ -125,7 +125,7 @@ search_macro_function(cl_object name, cl_object env)
 	done = Cnil;
 	do {
 		form = cl_macroexpand_1(2, old_form = form, env);
-		if (VALUES(1) == Cnil) {
+		if (ecl_nth_value(the_env, 1) == Cnil) {
 			break;
 		} else if (old_form == form) {
 			FEerror("Infinite loop when expanding macro form ~A", 1, old_form);

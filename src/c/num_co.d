@@ -139,7 +139,7 @@ ecl_floor1(cl_object x)
 		break;
 	case t_ratio:
 		v0 = ecl_floor2(x->ratio.num, x->ratio.den);
-		v1 = ecl_make_ratio(VALUES(1), x->ratio.den);
+		v1 = ecl_make_ratio(ecl_nth_value(the_env, 1), x->ratio.den);
 		break;
 	case t_singlefloat: {
 		float d = ecl_single_float(x);
@@ -208,7 +208,7 @@ ecl_floor2(cl_object x, cl_object y)
 		}
 		case t_ratio:		/* FIX / RAT */
 		  v0 = ecl_floor2(ecl_times(x, y->ratio.den), y->ratio.num);
-		  v1 = ecl_make_ratio(VALUES(1), y->ratio.den);
+		  v1 = ecl_make_ratio(ecl_nth_value(the_env, 1), y->ratio.den);
 		  break;
 		case t_singlefloat: {	/* FIX / SF */
 		  float n = ecl_single_float(y);
@@ -254,7 +254,7 @@ ecl_floor2(cl_object x, cl_object y)
 		}
 		case t_ratio:		/* BIG / RAT */
 		  v0 = ecl_floor2(ecl_times(x, y->ratio.den), y->ratio.num);
-		  v1 = ecl_make_ratio(VALUES(1), y->ratio.den);
+		  v1 = ecl_make_ratio(ecl_nth_value(the_env, 1), y->ratio.den);
 		  break;
 		case t_singlefloat: {	/* BIG / SF */
 		  float n = ecl_single_float(y);
@@ -291,11 +291,11 @@ ecl_floor2(cl_object x, cl_object y)
 		case t_ratio:		/* RAT / RAT */
 		  v0 = ecl_floor2(ecl_times(x->ratio.num, y->ratio.den),
 				  ecl_times(x->ratio.den, y->ratio.num));
-		  v1 = ecl_make_ratio(VALUES(1), ecl_times(x->ratio.den, y->ratio.den));
+		  v1 = ecl_make_ratio(ecl_nth_value(the_env, 1), ecl_times(x->ratio.den, y->ratio.den));
 		  break;
 		default:		/* RAT / ANY */
 		  v0 = ecl_floor2(x->ratio.num, ecl_times(x->ratio.den, y));
-		  v1 = ecl_divide(VALUES(1), x->ratio.den);
+		  v1 = ecl_divide(ecl_nth_value(the_env, 1), x->ratio.den);
 		}
 		break;
 	case t_singlefloat: {		/* SF / ANY */
@@ -351,10 +351,12 @@ ecl_ceiling1(cl_object x)
 		v0 = x;
 		v1 = ecl_make_fixnum(0);
 		break;
-	case t_ratio:
+	case t_ratio: {
+		const cl_env_ptr the_env = ecl_process_env();
 		v0 = ecl_ceiling2(x->ratio.num, x->ratio.den);
-		v1 = ecl_make_ratio(VALUES(1), x->ratio.den);
+		v1 = ecl_make_ratio(ecl_nth_value(the_env, 1), x->ratio.den);
 		break;
+	}
 	case t_singlefloat: {
 		float d = ecl_single_float(x);
 		float y = ceilf(d);
@@ -422,7 +424,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 		}
 		case t_ratio:		/* FIX / RAT */
 		  v0 = ecl_ceiling2(ecl_times(x, y->ratio.den), y->ratio.num);
-		  v1 = ecl_make_ratio(VALUES(1), y->ratio.den);
+		  v1 = ecl_make_ratio(ecl_nth_value(the_env, 1), y->ratio.den);
 		  break;
 		case t_singlefloat: {	/* FIX / SF */
 		  float n = ecl_single_float(y);
@@ -468,7 +470,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 		}
 		case t_ratio:		/* BIG / RAT */
 		  v0 = ecl_ceiling2(ecl_times(x, y->ratio.den), y->ratio.num);
-		  v1 = ecl_make_ratio(VALUES(1), y->ratio.den);
+		  v1 = ecl_make_ratio(ecl_nth_value(the_env, 1), y->ratio.den);
 		  break;
 		case t_singlefloat: {	/* BIG / SF */
 		  float n = ecl_single_float(y);
@@ -505,11 +507,11 @@ ecl_ceiling2(cl_object x, cl_object y)
 		case t_ratio:		/* RAT / RAT */
 		  v0 = ecl_ceiling2(ecl_times(x->ratio.num, y->ratio.den),
 				    ecl_times(x->ratio.den, y->ratio.num));
-		  v1 = ecl_make_ratio(VALUES(1), ecl_times(x->ratio.den, y->ratio.den));
+		  v1 = ecl_make_ratio(ecl_nth_value(the_env, 1), ecl_times(x->ratio.den, y->ratio.den));
 		  break;
 		default:		/* RAT / ANY */
 		  v0 = ecl_ceiling2(x->ratio.num, ecl_times(x->ratio.den, y));
-		  v1 = ecl_divide(VALUES(1), x->ratio.den);
+		  v1 = ecl_divide(ecl_nth_value(the_env, 1), x->ratio.den);
 		}
 		break;
 	case t_singlefloat: {		/* SF / ANY */
@@ -565,7 +567,7 @@ ecl_truncate1(cl_object x)
 		break;
 	case t_ratio:
 		v0 = ecl_truncate2(x->ratio.num, x->ratio.den);
-		v1 = ecl_make_ratio(VALUES(1), x->ratio.den);
+		v1 = ecl_make_ratio(ecl_nth_value(the_env, 1), x->ratio.den);
 		break;
 	case t_singlefloat: {
 		float d = ecl_single_float(x);
@@ -662,7 +664,7 @@ ecl_round1(cl_object x)
 		break;
 	case t_ratio:
 		v0 = ecl_round2(x->ratio.num, x->ratio.den);
-		v1 = ecl_make_ratio(VALUES(1), x->ratio.den);
+		v1 = ecl_make_ratio(ecl_nth_value(the_env, 1), x->ratio.den);
 		break;
 	case t_singlefloat: {
 		float d = ecl_single_float(x);

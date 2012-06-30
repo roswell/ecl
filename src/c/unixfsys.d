@@ -705,6 +705,7 @@ static cl_object
 list_directory(cl_object base_dir, cl_object text_mask, cl_object pathname_mask,
                int flags)
 {
+	const cl_env_ptr the_env = ecl_process_env();
 	cl_object out = Cnil;
 	cl_object prefix = ecl_namestring(base_dir, ECL_NAMESTRING_FORCE_BASE_STRING);
 	cl_object component, component_path, kind;
@@ -779,7 +780,7 @@ list_directory(cl_object base_dir, cl_object text_mask, cl_object pathname_mask,
                                 continue;
                 }
                 component_path = file_truename(component_path, component, flags);
-                kind = VALUES(1);
+                kind = ecl_nth_value(the_env, 1);
 		out = CONS(CONS(component_path, kind), out);
 	}
 #ifdef HAVE_DIRENT_H

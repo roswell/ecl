@@ -1588,7 +1588,7 @@ do_read_delimited_list(int d, cl_object in, bool proper_list)
 #ifdef ECL_CLOS_STREAMS
         if (!ECL_ANSI_STREAM_P(strm)) {
 		value0 = _ecl_funcall2(@'gray::stream-read-line', strm);
-		value1 = VALUES(1);
+		value1 = ecl_nth_value(the_env, 1);
 		if (!Null(value1)) {
 			if (!Null(eof_errorp))
 				FEend_of_file(strm);

@@ -2757,9 +2757,10 @@ io_file_length(cl_object strm)
 	int f = IO_FILE_DESCRIPTOR(strm);
 	cl_object output = ecl_file_len(f);
 	if (strm->stream.byte_size != 8) {
+		const cl_env_ptr the_env = ecl_process_env();
 		cl_index bs = strm->stream.byte_size;
 		output = ecl_floor2(output, ecl_make_fixnum(bs/8));
-		unlikely_if (VALUES(1) != ecl_make_fixnum(0)) {
+		unlikely_if (ecl_nth_value(the_env, 1) != ecl_make_fixnum(0)) {
 			FEerror("File length is not on byte boundary", 0);
 		}
 	}
@@ -3425,9 +3426,10 @@ io_stream_length(cl_object strm)
 	FILE *f = IO_STREAM_FILE(strm);
 	cl_object output = ecl_file_len(fileno(f));
 	if (strm->stream.byte_size != 8) {
+		const cl_env_ptr the_env = ecl_process_env();
 		cl_index bs = strm->stream.byte_size;
 		output = ecl_floor2(output, ecl_make_fixnum(bs/8));
-		unlikely_if (VALUES(1) != ecl_make_fixnum(0)) {
+		unlikely_if (ecl_nth_value(the_env, 1) != ecl_make_fixnum(0)) {
 			FEerror("File length is not on byte boundary", 0);
 		}
 	}

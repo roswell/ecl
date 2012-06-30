@@ -357,8 +357,8 @@ make_windows_handle(HANDLE h)
 		} while (status == @':running');
         } else {
                 status = ecl_waitpid(pid, wait);
-                code = VALUES(1);
-                pid = VALUES(2);
+                code = ecl_nth_value(the_env, 1);
+                pid = ecl_nth_value(the_env, 2);
                 /* A SIGCHLD interrupt may abort waitpid. If this
                  * is the case, the signal handler may have consumed
                  * the process status and we have to start over again */
@@ -818,7 +818,7 @@ ecl_stream_to_HANDLE(cl_object s, bool output)
 	set_external_process_streams(process, stream_write, stream_read);
 	if (!Null(wait)) {
                 exit_status = si_external_process_wait(2, process, Ct);
-                exit_status = VALUES(1);
+                exit_status = ecl_nth_value(the_env, 1);
         }
 	@(return ((parent_read || parent_write)?
 		  cl_make_two_way_stream(stream_read, stream_write) :

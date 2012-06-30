@@ -190,10 +190,11 @@ si_put_sysprop(cl_object sym, cl_object prop, cl_object value)
 cl_object
 si_rem_sysprop(cl_object sym, cl_object prop)
 {
+	const cl_env_ptr the_env = ecl_process_env();
 	cl_object plist, found;
 	plist = ecl_gethash_safe(sym, cl_core.system_properties, Cnil);
 	plist = si_rem_f(plist, prop);
-	found = VALUES(1);
+	found = ecl_nth_value(the_env, 1);
 	ecl_sethash(sym, cl_core.system_properties, plist);
-	@(return found);
+	ecl_return1(the_env, found);
 }

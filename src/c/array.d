@@ -1105,7 +1105,7 @@ si_replace_array(cl_object olda, cl_object newa)
 		cl_object other_array = CAR(dlist);
 		cl_object offset;
 		cl_array_displacement(other_array);
-		offset = VALUES(1);
+		offset = ecl_nth_value(the_env, 1);
 		ecl_displace(other_array, newa, offset);
 	}
 	switch (type_of(olda)) {

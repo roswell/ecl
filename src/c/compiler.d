@@ -690,8 +690,9 @@ c_declare_specials(cl_env_ptr env, cl_object specials)
 static cl_object
 c_process_declarations(cl_object body)
 {
+	const cl_env_ptr the_env = ecl_process_env();
 	@si::process-declarations(1, body);
-	body = VALUES(1);
+	body = ecl_nth_value(the_env, 1);
 	return body;
 }
 

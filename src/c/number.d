@@ -671,8 +671,9 @@ prepare_ratio_to_float(cl_object num, cl_object den, int digits, cl_fixnum *scal
                 }
         }
         do {
+		const cl_env_ptr the_env = ecl_process_env();
                 cl_object fraction = ecl_truncate2(num, den);
-                cl_object rem = VALUES(1);
+                cl_object rem = ecl_nth_value(the_env, 1);
                 cl_fixnum len = ecl_integer_length(fraction);
                 if ((len - digits) == 1) {
                         if (ecl_oddp(fraction)) {

@@ -630,9 +630,12 @@ ecl_parse_namestring(cl_object s, cl_index start, cl_index end, cl_index *ep,
 	} else if (SYMBOLP(aux)) {
 		version = aux;
 	} else {
+		const cl_env_ptr the_env = ecl_process_env();
+		cl_object parsed_length;
 		version = cl_parse_integer(3, aux, @':junk-allowed', Ct);
-		if (cl_integerp(version) != Cnil && ecl_plusp(version) &&
-		    ecl_fixnum(VALUES(1)) == ecl_length(aux))
+		parsed_length = ecl_nth_value(the_env, 1);
+		if (ecl_fixnum(parsed_length) == ecl_length(aux) &&
+		    cl_integerp(version) != Cnil && ecl_plusp(version))
 			;
 		else if (cl_string_equal(2, aux, @':newest') != Cnil)
 			version = @':newest';
