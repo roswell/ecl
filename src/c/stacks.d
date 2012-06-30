@@ -256,7 +256,7 @@ ecl_new_binding_index(cl_env_ptr env, cl_object symbol)
 		symbol->symbol.binding = new_index;
 		symbol->symbol.dynamic |= 1;
 	}
-        si_set_finalizer(symbol, Ct);
+        si_set_finalizer(symbol, ECL_T);
         return new_index;
 }
 
@@ -264,9 +264,9 @@ static cl_object
 ecl_extend_bindings_array(cl_object vector)
 {
         cl_index new_size = cl_core.last_var_index * 1.25;
-        cl_object new_vector = si_make_vector(Ct, ecl_make_fixnum(new_size), Cnil,
-                                              Cnil, Cnil, Cnil);
-        si_fill_array_with_elt(new_vector, OBJNULL, ecl_make_fixnum(0), Cnil);
+        cl_object new_vector = si_make_vector(ECL_T, ecl_make_fixnum(new_size), ECL_NIL,
+                                              ECL_NIL, ECL_NIL, ECL_NIL);
+        si_fill_array_with_elt(new_vector, OBJNULL, ecl_make_fixnum(0), ECL_NIL);
         ecl_copy_subarray(new_vector, 0, vector, 0, vector->vector.dim);
         return new_vector;
 }
@@ -402,7 +402,7 @@ ihs_function_name(cl_object x)
 		return(x->cfun.name);
 
 	default:
-		return(Cnil);
+		return(ECL_NIL);
 	}
 }
 
@@ -597,7 +597,7 @@ si_sch_frs_base(cl_object fr, cl_object ihs)
 	for (x = get_frame_ptr(fr); 
 	     x <= env->frs_top && x->frs_ihs->index < y;
 	     x++);
-	@(return ((x > env->frs_top) ? Cnil : ecl_make_fixnum(x - env->frs_org)))
+	@(return ((x > env->frs_top) ? ECL_NIL : ecl_make_fixnum(x - env->frs_org)))
 }
 
 /********************* INITIALIZATION ***********************/
@@ -661,7 +661,7 @@ init_stacks(cl_env_ptr env)
 	env->bds_limit = &env->bds_org[size - 2*margin];
 
 	env->ihs_top = &ihs_org;
-	ihs_org.function = Cnil;
-	ihs_org.lex_env = Cnil;
+	ihs_org.function = ECL_NIL;
+	ihs_org.lex_env = ECL_NIL;
 	ihs_org.index = 0;
 }

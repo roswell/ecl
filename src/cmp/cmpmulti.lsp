@@ -82,10 +82,10 @@
    ;; of a function.
    ((endp forms)
     (cond ((eq *destination* 'RETURN)
-	   (wt-nl "value0=Cnil; cl_env_copy->nvalues=0;")
+	   (wt-nl "value0=ECL_NIL; cl_env_copy->nvalues=0;")
 	   (unwind-exit 'RETURN))
 	  ((eq *destination* 'VALUES)
-	   (wt-nl "cl_env_copy->values[0]=Cnil; cl_env_copy->nvalues=0;")
+	   (wt-nl "cl_env_copy->values[0]=ECL_NIL; cl_env_copy->nvalues=0;")
 	   (unwind-exit 'VALUES))
 	  (t
 	   (unwind-exit 'NIL))))
@@ -169,7 +169,7 @@
   (dolist (v vars)
     (if use-bind
 	(bind (c1form-arg 0 (default-init v)) v)
-	(set-var '(C-INLINE (:object) "Cnil" () t nil) v)))
+	(set-var '(C-INLINE (:object) "ECL_NIL" () t nil) v)))
   output)
 
 (defun do-m-v-setq-any (min-values max-values vars use-bind)
@@ -220,8 +220,8 @@
 	(dolist (v vars)
 	  (when labels (wt-label (pop labels)))
 	  (if use-bind
-	      (bind '(C-INLINE (:object) "Cnil" () t nil) v)
-	      (set-var '(C-INLINE (:object) "Cnil" () t nil) v)))
+	      (bind '(C-INLINE (:object) "ECL_NIL" () t nil) v)
+	      (set-var '(C-INLINE (:object) "ECL_NIL" () t nil) v)))
 	(when labels (wt-label label))))
     output))
 

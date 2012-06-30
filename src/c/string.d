@@ -60,10 +60,10 @@ do_make_string(cl_index s, ecl_character code)
 	} else if (element_type == @'character') {
 		cl_index code = ecl_char_code(initial_element);
 		x = do_make_string(s, code);
-	} else if (_ecl_funcall3(@'subtypep', element_type, @'base-char') == Ct) {
+	} else if (_ecl_funcall3(@'subtypep', element_type, @'base-char') == ECL_T) {
 		int code = ecl_base_char_code(initial_element);
 		x = do_make_base_string(s, code);
-	} else if (_ecl_funcall3(@'subtypep', element_type, @'character') == Ct) {
+	} else if (_ecl_funcall3(@'subtypep', element_type, @'character') == ECL_T) {
 		cl_index code = ecl_char_code(initial_element);
 		x = do_make_string(s, code);
 	} else {
@@ -86,7 +86,7 @@ ecl_alloc_adjustable_base_string(cl_index l)
         output->base_string.self[l]    = 0;
 	output->base_string.flags      = ECL_FLAG_HAS_FILL_POINTER | ECL_FLAG_ADJUSTABLE;
         output->base_string.elttype    = ecl_aet_bc;
-	output->base_string.displaced  = Cnil;
+	output->base_string.displaced  = ECL_NIL;
 	output->base_string.dim        = l;
 	output->base_string.fillp      = 0;
 	return output;
@@ -101,7 +101,7 @@ ecl_alloc_adjustable_extended_string(cl_index l)
 	output->string.self       = (ecl_character *)ecl_alloc_atomic(bytes);
 	output->string.flags      = ECL_FLAG_HAS_FILL_POINTER | ECL_FLAG_ADJUSTABLE;
         output->string.elttype    = ecl_aet_ch;
-	output->string.displaced  = Cnil;
+	output->string.displaced  = ECL_NIL;
 	output->string.dim        = l;
         output->string.fillp      = 0;
 	return output;
@@ -117,7 +117,7 @@ ecl_make_simple_base_string(char *s, cl_fixnum l)
 	cl_object x = ecl_alloc_object(t_base_string);
         x->base_string.elttype = ecl_aet_bc;
         x->base_string.flags = 0; /* no fill pointer, no adjustable */
-	x->base_string.displaced = Cnil;
+	x->base_string.displaced = ECL_NIL;
         if (l < 0) l = strlen(s);
 	x->base_string.dim = (x->base_string.fillp = l);
 	x->base_string.self = (ecl_base_char *)s;
@@ -139,7 +139,7 @@ cl_object
 ecl_cstring_to_base_string_or_nil(const char *s)
 {
 	if (s == NULL)
-		return Cnil;
+		return ECL_NIL;
 	else
 		return make_base_string_copy(s);
 }
@@ -198,7 +198,7 @@ si_copy_to_simple_base_string(cl_object x)
 	}
 	case t_list:
 		if (Null(x)) {
-			x = Cnil_symbol->symbol.name;
+			x = ECL_NIL_SYMBOL->symbol.name;
 			goto AGAIN;
 		}
 	default:
@@ -241,7 +241,7 @@ cl_string(cl_object x)
 		break;
 	case t_list:
 		if (Null(x)) {
-			x = Cnil_symbol->symbol.name;
+			x = ECL_NIL_SYMBOL->symbol.name;
 			break;
 		}
 	default:
@@ -286,7 +286,7 @@ si_coerce_to_extended_string(cl_object x)
 		break;
 	case t_list:
 		if (Null(x)) {
-			x = Cnil_symbol->symbol.name;
+			x = ECL_NIL_SYMBOL->symbol.name;
 			goto AGAIN;
 		}
 	default:
@@ -432,39 +432,39 @@ compare_base(unsigned char *s1, cl_index l1, unsigned char *s2, cl_index l2,
 	p = ecl_vector_start_end(@[string=], string2, start2, end2);
         s2 = p.start; e2 = p.end;
 	if (e1 - s1 != e2 - s2)
-		@(return Cnil);
+		@(return ECL_NIL);
 #ifdef ECL_UNICODE
 	if (string1->string.t == t_string) {
 		if (string2->string.t == t_string) {
 			while (s1 < e1)
 				if (string1->string.self[s1++] != string2->string.self[s2++])
-					@(return Cnil);
-			@(return Ct);
+					@(return ECL_NIL);
+			@(return ECL_T);
 		} else {
 			while (s1 < e1)
 				if (string1->string.self[s1++] != string2->base_string.self[s2++])
-					@(return Cnil);
-			@(return Ct);
+					@(return ECL_NIL);
+			@(return ECL_T);
 		}
 	} else {
 		if (string2->string.t == t_string) {
 			while (s1 < e1)
 				if (string1->base_string.self[s1++] != string2->string.self[s2++])
-					@(return Cnil);
-			@(return Ct);
+					@(return ECL_NIL);
+			@(return ECL_T);
 		} else {
 			while (s1 < e1)
 				if (string1->base_string.self[s1++] != string2->base_string.self[s2++])
-					@(return Cnil);
-			@(return Ct);
+					@(return ECL_NIL);
+			@(return ECL_T);
 		}
  	}
 #else
 	while (s1 < e1)
 		if (string1->base_string.self[s1++] != string2->base_string.self[s2++])
-			@(return Cnil);
+			@(return ECL_NIL);
 #endif
-	@(return Ct);
+	@(return ECL_T);
 }
 @)
 
@@ -527,7 +527,7 @@ ecl_string_eq(cl_object x, cl_object y)
 	p = ecl_vector_start_end(@[string=], string2, start2, end2);
         s2 = p.start; e2 = p.end;
 	if (e1 - s1 != e2 - s2)
-		@(return Cnil);
+		@(return ECL_NIL);
 #ifdef ECL_UNICODE
         if (ECL_EXTENDED_STRING_P(string1) || ECL_EXTENDED_STRING_P(string2)) {
 		output = compare_strings(string1, s1, e1, string2, s2, e2, 0, &e1);
@@ -536,7 +536,7 @@ ecl_string_eq(cl_object x, cl_object y)
 	output = compare_base(string1->base_string.self + s1, e1 - s1,
 			      string2->base_string.self + s2, e2 - s2,
 			      0, &e1);
-	@(return ((output == 0)? Ct : Cnil))
+	@(return ((output == 0)? ECL_T : ECL_NIL))
 @)
 
 static cl_object
@@ -566,8 +566,8 @@ string_compare(cl_narg narg, int sign1, int sign2, int case_sensitive, ecl_va_li
 
 	string1 = cl_string(string1);
 	string2 = cl_string(string2);
-	if (start1p == Cnil) start1 = ecl_make_fixnum(0);
-	if (start2p == Cnil) start2 = ecl_make_fixnum(0);
+	if (start1p == ECL_NIL) start1 = ecl_make_fixnum(0);
+	if (start2p == ECL_NIL) start2 = ecl_make_fixnum(0);
 	p = ecl_vector_start_end(@[string=], string1, start1, end1);
         s1 = p.start; e1 = p.end;
 	p = ecl_vector_start_end(@[string=], string2, start2, end2);
@@ -587,7 +587,7 @@ string_compare(cl_narg narg, int sign1, int sign2, int case_sensitive, ecl_va_li
 	if (output == sign1 || output == sign2) {
 		result = ecl_make_fixnum(e1);
 	} else {
-		result = Cnil;
+		result = ECL_NIL;
 	}
 	@(return result)
 #undef start1p
@@ -752,7 +752,7 @@ string_case(cl_narg narg, cl_object fun, ecl_casefun casefun, ecl_va_list ARGS)
 
         strng = cl_string(strng);
         strng = cl_copy_seq(strng);
-	if (kstartp == Cnil)
+	if (kstartp == ECL_NIL)
                 kstart = ecl_make_fixnum(0);
 	p = ecl_vector_start_end(fun, strng, kstart, kend);
 	b = TRUE;
@@ -835,7 +835,7 @@ nstring_case(cl_narg narg, cl_object fun, ecl_casefun casefun, ecl_va_list ARGS)
 
         if (ecl_unlikely(!ECL_STRINGP(strng)))
                 FEwrong_type_nth_arg(fun, 1, strng, @[string]);
-	if (kstartp == Cnil)
+	if (kstartp == ECL_NIL)
                 kstart = ecl_make_fixnum(0);
 	p = ecl_vector_start_end(fun, strng, kstart, kend);
 	b = TRUE;

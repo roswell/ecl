@@ -273,31 +273,31 @@ ecl_make_pathname(cl_object host, cl_object device, cl_object directory,
 	p = ecl_alloc_object(t_pathname);
 	if (ecl_stringp(host))
 		p->pathname.logical = ecl_logical_hostname_p(host);
-	else if (host == Cnil)
+	else if (host == ECL_NIL)
 		p->pathname.logical = FALSE;
 	else {
 		x = directory;
 		component = @':host';
 		goto ERROR;
 	}
-	if (device != Cnil && device != @':unspecific' &&
+	if (device != ECL_NIL && device != @':unspecific' &&
 	    !(!p->pathname.logical && ecl_stringp(device))) {
 		x = device;
 		component = @':device';
 		goto ERROR;
 	}
-	if (name != Cnil && name != @':wild' && !ecl_stringp(name)) {
+	if (name != ECL_NIL && name != @':wild' && !ecl_stringp(name)) {
 		x = name;
 		component = @':name';
 		goto ERROR;
 	}
-	if (type != Cnil && type != @':unspecific' && type != @':wild' && !ecl_stringp(type)) {
+	if (type != ECL_NIL && type != @':unspecific' && type != @':wild' && !ecl_stringp(type)) {
 		x = type;
 		component = @':type';
 		goto ERROR;
 	}
 	if (version != @':unspecific' && version != @':newest' &&
-	    version != @':wild' && version != Cnil && !ECL_FIXNUMP(version))
+	    version != @':wild' && version != ECL_NIL && !ECL_FIXNUMP(version))
 	{
 		x = version;
 		component = @':version';
@@ -363,13 +363,13 @@ tilde_expand(cl_object pathname)
 	 * a user name, we merge the user homedir pathname with this one.
 	 */
 	cl_object directory, head;
-	if (pathname->pathname.logical || pathname->pathname.host != Cnil
-	    || pathname->pathname.device != Cnil) {
+	if (pathname->pathname.logical || pathname->pathname.host != ECL_NIL
+	    || pathname->pathname.device != ECL_NIL) {
 		return pathname;
 	}
 	directory = pathname->pathname.directory;
 	if (!CONSP(directory) || ECL_CONS_CAR(directory) != @':relative'
-	    || ECL_CONS_CDR(directory) == Cnil) {
+	    || ECL_CONS_CDR(directory) == ECL_NIL) {
 		return pathname;
 	}
 	head = CADR(directory);
@@ -412,7 +412,7 @@ static int is_null(int c) { return c == '\0'; }
  * Output is either
  *	1) :error in case (3) above
  *	2) :wild, :wild-inferiors, :up
- *	3) "" or Cnil when word has no elements
+ *	3) "" or ECL_NIL when word has no elements
  *	5) A non empty string
  */
 static cl_object
@@ -467,13 +467,13 @@ parse_word(cl_object s, delim_fn delim, int flags, cl_index start,
 		   the proper delimiter */
 		if (flags & WORD_INCLUDE_DELIM) {
 			*end_of_word = start;
-			return Cnil;
+			return ECL_NIL;
 		}
 	}
 	switch(i-j) {
 	case 0:
 		if (flags & WORD_EMPTY_IS_NIL)
-			return Cnil;
+			return ECL_NIL;
 		return cl_core.null_string;
 	case 1:
 		if (ecl_char(s,j) == '*')
@@ -509,14 +509,14 @@ parse_directories(cl_object s, int flags, cl_index start, cl_index end,
 		  cl_index *end_of_dir)
 {
 	cl_index i, j;
-	cl_object path = Cnil;
+	cl_object path = ECL_NIL;
 	delim_fn delim = (flags & WORD_LOGICAL) ? is_semicolon : is_slash;
 
 	flags |= WORD_INCLUDE_DELIM | WORD_ALLOW_ASTERISK;
 	*end_of_dir = start;
 	for (i = j = start; i < end; j = i) {
 		cl_object part = parse_word(s, delim, flags, j, end, &i);
-		if (part == @':error' || part == Cnil)
+		if (part == @':error' || part == ECL_NIL)
 			break;
 		if (part == cl_core.null_string) {  /* "/", ";" */
 			if (j != start) {
@@ -582,12 +582,12 @@ ecl_parse_namestring(cl_object s, cl_index start, cl_index end, cl_index *ep,
 	/* We first try parsing as logical-pathname. In case of
 	 * failure, physical-pathname parsing is performed only when
 	 * there is no supplied *logical* host name. All other failures
-	 * result in Cnil as output.
+	 * result in ECL_NIL as output.
 	 */
 	host = parse_word(s, is_colon, WORD_LOGICAL | WORD_INCLUDE_DELIM |
 			  WORD_DISALLOW_SEMICOLON, start, end, ep);
-	if (default_host != Cnil) {
-		if (host == Cnil || host == @':error')
+	if (default_host != ECL_NIL) {
+		if (host == ECL_NIL || host == @':error')
 			host = default_host;
 	}
 	if (!ecl_logical_hostname_p(host))
@@ -608,39 +608,39 @@ ecl_parse_namestring(cl_object s, cl_index start, cl_index end, cl_index *ep,
 		path = CONS(@':absolute', path);
 	}
 	if (path == @':error')
-		return Cnil;
+		return ECL_NIL;
 	name = parse_word(s, is_dot, WORD_LOGICAL | WORD_ALLOW_ASTERISK |
 			  WORD_EMPTY_IS_NIL, *ep, end, ep);
 	if (name == @':error')
-		return Cnil;
-	type = Cnil;
-	version = Cnil;
+		return ECL_NIL;
+	type = ECL_NIL;
+	version = ECL_NIL;
 	if (*ep == start || ecl_char(s, *ep-1) != '.')
 		goto make_it;
 	type = parse_word(s, is_dot, WORD_LOGICAL | WORD_ALLOW_ASTERISK |
 			  WORD_EMPTY_IS_NIL, *ep, end, ep);
 	if (type == @':error')
-		return Cnil;
+		return ECL_NIL;
 	if (*ep == start || ecl_char(s, *ep-1) != '.')
 		goto make_it;
 	aux = parse_word(s, is_null, WORD_LOGICAL | WORD_ALLOW_ASTERISK |
 			 WORD_EMPTY_IS_NIL, *ep, end, ep);
 	if (aux == @':error') {
-		return Cnil;
+		return ECL_NIL;
 	} else if (ECL_SYMBOLP(aux)) {
 		version = aux;
 	} else {
 		const cl_env_ptr the_env = ecl_process_env();
 		cl_object parsed_length;
-		version = cl_parse_integer(3, aux, @':junk-allowed', Ct);
+		version = cl_parse_integer(3, aux, @':junk-allowed', ECL_T);
 		parsed_length = ecl_nth_value(the_env, 1);
 		if (ecl_fixnum(parsed_length) == ecl_length(aux) &&
-		    cl_integerp(version) != Cnil && ecl_plusp(version))
+		    cl_integerp(version) != ECL_NIL && ecl_plusp(version))
 			;
-		else if (cl_string_equal(2, aux, @':newest') != Cnil)
+		else if (cl_string_equal(2, aux, @':newest') != ECL_NIL)
 			version = @':newest';
 		else
-			return Cnil;
+			return ECL_NIL;
 	}
 	goto make_it;
  physical:
@@ -657,43 +657,43 @@ ecl_parse_namestring(cl_object s, cl_index start, cl_index end, cl_index *ep,
 	 */
 #if defined(ECL_MS_WINDOWS_HOST)
 	if ((start+1 <= end) && is_slash(ecl_char(s, start))) {
-		device = Cnil;
+		device = ECL_NIL;
 		goto maybe_parse_host;
 	}
 #endif
 	device = parse_word(s, is_colon, WORD_INCLUDE_DELIM | WORD_EMPTY_IS_NIL |
 			    WORD_DISALLOW_SLASH, start, end, ep);
-	if (device == @':error' || device == Cnil) {
-		device = Cnil;
-		host = Cnil;
+	if (device == @':error' || device == ECL_NIL) {
+		device = ECL_NIL;
+		host = ECL_NIL;
 		goto done_device_and_host;
 	}
 	if (!ecl_stringp(device)) {
-		return Cnil;
+		return ECL_NIL;
 	}
  maybe_parse_host:
 	/* Files have no effective device. */
-	if (@string-equal(2, device, @':file') == Ct)
-		device = Cnil;
+	if (@string-equal(2, device, @':file') == ECL_T)
+		device = ECL_NIL;
 	start = *ep;
-	host = Cnil;
+	host = ECL_NIL;
 	if ((start+2) <= end && is_slash(ecl_char(s, start)) &&
 	    is_slash(ecl_char(s, start+1)))
 	{
 		host = parse_word(s, is_slash, WORD_EMPTY_IS_NIL,
 				  start+2, end, ep);
 		if (host == @':error') {
-			host = Cnil;
-		} else if (host != Cnil) {
+			host = ECL_NIL;
+		} else if (host != ECL_NIL) {
 			if (!ecl_stringp(host))
-				return Cnil;
+				return ECL_NIL;
 			start = *ep;
 			if (is_slash(ecl_char(s,--start)))
 				*ep = start;
 		}
 	}
 	if (ecl_length(device) == 0)
-		device = Cnil;
+		device = ECL_NIL;
  done_device_and_host:
 	path = parse_directories(s, 0, *ep, end, ep);
 	if (CONSP(path)) {
@@ -703,22 +703,22 @@ ecl_parse_namestring(cl_object s, cl_index start, cl_index end, cl_index *ep,
 		path = destructively_check_directory(path, FALSE, FALSE);
 	}
 	if (path == @':error')
-		return Cnil;
+		return ECL_NIL;
 	start = *ep;
 	name = parse_word(s, is_dot,
 			  WORD_ALLOW_LEADING_DOT | WORD_SEARCH_LAST_DOT |
 			  WORD_ALLOW_ASTERISK | WORD_EMPTY_IS_NIL,
 			  start, end, ep);
 	if (name == @':error')
-		return Cnil;
+		return ECL_NIL;
 	if ((*ep - start) <= 1 || ecl_char(s, *ep-1) != '.') {
-		type = Cnil;
+		type = ECL_NIL;
 	} else {
 		type = parse_word(s, is_null, WORD_ALLOW_ASTERISK, *ep, end, ep);
 		if (type == @':error')
-			return Cnil;
+			return ECL_NIL;
 	}
-	version = (name != Cnil || type != Cnil) ? @':newest' : Cnil;
+	version = (name != ECL_NIL || type != ECL_NIL) ? @':newest' : ECL_NIL;
  make_it:
 	if (*ep >= end) *ep = end;
 	path = ecl_make_pathname(host, device, path, name, type, version,
@@ -800,52 +800,52 @@ cl_logical_pathname(cl_object x)
 	bool checked = 0;
 @
 	pathname = cl_pathname(pathname);
-	if (component == Cnil || component == @':host') {
+	if (component == ECL_NIL || component == @':host') {
 		if (pathname->pathname.host == @':wild')
-			@(return Ct);
+			@(return ECL_T);
 		checked = 1;
 	}
-	if (component == Cnil || component == @':device') {
+	if (component == ECL_NIL || component == @':device') {
 		if (pathname->pathname.device == @':wild')
-			@(return Ct);
+			@(return ECL_T);
 		checked = 1;
 	}
-	if (component == Cnil || component == @':version') {
+	if (component == ECL_NIL || component == @':version') {
 		if (pathname->pathname.version == @':wild')
-			@(return Ct);
+			@(return ECL_T);
 		checked = 1;
 	}
-	if (component == Cnil || component == @':name') {
+	if (component == ECL_NIL || component == @':name') {
 		cl_object name = pathname->pathname.name;
-		if (name != Cnil &&
+		if (name != ECL_NIL &&
 		    (name == @':wild' || ecl_wild_string_p(name)))
-			@(return Ct);
+			@(return ECL_T);
 		checked = 1;
 	}
-	if (component == Cnil || component == @':type') {
+	if (component == ECL_NIL || component == @':type') {
 		cl_object name = pathname->pathname.type;
-		if (name != Cnil &&
+		if (name != ECL_NIL &&
 		    (name == @':wild' || ecl_wild_string_p(name)))
-			@(return Ct);
+			@(return ECL_T);
 		checked = 1;
 	}
-	if (component == Cnil || component == @':directory') {
+	if (component == ECL_NIL || component == @':directory') {
 		cl_object list = pathname->pathname.directory;
 		checked = 1;
 		loop_for_on_unsafe(list) {
 			cl_object name = ECL_CONS_CAR(list);
-			if (name != Cnil &&
+			if (name != ECL_NIL &&
 			    (name == @':wild' || name == @':wild-inferiors' ||
 			     ecl_wild_string_p(name)))
 			{
-				@(return Ct)
+				@(return ECL_T)
 			}
 		} end_loop_for_on_unsafe(list);
 	}
 	if (checked == 0) {
 		FEerror("~A is not a valid pathname component", 1, component);
 	}
-	@(return Cnil)
+	@(return ECL_NIL)
 @)
 
 /*
@@ -862,14 +862,14 @@ coerce_to_file_pathname(cl_object pathname)
 	pathname = cl_merge_pathnames(1, pathname);
 #if 0
 #if !defined(cygwin) && !defined(ECL_MS_WINDOWS_HOST)
-	if (pathname->pathname.device != Cnil)
+	if (pathname->pathname.device != ECL_NIL)
 		FEerror("Device ~S not yet supported.", 1,
 			pathname->pathname.device);
-	if (pathname->pathname.host != Cnil)
+	if (pathname->pathname.host != ECL_NIL)
 		FEerror("Access to remote files not yet supported.", 0);
 #endif
 #endif
-	if (pathname->pathname.directory == Cnil ||
+	if (pathname->pathname.directory == ECL_NIL ||
 	    ECL_CONS_CAR(pathname->pathname.directory) == @':relative') {
 		pathname = cl_merge_pathnames(2, pathname, si_getcwd(0));
 	}
@@ -903,12 +903,12 @@ si_coerce_to_filename(cl_object pathname_orig)
 	/* We always go through the pathname representation and thus
 	 * cl_namestring() always outputs a fresh new string */
 	pathname = coerce_to_file_pathname(pathname_orig);
-	if (cl_wild_pathname_p(1,pathname) != Cnil)
+	if (cl_wild_pathname_p(1,pathname) != ECL_NIL)
 		cl_error(3, @'file-error', @':pathname', pathname_orig);
 	namestring = ecl_namestring(pathname,
                                     ECL_NAMESTRING_TRUNCATE_IF_ERROR |
                                     ECL_NAMESTRING_FORCE_BASE_STRING);
-	if (namestring == Cnil) {
+	if (namestring == ECL_NIL) {
 		FEerror("Pathname without a physical namestring:"
                         "~% :HOST ~A"
                         "~% :DEVICE ~A"
@@ -929,7 +929,7 @@ si_coerce_to_filename(cl_object pathname_orig)
 	return namestring;
 }
 
-#define default_device(host) Cnil
+#define default_device(host) ECL_NIL
 
 cl_object
 ecl_merge_pathnames(cl_object path, cl_object defaults, cl_object default_version)
@@ -938,7 +938,7 @@ ecl_merge_pathnames(cl_object path, cl_object defaults, cl_object default_versio
         cl_object tocase;
 
 	defaults = cl_pathname(defaults);
-	path = cl_parse_namestring(1, path, Cnil, defaults);
+	path = cl_parse_namestring(1, path, ECL_NIL, defaults);
 	if (Null(host = path->pathname.host))
 		host = defaults->pathname.host;
         tocase = host_case(host);
@@ -981,7 +981,7 @@ ecl_merge_pathnames(cl_object path, cl_object defaults, cl_object default_versio
 	}
         if (default_version == @':default') {
                 if (Null(name) && Null(type)) {
-                        version = Cnil;
+                        version = ECL_NIL;
                 } else {
                         version = @':newest';
                 }
@@ -1021,24 +1021,24 @@ ecl_namestring(cl_object x, int flags)
 	if (logical) {
 		if ((y = x->pathname.device) != @':unspecific' &&
 		    truncate_if_unreadable)
-			return Cnil;
-		if (host != Cnil) {
-			si_do_write_sequence(host, buffer, ecl_make_fixnum(0), Cnil);
+			return ECL_NIL;
+		if (host != ECL_NIL) {
+			si_do_write_sequence(host, buffer, ecl_make_fixnum(0), ECL_NIL);
 			writestr_stream(":", buffer);
 		}
 	} else {
-		if ((y = x->pathname.device) != Cnil) {
-			si_do_write_sequence(y, buffer, ecl_make_fixnum(0), Cnil);
+		if ((y = x->pathname.device) != ECL_NIL) {
+			si_do_write_sequence(y, buffer, ecl_make_fixnum(0), ECL_NIL);
 			writestr_stream(":", buffer);
 		}
-		if (host != Cnil) {
+		if (host != ECL_NIL) {
 #if !defined(ECL_MS_WINDOWS_HOST)
-			if (y == Cnil) {
+			if (y == ECL_NIL) {
 				writestr_stream("file:", buffer);
 			}
 #endif
 			writestr_stream("//", buffer);
-			si_do_write_sequence(host, buffer, ecl_make_fixnum(0), Cnil);
+			si_do_write_sequence(host, buffer, ecl_make_fixnum(0), ECL_NIL);
 		}
 	}
 	l = x->pathname.directory;
@@ -1062,10 +1062,10 @@ ecl_namestring(cl_object x, int flags)
 		} else if (y == @':wild-inferiors') {
 			writestr_stream("**", buffer);
 		} else if (y != @':back') {
-			si_do_write_sequence(y, buffer, ecl_make_fixnum(0), Cnil);
+			si_do_write_sequence(y, buffer, ecl_make_fixnum(0), ECL_NIL);
 		} else {
 			/* Directory :back has no namestring representation */
-			return Cnil;
+			return ECL_NIL;
 		}
 		ecl_write_char(logical? ';' : DIR_SEPARATOR, buffer);
 	} end_loop_for_in;
@@ -1078,38 +1078,38 @@ NO_DIRECTORY:
 			writestr_stream(":", buffer);
 	}
 	y = x->pathname.name;
-	if (y != Cnil) {
+	if (y != ECL_NIL) {
 		if (y == @':wild') {
 			writestr_stream("*", buffer);
 		} else {
-			si_do_write_sequence(y, buffer, ecl_make_fixnum(0), Cnil);
+			si_do_write_sequence(y, buffer, ecl_make_fixnum(0), ECL_NIL);
 		}
 	} else if (!logical && !Null(x->pathname.type)) {
                 /* #P".txt" is :NAME = ".txt" :TYPE = NIL and
                    hence :NAME = NIL and :TYPE != NIL does not have
                    a printed representation */
-                return Cnil;
+                return ECL_NIL;
         }
 	y = x->pathname.type;
         if (y == @':unspecific') {
-                return Cnil;
-        } else if (y != Cnil) {
+                return ECL_NIL;
+        } else if (y != ECL_NIL) {
 		if (y == @':wild') {
 			writestr_stream(".*", buffer);
 		} else {
 			writestr_stream(".", buffer);
-			si_do_write_sequence(y, buffer, ecl_make_fixnum(0), Cnil);
+			si_do_write_sequence(y, buffer, ecl_make_fixnum(0), ECL_NIL);
 		}
 	}
 	y = x->pathname.version;
 	if (logical) {
-		if (y != Cnil) {
+		if (y != ECL_NIL) {
 			writestr_stream(".", buffer);
 			if (y == @':wild') {
 				writestr_stream("*", buffer);
 			} else if (y == @':newest') {
 				si_do_write_sequence(ecl_symbol_name(y), buffer,
-						     ecl_make_fixnum(0), Cnil);
+						     ecl_make_fixnum(0), ECL_NIL);
 			} else {
 				/* Since the printer is not reentrant,
 				 * we cannot use cl_write and friends.
@@ -1131,11 +1131,11 @@ NO_DIRECTORY:
 		/* Namestrings of physical pathnames have restrictions... */
 		if (Null(x->pathname.name) && Null(x->pathname.type)) {
 			/* Directories cannot have a version number */
-			if (y != Cnil)
-				return Cnil;
+			if (y != ECL_NIL)
+				return ECL_NIL;
 		} else if (y != @':newest') {
 			/* Filenames have an implicit version :newest */
-			return Cnil;
+			return ECL_NIL;
 		}
 	}
         buffer = cl_get_output_stream_string(buffer);
@@ -1163,7 +1163,7 @@ cl_namestring(cl_object x)
 	&k (start ecl_make_fixnum(0)) end junk_allowed
 	&a output)
 @
-	if (host != Cnil) {
+	if (host != ECL_NIL) {
 		host = cl_string(host);
 	}
 	if (!ecl_stringp(thing)) {
@@ -1172,7 +1172,7 @@ cl_namestring(cl_object x)
 		cl_object default_host = host;
                 cl_index_pair p;
                 cl_index ee;
-		if (default_host == Cnil && defaults != Cnil) {
+		if (default_host == ECL_NIL && defaults != ECL_NIL) {
 			defaults = cl_pathname(defaults);
 			default_host = defaults->pathname.host;
 		}
@@ -1182,16 +1182,16 @@ cl_namestring(cl_object x)
 		p = ecl_vector_start_end(@[parse-namestring], thing, start, end);
 		output = ecl_parse_namestring(thing, p.start, p.end, &ee, default_host);
 		start = ecl_make_fixnum(ee);
-		if (output == Cnil || ee != p.end) {
+		if (output == ECL_NIL || ee != p.end) {
 			if (Null(junk_allowed)) {
 				FEparse_error("Cannot parse the namestring ~S~%"
-					      "from ~S to ~S.", Cnil,
+					      "from ~S to ~S.", ECL_NIL,
 					      3, thing, start, end);
 			}
 			goto OUTPUT;
 		}
 	}
-	if (host != Cnil && !ecl_equal(output->pathname.host, host)) {
+	if (host != ECL_NIL && !ecl_equal(output->pathname.host, host)) {
 		FEerror("The pathname ~S does not contain the required host ~S.",
 			2, thing, host);
 	}
@@ -1208,9 +1208,9 @@ cl_namestring(cl_object x)
 	@(return ecl_merge_pathnames(path, defaults, default_version))
 @)
 
-@(defun make_pathname (&key (host Cnil hostp) (device Cnil devicep)
-		            (directory Cnil directoryp)
-			    (name Cnil namep) (type Cnil typep) (version Cnil versionp)
+@(defun make_pathname (&key (host ECL_NIL hostp) (device ECL_NIL devicep)
+		            (directory ECL_NIL directoryp)
+			    (name ECL_NIL namep) (type ECL_NIL typep) (version ECL_NIL versionp)
 		            ((:case scase) @':local')
 		            defaults
 		       &aux x)
@@ -1218,7 +1218,7 @@ cl_namestring(cl_object x)
 	if (Null(defaults)) {
 		defaults = si_default_pathname_defaults();
 		defaults = ecl_make_pathname(defaults->pathname.host,
-					     Cnil, Cnil, Cnil, Cnil, Cnil,
+					     ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL,
                                              @':local');
 	} else {
 		defaults = cl_pathname(defaults);
@@ -1237,14 +1237,14 @@ cl_namestring(cl_object x)
 cl_object
 cl_pathnamep(cl_object pname)
 {
-	@(return (ECL_PATHNAMEP(pname) ? Ct : Cnil))
+	@(return (ECL_PATHNAMEP(pname) ? ECL_T : ECL_NIL))
 }
 
 cl_object
 si_logical_pathname_p(cl_object pname)
 {
 	@(return ((ECL_PATHNAMEP(pname) && pname->pathname.logical)?
-		  Ct : Cnil))
+		  ECL_T : ECL_NIL))
 }
 
 @(defun pathname_host (pname &key ((:case scase) @':local'))
@@ -1298,7 +1298,7 @@ cl_object
 cl_file_namestring(cl_object pname)
 {
 	pname = cl_pathname(pname);
-	@(return ecl_namestring(ecl_make_pathname(Cnil, Cnil, Cnil,
+	@(return ecl_namestring(ecl_make_pathname(ECL_NIL, ECL_NIL, ECL_NIL,
 						  pname->pathname.name,
 						  pname->pathname.type,
 						  pname->pathname.version,
@@ -1310,9 +1310,9 @@ cl_object
 cl_directory_namestring(cl_object pname)
 {
 	pname = cl_pathname(pname);
-	@(return ecl_namestring(ecl_make_pathname(Cnil, Cnil,
+	@(return ecl_namestring(ecl_make_pathname(ECL_NIL, ECL_NIL,
 						  pname->pathname.directory,
-						  Cnil, Cnil, Cnil,
+						  ECL_NIL, ECL_NIL, ECL_NIL,
                                                   @':local'),
 				ECL_NAMESTRING_TRUNCATE_IF_ERROR))
 }
@@ -1327,7 +1327,7 @@ cl_host_namestring(cl_object pname)
 	@(return pname)
 }
 
-#define EN_MATCH(p1,p2,el) (ecl_equalp(p1->pathname.el, p2->pathname.el)? Cnil : p1->pathname.el)
+#define EN_MATCH(p1,p2,el) (ecl_equalp(p1->pathname.el, p2->pathname.el)? ECL_NIL : p1->pathname.el)
 
 @(defun enough_namestring (path
 	&o (defaults si_default_pathname_defaults()))
@@ -1349,15 +1349,15 @@ cl_host_namestring(cl_object pname)
 		   and if they have some common elements, we just output the remaining ones. */
 		cl_object dir_begin = funcall(5, @'mismatch', pathdir, defaultdir,
 					      @':test', @'equal');
-		if (dir_begin == Cnil) {
-			pathdir = Cnil;
+		if (dir_begin == ECL_NIL) {
+			pathdir = ECL_NIL;
 		} else if (dir_begin == cl_length(defaultdir)) {
 			pathdir = funcall(3, @'subseq', pathdir, dir_begin);
 			pathdir = CONS(@':relative', pathdir);
 		}
 	}
 	fname = EN_MATCH(path, defaults, name);
-	if (fname == Cnil) fname = path->pathname.name;
+	if (fname == ECL_NIL) fname = path->pathname.name;
 	/* Create a path with all elements that do not match the default */
 	newpath
 	= ecl_make_pathname(EN_MATCH(path, defaults, host),
@@ -1448,7 +1448,7 @@ path_item_match(cl_object a, cl_object mask) {
 		return TRUE;
 	/* If a component in the tested path is a wildcard field, this
 	   can only be matched by the same wildcard field in the mask */
-	if (!ecl_stringp(a) || mask == Cnil)
+	if (!ecl_stringp(a) || mask == ECL_NIL)
 		return (a == mask);
 	if (!ecl_stringp(mask))
 		FEerror("~S is not supported as mask for pathname-match-p", 1, mask);
@@ -1490,7 +1490,7 @@ path_list_match(cl_object a, cl_object mask) {
 cl_object
 cl_pathname_match_p(cl_object path, cl_object mask)
 {
-	cl_object output = Cnil;
+	cl_object output = ECL_NIL;
 	path = cl_pathname(path);
 	mask = cl_pathname(mask);
 	if (path->pathname.logical != mask->pathname.logical)
@@ -1510,7 +1510,7 @@ cl_pathname_match_p(cl_object path, cl_object mask)
 		goto OUTPUT;
 	if (Null(mask->pathname.version) ||
 	    path_item_match(path->pathname.version, mask->pathname.version))
-		output = Ct;
+		output = ECL_T;
  OUTPUT:
 	@(return output)
 }
@@ -1550,21 +1550,21 @@ coerce_to_from_pathname(cl_object x, cl_object host)
 	/* Find its translation list */
 	pair = @assoc(4, host, cl_core.pathname_translations, @':test', @'string-equal');
 	if (set == OBJNULL) {
-		@(return ((pair == Cnil)? Cnil : CADR(pair)));
+		@(return ((pair == ECL_NIL)? ECL_NIL : CADR(pair)));
 	}
 	/* Set the new translation list */
         if (ecl_unlikely(!LISTP(set))) {
                 FEwrong_type_nth_arg(@[si::pathname-translations], 2, set, @[list]);
         }
-	if (pair == Cnil) {
-		pair = CONS(host, CONS(Cnil, Cnil));
+	if (pair == ECL_NIL) {
+		pair = CONS(host, CONS(ECL_NIL, ECL_NIL));
 		cl_core.pathname_translations = CONS(pair, cl_core.pathname_translations);
 	}
-	for (l = set, set = Cnil; !ecl_endp(l); l = CDR(l)) {
+	for (l = set, set = ECL_NIL; !ecl_endp(l); l = CDR(l)) {
 		cl_object item = CAR(l);
 		cl_object from = coerce_to_from_pathname(cl_car(item), host);
 		cl_object to = cl_pathname(cl_cadr(item));
-		set = CONS(CONS(from, CONS(to, Cnil)), set);
+		set = CONS(CONS(from, CONS(to, ECL_NIL)), set);
 	}
 	set = cl_nreverse(set);
 	ECL_RPLACA(ECL_CONS_CDR(pair), set);
@@ -1608,13 +1608,13 @@ find_wilds(cl_object l, cl_object source, cl_object match)
 static cl_object
 find_list_wilds(cl_object a, cl_object mask)
 {
-	cl_object l = Cnil, l2;
+	cl_object l = ECL_NIL, l2;
 
 	while (!ecl_endp(mask)) {
 		cl_object item_mask = CAR(mask);
 		mask = CDR(mask);
 		if (item_mask == @':wild-inferiors') {
-			l2 = Cnil;
+			l2 = ECL_NIL;
 			while (!path_list_match(a, mask)) {
 				if (ecl_endp(a))
 					return @':error';
@@ -1694,7 +1694,7 @@ copy_wildcards(cl_object *wilds_list, cl_object pattern)
 static cl_object
 copy_list_wildcards(cl_object *wilds, cl_object to)
 {
-	cl_object l = Cnil;
+	cl_object l = ECL_NIL;
 
 	while (!ecl_endp(to)) {
 		cl_object d, mask = CAR(to);
@@ -1741,7 +1741,7 @@ copy_list_wildcards(cl_object *wilds, cl_object to)
 		goto error;
 
 	/* Match host names */
-	if (cl_string_equal(2, source->pathname.host, from->pathname.host) == Cnil)
+	if (cl_string_equal(2, source->pathname.host, from->pathname.host) == ECL_NIL)
 		goto error;
 	host = to->pathname.host;
 
@@ -1759,12 +1759,12 @@ copy_list_wildcards(cl_object *wilds, cl_object to)
                 wilds = translate_list_case(wilds, fromcase, tocase);
                 d = copy_list_wildcards(&wilds, to->pathname.directory);
                 if (d == @':error') goto error;
-                if (wilds != Cnil) goto error2;
+                if (wilds != ECL_NIL) goto error2;
         }
 	directory = d;
 
 	/* Match name */
-	wilds = find_wilds(Cnil, source->pathname.name, from->pathname.name);
+	wilds = find_wilds(ECL_NIL, source->pathname.name, from->pathname.name);
 	if (wilds == @':error') goto error2;
 	if (Null(to->pathname.name)) {
                 d = translate_component_case(from->pathname.name, fromcase, tocase);
@@ -1772,12 +1772,12 @@ copy_list_wildcards(cl_object *wilds, cl_object to)
                 wilds = translate_list_case(wilds, fromcase, tocase);
                 d = copy_wildcards(&wilds, to->pathname.name);
                 if (d == @':error') goto error;
-                if (wilds != Cnil) goto error2;
+                if (wilds != ECL_NIL) goto error2;
         }
 	name = d;
 
 	/* Match type */
-	wilds = find_wilds(Cnil, source->pathname.type, from->pathname.type);
+	wilds = find_wilds(ECL_NIL, source->pathname.type, from->pathname.type);
 	if (wilds == @':error') goto error2;
 	if (Null(to->pathname.type)) {
                 d = translate_component_case(from->pathname.type, fromcase, tocase);
@@ -1785,7 +1785,7 @@ copy_list_wildcards(cl_object *wilds, cl_object to)
                 wilds = translate_list_case(wilds, fromcase, tocase);
                 d = copy_wildcards(&wilds, to->pathname.type);
                 if (d == @':error') goto error;
-                if (wilds != Cnil) goto error2;
+                if (wilds != ECL_NIL) goto error2;
         }
 	type = d;
 

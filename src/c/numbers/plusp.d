@@ -21,7 +21,7 @@
 cl_object
 cl_plusp(cl_object x)
 {	/* INV: ecl_plusp()  checks type */
-	@(return (ecl_plusp(x) ? Ct : Cnil))
+	@(return (ecl_plusp(x) ? ECL_T : ECL_NIL))
 }
 
 static int

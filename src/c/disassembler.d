@@ -24,27 +24,27 @@ static cl_opcode *base = NULL;
 
 static void
 print_noarg(const char *s) {
-	ecl_princ_str(s, Cnil);
+	ecl_princ_str(s, ECL_NIL);
 }
 
 static void
 print_oparg(const char *s, cl_fixnum n) {
-	ecl_princ_str(s, Cnil);
-	ecl_princ(ecl_make_fixnum(n), Cnil);
+	ecl_princ_str(s, ECL_NIL);
+	ecl_princ(ecl_make_fixnum(n), ECL_NIL);
 }
 
 static void
 print_arg(const char *s, cl_object x) {
-	ecl_princ_str(s, Cnil);
-	ecl_princ(x, Cnil);
+	ecl_princ_str(s, ECL_NIL);
+	ecl_princ(x, ECL_NIL);
 }
 
 static void
 print_oparg_arg(const char *s, cl_fixnum n, cl_object x) {
-	ecl_princ_str(s, Cnil);
-	ecl_princ(ecl_make_fixnum(n), Cnil);
-	ecl_princ_str(",", Cnil);
-	ecl_princ(x, Cnil);
+	ecl_princ_str(s, ECL_NIL);
+	ecl_princ(ecl_make_fixnum(n), ECL_NIL);
+	ecl_princ_str(",", ECL_NIL);
+	ecl_princ(x, ECL_NIL);
 }
 
 #define GET_DATA(r,v,data) { \
@@ -59,7 +59,7 @@ disassemble_lambda(cl_object bytecodes) {
 	cl_object *data;
 	cl_opcode *vector;
 
-	ecl_bds_bind(env, @'*print-pretty*', Cnil);
+	ecl_bds_bind(env, @'*print-pretty*', ECL_NIL);
 
 	/* Print required arguments */
 	data = bytecodes->bytecodes.data->vector.self.t;
@@ -156,10 +156,10 @@ disassemble_tagbody(cl_object bytecodes, cl_opcode *vector) {
 	print_noarg("TAGBODY");
 	for (i=0; i<ntags; i++) {
 		GET_LABEL(destination, vector);
-		ecl_princ_str("\n\tTAG\t", Ct);
-		ecl_princ(ecl_make_fixnum(i), Ct);
-		ecl_princ_str(" @@ ", Ct);
-		ecl_princ(ecl_make_fixnum(destination - base), Ct);
+		ecl_princ_str("\n\tTAG\t", ECL_T);
+		ecl_princ(ecl_make_fixnum(i), ECL_T);
+		ecl_princ_str(" @@ ", ECL_T);
+		ecl_princ(ecl_make_fixnum(destination - base), ECL_T);
 	}
 	vector = disassemble(bytecodes, vector);
 	print_noarg("\t\t; tagbody");
@@ -176,22 +176,22 @@ disassemble(cl_object bytecodes, cl_opcode *vector) {
 	cl_object *data = bytecodes->bytecodes.data->vector.self.t;
 	cl_object line_no;
 
-	if (cl_fboundp(@'si::formatter-aux') != Cnil)
+	if (cl_fboundp(@'si::formatter-aux') != ECL_NIL)
 		line_format = make_constant_base_string("~%~4d\t");
 	else
-		line_format = Cnil;
+		line_format = ECL_NIL;
  BEGIN:
 	if (1) {
 		line_no = ecl_make_fixnum(vector-base);
 	} else {
 		line_no = @'*';
 	}
-	if (line_format != Cnil) {
-		cl_format(3, Ct, line_format, line_no);
+	if (line_format != ECL_NIL) {
+		cl_format(3, ECL_T, line_format, line_no);
 	} else {
-		ecl_princ_char('\n', Ct);
-		ecl_princ(line_no, Ct);
-		ecl_princ_char('\t', Ct);
+		ecl_princ_char('\n', ECL_T);
+		ecl_princ(line_no, ECL_T);
+		ecl_princ_char('\t', ECL_T);
 	}
 	switch (GET_OPCODE(vector)) {
 
@@ -301,7 +301,7 @@ disassemble(cl_object bytecodes, cl_opcode *vector) {
 	case OP_CATCH:		string = "CATCH\tREG0";
 				goto NOARG;
 	case OP_DO:		string = "BLOCK\t";
-				o = Cnil;
+				o = ECL_NIL;
 				goto ARG;
 	case OP_FRAME:		string = "FRAME\t";
 				goto JMP;
@@ -619,22 +619,22 @@ si_bc_disassemble(cl_object v)
 		disassemble_lambda(v);
 		@(return v)
 	}
-	@(return Cnil)
+	@(return ECL_NIL)
 }
 
 cl_object
 si_bc_split(cl_object b)
 {
-	cl_object vector, data, name, lex = Cnil;
+	cl_object vector, data, name, lex = ECL_NIL;
 
 	if (type_of(b) == t_bclosure) {
 		b = b->bclosure.code;
 		lex = b->bclosure.lex;
 	}
 	if (type_of(b) != t_bytecodes) {
-                vector = Cnil;
-                data = Cnil;
-                name = Cnil;
+                vector = ECL_NIL;
+                data = ECL_NIL;
+                name = ECL_NIL;
         } else {
                 vector = ecl_alloc_simple_vector(b->bytecodes.code_size *
                                                  sizeof(cl_opcode), ecl_aet_b8);
@@ -649,9 +649,9 @@ cl_object
 si_bc_join(cl_object lex, cl_object code, cl_object data, cl_object name)
 {
         cl_object output;
-        if (lex != Cnil) {
+        if (lex != ECL_NIL) {
                 output = ecl_alloc_object(t_bclosure);
-                output->bclosure.code = si_bc_join(Cnil, code, data, name);
+                output->bclosure.code = si_bc_join(ECL_NIL, code, data, name);
                 output->bclosure.lex = lex;
                 output->bclosure.entry = _ecl_bclosure_dispatch_vararg;
         } else {
@@ -670,20 +670,20 @@ si_bc_join(cl_object lex, cl_object code, cl_object data, cl_object name)
                                              0, code,
                                              cl_list(2,
                                                      @'simple-array',
-                                                     Ct));
+                                                     ECL_T));
                 }
                 /* Duplicate the vectors and steal their data pointers */
                 code = cl_copy_seq(code);
                 data = cl_copy_seq(data);
                 output = ecl_alloc_object(t_bytecodes);
-                output->bytecodes.name = Cnil;
-                output->bytecodes.definition = Cnil;
+                output->bytecodes.name = ECL_NIL;
+                output->bytecodes.definition = ECL_NIL;
                 output->bytecodes.entry = _ecl_bytecodes_dispatch_vararg;
                 output->bytecodes.code_size = code->vector.fillp / sizeof(cl_opcode);
                 output->bytecodes.code = (void*)code->vector.self.b8;
                 output->bytecodes.data = data;
-                output->bytecodes.file = Cnil;
-                output->bytecodes.file_position = Cnil;
+                output->bytecodes.file = ECL_NIL;
+                output->bytecodes.file_position = ECL_NIL;
         }
         @(return output)
 }

@@ -115,14 +115,14 @@ si_dump_c_backtrace(cl_object size)
         fflush(stderr);
         free(names);
         }
-        ecl_return1(the_env, Ct);
+        ecl_return1(the_env, ECL_T);
 #else
-        ecl_return1(the_env, Cnil);
+        ecl_return1(the_env, ECL_NIL);
 #endif
 }
 
 cl_object
 si_backtrace(cl_object start, cl_object end)
 {
-        @(return Cnil)
+        @(return ECL_NIL)
 }

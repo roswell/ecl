@@ -35,7 +35,7 @@ empty_cache(ecl_cache_ptr cache)
 		table->vector.self.fix[i+2] = 0;
 	}
 #ifdef ECL_THREADS
-	cache->clear_list = Cnil;
+	cache->clear_list = ECL_NIL;
 #endif
 }
 
@@ -79,19 +79,19 @@ ecl_make_cache(cl_index key_size, cl_index cache_size)
 {
 	ecl_cache_ptr cache = ecl_alloc(sizeof(struct ecl_cache));
 	cache->keys =
-		si_make_vector(Ct, /* element type */
+		si_make_vector(ECL_T, /* element type */
 			       ecl_make_fixnum(key_size), /* Maximum size */
-			       Ct, /* adjustable */
+			       ECL_T, /* adjustable */
 			       ecl_make_fixnum(0), /* fill pointer */
-			       Cnil, /* displaced */
-			       Cnil);
+			       ECL_NIL, /* displaced */
+			       ECL_NIL);
 	cache->table =
-		si_make_vector(Ct, /* element type */
+		si_make_vector(ECL_T, /* element type */
 			       ecl_make_fixnum(3*cache_size), /* Maximum size */
-			       Cnil, /* adjustable */
-			       Cnil, /* fill pointer */
-			       Cnil, /* displaced */
-			       Cnil);
+			       ECL_NIL, /* adjustable */
+			       ECL_NIL, /* fill pointer */
+			       ECL_NIL, /* displaced */
+			       ECL_NIL);
 	empty_cache(cache);
 	return cache;
 }
@@ -210,7 +210,7 @@ ecl_search_cache(ecl_cache_ptr cache)
 			cl_fixnum g = RECORD_GEN(e) - gen;
 			if (g <= 0) {
 				RECORD_KEY(e) = OBJNULL;
-				RECORD_VALUE(e) = Cnil;
+				RECORD_VALUE(e) = ECL_NIL;
 				g = 0;
 			}
 			RECORD_GEN_SET(e, g);

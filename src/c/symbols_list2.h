@@ -10,9 +10,9 @@
 # define ECL_NAME(x) NULL
 #endif
 #ifdef ECL_RELATIVE_PACKAGE_NAMES
-# define RELATIVE_PACKAGES_P Ct
+# define RELATIVE_PACKAGES_P ECL_T
 #else
-# define RELATIVE_PACKAGES_P Cnil
+# define RELATIVE_PACKAGES_P ECL_NIL
 #endif
 #ifdef DPP
 #define CLOS_ "CLOS::"

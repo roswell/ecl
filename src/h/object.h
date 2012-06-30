@@ -123,8 +123,8 @@ typedef cl_object (*cl_objectfn_fixed)();
 #define ECL_IMMEDIATE(o)	((cl_fixnum)(o) & 3)
 #define ECL_IMMEDIATE_TAG	3
 
-#define ecl_to_bool(x) ((x)!=Cnil)
-#define ecl_make_bool(x) ((x)? Ct : Cnil)
+#define ecl_to_bool(x) ((x)!=ECL_NIL)
+#define ecl_make_bool(x) ((x)? ECL_T : ECL_NIL)
 
 /* Immediate fixnums:		*/
 #define ECL_FIXNUM_TAG		t_fixnum
@@ -242,9 +242,9 @@ enum ecl_stype {		/*  symbol type  */
 	ecl_stp_special_form = 8
 };
 
-#define	Cnil			((cl_object)t_list)
-#define	Cnil_symbol		((cl_object)cl_symbols)
-#define	Ct			((cl_object)(cl_symbols+1))
+#define	ECL_NIL			((cl_object)t_list)
+#define	ECL_NIL_SYMBOL		((cl_object)cl_symbols)
+#define	ECL_T			((cl_object)(cl_symbols+1))
 #define ECL_UNBOUND		((cl_object)(cl_symbols+2))
 #define ECL_PROTECT_TAG		((cl_object)(cl_symbols+3))
 
@@ -261,7 +261,7 @@ struct ecl_symbol {
 				/*  This field coincides with cons.car  */
 	cl_object name;		/*  print name  */
 	cl_object hpack;	/*  home package  */
-				/*  Cnil for uninterned symbols  */
+				/*  ECL_NIL for uninterned symbols  */
 #ifdef ECL_THREADS
         cl_index binding;	/*  index into the bindings array  */
 #endif

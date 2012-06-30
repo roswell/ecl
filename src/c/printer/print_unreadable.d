@@ -78,5 +78,5 @@ si_print_unreadable_object_function(cl_object o, cl_object stream, cl_object typ
 		}
 		ecl_write_char('>', stream);
 	}
-	@(return Cnil)
+	@(return ECL_NIL)
 }

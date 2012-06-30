@@ -66,7 +66,7 @@ write_array_inner(bool vector, cl_object x, cl_object stream)
 			}
 			ecl_write_char(')', stream);
 		} else {
-			si_write_object(Cnil, stream);
+			si_write_object(ECL_NIL, stream);
 		}
 		ecl_write_char(' ', stream);
 	} else if (!vector) {

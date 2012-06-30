@@ -45,12 +45,12 @@
 static cl_object
 search_symbol_macro(cl_object name, cl_object env)
 {
-	for (env = CAR(env); env != Cnil; env = CDR(env)) {
+	for (env = CAR(env); env != ECL_NIL; env = CDR(env)) {
 		cl_object record = CAR(env);
 		if (CONSP(record) && CAR(record) == name) {
 			if (CADR(record) == @'si::symbol-macro')
 				return CADDR(record);
-			return Cnil;
+			return ECL_NIL;
 		}
 	}
 	return si_get_sysprop(name, @'si::symbol-macro');
@@ -60,7 +60,7 @@ static cl_object
 search_macro_function(cl_object name, cl_object env)
 {
 	int type = ecl_symbol_type(name);
-	if (env != Cnil) {
+	if (env != ECL_NIL) {
 		/* When the environment has been produced by the
 		   compiler, there might be atoms/symbols signalling
 		   closure and block boundaries. */
@@ -71,7 +71,7 @@ search_macro_function(cl_object name, cl_object env)
 				if (tag == @'si::macro')
 					return CADDR(record);
 				if (tag == @'function')
-					return Cnil;
+					return ECL_NIL;
 				break;
 			}
 		}
@@ -79,7 +79,7 @@ search_macro_function(cl_object name, cl_object env)
 	if (type & ecl_stp_macro) {
 		return SYM_FUN(name);
 	} else {
-		return Cnil;
+		return ECL_NIL;
 	}
 }
 
@@ -94,8 +94,8 @@ search_macro_function(cl_object name, cl_object env)
 	VALUES(1) is true when there was a macroexpansion.
 */
 
-@(defun macroexpand_1 (form &optional (env Cnil))
-	cl_object exp_fun = Cnil;
+@(defun macroexpand_1 (form &optional (env ECL_NIL))
+	cl_object exp_fun = ECL_NIL;
 @
 	if (ECL_ATOM(form)) {
 		if (ECL_SYMBOLP(form))
@@ -122,15 +122,15 @@ search_macro_function(cl_object name, cl_object env)
 @(defun macroexpand (form &optional env)
 	cl_object done, old_form;
 @
-	done = Cnil;
+	done = ECL_NIL;
 	do {
 		form = cl_macroexpand_1(2, old_form = form, env);
-		if (ecl_nth_value(the_env, 1) == Cnil) {
+		if (ecl_nth_value(the_env, 1) == ECL_NIL) {
 			break;
 		} else if (old_form == form) {
 			FEerror("Infinite loop when expanding macro form ~A", 1, old_form);
 		} else {
-			done = Ct;
+			done = ECL_T;
 		}
 	} while (1);
 	@(return form done)
@@ -139,18 +139,18 @@ search_macro_function(cl_object name, cl_object env)
 static cl_object
 or_macro(cl_object whole, cl_object env)
 {
-	cl_object output = Cnil;
+	cl_object output = ECL_NIL;
 	whole = CDR(whole);
 	if (Null(whole))	/* (OR) => NIL */
-		@(return Cnil);
+		@(return ECL_NIL);
 	while (!Null(CDR(whole))) {
-		output = CONS(CONS(CAR(whole), Cnil), output);
+		output = CONS(CONS(CAR(whole), ECL_NIL), output);
 		whole = CDR(whole);
 	}
 	if (Null(output))	/* (OR form1) => form1 */
 		@(return CAR(whole));
 	/* (OR form1 ... formn forml) => (COND (form1) ... (formn) (t forml)) */
-	output = CONS(cl_list(2, Ct, CAR(whole)), output);
+	output = CONS(cl_list(2, ECL_T, CAR(whole)), output);
 	@(return CONS(@'cond', cl_nreverse(output)))
 }
 
@@ -158,7 +158,7 @@ static cl_object
 expand_and(cl_object whole)
 {
 	if (Null(whole))
-		return Ct;
+		return ECL_T;
 	if (Null(CDR(whole)))
 		return CAR(whole);
 	return cl_list(3, @'if', CAR(whole), expand_and(CDR(whole)));

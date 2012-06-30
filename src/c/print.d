@@ -23,7 +23,7 @@ _ecl_stream_or_default_output(cl_object stream)
 {
 	if (Null(stream))
 		return ecl_symbol_value(@'*standard-output*');
-	else if (stream == Ct)
+	else if (stream == ECL_T)
 		return ecl_symbol_value(@'*terminal-io*');
 	return stream;
 }
@@ -46,12 +46,12 @@ ecl_print_level(void)
 {
 	cl_object object = ecl_symbol_value(@'*print-level*');
 	cl_fixnum level;
-	if (object == Cnil) {
+	if (object == ECL_NIL) {
 		level = MOST_POSITIVE_FIXNUM;
 	} else if (ECL_FIXNUMP(object)) {
 		level = ecl_fixnum(object);
 		if (level < 0) {
-		ERROR:	ECL_SETQ(ecl_process_env(), @'*print-level*', Cnil);
+		ERROR:	ECL_SETQ(ecl_process_env(), @'*print-level*', ECL_NIL);
 			FEerror("The value of *PRINT-LEVEL*~%  ~S~%"
                                 "is not of the expected type (OR NULL (INTEGER 0 *))",
                                 1, object);
@@ -69,12 +69,12 @@ ecl_print_length(void)
 {
 	cl_object object = ecl_symbol_value(@'*print-length*');
 	cl_fixnum length;
-	if (object == Cnil) {
+	if (object == ECL_NIL) {
 		length = MOST_POSITIVE_FIXNUM;
 	} else if (ECL_FIXNUMP(object)) {
 		length = ecl_fixnum(object);
 		unlikely_if (length < 0) {
-		ERROR:	ECL_SETQ(ecl_process_env(), @'*print-length*', Cnil);
+		ERROR:	ECL_SETQ(ecl_process_env(), @'*print-length*', ECL_NIL);
 			FEerror("The value of *PRINT-LENGTH*~%  ~S~%"
                                 "is not of the expected type (OR NULL (INTEGER 0 *))",
                                 1, object);
@@ -90,7 +90,7 @@ ecl_print_length(void)
 bool
 ecl_print_radix(void)
 {
-	return ecl_symbol_value(@'*print-radix*') != Cnil;
+	return ecl_symbol_value(@'*print-radix*') != ECL_NIL;
 }
 
 cl_object
@@ -112,35 +112,35 @@ ecl_print_case(void)
 bool
 ecl_print_gensym(void)
 {
-	return ecl_symbol_value(@'*print-gensym*') != Cnil;
+	return ecl_symbol_value(@'*print-gensym*') != ECL_NIL;
 }
 
 bool
 ecl_print_array(void)
 {
-	return ecl_symbol_value(@'*print-array*') != Cnil;
+	return ecl_symbol_value(@'*print-array*') != ECL_NIL;
 }
 
 bool
 ecl_print_readably(void)
 {
-	return ecl_symbol_value(@'*print-readably*') != Cnil;
+	return ecl_symbol_value(@'*print-readably*') != ECL_NIL;
 }
 
 bool
 ecl_print_escape(void)
 {
-	return ecl_symbol_value(@'*print-escape*') != Cnil;
+	return ecl_symbol_value(@'*print-escape*') != ECL_NIL;
 }
 
 bool
 ecl_print_circle(void)
 {
-	return ecl_symbol_value(@'*print-circle*') != Cnil;
+	return ecl_symbol_value(@'*print-circle*') != ECL_NIL;
 }
 
 @(defun write (x
-	       &key ((:stream strm) Cnil)
+	       &key ((:stream strm) ECL_NIL)
 		    (array ecl_symbol_value(@'*print-array*'))
 		    (base ecl_symbol_value(@'*print-base*'))
 		    ((:case cas) ecl_symbol_value(@'*print-case*'))
@@ -196,8 +196,8 @@ ecl_print_circle(void)
 @(defun pprint (obj &optional strm)
 @
 	strm = _ecl_stream_or_default_output(strm);
-	ecl_bds_bind(the_env, @'*print-escape*', Ct);
-	ecl_bds_bind(the_env, @'*print-pretty*', Ct);
+	ecl_bds_bind(the_env, @'*print-escape*', ECL_T);
+	ecl_bds_bind(the_env, @'*print-pretty*', ECL_T);
 	ecl_write_char('\n', strm);
 	si_write_object(obj, strm);
 	ecl_force_output(strm);
@@ -252,7 +252,7 @@ ecl_print_circle(void)
 @(defun terpri (&optional strm)
 @
 	ecl_terpri(strm);
-	@(return Cnil)
+	@(return ECL_NIL)
 @)
 
 @(defun fresh-line (&optional strm)
@@ -264,10 +264,10 @@ ecl_print_circle(void)
 	}
 #endif
 	if (ecl_file_column(strm) == 0)
-		@(return Cnil)
+		@(return ECL_NIL)
 	ecl_write_char('\n', strm);
 	ecl_force_output(strm);
-	@(return Ct)
+	@(return ECL_T)
 @)
 
 @(defun finish-output (&o strm)
@@ -279,21 +279,21 @@ ecl_print_circle(void)
 	}
 #endif
 	ecl_force_output(strm);
-	@(return Cnil)
+	@(return ECL_NIL)
 @)
 
 @(defun force-output (&o strm)
 @
  	strm = _ecl_stream_or_default_output(strm);
 	ecl_force_output(strm);
-	@(return Cnil)
+	@(return ECL_NIL)
 @)
 
 @(defun clear-output (&o strm)
 @
  	strm = _ecl_stream_or_default_output(strm);
 	ecl_clear_output(strm);
-	@(return Cnil)
+	@(return ECL_NIL)
 @)
 
 cl_object
@@ -319,8 +319,8 @@ ecl_princ(cl_object obj, cl_object strm)
 {
 	const cl_env_ptr the_env = ecl_process_env();
 	strm = _ecl_stream_or_default_output(strm);
-	ecl_bds_bind(the_env, @'*print-escape*', Cnil);
-	ecl_bds_bind(the_env, @'*print-readably*', Cnil);
+	ecl_bds_bind(the_env, @'*print-escape*', ECL_NIL);
+	ecl_bds_bind(the_env, @'*print-readably*', ECL_NIL);
 	si_write_object(obj, strm);
 	ecl_bds_unwind_n(the_env, 2);
 	return obj;
@@ -331,7 +331,7 @@ ecl_prin1(cl_object obj, cl_object strm)
 {
 	const cl_env_ptr the_env = ecl_process_env();
 	strm = _ecl_stream_or_default_output(strm);
-	ecl_bds_bind(the_env, @'*print-escape*', Ct);
+	ecl_bds_bind(the_env, @'*print-escape*', ECL_T);
 	si_write_object(obj, strm);
 	ecl_force_output(strm);
 	ecl_bds_unwind1(the_env);
@@ -359,7 +359,7 @@ ecl_terpri(cl_object strm)
 #endif
 	ecl_write_char('\n', strm);
 	ecl_force_output(strm);
-	return(Cnil);
+	return(ECL_NIL);
 }
 
 void

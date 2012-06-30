@@ -43,25 +43,25 @@ ecl_evenp(cl_object x)
 cl_object
 cl_oddp(cl_object x)
 {	/* INV: ecl_oddp() checks type */
-	@(return (ecl_oddp(x) ? Ct : Cnil))
+	@(return (ecl_oddp(x) ? ECL_T : ECL_NIL))
 }
 
 cl_object
 cl_evenp(cl_object x)
 {	/* INV: ecl_evenp() checks_type */
-	@(return (ecl_evenp(x) ? Ct : Cnil))
+	@(return (ecl_evenp(x) ? ECL_T : ECL_NIL))
 }
 
 cl_object
 si_float_nan_p(cl_object x)
 {
-	@(return (ecl_float_nan_p(x)? Ct : Cnil))
+	@(return (ecl_float_nan_p(x)? ECL_T : ECL_NIL))
 }
 
 cl_object
 si_float_infinity_p(cl_object x)
 {
-	@(return (ecl_float_infinity_p(x)? Ct : Cnil))
+	@(return (ecl_float_infinity_p(x)? ECL_T : ECL_NIL))
 }
 
 bool

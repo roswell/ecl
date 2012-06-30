@@ -57,7 +57,7 @@ write_sse_pack(cl_object x, cl_object stream)
 	cl_elttype etype = x->sse.elttype;
 	cl_object mode = ecl_symbol_value(@'ext::*sse-pack-print-mode*');
 
-	if (mode != Cnil) {
+	if (mode != ECL_NIL) {
 		if (mode == @':float') etype = ecl_aet_sf;
 		else if (mode == @':double') etype = ecl_aet_df;
 		else etype = ecl_aet_b8;
@@ -78,9 +78,9 @@ write_sse_pack(cl_object x, cl_object stream)
                         ecl_string_push_extend(buffer, ' ');
                         if (i%4 == 0) ecl_string_push_extend(buffer, ' ');
                         si_integer_to_string(buffer, ecl_make_fixnum(x->sse.data.b8[i]),
-                                             ecl_make_fixnum(16), Cnil, Cnil);
+                                             ecl_make_fixnum(16), ECL_NIL, ECL_NIL);
 		}
-                si_do_write_sequence(buffer, stream, ecl_make_fixnum(0), Cnil);
+                si_do_write_sequence(buffer, stream, ecl_make_fixnum(0), ECL_NIL);
                 si_put_buffer_string(buffer);
                 break;
         }

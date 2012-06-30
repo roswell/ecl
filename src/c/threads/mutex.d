@@ -48,15 +48,15 @@ ecl_make_lock(cl_object name, bool recursive)
 {
 	cl_object output = ecl_alloc_object(t_lock);
 	output->lock.name = name;
-	output->lock.owner = Cnil;
+	output->lock.owner = ECL_NIL;
 	output->lock.counter = 0;
 	output->lock.recursive = recursive;
-	output->lock.queue_list = Cnil;
-	output->lock.queue_spinlock = Cnil;
+	output->lock.queue_list = ECL_NIL;
+	output->lock.queue_spinlock = ECL_NIL;
         return output;
 }
 
-@(defun mp::make-lock (&key name ((:recursive recursive) Cnil))
+@(defun mp::make-lock (&key name ((:recursive recursive) ECL_NIL))
 @
 	@(return ecl_make_lock(name, !Null(recursive)))
 @)
@@ -67,7 +67,7 @@ mp_recursive_lock_p(cl_object lock)
 	cl_env_ptr env = ecl_process_env();
 	unlikely_if (type_of(lock) != t_lock)
 		FEerror_not_a_lock(lock);
-	ecl_return1(env, lock->lock.recursive? Ct : Cnil);
+	ecl_return1(env, lock->lock.recursive? ECL_T : ECL_NIL);
 }
 
 cl_object
@@ -113,13 +113,13 @@ mp_giveup_lock(cl_object lock)
                 FEerror_not_owned(lock);
 	}
 	if (--lock->lock.counter == 0) {
-		lock->lock.owner = Cnil;
+		lock->lock.owner = ECL_NIL;
 		print_lock("releasing %p\t", lock, lock);
 		ecl_wakeup_waiters(env, lock, ECL_WAKEUP_ONE);
 	} else {
 		print_lock("released %p\t", lock, lock);
 	}
-        ecl_return1(env, Ct);
+        ecl_return1(env, ECL_T);
 }
 
 static cl_object
@@ -129,20 +129,20 @@ get_lock_inner(cl_env_ptr env, cl_object lock)
 	cl_object own_process = env->own_process;
 	ecl_disable_interrupts_env(env);
         if (AO_compare_and_swap_full((AO_t*)&(lock->lock.owner),
-				     (AO_t)Cnil, (AO_t)own_process)) {
+				     (AO_t)ECL_NIL, (AO_t)own_process)) {
 		lock->lock.counter = 1;
-		output = Ct;
+		output = ECL_T;
 		print_lock("acquired %p\t", lock, lock);
 	} else if (lock->lock.owner == own_process) {
                 unlikely_if (!lock->lock.recursive) {
 			FEerror_not_a_recursive_lock(lock);
 		}
                 ++lock->lock.counter;
-		output = Ct;
+		output = ECL_T;
         } else {
 		print_lock("failed acquiring %p for %d\t", lock, lock,
 			   lock->lock.owner);
-		output = Cnil;
+		output = ECL_NIL;
 	}
 	ecl_enable_interrupts_env(env);
 	return output;
@@ -165,13 +165,13 @@ mp_get_lock_wait(cl_object lock)
 	unlikely_if (type_of(lock) != t_lock) {
 		FEerror_not_a_lock(lock);
 	}
-	if (lock->lock.queue_list != Cnil || get_lock_inner(env, lock) == Cnil) {
+	if (lock->lock.queue_list != ECL_NIL || get_lock_inner(env, lock) == ECL_NIL) {
 		ecl_wait_on(env, get_lock_inner, lock);
 	}
-	@(return Ct)
+	@(return ECL_T)
 }
 
-@(defun mp::get-lock (lock &optional (wait Ct))
+@(defun mp::get-lock (lock &optional (wait ECL_T))
 @
 	if (Null(wait))
         	return mp_get_lock_nowait(lock);

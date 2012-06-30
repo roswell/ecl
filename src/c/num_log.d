@@ -397,7 +397,7 @@ cl_logbitp(cl_object p, cl_object x)
 		else
 			i = (_ecl_big_sign(x) < 0);
 	}
-	@(return (i ? Ct : Cnil))
+	@(return (i ? ECL_T : ECL_NIL))
 }
 
 cl_object
@@ -493,9 +493,9 @@ si_bit_array_op(cl_object o, cl_object x, cl_object y, cl_object r)
 			goto ERROR;
 		yp = y->vector.self.bit;
 		yo = y->vector.offset;
-		if (r == Ct)
+		if (r == ECL_T)
 			r = x;
-		if (r != Cnil) {
+		if (r != ECL_NIL) {
 			if (type_of(r) != t_bitvector)
 				goto ERROR;
 			if (r->vector.dim != d)
@@ -503,14 +503,14 @@ si_bit_array_op(cl_object o, cl_object x, cl_object y, cl_object r)
 			i = (r->vector.self.bit - xp)*8 + (r->vector.offset - xo);
 			if ((i > 0 && i < d) || (i < 0 && -i < d)) {
 				r0 = r;
-				r = Cnil;
+				r = ECL_NIL;
 				replace = TRUE;
 				goto L1;
 			}
 			i = (r->vector.self.bit - yp)*8 + (r->vector.offset - yo);
 			if ((i > 0 && i < d) || (i < 0 && -i < d)) {
 				r0 = r;
-				r = Cnil;
+				r = ECL_NIL;
 				replace = TRUE;
 			}
 		}
@@ -537,9 +537,9 @@ si_bit_array_op(cl_object o, cl_object x, cl_object y, cl_object r)
 		for (i = 0;  i < x->array.rank;  i++)
 			if (x->array.dims[i] != y->array.dims[i])
 				goto ERROR;
-		if (r == Ct)
+		if (r == ECL_T)
 			r = x;
-		if (r != Cnil) {
+		if (r != ECL_NIL) {
 			if (type_of(r) != t_array)
 				goto ERROR;
 			if ((cl_elttype)r->array.elttype != ecl_aet_bit)
@@ -552,14 +552,14 @@ si_bit_array_op(cl_object o, cl_object x, cl_object y, cl_object r)
 			i = (r->vector.self.bit - xp)*8 + (r->vector.offset - xo);
 			if ((i > 0 && i < d) || (i < 0 && -i < d)) {
 				r0 = r;
-				r = Cnil;
+				r = ECL_NIL;
 				replace = TRUE;
 				goto L2;
 			} 
 			i = (r->vector.self.bit - yp)*8 + (r->vector.offset - yo);
 			if ((i > 0 && i < d) || (i < 0 && -i < d)) {
 				r0 = r;
-				r = Cnil;
+				r = ECL_NIL;
 				replace = TRUE;
 			}
 		}
@@ -567,7 +567,7 @@ si_bit_array_op(cl_object o, cl_object x, cl_object y, cl_object r)
 		if (Null(r)) {
 		  r = ecl_alloc_object(t_array);
 		  r->array.self.t = NULL;
-		  r->array.displaced = Cnil;
+		  r->array.displaced = ECL_NIL;
 		  r->array.rank = x->array.rank;
 		  r->array.dims = x->array.dims;
 		  r->array.elttype = ecl_aet_bit;

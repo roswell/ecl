@@ -20,7 +20,7 @@
  */
 #define loop_for_in(list) { \
   const cl_object __ecl_l0 = list; \
-  for (; list != Cnil; list = ECL_CONS_CDR(list)) { \
+  for (; list != ECL_NIL; list = ECL_CONS_CDR(list)) { \
     if (ecl_unlikely(!ECL_LISTP(list))) FEtype_error_proper_list(__ecl_l0);
 
 #define end_loop_for_in }}
@@ -30,7 +30,7 @@
  */
 #define loop_for_on_no_circle(list) \
   if (!CONSP(list)) { \
-    if (list != Cnil) FEtype_error_list(list); \
+    if (list != ECL_NIL) FEtype_error_list(list); \
   }else { \
     cl_object __slow; \
     bool __flag = TRUE; \
@@ -75,14 +75,14 @@
 
 #define ecl_def_string_array_elt(chars) {                      \
                 (int8_t)t_base_string, 0, ecl_aet_bc, 0,            \
-                        Cnil, (cl_index)(sizeof(chars))-1,      \
+                        ECL_NIL, (cl_index)(sizeof(chars))-1,      \
                         (cl_index)(sizeof(chars))-1,            \
                         (ecl_base_char*)(chars) }
 
 #define ecl_def_ct_base_string(name,chars,len,static,const)     \
         static const struct ecl_base_string name ## _data = {    \
                 (int8_t)t_base_string, 0, ecl_aet_bc, 0,            \
-                Cnil, (cl_index)(len), (cl_index)(len),         \
+                ECL_NIL, (cl_index)(len), (cl_index)(len),         \
                 (ecl_base_char*)(chars) };                      \
         static const cl_object name = (cl_object)(& name ## _data)
 
@@ -119,7 +119,7 @@
 #define ecl_def_ct_vector(name,type,raw,len,static,const)               \
         static const struct ecl_vector name ## _data = {                 \
                 (int8_t)t_vector, 0, (type), 0,                         \
-                Cnil, (cl_index)(len), (cl_index)(len),                 \
+                ECL_NIL, (cl_index)(len), (cl_index)(len),                 \
                 ecl_cast_ptr(cl_object*,raw), 0 };                      \
         static const cl_object name = (cl_object)(& name ## _data)
 

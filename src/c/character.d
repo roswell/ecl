@@ -48,7 +48,7 @@ cl_standard_char_p(cl_object c)
 {
 	/* INV: ecl_char_code() checks the type */
 	cl_fixnum i = ecl_char_code(c);
-	@(return (ecl_standard_char_p(i)? Ct : Cnil))
+	@(return (ecl_standard_char_p(i)? ECL_T : ECL_NIL))
 }
 
 bool
@@ -67,35 +67,35 @@ cl_object
 cl_graphic_char_p(cl_object c)
 {
 	/* INV: ecl_char_code() checks the type */
-	@(return (ecl_graphic_char_p(ecl_char_code(c))? Ct : Cnil))
+	@(return (ecl_graphic_char_p(ecl_char_code(c))? ECL_T : ECL_NIL))
 }
 
 cl_object
 cl_alpha_char_p(cl_object c)
 {
 	/* INV: ecl_char_code() checks the type */
-	@(return (ecl_alpha_char_p(ecl_char_code(c))? Ct : Cnil))
+	@(return (ecl_alpha_char_p(ecl_char_code(c))? ECL_T : ECL_NIL))
 }
 
 cl_object
 cl_upper_case_p(cl_object c)
 {
 	/* INV: ecl_char_code() checks the type */
-	@(return (ecl_upper_case_p(ecl_char_code(c))? Ct : Cnil))
+	@(return (ecl_upper_case_p(ecl_char_code(c))? ECL_T : ECL_NIL))
 }
 
 cl_object
 cl_lower_case_p(cl_object c)
 {
 	/* INV: ecl_char_code() checks the type */
-	@(return (ecl_lower_case_p(ecl_char_code(c))? Ct : Cnil))
+	@(return (ecl_lower_case_p(ecl_char_code(c))? ECL_T : ECL_NIL))
 }
 
 cl_object
 cl_both_case_p(cl_object c)
 {
 	/* INV: ecl_char_code() checks the type */
-	@(return (ecl_both_case_p(ecl_char_code(c))? Ct : Cnil))
+	@(return (ecl_both_case_p(ecl_char_code(c))? ECL_T : ECL_NIL))
 }
 
 int
@@ -130,7 +130,7 @@ ecl_string_case(cl_object s)
         }
         basis = ecl_fixnum(radix);
 	value = ecl_digitp(ecl_char_code(c), basis);
-	@(return ((value < 0)? Cnil: ecl_make_fixnum(value)));
+	@(return ((value < 0)? ECL_NIL: ecl_make_fixnum(value)));
 } @)
 
 /*
@@ -162,7 +162,7 @@ cl_alphanumericp(cl_object c)
 {
 	/* INV: ecl_char_code() checks type of `c' */
 	cl_fixnum i = ecl_char_code(c);
-	@(return (ecl_alphanumericp(i)? Ct : Cnil))
+	@(return (ecl_alphanumericp(i)? ECL_T : ECL_NIL))
 }
 
 @(defun char= (c &rest cs)
@@ -170,8 +170,8 @@ cl_alphanumericp(cl_object c)
 	/* INV: ecl_char_eq() checks types of `c' and `cs' */
 	while (--narg)
 		if (!ecl_char_eq(c, ecl_va_arg(cs)))
-			@(return Cnil)
-	@(return Ct)
+			@(return ECL_NIL)
+	@(return ECL_T)
 @)
 
 bool
@@ -194,9 +194,9 @@ ecl_char_eq(cl_object x, cl_object y)
 		c = ecl_va_arg(cs);
 		for (j = 1; j<i; j++)
 			if (ecl_char_eq(ecl_va_arg(ds), c))
-				@(return Cnil)
+				@(return ECL_NIL)
 	}
-	@(return Ct)
+	@(return ECL_T)
 @)
 
 static cl_object
@@ -210,9 +210,9 @@ Lchar_cmp(cl_env_ptr env, cl_narg narg, int s, int t, ecl_va_list args)
 	for (; --narg; c = d) {
 		d = ecl_va_arg(args);
 		if (s*ecl_char_cmp(d, c) < t)
-			ecl_return1(env, Cnil);
+			ecl_return1(env, ECL_NIL);
 	}
-	ecl_return1(env, Ct);
+	ecl_return1(env, ECL_T);
 }
 
 int
@@ -250,9 +250,9 @@ ecl_char_cmp(cl_object x, cl_object y)
 	/* INV: ecl_char_equal() checks the type of its arguments */
 	for (narg--, i = 0;  i < narg;  i++) {
 		if (!ecl_char_equal(c, ecl_va_arg(cs)))
-			@(return Cnil)
+			@(return ECL_NIL)
 	}
-	@(return Ct)
+	@(return ECL_T)
 @)
 
 #define char_equal_code(x) ecl_char_upcase(ecl_char_code(x))
@@ -277,9 +277,9 @@ ecl_char_equal(cl_object x, cl_object y)
 		c = ecl_va_arg(cs);
 		for (j=1;  j<i;  j++)
 			if (ecl_char_equal(c, ecl_va_arg(ds)))
-				@(return Cnil)
+				@(return ECL_NIL)
 	}
-	@(return Ct)
+	@(return ECL_T)
 @)
 
 static cl_object
@@ -294,9 +294,9 @@ Lchar_compare(cl_env_ptr env, cl_narg narg, int s, int t, ecl_va_list args)
 	for (; --narg; c = d) {
 		d = ecl_va_arg(args);
 		if (s*ecl_char_compare(d, c) < t)
-			ecl_return1(env, Cnil);
+			ecl_return1(env, ECL_NIL);
 	}
-	ecl_return1(env, Ct);
+	ecl_return1(env, ECL_T);
 }
 
 int
@@ -381,7 +381,7 @@ cl_code_char(cl_object c)
 			break;
 		}
 	case t_bignum:
-		c = Cnil;
+		c = ECL_NIL;
 		break;
 	default:
                 FEwrong_type_only_arg(@[code-char], c, @[integer]);
@@ -408,7 +408,7 @@ cl_char_downcase(cl_object c)
 @(defun digit_char (weight &optional (radix ecl_make_fixnum(10)))
 @ {
         cl_fixnum basis;
-        cl_object output = Cnil;
+        cl_object output = ECL_NIL;
         if (ecl_unlikely(!ECL_FIXNUMP(radix) ||
                          ecl_fixnum_lower(radix, ecl_make_fixnum(2)) ||
                          ecl_fixnum_greater(radix, ecl_make_fixnum(36)))) {
@@ -483,7 +483,7 @@ cl_char_name(cl_object c)
                 start[0] = 'U';
 		output = make_base_string_copy((const char*)start);
 	} else {
-		output = ecl_gethash_safe(ecl_make_fixnum(code), cl_core.char_names, Cnil);
+		output = ecl_gethash_safe(ecl_make_fixnum(code), cl_core.char_names, ECL_NIL);
 	}
 	@(return output);
 }
@@ -494,15 +494,15 @@ cl_name_char(cl_object name)
 	cl_object c;
 	cl_index l;
 	name = cl_string(name);
-	c = ecl_gethash_safe(name, cl_core.char_names, Cnil);
-        if (c != Cnil) {
+	c = ecl_gethash_safe(name, cl_core.char_names, ECL_NIL);
+        if (c != ECL_NIL) {
                 c = ECL_CODE_CHAR(ecl_fixnum(c));
         } else if (ecl_stringp(name) && (l = ecl_length(name))) {
 		c = cl_char(name, ecl_make_fixnum(0));
 		if (l == 1) {
 			(void)0;
 		} else if (c != ECL_CODE_CHAR('u') && c != ECL_CODE_CHAR('U')) {
-			c = Cnil;
+			c = ECL_NIL;
 		} else {
 			cl_index used_l;
 			cl_index end = name->base_string.fillp;
@@ -510,7 +510,7 @@ cl_name_char(cl_object name)
 			c = ecl_parse_integer(name, 1, end, &real_end, 16);
 			used_l = real_end;
 			if (!ECL_FIXNUMP(c) || (used_l == (l - 1))) {
-				c = Cnil;
+				c = ECL_NIL;
 			} else {
 				c = ECL_CODE_CHAR(ecl_fixnum(c));
 			}

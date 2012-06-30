@@ -72,7 +72,7 @@ si_integer_to_string(cl_object buffer, cl_object integer,
                         buffer = _ecl_ensure_buffer(buffer, 10);
                         write_base_prefix(buffer, ecl_fixnum(base));
                 }
-                buffer = si_integer_to_string(buffer, integer, base, Cnil, Cnil);
+                buffer = si_integer_to_string(buffer, integer, base, ECL_NIL, ECL_NIL);
                 if (!Null(decimalp) && base == ecl_make_fixnum(10)) {
                         _ecl_string_push_c_string(buffer, ".");
                 }

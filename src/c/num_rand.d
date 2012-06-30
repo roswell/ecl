@@ -220,7 +220,7 @@ cl_object
 ecl_make_random_state(cl_object rs)
 {
         cl_object z = ecl_alloc_object(t_random);
-	if (rs == Ct) {
+	if (rs == ECL_T) {
 		z->random.value = init_random_state();
 	} else {
 		if (Null(rs)) {
@@ -241,7 +241,7 @@ ecl_make_random_state(cl_object rs)
 	@(return rando(x, rs));
 @)
 
-@(defun make_random_state (&optional (rs Cnil))
+@(defun make_random_state (&optional (rs ECL_NIL))
 @
 	@(return ecl_make_random_state(rs))
 @)
@@ -249,5 +249,5 @@ ecl_make_random_state(cl_object rs)
 cl_object
 cl_random_state_p(cl_object x)
 {
-	@(return (ECL_RANDOM_STATE_P(x) ? Ct : Cnil))
+	@(return (ECL_RANDOM_STATE_P(x) ? ECL_T : ECL_NIL))
 }

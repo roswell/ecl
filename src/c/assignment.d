@@ -40,7 +40,7 @@ static cl_object
 make_setf_function_error(cl_object name)
 {
 	return ecl_make_cclosure_va((cl_objectfn)unbound_setf_function_error,
-				    name, Cnil);
+				    name, ECL_NIL);
 }
 
 cl_object
@@ -49,10 +49,10 @@ ecl_setf_definition(cl_object sym, cl_object createp)
 	cl_env_ptr the_env = ecl_process_env();
 	cl_object pair;
         ECL_WITH_GLOBAL_ENV_RDLOCK_BEGIN(the_env) {
-                pair = ecl_gethash_safe(sym, cl_core.setf_definitions, Cnil);
+                pair = ecl_gethash_safe(sym, cl_core.setf_definitions, ECL_NIL);
 		if (Null(pair) && !Null(createp)) {
 			createp = make_setf_function_error(sym);
-			pair = ecl_cons(createp, Cnil);
+			pair = ecl_cons(createp, ECL_NIL);
 			ecl_sethash(sym, cl_core.setf_definitions, pair);
 		}
         } ECL_WITH_GLOBAL_ENV_RDLOCK_END;
@@ -70,9 +70,9 @@ ecl_rem_setf_definition(cl_object sym)
 {
 	cl_env_ptr the_env = ecl_process_env();
         ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(the_env) {
-                cl_object pair = ecl_gethash_safe(sym, cl_core.setf_definitions, Cnil);
+                cl_object pair = ecl_gethash_safe(sym, cl_core.setf_definitions, ECL_NIL);
 		if (!Null(pair)) {
-			ECL_RPLACA(pair, Cnil);
+			ECL_RPLACA(pair, ECL_NIL);
 			ecl_remhash(sym, cl_core.setf_definitions);
 		}
         } ECL_WITH_GLOBAL_ENV_WRLOCK_END;
@@ -87,7 +87,7 @@ ecl_rem_setf_definition(cl_object sym)
 	if (Null(cl_functionp(def)))
 		FEinvalid_function(def);
 	pack = ecl_symbol_package(sym);
-	if (pack != Cnil && pack->pack.locked) {
+	if (pack != ECL_NIL && pack->pack.locked) {
 		CEpackage_error("Attempt to redefine function ~S in locked package.",
 				"Ignore lock and proceed", pack, 1, fname);
 	}
@@ -107,7 +107,7 @@ ecl_rem_setf_definition(cl_object sym)
 		SYM_FUN(sym) = def;
 		ecl_clear_compiler_properties(sym);
 #ifndef ECL_CMU_FORMAT
-		if (pprint == Cnil)
+		if (pprint == ECL_NIL)
 			si_rem_sysprop(sym, @'si::pretty-print-format');
 		else
 			si_put_sysprop(sym, @'si::pretty-print-format', pprint);
@@ -138,13 +138,13 @@ cl_fmakunbound(cl_object fname)
 {
 	cl_object sym = si_function_block_name(fname);
 	cl_object pack = ecl_symbol_package(sym);
-	if (pack != Cnil && pack->pack.locked) {
+	if (pack != ECL_NIL && pack->pack.locked) {
 		CEpackage_error("Attempt to redefine function ~S in locked package.",
 				"Ignore lock and proceed", pack, 1, fname);
 	}
 	if (ECL_SYMBOLP(fname)) {
 		ecl_clear_compiler_properties(sym);
-		SYM_FUN(sym) = Cnil;
+		SYM_FUN(sym) = ECL_NIL;
 		ecl_symbol_type_set(sym, ecl_symbol_type(sym) & ~ecl_stp_macro);
 	} else {
 		ecl_rem_setf_definition(sym);
@@ -166,13 +166,13 @@ si_get_sysprop(cl_object sym, cl_object prop)
 {
 	cl_env_ptr the_env = ecl_process_env();
         ECL_WITH_GLOBAL_ENV_RDLOCK_BEGIN(the_env) {
-                cl_object plist = ecl_gethash_safe(sym, cl_core.system_properties, Cnil);
+                cl_object plist = ecl_gethash_safe(sym, cl_core.system_properties, ECL_NIL);
                 prop = ecl_getf(plist, prop, OBJNULL);
         } ECL_WITH_GLOBAL_ENV_RDLOCK_END;
         if (prop == OBJNULL) {
-                @(return Cnil Cnil);
+                @(return ECL_NIL ECL_NIL);
         } else {
-                @(return prop Ct);
+                @(return prop ECL_T);
         }
 }
 
@@ -181,7 +181,7 @@ si_put_sysprop(cl_object sym, cl_object prop, cl_object value)
 {
 	cl_env_ptr the_env = ecl_process_env();
         ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(the_env) {
-                cl_object plist = ecl_gethash_safe(sym, cl_core.system_properties, Cnil);
+                cl_object plist = ecl_gethash_safe(sym, cl_core.system_properties, ECL_NIL);
                 ecl_sethash(sym, cl_core.system_properties, si_put_f(plist, value, prop));
         } ECL_WITH_GLOBAL_ENV_WRLOCK_END;
 	@(return value);
@@ -192,7 +192,7 @@ si_rem_sysprop(cl_object sym, cl_object prop)
 {
 	const cl_env_ptr the_env = ecl_process_env();
 	cl_object plist, found;
-	plist = ecl_gethash_safe(sym, cl_core.system_properties, Cnil);
+	plist = ecl_gethash_safe(sym, cl_core.system_properties, ECL_NIL);
 	plist = si_rem_f(plist, prop);
 	found = ecl_nth_value(the_env, 1);
 	ecl_sethash(sym, cl_core.system_properties, plist);

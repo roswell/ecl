@@ -22,7 +22,7 @@
 
 @(defun ext::mmap (filename
                    &key
-                   (length Cnil)
+                   (length ECL_NIL)
                    (offset ecl_make_fixnum(0))
                    (direction @':input')
                    (element_type @'base-char')
@@ -48,7 +48,7 @@
                 c_flags = MAP_ANON | MAP_PRIVATE;
                 fd = -1;
                 len = ecl_to_unsigned_integer(length);
-                stream = Cnil;
+                stream = ECL_NIL;
         } else {
                 c_flags = MAP_SHARED;
                 stream = cl_open(13, filename,
@@ -57,15 +57,15 @@
                                  @':if-exists', if_exists,
                                  @':if-does-not-exist', if_does_not_exist,
                                  @':external-format', @':default',
-                                 @':cstream', Cnil);
+                                 @':cstream', ECL_NIL);
                 fd = ecl_to_int(si_file_stream_fd(stream));
                 if (Null(length))
                         len = ecl_to_unsigned_integer(ecl_file_length(stream));
                 else
                         len = ecl_to_unsigned_integer(length);
         }
-        output = si_make_vector(element_type, ecl_make_fixnum(0), Cnil,
-                                Cnil, Cnil, Cnil);
+        output = si_make_vector(element_type, ecl_make_fixnum(0), ECL_NIL,
+                                ECL_NIL, ECL_NIL, ECL_NIL);
         pa = mmap(0, len, c_prot, c_flags, fd,
                   ecl_integer_to_off_t(offset));
         if (pa == MAP_FAILED) {
@@ -81,8 +81,8 @@
 {
         cl_object output, vector;
         if (Null(filename)) {
-                output = si_make_vector(element_type, length, Cnil,
-                                Cnil, Cnil, Cnil);
+                output = si_make_vector(element_type, length, ECL_NIL,
+                                ECL_NIL, ECL_NIL, ECL_NIL);
         } else {
                 cl_object stream = cl_open(13, filename,
                                            @':direction', direction,
@@ -90,13 +90,13 @@
                                            @':if-exists', if_exists,
                                            @':if-does-not-exist', if_does_not_exist,
                                            @':external-format', @':pass-through',
-                                           @':cstream', Ct);
+                                           @':cstream', ECL_T);
                 if (Null(length))
                         length = ecl_file_length(stream);
                 else
                         length = ecl_to_unsigned_integer(length);
-                output = si_make_vector(element_type, length, Cnil,
-                                        Cnil, Cnil, Cnil);
+                output = si_make_vector(element_type, length, ECL_NIL,
+                                        ECL_NIL, ECL_NIL, ECL_NIL);
                 cl_read_sequence(2, output, stream);
                 cl_close(1, stream);
         }
@@ -127,5 +127,5 @@ si_munmap(cl_object map)
         }
         cl_close(1, stream);
 #endif
-        @(return Cnil)
+        @(return ECL_NIL)
 }

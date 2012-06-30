@@ -33,8 +33,8 @@ ecl_make_semaphore(cl_object name, cl_fixnum count)
 	cl_object output = ecl_alloc_object(t_semaphore);
 	output->semaphore.name = name;
 	output->semaphore.counter = count;
-	output->semaphore.queue_list = Cnil;
-	output->semaphore.queue_spinlock = Cnil;
+	output->semaphore.queue_list = ECL_NIL;
+	output->semaphore.queue_spinlock = ECL_NIL;
         return output;
 }
 
@@ -84,7 +84,7 @@ mp_semaphore_wait_count(cl_object semaphore)
 		FEerror_not_a_semaphore(semaphore);
 	}
 	AO_fetch_and_add((AO_t*)&semaphore->semaphore.counter, n);
-	if (semaphore->semaphore.queue_list != Cnil) {
+	if (semaphore->semaphore.queue_list != ECL_NIL) {
 		ecl_wakeup_waiters(env, semaphore, ECL_WAKEUP_ONE);
 	}
         @(return)
@@ -99,7 +99,7 @@ get_semaphore_inner(cl_env_ptr env, cl_object semaphore)
 	do {
 		cl_fixnum counter = semaphore->semaphore.counter;
 		if (!counter) {
-			output = Cnil;
+			output = ECL_NIL;
 			break;
 		}
 		if (AO_compare_and_swap_full((AO_t*)&(semaphore->semaphore.counter),

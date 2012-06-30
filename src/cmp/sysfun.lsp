@@ -277,7 +277,7 @@
 ;; file hash.d
 
 (def-inline gethash :always (t t t) t "ecl_gethash_safe(#0,#1,#2)" :multiple-values nil)
-(def-inline gethash :always (t t) t "ecl_gethash_safe(#0,#1,Cnil)" :multiple-values nil)
+(def-inline gethash :always (t t) t "ecl_gethash_safe(#0,#1,ECL_NIL)" :multiple-values nil)
 
 ;; file list.d
 
@@ -360,7 +360,7 @@
 (def-inline cons :always (t t) t "CONS(#0,#1)")
 
 (def-inline endp :safe (t) :bool "ecl_endp(#0)")
-(def-inline endp :unsafe (t) :bool "#0==Cnil")
+(def-inline endp :unsafe (t) :bool "#0==ECL_NIL")
 
 (def-inline nth :always (t t) t "ecl_nth(ecl_to_size(#0),#1)")
 (def-inline nth :always (fixnum t) t "ecl_nth(#0,#1)")
@@ -374,7 +374,7 @@
 
 (def-inline last :always (t) t "ecl_last(#0,1)")
 
-(def-inline list :always nil t "Cnil")
+(def-inline list :always nil t "ECL_NIL")
 (def-inline list :always (t) t "ecl_list1(#0)")
 
 (def-inline list* :always (t) t "#0")
@@ -583,7 +583,7 @@
 
 ;; file pathname.d
 
-(def-inline null :always (t) :bool "#0==Cnil")
+(def-inline null :always (t) :bool "#0==ECL_NIL")
 
 (def-inline symbolp :always (t) :bool "@0;ECL_SYMBOLP(#0)")
 
@@ -632,19 +632,19 @@
 (def-inline equalp :always (t t) :bool "ecl_equalp(#0,#1)")
 (def-inline equalp :always (fixnum fixnum) :bool "(#0)==(#1)")
 
-(def-inline not :always (t) :bool "(#0)==Cnil")
+(def-inline not :always (t) :bool "(#0)==ECL_NIL")
 
 ;; file print.d, read.d
 
-(def-inline clear-output :always (stream) NULL "(ecl_clear_output(#0),Cnil)")
+(def-inline clear-output :always (stream) NULL "(ecl_clear_output(#0),ECL_NIL)")
 
-(def-inline finish-output :always (stream) NULL "(ecl_finish_output(#0),Cnil)")
+(def-inline finish-output :always (stream) NULL "(ecl_finish_output(#0),ECL_NIL)")
 
-(def-inline finish-output :always (stream) NULL "(ecl_force_output(#0),Cnil)")
+(def-inline finish-output :always (stream) NULL "(ecl_force_output(#0),ECL_NIL)")
 
-(def-inline write-char :always (t) t "@0;(ecl_princ_char(ecl_char_code(#0),Cnil),(#0))")
+(def-inline write-char :always (t) t "@0;(ecl_princ_char(ecl_char_code(#0),ECL_NIL),(#0))")
 
-(def-inline clear-input :always (stream) NULL "(ecl_clear_input(#0),Cnil)")
+(def-inline clear-input :always (stream) NULL "(ecl_clear_input(#0),ECL_NIL)")
 
 (def-inline copy-readtable :always (null null) t "standard_readtable")
 
@@ -766,7 +766,7 @@
 ;; file symbol.d
 
 (def-inline get :always (t t t) t "ecl_get(#0,#1,#2)")
-(def-inline get :always (t t) t "ecl_get(#0,#1,Cnil)")
+(def-inline get :always (t t) t "ecl_get(#0,#1,ECL_NIL)")
 
 (def-inline symbol-name :always (t) string "ecl_symbol_name(#0)")
 

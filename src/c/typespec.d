@@ -52,7 +52,7 @@ void
 FEcircular_list(cl_object x)
 {
 	/* FIXME: Is this the right way to rebind it? */
-	ecl_bds_bind(ecl_process_env(), @'*print-circle*', Ct);
+	ecl_bds_bind(ecl_process_env(), @'*print-circle*', ECL_T);
 	cl_error(9, @'simple-type-error', @':format-control',
 		    make_constant_base_string("Circular list ~D"),
 		    @':format-arguments', cl_list(1, x),
@@ -94,7 +94,7 @@ ecl_type_error(cl_object function, const char *place, cl_object o,
 	       cl_object type)
 {
 	return funcall(5, @'si::wrong-type-argument', o, type,
-		       (*place? make_constant_base_string(place) : Cnil),
+		       (*place? make_constant_base_string(place) : ECL_NIL),
 		       function);
 }
 
@@ -222,9 +222,9 @@ assert_type_non_negative_integer(cl_object p)
 void
 assert_type_proper_list(cl_object p)
 {
-	if (ECL_ATOM(p) && p != Cnil)
+	if (ECL_ATOM(p) && p != ECL_NIL)
 		FEtype_error_list(p);
-	if (cl_list_length(p) == Cnil)
+	if (cl_list_length(p) == ECL_NIL)
 		FEcircular_list(p);
 }
 
@@ -238,7 +238,7 @@ cl_type_of(cl_object x)
         case t_instance: {
 		cl_object cl = CLASS_OF(x);
 		t = CLASS_NAME(cl);
-		if (t == Cnil || cl != cl_find_class(2, t, Cnil))
+		if (t == ECL_NIL || cl != cl_find_class(2, t, ECL_NIL))
 			t = cl;
 		break;
 	}
@@ -261,7 +261,7 @@ cl_type_of(cl_object x)
 	}
 
 	case t_symbol:
-		if (x == Ct)
+		if (x == ECL_T)
 			t = @'boolean';
 		else if (x->symbol.hpack == cl_core.keyword_package)
 			t = @'keyword';

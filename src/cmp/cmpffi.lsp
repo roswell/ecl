@@ -367,7 +367,7 @@
 	   (#.+all-number-rep-types+ ; number type
 	    (wt "1"))
 	   ((:object)
-	    (wt "(" loc ")!=Cnil"))
+	    (wt "(" loc ")!=ECL_NIL"))
 	   (otherwise
 	    (coercion-error))))
 	((:object)

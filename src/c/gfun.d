@@ -78,13 +78,13 @@ clos_set_funcallable_instance_function(cl_object x, cl_object function_or_t)
 		reshape_instance(x, -1);
 		x->instance.isgf = ECL_NOT_FUNCALLABLE;
 	}
-	if (function_or_t == Ct) {
+	if (function_or_t == ECL_T) {
 		x->instance.isgf = ECL_STANDARD_DISPATCH;
                 x->instance.entry = generic_function_dispatch_vararg;
 	} else if (function_or_t == @'standard-generic-function') {
 		x->instance.isgf = ECL_RESTRICTED_DISPATCH;
                 x->instance.entry = generic_function_dispatch_vararg;
-	} else if (function_or_t == Cnil) {
+	} else if (function_or_t == ECL_NIL) {
 		x->instance.isgf = ECL_NOT_FUNCALLABLE;
                 x->instance.entry = FEnot_funcallable_vararg;
 	} else if (function_or_t == @'clos::standard-reader-method') {
@@ -109,7 +109,7 @@ clos_set_funcallable_instance_function(cl_object x, cl_object function_or_t)
 cl_object
 si_generic_function_p(cl_object x)
 {
-	@(return ((ECL_INSTANCEP(x) && (x->instance.isgf))? Ct : Cnil))
+	@(return ((ECL_INSTANCEP(x) && (x->instance.isgf))? ECL_T : ECL_NIL))
 }
 
 static cl_object
@@ -143,7 +143,7 @@ static cl_object
 frame_to_list(cl_object frame)
 {
 	cl_object arglist, *p;
-	for (p = frame->frame.base + frame->frame.size, arglist = Cnil;
+	for (p = frame->frame.base + frame->frame.size, arglist = ECL_NIL;
              p != frame->frame.base; ) {
 		arglist = CONS(*(--p), arglist);
 	}
@@ -154,7 +154,7 @@ static cl_object
 frame_to_classes(cl_object frame)
 {
 	cl_object arglist, *p;
-	for (p = frame->frame.base + frame->frame.size, arglist = Cnil;
+	for (p = frame->frame.base + frame->frame.size, arglist = ECL_NIL;
              p != frame->frame.base; ) {
 		arglist = CONS(cl_class_of(*(--p)), arglist);
 	}
@@ -172,16 +172,16 @@ generic_compute_applicable_method(cl_env_ptr env, cl_object frame, cl_object gf)
 		cl_object arglist = frame_to_list(frame);
 		methods = _ecl_funcall3(@'compute-applicable-methods',
 					gf, arglist);
-		unlikely_if (methods == Cnil) {
+		unlikely_if (methods == ECL_NIL) {
 			cl_object func = _ecl_funcall3(@'no-applicable-method',
 						       gf, arglist);
 			frame->frame.base[0] = OBJNULL;
-			env->values[1] = Cnil;
+			env->values[1] = ECL_NIL;
 			return func;
 		}
 	}
 	methods = clos_compute_effective_method_function(gf, GFUN_COMB(gf), methods);
-	env->values[1] = Ct;
+	env->values[1] = ECL_T;
 	return methods;
 }
 
@@ -191,14 +191,14 @@ restricted_compute_applicable_method(cl_env_ptr env, cl_object frame, cl_object 
 	/* method not cached */
 	cl_object arglist = frame_to_list(frame);
 	cl_object methods = clos_std_compute_applicable_methods(gf, arglist);
-	unlikely_if (methods == Cnil) {
+	unlikely_if (methods == ECL_NIL) {
 		cl_object func = _ecl_funcall3(@'no-applicable-method', gf, arglist);
 		frame->frame.base[0] = OBJNULL;
-		env->values[1] = Cnil;
+		env->values[1] = ECL_NIL;
 		return func;
 	}
 	methods = clos_std_compute_effective_method(gf, GFUN_COMB(gf), methods);
-	env->values[1] = Ct;
+	env->values[1] = ECL_T;
 	return methods;
 }
 
@@ -242,7 +242,7 @@ _ecl_standard_dispatch(cl_object frame, cl_object gf)
 		 * the keys and recompute the cache location if
 		 * it was filled. */
 		func = compute_applicable_method(env, frame, gf);
-		if (env->values[1] != Cnil) {
+		if (env->values[1] != ECL_NIL) {
 			cl_object keys = cl_copy_seq(vector);
 			if (e->key != OBJNULL) {
 				e = ecl_search_cache(cache);
@@ -251,7 +251,7 @@ _ecl_standard_dispatch(cl_object frame, cl_object gf)
 			e->value = func;
 		}
 	}
-	func = _ecl_funcall3(func, frame, Cnil);
+	func = _ecl_funcall3(func, frame, ECL_NIL);
 	/* Only need to close the copy */
 #if !defined(ECL_USE_VARARG_AS_POINTER)
 	if (frame == (cl_object)&frame_aux)
@@ -276,7 +276,7 @@ si_clear_gfun_hash(cl_object what)
 {
 	/*
 	 * This function clears the generic function call hashes selectively.
-	 *	what = Ct means clear the hash completely
+	 *	what = ECL_T means clear the hash completely
 	 *	what = generic function, means cleans only these entries
 	 * If we work on a multithreaded environment, we simply enqueue these
 	 * operations and wait for the destination thread to update its own hash.

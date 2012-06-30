@@ -82,7 +82,7 @@ mangle_name(cl_object output, unsigned char *source, int l)
 	unsigned char c, *source, *dest;
 	cl_object output;
 	cl_object package;
-	cl_object found = Cnil;
+	cl_object found = ECL_NIL;
 	cl_object maxarg = ecl_make_fixnum(ECL_CALL_ARGUMENTS_LIMIT);
 	cl_object minarg = ecl_make_fixnum(0);
 	bool is_symbol;
@@ -92,14 +92,14 @@ mangle_name(cl_object output, unsigned char *source, int l)
 	is_symbol = Null(as_function);
 	if (is_symbol) {
 		cl_fixnum p;
-		if (symbol == Cnil)
-			@(return Ct make_constant_base_string("Cnil"))
-		else if (symbol == Ct)
-			@(return Ct make_constant_base_string("Ct"))
+		if (symbol == ECL_NIL)
+			@(return ECL_T make_constant_base_string("ECL_NIL"))
+		else if (symbol == ECL_T)
+			@(return ECL_T make_constant_base_string("ECL_T"))
 		p  = (cl_symbol_initializer*)symbol - cl_symbols;
 		if (p >= 0 && p <= cl_num_symbols_in_core) {
-			found = Ct;
-			output = cl_format(4, Cnil,
+			found = ECL_T;
+			output = cl_format(4, ECL_NIL,
 					   make_constant_base_string("ECL_SYM(~S,~D)"),
 					   name, ecl_make_fixnum(p));
 			@(return found output maxarg)
@@ -112,7 +112,7 @@ mangle_name(cl_object output, unsigned char *source, int l)
 				cl_object s = (cl_object)(cl_symbols + l);
 				if (fun == SYM_FUN(s)) {
 					symbol = s;
-					found = Ct;
+					found = ECL_T;
 					if (fun->cfun.narg >= 0) {
 					    minarg =
 					    maxarg = ecl_make_fixnum(fun->cfun.narg);
@@ -132,7 +132,7 @@ mangle_name(cl_object output, unsigned char *source, int l)
 	else if (package == cl_core.ext_package)
 		package = make_constant_base_string("si");
 	else if (package == cl_core.keyword_package)
-		package = Cnil;
+		package = ECL_NIL;
 	else
 		package = package->pack.name;
 	symbol = ecl_symbol_name(symbol);
@@ -158,10 +158,10 @@ mangle_name(cl_object output, unsigned char *source, int l)
 	output->base_string.fillp = 0;
 	if (!Null(package))
 		if (!mangle_name(output, package->base_string.self, package->base_string.fillp))
-			@(return Cnil Cnil maxarg)
+			@(return ECL_NIL ECL_NIL maxarg)
 	output->base_string.self[output->base_string.fillp++] = c;
 	if (!(dest = mangle_name(output, source, l)))
-		@(return Cnil Cnil maxarg)
+		@(return ECL_NIL ECL_NIL maxarg)
 	if (dest[-1] == '_')
 		dest[-1] = 'M';
 	*(dest++) = '\0';
@@ -203,9 +203,9 @@ make_this_symbol(int i, cl_object s, int code, const char *name,
 	s->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
 #endif
 	ECL_SET(s, OBJNULL);
-	SYM_FUN(s) = Cnil;
-	s->symbol.plist = Cnil;
-	s->symbol.hpack = Cnil;
+	SYM_FUN(s) = ECL_NIL;
+	s->symbol.plist = ECL_NIL;
+	s->symbol.hpack = ECL_NIL;
 	s->symbol.stype = stp;
 	s->symbol.hpack = package;
 	s->symbol.name = make_constant_base_string(name);
@@ -216,7 +216,7 @@ make_this_symbol(int i, cl_object s, int code, const char *name,
 	} else {
 		int intern_flag;
 		ECL_SET(s, value);
-		if (ecl_find_symbol(s->symbol.name, package, &intern_flag) != Cnil
+		if (ecl_find_symbol(s->symbol.name, package, &intern_flag) != ECL_NIL
 		    && intern_flag == ECL_INHERITED) {
 			ecl_shadowing_import(s, package);
 		} else {

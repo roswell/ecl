@@ -38,9 +38,9 @@ extend_vector(cl_object v, cl_index amount)
 	if (new_length > ECL_ARRAY_DIMENSION_LIMIT)
 		new_length = ECL_ARRAY_DIMENSION_LIMIT;
 	other = si_make_vector(cl_array_element_type(v),
-			       ecl_make_fixnum(new_length), Ct,
+			       ecl_make_fixnum(new_length), ECL_T,
 			       ecl_make_fixnum(v->vector.fillp),
-			       Cnil, ecl_make_fixnum(0));
+			       ECL_NIL, ecl_make_fixnum(0));
 	ecl_copy_subarray(other, 0, v, 0, v->vector.fillp);
 	return si_replace_array(v, other);
 }
@@ -70,7 +70,7 @@ cl_vector_push(cl_object value, cl_object v)
 {
 	cl_index f = ecl_fixnum(cl_fill_pointer(v));
 	if (f >= v->vector.dim) {
-		@(return Cnil);
+		@(return ECL_NIL);
 	} else {
 		ecl_aset1(v, v->vector.fillp, value);
 		@(return ecl_make_fixnum(v->vector.fillp++));

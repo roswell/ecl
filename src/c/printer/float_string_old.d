@@ -121,10 +121,10 @@ float_string(cl_object digits_string,
 
         if (Null(digits_string)) {
                 digits_string = si_make_vector(@'base-char', ecl_make_fixnum(10),
-                                               Ct /* adjustable */,
+                                               ECL_T /* adjustable */,
                                                ecl_make_fixnum(0) /* fill pointer */,
-                                               Cnil /* displacement */,
-                                               Cnil /* displ. offset */);
+                                               ECL_NIL /* displacement */,
+                                               ECL_NIL /* displ. offset */);
         }
         /* Represent fraction as r/s, error bounds as m+/s and m-/s.
          * Rational arithmetic avoids loss of precision in subsequent
@@ -281,8 +281,8 @@ float_string(cl_object digits_string,
         @(return
           digits_string
           ecl_make_fixnum(1+digits)
-          ((decpnt == 0)? Ct : Cnil)
-          ((decpnt == digits)? Ct : Cnil)
+          ((decpnt == 0)? ECL_T : ECL_NIL)
+          ((decpnt == digits)? ECL_T : ECL_NIL)
           ecl_make_fixnum(decpnt))
 }
 
@@ -297,9 +297,9 @@ ecl_def_ct_base_string(str_dot,".",1,static,const);
                                                      @':initial-element',
                                                      ECL_CODE_CHAR('0'));
                         ecl_char_set(s, 0, '.');
-                        @(return s cl_length(s) Ct cl_zerop(fdigits) ecl_make_fixnum(0));
+                        @(return s cl_length(s) ECL_T cl_zerop(fdigits) ecl_make_fixnum(0));
                 } else {
-                        @(return str_dot ecl_make_fixnum(1) Ct Ct ecl_make_fixnum(0));
+                        @(return str_dot ecl_make_fixnum(1) ECL_T ECL_T ecl_make_fixnum(0));
                 }
         } else {
                 cl_object sig = cl_integer_decode_float(x);
@@ -307,7 +307,7 @@ ecl_def_ct_base_string(str_dot,".",1,static,const);
                 cl_object precision = cl_float_precision(x);
                 cl_object digits = cl_float_digits(x);
                 cl_object fudge = ecl_minus(digits, precision);
-                cl_object w = Null(width)? Cnil : cl_max(2, width, ecl_make_fixnum(1));
+                cl_object w = Null(width)? ECL_NIL : cl_max(2, width, ecl_make_fixnum(1));
                 return float_string(string, cl_ash(sig, ecl_negate(fudge)),
                                     ecl_plus(exp, fudge), precision, w,
                                     fdigits, scale, fmin);

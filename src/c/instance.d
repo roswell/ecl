@@ -33,7 +33,7 @@ cl_object
 si_allocate_raw_instance(cl_object orig, cl_object clas, cl_object size)
 {
 	cl_object output = ecl_allocate_instance(clas, ecl_to_size(size));
-	if (orig == Cnil) {
+	if (orig == ECL_NIL) {
 		orig = output;
 	} else {
 		orig->instance.clas = clas;
@@ -147,7 +147,7 @@ si_instance_set(cl_object x, cl_object index, cl_object value)
 cl_object
 si_instancep(cl_object x)
 {
-	@(return (ECL_INSTANCEP(x) ? ecl_make_fixnum(x->instance.length) : Cnil))
+	@(return (ECL_INSTANCEP(x) ? ecl_make_fixnum(x->instance.length) : ECL_NIL))
 }
 
 cl_object
@@ -161,7 +161,7 @@ si_unbound()
 cl_object
 si_sl_boundp(cl_object x)
 {
-	@(return ((x == ECL_UNBOUND) ? Cnil : Ct))
+	@(return ((x == ECL_UNBOUND) ? ECL_NIL : ECL_T))
 }
 
 cl_object
@@ -194,12 +194,12 @@ si_copy_instance(cl_object x)
 	@(return y)
 }
 
-@(defun find-class (name &optional (errorp Ct) env)
+@(defun find-class (name &optional (errorp ECL_T) env)
 	cl_object class, hash;
 @
 	hash = ECL_SYM_VAL(the_env, @'si::*class-name-hash-table*');
-	class = ecl_gethash_safe(name, hash, Cnil);
-	if (class == Cnil) {
+	class = ecl_gethash_safe(name, hash, ECL_NIL);
+	if (class == ECL_NIL) {
 		if (!Null(errorp))
 			FEerror("No class named ~S.", 1, name);
 	}

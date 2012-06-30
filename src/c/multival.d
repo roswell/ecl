@@ -24,7 +24,7 @@
 	unlikely_if (narg > ECL_MULTIPLE_VALUES_LIMIT)
 		FEerror("Too many values in VALUES",0);
 	the_env->nvalues = narg;
-	output = Cnil;
+	output = ECL_NIL;
 	if (narg) {
 		int i = 0;
 		do { 
@@ -40,7 +40,7 @@ cl_values_list(cl_object list)
 {
 	cl_env_ptr the_env = ecl_process_env();
 	int i;
-	the_env->values[0] = Cnil;
+	the_env->values[0] = ECL_NIL;
 	for (i = 0; !Null(list); list=ECL_CONS_CDR(list)) {
                 unlikely_if (!LISTP(list))
 			FEtype_error_list(list);

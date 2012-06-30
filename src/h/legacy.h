@@ -140,7 +140,7 @@
 
 #define NVALUES		cl_env.nvalues
 #define VALUES(n)	cl_env.values[n]
-#define return0()	return ((NVALUES = 0),Cnil)
+#define return0()	return ((NVALUES = 0),ECL_NIL)
 #define return1(x)	return ((VALUES(0)=(x)),(NVALUES=1),VALUES(0))
 #define returnn(x)	return x
 
@@ -188,3 +188,6 @@ enum {	/*  stream mode  */
 	smm_sequence_input,	/*  sequence input  */
 	smm_sequence_output	/*  sequence output  */
 };
+
+#define Cnil ECL_NIL
+#define Ct ECL_T

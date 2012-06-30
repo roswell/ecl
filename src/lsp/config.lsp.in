@@ -16,7 +16,7 @@
 	cl_object output;
 	struct utsname aux;
 	if (uname(&aux) < 0)
-		output = Cnil;
+		output = ECL_NIL;
 	else
 		output = cl_list(5, make_base_string_copy(aux.sysname),
 			    make_base_string_copy(aux.nodename),

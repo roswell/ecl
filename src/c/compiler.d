@@ -151,8 +151,8 @@ pop(cl_object *l) {
 static cl_object
 pop_maybe_nil(cl_object *l) {
 	cl_object head, list = *l;
-	if (list == Cnil)
-		return Cnil;
+	if (list == ECL_NIL)
+		return ECL_NIL;
 	unlikely_if (!ECL_LISTP(list))
 		FEill_formed_input();
 	head = ECL_CONS_CAR(list);
@@ -189,8 +189,8 @@ asm_end(cl_env_ptr env, cl_index beginning, cl_object definition) {
 		code[i] = (cl_opcode)(cl_fixnum)(env->stack[beginning+i]);
  	}
         bytecodes->bytecodes.entry =  _ecl_bytecodes_dispatch_vararg;
-        ecl_set_function_source_file_info(bytecodes, (file == OBJNULL)? Cnil : file,
-                                          (file == OBJNULL)? Cnil : position);
+        ecl_set_function_source_file_info(bytecodes, (file == OBJNULL)? ECL_NIL : file,
+                                          (file == OBJNULL)? ECL_NIL : position);
 	asm_clear(env, beginning);
 	return bytecodes;
 }
@@ -454,7 +454,7 @@ c_register_block(cl_env_ptr env, cl_object name)
 {
         const cl_compiler_ptr c_env = env->c_env;
 	cl_object loc = new_location(c_env);
-	c_env->variables = CONS(cl_list(4, @':block', name, Cnil, loc),
+	c_env->variables = CONS(cl_list(4, @':block', name, ECL_NIL, loc),
                                 c_env->variables);
 	return ecl_fixnum(ECL_CONS_CDR(loc));
 }
@@ -464,7 +464,7 @@ c_register_tags(cl_env_ptr env, cl_object all_tags)
 {
         const cl_compiler_ptr c_env = env->c_env;
 	cl_object loc = new_location(c_env);
-	c_env->variables = CONS(cl_list(4, @':tag', all_tags, Cnil, loc),
+	c_env->variables = CONS(cl_list(4, @':tag', all_tags, ECL_NIL, loc),
                                 c_env->variables);
 	return ecl_fixnum(ECL_CONS_CDR(loc));
 }
@@ -473,7 +473,7 @@ static void
 c_register_function(cl_env_ptr env, cl_object name)
 {
         const cl_compiler_ptr c_env = env->c_env;
-	c_env->variables = CONS(cl_list(4, @':function', name, Cnil,
+	c_env->variables = CONS(cl_list(4, @':function', name, ECL_NIL,
                                         new_location(c_env)),
                                 c_env->variables);
 	c_env->macros = CONS(cl_list(2, name, @'function'), c_env->macros);
@@ -508,8 +508,8 @@ c_register_var(cl_env_ptr env, cl_object var, bool special, bool bound)
 {
 	const cl_compiler_ptr c_env = env->c_env;
 	c_env->variables = CONS(cl_list(4, var,
-					special? @'special' : Cnil,
-					bound? Ct : Cnil,
+					special? @'special' : ECL_NIL,
+					bound? ECL_T : ECL_NIL,
 					new_location(c_env)),
 				c_env->variables);
 }
@@ -524,7 +524,7 @@ guess_environment(cl_env_ptr env, cl_object interpreter_env)
 	 * suitable compiler enviroment to compile forms that access the
 	 * variables and local functions of this interpreted code.
 	 */
-	for (interpreter_env = @revappend(interpreter_env, Cnil);
+	for (interpreter_env = @revappend(interpreter_env, ECL_NIL);
 	     !Null(interpreter_env);
 	     interpreter_env = ECL_CONS_CDR(interpreter_env))
 	{
@@ -537,7 +537,7 @@ guess_environment(cl_env_ptr env, cl_object interpreter_env)
                         if (ECL_SYMBOLP(record0)) {
                                 c_register_var(env, record0, FALSE, TRUE);
                         } else if (record1 == ecl_make_fixnum(0)) {
-                                c_register_tags(env, Cnil);
+                                c_register_tags(env, ECL_NIL);
                         } else {
                                 c_register_block(env, record1);
                         }
@@ -555,14 +555,14 @@ c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_object env,
 		new->env_depth = old->env_depth + 1;
 	} else {
 		new->code_walker = ECL_SYM_VAL(the_env, @'si::*code-walker*');
-		new->constants = si_make_vector(Ct, ecl_make_fixnum(16),
-						Ct, /* Adjustable */
+		new->constants = si_make_vector(ECL_T, ecl_make_fixnum(16),
+						ECL_T, /* Adjustable */
 						ecl_make_fixnum(0), /* Fillp */
-						Cnil, /* displacement */
-						Cnil);
+						ECL_NIL, /* displacement */
+						ECL_NIL);
 		new->stepping = 0;
 		new->lexical_level = 0;
-		new->load_time_forms = Cnil;
+		new->load_time_forms = ECL_NIL;
 		new->env_depth = 0;
 		new->macros = CDR(env);
 		new->variables = CAR(env);
@@ -608,7 +608,7 @@ c_tag_ref(cl_env_ptr env, cl_object the_tag, cl_object the_type)
 			if (type == the_type && ecl_equal(name, the_tag)) {
 				/* Mark as used */
                                 record = ECL_CONS_CDR(record);
-				ECL_RPLACA(record, Ct);
+				ECL_RPLACA(record, ECL_T);
 				return ecl_make_fixnum(n);
 			}
 			n++;
@@ -619,7 +619,7 @@ c_tag_ref(cl_env_ptr env, cl_object the_tag, cl_object the_type)
 			 * and other declarations */
 		}
 	}
-	return Cnil;
+	return ECL_NIL;
 }
 
 ecl_def_ct_base_string(undefined_variable,
@@ -662,7 +662,7 @@ c_var_ref(cl_env_ptr env, cl_object var, int allow_symbol_macro, bool ensure_def
 	}
 	if (ensure_defined) {
 		l = ecl_symbol_value(@'ext::*action-on-undefined-variable*');
-		if (l != Cnil) {
+		if (l != ECL_NIL) {
 			funcall(3, l, undefined_variable, var);
 		}
 	}
@@ -880,7 +880,7 @@ c_block(cl_env_ptr env, cl_object body, int old_flags) {
 	}
 	labelz = asm_jmp(env, OP_FRAME);
 	compile_body(env, body, flags);
-	if (CADDR(block_record) == Cnil) {
+	if (CADDR(block_record) == ECL_NIL) {
 		/* Block unused. We remove the enclosing OP_BLOCK/OP_DO */
 		/* We also have to remove the constants we compiled, because */
 		/* some of them might be from load-time-value */
@@ -1012,15 +1012,15 @@ perform_c_case(cl_env_ptr env, cl_object args, int flags) {
 
 	do {
 		if (Null(args))
-			return compile_body(env, Cnil, flags);
+			return compile_body(env, ECL_NIL, flags);
 		clause = pop(&args);
 		if (ECL_ATOM(clause))
 			FEprogram_error_noreturn("CASE: Illegal clause ~S.",1,clause);
 		test = pop(&clause);
-	} while (test == Cnil);
+	} while (test == ECL_NIL);
 
-	if (@'otherwise' == test || test == Ct) {
-		unlikely_if (args != Cnil) {
+	if (@'otherwise' == test || test == ECL_T) {
+		unlikely_if (args != ECL_NIL) {
 			FEprogram_error_noreturn("CASE: The selector ~A can only appear at the last position.",
 						 1, test);
 		}
@@ -1130,8 +1130,8 @@ c_compiler_let(cl_env_ptr env, cl_object args, int flags) {
 	2) The three jump forms are
 
 		[OP_JMP + label]	; Unconditional jump
-		[OP_JNIL + label]	; Jump if VALUES(0) == Cnil
-		[OP_JT + label]		; Jump if VALUES(0) != Cnil
+		[OP_JNIL + label]	; Jump if VALUES(0) == ECL_NIL
+		[OP_JT + label]		; Jump if VALUES(0) != ECL_NIL
 
 	It is important to remark that both OP_JNIL and OP_JT truncate
 	the values stack, so that always NVALUES = 1 after performing
@@ -1143,16 +1143,16 @@ c_cond(cl_env_ptr env, cl_object args, int flags) {
 	cl_index label_nil, label_exit;
 
 	if (Null(args))
-		return compile_form(env, Cnil, flags);
+		return compile_form(env, ECL_NIL, flags);
 	clause = pop(&args);
 	if (ECL_ATOM(clause))
 		FEprogram_error_noreturn("COND: Illegal clause ~S.",1,clause);
 	test = pop(&clause);
 	flags = maybe_values_or_reg0(flags);
-	if (Ct == test) {
+	if (ECL_T == test) {
 		/* Default sentence. If no forms, just output T. */
 		if (Null(clause))
-			compile_form(env, Ct, flags);
+			compile_form(env, ECL_T, flags);
 		else
 			compile_body(env, clause, flags);
 	} else {
@@ -1242,7 +1242,7 @@ c_until(cl_env_ptr env, cl_object body, int flags) {
 static int
 c_with_backend(cl_env_ptr env, cl_object args, int flags)
 {
-        cl_object forms = Cnil;
+        cl_object forms = ECL_NIL;
         while (!Null(args)) {
                 cl_object tag = pop(&args);
                 cl_object form = pop(&args);
@@ -1257,7 +1257,7 @@ eval_when_flags(cl_object situation)
 {
         int code = 0;
         cl_object p;
-        for (p = situation; p != Cnil; p = ECL_CONS_CDR(p)) {
+        for (p = situation; p != ECL_NIL; p = ECL_CONS_CDR(p)) {
                 cl_object keyword;
                 unlikely_if (!ECL_LISTP(p))
                         FEtype_error_proper_list(situation);
@@ -1290,33 +1290,33 @@ c_eval_when(cl_env_ptr env, cl_object args, int flags) {
 	int mode = c_env->mode;
         if (mode == FLAG_EXECUTE) {
                 if (!when_execute_p(situation))
-                        args = Cnil;
+                        args = ECL_NIL;
         } else if (c_env->lexical_level) {
                 if (!when_execute_p(situation))
-                        args = Cnil;
+                        args = ECL_NIL;
         } else if (mode == FLAG_LOAD) {
                 if (when_compile_p(situation)) {
                         env->c_env->mode = FLAG_COMPILE;
 			execute_each_form(env, args);
                         env->c_env->mode = FLAG_LOAD;
                         if (!when_load_p(situation))
-                                args = Cnil;
+                                args = ECL_NIL;
                 } else if (when_load_p(situation)) {
                         env->c_env->mode = FLAG_ONLY_LOAD;
                         flags = compile_toplevel_body(env, args, flags);
                         env->c_env->mode = FLAG_LOAD;
                         return flags;
                 } else {
-                        args = Cnil;
+                        args = ECL_NIL;
                 }
         } else if (mode == FLAG_ONLY_LOAD) {
                 if (!when_load_p(situation))
-                        args = Cnil;
+                        args = ECL_NIL;
         } else { /* FLAG_COMPILE */
                 if (when_execute_p(situation) || when_compile_p(situation)) {
 			execute_each_form(env, args);
                 }
-		args = Cnil;
+		args = ECL_NIL;
         }
         return compile_toplevel_body(env, args, flags);
 }
@@ -1433,7 +1433,7 @@ asm_function(cl_env_ptr env, cl_object function, int flags) {
                 cl_object body = ECL_CONS_CDR(function);
 		cl_object name;
                 if (kind == @'lambda') {
-			name = Cnil;
+			name = ECL_NIL;
                 } else if (kind == @'ext::lambda-block') {
                         name = ECL_CONS_CAR(body);
                         body = ECL_CONS_CDR(body);
@@ -1482,7 +1482,7 @@ c_if(cl_env_ptr env, cl_object form, int flags) {
 	if (Null(form)) {
 		return c_cond(env, ecl_list1(then), flags);
 	} else {
-		return c_cond(env, cl_list(2, then, CONS(Ct, form)), flags);
+		return c_cond(env, cl_list(2, then, CONS(ECL_T, form)), flags);
 	}
 }
 
@@ -1544,12 +1544,12 @@ c_let_leta(cl_env_ptr env, int op, cl_object args, int flags) {
 	case 1:		op = OP_BIND; break;
 	}
 
-	for (vars=Cnil, l=bindings; !Null(l); ) {
+	for (vars=ECL_NIL, l=bindings; !Null(l); ) {
 		cl_object aux = pop(&l);
 		cl_object var, value;
 		if (ECL_ATOM(aux)) {
 			var = aux;
-			value = Cnil;
+			value = ECL_NIL;
 		} else {
 			var = pop(&aux);
 			value = pop_maybe_nil(&aux);
@@ -1595,7 +1595,7 @@ c_load_time_value(cl_env_ptr env, cl_object args, int flags)
 {
 	const cl_compiler_ptr c_env = env->c_env;
 	cl_object value;
-	unlikely_if (Null(args) || cl_cddr(args) != Cnil)
+	unlikely_if (Null(args) || cl_cddr(args) != ECL_NIL)
 		FEprogram_error_noreturn("LOAD-TIME-VALUE: Wrong number of arguments.", 0);
 	value = ECL_CONS_CAR(args);
         if (c_env->mode != FLAG_LOAD && c_env->mode != FLAG_ONLY_LOAD) {
@@ -1604,7 +1604,7 @@ c_load_time_value(cl_env_ptr env, cl_object args, int flags)
 		/* Using the form as constant, we force the system to coalesce multiple
 		 * copies of the same load-time-value form */
 		c_env->load_time_forms =
-			ecl_cons(cl_list(3, args, value, Cnil),
+			ecl_cons(cl_list(3, args, value, ECL_NIL),
 				 c_env->load_time_forms);
 		value = args;
 	}
@@ -1738,7 +1738,7 @@ static int
 c_multiple_value_setq(cl_env_ptr env, cl_object orig_args, int flags) {
 	cl_object args = orig_args;
 	cl_object orig_vars;
-	cl_object vars = Cnil, values;
+	cl_object vars = ECL_NIL, values;
 	cl_object old_variables = env->c_env->variables;
 	cl_index nvars = 0;
 
@@ -1765,7 +1765,7 @@ c_multiple_value_setq(cl_env_ptr env, cl_object orig_args, int flags) {
 
 	/* Compile values */
 	values = pop(&args);
-	if (args != Cnil)
+	if (args != ECL_NIL)
 		FEprogram_error_noreturn("MULTIPLE-VALUE-SETQ: Too many arguments.", 0);
 	if (nvars == 0) {
 		/* No variables */
@@ -1774,7 +1774,7 @@ c_multiple_value_setq(cl_env_ptr env, cl_object orig_args, int flags) {
 	compile_form(env, values, FLAG_VALUES);
 
 	/* Compile variables */
-	for (nvars = 0, vars = cl_nreverse(vars); vars != Cnil; nvars++, vars = ECL_CONS_CDR(vars)) {
+	for (nvars = 0, vars = cl_nreverse(vars); vars != ECL_NIL; nvars++, vars = ECL_CONS_CDR(vars)) {
 		if (nvars) {
 			compile_setq(env, OP_VSETQ, ECL_CONS_CAR(vars));
 			asm_arg(env, nvars);
@@ -1817,7 +1817,7 @@ static int
 c_nth_value(cl_env_ptr env, cl_object args, int flags) {
 	compile_form(env, pop(&args), FLAG_PUSH);	/* INDEX */
 	compile_form(env, pop(&args), FLAG_VALUES);	/* VALUES */
-	if (args != Cnil)
+	if (args != ECL_NIL)
 		FEprogram_error_noreturn("NTH-VALUE: Too many arguments.",0);
 	asm_op(env, OP_NTHVAL);
 	return FLAG_REG0;
@@ -1896,12 +1896,12 @@ c_progv(cl_env_ptr env, cl_object args, int flags) {
 */
 static int
 c_psetq(cl_env_ptr env, cl_object old_args, int flags) {
-	cl_object args = Cnil, vars = Cnil;
+	cl_object args = ECL_NIL, vars = ECL_NIL;
 	bool use_psetf = FALSE;
 	cl_index nvars = 0;
 
 	if (Null(old_args))
-		return compile_body(env, Cnil, flags);
+		return compile_body(env, ECL_NIL, flags);
 	/* We have to make sure that non of the variables which
 	   are to be assigned is actually a symbol macro. If that
 	   is the case, we invoke (PSETF ...) to handle the
@@ -1930,7 +1930,7 @@ c_psetq(cl_env_ptr env, cl_object old_args, int flags) {
 	do {
 		compile_setq(env, OP_PSETQ, pop(&vars));
         } while (!Null(vars));
-	return compile_form(env, Cnil, flags);
+	return compile_form(env, ECL_NIL, flags);
 }
 
 
@@ -1950,7 +1950,7 @@ c_return_aux(cl_env_ptr env, cl_object name, cl_object stmt, int flags)
 
 	if (!ECL_SYMBOLP(name) || Null(ndx))
 		FEprogram_error_noreturn("RETURN-FROM: Unknown block name ~S.", 1, name);
-	if (stmt != Cnil)
+	if (stmt != ECL_NIL)
 		FEprogram_error_noreturn("RETURN-FROM: Too many arguments.", 0);
 	compile_form(env, output, FLAG_VALUES);
 	asm_op2(env, OP_RETURN, ecl_fixnum(ndx));
@@ -1959,7 +1959,7 @@ c_return_aux(cl_env_ptr env, cl_object name, cl_object stmt, int flags)
 
 static int
 c_return(cl_env_ptr env, cl_object stmt, int flags) {
-	return c_return_aux(env, Cnil, stmt, flags);
+	return c_return_aux(env, ECL_NIL, stmt, flags);
 }
 
 
@@ -1973,7 +1973,7 @@ c_return_from(cl_env_ptr env, cl_object stmt, int flags) {
 static int
 c_setq(cl_env_ptr env, cl_object args, int flags) {
 	if (Null(args))
-		return compile_form(env, Cnil, flags);
+		return compile_form(env, ECL_NIL, flags);
 	do {
 		cl_object var = pop(&args);
 		cl_object value = pop(&args);
@@ -2031,7 +2031,7 @@ c_tagbody(cl_env_ptr env, cl_object args, int flags)
 {
 	cl_object old_env = env->c_env->variables;
 	cl_index tag_base;
-	cl_object labels = Cnil, label, body;
+	cl_object labels = ECL_NIL, label, body;
 	cl_type item_type;
 	int nt, i;
 
@@ -2047,7 +2047,7 @@ c_tagbody(cl_env_ptr env, cl_object args, int flags)
 	}
 	if (nt == 0) {
 		compile_body(env, args, 0);
-		return compile_form(env, Cnil, flags);
+		return compile_form(env, ECL_NIL, flags);
 	}
 	asm_op2c(env, OP_BLOCK, ecl_make_fixnum(0));
 	c_register_tags(env, labels);
@@ -2076,7 +2076,7 @@ static int
 c_the(cl_env_ptr env, cl_object stmt, int flags) {
 	cl_object type = pop(&stmt);
 	cl_object value = pop(&stmt);
-	if (stmt != Cnil) {
+	if (stmt != ECL_NIL) {
 		FEprogram_error_noreturn("THE: Too many arguments",0);
 	}
 	return compile_form(env, value, flags);
@@ -2091,7 +2091,7 @@ static int
 c_throw(cl_env_ptr env, cl_object stmt, int flags) {
 	cl_object tag = pop(&stmt);
 	cl_object form = pop(&stmt);
-	if (stmt != Cnil)
+	if (stmt != ECL_NIL)
 		FEprogram_error_noreturn("THROW: Too many arguments.",0);
 	compile_form(env, tag, FLAG_PUSH);
 	compile_form(env, form, FLAG_VALUES);
@@ -2136,7 +2136,7 @@ c_values(cl_env_ptr env, cl_object args, int flags) {
 		/* We only need the first value. However, the rest
 		   of arguments HAVE to be be evaluated */
 		if (Null(args))
-			return compile_form(env, Cnil, flags);
+			return compile_form(env, ECL_NIL, flags);
 		flags = compile_form(env, pop(&args), FLAG_PUSH);
 		compile_body(env, args, FLAG_IGNORE);
 		return flags;
@@ -2178,8 +2178,8 @@ need_to_make_load_form_p(cl_object o)
         case t_list:
                 if (Null(o)) return 0;
         default:
-                return _ecl_funcall3(@'clos::need-to-make-load-form-p', o, Cnil)
-                        != Cnil;
+                return _ecl_funcall3(@'clos::need-to-make-load-form-p', o, ECL_NIL)
+                        != ECL_NIL;
         }
 }
 
@@ -2207,7 +2207,7 @@ compile_constant(cl_env_ptr env, cl_object stmt, int flags)
                 bool push = flags & FLAG_PUSH;
                 cl_fixnum n;
                 maybe_make_load_forms(env, stmt);
-                if (stmt == Cnil) {
+                if (stmt == ECL_NIL) {
                         asm_op(env, push? OP_PUSHNIL : OP_NIL);
                 } else if (ECL_FIXNUMP(stmt) && (n = ecl_fixnum(stmt)) <= MAX_OPARG
                            && n >= -MAX_OPARG) {
@@ -2224,7 +2224,7 @@ compile_constant(cl_env_ptr env, cl_object stmt, int flags)
 static int
 c_quote(cl_env_ptr env, cl_object args, int flags)
 {
-        if (ECL_ATOM(args) || ECL_CONS_CDR(args) != Cnil)
+        if (ECL_ATOM(args) || ECL_CONS_CDR(args) != ECL_NIL)
                 FEill_formed_input();
         return compile_constant(env, ECL_CONS_CAR(args), flags);
 }
@@ -2356,13 +2356,13 @@ eval_nontrivial_form(cl_env_ptr env, cl_object form) {
         frame.size = 0;
         frame.env = env;
         env->nvalues = 0;
-        env->values[0] = Cnil;
-        new_c_env.constants = si_make_vector(Ct, ecl_make_fixnum(16),
-					     Ct, /* Adjustable */
+        env->values[0] = ECL_NIL;
+        new_c_env.constants = si_make_vector(ECL_T, ecl_make_fixnum(16),
+					     ECL_T, /* Adjustable */
 					     ecl_make_fixnum(0), /* Fillp */
-					     Cnil, /* displacement */
-					     Cnil);
-        new_c_env.load_time_forms = Cnil;
+					     ECL_NIL, /* displacement */
+					     ECL_NIL);
+        new_c_env.load_time_forms = ECL_NIL;
         new_c_env.env_depth = 0;
         new_c_env.env_size = 0;
         env->c_env = &new_c_env;
@@ -2395,8 +2395,8 @@ eval_form(cl_env_ptr env, cl_object form) {
 static int
 execute_each_form(cl_env_ptr env, cl_object body)
 {
-        cl_object form = Cnil, next_form;
-        for (form = Cnil; !Null(body); form = next_form) {
+        cl_object form = ECL_NIL, next_form;
+        for (form = ECL_NIL; !Null(body); form = next_form) {
                 unlikely_if (!ECL_LISTP(body))
                         FEtype_error_proper_list(body);
                 next_form = ECL_CONS_CAR(body);
@@ -2447,10 +2447,10 @@ compile_with_load_time_forms(cl_env_ptr env, cl_object form, int flags)
          * If some constants need to be built, we insert the
          * code _before_ the actual forms;
          */
-        if (c_env->load_time_forms != Cnil) {
+        if (c_env->load_time_forms != ECL_NIL) {
                 cl_index *bytecodes = save_bytecodes(env, handle, current_pc(env));
                 cl_object p, forms_list = c_env->load_time_forms;
-		c_env->load_time_forms = Cnil;
+		c_env->load_time_forms = ECL_NIL;
 		p = forms_list;
                 do {
                         cl_object r = ECL_CONS_CAR(p);
@@ -2463,14 +2463,14 @@ compile_with_load_time_forms(cl_env_ptr env, cl_object form, int flags)
                         compile_with_load_time_forms(env, init_form, FLAG_IGNORE);
 			ECL_RPLACA(p, ecl_make_fixnum(loc));
                         p = ECL_CONS_CDR(p);
-                } while (p != Cnil);
+                } while (p != ECL_NIL);
 		p = forms_list;
 		do {
 			cl_index loc = ecl_fixnum(ECL_CONS_CAR(p));
 			/* Clear created constants (they cannot be printed) */
 			c_env->constants->vector.self.t[loc] = ecl_make_fixnum(0);
 			p = ECL_CONS_CDR(p);
-		} while (p != Cnil);
+		} while (p != ECL_NIL);
                 restore_bytecodes(env, bytecodes);
         }
         return output_flags;
@@ -2479,8 +2479,8 @@ compile_with_load_time_forms(cl_env_ptr env, cl_object form, int flags)
 static int
 compile_each_form(cl_env_ptr env, cl_object body, int flags)
 {
-        cl_object form = Cnil, next_form;
-        for (form = Cnil; !Null(body); form = next_form) {
+        cl_object form = ECL_NIL, next_form;
+        for (form = ECL_NIL; !Null(body); form = next_form) {
                 unlikely_if (!ECL_LISTP(body))
                         FEtype_error_proper_list(body);
                 next_form = ECL_CONS_CAR(body);
@@ -2507,8 +2507,8 @@ compile_toplevel_body(cl_env_ptr env, cl_object body, int flags)
 static int
 compile_body(cl_env_ptr env, cl_object body, int flags)
 {
-        cl_object form = Cnil, next_form;
-        for (form = Cnil; !Null(body); form = next_form) {
+        cl_object form = ECL_NIL, next_form;
+        for (form = ECL_NIL; !Null(body); form = next_form) {
                 unlikely_if (!ECL_LISTP(body))
                         FEtype_error_proper_list(body);
                 next_form = ECL_CONS_CAR(body);
@@ -2536,7 +2536,7 @@ static int
 c_endp(cl_env_ptr env, cl_object args, int flags)
 {
 	cl_object list = pop(&args);
-	if (args != Cnil) {
+	if (args != ECL_NIL) {
 		FEprogram_error_noreturn("ENDP: Too many arguments", 0);
 	}
 	compile_form(env, list, FLAG_REG0);
@@ -2548,7 +2548,7 @@ static int
 c_car(cl_env_ptr env, cl_object args, int flags)
 {
 	cl_object list = pop(&args);
-	if (args != Cnil) {
+	if (args != ECL_NIL) {
 		FEprogram_error_noreturn("CAR: Too many arguments", 0);
 	}
 	compile_form(env, list, FLAG_REG0);
@@ -2560,7 +2560,7 @@ static int
 c_cdr(cl_env_ptr env, cl_object args, int flags)
 {
 	cl_object list = pop(&args);
-	if (args != Cnil) {
+	if (args != ECL_NIL) {
 		FEprogram_error_noreturn("CDR: Too many arguments", 0);
 	}
 	compile_form(env, list, FLAG_REG0);
@@ -2573,9 +2573,9 @@ c_list_listA(cl_env_ptr env, cl_object args, int flags, int op)
 {
 	cl_index n = ecl_length(args);
 	if (n == 0) {
-		return compile_form(env, Cnil, flags);
+		return compile_form(env, ECL_NIL, flags);
 	} else {
-		while (ECL_CONS_CDR(args) != Cnil) {
+		while (ECL_CONS_CDR(args) != ECL_NIL) {
 			compile_form(env, ECL_CONS_CAR(args), FLAG_PUSH);
 			args = ECL_CONS_CDR(args);
 		}
@@ -2626,7 +2626,7 @@ c_listA(cl_env_ptr env, cl_object args, int flags)
   Handles special declarations, removes declarations from body
  */
 @(defun si::process-declarations (body &optional doc)
-	cl_object documentation = Cnil, declarations = Cnil, specials = Cnil;
+	cl_object documentation = ECL_NIL, declarations = ECL_NIL, specials = ECL_NIL;
 @
 	for (; !Null(body); body = ECL_CONS_CDR(body)) {
                 cl_object form;
@@ -2634,7 +2634,7 @@ c_listA(cl_env_ptr env, cl_object args, int flags)
                         FEill_formed_input();
                 form = ECL_CONS_CAR(body);
                 if (!Null(doc) && ecl_stringp(form) && !Null(ECL_CONS_CDR(body))) {
-                        if (documentation != Cnil)
+                        if (documentation != ECL_NIL)
                                 break;
                         documentation = form;
                         continue;
@@ -2668,7 +2668,7 @@ si_process_lambda(cl_object lambda)
 
 	lambda_list = ECL_CONS_CAR(lambda);
         body = ECL_CONS_CDR(lambda);
-	declarations = @si::process-declarations(2, body, Ct);
+	declarations = @si::process-declarations(2, body, ECL_T);
 	body = env->values[1];
 	documentation = env->values[2];
 	specials = env->values[3];
@@ -2721,12 +2721,12 @@ si_process_lambda_list(cl_object org_lambda_list, cl_object context)
 	if (context == @'function') { \
 		unlikely_if (ecl_symbol_type(v) & ecl_stp_constant)	\
 			FEillegal_variable_name(v); }
-        cl_object lists[4] = {Cnil, Cnil, Cnil, Cnil};
+        cl_object lists[4] = {ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL};
         cl_object *reqs = lists, *opts = lists+1, *keys = lists+2, *auxs = lists+3;
-	cl_object v, rest = Cnil, lambda_list = org_lambda_list;
+	cl_object v, rest = ECL_NIL, lambda_list = org_lambda_list;
 	int nreq = 0, nopt = 0, nkey = 0, naux = 0;
-	cl_object allow_other_keys = Cnil;
-	cl_object key_flag = Cnil;
+	cl_object allow_other_keys = ECL_NIL;
+	cl_object key_flag = ECL_NIL;
         enum {  AT_REQUIREDS,
                 AT_OPTIONALS,
                 AT_REST,
@@ -2744,7 +2744,7 @@ LOOP:
 		unlikely_if (context == @'function' || context == @'ftype')
 			goto ILLEGAL_LAMBDA;
                 v = lambda_list;
-                lambda_list = Cnil;
+                lambda_list = ECL_NIL;
                 goto REST;
 	}
 	v = ECL_CONS_CAR(lambda_list);
@@ -2769,7 +2769,7 @@ REST:		unlikely_if (stage >= AT_REST)
 	if (v == @'&key') {
 		unlikely_if (stage >= AT_KEYS)
 			goto ILLEGAL_LAMBDA;
-		key_flag = Ct;
+		key_flag = ECL_T;
 		stage = AT_KEYS;
 		goto LOOP;
 	}
@@ -2780,7 +2780,7 @@ REST:		unlikely_if (stage >= AT_REST)
 		goto LOOP;
 	}
 	if (v == @'&allow-other-keys') {
-		allow_other_keys = Ct;
+		allow_other_keys = ECL_T;
 		unlikely_if (stage != AT_KEYS)
 			goto ILLEGAL_LAMBDA;
 		stage = AT_OTHER_KEYS;
@@ -2793,8 +2793,8 @@ REST:		unlikely_if (stage >= AT_REST)
 		push(v, reqs);
 		break;
 	case AT_OPTIONALS: {
-		cl_object spp = Cnil;
-		cl_object init = Cnil;
+		cl_object spp = ECL_NIL;
+		cl_object init = ECL_NIL;
 		if (!ECL_ATOM(v) && (context != @'ftype')) {
 			cl_object x = v;
                         unlikely_if (!ECL_LISTP(x)) goto ILLEGAL_LAMBDA;
@@ -2808,7 +2808,7 @@ REST:		unlikely_if (stage >= AT_REST)
                                         unlikely_if (!ECL_LISTP(x)) goto ILLEGAL_LAMBDA;
 					spp = ECL_CONS_CAR(x);
                                         x = ECL_CONS_CDR(x);
-                                        if (spp != Cnil) assert_var_name(spp);
+                                        if (spp != ECL_NIL) assert_var_name(spp);
 					unlikely_if (!Null(x))
 						goto ILLEGAL_LAMBDA;
 				}
@@ -2826,8 +2826,8 @@ REST:		unlikely_if (stage >= AT_REST)
 		 * &rest variable, as in (lambda (&rest x y) ...) */
 		goto ILLEGAL_LAMBDA;
 	case AT_KEYS: {
-		cl_object init = Cnil;
-		cl_object spp = Cnil;
+		cl_object init = ECL_NIL;
+		cl_object spp = ECL_NIL;
                 cl_object key;
                 if (context == @'ftype') {
                         unlikely_if (ECL_ATOM(v))
@@ -2850,7 +2850,7 @@ REST:		unlikely_if (stage >= AT_REST)
                                         x = ECL_CONS_CDR(x);
 					unlikely_if (!Null(x))
 						goto ILLEGAL_LAMBDA;
-                                        if (spp != Cnil) assert_var_name(spp);
+                                        if (spp != ECL_NIL) assert_var_name(spp);
 				}
 			}
 		}
@@ -2880,7 +2880,7 @@ REST:		unlikely_if (stage >= AT_REST)
 	default: {
                 cl_object init;
 		if (ECL_ATOM(v)) {
-			init = Cnil;
+			init = ECL_NIL;
 		} else if (Null(CDDR(v))) {
 			cl_object x = v;
 			v = ECL_CONS_CAR(x);
@@ -2924,7 +2924,7 @@ c_default(cl_env_ptr env, cl_object var, cl_object stmt, cl_object flag, cl_obje
         if (Null(flag)) {
                 asm_complete(env, OP_JT, label);
         } else {
-                compile_form(env, Cnil, FLAG_REG0);
+                compile_form(env, ECL_NIL, FLAG_REG0);
                 asm_complete(env, OP_JT, label);
                 c_bind(env, flag, specials);
         }
@@ -2942,7 +2942,7 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
 		     @list*(3, @'ext::lambda-block', name, lambda));
 
 	old_c_env = env->c_env;
-	c_new_env(env, &new_c_env, Cnil, old_c_env);
+	c_new_env(env, &new_c_env, ECL_NIL, old_c_env);
 	new_c_env.lexical_level++;
 
 	reqs = si_process_lambda(lambda);
@@ -2990,8 +2990,8 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
                 c_bind(env, rest, specials);
         }
         if (!Null(key)) {
-                cl_object aux = CONS(allow_other_keys,Cnil);
-                cl_object names = Cnil;
+                cl_object aux = CONS(allow_other_keys,ECL_NIL);
+                cl_object names = ECL_NIL;
                 asm_op2c(env, OP_PUSHKEYS, aux);
                 keys = ECL_CONS_CDR(keys);
                 while (!Null(keys)) {
@@ -3026,7 +3026,7 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
 	asm_op(env, OP_EXIT);
 
         if (Null(ecl_symbol_value(@'si::*keep-definitions*')))
-                lambda = Cnil;
+                lambda = ECL_NIL;
 	output = asm_end(env, handle, lambda);
 	output->bytecodes.name = name;
 
@@ -3067,7 +3067,7 @@ cl_object
 si_valid_function_name_p(cl_object name)
 {
         name = ecl_function_block_name(name);
-        @(return (name? Ct : Cnil))
+        @(return (name? ECL_T : ECL_NIL))
 }
 
 cl_object
@@ -3078,7 +3078,7 @@ si_make_lambda(cl_object name, cl_object rest)
 	volatile cl_compiler_env_ptr old_c_env = the_env->c_env;
 	struct cl_compiler_env new_c_env;
 
-	c_new_env(the_env, &new_c_env, Cnil, 0);
+	c_new_env(the_env, &new_c_env, ECL_NIL, 0);
 	ECL_UNWIND_PROTECT_BEGIN(the_env) {
 		lambda = ecl_make_lambda(the_env, name, rest);
 	} ECL_UNWIND_PROTECT_EXIT {
@@ -3087,8 +3087,8 @@ si_make_lambda(cl_object name, cl_object rest)
 	@(return lambda)
 }
 
-@(defun si::eval-with-env (form &optional (env Cnil) (stepping Cnil)
-                           (compiler_env_p Cnil) (execute Ct))
+@(defun si::eval-with-env (form &optional (env ECL_NIL) (stepping ECL_NIL)
+                           (compiler_env_p ECL_NIL) (execute ECL_T))
 	volatile cl_compiler_env_ptr old_c_env;
 	struct cl_compiler_env new_c_env;
 	cl_object interpreter_env, compiler_env;
@@ -3096,18 +3096,18 @@ si_make_lambda(cl_object name, cl_object rest)
 	/*
 	 * Compile to bytecodes.
 	 */
-	if (compiler_env_p == Cnil) {
+	if (compiler_env_p == ECL_NIL) {
 		interpreter_env = env;
-		compiler_env = Cnil;
+		compiler_env = ECL_NIL;
 	} else {
-		interpreter_env = Cnil;
+		interpreter_env = ECL_NIL;
 		compiler_env = env;
 	}
 	old_c_env = the_env->c_env;
 	c_new_env(the_env, &new_c_env, compiler_env, 0);
 	guess_environment(the_env, interpreter_env);
 	new_c_env.lex_env = env;
-	new_c_env.stepping = stepping != Cnil;
+	new_c_env.stepping = stepping != ECL_NIL;
 	ECL_UNWIND_PROTECT_BEGIN(the_env) {
                 if (Null(execute)) {
                         cl_index handle = asm_begin(the_env);

@@ -193,7 +193,7 @@ cl_object
 ecl_make_foreign_data(cl_object tag, cl_index size, void *data)
 {
 	cl_object output = ecl_alloc_object(t_foreign);
-	output->foreign.tag = tag == Cnil ? @':void' : tag;
+	output->foreign.tag = tag == ECL_NIL ? @':void' : tag;
 	output->foreign.size = size;
 	output->foreign.data = (char*)data;
 	return output;
@@ -296,7 +296,7 @@ si_make_foreign_data_from_array(cl_object array)
 cl_object
 si_foreign_data_p(cl_object f)
 {
-        @(return (ECL_FOREIGN_DATA_P(f)? Ct : Cnil))
+        @(return (ECL_FOREIGN_DATA_P(f)? ECL_T : ECL_NIL))
 }
 
 cl_object
@@ -330,7 +330,7 @@ si_foreign_data_equal(cl_object f1, cl_object f2)
                 FEwrong_type_only_arg(@[si::foreign-data-address], f2,
                                       @[si::foreign-data]);
 	}
-	@(return ((f1->foreign.data == f2->foreign.data)? Ct : Cnil))
+	@(return ((f1->foreign.data == f2->foreign.data)? ECL_T : ECL_NIL))
 }
 
 cl_object
@@ -512,7 +512,7 @@ ecl_foreign_data_ref_elt(void *p, enum ecl_ffi_tag tag)
 		return ecl_make_foreign_data(@':pointer-void', 0, *(void **)p);
 	case ECL_FFI_CSTRING:
 		return *(char **)p ?
-                        ecl_make_simple_base_string(*(char **)p, -1) : Cnil;
+                        ecl_make_simple_base_string(*(char **)p, -1) : ECL_NIL;
 	case ECL_FFI_OBJECT:
 		return *(cl_object *)p;
 	case ECL_FFI_FLOAT:
@@ -520,7 +520,7 @@ ecl_foreign_data_ref_elt(void *p, enum ecl_ffi_tag tag)
 	case ECL_FFI_DOUBLE:
 		return ecl_make_double_float(*(double *)p);
 	case ECL_FFI_VOID:
-		return Cnil;
+		return ECL_NIL;
         default:
                 wrong_ffi_tag(tag);
 	}
@@ -602,7 +602,7 @@ ecl_foreign_data_set_elt(void *p, enum ecl_ffi_tag tag, cl_object value)
 		*(void **)p = ecl_foreign_data_pointer_safe(value);
 		break;
 	case ECL_FFI_CSTRING:
-		*(char **)p = value == Cnil ? NULL : (char*)value->base_string.self;
+		*(char **)p = value == ECL_NIL ? NULL : (char*)value->base_string.self;
 		break;
 	case ECL_FFI_OBJECT:
 		*(cl_object *)p = value;
@@ -672,7 +672,7 @@ si_alignment_of_foreign_elt_type(cl_object type)
 cl_object
 si_foreign_elt_type_p(cl_object type)
 {
-	@(return ((foreign_type_code(type) < 0)? Cnil : Ct))
+	@(return ((foreign_type_code(type) < 0)? ECL_NIL : ECL_T))
 }
 
 cl_object
@@ -681,7 +681,7 @@ si_null_pointer_p(cl_object f)
 	if (ecl_unlikely(type_of(f) != t_foreign))
                 FEwrong_type_only_arg(@[si::null-pointer-p], f,
                                       @[si::foreign-data]);
-	@(return ((f->foreign.data == NULL)? Ct : Cnil))
+	@(return ((f->foreign.data == NULL)? ECL_T : ECL_NIL))
 }
 
 cl_object
@@ -734,7 +734,7 @@ si_find_foreign_symbol(cl_object var, cl_object module, cl_object type, cl_objec
 	FEerror("SI:FIND-FOREIGN-SYMBOL does not work when ECL is statically linked", 0);
 #else
 	cl_object block;
-	cl_object output = Cnil;
+	cl_object output = ECL_NIL;
 	void *sym;
 
 	block = (module == @':default' ? module : si_load_foreign_module(module));
@@ -768,7 +768,7 @@ ecl_fficall_prepare(cl_object return_type, cl_object arg_type, cl_object cc_type
 	struct ecl_fficall *fficall = cl_env.fficall;
 	fficall->buffer_sp = fficall->buffer;
 	fficall->buffer_size = 0;
-	fficall->cstring = Cnil;
+	fficall->cstring = ECL_NIL;
 	fficall->cc = ecl_foreign_cc_code(cc_type);
         fficall->registers = ecl_fficall_prepare_extra(fficall->registers);
 }
@@ -839,7 +839,7 @@ ecl_fficall_align(int data)
 
 	fficall->buffer_size = 0;
 	fficall->buffer_sp = fficall->buffer;
-	fficall->cstring = Cnil;
+	fficall->cstring = ECL_NIL;
 
 	@(return object)
 @)
@@ -964,7 +964,7 @@ callback_executor(ffi_cif *cif, void *result, void **args, void *userdata)
         struct ecl_stack_frame frame_aux;
         const cl_object frame = ecl_stack_frame_open(the_env, (cl_object)&frame_aux, 0);
         cl_object x;
-        while (arg_types != Cnil) {
+        while (arg_types != ECL_NIL) {
                 cl_object type = ECL_CONS_CAR(arg_types);
                 enum ecl_ffi_tag tag = ecl_foreign_type_code(type);
                 x = ecl_foreign_data_ref_elt(*args, tag);
@@ -990,7 +990,7 @@ si_free_ffi_closure(cl_object closure)
 {
         ffi_cif *cif = ecl_alloc(sizeof(ffi_cif));
         ffi_type **types;
-        int n = prepare_cif(the_env, cif, return_type, arg_types, Cnil, cc_type,
+        int n = prepare_cif(the_env, cif, return_type, arg_types, ECL_NIL, cc_type,
                             &types);
 
 	/* libffi allocates executable memory for us. ffi_closure_alloc()

@@ -85,14 +85,14 @@ ecl_make_codeblock()
         block->cblock.temp_data_size = 0;
         block->cblock.data_text = NULL;
         block->cblock.data_text_size = 0;
-        block->cblock.next = Cnil;
-        block->cblock.name = Cnil;
-        block->cblock.links = Cnil;
+        block->cblock.next = ECL_NIL;
+        block->cblock.name = ECL_NIL;
+        block->cblock.links = ECL_NIL;
         block->cblock.cfuns_size = 0;
         block->cblock.cfuns = NULL;
-        block->cblock.source = Cnil;
+        block->cblock.source = ECL_NIL;
         block->cblock.refs = ecl_make_fixnum(0);
-        si_set_finalizer(block, Ct);
+        si_set_finalizer(block, ECL_T);
         return block;
 }
 
@@ -190,27 +190,27 @@ static cl_object
 ecl_library_find_by_name(cl_object filename)
 {
 	cl_object l;
-	for (l = cl_core.libraries; l != Cnil; l = ECL_CONS_CDR(l)) {
+	for (l = cl_core.libraries; l != ECL_NIL; l = ECL_CONS_CDR(l)) {
 		cl_object other = ECL_CONS_CAR(l);
 		cl_object name = other->cblock.name;
 		if (!Null(name) && ecl_string_eq(name, filename)) {
 			return other;
 		}
 	}
-	return Cnil;
+	return ECL_NIL;
 }
 
 static cl_object
 ecl_library_find_by_handle(void *handle)
 {
 	cl_object l;
-	for (l = cl_core.libraries; l != Cnil; l = ECL_CONS_CDR(l)) {
+	for (l = cl_core.libraries; l != ECL_NIL; l = ECL_CONS_CDR(l)) {
 		cl_object other = ECL_CONS_CAR(l);
 		if (handle == other->cblock.handle) {
 			return other;
 		}
 	}
-	return Cnil;
+	return ECL_NIL;
 }
 
 static cl_object
@@ -229,11 +229,11 @@ ecl_library_open_inner(cl_object filename, bool self_destruct)
 	block->cblock.data_text = NULL;
 	block->cblock.data_text_size = 0;
 	block->cblock.name = filename;
-	block->cblock.next = Cnil;
-	block->cblock.links = Cnil;
+	block->cblock.next = ECL_NIL;
+	block->cblock.links = ECL_NIL;
 	block->cblock.cfuns_size = 0;
 	block->cblock.cfuns = NULL;
-        block->cblock.source = Cnil;
+        block->cblock.source = ECL_NIL;
         block->cblock.refs = ecl_make_fixnum(1);
 
         ECL_WITH_GLOBAL_LOCK_BEGIN(the_env) {
@@ -245,12 +245,12 @@ ecl_library_open_inner(cl_object filename, bool self_destruct)
                  * track (in lisp) of how many copies we use.
                  */
                 cl_object other = ecl_library_find_by_handle(block->cblock.handle);
-                if (other != Cnil) {
+                if (other != ECL_NIL) {
                         dlclose_wrapper(block);
                         block = other;
                         block->cblock.refs = ecl_one_plus(block->cblock.refs);
                 } else {
-                        si_set_finalizer(block, Ct);
+                        si_set_finalizer(block, ECL_T);
                         cl_core.libraries = CONS(block, cl_core.libraries);
                 }
         }
@@ -325,7 +325,7 @@ ecl_library_symbol(cl_object block, const char *symbol, bool lock) {
 	void *p;
 	if (block == @':default') {
 		cl_object l;
-		for (l = cl_core.libraries; l != Cnil; l = ECL_CONS_CDR(l)) {
+		for (l = cl_core.libraries; l != ECL_NIL; l = ECL_CONS_CDR(l)) {
 			cl_object block = ECL_CONS_CAR(l);
 			p = ecl_library_symbol(block, symbol, lock);
 			if (p) return p;
@@ -427,14 +427,14 @@ ecl_library_close(cl_object block) {
                 ecl_disable_interrupts();
                 if (block->cblock.refs != ecl_make_fixnum(1)) {
                         block->cblock.refs = ecl_one_minus(block->cblock.refs);
-                        block = Cnil;
+                        block = ECL_NIL;
                 } else if (block->cblock.handle != NULL) {
                         dlclose_wrapper(block);
                         cl_core.libraries = ecl_remove_eq(block, cl_core.libraries);
                 }
                 ecl_enable_interrupts();
         } ECL_WITH_GLOBAL_LOCK_END;
-	if (block != Cnil && block->cblock.self_destruct) {
+	if (block != ECL_NIL && block->cblock.self_destruct) {
                 if (!Null(block->cblock.name)) {
                         unlink((char*)block->cblock.name->base_string.self);
                 }
@@ -444,7 +444,7 @@ ecl_library_close(cl_object block) {
 void
 ecl_library_close_all(void)
 {
-	while (cl_core.libraries != Cnil) {
+	while (cl_core.libraries != ECL_NIL) {
 		ecl_library_close(ECL_CONS_CAR(cl_core.libraries));
 	}
 }

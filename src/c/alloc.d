@@ -315,7 +315,7 @@ ONCE_MORE:
 	  break;
 	case t_array:
 	  obj->array.dims = NULL;
-	  obj->array.displaced = Cnil;
+	  obj->array.displaced = ECL_NIL;
 	  obj->array.elttype = (short)ecl_aet_object;
 	  obj->array.self.t = NULL;
 	  break;
@@ -323,16 +323,16 @@ ONCE_MORE:
 	case t_string:
 #endif
 	case t_vector:
-	  obj->array.displaced = Cnil;
+	  obj->array.displaced = ECL_NIL;
 	  obj->array.elttype = (short)ecl_aet_object;
 	  obj->array.self.t = NULL;
 	  break;
 	case t_base_string:
-	  obj->base_string.displaced = Cnil;
+	  obj->base_string.displaced = ECL_NIL;
 	  obj->base_string.self = NULL;
 	  break;
 	case t_bitvector:
-	  obj->vector.displaced = Cnil;
+	  obj->vector.displaced = ECL_NIL;
 	  obj->vector.self.bit = NULL;
 	  break;
 #ifndef CLOS
@@ -362,17 +362,17 @@ ONCE_MORE:
 	  obj->pathname.version = OBJNULL;
 	  break;
 	case t_bytecodes:
-	  obj->bytecodes.lex = Cnil;
-	  obj->bytecodes.name = Cnil;
-	  obj->bytecodes.definition = Cnil;
-	  obj->bytecodes.specials = Cnil;
+	  obj->bytecodes.lex = ECL_NIL;
+	  obj->bytecodes.name = ECL_NIL;
+	  obj->bytecodes.definition = ECL_NIL;
+	  obj->bytecodes.specials = ECL_NIL;
 	  obj->bytecodes.code_size = 0;
 	  obj->bytecodes.code = NULL;
 	  obj->bytecodes.data = NULL;
 	  break;
 	case t_bclosure:
 	  obj->bclosure.code =
-	  obj->bclosure.lex = Cnil;
+	  obj->bclosure.lex = ECL_NIL;
 	  break;
 	case t_cfun:
 	case t_cfunfixed:
@@ -410,25 +410,25 @@ ONCE_MORE:
 	case t_instance:
 	  obj->instance.length = 0;
 	  CLASS_OF(obj) = OBJNULL;
-	  obj->instance.sig = Cnil;
+	  obj->instance.sig = ECL_NIL;
 	  obj->instance.isgf = 0;
 	  obj->instance.slots = NULL;
 	  break;
 #endif /* CLOS */
 	case t_codeblock:
 	  obj->cblock.locked = 0;
-	  obj->cblock.name = Cnil;
+	  obj->cblock.name = ECL_NIL;
 	  obj->cblock.handle = NULL;
 	  obj->cblock.entry = NULL;
 	  obj->cblock.data = NULL;
 	  obj->cblock.data_size = 0;
 	  obj->cblock.data_text = NULL;
 	  obj->cblock.data_text_size = 0;
-	  obj->cblock.links = Cnil;
-	  obj->cblock.next = Cnil;
+	  obj->cblock.links = ECL_NIL;
+	  obj->cblock.next = ECL_NIL;
 	  break;
 	case t_foreign:
-	  obj->foreign.tag = Cnil;
+	  obj->foreign.tag = ECL_NIL;
 	  obj->foreign.size = 0;
 	  obj->foreign.data = NULL;
 	  break;
@@ -455,7 +455,7 @@ CALL_GC:
 	GC_disable();
 	{ cl_object s = ecl_make_simple_base_string(tm_table[(int)t].tm_name+1, -1);
 	GC_enable();
-	CEerror(Ct, "The storage for ~A is exhausted.~%\
+	CEerror(ECL_T, "The storage for ~A is exhausted.~%\
 Currently, ~D pages are allocated.~%\
 Use ALLOCATE to expand the space.",
 		2, s, MAKE_FIXNUM(tm->tm_npage));
@@ -511,7 +511,7 @@ CALL_GC:
 			tm->tm_maxpage += tm->tm_maxpage/2;
 		goto ONCE_MORE;
 	}
-	CEerror(Ct, "The storage for CONS is exhausted.~%\
+	CEerror(ECL_T, "The storage for CONS is exhausted.~%\
 Currently, ~D pages are allocated.~%\
 Use ALLOCATE to expand the space.",
 		1, MAKE_FIXNUM(tm->tm_npage));
@@ -574,7 +574,7 @@ ONCE_MORE:
 			g = FALSE;
 			goto ONCE_MORE;
 		}
-		CEerror(Ct, "Contiguous blocks exhausted.~%\
+		CEerror(ECL_T, "Contiguous blocks exhausted.~%\
 Currently, ~D pages are allocated.~%\
 Use ALLOCATE-CONTIGUOUS-PAGES to expand the space.",
 			1, MAKE_FIXNUM(ncbpage));
@@ -772,7 +772,7 @@ init_alloc(void)
 	maxcbpage = 2048;
 
 #ifdef NEED_MALLOC
-	malloc_list = Cnil;
+	malloc_list = ECL_NIL;
 	ecl_register_static_root(&malloc_list);
 #endif
 }
@@ -791,7 +791,7 @@ t_from_type(cl_object type)
    FEerror("Unrecognized type", 0);
 }
 
-@(defun si::allocate (type qty &optional (now Cnil))
+@(defun si::allocate (type qty &optional (now ECL_NIL))
 	struct typemanager *tm;
 	cl_ptr pp;
 	cl_index i;
@@ -800,15 +800,15 @@ t_from_type(cl_object type)
 	i = ecl_to_size(qty);
 	if (tm->tm_npage > i) i = tm->tm_npage;
 	tm->tm_maxpage = i;
-	if (now == Cnil || tm->tm_maxpage <= tm->tm_npage)
-	  @(return Ct)
+	if (now == ECL_NIL || tm->tm_maxpage <= tm->tm_npage)
+	  @(return ECL_T)
 	if (available_pages() < tm->tm_maxpage - tm->tm_npage ||
 	    (pp = alloc_page(tm->tm_maxpage - tm->tm_npage)) == NULL)
 	  FEerror("Can't allocate ~D pages for ~A.", 2, type,
 		  make_constant_base_string(tm->tm_name+1));
 	for (;  tm->tm_npage < tm->tm_maxpage;  pp += LISP_PAGESIZE)
 	  add_page_to_freelist(pp, tm);
-	@(return Ct)
+	@(return ECL_T)
 @)
 
 @(defun si::maximum-allocatable-pages (type)
@@ -821,7 +821,7 @@ t_from_type(cl_object type)
 	@(return MAKE_FIXNUM(tm_of(t_from_type(type))->tm_npage))
 @)
 
-@(defun si::allocate-contiguous-pages (qty &optional (now Cnil))
+@(defun si::allocate-contiguous-pages (qty &optional (now ECL_NIL))
 	cl_index i, m;
 	cl_ptr p;
 @
@@ -832,7 +832,7 @@ since ~D pages are already allocated.",
 			2, qty, MAKE_FIXNUM(ncbpage));
 	maxcbpage = i;
 	if (Null(now))
-	  @(return Ct)
+	  @(return ECL_T)
 	m = maxcbpage - ncbpage;
 	if (available_pages() < m || (p = alloc_page(m)) == NULL)
 		FEerror("Can't allocate ~D pages for contiguous blocks.",
@@ -841,7 +841,7 @@ since ~D pages are already allocated.",
 		type_map[page(p + LISP_PAGESIZE*i)] = (char)t_contiguous;
 	ncbpage += m;
 	cl_dealloc(p, LISP_PAGESIZE*m);
-	@(return Ct)
+	@(return ECL_T)
 @)
 
 @(defun si::allocated-contiguous-pages ()
@@ -872,7 +872,7 @@ since ~D pages are already allocated.",
 @(defun si::ignore-maximum-pages (&optional (flag OBJNULL))
 @
 	if (flag == OBJNULL)
-		@(return (ignore_maximum_pages? Ct : Cnil))
+		@(return (ignore_maximum_pages? ECL_T : ECL_NIL))
 	ignore_maximum_pages = Null(flag);
 	@(return flag)
 @)

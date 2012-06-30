@@ -21,7 +21,7 @@
 cl_object
 cl_zerop(cl_object x)
 {	/* INV: ecl_zerop() checks type */
-	@(return (ecl_zerop(x) ? Ct : Cnil))
+	@(return (ecl_zerop(x) ? ECL_T : ECL_NIL))
 }
 
 static int

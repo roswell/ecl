@@ -26,8 +26,8 @@
 	/* INV: For >= 2 arguments, ecl_number_equalp() performs checks */
 	for (i = 1; i < narg; i++)
 		if (!ecl_number_equalp(num, ecl_va_arg(nums)))
-			@(return Cnil)
-	@(return Ct)
+			@(return ECL_NIL)
+	@(return ECL_T)
 @)
 
 /* Returns 1 if both numbers compare to equal */
@@ -187,7 +187,7 @@ ecl_number_equalp(cl_object x, cl_object y)
 		numi = ecl_va_arg(nums);
 		for (j = 1; j<i; j++)
 			if (ecl_number_equalp(numi, ecl_va_arg(numb)))
-				@(return Cnil)
+				@(return ECL_NIL)
 	}
-	@(return Ct)
+	@(return ECL_T)
 @)

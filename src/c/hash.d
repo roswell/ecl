@@ -25,7 +25,7 @@
 #include <ecl/internal.h>
 #include "newhash.h"
 
-#define SYMBOL_NAME(x) (Null(x)? Cnil_symbol->symbol.name : (x)->symbol.name)
+#define SYMBOL_NAME(x) (Null(x)? ECL_NIL_SYMBOL->symbol.name : (x)->symbol.name)
 
 static void ECL_INLINE
 assert_type_hash_table(cl_object function, cl_narg narg, cl_object p)
@@ -80,7 +80,7 @@ _hash_equal(int depth, cl_hashkey h, cl_object x)
 	switch (type_of(x)) {
 	case t_list:
 		if (Null(x)) {
-			return _hash_equal(depth, h, Cnil_symbol->symbol.name);
+			return _hash_equal(depth, h, ECL_NIL_SYMBOL->symbol.name);
 		}
 		if (--depth == 0) {
 			return h;
@@ -159,7 +159,7 @@ _hash_equalp(int depth, cl_hashkey h, cl_object x)
 		return hash_word(h, ecl_char_upcase(ECL_CHAR_CODE(x)));
 	case t_list:
 		if (Null(x)) {
-			return _hash_equalp(depth, h, Cnil_symbol->symbol.name);
+			return _hash_equalp(depth, h, ECL_NIL_SYMBOL->symbol.name);
 		}
 		if (--depth == 0) {
 			return h;
@@ -288,7 +288,7 @@ _ecl_remhash_eq(cl_object key, cl_object hashtable)
 		return 0;
 	} else {
 		e->key = OBJNULL;
-		e->value = Cnil;
+		e->value = ECL_NIL;
 		hashtable->hash.entries--;
 		return 1;
 	}
@@ -333,7 +333,7 @@ _ecl_remhash_eql(cl_object key, cl_object hashtable)
 		return 0;
 	} else {
 		e->key = OBJNULL;
-		e->value = Cnil;
+		e->value = ECL_NIL;
 		hashtable->hash.entries--;
 		return 1;
 	}
@@ -372,7 +372,7 @@ _ecl_remhash_equal(cl_object key, cl_object hashtable)
 		return 0;
 	} else {
 		e->key = OBJNULL;
-		e->value = Cnil;
+		e->value = ECL_NIL;
 		hashtable->hash.entries--;
 		return 1;
 	}
@@ -411,7 +411,7 @@ _ecl_remhash_equalp(cl_object key, cl_object hashtable)
 		return 0;
 	} else {
 		e->key = OBJNULL;
-		e->value = Cnil;
+		e->value = ECL_NIL;
 		hashtable->hash.entries--;
 		return 1;
 	}
@@ -451,7 +451,7 @@ _ecl_remhash_pack(cl_object key, cl_object hashtable)
 		return 0;
 	} else {
 		e->key = OBJNULL;
-		e->value = Cnil;
+		e->value = ECL_NIL;
 		hashtable->hash.entries--;
 		return 1;
 	}
@@ -526,7 +526,7 @@ copy_entry(struct ecl_hashtable_entry *e, cl_object h)
 		}
 		h->hash.entries--;
 		output.key = OBJNULL;
-		output.value = Cnil;
+		output.value = ECL_NIL;
 		h->hash.entries--;
 		return *e = output;
 	}
@@ -631,7 +631,7 @@ _ecl_remhash_weak(cl_object key, cl_object hashtable)
 	if (aux->key != OBJNULL) {
 		hashtable->hash.entries--;
 		e->key = OBJNULL;
-		e->value = Cnil;
+		e->value = ECL_NIL;
 		return 1;
 	} else {
 		return 0;
@@ -729,7 +729,7 @@ ecl_extend_hashtable(cl_object hashtable)
 }
 
 @(defun make_hash_table (&key (test @'eql')
-			      (weakness Cnil)
+			      (weakness ECL_NIL)
 			      (size ecl_make_fixnum(1024))
                               (rehash_size cl_core.rehash_size)
 			      (rehash_threshold cl_core.rehash_threshold))
@@ -748,7 +748,7 @@ ecl_extend_hashtable(cl_object hashtable)
 			FEwrong_type_key_arg(@[make-hash-table],
 					     @[:weakness],
 					     cl_list(5, @'member',
-						     Cnil, @':key', @':value',
+						     ECL_NIL, @':key', @':value',
 						     @':key-and-value'),
 					     weakness);
 		}
@@ -885,34 +885,34 @@ cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
 cl_object
 cl_hash_table_p(cl_object ht)
 {
-	@(return (ECL_HASH_TABLE_P(ht) ? Ct : Cnil))
+	@(return (ECL_HASH_TABLE_P(ht) ? ECL_T : ECL_NIL))
 }
 
 cl_object
 si_hash_table_weakness(cl_object ht)
 {
-	cl_object output = Cnil;
+	cl_object output = ECL_NIL;
 #ifdef ECL_WEAK_HASH
 	switch (ht->hash.weak) {
 	case ecl_htt_weak_key: output = @':key'; break;
 	case ecl_htt_weak_value: output = @':value'; break;
 	case ecl_htt_weak_key_and_value: output = @':key-and-value'; break;
-	case ecl_htt_not_weak: default: output = Cnil; break;
+	case ecl_htt_not_weak: default: output = ECL_NIL; break;
 	}
 #endif
 	@(return output)
 }
 
-@(defun gethash (key ht &optional (no_value Cnil))
+@(defun gethash (key ht &optional (no_value ECL_NIL))
 @
 {
 	assert_type_hash_table(@[gethash], 2, ht);
 	{
 		cl_object v = ht->hash.get(key, ht, OBJNULL);
 		if (v != OBJNULL) {
-			@(return v Ct);
+			@(return v ECL_T);
 		} else {
-			@(return no_value Cnil);
+			@(return no_value ECL_NIL);
 		}
 	}
 }
@@ -937,7 +937,7 @@ cl_object
 cl_remhash(cl_object key, cl_object ht)
 {
 	/* INV: _ecl_remhash() checks the type of hashtable */
-	@(return (ecl_remhash(key, ht)? Ct : Cnil));
+	@(return (ecl_remhash(key, ht)? ECL_T : ECL_NIL));
 }
 
 cl_object
@@ -1001,9 +1001,9 @@ si_hash_table_iterate(cl_narg narg)
 				@(return ndx e.key e.value)
 			}
 		}
-		ECL_RPLACA(env, Cnil);
+		ECL_RPLACA(env, ECL_NIL);
 	}
-	@(return Cnil)
+	@(return ECL_NIL)
 }
 
 cl_object
@@ -1078,14 +1078,14 @@ cl_maphash(cl_object fun, cl_object ht)
 		if(e.key != OBJNULL)
 			funcall(3, fun, e.key, e.value);
 	}
-	@(return Cnil)
+	@(return ECL_NIL)
 }
 
 cl_object
 si_hash_table_content(cl_object ht)
 {
 	cl_index i;
-	cl_object output = Cnil;
+	cl_object output = ECL_NIL;
 	assert_type_hash_table(@[ext::hash-table-content], 2, ht);
 	for (i = 0;  i < ht->hash.size;  i++) {
 		struct ecl_hashtable_entry e = ht->hash.data[i];

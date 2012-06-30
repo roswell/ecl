@@ -29,38 +29,38 @@ cl_identity(cl_object x)
 cl_object
 cl_null(cl_object x)
 {
-	@(return (Null(x) ? Ct : Cnil))
+	@(return (Null(x) ? ECL_T : ECL_NIL))
 }
 
 cl_object
 cl_symbolp(cl_object x)
 {
-	@(return (ECL_SYMBOLP(x) ? Ct : Cnil))
+	@(return (ECL_SYMBOLP(x) ? ECL_T : ECL_NIL))
 }
 
 cl_object
 cl_atom(cl_object x)
 {
-	@(return (ECL_ATOM(x) ? Ct : Cnil))
+	@(return (ECL_ATOM(x) ? ECL_T : ECL_NIL))
 }
 
 cl_object
 cl_consp(cl_object x)
 {
-	@(return (CONSP(x) ? Ct : Cnil))
+	@(return (CONSP(x) ? ECL_T : ECL_NIL))
 }
 
 cl_object
 cl_listp(cl_object x)
 {
-	@(return ((Null(x) || CONSP(x)) ? Ct : Cnil))
+	@(return ((Null(x) || CONSP(x)) ? ECL_T : ECL_NIL))
 }
 
 cl_object
 cl_numberp(cl_object x)
 {
 	cl_type t = type_of(x);
-	@(return (ECL_NUMBER_TYPE_P(t) ? Ct : Cnil))
+	@(return (ECL_NUMBER_TYPE_P(t) ? ECL_T : ECL_NIL))
 }
 
 /*	Used in compiled code		*/
@@ -74,20 +74,20 @@ cl_object
 cl_integerp(cl_object x)
 {
 	cl_type t = type_of(x);
-	@(return ((t == t_fixnum || t == t_bignum) ? Ct : Cnil))
+	@(return ((t == t_fixnum || t == t_bignum) ? ECL_T : ECL_NIL))
 }
 
 cl_object
 cl_rationalp(cl_object x)
 {
 	cl_type t = type_of(x);
-	@(return ((t == t_fixnum || t == t_bignum || t == t_ratio) ? Ct : Cnil))
+	@(return ((t == t_fixnum || t == t_bignum || t == t_ratio) ? ECL_T : ECL_NIL))
 }
 
 cl_object
 cl_floatp(cl_object x)
 {
-	@(return (floatp(x)? Ct : Cnil))
+	@(return (floatp(x)? ECL_T : ECL_NIL))
 }
 
 bool
@@ -105,7 +105,7 @@ cl_object
 cl_realp(cl_object x)
 {
 	cl_type t = type_of(x);
-	@(return (ECL_REAL_TYPE_P(t) ? Ct : Cnil))
+	@(return (ECL_REAL_TYPE_P(t) ? ECL_T : ECL_NIL))
 }
 
 bool
@@ -118,20 +118,20 @@ ecl_realp(cl_object x)
 cl_object
 cl_complexp(cl_object x)
 {
-	@(return (ECL_COMPLEXP(x) ? Ct : Cnil))
+	@(return (ECL_COMPLEXP(x) ? ECL_T : ECL_NIL))
 }
 
 cl_object
 cl_characterp(cl_object x)
 {
-	@(return (ECL_CHARACTERP(x) ? Ct : Cnil))
+	@(return (ECL_CHARACTERP(x) ? ECL_T : ECL_NIL))
 }
 
 #ifdef ECL_UNICODE
 cl_object
 si_base_char_p(cl_object c)
 {
-	@(return ((ECL_CHARACTERP(c) && ECL_BASE_CHAR_P(c))? Ct : Cnil))
+	@(return ((ECL_CHARACTERP(c) && ECL_BASE_CHAR_P(c))? ECL_T : ECL_NIL))
 }
 #endif
 
@@ -149,19 +149,19 @@ ecl_stringp(cl_object x)
 cl_object
 cl_stringp(cl_object x)
 {
-	@(return (ECL_STRINGP(x)? Ct : Cnil))
+	@(return (ECL_STRINGP(x)? ECL_T : ECL_NIL))
 }
 
 cl_object
 cl_bit_vector_p(cl_object x)
 {
-	@(return (ECL_BIT_VECTOR_P(x) ? Ct : Cnil))
+	@(return (ECL_BIT_VECTOR_P(x) ? ECL_T : ECL_NIL))
 }
 
 cl_object
 cl_vectorp(cl_object x)
 {
-	@(return (ECL_VECTORP(x) ? Ct : Cnil))
+	@(return (ECL_VECTORP(x) ? ECL_T : ECL_NIL))
 }
 
 cl_object
@@ -170,14 +170,14 @@ cl_simple_string_p(cl_object x)
 	@(return ((ECL_STRINGP(x) &&
                    !ECL_ADJUSTABLE_ARRAY_P(x) &&
                    !ECL_ARRAY_HAS_FILL_POINTER_P(x) &&
-                   Null(CAR(x->base_string.displaced))) ? Ct : Cnil))
+                   Null(CAR(x->base_string.displaced))) ? ECL_T : ECL_NIL))
 }
 
 #ifdef ECL_UNICODE
 cl_object
 si_base_string_p(cl_object x)
 {
-	@(return (ECL_BASE_STRING_P(x) ? Ct : Cnil))
+	@(return (ECL_BASE_STRING_P(x) ? ECL_T : ECL_NIL))
 }
 #endif
 
@@ -187,7 +187,7 @@ cl_simple_bit_vector_p(cl_object x)
 	@(return ((ECL_BIT_VECTOR_P(x) &&
                    !ECL_ADJUSTABLE_ARRAY_P(x) &&
                    !ECL_ARRAY_HAS_FILL_POINTER_P(x) &&
-                   Null(CAR(x->vector.displaced))) ? Ct : Cnil))
+                   Null(CAR(x->vector.displaced))) ? ECL_T : ECL_NIL))
 }
 
 cl_object
@@ -198,19 +198,19 @@ cl_simple_vector_p(cl_object x)
                    !ECL_ADJUSTABLE_ARRAY_P(x) &&
                    !ECL_ARRAY_HAS_FILL_POINTER_P(x) &&
                    Null(CAR(x->vector.displaced)) &&
-                   (cl_elttype)x->vector.elttype == ecl_aet_object) ? Ct : Cnil))
+                   (cl_elttype)x->vector.elttype == ecl_aet_object) ? ECL_T : ECL_NIL))
 }
 
 cl_object
 cl_arrayp(cl_object x)
 {
-	@(return (ECL_ARRAYP(x) ? Ct : Cnil))
+	@(return (ECL_ARRAYP(x) ? ECL_T : ECL_NIL))
 }
 
 cl_object
 cl_packagep(cl_object x)
 {
-	@(return (ECL_PACKAGEP(x) ? Ct : Cnil))
+	@(return (ECL_PACKAGEP(x) ? ECL_T : ECL_NIL))
 }
 
 cl_object
@@ -226,9 +226,9 @@ cl_functionp(cl_object x)
 	    || (t == t_instance && x->instance.isgf)
 #endif
 	    )
-		output = Ct;
+		output = ECL_T;
 	else
-		output = Cnil;
+		output = ECL_NIL;
 	@(return output)
 }
 
@@ -237,13 +237,13 @@ cl_compiled_function_p(cl_object x)
 {
 	cl_type t = type_of(x);
 	@(return ((t == t_bytecodes || t == t_bclosure || t == t_cfun
-		   || t == t_cfunfixed || t == t_cclosure) ? Ct : Cnil))
+		   || t == t_cfunfixed || t == t_cclosure) ? ECL_T : ECL_NIL))
 }
 
 cl_object
 cl_eq(cl_object x, cl_object y)
 {
-	@(return ((x == y) ? Ct : Cnil))
+	@(return ((x == y) ? ECL_T : ECL_NIL))
 }
 
 /*
@@ -312,7 +312,7 @@ ecl_eql(cl_object x, cl_object y)
 cl_object
 cl_eql(cl_object x, cl_object y)
 {
-	@(return (ecl_eql(x, y) ? Ct : Cnil))
+	@(return (ecl_eql(x, y) ? ECL_T : ECL_NIL))
 }
 
 bool
@@ -406,7 +406,7 @@ BEGIN:
 cl_object
 cl_equal(cl_object x, cl_object y)
 {
-	@(return (ecl_equal(x, y) ? Ct : Cnil))
+	@(return (ecl_equal(x, y) ? ECL_T : ECL_NIL))
 }
 
 bool
@@ -531,11 +531,11 @@ BEGIN:
 cl_object
 cl_equalp(cl_object x, cl_object y)
 {
-	@(return (ecl_equalp(x, y) ? Ct : Cnil))
+	@(return (ecl_equalp(x, y) ? ECL_T : ECL_NIL))
 }
 
 cl_object
 si_fixnump(cl_object x)
 {
-	@(return (ECL_FIXNUMP(x) ? Ct : Cnil))
+	@(return (ECL_FIXNUMP(x) ? ECL_T : ECL_NIL))
 }

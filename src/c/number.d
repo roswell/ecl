@@ -682,7 +682,7 @@ prepare_ratio_to_float(cl_object num, cl_object den, int digits, cl_fixnum *scal
                                         ecl_make_fixnum(1);
                                 if (rem == ecl_make_fixnum(0)) {
                                         if (cl_logbitp(ecl_make_fixnum(1), fraction)
-                                            != Cnil)
+                                            != ECL_NIL)
                                                 fraction = ecl_plus(fraction, one);
                                 } else {
                                         fraction = ecl_plus(fraction, one);

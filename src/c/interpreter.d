@@ -148,7 +148,7 @@ ecl_stack_frame_pop_values(cl_object f)
 	cl_index n = f->frame.size % ECL_MULTIPLE_VALUES_LIMIT;
         cl_object o;
         env->nvalues = n;
-        env->values[0] = o = Cnil;
+        env->values[0] = o = ECL_NIL;
 	while (n--) {
                 env->values[n] = o = f->frame.base[n];
 	}
@@ -190,7 +190,7 @@ _ecl_bytecodes_dispatch_vararg(cl_narg narg, ...)
 {
         cl_object output;
         ECL_STACK_FRAME_VARARGS_BEGIN(narg, narg, frame) {
-		output = ecl_interpret(frame, Cnil, frame->frame.env->function);
+		output = ecl_interpret(frame, ECL_NIL, frame->frame.env->function);
 	} ECL_STACK_FRAME_VARARGS_END(frame);
         return output;
 }
@@ -289,7 +289,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
  BEGIN:
 	BEGIN_SWITCH {
 	CASE(OP_NOP); {
-		reg0 = Cnil;
+		reg0 = ECL_NIL;
 		the_env->nvalues = 0;
 		THREAD_NEXT;
 	}
@@ -484,7 +484,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 		frame_aux.base = the_env->stack_top - narg;
 		SETUP_ENV(the_env);
 	AGAIN:
-		if (ecl_unlikely(reg0 == OBJNULL || reg0 == Cnil))
+		if (ecl_unlikely(reg0 == OBJNULL || reg0 == ECL_NIL))
 			FEundefined_function(x);
 		switch (type_of(reg0)) {
 		case t_cfunfixed:
@@ -526,7 +526,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 			reg0 = SYM_FUN(reg0);
 			goto AGAIN;
 		case t_bytecodes:
-			reg0 = ecl_interpret(frame, Cnil, reg0);
+			reg0 = ecl_interpret(frame, ECL_NIL, reg0);
 			break;
 		case t_bclosure:
 			reg0 = ecl_interpret(frame, reg0->bclosure.lex, reg0->bclosure.code);
@@ -569,10 +569,10 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 	*/
 	CASE(OP_POPOPT); {
 		if (frame_index >= frame->frame.size) {
-                        reg0 = Cnil;
+                        reg0 = ECL_NIL;
                 } else {
                         ECL_STACK_PUSH(the_env,frame->frame.base[frame_index++]);
-                        reg0 = Ct;
+                        reg0 = ECL_T;
                 }
                 THREAD_NEXT;
 	}
@@ -590,7 +590,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
         CASE(OP_POPREST); {
                 cl_object *first = frame->frame.base + frame_index;
                 cl_object *last = frame->frame.base + frame->frame.size;
-                for (reg0 = Cnil; last > first; ) {
+                for (reg0 = ECL_NIL; last > first; ) {
                         reg0 = CONS(*(--last), reg0);
                 }
                 THREAD_NEXT;
@@ -611,19 +611,19 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
                 aok = ECL_CONS_CAR(keys_list);
                 for (; (keys_list = ECL_CONS_CDR(keys_list), !Null(keys_list)); ) {
                         cl_object name = ECL_CONS_CAR(keys_list);
-                        cl_object flag = Cnil;
-                        cl_object value = Cnil;
+                        cl_object flag = ECL_NIL;
+                        cl_object value = ECL_NIL;
                         cl_object *p = first;
                         for (; p != last; ++p) {
                                 if (*(p++) == name) {
                                         count -= 2;
-                                        if (flag == Cnil) {
-                                                flag = Ct;
+                                        if (flag == ECL_NIL) {
+                                                flag = ECL_T;
                                                 value = *p;
                                         }
                                 }
                         }
-                        if (flag != Cnil) ECL_STACK_PUSH(the_env, value);
+                        if (flag != ECL_NIL) ECL_STACK_PUSH(the_env, value);
                         ECL_STACK_PUSH(the_env, flag);
                 }
                 if (count) {
@@ -829,7 +829,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 		if (ecl_unlikely(!LISTP(reg0)))
                         FEwrong_type_only_arg(@[endp], reg0, @[list]);
 	CASE(OP_NOT); {
-		reg0 = (reg0 == Cnil)? Ct : Cnil;
+		reg0 = (reg0 == ECL_NIL)? ECL_T : ECL_NIL;
 		THREAD_NEXT;
 	}
 
@@ -880,7 +880,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 		GET_OPARG(n, vector);
 		GET_DATA(var_name, vector, data);
 		lex_env = bind_var(lex_env, var_name,
-				   (n < the_env->nvalues) ? the_env->values[n] : Cnil);
+				   (n < the_env->nvalues) ? the_env->values[n] : ECL_NIL);
 		THREAD_NEXT;
 	}
 	CASE(OP_BINDS); {
@@ -901,7 +901,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 		GET_OPARG(n, vector);
 		GET_DATA(var_name, vector, data);
 		ecl_bds_bind(the_env, var_name,
-			     (n < the_env->nvalues) ? the_env->values[n] : Cnil);
+			     (n < the_env->nvalues) ? the_env->values[n] : ECL_NIL);
 		THREAD_NEXT;
 	}
 	/* OP_SETQ	n{arg}
@@ -951,7 +951,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 		GET_OPARG(lex_env_index, vector);
 		GET_OPARG(index, vector);
 		ecl_lex_env_set_var(lex_env, lex_env_index,
-				    (index >= the_env->nvalues)? Cnil : the_env->values[index]);
+				    (index >= the_env->nvalues)? ECL_NIL : the_env->values[index]);
 		THREAD_NEXT;
 	}
 	CASE(OP_VSETQS); {
@@ -959,7 +959,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 		cl_oparg index;
 		GET_DATA(var, vector, data);
 		GET_OPARG(index, vector);
-		v = (index >= the_env->nvalues)? Cnil : the_env->values[index];
+		v = (index >= the_env->nvalues)? ECL_NIL : the_env->values[index];
 		ECL_SETQ(the_env, var, v);
 		THREAD_NEXT;
 	}
@@ -981,7 +981,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 		THREAD_NEXT;
 	}
 	CASE(OP_DO); {
-		reg0 = Cnil;
+		reg0 = ECL_NIL;
 		reg1 = ecl_make_fixnum(the_env->frame_id++);
 		lex_env = bind_frame(lex_env, reg1, reg0);
 		THREAD_NEXT;
@@ -1038,7 +1038,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 		THREAD_NEXT;
 	}
 	CASE(OP_EXIT_TAGBODY); {
-		reg0 = Cnil;
+		reg0 = ECL_NIL;
 	}
 	CASE(OP_EXIT_FRAME); {
 	DO_EXIT_FRAME:
@@ -1048,11 +1048,11 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 		THREAD_NEXT;
 	}
 	CASE(OP_NIL); {
-		reg0 = Cnil;
+		reg0 = ECL_NIL;
 		THREAD_NEXT;
 	}
 	CASE(OP_PUSHNIL); {
-		ECL_STACK_PUSH(the_env, Cnil);
+		ECL_STACK_PUSH(the_env, ECL_NIL);
 		THREAD_NEXT;
 	}
 	CASE(OP_VALUEREG0); {
@@ -1092,7 +1092,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 		cl_object *dest = the_env->values;
 		int n = the_env->nvalues = ecl_fixnum(ECL_STACK_POP_UNSAFE(the_env));
 		if (n == 0) {
-			*dest = reg0 = Cnil;
+			*dest = reg0 = ECL_NIL;
 			THREAD_NEXT;
 		} else if (n == 1) {
 			*dest = reg0 = ECL_STACK_POP_UNSAFE(the_env);
@@ -1126,7 +1126,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 		if (ecl_unlikely(n < 0)) {
 			FEerror("Wrong index passed to NTH-VAL", 1, ecl_make_fixnum(n));
 		} else if ((cl_index)n >= the_env->nvalues) {
-			reg0 = Cnil;
+			reg0 = ECL_NIL;
 		} else if (n) {
 			reg0 = the_env->values[n];
 		}
@@ -1212,14 +1212,14 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 		SETUP_ENV(the_env);
 		the_env->values[0] = reg0;
 		n = ecl_stack_push_values(the_env);
-		if (a == Ct) {
+		if (a == ECL_T) {
 			/* We are stepping in, but must first ask the user
 			 * what to do. */
 			ECL_SETQ(the_env, @'si::*step-level*',
 				 cl_1P(ECL_SYM_VAL(the_env, @'si::*step-level*')));
 			ECL_STACK_PUSH(the_env, form);
 			INTERPRET_FUNCALL(form, the_env, frame_aux, 1, @'si::stepper');
-		} else if (a != Cnil) {
+		} else if (a != ECL_NIL) {
 			/* The user told us to step over. *step-level* contains
 			 * an integer number that, when it becomes 0, means
 			 * that we have finished stepping over. */
@@ -1239,7 +1239,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 		cl_fixnum n;
 		GET_OPARG(n, vector);
 		SETUP_ENV(the_env);
-		if (ECL_SYM_VAL(the_env, @'si::*step-action*') == Ct) {
+		if (ECL_SYM_VAL(the_env, @'si::*step-action*') == ECL_T) {
 			ECL_STACK_PUSH(the_env, reg0);
 			INTERPRET_FUNCALL(reg0, the_env, frame_aux, 1, @'si::stepper');
 		}
@@ -1251,15 +1251,15 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 		SETUP_ENV(the_env);
 		the_env->values[0] = reg0;
 		n = ecl_stack_push_values(the_env);
-		if (a == Ct) {
+		if (a == ECL_T) {
 			/* We exit one stepping level */
 			ECL_SETQ(the_env, @'si::*step-level*',
 				 cl_1M(ECL_SYM_VAL(the_env, @'si::*step-level*')));
 		} else if (a == ecl_make_fixnum(0)) {
 			/* We are back to the level in which the user
 			 * selected to step over. */
-			ECL_SETQ(the_env, @'si::*step-action*', Ct);
-		} else if (a != Cnil) {
+			ECL_SETQ(the_env, @'si::*step-action*', ECL_T);
+		} else if (a != ECL_NIL) {
 			ECL_SETQ(the_env, @'si::*step-action*', cl_1M(a));
 		} else {
 			/* Not stepping, nothing to be done. */
@@ -1273,5 +1273,5 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 
 @(defun si::interpreter-stack ()
 @
-	@(return Cnil)
+	@(return ECL_NIL)
 @)

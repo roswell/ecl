@@ -73,12 +73,12 @@ si_make_pipe()
 #endif
 	if (ret < 0) {
 		FElibc_error("Unable to create pipe", 0);
-		output = Cnil;
+		output = ECL_NIL;
 	} else {
 		cl_object in = ecl_make_stream_from_fd(fake_in_name, fds[0], ecl_smm_input, 8,
-						       ECL_STREAM_DEFAULT_FORMAT, Cnil);
+						       ECL_STREAM_DEFAULT_FORMAT, ECL_NIL);
 		cl_object out = ecl_make_stream_from_fd(fake_out_name, fds[1], ecl_smm_output, 8,
-						       ECL_STREAM_DEFAULT_FORMAT, Cnil);
+						       ECL_STREAM_DEFAULT_FORMAT, ECL_NIL);
 		output = cl_make_two_way_stream(in, out);
 	}
 	@(return output)
@@ -171,7 +171,7 @@ set_external_process_streams(cl_object process, cl_object input, cl_object outpu
 static void
 update_process_status(cl_object process, cl_object status, cl_object code)
 {
-        ecl_structure_set(process, @'ext::external-process', 0, Cnil);
+        ecl_structure_set(process, @'ext::external-process', 0, ECL_NIL);
         ecl_structure_set(process, @'ext::external-process', 4, code);
         ecl_structure_set(process, @'ext::external-process', 3, status);
 }
@@ -207,12 +207,12 @@ remove_external_process(cl_env_ptr env, cl_object process)
 static cl_object
 find_external_process(cl_env_ptr env, cl_object pid)
 {
-	cl_object output = Cnil;
+	cl_object output = ECL_NIL;
 	ecl_disable_interrupts_env(env);
 	ECL_WITH_SPINLOCK_BEGIN(env, &cl_core.external_processes_lock);
 	{
 		cl_object p;
-		for (p = cl_core.external_processes; p != Cnil; p = ECL_CONS_CDR(p)) {
+		for (p = cl_core.external_processes; p != ECL_NIL; p = ECL_CONS_CDR(p)) {
 			cl_object process = ECL_CONS_CAR(p);
 			if (external_process_pid(process) == pid) {
 				output = process;
@@ -243,10 +243,10 @@ ecl_waitpid(cl_object pid, cl_object wait)
         ok = GetExitCodeProcess(*hProcess, &exitcode);
         if (!ok) {
                 status = @':error';
-                code = Cnil;
+                code = ECL_NIL;
         } else if (exitcode == STILL_ACTIVE) {
                 status = @':running';
-                code = Cnil;
+                code = ECL_NIL;
         } else {
                 status = @':exited';
                 code = ecl_make_fixnum(exitcode);
@@ -263,12 +263,12 @@ ecl_waitpid(cl_object pid, cl_object wait)
                 } else {
                         status = @':error';
                 }
-                code = Cnil;
-                pid = Cnil;
+                code = ECL_NIL;
+                pid = ECL_NIL;
         } else if (error == 0) {
-                status = Cnil;
-                code = Cnil;
-                pid = Cnil;
+                status = ECL_NIL;
+                code = ECL_NIL;
+                pid = ECL_NIL;
         } else {
                 pid = ecl_make_fixnum(error);
                 if (WIFEXITED(code_int)) {
@@ -282,7 +282,7 @@ ecl_waitpid(cl_object pid, cl_object wait)
                         code = ecl_make_fixnum(WSTOPSIG(code_int));
                 } else {
                         status = @':running';
-                        code = Cnil;
+                        code = ECL_NIL;
                 }
         }
 #endif
@@ -295,7 +295,7 @@ si_wait_for_all_processes()
         const cl_env_ptr env = ecl_process_env();
 #if defined(SIGCHLD) && !defined(ECL_WINDOWS_HOST)
         do {
-                cl_object status = ecl_waitpid(ecl_make_fixnum(-1), Cnil);
+                cl_object status = ecl_waitpid(ecl_make_fixnum(-1), ECL_NIL);
                 cl_object code = env->values[1];
                 cl_object pid = env->values[2];
                 if (Null(pid)) {
@@ -304,7 +304,7 @@ si_wait_for_all_processes()
                 } else {
                         cl_object p = find_external_process(env, pid);
                         if (!Null(p)) {
-				set_external_process_pid(p, Cnil);
+				set_external_process_pid(p, ECL_NIL);
                                 update_process_status(p, status, code);
                         }
                         if (status != @':running') {
@@ -338,7 +338,7 @@ make_windows_handle(HANDLE h)
 }
 #endif
 
-@(defun ext::external-process-wait (process &optional (wait Cnil))
+@(defun ext::external-process-wait (process &optional (wait ECL_NIL))
 @
 {
         cl_object status, code, pid;
@@ -402,14 +402,14 @@ ecl_stream_to_HANDLE(cl_object s, bool output)
 #endif
 
 @(defun ext::run-program (command argv &key (input @':stream') (output @':stream')
-	  		  (error @'t') (wait @'t') (environ Cnil)
+	  		  (error @'t') (wait @'t') (environ ECL_NIL)
                           (if_output_exists @':supersede'))
 	int parent_write = 0, parent_read = 0;
 	int child_pid;
 	cl_object pid, process;
 	cl_object stream_write;
 	cl_object stream_read;
-	cl_object exit_status = Cnil;
+	cl_object exit_status = ECL_NIL;
 @
 	command = si_copy_to_simple_base_string(command);
 	argv = cl_mapcar(2, @'si::copy-to-simple-base-string', argv);
@@ -430,7 +430,7 @@ ecl_stream_to_HANDLE(cl_object s, bool output)
 	   in double quotes, to avoid problems when these
 	   arguments or file names have spaces */
 	command =
-		cl_format(4, Cnil,
+		cl_format(4, ECL_NIL,
 			  ecl_make_simple_base_string("~S~{ ~S~}", -1),
 			  command, argv);
 	command = si_copy_to_simple_base_string(command);
@@ -596,7 +596,7 @@ ecl_stream_to_HANDLE(cl_object s, bool output)
 			   NULL, NULL, /* lpProcess/ThreadAttributes */
 			   TRUE, /* Inherit handles (for files) */
 			   /*CREATE_NEW_CONSOLE |*/
-			   0 /*(input == Ct || output == Ct || error == Ct ? 0 : CREATE_NO_WINDOW)*/,
+			   0 /*(input == ECL_T || output == ECL_T || error == ECL_T ? 0 : CREATE_NO_WINDOW)*/,
 			   env, /* Inherit environment */
 			   NULL, /* Current directory */
 			   &st_info, /* Startup info */
@@ -636,7 +636,7 @@ ecl_stream_to_HANDLE(cl_object s, bool output)
 			      0, GetLastError(), 0, (void*)&message, 0, NULL);
 		printf("%s\n", message);
 		LocalFree(message);
-		pid = Cnil;
+		pid = ECL_NIL;
 	}
         set_external_process_pid(process, pid);
         if (child_stdin) CloseHandle(child_stdin);
@@ -647,7 +647,7 @@ ecl_stream_to_HANDLE(cl_object s, bool output)
 {
 	int child_stdin, child_stdout, child_stderr;
 	int pipe_fd[2];
-	argv = CONS(command, ecl_nconc(argv, ecl_list1(Cnil)));
+	argv = CONS(command, ecl_nconc(argv, ecl_list1(ECL_NIL)));
 	argv = _ecl_funcall3(@'coerce', argv, @'vector');
  AGAIN_INPUT:
 	if (input == @':stream') {
@@ -748,7 +748,7 @@ ecl_stream_to_HANDLE(cl_object s, bool output)
 		dup2(child_stderr, STDERR_FILENO);
 		for (j = 0; j < argv->vector.fillp; j++) {
 			cl_object arg = argv->vector.self.t[j];
-			if (arg == Cnil) {
+			if (arg == ECL_NIL) {
 				argv_ptr[j] = NULL;
 			} else {
 				argv_ptr[j] = arg->base_string.self;
@@ -767,7 +767,7 @@ ecl_stream_to_HANDLE(cl_object s, bool output)
 		abort();
 	}
         if (child_pid < 0) {
-                pid = Cnil;
+                pid = ECL_NIL;
         } else {
                 pid = ecl_make_fixnum(child_pid);
         }
@@ -802,7 +802,7 @@ ecl_stream_to_HANDLE(cl_object s, bool output)
 	if (parent_write > 0) {
 		stream_write = ecl_make_stream_from_fd(command, parent_write,
 						       ecl_smm_output, 8,
-						       ECL_STREAM_DEFAULT_FORMAT, Ct);
+						       ECL_STREAM_DEFAULT_FORMAT, ECL_T);
 	} else {
 		parent_write = 0;
 		stream_write = cl_core.null_stream;
@@ -810,19 +810,19 @@ ecl_stream_to_HANDLE(cl_object s, bool output)
 	if (parent_read > 0) {
 		stream_read = ecl_make_stream_from_fd(command, parent_read,
 						      ecl_smm_input, 8,
-						      ECL_STREAM_DEFAULT_FORMAT, Ct);
+						      ECL_STREAM_DEFAULT_FORMAT, ECL_T);
 	} else {
 		parent_read = 0;
 		stream_read = cl_core.null_stream;
 	}
 	set_external_process_streams(process, stream_write, stream_read);
 	if (!Null(wait)) {
-                exit_status = si_external_process_wait(2, process, Ct);
+                exit_status = si_external_process_wait(2, process, ECL_T);
                 exit_status = ecl_nth_value(the_env, 1);
         }
 	@(return ((parent_read || parent_write)?
 		  cl_make_two_way_stream(stream_read, stream_write) :
-		  Cnil)
+		  ECL_NIL)
                  exit_status
                  process)
 @)

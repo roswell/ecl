@@ -210,10 +210,10 @@ si_float_to_digits(cl_object digits, cl_object number, cl_object position,
         k = scale(approx);
         if (Null(digits))
                 digits = si_make_vector(@'base-char', ecl_make_fixnum(10),
-                                        Ct /* adjustable */,
+                                        ECL_T /* adjustable */,
                                         ecl_make_fixnum(0) /* fill pointer */,
-                                        Cnil /* displacement */,
-                                        Cnil /* displ. offset */);
+                                        ECL_NIL /* displacement */,
+                                        ECL_NIL /* displ. offset */);
         generate(digits, approx);
         @(return ecl_make_fixnum(k) digits)
 }

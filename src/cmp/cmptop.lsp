@@ -245,7 +245,7 @@ return f2;
 ")
   (wt-nl-h "#define ECL_DEFINE_SETF_FUNCTIONS ")
   (loop for (name setf-vv name-vv) in *setf-definitions*
-     do (wt-h #\\ #\Newline setf-vv "=ecl_setf_definition(" name-vv ",Ct);"))
+     do (wt-h #\\ #\Newline setf-vv "=ecl_setf_definition(" name-vv ",ECL_T);"))
 
   (wt-nl-h "#ifdef __cplusplus")
   (wt-nl-h "}")
@@ -427,7 +427,7 @@ return f2;
   (when *ihs-used-p*
     (wt-h " \\")
     (wt-nl-h "struct ecl_ihs_frame ihs; \\")
-    (wt-nl-h "const cl_object _ecl_debug_env = Cnil;"))
+    (wt-nl-h "const cl_object _ecl_debug_env = ECL_NIL;"))
   (wt-nl-h "#define VLEX" *reservation-cmacro*)
   ;; There should be no need to mark lex as volatile, since we
   ;; are going to pass pointers of this array around and the compiler
@@ -634,7 +634,7 @@ return f2;
             do (wt-nl (if (zerop i) "{" ",{") name "," code "}"))
       (wt "};")
       (wt-nl "const cl_index _ecl_debug_info_raw[]={")
-      (wt-nl (if first "(cl_index)(Cnil)," "(cl_index)(_ecl_debug_env),")
+      (wt-nl (if first "(cl_index)(ECL_NIL)," "(cl_index)(_ecl_debug_env),")
              "(cl_index)(_ecl_descriptors)")
       (loop for var-loc in filtered-locations
             do (wt ",(cl_index)(&" (lcl-name var-loc) ")"))
@@ -857,7 +857,7 @@ return f2;
 					 (<= maxarg si:c-arguments-limit))
 				    maxarg
 				    -1)))
-                     (format stream "~%{0,0,~D,0,ecl_make_fixnum(~D),ecl_make_fixnum(~D),(cl_objectfn)~A,Cnil,ecl_make_fixnum(~D)},"
+                     (format stream "~%{0,0,~D,0,ecl_make_fixnum(~D),ecl_make_fixnum(~D),(cl_objectfn)~A,ECL_NIL,ecl_make_fixnum(~D)},"
                              narg
                              (vv-location loc)
                              (vv-location fname-loc)

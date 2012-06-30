@@ -20,10 +20,10 @@ _ecl_ensure_buffer(cl_object buffer, cl_fixnum length)
 {
         if (Null(buffer)) {
                 buffer = si_make_vector(@'base-char', ecl_make_fixnum(length),
-                                        Ct /* adjustable */,
+                                        ECL_T /* adjustable */,
                                         ecl_make_fixnum(0) /* fill pointer */,
-                                        Cnil /* displacement */,
-                                        Cnil /* displ. offset */);
+                                        ECL_NIL /* displacement */,
+                                        ECL_NIL /* displ. offset */);
         }
         return buffer;
 }
@@ -82,7 +82,7 @@ print_float_exponent(cl_object buffer, cl_object number, cl_fixnum exp)
         if (e != 'e' || exp != 0) {
                 ecl_string_push_extend(buffer, e);
                 si_integer_to_string(buffer, ecl_make_fixnum(exp), ecl_make_fixnum(10),
-                                     Cnil, Cnil);
+                                     ECL_NIL, ECL_NIL);
         }
 }
 
@@ -101,7 +101,7 @@ si_float_to_string_free(cl_object buffer_or_nil, cl_object number,
                 @(return push_base_string(buffer_or_nil, s));
         }
         base = ecl_length(buffer_or_nil);
-        exp = si_float_to_digits(buffer_or_nil, number, Cnil, Cnil);
+        exp = si_float_to_digits(buffer_or_nil, number, ECL_NIL, ECL_NIL);
         buffer = VALUES(1);
         e = ecl_fixnum(exp);
 

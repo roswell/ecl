@@ -30,7 +30,7 @@
 	 ;; first binding: assign location
 	 (setq var-loc (next-env))
 	 (setf (var-loc var) var-loc))
-       (when (zerop var-loc) (wt-nl "env" *env-lvl* " = Cnil;"))
+       (when (zerop var-loc) (wt-nl "env" *env-lvl* " = ECL_NIL;"))
        (wt-nl "CLV" var-loc "=env" *env-lvl* "=CONS(")
        (wt-coerce-loc :object loc)
        (wt ",env" *env-lvl* ");")

@@ -105,10 +105,10 @@ extend_process_vector()
 	ECL_WITH_SPINLOCK_BEGIN(the_env, &cl_core.processes_spinlock) {
 		cl_object other = cl_core.processes;
 		if (new_size > other->vector.dim) {
-			cl_object new = si_make_vector(Ct,
+			cl_object new = si_make_vector(ECL_T,
 						       ecl_make_fixnum(new_size),
 						       ecl_make_fixnum(other->vector.fillp),
-						       Cnil, Cnil, Cnil);
+						       ECL_NIL, ECL_NIL, ECL_NIL);
 			ecl_copy_subarray(new, 0, other, 0, other->vector.dim);
 			cl_core.processes = new;
 		}
@@ -160,14 +160,14 @@ static cl_object
 ecl_process_list()
 {
 	cl_env_ptr the_env = ecl_process_env();
-	cl_object output = Cnil;
+	cl_object output = ECL_NIL;
 	ECL_WITH_SPINLOCK_BEGIN(the_env, &cl_core.processes_spinlock) {
 		cl_object vector = cl_core.processes;
 		cl_object *data = vector->vector.self.t;
 		cl_index i;
 		for (i = 0; i < vector->vector.fillp; i++) {
 			cl_object p = data[i];
-			if (p != Cnil)
+			if (p != ECL_NIL)
 				output = ecl_cons(p, output);
 		}
 	} ECL_WITH_SPINLOCK_END;
@@ -214,7 +214,7 @@ thread_cleanup(void *aux)
 #endif
 	process->process.env = NULL;
 	ecl_unlist_process(process);
-	mp_barrier_unblock(3, process->process.exit_barrier, @':disable', Ct);
+	mp_barrier_unblock(3, process->process.exit_barrier, @':disable', ECL_T);
 	ecl_set_process_env(NULL);
 	if (env) _ecl_dealloc_env(env);
         AO_store_release((AO_t*)&process->process.phase, ECL_PROCESS_INACTIVE);
@@ -247,7 +247,7 @@ thread_entry_point(void *arg)
 	pthread_cleanup_push(thread_cleanup, (void *)process);
 #endif
 	ecl_cs_set_org(env);
-	print_lock("ENVIRON %p %p %p %p", Cnil, process,
+	print_lock("ENVIRON %p %p %p %p", ECL_NIL, process,
 		   env->bds_org, env->bds_top, env->bds_limit);
 
 	/* 2) Execute the code. The CATCH_ALL point is the destination
@@ -263,12 +263,12 @@ thread_entry_point(void *arg)
 #endif
 		process->process.phase = ECL_PROCESS_ACTIVE;
 		ecl_enable_interrupts_env(env);
-		si_trap_fpe(@'last', Ct);
+		si_trap_fpe(@'last', ECL_T);
 		ecl_bds_bind(env, @'mp::*current-process*', process);
 		env->values[0] = cl_apply(2, process->process.function,
                                           process->process.args);
                 {
-                        cl_object output = Cnil;
+                        cl_object output = ECL_NIL;
                         int i = env->nvalues;
                         while (i--) {
                                 output = CONS(env->values[i], output);
@@ -300,25 +300,25 @@ alloc_process(cl_object name, cl_object initial_bindings)
 	cl_object process = ecl_alloc_object(t_process), array;
         process->process.phase = ECL_PROCESS_INACTIVE;
 	process->process.name = name;
-	process->process.function = Cnil;
-	process->process.args = Cnil;
-	process->process.interrupt = Cnil;
-        process->process.exit_values = Cnil;
+	process->process.function = ECL_NIL;
+	process->process.args = ECL_NIL;
+	process->process.interrupt = ECL_NIL;
+        process->process.exit_values = ECL_NIL;
 	process->process.env = NULL;
 	if (initial_bindings != OBJNULL) {
-		array = si_make_vector(Ct, ecl_make_fixnum(256),
-                                       Cnil, Cnil, Cnil, Cnil);
-                si_fill_array_with_elt(array, OBJNULL, ecl_make_fixnum(0), Cnil);
+		array = si_make_vector(ECL_T, ecl_make_fixnum(256),
+                                       ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL);
+                si_fill_array_with_elt(array, OBJNULL, ecl_make_fixnum(0), ECL_NIL);
 	} else {
 		array = cl_copy_seq(ecl_process_env()->bindings_array);
 	}
         process->process.initial_bindings = array;
-	process->process.waiting_for = Cnil;
+	process->process.waiting_for = ECL_NIL;
 	process->process.queue_record = ecl_list1(process);
 	/* Creates the exit barrier so that processes can wait for termination,
 	 * but it is created in a disabled state. */
 	process->process.exit_barrier = ecl_make_barrier(name, MOST_POSITIVE_FIXNUM);
-	mp_barrier_unblock(3, process->process.exit_barrier, @':disable', Ct);
+	mp_barrier_unblock(3, process->process.exit_barrier, @':disable', ECL_T);
 	return process;
 }
 
@@ -387,7 +387,7 @@ ecl_release_current_thread(void)
 #endif
 }
 
-@(defun mp::make-process (&key name ((:initial-bindings initial_bindings) Ct))
+@(defun mp::make-process (&key name ((:initial-bindings initial_bindings) ECL_T))
 	cl_object process;
 @
 	process = alloc_process(name, initial_bindings);
@@ -410,10 +410,10 @@ mp_process_preset(cl_narg narg, cl_object process, cl_object function, ...)
 cl_object
 mp_interrupt_process(cl_object process, cl_object function)
 {
-	unlikely_if (mp_process_active_p(process) == Cnil)
+	unlikely_if (mp_process_active_p(process) == ECL_NIL)
 		FEerror("Cannot interrupt the inactive process ~A", 1, process);
         ecl_interrupt_process(process, function);
-	@(return Ct)
+	@(return ECL_T)
 }
 
 cl_object
@@ -538,12 +538,12 @@ mp_process_enable(cl_object process)
 		ecl_unlist_process(process);
 		/* Disable the barrier and alert possible waiting processes. */
 		mp_barrier_unblock(3, process->process.exit_barrier,
-				   @':disable', Ct);
+				   @':disable', ECL_T);
 		process->process.phase = ECL_PROCESS_INACTIVE;
 		process->process.env = NULL;
 		_ecl_dealloc_env(process_env);
 	}
-	@(return (ok? process : Cnil))
+	@(return (ok? process : ECL_NIL))
 }
 
 cl_object
@@ -577,7 +577,7 @@ cl_object
 mp_process_active_p(cl_object process)
 {
 	assert_type_process(process);
-	@(return (process->process.phase? Ct : Cnil))
+	@(return (process->process.phase? ECL_T : ECL_NIL))
 }
 
 cl_object
@@ -667,7 +667,7 @@ mp_block_signals(void)
 #ifdef ECL_WINDOWS_THREADS
         cl_env_ptr the_env = ecl_process_env();
         cl_object previous = ecl_symbol_value(@'ext::*interrupts-enabled*');
-        ECL_SETQ(the_env, @'ext::*interrupts-enabled*', Cnil);
+        ECL_SETQ(the_env, @'ext::*interrupts-enabled*', ECL_NIL);
         @(return previous)
 #else
         cl_object previous = mp_get_sigmask();
@@ -732,20 +732,20 @@ init_threads(cl_env_ptr env)
 	process = ecl_alloc_object(t_process);
 	process->process.phase = ECL_PROCESS_ACTIVE;
 	process->process.name = @'si::top-level';
-	process->process.function = Cnil;
-	process->process.args = Cnil;
+	process->process.function = ECL_NIL;
+	process->process.args = ECL_NIL;
 	process->process.thread = main_thread;
 	process->process.env = env;
-	process->process.waiting_for = Cnil;
+	process->process.waiting_for = ECL_NIL;
 	process->process.queue_record = ecl_list1(process);
 
 	env->own_process = process;
 
 	{
-		cl_object v = si_make_vector(Ct, /* Element type */
+		cl_object v = si_make_vector(ECL_T, /* Element type */
 					   ecl_make_fixnum(256), /* Size */
 					   ecl_make_fixnum(0), /* fill pointer */
-					   Cnil, Cnil, Cnil);
+					   ECL_NIL, ECL_NIL, ECL_NIL);
 		v->vector.self.t[0] = process;
 		v->vector.fillp = 1;
 		cl_core.processes = v;

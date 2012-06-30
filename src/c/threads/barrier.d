@@ -31,14 +31,14 @@ ecl_make_barrier(cl_object name, cl_index count)
 	output->barrier.name = name;
 	output->barrier.arrivers_count = count;
 	output->barrier.count = count;
-	output->barrier.queue_list = Cnil;
-	output->barrier.queue_spinlock = Cnil;
+	output->barrier.queue_list = ECL_NIL;
+	output->barrier.queue_spinlock = ECL_NIL;
         return output;
 }
 
 @(defun mp::make-barrier (count &key name)
 @
-	if (count == Ct)
+	if (count == ECL_T)
 		count = ecl_make_fixnum(MOST_POSITIVE_FIXNUM);
 	@(return ecl_make_barrier(name, fixnnint(count)))
 @)
@@ -103,12 +103,12 @@ barrier_wait_condition(cl_env_ptr env, cl_object barrier)
 {
 	/* We were signaled */
 	if (env->own_process->process.waiting_for != barrier)
-		return Ct;
+		return ECL_T;
 	/* Disabled barrier */
 	else if (barrier->barrier.arrivers_count < 0)
-		return Ct;
+		return ECL_T;
 	else
-		return Cnil;
+		return ECL_NIL;
 }
 
 static cl_fixnum
@@ -152,7 +152,7 @@ decrement_counter(cl_fixnum *counter)
 		/* There are (count-1) threads in the queue and we
 		 * are the last one. We thus unblock all threads and
 		 * proceed. */
-		own_process->process.waiting_for = Cnil;
+		own_process->process.waiting_for = ECL_NIL;
 		mp_barrier_unblock(1, barrier);
 		ecl_enable_interrupts_env(the_env);
 		output = @':unblocked';
@@ -160,11 +160,11 @@ decrement_counter(cl_fixnum *counter)
 		print_lock("barrier %p waiting", barrier, barrier);
 		ecl_enable_interrupts_env(the_env);
 		ecl_wait_on(the_env, barrier_wait_condition, barrier);
-		output = Ct;
+		output = ECL_T;
 	} else {
 		print_lock("barrier %p pass-through", barrier, barrier);
 		/* Barrier disabled */
-		output = Cnil;
+		output = ECL_NIL;
 	}
 	@(return output)
 }

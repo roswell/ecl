@@ -210,7 +210,7 @@ BEGIN:
 	case t_string:
 #endif
 	case t_vector:
-		if ((y = x->array.displaced) != Cnil)
+		if ((y = x->array.displaced) != ECL_NIL)
 			mark_displaced(y);
 		cp = (cl_ptr)x->array.self.t;
 		if (cp == NULL)
@@ -220,7 +220,7 @@ BEGIN:
 		case ecl_aet_ch:
 #endif
 		case ecl_aet_object:
-			if (x->array.displaced == Cnil || CAR(x->array.displaced) == Cnil) {
+			if (x->array.displaced == ECL_NIL || CAR(x->array.displaced) == ECL_NIL) {
 				i = x->vector.dim;
 				p = x->array.self.t;
 				goto MARK_DATA;
@@ -256,7 +256,7 @@ BEGIN:
 		}
 		goto COPY_ARRAY;
 	case t_base_string:
-		if ((y = x->base_string.displaced) != Cnil)
+		if ((y = x->base_string.displaced) != ECL_NIL)
 			mark_displaced(y);
 		cp = x->base_string.self;
 		if (cp == NULL)
@@ -266,7 +266,7 @@ BEGIN:
 		mark_contblock(cp, j);
 		break;
 	case t_bitvector:
-		if ((y = x->vector.displaced) != Cnil)
+		if ((y = x->vector.displaced) != ECL_NIL)
 			mark_displaced(y);
 		cp = x->vector.self.bit;
 		if (cp == NULL)
@@ -609,8 +609,8 @@ sweep_phase(void)
 	register struct typemanager *tm;
 	register cl_object f;
 
-	Cnil->symbol.m = FALSE;
-	Ct->symbol.m = FALSE;
+	ECL_NIL->symbol.m = FALSE;
+	ECL_T->symbol.m = FALSE;
 
 	if (debug)
 		printf("type map\n");
@@ -754,7 +754,7 @@ ecl_gc(cl_type t)
 	GC_disable();
 
 	CL_NEWENV_BEGIN {
-	if (SYM_VAL(@'si::*gc-verbose*') != Cnil) {
+	if (SYM_VAL(@'si::*gc-verbose*') != ECL_NIL) {
 		printf("\n[GC ..");
 		/* To use this should add entries in tm_table for reloc and contig.
 		   fprintf(stdout, "\n[GC for %d %s pages ..",
@@ -763,7 +763,7 @@ ecl_gc(cl_type t)
 		fflush(stdout);
 	}
 
-	debug = ecl_symbol_value(@'si::*gc-message*') != Cnil;
+	debug = ecl_symbol_value(@'si::*gc-message*') != ECL_NIL;
 
 	if (GC_enter_hook != NULL)
 		(*GC_enter_hook)();
@@ -875,7 +875,7 @@ ecl_gc(cl_type t)
 
 	gc_time += (gc_start = ecl_runtime() - gc_start);
 
-	if (SYM_VAL(@'si::*gc-verbose*') != Cnil) {
+	if (SYM_VAL(@'si::*gc-verbose*') != ECL_NIL) {
 		/* Don't use fprintf since on Linux it calls malloc() */
 		printf(". finished in %.2f\"]", gc_start/60.0);
 		fflush(stdout);
@@ -933,21 +933,21 @@ _mark_contblock(void *x, cl_index s)
 	the_env->values[4] = ecl_make_fixnum(ncb);
 	the_env->values[5] = ecl_make_fixnum(cbgccount);
 	the_env->values[6] = ecl_make_fixnum(holepage);
-	the_env->values[7] = Cnil;
+	the_env->values[7] = ECL_NIL;
 	tl = &the_env->values[7];
 	for (i = 0;  i < (int)t_end;  i++) {
 	  if (tm_table[i].tm_type == (cl_type)i) {
-	    tl = &CDR(*tl = CONS(ecl_make_fixnum(tm_table[i].tm_nused), Cnil));
-	    tl = &CDR(*tl = CONS(ecl_make_fixnum(tm_table[i].tm_nfree), Cnil));
-	    tl = &CDR(*tl = CONS(ecl_make_fixnum(tm_table[i].tm_npage), Cnil));
-	    tl = &CDR(*tl = CONS(ecl_make_fixnum(tm_table[i].tm_maxpage), Cnil));
-	    tl = &CDR(*tl = CONS(ecl_make_fixnum(tm_table[i].tm_gccount), Cnil));
+	    tl = &CDR(*tl = CONS(ecl_make_fixnum(tm_table[i].tm_nused), ECL_NIL));
+	    tl = &CDR(*tl = CONS(ecl_make_fixnum(tm_table[i].tm_nfree), ECL_NIL));
+	    tl = &CDR(*tl = CONS(ecl_make_fixnum(tm_table[i].tm_npage), ECL_NIL));
+	    tl = &CDR(*tl = CONS(ecl_make_fixnum(tm_table[i].tm_maxpage), ECL_NIL));
+	    tl = &CDR(*tl = CONS(ecl_make_fixnum(tm_table[i].tm_gccount), ECL_NIL));
 	  } else {
-	    tl = &CDR(*tl = CONS(Cnil, Cnil));
-	    tl = &CDR(*tl = CONS(ecl_make_fixnum(tm_table[i].tm_type), Cnil));
-	    tl = &CDR(*tl = CONS(Cnil, Cnil));
-	    tl = &CDR(*tl = CONS(Cnil, Cnil));
-	    tl = &CDR(*tl = CONS(Cnil, Cnil));
+	    tl = &CDR(*tl = CONS(ECL_NIL, ECL_NIL));
+	    tl = &CDR(*tl = CONS(ecl_make_fixnum(tm_table[i].tm_type), ECL_NIL));
+	    tl = &CDR(*tl = CONS(ECL_NIL, ECL_NIL));
+	    tl = &CDR(*tl = CONS(ECL_NIL, ECL_NIL));
+	    tl = &CDR(*tl = CONS(ECL_NIL, ECL_NIL));
 	  }
 	}
 	return the_env->values[0];
@@ -970,7 +970,7 @@ _mark_contblock(void *x, cl_index s)
 cl_object
 si_get_finalizer(cl_object o)
 {
-	@(return Cnil)
+	@(return ECL_NIL)
 }
 
 cl_object

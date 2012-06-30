@@ -68,10 +68,10 @@ coerce_to_posix_filename(cl_object filename)
 static int
 safe_chdir(const char *path, cl_object prefix)
 {
-	if (prefix != Cnil) {
+	if (prefix != ECL_NIL) {
 		cl_object aux = make_constant_base_string(path);
 		aux = si_base_string_concatenate(2, prefix, aux);
-		return safe_chdir((char *)aux->base_string.self, Cnil);
+		return safe_chdir((char *)aux->base_string.self, ECL_NIL);
 	} else {
 		int output;
 		ecl_disable_interrupts();
@@ -109,14 +109,14 @@ drive_host_prefix(cl_object pathname)
 {
 	cl_object device = pathname->pathname.device;
 	cl_object host = pathname->pathname.host;
-	cl_object output = Cnil;
-	if (device != Cnil) {
+	cl_object output = ECL_NIL;
+	if (device != ECL_NIL) {
 		output = make_base_string_copy("X:");
 		output->base_string.self[0] = device->base_string.self[0];
 	}
-	if (host != Cnil) {
+	if (host != ECL_NIL) {
 		cl_object slash = cl_core.slash;
-		if (output != Cnil)
+		if (output != ECL_NIL)
 			output = si_base_string_concatenate(5, output, slash, slash,
 							    host, slash);
 		else
@@ -126,7 +126,7 @@ drive_host_prefix(cl_object pathname)
 	return output;
 }
 #else
-#define drive_host_prefix(x) Cnil
+#define drive_host_prefix(x) ECL_NIL
 #endif
 
 /*
@@ -191,7 +191,7 @@ file_kind(char *filename, bool follow_links) {
 	ecl_disable_interrupts();
 	dw = GetFileAttributes( filename );
 	if (dw == -1)
-		output = Cnil;
+		output = ECL_NIL;
 	else if ( dw & FILE_ATTRIBUTE_DIRECTORY )
 		output = @':directory';
 	else
@@ -204,7 +204,7 @@ file_kind(char *filename, bool follow_links) {
 # else
 	if (safe_stat(filename, &buf) < 0)
 # endif
-		output = Cnil;
+		output = ECL_NIL;
 # ifdef HAVE_LSTAT
 	else if (S_ISLNK(buf.st_mode))
 		output = @':link';
@@ -282,21 +282,21 @@ enter_directory(cl_object base_dir, cl_object subdir, bool ignore_if_failure)
         aux = ecl_namestring(output, ECL_NAMESTRING_FORCE_BASE_STRING);
         aux->base_string.self[aux->base_string.fillp-1] = 0;
         kind = file_kind((char*)aux->base_string.self, FALSE);
-        if (kind == Cnil) {
-		if (ignore_if_failure) return Cnil;
+        if (kind == ECL_NIL) {
+		if (ignore_if_failure) return ECL_NIL;
 		FEcannot_open(aux);
 #ifdef HAVE_LSTAT
         } else if (kind == @':link') {
                 output = cl_truename(ecl_merge_pathnames(si_readlink(aux),
                                                          base_dir, @':default'));
-                if (output->pathname.name != Cnil ||
-                    output->pathname.type != Cnil)
+                if (output->pathname.name != ECL_NIL ||
+                    output->pathname.type != ECL_NIL)
                         goto WRONG_DIR;
                 return output;
 #endif
         } else if (kind != @':directory') {
         WRONG_DIR:
-		if (ignore_if_failure) return Cnil;
+		if (ignore_if_failure) return ECL_NIL;
                 FEerror("The directory~&  ~S~&in pathname~&  ~S~&"
                         "actually points to a file or special device.",
                         2, subdir, base_dir);
@@ -305,7 +305,7 @@ enter_directory(cl_object base_dir, cl_object subdir, bool ignore_if_failure)
                 cl_object newdir= output->pathname.directory;
                 newdir = ecl_nbutlast(newdir, 2);
                 if (Null(newdir)) {
-			if (ignore_if_failure) return Cnil;
+			if (ignore_if_failure) return ECL_NIL;
 			FEerror("Pathname contained an :UP component  "
                                 "that goes above the base directory:"
                                 "~&  ~S", 1, output);
@@ -329,7 +329,7 @@ make_base_pathname(cl_object pathname)
         return ecl_make_pathname(pathname->pathname.host,
 				 pathname->pathname.device,
 				 ecl_list1(@':absolute'),
-				 Cnil, Cnil, Cnil, @':local');
+				 ECL_NIL, ECL_NIL, ECL_NIL, @':local');
 }
 
 #define FOLLOW_SYMLINKS 1
@@ -351,7 +351,7 @@ file_truename(cl_object pathname, cl_object filename, int flags)
 		}
 	}
         kind = file_kind((char*)filename->base_string.self, FALSE);
-        if (kind == Cnil) {
+        if (kind == ECL_NIL) {
                 FEcannot_open(filename);
 #ifdef HAVE_LSTAT
         } else if (kind == @':link' && (flags & FOLLOW_SYMLINKS)) {
@@ -361,7 +361,7 @@ file_truename(cl_object pathname, cl_object filename, int flags)
 		pathname = ecl_make_pathname(pathname->pathname.host,
 					     pathname->pathname.device,
 					     pathname->pathname.directory,
-					     Cnil, Cnil, Cnil, @':local');
+					     ECL_NIL, ECL_NIL, ECL_NIL, @':local');
                 pathname = ecl_merge_pathnames(filename, pathname, @':default');
                 return cl_truename(pathname);
 #endif
@@ -369,8 +369,8 @@ file_truename(cl_object pathname, cl_object filename, int flags)
                 /* If the pathname is a directory but we have supplied
                    a file name, correct the type by appending a directory
                    separator and re-parsing again the namestring */
-                if (pathname->pathname.name != Cnil ||
-                    pathname->pathname.type != Cnil) {
+                if (pathname->pathname.name != ECL_NIL ||
+                    pathname->pathname.type != ECL_NIL) {
                         pathname = si_base_string_concatenate
                                 (2, filename,
                                  make_constant_base_string("/"));
@@ -379,14 +379,14 @@ file_truename(cl_object pathname, cl_object filename, int flags)
         }
         /* ECL does not contemplate version numbers
            in directory pathnames */
-        if (pathname->pathname.name == Cnil &&
-            pathname->pathname.type == Cnil) {
+        if (pathname->pathname.name == ECL_NIL &&
+            pathname->pathname.type == ECL_NIL) {
                 /* We have to destructively change the
                  * pathname version here. Otherwise
                  * merge_pathnames will not do it. It is
                  * safe because coerce_to_file_pathname
                  * created a copy. */
-                pathname->pathname.version = Cnil;
+                pathname->pathname.version = ECL_NIL;
         } else {
                 pathname->pathname.version = @':newest';
         }
@@ -416,7 +416,7 @@ cl_truename(cl_object orig_pathname)
                 base_dir = enter_directory(base_dir, ECL_CONS_CAR(dir), 0);
         }
         pathname = ecl_merge_pathnames(base_dir, pathname, @':default');
-	@(return file_truename(pathname, Cnil, FOLLOW_SYMLINKS))
+	@(return file_truename(pathname, ECL_NIL, FOLLOW_SYMLINKS))
 }
 
 int
@@ -474,10 +474,10 @@ ecl_file_len(int f)
 	newn = ecl_merge_pathnames(newn, oldn, @':newest');
 	new_filename = si_coerce_to_filename(newn);
 
-	while (if_exists == @':error' || if_exists == Cnil)
+	while (if_exists == @':error' || if_exists == ECL_NIL)
         {
-                if (cl_probe_file(new_filename) == Cnil) {
-                        if_exists = Ct;
+                if (cl_probe_file(new_filename) == ECL_NIL) {
+                        if_exists = ECL_T;
                         break;
                 }
 		/* if the file already exists */
@@ -485,13 +485,13 @@ ecl_file_len(int f)
 			if_exists = CEerror(@':supersede',
 					"When trying to rename ~S, ~S already exists",
                                         2, oldn, new_filename);
-			if (if_exists == Ct) if_exists= @':error';
+			if (if_exists == ECL_T) if_exists= @':error';
 		}
-		if (if_exists == Cnil) {
-			@(return Cnil Cnil Cnil)
+		if (if_exists == ECL_NIL) {
+			@(return ECL_NIL ECL_NIL ECL_NIL)
 		}
 	}
-	if (ecl_unlikely(if_exists != @':supersede' && if_exists != Ct)) {
+	if (ecl_unlikely(if_exists != @':supersede' && if_exists != ECL_T)) {
 		/* invalid key */
 		FEerror("~S is an illegal IF-EXISTS option for RENAME-FILE.",
                         1, if_exists);
@@ -558,8 +558,8 @@ SUCCESS:
 static int
 directory_pathname_p(cl_object path)
 {
-        return (path->pathname.name == Cnil) &&
-                (path->pathname.type == Cnil);
+        return (path->pathname.name == ECL_NIL) &&
+                (path->pathname.type == ECL_NIL);
 }
 
 cl_object
@@ -581,14 +581,14 @@ cl_delete_file(cl_object file)
                         "Cannot delete the directory ~S.";
 		FElibc_error(msg, 1, file);
         }
-	@(return Ct)
+	@(return ECL_T)
 }
 
 cl_object
 cl_probe_file(cl_object file)
 {
 	/* INV: Both SI:FILE-KIND and TRUENAME complain if "file" has wildcards */
-	@(return (si_file_kind(file, Ct) != Cnil? cl_truename(file) : Cnil))
+	@(return (si_file_kind(file, ECL_T) != ECL_NIL? cl_truename(file) : ECL_NIL))
 }
 
 cl_object
@@ -597,7 +597,7 @@ cl_file_write_date(cl_object file)
 	cl_object time, filename = coerce_to_posix_filename(file);
 	struct stat filestatus;
 	if (safe_stat((char*)filename->base_string.self, &filestatus) < 0) {
-		time = Cnil;
+		time = ECL_NIL;
 	} else {
 		time = UTC_time_to_universal_time(filestatus.st_mtime);
 	}
@@ -646,7 +646,7 @@ ecl_homedir_pathname(cl_object user)
 			i--;
 		}
 		if (i == 0)
-			return ecl_homedir_pathname(Cnil);
+			return ecl_homedir_pathname(ECL_NIL);
 #ifdef HAVE_PWD_H
 		pwent = getpwnam(p);
 		if (pwent == NULL)
@@ -673,19 +673,19 @@ ecl_homedir_pathname(cl_object user)
 	if (!IS_DIR_SEPARATOR(namestring->base_string.self[i-1]))
 		namestring = si_base_string_concatenate(2, namestring,
 						        ECL_CODE_CHAR(DIR_SEPARATOR));
-	return cl_parse_namestring(3, namestring, Cnil, Cnil);
+	return cl_parse_namestring(3, namestring, ECL_NIL, ECL_NIL);
 }
 
 @(defun user_homedir_pathname (&optional host)
 @
 	/* Ignore optional host argument. */
-	@(return ecl_homedir_pathname(Cnil));
+	@(return ecl_homedir_pathname(ECL_NIL));
 @)
 
 static bool
 string_match(const char *s, cl_object pattern)
 {
-	if (pattern == Cnil || pattern == @':wild') {
+	if (pattern == ECL_NIL || pattern == @':wild') {
 		return 1;
 	} else {
 		cl_index ls = strlen(s);
@@ -706,7 +706,7 @@ list_directory(cl_object base_dir, cl_object text_mask, cl_object pathname_mask,
                int flags)
 {
 	const cl_env_ptr the_env = ecl_process_env();
-	cl_object out = Cnil;
+	cl_object out = ECL_NIL;
 	cl_object prefix = ecl_namestring(base_dir, ECL_NAMESTRING_FORCE_BASE_STRING);
 	cl_object component, component_path, kind;
 	char *text;
@@ -717,7 +717,7 @@ list_directory(cl_object base_dir, cl_object text_mask, cl_object pathname_mask,
 	ecl_disable_interrupts();
 	dir = opendir((char*)prefix->base_string.self);
 	if (dir == NULL) {
-		out = Cnil;
+		out = ECL_NIL;
 		goto OUTPUT;
 	}
 
@@ -736,7 +736,7 @@ list_directory(cl_object base_dir, cl_object text_mask, cl_object pathname_mask,
 			cl_object mask = si_base_string_concatenate(2, prefix, aux);
 			hFind = FindFirstFile((char*)mask->base_string.self, &fd);
 			if (hFind == INVALID_HANDLE_VALUE) {
-				out = Cnil;
+				out = ECL_NIL;
 				goto OUTPUT;
 			}
 			found = TRUE;
@@ -754,7 +754,7 @@ list_directory(cl_object base_dir, cl_object text_mask, cl_object pathname_mask,
 	ecl_disable_interrupts();
 	fp = fopen((char*)prefix->base_string.self, OPEN_R);
 	if (fp == NULL) {
-		out = Cnil;
+		out = ECL_NIL;
 		goto OUTPUT;
 	}
 	setbuf(fp, iobuffer);
@@ -807,17 +807,17 @@ OUTPUT:
 static cl_object
 dir_files(cl_object base_dir, cl_object pathname, int flags)
 {
-	cl_object all_files, output = Cnil;
+	cl_object all_files, output = ECL_NIL;
 	cl_object mask;
 	cl_object name = pathname->pathname.name;
 	cl_object type = pathname->pathname.type;
-	if (name == Cnil && type == Cnil) {
+	if (name == ECL_NIL && type == ECL_NIL) {
 		return cl_list(1, base_dir);
 	}
-	mask = ecl_make_pathname(Cnil, Cnil, Cnil,
+	mask = ecl_make_pathname(ECL_NIL, ECL_NIL, ECL_NIL,
                                  name, type, pathname->pathname.version,
                                  @':local');
-	for (all_files = list_directory(base_dir, Cnil, mask, flags);
+	for (all_files = list_directory(base_dir, ECL_NIL, mask, flags);
 	     !Null(all_files);
 	     all_files = ECL_CONS_CDR(all_files))
 	{
@@ -840,7 +840,7 @@ dir_files(cl_object base_dir, cl_object pathname, int flags)
 static cl_object
 dir_recursive(cl_object base_dir, cl_object directory, cl_object filemask, int flags)
 {
-	cl_object item, output = Cnil;
+	cl_object item, output = ECL_NIL;
  AGAIN:
 	/* There are several possibilities here:
 	 *
@@ -849,7 +849,7 @@ dir_recursive(cl_object base_dir, cl_object directory, cl_object filemask, int f
 	 * we simply output the truename of the current directory. Otherwise
 	 * we have to find a file which corresponds to the description.
 	 */
-	if (directory == Cnil) {
+	if (directory == ECL_NIL) {
 		return ecl_nconc(dir_files(base_dir, filemask, flags), output);
 	}
 	/*
@@ -864,7 +864,7 @@ dir_recursive(cl_object base_dir, cl_object directory, cl_object filemask, int f
 		 * 2.1) If CAR(DIRECTORY) is a string or :WILD, we have to
 		 * enter & scan all subdirectories in our curent directory.
 		 */
-		cl_object next_dir = list_directory(base_dir, item, Cnil, flags);
+		cl_object next_dir = list_directory(base_dir, item, ECL_NIL, flags);
 		for (; !Null(next_dir); next_dir = ECL_CONS_CDR(next_dir)) {
 			cl_object record = ECL_CONS_CAR(next_dir);
 			cl_object component = ECL_CONS_CAR(record);
@@ -882,7 +882,7 @@ dir_recursive(cl_object base_dir, cl_object directory, cl_object filemask, int f
 		 * scan all subdirectories from _all_ levels, looking for a
 		 * tree that matches the remaining part of DIRECTORY.
 		 */
-		cl_object next_dir = list_directory(base_dir, Cnil, Cnil, flags);
+		cl_object next_dir = list_directory(base_dir, ECL_NIL, ECL_NIL, flags);
 		for (; !Null(next_dir); next_dir = ECL_CONS_CDR(next_dir)) {
 			cl_object record = ECL_CONS_CAR(next_dir);
 			cl_object component = ECL_CONS_CAR(record);
@@ -907,14 +907,14 @@ dir_recursive(cl_object base_dir, cl_object directory, cl_object filemask, int f
 		 * for the file part.
 		 */
 		if (Null(base_dir))
-			return Cnil;
+			return ECL_NIL;
 		directory = ECL_CONS_CDR(directory);
 		goto AGAIN;
 	}
 	return output;
 }
 
-@(defun directory (mask &key (resolve_symlinks Ct) &allow_other_keys)
+@(defun directory (mask &key (resolve_symlinks ECL_T) &allow_other_keys)
         cl_object base_dir;
 	cl_object output;
 @
@@ -926,10 +926,10 @@ dir_recursive(cl_object base_dir, cl_object directory, cl_object filemask, int f
         @(return output)
 @)
 
-@(defun ext::getcwd (&optional (change_d_p_d Cnil))
+@(defun ext::getcwd (&optional (change_d_p_d ECL_NIL))
 	cl_object output;
 @
-	output = cl_parse_namestring(3, current_dir(), Cnil, Cnil);
+	output = cl_parse_namestring(3, current_dir(), ECL_NIL, ECL_NIL);
 	if (!Null(change_d_p_d)) {
 		ECL_SETQ(the_env, @'*default-pathname-defaults*', output);
 	}
@@ -967,8 +967,8 @@ si_get_library_pathname(void)
 	s->base_string.fillp = len;
         /* GetModuleFileName returns a file name. We have to strip
          * the directory component. */
-        s = cl_make_pathname(8, @':name', Cnil, @':type', Cnil,
-			     @':version', Cnil,
+        s = cl_make_pathname(8, @':name', ECL_NIL, @':type', ECL_NIL,
+			     @':version', ECL_NIL,
                              @':defaults', s);
         s = ecl_namestring(s, ECL_NAMESTRING_FORCE_BASE_STRING);
 	}
@@ -990,22 +990,22 @@ si_get_library_pathname(void)
         @(return s);
 }
 
-@(defun ext::chdir (directory &optional (change_d_p_d Ct))
+@(defun ext::chdir (directory &optional (change_d_p_d ECL_T))
 	cl_object previous = si_getcwd(0);
 	cl_object namestring;
 @
 	/* This will fail if the new directory does not exist */
 	directory = cl_truename(directory);
-	if (directory->pathname.name != Cnil ||
-	    directory->pathname.type != Cnil)
+	if (directory->pathname.name != ECL_NIL ||
+	    directory->pathname.type != ECL_NIL)
 		FEerror("~A is not a directory pathname.", 1, directory);
 	namestring = ecl_namestring(directory,
                                     ECL_NAMESTRING_TRUNCATE_IF_ERROR |
                                     ECL_NAMESTRING_FORCE_BASE_STRING);
-	if (safe_chdir((char*)namestring->base_string.self, Cnil) < 0)
+	if (safe_chdir((char*)namestring->base_string.self, ECL_NIL) < 0)
 		FElibc_error("Can't change the current directory to ~A",
 			     1, namestring);
-	if (change_d_p_d != Cnil)
+	if (change_d_p_d != ECL_NIL)
 		ECL_SETQ(the_env, @'*default-pathname-defaults*', directory);
 	@(return previous)
 @)
@@ -1064,9 +1064,9 @@ si_mkstemp(cl_object template)
 
 	phys = cl_translate_logical_pathname(1, template);
 	dir = cl_make_pathname(8,
-	                       @':type', Cnil,
-	                       @':name', Cnil,
-	                       @':version', Cnil,
+	                       @':type', ECL_NIL,
+	                       @':name', ECL_NIL,
+	                       @':version', ECL_NIL,
 	                       @':defaults', phys);
 	dir = si_coerce_to_filename(dir);
 	file = cl_file_namestring(phys);
@@ -1083,7 +1083,7 @@ si_mkstemp(cl_object template)
 			     strTempFileName);
 	ecl_enable_interrupts();
 	if (!ok) {
-		output = Cnil;
+		output = ECL_NIL;
 	} else {
 		l = strlen(strTempFileName);
 		output = ecl_alloc_simple_base_string(l);
@@ -1109,7 +1109,7 @@ si_mkstemp(cl_object template)
 	ecl_enable_interrupts();
 
 	if (fd < 0) {
-		output = Cnil;
+		output = ECL_NIL;
 	} else {
 		close(fd);
 	}
@@ -1120,8 +1120,8 @@ si_mkstemp(cl_object template)
 cl_object
 si_rmdir(cl_object directory)
 {
-        return cl_delete_file(cl_make_pathname(6, @':name', Cnil,
-                                               @':type', Cnil,
+        return cl_delete_file(cl_make_pathname(6, @':name', ECL_NIL,
+                                               @':type', ECL_NIL,
                                                @':defaults', directory));
 }
 
@@ -1149,7 +1149,7 @@ si_copy_file(cl_object orig, cl_object dest)
 		fclose(in);
 	}
 	ecl_enable_interrupts();
-	@(return (ok? Ct : Cnil))
+	@(return (ok? ECL_T : ECL_NIL))
 }
 
 cl_object

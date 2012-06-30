@@ -193,8 +193,8 @@
 
     (structure-ref . wt-structure-ref)
 
-    (nil . "Cnil")
-    (t . "Ct")
+    (nil . "ECL_NIL")
+    (t . "ECL_T")
     (return . "value0")
     (values . "cl_env_copy->values[0]")
     (va-arg . "va_arg(args,cl_object)")

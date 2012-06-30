@@ -95,7 +95,7 @@ out_of_memory(size_t requested_bytes)
         if (!interrupts)
                 ecl_disable_interrupts_env(the_env);
 	/* Free the input / output buffers */
-	the_env->string_pool = Cnil;
+	the_env->string_pool = ECL_NIL;
 
 	/* The out of memory condition may happen in more than one thread */
         /* But then we have to ensure the error has not been solved */
@@ -122,7 +122,7 @@ out_of_memory(size_t requested_bytes)
                 if (cl_core.safety_region) {
                         /* We can free some memory and try handling the error */
                         GC_FREE(cl_core.safety_region);
-                        the_env->string_pool = Cnil;
+                        the_env->string_pool = ECL_NIL;
                         cl_core.safety_region = 0;
                         method = 0;
                 } else {
@@ -449,7 +449,7 @@ cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl
                 MAYBE_MARK(o->process.args);
                 MAYBE_MARK(o->process.function);
                 MAYBE_MARK(o->process.name);
-                if (o->process.env && o->process.env != Cnil)
+                if (o->process.env && o->process.env != ECL_NIL)
                         ecl_mark_env(o->process.env);
 		break;
         case t_lock:
@@ -654,12 +654,12 @@ ecl_list1(cl_object a)
 	ecl_enable_interrupts_env(the_env);
 #ifdef ECL_SMALL_CONS
 	obj->car = a;
-	obj->cdr = Cnil;
+	obj->cdr = ECL_NIL;
 	return ECL_PTR_CONS(obj);
 #else
 	obj->t = t_list;
 	obj->car = a;
-	obj->cdr = Cnil;
+	obj->cdr = ECL_NIL;
 	return (cl_object)obj;
 #endif
 }
@@ -1123,9 +1123,9 @@ standard_finalizer(cl_object o)
 static void
 wrapped_finalizer(cl_object o, cl_object finalizer)
 {
-	if (finalizer != Cnil && finalizer != NULL) {
+	if (finalizer != ECL_NIL && finalizer != NULL) {
                 CL_NEWENV_BEGIN {
-                        if (finalizer != Ct) {
+                        if (finalizer != ECL_T) {
 				funcall(2, finalizer, o);
                         }
                         standard_finalizer(o);
@@ -1143,11 +1143,11 @@ si_get_finalizer(cl_object o)
 	ecl_disable_interrupts_env(the_env);
 	GC_register_finalizer_no_order(o, (GC_finalization_proc)0, 0, &ofn, &odata);
 	if (ofn == 0) {
-		output = Cnil;
+		output = ECL_NIL;
 	} else if (ofn == (GC_finalization_proc)wrapped_finalizer) {
 		output = (cl_object)odata;
 	} else {
-		output = Cnil;
+		output = ECL_NIL;
 	}
 	GC_register_finalizer_no_order(o, ofn, odata, &ofn, &odata);
 	ecl_enable_interrupts_env(the_env);
@@ -1159,7 +1159,7 @@ ecl_set_finalizer_unprotected(cl_object o, cl_object finalizer)
 {
 	GC_finalization_proc ofn;
 	void *odata;
-	if (finalizer == Cnil) {
+	if (finalizer == ECL_NIL) {
 		GC_register_finalizer_no_order(o, (GC_finalization_proc)0,
 					       0, &ofn, &odata);
 	} else {
@@ -1196,13 +1196,13 @@ si_gc_stats(cl_object enable)
         cl_object size1 = ecl_make_fixnum(0);
         cl_object size2 = ecl_make_fixnum(0);
         if (cl_core.gc_stats == 0) {
-                old_status = Cnil;
+                old_status = ECL_NIL;
         } else if (GC_print_stats) {
                 old_status = @':full';
         } else {
-                old_status = Ct;
+                old_status = ECL_T;
         }
-	if (cl_core.bytes_consed == Cnil) {
+	if (cl_core.bytes_consed == ECL_NIL) {
 		cl_core.bytes_consed = ecl_alloc_object(t_bignum);
 		mpz_init2(cl_core.bytes_consed->big.big_num, 128);
 		cl_core.gc_counter = ecl_alloc_object(t_bignum);
@@ -1212,7 +1212,7 @@ si_gc_stats(cl_object enable)
                 size1 = _ecl_big_plus_fix(cl_core.bytes_consed, 1);
                 size2 = _ecl_big_plus_fix(cl_core.gc_counter, 1);
         }
-        if (enable == Cnil) {
+        if (enable == ECL_NIL) {
                 GC_print_stats = 0;
                 cl_core.gc_stats = 0;
         } else if (enable == ecl_make_fixnum(0)) {
@@ -1304,7 +1304,7 @@ stacks_scanner()
 	cl_object l;
 	l = cl_core.libraries;
 	if (l) {
-		for (; l != Cnil; l = ECL_CONS_CDR(l)) {
+		for (; l != ECL_NIL; l = ECL_CONS_CDR(l)) {
 			cl_object dll = ECL_CONS_CAR(l);
 			if (dll->cblock.locked) {
 				GC_push_conditional((void *)dll, (void *)(&dll->cblock + 1), 1);
@@ -1382,7 +1382,7 @@ ecl_alloc_weak_pointer(cl_object o)
 	obj->value = o;
         if (!ECL_FIXNUMP(o) && !ECL_CHARACTERP(o) && !Null(o)) {
                 GC_general_register_disappearing_link((void**)&(obj->value), (void*)o);
-                si_set_finalizer((cl_object)obj, Ct);
+                si_set_finalizer((cl_object)obj, ECL_T);
         }
 	return (cl_object)obj;
 }
@@ -1408,7 +1408,7 @@ si_weak_pointer_value(cl_object o)
 		FEwrong_type_only_arg(@[ext::weak-pointer-value], o,
                                       @[ext::weak-pointer]);
 	value = (cl_object)GC_call_with_alloc_lock((GC_fn_type)ecl_weak_pointer_value, o);
-	@(return (value? value : Cnil));
+	@(return (value? value : ECL_NIL));
 }
 
 #endif /* GBC_BOEHM */

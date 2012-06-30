@@ -22,7 +22,7 @@
 extern "C" {
 #endif
 
-#define Null(x)		((x)==Cnil)
+#define Null(x)		((x)==ECL_NIL)
 #define CONS(a,d)	ecl_cons((a),(d))
 #define ACONS(a,b,c)	ecl_cons(ecl_cons((a),(b)),(c))
 

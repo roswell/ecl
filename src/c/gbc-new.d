@@ -208,7 +208,7 @@ BEGIN:
 	case t_string:
 #endif
 	case t_vector:
-		if ((y = x->array.displaced) != Cnil)
+		if ((y = x->array.displaced) != ECL_NIL)
 			mark_displaced(y);
 		cp = (char *)x->array.self.t;
 		if (cp == NULL)
@@ -218,7 +218,7 @@ BEGIN:
 		case ecl_aet_ch:
 #endif
 		case ecl_aet_object:
-			if (x->array.displaced == Cnil || CAR(x->array.displaced) == Cnil) {
+			if (x->array.displaced == ECL_NIL || CAR(x->array.displaced) == ECL_NIL) {
 				cl_object *p = x->array.self.t;
 				cl_index i;
 				if (x->array.t == t_vector && x->vector.hasfillp)
@@ -250,7 +250,7 @@ BEGIN:
 		}
 		goto COPY_ARRAY;
 	case t_base_string:
-		if ((y = x->base_string.displaced) != Cnil)
+		if ((y = x->base_string.displaced) != ECL_NIL)
 			mark_displaced(y);
 		cp = x->base_string.self;
 		if (cp == NULL)
@@ -260,7 +260,7 @@ BEGIN:
 		mark_contblock(cp, j);
 		break;
 	case t_bitvector:
-		if ((y = x->vector.displaced) != Cnil)
+		if ((y = x->vector.displaced) != ECL_NIL)
 			mark_displaced(y);
 		cp = x->vector.self.bit;
 		if (cp == NULL)
@@ -454,8 +454,8 @@ mark_phase(void)
 	register ecl_frame_ptr frp;
 	register ecl_ihs_ptr ihsp;
 
-	mark_object(Cnil);
-	mark_object(Ct);
+	mark_object(ECL_NIL);
+	mark_object(ECL_T);
 
 #ifdef THREADS
 	{
@@ -565,8 +565,8 @@ sweep_phase(void)
 	register struct typemanager *tm;
 	register cl_object f;
 
-	Cnil->symbol.m = FALSE;
-	Ct->symbol.m = FALSE;
+	ECL_NIL->symbol.m = FALSE;
+	ECL_T->symbol.m = FALSE;
 
 	if (debug)
 		printf("type map\n");
@@ -696,7 +696,7 @@ gc(enum type t)
   if (!GC_enabled())
     return;
 
-  if (SYM_VAL(siVgc_verbose) != Cnil) {
+  if (SYM_VAL(siVgc_verbose) != ECL_NIL) {
     printf("\n[GC ..");
     /* To use this should add entries in tm_table for reloc and contig.
        fprintf(stdout, "\n[GC for %d %s pages ..",
@@ -705,7 +705,7 @@ gc(enum type t)
     fflush(stdout);
   }
 
-  debug = symbol_value(siVgc_message) != Cnil;
+  debug = symbol_value(siVgc_message) != ECL_NIL;
 
 #ifdef THREADS
   if (clwp != &main_lpd)  {
@@ -856,7 +856,7 @@ gc(enum type t)
 
   gc_time += (gc_start = runtime() - gc_start);
 
-  if (SYM_VAL(siVgc_verbose) != Cnil) {
+  if (SYM_VAL(siVgc_verbose) != ECL_NIL) {
     /* Don't use fprintf since on Linux it calls malloc() */
     printf(". finished in %.2f\"]", gc_start/60.0);
     fflush(stdout);
@@ -953,21 +953,21 @@ _mark_contblock(void *x, size_t s)
 	VALUES(4) = ecl_make_fixnum(ncb);
 	VALUES(5) = ecl_make_fixnum(cbgccount);
 	VALUES(6) = ecl_make_fixnum(holepage);
-	VALUES(7) = Cnil;
+	VALUES(7) = ECL_NIL;
 	tl = &VALUES(7);
 	for (i = 0;  i < (int)t_end;  i++) {
 	  if (tm_table[i].tm_type == (enum type)i) {
-	    tl = &CDR(*tl = CONS(ecl_make_fixnum(tm_table[i].tm_nused), Cnil));
-	    tl = &CDR(*tl = CONS(ecl_make_fixnum(tm_table[i].tm_nfree), Cnil));
-	    tl = &CDR(*tl = CONS(ecl_make_fixnum(tm_table[i].tm_npage), Cnil));
-	    tl = &CDR(*tl = CONS(ecl_make_fixnum(tm_table[i].tm_maxpage), Cnil));
-	    tl = &CDR(*tl = CONS(ecl_make_fixnum(tm_table[i].tm_gccount), Cnil));
+	    tl = &CDR(*tl = CONS(ecl_make_fixnum(tm_table[i].tm_nused), ECL_NIL));
+	    tl = &CDR(*tl = CONS(ecl_make_fixnum(tm_table[i].tm_nfree), ECL_NIL));
+	    tl = &CDR(*tl = CONS(ecl_make_fixnum(tm_table[i].tm_npage), ECL_NIL));
+	    tl = &CDR(*tl = CONS(ecl_make_fixnum(tm_table[i].tm_maxpage), ECL_NIL));
+	    tl = &CDR(*tl = CONS(ecl_make_fixnum(tm_table[i].tm_gccount), ECL_NIL));
 	  } else {
-	    tl = &CDR(*tl = CONS(Cnil, Cnil));
-	    tl = &CDR(*tl = CONS(ecl_make_fixnum(tm_table[i].tm_type), Cnil));
-	    tl = &CDR(*tl = CONS(Cnil, Cnil));
-	    tl = &CDR(*tl = CONS(Cnil, Cnil));
-	    tl = &CDR(*tl = CONS(Cnil, Cnil));
+	    tl = &CDR(*tl = CONS(ECL_NIL, ECL_NIL));
+	    tl = &CDR(*tl = CONS(ecl_make_fixnum(tm_table[i].tm_type), ECL_NIL));
+	    tl = &CDR(*tl = CONS(ECL_NIL, ECL_NIL));
+	    tl = &CDR(*tl = CONS(ECL_NIL, ECL_NIL));
+	    tl = &CDR(*tl = CONS(ECL_NIL, ECL_NIL));
 	  }
 	}
 	return VALUES(0);
@@ -992,8 +992,8 @@ init_GC(void)
 {
 	register_root(&siVgc_verbose);
 	register_root(&siVgc_message);
-	siVgc_verbose = make_si_special("*GC-VERBOSE*", Cnil);
-	siVgc_message = make_si_special("*GC-MESSAGE*", Cnil);
+	siVgc_verbose = make_si_special("*GC-VERBOSE*", ECL_NIL);
+	siVgc_message = make_si_special("*GC-MESSAGE*", ECL_NIL);
 	GC_enable();
 	gc_time = 0;
 }

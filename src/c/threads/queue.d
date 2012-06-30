@@ -37,7 +37,7 @@ void ECL_INLINE
 ecl_get_spinlock(cl_env_ptr the_env, cl_object *lock)
 {
 	cl_object own_process = the_env->own_process;
-	while (!AO_compare_and_swap_full((AO_t*)lock, (AO_t)Cnil,
+	while (!AO_compare_and_swap_full((AO_t*)lock, (AO_t)ECL_NIL,
 					 (AO_t)own_process)) {
 		ecl_process_yield();
 	}
@@ -46,7 +46,7 @@ ecl_get_spinlock(cl_env_ptr the_env, cl_object *lock)
 void ECL_INLINE
 ecl_giveup_spinlock(cl_object *lock)
 {
-	AO_store((AO_t*)lock, (AO_t)Cnil);
+	AO_store((AO_t*)lock, (AO_t)ECL_NIL);
 }
 
 static ECL_INLINE void
@@ -65,7 +65,7 @@ wait_queue_pop_all(cl_env_ptr the_env, cl_object q)
 	{
 		ecl_get_spinlock(the_env, &q->queue.spinlock);
 		output = q->queue.list;
-		q->queue.list = Cnil;
+		q->queue.list = ECL_NIL;
 		ecl_giveup_spinlock(&q->queue.spinlock);
 	}
 	ecl_enable_interrupts_env(the_env);
@@ -139,26 +139,26 @@ ecl_wait_on_timed(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object),
 	 * too slow */
 	for (iteration = 0; iteration < 10; iteration++) {
 		cl_object output = condition(the_env,o);
-		if (output != Cnil)
+		if (output != ECL_NIL)
 			return output;
 	}
 
 	/* 0) We reserve a record for the queue. In order to avoid
 	 * using the garbage collector, we reuse records */
 	record = own_process->process.queue_record;
-	unlikely_if (record == Cnil) {
+	unlikely_if (record == ECL_NIL) {
 		record = ecl_list1(own_process);
 	} else {
-		own_process->process.queue_record = Cnil;
+		own_process->process.queue_record = ECL_NIL;
 	}
 
-	ecl_bds_bind(the_env, @'ext::*interrupts-enabled*', Cnil);
+	ecl_bds_bind(the_env, @'ext::*interrupts-enabled*', ECL_NIL);
 	ECL_UNWIND_PROTECT_BEGIN(the_env) {
 		/* 2) Now we add ourselves to the queue. In order to
 		 * avoid a call to the GC, we try to reuse records. */
 		print_lock("adding to queue", o);
 		wait_queue_nconc(the_env, o, record);
-		ecl_bds_bind(the_env, @'ext::*interrupts-enabled*', Ct);
+		ecl_bds_bind(the_env, @'ext::*interrupts-enabled*', ECL_T);
 		ecl_check_pending_interrupts(the_env);
 
 		/* 3) Unlike the sigsuspend() implementation, this
@@ -177,12 +177,12 @@ ecl_wait_on_timed(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object),
 		 * signal. Note that we recover the cons for later use.*/
 		cl_object firstone = o->queue.list;
 		wait_queue_delete(the_env, o, own_process);
-		own_process->process.waiting_for = Cnil;
+		own_process->process.waiting_for = ECL_NIL;
 		own_process->process.queue_record = record;
-		ECL_RPLACD(record, Cnil);
+		ECL_RPLACD(record, ECL_NIL);
 
 		/* 5) When this process exits, it may be because it
-		 * aborts (which we know because output == Cnil), or
+		 * aborts (which we know because output == ECL_NIL), or
 		 * because the condition is satisfied. In both cases
 		 * we allow the first in the queue to test again its
 		 * condition. This is needed for objects, such as
@@ -238,10 +238,10 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 	/* 0) We reserve a record for the queue. In order to avoid
 	 * using the garbage collector, we reuse records */
 	record = own_process->process.queue_record;
-	unlikely_if (record == Cnil) {
+	unlikely_if (record == ECL_NIL) {
 		record = ecl_list1(own_process);
 	} else {
-		own_process->process.queue_record = Cnil;
+		own_process->process.queue_record = ECL_NIL;
 	}
 
 	/* 1) First we block lisp interrupt signals. This ensures that
@@ -283,12 +283,12 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 		 * signal. Note that we recover the cons for later use.*/
 		cl_object firstone = o->queue.list;
 		wait_queue_delete(the_env, o, own_process);
-		own_process->process.waiting_for = Cnil;
+		own_process->process.waiting_for = ECL_NIL;
 		own_process->process.queue_record = record;
-		ECL_RPLACD(record, Cnil);
+		ECL_RPLACD(record, ECL_NIL);
 
 		/* 5) When this process exits, it may be because it
-		 * aborts (which we know because output == Cnil), or
+		 * aborts (which we know because output == ECL_NIL), or
 		 * because the condition is satisfied. In both cases
 		 * we allow the first in the queue to test again its
 		 * condition. This is needed for objects, such as
@@ -322,7 +322,7 @@ ecl_wakeup_waiters(cl_env_ptr the_env, cl_object q, int flags)
 		 * because of the UNWIND-PROTECT in ecl_wait_on(), but
 		 * sometimes shit happens */
 		cl_object *tail, l;
-		for (tail = &q->queue.list; (l = *tail) != Cnil; ) {
+		for (tail = &q->queue.list; (l = *tail) != ECL_NIL; ) {
 			cl_object p = ECL_CONS_CAR(l);
 			if (p->process.phase == ECL_PROCESS_INACTIVE ||
 			    p->process.phase == ECL_PROCESS_EXITING) {
@@ -333,7 +333,7 @@ ecl_wakeup_waiters(cl_env_ptr the_env, cl_object q, int flags)
 				 * simply awake it with a signal.*/
 				print_lock("awaking %p", q, p);
 				if (flags & ECL_WAKEUP_RESET_FLAG)
-					p->process.waiting_for = Cnil;
+					p->process.waiting_for = ECL_NIL;
 				if (flags & ECL_WAKEUP_KILL)
 					mp_process_kill(p);
 				else
@@ -353,18 +353,18 @@ ecl_wakeup_waiters(cl_env_ptr the_env, cl_object q, int flags)
 void
 print_lock(char *prefix, cl_object l, ...)
 {
-	static cl_object lock = Cnil;
+	static cl_object lock = ECL_NIL;
 	va_list args;
 	va_start(args, l);
 	return;
-	if (l == Cnil || ECL_FIXNUMP(l->lock.name)) {
+	if (l == ECL_NIL || ECL_FIXNUMP(l->lock.name)) {
 		cl_env_ptr env = ecl_process_env();
 		ecl_get_spinlock(env, &lock);
 		printf("\n%ld\t", ecl_fixnum(env->own_process->process.name));
 		vprintf(prefix, args);
-		if (l != Cnil) {
+		if (l != ECL_NIL) {
 			cl_object p = l->lock.queue_list;
-			while (p != Cnil) {
+			while (p != ECL_NIL) {
 				printf(" %lx", ecl_fixnum(ECL_CONS_CAR(p)->process.name));
 				p = ECL_CONS_CDR(p);
 			}

@@ -112,7 +112,7 @@
      (wt-nl "cl_return_from(" (blk-var blk) "," (add-symbol (blk-name blk)) ");"))
     ((CLB UNWIND-PROTECT)
      (let ((*destination* 'VALUES)) (c2expr* val))
-     (wt-nl "cl_return_from(" (blk-var blk) ",Cnil);"))
+     (wt-nl "cl_return_from(" (blk-var blk) ",ECL_NIL);"))
     (T (let ((*destination* (blk-destination blk))
 	     (*exit* (blk-exit blk)))
 	 (c2expr val))))

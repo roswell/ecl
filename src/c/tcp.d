@@ -289,12 +289,12 @@ si_open_client_stream(cl_object host, cl_object port)
    ecl_enable_interrupts();
 
    if (fd == 0)
-     @(return Cnil)
+     @(return ECL_NIL)
 
 #if defined(ECL_MS_WINDOWS_HOST)
-   stream = ecl_make_stream_from_fd(host, fd, ecl_smm_io_wsock, 8, 0, Cnil);
+   stream = ecl_make_stream_from_fd(host, fd, ecl_smm_io_wsock, 8, 0, ECL_NIL);
 #else
-   stream = ecl_make_stream_from_fd(host, fd, ecl_smm_io, 8, 0, Cnil);
+   stream = ecl_make_stream_from_fd(host, fd, ecl_smm_io, 8, 0, ECL_NIL);
 #endif
 
    @(return stream)
@@ -317,7 +317,7 @@ si_open_server_stream(cl_object port)
    fd = create_server_port(p);
    ecl_enable_interrupts();
 
-   @(return ((fd == 0)? Cnil : ecl_make_stream_from_fd(Cnil, fd, ecl_smm_io, 8, 0, Cnil)))
+   @(return ((fd == 0)? ECL_NIL : ecl_make_stream_from_fd(ECL_NIL, fd, ecl_smm_io, 8, 0, ECL_NIL)))
 }
 
 /************************************************************
@@ -342,7 +342,7 @@ si_open_unix_socket_stream(cl_object path)
 	fd = socket(PF_UNIX, SOCK_STREAM, 0);
 	if (fd < 0) {
 		FElibc_error("Unable to create unix socket", 0);
-		@(return Cnil)
+		@(return ECL_NIL)
 	}
 
 	memcpy(addr.sun_path, path->base_string.self, path->base_string.fillp);
@@ -352,10 +352,10 @@ si_open_unix_socket_stream(cl_object path)
 	if (connect(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
 		close(fd);
 		FElibc_error("Unable to connect to unix socket ~A", 1, path);
-		@(return Cnil)
+		@(return ECL_NIL)
 	}
 
-	@(return ecl_make_stream_from_fd(path, fd, ecl_smm_io, 8, 0, Cnil))
+	@(return ecl_make_stream_from_fd(path, fd, ecl_smm_io, 8, 0, ECL_NIL))
 #endif
 }
 
@@ -394,12 +394,12 @@ si_lookup_host_entry(cl_object host_or_address)
 			1, host_or_address);
 	}
 	if (he == NULL)
-		@(return Cnil Cnil Cnil)
+		@(return ECL_NIL ECL_NIL ECL_NIL)
 	name = make_base_string_copy(he->h_name);
-	aliases = Cnil;
+	aliases = ECL_NIL;
 	for (i = 0; he->h_aliases[i] != 0; i++)
 		aliases = CONS(make_base_string_copy(he->h_aliases[i]), aliases);
-	addresses = Cnil;
+	addresses = ECL_NIL;
 	for (i = 0; he->h_addr_list[i]; i++) {
 		unsigned long *s = (unsigned long*)(he->h_addr_list[i]);
 		l = *s;

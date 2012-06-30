@@ -133,7 +133,7 @@ enqueue(pool_t pool, cl_object what)
                 cl_object cons;
                 index = ecl_make_fixnum(pool->hash->hash.entries);
                 ecl_sethash(what, pool->hash, index);
-                cons = ecl_cons(what, Cnil);
+                cons = ecl_cons(what, ECL_NIL);
                 ECL_RPLACD(pool->last, cons);
                 pool->last = cons;
         }
@@ -175,7 +175,7 @@ serialize_displaced_vector(pool_t pool, cl_object v)
         cl_object disp = v->vector.displaced;
         cl_object to = ECL_CONS_CAR(disp);
         if (Null(to)) {
-                v->vector.displaced = Cnil;
+                v->vector.displaced = ECL_NIL;
                 serialize_vector(pool, v);
         } else {
                 cl_index index = v->vector.self.b8 - to->vector.self.b8;
@@ -305,9 +305,9 @@ init_pool(pool_t pool, cl_object root)
 {
         pool->data = si_make_vector(@'ext::byte8',
                                     ecl_make_fixnum(1024),
-                                    Ct,
+                                    ECL_T,
                                     ecl_make_fixnum(2 * sizeof(cl_index)),
-                                    Cnil,
+                                    ECL_NIL,
                                     ecl_make_fixnum(0));
         pool->hash = cl__make_hash_table(@'eql', ecl_make_fixnum(256),
                                          cl_core.rehash_size,
@@ -357,7 +357,7 @@ reconstruct_object_ptr(uint8_t *data, cl_index bytes)
 static uint8_t *
 reconstruct_vector(cl_object v, uint8_t *data)
 {
-        if (v->vector.displaced == Cnil) {
+        if (v->vector.displaced == ECL_NIL) {
                 cl_type t = v->vector.elttype;
                 cl_index size = v->vector.dim * ecl_aet_size[t];
                 cl_index bytes = ROUND_TO_WORD(size);
@@ -447,9 +447,9 @@ fixup_vector(cl_object v, cl_object *o_list)
         if (!ECL_IMMEDIATE(v->vector.displaced)) {
                 cl_object disp = get_object(v->vector.displaced, o_list);
                 cl_object to = ECL_CONS_CAR(disp);
-                if (to != Cnil) {
+                if (to != ECL_NIL) {
                         cl_index offset = (cl_index)v->vector.self.b8;
-                        v->vector.displaced = Cnil;
+                        v->vector.displaced = ECL_NIL;
                         ecl_displace(v, to, ecl_make_fixnum(offset));
                         return;
                 }

@@ -24,9 +24,9 @@ cl_object
 mp_make_condition_variable(void)
 {
 	cl_object output = ecl_alloc_object(t_condition_variable);
-	output->condition_variable.queue_list = Cnil;
-	output->condition_variable.queue_spinlock = Cnil;
-	output->condition_variable.lock = Cnil;
+	output->condition_variable.queue_list = ECL_NIL;
+	output->condition_variable.queue_spinlock = ECL_NIL;
+	output->condition_variable.lock = ECL_NIL;
 	@(return output)
 }
 
@@ -37,11 +37,11 @@ condition_variable_wait(cl_env_ptr env, cl_object cv)
 	if (own_process->process.waiting_for != cv) {
 		/* We have been signaled */
 		cl_object lock = cv->condition_variable.lock;
-		if (mp_get_lock_nowait(lock) != Cnil)
-			return Ct;
+		if (mp_get_lock_nowait(lock) != ECL_NIL)
+			return ECL_T;
 		own_process->process.waiting_for = cv;
 	}
-	return Cnil;
+	return ECL_NIL;
 }
 
 cl_object
@@ -57,7 +57,7 @@ mp_condition_variable_wait(cl_object cv, cl_object lock)
                 FEwrong_type_nth_arg(@[mp::condition-variable-wait], 2, lock,
                                      @[mp::lock]);
 	}
-        unlikely_if (cv->condition_variable.lock != Cnil &&
+        unlikely_if (cv->condition_variable.lock != ECL_NIL &&
 		     cv->condition_variable.lock != lock)
 	{
                 FEerror("Attempt to associate lock ~A~%with condition variable ~A,"
@@ -75,7 +75,7 @@ mp_condition_variable_wait(cl_object cv, cl_object lock)
 	env->own_process->process.waiting_for = cv;
 	mp_giveup_lock(cv->condition_variable.lock = lock);
 	ecl_wait_on(env, condition_variable_wait, cv);
-	@(return Ct)
+	@(return ECL_T)
 }
 
 cl_object
@@ -89,7 +89,7 @@ mp_condition_variable_signal(cl_object cv)
 {
 	ecl_wakeup_waiters(ecl_process_env(), cv,
 			   ECL_WAKEUP_RESET_FLAG | ECL_WAKEUP_ONE);
-	@(return Ct)
+	@(return ECL_T)
 }
 
 cl_object
@@ -97,5 +97,5 @@ mp_condition_variable_broadcast(cl_object cv)
 {
 	ecl_wakeup_waiters(ecl_process_env(), cv,
 			   ECL_WAKEUP_RESET_FLAG | ECL_WAKEUP_ALL);
-	@(return Ct)
+	@(return ECL_T)
 }

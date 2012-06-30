@@ -22,7 +22,7 @@
 cl_object
 si_specialp(cl_object sym)
 {
-	@(return ((ecl_symbol_type(sym) & ecl_stp_special)? Ct : Cnil))
+	@(return ((ecl_symbol_type(sym) & ecl_stp_special)? ECL_T : ECL_NIL))
 }
 
 cl_fixnum
@@ -164,7 +164,7 @@ cl_go(cl_object tag_id, cl_object label)
 cl_object
 cl_grab_rest_args(ecl_va_list args)
 {
-	cl_object rest = Cnil;
+	cl_object rest = ECL_NIL;
 	cl_object *r = &rest;
 	while (args[0].narg) {
 		*r = ecl_list1(ecl_va_arg(args));
@@ -187,10 +187,10 @@ cl_parse_key(
 	cl_object supplied_allow_other_keys = OBJNULL;
 	cl_object unknown_keyword = OBJNULL;
 
-	if (rest != NULL) *rest = Cnil;
+	if (rest != NULL) *rest = ECL_NIL;
 
 	for (i = 0; i < 2*nkey; i++)
-		vars[i] = Cnil;             /* default values: NIL, supplied: NIL */
+		vars[i] = ECL_NIL;             /* default values: NIL, supplied: NIL */
 	if (args[0].narg <= 0) return;
 
 	for (; args[0].narg > 1; ) {
@@ -205,9 +205,9 @@ cl_parse_key(
 		}
 		for (i = 0; i < nkey; i++) {
 			if (keys[i] == keyword) {
-				if (vars[nkey+i] == Cnil) {
+				if (vars[nkey+i] == ECL_NIL) {
 					vars[i] = value;
-					vars[nkey+i] = Ct;
+					vars[nkey+i] = ECL_T;
 				}
 				goto goon;
 			}
@@ -223,7 +223,7 @@ cl_parse_key(
 	if (ecl_unlikely(args[0].narg != 0))
 		FEprogram_error_noreturn("Odd number of keys", 0);
 	if (ecl_unlikely(unknown_keyword != OBJNULL && !allow_other_keys &&
-                         (supplied_allow_other_keys == Cnil ||
+                         (supplied_allow_other_keys == ECL_NIL ||
                           supplied_allow_other_keys == OBJNULL)))
 		FEprogram_error("Unknown keyword ~S", 1, unknown_keyword);
 }

@@ -24,13 +24,13 @@ _ecl_write_bytecodes(cl_object x, cl_object stream)
 {
         if (ecl_print_readably()) {
                 cl_index i;
-                cl_object lex = Cnil;
-                cl_object code_l=Cnil;
+                cl_object lex = ECL_NIL;
+                cl_object code_l=ECL_NIL;
                 for ( i=x->bytecodes.code_size-1 ; i<(cl_index)(-1l) ; i-- )
                         code_l = ecl_cons(ecl_make_fixnum(((cl_opcode*)(x->bytecodes.code))[i]), code_l);
                 writestr_stream("#Y", stream);
                 si_write_ugly_object(cl_list(7, x->bytecodes.name, lex,
-                                             Cnil /* x->bytecodes.definition */,
+                                             ECL_NIL /* x->bytecodes.definition */,
                                              code_l, x->bytecodes.data,
                                              x->bytecodes.file,
                                              x->bytecodes.file_position),
@@ -38,7 +38,7 @@ _ecl_write_bytecodes(cl_object x, cl_object stream)
         } else {
                 cl_object name = x->bytecodes.name;
                 writestr_stream("#<bytecompiled-function ", stream);
-                if (name != Cnil)
+                if (name != ECL_NIL)
                         si_write_ugly_object(name, stream);
                 else
                         _ecl_write_addr(x, stream);
@@ -61,7 +61,7 @@ _ecl_write_bclosure(cl_object x, cl_object stream)
         } else {
                 cl_object name = x->bytecodes.name;
                 writestr_stream("#<bytecompiled-closure ", stream);
-                if (name != Cnil)
+                if (name != ECL_NIL)
                         si_write_ugly_object(name, stream);
                 else
                         _ecl_write_addr(x, stream);

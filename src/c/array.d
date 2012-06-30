@@ -22,7 +22,7 @@
 #include <ecl/internal.h>
 
 static const cl_object ecl_aet_name[] = {
-        Ct,                   /* ecl_aet_object */
+        ECL_T,                   /* ecl_aet_object */
         @'single-float',      /* ecl_aet_sf */
         @'double-float',      /* ecl_aet_df */
         @'bit',               /* ecl_aet_bit: cannot be handled with this code */
@@ -97,7 +97,7 @@ ecl_to_index(cl_object n)
 	case t_fixnum: {
 		cl_fixnum out = ecl_fixnum(n);
 		if (out < 0 || out >= ECL_ARRAY_DIMENSION_LIMIT)
-			FEtype_error_index(Cnil, out);
+			FEtype_error_index(ECL_NIL, out);
 		return out;
 	}
 	default:
@@ -419,7 +419,7 @@ si_make_pure_array(cl_object etype, cl_object dims, cl_object adj,
 			1, ecl_make_fixnum(r));
 	}
 	x = ecl_alloc_object(t_array);
-	x->array.displaced = Cnil;
+	x->array.displaced = ECL_NIL;
 	x->array.self.t = NULL;		/* for GC sake */
 	x->array.rank = r;
 	x->array.elttype = (short)ecl_symbol_to_elttype(etype);
@@ -445,7 +445,7 @@ si_make_pure_array(cl_object etype, cl_object dims, cl_object adj,
                 }
 	}
 	x->array.dim = s;
-        if (adj != Cnil) {
+        if (adj != ECL_NIL) {
                 x->array.flags |= ECL_FLAG_ADJUSTABLE;
         }
 	if (Null(displ))
@@ -493,15 +493,15 @@ si_make_vector(cl_object etype, cl_object dim, cl_object adj,
 		x->vector.elttype = (short)aet;
 	}
 	x->vector.self.t = NULL;		/* for GC sake */
-	x->vector.displaced = Cnil;
+	x->vector.displaced = ECL_NIL;
 	x->vector.dim = d;
         x->vector.flags = 0;
-        if (adj != Cnil) {
+        if (adj != ECL_NIL) {
                 x->vector.flags |= ECL_FLAG_ADJUSTABLE;
         }
 	if (Null(fillp)) {
 		f = d;
-	} else if (fillp == Ct) {
+	} else if (fillp == ECL_T) {
 		x->vector.flags |= ECL_FLAG_HAS_FILL_POINTER;
 		f = d;
 	} else if (ECL_FIXNUMP(fillp) && ecl_fixnum_geq(fillp,ecl_make_fixnum(0)) &&
@@ -509,7 +509,7 @@ si_make_vector(cl_object etype, cl_object dim, cl_object adj,
 		x->vector.flags |= ECL_FLAG_HAS_FILL_POINTER;
 	} else {
 		fillp = ecl_type_error(@'make-array',"fill pointer",fillp,
-				       cl_list(3,@'or',cl_list(3,@'member',Cnil,Ct),
+				       cl_list(3,@'or',cl_list(3,@'member',ECL_NIL,ECL_T),
 					       cl_list(3,@'integer',ecl_make_fixnum(0),
 						       dim)));
 		goto AGAIN;
@@ -529,7 +529,7 @@ alloc_pointerfull_memory(cl_index l)
         cl_object *p = ecl_alloc_align(sizeof(cl_object) * l, sizeof(cl_object));
         cl_index i;
         for (i = 0; l--;)
-                p[i++] = Cnil;
+                p[i++] = ECL_NIL;
         return p;
 }
 
@@ -605,7 +605,7 @@ ecl_alloc_simple_vector(cl_index l, cl_elttype aet)
 	}
         x->base_string.elttype = aet;
         x->base_string.flags = 0; /* no fill pointer, not adjustable */
-        x->base_string.displaced = Cnil;
+        x->base_string.displaced = ECL_NIL;
         x->base_string.dim = x->base_string.fillp = l;
 	return x;
 }
@@ -660,7 +660,7 @@ ecl_symbol_to_elttype(cl_object x)
 #endif
 	else if (x == @'t')
 		return(ecl_aet_object);
-	else if (x == Cnil) {
+	else if (x == ECL_NIL) {
 		FEerror("ECL does not support arrays with element type NIL", 0);
 	}
 	x = cl_upgraded_array_element_type(1, x);
@@ -780,7 +780,7 @@ ecl_displace(cl_object from, cl_object to, cl_object offset)
                 }
 		from->array.displaced = ecl_list1(to);
 		if (Null(to->array.displaced))
-			to->array.displaced = ecl_list1(Cnil);
+			to->array.displaced = ecl_list1(ECL_NIL);
 		ECL_RPLACD(to->array.displaced, CONS(from, CDR(to->array.displaced)));
 		if (fromtype == ecl_aet_bit) {
 			j += to->vector.offset;
@@ -806,7 +806,7 @@ si_array_raw_data(cl_object x)
         }
         data = x->vector.self.b8;
         to_array = x->array.displaced;
-        if (to_array == Cnil || ((to_array = ECL_CONS_CAR(to_array)) == Cnil)) {
+        if (to_array == ECL_NIL || ((to_array = ECL_CONS_CAR(to_array)) == ECL_NIL)) {
 		cl_index used_size = total_size;
 		int flags = 0;
 		if (ECL_ARRAY_HAS_FILL_POINTER_P(x)) {
@@ -819,16 +819,16 @@ si_array_raw_data(cl_object x)
                 output->vector.dim = total_size;
 		output->vector.fillp = used_size;
                 output->vector.flags = flags;
-                output->vector.displaced = Cnil;
+                output->vector.displaced = ECL_NIL;
         } else {
                 cl_index displ = data - to_array->vector.self.b8;
-		cl_object fillp = Cnil;
+		cl_object fillp = ECL_NIL;
 		if (ECL_ARRAY_HAS_FILL_POINTER_P(x)) {
 			fillp = ecl_make_fixnum(x->vector.fillp * ecl_aet_size[et]);
 		}
                 output = si_make_vector(@'ext::byte8',
                                         ecl_make_fixnum(total_size),
-                                        Cnil,
+                                        ECL_NIL,
                                         fillp,
                                         si_array_raw_data(to_array),
                                         ecl_make_fixnum(displ));
@@ -910,7 +910,7 @@ cl_adjustable_array_p(cl_object a)
 {
         if (ecl_unlikely(!ECL_ARRAYP(a)))
                 FEwrong_type_only_arg(@[adjustable-array-p], a, @[array]);
-	@(return (ECL_ADJUSTABLE_ARRAY_P(a) ? Ct : Cnil))
+	@(return (ECL_ADJUSTABLE_ARRAY_P(a) ? ECL_T : ECL_NIL))
 }
 
 /*
@@ -997,7 +997,7 @@ cl_svref(cl_object x, cl_object index)
 
 	if (ecl_unlikely(type_of(x) != t_vector ||
                          (x->vector.flags & (ECL_FLAG_ADJUSTABLE | ECL_FLAG_HAS_FILL_POINTER)) ||
-                         CAR(x->vector.displaced) != Cnil ||
+                         CAR(x->vector.displaced) != ECL_NIL ||
                          (cl_elttype)x->vector.elttype != ecl_aet_object))
 	{
                 FEwrong_type_nth_arg(@[svref],1,x,@[simple-vector]);
@@ -1014,7 +1014,7 @@ si_svset(cl_object x, cl_object index, cl_object v)
 
 	if (ecl_unlikely(type_of(x) != t_vector ||
                          (x->vector.flags & (ECL_FLAG_ADJUSTABLE | ECL_FLAG_HAS_FILL_POINTER)) ||
-                         CAR(x->vector.displaced) != Cnil ||
+                         CAR(x->vector.displaced) != ECL_NIL ||
                          (cl_elttype)x->vector.elttype != ecl_aet_object))
 	{
 		FEwrong_type_nth_arg(@[si::svset],1,x,@[simple-vector]);
@@ -1030,14 +1030,14 @@ cl_array_has_fill_pointer_p(cl_object a)
 	cl_object r;
 	switch (type_of(a)) {
 	case t_array:
-		r = Cnil; break;
+		r = ECL_NIL; break;
 	case t_vector:
 	case t_bitvector:
 #ifdef ECL_UNICODE
 	case t_string:
 #endif
 	case t_base_string:
-		r = ECL_ARRAY_HAS_FILL_POINTER_P(a)? Ct : Cnil;
+		r = ECL_ARRAY_HAS_FILL_POINTER_P(a)? ECL_T : ECL_NIL;
 		break;
 	default:
                 FEwrong_type_nth_arg(@[array-has-fill-pointer-p],1,a,@[array]);
@@ -1101,7 +1101,7 @@ si_replace_array(cl_object olda, cl_object newa)
 		olda = newa;
 		goto OUTPUT;
 	}
-	for (dlist = CDR(olda->array.displaced); dlist != Cnil; dlist = CDR(dlist)) {
+	for (dlist = CDR(olda->array.displaced); dlist != ECL_NIL; dlist = CDR(dlist)) {
 		cl_object other_array = CAR(dlist);
 		cl_object offset;
 		cl_array_displacement(other_array);

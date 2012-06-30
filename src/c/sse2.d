@@ -28,7 +28,7 @@
 cl_object
 si_sse_pack_p(cl_object x)
 {
-	@(return (ECL_SSE_PACK_P(x) ? Ct : Cnil))
+	@(return (ECL_SSE_PACK_P(x) ? ECL_T : ECL_NIL))
 }
 
 /* Element type substitution */
@@ -108,7 +108,7 @@ si_sse_pack_to_vector(cl_object x, cl_object elt_type)
 	}
 
 	etype = x->sse.elttype;
-	if (elt_type != Cnil)
+	if (elt_type != ECL_NIL)
 		etype = symbol_to_sse_elttype(elt_type);
 
 	vec = ecl_alloc_simple_vector(16/ecl_aet_size[etype], etype);

@@ -32,7 +32,7 @@ cl_symbol_function(cl_object sym)
 	int type = ecl_symbol_type(sym);
 	if (type & ecl_stp_special_form) {
 		output = @'special';
-	} else if (Null(sym) || (SYM_FUN(sym) == Cnil)) {
+	} else if (Null(sym) || (SYM_FUN(sym) == ECL_NIL)) {
 		FEundefined_function(sym);
 	} else if (type & ecl_stp_macro) {
 		output = CONS(@'si::macro', SYM_FUN(sym));
@@ -52,18 +52,18 @@ cl_object
 cl_fboundp(cl_object fname)
 {
 	if (Null(fname)) {
-		@(return Cnil);
+		@(return ECL_NIL);
 	} else if (ECL_SYMBOLP(fname)) {
 		@(return (((fname->symbol.stype & ecl_stp_special_form)
-			   || SYM_FUN(fname) != Cnil)? Ct : Cnil))
+			   || SYM_FUN(fname) != ECL_NIL)? ECL_T : ECL_NIL))
 	} else if (LISTP(fname)) {
 		if (CAR(fname) == @'setf') {
 			cl_object sym = CDR(fname);
-			if (CONSP(sym) && CDR(sym) == Cnil) {
+			if (CONSP(sym) && CDR(sym) == ECL_NIL) {
 				cl_object pair;
 				sym = CAR(sym);
 				if (ECL_SYMBOLP(sym)) {
-					pair = ecl_setf_definition(sym, Cnil);
+					pair = ecl_setf_definition(sym, ECL_NIL);
 					@(return ecl_cdr(pair));
 				}
 			}
@@ -80,7 +80,7 @@ ecl_fdefinition(cl_object fun)
 
 	if (t == t_symbol) {
 		output = SYM_FUN(fun);
-		unlikely_if (output == Cnil)
+		unlikely_if (output == ECL_NIL)
 			FEundefined_function(fun);
 		unlikely_if (fun->symbol.stype & (ecl_stp_macro | ecl_stp_special_form))
 			FEundefined_function(fun);
@@ -91,17 +91,17 @@ ecl_fdefinition(cl_object fun)
 		unlikely_if (!CONSP(sym))
 			FEinvalid_function_name(fun);
 		if (CAR(fun) == @'setf') {
-			unlikely_if (CDR(sym) != Cnil)
+			unlikely_if (CDR(sym) != ECL_NIL)
 				FEinvalid_function_name(fun);
 			sym = CAR(sym);
 			unlikely_if (type_of(sym) != t_symbol)
 				FEinvalid_function_name(fun);
-			output = ecl_setf_definition(sym, Cnil);
+			output = ecl_setf_definition(sym, ECL_NIL);
 			unlikely_if (Null(ecl_cdr(output)))
 				FEundefined_function(fun);
 			output = ECL_CONS_CAR(output);
 		} else if (CAR(fun) == @'lambda') {
-			return si_make_lambda(Cnil, sym);
+			return si_make_lambda(ECL_NIL, sym);
 		} else if (CAR(fun) == @'ext::lambda-block') {
 			return si_make_lambda(CAR(sym), CDR(sym));
 		} else {
@@ -163,7 +163,7 @@ cl_object
 cl_boundp(cl_object sym)
 {
 	const cl_env_ptr the_env = ecl_process_env();
-	ecl_return1(the_env, ecl_boundp(the_env,sym)? Ct : Cnil);
+	ecl_return1(the_env, ecl_boundp(the_env,sym)? ECL_T : ECL_NIL);
 }
 
 cl_object
@@ -171,5 +171,5 @@ cl_special_operator_p(cl_object form)
 {
 	const cl_env_ptr the_env = ecl_process_env();
 	int special = ecl_symbol_type(form) & ecl_stp_special_form;
-	ecl_return1(the_env, special? Ct : Cnil);
+	ecl_return1(the_env, special? ECL_T : ECL_NIL);
 }

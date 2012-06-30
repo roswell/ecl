@@ -77,7 +77,7 @@ ecl_make_rwlock(cl_object name)
         if (rc) {
                 FEerror("Unable to create read/write lock", 0);
         }
-	ecl_set_finalizer_unprotected(output, Ct);
+	ecl_set_finalizer_unprotected(output, ECL_T);
 #else
         output->rwlock.mutex = ecl_make_lock(name, 0);
 #endif
@@ -110,7 +110,7 @@ mp_giveup_rwlock_read(cl_object lock)
                 int rc = pthread_rwlock_unlock(&lock->rwlock.mutex);
                 if (rc)
                         FEunknown_rwlock_error(lock, rc);
-                @(return Ct);
+                @(return ECL_T);
         }
 #else
         return mp_giveup_lock(lock->rwlock.mutex);
@@ -131,12 +131,12 @@ mp_get_rwlock_read_nowait(cl_object lock)
 #ifdef ECL_RWLOCK
         {
                 const cl_env_ptr env = ecl_process_env();
-                cl_object output = Ct;
+                cl_object output = ECL_T;
                 int rc = pthread_rwlock_tryrdlock(&lock->rwlock.mutex);
                 if (rc == 0) {
-                        output = Ct;
+                        output = ECL_T;
                 } else if (rc == EBUSY) {
-                        output = Cnil;
+                        output = ECL_NIL;
                 } else {
                         FEunknown_rwlock_error(lock, rc);
                 }
@@ -159,14 +159,14 @@ mp_get_rwlock_read_wait(cl_object lock)
                 if (rc != 0) {
                         FEunknown_rwlock_error(lock, rc);
                 }
-                ecl_return1(env, Ct);
+                ecl_return1(env, ECL_T);
         }
 #else
         return mp_get_lock_wait(lock->rwlock.mutex);
 #endif
 }
 
-@(defun mp::get-rwlock-read (lock &optional (wait Ct))
+@(defun mp::get-rwlock-read (lock &optional (wait ECL_T))
 @
 	if (Null(wait))
         	return mp_get_rwlock_read_nowait(lock);
@@ -182,12 +182,12 @@ mp_get_rwlock_write_nowait(cl_object lock)
 #ifdef ECL_RWLOCK
         {
                 const cl_env_ptr env = ecl_process_env();
-                cl_object output = Ct;
+                cl_object output = ECL_T;
                 int rc = pthread_rwlock_trywrlock(&lock->rwlock.mutex);
                 if (rc == 0) {
-                        output = Ct;
+                        output = ECL_T;
                 } else if (rc == EBUSY) {
-                        output = Cnil;
+                        output = ECL_NIL;
                 } else {
                         FEunknown_rwlock_error(lock, rc);
                 }
@@ -210,14 +210,14 @@ mp_get_rwlock_write_wait(cl_object lock)
                 if (rc != 0) {
                         FEunknown_rwlock_error(lock, rc);
                 }
-                @(return Ct)
+                @(return ECL_T)
         }
 #else
         return mp_get_lock_wait(lock->rwlock.mutex);
 #endif
 }
 
-@(defun mp::get-rwlock-write (lock &optional (wait Ct))
+@(defun mp::get-rwlock-write (lock &optional (wait ECL_T))
 @
 	if (Null(wait))
         	return mp_get_rwlock_write_nowait(lock);

@@ -439,7 +439,7 @@
     (outer)))
 
 ;; let*: extra bds_unwind1
-;;        if((V3=CDR(V3))==Cnil){
+;;        if((V3=CDR(V3))==ECL_NIL){
 ;;        bds_bind(VV[0],T0);                       /*  *VAL*           */
 ;;        bds_unwind1;
 ;;        goto L1;}

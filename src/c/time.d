@@ -197,7 +197,7 @@ cl_sleep(cl_object z)
                 }
         } ECL_WITHOUT_FPE_END;
 	ecl_musleep(time, 0);
-	@(return Cnil)
+	@(return ECL_NIL)
 }
 
 static cl_object

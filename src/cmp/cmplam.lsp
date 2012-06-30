@@ -484,13 +484,13 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
       (cond ((and (eq (c1form-name init) 'LOCATION)
 		  (null (c1form-arg 0 init)))
 	     ;; no initform
-	     ;; Cnil has been set in keyvars if keyword parameter is not supplied.
+	     ;; ECL_NIL has been set in keyvars if keyword parameter is not supplied.
 	     (setf (second KEYVARS[i]) i)
 	     (bind KEYVARS[i] var))
 	    (t
 	     ;; with initform
 	     (setf (second KEYVARS[i]) (+ nkey i))
-	     (wt-nl "if(") (wt-loc KEYVARS[i]) (wt "==Cnil){")
+	     (wt-nl "if(") (wt-loc KEYVARS[i]) (wt "==ECL_NIL){")
 	     (let ((*unwind-exit* *unwind-exit*))
 	       (bind-init init var))
 	     (wt-nl "}else{")

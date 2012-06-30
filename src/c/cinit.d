@@ -99,7 +99,7 @@ cl_array_dimensions(cl_object array)
 extern cl_object
 si_find_relative_package(cl_narg narg, cl_object package, ...)
 {
-	@(return Cnil);
+	@(return ECL_NIL);
 }
 
 static cl_object si_simple_toplevel ()
@@ -121,7 +121,7 @@ static cl_object si_simple_toplevel ()
                 }
                 while (1) {
                         writestr_stream("\n> ", output);
-                        sentence = @read(3, Cnil, Cnil, OBJNULL);
+                        sentence = @read(3, ECL_NIL, ECL_NIL, OBJNULL);
                         if (sentence == OBJNULL)
                                 @(return);
 			sentence = si_eval_with_env(1, sentence);
@@ -139,10 +139,10 @@ main(int argc, char **args)
 	cl_boot(argc, args);
 
 	/* We are computing unnormalized numbers at some point */
-	si_trap_fpe(Ct, Cnil);
+	si_trap_fpe(ECL_T, ECL_NIL);
 
 #ifdef ECL_CMU_FORMAT
-	ECL_SET(@'*load-verbose*', Cnil);
+	ECL_SET(@'*load-verbose*', ECL_NIL);
 #endif
 	ECL_SET(@'*package*', cl_core.system_package);
 

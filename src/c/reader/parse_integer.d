@@ -86,20 +86,20 @@ ecl_parse_integer(cl_object str, cl_index start, cl_index end,
 		s++;
 	}
 	if (s >= e) {
-		if (junk_allowed != Cnil)
-			@(return Cnil ecl_make_fixnum(s))
+		if (junk_allowed != ECL_NIL)
+			@(return ECL_NIL ecl_make_fixnum(s))
 		else
 			goto CANNOT_PARSE;
 	}
 	x = ecl_parse_integer(strng, s, e, &ep, ecl_fixnum(radix));
 	if (x == OBJNULL) {
-		if (junk_allowed != Cnil) {
-			@(return Cnil ecl_make_fixnum(ep));
+		if (junk_allowed != ECL_NIL) {
+			@(return ECL_NIL ecl_make_fixnum(ep));
 		} else {
 			goto CANNOT_PARSE;
 		}
 	}
-	if (junk_allowed != Cnil) {
+	if (junk_allowed != ECL_NIL) {
 		@(return x ecl_make_fixnum(ep));
 	}
 	for (s = ep; s < e; s++) {
@@ -107,7 +107,7 @@ ecl_parse_integer(cl_object str, cl_index start, cl_index end,
                              != cat_whitespace) 
                 {
 CANNOT_PARSE:		FEparse_error("Cannot parse an integer in the string ~S.",
-				      Cnil, 1, strng);
+				      ECL_NIL, 1, strng);
 		}
 	}
 	@(return x ecl_make_fixnum(e));

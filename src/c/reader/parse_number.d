@@ -153,7 +153,7 @@ ecl_parse_number(cl_object str, cl_index start, cl_index end,
                         if (den == OBJNULL || (*ep < end)) {
                                 return OBJNULL;
                         } else if (den == ecl_make_fixnum(0)) {
-                                return Cnil;
+                                return ECL_NIL;
                         } else {
                                 return ecl_make_ratio(num, den);
                         }

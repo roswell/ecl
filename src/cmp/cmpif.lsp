@@ -98,12 +98,12 @@
            (list inlined-arg)
            (if (eq (loc-representation-type dest-loc) :bool)
                (case rep-type
-                 (:bool '((:bool) (:bool) "(#0)==Cnil" nil t))
-                 (:object '((:object) (:bool) "(#0)!=Cnil" nil t))
+                 (:bool '((:bool) (:bool) "(#0)==ECL_NIL" nil t))
+                 (:object '((:object) (:bool) "(#0)!=ECL_NIL" nil t))
                  (otherwise (return-from negate-argument nil)))
                (case rep-type
-                 (:bool '((:bool) (:object) "(#0)?Cnil:Ct" nil t))
-                 (:object '((:object) (:object) "Null(#0)?Ct:Cnil" nil t))
+                 (:bool '((:bool) (:object) "(#0)?ECL_NIL:ECL_T" nil t))
+                 (:object '((:object) (:object) "Null(#0)?ECL_T:ECL_NIL" nil t))
                  (otherwise (return-from negate-argument nil)))))))
 
 (defun c2fmla-not (c1form arg)
@@ -174,7 +174,7 @@
                  (t
                   (wt-nl "if((")
                   (wt-coerce-loc :object loc)
-                  (wt ")!=Cnil){")))
+                  (wt ")!=ECL_NIL){")))
            (unwind-no-exit label)
            (wt-nl) (wt-go label)
            (wt "}"))
@@ -192,7 +192,7 @@
                  (t
                   (wt-nl "if((")
                   (wt-coerce-loc :object loc)
-                  (wt ")==Cnil){")))
+                  (wt ")==ECL_NIL){")))
            (unwind-no-exit label)
            (wt-nl) (wt-go label)
            (wt "}"))

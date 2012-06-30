@@ -43,7 +43,7 @@ ecl_apply_from_stack_frame(cl_object frame, cl_object x)
 	cl_object fun = x;
       AGAIN:
         frame->frame.env->function = fun;
-	if (ecl_unlikely(fun == OBJNULL || fun == Cnil))
+	if (ecl_unlikely(fun == OBJNULL || fun == ECL_NIL))
 		FEundefined_function(x);
 	switch (type_of(fun)) {
 	case t_cfunfixed:
@@ -76,7 +76,7 @@ ecl_apply_from_stack_frame(cl_object frame, cl_object x)
 		fun = SYM_FUN(fun);
 		goto AGAIN;
 	case t_bytecodes:
-		return ecl_interpret(frame, Cnil, fun);
+		return ecl_interpret(frame, ECL_NIL, fun);
 	case t_bclosure:
 		return ecl_interpret(frame, fun->bclosure.lex, fun->bclosure.code);
 	default:
@@ -89,7 +89,7 @@ ecl_function_dispatch(cl_env_ptr env, cl_object x)
 {
 	cl_object fun = x;
  AGAIN:
-	if (ecl_unlikely(fun == OBJNULL || fun == Cnil))
+	if (ecl_unlikely(fun == OBJNULL || fun == ECL_NIL))
 		FEundefined_function(x);
 	switch (type_of(fun)) {
 	case t_cfunfixed:
@@ -181,18 +181,18 @@ cl_eval(cl_object form)
 	switch (type_of(arg)) {
 	case t_list:
 		if (Null(arg)) {
-			flag = Ct;
+			flag = ECL_T;
 		} else if (CAR(arg) == @'quote') {
-			flag = Ct;
+			flag = ECL_T;
 		} else {
-			flag = Cnil;
+			flag = ECL_NIL;
 		}
 		break;
 	case t_symbol:
-		flag = (arg->symbol.stype & ecl_stp_constant) ? Ct : Cnil;
+		flag = (arg->symbol.stype & ecl_stp_constant) ? ECL_T : ECL_NIL;
 		break;
 	default:
-		flag = Ct;
+		flag = ECL_T;
 	}
 	@(return flag)
 @)

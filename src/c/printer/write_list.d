@@ -101,7 +101,7 @@ _ecl_write_list(cl_object x, cl_object stream)
                 if (x == OBJNULL || ECL_ATOM(x) ||
                     (circle && _ecl_will_print_as_hash(x)))
 			{
-				if (x != Cnil) {
+				if (x != ECL_NIL) {
 					ecl_write_char(' ', stream);
 					writestr_stream(". ", stream);
 					si_write_object(x, stream);

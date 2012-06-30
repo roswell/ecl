@@ -36,7 +36,7 @@ write_readable_pathname(cl_object path, cl_object stream)
                         @':name', path->pathname.name,
                         @':type', path->pathname.type,
                         @':version', path->pathname.version,
-                        @':defaults', Cnil);
+                        @':defaults', ECL_NIL);
         writestr_stream("#.", stream);
         si_write_object(l, stream);
 }
@@ -46,13 +46,13 @@ write_pathname(cl_object path, cl_object stream)
 {
         cl_object namestring = ecl_namestring(path, 0);
         bool readably = ecl_print_readably();
-        if (namestring == Cnil) {
+        if (namestring == ECL_NIL) {
                 if (readably) {
                         write_readable_pathname(path, stream);
                         return;
                 }
                 namestring = ecl_namestring(path, 1);
-                if (namestring == Cnil) {
+                if (namestring == ECL_NIL) {
                         writestr_stream("#<Unprintable pathname>", stream);
                         return;
                 }
@@ -70,8 +70,8 @@ write_integer(cl_object number, cl_object stream)
         si_integer_to_string(s, number,
                              ecl_make_fixnum(print_base),
                              ecl_symbol_value(@'*print-radix*'),
-                             Ct /* decimal syntax */);
-        si_do_write_sequence(s, stream, ecl_make_fixnum(0), Cnil);
+                             ECL_T /* decimal syntax */);
+        si_do_write_sequence(s, stream, ecl_make_fixnum(0), ECL_NIL);
         si_put_buffer_string(s);
 }
 
@@ -79,8 +79,8 @@ void
 _ecl_write_fixnum(cl_fixnum i, cl_object stream)
 {
         cl_object s = si_get_buffer_string();
-        si_integer_to_string(s, ecl_make_fixnum(i), ecl_make_fixnum(10), Cnil, Cnil);
-        si_do_write_sequence(s, stream, ecl_make_fixnum(0), Cnil);
+        si_integer_to_string(s, ecl_make_fixnum(i), ecl_make_fixnum(10), ECL_NIL, ECL_NIL);
+        si_do_write_sequence(s, stream, ecl_make_fixnum(0), ECL_NIL);
         si_put_buffer_string(s);
 }
 
@@ -91,12 +91,12 @@ write_ratio(cl_object r, cl_object stream)
         int print_base = ecl_print_base();
         si_integer_to_string(s, r->ratio.num, ecl_make_fixnum(print_base),
                              ecl_symbol_value(@'*print-radix*'),
-                             Cnil /* decimal syntax */);
+                             ECL_NIL /* decimal syntax */);
         ecl_string_push_extend(s, '/');
         si_integer_to_string(s, r->ratio.den,
                              ecl_make_fixnum(print_base),
-                             Cnil, Cnil);
-        si_do_write_sequence(s, stream, ecl_make_fixnum(0), Cnil);
+                             ECL_NIL, ECL_NIL);
+        si_do_write_sequence(s, stream, ecl_make_fixnum(0), ECL_NIL);
         si_put_buffer_string(s);
 }
 
@@ -115,7 +115,7 @@ write_float(cl_object f, cl_object stream)
 {
         cl_object s = si_get_buffer_string();
         s = si_float_to_string_free(s, f, ecl_make_fixnum(-3), ecl_make_fixnum(8));
-        si_do_write_sequence(s, stream, ecl_make_fixnum(0), Cnil);
+        si_do_write_sequence(s, stream, ecl_make_fixnum(0), ECL_NIL);
         si_put_buffer_string(s);
 }
 
@@ -161,7 +161,7 @@ write_hashtable(cl_object x, cl_object stream)
 		writestr_stream("#.", stream);
 		si_write_ugly_object(init, stream);
 	} else {
-		_ecl_write_unreadable(x, "hash-table", Cnil, stream);
+		_ecl_write_unreadable(x, "hash-table", ECL_NIL, stream);
 	}
 }
 
@@ -172,7 +172,7 @@ write_random(cl_object x, cl_object stream)
                 writestr_stream("#$", stream);
                 _ecl_write_vector(x->random.value, stream);
         } else {
-                _ecl_write_unreadable(x->random.value, "random-state", Cnil, stream);
+                _ecl_write_unreadable(x->random.value, "random-state", ECL_NIL, stream);
         }
 }
 
@@ -240,19 +240,19 @@ write_stream(cl_object x, cl_object stream)
                 break;
         case ecl_smm_broadcast:
                 prefix = "closed broadcast stream";
-                tag = Cnil;
+                tag = ECL_NIL;
                 break;
         case ecl_smm_concatenated:
                 prefix = "closed concatenated stream";
-                tag = Cnil;
+                tag = ECL_NIL;
                 break;
         case ecl_smm_two_way:
                 prefix = "closed two-way stream";
-                tag = Cnil;
+                tag = ECL_NIL;
                 break;
         case ecl_smm_echo:
                 prefix = "closed echo stream";
-                tag = Cnil;
+                tag = ECL_NIL;
                 break;
         case ecl_smm_string_input: {
                 cl_object text = x->stream.object0;
@@ -281,15 +281,15 @@ write_stream(cl_object x, cl_object stream)
         }
         case ecl_smm_string_output:
                 prefix = "closed string-output stream";
-                tag = Cnil;
+                tag = ECL_NIL;
                 break;
         case ecl_smm_sequence_input:
                 prefix = "closed sequence-input stream";
-                tag = Cnil;
+                tag = ECL_NIL;
                 break;
         case ecl_smm_sequence_output:
                 prefix = "closed sequence-output stream";
-                tag = Cnil;
+                tag = ECL_NIL;
                 break;
         default:
                 ecl_internal_error("illegal stream mode");
@@ -331,7 +331,7 @@ write_structure(cl_object x, cl_object stream)
 static void
 write_readtable(cl_object x, cl_object stream)
 {
-        _ecl_write_unreadable(x, "readtable", Cnil, stream);
+        _ecl_write_unreadable(x, "readtable", ECL_NIL, stream);
 }
 
 static void
@@ -349,7 +349,7 @@ write_codeblock(cl_object x, cl_object stream)
 static void
 write_cclosure(cl_object x, cl_object stream)
 {
-        _ecl_write_unreadable(x, "compiled-closure", Cnil, stream);
+        _ecl_write_unreadable(x, "compiled-closure", ECL_NIL, stream);
 }
 
 static void
@@ -367,7 +367,7 @@ write_frame(cl_object x, cl_object stream)
 static void
 write_weak_pointer(cl_object x, cl_object stream)
 {
-        _ecl_write_unreadable(x, "weak-pointer", Cnil, stream);
+        _ecl_write_unreadable(x, "weak-pointer", ECL_NIL, stream);
 }
 
 #ifdef ECL_THREADS
@@ -388,25 +388,25 @@ write_lock(cl_object x, cl_object stream)
 static void
 write_condition_variable(cl_object x, cl_object stream)
 {
-        _ecl_write_unreadable(x, "semaphore", Cnil, stream);
+        _ecl_write_unreadable(x, "semaphore", ECL_NIL, stream);
 }
 
 static void
 write_semaphore(cl_object x, cl_object stream)
 {
-        _ecl_write_unreadable(x, "semaphore", Cnil, stream);
+        _ecl_write_unreadable(x, "semaphore", ECL_NIL, stream);
 }
 
 static void
 write_barrier(cl_object x, cl_object stream)
 {
-        _ecl_write_unreadable(x, "barrier", Cnil, stream);
+        _ecl_write_unreadable(x, "barrier", ECL_NIL, stream);
 }
 
 static void
 write_mailbox(cl_object x, cl_object stream)
 {
-        _ecl_write_unreadable(x, "mailbox", Cnil, stream);
+        _ecl_write_unreadable(x, "mailbox", ECL_NIL, stream);
 }
 
 #endif /* ECL_THREADS */
@@ -414,7 +414,7 @@ write_mailbox(cl_object x, cl_object stream)
 static void
 write_illegal(cl_object x, cl_object stream)
 {
-        _ecl_write_unreadable(x, "illegal pointer", Cnil, stream);
+        _ecl_write_unreadable(x, "illegal pointer", ECL_NIL, stream);
 }
 
 typedef void (*printer)(cl_object x, cl_object stream);

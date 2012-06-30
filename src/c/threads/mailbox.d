@@ -35,12 +35,12 @@ ecl_make_mailbox(cl_object name, cl_fixnum count)
 	count = mask;
 	mask = count - 1;
 	output->mailbox.name = name;
-	output->mailbox.data = si_make_vector(Ct, /* element type */
+	output->mailbox.data = si_make_vector(ECL_T, /* element type */
 					      ecl_make_fixnum(count), /* size */
-					      Cnil, /* adjustable */
-					      Cnil, /* fill pointer */
-					      Cnil, /* displaced to */
-					      Cnil); /* displacement */
+					      ECL_NIL, /* adjustable */
+					      ECL_NIL, /* fill pointer */
+					      ECL_NIL, /* displaced to */
+					      ECL_NIL); /* displacement */
 	output->mailbox.reader_semaphore =
 	  ecl_make_semaphore(name, 0);
 	output->mailbox.writer_semaphore =
@@ -85,7 +85,7 @@ mp_mailbox_empty_p(cl_object mailbox)
 	unlikely_if (type_of(mailbox) != t_mailbox) {
 		FEerror_not_a_mailbox(mailbox);
 	}
-	ecl_return1(env, mailbox->mailbox.reader_semaphore->semaphore.counter? Cnil : Ct);
+	ecl_return1(env, mailbox->mailbox.reader_semaphore->semaphore.counter? ECL_NIL : ECL_T);
 }
 
 cl_object

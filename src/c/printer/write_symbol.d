@@ -166,8 +166,8 @@ _ecl_write_symbol(cl_object x, cl_object stream)
 	bool forced_package = 0;
 
 	if (Null(x)) {
-		package = Cnil_symbol->symbol.hpack;
-		name = Cnil_symbol->symbol.name;
+		package = ECL_NIL_SYMBOL->symbol.hpack;
+		name = ECL_NIL_SYMBOL->symbol.name;
 	} else {
 		package = x->symbol.hpack;
 		name = x->symbol.name;

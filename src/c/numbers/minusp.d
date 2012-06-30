@@ -21,7 +21,7 @@
 cl_object
 cl_minusp(cl_object x)
 {	/* INV: ecl_minusp() checks type */
-	@(return (ecl_minusp(x) ? Ct : Cnil))
+	@(return (ecl_minusp(x) ? ECL_T : ECL_NIL))
 }
 
 static int

@@ -190,9 +190,9 @@ monotonic(int s, int t, int narg, ecl_va_list nums)
 	for (c = ecl_va_arg(nums); --narg; c = d) {
 		d = ecl_va_arg(nums);
 		if (s*ecl_number_compare(d, c) < t)
-			return1(Cnil);
+			return1(ECL_NIL);
 	}
-	return1(Ct);
+	return1(ECL_T);
 }
 
 #define MONOTONIC(i, j) (cl_narg narg, ...) \

@@ -31,7 +31,7 @@
 
 static cl_object dispatch_macro_character(cl_object table, cl_object strm, int c);
 
-#define read_suppress (ecl_symbol_value(@'*read-suppress*') != Cnil)
+#define read_suppress (ecl_symbol_value(@'*read-suppress*') != ECL_NIL)
 
 #ifdef ECL_UNICODE
 # define TOKEN_STRING_DIM(s) ((s)->string.dim)
@@ -56,7 +56,7 @@ si_get_buffer_string()
 	const cl_env_ptr env = ecl_process_env();
 	cl_object pool = env->string_pool;
 	cl_object output;
-	if (pool == Cnil) {
+	if (pool == ECL_NIL) {
 #ifdef ECL_UNICODE
 		output = ecl_alloc_adjustable_extended_string(ECL_BUFFER_STRING_SIZE);
 #else
@@ -73,11 +73,11 @@ si_get_buffer_string()
 cl_object
 si_put_buffer_string(cl_object string)
 {
-	if (string != Cnil) {
+	if (string != ECL_NIL) {
 		const cl_env_ptr env = ecl_process_env();
 		cl_object pool = env->string_pool;
 		cl_index l = 0;
-		if (pool != Cnil) {
+		if (pool != ECL_NIL) {
 			/* We store the size of the pool in the string index */
 			l = TOKEN_STRING_FILLP(ECL_CONS_CAR(pool));
 		}
@@ -113,7 +113,7 @@ ecl_read_object_non_recursive(cl_object in)
 	cl_object x;
 	const cl_env_ptr env = ecl_process_env();
 
-	ecl_bds_bind(env, @'si::*sharp-eq-context*', Cnil);
+	ecl_bds_bind(env, @'si::*sharp-eq-context*', ECL_NIL);
 	ecl_bds_bind(env, @'si::*backq-level*', ecl_make_fixnum(0));
 	x = ecl_read_object(in);
 	if (!Null(ECL_SYM_VAL(env, @'si::*sharp-eq-context*')))
@@ -135,7 +135,7 @@ invert_buffer_case(cl_object x, cl_object escape_list, int sign)
 	cl_fixnum high_limit, low_limit;
 	cl_fixnum i = TOKEN_STRING_FILLP(x);
 	do {
-		if (escape_list != Cnil) {
+		if (escape_list != ECL_NIL) {
 			cl_object escape_interval = CAR(escape_list);
 			high_limit = ecl_fixnum(CAR(escape_interval));
 			low_limit = ecl_fixnum(CDR(escape_interval));
@@ -202,7 +202,7 @@ BEGIN:
 		}
 		if (the_env->nvalues == 0) {
                         if (flags == ECL_READ_RETURN_IGNORABLE)
-                                return Cnil;
+                                return ECL_NIL;
                         goto BEGIN;
                 }
 		unlikely_if (the_env->nvalues > 1) {
@@ -212,7 +212,7 @@ BEGIN:
 		return o;
 	}
 LOOP:
-	p = escape_list = Cnil;
+	p = escape_list = ECL_NIL;
 	upcase = count = length = 0;
 	external_symbol = colon = 0;
 	token = si_get_buffer_string();
@@ -260,7 +260,7 @@ LOOP:
 			}
 			TOKEN_STRING_FILLP(token) = length = 0;
 			upcase = count = colon = 0;
-			escape_list = Cnil;
+			escape_list = ECL_NIL;
 		}
 		if (a == cat_single_escape) {
 			c = ecl_read_char_noeof(in);
@@ -270,7 +270,7 @@ LOOP:
 							ecl_make_fixnum(length)),
 						   escape_list);
 			} else {
-				escape_list = Ct;
+				escape_list = ECL_T;
 			}
 			ecl_string_push_extend(token, c);
 			length++;
@@ -294,7 +294,7 @@ LOOP:
 							ecl_make_fixnum(length-1)),
 						   escape_list);
 			} else {
-				escape_list = Ct;
+				escape_list = ECL_T;
 			}
 			goto NEXT;
 		}
@@ -329,13 +329,13 @@ LOOP:
 	}
 
 	if (suppress) {
-		x = Cnil;
+		x = ECL_NIL;
 		goto OUTPUT;
 	}
 
 	/* If there are some escaped characters, it must be a symbol */
-	if ((flags == ECL_READ_ONLY_TOKEN) || p != Cnil ||
-            escape_list != Cnil || length == 0)
+	if ((flags == ECL_READ_ONLY_TOKEN) || p != ECL_NIL ||
+            escape_list != ECL_NIL || length == 0)
 		goto SYMBOL;
 
 	/* The case in which the buffer is full of dots has to be especial cased */
@@ -355,7 +355,7 @@ LOOP:
 	if ((base <= 10) && ecl_alpha_char_p(TOKEN_STRING_CHAR(token,0)))
 		goto SYMBOL;
 	x = ecl_parse_number(token, 0, TOKEN_STRING_FILLP(token), &i, base);
-	unlikely_if (x == Cnil)
+	unlikely_if (x == ECL_NIL)
 		FEreader_error("Syntax error when reading number.~%Offending string: ~S.",
 			       in, 1, token);
 	if (x != OBJNULL && length == i)
@@ -381,7 +381,7 @@ LOOP:
 				2, cl_copy_seq(token), p);
 		}
 	} else {
-		if (p == Cnil) {
+		if (p == ECL_NIL) {
 			p = ecl_current_package();
 		}
 		/* INV: cl_make_symbol() copies the string */
@@ -409,7 +409,7 @@ si_read_object_or_ignore(cl_object in, cl_object eof)
 	cl_object x;
 	const cl_env_ptr env = ecl_process_env();
 
-	ecl_bds_bind(env, @'si::*sharp-eq-context*', Cnil);
+	ecl_bds_bind(env, @'si::*sharp-eq-context*', ECL_NIL);
 	ecl_bds_bind(env, @'si::*backq-level*', ecl_make_fixnum(0));
         x = ecl_read_object_with_delimiter(in, EOF, ECL_READ_RETURN_IGNORABLE, 
                                            cat_constituent);
@@ -451,7 +451,7 @@ cl_object comma_reader(cl_object in, cl_object c)
 	unlikely_if (backq_level <= 0)
 		FEreader_error("A comma has appeared out of a backquote.", in, 0);
 	/* Read character & complain at EOF */
-	c = cl_peek_char(2,Cnil,in);
+	c = cl_peek_char(2,ECL_NIL,in);
 	if (c == ECL_CODE_CHAR('@@')) {
 		x = @'si::unquote-splice';
 		ecl_read_char(in);
@@ -476,7 +476,7 @@ cl_object backquote_reader(cl_object in, cl_object c)
 	in = ecl_read_object(in);
 	ECL_SETQ(the_env, @'si::*backq-level*', ecl_make_fixnum(backq_level));
 #if 0
-	@(return cl_macroexpand_1(2, cl_list(2, @'si::quasiquote', in), Cnil));
+	@(return cl_macroexpand_1(2, cl_list(2, @'si::quasiquote', in), ECL_NIL));
 #else
 	@(return cl_list(2,@'si::quasiquote',in))
 #endif
@@ -513,7 +513,7 @@ read_constituent(cl_object in)
 		}
 		not_first = 1;
 	} while(1);
-	return (read_suppress)? Cnil : token;
+	return (read_suppress)? ECL_NIL : token;
 }
 
 static cl_object
@@ -570,11 +570,11 @@ dispatch_macro_character(cl_object table, cl_object in, int c)
 		} while (d >= 0);
 		arg = ecl_make_fixnum(i);
 	} else {
-		arg = Cnil;
+		arg = ECL_NIL;
 	}
 	{
 		cl_object dc = ECL_CODE_CHAR(c);
-		cl_object fun = ecl_gethash_safe(dc, table, Cnil);
+		cl_object fun = ecl_gethash_safe(dc, table, ECL_NIL);
 		unlikely_if (Null(fun)) {
 			FEreader_error("No dispatch function defined "
 				       "for character ~S",
@@ -622,13 +622,13 @@ sharp_C_reader(cl_object in, cl_object c, cl_object d)
 	const cl_env_ptr the_env = ecl_process_env();
 	cl_object x, real, imag;
 
-	if (d != Cnil && !read_suppress)
+	if (d != ECL_NIL && !read_suppress)
 		extra_argument('C', in, d);
 	x = ecl_read_object(in);
 	unlikely_if (x == OBJNULL)
 		FEend_of_file(in);
 	if (read_suppress)
-		@(return Cnil);
+		@(return ECL_NIL);
 	unlikely_if (!ECL_CONSP(x) || ecl_length(x) != 2)
 		FEreader_error("Reader macro #C should be followed by a list",
 			       in, 0);
@@ -654,15 +654,15 @@ sharp_backslash_reader(cl_object in, cl_object c, cl_object d)
 {
 	const cl_env_ptr the_env = ecl_process_env();
 	cl_object token;
-	if (d != Cnil && !read_suppress) {
+	if (d != ECL_NIL && !read_suppress) {
 		unlikely_if (!ECL_FIXNUMP(d) || d != ecl_make_fixnum(0)) {
 			FEreader_error("~S is an illegal CHAR-FONT.", in, 1, d);
                 }
         }
 	token = ecl_read_object_with_delimiter(in, EOF, ECL_READ_ONLY_TOKEN,
                                                cat_single_escape);
-	if (token == Cnil) {
-		c = Cnil;
+	if (token == ECL_NIL) {
+		c = ECL_NIL;
 	} else if (TOKEN_STRING_FILLP(token) == 1) {
 		c = ECL_CODE_CHAR(TOKEN_STRING_CHAR(token,0));
 	} else if (TOKEN_STRING_FILLP(token) == 2 && TOKEN_STRING_CHAR_CMP(token,0,'^')) {
@@ -683,13 +683,13 @@ static cl_object
 sharp_single_quote_reader(cl_object in, cl_object c, cl_object d)
 {
 	bool suppress = read_suppress;
-	if(d != Cnil && !suppress)
+	if(d != ECL_NIL && !suppress)
 		extra_argument('\'', in, d);
 	c = ecl_read_object(in);
 	unlikely_if (c == OBJNULL) {
 		FEend_of_file(in);
 	} else if (suppress) {
-		c = Cnil;
+		c = ECL_NIL;
 	} else {
 		c = cl_list(2, @'function', c);
 	}
@@ -702,14 +702,14 @@ sharp_Y_reader(cl_object in, cl_object c, cl_object d)
         cl_index i;
         cl_object x, rv, nth, lex;
 
-	if (d != Cnil && !read_suppress)
+	if (d != ECL_NIL && !read_suppress)
 		extra_argument('C', in, d);
 	x = ecl_read_object(in);
 	unlikely_if (x == OBJNULL) {
 		FEend_of_file(in);
         }
 	if (read_suppress) {
-		@(return Cnil);
+		@(return ECL_NIL);
         }
 	unlikely_if (!ECL_CONSP(x) || ecl_length(x) < 5) {
 		FEreader_error("Reader macro #Y should be followed by a list",
@@ -748,7 +748,7 @@ sharp_Y_reader(cl_object in, cl_object c, cl_object d)
         rv->bytecodes.data = nth;
 
         if (ECL_ATOM(x)) {
-                nth = Cnil;
+                nth = ECL_NIL;
         } else {
                 nth = ECL_CONS_CAR(x);
                 x = ECL_CONS_CDR(x);
@@ -807,7 +807,7 @@ sharp_left_parenthesis_reader(cl_object in, cl_object c, cl_object d)
 	} else if (read_suppress) {
 		/* Second case: *read-suppress* = t, we ignore the data */
 		do_read_delimited_list(')', in, 1);
-		v = Cnil;
+		v = ECL_NIL;
 	} else if (Null(d)) {
 		/* Third case: no dimension provided. Read a list and
 		   coerce it to vector. */
@@ -825,7 +825,7 @@ sharp_left_parenthesis_reader(cl_object in, cl_object c, cl_object d)
                         FEreader_error("Invalid dimension size ~D in #()", in, 1, d);
                 }
 		v = ecl_alloc_simple_vector(dim, ecl_aet_object);
-		for (i = 0, last = Cnil;; i++) {
+		for (i = 0, last = ECL_NIL;; i++) {
 			cl_object aux = ecl_read_object_with_delimiter(in, ')', 0,
                                                                        cat_constituent);
 			if (aux == OBJNULL)
@@ -856,7 +856,7 @@ sharp_asterisk_reader(cl_object in, cl_object c, cl_object d)
 
 	if (read_suppress) {
 		read_constituent(in);
-		@(return Cnil)
+		@(return ECL_NIL)
 	}
 	for (dimcount = 0 ;; dimcount++) {
 	 	int x = ecl_read_char(in);
@@ -911,7 +911,7 @@ sharp_colon_reader(cl_object in, cl_object ch, cl_object d)
 	int c;
 	cl_object output, token;
 
-	if (d != Cnil && !read_suppress)
+	if (d != ECL_NIL && !read_suppress)
 		extra_argument(':', in, d);
 	c = ecl_read_char_noeof(in);
 	a = ecl_readtable_get(rtbl, c, NULL);
@@ -952,7 +952,7 @@ sharp_colon_reader(cl_object in, cl_object ch, cl_object d)
 
 M:
 	if (read_suppress) {
-		output = Cnil;
+		output = ECL_NIL;
 	} else {
 		output = cl_make_symbol(token);
 	}
@@ -963,14 +963,14 @@ M:
 static cl_object
 sharp_dot_reader(cl_object in, cl_object c, cl_object d)
 {
-	if (d != Cnil && !read_suppress)
+	if (d != ECL_NIL && !read_suppress)
 		extra_argument('.', in, d);
 	c = ecl_read_object(in);
 	unlikely_if (c == OBJNULL)
 		FEend_of_file(in);
 	if (read_suppress)
-		@(return Cnil);
-	unlikely_if (ecl_symbol_value(@'*read-eval*') == Cnil)
+		@(return ECL_NIL);
+	unlikely_if (ecl_symbol_value(@'*read-eval*') == ECL_NIL)
 		FEreader_error("Cannot evaluate the form #.~A", in, 1, c);
         /* FIXME! We should do something here to ensure that the #.
          * only uses the #n# that have been defined */
@@ -985,17 +985,17 @@ read_number(cl_object in, int radix, cl_object macro_char)
 	cl_index i;
 	cl_object x;
 	cl_object token = read_constituent(in);
-	if (token == Cnil) {
-		x = Cnil;
+	if (token == ECL_NIL) {
+		x = ECL_NIL;
 	} else {
 		x = ecl_parse_number(token, 0, TOKEN_STRING_FILLP(token), &i, radix);
-		unlikely_if (x == OBJNULL || x == Cnil ||
+		unlikely_if (x == OBJNULL || x == ECL_NIL ||
                              i != TOKEN_STRING_FILLP(token))
                 {
 			FEreader_error("Cannot parse the #~A readmacro.", in, 1,
 				       macro_char);
 		}
-		unlikely_if (cl_rationalp(x) == Cnil) {
+		unlikely_if (cl_rationalp(x) == ECL_NIL) {
 			FEreader_error("The float ~S appeared after the #~A readmacro.",
 				       in, 2, x, macro_char);
 		}
@@ -1007,7 +1007,7 @@ read_number(cl_object in, int radix, cl_object macro_char)
 static cl_object
 sharp_B_reader(cl_object in, cl_object c, cl_object d)
 {
-	if(d != Cnil && !read_suppress)
+	if(d != ECL_NIL && !read_suppress)
 		extra_argument('B', in, d);
 	@(return (read_number(in, 2, ECL_CODE_CHAR('B'))))
 }
@@ -1015,7 +1015,7 @@ sharp_B_reader(cl_object in, cl_object c, cl_object d)
 static cl_object
 sharp_O_reader(cl_object in, cl_object c, cl_object d)
 {
-	if(d != Cnil && !read_suppress)
+	if(d != ECL_NIL && !read_suppress)
 		extra_argument('O', in, d);
 	@(return (read_number(in, 8, ECL_CODE_CHAR('O'))))
 }
@@ -1023,7 +1023,7 @@ sharp_O_reader(cl_object in, cl_object c, cl_object d)
 static cl_object
 sharp_X_reader(cl_object in, cl_object c, cl_object d)
 {
-	if(d != Cnil && !read_suppress)
+	if(d != ECL_NIL && !read_suppress)
 		extra_argument('X', in, d);
 	@(return (read_number(in, 16, ECL_CODE_CHAR('X'))))
 }
@@ -1059,10 +1059,10 @@ sharp_eq_reader(cl_object in, cl_object c, cl_object d)
 	unlikely_if (Null(d)) {
 		FEreader_error("The #= readmacro requires an argument.", in, 0);
         }
-	unlikely_if (ecl_assq(d, sharp_eq_context) != Cnil) {
+	unlikely_if (ecl_assq(d, sharp_eq_context) != ECL_NIL) {
 		FEreader_error("Duplicate definitions for #~D=.", in, 1, d);
         }
-        pair = CONS(d, Cnil);
+        pair = CONS(d, ECL_NIL);
 	ECL_SETQ(the_env, @'si::*sharp-eq-context*', CONS(pair, sharp_eq_context));
 	value = ecl_read_object(in);
 	unlikely_if (value == pair) {
@@ -1079,12 +1079,12 @@ sharp_sharp_reader(cl_object in, cl_object c, cl_object d)
 	cl_object pair;
 
 	if (read_suppress)
-                @(return Cnil);
+                @(return ECL_NIL);
 	unlikely_if (Null(d)) {
 		FEreader_error("The ## readmacro requires an argument.", in, 0);
         }
 	pair = ecl_assq(d, ECL_SYM_VAL(the_env, @'si::*sharp-eq-context*'));
-	unlikely_if (pair == Cnil) {
+	unlikely_if (pair == ECL_NIL) {
                 FEreader_error("#~D# is undefined.", in, 1, d);
         }
         @(return pair)
@@ -1284,7 +1284,7 @@ sharp_vertical_bar_reader(cl_object in, cl_object ch, cl_object d)
 	int c;
 	int level = 0;
 
-	if (d != Cnil && !read_suppress)
+	if (d != ECL_NIL && !read_suppress)
 		extra_argument('|', in, d);
 	for (;;) {
 		c = ecl_read_char_noeof(in);
@@ -1321,13 +1321,13 @@ static cl_object
 sharp_P_reader(cl_object in, cl_object c, cl_object d)
 {
 	bool suppress = read_suppress;
-	if (d != Cnil && !suppress)
+	if (d != ECL_NIL && !suppress)
 		extra_argument('P', in, d);
 	d = ecl_read_object(in);
 	if (suppress) {
-		d = Cnil;
+		d = ECL_NIL;
 	} else {
-		d = cl_parse_namestring(3, d, Cnil, Cnil);
+		d = cl_parse_namestring(3, d, ECL_NIL, ECL_NIL);
 	}
 	@(return d)
 }
@@ -1340,7 +1340,7 @@ static cl_object
 sharp_dollar_reader(cl_object in, cl_object c, cl_object d)
 {
 	cl_object rs;
-	if (d != Cnil && !read_suppress)
+	if (d != ECL_NIL && !read_suppress)
 		extra_argument('$', in, d);
 	c = ecl_read_object(in);
 	rs = ecl_alloc_object(t_random);
@@ -1393,7 +1393,7 @@ ecl_copy_readtable(cl_object from, cl_object to)
 	if (!Null(from->readtable.hash)) {
 		output->readtable.hash = si_copy_hash_table(from->readtable.hash);
 	} else {
-		output->readtable.hash = Cnil;
+		output->readtable.hash = ECL_NIL;
 	}
 #endif
 	if (!Null(to)) {
@@ -1468,12 +1468,12 @@ stream_or_default_input(cl_object stream)
 	const cl_env_ptr the_env = ecl_process_env();
 	if (Null(stream))
 		return ECL_SYM_VAL(the_env, @'*standard-input*');
-	if (stream == Ct)
+	if (stream == ECL_T)
 		return ECL_SYM_VAL(the_env, @'*terminal-io*');
 	return stream;
 }
 
-@(defun read (&optional (strm Cnil) (eof_errorp Ct) eof_value recursivep)
+@(defun read (&optional (strm ECL_NIL) (eof_errorp ECL_T) eof_value recursivep)
 	cl_object x;
 @
 	strm = stream_or_default_input(strm);
@@ -1499,8 +1499,8 @@ stream_or_default_input(cl_object stream)
 @)
 
 @(defun read_preserving_whitespace
-	(&optional (strm Cnil)
-		   (eof_errorp Ct)
+	(&optional (strm ECL_NIL)
+		   (eof_errorp ECL_T)
 		   eof_value
 		   recursivep)
 	cl_object x;
@@ -1524,7 +1524,7 @@ do_read_delimited_list(int d, cl_object in, bool proper_list)
 {
 	int after_dot = 0;
 	bool suppress = read_suppress;
-	cl_object x, y = Cnil;
+	cl_object x, y = ECL_NIL;
 	cl_object *p = &y;
 	do {
 		x = ecl_read_object_with_delimiter(in, d, 0, cat_constituent);
@@ -1561,7 +1561,7 @@ do_read_delimited_list(int d, cl_object in, bool proper_list)
 	} while (1);
 }
 
-@(defun read_delimited_list (d &optional (strm Cnil) recursivep)
+@(defun read_delimited_list (d &optional (strm ECL_NIL) recursivep)
 	cl_object l;
 	int delimiter;
 @
@@ -1570,7 +1570,7 @@ do_read_delimited_list(int d, cl_object in, bool proper_list)
 	if (!Null(recursivep)) {
 		l = do_read_delimited_list(delimiter, strm, 1);
 	} else {
-		ecl_bds_bind(the_env, @'si::*sharp-eq-context*', Cnil);
+		ecl_bds_bind(the_env, @'si::*sharp-eq-context*', ECL_NIL);
 		ecl_bds_bind(the_env, @'si::*backq-level*', ecl_make_fixnum(0));
 		l = do_read_delimited_list(delimiter, strm, 1);
 		if (!Null(ECL_SYM_VAL(the_env, @'si::*sharp-eq-context*')))
@@ -1580,7 +1580,7 @@ do_read_delimited_list(int d, cl_object in, bool proper_list)
 	@(return l)
 @)
 
-@(defun read_line (&optional (strm Cnil) (eof_errorp Ct) eof_value recursivep)
+@(defun read_line (&optional (strm ECL_NIL) (eof_errorp ECL_T) eof_value recursivep)
 	int c;
 	cl_object token, value0, value1;
 @
@@ -1593,7 +1593,7 @@ do_read_delimited_list(int d, cl_object in, bool proper_list)
 			if (!Null(eof_errorp))
 				FEend_of_file(strm);
 			value0 = eof_value;
-			value1 = Ct;
+			value1 = ECL_T;
 		}
 		goto OUTPUT;
 	}
@@ -1609,7 +1609,7 @@ do_read_delimited_list(int d, cl_object in, bool proper_list)
 		if (!Null(eof_errorp))
 			FEend_of_file(strm);
 		value0 = eof_value;
-		value1 = Ct;
+		value1 = ECL_T;
 	} else {
 #ifdef ECL_NEWLINE_IS_CRLF	/* From \r\n, ignore \r */
 		if (TOKEN_STRING_FILLP(token) > 0 &&
@@ -1620,14 +1620,14 @@ do_read_delimited_list(int d, cl_object in, bool proper_list)
 		ecl_read_char(strm);
 #endif
 		value0 = cl_copy_seq(token);
-		value1 = (c == EOF? Ct : Cnil);
+		value1 = (c == EOF? ECL_T : ECL_NIL);
 	}
 	si_put_buffer_string(token);
  OUTPUT:
 	@(return value0 value1)
 @)
 
-@(defun read-char (&optional (strm Cnil) (eof_errorp Ct) eof_value recursivep)
+@(defun read-char (&optional (strm ECL_NIL) (eof_errorp ECL_T) eof_value recursivep)
 	int c;
 	cl_object output;
 @
@@ -1642,22 +1642,22 @@ do_read_delimited_list(int d, cl_object in, bool proper_list)
 	@(return output)
 @)
 
-@(defun unread_char (c &optional (strm Cnil))
+@(defun unread_char (c &optional (strm ECL_NIL))
 @
 	/* INV: unread_char() checks the type `c' */
 	strm = stream_or_default_input(strm);
 	ecl_unread_char(ecl_char_code(c), strm);
-	@(return Cnil)
+	@(return ECL_NIL)
 @)
 
-@(defun peek-char (&optional peek_type (strm Cnil) (eof_errorp Ct) eof_value recursivep)
+@(defun peek-char (&optional peek_type (strm ECL_NIL) (eof_errorp ECL_T) eof_value recursivep)
 	int c;
 	cl_object rtbl = ecl_current_readtable();
 @
 	strm = stream_or_default_input(strm);
 	c = ecl_peek_char(strm);
 	if (c != EOF && !Null(peek_type)) {
-		if (peek_type == Ct) {
+		if (peek_type == ECL_T) {
 			do {
 				/* If the character is not a whitespace, output */
 				if (ecl_readtable_get(rtbl, c, NULL) != cat_whitespace)
@@ -1688,13 +1688,13 @@ do_read_delimited_list(int d, cl_object in, bool proper_list)
 	@(return eof_value)
 @)
 
-@(defun listen (&optional (strm Cnil))
+@(defun listen (&optional (strm ECL_NIL))
 @
 	strm = stream_or_default_input(strm);
-	@(return ((ecl_listen_stream(strm) == ECL_LISTEN_AVAILABLE)? Ct : Cnil))
+	@(return ((ecl_listen_stream(strm) == ECL_LISTEN_AVAILABLE)? ECL_T : ECL_NIL))
 @)
 
-@(defun read_char_no_hang (&optional (strm Cnil) (eof_errorp Ct) eof_value recursivep)
+@(defun read_char_no_hang (&optional (strm ECL_NIL) (eof_errorp ECL_T) eof_value recursivep)
 	int f;
 @
 	strm = stream_or_default_input(strm);
@@ -1724,18 +1724,18 @@ do_read_delimited_list(int d, cl_object in, bool proper_list)
 		FEend_of_file(strm);
 @)
 
-@(defun clear_input (&optional (strm Cnil))
+@(defun clear_input (&optional (strm ECL_NIL))
 @
 	strm = stream_or_default_input(strm);
 	ecl_clear_input(strm);
-	@(return Cnil)
+	@(return ECL_NIL)
 @)
 
-@(defun read_byte (binary_input_stream &optional (eof_errorp Ct) eof_value)
+@(defun read_byte (binary_input_stream &optional (eof_errorp ECL_T) eof_value)
 	cl_object c;
 @
 	c = ecl_read_byte(binary_input_stream);
-	if (c == Cnil) {
+	if (c == ECL_NIL) {
 		if (Null(eof_errorp))
 			@(return eof_value)
 		else
@@ -1813,7 +1813,7 @@ si_readtable_case_set(cl_object r, cl_object mode)
 cl_object
 cl_readtablep(cl_object readtable)
 {
-	@(return (ECL_READTABLEP(readtable) ? Ct : Cnil))
+	@(return (ECL_READTABLEP(readtable) ? ECL_T : ECL_NIL))
 }
 
 int
@@ -1825,9 +1825,9 @@ ecl_readtable_get(cl_object readtable, int c, cl_object *macro_or_table)
 	if (c >= RTABSIZE) {
 		cl_object hash = readtable->readtable.hash;
 		cat = cat_constituent;
-		m = Cnil;
+		m = ECL_NIL;
 		if (!Null(hash)) {
-			cl_object pair = ecl_gethash_safe(ECL_CODE_CHAR(c), hash, Cnil);
+			cl_object pair = ecl_gethash_safe(ECL_CODE_CHAR(c), hash, ECL_NIL);
 			if (!Null(pair)) {
 				cat = ecl_fixnum(ECL_CONS_CAR(pair));
 				m = ECL_CONS_CDR(pair);
@@ -1897,7 +1897,7 @@ ecl_invalid_character_p(int c)
 		dispatch = si_copy_hash_table(dispatch);
 	}
 	ecl_readtable_set(tordtbl, tc, cat, dispatch);
-	@(return Ct)
+	@(return ECL_T)
 @)
 
 @(defun set_macro_character (c function &optional non_terminating_p
@@ -1908,7 +1908,7 @@ ecl_invalid_character_p(int c)
 			  cat_terminating :
 			  cat_non_terminating,
 			  function);
-	@(return Ct)
+	@(return ECL_T)
 @)
 
 @(defun get_macro_character (c &optional (readtable ecl_current_readtable()))
@@ -1920,7 +1920,7 @@ ecl_invalid_character_p(int c)
 	cat = ecl_readtable_get(readtable, ecl_char_code(c), &dispatch);
         if (ECL_HASH_TABLE_P(dispatch))
 		dispatch = cl_core.dispatch_reader;
-	@(return dispatch ((cat == cat_non_terminating)? Ct : Cnil))
+	@(return dispatch ((cat == cat_non_terminating)? ECL_T : ECL_NIL))
 @)
 
 @(defun make_dispatch_macro_character (chr
@@ -1936,7 +1936,7 @@ ecl_invalid_character_p(int c)
                                     cl_core.rehash_size,
                                     cl_core.rehash_threshold);
 	ecl_readtable_set(readtable, c, cat, table);
-	@(return Ct)
+	@(return ECL_T)
 @)
 
 @(defun set_dispatch_macro_character (dspchr subchr fnc
@@ -1968,7 +1968,7 @@ ecl_invalid_character_p(int c)
 	} else {
 		_ecl_sethash(ECL_CODE_CHAR(subcode), table, fnc);
 	}
-	@(return Ct)
+	@(return ECL_T)
 @)
 
 @(defun get_dispatch_macro_character (dspchr subchr
@@ -1990,8 +1990,8 @@ ecl_invalid_character_p(int c)
 	/* Since macro characters may take a number as argument, it is
 	   not allowed to turn digits into dispatch macro characters */
 	if (ecl_digitp(c, 10) >= 0)
-		@(return Cnil)
-	@(return ecl_gethash_safe(subchr, table, Cnil))
+		@(return ECL_NIL)
+	@(return ecl_gethash_safe(subchr, table, ECL_NIL))
 @)
 
 cl_object
@@ -2004,7 +2004,7 @@ si_standard_readtable()
 	cl_object output;
 @
 	assert_type_readtable(@[ext::readtable-lock], 1, r);
-        output = (r->readtable.locked)? Ct : Cnil;
+        output = (r->readtable.locked)? ECL_T : ECL_NIL;
 	if (narg > 1) {
                 r->readtable.locked = !Null(yesno);
         }
@@ -2019,8 +2019,8 @@ extra_argument(int c, cl_object stream, cl_object d)
 }
 
 
-#define	make_cf2(f)	ecl_make_cfun((f), Cnil, NULL, 2)
-#define	make_cf3(f)	ecl_make_cfun((f), Cnil, NULL, 3)
+#define	make_cf2(f)	ecl_make_cfun((f), ECL_NIL, NULL, 2)
+#define	make_cf3(f)	ecl_make_cfun((f), ECL_NIL, NULL, 3)
 
 void
 init_read(void)
@@ -2037,19 +2037,19 @@ init_read(void)
 		ecl_alloc(RTABSIZE * sizeof(struct ecl_readtable_entry));
 	for (i = 0;  i < RTABSIZE;  i++) {
 		rtab[i].syntax_type = cat_constituent;
-		rtab[i].dispatch = Cnil;
+		rtab[i].dispatch = ECL_NIL;
 	}
 #ifdef ECL_UNICODE
-	r->readtable.hash = Cnil;
+	r->readtable.hash = ECL_NIL;
 #endif
 
 	cl_core.dispatch_reader = make_cf2(dispatch_reader_fun);
 
-	ecl_readtable_set(r, '\t', cat_whitespace, Cnil);
-	ecl_readtable_set(r, '\n', cat_whitespace, Cnil);
-	ecl_readtable_set(r, '\f', cat_whitespace, Cnil);
-	ecl_readtable_set(r, '\r', cat_whitespace, Cnil);
-	ecl_readtable_set(r, ' ', cat_whitespace, Cnil);
+	ecl_readtable_set(r, '\t', cat_whitespace, ECL_NIL);
+	ecl_readtable_set(r, '\n', cat_whitespace, ECL_NIL);
+	ecl_readtable_set(r, '\f', cat_whitespace, ECL_NIL);
+	ecl_readtable_set(r, '\r', cat_whitespace, ECL_NIL);
+	ecl_readtable_set(r, ' ', cat_whitespace, ECL_NIL);
 
 	ecl_readtable_set(r, '"', cat_terminating,
 			  make_cf2(double_quote_reader));
@@ -2064,15 +2064,15 @@ init_read(void)
 			  make_cf2(comma_reader));
 	ecl_readtable_set(r, ';', cat_terminating,
 			  make_cf2(semicolon_reader));
-	ecl_readtable_set(r, '\\', cat_single_escape, Cnil);
+	ecl_readtable_set(r, '\\', cat_single_escape, ECL_NIL);
 	ecl_readtable_set(r, '`', cat_terminating,
 			  make_cf2(backquote_reader));
-	ecl_readtable_set(r, '|', cat_multiple_escape, Cnil);
+	ecl_readtable_set(r, '|', cat_multiple_escape, ECL_NIL);
 
 	cl_core.default_dispatch_macro = make_cf3(default_dispatch_macro_fun);
 
 	cl_make_dispatch_macro_character(3, ECL_CODE_CHAR('#'),
-					 Ct /* non terminating */, r);
+					 ECL_T /* non terminating */, r);
 
 	cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('C'),
 					make_cf3(sharp_C_reader), r);
@@ -2122,7 +2122,7 @@ init_read(void)
 					make_cf3(sharp_Y_reader), r);
 	/*  This is specific to this implementation: ignore BOM  */
 #ifdef ECL_UNICODE
-	ecl_readtable_set(r, 0xfeff, cat_whitespace, Cnil);
+	ecl_readtable_set(r, 0xfeff, cat_whitespace, ECL_NIL);
 #endif
 
         /* Lock the standard read table so that we do not have to make copies
@@ -2132,9 +2132,9 @@ init_read(void)
 	init_backq();
 
 	ECL_SET(@'*readtable*',
-		r=ecl_copy_readtable(cl_core.standard_readtable, Cnil));
+		r=ecl_copy_readtable(cl_core.standard_readtable, ECL_NIL));
 	cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('!'),
-					Cnil, r);
+					ECL_NIL, r);
 	ECL_SET(@'*read-default-float-format*', @'single-float');
 
         {
@@ -2165,30 +2165,30 @@ init_read(void)
                               @'si::*sharp-eq-context*',
 			      @'si::*circle-counter*');
                 val = cl_list(24,
-                              /**pprint-dispatch-table**/ Cnil,
-                              /**print-array**/ Ct,
+                              /**pprint-dispatch-table**/ ECL_NIL,
+                              /**print-array**/ ECL_T,
                               /**print-base**/ ecl_make_fixnum(10),
                               /**print-case**/ @':downcase',
-                              /**print-circle**/ Ct,
-                              /**print-escape**/ Ct,
-                              /**print-gensym**/ Ct,
-                              /**print-length**/ Cnil,
-                              /**print-level**/ Cnil,
-                              /**print-lines**/ Cnil,
-                              /**print-miser-width**/ Cnil,
-                              /**print-pretty**/ Cnil,
-                              /**print-radix**/ Cnil,
-                              /**print-readably**/ Ct,
-                              /**print-right-margin**/ Cnil,
+                              /**print-circle**/ ECL_T,
+                              /**print-escape**/ ECL_T,
+                              /**print-gensym**/ ECL_T,
+                              /**print-length**/ ECL_NIL,
+                              /**print-level**/ ECL_NIL,
+                              /**print-lines**/ ECL_NIL,
+                              /**print-miser-width**/ ECL_NIL,
+                              /**print-pretty**/ ECL_NIL,
+                              /**print-radix**/ ECL_NIL,
+                              /**print-readably**/ ECL_T,
+                              /**print-right-margin**/ ECL_NIL,
                               /**read-base**/ ecl_make_fixnum(10),
                               /**read-default-float-format**/ @'single-float',
-                              /**read-eval**/ Ct,
-                              /**read-suppress**/ Cnil,
+                              /**read-eval**/ ECL_T,
+                              /**read-suppress**/ ECL_NIL,
                               /**readtable**/ cl_core.standard_readtable,
                               /*si::*print-package**/ cl_core.lisp_package,
-                              /*si::*print-structure**/ Ct,
-                              /*si::*sharp-eq-context**/ Cnil,
-			      /*si::*cicle-counter**/ Cnil);
+                              /*si::*print-structure**/ ECL_T,
+                              /*si::*sharp-eq-context**/ ECL_NIL,
+			      /*si::*cicle-counter**/ ECL_NIL);
                 ECL_SET(@'si::+ecl-syntax-progv-list+', CONS(var,val));
                 var = cl_list(23,
                               @'*print-pprint-dispatch*', /* See end of pprint.lsp */
@@ -2215,29 +2215,29 @@ init_read(void)
                               @'si::*sharp-eq-context*',
 			      @'si::*circle-counter*');
                 val = cl_list(23,
-                              /**pprint-dispatch-table**/ Cnil,
-                              /**print-array**/ Ct,
+                              /**pprint-dispatch-table**/ ECL_NIL,
+                              /**print-array**/ ECL_T,
                               /**print-base**/ ecl_make_fixnum(10),
                               /**print-case**/ @':upcase',
-                              /**print-circle**/ Cnil,
-                              /**print-escape**/ Ct,
-                              /**print-gensym**/ Ct,
-                              /**print-length**/ Cnil,
-                              /**print-level**/ Cnil,
-                              /**print-lines**/ Cnil,
-                              /**print-miser-width**/ Cnil,
-                              /**print-pretty**/ Cnil,
-                              /**print-radix**/ Cnil,
-                              /**print-readably**/ Ct,
-                              /**print-right-margin**/ Cnil,
+                              /**print-circle**/ ECL_NIL,
+                              /**print-escape**/ ECL_T,
+                              /**print-gensym**/ ECL_T,
+                              /**print-length**/ ECL_NIL,
+                              /**print-level**/ ECL_NIL,
+                              /**print-lines**/ ECL_NIL,
+                              /**print-miser-width**/ ECL_NIL,
+                              /**print-pretty**/ ECL_NIL,
+                              /**print-radix**/ ECL_NIL,
+                              /**print-readably**/ ECL_T,
+                              /**print-right-margin**/ ECL_NIL,
                               /**read-base**/ ecl_make_fixnum(10),
                               /**read-default-float-format**/ @'single-float',
-                              /**read-eval**/ Ct,
-                              /**read-suppress**/ Cnil,
+                              /**read-eval**/ ECL_T,
+                              /**read-suppress**/ ECL_NIL,
                               /**readtable**/ cl_core.standard_readtable,
                               /**package**/ cl_core.user_package,
-                              /*si::*sharp-eq-context**/ Cnil,
-			      /*si::*cicle-counter**/ Cnil);
+                              /*si::*sharp-eq-context**/ ECL_NIL,
+			      /*si::*cicle-counter**/ ECL_NIL);
                 ECL_SET(@'si::+io-syntax-progv-list+', CONS(var,val));
         }
 }
@@ -2273,7 +2273,7 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
                 cl_object progv_list;
 
 		ecl_bds_bind(env, @'si::*cblock*', block);
-                env->packages_to_be_created_p = Ct;
+                env->packages_to_be_created_p = ECL_T;
 
 		/* Communicate the library which Cblock we are using, and get
 		 * back the amount of data to be processed.
@@ -2358,7 +2358,7 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
                 in = OBJNULL;
 #endif
 	NO_DATA_LABEL:
-                env->packages_to_be_created_p = Cnil;
+                env->packages_to_be_created_p = ECL_NIL;
 
 		for (i = 0; i < block->cblock.cfuns_size; i++) {
 			const struct ecl_cfun *prototype = block->cblock.cfuns+i;
@@ -2384,7 +2384,7 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
 		x = cl_set_difference(2, env->packages_to_be_created, old_eptbc);
                 old_eptbc = env->packages_to_be_created;
                 unlikely_if (!Null(x)) {
-                        CEerror(Ct,
+                        CEerror(ECL_T,
                                 Null(ECL_CONS_CDR(x))?
                                 "Package ~A referenced in "
 				"compiled file~&  ~A~&but has not been created":
@@ -2402,7 +2402,7 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
 		if (in != OBJNULL)
 			cl_close(1,in);
 		env->packages_to_be_created = old_eptbc;
-                env->packages_to_be_created_p = Cnil;
+                env->packages_to_be_created_p = ECL_NIL;
 	} ECL_UNWIND_PROTECT_END;
 
 	return block;

@@ -34,7 +34,7 @@
 	cl_object res, *val = &res;
 @ {
 	PREPARE_MAP(the_env, lists, cdrs_frame, cars_frame, narg);
-	res = Cnil;
+	res = ECL_NIL;
 	while (TRUE) {
 		cl_index i;
 		for (i = 0;  i < narg;  i++) {
@@ -58,7 +58,7 @@
 	cl_object res, *val = &res;
 @ {
 	PREPARE_MAP(the_env, lists, cdrs_frame, cars_frame, narg);
-	res = Cnil;
+	res = ECL_NIL;
 	while (TRUE) {
 		cl_index i;
 		for (i = 0;  i < narg;  i++) {
@@ -128,7 +128,7 @@
 	cl_object res, *val = &res;
 @ {
 	PREPARE_MAP(the_env, lists, cdrs_frame, cars_frame, narg);
-	res = Cnil;
+	res = ECL_NIL;
 	while (TRUE) {
 		cl_index i;
 		for (i = 0;  i < narg;  i++) {
@@ -153,7 +153,7 @@
 	cl_object res, *val = &res;
 @ {
 	PREPARE_MAP(the_env, lists, cdrs_frame, cars_frame, narg);
-	res = Cnil;
+	res = ECL_NIL;
 	while (TRUE) {
 		cl_index i;
 		for (i = 0;  i < narg;  i++) {

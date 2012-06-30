@@ -25,9 +25,9 @@
 
 #define get_value(v, x)		unify(x, v)
 #define get_constant(c, x)	(c == x || unify(x, c))
-#define get_nil(x)		(Cnil == x || unify(x, Cnil))
+#define get_nil(x)		(ECL_NIL == x || unify(x, ECL_NIL))
 
 #define unify_slot		(*slotf)(*slot)
 #define unify_value(loc)	(*slotf)(loc)
 #define unify_constant(c)	(*slotf)(c)
-#define unify_nil		(*slotf)(Cnil)
+#define unify_nil		(*slotf)(ECL_NIL)

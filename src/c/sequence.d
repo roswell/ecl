@@ -152,7 +152,7 @@ ecl_subseq(cl_object sequence, cl_index start, cl_index limit)
 		if (start)
 			sequence = ecl_nthcdr(start, sequence);
 		{
-			cl_object x = Cnil;
+			cl_object x = ECL_NIL;
 			cl_object *z = &x;
 			while (!Null(sequence) && (limit--)) {
 				if (ECL_ATOM(sequence))
@@ -246,7 +246,7 @@ cl_reverse(cl_object seq)
 
 	switch (type_of(seq)) {
 	case t_list: {
-		for (x = seq, output = Cnil; !Null(x); x = ECL_CONS_CDR(x)) {
+		for (x = seq, output = ECL_NIL; !Null(x); x = ECL_CONS_CDR(x)) {
                         if (!LISTP(x)) goto E;
 			output = CONS(ECL_CONS_CAR(x), output);
                 }
@@ -275,7 +275,7 @@ cl_nreverse(cl_object seq)
 	switch (type_of(seq)) {
 	case t_list: {
 		cl_object x, y, z;
-                for (x = seq, y = Cnil; !Null(x); ) {
+                for (x = seq, y = ECL_NIL; !Null(x); ) {
                         if (!LISTP(x)) FEtype_error_list(x);
                         z = x;
                         x = ECL_CONS_CDR(x);

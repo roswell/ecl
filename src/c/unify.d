@@ -36,13 +36,13 @@ object **trail_top = trail;
 @(defun trail_restore ()
 @
   trail_restore;
-  @(return Cnil)
+  @(return ECL_NIL)
 @)
 
 @(defun trail_unmark ()
 @
   trail_unmark;
-  @(return Cnil)
+  @(return ECL_NIL)
 @)
 
 /* -------------------- Mode Operators -------------------- */
@@ -72,17 +72,17 @@ bool set_slot(object x)		/* write mode */
 
 @(defun get_value (v x)
 @
-	@(return (get_value(v, x)?Ct:Cnil))
+	@(return (get_value(v, x)?ECL_T:ECL_NIL))
 @)
 
 @(defun get_constant (c x)
 @
-	@(return (get_constant(c, x)?Ct:Cnil))
+	@(return (get_constant(c, x)?ECL_T:ECL_NIL))
 @)
 
 @(defun get_nil (arg)
 @
-	@(return (get_nil(arg)?Ct:Cnil))
+	@(return (get_nil(arg)?ECL_T:ECL_NIL))
 @)
 
 bool
@@ -115,7 +115,7 @@ RETRY:	switch (type_of(x)) {
 
 @(defun get_cons (arg)
 @
-	@(return (get_cons(arg)?Ct:Cnil))
+	@(return (get_cons(arg)?ECL_T:ECL_NIL))
 @)
 
 bool
@@ -148,7 +148,7 @@ RETRY:	switch (type_of(x)) {
 
 @(defun get_instance (x class arity)
 @
-	@(return (get_instance(x, class, ecl_fixnum(arity))?Ct:Cnil))
+	@(return (get_instance(x, class, ecl_fixnum(arity))?ECL_T:ECL_NIL))
 @)
 
 
@@ -227,21 +227,21 @@ unify(object x, object y)
   object x;
 @
 	x = (object)unify_value(loc);
-	@(return ((x == Cnil || x)?Ct:Cnil))
+	@(return ((x == ECL_NIL || x)?ECL_T:ECL_NIL))
 @)
 
 @(defun unify_constant (c)
   object x;
 @
 	x = (object)unify_constant(c);
-	@(return ((x == Cnil || x)?Ct:Cnil))
+	@(return ((x == ECL_NIL || x)?ECL_T:ECL_NIL))
 @)
 
 @(defun unify_nil ()
   object x;
 @
 	x = (object)unify_nil;
-	@(return ((x == Cnil || x)?Ct:Cnil))
+	@(return ((x == ECL_NIL || x)?ECL_T:ECL_NIL))
 @)
 
 /* -------------------- Test Functions -------------------- */
@@ -253,12 +253,12 @@ unify(object x, object y)
 
 @(defun locativep (obje)
 @
-	@(return (LOCATIVEP(obje)?Ct:Cnil))
+	@(return (LOCATIVEP(obje)?ECL_T:ECL_NIL))
 @)
 
 @(defun unboundp (loc)
 @
-	@(return (UNBOUNDP(loc)?Ct:Cnil))
+	@(return (UNBOUNDP(loc)?ECL_T:ECL_NIL))
 @)
 
 @(defun dereference (x)
@@ -282,13 +282,13 @@ object Ssetq, Sunify_slot;
 @
 	@(return list(3, Sprogn,
 			 list(3, Ssetq, CADR(var),
-				 CONS(Sunify_slot, Cnil)),
-			 Ct))
+				 CONS(Sunify_slot, ECL_NIL)),
+			 ECL_T))
 @)
 
 #define make_si_macro(name, cfun)	\
 	{object x = make_si_ordinary(name); \
-	   SYM_FUN(x) = make_cfun(cfun, Cnil, NULL); \
+	   SYM_FUN(x) = make_cfun(cfun, ECL_NIL, NULL); \
 	   x->symbol.mflag = TRUE; \
 	 }
 

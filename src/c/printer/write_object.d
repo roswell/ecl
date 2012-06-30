@@ -26,10 +26,10 @@ _ecl_will_print_as_hash(cl_object x)
 	cl_object circle_stack = ecl_symbol_value(@'si::*circle-stack*');
 	cl_object code = ecl_gethash_safe(x, circle_stack, OBJNULL);
 	if (ECL_FIXNUMP(circle_counter)) {
-		return !(code == OBJNULL || code == Cnil);
+		return !(code == OBJNULL || code == ECL_NIL);
 	} else if (code == OBJNULL) {
 		/* Was not found before */
-		_ecl_sethash(x, circle_stack, Cnil);
+		_ecl_sethash(x, circle_stack, ECL_NIL);
 		return 0;
 	} else {
 		return 1;
@@ -55,22 +55,22 @@ search_print_circle(cl_object x)
 		code = ecl_gethash_safe(x, circle_stack, OBJNULL);
 		if (code == OBJNULL) {
 			/* Was not found before */
-			_ecl_sethash(x, circle_stack, Cnil);
+			_ecl_sethash(x, circle_stack, ECL_NIL);
 			return 0;
-		} else if (code == Cnil) {
+		} else if (code == ECL_NIL) {
 			/* This object is referenced twice */
-			_ecl_sethash(x, circle_stack, Ct);
+			_ecl_sethash(x, circle_stack, ECL_T);
 			return 1;
 		} else {
 			return 2;
 		}
 	} else {
 		code = ecl_gethash_safe(x, circle_stack, OBJNULL);
-		if (code == OBJNULL || code == Cnil) {
+		if (code == OBJNULL || code == ECL_NIL) {
 			/* Is not referenced or was not found before */
-			/* _ecl_sethash(x, circle_stack, Cnil); */
+			/* _ecl_sethash(x, circle_stack, ECL_NIL); */
 			return 0;
-		} else if (code == Ct) {
+		} else if (code == ECL_T) {
 			/* This object is referenced twice, but has no code yet */
 			cl_fixnum new_code = ecl_fixnum(circle_counter) + 1;
 			circle_counter = ecl_make_fixnum(new_code);
@@ -89,9 +89,9 @@ si_write_object(cl_object x, cl_object stream)
 {
 	bool circle;
 #ifdef ECL_CMU_FORMAT
-	if (ecl_symbol_value(@'*print-pretty*') != Cnil) {
+	if (ecl_symbol_value(@'*print-pretty*') != ECL_NIL) {
 		cl_object f = _ecl_funcall2(@'pprint-dispatch', x);
-		if (VALUES(1) != Cnil) {
+		if (VALUES(1) != ECL_NIL) {
 			_ecl_funcall3(f, stream, x);
                         goto OUTPUT;
 		}
@@ -104,14 +104,14 @@ si_write_object(cl_object x, cl_object stream)
 		cl_object circle_counter;
 		cl_fixnum code;
 		circle_counter = ecl_symbol_value(@'si::*circle-counter*');
-		if (circle_counter == Cnil) {
+		if (circle_counter == ECL_NIL) {
 			cl_env_ptr env = ecl_process_env();
 			cl_object hash =
 				cl__make_hash_table(@'eq',
 						    ecl_make_fixnum(1024),
                                                     cl_core.rehash_size,
                                                     cl_core.rehash_threshold);
-			ecl_bds_bind(env, @'si::*circle-counter*', Ct);
+			ecl_bds_bind(env, @'si::*circle-counter*', ECL_T);
 			ecl_bds_bind(env, @'si::*circle-stack*', hash);
 			si_write_object(x, cl_core.null_stream);
 			ECL_SETQ(env, @'si::*circle-counter*', ecl_make_fixnum(0));

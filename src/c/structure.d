@@ -50,7 +50,7 @@ structure_subtypep(cl_object x, cl_object y)
 		if (x == y)
 			return(TRUE);
 		x = si_get_sysprop(x, @'si::structure-include');
-	} while (x != Cnil);
+	} while (x != ECL_NIL);
 	return(FALSE);
 }
 #endif /* CLOS */
@@ -59,7 +59,7 @@ cl_object
 si_structure_subtype_p(cl_object x, cl_object y)
 {
 	@(return ((type_of(x) == T_STRUCTURE
-		     && structure_subtypep(STYPE(x), y)) ? Ct : Cnil))
+		     && structure_subtypep(STYPE(x), y)) ? ECL_T : ECL_NIL))
 }
 
 @(defun si::make-structure (type &rest args)
@@ -184,11 +184,11 @@ si_structurep(cl_object s)
 {
 #ifdef CLOS
 	if (ECL_INSTANCEP(s) && structure_subtypep(CLASS_OF(s), @'structure-object'))
-		return Ct;
+		return ECL_T;
 #else
 	if (type_of(s) == t_structure)
-		return Ct;
+		return ECL_T;
 #endif
 	else
-		return Cnil;
+		return ECL_NIL;
 }

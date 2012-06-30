@@ -101,31 +101,31 @@ static struct {
 	cl_object handler;
 } known_signals[] = {
 #ifdef SIGHUP
-	{ SIGHUP, "+SIGHUP+", Cnil},
+	{ SIGHUP, "+SIGHUP+", ECL_NIL},
 #endif
 #ifdef SIGINT
 	{ SIGINT, "+SIGINT+", @'si::terminal-interrupt'},
 #endif
 #ifdef SIGQUIT
-	{ SIGQUIT, "+SIGQUIT+", Cnil},
+	{ SIGQUIT, "+SIGQUIT+", ECL_NIL},
 #endif
 #ifdef SIGILL
 	{ SIGILL, "+SIGILL+", @'ext::illegal-instruction'},
 #endif
 #ifdef SIGTRAP
-	{ SIGTRAP, "+SIGTRAP+", Cnil},
+	{ SIGTRAP, "+SIGTRAP+", ECL_NIL},
 #endif
 #ifdef SIGABRT
-	{ SIGABRT, "+SIGABRT+", Cnil},
+	{ SIGABRT, "+SIGABRT+", ECL_NIL},
 #endif
 #ifdef SIGEMT
-	{ SIGEMT, "+SIGEMT+", Cnil},
+	{ SIGEMT, "+SIGEMT+", ECL_NIL},
 #endif
 #ifdef SIGFPE
-	{ SIGFPE, "+SIGFPE+", Cnil},
+	{ SIGFPE, "+SIGFPE+", ECL_NIL},
 #endif
 #ifdef SIGKILL
-	{ SIGKILL, "+SIGKILL+", Cnil},
+	{ SIGKILL, "+SIGKILL+", ECL_NIL},
 #endif
 #ifdef SIGBUS
 	{ SIGBUS, "+SIGBUS+", @'ext::segmentation-violation'},
@@ -134,69 +134,69 @@ static struct {
 	{ SIGSEGV, "+SIGSEGV+", @'ext::segmentation-violation'},
 #endif
 #ifdef SIGSYS
-	{ SIGSYS, "+SIGSYS+", Cnil},
+	{ SIGSYS, "+SIGSYS+", ECL_NIL},
 #endif
 #ifdef SIGPIPE
-	{ SIGPIPE, "+SIGPIPE+", Cnil},
+	{ SIGPIPE, "+SIGPIPE+", ECL_NIL},
 #endif
 #ifdef SIGALRM
-	{ SIGALRM, "+SIGALRM+", Cnil},
+	{ SIGALRM, "+SIGALRM+", ECL_NIL},
 #endif
 #ifdef SIGTERM
-	{ SIGTERM, "+SIGTERM+", Cnil},
+	{ SIGTERM, "+SIGTERM+", ECL_NIL},
 #endif
 #ifdef SIGURG
-	{ SIGURG, "+SIGURG+", Cnil},
+	{ SIGURG, "+SIGURG+", ECL_NIL},
 #endif
 #ifdef SIGSTOP
-	{ SIGSTOP, "+SIGSTOP+", Cnil},
+	{ SIGSTOP, "+SIGSTOP+", ECL_NIL},
 #endif
 #ifdef SIGTSTP
-	{ SIGTSTP, "+SIGTSTP+", Cnil},
+	{ SIGTSTP, "+SIGTSTP+", ECL_NIL},
 #endif
 #ifdef SIGCONT
-	{ SIGCONT, "+SIGCONT+", Cnil},
+	{ SIGCONT, "+SIGCONT+", ECL_NIL},
 #endif
 #ifdef SIGCHLD
 	{ SIGCHLD, "+SIGCHLD+", @'si::wait-for-all-processes'},
 #endif
 #ifdef SIGTTIN
-	{ SIGTTIN, "+SIGTTIN+", Cnil},
+	{ SIGTTIN, "+SIGTTIN+", ECL_NIL},
 #endif
 #ifdef SIGTTOU
-	{ SIGTTOU, "+SIGTTOU+", Cnil},
+	{ SIGTTOU, "+SIGTTOU+", ECL_NIL},
 #endif
 #ifdef SIGIO
-	{ SIGIO, "+SIGIO+", Cnil},
+	{ SIGIO, "+SIGIO+", ECL_NIL},
 #endif
 #ifdef SIGXCPU
-	{ SIGXCPU, "+SIGXCPU+", Cnil},
+	{ SIGXCPU, "+SIGXCPU+", ECL_NIL},
 #endif
 #ifdef SIGXFSZ
-	{ SIGXFSZ, "+SIGXFSZ+", Cnil},
+	{ SIGXFSZ, "+SIGXFSZ+", ECL_NIL},
 #endif
 #ifdef SIGVTALRM
-	{ SIGVTALRM, "+SIGVTALRM+", Cnil},
+	{ SIGVTALRM, "+SIGVTALRM+", ECL_NIL},
 #endif
 #ifdef SIGPROF
-	{ SIGPROF, "+SIGPROF+", Cnil},
+	{ SIGPROF, "+SIGPROF+", ECL_NIL},
 #endif
 #ifdef SIGWINCH
-	{ SIGWINCH, "+SIGWINCH+", Cnil},
+	{ SIGWINCH, "+SIGWINCH+", ECL_NIL},
 #endif
 #ifdef SIGINFO
-	{ SIGINFO, "+SIGINFO+", Cnil},
+	{ SIGINFO, "+SIGINFO+", ECL_NIL},
 #endif
 #ifdef SIGUSR1
-	{ SIGUSR1, "+SIGUSR1+", Cnil},
+	{ SIGUSR1, "+SIGUSR1+", ECL_NIL},
 #endif
 #ifdef SIGUSR2
-	{ SIGUSR2, "+SIGUSR2+", Cnil},
+	{ SIGUSR2, "+SIGUSR2+", ECL_NIL},
 #endif
 #ifdef SIGTHR
-	{ SIGTHR, "+SIGTHR+", Cnil},
+	{ SIGTHR, "+SIGTHR+", ECL_NIL},
 #endif
-	{ -1, "", Cnil }
+	{ -1, "", ECL_NIL }
 };
 
 #ifdef HAVE_SIGPROCMASK
@@ -334,7 +334,7 @@ handle_signal_now(cl_object signal_code, cl_object process)
 		 * be a function, a symbol denoting a function or
 		 * a symbol denoting a condition.
 		 */
-		if (cl_find_class(2, signal_code, Cnil) != Cnil)
+		if (cl_find_class(2, signal_code, ECL_NIL) != ECL_NIL)
 			cl_cerror(2, str_ignore_signal, signal_code);
 #ifdef ECL_THREADS
 		else if (!Null(process))
@@ -364,7 +364,7 @@ si_handle_signal(cl_object signal_code, cl_object process)
 static void
 handle_all_queued(cl_env_ptr env)
 {
-	while (env->pending_interrupt != Cnil) {
+	while (env->pending_interrupt != ECL_NIL) {
 		handle_signal_now(pop_signal(env), env->own_process);
 	}
 }
@@ -375,14 +375,14 @@ queue_signal(cl_env_ptr env, cl_object code, int allocate)
 	ECL_WITH_SPINLOCK_BEGIN(env, &env->signal_queue_spinlock) {
 		cl_object record;
 		if (allocate) {
-			record = ecl_list1(Cnil);
+			record = ecl_list1(ECL_NIL);
 		} else {
 			record = ECL_CONS_CAR(env->signal_queue);
-			if (record != Cnil) {
+			if (record != ECL_NIL) {
 				env->signal_queue = ECL_CONS_CDR(record);
 			}
 		}
-		if (record != Cnil) {
+		if (record != ECL_NIL) {
 			ECL_RPLACD(record, env->pending_interrupt);
 			ECL_RPLACA(record, code);
 			env->pending_interrupt = record;
@@ -394,8 +394,8 @@ static cl_object
 pop_signal(cl_env_ptr env)
 {
 	cl_object record, value;
-	if (env->pending_interrupt == Cnil) {
-		return Cnil;
+	if (env->pending_interrupt == ECL_NIL) {
+		return ECL_NIL;
 	}
 	ECL_WITH_SPINLOCK_BEGIN(env, &env->signal_queue_spinlock) {
 		record = env->pending_interrupt;
@@ -439,7 +439,7 @@ handle_or_queue(cl_env_ptr the_env, cl_object signal_code, int code)
 	 */
 	else {
                 if (code) unblock_signal(the_env, code);
-		si_trap_fpe(@'last', Ct); /* Clear FPE exception flag */
+		si_trap_fpe(@'last', ECL_T); /* Clear FPE exception flag */
                 handle_signal_now(signal_code, the_env->own_process);
         }
 }
@@ -457,7 +457,7 @@ handler_fn_prototype(non_evil_signal_handler, int sig, siginfo_t *siginfo, void 
                 return;
         signal_object = ecl_gethash_safe(ecl_make_fixnum(sig),
 					 cl_core.known_signals,
-					 Cnil);
+					 ECL_NIL);
         handle_or_queue(the_env, signal_object, sig);
         errno = old_errno;
 }
@@ -475,7 +475,7 @@ handler_fn_prototype(evil_signal_handler, int sig, siginfo_t *siginfo, void *dat
                 return;
         signal_object = ecl_gethash_safe(ecl_make_fixnum(sig),
 					 cl_core.known_signals,
-					 Cnil);
+					 ECL_NIL);
         handle_signal_now(signal_object, the_env->own_process);
         errno = old_errno;
 }
@@ -485,9 +485,9 @@ typedef struct {
 	cl_object process;
 	int signo;
 } signal_thread_message;
-static cl_object signal_thread_process = Cnil;
+static cl_object signal_thread_process = ECL_NIL;
 static signal_thread_message signal_thread_msg;
-static cl_object signal_thread_spinlock = Cnil;
+static cl_object signal_thread_spinlock = ECL_NIL;
 static int signal_thread_pipe[2] = {-1,-1};
 
 static void
@@ -544,10 +544,10 @@ asynchronous_signal_servicing_thread()
 	ecl_get_spinlock(the_env, &signal_thread_spinlock);
 	pipe(signal_thread_pipe);
 	ecl_giveup_spinlock(&signal_thread_spinlock);
-	signal_thread_msg.process = Cnil;
+	signal_thread_msg.process = ECL_NIL;
 	for (;;) {
 		cl_object signal_code;
-		signal_thread_msg.process = Cnil;
+		signal_thread_msg.process = ECL_NIL;
 		if (read(signal_thread_pipe[0], &signal_thread_msg,
 			 sizeof(signal_thread_msg)) < 0)
 		{
@@ -567,7 +567,7 @@ asynchronous_signal_servicing_thread()
 #endif
 		signal_code = ecl_gethash_safe(ecl_make_fixnum(signal_thread_msg.signo),
 					       cl_core.known_signals,
-					       Cnil);
+					       ECL_NIL);
 		if (!Null(signal_code)) {
 			mp_process_run_function(4, @'si::handle-signal',
 						@'si::handle-signal',
@@ -683,9 +683,9 @@ handler_fn_prototype(fpe_signal_handler, int sig, siginfo_t *info, void *data)
 #endif /* SA_SIGINFO */
 	/*
 	  if (code && !(code & the_env->trap_fpe_bits))
-	  condition = Cnil;
+	  condition = ECL_NIL;
 	*/
-	si_trap_fpe(@'last', Ct); /* Clear FPE exception flag */
+	si_trap_fpe(@'last', ECL_T); /* Clear FPE exception flag */
 	unblock_signal(the_env, code);
 	handle_signal_now(condition, the_env->own_process);
 	/* We will not reach past this point. */
@@ -784,12 +784,12 @@ static cl_object
 do_catch_signal(int code, cl_object action, cl_object process)
 {
 	cl_object code_fixnum = ecl_make_fixnum(code);
-        if (action == Cnil || action == @':ignore') {
+        if (action == ECL_NIL || action == @':ignore') {
                 mysignal(code, SIG_IGN);
-                return Ct;
+                return ECL_T;
         } else if (action == @':default') {
                 mysignal(code, SIG_DFL);
-                return Ct;
+                return ECL_T;
         } else if (action == @':mask' || action == @':unmask') {
 #ifdef HAVE_SIGPROCMASK
 # ifdef ECL_THREADS
@@ -804,7 +804,7 @@ do_catch_signal(int code, cl_object action, cl_object process)
 			} else {
 				sigdelset(handled_set, code);
 			}
-			return Ct;
+			return ECL_T;
 		} else {
 			sigset_t handled_set;
 			pthread_sigmask(SIG_SETMASK, NULL, &handled_set);
@@ -814,7 +814,7 @@ do_catch_signal(int code, cl_object action, cl_object process)
 				sigdelset(&handled_set, code);
 			}
 			pthread_sigmask(SIG_SETMASK, &handled_set, NULL);
-			return Ct;
+			return ECL_T;
 		}
 # else
 		{
@@ -826,13 +826,13 @@ do_catch_signal(int code, cl_object action, cl_object process)
 				sigdelset(&handled_set, code);
 			}
 			sigprocmask(SIG_SETMASK, &handled_set, NULL);
-			return Ct;
+			return ECL_T;
 		}
 # endif /* !ECL_THREADS */
 #else /* !HAVE_SIGPROCMASK */
-		return Cnil;
+		return ECL_NIL;
 #endif /* !HAVE_SIGPROCMASK */
-	} else if (action == Ct || action == @':catch') {
+	} else if (action == ECL_T || action == @':catch') {
                 if (code == SIGSEGV) {
                         mysignal(code, sigsegv_handler);
                 }
@@ -857,7 +857,7 @@ do_catch_signal(int code, cl_object action, cl_object process)
                 else {
                         mysignal(code, non_evil_signal_handler);
                 }
-		return Ct;
+		return ECL_T;
         } else {
 		FEerror("Unknown 2nd argument to EXT:CATCH-SIGNAL: ~A", 1,
 			action);
@@ -882,7 +882,7 @@ si_set_signal_handler(cl_object code, cl_object handler)
 		illegal_signal_code(code);
 	}
 	ecl_sethash(code, cl_core.known_signals, handler);
-	si_catch_signal(2, code, Ct);
+	si_catch_signal(2, code, ECL_T);
 	@(return handler)
 }
 
@@ -956,7 +956,7 @@ do_interrupt_thread(cl_object process)
 		ok = 0;
 		goto EXIT;
 	}
-        process->process.interrupt = Ct;
+        process->process.interrupt = ECL_T;
         if (!VirtualProtect(process->process.env,
 			    sizeof(struct cl_env_struct),
 			    guard,
@@ -1048,8 +1048,8 @@ _ecl_w32_exception_filter(struct _EXCEPTION_POINTERS* ep)
                         cl_object process = the_env->own_process;
                         if (!Null(process->process.interrupt)) {
                                 cl_object signal = pop_signal(the_env);
-                                process->process.interrupt = Cnil;
-                                while (signal != Cnil && signal) {
+                                process->process.interrupt = ECL_NIL;
+                                while (signal != ECL_NIL && signal) {
                                         handle_signal_now(signal, the_env->own_process);
                                         signal = pop_signal(the_env);
                                 }
@@ -1103,10 +1103,10 @@ _ecl_w32_exception_filter(struct _EXCEPTION_POINTERS* ep)
 static cl_object
 W32_handle_in_new_thread(cl_object signal_code)
 {
-	int outside_ecl = ecl_import_current_thread(@'si::handle-signal', Cnil);
+	int outside_ecl = ecl_import_current_thread(@'si::handle-signal', ECL_NIL);
 	mp_process_run_function(4, @'si::handle-signal',
 				@'si::handle-signal',
-				signal_code, Cnil);
+				signal_code, ECL_NIL);
 	if (outside_ecl) ecl_release_current_thread();
 }
 
@@ -1185,7 +1185,7 @@ asynchronous_signal_servicing_thread()
 #endif
 			signal_code = ecl_gethash_safe(ecl_make_fixnum(signo),
 						       cl_core.known_signals,
-						       Cnil);
+						       ECL_NIL);
 			if (!Null(signal_code)) {
 				mp_process_run_function(3, @'si::handle-signal',
 							@'si::handle-signal',
@@ -1210,7 +1210,7 @@ si_trap_fpe(cl_object condition, cl_object flag)
         if (condition == @'last') {
 		bits = the_env->trap_fpe_bits;
         } else {
-                if (condition == Ct)
+                if (condition == ECL_T)
                         bits = FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW | FE_INVALID;
 		else if (condition == @'division-by-zero')
                         bits = FE_DIVBYZERO;
@@ -1224,7 +1224,7 @@ si_trap_fpe(cl_object condition, cl_object flag)
                         bits = FE_INEXACT;
                 else if (ECL_FIXNUMP(condition))
 			bits = ecl_fixnum(condition) & all;
-                if (flag == Cnil) {
+                if (flag == ECL_NIL) {
                         bits = the_env->trap_fpe_bits & ~bits;
                 } else {
                         bits = the_env->trap_fpe_bits | bits;
@@ -1323,7 +1323,7 @@ install_signal_handling_thread()
 			ecl_make_cfun((cl_objectfn_fixed)
 				      asynchronous_signal_servicing_thread,
 				      @'si::signal-servicing',
-				      Cnil,
+				      ECL_NIL,
 				      0);
 		cl_object process =
 			signal_thread_process =
@@ -1348,22 +1348,22 @@ install_synchronous_signal_handlers()
 {
 #ifdef SIGBUS
 	if (ecl_option_values[ECL_OPT_TRAP_SIGBUS]) {
-		do_catch_signal(SIGBUS, Ct, Cnil);
+		do_catch_signal(SIGBUS, ECL_T, ECL_NIL);
 	}
 #endif
 #ifdef SIGSEGV
 	if (ecl_option_values[ECL_OPT_TRAP_SIGSEGV]) {
-		do_catch_signal(SIGSEGV, Ct, Cnil);
+		do_catch_signal(SIGSEGV, ECL_T, ECL_NIL);
 	}
 #endif
 #ifdef SIGPIPE
 	if (ecl_option_values[ECL_OPT_TRAP_SIGPIPE]) {
-		do_catch_signal(SIGPIPE, Ct, Cnil);
+		do_catch_signal(SIGPIPE, ECL_T, ECL_NIL);
 	}
 #endif
 #ifdef SIGILL
 	if (ecl_option_values[ECL_OPT_TRAP_SIGILL]) {
-		do_catch_signal(SIGILL, Ct, Cnil);
+		do_catch_signal(SIGILL, ECL_T, ECL_NIL);
 	}
 #endif
 	/* In order to implement MP:INTERRUPT-PROCESS, MP:PROCESS-KILL
@@ -1403,13 +1403,13 @@ install_fpe_signal_handlers()
 #ifdef SIGFPE
 	if (ecl_option_values[ECL_OPT_TRAP_SIGFPE]) {
 		mysignal(SIGFPE, fpe_signal_handler);
-		si_trap_fpe(Ct, Ct);
+		si_trap_fpe(ECL_T, ECL_T);
 # ifdef ECL_IEEE_FP
 		/* By default deactivate errors and accept
 		 * denormals in floating point computations */
-		si_trap_fpe(@'floating-point-invalid-operation', Cnil);
-		si_trap_fpe(@'division-by-zero', Cnil);
-		si_trap_fpe(@'floating-point-overflow', Cnil);
+		si_trap_fpe(@'floating-point-invalid-operation', ECL_NIL);
+		si_trap_fpe(@'division-by-zero', ECL_NIL);
+		si_trap_fpe(@'floating-point-overflow', ECL_NIL);
 # endif
 	}
 #endif
@@ -1452,14 +1452,14 @@ create_signal_code_constants()
 		name = ecl_intern(make_base_string_copy(buffer),
 				  cl_core.ext_package,
 				  intern_flag);
-		add_one_signal(hash, i, name, Cnil);
+		add_one_signal(hash, i, name, ECL_NIL);
 	}
 	add_one_signal(hash, SIGRTMIN,
 		       _ecl_intern("+SIGRTMIN+", cl_core.ext_package),
-		       Cnil);
+		       ECL_NIL);
 	add_one_signal(hash, SIGRTMAX,
 		       _ecl_intern("+SIGRTMAX+", cl_core.ext_package),
-		       Cnil);
+		       ECL_NIL);
 #endif
 }
 
@@ -1473,7 +1473,7 @@ init_unixint(int pass)
 		create_signal_code_constants();
 		install_fpe_signal_handlers();
 		install_signal_handling_thread();
-		ECL_SET(@'ext::*interrupts-enabled*', Ct);
+		ECL_SET(@'ext::*interrupts-enabled*', ECL_T);
 		ecl_process_env()->disable_interrupts = 0;
 	}
 }

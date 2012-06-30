@@ -250,14 +250,14 @@
   `(c-inline
     (,array ,index ,limit) (:object :fixnum :fixnum) :void
     "if (ecl_unlikely((#1)>=(#2)))
-           FEwrong_index(Cnil,#0,-1,ecl_make_fixnum(#1),#2);"
+           FEwrong_index(ECL_NIL,#0,-1,ecl_make_fixnum(#1),#2);"
     :one-liner nil))
 
 (defmacro check-vector-in-bounds (vector index)
   `(c-inline
     (,vector ,index) (:object :fixnum) :void
     "if (ecl_unlikely((#1)>=(#0)->vector.dim))
-           FEwrong_index(Cnil,#0,-1,ecl_make_fixnum(#1),(#0)->vector.dim);"
+           FEwrong_index(ECL_NIL,#0,-1,ecl_make_fixnum(#1),(#0)->vector.dim);"
     :one-liner nil))
 
 (defconstant +array-dimension-accessor+

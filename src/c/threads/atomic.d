@@ -27,7 +27,7 @@ ecl_atomic_get(cl_object *slot)
 	cl_object old;
 	do {
 		old = (cl_object)AO_load((AO_t*)slot);
-	} while (!AO_compare_and_swap_full((AO_t*)slot, (AO_t)old, (AO_t)Cnil));
+	} while (!AO_compare_and_swap_full((AO_t*)slot, (AO_t)old, (AO_t)ECL_NIL));
 	return old;
 }
 

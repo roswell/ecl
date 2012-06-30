@@ -30,7 +30,7 @@ ecl_make_cfun(cl_objectfn_fixed c_function, cl_object name, cl_object cblock, in
 	cf->cfunfixed.entry_fixed = c_function;
 	cf->cfunfixed.name = name;
 	cf->cfunfixed.block = cblock;
-        cf->cfunfixed.file = Cnil;
+        cf->cfunfixed.file = ECL_NIL;
         cf->cfunfixed.file_position = ecl_make_fixnum(-1);
 	cf->cfunfixed.narg = narg;
 	if (ecl_unlikely(narg < 0 || narg > ECL_C_ARGUMENTS_LIMIT))
@@ -49,7 +49,7 @@ ecl_make_cfun_va(cl_objectfn c_function, cl_object name, cl_object cblock)
 	cf->cfun.name = name;
 	cf->cfun.block = cblock;
 	cf->cfun.narg = -1;
-        cf->cfun.file = Cnil;
+        cf->cfun.file = ECL_NIL;
         cf->cfun.file_position = ecl_make_fixnum(-1);
 	return cf;
 }
@@ -63,7 +63,7 @@ ecl_make_cclosure_va(cl_objectfn c_function, cl_object env, cl_object block)
 	cc->cclosure.entry = c_function;
 	cc->cclosure.env = env;
 	cc->cclosure.block = block;
-        cc->cclosure.file = Cnil;
+        cc->cclosure.file = ECL_NIL;
         cc->cclosure.file_position = ecl_make_fixnum(-1);
 	return cc;
 }
@@ -80,7 +80,7 @@ ecl_def_c_macro(cl_object sym, cl_objectfn_fixed c_function, int narg)
 {
 	si_fset(3, sym,
 		ecl_make_cfun(c_function, sym, ecl_symbol_value(@'si::*cblock*'), 2),
-		Ct);
+		ECL_T);
 }
 
 void
@@ -88,7 +88,7 @@ ecl_def_c_macro_va(cl_object sym, cl_objectfn c_function)
 {
 	si_fset(3, sym,
 		ecl_make_cfun_va(c_function, sym, ecl_symbol_value(@'si::*cblock*')),
-		Ct);
+		ECL_T);
 }
 
 void
@@ -113,7 +113,7 @@ si_compiled_function_name(cl_object fun)
 	case t_cfunfixed:
 		output = fun->cfun.name; break;
 	case t_cclosure:
-		output = Cnil; break;
+		output = ECL_NIL; break;
 	default:
 		FEinvalid_function(fun);
 	}
@@ -124,7 +124,7 @@ cl_object
 cl_function_lambda_expression(cl_object fun)
 {
 	cl_env_ptr the_env = ecl_process_env();
-	cl_object output, name = Cnil, lex = Cnil;
+	cl_object output, name = ECL_NIL, lex = ECL_NIL;
 
 	switch(type_of(fun)) {
 	case t_bclosure:
@@ -133,7 +133,7 @@ cl_function_lambda_expression(cl_object fun)
 	case t_bytecodes:
 		name = fun->bytecodes.name;
 		output = fun->bytecodes.definition;
-		if (name == Cnil)
+		if (name == ECL_NIL)
 		    output = cl_cons(@'lambda', output);
 		else if (name != @'si::bytecodes')
 		    output = @list*(3, @'ext::lambda-block', name, output);
@@ -141,20 +141,20 @@ cl_function_lambda_expression(cl_object fun)
 	case t_cfun:
 	case t_cfunfixed:
 		name = fun->cfun.name;
-		lex = Cnil;
-		output = Cnil;
+		lex = ECL_NIL;
+		output = ECL_NIL;
 		break;
 	case t_cclosure:
-		name = Cnil;
-		lex = Ct;
-		output = Cnil;
+		name = ECL_NIL;
+		lex = ECL_T;
+		output = ECL_NIL;
 		break;
 #ifdef CLOS
 	case t_instance:
 		if (fun->instance.isgf) {
-			name = Cnil;
-			lex = Cnil;
-			output = Cnil;
+			name = ECL_NIL;
+			lex = ECL_NIL;
+			output = ECL_NIL;
 			break;
 		}
 #endif
@@ -200,7 +200,7 @@ si_compiled_function_file(cl_object b)
         case t_cclosure:
 		ecl_return2(the_env, b->cclosure.file, b->cclosure.file_position);
         default:
-		ecl_return2(the_env, Cnil, Cnil);
+		ecl_return2(the_env, ECL_NIL, ECL_NIL);
 	}
 }
 
@@ -236,7 +236,7 @@ ecl_set_function_source_file_info(cl_object b, cl_object source, cl_object posit
 void
 ecl_cmp_defmacro(cl_object fun)
 {
-	si_fset(3, fun->cfun.name, fun, Ct);
+	si_fset(3, fun->cfun.name, fun, ECL_T);
 }
 
 void
