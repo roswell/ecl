@@ -97,7 +97,7 @@ ecl_rem_setf_definition(cl_object sym)
 		FEerror("Given that ~S is a special form, ~S cannot be defined as a function.",
 			2, sym, fname);
 	}
-	if (SYMBOLP(fname)) {
+	if (ECL_SYMBOLP(fname)) {
 		if (mflag) {
 			type |= ecl_stp_macro;
 		} else {
@@ -142,7 +142,7 @@ cl_fmakunbound(cl_object fname)
 		CEpackage_error("Attempt to redefine function ~S in locked package.",
 				"Ignore lock and proceed", pack, 1, fname);
 	}
-	if (SYMBOLP(fname)) {
+	if (ECL_SYMBOLP(fname)) {
 		ecl_clear_compiler_properties(sym);
 		SYM_FUN(sym) = Cnil;
 		ecl_symbol_type_set(sym, ecl_symbol_type(sym) & ~ecl_stp_macro);

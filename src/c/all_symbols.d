@@ -217,7 +217,7 @@ make_this_symbol(int i, cl_object s, int code, const char *name,
 		int intern_flag;
 		ECL_SET(s, value);
 		if (ecl_find_symbol(s->symbol.name, package, &intern_flag) != Cnil
-		    && intern_flag == INHERITED) {
+		    && intern_flag == ECL_INHERITED) {
 			ecl_shadowing_import(s, package);
 		} else {
 			cl_import2(s, package);

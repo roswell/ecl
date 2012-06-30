@@ -466,7 +466,7 @@ return f2;
     (wt-h1 ");")
     (wt-nl1 "{")
     (when (compiler-check-args)
-      (wt-nl "check_arg(" (length arg-types) ");"))
+      (wt-nl "_ecl_check_narg(" (length arg-types) ");"))
     (wt-nl "cl_env_copy->nvalues=1;")
     (wt-nl "return " (case return-type
                             (FIXNUM "ecl_make_fixnum")

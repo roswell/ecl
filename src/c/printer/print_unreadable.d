@@ -61,7 +61,7 @@ si_print_unreadable_object_function(cl_object o, cl_object stream, cl_object typ
 		if (!Null(type)) {
 			cl_index i, l;
 			type = cl_type_of(o);
-			if (!SYMBOLP(type)) {
+			if (!ECL_SYMBOLP(type)) {
 				type = @'standard-object';
 			}
 			type = type->symbol.name;

@@ -676,7 +676,7 @@ subst(struct cl_test *t, cl_object new_obj, cl_object tree)
 {
 	if (TEST(t, tree)) {
 		return new_obj;
-	} else if (ATOM(tree)) {
+	} else if (ECL_ATOM(tree)) {
 		return tree;
 	} else {
 		cl_object head, tail = Cnil;

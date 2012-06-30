@@ -197,9 +197,9 @@ _ecl_write_symbol(cl_object x, cl_object stream)
 				    needs_to_be_escaped(name, readtable, print_case));
 		if (ecl_find_symbol(ecl_symbol_name(x), package, &intern_flag) != x)
 			ecl_internal_error("can't print symbol");
-		if (intern_flag == INTERNAL || forced_package) {
+		if (intern_flag == ECL_INTERNAL || forced_package) {
 			writestr_stream("::", stream);
-		} else if (intern_flag == EXTERNAL) {
+		} else if (intern_flag == ECL_EXTERNAL) {
 			ecl_write_char(':', stream);
 		} else {
 			FEerror("Pathological symbol --- cannot print.", 0);

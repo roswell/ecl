@@ -56,7 +56,7 @@ _cl_backq_cdr(cl_object *px)
 	cl_object x = *px, ax, dx;
 	int a, d, out;
 
-	if (ATOM(x))
+	if (ECL_ATOM(x))
 		return(QUOTE);
 	if (CAR(x) == @'si::unquote') {
 		*px = CADR(x);
@@ -191,7 +191,7 @@ _cl_backq_car(cl_object *px)
 	cl_object x = *px;
 	int d;
  AGAIN:
-	if (ATOM(x))
+	if (ECL_ATOM(x))
 		return(QUOTE);
 	if (CAR(x) == @'si::quasiquote') {
 		x = *px = backq(CADR(x));

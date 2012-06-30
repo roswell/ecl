@@ -627,7 +627,7 @@ ecl_parse_namestring(cl_object s, cl_index start, cl_index end, cl_index *ep,
 			 WORD_EMPTY_IS_NIL, *ep, end, ep);
 	if (aux == @':error') {
 		return Cnil;
-	} else if (SYMBOLP(aux)) {
+	} else if (ECL_SYMBOLP(aux)) {
 		version = aux;
 	} else {
 		const cl_env_ptr the_env = ecl_process_env();

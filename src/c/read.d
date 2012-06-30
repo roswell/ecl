@@ -376,7 +376,7 @@ LOOP:
 		return token;
 	} else if (external_symbol) {
 		x = ecl_find_symbol(token, p, &intern_flag);
-		unlikely_if (intern_flag != EXTERNAL) {
+		unlikely_if (intern_flag != ECL_EXTERNAL) {
 			FEerror("Cannot find the external symbol ~A in ~S.",
 				2, cl_copy_seq(token), p);
 		}

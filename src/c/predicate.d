@@ -35,13 +35,13 @@ cl_null(cl_object x)
 cl_object
 cl_symbolp(cl_object x)
 {
-	@(return (SYMBOLP(x) ? Ct : Cnil))
+	@(return (ECL_SYMBOLP(x) ? Ct : Cnil))
 }
 
 cl_object
 cl_atom(cl_object x)
 {
-	@(return (ATOM(x) ? Ct : Cnil))
+	@(return (ECL_ATOM(x) ? Ct : Cnil))
 }
 
 cl_object

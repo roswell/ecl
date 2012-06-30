@@ -156,3 +156,9 @@
 
 typedef struct ecl_bds_bd *bds_ptr;
 typedef struct ecl_ihs_frame *ihs_ptr;
+
+#define LISTP(x)	ECL_LISTP(x)
+#define CONSP(x)	ECL_CONSP(x)
+#define ATOM(x)		ECL_ATOM(x)
+#define SYMBOLP(x)	ECL_SYMBOLP(x)
+

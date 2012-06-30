@@ -196,7 +196,7 @@ cl_parse_key(
 	for (; args[0].narg > 1; ) {
 		cl_object keyword = ecl_va_arg(args);
 		cl_object value = ecl_va_arg(args);
-		if (ecl_unlikely(!SYMBOLP(keyword)))
+		if (ecl_unlikely(!ECL_SYMBOLP(keyword)))
 			FEprogram_error_noreturn("LAMBDA: Keyword expected, got ~S.",
                                                  1, keyword);
 		if (rest != NULL) {

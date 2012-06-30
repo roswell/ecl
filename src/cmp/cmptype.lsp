@@ -146,7 +146,7 @@
   (case type
     (cons
      `(ffi:c-inline (,value) (:object) :void
-        "@0;if (ecl_unlikely(ATOM(#0))) FEtype_error_cons(#0);"
+        "@0;if (ecl_unlikely(ECL_ATOM(#0))) FEtype_error_cons(#0);"
         :one-liner nil))
     (array
      `(ffi:c-inline (,value) (:object) :void

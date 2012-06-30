@@ -45,7 +45,7 @@ cl_symbol_function(cl_object sym)
 cl_object
 cl_fdefinition(cl_object fname)
 {
-	@(return ((SYMBOLP(fname))? cl_symbol_function(fname) : ecl_fdefinition(fname)))
+	@(return ((ECL_SYMBOLP(fname))? cl_symbol_function(fname) : ecl_fdefinition(fname)))
 }
 
 cl_object
@@ -53,7 +53,7 @@ cl_fboundp(cl_object fname)
 {
 	if (Null(fname)) {
 		@(return Cnil);
-	} else if (SYMBOLP(fname)) {
+	} else if (ECL_SYMBOLP(fname)) {
 		@(return (((fname->symbol.stype & ecl_stp_special_form)
 			   || SYM_FUN(fname) != Cnil)? Ct : Cnil))
 	} else if (LISTP(fname)) {
@@ -136,7 +136,7 @@ cl_symbol_value(cl_object sym)
 	if (Null(sym)) {
 		value = sym;
 	} else {
-		if (ecl_unlikely(!SYMBOLP(sym))) {
+		if (ecl_unlikely(!ECL_SYMBOLP(sym))) {
 			FEwrong_type_only_arg(@[symbol-value], sym, @[symbol]);
 		}
 		value = ECL_SYM_VAL(the_env, sym);
@@ -153,7 +153,7 @@ ecl_boundp(cl_env_ptr env, cl_object sym)
 	if (Null(sym)) {
 		return 1;
 	} else {
-		if (ecl_unlikely(!SYMBOLP(sym)))
+		if (ecl_unlikely(!ECL_SYMBOLP(sym)))
 			FEwrong_type_only_arg(@[boundp], sym, @[symbol]);
 		return ECL_SYM_VAL(env, sym) != OBJNULL;
 	}

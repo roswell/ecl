@@ -34,10 +34,6 @@
  * they signal an error, they should undo all locks they had before.
  */
 
-#define	INTERNAL	1
-#define	EXTERNAL	2
-#define	INHERITED	3
-
 static cl_object find_symbol_inner(cl_object name, cl_object p, int *intern_flag);
 
 static void
@@ -414,21 +410,21 @@ find_symbol_inner(cl_object name, cl_object p, int *intern_flag)
 
 	s = ecl_gethash_safe(name, p->pack.external, OBJNULL);
 	if (s != OBJNULL) {
-		*intern_flag = EXTERNAL;
+		*intern_flag = ECL_EXTERNAL;
 		goto OUTPUT;
 	}
 	if (p == cl_core.keyword_package)
 		goto NOTHING;
 	s = ecl_gethash_safe(name, p->pack.internal, OBJNULL);
 	if (s != OBJNULL) {
-		*intern_flag = INTERNAL;
+		*intern_flag = ECL_INTERNAL;
 		goto OUTPUT;
 	}
 	ul = p->pack.uses;
 	loop_for_on_unsafe(ul) {
 		s = ecl_gethash_safe(name, ECL_CONS_CAR(ul)->pack.external, OBJNULL);
 		if (s != OBJNULL) {
-			*intern_flag = INHERITED;
+			*intern_flag = ECL_INHERITED;
 			goto OUTPUT;
 		}
 	} end_loop_for_on_unsafe(ul);
@@ -548,12 +544,12 @@ cl_export2(cl_object s, cl_object p)
                         error = 1;
                 } else if (x != s) {
                         error = 2;
-                } else if (intern_flag == EXTERNAL) {
+                } else if (intern_flag == ECL_EXTERNAL) {
                         error = 0;
                 } else if ((other_p = potential_export_conflict(name, s, p)) != Cnil) {
                         error = 3;
                 } else {
-                        if (intern_flag == INTERNAL)
+                        if (intern_flag == ECL_INTERNAL)
                                 ecl_remhash(name, p->pack.internal);
                         p->pack.external = _ecl_sethash(name, p->pack.external, s);
                         error = 0;
@@ -651,7 +647,7 @@ cl_unexport2(cl_object s, cl_object p)
                 cl_object x = find_symbol_inner(name, p, &intern_flag);
                 if (intern_flag == 0 || x != s) {
                         error = 1;
-                } else if (intern_flag != EXTERNAL) {
+                } else if (intern_flag != ECL_EXTERNAL) {
                         /* According to ANSI & Cltl, internal symbols are
                            ignored in unexport */
                         error = 0;
@@ -685,7 +681,7 @@ cl_import2(cl_object s, cl_object p)
                                 error = 1;
                                 goto OUTPUT;
                         }
-                        if (intern_flag == INTERNAL || intern_flag == EXTERNAL) {
+                        if (intern_flag == ECL_INTERNAL || intern_flag == ECL_EXTERNAL) {
                                 error = 0;
                                 goto OUTPUT;
                         }
@@ -720,7 +716,7 @@ ecl_shadowing_import(cl_object s, cl_object p)
 
 	ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(ecl_process_env()) {
                 x = find_symbol_inner(name, p, &intern_flag);
-                if (intern_flag && intern_flag != INHERITED) {
+                if (intern_flag && intern_flag != ECL_INHERITED) {
                         if (x == s) {
                                 if (!ecl_member_eq(x, p->pack.shadowings))
                                         p->pack.shadowings
@@ -730,7 +726,7 @@ ecl_shadowing_import(cl_object s, cl_object p)
                         if(ecl_member_eq(x, p->pack.shadowings))
                                 p->pack.shadowings =
                                         ecl_remove_eq(x, p->pack.shadowings);
-                        if (intern_flag == INTERNAL)
+                        if (intern_flag == ECL_INTERNAL)
                                 ecl_remhash(name, p->pack.internal);
                         else
                                 ecl_remhash(name, p->pack.external);
@@ -757,7 +753,7 @@ ecl_shadow(cl_object s, cl_object p)
 				"Ignore lock and proceed", p, 2, s, p);
 	ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(ecl_process_env()) {
                 x = find_symbol_inner(s, p, &intern_flag);
-                if (intern_flag != INTERNAL && intern_flag != EXTERNAL) {
+                if (intern_flag != ECL_INTERNAL && intern_flag != ECL_EXTERNAL) {
                         x = cl_make_symbol(s);
                         p->pack.internal = _ecl_sethash(s, p->pack.internal, x);
                         x->symbol.hpack = p;
@@ -912,11 +908,11 @@ cl_list_all_packages()
 	int intern_flag;
 @
 	sym = ecl_intern(strng, p, &intern_flag);
-	if (intern_flag == INTERNAL)
+	if (intern_flag == ECL_INTERNAL)
 		@(return sym @':internal')
-	if (intern_flag == EXTERNAL)
+	if (intern_flag == ECL_EXTERNAL)
 		@(return sym @':external')
-	if (intern_flag == INHERITED)
+	if (intern_flag == ECL_INHERITED)
 		@(return sym @':inherited')
 	@(return sym Cnil)
 @)
@@ -926,11 +922,11 @@ cl_list_all_packages()
 	int intern_flag;
 @
 	x = ecl_find_symbol(strng, p, &intern_flag);
-	if (intern_flag == INTERNAL)
+	if (intern_flag == ECL_INTERNAL)
 		@(return x @':internal')
-	if (intern_flag == EXTERNAL)
+	if (intern_flag == ECL_EXTERNAL)
 		@(return x @':external')
-	if (intern_flag == INHERITED)
+	if (intern_flag == ECL_INHERITED)
 		@(return x @':inherited')
 	@(return Cnil Cnil)
 @)

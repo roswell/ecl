@@ -222,7 +222,7 @@ assert_type_non_negative_integer(cl_object p)
 void
 assert_type_proper_list(cl_object p)
 {
-	if (ATOM(p) && p != Cnil)
+	if (ECL_ATOM(p) && p != Cnil)
 		FEtype_error_list(p);
 	if (cl_list_length(p) == Cnil)
 		FEcircular_list(p);

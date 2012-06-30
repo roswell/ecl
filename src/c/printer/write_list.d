@@ -98,7 +98,7 @@ _ecl_write_list(cl_object x, cl_object stream)
                 x = CDR(x);
                 si_write_object(y, stream);
                 /* FIXME! */
-                if (x == OBJNULL || ATOM(x) ||
+                if (x == OBJNULL || ECL_ATOM(x) ||
                     (circle && _ecl_will_print_as_hash(x)))
 			{
 				if (x != Cnil) {

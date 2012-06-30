@@ -283,9 +283,11 @@ struct ecl_package {
 	The values returned by intern and find_symbol.
 	File_symbol may return 0.
 */
-#define	INTERNAL	1
-#define	EXTERNAL	2
-#define	INHERITED	3
+enum {
+	ECL_INTERNAL = 1,
+	ECL_EXTERNAL,
+	ECL_INHERITED
+};
 
 /*
  * CONSES
@@ -312,11 +314,6 @@ struct ecl_package {
 #define ECL_ATOM(x)     (Null(x) || !LISTP(x))
 #define ECL_SYMBOLP(x)  (Null(x) || ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_symbol)))
 
-#define LISTP(x)	(ECL_IMMEDIATE(x) == t_list)
-#define CONSP(x)	(LISTP(x) && !Null(x))
-#define ATOM(x)		(Null(x) || !LISTP(x))
-#define SYMBOLP(x)	(Null(x) || ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_symbol)))
-
 #define ECL_PTR_CONS(x)	(cl_object)((char*)(x) + t_list)
 #define ECL_CONS_PTR(x)	((struct ecl_cons *)((char *)(x) - t_list))
 #define ECL_CONS_CAR(x)	(*(cl_object*)((char *)(x) - t_list))
@@ -333,11 +330,6 @@ struct ecl_cons {
 #define ECL_CONSP(x)    ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_list))
 #define ECL_ATOM(x)     (ECL_IMMEDIATE(x) || ((x)->d.t != t_list))
 #define ECL_SYMBOLP(x)  (Null(x) || ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_symbol)))
-
-#define LISTP(x)	(ECL_IMMEDIATE(x)? Null(x) : ((x)->d.t == t_list))
-#define CONSP(x)	((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_list))
-#define ATOM(x)		(ECL_IMMEDIATE(x) || ((x)->d.t != t_list))
-#define SYMBOLP(x)	(Null(x) || ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_symbol)))
 
 #define ECL_CONS_CAR(x)	((x)->cons.car)
 #define ECL_CONS_CDR(x)	((x)->cons.cdr)
@@ -895,10 +887,12 @@ struct ecl_process {
 	int trap_fpe_bits;
 };
 
-#define ECL_WAKEUP_ONE 0
-#define ECL_WAKEUP_ALL 1
-#define ECL_WAKEUP_RESET_FLAG 2
-#define ECL_WAKEUP_KILL 4
+enum {
+	ECL_WAKEUP_ONE = 0,
+	ECL_WAKEUP_ALL = 1,
+	ECL_WAKEUP_RESET_FLAG = 2,
+	ECL_WAKEUP_KILL = 4
+};
 
 struct ecl_queue {
 	_ECL_HDR;

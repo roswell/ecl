@@ -97,12 +97,12 @@ search_macro_function(cl_object name, cl_object env)
 @(defun macroexpand_1 (form &optional (env Cnil))
 	cl_object exp_fun = Cnil;
 @
-	if (ATOM(form)) {
-		if (SYMBOLP(form))
+	if (ECL_ATOM(form)) {
+		if (ECL_SYMBOLP(form))
 			exp_fun = search_symbol_macro(form, env);
 	} else {
 		cl_object head = CAR(form);
-		if (SYMBOLP(head))
+		if (ECL_SYMBOLP(head))
 			exp_fun = search_macro_function(head, env);
 	}
 	if (!Null(exp_fun)) {

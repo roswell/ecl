@@ -45,7 +45,7 @@ static bool
 structure_subtypep(cl_object x, cl_object y)
 {
 	do {
-		if (!SYMBOLP(x))
+		if (!ECL_SYMBOLP(x))
 			return(FALSE);
 		if (x == y)
 			return(TRUE);

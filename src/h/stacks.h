@@ -277,8 +277,6 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_obje
 }
 #define ecl_va_end(a) \
 	va_end(a[0].args)
-#define	check_arg(n) \
-	do { if (ecl_unlikely(narg != (n))) FEwrong_num_arguments_anonym();} while(0)
 
 /***********************
  * RETURN VALUES STACK
