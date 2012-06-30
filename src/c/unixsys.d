@@ -75,9 +75,9 @@ si_make_pipe()
 		FElibc_error("Unable to create pipe", 0);
 		output = Cnil;
 	} else {
-		cl_object in = ecl_make_stream_from_fd(fake_in_name, fds[0], smm_input, 8,
+		cl_object in = ecl_make_stream_from_fd(fake_in_name, fds[0], ecl_smm_input, 8,
 						       ECL_STREAM_DEFAULT_FORMAT, Cnil);
-		cl_object out = ecl_make_stream_from_fd(fake_out_name, fds[1], smm_output, 8,
+		cl_object out = ecl_make_stream_from_fd(fake_out_name, fds[1], ecl_smm_output, 8,
 						       ECL_STREAM_DEFAULT_FORMAT, Cnil);
 		output = cl_make_two_way_stream(in, out);
 	}
@@ -383,12 +383,12 @@ ecl_stream_to_HANDLE(cl_object s, bool output)
 		return INVALID_HANDLE_VALUE;
 	switch ((enum ecl_smmode)s->stream.mode) {
 #if defined(ECL_WSOCK)
-	case smm_input_wsock:
-	case smm_output_wsock:
-	case smm_io_wsock:
+	case ecl_smm_input_wsock:
+	case ecl_smm_output_wsock:
+	case ecl_smm_io_wsock:
 #endif
 #if defined(ECL_MS_WINDOWS_HOST)
-	case smm_io_wcon:
+	case ecl_smm_io_wcon:
 #endif
 		return (HANDLE)IO_FILE_DESCRIPTOR(s);
 	default: {
@@ -801,7 +801,7 @@ ecl_stream_to_HANDLE(cl_object s, bool output)
 	}
 	if (parent_write > 0) {
 		stream_write = ecl_make_stream_from_fd(command, parent_write,
-						       smm_output, 8,
+						       ecl_smm_output, 8,
 						       ECL_STREAM_DEFAULT_FORMAT, Ct);
 	} else {
 		parent_write = 0;
@@ -809,7 +809,7 @@ ecl_stream_to_HANDLE(cl_object s, bool output)
 	}
 	if (parent_read > 0) {
 		stream_read = ecl_make_stream_from_fd(command, parent_read,
-						      smm_input, 8,
+						      ecl_smm_input, 8,
 						      ECL_STREAM_DEFAULT_FORMAT, Ct);
 	} else {
 		parent_read = 0;

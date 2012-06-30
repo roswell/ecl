@@ -282,36 +282,36 @@ BEGIN:
 
 	case t_stream:
 		switch ((enum smmode)x->stream.mode) {
-		case smm_closed:
+		case ecl_smm_closed:
 			/* Rest of fields are NULL */
 			mark_next(x->stream.object1);
 			break;
-		case smm_input:
-		case smm_output:
-		case smm_io:
-		case smm_probe:
+		case ecl_smm_input:
+		case ecl_smm_output:
+		case ecl_smm_io:
+		case ecl_smm_probe:
 			mark_object(x->stream.object0);
 			mark_object(x->stream.object1);
 			mark_contblock(x->stream.buffer, BUFSIZ);
 			break;
 
-		case smm_synonym:
+		case ecl_smm_synonym:
 			mark_next(x->stream.object0);
 			break;
 
-		case smm_broadcast:
-		case smm_concatenated:
+		case ecl_smm_broadcast:
+		case ecl_smm_concatenated:
 			mark_next(x->stream.object0);
 			break;
 
-		case smm_two_way:
-		case smm_echo:
+		case ecl_smm_two_way:
+		case ecl_smm_echo:
 			mark_object(x->stream.object0);
 			mark_next(x->stream.object1);
 			break;
 
-		case smm_string_input:
-		case smm_string_output:
+		case ecl_smm_string_input:
+		case ecl_smm_string_output:
 			mark_next(x->stream.object0);
 			break;
 

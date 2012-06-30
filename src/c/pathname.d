@@ -758,16 +758,16 @@ L:
 		break;
 	case t_stream:
 		switch ((enum ecl_smmode)x->stream.mode) {
-		case smm_input:
-		case smm_output:
-		case smm_probe:
-		case smm_io:
-		case smm_input_file:
-		case smm_output_file:
-		case smm_io_file:
+		case ecl_smm_input:
+		case ecl_smm_output:
+		case ecl_smm_probe:
+		case ecl_smm_io:
+		case ecl_smm_input_file:
+		case ecl_smm_output_file:
+		case ecl_smm_io_file:
 			x = IO_STREAM_FILENAME(x);
 			goto L;
-		case smm_synonym:
+		case ecl_smm_synonym:
 			x = SYNONYM_STREAM_STREAM(x);
 			goto L;
 		default:

@@ -1428,7 +1428,7 @@ si_make_string_output_stream_from_string(cl_object s)
 	unlikely_if (!ECL_STRINGP(s) || !ECL_ARRAY_HAS_FILL_POINTER_P(s))
 		FEerror("~S is not a -string with a fill-pointer.", 1, s);
 	strm->stream.ops = duplicate_dispatch_table(&str_out_ops);
-	strm->stream.mode = (short)smm_string_output;
+	strm->stream.mode = (short)ecl_smm_string_output;
 	STRING_OUTPUT_STRING(strm) = s;
 	STRING_OUTPUT_COLUMN(strm) = 0;
 #if !defined(ECL_UNICODE)
@@ -1488,7 +1488,7 @@ cl_object
 cl_get_output_stream_string(cl_object strm)
 {
 	cl_object strng;
-	unlikely_if (!ECL_ANSI_STREAM_TYPE_P(strm, smm_string_output))
+	unlikely_if (!ECL_ANSI_STREAM_TYPE_P(strm, ecl_smm_string_output))
                 FEwrong_type_only_arg(@[get-output-stream-string],
                                       strm, @[string-stream]);
 	strng = cl_copy_seq(STRING_OUTPUT_STRING(strm));
@@ -1615,7 +1615,7 @@ ecl_make_string_input_stream(cl_object strng, cl_index istart, cl_index iend)
 
 	strm = alloc_stream();
 	strm->stream.ops = duplicate_dispatch_table(&str_in_ops);
-	strm->stream.mode = (short)smm_string_input;
+	strm->stream.mode = (short)ecl_smm_string_input;
 	STRING_INPUT_STRING(strm) = strng;
 	STRING_INPUT_POSITION(strm) = istart;
 	STRING_INPUT_LIMIT(strm) = iend;
@@ -1815,7 +1815,7 @@ cl_make_two_way_stream(cl_object istrm, cl_object ostrm)
 		not_an_output_stream(ostrm);
 	strm = alloc_stream();
 	strm->stream.format = cl_stream_external_format(istrm);
-	strm->stream.mode = (short)smm_two_way;
+	strm->stream.mode = (short)ecl_smm_two_way;
 	strm->stream.ops = duplicate_dispatch_table(&two_way_ops);
 	TWO_WAY_STREAM_INPUT(strm) = istrm;
 	TWO_WAY_STREAM_OUTPUT(strm) = ostrm;
@@ -1825,7 +1825,7 @@ cl_make_two_way_stream(cl_object istrm, cl_object ostrm)
 cl_object
 cl_two_way_stream_input_stream(cl_object strm)
 {
-	unlikely_if (!ECL_ANSI_STREAM_TYPE_P(strm,smm_two_way))
+	unlikely_if (!ECL_ANSI_STREAM_TYPE_P(strm,ecl_smm_two_way))
 		FEwrong_type_only_arg(@[two-way-stream-input-stream],
                                       strm, @[two-way-stream]);
 	@(return TWO_WAY_STREAM_INPUT(strm));
@@ -1834,7 +1834,7 @@ cl_two_way_stream_input_stream(cl_object strm)
 cl_object
 cl_two_way_stream_output_stream(cl_object strm)
 {
-	unlikely_if (!ECL_ANSI_STREAM_TYPE_P(strm, smm_two_way))
+	unlikely_if (!ECL_ANSI_STREAM_TYPE_P(strm, ecl_smm_two_way))
 		FEwrong_type_only_arg(@[two-way-stream-output-stream],
                                       strm, @[two-way-stream]);
 	@(return TWO_WAY_STREAM_OUTPUT(strm))
@@ -2002,7 +2002,7 @@ const struct ecl_file_ops broadcast_ops = {
 	x = alloc_stream();
 	x->stream.format = @':default';
 	x->stream.ops = duplicate_dispatch_table(&broadcast_ops);
-	x->stream.mode = (short)smm_broadcast;
+	x->stream.mode = (short)ecl_smm_broadcast;
 	BROADCAST_STREAM_LIST(x) = cl_nreverse(streams);
 	@(return x)
 @)
@@ -2010,7 +2010,7 @@ const struct ecl_file_ops broadcast_ops = {
 cl_object
 cl_broadcast_stream_streams(cl_object strm)
 {
-	unlikely_if (!ECL_ANSI_STREAM_TYPE_P(strm, smm_broadcast))
+	unlikely_if (!ECL_ANSI_STREAM_TYPE_P(strm, ecl_smm_broadcast))
 		FEwrong_type_only_arg(@[broadcast-stream-streams],
                                       strm, @[broadcast-stream]);
 	return cl_copy_list(BROADCAST_STREAM_LIST(strm));
@@ -2183,7 +2183,7 @@ cl_make_echo_stream(cl_object strm1, cl_object strm2)
 		not_an_output_stream(strm2);
 	strm = alloc_stream();
 	strm->stream.format = cl_stream_external_format(strm1);
-	strm->stream.mode = (short)smm_echo;
+	strm->stream.mode = (short)ecl_smm_echo;
 	strm->stream.ops = duplicate_dispatch_table(&echo_ops);
 	ECHO_STREAM_INPUT(strm) = strm1;
 	ECHO_STREAM_OUTPUT(strm) = strm2;
@@ -2193,7 +2193,7 @@ cl_make_echo_stream(cl_object strm1, cl_object strm2)
 cl_object
 cl_echo_stream_input_stream(cl_object strm)
 {
-	unlikely_if (!ECL_ANSI_STREAM_TYPE_P(strm, smm_echo))
+	unlikely_if (!ECL_ANSI_STREAM_TYPE_P(strm, ecl_smm_echo))
 		FEwrong_type_only_arg(@[echo-stream-input-stream],
                                       strm, @[echo-stream]);
 	@(return ECHO_STREAM_INPUT(strm))
@@ -2202,7 +2202,7 @@ cl_echo_stream_input_stream(cl_object strm)
 cl_object
 cl_echo_stream_output_stream(cl_object strm)
 {
-	unlikely_if (!ECL_ANSI_STREAM_TYPE_P(strm, smm_echo))
+	unlikely_if (!ECL_ANSI_STREAM_TYPE_P(strm, ecl_smm_echo))
 		FEwrong_type_only_arg(@[echo-stream-output-stream],
                                       strm, @[echo-stream]);
 	@(return ECHO_STREAM_OUTPUT(strm))
@@ -2336,7 +2336,7 @@ const struct ecl_file_ops concatenated_ops = {
 	} else {
 		x->stream.format = cl_stream_external_format(ECL_CONS_CAR(streams));
 	}
-	x->stream.mode = (short)smm_concatenated;
+	x->stream.mode = (short)ecl_smm_concatenated;
 	x->stream.ops = duplicate_dispatch_table(&concatenated_ops);
 	CONCATENATED_STREAM_LIST(x) = cl_nreverse(streams);
 	@(return x)
@@ -2345,7 +2345,7 @@ const struct ecl_file_ops concatenated_ops = {
 cl_object
 cl_concatenated_stream_streams(cl_object strm)
 {
-	unlikely_if (!ECL_ANSI_STREAM_TYPE_P(strm, smm_concatenated))
+	unlikely_if (!ECL_ANSI_STREAM_TYPE_P(strm, ecl_smm_concatenated))
 		FEwrong_type_only_arg(@[concatenated-stream-streams],
                                       strm, @[concatenated-stream]);
 	return cl_copy_list(CONCATENATED_STREAM_LIST(strm));
@@ -2536,7 +2536,7 @@ cl_make_synonym_stream(cl_object sym)
 	sym = ecl_check_cl_type(@'make-synonym-stream',sym,t_symbol);
 	x = alloc_stream();
 	x->stream.ops = duplicate_dispatch_table(&synonym_ops);
-	x->stream.mode = (short)smm_synonym;
+	x->stream.mode = (short)ecl_smm_synonym;
 	SYNONYM_STREAM_SYMBOL(x) = sym;
 	@(return x)
 }
@@ -2544,7 +2544,7 @@ cl_make_synonym_stream(cl_object sym)
 cl_object
 cl_synonym_stream_symbol(cl_object strm)
 {
-	unlikely_if (!ECL_ANSI_STREAM_TYPE_P(strm, smm_synonym))
+	unlikely_if (!ECL_ANSI_STREAM_TYPE_P(strm, ecl_smm_synonym))
 		FEwrong_type_only_arg(@[synonym-stream-symbol],
                                       strm, @[synonym-stream]);
 	@(return SYNONYM_STREAM_SYMBOL(strm))
@@ -3240,17 +3240,17 @@ si_stream_external_format_set(cl_object stream, cl_object format)
         }
 #endif
         switch (stream->stream.mode) {
-        case smm_input:
-        case smm_input_file:
-        case smm_output:
-        case smm_output_file:
-        case smm_io:
-        case smm_io_file:
+        case ecl_smm_input:
+        case ecl_smm_input_file:
+        case ecl_smm_output:
+        case ecl_smm_output_file:
+        case ecl_smm_io:
+        case ecl_smm_io_file:
 #ifdef ECL_WSOCK
-        case smm_input_wsock:
-        case smm_output_wsock:
-        case smm_io_wsock:
-	case smm_io_wcon:
+        case ecl_smm_input_wsock:
+        case ecl_smm_output_wsock:
+        case ecl_smm_io_wsock:
+	case ecl_smm_io_wcon:
 #endif
                 {
                         cl_object elt_type = ecl_stream_element_type(stream);
@@ -3274,20 +3274,20 @@ ecl_make_file_stream_from_fd(cl_object fname, int fd, enum ecl_smmode smm,
 {
 	cl_object stream = alloc_stream();
 	switch(smm) {
-	case smm_input:
-		smm = smm_input_file;
-	case smm_input_file:
-	case smm_probe:
+	case ecl_smm_input:
+		smm = ecl_smm_input_file;
+	case ecl_smm_input_file:
+	case ecl_smm_probe:
 		stream->stream.ops = duplicate_dispatch_table(&input_file_ops);
 		break;
-	case smm_output:
-		smm = smm_output_file;
-	case smm_output_file:
+	case ecl_smm_output:
+		smm = ecl_smm_output_file;
+	case ecl_smm_output_file:
 		stream->stream.ops = duplicate_dispatch_table(&output_file_ops);
 		break;
-	case smm_io:
-		smm = smm_io_file;
-	case smm_io_file:
+	case ecl_smm_io:
+		smm = ecl_smm_io_file;
+	case ecl_smm_io_file:
 		stream->stream.ops = duplicate_dispatch_table(&io_file_ops);
 		break;
 	default:
@@ -3974,7 +3974,7 @@ maybe_make_windows_console_FILE(cl_object fname, FILE *f, enum ecl_smmode smm,
 		output = ecl_make_stream_from_FILE
 			(fname,
 			 (void*)_get_osfhandle(desc),
-			 smm_io_wcon,
+			 ecl_smm_io_wcon,
 			 byte_size, flags,
 			 external_format);
 		output->stream.eof_char = CONTROL_Z;
@@ -3996,7 +3996,7 @@ maybe_make_windows_console_fd(cl_object fname, int desc, enum ecl_smmode smm,
 		output = ecl_make_stream_from_FILE
 			(fname,
 			 (void*)_get_osfhandle(desc),
-			 smm_io_wcon,
+			 ecl_smm_io_wcon,
 			 byte_size, flags,
 			 external_format);
 		output->stream.eof_char = CONTROL_Z;
@@ -4039,7 +4039,7 @@ si_set_buffering_mode(cl_object stream, cl_object buffer_mode_symbol)
 	else
 		FEerror("Not a valid buffering mode: ~A", 1, buffer_mode_symbol);
 
-	if (mode == smm_output || mode == smm_io || mode == smm_input) {
+	if (mode == ecl_smm_output || mode == ecl_smm_io || mode == ecl_smm_input) {
 		FILE *fp = IO_STREAM_FILE(stream);
 
 		if (buffer_mode != _IONBF) {
@@ -4062,27 +4062,27 @@ ecl_make_stream_from_FILE(cl_object fname, void *f, enum ecl_smmode smm,
 	stream->stream.mode = (short)smm;
 	stream->stream.closed = 0;
 	switch (smm) {
-	case smm_io:
+	case ecl_smm_io:
 		stream->stream.ops = duplicate_dispatch_table(&io_stream_ops);
 		break;
-	case smm_probe:
-	case smm_input:
+	case ecl_smm_probe:
+	case ecl_smm_input:
 		stream->stream.ops = duplicate_dispatch_table(&input_stream_ops);
 		break;
-	case smm_output:
+	case ecl_smm_output:
 		stream->stream.ops = duplicate_dispatch_table(&output_stream_ops);
 		break;
 #if defined(ECL_WSOCK)
-	case smm_input_wsock:
+	case ecl_smm_input_wsock:
 		stream->stream.ops = duplicate_dispatch_table(&winsock_stream_input_ops);
 		break;
-	case smm_output_wsock:
+	case ecl_smm_output_wsock:
 		stream->stream.ops = duplicate_dispatch_table(&winsock_stream_output_ops);
 		break;
-	case smm_io_wsock:
+	case ecl_smm_io_wsock:
 		stream->stream.ops = duplicate_dispatch_table(&winsock_stream_io_ops);
 		break;
-	case smm_io_wcon:
+	case ecl_smm_io_wcon:
 		stream->stream.ops = duplicate_dispatch_table(&wcon_stream_io_ops);
 		break;
 #endif
@@ -4105,27 +4105,27 @@ ecl_make_stream_from_fd(cl_object fname, int fd, enum ecl_smmode smm,
 	char *mode;			/* file open mode */
 	FILE *fp;			/* file pointer */
 	switch(smm) {
-	case smm_input:
+	case ecl_smm_input:
 		mode = OPEN_R;
 		break;
-	case smm_output:
+	case ecl_smm_output:
 		mode = OPEN_W;
 		break;
-	case smm_io:
+	case ecl_smm_io:
 		mode = OPEN_RW;
 		break;
 #if defined(ECL_WSOCK)
-	case smm_input_wsock:
-	case smm_output_wsock:
-	case smm_io_wsock:
-	case smm_io_wcon:
+	case ecl_smm_input_wsock:
+	case ecl_smm_output_wsock:
+	case ecl_smm_io_wsock:
+	case ecl_smm_io_wcon:
 		break;
 #endif
 	default:
 		FEerror("make_stream: wrong mode", 0);
 	}
 #if defined(ECL_WSOCK)
-	if (smm == smm_input_wsock || smm == smm_output_wsock || smm == smm_io_wsock || smm == smm_io_wcon)
+	if (smm == ecl_smm_input_wsock || smm == ecl_smm_output_wsock || smm == ecl_smm_io_wsock || smm == ecl_smm_io_wcon)
 		fp = (FILE*)fd;
 	else
 		fp = safe_fdopen(fd, mode);
@@ -4147,35 +4147,35 @@ ecl_stream_to_handle(cl_object s, bool output)
 	if (ecl_unlikely(!ECL_ANSI_STREAM_P(s)))
 		return -1;
 	switch ((enum ecl_smmode)s->stream.mode) {
-	case smm_input:
+	case ecl_smm_input:
 		if (output) return -1;
 		return fileno(IO_STREAM_FILE(s));
-	case smm_input_file:
+	case ecl_smm_input_file:
 		if (output) return -1;
 		return IO_FILE_DESCRIPTOR(s);
-	case smm_output:
+	case ecl_smm_output:
 		if (!output) return -1;
 		return fileno(IO_STREAM_FILE(s));
-	case smm_output_file:
+	case ecl_smm_output_file:
 		if (!output) return -1;
 		return IO_FILE_DESCRIPTOR(s);
-	case smm_io:
+	case ecl_smm_io:
 		return fileno(IO_STREAM_FILE(s));
-	case smm_io_file:
+	case ecl_smm_io_file:
 		return IO_FILE_DESCRIPTOR(s);
-	case smm_synonym:
+	case ecl_smm_synonym:
 		s = SYNONYM_STREAM_STREAM(s);
 		goto BEGIN;
-	case smm_two_way:
+	case ecl_smm_two_way:
 		s = output? TWO_WAY_STREAM_OUTPUT(s) : TWO_WAY_STREAM_INPUT(s);
 		goto BEGIN;
 #if defined(ECL_WSOCK)
-	case smm_input_wsock:
-	case smm_output_wsock:
-	case smm_io_wsock:
+	case ecl_smm_input_wsock:
+	case ecl_smm_output_wsock:
+	case ecl_smm_io_wsock:
 #endif
 #if defined(ECL_MS_WINDOWS_HOST)
-	case smm_io_wcon:
+	case ecl_smm_io_wcon:
 #endif
 		return -1;
 	default:
@@ -4192,14 +4192,14 @@ si_file_stream_fd(cl_object s)
 		FEerror("file_stream_fd: not a stream", 0);
 
 	switch ((enum ecl_smmode)s->stream.mode) {
-	case smm_input:
-	case smm_output:
-	case smm_io:
+	case ecl_smm_input:
+	case ecl_smm_output:
+	case ecl_smm_io:
                 ret = ecl_make_fixnum(fileno(IO_STREAM_FILE(s)));
                 break;
-	case smm_input_file:
-	case smm_output_file:
-	case smm_io_file:
+	case ecl_smm_input_file:
+	case ecl_smm_output_file:
+	case ecl_smm_io_file:
                 ret = ecl_make_fixnum(IO_FILE_DESCRIPTOR(s));
                 break;
 	default:
@@ -4322,7 +4322,7 @@ make_sequence_input_stream(cl_object vector, cl_index istart, cl_index iend,
          * sequences it has to be explicitly mentioned. */
         strm = alloc_stream();
 	strm->stream.ops = duplicate_dispatch_table(&seq_in_ops);
-	strm->stream.mode = (short)smm_sequence_input;
+	strm->stream.mode = (short)ecl_smm_sequence_input;
         if (!byte_size) {
 #if defined(ECL_UNICODE)
                 if (ECL_BASE_STRING_P(vector)) {
@@ -4469,7 +4469,7 @@ make_sequence_output_stream(cl_object vector, cl_object external_format)
          * sequences it has to be explicitly mentioned. */
 	strm = alloc_stream();
 	strm->stream.ops = duplicate_dispatch_table(&seq_out_ops);
-	strm->stream.mode = (short)smm_sequence_output;
+	strm->stream.mode = (short)ecl_smm_sequence_output;
         if (!byte_size) {
 #if defined(ECL_UNICODE)
                 if (ECL_BASE_STRING_P(vector)) {
@@ -4721,7 +4721,7 @@ cl_file_string_length(cl_object stream, cl_object string)
 	unlikely_if (!ECL_ANSI_STREAM_P(stream)) {
                 FEwrong_type_only_arg(@[file-string-length], stream, @[stream]);
 	}
-	if (stream->stream.mode == smm_broadcast) {
+	if (stream->stream.mode == ecl_smm_broadcast) {
 		stream = BROADCAST_STREAM_LIST(stream);
 		if (Null(stream)) {
 			@(return ecl_make_fixnum(1));
@@ -4949,7 +4949,7 @@ cl_stream_external_format(cl_object strm)
 #endif
         unlikely_if (t != t_stream)
                 FEwrong_type_only_arg(@[stream-external-format], strm, @[stream]);
-	if (strm->stream.mode == smm_synonym) {
+	if (strm->stream.mode == ecl_smm_synonym) {
 		strm = SYNONYM_STREAM_STREAM(strm);
 		goto AGAIN;
 	}
@@ -5049,7 +5049,7 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
 	char *fname = (char*)filename->base_string.self;
 	bool appending = 0;
 	bool exists = si_file_kind(filename, Ct) != Cnil;
-	if (smm == smm_input || smm == smm_probe) {
+	if (smm == ecl_smm_input || smm == ecl_smm_probe) {
 		if (!exists) {
 			if (if_does_not_exist == @':error') {
 				FEcannot_open(fn);
@@ -5066,8 +5066,8 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
 		}
 		f = safe_open(fname, O_RDONLY, mode);
 		unlikely_if (f < 0) FEcannot_open(fn);
-	} else if (smm == smm_output || smm == smm_io) {
-		int base = (smm == smm_output)? O_WRONLY : O_RDWR;
+	} else if (smm == ecl_smm_output || smm == ecl_smm_io) {
+		int base = (smm == ecl_smm_output)? O_WRONLY : O_RDWR;
 		if (if_exists == @':new_version' &&
 		    if_does_not_exist == @':create') {
 			exists = 0;
@@ -5117,10 +5117,10 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
 		 * output we open with w+ because we do not want to
 		 * overwrite the file. */
 		switch (smm) {
-		case smm_probe:
-		case smm_input: fp = safe_fopen(fname, OPEN_R); break;
-		case smm_output:
-		case smm_io: fp = safe_fopen(fname, OPEN_RW); break;
+		case ecl_smm_probe:
+		case ecl_smm_input: fp = safe_fopen(fname, OPEN_R); break;
+		case ecl_smm_output:
+		case ecl_smm_io: fp = safe_fopen(fname, OPEN_RW); break;
                 default:; /* never reached */
 		}
 		output = ecl_make_stream_from_FILE(fn, fp, smm, byte_size, flags,
@@ -5130,7 +5130,7 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
 		output = ecl_make_file_stream_from_fd(fn, f, smm, byte_size, flags,
 						      external_format);
 	}
-	if (smm == smm_probe) {
+	if (smm == ecl_smm_probe) {
 		cl_close(1, output);
 	} else {
 		output->stream.flags |= ECL_STREAM_MIGHT_SEEK;
@@ -5155,11 +5155,11 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
 @
 	/* INV: ecl_open_stream() checks types */
 	if (direction == @':input') {
-		smm = smm_input;
+		smm = ecl_smm_input;
 		if (!idnesp)
 			if_does_not_exist = @':error';
 	} else if (direction == @':output') {
-		smm = smm_output;
+		smm = ecl_smm_output;
 		if (!iesp)
 			if_exists = @':new_version';
 		if (!idnesp) {
@@ -5170,7 +5170,7 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
 				if_does_not_exist = @':create';
 		}
 	} else if (direction == @':io') {
-		smm = smm_io;
+		smm = ecl_smm_io;
 		if (!iesp)
 			if_exists = @':new_version';
 		if (!idnesp) {
@@ -5181,7 +5181,7 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
 				if_does_not_exist = @':create';
 		}
 	} else if (direction == @':probe') {
-		smm = smm_probe;
+		smm = ecl_smm_probe;
 		if (!idnesp)
 			if_does_not_exist = Cnil;
 	} else {
@@ -5470,7 +5470,7 @@ static void
 maybe_clearerr(cl_object strm)
 {
 	int t = strm->stream.mode;
-	if (t == smm_io || t == smm_output || t == smm_input) {
+	if (t == ecl_smm_io || t == ecl_smm_output || t == ecl_smm_input) {
 		FILE *f = IO_STREAM_FILE(strm);
 		if (f != NULL) clearerr(f);
 	}
@@ -5588,7 +5588,7 @@ init_file(void)
 #endif
 
 	null_stream = ecl_make_stream_from_FILE(make_constant_base_string("/dev/null"),
-						NULL, smm_io, 8, flags, external_format);
+						NULL, ecl_smm_io, 8, flags, external_format);
 	generic_close(null_stream);
 	null_stream = cl_make_two_way_stream(null_stream, cl_make_broadcast_stream(0));
 	cl_core.null_stream = null_stream;
@@ -5597,20 +5597,20 @@ init_file(void)
          * The reason is that C streams block on I/O operations. */
 #if !defined(ECL_THREADS)
 	standard_input = maybe_make_windows_console_FILE(make_constant_base_string("stdin"),
-							 stdin, smm_input, 8, flags, external_format);
+							 stdin, ecl_smm_input, 8, flags, external_format);
 	standard_output = maybe_make_windows_console_FILE(make_constant_base_string("stdout"),
-							  stdout, smm_output, 8, flags, external_format);
+							  stdout, ecl_smm_output, 8, flags, external_format);
 	error_output = maybe_make_windows_console_FILE(make_constant_base_string("stderr"),
-						       stderr, smm_output, 8, flags, external_format);
+						       stderr, ecl_smm_output, 8, flags, external_format);
 #else
 	standard_input = maybe_make_windows_console_fd(make_constant_base_string("stdin"),
-						       STDIN_FILENO, smm_input_file, 8, flags,
+						       STDIN_FILENO, ecl_smm_input_file, 8, flags,
 						       external_format);
 	standard_output = maybe_make_windows_console_fd(make_constant_base_string("stdout"),
-							STDOUT_FILENO, smm_output_file, 8, flags,
+							STDOUT_FILENO, ecl_smm_output_file, 8, flags,
 							external_format);
 	error_output = maybe_make_windows_console_fd(make_constant_base_string("stderr"),
-						     STDERR_FILENO, smm_output_file, 8, flags,
+						     STDERR_FILENO, ecl_smm_output_file, 8, flags,
 						     external_format);
 #endif
 	cl_core.standard_input = standard_input;

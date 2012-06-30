@@ -188,73 +188,73 @@ write_stream(cl_object x, cl_object stream)
         ecl_base_char buffer[10];
 #endif
         switch ((enum ecl_smmode)x->stream.mode) {
-        case smm_input_file:
+        case ecl_smm_input_file:
                 prefix = "closed input file";
                 tag = IO_STREAM_FILENAME(x);
                 break;
-        case smm_input:
+        case ecl_smm_input:
                 prefix = "closed input stream";
                 tag = IO_STREAM_FILENAME(x);
                 break;
-        case smm_output_file:
+        case ecl_smm_output_file:
                 prefix = "closed output file";
                 tag = IO_STREAM_FILENAME(x);
                 break;
-        case smm_output:
+        case ecl_smm_output:
                 prefix = "closed output stream";
                 tag = IO_STREAM_FILENAME(x);
                 break;
 #ifdef ECL_MS_WINDOWS_HOST
-        case smm_input_wsock:
+        case ecl_smm_input_wsock:
                 prefix = "closed input win32 socket stream";
                 tag = IO_STREAM_FILENAME(x);
                 break;
-        case smm_output_wsock:
+        case ecl_smm_output_wsock:
                 prefix = "closed output win32 socket stream";
                 tag = IO_STREAM_FILENAME(x);
                 break;
-        case smm_io_wsock:
+        case ecl_smm_io_wsock:
                 prefix = "closed i/o win32 socket stream";
                 tag = IO_STREAM_FILENAME(x);
                 break;
-        case smm_io_wcon:
+        case ecl_smm_io_wcon:
                 prefix = "closed i/o win32 console stream";
                 tag = IO_STREAM_FILENAME(x);
                 break;
 #endif
-        case smm_io_file:
+        case ecl_smm_io_file:
                 prefix = "closed io file";
                 tag = IO_STREAM_FILENAME(x);
                 break;
-        case smm_io:
+        case ecl_smm_io:
                 prefix = "closed io stream";
                 tag = IO_STREAM_FILENAME(x);
                 break;
-        case smm_probe:
+        case ecl_smm_probe:
                 prefix = "closed probe stream";
                 tag = IO_STREAM_FILENAME(x);
                 break;
-        case smm_synonym:
+        case ecl_smm_synonym:
                 prefix = "closed synonym stream to";
                 tag = SYNONYM_STREAM_SYMBOL(x);
                 break;
-        case smm_broadcast:
+        case ecl_smm_broadcast:
                 prefix = "closed broadcast stream";
                 tag = Cnil;
                 break;
-        case smm_concatenated:
+        case ecl_smm_concatenated:
                 prefix = "closed concatenated stream";
                 tag = Cnil;
                 break;
-        case smm_two_way:
+        case ecl_smm_two_way:
                 prefix = "closed two-way stream";
                 tag = Cnil;
                 break;
-        case smm_echo:
+        case ecl_smm_echo:
                 prefix = "closed echo stream";
                 tag = Cnil;
                 break;
-        case smm_string_input: {
+        case ecl_smm_string_input: {
                 cl_object text = x->stream.object0;
                 cl_index ndx, l = ecl_length(text);
                 for (ndx = 0; (ndx < 8) && (ndx < l); ndx++) {
@@ -279,15 +279,15 @@ write_stream(cl_object x, cl_object stream)
                 tag->base_string.fillp = ndx-1;
                 break;
         }
-        case smm_string_output:
+        case ecl_smm_string_output:
                 prefix = "closed string-output stream";
                 tag = Cnil;
                 break;
-        case smm_sequence_input:
+        case ecl_smm_sequence_input:
                 prefix = "closed sequence-input stream";
                 tag = Cnil;
                 break;
-        case smm_sequence_output:
+        case ecl_smm_sequence_output:
                 prefix = "closed sequence-output stream";
                 tag = Cnil;
                 break;

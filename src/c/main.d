@@ -476,7 +476,7 @@ maybe_fix_console_stream(cl_object stream)
 		{65001, "UTF8"},
 		{0,"LATIN-1"}
 	};
-	if (stream->stream.mode != smm_io_wcon)
+	if (stream->stream.mode != ecl_smm_io_wcon)
 		return;
 	for (i = 0; known_cp[i].code && known_cp[i].code != cp; i++)
 		{}

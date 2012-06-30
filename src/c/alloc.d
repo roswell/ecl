@@ -342,7 +342,7 @@ ONCE_MORE:
 	  break;
 #endif /* CLOS */
 	case t_stream:
-	  obj->stream.mode = (short)smm_broadcast;
+	  obj->stream.mode = (short)ecl_smm_broadcast;
 	  obj->stream.file.descriptor = -1;
 	  obj->stream.object0 = OBJNULL;
 	  obj->stream.object1 = OBJNULL;

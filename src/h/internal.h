@@ -267,7 +267,7 @@ extern void* ecl_dynamic_callback_make(cl_object data, enum ecl_ffi_calling_conv
 #define OPEN_RA	"a+b"
 
 #define ECL_FILE_STREAM_P(strm) \
-        (ECL_ANSI_STREAM_P(strm) && (strm)->stream.mode < smm_synonym)
+        (ECL_ANSI_STREAM_P(strm) && (strm)->stream.mode < ecl_smm_synonym)
 #define STRING_OUTPUT_STRING(strm) (strm)->stream.object0
 #define STRING_OUTPUT_COLUMN(strm) (strm)->stream.int1
 #define STRING_INPUT_STRING(strm) (strm)->stream.object0

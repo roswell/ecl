@@ -512,30 +512,30 @@ struct ecl_structure {		/*  structure header  */
 #endif
 
 enum ecl_smmode {		/*  stream mode  */
-	smm_input,		/*  input  */
-	smm_input_file,		/*  input  */
-	smm_output,		/*  output  */
-	smm_output_file,	/*  output  */
-	smm_io,			/*  input-output  */
-	smm_io_file,		/*  input-output  */
-	smm_synonym,		/*  synonym  */
-	smm_broadcast,		/*  broadcast  */
-	smm_concatenated,	/*  concatenated  */
-	smm_two_way,		/*  two way  */
-	smm_echo,		/*  echo  */
-	smm_string_input,	/*  string input  */
-	smm_string_output,	/*  string output  */
-	smm_probe,		/*  probe (only used in open_stream())  */
+	ecl_smm_input,		/*  input  */
+	ecl_smm_input_file,		/*  input  */
+	ecl_smm_output,		/*  output  */
+	ecl_smm_output_file,	/*  output  */
+	ecl_smm_io,			/*  input-output  */
+	ecl_smm_io_file,		/*  input-output  */
+	ecl_smm_synonym,		/*  synonym  */
+	ecl_smm_broadcast,		/*  broadcast  */
+	ecl_smm_concatenated,	/*  concatenated  */
+	ecl_smm_two_way,		/*  two way  */
+	ecl_smm_echo,		/*  echo  */
+	ecl_smm_string_input,	/*  string input  */
+	ecl_smm_string_output,	/*  string output  */
+	ecl_smm_probe,		/*  probe (only used in open_stream())  */
 #if defined(ECL_WSOCK)
-	smm_input_wsock,	/*  input socket (Win32) */
-	smm_output_wsock,	/*  output socket (Win32) */
-	smm_io_wsock,		/*  input/output socket (Win32) */
+	ecl_smm_input_wsock,	/*  input socket (Win32) */
+	ecl_smm_output_wsock,	/*  output socket (Win32) */
+	ecl_smm_io_wsock,		/*  input/output socket (Win32) */
 #endif
 #if defined(ECL_MS_WINDOWS_HOST)
-	smm_io_wcon,		/*  windows console (Win32) */
+	ecl_smm_io_wcon,		/*  windows console (Win32) */
 #endif
-	smm_sequence_input,	/*  sequence input  */
-	smm_sequence_output	/*  sequence output  */
+	ecl_smm_sequence_input,	/*  sequence input  */
+	ecl_smm_sequence_output	/*  sequence output  */
 };
 
 struct ecl_file_ops {

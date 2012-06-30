@@ -96,7 +96,7 @@ si_load_source(cl_object source, cl_object verbose, cl_object print, cl_object e
 		/* INV: if "source" is not a valid stream, file.d will complain */
 		strm = source;
 	} else {
-		strm = ecl_open_stream(source, smm_input, Cnil, Cnil, 8,
+		strm = ecl_open_stream(source, ecl_smm_input, Cnil, Cnil, 8,
 				       ECL_STREAM_C_STREAM, external_format);
 		if (Null(strm))
 			@(return Cnil)
@@ -145,7 +145,7 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
 		/* INV: if "source" is not a valid stream, file.d will complain */
 		strm = source;
 	} else {
-		strm = ecl_open_stream(source, smm_input, Cnil, Cnil, 8,
+		strm = ecl_open_stream(source, ecl_smm_input, Cnil, Cnil, 8,
 				       ECL_STREAM_C_STREAM, external_format);
 		if (Null(strm))
 			@(return Cnil)

@@ -326,15 +326,15 @@ cl_type_of(cl_object x)
 #endif
 	case t_stream:
 		switch (x->stream.mode) {
-		case smm_synonym:	t = @'synonym-stream'; break;
-		case smm_broadcast:	t = @'broadcast-stream'; break;
-		case smm_concatenated:	t = @'concatenated-stream'; break;
-		case smm_two_way:	t =  @'two-way-stream'; break;
-		case smm_string_input:
-		case smm_string_output:	t = @'string-stream'; break;
-		case smm_echo:		t = @'echo-stream'; break;
-                case smm_sequence_input:
-                case smm_sequence_output: t = @'ext::sequence-stream'; break;
+		case ecl_smm_synonym:	t = @'synonym-stream'; break;
+		case ecl_smm_broadcast:	t = @'broadcast-stream'; break;
+		case ecl_smm_concatenated:	t = @'concatenated-stream'; break;
+		case ecl_smm_two_way:	t =  @'two-way-stream'; break;
+		case ecl_smm_string_input:
+		case ecl_smm_string_output:	t = @'string-stream'; break;
+		case ecl_smm_echo:		t = @'echo-stream'; break;
+                case ecl_smm_sequence_input:
+                case ecl_smm_sequence_output: t = @'ext::sequence-stream'; break;
 		default:		t = @'file-stream'; break;
 		}
 		break;

@@ -162,3 +162,29 @@ typedef struct ecl_ihs_frame *ihs_ptr;
 #define ATOM(x)		ECL_ATOM(x)
 #define SYMBOLP(x)	ECL_SYMBOLP(x)
 
+enum {	/*  stream mode  */
+	smm_input,		/*  input  */
+	smm_input_file,		/*  input  */
+	smm_output,		/*  output  */
+	smm_output_file,	/*  output  */
+	smm_io,			/*  input-output  */
+	smm_io_file,		/*  input-output  */
+	smm_synonym,		/*  synonym  */
+	smm_broadcast,		/*  broadcast  */
+	smm_concatenated,	/*  concatenated  */
+	smm_two_way,		/*  two way  */
+	smm_echo,		/*  echo  */
+	smm_string_input,	/*  string input  */
+	smm_string_output,	/*  string output  */
+	smm_probe,		/*  probe (only used in open_stream())  */
+#if defined(WSOCK)
+	smm_input_wsock,	/*  input socket (Win32) */
+	smm_output_wsock,	/*  output socket (Win32) */
+	smm_io_wsock,		/*  input/output socket (Win32) */
+#endif
+#if defined(MS_WINDOWS_HOST)
+	smm_io_wcon,		/*  windows console (Win32) */
+#endif
+	smm_sequence_input,	/*  sequence input  */
+	smm_sequence_output	/*  sequence output  */
+};
