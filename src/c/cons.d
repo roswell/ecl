@@ -814,152 +814,182 @@ cl_object ecl_cddddr(cl_object x)
 
 cl_object cl_car(cl_object x)
 {
-  return1(ecl_car(x));
+  const cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, ecl_car(x));
 }
 
 cl_object cl_cdr(cl_object x)
 {
-  return1(ecl_cdr(x));
+  const cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, ecl_cdr(x));
 }
 
 cl_object cl_caar(cl_object x)
 {
-  return1(ecl_caar(x));
+  const cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, ecl_caar(x));
 }
 
 cl_object cl_cdar(cl_object x)
 {
-  return1(ecl_cdar(x));
+  const cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, ecl_cdar(x));
 }
 
 cl_object cl_cadr(cl_object x)
 {
-  return1(ecl_cadr(x));
+  const cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, ecl_cadr(x));
 }
 
 cl_object cl_cddr(cl_object x)
 {
-  return1(ecl_cddr(x));
+  const cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, ecl_cddr(x));
 }
 
 cl_object cl_caaar(cl_object x)
 {
-  return1(ecl_caaar(x));
+  const cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, ecl_caaar(x));
 }
 
 cl_object cl_cdaar(cl_object x)
 {
-  return1(ecl_cdaar(x));
+  const cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, ecl_cdaar(x));
 }
 
 cl_object cl_cadar(cl_object x)
 {
-  return1(ecl_cadar(x));
+  const cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, ecl_cadar(x));
 }
 
 cl_object cl_cddar(cl_object x)
 {
-  return1(ecl_cddar(x));
+  const cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, ecl_cddar(x));
 }
 
 cl_object cl_caadr(cl_object x)
 {
-  return1(ecl_caadr(x));
+  const cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, ecl_caadr(x));
 }
 
 cl_object cl_cdadr(cl_object x)
 {
-  return1(ecl_cdadr(x));
+  const cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, ecl_cdadr(x));
 }
 
 cl_object cl_caddr(cl_object x)
 {
-  return1(ecl_caddr(x));
+  const cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, ecl_caddr(x));
 }
 
 cl_object cl_cdddr(cl_object x)
 {
-  return1(ecl_cdddr(x));
+  const cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, ecl_cdddr(x));
 }
 
 cl_object cl_caaaar(cl_object x)
 {
-  return1(ecl_caaaar(x));
+  const cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, ecl_caaaar(x));
 }
 
 cl_object cl_cdaaar(cl_object x)
 {
-  return1(ecl_cdaaar(x));
+  const cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, ecl_cdaaar(x));
 }
 
 cl_object cl_cadaar(cl_object x)
 {
-  return1(ecl_cadaar(x));
+  const cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, ecl_cadaar(x));
 }
 
 cl_object cl_cddaar(cl_object x)
 {
-  return1(ecl_cddaar(x));
+  const cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, ecl_cddaar(x));
 }
 
 cl_object cl_caadar(cl_object x)
 {
-  return1(ecl_caadar(x));
+  const cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, ecl_caadar(x));
 }
 
 cl_object cl_cdadar(cl_object x)
 {
-  return1(ecl_cdadar(x));
+  const cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, ecl_cdadar(x));
 }
 
 cl_object cl_caddar(cl_object x)
 {
-  return1(ecl_caddar(x));
+  const cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, ecl_caddar(x));
 }
 
 cl_object cl_cdddar(cl_object x)
 {
-  return1(ecl_cdddar(x));
+  const cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, ecl_cdddar(x));
 }
 
 cl_object cl_caaadr(cl_object x)
 {
-  return1(ecl_caaadr(x));
+  const cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, ecl_caaadr(x));
 }
 
 cl_object cl_cdaadr(cl_object x)
 {
-  return1(ecl_cdaadr(x));
+  const cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, ecl_cdaadr(x));
 }
 
 cl_object cl_cadadr(cl_object x)
 {
-  return1(ecl_cadadr(x));
+  const cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, ecl_cadadr(x));
 }
 
 cl_object cl_cddadr(cl_object x)
 {
-  return1(ecl_cddadr(x));
+  const cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, ecl_cddadr(x));
 }
 
 cl_object cl_caaddr(cl_object x)
 {
-  return1(ecl_caaddr(x));
+  const cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, ecl_caaddr(x));
 }
 
 cl_object cl_cdaddr(cl_object x)
 {
-  return1(ecl_cdaddr(x));
+  const cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, ecl_cdaddr(x));
 }
 
 cl_object cl_cadddr(cl_object x)
 {
-  return1(ecl_cadddr(x));
+  const cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, ecl_cadddr(x));
 }
 
 cl_object cl_cddddr(cl_object x)
 {
-  return1(ecl_cddddr(x));
+  const cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, ecl_cddddr(x));
 }
 
 /* END-GENERATED */

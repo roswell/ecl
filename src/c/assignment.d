@@ -25,7 +25,7 @@ cl_set(cl_object var, cl_object val)
 	const cl_env_ptr env = ecl_process_env();
 	if (ecl_symbol_type(var) & ecl_stp_constant)
 		FEinvalid_variable("Cannot assign to the constant ~S.", var);
-	return1(ECL_SETQ(env, var, val));
+	ecl_return1(env, ECL_SETQ(env, var, val));
 }
 
 static cl_object

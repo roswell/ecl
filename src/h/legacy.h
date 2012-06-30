@@ -139,3 +139,7 @@
 #define CHAR_CODE_LIMIT ECL_CHAR_CODE_LIMIT
 
 #define NVALUES		cl_env.nvalues
+
+#define return0()	return ((NVALUES = 0),Cnil)
+#define return1(x)	return ((VALUES(0)=(x)),(NVALUES=1),VALUES(0))
+#define returnn(x)	return x

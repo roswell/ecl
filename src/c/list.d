@@ -215,9 +215,10 @@ ecl_append(cl_object x, cl_object y)
 	return head;
 }
 
-#define LENTH(n) (cl_object x) {\
-	return1(ecl_nth(n, x));\
-}
+#define LENTH(n) (cl_object x) {				\
+		const cl_env_ptr the_env = ecl_process_env();	\
+		ecl_return1(the_env, ecl_nth(n, x));		\
+	}
 cl_object @fifth	LENTH(4)
 cl_object @sixth	LENTH(5)
 cl_object @seventh	LENTH(6)

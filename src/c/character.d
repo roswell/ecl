@@ -450,8 +450,9 @@ ecl_digit_char(cl_fixnum w, cl_fixnum r)
 cl_object
 cl_char_int(cl_object c)
 {
+	const cl_env_ptr the_env = ecl_process_env();
 	/* INV: ecl_char_code() checks the type of `c' */
-	return1(ecl_make_fixnum(ecl_char_code(c)));
+	ecl_return1(the_env, ecl_make_fixnum(ecl_char_code(c)));
 }
 
 /* here we give every character an implicit name of the form 'u#' where # is a hexadecimal number,
