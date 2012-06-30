@@ -59,7 +59,7 @@ cl_object
 si_structure_subtype_p(cl_object x, cl_object y)
 {
 	@(return ((type_of(x) == T_STRUCTURE
-		     && structure_subtypep(STYPE(x), y)) ? ECL_T : ECL_NIL))
+		     && structure_subtypep(ECL_STRUCT_TYPE(x), y)) ? ECL_T : ECL_NIL))
 }
 
 @(defun si::make-structure (type &rest args)
@@ -67,10 +67,10 @@ si_structure_subtype_p(cl_object x, cl_object y)
 	int i;
 @
 	x = ecl_alloc_object(T_STRUCTURE);
-	STYPE(x) = type;
-	SLOTS(x) = NULL;	/* for GC sake */
-	SLENGTH(x) = --narg;
-	SLOTS(x) = (cl_object *)ecl_alloc_align(sizeof(cl_object)*narg, sizeof(cl_object));
+	ECL_STRUCT_TYPE(x) = type;
+	ECL_STRUCT_SLOTS(x) = NULL;	/* for GC sake */
+	ECL_STRUCT_LENGTH(x) = --narg;
+	ECL_STRUCT_SLOTS(x) = (cl_object *)ecl_alloc_align(sizeof(cl_object)*narg, sizeof(cl_object));
 #ifdef CLOS
         x->instance.sig = ECL_UNBOUND;
 #endif
@@ -78,7 +78,7 @@ si_structure_subtype_p(cl_object x, cl_object y)
 		FEerror("Limit on structure size exceeded: ~S slots requested.",
 			1, ecl_make_fixnum(narg));
 	for (i = 0;  i < narg;  i++)
-		SLOT(x, i) = ecl_va_arg(args);
+		ECL_STRUCT_SLOT(x, i) = ecl_va_arg(args);
 	@(return x)
 @)
 
@@ -94,12 +94,12 @@ ecl_copy_structure(cl_object x)
 	if (ecl_unlikely(Null(si_structurep(x))))
 		FEwrong_type_only_arg(@[copy-structure], x, @[structure]);
 	y = ecl_alloc_object(T_STRUCTURE);
-	STYPE(y) = STYPE(x);
-	SLENGTH(y) = j = SLENGTH(x);
+	ECL_STRUCT_TYPE(y) = ECL_STRUCT_TYPE(x);
+	ECL_STRUCT_LENGTH(y) = j = ECL_STRUCT_LENGTH(x);
 	size = sizeof(cl_object)*j;
-	SLOTS(y) = NULL;	/* for GC sake */
-	SLOTS(y) = (cl_object *)ecl_alloc_align(size, sizeof(cl_object));
-	memcpy(SLOTS(y), SLOTS(x), size);
+	ECL_STRUCT_SLOTS(y) = NULL;	/* for GC sake */
+	ECL_STRUCT_SLOTS(y) = (cl_object *)ecl_alloc_align(size, sizeof(cl_object));
+	memcpy(ECL_STRUCT_SLOTS(y), ECL_STRUCT_SLOTS(x), size);
 #ifdef CLOS
         y->instance.sig = x->instance.sig;
 #endif
@@ -136,16 +136,16 @@ si_structure_name(cl_object s)
 {
 	if (ecl_unlikely(Null(si_structurep(s))))
                 FEwrong_type_only_arg(@[si::structure-name], s, @[structure]);
-	@(return SNAME(s))
+	@(return ECL_STRUCT_NAME(s))
 }
 
 cl_object
 si_structure_ref(cl_object x, cl_object type, cl_object index)
 {
 	if (ecl_unlikely(type_of(x) != T_STRUCTURE ||
-                         !structure_subtypep(STYPE(x), type)))
+                         !structure_subtypep(ECL_STRUCT_TYPE(x), type)))
                 FEwrong_type_nth_arg(@[si::structure-ref], 1, x, type);
-	@(return SLOT(x, ecl_fixnum(index)))
+	@(return ECL_STRUCT_SLOT(x, ecl_fixnum(index)))
 }
 
 cl_object
@@ -153,18 +153,18 @@ ecl_structure_ref(cl_object x, cl_object type, int n)
 {
 
 	if (ecl_unlikely(type_of(x) != T_STRUCTURE ||
-                         !structure_subtypep(STYPE(x), type)))
+                         !structure_subtypep(ECL_STRUCT_TYPE(x), type)))
                 FEwrong_type_nth_arg(@[si::structure-ref], 1, x, type);
-	return(SLOT(x, n));
+	return(ECL_STRUCT_SLOT(x, n));
 }
 
 cl_object
 si_structure_set(cl_object x, cl_object type, cl_object index, cl_object val)
 {
 	if (ecl_unlikely(type_of(x) != T_STRUCTURE ||
-                         !structure_subtypep(STYPE(x), type)))
+                         !structure_subtypep(ECL_STRUCT_TYPE(x), type)))
                 FEwrong_type_nth_arg(@[si::structure-set], 1, x, type);
-	SLOT(x, ecl_fixnum(index)) = val;
+	ECL_STRUCT_SLOT(x, ecl_fixnum(index)) = val;
 	@(return val)
 }
 
@@ -173,9 +173,9 @@ ecl_structure_set(cl_object x, cl_object type, int n, cl_object v)
 {
 
 	if (ecl_unlikely(type_of(x) != T_STRUCTURE ||
-                         !structure_subtypep(STYPE(x), type)))
+                         !structure_subtypep(ECL_STRUCT_TYPE(x), type)))
                 FEwrong_type_nth_arg(@[si::structure-set], 1, x, type);
-	SLOT(x, n) = v;
+	ECL_STRUCT_SLOT(x, n) = v;
 	return(v);
 }
 

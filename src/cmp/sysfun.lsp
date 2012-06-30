@@ -756,7 +756,7 @@
 
 ;; file structure.d
 
-(def-inline si:structure-name :always (structure) symbol "SNAME(#0)")
+(def-inline si:structure-name :always (structure) symbol "ECL_STRUCT_NAME(#0)")
 
 (def-inline si:structure-ref :always (t t fixnum) t "ecl_structure_ref(#0,#1,#2)")
 

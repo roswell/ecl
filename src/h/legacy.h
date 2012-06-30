@@ -200,3 +200,9 @@ enum {	/*  stream mode  */
 #define CLASS_INFERIORS(x) ECL_CLASS_INFERIORS(x)
 #define CLASS_SLOTS(x) ECL_CLASS_SLOTS(x)
 #define CLASS_CPL(x) ECL_CLASS_CPL(x)
+
+#define STYPE(x) ECL_STRUCT_TYPE(x)
+#define SLOTS(x) ECL_STRUCT_SLOTS(x)
+#define SLOT(x,i) ECL_STRUCT_SLOT(x,i)
+#define SLENGTH(x) ECL_STRUCT_LENGTH(x)
+#define SNAME(x) ECL_STRUCT_NAME(x)

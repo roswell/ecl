@@ -490,11 +490,11 @@ struct ecl_string {		/*  string header  */
 
 #ifdef CLOS
 #define T_STRUCTURE	t_instance
-#define STYPE(x)	ECL_CLASS_OF(x)
-#define SLOTS(x)	(x)->instance.slots
-#define SLENGTH(x)	(x)->instance.length
-#define SLOT(x,i)	(x)->instance.slots[i]
-#define SNAME(x)	ECL_CLASS_NAME(ECL_CLASS_OF(x))
+#define ECL_STRUCT_TYPE(x)	ECL_CLASS_OF(x)
+#define ECL_STRUCT_SLOTS(x)	(x)->instance.slots
+#define ECL_STRUCT_LENGTH(x)	(x)->instance.length
+#define ECL_STRUCT_SLOT(x,i)	(x)->instance.slots[i]
+#define ECL_STRUCT_NAME(x)	ECL_CLASS_NAME(ECL_CLASS_OF(x))
 #else
 struct ecl_structure {		/*  structure header  */
 	_ECL_HDR;
@@ -504,11 +504,11 @@ struct ecl_structure {		/*  structure header  */
 };
 
 #define T_STRUCTURE	t_structure
-#define STYPE(x)	x->str.name
-#define SLOTS(x)	(x)->str.self
-#define SLENGTH(x)	(x)->str.length
-#define SLOT(x,i)	(x)->str.self[i]
-#define SNAME(x)	x->str.name
+#define ECL_STRUCT_TYPE(x)	x->str.name
+#define ECL_STRUCT_SLOTS(x)	(x)->str.self
+#define ECL_STRUCT_LENGTH(x)	(x)->str.length
+#define ECL_STRUCT_SLOT(x,i)	(x)->str.self[i]
+#define ECL_STRUCT_NAME(x)	x->str.name
 #endif
 
 enum ecl_smmode {		/*  stream mode  */
