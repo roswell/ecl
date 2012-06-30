@@ -284,7 +284,6 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_obje
  * RETURN VALUES STACK
  ***********************/
 
-#define NVALUES		cl_env.nvalues
 #define VALUES(n)	cl_env.values[n]
 #define return0()	return ((NVALUES = 0),Cnil)
 #define return1(x)	return ((VALUES(0)=(x)),(NVALUES=1),VALUES(0))

@@ -925,16 +925,16 @@ _mark_contblock(void *x, cl_index s)
 	int i;
 	cl_object *tl;
 @
-	NVALUES = 8;
-	VALUES(0) = ecl_make_fixnum(real_maxpage);
-	VALUES(1) = ecl_make_fixnum(available_pages());
-	VALUES(2) = ecl_make_fixnum(ncbpage);
-	VALUES(3) = ecl_make_fixnum(maxcbpage);
-	VALUES(4) = ecl_make_fixnum(ncb);
-	VALUES(5) = ecl_make_fixnum(cbgccount);
-	VALUES(6) = ecl_make_fixnum(holepage);
-	VALUES(7) = Cnil;
-	tl = &VALUES(7);
+	the_env->nvalues = 8;
+	the_env->values[0] = ecl_make_fixnum(real_maxpage);
+	the_env->values[1] = ecl_make_fixnum(available_pages());
+	the_env->values[2] = ecl_make_fixnum(ncbpage);
+	the_env->values[3] = ecl_make_fixnum(maxcbpage);
+	the_env->values[4] = ecl_make_fixnum(ncb);
+	the_env->values[5] = ecl_make_fixnum(cbgccount);
+	the_env->values[6] = ecl_make_fixnum(holepage);
+	the_env->values[7] = Cnil;
+	tl = &the_env->values[7];
 	for (i = 0;  i < (int)t_end;  i++) {
 	  if (tm_table[i].tm_type == (cl_type)i) {
 	    tl = &CDR(*tl = CONS(ecl_make_fixnum(tm_table[i].tm_nused), Cnil));
@@ -950,7 +950,7 @@ _mark_contblock(void *x, cl_index s)
 	    tl = &CDR(*tl = CONS(Cnil, Cnil));
 	  }
 	}
-	return VALUES(0);
+	return the_env->values[0];
 @)
 
 @(defun si::reset-gc-count ()

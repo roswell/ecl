@@ -295,5 +295,5 @@ si_clear_gfun_hash(cl_object what)
 #endif
 	ecl_cache_remove_one(the_env->method_cache, what);
 	ecl_cache_remove_one(the_env->slot_cache, what);
-        return0();
+        ecl_return0(the_env);
 }

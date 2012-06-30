@@ -414,9 +414,9 @@ si_read_object_or_ignore(cl_object in, cl_object eof)
         x = ecl_read_object_with_delimiter(in, EOF, ECL_READ_RETURN_IGNORABLE, 
                                            cat_constituent);
         if (x == OBJNULL) {
-                NVALUES = 1;
+                env->nvalues = 1;
                 x = eof;
-        } else if (env->nvalues != 0) {
+        } else if (env->nvalues) {
                 if (!Null(ECL_SYM_VAL(env, @'si::*sharp-eq-context*')))
                         x = patch_sharp(x);
         }

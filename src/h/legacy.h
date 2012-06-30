@@ -137,3 +137,5 @@
 #define cl_va_end ecl_va_end
 
 #define CHAR_CODE_LIMIT ECL_CHAR_CODE_LIMIT
+
+#define NVALUES		cl_env.nvalues

@@ -152,12 +152,13 @@ cl_return_from(cl_object block_id, cl_object block_name)
 void
 cl_go(cl_object tag_id, cl_object label)
 {
+	const cl_env_ptr the_env = ecl_process_env();
 	ecl_frame_ptr fr = frs_sch(tag_id);
 	if (fr == NULL)
 		FEcontrol_error("GO: The tagbody ~S is missing.", 1, tag_id);
-	VALUES(0)=label;
-	NVALUES=1;
-	ecl_unwind(ecl_process_env(), fr);
+	the_env->values[0] = label;
+	the_env->nvalues = 1;
+	ecl_unwind(the_env, fr);
 }
 
 cl_object
