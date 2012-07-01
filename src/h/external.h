@@ -45,9 +45,9 @@ struct cl_env_struct {
 	cl_object bindings_array;
 #endif
 	cl_index bds_size;
-	struct ecl_bds_bd *bds_org;
-	struct ecl_bds_bd *bds_top;
-	struct ecl_bds_bd *bds_limit;
+	struct ecl_bds_frame *bds_org;
+	struct ecl_bds_frame *bds_top;
+	struct ecl_bds_frame *bds_limit;
 
 	/*
 	 * The Invocation History Stack (IHS) keeps a list of the names of the

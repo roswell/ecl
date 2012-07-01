@@ -35,7 +35,7 @@ extern "C" {
  * BIND STACK
  **************/
 
-typedef struct ecl_bds_bd {
+typedef struct ecl_bds_frame {
 	cl_object symbol;	/*  symbol  */
 	cl_object value;	/*  previous value of the symbol  */
 } *ecl_bds_ptr;
