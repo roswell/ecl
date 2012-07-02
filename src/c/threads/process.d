@@ -266,7 +266,7 @@ thread_entry_point(void *arg)
 		si_trap_fpe(@'last', ECL_T);
 		ecl_bds_bind(env, @'mp::*current-process*', process);
 
-		ECL_RESTARTS_TRY(env, ecl_list1(Cnil), @'abort') {
+		ECL_RESTART_CASE_BEGIN(env, @'abort') {
 			env->values[0] = cl_apply(2, process->process.function,
 						  process->process.args);
 			{
@@ -277,7 +277,7 @@ thread_entry_point(void *arg)
 				}
 				process->process.exit_values = output;
 			}
-		} ECL_RESTARTS_CATCH(1,args) {
+		} ECL_RESTART_CASE(1,args) {
 			/* ABORT restart. */
 			process->process.exit_values = args;
 		} ECL_RESTARTS_END;
