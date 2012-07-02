@@ -79,6 +79,17 @@
 	(funcall fn stream)
 	(format stream "~s" (or (restart-name restart) restart)))))
 
+(defun bind-simple-restarts (tag names)
+  (flet ((simple-restart-function (tag code)
+	   #'(lambda (&rest args) (throw tag (values code args)))))
+    (cons (loop for i from 1
+	     for n in (if (atom names) (list names) names)
+	     for f = (simple-restart-function tag i)
+	     collect (let ((v i))
+		       (make-restart :name n
+				     :function f)))
+	  *restart-clusters*)))
+
 (defmacro restart-bind (bindings &body forms)
   `(let ((*restart-clusters*
 	  (cons (list ,@(mapcar #'(lambda (binding)

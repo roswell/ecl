@@ -1676,6 +1676,7 @@ extern ECL_API void ecl_defparameter(cl_object s, cl_object v);
 extern ECL_API cl_object ecl_make_symbol(const char *s, const char*p);
 extern ECL_API cl_object ecl_make_keyword(const char *s);
 extern ECL_API cl_object ecl_symbol_value(cl_object s);
+extern ECL_API cl_object ecl_setq(cl_env_ptr env, cl_object var, cl_object value);
 extern ECL_API cl_object ecl_symbol_name(cl_object s);
 extern ECL_API cl_object ecl_symbol_package(cl_object s);
 extern ECL_API int ecl_symbol_type(cl_object s);
@@ -2154,6 +2155,7 @@ extern ECL_API cl_object cl_continue _ARGS((cl_narg narg, ...));
 extern ECL_API cl_object cl_muffle_warning _ARGS((cl_narg narg, ...));
 extern ECL_API cl_object cl_store_value _ARGS((cl_narg narg, cl_object value, ...));
 extern ECL_API cl_object cl_use_value _ARGS((cl_narg narg, cl_object value, ...));
+extern ECL_API cl_object si_bind_simple_restarts(cl_object tag, cl_object names);
 
 /*
  * CDR-5

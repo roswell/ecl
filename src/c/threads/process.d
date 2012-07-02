@@ -265,16 +265,22 @@ thread_entry_point(void *arg)
 		ecl_enable_interrupts_env(env);
 		si_trap_fpe(@'last', ECL_T);
 		ecl_bds_bind(env, @'mp::*current-process*', process);
-		env->values[0] = cl_apply(2, process->process.function,
-                                          process->process.args);
-                {
-                        cl_object output = ECL_NIL;
-                        int i = env->nvalues;
-                        while (i--) {
-                                output = CONS(env->values[i], output);
-                        }
-                        process->process.exit_values = output;
-                }
+
+		ECL_RESTARTS_TRY(env, ecl_list1(Cnil), @'abort') {
+			env->values[0] = cl_apply(2, process->process.function,
+						  process->process.args);
+			{
+				cl_object output = ECL_NIL;
+				int i = env->nvalues;
+				while (i--) {
+					output = CONS(env->values[i], output);
+				}
+				process->process.exit_values = output;
+			}
+		} ECL_RESTARTS_CATCH(1,args) {
+			/* ABORT restart. */
+			process->process.exit_values = args;
+		} ECL_RESTARTS_END;
 		/* This will disable interrupts during the exit
 		 * so that the unwinding is not interrupted. */
 		process->process.phase = ECL_PROCESS_EXITING;

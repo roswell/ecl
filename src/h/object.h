@@ -247,6 +247,7 @@ enum ecl_stype {		/*  symbol type  */
 #define	ECL_T			((cl_object)(cl_symbols+1))
 #define ECL_UNBOUND		((cl_object)(cl_symbols+2))
 #define ECL_PROTECT_TAG		((cl_object)(cl_symbols+3))
+#define ECL_RESTART_CLUSTERS	((cl_object)(cl_symbols+4))
 
 struct ecl_symbol {
 	_ECL_HDR2(stype, dynamic);/*  symbol type, special-variable-p */

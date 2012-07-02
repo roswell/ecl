@@ -90,6 +90,7 @@ cl_symbols[] = {
 {SYS_ "UNBOUND",NULL},
 #endif
 {SYS_ "PROTECT-TAG",NULL},
+{SYS_ "*RESTART-CLUSTERS*",NULL},
 
 /* LISP PACKAGE */
 {"&ALLOW-OTHER-KEYS",NULL},
@@ -2303,6 +2304,8 @@ cl_symbols[] = {
 {FFI_ "WITH-FOREIGN-OBJECTS",NULL},
 {FFI_ "WITH-FOREIGN-STRING",NULL},
 {FFI_ "WITH-FOREIGN-STRINGS",NULL},
+
+{SYS_ "BIND-SIMPLE-RESTARTS","si_bind_simple_restarts"},
 
 /* Tag for end of list */
 {NULL,NULL}};

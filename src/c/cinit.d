@@ -53,6 +53,12 @@ clos_std_compute_applicable_methods(cl_object gf, cl_object arglist)
 }
 
 extern cl_object
+si_bind_simple_restarts(cl_object tag, cl_object names)
+{
+	return _ecl_funcall3(@'si::bind-simple-restarts', tag, names);
+}
+
+extern cl_object
 clos_std_compute_effective_method(cl_object gf, cl_object combination, cl_object methods_list)
 {
 	return _ecl_funcall4(@'clos::std-compute-effective-method', gf, combination, methods_list);

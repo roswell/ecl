@@ -19,13 +19,39 @@
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
 
+static void FEconstant_assignment(cl_object var) ecl_attr_noreturn;
+
+static void
+FEconstant_assignment(cl_object var)
+{
+	FEinvalid_variable("Cannot assign to the constant ~S.", var);
+}
+
 cl_object
-cl_set(cl_object var, cl_object val)
+cl_set(cl_object var, cl_object value)
 {
 	const cl_env_ptr env = ecl_process_env();
-	if (ecl_symbol_type(var) & ecl_stp_constant)
-		FEinvalid_variable("Cannot assign to the constant ~S.", var);
-	ecl_return1(env, ECL_SETQ(env, var, val));
+	unlikely_if (Null(var)) {
+		FEconstant_assignment(var);
+	}
+	unlikely_if (type_of(var) != t_symbol) {
+		FEwrong_type_nth_arg(@[setq], 1, var, @[symbol]);
+	}
+	unlikely_if (var->symbol.stype & ecl_stp_constant)
+		FEconstant_assignment(var);
+	ecl_return1(env, ECL_SETQ(env, var, value));
+}
+
+cl_object
+ecl_setq(cl_env_ptr env, cl_object var, cl_object value)
+{
+	unlikely_if (Null(var)) {
+		FEconstant_assignment(var);
+	}
+	unlikely_if (type_of(var) != t_symbol) {
+		FEwrong_type_nth_arg(@[setq], 1, var, @[symbol]);
+	}
+	return ECL_SETQ(env, var, value);
 }
 
 static cl_object
