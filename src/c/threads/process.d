@@ -280,7 +280,7 @@ thread_entry_point(void *arg)
 		} ECL_RESTART_CASE(1,args) {
 			/* ABORT restart. */
 			process->process.exit_values = args;
-		} ECL_RESTARTS_END;
+		} ECL_RESTART_CASE_END;
 		/* This will disable interrupts during the exit
 		 * so that the unwinding is not interrupted. */
 		process->process.phase = ECL_PROCESS_EXITING;
