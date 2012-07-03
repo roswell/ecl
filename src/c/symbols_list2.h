@@ -2305,7 +2305,7 @@ cl_symbols[] = {
 {FFI_ "WITH-FOREIGN-STRING",NULL},
 {FFI_ "WITH-FOREIGN-STRINGS",NULL},
 
-{SYS_ "BIND-SIMPLE-RESTARTS","si_bind_simple_restarts"},
+{SYS_ "BIND-SIMPLE-RESTARTS","ECL_NAME(si_bind_simple_restarts)"},
 
 /* Tag for end of list */
 {NULL,NULL}};
