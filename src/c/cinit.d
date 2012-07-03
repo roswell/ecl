@@ -62,6 +62,15 @@ si_bind_simple_restarts(cl_object tag, cl_object names)
 }
 
 extern cl_object
+si_bind_simple_handlers(cl_object tag, cl_object names)
+{
+	if (ECL_SYM_FUN(@'si::bind-simple-handlers') != Cnil)
+		return _ecl_funcall3(@'si::bind-simple-handlers', tag, names);
+	else
+		return ECL_SYM_VAL(ecl_process_env(), @'si::*handler-clusters*');
+}
+
+extern cl_object
 clos_std_compute_effective_method(cl_object gf, cl_object combination, cl_object methods_list)
 {
 	return _ecl_funcall4(@'clos::std-compute-effective-method', gf, combination, methods_list);

@@ -431,6 +431,23 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_obje
 		ecl_bds_unwind1(__the_env);	\
 		} while (0)
 
+#define ECL_HANDLER_CASE_BEGIN(the_env, names) do {			\
+	const cl_env_ptr __the_env = (the_env);				\
+	const cl_object __ecl_tag = ecl_list1(names);			\
+	ecl_bds_bind(__the_env, ECL_HANDLER_CLUSTERS,			\
+		     si_bind_simple_handlers(__ecl_tag, names));	\
+	if (ecl_frs_push(__the_env,__ecl_tag) == 0) {
+
+#define ECL_HANDLER_CASE(code, args)					\
+	} else if (__the_env->values[1] == ecl_make_fixnum(code)) {	\
+	const cl_object args = __the_env->values[0];
+	
+
+#define ECL_HANDLER_CASE_END }			\
+		ecl_frs_pop(__the_env);		\
+		ecl_bds_unwind1(__the_env);	\
+		} while (0)
+
 #if defined(_MSC_VER)
 # define ECL_CATCH_ALL_BEGIN(the_env) do {			\
 	const cl_env_ptr __the_env = (the_env);			\

@@ -348,6 +348,7 @@
 ;; ECL extensions
 (proclamation ext:catch-signal (fixnum gen-bool &key) null)
 (proclamation si:bind-simple-restarts (t t) list)
+(proclamation si:bind-simple-handlers (t t) list)
 
 ;;;
 ;;; 10. SYMBOLS

@@ -90,6 +90,15 @@
 				     :function f)))
 	  *restart-clusters*)))
 
+(defun bind-simple-handlers (tag names)
+  (flet ((simple-handler-function (tag code)
+	   #'(lambda (c) (throw tag (values code c)))))
+    (cons (loop for i from 1
+	     for n in (if (atom names) (list names) names)
+	     for f = (simple-restart-function tag i)
+	     collect (cons name f))
+	  *handler-clusters*)))
+
 (defmacro restart-bind (bindings &body forms)
   `(let ((*restart-clusters*
 	  (cons (list ,@(mapcar #'(lambda (binding)
