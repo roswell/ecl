@@ -27,7 +27,7 @@ ecl_symbol_package(cl_object s)
 {
         if (Null(s))
                 return ECL_NIL_SYMBOL->symbol.hpack;
-        if (type_of(s) == t_symbol)
+        if (ecl_t_of(s) == t_symbol)
                 return s->symbol.hpack;
         FEwrong_type_nth_arg(@[symbol-package], 1, s, @[symbol]);
 }
@@ -37,7 +37,7 @@ ecl_symbol_type(cl_object s)
 {
         if (Null(s))
                 return ECL_NIL_SYMBOL->symbol.stype;
-        if (type_of(s) == t_symbol)
+        if (ecl_t_of(s) == t_symbol)
                 return s->symbol.stype;
         FEwrong_type_nth_arg(@[symbol-name], 1, s, @[symbol]);
 }
@@ -49,7 +49,7 @@ ecl_symbol_type_set(cl_object s, int type)
                 ECL_NIL_SYMBOL->symbol.stype = type;
                 return;
         }
-        if (type_of(s) == t_symbol) {
+        if (ecl_t_of(s) == t_symbol) {
                 s->symbol.stype = type;
                 return;
         }
@@ -62,7 +62,7 @@ ecl_symbol_name(cl_object s)
         if (Null(s)) {
                 return ECL_NIL_SYMBOL->symbol.name;
         }
-        if (type_of(s) == t_symbol) {
+        if (ecl_t_of(s) == t_symbol) {
                 return s->symbol.name;
         }
         FEwrong_type_nth_arg(@[symbol-name], 1, s, @[symbol]);
@@ -74,7 +74,7 @@ ecl_symbol_plist(cl_object s)
         if (Null(s)) {
                 return &ECL_NIL_SYMBOL->symbol.plist;
         }
-        if (type_of(s) == t_symbol) {
+        if (ecl_t_of(s) == t_symbol) {
                 return &s->symbol.plist;
         }
         FEwrong_type_nth_arg(@[symbol-plist], 1, s, @[symbol]);
@@ -89,7 +89,7 @@ cl_make_symbol(cl_object str)
 {
 	cl_object x;
 	/* INV: In several places it is assumed that we copy the string! */
-	switch (type_of(str)) {
+	switch (ecl_t_of(str)) {
 #ifdef ECL_UNICODE
 	case t_string:
 		if (!ecl_fits_in_base_string(str)) {
@@ -259,7 +259,7 @@ remf(cl_object *place, cl_object indicator)
 bool
 ecl_keywordp(cl_object s)
 {
-	return (type_of(s) == t_symbol) && (s->symbol.hpack == cl_core.keyword_package);
+	return (ecl_t_of(s) == t_symbol) && (s->symbol.hpack == cl_core.keyword_package);
 }
 
 @(defun get (sym indicator &optional deflt)
@@ -342,7 +342,7 @@ cl_symbol_name(cl_object x)
 	if (ecl_stringp(prefix)) {
 		counter = ECL_SYM_VAL(the_env, @'*gensym-counter*');
 		increment = 1;
-	} else if ((t = type_of(prefix)) == t_fixnum || t == t_bignum) {
+	} else if ((t = ecl_t_of(prefix)) == t_fixnum || t == t_bignum) {
 		counter = prefix;
 		prefix = cl_core.gensym_prefix;
 		increment = 0;

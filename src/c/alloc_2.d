@@ -1404,7 +1404,7 @@ cl_object
 si_weak_pointer_value(cl_object o)
 {
 	cl_object value;
-	if (ecl_unlikely(type_of(o) != t_weak_pointer))
+	if (ecl_unlikely(ecl_t_of(o) != t_weak_pointer))
 		FEwrong_type_only_arg(@[ext::weak-pointer-value], o,
                                       @[ext::weak-pointer]);
 	value = (cl_object)GC_call_with_alloc_lock((GC_fn_type)ecl_weak_pointer_value, o);

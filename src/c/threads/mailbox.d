@@ -62,7 +62,7 @@ cl_object
 mp_mailbox_name(cl_object mailbox)
 {
 	cl_env_ptr env = ecl_process_env();
-	unlikely_if (type_of(mailbox) != t_mailbox) {
+	unlikely_if (ecl_t_of(mailbox) != t_mailbox) {
 		FEerror_not_a_mailbox(mailbox);
 	}
         ecl_return1(env, mailbox->mailbox.name);
@@ -72,7 +72,7 @@ cl_object
 mp_mailbox_count(cl_object mailbox)
 {
 	cl_env_ptr env = ecl_process_env();
-	unlikely_if (type_of(mailbox) != t_mailbox) {
+	unlikely_if (ecl_t_of(mailbox) != t_mailbox) {
 		FEerror_not_a_mailbox(mailbox);
 	}
 	ecl_return1(env, ecl_make_fixnum(mailbox->mailbox.data->vector.dim));
@@ -82,7 +82,7 @@ cl_object
 mp_mailbox_empty_p(cl_object mailbox)
 {
 	cl_env_ptr env = ecl_process_env();
-	unlikely_if (type_of(mailbox) != t_mailbox) {
+	unlikely_if (ecl_t_of(mailbox) != t_mailbox) {
 		FEerror_not_a_mailbox(mailbox);
 	}
 	ecl_return1(env, mailbox->mailbox.reader_semaphore->semaphore.counter? ECL_NIL : ECL_T);
@@ -94,7 +94,7 @@ mp_mailbox_read(cl_object mailbox)
 	cl_env_ptr env = ecl_process_env();
 	cl_fixnum ndx;
 	cl_object output;
-	unlikely_if (type_of(mailbox) != t_mailbox) {
+	unlikely_if (ecl_t_of(mailbox) != t_mailbox) {
 		FEerror_not_a_mailbox(mailbox);
 	}
 	mp_wait_on_semaphore(mailbox->mailbox.reader_semaphore);
@@ -112,7 +112,7 @@ mp_mailbox_send(cl_object mailbox, cl_object msg)
 {
 	cl_env_ptr env = ecl_process_env();
 	cl_fixnum ndx;
-	unlikely_if (type_of(mailbox) != t_mailbox) {
+	unlikely_if (ecl_t_of(mailbox) != t_mailbox) {
 		FEerror_not_a_mailbox(mailbox);
 	}
 	mp_wait_on_semaphore(mailbox->mailbox.writer_semaphore);

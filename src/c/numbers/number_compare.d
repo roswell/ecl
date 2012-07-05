@@ -38,8 +38,8 @@ ecl_number_compare(cl_object x, cl_object y)
 #endif
 	cl_type ty;
  BEGIN:
-	ty = type_of(y);
-	switch (type_of(x)) {
+	ty = ecl_t_of(y);
+	switch (ecl_t_of(x)) {
 	case t_fixnum:
 	  	ix = ecl_fixnum(x);
 		switch (ty) {

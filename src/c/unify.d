@@ -89,7 +89,7 @@ bool
 get_cons(object x)
 {
 
-RETRY:	switch (type_of(x)) {
+RETRY:	switch (ecl_t_of(x)) {
 	case t_cons:
 	  slot = &CDR(x);	/* cdr slot is first in struct cons */
 	  slotf = get_slot;
@@ -121,7 +121,7 @@ RETRY:	switch (type_of(x)) {
 bool
 get_instance(object x, object class, int arity)
 {
-RETRY:	switch (type_of(x)) {
+RETRY:	switch (ecl_t_of(x)) {
 	case t_instance: 
 	if (ECL_CLASS_OF(x) == class) {
 	  slot = x->instance.slots;
@@ -169,12 +169,12 @@ unify(object x, object y)
 {
   /* NOTE: x <- y */
 
-  L: switch (type_of(x)) {
+  L: switch (ecl_t_of(x)) {
 
   case t_locative: UNIFY_LOCATIVE(x, y, L);
 
   case t_cons:
-       L1: switch (type_of(y)) {
+       L1: switch (ecl_t_of(y)) {
 
        case t_cons: return(unify(CAR(x), CAR(y)) &&
 			   unify(CDR(x), CDR(y)));
@@ -185,7 +185,7 @@ unify(object x, object y)
        }
 
   case t_instance:
-       L2: switch (type_of(y)) {
+       L2: switch (ecl_t_of(y)) {
 
        case t_instance:
 	 if (ECL_CLASS_OF(x) == ECL_CLASS_OF(y)) {
@@ -264,7 +264,7 @@ unify(object x, object y)
 @(defun dereference (x)
   extern object Slocative;
 @
-	while (type_of(x) != t_locative)
+	while (ecl_t_of(x) != t_locative)
 	  x = wrong_type_argument(Slocative, x);
 	@(return (DEREF(x)))
 @)

@@ -310,7 +310,7 @@ static void
 write_structure(cl_object x, cl_object stream)
 {
         cl_object print_function;
-        unlikely_if (type_of(x->str.name) != t_symbol)
+        unlikely_if (ecl_t_of(x->str.name) != t_symbol)
                 FEerror("Found a corrupt structure with an invalid type name~%"
                         "  ~S", x->str.name);
         print_function = si_get_sysprop(x->str.name, @'si::structure-print-function');
@@ -483,7 +483,7 @@ si_write_ugly_object(cl_object x, cl_object stream)
                         FEprint_not_readable(x);
 		writestr_stream("#<OBJNULL>", stream);
 	} else {
-                int t = type_of(x);
+                int t = ecl_t_of(x);
                 printer f = (t >= t_end)? write_illegal : dispatch[t];
                 f(x, stream);
         }

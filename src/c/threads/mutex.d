@@ -65,7 +65,7 @@ cl_object
 mp_recursive_lock_p(cl_object lock)
 {
 	cl_env_ptr env = ecl_process_env();
-	unlikely_if (type_of(lock) != t_lock)
+	unlikely_if (ecl_t_of(lock) != t_lock)
 		FEerror_not_a_lock(lock);
 	ecl_return1(env, lock->lock.recursive? ECL_T : ECL_NIL);
 }
@@ -74,7 +74,7 @@ cl_object
 mp_lock_name(cl_object lock)
 {
 	cl_env_ptr env = ecl_process_env();
-	unlikely_if (type_of(lock) != t_lock) {
+	unlikely_if (ecl_t_of(lock) != t_lock) {
 		FEerror_not_a_lock(lock);
 	}
         ecl_return1(env, lock->lock.name);
@@ -84,7 +84,7 @@ cl_object
 mp_lock_owner(cl_object lock)
 {
 	cl_env_ptr env = ecl_process_env();
-	unlikely_if (type_of(lock) != t_lock) {
+	unlikely_if (ecl_t_of(lock) != t_lock) {
 		FEerror_not_a_lock(lock);
 	}
         ecl_return1(env, lock->lock.owner);
@@ -94,7 +94,7 @@ cl_object
 mp_lock_count(cl_object lock)
 {
 	cl_env_ptr env = ecl_process_env();
-	unlikely_if (type_of(lock) != t_lock) {
+	unlikely_if (ecl_t_of(lock) != t_lock) {
 		FEerror_not_a_lock(lock);
 	}
 	ecl_return1(env, ecl_make_fixnum(lock->lock.counter));
@@ -106,7 +106,7 @@ mp_giveup_lock(cl_object lock)
         /* Must be called with interrupts disabled. */
         cl_env_ptr env = ecl_process_env();
 	cl_object own_process = env->own_process;
-	unlikely_if (type_of(lock) != t_lock) {
+	unlikely_if (ecl_t_of(lock) != t_lock) {
 		FEerror_not_a_lock(lock);
 	}
 	unlikely_if (lock->lock.owner != own_process) {
@@ -152,7 +152,7 @@ cl_object
 mp_get_lock_nowait(cl_object lock)
 {
         cl_env_ptr env = ecl_process_env();
-	unlikely_if (type_of(lock) != t_lock) {
+	unlikely_if (ecl_t_of(lock) != t_lock) {
 		FEerror_not_a_lock(lock);
 	}
 	ecl_return1(env, get_lock_inner(env, lock));
@@ -162,7 +162,7 @@ cl_object
 mp_get_lock_wait(cl_object lock)
 {
         cl_env_ptr env = ecl_process_env();
-	unlikely_if (type_of(lock) != t_lock) {
+	unlikely_if (ecl_t_of(lock) != t_lock) {
 		FEerror_not_a_lock(lock);
 	}
 	if (lock->lock.queue_list != ECL_NIL || get_lock_inner(env, lock) == ECL_NIL) {

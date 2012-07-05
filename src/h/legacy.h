@@ -207,3 +207,5 @@ enum {	/*  stream mode  */
 #define SLOT(x,i) ECL_STRUCT_SLOT(x,i)
 #define SLENGTH(x) ECL_STRUCT_LENGTH(x)
 #define SNAME(x) ECL_STRUCT_NAME(x)
+
+#define type_of(x) ecl_t_of(x)

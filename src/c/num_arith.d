@@ -23,8 +23,8 @@ ecl_integer_divide(cl_object x, cl_object y)
 {
 	cl_type tx, ty;
 
-	tx = type_of(x);
-	ty = type_of(y);
+	tx = ecl_t_of(x);
+	ty = ecl_t_of(y);
 	if (tx == t_fixnum) {
  		if (ty == t_fixnum) {
 			if (y == ecl_make_fixnum(0))
@@ -70,7 +70,7 @@ ecl_gcd(cl_object x, cl_object y)
         ECL_WITH_TEMP_BIGNUM(x_big,1);
         ECL_WITH_TEMP_BIGNUM(y_big,1);
 
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_fixnum:
                 _ecl_big_set_fixnum(x_big, ecl_fixnum(x));
                 x = x_big;
@@ -79,7 +79,7 @@ ecl_gcd(cl_object x, cl_object y)
 	default:
 		FEwrong_type_nth_arg(@[gcd], 1, x, @[integer]);
 	}
-	switch (type_of(y)) {
+	switch (ecl_t_of(y)) {
 	case t_fixnum:
                 _ecl_big_set_fixnum(y_big, ecl_fixnum(y));
                 y = y_big;

@@ -368,7 +368,7 @@ ecl_write_string(cl_object strng, cl_object strm)
 	cl_index i;
 
 	strm = _ecl_stream_or_default_output(strm);
-	switch(type_of(strng)) {
+	switch(ecl_t_of(strng)) {
 #ifdef ECL_UNICODE
 	case t_string:
 		for (i = 0;  i < strng->string.fillp;  i++)

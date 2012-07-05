@@ -287,7 +287,7 @@ cl_object
 cl_class_of(cl_object x)
 {
 	size_t index;
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_instance:
 		@(return ECL_CLASS_OF(x))
 	case t_fixnum:

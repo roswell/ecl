@@ -56,8 +56,8 @@ expt_zero(cl_object x, cl_object y)
 {
 	cl_type ty, tx;
 	cl_object z;
-        ty = type_of(y);
-        tx = type_of(x);
+        ty = ecl_t_of(y);
+        tx = ecl_t_of(x);
         if (ecl_unlikely(!ECL_NUMBER_TYPE_P(tx))) {
                 FEwrong_type_nth_arg(@[expt], 1, x, @[number]);
 	}
@@ -93,8 +93,8 @@ ecl_expt(cl_object x, cl_object y)
 	if (ecl_unlikely(ecl_zerop(y))) {
                 return expt_zero(x, y);
 	}
-        ty = type_of(y);
-        tx = type_of(x);
+        ty = ecl_t_of(y);
+        tx = ecl_t_of(x);
         if (ecl_unlikely(!ECL_NUMBER_TYPE_P(tx))) {
                 FEwrong_type_nth_arg(@[expt], 1, x, @[number]);
 	}

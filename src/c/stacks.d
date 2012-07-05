@@ -383,7 +383,7 @@ ihs_function_name(cl_object x)
 {
 	cl_object y;
 
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_symbol:
 		return(x);
 

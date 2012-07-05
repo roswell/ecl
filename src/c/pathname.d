@@ -303,7 +303,7 @@ ecl_make_pathname(cl_object host, cl_object device, cl_object directory,
 		component = @':version';
 	ERROR:	FEerror("~s is not a valid pathname-~a component", 2, x, component);
 	}
-	switch (type_of(directory)) {
+	switch (ecl_t_of(directory)) {
 #ifdef ECL_UNICODE
 	case t_string:
 #endif
@@ -748,7 +748,7 @@ cl_object
 cl_pathname(cl_object x)
 {
 L:
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 #ifdef ECL_UNICODE
 	case t_string:
 #endif
@@ -1520,7 +1520,7 @@ cl_pathname_match_p(cl_object path, cl_object mask)
 static cl_object
 coerce_to_from_pathname(cl_object x, cl_object host)
 {
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 #ifdef ECL_UNICODE
 	case t_string:
 #endif

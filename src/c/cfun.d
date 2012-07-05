@@ -104,7 +104,7 @@ si_compiled_function_name(cl_object fun)
 	cl_env_ptr the_env = ecl_process_env();
 	cl_object output;
 
-	switch(type_of(fun)) {
+	switch(ecl_t_of(fun)) {
 	case t_bclosure:
 		fun = fun->bclosure.code;
 	case t_bytecodes:
@@ -126,7 +126,7 @@ cl_function_lambda_expression(cl_object fun)
 	cl_env_ptr the_env = ecl_process_env();
 	cl_object output, name = ECL_NIL, lex = ECL_NIL;
 
-	switch(type_of(fun)) {
+	switch(ecl_t_of(fun)) {
 	case t_bclosure:
 		lex = fun->bclosure.lex;
 		fun = fun->bclosure.code;
@@ -169,7 +169,7 @@ si_compiled_function_block(cl_object fun)
 {
        cl_object output;
 
-       switch(type_of(fun)) {
+       switch(ecl_t_of(fun)) {
        case t_cfun:
 	       output = fun->cfun.block; break;
        case t_cfunfixed:
@@ -187,7 +187,7 @@ si_compiled_function_file(cl_object b)
 {
 	cl_env_ptr the_env = ecl_process_env();
  BEGIN:
-        switch (type_of(b)) {
+        switch (ecl_t_of(b)) {
         case t_bclosure:
                 b = b->bclosure.code;
                 goto BEGIN;
@@ -208,7 +208,7 @@ void
 ecl_set_function_source_file_info(cl_object b, cl_object source, cl_object position)
 {
  BEGIN:
-        switch (type_of(b)) {
+        switch (ecl_t_of(b)) {
         case t_bclosure:
                 b = b->bclosure.code;
                 goto BEGIN;

@@ -136,7 +136,7 @@ typedef cl_object (*cl_objectfn_fixed)();
 #define ecl_fixnum_geq(a,b)     ((cl_fixnum)(a) >= (cl_fixnum)(b))
 #define ecl_fixnum_plusp(a)     ((cl_fixnum)(a) > (cl_fixnum)ecl_make_fixnum(0))
 #define ecl_fixnum_minusp(a)    ((cl_fixnum)(a) < (cl_fixnum)(0))
-#define ecl_fixnum(a)              (((cl_fixnum)(a)) >> 2)
+#define ecl_fixnum(a)           (((cl_fixnum)(a)) >> 2)
 
 /* Immediate characters:	*/
 #define ECL_CHARACTER_TAG	t_character
@@ -1081,14 +1081,15 @@ union cl_lispunion {
 	Type_of.
 */
 #if defined(__cplusplus) || (defined(__GNUC__) && !defined(__STRICT_ANSI__))
-static inline cl_type type_of(cl_object o) {
+static inline cl_type ecl_t_of(cl_object o) {
 	int i = ECL_IMMEDIATE(o);
 	return (i? (cl_type)i : (cl_type)(o->d.t));
 }
 #else
-#define	type_of(o) \
+#define	ecl_t_of(o) \
 	((cl_type)(ECL_IMMEDIATE(o) ? ECL_IMMEDIATE(o) : ((o)->d.t)))
 #endif
+#define type_of(o) ecl_t_of(o)
 
 /*
 	This is used to retrieve optional arguments

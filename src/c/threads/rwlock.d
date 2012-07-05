@@ -94,7 +94,7 @@ cl_object
 mp_rwlock_name(cl_object lock)
 {
 	const cl_env_ptr env = ecl_process_env();
-	if (type_of(lock) != t_rwlock)
+	if (ecl_t_of(lock) != t_rwlock)
 		FEerror_not_a_rwlock(lock);
         ecl_return1(env, lock->rwlock.name);
 }
@@ -103,7 +103,7 @@ cl_object
 mp_giveup_rwlock_read(cl_object lock)
 {
         /* Must be called with interrupts disabled. */
-	if (type_of(lock) != t_rwlock)
+	if (ecl_t_of(lock) != t_rwlock)
 		FEerror_not_a_rwlock(lock);
 #ifdef ECL_RWLOCK
         {
@@ -126,7 +126,7 @@ mp_giveup_rwlock_write(cl_object lock)
 cl_object
 mp_get_rwlock_read_nowait(cl_object lock)
 {
-        if (type_of(lock) != t_rwlock)
+        if (ecl_t_of(lock) != t_rwlock)
 		FEerror_not_a_rwlock(lock);
 #ifdef ECL_RWLOCK
         {
@@ -150,7 +150,7 @@ mp_get_rwlock_read_nowait(cl_object lock)
 cl_object
 mp_get_rwlock_read_wait(cl_object lock)
 {
-        if (type_of(lock) != t_rwlock)
+        if (ecl_t_of(lock) != t_rwlock)
 		FEerror_not_a_rwlock(lock);
 #ifdef ECL_RWLOCK
         {
@@ -177,7 +177,7 @@ mp_get_rwlock_read_wait(cl_object lock)
 cl_object
 mp_get_rwlock_write_nowait(cl_object lock)
 {
-        if (type_of(lock) != t_rwlock)
+        if (ecl_t_of(lock) != t_rwlock)
 		FEerror_not_a_rwlock(lock);
 #ifdef ECL_RWLOCK
         {
@@ -202,7 +202,7 @@ cl_object
 mp_get_rwlock_write_wait(cl_object lock)
 {
         cl_env_ptr env = ecl_process_env();
-        if (type_of(lock) != t_rwlock)
+        if (ecl_t_of(lock) != t_rwlock)
 		FEerror_not_a_rwlock(lock);
 #ifdef ECL_RWLOCK
         {

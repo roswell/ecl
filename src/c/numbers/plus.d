@@ -178,9 +178,9 @@ ecl_plus(cl_object x, cl_object y)
 	cl_fixnum i, j;
 	cl_object z, z1;
 
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_fixnum:
-	        switch (type_of(y)) {
+	        switch (ecl_t_of(y)) {
 		case t_fixnum:
                         return ecl_make_integer(ecl_fixnum(x) + ecl_fixnum(y));
 		case t_bignum:
@@ -205,7 +205,7 @@ ecl_plus(cl_object x, cl_object y)
 			FEwrong_type_nth_arg(@[+], 2, y, @[number]);
 		}
 	case t_bignum:
-		switch (type_of(y)) {
+		switch (ecl_t_of(y)) {
 		case t_fixnum:
                         return _ecl_big_plus_fix(x, ecl_fixnum(y));
 		case t_bignum:
@@ -228,7 +228,7 @@ ecl_plus(cl_object x, cl_object y)
 			FEwrong_type_nth_arg(@[+], 2, y, @[number]);
 		}
 	case t_ratio:
-		switch (type_of(y)) {
+		switch (ecl_t_of(y)) {
 		case t_fixnum:
 		case t_bignum:
 			z = ecl_times(x->ratio.den, y);
@@ -254,7 +254,7 @@ ecl_plus(cl_object x, cl_object y)
 			FEwrong_type_nth_arg(@[+], 2, y, @[number]);
 		}
 	case t_singlefloat:
-		switch (type_of(y)) {
+		switch (ecl_t_of(y)) {
 		case t_fixnum:
 			return ecl_make_single_float(ecl_single_float(x) + ecl_fixnum(y));
 		case t_bignum:
@@ -274,7 +274,7 @@ ecl_plus(cl_object x, cl_object y)
 			FEwrong_type_nth_arg(@[+], 2, y, @[number]);
 		}
 	case t_doublefloat:
-		switch (type_of(y)) {
+		switch (ecl_t_of(y)) {
 		case t_fixnum:
 			return ecl_make_double_float(ecl_double_float(x) + ecl_fixnum(y));
 		case t_bignum:
@@ -295,7 +295,7 @@ ecl_plus(cl_object x, cl_object y)
 		}
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
-		switch (type_of(y)) {
+		switch (ecl_t_of(y)) {
 		case t_fixnum:
 			return ecl_make_long_float(ecl_long_float(x) + ecl_fixnum(y));
 		case t_bignum:
@@ -314,7 +314,7 @@ ecl_plus(cl_object x, cl_object y)
 		}
 #endif
 	case t_complex:
-		if (type_of(y) != t_complex) {
+		if (ecl_t_of(y) != t_complex) {
 			cl_object aux = x;
 			x = y; y = aux;
 			goto COMPLEX;

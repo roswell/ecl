@@ -108,7 +108,7 @@ _ecl_write_list(cl_object x, cl_object stream)
 				}
 				break;
 			}
-                if (i == 0 && y != OBJNULL && type_of(y) == t_symbol)
+                if (i == 0 && y != OBJNULL && ecl_t_of(y) == t_symbol)
                         ecl_write_char(' ', stream);
                 else
                         ecl_write_char(' ', stream);

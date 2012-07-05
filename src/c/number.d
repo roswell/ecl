@@ -533,9 +533,9 @@ ecl_make_complex(cl_object r, cl_object i)
 	cl_object c;
 	cl_type ti;
  AGAIN:
-	ti = type_of(i);
+	ti = ecl_t_of(i);
 	/* Both R and I are promoted to a common type */
-	switch (type_of(r)) {
+	switch (ecl_t_of(r)) {
 	case t_fixnum:
 	case t_bignum:
 	case t_ratio:
@@ -749,7 +749,7 @@ ecl_to_float(cl_object x)
 {
 	if (ECL_FIXNUMP(x)) return(ecl_fixnum(x));	/* Immediate fixnum */
 
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_fixnum:
 		return (float)ecl_fixnum(x);
 	case t_bignum:
@@ -772,7 +772,7 @@ ecl_to_float(cl_object x)
 double
 ecl_to_double(cl_object x)
 {
-	switch(type_of(x)) {
+	switch(ecl_t_of(x)) {
 	case t_fixnum:
 		return((double)(ecl_fixnum(x)));
 	case t_bignum:
@@ -796,7 +796,7 @@ ecl_to_double(cl_object x)
 long double
 ecl_to_long_double(cl_object x)
 {
-	switch(type_of(x)) {
+	switch(ecl_t_of(x)) {
 	case t_fixnum:
 		return (long double)ecl_fixnum(x);
 	case t_bignum:
@@ -820,7 +820,7 @@ cl_rational(cl_object x)
 {
 	double d;
  AGAIN:
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_fixnum:
 	case t_bignum:
 	case t_ratio:

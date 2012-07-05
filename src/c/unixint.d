@@ -323,7 +323,7 @@ ecl_def_ct_base_string(str_ignore_signal,"Ignore signal",13,static,const);
 static void
 handle_signal_now(cl_object signal_code, cl_object process)
 {
-        switch (type_of(signal_code)) {
+        switch (ecl_t_of(signal_code)) {
         case t_fixnum:
                 cl_cerror(4, str_ignore_signal, @'ext::unix-signal-received',
                           @':code', signal_code);
@@ -796,7 +796,7 @@ do_catch_signal(int code, cl_object action, cl_object process)
 		/* When a process object is supplied, the changes take care
 		 * on the process structure and will only take effect when
 		 * the process is enabled. */
-		if (type_of(process) == t_process) {
+		if (ecl_t_of(process) == t_process) {
 			cl_env_ptr env = process->process.env;
 			sigset_t *handled_set = (sigset_t *)env->default_sigmask;
 			if (action == @':mask') {

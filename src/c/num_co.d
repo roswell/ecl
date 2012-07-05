@@ -59,11 +59,11 @@ number_remainder(cl_object x, cl_object y, cl_object q)
 	cl_type ty, tx;
 @
 	if (y != OBJNULL) {
-		ty = type_of(y);
+		ty = ecl_t_of(y);
 	} else {
 		ty = t_singlefloat;
 	}
-	switch (tx = type_of(x)) {
+	switch (tx = ecl_t_of(x)) {
 	case t_singlefloat:
 	case t_doublefloat:
 #ifdef ECL_LONG_FLOAT
@@ -96,7 +96,7 @@ number_remainder(cl_object x, cl_object y, cl_object q)
 cl_object
 cl_numerator(cl_object x)
 {
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_ratio:
 		x = x->ratio.num;
 		break;
@@ -112,7 +112,7 @@ cl_numerator(cl_object x)
 cl_object
 cl_denominator(cl_object x)
 {
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_ratio:
 		x = x->ratio.den;
 		break;
@@ -131,7 +131,7 @@ ecl_floor1(cl_object x)
 {
 	const cl_env_ptr the_env = ecl_process_env();
 	cl_object v0, v1;
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_fixnum:
 	case t_bignum:
 		v0 = x;
@@ -176,11 +176,11 @@ ecl_floor2(cl_object x, cl_object y)
 	const cl_env_ptr the_env = ecl_process_env();
 	cl_object v0, v1;
 	cl_type ty;
-        ty = type_of(y);
+        ty = ecl_t_of(y);
 	if (ecl_unlikely(!ECL_REAL_TYPE_P(ty))) {
                 FEwrong_type_nth_arg(@[floor],2,y,@[real]);
 	}
-	switch(type_of(x)) {
+	switch(ecl_t_of(x)) {
 	case t_fixnum:
 		switch(ty) {
 		case t_fixnum: {	/* FIX / FIX */
@@ -345,7 +345,7 @@ cl_object
 ecl_ceiling1(cl_object x)
 {
 	cl_object v0, v1;
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_fixnum:
 	case t_bignum:
 		v0 = x;
@@ -392,11 +392,11 @@ ecl_ceiling2(cl_object x, cl_object y)
 	const cl_env_ptr the_env = ecl_process_env();
 	cl_object v0, v1;
 	cl_type ty;
-        ty = type_of(y);
+        ty = ecl_t_of(y);
 	if (ecl_unlikely(!ECL_REAL_TYPE_P(ty))) {
 		FEwrong_type_nth_arg(@[ceiling],2, y, @[real]);
 	}
-	switch(type_of(x)) {
+	switch(ecl_t_of(x)) {
 	case t_fixnum:
 		switch(ty) {
 		case t_fixnum: {	/* FIX / FIX */
@@ -457,7 +457,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 		}
 		break;
 	case t_bignum:
-		switch(type_of(y)) {
+		switch(ecl_t_of(y)) {
 		case t_fixnum: {	/* BIG / FIX */
                   ECL_WITH_TEMP_BIGNUM(by,4);
                   _ecl_big_set_fixnum(by, ecl_fixnum(y));
@@ -503,7 +503,7 @@ ecl_ceiling2(cl_object x, cl_object y)
 		}
 		break;
 	case t_ratio:
-		switch(type_of(y)) {
+		switch(ecl_t_of(y)) {
 		case t_ratio:		/* RAT / RAT */
 		  v0 = ecl_ceiling2(ecl_times(x->ratio.num, y->ratio.den),
 				    ecl_times(x->ratio.den, y->ratio.num));
@@ -559,7 +559,7 @@ ecl_truncate1(cl_object x)
 {
 	const cl_env_ptr the_env = ecl_process_env();
 	cl_object v0, v1;
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_fixnum:
 	case t_bignum:
 		v0 = x;
@@ -656,7 +656,7 @@ ecl_round1(cl_object x)
 {
 	const cl_env_ptr the_env = ecl_process_env();
 	cl_object v0, v1;
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_fixnum:
 	case t_bignum:
 		v0 = x;
@@ -703,7 +703,7 @@ ecl_round2(cl_object x, cl_object y)
 	cl_object q;
 
 	q = ecl_divide(x, y);
-	switch (type_of(q)) {
+	switch (ecl_t_of(q)) {
 	case t_fixnum:
 	case t_bignum:
 		v0 = q;
@@ -765,7 +765,7 @@ cl_decode_float(cl_object x)
 {
 	const cl_env_ptr the_env = ecl_process_env();
 	int e, s;
-	cl_type tx = type_of(x);
+	cl_type tx = ecl_t_of(x);
 	float f;
 
 	switch (tx) {
@@ -824,7 +824,7 @@ cl_scale_float(cl_object x, cl_object y)
 	} else {
 		FEwrong_type_nth_arg(@[scale-float],2,y,@[fixnum]);
 	}
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_singlefloat:
 		x = ecl_make_single_float(ldexpf(ecl_single_float(x), k));
 		break;
@@ -855,7 +855,7 @@ cl_float_radix(cl_object x)
 int
 ecl_signbit(cl_object x)
 {
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_singlefloat:
 		return signbit(ecl_single_float(x));
 	case t_doublefloat:
@@ -876,7 +876,7 @@ ecl_signbit(cl_object x)
 		y = cl_float(2, ecl_make_fixnum(1), x);
 	}
 	negativep = ecl_signbit(x);
-	switch (type_of(y)) {
+	switch (ecl_t_of(y)) {
 	case t_singlefloat: {
 		float f = ecl_single_float(y);
                 if (signbit(f) != negativep) y = ecl_make_single_float(-f);
@@ -904,7 +904,7 @@ cl_object
 cl_float_digits(cl_object x)
 {
 	const cl_env_ptr the_env = ecl_process_env();
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_singlefloat:
 		x = ecl_make_fixnum(FLT_MANT_DIG);
 		break;
@@ -927,7 +927,7 @@ cl_float_precision(cl_object x)
 {
 	const cl_env_ptr the_env = ecl_process_env();
 	int precision;
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_singlefloat: {
 		float f = ecl_single_float(x);
 		if (f == 0.0) {
@@ -987,7 +987,7 @@ cl_integer_decode_float(cl_object x)
 	const cl_env_ptr the_env = ecl_process_env();
 	int e, s = 1;
 
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat: {
 		long double d = ecl_long_float(x);
@@ -1053,7 +1053,7 @@ cl_integer_decode_float(cl_object x)
 cl_object
 cl_realpart(cl_object x)
 {
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_fixnum:
 	case t_bignum:
 	case t_ratio:
@@ -1075,7 +1075,7 @@ cl_realpart(cl_object x)
 cl_object
 cl_imagpart(cl_object x)
 {
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_fixnum:
 	case t_bignum:
 	case t_ratio:

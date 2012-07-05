@@ -37,7 +37,7 @@ assert_type_hash_table(cl_object function, cl_narg narg, cl_object p)
 static cl_hashkey
 _hash_eql(cl_hashkey h, cl_object x)
 {
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_bignum:
 		return hash_string(h, (unsigned char*)ECL_BIGNUM_LIMBS(x),
 				   labs(ECL_BIGNUM_SIZE(x)) *
@@ -77,7 +77,7 @@ _hash_eql(cl_hashkey h, cl_object x)
 static cl_hashkey
 _hash_equal(int depth, cl_hashkey h, cl_object x)
 {
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_list:
 		if (Null(x)) {
 			return _hash_equal(depth, h, ECL_NIL_SYMBOL->symbol.name);
@@ -154,7 +154,7 @@ static cl_hashkey
 _hash_equalp(int depth, cl_hashkey h, cl_object x)
 {
 	cl_index i, len;
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_character:
 		return hash_word(h, ecl_char_upcase(ECL_CHAR_CODE(x)));
 	case t_list:

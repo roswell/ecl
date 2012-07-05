@@ -34,7 +34,7 @@ cl_set(cl_object var, cl_object value)
 	unlikely_if (Null(var)) {
 		FEconstant_assignment(var);
 	}
-	unlikely_if (type_of(var) != t_symbol) {
+	unlikely_if (ecl_t_of(var) != t_symbol) {
 		FEwrong_type_nth_arg(@[setq], 1, var, @[symbol]);
 	}
 	unlikely_if (var->symbol.stype & ecl_stp_constant)
@@ -48,7 +48,7 @@ ecl_setq(cl_env_ptr env, cl_object var, cl_object value)
 	unlikely_if (Null(var)) {
 		FEconstant_assignment(var);
 	}
-	unlikely_if (type_of(var) != t_symbol) {
+	unlikely_if (ecl_t_of(var) != t_symbol) {
 		FEwrong_type_nth_arg(@[setq], 1, var, @[symbol]);
 	}
 	return ECL_SETQ(env, var, value);

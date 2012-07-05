@@ -49,11 +49,11 @@ mp_condition_variable_wait(cl_object cv, cl_object lock)
 {
         cl_env_ptr env = ecl_process_env();
 	cl_object own_process = env->own_process;
-	unlikely_if (type_of(cv) != t_condition_variable) {
+	unlikely_if (ecl_t_of(cv) != t_condition_variable) {
                 FEwrong_type_nth_arg(@[mp::condition-variable-wait], 1, cv,
                                      @[mp::condition-variable]);
 	}
-	unlikely_if (type_of(lock) != t_lock) {
+	unlikely_if (ecl_t_of(lock) != t_lock) {
                 FEwrong_type_nth_arg(@[mp::condition-variable-wait], 2, lock,
                                      @[mp::lock]);
 	}

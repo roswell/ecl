@@ -92,7 +92,7 @@ si_load_source(cl_object source, cl_object verbose, cl_object print, cl_object e
 	cl_object x, strm;
 
 	/* Source may be either a stream or a filename */
-	if (type_of(source) != t_pathname && type_of(source) != t_base_string) {
+	if (ecl_t_of(source) != t_pathname && ecl_t_of(source) != t_base_string) {
 		/* INV: if "source" is not a valid stream, file.d will complain */
 		strm = source;
 	} else {
@@ -141,7 +141,7 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
 	cl_object old_eptbc = env->packages_to_be_created;
 
 	/* Source may be either a stream or a filename */
-	if (type_of(source) != t_pathname && type_of(source) != t_base_string) {
+	if (ecl_t_of(source) != t_pathname && ecl_t_of(source) != t_base_string) {
 		/* INV: if "source" is not a valid stream, file.d will complain */
 		strm = source;
 	} else {
@@ -164,7 +164,7 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
                         if (ECL_LISTP(forms)) {
                                 cl_object x = ECL_CONS_CAR(forms);
                                 forms = ECL_CONS_CDR(forms);
-                                if (type_of(x) == t_bytecodes) {
+                                if (ecl_t_of(x) == t_bytecodes) {
                                         _ecl_funcall1(x);
                                         continue;
                                 }
@@ -206,7 +206,7 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
 	bool not_a_filename = 0;
 @
 	/* If source is a stream, read conventional lisp code from it */
-	if (type_of(source) != t_pathname && !ecl_stringp(source)) {
+	if (ecl_t_of(source) != t_pathname && !ecl_stringp(source)) {
 		/* INV: if "source" is not a valid stream, file.d will complain */
 		filename = source;
 		function = ECL_NIL;

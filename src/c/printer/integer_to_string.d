@@ -78,7 +78,7 @@ si_integer_to_string(cl_object buffer, cl_object integer,
                 }
                 @(return buffer)
         }
-        switch (type_of(integer)) {
+        switch (ecl_t_of(integer)) {
         case t_fixnum: {
                 cl_object big = _ecl_big_register0();
                 _ecl_big_set_fixnum(big, ecl_fixnum(integer));

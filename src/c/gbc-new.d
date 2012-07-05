@@ -131,7 +131,7 @@ BEGIN:
 		return;
 	set_mark_bit(x);
 
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 
 	case t_bignum:
 #ifdef WITH_GMP
@@ -413,7 +413,7 @@ BEGIN:
 		break;
 	default:
 		if (debug)
-			printf("\ttype = %d\n", type_of(x));
+			printf("\ttype = %d\n", ecl_t_of(x));
 		error("mark botch");
 	}
 }

@@ -58,7 +58,7 @@ structure_subtypep(cl_object x, cl_object y)
 cl_object
 si_structure_subtype_p(cl_object x, cl_object y)
 {
-	@(return ((type_of(x) == T_STRUCTURE
+	@(return ((ecl_t_of(x) == T_STRUCTURE
 		     && structure_subtypep(ECL_STRUCT_TYPE(x), y)) ? ECL_T : ECL_NIL))
 }
 
@@ -110,7 +110,7 @@ ecl_copy_structure(cl_object x)
 cl_object
 cl_copy_structure(cl_object s)
 {
-	switch (type_of(s)) {
+	switch (ecl_t_of(s)) {
 	case t_instance:
 		s = ecl_copy_structure(s);
 		break;
@@ -142,7 +142,7 @@ si_structure_name(cl_object s)
 cl_object
 si_structure_ref(cl_object x, cl_object type, cl_object index)
 {
-	if (ecl_unlikely(type_of(x) != T_STRUCTURE ||
+	if (ecl_unlikely(ecl_t_of(x) != T_STRUCTURE ||
                          !structure_subtypep(ECL_STRUCT_TYPE(x), type)))
                 FEwrong_type_nth_arg(@[si::structure-ref], 1, x, type);
 	@(return ECL_STRUCT_SLOT(x, ecl_fixnum(index)))
@@ -152,7 +152,7 @@ cl_object
 ecl_structure_ref(cl_object x, cl_object type, int n)
 {
 
-	if (ecl_unlikely(type_of(x) != T_STRUCTURE ||
+	if (ecl_unlikely(ecl_t_of(x) != T_STRUCTURE ||
                          !structure_subtypep(ECL_STRUCT_TYPE(x), type)))
                 FEwrong_type_nth_arg(@[si::structure-ref], 1, x, type);
 	return(ECL_STRUCT_SLOT(x, n));
@@ -161,7 +161,7 @@ ecl_structure_ref(cl_object x, cl_object type, int n)
 cl_object
 si_structure_set(cl_object x, cl_object type, cl_object index, cl_object val)
 {
-	if (ecl_unlikely(type_of(x) != T_STRUCTURE ||
+	if (ecl_unlikely(ecl_t_of(x) != T_STRUCTURE ||
                          !structure_subtypep(ECL_STRUCT_TYPE(x), type)))
                 FEwrong_type_nth_arg(@[si::structure-set], 1, x, type);
 	ECL_STRUCT_SLOT(x, ecl_fixnum(index)) = val;
@@ -172,7 +172,7 @@ cl_object
 ecl_structure_set(cl_object x, cl_object type, int n, cl_object v)
 {
 
-	if (ecl_unlikely(type_of(x) != T_STRUCTURE ||
+	if (ecl_unlikely(ecl_t_of(x) != T_STRUCTURE ||
                          !structure_subtypep(ECL_STRUCT_TYPE(x), type)))
                 FEwrong_type_nth_arg(@[si::structure-set], 1, x, type);
 	ECL_STRUCT_SLOT(x, n) = v;
@@ -186,7 +186,7 @@ si_structurep(cl_object s)
 	if (ECL_INSTANCEP(s) && structure_subtypep(ECL_CLASS_OF(s), @'structure-object'))
 		return ECL_T;
 #else
-	if (type_of(s) == t_structure)
+	if (ecl_t_of(s) == t_structure)
 		return ECL_T;
 #endif
 	else

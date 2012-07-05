@@ -938,7 +938,7 @@ cl_list_all_packages()
 
 @(defun export (symbols &o (pack ecl_current_package()))
 @
-	switch (type_of(symbols)) {
+	switch (ecl_t_of(symbols)) {
 	case t_symbol:
 		cl_export2(symbols, pack);
 		break;
@@ -957,7 +957,7 @@ cl_list_all_packages()
 
 @(defun unexport (symbols &o (pack ecl_current_package()))
 @
-	switch (type_of(symbols)) {
+	switch (ecl_t_of(symbols)) {
 	case t_symbol:
 		cl_unexport2(symbols, pack);
 		break;
@@ -976,7 +976,7 @@ cl_list_all_packages()
 
 @(defun import (symbols &o (pack ecl_current_package()))
 @
-	switch (type_of(symbols)) {
+	switch (ecl_t_of(symbols)) {
 	case t_symbol:
 		cl_import2(symbols, pack);
 		break;
@@ -995,7 +995,7 @@ cl_list_all_packages()
 
 @(defun shadowing_import (symbols &o (pack ecl_current_package()))
 @
-	switch (type_of(symbols)) {
+	switch (ecl_t_of(symbols)) {
 	case t_symbol:
 		ecl_shadowing_import(symbols, pack);
 		break;
@@ -1014,7 +1014,7 @@ cl_list_all_packages()
 
 @(defun shadow (symbols &o (pack ecl_current_package()))
 @
-	switch (type_of(symbols)) {
+	switch (ecl_t_of(symbols)) {
 #ifdef ECL_UNICODE
 	case t_string:
 #endif
@@ -1040,7 +1040,7 @@ cl_list_all_packages()
 
 @(defun use_package (pack &o (pa ecl_current_package()))
 @
-	switch (type_of(pack)) {
+	switch (ecl_t_of(pack)) {
 	case t_symbol:
 	case t_character:
 	case t_base_string:
@@ -1062,7 +1062,7 @@ cl_list_all_packages()
 
 @(defun unuse_package (pack &o (pa ecl_current_package()))
 @
-	switch (type_of(pack)) {
+	switch (ecl_t_of(pack)) {
 	case t_symbol:
 	case t_character:
 	case t_base_string:

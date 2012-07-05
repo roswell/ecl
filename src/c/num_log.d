@@ -160,9 +160,9 @@ log_op(cl_narg narg, int op, ecl_va_list ARGS)
 cl_object
 ecl_boole(int op, cl_object x, cl_object y)
 {
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_fixnum:
-		switch (type_of(y)) {
+		switch (ecl_t_of(y)) {
 		case t_fixnum: {
 			cl_fixnum z = fixnum_operations[op](ecl_fixnum(x), ecl_fixnum(y));
 			return ecl_make_fixnum(z);
@@ -179,7 +179,7 @@ ecl_boole(int op, cl_object x, cl_object y)
 		break;
 	case t_bignum: {
                 cl_object x_copy = _ecl_big_register0();
-		switch (type_of(y)) {
+		switch (ecl_t_of(y)) {
 		case t_fixnum: {
 			cl_object z = _ecl_big_register1();
                         _ecl_big_set_fixnum(z,ecl_fixnum(y));
@@ -212,7 +212,7 @@ count_bits(cl_object x)
 {
 	cl_fixnum count;
 
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_fixnum: {
 		cl_fixnum i = ecl_fixnum(x);
 		cl_fixnum j = (i < 0) ? ~i : i;
@@ -450,7 +450,7 @@ ecl_integer_length(cl_object x)
 	int count;
 	cl_fixnum i;
 
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_fixnum:
 		i = ecl_fixnum(x);
 		count = ecl_fixnum_bit_length(i);
@@ -483,11 +483,11 @@ si_bit_array_op(cl_object o, cl_object x, cl_object y, cl_object r)
 	byte *xp, *yp, *rp;
 	int xo, yo, ro;
 
-	if (type_of(x) == t_bitvector) {
+	if (ecl_t_of(x) == t_bitvector) {
 		d = x->vector.dim;
 		xp = x->vector.self.bit;
 		xo = x->vector.offset;
-		if (type_of(y) != t_bitvector)
+		if (ecl_t_of(y) != t_bitvector)
 			goto ERROR;
 		if (d != y->vector.dim)
 			goto ERROR;
@@ -496,7 +496,7 @@ si_bit_array_op(cl_object o, cl_object x, cl_object y, cl_object r)
 		if (r == ECL_T)
 			r = x;
 		if (r != ECL_NIL) {
-			if (type_of(r) != t_bitvector)
+			if (ecl_t_of(r) != t_bitvector)
 				goto ERROR;
 			if (r->vector.dim != d)
 				goto ERROR;
@@ -519,14 +519,14 @@ si_bit_array_op(cl_object o, cl_object x, cl_object y, cl_object r)
 			r = ecl_alloc_simple_vector(d, ecl_aet_bit);
 		}
 	} else {
-		if (type_of(x) != t_array)
+		if (ecl_t_of(x) != t_array)
 			goto ERROR;
 		if ((cl_elttype)x->array.elttype != ecl_aet_bit)
 			goto ERROR;
 		d = x->array.dim;
 		xp = x->vector.self.bit;
 		xo = x->vector.offset;
-		if (type_of(y) != t_array)
+		if (ecl_t_of(y) != t_array)
 			goto ERROR;
 		if ((cl_elttype)y->array.elttype != ecl_aet_bit)
 			goto ERROR;
@@ -540,7 +540,7 @@ si_bit_array_op(cl_object o, cl_object x, cl_object y, cl_object r)
 		if (r == ECL_T)
 			r = x;
 		if (r != ECL_NIL) {
-			if (type_of(r) != t_array)
+			if (ecl_t_of(r) != t_array)
 				goto ERROR;
 			if ((cl_elttype)r->array.elttype != ecl_aet_bit)
 				goto ERROR;

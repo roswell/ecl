@@ -333,7 +333,7 @@ si_open_unix_socket_stream(cl_object path)
 	int fd;			/* file descriptor */
 	struct sockaddr_un addr;
 
-	if (ecl_unlikely(type_of(path) != t_base_string))
+	if (ecl_unlikely(ecl_t_of(path) != t_base_string))
                 FEwrong_type_nth_arg(@[si::open-unix-socket-stream], 1, path,
                                      @[string]);
 	if (path->base_string.fillp > UNIX_MAX_PATH-1)
@@ -373,7 +373,7 @@ si_lookup_host_entry(cl_object host_or_address)
 
 	INIT_TCP
 
-	switch (type_of(host_or_address)) {
+	switch (ecl_t_of(host_or_address)) {
 	case t_base_string:
 		host_or_address = si_copy_to_simple_base_string(host_or_address);
 		he = gethostbyname((char*)host_or_address->base_string.self);

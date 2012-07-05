@@ -612,10 +612,10 @@ disassemble(cl_object bytecodes, cl_opcode *vector) {
 cl_object
 si_bc_disassemble(cl_object v)
 {
-	if (type_of(v) == t_bclosure) {
+	if (ecl_t_of(v) == t_bclosure) {
 		v = v->bclosure.code;
 	}
-	if (type_of(v) == t_bytecodes) {
+	if (ecl_t_of(v) == t_bytecodes) {
 		disassemble_lambda(v);
 		@(return v)
 	}
@@ -627,11 +627,11 @@ si_bc_split(cl_object b)
 {
 	cl_object vector, data, name, lex = ECL_NIL;
 
-	if (type_of(b) == t_bclosure) {
+	if (ecl_t_of(b) == t_bclosure) {
 		b = b->bclosure.code;
 		lex = b->bclosure.lex;
 	}
-	if (type_of(b) != t_bytecodes) {
+	if (ecl_t_of(b) != t_bytecodes) {
                 vector = ECL_NIL;
                 data = ECL_NIL;
                 name = ECL_NIL;

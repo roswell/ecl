@@ -181,7 +181,7 @@ ecl_process_list()
 static void
 assert_type_process(cl_object o)
 {
-	if (type_of(o) != t_process)
+	if (ecl_t_of(o) != t_process)
 		FEwrong_type_argument(@[mp::process], o);
 }
 

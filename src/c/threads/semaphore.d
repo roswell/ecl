@@ -49,7 +49,7 @@ cl_object
 mp_semaphore_name(cl_object semaphore)
 {
 	cl_env_ptr env = ecl_process_env();
-	unlikely_if (type_of(semaphore) != t_semaphore) {
+	unlikely_if (ecl_t_of(semaphore) != t_semaphore) {
 		FEerror_not_a_semaphore(semaphore);
 	}
         ecl_return1(env, semaphore->semaphore.name);
@@ -59,7 +59,7 @@ cl_object
 mp_semaphore_count(cl_object semaphore)
 {
 	cl_env_ptr env = ecl_process_env();
-	unlikely_if (type_of(semaphore) != t_semaphore) {
+	unlikely_if (ecl_t_of(semaphore) != t_semaphore) {
 		FEerror_not_a_semaphore(semaphore);
 	}
 	ecl_return1(env, ecl_make_fixnum(semaphore->semaphore.counter));
@@ -69,7 +69,7 @@ cl_object
 mp_semaphore_wait_count(cl_object semaphore)
 {
 	cl_env_ptr env = ecl_process_env();
-	unlikely_if (type_of(semaphore) != t_semaphore) {
+	unlikely_if (ecl_t_of(semaphore) != t_semaphore) {
 		FEerror_not_a_semaphore(semaphore);
 	}
 	ecl_return1(env, cl_length(semaphore->semaphore.queue_list));
@@ -80,7 +80,7 @@ mp_semaphore_wait_count(cl_object semaphore)
 {
 	cl_fixnum n = fixnnint(count);
         cl_env_ptr env = ecl_process_env();
-	unlikely_if (type_of(semaphore) != t_semaphore) {
+	unlikely_if (ecl_t_of(semaphore) != t_semaphore) {
 		FEerror_not_a_semaphore(semaphore);
 	}
 	AO_fetch_and_add((AO_t*)&semaphore->semaphore.counter, n);
@@ -118,7 +118,7 @@ mp_wait_on_semaphore(cl_object semaphore)
 {
         cl_env_ptr env = ecl_process_env();
 	cl_object output;
-	unlikely_if (type_of(semaphore) != t_semaphore) {
+	unlikely_if (ecl_t_of(semaphore) != t_semaphore) {
 		FEerror_not_a_semaphore(semaphore);
 	}
 	output = get_semaphore_inner(env, semaphore);

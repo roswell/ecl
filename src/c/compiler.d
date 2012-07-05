@@ -343,7 +343,7 @@ static compiler_record database[] = {
 static void
 assert_type_symbol(cl_object v)
 {
-	if (type_of(v) != t_symbol)
+	if (ecl_t_of(v) != t_symbol)
 		FEprogram_error_noreturn("Expected a symbol, found ~S.", 1, v);
 }
 
@@ -934,7 +934,7 @@ c_call(cl_env_ptr env, cl_object args, int flags) {
 	    && name < (cl_object)(cl_symbols + cl_num_symbols_in_core))
 	{
 		cl_object f = ECL_SYM_FUN(name);
-		cl_type t = (f == OBJNULL)? t_other : type_of(f);
+		cl_type t = (f == OBJNULL)? t_other : ecl_t_of(f);
 		if (t == t_cfunfixed) {
 			cl_index n = ecl_length(args);
 			if (f->cfun.narg == 1 && n == 1) {
@@ -2038,7 +2038,7 @@ c_tagbody(cl_env_ptr env, cl_object args, int flags)
 	/* count the tags */
 	for (nt = 0, body = args; !Null(body); ) {
 		label = pop(&body);
-		item_type = type_of(label);
+		item_type = ecl_t_of(label);
 		if (item_type == t_symbol || item_type == t_fixnum ||
 	            item_type == t_bignum) {
 			labels = CONS(CONS(label,ecl_make_fixnum(nt)), labels);
@@ -2058,7 +2058,7 @@ c_tagbody(cl_env_ptr env, cl_object args, int flags)
 
 	for (body = args; !Null(body); ) {
 		label = pop(&body);
-		item_type = type_of(label);
+		item_type = ecl_t_of(label);
 		if (item_type == t_symbol || item_type == t_fixnum ||
 	            item_type == t_bignum) {
 			asm_complete(env, 0, tag_base);
@@ -2156,7 +2156,7 @@ c_values(cl_env_ptr env, cl_object args, int flags) {
 static int
 need_to_make_load_form_p(cl_object o)
 {
-        switch (type_of(o)) {
+        switch (ecl_t_of(o)) {
         case t_character:
         case t_fixnum:
         case t_bignum:

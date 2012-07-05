@@ -75,7 +75,7 @@ cl_fboundp(cl_object fname)
 cl_object
 ecl_fdefinition(cl_object fun)
 {
-	cl_type t = type_of(fun);
+	cl_type t = ecl_t_of(fun);
 	cl_object output;
 
 	if (t == t_symbol) {
@@ -94,7 +94,7 @@ ecl_fdefinition(cl_object fun)
 			unlikely_if (CDR(sym) != ECL_NIL)
 				FEinvalid_function_name(fun);
 			sym = CAR(sym);
-			unlikely_if (type_of(sym) != t_symbol)
+			unlikely_if (ecl_t_of(sym) != t_symbol)
 				FEinvalid_function_name(fun);
 			output = ecl_setf_definition(sym, ECL_NIL);
 			unlikely_if (Null(ecl_cdr(output)))
@@ -116,7 +116,7 @@ ecl_fdefinition(cl_object fun)
 cl_object
 si_coerce_to_function(cl_object fun)
 {
-	cl_type t = type_of(fun);
+	cl_type t = ecl_t_of(fun);
 	if (!(t == t_cfun || t == t_cfunfixed || t == t_cclosure
 	      || t == t_bytecodes || t == t_bclosure
 #ifdef CLOS

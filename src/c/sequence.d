@@ -75,7 +75,7 @@ ecl_elt(cl_object seq, cl_fixnum index)
 
 	if (index < 0)
 		goto E;
-	switch (type_of(seq)) {
+	switch (ecl_t_of(seq)) {
 	case t_list:
 		for (i = index, l = seq;  i > 0;  --i) {
                         if (!LISTP(l)) goto E0;
@@ -116,7 +116,7 @@ ecl_elt_set(cl_object seq, cl_fixnum index, cl_object val)
 
 	if (index < 0)
 		goto E;
-	switch (type_of(seq)) {
+	switch (ecl_t_of(seq)) {
 	case t_list:
 		for (i = index, l = seq;  i > 0;  --i) {
                         if (!LISTP(l)) goto E0;
@@ -147,7 +147,7 @@ E:
 cl_object
 ecl_subseq(cl_object sequence, cl_index start, cl_index limit)
 {
-	switch (type_of(sequence)) {
+	switch (ecl_t_of(sequence)) {
 	case t_list:
 		if (start)
 			sequence = ecl_nthcdr(start, sequence);
@@ -217,7 +217,7 @@ ecl_length(cl_object x)
 {
 	cl_fixnum i;
 
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_list:
 		/* INV: A list's length always fits in a fixnum */
 		i = 0;
@@ -244,7 +244,7 @@ cl_reverse(cl_object seq)
 {
 	cl_object output, x;
 
-	switch (type_of(seq)) {
+	switch (ecl_t_of(seq)) {
 	case t_list: {
 		for (x = seq, output = ECL_NIL; !Null(x); x = ECL_CONS_CDR(x)) {
                         if (!LISTP(x)) goto E;
@@ -272,7 +272,7 @@ cl_reverse(cl_object seq)
 cl_object
 cl_nreverse(cl_object seq)
 {
-	switch (type_of(seq)) {
+	switch (ecl_t_of(seq)) {
 	case t_list: {
 		cl_object x, y, z;
                 for (x = seq, y = ECL_NIL; !Null(x); ) {

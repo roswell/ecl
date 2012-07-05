@@ -45,7 +45,7 @@ ecl_apply_from_stack_frame(cl_object frame, cl_object x)
         frame->frame.env->function = fun;
 	if (ecl_unlikely(fun == OBJNULL || fun == ECL_NIL))
 		FEundefined_function(x);
-	switch (type_of(fun)) {
+	switch (ecl_t_of(fun)) {
 	case t_cfunfixed:
 		if (ecl_unlikely(narg != (cl_index)fun->cfun.narg))
 			FEwrong_num_arguments(fun);
@@ -91,7 +91,7 @@ ecl_function_dispatch(cl_env_ptr env, cl_object x)
  AGAIN:
 	if (ecl_unlikely(fun == OBJNULL || fun == ECL_NIL))
 		FEundefined_function(x);
-	switch (type_of(fun)) {
+	switch (ecl_t_of(fun)) {
 	case t_cfunfixed:
 		env->function = fun;
 		return fun->cfunfixed.entry;
@@ -137,7 +137,7 @@ cl_funcall(cl_narg narg, cl_object function, ...)
 
 @(defun apply (fun lastarg &rest args)
 @
-	if (narg == 2 && type_of(lastarg) == t_frame) {
+	if (narg == 2 && ecl_t_of(lastarg) == t_frame) {
 		return ecl_apply_from_stack_frame(lastarg, fun);
 	} else {
 		cl_object out;
@@ -150,7 +150,7 @@ cl_funcall(cl_narg narg, cl_object function, ...)
 			ECL_STACK_FRAME_SET(frame, i, lastarg);
 			lastarg = ecl_va_arg(args);
 		}
-		if (type_of(lastarg) == t_frame) {
+		if (ecl_t_of(lastarg) == t_frame) {
 			/* This could be replaced with a memcpy() */
                         for (i = 0; i < lastarg->frame.size; i++) {
 				ecl_stack_frame_push(frame, lastarg->frame.base[i]);
@@ -178,7 +178,7 @@ cl_eval(cl_object form)
 @(defun constantp (arg &optional env)
 	cl_object flag;
 @
-	switch (type_of(arg)) {
+	switch (ecl_t_of(arg)) {
 	case t_list:
 		if (Null(arg)) {
 			flag = ECL_T;

@@ -47,7 +47,7 @@ cl_object
 mp_barrier_name(cl_object barrier)
 {
 	cl_env_ptr env = ecl_process_env();
-	unlikely_if (type_of(barrier) != t_barrier) {
+	unlikely_if (ecl_t_of(barrier) != t_barrier) {
 		FEerror_not_a_barrier(barrier);
 	}
         ecl_return1(env, barrier->barrier.name);
@@ -57,7 +57,7 @@ cl_object
 mp_barrier_count(cl_object barrier)
 {
 	cl_env_ptr env = ecl_process_env();
-	unlikely_if (type_of(barrier) != t_barrier) {
+	unlikely_if (ecl_t_of(barrier) != t_barrier) {
 		FEerror_not_a_barrier(barrier);
 	}
 	ecl_return1(env, ecl_make_fixnum(barrier->barrier.count));
@@ -68,7 +68,7 @@ mp_barrier_arrivers_count(cl_object barrier)
 {
 	cl_fixnum arrivers, count;
 	cl_env_ptr env = ecl_process_env();
-	unlikely_if (type_of(barrier) != t_barrier) {
+	unlikely_if (ecl_t_of(barrier) != t_barrier) {
 		FEerror_not_a_barrier(barrier);
 	}
 	arrivers = barrier->barrier.arrivers_count;
@@ -84,7 +84,7 @@ mp_barrier_arrivers_count(cl_object barrier)
 	int ping_flags = ECL_WAKEUP_RESET_FLAG | ECL_WAKEUP_ALL;
 	int kill_flags = ECL_WAKEUP_RESET_FLAG | ECL_WAKEUP_KILL | ECL_WAKEUP_ALL;
 @
-	unlikely_if (type_of(barrier) != t_barrier) {
+	unlikely_if (ecl_t_of(barrier) != t_barrier) {
 		FEerror_not_a_barrier(barrier);
 	}
 	if (!Null(reset_count))
@@ -141,7 +141,7 @@ decrement_counter(cl_fixnum *counter)
 {
 	cl_object own_process = the_env->own_process;
 
-	unlikely_if (type_of(barrier) != t_barrier) {
+	unlikely_if (ecl_t_of(barrier) != t_barrier) {
 		FEerror_not_a_barrier(barrier);
 	}
 	ecl_disable_interrupts_env(the_env);

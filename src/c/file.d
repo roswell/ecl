@@ -4732,7 +4732,7 @@ cl_file_string_length(cl_object stream, cl_object string)
 	unlikely_if (!ECL_FILE_STREAM_P(stream)) {
 		not_a_file_stream(stream);
 	}
-	switch (type_of(string)) {
+	switch (ecl_t_of(string)) {
 #ifdef ECL_UNICODE
 	case t_string:
 #endif
@@ -4941,7 +4941,7 @@ cl_stream_external_format(cl_object strm)
 	cl_object output;
 	cl_type t;
  AGAIN:
-	t= type_of(strm);
+	t= ecl_t_of(strm);
 #ifdef ECL_CLOS_STREAMS
 	if (t == t_instance)
 		output = @':default';

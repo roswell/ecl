@@ -412,7 +412,7 @@ fmt_integer(format_stack fmt, cl_object x, bool colon, bool atsign,
 	int l, l1;
 	int s;
 
-	if (!ECL_FIXNUMP(x) && type_of(x) != t_bignum) {
+	if (!ECL_FIXNUMP(x) && ecl_t_of(x) != t_bignum) {
 		fmt_prepare_aux_stream(fmt);
 		ecl_bds_bind(env, @'*print-escape*', ECL_NIL);
 		ecl_bds_bind(env, @'*print-base*', ecl_make_fixnum(radix));
@@ -867,16 +867,16 @@ fmt_fix_float(format_stack fmt, bool colon, bool atsign)
 
 	x = fmt_advance(fmt);
 	if (ECL_FIXNUMP(x) ||
-	    type_of(x) == t_bignum ||
-	    type_of(x) == t_ratio)
+	    ecl_t_of(x) == t_bignum ||
+	    ecl_t_of(x) == t_ratio)
 		x = ecl_make_single_float(ecl_to_float(x));
-	if (!ECL_REAL_TYPE_P(type_of(x))) {
+	if (!ECL_REAL_TYPE_P(ecl_t_of(x))) {
 		if (fmt->nparam > 1) fmt->nparam = 1;
 		fmt_back_up(fmt);
 		fmt_decimal(fmt, colon, atsign);
 		return;
 	}
-	if (type_of(x) == t_doublefloat)
+	if (ecl_t_of(x) == t_doublefloat)
 		n = 16;
 	else
 		n = 7;
@@ -1041,16 +1041,16 @@ fmt_exponential_float(format_stack fmt, bool colon, bool atsign)
 
 	x = fmt_advance(fmt);
 	if (ECL_FIXNUMP(x) ||
-	    type_of(x) == t_bignum ||
-	    type_of(x) == t_ratio)
+	    ecl_t_of(x) == t_bignum ||
+	    ecl_t_of(x) == t_ratio)
 		x = ecl_make_single_float(ecl_to_float(x));
-	if (!ECL_REAL_TYPE_P(type_of(x))) {
+	if (!ECL_REAL_TYPE_P(ecl_t_of(x))) {
 		if (fmt->nparam > 1) fmt->nparam = 1;
 		fmt_back_up(fmt);
 		fmt_decimal(fmt, colon, atsign);
 		return;
 	}
-	if (type_of(x) == t_doublefloat)
+	if (ecl_t_of(x) == t_doublefloat)
 		n = 16;
 	else
 		n = 7;
@@ -1174,12 +1174,12 @@ fmt_exponential_float(format_stack fmt, bool colon, bool atsign)
 		} else {
 			t = t_singlefloat;
 		}
-		if (type_of(x) == t)
+		if (ecl_t_of(x) == t)
 			exponentchar = 'E';
-		else if (type_of(x) == t_singlefloat)
+		else if (ecl_t_of(x) == t_singlefloat)
 			exponentchar = 'F';
 #ifdef ECL_LONG_FLOAT
-		else if (type_of(x) == t_longfloat)
+		else if (ecl_t_of(x) == t_longfloat)
 			exponentchar = 'L';
 #endif
 		else
@@ -1224,13 +1224,13 @@ fmt_general_float(format_stack fmt, bool colon, bool atsign)
 	exponentchar = ECL_CHAR_CODE(set_param(fmt, 6, CHAR, ECL_CODE_CHAR('\0')));
 
 	x = fmt_advance(fmt);
-	if (!ECL_REAL_TYPE_P(type_of(x))) {
+	if (!ECL_REAL_TYPE_P(ecl_t_of(x))) {
 		if (fmt->nparam > 1) fmt->nparam = 1;
 		fmt_back_up(fmt);
 		fmt_decimal(fmt, colon, atsign);
 		return;
 	}
-	if (type_of(x) == t_doublefloat)
+	if (ecl_t_of(x) == t_doublefloat)
 		q = 16;
 	else
 		q = 7;
@@ -1291,7 +1291,7 @@ fmt_dollars_float(format_stack fmt, bool colon, bool atsign)
 	if (w < 0) w = 0;
 	padchar = ECL_CHAR_CODE(set_param(fmt, 3, CHAR, ECL_CODE_CHAR(' ')));
 	x = fmt_advance(fmt);
-	if (!ECL_REAL_TYPE_P(type_of(x))) {
+	if (!ECL_REAL_TYPE_P(ecl_t_of(x))) {
 		if (fmt->nparam < 3)
 			fmt->nparam = 0;
 		else {
@@ -1303,7 +1303,7 @@ fmt_dollars_float(format_stack fmt, bool colon, bool atsign)
 		return;
 	}
 	q = 7;
-	if (type_of(x) == t_doublefloat)
+	if (ecl_t_of(x) == t_doublefloat)
 		q = 16;
 	f = ecl_to_double(x);
 	edit_double(q, f, &sign, buff, &exp);
@@ -1491,7 +1491,7 @@ fmt_indirection(format_stack fmt, bool colon, bool atsign)
 	ensure_param(fmt, 0);
 	fmt_not_colon(fmt, colon);
 	s = fmt_advance(fmt);
-	if (type_of(s) != t_base_string)
+	if (ecl_t_of(s) != t_base_string)
 		fmt_error(fmt, "control string expected");
 	if (atsign) {
 		fmt_copy(&fmt_old, fmt);
@@ -2044,7 +2044,7 @@ LOOP:
 		case 'v':  case 'V':
 			x = fmt_advance(fmt);
 			c = ctl_advance(fmt);
-			if (type_of(x) == t_character) {
+			if (ecl_t_of(x) == t_character) {
 				fmt->param[n] = x;
 			} else {
 				goto INTEGER;

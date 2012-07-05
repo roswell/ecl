@@ -57,7 +57,7 @@ ecl_imod(cl_fixnum x, cl_fixnum y)
 char
 ecl_to_char(cl_object x)
 {
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_fixnum:
 		return ecl_fixnum(x);
 	case t_character:
@@ -70,7 +70,7 @@ ecl_to_char(cl_object x)
 cl_fixnum
 ecl_to_fixnum(cl_object x)
 {
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_fixnum:
 	case t_bignum:
 		return fixint(x);
@@ -93,7 +93,7 @@ ecl_to_fixnum(cl_object x)
 cl_index
 ecl_to_unsigned_integer(cl_object x)
 {
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_fixnum:
 	case t_bignum:
 		return fixnnint(x);

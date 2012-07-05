@@ -20,7 +20,7 @@
 
 #define MATH_DISPATCH2_LABEL(t1,t2) case ((t1)*(t_complex+1)+(t2)):
 #define MATH_DISPATCH2_BEGIN(x,y) {                                     \
-    int tx = type_of(x), ty = type_of(y);                               \
+    int tx = ecl_t_of(x), ty = ecl_t_of(y);                               \
     unlikely_if (ty > t_complex) { goto DISPATCH2_ERROR; } \
     switch (tx * (t_complex+1) + ty)
 #define MATH_DISPATCH2_END } (void)0

@@ -209,7 +209,7 @@ _ecl_bclosure_dispatch_vararg(cl_narg narg, ...)
 static cl_object
 close_around(cl_object fun, cl_object lex) {
 	cl_object v = ecl_alloc_object(t_bclosure);
-	if (type_of(fun) != t_bytecodes)
+	if (ecl_t_of(fun) != t_bytecodes)
 		FEerror("!!!", 0);
 	v->bclosure.code = fun;
 	v->bclosure.lex = lex;
@@ -486,7 +486,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 	AGAIN:
 		if (ecl_unlikely(reg0 == OBJNULL || reg0 == ECL_NIL))
 			FEundefined_function(x);
-		switch (type_of(reg0)) {
+		switch (ecl_t_of(reg0)) {
 		case t_cfunfixed:
 			if (ecl_unlikely(narg != (cl_index)reg0->cfunfixed.narg))
 				FEwrong_num_arguments(reg0);

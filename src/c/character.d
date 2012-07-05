@@ -337,7 +337,7 @@ ecl_char_compare(cl_object x, cl_object y)
 cl_object
 cl_character(cl_object x)
 {
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_character:
 		break;
 	case t_symbol:
@@ -373,7 +373,7 @@ cl_code_char(cl_object c)
 {
 	cl_fixnum fc;
 
-	switch (type_of(c)) {
+	switch (ecl_t_of(c)) {
 	case t_fixnum:
 		fc = ecl_fixnum(c);
 		if (fc < ECL_CHAR_CODE_LIMIT && fc >= 0) {
@@ -417,7 +417,7 @@ cl_char_downcase(cl_object c)
                                                            ecl_make_fixnum(36)));
         }
         basis = ecl_fixnum(radix);
-	switch (type_of(weight)) {
+	switch (ecl_t_of(weight)) {
 	case t_fixnum: {
 		cl_fixnum value = ecl_fixnum(weight);
 		if (value >= 0) {

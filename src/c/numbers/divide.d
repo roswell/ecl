@@ -182,10 +182,10 @@ ecl_divide(cl_object x, cl_object y)
 {
 	cl_object z, z1, z2;
 
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_fixnum:
 	case t_bignum:
-		switch (type_of(y)) {
+		switch (ecl_t_of(y)) {
 		case t_fixnum:
 			if (y == ecl_make_fixnum(0))
 				FEdivision_by_zero(x, y);
@@ -212,7 +212,7 @@ ecl_divide(cl_object x, cl_object y)
 			FEwrong_type_nth_arg(@[/], 2, y, @[number]);
 		}
 	case t_ratio:
-		switch (type_of(y)) {
+		switch (ecl_t_of(y)) {
 		case t_fixnum:
 			if (y == ecl_make_fixnum(0))
 				FEdivision_by_zero(x, y);
@@ -237,7 +237,7 @@ ecl_divide(cl_object x, cl_object y)
 			FEwrong_type_nth_arg(@[/], 2, y, @[number]);
 		}
 	case t_singlefloat:
-		switch (type_of(y)) {
+		switch (ecl_t_of(y)) {
 		case t_fixnum:
 			return ecl_make_single_float(ecl_single_float(x) / ecl_fixnum(y));
 		case t_bignum:
@@ -257,7 +257,7 @@ ecl_divide(cl_object x, cl_object y)
 			FEwrong_type_nth_arg(@[/], 2, y, @[number]);
 		}
 	case t_doublefloat:
-		switch (type_of(y)) {
+		switch (ecl_t_of(y)) {
 		case t_fixnum:
 			return ecl_make_double_float(ecl_double_float(x) / ecl_fixnum(y));
 		case t_bignum:
@@ -278,7 +278,7 @@ ecl_divide(cl_object x, cl_object y)
 		}
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat:
-		switch (type_of(y)) {
+		switch (ecl_t_of(y)) {
 		case t_fixnum:
 			return ecl_make_long_float(ecl_long_float(x) / ecl_fixnum(y));
 		case t_bignum:
@@ -297,7 +297,7 @@ ecl_divide(cl_object x, cl_object y)
 		}
 #endif
 	case t_complex:
-		if (type_of(y) != t_complex) {
+		if (ecl_t_of(y) != t_complex) {
 			z1 = ecl_divide(x->complex.real, y);
 			z2 = ecl_divide(x->complex.imag, y);
 			return ecl_make_complex(z1, z2);

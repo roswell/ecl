@@ -48,7 +48,7 @@ extend_vector(cl_object v, cl_index amount)
 ecl_character
 ecl_string_push_extend(cl_object s, ecl_character c)
 {
-	switch(type_of(s)) {
+	switch(ecl_t_of(s)) {
 #ifdef ECL_UNICODE
 	case t_string:
 #endif

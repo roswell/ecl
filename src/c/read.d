@@ -1105,7 +1105,7 @@ do_patch_sharp(cl_object x, cl_object table)
 	 *	or might not yet be processed by do_patch_sharp().
 	 */
  AGAIN:
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_list: {
 		cl_object y;
                 if (Null(x))
@@ -1141,7 +1141,7 @@ do_patch_sharp(cl_object x, cl_object table)
 	/* We eagerly mark the object as processed, to avoid infinite
 	 * recursion. */
         _ecl_sethash(x, table, x);
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_list:
                 ECL_RPLACA(x, do_patch_sharp(ECL_CONS_CAR(x), table));
                 ECL_RPLACD(x, do_patch_sharp(ECL_CONS_CDR(x), table));
@@ -1188,7 +1188,7 @@ do_patch_sharp(cl_object x, cl_object table)
 }
 #else
 {
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_list:
                 if (Null(x))
                         return x;
@@ -1205,7 +1205,7 @@ do_patch_sharp(cl_object x, cl_object table)
 	default:
                 return x;
 	}
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_list:
                 ECL_RPLACA(x, do_patch_sharp(ECL_CONS_CAR(x), table));
                 ECL_RPLACD(x, do_patch_sharp(ECL_CONS_CDR(x), table));
@@ -2287,7 +2287,7 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
                         if (len) {
                                 /* Code from COMPILE uses data in *compiler-constants* */
                                 cl_object v = ECL_SYM_VAL(env,@'si::*compiler-constants*');
-                                unlikely_if (type_of(v) != t_vector ||
+                                unlikely_if (ecl_t_of(v) != t_vector ||
                                              v->vector.dim != len ||
                                              v->vector.elttype != ecl_aet_object)
                                         FEerror("Internal error: corrupted data in "

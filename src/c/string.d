@@ -147,7 +147,7 @@ ecl_cstring_to_base_string_or_nil(const char *s)
 bool
 ecl_fits_in_base_string(cl_object s)
 {
-	switch (type_of(s)) {
+	switch (ecl_t_of(s)) {
 #ifdef ECL_UNICODE
 	case t_string: {
 		cl_index i;
@@ -170,7 +170,7 @@ si_copy_to_simple_base_string(cl_object x)
 {
 	cl_object y;
  AGAIN:
-	switch(type_of(x)) {
+	switch(ecl_t_of(x)) {
 	case t_symbol:
 		x = x->symbol.name;
 		goto AGAIN;
@@ -210,7 +210,7 @@ si_copy_to_simple_base_string(cl_object x)
 cl_object
 cl_string(cl_object x)
 {
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_symbol:
 		x = x->symbol.name;
 		break;
@@ -265,7 +265,7 @@ si_coerce_to_extended_string(cl_object x)
 {
 	cl_object y;
  AGAIN:
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_symbol:
 		x = x->symbol.name;
 		goto AGAIN;
@@ -307,7 +307,7 @@ ecl_character
 ecl_char(cl_object object, cl_index index)
 {
 	/* CHAR bypasses fill pointers when accessing strings */
-	switch(type_of(object)) {
+	switch(ecl_t_of(object)) {
 #ifdef ECL_UNICODE
 	case t_string:
 		if (index >= object->string.dim)
@@ -336,7 +336,7 @@ ecl_character
 ecl_char_set(cl_object object, cl_index index, ecl_character value)
 {
 	/* CHAR bypasses fill pointers when accessing strings */
-	switch(type_of(object)) {
+	switch(ecl_t_of(object)) {
 #ifdef ECL_UNICODE
 	case t_string:
 		if (index >= object->string.dim)
@@ -479,9 +479,9 @@ ecl_string_eq(cl_object x, cl_object y)
 	j = y->base_string.fillp;
 	if (i != j) return 0;
 #ifdef ECL_UNICODE
-	switch(type_of(x)) {
+	switch(ecl_t_of(x)) {
 	case t_string:
-		switch(type_of(y)) {
+		switch(ecl_t_of(y)) {
 		case t_string:
 			return memcmp(x->string.self, y->string.self, i * sizeof *x->string.self) == 0;
 		case t_base_string: {
@@ -496,7 +496,7 @@ ecl_string_eq(cl_object x, cl_object y)
 		}
 		break;
 	case t_base_string:
-		switch(type_of(y)) {
+		switch(ecl_t_of(y)) {
 		case t_string:
 			return ecl_string_eq(y, x);
 		case t_base_string:
@@ -652,7 +652,7 @@ bool
 ecl_member_char(ecl_character c, cl_object char_bag)
 {
 	cl_index i, f;
-	switch (type_of(char_bag)) {
+	switch (ecl_t_of(char_bag)) {
 	case t_list:
 		loop_for_in(char_bag) {
 			cl_object other = CAR(char_bag);

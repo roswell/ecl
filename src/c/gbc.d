@@ -133,7 +133,7 @@ BEGIN:
 	}
 	x->d.m = TRUE;
 
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 
 	case t_bignum: {
 		/* GMP may set num.alloc before actually allocating anything.
@@ -428,7 +428,7 @@ BEGIN:
 		return;
 	default:
 		if (debug)
-			printf("\ttype = %d\n", type_of(x));
+			printf("\ttype = %d\n", ecl_t_of(x));
 		ecl_internal_error("mark botch");
 	}
 }

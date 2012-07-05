@@ -190,7 +190,7 @@ ecl_type_to_symbol(cl_type t)
 cl_object
 ecl_check_cl_type(cl_object fun, cl_object p, cl_type t)
 {
-	while (type_of(p) != t) {
+	while (ecl_t_of(p) != t) {
 		p = ecl_type_error(fun, "argument", p, ecl_type_to_symbol(t));
 	}
 	return p;
@@ -199,7 +199,7 @@ ecl_check_cl_type(cl_object fun, cl_object p, cl_type t)
 void
 assert_type_integer(cl_object p)
 {
-	cl_type t = type_of(p);
+	cl_type t = ecl_t_of(p);
 	if (t != t_fixnum && t != t_bignum)
                 FEwrong_type_nth_arg(@[coerce], 1, p, @[integer]);
 }
@@ -207,7 +207,7 @@ assert_type_integer(cl_object p)
 void
 assert_type_non_negative_integer(cl_object p)
 {
-	cl_type t = type_of(p);
+	cl_type t = ecl_t_of(p);
 
 	if (t == t_fixnum) {
 		if (ecl_fixnum_plusp(p))
@@ -232,7 +232,7 @@ cl_object
 cl_type_of(cl_object x)
 {
 	cl_object t;
-	cl_type tx = type_of(x);
+	cl_type tx = ecl_t_of(x);
 	switch (tx) {
 #ifdef CLOS
         case t_instance: {

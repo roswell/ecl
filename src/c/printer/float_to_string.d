@@ -62,7 +62,7 @@ print_float_exponent(cl_object buffer, cl_object number, cl_fixnum exp)
 {
         cl_object r = ecl_symbol_value(@'*read-default-float-format*');
         cl_fixnum e;
-        switch (type_of(number)) {
+        switch (ecl_t_of(number)) {
         case t_singlefloat:
                 e = (r == @'single-float' || r == @'short-float')? 'e' : 'f';
                 break;

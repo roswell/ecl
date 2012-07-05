@@ -320,7 +320,7 @@ si_wait_for_all_processes()
 cl_object
 si_close_windows_handle(cl_object h)
 {
-        if (type_of(h) == t_foreign) {
+        if (ecl_t_of(h) == t_foreign) {
                 HANDLE *ph = (HANDLE*)h->foreign.data;
                 if (ph) CloseHandle(*ph);
         }

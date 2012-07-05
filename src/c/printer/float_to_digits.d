@@ -39,7 +39,7 @@ setup(cl_object number, float_approx *approx)
         cl_object f = cl_integer_decode_float(number);
         cl_fixnum e = ecl_fixnum(VALUES(1)), min_e;
         bool limit_f = 0;
-        switch (type_of(number)) {
+        switch (ecl_t_of(number)) {
         case t_singlefloat:
                 min_e = FLT_MIN_EXP;
                 limit_f = (number->SF.SFVAL ==

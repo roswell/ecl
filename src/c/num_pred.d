@@ -73,7 +73,7 @@ ecl_float_nan_p(cl_object x)
 bool
 ecl_float_infinity_p(cl_object x)
 {
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_singlefloat:
 		return !isfinite(ecl_single_float(x));
 	case t_doublefloat:

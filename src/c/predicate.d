@@ -59,28 +59,28 @@ cl_listp(cl_object x)
 cl_object
 cl_numberp(cl_object x)
 {
-	cl_type t = type_of(x);
+	cl_type t = ecl_t_of(x);
 	@(return (ECL_NUMBER_TYPE_P(t) ? ECL_T : ECL_NIL))
 }
 
 /*	Used in compiled code		*/
 bool ecl_numberp(cl_object x)
 {
-        cl_type t = type_of(x);
+        cl_type t = ecl_t_of(x);
         return ECL_NUMBER_TYPE_P(t);
 }
 
 cl_object
 cl_integerp(cl_object x)
 {
-	cl_type t = type_of(x);
+	cl_type t = ecl_t_of(x);
 	@(return ((t == t_fixnum || t == t_bignum) ? ECL_T : ECL_NIL))
 }
 
 cl_object
 cl_rationalp(cl_object x)
 {
-	cl_type t = type_of(x);
+	cl_type t = ecl_t_of(x);
 	@(return ((t == t_fixnum || t == t_bignum || t == t_ratio) ? ECL_T : ECL_NIL))
 }
 
@@ -93,7 +93,7 @@ cl_floatp(cl_object x)
 bool
 floatp(cl_object x)
 {
-	cl_type t = type_of(x);
+	cl_type t = ecl_t_of(x);
 	return (t == t_singlefloat) || (t == t_doublefloat)
 #ifdef ECL_LONG_FLOAT
 		|| (t == t_longfloat)
@@ -104,14 +104,14 @@ floatp(cl_object x)
 cl_object
 cl_realp(cl_object x)
 {
-	cl_type t = type_of(x);
+	cl_type t = ecl_t_of(x);
 	@(return (ECL_REAL_TYPE_P(t) ? ECL_T : ECL_NIL))
 }
 
 bool
 ecl_realp(cl_object x)
 {
-        cl_type t = type_of(x);
+        cl_type t = ecl_t_of(x);
         return ECL_REAL_TYPE_P(t);
 }
 
@@ -138,7 +138,7 @@ si_base_char_p(cl_object c)
 bool
 ecl_stringp(cl_object x)
 {
-	cl_type t = type_of(x);
+	cl_type t = ecl_t_of(x);
 #ifdef ECL_UNICODE
 	return t == t_base_string || t == t_string;
 #else
@@ -193,7 +193,7 @@ cl_simple_bit_vector_p(cl_object x)
 cl_object
 cl_simple_vector_p(cl_object x)
 {
-	cl_type t = type_of(x);
+	cl_type t = ecl_t_of(x);
 	@(return ((t == t_vector &&
                    !ECL_ADJUSTABLE_ARRAY_P(x) &&
                    !ECL_ARRAY_HAS_FILL_POINTER_P(x) &&
@@ -219,7 +219,7 @@ cl_functionp(cl_object x)
 	cl_type t;
 	cl_object output;
 
-	t = type_of(x);
+	t = ecl_t_of(x);
 	if (t == t_bytecodes || t == t_bclosure || t == t_cfun
 	    || t == t_cfunfixed || t == t_cclosure
 #ifdef CLOS
@@ -235,7 +235,7 @@ cl_functionp(cl_object x)
 cl_object
 cl_compiled_function_p(cl_object x)
 {
-	cl_type t = type_of(x);
+	cl_type t = ecl_t_of(x);
 	@(return ((t == t_bytecodes || t == t_bclosure || t == t_cfun
 		   || t == t_cfunfixed || t == t_cclosure) ? ECL_T : ECL_NIL))
 }
@@ -322,8 +322,8 @@ ecl_equal(register cl_object x, cl_object y)
 BEGIN:
 	if (x==y)
 		return(TRUE);
-	tx = type_of(x);
-	ty = type_of(y);
+	tx = ecl_t_of(x);
+	ty = ecl_t_of(y);
 	switch (tx) {
 	case t_list:
 		if (Null(x) || Null(y)) {
@@ -417,8 +417,8 @@ ecl_equalp(cl_object x, cl_object y)
 BEGIN:
         if (x == y)
                 return TRUE;
-	tx = type_of(x);
-	ty = type_of(y);
+	tx = ecl_t_of(x);
+	ty = ecl_t_of(y);
 
 	switch (tx) {
 	case t_fixnum:

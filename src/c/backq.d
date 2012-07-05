@@ -33,7 +33,7 @@ static cl_object backq(cl_object x);
 static cl_object
 kwote(cl_object x)
 {
-	cl_type t = type_of(x);
+	cl_type t = ecl_t_of(x);
 	if ((t == t_symbol && !Null(x) && !ecl_keywordp(x)) ||
 	    t == t_list || t == t_vector)
 		x = CONS(@'quote', ecl_list1(x));

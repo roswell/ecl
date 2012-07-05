@@ -91,8 +91,8 @@ ecl_atan2(cl_object y, cl_object x)
         ECL_MATHERR_CLEAR;
         {
 #ifdef ECL_LONG_FLOAT
-	int tx = type_of(x);
-	int ty = type_of(y);
+	int tx = ecl_t_of(x);
+	int ty = ecl_t_of(y);
 	if (tx < ty)
 		tx = ty;
 	if (tx == t_longfloat) {

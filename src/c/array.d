@@ -93,7 +93,7 @@ checked_index(cl_object function, cl_object a, int which, cl_object index,
 cl_index
 ecl_to_index(cl_object n)
 {
-	switch (type_of(n)) {
+	switch (ecl_t_of(n)) {
 	case t_fixnum: {
 		cl_fixnum out = ecl_fixnum(n);
 		if (out < 0 || out >= ECL_ARRAY_DIMENSION_LIMIT)
@@ -123,7 +123,7 @@ si_row_major_aset(cl_object x, cl_object indx, cl_object val)
 @ {
 	cl_index i, j;
 	cl_index r = narg - 1;
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_array:
 		if (r != x->array.rank)
 			FEerror("Wrong number of indices.", 0);
@@ -266,7 +266,7 @@ ecl_row_major_ptr(cl_object x, cl_index index, cl_index bytes)
 	cl_index i, j;
 	cl_index r = narg - 2;
 	cl_object v;
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_array:
 		if (ecl_unlikely(r != x->array.rank))
 			FEerror("Wrong number of indices.", 0);
@@ -755,7 +755,7 @@ ecl_displace(cl_object from, cl_object to, cl_object offset)
                 FEwrong_type_key_arg(@[adjust-array], @[:displaced-index-offset],
                                      offset, @[fixnum]);
         }
-	if (type_of(to) == t_foreign) {
+	if (ecl_t_of(to) == t_foreign) {
 		if (fromtype == ecl_aet_bit || fromtype == ecl_aet_object) {
 			FEerror("Cannot displace arrays with element type T or BIT onto foreign data",0);
 		}
@@ -853,7 +853,7 @@ cl_array_rank(cl_object a)
 cl_index
 ecl_array_rank(cl_object a)
 {
-	switch (type_of(a)) {
+	switch (ecl_t_of(a)) {
 	case t_array:
 		return a->array.rank;
 #ifdef ECL_UNICODE
@@ -877,7 +877,7 @@ cl_array_dimension(cl_object a, cl_object index)
 cl_index
 ecl_array_dimension(cl_object a, cl_index index)
 {
-	switch (type_of(a)) {
+	switch (ecl_t_of(a)) {
 	case t_array: {
                 if (ecl_unlikely(index > a->array.rank))
                         FEwrong_dimensions(a, index+1);
@@ -995,7 +995,7 @@ cl_svref(cl_object x, cl_object index)
 	const cl_env_ptr the_env = ecl_process_env();
 	cl_index i;
 
-	if (ecl_unlikely(type_of(x) != t_vector ||
+	if (ecl_unlikely(ecl_t_of(x) != t_vector ||
                          (x->vector.flags & (ECL_FLAG_ADJUSTABLE | ECL_FLAG_HAS_FILL_POINTER)) ||
                          CAR(x->vector.displaced) != ECL_NIL ||
                          (cl_elttype)x->vector.elttype != ecl_aet_object))
@@ -1012,7 +1012,7 @@ si_svset(cl_object x, cl_object index, cl_object v)
 	const cl_env_ptr the_env = ecl_process_env();
 	cl_index i;
 
-	if (ecl_unlikely(type_of(x) != t_vector ||
+	if (ecl_unlikely(ecl_t_of(x) != t_vector ||
                          (x->vector.flags & (ECL_FLAG_ADJUSTABLE | ECL_FLAG_HAS_FILL_POINTER)) ||
                          CAR(x->vector.displaced) != ECL_NIL ||
                          (cl_elttype)x->vector.elttype != ecl_aet_object))
@@ -1028,7 +1028,7 @@ cl_array_has_fill_pointer_p(cl_object a)
 {
 	const cl_env_ptr the_env = ecl_process_env();
 	cl_object r;
-	switch (type_of(a)) {
+	switch (ecl_t_of(a)) {
 	case t_array:
 		r = ECL_NIL; break;
 	case t_vector:
@@ -1093,8 +1093,8 @@ si_replace_array(cl_object olda, cl_object newa)
 {
 	const cl_env_ptr the_env = ecl_process_env();
 	cl_object dlist;
-	if (type_of(olda) != type_of(newa)
-	    || (type_of(olda) == t_array && olda->array.rank != newa->array.rank))
+	if (ecl_t_of(olda) != ecl_t_of(newa)
+	    || (ecl_t_of(olda) == t_array && olda->array.rank != newa->array.rank))
 		goto CANNOT;
 	if (!ECL_ADJUSTABLE_ARRAY_P(olda)) {
 		/* When an array is not adjustable, we simply output the new array */
@@ -1108,7 +1108,7 @@ si_replace_array(cl_object olda, cl_object newa)
 		offset = ecl_nth_value(the_env, 1);
 		ecl_displace(other_array, newa, offset);
 	}
-	switch (type_of(olda)) {
+	switch (ecl_t_of(olda)) {
 	case t_array:
 	case t_vector:
 	case t_bitvector:

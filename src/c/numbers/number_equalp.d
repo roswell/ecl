@@ -39,9 +39,9 @@ ecl_number_equalp(cl_object x, cl_object y)
 	/* INV: (= fixnum ratio) => 0 */
 	/* INV: (= bignum ratio) => 0 */
  BEGIN:
-	switch (type_of(x)) {
+	switch (ecl_t_of(x)) {
 	case t_fixnum:
-		switch (type_of(y)) {
+		switch (ecl_t_of(y)) {
 		case t_fixnum:
 		  	return x == y;
 		case t_bignum:
@@ -61,7 +61,7 @@ ecl_number_equalp(cl_object x, cl_object y)
 			FEwrong_type_nth_arg(@[=], 2, y, @[number]);
 		}
 	case t_bignum:
-		switch (type_of(y)) {
+		switch (ecl_t_of(y)) {
 		case t_fixnum:
 			return 0;
 		case t_bignum:
@@ -81,7 +81,7 @@ ecl_number_equalp(cl_object x, cl_object y)
 			FEwrong_type_nth_arg(@[=], 2, y, @[number]);
 		}
 	case t_ratio:
-		switch (type_of(y)) {
+		switch (ecl_t_of(y)) {
 		case t_fixnum:
 		case t_bignum:
 			return 0;
@@ -106,7 +106,7 @@ ecl_number_equalp(cl_object x, cl_object y)
 	case t_doublefloat:
 		dx = ecl_double_float(x);
 	FLOAT:
-		switch (type_of(y)) {
+		switch (ecl_t_of(y)) {
 		case t_fixnum:
 			return double_fix_compare(ecl_fixnum(y), dx) == 0;
 		case t_bignum:
@@ -129,7 +129,7 @@ ecl_number_equalp(cl_object x, cl_object y)
 #ifdef ECL_LONG_FLOAT
 	case t_longfloat: {
 		long double dx = ecl_long_float(x);
-		switch (type_of(y)) {
+		switch (ecl_t_of(y)) {
 		case t_fixnum:
 			return long_double_fix_compare(ecl_fixnum(y), dx) == 0;
 		case t_bignum:
@@ -154,7 +154,7 @@ ecl_number_equalp(cl_object x, cl_object y)
 			return 0;
 		return ecl_number_equalp(x, y->complex.real);
 	case t_complex:
-                switch (type_of(y)) {
+                switch (ecl_t_of(y)) {
                 case t_complex:
 			return (ecl_number_equalp(x->complex.real, y->complex.real) &&
 				ecl_number_equalp(x->complex.imag, y->complex.imag));
