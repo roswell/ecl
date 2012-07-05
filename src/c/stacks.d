@@ -419,13 +419,6 @@ get_ihs_ptr(cl_index n)
 }
 
 cl_object
-ihs_top_function_name(void)
-{
-	cl_env_ptr env = ecl_process_env();
-	return ihs_function_name(env->ihs_top->function);
-}
-
-cl_object
 si_ihs_top(void)
 {
 	cl_env_ptr env = ecl_process_env();

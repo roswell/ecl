@@ -203,8 +203,6 @@ typedef struct ecl_ihs_frame {
 	if (r) __the_env->ihs_top = r->next;		\
 } while(0)
 
-extern ECL_API cl_object ihs_top_function_name(void);
-
 /***************
  * FRAME STACK
  ***************/
