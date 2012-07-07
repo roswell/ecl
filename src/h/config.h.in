@@ -220,6 +220,9 @@ typedef unsigned char ecl_base_char;
 /* We can use small, two-words conses, without type information		*/
 #undef ECL_SMALL_CONS
 
+/* Use CMU Common-Lisp's FORMAT routine					*/
+#undef ECL_CMU_FORMAT
+
 /*
  * C macros for inlining, denoting probable code paths and other stuff
  * that makes better code. Most of it is GCC specific.
@@ -284,9 +287,6 @@ typedef unsigned char ecl_base_char;
 
 /* Undefine this if you do not want ECL to check for circular lists	*/
 #define ECL_SAFE
-
-/* Use CMU Common-Lisp's FORMAT routine					*/
-#undef ECL_CMU_FORMAT
 
 /* Bytecodes and arguments are 8 and 16 bits large, respectively	*/
 #undef ECL_SMALL_BYTECODES
