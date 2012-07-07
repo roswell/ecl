@@ -98,8 +98,14 @@ ecl_rem_setf_definition(cl_object sym)
         ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(the_env) {
                 cl_object pair = ecl_gethash_safe(sym, cl_core.setf_definitions, ECL_NIL);
 		if (!Null(pair)) {
-			ECL_RPLACA(pair, ECL_NIL);
+			ECL_RPLACA(pair, make_setf_function_error(sym));
+			ECL_RPLACD(pair, ECL_NIL);
+			/*
+			  FIXME: This leaks resources
+			  We actually cannot remove it, because some compiled
+			  code might be using it!
 			ecl_remhash(sym, cl_core.setf_definitions);
+			*/
 		}
         } ECL_WITH_GLOBAL_ENV_WRLOCK_END;
 }
