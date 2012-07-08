@@ -447,7 +447,7 @@
                      (let ((l (multiple-value-list (funcall f name))))
                        (and (first l) (register-pre-built-system name))
                        (values-list l)))))
-#+win32 (push '("asd" . si::load-source) ext:*load-hooks*)
+#+win32 (setf ext:*load-hooks* (append ext:*load-hooks* '(("asd" . si::load-source))))
 (pushnew 'module-provide-asdf ext:*module-provider-functions*)
 (pushnew (translate-logical-pathname "SYS:") *central-registry*)
 
