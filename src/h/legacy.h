@@ -208,4 +208,7 @@ enum {	/*  stream mode  */
 #define SLENGTH(x) ECL_STRUCT_LENGTH(x)
 #define SNAME(x) ECL_STRUCT_NAME(x)
 
+#ifndef type_of
 #define type_of(x) ecl_t_of(x)
+#endif
+
