@@ -95,8 +95,8 @@
 	   value)
 	  ((and (policy-evaluate-forms) (constantp value))
 	   (unless (typep (cmp-eval value) type)
-	     (cmpwarning "Failed type assertion for value ~A and type ~A"
-			 value type))
+	     (cmpwarn "Failed type assertion for value ~A and type ~A"
+		      value type))
 	   value)
 	  ;; Is the form type contained in the test?
 	  ((progn
