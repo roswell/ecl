@@ -1187,15 +1187,15 @@ also known as unix-domain sockets."))
                             (name "FD-STREAM"))
   (assert (stringp name) (name) "name must be a string.")
   (let* ((smm-mode (ecase mode
-		       (:input (c-constant "smm_input"))
-		       (:output (c-constant "smm_output"))
-		       (:input-output (c-constant "smm_io"))
+		       (:input (c-constant "ecl_smm_input"))
+		       (:output (c-constant "ecl_smm_output"))
+		       (:input-output (c-constant "ecl_smm_io"))
 		       #+:wsock
-		       (:input-wsock (c-constant "smm_input_wsock"))
+		       (:input-wsock (c-constant "ecl_smm_input_wsock"))
 		       #+:wsock
-		       (:output-wsock (c-constant "smm_output_wsock"))
+		       (:output-wsock (c-constant "ecl_smm_output_wsock"))
 		       #+:wsock
-		       (:input-output-wsock (c-constant "smm_io_wsock"))
+		       (:input-output-wsock (c-constant "ecl_smm_io_wsock"))
 		       ))
 	 (external-format (unless (subtypep element-type 'integer) external-format))
          (stream (ffi:c-inline (name fd smm-mode element-type external-format)
