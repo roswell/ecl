@@ -722,7 +722,7 @@ cl_boot(int argc, char **argv)
 	 */
 #ifdef ECL_THREADS
 	ECL_SET(@'mp::+load-compile-lock+',
-		mp_make_lock(2, @':name', @'mp::+load-compile-lock+'));
+		ecl_make_lock(@'mp::+load-compile-lock+', 1));
 #endif
 	aux = cl_list(
 #ifdef ENABLE_DLOPEN
