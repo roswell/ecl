@@ -93,6 +93,10 @@
 	 form form-type and-type)
     (cond ((or (trivial-type-p args) (not (policy-type-assertions)))
 	   value)
+	  ((and (consp type)
+		(eq (first type) 'values))
+	   (c1checked-value (list (values-type-primary-type type)
+				  value)))
 	  ((and (policy-evaluate-forms) (constantp value))
 	   (unless (typep (cmp-eval value) type)
 	     (cmpwarn "Failed type assertion for value ~A and type ~A"
