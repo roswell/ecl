@@ -120,7 +120,7 @@
          (values 0 MULTIPLE-VALUES-LIMIT))
         ((or (atom type) (not (eq (first type) 'VALUES)))
          (values 1 1))
-        ((or (member '&rest type) (member 'optional type))
+        ((or (member '&rest type) (member '&optional type))
          (values 0 MULTIPLE-VALUES-LIMIT))
         (t
          (let ((l (1- (length type))))
