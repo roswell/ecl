@@ -274,6 +274,13 @@
 	      :prefix "EXT"
 	      :builtin nil)
 
+#+WANTS-SOCKETS
+(build-module "ecl-quicklisp"
+	      '("ext:quicklisp;ecl-quicklisp.lisp")
+	      :dir "build:ext;"
+	      :prefix "EXT"
+	      :builtin nil)
+
 ;;;
 ;;; * Test suite
 ;;;
