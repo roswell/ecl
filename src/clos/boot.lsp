@@ -102,7 +102,11 @@
 	  (eql-specializer-flag      class) nil
 	  (specializer-direct-methods class) nil
 	  (specializer-direct-generic-functions class) nil
-	  (gethash name si::*class-name-hash-table*) class)
+	  (gethash name si::*class-name-hash-table*) class
+	  (class-sealedp             class) nil
+	  (class-dependents          class) nil
+	  (class-valid-initargs      class) nil
+	  )
     class))
 
 (defun add-slots (class slots)
