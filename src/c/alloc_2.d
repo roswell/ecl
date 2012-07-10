@@ -462,6 +462,7 @@ cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl
                 MAYBE_MARK(o->condition_variable.queue_spinlock);
                 MAYBE_MARK(o->condition_variable.queue_list);
                 MAYBE_MARK(o->condition_variable.lock);
+                MAYBE_MARK(o->condition_variable.signaled);
 		break;
 	case t_rwlock:
 		MAYBE_MARK(o->rwlock.name);
@@ -1014,6 +1015,7 @@ init_alloc(void)
                 to_bitmap(&o, &(o.rwlock.mutex));
 #  endif
 	type_info[t_condition_variable].descriptor =
+		to_bitmap(&o, &(o.condition_variable.signaled)) |
 		to_bitmap(&o, &(o.condition_variable.lock)) |
 		to_bitmap(&o, &(o.condition_variable.queue_list)) |
 		to_bitmap(&o, &(o.condition_variable.queue_spinlock));

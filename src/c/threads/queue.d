@@ -331,7 +331,6 @@ ecl_wakeup_waiters(cl_env_ptr the_env, cl_object q, int flags)
 			} else {
 				/* If the process is active, we then
 				 * simply awake it with a signal.*/
-				print_lock("awaking %p", q, p);
 				if (flags & ECL_WAKEUP_RESET_FLAG)
 					p->process.waiting_for = ECL_NIL;
 				if (flags & ECL_WAKEUP_KILL)

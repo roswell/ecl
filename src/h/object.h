@@ -954,6 +954,7 @@ struct ecl_condition_variable {
 	cl_object queue_list;
 	cl_object queue_spinlock;
 	cl_object lock;
+	cl_object signaled;
 };
 #endif /* ECL_THREADS */
 

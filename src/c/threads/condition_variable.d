@@ -33,15 +33,7 @@ mp_make_condition_variable(void)
 static cl_object
 condition_variable_wait(cl_env_ptr env, cl_object cv)
 {
-	cl_object own_process = env->own_process;
-	if (own_process->process.waiting_for != cv) {
-		/* We have been signaled */
-		cl_object lock = cv->condition_variable.lock;
-		if (mp_get_lock_nowait(lock) != ECL_NIL)
-			return ECL_T;
-		own_process->process.waiting_for = cv;
-	}
-	return ECL_NIL;
+	return cv->condition_variable.signaled;
 }
 
 cl_object
@@ -75,6 +67,7 @@ mp_condition_variable_wait(cl_object cv, cl_object lock)
 	env->own_process->process.waiting_for = cv;
 	mp_giveup_lock(cv->condition_variable.lock = lock);
 	ecl_wait_on(env, condition_variable_wait, cv);
+	mp_get_lock_wait(lock);
 	@(return ECL_T)
 }
 
@@ -87,6 +80,8 @@ mp_condition_variable_timedwait(cl_object cv, cl_object lock, cl_object seconds)
 cl_object
 mp_condition_variable_signal(cl_object cv)
 {
+	cl_object lock = cv->condition_variable.lock;
+	cv->condition_variable.signaled = ECL_T;
 	ecl_wakeup_waiters(ecl_process_env(), cv,
 			   ECL_WAKEUP_RESET_FLAG | ECL_WAKEUP_ONE);
 	@(return ECL_T)
