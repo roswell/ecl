@@ -280,6 +280,8 @@ typedef unsigned int uint32_t;
 /* Activate Boehm-Weiser incremental garbage collector			*/
 /* #undef GBC_BOEHM_GENGC */
 
+#define ECL_WEAK_HASH
+
 /*
  * SYSTEM FEATURES:
  */
