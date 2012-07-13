@@ -262,7 +262,7 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 		 * might have missed a wakeup event if that happened
 		 * between 0) and 2), which is why we start with the
 		 * check*/
-		if (o->queue.list != record ||
+		if ((o->queue.list != record && o->d.t != t_condition_variable) ||
 		    Null(output = condition(the_env, o)))
 		{
 			print_lock("suspending %p", o, o);
@@ -329,17 +329,20 @@ ecl_wakeup_waiters(cl_env_ptr the_env, cl_object q, int flags)
 				print_lock("removing %p", q, p);
 				*tail = ECL_CONS_CDR(l);
 			} else {
+				print_lock("awaking %p", q, p);
 				/* If the process is active, we then
 				 * simply awake it with a signal.*/
 				if (flags & ECL_WAKEUP_RESET_FLAG)
 					p->process.waiting_for = ECL_NIL;
+				if (flags & ECL_WAKEUP_DELETE)
+					*tail = ECL_CONS_CDR(l);
+				tail = &ECL_CONS_CDR(l);
 				if (flags & ECL_WAKEUP_KILL)
 					mp_process_kill(p);
 				else
 					ecl_wakeup_process(p);
 				if (!(flags & ECL_WAKEUP_ALL))
 					break;
-				tail = &ECL_CONS_CDR(l);
 			}
 		}
 	}
@@ -355,8 +358,9 @@ print_lock(char *prefix, cl_object l, ...)
 	static cl_object lock = ECL_NIL;
 	va_list args;
 	va_start(args, l);
-	return;
-	if (l == ECL_NIL || ECL_FIXNUMP(l->lock.name)) {
+	if (l == ECL_NIL
+	    || type_of(l) == t_condition_variable
+	    || ECL_FIXNUMP(l->lock.name)) {
 		cl_env_ptr env = ecl_process_env();
 		ecl_get_spinlock(env, &lock);
 		printf("\n%ld\t", ecl_fixnum(env->own_process->process.name));

@@ -36,6 +36,7 @@ condition_variable_wait(cl_env_ptr env, cl_object cv)
 	cl_object lock = cv->condition_variable.lock;
 	cl_object own_process = env->own_process;
 	/* We have entered the queue and still own the mutex? */
+	print_lock("cv lock %p is %p =? %p", cv, lock, lock->lock.owner, own_process);
 	if (lock->lock.owner == own_process) {
 		mp_giveup_lock(lock);
 	}
@@ -71,7 +72,7 @@ mp_condition_variable_wait(cl_object cv, cl_object lock)
                 FEerror("mp:condition-variable-wait can not be used with recursive"
                         " locks:~%~S", 1, lock);
         }
-	print_lock("waiting cv %p", cv, env);
+	print_lock("waiting cv %p", cv, cv);
 	cv->condition_variable.lock = lock;
 	env->own_process->process.waiting_for = cv;
 	ecl_wait_on(env, condition_variable_wait, cv);
@@ -88,17 +89,17 @@ mp_condition_variable_timedwait(cl_object cv, cl_object lock, cl_object seconds)
 cl_object
 mp_condition_variable_signal(cl_object cv)
 {
-	cl_object lock = cv->condition_variable.lock;
+	print_lock("signal cv %p", cv, cv);
 	ecl_wakeup_waiters(ecl_process_env(), cv,
-			   ECL_WAKEUP_RESET_FLAG | ECL_WAKEUP_ONE);
+			   ECL_WAKEUP_RESET_FLAG | ECL_WAKEUP_ONE | ECL_WAKEUP_DELETE);
 	@(return ECL_T)
 }
 
 cl_object
 mp_condition_variable_broadcast(cl_object cv)
 {
-	print_lock("waking up cv", cv);
+	print_lock("broadcast cv %p", cv);
 	ecl_wakeup_waiters(ecl_process_env(), cv,
-			   ECL_WAKEUP_RESET_FLAG | ECL_WAKEUP_ALL);
+			   ECL_WAKEUP_RESET_FLAG | ECL_WAKEUP_ALL | ECL_WAKEUP_DELETE);
 	@(return ECL_T)
 }

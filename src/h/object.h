@@ -893,7 +893,8 @@ enum {
 	ECL_WAKEUP_ONE = 0,
 	ECL_WAKEUP_ALL = 1,
 	ECL_WAKEUP_RESET_FLAG = 2,
-	ECL_WAKEUP_KILL = 4
+	ECL_WAKEUP_KILL = 4,
+	ECL_WAKEUP_DELETE = 8
 };
 
 struct ecl_queue {
