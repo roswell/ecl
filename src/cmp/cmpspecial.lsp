@@ -23,9 +23,14 @@
   (cmperr "The declaration ~s was found in a bad place." (cons 'DECLARE args)))
 
 (defun c1the (args)
-  (if (policy-the-is-checked)
-      (c1checked-value args)
-      (c1truly-the args)))
+  (check-args-number 'THE args 2 2)
+  ;; FIXME: C1CHECKED-VALUE cannot check multiple values.
+  (let ((type (first args)))
+    (if (and (policy-the-is-checked)
+	     (not (and (consp type)
+		       (eq (first type) 'values))))
+	(c1checked-value args)
+	(c1truly-the args))))
 
 (defun c1truly-the (args)
   (check-args-number 'TRULY-THE args 2 2)
