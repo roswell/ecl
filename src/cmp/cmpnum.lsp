@@ -219,13 +219,16 @@
 
 (def-type-propagator expt (fname base exponent)
   ;; Rules:
-  ;;	(expt number-type integer) -> number-type
+  ;;	(expt fixnum integer) -> integer
+  ;;    (expt number-type integer) -> number-type
   ;;	(expt number-type1 number-type2) -> (max-float number-type1 number-type2)
   ;;
   (let ((exponent (ensure-real-type exponent)))
     (values (list base exponent)
 	    (cond ((eql exponent 'integer)
-		   base)
+		   (if (subtypep base 'fixnum)
+		       'integer
+		       base))
 		  ((type>= '(real 0 *) base)
 		   (let* ((exponent (ensure-nonrational-type exponent)))
 		     (maximum-number-type exponent base)))
