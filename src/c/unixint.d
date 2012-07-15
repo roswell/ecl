@@ -1058,25 +1058,32 @@ _ecl_w32_exception_filter(struct _EXCEPTION_POINTERS* ep)
                 }
 		/* Catch all arithmetic exceptions */
 		case EXCEPTION_INT_DIVIDE_BY_ZERO:
+			feclearexcept(FE_ALL_EXCEPT);
                         handle_signal_now(@'division-by-zero', the_env->own_process);
                         return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_INT_OVERFLOW:
+			feclearexcept(FE_ALL_EXCEPT);
                         handle_signal_now(@'arithmetic-error', the_env->own_process);
                         return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_FLT_DIVIDE_BY_ZERO:
+			feclearexcept(FE_ALL_EXCEPT);
                         handle_signal_now(@'floating-point-overflow', the_env->own_process);
                         return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_FLT_OVERFLOW:
+			feclearexcept(FE_ALL_EXCEPT);
                         handle_signal_now(@'floating-point-overflow', the_env->own_process);
                         return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_FLT_UNDERFLOW:
+			feclearexcept(FE_ALL_EXCEPT);
                         handle_signal_now(@'floating-point-underflow', the_env->own_process);
                         return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_FLT_INEXACT_RESULT:
+			feclearexcept(FE_ALL_EXCEPT);
                         handle_signal_now(@'floating-point-inexact', the_env->own_process);
                         return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_FLT_DENORMAL_OPERAND:
 		case EXCEPTION_FLT_INVALID_OPERATION:
+			feclearexcept(FE_ALL_EXCEPT);
                         handle_signal_now(@'floating-point-invalid-operation', the_env->own_process);
                         return EXCEPTION_CONTINUE_EXECUTION;
 		case EXCEPTION_FLT_STACK_CHECK:
