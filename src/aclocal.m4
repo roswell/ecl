@@ -339,6 +339,7 @@ case "${host_os}" in
                 fi
 		;;
 	cygwin*)
+		enable_threads='no'
 		thehost='cygwin'
 		shared='yes'
 		THREAD_CFLAGS='-D_THREAD_SAFE'
