@@ -200,7 +200,7 @@ value of *CMP-ENV*.")
 ;;; Do we debug the compiler? Then we need files not to be deleted.
 
 (defvar *debug-compiler* nil)
-(defvar *delete-files* #-ecl-min t #+ecl-min nil)
+(defvar *delete-files* t)
 (defvar *files-to-be-deleted* '())
 
 (defvar *user-ld-flags* '()
