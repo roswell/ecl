@@ -438,7 +438,8 @@ clean_ecl:
 	            lsp\load.lsp clos\load.lsp cmp\load.lsp cmp\cmpdefs.lsp \
 		    ecl.lib ecl.dll ecl_min$(EXE) eclmin.lib help.doc sysfun.lsp \
 		    BUILD-STAMP $(TARGETS) *.exp *.ilk *.manifest *.pdb *.c *.obj \
-		    ecl-config.bat ecl-static.lib) \
+		    ecl-config.bat ecl-static.lib *.tmp *.implib *.lib ecl.ico \
+		    ecl-cc.bat ecl.rc ecl.res) \
 	     do $(RM) %i
 	cd c
 	-$(MAKE) ECL_THREADS=$(ECL_THREADS) clean
@@ -446,6 +447,7 @@ clean_ecl:
 clean_lisp:
 	-for %i in (lsp clos $(ECL_MODULES)) do for %k in (%i.lib %i.fas %i.ilk %i.c %i.obj %i.pdb) do $(RM) %k
 	-for %i in (lsp clos ext $(ECL_MODULES)) do $(RMDIR) %i
+	-for %i in ( *.fas *.implib *.lib *.asd) do $(RM) %i
 	-$(RM) help.doc
 	-$(RM) MODULES
 distclean: clean
