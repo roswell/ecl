@@ -311,7 +311,7 @@ extern ecl_off_t ecl_integer_to_off_t(cl_object offset);
 /* format.d */
 
 #ifndef ECL_CMU_FORMAT
-extern cl_object si_formatter_aux _ARGS((cl_narg narg, cl_object strm, cl_object string, ...));
+extern cl_object si_formatter_aux _ECL_ARGS((cl_narg narg, cl_object strm, cl_object string, ...));
 #endif
 
 /* hash.d */
