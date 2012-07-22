@@ -143,8 +143,9 @@ copy_object_file(cl_object original)
 
 #ifdef ENABLE_DLOPEN
 static void
-dlopen_wrapper(cl_object filename, cl_object block)
+dlopen_wrapper(cl_object block)
 {
+	cl_object filename = block->cblock.name;
         char *filename_string = (char*)filename->base_string.self;
 #ifdef HAVE_DLFCN_H
 	block->cblock.handle = dlopen(filename_string, RTLD_NOW|RTLD_GLOBAL);
@@ -238,7 +239,7 @@ ecl_library_open_inner(cl_object filename, bool self_destruct)
 
         ECL_WITH_GLOBAL_LOCK_BEGIN(the_env) {
 	ecl_disable_interrupts();
-        dlopen_wrapper(filename, block);
+        GC_call_with_alloc_lock(dlopen_wrapper, block);
         if (block->cblock.handle != NULL) {
                 /* Have we already loaded this library? If so, then unload this
                  * copy and increase the reference counter so that we can keep
@@ -246,7 +247,7 @@ ecl_library_open_inner(cl_object filename, bool self_destruct)
                  */
                 cl_object other = ecl_library_find_by_handle(block->cblock.handle);
                 if (other != ECL_NIL) {
-                        dlclose_wrapper(block);
+			GC_call_with_alloc_lock(dlclose_wrapper, block);
                         block = other;
                         block->cblock.refs = ecl_one_plus(block->cblock.refs);
                 } else {
@@ -429,7 +430,7 @@ ecl_library_close(cl_object block) {
                         block->cblock.refs = ecl_one_minus(block->cblock.refs);
                         block = ECL_NIL;
                 } else if (block->cblock.handle != NULL) {
-                        dlclose_wrapper(block);
+                        GC_call_with_alloc_lock(dlclose_wrapper, block);
                         cl_core.libraries = ecl_remove_eq(block, cl_core.libraries);
                 }
                 ecl_enable_interrupts();
