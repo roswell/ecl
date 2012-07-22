@@ -125,6 +125,11 @@
         (fdefinition 'compile-file-pathname) #'bc-compile-file-pathname)
   (ext::package-lock (find-package :cl) t))
 
+(defun install-c-compiler ()
+  (require :cmp)
+  (locally (declare (notinline install-c-compiler))
+    (funcall 'install-c-compiler)))
+
 #-ecl-min
 (progn
 #+(and dlopen (not windows))
