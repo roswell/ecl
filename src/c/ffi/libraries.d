@@ -71,6 +71,8 @@
 #include <ecl/ecl-inl.h>
 #include <ecl/internal.h>
 
+#define GC_call_with_alloc_lock(f,arg) f(arg)
+
 cl_object
 ecl_make_codeblock()
 {
