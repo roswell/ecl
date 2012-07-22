@@ -109,7 +109,7 @@
   ((prefix :initform "Error")
    (format :initform +error-format+)))
 
-(define-condition compiler-fatal-error (compiler-message)
+(define-condition compiler-fatal-error (compiler-error)
   ((format :initform +fatal-format+)))
 
 (define-condition compiler-internal-error (compiler-fatal-error)
@@ -165,6 +165,7 @@
   (setf c (make-condition 'compiler-internal-error
                           :format-control "~A"
                           :format-arguments (list c)))
+  (push c *compiler-conditions*)
   (signal c)
   (print-compiler-message c t)
   (abort))
