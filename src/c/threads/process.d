@@ -208,7 +208,7 @@ thread_cleanup(void *aux)
 	{
 		sigset_t new[1];
 		sigemptyset(new);
-		sigaddset(new, ecl_option_values[ECL_OPT_SIGNAL_HANDLING_THREAD]);
+		sigaddset(new, ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL]);
 		pthread_sigmask(SIG_BLOCK, new, NULL);
 	}
 #endif
