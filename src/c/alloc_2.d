@@ -487,6 +487,7 @@ cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl
 		break;
 # endif
         case t_codeblock:
+                MAYBE_MARK(o->cblock.error);
                 MAYBE_MARK(o->cblock.source);
                 MAYBE_MARK(o->cblock.links);
                 MAYBE_MARK(o->cblock.name);
@@ -1037,7 +1038,8 @@ init_alloc(void)
                 to_bitmap(&o, &(o.cblock.next)) |
                 to_bitmap(&o, &(o.cblock.name)) |
                 to_bitmap(&o, &(o.cblock.links)) |
-                to_bitmap(&o, &(o.cblock.source));
+                to_bitmap(&o, &(o.cblock.source)) |
+		to_bitmap(&o, &(o.cblock.error));
         type_info[t_foreign].descriptor =
                 to_bitmap(&o, &(o.foreign.data)) |
                 to_bitmap(&o, &(o.foreign.tag));

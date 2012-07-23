@@ -709,8 +709,9 @@ si_load_foreign_module(cl_object filename)
 # endif
 	output = ecl_library_open(filename, 0);
 	if (output->cblock.handle == NULL) {
+		cl_object aux = ecl_library_error(output);
 		ecl_library_close(output);
-		output = ecl_library_error(output);
+		output = aux;
 	}
 # ifdef ECL_THREADS
 	(void)0; /* MSVC complains about missing ';' before '}' */

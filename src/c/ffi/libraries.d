@@ -144,6 +144,37 @@ copy_object_file(cl_object original)
 }
 
 #ifdef ENABLE_DLOPEN
+
+static void
+set_library_error(cl_object block) {
+	cl_object output;
+	ecl_disable_interrupts();
+#ifdef HAVE_DLFCN_H
+	output = make_base_string_copy(dlerror());
+#endif
+#ifdef HAVE_MACH_O_DYLD_H
+	{
+		NSLinkEditErrors c;
+		int number;
+		const char *filename;
+		NSLinkEditError(&c, &number, &filename, &message);
+		output = make_base_string_copy(message);
+	}
+#endif
+#if defined(ECL_MS_WINDOWS_HOST)
+	{
+		const char *message;
+		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
+			      FORMAT_MESSAGE_ALLOCATE_BUFFER,
+			      0, GetLastError(), 0, (void*)&message, 0, NULL);
+		output = make_base_string_copy(message);
+		LocalFree(message);
+	}
+#endif
+	ecl_enable_interrupts();
+	block->cblock.source = output;
+}
+
 static void
 dlopen_wrapper(cl_object block)
 {
@@ -170,6 +201,8 @@ dlopen_wrapper(cl_object block)
 #if defined(ECL_MS_WINDOWS_HOST)
 	block->cblock.handle = LoadLibrary(filename_string);
 #endif
+	if (block->cblock.handle == NULL)
+		set_library_error(block);
 }
 
 static void
@@ -390,37 +423,17 @@ ecl_library_symbol(cl_object block, const char *symbol, bool lock) {
 			block->cblock.locked |= lock;
 		}
 	}
+	if (!p)
+		set_library_error(block);
 	return p;
 }
 
 cl_object
 ecl_library_error(cl_object block) {
-	cl_object output;
-	ecl_disable_interrupts();
-#ifdef HAVE_DLFCN_H
-	output = make_base_string_copy(dlerror());
-#endif
-#ifdef HAVE_MACH_O_DYLD_H
-	{
-		NSLinkEditErrors c;
-		int number;
-		const char *filename;
-		NSLinkEditError(&c, &number, &filename, &message);
-		output = make_base_string_copy(message);
-	}
-#endif
-#if defined(ECL_MS_WINDOWS_HOST)
-	{
-		const char *message;
-		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
-			      FORMAT_MESSAGE_ALLOCATE_BUFFER,
-			      0, GetLastError(), 0, (void*)&message, 0, NULL);
-		output = make_base_string_copy(message);
-		LocalFree(message);
-	}
-#endif
-	ecl_enable_interrupts();
-	return output;
+	if (block->cblock.handle)
+		return block->cblock.error;
+	else
+		return ECL_NIL;
 }
 
 void

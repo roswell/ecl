@@ -700,6 +700,7 @@ struct ecl_codeblock {
 	const struct ecl_cfun *cfuns;
         cl_object source;		/*  common debug information for this block  */
         cl_object refs;			/*  reference counter for the library  */
+	cl_object error;		/*  error message when loading */
 };
 
 struct ecl_bytecodes {
