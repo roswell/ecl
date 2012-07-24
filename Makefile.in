@@ -147,11 +147,8 @@ rpmbuild=$(shell if [ -z `which rpmbuild` ]; then echo "rpm"; else echo "rpmbuil
 # 	grep -v '^#% ' > $(rpmdir)/SPECS/ecl.spec;
 # 	rpm -ba $(rpmdir)/SPECS/ecl.spec
 
-$(TAR_DIR):
-	git clone .git $(TAR_DIR)
-$(TAR_DIR).tgz: $(TAR_DIR)
-	cd $(TAR_DIR) && git pull && git reset --hard
-	tar -cz --exclude .git -f $(TAR_DIR).tgz $(TAR_DIR)
+$(TAR_DIR).tgz:
+	git archive --format=tar.gz --prefix=$(TAR_DIR)/ HEAD > $@
 
 binary-dist: all
 	su -c "rm -rf tmp"
