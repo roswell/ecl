@@ -14,7 +14,12 @@
   (translate-logical-pathname "HOME:QUICKLISP;")
   )
 
-(defparameter *quicklisp-setup* "SYS:QUICKLISP;SETUP.LISP")
+(defparameter *quicklisp-setup*
+  #+windows
+  "SYS:QUICKLISP;SETUP.LISP"
+  #-windows
+  "HOME:QUICKLISP;SETUP.LISP"
+)
 
 (defun safe-download (url filename)
   (ensure-directories-exist filename)
