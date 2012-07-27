@@ -1422,6 +1422,7 @@ package."
     (let* ((*standard-input* *debug-io*)
            (*standard-output* *debug-io*)
            ;;(*tpl-prompt-hook* "[dbg] ")
+	   (*print-readably* nil)
            (*print-pretty* nil)
            (*print-circle* t)
            (*readtable* (or *break-readtable* *readtable*))
