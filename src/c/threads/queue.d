@@ -262,7 +262,7 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 		 * might have missed a wakeup event if that happened
 		 * between 0) and 2), which is why we start with the
 		 * check*/
-		if ((o->queue.list != record && o->d.t != t_condition_variable) ||
+		if (/*(o->queue.list != record && o->d.t != t_condition_variable) ||*/
 		    Null(output = condition(the_env, o)))
 		{
 			print_lock("suspending %p", o, o);
