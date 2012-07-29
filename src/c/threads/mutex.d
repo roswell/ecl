@@ -165,7 +165,7 @@ mp_get_lock_wait(cl_object lock)
 	unlikely_if (ecl_t_of(lock) != t_lock) {
 		FEerror_not_a_lock(lock);
 	}
-	if (lock->lock.queue_list != ECL_NIL || get_lock_inner(env, lock) == ECL_NIL) {
+	if (get_lock_inner(env, lock) == ECL_NIL) {
 		ecl_wait_on(env, get_lock_inner, lock);
 	}
 	@(return ECL_T)

@@ -167,15 +167,14 @@ ecl_wait_on_timed(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object),
 		 * function is invoked. We must thus spin over short
 		 * intervals of time to ensure that we check the
 		 * condition periodically. */
-		do {
+		while (Null(output = condition(the_env, o))) {
 			ecl_musleep(waiting_time(iteration++, &start), 1);
-		} while (Null(output = condition(the_env, o)));
+		}
 		ecl_bds_unwind1(the_env);
 	} ECL_UNWIND_PROTECT_EXIT {
 		/* 4) At this point we wrap up. We remove ourselves
 		 * from the queue and unblock the lisp interrupt
 		 * signal. Note that we recover the cons for later use.*/
-		cl_object firstone = o->queue.list;
 		wait_queue_delete(the_env, o, own_process);
 		own_process->process.waiting_for = ECL_NIL;
 		own_process->process.queue_record = record;
@@ -188,7 +187,7 @@ ecl_wait_on_timed(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object),
 		 * condition. This is needed for objects, such as
 		 * semaphores, where the condition may be satisfied
 		 * more than once. */
-		if (/*Null(output) &&*/ (firstone == record)) {
+		if (Null(output)) {
 			ecl_wakeup_waiters(the_env, o, ECL_WAKEUP_ONE);
 		}
 	} ECL_UNWIND_PROTECT_END;
@@ -262,20 +261,16 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 		 * might have missed a wakeup event if that happened
 		 * between 0) and 2), which is why we start with the
 		 * check*/
-		if (/*(o->queue.list != record && o->d.t != t_condition_variable) ||*/
-		    Null(output = condition(the_env, o)))
+		while (Null(output = condition(the_env, o)))
 		{
-			print_lock("suspending %p", o, o);
-			do {
-				/* This will wait until we get a signal that
-				 * demands some code being executed. Note that
-				 * this includes our communication signals and
-				 * the signals used by the GC. Note also that
-				 * as a consequence we might throw / return
-				 * which is why need to protect it all with
-				 * UNWIND-PROTECT. */
-				sigsuspend(&original);
-			} while (Null(output = condition(the_env, o)));
+			/* This will wait until we get a signal that
+			 * demands some code being executed. Note that
+			 * this includes our communication signals and
+			 * the signals used by the GC. Note also that
+			 * as a consequence we might throw / return
+			 * which is why need to protect it all with
+			 * UNWIND-PROTECT. */
+			sigsuspend(&original);
 		}
 	} ECL_UNWIND_PROTECT_EXIT {
 		/* 4) At this point we wrap up. We remove ourselves
@@ -294,7 +289,7 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 		 * condition. This is needed for objects, such as
 		 * semaphores, where the condition may be satisfied
 		 * more than once. */
-		if (/*Null(output) &&*/ (firstone == record)) {
+		if (Null(output)) {
 			ecl_wakeup_waiters(the_env, o, ECL_WAKEUP_ONE);
 		}
 
@@ -311,11 +306,9 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 void
 ecl_wakeup_waiters(cl_env_ptr the_env, cl_object q, int flags)
 {
-	if (Null(q->queue.list))
-		return;
 	ecl_disable_interrupts_env(the_env);
 	ecl_get_spinlock(the_env, &q->queue.spinlock);
-	{
+	if (q->queue.list != ECL_NIL) {
 		/* We scan the list of waiting processes, awaking one
 		 * or more, depending on flags. In running through the list
 		 * we eliminate zombie processes --- they should not be here
