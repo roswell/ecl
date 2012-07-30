@@ -302,6 +302,29 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 #endif
 }
 
+cl_object
+ecl_waiter_pop(cl_env_ptr the_env, cl_object q)
+{
+	cl_object output;
+	ecl_disable_interrupts_env(the_env);
+	ecl_get_spinlock(the_env, &q->queue.spinlock);
+	{
+		cl_object l;
+		output = ECL_NIL;
+		for (l = q->queue.list; l != ECL_NIL; l = ECL_CONS_CDR(l)) {
+			cl_object p = ECL_CONS_CAR(l);
+			if (p->process.phase != ECL_PROCESS_INACTIVE &&
+			    p->process.phase != ECL_PROCESS_EXITING) {
+				output = p;
+				break;
+			}
+		}
+	}
+	ecl_giveup_spinlock(&q->queue.spinlock);
+	ecl_enable_interrupts_env(the_env);
+	return output;
+}
+
 void
 ecl_wakeup_waiters(cl_env_ptr the_env, cl_object q, int flags)
 {

@@ -113,12 +113,15 @@ mp_giveup_lock(cl_object lock)
                 FEerror_not_owned(lock);
 	}
 	if (--lock->lock.counter == 0) {
-		lock->lock.owner = ECL_NIL;
-		print_lock("releasing %p\t", lock, lock);
-		ecl_wakeup_waiters(env, lock, ECL_WAKEUP_ONE);
-	} else {
-		print_lock("released %p\t", lock, lock);
-	}
+		cl_object first = ecl_waiter_pop(env, lock);;
+		if (first == ECL_NIL) {
+			lock->lock.owner = ECL_NIL;
+		} else {
+			lock->lock.counter = 1;
+			lock->lock.owner = first;
+			ecl_wakeup_process(first);
+		}
+	} 
         ecl_return1(env, ECL_T);
 }
 
@@ -158,6 +161,26 @@ mp_get_lock_nowait(cl_object lock)
 	ecl_return1(env, get_lock_inner(env, lock));
 }
 
+static cl_object
+own_or_get_lock(cl_env_ptr env, cl_object lock)
+{
+	cl_object output;
+	cl_object own_process = env->own_process;
+	ecl_disable_interrupts_env(env);
+        if (AO_compare_and_swap_full((AO_t*)&(lock->lock.owner),
+				     (AO_t)ECL_NIL, (AO_t)own_process)) {
+		lock->lock.counter = 1;
+		output = ECL_T;
+		print_lock("acquired %p\t", lock, lock);
+	} else if (lock->lock.owner == own_process) {
+		output = ECL_T;
+        } else {
+		output = ECL_NIL;
+	}
+	ecl_enable_interrupts_env(env);
+	return output;
+}
+
 cl_object
 mp_get_lock_wait(cl_object lock)
 {
@@ -166,7 +189,7 @@ mp_get_lock_wait(cl_object lock)
 		FEerror_not_a_lock(lock);
 	}
 	if (get_lock_inner(env, lock) == ECL_NIL) {
-		ecl_wait_on(env, get_lock_inner, lock);
+		ecl_wait_on(env, own_or_get_lock, lock);
 	}
 	@(return ECL_T)
 }

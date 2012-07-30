@@ -497,6 +497,7 @@ extern void ecl_giveup_spinlock(cl_object *lock);
 extern cl_object ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_object o);
 extern void ecl_wakeup_waiters(cl_env_ptr the_env, cl_object o, int flags);
 extern void ecl_wakeup_process(cl_object process);
+extern cl_object ecl_waiter_pop(cl_env_ptr the_env, cl_object q);
 #endif
 
 /* threads/rwlock.d */
