@@ -102,7 +102,7 @@ static cl_object
 barrier_wait_condition(cl_env_ptr env, cl_object barrier)
 {
 	/* We were signaled */
-	if (env->own_process->process.waiting_for != barrier)
+	if (env->own_process->process.woken_up != ECL_NIL)
 		return ECL_T;
 	/* Disabled barrier */
 	else if (barrier->barrier.arrivers_count < 0)
@@ -145,14 +145,12 @@ decrement_counter(cl_fixnum *counter)
 		FEerror_not_a_barrier(barrier);
 	}
 	ecl_disable_interrupts_env(the_env);
-	own_process->process.waiting_for = barrier;
 	counter = decrement_counter(&barrier->barrier.arrivers_count);
 	if (counter == 0) {
 		print_lock("barrier %p saturated", barrier, barrier);
 		/* There are (count-1) threads in the queue and we
 		 * are the last one. We thus unblock all threads and
 		 * proceed. */
-		own_process->process.waiting_for = ECL_NIL;
 		mp_barrier_unblock(1, barrier);
 		ecl_enable_interrupts_env(the_env);
 		output = @':unblocked';

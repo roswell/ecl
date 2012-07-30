@@ -247,6 +247,7 @@ thread_entry_point(void *arg)
 	pthread_cleanup_push(thread_cleanup, (void *)process);
 #endif
 	ecl_cs_set_org(env);
+	ecl_get_spinlock(env, &process->process.start_spinlock);
 	print_lock("ENVIRON %p %p %p %p", ECL_NIL, process,
 		   env->bds_org, env->bds_top, env->bds_limit);
 
@@ -319,7 +320,8 @@ alloc_process(cl_object name, cl_object initial_bindings)
 		array = cl_copy_seq(ecl_process_env()->bindings_array);
 	}
         process->process.initial_bindings = array;
-	process->process.waiting_for = ECL_NIL;
+	process->process.woken_up = ECL_NIL;
+	process->process.start_spinlock = ECL_NIL;
 	process->process.queue_record = ecl_list1(process);
 	/* Creates the exit barrier so that processes can wait for termination,
 	 * but it is created in a disabled state. */
@@ -504,6 +506,9 @@ mp_process_enable(cl_object process)
 	/* Activate the barrier so that processes can immediately start waiting. */
 	mp_barrier_unblock(1, process->process.exit_barrier);
 
+	/* Block the thread with this spinlock until it is ready */
+	process->process.start_spinlock = ECL_T;
+
 #ifdef ECL_WINDOWS_THREADS
 	{
 	HANDLE code;
@@ -549,6 +554,9 @@ mp_process_enable(cl_object process)
 		process->process.env = NULL;
 		_ecl_dealloc_env(process_env);
 	}
+	/* Unleash the thread */
+	process->process.start_spinlock = ECL_NIL;
+
 	@(return (ok? process : ECL_NIL))
 }
 
@@ -742,8 +750,9 @@ init_threads(cl_env_ptr env)
 	process->process.args = ECL_NIL;
 	process->process.thread = main_thread;
 	process->process.env = env;
-	process->process.waiting_for = ECL_NIL;
+	process->process.woken_up = ECL_NIL;
 	process->process.queue_record = ecl_list1(process);
+	process->process.start_spinlock = ECL_NIL;
 
 	env->own_process = process;
 

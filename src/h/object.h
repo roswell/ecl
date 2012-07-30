@@ -883,8 +883,9 @@ struct ecl_process {
         cl_object parent;
 	cl_object exit_barrier;
         cl_object exit_values;
-	cl_object waiting_for;
+	cl_object woken_up;
 	cl_object queue_record;
+	cl_object start_spinlock;
 	cl_index phase;
 	pthread_t thread;
 	int trap_fpe_bits;

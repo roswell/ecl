@@ -41,7 +41,7 @@ condition_variable_wait(cl_env_ptr env, cl_object cv)
 		mp_giveup_lock(lock);
 	}
 	/* We always return when we have been explicitly awaken */
-	return (own_process->process.waiting_for != cv)? ECL_T : ECL_NIL;
+	return own_process->process.woken_up;
 }
 
 cl_object
@@ -74,7 +74,6 @@ mp_condition_variable_wait(cl_object cv, cl_object lock)
         }
 	print_lock("waiting cv %p", cv, cv);
 	cv->condition_variable.lock = lock;
-	env->own_process->process.waiting_for = cv;
 	ecl_wait_on(env, condition_variable_wait, cv);
 	mp_get_lock_wait(lock);
 	@(return ECL_T)

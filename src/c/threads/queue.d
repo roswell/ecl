@@ -157,6 +157,7 @@ ecl_wait_on_timed(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object),
 		/* 2) Now we add ourselves to the queue. In order to
 		 * avoid a call to the GC, we try to reuse records. */
 		print_lock("adding to queue", o);
+		own_process->process.woken_up = ECL_NIL;
 		wait_queue_nconc(the_env, o, record);
 		ecl_bds_bind(the_env, @'ext::*interrupts-enabled*', ECL_T);
 		ecl_check_pending_interrupts(the_env);
@@ -176,7 +177,6 @@ ecl_wait_on_timed(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object),
 		 * from the queue and unblock the lisp interrupt
 		 * signal. Note that we recover the cons for later use.*/
 		wait_queue_delete(the_env, o, own_process);
-		own_process->process.waiting_for = ECL_NIL;
 		own_process->process.queue_record = record;
 		ECL_RPLACD(record, ECL_NIL);
 
@@ -254,6 +254,7 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 	}
 
 	/* 2) Now we add ourselves to the queue. */
+	own_process->process.woken_up = ECL_NIL;
 	wait_queue_nconc(the_env, o, record);
 
 	ECL_UNWIND_PROTECT_BEGIN(the_env) {
@@ -276,9 +277,7 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 		/* 4) At this point we wrap up. We remove ourselves
 		 * from the queue and unblock the lisp interrupt
 		 * signal. Note that we recover the cons for later use.*/
-		cl_object firstone = o->queue.list;
 		wait_queue_delete(the_env, o, own_process);
-		own_process->process.waiting_for = ECL_NIL;
 		own_process->process.queue_record = record;
 		ECL_RPLACD(record, ECL_NIL);
 
@@ -325,8 +324,7 @@ ecl_wakeup_waiters(cl_env_ptr the_env, cl_object q, int flags)
 				print_lock("awaking %p", q, p);
 				/* If the process is active, we then
 				 * simply awake it with a signal.*/
-				if (flags & ECL_WAKEUP_RESET_FLAG)
-					p->process.waiting_for = ECL_NIL;
+				p->process.woken_up = ECL_T;
 				if (flags & ECL_WAKEUP_DELETE)
 					*tail = ECL_CONS_CDR(l);
 				tail = &ECL_CONS_CDR(l);
