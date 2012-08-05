@@ -14,7 +14,11 @@
     See file '../Copyright' for full details.
 */
 
+#ifndef __CYGWIN__
+/* Recent versions of cygwin do not define fd_set when WINSOCKAPI is
+ * defined */
 #define _WINSOCKAPI_
+#endif /* __CYGWIN__ */
 #include <ecl/ecl.h>
 #include <math.h> /* for inline mathematics */
 #include <ecl/ecl-inl.h>
