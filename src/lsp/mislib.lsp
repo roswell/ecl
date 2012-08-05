@@ -135,7 +135,7 @@ Evaluates FORM, outputs the realtime and runtime used for the evaluation to
   mw = timezone/60;
 #else
   struct tm ltm, gtm;
-  time_t when = 0L;
+  time_t when = time(0) /*0L*/;
 
   ltm = *localtime(&when);
   gtm = *gmtime(&when);
