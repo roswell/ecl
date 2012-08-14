@@ -94,24 +94,17 @@
         (t
          (with-open-file (sout output-file :direction :output :if-exists :supersede
                                :if-does-not-exist :create)
-           (handler-case
-	       (let ((binary (loop with *package* = *package*
-				with ext:*bytecodes-compiler* = t
-				for position = (file-position input)
-				for form = (read input nil :EOF)
-				until (eq form :EOF)
-				do (when ext::*source-location*
-				     (rplacd ext:*source-location* position))
-				collect (si:eval-with-env form nil nil nil nil))))
-		 (sys:with-ecl-io-syntax
-		     (write binary :stream sout :circle t :escape t :readably t :pretty nil))
-                 (terpri sout))
-             (error (c) (let ((*print-readably* nil)
-                              (*print-pretty* nil)
-                              (*print-circle* t))
-                          (princ c)
-                          (print foo)
-                          (break)))))))
+	   (let ((binary (loop with *package* = *package*
+			    with ext:*bytecodes-compiler* = t
+			    for position = (file-position input)
+			    for form = (read input nil :EOF)
+			    until (eq form :EOF)
+			    do (when ext::*source-location*
+				 (rplacd ext:*source-location* position))
+			    collect (si:eval-with-env form nil nil nil nil))))
+	     (sys:with-ecl-io-syntax
+		 (write binary :stream sout :circle t :escape t :readably t :pretty nil))
+	     (terpri sout)))))
   (when load
     (load output-file :verbose *compile-verbose*))
   (values output-file nil nil))
