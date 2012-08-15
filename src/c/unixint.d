@@ -607,8 +607,8 @@ handler_fn_prototype(process_interrupt_handler, int sig, siginfo_t *siginfo, voi
 static void
 handler_fn_prototype(fpe_signal_handler, int sig, siginfo_t *info, void *data)
 {
+        int code;
 	cl_object condition;
-        int code, old_errno = errno;
 	cl_env_ptr the_env;
 	reinstall_signal(sig, fpe_signal_handler);
         /* The lisp environment might not be installed. */
