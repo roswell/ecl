@@ -46,7 +46,7 @@ _hash_eql(cl_hashkey h, cl_object x)
 		h = _hash_eql(h, x->ratio.num);
 		return _hash_eql(h, x->ratio.den);
 	case t_singlefloat:
-		return hash_string(h, (unsigned char*)&ecl_single_float(x), sizeof(ecl_signle_float(x)));
+		return hash_string(h, (unsigned char*)&ecl_single_float(x), sizeof(ecl_single_float(x)));
 	case t_doublefloat:
 		return hash_string(h, (unsigned char*)&ecl_double_float(x), sizeof(ecl_double_float(x)));
 #ifdef ECL_LONG_FLOAT
