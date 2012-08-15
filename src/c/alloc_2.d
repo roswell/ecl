@@ -34,6 +34,12 @@
 static void gather_statistics();
 static void ecl_mark_env(struct cl_env_struct *env);
 
+/* We need these prototypes because private/gc.h is not available
+ * and this interface is not yet exported by BDWGC */
+extern void GC_push_all(char *bottom, char *top);
+extern void GC_push_conditional(char *bottom, char *top, int all);
+extern void GC_set_mark_bit(const void *p);
+ 
 #ifdef GBC_BOEHM_PRECISE
 # if GBC_BOEHM
 #  undef GBC_BOEHM_PRECISE
