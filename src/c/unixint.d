@@ -523,7 +523,7 @@ static cl_object
 asynchronous_signal_servicing_thread()
 {
 	const cl_env_ptr the_env = ecl_process_env();
-	int interrupt_signal;
+	int interrupt_signal = -1;
 	/*
 	 * We block all signals except the usual interrupt thread.
 	 */
