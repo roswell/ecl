@@ -289,8 +289,8 @@ ecl_waitpid(cl_object pid, cl_object wait)
         @(return status code pid)
 }
 
-cl_object
-si_wait_for_all_processes()
+@(defun si::wait-for-all-processes (&key (process ECL_NIL))
+@
 {
         const cl_env_ptr env = ecl_process_env();
 #if defined(SIGCHLD) && !defined(ECL_WINDOWS_HOST)
@@ -315,6 +315,7 @@ si_wait_for_all_processes()
 #endif
         ecl_return0(env);
 }
+@)
 
 #if defined(ECL_MS_WINDOWS_HOST) || defined(cygwin)
 cl_object

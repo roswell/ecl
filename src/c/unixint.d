@@ -561,7 +561,7 @@ asynchronous_signal_servicing_thread()
 		}
 #ifdef SIGCHLD
 		if (signal_thread_msg.signo == SIGCHLD) {
-			si_wait_for_all_processes();
+			si_wait_for_all_processes(0);
 			continue;
 		}
 #endif
@@ -1185,7 +1185,7 @@ asynchronous_signal_servicing_thread()
 #endif
 #ifdef SIGCHLD
                         if (signo == SIGCHLD) {
-                                si_wait_for_all_processes();
+                                si_wait_for_all_processes(0);
                                 continue;
                         }
 #endif
