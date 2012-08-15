@@ -4567,6 +4567,16 @@ case "${host_os}" in
 		SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
 		SONAME_LDFLAGS="-Wl,-soname,SONAME"
 		;;
+	dragonfly*)
+		thehost='dragonfly'
+		THREAD_LIBS='-lpthread'
+		SHARED_LDFLAGS="-shared ${LDFLAGS}"
+		BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
+		ECL_LDRPATH="-Wl,--rpath,~A"
+		clibs=""
+		SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
+		SONAME_LDFLAGS="-Wl,-soname,SONAME"
+		;;
 	freebsd*)
 		thehost='freebsd'
 		THREAD_LIBS='-lpthread'
