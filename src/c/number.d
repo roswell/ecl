@@ -296,7 +296,7 @@ ecl_make_int64_t(ecl_int64_t i)
 #if defined(ecl_ulong_long_t)
 # if defined(ecl_uint32_t) && ECL_LONG_LONG_BITS == 32
 ecl_ulong_long_t
-ecl_to_ulong_Long(cl_object x) {
+ecl_to_ulong_long(cl_object x) {
         return (ecl_ulong_long_t)ecl_to_uint32_t(x);
 }
 
@@ -315,7 +315,7 @@ ecl_make_long_long(ecl_long_long_t i) {
 # else
 #  if defined(ecl_uint64_t) && ECL_LONG_LONG_BITS == 64
 ecl_ulong_long_t
-ecl_to_ulong_Long(cl_object x) {
+ecl_to_ulong_long(cl_object x) {
         return (ecl_ulong_long_t)ecl_to_uint64_t(x);
 }
 ecl_long_long_t
@@ -332,7 +332,7 @@ ecl_make_long_long(ecl_long_long_t i) {
 }
 #  else
 ecl_ulong_long_t
-ecl_to_ulong_Long(cl_object x) {
+ecl_to_ulong_long(cl_object x) {
 	if (!ecl_minusp(x)) {
 		if (ECL_FIXNUMP(x)) {
 			return (ecl_ulong_long_t)ecl_fixnum(x);

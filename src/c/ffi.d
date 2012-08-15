@@ -595,7 +595,7 @@ ecl_foreign_data_set_elt(void *p, enum ecl_ffi_tag tag, cl_object value)
                 *(ecl_long_long_t *)p = ecl_to_long_long(value);
                 break;
         case ECL_FFI_UNSIGNED_LONG_LONG:
-                *(ecl_ulong_long_t *)p = ecl_to_ulong_Long(value);
+                *(ecl_ulong_long_t *)p = ecl_to_ulong_long(value);
                 break;
 #endif
 	case ECL_FFI_POINTER_VOID:

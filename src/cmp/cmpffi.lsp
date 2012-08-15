@@ -83,8 +83,8 @@
     :unsigned-long-long
     #+long-long
     ((unsigned-byte #.ffi:c-long-long-bit) "ecl_ulong_long_t"
-         "ecl_make_ulong_Long"
-         "ecl_to_ulong_Long" "ecl_to_ulong_Long")
+         "ecl_make_ulong_long"
+         "ecl_to_ulong_long" "ecl_to_ulong_long")
     :float
     (single-float "float" "ecl_make_single_float" "ecl_to_float" "ecl_single_float")
     :double
