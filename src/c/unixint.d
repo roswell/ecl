@@ -783,7 +783,6 @@ ecl_check_pending_interrupts(cl_env_ptr env)
 static cl_object
 do_catch_signal(int code, cl_object action, cl_object process)
 {
-	cl_object code_fixnum = ecl_make_fixnum(code);
         if (action == ECL_NIL || action == @':ignore') {
                 mysignal(code, SIG_IGN);
                 return ECL_T;
