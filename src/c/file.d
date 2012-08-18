@@ -3689,33 +3689,30 @@ winsock_stream_write_byte8(cl_object strm, unsigned char *c, cl_index n)
 static int
 winsock_stream_listen(cl_object strm) 
 {
-	cl_index out = 0;
-	unsigned char *endp;
-	unsigned char *p;
-
-	SOCKET s = (SOCKET)IO_FILE_DESCRIPTOR(strm);
+	SOCKET s;
+	unlikely_if (strm->stream.byte_stack != ECL_NIL) {
+		return ECL_LISTEN_AVAILABLE;
+	}
+	s = (SOCKET)IO_FILE_DESCRIPTOR(strm);
 	unlikely_if (INVALID_SOCKET == s) {
 		wrong_file_handler(strm);
-	} else {
-		if (CONSP(strm->stream.object0)) {
-			return ECL_LISTEN_AVAILABLE;
-                } else {
-			struct timeval tv = { 0, 0 };
-			fd_set fds;
-			cl_index result;
+	}
+	{
+		struct timeval tv = { 0, 0 };
+		fd_set fds;
+		cl_index result;
 			
-			FD_ZERO( &fds );
-			FD_SET(s, &fds);
-			ecl_disable_interrupts();
-			result = select( 0, &fds, NULL, NULL,  &tv );
-			unlikely_if (result == SOCKET_ERROR)
-				wsock_error("Cannot listen on Windows "
-                                            "socket ~S.~%~A", strm );
-			ecl_enable_interrupts();
-			return ( result > 0 
-				 ? ECL_LISTEN_AVAILABLE 
-				 : ECL_LISTEN_NO_CHAR );
-		}
+		FD_ZERO( &fds );
+		FD_SET(s, &fds);
+		ecl_disable_interrupts();
+		result = select( 0, &fds, NULL, NULL,  &tv );
+		unlikely_if (result == SOCKET_ERROR)
+			wsock_error("Cannot listen on Windows "
+				    "socket ~S.~%~A", strm );
+		ecl_enable_interrupts();
+		return ( result > 0 
+			 ? ECL_LISTEN_AVAILABLE 
+			 : ECL_LISTEN_NO_CHAR );
 	}
 }
 
