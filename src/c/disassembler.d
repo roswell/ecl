@@ -416,7 +416,7 @@ disassemble(cl_object bytecodes, cl_opcode *vector) {
 				GET_DATA(o, vector, data);
 				goto ARG;
 
-	/* OP_GO	n{arg}
+	/* OP_GO	n{arg}, tag-ndx{arg}
 	   OP_QUOTE	tag-name{symbol}
 		Jumps to the tag which is defined at the n-th position in
 		the lexical environment. TAG-NAME is kept for debugging
@@ -424,7 +424,8 @@ disassemble(cl_object bytecodes, cl_opcode *vector) {
 	*/
 	case OP_GO:		string = "GO\t";
 				GET_OPARG(n, vector);
-				GET_DATA(o, vector, data);
+				GET_OPARG(m, vector);
+				o = ecl_make_fixnum(m);
 				goto OPARG_ARG;
 
 	/* OP_RETURN	n{arg}
