@@ -1925,6 +1925,7 @@ cl_symbols[] = {
 
 {KEY_ "SYSV",NULL},
 {KEY_ "UNIX64",NULL},
+{KEY_ "WIN64",NULL},
 
 {EXT_ "WEAK-POINTER",NULL},
 {EXT_ "MAKE-WEAK-POINTER","si_make_weak_pointer"},
