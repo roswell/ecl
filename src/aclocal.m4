@@ -623,12 +623,12 @@ int main() {
     for (bits=1; ((t << 1) >> 1) == t; bits++, t <<= 1);
     l = (~l) << (bits - 3);
 #if 1
-    fprintf(f,"CL_FIXNUM_MIN='%ld';",l);
-    fprintf(f,"CL_FIXNUM_MAX='%ld';",-(l+1));
+    fprintf(f,"CL_FIXNUM_MIN='%ldL';",l);
+    fprintf(f,"CL_FIXNUM_MAX='%ldL';",-(l+1));
 #else
     l++;
-    fprintf(f,"CL_FIXNUM_MIN='%ld';",l);
-    fprintf(f,"CL_FIXNUM_MAX='%ld';",-l);
+    fprintf(f,"CL_FIXNUM_MIN='%ldL';",l);
+    fprintf(f,"CL_FIXNUM_MAX='%ldL';",-l);
 #endif
 #ifdef ECL_LONG_LONG_BITS
   } else if (sizeof(long long) >= sizeof(void*)) {
@@ -638,12 +638,12 @@ int main() {
     for (bits=1; ((t << 1) >> 1) == t; bits++, t <<= 1);
     l = (~l) << (bits - 3);
 # if 1
-    fprintf(f,"CL_FIXNUM_MIN='%ld';",l);
-    fprintf(f,"CL_FIXNUM_MAX='%ld';",-(l+1));
+    fprintf(f,"CL_FIXNUM_MIN='%lldLL';",l);
+    fprintf(f,"CL_FIXNUM_MAX='%lldLL';",-(l+1));
 # else
     l++;
-    fprintf(f,"CL_FIXNUM_MIN='%ld';",l);
-    fprintf(f,"CL_FIXNUM_MAX='%ld';",-l);
+    fprintf(f,"CL_FIXNUM_MIN='%lldLL';",l);
+    fprintf(f,"CL_FIXNUM_MAX='%lldLL';",-l);
 # endif
 #endif
   } else {
