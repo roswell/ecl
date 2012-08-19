@@ -369,7 +369,7 @@ _ecl_big_set_fixnum(cl_object x, cl_fixnum f)
                 ECL_BIGNUM_LIMBS(x)[0] = f;
         } else if (f < 0) {
                 ECL_BIGNUM_SIZE(x) = -1;
-                ECL_BIGNUM_LIMBS(x) = -f;
+                ECL_BIGNUM_LIMBS(x)[0] = -f;
         }
 }
 
@@ -381,9 +381,6 @@ _ecl_big_set_index(cl_object x, cl_index f)
         } else if (f > 0) {
                 ECL_BIGNUM_SIZE(x) = 1;
                 ECL_BIGNUM_LIMBS(x)[0] = f;
-        } else if (f < 0) {
-                ECL_BIGNUM_SIZE(x) = -1;
-                ECL_BIGNUM_LIMBS(x)[0] = -f;
         }
 }
 
