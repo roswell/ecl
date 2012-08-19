@@ -504,7 +504,7 @@ ecl_foreign_data_ref_elt(void *p, enum ecl_ffi_tag tag)
         case ECL_FFI_LONG_LONG:
                 return ecl_make_long_long(*(ecl_long_long_t *)p);
         case ECL_FFI_UNSIGNED_LONG_LONG:
-                return ecl_make_ulong_Long(*(ecl_ulong_long_t *)p);
+                return ecl_make_ulong_long(*(ecl_ulong_long_t *)p);
 #endif
 	case ECL_FFI_UNSIGNED_LONG:
 		return ecl_make_unsigned_integer(*(unsigned long *)p);

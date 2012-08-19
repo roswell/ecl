@@ -305,7 +305,7 @@ ecl_to_long_long(cl_object x) {
         return (ecl_long_long_t)ecl_to_int32_t(x);
 }
 cl_object
-ecl_make_ulong_Long(ecl_ulong_long_t i) {
+ecl_make_ulong_long(ecl_ulong_long_t i) {
         return ecl_make_uint32_t(i);
 }
 cl_object
@@ -323,7 +323,7 @@ ecl_to_long_long(cl_object x) {
         return (ecl_long_long_t)ecl_to_int64_t(x);
 }
 cl_object
-ecl_make_ulong_Long(ecl_ulong_long_t i) {
+ecl_make_ulong_long(ecl_ulong_long_t i) {
         return ecl_make_uint64_t(i);
 }
 cl_object
@@ -391,7 +391,7 @@ ecl_to_long_long(cl_object x)
 }
 
 cl_object
-ecl_make_ulong_Long(ecl_ulong_long_t i)
+ecl_make_ulong_long(ecl_ulong_long_t i)
 {
         if (i <= MOST_POSITIVE_FIXNUM) {
                 return ecl_make_fixnum(i);
