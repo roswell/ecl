@@ -622,6 +622,7 @@ struct ecl_stream {
 	cl_object object0;	/*  some object  */
 	cl_object object1;	/*  some object */
 	cl_object byte_stack;	/*  buffer for unread bytes  */
+	cl_index column;	/*  file column  */
 	cl_fixnum last_char;	/*  last character read  */
 	cl_fixnum last_code[2];	/*  actual composition of last character  */
 	cl_fixnum int0;		/*  some int  */

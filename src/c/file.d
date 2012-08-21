@@ -592,11 +592,12 @@ eformat_write_char(cl_object strm, ecl_character c)
         nbytes = strm->stream.encoder(strm, buffer, c);
 	strm->stream.ops->write_byte8(strm, buffer, nbytes);
 	if (c == '\n')
-		IO_STREAM_COLUMN(strm) = 0;
+		strm->stream.column = 0;
 	else if (c == '\t')
-		IO_STREAM_COLUMN(strm) = (IO_STREAM_COLUMN(strm)&~07) + 8;
+		strm->stream.column = (strm->stream.column & ~((cl_index)07)) + 8;
 	else
-		IO_STREAM_COLUMN(strm)++;
+		strm->stream.column++;
+	fflush(stdout);
 	return c;
 }
 
@@ -616,7 +617,7 @@ eformat_write_char_cr(cl_object strm, ecl_character c)
 {
 	if (c == ECL_CHAR_CODE_NEWLINE) {
 		eformat_write_char(strm, ECL_CHAR_CODE_RETURN);
-		IO_STREAM_COLUMN(strm) = 0;
+		strm->stream.column = 0;
 		return c;
 	}
 	return eformat_write_char(strm, c);
@@ -649,7 +650,7 @@ eformat_write_char_crlf(cl_object strm, ecl_character c)
 	if (c == ECL_CHAR_CODE_NEWLINE) {
 		eformat_write_char(strm, ECL_CHAR_CODE_RETURN);
 		eformat_write_char(strm, ECL_CHAR_CODE_LINEFEED);
-		IO_STREAM_COLUMN(strm) = 0;
+		strm->stream.column = 0;
 		return c;
 	}
 	return eformat_write_char(strm, c);
@@ -1335,13 +1336,13 @@ const struct ecl_file_ops clos_stream_ops = {
 static ecl_character
 str_out_write_char(cl_object strm, ecl_character c)
 {
-	int column = STRING_OUTPUT_COLUMN(strm);
+	int column = strm->stream.column;
 	if (c == '\n')
-		STRING_OUTPUT_COLUMN(strm) = 0;
+		strm->stream.column = 0;
 	else if (c == '\t')
-		STRING_OUTPUT_COLUMN(strm) = (column&~07) + 8;
+		strm->stream.column = (column&~(cl_index)7) + 8;
 	else
-		STRING_OUTPUT_COLUMN(strm) = column+1;
+		strm->stream.column++;
 	ecl_string_push_extend(STRING_OUTPUT_STRING(strm), c);
 	return c;
 }
@@ -1384,7 +1385,7 @@ str_out_set_position(cl_object strm, cl_object pos)
 static int
 str_out_column(cl_object strm)
 {
-	return STRING_OUTPUT_COLUMN(strm);
+	return strm->stream.column;
 }
 
 const struct ecl_file_ops str_out_ops = {
@@ -1430,7 +1431,7 @@ si_make_string_output_stream_from_string(cl_object s)
 	strm->stream.ops = duplicate_dispatch_table(&str_out_ops);
 	strm->stream.mode = (short)ecl_smm_string_output;
 	STRING_OUTPUT_STRING(strm) = s;
-	STRING_OUTPUT_COLUMN(strm) = 0;
+	strm->stream.column = 0;
 #if !defined(ECL_UNICODE)
 	strm->stream.format = @':pass-through';
 	strm->stream.flags = ECL_STREAM_DEFAULT_FORMAT;
@@ -2823,7 +2824,7 @@ io_file_set_position(cl_object strm, cl_object large_disp)
 static int
 io_file_column(cl_object strm)
 {
-	return IO_FILE_COLUMN(strm);
+	return strm->stream.column;
 }
 
 static cl_object
@@ -3297,7 +3298,7 @@ ecl_make_file_stream_from_fd(cl_object fname, int fd, enum ecl_smmode smm,
 	stream->stream.closed = 0;
 	set_stream_elt_type(stream, byte_size, flags, external_format);
 	IO_FILE_FILENAME(stream) = fname; /* not really used */
-	IO_FILE_COLUMN(stream) = 0;
+	stream->stream.column = 0;
 	IO_FILE_DESCRIPTOR(stream) = fd;
 	stream->stream.last_op = 0;
 	si_set_finalizer(stream, ECL_T);
@@ -3494,7 +3495,7 @@ io_stream_set_position(cl_object strm, cl_object large_disp)
 static int
 io_stream_column(cl_object strm)
 {
-	return IO_STREAM_COLUMN(strm);
+	return strm->stream.column;
 }
 
 static cl_object
@@ -4088,7 +4089,7 @@ ecl_make_stream_from_FILE(cl_object fname, void *f, enum ecl_smmode smm,
 	}
 	set_stream_elt_type(stream, byte_size, flags, external_format);
 	IO_STREAM_FILENAME(stream) = fname; /* not really used */
-	IO_STREAM_COLUMN(stream) = 0;
+	stream->stream.column = 0;
         IO_STREAM_FILE(stream) = f;
 	stream->stream.last_op = 0;
 	si_set_finalizer(stream, ECL_T);
