@@ -197,7 +197,7 @@ ecl_object_byte_size(cl_type t)
                 FEerror("ecl_object_byte_size invoked with an immediate type ~D",
                         1, ecl_make_fixnum(1));
         if (t >= t_end)
-                FEerror("ecl_object_byte_size invoked with an unkown type ~D",
+                FEerror("ecl_object_byte_size invoked with an unknown type ~D",
                         1, ecl_make_fixnum(1));
         return type_info[t].size;
 }

@@ -2647,7 +2647,7 @@
     (unless (= depth image-depth)
       (if (= image-depth 1)
 	  (unless gcontext (xlib::required-arg gcontext))
-	(error "Pixmap depth ~d incompatable with image depth ~d"
+	(error "Pixmap depth ~d incompatible with image depth ~d"
 	       depth image-depth)))	       
     (put-image pixmap gc image :x 0 :y 0 :bitmap-p (and (= image-depth 1)
 							gcontext))
