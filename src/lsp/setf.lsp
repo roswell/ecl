@@ -550,15 +550,15 @@ retrieved by (DOCUMENTATION 'SYMBOL 'FUNCTION)."
 		  (V VALS (CDR V))
 		  (LET-LIST NIL (CONS (LIST (CAR D) (CAR V)) LET-LIST)))
 		 ((NULL D)
-		  (SETQ LET-LIST (APPEND (NREVERSE ALL-VARS) LET-LIST))
-		  (PUSH
-		   (LIST
-		    (CAR STORES)
-		    (IF (AND (LISTP %REFERENCE) (EQ (CAR %REFERENCE) 'THE))
-			(LIST 'THE (CADR %REFERENCE)
-			      (LIST* (QUOTE ,function) GETTER ,@varlist ,restvar))
-			(LIST* (QUOTE ,function) GETTER (MAPCAR #'CAR ALL-VARS))))
-		   LET-LIST)
+		  (SETQ LET-LIST
+			(LIST*
+			 (LIST
+			  (CAR STORES)
+			  (IF (AND (LISTP %REFERENCE) (EQ (CAR %REFERENCE) 'THE))
+			      (LIST 'THE (CADR %REFERENCE)
+				    (LIST* (QUOTE ,function) GETTER ,@varlist ,restvar))
+			      (LIST* (QUOTE ,function) GETTER (MAPCAR #'CAR ALL-VARS))))
+			 (APPEND ALL-VARS LET-LIST)))
 		  `(LET* ,(NREVERSE LET-LIST)
 		     (DECLARE (:READ-ONLY ,@(mapcar #'first all-vars)
 					  ,@vars))
