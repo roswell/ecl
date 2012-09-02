@@ -133,6 +133,7 @@ typedef struct cl_compiler_env *cl_compiler_env_ptr;
 /* error.d */
 
 extern void _ecl_unexpected_return() ecl_attr_noreturn;
+extern cl_object _ecl_strerror(int code);
 
 /* eval.d */
 

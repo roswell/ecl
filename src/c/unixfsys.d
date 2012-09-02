@@ -482,9 +482,16 @@ ecl_file_len(int f)
                 }
 		/* if the file already exists */
 		if (if_exists == @':error') {
-			if_exists = CEerror(@':supersede',
-					"When trying to rename ~S, ~S already exists",
-                                        2, oldn, new_filename);
+			const char *msg = "When trying to rename ~S, ~S already exists";
+			if_exists =
+				si_signal_simple_error
+				(6, @'file-error', /* condition */
+				 @':supersede', /* continuable */
+				 /* format */
+				 ecl_make_constant_base_string(msg,strlen(msg)),
+				 cl_list(2, oldn, new_filename), /* format args */
+				 @':pathname', /* file-error options */
+				 new_filename);
 			if (if_exists == ECL_T) if_exists= @':error';
 		}
 		if (if_exists == ECL_NIL) {
@@ -547,7 +554,17 @@ ecl_file_len(int f)
 	}
 FAILURE_CLOBBER:
 	ecl_enable_interrupts();
-	FElibc_error("Cannot rename the file ~S to ~S.", 2, oldn, newn);
+	{
+		cl_object c_error = _ecl_strerror(errno);
+		const char *msg = "Unable to rename file ~S to ~S.~%C library error: ~S";
+		si_signal_simple_error
+			(6, @'file-error', /* condition */
+			 ECL_NIL, /* continuable */
+			 ecl_make_constant_base_string(msg,strlen(msg)), /* format */
+			 cl_list(3, oldn, newn, c_error), /* format args */
+			 @':pathname', /* file-error options */
+			 oldn);
+	}
 
 SUCCESS:
 	ecl_enable_interrupts();
@@ -568,7 +585,7 @@ cl_delete_file(cl_object file)
         cl_object path = cl_pathname(file);
         int isdir = directory_pathname_p(path);
 	cl_object filename = coerce_to_posix_filename(path);
-	int ok;
+	int ok, code;
 
 	ecl_disable_interrupts();
         ok = (isdir? rmdir : unlink)((char*)filename->base_string.self);
@@ -577,9 +594,16 @@ cl_delete_file(cl_object file)
 	if (ok < 0) {
                 const char *msg =
                         isdir?
-                        "Cannot delete the file ~S." :
-                        "Cannot delete the directory ~S.";
-		FElibc_error(msg, 1, file);
+                        "Cannot delete the file ~S.~%C library error: ~S" :
+                        "Cannot delete the directory ~S.~%C library error: ~S";
+		cl_object c_error = _ecl_strerror(errno);
+		si_signal_simple_error
+			(6, @'file-error', /* condition */
+			 ECL_T, /* continuable */
+			 ecl_make_constant_base_string(msg,strlen(msg)), /* format */
+			 cl_list(2, file, c_error), /* format args */
+			 @':pathname', /* file-error options */
+			 file);
         }
 	@(return ECL_T)
 }
@@ -609,8 +633,18 @@ cl_file_author(cl_object file)
 {
 	cl_object output, filename = coerce_to_posix_filename(file);
 	struct stat filestatus;
-	if (safe_stat((char*)filename->base_string.self, &filestatus) < 0)
-		FElibc_error("Cannot get the file status of ~S.", 1, file);
+	if (safe_stat((char*)filename->base_string.self, &filestatus) < 0) {
+		const char *msg = "Unable to read file author for ~S."
+			"~%C library error: ~S";
+		cl_object c_error = _ecl_strerror(errno);
+		si_signal_simple_error
+			(6, @'file-error', /* condition */
+			 ECL_T, /* continuable */
+			 ecl_make_constant_base_string(msg,strlen(msg)), /* format */
+			 cl_list(2, file, c_error), /* format args */
+			 @':pathname', /* file-error options */
+			 file);
+	}
 #ifdef HAVE_PWD_H
 	{
 		struct passwd *pwent;
@@ -1002,11 +1036,21 @@ si_get_library_pathname(void)
 	namestring = ecl_namestring(directory,
                                     ECL_NAMESTRING_TRUNCATE_IF_ERROR |
                                     ECL_NAMESTRING_FORCE_BASE_STRING);
-	if (safe_chdir((char*)namestring->base_string.self, ECL_NIL) < 0)
-		FElibc_error("Can't change the current directory to ~A",
-			     1, namestring);
-	if (change_d_p_d != ECL_NIL)
+	if (safe_chdir((char*)namestring->base_string.self, ECL_NIL) < 0) {
+		cl_object c_error = _ecl_strerror(errno);
+		const char *msg = "Can't change the current directory to ~A."
+			"~%C library error: ~S";
+		si_signal_simple_error
+			(6, @'file-error', /* condition */
+			 ECL_T, /* continuable */
+			 /* format */
+			 ecl_make_constant_base_string(msg,strlen(msg)),
+			 cl_list(2, directory, c_error), /* format args */
+			 @':pathname', /* file-error options */
+			 directory);
+	} else if (change_d_p_d != ECL_NIL) {
 		ECL_SETQ(the_env, @'*default-pathname-defaults*', directory);
+	}
 	@(return previous)
 @)
 
@@ -1043,8 +1087,19 @@ si_mkdir(cl_object directory, cl_object mode)
 #endif
 	ecl_enable_interrupts();
 
-	if (ecl_unlikely(ok < 0))
-		FElibc_error("Could not create directory ~S", 1, filename);
+	if (ecl_unlikely(ok < 0)) {
+		cl_object c_error = _ecl_strerror(errno);
+		const char *msg = "Could not create directory ~S"
+			"~%C library error: ~S";
+		si_signal_simple_error
+			(6, @'file-error', /* condition */
+			 ECL_T, /* continuable */
+			 /* format */
+			 ecl_make_constant_base_string(msg,strlen(msg)),
+			 cl_list(2, filename, c_error), /* format args */
+			 @':pathname', /* file-error options */
+			 filename);
+	}
 	@(return filename)
 }
 
@@ -1158,8 +1213,17 @@ si_chmod(cl_object file, cl_object mode)
 	mode_t code = ecl_to_uint32_t(mode);
 	cl_object filename = coerce_to_posix_filename(file);
 	unlikely_if (chmod((char*)filename->base_string.self, code)) {
-		FElibc_error("Unable to change mode of file~%~S~%to value ~O",
-			     2, file, mode);
+		cl_object c_error = _ecl_strerror(errno);
+		const char *msg = "Unable to change mode of file ~S to value ~O"
+			"~%C library error: ~S";
+		si_signal_simple_error
+			(6, @'file-error', /* condition */
+			 ECL_T, /* continuable */
+			 /* format */
+			 ecl_make_constant_base_string(msg,strlen(msg)),
+			 cl_list(3, file, mode, c_error), /* format args */
+			 @':pathname', /* file-error options */
+			 file);
 	}
 	@(return)
 }
