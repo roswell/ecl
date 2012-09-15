@@ -127,7 +127,7 @@
 
 (make-package "ASDF")
 
-(defun build-fake-asdf (name static-library compiled-filename)
+(defun build-fake-asdf (name static-library compiled-filename &key depends-on)
   (let ((path (make-pathname :name name :type "asd"))
 	(compiled (make-pathname :host "SYS"
 				 :name (pathname-name compiled-filename)
@@ -140,6 +140,7 @@
                      :if-does-not-exist :create)
       (print `(defsystem ,name :class asdf::prebuilt-system
                          :lib ,library
+			 :depends-on ,depends-on
                          :components ((:compiled-file ,(string name)
 				       :pathname ,compiled)))))
     path))
@@ -163,8 +164,9 @@
       #+:wants-dlopen
       (push (setf compiled-file-name (c::build-fasl name :lisp-files objects))
 	    *module-files*)
-      (push (build-fake-asdf (if (equalp name "asdf") "prebuilt-asdf" name)
-			     static-library compiled-file-name)
+      (push (if (equalp name "asdf")
+		(build-fake-asdf "prebuilt-asdf" static-library compiled-file-name :depends-on '("cmp"))
+		(build-fake-asdf name static-library compiled-file-name))
 	    *module-files*)
       )))
 
