@@ -1010,17 +1010,17 @@
      clos::class-precedence-list
      clos::class-direct-slots
      clos::default-initargs-of
-     clos::generic-function-lambda-list
-     clos::generic-function-argument-precedence-order
-     clos::generic-function-method-combination
-     clos::generic-function-method-class
-     clos::generic-function-methods
-     clos::method-generic-function
-     clos::method-lambda-list
-     clos::method-specializers
-     clos::method-qualifiers
-     clos::method-function
-     clos::method-plist
+     ;; clos::generic-function-lambda-list
+     ;; clos::generic-function-argument-precedence-order
+     ;; clos::generic-function-method-combination
+     ;; clos::generic-function-method-class
+     ;; clos::generic-function-methods
+     ;; clos::method-generic-function
+     ;; clos::method-lambda-list
+     ;; clos::method-specializers
+     ;; clos::method-qualifiers
+     ;; clos::method-function
+     ;; clos::method-plist
      clos::associate-methods-to-gfun
      ;; method.lsp
      clos::pop-next-method
