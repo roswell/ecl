@@ -527,7 +527,6 @@ copy_entry(struct ecl_hashtable_entry *e, cl_object h)
 		h->hash.entries--;
 		output.key = OBJNULL;
 		output.value = ECL_NIL;
-		h->hash.entries--;
 		return *e = output;
 	}
 }
@@ -540,17 +539,15 @@ _ecl_weak_hash_loop(cl_hashkey h, cl_object key, cl_object hashtable,
         cl_index i = h % hsize, j = hsize, k;
 	for (k = 0; k < hsize;  i = (i + 1) % hsize, k++) {
 		struct ecl_hashtable_entry *p = hashtable->hash.data + i;
-		struct ecl_hashtable_entry e = copy_entry(p, hashtable);
+		struct ecl_hashtable_entry e = *aux = copy_entry(p, hashtable);
 		if (e.key == OBJNULL) {
 			if (e.value == OBJNULL) {
 				if (j == hsize) {
-					*aux = e;
 					return p;
 				} else {
 					return hashtable->hash.data + j;
 				}
 			} else {
-				*aux = e;
 				if (j == hsize) {
 					j = i;
 				} else if (j == i) {
