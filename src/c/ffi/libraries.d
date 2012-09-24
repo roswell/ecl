@@ -93,6 +93,7 @@ ecl_make_codeblock()
         block->cblock.cfuns_size = 0;
         block->cblock.cfuns = NULL;
         block->cblock.source = ECL_NIL;
+	block->cblock.error = ECL_NIL;
         block->cblock.refs = ecl_make_fixnum(0);
         si_set_finalizer(block, ECL_T);
         return block;
@@ -172,7 +173,7 @@ set_library_error(cl_object block) {
 	}
 #endif
 	ecl_enable_interrupts();
-	block->cblock.source = output;
+	block->cblock.error = output;
 }
 
 static void
@@ -253,23 +254,9 @@ static cl_object
 ecl_library_open_inner(cl_object filename, bool self_destruct)
 {
         const cl_env_ptr the_env = ecl_process_env();
-	cl_object block = ecl_alloc_object(t_codeblock);
+	cl_object block = ecl_make_codeblock();
 	block->cblock.self_destruct = self_destruct;
-	block->cblock.locked = 0;
-	block->cblock.handle = NULL;
-	block->cblock.entry = NULL;
-	block->cblock.data = NULL;
-	block->cblock.data_size = 0;
-	block->cblock.temp_data = NULL;
-	block->cblock.temp_data_size = 0;
-	block->cblock.data_text = NULL;
-	block->cblock.data_text_size = 0;
 	block->cblock.name = filename;
-	block->cblock.next = ECL_NIL;
-	block->cblock.links = ECL_NIL;
-	block->cblock.cfuns_size = 0;
-	block->cblock.cfuns = NULL;
-        block->cblock.source = ECL_NIL;
         block->cblock.refs = ecl_make_fixnum(1);
 
         ECL_WITH_GLOBAL_LOCK_BEGIN(the_env) {
@@ -430,10 +417,7 @@ ecl_library_symbol(cl_object block, const char *symbol, bool lock) {
 
 cl_object
 ecl_library_error(cl_object block) {
-	if (block->cblock.handle)
-		return block->cblock.error;
-	else
-		return ECL_NIL;
+	return block->cblock.error;
 }
 
 void
