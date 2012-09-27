@@ -333,9 +333,11 @@ alloc_process(cl_object name, cl_object initial_bindings)
 bool
 ecl_import_current_thread(cl_object name, cl_object bindings)
 {
+	struct cl_env_struct env_aux[1];
 	cl_object process;
 	pthread_t current;
 	cl_env_ptr env;
+	int registered;
 #ifdef ECL_WINDOWS_THREADS
 	{
 	HANDLE aux = GetCurrentThread();
@@ -352,7 +354,18 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
 	current = pthread_self();
 #endif
 #ifdef GBC_BOEHM
-	GC_register_my_thread((void*)&name);
+	switch (GC_register_my_thread((void*)&name)) {
+	case GC_SUCCESS:
+		registered = 1;
+		break;
+	case GC_DUPLICATE:
+		/* Thread was probably created using the GC hooks
+		 * for thread creation */
+		registered = 0;
+		break;
+	default:
+		return 0;
+	}
 #endif
 	{
 		cl_object processes = cl_core.processes;
@@ -363,17 +376,20 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
 				return 0;
 		}
 	}
-	process = alloc_process(name, bindings);
+	/* We need a fake env to allow for interrupts blocking. */
+	env_aux->disable_interrupts = 1;
+	ecl_set_process_env(env_aux);
+	env = _ecl_alloc_env(0);
+	ecl_set_process_env(env);
+	env->cleanup = registered;
+
+	/* Link environment and process together */
+	env->own_process = process = alloc_process(name, bindings);
+	process->process.env = env;
         process->process.phase = ECL_PROCESS_BOOTING;
 	process->process.thread = current;
 	ecl_list_process(process);
 
-	/* Link environment and process together */
-	env = _ecl_alloc_env();
-	env->own_process = process;
-	process->process.env = env;
-
-	ecl_set_process_env(env);
 	ecl_init_env(env);
 	env->bindings_array = process->process.initial_bindings;
         env->thread_local_bindings_size = env->bindings_array->vector.dim;
@@ -389,9 +405,13 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
 void
 ecl_release_current_thread(void)
 {
-	thread_cleanup(ecl_process_env()->own_process);
+	cl_env_ptr env = ecl_process_env();
+	int cleanup = env->cleanup;
+	thread_cleanup(env->own_process);
 #ifdef GBC_BOEHM
-	GC_unregister_my_thread();
+	if (cleanup) {
+		GC_unregister_my_thread();
+	}
 #endif
 }
 
@@ -491,7 +511,7 @@ mp_process_enable(cl_object process)
 	ecl_list_process(process);
 
 	/* Link environment and process together */
-	process_env = _ecl_alloc_env();
+	process_env = _ecl_alloc_env(ecl_process_env());
 	process_env->own_process = process;
 	process->process.env = process_env;
 

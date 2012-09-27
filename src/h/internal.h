@@ -52,7 +52,7 @@ extern void init_threads(cl_env_ptr);
 extern void ecl_init_env(cl_env_ptr);
 extern void init_lib_LSP(cl_object);
 
-extern cl_env_ptr _ecl_alloc_env(void);
+extern cl_env_ptr _ecl_alloc_env(cl_env_ptr parent);
 extern void _ecl_dealloc_env(cl_env_ptr);
 
 /* alloc.d/alloc_2.d */

@@ -137,6 +137,10 @@ struct cl_env_struct {
 
 	/* Segmentation fault address */
 	void *fault_address;
+
+#ifdef ECL_THREADS
+	int cleanup;
+#endif
 };
 
 #ifndef __GNUC__

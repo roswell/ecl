@@ -134,6 +134,7 @@ ecl_init_env(cl_env_ptr env)
 	env->c_env = NULL;
 #if !defined(ECL_THREADS)
 	env->own_process = ECL_NIL;
+	env->cleanup = 0;
 #endif
 	env->string_pool = ECL_NIL;
 
@@ -207,7 +208,7 @@ _ecl_dealloc_env(cl_env_ptr env)
 }
 
 cl_env_ptr
-_ecl_alloc_env()
+_ecl_alloc_env(cl_env_ptr parent)
 {
 	/*
 	 * Allocates the lisp environment for a thread. Depending on which
@@ -242,10 +243,10 @@ _ecl_alloc_env()
                 size_t bytes = cl_core.default_sigmask_bytes;
                 if (bytes == 0) {
                         output->default_sigmask = 0;
-                } else if (ecl_option_values[ECL_OPT_BOOTED]) {
+                } else if (parent) {
                         output->default_sigmask = ecl_alloc_atomic(bytes);
                         memcpy(output->default_sigmask,
-                               ecl_process_env()->default_sigmask,
+                               parent->default_sigmask,
                                bytes);
                 } else {
                         output->default_sigmask = cl_core.default_sigmask;
@@ -518,7 +519,7 @@ cl_boot(int argc, char **argv)
 	init_unixint(0);
 	init_alloc();
 	GC_disable();
-	env = _ecl_alloc_env();
+	env = _ecl_alloc_env(0);
 #ifdef ECL_THREADS
         init_threads(env);
 #else
