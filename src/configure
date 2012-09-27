@@ -4833,7 +4833,7 @@ MV="mv"
 
 
 
-ECL_GC_DIR=gc
+ECL_GC_DIR=gc-unstable
 ECL_LDRPATH=''
 SHAREDEXT='so'
 SHAREDPREFIX='lib'

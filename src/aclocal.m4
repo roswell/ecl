@@ -237,7 +237,7 @@ AC_SUBST(EXEEXT)
 AC_SUBST(INSTALL_TARGET)dnl Which type of installation: flat directory or unix like.
 AC_SUBST(thehost)
 AC_SUBST(ECL_GC_DIR)dnl Which version of the Boehm-Weiser library to use
-ECL_GC_DIR=gc
+ECL_GC_DIR=gc-unstable
 ECL_LDRPATH=''
 SHAREDEXT='so'
 SHAREDPREFIX='lib'
