@@ -70,11 +70,13 @@ static cl_index ecl_write_byte8(cl_object stream, unsigned char *c, cl_index n);
 struct ecl_file_ops *duplicate_dispatch_table(const struct ecl_file_ops *ops);
 const struct ecl_file_ops *stream_dispatch_table(cl_object strm);
 
-static int flisten(FILE *);
-static int file_listen(int);
+static int flisten(cl_object, FILE *);
+static int file_listen(cl_object, int);
 
 static cl_object alloc_stream();
 
+static void cannot_close(cl_object stream) ecl_attr_noreturn;
+static void file_libc_error(cl_object error_type, cl_object stream, const char *msg, int narg, ...) ecl_attr_noreturn;
 static cl_object not_a_file_stream(cl_object fn) ecl_attr_noreturn;
 static void not_an_input_stream(cl_object fn) ecl_attr_noreturn;
 static void not_an_output_stream(cl_object fn) ecl_attr_noreturn;
@@ -2703,7 +2705,7 @@ io_file_listen(cl_object strm)
 			}
 		}
 	}
-	return file_listen(IO_FILE_DESCRIPTOR(strm));
+	return file_listen(strm, IO_FILE_DESCRIPTOR(strm));
 }
 
 #if defined(ECL_MS_WINDOWS_HOST)
@@ -2729,7 +2731,7 @@ io_file_clear_input(cl_object strm)
 		/* Do not stop here: the FILE structure needs also to be flushed */
 	}
 #endif
-	while (file_listen(f) == ECL_LISTEN_AVAILABLE) {
+	while (file_listen(strm, f) == ECL_LISTEN_AVAILABLE) {
 		ecl_character c = eformat_read_char(strm);
                 if (c == EOF) return;
 	}
@@ -2838,7 +2840,7 @@ io_file_close(cl_object strm)
 		FEerror("Cannot close the standard input", 0);
 	failed = safe_close(f);
 	unlikely_if (failed < 0)
-		FElibc_error("Cannot close stream ~S.", 1, strm);
+		cannot_close(strm);
 	IO_FILE_DESCRIPTOR(strm) = -1;
 	return generic_close(strm);
 }
@@ -3377,7 +3379,7 @@ io_stream_listen(cl_object strm)
 {
 	if (strm->stream.byte_stack != ECL_NIL)
 		return ECL_LISTEN_AVAILABLE;
-	return flisten(IO_STREAM_FILE(strm));
+	return flisten(strm, IO_STREAM_FILE(strm));
 }
 
 static void
@@ -3393,7 +3395,7 @@ io_stream_clear_input(cl_object strm)
 		/* Do not stop here: the FILE structure needs also to be flushed */
 	}
 #endif
-	while (flisten(fp) == ECL_LISTEN_AVAILABLE) {
+	while (flisten(strm, fp) == ECL_LISTEN_AVAILABLE) {
 		ecl_disable_interrupts();
 		getc(fp);
 		ecl_enable_interrupts();
@@ -3514,7 +3516,7 @@ io_stream_close(cl_object strm)
 	}
 	failed = safe_fclose(f);
 	unlikely_if (failed)
-		FElibc_error("Cannot close stream ~S.", 1, strm);
+		cannot_close(strm);
 #if !defined(GBC_BOEHM)
 	ecl_dealloc(strm->stream.buffer);
 	IO_STREAM_FILE(strm) = NULL;
@@ -3734,7 +3736,7 @@ winsock_stream_close(cl_object strm)
 	failed = closesocket(s);
 	ecl_enable_interrupts();
 	unlikely_if (failed < 0)
-		FElibc_error("Cannot close stream ~S.", 1, strm);
+		cannot_close(strm);
 	IO_FILE_DESCRIPTOR(strm) = (int)INVALID_SOCKET;
 	return generic_close(strm);
 }
@@ -5209,7 +5211,7 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
  */
 
 static int
-file_listen(int fileno)
+file_listen(cl_object stream, int fileno)
 {
 #if !defined(ECL_MS_WINDOWS_HOST)
 # if defined(HAVE_SELECT)
@@ -5226,7 +5228,7 @@ file_listen(int fileno)
 	FD_SET(fileno, &fds);
 	retv = select(fileno + 1, &fds, NULL, NULL, &tv);
 	if (ecl_unlikely(retv < 0))
-		FElibc_error("select() returned an error value", 0);
+		file_libc_error(@[stream-error], stream, "Error while listening to stream.", 0);
 	else if (retv > 0)
 		return ECL_LISTEN_AVAILABLE;
 	else
@@ -5294,7 +5296,7 @@ file_listen(int fileno)
 }
 
 static int
-flisten(FILE *fp)
+flisten(cl_object stream, FILE *fp)
 {
 	int aux;
 	if (feof(fp))
@@ -5303,7 +5305,7 @@ flisten(FILE *fp)
 	if (FILE_CNT(fp) > 0)
 		return ECL_LISTEN_AVAILABLE;
 #endif
-	aux = file_listen(fileno(fp));
+	aux = file_listen(stream, fileno(fp));
 	if (aux != -3)
 		return aux;
 	/* This code is portable, and implements the expected behavior for regular files.
@@ -5312,10 +5314,12 @@ flisten(FILE *fp)
 		/* regular file */
 		ecl_off_t old_pos = ecl_ftello(fp), end_pos;
 		unlikely_if (ecl_fseeko(fp, 0, SEEK_END) != 0)
-			FElibc_error("fseek() returned an error value", 0);
+			file_libc_error(@[file-error], stream,
+					"Unable to check file position", 0);
 		end_pos = ecl_ftello(fp);
 		unlikely_if (ecl_fseeko(fp, old_pos, SEEK_SET) != 0)
-			FElibc_error("fseek() returned an error value", 0);
+			file_libc_error(@[file-error], stream,
+					"Unable to check file position", 0);
 		return (end_pos > old_pos ? ECL_LISTEN_AVAILABLE : ECL_LISTEN_EOF);
 	}
 	return !ECL_LISTEN_AVAILABLE;
@@ -5453,6 +5457,28 @@ not_a_binary_stream(cl_object s)
 }
 
 static void
+cannot_close(cl_object stream)
+{
+	file_libc_error(@[file-error], stream, "Stream cannot be closed", 0);
+}
+
+static void
+file_libc_error(cl_object error_type, cl_object stream,
+		const char *msg, int narg, ...)
+{
+	ecl_va_list args;
+	cl_object rest, error = _ecl_strerror(errno);
+
+	ecl_va_start(args, narg, narg, 0);
+	rest = cl_grab_rest_args(args);
+
+	si_signal_simple_error(4, (cl_object)(cl_symbols + ecl_fixnum(error_type)), Cnil,
+			       make_constant_base_string("~?~%C library explanation: ~A."),
+			       cl_list(3, make_constant_base_string(msg), rest,
+				       error));
+}
+
+static void
 unread_error(cl_object s)
 {
 	CEerror(ECL_T, "Error when using UNREAD-CHAR on stream ~D", 1, s);
@@ -5485,9 +5511,9 @@ restartable_io_error(cl_object strm, const char *s)
 	if (old_errno == EINTR) {
 		return 1;
 	} else {
-		FElibc_error("C operation (~A) to stream ~S signaled an error.",
-			     2, ecl_make_constant_base_string(s, strlen(s)),
-			     strm);
+		file_libc_error(@[stream-error], strm,
+				"C operation (~A) signaled an error.",
+				1, ecl_make_constant_base_string(s, strlen(s)));
 		return 0;
 	}
 }
@@ -5499,8 +5525,8 @@ io_error(cl_object strm)
 	/* ecl_disable_interrupts(); ** done by caller */
 	maybe_clearerr(strm);
 	ecl_enable_interrupts_env(the_env);
-	FElibc_error("Read or write operation to stream ~S signaled an error.",
-		     1, strm);
+	file_libc_error(@[stream-error], strm,
+			"Read or write operation signaled an error", 0);
 }
 
 static void
