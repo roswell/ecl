@@ -22,75 +22,16 @@
   (declare (ignore initargs))
   (error "The built-in class (~A) cannot be instantiated" class))
 
-(eval-when (:compile-toplevel :execute)
-  ;;
-  ;; All changes to this are connected to the changes in 
-  ;; the code of cl_class_of() in src/instance.d
-  ;;
-  (defconstant +builtin-classes-list+
-	 '(;(t object)
-	    (sequence)
-	      (list sequence)
-	        (cons list)
-	    (array)
-	      (vector array sequence)
-	        (string vector)
-                #+unicode
-	        (base-string string vector)
-	        (bit-vector vector)
-	    (stream)
-	      (ext:ansi-stream stream)
-		(file-stream ext:ansi-stream)
-		(echo-stream ext:ansi-stream)
-		(string-stream ext:ansi-stream)
-		(two-way-stream ext:ansi-stream)
-		(synonym-stream ext:ansi-stream)
-		(broadcast-stream ext:ansi-stream)
-		(concatenated-stream ext:ansi-stream)
-		(ext:sequence-stream ext:ansi-stream)
-	    (character)
-	    (number)
-	      (real number)
-	        (rational real)
-		  (integer rational)
-		  (ratio rational)
-	        (float real)
-	      (complex number)
-	    (symbol)
-	      (null symbol list)
-	      (keyword symbol)
-	    (package)
-	    (function)
-	    (pathname)
-	      (logical-pathname pathname)
-	    (hash-table)
-	    (random-state)
-	    (readtable)
-            (si::code-block)
-	    (si::foreign-data)
-	    (si::frame)
-	    (si::weak-pointer)
-	    #+threads (mp::process)
-	    #+threads (mp::lock)
-	    #+threads (mp::rwlock)
-	    #+threads (mp::condition-variable)
-	    #+threads (mp::semaphore)
-	    #+threads (mp::barrier)
-	    #+threads (mp::mailbox)
-	    #+sse2 (ext::sse-pack))))
-
 (loop for (name . rest) in '#.+builtin-classes-list+
-   with index = 1
+   for index from 1
    with built-in-class = (find-class 'built-in-class)
-   with array = (make-array #.(1+ (length +builtin-classes-list+))
-			    :initial-element (find-class 't))
+   with array = +builtin-classes-pre-array+
    do (let* ((direct-superclasses (mapcar #'find-class (or rest '(t))))
 	     (class (make-instance built-in-class :name name
 				   :direct-superclasses direct-superclasses
 				   :direct-slots nil)))
 	(setf (find-class name) class
-	      (aref array index) class
-	      index (1+ index)))
+	      (aref array index) class))
    finally (si::*make-constant '+builtin-classes+ array))
 
 (defmethod ensure-class-using-class ((class null) name &rest rest)

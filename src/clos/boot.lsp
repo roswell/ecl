@@ -13,6 +13,64 @@
 (in-package "CLOS")
 
 ;;; ----------------------------------------------------------------------
+(eval-when (:compile-toplevel :execute)
+  ;;
+  ;; All changes to this are connected to the changes in 
+  ;; the code of cl_class_of() in src/instance.d
+  ;;
+  (defconstant +builtin-classes-list+
+	 '(;(t object)
+	    (sequence)
+	      (list sequence)
+	        (cons list)
+	    (array)
+	      (vector array sequence)
+	        (string vector)
+                #+unicode
+	        (base-string string vector)
+	        (bit-vector vector)
+	    (stream)
+	      (ext:ansi-stream stream)
+		(file-stream ext:ansi-stream)
+		(echo-stream ext:ansi-stream)
+		(string-stream ext:ansi-stream)
+		(two-way-stream ext:ansi-stream)
+		(synonym-stream ext:ansi-stream)
+		(broadcast-stream ext:ansi-stream)
+		(concatenated-stream ext:ansi-stream)
+		(ext:sequence-stream ext:ansi-stream)
+	    (character)
+	    (number)
+	      (real number)
+	        (rational real)
+		  (integer rational)
+		  (ratio rational)
+	        (float real)
+	      (complex number)
+	    (symbol)
+	      (null symbol list)
+	      (keyword symbol)
+	    (package)
+	    (function)
+	    (pathname)
+	      (logical-pathname pathname)
+	    (hash-table)
+	    (random-state)
+	    (readtable)
+            (si::code-block)
+	    (si::foreign-data)
+	    (si::frame)
+	    (si::weak-pointer)
+	    #+threads (mp::process)
+	    #+threads (mp::lock)
+	    #+threads (mp::rwlock)
+	    #+threads (mp::condition-variable)
+	    #+threads (mp::semaphore)
+	    #+threads (mp::barrier)
+	    #+threads (mp::mailbox)
+	    #+sse2 (ext::sse-pack))))
+
+(defconstant +builtin-classes-pre-array+ (make-array (1+ #.(length +builtin-classes-list+))))
 
 ;;; FROM AMOP:
 ;;;
@@ -101,7 +159,7 @@
 ;;; We cannot use the functions CREATE-STANDARD-CLASS and others because SLOTS,
 ;;; DIRECT-SLOTS, etc are empty and therefore SLOT-VALUE does not work.
 
-(defun make-empty-standard-class (name &key metaclass direct-superclasses direct-slots)
+(defun make-empty-standard-class (name &key metaclass direct-superclasses direct-slots index)
   (declare (si::c-local))
   (let* ((the-metaclass (cond (metaclass
 			       (gethash metaclass si::*class-name-hash-table*))
@@ -132,6 +190,8 @@
       (setf (class-direct-superclasses class) superclasses
 	    (class-precedence-list class)
 	    (compute-clos-class-precedence-list class superclasses)))
+    (when index
+      (setf (aref +builtin-classes-pre-array+ index) class))
     (add-slots class direct-slots)
     class))
 
