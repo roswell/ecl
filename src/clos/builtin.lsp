@@ -22,17 +22,11 @@
   (declare (ignore initargs))
   (error "The built-in class (~A) cannot be instantiated" class))
 
-(loop for (name . rest) in '#.+builtin-classes-list+
-   for index from 1
-   with built-in-class = (find-class 'built-in-class)
-   with array = +builtin-classes-pre-array+
-   do (let* ((direct-superclasses (mapcar #'find-class (or rest '(t))))
-	     (class (make-instance built-in-class :name name
-				   :direct-superclasses direct-superclasses
-				   :direct-slots nil)))
-	(setf (find-class name) class
-	      (aref array index) class))
-   finally (si::*make-constant '+builtin-classes+ array))
+;;;
+;;; At this point we can activate the vector of builtin classes, which
+;;; is used by class-of and other functions.
+;;;
+(si::*make-constant '+builtin-classes+ +builtin-classes-pre-array+)
 
 (defmethod ensure-class-using-class ((class null) name &rest rest)
   (declare (ignore class))

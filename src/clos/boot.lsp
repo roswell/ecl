@@ -106,8 +106,9 @@
        collect (canonical-slot-to-direct-slot nil s))))
 (eval-when (eval)
   (defconstant +class-hierarchy+
-    '((standard-class) ; Special-cased below
+    `((standard-class) ; Special-cased below
       (t
+       :index 0
        :metaclass standard-class)
       (standard-object
        :metaclass standard-class
@@ -151,7 +152,13 @@
       (funcallable-standard-class
        :metaclass standard-class
        :direct-superclasses (std-class)
-       :direct-slots #1#))))
+       :direct-slots #1#)
+      ,@(loop for (name . rest) in +builtin-classes-list+
+	   for index from 1
+	   collect (list name :metaclass 'built-in-class
+			 :index index
+			 :direct-superclasses (or rest '(t))))
+      )))
 
 ;;; ----------------------------------------------------------------------
 ;;; Building the classes T, CLASS, STANDARD-OBJECT and STANDARD-CLASS.
