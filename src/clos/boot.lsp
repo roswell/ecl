@@ -48,36 +48,50 @@
        collect (canonical-slot-to-direct-slot nil s))))
 (eval-when (eval)
   (defconstant +class-hierarchy+
-    '((t)
+    '((standard-class) ; Special-cased below
+      (t
+       :metaclass standard-class)
       (standard-object
+       :metaclass standard-class
        :direct-superclasses (t))
       (metaobject
+       :metaclass standard-class
        :direct-superclasses (standard-object))
       (method-combination
+       :metaclass standard-class
        :direct-superclasses (metaobject)
        :direct-slots #.(canonical-slots +method-combination-slots+))
       (specializer
+       :metaclass standard-class
        :direct-superclasses (metaobject)
        :direct-slots #.(canonical-slots +specializer-slots+))
       (eql-specializer
+       :metaclass standard-class
        :direct-superclasses (specializer)
        :direct-slots #.(canonical-slots +eql-specializer-slots+))
       (class
+       :metaclass standard-class
        :direct-superclasses (specializer)
        :direct-slots #.(canonical-slots +class-slots+))
       (forward-referenced-class
+       :metaclass standard-class
        :direct-superclasses (class)
        :direct-slots #.(canonical-slots +class-slots+))
       (built-in-class
+       :metaclass standard-class
        :direct-superclasses (class)
        :direct-slots #1=#.(canonical-slots +standard-class-slots+))
       (std-class
+       :metaclass standard-class
        :direct-superclasses (class)
        :direct-slots #1#)
       (standard-class
+       :metaclass standard-class
        :direct-superclasses (std-class)
-       :direct-slots #1#)
+       :direct-slots #1#
+       :metaclass standard-class)
       (funcallable-standard-class
+       :metaclass standard-class
        :direct-superclasses (std-class)
        :direct-slots #1#))))
 
@@ -87,12 +101,16 @@
 ;;; We cannot use the functions CREATE-STANDARD-CLASS and others because SLOTS,
 ;;; DIRECT-SLOTS, etc are empty and therefore SLOT-VALUE does not work.
 
-(defun make-empty-standard-class (name metaclass direct-superclasses direct-slots)
+(defun make-empty-standard-class (name &key metaclass direct-superclasses direct-slots)
   (declare (si::c-local))
-  (let ((class (or (gethash name si::*class-name-hash-table*)
-		   (si:allocate-raw-instance nil metaclass
-					     #.(length +standard-class-slots+)))))
-    (unless metaclass
+  (let* ((the-metaclass (cond (metaclass
+			       (gethash metaclass si::*class-name-hash-table*))
+			      (t
+			       nil)))
+	 (class (or (gethash name si::*class-name-hash-table*)
+		    (si:allocate-raw-instance nil the-metaclass
+					      #.(length +standard-class-slots+)))))
+    (unless the-metaclass
       (si:instance-class-set class class))
     (setf (class-id                  class) name
 	  (class-direct-subclasses   class) nil
@@ -139,11 +157,8 @@
 ;; itself as metaclass. MAKE-EMPTY-STANDARD-CLASS takes care of that.
 ;;
 (let ((all-classes 
-       (loop with standard-class = (make-empty-standard-class 'standard-class nil nil nil)
-	  for c in '#.+class-hierarchy+
-	  for class = (make-empty-standard-class name standard-class
-						 (getf (rest c) :direct-superclasses)
-						 (getf (rest c) :direct-slots))
+       (loop for c in '#.+class-hierarchy+
+	  for class = (apply #'make-empty-standard-class c)
 	  collect class)))
   ;;
   ;; 2) Class T had its metaclass wrong. Fix it.
