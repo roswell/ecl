@@ -147,6 +147,13 @@
 	   collect (list name :metaclass 'built-in-class
 			 :index index
 			 :direct-superclasses (or rest '(t))))
+      (funcallable-standard-object
+       :direct-superclasses (standard-object function))
+      (generic-function
+       :metaclass funcallable-standard-class
+       :direct-superclasses (metaobject funcallable-standard-object))
+      (method
+       :direct-superclasses (metaobject))
       )))
 
 ;;; ----------------------------------------------------------------------
