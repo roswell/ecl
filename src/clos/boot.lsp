@@ -87,7 +87,7 @@
 ;;; We cannot use the functions CREATE-STANDARD-CLASS and others because SLOTS,
 ;;; DIRECT-SLOTS, etc are empty and therefore SLOT-VALUE does not work.
 
-(defun make-empty-standard-class (name metaclass)
+(defun make-empty-standard-class (name metaclass direct-superclasses direct-slots)
   (declare (si::c-local))
   (let ((class (or (gethash name si::*class-name-hash-table*)
 		   (si:allocate-raw-instance nil metaclass
@@ -107,6 +107,14 @@
 	  (class-dependents          class) nil
 	  (class-valid-initargs      class) nil
 	  )
+    (let ((superclasses (loop for name in direct-superclasses
+			   for parent = (find-class name)
+			   do (push class (class-direct-subclasses parent))
+			   collect parent)))
+      (setf (class-direct-superclasses class) superclasses
+	    (class-precedence-list class)
+	    (compute-clos-class-precedence-list class superclasses)))
+    (add-slots class direct-slots)
     class))
 
 (defun add-slots (class slots)
@@ -131,18 +139,11 @@
 ;; itself as metaclass. MAKE-EMPTY-STANDARD-CLASS takes care of that.
 ;;
 (let ((all-classes 
-       (loop with standard-class = (make-empty-standard-class 'standard-class nil)
+       (loop with standard-class = (make-empty-standard-class 'standard-class nil nil nil)
 	  for c in '#.+class-hierarchy+
-	  for name = (first c)
-	  for class = (make-empty-standard-class name standard-class)
-	  for superclasses = (loop for name in (getf (rest c) :direct-superclasses)
-				for parent = (find-class name)
-				do (push class (class-direct-subclasses parent))
-				collect parent)
-	  do (setf (class-direct-superclasses class) superclasses
-		   (class-precedence-list class)
-		   (compute-clos-class-precedence-list class superclasses))
-	  do (add-slots class (getf (rest c) :direct-slots))
+	  for class = (make-empty-standard-class name standard-class
+						 (getf (rest c) :direct-superclasses)
+						 (getf (rest c) :direct-slots))
 	  collect class)))
   ;;
   ;; 2) Class T had its metaclass wrong. Fix it.
