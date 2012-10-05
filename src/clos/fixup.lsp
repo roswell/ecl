@@ -45,7 +45,9 @@
     (map-into direct-slots #'identity new-direct-slots)
     (map-into effective-slots #'identity new-effective-slots)
     (when (typep class 'std-class)
-      (std-create-slots-table class)))
+      (std-create-slots-table class)
+      )
+    (std-class-generate-accessors class))
   (mapc #'convert-one-class (class-direct-subclasses class)))
 
 ;;;

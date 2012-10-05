@@ -655,8 +655,21 @@ because it contains a reference to the undefined class~%  ~A"
 	  #'(lambda (value self)
 	      (setf (slot-value self slot-name) value))))
 
+(defun safe-add-method (name method)
+  ;; Adds a method to a function which might have been previously defined
+  ;; as non-generic, without breaking the function
+  (if (or *clos-booted*
+	  (not (fboundp name))
+	  (si::instancep (fdefinition name)))
+      (add-method (ensure-generic-function name) method)
+      (let* ((alt-name #:foo)
+	     (gf (ensure-generic-function alt-name)))
+	(add-method gf method)
+	(setf (fdefinition name) gf
+	      (generic-function-name gf) name)
+	(fmakunbound alt-name))))
+
 (defun std-class-generate-accessors (standard-class &aux optimizable)
-  (declare (si::c-local))
   ;;
   ;; The accessors are closures, which are generated every time the
   ;; slots of the class change. The accessors are safe: they check that
@@ -700,15 +713,16 @@ because it contains a reference to the undefined class~%  ~A"
 			     (apply #'writer-method-class standard-class slotd
 				    writer-args))))
 	(dolist (fname (slot-definition-readers slotd))
-	  (add-method (ensure-generic-function fname)
-		      (make-method reader-class nil `(,standard-class) '(self)
-				   (wrapped-method-function reader)
-				   (list :slot-definition slotd))))
+	  (safe-add-method fname
+			   (make-method reader-class nil `(,standard-class) '(self)
+					(wrapped-method-function reader)
+					(list :slot-definition slotd))))
 	(dolist (fname (slot-definition-writers slotd))
-	  (add-method (ensure-generic-function fname)
-		      (make-method writer-class nil `(,(find-class t) ,standard-class) '(value self)
-				   (wrapped-method-function writer)
-				   (list :slot-definition slotd))))))))
+	  (safe-add-method fname
+			   (make-method writer-class nil
+					`(,(find-class t) ,standard-class) '(value self)
+					(wrapped-method-function writer)
+					(list :slot-definition slotd))))))))
 
 ;;; ======================================================================
 ;;; STANDARD-OBJECT
