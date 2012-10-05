@@ -251,26 +251,44 @@
 ;;; ----------------------------------------------------------------------
 ;;;                                                         early versions
 
+(eval-when (:compile-toplevel :execute)
+  (defmacro early-make-instance (slots class &rest key-value-pairs)
+    (setf slots (symbol-value slots))
+    `(let ((object (si::allocate-raw-instance nil (find-class ,class)
+					      ,(length slots))))
+       (declare (type standard-object object))
+       (si::instance-sig-set object)
+       ,@(loop for (name . slotd) in slots
+	    for initarg = (getf slotd :initarg)
+	    for initform = (getf slotd :initform)
+	    for initvalue = (getf key-value-pairs initarg)
+	    for index from 0
+	    do (when (and initarg (member initarg key-value-pairs))
+		 (setf initform (getf key-value-pairs initarg)))
+	    collect `(si::instance-set object ,index ,initform))
+       object)))
+
 ;;; early version used during bootstrap
 (defun ensure-generic-function (name &key (lambda-list (si::unbound) l-l-p))
   (if (and (fboundp name) (si::instancep (fdefinition name)))
       (fdefinition name)
       ;; create a fake standard-generic-function object:
-      (let ((gfun (si:allocate-raw-instance nil (find-class 't)
-		     #.(length +standard-generic-function-slots+))))
-	(declare (type standard-object gfun))
+      (let ((gfun (early-make-instance
+		   +standard-generic-function-slots+
+		   'standard-generic-function
+		   :name name
+		   :spec-list nil
+		   :method-combination (find-method-combination nil 'standard nil)
+		   :lambda-list lambda-list
+		   :argument-precedence-order
+		   (and l-l-p (rest (si::process-lambda-list lambda-list t)))
+		   :method-class (find-class 'standard-method)
+		   :docstring nil
+		   :methods nil
+		   :a-p-o-function nil
+		   :declarations nil
+		   :dependents nil)))
 	;; create a new gfun
-	(si::instance-sig-set gfun)
-	(setf (generic-function-name gfun) name
-	      (generic-function-lambda-list gfun) lambda-list
-	      (generic-function-method-combination gfun)
-	      (find-method-combination gfun 'standard nil)
-	      (generic-function-methods gfun) nil
-	      (generic-function-spec-list gfun) nil
-              (generic-function-dependents gfun) nil)
-	(when l-l-p
-	  (setf (generic-function-argument-precedence-order gfun)
-		(rest (si::process-lambda-list lambda-list t))))
 	(set-funcallable-instance-function gfun 'standard-generic-function)
 	(setf (fdefinition name) gfun)
 	gfun)))
@@ -373,6 +391,9 @@
   (declare (optimize (speed 3))
 	   (si::c-local))
   (flet ((applicable-method-p (method args)
+	   #+(or)
+	   (print `(= ,(mapcar #'class-id (mapcar #'class-of args))
+		      ,(mapcar #'class-id (method-specializers method))))
 	   (loop for spec in (method-specializers method)
 	      for arg in args
 	      always (if (eql-specializer-flag spec)
