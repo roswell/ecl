@@ -152,8 +152,15 @@
       (generic-function
        :metaclass funcallable-standard-class
        :direct-superclasses (metaobject funcallable-standard-object))
+      (standard-generic-function
+       :direct-superclasses (generic-function)
+       :direct-slots #.(canonical-slots +standard-generic-function-slots+)
+       :metaclass funcallable-standard-class)
       (method
        :direct-superclasses (metaobject))
+      (standard-method
+       :direct-superclasses (method)
+       :direct-slots #.(canonical-slots +standard-method-slots+))
       )))
 
 ;;; ----------------------------------------------------------------------
@@ -164,7 +171,6 @@
 
 (defun make-empty-standard-class (name &key (metaclass 'standard-class)
 				  direct-superclasses direct-slots index)
-  (declare (si::c-local))
   (let* ((the-metaclass (and metaclass (gethash metaclass si::*class-name-hash-table*)))
 	 (class (or (gethash name si::*class-name-hash-table*)
 		    (si:allocate-raw-instance nil the-metaclass

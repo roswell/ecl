@@ -11,32 +11,9 @@
 
 (in-package "CLOS")
 
-;;; ----------------------------------------------------------------------
-;;; Funcallable object
-;;; ----------------------------------------------------------------------
-
-(defclass funcallable-standard-object (standard-object function) ())
-
-;;; ----------------------------------------------------------------------
-;;; Generic Functions
-;;; ----------------------------------------------------------------------
-
-(defclass generic-function (metaobject funcallable-standard-object) ()
-  (:metaclass 'funcallable-standard-class))
-
-(defclass standard-generic-function (generic-function)
-  #.(remove-accessors +standard-generic-function-slots+)
-  (:metaclass 'funcallable-standard-class))
-
 ;;;----------------------------------------------------------------------
 ;;; Method
 ;;; ----------------------------------------------------------------------
-
-(defclass method (metaobject) ())
-
-(defclass standard-method (method)
-  #.(remove-accessors +standard-method-slots+))
-
 
 (defun function-keywords (method)
   (multiple-value-bind (reqs opts rest-var key-flag keywords)
