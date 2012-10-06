@@ -26,15 +26,6 @@
 	    output)
 	(push (first l) output)))))
 
-(defclass standard-accessor-method (standard-method)
-  ((slot-definition :initarg :slot-definition
-		    :initform nil 
-		    :reader accessor-method-slot-definition)))
-
-(defclass standard-reader-method (standard-accessor-method) ())
-
-(defclass standard-writer-method (standard-accessor-method) ())
-
 (defmethod shared-initialize ((method standard-method) slot-names &rest initargs
 			      &key (specializers nil spec-supplied-p)
 			      (lambda-list nil lambda-supplied-p)

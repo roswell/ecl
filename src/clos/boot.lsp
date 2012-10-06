@@ -77,7 +77,7 @@
 ;;; ----------------------------------------------------------------------
 ;;; STANDARD-GENERIC-FUNCTION
 
-(eval-when (compile eval)
+(eval-when (:compile-toplevel :execute)
   (defparameter +standard-generic-function-slots+
     '((name :initarg :name :initform nil
        :accessor generic-function-name)
@@ -106,7 +106,7 @@
 ;;; ----------------------------------------------------------------------
 ;;; STANDARD-METHOD
 
-(eval-when (compile eval)
+(eval-when (:compile-toplevel :execute)
   (defparameter +standard-method-slots+
     '((the-generic-function :initarg :generic-function :initform nil
        :accessor method-generic-function)
@@ -117,7 +117,14 @@
       (the-function :initarg :function :accessor method-function)
       (docstring :initarg :documentation :initform nil)
       (plist :initform nil :initarg :plist :accessor method-plist)
-      (keywords :initform nil :accessor method-keywords))))
+      (keywords :initform nil :accessor method-keywords)))
+
+  (defparameter +standard-accessor-method-slots+
+    (append +standard-method-slots+
+	    '((slot-definition :initarg :slot-definition
+		    :initform nil 
+	       ;; FIXME! Should be a :reader
+		    :accessor accessor-method-slot-definition)))))
 
 ;;; ----------------------------------------------------------------------
 (eval-when (:compile-toplevel :execute)
@@ -264,6 +271,15 @@
       (standard-method
        :direct-superclasses (method)
        :direct-slots #.+standard-method-slots+)
+      (standard-accessor-method
+       :direct-superclasses (standard-method)
+       :direct-slots #2=#.+standard-accessor-method-slots+)
+      (standard-reader-method
+       :direct-superclasses (standard-accessor-method)
+       :direct-slots #2#)
+      (standard-writer-method
+       :direct-superclasses (standard-accessor-method)
+       :direct-slots #2#)
       )))
 
 ;;; ----------------------------------------------------------------------
