@@ -175,32 +175,33 @@
 	 (class (or (gethash name si::*class-name-hash-table*)
 		    (si:allocate-raw-instance nil the-metaclass
 					      #.(length +standard-class-slots+)))))
-    (unless the-metaclass
-      (si:instance-class-set class class))
-    (setf (class-id                  class) name
-	  (class-direct-subclasses   class) nil
-	  (class-direct-default-initargs class) nil
-	  (class-default-initargs    class) nil
-	  (class-finalized-p         class) t
-	  (eql-specializer-flag      class) nil
-	  (specializer-direct-methods class) nil
-	  (specializer-direct-generic-functions class) nil
-	  (gethash name si::*class-name-hash-table*) class
-	  (class-sealedp             class) nil
-	  (class-dependents          class) nil
-	  (class-valid-initargs      class) nil
-	  )
-    (let ((superclasses (loop for name in direct-superclasses
-			   for parent = (find-class name)
-			   do (push class (class-direct-subclasses parent))
-			   collect parent)))
-      (setf (class-direct-superclasses class) superclasses
-	    (class-precedence-list class)
-	    (compute-clos-class-precedence-list class superclasses)))
-    (when index
-      (setf (aref +builtin-classes-pre-array+ index) class))
-    (add-slots class direct-slots)
-    class))
+    (with-early-accessors (+standard-class-slots+)
+      (unless the-metaclass
+	(si:instance-class-set class class))
+      (setf (class-id                  class) name
+	    (class-direct-subclasses   class) nil
+	    (class-direct-default-initargs class) nil
+	    (class-default-initargs    class) nil
+	    (class-finalized-p         class) t
+	    (eql-specializer-flag      class) nil
+	    (specializer-direct-methods class) nil
+	    (specializer-direct-generic-functions class) nil
+	    (gethash name si::*class-name-hash-table*) class
+	    (class-sealedp             class) nil
+	    (class-dependents          class) nil
+	    (class-valid-initargs      class) nil
+	    )
+      (let ((superclasses (loop for name in direct-superclasses
+			     for parent = (find-class name)
+			     do (push class (class-direct-subclasses parent))
+			     collect parent)))
+	(setf (class-direct-superclasses class) superclasses
+	      (class-precedence-list class)
+	      (compute-clos-class-precedence-list class superclasses)))
+      (when index
+	(setf (aref +builtin-classes-pre-array+ index) class))
+      (add-slots class direct-slots)
+      class)))
 
 (defun add-slots (class slots)
   (declare (si::c-local))

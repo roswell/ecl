@@ -106,7 +106,7 @@
       (sealedp :initarg :sealedp :initform nil :accessor class-sealedp)
       (prototype)
       (dependents :initform nil :accessor class-dependents)
-      (valid-initargs :accessor class-valid-initargs)))
+      (valid-initargs :initform nil :accessor class-valid-initargs)))
 
   (defconstant +class-name-ndx+
     (position 'name +class-slots+ :key #'first))
@@ -252,31 +252,48 @@
 ;;;                                                         early versions
 
 (eval-when (:compile-toplevel :execute)
-  (defmacro with-early-make-instance ((class slots) (object &rest key-value-pairs)
+  (defmacro with-early-accessors ((&rest slot-definitions) &rest body)
+    `(macrolet
+	 ,(loop for slots in slot-definitions
+	     nconc (loop for (name . slotd) in (if (symbolp slots)
+						   (symbol-value slots)
+						   slots)
+		      for index from 0
+		      for accessor = (getf slotd :accessor)
+		      when accessor
+		      collect `(,accessor (object) `(si::instance-ref ,object ,,index))))
+       ,@body))
+  (defmacro with-early-make-instance (slots (object class &rest key-value-pairs)
 				      &rest body)
-    (setf slots (symbol-value slots))
-    `(let ((,object (si::allocate-raw-instance nil (find-class ',class)
-					      ,(length slots))))
+    (when (symbolp slots)
+      (setf slots (symbol-value slots)))
+    `(let* ((%class ,class)
+	    (,object (si::allocate-raw-instance nil %class
+						,(length slots))))
        (declare (type standard-object ,object))
-       (si::instance-sig-set ,object)
        ,@(loop for (name . slotd) in slots
 	    for initarg = (getf slotd :initarg)
 	    for initform = (getf slotd :initform)
 	    for initvalue = (getf key-value-pairs initarg)
 	    for index from 0
-	    do (when (and initarg (member initarg key-value-pairs))
-		 (setf initform (getf key-value-pairs initarg)))
+	    do (cond ((and initarg (member initarg key-value-pairs))
+		      (setf initform (getf key-value-pairs initarg)))
+		     ((getf key-value-pairs name)
+		      (setf initform (getf key-value-pairs name))))
 	    collect `(si::instance-set ,object ,index ,initform))
-       ,@body)))
+       (when %class
+	 (si::instance-sig-set ,object))
+       (with-early-accessors (,slots)
+	 ,@body))))
 
 ;;; early version used during bootstrap
 (defun ensure-generic-function (name &key (lambda-list (si::unbound) l-l-p))
   (if (and (fboundp name) (si::instancep (fdefinition name)))
       (fdefinition name)
       ;; create a fake standard-generic-function object:
-      (with-early-make-instance
-	  (standard-generic-function +standard-generic-function-slots+)
-	(gfun :name name
+      (with-early-make-instance +standard-generic-function-slots+
+	(gfun (find-class 'standard-generic-function)
+	      :name name
 	      :spec-list nil
 	      :method-combination (find-method-combination nil 'standard nil)
 	      :lambda-list lambda-list
