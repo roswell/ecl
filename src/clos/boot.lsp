@@ -13,6 +13,126 @@
 (in-package "CLOS")
 
 ;;; ----------------------------------------------------------------------
+;;; Class SPECIALIZER
+
+(eval-when (:compile-toplevel :execute)
+  (defparameter +specializer-slots+
+    '((flag :initform nil :accessor eql-specializer-flag)
+      (direct-methods :initform nil :accessor specializer-direct-methods)
+      (direct-generic-functions :initform nil :accessor specializer-direct-generic-functions)))
+  (defparameter +eql-specializer-slots+
+    '((flag :initform t :accessor eql-specializer-flag)
+      (direct-methods :initform nil :accessor specializer-direct-methods)
+      (direct-generic-functions :initform nil :accessor specializer-direct-generic-functions)
+      (object :initarg :object :accessor eql-specializer-object))))
+
+#.(create-accessors +eql-specializer-slots+ 'eql-specializer)
+
+;;; ----------------------------------------------------------------------
+;;; Class METHOD-COMBINATION
+
+(eval-when (:compile-toplevel :execute)
+  (defparameter +method-combination-slots+
+    `((name :initform :name :accessor method-combination-name)
+      (compiler :initform :compiler :accessor method-combination-compiler)
+      (options :initform :options :accessor method-combination-options))))
+
+#.(create-accessors +method-combination-slots+ 'method-combination)
+
+;;; ----------------------------------------------------------------------
+;;; Class CLASS
+
+(eval-when (:compile-toplevel :execute)
+  (defparameter +class-slots+
+    `(,@+specializer-slots+
+      (name :initarg :name :initform nil :accessor class-id)
+      (direct-superclasses :initarg :direct-superclasses
+       :accessor class-direct-superclasses)
+      (direct-subclasses :initform nil :accessor class-direct-subclasses)
+      (slots :accessor class-slots)
+      (precedence-list :accessor class-precedence-list)
+      (direct-slots :initarg :direct-slots :accessor class-direct-slots)
+      (direct-default-initargs :initarg :direct-default-initargs
+       :initform nil :accessor class-direct-default-initargs)
+      (default-initargs :accessor class-default-initargs)
+      (finalized :initform nil :accessor class-finalized-p)
+      (docstring :initarg :documentation :initform nil)
+      (size :accessor class-size)
+      (sealedp :initarg :sealedp :initform nil :accessor class-sealedp)
+      (prototype)
+      (dependents :initform nil :accessor class-dependents)
+      (valid-initargs :initform nil :accessor class-valid-initargs)))
+
+  (defconstant +class-name-ndx+
+    (position 'name +class-slots+ :key #'first))
+  (defconstant +class-precedence-list-ndx+
+    (position 'precedence-list +class-slots+ :key #'first)))
+
+;#.(create-accessors +class-slots+ 'class)
+
+;;; ----------------------------------------------------------------------
+;;; STANDARD-CLASS
+
+(eval-when (:compile-toplevel :execute)
+  (defparameter +standard-class-slots+
+    (append +class-slots+
+	    '((slot-table :accessor slot-table)
+	      (optimize-slot-access)
+	      (forward)))))
+
+#.(create-accessors +standard-class-slots+ 'standard-class)
+
+;;; ----------------------------------------------------------------------
+;;; STANDARD-GENERIC-FUNCTION
+
+(eval-when (compile eval)
+  (defparameter +standard-generic-function-slots+
+    '((name :initarg :name :initform nil
+       :accessor generic-function-name)
+      (spec-list :initform nil :accessor generic-function-spec-list)
+      (method-combination 
+       :initarg :method-combination :initform (find-method-combination (class-prototype (find-class 'standard-generic-function)) 'standard nil)
+       :accessor generic-function-method-combination)
+      (lambda-list :initarg :lambda-list
+       :accessor generic-function-lambda-list)
+      (argument-precedence-order 
+       :initarg :argument-precedence-order
+       :initform nil
+       :accessor generic-function-argument-precedence-order)
+      (method-class
+       :initarg :method-class
+       :initform (find-class 'standard-method))
+      (docstring :initarg :documentation :initform nil)
+      (methods :initform nil :accessor generic-function-methods)
+      (a-p-o-function :initform nil :accessor generic-function-a-p-o-function)
+      (declarations
+       :initarg :declarations
+       :initform nil
+       :accessor generic-function-declarations)
+      (dependents :initform nil :accessor generic-function-dependents))))
+
+#.(create-accessors +standard-generic-function-slots+
+		    'standard-generic-function)
+
+;;; ----------------------------------------------------------------------
+;;; STANDARD-METHOD
+
+(eval-when (compile eval)
+  (defparameter +standard-method-slots+
+    '((the-generic-function :initarg :generic-function :initform nil
+       :accessor method-generic-function)
+      (lambda-list :initarg :lambda-list
+       :accessor method-lambda-list)
+      (specializers :initarg :specializers :accessor method-specializers)
+      (qualifiers :initform nil :initarg :qualifiers :accessor method-qualifiers)
+      (the-function :initarg :function :accessor method-function)
+      (docstring :initarg :documentation :initform nil)
+      (plist :initform nil :initarg :plist :accessor method-plist)
+      (keywords :initform nil :accessor method-keywords))))
+
+#.(create-accessors +standard-method-slots+ 'standard-method)
+
+;;; ----------------------------------------------------------------------
 (eval-when (:compile-toplevel :execute)
   ;;
   ;; All changes to this are connected to the changes in 
@@ -162,6 +282,45 @@
        :direct-superclasses (method)
        :direct-slots #.(canonical-slots +standard-method-slots+))
       )))
+
+;;; ----------------------------------------------------------------------
+;;; Early accessors and class construction
+;;;
+
+(eval-when (:compile-toplevel :execute)
+  (defmacro with-early-accessors ((&rest slot-definitions) &rest body)
+    `(macrolet
+	 ,(loop for slots in slot-definitions
+	     nconc (loop for (name . slotd) in (if (symbolp slots)
+						   (symbol-value slots)
+						   slots)
+		      for index from 0
+		      for accessor = (getf slotd :accessor)
+		      when accessor
+		      collect `(,accessor (object) `(si::instance-ref ,object ,,index))))
+       ,@body))
+  (defmacro with-early-make-instance (slots (object class &rest key-value-pairs)
+				      &rest body)
+    (when (symbolp slots)
+      (setf slots (symbol-value slots)))
+    `(let* ((%class ,class)
+	    (,object (si::allocate-raw-instance nil %class
+						,(length slots))))
+       (declare (type standard-object ,object))
+       ,@(loop for (name . slotd) in slots
+	    for initarg = (getf slotd :initarg)
+	    for initform = (getf slotd :initform)
+	    for initvalue = (getf key-value-pairs initarg)
+	    for index from 0
+	    do (cond ((and initarg (member initarg key-value-pairs))
+		      (setf initform (getf key-value-pairs initarg)))
+		     ((getf key-value-pairs name)
+		      (setf initform (getf key-value-pairs name))))
+	    collect `(si::instance-set ,object ,index ,initform))
+       (when %class
+	 (si::instance-sig-set ,object))
+       (with-early-accessors (,slots)
+	 ,@body))))
 
 ;;; ----------------------------------------------------------------------
 ;;; Building the classes T, CLASS, STANDARD-OBJECT and STANDARD-CLASS.

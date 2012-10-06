@@ -1,13 +1,15 @@
 ;;; @configure_input@
 
 (defvar +clos-module-files+
-'("src:clos;kernel.lsp"
+'("src:clos;package.lsp"
+  "src:clos;slot.lsp"
+  "src:clos;cpl.lsp"
+  "src:clos;boot.lsp"
+  "src:clos;kernel.lsp"
   "src:clos;macros.lsp"
   "src:clos;method.lsp"
-  "src:clos;slot.lsp"
   "src:clos;combin.lsp"
   "src:clos;defclass.lsp"
-  "src:clos;boot.lsp"
   "src:clos;slotvalue.lsp"
   "src:clos;standard.lsp"
   "src:clos;builtin.lsp"
