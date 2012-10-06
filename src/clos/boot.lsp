@@ -26,7 +26,7 @@
       (direct-generic-functions :initform nil :accessor specializer-direct-generic-functions)
       (object :initarg :object :accessor eql-specializer-object))))
 
-#.(create-accessors +eql-specializer-slots+ 'eql-specializer)
+;#.(create-accessors +eql-specializer-slots+ 'eql-specializer)
 
 ;;; ----------------------------------------------------------------------
 ;;; Class METHOD-COMBINATION
@@ -37,7 +37,7 @@
       (compiler :initform :compiler :accessor method-combination-compiler)
       (options :initform :options :accessor method-combination-options))))
 
-#.(create-accessors +method-combination-slots+ 'method-combination)
+;#.(create-accessors +method-combination-slots+ 'method-combination)
 
 ;;; ----------------------------------------------------------------------
 ;;; Class CLASS
@@ -68,8 +68,6 @@
   (defconstant +class-precedence-list-ndx+
     (position 'precedence-list +class-slots+ :key #'first)))
 
-;#.(create-accessors +class-slots+ 'class)
-
 ;;; ----------------------------------------------------------------------
 ;;; STANDARD-CLASS
 
@@ -80,7 +78,7 @@
 	      (optimize-slot-access)
 	      (forward)))))
 
-#.(create-accessors +standard-class-slots+ 'standard-class)
+;#.(create-accessors +standard-class-slots+ 'standard-class)
 
 ;;; ----------------------------------------------------------------------
 ;;; STANDARD-GENERIC-FUNCTION
@@ -111,8 +109,8 @@
        :accessor generic-function-declarations)
       (dependents :initform nil :accessor generic-function-dependents))))
 
-#.(create-accessors +standard-generic-function-slots+
-		    'standard-generic-function)
+;#.(create-accessors +standard-generic-function-slots+
+;		    'standard-generic-function)
 
 ;;; ----------------------------------------------------------------------
 ;;; STANDARD-METHOD
@@ -130,7 +128,7 @@
       (plist :initform nil :initarg :plist :accessor method-plist)
       (keywords :initform nil :accessor method-keywords))))
 
-#.(create-accessors +standard-method-slots+ 'standard-method)
+;#.(create-accessors +standard-method-slots+ 'standard-method)
 
 ;;; ----------------------------------------------------------------------
 (eval-when (:compile-toplevel :execute)
@@ -221,10 +219,6 @@
 ;;; 	funcallable-standard-class	(class)
 ;;;
 (eval-when (eval)
-  (defun canonical-slots (slots)
-    (loop for s in (parse-slots (remove-accessors slots))
-       collect (canonical-slot-to-direct-slot nil s))))
-(eval-when (eval)
   (defconstant +class-hierarchy+
     `((standard-class
        :metaclass nil) ; Special-cased below
@@ -236,22 +230,22 @@
        :direct-superclasses (standard-object))
       (method-combination
        :direct-superclasses (metaobject)
-       :direct-slots #.(canonical-slots +method-combination-slots+))
+       :direct-slots #.+method-combination-slots+)
       (specializer
        :direct-superclasses (metaobject)
-       :direct-slots #.(canonical-slots +specializer-slots+))
+       :direct-slots #.+specializer-slots+)
       (eql-specializer
        :direct-superclasses (specializer)
-       :direct-slots #.(canonical-slots +eql-specializer-slots+))
+       :direct-slots #.+eql-specializer-slots+)
       (class
        :direct-superclasses (specializer)
-       :direct-slots #.(canonical-slots +class-slots+))
+       :direct-slots #.+class-slots+)
       (forward-referenced-class
        :direct-superclasses (class)
-       :direct-slots #.(canonical-slots +class-slots+))
+       :direct-slots #.+class-slots+)
       (built-in-class
        :direct-superclasses (class)
-       :direct-slots #1=#.(canonical-slots +standard-class-slots+))
+       :direct-slots #1=#.+standard-class-slots+)
       (std-class
        :direct-superclasses (class)
        :direct-slots #1#)
@@ -274,13 +268,13 @@
        :direct-superclasses (metaobject funcallable-standard-object))
       (standard-generic-function
        :direct-superclasses (generic-function)
-       :direct-slots #.(canonical-slots +standard-generic-function-slots+)
+       :direct-slots #.+standard-generic-function-slots+
        :metaclass funcallable-standard-class)
       (method
        :direct-superclasses (metaobject))
       (standard-method
        :direct-superclasses (method)
-       :direct-slots #.(canonical-slots +standard-method-slots+))
+       :direct-slots #.+standard-method-slots+)
       )))
 
 ;;; ----------------------------------------------------------------------
@@ -330,6 +324,7 @@
 
 (defun make-empty-standard-class (name &key (metaclass 'standard-class)
 				  direct-superclasses direct-slots index)
+  (declare (optimize speed (safety 0)))
   (let* ((the-metaclass (and metaclass (gethash metaclass si::*class-name-hash-table*)))
 	 (class (or (gethash name si::*class-name-hash-table*)
 		    (si:allocate-raw-instance nil the-metaclass
@@ -362,11 +357,24 @@
       (add-slots class direct-slots)
       class)))
 
+(defun remove-accessors (slotds)
+  (declare (optimize speed (safety 0)))
+  (loop for i in slotds
+     for j = (copy-list i)
+     do (remf (cdr j) :accessor)
+     collect j))
+
+(defun canonical-slots (slots)
+  (declare (optimize speed (safety 0)))
+  (loop for s in (parse-slots (remove-accessors slots))
+     collect (canonical-slot-to-direct-slot nil s)))
+
 (defun add-slots (class slots)
-  (declare (si::c-local))
+  (declare (si::c-local)
+	   (optimize speed (safety 0)))
   ;; It does not matter that we pass NIL instead of a class object,
   ;; because CANONICAL-SLOT-TO-DIRECT-SLOT will make simple slots.
-  (loop with all-slots = (copy-list slots)
+  (loop with all-slots = (canonical-slots slots)
      with table = (make-hash-table :size (if all-slots 24 0))
      for i from 0
      for s in all-slots
@@ -378,28 +386,58 @@
 		   (slot-table class) table
 		   (class-direct-slots class) (copy-list all-slots))))
 
+(defun reader-closure (index)
+  (declare (si::c-local)
+	   (optimize speed (safety 0)))
+  (lambda (object) (si::instance-ref object index)))
+
+(defun writer-closure (index)
+  (declare (si::c-local)
+	   (optimize speed (safety 0)))
+  (lambda (value object) (si::instance-set object index value)))
+
+(defun generate-accessors (slotd-definitions)
+  (declare (si::c-local)
+	   (optimize speed (safety 0)))
+  (loop for index from 0
+     for slotd in slotd-definitions
+     do (loop with key-value-pairs = (rest slotd)
+	   for key = (pop key-value-pairs)
+	   for value = (pop key-value-pairs)
+	   while key
+	   do (case key
+		(:reader
+		 (setf (fdefinition value) (reader-closure index)))
+		(:writer
+		 (setf (fdefinition value) (writer-closure index)))
+		(:accessor
+		 (setf (fdefinition value) (reader-closure index)
+		       (fdefinition `(setf ,value)) (writer-closure index)))))))
+
 ;; 1) Create the classes
 ;;
 ;; Notice that, due to circularity in the definition, STANDARD-CLASS has
 ;; itself as metaclass. MAKE-EMPTY-STANDARD-CLASS takes care of that.
 ;;
-(let ((all-classes 
-       (loop for c in '#.+class-hierarchy+
-	  for class = (apply #'make-empty-standard-class c)
-	  collect class)))
-  ;;
-  ;; 2) Class T had its metaclass wrong. Fix it.
-  ;;
-  (si:instance-class-set (find-class 't) (find-class 'built-in-class))
-  ;;
-  ;; 3) Finalize
-  ;;
-  (mapc #'si::instance-sig-set all-classes)
-  ;;
-  ;; This is needed for further optimization
-  ;;
-  (setf (class-sealedp (find-class 'method-combination)) t)
-  )
+(let* ((class-hierarchy '#.+class-hierarchy+))
+  (loop for c in class-hierarchy
+     do (generate-accessors (getf (rest c) :direct-slots)))
+  (let ((all-classes (loop for c in class-hierarchy
+			for class = (apply #'make-empty-standard-class c)
+			collect class)))
+    ;;
+    ;; 2) Class T had its metaclass wrong. Fix it.
+    ;;
+    (si:instance-class-set (find-class 't) (find-class 'built-in-class))
+    ;;
+    ;; 3) Finalize
+    ;;
+    (mapc #'si::instance-sig-set all-classes)
+    ;;
+    ;; This is needed for further optimization
+    ;;
+    (setf (class-sealedp (find-class 'method-combination)) t)
+    ))
 
 (defconstant +the-t-class+ (find-class 't nil))
 (defconstant +the-class+ (find-class 'class nil))

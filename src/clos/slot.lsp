@@ -156,42 +156,4 @@
 	   name)))
       (push slotd collect))))
 
-;;;----------------------------------------------------------------------
-;;; BOOTSTRAP FUNCTIONS TO ACCESS SLOTS
-;;;
-;;; ECL has some restictions regarding the basic classes CLASS,
-;;; STANDARD-CLASS and STANDARD-GENERIC-FUNCTION. These are that, certain
-;;; slots must have pre-defined positions which cannot change. That means
-;;; that a user can extend these classes, but they must be the first ones
-;;; in the class hierarchy, and the position of their slots must not change.
-
-(eval-when (compile eval)
-(defun create-accessors (slotds type)
-  (let* ((names '())
-	 (forms (loop for i from 0
-		   for s in slotds
-		   for accessor = (getf (cdr s) :accessor)
-		   for reader = (getf (cdr s) :reader)
-		   when reader
-		   do (pushnew reader names)
-		   and collect `(defun ,reader (obj)
-				  (si::instance-ref obj ,i))
-		   when accessor
-		   do (pushnew accessor names)
-		   and collect `(defun ,accessor (obj)
-				  (si::instance-ref obj ,i))
-		   and collect `(defsetf ,accessor (obj) (x)
-				  `(si::instance-set ,obj ,,i ,x)))))
-    `(progn
-       #+nil
-       (eval-when (:compile-toplevel :execute)
-         (proclaim '(notinline ,@names)))
-       ,@forms)))
-(defun remove-accessors (slotds)
-  (loop for i in slotds
-     for j = (copy-list i)
-     do (remf (cdr j) :accessor)
-     collect j))
-)
-
 ;;; ----------------------------------------------------------------------
