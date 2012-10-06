@@ -53,7 +53,9 @@
     (loop for s in specializers
        unless (typep s 'specializer)
        do (error "Object ~A is not a valid specializer" s)))
-  (add-method-keywords (call-next-method)))
+  (setf method (call-next-method)
+	(method-keywords method) (compute-method-keywords (method-lambda-list method)))
+  method)
 
 #+threads
 (defparameter *eql-specializer-lock* (mp:make-lock :name 'eql-specializer))

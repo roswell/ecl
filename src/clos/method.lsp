@@ -333,29 +333,26 @@ have disappeared."
 ;;; ----------------------------------------------------------------------
 ;;;                                                             operations
 
-(defun add-method-keywords (method)
+(defun compute-method-keywords (lambda-list)
   (multiple-value-bind (reqs opts rest key-flag keywords allow-other-keys)
-      (si::process-lambda-list (method-lambda-list method) t)
+      (si::process-lambda-list lambda-list t)
     (declare (ignore reqs opts rest key-flag))
-    (setf (method-keywords method)
-          (if allow-other-keys
-              't
-              (loop for k in (rest keywords) by #'cddddr
-                 collect k)))
-    method))
+    (if allow-other-keys
+	't
+	(loop for k in (rest keywords) by #'cddddr
+	   collect k))))
 
 (defun make-method (method-class qualifiers specializers lambda-list fun options)
   (declare (ignore options))
-  (let* ((instance-size (+ #.(length +standard-method-slots+)
-			   (if (eq method-class 'standard-method)
-			       0 2)))
-	 (method (si:allocate-raw-instance nil method-class instance-size)))
-    (setf (method-generic-function method) nil
-	  (method-lambda-list method) lambda-list
-	  (method-function method) fun
-	  (method-specializers method) specializers
-	  (method-qualifiers method) qualifiers)
-    (add-method-keywords method)))
+  (with-early-make-instance +standard-method-slots+
+    (method method-class
+	    :generic-function nil
+	    :lambda-list lambda-list
+	    :function fun
+	    :specializers specializers
+	    :qualifiers qualifiers
+	    :keywords (compute-method-keywords lambda-list))
+    method))
 
 ;;; early version used during bootstrap
 (defun method-p (x)
