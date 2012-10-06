@@ -662,7 +662,7 @@ because it contains a reference to the undefined class~%  ~A"
 	  (not (fboundp name))
 	  (si::instancep (fdefinition name)))
       (add-method (ensure-generic-function name) method)
-      (let* ((alt-name #:foo)
+      (let* ((alt-name '#:foo)
 	     (gf (ensure-generic-function alt-name)))
 	(add-method gf method)
 	(setf (fdefinition name) gf
