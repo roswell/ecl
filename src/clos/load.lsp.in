@@ -8,6 +8,7 @@
   "src:clos;combin.lsp"
   "src:clos;defclass.lsp"
   "src:clos;boot.lsp"
+  "src:clos;slotvalue.lsp"
   "src:clos;standard.lsp"
   "src:clos;builtin.lsp"
   "src:clos;change.lsp"
