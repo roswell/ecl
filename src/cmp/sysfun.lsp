@@ -1003,12 +1003,6 @@
      clos::standard-instance-set
      ;; kernel.lsp
      clos::install-method
-     clos::class-id
-     clos::class-direct-superclasses
-     clos::class-direct-subclasses
-     clos::class-slots
-     clos::class-precedence-list
-     clos::class-direct-slots
      clos::default-initargs-of
      ;; clos::generic-function-lambda-list
      ;; clos::generic-function-argument-precedence-order
