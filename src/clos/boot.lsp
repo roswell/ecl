@@ -12,6 +12,29 @@
 
 (in-package "CLOS")
 
+(eval-when (compile eval)
+(defun create-accessors (slotds type)
+  (let* ((names '())
+	 (forms (loop for i from 0
+		   for s in slotds
+		   for accessor = (getf (cdr s) :accessor)
+		   for reader = (getf (cdr s) :reader)
+		   when reader
+		   do (pushnew reader names)
+		   and collect `(defun ,reader (obj)
+				  (si::instance-ref obj ,i))
+		   when accessor
+		   do (pushnew accessor names)
+		   and collect `(defun ,accessor (obj)
+				  (si::instance-ref obj ,i))
+		   and collect `(defsetf ,accessor (obj) (x)
+				  `(si::instance-set ,obj ,,i ,x)))))
+    `(progn
+       #+nil
+       (eval-when (:compile-toplevel :execute)
+         (proclaim '(notinline ,@names)))
+       ,@forms))))
+
 ;;; ----------------------------------------------------------------------
 ;;; Class SPECIALIZER
 
@@ -26,7 +49,7 @@
       (direct-generic-functions :initform nil :accessor specializer-direct-generic-functions)
       (object :initarg :object :accessor eql-specializer-object))))
 
-;#.(create-accessors +eql-specializer-slots+ 'eql-specializer)
+#.(create-accessors +eql-specializer-slots+ 'eql-specializer)
 
 ;;; ----------------------------------------------------------------------
 ;;; Class METHOD-COMBINATION
@@ -37,7 +60,7 @@
       (compiler :initform :compiler :accessor method-combination-compiler)
       (options :initform :options :accessor method-combination-options))))
 
-;#.(create-accessors +method-combination-slots+ 'method-combination)
+#.(create-accessors +method-combination-slots+ 'method-combination)
 
 ;;; ----------------------------------------------------------------------
 ;;; Class CLASS
@@ -61,7 +84,7 @@
       (sealedp :initarg :sealedp :initform nil :accessor class-sealedp)
       (prototype)
       (dependents :initform nil :accessor class-dependents)
-      (valid-initargs :initform nil :accessor class-valid-initargs)))
+      (valid-initargs :accessor class-valid-initargs)))
 
   (defconstant +class-name-ndx+
     (position 'name +class-slots+ :key #'first))
@@ -78,7 +101,7 @@
 	      (optimize-slot-access)
 	      (forward)))))
 
-;#.(create-accessors +standard-class-slots+ 'standard-class)
+#.(create-accessors +standard-class-slots+ 'standard-class)
 
 ;;; ----------------------------------------------------------------------
 ;;; STANDARD-GENERIC-FUNCTION
@@ -109,8 +132,8 @@
        :accessor generic-function-declarations)
       (dependents :initform nil :accessor generic-function-dependents))))
 
-;#.(create-accessors +standard-generic-function-slots+
-;		    'standard-generic-function)
+#.(create-accessors +standard-generic-function-slots+
+		    'standard-generic-function)
 
 ;;; ----------------------------------------------------------------------
 ;;; STANDARD-METHOD
@@ -128,7 +151,7 @@
       (plist :initform nil :initarg :plist :accessor method-plist)
       (keywords :initform nil :accessor method-keywords))))
 
-;#.(create-accessors +standard-method-slots+ 'standard-method)
+#.(create-accessors +standard-method-slots+ 'standard-method)
 
 ;;; ----------------------------------------------------------------------
 (eval-when (:compile-toplevel :execute)
@@ -420,6 +443,7 @@
 ;; itself as metaclass. MAKE-EMPTY-STANDARD-CLASS takes care of that.
 ;;
 (let* ((class-hierarchy '#.+class-hierarchy+))
+  #+(or)
   (loop for c in class-hierarchy
      do (generate-accessors (getf (rest c) :direct-slots)))
   (let ((all-classes (loop for c in class-hierarchy
