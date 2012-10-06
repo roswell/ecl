@@ -176,7 +176,8 @@
 			      &rest initargs)
   (declare (ignore initargs slot-names))
   (call-next-method)
-  (compute-g-f-spec-list gfun)
+  (when (generic-function-methods gfun)
+    (compute-g-f-spec-list gfun))
   (update-dependents gfun initargs)
   gfun)
 

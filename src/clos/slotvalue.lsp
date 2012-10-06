@@ -138,12 +138,12 @@ Slot name: ~A"
 (defmethod slot-missing ((class t) object slot-name operation 
 			 &optional new-value)
   (declare (ignore operation new-value class))
-  (print slot-name)
-  (print (class-id class))
+  (print (list 'slot-missing slot-name (class-id class)))
   (error "~A is not a slot of ~A" slot-name object))
 
 (defmethod slot-unbound ((class t) object slot-name)
   (declare (ignore class))
+  (print (list 'slot-unbound (class-id class) (print slot-name)))
   (error 'unbound-slot :instance object :name slot-name))
 
 ;;;

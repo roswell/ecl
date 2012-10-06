@@ -577,7 +577,7 @@ because it contains a reference to the undefined class~%  ~A"
 	   (si::c-local))
   (let* ((class (class-of object))
 	 (slotd (find index (class-slots class) :key #'slot-definition-location)))
-    (values (slotd-unbound class object (slot-definition-name slotd)))))
+    (values (slot-unbound class object (slot-definition-name slotd)))))
 
 (defun safe-instance-ref (object index)
   (declare (type standard-object object)
@@ -658,16 +658,17 @@ because it contains a reference to the undefined class~%  ~A"
 (defun safe-add-method (name method)
   ;; Adds a method to a function which might have been previously defined
   ;; as non-generic, without breaking the function
-  (if (or *clos-booted*
-	  (not (fboundp name))
-	  (si::instancep (fdefinition name)))
-      (add-method (ensure-generic-function name) method)
-      (let* ((alt-name '#:foo)
-	     (gf (ensure-generic-function alt-name)))
-	(add-method gf method)
-	(setf (fdefinition name) gf
-	      (generic-function-name gf) name)
-	(fmakunbound alt-name))))
+  (cond ((or *clos-booted*
+	     (not (fboundp name))
+	     (si::instancep (fdefinition name)))
+	 (add-method (ensure-generic-function name) method))
+	(t
+	 (let* ((alt-name '#:foo)
+		(gf (ensure-generic-function alt-name)))
+	   (add-method gf method)
+	   (setf (generic-function-name gf) name)
+	   (setf (fdefinition name) gf)
+	   (fmakunbound alt-name)))))
 
 (defun std-class-generate-accessors (standard-class &aux optimizable)
   ;;
