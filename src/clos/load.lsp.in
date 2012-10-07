@@ -7,6 +7,7 @@
   "src:clos;std-slot-value.lsp"
   "src:clos;boot.lsp"
   "src:clos;kernel.lsp"
+  "src:clos;std-accessors.lsp"
   "src:clos;method.lsp"
   "src:clos;combin.lsp"
   "src:clos;defclass.lsp"
