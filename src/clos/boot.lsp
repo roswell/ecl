@@ -72,6 +72,7 @@
   (with-early-accessors (+standard-class-slots+
 			 +slot-definition-slots+)
     (let* ((table (make-hash-table :size (if slots 24 0)))
+	   (location-table (make-hash-table :size (if slots 24 0)))
 	   (slots (parse-slots slots))
 	   (direct-slots (loop for slotd in slots
 			    collect (apply #'make-simple-slotd
@@ -79,16 +80,19 @@
 				     slotd)))
 	   (effective-slots (loop for i from 0
 			       for slotd in slots
+			       for name = (getf slotd :name)
 			       for s = (apply #'make-simple-slotd
 					(find-class 'standard-effective-slot-definition)
 					slotd)
 			       do (setf (slot-definition-location s) i
-					(gethash (getf slotd :name) table) s)
+					(gethash name location-table) i
+					(gethash name table) s)
 			       collect s)))
       (setf (class-slots class) effective-slots
 	    (class-direct-slots class) direct-slots
 	    (class-size class) (length slots)
-	    (slot-table class) table))))
+	    (slot-table class) table
+	    (class-location-table class) location-table))))
 
 ;; 1) Create the classes
 ;;

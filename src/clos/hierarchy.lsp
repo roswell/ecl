@@ -68,7 +68,10 @@
       (sealedp :initarg :sealedp :initform nil :accessor class-sealedp)
       (prototype)
       (dependents :initform nil :accessor class-dependents)
-      (valid-initargs :accessor class-valid-initargs)))
+      (valid-initargs :accessor class-valid-initargs)
+      (slot-table :accessor slot-table)
+      (location-table :initform nil :accessor class-location-table)
+      ))
 
   (defconstant +class-name-ndx+
     (position 'name +class-slots+ :key #'first))
@@ -81,8 +84,7 @@
 (eval-when (:compile-toplevel :execute)
   (defparameter +standard-class-slots+
     (append +class-slots+
-	    '((slot-table :accessor slot-table)
-	      (optimize-slot-access)
+	    '((optimize-slot-access)
 	      (forward)))))
 
 ;;; ----------------------------------------------------------------------

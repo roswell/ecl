@@ -351,11 +351,14 @@ because it contains a reference to the undefined class~%  ~A"
   ;; this only makes sense when the class has been defined.
   (dolist (subclass (reverse (class-direct-subclasses class)))
     (finalize-unless-forward subclass))
+  ;;
+  ;; We create various caches to more rapidly find the slot locations and
+  ;; slot definitions.
+  (std-create-slots-table class)
   )
 
 (defmethod finalize-inheritance ((class std-class))
   (call-next-method)
-  (std-create-slots-table class)
   (std-class-generate-accessors class))
 
 (defmethod compute-class-precedence-list ((class class))

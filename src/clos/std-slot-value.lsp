@@ -107,12 +107,25 @@
 ;;; slots rapidly.
 ;;;
 (defun std-create-slots-table (class)
-  (with-slots ((all-slots slots) (slot-table slot-table))
+  (with-slots ((all-slots slots)
+	       (slot-table slot-table)
+	       (location-table location-table))
       class
-    (let* ((table (make-hash-table :size (max 32 (length all-slots)))))
+    (let* ((size (max 32 (* 2 (length all-slots))))
+	   (table (make-hash-table :size size)))
       (dolist (slotd all-slots)
 	(setf (gethash (slot-definition-name slotd) table) slotd))
-      (setf slot-table table))))
+      (let ((metaclass (si::instance-class class))
+	    (locations nil))
+	(when (or (eq metaclass (find-class 'standard-class))
+		  (eq metaclass (find-class 'funcallable-standard-class))
+		  (eq metaclass (find-class 'structure-class)))
+	  (setf locations (make-hash-table :size size))
+	  (dolist (slotd all-slots)
+	    (setf (gethash (slot-definition-name slotd) locations)
+		  (slot-definition-location slotd))))
+	(setf slot-table table
+	      location-table locations)))))
 
 (defun find-slot-definition (class slot-name)
   (with-slots ((slots slots) (slot-table slot-table))
@@ -150,94 +163,90 @@
 ;;; Specific functions for slot reading, writing, boundness checking, etc.
 ;;;
 
-(defun standard-instance-get (instance slotd)
+(defun standard-instance-get (instance location)
   (with-early-accessors (+standard-class-slots+
 			 +slot-definition-slots+)
     (ensure-up-to-date-instance instance)
-    (let* ((class (si:instance-class instance))
-	   (location (slot-definition-location slotd)))
-      (cond ((ext:fixnump location)
-	     ;; local slot
-	     (si:instance-ref instance (truly-the fixnum location)))
-	    ((consp location)
-	     ;; shared slot
-	     (car location))
-	    (t
-	     (invalid-slot-definition instance slotd))))))
+    (cond ((ext:fixnump location)
+	   ;; local slot
+	   (si:instance-ref instance (truly-the fixnum location)))
+	  ((consp location)
+	   ;; shared slot
+	   (car location))
+	  (t
+	   (invalid-slot-location instance location)))))
 
-(defun standard-instance-set (val instance slotd)
+(defun standard-instance-set (val instance location)
   (with-early-accessors (+standard-class-slots+
 			 +slot-definition-slots+)
     (ensure-up-to-date-instance instance)
-    (let* ((class (si:instance-class instance))
-	   (location (slot-definition-location slotd)))
-      (cond ((ext:fixnump location)
-	     ;; local slot
-	     (si:instance-set instance (truly-the fixnum location) val))
-	    ((consp location)
-	     ;; shared slot
-	     (setf (car location) val))
-	    (t
-	     (invalid-slot-definition instance slotd))))
+    (cond ((ext:fixnump location)
+	   ;; local slot
+	   (si:instance-set instance (truly-the fixnum location) val))
+	  ((consp location)
+	   ;; shared slot
+	   (setf (car location) val))
+	  (t
+	   (invalid-slot-location instance location)))
     val))
 
 (defun slot-value (self slot-name)
-  (let* ((class (class-of self)))
-    (if (or (eq (si:instance-class class) +the-standard-class+)
-	    (eq (si:instance-class class) +the-funcallable-standard-class+))
-	(with-early-accessors (+standard-class-slots+
-			       +slot-definition-slots+)
-	  (let ((slotd (gethash slot-name (slot-table class) nil)))
-	    (if slotd
-		(let ((value (standard-instance-get self slotd)))
+  (with-early-accessors (+standard-class-slots+
+			 +slot-definition-slots+)
+    (let* ((class (class-of self))
+	   (location-table (class-location-table class)))
+      (if location-table
+	  (let ((location (gethash slot-name location-table nil)))
+	    (if location
+		(let ((value (standard-instance-get self location)))
 		  (if (si:sl-boundp value)
 		      value
-		      (values (slot-unbound class self (slot-definition-name slotd)))))
-		(slot-missing class self slot-name 'SLOT-VALUE))))
-	(let ((slotd (find slot-name (class-slots class) :key #'slot-definition-name)))
-	  (if slotd
-	      (slot-value-using-class class self slotd)
-	      (values (slot-missing class self slot-name 'SLOT-VALUE)))))))
+		      (values (slot-unbound class self slot-name))))
+		(slot-missing class self slot-name 'SLOT-VALUE)))
+	  (let ((slotd (find slot-name (class-slots class) :key #'slot-definition-name)))
+	    (if slotd
+		(slot-value-using-class class self slotd)
+		(values (slot-missing class self slot-name 'SLOT-VALUE))))))))
 
 (defun slot-exists-p (self slot-name)
   (and (find-slot-definition (class-of self) slot-name)
        t))
 
 (defun slot-boundp (self slot-name)
-  (let* ((class (class-of self)))
-    (if (or (eq (si:instance-class class) +the-standard-class+)
-	    (eq (si:instance-class class) +the-funcallable-standard-class+))
-	(with-early-accessors (+standard-class-slots+)
-	  (let ((slotd (gethash slot-name (slot-table class) nil)))
+  (with-early-accessors (+standard-class-slots+
+			 +slot-definition-slots+)
+    (let* ((class (class-of self))
+	   (location-table (class-location-table class)))
+      (if location-table
+	  (let ((location (gethash slot-name location-table nil)))
+	    (if location
+		(si:sl-boundp (standard-instance-get self location))
+		(slot-missing class self slot-name 'SLOT-VALUE)))
+	  (let ((slotd (find slot-name (class-slots class) :key #'slot-definition-name)))
 	    (if slotd
-		(si::sl-boundp (standard-instance-get self slotd))
-		(values (slot-missing class self slot-name 'SLOT-BOUNDP)))))
-	(let ((slotd (find slot-name (class-slots class) :key #'slot-definition-name)))
-	  (if slotd
-	      (slot-boundp-using-class class self slotd)
-	      (values (slot-missing class self slot-name 'SLOT-BOUNDP)))))))
+		(slot-boundp-using-class class self slotd)
+		(values (slot-missing class self slot-name 'SLOT-BOUNDP))))))))
 
 (defun (setf slot-value) (value self slot-name)
-  (let* ((class (class-of self)))
-    (if (or (eq (si:instance-class class) +the-standard-class+)
-	    (eq (si:instance-class class) +the-funcallable-standard-class+))
-	(with-early-accessors (+standard-class-slots+)
-	  (let ((slotd (gethash slot-name (slot-table class) nil)))
+  (with-early-accessors (+standard-class-slots+
+			 +slot-definition-slots+)
+    (let* ((class (class-of self))
+	   (location-table (class-location-table class)))
+      (if location-table
+	  (let ((location (gethash slot-name location-table nil)))
+	    (if location
+		(standard-instance-set value self location)
+		(slot-missing class self slot-name 'SETF value)))
+	  (let ((slotd (find slot-name (class-slots class) :key #'slot-definition-name)))
 	    (if slotd
-		(standard-instance-set value self slotd)
-		(slot-missing class self slot-name 'SETF value))))
-	(let ((slotd (find slot-name (class-slots class) :key #'slot-definition-name)))
-	  (if slotd
-	      (setf (slot-value-using-class class self slotd) value)
-	      (slot-missing class self slot-name 'SETF value))))))
+		(setf (slot-value-using-class class self slotd) value)
+		(slot-missing class self slot-name 'SETF value)))))))
 
 ;;;
 ;;; 2) Overloadable methods on which the previous functions are based
 ;;;
 
-(defun invalid-slot-definition (instance slotd)
+(defun invalid-slot-location (instance location)
   (declare (si::c-local))
-  (error "Effective slot definition lacks a valid location.
-Class name: ~A
-Slot name: ~A"
-	 (type-of instance) (slot-definition-name slotd)))
+  (error "Invalid location ~A when accessing slot of class ~A"
+	 location (class-of location)))
