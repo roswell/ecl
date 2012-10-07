@@ -84,10 +84,12 @@
       (setf slot-table table))))
 
 (defun find-slot-definition (class slot-name)
-  (if (or (eq (si:instance-class class) +the-standard-class+)
-          (eq (si:instance-class class) +the-funcallable-standard-class+))
-      (gethash slot-name (slot-table class) nil)
-      (find slot-name (class-slots class) :key #'slot-definition-name)))
+  (with-slots ((slots slots) (slot-table slot-table))
+      class
+    (if (or (eq (si:instance-class class) +the-standard-class+)
+	    (eq (si:instance-class class) +the-funcallable-standard-class+))
+	(gethash slot-name slot-table nil)
+	(find slot-name slots :key #'slot-definition-name))))
 
 ;;;
 ;;; INSTANCE UPDATE PREVIOUS
