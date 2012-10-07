@@ -421,25 +421,6 @@ have disappeared."
 	     qualifiers specializers)))
   nil)
 
-
-;;; ----------------------------------------------------------------------
-;;;                                                             with-slots
-
-(defmacro with-slots (slot-entries instance-form &body body)
-  (let* ((temp (gensym))
-	 (accessors
-	  (do ((scan slot-entries (cdr scan))
-	       (res))
-	      ((null scan) (nreverse res))
-	      (if (symbolp (first scan))
-		  (push `(,(first scan) (slot-value ,temp ',(first scan))) res)
-		(push `(,(caar scan)
-			(slot-value ,temp ',(cadar scan))) res)))))
-    `(let ((,temp ,instance-form))
-       (symbol-macrolet ,accessors ,@body))))
-
-;(with-slots (x (y2 y)) inst (setq x y2))
-
 ;;; ----------------------------------------------------------------------
 ;;;                                                         with-accessors
 

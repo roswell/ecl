@@ -355,13 +355,6 @@ because it contains a reference to the undefined class~%  ~A"
     (finalize-unless-forward subclass))
   )
 
-(defun std-create-slots-table (class)
-  (let* ((all-slots (class-slots class))
-	 (table (make-hash-table :size (max 32 (length all-slots)))))
-    (dolist (slotd (class-slots class))
-      (setf (gethash (slot-definition-name slotd) table) slotd))
-    (setf (slot-table class) table)))
-
 (defmethod finalize-inheritance ((class std-class))
   (call-next-method)
   (std-create-slots-table class)
@@ -369,6 +362,10 @@ because it contains a reference to the undefined class~%  ~A"
 
 (defmethod compute-class-precedence-list ((class class))
   (compute-clos-class-precedence-list class (class-direct-superclasses class)))
+
+(eval-when (:compile-toplevel :execute)
+  (defmacro mapappend (fun &rest args)
+    `(reduce #'append (mapcar ,fun ,@args))))
 
 (defmethod compute-slots ((class class))
   ;; INV: for some classes ECL expects that the order of the inherited slots is

@@ -17,65 +17,6 @@
     (setf (slot-value class 'prototype) (allocate-instance class)))
   (slot-value class 'prototype))
 
-;;; ----------------------------------------------------------------------
-;;; SLOTS READING AND WRITING
-;;;
-;;;
-;;; 1) Functional interface
-;;;
-
-(defun find-slot-definition (class slot-name)
-  (declare (si::c-local))
-  (if (or (eq (si:instance-class class) +the-standard-class+)
-          (eq (si:instance-class class) +the-funcallable-standard-class+))
-      (gethash slot-name (slot-table class) nil)
-      (find slot-name (class-slots class) :key #'slot-definition-name)))
-
-(defun slot-value (self slot-name)
-  (let* ((class (class-of self)))
-    (if (or (eq (si:instance-class class) +the-standard-class+)
-	    (eq (si:instance-class class) +the-funcallable-standard-class+))
-	(with-early-accessors (+standard-class-slots+)
-	  (let ((slotd (gethash slot-name (slot-table class) nil)))
-	    (if slotd
-		(let ((value (standard-instance-get self slotd)))
-		  (if (sl:sl-boundp value)
-		      value
-		      (values (slot-unbound class self (slot-definition-name slotd)))))
-		(slot-missing class self slot-name 'SLOT-VALUE))))
-	(let ((slotd (find slot-name (class-slots class) :key #'slot-definition-name)))
-	  (if slotd
-	      (slot-value-using-class class self slotd)
-	      (values (slot-missing class self slot-name 'SLOT-VALUE)))))))
-
-(defun slot-boundp (self slot-name)
-  (let* ((class (class-of self)))
-    (if (or (eq (si:instance-class class) +the-standard-class+)
-	    (eq (si:instance-class class) +the-funcallable-standard-class+))
-	(with-early-accessors (+standard-class-slots+)
-	  (let ((slotd (gethash slot-name (slot-table class) nil)))
-	    (if slotd
-		(si::sl-boundp (standard-instance-get self slotd))
-		(values (slot-missing class self slot-name 'SLOT-BOUNDP)))))
-	(let ((slotd (find slot-name (class-slots class) :key #'slot-definition-name)))
-	  (if slotd
-	      (slot-boundp-using-class class self slotd)
-	      (values (slot-missing class self slot-name 'SLOT-BOUNDP)))))))
-
-(defun (setf slot-value) (value self slot-name)
-  (let* ((class (class-of self)))
-    (if (or (eq (si:instance-class class) +the-standard-class+)
-	    (eq (si:instance-class class) +the-funcallable-standard-class+))
-	(with-early-accessors (+standard-class-slots+)
-	  (let ((slotd (gethash slot-name (slot-table class) nil)))
-	    (if slotd
-		(standard-instance-set value self slotd)
-		(slot-missing class self slot-name 'SETF value))))
-	(let ((slotd (find slot-name (class-slots class) :key #'slot-definition-name)))
-	  (if slotd
-	      (setf (slot-value-using-class class self slotd) value)
-	      (slot-missing class self slot-name 'SETF value))))))
-
 (defun slot-makunbound (self slot-name)
   (let* ((class (class-of self))
 	 (slotd (find-slot-definition class slot-name)))
@@ -84,62 +25,16 @@
 	(slot-missing class self slot-name 'SLOT-MAKUNBOUND))
     self))
 
-(defun slot-exists-p (self slot-name)
-  (and (find-slot-definition (class-of self) slot-name)
-       t))
-
-;;;
-;;; 2) Overloadable methods on which the previous functions are based
-;;;
-
-(defun standard-instance-get (instance slotd)
-  (with-early-accessors (+standard-class-slots+)
-    (ensure-up-to-date-instance instance)
-    (let* ((class (si:instance-class instance))
-	   (location (slot-definition-location slotd)))
-      (cond ((ext:fixnump location)
-	     ;; local slot
-	     (si:instance-ref instance (truly-the fixnum location)))
-	    ((consp location)
-	     ;; shared slot
-	     (car location))
-	    (t
-	     (invalid-slot-definition instance slotd))))))
-
-(defun standard-instance-set (val instance slotd)
-  (with-early-accessors (+standard-class-slots+)
-    (ensure-up-to-date-instance instance)
-    (let* ((class (si:instance-class instance))
-	   (location (slot-definition-location slotd)))
-      (cond ((ext:fixnump location)
-	     ;; local slot
-	     (si:instance-set instance (truly-the fixnum location) val))
-	    ((consp location)
-	     ;; shared slot
-	     (setf (car location) val))
-	    (t
-	     (invalid-slot-definition instance slotd))))
-    val))
-
-(defun invalid-slot-definition (instance slotd)
-  (error "Effective slot definition lacks a valid location.
-Class name: ~A
-Slot name: ~A"
-	 (type-of instance) (slot-definition-name slotd)))
-
 (defmethod slot-value-using-class ((class class) self slotd)
-  (let ((value (standard-instance-get self slotd)))
-    (if (si:sl-boundp value)
-	value
-	(values (slot-unbound class self (slot-definition-name slotd))))))
+  (slot-value self (slot-definition-name slotd)))
 
 (defmethod slot-boundp-using-class ((class class) self slotd)
   (declare (ignore class))
-  (si::sl-boundp (standard-instance-get self slotd)))
+  (slot-boundp self (slot-definition-name slotd)))
 
 (defmethod (setf slot-value-using-class) (val (class class) self slotd)
   (declare (ignore class))
-  (standard-instance-set val self slotd))
+  (setf (slot-value self (slot-definition-name slotd)) val))
 
 (defmethod slot-makunbound-using-class ((class class) instance slotd)
   (declare (ignore class))
