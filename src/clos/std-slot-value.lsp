@@ -221,7 +221,7 @@
 	  (let ((location (gethash slot-name location-table nil)))
 	    (if location
 		(si:sl-boundp (standard-instance-get self location))
-		(slot-missing class self slot-name 'SLOT-VALUE)))
+		(values (slot-missing class self slot-name 'SLOT-BOUNDP))))
 	  (let ((slotd (find slot-name (class-slots class) :key #'slot-definition-name)))
 	    (if slotd
 		(slot-boundp-using-class class self slotd)
