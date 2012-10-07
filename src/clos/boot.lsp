@@ -31,16 +31,18 @@
 	    (,object (si::allocate-raw-instance nil %class
 						,(length slots))))
        (declare (type standard-object ,object))
-       ,@(loop for (name . slotd) in slots
-	    for initarg = (getf slotd :initarg)
-	    for initform = (getf slotd :initform)
-	    for initvalue = (getf key-value-pairs initarg)
-	    for index from 0
-	    do (cond ((and initarg (member initarg key-value-pairs))
-		      (setf initform (getf key-value-pairs initarg)))
-		     ((getf key-value-pairs name)
-		      (setf initform (getf key-value-pairs name))))
-	    collect `(si::instance-set ,object ,index ,initform))
+       ,@(flet ((initializerp (name list)
+		  (not (eq (getf list name 'wrong) 'wrong))))
+	       (loop for (name . slotd) in slots
+		  for initarg = (getf slotd :initarg)
+		  for initform = (getf slotd :initform)
+		  for initvalue = (getf key-value-pairs initarg)
+		  for index from 0
+		  do (cond ((and initarg (initializerp initarg key-value-pairs))
+			    (setf initform (getf key-value-pairs initarg)))
+			   ((initializerp name key-value-pairs)
+			    (setf initform (getf key-value-pairs name))))
+		  collect `(si::instance-set ,object ,index ,initform)))
        (when %class
 	 (si::instance-sig-set ,object))
        (with-early-accessors (,slots)
