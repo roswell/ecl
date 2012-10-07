@@ -226,7 +226,8 @@
 (eval-when (eval)
   (defconstant +class-hierarchy+
     `((standard-class
-       :metaclass nil) ; Special-cased below
+       :metaclass nil ; Special-cased in boot.lsp
+       :direct-slots #1=#.+standard-class-slots+)
       (t
        :index 0)
       (standard-object
@@ -250,7 +251,7 @@
        :direct-slots #.+class-slots+)
       (built-in-class
        :direct-superclasses (class)
-       :direct-slots #1=#.+standard-class-slots+)
+       :direct-slots #1#)
       (std-class
        :direct-superclasses (class)
        :direct-slots #1#)
