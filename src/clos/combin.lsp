@@ -201,11 +201,11 @@
   name)
 
 (defun make-method-combination (name compiler options)
-  (let ((o (si:allocate-raw-instance nil (find-class 'method-combination)
-				     #.(length +method-combination-slots+))))
-    (setf (method-combination-compiler o) compiler
-	  (method-combination-name o) name
-	  (method-combination-options o) options)
+  (with-early-make-instance +method-combination-slots+
+    (o (find-class 'method-combination)
+       :name name
+       :compiler compiler
+       :options options)
     o))
 
 (defun find-method-combination (gf method-combination-type-name method-combination-options)
