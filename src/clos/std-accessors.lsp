@@ -185,8 +185,8 @@
 
 (labels ((generate-accessors (class)
 	   (declare (optimize speed (safety 0)))
-	   (loop for index from 0
-	      for slotd in (slot-value class 'slots)
+	   (loop for slotd in (slot-value class 'slots)
+	      for index = (slot-definition-location slotd)
 	      do (loop for reader in (slot-definition-readers slotd)
 		    do (setf (fdefinition reader) (reader-closure index))
 		      #+(or)
