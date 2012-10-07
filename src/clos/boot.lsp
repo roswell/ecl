@@ -60,7 +60,8 @@
 		    (si:allocate-raw-instance nil the-metaclass
 					      #.(length +standard-class-slots+)))))
     (with-early-accessors (+standard-class-slots+)
-      (unless the-metaclass
+      (when (eq name 'standard-class)
+	(defconstant +the-standard-class+ class)
 	(si:instance-class-set class class))
       (setf (class-id                  class) name
 	    (class-direct-subclasses   class) nil
@@ -75,6 +76,7 @@
 	    (class-dependents          class) nil
 	    (class-valid-initargs      class) nil
 	    )
+      (add-slots class direct-slots)
       (let ((superclasses (loop for name in direct-superclasses
 			     for parent = (find-class name)
 			     do (push class (class-direct-subclasses parent))
@@ -84,7 +86,6 @@
 	      (compute-clos-class-precedence-list class superclasses)))
       (when index
 	(setf (aref +builtin-classes-pre-array+ index) class))
-      (add-slots class direct-slots)
       class)))
 
 (defun remove-accessors (slotds)
@@ -104,17 +105,18 @@
 	   (optimize speed (safety 0)))
   ;; It does not matter that we pass NIL instead of a class object,
   ;; because CANONICAL-SLOT-TO-DIRECT-SLOT will make simple slots.
-  (loop with all-slots = (canonical-slots slots)
-     with table = (make-hash-table :size (if all-slots 24 0))
-     for i from 0
-     for s in all-slots
-     for name = (slot-definition-name s)
-     do (setf (slot-definition-location s) i
-	      (gethash name table) s)
-     finally (setf (class-slots class) all-slots
-		   (class-size class) (length all-slots)
-		   (slot-table class) table
-		   (class-direct-slots class) (copy-list all-slots))))
+  (with-early-accessors (+standard-class-slots+)
+    (loop with all-slots = (canonical-slots slots)
+       with table = (make-hash-table :size (if all-slots 24 0))
+       for i from 0
+       for s in all-slots
+       for name = (slot-definition-name s)
+       do (setf (slot-definition-location s) i
+		(gethash name table) s)
+       finally (setf (class-slots class) all-slots
+		     (class-size class) (length all-slots)
+		     (slot-table class) table
+		     (class-direct-slots class) (copy-list all-slots)))))
 
 (defun reader-closure (index)
   (declare (si::c-local))
@@ -124,7 +126,7 @@
   (declare (si::c-local))
   (lambda (value object) (si::instance-set object index value)))
 
-(defun generate-accessors (slotd-definitions)
+(defun generate-accessors (class slotd-definitions)
   (declare (si::c-local)
 	   (optimize speed (safety 0)))
   (loop for index from 0
@@ -135,13 +137,22 @@
 	   while key
 	   do (case key
 		(:reader
-		 (setf (fdefinition value) (reader-closure index)))
+		 (setf (fdefinition value) (reader-closure index))
+		 #+(or)
+		 (install-method value nil (list class) '(self)
+				 (reader-closure index) t))
 		#+(or)
 		(:writer ;; not used above
 		 (setf (fdefinition value) (writer-closure index)))
 		(:accessor
 		 (setf (fdefinition value) (reader-closure index)
-		       (fdefinition `(setf ,value)) (writer-closure index)))))))
+		       (fdefinition `(setf ,value)) (writer-closure index))
+		 #+(or)
+		 (install-method value nil (list class) '(self)
+				 (reader-closure index) t))
+		 #+(or)
+		 (install-method value nil (list (find-class 't) class) '(value self)
+				 (writer-closure index) t)))))
 
 ;; 1) Create the classes
 ;;
@@ -149,11 +160,16 @@
 ;; itself as metaclass. MAKE-EMPTY-STANDARD-CLASS takes care of that.
 ;;
 (let* ((class-hierarchy '#.+class-hierarchy+))
-  (loop for c in class-hierarchy
-     do (generate-accessors (getf (rest c) :direct-slots)))
   (let ((all-classes (loop for c in class-hierarchy
 			for class = (apply #'make-empty-standard-class c)
 			collect class)))
+    (defconstant +the-t-class+ (find-class 't nil))
+    (defconstant +the-class+ (find-class 'class nil))
+    (defconstant +the-std-class+ (find-class 'std-class nil))
+    (defconstant +the-funcallable-standard-class+
+      (find-class 'funcallable-standard-class nil))
+    (loop for c in class-hierarchy
+       do (generate-accessors (find-class (first c)) (getf (rest c) :direct-slots)))
     ;;
     ;; 2) Class T had its metaclass wrong. Fix it.
     ;;
@@ -167,10 +183,3 @@
     ;;
     (setf (class-sealedp (find-class 'method-combination)) t)
     ))
-
-(defconstant +the-t-class+ (find-class 't nil))
-(defconstant +the-class+ (find-class 'class nil))
-(defconstant +the-std-class+ (find-class 'std-class nil))
-(defconstant +the-standard-class+ (find-class 'standard-class nil))
-(defconstant +the-funcallable-standard-class+
-  (find-class 'funcallable-standard-class nil))
