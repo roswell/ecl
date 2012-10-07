@@ -16,40 +16,6 @@
   (make-array (1+ #.(length +builtin-classes-list+))))
 
 ;;; ----------------------------------------------------------------------
-;;; Early accessors and class construction
-;;;
-;;;
-;;; The following macro is also used at bootstap for instantiating
-;;; a class based only on the s-form description.
-;;;
-(eval-when (:compile-toplevel :execute)
-  (defmacro with-early-make-instance (slots (object class &rest key-value-pairs)
-				      &rest body)
-    (when (symbolp slots)
-      (setf slots (symbol-value slots)))
-    `(let* ((%class ,class)
-	    (,object (si::allocate-raw-instance nil %class
-						,(length slots))))
-       (declare (type standard-object ,object))
-       ,@(flet ((initializerp (name list)
-		  (not (eq (getf list name 'wrong) 'wrong))))
-	       (loop for (name . slotd) in slots
-		  for initarg = (getf slotd :initarg)
-		  for initform = (getf slotd :initform (si::unbound))
-		  for initvalue = (getf key-value-pairs initarg)
-		  for index from 0
-		  do (cond ((and initarg (initializerp initarg key-value-pairs))
-			    (setf initform (getf key-value-pairs initarg)))
-			   ((initializerp name key-value-pairs)
-			    (setf initform (getf key-value-pairs name))))
-		  when (si:sl-boundp initform)
-		  collect `(si::instance-set ,object ,index ,initform)))
-       (when %class
-	 (si::instance-sig-set ,object))
-       (with-early-accessors (,slots)
-	 ,@body))))
-
-;;; ----------------------------------------------------------------------
 ;;; Building the classes T, CLASS, STANDARD-OBJECT and STANDARD-CLASS.
 ;;;
 ;;; We cannot use the functions CREATE-STANDARD-CLASS and others because SLOTS,
