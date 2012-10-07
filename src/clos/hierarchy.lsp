@@ -42,9 +42,9 @@
 
 (eval-when (:compile-toplevel :execute)
   (defparameter +method-combination-slots+
-    `((name :initform :name :accessor method-combination-name)
-      (compiler :initform :compiler :accessor method-combination-compiler)
-      (options :initform :options :accessor method-combination-options))))
+    `((name :initarg :name :accessor method-combination-name)
+      (compiler :initarg :compiler :accessor method-combination-compiler)
+      (options :initarg :options :accessor method-combination-options))))
 
 ;;; ----------------------------------------------------------------------
 ;;; Class CLASS
