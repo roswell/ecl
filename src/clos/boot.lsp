@@ -35,13 +35,14 @@
 		  (not (eq (getf list name 'wrong) 'wrong))))
 	       (loop for (name . slotd) in slots
 		  for initarg = (getf slotd :initarg)
-		  for initform = (getf slotd :initform)
+		  for initform = (getf slotd :initform (si::unbound))
 		  for initvalue = (getf key-value-pairs initarg)
 		  for index from 0
 		  do (cond ((and initarg (initializerp initarg key-value-pairs))
 			    (setf initform (getf key-value-pairs initarg)))
 			   ((initializerp name key-value-pairs)
 			    (setf initform (getf key-value-pairs name))))
+		  when (si:sl-boundp initform)
 		  collect `(si::instance-set ,object ,index ,initform)))
        (when %class
 	 (si::instance-sig-set ,object))
