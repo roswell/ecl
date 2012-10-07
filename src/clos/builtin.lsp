@@ -72,16 +72,6 @@
 ;;; STRUCTURES
 ;;;
 
-(defclass structure-class (class)
-  (slot-descriptions
-   initial-offset
-   defstruct-form
-   constructors
-   documentation
-   copier
-   predicate
-   print-function))
-
 ;;; structure-classes cannot be instantiated
 (defmethod make-instance ((class structure-class) &rest initargs)
   (declare (ignore initargs))
@@ -92,14 +82,6 @@
   (dolist (slot (class-slots class))
     (unless (eq :INSTANCE (slot-definition-allocation slot))
       (error "The structure class ~S can't have shared slots" (class-name class)))))
-
-;;; ----------------------------------------------------------------------
-;;; Structure-object
-;;;
-;;; Structure-object has no slots and inherits only from t:
-
-(defclass structure-object (t) ()
-  (:metaclass structure-class))
 
 (defmethod make-load-form ((object structure-object) &optional environment)
   (make-load-form-saving-slots object :key environment))

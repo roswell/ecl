@@ -86,6 +86,21 @@
 	      (forward)))))
 
 ;;; ----------------------------------------------------------------------
+;;; STRUCTURE-CLASS
+
+(eval-when (:compile-toplevel :execute)
+  (defparameter +structure-class-slots+
+    (append +class-slots+
+	    '((slot-descriptions)
+	      (initial-offset)
+	      (defstruct-form)
+	      (constructors)
+	      (documentation)
+	      (copier)
+	      (predicate)
+	      (print-function)))))
+
+;;; ----------------------------------------------------------------------
 ;;; STANDARD-GENERIC-FUNCTION
 
 (eval-when (:compile-toplevel :execute)
@@ -290,5 +305,11 @@
       (standard-writer-method
        :direct-superclasses (standard-accessor-method)
        :direct-slots #2#)
+      (structure-class
+       :direct-superclasses (class)
+       :direct-slots #.+structure-class-slots+)
+      (structure-object
+       :metaclass structure-class
+       :direct-superclasses (t))
       )))
 
