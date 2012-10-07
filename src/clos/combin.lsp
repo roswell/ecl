@@ -129,43 +129,44 @@
 	(funcall (first primary) .combined-method-args. (rest primary)))))
 
 (defun standard-compute-effective-method (gf methods)
-  (let* ((before ())
-	 (primary ())
-	 (after ())
-	 (around ()))
-    (dolist (m methods)
-      (let* ((qualifiers (method-qualifiers m))
-	     (f (method-function m)))
-	(cond ((null qualifiers) (push f primary))
-	      ((rest qualifiers) (error-qualifier m qualifiers))
-	      ((eq (setq qualifiers (first qualifiers)) :BEFORE)
-	       (push f before))
-	      ((eq qualifiers :AFTER) (push f after))
-	      ((eq qualifiers :AROUND) (push f around))
-	      (t (error-qualifier m qualifiers)))))
-    ;; When there are no primary methods, an error is to be signaled,
-    ;; and we need not care about :AROUND, :AFTER or :BEFORE methods.
-    (when (null primary)
-      (return-from standard-compute-effective-method
-	#'(lambda (&rest args)
-	    (apply 'no-primary-method gf args))))
-    ;; PRIMARY, BEFORE and AROUND are reversed because they have to
-    ;; be on most-specific-first order (ANSI 7.6.6.2), while AFTER
-    ;; may remain as it is because it is least-specific-order.
-    (setf primary (nreverse primary)
-	  before (nreverse before))
-    (if around
-	(let ((main (if (or before after)
-			(list
-			 (standard-main-effective-method before primary after))
-			primary)))
-	  (setf around (nreverse around))
-	  (combine-method-functions (first around)
-				    (nconc (rest around) main)))
-	(if (or before after)
-	    (standard-main-effective-method before primary after)
-	    (combine-method-functions (first primary) (rest primary))))
-    ))
+  (with-early-accessors (+standard-method-slots+)
+    (let* ((before ())
+	   (primary ())
+	   (after ())
+	   (around ()))
+      (dolist (m methods)
+	(let* ((qualifiers (method-qualifiers m))
+	       (f (method-function m)))
+	  (cond ((null qualifiers) (push f primary))
+		((rest qualifiers) (error-qualifier m qualifiers))
+		((eq (setq qualifiers (first qualifiers)) :BEFORE)
+		 (push f before))
+		((eq qualifiers :AFTER) (push f after))
+		((eq qualifiers :AROUND) (push f around))
+		(t (error-qualifier m qualifiers)))))
+      ;; When there are no primary methods, an error is to be signaled,
+      ;; and we need not care about :AROUND, :AFTER or :BEFORE methods.
+      (when (null primary)
+	(return-from standard-compute-effective-method
+	  #'(lambda (&rest args)
+	      (apply 'no-primary-method gf args))))
+      ;; PRIMARY, BEFORE and AROUND are reversed because they have to
+      ;; be on most-specific-first order (ANSI 7.6.6.2), while AFTER
+      ;; may remain as it is because it is least-specific-order.
+      (setf primary (nreverse primary)
+	    before (nreverse before))
+      (if around
+	  (let ((main (if (or before after)
+			  (list
+			   (standard-main-effective-method before primary after))
+			  primary)))
+	    (setf around (nreverse around))
+	    (combine-method-functions (first around)
+				      (nconc (rest around) main)))
+	  (if (or before after)
+	      (standard-main-effective-method before primary after)
+	      (combine-method-functions (first primary) (rest primary))))
+      )))
 
 ;; ----------------------------------------------------------------------
 ;; DEFINE-METHOD-COMBINATION
@@ -334,11 +335,12 @@
   (declare (type method-combination method-combination)
 	   (type generic-function gf)
 	   (optimize speed (safety 0)))
-  (let* ((compiler (method-combination-compiler method-combination))
-	 (options (method-combination-options method-combination)))
-    (if options
-	(apply compiler gf applicable-methods options)
-	(funcall compiler gf applicable-methods))))
+  (with-early-accessors (+method-combination-slots+)
+    (let* ((compiler (method-combination-compiler method-combination))
+	   (options (method-combination-options method-combination)))
+      (if options
+	  (apply compiler gf applicable-methods options)
+	  (funcall compiler gf applicable-methods)))))
 
 (defun compute-effective-method-function (gf method-combination applicable-methods)
   ;; Cannot be inlined because it will be a method

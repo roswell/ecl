@@ -111,9 +111,9 @@
   ;; be (:allow-other-keys t), which disables the checking of the arguments.
   ;; (Paul Dietz's ANSI test suite, test CLASS-24.4)
   (setf initargs (add-default-initargs class initargs))
-  (let ((keywords (class-valid-initargs class)))
-    (when (eq keywords (si::unbound))
-      (setf keywords (precompute-valid-initarg-keywords class)))
+  (let ((keywords (if (slot-boundp class 'valid-initargs)
+		      (class-valid-initargs class)
+		      (precompute-valid-initarg-keywords class))))
     (check-initargs class initargs nil (class-slots class) keywords))
   (let ((instance (apply #'allocate-instance class initargs)))
     (apply #'initialize-instance instance initargs)
@@ -304,7 +304,8 @@ because it contains a reference to the undefined class~%  ~A"
     ;; their locations. This may imply adding _new_ direct slots.
     ;;
     (when (class-sealedp class)
-      (let* ((free-slots (delete-duplicates (mapcar #'slot-definition-name (class-slots class)))))
+      (let* ((free-slots (delete-duplicates (mapcar #'slot-definition-name (class-slots class))))
+	     (all-slots (class-slots class)))
 	;;
 	;; We first search all slots that belonged to unsealed classes and which
 	;; therefore have no fixed position.
@@ -318,9 +319,10 @@ because it contains a reference to the undefined class~%  ~A"
 	;; the class direct slots.
 	;;
 	(loop for slotd in (class-direct-slots class)
-	   do (let ((name (slot-definition-name slotd)))
+	   do (let* ((name (slot-definition-name slotd))
+		     (other-slotd (find name all-slots :key #'slot-definition-name)))
 		(setf (slot-definition-location slotd)
-		      (slot-definition-location (find-slot-definition class name))
+		      (slot-definition-location other-slotd)
 		      free-slots (delete name free-slots))))
 	;;
 	;; And finally we add one direct slot for each inherited slot that did
@@ -328,7 +330,7 @@ because it contains a reference to the undefined class~%  ~A"
 	;;
 	(loop for name in free-slots
 	   with direct-slots = (class-direct-slots class)
-	   do (let* ((effective-slotd (find-slot-definition class name))
+	   do (let* ((effective-slotd (find name all-slots :key #'slot-definition-name))
 		     (def (loop for (name . rest) in +slot-definition-slots+
 			     nconc (list (getf rest :initarg)
 					 (funcall (getf rest :accessor) effective-slotd)))))
@@ -710,9 +712,9 @@ because it contains a reference to the undefined class~%  ~A"
 				:specializers `(,(find-class t) ,standard-class)
 				:slot-definition slotd))
 	     (writer-class (if (boundp '*early-methods*)
-			       'standard-reader-method
-			     (apply #'writer-method-class standard-class slotd
-				    writer-args))))
+			       'standard-writer-method
+			       (apply #'writer-method-class standard-class slotd
+				      writer-args))))
 	(dolist (fname (slot-definition-readers slotd))
 	  (safe-add-method fname
 			   (make-method reader-class nil `(,standard-class) '(self)

@@ -45,9 +45,7 @@
     (map-into direct-slots #'identity new-direct-slots)
     (map-into effective-slots #'identity new-effective-slots)
     (when (typep class 'std-class)
-      (std-create-slots-table class)
-      )
-    (std-class-generate-accessors class))
+      (std-create-slots-table class)))
   (mapc #'convert-one-class (class-direct-subclasses class)))
 
 ;;;
@@ -240,6 +238,13 @@ their lambda lists ~A and ~A are not congruent."
 				     (method standard-method)))
 (function-to-method 'find-method '((gf standard-generic-function)
 				   qualifiers specializers &optional error))
+
+(labels ((create-accessors (class)
+	   (when (typep class 'standard-class)
+	     (std-class-generate-accessors class))
+	   (loop for i in (class-direct-subclasses class)
+	      do (create-accessors i))))
+  (create-accessors (find-class 't)))
 
 ;;; COMPUTE-APPLICABLE-METHODS is used by the core in various places,
 ;;; including instance initialization. This means we cannot just redefine it.

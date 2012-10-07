@@ -39,7 +39,7 @@
 (defun generic-function-method-class (generic-function)
   (if *clos-booted*
       (slot-value generic-function 'method-class)
-      'standard-method))
+      (find-class 'standard-method)))
 
 (defmacro defmethod (&whole whole name &rest args &environment env)
   (let* ((*print-length* 3)
@@ -344,8 +344,12 @@ have disappeared."
 
 (defun make-method (method-class qualifiers specializers lambda-list fun options)
   (declare (ignore options))
-  (with-early-make-instance +standard-method-slots+
-    (method method-class
+  (with-early-make-instance
+      ;; We choose the largest list of slots
+      +standard-accessor-method-slots+
+    (method (if (si::instancep method-class)
+		method-class
+		(find-class method-class))
 	    :generic-function nil
 	    :lambda-list lambda-list
 	    :function fun
@@ -360,7 +364,7 @@ have disappeared."
 
 ;;; early version used during bootstrap
 (defun add-method (gf method)
-  (with-early-accessors (+standard-method-slots+ +standard-generic-function-slots+)
+  (with-early-accessors (+standard-method-slots+ +standard-generic-function-slots+ +standard-class-slots+)
     (let* ((name (generic-function-name gf))
 	   (method-entry (assoc name *early-methods*)))
       (unless method-entry

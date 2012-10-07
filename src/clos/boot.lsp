@@ -371,7 +371,7 @@
 
 (defun canonical-slots (slots)
   (declare (optimize speed (safety 0)))
-  (loop for s in (parse-slots (remove-accessors slots))
+  (loop for s in (parse-slots slots)
      collect (canonical-slot-to-direct-slot nil s)))
 
 (defun add-slots (class slots)
