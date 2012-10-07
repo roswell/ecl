@@ -17,39 +17,27 @@
 ;;; ----------------------------------------------------------------------
 ;;; SLOT descriptors
 ;;;
-;;; We need slot definition objects both during bootstrap and also at
-;;; runtime. Here we set up a dual definition: if the class
-;;; SLOT-DEFINITION has been defined, we use it; otherwise we work
-;;; with slot definitions as by the effective structure
-;;;
-;;;	(defstruct (slot-definition (:type list))
-;;;	  name initform initfunction type allocation initargs
-;;;	   readers writers documentation)
-;;;
-;;; However, this structure is not defined explicitely, to save
-;;; memory. We rather create a constructor
-;;; CANONICAL-SLOT-TO-DIRECT-SLOT and several accessors (closures)
-;;; down there.
 
-(defconstant +slot-definition-slots+
-  '((name :initarg :name :initform nil :accessor slot-definition-name)
-    (initform :initarg :initform :initform #.+initform-unsupplied+ :accessor slot-definition-initform)
-    (initfunction :initarg :initfunction :initform nil :accessor slot-definition-initfunction)
-    (declared-type :initarg :type :initform t :accessor slot-definition-type)
-    (allocation :initarg :allocation :initform :instance :accessor slot-definition-allocation)
-    (initargs :initarg :initargs :initform nil :accessor slot-definition-initargs)
-    (readers :initarg :readers :initform nil :accessor slot-definition-readers)
-    (writers :initarg :writers :initform nil :accessor slot-definition-writers)
-    (docstring :initarg :documentation :initform nil :accessor slot-definition-documentation)
-    (location :initarg :location :initform nil :accessor slot-definition-location)
-    ))
-
-(defun make-simple-slotd (&key name (initform +initform-unsupplied+) initfunction
+(defun make-simple-slotd (class
+			  &key name (initform +initform-unsupplied+) initfunction
 			  (type 'T) (allocation :instance)
 			  initargs readers writers documentation location)
-  (when (listp initfunction)
-    (setf initfunction (eval initfunction)))
-  (list name initform initfunction type allocation initargs readers writers documentation location))
+  (when (and (eq allocation :class)
+	     (functionp initfunction))
+    (setf initfunction (constantly (funcall initfunction))))
+  (with-early-make-instance +slot-definition-slots+
+    (slotd class
+	   :name name
+	   :initform initform
+	   :initfunction (if (listp initfunction) (eval initfunction) initfunction)
+	   :type type
+	   :allocation allocation
+	   :initargs initargs
+	   :readers readers
+	   :writers writers
+	   :documentation documentation
+	   :location location)
+    slotd))
 
 (defun freeze-class-slot-initfunction (slotd)
   (when (eq (getf slotd :allocation) :class)
@@ -64,21 +52,31 @@
   (setf slotd (freeze-class-slot-initfunction slotd))
   (if (find-class 'slot-definition nil)
       (apply #'make-instance
-	     (apply #'direct-slot-definition-class class slotd)
+	     (apply #'direct-slot-definition-class class
+		    (freeze-class-slot-initfunction slotd))
 	     slotd)
-      (apply #'make-simple-slotd slotd)))
+      (apply #'make-simple-slotd class slotd)))
 
-(let ((accessors (loop for i in +slot-definition-slots+
-                    collect (first (last i)))))
-  (dotimes (i (length accessors))
-    (let ((name (first (nth i +slot-definition-slots+)))
-	  (position i)
-	  (f (nth i accessors)))
-      (setf (fdefinition f)
-	    #'(lambda (x)
-		(if (consp x) (nth position x) (si:instance-ref x position))))
-      (setf (fdefinition `(setf ,f))
-	    #'(lambda (v x) (if (consp x) (setf (nth position x) v) (si:instance-set x position v)))))))
+(defun direct-slot-to-canonical-slot (slotd)
+  (list . #.(loop for (name . rest) in +slot-definition-slots+
+	       collect (getf rest :initarg)
+	       collect `(,(getf rest :accessor) slotd))))
+
+(loop with all-slots = '#.+slot-definition-slots+
+   for slotd in all-slots
+   for i from 0
+   for fname = (getf (rest slotd) :accessor)
+   do (let ((name (first slotd)))
+	(setf (fdefinition fname)
+	      #'(lambda (x)
+		  (if (consp x)
+		      (nth position x)
+		      (slot-value x name)))
+	      (fdefinition `(setf ,fname))
+	      #'(lambda (v x)
+		  (if (consp x)
+		      (setf (nth position x) v)
+		      (setf (slot-value x name) v))))))
 
 ;;; ----------------------------------------------------------------------
 ;;;

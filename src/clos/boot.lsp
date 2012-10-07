@@ -15,38 +15,6 @@
 (defconstant +builtin-classes-pre-array+
   (make-array (1+ #.(length +builtin-classes-list+))))
 
-
-;;;
-;;; The following macro is also used at bootstap for instantiating
-;;; a class based only on the s-form description.
-;;;
-(eval-when (:compile-toplevel :execute)
-  (defmacro with-early-make-instance (slots (object class &rest key-value-pairs)
-				      &rest body)
-    (when (symbolp slots)
-      (setf slots (symbol-value slots)))
-    `(let* ((%class ,class)
-	    (,object (si::allocate-raw-instance nil %class
-						,(length slots))))
-       (declare (type standard-object ,object))
-       ,@(flet ((initializerp (name list)
-		  (not (eq (getf list name 'wrong) 'wrong))))
-	       (loop for (name . slotd) in slots
-		  for initarg = (getf slotd :initarg)
-		  for initform = (getf slotd :initform (si::unbound))
-		  for initvalue = (getf key-value-pairs initarg)
-		  for index from 0
-		  do (cond ((and initarg (initializerp initarg key-value-pairs))
-			    (setf initform (getf key-value-pairs initarg)))
-			   ((initializerp name key-value-pairs)
-			    (setf initform (getf key-value-pairs name))))
-		  when (si:sl-boundp initform)
-		  collect `(si::instance-set ,object ,index ,initform)))
-       (when %class
-	 (si::instance-sig-set ,object))
-       (with-early-accessors (,slots)
-	 ,@body))))
-
 ;;; ----------------------------------------------------------------------
 ;;; Building the classes T, CLASS, STANDARD-OBJECT and STANDARD-CLASS.
 ;;;
@@ -96,28 +64,31 @@
      do (remf (cdr j) :accessor)
      collect j))
 
-(defun canonical-slots (slots)
-  (declare (optimize speed (safety 0)))
-  (loop for s in (parse-slots slots)
-     collect (canonical-slot-to-direct-slot nil s)))
-
 (defun add-slots (class slots)
   (declare (si::c-local)
 	   (optimize speed (safety 0)))
   ;; It does not matter that we pass NIL instead of a class object,
   ;; because CANONICAL-SLOT-TO-DIRECT-SLOT will make simple slots.
-  (with-early-accessors (+standard-class-slots+)
-    (loop with all-slots = (canonical-slots slots)
-       with table = (make-hash-table :size (if all-slots 24 0))
-       for i from 0
-       for s in all-slots
-       for name = (slot-definition-name s)
-       do (setf (slot-definition-location s) i
-		(gethash name table) s)
-       finally (setf (class-slots class) all-slots
-		     (class-size class) (length all-slots)
-		     (slot-table class) table
-		     (class-direct-slots class) (copy-list all-slots)))))
+  (with-early-accessors (+standard-class-slots+
+			 +slot-definition-slots+)
+    (let* ((table (make-hash-table :size (if slots 24 0)))
+	   (slots (parse-slots slots))
+	   (direct-slots (loop for slotd in slots
+			    collect (apply #'make-simple-slotd
+				     (find-class 'standard-direct-slot-definition)
+				     slotd)))
+	   (effective-slots (loop for i from 0
+			       for slotd in slots
+			       for s = (apply #'make-simple-slotd
+					(find-class 'standard-effective-slot-definition)
+					slotd)
+			       do (setf (slot-definition-location s) i
+					(gethash (getf slotd :name) table) s)
+			       collect s)))
+      (setf (class-slots class) effective-slots
+	    (class-direct-slots class) direct-slots
+	    (class-size class) (length slots)
+	    (slot-table class) table))))
 
 ;; 1) Create the classes
 ;;

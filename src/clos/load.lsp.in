@@ -2,9 +2,9 @@
 
 (defvar +clos-module-files+
 '("src:clos;package.lsp"
-  "src:clos;slot.lsp"
   "src:clos;cpl.lsp"
   "src:clos;std-slot-value.lsp"
+  "src:clos;slot.lsp"
   "src:clos;boot.lsp"
   "src:clos;kernel.lsp"
   "src:clos;method.lsp"

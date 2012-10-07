@@ -71,6 +71,37 @@
        ,@body)))
 
 ;;;
+;;; The following macro is also used at bootstap for instantiating
+;;; a class based only on the s-form description.
+;;;
+(eval-when (:compile-toplevel :execute)
+  (defmacro with-early-make-instance (slots (object class &rest key-value-pairs)
+				      &rest body)
+    (when (symbolp slots)
+      (setf slots (symbol-value slots)))
+    `(let* ((%class ,class)
+	    (,object (si::allocate-raw-instance nil %class
+						,(length slots))))
+       (declare (type standard-object ,object))
+       ,@(flet ((initializerp (name list)
+		  (not (eq (getf list name 'wrong) 'wrong))))
+	       (loop for (name . slotd) in slots
+		  for initarg = (getf slotd :initarg)
+		  for initform = (getf slotd :initform (si::unbound))
+		  for initvalue = (getf key-value-pairs initarg)
+		  for index from 0
+		  do (cond ((and initarg (initializerp initarg key-value-pairs))
+			    (setf initform (getf key-value-pairs initarg)))
+			   ((initializerp name key-value-pairs)
+			    (setf initform (getf key-value-pairs name))))
+		  when (si:sl-boundp initform)
+		  collect `(si::instance-set ,object ,index ,initform)))
+       (when %class
+	 (si::instance-sig-set ,object))
+       (with-early-accessors (,slots)
+	 ,@body))))
+
+;;;
 ;;; ECL classes store slots in a hash table for faster access. The
 ;;; following functions create the cache and allow us to locate the
 ;;; slots rapidly.
@@ -109,6 +140,10 @@
 	   (unless (eq s (class-slots (si::instance-class i)))
 	     (update-instance i)))))))
 
+(defun update-instance (x)
+  (si::instance-sig-set x))
+(declaim (notinline update-instance))
+
 ;;;
 ;;; STANDARD-CLASS INTERFACE
 ;;;
@@ -116,7 +151,8 @@
 ;;;
 
 (defun standard-instance-get (instance slotd)
-  (with-early-accessors (+standard-class-slots+)
+  (with-early-accessors (+standard-class-slots+
+			 +slot-definition-slots+)
     (ensure-up-to-date-instance instance)
     (let* ((class (si:instance-class instance))
 	   (location (slot-definition-location slotd)))
@@ -130,7 +166,8 @@
 	     (invalid-slot-definition instance slotd))))))
 
 (defun standard-instance-set (val instance slotd)
-  (with-early-accessors (+standard-class-slots+)
+  (with-early-accessors (+standard-class-slots+
+			 +slot-definition-slots+)
     (ensure-up-to-date-instance instance)
     (let* ((class (si:instance-class instance))
 	   (location (slot-definition-location slotd)))
@@ -148,7 +185,8 @@
   (let* ((class (class-of self)))
     (if (or (eq (si:instance-class class) +the-standard-class+)
 	    (eq (si:instance-class class) +the-funcallable-standard-class+))
-	(with-early-accessors (+standard-class-slots+)
+	(with-early-accessors (+standard-class-slots+
+			       +slot-definition-slots+)
 	  (let ((slotd (gethash slot-name (slot-table class) nil)))
 	    (if slotd
 		(let ((value (standard-instance-get self slotd)))

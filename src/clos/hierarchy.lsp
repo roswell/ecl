@@ -153,6 +153,24 @@
 		    :accessor accessor-method-slot-definition)))))
 
 ;;; ----------------------------------------------------------------------
+;;; SLOT-DEFINITION
+;;;
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defconstant +slot-definition-slots+
+    '((name :initarg :name :initform nil :accessor slot-definition-name)
+      (initform :initarg :initform :initform +initform-unsupplied+ :accessor slot-definition-initform)
+      (initfunction :initarg :initfunction :initform nil :accessor slot-definition-initfunction)
+      (declared-type :initarg :type :initform t :accessor slot-definition-type)
+      (allocation :initarg :allocation :initform :instance :accessor slot-definition-allocation)
+      (initargs :initarg :initargs :initform nil :accessor slot-definition-initargs)
+      (readers :initarg :readers :initform nil :accessor slot-definition-readers)
+      (writers :initarg :writers :initform nil :accessor slot-definition-writers)
+      (docstring :initarg :documentation :initform nil :accessor slot-definition-documentation)
+      (location :initarg :location :initform nil :accessor slot-definition-location)
+      )))
+
+;;; ----------------------------------------------------------------------
 (eval-when (:compile-toplevel :execute)
   ;;
   ;; All changes to this are connected to the changes in 
@@ -240,15 +258,40 @@
 ;;;
 (eval-when (eval)
   (defconstant +class-hierarchy+
-    `((standard-class
+    `((standard-class)
+      (standard-effective-slot-definition)
+      (standard-direct-slot-definition)
+      (standard-class
        :metaclass nil ; Special-cased in boot.lsp
-       :direct-slots #1=#.+standard-class-slots+)
+       :direct-slots #.+standard-class-slots+)
+      (standard-direct-slot-definition
+       :direct-slots #3=#.+slot-definition-slots+)
+      (standard-effective-slot-definition
+       :direct-slots #3#)
       (t
        :index 0)
       (standard-object
        :direct-superclasses (t))
       (metaobject
        :direct-superclasses (standard-object))
+      (slot-definition
+       :direct-superclasses (metaobject)
+       :direct-slots #3#)
+      (standard-slot-definition
+       :direct-superclasses (slot-definition)
+       :direct-slots #3#)
+      (direct-slot-definition
+       :direct-superclasses (slot-definition)
+       :direct-slots #3#)
+      (effective-slot-definition
+       :direct-superclasses (slot-definition)
+       :direct-slots #3#)
+      (standard-direct-slot-definition
+       :direct-superclasses (standard-slot-definition direct-slot-definition)
+       :direct-slots #3#)
+      (standard-effective-slot-definition
+       :direct-superclasses (standard-slot-definition effective-slot-definition)
+       :direct-slots #3#)
       (method-combination
        :direct-superclasses (metaobject)
        :direct-slots #.+method-combination-slots+)
@@ -266,7 +309,7 @@
        :direct-slots #.+class-slots+)
       (built-in-class
        :direct-superclasses (class)
-       :direct-slots #1#)
+       :direct-slots #1=#.+standard-class-slots+)
       (std-class
        :direct-superclasses (class)
        :direct-slots #1#)

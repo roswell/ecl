@@ -27,45 +27,6 @@
 (defclass standard-effective-slot-definition (standard-slot-definition direct-slot-definition))
 |#
 
-(defun convert-one-class (class)
-  (let* ((direct-slots (class-direct-slots class))
-	 (effective-slots (class-slots class))
-	 (new-direct-slots
-	  (loop for x in direct-slots
-		collect (if (consp x)
-			    (apply #'make-instance 'standard-direct-slot-definition
-				   (slot-definition-to-plist x))
-			    x)))
-	 (new-effective-slots
-	  (loop for x in effective-slots
-		collect (if (consp x)
-			    (apply #'make-instance 'standard-effective-slot-definition
-				   (slot-definition-to-plist x))
-			    x))))
-    (map-into direct-slots #'identity new-direct-slots)
-    (map-into effective-slots #'identity new-effective-slots)
-    (when (typep class 'std-class)
-      (std-create-slots-table class)))
-  (mapc #'convert-one-class (class-direct-subclasses class)))
-
-;;;
-;;; We cannot redefine the class for slot definitions because this
-;;; causes an infinite loop. Hence, we avoid evaluating the following
-;;; forms at compile time.
-;;;
-(eval-when (:load-toplevel :execute)
-  (eval
-   `(progn
-     (defclass slot-definition (metaobject)
-       ,(mapcar #'(lambda (x) (butlast x 2)) +slot-definition-slots+))
-     (defclass standard-slot-definition (slot-definition) ())
-     (defclass direct-slot-definition (slot-definition) ())
-     (defclass effective-slot-definition (slot-definition) ())
-     (defclass standard-direct-slot-definition (standard-slot-definition direct-slot-definition) ())
-     (defclass standard-effective-slot-definition (standard-slot-definition effective-slot-definition) ())))
-  (make-instances-obsolete (find-class 't))
-  (convert-one-class (find-class 't)))
-
 (defmethod reader-method-class ((class std-class)
 				(direct-slot direct-slot-definition)
 				&rest initargs)
@@ -240,7 +201,9 @@ their lambda lists ~A and ~A are not congruent."
 				   qualifiers specializers &optional error))
 
 (labels ((create-accessors (class)
-	   (when (typep class 'standard-class)
+	   (when (and (typep class 'standard-class)
+		      (not (member (find-class 'slot-definition)
+				   (class-precedence-list class))))
 	     (std-class-generate-accessors class))
 	   (loop for i in (class-direct-subclasses class)
 	      do (create-accessors i))))

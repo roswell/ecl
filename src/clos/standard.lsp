@@ -331,9 +331,7 @@ because it contains a reference to the undefined class~%  ~A"
 	(loop for name in free-slots
 	   with direct-slots = (class-direct-slots class)
 	   do (let* ((effective-slotd (find name all-slots :key #'slot-definition-name))
-		     (def (loop for (name . rest) in +slot-definition-slots+
-			     nconc (list (getf rest :initarg)
-					 (funcall (getf rest :accessor) effective-slotd)))))
+		     (def (direct-slot-to-canonical-slot effective-slotd)))
 		(push (apply #'make-instance (direct-slot-definition-class class def)
 			     def)
 		      direct-slots))
