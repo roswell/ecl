@@ -240,7 +240,8 @@
 	  (let ((slotd (find slot-name (class-slots class) :key #'slot-definition-name)))
 	    (if slotd
 		(setf (slot-value-using-class class self slotd) value)
-		(slot-missing class self slot-name 'SETF value)))))))
+		(slot-missing class self slot-name 'SETF value))))))
+  value)
 
 ;;;
 ;;; 2) Overloadable methods on which the previous functions are based
