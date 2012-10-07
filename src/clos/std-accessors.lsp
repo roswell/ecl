@@ -20,13 +20,18 @@
 ;;; some varieties work at boot time.
 ;;; 
 
+(defun safe-slot-definition-location (slotd &optional default)
+  (if (or (listp slotd) (slot-boundp slotd 'location))
+      (slot-definition-location slotd)
+      default))
+
 (defun unbound-slot-error (object index)
   (declare (type standard-object object)
 	   (type fixnum index)
 	   (optimize (safety 0))
 	   (si::c-local))
   (let* ((class (class-of object))
-	 (slotd (find index (class-slots class) :key #'slot-definition-location)))
+	 (slotd (find index (slot-value class 'slots) :key #'slot-definition-location)))
     (values (slot-unbound class object (slot-definition-name slotd)))))
 
 (defun safe-instance-ref (object index)
@@ -62,7 +67,7 @@
                          (standard-object self))
                 (ensure-up-to-date-instance self)
 		(let* ((class (si:instance-class self))
-		       (table (slot-table class))
+		       (table (slot-value class 'slot-table))
 		       (slotd (truly-the slot-definition (gethash slot-name table)))
 		       (index (slot-definition-location slotd))
 		       (value (if (si::fixnump index)
@@ -76,7 +81,7 @@
                          (standard-object self))
                 (ensure-up-to-date-instance self)
 		(let* ((class (si:instance-class self))
-		       (table (slot-table class))
+		       (table (slot-value class 'slot-table))
 		       (slotd (truly-the slot-definition (gethash slot-name table)))
 		       (index (slot-definition-location slotd)))
 		  (if (si::fixnump index)
@@ -128,17 +133,20 @@
   ;; the liberty of using SI:INSTANCE-REF because they know the class of
   ;; the instance.
   ;;
-  (dolist (slotd (class-direct-slots standard-class))
+  (dolist (slotd (slot-value standard-class 'direct-slots))
     (multiple-value-bind (reader writer)
 	(let ((name (slot-definition-name slotd))
 	      (allocation (slot-definition-allocation slotd))
 	      (location (safe-slot-definition-location slotd)))
-	  (cond ((and (eq allocation :instance) (typep location 'fixnum))
+	  (cond ((and optimizable
+		      (eq allocation :instance)
+		      (typep location 'fixnum))
 		 (std-class-sealed-accessors (slot-definition-location slotd)))
 		;; When a class is the specified STANDARD-CLASS, then the
 		;; user may not write any method around SLOT-VALUE-USING-CLASS
 		;; This allows us to write optimized versions of the accessors.
-		((and (eq allocation :instance)
+		((and optimizable
+		      (eq allocation :instance)
 		      (eq standard-class +the-standard-class+))
 		 (std-class-optimized-accessors name))
 		(t
@@ -185,6 +193,9 @@
 
 (labels ((generate-accessors (class)
 	   (declare (optimize speed (safety 0)))
+	   #+(or)
+	   (when (typep class 'standard-class)
+	     (std-class-generate-accessors class))
 	   (loop for slotd in (slot-value class 'slots)
 	      for index = (slot-definition-location slotd)
 	      do (loop for reader in (slot-definition-readers slotd)
