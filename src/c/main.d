@@ -123,7 +123,7 @@ ecl_set_option(int option, cl_fixnum value)
 		    ecl_option_values[ECL_OPT_BOOTED]) {
 			FEerror("Cannot change option ~D while ECL is running",
 				1, ecl_make_fixnum(option));
-		}
+		} 
 		ecl_option_values[option] = value;
 	}
 }
@@ -132,9 +132,10 @@ void
 ecl_init_env(cl_env_ptr env)
 {
 	env->c_env = NULL;
-#if !defined(ECL_THREADS)
-	env->own_process = ECL_NIL;
+#if defined(ECL_THREADS)
 	env->cleanup = 0;
+#else
+	env->own_process = ECL_NIL;
 #endif
 	env->string_pool = ECL_NIL;
 
