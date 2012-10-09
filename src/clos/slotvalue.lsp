@@ -25,31 +25,21 @@
 	(slot-missing class self slot-name 'SLOT-MAKUNBOUND))
     self))
 
-(defmethod slot-value-using-class ((class class) self slotd)
-  (slot-value self (slot-definition-name slotd)))
-
-(defmethod slot-boundp-using-class ((class class) self slotd)
+(defmethod slot-value-using-class ((class std-class) self slotd)
   (declare (ignore class))
-  (slot-boundp self (slot-definition-name slotd)))
+  (standard-instance-get self (slot-definition-location slotd)))
 
-(defmethod (setf slot-value-using-class) (val (class class) self slotd)
+(defmethod slot-boundp-using-class ((class std-class) self slotd)
   (declare (ignore class))
-  (setf (slot-value self (slot-definition-name slotd)) val))
+  (si:sl-boundp (standard-instance-get self (slot-definition-location slotd))))
 
-(defmethod slot-makunbound-using-class ((class class) instance slotd)
+(defmethod (setf slot-value-using-class) (val (class std-class) self slotd)
   (declare (ignore class))
-  (ensure-up-to-date-instance instance)
-  (let* ((location (slot-definition-location slotd)))
-    (cond ((ext:fixnump location)
-	   ;; local slot
-	   (si:sl-makunbound instance (truly-the fixnum location)))
-	  ((consp location)
-	   ;; shared slot
-	   (setf (car location) (unbound)))
-	  (t
-	   (error "Effective slot definition lacks a valid location:~%~A"
-		  slotd))))
-  instance)
+  (standard-instance-set val self (slot-definition-location slotd)))
+
+(defmethod slot-makunbound-using-class ((class std-class) instance slotd)
+  (declare (ignore class))
+  (standard-instance-set (si:unbound) instance (slot-definition-location slotd)))
 
 ;;;
 ;;; 3) Error messages related to slot access

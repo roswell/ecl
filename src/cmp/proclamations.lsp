@@ -289,6 +289,10 @@
 ; (proclamation unbound-slot-instance (condition) si::instance :predicate)
 
 #+clos
+(proclamation clos::standard-instance-get (ext:instance t) t)
+#+clos
+(proclamation clos::standard-instance-set (t ext:instance t) t)
+#+clos
 (proclamation clos:std-compute-applicable-methods (generic-function list) list)
 #+clos
 (proclamation clos:std-compute-effective-method (generic-function method-combination list) function)

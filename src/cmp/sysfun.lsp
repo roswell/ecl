@@ -996,6 +996,10 @@
     #+clos
     ,@'(;; defclass.lsp
      clos::ensure-class
+     ;; std-slot-value.lsp
+     clos::standard-instance-get
+     clos::standard-instance-set
+     clos::find-slot-definition
      ;; combin.lsp
      clos::simple-code-walker
      ;; standard.lsp

@@ -259,15 +259,6 @@ argument was supplied for metaclass ~S." (class-of class))))))))
   (let ((y (find-class 'FORWARD-REFERENCED-CLASS nil)))
     (and y (si::subclassp (class-of x) y))))
 
-(defun find-slot-definition (class slot-name)
-  (declare (si::c-local))
-  (let (table)
-    (if (and (or (eq (si:instance-class class) +the-standard-class+)
-                 (eq (si:instance-class class) +the-funcallable-standard-class+))
-             (not (eq (setf table (slot-table class)) 'SI::UNBOUND)))
-        (gethash slot-name table nil)
-        (find slot-name (class-slots class) :key #'slot-definition-name))))
-
 (defmethod finalize-inheritance ((class class))
   ;; FINALIZE-INHERITANCE computes the guts of what defines a class: the
   ;; slots, the list of parent class, etc. It is called when either the
