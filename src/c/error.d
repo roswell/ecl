@@ -361,14 +361,12 @@ FEwrong_index(cl_object function, cl_object a, int which, cl_object ndx,
 void
 FEunbound_variable(cl_object sym)
 {
-	cl_print(1, sym);
 	cl_error(3, @'unbound-variable', @':name', sym);
 }
 
 void
 FEundefined_function(cl_object fname)
 {
-	cl_print(1, fname);
 	cl_error(3, @'undefined-function', @':name', fname);
 }
 
