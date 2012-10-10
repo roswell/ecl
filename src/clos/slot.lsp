@@ -62,22 +62,6 @@
 	       collect (getf rest :initarg)
 	       collect `(,(getf rest :accessor) slotd))))
 
-(loop with all-slots = '#.+slot-definition-slots+
-   for slotd in all-slots
-   for i from 0
-   for fname = (getf (rest slotd) :accessor)
-   do (let ((name (first slotd)))
-	(setf (fdefinition fname)
-	      #'(lambda (x)
-		  (if (consp x)
-		      (nth position x)
-		      (slot-value x name)))
-	      (fdefinition `(setf ,fname))
-	      #'(lambda (v x)
-		  (if (consp x)
-		      (setf (nth position x) v)
-		      (setf (slot-value x name) v))))))
-
 ;;; ----------------------------------------------------------------------
 ;;;
 ;;; (PARSE-SLOTS slot-definition-form) => slot-definition-object

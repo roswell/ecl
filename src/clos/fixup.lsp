@@ -200,15 +200,6 @@ their lambda lists ~A and ~A are not congruent."
 (function-to-method 'find-method '((gf standard-generic-function)
 				   qualifiers specializers &optional error))
 
-(labels ((create-accessors (class)
-	   (when (and (typep class 'standard-class)
-		      (not (member (find-class 'slot-definition)
-				   (class-precedence-list class))))
-	     (std-class-generate-accessors class))
-	   (loop for i in (class-direct-subclasses class)
-	      do (create-accessors i))))
-  (create-accessors (find-class 't)))
-
 ;;; COMPUTE-APPLICABLE-METHODS is used by the core in various places,
 ;;; including instance initialization. This means we cannot just redefine it.
 ;;; Instead, we create an auxiliary function and move definitions from one to

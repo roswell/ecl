@@ -168,28 +168,29 @@
       ;; function, where we can replace the output of COMPUTE-DISCRIMINATING-FUNCTION with
       ;; a similar implementation in C
       (compute-discriminating-function gfun)
-    (let ((methods (generic-function-methods gfun)))
+    (let ((methods (slot-value gfun 'methods)))
       (set-funcallable-instance-function
        gfun
        (cond
 	 ;; Case 1*
 	 ((or (not optimizable)
-	      (> (length (generic-function-spec-list gfun))
+	      (> (length (slot-value gfun 'spec-list))
 		 si::c-arguments-limit))
 	  default-function)
 	 ;; Case 2*
-	 ((and (not (eq (class-id (class-of gfun)) 'standard-generic-function))
+	 ((and (not (eq (slot-value (class-of gfun) 'name)
+			'standard-generic-function))
 	       *clos-booted*)
 	  t)
 	 ((null methods)
 	  'standard-generic-function)
 	 ;; Cases 3*
 	 ((loop with class = (find-class 'standard-reader-method nil)
-	     for m in (generic-function-methods gfun)
+	     for m in methods
 	     always (eq class (class-of m)))
 	  'standard-reader-method)
 	 ((loop with class = (find-class 'standard-writer-method nil)
-	     for m in (generic-function-methods gfun)
+	     for m in methods
 	     always (eq class (class-of m)))
 	  'standard-writer-method)
 	 ;; Case 4*

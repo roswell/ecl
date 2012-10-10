@@ -21,9 +21,10 @@
 ;;; 
 
 (defun safe-slot-definition-location (slotd &optional default)
-  (if (or (listp slotd) (slot-boundp slotd 'location))
-      (slot-definition-location slotd)
-      default))
+  (cond ((listp slotd)
+	 (error "List instead of a slot definition object"))
+	(t
+	 (slot-value slotd 'location))))
 
 (defun unbound-slot-error (object index)
   (declare (type standard-object object)
@@ -125,7 +126,7 @@
 	   (setf (fdefinition name) gf)
 	   (fmakunbound alt-name)))))
 
-(defun std-class-generate-accessors (standard-class &aux optimizable)
+(defun std-class-generate-accessors (standard-class &optional (optimizable t))
   ;;
   ;; The accessors are closures, which are generated every time the
   ;; slots of the class change. The accessors are safe: they check that
@@ -134,15 +135,15 @@
   ;; the instance.
   ;;
   (dolist (slotd (slot-value standard-class 'direct-slots))
-    (multiple-value-bind (reader writer)
-	(let ((name (slot-definition-name slotd))
-	      (allocation (slot-definition-allocation slotd))
-	      (location (safe-slot-definition-location slotd)))
+    (with-slots ((name name) (allocation allocation) (location location)
+		 (readers readers) (writers writers))
+	slotd
+      (multiple-value-bind (reader writer)
 	  (cond ((and optimizable
 		      (eq allocation :instance)
 		      (typep location 'fixnum))
-		 (std-class-sealed-accessors (slot-definition-location slotd)))
-		;; When a class is the specified STANDARD-CLASS, then the
+		 (std-class-sealed-accessors location))
+		;; When a class is the of the specified STANDARD-CLASS, then the
 		;; user may not write any method around SLOT-VALUE-USING-CLASS
 		;; This allows us to write optimized versions of the accessors.
 		((and optimizable
@@ -150,38 +151,40 @@
 		      (eq standard-class +the-standard-class+))
 		 (std-class-optimized-accessors name))
 		(t
-		 (std-class-accessors name))))
-      (let* ((reader-args (list :function reader
-				:generic-function nil
-				:qualifiers nil
-				:lambda-list '(object)
-				:specializers `(,standard-class)
-				:slot-definition slotd))
-	     (reader-class (if (boundp '*early-methods*)
-			       'standard-reader-method
-			       (apply #'reader-method-class standard-class slotd
-				      reader-args)))
-	     (writer-args (list :function writer
-				:generic-function nil
-				:qualifiers nil
-				:lambda-list '(value object)
-				:specializers `(,(find-class t) ,standard-class)
-				:slot-definition slotd))
-	     (writer-class (if (boundp '*early-methods*)
-			       'standard-writer-method
-			       (apply #'writer-method-class standard-class slotd
-				      writer-args))))
-	(dolist (fname (slot-definition-readers slotd))
-	  (safe-add-method fname
-			   (make-method reader-class nil `(,standard-class) '(self)
-					(wrapped-method-function reader)
-					(list :slot-definition slotd))))
-	(dolist (fname (slot-definition-writers slotd))
-	  (safe-add-method fname
-			   (make-method writer-class nil
-					`(,(find-class t) ,standard-class) '(value self)
-					(wrapped-method-function writer)
-					(list :slot-definition slotd))))))))
+		 (std-class-accessors name)))
+	(let* ((reader-args (list :function reader
+				  :generic-function nil
+				  :qualifiers nil
+				  :lambda-list '(object)
+				  :specializers `(,standard-class)
+				  :slot-definition slotd))
+	       (reader-class (if (boundp '*early-methods*)
+				 'standard-reader-method
+				 (apply #'reader-method-class standard-class slotd
+					reader-args)))
+	       (writer-args (list :function writer
+				  :generic-function nil
+				  :qualifiers nil
+				  :lambda-list '(value object)
+				  :specializers `(,(find-class t) ,standard-class)
+				  :slot-definition slotd))
+	       (writer-class (if (boundp '*early-methods*)
+				 'standard-writer-method
+				 (apply #'writer-method-class standard-class slotd
+					writer-args))))
+	  (dolist (fname readers)
+	    (let ((method (make-method reader-class nil `(,standard-class) '(self)
+				       (wrapped-method-function reader)
+				       nil)))
+	      (safe-add-method fname method)
+	      (setf (slot-value method 'slot-definition) slotd)))
+	  (dolist (fname writers)
+	    (let ((method (make-method writer-class nil
+				       `(,(find-class t) ,standard-class) '(value self)
+				       (wrapped-method-function writer)
+				       nil)))
+	      (safe-add-method fname method)
+	      (setf (slot-value method 'slot-definition) slotd))))))))
 
 (defun reader-closure (index)
   (declare (si::c-local))
@@ -193,22 +196,20 @@
 
 (labels ((generate-accessors (class)
 	   (declare (optimize speed (safety 0)))
-	   #+(or)
-	   (when (typep class 'standard-class)
-	     (std-class-generate-accessors class))
-	   (loop for slotd in (slot-value class 'slots)
-	      for index = (slot-definition-location slotd)
-	      do (loop for reader in (slot-definition-readers slotd)
-		    do (setf (fdefinition reader) (reader-closure index))
-		      #+(or)
-		      (install-method reader nil (list class) '(self)
-				      (reader-closure index) t))
-	      do (loop for writer in (slot-definition-writers slotd)
-		    do (setf (fdefinition writer) (writer-closure index))
-		      #+(or)
-		      (install-method writer nil (list +the-t-class+ class)
-				      '(value self)
-				      (writer-closure index) t)))
+	   (if (and (typep class 'standard-class)
+		    (not (member (slot-value class 'name)
+				 '(slot-definition
+				   direct-slot-definition
+				   effective-slot-definition
+				   standard-slot-definition
+				   standard-direct-slot-definition
+				   standard-effective-slot-definition))))
+	       (std-class-generate-accessors class t)
+	       (loop for slotd in (slot-value class 'slots)
+		  for index = (slot-value slotd 'location)
+		  do (loop for reader in (slot-value slotd 'readers)
+			do (setf (fdefinition reader) (reader-closure index)))
+		  do (loop for writer in (slot-value slotd 'writers)
+			do (setf (fdefinition writer) (writer-closure index)))))
 	   (mapc #'generate-accessors (slot-value class 'direct-subclasses))))
   (generate-accessors +the-t-class+))
-
