@@ -16,6 +16,7 @@
 #define CONSTANT_SYMBOL 1
 #define SPECIAL_SYMBOL 2
 #define FORM_SYMBOL 3
+#define PRIVATE 256
 
 #define CL_ORDINARY	CL_PACKAGE | ORDINARY_SYMBOL
 #define CL_SPECIAL	CL_PACKAGE | SPECIAL_SYMBOL
@@ -182,7 +183,7 @@ make_this_symbol(int i, cl_object s, int code, const char *name,
 	case CONSTANT_SYMBOL: stp = ecl_stp_constant; break;
 	case FORM_SYMBOL: form = 1; stp = ecl_stp_ordinary;
 	}
-	switch (code & ~(int)3) {
+	switch (code & 0xfc) {
 	case CL_PACKAGE: package = cl_core.lisp_package; break;
 	case SI_PACKAGE: package = cl_core.system_package; break;
 	case EXT_PACKAGE: package = cl_core.ext_package; break;
@@ -222,9 +223,11 @@ make_this_symbol(int i, cl_object s, int code, const char *name,
 		} else {
 			cl_import2(s, package);
 		}
-		cl_export2(s, package);
-                if (package == cl_core.ext_package)
-                        cl_export2(s, cl_core.system_package);
+		if (!(code & PRIVATE)) {
+			cl_export2(s, package);
+			if (package == cl_core.ext_package)
+				cl_export2(s, cl_core.system_package);
+		}
 	}
 	if (form) {
 		s->symbol.stype |= ecl_stp_special_form;
