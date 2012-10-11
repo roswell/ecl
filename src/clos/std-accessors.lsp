@@ -57,20 +57,14 @@
 ;;;
 (defun std-class-optimized-accessors (slot-name)
   (declare (si::c-local))
-  (macrolet ((slot-table (class)
-	       `(si::instance-ref ,class #.(position 'slot-table +standard-class-slots+
-						     :key #'first)))
-	     (slot-definition-location (slotd)
-	       `(si::instance-ref ,slotd #.(position 'location +slot-definition-slots+
-						     :key #'first))))
+  (with-early-accessors (+standard-class-slots+)
     (values #'(lambda (self)
-                (declare (optimize (safety 0) (speed 3) (debug 0))
-                         (standard-object self))
-                (ensure-up-to-date-instance self)
+		(declare (optimize (safety 0) (speed 3) (debug 0))
+			 (standard-object self))
+		(ensure-up-to-date-instance self)
 		(let* ((class (si:instance-class self))
-		       (table (slot-value class 'slot-table))
-		       (slotd (truly-the slot-definition (gethash slot-name table)))
-		       (index (slot-definition-location slotd))
+		       (table (class-location-table class))
+		       (index (gethash slot-name table))
 		       (value (if (si::fixnump index)
 				  (si:instance-ref self (truly-the fixnum index))
 				  (car (truly-the cons index)))))
@@ -78,13 +72,12 @@
 		      value
 		      (values (slot-unbound (class-of self) self slot-name)))))
 	    #'(lambda (value self)
-                (declare (optimize (safety 0) (speed 3) (debug 0))
-                         (standard-object self))
-                (ensure-up-to-date-instance self)
+		(declare (optimize (safety 0) (speed 3) (debug 0))
+			 (standard-object self))
+		(ensure-up-to-date-instance self)
 		(let* ((class (si:instance-class self))
-		       (table (slot-value class 'slot-table))
-		       (slotd (truly-the slot-definition (gethash slot-name table)))
-		       (index (slot-definition-location slotd)))
+		       (table (class-location-table class))
+		       (index (gethash slot-name table)))
 		  (if (si::fixnump index)
 		      (si:instance-set self (truly-the fixnum index) value)
 		      (rplaca (truly-the cons index) value)))))))
@@ -138,17 +131,24 @@
     (with-slots ((name name) (allocation allocation) (location location)
 		 (readers readers) (writers writers))
 	slotd
+      ;; When a class is of a specified class in the MOP (such as
+      ;; STANDARD-CLASS), then the user may not write any method
+      ;; around SLOT-VALUE-USING-CLASS. This allows us to write
+      ;; optimized versions of the accessors.
+      (unless (member (slot-value standard-class 'name)
+		      '(standard-class
+			funcallable-standard-class
+			structure-class))
+	(setf optimizable nil))
       (multiple-value-bind (reader writer)
 	  (cond ((and optimizable
 		      (eq allocation :instance)
+		      ;; This is an extension by ECL in which a direct slot
+		      ;; definition specifies the location of a slot. It
+		      ;; only happens for sealed classes.
 		      (typep location 'fixnum))
 		 (std-class-sealed-accessors location))
-		;; When a class is the of the specified STANDARD-CLASS, then the
-		;; user may not write any method around SLOT-VALUE-USING-CLASS
-		;; This allows us to write optimized versions of the accessors.
-		((and optimizable
-		      (eq allocation :instance)
-		      (eq standard-class +the-standard-class+))
+		(optimizable
 		 (std-class-optimized-accessors name))
 		(t
 		 (std-class-accessors name)))
