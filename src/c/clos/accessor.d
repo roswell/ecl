@@ -46,7 +46,7 @@ slot_method_name(cl_object gfun, cl_object args)
 		cl_object first = ECL_CONS_CAR(methods);
 		cl_object slotd = _ecl_funcall3(@'slot-value', first,
 						@'clos::slot-definition');
-		return _ecl_funcall2(@'clos::slot-definition-name', slotd);
+		return _ecl_funcall3(@'slot-value', slotd, @'clos::name');
 	}
 }
 
@@ -61,7 +61,7 @@ slot_method_index(cl_object gfun, cl_object instance, cl_object args)
 						ECL_CLASS_OF(instance),
 						@'clos::slot-table');
 		cl_object slotd = ecl_gethash_safe(slot_name, table, OBJNULL);
-		return _ecl_funcall2(@'clos::slot-definition-location', slotd);
+		return _ecl_funcall3(@'slot-value', slotd, @'ext::location');
 	}
 }
 
