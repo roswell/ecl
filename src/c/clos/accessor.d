@@ -95,6 +95,16 @@ add_new_index(const cl_env_ptr env, cl_object gfun, cl_object instance, cl_objec
 	}
 }
 
+static void
+ensure_up_to_date_instance(cl_object instance)
+{
+	cl_object clas = ECL_CLASS_OF(instance);
+	cl_object slots = ECL_CLASS_SLOTS(clas);
+	unlikely_if (slots != ECL_UNBOUND && instance->instance.sig != slots) {
+		_ecl_funcall2(@'clos::update-instance', instance);
+	}
+}
+
 cl_object
 ecl_slot_reader_dispatch(cl_narg narg, cl_object instance)
 {
@@ -119,6 +129,7 @@ ecl_slot_reader_dispatch(cl_narg narg, cl_object instance)
 			return env->values[0];
 		}
 	}
+	ensure_up_to_date_instance(instance);
 	index = e->value;
 	if (ECL_FIXNUMP(index)) {
 		value = instance->instance.slots[ecl_fixnum(index)];

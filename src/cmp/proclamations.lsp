@@ -298,6 +298,8 @@
 (proclamation clos:std-compute-effective-method (generic-function method-combination list) function)
 #+clos
 (proclamation clos:compute-effective-method-function (generic-function method-combination list) function)
+#+clos
+(proclamation clos::update-instance (ext:instance) (values))
 
 ;;;
 ;;; 8. STRUCTURES

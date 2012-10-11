@@ -1720,6 +1720,7 @@ cl_symbols[] = {
 {CLOS_ "STD-COMPUTE-EFFECTIVE-METHOD","ECL_NAME(clos_std_compute_effective_method)"},
 {CLOS_ "COMPUTE-EFFECTIVE-METHOD-FUNCTION","ECL_NAME(clos_compute_effective_method_function)"},
 {CLOS_ "UPDATE-DEPENDENT",NULL},
+{CLOS_ "UPDATE-INSTANCE",NULL},
 {CLOS_ "VALIDATE-SUPERCLASS",NULL},
 {CLOS_ "WRITER-METHOD-CLASS",NULL},
 {SYS_ "CLEAR-GFUN-HASH","si_clear_gfun_hash"},
