@@ -196,7 +196,7 @@
 
 (labels ((generate-accessors (class)
 	   (declare (optimize speed (safety 0)))
-	   (if (and (typep class 'standard-class)
+	   (if (and (typep class 'std-class)
 		    (not (member (slot-value class 'name)
 				 '(slot-definition
 				   direct-slot-definition
