@@ -59,9 +59,8 @@ slot_method_index(cl_object gfun, cl_object instance, cl_object args)
 	else {
 		cl_object table = _ecl_funcall3(@'slot-value',
 						ECL_CLASS_OF(instance),
-						@'clos::slot-table');
-		cl_object slotd = ecl_gethash_safe(slot_name, table, OBJNULL);
-		return _ecl_funcall3(@'slot-value', slotd, @'ext::location');
+						@'clos::location-table');
+		return ecl_gethash_safe(slot_name, table, OBJNULL);
 	}
 }
 
