@@ -117,7 +117,17 @@
     ;;
     (mapc #'si::instance-sig-set all-classes)
     ;;
-    ;; This is needed for further optimization
+    ;; 4) This is needed for further optimization
     ;;
     (setf (slot-value (find-class 'method-combination) 'sealedp) t)
+    ;;
+    ;; 5) This is needed so that slot-definition objects are not marked
+    ;;    obsolete and need to be updated
+    ;;
+    (with-early-accessors (+standard-class-slots+)
+      (loop for c in all-classes
+	 do (loop for s in (class-direct-slots c)
+	       do (si::instance-sig-set s))
+	 do (loop for s in (class-slots c)
+	       do (si::instance-sig-set s))))
     ))
