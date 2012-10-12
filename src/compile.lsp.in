@@ -206,7 +206,9 @@
 #+WANTS-ASDF
 (build-module "asdf"
               '("ext:asdf;asdf.lisp"
-		"ext:asdf;asdf-ecl.lisp")
+		"ext:asdf;specials.lisp"
+		"ext:asdf;bundle.lisp"
+		"ext:asdf;ecl.lisp")
               :dir "build:ext;"
               :prefix "EXT"
               :builtin #+:BUILTIN-ASDF t #-:BUILTIN-ASDF nil)
