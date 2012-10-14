@@ -350,6 +350,12 @@
       (standard-writer-method
        :direct-superclasses (standard-accessor-method)
        :direct-slots #2#)
+      (standard-optimized-reader-method
+       :direct-superclasses (standard-reader-method)
+       :direct-slots #2#)
+      (standard-optimized-writer-method
+       :direct-superclasses (standard-writer-method)
+       :direct-slots #2#)
       (structure-class
        :direct-superclasses (class)
        :direct-slots #.+structure-class-slots+)

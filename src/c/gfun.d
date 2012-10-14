@@ -87,11 +87,11 @@ clos_set_funcallable_instance_function(cl_object x, cl_object function_or_t)
 	} else if (function_or_t == ECL_NIL) {
 		x->instance.isgf = ECL_NOT_FUNCALLABLE;
                 x->instance.entry = FEnot_funcallable_vararg;
-	} else if (function_or_t == @'clos::standard-reader-method') {
+	} else if (function_or_t == @'clos::standard-optimized-reader-method') {
 		/* WARNING: We assume that f(a,...) behaves as f(a,b) */
 		x->instance.isgf = ECL_READER_DISPATCH;
 		x->instance.entry = (cl_objectfn)ecl_slot_reader_dispatch;
-	} else if (function_or_t == @'clos::standard-writer-method') {
+	} else if (function_or_t == @'clos::standard-optimized-writer-method') {
 		/* WARNING: We assume that f(a,...) behaves as f(a,b) */
 		x->instance.isgf = ECL_WRITER_DISPATCH;
 		x->instance.entry = (cl_objectfn)ecl_slot_writer_dispatch;

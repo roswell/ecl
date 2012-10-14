@@ -31,13 +31,23 @@
 				(direct-slot direct-slot-definition)
 				&rest initargs)
   (declare (ignore class direct-slot initargs))
-  (find-class 'standard-reader-method))
+  (find-class (if (member (class-name (class-of class))
+			  '(standard-class
+			    funcallable-standard-class
+			    structure-class))
+		  'standard-optimized-reader-method
+		  'standard-reader-method)))
 
 (defmethod writer-method-class ((class std-class)
 				(direct-slot direct-slot-definition)
 				&rest initargs)
   (declare (ignore class direct-slot initargs))
-  (find-class 'standard-writer-method))
+  (find-class (if (member (class-name (class-of class))
+			  '(standard-class
+			    funcallable-standard-class
+			    structure-class))
+		  'standard-optimized-writer-method
+		  'standard-reader-method)))
 
 ;;; ----------------------------------------------------------------------
 ;;; Fixup
