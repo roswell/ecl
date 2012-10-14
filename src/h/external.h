@@ -1942,6 +1942,11 @@ extern ECL_API cl_object cl_bit_not _ECL_ARGS((cl_narg narg, cl_object V1, ...))
 extern ECL_API cl_object cl_vector_pop(cl_object V1);
 extern ECL_API cl_object cl_adjust_array _ECL_ARGS((cl_narg narg, cl_object V1, cl_object V2, ...));
 
+/* describe.lsp */
+
+extern ECL_API cl_object cl_inspect(cl_object o);
+extern ECL_API cl_object cl_describe _ECL_ARGS((cl_narg narg, cl_object o, ...));
+
 /* iolib.lsp */
 
 extern ECL_API cl_object cl_read_from_string _ECL_ARGS((cl_narg narg, cl_object V1, ...));

@@ -877,6 +877,8 @@
     ;; conditions.lsp
     si::safe-eval abort continue muffle-warning store-value use-value
     si::bind-simple-restarts si::bind-simple-handlers
+    ;; describe.lsp
+    describe inspect
     ;; iolib.lsp
     read-from-string write-to-string prin1-to-string princ-to-string
     y-or-n-p yes-or-no-p string-to-object
