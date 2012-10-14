@@ -2195,7 +2195,7 @@ maybe_make_load_forms(cl_env_ptr env, cl_object constant)
         if (!need_to_make_load_form_p(constant))
                 return;
         make = _ecl_funcall2(@'make-load-form', constant);
-        init = env->values[1];
+        init = (env->nvalues > 1)? env->values[1] : ECL_NIL;
         c_env->load_time_forms = ecl_cons(cl_list(3, constant, make, init),
                                           c_env->load_time_forms);
 }
