@@ -63,7 +63,7 @@
 
 (defun bc-compile-file-pathname (name &key (output-file name) (type :fasl)
 				 verbose print c-file h-file data-file
-				 shared-data-file system-p load)
+				 shared-data-file system-p load external-format)
   (declare (ignore load c-file h-file data-file shared-data-file system-p verbose print))
   (let ((extension "fasc"))
     (case type
@@ -76,6 +76,7 @@
 			((:verbose *compile-verbose*) *compile-verbose*)
 			((:print *compile-print*) *compile-print*)
 			(load nil)
+			(external-format :default)
 			(output-file nil output-file-p)
 			&allow-other-keys &aux foo)
   (setf output-file (if output-file-p
@@ -93,7 +94,8 @@
          (error "COMPILE-FILE invoked with a stream input and no :OUTPUT-FILE"))
         (t
          (with-open-file (sout output-file :direction :output :if-exists :supersede
-                               :if-does-not-exist :create)
+                               :if-does-not-exist :create
+			       :external-format external-format)
 	   (let ((binary (loop with *package* = *package*
 			    with ext:*bytecodes-compiler* = t
 			    for position = (file-position input)
