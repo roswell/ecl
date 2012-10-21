@@ -75,9 +75,11 @@
 ;;; TYPE PROPAGATION
 ;;;
 
-(def-type-propagator logand (a b)
-  (let ((output (dolist (int-type '((UNSIGNED-BYTE 8) FIXNUM) 'INTEGER)
-		  (when (or (subtypep a int-type)
-			    (subtypep b int-type))
-		    (return int-type)))))
-    (values (list a b) output)))
+(def-type-propagator logand (&rest args)
+  (values args
+	  (if args
+	      (dolist (int-type '((UNSIGNED-BYTE 8) FIXNUM) 'integer)
+		(when (loop for value in args
+			 always (subtypep value int-type))
+		  (return int-type)))
+	      'fixnum)))
