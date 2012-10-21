@@ -103,14 +103,12 @@
 
 (defun valid-declaration-p (decl)
   ;(declare (si::c-local))
-  (unless (eq (first decl) 'OPTIMIZE)
-	  (simple-program-error "The only declaration allowed is optimize"))
-  (dolist (first (rest decl))
-    (when (atom first)
-      (setq first (cons first 3)))
-    (unless (member (car first) '(SPEED SPACE COMPILATION-SPEED DEBUG SAFETY))
-      (simple-program-error "The only qualities allowed are speed and space")))
-  decl)
+  (and (eq (first decl) 'OPTIMIZE)
+       (loop for item in decl
+	  always (or (atom item)
+		     (and (consp item)
+			  (member (first item)
+				  '(SPEED SPACE COMPILATION-SPEED DEBUG SAFETY)))))))
 
 ;;; ----------------------------------------------------------------------
 ;;; GENERIC FUNCTION (RE)INITIALIZATION PROTOCOL
@@ -120,11 +118,16 @@
   (rest (si::process-lambda-list lambda-list t)))
 
 (defmethod shared-initialize ((gfun generic-function) slot-names &rest initargs
-			      &key (lambda-list nil l-l-p)
+			      &key (name nil)
+			      (lambda-list nil l-l-p)
 			      (argument-precedence-order nil a-o-p)
 			      (documentation nil)
 			      (declarations nil)
 			      (method-class (find-class 'method))
+			      &aux
+			      (gfun-name (if (slot-boundp gfun 'name)
+					     (slot-value gfun 'name)
+					     (or name :anonymous)))
 			      )
   (declare (ignore initargs slot-names))
   ;;
@@ -132,23 +135,25 @@
   ;;
   (when a-o-p
     (unless l-l-p
-      (simple-program-error "Supplied :argument-precedence-order, but :lambda-list is missing"))
+      (simple-program-error "When defining generic function ~A~%Supplied :argument-precedence-order, but :lambda-list is missing"
+			    gfun-name))
     (dolist (l (lambda-list-required-arguments lambda-list))
       (unless (= (count l argument-precedence-order) 1)
-	(simple-program-error "The required argument ~A does not appear exactly once in the ARGUMENT-PRECEDENCE-ORDER list ~A"
-			      l argument-precedence-order))))
+	(simple-program-error "When defining generic function ~A~%The required argument ~A does not appear exactly once in the ARGUMENT-PRECEDENCE-ORDER list ~A"
+			      gfun-name l argument-precedence-order))))
   (unless (every #'valid-declaration-p declarations)
-    (simple-program-error "Not a valid declaration list: ~A" declarations))
+    (simple-program-error "When defining generic function ~A~%Not a valid declaration list: ~A"
+			  gfun-name declarations))
   (unless (or (null documentation) (stringp documentation))
     (error 'simple-type-error
-	   :format-control "Not a valid documentation object ~"
-	   :format-arguments (list documentation)
+	   :format-control "When defining generic function~A~%Not a valid documentation object ~"
+	   :format-arguments (list gfun-name documentation)
 	   :datum documentation
 	   :expected-type '(or null string)))
   (unless (si::subclassp method-class (find-class 'method))
     (error 'simple-type-error
-	   :format-control "Not a valid method class, ~A"
-	   :format-arguments (list method-class)
+	   :format-control "When defining generic function~A~%Not a valid method class, ~A"
+	   :format-arguments (list gfun-name method-class)
 	   :datum method-class
 	   :expected-type 'method))
   ;;
