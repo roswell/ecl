@@ -826,14 +826,19 @@ Use special code 0 to cancel this operation.")
 	  (push '&allow-other-keys output))))
     (nreverse output)))
 
+(defun lambda-list-from-annotations (name)
+  (declare (si::c-local)) 
+  (let ((args (ext:get-annotation name :lambda-list nil)))
+    (values args (and args t))))
+
 (defun function-lambda-list (function)
   (cond
     ((symbolp function)
-     (if (or (not (fboundp function))
-             (special-operator-p function)
-             (macro-function function))
-         (values nil nil)
-         (function-lambda-list (fdefinition function))))
+     (cond ((or (special-operator-p function)
+		(macro-function function))
+	    (lambda-list-from-annotations function))
+	   (t
+	    (function-lambda-list (fdefinition function)))))
     ((typep function 'generic-function)
      (values (clos:generic-function-lambda-list function) t))
     ;; Use the lambda list from the function definition, if available,
@@ -857,9 +862,7 @@ Use special code 0 to cancel this operation.")
     ;; If it's a compiled function of ECL itself, reconstruct the
     ;; lambda-list from its documentation string.
     (t
-     (let* ((name (compiled-function-name function))
-            (args (ext:get-annotation name :lambda-list nil)))
-       (values args (and args t))))))
+     (lambda-list-from-annotations (compiled-function-name function)))))
 
 #-ecl-min
 (defun decode-env-elt (env ndx)
