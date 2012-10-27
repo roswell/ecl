@@ -293,7 +293,7 @@ ecl_def_ct_base_string(str_cl,"CL",2,static,const);
 ecl_def_ct_base_string(str_cl_user,"CL-USER",7,static,const);
 ecl_def_ct_base_string(str_LISP,"LISP",4,static,const);
 ecl_def_ct_base_string(str_c,"C",1,static,const);
-ecl_def_ct_base_string(str_compiler,"COMPILER",11,static,const);
+ecl_def_ct_base_string(str_compiler,"COMPILER",8,static,const);
 ecl_def_ct_base_string(str_ffi,"FFI",3,static,const);
 ecl_def_ct_base_string(str_uffi,"UFFI",4,static,const);
 ecl_def_ct_base_string(str_user,"USER",4,static,const);
