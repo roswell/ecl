@@ -30,11 +30,12 @@
 			 ,@declarations)
 		(si::while (< ,variable ,%limit)
                   ,@body
-		  (reckless (setq ,variable (1+ ,variable))))))
+		  (reckless (setq ,variable (1+ ,variable))))
+		,@output))
              (t
 	      (let ((,variable 0))
 		(declare ,@declarations)
                 (si::while (< ,variable ,%limit)
                   ,@body
-		  (setq ,variable (1+ ,variable))))))
-           ,@output)))))
+		  (setq ,variable (1+ ,variable)))
+		,@output))))))))
