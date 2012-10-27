@@ -20,16 +20,15 @@
 
 (defun do-docfun (symbol kind args doc)
   ;(print symbol)
+  (assert (listp args))
+  (ext:annotate symbol ':lambda-list nil args)
   (cond ((and doc (search "Syntax:" doc))
 	 (setf args nil))
 	((and doc (search "Args:" doc))
 	 (setf args nil))
 	((member kind '(macro special))
-         (ext:annotate symbol ':lambda-list nil args)
 	 (setf args (format nil "Syntax: ~A" args)))
 	(t
-         (assert (listp args))
-         (ext:annotate symbol ':lambda-list nil args)
 	 (setf args (format nil "Args: ~A" args))))
   (si::set-documentation
    symbol 'function
@@ -438,7 +437,7 @@ Returns T if CHAR is alphabetic; NIL otherwise.")
 (docfun alphanumericp function (char) "
 Returns T if CHAR is either numeric or alphabetic; NIL otherwise.")
 
-(docfun and macro "(and {form}*)" "
+(docfun and macro (&rest forms) "
 Evaluates FORMs in order.  If any FORM evaluates to NIL, returns
 immediately with the value NIL.  Otherwise, returns all values of the
 last FORM.")
@@ -532,7 +531,7 @@ A bignum is an integer that is not a fixnum.")
 (docfun bit-vector-p function (x) "
 Returns T if X is a bit-vector; NIL otherwise.")
 
-(docfun block special "(block name {form}*)" "
+(docfun block special (name &body forms) "
 Establishes a block named by NAME, evaluates FORMs in order, and returns all
 values of the last FORM.  Returns NIL if no FORMs are given.
 The scope of the established block is the body (i.e. the FORMs) of the BLOCK
@@ -699,14 +698,18 @@ since there is no such logical upper bound in ECL.")
 (docfun car function (x) "
 Returns the car of X if X is a cons.  Returns NIL if X is NIL.")
 
-(docfun case macro "(case keyform {({key | ({key}*)} {form}*)}*)" "
+(docfun case macro (keyform &rest alternatives) "
+Syntax: (case keyform {({key | ({key}*)} {form}*)}*)
+
 Evaluates KEYFORM and searches a KEY that is EQL to the value of KEYFORM.  If
 found, then evaluates FORMs in order that follow the KEY (or the key list that
 contains the KEY) and returns all values of the last FORM.  Returns NIL if no
 such key is found.  The symbols T and OTHERWISE may be used at the place of a
 key list to specify the default case.")
 
-(docfun catch special "(catch tag-form {form}*)" "
+(docfun catch special (tag-form &body forms) "
+Syntax: (catch tag-form {form}*)
+
 Sets up a catcher whose catch tag is the value of TAG-FORM.  Then evaluates
 FORMs in order and returns all values of the last FORM.  During the evaluation
 of FORMs, if a THROW form is evaluated that specifies a catch tag EQ to the
@@ -914,8 +917,8 @@ discarded.")
 Clears the output buffer of STREAM and returns NIL.  Contents of the buffer
 are discarded.")
 
-(docfun ffi:clines special "(clines {string}*)" "
-
+(docfun ffi:clines special (&body c-strings) "
+Syntax: (clines {string}*)
 The ECL compiler embeds STRINGs into the intermediate C language code.  The
 interpreter ignores this form.")
 
@@ -966,8 +969,9 @@ Returns the function name associated with COMPILED-FUNCTION.")
 (docfun compiled-function-p function (x) "
 Returns T if X is a compiled function object; NIL otherwise.")
 
-(docfun compiler-let special
-	"(compiler-let ({var | (var [value])}*) {form}*)" "
+(docfun compiler-let special (bindings &body forms)
+	"Syntax: (compiler-let ({var | (var [value])}*) {form}*)
+
 When interpreted, this form works just like a LET form with all VARs declared
 special.  When compiled, FORMs are processed with the VARs bound at compile
 time, but no bindings occur when the compiled code is executed.")
@@ -1049,7 +1053,9 @@ Returns the number of elements in SEQUENCE satisfying TEST.")
             (start 0) (end (length sequence)) (from-end nil)) "
 Returns the number of elements in SEQUENCE not satisfying TEST.")
 
-(docfun declare special "(declare {decl-spec}*)" "
+(docfun declare special (&rest declaration-specifiers)
+"Syntax: (declare {decl-spec}*)
+
 Gives declarations.  Possible DECL-SPECs are:
   (SPECIAL {var}*)
   (TYPE type {var}*)
@@ -1159,9 +1165,10 @@ FILESPEC may be a symbol, a string, a pathname, or a file stream.")
 ECL specific.
 Returns T if the ARRAY is displaced to another array; NIL otherwise.")
 
-(docfun do macro
-	"(do ({(var [init [step]])}*) (test {result}*)
-          {decl}* {tag | statement}*)" "
+(docfun do macro (bindings (test &optional result) &body forms)
+	"Syntax: (do ({(var [init [step]])}*) (test {result}*)
+          {decl}* {tag | statement}*)
+
 Establishes a NIL block, binds each VAR to the value of the corresponding INIT
 (which defaults to NIL), and then executes STATEMENTs repeatedly until TEST is
 satisfied.  After each iteration, evaluates STEP and assigns the value to the
@@ -1170,16 +1177,15 @@ given.  When TEST is satisfied, evaluates RESULTs as a PROGN and returns all
 values of the last RESULT.  Performs variable bindings and assignments in
 parallel, just as LET and PSETQ do.")
 
-(docfun do* macro
-	"(do* ({(var [init [step]])}*) (test {result}*)
-          {decl}* {tag | statement}*)" "
+(docfun do* macro (bindings (test &optional result) &body forms)
+	"Syntax: (do* ({(var [init [step]])}*) (test {result}*)
+          {decl}* {tag | statement}*)
+
 Similar to DO, but performs variable bindings and assignments in serial, just
 as LET* and SETQ do.")
 
-(docfun dolist macro
-	"(dolist (var form [result])
-          {decl}* {tag | statement}*)" "
-Establishes a NIL block and executes STATEMENTs once for each member of the
+(docfun dolist macro ((var form &optional result) &body forms)
+	"Establishes a NIL block and executes STATEMENTs once for each member of the
 list value of FORM, with VAR bound to the member.  Then evaluates RESULT
 (which defaults to NIL) and returns all values.")
 
@@ -1187,10 +1193,8 @@ list value of FORM, with VAR bound to the member.  Then evaluates RESULT
 A double-float is a double-precision floating point number.
 DOUBLE-FLOAT as a type specifier is equivalent to LONG-FLOAT in ECL.")
 
-(docfun dotimes macro
-	"(dotimes (var form [result])
-          {decl}* {tag | statement}*)" "
-Establishes a NIL block and executes STATEMENTs once for each integer between
+(docfun dotimes macro ((var form &optional result) &body forms)
+	"Establishes a NIL block and executes STATEMENTs once for each integer between
 0 (inclusive) and the value of FORM (exclusive), with VAR bound to the
 integer.  Then evaluates RESULT (which defaults to NIL) and returns all
 values.")
@@ -1244,7 +1248,7 @@ Signals an error.  The args are FORMATed to *error-output*.")
 (docfun eval function (form) "
 Evaluates FORM and returns all values.")
 
-(docfun eval-when special "(eval-when ({situation}*) {form}*)" "
+(docfun eval-when special ((&rest situation) &body forms) "
 Specifies when to evaluate FORMs.  Each SITUATION must be one of the following
 symbols.
 	COMPILE	(compile-time)
@@ -1348,8 +1352,7 @@ Equivalent to CAR.")
 ECL specific.
 Returns T if the X is a fixnum; NIL otherwise.")
 
-(docfun flet special
-	"(flet ({(name lambda-list {decl | doc}* {form}*)}*) . body)" "
+(docfun flet special ((&rest functions) &body forms) "
 Introduces local functions and evaluates BODY as a PROGN.  BODY is the scope
 of each local function but the local function definitions are not.  Thus each
 local function can reference externally defined functions of the same name as
@@ -1461,10 +1464,10 @@ functions such as FUNCALL or APPLY.  A function is either:
 	   environment at the time of the function creation.
 	3. a symbol that names a global function.")
 
-(docfun function special "(function x) | #'x" "
-If X is a lambda expression, creates and returns a lexical closure of X in the
-current lexical environment.  If X is a symbol that names a function, returns
-that function definition.")
+(docfun function special (function-name) "
+If X is a lambda expression, (function x) creates and returns a lexical closure
+of X in the current lexical environment.  If X is a symbol that names a function,
+returns that function definition.")
 
 (docfun functionp function (x) "
 Returns T if X is an object that can be used to specify a function to be
@@ -1601,7 +1604,7 @@ equal to zero.")
 ECL/CLOS specific.
 Returns T if OBJECT is of gfun type.")
 
-(docfun go special "(go tag)" "
+(docfun go special (tag) "
 Jumps to TAG.  See TAGBODY.")
 
 (docfun graphic-char-p function (char) "
@@ -1627,7 +1630,7 @@ FILESPEC may be a symbol, a string, a pathname, or a file stream.")
 (docfun identity function (x) "
 Returns X.")
 
-(docfun if special "(if test form1 [form2])" "
+(docfun if special (test true-form &optional false-form) "
 If TEST evaluates to non-NIL, then evaluates FORM1 and returns all values.
 Otherwise, evaluates FORM2 (which defaults to NIL) and returns all values.")
 
@@ -1734,8 +1737,7 @@ A keyword is a symbol in the keyword package.")
 (docfun keywordp function (x) "
 Returns T if X is a symbol that belongs to the KEYWORD package; NIL otherwise.")
 
-(docfun labels special
-	"(labels ({(name lambda-list {decl | doc}* {form}*)}*) . body)" "
+(docfun labels special ((&rest functions) &body forms) "
 Introduces local functions and evaluates BODY as a PROGN.  The scope of each
 local function include the local function definitions.  Thus self- and mutual-
 recursive local functions can be defined.  Doc-strings for local functions are
@@ -1790,12 +1792,12 @@ Same as LEAST-POSITIVE-LONG-FLOAT.")
 (docfun length function (sequence) "
 Returns the length of SEQUENCE.")
 
-(docfun let special "(let ({var | (var [init])}*) {decl}* {form}*)" "
+(docfun let special ((&rest bindings) &body body) "
 Evaluates all INITs (which defaults to NIL), binds the value of each INIT to
 the corresponding VAR, evaluates FORMs, and returns all values of the last
 FORM.  Returns NIL if no FORM is given.")
 
-(docfun let* special "(let* ({var | (var [init])}*) {decl}* {form}*)" "
+(docfun let* special ((&rest bindings) &body body) "
 Evaluates INIT (which defaults to NIL) and binds the value to the
 corresponding VAR, one by one for each pair of VAR and INIT.  Then evaluates
 FORMs and returns all values of the last FORM.  Returns NIL if no FORM is
@@ -1836,7 +1838,7 @@ is not found.  It may be :ERROR or NIL.
 If the file was loaded successfully, returns the pathname of the file actually
 loaded")
 
-(docfun locally macro "(locally {decl}* {form}*)" "
+(docfun locally macro (&body forms) "
 Gives DECLs locally while evaluating FORMs, and returns all values of the last
 FORM.  Returns NIL if no FORM is given.")
 
@@ -1906,9 +1908,9 @@ If FORM is a macro form, then expands it once and returns the result as the
 first value and T as the second value.  Otherwise, returns FORM and NIL as two
 values.")
 
-(docfun macrolet special
-	"(macrolet ({(name defmacro-lambda-list {decl | doc}* {form}*)}*)
-          . body)" "
+(docfun macrolet special ((&rest macros) &body forms)
+"Syntax: (macrolet ({(name defmacro-lambda-list {decl | doc}* {form}*)}*)
+          . body)
 Introduces local macros and evaluates BODY as a PROGN.  See DEFMACRO for the
 complete syntax of defmacro-lambda-list.  Doc-strings for local macros are
 simply ignored.")
@@ -1999,7 +2001,7 @@ is notated as
 	#<string-output stream n>
 where N is a number that identifies the stream.")
 
-(docfun si::make-string-output-stream-from-string function (string) ")
+(docfun si::make-string-output-stream-from-string function (string) "
 ECL specific.
 Creates and returns a string-output-stream to STRING.  STRING must have a
 fill-pointer.")
@@ -2122,14 +2124,12 @@ The largest positive short-float.")
 (docvar most-positive-single-float constant "
 Same as MOST-POSITIVE-LONG-FLOAT.")
 
-(docfun multiple-value-call special
-	"(multiple-value-call function-form {form}*)" "
+(docfun multiple-value-call special (function-form &rest forms) "
 Evaluates FUNCTION-FORM, whose value must be a function.  Then evaluates FORMs
 and applies the function to all values of FORMs.  Unlike FUNCALL, all values
 of each FORM are used as arguments.  Returns all values of the function.")
 
-(docfun multiple-value-prog1 special
-	"(multiple-value-prog1 first-form {form}*)" "
+(docfun multiple-value-prog1 special (first-form &rest forms) "
 Evaluates FIRST-FORM, saves all values it returns, and then evaluates FORMs.
 Returns all the saved values of FIRST-FORM.")
 
@@ -2252,7 +2252,7 @@ where F is the file name.")
 "Creates a pipe in the form of a two-way stream that can be used for
 interprocess and interthread communication.")
 
-(docfun or macro "(or {form}*)" "
+(docfun or macro (&rest forms) "
 Evaluates FORMs in order from left to right.  If any FORM evaluates to non-
 NIL, quits and returns that (single) value.  If the last FORM is reached,
 returns whatever values it returns.")
@@ -2413,17 +2413,17 @@ Equivalent to
 Returns the full pathname of the specified file if it exists.  Returns NIL
 otherwise.  FILESPEC may be a symbol, a string, a pathname, or a file stream.")
 
-(docfun progn special "(progn {form}*)" "
+(docfun progn special (&body forms) "
 Evaluates FORMs in order, and returns all values of the last FORM.  Returns
 NIL if no FORM is given.")
 
-(docfun progv special "(progv symbols-form values-form {form}*)" "
+(docfun progv special (symbols-form values-form &body forms) "
 Evaluates SYMBOLS-FORM and VALUES-FORM.  The value of SYMBOLS-FORM must be a
 list of symbols (S1 ... Sn) and the value of VALUES-FORM must be a list
 (V1 ... Vm).  Binds each Si to Vi or to NIL if i > m.  Then evaluates FORMs
 and returns all values of the last FORM.  Returns NIL if no FORM is given.")
 
-(docfun quote special "(quote x) | 'x" "
+(docfun quote special (x) "
 Simply returns X without evaluating it.")
 
 (docfun random function (number &optional (random-state *random-state*)) "
@@ -2588,12 +2588,12 @@ garbage collector has been called for each implementation type.")
 (docfun rest function (x) "
 Equivalent to CDR.")
 
-(docfun return macro "(return [result])" "
+(docfun return macro (&optional result) "
 Terminates execution of the lexically surrounding NIL block and returns all
 values of RESULT (which defaults to NIL) as the values of the terminated
 block.")
 
-(docfun return-from special "(return-from symbol [result])" "
+(docfun return-from special (symbol &optional result) "
 Terminates execution of the lexically surrounding block named SYMBOL and
 returns all values of RESULT (which defaults to NIL) as the values of the
 terminated block.")
@@ -2681,7 +2681,9 @@ readtable is used.  TO-CHAR belongs to the same syntactic class as FROM-CHAR,
 and if FROM-CHAR is a macro character, TO-CHAR inherits the read macro and
 non-terminating-p flag of FROM-CHAR.  See READTABLE.")
 
-(docfun setq special "(setq {var form}*)" "
+(docfun setq special (&rest var-form-pairs) "
+Syntax: (setq {var form}*)
+
 Evaluates each FORM and assigns the value to VAR in order.  Returns the value
 of the last FORM.")
 
@@ -3063,7 +3065,9 @@ The type T is a supertype of every type.  Every object belongs to this type.")
 (docvar t constant "
 The value of T is T.")
 
-(docfun tagbody special "(tagbody {tag | statement}*)" "
+(docfun tagbody special (&body forms)
+"Syntax: (tagbody {tag | statement}*)
+
 Executes STATEMENTs in order and returns NIL after the execution of the last
 STATEMENT.  But, if a GO form causes a jump to one of the TAGs, then execution
 continues at the point right after the TAG.  Lists are regarded as STATEMENTs
@@ -3085,7 +3089,7 @@ Equivalent to (CADR (CDDDDR (CDDDDR X))).")
 (docfun terpri function (&optional (stream *standard-output*)) "
 Outputs a newline character.")
 
-(docfun the special "(the type form)" "
+(docfun the special (type form) "
 Declares that FORM evaluates to a value of TYPE.  Evaluates FORM and checks if
 the value belongs to TYPE.  If it does, returns the value.  Otherwise, signals
 an error.")
@@ -3093,7 +3097,7 @@ an error.")
 (docfun third function (x) "
 Equivalent to CADDR.")
 
-(docfun throw special "(throw tag form)" "
+(docfun throw special (tag form) "
 Evaluates TAG and aborts the execution of the most recent CATCH form that
 establishes a catcher with the same catch tag.  Returns all values of FORM as
 the values of the CATCH form.")
@@ -3130,7 +3134,7 @@ Causes PACKAGE not to use packages specified by PACKAGE-SPEC.  PACKAGE-SPEC
 may be a package object, a string, a symbol, or a list consisting of package
 objects, strings, and, symbols.")
 
-(docfun unwind-protect special "(unwind-protect form {cleanup-form}*)" "
+(docfun unwind-protect special (form &body cleanup-forms) "
 Evaluates FORM and returns all its values.  Before returning, evaluates
 CLEANUP-FORMs in order, whether FORM returns normally or abnormally by a non-
 local exit.")
@@ -3170,7 +3174,7 @@ of VECTOR and then increments the fill-pointer by one.  If the new value of
 the fill-pointer becomes too large, extends VECTOR for N more elements.
 Returns the new value of the fill-pointer.")
 
-(docfun when macro "(when test {form}*)" "
+(docfun when macro (test &body forms) "
 If TEST evaluates to non-NIL, then evaluates FORMs and returns all values of
 the last FORM.  If not, simply returns NIL.")
 
