@@ -26,7 +26,7 @@
    #+ecl (type :reader bundle-op-type)
    #+ecl (name-suffix :initarg :name-suffix :initform nil)
    #+ecl (lisp-files :initform nil :accessor bundle-op-lisp-files)
-   #+ecl (monolithic :initform nil :reader bundle-op-monolithic-p)
+   ;#+ecl (monolithic :initform nil :reader bundle-op-monolithic-p)
    #+mkcl (do-fasb :initarg :do-fasb :initform t :reader bundle-op-do-fasb-p)
    #+mkcl (do-static-library :initarg :do-static-library :initform t :reader bundle-op-do-static-library-p)))
 
