@@ -18,12 +18,16 @@
 ;;; The different targets are defined by specialization.
 ;;;
 
+(defun fasl-type ()
+  "pathname TYPE for lisp FASt Loading files"
+  (#-ecl load-time-value #+ecl identity
+   (pathname-type (compile-file-pathname "foo.lisp"))))
+
 (defclass bundle-op (operation)
   ((build-args :initarg :args :initform nil :accessor bundle-op-build-args)
    #+ecl (type :reader bundle-op-type)
    #+ecl (name-suffix :initarg :name-suffix :initform nil)
    #+ecl (lisp-files :initform nil :accessor bundle-op-lisp-files)
-   ;#+ecl (monolithic :initform nil :reader bundle-op-monolithic-p)
    #+mkcl (do-fasb :initarg :do-fasb :initform t :reader bundle-op-do-fasb-p)
    #+mkcl (do-static-library :initarg :do-static-library :initform t :reader bundle-op-do-static-library-p)))
 
@@ -290,7 +294,8 @@
   (coerce-pathname
    (or (slot-value component 'relative-pathname)
        (component-name component))
-   :defaults (compile-file-pathname "foo.lisp")))
+   :type (fasl-type)
+   :defaults (component-parent-pathname component)))
 
 (defmethod output-files (o (c compiled-file))
   (declare (ignore o c))
