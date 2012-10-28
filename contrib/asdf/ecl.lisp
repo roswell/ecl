@@ -32,5 +32,3 @@
 (export '(make-build load-fasl-op))
 
 (pushnew '("fasb" . si::load-binary) ext:*load-hooks* :test 'equal :key 'car)
-
-(pushnew (translate-logical-pathname "SYS:") *central-registry*)
