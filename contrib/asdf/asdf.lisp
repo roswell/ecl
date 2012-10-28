@@ -4227,6 +4227,7 @@ with a different configuration, so the configuration would be re-read then."
 
 (defun* wrapping-source-registry ()
   `(:source-registry
+    #+ecl (:tree ,(translate-logical-pathname "SYS:"))
     #+mkcl (:tree ,(translate-logical-pathname "CONTRIB:"))
     #+sbcl (:tree ,(truenamize (getenv-pathname "SBCL_HOME" :want-directory t)))
     :inherit-configuration
