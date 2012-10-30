@@ -890,7 +890,7 @@
               sequence :no-side-effects)
 (proclamation map (type-specifier function-designator sequence &rest sequence)
               sequence)
-(proclamation map-into (sequence function-designator sequence &rest sequence)
+(proclamation map-into (sequence function-designator &rest sequence)
               sequence)
 (proclamation reduce (function-designator sequence &key) t)
 (proclamation count (t sequence &key) sequence-index)
