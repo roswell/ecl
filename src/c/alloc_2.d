@@ -787,6 +787,9 @@ init_alloc(void)
 	GC_all_interior_pointers = 0;
 	GC_time_limit = GC_TIME_UNLIMITED;
 	GC_init();
+#ifdef ECL_THREADS
+	GC_allow_register_threads();
+#endif
 	if (ecl_option_values[ECL_OPT_INCREMENTAL_GC]) {
 		GC_enable_incremental();
 	}
