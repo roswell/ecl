@@ -338,6 +338,7 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
 	pthread_t current;
 	cl_env_ptr env;
 	int registered;
+	struct GC_stack_base stack;
 #ifdef ECL_WINDOWS_THREADS
 	{
 	HANDLE aux = GetCurrentThread();
@@ -354,7 +355,8 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
 	current = pthread_self();
 #endif
 #ifdef GBC_BOEHM
-	switch (GC_register_my_thread((void*)&name)) {
+	GC_get_stack_base(&stack);
+	switch (GC_register_my_thread(&stack)) {
 	case GC_SUCCESS:
 		registered = 1;
 		break;
