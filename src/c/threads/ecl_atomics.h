@@ -15,7 +15,7 @@
 
 #ifndef ECL_ATOMICS_H
 #define AO_ASSUME_WINDOWS98
-#include <ecl/atomic_ops.h>
+#include <ecl/internal.h>
 
 #if !defined(AO_HAVE_compare_and_swap_full)
 # error "ECL needs AO_compare_and_swap_full or an equivalent"

@@ -89,6 +89,7 @@
 #  undef _endthreadex
 # endif
 #endif
+#undef ECL_LIBATOMIC_OPS_H
 
 /* Network streams							*/
 #undef TCP

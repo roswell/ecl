@@ -763,6 +763,7 @@ enable_shared
 enable_rpath
 enable_threads
 enable_boehm
+enable_libatomic
 enable_slow_config
 enable_soname
 with_system_boehm
@@ -1444,6 +1445,8 @@ Optional Features:
                           default=NO).
   --enable-boehm          use the Boehm-Weiser garbage collector
                           (no|included|system|auto, default=auto)
+  --enable-libatomic      version of the libatomic-ops library
+                          (auto|included|system, default=auto)
   DEPRECATED: use --with-system-boehm=no
 
   --enable-soname         link and install the library using version numbers
@@ -2614,6 +2617,14 @@ if test "${enable_boehm+set}" = set; then :
   enableval=$enable_boehm;
 else
   enable_boehm=auto
+fi
+
+
+# Check whether --enable-libatomic was given.
+if test "${enable_libatomic+set}" = set; then :
+  enableval=$enable_libatomic;
+else
+  enable_libatomic=auto
 fi
 
 
@@ -9136,18 +9147,53 @@ fi
 fi
 
 
+case "${enable_libatomic}" in
+  auto|system|included) ;;
+  *) as_fn_error $? "Invalid value of --enable-libatomic: ${enable_libatomic} " "$LINENO" 5;;
+esac
 if test "x${enable_threads}" != "xno"; then
-  test -d atomic || mkdir atomic
-  (destdir=`${PWDCMD}`; cd atomic && CC="${CC} ${PICFLAG}" \
-   $srcdir/${ECL_GC_DIR}/libatomic*/configure --disable-shared --prefix=${destdir} \
+  ac_fn_c_check_header_mongrel "$LINENO" "atomic_ops.h" "ac_cv_header_atomic_ops_h" "$ac_includes_default"
+if test "x$ac_cv_header_atomic_ops_h" = xyes; then :
+  system_libatomic=yes
+else
+  system_libatomic=no
+fi
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking libatomic-ops version " >&5
+$as_echo_n "checking libatomic-ops version ... " >&6; }
+  if test "${enable_libatomic}" = auto; then
+    if test "${system_libatomic}" = yes; then
+      enable_libatomic=system
+    else
+      enable_libatomic=included
+    fi
+  fi
+  if test "${enable_libatomic}" = system; then
+    if test "${system_libatomic}" = no; then
+      as_fn_error $? "Cannot find libatomic-ops in the system " "$LINENO" 5
+      enable_libatomic=included
+    fi
+  fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${enable_libatomic} " >&5
+$as_echo "${enable_libatomic} " >&6; }
+  if test "${enable_libatomic}" = included; then
+    test -d atomic || mkdir atomic
+    (destdir=`${PWDCMD}`; cd atomic && CC="${CC} ${PICFLAG}" \
+     $srcdir/${ECL_GC_DIR}/libatomic*/configure --disable-shared --prefix=${destdir} \
 	--infodir=${destdir}/doc --includedir=${destdir}/ecl --with-pic \
         --libdir=${destdir} --build=${build_alias} --host=${host_alias} \
         CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" CC="${CC} \
         ${PICFLAG}")
-  SUBDIRS="${SUBDIRS} atomic"
-  CORE_LIBS="-leclatomic ${CORE_LIBS}"
-  if test "${enable_shared}" = "no"; then
-    LIBRARIES="${LIBRARIES} ${LIBPREFIX}eclatomic.${LIBEXT}"
+    SUBDIRS="${SUBDIRS} atomic"
+    if test "${enable_shared}" = "no"; then
+      LIBRARIES="${LIBRARIES} ${LIBPREFIX}eclatomic.${LIBEXT}"
+    fi
+    $as_echo "#define ECL_LIBATOMIC_OPS_H 1" >>confdefs.h
+
+    CORE_LIBS="-leclatomic ${CORE_LIBS}"
+  else
+    CORE_LIBS="-latomic_ops ${CORE_LIBS}"
   fi
 fi
 

@@ -873,18 +873,43 @@ dnl ----------------------------------------------------------------------
 dnl Configure libatomic-ops
 dnl
 AC_DEFUN([ECL_LIBATOMIC_OPS],[
+case "${enable_libatomic}" in
+  auto|system|included) ;;
+  *) AC_MSG_ERROR( [Invalid value of --enable-libatomic: ${enable_libatomic}] );;
+esac
 if test "x${enable_threads}" != "xno"; then
-  test -d atomic || mkdir atomic
-  (destdir=`${PWDCMD}`; cd atomic && CC="${CC} ${PICFLAG}" \
-   $srcdir/${ECL_GC_DIR}/libatomic*/configure --disable-shared --prefix=${destdir} \
+  AC_CHECK_HEADER([atomic_ops.h],[system_libatomic=yes],[system_libatomic=no],[])
+  AC_MSG_CHECKING( [libatomic-ops version] )
+  if test "${enable_libatomic}" = auto; then
+    if test "${system_libatomic}" = yes; then
+      enable_libatomic=system
+    else
+      enable_libatomic=included
+    fi
+  fi
+  if test "${enable_libatomic}" = system; then
+    if test "${system_libatomic}" = no; then
+      AC_MSG_ERROR( [Cannot find libatomic-ops in the system] )
+      enable_libatomic=included
+    fi
+  fi
+  AC_MSG_RESULT( [${enable_libatomic}] )
+  if test "${enable_libatomic}" = included; then
+    test -d atomic || mkdir atomic
+    (destdir=`${PWDCMD}`; cd atomic && CC="${CC} ${PICFLAG}" \
+     $srcdir/${ECL_GC_DIR}/libatomic*/configure --disable-shared --prefix=${destdir} \
 	--infodir=${destdir}/doc --includedir=${destdir}/ecl --with-pic \
         --libdir=${destdir} --build=${build_alias} --host=${host_alias} \
         CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" CC="${CC} \
         ${PICFLAG}")
-  SUBDIRS="${SUBDIRS} atomic"
-  CORE_LIBS="-leclatomic ${CORE_LIBS}"
-  if test "${enable_shared}" = "no"; then
-    LIBRARIES="${LIBRARIES} ${LIBPREFIX}eclatomic.${LIBEXT}"
+    SUBDIRS="${SUBDIRS} atomic"
+    if test "${enable_shared}" = "no"; then
+      LIBRARIES="${LIBRARIES} ${LIBPREFIX}eclatomic.${LIBEXT}"
+    fi
+    AC_DEFINE(ECL_LIBATOMIC_OPS_H)
+    CORE_LIBS="-leclatomic ${CORE_LIBS}"
+  else
+    CORE_LIBS="-latomic_ops ${CORE_LIBS}"
   fi
 fi
 ])
