@@ -788,7 +788,9 @@ init_alloc(void)
 	GC_time_limit = GC_TIME_UNLIMITED;
 	GC_init();
 #ifdef ECL_THREADS
+# if GC_VERSION_MAJOR > 7 || GC_VERSION_MINOR > 1
 	GC_allow_register_threads();
+# endif
 #endif
 	if (ecl_option_values[ECL_OPT_INCREMENTAL_GC]) {
 		GC_enable_incremental();
