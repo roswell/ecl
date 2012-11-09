@@ -76,6 +76,7 @@
 # include <ecl/gc/gc.h>
 # define ECL_DYNAMIC_VV
 #endif
+#define ECL_LIBATOMIC_OPS_H
 
 /* Network streams							*/
 #define TCP 1
