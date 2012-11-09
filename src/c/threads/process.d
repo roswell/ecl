@@ -401,6 +401,8 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
 	/* Activate the barrier so that processes can immediately start waiting. */
 	mp_barrier_unblock(1, process->process.exit_barrier);
         process->process.phase = ECL_PROCESS_ACTIVE;
+
+	ecl_bds_bind(env, @'mp::*current-process*', process);
 	return 1;
 }
 
@@ -775,6 +777,7 @@ init_threads(cl_env_ptr env)
 	process->process.woken_up = ECL_NIL;
 	process->process.queue_record = ecl_list1(process);
 	process->process.start_spinlock = ECL_NIL;
+	process->process.exit_barrier = ecl_make_barrier(process->process.name, MOST_POSITIVE_FIXNUM);
 
 	env->own_process = process;
 
