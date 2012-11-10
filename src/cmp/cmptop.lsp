@@ -235,9 +235,6 @@
 cl_object f1 = ecl_fdefinition(setf_form);
 cl_object f2 = ECL_CONS_CAR(setf_vv);
 if (f1 != f2) {
-cl_print(1,f1);
-cl_print(1,f2);
-cl_print(1,setf_form);
 FEundefined_function(setf_form);
 }
 return f2;
