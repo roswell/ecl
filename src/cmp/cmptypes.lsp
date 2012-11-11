@@ -162,6 +162,7 @@
   (referenced-vars nil)	;;; List of external variables referenced here.
   (referenced-funs nil)	;;; List of external functions called in this one.
 			;;; We only register direct calls, not calls via object.
+  (referencing-funs nil);;; Functions that reference this one
   (child-funs nil)	;;; List of local functions defined here.
   #+new-cmp
   (debug 0)		;;; Debug quality

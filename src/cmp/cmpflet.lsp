@@ -54,12 +54,13 @@
 
     ;; When we are in a LABELs form, we have to propagate the external
     ;; variables from one function to the other functions that use it.
-    (dolist (f1 local-funs)
-      (let ((vars (fun-referenced-vars f1)))
-	(dolist (f2 local-funs)
-	  (when (and (not (eq f1 f2))
-		     (member f1 (fun-referenced-funs f2)))
-	    (add-referred-variables-to-function f2 vars)))))
+    (when (eq origin 'LABELS)
+      (dolist (f1 local-funs)
+	(let ((vars (fun-referenced-vars f1)))
+	  (dolist (f2 local-funs)
+	    (when (and (not (eq f1 f2))
+		       (member f1 (fun-referenced-funs f2) :test #'eq))
+	      (add-to-fun-referenced-vars f2 vars))))))
 
     ;; Now we can compile the body itself.
     (let ((*cmp-env* new-env))
@@ -243,10 +244,13 @@
 	  (cmperr "The name of a macro ~A was found in special form FUNCTION." fname))
 	(return-from local-function-ref nil))
       (incf (fun-ref fun))
-      (cond (build-object
-	     (setf (fun-ref-ccb fun) t))
-	    (*current-function*
-	     (push fun (fun-referenced-funs *current-function*))))
+      (if build-object
+	  (setf (fun-ref-ccb fun) t)
+	  (let ((caller *current-function*))
+	    (when (and caller
+		       (not (member fun (fun-referenced-funs caller) :test #'eq)))
+	      (push fun (fun-referenced-funs caller))
+	      (push caller (fun-referencing-funs fun)))))
       ;; we introduce a variable to hold the funob
       (let ((var (fun-var fun)))
 	(cond (ccb (when build-object

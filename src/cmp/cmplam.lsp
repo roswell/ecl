@@ -69,11 +69,30 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 	 (<= narg si::c-arguments-limit)
 	 narg)))
 
-(defun add-referred-variables-to-function (fun var-list)
-  (setf (fun-referenced-vars fun)
-	(set-difference (union (fun-referenced-vars fun) var-list)
-			(fun-local-vars fun)))
-  fun)
+(defun add-to-fun-referenced-vars (fun var-list)
+  (loop with new-vars = (fun-referenced-vars fun)
+     with locals = (fun-local-vars fun)
+     with change = nil
+     for v in var-list
+     when (and (not (member v locals :test #'eq))
+	       (not (member v new-vars :test #'eq)))
+     do (setf change t new-vars (cons v new-vars))
+     finally (when change
+	       (setf (fun-referenced-vars fun) new-vars)
+	       (return t))))
+
+(defun add-to-fun-referenced-funs (fun fun-list)
+  (loop with new-funs = (fun-referenced-funs fun)
+     with change = nil
+     for f in fun-list
+     when (and (not (member f new-funs :test #'eq))
+	       (not (child-function-p fun f)))
+     do (setf change t
+	      new-funs (cons f new-funs)
+	      (fun-referencing-funs f) (cons fun (fun-referencing-funs f)))
+     finally (when change
+	       (setf (fun-referenced-funs fun) new-funs)
+	       (return t))))
 
 (defun c1compile-function (lambda-list-and-body &key (fun (make-fun))
 			   (name (fun-name fun)) (CB/LB 'CB))
@@ -93,7 +112,6 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 	 (no-entry (assoc 'SI::C-LOCAL decl))
 	 (lambda-expr (c1lambda-expr lambda-list-and-body
 				     (si::function-block-name name)))
-	 (children (fun-child-funs fun))
 	 cfun exported minarg maxarg)
     (when (and no-entry (policy-debug-ihs-frame))
       (setf no-entry nil)
@@ -125,21 +143,11 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 	  (fun-maxarg fun) maxarg
 	  (fun-description fun) name
 	  (fun-no-entry fun) no-entry)
-    (reduce #'add-referred-variables-to-function
-	    (mapcar #'fun-referenced-vars children)
-	    :initial-value fun)
-    (reduce #'add-referred-variables-to-function
-	    (mapcar #'fun-referenced-vars (fun-referenced-funs fun))
-	    :initial-value fun)
-    ;; Add all non-global functions which are referenced by children
-    ;; excluding those created inside this function.
-    (loop with children = (fun-child-funs fun)
-       for child in children
-       do (loop for f in (fun-referenced-funs child)
-	     unless (or (fun-global f)
-			(child-function-p fun f))
-	     do (pushnew f (fun-referenced-funs fun)))
-       finally (update-fun-closure-type-many children))
+    (loop for child in (fun-child-funs fun)
+       do (add-to-fun-referenced-vars fun (fun-referenced-vars child))
+       do (add-to-fun-referenced-funs fun (fun-referenced-funs child)))
+    (loop for f in (fun-referenced-funs fun)
+       do (add-to-fun-referenced-vars fun (fun-referenced-vars f)))
     (update-fun-closure-type fun)
     (when global
       (if (fun-closure fun)
