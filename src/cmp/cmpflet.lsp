@@ -88,8 +88,16 @@
 		      :args local-funs body-c1form (eq origin 'LABELS))
 	body-c1form)))
 
+(defun child-function-p (presumed-parent fun)
+  (declare (si::c-local))
+  (loop for real-parent = (fun-parent fun)
+     while real-parent
+     do (if (eq real-parent presumed-parent)
+	    (return t)
+	    (setf fun real-parent))))
+
 (defun compute-fun-closure-type (fun)
-  (labels
+  (flet
       ((closure-type (fun)
 	 (let ((closure nil))
 	   ;; it will have a full closure if it refers external non-global variables
@@ -101,7 +109,7 @@
 		   (unless closure (setf closure 'LEXICAL)))))
 	   ;; ...or if it directly calls a function
 	   (dolist (f (fun-referenced-funs fun))
-	     (unless (child-p fun f)
+	     (unless (child-function-p fun f)
 	       ;; .. which has a full closure
 	       (case (fun-closure f)
 		 (CLOSURE (setf closure 'CLOSURE))
@@ -112,12 +120,7 @@
 		       (and (fun-var fun)
 			    (plusp (var-ref (fun-var fun)))))
 	       (setf closure 'CLOSURE)))
-	   closure))
-       (child-p (presumed-parent fun)
-	 (let ((real-parent (fun-parent fun)))
-	   (when real-parent
-	     (or (eq real-parent presumed-parent)
-		 (child-p real-parent presumed-parent))))))
+	   closure)))
     ;; This recursive algorithm is guaranteed to stop when functions
     ;; do not change.
     (let ((new-type (closure-type fun))
