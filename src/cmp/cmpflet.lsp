@@ -89,8 +89,7 @@
 	body-c1form)))
 
 (defun child-function-p (presumed-parent fun)
-  (declare (si::c-local)
-	   (optimize speed))
+  (declare (optimize speed))
   (loop for real-parent = (fun-parent fun)
      while real-parent
      do (if (eq real-parent presumed-parent)

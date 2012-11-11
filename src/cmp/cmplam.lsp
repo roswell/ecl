@@ -131,7 +131,15 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
     (reduce #'add-referred-variables-to-function
 	    (mapcar #'fun-referenced-vars (fun-referenced-funs fun))
 	    :initial-value fun)
-    (update-fun-closure-type-many (fun-child-funs fun))
+    ;; Add all non-global functions which are referenced by children
+    ;; excluding those created inside this function.
+    (loop with children = (fun-child-funs fun)
+       for child in children
+       do (loop for f in (fun-referenced-funs child)
+	     unless (or (fun-global f)
+			(child-function-p fun f))
+	     do (pushnew f (fun-referenced-funs fun)))
+       finally (update-fun-closure-type-many children))
     (update-fun-closure-type fun)
     (when global
       (if (fun-closure fun)
