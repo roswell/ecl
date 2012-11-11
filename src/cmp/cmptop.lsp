@@ -780,13 +780,28 @@ return f2;
 ;;; the compiler we do not know whether a function is a closure, hence the need
 ;;; for a c2fset.
 ;;;
+;;; We optimize (SYS:FSET #'(LAMBDA ...) ..) and also, accidentally,
+;;; (SYS:FSET (FLET ((FOO ...)) #'FOO) ...) which is to what LAMBDA gets
+;;; translated in c1function.
+;;;
 (defun c1fset (args)
   (destructuring-bind (fname def &optional (macro nil) (pprint nil))
       args
     (let* ((fun-form (c1expr def)))
-      (if (and (eq (c1form-name fun-form) 'FUNCTION)
-	       (not (eq (c1form-arg 0 fun-form) 'GLOBAL)))
-	  (let ((fun-object (c1form-arg 2 fun-form)))
+      (when (eq (c1form-name fun-form) 'LOCALS)
+	(let* ((function-list (c1form-arg 0 fun-form))
+	       (fun-object (pop function-list))
+	       (form (c1form-arg 1 fun-form))
+	       (labels (c1form-arg 2 fun-form)))
+	  (when (and
+		 ;; Only 1 function
+		 (null function-list)
+		 ;; Not closed over anything
+		 (every #'global-var-p (fun-referenced-vars fun-object))
+		 ;; Referencing the function variable
+		 (eq (c1form-name form) 'VAR)
+		 (eq (c1form-arg 0 form)
+		     (fun-var fun-object)))
 	    (when (fun-no-entry fun-object)
 	      (when macro
 		(cmperr "Declaration C-LOCAL used in macro ~a"
@@ -807,7 +822,7 @@ return f2;
 			      (list (c1expr fname)
 				    fun-form
 				    (c1expr macro)
-				    (c1expr pprint))))))))
+				    (c1expr pprint)))))))))
     (c1call-global 'SI:FSET (list fname def macro pprint))))
 
 (defun p1fset (c1form assumptions fun fname macro pprint c1forms)
@@ -818,7 +833,7 @@ return f2;
     (wt-nl "(void)0; /* No entry created for "
 	   (format nil "~A" (fun-name fun))
 	   " */")
-    ;; FIXME! Look at c2function!
+    ;; FIXME! Look at C2LOCALS!
     (new-local fun)
     (return-from c2fset))
   (unless (and (not (fun-closure fun))
@@ -828,7 +843,7 @@ return f2;
   (let ((*inline-blocks* 0)
 	(loc (data-empty-loc)))
     (push (list loc fname fun) *global-cfuns-array*)
-    ;; FIXME! Look at c2function!
+    ;; FIXME! Look at C2LOCALS!
     (new-local fun)
     (wt-nl (if macro "ecl_cmp_defmacro(" "ecl_cmp_defun(")
 	   loc ");")

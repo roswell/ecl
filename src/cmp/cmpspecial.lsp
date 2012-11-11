@@ -86,11 +86,7 @@
 	     (if (eq (first fun) 'EXT::LAMBDA)
 		 (setf name (gensym) body (rest fun))
 		 (setf name (second fun) body (cddr fun)))
-	     (let* ((funob (c1compile-function body :name name))
-		    (lambda-form (fun-lambda funob)))
-	       (setf (fun-ref-ccb funob) t)
-	       (update-fun-closure-type funob)
-	       (make-c1form 'FUNCTION lambda-form 'CLOSURE lambda-form funob))))
+	     (c1expr `(flet ((,name ,@body)) #',name))))
 	  (t (cmperr "The function ~s is illegal." fun)))))
 
 (defun c2function (c1form kind funob fun)
@@ -99,6 +95,7 @@
     (GLOBAL
      (unwind-exit (list 'FDEFINITION fun)))
     (CLOSURE
+     (baboon)
      (new-local fun)
      (unwind-exit `(MAKE-CCLOSURE ,fun)))))
 
