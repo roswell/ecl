@@ -98,28 +98,29 @@
 
 (defun compute-closure-type (fun)
   (declare (si::c-local))
-  (let ((closure nil))
+  (let ((lexical-closure-p nil))
     ;; it will have a full closure if it refers external non-global variables
     (dolist (var (fun-referenced-vars fun))
-      (unless (global-var-p var)
-	;; ...across CB
-	(if (ref-ref-ccb var)
-	    (setf closure 'CLOSURE)
-	    (unless closure (setf closure 'LEXICAL)))))
+      (cond ((global-var-p var))
+	    ;; ...across CB
+	    ((ref-ref-ccb var)
+	     (return-from compute-closure-type 'CLOSURE))
+	    (t
+	     (setf lexical-closure-p t))))
     ;; ...or if it directly calls a function
     (dolist (f (fun-referenced-funs fun))
       (unless (child-function-p fun f)
 	;; .. which has a full closure
 	(case (fun-closure f)
-	  (CLOSURE (setf closure 'CLOSURE))
-	  (LEXICAL (unless closure (setf closure 'LEXICAL))))))
+	  (CLOSURE (return-from compute-closure-type 'CLOSURE))
+	  (LEXICAL (setf lexical-closure-p t)))))
     ;; ...or the function itself is referred across CB
-    (when closure
-      (when (or (fun-ref-ccb fun)
-		(and (fun-var fun)
-		     (plusp (var-ref (fun-var fun)))))
-	(setf closure 'CLOSURE)))
-    closure))
+    (when lexical-closure-p
+      (if (or (fun-ref-ccb fun)
+	      (and (fun-var fun)
+		   (plusp (var-ref (fun-var fun)))))
+	  'CLOSURE
+	  'LEXICAL))))
 
 (defun update-fun-closure-type-many (function-list)
   (do ((finish nil t)
