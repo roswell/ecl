@@ -133,23 +133,20 @@
 
 (defun update-fun-closure-type (fun)
   (let ((old-type (fun-closure fun)))
+    (when (eq old-type 'closure)
+      (return-from update-fun-closure-type nil))
     ;; This recursive algorithm is guaranteed to stop when functions
     ;; do not change.
     (let ((new-type (compute-closure-type fun)))
       ;; Same type
       (when (eq new-type old-type)
 	(return-from update-fun-closure-type nil))
-      ;; {lexical,closure} -> no closure!
-      ;; closure -> {lexical, no closure}
-      (when (or (and (not new-type) old-type)
-		(eq old-type 'CLOSURE))
-	(baboon))
+      (when (fun-global fun)
+	(cmpnote "Function ~A is global but is closed over some variables.~%~{~A ~}"
+		 (fun-name fun) (mapcar #'var-name (fun-referenced-vars fun))))
       (setf (fun-closure fun) new-type)
       ;; All external, non-global variables become of type closure
       (when (eq new-type 'CLOSURE)
-	(when (fun-global fun)
-	  (cmpnote "Function ~A is global but is closed over some variables.~%~{~A ~}"
-                   (fun-name fun) (mapcar #'var-name (fun-referenced-vars fun))))
 	(dolist (var (fun-referenced-vars fun))
 	  (unless (global-var-p var)
 	    (setf (var-ref-clb var) nil
