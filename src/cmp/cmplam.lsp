@@ -135,9 +135,9 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 	(finish)
       (setf finish t)
       (dolist (f (fun-child-funs fun))
-	(when (compute-fun-closure-type f)
+	(when (update-fun-closure-type f)
 	  (setf finish nil))))
-    (compute-fun-closure-type fun)
+    (update-fun-closure-type fun)
     (when global
       (if (fun-closure fun)
           (cmpnote "Function ~A is global but is closed over some variables.~%~{~A ~}"

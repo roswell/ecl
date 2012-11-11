@@ -79,7 +79,7 @@
     (loop while
 	 (let ((x nil))
 	   (loop for f in local-funs
-	      when (compute-fun-closure-type f)
+	      when (update-fun-closure-type f)
 	      do (setf x t))
 	   x))
 
@@ -89,48 +89,47 @@
 	body-c1form)))
 
 (defun child-function-p (presumed-parent fun)
-  (declare (si::c-local))
+  (declare (si::c-local)
+	   (optimize speed))
   (loop for real-parent = (fun-parent fun)
      while real-parent
      do (if (eq real-parent presumed-parent)
 	    (return t)
 	    (setf fun real-parent))))
 
-(defun compute-fun-closure-type (fun)
-  (flet
-      ((closure-type (fun)
-	 (let ((closure nil))
-	   ;; it will have a full closure if it refers external non-global variables
-	   (dolist (var (fun-referenced-vars fun))
-	     (unless (global-var-p var)
-	       ;; ...across CB
-	       (if (ref-ref-ccb var)
-		   (setf closure 'CLOSURE)
-		   (unless closure (setf closure 'LEXICAL)))))
-	   ;; ...or if it directly calls a function
-	   (dolist (f (fun-referenced-funs fun))
-	     (unless (child-function-p fun f)
-	       ;; .. which has a full closure
-	       (case (fun-closure f)
-		 (CLOSURE (setf closure 'CLOSURE))
-		 (LEXICAL (unless closure (setf closure 'LEXICAL))))))
-	   ;; ...or the function itself is referred across CB
-	   (when closure
-	     (when (or (fun-ref-ccb fun)
-		       (and (fun-var fun)
-			    (plusp (var-ref (fun-var fun)))))
-	       (setf closure 'CLOSURE)))
-	   closure)))
+(defun compute-closure-type (fun)
+  (declare (si::c-local))
+  (let ((closure nil))
+    ;; it will have a full closure if it refers external non-global variables
+    (dolist (var (fun-referenced-vars fun))
+      (unless (global-var-p var)
+	;; ...across CB
+	(if (ref-ref-ccb var)
+	    (setf closure 'CLOSURE)
+	    (unless closure (setf closure 'LEXICAL)))))
+    ;; ...or if it directly calls a function
+    (dolist (f (fun-referenced-funs fun))
+      (unless (child-function-p fun f)
+	;; .. which has a full closure
+	(case (fun-closure f)
+	  (CLOSURE (setf closure 'CLOSURE))
+	  (LEXICAL (unless closure (setf closure 'LEXICAL))))))
+    ;; ...or the function itself is referred across CB
+    (when closure
+      (when (or (fun-ref-ccb fun)
+		(and (fun-var fun)
+		     (plusp (var-ref (fun-var fun)))))
+	(setf closure 'CLOSURE)))
+    closure))
+
+(defun update-fun-closure-type (fun)
+  (let ((old-type (fun-closure fun)))
     ;; This recursive algorithm is guaranteed to stop when functions
     ;; do not change.
-    (let ((new-type (closure-type fun))
-	  (old-type (fun-closure fun)))
-;;       (format t "~%CLOSURE-TYPE: ~A ~A -> ~A, ~A" (fun-name fun)
-;;       	      old-type new-type (fun-parent fun))
-;;       (print (fun-referenced-vars fun))
+    (let ((new-type (compute-closure-type fun)))
       ;; Same type
       (when (eq new-type old-type)
-	(return-from compute-fun-closure-type nil))
+	(return-from update-fun-closure-type nil))
       ;; {lexical,closure} -> no closure!
       ;; closure -> {lexical, no closure}
       (when (or (and (not new-type) old-type)
@@ -155,9 +154,9 @@
       (do ((finish nil t)
 	   (recompute nil))
 	(finish
-	 (when recompute (compute-fun-closure-type fun)))
+	 (when recompute (update-fun-closure-type fun)))
 	(dolist (f (fun-child-funs fun))
-	  (when (compute-fun-closure-type f)
+	  (when (update-fun-closure-type f)
 	    (setf recompute t finish nil))))
       t)))
 

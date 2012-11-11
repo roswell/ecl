@@ -89,7 +89,7 @@
 	     (let* ((funob (c1compile-function body :name name))
 		    (lambda-form (fun-lambda funob)))
 	       (setf (fun-ref-ccb funob) t)
-	       (compute-fun-closure-type funob)
+	       (update-fun-closure-type funob)
 	       (make-c1form 'FUNCTION lambda-form 'CLOSURE lambda-form funob))))
 	  (t (cmperr "The function ~s is illegal." fun)))))
 
