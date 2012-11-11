@@ -98,7 +98,7 @@
   (when *current-function*
     (unless (eq *current-function* (var-function var))
       (pushnew *current-function* (var-functions-reading var))
-      (pushnew var (fun-referred-vars *current-function*))))
+      (pushnew var (fun-referenced-vars *current-function*))))
   form)
 
 (defun add-to-set-nodes (var form)
@@ -110,7 +110,7 @@
   (when *current-function*
     (unless (eq *current-function* (var-function var))
       (pushnew *current-function* (var-functions-setting var))
-      (pushnew var (fun-referred-vars *current-function*))))
+      (pushnew var (fun-referenced-vars *current-function*))))
   form)
 
 (defun add-to-set-nodes-of-var-list (var-list form)

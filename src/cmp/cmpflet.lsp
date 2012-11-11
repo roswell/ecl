@@ -55,10 +55,10 @@
     ;; When we are in a LABELs form, we have to propagate the external
     ;; variables from one function to the other functions that use it.
     (dolist (f1 local-funs)
-      (let ((vars (fun-referred-vars f1)))
+      (let ((vars (fun-referenced-vars f1)))
 	(dolist (f2 local-funs)
 	  (when (and (not (eq f1 f2))
-		     (member f1 (fun-referred-funs f2)))
+		     (member f1 (fun-referenced-funs f2)))
 	    (add-referred-variables-to-function f2 vars)))))
 
     ;; Now we can compile the body itself.
@@ -88,14 +88,14 @@
 		      :args local-funs body-c1form (eq origin 'LABELS))
 	body-c1form)))
 
-(defun fun-referred-local-vars (fun)
-  (remove-if #'global-var-p (fun-referred-vars fun)))
+(defun fun-referenced-local-vars (fun)
+  (remove-if #'global-var-p (fun-referenced-vars fun)))
 
 (defun compute-fun-closure-type (fun)
   (labels
       ((closure-type (fun &aux (lambda-form (fun-lambda fun)))
-	 (let ((vars (fun-referred-local-vars fun))
-	       (funs (remove fun (fun-referred-funs fun) :test #'child-p))
+	 (let ((vars (fun-referenced-local-vars fun))
+	       (funs (remove fun (fun-referenced-funs fun) :test #'child-p))
 	       (closure nil))
 	   ;; it will have a full closure if it refers external non-global variables
 	   (dolist (var vars)
@@ -127,7 +127,7 @@
 	  (old-type (fun-closure fun)))
 ;;       (format t "~%CLOSURE-TYPE: ~A ~A -> ~A, ~A" (fun-name fun)
 ;;       	      old-type new-type (fun-parent fun))
-;;       (print (fun-referred-vars fun))
+;;       (print (fun-referenced-vars fun))
       ;; Same type
       (when (eq new-type old-type)
 	(return-from compute-fun-closure-type nil))
@@ -141,13 +141,13 @@
       (when (eq new-type 'CLOSURE)
 	(when (fun-global fun)
 	  (cmpnote "Function ~A is global but is closed over some variables.~%~{~A ~}"
-                   (fun-name fun) (mapcar #'var-name (fun-referred-vars fun))))
-	(dolist (var (fun-referred-local-vars fun))
+                   (fun-name fun) (mapcar #'var-name (fun-referenced-vars fun))))
+	(dolist (var (fun-referenced-local-vars fun))
 	  (setf (var-ref-clb var) nil
 		(var-ref-ccb var) t
 		(var-kind var) 'CLOSURE
 		(var-loc var) 'OBJECT))
-	(dolist (f (fun-referred-funs fun))
+	(dolist (f (fun-referenced-funs fun))
 	  (setf (fun-ref-ccb f) t)))
       ;; If the status of some of the children changes, we have
       ;; to recompute the closure type.
@@ -245,7 +245,7 @@
       (cond (build-object
 	     (setf (fun-ref-ccb fun) t))
 	    (*current-function*
-	     (push fun (fun-referred-funs *current-function*))))
+	     (push fun (fun-referenced-funs *current-function*))))
       ;; we introduce a variable to hold the funob
       (let ((var (fun-var fun)))
 	(cond (ccb (when build-object

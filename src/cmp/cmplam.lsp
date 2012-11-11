@@ -70,8 +70,8 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 	 narg)))
 
 (defun add-referred-variables-to-function (fun var-list)
-  (setf (fun-referred-vars fun)
-	(set-difference (union (fun-referred-vars fun) var-list)
+  (setf (fun-referenced-vars fun)
+	(set-difference (union (fun-referenced-vars fun) var-list)
 			(fun-local-vars fun)))
   fun)
 
@@ -126,10 +126,10 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 	  (fun-description fun) name
 	  (fun-no-entry fun) no-entry)
     (reduce #'add-referred-variables-to-function
-	    (mapcar #'fun-referred-vars children)
+	    (mapcar #'fun-referenced-vars children)
 	    :initial-value fun)
     (reduce #'add-referred-variables-to-function
-	    (mapcar #'fun-referred-vars (fun-referred-funs fun))
+	    (mapcar #'fun-referenced-vars (fun-referenced-funs fun))
 	    :initial-value fun)
     (do ((finish nil))
 	(finish)
@@ -141,7 +141,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
     (when global
       (if (fun-closure fun)
           (cmpnote "Function ~A is global but is closed over some variables.~%~{~A ~}"
-                   (fun-name fun) (mapcar #'var-name (fun-referred-vars fun)))
+                   (fun-name fun) (mapcar #'var-name (fun-referenced-vars fun)))
           (new-defun fun (fun-no-entry fun)))))
   fun)
 

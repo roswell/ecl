@@ -395,8 +395,8 @@ return f2;
                     (= (fun-minarg x) (fun-minarg y))
                     (eql (fun-maxarg x) (fun-maxarg y))
                     (every #'similar (fun-local-vars x) (fun-local-vars y))
-                    (every #'similar (fun-referred-vars x) (fun-referred-vars y))
-                    (every #'similar (fun-referred-funs x) (fun-referred-funs y))
+                    (every #'similar (fun-referenced-vars x) (fun-referenced-vars y))
+                    (every #'similar (fun-referenced-funs x) (fun-referenced-funs y))
                     (every #'similar (fun-child-funs x) (fun-child-funs y)))))
       (similar x y))))
 |#
@@ -738,7 +738,7 @@ return f2;
 			    ;; parameter of this closure
 			    ;; (not yet bound, therefore var-loc is OBJECT)
 			    (eq (var-loc x) 'OBJECT)))
-		       (fun-referred-vars fun)))
+		       (fun-referenced-vars fun)))
 	    l)
 	(when clv-used
 	  (setf clv-used (sort clv-used #'> :key #'var-loc))

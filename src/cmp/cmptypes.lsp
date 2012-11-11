@@ -91,10 +91,10 @@
 ;;; 3.  (flet ((foo () x)) #'(lambda () (foo))) CCLOSURE
 ;;; 4.  (flet ((foo () x)) #'foo)		CCLOSURE+LISP_CLOSURE
 
-;;; A function can be referred across a ccb without being a closure, e.g:
+;;; A function can be referenced across a ccb without being a closure, e.g:
 ;;;   (flet ((foo () (bar))) #'(lambda () (foo)))
 ;;;   [the lambda also need not be a closure]
-;;; and it can be a closure without being referred across ccb, e.g.:
+;;; and it can be a closure without being referenced across ccb, e.g.:
 ;;;   (flet ((foo () x)) #'foo)  [ is this a mistake in local-function-ref?]
 ;;; Here instead the lambda must be a closure, but no closure is needed for foo
 ;;;   (flet ((foo () x)) #'(lambda () (foo)))
@@ -102,14 +102,14 @@
 ;;; A CCLOSURE must be created for a function when:
 ;;; 1. it appears within a FUNCTION construct and
 ;;; 2. it uses some ccb references (directly or indirectly).
-;;; ref-ccb corresponds to the first condition, i.e. function is referred
+;;; ref-ccb corresponds to the first condition, i.e. function is referenced
 ;;;   across CCB. It is computed during Pass 1. A value of 'RETURNED means
 ;;;   that it is immediately within FUNCTION.
 ;;; closure corresponds to second condition and is computed in Pass 2 by
-;;;   looking at the info-referred-vars and info-local-referred of its body.
+;;;   looking at the info-referenced-vars and info-local-referenced of its body.
 
 ;;; A LISP_CFUN or LISP_CLOSURE must be created when the function is returned.
-;;; The LISP funob may then be referred locally or across LB or CB:
+;;; The LISP funob may then be referenced locally or across LB or CB:
 ;;;     (flet ((foo (z) (bar z))) (list #'foo)))
 ;;;     (flet ((foo (z) z)) (flet ((bar () #'foo)) (bar)))
 ;;;     (flet ((foo (z) (bar z))) #'(lambda () #'foo)))
@@ -159,8 +159,8 @@
   (parent *current-function*)
 			;;; Parent function, NIL if global.
   (local-vars nil)	;;; List of local variables created here.
-  (referred-vars nil)	;;; List of external variables referenced here.
-  (referred-funs nil)	;;; List of external functions called in this one.
+  (referenced-vars nil)	;;; List of external variables referenced here.
+  (referenced-funs nil)	;;; List of external functions called in this one.
 			;;; We only register direct calls, not calls via object.
   (child-funs nil)	;;; List of local functions defined here.
   #+new-cmp
