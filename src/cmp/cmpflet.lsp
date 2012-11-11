@@ -55,12 +55,17 @@
     ;; When we are in a LABELs form, we have to propagate the external
     ;; variables from one function to the other functions that use it.
     (when (eq origin 'LABELS)
-      (dolist (f1 local-funs)
-	(let ((vars (fun-referenced-vars f1)))
-	  (dolist (f2 local-funs)
-	    (when (and (not (eq f1 f2))
-		       (member f1 (fun-referenced-funs f2) :test #'eq))
-	      (add-to-fun-referenced-vars f2 vars))))))
+      (loop for change = nil
+	 do (loop for f1 in local-funs
+	       for vars = (fun-referenced-vars f1)
+	       for funs = (fun-referenced-funs f1)
+	       do (loop for f2 in (fun-referencing-funs f1)
+		     for c1 = (add-to-fun-referenced-vars f2 vars)
+		     for c2 = (add-to-fun-referenced-funs f2 funs)
+		     for c3 = (update-fun-closure-type f2)
+		     when (or c1 c2 c3)
+		     do (setf change t)))
+	 do (unless change (return))))
 
     ;; Now we can compile the body itself.
     (let ((*cmp-env* new-env))

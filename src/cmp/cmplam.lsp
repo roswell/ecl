@@ -85,7 +85,8 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
   (loop with new-funs = (fun-referenced-funs fun)
      with change = nil
      for f in fun-list
-     when (and (not (member f new-funs :test #'eq))
+     when (and (not (eq fun f))
+	       (not (member f new-funs :test #'eq))
 	       (not (child-function-p fun f)))
      do (setf change t
 	      new-funs (cons f new-funs)
