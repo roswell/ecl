@@ -88,27 +88,24 @@
 		      :args local-funs body-c1form (eq origin 'LABELS))
 	body-c1form)))
 
-(defun fun-referenced-local-vars (fun)
-  (remove-if #'global-var-p (fun-referenced-vars fun)))
-
 (defun compute-fun-closure-type (fun)
   (labels
-      ((closure-type (fun &aux (lambda-form (fun-lambda fun)))
-	 (let ((vars (fun-referenced-local-vars fun))
-	       (funs (remove fun (fun-referenced-funs fun) :test #'child-p))
-	       (closure nil))
+      ((closure-type (fun)
+	 (let ((closure nil))
 	   ;; it will have a full closure if it refers external non-global variables
-	   (dolist (var vars)
-	     ;; ...across CB
-	     (if (ref-ref-ccb var)
-		 (setf closure 'CLOSURE)
-		 (unless closure (setf closure 'LEXICAL))))
+	   (dolist (var (fun-referenced-vars fun))
+	     (unless (global-var-p var)
+	       ;; ...across CB
+	       (if (ref-ref-ccb var)
+		   (setf closure 'CLOSURE)
+		   (unless closure (setf closure 'LEXICAL)))))
 	   ;; ...or if it directly calls a function
-	   (dolist (f funs)
-	     ;; .. which has a full closure
-	     (case (fun-closure f)
-	       (CLOSURE (setf closure 'CLOSURE))
-	       (LEXICAL (unless closure (setf closure 'LEXICAL)))))
+	   (dolist (f (fun-referenced-funs fun))
+	     (unless (child-p fun f)
+	       ;; .. which has a full closure
+	       (case (fun-closure f)
+		 (CLOSURE (setf closure 'CLOSURE))
+		 (LEXICAL (unless closure (setf closure 'LEXICAL))))))
 	   ;; ...or the function itself is referred across CB
 	   (when closure
 	     (when (or (fun-ref-ccb fun)
@@ -142,11 +139,12 @@
 	(when (fun-global fun)
 	  (cmpnote "Function ~A is global but is closed over some variables.~%~{~A ~}"
                    (fun-name fun) (mapcar #'var-name (fun-referenced-vars fun))))
-	(dolist (var (fun-referenced-local-vars fun))
-	  (setf (var-ref-clb var) nil
-		(var-ref-ccb var) t
-		(var-kind var) 'CLOSURE
-		(var-loc var) 'OBJECT))
+	(dolist (var (fun-referenced-vars fun))
+	  (unless (global-var-p var)
+	    (setf (var-ref-clb var) nil
+		  (var-ref-ccb var) t
+		  (var-kind var) 'CLOSURE
+		  (var-loc var) 'OBJECT)))
 	(dolist (f (fun-referenced-funs fun))
 	  (setf (fun-ref-ccb f) t)))
       ;; If the status of some of the children changes, we have
