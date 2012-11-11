@@ -131,12 +131,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
     (reduce #'add-referred-variables-to-function
 	    (mapcar #'fun-referenced-vars (fun-referenced-funs fun))
 	    :initial-value fun)
-    (do ((finish nil))
-	(finish)
-      (setf finish t)
-      (dolist (f (fun-child-funs fun))
-	(when (update-fun-closure-type f)
-	  (setf finish nil))))
+    (update-fun-closure-type-many (fun-child-funs fun))
     (update-fun-closure-type fun)
     (when global
       (if (fun-closure fun)

@@ -122,6 +122,15 @@
 	(setf closure 'CLOSURE)))
     closure))
 
+(defun update-fun-closure-type-many (function-list)
+  (do ((finish nil t)
+       (recompute nil))
+      (finish
+       recompute)
+    (dolist (f function-list)
+      (when (update-fun-closure-type f)
+	(setf recompute t finish nil)))))
+
 (defun update-fun-closure-type (fun)
   (let ((old-type (fun-closure fun)))
     ;; This recursive algorithm is guaranteed to stop when functions
@@ -151,13 +160,8 @@
 	  (setf (fun-ref-ccb f) t)))
       ;; If the status of some of the children changes, we have
       ;; to recompute the closure type.
-      (do ((finish nil t)
-	   (recompute nil))
-	(finish
-	 (when recompute (update-fun-closure-type fun)))
-	(dolist (f (fun-child-funs fun))
-	  (when (update-fun-closure-type f)
-	    (setf recompute t finish nil))))
+      (when (update-fun-closure-type-many (fun-child-funs fun))
+	(update-fun-closure-type fun))
       t)))
 
 (defun c2locals (c1form funs body labels ;; labels is T when deriving from labels
