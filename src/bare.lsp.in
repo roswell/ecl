@@ -145,7 +145,7 @@
 				       :pathname ,compiled)))))
     path))
 
-(defun build-module (name sources &key additional-files
+(defun build-module (name sources &key additional-files depends-on
                      (builtin nil) (dir "build:")
                      ((:prefix si::*init-function-prefix*) "EXT"))
   (mapc #'proclaim +ecl-optimization-settings+)
@@ -166,7 +166,7 @@
 	    *module-files*)
       (push (if (equalp name "asdf")
 		(build-fake-asdf "prebuilt-asdf" static-library compiled-file-name :depends-on '("cmp"))
-		(build-fake-asdf name static-library compiled-file-name))
+		(build-fake-asdf name static-library compiled-file-name :depends-on depends-on))
 	    *module-files*)
       )))
 

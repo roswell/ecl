@@ -242,6 +242,7 @@
 #+WANTS-SOCKETS
 (build-module "sb-bsd-sockets"
 	      '("ext:sockets;sb-bsd-sockets.lisp")
+              :depends-on '("sockets")
 	      :dir "build:ext;"
 	      :prefix "EXT"
 	      :builtin nil)
