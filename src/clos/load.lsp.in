@@ -31,6 +31,8 @@
   #+unicode
   "src:lsp;unicode.lsp" ; Depends on conditions.lsp
   "ext:bytecmp;bytecmp.lsp"
+  "ext:ecl-cdb;ecl-cdb.lisp" ; Needed for DOCUMENTATION
+  "ext:ecl-cdb;ecl-help.lisp"
   ))
 
 (mapc #'(lambda (x)
