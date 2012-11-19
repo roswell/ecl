@@ -600,11 +600,11 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 	(push keyword all-keys)
 	(setf let-vars
 	      (list*
-	       `(,key-var (if (eq ,key-flag 'si::failed) ,key-value ,key-flag))
+	       `(,key-var (if (eq ,key-flag 'si::missing-keyword) ,key-value ,key-flag))
 	       `(,key-flag (si::search-keyword ,rest ,keyword))
 	       let-vars))
 	(when (fourth scan)
-	  (push `(setf ,key-flag (not (eq ,key-flag 'si::failed)))
+	  (push `(setf ,key-flag (not (eq ,key-flag 'si::missing-keyword)))
 		extra-stmts))))
     (when (and key-flag (not allow-other-keys))
       (push `(si::check-keyword ,rest ',all-keys) extra-stmts))
