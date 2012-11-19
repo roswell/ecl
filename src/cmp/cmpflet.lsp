@@ -137,13 +137,19 @@
       (when (update-fun-closure-type f)
 	(setf recompute t finish nil)))))
 
+(defun prepend-new (l1 l2)
+  (loop for f in l1
+     do (pushnew f l2))
+  l2)
+
 (defun update-fun-closure-type (fun)
   (let ((old-type (fun-closure fun)))
     (when (eq old-type 'closure)
       (return-from update-fun-closure-type nil))
     ;; This recursive algorithm is guaranteed to stop when functions
     ;; do not change.
-    (let ((new-type (compute-closure-type fun)))
+    (let ((new-type (compute-closure-type fun))
+	  (to-be-updated (fun-child-funs fun)))
       ;; Same type
       (when (eq new-type old-type)
 	(return-from update-fun-closure-type nil))
@@ -154,16 +160,21 @@
       ;; All external, non-global variables become of type closure
       (when (eq new-type 'CLOSURE)
 	(dolist (var (fun-referenced-vars fun))
-	  (unless (global-var-p var)
+	  (unless (or (global-var-p var)
+		      (eq (var-kind var) new-type))
 	    (setf (var-ref-clb var) nil
 		  (var-ref-ccb var) t
 		  (var-kind var) 'CLOSURE
-		  (var-loc var) 'OBJECT)))
+		  (var-loc var) 'OBJECT
+		  to-be-updated
+		  (prepend-new (var-functions-reading var)
+			       (prepend-new (var-functions-setting var)
+					    to-be-updated)))))
 	(dolist (f (fun-referenced-funs fun))
 	  (setf (fun-ref-ccb f) t)))
       ;; If the status of some of the children changes, we have
       ;; to recompute the closure type.
-      (when (update-fun-closure-type-many (fun-child-funs fun))
+      (when (update-fun-closure-type-many to-be-updated)
 	(update-fun-closure-type fun))
       t)))
 
