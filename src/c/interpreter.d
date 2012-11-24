@@ -417,21 +417,21 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 
 	CASE(OP_CALLG1); {
 		cl_object s;
-		cl_objectfn_fixed f;
+		cl_objectfn f;
 		GET_DATA(s, vector, data);
-		f = ECL_SYM_FUN(s)->cfunfixed.entry_fixed;
+		f = ecl_function_dispatch(the_env, ECL_SYM_FUN(s));
 		SETUP_ENV(the_env);
-		reg0 = f(reg0);
+		reg0 = f(1, reg0);
 		THREAD_NEXT;
 	}
 
 	CASE(OP_CALLG2); {
 		cl_object s;
-		cl_objectfn_fixed f;
+		cl_objectfn f;
 		GET_DATA(s, vector, data);
-		f = ECL_SYM_FUN(s)->cfunfixed.entry_fixed;
+		f = ecl_function_dispatch(the_env, ECL_SYM_FUN(s));
 		SETUP_ENV(the_env);
-		reg0 = f(ECL_STACK_POP_UNSAFE(the_env), reg0);
+		reg0 = f(2, ECL_STACK_POP_UNSAFE(the_env), reg0);
 		THREAD_NEXT;
 	}
 
