@@ -119,6 +119,11 @@
     (apply #'initialize-instance instance initargs)
     instance))
 
+(defun delete-keyword (keyword list)
+  (loop until (eq (getf list keyword list) list)
+     do (remf list keyword))
+  list)
+
 (defun add-default-initargs (class initargs)
   (declare (si::c-local))
   ;; Here, for each slot which is not mentioned in the initialization
@@ -132,7 +137,7 @@
         (when (or (eq supplied-value '+initform-unsupplied+)
                   (eq supplied-value 'si::missing-keyword))
           (when (eq supplied-value '+initform-unsupplied+)
-            (remf initargs initarg))
+            (setf initargs (delete-keyword initarg initargs)))
           (setf output (list* (funcall value) initarg output)))))
     (if output
         (append initargs (nreverse output))
@@ -169,18 +174,20 @@
 
 (defmethod shared-initialize ((class class) slot-names &rest initargs &key direct-superclasses)
   ;; verify that the inheritance list makes sense
-  (setf direct-superclasses
-        (check-direct-superclasses class direct-superclasses))
-  (when (slot-boundp class 'direct-superclasses)
+  (let* ((class (apply #'call-next-method class slot-names
+		       :direct-superclasses
+		       (if (slot-boundp class 'direct-superclasses)
+			   (slot-value class 'direct-superclasses)
+			   nil)
+		       initargs))
+	 (direct-superclasses (check-direct-superclasses class direct-superclasses)))
     (loop for c in (class-direct-superclasses class)
        unless (member c direct-superclasses :test #'eq)
-       do (remove-direct-subclass c class)))
-  (setf class (apply #'call-next-method class slot-names
-		     :direct-superclasses direct-superclasses
-		     initargs))
-  (loop for c in (class-direct-superclasses class)
-     do (add-direct-subclass c class))
-  class)
+       do (remove-direct-subclass c class))
+    (setf (class-direct-superclasses class) direct-superclasses)
+    (loop for c in direct-superclasses
+       do (add-direct-subclass c class))
+    class))
 
 (defun precompute-valid-initarg-keywords (class)
   (setf (class-valid-initargs class)
