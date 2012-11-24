@@ -27,7 +27,11 @@
 
 (defmethod slot-value-using-class ((class std-class) self slotd)
   (declare (ignore class))
-  (standard-instance-get self (slot-definition-location slotd)))
+  (let* ((location (slot-definition-location slotd))
+	 (value (standard-instance-get self location)))
+    (if (si:sl-boundp value)
+	value
+	(values (slot-unbound class self (slot-definition-name slotd))))))
 
 (defmethod slot-boundp-using-class ((class std-class) self slotd)
   (declare (ignore class))
