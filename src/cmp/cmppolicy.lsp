@@ -150,7 +150,11 @@
        else do
          (case on-off
             ((:only-on :on) (rplaca bits (logior (car bits) flag)))
-            ((:only-off :off) (rplacd bits (logior (cdr bits) flag))))))
+            ((:only-off :off) (rplacd bits (logior (cdr bits) flag)))))
+    (loop for i from 0 to 3
+       do (print (optimization-quality-switches quality i)))
+    )
+  (trace augment-policy)
   (defun policy-declaration-name (base)
     (intern (symbol-name base) (find-package "EXT")))
   (defun policy-function-name (base)
@@ -160,6 +164,7 @@
     (unintern name)
     (import name (find-package "EXT")) 
     (export name (find-package "EXT"))
+    (print whole)
     (let* ((test (ash 1 +last-optimization-bit+))
            (declaration-name (policy-declaration-name name))
            (function-name (policy-function-name name))
@@ -177,7 +182,6 @@
       (loop with extra = '()
          with slow = '()
          with conditions = (remove doc conditions)
-         with trigger = nil
          for case = (pop conditions)
          while case
          do
@@ -208,7 +212,6 @@
               (push `(>= (cmp-env-optimization ',(first conditions) env)
                          ,(second conditions))
                     slow)
-              (setf trigger (eq case :on))
               (augment-policy (pop conditions) (pop conditions)
                               case test))
              ((:only-off :off)
@@ -225,8 +228,6 @@
          finally
            (progn
              (incf +last-optimization-bit+)
-             (unless trigger
-               (augment-policy 'speed 0 :on test))
              (return
                (and emit-function
                `(defun ,function-name (&optional (env *cmp-env*))
