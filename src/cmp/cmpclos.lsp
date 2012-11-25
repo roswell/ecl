@@ -128,6 +128,6 @@
             collect `(define-compiler-macro ,accessor (&whole whole obj &environment env)
                        (if (policy-inline-slot-access env)
 			   (if (policy-assume-no-errors env)
-			       `(si::instance-ref ,obj ,,i))
-			       `(clos::safe-instance-ref ,obj ,,i)
+			       `(si::instance-ref ,obj ,,i)
+			       `(clos::safe-instance-ref ,obj ,,i))
                            whole)))))
