@@ -75,7 +75,7 @@
 (defun write-word (byte stream)
   (declare (type (unsigned-byte 32) byte)
 	   (stream stream)
-	   (optimize speed))
+	   (optimize speed (safety 0)))
   (write-byte (logand #xff byte) stream)
   (write-byte (logand #xff (ash byte -8)) stream)
   (write-byte (logand #xff (ash byte -16)) stream)
@@ -137,7 +137,7 @@
     (write-sequence value stream)))
 
 (defun dump-table (table stream)
-  (declare (optimize speed))
+  (declare (optimize speed (safety 0)))
   ;; TABLE is an association list of (HASH-KEY . FILE-POSITION)
   ;; We dump it at the end of the file. The length of the actual
   ;; file table can be a bit larger, to avoid many coincidences.
