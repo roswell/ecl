@@ -151,10 +151,7 @@
          (case on-off
             ((:only-on :on) (rplaca bits (logior (car bits) flag)))
             ((:only-off :off) (rplacd bits (logior (cdr bits) flag)))))
-    (loop for i from 0 to 3
-       do (print (optimization-quality-switches quality i)))
     )
-  (trace augment-policy)
   (defun policy-declaration-name (base)
     (intern (symbol-name base) (find-package "EXT")))
   (defun policy-function-name (base)
@@ -164,7 +161,6 @@
     (unintern name)
     (import name (find-package "EXT")) 
     (export name (find-package "EXT"))
-    (print whole)
     (let* ((test (ash 1 +last-optimization-bit+))
            (declaration-name (policy-declaration-name name))
            (function-name (policy-function-name name))
