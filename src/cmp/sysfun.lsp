@@ -1005,7 +1005,6 @@
      ;; combin.lsp
      clos::simple-code-walker
      ;; standard.lsp
-     clos::safe-instance-ref
      clos::standard-instance-set
      ;; kernel.lsp
      clos::install-method

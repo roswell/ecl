@@ -26,24 +26,6 @@
 	(t
 	 (slot-value slotd 'location))))
 
-(defun unbound-slot-error (object index)
-  (declare (type standard-object object)
-	   (type fixnum index)
-	   (optimize (safety 0))
-	   (si::c-local))
-  (let* ((class (class-of object))
-	 (slotd (find index (slot-value class 'slots) :key #'slot-definition-location)))
-    (values (slot-unbound class object (slot-definition-name slotd)))))
-
-(defun safe-instance-ref (object index)
-  (declare (type standard-object object)
-	   (type fixnum index)
-	   (optimize (safety 0)))
-  (let ((value (si:instance-ref object index)))
-    (if (si:sl-boundp value)
-	value
-	(unbound-slot-error object index))))
-
 ;;; The following does not get as fast as it should because we are not
 ;;; allowed to memoize the position of a slot. The problem is that the
 ;;; AMOP specifies that slot accessors are created from the direct

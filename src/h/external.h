@@ -825,7 +825,7 @@ extern ECL_API cl_object si_allocate_raw_instance(cl_object orig, cl_object clas
 extern ECL_API cl_object si_instance_class(cl_object x);
 extern ECL_API cl_object si_instance_class_set(cl_object x, cl_object y);
 extern ECL_API cl_object si_instance_ref(cl_object x, cl_object index);
-extern ECL_API cl_object si_instance_ref_safe(cl_object x, cl_object index);
+extern ECL_API cl_object clos_safe_instance_ref(cl_object x, cl_object index);
 extern ECL_API cl_object si_instance_set(cl_object x, cl_object index, cl_object value);
 extern ECL_API cl_object si_instancep(cl_object x);
 extern ECL_API cl_object si_unbound(void);

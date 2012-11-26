@@ -99,8 +99,9 @@ si_instance_ref(cl_object x, cl_object index)
 	@(return x->instance.slots[i])
 }
 
+#ifdef CLOS
 cl_object
-si_instance_ref_safe(cl_object x, cl_object index)
+clos_safe_instance_ref(cl_object x, cl_object index)
 {
 	cl_fixnum i;
 
@@ -113,9 +114,10 @@ si_instance_ref_safe(cl_object x, cl_object index)
 		FEtype_error_index(x, i);
 	x = x->instance.slots[i];
 	if (ecl_unlikely(x == ECL_UNBOUND))
-		cl_error(5, @'unbound-slot', @':name', index, @':instance', x);
+		x = _ecl_funcall4(@'slot-unbound', ECL_NIL, x, index);
 	@(return x)
 }
+#endif
 
 cl_object
 ecl_instance_set(cl_object x, cl_fixnum i, cl_object v)

@@ -1278,7 +1278,6 @@ cl_symbols[] = {
 #else
 {SYS_ "COPY-INSTANCE", SI_ORDINARY, si_copy_instance, 1, OBJNULL},
 {SYS_ "GENERIC-FUNCTION-P", SI_ORDINARY, si_generic_function_p, 1, OBJNULL},
-{SYS_ "INSTANCE-REF-SAFE", SI_ORDINARY, si_instance_ref_safe, 2, OBJNULL},
 {SYS_ "INSTANCE-REF", SI_ORDINARY, si_instance_ref, 2, OBJNULL},
 {SYS_ "INSTANCE-SET", SI_ORDINARY, si_instance_set, 3, OBJNULL},
 {SYS_ "INSTANCE-SIG", SI_ORDINARY, si_instance_sig, 1, OBJNULL},
@@ -1731,6 +1730,7 @@ cl_symbols[] = {
 {CLOS_ "NEED-TO-MAKE-LOAD-FORM-P", CLOS_ORDINARY, ECL_NAME(clos_need_to_make_load_form_p), 2, OBJNULL},
 {CLOS_ "LOAD-DEFCLASS", CLOS_ORDINARY, ECL_NAME(clos_load_defclass), 4, OBJNULL},
 {CLOS_ "DOCSTRING", CLOS_ORDINARY, NULL, -1, OBJNULL},
+{CLOS_ "SAFE-INSTANCE-REF", CLOS_ORDINARY, clos_safe_instance_ref, 2, OBJNULL},
 #endif
 
 {SYS_ "CL-FIXNUM-BITS", SI_CONSTANT, NULL, -1, ecl_make_fixnum(FIXNUM_BITS)},

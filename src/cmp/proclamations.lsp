@@ -1322,7 +1322,7 @@
 #+clos
 (proclamation si:allocate-raw-instance (t t fixnum) ext:instance)
 #+clos
-(proclamation si:instance-ref-safe (t fixnum) t)
+(proclamation clos:safe-instance-ref (t fixnum) t)
 #+clos
 (proclamation si:instance-ref (t fixnum) t :reader)
 #+clos
