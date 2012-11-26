@@ -114,6 +114,7 @@
 	    (when (si::fixnump index)
 	      `(si::instance-set ,(second args) ,index ,(first args)))))))))
 
+#+(or)
 (progn .
   #.(loop for var in '(clos::+standard-generic-function-slots+
                        clos::+standard-method-slots+
