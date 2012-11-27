@@ -552,10 +552,13 @@ asynchronous_signal_servicing_thread()
 		if (read(signal_thread_pipe[0], &signal_thread_msg,
 			 sizeof(signal_thread_msg)) < 0)
 		{
+			/* Either the pipe errs or we have received an interrupt
+			 * from a different thread */
 			if (errno != EINTR ||
 			    signal_thread_msg.process != the_env->own_process)
 				break;
 		}
+		/* We have queued ourselves an interrupt event */
 		if (signal_thread_msg.signo == interrupt_signal &&
 		    signal_thread_msg.process == the_env->own_process) {
 			break;
@@ -576,6 +579,10 @@ asynchronous_signal_servicing_thread()
 						signal_thread_msg.process);
 		}
 	}
+# if defined(ECL_USE_MPROTECT)
+	/* We might have protected our own environment */
+	mprotect(the_env, sizeof(*the_env), PROT_READ | PROT_WRITE);
+# endif /* ECL_USE_MPROTECT */
 	close(signal_thread_pipe[0]);
 	close(signal_thread_pipe[1]);
 	ecl_return0(the_env);
