@@ -377,7 +377,7 @@ queue_signal(cl_env_ptr env, cl_object code, int allocate)
 		if (allocate) {
 			record = ecl_list1(ECL_NIL);
 		} else {
-			record = ECL_CONS_CAR(env->signal_queue);
+			record = env->signal_queue;
 			if (record != ECL_NIL) {
 				env->signal_queue = ECL_CONS_CDR(record);
 			}
