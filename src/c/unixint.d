@@ -383,9 +383,10 @@ queue_signal(cl_env_ptr env, cl_object code, int allocate)
 			}
 		}
 		if (record != ECL_NIL) {
-			ECL_RPLACD(record, env->pending_interrupt);
 			ECL_RPLACA(record, code);
-			env->pending_interrupt = record;
+			env->pending_interrupt =
+				ecl_nconc(env->pending_interrupt,
+					  record);
 		}
 	} ECL_WITH_SPINLOCK_END;
 }
