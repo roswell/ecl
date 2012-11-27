@@ -49,6 +49,7 @@ static cl_object dispatch_macro_character(cl_object table, cl_object strm, int c
 
 #define ECL_READ_ONLY_TOKEN 1
 #define ECL_READ_RETURN_IGNORABLE 3
+#define ECL_READ_LIST_DOT 4
 
 cl_object
 si_get_buffer_string()
@@ -340,12 +341,18 @@ LOOP:
 
 	/* The case in which the buffer is full of dots has to be especial cased */
 	if (length == 1 && TOKEN_STRING_CHAR_CMP(token,0,'.')) {
-		x = @'si::.';
-		goto OUTPUT;
+		if (flags == ECL_READ_LIST_DOT) {
+			x = @'si::.';
+			goto OUTPUT;
+		} else {
+			FEreader_error("Dots appeared illegally.", in, 0);
+		}
 	} else {
-		for (i = 0;  i < length;  i++)
+		int i;
+		for (i = 0;  i < length;  i++) {
 			if (!TOKEN_STRING_CHAR_CMP(token,i,'.'))
 				goto MAYBE_NUMBER;
+		}
 		FEreader_error("Dots appeared illegally.", in, 0);
 	}
 
@@ -1527,7 +1534,8 @@ do_read_delimited_list(int d, cl_object in, bool proper_list)
 	cl_object x, y = ECL_NIL;
 	cl_object *p = &y;
 	do {
-		x = ecl_read_object_with_delimiter(in, d, 0, cat_constituent);
+		x = ecl_read_object_with_delimiter(in, d, ECL_READ_LIST_DOT,
+						   cat_constituent);
 		if (x == OBJNULL) {
 			/* End of the list. */
 			unlikely_if (after_dot == 1) {
