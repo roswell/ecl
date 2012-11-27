@@ -24,6 +24,8 @@ potential_number_p(cl_object s, int base)
 	/* See ANSI 2.3.1.1 */
 	static cl_index i, l;
         ecl_character c;
+	/* A potential number must contain at least one digit */
+	bool some_digit = FALSE;
 
 	l = s->base_string.fillp;
 	if (l == 0)
@@ -32,7 +34,9 @@ potential_number_p(cl_object s, int base)
 
 	/* A potential number must begin with a digit, sign or
            extension character (^ _) */
-	if ((ecl_digitp(c, base) < 0) && c != '+' && c != '-' && c != '^' && c != '_')
+	if (ecl_digitp(c,base) >= 0)
+		some_digit = TRUE;
+	else if (c != '+' && c != '-' && c != '^' && c != '_')
 		return FALSE;
 
 	/* A potential number cannot end with a sign */
@@ -46,17 +50,19 @@ potential_number_p(cl_object s, int base)
 		 * extension characters and number markers. Number
 		 * markers are letters, but two adjacent letters fail
 		 * to be a number marker. */
-		if (ecl_digitp(c, base) >= 0 || c == '+' || c == '-' ||
-                    c == '/' || c == '.' || c == '^' || c == '_') {
+		if (ecl_digitp(c, base) >= 0) {
+			some_digit = TRUE;
+		} else if (c == '+' || c == '-' ||
+			   c == '/' || c == '.' || c == '^' || c == '_') {
 			continue;
-		}
-		if (ecl_alpha_char_p(c) &&
-                    (((i+1) >= l) || !ecl_alpha_char_p(ecl_char(s, i+1)))) {
+		} else if (ecl_alpha_char_p(c) &&
+			   (((i+1) >= l) || !ecl_alpha_char_p(ecl_char(s, i+1)))) {
 			continue;
+		} else {
+			return FALSE;
 		}
-		return FALSE;
 	}
-	return TRUE;
+	return some_digit;
 }
 
 #define needs_to_be_inverted(s) (ecl_string_case(s) != 0)
