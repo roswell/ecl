@@ -247,8 +247,8 @@ the one defined in the ANSI standard. *print-base* is 10, *print-array* is t,
 *package* is \"CL-USER\", etc."
   (with-clean-symbols (%progv-list)
     `(let ((%progv-list +io-syntax-progv-list+))
-       (progv (car (ext:truly-the cons %progv-list))
-	   (cdr (ext:truly-the cons %progv-list))
+       (progv (si:cons-car %progv-list)
+	   (si:cons-cdr %progv-list)
 	 ,@body))))
 
 (defmacro with-ecl-io-syntax (&body body)
@@ -257,8 +257,8 @@ The forms of the body are executed in a print environment that corresponds to
 the one used internally by ECL compiled files."
   (with-clean-symbols (%progv-list)
     `(let ((%progv-list +ecl-syntax-progv-list+))
-       (progv (car (ext:truly-the cons %progv-list))
-	   (cdr (ext:truly-the cons %progv-list))
+       (progv (si:cons-car %progv-list)
+	   (si:cons-cdr %progv-list)
 	 ,@body))))
 
 #-formatter
