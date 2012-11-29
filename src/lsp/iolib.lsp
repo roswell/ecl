@@ -245,17 +245,21 @@ is not given, ends the recording."
 The forms of the body are executed in a print environment that corresponds to
 the one defined in the ANSI standard. *print-base* is 10, *print-array* is t,
 *package* is \"CL-USER\", etc."
-  `(progv (car +io-syntax-progv-list+)
-       (cdr +io-syntax-progv-list+)
-     ,@body))
+  (with-clean-symbols (%progv-list)
+    `(let ((%progv-list +io-syntax-progv-list+))
+       (progv (car (ext:truly-the cons %progv-list))
+	   (cdr (ext:truly-the cons %progv-list))
+	 ,@body))))
 
 (defmacro with-ecl-io-syntax (&body body)
   "Syntax: ({forms}*)
 The forms of the body are executed in a print environment that corresponds to
 the one used internally by ECL compiled files."
-  `(progv (car +ecl-syntax-progv-list+)
-       (cdr +ecl-syntax-progv-list+)
-     ,@body))
+  (with-clean-symbols (%progv-list)
+    `(let ((%progv-list +ecl-syntax-progv-list+))
+       (progv (car (ext:truly-the cons %progv-list))
+	   (cdr (ext:truly-the cons %progv-list))
+	 ,@body))))
 
 #-formatter
 (defmacro formatter (control-string)
