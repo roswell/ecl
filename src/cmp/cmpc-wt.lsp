@@ -47,7 +47,7 @@
 
 (defun wt-nl (&rest forms)
   (wt1 #\Newline)
-  (wt1 #\Tab)
+  (wt1-indent)
   (mapc #'wt1 forms))
 
 (defun wt-nl1 (&rest forms)
@@ -63,7 +63,8 @@
 	    'vector))
 
 (defun wt1-indent ()
-  (wt1 #\Tab))
+  (if (plusp *opened-c-braces*)
+      (wt1 #\Tab)))
 
 (defun wt-open-brace ()
   (wt "{")
