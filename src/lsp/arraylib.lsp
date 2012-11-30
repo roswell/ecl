@@ -104,21 +104,28 @@ Returns a list whose N-th element is the length of the N-th dimension of ARRAY."
     (push (array-dimension array (decf i)) d)))
 
 
-(defun array-in-bounds-p (array &rest indices &aux (r (array-rank array)))
+(defun array-in-bounds-p (array &rest indices)
   "Args: (array &rest indexes)
 Returns T if INDEXes are valid indexes of ARRAY; NIL otherwise.  The number of
 INDEXes must be equal to the rank of ARRAY."
-  (when (/= r (length indices))
-        (error "The rank of the array is ~R,~%~
+  (declare (type array array)
+	   (optimize (safety 0))
+           (ext:check-arguments-type))
+  (do* ((indices indices (cons-cdr indices))
+	(r (array-rank array))
+	(i 0 (1+ i)))
+       ((>= i r) t)
+    (declare (type index r i))
+    (if indices
+	(let* ((index (cons-car indices)))
+	  (when (or (not (si::fixnump index))
+		    (minusp (truly-the fixnum index))
+		    (>= (truly-the fixnum index) (array-dimension array i)))
+	    (return nil)))
+	(error "The rank of the array is ~R,~%~
                ~7@Tbut ~R ~:*~[indices are~;index is~:;indices are~] ~
                supplied."
-               r (length indices)))
-  (do ((i 0 (1+ i))
-       (s indices (cdr s)))
-      ((>= i r) t)
-    (when (or (< (car s) 0)
-              (>= (car s) (array-dimension array i)))
-          (return nil))))
+		 r i))))
 
 (defun row-major-index-inner (array indices)
   (declare (optimize (safety 0))
