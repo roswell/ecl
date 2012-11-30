@@ -193,7 +193,8 @@
     ;; If there are more variables, we have to check whether there
     ;; are enough values left in the stack.
     (when vars
-      (wt-nl "{int " nr "=cl_env_copy->nvalues-" min-values ";")
+      (wt-nl-open-brace) ;; Brace [1]
+      (wt-nl "int " nr " = cl_env_copy->nvalues-" min-values ";")
       ;;
       ;; Loop for assigning values to variables
       ;;
@@ -214,7 +215,8 @@
       ;; Loop for setting default values when there are less output than vars.
       ;;
       (let ((label (next-label)))
-	(wt-nl) (wt-go label) (wt "}")
+	(wt-nl) (wt-go label)
+	(wt-nl-close-brace) ;; Matches [1]
 	(push label labels)
 	(setq labels (nreverse labels))
 	(dolist (v vars)
@@ -273,7 +275,7 @@
 	 (nr (make-lcl-var :type :int))
 	 min-values max-values)
     ;; 1) Retrieve the number of output values
-    (wt-nl "{")
+    (wt-nl-open-brace)
     (multiple-value-setq (min-values max-values)
       (c1form-values-number init-form))
 
@@ -303,6 +305,5 @@
     (c2expr body)
 
     ;; 6) Close the C expression.
-    (wt "}"))
-  )
+    (wt-nl-close-brace)))
 

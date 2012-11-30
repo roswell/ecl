@@ -51,11 +51,11 @@
 	     (*env-lvl* *env-lvl*))
 	(setf (blk-exit blk) *exit*
 	      (blk-destination blk) *destination*)
-	(wt "{")
+	(wt-nl-open-brace)
 	(unless (or (blk-ref-ccb blk) (blk-ref-clb blk))
 	  (setf (var-kind blk-var) :object
 		(var-loc blk-var) (next-lcl))
-	  (wt " cl_object " blk-var ";"))
+	  (wt-nl "cl_object " blk-var ";"))
 	(when (env-grows (blk-ref-ccb blk))
 	  (let ((env-lvl *env-lvl*))
 	    (wt-nl *volatile* "cl_object env" (incf *env-lvl*)
@@ -68,7 +68,7 @@
 	  (c2expr body)
 	  (wt "}"))
 	(when (blk-ref-ccb blk) (decf *env*))
-	(wt-nl "}"))
+	(wt-nl-close-brace))
       (progn
 	(setf (blk-exit blk) *exit*)
 	(setf (blk-destination blk) *destination*)

@@ -85,12 +85,12 @@
 
 (defun wt-nl-close-many-braces (final-value)
   (let ((*opened-c-braces* final-value))
+    (wt1 #\Newline)
     (wt1-indent))
   (wt-close-many-braces final-value))
 
 (defun wt-nl-close-brace ()
-  (wt1 #\Newline)
-  (wt-close-brace (1- *opened-c-braces*)))
+  (wt-nl-close-many-braces (1- *opened-c-braces*)))
 
 ;;;
 ;;; LABELS AND JUMPS

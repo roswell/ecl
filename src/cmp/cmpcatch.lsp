@@ -60,7 +60,7 @@
   (let* ((sp (make-lcl-var :rep-type :cl-index))
 	 (nargs (make-lcl-var :rep-type :cl-index))
 	 (*unwind-exit* `((STACK ,sp) ,@*unwind-exit*)))
-    (wt-nl "{")
+    (wt-nl-open-brace)
     (wt-nl "volatile bool unwinding = FALSE;")
     (wt-nl "cl_index " sp "=ECL_STACK_INDEX(cl_env_copy)," nargs ";")
     (wt-nl "ecl_frame_ptr next_fr;")
@@ -86,7 +86,7 @@
     (wt-nl "if (unwinding) ecl_unwind(cl_env_copy,next_fr);")
     ;; ... or simply return the values of the protected form.
     (unwind-exit 'VALUES)
-    (wt "}")))
+    (wt-nl-close-brace)))
 
 (defun c1throw (args)
   (check-args-number 'THROW args 2 2)

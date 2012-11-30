@@ -111,9 +111,11 @@
 			      loc))
 	      (if (or bds-lcl (plusp bds-bind))
 		  (let ((lcl (make-lcl-var :type (second loc))))
-		    (wt-nl "{cl_fixnum " lcl "= " loc ";")
+		    (wt-nl-open-brace)
+		    (wt-nl "cl_fixnum " lcl "= " loc ";")
 		    (unwind-bds bds-lcl bds-bind stack-frame ihs-p)
-		    (wt-nl "return(" lcl ");}"))
+		    (wt-nl "return(" lcl ");")
+		    (wt-nl-close-brace))
 		  (progn
 		    (wt-nl "return(" loc ");")))
 	      (return)))

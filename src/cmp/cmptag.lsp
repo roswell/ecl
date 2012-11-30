@@ -141,14 +141,17 @@
 	    (label (next-label))
 	    (*env* *env*) (*env-lvl* *env-lvl*)
 	    (*lex* *lex*) (*lcl* *lcl*)
+	    (*inline-blocks* 0)
 	    (env-grows (env-grows (var-ref-ccb tag-loc))))
 	(when env-grows
 	  (let ((env-lvl *env-lvl*))
-	    (wt-nl "{ volatile cl_object env" (incf *env-lvl*)
+	    (maybe-open-inline-block)
+	    (wt-nl "volatile cl_object env" (incf *env-lvl*)
 		   " = env" env-lvl ";")))
 	(when (eq :OBJECT (var-kind tag-loc))
 	  (setf (var-loc tag-loc) (next-lcl))
-	  (wt-nl "{ cl_object " tag-loc ";")
+	  (maybe-open-inline-block)
+	  (wt-nl "cl_object " tag-loc ";")
 	  (setq env-grows t))		; just to ensure closing the block
 	(bind "ECL_NEW_FRAME_ID(cl_env_copy)" tag-loc)
 	(wt-nl "if (ecl_frs_push(cl_env_copy," tag-loc ")) {")
@@ -164,8 +167,7 @@
 	(wt-nl "}")
 	(let ((*unwind-exit* (cons label *unwind-exit*)))
 	  (c2tagbody-body body))
-	(when env-grows (wt "}"))))
-  )
+	(close-inline-blocks))))
 
 (defun c2tagbody-body (body)
   ;;; INV: BODY is a list of tags and forms. We have processed the body

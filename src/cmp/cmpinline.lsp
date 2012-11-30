@@ -173,7 +173,7 @@
     (open-inline-block)))
 
 (defun open-inline-block ()
-  (wt "{")
+  (wt-nl "{")
   (incf *inline-blocks*))
 
 (defun close-inline-blocks (&optional new-line)
