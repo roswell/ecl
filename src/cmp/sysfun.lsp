@@ -190,6 +190,10 @@
 (def-inline si:row-major-aset :unsafe ((array fixnum) fixnum fixnum) :fixnum
  "(#0)->array.self.fix[#1]= #2")
 
+(def-inline si:copy-subarray :always (array ext:array-index array ext:array-index
+				      ext:array-index) array
+ "@0;(ecl_copy_subarray(#0,#1,#2,#3,#4),#0)")
+
 (def-inline array-rank :unsafe (array) :fixnum
  "@0;(((#0)->d.t == t_array)?(#0)->array.rank:1)")
 (def-inline array-rank :always (array) :fixnum

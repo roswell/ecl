@@ -299,18 +299,7 @@ pointer is 0 already."
 		(i2 start2))
 	   (declare (ext:array-index d1 d2 l i1 i2))
 	   (if (null dims1)
-	       #+ecl-min
-	       (dotimes (i l)
-		 (declare (ext:array-index i))
-		 (row-major-aset dest i1 (row-major-aref orig i2))
-		 (incf i1)
-		 (incf i2))
-	       #-ecl-min
-	       (ffi::c-inline (dest i1 orig i2 l)
-			      (array :fixnum array :fixnum :fixnum) :void
-			      "ecl_copy_subarray(#0, #1, #2, #3, #4)"
-			      :one-liner t
-			      :side-effects t)
+	       (copy-subarray dest i1 orig i2 l)
 	       (let ((step1 (apply #'* dims1))
 		     (step2 (apply #'* dims2)))
 		 (declare (ext:array-index step1 step2))
@@ -366,14 +355,8 @@ adjustable array."
   (cond ((adjustable-array-p vec)
 	 (adjust-array vec len))
 	((typep vec 'simple-array)
-	 (let ((new-vec (make-array len :element-type
-				    (array-element-type vec))))
-	   (check-type len fixnum)
-	   (locally (declare (optimize (speed 3) (safety 0) (space 0)) )
-	     (dotimes (i len)
-	       (declare (fixnum i))
-	       (setf (aref new-vec i) (aref vec i))))
-	   new-vec))
+	 (let ((new-vec (make-array len :element-type (array-element-type vec))))
+	   (copy-subarray new-vec 0 vec 0 len)))
 	((typep vec 'vector)
 	 (setf (fill-pointer vec) len)
 	 vec)
