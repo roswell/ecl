@@ -179,8 +179,9 @@
       t)))
 
 (defun c2locals (c1form funs body labels ;; labels is T when deriving from labels
-		 &aux block-p
+		 &aux
 		 (*env* *env*)
+		 (*inline-blocks* 0)
 		 (*env-lvl* *env-lvl*) env-grows)
   (declare (ignore c1form))
   ;; create location for each function which is returned,
@@ -190,15 +191,13 @@
       (when (plusp (var-ref var)) ; the function is returned
         (unless (member (var-kind var) '(LEXICAL CLOSURE))
           (setf (var-loc var) (next-lcl))
-          (unless block-p
-            (setq block-p t) (wt-nl "{ "))
+	  (maybe-open-inline-block)
           (wt "cl_object " var ";"))
 	(unless env-grows
 	  (setq env-grows (var-ref-ccb var))))))
   ;; or in closure environment:
   (when (env-grows env-grows)
-    (unless block-p
-      (wt-nl "{ ") (setq block-p t))
+    (maybe-open-inline-block)
     (let ((env-lvl *env-lvl*))
       (wt "volatile cl_object env" (incf *env-lvl*) " = env" env-lvl ";")))
   ;; bind such locations:
@@ -216,7 +215,7 @@
 	(set-var (list 'MAKE-CCLOSURE fun) var))))
 
   (c2expr body)
-  (when block-p (wt-nl "}")))
+  (close-inline-blocks))
 
 (defun c1decl-body (decls body)
   (if (null decls)

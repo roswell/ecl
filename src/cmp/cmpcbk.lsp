@@ -110,7 +110,7 @@
 	    (setf comma ",")))
     (wt ")")
     (wt-h ");")
-    (wt-nl1 "{")
+    (wt-nl-open-brace)
     (when return-p
       (wt-nl return-type-name " output;"))
     (wt-nl "const cl_env_ptr cl_env_copy = ecl_process_env();")
@@ -132,4 +132,4 @@
       (wt-nl "ecl_foreign_data_set_elt(&output,"
 	     (foreign-elt-type-code return-type) ",aux);")
       (wt-nl "return output;"))
-    (wt-nl1 "}")))
+    (wt-nl-close-brace)))

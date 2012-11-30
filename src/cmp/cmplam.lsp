@@ -353,7 +353,6 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 
   ;; check arguments
   (unless (or local-entry-p (not (policy-check-nargs)))
-    (incf *inline-blocks*)
     (if (and use-narg (not varargs))
 	(wt-nl "if (ecl_unlikely(narg!=" nreq ")) FEwrong_num_arguments_anonym();")
 	(when varargs
@@ -361,7 +360,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 	    (wt-nl "if (ecl_unlikely(narg<" nreq ")) FEwrong_num_arguments_anonym();"))
 	  (unless (or rest keywords allow-other-keys)
 	    (wt-nl "if (ecl_unlikely(narg>" (+ nreq nopt) ")) FEwrong_num_arguments_anonym();"))))
-    (wt-nl "{"))
+    (open-inline-block))
 
   ;; If the number of required arguments exceeds the number of variables we
   ;; want to pass on the C stack, we pass some of the arguments to the list
@@ -429,7 +428,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 	 do (bind `(LCL ,reqi) var)))
 
     (when fname-in-ihs-p
-      (wt-nl "{")
+      (open-inline-block)
       (setf *ihs-used-p* t)
       (push 'IHS *unwind-exit*)
       (when (policy-debug-variable-bindings)
@@ -447,7 +446,8 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
     ;; which is what we do here.
     (let ((va-arg-loc (if simple-varargs 'VA-ARG 'CL-VA-ARG)))
       ;; counter for optionals
-      (wt-nl "{int i=" nreq ";")
+      (wt-nl-open-brace)
+      (wt-nl "int i=" nreq ";")
       (do ((opt optionals (cdddr opt)))
 	  ((endp opt))
 	(wt-nl "if (i >= narg) {")
@@ -459,7 +459,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 	    (bind va-arg-loc (first opt)))
 	  (when (third opt) (bind t (third opt)))
 	(wt-nl "}"))
-      (wt "}")))
+      (wt-nl-close-brace)))
 
   (when (or rest keywords allow-other-keys)
     (cond ((not (or keywords allow-other-keys))
@@ -503,10 +503,10 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 	    (t
 	     ;; with initform
 	     (setf (second KEYVARS[i]) (+ nkey i))
-	     (wt-nl "if(") (wt-loc KEYVARS[i]) (wt "==ECL_NIL){")
+	     (wt-nl "if (") (wt-loc KEYVARS[i]) (wt "==ECL_NIL) {")
 	     (let ((*unwind-exit* *unwind-exit*))
 	       (bind-init init var))
-	     (wt-nl "}else{")
+	     (wt-nl "} else {")
 	     (setf (second KEYVARS[i]) i)
 	     (bind KEYVARS[i] var)
 	     (wt "}")))
@@ -521,11 +521,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
   ;;; Now the parameters are ready, after all!
   (c2expr body)
 
-  ;;; Closing braces is done i cmptop.lsp
-  (when fname-in-ihs-p
-    (wt-nl "}"))
-  (close-inline-blocks)
-  )
+  (close-inline-blocks))
 
 (defun optimize-funcall/apply-lambda (lambda-form arguments apply-p
 				      &aux body apply-list apply-var

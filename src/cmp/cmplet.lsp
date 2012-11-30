@@ -266,16 +266,16 @@
      for kind = (local var)
      when kind
      do (progn
-	  (wt-nl)(maybe-open-inline-block)
+	  (maybe-open-inline-block)
 	  (bind (next-lcl) var)
-	  (wt *volatile* (rep-type-name kind) " " var ";")
+	  (wt-nl *volatile* (rep-type-name kind) " " var ";")
 	  (wt-comment (var-name var))))
 
   ;; Create closure bindings for closed-over variables
   (when (some #'var-ref-ccb vars)
-    (wt-nl) (maybe-open-inline-block)
+    (maybe-open-inline-block)
     (let ((env-lvl *env-lvl*))
-      (wt *volatile* "cl_object env" (incf *env-lvl*) " = env" env-lvl ";")))
+      (wt-nl *volatile* "cl_object env" (incf *env-lvl*) " = env" env-lvl ";")))
 
   ;; Assign values
   (loop for form in forms
@@ -293,11 +293,11 @@
   ;; Optionally register the variables with the IHS frame for debugging
   (if (policy-debug-variable-bindings)
       (let ((*unwind-exit* *unwind-exit*))
-        (wt-nl "{")
+        (wt-nl-open-brace)
         (let* ((env (build-debug-lexical-env vars)))
           (when env (push 'IHS-ENV *unwind-exit*))
           (c2expr body)
-          (wt-nl "}")
+          (wt-nl-close-brace)
           (when env (pop-debug-lexical-env))))
       (c2expr body))
 
