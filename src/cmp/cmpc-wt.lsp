@@ -54,6 +54,43 @@
   (wt1 #\Newline)
   (mapc #'wt1 forms))
 
+;;; Blocks beyond this value will not be indented
+(defvar +max-depth+ 10)
+(defvar +c-indent-strings+
+  #.(coerce (loop for i from 0 to +max-depth+
+	       collect (make-array i :initial-element #\Space
+				   :element-type 'base-char))
+	    'vector))
+
+(defun wt1-indent ()
+  (wt1 #\Tab))
+
+(defun wt-open-brace ()
+  (wt "{")
+  (incf *opened-c-braces*))
+
+(defun wt-nl-open-brace ()
+  (wt1 #\Newline)
+  (wt1-indent)
+  (wt-open-brace))
+
+(defun wt-close-many-braces (final-value)
+  (when (or (minusp final-value)
+	    (> final-value *opened-c-braces*))
+    (baboon :format-control "Mismatch in C blocks"))
+  (loop for i from 0 below (- *opened-c-braces* final-value)
+     do (wt1 #\}))
+  (setf *opened-c-braces* final-value))
+
+(defun wt-nl-close-many-braces (final-value)
+  (let ((*opened-c-braces* final-value))
+    (wt1-indent))
+  (wt-close-many-braces final-value))
+
+(defun wt-nl-close-brace ()
+  (wt1 #\Newline)
+  (wt-close-brace (1- *opened-c-braces*)))
+
 ;;;
 ;;; LABELS AND JUMPS
 ;;;

@@ -331,6 +331,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 		 (*permanent-data* t)
 		 (*unwind-exit* *unwind-exit*)
 		 (*env* *env*)
+		 (*inline-blocks* 0)
 		 (last-arg))
   (declare (fixnum nreq nkey))
 
@@ -523,6 +524,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
   ;;; Closing braces is done i cmptop.lsp
   (when fname-in-ihs-p
     (wt-nl "}"))
+  (close-inline-blocks)
   )
 
 (defun optimize-funcall/apply-lambda (lambda-form arguments apply-p

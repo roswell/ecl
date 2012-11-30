@@ -170,8 +170,11 @@
 
 (defun maybe-open-inline-block ()
   (unless (plusp *inline-blocks*)
-    (wt "{")
-    (setf *inline-blocks* 1)))
+    (open-inline-block)))
+
+(defun open-inline-block ()
+  (wt "{")
+  (incf *inline-blocks*))
 
 (defun close-inline-blocks (&optional new-line)
   (loop for i of-type fixnum from 0 below *inline-blocks*

@@ -123,6 +123,7 @@
   (wt-nl-h "#endif")
   ;;; Initialization function.
   (let* ((*lcl* 0) (*lex* 0) (*max-lex* 0) (*max-env* 0) (*max-temp* 0)
+	 (*opened-c-braces* 0)
          (*aux-closure* nil)
 	 (*reservation-cmacro* (next-cmacro))
 	 (c-output-file *compiler-output1*)
@@ -134,10 +135,11 @@
     (wt-nl1 "extern \"C\"")
     (wt-nl1 "#endif")
     (wt-nl1 "ECL_DLLEXPORT void " name "(cl_object flag)")
-    (wt-nl1 "{ VT" *reservation-cmacro*
-	    " VLEX" *reservation-cmacro*
-            " CLSR" *reservation-cmacro*
-	    " STCK" *reservation-cmacro*)
+    (wt-nl-open-brace)
+    (wt-nl "VT" *reservation-cmacro*
+	   " VLEX" *reservation-cmacro*
+	   " CLSR" *reservation-cmacro*
+	   " STCK" *reservation-cmacro*)
     (wt-nl "const cl_env_ptr cl_env_copy = ecl_process_env();")
     (wt-nl "cl_object value0;")
     (wt-nl "cl_object *VVtemp;")
@@ -193,7 +195,7 @@
       (let ((*compiler-output1* c-output-file))
 	(emit-local-funs)))
     (wt-function-epilogue)
-    (wt-nl1 "}")
+    (wt-nl-close-many-braces 0)
     (setq top-output-string (get-output-stream-string *compiler-output1*)))
 
   ;; Declarations in h-file.
@@ -461,7 +463,7 @@ return f2;
       (wt1 ", cl_object ") (wt-lcl lcl)
       (wt-h ", cl_object"))
     (wt-h1 ");")
-    (wt-nl1 "{")
+    (wt-nl-open-brace)
     (when (compiler-check-args)
       (wt-nl "_ecl_check_narg(" (length arg-types) ");"))
     (wt-nl "cl_env_copy->nvalues=1;")
@@ -488,8 +490,8 @@ return f2;
             (otherwise "")) "(")
         (wt-lcl n) (wt ")")
         (unless (endp (cdr types)) (wt ",")))
-    (wt "));}")
-    )
+    (wt "));")
+    (wt-nl-close-many-braces 0))
 
 (defun rep-type (type)
   (case type
@@ -712,12 +714,12 @@ return f2;
 	 (*destination* 'RETURN)
          (*ihs-used-p* nil)
 	 (*reservation-cmacro* (next-cmacro))
-	 (*inline-blocks* 1))
-    (wt-nl1 "{")
-    (wt " VT" *reservation-cmacro*
-	" VLEX" *reservation-cmacro*
-	" CLSR" *reservation-cmacro*
-	" STCK" *reservation-cmacro*)
+	 (*opened-c-braces* 0))
+    (wt-nl-open-brace)
+    (wt-nl "VT" *reservation-cmacro*
+	   " VLEX" *reservation-cmacro*
+	   " CLSR" *reservation-cmacro*
+	   " STCK" *reservation-cmacro*)
     (wt-nl "const cl_env_ptr cl_env_copy = ecl_process_env();")
     (when (eq (fun-closure fun) 'CLOSURE)
       (wt "cl_object " *volatile* "env0 = cl_env_copy->function->cclosure.env;"))
@@ -755,8 +757,8 @@ return f2;
 	    (when (= n (var-loc (first bs)))
 	      (wt-comment (var-name (first clv-used)))
               (pop clv-used)))
-	  (wt-nl "{ /* ... closure scanning finished */")
-	  (incf *inline-blocks*)))
+	  (wt-nl-open-brace)
+	  (wt " /* ... closure scanning finished */")))
 
     (c2lambda-expr (c1form-arg 0 lambda-expr)
 		   (c1form-arg 2 lambda-expr)
@@ -764,10 +766,9 @@ return f2;
 		   narg
 		   (fun-closure fun))
     (wt-nl1)
-    (close-inline-blocks)
+    (wt-nl-close-many-braces 0)
     ;; we should declare in CLSR only those used
-    (wt-function-epilogue (fun-closure fun)))
-  )
+    (wt-function-epilogue (fun-closure fun))))
 
 ;;; ----------------------------------------------------------------------
 ;;; Optimizer for FSET. Removes the need for a special handling of DEFUN as a

@@ -25,6 +25,7 @@
 #-new-cmp
 (defvar *info* (make-info))
 (defvar *inline-blocks* 0)
+(defvar *opened-c-braces* 0)
 ;;; *inline-blocks* holds the number of C blocks opened for declaring
 ;;; temporaries for intermediate results of the evaluation of inlined
 ;;; function calls.
@@ -346,6 +347,7 @@ be deleted if they have been opened with LoadLibrary.")
     (*compile-time-too* nil)
     (*clines-string-list* '())
     (*inline-blocks* 0)
+    (*open-c-braces* 0)
     #+new-cmp
     (*type-and-cache* (type-and-empty-cache))
     #+new-cmp
