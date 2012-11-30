@@ -37,8 +37,8 @@
         (make-temp-var)
         (let ((var (make-lcl-var :rep-type out-rep-type
                                  :type value-type)))
-          (wt-nl "{" (rep-type-name out-rep-type) " " var ";")
-          (incf *inline-blocks*)
+	  (open-inline-block)
+          (wt-nl (rep-type-name out-rep-type) " " var ";")
           var))))
 
 (defun save-inline-loc (loc)
@@ -173,14 +173,12 @@
     (open-inline-block)))
 
 (defun open-inline-block ()
-  (wt-nl "{")
+  (wt-nl-open-brace)
   (incf *inline-blocks*))
 
 (defun close-inline-blocks (&optional new-line)
   (loop for i of-type fixnum from 0 below *inline-blocks*
-     when (and (zerop i) new-line)
-     do (wt-nl)
-     do (wt #\})))
+     do (wt-nl-close-brace)))
 
 (defun form-causes-side-effect (form)
   (c1form-side-effects form))
