@@ -192,6 +192,8 @@
 
 (def-inline array-rank :unsafe (array) :fixnum
  "@0;(((#0)->d.t == t_array)?(#0)->array.rank:1)")
+(def-inline array-rank :always (array) :fixnum
+ "ecl_array_rank(#0)")
 
 (def-inline array-dimension :always (t t) fixnum
  "ecl_array_dimension(#0,ecl_to_size(#1))")
