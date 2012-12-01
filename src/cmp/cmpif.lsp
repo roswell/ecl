@@ -85,6 +85,14 @@
 	   (let ((*destination* `(JUMP-FALSE ,false-label)))
 	     (c2expr* fmla))
 	   (c2expr form1)))
+	((and (eq *destination* 'TRASH)
+	      (eq (c1form-name form1) 'LOCATION))
+	 ;; Optimize (IF condition useless-value false-branch) when
+	 ;; the true branch can be discarded.
+	 (with-optional-exit-label (true-label)
+	   (let ((*destination* `(JUMP-TRUE ,true-label)))
+	     (c2expr* fmla))
+	   (c2expr form2)))
 	(t
 	 (with-exit-label (false-label)
 	   (let ((*destination* `(JUMP-FALSE ,false-label)))
@@ -110,10 +118,10 @@
 (defun c2fmla-not (c1form arg)
   (declare (ignore c1form))
   (let ((dest *destination*))
-    (cond ((and (consp dest) (eq (car dest) 'JUMP-TRUE))
+    (cond ((jump-true-destination-p dest)
            (let ((*destination* `(JUMP-FALSE ,@(cdr dest))))
              (c2expr arg)))
-          ((and (consp dest) (eq (car dest) 'JUMP-FALSE))
+          ((jump-false-destination-p dest)
            (let ((*destination* `(JUMP-TRUE ,@(cdr dest))))
              (c2expr arg)))
           (t
@@ -121,20 +129,18 @@
                  (*temp* *temp*))
              (unwind-exit (negate-argument
                            (emit-inline-form arg nil)
-                           *destination*))
+                           dest))
              (close-inline-blocks))))))
 
-(defun jump-true-destination? ()
-  (let ((dest *destination*))
-    (and (consp dest) (eq (car dest) 'JUMP-TRUE))))
+(defun jump-true-destination-p (dest)
+  (and (consp dest) (eq (si:cons-car dest) 'JUMP-TRUE)))
 
-(defun jump-false-destination? ()
-  (let ((dest *destination*))
-    (and (consp dest) (eq (car dest) 'JUMP-FALSE))))
+(defun jump-false-destination-p (dest)
+  (and (consp dest) (eq (si:cons-car dest) 'JUMP-FALSE)))
 
 (defun c2fmla-and (c1form butlast last)
   (declare (ignore c1form))
-  (if (jump-false-destination?)
+  (if (jump-false-destination-p *destination*)
       (progn
 	(mapc #'c2expr* butlast)
 	(c2expr last))
@@ -147,10 +153,10 @@
 
 (defun c2fmla-or (c1form butlast last)
   (declare (ignore c1form))
-  (cond ((jump-true-destination?)
+  (cond ((jump-true-destination-p *destination*)
 	 (mapc #'c2expr* butlast)
 	 (c2expr last))
-	((jump-false-destination?)
+	((jump-false-destination-p *destination*)
 	 (with-exit-label (true-label)
 	   (let ((*destination* `(JUMP-TRUE ,true-label)))
 	     (mapc #'c2expr* butlast))
