@@ -14,6 +14,23 @@
 
 (in-package "COMPILER")
 
+;;; UNWIND-EXIT TAGS	   PURPOSE
+;;;
+;;; number		-> unknown purpose
+;;; JUMP		-> unknown purpose
+;;; FRAME		-> ecl_frs_push()
+;;; IHS			-> ihs push
+;;; IHS-ENV		-> ihs push
+;;; BDS-BIND		-> binding of 1 special variable
+;;; (number . {T|NIL})	-> label
+;;; (LCL n)		-> n local variables
+;;; (STACK n)		-> n elements pushed in stack
+;;; TAIL-RECURSION-MARK	-> TTL: label created
+;;; RETURN*		-> outermost location
+;;;
+;;; (*) also RETURN-FIXNUM, -CHARACTER, -SINGLE-FLOAT
+;;;     -DOUBLE-FLOAT, -OBJECT.
+;;;
 (defun unwind-bds (bds-lcl bds-bind stack-frame ihs-p)
   (declare (fixnum bds-bind))
   (let ((some nil))
@@ -153,37 +170,21 @@
   (declare (fixnum bds-bind))
   (dolist (ue *unwind-exit* (baboon-improper-*exit*))
     (cond
-       ((consp ue)
-	(cond ((eq ue exit)
-	       (return (unwind-bds bds-lcl bds-bind stack-frame ihs-p)))
-	      ((eq (first ue) 'STACK)
-	       (setf stack-frame (second ue)))))
-       ((numberp ue)
-	(setq bds-lcl ue bds-bind 0))
-       ((eq ue 'BDS-BIND)
-	(incf bds-bind))
-       ((member ue '(RETURN RETURN-OBJECT RETURN-FIXNUM RETURN-CHARACTER
-                            RETURN-DOUBLE-FLOAT RETURN-SINGLE-FLOAT))
-        (if (eq exit ue)
-            (return (unwind-bds bds-lcl bds-bind stack-frame ihs-p))
-            (baboon-unwind-exit ue))
-        ;;; Never reached
-        )
-       ((eq ue 'FRAME)
-	(wt-nl "ecl_frs_pop(cl_env_copy);"))
-       ((eq ue 'TAIL-RECURSION-MARK)
-        (if (eq exit 'TAIL-RECURSION-MARK)
-            (return (unwind-bds bds-lcl bds-bind stack-frame ihs-p))
-            (baboon-unwind-exit ue))
-        ;;; Never reached
-        )
-       ((eq ue 'JUMP))
-       ((eq ue 'IHS-ENV)
-        (setf ihs-p ue))
-       (t (baboon-unwind-exit ue))
-       ))
-  ;;; Never reached
-  )
+      ((eq ue exit)
+       (return (unwind-bds bds-lcl bds-bind stack-frame ihs-p)))
+      ((consp ue)
+       (when (eq (first ue) 'STACK)
+	 (setf stack-frame (second ue))))
+      ((numberp ue)
+       (setq bds-lcl ue bds-bind 0))
+      ((eq ue 'BDS-BIND)
+       (incf bds-bind))
+      ((eq ue 'FRAME)
+       (wt-nl "ecl_frs_pop(cl_env_copy);"))
+      ((eq ue 'JUMP))
+      ((eq ue 'IHS-ENV)
+       (setf ihs-p ue))
+      (t (baboon-unwind-exit ue)))))
 
 ;;; Tail-recursion optimization for a function F is possible only if
 ;;;	1. F receives only required parameters, and
