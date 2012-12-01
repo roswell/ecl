@@ -46,8 +46,7 @@
   (princ form *compiler-output2*))
 
 (defun wt-nl (&rest forms)
-  (wt1 #\Newline)
-  (wt1-indent)
+  (wt-nl-indent)
   (mapc #'wt1 forms))
 
 (defun wt-nl1 (&rest forms)
@@ -56,41 +55,40 @@
 
 ;;; Blocks beyond this value will not be indented
 (defvar +max-depth+ 10)
-(defvar +c-indent-strings+
-  #.(coerce (loop for i from 0 to +max-depth+
-	       collect (make-array i :initial-element #\Space
-				   :element-type 'base-char))
+(defvar +c-newline-indent-strings+
+  #.(coerce (let ((basis (make-array (1+ +max-depth+)
+				     :initial-element #\Space
+				     :element-type 'base-char)))
+	      (setf (aref basis 0) #\Newline)
+	      (loop for i from 0 to +max-depth+
+		 collect (subseq basis 0 (1+ i))))
 	    'vector))
 
-(defun wt1-indent ()
-  (if (plusp *opened-c-braces*)
-      (wt1 #\Tab)))
+(defun wt-nl-indent ()
+  (wt1 (aref +c-newline-indent-strings+ (min *opened-c-braces* +max-depth+))))
 
 (defun wt-open-brace ()
-  (wt "{")
+  (wt1 #\{)
   (incf *opened-c-braces*))
 
 (defun wt-nl-open-brace ()
-  (wt1 #\Newline)
-  (wt1-indent)
+  (wt-nl-indent)
   (wt-open-brace))
 
-(defun wt-close-many-braces (final-value)
-  (when (or (minusp final-value)
-	    (> final-value *opened-c-braces*))
-    (baboon :format-control "Mismatch in C blocks"))
-  (loop for i from 0 below (- *opened-c-braces* final-value)
-     do (wt1 #\}))
-  (setf *opened-c-braces* final-value))
-
 (defun wt-nl-close-many-braces (final-value)
-  (let ((*opened-c-braces* final-value))
-    (wt1 #\Newline)
-    (wt1-indent))
-  (wt-close-many-braces final-value))
+  (let ((diff (- *opened-c-braces* final-value)))
+    (when (minusp diff)
+      (baboon :format-control "Mismatch in C blocks"))
+    (loop for i from 0 below diff
+       do (wt-nl-close-brace))))
 
 (defun wt-nl-close-brace ()
-  (wt-nl-close-many-braces (1- *opened-c-braces*)))
+  (if (plusp *opened-c-braces*)
+      (progn
+	(wt-nl-indent)
+	(wt1 #\})
+	(decf *opened-c-braces*))
+      (baboon :format-control "Mismatch in C blocks")))
 
 ;;;
 ;;; LABELS AND JUMPS
