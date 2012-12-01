@@ -61,9 +61,32 @@
 (defmacro next-cmacro () '(incf *next-cmacro*))
 
 ;;; from cmplabel.lsp
-(defmacro next-label () `(cons (incf *last-label*) nil))
+(defun next-label ()
+  (cons (incf *last-label*) nil))
 
-(defmacro next-label* () `(cons (incf *last-label*) t))
+(defun next-label* ()
+  (cons (incf *last-label*) t))
+
+(defun maybe-next-label ()
+  (let ((l (next-label)))
+    (if (and (consp *exit*) (numberp (car *exit*)))
+	*exit*
+	l)))
+
+(defun maybe-wt-label (label)
+  (unless (eq label *exit*)
+    (wt-label label)))
+
+(defmacro with-exit-label ((label) &body body)
+  `(let* ((,label (next-label))
+	  (*unwind-exit* (cons ,label *unwind-exit*)))
+     ,@body
+     (wt-label ,label)))
+
+(defmacro with-optional-label ((label-name) &body body)
+  `(let ((,label-name (maybe-next-label)))
+     ,@body
+     (maybe-wt-label ,label-name)))
 
 (defun next-lcl () (list 'LCL (incf *lcl*)))
 

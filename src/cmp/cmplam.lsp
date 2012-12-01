@@ -505,12 +505,14 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 	     ;; with initform
 	     (setf (second KEYVARS[i]) (+ nkey i))
 	     (wt-nl "if (") (wt-loc KEYVARS[i]) (wt "==ECL_NIL) {")
-	     (let ((*unwind-exit* *unwind-exit*))
+	     (let ((*unwind-exit* *unwind-exit*)
+		   (*opened-c-braces* (1+ *opened-c-braces*)))
 	       (bind-init init var))
 	     (wt-nl "} else {")
-	     (setf (second KEYVARS[i]) i)
-	     (bind KEYVARS[i] var)
-	     (wt "}")))
+	     (let ((*opened-c-braces* (1+ *opened-c-braces*)))
+	       (setf (second KEYVARS[i]) i)
+	       (bind KEYVARS[i] var))
+	     (wt-nl "}")))
       (when flag
 	(setf (second KEYVARS[i]) (+ nkey i))
 	(bind KEYVARS[i] flag))))

@@ -16,20 +16,31 @@
 
 (defun unwind-bds (bds-lcl bds-bind stack-frame ihs-p)
   (declare (fixnum bds-bind))
-  (when stack-frame
-    (if (stringp stack-frame)
-	(wt-nl "ecl_stack_frame_close(" stack-frame ");")
-	(wt-nl "ECL_STACK_SET_INDEX(cl_env_copy," stack-frame ");")))
-  (when bds-lcl
-    (wt-nl "ecl_bds_unwind(cl_env_copy," bds-lcl ");"))
-  (if (< bds-bind 4)
-      (dotimes (n bds-bind)
-	(declare (fixnum n))
-	(wt-nl "ecl_bds_unwind1(cl_env_copy);"))
-      (wt-nl "ecl_bds_unwind_n(cl_env_copy," bds-bind ");"))
-  (case ihs-p
-    (IHS (wt-nl "ecl_ihs_pop(cl_env_copy);"))
-    (IHS-ENV (wt-nl "ihs.lex_env = _ecl_debug_env;"))))
+  (let ((some nil))
+    (when stack-frame
+      (setf some t)
+      (if (stringp stack-frame)
+	  (wt-nl "ecl_stack_frame_close(" stack-frame ");")
+	  (wt-nl "ECL_STACK_SET_INDEX(cl_env_copy," stack-frame ");")))
+    (when bds-lcl
+      (setf some t)
+      (wt-nl "ecl_bds_unwind(cl_env_copy," bds-lcl ");"))
+    (cond ((< bds-bind 4)
+	   (dotimes (n bds-bind)
+	     (declare (fixnum n))
+	     (setf some t)
+	     (wt-nl "ecl_bds_unwind1(cl_env_copy);")))
+	  (t
+	   (setf some t)
+	   (wt-nl "ecl_bds_unwind_n(cl_env_copy," bds-bind ");")))
+    (case ihs-p
+      (IHS
+       (setf some t)
+       (wt-nl "ecl_ihs_pop(cl_env_copy);"))
+      (IHS-ENV
+       (setf some t)
+       (wt-nl "ihs.lex_env = _ecl_debug_env;")))
+    some))
 
 (defun unwind-exit (loc &optional (jump-p nil) &aux (bds-lcl nil) (bds-bind 0) (stack-frame nil) (ihs-p nil))
   (declare (fixnum bds-bind))
@@ -144,25 +155,25 @@
     (cond
        ((consp ue)
 	(cond ((eq ue exit)
-	       (unwind-bds bds-lcl bds-bind stack-frame ihs-p)
-	       (return))
+	       (return (unwind-bds bds-lcl bds-bind stack-frame ihs-p)))
 	      ((eq (first ue) 'STACK)
 	       (setf stack-frame (second ue)))))
-       ((numberp ue) (setq bds-lcl ue bds-bind 0))
-       ((eq ue 'BDS-BIND) (incf bds-bind))
+       ((numberp ue)
+	(setq bds-lcl ue bds-bind 0))
+       ((eq ue 'BDS-BIND)
+	(incf bds-bind))
        ((member ue '(RETURN RETURN-OBJECT RETURN-FIXNUM RETURN-CHARACTER
                             RETURN-DOUBLE-FLOAT RETURN-SINGLE-FLOAT))
         (if (eq exit ue)
-            (progn (unwind-bds bds-lcl bds-bind stack-frame ihs-p)
-                   (return))
+            (return (unwind-bds bds-lcl bds-bind stack-frame ihs-p))
             (baboon-unwind-exit ue))
         ;;; Never reached
         )
-       ((eq ue 'FRAME) (wt-nl "ecl_frs_pop(cl_env_copy);"))
+       ((eq ue 'FRAME)
+	(wt-nl "ecl_frs_pop(cl_env_copy);"))
        ((eq ue 'TAIL-RECURSION-MARK)
         (if (eq exit 'TAIL-RECURSION-MARK)
-            (progn (unwind-bds bds-lcl bds-bind stack-frame ihs-p)
-                   (return))
+            (return (unwind-bds bds-lcl bds-bind stack-frame ihs-p))
             (baboon-unwind-exit ue))
         ;;; Never reached
         )

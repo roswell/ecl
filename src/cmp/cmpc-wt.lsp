@@ -85,9 +85,9 @@
 (defun wt-nl-close-brace ()
   (if (plusp *opened-c-braces*)
       (progn
+	(decf *opened-c-braces*)
 	(wt-nl-indent)
-	(wt1 #\})
-	(decf *opened-c-braces*))
+	(wt1 #\}))
       (baboon :format-control "Mismatch in C blocks")))
 
 ;;;

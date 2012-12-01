@@ -74,13 +74,6 @@
 			 :args butlast last)
 	    last))))
 
-(eval-when (:compile-toplevel :execute)
-(defmacro with-exit-label ((label) &body body)
-  `(let* ((,label (next-label))
-	  (*unwind-exit* (cons ,label *unwind-exit*)))
-     ,@body
-     (wt-label ,label))))
-
 (defun c2if (c1form fmla form1 form2)
   (declare (ignore c1form))
   ;; FIXME! Optimize when FORM1 or FORM2 are constants
@@ -170,14 +163,17 @@
       (loc-immediate-value-p loc)
     (cond ((not constantp)
            (cond ((eq (loc-representation-type loc) :bool)
-                  (wt-nl "if(" loc "){"))
+                  (wt-nl "if (" loc ") {"))
                  (t
-                  (wt-nl "if((")
+                  (wt-nl "if ((")
                   (wt-coerce-loc :object loc)
-                  (wt ")!=ECL_NIL){")))
-           (unwind-no-exit label)
-           (wt-nl) (wt-go label)
-           (wt "}"))
+                  (wt ")!=ECL_NIL) {")))
+           (cond ((unwind-no-exit label)
+		  (incf *opened-c-braces*)
+		  (wt-nl) (wt-go label)
+		  (wt-nl-close-brace))
+		 (t
+		  (wt " ") (wt-go label) (wt " }"))))
           ((null value))
           (t
            (unwind-no-exit label)
@@ -188,14 +184,17 @@
       (loc-immediate-value-p loc)
     (cond ((not constantp)
            (cond ((eq (loc-representation-type loc) :bool)
-                  (wt-nl "if(!(" loc ")){"))
+                  (wt-nl "if (!(" loc ")) {"))
                  (t
-                  (wt-nl "if((")
+                  (wt-nl "if (Null(")
                   (wt-coerce-loc :object loc)
-                  (wt ")==ECL_NIL){")))
-           (unwind-no-exit label)
-           (wt-nl) (wt-go label)
-           (wt "}"))
+                  (wt ")) {")))
+	   (cond ((unwind-no-exit label)
+		  (incf *opened-c-braces*)
+		  (wt-nl) (wt-go label)
+		  (wt-nl-close-brace))
+		 (t
+		  (wt " ") (wt-go label) (wt " }"))))
           (value)
           (t
            (unwind-no-exit label)
