@@ -71,10 +71,9 @@
   (and (consp x) (integerp (si::cons-car x))))
 
 (defun maybe-next-label ()
-  (let ((l (next-label)))
-    (if (labelp *exit*)
-	*exit*
-	l)))
+  (if (labelp *exit*)
+      *exit*
+      (next-label)))
 
 (defun maybe-wt-label (label)
   (unless (eq label *exit*)
