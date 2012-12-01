@@ -281,4 +281,4 @@
               (or fun-lisp-name 'ANONYMOUS)))
     (when (fun-needs-narg fun)
       (push narg args))
-    (wt-call fun-c-name args fun-lisp-name env)))
+    (wt-call fun-c-name args nil env)))
