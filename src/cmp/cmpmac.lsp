@@ -83,8 +83,9 @@
      ,@body
      (wt-label ,label)))
 
-(defmacro with-optional-label ((label-name) &body body)
-  `(let ((,label-name (maybe-next-label)))
+(defmacro with-optional-exit-label ((label-name) &body body)
+  `(let* ((,label-name (maybe-next-label))
+	  (*unwind-exit* (adjoin ,label-name *unwind-exit*)))
      ,@body
      (maybe-wt-label ,label-name)))
 

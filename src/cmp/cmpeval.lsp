@@ -165,6 +165,10 @@
       (apply dispatch form args))))
 
 (defun c2expr* (form)
+  ;; C2EXPR* compiles the giving expression in a context in which
+  ;; other expressions will follow this one. We must thus create
+  ;; a possible label so that the compiled forms exit right at
+  ;; the point where the next form will be compiled.
   (with-exit-label (label)
     (let* ((*exit* label)
 	   (*unwind-exit* (cons *exit* *unwind-exit*))
