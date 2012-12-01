@@ -145,7 +145,7 @@
     (wt-nl "cl_object *VVtemp;")
 
     (wt-nl "if (flag != OBJNULL){")
-    (wt-nl "Cblock=flag;")
+    (wt-nl "Cblock = flag;")
     (wt-nl "#ifndef ECL_DYNAMIC_VV")
     (wt-nl "flag->cblock.data = VV;")
     (wt-nl "#endif")
@@ -233,13 +233,14 @@
       (wt-nl1 "static cl_object " c-name "(cl_narg narg, ...)"
 	      "{TRAMPOLINK(narg," lisp-name ",&" var-name ",Cblock);}")))
   #+(or)
-  (wt-nl-h "static cl_object ECL_SETF_DEFINITION(cl_object setf_vv, cl_object setf_form) {
-cl_object f1 = ecl_fdefinition(setf_form);
-cl_object f2 = ECL_CONS_CAR(setf_vv);
-if (f1 != f2) {
-FEundefined_function(setf_form);
-}
-return f2;
+  (wt-nl-h "static cl_object ECL_SETF_DEFINITION(cl_object setf_vv, cl_object setf_form)
+{
+ cl_object f1 = ecl_fdefinition(setf_form);
+ cl_object f2 = ECL_CONS_CAR(setf_vv);
+ if (f1 != f2) {
+  FEundefined_function(setf_form);
+ }
+ return f2;
 }
 ")
   (wt-nl-h "#define ECL_DEFINE_SETF_FUNCTIONS ")
@@ -466,7 +467,7 @@ return f2;
     (wt-nl-open-brace)
     (when (compiler-check-args)
       (wt-nl "_ecl_check_narg(" (length arg-types) ");"))
-    (wt-nl "cl_env_copy->nvalues=1;")
+    (wt-nl "cl_env_copy->nvalues = 1;")
     (wt-nl "return " (case return-type
                             (FIXNUM "ecl_make_fixnum")
                             (CHARACTER "CODE_CHAR")
@@ -642,11 +643,11 @@ return f2;
              (+ 2 (length filtered-locations))
              ",,);")
       (unless first
-        (wt-nl "ihs.lex_env=_ecl_debug_env;")))
+        (wt-nl "ihs.lex_env = _ecl_debug_env;")))
     filtered-codes))
 
 (defun pop-debug-lexical-env ()
-  (wt-nl "ihs.lex_env=_ecl_debug_env;"))
+  (wt-nl "ihs.lex_env = _ecl_debug_env;"))
 
 (defun t3local-fun (fun &aux  (lambda-expr (fun-lambda fun))
 			      (level (if (eq (fun-closure fun) 'LEXICAL)
@@ -752,8 +753,8 @@ return f2;
 	      ((or (minusp n) (null bs)))
 	    (wt-nl "CLV" n)
 	    (if first
-		(progn (wt "=env0;") (setf first nil))
-		(wt "=_ecl_cdr(CLV" (1+ n) ");"))
+		(progn (wt " = env0;") (setf first nil))
+		(wt " = _ecl_cdr(CLV" (1+ n) ");"))
 	    (when (= n (var-loc (first bs)))
 	      (wt-comment (var-name (first clv-used)))
               (pop clv-used)))

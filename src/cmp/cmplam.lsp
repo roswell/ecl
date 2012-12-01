@@ -447,23 +447,25 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
     (let ((va-arg-loc (if simple-varargs 'VA-ARG 'CL-VA-ARG)))
       ;; counter for optionals
       (wt-nl-open-brace)
-      (wt-nl "int i=" nreq ";")
+      (wt-nl "int i = " nreq ";")
       (do ((opt optionals (cdddr opt)))
 	  ((endp opt))
 	(wt-nl "if (i >= narg) {")
+	(let ((*opened-c-braces* (1+ *opened-c-braces*)))
 	  (bind-init (second opt) (first opt))
-	  (when (third opt) (bind nil (third opt)))
+	  (when (third opt) (bind nil (third opt))))
 	(wt-nl "} else {")
+	(let ((*opened-c-braces* (1+ *opened-c-braces*))
+	      (*unwind-exit* *unwind-exit*))
 	  (wt-nl "i++;")
-	  (let ((*unwind-exit* *unwind-exit*))
-	    (bind va-arg-loc (first opt)))
-	  (when (third opt) (bind t (third opt)))
+	  (bind va-arg-loc (first opt))
+	  (when (third opt) (bind t (third opt))))
 	(wt-nl "}"))
       (wt-nl-close-brace)))
 
   (when (or rest keywords allow-other-keys)
     (cond ((not (or keywords allow-other-keys))
-	   (wt-nl rest-loc "=cl_grab_rest_args(args);"))
+	   (wt-nl rest-loc " = cl_grab_rest_args(args);"))
 	  (t
 	   (cond (keywords
 		  (wt-nl-open-brace) ;; Brace [1]
@@ -504,7 +506,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 	    (t
 	     ;; with initform
 	     (setf (second KEYVARS[i]) (+ nkey i))
-	     (wt-nl "if (") (wt-loc KEYVARS[i]) (wt "==ECL_NIL) {")
+	     (wt-nl "if (Null(") (wt-loc KEYVARS[i]) (wt ")) {")
 	     (let ((*unwind-exit* *unwind-exit*)
 		   (*opened-c-braces* (1+ *opened-c-braces*)))
 	       (bind-init init var))

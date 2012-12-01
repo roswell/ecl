@@ -82,10 +82,12 @@
    ;; of a function.
    ((endp forms)
     (cond ((eq *destination* 'RETURN)
-	   (wt-nl "value0=ECL_NIL; cl_env_copy->nvalues=0;")
+	   (wt-nl "value0 = ECL_NIL;")
+	   (wt-nl "cl_env_copy->nvalues = 0;")
 	   (unwind-exit 'RETURN))
 	  ((eq *destination* 'VALUES)
-	   (wt-nl "cl_env_copy->values[0]=ECL_NIL; cl_env_copy->nvalues=0;")
+	   (wt-nl "cl_env_copy->values[0] = ECL_NIL;")
+	   (wt-nl "cl_env_copy->nvalues = 0;")
 	   (unwind-exit 'VALUES))
 	  (t
 	   (unwind-exit 'NIL))))
@@ -108,12 +110,12 @@
 	   (forms (nreverse (coerce-locs (inline-args forms)))))
       ;; By inlining arguments we make sure that VL has no call to funct.
       ;; Reverse args to avoid clobbering VALUES(0)
-      (wt-nl "cl_env_copy->nvalues=" nv ";")
+      (wt-nl "cl_env_copy->nvalues = " nv ";")
       (do ((vl forms (rest vl))
 	   (i (1- (length forms)) (1- i)))
 	  ((null vl))
 	(declare (fixnum i))
-	(wt-nl "cl_env_copy->values[" i "]=" (first vl) ";"))
+	(wt-nl "cl_env_copy->values[" i "] = " (first vl) ";"))
       (unwind-exit 'VALUES)
       (close-inline-blocks)))))
 
