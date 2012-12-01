@@ -77,11 +77,20 @@
 (defun c2if (c1form fmla form1 form2)
   (declare (ignore c1form))
   ;; FIXME! Optimize when FORM1 or FORM2 are constants
-  (with-exit-label (false-label)
-    (let ((*destination* `(JUMP-FALSE ,false-label)))
-      (c2expr* fmla))
-    (c2expr form1))
-  (c2expr form2))
+  (cond ((and (eq *destination* 'TRASH)
+	      (eq (c1form-name form2) 'LOCATION))
+	 ;; Optimize (IF condition true-branch) or a situation in which
+	 ;; the false branch can be discarded.
+	 (with-optional-exit-label (false-label)
+	   (let ((*destination* `(JUMP-FALSE ,false-label)))
+	     (c2expr* fmla))
+	   (c2expr form1)))
+	(t
+	 (with-exit-label (false-label)
+	   (let ((*destination* `(JUMP-FALSE ,false-label)))
+	     (c2expr* fmla))
+	   (c2expr form1))
+	 (c2expr form2))))
 
 (defun negate-argument (inlined-arg dest-loc)
   (let* ((loc (second inlined-arg))

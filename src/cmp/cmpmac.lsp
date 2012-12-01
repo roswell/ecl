@@ -67,9 +67,12 @@
 (defun next-label* ()
   (cons (incf *last-label*) t))
 
+(defun labelp (x)
+  (and (consp x) (integerp (si::cons-car x))))
+
 (defun maybe-next-label ()
   (let ((l (next-label)))
-    (if (and (consp *exit*) (numberp (car *exit*)))
+    (if (labelp *exit*)
 	*exit*
 	l)))
 
@@ -83,11 +86,11 @@
      ,@body
      (wt-label ,label)))
 
-(defmacro with-optional-exit-label ((label-name) &body body)
-  `(let* ((,label-name (maybe-next-label))
-	  (*unwind-exit* (adjoin ,label-name *unwind-exit*)))
+(defmacro with-optional-exit-label ((label) &body body)
+  `(let* ((,label (maybe-next-label))
+	  (*unwind-exit* (adjoin ,label *unwind-exit*)))
      ,@body
-     (maybe-wt-label ,label-name)))
+     (maybe-wt-label ,label)))
 
 (defun next-lcl () (list 'LCL (incf *lcl*)))
 
