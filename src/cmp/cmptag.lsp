@@ -135,7 +135,6 @@
 	  (setf (tag-unwind-exit x) *unwind-exit*)))
       ;; some tag used non locally or inside an unwind-protect
       (let ((*unwind-exit* (cons 'FRAME *unwind-exit*))
-	    (label (next-label))
 	    (*env* *env*) (*env-lvl* *env-lvl*)
 	    (*lex* *lex*) (*lcl* *lcl*)
 	    (*inline-blocks* 0)
@@ -162,8 +161,7 @@
 	(when (var-ref-ccb tag-loc)
 	  (wt-nl "ecl_internal_error(\"GO found an inexistent tag\");"))
 	(wt-nl "}")
-	(let ((*unwind-exit* (cons label *unwind-exit*)))
-	  (c2tagbody-body body))
+	(c2tagbody-body body)
 	(close-inline-blocks))))
 
 (defun c2tagbody-body (body)
