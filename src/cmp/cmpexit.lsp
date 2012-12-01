@@ -166,25 +166,36 @@
   (baboon :format-control "The value of unwind exit~%~A~%found in *UNWIND-EXIT*~%~A~%is not valid."
           :format-arguments (list ue *unwind-exit*)))
 
-(defun unwind-no-exit (exit &aux (bds-lcl nil) (bds-bind 0) (stack-frame nil) (ihs-p nil))
-  (declare (fixnum bds-bind))
-  (dolist (ue *unwind-exit* (baboon-improper-*exit*))
-    (cond
-      ((eq ue exit)
-       (return (unwind-bds bds-lcl bds-bind stack-frame ihs-p)))
-      ((consp ue)
-       (when (eq (first ue) 'STACK)
-	 (setf stack-frame (second ue))))
-      ((numberp ue)
-       (setq bds-lcl ue bds-bind 0))
-      ((eq ue 'BDS-BIND)
-       (incf bds-bind))
-      ((eq ue 'FRAME)
-       (wt-nl "ecl_frs_pop(cl_env_copy);"))
-      ((eq ue 'JUMP))
-      ((eq ue 'IHS-ENV)
-       (setf ihs-p ue))
-      (t (baboon-unwind-exit ue)))))
+(defun unwind-no-exit-until (last-cons)
+  (loop with bds-lcl = nil
+     with bds-bind = 0
+     with stack-frame = nil
+     with ihs-p = nil
+     for unwind-exit on *unwind-exit*
+     for ue = (car unwind-exit)
+     until (eq unwind-exit last-cons)
+     do (cond
+	  ((consp ue)
+	   (when (eq (first ue) 'STACK)
+	     (setf stack-frame (second ue))))
+	  ((numberp ue)
+	   (setq bds-lcl ue bds-bind 0))
+	  ((eq ue 'BDS-BIND)
+	   (incf bds-bind))
+	  ((eq ue 'FRAME)
+	   (wt-nl "ecl_frs_pop(cl_env_copy);"))
+	  ((eq ue 'JUMP))
+	  ((eq ue 'IHS-ENV)
+	   (setf ihs-p ue))
+	  (t (baboon-unwind-exit ue)))
+     finally (return (unwind-bds bds-lcl bds-bind stack-frame ihs-p))))
+
+(defun unwind-no-exit (exit)
+  (let ((where (member exit *unwind-exit* :test #'eq)))
+    (unless where
+      (baboon :format-control "Unwind-exit label ~A not found"
+	      :format-arguments (list exit)))
+    (unwind-no-exit-until where)))
 
 ;;; Tail-recursion optimization for a function F is possible only if
 ;;;	1. F receives only required parameters, and
