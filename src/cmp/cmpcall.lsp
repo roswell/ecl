@@ -241,7 +241,7 @@
         (let ((comma ""))
           (dolist (arg args)
             (wt comma arg)
-            (setf comma ",")))
+            (setf comma ", ")))
         (wt ")")))
   (when fname (wt-comment fname)))
 
@@ -251,7 +251,7 @@
         (wt "(cl_env_copy->function=" fun-loc ")->cfun.entry(" narg)
         (wt "ecl_function_dispatch(cl_env_copy," fun-loc ")(" narg))
     (dolist (arg args)
-      (wt "," arg))
+      (wt ", " arg))
     (wt ")")
     (when fname (wt-comment fname))))
 
