@@ -466,7 +466,8 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 	   (wt-nl rest-loc "=cl_grab_rest_args(args);"))
 	  (t
 	   (cond (keywords
-		  (wt-nl "{ cl_object keyvars[" (* 2 nkey) "];")
+		  (wt-nl-open-brace) ;; Brace [1]
+		  (wt-nl "cl_object keyvars[" (* 2 nkey) "];")
 		  (wt-nl "cl_parse_key(args," nkey "," cfun "keys,keyvars"))
 		 (t
 		  (wt-nl "cl_parse_key(args,0,NULL,NULL")))
@@ -487,7 +488,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
       ((endp kwd)
        (when all-kwd
 	 (wt-nl-h "#define " cfun "keys (&" (add-keywords (nreverse all-kwd)) ")")
-	 (wt-nl "}")))
+	 (wt-nl-close-brace))) ;; Matches [1]
     (declare (fixnum i))
     (push (first kwd) all-kwd)
     (let ((key (first kwd))
