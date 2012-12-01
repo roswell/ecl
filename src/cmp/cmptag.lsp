@@ -128,14 +128,11 @@
 	   (ignore c1form))
   (if (null (var-kind tag-loc))
       ;; only local goto's
-      (let ((label (next-label)))
+      (dolist (x body (c2tagbody-body body))
 	;; Allocate labels.
-	(dolist (x body)
-	  (when (and (tag-p x) (plusp (tag-ref x)))
-	    (setf (tag-label x) (next-label*))
-	    (setf (tag-unwind-exit x) label)))
-	(let ((*unwind-exit* (cons label *unwind-exit*)))
-	  (c2tagbody-body body)))
+	(when (and (tag-p x) (plusp (tag-ref x)))
+	  (setf (tag-label x) (next-label*))
+	  (setf (tag-unwind-exit x) *unwind-exit*)))
       ;; some tag used non locally or inside an unwind-protect
       (let ((*unwind-exit* (cons 'FRAME *unwind-exit*))
 	    (label (next-label))
@@ -159,7 +156,7 @@
 	(dolist (tag body)
 	  (when (and (tag-p tag) (plusp (tag-ref tag)))
 	    (setf (tag-label tag) (next-label))
-	    (setf (tag-unwind-exit tag) label)
+	    (setf (tag-unwind-exit tag) *unwind-exit*)
 	    (wt-nl "if (cl_env_copy->values[0]==ecl_make_fixnum(" (tag-index tag) "))")
 	    (wt-go (tag-label tag))))
 	(when (var-ref-ccb tag-loc)
@@ -219,5 +216,5 @@
 	(wt-nl "cl_go(" var ",ecl_make_fixnum(" (tag-index tag) "));"))
       ;; local go
       (progn
-	(unwind-no-exit (tag-unwind-exit tag))
+	(unwind-no-exit-until (tag-unwind-exit tag))
 	(wt-nl) (wt-go (tag-label tag)))))
