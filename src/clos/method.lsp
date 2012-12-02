@@ -74,13 +74,25 @@
 		(simplify-lambda name fn-form)
 	      (unless wrapped-p
 		(error "Unable to unwrap function"))
-	      (ext:register-with-pde whole
-				     `(install-method ',name ',qualifiers
-						      ,(list 'si::quasiquote specializers)
-						      ',lambda-list
-						      ,(maybe-remove-block wrapped-lambda)
-						      ,wrapped-p
-						      ,@(mapcar #'si::maybe-quote options))))))))))
+	      (ext:register-with-pde
+	       whole
+	       `(install-method ',name ',qualifiers
+				,(specializers-expression specializers)
+				',lambda-list
+				,(maybe-remove-block wrapped-lambda)
+				,wrapped-p
+				,@(mapcar #'si::maybe-quote options))))))))))
+
+(defun specializers-expression (specializers)
+  (declare (si::c-local))
+  (list 'si::quasiquote
+	(loop for spec in specializers
+	   collect (if (atom spec)
+		       spec
+		       `(eql ,(let ((value (second spec)))
+				   (if (constantp value)
+				       (eval value)
+				       (list 'si::unquote value))))))))
 
 (defun maybe-remove-block (method-lambda)
   (when (eq (first method-lambda) 'lambda)
@@ -306,12 +318,8 @@ have disappeared."
       ((atom specializer))
       ;; Specializer is (EQL value)
       ((and (eql (first specializer) 'EQL)
-	    (endp (cddr specializer)))
-       (let ((value (second specializer)))
-	 (setf specializer
-	       `(eql ,(if (constantp value)
-			  (eval value)
-			  (list 'si::unquote value))))))
+	    (cdr specializer)
+	    (endp (cddr specializer))))
       ;; Otherwise, syntax error
       (t
        (si::simple-program-error "Syntax error in method specializer ~A" arg)))
