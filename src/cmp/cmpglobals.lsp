@@ -288,13 +288,6 @@ lines are inserted, but the order is preserved")
 ;;;	| ( 'CLINES'	string* )
 ;;;	| ( 'LOAD-TIME-VALUE' vv )
 
-#-new-cmp
-(defvar *reservations* nil)
-(defvar *reservation-cmacro* nil)
-
-;;; *reservations* holds (... ( cmacro . value ) ...).
-;;; *reservation-cmacro* holds the cmacro current used as vs reservation.
-
 ;;; *global-entries* holds (... ( fname cfun return-types arg-type ) ...).
 (defvar *global-entries* nil)
 
@@ -341,8 +334,6 @@ be deleted if they have been opened with LoadLibrary.")
     (*linking-calls* nil)
     (*global-entries* nil)
     (*undefined-vars* nil)
-    #-new-cmp
-    (*reservations* nil)
     (*top-level-forms* nil)
     (*compile-time-too* nil)
     (*clines-string-list* '())

@@ -122,10 +122,8 @@
   (wt-nl-h "extern \"C\" {")
   (wt-nl-h "#endif")
   ;;; Initialization function.
-  (let* ((*lcl* 0) (*lex* 0) (*max-lex* 0) (*max-env* 0) (*max-temp* 0)
-	 (*opened-c-braces* 0)
+  (let* ((*opened-c-braces* 0)
          (*aux-closure* nil)
-	 (*reservation-cmacro* (next-cmacro))
 	 (c-output-file *compiler-output1*)
 	 (*compiler-output1* (make-string-output-stream))
 	 (*emitted-local-funs* nil)
@@ -136,10 +134,6 @@
     (wt-nl "#endif")
     (wt-nl "ECL_DLLEXPORT void " name "(cl_object flag)")
     (wt-nl-open-brace)
-    (wt-nl "VT" *reservation-cmacro*
-	   " VLEX" *reservation-cmacro*
-	   " CLSR" *reservation-cmacro*
-	   " STCK" *reservation-cmacro*)
     (wt-nl "const cl_env_ptr cl_env_copy = ecl_process_env();")
     (wt-nl "cl_object value0;")
     (wt-nl "cl_object *VVtemp;")
@@ -185,23 +179,13 @@
 
     (setq *compiler-phase* 't2)
 
-    ;; useless in initialization.
-    (dolist (form (nconc (reverse *make-forms*) *top-level-forms*))
-      (let* ((*compile-to-linking-call* nil)
-             (*compile-file-truename* (and form (c1form-file form)))
-             (*compile-file-position* (and form (c1form-file-position form)))
-             (*env* 0) (*level* 0) (*temp* 0))
-	  (t2expr form))
-      (let ((*compiler-output1* c-output-file))
-	(emit-local-funs)))
-    (wt-function-epilogue)
+    (loop for form in (nconc (reverse *make-forms*) *top-level-forms*)
+       do (emit-toplevel-form form c-output-file))
     (wt-nl-close-many-braces 0)
     (setq top-output-string (get-output-stream-string *compiler-output1*)))
 
   ;; Declarations in h-file.
   (wt-nl-h "static cl_object Cblock;")
-  (dolist (x *reservations*)
-    (wt-nl-h "#define VM" (car x) " " (cdr x)))
   (let ((num-objects (data-size)))
     (if (zerop num-objects)
 	(progn
@@ -271,6 +255,33 @@
       (apply #'t3-defcallback x)))
 
   (wt-nl top-output-string))
+
+(defun emit-toplevel-form (form c-output-file)
+  (let ((*ihs-used-p* nil)
+	(*max-lex* 0)
+	(*max-env* 0)
+	(*max-temp* 0)
+	(*lcl* 0)
+	(*lex* 0)
+	(*env* 0)
+	(*level* 0)
+	(*temp* 0)
+	(*compile-to-linking-call* nil)
+	(*compile-file-truename* (and form (c1form-file form)))
+	(*compile-file-position* (and form (c1form-file-position form))))
+    (let ((body (with-output-to-string (*compiler-output1*)
+		  (t2expr form))))
+      (if (or (plusp *max-lex*)
+	      (plusp *max-temp*)
+	      (plusp *max-env*))
+	  (progn
+	    (wt-nl-open-brace)
+	    (wt-function-locals)
+	    (write-sequence body *compiler-output1*)
+	    (wt-nl-close-brace))
+	  (write-sequence body *compiler-output1*)))
+    (let ((*compiler-output1* c-output-file))
+      (emit-local-funs))))
 
 (defun c1eval-when (args)
   (check-args-number 'EVAL-WHEN args 1)
@@ -404,55 +415,7 @@
       (similar x y))))
 |#
 
-(defun wt-function-prolog (&optional sp local-entry)
-  (wt " VT" *reservation-cmacro*
-      " VLEX" *reservation-cmacro*
-      " CLSR" *reservation-cmacro*
-      " STCK" *reservation-cmacro*)
-  (wt-nl "cl_object value0;")
-  ; (when (compiler-push-events) (wt-nl "ihs_check;"))
-  )
-
-(defun wt-function-epilogue (&optional closure-type)
-  (push (cons *reservation-cmacro* *max-temp*) *reservations*)
-  ;; FIXME! Are we careful enough with temporary variables that
-  ;; we need not make them volatile?
-  (wt-nl-h "#define VT" *reservation-cmacro*)
-  (when (plusp *max-temp*)
-    (wt-h " cl_object ")
-    (dotimes (i *max-temp*)
-      (wt-h "T" i)
-      (unless (= (1+ i) *max-temp*) (wt-h ",")))
-    (wt-h ";"))
-  (when *ihs-used-p*
-    (wt-h " \\")
-    (wt-nl-h "struct ecl_ihs_frame ihs; \\")
-    (wt-nl-h "const cl_object _ecl_debug_env = ECL_NIL;"))
-  (wt-nl-h "#define VLEX" *reservation-cmacro*)
-  ;; There should be no need to mark lex as volatile, since we
-  ;; are going to pass pointers of this array around and the compiler
-  ;; should definitely keep this in memory.
-  (when (plusp *max-lex*)
-    (wt-h " volatile cl_object lex" *level* "[" *max-lex* "];"))
-  (wt-nl-h "#define CLSR" *reservation-cmacro*)
-  (wt-nl-h "#define STCK" *reservation-cmacro*)
-  (when (plusp *max-env*)
-    (unless (eq closure-type 'CLOSURE)
-      (wt-h " cl_object " *volatile* "env0;"))
-    ;; Note that the closure structure has to be marked volatile
-    ;; or else GCC may optimize away writes into it because it
-    ;; does not know it shared with the rest of the world.
-    (when *aux-closure*
-      (wt-h " volatile struct ecl_cclosure aux_closure;"))
-    (wt-h " cl_object " *volatile*)
-    (dotimes (i *max-env*)
-      (wt-h "CLV" i)
-      (unless (= (1+ i) *max-env*) (wt-h ",")))
-    (wt-h ";"))
-  )
-
 (defun wt-function-locals (&optional closure-type)
-  (push (cons *reservation-cmacro* *max-temp*) *reservations*)
   ;; FIXME! Are we careful enough with temporary variables that
   ;; we need not make them volatile?
   (when (plusp *max-temp*)
@@ -700,7 +663,6 @@
 	 (*unwind-exit* '(RETURN))
 	 (*destination* 'RETURN)
          (*ihs-used-p* nil)
-	 (*reservation-cmacro* (next-cmacro))
 	 (*opened-c-braces* 0)
 	 (*tail-recursion-info* fun)
 	 (*volatile* (c1form-volatile* lambda-expr)))
