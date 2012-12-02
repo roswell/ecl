@@ -134,22 +134,23 @@
 		 (std-class-optimized-accessors name))
 		(t
 		 (std-class-accessors name)))
-	(let* ((reader-args (list :function reader
-				  :generic-function nil
-				  :qualifiers nil
-				  :lambda-list '(object)
-				  :specializers `(,standard-class)
-				  :slot-definition slotd))
+	(let* ((options (list :slot-definition slotd))
+	       (reader-args (list* :function reader
+				   :generic-function nil
+				   :qualifiers nil
+				   :lambda-list '(object)
+				   :specializers `(,standard-class)
+				   options))
 	       (reader-class (if (boundp '*early-methods*)
 				 'standard-reader-method
 				 (apply #'reader-method-class standard-class slotd
 					reader-args)))
-	       (writer-args (list :function writer
-				  :generic-function nil
-				  :qualifiers nil
-				  :lambda-list '(value object)
-				  :specializers `(,(find-class t) ,standard-class)
-				  :slot-definition slotd))
+	       (writer-args (list* :function writer
+				   :generic-function nil
+				   :qualifiers nil
+				   :lambda-list '(value object)
+				   :specializers `(,(find-class t) ,standard-class)
+				   options))
 	       (writer-class (if (boundp '*early-methods*)
 				 'standard-writer-method
 				 (apply #'writer-method-class standard-class slotd
@@ -157,16 +158,22 @@
 	  (dolist (fname readers)
 	    (let ((method (make-method reader-class nil `(,standard-class) '(self)
 				       (wrapped-method-function reader)
-				       nil)))
+				       options)))
 	      (safe-add-method fname method)
-	      (setf (slot-value method 'slot-definition) slotd)))
+	      ;; This is redundant, but we need it at boot time because
+	      ;; the early MAKE-METHOD does not use the options field.
+	      (unless *clos-booted*
+		(setf (slot-value method 'slot-definition) slotd))))
 	  (dolist (fname writers)
 	    (let ((method (make-method writer-class nil
 				       `(,(find-class t) ,standard-class) '(value self)
 				       (wrapped-method-function writer)
-				       nil)))
+				       options)))
 	      (safe-add-method fname method)
-	      (setf (slot-value method 'slot-definition) slotd))))))))
+	      ;; This is redundant, but we need it at boot time because
+	      ;; the early MAKE-METHOD does not use the options field.
+	      (unless *clos-booted*
+		(setf (slot-value method 'slot-definition) slotd)))))))))
 
 (defun reader-closure (index)
   (declare (si::c-local))
