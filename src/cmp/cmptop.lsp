@@ -451,6 +451,38 @@
     (wt-h ";"))
   )
 
+(defun wt-function-locals (&optional closure-type)
+  (push (cons *reservation-cmacro* *max-temp*) *reservations*)
+  ;; FIXME! Are we careful enough with temporary variables that
+  ;; we need not make them volatile?
+  (when (plusp *max-temp*)
+    (wt-nl "cl_object ")
+    (dotimes (i *max-temp*)
+      (wt "T" i)
+      (unless (= (1+ i) *max-temp*) (wt ", ")))
+    (wt ";"))
+  (when *ihs-used-p*
+    (wt-nl "struct ecl_ihs_frame ihs;")
+    (wt-nl "const cl_object _ecl_debug_env = ECL_NIL;"))
+  ;; There should be no need to mark lex as volatile, since we
+  ;; are going to pass pointers of this array around and the compiler
+  ;; should definitely keep this in memory.
+  (when (plusp *max-lex*)
+    (wt-nl "volatile cl_object lex" *level* "[" *max-lex* "];"))
+  (when (plusp *max-env*)
+    (unless (eq closure-type 'CLOSURE)
+      (wt-nl "cl_object " *volatile* "env0;"))
+    ;; Note that the closure structure has to be marked volatile
+    ;; or else GCC may optimize away writes into it because it
+    ;; does not know it shared with the rest of the world.
+    (when *aux-closure*
+      (wt-nl "volatile struct ecl_cclosure aux_closure;"))
+    (wt-nl "cl_object " *volatile*)
+    (dotimes (i *max-env*)
+      (wt "CLV" i)
+      (unless (= (1+ i) *max-env*) (wt ", ")))
+    (wt-nl ";")))
+
 (defun wt-global-entry (fname cfun arg-types return-type)
     (when (and (symbolp fname) (get-sysprop fname 'NO-GLOBAL-ENTRY))
       (return-from wt-global-entry nil))
@@ -673,34 +705,36 @@
 	 (*tail-recursion-info* fun)
 	 (*volatile* (c1form-volatile* lambda-expr)))
     ;; Function declaration. Returns NIL if this function needs no body.
-    (when (t3local-function-declaration fun)
+    (when (t3local-fun-declaration fun)
       (wt-nl-open-brace)
-      (wt-nl "VT" *reservation-cmacro*
-	     " VLEX" *reservation-cmacro*
-	     " CLSR" *reservation-cmacro*
-	     " STCK" *reservation-cmacro*)
-      (wt-nl "const cl_env_ptr cl_env_copy = ecl_process_env();")
-      (when (eq (fun-closure fun) 'CLOSURE)
-	(wt "cl_object " *volatile* "env0 = cl_env_copy->function->cclosure.env;"))
-      (wt-nl *volatile* "cl_object value0;")
-      (when (policy-check-stack-overflow)
-	(wt-nl "ecl_cs_check(cl_env_copy,value0);"))
-      (when (eq (fun-closure fun) 'CLOSURE)
-	(t3local-function-closure-scan fun))
-      (t3local-function-body fun)
-      (wt-nl-close-many-braces 0)
-      (wt-function-epilogue (fun-closure fun)))))
+      (let ((body (t3local-fun-body fun)))
+	(wt-function-locals (fun-closure fun))
+	(wt-nl "const cl_env_ptr cl_env_copy = ecl_process_env();")
+	(when (eq (fun-closure fun) 'CLOSURE)
+	  (wt "cl_object " *volatile* "env0 = cl_env_copy->function->cclosure.env;"))
+	(wt-nl *volatile* "cl_object value0;")
+	(when (policy-check-stack-overflow)
+	  (wt-nl "ecl_cs_check(cl_env_copy,value0);"))
+	(when (eq (fun-closure fun) 'CLOSURE)
+	  (t3local-fun-closure-scan fun))
+	(write-sequence body *compiler-output1*)
+	(wt-nl-close-many-braces 0)))))
 
-(defun t3local-function-body (fun)
-  (let ((lambda-expr (fun-lambda fun)))
-    (c2lambda-expr (c1form-arg 0 lambda-expr)
-		   (c1form-arg 2 lambda-expr)
-		   (fun-cfun fun)
-		   (fun-name fun)
-		   (fun-needs-narg fun)
-		   (fun-closure fun))))
+(defun t3local-fun-body (fun)
+  (let ((string (make-array 2048 :element-type 'base-char
+			    :adjustable t
+			    :fill-pointer 0)))
+    (with-output-to-string (*compiler-output1* string)
+      (let ((lambda-expr (fun-lambda fun)))
+	(c2lambda-expr (c1form-arg 0 lambda-expr)
+		       (c1form-arg 2 lambda-expr)
+		       (fun-cfun fun)
+		       (fun-name fun)
+		       (fun-needs-narg fun)
+		       (fun-closure fun))))
+    string))
 
-(defun t3local-function-declaration (fun)
+(defun t3local-fun-declaration (fun)
   (declare (type fun fun))
   (wt-comment-nl (cond ((fun-global fun) "function definition for ~a")
                        ((eq (fun-closure fun) 'CLOSURE) "closure ~a")
@@ -708,7 +742,7 @@
                  (or (fun-name fun) (fun-description fun) 'CLOSURE))
   (when (fun-shares-with fun)
     (wt-comment-nl "... shares definition with ~a" (fun-name (fun-shares-with fun)))
-    (return-from t3local-function-declaration nil))
+    (return-from t3local-fun-declaration nil))
   (let* ((comma "")
 	 (lambda-expr (fun-lambda fun))
 	 (volatile (c1form-volatile* lambda-expr))
@@ -772,7 +806,7 @@
       (fun-level fun)
       0))
 
-(defun t3local-function-closure-scan (fun)
+(defun t3local-fun-closure-scan (fun)
   (let ((clv-used (fun-closure-variables fun)))
     (wt-nl "/* Scanning closure data ... */")
     (do ((n (1- (fun-env fun)) (1- n))
