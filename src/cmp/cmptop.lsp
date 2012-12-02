@@ -711,7 +711,8 @@
 	 (*max-env* *env*) (*env-lvl* 0)
          (*aux-closure* nil)
 	 (*level* level)
-	 (*exit* 'RETURN) (*unwind-exit* '(RETURN))
+	 (*exit* 'RETURN)
+	 (*unwind-exit* '(RETURN))
 	 (*destination* 'RETURN)
          (*ihs-used-p* nil)
 	 (*reservation-cmacro* (next-cmacro))
@@ -728,48 +729,57 @@
     (when (policy-check-stack-overflow)
       (wt-nl "ecl_cs_check(cl_env_copy,value0);"))
     (when (eq (fun-closure fun) 'CLOSURE)
-      (let ((clv-used (remove-if
-		       #'(lambda (x)
-			   (or
-			    ;; non closure variable
-			    (not (ref-ref-ccb x))
-			    ;; special variable
-			    (eq (var-kind x) 'special)
-			    ;; not actually referenced
-			    (and (not (var-referenced-in-form x (fun-lambda fun)))
-				 (not (var-changed-in-form x (fun-lambda fun))))
-			    ;; parameter of this closure
-			    ;; (not yet bound, therefore var-loc is OBJECT)
-			    (eq (var-loc x) 'OBJECT)))
-		       (fun-referenced-vars fun)))
-	    l)
-	(when clv-used
-	  (setf clv-used (sort clv-used #'> :key #'var-loc))
-		l (var-loc (first clv-used)))
-	  (wt-nl "/* Scanning closure data ... */")
-	  (do ((n (1- (fun-env fun)) (1- n))
-	       (bs clv-used)
-	       (first t))
-	      ((or (minusp n) (null bs)))
-	    (wt-nl "CLV" n)
-	    (if first
-		(progn (wt " = env0;") (setf first nil))
-		(wt " = _ecl_cdr(CLV" (1+ n) ");"))
-	    (when (= n (var-loc (first bs)))
-	      (wt-comment (var-name (first clv-used)))
-              (pop clv-used)))
-	  (wt-nl-open-brace)
-	  (wt " /* ... closure scanning finished */")))
+      (t3local-function-closure-scan fun))
 
-    (c2lambda-expr (c1form-arg 0 lambda-expr)
-		   (c1form-arg 2 lambda-expr)
-		   (fun-cfun fun) (fun-name fun)
-		   narg
-		   (fun-closure fun))
-    (wt-nl1)
+    (t3local-function-body fun)
+
     (wt-nl-close-many-braces 0)
     ;; we should declare in CLSR only those used
     (wt-function-epilogue (fun-closure fun))))
+
+(defun t3local-function-body (fun)
+  (let ((lambda-expr (fun-lambda fun)))
+    (c2lambda-expr (c1form-arg 0 lambda-expr)
+		   (c1form-arg 2 lambda-expr)
+		   (fun-cfun fun)
+		   (fun-name fun)
+		   (fun-needs-narg fun)
+		   (fun-closure fun))))
+
+(defun function-closure-variables (fun)
+  (sort (remove-if
+	 #'(lambda (x)
+	     (or
+	      ;; non closure variable
+	      (not (ref-ref-ccb x))
+	      ;; special variable
+	      (eq (var-kind x) 'special)
+	      ;; not actually referenced
+	      (and (not (var-referenced-in-form x (fun-lambda fun)))
+		   (not (var-changed-in-form x (fun-lambda fun))))
+	      ;; parameter of this closure
+	      ;; (not yet bound, therefore var-loc is OBJECT)
+	      (eq (var-loc x) 'OBJECT)))
+	 (fun-referenced-vars fun))
+	#'>
+	:key #'var-loc))
+
+(defun t3local-function-closure-scan (fun)
+  (let ((clv-used (function-closure-variables fun)))
+    (wt-nl "/* Scanning closure data ... */")
+    (do ((n (1- (fun-env fun)) (1- n))
+	 (bs clv-used)
+	 (first t))
+	((or (minusp n) (null bs)))
+      (wt-nl "CLV" n)
+      (if first
+	  (progn (wt " = env0;") (setf first nil))
+	  (wt " = _ecl_cdr(CLV" (1+ n) ");"))
+      (when (= n (var-loc (first bs)))
+	(wt-comment (var-name (first clv-used)))
+	(pop clv-used)))
+    (wt-nl-open-brace)
+    (wt " /* ... closure scanning finished */")))
 
 ;;; ----------------------------------------------------------------------
 ;;; Optimizer for FSET. Removes the need for a special handling of DEFUN as a
