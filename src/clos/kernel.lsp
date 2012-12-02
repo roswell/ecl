@@ -112,6 +112,11 @@
 	(setf (fdefinition name) gfun)
 	gfun)))
 
+(defun (setf generic-function-name) (new-name gf)
+  (if *clos-booted*
+      (reinitialize-instance gf :name new-name)
+      (setf (slot-value gf 'name) new-name)))
+
 (defun default-dispatch (generic-function)
   (cond ((null *clos-booted*)
 	 'standard-generic-function)

@@ -108,7 +108,7 @@
 (eval-when (:compile-toplevel :execute)
   (defparameter +standard-generic-function-slots+
     '((name :initarg :name :initform nil
-       :accessor generic-function-name)
+       :reader generic-function-name)
       (spec-list :initform nil :accessor generic-function-spec-list)
       (method-combination 
        :initarg :method-combination :initform (find-method-combination (class-prototype (find-class 'standard-generic-function)) 'standard nil)
