@@ -42,6 +42,7 @@
       (find-class 'standard-method)))
 
 (defmacro defmethod (&whole whole name &rest args &environment env)
+  (declare (notinline make-method-lambda))
   (let* ((*print-length* 3)
 	 (*print-depth* 2)
 	 (qualifiers (loop while (and args (not (listp (first args))))
