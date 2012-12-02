@@ -108,7 +108,7 @@
 			(*volatile* " volatile "))
 
   (setq *top-level-forms* (nreverse *top-level-forms*))
-  (wt-nl1 "#include \"" (brief-namestring h-pathname) "\"")
+  (wt-nl "#include \"" (brief-namestring h-pathname) "\"")
 
   ;; VV might be needed by functions in CLINES.
   (wt-nl-h "#ifdef ECL_DYNAMIC_VV")
@@ -130,11 +130,11 @@
 	 (*compiler-output1* (make-string-output-stream))
 	 (*emitted-local-funs* nil)
 	 (*compiler-declared-globals* (make-hash-table)))
-    (wt-nl1 "#include \"" (brief-namestring data-pathname) "\"")
-    (wt-nl1 "#ifdef __cplusplus")
-    (wt-nl1 "extern \"C\"")
-    (wt-nl1 "#endif")
-    (wt-nl1 "ECL_DLLEXPORT void " name "(cl_object flag)")
+    (wt-nl "#include \"" (brief-namestring data-pathname) "\"")
+    (wt-nl "#ifdef __cplusplus")
+    (wt-nl "extern \"C\"")
+    (wt-nl "#endif")
+    (wt-nl "ECL_DLLEXPORT void " name "(cl_object flag)")
     (wt-nl-open-brace)
     (wt-nl "VT" *reservation-cmacro*
 	   " VLEX" *reservation-cmacro*
@@ -230,7 +230,7 @@
     (let* ((var-name (fifth l))
 	   (c-name (fourth l))
 	   (lisp-name (third l)))
-      (wt-nl1 "static cl_object " c-name "(cl_narg narg, ...)"
+      (wt-nl "static cl_object " c-name "(cl_narg narg, ...)"
 	      "{TRAMPOLINK(narg," lisp-name ",&" var-name ",Cblock);}")))
   #+(or)
   (wt-nl-h "static cl_object ECL_SETF_DEFINITION(cl_object setf_vv, cl_object setf_form)
@@ -455,7 +455,7 @@
     (when (and (symbolp fname) (get-sysprop fname 'NO-GLOBAL-ENTRY))
       (return-from wt-global-entry nil))
     (wt-comment-nl "global entry for the function ~a" fname)
-    (wt-nl1 "static cl_object L" cfun "(cl_narg narg")
+    (wt-nl "static cl_object L" cfun "(cl_narg narg")
     (wt-nl-h "static cl_object L" cfun "(cl_narg")
     (do ((vl arg-types (cdr vl))
 	 (lcl (1+ *lcl*) (1+ lcl)))
@@ -649,93 +649,47 @@
 (defun pop-debug-lexical-env ()
   (wt-nl "ihs.lex_env = _ecl_debug_env;"))
 
-(defun t3local-fun (fun &aux  (lambda-expr (fun-lambda fun))
-			      (level (if (eq (fun-closure fun) 'LEXICAL)
-					 (fun-level fun)
-					 0))
-			      (cfun (fun-cfun fun))
-		    	      (minarg (fun-minarg fun))
-		    	      (maxarg (fun-maxarg fun))
-		    	      (narg (fun-needs-narg fun))
-			      (nenvs level)
-			      (*volatile* (c1form-volatile* lambda-expr))
-			      (*tail-recursion-info* fun)
-                              (lambda-list (c1form-arg 0 lambda-expr))
-                              (requireds (car lambda-list))
-                              (*cmp-env* (c1form-env lambda-expr)))
-  (declare (fixnum level nenvs))
-  (print-emitting fun)
-  (wt-comment-nl (cond ((fun-global fun) "function definition for ~a")
-                       ((eq (fun-closure fun) 'CLOSURE) "closure ~a")
-                       (t "local function ~a"))
-                 (or (fun-name fun) (fun-description fun) 'CLOSURE))
-  (when (fun-shares-with fun)
-    (wt-comment-nl "... shares definition with ~a" (fun-name (fun-shares-with fun)))
-    (return-from t3local-fun))
-  (wt-comment-nl "optimize speed ~D, debug ~D, space ~D, safety ~D "
-                 (cmp-env-optimization 'speed)
-                 (cmp-env-optimization 'debug)
-                 (cmp-env-optimization 'space)
-                 (cmp-env-optimization 'safety))
-  (cond ((fun-exported fun)
-	 (wt-nl-h "ECL_DLLEXPORT cl_object " cfun "(")
-	 (wt-nl1 "cl_object " cfun "("))
-	(t
-	 (wt-nl-h "static cl_object " cfun "(")
-	 (wt-nl1 "static cl_object " cfun "(")))
-  (let ((comma ""))
-    (when narg
-      (wt-h *volatile* "cl_narg")
-      (wt *volatile* "cl_narg narg")
-      (setf comma ", "))
-    (dotimes (n level)
-      (wt-h comma "volatile cl_object  *")
-      (wt comma "volatile cl_object *lex" n)
-      (setf comma ", "))
-    (loop for lcl from 1 upto si:c-arguments-limit
-       for var in requireds
-       do
-	 (wt-h comma "cl_object " *volatile*)
-	 (wt comma "cl_object " *volatile*) (wt-lcl lcl)
-	 (setf comma ", "))
-    (when narg
-      (wt-h ", ...")
-      (wt ", ..."))
-    (wt-h ");")
-    (wt ")"))
+(defun t3local-fun (fun)
+  (declare (type fun fun))
 
-  (let* ((*lcl* 0) (*temp* 0) (*max-temp* 0)
+  ;; Compiler note about compiling this function
+  (print-emitting fun)
+
+  (let* ((lambda-expr (fun-lambda fun))
+	 (*cmp-env* (c1form-env lambda-expr))
+	 (*lcl* 0) (*temp* 0) (*max-temp* 0)
          (*last-label* 0)
 	 (*lex* 0) (*max-lex* 0)
 	 (*env* (fun-env fun))		; continue growing env
 	 (*max-env* *env*) (*env-lvl* 0)
          (*aux-closure* nil)
-	 (*level* level)
+	 (*level* (fun-lexical-levels fun))
 	 (*exit* 'RETURN)
 	 (*unwind-exit* '(RETURN))
 	 (*destination* 'RETURN)
          (*ihs-used-p* nil)
 	 (*reservation-cmacro* (next-cmacro))
-	 (*opened-c-braces* 0))
-    (wt-nl-open-brace)
-    (wt-nl "VT" *reservation-cmacro*
-	   " VLEX" *reservation-cmacro*
-	   " CLSR" *reservation-cmacro*
-	   " STCK" *reservation-cmacro*)
-    (wt-nl "const cl_env_ptr cl_env_copy = ecl_process_env();")
-    (when (eq (fun-closure fun) 'CLOSURE)
-      (wt "cl_object " *volatile* "env0 = cl_env_copy->function->cclosure.env;"))
-    (wt-nl *volatile* "cl_object value0;")
-    (when (policy-check-stack-overflow)
-      (wt-nl "ecl_cs_check(cl_env_copy,value0);"))
-    (when (eq (fun-closure fun) 'CLOSURE)
-      (t3local-function-closure-scan fun))
-
-    (t3local-function-body fun)
-
-    (wt-nl-close-many-braces 0)
-    ;; we should declare in CLSR only those used
-    (wt-function-epilogue (fun-closure fun))))
+	 (*opened-c-braces* 0)
+	 (*tail-recursion-info* fun)
+	 (*volatile* (c1form-volatile* lambda-expr)))
+    ;; Function declaration. Returns NIL if this function needs no body.
+    (when (t3local-function-declaration fun)
+      (wt-nl-open-brace)
+      (wt-nl "VT" *reservation-cmacro*
+	     " VLEX" *reservation-cmacro*
+	     " CLSR" *reservation-cmacro*
+	     " STCK" *reservation-cmacro*)
+      (wt-nl "const cl_env_ptr cl_env_copy = ecl_process_env();")
+      (when (eq (fun-closure fun) 'CLOSURE)
+	(wt "cl_object " *volatile* "env0 = cl_env_copy->function->cclosure.env;"))
+      (wt-nl *volatile* "cl_object value0;")
+      (when (policy-check-stack-overflow)
+	(wt-nl "ecl_cs_check(cl_env_copy,value0);"))
+      (when (eq (fun-closure fun) 'CLOSURE)
+	(t3local-function-closure-scan fun))
+      (t3local-function-body fun)
+      (wt-nl-close-many-braces 0)
+      (wt-function-epilogue (fun-closure fun)))))
 
 (defun t3local-function-body (fun)
   (let ((lambda-expr (fun-lambda fun)))
@@ -746,7 +700,56 @@
 		   (fun-needs-narg fun)
 		   (fun-closure fun))))
 
-(defun function-closure-variables (fun)
+(defun t3local-function-declaration (fun)
+  (declare (type fun fun))
+  (wt-comment-nl (cond ((fun-global fun) "function definition for ~a")
+                       ((eq (fun-closure fun) 'CLOSURE) "closure ~a")
+                       (t "local function ~a"))
+                 (or (fun-name fun) (fun-description fun) 'CLOSURE))
+  (when (fun-shares-with fun)
+    (wt-comment-nl "... shares definition with ~a" (fun-name (fun-shares-with fun)))
+    (return-from t3local-function-declaration nil))
+  (let* ((comma "")
+	 (lambda-expr (fun-lambda fun))
+	 (volatile (c1form-volatile* lambda-expr))
+	 (lambda-list (c1form-arg 0 lambda-expr))
+	 (requireds (car lambda-list))
+	 (narg (fun-needs-narg fun)))
+    (let ((cmp-env (c1form-env lambda-expr)))
+      (wt-comment-nl "optimize speed ~D, debug ~D, space ~D, safety ~D "
+		     (cmp-env-optimization 'speed cmp-env)
+		     (cmp-env-optimization 'debug cmp-env)
+		     (cmp-env-optimization 'space cmp-env)
+		     (cmp-env-optimization 'safety cmp-env)))
+    (let ((cfun (fun-cfun fun)))
+      (cond ((fun-exported fun)
+	     (wt-nl-h "ECL_DLLEXPORT cl_object " cfun "(")
+	     (wt-nl "cl_object " cfun "("))
+	    (t
+	     (wt-nl-h "static cl_object " cfun "(")
+	     (wt-nl "static cl_object " cfun "("))))
+    (when narg
+      (wt-h volatile "cl_narg")
+      (wt volatile "cl_narg narg")
+      (setf comma ", "))
+    (dotimes (n (fun-lexical-levels fun))
+      (wt-h comma "volatile cl_object  *")
+      (wt comma "volatile cl_object *lex" n)
+      (setf comma ", "))
+    (loop for lcl from 1 upto si:c-arguments-limit
+       for var in requireds
+       do
+	 (wt-h comma "cl_object " volatile)
+	 (wt comma "cl_object " volatile) (wt-lcl lcl)
+	 (setf comma ", "))
+    (when narg
+      (wt-h ", ...")
+      (wt ", ..."))
+    (wt-h ");")
+    (wt ")"))
+  t)
+
+(defun fun-closure-variables (fun)
   (sort (remove-if
 	 #'(lambda (x)
 	     (or
@@ -764,8 +767,13 @@
 	#'>
 	:key #'var-loc))
 
+(defun fun-lexical-levels (fun)
+  (if (eq (fun-closure fun) 'LEXICAL)
+      (fun-level fun)
+      0))
+
 (defun t3local-function-closure-scan (fun)
-  (let ((clv-used (function-closure-variables fun)))
+  (let ((clv-used (fun-closure-variables fun)))
     (wt-nl "/* Scanning closure data ... */")
     (do ((n (1- (fun-env fun)) (1- n))
 	 (bs clv-used)
