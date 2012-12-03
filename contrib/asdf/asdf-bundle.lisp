@@ -25,8 +25,8 @@
 
 (defclass bundle-op (operation)
   ((build-args :initarg :args :initform nil :accessor bundle-op-build-args)
+   (name-suffix :initarg :name-suffix :initform nil)
    #+ecl (type :reader bundle-op-type)
-   #+ecl (name-suffix :initarg :name-suffix :initform nil)
    #+ecl (lisp-files :initform nil :accessor bundle-op-lisp-files)
    #+mkcl (do-fasb :initarg :do-fasb :initform t :reader bundle-op-do-fasb-p)
    #+mkcl (do-static-library :initarg :do-static-library :initform t :reader bundle-op-do-static-library-p)))
@@ -58,7 +58,6 @@
 (defclass program-op (monolithic-bundle-op)
   ((type :initform :program)))
 
-#+ecl
 (defmethod initialize-instance :after ((instance bundle-op) &rest initargs
                                        &key (name-suffix nil name-suffix-p)
                                        &allow-other-keys)
@@ -73,9 +72,10 @@
         (slot-value instance 'original-initargs)
       (setf (slot-value instance 'original-initargs)
             (remove-keys '(lisp-files epilogue-code prologue-code) original-initargs)
-            (bundle-op-lisp-files instance) lisp-files
             (monolithic-op-prologue-code instance) prologue-code
-            (monolithic-op-epilogue-code instance) epilogue-code)))
+            (monolithic-op-epilogue-code instance) epilogue-code)
+      #-ecl (assert (null lisp-files))
+      #+ecl (setf (bundle-op-lisp-files instance) lisp-files)))
   (setf (bundle-op-build-args instance)
         (remove-keys '(type monolithic name-suffix)
                      (slot-value instance 'original-initargs))))
@@ -195,7 +195,7 @@
                         #|"-" (string-downcase (implementation-type))|#)
           :type "lisp"
           :defaults (system-source-directory c))
-          #+ecl :type #+ecl (bundle-op-type o))))
+         #+ecl :type #+ecl (bundle-op-type o))))
 
 (defmethod perform ((o bundle-op) (c t))
   (declare (ignorable o c))
@@ -403,3 +403,234 @@
                      :lib ,(make-pathname :name (pathname-name library)
                                           :type (pathname-type library)))
                 s)))))
+
+(defun copy-stream-to-stream (input output &key (element-type 'character) (buffer-size 8192))
+  "Copy the contents of the INPUT stream into the OUTPUT stream,
+using WRITE-SEQUENCE and a sensibly sized buffer." ; copied from xcvb-driver
+  (with-open-stream (input input)
+    (loop
+      :for buffer = (make-array (list buffer-size) :element-type element-type)
+      :for end = (read-sequence buffer input)
+      :until (zerop end)
+      :do (write-sequence buffer output :end end)
+          (when (< end buffer-size) (return)))))
+
+(defun concatenate-files (inputs output)
+  (with-open-file (o output :element-type '(unsigned-byte 8)
+                            :direction :output :if-exists :rename-and-delete)
+    (dolist (input inputs)
+      (with-open-file (i input :element-type '(unsigned-byte 8)
+                               :direction :input :if-does-not-exist :error)
+        (copy-stream-to-stream i o :element-type '(unsigned-byte 8))))))
+
+(defun* add-pathname-suffix (pathname suffix)
+  (make-pathname :name (strcat (pathname-name pathname) suffix)
+                 :defaults pathname))
+
+(defun combine-fasls (inputs output)
+  #-(or allegro clisp clozure cmu lispworks sbcl scl)
+  (declare (ignore inputs output))
+  #-(or allegro clisp clozure cmu lispworks sbcl scl)
+  (error "~S is not supported on ~A" 'combine-fasls (implementation-type))
+  #+clozure (ccl:fasl-concatenate output inputs :if-exists :supersede)
+  #+(or allegro clisp cmu sbcl scl) (concatenate-files inputs output)
+  #+lispworks
+  (let (fasls)
+    (unwind-protect
+         (progn
+           (loop :for i :in inputs
+                 :for n :from 1
+                 :for f = (add-pathname-suffix
+                           output (format nil "-FASL~D" n))
+                 :do (lispworks:copy-file i f)
+                     (push f fasls))
+           (ignore-errors (lispworks:delete-system :fasls-to-concatenate))
+           (eval `(scm:defsystem :fasls-to-concatenate
+                    (:default-pathname ,(pathname-directory-pathname output))
+                    :members
+                    ,(loop :for f :in (reverse fasls)
+                           :collect `(,(namestring f) :load-only t))))
+           (scm:concatenate-system output :fasls-to-concatenate))
+      (loop :for f :in fasls :do (ignore-errors (delete-file f)))
+      (ignore-errors (lispworks:delete-system :fasls-to-concatenate)))))
+
+(defun call-with-staging-pathname (pathname fun)
+  "Calls fun with a staging pathname, and atomically
+renames the staging pathname to the pathname in the end.
+Note: this protects only against failure of the program,
+not against concurrent attempts.
+For the latter case, we ought pick random suffix and atomically open it."
+  (let* ((pathname (pathname pathname))
+         (staging (add-pathname-suffix pathname "-ASDF-TMP")))
+    (unwind-protect
+         (multiple-value-prog1
+             (funcall fun staging)
+           (rename-file staging pathname #+clozure :if-exists #+clozure :rename-and-delete))
+      (when (probe-file* staging)
+        (delete-file staging)))))
+
+(defmacro with-staging-pathname ((pathname-var &optional (pathname-value pathname-var)) &body body)
+  `(call-with-staging-pathname ,pathname-value #'(lambda (,pathname-var) ,@body)))
+
+#-(or ecl mkcl)
+(defmethod perform ((o bundle-op) (c system))
+  (let* ((input-files (input-files o c))
+         (fasl-files (remove (fasl-type) input-files :key #'pathname-type :test-not #'string=))
+         (non-fasl-files (remove (fasl-type) input-files :key #'pathname-type :test #'string=))
+         (output-files (output-files o c))
+         (output-file (first output-files)))
+    (when input-files
+      (assert output-files)
+      (when non-fasl-files
+        (error "On ~A, asdf-bundle can only bundle FASL files, but these were also produced: ~S"
+               (implementation-type) non-fasl-files))
+      (when (and (typep o 'monolithic-bundle-op)
+                 (or (monolithic-op-prologue-code o) (monolithic-op-epilogue-code o)))
+        (error "prologue-code and epilogue-code are not supported on ~A"
+               (implementation-type)))
+      (ensure-directories-exist output-file)
+      (with-staging-pathname (output-file)
+        (combine-fasls fasl-files output-file)))))
+
+(defmethod output-files ((o fasl-op) (c source-file))
+  (declare (ignorable o c))
+  nil)
+
+(defmethod input-files ((o fasl-op) (c source-file))
+  (declare (ignorable o c))
+  nil)
+
+(defclass precompiled-system (system)
+  ((fasl :initarg :fasl :reader %system-fasl)))
+
+(defgeneric system-fasl (system)
+  (:method ((system precompiled-system))
+    (let* ((f (%system-fasl system))
+           (p (etypecase f
+                ((or pathname string) f)
+                (function (funcall f))
+                (cons (eval f)))))
+      (pathname p))))
+
+(defmethod input-files ((o load-op) (s precompiled-system))
+  (declare (ignorable o))
+  (list (system-fasl s)))
+
+(defmethod perform ((o load-op) (s precompiled-system))
+  (declare (ignorable o))
+  (load (system-fasl s)))
+
+(defmethod input-files ((o load-fasl-op) (s precompiled-system))
+  (declare (ignorable o))
+  (input-files (make-instance 'load-op) s))
+
+(defmethod perform ((o load-fasl-op) (s precompiled-system))
+  (declare (ignorable o))
+  (perform (make-instance 'load-op) s))
+
+#| ;; Example use:
+(asdf:defsystem :precompiled-asdf-utils :class asdf::precompiled-system :fasl (asdf:apply-output-translations (asdf:system-relative-pathname :asdf-utils "asdf-utils.system.fasl")))
+(asdf:load-system :precompiled-asdf-utils)
+|#
+
+#+ecl
+(defmethod output-files ((o fasl-op) (c system))
+  (declare (ignorable o c))
+  (loop :for file :in (call-next-method)
+        :collect (make-pathname :type "fasb" :defaults file)))
+
+#+ecl
+(defmethod perform ((o bundle-op) (c system))
+  (let* ((object-files (remove "fas" (input-files o c)
+                               :key #'pathname-type :test #'string=))
+         (output (output-files o c)))
+    (ensure-directories-exist (first output))
+    (apply #'c::builder (bundle-op-type o) (first output)
+	   :lisp-files (append object-files (bundle-op-lisp-files o))
+           (append (bundle-op-build-args o)
+                   (when (and (typep o 'monolithic-bundle-op)
+                              (monolithic-op-prologue-code o))
+                     `(:prologue-code ,(monolithic-op-prologue-code o)))
+                   (when (and (typep o 'monolithic-bundle-op)
+                              (monolithic-op-epilogue-code o))
+                     `(:epilogue-code ,(monolithic-op-epilogue-code o)))))))
+
+#+mkcl
+(progn
+;;;
+;;; BUNDLE-SUB-OPERATIONS
+;;;
+;;; Builds a list of pairs (operation . component) which contains all the
+;;; dependencies of this bundle.
+;;;
+
+(defun mkcl-bundle-sub-operations (sys)
+  (gather-components 'compile-op sys
+		     :filter-system sys
+		     :filter-type '(not system)))
+
+(defun files-to-bundle (sys)
+  (loop :for (op . comp) :in (mkcl-bundle-sub-operations sys)
+    :for sub-files = (output-files op comp)
+    :when sub-files
+    :collect (first sub-files)))
+
+(defmethod component-depends-on ((o bundle-op) (c system))
+  (cons `(compile-op ,(component-name c)) (call-next-method)))
+
+(defmethod output-files ((o bundle-op) (c system))
+  (let* ((name (component-name c))
+	 (static-lib-name (merge-pathnames
+			   (compiler::builder-internal-pathname name :static-library)
+			   (component-relative-pathname c)))
+	 (fasl-bundle-name (merge-pathnames
+			    (compiler::builder-internal-pathname name :fasb)
+			    (component-relative-pathname c))))
+    (list static-lib-name fasl-bundle-name)))
+
+(defmethod perform ((o bundle-op) (c system))
+  (let* ((object-files (files-to-bundle c))
+	 (output (output-files o c)))
+    (ensure-directories-exist (first output))
+    (when (bundle-op-do-static-library-p o)
+      (apply #'compiler::build-static-library (first output)
+             :lisp-object-files object-files (bundle-op-build-args o)))
+    (when (bundle-op-do-fasb-p o)
+      (apply #'compiler::build-bundle (second output)
+             :lisp-object-files object-files (bundle-op-build-args o)))))
+
+(defun bundle-system (system &rest args &key force (verbose t) version &allow-other-keys)
+  (declare (ignore force verbose version))
+  (apply #'operate 'bundle-op system args))
+
+;;;
+;;; BUNDLED FILES
+;;;
+;;; This component can be used to distribute ASDF libraries in bundled form.
+;;;
+
+(defclass bundle (component) ())
+
+(defmethod source-file-type ((c bundle) (s system))
+  "fasb")
+
+(defmethod perform ((o load-op) (c bundle))
+  (load (component-pathname c)))
+
+(defmethod perform (o (c bundle))
+  (declare (ignore o))
+  nil)
+
+;; The ability to load a fasb bundle is separate from
+;; the ability to build a fasb bundle, so this is somewhat unrelated to what is above.
+);mkcl
+
+;;;
+;;; Final integration steps
+;;;
+
+(export '(load-fasl-op precompiled-system
+          #+ecl make-build #+mkcl bundle-system))
+
+#+(or ecl mkcl)
+(pushnew '("fasb" . si::load-binary) si:*load-hooks* :test 'equal :key 'car)
