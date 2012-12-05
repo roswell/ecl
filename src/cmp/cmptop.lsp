@@ -273,7 +273,8 @@
 		  (t2expr form))))
       (if (or (plusp *max-lex*)
 	      (plusp *max-temp*)
-	      (plusp *max-env*))
+	      (plusp *max-env*)
+	      *ihs-used-p*)
 	  (progn
 	    (wt-nl-open-brace)
 	    (wt-function-locals)
