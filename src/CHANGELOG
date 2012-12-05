@@ -1,131 +1,66 @@
-ECL 12.7.1:
-===========
-
-* Bugs fixed:
-
- - The implementation of locks and condition variables based on POSIX threads
-   was not safe under interrupts. It has all been reimplemented using atomic
-   userspace operations plus a new wait queue.
-
- - :CDECL was not accepted as an FFI declaration due to a typo.
-
- - REMOVE-METHOD and FIND-METHOD were not generic functions.
-
- - MAKE-LOAD-FORM's methods for standard-object, structure-object and
-   condition did not signal an error).
+ECL 12.12.1:
+============
 
 * Visible changes:
 
- - ECL builds with support for threads by default (where available).
+ - delete-file, rename-file, chdir, mkdir and chmod now signal file-errors
 
- - DIRECTORY no longer complains when it finds an inexistent directory
-   component: it simply returns NIL as the list of pathnames.
+ - Upgraded ASDF and incorporated ASDF-BUNDLE instead of ASDF-ECL
 
- - CASE now complains when the OTHERWISE/T clause is not the last one.
+ - SYS:FUNCTION-LAMBDA-LIST works again with macros and special operators
 
- - Instead of issuing an error, LOOP now only produces a STYLE-WARNING
-   when iteration forms appear at the wrong place, as in (LOOP WHILE ...)
-   followed by some assignment.
+ - Link in ecl-help to avoid problems in standalone programs that need
+   DOCUMENTATION
 
- - EXT:MKDIR no longer accepts pathnames as inputs to avoid problems with
-   pathnames that contain name or type components.
+ - ECL now generates properly indented and more readable C code, with less
+   labels and more standard constructs.
 
- - ENSURE-DIRECTORIES-EXIST accepts the keyword argument :MODE which is
-   passed to MKDIR.
+* Bugs fixed:
 
- - In EXT:RUN-PROGRAM the child process is delayed until the parent has created
-   the process structure and stored the process id in it. Formerly we had race
-   conditions due to the child exiting before the parent was able to call
-   sigwait().
+ - Improvements in the performance of the new multiprocessing library.
 
- - Where available, ECL now defines the constants EXT:+SIGRTMIN+ and
-   EXT:+SIGRTMAX+, as well as EXT:+SIGRT0+ through EXT:+RTMINn+ where n =
-   SIGRTMAX - SIGRTMIN Those signals can be then trapped.
+ - Fixes in the queue for POSIX signals, which caused repeated Ctrl-C to get
+   lost.
 
- - The interrupt handler for floating point exceptions does not care about
-   the value of EXT:*INTERRUPTS-ENABLED* or similar mechanisms because such
-   interrupt has to be treated as an error, not as something optional. The
-   same applies to other evil signals, such as SIGSEGV or SIGBUS.
+ - Fixed typos that affected support for long long and unsigned long long.
 
- - New functions (EXT:GET-INTERRUPT-HANDLER code) and
-   (EXT:SET-INTERRUPT-HANDLER code function-designator) allow the user to
-   customize how these interrupts are caught. SET-INTERRUPT-HANDLER runs an
-   implicit EXT:CATCH-SIGNAL.
+ - The code in ecl_import_current_thread() did not follow the GC API.
 
- - ECL now exports the symbols FFI:C-INT-MAX, FFI:C-INT-MIN, FFI:C-LONG-MAX,
-   etc, which correspond to the POSIX C constants INT_MAX, INT_MIN, LONG_MAX,
-   and similar ones.
+ - The version of COMPILE-FILE in the bytecodes compiler did not support
+   :EXTERNAL-FORMAT keyword
 
- - APROPOS-LIST no longer returns duplicate symbols.
+ - The compiled version of DOTIMES evaluated the output form in the wrong
+   context
 
- - The ABORT restart is now bound on every new thread (except the main one,
-   where either the user or the toplevel must take care of that).
+ - ecl_import_current_thread() did not bind *current-process*
 
-* Windows:
+ - Changed the algorithm for computing whether a function is a closure or not,
+   and which type of C closure it needs.
 
- - ECL guesses whether the input / output / error streams are consoles. If
-   so, it sets up a special type of stream that copes with the deficiencies
-   of read()/write() and similar functions on consoles -- namely that they
-   may read or write a larger number of bytes than demanded because they
-   translate the input/output to and from the corresponding codepage.
-   (EXPERIMENTAL)
-
- - ECL detects the codepage that the console is using and applies it as
-   the appropriate external format (with :CRLF convention).
-
- - ECL's console stream signals EOF when Ctrl-Z is detected.
+ - '. returned SI:|.| while this is an internal way to construct lists
 
 * Metaobject protocol:
 
- - Implemented CLOS:COMPUTE-APPLICABLE-METHODS-USING-CLASSES.
+ - ECL fully supports the MOP.
 
- - COMPUTE-APPLICABLE-METHODS and CLOS:COMPUTE-EFFECTIVE-METHOD are now
-   generic functions.
+ - Completely changed ECL's class bootstrapping protocol, which is now simpler
+   and more effective, .allowing us to have all classes from the very
+   beginning.
 
- - Implemented and used in the core: VALIDATE-SUPERCLASSES
+ - All accessors are redefined as generic functions after bootstrapping ECL.
 
- - UPDATE-DEPENDENT, MAP-DEPENDENTS and related functions have been fixed. They
-   are now invoked by REMOVE-METHOD and REINITIALIZE-INSTANCE, when acting on
-   generic functions, standard classes, etc.
+ - Standard class accessors are now optimized. This is possible because they
+   rely on slot-value, which as per the MOP cannot be redefined or wrapped
+   around without introducing new metaclasses.
 
- - (SETF CLASS-NAME) is now implemented using REINITIALIZE-INSTANCE.
+ - ECL's compiler no longer inlines the accessors to metaobject slots, allowing
+   for redefinition.
 
- - ENSURE-CLASS-USING-CLASS now registers the class with
-   FIND-CLASS. ENSURE-CLASS relies on E-C-U-C doing that.
+ - (SETF SLOT-VALUE) did not always return the assigned value
 
- - EXTRACT-LAMBDA-LIST and EXTRACT-SPECIALIZER-NAMES implemented.
+ - SLOT-BOUNDP returned extra values in error conditions
 
- - CLOS:GENERIC-FUNCTION-DECLARATIONS and slot CLOS:DECLARATIONS are now
-   implemented (even if not used by ECL itself).
-
- - Implemented the class CLOS:METAOBJECT
-
- - Implemented SPECIALIZER and EQL-SPECIALIZER, together with
-   ADD-DIRECT-METHOD, REMOVE-DIRECT-METHOD, SPECIALIZER-DIRECT-METHODS,
-   SPECIALIZER-DIRECT-GENERIC-FUNCTIONS and EQL-SPECIALIZER-OBJECT. ECL now
-   uses these objects internally for method dispatch.
-
- - DEFMETHOD now relies on MAKE-METHOD-LAMBDA to create the appropriate
-   function.
-
- - Implemented COMPUTE-DISCRIMINATING-FUNCTION.
-
- - ECL's discriminating functions use COMPUTE-APPLICABLE-METHODS-USING-CLASSES
-   on those classes in which the user may redefine or extend the
-   method. Elsewhere, ECL relies on the internal equivalent of
-   COMPUTE-APPLICABLE-METHODS, which _always_ memoizes results.
-
- - When reinitializing a class instance, ECL would not remove the class from
-   its former superclasses.
-
- - The method combination slot of a generic function is now precomputed by
-   using FIND-METHOD-COMBINATION in SHARED-INITIALIZE.
-
- - METHOD-COMBINATION is now a class with slots and it is used by ECL for
-   computing effective methods.
-
- - The MOP and CL classes and metaclasses do not contain any slot whose name
-   is exported by any of the CL or CL-USER packages.
+ - SLOT-VALUE-USING-CLASS did not invoke SLOT-UNBOUND
 
 ;;; Local Variables: ***
 ;;; mode:text ***
