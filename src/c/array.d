@@ -779,9 +779,16 @@ ecl_displace(cl_object from, cl_object to, cl_object offset)
                                              offset, type);
                 }
 		from->array.displaced = ecl_list1(to);
-		if (Null(to->array.displaced))
-			to->array.displaced = ecl_list1(ECL_NIL);
-		ECL_RPLACD(to->array.displaced, CONS(from, CDR(to->array.displaced)));
+		/* We only need to keep track of the arrays that displace to us
+		 * when this one array is adjustable */
+		if (ECL_ADJUSTABLE_ARRAY_P(to)) {
+			cl_object track_list = to->array.displaced;
+			if (Null(track_list))
+				to->array.displaced =
+					track_list = ecl_list1(ECL_NIL);
+			ECL_RPLACD(track_list,
+				   CONS(from, ECL_CONS_CDR(track_list)));
+		}
 		if (fromtype == ecl_aet_bit) {
 			j += to->vector.offset;
 			from->vector.offset = j%CHAR_BIT;

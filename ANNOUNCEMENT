@@ -24,21 +24,6 @@ releases, a CVS tree and some useful documentation.
 Known issues
 ============
 
-This release is the first one with the new multithreading library,
-which no longer relies on the POSIX mutexes, condition variables and
-semaphores. Instead, ECL makes use of libatomic-ops to implement
-userspace routines for process communication (mailboxes), resource
-sharing (locks, condition variables, counting semaphores) and fast
-spinlocks.
-
-Due to the new implementation, it is likely that some corner cases
-may appear during use. In this case we would like to ask you to
-report a reproducible test case to ECL's bug tracker and we will
-provide a solution as soon as possible, with a new release, if
-needed.
-
-In addition to this, the following problems persist:
-
 * Cygwin's library is still broken: fork/exec fails to reload the
   cygwin library, or ECL's compiled libraries in a completely random
   fashion. For this reason we recommend using ext:system instead of
@@ -56,16 +41,7 @@ Changes since last release
 
 Some highlights of this release are:
 
-* The multithreading library.
-
-* Complete support for MOP.
-
-* Speed improvements in areas such as slot accessors.
-
-* Common Lisp code can now trap and capture Unix interrupts, though
-  the processing is asynchronous for all but the critical ones.
-
-* Lots and lots of fixes.
+* The MOP has been fixed to work with the upcoming release of Closer-MOP
 
 See file src/CHANGELOG or browse it online
 
