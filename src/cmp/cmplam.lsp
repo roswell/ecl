@@ -313,8 +313,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 |#
 
 (defun c2lambda-expr
-    (lambda-list body cfun fname use-narg
-                 &optional closure-type
+    (lambda-list body cfun fname use-narg required-lcls closure-type
 		 &aux (requireds (first lambda-list))
 		 (optionals (second lambda-list))
 		 (rest (third lambda-list)) rest-loc
@@ -373,55 +372,54 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
   ;; For optional and keyword parameters, and lexical variables which
   ;; can be unboxed, this will be a new LCL.
   ;; The bind step later will assign to such variable.
-  (let ((required-lcls (mapcar #'(lambda (x) (next-lcl)) requireds)))
-    (labels ((wt-decl (var)
-	       (let ((lcl (next-lcl (var-name var))))
-		 (wt-nl)
-		 (wt *volatile* (rep-type-name (var-rep-type var)) " " lcl ";")
-		 lcl))
-	     (do-decl (var)
-	       (when (local var) ; no LCL needed for SPECIAL or LEX
-		 (setf (var-loc var) (wt-decl var)))))
-      ;; Declare unboxed required arguments
-      (loop for var in requireds
-	 when (unboxed var)
-	 do (setf (var-loc var) (wt-decl var)))
-      ;; dont create rest or varargs if not used
-      (when (and rest (< (var-ref rest) 1))
-	(setq rest nil
-	      varargs (or optionals keywords allow-other-keys)))
-      ;; Declare &optional variables
-      (do ((opt optionals (cdddr opt)))
-	  ((endp opt))
-	(do-decl (first opt))
-	(when (third opt) (do-decl (third opt))))
-      ;; Declare &rest variables
-      (when rest (setq rest-loc (wt-decl rest)))
-      ;; Declare &key variables
-      (do ((key keywords (cddddr key)))
-	  ((endp key))
-	(do-decl (second key))
-	(when (fourth key) (do-decl (fourth key))))
-      ;; Declare and assign the variable arguments pointer
-      (when varargs
-	(let ((first-arg (cond ((plusp nreq)
-				(format nil "V~d" (length required-lcls)))
-			       ((eq closure-type 'LEXICAL)
-				(format nil "lex~D" (1- *level*)))
-			       (t "narg"))))
-	  (wt-nl
-	   (format nil
-		   (if (setq simple-varargs (and (not (or rest keywords allow-other-keys))
-						 (< (+ nreq nopt) 30)))
-		       "va_list args; va_start(args,~a);"
-		       "ecl_va_list args; ecl_va_start(args,~a,narg,~d);")
-		   first-arg nreq))))
-      ;; Bind required argumens. Produces C statements for unboxed variables,
-      ;; which is why it is done after all declarations.
-      (loop for var in requireds
-	 for lcl in required-lcls
-	 do (bind lcl var))))   
+  (labels ((wt-decl (var)
+	     (let ((lcl (next-lcl (var-name var))))
+	       (wt-nl)
+	       (wt *volatile* (rep-type-name (var-rep-type var)) " " lcl ";")
+	       lcl))
+	   (do-decl (var)
+	     (when (local var) ; no LCL needed for SPECIAL or LEX
+	       (setf (var-loc var) (wt-decl var)))))
+    ;; Declare unboxed required arguments
+    (loop for var in requireds
+       when (unboxed var)
+       do (setf (var-loc var) (wt-decl var)))
+    ;; dont create rest or varargs if not used
+    (when (and rest (< (var-ref rest) 1))
+      (setq rest nil
+	    varargs (or optionals keywords allow-other-keys)))
+    ;; Declare &optional variables
+    (do ((opt optionals (cdddr opt)))
+	((endp opt))
+      (do-decl (first opt))
+      (when (third opt) (do-decl (third opt))))
+    ;; Declare &rest variables
+    (when rest (setq rest-loc (wt-decl rest)))
+    ;; Declare &key variables
+    (do ((key keywords (cddddr key)))
+	((endp key))
+      (do-decl (second key))
+      (when (fourth key) (do-decl (fourth key)))))
 
+  ;; Declare and assign the variable arguments pointer
+  (when varargs
+    (flet ((last-variable ()
+	     (cond (required-lcls
+		    (first (last required-lcls)))
+		   ((eq closure-type 'LEXICAL)
+		    (format nil "lex~D" (1- *level*)))
+		   (t "narg"))))
+      (if (setq simple-varargs (and (not (or rest keywords allow-other-keys))
+				    (< (+ nreq nopt) 30)))
+	  (wt-nl "va_list args; va_start(args,"
+		 (last-variable)
+		 ");")
+	  (wt-nl "ecl_va_list args; ecl_va_start(args,"
+		 (last-variable) ",narg," nreq ");"))))
+
+  ;; Bind required argumens. Produces C statements for unboxed variables,
+  ;; which is why it is done after all declarations.
+  (mapc #'bind required-lcls requireds)
 
   (when fname-in-ihs-p
     (open-inline-block)

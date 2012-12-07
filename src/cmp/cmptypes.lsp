@@ -175,6 +175,7 @@
   #+new-cmp
   code-gen-props	;;; Extra properties for code generation
   (cmp-env (cmp-env-copy)) ;;; Environment
+  required-lcls         ;;; Names of the function arguments
   )
 
 (defstruct (blk (:include ref))

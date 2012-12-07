@@ -694,6 +694,7 @@
 		       (fun-cfun fun)
 		       (fun-name fun)
 		       (fun-needs-narg fun)
+		       (fun-required-lcls fun)
 		       (fun-closure fun))))
     string))
 
@@ -710,7 +711,8 @@
 	 (lambda-expr (fun-lambda fun))
 	 (volatile (c1form-volatile* lambda-expr))
 	 (lambda-list (c1form-arg 0 lambda-expr))
-	 (requireds (car lambda-list))
+	 (requireds (mapcar #'(lambda (v) (next-lcl (var-name v)))
+			    (car lambda-list)))
 	 (narg (fun-needs-narg fun)))
     (let ((cmp-env (c1form-env lambda-expr)))
       (wt-comment-nl "optimize speed ~D, debug ~D, space ~D, safety ~D "
@@ -733,11 +735,9 @@
       (wt-h comma "volatile cl_object  *")
       (wt comma "volatile cl_object *lex" n)
       (setf comma ", "))
-    (loop for lcl from 1 upto si:c-arguments-limit
-       for var in requireds
-       do
-	 (wt-h comma "cl_object " volatile)
-	 (wt comma "cl_object " volatile) (wt-lcl lcl)
+    (loop for lcl in (setf (fun-required-lcls fun) requireds)
+       do (wt-h comma "cl_object " volatile)
+	 (wt comma "cl_object " volatile lcl)
 	 (setf comma ", "))
     (when narg
       (wt-h ", ...")
