@@ -311,8 +311,8 @@
 
 (defun wt-lex (lex)
   (if (consp lex)
-    (wt "lex" (car lex) "[" (cdr lex) "]")
-    (wt-lcl lex)))
+      (wt "lex" (car lex) "[" (cdr lex) "]")
+      (wt-lcl lex)))
 
 ;;; reference to variable of inner closure.
 (defun wt-env (clv) (wt "ECL_CONS_CAR(CLV" clv ")"))

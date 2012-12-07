@@ -375,7 +375,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
   ;; The bind step later will assign to such variable.
   (let ((required-lcls (mapcar #'(lambda (x) (next-lcl)) requireds)))
     (labels ((wt-decl (var)
-	       (let ((lcl (next-lcl)))
+	       (let ((lcl (next-lcl (var-name var))))
 		 (wt-nl)
 		 (wt *volatile* (rep-type-name (var-rep-type var)) " " lcl ";")
 		 lcl))

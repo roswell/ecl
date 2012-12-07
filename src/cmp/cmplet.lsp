@@ -264,12 +264,10 @@
   ;; Emit C definitions of local variables
   (loop for var in vars
      for kind = (local var)
-     when kind
-     do (progn
+     do (when kind
 	  (maybe-open-inline-block)
-	  (bind (next-lcl) var)
-	  (wt-nl *volatile* (rep-type-name kind) " " var ";")
-	  (wt-comment (var-name var))))
+	  (bind (next-lcl (var-name var)) var)
+	  (wt-nl *volatile* (rep-type-name kind) " " var ";")))
 
   ;; Create closure bindings for closed-over variables
   (when (some #'var-ref-ccb vars)

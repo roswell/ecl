@@ -91,7 +91,11 @@
      ,@body
      (maybe-wt-label ,label)))
 
-(defun next-lcl () (list 'LCL (incf *lcl*)))
+(defun next-lcl (&optional name)
+  (list 'LCL (incf *lcl*) T
+	(if (and name (symbol-package name))
+	    (lisp-to-c-name name)
+	    "")))
 
 (defun next-cfun (&optional (prefix "L~D~A") (lisp-name nil))
   (let ((code (incf *next-cfun*)))

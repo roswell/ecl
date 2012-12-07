@@ -159,12 +159,13 @@
           '(RETURN RETURN-FIXNUM RETURN-CHARACTER RETURN-SINGLE-FLOAT
             RETURN-DOUBLE-FLOAT RETURN-LONG-FLOAT RETURN-OBJECT)))
 
-(defun lcl-name (lcl) (format nil "V~D" lcl))
+(defun wt-lcl (lcl)
+  (unless (numberp lcl) (baboon))
+  (wt "V" lcl))
 
-(defun wt-lcl (lcl) (unless (numberp lcl) (baboon)) (wt "V" lcl))
-
-(defun wt-lcl-loc (lcl &optional type)
-  (wt-lcl lcl))
+(defun wt-lcl-loc (lcl &optional type name)
+  (unless (numberp lcl) (baboon))
+  (wt "V" lcl name))
 
 (defun wt-temp (temp)
   (wt "T" temp))

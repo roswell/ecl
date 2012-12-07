@@ -618,7 +618,7 @@
           when (and code (consp loc) (eq (first loc) 'LCL))
           do (progn
                (push (cons name code) filtered-codes)
-               (push (second loc) filtered-locations)))
+               (push loc filtered-locations)))
     ;; Generate two tables, a static one with information about the
     ;; variables, including name and type, and dynamic one, which is
     ;; a vector of pointer to the variables.
@@ -633,7 +633,7 @@
       (wt-nl (if first "(cl_index)(ECL_NIL)," "(cl_index)(_ecl_debug_env),")
              "(cl_index)(_ecl_descriptors)")
       (loop for var-loc in filtered-locations
-            do (wt ",(cl_index)(&" (lcl-name var-loc) ")"))
+            do (wt ",(cl_index)(&" var-loc ")"))
       (wt "};")
       (wt-nl "ecl_def_ct_vector(_ecl_debug_env,ecl_aet_index,_ecl_debug_info_raw,"
              (+ 2 (length filtered-locations))
