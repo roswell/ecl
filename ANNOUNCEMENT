@@ -41,7 +41,11 @@ Changes since last release
 
 Some highlights of this release are:
 
-* The MOP has been fixed to work with the upcoming release of Closer-MOP
+* The MOP has been fixed to work with the upcoming release of
+  Closer-MOP
+
+* ECL now produces a much more readable C code, with indentation and
+  more explicit declarations of variables.
 
 See file src/CHANGELOG or browse it online
 
