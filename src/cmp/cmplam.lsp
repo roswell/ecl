@@ -314,7 +314,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 
 (defun c2lambda-expr
     (lambda-list body cfun fname use-narg
-                 &optional closure-type local-entry-p
+                 &optional closure-type
 		 &aux (requireds (first lambda-list))
 		 (optionals (second lambda-list))
 		 (rest (third lambda-list)) rest-loc
@@ -346,13 +346,8 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
     (setf *tail-recursion-info* (cons *tail-recursion-info* (car lambda-list)))
     (setf *tail-recursion-info* nil))
 
-  ;; For local entry functions arguments are processed by t3defun.
-  ;; They must have a fixed number of arguments, no optionals, rest, etc.
-  (when (and local-entry-p varargs)
-    (baboon))
-
   ;; check arguments
-  (unless (or local-entry-p (not (policy-check-nargs)))
+  (when (policy-check-nargs)
     (if (and use-narg (not varargs))
 	(wt-nl "if (ecl_unlikely(narg!=" nreq ")) FEwrong_num_arguments_anonym();")
 	(when varargs
@@ -378,65 +373,64 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
   ;; For optional and keyword parameters, and lexical variables which
   ;; can be unboxed, this will be a new LCL.
   ;; The bind step later will assign to such variable.
-  (let* ((req0 *lcl*)
-	 (lcl (+ req0 nreq)))
-    (declare (fixnum lcl))
+  (let ((required-lcls (mapcar #'(lambda (x) (next-lcl)) requireds)))
     (labels ((wt-decl (var)
-               (wt-nl)
-               (wt *volatile* (rep-type-name (var-rep-type var)) " ")
-               (wt-lcl (incf lcl)) (wt ";")
-               `(LCL ,lcl))
-             (do-decl (var)
+	       (let ((lcl (next-lcl)))
+		 (wt-nl)
+		 (wt *volatile* (rep-type-name (var-rep-type var)) " " lcl ";")
+		 lcl))
+	     (do-decl (var)
 	       (when (local var) ; no LCL needed for SPECIAL or LEX
 		 (setf (var-loc var) (wt-decl var)))))
+      ;; Declare unboxed required arguments
       (loop for var in requireds
-	 for reqi of-type fixnum from (1+ req0)
-	 do (cond (local-entry-p
-		   (bind `(LCL ,reqi) var))
-		  ((unboxed var) ; create unboxed variable
-		   (setf (var-loc var) (wt-decl var)))))
+	 when (unboxed var)
+	 do (setf (var-loc var) (wt-decl var)))
       ;; dont create rest or varargs if not used
       (when (and rest (< (var-ref rest) 1))
 	(setq rest nil
-              varargs (or optionals keywords allow-other-keys)))
+	      varargs (or optionals keywords allow-other-keys)))
+      ;; Declare &optional variables
       (do ((opt optionals (cdddr opt)))
 	  ((endp opt))
-        (do-decl (first opt))
-        (when (third opt) (do-decl (third opt))))
+	(do-decl (first opt))
+	(when (third opt) (do-decl (third opt))))
+      ;; Declare &rest variables
       (when rest (setq rest-loc (wt-decl rest)))
+      ;; Declare &key variables
       (do ((key keywords (cddddr key)))
 	  ((endp key))
-        (do-decl (second key))
-        (when (fourth key) (do-decl (fourth key)))))
-
-    (when varargs
-      (let ((first-arg (cond ((plusp nreq) (format nil "V~d" (+ req0 nreq)))
-			     ((eq closure-type 'LEXICAL) (format nil "lex~D" (1- *level*)))
-			     (t "narg"))))
-	(wt-nl
-	  (format nil
-	     (if (setq simple-varargs (and (not (or rest keywords allow-other-keys))
-					   (< (+ nreq nopt) 30)))
-		 "va_list args; va_start(args,~a);"
-		 "ecl_va_list args; ecl_va_start(args,~a,narg,~d);")
-	     first-arg nreq))))
-
-    ;; Bind required parameters.
-    (unless local-entry-p
+	(do-decl (second key))
+	(when (fourth key) (do-decl (fourth key))))
+      ;; Declare and assign the variable arguments pointer
+      (when varargs
+	(let ((first-arg (cond ((plusp nreq)
+				(format nil "V~d" (length required-lcls)))
+			       ((eq closure-type 'LEXICAL)
+				(format nil "lex~D" (1- *level*)))
+			       (t "narg"))))
+	  (wt-nl
+	   (format nil
+		   (if (setq simple-varargs (and (not (or rest keywords allow-other-keys))
+						 (< (+ nreq nopt) 30)))
+		       "va_list args; va_start(args,~a);"
+		       "ecl_va_list args; ecl_va_start(args,~a,narg,~d);")
+		   first-arg nreq))))
+      ;; Bind required argumens. Produces C statements for unboxed variables,
+      ;; which is why it is done after all declarations.
       (loop for var in requireds
-	 for reqi of-type fixnum from (1+ req0)
-	 do (bind `(LCL ,reqi) var)))
+	 for lcl in required-lcls
+	 do (bind lcl var))))   
 
-    (when fname-in-ihs-p
-      (open-inline-block)
-      (setf *ihs-used-p* t)
-      (push 'IHS *unwind-exit*)
-      (when (policy-debug-variable-bindings)
-        (build-debug-lexical-env (reverse requireds) t))
-      (wt-nl "ecl_ihs_push(cl_env_copy,&ihs," (add-symbol fname)
-             ",_ecl_debug_env);"))
 
-    (setq *lcl* lcl))
+  (when fname-in-ihs-p
+    (open-inline-block)
+    (setf *ihs-used-p* t)
+    (push 'IHS *unwind-exit*)
+    (when (policy-debug-variable-bindings)
+      (build-debug-lexical-env (reverse requireds) t))
+    (wt-nl "ecl_ihs_push(cl_env_copy,&ihs," (add-symbol fname)
+	   ",_ecl_debug_env);"))
 
   ;; Bind optional parameters as long as there remain arguments.
   (when optionals
