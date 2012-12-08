@@ -269,7 +269,6 @@ lines are inserted, but the order is preserved")
 					; with fixed number of arguments.
 					; watch out for multiple values.
 
-(defvar *global-var-objects* nil)	; var objects for global/special vars
 (defvar *global-vars* nil)		; variables declared special
 (defvar *global-funs* nil)		; holds	{ fun }*
 (defvar *global-cfuns-array* nil)	; holds	{ fun }*
@@ -327,7 +326,6 @@ be deleted if they have been opened with LoadLibrary.")
     (*permanent-objects* nil)
     (*temporary-objects* nil)
     (*local-funs* nil)
-    (*global-var-objects* nil)
     (*global-vars* nil)
     (*global-funs* nil)
     (*global-cfuns-array* nil)

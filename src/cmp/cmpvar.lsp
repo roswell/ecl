@@ -129,7 +129,7 @@
 ;;; value.
 
 (defun check-global (name)
-  (member name *global-vars* :test #'eq :key #'var-name))
+  (member name *global-vars*))
 
 (defun special-variable-p (name)
   "Return true if NAME is associated to a special variable in the lexical environment."
@@ -317,26 +317,20 @@
 			       (type (or (get-sysprop name 'CMP-TYPE) t))
 			       (kind 'GLOBAL)
 			       (warn nil))
-  (let* ((var (find name *global-var-objects* :key #'var-name))
-	 (found var))
-    (unless found
-      (setf var (make-var :name name :kind kind :type type :loc (add-symbol name)))
-      (push var *global-var-objects*))
+  (let* ((var (make-var :name name :kind kind :type type :loc (add-symbol name))))
     (when warn
-      (unless (or (constantp name) (special-variable-p name))
+      (unless (or (constantp name)
+		  (special-variable-p name)
+		  (member name *undefined-vars*))
 	(undefined-variable name)
-	(unless found
-	  (push var *undefined-vars*))))
+	(push name *undefined-vars*)))
     var))
 
 (defun c1declare-specials (globals)
   (mapc #'cmp-env-declare-special globals))
 
 (defun si::register-global (name)
-  (unless (check-global name)
-    (push (c1make-global-variable name :kind 'GLOBAL
-				  :type (or (get-sysprop name 'CMP-TYPE) 'T))
-	  *global-vars*))
+  (pushnew name *global-vars*)
   (values))
 
 (defun c1setq (args)

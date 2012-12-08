@@ -170,8 +170,7 @@
   ;;  - the value of e2 is not modified in e3 nor in following expressions
   (when (eq (c1form-name form) 'VAR)
     (let ((other-var (c1form-arg 0 form)))
-      (unless (or (and (global-var-p other-var)
-		       (> (var-ref var) 1))
+      (unless (or (global-var-p other-var)
 		  (member other-var rest-vars)
                   (var-changed-in-form-list other-var rest-forms))
         (cmpdebug "Replacing variable ~A by its value ~A" (var-name var) form)
