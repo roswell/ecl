@@ -161,11 +161,11 @@
 
 (defun wt-lcl (lcl)
   (unless (numberp lcl) (baboon))
-  (wt "V" lcl))
+  (wt "v" lcl))
 
 (defun wt-lcl-loc (lcl &optional type name)
   (unless (numberp lcl) (baboon))
-  (wt "V" lcl name))
+  (wt "v" lcl name))
 
 (defun wt-temp (temp)
   (wt "T" temp))
