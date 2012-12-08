@@ -28,7 +28,7 @@
 	      for b in bindings
 	      if (atom b)
 	      collect b into real-bindings
-	      else collect (setf temp (gentemp "LET")) into temp-names and
+	      else collect (setf temp (gensym "LET")) into temp-names and
 	      collect (cons temp (cdr b)) into temp-bindings and
 	      collect (list (car b) temp) into real-bindings
 	      finally
