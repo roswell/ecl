@@ -282,7 +282,7 @@ where CREATED is true only if we succeeded on creating all directories."
 			  :defaults full-pathname)))
       (dolist (item (pathname-directory full-pathname))
 	(setf d (nconc d (list item)))
-	(let* ((p (make-pathname :directory d)))
+	(let* ((p (make-pathname :directory d :defaults *default-pathname-defaults*)))
 	  (unless (or (symbolp item) (si::file-kind p nil))
 	    (setf created t)
 	    (let ((ps (namestring p)))
