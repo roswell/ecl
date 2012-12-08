@@ -115,16 +115,13 @@
 (defun proclaim-var (type vl)
   (dolist (var vl)
     (if (symbolp var)
-	(let ((type1 (get-sysprop var 'CMP-TYPE))
-	      (v (sch-global var)))
+	(let ((type1 (get-sysprop var 'CMP-TYPE)))
 	  (setq type1 (if type1 (type-and type1 type) type))
-	  (when v (setq type1 (type-and type1 (var-type v))))
 	  (unless type1
 	    (warn
 	     "Inconsistent type declaration was found for the variable ~s."
 	     var)
 	    (setq type1 T))
-	  (put-sysprop var 'CMP-TYPE type1)
-	  (when v (setf (var-type v) type1)))
+	  (put-sysprop var 'CMP-TYPE type1))
 	(warn "The variable name ~s is not a symbol." var))))
 

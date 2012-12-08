@@ -124,12 +124,6 @@
 ;;; that the variable has a value.
 
 ;;;  Bootstrap problem: proclaim needs this function:
-(defun sch-global (name)
-  (dolist (var *undefined-vars*)
-    (declare (type var var))
-    (when (eq (var-name var) name)
-      (return-from sch-global var))))
-
 ;;;
 ;;; Check if a variable has been declared as a special variable with a global
 ;;; value.
@@ -319,15 +313,20 @@
 
 ;;; ----------------------------------------------------------------------
 
-(defun c1make-global-variable (name &key (type t) (kind 'GLOBAL) (warn nil))
-  (let ((var (find name *global-var-objects* :key #'var-name)))
-    (unless var
-      (setf var (make-var :name name :kind kind :type type :loc (add-symbol name))))
-    (push var *global-var-objects*)
+(defun c1make-global-variable (name &key
+			       (type (or (get-sysprop name 'CMP-TYPE) t))
+			       (kind 'GLOBAL)
+			       (warn nil))
+  (let* ((var (find name *global-var-objects* :key #'var-name))
+	 (found var))
+    (unless found
+      (setf var (make-var :name name :kind kind :type type :loc (add-symbol name)))
+      (push var *global-var-objects*))
     (when warn
       (unless (or (constantp name) (special-variable-p name))
 	(undefined-variable name)
-	(push var *undefined-vars*)))
+	(unless found
+	  (push var *undefined-vars*))))
     var))
 
 (defun c1declare-specials (globals)
