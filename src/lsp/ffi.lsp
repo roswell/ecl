@@ -681,7 +681,7 @@ the actual arguments are of the specified type."
               ;; defCbody must go first, because it clears symbol-plist of fun
               (defCbody ,fun ,arg-types ,type ,code)
               (declaim (ftype (function ,arg-types ,type) ,fun))
-	      (def-inline ,fun :always ,arg-types ,type ,code)))
+	      (c::def-inline ,fun :always ,arg-types ,type ,code)))
 
 (defmacro defla (&rest body)
 "Syntax: (defla name lambda-list &body body)" "
