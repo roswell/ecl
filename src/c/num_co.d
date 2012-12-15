@@ -651,6 +651,26 @@ round_long_double(long double d)
 }
 #endif
 
+static cl_object
+ecl_round2_integer(const cl_env_ptr the_env, cl_object x, cl_object y)
+{
+	cl_object q1 = ecl_integer_divide(x, y);
+	cl_object r = ecl_make_ratio(ecl_minus(x, ecl_times(q1, y)), y);
+	if (ecl_minusp(r)) {
+		int c = ecl_number_compare(cl_core.minus_half, r);
+		if (c > 0 || (c == 0 && ecl_oddp(q1))) {
+			q1 = ecl_one_minus(q1);
+		}
+	} else {
+		int c = ecl_number_compare(r, cl_core.plus_half);
+		if (c > 0 || (c == 0 && ecl_oddp(q1))) {
+			q1 = ecl_one_plus(q1);
+		}
+	}
+	r = number_remainder(x, y, q1);
+	ecl_return2(the_env, q1, r);
+}
+
 cl_object
 ecl_round1(cl_object x)
 {
@@ -663,7 +683,7 @@ ecl_round1(cl_object x)
 		v1 = ecl_make_fixnum(0);
 		break;
 	case t_ratio:
-		v0 = ecl_round2(x->ratio.num, x->ratio.den);
+		v0 = ecl_round2_integer(the_env, x->ratio.num, x->ratio.den);
 		v1 = ecl_make_ratio(ecl_nth_value(the_env, 1), x->ratio.den);
 		break;
 	case t_singlefloat: {
@@ -709,24 +729,8 @@ ecl_round2(cl_object x, cl_object y)
 		v0 = q;
 		v1 = ecl_make_fixnum(0);
 		break;
-	case t_ratio: {
-		cl_object q1 = ecl_integer_divide(q->ratio.num, q->ratio.den);
-		cl_object r = ecl_minus(q, q1);
-		if (ecl_minusp(r)) {
-			int c = ecl_number_compare(cl_core.minus_half, r);
-			if (c > 0 || (c == 0 && ecl_oddp(q1))) {
-				q1 = ecl_one_minus(q1);
-			}
-		} else {
-			int c = ecl_number_compare(r, cl_core.plus_half);
-			if (c > 0 || (c == 0 && ecl_oddp(q1))) {
-				q1 = ecl_one_plus(q1);
-			}
-		}
-		v0 = q1;
-		v1 = number_remainder(x, y, q1);
-		break;
-	}
+	case t_ratio:
+		return ecl_round2_integer(the_env, x, y);
 	default:
 		v0 = q = ecl_round1(q);
 		v1 = number_remainder(x, y, q);
