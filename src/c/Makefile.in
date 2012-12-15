@@ -59,6 +59,7 @@ OBJS	= main.o symbol.o package.o cons.o list.o\
 	numbers/one_plus.o numbers/one_minus.o \
 	numbers/plus.o numbers/minus.o numbers/times.o numbers/divide.o \
 	numbers/number_compare.o numbers/number_equalp.o numbers/minmax.o \
+	numbers/floor.o numbers/ceiling.o numbers/round.o numbers/truncate.o \
 	typespec.o assignment.o \
 	predicate.o number.o\
 	num_pred.o num_arith.o num_co.o\
