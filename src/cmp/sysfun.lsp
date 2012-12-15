@@ -880,7 +880,7 @@
     vector-pop adjust-array
     ;; assert.lsp
     si::do-check-type si::ecase-error si::etypecase-error
-    si::wrong-type-argument
+    si::wrong-type-argument si::ccase-error si::ctypecase-error
     ;; assignment.lsp
     si::setf-definition
     ;; conditions.lsp
@@ -977,7 +977,7 @@
 
 (proclaim
   `(si::c-export-fname #+ecl-min ,@c::*in-all-symbols-functions*
-    ccase-error typecase-error-string find-documentation find-declarations
+    typecase-error-string find-documentation find-declarations
     si::search-keyword si::check-keyword
     si::dm-too-many-arguments si::dm-too-few-arguments
     remove-documentation si::get-documentation

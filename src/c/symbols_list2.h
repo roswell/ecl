@@ -2016,8 +2016,10 @@ cl_symbols[] = {
 {EXT_ "COMPILER-TYPECASE",NULL},
 
 {SYS_ "ASSERT-FAILURE","ECL_NAME(si_assert_failure)"},
+{SYS_ "CCASE-ERROR","ECL_NAME(si_ccase_error)"},
 {SYS_ "ECASE-ERROR","ECL_NAME(si_ecase_error)"},
 {SYS_ "ETYPECASE-ERROR","ECL_NAME(si_etypecase_error)"},
+{SYS_ "CTYPECASE-ERROR","ECL_NAME(si_ctypecase_error)"},
 {SYS_ "DO-CHECK-TYPE","ECL_NAME(si_do_check_type)"},
 
 {SYS_ "SERIALIZE","si_serialize"},

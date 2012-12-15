@@ -256,8 +256,10 @@
 (proclamation si:bds-val (si::index) t)
 (proclamation si:sch-frs-base (si::index si::index) (or null si::index))
 
+(proclamation si::ccase-error (t t t) t)
 (proclamation si::ecase-error (t t) t)
 (proclamation si::etypecase-error (t t) t)
+(proclamation si::ctypecase-error (t t t) t)
 (proclamation si::do-check-type (t t t t) t)
 
 (proclamation si::dm-too-many-arguments (t) t)

@@ -2170,8 +2170,10 @@ extern ECL_API cl_object si_assert_failure _ECL_ARGS((cl_narg narg, cl_object V1
 
 /* assert.lsp */
 extern ECL_API cl_object si_wrong_type_argument _ECL_ARGS((cl_narg narg, cl_object value, cl_object type, ...));
+extern ECL_API cl_object si_ccase_error(cl_object keyform, cl_object key, cl_object values);
 extern ECL_API cl_object si_ecase_error(cl_object value, cl_object values);
 extern ECL_API cl_object si_etypecase_error(cl_object value, cl_object type);
+extern ECL_API cl_object si_ctypecase_error(cl_object keyplace, cl_object value, cl_object type);
 extern ECL_API cl_object si_do_check_type(cl_object value, cl_object type, cl_object type_string, cl_object place);
 
 /*
