@@ -883,6 +883,7 @@
     ;; conditions.lsp
     si::safe-eval abort continue muffle-warning store-value use-value
     si::bind-simple-restarts si::bind-simple-handlers
+    si::assert-failure
     ;; describe.lsp
     describe inspect
     ;; iolib.lsp
@@ -986,7 +987,6 @@
     si::sequence-count
     si::structure-type-error si::define-structure
     si::coerce-to-list si::coerce-to-vector
-    si::assert-failure
     si::ecase-error si::etypecase-error
     si::traced-old-definition
 
