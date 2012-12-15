@@ -878,6 +878,8 @@
     bit sbit bit-and bit-ior bit-xor bit-eqv bit-nand bit-nor bit-andc1
     bit-andc2 bit-orc1 bit-orc2 bit-not
     vector-pop adjust-array
+    ;; assert.lsp
+    si::do-check-type si::ecase-error si::etypecase-error
     ;; assignment.lsp
     si::setf-definition
     ;; conditions.lsp
@@ -974,7 +976,6 @@
 
 (proclaim
   `(si::c-export-fname #+ecl-min ,@c::*in-all-symbols-functions*
-    si::ecase-error si::etypecase-error si::do-check-type
     ccase-error typecase-error-string find-documentation find-declarations
     si::search-keyword si::check-keyword
     si::dm-too-many-arguments si::dm-too-few-arguments
@@ -987,7 +988,6 @@
     si::sequence-count
     si::structure-type-error si::define-structure
     si::coerce-to-list si::coerce-to-vector
-    si::ecase-error si::etypecase-error
     si::traced-old-definition
 
     #+formatter

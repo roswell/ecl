@@ -2167,6 +2167,9 @@ extern ECL_API cl_object cl_use_value _ECL_ARGS((cl_narg narg, cl_object value, 
 extern ECL_API cl_object si_bind_simple_restarts(cl_object tag, cl_object names);
 extern ECL_API cl_object si_bind_simple_handlers(cl_object tag, cl_object names);
 extern ECL_API cl_object si_assert_failure _ECL_ARGS((cl_narg narg, cl_object V1, ...));
+extern ECL_API cl_object si_ecase_error(cl_object value, cl_object values);
+extern ECL_API cl_object si_etypecase_error(cl_object value, cl_object type);
+extern ECL_API cl_object si_do_check_type(cl_object value, cl_object type, cl_object type_string, cl_object place);
 
 /*
  * CDR-5

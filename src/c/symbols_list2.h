@@ -2016,8 +2016,8 @@ cl_symbols[] = {
 {EXT_ "COMPILER-TYPECASE",NULL},
 
 {SYS_ "ASSERT-FAILURE","ECL_NAME(si_assert_failure)"},
-{SYS_ "ECASE-ERROR",NULL},
-{SYS_ "ETYPECASE-ERROR",NULL},
+{SYS_ "ECASE-ERROR","ECL_NAME(si_ecase_error)"},
+{SYS_ "ETYPECASE-ERROR","ECL_NAME(si_etypecase_error)"},
 
 {SYS_ "SERIALIZE","si_serialize"},
 {SYS_ "DESERIALIZE","si_deserialize"},
@@ -2314,6 +2314,8 @@ cl_symbols[] = {
 
 {SYS_ "BIND-SIMPLE-RESTARTS","ECL_NAME(si_bind_simple_restarts)"},
 {SYS_ "BIND-SIMPLE-HANDLERS","ECL_NAME(si_bind_simple_handlers)"},
+
+{SYS_ "DO-CHECK-TYPE","ECL_NAME(si_do_check_type)"},
 
 /* Tag for end of list */
 {NULL,NULL}};
