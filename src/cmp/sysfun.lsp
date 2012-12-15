@@ -880,6 +880,7 @@
     vector-pop adjust-array
     ;; assert.lsp
     si::do-check-type si::ecase-error si::etypecase-error
+    si::wrong-type-argument
     ;; assignment.lsp
     si::setf-definition
     ;; conditions.lsp

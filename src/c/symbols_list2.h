@@ -1782,7 +1782,7 @@ cl_symbols[] = {
 {SYS_ "PACKAGE-CHILDREN",NULL},
 /* #endif ECL_RELATIVE_PACKAGE_NAMES */
 
-{SYS_ "WRONG-TYPE-ARGUMENT",NULL},
+{SYS_ "WRONG-TYPE-ARGUMENT","si_wrong_type_argument"},
 
 {SYS_ "*CURRENT-FORM*",NULL},
 
@@ -2018,6 +2018,7 @@ cl_symbols[] = {
 {SYS_ "ASSERT-FAILURE","ECL_NAME(si_assert_failure)"},
 {SYS_ "ECASE-ERROR","ECL_NAME(si_ecase_error)"},
 {SYS_ "ETYPECASE-ERROR","ECL_NAME(si_etypecase_error)"},
+{SYS_ "DO-CHECK-TYPE","ECL_NAME(si_do_check_type)"},
 
 {SYS_ "SERIALIZE","si_serialize"},
 {SYS_ "DESERIALIZE","si_deserialize"},
@@ -2314,8 +2315,6 @@ cl_symbols[] = {
 
 {SYS_ "BIND-SIMPLE-RESTARTS","ECL_NAME(si_bind_simple_restarts)"},
 {SYS_ "BIND-SIMPLE-HANDLERS","ECL_NAME(si_bind_simple_handlers)"},
-
-{SYS_ "DO-CHECK-TYPE","ECL_NAME(si_do_check_type)"},
 
 /* Tag for end of list */
 {NULL,NULL}};
