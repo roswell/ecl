@@ -25,7 +25,6 @@
 cl_object
 ecl_truncate1(cl_object x)
 {
-	const cl_env_ptr the_env = ecl_process_env();
 	cl_object v0, v1;
 	switch (ecl_t_of(x)) {
 	case t_fixnum:
@@ -34,9 +33,10 @@ ecl_truncate1(cl_object x)
 		v1 = ecl_make_fixnum(0);
 		break;
 	case t_ratio:
-		v0 = ecl_truncate2(x->ratio.num, x->ratio.den);
-		v1 = ecl_make_ratio(ecl_nth_value(the_env, 1), x->ratio.den);
-		break;
+		if (ecl_plusp(x->ratio.num))
+			return ecl_floor1(x);
+		else
+			return ecl_ceiling1(x);
 	case t_singlefloat: {
 		float d = ecl_single_float(x);
 		float y = d > 0? floorf(d) : ceilf(d);
@@ -63,7 +63,10 @@ ecl_truncate1(cl_object x)
 	default:
                 FEwrong_type_nth_arg(@[truncate],1,x,@[real]);
 	}
-	ecl_return2(the_env, v0, v1);
+	{
+		const cl_env_ptr the_env = ecl_process_env();
+		ecl_return2(the_env, v0, v1);
+	}
 }
 
 cl_object

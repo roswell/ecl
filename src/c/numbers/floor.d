@@ -19,6 +19,7 @@
 #ifndef HAVE_ISOC99
 # define floorf floor
 #endif
+#include <ecl/impl/math_dispatch2.h>
 #include <ecl/internal.h>
 
 @(defun floor (x &optional (y OBJNULL))
