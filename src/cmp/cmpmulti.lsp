@@ -199,6 +199,9 @@
 	      (loc (values-loc-or-value0 i)))
 	  (bind-or-set loc v use-bind))))
 
+    (let ((ndx (position-if #'useful-var-p vars :from-end t)))
+      (setf vars (and ndx (subseq vars 0 (1+ ndx)))))
+
     ;; If there are more used variables, we have to check whether there
     ;; are enough values left in the stack.
     (when vars
