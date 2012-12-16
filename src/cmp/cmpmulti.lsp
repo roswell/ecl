@@ -176,20 +176,16 @@
       (c2expr* form)
       (return-from do-m-v-setq *destination*)))
 
-  (let* ((*lcl* *lcl*)
-         (nr (make-lcl-var :type :int))
-	 (output (first vars))
-	 (labels '())
-	 min-values max-values)
+  ;; Store the values in the values stack + value0. Try guessing how
+  ;; many they are.
+  (multiple-value-bind (min-values max-values)
+      (c1form-values-number form)
 
-    ;; Store the values in the values stack + value0. Try guessing how
-    ;; many they are.
-    (multiple-value-setq (min-values max-values)
-      (c1form-values-number form))
+    ;; We save the values in the value stack + value0
     (let ((*destination* 'RETURN))
       (c2expr* form))
 
-    ;; At least we always have the value in value0
+    ;; At least we always have NIL value0
     (setf min-values (max 1 min-values))
 
     ;; We know that at least MIN-VALUES variables will get a value
@@ -202,39 +198,20 @@
     (let ((ndx (position-if #'useful-var-p vars :from-end t)))
       (setf vars (and ndx (subseq vars 0 (1+ ndx)))))
 
-    ;; If there are more used variables, we have to check whether there
-    ;; are enough values left in the stack.
     (when vars
-      (wt-nl-open-brace) ;; Brace [1]
-      (wt-nl "int " nr " = cl_env_copy->nvalues-" min-values ";")
-      ;;
-      ;; Loop for assigning values to variables
-      ;;
-      (do (;; We call BIND twice for each variable. Hence, we need to
-	   ;; remove spurious BDS-BIND from the list. See also C2LAMBDA.
-	   (*unwind-exit* *unwind-exit*)
-	   (vs vars (rest vs))
-	   (i min-values (1+ i)))
-	  ((or (endp vs) (= i max-values)))
-	(declare (fixnum i))
-	(let ((loc (values-loc-or-value0 i))
-	      (v (first vs))
-	      (label (next-label)))
-	  (wt-nl "if (" nr "--<=0) ") (wt-go label)
-	  (push label labels)
-	  (bind-or-set loc v use-bind)))
-      ;;
-      ;; Loop for setting default values when there are less output than vars.
-      ;;
-      (let ((label (next-label)))
-	(wt-nl) (wt-go label)
-	(wt-nl-close-brace) ;; Matches [1]
-	(push label labels)
-	(setq labels (nreverse labels))
-	(dolist (v vars)
-	  (when labels (wt-label (pop labels)))
-	  (bind-or-set '(C-INLINE (:object) "ECL_NIL" () t nil) v use-bind))
-	(when labels (wt-label label))))
+      (let ((*lcl* *lcl*)
+	    (nr (make-lcl-var :type :int))
+	    (tmp (make-lcl-var)))
+	(wt-nl-open-brace)
+	(wt-nl "const int " nr " = cl_env_copy->nvalues;")
+	(wt-nl "cl_object " tmp ";")
+	(loop for v in vars
+	   for i from min-values
+	   for loc = (values-loc-or-value0 i)
+	   do (when (useful-var-p v)
+		(wt-nl tmp " = (" nr "<=" i ")? ECL_NIL : " loc ";")
+		(bind-or-set tmp v use-bind)))
+	(wt-nl-close-brace)))
     'VALUE0))
 
 (defun c2multiple-value-setq (c1form vars form)
