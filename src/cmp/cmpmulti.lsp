@@ -190,7 +190,7 @@
       (c2expr* form))
 
     ;; At least we always have the value in value0
-    ;(setf min-values (max 1 min-values))
+    (setf min-values (max 1 min-values))
 
     ;; We know that at least MIN-VALUES variables will get a value
     (dotimes (i min-values)
