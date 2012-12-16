@@ -164,7 +164,7 @@
 	(c2expr* form)
 	(loop for i from 0 below nvalues
 	   while vars
-	   do (funcall (if use-bind #'bind-var #'set-var)
+	   do (funcall (if use-bind #'bind #'set-var)
 		       (values-loc i) (pop vars))))
       (let ((*destination* (pop vars)))
 	(c2expr* form)))
@@ -229,16 +229,18 @@
 	(when labels (wt-label label))))
     output))
 
-(defun c2multiple-value-setq (c1form vars form)
-  (declare (ignore c1form))
+(defun do-m-v-setq (vars form use-bind)
   (multiple-value-bind (min-values max-values)
       (c1form-values-number form)
-    (unwind-exit 
-     (if (= min-values max-values)
-	 (do-m-v-setq-fixed min-values vars form nil)
-	 (let ((*destination* 'VALUES))
-	   (c2expr* form)
-	   (do-m-v-setq-any min-values max-values vars nil))))))
+    (if (= min-values max-values)
+	(do-m-v-setq-fixed min-values vars form use-bind)
+	(let ((*destination* 'VALUES))
+	  (c2expr* form)
+	  (do-m-v-setq-any min-values max-values vars use-bind)))))
+
+(defun c2multiple-value-setq (c1form vars form)
+  (declare (ignore c1form))
+  (unwind-exit (do-m-v-setq vars form nil)))
 
 (defun c1multiple-value-bind (args)
   (check-args-number 'MULTIPLE-VALUE-BIND args 2)
@@ -265,9 +267,6 @@
 
 (defun c2multiple-value-bind (c1form vars init-form body)
   (declare (ignore c1form))
-  ;; 0) Compile the form which is going to give us the values
-  (let ((*destination* 'VALUES)) (c2expr* init-form))
-
   (let* ((*unwind-exit* *unwind-exit*)
 	 (*env-lvl* *env-lvl*)
 	 (*env* *env*)
@@ -299,8 +298,9 @@
 	(wt-nl "volatile cl_object env" (incf *env-lvl*)
 	       " = env" env-lvl ";")))
 
-    ;; 4) Assign the values to the variables
-    (do-m-v-setq-any min-values max-values vars t)
+    ;; 4) Assign the values to the variables, compiling the form
+    ;;    and binding the variables in the process.
+    (do-m-v-setq vars init-form t)
 
     ;; 5) Compile the body. If there are bindings of special variables,
     ;;    these bindings are undone here.
