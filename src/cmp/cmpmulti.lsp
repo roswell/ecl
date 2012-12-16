@@ -195,13 +195,10 @@
 	      (loc (values-loc-or-value0 i)))
 	  (bind-or-set loc v use-bind))))
 
-    (let ((ndx (position-if #'useful-var-p vars :from-end t)))
-      (setf vars (and ndx (subseq vars 0 (1+ ndx)))))
-
-    (when vars
-      (let ((*lcl* *lcl*)
-	    (nr (make-lcl-var :type :int))
-	    (tmp (make-lcl-var)))
+    (when (some #'useful-var-p vars)
+      (let* ((*lcl* *lcl*)
+	     (nr (make-lcl-var :type :int))
+	     (tmp (make-lcl-var)))
 	(wt-nl-open-brace)
 	(wt-nl "const int " nr " = cl_env_copy->nvalues;")
 	(wt-nl "cl_object " tmp ";")
