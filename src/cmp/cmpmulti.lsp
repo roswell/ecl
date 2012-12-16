@@ -163,25 +163,7 @@
 (defun values-loc-or-value0 (i)
   (if (plusp i) (values-loc i) 'VALUE0))
 
-(defun do-m-v-setq-fixed (nvalues vars form use-bind)
-  ;; This routine should evaluate FORM and store the values (whose amount
-  ;; is known to be NVALUES) into the variables VARS. The output is a
-  ;; place from where the first value can be retreived.
-  ;; INV: There is at least one variable.
-  ;;
-  (if (or (> nvalues 1) use-bind)
-      (let ((*destination* 'RETURN))
-	(c2expr* form)
-	(loop for i from 0 below nvalues
-	   for v in vars
-	   for loc = (values-loc-or-value0 i)
-	   do (bind-or-set loc v use-bind))
-	'VALUE0)
-      (let ((*destination* (first vars)))
-	(c2expr* form)
-	*destination*)))
-
-(defun do-m-v-setq-any (min-values max-values vars use-bind)
+(defun do-m-v-setq (vars form use-bind &aux min-values max-values)
   ;; This routine moves values from the multiple-value stack into the
   ;; variables VARS. The amount of values is not known (or at least we only
   ;; know that there is some number between MIN-VALUES and MAX-VALUES).  If
@@ -189,17 +171,35 @@
   ;; this routine is a location containing the first value (typically, the
   ;; name of the first variable).
   ;;
+  (when (= (length vars) 1)
+    (let ((*destination* (first vars)))
+      (c2expr* form)
+      (return-from do-m-v-setq *destination*)))
+
   (let* ((*lcl* *lcl*)
          (nr (make-lcl-var :type :int))
 	 (output (first vars))
-	 (labels '()))
+	 (labels '())
+	 min-values max-values)
+
+    ;; Store the values in the values stack + value0. Try guessing how
+    ;; many they are.
+    (multiple-value-setq (min-values max-values)
+      (c1form-values-number form))
+    (let ((*destination* 'RETURN))
+      (c2expr* form))
+
+    ;; At least we always have the value in value0
+    ;(setf min-values (max 1 min-values))
+
     ;; We know that at least MIN-VALUES variables will get a value
     (dotimes (i min-values)
       (when vars
 	(let ((v (pop vars))
 	      (loc (values-loc-or-value0 i)))
 	  (bind-or-set loc v use-bind))))
-    ;; If there are more variables, we have to check whether there
+
+    ;; If there are more used variables, we have to check whether there
     ;; are enough values left in the stack.
     (when vars
       (wt-nl-open-brace) ;; Brace [1]
@@ -232,16 +232,7 @@
 	  (when labels (wt-label (pop labels)))
 	  (bind-or-set '(C-INLINE (:object) "ECL_NIL" () t nil) v use-bind))
 	(when labels (wt-label label))))
-    output))
-
-(defun do-m-v-setq (vars form use-bind)
-  (multiple-value-bind (min-values max-values)
-      (c1form-values-number form)
-    (if (= min-values max-values)
-	(do-m-v-setq-fixed min-values vars form use-bind)
-	(let ((*destination* 'RETURN))
-	  (c2expr* form)
-	  (do-m-v-setq-any min-values max-values vars use-bind)))))
+    'VALUE0))
 
 (defun c2multiple-value-setq (c1form vars form)
   (declare (ignore c1form))
@@ -291,8 +282,7 @@
       (declare (type var var))
       (let ((kind (local var)))
 	(if kind
-	    (when (or (plusp (var-ref var))
-		      (member (var-kind var) '(SPECIAL GLOBAL)))
+	    (when (useful-var-p var)
 	      (maybe-open-inline-block)
 	      (bind (next-lcl) var)
 	      (wt-nl *volatile* (rep-type-name kind) " " var ";")

@@ -256,6 +256,10 @@
     (or (eq kind 'global)
         (eq kind 'special))))
 
+(defun useful-var-p (var)
+  (or (plusp (var-ref var))
+      (global-var-p var)))
+
 (defun c2var/location (c1form loc)
   #+(or)
   (unwind-exit loc)
