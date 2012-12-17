@@ -72,7 +72,7 @@
        (setq elt-type 'BASE-CHAR
 	     length (if (endp args) '* (first args))))
       #+unicode
-      ((BASE-STRING BASE-SIMPLE-STRING)
+      ((BASE-STRING SIMPLE-BASE-STRING)
        (setq elt-type 'BASE-CHAR
 	     length (if (endp args) '* (first args))))
       #+unicode
