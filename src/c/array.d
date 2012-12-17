@@ -552,6 +552,13 @@ ecl_array_allocself(cl_object x)
 		return;
         }
 #endif
+	case ecl_aet_bc: {
+		cl_index elt_size = 1;
+		x->vector.self.bc = (ecl_base_char *)ecl_alloc_atomic(d+1);
+		/* Null terminate the string */
+		x->vector.self.bc[d] = 0;
+		break;
+	}
         case ecl_aet_bit:
                 d = (d + (CHAR_BIT-1)) / CHAR_BIT;
                 x->vector.self.bit = (byte *)ecl_alloc_atomic(d);
@@ -574,7 +581,7 @@ ecl_alloc_simple_vector(cl_index l, cl_elttype aet)
 	case ecl_aet_bc:
                 x = ecl_alloc_compact_object(t_base_string, l+1);
                 x->base_string.self = ECL_COMPACT_OBJECT_EXTRA(x);
-                memset(x->base_string.self, 0, l+1);
+		x->base_string.self[l] = 0;
                 break;
 #ifdef ECL_UNICODE
 	case ecl_aet_ch:
