@@ -64,7 +64,9 @@
 (defun get-arg-types (fname &optional (env *cmp-env*) (may-be-global t))
   (let ((x (cmp-env-search-ftype fname env)))
     (if x
-        (values (first x) t)
+	(let ((arg-types (first x)))
+	  (unless (eq arg-types '*)
+	    (values arg-types t)))
         (when may-be-global
           (let ((fun (cmp-env-search-function fname env)))
             (when (or (null fun) (and (fun-p fun) (fun-global fun)))
@@ -73,7 +75,9 @@
 (defun get-return-type (fname &optional (env *cmp-env*))
   (let ((x (cmp-env-search-ftype fname env)))
     (if x
-	(values (second x) t)
+	(let ((return-types (second x)))
+	  (unless (eq return-types '*)
+	    (values return-types t)))
         (let ((fun (cmp-env-search-function fname env)))
           (when (or (null fun) (and (fun-p fun) (fun-global fun)))
             (sys:get-sysprop fname 'PROCLAIMED-RETURN-TYPE))))))
