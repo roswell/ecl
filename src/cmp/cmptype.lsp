@@ -59,7 +59,7 @@
 
 (defun lambda-type-check-associate (fname requireds optionals keywords global-fun-p)
   (multiple-value-bind (arg-types found)
-      (get-arg-types fname *cmp-env* global-fun-p)
+      (and global-fun-p (get-arg-types fname *cmp-env* global-fun-p))
     (if found
         (multiple-value-bind (req-types opt-types rest-flag key-flag
                                         key-types allow-other-keys)
