@@ -75,7 +75,7 @@
 ;;; TYPE PROPAGATION
 ;;;
 
-(def-type-propagator logand (&rest args)
+(def-type-propagator logand (fname &rest args)
   (values args
 	  (if args
 	      (dolist (int-type '((UNSIGNED-BYTE 8) FIXNUM) 'integer)
