@@ -302,6 +302,8 @@
 (proclamation clos:compute-effective-method-function (generic-function method-combination list) function)
 #+clos
 (proclamation clos::update-instance (ext:instance) (values))
+#+clos
+(proclamation clos::slot-value-set (t si::instance symbol) t)
 
 ;;;
 ;;; 8. STRUCTURES

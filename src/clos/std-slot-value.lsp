@@ -227,7 +227,7 @@
 		(slot-boundp-using-class class self slotd)
 		(values (slot-missing class self slot-name 'SLOT-BOUNDP))))))))
 
-(defun (setf slot-value) (value self slot-name)
+(defun clos::slot-value-set (value self slot-name)
   (with-early-accessors (+standard-class-slots+
 			 +slot-definition-slots+)
     (let* ((class (class-of self))
@@ -242,6 +242,8 @@
 		(setf (slot-value-using-class class self slotd) value)
 		(slot-missing class self slot-name 'SETF value))))))
   value)
+
+(setf (fdefinition '(setf slot-value)) #'clos::slot-value-set)
 
 ;;;
 ;;; 2) Overloadable methods on which the previous functions are based

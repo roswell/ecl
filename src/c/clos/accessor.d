@@ -60,6 +60,12 @@ slot_method_index(cl_object gfun, cl_object instance, cl_object args)
 		cl_object table = _ecl_funcall3(@'slot-value',
 						ECL_CLASS_OF(instance),
 						@'clos::location-table');
+		/* The class might not be a standard class. This happens
+		 * when a nonstandard class inherits from a standard class
+		 * and does not add any new slot accessor.
+		 */
+		unlikely_if (Null(table))
+			return slot_name;
 		return ecl_gethash_safe(slot_name, table, OBJNULL);
 	}
 }
@@ -132,10 +138,11 @@ ecl_slot_reader_dispatch(cl_narg narg, cl_object instance)
 	index = e->value;
 	if (ECL_FIXNUMP(index)) {
 		value = instance->instance.slots[ecl_fixnum(index)];
+	} else if (ecl_unlikely(!ECL_LISTP(index))) {
+		value = cl_slot_value(instance, index);
+	} else if (ecl_unlikely(Null(index))) {
+		FEerror("Error when accessing method cache for ~A", 1, gfun);
 	} else {
-		unlikely_if (!ECL_CONSP(index)) {
-			FEerror("Error when accessing method cache for ~A", 1, gfun);
-		}
 		value = ECL_CONS_CAR(index);
 	}
 	unlikely_if (value == ECL_UNBOUND) {
@@ -175,10 +182,11 @@ ecl_slot_writer_dispatch(cl_narg narg, cl_object value, cl_object instance)
 	index = e->value;
 	if (ECL_FIXNUMP(index)) {
 		instance->instance.slots[ecl_fixnum(index)] = value;
+	} else if (ecl_unlikely(!ECL_LISTP(index))) {
+		clos_slot_value_set(value, instance, index);
+	} else if (ecl_unlikely(Null(index))) {
+		FEerror("Error when accessing method cache for ~A", 1, gfun);
 	} else {
-		unlikely_if (!ECL_CONSP(index)) {
-			FEerror("Error when accessing method cache for ~A", 1, gfun);
-		}
 		ECL_RPLACA(index, value);
 	}
 	@(return value)

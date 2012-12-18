@@ -2117,7 +2117,6 @@ extern ECL_API cl_object clos_compute_effective_method_function(cl_object gf, cl
 /* boot.lsp */
 extern ECL_API cl_object cl_slot_boundp(cl_object object, cl_object slot);
 extern ECL_API cl_object cl_slot_makunbound(cl_object object, cl_object slot);
-extern ECL_API cl_object cl_slot_value(cl_object object, cl_object slot);
 extern ECL_API cl_object cl_slot_exists_p(cl_object object, cl_object slot);
 
 /* print.lsp */
@@ -2154,7 +2153,12 @@ extern ECL_API cl_object clos_install_method _ECL_ARGS((cl_narg narg, cl_object 
 
 /* standard.lsp */
 extern ECL_API cl_object clos_standard_instance_set _ECL_ARGS((cl_narg narg, cl_object V1, cl_object V2, cl_object V3, ...));
+
 #endif
+
+/* std-slot-value */
+extern ECL_API cl_object cl_slot_value(cl_object object, cl_object slot);
+extern ECL_API cl_object clos_slot_value_set(cl_object value, cl_object instance, cl_object name);
 
 #endif
 

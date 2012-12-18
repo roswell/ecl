@@ -945,6 +945,7 @@
      slot-boundp
      slot-makunbound
      slot-value
+     clos::slot-value-set
      slot-exists-p
      clos::need-to-make-load-form-p
      ;; defclass
