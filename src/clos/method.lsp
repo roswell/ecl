@@ -141,6 +141,7 @@
 			(and x (subseq lambda-list x))
                         nil))))
     (let* ((copied-variables '())
+	   (ignorable `(declare (ignorable ,@required-parameters)))
 	   (class-declarations
 	    (nconc (when *add-method-argument-declarations*
 		     (loop for name in required-parameters
@@ -161,8 +162,11 @@
 	    ;; arguments to the code walk.
 	    `(lambda ,lambda-list
 	       ,@(and class-declarations `((declare ,@class-declarations)))
+	       ,ignorable
 	       ,(if copied-variables
-		    `(let* ,copied-variables ,block)
+		    `(let* ,copied-variables
+		       ,ignorable
+		       ,block)
 		     block))))
       (values method-lambda declarations documentation))))
 
