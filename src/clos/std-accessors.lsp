@@ -26,44 +26,6 @@
 	(t
 	 (slot-value slotd 'location))))
 
-;;; The following does not get as fast as it should because we are not
-;;; allowed to memoize the position of a slot. The problem is that the
-;;; AMOP specifies that slot accessors are created from the direct
-;;; slots, without knowing the slot position. This semantics is
-;;; required for working standard-reader- and
-;;; standard-writer-method. OTOH if we want to have memoized slot
-;;; positions we have to work from the effective slots and we have to
-;;; create methods for all slots, not only the direct ones in this
-;;; class. Both semantics are incompatible, but we currently have no
-;;; safe way to choose one or another
-;;;
-(defun std-class-optimized-accessors (slot-name)
-  (declare (si::c-local))
-  (with-early-accessors (+standard-class-slots+)
-    (values #'(lambda (self)
-		(declare (optimize (safety 0) (speed 3) (debug 0))
-			 (standard-object self))
-		(ensure-up-to-date-instance self)
-		(let* ((class (si:instance-class self))
-		       (table (class-location-table class))
-		       (index (gethash slot-name table))
-		       (value (if (si::fixnump index)
-				  (si:instance-ref self (truly-the fixnum index))
-				  (car (truly-the cons index)))))
-		  (if (si:sl-boundp value)
-		      value
-		      (values (slot-unbound (class-of self) self slot-name)))))
-	    #'(lambda (value self)
-		(declare (optimize (safety 0) (speed 3) (debug 0))
-			 (standard-object self))
-		(ensure-up-to-date-instance self)
-		(let* ((class (si:instance-class self))
-		       (table (class-location-table class))
-		       (index (gethash slot-name table)))
-		  (if (si::fixnump index)
-		      (si:instance-set self (truly-the fixnum index) value)
-		      (rplaca (truly-the cons index) value)))))))
-
 (defun std-class-sealed-accessors (index)
   (declare (si::c-local)
 	   (fixnum index))
@@ -130,8 +92,6 @@
 		      ;; only happens for sealed classes.
 		      (typep location 'fixnum))
 		 (std-class-sealed-accessors location))
-		(optimizable
-		 (std-class-optimized-accessors name))
 		(t
 		 (std-class-accessors name)))
 	(let* ((options (list :slot-definition slotd))
