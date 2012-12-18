@@ -556,7 +556,7 @@
 	    (wt-nl)
 	    (wt-c-inline-loc output-rep-type c-expression coerced-arguments t nil)
 	    (when one-liner (wt ";")))
-	  (cmpwarn "Ignoring form ~S" c-expression))
+	  (cmpnote "Ignoring form ~S" c-expression))
       (return-from produce-inline-loc NIL))
 
     ;; If the form is a one-liner, we can simply propagate this expression until the

@@ -81,8 +81,8 @@
 
 (defun assert-var-not-ignored (var)
   (when (let ((x (var-ignorable var))) (and x (minusp x)))
-    (cmpwarn "Variable ~A, declared as IGNORE, found in a lisp form."
-	     (var-name var))
+    (cmpwarn-style "Variable ~A, declared as IGNORE, found in a lisp form."
+		   (var-name var))
     (setf (var-ignorable var) nil)))
 
 (defun delete-from-read-nodes (var form)
@@ -190,7 +190,7 @@
   (when (eq (var-kind var) 'LEXICAL)
     (when (and (zerop (var-ref var)) ;;; This field may be -1 (IGNORE). Beppe
                (not (var-ignorable var)))
-        (cmpwarn "The variable ~s is not used." (var-name var)))
+        (cmpwarn-style "The variable ~s is not used." (var-name var)))
     (when (not (var-ref-clb var))
       ;; if the variable can be stored locally, set it var-kind to its type
       (setf (var-kind var)

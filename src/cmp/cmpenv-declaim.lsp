@@ -35,7 +35,7 @@
     (multiple-value-bind (body specials types ignored others doc all)
         (c1body `((DECLARE ,@args)) nil)
       (when ignored
-        (cmpwarn "IGNORE/IGNORABLE declarations in DECLAIM are ignored"))
+        (cmpwarn-style "IGNORE/IGNORABLE declarations in DECLAIM are ignored"))
       (reduce #'add-one-declaration others
               :initial-value (add-variables *cmp-env* types specials))
       (reduce #'add-one-declaration others
