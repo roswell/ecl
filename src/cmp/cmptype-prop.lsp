@@ -71,7 +71,7 @@
       (setf lambda-list (append lambda-list (list '&rest var))
             body (list* `(declare (ignorable ,var)) body))))
   `(setf (gethash ',fname *p0-dispatch-table*)
-         #'(lambda ,lambda-list ,@body)))
+         #'(lambda ,lambda-list (declare (ignorable ,(first lambda-list))) ,@body)))
 
 (defun copy-type-propagator (orig dest-list)
   (loop with function = (gethash orig *p0-dispatch-table*)
