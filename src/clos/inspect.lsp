@@ -356,11 +356,11 @@ q (or Q):             quits the inspection.~%~
 	     (documentation c t)
 	     (si::get-documentation object doc-type))))
       (function
-       (or (and (fboundp object)
+       (or (si::get-documentation object doc-type)
+	   (and (fboundp object)
 		(documentation (or (macro-function object)
 				   (fdefinition object))
-			       doc-type))
-	   (si::get-documentation object doc-type)))
+			       doc-type))))
       (otherwise
        (si::get-documentation object doc-type)))))
 
