@@ -840,15 +840,11 @@
 (def-inline si:sl-boundp :always (t) :bool "(#0)!=ECL_UNBOUND")
 
 #+clos
-(def-inline clos:standard-instance-access :always (t t) t "ecl_instance_ref((#0),ecl_to_size(#1))")
-#+clos
 (def-inline clos:standard-instance-access :always (t fixnum) t "ecl_instance_ref((#0),(#1))")
 #+clos
 (def-inline clos:standard-instance-access :unsafe (standard-object fixnum) t
  "(#0)->instance.slots[#1]")
 
-#+clos
-(def-inline clos:funcallable-standard-instance-access :always (t t) t "ecl_instance_ref((#0),ecl_to_size(#1))")
 #+clos
 (def-inline clos:funcallable-standard-instance-access :always (t fixnum) t "ecl_instance_ref((#0),(#1))")
 #+clos
@@ -938,8 +934,8 @@
      clos:std-compute-applicable-methods
      clos:std-compute-effective-method
      clos:compute-effective-method-function
-     ;; standard-instance-access ; this function is a synonym for si:instance-ref
-     ;; funcallable-standard-instance-access ; same for this one
+     standard-instance-access
+     ;; funcallable-standard-instance-access alias for standard-instance-access
      subclassp of-class-p
      ;; boot.lsp
      slot-boundp
@@ -1006,7 +1002,7 @@
     ,@'(;; defclass.lsp
      clos::ensure-class
      ;; std-slot-value.lsp
-     clos::standard-instance-get
+     clos::standard-instance-access
      clos::standard-instance-set
      clos::find-slot-definition
      ;; combin.lsp

@@ -2159,6 +2159,8 @@ extern ECL_API cl_object clos_standard_instance_set _ECL_ARGS((cl_narg narg, cl_
 /* std-slot-value */
 extern ECL_API cl_object cl_slot_value(cl_object object, cl_object slot);
 extern ECL_API cl_object clos_slot_value_set(cl_object value, cl_object instance, cl_object name);
+extern ECL_API cl_object clos_standard_instance_access(cl_object object, cl_object location);
+#define clos_funcallable_standard_instance_access clos_standard_instance_access
 
 #endif
 

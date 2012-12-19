@@ -163,7 +163,7 @@
 ;;; Specific functions for slot reading, writing, boundness checking, etc.
 ;;;
 
-(defun standard-instance-get (instance location)
+(defun standard-instance-access (instance location)
   (with-early-accessors (+standard-class-slots+
 			 +slot-definition-slots+)
     (ensure-up-to-date-instance instance)
@@ -198,7 +198,7 @@
       (if location-table
 	  (let ((location (gethash slot-name location-table nil)))
 	    (if location
-		(let ((value (standard-instance-get self location)))
+		(let ((value (standard-instance-access self location)))
 		  (if (si:sl-boundp value)
 		      value
 		      (values (slot-unbound class self slot-name))))
@@ -220,7 +220,7 @@
       (if location-table
 	  (let ((location (gethash slot-name location-table nil)))
 	    (if location
-		(si:sl-boundp (standard-instance-get self location))
+		(si:sl-boundp (standard-instance-access self location))
 		(values (slot-missing class self slot-name 'SLOT-BOUNDP))))
 	  (let ((slotd (find slot-name (class-slots class) :key #'slot-definition-name)))
 	    (if slotd

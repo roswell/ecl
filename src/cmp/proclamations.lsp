@@ -291,8 +291,6 @@
 ; (proclamation unbound-slot-instance (condition) si::instance :predicate)
 
 #+clos
-(proclamation clos::standard-instance-get (ext:instance t) t)
-#+clos
 (proclamation clos::standard-instance-set (t ext:instance t) t)
 #+clos
 (proclamation clos:std-compute-applicable-methods (generic-function list) list)
@@ -1344,10 +1342,10 @@
 #+clos
 (proclamation si:sl-makunbound (t fixnum) t)
 #+clos
-(proclamation clos:standard-instance-access (standard-object fixnum) t :reader)
+(proclamation clos:standard-instance-access (standard-object t) t :reader)
 #+clos
 (proclamation clos:funcallable-standard-instance-access
-              (clos:funcallable-standard-object fixnum)
+              (clos:funcallable-standard-object t)
               t :reader)
 #+clos
 (proclamation associate-methods-to-gfun (generic-function *)
