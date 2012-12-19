@@ -156,10 +156,10 @@ disassemble_tagbody(cl_object bytecodes, cl_opcode *vector) {
 	print_noarg("TAGBODY");
 	for (i=0; i<ntags; i++) {
 		GET_LABEL(destination, vector);
-		ecl_princ_str("\n\tTAG\t", ECL_T);
-		ecl_princ(ecl_make_fixnum(i), ECL_T);
-		ecl_princ_str(" @@ ", ECL_T);
-		ecl_princ(ecl_make_fixnum(destination - base), ECL_T);
+		ecl_princ_str("\n\tTAG\t", ECL_NIL);
+		ecl_princ(ecl_make_fixnum(i), ECL_NIL);
+		ecl_princ_str(" @@ ", ECL_NIL);
+		ecl_princ(ecl_make_fixnum(destination - base), ECL_NIL);
 	}
 	vector = disassemble(bytecodes, vector);
 	print_noarg("\t\t; tagbody");
@@ -189,9 +189,9 @@ disassemble(cl_object bytecodes, cl_opcode *vector) {
 	if (line_format != ECL_NIL) {
 		cl_format(3, ECL_T, line_format, line_no);
 	} else {
-		ecl_princ_char('\n', ECL_T);
-		ecl_princ(line_no, ECL_T);
-		ecl_princ_char('\t', ECL_T);
+		ecl_princ_char('\n', ECL_NIL);
+		ecl_princ(line_no, ECL_NIL);
+		ecl_princ_char('\t', ECL_NIL);
 	}
 	switch (GET_OPCODE(vector)) {
 
