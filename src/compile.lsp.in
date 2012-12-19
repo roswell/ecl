@@ -19,6 +19,22 @@
 (load "bare.lsp" :verbose nil)
 
 ;;;
+;;; * Complain about functions which are not in the core
+;;;
+#+(or)
+(let ((wrong-symbols '()))
+  (let ((*standard-output* (make-broadcast-stream)))
+    (dolist (p '("CL" "SI" "EXT" "CLOS"))
+      (do-symbols (s (find-package p))
+	(when (and (fboundp s)
+		   (not (typep (fdefinition s) '(or list generic-function)))
+		   (si::mangle-name s)
+		   (si::bc-disassemble (fdefinition s)))
+	  (pushnew s wrong-symbols)))))
+  (format t "~%;;; Functions that can be made into the core:~%")
+  (pprint (set-difference wrong-symbols c::*in-all-symbols-functions*)))
+
+;;;
 ;;; * Force compiler constants only for the core library
 ;;;
 (setf *use-static-constants-p* t)
