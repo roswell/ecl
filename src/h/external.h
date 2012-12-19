@@ -1942,6 +1942,19 @@ extern ECL_API cl_object cl_bit_not _ECL_ARGS((cl_narg narg, cl_object V1, ...))
 extern ECL_API cl_object cl_vector_pop(cl_object V1);
 extern ECL_API cl_object cl_adjust_array _ECL_ARGS((cl_narg narg, cl_object V1, cl_object V2, ...));
 
+/* config.lsp */
+
+extern ECL_API cl_object cl_short_site_name();
+extern ECL_API cl_object cl_long_site_name();
+extern ECL_API cl_object cl_lisp_implementation_type();
+extern ECL_API cl_object cl_lisp_implementation_version();
+extern ECL_API cl_object si_lisp_implementation_vcs_id();
+extern ECL_API cl_object cl_machine_type();
+extern ECL_API cl_object cl_machine_instance();
+extern ECL_API cl_object cl_machine_version();
+extern ECL_API cl_object cl_software_type();
+extern ECL_API cl_object cl_software_version();
+
 /* describe.lsp */
 
 extern ECL_API cl_object cl_inspect(cl_object o);

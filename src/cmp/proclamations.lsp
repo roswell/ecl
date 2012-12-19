@@ -244,6 +244,8 @@
 (proclamation si:compiled-function-block (function) (or null si::codeblock))
 (proclamation ext:compiled-function-file (function) (values t t))
 
+(proclamation ext:constantly-t () function)
+
 (proclamation si:ihs-top () si::index)
 (proclamation si:ihs-fun (si::index) (or null function-designator))
 (proclamation si:ihs-env (si::index) environment)
@@ -1299,6 +1301,7 @@
 
 ;; ECL extensions
 
+(proclamation ext::lisp-implementation-vcs-id () string :pure)
 (proclamation si::room-report () (values t t t t t t t t))
 (proclamation si::reset-gbc-count () t)
 (proclamation ext:gc (&optional gen-bool) t)

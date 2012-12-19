@@ -877,6 +877,10 @@
     ;; assert.lsp
     si::do-check-type si::ecase-error si::etypecase-error
     si::wrong-type-argument si::ccase-error si::ctypecase-error
+    ;; config.lsp
+    short-site-name long-site-name machine-type machine-instance machine-version
+    software-type software-version lisp-implementation-type lisp-implementation-version
+    si::lisp-implementation-vcs-id
     ;; assignment.lsp
     si::setf-definition
     ;; conditions.lsp
@@ -910,6 +914,9 @@
     ;; predlib.lsp
     upgraded-array-element-type upgraded-complex-part-type typep subtypep coerce
     do-deftype
+    ;; process.lsp
+    ext:make-external-process ext:external-process-pid ext:external-process-input
+    ext:external-process-output ext:external-process-status
     ;; seq.lsp
     make-sequence concatenate map some every notany notevery map-into
     ;; seqlib.lsp
