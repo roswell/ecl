@@ -39,11 +39,12 @@
 
 (defmethod (setf slot-value-using-class) (val (class std-class) self slotd)
   (declare (ignore class))
-  (standard-instance-set val self (slot-definition-location slotd)))
+  (setf (standard-instance-access self (slot-definition-location slotd)) val))
 
 (defmethod slot-makunbound-using-class ((class std-class) instance slotd)
   (declare (ignore class))
-  (standard-instance-set (si:unbound) instance (slot-definition-location slotd)))
+  (setf (standard-instance-access instance (slot-definition-location slotd)) (si:unbound))
+  instance)
 
 ;;;
 ;;; 3) Error messages related to slot access

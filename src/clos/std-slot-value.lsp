@@ -176,7 +176,7 @@
 	  (t
 	   (invalid-slot-location instance location)))))
 
-(defun standard-instance-set (val instance location)
+(defun standard-instance-set (instance location val)
   (with-early-accessors (+standard-class-slots+
 			 +slot-definition-slots+)
     (ensure-up-to-date-instance instance)
@@ -189,6 +189,9 @@
 	  (t
 	   (invalid-slot-location instance location)))
     val))
+
+(defsetf standard-instance-access standard-instance-set)
+(defsetf funcallable-standard-instance-access standard-instance-set)
 
 (defun slot-value (self slot-name)
   (with-early-accessors (+standard-class-slots+
@@ -235,7 +238,7 @@
       (if location-table
 	  (let ((location (gethash slot-name location-table nil)))
 	    (if location
-		(standard-instance-set value self location)
+		(setf (standard-instance-access self location) value)
 		(slot-missing class self slot-name 'SETF value)))
 	  (let ((slotd (find slot-name (class-slots class) :key #'slot-definition-name)))
 	    (if slotd

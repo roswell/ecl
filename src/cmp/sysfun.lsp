@@ -934,8 +934,9 @@
      clos:std-compute-applicable-methods
      clos:std-compute-effective-method
      clos:compute-effective-method-function
-     standard-instance-access
-     ;; funcallable-standard-instance-access alias for standard-instance-access
+     ;; std-slot-value.lsp
+     clos::standard-instance-access ;; alias clos:funcallable-standard-instance-access
+     clos::standard-instance-set
      subclassp of-class-p
      ;; boot.lsp
      slot-boundp
@@ -1001,14 +1002,9 @@
     #+clos
     ,@'(;; defclass.lsp
      clos::ensure-class
-     ;; std-slot-value.lsp
-     clos::standard-instance-access
-     clos::standard-instance-set
      clos::find-slot-definition
      ;; combin.lsp
      clos::simple-code-walker
-     ;; standard.lsp
-     clos::standard-instance-set
      ;; kernel.lsp
      clos::install-method
      clos::default-initargs-of
