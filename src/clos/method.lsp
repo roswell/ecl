@@ -150,6 +150,7 @@
 			do (push `(,name ,name) copied-variables) and
 			nconc `((type ,type ,name)
 				(si::no-check-type ,name))))
+		   (list (list 'si::function-block-name name))
 		   (cdar declarations)))
 	   (block `(block ,(si::function-block-name name) ,@real-body))
 	   (method-lambda

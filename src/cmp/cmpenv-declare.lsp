@@ -98,6 +98,7 @@ and a possible documentation string (only accepted when DOC-P is true)."
               SI::C-GLOBAL DYNAMIC-EXTENT IGNORABLE VALUES
               SI::NO-CHECK-TYPE POLICY-DEBUG-IHS-FRAME :READ-ONLY)
              (push decl others))
+	    (SI:FUNCTION-BLOCK-NAME)
             (otherwise
              (if (or (alien-declaration-p decl-name)
                      (policy-declaration-name-p decl-name))
@@ -147,7 +148,7 @@ special variable declarations, as these have been extracted before."
      (cmp-env-extend-declaration 'alien (rest decl) env))
     ((SI::C-LOCAL SI::C-GLOBAL SI::NO-CHECK-TYPE :READ-ONLY)
      env)
-    ((DYNAMIC-EXTENT IGNORABLE)
+    ((DYNAMIC-EXTENT IGNORABLE SI:FUNCTION-BLOCK-NAME)
      ;; FIXME! SOME ARE IGNORED!
      env)
     (otherwise

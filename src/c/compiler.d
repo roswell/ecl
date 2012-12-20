@@ -3018,6 +3018,14 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
 		compile_form(env, @list*(3, @'block', si_function_block_name(name),
                                          body), FLAG_VALUES);
 	} else {
+		while (!Null(decl)) {
+			cl_object l = ECL_CONS_CAR(decl);
+			if (ECL_CONSP(l) && ECL_CONS_CAR(l) == @'si::function-block-name') {
+				name = ECL_CONS_CAR(ECL_CONS_CDR(l));
+				break;
+			}
+			decl = ECL_CONS_CDR(decl);
+		}
 		compile_body(env, body, FLAG_VALUES);
 	}
 
