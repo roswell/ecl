@@ -1969,6 +1969,9 @@ extern ECL_API cl_object cl_princ_to_string(cl_object V1);
 extern ECL_API cl_object cl_y_or_n_p _ECL_ARGS((cl_narg narg, ...));
 extern ECL_API cl_object cl_yes_or_no_p _ECL_ARGS((cl_narg narg, ...));
 extern ECL_API cl_object si_string_to_object _ECL_ARGS((cl_narg narg, cl_object str, ...));
+extern ECL_API cl_object cl_dribble _ECL_ARGS((cl_narg narg, ...));
+extern ECL_API cl_object si_load_encoding(cl_object name);
+extern ECL_API cl_object si_make_encoding(cl_object mapping);
 
 /* listlib.lsp */
 
@@ -2101,6 +2104,7 @@ extern ECL_API cl_object cl_sort _ECL_ARGS((cl_narg narg, cl_object V1, cl_objec
 extern ECL_API cl_object cl_stable_sort _ECL_ARGS((cl_narg narg, cl_object V1, cl_object V2, ...));
 extern ECL_API cl_object cl_merge _ECL_ARGS((cl_narg narg, cl_object V1, cl_object V2, cl_object V3, cl_object V4, ...));
 extern ECL_API cl_object cl_constantly(cl_object V1);
+extern ECL_API cl_object cl_complement(cl_object V1);
 
 /* trace.lsp */
 
@@ -2173,11 +2177,21 @@ extern ECL_API cl_object clos_standard_instance_access(cl_object object, cl_obje
 #define clos_funcallable_standard_instance_access clos_standard_instance_access
 extern ECL_API cl_object clos_standard_instance_set(cl_object object, cl_object location, cl_object value);
 #define clos_funcallable_standard_instance_set clos_standard_instance_access
+
+/* method.lsp */
+extern ECL_API cl_object clos_extract_lambda_list(cl_object object);
+extern ECL_API cl_object clos_extract_specializer_names(cl_object object);
+
 #endif
 
 /* conditions.lsp */
 extern ECL_API cl_object cl_abort _ECL_ARGS((cl_narg narg, ...));
 extern ECL_API cl_object cl_continue _ECL_ARGS((cl_narg narg, ...));
+extern ECL_API cl_object cl_compute_restarts _ECL_ARGS((cl_narg narg, ...));
+extern ECL_API cl_object cl_find_restart _ECL_ARGS((cl_narg narg, cl_object name, ...));
+extern ECL_API cl_object cl_invoke_restart _ECL_ARGS((cl_narg narg, cl_object restart, ...));
+extern ECL_API cl_object cl_invoke_restart_interactively(cl_object restart);
+extern ECL_API cl_object cl_make_condition _ECL_ARGS((cl_narg narg, cl_object type, ...));
 extern ECL_API cl_object cl_muffle_warning _ECL_ARGS((cl_narg narg, ...));
 extern ECL_API cl_object cl_store_value _ECL_ARGS((cl_narg narg, cl_object value, ...));
 extern ECL_API cl_object cl_use_value _ECL_ARGS((cl_narg narg, cl_object value, ...));

@@ -304,6 +304,10 @@
 (proclamation clos::update-instance (ext:instance) (values))
 #+clos
 (proclamation clos::slot-value-set (t si::instance symbol) t)
+#+clos
+(proclamation clos:extract-lambda-list (list) list)
+#+clos
+(proclamation clos:extract-specializer-names (list) list)
 
 ;;;
 ;;; 8. STRUCTURES
@@ -1131,6 +1135,8 @@
 #+wants-sockets
 (proclamation si:lookup-host-entry (t) (values (or null string) list list))
 (proclamation si:copy-stream (stream stream) t)
+(proclamation si:make-encoding (t) t)
+(proclamation si:load-encoding (t) t)
 
 ;;;
 ;;; 22. PRINT

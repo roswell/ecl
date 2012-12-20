@@ -886,12 +886,14 @@
     ;; conditions.lsp
     si::safe-eval abort continue muffle-warning store-value use-value
     si::bind-simple-restarts si::bind-simple-handlers
-    si::assert-failure
+    si::assert-failure compute-restarts find-restart invoke-restart
+    invoke-restart-interactively make-condition
     ;; describe.lsp
     describe inspect
     ;; iolib.lsp
     read-from-string write-to-string prin1-to-string princ-to-string
-    y-or-n-p yes-or-no-p string-to-object
+    y-or-n-p yes-or-no-p string-to-object dribble ext:make-encoding
+    ext:load-encoding
     ;; listlib.lsp
     union nunion intersection nintersection set-difference nset-difference
     set-exclusive-or nset-exclusive-or subsetp rassoc-if rassoc-if-not
@@ -914,11 +916,9 @@
     ;; predlib.lsp
     upgraded-array-element-type upgraded-complex-part-type typep subtypep coerce
     do-deftype
-    ;; process.lsp
-    ext:make-external-process ext:external-process-pid ext:external-process-input
-    ext:external-process-output ext:external-process-status
     ;; seq.lsp
     make-sequence concatenate map some every notany notevery map-into
+    complement
     ;; seqlib.lsp
     reduce fill replace
     remove remove-if remove-if-not delete delete-if delete-if-not
@@ -933,7 +933,8 @@
     ;; pprint.lsp
     pprint-fill copy-pprint-dispatch pprint-dispatch
     pprint-linear pprint-newline pprint-tab pprint-tabular
-    set-pprint-dispatch pprint-indent 
+    set-pprint-dispatch pprint-indent
+
     #+clos
     ,@'(;; combin.lsp
      method-combination-error
@@ -954,6 +955,9 @@
      clos::need-to-make-load-form-p
      ;; defclass
      clos:load-defclass
+     ;; method
+     clos:extract-lambda-list
+     clos:extract-specializer-names
      )
 
     ;; cdr-5
