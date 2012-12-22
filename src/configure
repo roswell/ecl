@@ -5070,12 +5070,41 @@ LSP_FEATURES="(cons :android ${LSP_FEATURES})"
 esac
 
 case "${host}" in
+	*-nacl)
+		thehost='linux'
+		THREAD_CFLAGS='-D_THREAD_SAFE'
+		THREAD_LIBS='-lpthread'
+		SHARED_LDFLAGS="-shared ${LDFLAGS}"
+		BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
+		ECL_GC_DIR=gc-unstable
+		ECL_LDRPATH='-Wl,--rpath,~A'
+		CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 ${CFLAGS}"
+		SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
+		SONAME_LDFLAGS="-Wl,-soname,SONAME"
+
+LSP_FEATURES="(cons :nacl ${LSP_FEATURES})"
+
+                ;;
+	*-pnacl)
+		thehost='linux'
+		THREAD_CFLAGS='-D_THREAD_SAFE'
+		THREAD_LIBS='-lpthread'
+						ECL_GC_DIR=gc-unstable
+				CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 ${CFLAGS}"
+
+LSP_FEATURES="(cons :nacl ${LSP_FEATURES})"
+
+
+LSP_FEATURES="(cons :pnacl ${LSP_FEATURES})"
+
+                ;;
 	i686*-android*)
 		THREAD_LIBS=''
 		CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DANDROID -DPLATFORM_ANDROID -DUSE_GET_STACKBASE_FOR_MAIN -DIGNORE_DYNAMIC_LOADING -DNO_GETCONTEXT -DHAVE_GETTIMEOFDAY -DHAVE_SIGPROCMASK ${CFLAGS}"
 
 LSP_FEATURES="(cons :android ${LSP_FEATURES})"
 
+                ;;
 esac
 
 case "${host_cpu}" in

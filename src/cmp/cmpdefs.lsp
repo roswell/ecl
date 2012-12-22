@@ -45,8 +45,12 @@ coprocessor).")
 (defvar *ld-format* #-msvc "~A -o ~S -L~S ~{~S ~} ~@[~S~]~{ '~A'~} ~A"
                     #+msvc "~A -Fe~S~* ~{~S ~} ~@[~S~]~{ '~A'~} ~A")
 
-(defvar *cc-format* #-msvc "~A -I. \"-I~A\" ~A ~:[~*~;~A~] -w -c \"~A\" -o \"~A\"~{ '~A'~}"
-                    #+msvc "~A -I. -I\"~A\" ~A ~:[~*~;~A~] -w -c \"~A\" -Fo\"~A\"~{ '~A'~}")
+(defvar *cc-format* (cond ((member :msvc *features*)
+			   "~A -I. \"-I~A\" ~A ~:[~*~;~A~] -w -c \"~A\" -o \"~A\"~{ '~A'~}")
+			  ((member :nacl *features*) ;; pnacl-clang doesn't support -w
+			   "~A -I. \"-I~A\" ~A ~:[~*~;~A~] -c \"~A\" -o \"~A\"~{ '~A'~}")
+			  (t
+			   "~A -I. \"-I~A\" ~A ~:[~*~;~A~] -w -c \"~A\" -o \"~A\"~{ '~A'~}")))
 
 #-dlopen
 (defvar *ld-flags* "@LDFLAGS@ -lecl @CORE_LIBS@ @FASL_LIBS@ @LIBS@")

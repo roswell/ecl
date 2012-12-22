@@ -97,7 +97,7 @@ ecl_cs_set_org(cl_env_ptr env)
         env->cs_org = (char*)(&env);
         env->cs_barrier = env->cs_org;
         env->cs_max_size = 0;
-#if defined(HAVE_SYS_RESOURCE_H) && defined(RLIMIT_STACK)
+#if defined(HAVE_SYS_RESOURCE_H) && defined(RLIMIT_STACK) && !defined(NACL)
         {
                 struct rlimit rl;
                 cl_index size;

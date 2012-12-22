@@ -97,7 +97,20 @@ initialization function in object files have more or less unpredictable
 names, we store them in a string in the object file. This string is recognized
 by the TAG it has at the beginning This function searches that tag and retrieves
 the function name it precedes."
+  #-pnacl
   (with-open-file (stream file :direction :input :element-type '(unsigned-byte 8))
+    (when (search-tag stream tag)
+      (let ((name (read-name stream)))
+        name)))
+  #+pnacl
+  (let* ((pnacl-dis (or (ext:getenv "PNACL_DIS")
+                        (error "please set the PNACL_DIS environment variable to your toolchain's pnacl-dis location")))
+         (stream (ext:run-program
+                  pnacl-dis
+                  (list (namestring (translate-logical-pathname file)))
+                  :wait nil :input NIL :output :STREAM :error :OUTPUT)))
+    (unless stream
+      (error "Unable to disasemble file ~a" file))
     (when (search-tag stream tag)
       (let ((name (read-name stream)))
         name))))

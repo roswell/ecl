@@ -7,12 +7,12 @@
 ;;
 (in-package "LISP")
 
-#+(and (not ecl-min) uname)
+#+(and (not ecl-min) (not nacl) uname)
 (ffi:clines "
 #include <sys/utsname.h>
 ")
 
-#+(and (not ecl-min) uname)
+#+(and (not ecl-min) (not nacl) uname)
 (defun uname ()
  (ffi:c-inline () () :object "{
         cl_object output;

@@ -449,10 +449,38 @@ case "${host_os}" in
 esac
 
 case "${host}" in
+	*-nacl)
+		thehost='linux'
+		THREAD_CFLAGS='-D_THREAD_SAFE'
+		THREAD_LIBS='-lpthread'
+		SHARED_LDFLAGS="-shared ${LDFLAGS}"
+		BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
+		ECL_GC_DIR=gc-unstable
+		ECL_LDRPATH='-Wl,--rpath,~A'
+		CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 ${CFLAGS}"
+		SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
+		SONAME_LDFLAGS="-Wl,-soname,SONAME"
+		ECL_ADD_FEATURE([nacl])
+                ;;
+	*-pnacl)
+		thehost='linux'
+		THREAD_CFLAGS='-D_THREAD_SAFE'
+		THREAD_LIBS='-lpthread'
+		dnl SHARED_LDFLAGS="-shared ${LDFLAGS}"
+		dnl BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
+		ECL_GC_DIR=gc-unstable
+		dnl ECL_LDRPATH='-Wl,--rpath,~A'
+		CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 ${CFLAGS}"
+		dnl SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
+		dnl SONAME_LDFLAGS="-Wl,-soname,SONAME"
+		ECL_ADD_FEATURE([nacl])
+		ECL_ADD_FEATURE([pnacl])
+                ;;
 	i686*-android*)
 		THREAD_LIBS=''
 		CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DANDROID -DPLATFORM_ANDROID -DUSE_GET_STACKBASE_FOR_MAIN -DIGNORE_DYNAMIC_LOADING -DNO_GETCONTEXT -DHAVE_GETTIMEOFDAY -DHAVE_SIGPROCMASK ${CFLAGS}"
 		ECL_ADD_FEATURE([android])
+                ;;
 esac
 
 case "${host_cpu}" in
