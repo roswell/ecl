@@ -1428,6 +1428,7 @@ package."
 	   (*print-readably* nil)
            (*print-pretty* nil)
            (*print-circle* t)
+	   (*print-length* 2)
            (*readtable* (or *break-readtable* *readtable*))
            (*break-message* (format nil "~&Condition of type: ~A~%~A~%"
 				    (type-of condition) condition))

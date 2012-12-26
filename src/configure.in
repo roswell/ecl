@@ -294,6 +294,12 @@ AC_ARG_WITH(init-form,
                   [lisp forms to execute at startup (default="(si::top-level t)")]),
   [with_init_form="${withval}"], [with_init_form=""])
 
+AC_ARG_WITH(unicode-names,
+  AS_HELP_STRING( [--with-unicode-names],
+                  [link in the database of Unicode names]
+                  [(YES,no)]),
+  [],[with_unicode_names="yes"])
+
 dnl -----------------------------------------------------------------------
 dnl Installation directories
 ecldir="${libdir}/ecl-${PACKAGE_VERSION}"
@@ -851,6 +857,10 @@ if test "x${enable_unicode}" != "xno"; then
       CHAR_CODE_LIMIT=1114112
       ECL_CHARACTER=$ECL_INT32_T
       EXTRA_OBJS="$EXTRA_OBJS unicode/ucd.o unicode/ucd-0000.o unicode/ucd-0016.o unicode/ucd-0032.o unicode/ucd-0048.o unicode/ucd-0064.o unicode/ucd-0080.o unicode/ucd-0096.o"
+   fi
+   if test "${with_unicode_names}" = "yes"; then
+      AC_DEFINE(ECL_UNICODE_NAMES, [1], [Link in the database of Unicode names])
+      EXTRA_OBJS="$EXTRA_OBJS unicode/ucd_names_char.o unicode/ucd_names_codes.o unicode/ucd_names_pair.o unicode/ucd_names_str.o"
    fi
 else
    CHAR_CODE_LIMIT=256

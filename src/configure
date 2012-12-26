@@ -806,6 +806,7 @@ with_profile_cflags
 with_newcmp
 with_extra_files
 with_init_form
+with_unicode_names
 with_x
 '
       ac_precious_vars='build_alias
@@ -1522,6 +1523,7 @@ Optional Packages:
   --with-extra-files      list of additional source files (default="")
   --with-init-form        lisp forms to execute at startup
                           (default="(si::top-level t)")
+  --with-unicode-names    link in the database of Unicode names (YES,no)
   --with-x                use the X Window System
 
 Some influential environment variables:
@@ -2986,6 +2988,15 @@ if test "${with_init_form+set}" = set; then :
   withval=$with_init_form; with_init_form="${withval}"
 else
   with_init_form=""
+fi
+
+
+
+# Check whether --with-unicode-names was given.
+if test "${with_unicode_names+set}" = set; then :
+  withval=$with_unicode_names;
+else
+  with_unicode_names="yes"
 fi
 
 
@@ -9402,6 +9413,12 @@ $as_echo "#define ECL_UNICODE 21" >>confdefs.h
       CHAR_CODE_LIMIT=1114112
       ECL_CHARACTER=$ECL_INT32_T
       EXTRA_OBJS="$EXTRA_OBJS unicode/ucd.o unicode/ucd-0000.o unicode/ucd-0016.o unicode/ucd-0032.o unicode/ucd-0048.o unicode/ucd-0064.o unicode/ucd-0080.o unicode/ucd-0096.o"
+   fi
+   if test "${with_unicode_names}" = "yes"; then
+
+$as_echo "#define ECL_UNICODE_NAMES 1" >>confdefs.h
+
+      EXTRA_OBJS="$EXTRA_OBJS unicode/ucd_names_char.o unicode/ucd_names_codes.o unicode/ucd_names_pair.o unicode/ucd_names_str.o"
    fi
 else
    CHAR_CODE_LIMIT=256

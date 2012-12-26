@@ -1901,6 +1901,10 @@ extern ECL_API cl_object si_coerce_to_base_string(cl_object x);
 extern ECL_API cl_object si_coerce_to_extended_string(cl_object x);
 #define ecl_alloc_simple_extended_string(l) ecl_alloc_simple_vector((l),ecl_aet_ch)
 extern ECL_API cl_object ecl_alloc_adjustable_extended_string(cl_index l);
+# ifdef ECL_UNICODE_NAMES
+extern ECL_API cl_object _ecl_ucd_code_to_name(ecl_character c);
+extern ECL_API cl_object _ecl_ucd_name_to_code(cl_object name);
+# endif
 #else
 #define si_base_char_p cl_characterp
 #define si_base_string_p cl_stringp

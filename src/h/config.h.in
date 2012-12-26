@@ -102,6 +102,8 @@
 
 /* Support for Unicode strings */
 #undef ECL_UNICODE
+/* Link in the Unicode names for all characters (takes ~0.5 Mb)		*/
+#undef ECL_UNICODE_NAMES
 
 /* Allow STREAM operations to work on arbitrary objects			*/
 #undef ECL_CLOS_STREAMS
