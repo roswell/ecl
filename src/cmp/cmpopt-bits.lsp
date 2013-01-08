@@ -41,6 +41,9 @@
 			    (ash ,integer %pos)))))))
       whole))
 
+(define-compiler-macro ldb-test (&rest args)
+  `(zerop (ldb ,@args)))
+
 ;;;
 ;;; ASH
 ;;; Bit fiddling. It is a bit tricky because C does not allow
