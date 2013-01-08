@@ -172,12 +172,16 @@
   "Generates a type check on an expression, ensuring that it is satisfied."
   (multiple-value-bind (trivial valid)
       (subtypep 't type)
-    (if (and trivial valid)
-        value
-        (with-clean-symbols (%value)
-          `(let* ((%value ,value))
-             ,(type-error-check '%value (replace-invalid-types type))
-             (truly-the ,type %value))))))
+    (cond ((and trivial valid)
+	   value)
+	  ((and (constantp value)
+		(typep value type))
+	   value)
+	  (t
+	   (with-clean-symbols (%value)
+	     `(let* ((%value ,value))
+		,(type-error-check '%value (replace-invalid-types type))
+		(truly-the ,type %value)))))))
 
 (defun replace-invalid-types (type)
   ;; Some types which are acceptable in DECLARE are not
