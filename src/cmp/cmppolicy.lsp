@@ -279,6 +279,9 @@
 (define-policy inline-accessors :off debug 2 :off space 2
   "Inline access to object slots, including conses and arrays")
 
+(define-policy inline-bit-operations :off space 2
+  "Inline LDB and similar functions")
+
 (define-policy open-code-aref/aset :alias inline-accessors
   "Inline access to arrays")
 

@@ -19,18 +19,27 @@
 ;;; Look for inline expansion of LDB1 in sysfun.lsp
 ;;;
 
-(define-compiler-macro ldb (&whole whole &rest args)
-  (let ((arg1 (first args))
-	(len (integer-length most-positive-fixnum))
-	size pos)
-    (if (and (consp arg1)
-	     (eq 'BYTE (car arg1))
-	     (integerp (setq size (second arg1)))
-	     (integerp (setq pos (third arg1)))
-	     (<= (+ size pos) len)
-	     (subtypep (result-type (second args)) 'FIXNUM))
-	`(truly-the fixnum (ldb1 ,size ,pos ,(second args)))
-	whole)))
+(define-compiler-macro ldb (&whole whole bytespec integer)
+  (if (and (consp bytespec)
+	   (eq 'BYTE (car bytespec))
+	   (= (length bytespec) 3)
+	   (policy-inline-bit-operations))
+      (let ((size (second bytespec))
+	    (pos (third bytespec)))
+	(cond ((and (integerp size)
+		    (integerp pos)
+		    (<= (+ size pos) #.(integer-length most-positive-fixnum))
+		    (subtypep (result-type integer) 'FIXNUM))
+	       `(truly-the fixnum (ldb1 ,size ,pos ,(second args))))
+	      ((or (policy-assume-right-type)
+		   (typep pos 'unsigned-byte))
+	       `(logand (lognot (ash -1 ,size)) (ash ,integer ,(- pos))))
+	      (t
+	       (with-clean-symbols (%pos)
+		 `(let ((%pos (optional-type-assertion ,pos unsigned-byte)))	     
+		    (logand (lognot (ash -1 ,size))
+			    (ash ,integer %pos)))))))
+      whole))
 
 ;;;
 ;;; ASH
@@ -40,12 +49,16 @@
 ;;;
 
 (define-compiler-macro ash (&whole whole argument shift)
-  (if (and (policy-assume-right-type)
-           (integerp shift))
-      (if (zerop shift)
-          argument
-          `(shift ,argument ,shift))
-      whole))
+  (cond ((and (integerp argument)
+	      (integerp shift))
+	 (ash argument shift))
+	((and (policy-assume-right-type)
+	      (integerp shift))
+	 (if (zerop shift)
+	     argument
+	     `(shift ,argument ,shift)))
+	(t
+	 whole)))
 
 (define-c-inliner shift (return-type argument orig-shift)
   (let* ((arg-type (inlined-arg-type argument))
