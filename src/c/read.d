@@ -801,13 +801,24 @@ sharp_left_parenthesis_reader(cl_object in, cl_object c, cl_object d)
 			FEreader_error("A ,@ or ,. appeared in an illegal position.",
 				       in, 0);
                 }
-		if (a == QUOTE) {
-			v = _ecl_funcall4(@'make-array', cl_list(1, cl_length(x)),
-				    @':initial-contents', x);
-		} else {
+		if (a != QUOTE) {
 			v = cl_list(2, @'si::unquote', 
 				    cl_list(3, @'apply',
 					    cl_list(2, @'quote', @'vector'), x));
+		} else if (Null(d)) {
+			v = _ecl_funcall4(@'make-array', ecl_list1(cl_length(x)),
+					  @':initial-contents', x);
+		} else {
+			cl_object last;
+			cl_index l, i;
+			v = _ecl_funcall2(@'make-array', ecl_list1(d));
+			for (i = 0, last = ECL_NIL, l = ecl_fixnum(d); i < l; i++) {
+				if (ECL_CONSP(x)) {
+					last = ECL_CONS_CAR(x);
+					x = ECL_CONS_CDR(x);
+				}
+				ecl_aset_unsafe(v, i, last);
+			}
 		}
 	} else if (read_suppress) {
 		/* Second case: *read-suppress* = t, we ignore the data */
@@ -1068,7 +1079,7 @@ sharp_eq_reader(cl_object in, cl_object c, cl_object d)
 	unlikely_if (ecl_assq(d, sharp_eq_context) != ECL_NIL) {
 		FEreader_error("Duplicate definitions for #~D=.", in, 1, d);
         }
-        pair = CONS(d, ECL_NIL);
+        pair = CONS(d, OBJNULL);
 	ECL_SETQ(the_env, @'si::*sharp-eq-context*', CONS(pair, sharp_eq_context));
 	value = ecl_read_object(in);
 	unlikely_if (value == pair) {
@@ -1085,15 +1096,17 @@ sharp_sharp_reader(cl_object in, cl_object c, cl_object d)
 	cl_object pair;
 
 	if (read_suppress)
-                @(return ECL_NIL);
+                ecl_return1(the_env, ECL_NIL);
 	unlikely_if (Null(d)) {
 		FEreader_error("The ## readmacro requires an argument.", in, 0);
         }
 	pair = ecl_assq(d, ECL_SYM_VAL(the_env, @'si::*sharp-eq-context*'));
 	unlikely_if (pair == ECL_NIL) {
                 FEreader_error("#~D# is undefined.", in, 1, d);
-        }
-        @(return pair)
+        } else {
+		cl_object value = ECL_CONS_CDR(pair);
+		ecl_return1(the_env, (value == OBJNULL)? pair : value);
+	}
 }
 
 static cl_object
