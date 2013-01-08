@@ -929,7 +929,7 @@ from the C language code.  NIL means \"do not create the file\"."
      ,@(split-program-options *cc-flags*)
      ,@(and (>= (cmp-env-optimization 'speed) 2)
             (split-program-options *cc-optimize*))
-     "-w" "-c"
+     "-c"
      ,(brief-namestring c-pathname)
      #-msvc
      ,@(list "-o" (brief-namestring o-pathname))
