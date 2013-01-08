@@ -105,7 +105,7 @@ si_put_buffer_string(cl_object string)
 }
 
 static void extra_argument (int c, cl_object stream, cl_object d);
-static cl_object patch_sharp(cl_object x);
+static cl_object patch_sharp(const cl_env_ptr env, cl_object x);
 static cl_object do_read_delimited_list(int d, cl_object strm, bool proper_list);
 
 cl_object
@@ -117,8 +117,7 @@ ecl_read_object_non_recursive(cl_object in)
 	ecl_bds_bind(env, @'si::*sharp-eq-context*', ECL_NIL);
 	ecl_bds_bind(env, @'si::*backq-level*', ecl_make_fixnum(0));
 	x = ecl_read_object(in);
-	if (!Null(ECL_SYM_VAL(env, @'si::*sharp-eq-context*')))
-		x = patch_sharp(x);
+	x = patch_sharp(env, x);
 	ecl_bds_unwind_n(env, 2);
 	return x;
 }
@@ -424,8 +423,7 @@ si_read_object_or_ignore(cl_object in, cl_object eof)
                 env->nvalues = 1;
                 x = eof;
         } else if (env->nvalues) {
-                if (!Null(ECL_SYM_VAL(env, @'si::*sharp-eq-context*')))
-                        x = patch_sharp(x);
+		x = patch_sharp(env, x);
         }
 	ecl_bds_unwind_n(env, 2);
 	return x;
@@ -970,6 +968,7 @@ M:
 static cl_object
 sharp_dot_reader(cl_object in, cl_object c, cl_object d)
 {
+	const cl_env_ptr env = ecl_process_env();
 	if (d != ECL_NIL && !read_suppress)
 		extra_argument('.', in, d);
 	c = ecl_read_object(in);
@@ -981,7 +980,7 @@ sharp_dot_reader(cl_object in, cl_object c, cl_object d)
 		FEreader_error("Cannot evaluate the form #.~A", in, 1, c);
         /* FIXME! We should do something here to ensure that the #.
          * only uses the #n# that have been defined */
-        c = patch_sharp(c);
+        c = patch_sharp(env, c);
 	c = si_eval_with_env(1, c);
 	@(return c)
 }
@@ -1261,22 +1260,23 @@ do_patch_sharp(cl_object x, cl_object table)
 #endif
 
 static cl_object
-patch_sharp(cl_object x)
+patch_sharp(const cl_env_ptr the_env, cl_object x)
 {
-	const cl_env_ptr the_env = ecl_process_env();
-	cl_object pairs;
-        cl_object table = 
-                cl__make_hash_table(@'eq', ecl_make_fixnum(20), /* size */
-                                    cl_core.rehash_size,
+	cl_object pairs = ECL_SYM_VAL(the_env, @'si::*sharp-eq-context*');
+	if (pairs == ECL_NIL) {
+		return x;
+	} else {
+		cl_object table = 
+			cl__make_hash_table(@'eq', ecl_make_fixnum(20), /* size */
+					    cl_core.rehash_size,
                                     cl_core.rehash_threshold);
-
-        pairs = ECL_SYM_VAL(the_env, @'si::*sharp-eq-context*');
-        loop_for_in(pairs) {
-                cl_object pair = ECL_CONS_CAR(pairs);
-                _ecl_sethash(pair, table, ECL_CONS_CDR(pair));
-        } end_loop_for_in;
-	x = do_patch_sharp(x, table);
-	return x;
+		do {
+			cl_object pair = ECL_CONS_CAR(pairs);
+			_ecl_sethash(pair, table, ECL_CONS_CDR(pair));
+			pairs = ECL_CONS_CDR(pairs);
+		} while (pairs != ECL_NIL);
+		return do_patch_sharp(x, table);
+	}
 }
 
 #define sharp_plus_reader void_reader
@@ -1581,8 +1581,7 @@ do_read_delimited_list(int d, cl_object in, bool proper_list)
 		ecl_bds_bind(the_env, @'si::*sharp-eq-context*', ECL_NIL);
 		ecl_bds_bind(the_env, @'si::*backq-level*', ecl_make_fixnum(0));
 		l = do_read_delimited_list(delimiter, strm, 1);
-		if (!Null(ECL_SYM_VAL(the_env, @'si::*sharp-eq-context*')))
-			l = patch_sharp(l);
+		l = patch_sharp(the_env, l);
 		ecl_bds_unwind_n(the_env, 2);
 	}
 	@(return l)
@@ -2352,9 +2351,9 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
 		if (!Null(ECL_SYM_VAL(env, @'si::*sharp-eq-context*'))) {
 			while (i--) {
 				if (i < perm_len) {
-					VV[i] = patch_sharp(VV[i]);
+					VV[i] = patch_sharp(env, VV[i]);
 				} else {
-					VVtemp[i-perm_len] = patch_sharp(VVtemp[i-perm_len]);
+					VVtemp[i-perm_len] = patch_sharp(env, VVtemp[i-perm_len]);
 				}
 			}
 		}
