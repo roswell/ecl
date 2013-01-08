@@ -70,7 +70,7 @@
     :unsigned-long
     ((integer 0 #.ffi:c-ulong-max) "unsigned long"
      "ecl_make_ulong" "ecl_to_ulong"
-     #.(if (<= most-positive-fixnum ffi:c-long-max) "ecl_fixnum" "ecl_to_ulong"))
+     #.(if (<= ffi:c-long-max most-positive-fixnum) "ecl_fixnum" "ecl_to_ulong"))
     :cl-index
     ((integer 0 #.most-positive-fixnum) "cl_index"
      "ecl_make_unsigned_integer" "ecl_to_cl_index" "ecl_fixnum")
