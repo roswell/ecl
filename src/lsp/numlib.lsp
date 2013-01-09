@@ -302,31 +302,37 @@ Returns the position part (in ECL, the cdr part) of the byte specifier BYTE."
   "Args: (bytespec integer)
 Extracts a byte from INTEGER at the specified byte position, right-justifies
 the byte, and returns the result as an integer."
-  (logandc2 (ash integer (- (byte-position bytespec)))
-            (- (ash 1 (byte-size bytespec)))))
+  (logand (ash integer (- (byte-position bytespec)))
+	  (lognot (ash -1 (byte-size bytespec)))))
 
 (defun ldb-test (bytespec integer)
   "Args: (bytespec integer)
 Returns T if at least one bit of the specified byte is 1; NIL otherwise."
-  (not (zerop (ldb bytespec integer))))
+  (not (zerop (mask-field bytespec integer))))
 
 (defun mask-field (bytespec integer)
   "Args: (bytespec integer)
 Extracts the specified byte from INTEGER and returns the result as an integer."
-  (ash (ldb bytespec integer) (byte-position bytespec)))
+  (logand (ash (lognot (ash -1 (byte-size bytespec)))
+	       (byte-position bytespec))
+	  integer))
 
 (defun dpb (newbyte bytespec integer)
   "Args: (newbyte bytespec integer)
 Replaces the specified byte of INTEGER with NEWBYTE (an integer) and returns
 the result."
-  (logxor integer
-          (mask-field bytespec integer)
-          (ash (logandc2 newbyte
-                         (- (ash 1 (byte-size bytespec))))
-               (byte-position bytespec))))
+  (let* ((pos (byte-position bytespec))
+	 (size (byte-size bytespec))
+	 (mask (ash (lognot (ash -1 size)) pos)))
+    (logior (logandc2 integer mask)
+	    (logand (ash newbyte pos) mask))))
 
 (defun deposit-field (newbyte bytespec integer)
   "Args: (integer1 bytespec integer2)
 Returns an integer represented by the bit sequence obtained by replacing the
 specified bits of INTEGER2 with the specified bits of INTEGER1."
-  (dpb (ash newbyte (- (byte-position bytespec))) bytespec integer))
+  (let* ((pos (byte-position bytespec))
+	 (size (byte-size bytespec))
+	 (mask (ash (lognot (ash -1 size)) pos)))
+    (logior (logandc2 integer mask)
+	    (logand newbyte mask))))
