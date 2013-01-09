@@ -14,6 +14,14 @@
 (in-package "COMPILER")
 
 (defun c1compiler-typecase (args)
+  (let ((form (first args)))
+    (multiple-value-bind (constantp value)
+	(constant-value-p form *cmp-env*)
+      (when constantp
+	(loop for (type . forms) in (rest args)
+	   when (typep value type)
+	   do (return-from c1compiler-typecase (c1progn forms))
+	   finally (baboon :format-control "COMPILER-TYPECASE form missing a T statement")))))
   (let* ((var-name (pop args))
 	 (var (c1vref var-name))
 	 (first-case (car args)))
