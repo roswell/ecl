@@ -51,13 +51,12 @@
       `(not (zerop (mask-field ,bytespec ,integer)))
       whole))
 
-#+(or)
-(define-compiler-macro mask-field (&whole bytespec integer)
+(define-compiler-macro mask-field (&whole whole bytespec integer)
   (if (inline-bytespec bytespec)
       (let ((size (second bytespec))
 	    (pos (third bytespec)))
 	`(logand (ash (lognot (ash -1 ,size))
-		      (optional-type-assertion ,pos unsigned-byte))
+		      (optional-type-check ,pos unsigned-byte))
 		 ,integer))
       whole))
 
