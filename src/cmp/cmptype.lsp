@@ -204,9 +204,9 @@
       value
       `(assert-type-if-known ,value ,type)))
 
-(defmacro with-let-type-check (triplets &body body &environment env)
+(defmacro with-let*-type-check (triplets &body body &environment env)
   (flet ((wrap (let-or-macro var value body)
-	   `(,let-or-macro ((,var ',value))
+	   `(,let-or-macro ((,var ,value))
 	      ,body)))
     (loop with body = `(progn ,@body)
        for (var value type) in (reverse triplets)
@@ -217,5 +217,5 @@
 		      (if (or (eq new-value env) ; not constant
 			      (not (typep new-value type)))
 			  (wrap 'let var `(assert-type-if-known ,value ,type) body)
-			  (wrap 'symbol-macrolet var value body)))))
+			  (wrap 'symbol-macrolet var (si::maybe-quote value) body)))))
        finally (return body))))
