@@ -46,15 +46,9 @@
 			    (ash ,integer (- %pos))))))))
       whole))
 
-#+(or)
 (define-compiler-macro ldb-test (&whole whole bytespec integer)
   (if (inline-bytespec bytespec)
-      (let* ((size (second bytespec))
-	     (form (if (and (integerp size)
-			    (<= size #.(integer-length most-positive-fixnum)))
-		       'mask-field
-		       'ldb)))
-	`(not (zerop (,form ,bytespec ,integer))))
+      `(not (zerop (mask-field ,bytespec ,integer)))
       whole))
 
 #+(or)
