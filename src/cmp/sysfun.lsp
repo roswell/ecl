@@ -798,11 +798,6 @@
 (def-inline ext:fixnump :always (t) :bool "ECL_FIXNUMP(#0)")
 (def-inline ext:fixnump :always (fixnum) :bool "1")
 
-(def-inline c::ldb1 :always (fixnum fixnum fixnum) :fixnum
- "((((~((cl_fixnum)-1 << (#0))) << (#1)) & (cl_fixnum)(#2)) >> (#1))")
-(def-inline c::ldb1 :always (fixnum fixnum fixnum) t
- "ecl_make_fixnum((((~((cl_fixnum)-1 << (#0))) << (#1)) & (cl_fixnum)(#2)) >> (#1))")
-
 ;; Functions only available with threads
 #+threads
 (def-inline mp:lock-count :unsafe (mp:lock) fixnum "((#0)->lock.count)")
