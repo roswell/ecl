@@ -176,23 +176,40 @@ cl_eval(cl_object form)
 }
 
 @(defun constantp (arg &optional env)
-	cl_object flag;
+	cl_object value;
 @
+  AGAIN:
 	switch (ecl_t_of(arg)) {
 	case t_list:
 		if (Null(arg)) {
-			flag = ECL_T;
-		} else if (CAR(arg) == @'quote') {
-			flag = ECL_T;
-		} else {
-			flag = ECL_NIL;
+			value = ECL_T;
+			break;
 		}
+		if (ECL_CONS_CAR(arg) == @'quote') {
+			value = ECL_T;
+			break;
+		}
+		/*
+		value = cl_macroexpand(2, arg, env);
+		if (value != arg) {
+			arg = value;
+			goto AGAIN;
+		}
+		*/
+		value = ECL_NIL;
 		break;
 	case t_symbol:
-		flag = (arg->symbol.stype & ecl_stp_constant) ? ECL_T : ECL_NIL;
-		break;
+		value = cl_macroexpand(2, arg, env);
+		if (value != arg) {
+			arg = value;
+			goto AGAIN;
+		}
+		if (!(arg->symbol.stype & ecl_stp_constant)) {
+			value = ECL_NIL;
+			break;
+		}
 	default:
-		flag = ECL_T;
+		value = ECL_T;
 	}
-	@(return flag)
+	@(return value)
 @)
