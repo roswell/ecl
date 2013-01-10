@@ -174,9 +174,8 @@
       (subtypep 't type)
     (cond ((and trivial valid)
 	   value)
-	  ((and (constantp value)
-		(typep value type))
-	   value)
+	  ((multiple-value-setq (valid value) (constant-value-p value env))
+	   (si::maybe-quote value))
 	  (t
 	   (with-clean-symbols (%value)
 	     `(let* ((%value ,value))
@@ -204,18 +203,9 @@
       value
       `(assert-type-if-known ,value ,type)))
 
-(defmacro with-let*-type-check (triplets &body body &environment env)
-  (flet ((wrap (let-or-macro var value body)
-	   `(,let-or-macro ((,var ,value))
-	      ,body)))
-    (loop with body = `(progn ,@body)
-       for (var value type) in (reverse triplets)
-       do (setf body
-		(if (policy-assume-right-type)
-		    (wrap 'symbol-macrolet var value body)
-		    (let ((new-value (extract-constant-value value env)))
-		      (if (or (eq new-value env) ; not constant
-			      (not (typep new-value type)))
-			  (wrap 'let var `(assert-type-if-known ,value ,type) body)
-			  (wrap 'symbol-macrolet var (si::maybe-quote value) body)))))
-       finally (return body))))
+(defmacro with-let*-type-check (triplets &body body)
+  `(let* ,(loop for (var value type) in triplets
+	     collect `(,var (assert-type-if-known ,value ,type)))
+     (declare (:read-only ,@(mapcar #'car triplets)))
+     ,@body))
+
