@@ -176,40 +176,88 @@ cl_eval(cl_object form)
 }
 
 @(defun constantp (arg &optional env)
-	cl_object value;
 @
-  AGAIN:
-	switch (ecl_t_of(arg)) {
+	return si_constantp_inner(arg, env);
+@)
+
+cl_object
+si_constantp_inner(cl_object form, cl_object env)
+{
+	const cl_env_ptr the_env = ecl_process_env();
+	cl_object value;
+ AGAIN:
+	switch (ecl_t_of(form)) {
 	case t_list:
-		if (Null(arg)) {
+		if (Null(form)) {
 			value = ECL_T;
 			break;
 		}
-		if (ECL_CONS_CAR(arg) == @'quote') {
+		if (ECL_CONS_CAR(form) == @'quote') {
 			value = ECL_T;
 			break;
 		}
 		/*
-		value = cl_macroexpand(2, arg, env);
-		if (value != arg) {
-			arg = value;
+		value = cl_macroexpand(2, form, env);
+		if (value != form) {
+			form = value;
 			goto AGAIN;
 		}
 		*/
 		value = ECL_NIL;
 		break;
 	case t_symbol:
-		value = cl_macroexpand(2, arg, env);
-		if (value != arg) {
-			arg = value;
+		value = cl_macroexpand(2, form, env);
+		if (value != form) {
+			form = value;
 			goto AGAIN;
 		}
-		if (!(arg->symbol.stype & ecl_stp_constant)) {
+		if (!(form->symbol.stype & ecl_stp_constant)) {
 			value = ECL_NIL;
 			break;
 		}
 	default:
 		value = ECL_T;
 	}
-	@(return value)
-@)
+	ecl_return1(the_env, value);
+}
+
+cl_object
+si_constant_form_value(cl_object form, cl_object env)
+{
+	const cl_env_ptr the_env = ecl_process_env();
+	cl_object value;
+  AGAIN:
+	switch (ecl_t_of(form)) {
+	case t_list:
+		if (Null(form)) {
+			value = ECL_T;
+			break;
+		}
+		if (ECL_CONS_CAR(form) == @'quote') {
+			value = cl_second(form);
+			break;
+		}
+		/*
+		value = cl_macroexpand(2, form, env);
+		if (value != form) {
+			form = value;
+			goto AGAIN;
+		}
+		*/
+	ERROR:
+		FEerror("EXT:CONSTANT-FORM-VALUE invoked with a non-constant form ~A",
+			0, form);
+		break;
+	case t_symbol:
+		value = cl_macroexpand(2, form, env);
+		if (value != form) {
+			form = value;
+			goto AGAIN;
+		}
+		value = ECL_SYM_VAL(the_env, value);
+		break;
+	default:
+		value = form;
+	}
+	ecl_return1(the_env, value);
+}

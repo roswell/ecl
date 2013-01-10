@@ -2319,6 +2319,8 @@ cl_symbols[] = {
 
 {SYS_ "BIND-SIMPLE-RESTARTS","ECL_NAME(si_bind_simple_restarts)"},
 {SYS_ "BIND-SIMPLE-HANDLERS","ECL_NAME(si_bind_simple_handlers)"},
+{EXT_ "CONSTANT-FORM-VALUE","si_constant_form_value"},
+{EXT_ "CONSTANTP-INNER","si_constantp_inner"},
 
 /* Tag for end of list */
 {NULL,NULL}};
