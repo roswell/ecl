@@ -241,7 +241,11 @@
     (with-open-file (s tmp :direction :output
 		       :if-exists :supersede
 		       :if-does-not-exist :create)
-      (format s "(require :cmp)(pprint (ext:getcwd))(load ~S)#+ecl(quit)"
+      (format s "(require :cmp)
+#+ecl(setf c::*suppress-compiler-messages* '(or c::compiler-note c::style-warning))
+(pprint (ext:getcwd))
+(load ~S)
+#+ecl(quit)"
 	      (namestring input)))
     (unwind-protect
 	(progn
