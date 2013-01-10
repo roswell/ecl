@@ -81,7 +81,7 @@ by (documentation 'NAME 'type)."
       (when (and (null lambda-list) (consp body) (null (rest body)))
         (let ((form (first body)))
           (when (constantp form env)
-            (setf function form))))
+            (setf function (ext:maybe-quote (ext:constant-form-value form env))))))
       `(eval-when (:compile-toplevel :load-toplevel :execute)
          ,@(si::expand-set-documentation name 'type doc)
          (do-deftype ',name '(DEFTYPE ,name ,lambda-list ,@body)
