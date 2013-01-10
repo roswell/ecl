@@ -95,14 +95,20 @@
 			   (t
 			    (c1expr `(checked-value ,type ,(first form)))))))
           ;; :read-only variable handling. Beppe
-          (if (read-only-variable-p name other-decls)
-	      (if (global-var-p var)
-		  (cmpwarn "Found :READ-ONLY declaration for global var ~A"
-			   name)
-		  (setf (var-type var) (c1form-primary-type init))))
-          (push var vars)
-          (push init forms)
-          (when (eq let/let* 'LET*) (push-vars var))))
+          (when (read-only-variable-p name other-decls)
+	    (if (global-var-p var)
+		(cmpwarn "Found :READ-ONLY declaration for global var ~A"
+			 name)
+		(setf (var-type var) (c1form-primary-type init)))
+	    (multiple-value-bind (constantp value)
+		(c1form-constant-p init)
+	      (when constantp
+		(cmp-env-register-symbol-macro name (si::maybe-quote value))
+		(setf var nil))))
+	  (when var
+	    (push var vars)
+	    (push init forms)
+	    (when (eq let/let* 'LET*) (push-vars var)))))
       (setf vars (nreverse vars)
             forms (nreverse forms))
       (when (eq let/let* 'LET)
