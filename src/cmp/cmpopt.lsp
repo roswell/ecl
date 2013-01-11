@@ -48,9 +48,11 @@
   (let* ((orig-type type)
 	 aux function
 	 first rest function)
-    (cond ((not (and (constantp type) (setf type (cmp-eval type)) t))
-	   form)
-	  ;; Type is not known
+    ;; Type must be constant to optimize
+    (if (constantp type env)
+	(setf type (ext:constant-form-value type env))
+	(return-from expand-typep form))
+    (cond ;; Type is not known
 	  ((not (known-type-p type))
 	   form)
 	  ;; Variable declared with a given type
@@ -221,10 +223,11 @@
   ;; step. Otherwise the compiler macro will enter an infinite loop.
   (let* ((orig-type type)
 	 first rest)
-    (cond ((not (and (constantp type) (setf type (cmp-eval type))))
-	   form)
-	  ;;
-	  ;; Trivial case
+    ;; Type must be constant to optimize
+    (if (constantp type env)
+	(setf type (ext:constant-form-value type env))
+	(return-from expand-coerce form))
+    (cond ;; Trivial case
 	  ((subtypep 't type)
 	   value)
 	  ;;

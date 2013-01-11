@@ -16,7 +16,7 @@
 
 (defun printer-default-stream (stream env)
   (if (constantp stream env)
-      (let ((value (cmp-eval stream env)))
+      (let ((value (ext:constant-form-value stream env)))
         (case value
           ((nil) '*standard-output*)
           ((t) '*terminal-io*)
@@ -32,7 +32,7 @@
 
 (define-compiler-macro princ (expression &optional stream &environment env)
   (if (constantp expression env)
-      (let ((value (cmp-eval expression env)))
+      (let ((value (ext:constant-form-value expression env)))
         (cond ((eql value #\Newline)
                `(terpri ,stream))
               ((characterp value)

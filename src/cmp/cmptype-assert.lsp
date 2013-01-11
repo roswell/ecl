@@ -98,8 +98,8 @@
 		(eq (first type) 'values))
 	   (c1checked-value (list (values-type-primary-type type)
 				  value)))
-	  ((and (policy-evaluate-forms) (constantp value))
-	   (unless (typep (cmp-eval value) type)
+	  ((and (policy-evaluate-forms) (constantp value *cmp-env*))
+	   (unless (typep (ext:constant-form-value value *cmp-env*) type)
 	     (cmpwarn "Failed type assertion for value ~A and type ~A"
 		      value type))
 	   value)

@@ -46,8 +46,8 @@
 ;;
 
 (define-compiler-macro boole (&whole form op-code op1 op2)
-  (or (and (constantp op-code)
-	   (case (eval op-code)
+  (or (and (constantp op-code *cmp-env*)
+	   (case (ext:constant-form-value op-code *cmp-env*)
 	     (#. boole-clr `(progn ,op1 ,op2 0))
 	     (#. boole-set `(progn ,op1 ,op2 -1))
 	     (#. boole-1 `(prog1 ,op1 ,op2))
