@@ -180,9 +180,10 @@
               (check-vector-in-bounds ,a ,index)
               ,index)))
     (if (policy-type-assertions env)
-	`(let ((%array-index ,index))
-	   (declare (:read-only %array-index))
-	   ,(expansion a '%array-index))
+	(with-clean-symbols (%array-index)
+	  `(let ((%array-index ,index))
+	     (declare (:read-only %array-index))
+	     ,(expansion a '%array-index)))
         index)))
 
 (defun expand-row-major-index (a indices env)
