@@ -250,7 +250,7 @@ extern ECL_API size_t GC_get_total_bytes();
        (legal-fun-name-or-type-error name)
        ;; Then we map onto it.
        (funcall function name))
-      (string (let ((package (find-package name)))
+      (string (let ((package (si:coerce-to-package name)))
                 (do-symbols (symbol package)
                   (when (eq (symbol-package symbol) package)
                     (when (and (fboundp symbol)
@@ -411,7 +411,10 @@ Lisp process."
               "~%These functions were not called:~%~{~<~%~:; ~S~>~}~%"
               (sort no-call-name-list #'string<
                     :key (lambda (name)
-                           (symbol-name name)))))
+                           (symbol-name
+                            (if (consp name)
+                                (cadr name)
+                                name))))))
 
     (values)))
 
