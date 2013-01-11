@@ -158,8 +158,8 @@
                             (mapcar #'slot-definition-name new-local-slotds)))
       (dolist (slot-name discarded-slots)
         (let* ((ndx (position slot-name old-local-slotds :key #'slot-definition-name)))
-          (push (cons slot-name (si::instance-ref old-instance ndx))
-                property-list)))
+          (setf property-list
+		(list* slot-name (si::instance-ref old-instance ndx) property-list))))
       (dolist (new-slot new-local-slotds)
         (let* ((name (slot-definition-name new-slot))
                (old-i (position name old-local-slotds :key #'slot-definition-name)))
