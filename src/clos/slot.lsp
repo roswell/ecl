@@ -119,7 +119,7 @@
 	      (:writer     (push value (getf output :writers)))
 	      (:allocation (setf (getf output :allocation) value))
 	      (:type       (setf (getf output :type) value))
-	      (:documentation  (push value (getf output :documentation)))
+	      (:documentation  (setf (getf output :documentation) value))
 	      (otherwise   (if (or (getf extra option)
 				   (getf options option))
 			       (push value (getf extra option))
