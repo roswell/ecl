@@ -629,7 +629,7 @@ makes it the new value of PLACE.  Returns the new value of PLACE."
     (when (trivial-setf-form place vars stores store-form access-form)
       (return-from push `(setq ,place (cons ,item ,place))))
     ;; The item to be pushed has to be evaluated before the destination
-    (unless (constantp item)
+    (unless (constantp item env)
       (setq vals (cons item vals)
 	    item (gensym)
 	    vars (cons item vars)))
@@ -652,7 +652,7 @@ to MEMBER."
     (when (trivial-setf-form place vars stores store-form access-form)
       (return-from pushnew `(setq ,place (adjoin ,item ,place ,@rest))))
     ;; The item to be pushed has to be evaluated before the destination
-    (unless (constantp item)
+    (unless (constantp item env)
       (setq vals (cons item vals)
 	    item (gensym)
 	    vars (cons item vars)))
