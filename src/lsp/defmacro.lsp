@@ -88,13 +88,17 @@
 	       *current-form*))
       (error "Too few arguments supplied to a inlined lambda form.")))
 
-(defun sys::destructure (vl macro &aux (basis-form (gensym)))
+(defun sys::destructure (vl macro &aux (basis-form (gensym)) (destructure-symbols (list basis-form)))
   (declare (si::c-local)
 	   (special *dl* *arg-check*))
-  (labels ((dm-vl (vl whole macro)
+  (labels ((tempsym ()
+	     (let ((x (gensym)))
+	       (push x destructure-symbols)
+	       x))
+	   (dm-vl (vl whole macro)
 	     (multiple-value-bind (reqs opts rest key-flag keys allow-other-keys auxs)
 		 (si::process-lambda-list vl (if macro 'macro 'destructuring-bind))
-	       (let* ((pointer (gensym))
+	       (let* ((pointer (tempsym))
 		      (cons-pointer `(truly-the cons ,pointer))
 		      (unsafe-car `(car ,cons-pointer))
 		      (unsafe-cdr `(cdr ,cons-pointer))
@@ -125,7 +129,7 @@
 		   (dm-v rest pointer)
 		   (setq no-check t))
 		 (dotimes (i (pop keys))
-		   (let* ((temp (gensym))
+		   (let* ((temp (tempsym))
 			  (k (first keys))
 			  (v (second keys))
 			  (init (third keys))
@@ -157,14 +161,14 @@
 		   ((eq (first v) '&whole)
 		    (let ((whole-var (second v)))
 		      (if (listp whole-var)
-			  (let ((new-whole (gensym)))
+			  (let ((new-whole (tempsym)))
 			    (dm-v new-whole init)
 			    (dm-vl whole-var new-whole nil)
 			    (setq whole-var new-whole))
 			  (dm-v whole-var init))
 		      (dm-vl (cddr v) whole-var nil)))
 		   (t
-		    (let ((temp (gensym)))
+		    (let ((temp (tempsym)))
 		      (push (if init (list temp init) temp) *dl*)
 		      (dm-vl v temp nil))))))
 
@@ -184,7 +188,8 @@
 	    (t (error "The destructuring-lambda-list ~s is not a list." vl)))
       (values (dm-vl vl whole macro) whole
 	      (nreverse *dl*)
-              *arg-check*))))
+              *arg-check*
+	      destructure-symbols))))
 
 ;;; valid lambda-list to DEFMACRO is:
 ;;;
@@ -244,9 +249,10 @@
                 env (second env))
           (setq env (gensym)
                 decls (list* `(declare (ignore ,env)) decls)))
-      (multiple-value-bind (ppn whole dl arg-check)
+      (multiple-value-bind (ppn whole dl arg-check ignorables)
           (destructure vl t)
         (values `(ext::lambda-block ,name (,whole ,env &aux ,@dl)
+				    (declare (ignorable ,@ignorables))
                                     ,@decls 
                                     ,@arg-check
                                     ,@body)
@@ -302,10 +308,11 @@
 (defmacro destructuring-bind (vl list &body body)
   (multiple-value-bind (decls body)
       (find-declarations body)
-    (multiple-value-bind (ppn whole dl arg-check)
+    (multiple-value-bind (ppn whole dl arg-check ignorables)
         (destructure vl nil)
       (declare (ignore ppn))
       `(let* ((,whole ,list) ,@dl)
+	 (declare (ignorable ,@ignorables))
          ,@decls
          ,@arg-check
          ,@body))))
