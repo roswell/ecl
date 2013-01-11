@@ -161,6 +161,7 @@
 (deftype ext:instance ()
   'standard-object)
 
+(proclaim '(notinline ext:constantp-inner ext:constant-form-value))
 
 (eval-when (:compile-toplevel :execute)
 (defparameter +proclamations+ '(
