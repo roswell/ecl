@@ -177,14 +177,12 @@ cl_eval(cl_object form)
 
 @(defun constantp (arg &optional env)
 @
-	return si_constantp_inner(arg, env);
+	return _ecl_funcall3(@'ext::constantp-inner', arg, env);
 @)
 
-cl_object
-si_constantp_inner(cl_object form, cl_object env)
-{
-	const cl_env_ptr the_env = ecl_process_env();
+@(defun ext::constantp-inner (form &optional env)
 	cl_object value;
+@
  AGAIN:
 	switch (ecl_t_of(form)) {
 	case t_list:
@@ -219,13 +217,11 @@ si_constantp_inner(cl_object form, cl_object env)
 		value = ECL_T;
 	}
 	ecl_return1(the_env, value);
-}
+@)
 
-cl_object
-si_constant_form_value(cl_object form, cl_object env)
-{
-	const cl_env_ptr the_env = ecl_process_env();
+@(defun ext::constant-form-value (form &optional env)
 	cl_object value;
+@
   AGAIN:
 	switch (ecl_t_of(form)) {
 	case t_list:
@@ -260,4 +256,4 @@ si_constant_form_value(cl_object form, cl_object env)
 		value = form;
 	}
 	ecl_return1(the_env, value);
-}
+@)

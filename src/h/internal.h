@@ -148,8 +148,8 @@ extern cl_object _ecl_strerror(int code);
 #define _ecl_funcall1(fun) \
 	ecl_function_dispatch(ecl_process_env(), (fun))(0)
 
-extern cl_object si_constantp_inner(cl_object form, cl_object env);
-extern cl_object si_constant_form_value(cl_object form, cl_object env);
+extern cl_object si_constantp_inner _ECL_ARGS((cl_narg narg, cl_object form, ...));
+extern cl_object si_constant_form_value _ECL_ARGS((cl_narg narg, cl_object form, ...));
 
 /* interpreter.d */
 

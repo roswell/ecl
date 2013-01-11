@@ -178,7 +178,7 @@
               (values (or function-name function) gen-bool gen-bool))
 (proclamation compiler-macro-function (function-name &optional environment)
               function)
-(proclamation constantp (t &optional environment) gen-bool :no-side-effects)
+(proclamation constantp (t &optional environment) gen-bool)
 (proclamation eval (form) (values &rest t))
 (proclamation macro-function (symbol &optional environment) function)
 (proclamation macroexpand (form &optional environment) (values form gen-bool))
@@ -190,6 +190,8 @@
 (proclamation si:specialp (symbol) gen-bool :predicate)
 (proclamation si::do-defsetf (symbol (or symbol function)) t)
 (proclamation si::do-define-setf-method (symbol function) t)
+(proclamation ext:constant-form-value (t &optional environment) t)
+(proclamation ext:constantp-inner (t &optional environment) gen-bool)
 
 ;;;
 ;;; 4. TYPES AND CLASSES
