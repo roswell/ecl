@@ -222,6 +222,7 @@ cl_eval(cl_object form)
 @(defun ext::constant-form-value (form &optional env)
 	cl_object value;
 @
+{
   AGAIN:
 	switch (ecl_t_of(form)) {
 	case t_list:
@@ -230,8 +231,7 @@ cl_eval(cl_object form)
 			break;
 		}
 		if (ECL_CONS_CAR(form) == @'quote') {
-			value = cl_second(form);
-			break;
+			return cl_second(form);
 		}
 		/*
 		value = cl_macroexpand(2, form, env);
@@ -255,5 +255,6 @@ cl_eval(cl_object form)
 	default:
 		value = form;
 	}
-	ecl_return1(the_env, value);
+	@(return value);
+}
 @)
