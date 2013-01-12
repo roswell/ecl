@@ -280,11 +280,13 @@ enter_directory(cl_object base_dir, cl_object subdir, bool ignore_if_failure)
         aux = ecl_append(base_dir->pathname.directory, ecl_list1(aux));
         output = cl_make_pathname(4, @':directory', aux, @':defaults', base_dir);
         aux = ecl_namestring(output, ECL_NAMESTRING_FORCE_BASE_STRING);
-        aux->base_string.self[aux->base_string.fillp-1] = 0;
+	/* We remove the trailing '/' from the namestring because the
+	 * POSIX library does not like it. */
+        aux->base_string.self[--aux->base_string.fillp] = 0;
         kind = file_kind((char*)aux->base_string.self, FALSE);
         if (kind == ECL_NIL) {
 		if (ignore_if_failure) return ECL_NIL;
-		FEcannot_open(aux);
+		FEcannot_open(output);
 #ifdef HAVE_LSTAT
         } else if (kind == @':link') {
                 output = cl_truename(ecl_merge_pathnames(si_readlink(aux),
