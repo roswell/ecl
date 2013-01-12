@@ -2321,6 +2321,7 @@ cl_symbols[] = {
 {SYS_ "BIND-SIMPLE-HANDLERS", SI_ORDINARY, ECL_NAME(si_bind_simple_handlers), 2, OBJNULL},
 {EXT_ "CONSTANT-FORM-VALUE", EXT_ORDINARY, si_constant_form_value, -1, OBJNULL},
 {EXT_ "CONSTANTP-INNER", EXT_ORDINARY, si_constantp_inner, -1, OBJNULL},
+{SYS_ "MAKE-BACKQ-VECTOR", SI_ORDINARY, si_make_backq_vector, 3, OBJNULL},
 
 /* Tag for end of list */
 {NULL, CL_ORDINARY, NULL, -1, OBJNULL}};

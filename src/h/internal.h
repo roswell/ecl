@@ -438,6 +438,7 @@ extern void cl_write_object(cl_object x, cl_object stream);
 #else
 #define	RTABSIZE	ECL_CHAR_CODE_LIMIT	/*  read table size  */
 #endif
+extern cl_object si_make_backq_vector(cl_object dim, cl_object data, cl_object stream);
 
 /* package.d */
 

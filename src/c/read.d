@@ -785,40 +785,63 @@ sharp_Y_reader(cl_object in, cl_object c, cl_object d)
  *----------------------------------------------------------------------
  */
 
+cl_object
+si_make_backq_vector(cl_object d, cl_object data, cl_object in)
+{
+	const cl_env_ptr the_env = ecl_process_env();
+	cl_object v, last;
+	cl_index dim, i;
+	if (Null(d)) {
+		dim = ecl_length(data);
+	} else {
+		dim = ecl_fixnum(d);
+	}
+	v = ecl_alloc_simple_vector(dim, ecl_aet_object);
+	for (i = 0, last = ECL_NIL; i < dim; i++) {
+		if (data == ECL_NIL) {
+			/* ... we fill the vector with the last element read (or NIL). */
+			for (; i < dim; i++) {
+				ecl_aset_unsafe(v, i, last);
+			}
+			break;
+		}
+		ecl_aset_unsafe(v, i, last = ecl_car(data));
+		data = ECL_CONS_CDR(data);
+	}
+	unlikely_if (data != ECL_NIL) {
+		if (in != ECL_NIL) {
+			FEreader_error("Vector larger than specified length,"
+				       "~D.", in, 1, d);
+		} else {
+			FEerror("Vector larger than specified length, ~D", 1, d);
+		}
+	}
+	ecl_return1(the_env, v);
+}
+
 static cl_object
 sharp_left_parenthesis_reader(cl_object in, cl_object c, cl_object d)
 {
 	extern int _cl_backq_car(cl_object *);
 	const cl_env_ptr the_env = ecl_process_env();
 	cl_object v;
-	if (ecl_fixnum(ECL_SYM_VAL(the_env, @'si::*backq-level*')) > 0) {
+	unlikely_if (!Null(d) &&
+		     (!ECL_FIXNUMP(d) || ecl_fixnum_minusp(d) ||
+		      ecl_fixnum_greater(d, ecl_make_fixnum(ECL_ARRAY_DIMENSION_LIMIT))))
+	{
+		FEreader_error("Invalid dimension size ~D in #()", in, 1, d);
+	}
+	if (ecl_fixnum_plusp(ECL_SYM_VAL(the_env, @'si::*backq-level*'))) {
 		/* First case: ther might be unquoted elements in the vector.
 		 * Then we just create a form that generates the vector.
 		 */
 		cl_object x = do_read_delimited_list(')', in, 1);
 		cl_index a = _cl_backq_car(&x);
-		unlikely_if (a == APPEND || a == NCONC) {
-			FEreader_error("A ,@ or ,. appeared in an illegal position.",
-				       in, 0);
-                }
 		if (a != QUOTE) {
 			v = cl_list(2, @'si::unquote', 
-				    cl_list(3, @'apply',
-					    cl_list(2, @'quote', @'vector'), x));
-		} else if (Null(d)) {
-			v = _ecl_funcall4(@'make-array', ecl_list1(cl_length(x)),
-					  @':initial-contents', x);
+				    cl_list(4, @'si::make-backq-vector', d, x, ECL_NIL));
 		} else {
-			cl_object last;
-			cl_index l, i;
-			v = _ecl_funcall2(@'make-array', ecl_list1(d));
-			for (i = 0, last = ECL_NIL, l = ecl_fixnum(d); i < l; i++) {
-				if (ECL_CONSP(x)) {
-					last = ECL_CONS_CAR(x);
-					x = ECL_CONS_CDR(x);
-				}
-				ecl_aset_unsafe(v, i, last);
-			}
+			return si_make_backq_vector(d, x, in);
 		}
 	} else if (read_suppress) {
 		/* Second case: *read-suppress* = t, we ignore the data */
@@ -827,19 +850,13 @@ sharp_left_parenthesis_reader(cl_object in, cl_object c, cl_object d)
 	} else if (Null(d)) {
 		/* Third case: no dimension provided. Read a list and
 		   coerce it to vector. */
-		cl_object x = do_read_delimited_list(')', in, 1);
-		v = _ecl_funcall4(@'make-array', cl_list(1, cl_length(x)),
-			    @':initial-contents', x);
+		return si_make_backq_vector(d, do_read_delimited_list(')', in, 1), in);
 	} else {
 		/* Finally: Both dimension and data are provided. The
 		   amount of data cannot exceed the length, but it may
 		   be smaller, and in that case...*/
 		cl_object last;
-		cl_index dim, i;
-                unlikely_if (!ECL_FIXNUMP(d) || ((dim = ecl_fixnum(d)) < 0) ||
-                             (dim > ECL_ARRAY_DIMENSION_LIMIT)) {
-                        FEreader_error("Invalid dimension size ~D in #()", in, 1, d);
-                }
+		cl_index dim = ecl_fixnum(d), i;
 		v = ecl_alloc_simple_vector(dim, ecl_aet_object);
 		for (i = 0, last = ECL_NIL;; i++) {
 			cl_object aux = ecl_read_object_with_delimiter(in, ')', 0,
