@@ -77,14 +77,6 @@
 	      when (si::type= type a-type)
 	      do (return `(,function-name ,object))))
 	  ;;
-	  ;; The following are not real functions, but are expanded by the
-	  ;; compiler into C forms.
-	  ((setf function (assoc type '((SINGLE-FLOAT . SINGLE-FLOAT-P)
-					(SHORT-FLOAT . SHORT-FLOAT-P)
-					(DOUBLE-FLOAT . DOUBLE-FLOAT-P)
-					(LONG-FLOAT . LONG-FLOAT-P))))
-	   `(,(cdr function) ,object))
-	  ;;
 	  ;; Complex types defined with DEFTYPE.
 	  ((and (atom type)
                 (setq function (get-sysprop type 'SI::DEFTYPE-DEFINITION)))

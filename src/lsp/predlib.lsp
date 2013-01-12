@@ -304,6 +304,44 @@ and is not adjustable."
 	   (array-has-fill-pointer-p x)
 	   (array-displacement x))))
 
+(defun ratiop (x)
+  #-ecl-min
+  (ffi::c-inline (x) (t) :bool "type_of(#0) == t_ratio" :one-liner t)
+  #+ecl-min
+  (and (rationalp x) (not (integerp x))))
+
+(defun short-float-p (x)
+  #-ecl-min
+  (ffi::c-inline (x) (t) :bool "type_of(#0) == t_singlefloat" :one-liner t)
+  #+ecl-min
+  (eq (type-of x) 'single-float))
+
+(defun single-float-p (x)
+  #-ecl-min
+  (ffi::c-inline (x) (t) :bool "type_of(#0) == t_singlefloat" :one-liner t)
+  #+ecl-min
+  (eq (type-of x) 'single-float))
+
+(defun double-float-p (x)
+  #-ecl-min
+  (ffi::c-inline (x) (t) :bool "type_of(#0) == t_doublefloat" :one-liner t)
+  #+ecl-min
+  (eq (type-of x) 'double-float))
+
+#+long-float
+(defun long-float-p (x)
+  #-ecl-min
+  (ffi::c-inline (x) (t) :bool "type_of(#0) == t_longfloat" :one-liner t)
+  #+ecl-min
+  (eq (type-of x) 'long-float))
+
+#-long-float
+(defun long-float-p (x)
+  #-ecl-min
+  (ffi::c-inline (x) (t) :bool "type_of(#0) == t_doublefloat" :one-liner t)
+  #+ecl-min
+  (eq (type-of x) 'double-float))
+
 (eval-when (:execute :load-toplevel :compile-toplevel)
   (defconstant +known-typep-predicates+
     '((ARRAY . ARRAYP)
@@ -318,6 +356,7 @@ and is not adjustable."
       (COMPLEX . COMPLEXP)
       (COMPLEX-ARRAY . COMPLEX-ARRAY-P)
       (CONS . CONSP)
+      (DOUBLE-FLOAT . SI:DOUBLE-FLOAT-P)
       (FLOAT . FLOATP)
       (SI:FOREIGN-DATA . SI:FOREIGN-DATA-P)
       (FUNCTION . FUNCTIONP)
@@ -327,10 +366,12 @@ and is not adjustable."
       (KEYWORD . KEYWORDP)
       (LIST . LISTP)
       (LOGICAL-PATHNAME . LOGICAL-PATHNAME-P)
+      (LONG-FLOAT . SI:LONG-FLOAT-P)
       (NIL . CONSTANTLY-NIL)
       (NULL . NULL)
       (NUMBER . NUMBERP)
       (PACKAGE . PACKAGEP)
+      (RATIO . SI:RATIOP)
       (RANDOM-STATE . RANDOM-STATE-P)
       (RATIONAL . RATIONALP)
       (PATHNAME . PATHNAMEP)
@@ -339,6 +380,8 @@ and is not adjustable."
       (SIMPLE-ARRAY . SIMPLE-ARRAY-P)
       (SIMPLE-STRING . SIMPLE-STRING-P)
       (SIMPLE-VECTOR . SIMPLE-VECTOR-P)
+      (SHORT-FLOAT . SI:SHORT-FLOAT-P)
+      (SINGLE-FLOAT . SI:SINGLE-FLOAT-P)
       (STREAM . STREAMP)
       (STRING . STRINGP)
       (STRUCTURE . SYS:STRUCTUREP)
@@ -434,9 +477,9 @@ Returns T if X belongs to TYPE; NIL otherwise."
   (declare (ignore env))
   (cond ((symbolp type)
 	 (let ((f (get-sysprop type 'TYPE-PREDICATE)))
-	   (cond (f (return-from typep (funcall f object)))
-		 ((eq (type-of object) type) (return-from typep t))
-		 (t (setq tp type i nil)))))
+	   (if f
+	       (return-from typep (funcall f object))
+	       (setq tp type i nil))))
 	((consp type)
 	 (setq tp (car type) i (cdr type)))
 	#+clos
@@ -455,11 +498,12 @@ Returns T if X belongs to TYPE; NIL otherwise."
     ((T) t)
     ((NIL) nil)
     (BIGNUM (and (integerp object) (not (si::fixnump object))))
-    (RATIO (eq (type-of object) 'RATIO))
     (STANDARD-CHAR
      (and (characterp object) (standard-char-p object)))
     (INTEGER
      (and (integerp object) (in-interval-p object i)))
+    (RATIO
+     (and (ratiop object) (in-interval-p object i)))
     (RATIONAL
      (and (rationalp object) (in-interval-p object i)))
     (FLOAT
@@ -467,12 +511,12 @@ Returns T if X belongs to TYPE; NIL otherwise."
     (REAL
      (and (or (rationalp object) (floatp object)) (in-interval-p object i)))
     ((SINGLE-FLOAT #-short-float SHORT-FLOAT)
-     (and (eq (type-of object) 'SINGLE-FLOAT) (in-interval-p object i)))
+     (and (si:single-float-p object) (in-interval-p object i)))
     ((DOUBLE-FLOAT #-long-float LONG-FLOAT)
-     (and (eq (type-of object) 'DOUBLE-FLOAT) (in-interval-p object i)))
+     (and (si:double-float-p object) (in-interval-p object i)))
     #+long-float
     (LONG-FLOAT
-     (and (eq (type-of object) 'LONG-FLOAT) (in-interval-p object i)))
+     (and (si:long-float-p object) (in-interval-p object i)))
     (COMPLEX
      (and (complexp object)
           (or (null i)

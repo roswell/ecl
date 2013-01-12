@@ -784,16 +784,16 @@
 
 (def-inline shift<< :always (fixnum fixnum) :fixnum "((#0) << (#1))")
 
-(def-inline short-float-p :always (t) :bool "@0;ECL_SINGLE_FLOAT_P(#0)")
+(def-inline si:short-float-p :always (t) :bool "@0;ECL_SINGLE_FLOAT_P(#0)")
 
-(def-inline single-float-p :always (t) :bool "@0;ECL_SINGLE_FLOAT_P(#0)")
+(def-inline si:single-float-p :always (t) :bool "@0;ECL_SINGLE_FLOAT_P(#0)")
 
-(def-inline double-float-p :always (t) :bool "@0;ECL_DOUBLE_FLOAT_P(#0)")
+(def-inline si:double-float-p :always (t) :bool "@0;ECL_DOUBLE_FLOAT_P(#0)")
 
 #-long-float
-(def-inline long-float-p :always (t) :bool "@0;ECL_DOUBLE_FLOAT_P(#0)")
+(def-inline si:long-float-p :always (t) :bool "@0;ECL_DOUBLE_FLOAT_P(#0)")
 #+long-float
-(def-inline long-float-p :always (t) :bool "@0;ECL_LONG_FLOAT_P(#0)")
+(def-inline si:long-float-p :always (t) :bool "@0;ECL_LONG_FLOAT_P(#0)")
 
 (def-inline ext:fixnump :always (t) :bool "ECL_FIXNUMP(#0)")
 (def-inline ext:fixnump :always (fixnum) :bool "1")
@@ -910,7 +910,8 @@
     find-relative-package package-parent package-children
     ;; predlib.lsp
     upgraded-array-element-type upgraded-complex-part-type typep subtypep coerce
-    do-deftype
+    do-deftype si::ratiop si::single-float-p si::short-float-p si::double-float-p
+    si::long-float-p
     ;; seq.lsp
     make-sequence concatenate map some every notany notevery map-into
     complement

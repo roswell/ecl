@@ -2323,5 +2323,11 @@ cl_symbols[] = {
 {EXT_ "CONSTANTP-INNER", EXT_ORDINARY, si_constantp_inner, -1, OBJNULL},
 {SYS_ "MAKE-BACKQ-VECTOR", SI_ORDINARY, si_make_backq_vector, 3, OBJNULL},
 
+{SYS_ "RATIOP", SI_ORDINARY, ECL_NAME(si_ratiop), 1, OBJNULL},
+{SYS_ "SHORT-FLOAT-P", SI_ORDINARY, ECL_NAME(si_short_float_p), 1, OBJNULL},
+{SYS_ "SINGLE-FLOAT-P", SI_ORDINARY, ECL_NAME(si_single_float_p), 1, OBJNULL},
+{SYS_ "DOUBLE-FLOAT-P", SI_ORDINARY, ECL_NAME(si_double_float_p), 1, OBJNULL},
+{SYS_ "LONG-FLOAT-P", SI_ORDINARY, ECL_NAME(si_long_float_p), 1, OBJNULL},
+
 /* Tag for end of list */
 {NULL, CL_ORDINARY, NULL, -1, OBJNULL}};

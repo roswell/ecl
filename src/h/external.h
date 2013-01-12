@@ -2057,6 +2057,11 @@ extern ECL_API cl_object cl_upgraded_complex_part_type _ECL_ARGS((cl_narg narg, 
 extern ECL_API cl_object cl_typep _ECL_ARGS((cl_narg narg, cl_object V1, cl_object V2, ...));
 extern ECL_API cl_object cl_coerce(cl_object V1, cl_object V2);
 extern ECL_API cl_object cl_subtypep _ECL_ARGS((cl_narg narg, cl_object V1, cl_object V2, ...));
+extern ECL_API cl_object si_short_float_p(cl_object t);
+extern ECL_API cl_object si_single_float_p(cl_object t);
+extern ECL_API cl_object si_double_float_p(cl_object t);
+extern ECL_API cl_object si_long_float_p(cl_object t);
+extern ECL_API cl_object si_ratiop(cl_object t);
 
 /* setf.lsp */
 

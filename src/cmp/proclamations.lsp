@@ -571,14 +571,15 @@
 ;; ECL extensions
 (proclamation si:bit-array-op (t t t t) (array bit))
 (proclamation ext:fixnump (t) gen-bool :pure)
+(proclamation si:ratiop (t) gen-bool :pure)
+(proclamation si:short-float-p (t) gen-bool :pure)
+(proclamation si:single-float-p (t) gen-bool :pure)
+(proclamation si:double-float-p (t) gen-bool :pure)
+(proclamation si:long-float-p (t) gen-bool :pure)
 
 ;; Virtual functions added by the compiler
 (proclamation shift>> (*) nil :pure)
 (proclamation shift<< (*) nil :pure)
-(proclamation short-float-p (*) nil :pure)
-(proclamation single-float-p (*) nil :pure)
-(proclamation double-float-p (*) nil :pure)
-(proclamation long-float-p (*) nil :pure)
 (proclamation c::ldb1 (fixnum fixnum fixnum) fixnum :no-side-effects)
 
 
