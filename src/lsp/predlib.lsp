@@ -1165,6 +1165,8 @@ if not possible."
 	       (FUNCTION (OR COMPILED-FUNCTION GENERIC-FUNCTION))
 
 	       (INTEGER (INTEGER * *))
+	       (FIXNUM (INTEGER #.most-negative-fixnum #.most-positive-fixnum))
+	       (BIGNUM (OR (INTEGER * (#.most-negative-fixnum)) (INTEGER (#.most-positive-fixnum) *)))
 	       (SINGLE-FLOAT (SINGLE-FLOAT * *))
 	       (DOUBLE-FLOAT (DOUBLE-FLOAT * *))
 	       #+long-float

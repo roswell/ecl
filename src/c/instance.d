@@ -253,6 +253,8 @@ enum ecl_built_in_classes {
 	ECL_BUILTIN_REAL,
 	ECL_BUILTIN_RATIONAL,
 	ECL_BUILTIN_INTEGER,
+	ECL_BUILTIN_FIXNUM,
+	ECL_BUILTIN_BIGNUM,
 	ECL_BUILTIN_RATIO,
 	ECL_BUILTIN_FLOAT,
 	ECL_BUILTIN_COMPLEX,
@@ -293,8 +295,9 @@ cl_class_of(cl_object x)
 	case t_instance:
 		@(return ECL_CLASS_OF(x))
 	case t_fixnum:
+		index = ECL_BUILTIN_FIXNUM; break;
 	case t_bignum:
-		index = ECL_BUILTIN_INTEGER; break;
+		index = ECL_BUILTIN_BIGNUM; break;
 	case t_ratio:
 		index = ECL_BUILTIN_RATIO; break;
 	case t_singlefloat:

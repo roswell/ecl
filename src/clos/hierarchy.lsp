@@ -204,6 +204,8 @@
 	      (real number)
 	        (rational real)
 		  (integer rational)
+		    (fixnum integer)
+		    (bignum integer)
 		  (ratio rational)
 	        (float real)
 	      (complex number)
