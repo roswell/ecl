@@ -144,3 +144,28 @@ ecl_def_string_array(char_names,static,const) = {
         ecl_def_string_array_elt("Rubout"),
         ecl_def_string_array_elt(0)
 };
+
+/* Linefeed is redundant with one of the names given in
+ * iso_latin_names.h, but it can not be associated to the code
+ * 10, because the default name must be Newline. Similar to
+ * the other codes. */
+ecl_def_string_array(extra_char_names,static,const) = {
+        ecl_def_string_array_elt("Null"), /* 0 */
+	ecl_def_string_array_elt("Bell"), /* 7 */
+	ecl_def_string_array_elt("Bs"), /* 8 */
+	ecl_def_string_array_elt("Ht"), /* 9 */
+	ecl_def_string_array_elt("Linefeed"), /* 10 */
+	ecl_def_string_array_elt("Lf"), /* 10 */
+	ecl_def_string_array_elt("Escape"), /* 27 */
+	ecl_def_string_array_elt("Ff"), /* 12 */
+	ecl_def_string_array_elt("Cr"), /* 13 */
+	ecl_def_string_array_elt("Sp"), /* 32 */
+	ecl_def_string_array_elt("Del") /* 127 */
+};
+
+static const unsigned char extra_char_codes[] = {
+	0, 7, 8, 9, 10, 10, 27, 12, 13, 32, 127
+};
+
+#define extra_char_names_size 11
+

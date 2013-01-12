@@ -310,10 +310,6 @@ ecl_def_ct_base_string(str_multiprocessing,"MULTIPROCESSING",15,static,const);
 #ifdef ECL_CLOS_STREAMS
 ecl_def_ct_base_string(str_gray,"GRAY",4,static,const);
 #endif
-ecl_def_ct_base_string(str_null,"Null",4,static,const);
-ecl_def_ct_base_string(str_linefeed,"Linefeed",8,static,const);
-ecl_def_ct_base_string(str_bell,"Bell",4,static,const);
-ecl_def_ct_base_string(str_escape,"Escape",6,static,const);
 ecl_def_ct_base_string(str_star_dot_star,"*.*",3,static,const);
 ecl_def_ct_base_string(str_rel_star_dot_star,"./*.*",5,static,const);
 ecl_def_ct_base_string(str_empty,"",0,static,const);
@@ -667,14 +663,11 @@ cl_boot(int argc, char **argv)
 		ecl_sethash(name, aux, code);
 		ecl_sethash(code, aux, name);
 	}
-        /* Linefeed is redundant with one of the names given in
-         * iso_latin_names.h, but it can not be associated to the code
-         * 10, because the default name must be Newline. Similar to
-         * the other codes. */
-        ecl_sethash(str_null, aux, ecl_make_fixnum(0));
-        ecl_sethash(str_linefeed, aux, ecl_make_fixnum(10));
-        ecl_sethash(str_bell, aux, ecl_make_fixnum(7));
-        ecl_sethash(str_escape, aux, ecl_make_fixnum(27));
+	for (i = 0; i < extra_char_names_size; i++) {
+                cl_object name = (cl_object)(extra_char_names + i);
+		cl_object code = ecl_make_fixnum(extra_char_codes[i]);
+		ecl_sethash(name, aux, code);
+	}
 
         /*
          * Initialize logical pathname translations. This must come after
