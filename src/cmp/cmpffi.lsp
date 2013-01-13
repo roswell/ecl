@@ -32,8 +32,8 @@
 	(:unsigned-long-long . #.(logcount ffi:c-ulong-long-max))
 	#+long-long
 	(:long-long . #.(logcount ffi:c-ulong-long-max))
-	(:cl-index . #.si::cl-fixnum-bits)
-	(:fixnum . #.(- si::cl-fixnum-bits))
+	(:cl-index . #.(logcount most-positive-fixnum))
+	(:fixnum . #.(- (logcount most-positive-fixnum)))
 	(:uint8-t . 8)
 	(:int8-t . -8)
 	(:uint16-t . 16)
