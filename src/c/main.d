@@ -698,8 +698,8 @@ cl_boot(int argc, char **argv)
 	ECL_SET(@'ffi::c-uint-max', ecl_make_unsigned_integer(UINT_MAX));
 	ECL_SET(@'ffi::c-ulong-max', ecl_make_unsigned_integer(ULONG_MAX));
 #ifdef ecl_long_long_t
-	ECL_SET(@'ffi::c-long-long-max', ecl_make_unsigned_integer(LLONG_MAX));
-	ECL_SET(@'ffi::c-ulong-long-max', ecl_make_unsigned_integer(ULLONG_MAX));
+	ECL_SET(@'ffi::c-long-long-max', ecl_make_long_long(LLONG_MAX));
+	ECL_SET(@'ffi::c-ulong-long-max', ecl_make_ulong_long(ULLONG_MAX));
 #endif
 
 	init_unixtime();
