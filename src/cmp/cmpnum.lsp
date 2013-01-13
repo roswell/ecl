@@ -120,30 +120,49 @@
 (def-type-propagator / (fname op1 &rest others)
   (arithmetic-propagator op1 others 'rational))
 
-(defun inline-binop (expected-type arg1 arg2 integer-result-type
-		     consing non-consing)
-  (if (and (policy-assume-right-type)
-           (c-number-type-p expected-type)
-           (c-number-type-p (inlined-arg-type arg1))
-           (c-number-type-p (inlined-arg-type arg2)))
-      (produce-inline-loc (list arg1 arg2)
-                          (list (lisp-type->rep-type (inlined-arg-type arg1))
-                                (lisp-type->rep-type (inlined-arg-type arg2)))
-                          (list (lisp-type->rep-type expected-type))
-                          non-consing nil t)
-      (produce-inline-loc (list arg1 arg2) '(:object :object) '(:object)
-                          consing nil t)))
+(defun inline-binop (expected-type arg1 arg2 consing non-consing)
+  (let ((arg1-type (inlined-arg-type arg1))
+	(arg2-type (inlined-arg-type arg2)))
+    (if (and (policy-assume-right-type)
+	     (c-number-type-p expected-type)
+	     (c-number-type-p arg1-type)
+	     (c-number-type-p arg2-type))
+	;; The input arguments have to be coerced to a C
+	;; type that fits the output, to avoid overflow which
+	;; would happen if we used say, long c = (int)a * (int)b
+	;; as the output would be an integer, not a long.
+	(let* ((arg1-rep (lisp-type->rep-type arg1-type))
+	       (arg2-rep (lisp-type->rep-type arg2-type))
+	       (out-rep (lisp-type->rep-type expected-type))
+	       (max-rep (elt +all-number-rep-types+
+			     (max (position arg1-rep +all-number-rep-types+)
+				  (position arg2-rep +all-number-rep-types+)
+				  (position out-rep +all-number-rep-types+))
+			     ))
+	       (max-name (rep-type-name max-rep)))
+	  (produce-inline-loc
+	   (list arg1 arg2)
+	   (list arg1-rep arg2-rep)
+	   (list max-rep)
+	   (format nil "(~@[(~A)~]#0)~A(~@[(~A)~]#1)"
+		   (unless (eq arg1-rep max-rep) max-name)
+		   non-consing
+		   (unless (eq arg2-rep max-rep) max-name))
+	   nil t))
+	(produce-inline-loc (list arg1 arg2) '(:object :object) '(:object)
+			    consing nil t))))
 
 (defun inline-arith-unop (expected-type arg1 consing non-consing)
-  (if (and (policy-assume-right-type)
-           (c-number-type-p expected-type)
-           (c-number-type-p (inlined-arg-type arg1)))
-      (produce-inline-loc (list arg1)
-                          (list (lisp-type->rep-type (inlined-arg-type arg1)))
-                          (list (lisp-type->rep-type expected-type))
-                          non-consing nil t)
-      (produce-inline-loc (list arg1) '(:object :object) '(:object)
-                          consing nil t)))
+  (let ((arg1-type (inlined-arg-type arg1)))
+    (if (and (policy-assume-right-type)
+	     (c-number-type-p expected-type)
+	     (c-number-type-p arg1-type))
+	(produce-inline-loc (list arg1)
+			    (list (lisp-type->rep-type arg1-type))
+			    (list (lisp-type->rep-type expected-type))
+			    non-consing nil t)
+	(produce-inline-loc (list arg1) '(:object :object) '(:object)
+			    consing nil t))))
 
 (define-c-inliner + (return-type &rest arguments &aux arg1 arg2)
   (when (null arguments)
@@ -152,8 +171,7 @@
   (when (null arguments)
     (return (inlined-arg-loc arg1)))
   (loop for arg2 = (pop arguments)
-     for result = (inline-binop return-type arg1 arg2 'integer
-				"ecl_plus(#0,#1)" "(#0)+(#1)")
+     for result = (inline-binop return-type arg1 arg2 "ecl_plus(#0,#1)" #\+)
      do (if arguments
 	    (setf arg1 (save-inline-loc result))
 	    (return result))))
@@ -162,8 +180,7 @@
   (when (null arguments)
     (return (inline-arith-unop return-type arg1 "ecl_negate(#0)" "-(#0)")))
   (loop for arg2 = (pop arguments)
-     for result = (inline-binop return-type arg1 arg2 'integer
-				"ecl_minus(#0,#1)" "(#0)-(#1)")
+     for result = (inline-binop return-type arg1 arg2 "ecl_minus(#0,#1)" #\-)
      do (if arguments
 	    (setf arg1 (save-inline-loc result))
 	    (return result))))
@@ -175,8 +192,7 @@
   (when (null arguments)
     (return (inlined-arg-loc arg1)))
   (loop for arg2 = (pop arguments)
-     for result = (inline-binop return-type arg1 arg2 'integer
-				"ecl_times(#0,#1)" "(#0)*(#1)")
+     for result = (inline-binop return-type arg1 arg2 "ecl_times(#0,#1)" #\*)
      do (if arguments
 	    (setf arg1 (save-inline-loc result))
 	    (return result))))
@@ -186,8 +202,7 @@
     (return (inline-arith-unop return-type arg1
                                "ecl_divide(ecl_make_fixnum(1),(#0))" "1/(#0)")))
   (loop for arg2 = (pop arguments)
-     for result = (inline-binop return-type arg1 arg2 'rational
-				"ecl_divide(#0,#1)" "(#0)/(#1)")
+     for result = (inline-binop return-type arg1 arg2 "ecl_divide(#0,#1)" #\/)
      do (if arguments
 	    (setf arg1 (save-inline-loc result))
 	    (return result))))
