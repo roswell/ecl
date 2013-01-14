@@ -56,8 +56,7 @@
 
 
 (defun do-setf-structure-method (access-function type index)
-  (declare (si::c-local)
-	   (optimize (speed 3) (safety 0)))
+  (declare (si::c-local))
   (put-sysprop access-function 'STRUCTURE-ACCESS (cons type index))
   (do-defsetf access-function
     (cond ((or (eq type 'list) (eq type 'vector))
