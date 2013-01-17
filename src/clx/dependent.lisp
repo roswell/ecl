@@ -894,7 +894,7 @@
 
 #+(and ecl threads)
 (defun make-process-lock (name)
-  (mp:make-lock :name name))
+  (mp:make-lock :name name :recursive t))
 
 ;;; HOLDING-LOCK: Execute a body of code with a lock held.
 
