@@ -32,7 +32,7 @@
 ;;; handler -- this breaks some C libraries out there (OS X 32 bit).
 ;;;
 (defun system (cmd-string)
-  (let ((shell (getenv "SHELL"))
+  (let ((shell "/bin/sh")
         (option "-c"))
     #+windows
     (let ((comspec (getenv "ComSpec")))
