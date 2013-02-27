@@ -55,7 +55,6 @@ appeared after a '--'.")
 (defconstant +default-command-arg-rules+
   '(("--help" 0 #0=(progn (princ *help-message* *standard-output*) (quit)) :noloadrc)
     ("-?" 0 #0# :noloadrc)
-    ("-h" 0 #0# :noloadrc)
     ("-norc" 0 nil :noloadrc)
     ("--version" 0
      (progn (setf quit 0)
@@ -106,9 +105,9 @@ appeared after a '--'.")
        (funcall (read-from-string "c::build-program")
 		(or output-file "lisp.exe") :lisp-files '&rest)
        (setq output-file t quit t)))
-    ("-o" 1 (setq output-file 1))
-    ("-c" 1 (setq c-file 1))
-    ("-h" 1 (setq h-file 1))
+    ("-o" &optional (setq output-file 1))
+    ("-c" &optional (setq c-file 1))
+    ("-h" &optional (setq h-file 1))
     ("-data" 1 (setq data-file 1))
     ("-q" 0 (setq verbose nil))
     ("-hp" 0 (setf *relative-package-names* t))
@@ -149,15 +148,24 @@ appeared after a '--'.")
                      stop t)))
       (let ((pattern (copy-tree (third rule)))
             (noptions (second rule)))
-        (unless (equal noptions 0)
-          (when (null option-list)
-            (command-arg-error
-             "Missing argument after command line option ~A.~%"
-	       option))
-          (if (or (eq noptions 'rest) (eq noptions '&rest))
-              (progn (nsubst option-list noptions pattern)
-                     (setf option-list nil))
-              (nsubst (pop option-list) noptions pattern)))
+	(cond ((equal noptions 0)
+	       ;; No extra arguments
+	       )
+	      ((and (equal noptions '&optional)
+		    (or (null option-list)
+			(assoc (first option-list) rules :test #'string=)))
+	       ;; The argument is optional and the next command line option is
+	       ;; either absent or it is a valid command line option
+	       (nsubst t 1 pattern))
+	      ((null option-list)
+	       (command-arg-error
+		"Missing argument after command line option ~A.~%"
+		option))
+	      ((or (eq noptions 'rest) (eq noptions '&rest))
+	       (nsubst option-list noptions pattern)
+	       (setf option-list nil))
+	      (t
+	       (nsubst (pop option-list) 1 pattern)))
         (push pattern commands)))))
 
 (defun process-command-args (&key
