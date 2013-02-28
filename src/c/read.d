@@ -1818,9 +1818,8 @@ cl_readtable_case(cl_object r)
 static void
 error_locked_readtable(cl_object r)
 {
-        cl_error(3,
-                 make_constant_base_string("Change readtable"),
-                 make_constant_base_string("Cannot modify locked readtable ~A."),
+        cl_error(2,
+		 make_constant_base_string("Cannot modify locked readtable ~A."),
                  r);
 }
 
