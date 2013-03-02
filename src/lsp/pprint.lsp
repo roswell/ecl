@@ -1054,6 +1054,7 @@
 
 ;;;; Pprint-dispatch tables.
 
+(defvar *standard-pprint-dispatch*)
 (defvar *initial-pprint-dispatch*)
 
 (defstruct (pprint-dispatch-entry
@@ -1081,6 +1082,8 @@
 
 (defstruct (pprint-dispatch-table
 	    (:print-function %print-pprint-dispatch-table))
+  ;; Are we allowed to modify this table?
+  (read-only-p nil)
   ;;
   ;; A list of all the entries (except for CONS entries below) in highest
   ;; to lowest priority.
@@ -1165,6 +1168,10 @@
 	   (type real priority)
 	   (type pprint-dispatch-table table)
 	   #.+ecl-safe-declarations+)
+  (when (pprint-dispatch-table-read-only-p table)
+    (cerror "Ignore and continue"
+	    "Tried to modified a read-only pprint dispatch table: ~A"
+	    table))
   ;; FIXME! This check should be automatically generated when compiling
   ;; with high enough safety mode.
   (unless (typep priority 'real)
@@ -1596,8 +1603,10 @@
 			   (symbol-function (second magic-form))))
     (setf *initial-pprint-dispatch* *print-pprint-dispatch*)
     )
-  (setf *print-pprint-dispatch* (copy-pprint-dispatch nil))
-  (setf (first (cdr si::+io-syntax-progv-list+)) *initial-pprint-dispatch*)
-  (setf (first (cdr si::+ecl-syntax-progv-list+)) *initial-pprint-dispatch*)
+  (setf *print-pprint-dispatch* (copy-pprint-dispatch nil)
+	*standard-pprint-dispatch* *initial-pprint-dispatch*)
+  (setf (pprint-dispatch-table-read-only-p *standard-pprint-dispatch*) t)
+  (setf (first (cdr si::+io-syntax-progv-list+)) *standard-pprint-dispatch*)
+  (setf (first (cdr si::+ecl-syntax-progv-list+)) *standard-pprint-dispatch*)
   #-ecl-min
   (setf *print-pretty* t))
