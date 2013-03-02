@@ -74,10 +74,11 @@ static cl_index object_size[] = {
 #ifdef ECL_THREADS
 	ROUNDED_SIZE(ecl_process), /* t_process */
 	ROUNDED_SIZE(ecl_lock), /* t_lock */
+	ROUNDED_SIZE(ecl_rwlock), /* t_rwlock */
 	ROUNDED_SIZE(ecl_condition_variable), /* t_condition_variable */
-# ifdef ECL_SEMAPHORES
         ROUNDED_SIZE(ecl_semaphore), /* t_semaphore */
-# endif
+        ROUNDED_SIZE(ecl_barrier), /* t_barrier */
+        ROUNDED_SIZE(ecl_mailbox), /* t_mailbox */
 #endif
 	ROUNDED_SIZE(ecl_codeblock), /* t_codeblock */
 	ROUNDED_SIZE(ecl_foreign), /* t_foreign */
@@ -295,6 +296,23 @@ serialize_one(pool_t pool, cl_object what)
                 buffer->pathname.version =
                         enqueue(pool, buffer->pathname.version);
                 break;
+	case t_random: {
+		buffer->random.value = enqueue(pool, buffer->random.value);
+		break;
+	}
+	case t_bclosure: {
+		buffer->bclosure.code = enqueue(pool, buffer->bclosure.code);
+		buffer->bclosure.lex = enqueue(pool, buffer->bclosure.lex);
+	}
+	case t_bytecodes: {
+		buffer->bytecodes.name = enqueue(pool, buffer->bytecodes.name);
+		buffer->bytecodes.definition = enqueue(pool, buffer->bytecodes.definition);
+		buffer->bytecodes.data = enqueue(pool, buffer->bytecodes.data);
+		buffer->bytecodes.file = enqueue(pool, buffer->bytecodes.file);
+		buffer->bytecodes.file_position = enqueue(pool, buffer->bytecodes.file_position);
+		buffer->bytecodes.code = serialize_bits(pool, buffer->bytecodes.code,
+							buffer->bytecodes.code_size);
+	}
         default:
                 FEerror("Unable to serialize object ~A", 1, what);
         }
@@ -352,6 +370,14 @@ reconstruct_object_ptr(uint8_t *data, cl_index bytes)
         void *output = ecl_alloc(bytes);
         memcpy(output, data, bytes);
         return output;
+}
+
+static uint8_t *
+reconstruct_bytecodes(cl_object o, uint8_t *data)
+{
+	o->bytecodes.code = reconstruct_bits(data, o->bytecodes.code_size);
+	data += o->bytecodes.code_size;
+	return data;
 }
 
 static uint8_t *
@@ -424,6 +450,9 @@ reconstruct_one(uint8_t *data, cl_object *output)
                 *output = (cl_object)data;
                 data += ROUND_TO_WORD(sizeof(struct fake_symbol));
                 break;
+	case t_bytecodes:
+		data = duplicate_object(data, output);
+		data = reconstruct_bytecodes(*output, data);
         default:
                 data = duplicate_object(data, output);
         }
@@ -502,6 +531,22 @@ fixup(cl_object o, cl_object *o_list)
                 o->pathname.version =
                         get_object(o->pathname.version, o_list);
                 break;
+        case t_random:
+                o->random.value = get_object(o->random.value, o_list);
+                break;
+        case t_bclosure:
+                o->bclosure.code = get_object(o->bclosure.code, o_list);
+                o->bclosure.lex = get_object(o->bclosure.lex, o_list);
+		o->bclosure.entry = _ecl_bclosure_dispatch_vararg;
+                break;
+	case t_bytecodes:
+		o->bytecodes.name = get_object(o->bytecodes.name, o_list);
+		o->bytecodes.definition = get_object(o->bytecodes.definition, o_list);
+		o->bytecodes.data = get_object(o->bytecodes.data, o_list);
+		o->bytecodes.file = get_object(o->bytecodes.file, o_list);
+		o->bytecodes.file_position = get_object(o->bytecodes.file_position, o_list);
+		o->bytecodes.entry = _ecl_bytecodes_dispatch_vararg;
+		break;
         default:
                 break;
         }
