@@ -68,22 +68,22 @@
       c::*ecl-library-directory* "@true_builddir@/")
 #-:wants-dlopen 
 (setf c::*ld-flags*
-      "@LDFLAGS@ @LIBPREFIX@ecl.@LIBEXT@ @CORE_LIBS@ @LIBS@ @FASL_LIBS@")
+      "@LDFLAGS@ @LIBPREFIX@ecl.@LIBEXT@ @CORE_LIBS@ @FASL_LIBS@ @LIBS@")
 #+(and :wants-dlopen (not nonstop))
 (setf c::*ld-flags*
       "@LDFLAGS@ @SHAREDPREFIX@ecl.@SHAREDEXT@ @LIBS@"
       c::*ld-shared-flags*
-      "@SHARED_LDFLAGS@ @LDFLAGS@ @SHAREDPREFIX@ecl.@SHAREDEXT@ @LIBS@ @FASL_LIBS@"
+      "@SHARED_LDFLAGS@ @LDFLAGS@ @SHAREDPREFIX@ecl.@SHAREDEXT@ @FASL_LIBS@ @LIBS@"
       c::*ld-bundle-flags*
-      "@BUNDLE_LDFLAGS@ @LDFLAGS@ @SHAREDPREFIX@ecl.@SHAREDEXT@ @LIBS@ @FASL_LIBS@")
+      "@BUNDLE_LDFLAGS@ @LDFLAGS@ @SHAREDPREFIX@ecl.@SHAREDEXT@ @FASL_LIBS@ @LIBS@")
 ;;; FIXME: The nonstop platform does not support soname
 #+(and :wants-dlopen nonstop)
 (setf c::*ld-flags*
       "@LDFLAGS@ -Wld=-l@SHAREDPREFIX@ecl.@SHAREDEXT@ @LIBS@"
       c::*ld-shared-flags*
-      "@SHARED_LDFLAGS@ @LDFLAGS@ -Wld=-l@SHAREDPREFIX@ecl.@SHAREDEXT@ @LIBS@ @FASL_LIBS@"
+      "@SHARED_LDFLAGS@ @LDFLAGS@ -Wld=-l@SHAREDPREFIX@ecl.@SHAREDEXT@ @FASL_LIBS@ @LIBS@"
       c::*ld-bundle-flags*
-      "@BUNDLE_LDFLAGS@ @LDFLAGS@ -Wld=-l@SHAREDPREFIX@ecl.@SHAREDEXT@ @LIBS@ @FASL_LIBS@")
+      "@BUNDLE_LDFLAGS@ @LDFLAGS@ -Wld=-l@SHAREDPREFIX@ecl.@SHAREDEXT@ @FASL_LIBS@ @LIBS@")
 
 ;;;
 ;;; * Avoid name clashes with user supplied code.
@@ -140,7 +140,7 @@
 ;;;
 ;;; We do not need the -rpath flag for the library, nor -lecl.
 ;;;
-(let* ((c::*ld-shared-flags* #-msvc "@SHARED_LDFLAGS@ @LDFLAGS@ @SONAME_LDFLAGS@ @CORE_LIBS@ @LIBS@ @FASL_LIBS@"
+(let* ((c::*ld-shared-flags* #-msvc "@SHARED_LDFLAGS@ @LDFLAGS@ @SONAME_LDFLAGS@ @CORE_LIBS@ @FASL_LIBS@ @LIBS@"
 			     #+msvc "@SHARED_LDFLAGS@ @LDFLAGS@ @STATICLIBS@ @CLIBS@")
        (c::*cc-flags* (concatenate 'string "-DECL_API -I@true_builddir@/c " c::*cc-flags*))
        (extra-args nil))
