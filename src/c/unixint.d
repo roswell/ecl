@@ -1286,7 +1286,6 @@ install_asynchronous_signal_handlers()
 #endif
 #ifdef HAVE_SIGPROCMASK
 	sigset_t *sigmask = cl_core.default_sigmask = &main_thread_sigmask;
-	ecl_process_env()->default_sigmask = &main_thread_sigmask;
         cl_core.default_sigmask_bytes = sizeof(sigset_t);
 # ifdef ECL_THREADS
 	pthread_sigmask(SIG_SETMASK, NULL, sigmask);
@@ -1332,6 +1331,7 @@ static void
 install_signal_handling_thread()
 {
 #if defined(ECL_THREADS) && defined(HAVE_SIGPROCMASK)
+	ecl_process_env()->default_sigmask = &main_thread_sigmask;
 	if (ecl_option_values[ECL_OPT_SIGNAL_HANDLING_THREAD]) {
 		cl_object fun =
 			ecl_make_cfun((cl_objectfn_fixed)
@@ -1399,8 +1399,8 @@ install_synchronous_signal_handlers()
 		}
 		mysignal(signal, process_interrupt_handler);
 #ifdef HAVE_SIGPROCMASK
-                sigdelset((sigset_t *)ecl_process_env()->default_sigmask, signal);
-                pthread_sigmask(SIG_SETMASK, ecl_process_env()->default_sigmask, NULL);
+                sigdelset(&main_thread_sigmask, signal);
+                pthread_sigmask(SIG_SETMASK, &main_thread_sigmask, NULL);
 #endif
 	}
 #endif
