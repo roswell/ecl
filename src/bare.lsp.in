@@ -138,7 +138,7 @@
     (with-open-file (*standard-output* path
                      :direction :output :if-exists :supersede
                      :if-does-not-exist :create)
-      (print `(defsystem ,name :class asdf::prebuilt-system
+      (print `(defsystem ,name :class ,(find-symbol "PREBUILT-SYSTEM" "ASDF")
                          :lib ,library
 			 :depends-on ,depends-on
                          :components ((:compiled-file ,(string name)
