@@ -167,6 +167,9 @@ printer and we should rather use MAKE-LOAD-FORM."
 ;;; ----------------------------------------------------------------------
 
 (defmethod print-object ((instance t) stream)
+  (write instance :stream stream))
+
+(defmethod print-object ((instance standard-object) stream)
   (print-unreadable-object (instance stream)
     (let ((*package* (find-package "CL")))
       (format stream "a ~S"
