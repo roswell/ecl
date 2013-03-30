@@ -91,7 +91,7 @@
 
 (defun emit-inlined-values (form forms)
   (let ((args (c1form-arg 0 form)))
-    (prog1 (emit-inline-form (pop args) forms)
+    (prog1 (emit-inline-form (or (pop args) (c1nil)) forms)
       (loop with *destination* = 'TRASH
          for form in args
          do (c2expr* form)))))
