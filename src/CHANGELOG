@@ -1,66 +1,77 @@
-ECL 12.12.1:
-============
+ECL 13.4.1
+==========
 
-* Visible changes:
+* Compiler fixes:
 
- - delete-file, rename-file, chdir, mkdir and chmod now signal file-errors
+- Minor readability improvements in the C code.
 
- - Upgraded ASDF and incorporated ASDF-BUNDLE instead of ASDF-ECL
+- MULTIPLE-VALUE-BIND compiles using MULTIPLE-VALUE-SETQ and now both are
+  better optimized, generating simpler C code.
 
- - SYS:FUNCTION-LAMBDA-LIST works again with macros and special operators
+- The type checking routine for LOGAND was producing spurious warnings.
 
- - Link in ecl-help to avoid problems in standalone programs that need
-   DOCUMENTATION
+- (LDB (BYTE ...) ...) no longer conses a BYTE object.
 
- - ECL now generates properly indented and more readable C code, with less
-   labels and more standard constructs.
+- Added optimizations for MASK-FIELD, DPB, DEPOSIT-FIELD, LDB-TEST and LDB.
 
-* Bugs fixed:
+- CONSTANT-VALUE-P and friends now use the (compiler) environment.
 
- - Improvements in the performance of the new multiprocessing library.
+- No optional type check generated for constant values.
 
- - Fixes in the queue for POSIX signals, which caused repeated Ctrl-C to get
-   lost.
+- Declare the temporary variables in DEFMACRO/DESTRUCTURING-BIND as IGNORABLE
 
- - Fixed typos that affected support for long long and unsigned long long.
+* Common Lisp fixes:
 
- - The code in ecl_import_current_thread() did not follow the GC API.
+- CONSTANTP now performs a bit more work, macroexpanding forms.
 
- - The version of COMPILE-FILE in the bytecodes compiler did not support
-   :EXTERNAL-FORMAT keyword
+- ENSURE-DIRECTORIES-EXIST ignores the host and device from the original
+  pathname when creating the directories.
 
- - The compiled version of DOTIMES evaluated the output form in the wrong
-   context
+- In FORMAT, printing of floating point numbers could lead to an infinite loop.
 
- - ecl_import_current_thread() did not bind *current-process*
+- ROUND, FLOOR, CEILING and TRUNCATE have been reorganized and work faster with
+  rational numbers.
 
- - Changed the algorithm for computing whether a function is a closure or not,
-   and which type of C closure it needs.
+- (CONCATENATE 'SIMPLE-BASE-STRING ...) returned an ordinary string.
 
- - '. returned SI:|.| while this is an internal way to construct lists
+- MAKE-ARRAY did not terminate strings with #\Null (needed internally by the C
+  code).
 
-* Metaobject protocol:
+- (SETF DOCUMENTATION) did not operate on functions because the function object
+  documentation had precedence over the annotation.
 
- - ECL fully supports the MOP.
+- Added the whole Unicode character database to the C library. This means ECL
+  can now interpret all Unicode character names properly, and print them as
+  well. ECL now also recognizes all ASCII control-character abbreviations
 
- - Completely changed ECL's class bootstrapping protocol, which is now simpler
-   and more effective, .allowing us to have all classes from the very
-   beginning.
+- Print integers using upcase letters for radix > 10
 
- - All accessors are redefined as generic functions after bootstrapping ECL.
+- New functions RATIOP, {SINGLE,SHORT,DOUBLE,LONG}-FLOAT-P help avoid consing
+  in TYPEP
 
- - Standard class accessors are now optimized. This is possible because they
-   rely on slot-value, which as per the MOP cannot be redefined or wrapped
-   around without introducing new metaclasses.
+* CLOS:
 
- - ECL's compiler no longer inlines the accessors to metaobject slots, allowing
-   for redefinition.
+- Added built in classes FIXNUM and BIGNUM.
 
- - (SETF SLOT-VALUE) did not always return the assigned value
+- Eliminated code for accessing slots that was no longer used. Removed also
+  redundant code.
 
- - SLOT-BOUNDP returned extra values in error conditions
+- Updating a class (due to a change in metaclass) now forces updating its
+  children
 
- - SLOT-VALUE-USING-CLASS did not invoke SLOT-UNBOUND
+- UPDATE-INSTANCE-FOR-REDEFINED-CLASS received an alist instead of a
+  propertly-list as last argument
+
+- PRINT-OBJECT did not have a working default for built in classes.
+
+* Extensions:
+
+- SYSTEM must use the POSIX shell, which usually lives in /bin/sh.
+
+- CLX now uses recursive locks.
+
+- ASDF upgraded to version 2.32, including the ASDF-BUNDLE facility, which
+  supersedes ECL's own implementation of precompiled libraries.
 
 ;;; Local Variables: ***
 ;;; mode:text ***
