@@ -26,9 +26,11 @@
  * As of 2006-10-13 I found this bug in GLIBC's tanf, which overflows
  * when the argument is pi/4. It is 2008 and this has not yet been
  * solved. Not only that, but if we use tan() on float, GCC automatically
- * and stupidly forces the use of tanf().
+ * and stupidly forces the use of tanf(). 
+ * As of 2013-03-31, this problem persists also on other platforms, such
+ * as ARM, or PowerPC64. We thus extend the conditional to all GLIB copies.
  */
-#if defined(__amd64__) && defined(__GLIBC__)
+#if /*defined(__amd64__) && */ defined(__GLIBC__)
 static double safe_tanf(double x) { return tan(x); }
 #else
 # define safe_tanf(x) tanf(x)
