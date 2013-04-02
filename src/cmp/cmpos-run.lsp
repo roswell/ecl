@@ -45,7 +45,7 @@
   (let* ((command (format nil "~S~{ ~S~}" program args))
          (base-string-command (si:copy-to-simple-base-string command))
 	 (code (ffi:c-inline (base-string-command) (:object) :int
-                  "system(#0->base_string.self)":one-liner t)))
+                  "system((const char*)(#0->base_string.self))":one-liner t)))
     (values nil code nil)))
 
 (defun safe-run-program (program args)
