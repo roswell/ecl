@@ -187,10 +187,10 @@ extern cl_object si_constant_form_value _ECL_ARGS((cl_narg narg, cl_object form,
         frame->frame.stack = 0;                                         \
         frame->frame.env = env;                                         \
         frame->frame.size = narg;                                       \
-        if (narg < ECL_C_ARGUMENTS_LIMIT) {                                 \
+        if (narg < ECL_C_ARGUMENTS_LIMIT) {                             \
                 va_list args;                                           \
                 va_start(args, lastarg);                                \
-                frame->frame.base = (void*)args;                        \
+                frame->frame.base = (cl_object*)args;                   \
         } else {                                                        \
                 frame->frame.base = env->stack_top - narg;              \
         }
@@ -212,7 +212,7 @@ extern cl_object si_constant_form_value _ECL_ARGS((cl_narg narg, cl_object form,
                         *p = va_arg(args, cl_object);                   \
                         ++p;                                            \
                 }                                                       \
-                frame->frame.stack = (void*)0x1;                        \
+                frame->frame.stack = (cl_object*)0x1;                   \
         } else {                                                        \
                 frame->frame.base = env->stack_top - narg;              \
                 frame->frame.stack = 0;                                 \
