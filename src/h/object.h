@@ -692,8 +692,7 @@ struct ecl_codeblock {
 	int	data_size;
 	cl_object *temp_data;		/*  data vector for toplevel forms */
 	int	temp_data_size;
-	const char *data_text;		/*  string with objects to be defined  */
-	int	data_text_size;
+	const cl_object *data_text;	/*  strings with objects to be defined  */
 	cl_object next;			/*  next codeblock within same library */
 	cl_object name;
 	cl_object links;		/*  list of symbols with linking calls  */

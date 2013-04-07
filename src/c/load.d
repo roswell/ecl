@@ -68,18 +68,9 @@ si_load_binary(cl_object filename, cl_object verbose,
 	}
 
 GO_ON:
-        /* Try to load the compiled data */
-        map = si_get_cdata(filename);
-        array = ecl_nth_value(the_env, 1);
-
-        block->cblock.data_text = (char*)array->base_string.self;
-        block->cblock.data_text_size = array->base_string.dim;
-
 	/* Finally, perform initialization */
 	ecl_init_module(block, (void (*)(cl_object))(block->cblock.entry));
 	output = ECL_NIL;
-
-        si_munmap(map);
 OUTPUT:
 	ecl_return1(the_env, output);
 }

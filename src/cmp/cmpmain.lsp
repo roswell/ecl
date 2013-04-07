@@ -220,7 +220,7 @@ the environment variable TMPDIR to a different value." template))
 #define ECL_CPP_TAG
 #endif
 
-~:{	extern ECL_CPP_TAG void ~*~A(cl_object);~%~}
+~:{	extern ECL_CPP_TAG void ~A(cl_object);~%~}
 
 ")
 
@@ -259,12 +259,9 @@ void ~A(cl_object cblock)
          * circular chain. This disables the garbage collection of
          * the library until _ALL_ functions in all modules are unlinked.
          */
-	cl_index i = 0;
 	cl_object current, next = Cblock;
 ~:{
 	current = ecl_make_codeblock();
-	current->cblock.data_text = next->cblock.data_text + i;
-	current->cblock.data_text_size = i = ~D;
 	current->cblock.next = next;
 	next = current;
 	ecl_init_module(current, ~A);
@@ -471,11 +468,7 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
 	       (flags (guess-ld-flags path)))
 	  ;; We should give a warning that we cannot link this module in
 	  (when flags (push flags ld-flags))
-	  (multiple-value-bind (map array)
-	      (si::get-cdata path)
-	    (push (copy-seq array) submodules-data)
-	    (push (list (length array) init-fn path) submodules)
-	    (si::munmap map)))))
+	  (push (list init-fn path) submodules))))
     (setf submodules-data (apply #'concatenate '(array base-char (*))
                                  submodules-data))
     (setq c-file (open c-name :direction :output :external-format :default))
@@ -486,18 +479,6 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
       (setf init-name (compute-init-name output-name :kind target)))
     (unless main-name
       (setf main-name (compute-main-name output-name :kind target)))
-    (unless (eq target :fasl)
-      (let ((files-with-binary-data
-             (loop for (size name path) in submodules
-                when (plusp size)
-                collect path)))
-        (when files-with-binary-data
-          (error "In C:BUILDER, when building file~%~T~A~%~
-tried to link together files that contained split binary data.~%~
-Unfortunately this is currently not possible. To avoid this~%~
-recompile the files setting C::*COMPILE-IN-CONSTANTS* to T.~%~
-List of offending files:~{~%~T~S~}"
-             output-name files-with-binary-data))))
     (ecase target
       (:program
        (format c-file +lisp-program-init+ init-name "" submodules "")
@@ -535,7 +516,6 @@ List of offending files:~{~%~T~S~}"
        (close c-file)
        (compiler-cc c-name o-name)
        (bundle-cc output-name init-name (list* o-name ld-flags))))
-    (data-binary-dump output-name submodules-data)
     (mapc 'cmp-delete-file tmp-names)
     (cmp-delete-file c-name)
     (cmp-delete-file o-name)
@@ -671,14 +651,12 @@ compiled successfully, returns the pathname of the compiled file"
                             output-file
                             (compile-file-pathname output-file :type :object))))
         (compiler-cc c-pathname o-pathname)
-        (data-binary-dump o-pathname)
         #+dlopen
         (unless system-p
           (push o-pathname to-delete)
           (bundle-cc (si::coerce-to-filename output-file)
                      init-name
-                     (list (si::coerce-to-filename o-pathname)))
-          (data-binary-dump output-file)))
+                     (list (si::coerce-to-filename o-pathname)))))
 
       (if (setf true-output-file (probe-file output-file))
           (cmpprogress "~&;;; Finished compiling ~a.~%;;;~%"
@@ -795,7 +773,6 @@ after compilation."
       (bundle-cc (si::coerce-to-filename so-pathname)
 		 init-name
 		 (list (si::coerce-to-filename o-pathname)))
-      (data-binary-dump so-pathname)
       (cmp-delete-file c-pathname)
       (cmp-delete-file h-pathname)
       (cmp-delete-file o-pathname)

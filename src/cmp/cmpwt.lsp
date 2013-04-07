@@ -83,31 +83,39 @@
 	 "")))
 
 (defun data-c-dump (filename)
-  (with-open-file (stream filename :direction :output :if-does-not-exist :create
-                          :if-exists :supersede :external-format :default)
-    (let ((string (data-dump-array)))
-      (if (and *compile-in-constants* (plusp (length string)))
-	  (let ((*wt-string-size* 0)
-		(*wt-data-column* 80))
-	    (princ "static const char compiler_data_text[] = " stream)
-	    (wt-filtered-data string stream)
-	    (princ #\; stream)
-	    (format stream "~%#define compiler_data_text_size ~D~%"
-		    *wt-string-size*))
-          (princ "#define compiler_data_text NULL
-#define compiler_data_text_size 0" stream)))))
-
-(defun data-binary-dump (filename &optional string)
-  (unless *compile-in-constants*
-    (si::add-cdata filename (or string (data-dump-array)))))
-
-(defun wt-data-begin (stream)
-  nil)
-
-(defun wt-data-end (stream)
-  (princ #\; stream)
-  (format stream "~%#define compiler_data_text_size ~D~%" *wt-string-size*)
-  (setf *wt-string-size* 0))
+  (labels ((produce-strings ()
+	     (loop with string = (data-dump-array)
+		with max-string-size = 65530
+		with l = (length string)
+		for i from 0 below l by max-string-size
+		for this-l = (min (- l i) max-string-size)
+		collect (make-array this-l :displaced-to string
+				    :element-type 'character
+				    :displaced-index-offset i)))
+	   (output-one-c-string (name string stream)
+	     (let* ((*wt-string-size* 0)
+		    (*wt-data-column* 80)
+		    (s (with-output-to-string (stream)
+			 (wt-filtered-data string stream))))
+	       (format stream "static const struct ecl_base_string ~A[] = {
+	(int8_t)t_base_string, 0, ecl_aet_bc, 0,
+	ECL_NIL, (cl_index)~D, (cl_index)~D,
+	(ecl_base_char*)~A };~%"
+		       name *wt-string-size* *wt-string-size* s)
+	       name))
+	   (output-c-strings (strings stream)
+	     (format stream
+		     "~%static const cl_object compiler_data_text[] = {~{~%(cl_object)~A,~}~%NULL};"
+		     (loop for s in strings
+			for i from 1
+			for name = (format nil "compiler_data_text~D" i)
+			collect (output-one-c-string name s stream)))))
+    (with-open-file (stream filename :direction :output :if-does-not-exist :create
+			    :if-exists :supersede :external-format :default)
+      (let ((strings (produce-strings)))
+	(if strings
+	    (output-c-strings strings stream)
+	    (princ "~%#define compiler_data_text NULL" stream))))))
 
 (defun data-empty-loc ()
   (add-object 0 :duplicate t :permanent t))
@@ -124,7 +132,8 @@
 	    (push (make-c1form* 'INIT-FORM :args location (c1expr init-form)) *make-forms*))))))
 
 (defun add-object (object &key (duplicate nil)
-		   (permanent (or (symbolp object) *permanent-data*)))
+		   (permanent (or (symbolp object) *permanent-data*))
+		   (used-p nil))
   ;; FIXME! Currently we have two data vectors and, when compiling
   ;; files, it may happen that a constant is duplicated and stored
   ;; both in VV and VVtemp. This would not be a problem if the
@@ -139,27 +148,33 @@
 	 (next-ndx (length array))
          (forced duplicate)
 	 found)
-    (cond ((add-static-constant object))
-          ((and x duplicate)
-	   (setq x (make-vv :location next-ndx :used-p forced
-                            :permanent-p permanent
-                            :value object))
-	   (vector-push-extend (list object x next-ndx) array)
-	   x)
-	  (x
-	   (second x))
-	  ((and (not duplicate)
-		(symbolp object)
-		(multiple-value-setq (found x) (si::mangle-name object)))
-	   x)
-	  (t
-	   (setq x (make-vv :location next-ndx :used-p forced
-                            :permanent-p permanent
-                            :value object))
-	   (vector-push-extend (list object x next-ndx) array)
-	   (unless *compiler-constants*
-	     (add-load-form object x))
-	   x))))
+    (setq x
+	  (cond ((add-static-constant object))
+		((and x duplicate)
+		 (setq x (make-vv :location next-ndx :used-p forced
+				  :permanent-p permanent
+				  :value object
+				  :used-p t))
+		 (vector-push-extend (list object x next-ndx) array)
+		 x)
+		(x
+		 (second x))
+		((and (not duplicate)
+		      (symbolp object)
+		      (multiple-value-setq (found x) (si::mangle-name object)))
+		 x)
+		(t
+		 (setq x (make-vv :location next-ndx :used-p forced
+				  :permanent-p permanent
+				  :value object
+				  :used-p used-p))
+		 (vector-push-extend (list object x next-ndx) array)
+		 (unless *compiler-constants*
+		   (add-load-form object x))
+		 x)))
+    (when (and used-p (typep x 'vv))
+      (setf (vv-used-p x) t))
+    x))
 
 (defun add-symbol (symbol)
   (add-object symbol :duplicate nil :permanent t))

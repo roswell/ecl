@@ -147,9 +147,7 @@
       (wt-nl "flag->cblock.self_destruct=1;"))
     (wt-nl "flag->cblock.data_size = VM;")
     (wt-nl "flag->cblock.temp_data_size = VMtemp;")
-    (when (or *compile-in-constants* si::*compiler-constants*)
-      (wt-nl "flag->cblock.data_text = compiler_data_text;")
-      (wt-nl "flag->cblock.data_text_size = compiler_data_text_size;"))
+    (wt-nl "flag->cblock.data_text = compiler_data_text;")
     (wt-nl "flag->cblock.cfuns_size = compiler_cfuns_size;")
     (wt-nl "flag->cblock.cfuns = compiler_cfuns;")
     (when ext:*source-location*
@@ -161,7 +159,7 @@
     (wt-nl "#endif")
     ;; With this we ensure creating a constant with the tag
     ;; and the initialization file
-    (wt-nl "Cblock->cblock.data_text = \"" (init-name-tag name) "\";")
+    (wt-nl "Cblock->cblock.data_text = (const cl_object *)\"" (init-name-tag name) "\";")
 
     (wt-nl "VVtemp = Cblock->cblock.temp_data;")
 
@@ -190,8 +188,7 @@
     (if (zerop num-objects)
 	(progn
 	  (wt-nl-h "#undef ECL_DYNAMIC_VV")
-	  (wt-nl-h "#define compiler_data_text \"\"")
-	  (wt-nl-h "#define compiler_data_text_size 0")
+	  (wt-nl-h "#define compiler_data_text 0")
 	  (wt-nl-h "#define VM 0")
 	  (wt-nl-h "#define VMtemp 0")
 	  (wt-nl-h "#define VV NULL"))
@@ -832,7 +829,12 @@
 	      (return-from c1fset
 		(make-c1form* 'SI:FSET :args
 			      fun-object ;; Function object
-			      (add-object (second fname) :permanent t :duplicate t)
+			      (let* ((fname (second fname))
+				     (in-cl-symbols-p (and (symbolp fname)
+							   (si::mangle-name fname))))
+				(add-object fname :permanent t
+					    :duplicate in-cl-symbols-p
+					    :used-p t))
 			      macro
 			      pprint
 			      ;; The c1form, when we do not optimize

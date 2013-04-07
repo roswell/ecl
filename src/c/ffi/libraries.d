@@ -86,7 +86,6 @@ ecl_make_codeblock()
         block->cblock.temp_data = NULL;
         block->cblock.temp_data_size = 0;
         block->cblock.data_text = NULL;
-        block->cblock.data_text_size = 0;
         block->cblock.next = ECL_NIL;
         block->cblock.name = ECL_NIL;
         block->cblock.links = ECL_NIL;

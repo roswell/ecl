@@ -2289,6 +2289,37 @@ init_read(void)
  *
  *----------------------------------------------------------------------
  */
+static cl_object
+make_one_data_stream(const cl_object string)
+{
+#ifdef ECL_UNICODE
+	return si_make_sequence_input_stream(3, string, @':external-format',
+					     @':utf-8');
+#else
+	return ecl_make_string_input_stream(string, 0, ecl_length(string));
+#endif
+}
+
+static cl_object
+make_data_stream(const cl_object *data)
+{
+	if (data == 0 || data[0] == NULL) {
+		return cl_core.null_stream;
+	}
+	if (data[1] == NULL) {
+		return make_one_data_stream(data[0]);
+	} else {
+		cl_object stream_list = ECL_NIL;
+		cl_index i;
+		for (i = 0; data[i]; i++) {
+			cl_object s = make_one_data_stream(data[i]);
+			stream_list = ecl_cons(s, stream_list);
+		}
+		return cl_apply(2, @'make-concatenated-stream',
+				cl_nreverse(stream_list));
+	}
+}
+
 cl_object
 ecl_init_module(cl_object block, void (*entry_point)(cl_object))
 {
@@ -2319,7 +2350,7 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
 		temp_len = block->cblock.temp_data_size;
 		len = perm_len + temp_len;
 
-                if (block->cblock.data_text == 0 || block->cblock.data_text_size == 0) {
+                if (block->cblock.data_text == 0) {
                         if (len) {
                                 /* Code from COMPILE uses data in *compiler-constants* */
                                 cl_object v = ECL_SYM_VAL(env,@'si::*compiler-constants*');
@@ -2357,14 +2388,7 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
                         memcpy(VV, v->vector.self.t, len * sizeof(cl_object));
                 }
 #else
-		in = ecl_make_simple_base_string((char *)block->cblock.data_text,
-						 block->cblock.data_text_size);
-# ifdef ECL_UNICODE
-		in = si_make_sequence_input_stream(3, in, @':external-format',
-						   @':utf-8');
-# else
-		in=ecl_make_string_input_stream(in, 0, block->cblock.data_text_size);
-# endif
+		in = make_data_stream(block->cblock.data_text);
                 progv_list = ECL_SYM_VAL(env, @'si::+ecl-syntax-progv-list+');
                 bds_ndx = ecl_progv(env, ECL_CONS_CAR(progv_list),
                                     ECL_CONS_CDR(progv_list));
