@@ -1,6 +1,10 @@
 ECL 13.4.1
 ==========
 
+* Visible changes:
+
+- ECL now reports #+UNIX for all compatible systems, including *BSD ones.
+
 * Compiler fixes:
 
 - Minor readability improvements in the C code.
