@@ -115,7 +115,7 @@
       (let ((strings (produce-strings)))
 	(if strings
 	    (output-c-strings strings stream)
-	    (princ "~%#define compiler_data_text NULL" stream))))))
+	    (princ "#define compiler_data_text NULL" stream))))))
 
 (defun data-empty-loc ()
   (add-object 0 :duplicate t :permanent t))
