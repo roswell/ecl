@@ -182,7 +182,7 @@
   (setf string (encode-string string external-format))
   (let ((N (length string))
 	(wt-data-column 80))
-    (incf *wt-string-size* (1+ N)) ; 1+ accounts for a blank space
+    (incf *wt-string-size* N) ; 1+ accounts for a blank space
     (format stream (if one-liner "\"" "~%\""))
     (dotimes (i N)
       (decf wt-data-column)
@@ -204,7 +204,7 @@
 	  ((char= x #\")
 	   (princ "\\\"" stream))
 	  (t (princ x stream)))))
-    (princ (if one-liner "\""  " \"") stream)
+    (princ "\"" stream)
     string))
 
 (defun c-filtered-string (string &rest args)
