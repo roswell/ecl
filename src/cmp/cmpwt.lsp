@@ -84,6 +84,12 @@
 
 (defun data-c-dump (filename)
   (labels ((produce-strings ()
+	     ;; Only Windows has a size limit in the strings it creates.
+	     #-windows
+	     (let ((s (data-dump-array)))
+	       (when (plusp (length s))
+		 (list s)))
+	     #+windows
 	     (loop with string = (data-dump-array)
 		with max-string-size = 65530
 		with l = (length string)
