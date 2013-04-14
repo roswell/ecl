@@ -46,6 +46,9 @@ Some highlights of this release are:
   recognizes all valid Unicode (and ASCII) names for the whole range
   of characters, and can print them as well.
 
+* ECL has changed the way it stores compiled data in the C files, so
+  that it works around the limit of 65k characters per string.
+
 See file src/CHANGELOG or browse it online
 
 http://ecls.cvs.sourceforge.net/viewvc/ecls/ecl/src/CHANGELOG?view=markup
