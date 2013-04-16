@@ -970,11 +970,33 @@ cl_hash_table_size(cl_object ht)
 	@(return ecl_make_fixnum(ht->hash.size))
 }
 
+cl_index
+ecl_hash_table_count(cl_object ht)
+{
+	if (ht->hash.weak == ecl_htt_not_weak) {
+		return ht->hash.entries;
+	} else if (ht->hash.size) {
+		cl_index i, j;
+		for (i = j = 0; i < ht->hash.size; i++) {
+			struct ecl_hashtable_entry output =
+				copy_entry(ht->hash.data + i, ht);
+			if (output.key != OBJNULL) {
+				if (++j == ht->hash.size)
+					break;
+			}
+		}
+		return ht->hash.entries = j;
+	} else {
+		return 0;
+	}
+}
+
+
 cl_object
 cl_hash_table_count(cl_object ht)
 {
 	assert_type_hash_table(@[hash-table-count], 1, ht);
-	@(return (ecl_make_fixnum(ht->hash.entries)))
+	@(return (ecl_make_fixnum(ecl_hash_table_count(ht))))
 }
 
 static cl_object

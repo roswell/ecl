@@ -284,6 +284,7 @@
 
 (def-inline gethash :always (t t t) t "ecl_gethash_safe(#0,#1,#2)" :multiple-values nil)
 (def-inline gethash :always (t t) t "ecl_gethash_safe(#0,#1,ECL_NIL)" :multiple-values nil)
+(def-inline hash-table-count :unsafe (hash-table) ext:array-index "ecl_hash_table_count(#0)")
 
 ;; file list.d
 

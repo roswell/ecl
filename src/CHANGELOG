@@ -53,6 +53,11 @@ ECL 13.4.1
 - New functions RATIOP, {SINGLE,SHORT,DOUBLE,LONG}-FLOAT-P help avoid consing
   in TYPEP
 
+- HASH-TABLE-COUNT did not work with weak hashes: it did not update the count
+  of live cells (Note, however, that this function is by definition not
+  reliable, just a hint, since a garbage collection may happen while the count
+  is being computed)
+
 * CLOS:
 
 - Added built in classes FIXNUM and BIGNUM.
