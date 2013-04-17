@@ -54,8 +54,8 @@
 	`(with-let*-type-check ((%size ,(second bytespec) unsigned-byte)
 				(%pos ,(third bytespec) unsigned-byte)
 				(%mask (ash (lognot (ash -1 %size)) %pos) t))
-	     (logior (logandc2 ,integer %mask)
-		     (logand (ash ,newbyte %pos) %mask))))
+	     (logior (logand (ash ,newbyte %pos) %mask)
+		     (logandc2 ,integer %mask))))
       whole))
 
 (define-compiler-macro deposit-field (&whole whole newbyte bytespec integer)
@@ -64,8 +64,9 @@
 	`(with-let*-type-check ((%size ,(second bytespec) unsigned-byte)
 				(%pos ,(third bytespec) unsigned-byte)
 				(%mask (ash (lognot (ash -1 %size)) %pos) t))
-	     (logior (logandc2 ,integer %mask)
-		     (logand ,newbyte %mask))))
+	     (logior (logand ,newbyte %mask)
+		     (logandc2 ,integer %mask)
+		     )))
       whole))
 
 (define-setf-expander ldb (&environment env bytespec int)
