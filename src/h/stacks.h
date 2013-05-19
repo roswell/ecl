@@ -102,7 +102,7 @@ static inline void ecl_bds_push_inl(cl_env_ptr env, cl_object s)
                 if (slot >= env->bds_limit) slot = ecl_bds_overflow();
                 slot->symbol = s;
                 slot->value = *location;
-                if (!(*location)) *location = s->symbol.value;
+                if (*location == ECL_NO_TL_BINDING) *location = s->symbol.value;
         }
 # else
         slot = ++env->bds_top;
@@ -130,7 +130,7 @@ static inline cl_object ecl_bds_read_inl(cl_env_ptr env, cl_object s)
         cl_index index = s->symbol.binding;
         if (index < env->thread_local_bindings_size) {
                 cl_object x = env->thread_local_bindings[index];
-                if (x) return x;
+                if (x != ECL_NO_TL_BINDING) return x;
         }
         return s->symbol.value;
 }
@@ -139,7 +139,7 @@ static inline cl_object ecl_bds_set_inl(cl_env_ptr env, cl_object s, cl_object v
         cl_index index = s->symbol.binding;
         if (index < env->thread_local_bindings_size) {
                 cl_object *location = env->thread_local_bindings + index;
-                if (*location) return *location = v;
+                if (*location != ECL_NO_TL_BINDING) return *location = v;
         }
         return s->symbol.value = v;
 }

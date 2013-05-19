@@ -266,7 +266,7 @@ ecl_extend_bindings_array(cl_object vector)
         cl_index new_size = cl_core.last_var_index * 1.25;
         cl_object new_vector = si_make_vector(ECL_T, ecl_make_fixnum(new_size), ECL_NIL,
                                               ECL_NIL, ECL_NIL, ECL_NIL);
-        si_fill_array_with_elt(new_vector, OBJNULL, ecl_make_fixnum(0), ECL_NIL);
+        si_fill_array_with_elt(new_vector, ECL_NO_TL_BINDING, ecl_make_fixnum(0), ECL_NIL);
         ecl_copy_subarray(new_vector, 0, vector, 0, vector->vector.dim);
         return new_vector;
 }
@@ -330,7 +330,7 @@ ecl_bds_push(cl_env_ptr env, cl_object s)
         if (slot >= env->bds_limit) slot = ecl_bds_overflow();
         slot->symbol = s;
         slot->value = *location;
-	if (!(*location)) *location = s->symbol.value;
+	if (*location != ECL_NO_TL_BINDING) *location = s->symbol.value;
 #else
 	ecl_bds_check(env);
 	(++(env->bds_top))->symbol = s;
@@ -358,7 +358,7 @@ ecl_bds_read(cl_env_ptr env, cl_object s)
         cl_index index = s->symbol.binding;
         if (index < env->thread_local_bindings_size) {
                 cl_object x = env->thread_local_bindings[index];
-                if (x) return x;
+                if (x != ECL_NO_TL_BINDING) return x;
         }
         return s->symbol.value;
 }
@@ -369,7 +369,7 @@ ecl_bds_set(cl_env_ptr env, cl_object s, cl_object value)
         cl_index index = s->symbol.binding;
         if (index < env->thread_local_bindings_size) {
                 cl_object *location = env->thread_local_bindings + index;
-                if (*location)
+                if (*location != ECL_NO_TL_BINDING)
                         return (*location) = value;
         }
 	return (s->symbol.value = value);
