@@ -1,4 +1,4 @@
-ECL 13.4.1
+ECL 13.5.1
 ==========
 
 * Visible changes:
@@ -57,6 +57,12 @@ ECL 13.4.1
   of live cells (Note, however, that this function is by definition not
   reliable, just a hint, since a garbage collection may happen while the count
   is being computed)
+
+- ECL no longer uses :READ-ONLY declarations in the SETF expansions because
+  there is code out there that modifies the values variables.
+
+- PROGV can now 'unbind' variables when the list of variables is longer than
+  the list of values.
 
 * CLOS:
 
