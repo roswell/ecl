@@ -358,9 +358,12 @@ Does not check if the third gang is a single-element list."
 	  ((try-simpler-expansion place vars vals stores newvalue store-form))
 	  (t
 	   `(let* ,(mapcar #'list vars vals)
-	      (declare (:read-only ,@vars))
+	      ;; Unfortunately we cannot do this because there is code out
+	      ;; there that changes the variables and values
+	      ;; (declare (:read-only ,@vars))
 	      (multiple-value-bind ,stores ,newvalue
-		(declare (:read-only ,@stores))
+		;; Same here
+		;; (declare (:read-only ,@stores))
 		,store-form))))))
 
 (defun setf-expand (l env)
