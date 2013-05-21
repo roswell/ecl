@@ -227,7 +227,7 @@ cl_eval(cl_object form)
 	switch (ecl_t_of(form)) {
 	case t_list:
 		if (Null(form)) {
-			value = ECL_T;
+			value = ECL_NIL;
 			break;
 		}
 		if (ECL_CONS_CAR(form) == @'quote') {
