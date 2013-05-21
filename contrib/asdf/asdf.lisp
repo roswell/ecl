@@ -1,5 +1,5 @@
 ;;; -*- mode: Common-Lisp; Base: 10 ; Syntax: ANSI-Common-Lisp -*-
-;;; This is ASDF 2.33.8: Another System Definition Facility.
+;;; This is ASDF 2.33.10: Another System Definition Facility.
 ;;;
 ;;; Feedback, bug reports, and patches are all welcome:
 ;;; please mail to <asdf-devel@common-lisp.net>.
@@ -5421,7 +5421,7 @@ You can compare this string with e.g.: (ASDF:VERSION-SATISFIES (ASDF:ASDF-VERSIO
          ;; "3.4.5.67" would be a development version in the official upstream of 3.4.5.
          ;; "3.4.5.0.8" would be your eighth local modification of official release 3.4.5
          ;; "3.4.5.67.8" would be your eighth local modification of development version 3.4.5.67
-         (asdf-version "2.33.8")
+         (asdf-version "2.33.10")
          (existing-version (asdf-version)))
     (setf *asdf-version* asdf-version)
     (when (and existing-version (not (equal asdf-version existing-version)))
@@ -8565,6 +8565,29 @@ for how to load or compile stuff")
 (asdf:load-system :precompiled-asdf-utils)
 |#
 
+#+(or ecl mkcl)
+(with-upgradability ()
+  (defun uiop-library-file ()
+    (or (and (find-system :uiop nil)
+             (system-source-directory :uiop)
+             (progn
+               (operate 'lib-op :uiop)
+               (output-file 'lib-op :uiop)))
+        (resolve-symlinks* (c::compile-file-pathname "sys:asdf" :type :lib))))
+  (defmethod input-files :around ((o program-op) (c system))
+    (let ((files (call-next-method))
+          (plan (traverse-sub-actions o c :plan-class 'sequential-plan)))
+      (unless (or (and (find-system :uiop nil)
+                       (system-source-directory :uiop)
+                       (plan-operates-on-p plan '("uiop")))
+                  (and (system-source-directory :asdf)
+                       (plan-operates-on-p plan '("asdf"))))
+        (pushnew (uiop-library-file) files :test 'pathname-equal))
+      files))
+
+  (defun register-pre-built-system (name)
+    (register-system (make-instance 'system :name (coerce-name name) :source-file nil))))
+
 #+ecl
 (with-upgradability ()
   (defmethod perform ((o bundle-compile-op) (c system))
@@ -8572,10 +8595,6 @@ for how to load or compile stuff")
            (output (output-files o c))
            (bundle (first output))
            (kind (bundle-type o)))
-      (when (typep o 'program-op)
-	(setf object-files
-	      (list* (c::compile-file-pathname "sys:asdf" :type :lib)
-		     object-files)))
       (when output
         (create-image
          bundle (append object-files (bundle-op-lisp-files o))
@@ -8602,12 +8621,6 @@ for how to load or compile stuff")
   (defun bundle-system (system &rest args &key force (verbose t) version &allow-other-keys)
     (declare (ignore force verbose version))
     (apply #'operate 'binary-op system args)))
-
-#+(or ecl mkcl)
-(with-upgradability ()
-  (defun register-pre-built-system (name)
-    (register-system (make-instance 'system :name (coerce-name name) :source-file nil))))
-
 ;;;; -------------------------------------------------------------------------
 ;;;; Concatenate-source
 
@@ -9017,9 +9030,9 @@ effectively disabling the output translation facility."
 
 (asdf/package:define-package :asdf/backward-interface
   (:recycle :asdf/backward-interface :asdf)
-  (:use :asdf/common-lisp :asdf/driver :asdf/upgrade
+  (:use :uiop/common-lisp :uiop :asdf/upgrade
    :asdf/component :asdf/system :asdf/find-system :asdf/operation :asdf/action
-   :asdf/lisp-build :asdf/operate :asdf/output-translations)
+   :asdf/lisp-action :asdf/operate :asdf/output-translations)
   (:export
    #:*asdf-verbose*
    #:operation-error #:compile-error #:compile-failed #:compile-warned
@@ -9027,8 +9040,7 @@ effectively disabling the output translation facility."
    #:component-load-dependencies
    #:enable-asdf-binary-locations-compatibility
    #:operation-forced
-   #:operation-on-failure
-   #:operation-on-warnings
+   #:operation-on-failure #:operation-on-warnings #:on-failure #:on-warnings
    #:component-property
    #:run-shell-command
    #:system-definition-pathname))
