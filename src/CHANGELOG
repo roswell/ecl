@@ -88,6 +88,9 @@ ECL 13.5.1
 - ASDF upgraded to version 2.32, including the ASDF-BUNDLE facility, which
   supersedes ECL's own implementation of precompiled libraries.
 
+- MAKE-INSTANCE, SHARED-INITIALIZE, REINITIALIZE-INSTANCE now work on
+  structures as well.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

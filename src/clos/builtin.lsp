@@ -73,9 +73,10 @@
 ;;;
 
 ;;; structure-classes cannot be instantiated
-(defmethod make-instance ((class structure-class) &rest initargs)
+(defmethod allocate-instance ((class structure-class) &rest initargs)
   (declare (ignore initargs))
-  (error "The structure-class (~A) cannot be instantiated" class))
+  (apply #'si::make-structure class
+	 (make-list (class-size class)) :initial-element (si::unbound)))
 
 (defmethod finalize-inheritance ((class structure-class))
   (call-next-method)
