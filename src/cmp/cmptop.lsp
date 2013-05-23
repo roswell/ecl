@@ -439,10 +439,10 @@
     (when *aux-closure*
       (wt-nl "volatile struct ecl_cclosure aux_closure;"))
     (wt-nl "cl_object " *volatile*)
-    (dotimes (i *max-env*)
-      (wt "CLV" i)
-      (unless (= (1+ i) *max-env*) (wt ", ")))
-    (wt-nl ";")))
+    (loop for i from 0 below *max-env*
+       for comma = "" then ", "
+       do (wt comma "CLV" i)
+       finally (wt ";"))))
 
 (defun wt-global-entry (fname cfun arg-types return-type)
     (when (and (symbolp fname) (get-sysprop fname 'NO-GLOBAL-ENTRY))
