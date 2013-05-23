@@ -671,7 +671,7 @@
 	(wt-function-locals (fun-closure fun))
 	(wt-nl "const cl_env_ptr cl_env_copy = ecl_process_env();")
 	(when (eq (fun-closure fun) 'CLOSURE)
-	  (wt "cl_object " *volatile* "env0 = cl_env_copy->function->cclosure.env;"))
+	  (wt-nl "cl_object " *volatile* "env0 = cl_env_copy->function->cclosure.env;"))
 	(wt-nl *volatile* "cl_object value0;")
 	(when (policy-check-stack-overflow)
 	  (wt-nl "ecl_cs_check(cl_env_copy,value0);"))
