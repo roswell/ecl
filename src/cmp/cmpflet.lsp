@@ -186,36 +186,39 @@
   (declare (ignore c1form))
   ;; create location for each function which is returned,
   ;; either in lexical:
-  (dolist (fun funs)
-    (let* ((var (fun-var fun)))
-      (when (plusp (var-ref var)) ; the function is returned
-        (unless (member (var-kind var) '(LEXICAL CLOSURE))
-          (setf (var-loc var) (next-lcl))
-	  (maybe-open-inline-block)
-          (wt "cl_object " var ";"))
-	(unless env-grows
-	  (setq env-grows (var-ref-ccb var))))))
-  ;; or in closure environment:
-  (when (env-grows env-grows)
-    (maybe-open-inline-block)
-    (let ((env-lvl *env-lvl*))
-      (wt "volatile cl_object env" (incf *env-lvl*) " = env" env-lvl ";")))
-  ;; bind such locations:
-  ;; - first create binding (because of possible circularities)
-  (dolist (fun funs)
-    (let* ((var (fun-var fun)))
-      (when (plusp (var-ref var))
-	(bind nil var))))
+  (loop with env-grows = nil
+     with closed-vars = '()
+     for fun in funs
+     for var = (fun-var fun)
+     when (plusp (var-ref var))
+     do (case (var-kind var)
+	  ((lexical closure)
+	   (push var closed-vars)
+	   (unless env-grows
+	     (setq env-grows (var-ref-ccb var))))
+	  (otherwise
+	   (maybe-open-inline-block)
+	   (bind (next-lcl) var)
+	   (wt-nl *volatile* "cl_object " var ";")))
+     finally
+     ;; if we have closed variables
+       (when (env-grows env-grows)
+	 (maybe-open-inline-block)
+	 (let ((env-lvl *env-lvl*))
+	   (wt "volatile cl_object env" (incf *env-lvl*) " = env" env-lvl ";")))
+     ;; bind closed locations because of possible circularities
+       (loop for var in closed-vars
+	  do (bind nil var)))
   ;; create the functions:
   (mapc #'new-local funs)
   ;; - then assign to it
-  (dolist (fun funs)
-    (let* ((var (fun-var fun)))
-      (when (plusp (var-ref var))
-	(set-var (list 'MAKE-CCLOSURE fun) var))))
-
+  (loop for fun in funs
+     for var = (fun-var fun)
+     when (plusp (var-ref var))
+     do (set-var (list 'MAKE-CCLOSURE fun) var))
   (c2expr body)
   (close-inline-blocks))
+
 
 (defun c1decl-body (decls body)
   (if (null decls)
