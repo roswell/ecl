@@ -182,7 +182,7 @@
 		 &aux
 		 (*env* *env*)
 		 (*inline-blocks* 0)
-		 (*env-lvl* *env-lvl*) env-grows)
+		 (*env-lvl* *env-lvl*))
   (declare (ignore c1form))
   ;; create location for each function which is returned,
   ;; either in lexical:
@@ -199,13 +199,13 @@
 	  (otherwise
 	   (maybe-open-inline-block)
 	   (bind (next-lcl) var)
-	   (wt-nl *volatile* "cl_object " var ";")))
+	   (wt-nl "cl_object " *volatile* var ";")))
      finally
      ;; if we have closed variables
        (when (env-grows env-grows)
 	 (maybe-open-inline-block)
 	 (let ((env-lvl *env-lvl*))
-	   (wt "volatile cl_object env" (incf *env-lvl*) " = env" env-lvl ";")))
+	   (wt "cl_object " *volatile* "env" (incf *env-lvl*) " = env" env-lvl ";")))
      ;; bind closed locations because of possible circularities
        (loop for var in closed-vars
 	  do (bind nil var)))

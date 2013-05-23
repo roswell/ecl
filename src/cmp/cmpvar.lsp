@@ -452,7 +452,7 @@
 		       (rep-type-name (rep-type-name rep-type))
 		       (temp (make-lcl-var :rep-type rep-type)))
 		  (wt-nl-open-brace)
-                  (wt-nl *volatile* rep-type-name " " temp ";")
+                  (wt-nl rep-type-name " " *volatile* temp ";")
                   (let ((*destination* temp)) (c2expr* form))
                   (push (cons var temp) saves))
                 (let ((*destination* (make-temp-var)))

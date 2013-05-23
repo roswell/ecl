@@ -105,7 +105,7 @@
 
 (defun ctop-write (name h-pathname data-pathname
 			&aux def top-output-string
-			(*volatile* " volatile "))
+			(*volatile* "volatile "))
 
   (setq *top-level-forms* (nreverse *top-level-forms*))
   (wt-nl "#include \"" (brief-namestring h-pathname) "\"")
@@ -266,8 +266,11 @@
 	(*compile-to-linking-call* nil)
 	(*compile-file-truename* (and form (c1form-file form)))
 	(*compile-file-position* (and form (c1form-file-position form))))
-    (let ((body (with-output-to-string (*compiler-output1*)
-		  (t2expr form))))
+    ;; We save the C body of the statement, indented, just in case
+    ;; we need to add a {} section with the environment variables.
+    (let ((body (let ((*opened-c-braces* (1+ *opened-c-braces*)))
+		  (with-output-to-string (*compiler-output1*)
+		    (t2expr form)))))
       (if (or (plusp *max-lex*)
 	      (plusp *max-temp*)
 	      (plusp *max-env*)
@@ -672,7 +675,7 @@
 	(wt-nl "const cl_env_ptr cl_env_copy = ecl_process_env();")
 	(when (eq (fun-closure fun) 'CLOSURE)
 	  (wt-nl "cl_object " *volatile* "env0 = cl_env_copy->function->cclosure.env;"))
-	(wt-nl *volatile* "cl_object value0;")
+	(wt-nl "cl_object " *volatile* "value0;")
 	(when (policy-check-stack-overflow)
 	  (wt-nl "ecl_cs_check(cl_env_copy,value0);"))
 	(when (eq (fun-closure fun) 'CLOSURE)
