@@ -76,7 +76,7 @@
 (defmethod allocate-instance ((class structure-class) &rest initargs)
   (declare (ignore initargs))
   (apply #'si::make-structure class
-	 (make-list (class-size class)) :initial-element (si::unbound)))
+	 (make-list (class-size class) :initial-element (si::unbound))))
 
 (defmethod finalize-inheritance ((class structure-class))
   (call-next-method)
