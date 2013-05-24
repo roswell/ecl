@@ -315,7 +315,7 @@ alloc_process(cl_object name, cl_object initial_bindings)
 	if (initial_bindings != OBJNULL) {
 		array = si_make_vector(ECL_T, ecl_make_fixnum(256),
                                        ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL);
-                si_fill_array_with_elt(array, OBJNULL, ecl_make_fixnum(0), ECL_NIL);
+                si_fill_array_with_elt(array, ECL_NO_TL_BINDING, ecl_make_fixnum(0), ECL_NIL);
 	} else {
 		array = cl_copy_seq(ecl_process_env()->bindings_array);
 	}
