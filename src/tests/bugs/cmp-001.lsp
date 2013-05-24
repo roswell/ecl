@@ -208,7 +208,7 @@
       (prog1 (foo)
 	(delete-file output)
 	(delete-file "aux-cmp-0008.lsp")))
-  "#1=(1 2 3 #<a CMP-007-CLASS> #1#)")
+  "#1=(1 2 3 #<a CL-TEST::CMP-007-CLASS> #1#)")
 
 ;;; Date: 9/06/2006 (Pascal Costanza)
 ;;; Fixed: 13/06/2006 (juanjo)
