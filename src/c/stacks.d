@@ -330,7 +330,7 @@ ecl_bds_push(cl_env_ptr env, cl_object s)
         if (slot >= env->bds_limit) slot = ecl_bds_overflow();
         slot->symbol = s;
         slot->value = *location;
-	if (*location != ECL_NO_TL_BINDING) *location = s->symbol.value;
+	if (*location == ECL_NO_TL_BINDING) *location = s->symbol.value;
 #else
 	ecl_bds_check(env);
 	(++(env->bds_top))->symbol = s;
