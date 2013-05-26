@@ -29,6 +29,10 @@
     (return-from p1propagate (values 'null assumptions)))
   (when (c1form-p form)
     (let* ((*cmp-env* (c1form-env form))
+	   (*compile-file-pathname* (c1form-file form))
+	   (*compile-file-position* (c1form-file-position form))
+	   (*current-form* (c1form-form form))
+	   (*current-toplevel-form* (c1form-toplevel-form form))
            (name (c1form-name form))
            (propagator (gethash name *p1-dispatch-table*)))
       (when propagator
