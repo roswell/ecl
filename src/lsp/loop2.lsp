@@ -932,6 +932,12 @@ collected result will be returned as the value of the LOOP."
   (declare (si::c-local))
   `(return-from ,(car *loop-names*) ,form))
 
+(defun loop-pseudo-body (form)
+  (declare (si::c-local))
+  (cond ((or *loop-emitted-body* *loop-inside-conditional*)
+         (push form *loop-body*))
+        (t (push form *loop-before-loop*) (push form *loop-after-body*))))
+
 (defun loop-emit-body (form)
   (declare (si::c-local))
   (setq *loop-emitted-body* t)
@@ -1173,7 +1179,7 @@ collected result will be returned as the value of the LOOP."
 	(when (loop-tequal (car *loop-source-code*) :end)
 	  (loop-pop-source))
 	(when it-p (setq form `(setq ,it-p ,form)))
-	(loop-emit-body
+	(loop-pseudo-body
 	  `(if ,(if negatep `(not ,form) form)
 	       ,then
 	       ,@else))))))
@@ -1350,7 +1356,7 @@ collected result will be returned as the value of the LOOP."
 
 (defun loop-do-while (negate kwd &aux (form (loop-get-form)))
   (loop-disallow-conditional kwd)
-  (loop-emit-body `(,(if negate 'when 'unless) ,form (go end-loop))))
+  (loop-pseudo-body `(,(if negate 'when 'unless) ,form (go end-loop))))
 
 
 (defun loop-do-with ()
