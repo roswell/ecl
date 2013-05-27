@@ -138,42 +138,6 @@
 
 (defparameter *loop-real-data-type* 'real)
 
-(defun loop-optimization-quantities (env)
-  (declare (si::c-local))
-  ;; The ANSI conditionalization here is for those lisps that implement
-  ;; DECLARATION-INFORMATION (from cleanup SYNTACTIC-ENVIRONMENT-ACCESS).
-  ;; It is really commentary on how this code could be written.  I don't
-  ;; actually expect there to be an ANSI #+-conditional -- it should be
-  ;; replaced with the appropriate conditional name for your
-  ;; implementation/dialect.
-  (declare #-ANSI (ignore env)
-	   #+Genera (values speed space safety compilation-speed debug))
-  #+ANSI (let ((stuff (declaration-information 'optimize env)))
-	   (values (or (cdr (assoc 'speed stuff)) 1)
-		   (or (cdr (assoc 'space stuff)) 1)
-		   (or (cdr (assoc 'safety stuff)) 1)
-		   (or (cdr (assoc 'compilation-speed stuff)) 1)
-		   (or (cdr (assoc 'debug stuff)) 1)))
-  #+CLOE-Runtime (values compiler::time compiler::space
-			 compiler::safety compiler::compilation-speed 1)
-  #-(or ANSI CLOE-Runtime) (values 1 1 1 1 1))
-
-
-;;; The following form takes a list of variables and a form which presumably
-;;; references those variables, and wraps it somehow so that the compiler does not
-;;; consider those variables have been referenced.  The intent of this is that
-;;; iteration variables can be flagged as unused by the compiler, e.g. I in
-;;; (loop for i from 1 to 10 do (print t)), since we will tell it when a usage
-;;; of it is "invisible" or "not to be considered".
-;;;We implicitly assume that a setq does not count as a reference.  That is, the
-;;; kind of form generated for the above loop construct to step I, simplified, is
-;;; `(SETQ I ,(HIDE-VARIABLE-REFERENCES '(I) '(1+ I))).
-(defun hide-variable-references (variable-list form)
-  (declare #-Genera (ignore variable-list) (si::c-local))
-  #+Genera (if variable-list `(compiler:invisible-references ,variable-list ,form) form)
-  #-Genera form)
-
-
 ;;; The following function takes a flag, a variable, and a form which presumably
 ;;; references that variable, and wraps it somehow so that the compiler does not
 ;;; consider that variable to have been referenced.  The intent of this is that
@@ -764,12 +728,6 @@ a LET-like macro, and a SETQ-like macro, which perform LOOP-style destructuring.
 
 (defparameter *loop-iteration-flag-variable*
 	(make-symbol "LOOP-NOT-FIRST-TIME"))
-
-
-(defun loop-code-duplication-threshold (env)
-  (declare (si::c-local))
-  (multiple-value-bind (speed space) (loop-optimization-quantities env)
-    (+ 40 (* (- speed space) 10))))
 
 
 (defmacro loop-body (&environment env
