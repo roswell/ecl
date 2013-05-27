@@ -24,6 +24,9 @@ ECL 13.5.1
 
 - Declare the temporary variables in DEFMACRO/DESTRUCTURING-BIND as IGNORABLE
 
+- ECL now accepts WHILE/IF before FOR/AS, a construct that is not ANSI
+  An example: (LOOP FOR I IN LIST WHILE (SOME-TEST I) FOR X = (F I) ... )
+
 * Common Lisp fixes:
 
 - CONSTANTP now performs a bit more work, macroexpanding forms.

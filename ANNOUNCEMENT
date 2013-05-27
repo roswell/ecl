@@ -51,6 +51,9 @@ Some highlights of this release are:
 
 * ECL now builds with Microsoft Visual Studio C++ 2012.
 
+* We bend the knee and accepted WHILE/IF statements intertwined with
+  FOR/AS, though this is still not valid ANSI Common Lisp.
+
 See file src/CHANGELOG or browse it online
 
 http://ecls.cvs.sourceforge.net/viewvc/ecls/ecl/src/CHANGELOG?view=markup
