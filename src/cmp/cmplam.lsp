@@ -375,7 +375,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
   (labels ((wt-decl (var)
 	     (let ((lcl (next-lcl (var-name var))))
 	       (wt-nl)
-	       (wt (rep-type-name (var-rep-type var)) " " *volatile* lcl ";")
+	       (wt (rep-type->c-name (var-rep-type var)) " " *volatile* lcl ";")
 	       lcl))
 	   (do-decl (var)
 	     (when (local var) ; no LCL needed for SPECIAL or LEX

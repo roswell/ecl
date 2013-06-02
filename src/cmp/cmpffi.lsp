@@ -17,180 +17,46 @@
 ;; REPRESENTATION TYPES
 ;;
 
-;; All known integer C types, sorted by bit size.
-(defconstant +all-integer-rep-type-pairs+
-  '#.(stable-sort
-      '((:byte . -8)
-	(:unsigned-byte . 8)
-	(:unsigned-short . #.(logcount ffi:c-ushort-max))
-	(:short . #.(- (logcount ffi:c-ushort-max)))
-	(:unsigned-int . #.(logcount ffi:c-uint-max))
-	(:int . #.(logcount ffi:c-uint-max))
-	(:unsigned-long . #.(logcount ffi:c-ulong-max))
-	(:long . #.(logcount ffi:c-ulong-max))
-	#+long-long
-	(:unsigned-long-long . #.(logcount ffi:c-ulong-long-max))
-	#+long-long
-	(:long-long . #.(logcount ffi:c-ulong-long-max))
-	(:cl-index . #.(logcount most-positive-fixnum))
-	(:fixnum . #.(- (logcount most-positive-fixnum)))
-	(:uint8-t . 8)
-	(:int8-t . -8)
-	(:uint16-t . 16)
-	(:int16-t . -16)
-	(:uint32-t . 32)
-	(:int32-t . -32)
-	(:uint64-t . 64)
-	(:int64-t . -64))
-      #'< :key #'(lambda (pair) (abs (cdr pair)))))
+(defun rep-type-record-unsafe (rep-type)
+  (gethash rep-type (machine-rep-type-hash *machine*)))
 
-(defconstant +all-integer-rep-types+
-  (mapcar #'car +all-integer-rep-type-pairs+))
+(defun rep-type-record (rep-type)
+  (let ((record (gethash rep-type (machine-rep-type-hash *machine*))))
+    (unless record
+      (cmperr "Not a valid C type name ~A" rep-type))
+    record))
 
-(defconstant +all-number-rep-types+
-  (append +all-integer-rep-types+ '(:float :double :long-double)))
+(defun rep-type->lisp-type (name)
+  (let ((output (rep-type-record-unsafe name)))
+    (cond (output
+	   (rep-type-lisp-type output))
+	  ((lisp-type-p name) name)
+	  (t (error "Unknown representation type ~S" name)))))
 
-(defconstant +representation-types+
-  '(;; These types can be used by ECL to unbox data
-    ;; They are sorted from the most specific, to the least specific one.
-    :byte
-    #1=((signed-byte 8) "int8_t" "ecl_make_int8_t" "ecl_to_int8_t" "ecl_fixnum")
-    :unsigned-byte
-    #2=((unsigned-byte 8) "uint8_t" "ecl_make_uint8_t" "ecl_to_uint8_t" "ecl_fixnum")
-    :fixnum
-    (fixnum "cl_fixnum" "ecl_make_fixnum" "ecl_to_fixnum" "ecl_fixnum")
-    :int
-    ((integer #.ffi:c-int-min #.ffi:c-int-max) "int"
-     "ecl_make_int" "ecl_to_int" "ecl_to_int")
-    :unsigned-int
-    ((integer 0 #.ffi:c-uint-max) "unsigned int"
-     "ecl_make_uint" "ecl_to_uint" "ecl_to_uint")
-    :long
-    ((integer #.ffi:c-long-min #.ffi:c-long-max) "long" "ecl_make_long" "ecl_to_long"
-     #.(if (<= most-negative-fixnum ffi:c-long-min ffi:c-long-max most-positive-fixnum)
-	   "ecl_fixnum"
-	   "ecl_to_long"))
-    :unsigned-long
-    ((integer 0 #.ffi:c-ulong-max) "unsigned long"
-     "ecl_make_ulong" "ecl_to_ulong"
-     #.(if (<= ffi:c-long-max most-positive-fixnum) "ecl_fixnum" "ecl_to_ulong"))
-    :cl-index
-    ((integer 0 #.most-positive-fixnum) "cl_index"
-     "ecl_make_unsigned_integer" "ecl_to_cl_index" "ecl_fixnum")
-    #+long-long
-    :long-long
-    #+long-long
-    ((signed-byte #.ffi:c-long-long-bit) "ecl_long_long_t" "ecl_make_long_long"
-     "ecl_to_long_long" "ecl_to_long_long")
-    #+long-long
-    :unsigned-long-long
-    #+long-long
-    ((unsigned-byte #.ffi:c-long-long-bit) "ecl_ulong_long_t"
-         "ecl_make_ulong_long"
-         "ecl_to_ulong_long" "ecl_to_ulong_long")
-    :float
-    (single-float "float" "ecl_make_single_float" "ecl_to_float" "ecl_single_float")
-    :double
-    (double-float "double" "ecl_make_double_float" "ecl_to_double" "ecl_double_float")
-    #+:long-float
-    :long-double
-    #+:long-float
-    (long-float "long double" "ecl_make_long_float" "ecl_to_long_double" "ecl_long_float")
-    :unsigned-char
-    (base-char "unsigned char" "CODE_CHAR" "ecl_base_char_code" "CHAR_CODE")
-    :char
-    (base-char "char" "CODE_CHAR" "ecl_base_char_code" "CHAR_CODE")
-    :wchar
-    (character "ecl_character" "CODE_CHAR" "ecl_char_code" "CHAR_CODE")
-    #+sse2
-    :float-sse-pack
-    #+sse2
-    (ext:float-sse-pack "__m128" "ecl_make_float_sse_pack"
-     "ecl_unbox_float_sse_pack" "ecl_unbox_float_sse_pack_unsafe")
-    #+sse2
-    :double-sse-pack
-    #+sse2
-    (ext:double-sse-pack "__m128d" "ecl_make_double_sse_pack"
-     "ecl_unbox_double_sse_pack" "ecl_unbox_double_sse_pack_unsafe")
-    #+sse2
-    :int-sse-pack
-    #+sse2
-    (ext:sse-pack #|<-intentional|# "__m128i" "ecl_make_int_sse_pack"
-     "ecl_unbox_int_sse_pack" "ecl_unbox_int_sse_pack_unsafe")
-    :object
-    (t "cl_object")
-    :bool
-    (t "bool" "ecl_make_bool" "ecl_to_bool" "ecl_to_bool")
-    ;; These types are never selected to unbox data.
-    ;; They are here, because we need to know how to print them.
-    :void
-    (nil "void")
-    :pointer-void
-    (si::foreign-data "void*" "ecl_make_pointer" "ecl_to_pointer" "ecl_to_pointer")
-    :cstring
-    (string "char*" "ecl_cstring_to_base_string_or_nil")
-    :char*
-    (string "char*")
-    :int8-t
-    #1#
-    :uint8-t
-    #2#
-    #+:uint16-t
-    :int16-t
-    #+:uint16-t
-    ((unsigned-byte 16) "ecl_int16_t" "ecl_make_int16_t" "ecl_to_int16_t"
-     #.(if (subtypep '(unsigned-byte 16) 'fixnum) "ecl_fixnum" "ecl_to_int32_t"))
-    #+:uint16-t
-    :uint16-t
-    #+:uint16-t
-    ((signed-byte 16) "ecl_uint16_t" "ecl_make_uint16_t" "ecl_to_uint16_t" "ecl_fixnum"
-     #.(if (subtypep '(signed-byte 16) 'fixnum) "ecl_fixnum" "ecl_to_unt16_t"))
-    #+:uint32-t
-    :int32-t
-    #+:uint32-t
-    ((unsigned-byte 32) "ecl_int32_t" "ecl_make_int32_t" "ecl_to_int32_t"
-     #.(if (subtypep '(unsigned-byte 32) 'fixnum) "ecl_fixnum" "ecl_to_int32_t"))
-    #+:uint32-t
-    :uint32-t
-    #+:uint32-t
-    ((signed-byte 32) "ecl_uint32_t" "ecl_make_uint32_t" "ecl_to_uint32_t"
-     #.(if (subtypep '(signed-byte 32) 'fixnum) "ecl_fixnum" "ecl_to_uint32_t"))
-    #+:uint64-t
-    :int64-t
-    #+:uint64-t
-    ((signed-byte 64) "ecl_int64_t" "ecl_make_int64_t" "ecl_to_int64_t" "ecl_to_int64_t")
-    #+:uint64-t
-    :uint64-t
-    #+:uint64-t
-    ((signed-byte 64) "ecl_uint64_t" "ecl_make_uint64_t" "ecl_to_uint64_t" "ecl_to_uint64_t")
-    :short
-    ((integer #.ffi:c-short-min #.ffi:c-short-max) "short"
-     "ecl_make_short" "ecl_to_short" "ecl_fixnum")
-    :unsigned-short
-    ((integer 0 #.ffi:c-ushort-max) "unsigned short"
-     "ecl_make_ushort" "ecl_to_ushort" "ecl_fixnum")
-    ))
-
-(defparameter +representation-type-hash+
-  (loop with table = (make-hash-table :size 128 :test 'eq)
-     for record on +representation-types+ by #'cddr
-     for rep-type = (first record)
-     for information = (second record)
-     do (setf (gethash rep-type table) information)
-     finally (progn
-               #+sse2 ; hack: sse-pack -> int, but int -> int-sse-pack
-               (setf (gethash :int-sse-pack table)
-                     (list* 'ext:int-sse-pack (cdr (gethash :int-sse-pack table))))
-               (return table))))
+(defun lisp-type->rep-type (type)
+  (cond
+    ;; We expect type = NIL when we have no information. Should be fixed. FIXME!
+    ((null type)
+     :object)
+    ((let ((r (rep-type-record-unsafe type)))
+       (and r (rep-type-name r))))
+    (t
+     ;; Find the most specific type that fits
+     (dolist (record (machine-sorted-types *machine*) :object)
+       (when (subtypep type (rep-type-lisp-type record))
+	 (return-from lisp-type->rep-type (rep-type-name record)))))))
 
 (defun c-number-rep-type-p (rep-type)
-  (member rep-type +all-number-rep-types+))
+  (let ((r (rep-type-record-unsafe rep-type)))
+    (and r (rep-type-numberp r))))
 
 (defun c-integer-rep-type-p (rep-type)
-  (member rep-type +all-integer-rep-types+))
+  (let ((r (rep-type-record-unsafe rep-type)))
+    (and r (rep-type-integerp r))))
 
 (defun c-integer-rep-type-bits (rep-type)
-  (abs (cdr (assoc rep-type +all-integer-rep-type-pairs+))))
+  (let ((r (rep-type-record-unsafe rep-type)))
+    (and r (rep-type-bits r))))
 
 (defun c-number-type-p (type)
   (c-number-rep-type-p (lisp-type->rep-type type)))
@@ -201,58 +67,33 @@
 (defun c-integer-type-bits (type)
   (c-number-rep-type-bits (lisp-type->rep-type type)))
 
-(defun rep-type-record (rep-type)
-  (gethash rep-type +representation-type-hash+))
-
-(defun rep-type->lisp-type (rep-type)
-  (let ((output (rep-type-record rep-type)))
-    (cond (output
-           (if (eq rep-type :void) nil
-	     (or (first output)
-	         (cmperr "Representation type ~S cannot be coerced to lisp"
-                         rep-type))))
-	  ((lisp-type-p rep-type) rep-type)
-	  (t (cmperr "Unknown representation type ~S" rep-type)))))
-
-(defun lisp-type->rep-type (type)
-  (cond
-    ;; We expect type = NIL when we have no information. Should be fixed. FIXME!
-    ((null type)
-     :object)
-    ((rep-type-record type)
-     type)
-    (t
-     (do ((l +representation-types+ (cddr l)))
-	 ((endp l) :object)
-       (when (subtypep type (first (second l)))
-	 (return-from lisp-type->rep-type (first l)))))))
-
-(defun rep-type-name (type)
-  (or (second (rep-type-record type))
-      (cmperr "Not a valid C type name ~S" type)))
+(defun rep-type->c-name (type)
+  (rep-type-c-name (rep-type-record type)))
 
 (defun lisp-type-p (type)
   (subtypep type 'T))
 
 (defun wt-to-object-conversion (loc-rep-type loc)
-  (when (and (consp loc) (member (first loc) '(single-float-value
-					       double-float-value
-					       long-float-value)))
+  (when (and (consp loc) (member (first loc)
+				 '(single-float-value
+				   double-float-value
+				   long-float-value)))
     (wt (third loc)) ;; VV index
     (return-from wt-to-object-conversion))
-  (let ((x (third (rep-type-record loc-rep-type))))
-    (unless x
+  (let ((record (rep-type-record loc-rep-type)))
+    (unless record
       (cmperr "Cannot coerce C variable of type ~A to lisp object" loc-rep-type))
-    (wt x "(" loc ")")))
+    (wt (rep-type-to-lisp record) "(" loc ")")))
 
 (defun wt-from-object-conversion (dest-type loc-type rep-type loc)
-  (let ((x (cdddr (rep-type-record rep-type))))
-    (unless x
+  (let* ((record (rep-type-record rep-type))
+	 (coercer (and record (rep-type-from-lisp record))))
+    (unless coercer
       (cmperr "Cannot coerce lisp object to C type ~A" rep-type))
     (wt (if (or (policy-assume-no-errors)
                 (subtypep loc-type dest-type))
-	    (second x)
-            (first x))
+	    (rep-type-from-lisp-unsafe record)
+	    coercer)
 	"(" loc ")")))
 
 ;; ----------------------------------------------------------------------
@@ -275,7 +116,7 @@
   (cond ((eq loc NIL) 'NULL)
 	((var-p loc) (var-type loc))
         ((vv-p loc) (vv-type loc))
-	((si::fixnump loc) 'fixnum)
+	((numberp loc) (lisp-type->rep-type (type-of loc)))
 	((atom loc) 'T)
 	(t
 	 (case (first loc)
@@ -298,7 +139,7 @@
   (cond ((member loc '(NIL T)) :object)
 	((var-p loc) (var-rep-type loc))
         ((vv-p loc) :object)
-	((si::fixnump loc) :fixnum)
+	((numberp loc) (lisp-type->rep-type (type-of loc)))
         ((eq loc 'TRASH) :void)
 	((atom loc) :object)
 	(t
@@ -336,45 +177,35 @@
 	(wt loc)
 	(return-from wt-coerce-loc))
       (case dest-rep-type
-	(#.+all-integer-rep-types+
-	 (case loc-rep-type
-	   (#.+all-number-rep-types+
-	    (wt "(" (rep-type-name dest-rep-type) ")(" loc ")"))
-	   ((:object)
-	    (ensure-valid-object-type dest-type)
-	    (wt-from-object-conversion dest-type loc-type dest-rep-type loc))
-	   (otherwise
-	    (coercion-error))))
 	((:char :unsigned-char :wchar)
 	 (case loc-rep-type
 	   ((:char :unsigned-char :wchar)
-	    (wt "(" (rep-type-name dest-rep-type) ")(" loc ")"))
+	    (wt "(" (rep-type->c-name dest-rep-type) ")(" loc ")"))
 	   ((:object)
 	    (ensure-valid-object-type dest-type)
 	    (wt-from-object-conversion dest-type loc-type dest-rep-type loc))
 	   (otherwise
 	    (coercion-error))))
 	((:float :double :long-double)
-	 (case loc-rep-type
-	   (#.+all-number-rep-types+
-	    (wt "(" (rep-type-name dest-rep-type) ")(" loc ")"))
-	   ((:object)
+	 (cond
+	   ((c-number-rep-type-p loc-rep-type)
+	    (wt "(" (rep-type->c-name dest-rep-type) ")(" loc ")"))
+	   ((eq loc-rep-type :object)
 	    ;; We relax the check a bit, because it is valid in C to coerce
 	    ;; between floats of different types.
 	    (ensure-valid-object-type 'FLOAT)
 	    (wt-from-object-conversion dest-type loc-type dest-rep-type loc))
-	   (otherwise
+	   (t
 	    (coercion-error))))
 	((:bool)
-	 (case loc-rep-type
-	   (#.+all-number-rep-types+ ; number type
+	 (cond
+	   ((c-number-rep-type-p loc-rep-type)
 	    (wt "1"))
-	   ((:object)
+	   ((eq loc-rep-type :object)
 	    (wt "(" loc ")!=ECL_NIL"))
-	   (otherwise
+	   (t
 	    (coercion-error))))
 	((:object)
-         #+sse2
 	 (case loc-rep-type
 	   ((:int-sse-pack :float-sse-pack :double-sse-pack)
             (when (>= (cmp-env-optimization 'speed) 1)
@@ -399,7 +230,6 @@
 	    (wt "(char *)(" loc ")"))
 	   (otherwise
 	    (coercion-error))))
-	#+sse2
 	((:int-sse-pack :float-sse-pack :double-sse-pack)
 	 (case loc-rep-type
 	   ((:object)
@@ -420,7 +250,17 @@
 	   (otherwise
 	    (coercion-error))))
 	(t
-	 (coercion-error))))))
+	 ;; At this point we only have coercions to integers
+	 (cond
+	   ((not (c-integer-rep-type-p dest-rep-type))
+	    (coercion-error))
+	   ((c-number-rep-type-p loc-rep-type)
+	    (wt "(" (rep-type->c-name dest-rep-type) ")(" loc ")"))
+	   ((eq :object loc-rep-type)
+	    (ensure-valid-object-type dest-type)
+	    (wt-from-object-conversion dest-type loc-type dest-rep-type loc))
+	   (t
+	    (coercion-error))))))))
 
 ;;; ----------------------------------------------------------------------
 ;;; C/C++ DECLARATIONS AND HEADERS
@@ -580,7 +420,7 @@
     ;; Otherwise we have to set up variables for holding the output.
     (flet ((make-output-var (type)
 	     (let ((var (make-lcl-var :rep-type type)))
-	       (wt-nl (rep-type-name type) " " var ";")
+	       (wt-nl (rep-type->c-name type) " " var ";")
 	       var)))
       (open-inline-block)
       (let ((output-vars (mapcar #'make-output-var output-rep-type)))
@@ -617,7 +457,7 @@
 	       (wt-nl)
 	       (unless block-opened
 		 (open-inline-block))
-	       (wt (rep-type-name rep-type) " " lcl "= ")
+	       (wt (rep-type->c-name rep-type) " " lcl "= ")
 	       (wt-coerce-loc rep-type loc)
 	       (wt ";")
 	       (setq loc lcl)))

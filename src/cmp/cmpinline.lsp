@@ -38,7 +38,7 @@
         (let ((var (make-lcl-var :rep-type out-rep-type
                                  :type value-type)))
 	  (open-inline-block)
-          (wt-nl (rep-type-name out-rep-type) " " var ";")
+          (wt-nl (rep-type->c-name out-rep-type) " " var ";")
           var))))
 
 (defun save-inline-loc (loc)
@@ -187,7 +187,6 @@
   (some #'c1form-side-effects forms))
 
 (defun function-may-have-side-effects (fname)
-
   (not (get-sysprop fname 'no-side-effects)))
 
 (defun function-may-change-sp (fname)

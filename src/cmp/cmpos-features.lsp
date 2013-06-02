@@ -154,4 +154,4 @@ we are currently using with ECL."
  #-(or windows cygwin) "build:ecl_min")
 
 #+ecl-min
-(format t "~%;;; System features: ~A" *compiler-features*)
+(format t ";;; System features: ~A~%" *compiler-features*)

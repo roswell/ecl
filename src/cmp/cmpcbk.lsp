@@ -92,7 +92,7 @@
 	(t
 	 (cmperr "DEFCALLBACK does not support complex return types such as ~A"
 		 return-type)))
-  (let ((return-type-name (rep-type-name (ffi::%convert-to-arg-type return-type)))
+  (let ((return-type-name (rep-type->c-name (ffi::%convert-to-arg-type return-type)))
 	(fmod (case call-type
 		(:cdecl "")
 		(:stdcall "__stdcall ")
@@ -105,8 +105,8 @@
 	  with comma = ""
 	  do
 	  (progn
-            (wt-h comma (rep-type-name (ffi::%convert-to-arg-type type)) " var" n)
-	    (wt comma (rep-type-name (ffi::%convert-to-arg-type type)) " var" n)
+            (wt-h comma (rep-type->c-name (ffi::%convert-to-arg-type type)) " var" n)
+	    (wt comma (rep-type->c-name (ffi::%convert-to-arg-type type)) " var" n)
 	    (setf comma ",")))
     (wt ")")
     (wt-h ");")

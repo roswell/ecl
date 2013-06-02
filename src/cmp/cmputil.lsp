@@ -384,9 +384,6 @@
   #-new-cmp(rem-sysprop symbol 'c1)
   #-new-cmp(rem-sysprop symbol 'c2)
   #-new-cmp(rem-sysprop symbol 'c1conditional)
-  (rem-sysprop symbol ':inline-always)
-  (rem-sysprop symbol ':inline-unsafe)
-  (rem-sysprop symbol ':inline-safe)
   (rem-sysprop symbol 'lfun))
 
 #-new-cmp

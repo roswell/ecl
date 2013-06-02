@@ -74,7 +74,7 @@
   "A location that is in a C1FORM and can be moved"
   (cond ((member loc '(t nil))
 	 t)
-	((ext:fixnump loc)
+	((numberp loc)
 	 t)
 	((stringp loc)
 	 t)
@@ -107,7 +107,7 @@
          (values t t))
         ((eq loc nil)
          (values t nil))
-        ((ext:fixnump loc)
+        ((numberp loc)
          (values t loc))
         ((vv-p loc)
          (let ((value (vv-value loc)))

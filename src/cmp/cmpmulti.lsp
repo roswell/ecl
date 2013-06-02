@@ -262,7 +262,7 @@
 	    (when (useful-var-p var)
 	      (maybe-open-inline-block)
 	      (bind (next-lcl) var)
-	      (wt-nl (rep-type-name kind) " " *volatile* var ";")
+	      (wt-nl (rep-type->c-name kind) " " *volatile* var ";")
 	      (wt-comment (var-name var)))
 	    (unless env-grows (setq env-grows (var-ref-ccb var))))))
 

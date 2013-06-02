@@ -272,7 +272,7 @@
      do (when kind
 	  (maybe-open-inline-block)
 	  (bind (next-lcl (var-name var)) var)
-	  (wt-nl *volatile* (rep-type-name kind) " " var ";")))
+	  (wt-nl *volatile* (rep-type->c-name kind) " " var ";")))
 
   ;; Create closure bindings for closed-over variables
   (when (some #'var-ref-ccb vars)

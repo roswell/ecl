@@ -120,6 +120,13 @@
 (def-type-propagator / (fname op1 &rest others)
   (arithmetic-propagator op1 others 'rational))
 
+(defun most-generic-number-rep-type (r1 r2)
+  (let* ((r1 (rep-type-record r1))
+	 (r2 (rep-type-record r2)))
+    (rep-type-name (if (< (rep-type-index r1) (rep-type-index r2))
+		       r2
+		       r1))))
+
 (defun inline-binop (expected-type arg1 arg2 consing non-consing)
   (let ((arg1-type (inlined-arg-type arg1))
 	(arg2-type (inlined-arg-type arg2)))
@@ -134,12 +141,10 @@
 	(let* ((arg1-rep (lisp-type->rep-type arg1-type))
 	       (arg2-rep (lisp-type->rep-type arg2-type))
 	       (out-rep (lisp-type->rep-type expected-type))
-	       (max-rep (elt +all-number-rep-types+
-			     (max (position arg1-rep +all-number-rep-types+)
-				  (position arg2-rep +all-number-rep-types+)
-				  (position out-rep +all-number-rep-types+))
-			     ))
-	       (max-name (rep-type-name max-rep)))
+	       (max-rep (most-generic-number-rep-type
+			 (most-generic-number-rep-type
+			  arg1-rep arg2-rep) out-rep))
+	       (max-name (rep-type->c-name max-rep)))
 	  (produce-inline-loc
 	   (list arg1 arg2)
 	   (list arg1-rep arg2-rep)

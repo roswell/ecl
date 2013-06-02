@@ -32,6 +32,7 @@
 
 (defvar *inline-max-depth* 3
   "Depth at which inlining of functions stops.")
+(defvar *inline-information* nil)
 
 ;;; --cmputil.lsp--
 ;;;
@@ -78,6 +79,9 @@ running the compiler. It may be updated by running ")
 ;;; List of callbacks to be generated
 ;;;
 (defvar *callbacks* nil)
+
+;;; --cmpc-machine.lsp, cmpffi.lsp ---
+(defvar *machine* nil)
 
 ;;; --cmpcall.lsp--
 ;;;
@@ -251,6 +255,7 @@ lines are inserted, but the order is preserved")
 ;;;  defining the current function during loading process.
 (defvar *setf-definitions* nil)         ; C forms to find out (SETF fname) locations
 
+(defvar *optimizable-constants* nil)	; (value . c1form) pairs for inlining constants
 (defvar *use-static-constants-p*        ; T/NIL flag to determine whether one may
   #+ecl-min t #-ecl-min nil)            ; generate lisp constant values as C structs
 (defvar *static-constants* nil)		; constants that can be built as C values
@@ -344,5 +349,10 @@ be deleted if they have been opened with LoadLibrary.")
     #+new-cmp
     (*values-type-to-n-types-cache* (values-type-to-n-types-empty-cache))
     (si::*defun-inline-hook* 'maybe-install-inline-function)
+    (*machine* (or *machine* +default-machine+))
+    (*optimizable-constants* (make-optimizable-constants *machine*))
+    (*inline-information*
+     (let ((r (machine-inline-information *machine*)))
+       (if r (si::copy-hash-table r) (make-inline-information *machine*))))
     ))
 

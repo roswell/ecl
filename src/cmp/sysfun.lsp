@@ -22,47 +22,6 @@
 
 (in-package "COMPILER")
 
-(defun def-inline (name safety arg-types return-rep-type expansion
-                   &key (one-liner t) (exact-return-type nil) (inline-or-warn nil)
-		   (multiple-values t)
-                   &aux arg-rep-types)
-  (setf safety
-	(case safety
-	  (:unsafe :inline-unsafe)
-	  (:safe :inline-safe)
-	  (:always :inline-always)
-	  (t (error "In DEF-INLINE, wrong value of SAFETY"))))
-  (setf arg-rep-types
-	(mapcar #'(lambda (x) (if (eq x '*) x (lisp-type->rep-type x)))
-		arg-types))
-  (when (eq return-rep-type t)
-    (setf return-rep-type :object))
-  (when inline-or-warn
-    (put-sysprop name 'should-be-inlined t))
-  (let* ((return-type (if (and (consp return-rep-type)
-                               (eq (first return-rep-type) 'values))
-                          t
-                          (rep-type->lisp-type return-rep-type)))
-         (inline-info
-          (make-inline-info :name name
-                            :arg-rep-types arg-rep-types
-                            :return-rep-type return-rep-type
-                            :return-type return-type
-                            :arg-types arg-types
-                            :exact-return-type exact-return-type
-			    :multiple-values multiple-values
-                            ;; :side-effects (not (get-sysprop name 'no-side-effects))
-                            :one-liner one-liner
-                            :expansion expansion))
-         (previous (get-sysprop name safety)))
-    #+(or)
-    (loop for i in previous
-       when (and (equalp (inline-info-arg-types i) arg-types)
-                 (not (equalp return-type (inline-info-return-type i))))
-       do (format t "~&;;; Redundand inline definition for ~A~&;;; ~<~A~>~&;;; ~<~A~>"
-                  name i inline-info))
-    (put-sysprop name safety (cons inline-info previous))))
-
 (eval-when (:compile-toplevel :execute)
 (defparameter +inline-forms+ '(
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -121,22 +80,16 @@
  "(#0)->vector.self.b8[#1]")
 (def-inline row-major-aref :unsafe ((array ext:integer8) fixnum) :int8-t
  "(#0)->vector.self.i8[#1]")
-#+:uint16-t
 (def-inline row-major-aref :unsafe ((array ext:byte16) fixnum) :uint16-t
  "(#0)->vector.self.b16[#1]")
-#+:uint16-t
 (def-inline row-major-aref :unsafe ((array ext:integer16) fixnum) :int16-t
  "(#0)->vector.self.i16[#1]")
-#+:uint32-t
 (def-inline row-major-aref :unsafe ((array ext:byte32) fixnum) :uint32-t
  "(#0)->vector.self.b32[#1]")
-#+:uint32-t
 (def-inline row-major-aref :unsafe ((array ext:integer32) fixnum) :int32-t
  "(#0)->vector.self.i32[#1]")
-#+:uint64-t
 (def-inline row-major-aref :unsafe ((array ext:byte64) fixnum) :uint64-t
  "(#0)->vector.self.b64[#1]")
-#+:uint64-t
 (def-inline row-major-aref :unsafe ((array ext:integer64) fixnum) :int64-t
  "(#0)->vector.self.i64[#1]")
 (def-inline row-major-aref :unsafe ((array double-float) fixnum) :double
@@ -165,22 +118,16 @@
  "(#0)->vector.self.b8[#1]= #2")
 (def-inline si:row-major-aset :unsafe ((array ext:integer8) fixnum ext:integer8) :int8-t
  "(#0)->vector.self.i8[#1]= #2")
-#+:uint16-t
 (def-inline si:row-major-aset :unsafe ((array ext:byte16) fixnum ext:byte16) :uint16-t
  "(#0)->vector.self.b16[#1]= #2")
-#+:uint16-t
 (def-inline si:row-major-aset :unsafe ((array ext:integer16) fixnum ext:integer16) :int16-t
  "(#0)->vector.self.i16[#1]= #2")
-#+:uint32-t
 (def-inline si:row-major-aset :unsafe ((array ext:byte32) fixnum ext:byte32) :uint32-t
  "(#0)->vector.self.b32[#1]= #2")
-#+:uint32-t
 (def-inline si:row-major-aset :unsafe ((array ext:integer32) fixnum ext:integer32) :int32-t
  "(#0)->vector.self.i32[#1]= #2")
-#+:uint64-t
 (def-inline si:row-major-aset :unsafe ((array ext:byte64) fixnum ext:byte64) :uint64-t
  "(#0)->vector.self.b64[#1]= #2")
-#+:uint64-t
 (def-inline si:row-major-aset :unsafe ((array ext:integer64) fixnum ext:integer64) :int64-t
  "(#0)->vector.self.i64[#1]= #2")
 (def-inline si:row-major-aset :unsafe ((array double-float) fixnum double-float) :double
@@ -399,7 +346,7 @@
 
 (def-inline 1+ :always (t) t "ecl_one_plus(#0)")
 (def-inline 1+ :always (fixnum) t "ecl_make_integer((#0)+1)")
-(def-inline 1+ :always (double-loat) :double "(double)(#0)+1")
+(def-inline 1+ :always (double-float) :double "(double)(#0)+1")
 (def-inline 1+ :always (single-float) :float "(float)(#0)+1")
 (def-inline 1+ :always (fixnum) :fixnum "(#0)+1" :exact-return-type t)
 
@@ -763,7 +710,7 @@
 
 ;; file structure.d
 
-(def-inline si:structure-name :always (structure) symbol "ECL_STRUCT_NAME(#0)")
+(def-inline si:structure-name :always (structure-object) symbol "ECL_STRUCT_NAME(#0)")
 
 (def-inline si:structure-ref :always (t t fixnum) t "ecl_structure_ref(#0,#1,#2)")
 
@@ -849,8 +796,70 @@
 
 ))) ; eval-when
 
-(loop for i in '#.(mapcar #'rest +inline-forms+)
-   do (apply #'def-inline i))
+(defun make-inline-information (*machine*)
+  (let ((*inline-information* (make-hash-table :size 512 :test 'equal)))
+    (loop for i in '#.(mapcar #'rest +inline-forms+)
+       do (apply #'def-inline i))
+    *inline-information*))
+
+(defun inline-information (name safety)
+  (gethash (list name safety) *inline-information*))
+
+(defun (setf inline-information) (value name safety)
+  (setf (gethash (list name safety) *inline-information*) value))
+
+(defun def-inline (name safety arg-types return-rep-type expansion
+                   &key (one-liner t) (exact-return-type nil) (inline-or-warn nil)
+		   (multiple-values t)
+                   &aux arg-rep-types)
+  (setf safety
+	(case safety
+	  (:unsafe :inline-unsafe)
+	  (:safe :inline-safe)
+	  (:always :inline-always)
+	  (t (error "In DEF-INLINE, wrong value of SAFETY"))))
+  ;; Ensure we can inline this form. We only inline when the features are
+  ;; there (checked above) and when the C types are part of this machine
+  ;; (checked here).
+  (loop for type in (list* return-rep-type arg-types)
+     unless (or (eq type 'fixnum-float)
+		(and (consp type) (eq (car type) 'values))
+		(lisp-type-p type)
+		(machine-c-type-p type))
+     do (warn "Dropping inline form for ~A because of missing type ~A" name type)
+       (return-from def-inline))
+  (setf arg-rep-types
+	(mapcar #'(lambda (x) (if (eq x '*) x (lisp-type->rep-type x)))
+		arg-types))
+  (when (eq return-rep-type t)
+    (setf return-rep-type :object))
+  (when inline-or-warn
+    (setf (inline-information name 'should-be-inlined) t))
+  (let* ((return-type (if (and (consp return-rep-type)
+                               (eq (first return-rep-type) 'values))
+                          t
+                          (rep-type->lisp-type return-rep-type)))
+         (inline-info
+          (make-inline-info :name name
+                            :arg-rep-types arg-rep-types
+                            :return-rep-type return-rep-type
+                            :return-type return-type
+                            :arg-types arg-types
+                            :exact-return-type exact-return-type
+			    :multiple-values multiple-values
+                            ;; :side-effects (not (get-sysprop name 'no-side-effects))
+                            :one-liner one-liner
+                            :expansion expansion)))
+    #+(or)
+    (loop for i in (inline-information name safety)
+       when (and (equalp (inline-info-arg-types i) arg-types)
+                 (not (equalp return-type (inline-info-return-type i))))
+       do (format t "~&;;; Redundand inline definition for ~A~&;;; ~<~A~>~&;;; ~<~A~>"
+                  name i inline-info))
+    (push inline-info (gethash (list name safety) *inline-information*))))
+
+(setf (machine-inline-information +default-machine+)
+      (make-inline-information +default-machine+))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;

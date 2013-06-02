@@ -258,3 +258,21 @@
   (used-p nil)
   (permanent-p t)
   (value nil))
+
+(defstruct machine
+  (c-types '())
+  rep-type-hash
+  sorted-types
+  inline-information)
+
+(defstruct (rep-type (:constructor %make-rep-type))
+  (index 0) ; Precedence order in the type list
+  (name t)
+  (lisp-type t)
+  (bits nil)
+  (numberp nil)
+  (integerp nil)
+  (c-name nil)
+  (to-lisp nil)
+  (from-lisp nil)
+  (from-lisp-unsafe nil))

@@ -90,20 +90,20 @@
   (declare (si::c-local))
   (let ((output nil))
     (unless (safe-compile)
-      (dolist (x (get-sysprop fname ':INLINE-UNSAFE))
+      (dolist (x (inline-information fname ':INLINE-UNSAFE))
         (let ((other (inline-type-matches x types return-type)))
           (when other
             (setf output (choose-inline-info output other return-type return-rep-type))))))
-    (dolist (x (get-sysprop fname ':INLINE-SAFE))
+    (dolist (x (inline-information fname ':INLINE-SAFE))
       (let ((other (inline-type-matches x types return-type)))
         (when other
           (setf output (choose-inline-info output other return-type return-rep-type)))))
-    (dolist (x (get-sysprop fname ':INLINE-ALWAYS))
+    (dolist (x (inline-information fname ':INLINE-ALWAYS))
       (let ((other (inline-type-matches x types return-type)))
         (when other
           (setf output (choose-inline-info output other return-type return-rep-type)))))
     (when (and (null output)
-               (get-sysprop fname 'should-be-inlined)
+               (inline-information fname 'should-be-inlined)
                (>= (cmp-env-optimization 'speed) 1))
       (cmpwarn-style "Could not inline call to ~S ~S - performance may be degraded."
                      fname types))

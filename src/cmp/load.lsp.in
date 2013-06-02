@@ -14,17 +14,19 @@
   "src:cmp;cmptype-prop.lsp"
   "src:cmp;cmptype.lsp"
   "src:cmp;cmptype-assert.lsp"
+  "src:cmp;cmpenv-api.lsp"
+  "src:cmp;cmpenv-fun.lsp"
+  "src:cmp;cmpenv-declare.lsp"
+  "src:cmp;cmpenv-proclaim.lsp"
+  "src:cmp;cmpenv-declaim.lsp"
+  "src:cmp;sysfun.lsp"
+  "src:cmp;cmpc-machine.lsp"
   "src:cmp;cmpc-wt.lsp"
   "src:cmp;cmpc-inliner.lsp"
   "src:cmp;cmpbind.lsp"
   "src:cmp;cmpblock.lsp"
   "src:cmp;cmpcall.lsp"
   "src:cmp;cmpcatch.lsp"
-  "src:cmp;cmpenv-api.lsp"
-  "src:cmp;cmpenv-fun.lsp"
-  "src:cmp;cmpenv-declare.lsp"
-  "src:cmp;cmpenv-proclaim.lsp"
-  "src:cmp;cmpenv-declaim.lsp"
   "src:cmp;cmppolicy.lsp"
   "src:cmp;cmpeval.lsp"
   "src:cmp;cmpexit.lsp"
@@ -62,9 +64,8 @@
   "src:cmp;cmpos-run.lsp"
   "src:cmp;cmpos-features.lsp"
   "src:cmp;cmpmain.lsp"
-  "src:cmp;proclamations.lsp"
-  "src:cmp;sysfun.lsp"))
+  "src:cmp;proclamations.lsp"))
 
 (let ((si::*keep-documentation* nil))
-  (mapc #'(lambda (x) (load x :verbose nil)) +cmp-module-files+))
+  (mapc #'(lambda (x) (load x :verbose t)) +cmp-module-files+))
 

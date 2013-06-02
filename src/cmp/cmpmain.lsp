@@ -17,10 +17,6 @@
 
 (in-package "COMPILER")
 
-#-threads
-(defmacro with-lock ((lock) &body body)
-  `(progn ,@body))
-
 (defun safe-mkstemp (template)
   ;; We do several things here. One is to check for success in MKSTEMP,
   ;; the other one is to ensure that the output of this function _always_
