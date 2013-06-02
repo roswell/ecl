@@ -2329,5 +2329,7 @@ cl_symbols[] = {
 {SYS_ "DOUBLE-FLOAT-P", SI_ORDINARY, ECL_NAME(si_double_float_p), 1, OBJNULL},
 {SYS_ "LONG-FLOAT-P", SI_ORDINARY, ECL_NAME(si_long_float_p), 1, OBJNULL},
 
+{SYS_ "COPY-HASH-TABLE", SI_ORDINARY, si_copy_hash_table, 1, OBJNULL},
+
 /* Tag for end of list */
 {NULL, CL_ORDINARY, NULL, -1, OBJNULL}};
