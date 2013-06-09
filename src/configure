@@ -1443,7 +1443,7 @@ Optional Features:
   --enable-rpath          hard-code the location of the ECL shared library.
                           (no|yes, default=NO)
   --enable-threads        support for native threads (yes|no|auto,
-                          default=NO).
+                          default=YES).
   --enable-boehm          use the Boehm-Weiser garbage collector
                           (no|included|system|auto, default=auto)
   --enable-libatomic      version of the libatomic-ops library
