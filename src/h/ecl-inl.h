@@ -73,11 +73,11 @@
                 cl_fixnum padding[(sizeof(struct ecl_base_string)+3)/4*4]; \
         } name[]
 
-#define ecl_def_string_array_elt(chars) {                      \
+#define ecl_def_string_array_elt(chars) { {                      \
                 (int8_t)t_base_string, 0, ecl_aet_bc, 0,            \
                         ECL_NIL, (cl_index)(sizeof(chars))-1,      \
                         (cl_index)(sizeof(chars))-1,            \
-                        (ecl_base_char*)(chars) }
+                        (ecl_base_char*)(chars) } }
 
 #define ecl_def_ct_base_string(name,chars,len,static,const)     \
         static const struct ecl_base_string name ## _data = {    \
