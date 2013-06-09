@@ -19,7 +19,6 @@
   "src:cmp;cmpenv-declare.lsp"
   "src:cmp;cmpenv-proclaim.lsp"
   "src:cmp;cmpenv-declaim.lsp"
-  "src:cmp;sysfun.lsp"
   "src:cmp;cmpc-machine.lsp"
   "src:cmp;cmpc-wt.lsp"
   "src:cmp;cmpc-inliner.lsp"
@@ -64,7 +63,8 @@
   "src:cmp;cmpos-run.lsp"
   "src:cmp;cmpos-features.lsp"
   "src:cmp;cmpmain.lsp"
-  "src:cmp;proclamations.lsp"))
+  "src:cmp;proclamations.lsp"
+  "src:cmp;sysfun.lsp"))
 
 (let ((si::*keep-documentation* nil))
   (mapc #'(lambda (x) (load x :verbose t)) +cmp-module-files+))

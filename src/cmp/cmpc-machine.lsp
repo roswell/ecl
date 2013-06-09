@@ -168,4 +168,3 @@
   (typep number (rep-type-lisp-type (gethash :fixnum number))))
 
 (defconstant +default-machine+ (setf *machine* (default-machine)))
-
