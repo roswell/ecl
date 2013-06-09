@@ -1,6 +1,6 @@
-.TH ECL-CONFIG 1 04/03/06
+.TH ECL-CONFIG 1 2013-06-09
 .SH NAME
-ecl-config \- Embeddable Common LISP configuration query
+ecl-config \- Embeddable Common Lisp configuration query
 .SH SYNOPSIS
 \fBecl\-config\fP
 [\fB\-cflags]

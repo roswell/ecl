@@ -1,17 +1,15 @@
-.TH ECL 1 03/10/03
+.TH ECL 1 2013-06-09
 .UC 4
 .SH NAME
-ecl \- Embeddable Common LISP
+ecl \- Embeddable Common Lisp
 .SH SYNOPSIS
 \fBecl\fP
 [\fB\-dir\fP \fIdir\fP]
 [\fB\-load\fP \fIfile\fP]
 [\fB\-eval\fP \fIexpr\fP]
-.if n .ti +4
-.if t .ti +.5i
+.br
 [\fB\-compile\fP \fIfile\fP
-.if n .ti +8
-.if t .ti +.5i
+.br
 [\fB\-o\fP \fIofile\fP]
 [\fB\-c\fP [\fIcfile\fP]]
 [\fB\-h\fP [\fIhfile\fP]]
@@ -20,10 +18,10 @@ ecl \- Embeddable Common LISP
 
 .SH DESCRIPTION
 .sp
-ECL stands for Embeddable Common-Lisp.
-The ECL project is an effort to modernize 
+ECL stands for Embeddable Common Lisp.
+The ECL project is an effort to modernize
 Giuseppe Attardi's ECL environment to
-produce an implementation of the Common-Lisp
+produce an implementation of the Common Lisp
 language which complies to the ANSI X3J13
 definition of the language.
 .PP
@@ -39,7 +37,7 @@ A dynamic loader.
 .IP \(bu
 The possibility to build standalone executables.
 .IP \(bu
-The Common-Lisp Object System (CLOS).
+The Common Lisp Object System (CLOS).
 .IP \(bu
 Conditions and restarts for handling errors.
 .IP \(bu
@@ -86,7 +84,7 @@ before entering the read-eval-print loop.
 .BI \-compile " file"
 Translates
 .I file
-to C and invokes the local C compiler to produce a 
+to C and invokes the local C compiler to produce a
 shared library with .fas as extension per default.
 .TP
 .BI \-o " ofile"
@@ -111,9 +109,9 @@ supplied, into a file named after the source file, but
 with .data as extension.
 .TP
 .B \-s
-Produce a linkable object file. It cannot be loaded 
-with load, but it can be used to build libraries 
-or standalone executable programs. 
+Produce a linkable object file. It cannot be loaded
+with load, but it can be used to build libraries
+or standalone executable programs.
 .TP
 .B \-q
 Produce less notes when compiling.
