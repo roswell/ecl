@@ -109,7 +109,9 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 	 (*cmp-env* (setf (fun-cmp-env fun) (cmp-env-mark CB/LB)))
 	 (setjmps *setjmps*)
 	 (decl (si::process-declarations (rest lambda-list-and-body)))
-	 (global (and (assoc 'SI::C-GLOBAL decl) (setf (fun-global fun) T)))
+	 (global (and *use-c-global*
+		      (assoc 'SI::C-GLOBAL decl)
+		      (setf (fun-global fun) T)))
 	 (no-entry (assoc 'SI::C-LOCAL decl))
 	 (lambda-expr (c1lambda-expr lambda-list-and-body
 				     (si::function-block-name name)))

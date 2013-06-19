@@ -802,10 +802,19 @@
 ;;; (SYS:FSET (FLET ((FOO ...)) #'FOO) ...) which is to what LAMBDA gets
 ;;; translated in c1function.
 ;;;
-(defun c1fset (args)
+(defun t1fset (args)
+  (let ((form `(si::fset ,@args)))
+    (when *compile-time-too*
+      (cmp-eval form))
+    (let ((*compile-toplevel* nil)
+	  (*compile-time-too* nil))
+      (add-load-time-values (c1fset form)))))
+
+(defun c1fset (form)
   (destructuring-bind (fname def &optional (macro nil) (pprint nil))
-      args
-    (let* ((fun-form (c1expr def)))
+      (rest form)
+    (let* ((*use-c-global* t)
+	   (fun-form (c1expr def)))
       (when (eq (c1form-name fun-form) 'LOCALS)
 	(let* ((function-list (c1form-arg 0 fun-form))
 	       (fun-object (pop function-list))
@@ -846,10 +855,13 @@
 				    fun-form
 				    (c1expr macro)
 				    (c1expr pprint)))))))))
-    (c1call-global 'SI:FSET (list fname def macro pprint))))
+    (t1ordinary form)))
 
 (defun p1fset (c1form assumptions fun fname macro pprint c1forms)
   (p1propagate (fun-lambda fun) assumptions))
+
+(defun t2fset (c1form &rest args)
+  (t2ordinary nil c1form))
 
 (defun c2fset (c1form fun fname macro pprint c1forms)
   (when (fun-no-entry fun)

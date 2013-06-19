@@ -270,6 +270,7 @@ lines are inserted, but the order is preserved")
 
 (defvar *global-vars* nil)		; variables declared special
 (defvar *global-funs* nil)		; holds	{ fun }*
+(defvar *use-c-global* nil)		; honor si::c-global declaration
 (defvar *global-cfuns-array* nil)	; holds	{ fun }*
 (defvar *linking-calls* nil)		; holds { ( global-fun-name fun symbol c-fun-name var-name ) }*
 (defvar *local-funs* nil)		; holds { fun }*

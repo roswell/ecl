@@ -140,7 +140,6 @@
     (psetq . c1psetq) ; c1special
 
     (load-time-value . c1load-time-value) ; c1
-    (si:fset . c1fset) ; c1
 
     (apply . c1apply) ; c1
     ))
@@ -155,6 +154,7 @@
     (macrolet . c1macrolet)
     (locally . c1locally)
     (symbol-macrolet . c1symbol-macrolet)
+    (si:fset . t1fset)
     ))
 
 (defconstant +set-loc-dispatch-alist+
@@ -241,7 +241,7 @@
     (progv . c2progv) ; c2
     (psetq . c2psetq) ; c2
 
-    (si:fset . c2fset) ; c2
+    (si:fset . c2fset)
 
     (ext:compiler-typecase . c2compiler-typecase)
     (checked-value . c2checked-value)
@@ -254,6 +254,7 @@
     (load-time-value . t2load-time-value)
     (make-form . t2make-form)
     (init-form . t2init-form)
+    (si:fset . t2fset)
     ))
 
 (defconstant +p1-dispatch-alist+
