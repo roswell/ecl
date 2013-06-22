@@ -105,7 +105,9 @@ and a possible documentation string (only accepted when DOC-P is true)."
                      (policy-declaration-name-p decl-name))
                  (push decl others)
                  (multiple-value-bind (ok type)
-                     (valid-type-specifier decl-name)
+		     (if (machine-c-type-p decl-name)
+			 (values t decl-name)
+			 (valid-type-specifier decl-name))
                    (cmpassert ok "Unknown declaration specifier ~s"
                               decl-name)
                    (setf types (collect-declared type decl-args types))))))

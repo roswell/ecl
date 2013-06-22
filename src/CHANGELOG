@@ -6,6 +6,12 @@ ECL 13.7.1
 - DEFUN functions not defined as toplevel forms were also directly referenced
   other code in the same file.
 
+* Extensions:
+
+- In compiled code it is possible to declare variables to have a C type
+  such as in (declare (:double a)) and then the variable is enforced to
+  be unboxed to such type.
+
 ;;; Local Variables: ***
 ;;; mode:text ***
 ;;; fill-column:79 ***

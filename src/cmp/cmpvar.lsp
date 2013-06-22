@@ -72,6 +72,7 @@
   (mapcar #'first (var-read-nodes var)))
 
 (defun assert-var-ref-value (var)
+  #+debug-compiler
   (unless (let ((ref (var-ref var)))
 	    (or (> ref (/ most-positive-fixnum 2))
 		(= (var-ref var) (+ (length (var-read-nodes var))
@@ -172,18 +173,23 @@
   (cmpck (not (symbolp name)) "The variable ~s is not a symbol." name)
   (cmpck (constantp name) "The constant ~s is being bound." name)
   (let ((ignorable (cdr (assoc name ignores)))
-        type)
-    (setq type (if (setq type (assoc name types))
-                   (cdr type)
-                   'T))
+	(kind 'LEXICAL)  ; we rely on check-vref to fix it
+        (type (assoc name types)))
+    (cond ((null type)
+	   (setq type 'T))
+	  ((machine-c-type-p (setq type (cdr type)))
+	   (setf kind type
+		 type (rep-type->lisp-type type))))
     (cond ((or (member name specials) (special-variable-p name))
-           (unless type
+	   (unless (eq kind 'LEXICAL)
+	     (cmperr "Special variable ~A cannot be declared to have C type ~A"
+		     name type))
+           (when (eq type 'T)
 	     (setf type (or (get-sysprop name 'CMP-TYPE) 'T)))
 	   (c1make-global-variable name :kind 'SPECIAL :type type))
           (t
 	   (make-var :name name :type type :loc 'OBJECT
-		     :kind 'LEXICAL ; we rely on check-vref to fix it
-                     :ignorable ignorable
+		     :kind kind :ignorable ignorable
 		     :ref 0)))))
 
 (defun check-vref (var)
@@ -229,15 +235,20 @@
 	   ;; symbol-macrolet
 	   (baboon))
 	  (t
-	   (assert-var-ref-value var)
-	   (assert-var-not-ignored var)
-	   (when (eq (var-kind var) 'LEXICAL)
-	     (cond (ccb (setf (var-ref-clb var) nil ; replace a previous 'CLB
+	   (case (var-kind var)
+	     ((SPECIAL GLOBAL))
+	     ((CLOSURE))
+	     ((LEXICAL)
+	      (cond (ccb (setf (var-ref-clb var) nil ; replace a previous 'CLB
 			      (var-ref-ccb var) t
 			      (var-kind var) 'CLOSURE
 			      (var-loc var) 'OBJECT))
 		   (clb (setf (var-ref-clb var) t
 			      (var-loc var) 'OBJECT))))
+	     (t
+	      (when (or clb ccb)
+		(cmperr "Variable ~A declared of C type cannot be referenced across function boundaries."
+			(var-name var)))))
 	   var))))
 
 (defun push-vars (v)
