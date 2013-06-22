@@ -73,8 +73,7 @@
 	 (error "Not a valid function name ~s in ~s proclamation" var decl-name))))
     (DECLARATION
      (validate-alien-declaration (rest decl) #'error)
-     (setf si::*alien-declarations*
-           (append (rest decl) si:*alien-declarations*)))
+     (setf si::*alien-declarations* (append (rest decl) si:*alien-declarations*)))
     (SI::C-EXPORT-FNAME
      (dolist (x (cdr decl))
        (cond ((symbolp x)

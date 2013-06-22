@@ -37,8 +37,9 @@
               new-declaration))))
 
 (defun alien-declaration-p (name &optional (env *cmp-env*))
-  (or (member name si::*alien-declarations*)
-      (member name (cmp-env-search-declaration 'alien env))))
+  (and (symbolp name)
+       (member name (cmp-env-search-declaration 'alien env si::*alien-declarations*)
+	       :test 'eq)))
 
 (defun parse-ignore-declaration (decl-args expected-ref-number tail)
   (declare (si::c-local))
@@ -145,7 +146,7 @@ special variable declarations, as these have been extracted before."
       env)
     (DECLARATION
      (validate-alien-declaration (rest decl) #'cmperr)
-     (cmp-env-extend-declaration 'alien (rest decl) env))
+     (cmp-env-extend-declaration 'alien (rest decl) env si::*alien-declarations*))
     ((SI::C-LOCAL SI::C-GLOBAL SI::NO-CHECK-TYPE :READ-ONLY)
      env)
     ((DYNAMIC-EXTENT IGNORABLE SI:FUNCTION-BLOCK-NAME)

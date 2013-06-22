@@ -70,8 +70,8 @@ that are susceptible to be changed by PROCLAIM."
         (cmp-env-variables env))
   env)
 
-(defun cmp-env-extend-declaration (type arguments &optional (env *cmp-env*))
-  (let ((x (cmp-env-search-declaration type)))
+(defun cmp-env-extend-declaration (type arguments &optional (env *cmp-env*) default)
+  (let ((x (cmp-env-search-declaration type env default)))
     (cmp-env-add-declaration type (append arguments x) env)
     env))
 
@@ -202,10 +202,11 @@ that are susceptible to be changed by PROCLAIM."
 	when (and (consp i) (var-p (fourth i)))
 	collect (fourth i)))
 
-(defun cmp-env-search-declaration (kind &optional (env *cmp-env*))
+(defun cmp-env-search-declaration (kind &optional (env *cmp-env*) default)
   (loop for i in (car env)
      when (and (consp i)
                (eq (first i) :declare)
                (eq (second i) kind))
-     return (cddr i)))
+     return (cddr i)
+     finally (return default)))
 
