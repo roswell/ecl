@@ -347,26 +347,28 @@
 	     (let ((x (produce-type-pair output-type)))
 	       (setf output-type (car x)
 		     output-rep-type (list (cdr x)))))))
-    (let* ((processed-arguments '()))
-      (unless (and (listp arguments)
-		   (listp arg-types)
-		   (stringp c-expression))
-	(cmperr "C-INLINE: syntax error in ~S"
-		(list* 'c-inline args)))
-      (do ((processed-arguments '())
-	   (processed-arg-types '()))
-	  ((and (endp arguments) (endp arg-types))
-	   (make-c1form* 'C-INLINE :type output-type
-                         :side-effects side-effects
-                         :args
-			 (nreverse processed-arguments)
-			 (nreverse processed-arg-types)
-			 output-rep-type
-			 c-expression
-			 side-effects
-			 one-liner))
-	(push (or (pop arg-types) 'T) processed-arg-types)
-	(push (c1expr (pop arguments)) processed-arguments)))))
+    (unless (and (listp arguments)
+		 (listp arg-types)
+		 (stringp c-expression))
+      (cmperr "C-INLINE: syntax error in ~S"
+	      (list* 'c-inline args)))
+    (unless (= (length arguments)
+	       (length arg-types))
+      (cmperr "C-INLINE: wrong number of arguments in ~S"
+	      (list* 'c-inline args)))
+    (let* ((arguments (mapcar #'c1expr arguments))
+	   (form (make-c1form* 'C-INLINE :type output-type
+			       :side-effects side-effects
+			       :args arguments arg-types
+			       output-rep-type
+			       c-expression
+			       side-effects
+			       one-liner)))
+      (loop for form in arguments
+	 when (eq (c1form-name form) 'VAR)
+	 do (let ((var (c1form-arg 0 form)))
+	      (add-to-set-nodes var form)))
+      form)))
 
 (defun produce-inline-loc (inlined-arguments arg-types output-rep-type
 			   c-expression side-effects one-liner)
@@ -442,28 +444,35 @@
     (close-inline-blocks)))
 
 (defun coerce-locs (inlined-args &optional types args-to-be-saved)
-  (do* ((l inlined-args (cdr l))
-	(item (first l) (first l))
-	(i 0 (1+ i))
-	(block-opened nil))
-       ((endp l)
-	inlined-args)
-    (let* ((type (if types (pop types) :object))
-	   (rep-type (lisp-type->rep-type type))
-	   (lisp-type (first item))
-	   (loc (second item)))
-      (cond ((and (not (loc-movable-p loc)) (member i args-to-be-saved))
-	     (let ((lcl (make-lcl-var :rep-type rep-type)))
-	       (wt-nl)
-	       (unless block-opened
-		 (open-inline-block))
-	       (wt (rep-type->c-name rep-type) " " lcl "= ")
-	       (wt-coerce-loc rep-type loc)
-	       (wt ";")
-	       (setq loc lcl)))
-	    ((and (not (equal rep-type (loc-representation-type loc))))
-	     (setq loc `(COERCE-LOC ,rep-type ,loc))))
-      (setf (first l) loc))))
+  ;; INLINED-ARGS is a list of (TYPE LOCATION) produced by the
+  ;; inline code. ARGS-TO-BE-SAVED is a positional list created by
+  ;; C-INLINE, instructing that the value should be saved in a temporary
+  ;; variable. Finally, TYPES is a list of destination types, to which
+  ;; the former values are coerced. The destination types can be
+  ;;	- A lisp type (:OBJECT, :FINXUM, etc)
+  ;;	- A machine representation type (T, INTEGER, etc)
+  (loop with block-opened = nil
+     for (lisp-type loc) in inlined-args
+     for type in (or types '#1=(:object . #1#))
+     for i from 0
+     for rep-type = (lisp-type->rep-type type)
+     collect
+       (cond ((and args-to-be-saved
+		   (member i args-to-be-saved :test #'eql)
+		   (not (loc-movable-p loc)))
+	      (let ((lcl (make-lcl-var :rep-type rep-type)))
+		(wt-nl)
+		(unless block-opened
+		  (setf block-opened t)
+		  (open-inline-block))
+		(wt (rep-type->c-name rep-type) " " lcl "= ")
+		(wt-coerce-loc rep-type loc)
+		(wt ";")
+		lcl))
+	     ((equal rep-type (loc-representation-type loc))
+	      loc)
+	     (t
+	      `(COERCE-LOC ,rep-type ,loc)))))
 
 (defun wt-c-inline-loc (output-rep-type c-expression coerced-arguments side-effects output-vars)
   (with-input-from-string (s c-expression)
