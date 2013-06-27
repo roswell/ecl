@@ -370,6 +370,27 @@
 	      (add-to-set-nodes var form)))
       form)))
 
+(defun c1c-progn (arguments)
+  (let* ((variables (mapcar #'c1fref (pop arguments)))
+	 (statements (loop for form in arguments
+			collect (if (stringp form)
+				    form
+				    (c1expr form))))
+	 (form (make-c1form* 'FFI:C-PROGN :type NIL
+		:side-effects t
+		:args variables statements)))
+    (add-to-set-nodes-of-var-list variables form)
+    form))
+
+(defun c2c-progn (c1form statements)
+  (loop with *destination* = 'TRASH
+     for form in statements
+     if (stringp form)
+     do (wt-nl form)
+     else
+     do (c2expr* form))
+  (unwind-exit nil))
+
 (defun produce-inline-loc (inlined-arguments arg-types output-rep-type
 			   c-expression side-effects one-liner)
   (let* (args-to-be-saved
