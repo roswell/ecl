@@ -596,8 +596,8 @@ cl_delete_file(cl_object file)
 	if (ok < 0) {
                 const char *msg =
                         isdir?
-                        "Cannot delete the file ~S.~%C library error: ~S" :
-                        "Cannot delete the directory ~S.~%C library error: ~S";
+                        "Cannot delete the directory ~S.~%C library error: ~S" :
+                        "Cannot delete the file ~S.~%C library error: ~S";
 		cl_object c_error = _ecl_strerror(errno);
 		si_signal_simple_error
 			(6, @'file-error', /* condition */
