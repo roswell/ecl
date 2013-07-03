@@ -138,11 +138,12 @@
     (with-open-file (*standard-output* path
                      :direction :output :if-exists :supersede
                      :if-does-not-exist :create)
-      (print `(defsystem ,name :class ,(find-symbol "PREBUILT-SYSTEM" "ASDF")
-                         :lib ,library
-			 :depends-on ,depends-on
-                         :components ((:compiled-file ,(string name)
-				       :pathname ,compiled)))))
+      (format t "
+(defsystem ~S :class asdf::prebuilt-system
+	:lib ~S
+	:depends-on ~S
+	:components ((:compiled-file ~S :pathname ~S)))"
+	      name library depends-on (string name) compiled))
     path))
 
 (defun build-module (name sources &key additional-files depends-on
