@@ -13,7 +13,16 @@ ECL 13.7.1
   be unboxed to such type.
 
 - New form EXT:C-PROGN used to interleave C statements with lisp code, where
-  the lisp code may refer to any number of variables.
+  the lisp code may refer to any number of variables. Example:
+
+	(lambda (i)
+	  (let* ((limit i)
+	  	 (iterator 0))
+	    (declare (:int limit iterator))
+	    (ffi:c-progn (limit iterator)
+	      "for (#1 = 0; #1 < #0; #1++) {"
+	      (print iterator)
+	      "}")))
 
 ;;; Local Variables: ***
 ;;; mode:text ***

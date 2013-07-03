@@ -37,7 +37,7 @@
 			c-expression-string
 			side-effects-p
 			one-liner-p)
-    (C-PROGN		body)
+    (C-PROGN		variables forms)
     (LOCALS		local-fun-list body labels-p :pure)
     (IF			fmla-c1form true-c1form false-c1form :pure)
     (FMLA-NOT		fmla-c1form :pure)
