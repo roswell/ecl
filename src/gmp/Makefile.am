@@ -84,7 +84,7 @@ LIBMP_LT_REVISION = 10
 LIBMP_LT_AGE =      1
 
 
-SUBDIRS = tests mpn mpz mpq mpf printf scanf cxx mpbsd demos tune
+SUBDIRS = mpn mpz mpq cxx # mpf printf scanf tests demos tune
 
 EXTRA_DIST = macos configfsf.guess configfsf.sub .gdbinit INSTALL.autoconf
 
@@ -249,7 +249,7 @@ EXTRA_libgmp_la_SOURCES = tal-debug.c tal-notreent.c tal-reent.c
 libgmp_la_DEPENDENCIES = @TAL_OBJECT@		\
   $(MPF_OBJECTS) $(MPZ_OBJECTS) $(MPQ_OBJECTS)	\
   $(MPN_OBJECTS) @mpn_objs_in_libgmp@		\
-  $(PRINTF_OBJECTS)  $(SCANF_OBJECTS)
+  # $(PRINTF_OBJECTS)  $(SCANF_OBJECTS)
 libgmp_la_LIBADD = $(libgmp_la_DEPENDENCIES)
 libgmp_la_LDFLAGS = $(GMP_LDFLAGS) $(LIBGMP_LDFLAGS) \
   -version-info $(LIBGMP_LT_CURRENT):$(LIBGMP_LT_REVISION):$(LIBGMP_LT_AGE)
