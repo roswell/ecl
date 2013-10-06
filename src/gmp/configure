@@ -24415,7 +24415,7 @@ fi
 # inttypes.h, stdint.h, unistd.h and sys/types.h are already in the autoconf
 # default tests
 #
-for ac_header in fcntl.h float.h invent.h langinfo.h locale.h nl_types.h sys/attributes.h sys/iograph.h sys/mman.h sys/param.h sys/processor.h sys/pstat.h sys/sysinfo.h sys/syssgi.h sys/systemcfg.h sys/time.h sys/times.h
+for ac_header in float.h langinfo.h locale.h nl_types.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -24429,68 +24429,8 @@ fi
 done
 
 
-# On SunOS, sys/resource.h needs sys/time.h (for struct timeval)
-for ac_header in sys/resource.h
-do :
-  ac_fn_c_check_header_compile "$LINENO" "sys/resource.h" "ac_cv_header_sys_resource_h" "#if TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# if HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
-#endif
-"
-if test "x$ac_cv_header_sys_resource_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_SYS_RESOURCE_H 1
-_ACEOF
-
-fi
-
-done
-
-
-# On NetBSD and OpenBSD, sys/sysctl.h needs sys/param.h for various constants
-for ac_header in sys/sysctl.h
-do :
-  ac_fn_c_check_header_compile "$LINENO" "sys/sysctl.h" "ac_cv_header_sys_sysctl_h" "#if HAVE_SYS_PARAM_H
-# include <sys/param.h>
-#endif
-"
-if test "x$ac_cv_header_sys_sysctl_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_SYS_SYSCTL_H 1
-_ACEOF
-
-fi
-
-done
-
-
-# On OSF 4.0, <machine/hal_sysinfo.h> must have <sys/sysinfo.h> for ulong_t
-for ac_header in machine/hal_sysinfo.h
-do :
-  ac_fn_c_check_header_compile "$LINENO" "machine/hal_sysinfo.h" "ac_cv_header_machine_hal_sysinfo_h" "#if HAVE_SYS_SYSINFO_H
-# include <sys/sysinfo.h>
-#endif
-"
-if test "x$ac_cv_header_machine_hal_sysinfo_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_MACHINE_HAL_SYSINFO_H 1
-_ACEOF
-
-fi
-
-done
-
-
 # Reasons for testing:
-#   optarg - not declared in mingw
 #   fgetc, fscanf, ungetc, vfprintf - not declared in SunOS 4
-#   sys_errlist, sys_nerr - not declared in SunOS 4
 #
 # optarg should be in unistd.h and the rest in stdio.h, both of which are
 # in the autoconf default includes.
@@ -24498,36 +24438,6 @@ done
 # sys_errlist and sys_nerr are supposed to be in <errno.h> on SunOS according
 # to the man page (but aren't), in glibc they're in stdio.h.
 #
-ac_fn_c_check_decl "$LINENO" "fgetc" "ac_cv_have_decl_fgetc" "$ac_includes_default"
-if test "x$ac_cv_have_decl_fgetc" = xyes; then :
-  ac_have_decl=1
-else
-  ac_have_decl=0
-fi
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_DECL_FGETC $ac_have_decl
-_ACEOF
-ac_fn_c_check_decl "$LINENO" "fscanf" "ac_cv_have_decl_fscanf" "$ac_includes_default"
-if test "x$ac_cv_have_decl_fscanf" = xyes; then :
-  ac_have_decl=1
-else
-  ac_have_decl=0
-fi
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_DECL_FSCANF $ac_have_decl
-_ACEOF
-ac_fn_c_check_decl "$LINENO" "optarg" "ac_cv_have_decl_optarg" "$ac_includes_default"
-if test "x$ac_cv_have_decl_optarg" = xyes; then :
-  ac_have_decl=1
-else
-  ac_have_decl=0
-fi
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_DECL_OPTARG $ac_have_decl
-_ACEOF
 ac_fn_c_check_decl "$LINENO" "ungetc" "ac_cv_have_decl_ungetc" "$ac_includes_default"
 if test "x$ac_cv_have_decl_ungetc" = xyes; then :
   ac_have_decl=1
@@ -24537,41 +24447,6 @@ fi
 
 cat >>confdefs.h <<_ACEOF
 #define HAVE_DECL_UNGETC $ac_have_decl
-_ACEOF
-ac_fn_c_check_decl "$LINENO" "vfprintf" "ac_cv_have_decl_vfprintf" "$ac_includes_default"
-if test "x$ac_cv_have_decl_vfprintf" = xyes; then :
-  ac_have_decl=1
-else
-  ac_have_decl=0
-fi
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_DECL_VFPRINTF $ac_have_decl
-_ACEOF
-
-ac_fn_c_check_decl "$LINENO" "sys_errlist" "ac_cv_have_decl_sys_errlist" "#include <stdio.h>
-#include <errno.h>
-"
-if test "x$ac_cv_have_decl_sys_errlist" = xyes; then :
-  ac_have_decl=1
-else
-  ac_have_decl=0
-fi
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_DECL_SYS_ERRLIST $ac_have_decl
-_ACEOF
-ac_fn_c_check_decl "$LINENO" "sys_nerr" "ac_cv_have_decl_sys_nerr" "#include <stdio.h>
-#include <errno.h>
-"
-if test "x$ac_cv_have_decl_sys_nerr" = xyes; then :
-  ac_have_decl=1
-else
-  ac_have_decl=0
-fi
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_DECL_SYS_NERR $ac_have_decl
 _ACEOF
 
 

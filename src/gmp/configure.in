@@ -2189,37 +2189,10 @@ AC_HEADER_TIME
 # inttypes.h, stdint.h, unistd.h and sys/types.h are already in the autoconf
 # default tests
 #
-AC_CHECK_HEADERS(fcntl.h float.h invent.h langinfo.h locale.h nl_types.h sys/attributes.h sys/iograph.h sys/mman.h sys/param.h sys/processor.h sys/pstat.h sys/sysinfo.h sys/syssgi.h sys/systemcfg.h sys/time.h sys/times.h)
-
-# On SunOS, sys/resource.h needs sys/time.h (for struct timeval)
-AC_CHECK_HEADERS(sys/resource.h,,,
-[#if TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# if HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
-#endif])
-
-# On NetBSD and OpenBSD, sys/sysctl.h needs sys/param.h for various constants
-AC_CHECK_HEADERS(sys/sysctl.h,,,
-[#if HAVE_SYS_PARAM_H
-# include <sys/param.h>
-#endif])
-
-# On OSF 4.0, <machine/hal_sysinfo.h> must have <sys/sysinfo.h> for ulong_t
-AC_CHECK_HEADERS(machine/hal_sysinfo.h,,,
-[#if HAVE_SYS_SYSINFO_H
-# include <sys/sysinfo.h>
-#endif])
+AC_CHECK_HEADERS(float.h langinfo.h locale.h nl_types.h)
 
 # Reasons for testing:
-#   optarg - not declared in mingw
 #   fgetc, fscanf, ungetc, vfprintf - not declared in SunOS 4
-#   sys_errlist, sys_nerr - not declared in SunOS 4
 #
 # optarg should be in unistd.h and the rest in stdio.h, both of which are
 # in the autoconf default includes.
@@ -2227,10 +2200,7 @@ AC_CHECK_HEADERS(machine/hal_sysinfo.h,,,
 # sys_errlist and sys_nerr are supposed to be in <errno.h> on SunOS according
 # to the man page (but aren't), in glibc they're in stdio.h.
 #
-AC_CHECK_DECLS([fgetc, fscanf, optarg, ungetc, vfprintf])
-AC_CHECK_DECLS([sys_errlist, sys_nerr], , ,
-[#include <stdio.h>
-#include <errno.h>])
+AC_CHECK_DECLS([ungetc])
 
 AC_TYPE_SIGNAL
 
