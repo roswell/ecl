@@ -308,6 +308,9 @@ typedef unsigned char ecl_base_char;
 #define ECL_WEAK_HASH
 #endif
 
+/* GC_set_start_callback						*/
+#define HAVE_GC_SET_START_CALLBACK
+
 /*
  * SYSTEM FEATURES:
  */

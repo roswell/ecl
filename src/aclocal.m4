@@ -940,6 +940,10 @@ if test "${enable_boehm}" = auto -o "${enable_boehm}" = system; then
      AC_CHECK_HEADER([gc/gc.h],[ECL_BOEHM_GC_HEADER='gc/gc.h'],[system_boehm=no],[])
    fi
  fi
+ if test "${system_boehm}" = "yes"; then
+   AC_CHECK_LIB( [gc], [GC_set_start_callback],
+                 [AC_DEFINE(HAVE_GC_SET_START_CALLBACK)], [] )
+ fi
  AC_MSG_CHECKING( [whether we can use the existing Boehm-Weiser library] )
  AC_MSG_RESULT( [${system_boehm}] )
  if test "${system_boehm}" = "no"; then

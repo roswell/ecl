@@ -31,6 +31,13 @@
 
 #ifdef GBC_BOEHM
 
+static void (*GC_old_start_callback)(void) = NULL;
+#ifdef HAVE_GC_START_CALLBACK
+extern void GC_set_start_callback(void *);
+extern void *GC_get_start_callback(void *);
+#else
+extern void *GC_start_call_back(void);
+#endif
 static void gather_statistics();
 static void ecl_mark_env(struct cl_env_struct *env);
 
@@ -750,7 +757,6 @@ ecl_dealloc(void *ptr)
 static int alloc_initialized = FALSE;
 
 extern void (*GC_push_other_roots)();
-extern void (*GC_start_call_back)();
 static void (*old_GC_push_other_roots)();
 static void stacks_scanner();
 
@@ -1090,7 +1096,13 @@ init_alloc(void)
 #endif /* GBC_BOEHM_PRECISE */
 	old_GC_push_other_roots = GC_push_other_roots;
 	GC_push_other_roots = stacks_scanner;
+#ifdef HAVE_GC_SET_START_CALLBACK
+	GC_old_start_callback = GC_get_start_callback();
+	GC_set_start_callback(gather_statistics);
+#else
+	GC_old_start_callback = GC_start_call_back;
 	GC_start_call_back = (void (*)())gather_statistics;
+#endif
 	GC_java_finalization = 1;
         GC_oom_fn = out_of_memory;
         GC_set_warn_proc(no_warnings);
@@ -1198,7 +1210,7 @@ si_set_finalizer(cl_object o, cl_object finalizer)
 /* If we do not build our own version of the library, we do not have
  * control over the existence of this variable.
  */
-#if 1 /*GBC_BOEHM == 0*/
+#if GBC_BOEHM == 0
 extern int GC_print_stats;
 #else
 static int GC_print_stats;
@@ -1277,6 +1289,8 @@ gather_statistics()
 			   cl_core.gc_counter->big.big_num,
 			   1);
 	}
+	if (GC_old_start_callback)
+		GC_old_start_callback();
 }
 
 
