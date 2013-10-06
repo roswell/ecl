@@ -36,7 +36,9 @@
  "#include <errno.h>"
  "#include <fcntl.h>"
  #+:cygwin
- "#define MSG_WAITALL 0"
+ "#ifndef MSG_WAITALL
+  #define MSG_WAITALL 0
+  #endif"
  "#ifndef MSG_CONFIRM"
  "#define MSG_CONFIRM 0"
  "#endif"
