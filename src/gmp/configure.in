@@ -2287,44 +2287,7 @@ AH_VERBATIM([HAVE_LIMB],
 
 GMP_C_DOUBLE_FORMAT
 
-
-# Reasons for testing:
-#   alarm - not in mingw
-#   attr_get - IRIX specific
-#   clock_gettime - not in glibc 2.2.4, only very recent systems
-#   cputime - not in glibc
-#   getsysinfo - OSF specific
-#   getrusage - not in mingw
-#   gettimeofday - not in mingw
-#   mmap - not in mingw, djgpp
-#   nl_langinfo - X/Open standard only, not in djgpp for instance
-#   obstack_vprintf - glibc specific
-#   processor_info - solaris specific
-#   pstat_getprocessor - HPUX specific (10.x and up)
-#   raise - an ANSI-ism, though probably almost universal by now
-#   read_real_time - AIX specific
-#   sigaction - not in mingw
-#   sigaltstack - not in mingw, or old AIX (reputedly)
-#   sigstack - not in mingw
-#   strerror - not in SunOS
-#   strnlen - glibc extension (some other systems too)
-#   syssgi - IRIX specific
-#   times - not in mingw
-#
-# clock_gettime is in librt on *-*-osf5.1.  We could look for it
-# there, but that's not worth bothering with unless it has a decent
-# resolution (in a quick test clock_getres said only 1 millisecond).
-#
-# AC_FUNC_STRNLEN is not used because we don't want the AC_LIBOBJ
-# replacement setups it gives.  It detects a faulty strnlen on AIX, but
-# missing out on that test is ok since our only use of strnlen is in
-# __gmp_replacement_vsnprintf which is not required on AIX since it has a
-# vsnprintf.
-#
-AC_CHECK_FUNCS(alarm attr_get clock clock_gettime cputime getpagesize getrusage gettimeofday getsysinfo localeconv memset mmap mprotect nl_langinfo obstack_vprintf popen processor_info pstat_getprocessor raise read_real_time sigaction sigaltstack sigstack syssgi strchr strerror strnlen strtol strtoul sysconf sysctl sysctlbyname times)
-
-GMP_FUNC_VSNPRINTF
-GMP_FUNC_SSCANF_WRITABLE_INPUT
+AC_CHECK_FUNCS(localeconv memset nl_langinfo obstack_vprintf raise strchr strtol)
 
 # C++ tests, when required
 #
@@ -2373,7 +2336,7 @@ gmp_mpn_functions="$extra_functions					   \
   submul_1 lshift rshift dive_1 diveby3 divis divrem divrem_1 divrem_2     \
   fib2_ui mod_1 mod_34lsub1 mode1o pre_divrem_1 pre_mod_1 dump		   \
   mul mul_fft mul_n mul_basecase sqr_basecase random random2 pow_1	   \
-  rootrem sqrtrem get_str set_str scan0 scan1 popcount hamdist cmp perfsqr \
+  rootrem sqrtrem get_str set_str scan0 scan1 popcount cmp perfsqr \
   bdivmod gcd_1 gcd gcdext tdiv_qr dc_divrem_n sb_divrem_mn jacbase get_d  \
   mullow_n mullow_basecase				   \
   $gmp_mpn_functions_optional"
@@ -2384,7 +2347,7 @@ tmp_mulfunc=
 case $tmp_fn in
   add_n|sub_n)       tmp_mulfunc="aors_n"    ;;
   addmul_1|submul_1) tmp_mulfunc="aorsmul_1" ;;
-  popcount|hamdist)  tmp_mulfunc="popham"    ;;
+  popcount)  tmp_mulfunc="popham"    ;;
   and_n|andn_n|nand_n | ior_n|iorn_n|nior_n | xor_n|xnor_n)
                      tmp_mulfunc="logops_n"  ;;
   lshift|rshift)     tmp_mulfunc="lorrshift";;
@@ -2718,7 +2681,7 @@ for tmp_fn in $gmp_mpn_functions; do
             case $tmp_fn in
               and_n | ior_n | xor_n | andn_n | \
               copyi | copyd | \
-              popcount | hamdist | \
+              popcount | \
               udiv | udiv_w_sdiv | umul | \
               cntlz | invert_limb)
                 # these operations are either unaffected by nails or defined

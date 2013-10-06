@@ -129,8 +129,6 @@ mpn_addsub_n (mp_ptr r1p, mp_ptr r2p, mp_srcptr s1p, mp_srcptr s2p, mp_size_t n)
 #include <stdio.h>
 #include "timing.h"
 
-long cputime ();
-
 int
 main (int argc, char **argv)
 {

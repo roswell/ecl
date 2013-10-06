@@ -25772,41 +25772,7 @@ $as_echo "$as_me: WARNING: oops, unrecognised float format: $gmp_cv_c_double_for
 esac
 
 
-
-# Reasons for testing:
-#   alarm - not in mingw
-#   attr_get - IRIX specific
-#   clock_gettime - not in glibc 2.2.4, only very recent systems
-#   cputime - not in glibc
-#   getsysinfo - OSF specific
-#   getrusage - not in mingw
-#   gettimeofday - not in mingw
-#   mmap - not in mingw, djgpp
-#   nl_langinfo - X/Open standard only, not in djgpp for instance
-#   obstack_vprintf - glibc specific
-#   processor_info - solaris specific
-#   pstat_getprocessor - HPUX specific (10.x and up)
-#   raise - an ANSI-ism, though probably almost universal by now
-#   read_real_time - AIX specific
-#   sigaction - not in mingw
-#   sigaltstack - not in mingw, or old AIX (reputedly)
-#   sigstack - not in mingw
-#   strerror - not in SunOS
-#   strnlen - glibc extension (some other systems too)
-#   syssgi - IRIX specific
-#   times - not in mingw
-#
-# clock_gettime is in librt on *-*-osf5.1.  We could look for it
-# there, but that's not worth bothering with unless it has a decent
-# resolution (in a quick test clock_getres said only 1 millisecond).
-#
-# AC_FUNC_STRNLEN is not used because we don't want the AC_LIBOBJ
-# replacement setups it gives.  It detects a faulty strnlen on AIX, but
-# missing out on that test is ok since our only use of strnlen is in
-# __gmp_replacement_vsnprintf which is not required on AIX since it has a
-# vsnprintf.
-#
-for ac_func in alarm attr_get clock clock_gettime cputime getpagesize getrusage gettimeofday getsysinfo localeconv memset mmap mprotect nl_langinfo obstack_vprintf popen processor_info pstat_getprocessor raise read_real_time sigaction sigaltstack sigstack syssgi strchr strerror strnlen strtol strtoul sysconf sysctl sysctlbyname times
+for ac_func in localeconv memset nl_langinfo obstack_vprintf raise strchr strtol
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -25817,127 +25783,6 @@ _ACEOF
 
 fi
 done
-
-
-
-ac_fn_c_check_func "$LINENO" "vsnprintf" "ac_cv_func_vsnprintf"
-if test "x$ac_cv_func_vsnprintf" = xyes; then :
-  gmp_vsnprintf_exists=yes
-else
-  gmp_vsnprintf_exists=no
-fi
-
-if test "$gmp_vsnprintf_exists" = no; then
-  gmp_cv_func_vsnprintf=no
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether vsnprintf works" >&5
-$as_echo_n "checking whether vsnprintf works... " >&6; }
-if ${gmp_cv_func_vsnprintf+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  gmp_cv_func_vsnprintf=yes
-   for i in 'check ("hello world");' 'int n; check ("%nhello world", &n);'; do
-     if test "$cross_compiling" = yes; then :
-  gmp_cv_func_vsnprintf=probably; break
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <string.h>  /* for strcmp */
-#include <stdio.h>   /* for vsnprintf */
-
-#if HAVE_STDARG
-#include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
-
-int
-#if HAVE_STDARG
-check (const char *fmt, ...)
-#else
-check (va_alist)
-     va_dcl
-#endif
-{
-  static char  buf[128];
-  va_list  ap;
-  int      ret;
-
-#if HAVE_STDARG
-  va_start (ap, fmt);
-#else
-  char *fmt;
-  va_start (ap);
-  fmt = va_arg (ap, char *);
-#endif
-
-  ret = vsnprintf (buf, 4, fmt, ap);
-
-  if (strcmp (buf, "hel") != 0)
-    exit (1);
-
-  /* allowed return values */
-  if (ret != -1 && ret != 3 && ret != 11)
-    exit (2);
-
-  return 0;
-}
-
-int
-main ()
-{
-$i
-  exit (0);
-}
-
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  :
-else
-  gmp_cv_func_vsnprintf=no; break
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-  done
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $gmp_cv_func_vsnprintf" >&5
-$as_echo "$gmp_cv_func_vsnprintf" >&6; }
-  if test "$gmp_cv_func_vsnprintf" = probably; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: cannot check for properly working vsnprintf when cross compiling, will assume it's ok" >&5
-$as_echo "$as_me: WARNING: cannot check for properly working vsnprintf when cross compiling, will assume it's ok" >&2;}
-  fi
-  if test "$gmp_cv_func_vsnprintf" != no; then
-
-$as_echo "#define HAVE_VSNPRINTF 1" >>confdefs.h
-
-  fi
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether sscanf needs writable input" >&5
-$as_echo_n "checking whether sscanf needs writable input... " >&6; }
-if ${gmp_cv_func_sscanf_writable_input+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $host in
-  *-*-hpux9 | *-*-hpux9.*)
-     gmp_cv_func_sscanf_writable_input=yes ;;
-  *) gmp_cv_func_sscanf_writable_input=no  ;;
-esac
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $gmp_cv_func_sscanf_writable_input" >&5
-$as_echo "$gmp_cv_func_sscanf_writable_input" >&6; }
-case $gmp_cv_func_sscanf_writable_input in
-  yes)
-$as_echo "#define SSCANF_WRITABLE_INPUT 1" >>confdefs.h
- ;;
-  no)  ;;
-  *)   as_fn_error $? "unrecognised \$gmp_cv_func_sscanf_writable_input" "$LINENO" 5 ;;
-esac
 
 
 # C++ tests, when required
@@ -26019,7 +25864,7 @@ gmp_mpn_functions="$extra_functions					   \
   submul_1 lshift rshift dive_1 diveby3 divis divrem divrem_1 divrem_2     \
   fib2_ui mod_1 mod_34lsub1 mode1o pre_divrem_1 pre_mod_1 dump		   \
   mul mul_fft mul_n mul_basecase sqr_basecase random random2 pow_1	   \
-  rootrem sqrtrem get_str set_str scan0 scan1 popcount hamdist cmp perfsqr \
+  rootrem sqrtrem get_str set_str scan0 scan1 popcount cmp perfsqr \
   bdivmod gcd_1 gcd gcdext tdiv_qr dc_divrem_n sb_divrem_mn jacbase get_d  \
   mullow_n mullow_basecase				   \
   $gmp_mpn_functions_optional"
@@ -26250,7 +26095,7 @@ tmp_mulfunc=
 case $tmp_fn in
   add_n|sub_n)       tmp_mulfunc="aors_n"    ;;
   addmul_1|submul_1) tmp_mulfunc="aorsmul_1" ;;
-  popcount|hamdist)  tmp_mulfunc="popham"    ;;
+  popcount)  tmp_mulfunc="popham"    ;;
   and_n|andn_n|nand_n | ior_n|iorn_n|nior_n | xor_n|xnor_n)
                      tmp_mulfunc="logops_n"  ;;
   lshift|rshift)     tmp_mulfunc="lorrshift";;
@@ -26385,7 +26230,7 @@ tmp_mulfunc=
 case $tmp_fn in
   add_n|sub_n)       tmp_mulfunc="aors_n"    ;;
   addmul_1|submul_1) tmp_mulfunc="aorsmul_1" ;;
-  popcount|hamdist)  tmp_mulfunc="popham"    ;;
+  popcount)  tmp_mulfunc="popham"    ;;
   and_n|andn_n|nand_n | ior_n|iorn_n|nior_n | xor_n|xnor_n)
                      tmp_mulfunc="logops_n"  ;;
   lshift|rshift)     tmp_mulfunc="lorrshift";;
@@ -26418,7 +26263,7 @@ esac
             case $tmp_fn in
               and_n | ior_n | xor_n | andn_n | \
               copyi | copyd | \
-              popcount | hamdist | \
+              popcount | \
               udiv | udiv_w_sdiv | umul | \
               cntlz | invert_limb)
                 # these operations are either unaffected by nails or defined
