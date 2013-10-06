@@ -247,9 +247,8 @@ libgmp_la_SOURCES = gmp-impl.h longlong.h randmt.h			\
   randmts.c rands.c randsd.c randsdui.c randbui.c randmui.c version.c
 EXTRA_libgmp_la_SOURCES = tal-debug.c tal-notreent.c tal-reent.c
 libgmp_la_DEPENDENCIES = @TAL_OBJECT@		\
-  $(MPF_OBJECTS) $(MPZ_OBJECTS) $(MPQ_OBJECTS)	\
-  $(MPN_OBJECTS) @mpn_objs_in_libgmp@		\
-  # $(PRINTF_OBJECTS)  $(SCANF_OBJECTS)
+  $(MPZ_OBJECTS) $(MPN_OBJECTS) @mpn_objs_in_libgmp@		\
+  # $(PRINTF_OBJECTS)  $(SCANF_OBJECTS) $(MPF_OBJECTS) $(MPQ_OBJECTS)
 libgmp_la_LIBADD = $(libgmp_la_DEPENDENCIES)
 libgmp_la_LDFLAGS = $(GMP_LDFLAGS) $(LIBGMP_LDFLAGS) \
   -version-info $(LIBGMP_LT_CURRENT):$(LIBGMP_LT_REVISION):$(LIBGMP_LT_AGE)
