@@ -84,7 +84,7 @@ LIBMP_LT_REVISION = 10
 LIBMP_LT_AGE =      1
 
 
-SUBDIRS = mpn mpz # mpq cxx mpf printf scanf tests demos tune
+SUBDIRS = mpn mpz # mpq cxx mpf tests demos tune
 
 EXTRA_DIST = macos configfsf.guess configfsf.sub .gdbinit INSTALL.autoconf
 
@@ -160,8 +160,7 @@ MPZ_OBJECTS = mpz/abs$U.lo mpz/add$U.lo mpz/add_ui$U.lo			\
   mpz/import$U.lo mpz/init$U.lo mpz/init2$U.lo mpz/inp_raw$U.lo		\
   mpz/inp_str$U.lo mpz/invert$U.lo					\
   mpz/ior$U.lo mpz/iset$U.lo mpz/iset_d$U.lo mpz/iset_si$U.lo		\
-  mpz/iset_str$U.lo mpz/iset_ui$U.lo mpz/jacobi$U.lo mpz/kronsz$U.lo	\
-  mpz/kronuz$U.lo mpz/kronzs$U.lo mpz/kronzu$U.lo			\
+  mpz/iset_str$U.lo mpz/iset_ui$U.lo	\
   mpz/lcm$U.lo mpz/lcm_ui$U.lo mpz/lucnum_ui$U.lo mpz/lucnum2_ui$U.lo	\
   mpz/millerrabin$U.lo mpz/mod$U.lo mpz/mul$U.lo mpz/mul_2exp$U.lo	\
   mpz/mul_si$U.lo mpz/mul_ui$U.lo					\
@@ -194,23 +193,6 @@ MPQ_OBJECTS = mpq/abs$U.lo mpq/aors$U.lo				\
   mpq/set_f$U.lo mpq/swap$U.lo
 
 MPN_OBJECTS = mpn/fib_table$U.lo mpn/mp_bases$U.lo
-
-PRINTF_OBJECTS =							\
-  printf/asprintf$U.lo printf/asprntffuns$U.lo				\
-  printf/doprnt$U.lo printf/doprntf$U.lo printf/doprnti$U.lo		\
-  printf/fprintf$U.lo							\
-  printf/obprintf$U.lo printf/obvprintf$U.lo printf/obprntffuns$U.lo	\
-  printf/printf$U.lo printf/printffuns$U.lo				\
-  printf/snprintf$U.lo printf/snprntffuns$U.lo				\
-  printf/sprintf$U.lo printf/sprintffuns$U.lo				\
-  printf/vasprintf$U.lo printf/vfprintf$U.lo printf/vprintf$U.lo	\
-  printf/vsnprintf$U.lo printf/vsprintf$U.lo				\
-  printf/repl-vsnprintf$U.lo
-
-SCANF_OBJECTS =							\
-  scanf/doscan$U.lo scanf/fscanf$U.lo scanf/fscanffuns$U.lo	\
-  scanf/scanf$U.lo scanf/sscanf$U.lo scanf/sscanffuns$U.lo	\
-  scanf/vfscanf$U.lo scanf/vscanf$U.lo scanf/vsscanf$U.lo
 
 # no $U for C++ files
 CXX_OBJECTS =								\
@@ -247,7 +229,7 @@ libgmp_la_SOURCES = gmp-impl.h longlong.h randmt.h			\
 EXTRA_libgmp_la_SOURCES = tal-debug.c tal-notreent.c tal-reent.c
 libgmp_la_DEPENDENCIES = @TAL_OBJECT@		\
   $(MPZ_OBJECTS) $(MPN_OBJECTS) @mpn_objs_in_libgmp@		\
-  # $(PRINTF_OBJECTS)  $(SCANF_OBJECTS) $(MPF_OBJECTS) $(MPQ_OBJECTS)
+  # $(MPF_OBJECTS) $(MPQ_OBJECTS)
 libgmp_la_LIBADD = $(libgmp_la_DEPENDENCIES)
 libgmp_la_LDFLAGS = $(GMP_LDFLAGS) $(LIBGMP_LDFLAGS) \
   -version-info $(LIBGMP_LT_CURRENT):$(LIBGMP_LT_REVISION):$(LIBGMP_LT_AGE)

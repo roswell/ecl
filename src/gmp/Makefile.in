@@ -110,20 +110,19 @@ am__DEPENDENCIES_1 = mpz/abs$U.lo mpz/add$U.lo mpz/add_ui$U.lo \
 	mpz/getlimbn$U.lo mpz/import$U.lo mpz/init$U.lo mpz/init2$U.lo \
 	mpz/inp_raw$U.lo mpz/inp_str$U.lo mpz/invert$U.lo mpz/ior$U.lo \
 	mpz/iset$U.lo mpz/iset_d$U.lo mpz/iset_si$U.lo \
-	mpz/iset_str$U.lo mpz/iset_ui$U.lo mpz/jacobi$U.lo \
-	mpz/kronsz$U.lo mpz/kronuz$U.lo mpz/kronzs$U.lo \
-	mpz/kronzu$U.lo mpz/lcm$U.lo mpz/lcm_ui$U.lo \
-	mpz/lucnum_ui$U.lo mpz/lucnum2_ui$U.lo mpz/millerrabin$U.lo \
-	mpz/mod$U.lo mpz/mul$U.lo mpz/mul_2exp$U.lo mpz/mul_si$U.lo \
-	mpz/mul_ui$U.lo mpz/n_pow_ui$U.lo mpz/neg$U.lo \
-	mpz/nextprime$U.lo mpz/out_raw$U.lo mpz/out_str$U.lo \
-	mpz/perfpow$U.lo mpz/perfsqr$U.lo mpz/popcount$U.lo \
-	mpz/pow_ui$U.lo mpz/powm$U.lo mpz/powm_ui$U.lo \
-	mpz/pprime_p$U.lo mpz/random$U.lo mpz/random2$U.lo \
-	mpz/realloc$U.lo mpz/realloc2$U.lo mpz/remove$U.lo \
-	mpz/root$U.lo mpz/rootrem$U.lo mpz/rrandomb$U.lo \
-	mpz/scan0$U.lo mpz/scan1$U.lo mpz/set$U.lo mpz/set_d$U.lo \
-	mpz/set_f$U.lo mpz/set_q$U.lo mpz/set_si$U.lo mpz/set_str$U.lo \
+	mpz/iset_str$U.lo mpz/iset_ui$U.lo mpz/lcm$U.lo \
+	mpz/lcm_ui$U.lo mpz/lucnum_ui$U.lo mpz/lucnum2_ui$U.lo \
+	mpz/millerrabin$U.lo mpz/mod$U.lo mpz/mul$U.lo \
+	mpz/mul_2exp$U.lo mpz/mul_si$U.lo mpz/mul_ui$U.lo \
+	mpz/n_pow_ui$U.lo mpz/neg$U.lo mpz/nextprime$U.lo \
+	mpz/out_raw$U.lo mpz/out_str$U.lo mpz/perfpow$U.lo \
+	mpz/perfsqr$U.lo mpz/popcount$U.lo mpz/pow_ui$U.lo \
+	mpz/powm$U.lo mpz/powm_ui$U.lo mpz/pprime_p$U.lo \
+	mpz/random$U.lo mpz/random2$U.lo mpz/realloc$U.lo \
+	mpz/realloc2$U.lo mpz/remove$U.lo mpz/root$U.lo \
+	mpz/rootrem$U.lo mpz/rrandomb$U.lo mpz/scan0$U.lo \
+	mpz/scan1$U.lo mpz/set$U.lo mpz/set_d$U.lo mpz/set_f$U.lo \
+	mpz/set_q$U.lo mpz/set_si$U.lo mpz/set_str$U.lo \
 	mpz/set_ui$U.lo mpz/setbit$U.lo mpz/size$U.lo \
 	mpz/sizeinbase$U.lo mpz/sqrt$U.lo mpz/sqrtrem$U.lo \
 	mpz/sub$U.lo mpz/sub_ui$U.lo mpz/swap$U.lo mpz/tdiv_ui$U.lo \
@@ -407,7 +406,7 @@ LIBGMPXX_LT_AGE = 1
 LIBMP_LT_CURRENT = 4
 LIBMP_LT_REVISION = 10
 LIBMP_LT_AGE = 1
-SUBDIRS = mpn mpz # mpq cxx mpf printf scanf tests demos tune
+SUBDIRS = mpn mpz # mpq cxx mpf tests demos tune
 
 # The ansi2knr setups for the build programs are the same as the normal
 # automake ansi2knr rules, but using $(CC_FOR_BUILD) instead of $(CC).
@@ -498,8 +497,7 @@ MPZ_OBJECTS = mpz/abs$U.lo mpz/add$U.lo mpz/add_ui$U.lo			\
   mpz/import$U.lo mpz/init$U.lo mpz/init2$U.lo mpz/inp_raw$U.lo		\
   mpz/inp_str$U.lo mpz/invert$U.lo					\
   mpz/ior$U.lo mpz/iset$U.lo mpz/iset_d$U.lo mpz/iset_si$U.lo		\
-  mpz/iset_str$U.lo mpz/iset_ui$U.lo mpz/jacobi$U.lo mpz/kronsz$U.lo	\
-  mpz/kronuz$U.lo mpz/kronzs$U.lo mpz/kronzu$U.lo			\
+  mpz/iset_str$U.lo mpz/iset_ui$U.lo	\
   mpz/lcm$U.lo mpz/lcm_ui$U.lo mpz/lucnum_ui$U.lo mpz/lucnum2_ui$U.lo	\
   mpz/millerrabin$U.lo mpz/mod$U.lo mpz/mul$U.lo mpz/mul_2exp$U.lo	\
   mpz/mul_si$U.lo mpz/mul_ui$U.lo					\
@@ -532,23 +530,6 @@ MPQ_OBJECTS = mpq/abs$U.lo mpq/aors$U.lo				\
   mpq/set_f$U.lo mpq/swap$U.lo
 
 MPN_OBJECTS = mpn/fib_table$U.lo mpn/mp_bases$U.lo
-PRINTF_OBJECTS = \
-  printf/asprintf$U.lo printf/asprntffuns$U.lo				\
-  printf/doprnt$U.lo printf/doprntf$U.lo printf/doprnti$U.lo		\
-  printf/fprintf$U.lo							\
-  printf/obprintf$U.lo printf/obvprintf$U.lo printf/obprntffuns$U.lo	\
-  printf/printf$U.lo printf/printffuns$U.lo				\
-  printf/snprintf$U.lo printf/snprntffuns$U.lo				\
-  printf/sprintf$U.lo printf/sprintffuns$U.lo				\
-  printf/vasprintf$U.lo printf/vfprintf$U.lo printf/vprintf$U.lo	\
-  printf/vsnprintf$U.lo printf/vsprintf$U.lo				\
-  printf/repl-vsnprintf$U.lo
-
-SCANF_OBJECTS = \
-  scanf/doscan$U.lo scanf/fscanf$U.lo scanf/fscanffuns$U.lo	\
-  scanf/scanf$U.lo scanf/sscanf$U.lo scanf/sscanffuns$U.lo	\
-  scanf/vfscanf$U.lo scanf/vscanf$U.lo scanf/vsscanf$U.lo
-
 
 # no $U for C++ files
 CXX_OBJECTS = \
@@ -585,7 +566,7 @@ libgmp_la_SOURCES = gmp-impl.h longlong.h randmt.h			\
 EXTRA_libgmp_la_SOURCES = tal-debug.c tal-notreent.c tal-reent.c
 libgmp_la_DEPENDENCIES = @TAL_OBJECT@		\
   $(MPZ_OBJECTS) $(MPN_OBJECTS) @mpn_objs_in_libgmp@		\
-  # $(PRINTF_OBJECTS)  $(SCANF_OBJECTS) $(MPF_OBJECTS) $(MPQ_OBJECTS)
+  # $(MPF_OBJECTS) $(MPQ_OBJECTS)
 
 libgmp_la_LIBADD = $(libgmp_la_DEPENDENCIES)
 libgmp_la_LDFLAGS = $(GMP_LDFLAGS) $(LIBGMP_LDFLAGS) \
