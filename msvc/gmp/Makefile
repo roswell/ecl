@@ -365,11 +365,6 @@ MPZ_SOURCES = \
     mpz\iset_si.c \
     mpz\iset_str.c \
     mpz\iset_ui.c \
-    mpz\jacobi.c \
-    mpz\kronsz.c \
-    mpz\kronuz.c \
-    mpz\kronzs.c \
-    mpz\kronzu.c \
     mpz\lcm.c \
     mpz\lcm_ui.c \
     mpz\lucnum2_ui.c \
@@ -536,7 +531,7 @@ MPN_GC_OBJS = $(MPN_GC_SOURCES:.c=.obj)
 #MPN_P0_OBJS = $(MPN_P0_ASM_SOURCES:.asm=.obj) $(MPN_P0_C_SOURCES:.c=.obj)
 MPN_P3_OBJS = $(MPN_P3_ASM_SOURCES:.asm=.obj) $(MPN_P3_C_SOURCES:.c=.obj)
 MPN_P4_OBJS = $(MPN_P4_ASM_SOURCES:.asm=.obj) $(MPN_P4_C_SOURCES:.c=.obj)
-MPN_AMD64_OBJS = $(MPN_AMD64_ASM_SOURCES:.asm=.obj) $(MPN_AMD64_C_SOURCES:.c=.obj)
+MPN_AMD64_OBJS = $(MPN_AMD64_ASM_SOURCES:.asm=.obj) $(MPN_AMD64_C_SOURCES:.c=.obj) #
 MPZ_OBJS = $(MPZ_SOURCES:.c=.obj)
 GMP_OBJS = $(GMP_SOURCES:.c=.obj)
 
