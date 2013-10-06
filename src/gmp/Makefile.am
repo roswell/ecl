@@ -84,7 +84,7 @@ LIBMP_LT_REVISION = 10
 LIBMP_LT_AGE =      1
 
 
-SUBDIRS = mpn mpz mpq cxx # mpf printf scanf tests demos tune
+SUBDIRS = mpn mpz # mpq cxx mpf printf scanf tests demos tune
 
 EXTRA_DIST = macos configfsf.guess configfsf.sub .gdbinit INSTALL.autoconf
 

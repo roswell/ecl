@@ -28316,7 +28316,7 @@ echo "define(\`__CONFIG_M4_INCLUDED__')" >> $gmp_configm4
 # FIXME: Upcoming version of autoconf/automake may not like broken lines.
 #        Right now automake isn't accepting the new AC_CONFIG_FILES scheme.
 
-ac_config_files="$ac_config_files Makefile mpbsd/Makefile mpf/Makefile mpn/Makefile mpq/Makefile mpz/Makefile printf/Makefile scanf/Makefile cxx/Makefile doc/Makefile gmp.h:gmp-h.in mp.h:mp-h.in"
+ac_config_files="$ac_config_files Makefile mpn/Makefile mpz/Makefile gmp.h:gmp-h.in mp.h:mp-h.in"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -29507,15 +29507,8 @@ do
     "mpn/$tmp_fn.$tmp_ext") CONFIG_LINKS="$CONFIG_LINKS mpn/$tmp_fn.$tmp_ext:mpn/$tmp_dir/$tmp_base.$tmp_ext" ;;
     "gmp-mparam.h") CONFIG_LINKS="$CONFIG_LINKS gmp-mparam.h:mpn/$gmp_mparam_dir/gmp-mparam.h" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
-    "mpbsd/Makefile") CONFIG_FILES="$CONFIG_FILES mpbsd/Makefile" ;;
-    "mpf/Makefile") CONFIG_FILES="$CONFIG_FILES mpf/Makefile" ;;
     "mpn/Makefile") CONFIG_FILES="$CONFIG_FILES mpn/Makefile" ;;
-    "mpq/Makefile") CONFIG_FILES="$CONFIG_FILES mpq/Makefile" ;;
     "mpz/Makefile") CONFIG_FILES="$CONFIG_FILES mpz/Makefile" ;;
-    "printf/Makefile") CONFIG_FILES="$CONFIG_FILES printf/Makefile" ;;
-    "scanf/Makefile") CONFIG_FILES="$CONFIG_FILES scanf/Makefile" ;;
-    "cxx/Makefile") CONFIG_FILES="$CONFIG_FILES cxx/Makefile" ;;
-    "doc/Makefile") CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
     "gmp.h") CONFIG_FILES="$CONFIG_FILES gmp.h:gmp-h.in" ;;
     "mp.h") CONFIG_FILES="$CONFIG_FILES mp.h:mp-h.in" ;;
 
