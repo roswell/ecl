@@ -332,14 +332,6 @@ typedef __mpq_struct *mpq_ptr;
 #define _GMP_H_HAVE_FILE 1
 #endif
 
-/* In ISO C, if a prototype involving "struct obstack *" is given without
-   that structure defined, then the struct is scoped down to just the
-   prototype, causing a conflict if it's subsequently defined for real.  So
-   only give prototypes if we've got obstack.h.  */
-#if defined (_OBSTACK_H)   /* glibc <obstack.h> */
-#define _GMP_H_HAVE_OBSTACK 1
-#endif
-
 /* The prototypes for gmp_vprintf etc are provided only if va_list is
    available, via an application having included <stdarg.h> or <varargs.h>.
    Usually va_list is a typedef so can't be tested directly, but C99
@@ -592,90 +584,6 @@ unsigned long gmp_urandomb_ui __GMP_PROTO ((gmp_randstate_t, unsigned long));
 
 #define gmp_urandomm_ui __gmp_urandomm_ui
 unsigned long gmp_urandomm_ui __GMP_PROTO ((gmp_randstate_t, unsigned long));
-
-
-/**************** Formatted output routines.  ****************/
-
-#define gmp_asprintf __gmp_asprintf
-__GMP_DECLSPEC int gmp_asprintf __GMP_PROTO ((char **, __gmp_const char *, ...));
-
-#define gmp_fprintf __gmp_fprintf
-#ifdef _GMP_H_HAVE_FILE
-__GMP_DECLSPEC int gmp_fprintf __GMP_PROTO ((FILE *, __gmp_const char *, ...));
-#endif
-
-#define gmp_obstack_printf __gmp_obstack_printf
-#if defined (_GMP_H_HAVE_OBSTACK)
-__GMP_DECLSPEC int gmp_obstack_printf __GMP_PROTO ((struct obstack *, __gmp_const char *, ...));
-#endif
-
-#define gmp_obstack_vprintf __gmp_obstack_vprintf
-#if defined (_GMP_H_HAVE_OBSTACK) && defined (_GMP_H_HAVE_VA_LIST)
-__GMP_DECLSPEC int gmp_obstack_vprintf __GMP_PROTO ((struct obstack *, __gmp_const char *, va_list));
-#endif
-
-#define gmp_printf __gmp_printf
-__GMP_DECLSPEC int gmp_printf __GMP_PROTO ((__gmp_const char *, ...));
-
-#define gmp_snprintf __gmp_snprintf
-__GMP_DECLSPEC int gmp_snprintf __GMP_PROTO ((char *, size_t, __gmp_const char *, ...));
-
-#define gmp_sprintf __gmp_sprintf
-__GMP_DECLSPEC int gmp_sprintf __GMP_PROTO ((char *, __gmp_const char *, ...));
-
-#define gmp_vasprintf __gmp_vasprintf
-#if defined (_GMP_H_HAVE_VA_LIST)
-__GMP_DECLSPEC int gmp_vasprintf __GMP_PROTO ((char **, __gmp_const char *, va_list));
-#endif
-
-#define gmp_vfprintf __gmp_vfprintf
-#if defined (_GMP_H_HAVE_FILE) && defined (_GMP_H_HAVE_VA_LIST)
-__GMP_DECLSPEC int gmp_vfprintf __GMP_PROTO ((FILE *, __gmp_const char *, va_list));
-#endif
-
-#define gmp_vprintf __gmp_vprintf
-#if defined (_GMP_H_HAVE_VA_LIST)
-__GMP_DECLSPEC int gmp_vprintf __GMP_PROTO ((__gmp_const char *, va_list));
-#endif
-
-#define gmp_vsnprintf __gmp_vsnprintf
-#if defined (_GMP_H_HAVE_VA_LIST)
-__GMP_DECLSPEC int gmp_vsnprintf __GMP_PROTO ((char *, size_t, __gmp_const char *, va_list));
-#endif
-
-#define gmp_vsprintf __gmp_vsprintf
-#if defined (_GMP_H_HAVE_VA_LIST)
-__GMP_DECLSPEC int gmp_vsprintf __GMP_PROTO ((char *, __gmp_const char *, va_list));
-#endif
-
-
-/**************** Formatted input routines.  ****************/
-
-#define gmp_fscanf __gmp_fscanf
-#ifdef _GMP_H_HAVE_FILE
-__GMP_DECLSPEC int gmp_fscanf __GMP_PROTO ((FILE *, __gmp_const char *, ...));
-#endif
-
-#define gmp_scanf __gmp_scanf
-__GMP_DECLSPEC int gmp_scanf __GMP_PROTO ((__gmp_const char *, ...));
-
-#define gmp_sscanf __gmp_sscanf
-__GMP_DECLSPEC int gmp_sscanf __GMP_PROTO ((__gmp_const char *, __gmp_const char *, ...));
-
-#define gmp_vfscanf __gmp_vfscanf
-#if defined (_GMP_H_HAVE_FILE) && defined (_GMP_H_HAVE_VA_LIST)
-__GMP_DECLSPEC int gmp_vfscanf __GMP_PROTO ((FILE *, __gmp_const char *, va_list));
-#endif
-
-#define gmp_vscanf __gmp_vscanf
-#if defined (_GMP_H_HAVE_VA_LIST)
-__GMP_DECLSPEC int gmp_vscanf __GMP_PROTO ((__gmp_const char *, va_list));
-#endif
-
-#define gmp_vsscanf __gmp_vsscanf
-#if defined (_GMP_H_HAVE_VA_LIST)
-__GMP_DECLSPEC int gmp_vsscanf __GMP_PROTO ((__gmp_const char *, __gmp_const char *, va_list));
-#endif
 
 
 /**************** Integer (i.e. Z) routines.  ****************/
