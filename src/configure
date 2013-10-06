@@ -4977,6 +4977,11 @@ case "${host_os}" in
 		SHAREDPREFIX=''
 		SHAREDEXT='dll'
 		PICFLAG=''
+		if test "x$host_cpu" = "xx86_64" ; then
+		   # Our GMP library is too old and does not support
+		   # Windows64 calling conventions.
+		   with_c_gmp=yes
+		fi
 		;;
 	mingw*)
 		thehost='mingw32'
@@ -5918,6 +5923,49 @@ fi
 
 
    fi
+ fi
+ if test "${system_boehm}" = "yes"; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GC_set_start_callback in -lgc" >&5
+$as_echo_n "checking for GC_set_start_callback in -lgc... " >&6; }
+if ${ac_cv_lib_gc_GC_set_start_callback+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lgc  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char GC_set_start_callback ();
+int
+main ()
+{
+return GC_set_start_callback ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_gc_GC_set_start_callback=yes
+else
+  ac_cv_lib_gc_GC_set_start_callback=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_gc_GC_set_start_callback" >&5
+$as_echo "$ac_cv_lib_gc_GC_set_start_callback" >&6; }
+if test "x$ac_cv_lib_gc_GC_set_start_callback" = xyes; then :
+  $as_echo "#define HAVE_GC_SET_START_CALLBACK 1" >>confdefs.h
+
+fi
+
  fi
  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether we can use the existing Boehm-Weiser library " >&5
 $as_echo_n "checking whether we can use the existing Boehm-Weiser library ... " >&6; }

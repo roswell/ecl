@@ -359,6 +359,11 @@ case "${host_os}" in
 		SHAREDPREFIX=''
 		SHAREDEXT='dll'
 		PICFLAG=''
+		if test "x$host_cpu" = "xx86_64" ; then
+		   # Our GMP library is too old and does not support
+		   # Windows64 calling conventions.
+		   with_c_gmp=yes
+		fi
 		;;
 	mingw*)
 		thehost='mingw32'
