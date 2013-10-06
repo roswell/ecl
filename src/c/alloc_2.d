@@ -36,9 +36,9 @@ static void (*GC_old_start_callback)(void) = NULL;
 extern void GC_set_start_callback(void *);
 extern void *GC_get_start_callback(void *);
 #else
-extern void *GC_start_call_back(void);
+extern void (*GC_start_call_back)(void);
 #endif
-static void gather_statistics();
+static void gather_statistics(void);
 static void ecl_mark_env(struct cl_env_struct *env);
 
 /* We need these prototypes because private/gc.h is not available
@@ -1101,7 +1101,7 @@ init_alloc(void)
 	GC_set_start_callback(gather_statistics);
 #else
 	GC_old_start_callback = GC_start_call_back;
-	GC_start_call_back = (void (*)())gather_statistics;
+	GC_start_call_back = (void (*)(void))gather_statistics;
 #endif
 	GC_java_finalization = 1;
         GC_oom_fn = out_of_memory;
