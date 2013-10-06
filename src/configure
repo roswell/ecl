@@ -5558,11 +5558,11 @@ $as_echo "$as_me: Configuring included GMP library:" >&6;}
   fi
   if test "x$with_c_gmp" = "xyes"; then
     gmp_build=`echo ${gmp_build} | sed 's,[^-]*\(-.*\),none\1,'`
-    echo ***
-    echo *** BUILDING GMP WITH C!
-    echo *** This is a last resort, either because of license or
-    echo *** porting issues.
-    echo ***
+    echo '***'
+    echo '***' BUILDING GMP WITH C!
+    echo '***' This is a last resort, either because of license or
+    echo '***' porting issues.
+    echo '***'
   fi
   ECL_GMP_HEADER='ecl/gmp.h'
   if test "x$ABI" = "x"; then
