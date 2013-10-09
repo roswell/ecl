@@ -9209,7 +9209,7 @@ if ${gmp_cv_c_for_build_ansi+:} false; then :
 else
   cat >conftest.c <<EOF
 int
-main (int argc, char *argv)
+main (int argc, char **argv)
 {
   exit(0);
 }

@@ -3768,7 +3768,7 @@ AC_CACHE_CHECK([whether build system compiler is ANSI],
                gmp_cv_c_for_build_ansi,
 [cat >conftest.c <<EOF
 int
-main (int argc, char *argv[])
+main (int argc, char **argv)
 {
   exit(0);
 }
