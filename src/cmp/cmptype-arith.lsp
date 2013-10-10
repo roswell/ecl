@@ -129,21 +129,18 @@
 (defun-equal-cached values-type-primary-type (type)
   ;; Extract the type of the first value returned by this form. We are
   ;; pragmatic and thus (VALUES) => NULL  [CHECKME!]
-  (when (and (consp type) (eq (first type) 'VALUES))
-    (if (null (rest type))
-	(setf type 'null)
-	(let ((subtype (second type)))
-	  (when (or (eq subtype '&optional) (eq subtype '&rest))
-	    (setf type (cddr type))
-	    (when (or (null type)
-		      (eq (setf subtype (first type)) '&optional)
-		      (eq subtype '&rest))
-	      (cmperr "Syntax error in type expression ~S" type))
-	    ;; An &optional or &rest output value might be missing
-	    ;; If this is the case, the the value will be NIL.
-	    (setf subtype (type-or 'null subtype)))
-	  (setf type subtype))))
-  type)
+  (let (aux)
+    (cond ((or (atom type)
+	       (not (eq (first type) 'VALUES)))
+	   type)
+	  ((null (setf aux (rest type)))
+	   'NULL)
+	  ((member (setf aux (first aux))
+		   '(&optional &rest &allow-other-keys))
+	   (setf aux (do-values-type-to-n-types type 1))
+	   (if aux (first aux) 'null))
+	  (t
+	   aux))))
 
 (defun-equal-cached values-type-to-n-types (type length)
   (when (plusp length)
@@ -153,11 +150,14 @@
   (declare (si::c-local))
   (multiple-value-bind (required optional rest)
       (split-values-type type)
-    (let* ((output (nconc required optional))
+    (let* ((optional (loop for i in optional
+			   collect (if (eq i t) i `(or null ,i))))
+	   (output (nconc required optional))
 	   (l (length output)))
       (if (< l length)
-	  (nconc output (make-list (- length l) :initial-element rest))
-	(subseq output 0 (1- length))))))
+	  (nconc output (make-list (- length l)
+				   :initial-element (if rest (first rest) t)))
+	(subseq output 0 length)))))
 
 (defun split-values-type (type)
   (if (or (atom type) (not (eq (first type) 'VALUES)))
@@ -165,7 +165,7 @@
     (loop with required = '()
 	  with optional-flag = nil
 	  with optional = '()
-	  with rest = nil
+	  with rest = '()
 	  with a-o-k = nil
 	  with l = (rest type)
 	  while l
@@ -184,7 +184,7 @@
 			    (not (member (rest l) '(() (&allow-other-keys))
 					 :test #'equal)))
 		    (cmperr "Syntax error in type expression ~S" type))
-		  (setf rest (car l)))
+		  (setf rest (list (car l))))
 		 (otherwise
 		  (if optional-flag
 		      (push typespec optional)
