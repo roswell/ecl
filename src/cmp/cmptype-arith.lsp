@@ -146,34 +146,51 @@
   type)
 
 (defun-equal-cached values-type-to-n-types (type length)
-  (if (or (atom type) (not (eql (first type) 'values)))
-      (and (plusp length)
-           (list* type (make-list (1- length) :initial-element 'NULL)))
-      (do* ((l (rest type))
-            (output '())
-            (n length (1- n)))
-           ((or (null l) (zerop n)) (nreverse output))
-        (let ((type (pop l)))
-          (case type
-            (&optional
-             (when (null l)
-               (cmperr "Syntax error in type expression ~S" type))
-             (setf type (pop l)))
-            (&rest
-             (when (null l)
-               (cmperr "Syntax error in type expression ~S" type))
-             (return-from values-type-to-n-types
-               (nreconc output (make-list n :initial-element (first l))))))
-          (push type output)))))
+  (when (plusp length)
+    (do-values-type-to-n-types type length)))
+
+(defun do-values-type-to-n-types (type length)
+  (declare (si::c-local))
+  (multiple-value-bind (required optional rest)
+      (split-values-type type)
+    (let* ((output (nconc required optional))
+	   (l (length output)))
+      (if (< l length)
+	  (nconc output (make-list (- length l) :initial-element rest))
+	(subseq output 0 (1- length))))))
 
 (defun split-values-type (type)
   (if (or (atom type) (not (eq (first type) 'VALUES)))
-      (values (list type) nil nil)
-      (let ((rest (member '&rest type))
-            (opt (member '&optional type)))
-        (values (ldiff (rest type) (or rest opt))
-                (ldiff (rest (member '&optional type)) rest)
-                (rest (member '&rest type))))))
+      (values (list type) nil nil nil)
+    (loop with required = '()
+	  with optional-flag = nil
+	  with optional = '()
+	  with rest = nil
+	  with a-o-k = nil
+	  with l = (rest type)
+	  while l
+	  do (let ((typespec (pop l)))
+	       (case typespec
+		 (&allow-other-keys
+		  (setf a-o-k t)
+		  (when l
+		    (cmperr "Syntax error in type expression ~S" type)))
+		 (&optional
+		  (when optional-flag
+		    (cmperr "Syntax error in type expression ~S" type))
+		  (setf optional-flag t))
+		 (&rest
+		  (when (or (null l)
+			    (not (member (rest l) '(() (&allow-other-keys))
+					 :test #'equal)))
+		    (cmperr "Syntax error in type expression ~S" type))
+		  (setf rest (car l)))
+		 (otherwise
+		  (if optional-flag
+		      (push typespec optional)
+		    (push typespec required)))))
+	  finally
+	  (return (values required (nreverse optional) rest a-o-k)))))
 
 (defun-equal-cached values-type-or (t1 t2)
   (when (or (eq t2 'T) (equalp t2 '(VALUES &REST T)))
