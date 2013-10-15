@@ -67,7 +67,7 @@ all functions."
 	       step (barfp t) fname oldf)
     (cond ((si::valid-function-name-p spec)
 	   (setq fname spec))
-          ((si::proper-list-p spec)
+          ((not (si::proper-list-p spec))
            (error "Not a valid argument to TRACE: ~S" spec))
 	  ((si::valid-function-name-p (first spec))
 	   (setq fname (first spec))
