@@ -27,7 +27,7 @@
 # Makefiles in subdirectories, but here we must omit it so automake gives
 # the actual ansi2knr build rule, not "cd $(top_builddir) && make ansi2knr".
 #
-AUTOMAKE_OPTIONS = 1.8 gnu no-dependencies ansi2knr
+AUTOMAKE_OPTIONS = 1.8 gnu no-dependencies
 
 
 # Libtool -version-info for libgmp.la and libmp.la.  See "Versioning" in the
@@ -289,9 +289,6 @@ install-data-hook:
 	@echo ''
 
 
-# The ansi2knr setups for the build programs are the same as the normal
-# automake ansi2knr rules, but using $(CC_FOR_BUILD) instead of $(CC).
-#
 # The "test -f" support for srcdir!=builddir is similar to the automake .c.o
 # etc rules, but with each foo.c explicitly, since $< is not portable
 # outside an inference rule.
@@ -314,14 +311,9 @@ mpz/fac_ui.h: gen-fac_ui$(EXEEXT_FOR_BUILD)
 	./gen-fac_ui $(BITS_PER_MP_LIMB) $(GMP_NAIL_BITS) >mpz/fac_ui.h || (rm -f mpz/fac_ui.h; exit 1)
 BUILT_SOURCES += mpz/fac_ui.h
 
-gen-fac_ui$(EXEEXT_FOR_BUILD): gen-fac_ui$(U_FOR_BUILD).c dumbmp.c
-	$(CC_FOR_BUILD) `test -f 'gen-fac_ui$(U_FOR_BUILD).c' || echo '$(srcdir)/'`gen-fac_ui$(U_FOR_BUILD).c -o gen-fac_ui$(EXEEXT_FOR_BUILD)
-DISTCLEANFILES += gen-fac_ui$(EXEEXT_FOR_BUILD)
+gen-fac_ui$(EXEEXT_FOR_BUILD): gen-fac_ui.c dumbmp.c
+	$(CC_FOR_BUILD) $(srcdir)/gen-fac_ui.c -o gen-fac_ui$(EXEEXT_FOR_BUILD)
 EXTRA_DIST += gen-fac_ui.c
-
-gen-fac_ui_.c: gen-fac_ui.c $(ANSI2KNR)
-	$(CPP_FOR_BUILD) `if test -f $(srcdir)/gen-fac_ui.c; then echo $(srcdir)/gen-fac_ui.c; else echo gen-fac_ui.c; fi` | sed 's/^# \([0-9]\)/#line \1/' | $(ANSI2KNR) > gen-fac_ui_.c || rm -f gen-fac_ui_.c
-
 
 fib_table.h: gen-fib$(EXEEXT_FOR_BUILD)
 	./gen-fib header $(BITS_PER_MP_LIMB) $(GMP_NAIL_BITS) >fib_table.h || (rm -f fib_table.h; exit 1)
@@ -331,14 +323,9 @@ mpn/fib_table.c: gen-fib$(EXEEXT_FOR_BUILD)
 	./gen-fib table $(BITS_PER_MP_LIMB) $(GMP_NAIL_BITS) >mpn/fib_table.c || (rm -f mpn/fib_table.c; exit 1)
 BUILT_SOURCES += mpn/fib_table.c
 
-gen-fib$(EXEEXT_FOR_BUILD): gen-fib$(U_FOR_BUILD).c dumbmp.c
-	$(CC_FOR_BUILD) `test -f 'gen-fib$(U_FOR_BUILD).c' || echo '$(srcdir)/'`gen-fib$(U_FOR_BUILD).c -o gen-fib$(EXEEXT_FOR_BUILD)
-DISTCLEANFILES += gen-fib$(EXEEXT_FOR_BUILD)
+gen-fib$(EXEEXT_FOR_BUILD): gen-fib.c dumbmp.c
+	$(CC_FOR_BUILD) $(srcdir)/gen-fib.c -o gen-fib$(EXEEXT_FOR_BUILD)
 EXTRA_DIST += gen-fib.c
-
-gen-fib_.c: gen-fib.c $(ANSI2KNR)
-	$(CPP_FOR_BUILD) `if test -f $(srcdir)/gen-fib.c; then echo $(srcdir)/gen-fib.c; else echo gen-fib.c; fi` | sed 's/^# \([0-9]\)/#line \1/' | $(ANSI2KNR) > gen-fib_.c || rm -f gen-fib_.c
-
 
 mp_bases.h: gen-bases$(EXEEXT_FOR_BUILD)
 	./gen-bases header $(BITS_PER_MP_LIMB) $(GMP_NAIL_BITS) >mp_bases.h || (rm -f mp_bases.h; exit 1)
@@ -348,27 +335,17 @@ mpn/mp_bases.c: gen-bases$(EXEEXT_FOR_BUILD)
 	./gen-bases table $(BITS_PER_MP_LIMB) $(GMP_NAIL_BITS) >mpn/mp_bases.c || (rm -f mpn/mp_bases.c; exit 1)
 BUILT_SOURCES += mpn/mp_bases.c
 
-gen-bases$(EXEEXT_FOR_BUILD): gen-bases$(U_FOR_BUILD).c dumbmp.c
-	$(CC_FOR_BUILD) `test -f 'gen-bases$(U_FOR_BUILD).c' || echo '$(srcdir)/'`gen-bases$(U_FOR_BUILD).c -o gen-bases$(EXEEXT_FOR_BUILD) $(LIBM_FOR_BUILD)
-DISTCLEANFILES += gen-bases$(EXEEXT_FOR_BUILD)
+gen-bases$(EXEEXT_FOR_BUILD): gen-bases.c dumbmp.c
+	$(CC_FOR_BUILD) $(srcdir)/gen-bases.c -o gen-bases$(EXEEXT_FOR_BUILD) $(LIBM_FOR_BUILD)
 EXTRA_DIST += gen-bases.c
-
-gen-bases_.c: gen-bases.c $(ANSI2KNR)
-	$(CPP_FOR_BUILD) `if test -f $(srcdir)/gen-bases.c; then echo $(srcdir)/gen-bases.c; else echo gen-bases.c; fi` | sed 's/^# \([0-9]\)/#line \1/' | $(ANSI2KNR) > gen-bases_.c || rm -f gen-bases_.c
-
 
 mpn/perfsqr.h: gen-psqr$(EXEEXT_FOR_BUILD)
 	./gen-psqr $(BITS_PER_MP_LIMB) $(GMP_NAIL_BITS) >mpn/perfsqr.h || (rm -f mpn/perfsqr.h; exit 1)
 BUILT_SOURCES += mpn/perfsqr.h
 
-gen-psqr$(EXEEXT_FOR_BUILD): gen-psqr$(U_FOR_BUILD).c dumbmp.c
-	$(CC_FOR_BUILD) `test -f 'gen-psqr$(U_FOR_BUILD).c' || echo '$(srcdir)/'`gen-psqr$(U_FOR_BUILD).c -o gen-psqr$(EXEEXT_FOR_BUILD) $(LIBM_FOR_BUILD)
-DISTCLEANFILES += gen-psqr$(EXEEXT_FOR_BUILD)
+gen-psqr$(EXEEXT_FOR_BUILD): gen-psqr.c dumbmp.c
+	$(CC_FOR_BUILD) $(srcdir)/gen-psqr.c -o gen-psqr$(EXEEXT_FOR_BUILD) $(LIBM_FOR_BUILD)
 EXTRA_DIST += gen-psqr.c
-
-gen-psqr_.c: gen-psqr.c $(ANSI2KNR)
-	$(CPP_FOR_BUILD) `if test -f $(srcdir)/gen-psqr.c; then echo $(srcdir)/gen-psqr.c; else echo gen-psqr.c; fi` | sed 's/^# \([0-9]\)/#line \1/' | $(ANSI2KNR) > gen-psqr_.c || rm -f gen-psqr_.c
-
 
 # Avoid: CVS - cvs directories
 #        *~  - emacs backups

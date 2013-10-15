@@ -3757,38 +3757,6 @@ AC_SUBST(EXEEXT_FOR_BUILD,$gmp_cv_prog_exeext_for_build)
 ])
 
 
-dnl  GMP_C_FOR_BUILD_ANSI
-dnl  --------------------
-dnl  Determine whether CC_FOR_BUILD is ANSI, and establish U_FOR_BUILD
-dnl  accordingly.
-
-AC_DEFUN([GMP_C_FOR_BUILD_ANSI],
-[AC_REQUIRE([GMP_PROG_CC_FOR_BUILD])
-AC_CACHE_CHECK([whether build system compiler is ANSI],
-               gmp_cv_c_for_build_ansi,
-[cat >conftest.c <<EOF
-int
-main (int argc, char **argv)
-{
-  exit(0);
-}
-EOF
-gmp_compile="$CC_FOR_BUILD conftest.c"
-if AC_TRY_EVAL(gmp_compile); then
-  gmp_cv_c_for_build_ansi=yes
-else
-  gmp_cv_c_for_build_ansi=no
-fi
-rm -f conftest* a.out b.out a.exe a_out.exe
-])
-if test "$gmp_cv_c_for_build_ansi" = yes; then
-  U_FOR_BUILD=
-else
-  AC_SUBST(U_FOR_BUILD,_)
-fi
-])
-
-
 dnl  GMP_CHECK_LIBM_FOR_BUILD
 dnl  ------------------------
 dnl  Establish LIBM_FOR_BUILD as -lm, if that seems to work.
