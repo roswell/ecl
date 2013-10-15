@@ -1036,7 +1036,7 @@
 
 (proclamation directory (pathname-designator &key) list)
 (proclamation probe-file (pathname-designator) (or pathname null))
-(proclamation ensure-directories-exist (pathname &key)
+(proclamation ensure-directories-exist (pathname-designator &key)
               (values pathname gen-bool))
 (proclamation truename (pathname-designator) pathname)
 (proclamation file-author (pathname-designator) (or string null))
