@@ -222,7 +222,7 @@ destructively_check_directory(cl_object directory, bool logical, bool delete_bac
                                 cl_object next = ECL_CONS_CDR(ptr);
                                 ptr = ecl_nthcdr(i-2, directory);
 				ECL_RPLACD(ptr, next);
-                                i--;
+                                i = i-2;
                         }
 		} else if (item == @':up') {
 			if (i == 0)
