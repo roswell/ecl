@@ -72,7 +72,10 @@ and a possible documentation string (only accepted when DOC-P is true)."
        for decl in all-declarations
        for decl-name = (first decl)
        for decl-args = (rest decl)
-       do (cmpassert (and (valid-form-p decl-args) (symbolp decl-name))
+       do (cmpassert (and (valid-form-p decl-args)
+			  (or (symbolp decl-name)
+			      (and (consp decl-name)
+				   (valid-type-specifier decl-name))))
                      "Syntax error in declaration ~s" decl)
        do (case decl-name
             (SPECIAL)
