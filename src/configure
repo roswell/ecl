@@ -5970,6 +5970,9 @@ if test "x$ac_cv_lib_gc_GC_set_start_callback" = xyes; then :
 
 fi
 
+ else
+  $as_echo "#define HAVE_GC_SET_START_CALLBACK 1" >>confdefs.h
+
  fi
  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether we can use the existing Boehm-Weiser library " >&5
 $as_echo_n "checking whether we can use the existing Boehm-Weiser library ... " >&6; }

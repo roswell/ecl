@@ -948,6 +948,8 @@ if test "${enable_boehm}" = auto -o "${enable_boehm}" = system; then
  if test "${system_boehm}" = "yes"; then
    AC_CHECK_LIB( [gc], [GC_set_start_callback],
                  [AC_DEFINE(HAVE_GC_SET_START_CALLBACK)], [] )
+ else
+  AC_DEFINE(HAVE_GC_SET_START_CALLBACK)
  fi
  AC_MSG_CHECKING( [whether we can use the existing Boehm-Weiser library] )
  AC_MSG_RESULT( [${system_boehm}] )

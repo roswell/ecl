@@ -32,7 +32,7 @@
 #ifdef GBC_BOEHM
 
 static void (*GC_old_start_callback)(void) = NULL;
-#ifdef HAVE_GC_START_CALLBACK
+#ifdef HAVE_GC_SET_START_CALLBACK
 extern void GC_set_start_callback(void *);
 extern void *GC_get_start_callback(void *);
 #else

@@ -309,7 +309,7 @@ typedef unsigned char ecl_base_char;
 #endif
 
 /* GC_set_start_callback						*/
-#define HAVE_GC_SET_START_CALLBACK
+#undef HAVE_GC_SET_START_CALLBACK
 
 /*
  * SYSTEM FEATURES:
