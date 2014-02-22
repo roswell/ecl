@@ -135,7 +135,7 @@
 		  (setf method-list
 			(compute-applicable-methods generic-function args))
 		  (unless method-list
-		    (no-applicable-methods generic-function args)))
+		    (apply #'no-applicable-method generic-function args)))
 		(funcall (compute-effective-method-function
 			  generic-function
 			  (generic-function-method-combination generic-function)

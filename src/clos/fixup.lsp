@@ -236,9 +236,10 @@ their lambda lists ~A and ~A are not congruent."
 ;;; ----------------------------------------------------------------------
 ;;; Error messages
 
-(defmethod no-applicable-method (gf args)
-  (error "No applicable method for ~S with arguments of types~{~& ~A~}" 
-	 (generic-function-name gf)
+(defmethod no-applicable-method (gf &rest args)
+  (error "No applicable method for ~S with ~
+          ~:[no arguments~;arguments of types ~:*~{~& ~A~}~]."
+         (generic-function-name gf)
          (mapcar #'type-of args)))
 
 (defmethod no-next-method (gf method &rest args)

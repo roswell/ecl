@@ -22,7 +22,7 @@
 static void
 no_applicable_method(cl_env_ptr env, cl_object gfun, cl_object args)
 {
-	env->values[0] = _ecl_funcall3(@'no-applicable-method', gfun, args);
+	env->values[0] = cl_apply(3, @'no-applicable-method', gfun, args);
 }
 
 static cl_object
