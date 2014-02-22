@@ -517,9 +517,15 @@ safe_buffer_pointer(cl_object x, cl_index size)
 (defun get-protocol-by-name (string-or-symbol)
   "Calls getprotobyname"
   (let ((string (string string-or-symbol)))
-    (c-inline (string) (:cstring) :int
-	      "getprotobyname(#0)->p_proto"
-	      :one-liner t)))
+      (c-inline (string) (:cstring) :int
+                "{
+                 struct protoent *pe;
+
+                 pe = getprotobyname(#0);
+                 @(return 0) = pe ? pe->p_proto : -1;
+                 }
+               ")))
+
 
 (defun make-inet-address (dotted-quads)
   "Return a vector of octets given a string DOTTED-QUADS in the format
