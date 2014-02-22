@@ -154,7 +154,7 @@ write_hashtable(cl_object x, cl_object stream)
 				@':size', cl_hash_table_size(x),
 				@':rehash-size', cl_hash_table_rehash_size(x),
 				@':rehash-threshold', cl_hash_table_rehash_threshold(x),
-				@':test', cl_hash_table_test(x));
+				@':test', cl_list(2, @'quote', cl_hash_table_test(x)));
 		cl_object init =
 			cl_list(3, @'ext::hash-table-fill', make,
 				cl_list(2, @'quote', si_hash_table_content(x)));
