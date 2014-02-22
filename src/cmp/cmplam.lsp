@@ -114,6 +114,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 		      (setf (fun-global fun) T)))
 	 (no-entry (assoc 'SI::C-LOCAL decl))
 	 (lambda-expr (c1lambda-expr lambda-list-and-body
+                                     name
 				     (si::function-block-name name)))
 	 cfun exported minarg maxarg)
     (when (and no-entry (policy-debug-ihs-frame))
@@ -163,8 +164,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
   (handler-case (si::process-lambda-list list 'function)
     (error (c) (cmperr "Illegal lambda list ~S" list))))
 
-(defun c1lambda-expr (lambda-expr
-                      &optional (block-name nil)
+(defun c1lambda-expr (lambda-expr function-name block-name
                       &aux doc body ss is ts
                            other-decls
 		           new-variables
@@ -202,7 +202,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 	     (flag (third specs)))
 	(setq init (if init
 		       (and-form-type (var-type var) (c1expr init) init
-				      :safe "In (LAMBDA ~a...)" block-name)
+				      :safe "In (LAMBDA ~a...)" function-name)
 		       (default-init var)))
 	(push var type-checks)
 	(push-vars var)
@@ -224,7 +224,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 	     (flag (fourth specs)))
 	(setq init (if init
 		       (and-form-type (var-type var) (c1expr init) init
-				      :safe "In (LAMBDA ~a...)" block-name)
+				      :safe "In (LAMBDA ~a...)" function-name)
 		       (default-init var)))
 	(push var type-checks)
 	(push-vars var)
@@ -244,14 +244,15 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
     ;; arguments, have to be applied to the body. At the same time, we
     ;; replace &aux variables with a LET* form that defines them.
     (let* ((declarations other-decls)
-           (type-checks (extract-lambda-type-checks block-name requireds optionals
-                                                    keywords ts other-decls))
+           (type-checks (extract-lambda-type-checks
+                         function-name requireds optionals
+                         keywords ts other-decls))
            (type-check-forms (car type-checks))
            (let-vars (loop for spec on (nconc (cdr type-checks) aux-vars)
-                        by #'cddr
-                        for name = (first spec)
-                        for init = (second spec)
-                        collect (list name init)))
+                           by #'cddr
+                           for name = (first spec)
+                           for init = (second spec)
+                           collect (list name init)))
            (new-variables (cmp-env-new-variables *cmp-env* old-env))
 	   (already-declared-names (set-difference (mapcar #'var-name new-variables)
                                                    (mapcar #'car let-vars))))
@@ -261,8 +262,8 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
           (push `(special ,@specials) declarations)))
       ;; ...ignorable...
       (let ((ignorables (loop for (var . expected-uses) in is
-                           unless (member var already-declared-names)
-                           collect var)))
+                              unless (member var already-declared-names)
+                              collect var)))
         (when ignorables
           (push `(ignorable ,@ignorables) declarations)))
       ;; ...or type declarations
