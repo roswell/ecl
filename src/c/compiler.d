@@ -1672,16 +1672,16 @@ static int
 c_multiple_value_bind(cl_env_ptr env, cl_object args, int flags)
 {
 	cl_object vars = pop(&args);
-	cl_object value = pop(&args);
         int n = ecl_length(vars);
 	switch (n) {
         case 0:
                 return c_locally(env, args, flags);
         case 1:
                 vars = ECL_CONS_CAR(vars);
-                vars = ecl_list1(cl_list(2, vars, value));
+                vars = ecl_list1(cl_list(2, vars, pop(&args)));
                 return c_leta(env, cl_listX(2, vars, args), flags);
         default: {
+                cl_object value = pop(&args);
                 cl_object old_variables = env->c_env->variables;
                 cl_object body = c_process_declarations(args);
                 cl_object specials = env->values[3];
