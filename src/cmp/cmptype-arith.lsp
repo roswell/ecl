@@ -190,7 +190,8 @@
 		      (push typespec optional)
 		    (push typespec required)))))
 	  finally
-	  (return (values required (nreverse optional) rest a-o-k)))))
+	  (return (values (nreverse required) (nreverse optional)
+                          rest a-o-k)))))
 
 (defun-equal-cached values-type-or (t1 t2)
   (when (or (eq t2 'T) (equalp t2 '(VALUES &REST T)))
