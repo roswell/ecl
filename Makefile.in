@@ -34,7 +34,7 @@ MACHINE = @MACHINE_VERSION@
 
 VERSION=@PACKAGE_VERSION@
 WWW=http://ecls.sourceforge.net/
-ADDRESS=anonymous@ecls.cvs.sourceforge.net:/cvsroot/ecls
+ADDRESS=git://git.code.sf.net/p/ecls/ecl
 
 # ==================== Things `configure' Might Edit ====================
 
