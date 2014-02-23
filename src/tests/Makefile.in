@@ -6,8 +6,10 @@ all: output.ecl/ansi.log output.ecl/regressions.log
 
 output.ecl/ansi.log: config.lsp
 	$(MAKE) do-ansi
+	$(MAKE) show-fails
 output.ecl/regressions.log: config.lsp
 	$(MAKE) do-regressions
+	$(MAKE) show-fails
 
 do-ansi: ansi-tests config.lsp
 	$(ECL) -norc -load config.lsp -eval '(ecl-tests::run-ansi-tests)' -eval '(ext:quit)' < /dev/null
@@ -17,6 +19,9 @@ do-quicklisp: quicklisp config.lsp
 	$(ECL) -norc -load config.lsp -eval '(ecl-tests::run-quicklisp-tests)' -eval '(ext:quit)' < /dev/null
 do-mop-tests: mop-features config.lsp
 	$(ECL) -norc -load config.lsp -eval '(ecl-tests::run-mop-tests)' -eval '(ext:quit)' < /dev/null
+
+show-fails:
+	grep "^Test .* failed" output.ecl/ansi.log output.ecl/regressions.log
 
 #
 # Create directories

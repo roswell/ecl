@@ -7,8 +7,11 @@ About testing:
 make check
 	to (get, initialize and) run the tests
 
-make -C build/tests do-regressions 
+make -C build/tests do-regressions
 make -C build/tests do-ansi
 make -C build/tests do-quicklisp
 make -C build/tests do-mop-tests
 	runs the specified tests
+
+make -C build/tests/ show-fails
+	prints results
