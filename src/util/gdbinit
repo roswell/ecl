@@ -26,9 +26,13 @@ define ecl_print
 	#print $cl_debug_stream->stream.object0->base_string.self
 	#set $cl_debug_stream->stream.object0->base_string.fillp = 0
 
-	set $cl_debug_imm = 3 & (long)x
-	print (cl_type)($cl_debug_imm ? $cl_debug_imm : x->d.t)
+	set $cl_debug_imm = 3 & (long)$arg0
+	set $cl_debug_type = ($cl_debug_imm ? $cl_debug_imm : $arg0->d.t)
+	print (cl_type) $cl_debug_type
 
-	set $cl_debug_void = si_write_ugly_object( $arg0, $cl_debug_stream)
-	print $cl_debug_stream->stream.object0->base_string.self
+	# not safe for printing
+	if $cl_debug_type > 0
+	    set $cl_debug_void = si_write_ugly_object( $arg0, $cl_debug_stream)
+	    print $cl_debug_stream->stream.object0->base_string.self
+	end
 end
