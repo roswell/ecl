@@ -15,6 +15,13 @@ This is a GDB function that prints a 'cl_object' human-readably:
 
 
 
+Using VIM:
+----------
+
+.git/tags is a VIM-compatible tag file; if you're using
+the fugitive plugin, it will be used automatically.
+
+
 
 About testing:
 --------------

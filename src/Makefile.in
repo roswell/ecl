@@ -51,7 +51,7 @@ LSP_LIBRARIES = @LSP_LIBRARIES@
 TARGETS = @TARGETS@
 ECL_CMPDIR = @ECL_CMPDIR@
 
-all:	$(TARGETS) bin/ecl-config TAGS
+all:	$(TARGETS) bin/ecl-config .git/tags TAGS
 .PHONY:	all
 
 %Makefile: $(srcdir)/%Makefile.in config.status
@@ -258,6 +258,8 @@ selfbuild:
 # Make sure to also include *.d files; and match DPP's idiosyncracies
 # like "@si::foo" and "@(defun si::foo".
 # This rule is allowed to fail when etags does not exist.
+.git/tags:
+	cd $(srcdir)/.git && ctags -o tags -R --langmap=c:+.d ../src
 TAGS:
 	-if test "x$(ETAGS)" != "x"; then \
 	srcfiles=`find $(srcdir)/c $(srcdir)/h -name '*.[chd]'` && \
