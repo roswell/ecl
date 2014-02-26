@@ -1,5 +1,20 @@
 You can find the preprocessed documentation in ./doc in HTML format.
 
+Debugging via GDB:
+------------------
+
+src/util/gdbinit (and, therefore, build/.gdbinit) defines
+a few convenience things - T, NIL, and, even more important,
+ecl_print.
+
+This is a GDB function that prints a 'cl_object' human-readably:
+
+    (gdb) ecl_print x
+    $39 = t_fixnum
+    $40 = (ecl_base_char *) 0x42b4000 "10652336"
+
+
+
 
 About testing:
 --------------
