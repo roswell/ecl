@@ -43,7 +43,7 @@ end
 
 
 define ecl_eval
-	set $cl_debug_str = ecl_make_simple_base_string( "$arg0", -1)
+	set $cl_debug_str = ecl_make_simple_base_string( $arg0, -1)
 	set $cl_debug_stream = ecl_make_string_input_stream( $cl_debug_str, 0, ((struct ecl_base_string*)$cl_debug_str)->fillp)
 	set $cl_debug_form = cl_read(1, $cl_debug_stream)
 	disable breakpoints
