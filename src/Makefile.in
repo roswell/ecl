@@ -259,7 +259,7 @@ selfbuild:
 # like "@si::foo" and "@(defun si::foo".
 # This rule is allowed to fail when etags does not exist.
 .git/tags:
-	cd $(srcdir)/../.git && ctags -o tags -R --langmap=c:+.d ../src
+	cd $(srcdir)/../.git && ctags -o tags -R --langmap=c:+.d ../src || true
 TAGS:
 	-if test "x$(ETAGS)" != "x"; then \
 	srcfiles=`find $(srcdir)/c $(srcdir)/h -name '*.[chd]'` && \
