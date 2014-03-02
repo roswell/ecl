@@ -30,6 +30,7 @@
 (load "../ansi-tests/ansi-aux.lsp")
 
 (load "sf276--write-hash-readably.lsp")
+(load "sf286.lsp")
 (load "cl-001.lsp")
 
 (load "int-001.lsp")
