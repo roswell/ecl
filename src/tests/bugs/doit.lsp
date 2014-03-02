@@ -29,8 +29,12 @@
 (load "../ansi-tests/universe.lsp")
 (load "../ansi-tests/ansi-aux.lsp")
 
+(load "sf262--declaim-type-foo-setf-foo.lsp")
+(load "sf272--style-warning-argument-order.lsp")
 (load "sf276--write-hash-readably.lsp")
+(load "sf282--mvb-not-evaled.lsp")
 (load "sf286.lsp")
+
 (load "cl-001.lsp")
 
 (load "int-001.lsp")
