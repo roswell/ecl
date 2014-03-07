@@ -218,8 +218,8 @@
       (when (getf (method-plist m) :method-from-defgeneric-p)
 	(remove-method gfun m))))
   (if (eq (class-of gfun) generic-function-class)
-      (apply #'reinitialize-instance gfun :name name args)
-      (apply #'change-class gfun generic-function-class :name name args)))
+      (apply #'reinitialize-instance gfun args)
+      (apply #'change-class gfun generic-function-class args)))
 
 (defmethod ensure-generic-function-using-class
     ((gfun null) name &rest args &key
