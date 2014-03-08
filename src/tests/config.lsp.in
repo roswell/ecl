@@ -170,7 +170,9 @@
   (loop for f in (directory (merge-pathnames *wild-inferiors* orig))
      for f2 = (enough-namestring f orig)
      for f3 = (merge-pathnames f2 dest)
-     unless (probe-file f3)
+     unless (and (probe-file f3)
+                 (>= (file-write-date f3)
+                     (file-write-date f2)))
      do (ensure-directories-exist f3)
      do (ext:copy-file f f3)))
 
