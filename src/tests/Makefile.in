@@ -4,6 +4,7 @@ all: output.ecl/ansi.log output.ecl/regressions.log
 
 .PHONY: do-ansi do-regressions do-quicklisp cleanup clean-sources update
 
+BUGS_FILES := $(shell find ../../src/tests/bugs/ -type f)
 output.ecl/ansi.log: config.lsp
 	$(MAKE) do-ansi
 	$(MAKE) show-fails
@@ -28,7 +29,7 @@ show-fails:
 #
 ansi-tests: config.lsp
 	$(ECL) -norc -load config.lsp -eval '(ecl-tests::ensure-ansi-tests)' -eval '(ext:quit)' < /dev/null
-regressions: config.lsp
+regressions: config.lsp ansi-tests $(BUGS_FILES)
 	$(ECL) -norc -load config.lsp -eval '(ecl-tests::ensure-regressions)' -eval '(ext:quit)' < /dev/null
 quicklisp: config.lsp
 	$(ECL) -norc -load config.lsp -eval '(ecl-tests::ensure-quicklisp)' -eval '(ext:quit)' < /dev/null
