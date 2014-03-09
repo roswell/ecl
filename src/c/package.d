@@ -893,8 +893,9 @@ cl_package_shadowing_symbols(cl_object p)
 cl_object
 si_package_lock(cl_object p, cl_object t)
 {
-	bool previous = p->pack.locked;
+	bool previous;
 	p = si_coerce_to_package(p);
+	previous = p->pack.locked;
 	p->pack.locked = (t != ECL_NIL);
 	@(return (previous? ECL_T : ECL_NIL))
 }
