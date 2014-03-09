@@ -37,6 +37,8 @@
 
 (load "cl-001.lsp")
 
+(load "mixed.lsp")
+
 (load "int-001.lsp")
 
 #-ecl-bytecmp
