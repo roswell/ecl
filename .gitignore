@@ -40,3 +40,6 @@ MODULES
 Makefile
 
 src/autom4te.cache
+
+regressions/*.lsp
+regressions/eformat-tests/*.txt
