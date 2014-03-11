@@ -698,17 +698,71 @@
     (unless (member s '#.+conflicting-symbols+)
       (export s p))))
 
+;;; Redefining the IO functions
+;;
+;; I guess that because of efficiency reasons most of the IO functions
+;; in CL are normal functions (ie. not generic functions); but that
+;; doesn't work with packages like FLEXI-STREAMS that want to define
+;; new stream types that work with the same symbols from CL.
+;; 
+;; TRIVIAL-GRAY-STREAMS tries to unify that mess across
+;; different implementations, by importing most of (for ECL) GRAY
+;; into IMPL-SPECIFIC-GRAY, importing from I-S-G into T-G-S,
+;; and overloading/extending there where necessary.
+;;
+;;
+;; REDEFINE-CL-FUNCTIONS should now make the functions that are bound
+;; to CL symbols generic functions.
+;;
+;;
+;; So...
+;; 
+;;    CL has a function
+;;    GRAY has a function
+;;    
+;;    TRIVIAL-GRAY-STREAMS imports from GRAY
+;;
+;; But calling eg. CL:FILE-POSITION should make use of all the
+;; methods defined on T-G-S:STREAMS-FILE-POSITION ...
+;; 
+
+(defun %redefine-cl-functions (cl-symbol gray-symbol gray-package)
+  (unless (typep (fdefinition cl-symbol) 'generic-function) 
+    (let ((gf (fdefinition gray-symbol)))
+      ;; Given a symbol in CL, and one in GRAY,
+      ;; we want to keep the CL symbol (in case there are references to it stored somewhere),
+      ;; but it shall get the generic-function ...
+      (setf (fdefinition cl-symbol) gf)
+      ;; and become EQ to the GRAY symbol.
+      ;; But: unintern/import removes the package from the symbol used as 
+      ;; name by the GF, making it equivalent to a GENSYM - and then no 
+      ;; new methods can be registered for it ...
+      ;;
+      ;; For same symbol-names, we can unintern/import/export;
+      ;; for different symbol-names, we can only copy the fdefinition.
+      (when (string= (symbol-name cl-symbol)
+                    (symbol-name gray-symbol))
+        (unintern gray-symbol gray-package)
+        (import cl-symbol gray-package)
+        (export cl-symbol gray-package))
+      ;; so now make the GF accessible again
+      (setf (slot-value gf 'clos::name)
+            cl-symbol))))
+
 (defun redefine-cl-functions ()
   "Some functions in CL package are expected to be generic. We make them so."
-  (let ((x (si::package-lock "COMMON-LISP" nil)))
+  (let ((x (si::package-lock "COMMON-LISP" nil))
+        (gray-package (find-package "GRAY")))
     (loop for cl-symbol in '#.+conflicting-symbols+
-       with gray-package = (find-package "GRAY")
-       do (unless (typep (fdefinition cl-symbol) 'generic-function) 
-	    (let ((gray-symbol (find-symbol (symbol-name cl-symbol) gray-package)))
-	      (setf (fdefinition cl-symbol) (fdefinition gray-symbol))
-	      (unintern gray-symbol gray-package)
-	      (import cl-symbol gray-package)
-	      (export cl-symbol gray-package))))
+          for gray-symbol = (find-symbol (symbol-name cl-symbol)
+                                         gray-package)
+          do (%redefine-cl-functions cl-symbol
+                                     gray-symbol
+                                     gray-package))
+    ;; things that are called differently
+    (%redefine-cl-functions 'cl:file-position
+                            'gray:stream-file-position
+                            gray-package)
     (si::package-lock "COMMON-LISP" x)
     nil))
 
