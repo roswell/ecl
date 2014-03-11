@@ -261,11 +261,11 @@ AC_ARG_ENABLE(precisegc,
 		  [(no|yes, default=NO)]),
   [enable_precisegc=${enableval}], [enable_precisegc=no] )
 
-dnl AC_ARG_ENABLE(debug,
-dnl   AS_HELP_STRING( [--enable-debug],
-dnl                  [enable various debugging features]
-dnl                  [(default=NO)]),
-dnl  [DEBUG_CFLAGS="-g -O0"; CFLAGS="$CFLAGS -g -O0"],[])
+AC_ARG_ENABLE(debug,
+  AS_HELP_STRING( [--enable-debug],
+                 [enable various debugging features]
+                 [(default=NO)]),
+ [DEBUG_CFLAGS="-g -O0"; CFLAGS="$CFLAGS -g -O0"],[])
 
 AC_ARG_WITH(debug-cflags,
   AS_HELP_STRING( [--with-debug-cflags],

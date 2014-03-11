@@ -801,6 +801,7 @@ enable_asmapply
 enable_smallcons
 enable_gengc
 enable_precisegc
+enable_debug
 with_debug_cflags
 with_profile_cflags
 with_newcmp
@@ -1470,6 +1471,7 @@ Optional Features:
   --enable-precisegc      use type information during garbage collection.
                           Requires Boehm-Weiser gc (EXPERIMENTAL). (no|yes,
                           default=NO)
+  --enable-debug          enable various debugging features (default=NO)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -2944,6 +2946,11 @@ else
   enable_precisegc=no
 fi
 
+
+# Check whether --enable-debug was given.
+if test "${enable_debug+set}" = set; then :
+  enableval=$enable_debug; DEBUG_CFLAGS="-g -O0"; CFLAGS="$CFLAGS -g -O0"
+fi
 
 
 
