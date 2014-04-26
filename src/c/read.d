@@ -536,12 +536,8 @@ double_quote_reader(cl_object in, cl_object c)
 			c = ecl_read_char_noeof(in);
 		ecl_string_push_extend(token, c);
 	}
-#ifdef ECL_UNICODE
-	if (ecl_fits_in_base_string(token))
-		output = si_coerce_to_base_string(token);
-	else
-#endif
-		output = cl_copy_seq(token);
+
+	output = cl_copy_seq(token);
 	si_put_buffer_string(token);
 	@(return output)
 }
