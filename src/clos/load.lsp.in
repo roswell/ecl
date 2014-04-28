@@ -33,6 +33,7 @@
   "ext:bytecmp;bytecmp.lsp"
   "ext:ecl-cdb;ecl-cdb.lisp" ; Needed for DOCUMENTATION
   "ext:ecl-cdb;ecl-help.lisp"
+  "src:clos;walk.lsp"
   ))
 
 (mapc #'(lambda (x)
