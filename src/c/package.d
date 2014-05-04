@@ -1069,6 +1069,7 @@ cl_list_all_packages()
 	case t_symbol:
 	case t_character:
 	case t_base_string:
+	case t_string:
 	case t_package:
 		ecl_unuse_package(pack, pa);
 		break;
