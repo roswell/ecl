@@ -673,9 +673,6 @@ Returns T if X belongs to TYPE; NIL otherwise."
 ;;			COERCE
 ;;************************************************************
 
-(defun error-coerce (object type)
-  (error "Cannot coerce ~S to type ~S." object type))
-
 (defun coerce (object type &aux aux)
   "Args: (x type)
 Coerces X to an object of the specified type, if possible.  Signals an error
@@ -683,48 +680,51 @@ if not possible."
   (when (typep object type)
     ;; Just return as it is.
     (return-from coerce object))
-  (setq type (expand-deftype type))
-  (cond ((atom type)
-	 (case type
-	   ((T) object)
-	   (LIST
-	    (do ((io (make-seq-iterator object) (seq-iterator-next object io))
-	         (l nil (cons (seq-iterator-ref object io) l)))
-	        ((null io) l)))
-	   ((CHARACTER BASE-CHAR) (character object))
-	   (FLOAT (float object))
-	   (SINGLE-FLOAT (float object 0.0F0))
-	   (SHORT-FLOAT (float object 0.0S0))
-	   (DOUBLE-FLOAT (float object 0.0D0))
-	   (LONG-FLOAT (float object 0.0L0))
-	   (COMPLEX (complex (realpart object) (imagpart object)))
-	   (FUNCTION (coerce-to-function object))
-	   ((VECTOR SIMPLE-VECTOR #+unicode SIMPLE-BASE-STRING SIMPLE-STRING #+unicode BASE-STRING STRING BIT-VECTOR SIMPLE-BIT-VECTOR)
-	    (concatenate type object))
-	   (t
-	    (if (or (listp object) (vectorp object))
-		(concatenate type object)
-		(error-coerce object type)))))
-	((eq (setq aux (first type)) 'COMPLEX)
-	 (if type
-	     (complex (coerce (realpart object) (second type))
-		      (coerce (imagpart object) (second type)))
-	     (complex (realpart object) (imagpart object))))
-	((member aux '(SINGLE-FLOAT SHORT-FLOAT DOUBLE-FLOAT LONG-FLOAT FLOAT))
-	 (setq aux (coerce object aux))
-	 (unless (typep aux type)
-	   (error-coerce object type))
-	 aux)
-	((eq aux 'AND)
-	 (dolist (type (rest type))
-	   (setq aux (coerce aux type)))
-	 (unless (typep aux type)
-	   (error-coerce object type))
-	 aux)
-	((or (listp object) (vectorp object))
-	 (concatenate type object))
-	(t
-	 (error-coerce object type))))
+  (flet ((fail ()
+           (error "Cannot coerce ~S to type ~S." object type)))
+    (let ((type (expand-deftype type)))
+      (cond ((atom type)
+             (case type
+               ((T) object)
+               (LIST
+                (do ((io (make-seq-iterator object) (seq-iterator-next object io))
+                     (l nil (cons (seq-iterator-ref object io) l)))
+                    ((null io) l)))
+               ((CHARACTER BASE-CHAR) (character object))
+               (FLOAT (float object))
+               (SINGLE-FLOAT (float object 0.0F0))
+               (SHORT-FLOAT (float object 0.0S0))
+               (DOUBLE-FLOAT (float object 0.0D0))
+               (LONG-FLOAT (float object 0.0L0))
+               (COMPLEX (complex (realpart object) (imagpart object)))
+               (FUNCTION (coerce-to-function object))
+               ((VECTOR SIMPLE-VECTOR #+unicode SIMPLE-BASE-STRING SIMPLE-STRING
+                        #+unicode BASE-STRING STRING BIT-VECTOR SIMPLE-BIT-VECTOR)
+                (concatenate type object))
+               (t
+                (if (or (listp object) (vectorp object))
+                    (concatenate type object)
+                    (fail)))))
+            ((eq (setq aux (first type)) 'COMPLEX)
+             (if type
+                 (complex (coerce (realpart object) (second type))
+                          (coerce (imagpart object) (second type)))
+                 (complex (realpart object) (imagpart object))))
+            ((member aux '(SINGLE-FLOAT SHORT-FLOAT DOUBLE-FLOAT LONG-FLOAT FLOAT))
+             (setq aux (coerce object aux))
+             (unless (typep aux type)
+               (fail))
+             aux)
+            ((eq aux 'AND)
+             (dolist (type (rest type))
+               (setq aux (coerce aux type)))
+             (unless (typep aux type)
+               (fail))
+             aux)
+            ((or (listp object) (vectorp object))
+             (concatenate type object))
+            (t
+             (fail))))))
 
 ;;************************************************************
 ;;			SUBTYPEP
