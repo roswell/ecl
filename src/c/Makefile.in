@@ -118,6 +118,7 @@ $(DPP): $(srcdir)/dpp.c $(srcdir)/symbols_list2.h
 	$(TRUE_CC) -I$(srcdir) -I@true_builddir@ -I./ $(srcdir)/dpp.c @CPPFLAGS@ @CFLAGS@ @ECL_CFLAGS@ -o $@ ; \
 	fi
 
+$(OBJS): $(DPP)
 #
 # symbols_list2.h is built this way to allow for an atomic replacement of
 # the file. Otherwise we have problem when doing concurrent builds with
@@ -139,11 +140,13 @@ gbc.o: gbc.c $(HFILES)
 #
 # This reduces the overhead of jumping to other functions
 #
+apply.c: $(DPP)
 apply.o: apply.c $(HFILES) $(HDIR)/cs.h
 	$(CC) $(CFLAGS) apply.c -o $@
 #
 # These files are interrelated
 #
+all_symbols.c: $(DPP)
 all_symbols.o: all_symbols.c
 	$(CC) $(CFLAGS) -I./ all_symbols.c -o $@
 all_symbols2.o: all_symbols.c
@@ -152,5 +155,6 @@ all_symbols2.o: all_symbols.c
 #
 # This is in another directory
 #
+cinit.c: $(DPP)
 ../cinit.o: cinit.c $(HFILES)
 	$(CC) $(CFLAGS) -I./ cinit.c -o $@
