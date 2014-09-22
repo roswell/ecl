@@ -84,7 +84,7 @@ ecl_to_fix(cl_object f)
 static ECL_INLINE cl_index
 ecl_to_size(cl_object f)
 {
-	cl_fixnum aux;
+	cl_fixnum aux = 0;
 	if (ecl_unlikely(!ECL_FIXNUMP(f) || ((aux = ecl_fixnum(f)) < 0)))
 		FEtype_error_size(f);
 	return aux;
