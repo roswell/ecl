@@ -813,6 +813,8 @@ with_x
       ac_precious_vars='build_alias
 host_alias
 target_alias
+ecldir
+docdir
 CC
 CFLAGS
 LDFLAGS
@@ -1444,7 +1446,7 @@ Optional Features:
   --enable-rpath          hard-code the location of the ECL shared library.
                           (no|yes, default=NO)
   --enable-threads        support for native threads (yes|no|auto,
-                          default=YES).
+                          default=auto).
   --enable-boehm          use the Boehm-Weiser garbage collector
                           (no|included|system|auto, default=auto)
   --enable-libatomic      version of the libatomic-ops library
@@ -1529,6 +1531,8 @@ Optional Packages:
   --with-x                use the X Window System
 
 Some influential environment variables:
+  ecldir      the directory where *.fas files are installed
+  docdir      the directory where documentation is installed
   CC          C compiler command
   CFLAGS      C compiler flags
   LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
@@ -3007,7 +3011,9 @@ else
 fi
 
 
-ecldir="${libdir}/ecl-${PACKAGE_VERSION}"
+
+test -z "${ecldir}" && ecldir="${libdir}/ecl-${PACKAGE_VERSION}"
+
 
 test -z "${docdir}" && docdir="${datadir}/doc/ecl-${PACKAGE_VERSION}"
 

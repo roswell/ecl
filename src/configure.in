@@ -302,8 +302,10 @@ AC_ARG_WITH(unicode-names,
 
 dnl -----------------------------------------------------------------------
 dnl Installation directories
-ecldir="${libdir}/ecl-${PACKAGE_VERSION}"
+AC_ARG_VAR([ecldir], [the directory where *.fas files are installed])
+test -z "${ecldir}" && ecldir="${libdir}/ecl-${PACKAGE_VERSION}"
 AC_SUBST([ecldir])
+AC_ARG_VAR([docdir], [the directory where documentation is installed])
 test -z "${docdir}" && docdir="${datadir}/doc/ecl-${PACKAGE_VERSION}"
 AC_SUBST([docdir])
 
