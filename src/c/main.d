@@ -160,7 +160,9 @@ ecl_init_env(cl_env_ptr env)
 #endif
 
 #ifdef CLOS
-	env->method_cache = ecl_make_cache(64, 4096);
+        /* Needs 128 elements for 64 entries to differentiate between
+           EQL specializers and class specializers */
+	env->method_cache = ecl_make_cache(128, 4096);
 	env->slot_cache = ecl_make_cache(3, 4096);
 #endif
         env->pending_interrupt = ECL_NIL;

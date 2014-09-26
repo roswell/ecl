@@ -129,11 +129,17 @@ fill_spec_vector(cl_object vector, cl_object frame, cl_object gf)
 			FEwrong_num_arguments(gf);
 		unlikely_if (spec_no >= vector->vector.dim)
 			ecl_internal_error("Too many arguments to fill_spec_vector()");
-		argtype[spec_no++] =
-			(!ECL_LISTP(spec_type) ||
-			 Null(ecl_memql(args[spec_position], spec_type))) ?
-			cl_class_of(args[spec_position]) :
-			args[spec_position];
+                /* Need to differentiate between EQL specializers and
+                   class specializers, because the EQL value can be a
+                   class, and may classh with a class specializer. */
+                if (ECL_LISTP(spec_type) && ecl_memql(args[spec_position], spec_type)) {
+                        argtype[spec_no++] = args[spec_position];
+                        argtype[spec_no++] = 1;
+                } else {
+                        argtype[spec_no++] = cl_class_of(args[spec_position]);
+                        argtype[spec_no++] = 0;
+                }
+                        
 	} end_loop_for_on_unsafe(spec_how_list);
 	vector->vector.fillp = spec_no;
 	return vector;
