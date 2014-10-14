@@ -18,6 +18,7 @@
 #define ECL_INCLUDE_MATH_H
 #include <ecl/ecl.h>
 #include <ecl/number.h>
+#include <assert.h>  /* for assert() */
 #include <stdio.h>
 #include <limits.h>
 #include <float.h>
@@ -2326,7 +2327,7 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
 	volatile cl_object x;
 	cl_index i, len, perm_len, temp_len;
 	cl_object in;
-	cl_object *VV, *VVtemp = 0;
+	cl_object *VV = NULL, *VVtemp = NULL;
 
 	if (block == NULL)
                 block = ecl_make_codeblock();
@@ -2358,12 +2359,12 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
                                         FEerror("Internal error: corrupted data in "
                                                 "si::*compiler-constants*", 0);
                                 VV = block->cblock.data = v->vector.self.t;
-                                VVtemp = block->cblock.temp_data = 0;
+                                VVtemp = block->cblock.temp_data = NULL;
                         }
                         goto NO_DATA_LABEL;
                 }
 		if (len == 0) {
-                        VV = VVtemp = 0;
+                        VV = VVtemp = NULL;
                         goto NO_DATA_LABEL;
                 }
 #ifdef ECL_DYNAMIC_VV
@@ -2418,6 +2419,7 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
 	NO_DATA_LABEL:
                 env->packages_to_be_created_p = ECL_NIL;
 
+		assert(block->cblock.cfuns_size == 0 || VV != NULL);
 		for (i = 0; i < block->cblock.cfuns_size; i++) {
 			const struct ecl_cfun *prototype = block->cblock.cfuns+i;
 			cl_index fname_location = ecl_fixnum(prototype->block);
