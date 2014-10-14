@@ -454,6 +454,7 @@ cl_object
 ecl_file_len(int f)
 {
 	struct stat filestatus;
+	memset(&filestatus, 0, sizeof(filestatus));
 	ecl_disable_interrupts();
 	fstat(f, &filestatus);
 	ecl_enable_interrupts();
