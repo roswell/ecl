@@ -22,6 +22,8 @@
 #include <ecl/impl/math_fenv.h>
 #include <ecl/impl/math_dispatch.h>
 
+#include <stdlib.h> /* for abort() */
+
 #pragma STDC FENV_ACCESS ON
 
 cl_fixnum
@@ -81,7 +83,7 @@ expt_zero(cl_object x, cl_object y)
                 return ecl_make_complex(z, ecl_make_fixnum(0));
         default:
                 /* We will never reach this */
-                (void)0;
+                abort();
         }
 }
 
