@@ -3,6 +3,7 @@
 \#*
 
 build
+cov-int
 
 *.data
 *.dll
