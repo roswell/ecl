@@ -618,7 +618,7 @@ extern ECL_API cl_object ecl_make_codeblock();
 extern ECL_API cl_object ecl_library_open(cl_object filename, bool force_reload);
 extern ECL_API void *ecl_library_symbol(cl_object block, const char *symbol, bool lock);
 extern ECL_API cl_object ecl_library_error(cl_object block);
-extern ECL_API void ecl_library_close(cl_object block);
+extern ECL_API bool ecl_library_close(cl_object block);
 extern ECL_API void ecl_library_close_all(void);
 
 /* ffi/mmap.d */
@@ -650,6 +650,7 @@ extern ECL_API cl_object si_null_pointer_p(cl_object f);
 extern ECL_API cl_object si_size_of_foreign_elt_type(cl_object tag);
 extern ECL_API cl_object si_alignment_of_foreign_elt_type(cl_object tag);
 extern ECL_API cl_object si_load_foreign_module(cl_object module);
+extern ECL_API cl_object si_unload_foreign_module(cl_object module);
 extern ECL_API cl_object si_find_foreign_symbol(cl_object var, cl_object module, cl_object type, cl_object size);
 extern ECL_API cl_object si_call_cfun(cl_narg, cl_object fun, cl_object return_type, cl_object arg_types, cl_object args, ...);
 extern ECL_API cl_object si_make_dynamic_callback(cl_narg, cl_object fun, cl_object sym, cl_object return_type, cl_object arg_types, ...);

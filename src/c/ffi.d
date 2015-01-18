@@ -729,6 +729,33 @@ si_load_foreign_module(cl_object filename)
 }
 
 cl_object
+si_unload_foreign_module(cl_object module)
+{
+#if !defined(ENABLE_DLOPEN)
+        FEerror("SI:UNLOAD-FOREIGN-MODULE does not work when ECL is statically linked", 0);
+#else
+        cl_object output = ECL_NIL;
+
+        if (ecl_unlikely(ecl_t_of(module) != t_codeblock)) {
+                FEerror("UNLOAD-FOREIGN-MODULE: Argument is not a foreign module: ~S ",
+                        1, module);
+        }
+# ifdef ECL_THREADS
+        mp_get_lock(1, ecl_symbol_value(@'mp::+load-compile-lock+'));
+        ECL_UNWIND_PROTECT_BEGIN(ecl_process_env()) {
+# endif
+                if (ecl_likely(ecl_library_close(module))) output = ECL_T;
+# ifdef ECL_THREADS
+                (void)0; /* MSVC complains about missing ';' before '}' */
+        } ECL_UNWIND_PROTECT_EXIT {
+                mp_giveup_lock(ecl_symbol_value(@'mp::+load-compile-lock+'));
+        } ECL_UNWIND_PROTECT_END;
+# endif
+        @(return output)
+#endif
+}
+
+cl_object
 si_find_foreign_symbol(cl_object var, cl_object module, cl_object type, cl_object size)
 {
 #if !defined(ENABLE_DLOPEN)
