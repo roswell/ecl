@@ -205,7 +205,7 @@ dlopen_wrapper(cl_object block)
 		set_library_error(block);
 }
 
-static void
+static int
 dlclose_wrapper(cl_object block)
 {
         if (block->cblock.handle != NULL) {
@@ -219,7 +219,9 @@ dlclose_wrapper(cl_object block)
                 FreeLibrary(block->cblock.handle);
 #endif
                 block->cblock.handle = NULL;
+  return TRUE;
         }
+ return FALSE;
 }
 
 static cl_object
@@ -419,18 +421,23 @@ ecl_library_error(cl_object block) {
 	return block->cblock.error;
 }
 
-void
+bool
 ecl_library_close(cl_object block) {
         const cl_env_ptr the_env = ecl_process_env();
+ bool success = TRUE;
         ECL_WITH_GLOBAL_LOCK_BEGIN(the_env) {
                 ecl_disable_interrupts();
-                if (block->cblock.refs != ecl_make_fixnum(1)) {
+  /* is it ever a case? no matter how many times i call
+     load-foreign-module it seems that block->cblock.refs = 1 */
+                if (block->cblock.refs > ecl_make_fixnum(1)) {
                         block->cblock.refs = ecl_one_minus(block->cblock.refs);
                         block = ECL_NIL;
                 } else if (block->cblock.handle != NULL) {
-                        GC_call_with_alloc_lock(dlclose_wrapper, block);
+                        success = GC_call_with_alloc_lock(dlclose_wrapper, block);
                         cl_core.libraries = ecl_remove_eq(block, cl_core.libraries);
-                }
+                } else { /* block not loaded */
+   success = FALSE;
+  }
                 ecl_enable_interrupts();
         } ECL_WITH_GLOBAL_LOCK_END;
 	if (block != ECL_NIL && block->cblock.self_destruct) {
@@ -438,6 +445,7 @@ ecl_library_close(cl_object block) {
                         unlink((char*)block->cblock.name->base_string.self);
                 }
         }
+ return success;
 }
 
 void

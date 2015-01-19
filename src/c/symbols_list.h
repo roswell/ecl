@@ -1485,6 +1485,7 @@ cl_symbols[] = {
 {SYS_ "FREE-FOREIGN-DATA", SI_ORDINARY, si_free_foreign_data, 1, OBJNULL},
 {SYS_ "MAKE-FOREIGN-DATA-FROM-ARRAY", SI_ORDINARY, si_make_foreign_data_from_array, 1, OBJNULL},
 {SYS_ "LOAD-FOREIGN-MODULE", SI_ORDINARY, si_load_foreign_module, 1, OBJNULL},
+{SYS_ "UNLOAD-FOREIGN-MODULE", SI_ORDINARY, si_unload_foreign_module, 1, OBJNULL},
 {SYS_ "NULL-POINTER-P", SI_ORDINARY, si_null_pointer_p, 1, OBJNULL},
 {SYS_ "SIZE-OF-FOREIGN-ELT-TYPE", SI_ORDINARY, si_size_of_foreign_elt_type, 1, OBJNULL},
 {SYS_ "ALIGNMENT-OF-FOREIGN-ELT-TYPE", SI_ORDINARY, si_alignment_of_foreign_elt_type, 1, OBJNULL},
