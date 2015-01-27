@@ -2774,6 +2774,8 @@ static cl_object
 io_file_get_position(cl_object strm)
 {
 	int f = IO_FILE_DESCRIPTOR(strm);
+        if (isatty(f)) return(ECL_NIL);
+
 	cl_object output;
 	ecl_off_t offset;
 
@@ -2781,7 +2783,10 @@ io_file_get_position(cl_object strm)
 	offset = lseek(f, 0, SEEK_CUR);
 	ecl_enable_interrupts();
 	unlikely_if (offset < 0)
-		io_error(strm);
+        	if (errno == ESPIPE)
+                	return(ECL_NIL);
+                else
+			io_error(strm);
 	if (sizeof(ecl_off_t) == sizeof(long)) {
 		output = ecl_make_integer(offset);
 	} else {
@@ -2806,6 +2811,7 @@ static cl_object
 io_file_set_position(cl_object strm, cl_object large_disp)
 {
 	int f = IO_FILE_DESCRIPTOR(strm);
+        if (isatty(f)) return(ECL_NIL);
 	ecl_off_t disp;
 	int mode;
 	if (Null(large_disp)) {
