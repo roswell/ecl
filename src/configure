@@ -10814,4 +10814,4 @@ if test -n "$ac_unrecognized_opts" && test "$enable_option_checking" != no; then
 $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
-for i in $srcdir/c/*/; do mkdir c/`basename $i`; done
+for i in $srcdir/c/*/; do mkdir -p c/`basename $i`; done
