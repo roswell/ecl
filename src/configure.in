@@ -8,7 +8,7 @@ dnl  AUTOCONF configuration for ECL
 dnl  Giuseppe Attardi 25.1.1994
 dnl
 
-AC_INIT([ecl],[13.5.1],[])
+AC_INIT([ecl],[15.2.21],[])
 AC_REVISION([$Revision$])
 AC_CONFIG_SRCDIR([bare.lsp.in])
 AC_CONFIG_AUX_DIR([gmp])
@@ -902,4 +902,4 @@ AC_CONFIG_FILES([
  ])
 AC_CONFIG_HEADERS([ecl/config.h:ecl/configpre.h]) # FIXME
 AC_OUTPUT
-for i in $srcdir/c/*/; do mkdir c/`basename $i`; done
+for i in $srcdir/c/*/; do mkdir -p c/`basename $i`; done

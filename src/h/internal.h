@@ -422,6 +422,7 @@ extern void cl_write_object(cl_object x, cl_object stream);
 #endif /* ECL_THREADS */
 
 #ifdef ECL_THREADS
+# define AO_REQUIRE_CAS
 # ifdef ECL_LIBATOMIC_OPS_H
 #  include <ecl/atomic_ops.h>
 # else
