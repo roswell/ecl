@@ -35,9 +35,20 @@ Known issues
   quicklisp and have a C compiler accessible to ECL, you may use
   (ext:install-c-compiler) to switch back to the Lisp-to-C compiler.
 
+Changes since 13.5.1
+====================
 
-Changes since last release
-==========================
+* Features coverity scan model, ffi-unload-module implementation,
+  probably more.
+
+* Build system
+  enhancements, parallel builds, fixes, simplifications, cleanups,
+  maintenance.  minor cleanup, maintenance.
+
+* Numerous fixes
+
+Changes since 12.7.1
+====================
 
 Some highlights of this release are:
 
