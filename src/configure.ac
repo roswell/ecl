@@ -12,7 +12,7 @@ AC_INIT([ecl],[15.2.21],[])
 AC_REVISION([$Revision$])
 AC_CONFIG_SRCDIR([bare.lsp.in])
 AC_CONFIG_AUX_DIR([gmp])
-AC_PREREQ(2.59)
+AC_PREREQ(2.69)
 
 dnl -----------------------------------------------------------------------
 dnl Make sure we do not configure within source directory
@@ -551,7 +551,7 @@ else
   ECL_BOEHM_GC
 fi
 if test ${enable_smallcons} = "yes" ; then
-   AC_DEFINE(ECL_SMALL_CONS)
+   AC_DEFINE([ECL_SMALL_CONS], [], [ECL_SMALL_CONS])
 fi
 
 ECL_LIBFFI
@@ -597,13 +597,13 @@ dnl Deactivate floating point exceptions if asked to
 if test "${with_ieee_fp}" = yes; then
    with_signed_zero="yes"
    with_fpe="yes"
-   AC_DEFINE(ECL_IEEE_FP)
+   AC_DEFINE([ECL_IEEE_FP], [], [ECL_IEEE_FP])
 fi
 if test "${with_fpe}" != yes; then
-   AC_DEFINE(ECL_AVOID_FPE_H)
+   AC_DEFINE([ECL_AVOID_FPE_H], [], [ECL_AVOID_FPE_H])
 fi
 if test "${with_signed_zero}" = yes; then
-   AC_DEFINE(ECL_SIGNED_ZERO)
+   AC_DEFINE([ECL_SIGNED_ZERO], [], [ECL_SIGNED_ZERO])
 fi
 
 dnl =====================================================================
@@ -707,8 +707,8 @@ AC_CHECK_FUNCS( [expf logf sqrtf cosf sinf tanf sinhf coshf tanhf] \
 AC_CHECK_FUNCS( [sched_yield uname fseeko dladdr backtrace backtrace_symbols] )
 
 AC_CHECK_HEADER( [sys/mman.h],
-                 AC_DEFINE(ECL_USE_MPROTECT)
-                 AC_DEFINE(HAVE_SYS_MMAN_H)
+                 AC_DEFINE([ECL_USE_MPROTECT], [], [ECL_USE_MPROTECT])
+                 AC_DEFINE([HAVE_SYS_MMAN_H], [], [HAVE_SYS_MMAN_H])
                )
 
 ECL_POSIX_ENVIRON
@@ -747,7 +747,7 @@ dnl Lisp library and libecl features
 if test ${enable_shared} = "yes"; then
   AC_DEFINE(ENABLE_DLOPEN, [1], [Allow loading dynamically linked code])
   LSP_LIBRARIES="${SHAREDPREFIX}ecl.${SHAREDEXT}"
-  ECL_ADD_FEATURE([wants-dlopen])
+  ECL_ADD_LISP_MODULE([dlopen])
 else
   enable_soname=no
   LSP_LIBRARIES="${LIBPREFIX}ecl.${LIBEXT}"
@@ -760,7 +760,7 @@ fi
 
 if test "${with_cmuformat}" = "yes"; then
   with_clos_streams="yes"
-  AC_DEFINE(ECL_CMU_FORMAT, [1], [Use CMU Common-Lisp's FORMAT routine])
+  AC_DEFINE([ECL_CMU_FORMAT], [1], [Use CMU Common-Lisp's FORMAT routine])
 fi
 
 if test "${with_clos_streams}" = "yes"; then
@@ -854,18 +854,18 @@ fi
 
 if test "x${enable_unicode}" != "xno"; then
    if test "${enable_unicode}" = 16; then
-      AC_DEFINE(ECL_UNICODE, [16], [Support for Unicode])
+      AC_DEFINE([ECL_UNICODE], [16], [Support for Unicode])
       CHAR_CODE_LIMIT=65536
       ECL_CHARACTER=$ECL_INT16_T
       EXTRA_OBJS="$EXTRA_OBJS unicode/ucd16.o unicode/ucd16-0000.o unicode/ucd16-0016.o unicode/ucd16-0032.o unicode/ucd16-0048.o unicode/ucd16-0064.o"
    else
-      AC_DEFINE(ECL_UNICODE, [21], [Support for Unicode])
+      AC_DEFINE([ECL_UNICODE], [21], [Support for Unicode])
       CHAR_CODE_LIMIT=1114112
       ECL_CHARACTER=$ECL_INT32_T
       EXTRA_OBJS="$EXTRA_OBJS unicode/ucd.o unicode/ucd-0000.o unicode/ucd-0016.o unicode/ucd-0032.o unicode/ucd-0048.o unicode/ucd-0064.o unicode/ucd-0080.o unicode/ucd-0096.o"
    fi
    if test "${with_unicode_names}" = "yes"; then
-      AC_DEFINE(ECL_UNICODE_NAMES, [1], [Link in the database of Unicode names])
+      AC_DEFINE([ECL_UNICODE_NAMES], [1], [Link in the database of Unicode names])
       EXTRA_OBJS="$EXTRA_OBJS unicode/ucd_names_char.o unicode/ucd_names_codes.o unicode/ucd_names_pair.o unicode/ucd_names_str.o"
    fi
 else
@@ -889,7 +889,7 @@ else
 fi
 
 if test "${enable_hpack}" = "yes"; then
-   AC_DEFINE(ECL_RELATIVE_PACKAGE_NAMES, [1], [Hierarchical package names])
+   AC_DEFINE([ECL_RELATIVE_PACKAGE_NAMES], [1], [Hierarchical package names])
 fi
 
 AC_CONFIG_FILES([
@@ -900,6 +900,6 @@ AC_CONFIG_FILES([
   cmp/cmpdefs.pre:cmp/cmpdefs.lsp
   tests/config.lsp tests/Makefile
  ])
-AC_CONFIG_HEADERS([ecl/config.h:ecl/configpre.h]) # FIXME
+AC_CONFIG_HEADERS([ecl/config.h:ecl/configpre.h])
 AC_OUTPUT
-for i in $srcdir/c/*/; do mkdir -p c/`basename $i`; done
+for i in $srcdir/c/*/; do mkdir c/`basename $i`; done
