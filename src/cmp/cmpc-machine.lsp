@@ -148,7 +148,7 @@
     ;; hack: sse-pack -> int, but int -> int-sse-pack
     (let ((r (gethash :int-sse-pack table)))
       (when r
-	(setf (rep-type-to-lisp r) 'ext:int-sse-pack)))
+	(setf (rep-type-index r) 'ext:int-sse-pack)))
     ;; On a second pass, we replace types with more general ones
     (loop with fixnum-rep-type = (gethash ':fixnum table)
        with fixnum-lisp-type = (rep-type-lisp-type fixnum-rep-type)
