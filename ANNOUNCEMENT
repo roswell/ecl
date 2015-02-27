@@ -35,6 +35,19 @@ Known issues
   quicklisp and have a C compiler accessible to ECL, you may use
   (ext:install-c-compiler) to switch back to the Lisp-to-C compiler.
 
+Changes since 15.2.21
+=====================
+
+* autoconf scripts are rewritten to support version 2.69 stack
+
+* direction is now correctly determined, so gcc 5.x builds should be
+
+* possible broken --with-sse=yes build works now patch enabling
+
+* compilation of ECL under MSVC (2008/2010) stable-sort now works as
+  desired
+
+
 Changes since 13.5.1
 ====================
 
