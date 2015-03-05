@@ -176,9 +176,9 @@
 		  (when l
 		    (cmperr "Syntax error in type expression ~S" type)))
 		 (&optional
-		  (when optional-flag
-		    (cmperr "Syntax error in type expression ~S" type))
-		  (setf optional-flag t))
+		  (if optional-flag
+		      (push typespec optional)
+		      (setf optional-flag t)))
 		 (&rest
 		  (when (or (null l)
 			    (not (member (rest l) '(() (&allow-other-keys))
