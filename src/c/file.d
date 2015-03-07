@@ -491,12 +491,12 @@ generic_close(cl_object strm)
 static cl_index
 generic_write_vector(cl_object strm, cl_object data, cl_index start, cl_index end)
 {
-        cl_elttype elttype;
+	cl_elttype elttype;
 	const struct ecl_file_ops *ops;
 	if (start >= end)
 		return start;
 	ops = stream_dispatch_table(strm);
-        elttype = ecl_array_elttype(data);
+	elttype = ecl_array_elttype(data);
 	if (elttype == ecl_aet_bc ||
 #ifdef ECL_UNICODE
 	    elttype == ecl_aet_ch ||
@@ -591,7 +591,7 @@ eformat_write_char(cl_object strm, ecl_character c)
 {
 	unsigned char buffer[ENCODING_BUFFER_MAX_SIZE];
 	ecl_character nbytes;
-        nbytes = strm->stream.encoder(strm, buffer, c);
+	nbytes = strm->stream.encoder(strm, buffer, c);
 	strm->stream.ops->write_byte8(strm, buffer, nbytes);
 	if (c == '\n')
 		strm->stream.column = 0;
@@ -679,7 +679,7 @@ passthrough_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
 {
 #ifdef ECL_UNICODE
 	unlikely_if (c > 0xFF) {
-                return encoding_error(stream, buffer, c);
+		return encoding_error(stream, buffer, c);
 	}
 #endif
 	buffer[0] = c;
@@ -698,7 +698,7 @@ ascii_decoder(cl_object stream)
 	if (ecl_read_byte8(stream, &aux, 1) < 1) {
 		return EOF;
 	} else if (aux > 127) {
-                return decoding_error(stream, &aux, 1);
+		return decoding_error(stream, &aux, 1);
 	} else {
 		return aux;
 	}
@@ -708,7 +708,7 @@ static int
 ascii_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
 {
 	unlikely_if (c > 127) {
-                return encoding_error(stream, buffer, c);
+		return encoding_error(stream, buffer, c);
 	}
 	buffer[0] = c;
 	return 1;
@@ -817,7 +817,7 @@ ucs_2be_decoder(cl_object stream)
 			} else {
 				ecl_character aux = ((ecl_character)buffer[0] << 8) | buffer[1];
 				if ((buffer[0] & 0xF8) != 0xDC) {
-                                        return decoding_error(stream, buffer, 1);
+					return decoding_error(stream, buffer, 1);
 				}
 				return ((c & 0x3FFF) << 10) + (aux & 0x3FFF) + 0x10000;
 			}
@@ -859,7 +859,7 @@ ucs_2le_decoder(cl_object stream)
 			} else {
 				ecl_character aux = ((ecl_character)buffer[1] << 8) | buffer[0];
 				if ((buffer[1] & 0xF8) != 0xDC) {
-                                        return decoding_error(stream, buffer, 2);
+					return decoding_error(stream, buffer, 2);
 				}
 				return ((c & 0x3FFF) << 10) + (aux & 0x3FFF) + 0x10000;
 			}
@@ -931,7 +931,7 @@ user_decoder(cl_object stream)
 	}
 	character = ecl_gethash_safe(ecl_make_fixnum(buffer[0]), table, ECL_NIL);
 	unlikely_if (Null(character)) {
-                return decoding_error(stream, buffer, 1);
+		return decoding_error(stream, buffer, 1);
 	}
 	if (character == ECL_T) {
 		if (ecl_read_byte8(stream, buffer+1, 1) < 1) {
@@ -940,7 +940,7 @@ user_decoder(cl_object stream)
 			cl_fixnum byte = (buffer[0]<<8) + buffer[1];
 			character = ecl_gethash_safe(ecl_make_fixnum(byte), table, ECL_NIL);
 			unlikely_if (Null(character)) {
-                                return decoding_error(stream, buffer, 2);
+				return decoding_error(stream, buffer, 2);
 			}
 		}
 	}
@@ -988,7 +988,7 @@ user_multistate_decoder(cl_object stream)
 			return ECL_CHAR_CODE(character);
 		}
 		unlikely_if (Null(character)) {
-                        return decoding_error(stream, buffer, i);
+			return decoding_error(stream, buffer, i);
 		}
 		if (character == ECL_T) {
 			/* Need more characters */
@@ -1063,7 +1063,7 @@ utf_8_decoder(cl_object stream)
 		return buffer[0];
 	}
 	unlikely_if ((buffer[0] & 0x40) == 0)
-                return decoding_error(stream, buffer, 1);
+		return decoding_error(stream, buffer, 1);
 	if ((buffer[0] & 0x20) == 0) {
 		cum = buffer[0] & 0x1F;
 		nbytes = 1;
@@ -1074,7 +1074,7 @@ utf_8_decoder(cl_object stream)
 		cum = buffer[0] & 0x07;
 		nbytes = 3;
 	} else {
-                return decoding_error(stream, buffer, 1);
+		return decoding_error(stream, buffer, 1);
 	}
 	if (ecl_read_byte8(stream, buffer+1, nbytes) < nbytes)
 		return EOF;
@@ -1082,16 +1082,16 @@ utf_8_decoder(cl_object stream)
 		unsigned char c = buffer[i];
 		/*printf(": %04x :", c);*/
 		unlikely_if ((c & 0xC0) != 0x80)
-                        return decoding_error(stream, buffer, nbytes+1);
+			return decoding_error(stream, buffer, nbytes+1);
 		cum = (cum << 6) | (c & 0x3F);
 		unlikely_if (cum == 0)
-                        return decoding_error(stream, buffer, nbytes+1);
+			return decoding_error(stream, buffer, nbytes+1);
 	}
 	if (cum >= 0xd800) {
 		unlikely_if (cum <= 0xdfff)
-                        return decoding_error(stream, buffer, nbytes+1);
+			return decoding_error(stream, buffer, nbytes+1);
 		unlikely_if (cum >= 0xFFFE && cum <= 0xFFFF)
-                        return decoding_error(stream, buffer, nbytes+1);
+			return decoding_error(stream, buffer, nbytes+1);
 	}
 	/*printf("; %04x ;", cum);*/
 	return cum;
@@ -1162,8 +1162,8 @@ static cl_object
 clos_stream_read_byte(cl_object strm)
 {
 	cl_object b = _ecl_funcall2(@'gray::stream-read-byte', strm);
-        if (b == @':eof') b = ECL_NIL;
-        return b;
+	if (b == @':eof') b = ECL_NIL;
+	return b;
 }
 
 static void
@@ -1176,18 +1176,18 @@ static ecl_character
 clos_stream_read_char(cl_object strm)
 {
 	cl_object output = _ecl_funcall2(@'gray::stream-read-char', strm);
-        cl_fixnum value;
+	cl_fixnum value;
 	if (ECL_CHARACTERP(output))
-                value = ECL_CHAR_CODE(output);
-        else if (ECL_FIXNUMP(output))
-                value = ecl_fixnum(output);
+		value = ECL_CHAR_CODE(output);
+	else if (ECL_FIXNUMP(output))
+		value = ecl_fixnum(output);
 	else if (output == ECL_NIL || output == @':eof')
 		return EOF;
-        else
-                value = -1;
-        unlikely_if (value < 0 || value > ECL_CHAR_CODE_LIMIT)
-                FEerror("Unknown character ~A", 1, output);
-        return value;
+	else
+		value = -1;
+	unlikely_if (value < 0 || value > ECL_CHAR_CODE_LIMIT)
+		FEerror("Unknown character ~A", 1, output);
+	return value;
 }
 
 static ecl_character
@@ -1492,8 +1492,8 @@ cl_get_output_stream_string(cl_object strm)
 {
 	cl_object strng;
 	unlikely_if (!ECL_ANSI_STREAM_TYPE_P(strm, ecl_smm_string_output))
-                FEwrong_type_only_arg(@[get-output-stream-string],
-                                      strm, @[string-stream]);
+		FEwrong_type_only_arg(@[get-output-stream-string],
+				      strm, @[string-stream]);
 	strng = cl_copy_seq(STRING_OUTPUT_STRING(strm));
 	STRING_OUTPUT_STRING(strm)->base_string.fillp = 0;
 	@(return strng)
@@ -1641,10 +1641,10 @@ ecl_make_string_input_stream(cl_object strng, cl_index istart, cl_index iend)
 }
 
 @(defun make_string_input_stream (strng &o (istart ecl_make_fixnum(0)) iend)
-        cl_index_pair p;
+	cl_index_pair p;
 @
 	strng = cl_string(strng);
-        p = ecl_vector_start_end(@[make-string-input-stream], strng, istart, iend);
+	p = ecl_vector_start_end(@[make-string-input-stream], strng, istart, iend);
 	@(return (ecl_make_string_input_stream(strng, p.start, p.end)))
 @)
 
@@ -1830,7 +1830,7 @@ cl_two_way_stream_input_stream(cl_object strm)
 {
 	unlikely_if (!ECL_ANSI_STREAM_TYPE_P(strm,ecl_smm_two_way))
 		FEwrong_type_only_arg(@[two-way-stream-input-stream],
-                                      strm, @[two-way-stream]);
+				      strm, @[two-way-stream]);
 	@(return TWO_WAY_STREAM_INPUT(strm));
 }
 
@@ -1839,7 +1839,7 @@ cl_two_way_stream_output_stream(cl_object strm)
 {
 	unlikely_if (!ECL_ANSI_STREAM_TYPE_P(strm, ecl_smm_two_way))
 		FEwrong_type_only_arg(@[two-way-stream-output-stream],
-                                      strm, @[two-way-stream]);
+				      strm, @[two-way-stream]);
 	@(return TWO_WAY_STREAM_OUTPUT(strm))
 }
 
@@ -2015,7 +2015,7 @@ cl_broadcast_stream_streams(cl_object strm)
 {
 	unlikely_if (!ECL_ANSI_STREAM_TYPE_P(strm, ecl_smm_broadcast))
 		FEwrong_type_only_arg(@[broadcast-stream-streams],
-                                      strm, @[broadcast-stream]);
+				      strm, @[broadcast-stream]);
 	return cl_copy_list(BROADCAST_STREAM_LIST(strm));
 }
 
@@ -2198,7 +2198,7 @@ cl_echo_stream_input_stream(cl_object strm)
 {
 	unlikely_if (!ECL_ANSI_STREAM_TYPE_P(strm, ecl_smm_echo))
 		FEwrong_type_only_arg(@[echo-stream-input-stream],
-                                      strm, @[echo-stream]);
+				      strm, @[echo-stream]);
 	@(return ECHO_STREAM_INPUT(strm))
 }
 
@@ -2207,7 +2207,7 @@ cl_echo_stream_output_stream(cl_object strm)
 {
 	unlikely_if (!ECL_ANSI_STREAM_TYPE_P(strm, ecl_smm_echo))
 		FEwrong_type_only_arg(@[echo-stream-output-stream],
-                                      strm, @[echo-stream]);
+				      strm, @[echo-stream]);
 	@(return ECHO_STREAM_OUTPUT(strm))
 }
 
@@ -2350,7 +2350,7 @@ cl_concatenated_stream_streams(cl_object strm)
 {
 	unlikely_if (!ECL_ANSI_STREAM_TYPE_P(strm, ecl_smm_concatenated))
 		FEwrong_type_only_arg(@[concatenated-stream-streams],
-                                      strm, @[concatenated-stream]);
+				      strm, @[concatenated-stream]);
 	return cl_copy_list(CONCATENATED_STREAM_LIST(strm));
 }
 
@@ -2549,7 +2549,7 @@ cl_synonym_stream_symbol(cl_object strm)
 {
 	unlikely_if (!ECL_ANSI_STREAM_TYPE_P(strm, ecl_smm_synonym))
 		FEwrong_type_only_arg(@[synonym-stream-symbol],
-                                      strm, @[synonym-stream]);
+				      strm, @[synonym-stream]);
 	@(return SYNONYM_STREAM_SYMBOL(strm))
 }
 
@@ -2733,7 +2733,7 @@ io_file_clear_input(cl_object strm)
 #endif
 	while (file_listen(strm, f) == ECL_LISTEN_AVAILABLE) {
 		ecl_character c = eformat_read_char(strm);
-                if (c == EOF) return;
+		if (c == EOF) return;
 	}
 }
 
@@ -2773,19 +2773,19 @@ io_file_length(cl_object strm)
 static cl_object
 io_file_get_position(cl_object strm)
 {
-	int f = IO_FILE_DESCRIPTOR(strm);
-        if (isatty(f)) return(ECL_NIL);
-
 	cl_object output;
 	ecl_off_t offset;
+
+	int f = IO_FILE_DESCRIPTOR(strm);
+	if (isatty(f)) return(ECL_NIL);
 
 	ecl_disable_interrupts();
 	offset = lseek(f, 0, SEEK_CUR);
 	ecl_enable_interrupts();
 	unlikely_if (offset < 0)
-        	if (errno == ESPIPE)
-                	return(ECL_NIL);
-                else
+		if (errno == ESPIPE)
+			return(ECL_NIL);
+		else
 			io_error(strm);
 	if (sizeof(ecl_off_t) == sizeof(long)) {
 		output = ecl_make_integer(offset);
@@ -2810,10 +2810,10 @@ io_file_get_position(cl_object strm)
 static cl_object
 io_file_set_position(cl_object strm, cl_object large_disp)
 {
-	int f = IO_FILE_DESCRIPTOR(strm);
-        if (isatty(f)) return(ECL_NIL);
 	ecl_off_t disp;
 	int mode;
+	int f = IO_FILE_DESCRIPTOR(strm);
+	if (isatty(f)) return(ECL_NIL);
 	if (Null(large_disp)) {
 		disp = 0;
 		mode = SEEK_END;

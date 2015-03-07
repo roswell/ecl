@@ -8,7 +8,7 @@ AC_CHECK_TYPES([long double],[enable_longdouble=yes],[enable_longdouble=no])
 if test "$enable_longdouble" != "no" ; then
 AC_CHECK_FUNCS([sinl cosl tanl logl expl],[],[enable_longdouble=no; break])
 if test "$enable_longdouble" != "no" ; then
-AC_DEFINE(ECL_LONG_FLOAT)
+AC_DEFINE([ECL_LONG_FLOAT], [], [ECL_LONG_FLOAT])
 fi
 fi
 fi
@@ -53,9 +53,10 @@ if test "x$ECL_LONG_LONG_BITS" = "x"; then
   AC_MSG_RESULT(not available)
 else
   AC_MSG_RESULT([$ECL_LONG_LONG_BITS])
-  AC_DEFINE(ecl_long_long_t, long long, [compiler understands long long])
-  AC_DEFINE(ecl_ulong_long_t, unsigned long long, [compiler understands long long])
-  AC_DEFINE_UNQUOTED([ECL_LONG_LONG_BITS],[$ECL_LONG_LONG_BITS])
+  AC_DEFINE([ecl_long_long_t], [long long], [compiler understands long long])
+  AC_DEFINE([ecl_ulong_long_t], [unsigned long long], [compiler understands long long])
+  AC_DEFINE_UNQUOTED([ECL_LONG_LONG_BITS],[$ECL_LONG_LONG_BITS],
+   [ECL_LOING_LONG_BITS])dnl last param needs to be on a new line. -evrim.
 fi
 ])
 
@@ -222,12 +223,12 @@ CP="cp"
 MV="mv"
 
 ### Guess the operating system
-AC_SUBST(ARCHITECTURE)dnl	Type of processor for which this is compiled
-AC_SUBST(SOFTWARE_TYPE)dnl	Type of operating system
-AC_SUBST(SOFTWARE_VERSION)dnl	Version number of operating system
-AC_SUBST(MACHINE_VERSION)dnl	Version of the machine
+AC_SUBST(ARCHITECTURE)dnl Type of processor for which this is compiled
+AC_SUBST(SOFTWARE_TYPE)dnl Type of operating system
+AC_SUBST(SOFTWARE_VERSION)dnl	 Version number of operating system
+AC_SUBST(MACHINE_VERSION)dnl	 Version of the machine
 
-AC_SUBST(ECL_LDRPATH)dnl	Sometimes the path for finding DLLs must be hardcoded.
+AC_SUBST(ECL_LDRPATH)dnl Sometimes the path for finding DLLs must be hardcoded.
 AC_SUBST(LIBPREFIX)dnl	Name components of a statically linked library
 AC_SUBST(LIBEXT)
 AC_SUBST(SHAREDEXT)dnl	Name components of a dynamically linked library
@@ -494,8 +495,8 @@ AC_TYPE_UINT$1_T
 if test "x$ac_cv_c_int$1_t" = xyes; then
   eval ECL_INT$1_T="int$1_t"
   eval ECL_UINT$1_T="uint$1_t"
-  AC_DEFINE_UNQUOTED([ecl_int$1_t],[int$1_t])
-  AC_DEFINE_UNQUOTED([ecl_uint$1_t],[uint$1_t])
+  AC_DEFINE_UNQUOTED([ecl_int$1_t], [int$1_t], [ecl_int$1_t])
+  AC_DEFINE_UNQUOTED([ecl_uint$1_t], [uint$1_t], [ecl_uint$1_t])
 fi])
 
 dnl
@@ -543,24 +544,26 @@ AC_DEFUN(ECL_STACK_DIRECTION,[
   AC_MSG_CHECKING(whether stack growns downwards)
 if test -z "${ECL_STACK_DIR}" ; then
   AC_RUN_IFELSE([AC_LANG_SOURCE([[
+
+#include <stddef.h>
 #include <stdlib.h>
 
-char *f2() {
+ptrdiff_t f2(const char *d) {
   char c[2];
-  return c;
+  return c-d;
 }
 
-char *f1() {
+ptrdiff_t f1(const char *d) {
   char c[2];
-  return c+1;
+  return c+1-d;
 }
 
-typedef char *(*f_ptr)();
+typedef ptrdiff_t (*f_ptr)(const char *);
 f_ptr f[2] = { f1, f2 };
 
-int signo() {
+ptrdiff_t signo() {
   char d[1];
-  return f[rand() & 1]() - d;
+  return f[rand() & 1](d);
 }
 
 int main() {
@@ -572,7 +575,7 @@ int main() {
 ]])],[ECL_STACK_DIR=down],[ECL_STACK_DIR=up],[])
 fi
 case "${ECL_STACK_DIR}" in
-  down|DOWN) AC_MSG_RESULT(yes); AC_DEFINE(ECL_DOWN_STACK, [1], [Stack grows downwards]) ;;
+  down|DOWN) AC_MSG_RESULT(yes); AC_DEFINE([ECL_DOWN_STACK], [1], [Stack grows downwards]) ;;
   up|UP) AC_MSG_RESULT(no) ;;
   *) AC_MSG_ERROR(Unable to determine stack growth direction)
 esac])
@@ -719,8 +722,8 @@ int main() {
 fi
 case "${ECL_NEWLINE}" in
   LF) AC_MSG_RESULT(lf) ;;
-  CR) AC_MSG_RESULT(cr); AC_DEFINE(ECL_NEWLINE_IS_CR, [1], [Define if your newline is CR]) ;;
-  CRLF) AC_MSG_RESULT(cr+lf); AC_DEFINE(ECL_NEWLINE_IS_CRLF, [1], [Define if your newline is CRLF]) ;;
+  CR) AC_MSG_RESULT(cr); AC_DEFINE([ECL_NEWLINE_IS_CR], [1], [Define if your newline is CR]) ;;
+  CRLF) AC_MSG_RESULT(cr+lf); AC_DEFINE([ECL_NEWLINE_IS_CRLF], [1], [Define if your newline is CRLF]) ;;
   *) AC_MSG_ERROR(Unable to determine linefeed mode) ;;
 esac
 ])
@@ -782,7 +785,7 @@ AC_RUN_IFELSE(
     int main() {
       return (foo() == 0);
     }]])],
-  [AC_DEFINE(HAVE___BUILTIN_RETURN_ADDRESS)],
+  [AC_DEFINE([HAVE___BUILTIN_RETURN_ADDRESS], [], [HAVE___BUILTIN_RETURN_ADDRESS])],
   [])
 fi
 ])
@@ -794,7 +797,7 @@ dnl
 AC_DEFUN([ECL_FPE_MODEL],
 [AC_MSG_CHECKING([for code to detect FP exceptions])
 case "${host_cpu}" in
-   i686 |i586 | pentium* | athlon* )
+   i686 | i586 | pentium* | athlon* )
 	ECL_FPE_CODE="arch/fpe_x86.c"
 	AC_MSG_RESULT([x86])
 	;;
@@ -835,7 +838,7 @@ _mm_getcsr();]])],[sse_included=yes],[sse_included=no])
   fi
  fi
  if test "x$with_sse" = xyes; then
-  AC_DEFINE(ECL_SSE2)
+  AC_DEFINE([ECL_SSE2], [], [ECL_SSE2])
   AC_MSG_RESULT([yes])
  else
   AC_MSG_RESULT([no])
@@ -847,8 +850,8 @@ dnl ----------------------------------------------------------------------
 dnl Check whether we have POSIX read/write locks are available
 AC_DEFUN([ECL_POSIX_RWLOCK],[
 AC_CHECK_FUNC( [pthread_rwlock_init], [
-  AC_DEFINE(ECL_RWLOCK)
-  AC_DEFINE(HAVE_POSIX_RWLOCK)
+  AC_DEFINE([ECL_RWLOCK], [], [ECL_RWLOCK])
+  AC_DEFINE([HAVE_POSIX_RWLOCK], [], [HAVE_POSIX_RWLOCK])
 ], [])
 THREAD_OBJ="$THREAD_OBJ threads/rwlock"
 ])
@@ -870,7 +873,7 @@ int main() {
 fi
 AC_MSG_RESULT([$ECL_WORKING_ENVIRON])
 if test $ECL_WORKING_ENVIRON = yes ; then
-  AC_DEFINE(HAVE_ENVIRON)
+  AC_DEFINE([HAVE_ENVIRON], [], [HAVE_ENVIRON])
 fi
 ])
 
@@ -911,7 +914,7 @@ if test "x${enable_threads}" != "xno"; then
     if test "${enable_shared}" = "no"; then
       LIBRARIES="${LIBRARIES} ${LIBPREFIX}eclatomic.${LIBEXT}"
     fi
-    AC_DEFINE(ECL_LIBATOMIC_OPS_H)
+    AC_DEFINE([ECL_LIBATOMIC_OPS_H], [], [ECL_LIBATOMIC_OPS_H])
     CORE_LIBS="-leclatomic ${CORE_LIBS}"
   else
     CORE_LIBS="-latomic_ops ${CORE_LIBS}"
@@ -947,9 +950,9 @@ if test "${enable_boehm}" = auto -o "${enable_boehm}" = system; then
  fi
  if test "${system_boehm}" = "yes"; then
    AC_CHECK_LIB( [gc], [GC_set_start_callback],
-                 [AC_DEFINE(HAVE_GC_SET_START_CALLBACK)], [] )
+                 [AC_DEFINE([HAVE_GC_SET_START_CALLBACK], [], [HAVE_GC_SET_START_CALLBACK])], [] )
  else
-  AC_DEFINE(HAVE_GC_SET_START_CALLBACK)
+  AC_DEFINE([HAVE_GC_SET_START_CALLBACK], [], [HAVE_GC_SET_START_CALLBACK])
  fi
  AC_MSG_CHECKING( [whether we can use the existing Boehm-Weiser library] )
  AC_MSG_RESULT( [${system_boehm}] )
@@ -973,6 +976,13 @@ if test "${enable_boehm}" = "included"; then
  dnl
  AC_MSG_NOTICE([Configuring included Boehm GC library:])
  test -d gc && rm -rf gc
+ currentdir=`${PWDCMD}`
+ cd $srcdir/${ECL_GC_DIR};
+ if test -d configure; then
+    autoreconf -vif
+    automake --add-missing
+ fi;
+ cd $currentdir;
  if mkdir gc; then
    if (destdir=`${PWDCMD}`; cd gc; \
        $srcdir/${ECL_GC_DIR}/configure --disable-shared --prefix=${destdir} \
@@ -996,11 +1006,11 @@ if test "${enable_boehm}" = "included"; then
  fi
 fi
 if test "${enable_gengc}" != "no" ; then
-  AC_DEFINE(GBC_BOEHM_GENGC)
+  AC_DEFINE([GBC_BOEHM_GENGC], [], [GBC_BOEHM_GENGC])
 fi
 AC_MSG_CHECKING([if we use Boehm-Demers-Weiser precise garbage collector]);
 if test "${enable_precisegc}" != "no" ; then
-  AC_DEFINE(GBC_BOEHM_PRECISE)
+  AC_DEFINE([GBC_BOEHM_PRECISE], [], [GBC_BOEHM_PRECISE])
   AC_MSG_RESULT([yes])
 else
   AC_MSG_RESULT([no])
@@ -1067,7 +1077,7 @@ fi
 if test -z "${ECL_LIBFFI_HEADER}"; then
   AC_MSG_WARN([Unable to configure or find libffi library; disabling dynamic FFI])
 else
-  AC_DEFINE(HAVE_LIBFFI)
+  AC_DEFINE([HAVE_LIBFFI], [], [HAVE_LIBFFI])
 fi
 ])
 

@@ -882,7 +882,7 @@ SEQUENCE.  See SORT."
 	predicate (si::coerce-to-function predicate))
   (if (listp sequence)
       (list-merge-sort sequence predicate key)
-      (if (or (stringp sequence) (bit-vector-p sequence))
+      (if (bit-vector-p sequence)
           (sort sequence predicate :key key)
           (coerce (list-merge-sort (coerce sequence 'list)
                                    predicate
