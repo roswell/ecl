@@ -35,21 +35,23 @@ Known issues
   quicklisp and have a C compiler accessible to ECL, you may use
   (ext:install-c-compiler) to switch back to the Lisp-to-C compiler.
 
-Changes since 15.2.21
-=====================
+15.3.7 changes since 15.2.21
+============================
 
 * autoconf scripts are rewritten to support version 2.69 stack
 
 * direction is now correctly determined, so gcc 5.x builds should be
 
-* possible broken --with-sse=yes build works now patch enabling
+* broken --with-sse=yes configure flag works once again
 
-* compilation of ECL under MSVC (2008/2010) stable-sort now works as
-  desired
+* compilation of ECL under MSVC (2008/2010/2012) even with custom
+  code pages
+
+* stable-sort now works as desired
 
 
-Changes since 13.5.1
-====================
+15.2.21 changes since 13.5.1
+============================
 
 * Features coverity scan model, ffi-unload-module implementation,
   probably more.
