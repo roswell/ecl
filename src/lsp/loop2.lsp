@@ -1595,7 +1595,8 @@ Note that this is not a valid ANSI code."))
 			  sequence-variable sequence-type
 			  step-hack default-top
 			  prep-phrases)
-  (declare (si::c-local))
+  (declare (si::c-local)
+	   (ignore indexv-user-specified-p))
    (let ((endform nil)				;Form (constant or variable) with limit value.
 	 (sequencep nil)			;T if sequence arg has been provided.
 	 (testfn nil)				;endtest function
