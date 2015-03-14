@@ -930,7 +930,6 @@
    next line.  (See PPRINT-INDENT.)"
   (declare (type (member :linear :miser :fill :mandatory) kind)
 	   (type (or stream (member t nil)) stream)
-	   (values null)
 	   (ext:check-arguments-type)
 	   #.+ecl-safe-declarations+)
   (let ((stream (case stream
@@ -954,7 +953,6 @@
   (declare (type (member :block :current) relative-to)
 	   (type real n)
 	   (type (or stream (member t nil)) stream)
-	   (values null)
 	   (ext:check-arguments-type)
 	   #.+ecl-safe-declarations+)
   (let ((stream (case stream
@@ -980,7 +978,6 @@
   (declare (type (member :line :section :line-relative :section-relative) kind)
 	   (type unsigned-byte colnum colinc)
 	   (type (or stream (member t nil)) stream)
-	   (values null)
 	   (ext:check-arguments-type)
 	   #.+ecl-safe-declarations+)
   (let ((stream (case stream
