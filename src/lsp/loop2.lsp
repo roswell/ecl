@@ -585,6 +585,7 @@ a LET-like macro, and a SETQ-like macro, which perform LOOP-style destructuring.
 		     main-body
 		     after-loop
 		     epilogue)
+  (declare (ignore env))
   (unless (= (length before-loop) (length after-loop))
     (error "LOOP-BODY called with non-synched before- and after-loop lists."))
   ;;All our work is done from these copies, working backwards from the end:
