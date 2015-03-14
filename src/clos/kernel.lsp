@@ -62,8 +62,7 @@
 ;;; Methods
 
 (defun install-method (name qualifiers specializers lambda-list fun wrap &rest options)
-  (declare (ignore doc)
-	   (notinline ensure-generic-function))
+  (declare (notinline ensure-generic-function))
 ;  (record-definition 'method `(method ,name ,@qualifiers ,specializers))
   (let* ((gf (ensure-generic-function name))
 	 (fun (if wrap (wrapped-method-function fun) fun))
