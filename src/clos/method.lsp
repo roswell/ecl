@@ -132,7 +132,8 @@
 	(values fn-form nil))))
 
 (defun make-raw-lambda (name lambda-list required-parameters specializers body env)
-  (declare (si::c-local))
+  (declare (si::c-local)
+	   (ignore env))
   (multiple-value-bind (declarations real-body documentation)
       (sys::find-declarations body)
     ;; FIXME!! This deactivates the checking of keyword arguments
