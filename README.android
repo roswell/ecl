@@ -1,0 +1,12 @@
+To build:
+
+$ export ANDROID_NDK_ROOT=Path to NDK
+$ ./configure.android
+
+This will create a 32-bit version of ECL to cross-compile.
+Then it will compile an ARM 32-bit ECL into android/install/android.
+Please see the sample application in contrib/android.
+
+
+evrim ulu <evrimulu@gmail.com>
+March 2015

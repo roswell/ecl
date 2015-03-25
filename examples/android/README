@@ -1,0 +1,14 @@
+This project is a base project for ECL Android.
+It is created by Sylvain Ageneau <ageneau@gmail.com>.
+Original location of this project is: 
+http://github.com/ageneau/ecl-android
+
+Instructions:
+$ android update project -t android-19 -p .
+$ ndk-build
+$ ant debug install
+
+Please direct further questions to ecl-devel@common-lisp.net
+
+evrim ulu <evrimulu@gmail.com>
+March 2015.
