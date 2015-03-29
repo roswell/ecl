@@ -119,10 +119,10 @@ out_of_memory(size_t requested_bytes)
 {
         failure = 0;
         GC_gcollect();
-        GC_oom_fn = out_of_memory_check;
+        GC_set_oom_fn(out_of_memory_check);
         {
                 output = GC_MALLOC(requested_bytes);
-                GC_oom_fn = out_of_memory;
+                GC_set_oom_fn(out_of_memory);
                 if (output != 0 && failure == 0) {
                         method = 2;
                         goto OUTPUT;
@@ -789,9 +789,9 @@ init_alloc(void)
 	 * 3) Out of the incremental garbage collector, we only use the
 	 *    generational component.
 	 */
-	GC_no_dls = 1;
-	GC_all_interior_pointers = 0;
-	GC_time_limit = GC_TIME_UNLIMITED;
+	GC_set_no_dls(1);
+	GC_set_all_interior_pointers(0);
+	GC_set_time_limit(GC_TIME_UNLIMITED);
 	GC_init();
 #ifdef ECL_THREADS
 # if GC_VERSION_MAJOR > 7 || GC_VERSION_MINOR > 1
@@ -1103,8 +1103,8 @@ init_alloc(void)
 	GC_old_start_callback = GC_start_call_back;
 	GC_start_call_back = (void (*)(void))gather_statistics;
 #endif
-	GC_java_finalization = 1;
-        GC_oom_fn = out_of_memory;
+	GC_set_java_finalization(1);
+        GC_set_oom_fn(out_of_memory);
         GC_set_warn_proc(no_warnings);
 	GC_enable();
 }
