@@ -3,6 +3,7 @@
 ;;;;  Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya.
 ;;;;  Copyright (c) 1990, Giuseppe Attardi.
 ;;;;  Copyright (c) 2001, Juan Jose Garcia Ripoll.
+;;;;  Copyright (c) 2015, Daniel Kochmański.
 ;;;;
 ;;;;    This program is free software; you can redistribute it and/or
 ;;;;    modify it under the terms of the GNU Library General Public
@@ -403,97 +404,98 @@ Each PLACE may be any one of the following:
         ((endp (cddr rest)) (setf-expand-1 (car rest) (cadr rest) env))
         (t (cons 'progn (setf-expand rest env)))))
 
-;;; PSETF macro.
+;;; PSTEF/SHIFTF/ROTATEF base macros
 
-(defmacro psetf (&environment env &rest rest)
-  "Syntax: (psetf {place form}*)
+;; WITH-SETF-EXPANSIONS
+(defmacro with-setf-expansions
+    ((pairs stores store-forms access-forms)
+     (args &optional env) &body body)
+  "Syntax: (with-setf-expansions (pairs stores store-forms access-forms)
+            ({place}* &optional env) {form}*)
+Map setf-expansions of places into list of bindings in PAIRS, list of
+stores in STORES, list of store-form in STORE-FORMS and list of
+access-form in ACCESS-FORMS.  Creates new lexical scope composed of
+these variables."
+  (declare (notinline mapcar))
+  `(destructuring-bind (,pairs ,stores ,store-forms ,access-forms)
+       (reduce (lambda (x y)
+                 (list
+                  (nconc (mapcar #'list (first y) (second y))
+                         (first x))
+                  (cons (third  y) (second x))
+                  (cons (fourth y) (third  x))
+                  (cons (fifth  y) (fourth x))))
+               (mapcar (lambda (place)
+                         (multiple-value-list
+                          (get-setf-expansion place ,env)))
+                       (reverse ,args))
+               :initial-value '(nil nil nil nil))
+     ,@body))
+
+;; WITH-EXPANSION-SETTER
+(defmacro with-expansion-setter ((name store-forms) &body body)
+  "Syntax: (with-expansion-setter (name store-forms) {form}*)
+Macro creates lexically-scoped function NAME, which takes two lists as
+arguments, and expands into nested MULTIPLE-VALUE-BINDs of ACCESS-FORMS
+into STORES.  Finally inside bindings it expands STORE-FORMS."
+  `(labels ((,name (stores access-forms)
+              (if stores
+                  `((multiple-value-bind ,(car stores) ,(car access-forms)
+                      ,@(,name (cdr stores) (cdr access-forms))))
+                  `(,@,store-forms))))
+     ,@body))
+
+;;; PSETF macro.
+(defmacro psetf (&environment env &rest args)
+    "Syntax: (psetf {place form}*)
 Similar to SETF, but evaluates all FORMs first, and then assigns each value to
 the corresponding PLACE.  Returns NIL."
-  (declare (notinline mapcar))
-  (cond ((endp rest) nil)
-        ((endp (cdr rest)) (error "~S is an illegal PSETF form." rest))
-        ((endp (cddr rest))
-         `(progn ,(setf-expand-1 (car rest) (cadr rest) env)
-                 nil))
-        (t
-	 (do ((r rest (cddr r))
-	      (pairs nil)
-	      (store-forms nil))
-	     ((endp r)
-	      `(let* ,pairs
-		 ,@(nreverse store-forms)
-		 nil))
-	   (when (endp (cdr r)) (error "~S is an illegal PSETF form." rest))
-	   (multiple-value-bind (vars vals stores store-form access-form)
-	       (get-setf-expansion (car r) env)
-             (declare (ignore access-form))
-	     (setq store-forms (cons store-form store-forms))
-	     (setq pairs
-		   (nconc pairs
-			  (mapcar #'list
-				  (append vars stores)
-				  (append vals (list (cadr r)))))))))))
-
+    (multiple-value-bind (places forms)
+        (do* ((args args (cddr args))
+              places forms)
+             ((endp args)
+              (values (nreverse places)
+                      (nreverse forms)))
+          (when (endp (cdr args))
+            (error "~S is an illegal PSETF form (odd number of arguments)." rest))
+          (push (car args) places)
+          (push (cadr args) forms))
+      (with-setf-expansions (pairs stores store-forms access-forms) (places env)
+        (declare (ignore access-forms))
+        (with-expansion-setter (thunk store-forms)
+          `(let* ,pairs
+             ,@(thunk stores forms)
+             nil)))))
 
 ;;; SHIFTF macro.
-(defmacro shiftf (&environment env &rest rest)
-  "Syntax: (shiftf {place}+ form)
+(defmacro shiftf (&environment env &rest args)
+    "Syntax: (shiftf {place}+ form)
 Saves the values of PLACE and FORM, and then assigns the value of each PLACE
 to the PLACE on its left.  The rightmost PLACE gets the value of FORM.
 Returns the original value of the leftmost PLACE."
-  (declare (notinline mapcar))
-  (do ((r rest (cdr r))
-       (pairs nil)
-       (stores nil)
-       (store-forms nil)
-       (g (gensym))
-       (access-forms nil))
-      ((endp (cdr r))
-       (setq stores (nreverse stores))
-       (setq store-forms (nreverse store-forms))
-       (setq access-forms (nreverse access-forms))
-       `(let* ,(nconc pairs
-		      (list (list g (car access-forms)))
-		      (mapcar #'list stores (cdr access-forms))
-		      (list (list (car (last stores)) (car r))))
-	    ,@store-forms
-	    ,g))
-    (multiple-value-bind (vars vals stores1 store-form access-form)
-	(get-setf-expansion (car r) env)
-      (setq pairs (nconc pairs (mapcar #'list vars vals)))
-      (setq stores (cons (car stores1) stores))
-      (setq store-forms (cons store-form store-forms))
-      (setq access-forms (cons access-form access-forms)))))
-
+  (with-setf-expansions (pairs stores store-forms access-forms)
+      ((butlast args) env)
+    (with-expansion-setter (thunk store-forms)
+      `(multiple-value-prog1 ,(car access-forms)
+         (let* ,pairs
+           ,@(thunk stores
+                    (append (cdr access-forms)
+                            (last args))))))))
 
 ;;; ROTATEF macro.
-(defmacro rotatef (&environment env &rest rest)
-  "Syntax: (rotatef {place}*)
+(defmacro rotatef (&environment env &rest args)
+    "Syntax: (rotatef {place}*)
 Saves the values of PLACEs, and then assigns to each PLACE the saved value of
 the PLACE to its right.  The rightmost PLACE gets the value of the leftmost
 PLACE.  Returns NIL."
-  (declare (notinline mapcar))
-  (do ((r rest (cdr r))
-       (pairs nil)
-       (stores nil)
-       (store-forms nil)
-       (access-forms nil))
-      ((endp r)
-       (setq stores (nreverse stores))
-       (setq store-forms (nreverse store-forms))
-       (setq access-forms (nreverse access-forms))
-       `(let* ,(nconc pairs
-		      (mapcar #'list stores (cdr access-forms))
-		      (list (list (car (last stores)) (car access-forms))))
-	    ,@store-forms
-	    nil))
-    (multiple-value-bind (vars vals stores1 store-form access-form)
-	(get-setf-expansion (car r) env)
-      (setq pairs (nconc pairs (mapcar #'list vars vals)))
-      (setq stores (cons (car stores1) stores))
-      (setq store-forms (cons store-form store-forms))
-      (setq access-forms (cons access-form access-forms)))))
-
+  (with-setf-expansions (pairs stores store-forms access-forms)
+      (args env)
+    (with-expansion-setter (thunk store-forms)
+      `(let* ,pairs
+         ,@(thunk stores
+                  (append (cdr access-forms)
+                          (list (car access-forms))))
+         nil))))
 
 ;;; DEFINE-MODIFY-MACRO macro, by Bruno Haible.
 (defmacro define-modify-macro (name lambdalist function &optional docstring)
