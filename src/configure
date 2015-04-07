@@ -1486,6 +1486,7 @@ Optional Packages:
   --with-gmp-prefix=path  prefix for system GMP includes and libraries
   --with-gmp-incdir=path  path to system GMP includes (overrides prefix)
   --with-gmp-libdir=path  path to system GMP libraries (overrides prefix)
+  --with-libffi-prefix=path  prefix for system LIBFFI includes and libraries
   --with-__thread         Enable __thread thread-local variables (yes|NO|auto)
                           (supported by NPTL-aware glibc and maybe Windows)
   --with-cxx              build ECL using C++ compiler (default=NO)
@@ -2716,6 +2717,11 @@ $as_echo "$as_me: WARNING: --with-local-gmp is deprecated, use --with-system-gmp
    with_system_gmp="${enableval}"
 fi
 
+
+# Check whether --with-libffi-prefix was given.
+if test "${with_libffi_prefix+set}" = set; then :
+  withval=$with_libffi_prefix; LIBFFI_INCDIR="$withval/include"; LIBFFI_LIBDIR="$withval/lib"
+fi
 
 
 # Check whether --with-__thread was given.

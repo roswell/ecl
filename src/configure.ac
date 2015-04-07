@@ -109,6 +109,11 @@ AC_ARG_ENABLE(local-gmp,
     [--with-local-gmp is deprecated, use --with-system-gmp instead!])
    with_system_gmp="${enableval}"])
 
+AC_ARG_WITH(libffi-prefix,
+  AS_HELP_STRING( [--with-libffi-prefix=path],
+                  [prefix for system LIBFFI includes and libraries] ),
+  [LIBFFI_INCDIR="$withval/include"; LIBFFI_LIBDIR="$withval/lib"], [])
+
 AC_ARG_WITH(__thread,
   AS_HELP_STRING( [--with-__thread],
                   [Enable __thread thread-local variables (yes|NO|auto)]
@@ -319,6 +324,7 @@ AC_SUBST(ECL_CFLAGS)            dnl Similar, but specific to ECL (see src/util/e
 AC_SUBST(DEBUG_CFLAGS)
 AC_SUBST(GMP_CPPFLAGS)		dnl CFLAGS needed for compiling with system GMP library
 AC_SUBST(GMP_LDFLAGS)		dnl LDFLAGS needed for compiling with system GMP library
+AC_SUBST(LIBFFI_LDFLAGS)		dnl LDFLAGS needed for compiling with system LIBFFI library
 AC_SUBST(FASL_LIBS)             dnl Libraries to link into all ecl code but not
                                 dnl into helper programs.
 AC_SUBST(CORE_LIBS, [])         dnl Locally compiled libs to link into
@@ -464,6 +470,22 @@ fi
 if test "x${with_system_gmp}" = "xno"; then
   ECL_GMP_BASED_CONFIG
 fi
+
+dnl ======================================================================
+dnl LIBFFI library
+if test "x$LIBFFI_INCDIR" != "x"; then
+  LIBFFI_CPPFLAGS="-I$LIBFFI_INCDIR"
+fi
+if test "x$LIBFFI_LIBDIR" != "x"; then
+  LIBFFI_LDFLAGS="-L$LIBFFI_LIBDIR"
+  if test "$enable_rpath" = "yes"; then
+    if (echo "$ECL_LDRPATH" | grep '~A') > /dev/null; then
+      LIBFFI_LDFLAGS=`echo $ECL_LDRPATH | sed "s,~A,$LIBFFI_LIBDIR,"`" $LIBFFI_LDFLAGS"
+    fi
+  fi
+fi
+CPPFLAGS="$CPPFLAGS $LIBFFI_CPPFLAGS"
+LDFLAGS="$LDFLAGS $LIBFFI_LDFLAGS"
 
 dnl =====================================================================
 dnl Checks for libraries
