@@ -711,6 +711,7 @@ BUNDLE_LDFLAGS
 SHARED_LDFLAGS
 CORE_LIBS
 FASL_LIBS
+LIBFFI_LDFLAGS
 GMP_LDFLAGS
 GMP_CPPFLAGS
 DEBUG_CFLAGS
@@ -774,6 +775,7 @@ with_gmp_prefix
 with_gmp_incdir
 with_gmp_libdir
 enable_local_gmp
+with_libffi_prefix
 with___thread
 enable_opcode8
 with_cxx
@@ -1486,7 +1488,8 @@ Optional Packages:
   --with-gmp-prefix=path  prefix for system GMP includes and libraries
   --with-gmp-incdir=path  path to system GMP includes (overrides prefix)
   --with-gmp-libdir=path  path to system GMP libraries (overrides prefix)
-  --with-libffi-prefix=path  prefix for system LIBFFI includes and libraries
+  --with-libffi-prefix=path
+                          prefix for system LIBFFI includes and libraries
   --with-__thread         Enable __thread thread-local variables (yes|NO|auto)
                           (supported by NPTL-aware glibc and maybe Windows)
   --with-cxx              build ECL using C++ compiler (default=NO)
@@ -2718,10 +2721,12 @@ $as_echo "$as_me: WARNING: --with-local-gmp is deprecated, use --with-system-gmp
 fi
 
 
+
 # Check whether --with-libffi-prefix was given.
 if test "${with_libffi_prefix+set}" = set; then :
   withval=$with_libffi_prefix; LIBFFI_INCDIR="$withval/include"; LIBFFI_LIBDIR="$withval/lib"
 fi
+
 
 
 # Check whether --with-__thread was given.
@@ -3027,7 +3032,7 @@ test -z "${docdir}" && docdir="${datadir}/doc/ecl-${PACKAGE_VERSION}"
 boehm_configure_flags=""
 
 
-				                                                                                                                  TARGETS='bin/ecl$(EXE)'
+						                                                                                                                  TARGETS='bin/ecl$(EXE)'
 SUBDIRS=c
                             LSP_FEATURES='*features*'
 
@@ -5638,6 +5643,20 @@ $as_echo_n "checking Linker flags... " >&6; }
 $as_echo "${LDFLAGS}" >&6; }
 
 fi
+
+if test "x$LIBFFI_INCDIR" != "x"; then
+  LIBFFI_CPPFLAGS="-I$LIBFFI_INCDIR"
+fi
+if test "x$LIBFFI_LIBDIR" != "x"; then
+  LIBFFI_LDFLAGS="-L$LIBFFI_LIBDIR"
+  if test "$enable_rpath" = "yes"; then
+    if (echo "$ECL_LDRPATH" | grep '~A') > /dev/null; then
+      LIBFFI_LDFLAGS=`echo $ECL_LDRPATH | sed "s,~A,$LIBFFI_LIBDIR,"`" $LIBFFI_LDFLAGS"
+    fi
+  fi
+fi
+CPPFLAGS="$CPPFLAGS $LIBFFI_CPPFLAGS"
+LDFLAGS="$LDFLAGS $LIBFFI_LDFLAGS"
 
 
 LIBS="${LIBS} -lm"
