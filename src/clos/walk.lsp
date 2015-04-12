@@ -1171,6 +1171,7 @@
 
 #+ecl
 (defun walk-c-inline (form context env)
+  (declare (ignore context))
   (relist* form
 	   (first form)
 	   (walk-repeat-eval (second form) env) ; arguments

@@ -44,7 +44,7 @@
 #include <ecl/cache.h>
 #include <ecl/internal.h>
 #include <ecl/ecl-inl.h>
-extern int GC_dont_gc;
+
 
 #include "ecl_features.h"
 #include "iso_latin_names.h"

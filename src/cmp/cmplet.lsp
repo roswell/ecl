@@ -255,8 +255,6 @@
 	       (*env* *env*)
 	       (*env-lvl* *env-lvl*)
 	       (*inline-blocks* 0))
-  (declare (type boolean block-p))
-
   ;; Replace read-only variables when it is worth doing it.
   (loop for var in vars
      for rest-forms on (append forms (list body))

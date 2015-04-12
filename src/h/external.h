@@ -769,9 +769,9 @@ extern ECL_API void ecl_gc(cl_type t);
 #endif
 
 #ifdef GBC_BOEHM
-#define GC_enabled() (!GC_dont_gc)
-#define GC_enable() GC_dont_gc = FALSE;
-#define GC_disable() GC_dont_gc = TRUE;
+#define GC_enabled() !GC_is_disabled()
+#define GC_enable() GC_enable()
+#define GC_disable() GC_disable()
 extern ECL_API void ecl_register_root(cl_object *p);
 #endif /* GBC_BOEHM */
 
