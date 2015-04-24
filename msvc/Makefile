@@ -156,7 +156,7 @@ INSTALL	= @INSTALL@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_DATA = @INSTALL_DATA@
-mkinstalldirs = $(SHELL) $(top_srcdir)/gc/mkinstalldirs
+mkinstalldirs = $(top_srcdir)/bdwgc/install-sh -d
 
 # Files
 #
@@ -353,8 +353,8 @@ eclgc.lib:
 	           gc_config_macros.h leak_detector.h gc_typed.h \
 	           private\gc_priv.h private\gcconfig.h gc_mark.h \
 		   new_gc_alloc.h weakpointer.h gc_pthread_redirects.h) \
-	    do $(CP) $(srcdir)\gc\include\%h ecl\gc\%h
-	$(CP) $(srcdir)\gc\libatomic_ops-1.2\src\atomic_ops.h ecl\gc
+	    do $(CP) $(srcdir)\bdwgc\include\%h ecl\gc\%h
+
 eclgmp.lib:
 	cd gmp
 	$(MAKE) "MPN_TYPE=$(GMP_TYPE)" "CFLAGS_CONFIG=$(CFLAGS_CONFIG)" \
@@ -421,7 +421,7 @@ windows-nsi:
 
 clean: clean_ecl clean_lisp
 	-$(RM) .gdbinit cinit.lib ecl_min.lib
-	-$(RM) gc\*.pdb
+	-$(RM) bdwgc\*.pdb
 	cd gc
 	-$(MAKE) ECL_THREADS=$(ECL_THREADS) clean
 	cd ..
