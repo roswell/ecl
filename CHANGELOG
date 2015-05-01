@@ -40,9 +40,11 @@
      
 ** Enchantments:
 
-   - Update libffi to version 3.2.1.
+   - Update libffi to version 3.2.1
   
-   - Update asdf to version 3.1.4.
+   - Update asdf to version 3.1.4
+
+   - Update bdwgc to version 7.4.2
   
 * 15.3.7 changes since 15.2.21  
 ** Issues fixed:

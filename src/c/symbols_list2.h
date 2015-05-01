@@ -1890,7 +1890,7 @@ cl_symbols[] = {
 {KEY_ "UCS-4LE",NULL},
 
 {EXT_ "LOAD-ENCODING",NULL},
-{EXT_ "MAKE-ENCODING",NULL},
+{EXT_ "MAKE-ENCODING","si_make_encoding"},
 {EXT_ "ALL-ENCODINGS","ECL_NAME(si_load_encoding)"},
 
 {KEY_ "US-ASCII",NULL},

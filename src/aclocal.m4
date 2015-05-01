@@ -238,7 +238,7 @@ AC_SUBST(EXEEXT)
 AC_SUBST(INSTALL_TARGET)dnl Which type of installation: flat directory or unix like.
 AC_SUBST(thehost)
 AC_SUBST(ECL_GC_DIR)dnl Which version of the Boehm-Weiser library to use
-ECL_GC_DIR=gc-unstable
+ECL_GC_DIR=bdwgc
 ECL_LDRPATH=''
 SHAREDEXT='so'
 SHAREDPREFIX='lib'
@@ -412,7 +412,7 @@ case "${host_os}" in
                 # well with our signal handler.
 		# enable_boehm=included
                 if test `uname -r | cut -d '.' -f 1` -ge 11; then
-                  ECL_GC_DIR=gc-unstable
+                  ECL_GC_DIR=bdwgc
                 fi
 		SONAME="${SHAREDPREFIX}ecl.SOVERSION.${SHAREDEXT}"
 		SONAME_LDFLAGS="-Wl,-install_name,@libdir\@/SONAME -Wl,-compatibility_version,${PACKAGE_VERSION}"

@@ -1,3 +1,7 @@
+2011-02-08  Andreas Tobler  <andreast@fgznet.ch>
+
+	* testsuite/lib/libffi.exp: Tweak for stand-alone mode.
+
 2009-12-25  Samuli Suominen  <ssuominen@gentoo.org>
 
 	* configure.ac: Undefine _AC_ARG_VAR_PRECIOUS for autoconf 2.64.
@@ -570,8 +574,8 @@
 	* Makefile.am, include/Makefile.am: Move headers to
 	libffi_la_SOURCES for new automake.
 	* Makefile.in, include/Makefile.in: Rebuilt.
-	
-	* testsuite/lib/wrapper.exp: Copied from gcc tree to allow for 
+
+	* testsuite/lib/wrapper.exp: Copied from gcc tree to allow for
 	execution outside of gcc tree.
 	* testsuite/lib/target-libpath.exp: Ditto.
 
