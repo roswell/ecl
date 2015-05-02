@@ -268,9 +268,11 @@ enter_directory(cl_object base_dir, cl_object subdir, bool ignore_if_failure)
         } else if (subdir == @':up') {
                 aux = make_constant_base_string("..");
         } else if (!ECL_BASE_STRING_P(subdir)) {
-                FEerror("Directory component ~S found in pathname~&  ~S"
-                        "~&is not allowed in TRUENAME or DIRECTORY",
-                        1, subdir);
+                unlikely_if (!ecl_fits_in_base_string(subdir))
+                        FEerror("Directory component ~S found in pathname~&  ~S"
+                                "~&is not allowed in TRUENAME or DIRECTORY",
+                                1, subdir);
+                aux = si_coerce_to_base_string(subdir);
         } else {
                 aux = subdir;
         }
