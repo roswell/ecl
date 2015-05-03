@@ -6,6 +6,7 @@
     Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya.
     Copyright (c) 1990, Giuseppe Attardi.
     Copyright (c) 2001, Juan Jose Garcia Ripoll.
+    Copyright (c) 2015, Daniel Kochmański.
 
     ECL is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -127,13 +128,7 @@ translate_component_case(cl_object str, cl_object fromcase, cl_object tocase)
          * numbers, etc, which need not be translated */
         if (str == OBJNULL) {
                 return str;
-        } else if (!ECL_BASE_STRING_P(str)) {
-#ifdef ECL_UNICODE
-                if (ECL_EXTENDED_STRING_P(str) && ecl_fits_in_base_string(str)) {
-                        str = si_coerce_to_base_string(str);
-                        return translate_component_case(str, fromcase, tocase);
-                }
-#endif
+        } else if (!ECL_STRINGP(str)) {
                 return str;
         } else if (tocase == fromcase) {
                 return str;
@@ -235,12 +230,7 @@ destructively_check_directory(cl_object directory, bool logical, bool delete_bac
 				return @':error';
 		} else if (ecl_stringp(item)) {
 			cl_index l = ecl_length(item);
-#ifdef ECL_UNICODE
-			if (ecl_fits_in_base_string(item)) {
-				item = si_copy_to_simple_base_string(item);
-			} else
-#endif
-				item = cl_copy_seq(item);
+			item = cl_copy_seq(item);
 			ECL_RPLACA(ptr, item);
 			if (logical)
 				continue;
@@ -1176,9 +1166,6 @@ cl_namestring(cl_object x)
 			defaults = cl_pathname(defaults);
 			default_host = defaults->pathname.host;
 		}
-#ifdef ECL_UNICODE
-		thing = si_coerce_to_base_string(thing);
-#endif
 		p = ecl_vector_start_end(@[parse-namestring], thing, start, end);
 		output = ecl_parse_namestring(thing, p.start, p.end, &ee, default_host);
 		start = ecl_make_fixnum(ee);
@@ -1680,11 +1667,7 @@ copy_wildcards(cl_object *wilds_list, cl_object pattern)
 	}
 	/* Only create a new string when needed */
 	if (new_string) {
-		if (ecl_fits_in_base_string(token)) {
-			pattern = si_copy_to_simple_base_string(token);
-		} else {
-			pattern = cl_copy_seq(token);
-		}
+		pattern = cl_copy_seq(token);
 	}
 	si_put_buffer_string(token);
 	*wilds_list = wilds;
