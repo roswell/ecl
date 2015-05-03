@@ -5,6 +5,7 @@
 /*
     Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya.
     Copyright (c) 1990, Giuseppe Attardi.
+    Copyright (c) 2015, Daniel Kochmański.
 
     ECL is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -86,6 +87,8 @@ ucd_char_data(ecl_character code)
 static cl_index
 ucd_value_0(ecl_character code)
 {
+	if (ecl_unlikely((code >= 0x110000)))
+		FEerror("The value ~A is not of type (MOD 1114112)", 1, code);
 	return ucd_char_data(code)[0];
 }
 

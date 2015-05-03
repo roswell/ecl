@@ -5,6 +5,7 @@
 /*
     Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya.
     Copyright (c) 1990, Giuseppe Attardi.
+    Copyright (c) 2015, Daniel Kochmański.
 
     ECL is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -103,17 +104,29 @@ ecl_string_case(cl_object s)
 {
 	int upcase;
 	cl_index i;
-	const ecl_base_char *text = (ecl_base_char*)s->base_string.self;
-	for (i = 0, upcase = 0; i <= s->base_string.dim; i++) {
-		if (ecl_upper_case_p(text[i])) {
-			if (upcase < 0)
-				return 0;
-			upcase = +1;
-		} else if (ecl_lower_case_p(text[i])) {
-			if (upcase > 0)
-				return 0;
-			upcase = -1;
+	ecl_base_char *text;
+	
+	switch (ecl_t_of(s)) {
+#ifdef ECL_UNICODE
+	case t_string:
+		s = si_coerce_to_base_string(s);
+#endif
+	case t_base_string:
+		text = (ecl_base_char*)s->base_string.self;
+		for (i = 0, upcase = 0; i < s->base_string.dim; i++) {
+			if (ecl_upper_case_p(text[i])) {
+				if (upcase < 0)
+					return 0;
+				upcase = +1;
+			} else if (ecl_lower_case_p(text[i])) {
+				if (upcase > 0)
+					return 0;
+				upcase = -1;
+			}
 		}
+		break;
+	default:
+		FEwrong_type_argument(@[string], s);
 	}
 	return upcase;
 }
