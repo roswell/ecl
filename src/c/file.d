@@ -815,10 +815,11 @@ ucs_2be_decoder(cl_object stream)
 			if (ecl_read_byte8(stream, buffer, 2) < 2) {
 				return EOF;
 			} else {
-				ecl_character aux = ((ecl_character)buffer[0] << 8) | buffer[1];
-				if ((buffer[0] & 0xF8) != 0xDC) {
+				ecl_character aux;
+				if ((buffer[1] & 0xFC) != 0xDC) {
 					return decoding_error(stream, buffer, 1);
 				}
+				aux = ((ecl_character)buffer[0] << 8) | buffer[1];
 				return ((c & 0x3FFF) << 10) + (aux & 0x3FFF) + 0x10000;
 			}
 		}
@@ -857,10 +858,11 @@ ucs_2le_decoder(cl_object stream)
 			if (ecl_read_byte8(stream, buffer, 2) < 2) {
 				return EOF;
 			} else {
-				ecl_character aux = ((ecl_character)buffer[1] << 8) | buffer[0];
-				if ((buffer[1] & 0xF8) != 0xDC) {
+				ecl_character aux;
+				if ((buffer[1] & 0xFC) != 0xDC) {
 					return decoding_error(stream, buffer, 2);
 				}
+				aux = ((ecl_character)buffer[1] << 8) | buffer[0];
 				return ((c & 0x3FFF) << 10) + (aux & 0x3FFF) + 0x10000;
 			}
 		}
