@@ -83,13 +83,15 @@
        (setq elt-type 'BIT
 	     length (if (endp args) '* (first args))))
       ((ARRAY SIMPLE-ARRAY)
-       (when (or (endp (rest args))
-		 (atom (setq length (second args)))
-		 (endp length)
-		 (not (endp (rest length))))
-	 (error-sequence-type type))
-       (setq elt-type (upgraded-array-element-type (first args))
-	     length (first (second args))))
+       (let ((dimension-spec (second args)))
+         (cond
+           ((eql dimension-spec 1)
+            (setf length '*))
+           ((and (consp dimension-spec)
+                 (null (cdr dimension-spec)))
+            (setf length (car dimension-spec)))
+           (T (error-sequence-type type))))
+       (setq elt-type (upgraded-array-element-type (first args))))
       (t
        ;; We arrive here when the sequence type is not easy to parse.
        ;; We give up trying to guess the length of the sequence.
