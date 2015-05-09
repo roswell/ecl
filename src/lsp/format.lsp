@@ -1333,11 +1333,14 @@
     (prin1 number stream)
     nil)
    (t
-    (let ((spaceleft w))
+    (let* ((spaceleft w)
+           (digits (if (null spaceleft)
+                       nil
+                       (1- spaceleft))))
       (when (and w (or atsign (minusp number))) (decf spaceleft))
       (multiple-value-bind 
 	  (str len lpoint tpoint)
-	  (sys::flonum-to-string (abs number) (1- spaceleft) d k)
+	  (sys::flonum-to-string (abs number) digits d k)
 	;;if caller specifically requested no fraction digits, suppress the
 	;;optional trailing zero
 	(when (and d (zerop d)) (setq tpoint nil))
