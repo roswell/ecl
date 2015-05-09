@@ -97,9 +97,6 @@
 
 (defun flonum-to-string (x &optional width fdigits (scale 0) (fmin 0))
   (declare (type float x))
-  ;; FIXME: I think only FORMAT-DOLLARS calls FLONUM-TO-STRING with
-  ;; possibly-negative X.
-  (setf x (abs x))
   (cond ((zerop x)
          ;; Zero is a special case which FLOAT-STRING cannot handle.
          (if fdigits
@@ -1569,7 +1566,7 @@
       (let* ((signstr (if (minusp number) "-" (if atsign "+" "")))
 	     (signlen (length signstr)))
 	(multiple-value-bind (str strlen ig2 ig3 pointplace)
-			     (sys::flonum-to-string number nil d)
+			     (sys::flonum-to-string (abs number) nil d)
 	  (declare (ignore ig2 ig3))
 	  (when colon (write-string signstr stream))
 	  (dotimes (i (- w signlen (max 0 (- n pointplace)) strlen))
