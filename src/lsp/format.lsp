@@ -13,6 +13,9 @@
 ;;;
 ;;; Written by William Lott, with lots of stuff stolen from the previous
 ;;; version by David Adam and later rewritten by Bill Maddox.
+;;;
+;;; Various fixes and adaptations provided by Juan Jose Garcia-Ripoll and
+;;; other Embeddable Common-Lisp developers.
 ;;; 
 
 (in-package "SYS")
@@ -92,7 +95,7 @@
 
 (defparameter *digits* "0123456789")
 
-(defun flonum-to-string (x &optional width fdigits scale fmin)
+(defun flonum-to-string (x &optional width fdigits (scale 0) (fmin 0))
   (declare (type float x))
   ;; FIXME: I think only FORMAT-DOLLARS calls FLONUM-TO-STRING with
   ;; possibly-negative X.
@@ -108,28 +111,27 @@
          (multiple-value-bind (e string)
              (if fdigits
                  (float-to-digits nil x
-                                  (min (- (+ fdigits (or scale 0)))
-                                       (- (or fmin 0)))
+                                  (min (- (+ fdigits scale))
+                                       (- fmin))
                                   nil)
                  (if (and width (> width 1))
                      (let ((w (multiple-value-list
                                (float-to-digits nil x
                                                 (max 1
                                                      (+ (1- width)
-                                                        (if (and scale (minusp scale))
+                                                        (if (minusp scale)
                                                             scale 0)))
                                                 t)))
                            (f (multiple-value-list
                                (float-to-digits nil x
-                                                (- (+ (or fmin 0)
-                                                      (if scale scale 0)))
+                                                (- (+ fmin scale))
                                                 nil))))
                        (cond
                          ((>= (length (cadr w)) (length (cadr f)))
                           (values-list w))
                          (t (values-list f))))
                      (float-to-digits nil x nil nil)))
-           (let ((e (+ e (or scale 0)))
+           (let ((e (+ e scale))
                  (stream (make-string-output-stream)))
              (if (plusp e)
                  (progn
@@ -1292,7 +1294,7 @@
     (error 'format-error
 	   :complaint
 	   "Cannot specify the colon modifier with this directive."))
-  (expand-bind-defaults ((w nil) (d nil) (k nil) (ovf nil) (pad #\space)) params
+  (expand-bind-defaults ((w nil) (d nil) (k 0) (ovf nil) (pad #\space)) params
     `(format-fixed stream ,(expand-next-arg) ,w ,d ,k ,ovf ,pad ,atsignp)))
 
 (def-format-interpreter #\F (colonp atsignp params)
@@ -1300,7 +1302,7 @@
     (error 'format-error
 	   :complaint
 	   "Cannot specify the colon modifier with this directive."))
-  (interpret-bind-defaults ((w nil) (d nil) (k nil) (ovf nil) (pad #\space))
+  (interpret-bind-defaults ((w nil) (d nil) (k 0) (ovf nil) (pad #\space))
 			   params
     (format-fixed stream (next-arg) w d k ovf pad atsignp)))
 
@@ -1441,7 +1443,7 @@
 	       (estr (decimal-string (abs expt)))
 	       (elen (if e (max (length estr) e) (length estr)))
 	       (fdig (if d (if (plusp k) (1+ (- d k)) d) nil))
-	       (fmin (if (minusp k) (- 1 k) nil))
+	       (fmin (if (minusp k) (- 1 k) 0))
 	       (spaceleft (if w
 			      (- w 2 elen
 				 (if (or atsign (minusp number))
@@ -1485,7 +1487,7 @@
 	   :complaint
 	   "Cannot specify the colon modifier with this directive."))
   (expand-bind-defaults
-      ((w nil) (d nil) (e nil) (k nil) (ovf nil) (pad #\space) (mark nil))
+      ((w nil) (d nil) (e nil) (k 0) (ovf nil) (pad #\space) (mark nil))
       params
     `(format-general stream ,(expand-next-arg) ,w ,d ,e ,k ,ovf ,pad ,mark ,atsignp)))
 
@@ -1495,7 +1497,7 @@
 	   :complaint
 	   "Cannot specify the colon modifier with this directive."))
   (interpret-bind-defaults
-      ((w nil) (d nil) (e nil) (k nil) (ovf nil) (pad #\space) (mark nil))
+      ((w nil) (d nil) (e nil) (k 0) (ovf nil) (pad #\space) (mark nil))
       params
     (format-general stream (next-arg) w d e k ovf pad mark atsignp)))
 
@@ -1541,7 +1543,7 @@
 	       (ww (if w (- w ee) nil))
 	       (dd (- d n)))
 	  (cond ((<= 0 dd d)
-		 (let ((char (if (format-fixed-aux stream number ww dd nil
+		 (let ((char (if (format-fixed-aux stream number ww dd 0
 						   ovf pad atsign)
 				 ovf
 				 #\space)))
@@ -1567,7 +1569,7 @@
       (let* ((signstr (if (minusp number) "-" (if atsign "+" "")))
 	     (signlen (length signstr)))
 	(multiple-value-bind (str strlen ig2 ig3 pointplace)
-			     (sys::flonum-to-string number nil d nil)
+			     (sys::flonum-to-string number nil d)
 	  (declare (ignore ig2 ig3))
 	  (when colon (write-string signstr stream))
 	  (dotimes (i (- w signlen (max 0 (- n pointplace)) strlen))
