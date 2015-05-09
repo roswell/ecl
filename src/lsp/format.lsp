@@ -49,10 +49,10 @@
 ;;;                unspecified or NIL, in which case as many digits as possible
 ;;;                are generated, subject to the constraint that there are no
 ;;;                trailing zeroes.
-;;;     SCALE    - If this parameter is specified or non-NIL, then the number
+;;;     SCALE    - If this parameter is specified or non-zero, then the number
 ;;;                printed is (* x (expt 10 scale)).  This scaling is exact,
 ;;;                and cannot lose precision.
-;;;     FMIN     - This parameter, if specified or non-NIL, is the minimum
+;;;     FMIN     - This parameter, if specified or non-zero, is the minimum
 ;;;                number of fraction digits which will be produced, regardless
 ;;;                of the value of WIDTH or FDIGITS.  This feature is used by
 ;;;                the ~E format directive to prevent complete loss of
