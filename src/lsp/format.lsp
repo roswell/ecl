@@ -110,7 +110,7 @@
         (t
          (multiple-value-bind (e string)
              (cond
-               ((not (null fdigits))
+               (fdigits
                 (float-to-digits nil x
                                  (min (- (+ fdigits scale))
                                       (- fmin))
@@ -128,40 +128,42 @@
                             (float-to-digits nil x
                                              (- (+ fmin scale))
                                              nil))))
-                    (format t "width is ~A, w is ~A~&" width w)
                     (if (>= (length (cadr w))
                             (length (cadr f)))
                         (values-list w)
                         (values-list f)))))
-           (let ((e (+ e scale))
-                 (stream (make-string-output-stream)))
-             (if (plusp e)
-                 (progn
-                   (write-string string stream :end (min (length string)
-                                                         e))
-                   (dotimes (i (- e (length string)))
-                     (write-char #\0 stream))
-                   (write-char #\. stream)
-                   (write-string string stream :start (min (length
-                                                            string) e))
-                   (when fdigits
-                     (dotimes (i (- fdigits
-                                    (- (length string)
-                                       (min (length string) e))))
-                       (write-char #\0 stream))))
-                 (progn
-                   (write-string "." stream)
-                   (dotimes (i (- e))
-                     (write-char #\0 stream))
-                   (write-string string stream)
-                   (when fdigits
-                     (dotimes (i (+ fdigits e (- (length string))))
-                       (write-char #\0 stream)))))
-             (let ((string (get-output-stream-string stream)))
-               (values string (length string)
-                       (char= (char string 0) #\.)
-                       (char= (char string (1- (length string))) #\.)
-                       (position #\. string))))))))
+           (let* ((exp (+ e scale))
+                  (stream (make-string-output-stream))
+                  (length (length string))
+                  (flength (- length exp)))
+             ;; Integer part
+             (when (plusp exp)
+               (write-string string
+                             stream
+                             :end (min length exp))
+               (dotimes (i (- flength))
+                 (write-char #\0 stream)))
+             ;; Separator
+             (write-char #\. stream)
+             ;; Float part
+             (when (minusp exp)
+               (dotimes (i (abs exp))
+                 (write-char #\0 stream)))
+             (write-string string
+                           stream
+                           :start (max 0 (min length exp)))
+             (when fdigits
+               (dotimes (i (- fdigits (max flength 0)))
+                 (write-char #\0 stream)))
+
+             (let* ((string (get-output-stream-string stream))
+                    (length (length string))
+                    (position (position #\. string)))
+               (values string
+                       length
+                       (= position 0)
+                       (= position (1- length))
+                       position)))))))
 
 ;;; SCALE-EXPONENT  --  Internal
 ;;;
