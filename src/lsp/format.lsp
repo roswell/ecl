@@ -108,29 +108,28 @@
                (setf (schar s 0) #\.)
                (values s (length s) t nil 0))))
       (multiple-value-bind (e string)
-          (cond
-            (fdigits
-             (float-to-digits nil x
-                              (min (- (+ fdigits scale))
-                                   (- fmin))
-                              nil))
-            ((null width)
-             (float-to-digits nil x nil nil))
-            (T (let ((w (multiple-value-list
-                         (float-to-digits nil x
-                                          (max 0
-                                               (+ (1- width)
-                                                  (if (minusp scale)
-                                                      scale 0)))
-                                          t)))
-                     (f (multiple-value-list
-                         (float-to-digits nil x
-                                          (- (+ fmin scale))
-                                          nil))))
-                 (if (>= (length (cadr w))
-                         (length (cadr f)))
-                     (values-list w)
-                     (values-list f)))))
+          (cond (fdigits
+                 (float-to-digits nil x
+                                  (min (- (+ fdigits scale))
+                                       (- fmin))
+                                  nil))
+                ((null width)
+                 (float-to-digits nil x nil nil))
+                (T (let ((w (multiple-value-list
+                             (float-to-digits nil x
+                                              (max 0
+                                                   (+ (1- width)
+                                                      (if (minusp scale)
+                                                          scale 0)))
+                                              t)))
+                         (f (multiple-value-list
+                             (float-to-digits nil x
+                                              (- (+ fmin scale))
+                                              nil))))
+                     (if (>= (length (cadr w))
+                             (length (cadr f)))
+                         (values-list w)
+                         (values-list f)))))
         (let* ((exp (+ e scale))
                (stream (make-string-output-stream))
                (length (length string))
@@ -1349,7 +1348,8 @@
 	  (sys::flonum-to-string (abs number) digits d k)
 	;;if caller specifically requested no fraction digits, suppress the
 	;;optional trailing zero
-	(when (and d (zerop d)) (setq tpoint nil))
+	(when (and d (zerop d))
+          (setq tpoint nil))
 	(when w 
 	  (decf spaceleft len)
           ;; obligatory trailing zero (unless explicitly cut with ,d)
@@ -1362,7 +1362,8 @@
 	        (setq lpoint nil))))
 	(cond ((and w (< spaceleft 0) ovf)
 	       ;;field width overflow
-	       (dotimes (i w) (write-char ovf stream))
+	       (dotimes (i w)
+                 (write-char ovf stream))
 	       t)
 	      (t
 	       (when w (dotimes (i spaceleft) (write-char pad stream)))
