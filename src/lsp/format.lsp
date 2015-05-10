@@ -1342,7 +1342,10 @@
            (digits (if (null spaceleft)
                        nil
                        (1- spaceleft))))
-      (when (and w (or atsign (minusp number))) (decf spaceleft))
+      (when (and w (or atsign
+                       (minusp number)))
+        (decf spaceleft)
+        (decf digits))
       (multiple-value-bind 
 	  (str len lpoint tpoint)
 	  (sys::flonum-to-string (abs number) digits d k)
