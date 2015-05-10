@@ -117,14 +117,9 @@
                                  nil))
                ((null width)
                 (float-to-digits nil x nil nil))
-               ;; ((= width 1)
-               ;;  ;; This is a corner case. CLHS indicates, that minimal
-               ;;  ;; number of characters required to print a value
-               ;;  ;; should be used.
-               ;;  (float-to-digits nil x nil nil))
                (T (let ((w (multiple-value-list
                             (float-to-digits nil x
-                                             (max 1
+                                             (max 0
                                                   (+ (1- width)
                                                      (if (minusp scale)
                                                          scale 0)))
