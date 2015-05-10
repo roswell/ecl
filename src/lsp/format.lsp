@@ -106,28 +106,35 @@
              (values "." 1 t t 0)))
         (t
          (multiple-value-bind (e string)
-             (if fdigits
-                 (float-to-digits nil x
-                                  (min (- (+ fdigits scale))
-                                       (- fmin))
-                                  nil)
-                 (if (and width (> width 1))
-                     (let ((w (multiple-value-list
-                               (float-to-digits nil x
-                                                (max 1
-                                                     (+ (1- width)
-                                                        (if (minusp scale)
-                                                            scale 0)))
-                                                t)))
-                           (f (multiple-value-list
-                               (float-to-digits nil x
-                                                (- (+ fmin scale))
-                                                nil))))
-                       (cond
-                         ((>= (length (cadr w)) (length (cadr f)))
-                          (values-list w))
-                         (t (values-list f))))
-                     (float-to-digits nil x nil nil)))
+             (cond
+               ((not (null fdigits))
+                (float-to-digits nil x
+                                 (min (- (+ fdigits scale))
+                                      (- fmin))
+                                 nil))
+               ((null width)
+                (float-to-digits nil x nil nil))
+               ;; ((= width 1)
+               ;;  ;; This is a corner case. CLHS indicates, that minimal
+               ;;  ;; number of characters required to print a value
+               ;;  ;; should be used.
+               ;;  (float-to-digits nil x nil nil))
+               (T (let ((w (multiple-value-list
+                            (float-to-digits nil x
+                                             (max 1
+                                                  (+ (1- width)
+                                                     (if (minusp scale)
+                                                         scale 0)))
+                                             t)))
+                        (f (multiple-value-list
+                            (float-to-digits nil x
+                                             (- (+ fmin scale))
+                                             nil))))
+                    (format t "width is ~A, w is ~A~&" width w)
+                    (if (>= (length (cadr w))
+                            (length (cadr f)))
+                        (values-list w)
+                        (values-list f)))))
            (let ((e (+ e scale))
                  (stream (make-string-output-stream)))
              (if (plusp e)
