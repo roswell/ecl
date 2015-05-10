@@ -97,73 +97,72 @@
 
 (defun flonum-to-string (x &optional width fdigits (scale 0) (fmin 0))
   (declare (type float x))
-  (cond ((zerop x)
-         ;; Zero is a special case which FLOAT-STRING cannot handle.
-         (cond ((null fdigits)
-                (values ".0" 2 t nil 0))
-               ((zerop fdigits)
-                (values "0." 2 nil t 1))
-               (T
-                (let ((s (make-string (1+ fdigits) :initial-element #\0)))
-                  (setf (schar s 0) #\.)
-                  (values s (length s) t nil 0)))))
-        (t
-         (multiple-value-bind (e string)
-             (cond
-               (fdigits
-                (float-to-digits nil x
-                                 (min (- (+ fdigits scale))
-                                      (- fmin))
-                                 nil))
-               ((null width)
-                (float-to-digits nil x nil nil))
-               (T (let ((w (multiple-value-list
-                            (float-to-digits nil x
-                                             (max 0
-                                                  (+ (1- width)
-                                                     (if (minusp scale)
-                                                         scale 0)))
-                                             t)))
-                        (f (multiple-value-list
-                            (float-to-digits nil x
-                                             (- (+ fmin scale))
-                                             nil))))
-                    (if (>= (length (cadr w))
-                            (length (cadr f)))
-                        (values-list w)
-                        (values-list f)))))
-           (let* ((exp (+ e scale))
-                  (stream (make-string-output-stream))
-                  (length (length string))
-                  (flength (- length exp)))
-             ;; Integer part
-             (when (plusp exp)
-               (write-string string
-                             stream
-                             :end (min length exp))
-               (dotimes (i (- flength))
-                 (write-char #\0 stream)))
-             ;; Separator
-             (write-char #\. stream)
-             ;; Float part
-             (when (minusp exp)
-               (dotimes (i (abs exp))
-                 (write-char #\0 stream)))
-             (write-string string
-                           stream
-                           :start (max 0 (min length exp)))
-             (when fdigits
-               (dotimes (i (- fdigits (max flength 0)))
-                 (write-char #\0 stream)))
+  (if (zerop x)
+      ;; Zero is a special case which FLOAT-STRING cannot handle.
+      (cond ((null fdigits)
+             (values ".0" 2 t nil 0))
+            ((zerop fdigits)
+             (values "0." 2 nil t 1))
+            (T
+             (let ((s (make-string (1+ fdigits) :initial-element #\0)))
+               (setf (schar s 0) #\.)
+               (values s (length s) t nil 0))))
+      (multiple-value-bind (e string)
+          (cond
+            (fdigits
+             (float-to-digits nil x
+                              (min (- (+ fdigits scale))
+                                   (- fmin))
+                              nil))
+            ((null width)
+             (float-to-digits nil x nil nil))
+            (T (let ((w (multiple-value-list
+                         (float-to-digits nil x
+                                          (max 0
+                                               (+ (1- width)
+                                                  (if (minusp scale)
+                                                      scale 0)))
+                                          t)))
+                     (f (multiple-value-list
+                         (float-to-digits nil x
+                                          (- (+ fmin scale))
+                                          nil))))
+                 (if (>= (length (cadr w))
+                         (length (cadr f)))
+                     (values-list w)
+                     (values-list f)))))
+        (let* ((exp (+ e scale))
+               (stream (make-string-output-stream))
+               (length (length string))
+               (flength (- length exp)))
+          ;; Integer part
+          (when (plusp exp)
+            (write-string string
+                          stream
+                          :end (min length exp))
+            (dotimes (i (- flength))
+              (write-char #\0 stream)))
+          ;; Separator
+          (write-char #\. stream)
+          ;; Float part
+          (when (minusp exp)
+            (dotimes (i (abs exp))
+              (write-char #\0 stream)))
+          (write-string string
+                        stream
+                        :start (max 0 (min length exp)))
+          (when fdigits
+            (dotimes (i (- fdigits (max flength 0)))
+              (write-char #\0 stream)))
 
-             (let* ((string (get-output-stream-string stream))
-                    (length (length string))
-                    (position (position #\. string)))
-               (values string
-                       length
-                       (= position 0)
-                       (= position (1- length))
-                       position)))))))
+          (let* ((string (get-output-stream-string stream))
+                 (length (length string))
+                 (position (position #\. string)))
+            (values string
+                    length
+                    (= position 0)
+                    (= position (1- length))
+                    position))))))
 
 ;;; SCALE-EXPONENT  --  Internal
 ;;;
