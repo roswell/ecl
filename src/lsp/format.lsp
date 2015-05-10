@@ -1356,16 +1356,14 @@
 	(when (and d (zerop d)) (setq tpoint nil))
 	(when w 
 	  (decf spaceleft len)
-	  ;;optional leading zero
+          ;; obligatory trailing zero (unless explicitly cut with ,d)
+          (when tpoint
+            (decf spaceleft))
+	  ;; optional leading zero
 	  (when lpoint
-	    (if (or (> spaceleft 0) tpoint) ;force at least one digit
-		(decf spaceleft)
-		(setq lpoint nil)))
-	  ;;optional trailing zero
-	  (when tpoint
 	    (if (> spaceleft 0)
-		(decf spaceleft)
-		(setq tpoint nil))))
+	        (decf spaceleft)
+	        (setq lpoint nil))))
 	(cond ((and w (< spaceleft 0) ovf)
 	       ;;field width overflow
 	       (dotimes (i w) (write-char ovf stream))
