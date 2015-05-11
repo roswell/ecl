@@ -119,25 +119,24 @@
              (let ((s (make-string (1+ fdigits) :initial-element #\0)))
                (setf (schar s 0) #\.)
                (values s (length s) t nil 0))))
-      (multiple-value-bind (e string)
+      (multiple-value-bind (e string zero?)
           (cond (fdigits
-                 (float-to-digits nil x
-                                  (min (- (+ fdigits scale))
-                                       (- fmin))
-                                  nil))
+                 (float-to-digits* nil x
+                                   (min (- (+ fdigits scale))
+                                        (- fmin))
+                                   nil))
                 ((null width)
-                 (float-to-digits nil x nil nil))
+                 (float-to-digits* nil x nil nil))
                 (T (let ((w (multiple-value-list
-                             (float-to-digits nil x
-                                              (max 1
-                                                   (+ (1- width)
-                                                      (if (minusp scale)
-                                                          scale 0)))
-                                              t)))
+                             (float-to-digits* nil x
+                                               (+ (1- width)
+                                                  (if (minusp scale)
+                                                      scale 0))
+                                               t)))
                          (f (multiple-value-list
-                             (float-to-digits nil x
-                                              (- (+ fmin scale))
-                                              nil))))
+                             (float-to-digits* nil x
+                                               (- (+ fmin scale))
+                                               nil))))
                      (if (>= (length (cadr w))
                              (length (cadr f)))
                          (values-list w)
