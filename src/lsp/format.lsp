@@ -95,6 +95,18 @@
 
 (defparameter *digits* "0123456789")
 
+(defun float-to-digits* (digits number position relativep)
+  "Does what float-to-digits, but also detects if result is zero."
+  (multiple-value-bind (exp string)
+      (float-to-digits digits
+                       number
+                       position
+                       relativep)
+    (values exp
+            string
+            (and position
+                 (< exp (- (abs position)))))))
+
 (defun flonum-to-string (x &optional width fdigits (scale 0) (fmin 0))
   (declare (type float x))
   (if (zerop x)
