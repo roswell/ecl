@@ -129,9 +129,10 @@
                  (float-to-digits* nil x nil nil))
                 (T (let ((w (multiple-value-list
                              (float-to-digits* nil x
-                                               (+ (1- width)
-                                                  (if (minusp scale)
-                                                      scale 0))
+                                               (max 0
+                                                    (+ (1- width)
+                                                       (if (minusp scale)
+                                                           scale 0)))
                                                t)))
                          (f (multiple-value-list
                              (float-to-digits* nil x
