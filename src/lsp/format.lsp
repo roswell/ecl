@@ -144,28 +144,43 @@
                          (values-list f)))))
         (let* ((exp (+ e scale))
                (stream (make-string-output-stream))
-               (length (length string))
-               (flength (- length exp)))
+               (length (length string)))
           ;; Integer part
           (when (plusp exp)
             (write-string string
                           stream
                           :end (min length exp))
-            (dotimes (i (- flength))
+            (dotimes (i (- exp length))
               (write-char #\0 stream)))
-          ;; Separator
+          ;; Separator and fraction
           (write-char #\. stream)
-          ;; Float part
-          (when (minusp exp)
-            (dotimes (i (abs exp))
-              (write-char #\0 stream)))
-          (write-string string
-                        stream
-                        :start (max 0 (min length exp)))
-          (when fdigits
-            (dotimes (i (- fdigits (max flength 0)))
-              (write-char #\0 stream)))
-
+          ;; Fraction part
+          (cond ((and zero? fdigits)
+                 (dotimes (i fdigits)
+                   (write-char #\0 stream)))
+                (fdigits
+                 (let ((characters-used 0))
+                   (dotimes (i (min (- exp) fdigits))
+                     (incf characters-used)
+                     (write-char #\0 stream))
+                   (let* ((start (max 0 (min length exp)))
+                          (end (max start
+                                    (min length
+                                         (+ start (- fdigits characters-used))))))
+                     (write-string string stream
+                                   :start start
+                                   :end   end)
+                     (incf characters-used (- end start))
+                     (dotimes (i (- fdigits characters-used))
+                       (write-char #\0 stream)))))
+                (zero?
+                 (write-char #\0 stream))
+                (T
+                 (dotimes (i (- exp))
+                   (write-char #\0 stream))
+                 (let ((start (max 0 (min length exp))))
+                       (write-string string stream
+                                     :start start))))
           (let* ((string (get-output-stream-string stream))
                  (length (length string))
                  (position (position #\. string)))
