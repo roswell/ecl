@@ -39,6 +39,8 @@
      were handled improperly in regard of multiple values.
 
    - Improved unicode support in character handling.
+
+   - Format handles floats correctly (algorithm rework).
      
 ** Enchantments:
 
