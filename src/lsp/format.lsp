@@ -15,7 +15,7 @@
 ;;; version by David Adam and later rewritten by Bill Maddox.
 ;;;
 ;;; Various fixes and adaptations provided by Juan Jose Garcia-Ripoll and
-;;; other Embeddable Common-Lisp developers.
+;;; Daniel Kochmański for Embeddable Common-Lisp.
 ;;; 
 
 (in-package "SYS")
