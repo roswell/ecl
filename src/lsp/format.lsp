@@ -1362,7 +1362,7 @@
 	  (sys::flonum-to-string (abs number) digits d k)
 	;;if caller specifically requested no fraction digits, suppress the
 	;;optional trailing zero
-	(when (and d (zerop d))
+	(when (eql d 0)
           (setq tpoint nil))
 	(when w 
 	  (decf spaceleft len)
@@ -1371,7 +1371,8 @@
             (decf spaceleft))
 	  ;; optional leading zero
 	  (when lpoint
-	    (if (> spaceleft 0)
+	    (if (or (> spaceleft 0)
+                    (eql d 0))
 	        (decf spaceleft)
 	        (setq lpoint nil))))
 	(cond ((and w (< spaceleft 0) ovf)
