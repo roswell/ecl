@@ -1046,7 +1046,9 @@ cl_list_all_packages()
 	case t_symbol:
 	case t_character:
 	case t_base_string:
+#ifdef ECL_UNICODE
 	case t_string:
+#endif
 	case t_package:
 		ecl_use_package(pack, pa);
 		break;
@@ -1069,7 +1071,9 @@ cl_list_all_packages()
 	case t_symbol:
 	case t_character:
 	case t_base_string:
+#ifdef ECL_UNICODE
 	case t_string:
+#endif
 	case t_package:
 		ecl_unuse_package(pack, pa);
 		break;

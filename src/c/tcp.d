@@ -374,7 +374,9 @@ si_lookup_host_entry(cl_object host_or_address)
 	INIT_TCP
 
 	switch (ecl_t_of(host_or_address)) {
+#ifdef ECL_UNICODE
 	case t_string:
+#endif
 	case t_base_string:
 		host_or_address = si_copy_to_simple_base_string(host_or_address);
 		he = gethostbyname((char*)host_or_address->base_string.self);
