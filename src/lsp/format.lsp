@@ -223,7 +223,7 @@
 	(setf x (* x 1.0l18) delta -18)
 	#-long-float
 	(setf x (* x 1.0l16) delta -16))
-      ;; We find the appropriate factor that keeps the output within (0.1,1]
+      ;; We find the appropriate factor that keeps the output within [0.1,1)
       ;; Note that we have to compute the exponential _every_ _time_ in the loop
       ;; because multiplying just by 10.0l0 every time would lead to a greater
       ;; loss of precission.
@@ -232,12 +232,12 @@
 	(if (minusp ex)
 	    (loop for y of-type long-float
 		 = (* x (the long-float (expt 10.0l0 (- ex))))
-	       while (<= y 0.1l0)
+	       while (< y 0.1l0)
 	       do (decf ex)
 	       finally (return (values y (the fixnum (+ delta ex)))))
 	    (loop for y of-type long-float
 		 = (/ x (the long-float (expt 10.0l0 ex)))
-	       while (> y 1.0l0)
+	       while (>= y 1.0l0)
 	       do (incf ex)
 	       finally (return (values y (the fixnum (+ delta ex)))))))
       #+(or)
@@ -1471,9 +1471,8 @@
       (prin1 number stream)
       (multiple-value-bind (num expt)
           (sys::scale-exponent (abs number))
-        (when (< expt 0)
+        (when (< expt 0)                ; adjust scale factor
           (decf k))
-        ;;   (incf expt))
 	(let* ((expt (- expt k))
 	       (estr (decimal-string (abs expt)))
 	       (elen (if e (max (length estr) e) (length estr)))
