@@ -1425,18 +1425,19 @@
 (defun format-exponential (stream number w d e k ovf pad marker atsign)
   #-formatter
   (declare (si::c-local))
-  (if (numberp number)
-      (if (floatp number)
-	  (format-exp-aux stream number w d e k ovf pad marker atsign)
-	  (if (rationalp number)
-	      (format-exp-aux stream
-			      (coerce number 'single-float)
-			      w d e k ovf pad marker atsign)
-	      (format-write-field stream
-				  (decimal-string number)
-				  w 1 0 #\space t)))
-      (format-princ stream number nil nil w 1 0 pad)))
-
+  (cond
+    ((not (numberp number))
+     (format-princ stream number nil nil w 1 0 pad))
+    ((floatp number)
+     (format-exp-aux stream number w d e k ovf pad marker atsign))
+    ((rationalp number)
+     (format-exp-aux streamn
+                     (coerce number 'single-float)
+                     w d e k ovf pad marker atsign))
+    (T
+     (format-write-field stream
+                         (decimal-string number)
+                         w 1 0 #\space t))))
 
 (defun format-exponent-marker (number)
   (declare (si::c-local))
