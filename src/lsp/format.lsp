@@ -1470,7 +1470,7 @@
       #+ecl nil
       (prin1 number stream)
       (multiple-value-bind (num expt)
-			   (sys::scale-exponent (abs number))
+          (sys::scale-exponent (abs number))
 	(let* ((expt (- expt k))
 	       (estr (decimal-string (abs expt)))
 	       (elen (if e (max (length estr) e) (length estr)))
@@ -1483,8 +1483,7 @@
 			      nil)))
 	  (if (and w ovf e (> elen e)) ;exponent overflow
 	      (dotimes (i w) (write-char ovf stream))
-	      (multiple-value-bind
-		  (fstr flen lpoint)
+	      (multiple-value-bind (fstr flen lpoint)
 		  (sys::flonum-to-string num spaceleft fdig k fmin)
 		(when w 
 		  (decf spaceleft flen)
