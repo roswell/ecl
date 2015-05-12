@@ -130,7 +130,7 @@
                 (T (let ((w (multiple-value-list
                              (float-to-digits* nil x
                                                (max 0
-                                                    (+ (1- width)
+                                                    (+ (- width 2)
                                                        (if (minusp scale)
                                                            scale 0)))
                                                t)))
@@ -1365,19 +1365,14 @@
     (prin1 number stream)
     nil)
    (t
-    (let* ((spaceleft w)
-           (digits (if (null spaceleft)
-                       nil
-                       (1- spaceleft))))
+    (let ((spaceleft w))
       (when (and w (or atsign
                        (minusp number)))
-        (decf spaceleft)
-        (decf digits))
-      (multiple-value-bind 
-	  (str len lpoint tpoint)
-	  (sys::flonum-to-string (abs number) digits d k)
-	;;if caller specifically requested no fraction digits, suppress the
-	;;optional trailing zero
+        (decf spaceleft))
+      (multiple-value-bind (str len lpoint tpoint)
+	  (sys::flonum-to-string (abs number) spaceleft d k)
+	;; if caller specifically requested no fraction digits, suppress the
+	;; trailing zero
 	(when (eql d 0)
           (setq tpoint nil))
 	(when w 
