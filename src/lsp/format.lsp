@@ -1431,7 +1431,7 @@
     ((floatp number)
      (format-exp-aux stream number w d e k ovf pad marker atsign))
     ((rationalp number)
-     (format-exp-aux streamn
+     (format-exp-aux stream
                      (coerce number 'single-float)
                      w d e k ovf pad marker atsign))
     (T
@@ -1471,6 +1471,9 @@
       (prin1 number stream)
       (multiple-value-bind (num expt)
           (sys::scale-exponent (abs number))
+        (when (< expt 0)
+          (decf k))
+        ;;   (incf expt))
 	(let* ((expt (- expt k))
 	       (estr (decimal-string (abs expt)))
 	       (elen (if e (max (length estr) e) (length estr)))
