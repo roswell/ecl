@@ -40,7 +40,7 @@
 
    - Improved unicode support in character handling.
 
-   - Format handles floats correctly (algorithm rework).
+   - Format handles floats and exponentials correctly (major format rework).
      
 ** Enchantments:
 
