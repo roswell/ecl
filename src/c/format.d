@@ -2235,5 +2235,6 @@ DIRECTIVE:
 		doformat(narg, strm, string, args, FALSE);
 #endif
 	}
+	output = cl_copy_seq(output);
 	@(return output)
 @)
