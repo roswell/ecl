@@ -476,8 +476,8 @@ Returns the original value of the leftmost PLACE."
   (with-setf-expansions (pairs stores store-forms access-forms)
       ((butlast args) env)
     (with-expansion-setter (thunk store-forms)
-      `(multiple-value-prog1 ,(car access-forms)
-         (let* ,pairs
+      `(let* ,pairs
+         (multiple-value-prog1 ,(car access-forms)
            ,@(thunk stores
                     (append (cdr access-forms)
                             (last args))))))))
