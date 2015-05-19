@@ -58,19 +58,19 @@
 
 (defvar *regressions-sandbox* (merge-pathnames "regressions/" *here*))
 
-(defvar *ansi-tests-mirror* "http://ecls.sourceforge.net/ansi-tests.tar.gz")
+(defvar *ansi-tests-mirror* "http://common-lisp.net/project/ecl/tests/ansi-tests.tar.gz")
 
 (defvar *ansi-tests-sandbox* (merge-pathnames "ansi-tests/" *here*))
 
 (defvar *ansi-tests-tarball* "ansi-tests.tar.gz")
 
-(defvar *mop-tests-mirror* "http://ecls.sourceforge.net/mop-features.tar.gz")
+(defvar *mop-tests-mirror* "http://common-lisp.net/project/ecl/tests/mop-features.tar.gz")
 
 (defvar *mop-tests-sandbox* (merge-pathnames "mop-features/" *here*))
 
 (defvar *mop-tests-tarball* "mop-features.tar.gz")
 
-(defvar *fricas-mirror* "http://ecls.sourceforge.net/fricas.tar.gz")
+(defvar *fricas-mirror* "http://common-lisp.net/project/ecl/tests/fricas.tar.gz")
 
 (defvar *fricas-sandbox* (merge-pathnames "fricas/" *here*))
 
