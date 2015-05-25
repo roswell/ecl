@@ -306,6 +306,7 @@ ecl_def_ct_base_string(str_system,"SYSTEM",6,static,const);
 ecl_def_ct_base_string(str_ext,"EXT",3,static,const);
 #ifdef CLOS
 ecl_def_ct_base_string(str_clos,"CLOS",4,static,const);
+ecl_def_ct_base_string(str_mop,"MOP",3,static,const);
 #endif
 ecl_def_ct_base_string(str_mp,"MP",2,static,const);
 ecl_def_ct_base_string(str_multiprocessing,"MULTIPROCESSING",15,static,const);
@@ -586,7 +587,9 @@ cl_boot(int argc, char **argv)
 				 ecl_list1(cl_core.lisp_package));
 #ifdef CLOS
 	cl_core.clos_package =
-		ecl_make_package(str_clos, ECL_NIL, ecl_list1(cl_core.lisp_package));
+		ecl_make_package(str_clos,
+                                 ecl_list1(str_mop),
+                                 ecl_list1(cl_core.lisp_package));
 #endif
 	cl_core.mp_package =
 		ecl_make_package(str_mp,
