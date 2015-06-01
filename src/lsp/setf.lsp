@@ -394,7 +394,7 @@ Each PLACE may be any one of the following:
     where '?' stands for either 'a' or 'd'.
   * A function call form whose first element is:
         1. an access function for a structure slot
-        1. an accessor method for a CLOS object
+        2. an accessor method for a CLOS object
   * the form (THE type place) with PLACE being a place recognized by SETF.
   * a macro call which expands to a place recognized by SETF.
   * any form for which a DEFSETF or DEFINE-SETF-EXPANDER declaration has been
