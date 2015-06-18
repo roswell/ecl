@@ -16,12 +16,7 @@
   architectures should be rather easy.
   
 * Known issues
-  
-  - Cygwin's library is still broken: fork/exec fails to reload the
-    cygwin library, or ECL's compiled libraries in a completely random
-    fashion.  For this reason we recommend using ext:system instead of
-    ext:run-program in that platform.
-    
+
   - In Windows ECL comes with bytecodes compiler by default, because C
     compilers are normally not avaiable. Unfortunately several libraries
     out there are not prepared for this.  If you plan to use quicklisp
