@@ -74,6 +74,12 @@ bin/ecl$(EXE): ecl_min$(EXE) compile.lsp ecl/external.h build-stamp $(top_srcdir
 	else \
 		ECLDIR=`pwd`/ ./ecl_min$(EXE) compile; \
 	fi
+	if [ "x@SONAME@" != "x" -a -f "@SONAME@" ]; then \
+	  ( mv @SONAME@ @SONAME3@ && \
+	    $(LN_S) @SONAME3@ @SONAME2@ && \
+	    $(LN_S) @SONAME3@ @SONAME1@ && \
+	    $(LN_S) @SONAME3@ @SONAME@ ) \
+	fi
 
 ecl_min$(EXE): $(LIBRARIES) .gdbinit @LIBPREFIX@eclmin.@LIBEXT@
 	if [ -f CROSS-COMPILER ]; then \
@@ -178,9 +184,9 @@ install:
 	   $(INSTALL_LIBRARY) $$i $(DESTDIR)$(libdir); \
 	  fi \
 	done
-	if [ "x@SONAME@" != "x" -a -f "@SONAME@" ]; then \
-	  ( cd $(DESTDIR)$(libdir) && $(RM) -f @SONAME3@ @SONAME2@ @SONAME1@ && \
-	    mv @SONAME@ @SONAME3@ && \
+	if [ "x@SONAME3@" != "x" -a -f "@SONAME3@" ]; then \
+	  ( $(INSTALL_LIBRARY) @SONAME3@ $(DESTDIR)$(libdir) && \
+	    cd $(DESTDIR)$(libdir) && $(RM) -f @SONAME2@ @SONAME1@ @SONAME@ && \
 	    $(LN_S) @SONAME3@ @SONAME2@ && \
 	    $(LN_S) @SONAME3@ @SONAME1@ && \
 	    $(LN_S) @SONAME3@ @SONAME@ ) \
