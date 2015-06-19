@@ -15,7 +15,7 @@
 (defvar *ecl-sources*
   (loop for *default-pathname-defaults* in
 	'(#p"@true_srcdir@/" #p"../../" #p"../../src/")
-	when (probe-file "CHANGELOG")
+	when (probe-file "configure.ac")
 	return *default-pathname-defaults*))
 
 (defvar *test-sources* (merge-pathnames "tests/" *ecl-sources*))
@@ -28,7 +28,7 @@
 			 #+windows
 			 (namestring (truename #+windows "sys:ecl.exe"))
 			 #-windows
-			 "ecl"))
+			 "@prefix@/bin/ecl"))
 
 (defvar *test-image-args*
   (cond ((search "ecl" *test-image*)

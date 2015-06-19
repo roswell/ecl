@@ -1,16 +1,15 @@
-ECL=ecl@EXEEXT@
+ECL=@prefix@/@bindir@/ecl@EXEEXT@
 
-all: output.ecl/ansi.log output.ecl/regressions.log
+all: show-fails
 
 .PHONY: do-ansi do-regressions do-quicklisp cleanup clean-sources update
 
 BUGS_FILES := $(shell find ../../src/tests/bugs/ -type f)
 output.ecl/ansi.log: config.lsp
 	$(MAKE) do-ansi
-	$(MAKE) show-fails
+
 output.ecl/regressions.log: config.lsp
 	$(MAKE) do-regressions
-	$(MAKE) show-fails
 
 do-ansi: ansi-tests config.lsp
 	$(ECL) -norc -load config.lsp -eval '(ecl-tests::run-ansi-tests)' -eval '(ext:quit)' < /dev/null
@@ -21,20 +20,22 @@ do-quicklisp: quicklisp config.lsp
 do-mop-tests: mop-features config.lsp
 	$(ECL) -norc -load config.lsp -eval '(ecl-tests::run-mop-tests)' -eval '(ext:quit)' < /dev/null
 
-show-fails:
+show-fails: output.ecl/ansi.log output.ecl/regressions.log
 	grep "^Test .* failed" output.ecl/ansi.log output.ecl/regressions.log
 
 #
 # Create directories
 #
 ansi-tests: config.lsp
+	wget "http://common-lisp.net/project/ecl/tests/ansi-tests.tar.gz" -P cache
 	$(ECL) -norc -load config.lsp -eval '(ecl-tests::ensure-ansi-tests)' -eval '(ext:quit)' < /dev/null
+mop-features: config.lsp
+	wget "http://common-lisp.net/project/ecl/tests/mop-features.tar.gz" -P cache
+	$(ECL) -norc -load config.lsp -eval '(ecl-tests::ensure-mop-tests)' -eval '(ext:quit)' < /dev/null
 regressions: config.lsp ansi-tests $(BUGS_FILES)
 	$(ECL) -norc -load config.lsp -eval '(ecl-tests::ensure-regressions)' -eval '(ext:quit)' < /dev/null
 quicklisp: config.lsp
 	$(ECL) -norc -load config.lsp -eval '(ecl-tests::ensure-quicklisp)' -eval '(ext:quit)' < /dev/null
-mop-features: config.lsp
-	$(ECL) -norc -load config.lsp -eval '(ecl-tests::ensure-mop-tests)' -eval '(ext:quit)' < /dev/null
 
 #
 # Test other implementations
