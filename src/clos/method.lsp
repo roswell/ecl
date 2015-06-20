@@ -290,6 +290,17 @@
 	 (values name (nreverse qualifiers) (first args) (rest args)))
       (push (pop args) qualifiers))))
 
+(defun implicit-generic-lambda (lambda-list)
+  "Implicit defgeneric declaration removes all &key arguments (preserving &key)"
+  (when lambda-list
+    (let (acc)
+      (do* ((ll lambda-list (cdr ll))
+            (elt (car ll) (car ll)))
+           ((or (endp (rest ll))
+                (eql elt '&key))
+            (nreverse (cons elt acc)))
+        (push elt acc)))))
+
 (defun extract-lambda-list (specialized-lambda-list)
   (values (parse-specialized-lambda-list specialized-lambda-list)))
 
@@ -398,7 +409,8 @@ have disappeared."
       (push method (generic-function-methods gf))
       (setf (method-generic-function method) gf)
       (unless (si::sl-boundp (generic-function-lambda-list gf))
-	(setf (generic-function-lambda-list gf) (method-lambda-list method))
+	(setf (generic-function-lambda-list gf) (implicit-generic-lambda
+                                                 (method-lambda-list method)))
 	(setf (generic-function-argument-precedence-order gf)
 	      (rest (si::process-lambda-list (method-lambda-list method) t))))
       (compute-g-f-spec-list gf)

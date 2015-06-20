@@ -150,7 +150,8 @@ and cannot be added to ~A." method other-gf gf)))
 	    (error "Cannot add the method ~A to the generic function ~A because ~
 their lambda lists ~A and ~A are not congruent."
 		   method gf old-lambda-list new-lambda-list)))
-	(reinitialize-instance gf :lambda-list new-lambda-list)))
+        (reinitialize-instance
+         gf :lambda-list (implicit-generic-lambda new-lambda-list))))
   ;;
   ;; 3) Finally, it is inserted in the list of methods, and the method is
   ;;    marked as belonging to a generic function.
