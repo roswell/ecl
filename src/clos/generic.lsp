@@ -17,7 +17,7 @@
 
 (defmacro defgeneric (&whole whole &rest args)
   (multiple-value-bind (function-specifier lambda-list options)
-    (parse-defgeneric args)
+      (parse-defgeneric args)
     (parse-lambda-list lambda-list)
     ;; process options
     (multiple-value-bind (option-list method-list)
