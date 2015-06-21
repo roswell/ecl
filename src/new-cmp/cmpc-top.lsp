@@ -53,8 +53,8 @@
     (wt-nl1 "#include \"" (si::coerce-to-filename data-pathname) "\""))
   ;;; Initialization function.
   (let* ((c-output-file *compiler-output1*)
-	 (*compiler-output1* (make-string-output-stream))
-	 (*compiler-declared-globals* (make-hash-table)))
+         (*compiler-output1* (make-string-output-stream))
+         (*compiler-declared-globals* (make-hash-table)))
 
     ;; Type propagation phase
     (when *do-type-propagation*
@@ -84,17 +84,17 @@
 
   (dolist (l *linking-calls*)
     (let* ((c-name (fourth l))
-	   (var-name (fifth l)))
+           (var-name (fifth l)))
       (wt-nl-h "static cl_object " c-name "(cl_narg, ...);")
       (wt-nl-h "static cl_object (*" var-name ")(cl_narg, ...)=" c-name ";")))
 
   ;;; Initial functions for linking calls.
   (dolist (l *linking-calls*)
     (let* ((var-name (fifth l))
-	   (c-name (fourth l))
-	   (lisp-name (third l)))
+           (c-name (fourth l))
+           (lisp-name (third l)))
       (wt-nl1 "static cl_object " c-name "(cl_narg narg, ...)"
-	      "{TRAMPOLINK(narg," lisp-name ",&" var-name ",Cblock);}")))
+              "{TRAMPOLINK(narg," lisp-name ",&" var-name ",Cblock);}")))
 
   (wt-nl-h "#ifdef __cplusplus")
   (wt-nl-h "}")
@@ -154,12 +154,12 @@
          (*current-toplevel-form* (fun-toplevel-form fun))
          (*lcl* (fun-last-lcl fun))
          (*last-label* (fun-last-label fun))
-	 (*lex* 0)
+         (*lex* 0)
          (*max-lex* 0)
-	 (*env* (fun-env fun))		; continue growing env
-	 (*max-env* *env*)
+         (*env* (fun-env fun))          ; continue growing env
+         (*max-env* *env*)
          (*env-lvl* 0)
-	 (*level* (if (eq (fun-closure fun) 'LEXICAL)
+         (*level* (if (eq (fun-closure fun) 'LEXICAL)
                       (fun-level fun)
                       0))
          (*volatile* (if (fun-volatile-p fun) "volatile " ""))

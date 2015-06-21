@@ -18,7 +18,7 @@
   (let ((var (apply #'%make-var args)))
     (unless (member (var-kind var) '(SPECIAL GLOBAL))
       (when *current-function*
-	(push var (fun-local-vars *current-function*))))
+        (push var (fun-local-vars *current-function*))))
     var))
 
 ;;; FIXME! VAR-REFERENCED-IN-FORM and VAR-CHANGED-IN-FORM are too
@@ -26,7 +26,7 @@
 ;;; variable are actually called from the given node.  The problem arises when
 ;;; we create a closure of a function, as in
 ;;;
-;;;	(let* ((a 1) (b #'(lambda () (incf a)))) ...)
+;;;     (let* ((a 1) (b #'(lambda () (incf a)))) ...)
 ;;;
 ;;; To know whether A is changed or read, we would have to track where B is
 ;;; actually used.
@@ -139,18 +139,18 @@
   (cmpck (constantp name) "The constant ~s is being bound." name)
   (let (type)
     (if (setq type (assoc name types))
-	(setq type (cdr type))
-	(setq type 'T))
+        (setq type (cdr type))
+        (setq type 'T))
     (cond ((or (member name specials)
-	       (sys:specialp name)
-               (check-global name))	;; added. Beppe 17 Aug 1987
+               (sys:specialp name)
+               (check-global name))     ;; added. Beppe 17 Aug 1987
            (unless type
-	     (setf type (or (get-sysprop name 'CMP-TYPE) 'T)))
-	   (c1make-global-variable name :kind 'SPECIAL :type type))
+             (setf type (or (get-sysprop name 'CMP-TYPE) 'T)))
+           (c1make-global-variable name :kind 'SPECIAL :type type))
           (t
-	   (make-var :name name :type type :loc 'OBJECT
-		     :kind 'LEXICAL ; we rely on check-vref to fix it
-		     :ref (if (member name ignores) -1 0))))))
+           (make-var :name name :type type :loc 'OBJECT
+                     :kind 'LEXICAL ; we rely on check-vref to fix it
+                     :ref (if (member name ignores) -1 0))))))
 
 (defun c1var (destination name)
   (let ((vref (c1vref name (eq destination 'TRASH))))
@@ -174,10 +174,10 @@
            (unless (and maybe-drop-ref (not (policy-global-var-checking)))
              (c1make-global-variable name :warn t
                                      :type (or (get-sysprop name 'CMP-TYPE) t))))
-	  ((not (var-p var))
-	   ;; symbol-macrolet
-	   (baboon))
-	  (t
+          ((not (var-p var))
+           ;; symbol-macrolet
+           (baboon))
+          (t
            (when (and maybe-drop-ref
                       (not (and (global-var-p var)
                                 (policy-global-var-checking))))
@@ -185,14 +185,14 @@
            (when (minusp (var-ref var)) ; IGNORE.
              (cmpwarn-style "The ignored variable ~s is used." name)
              (setf (var-ref var) 0))
-	   (when (eq (var-kind var) 'LEXICAL)
-	     (cond (ccb (setf (var-ref-clb var) nil ; replace a previous 'CLB
-			      (var-ref-ccb var) t
-			      (var-kind var) 'CLOSURE
-			      (var-loc var) 'OBJECT))
-		   (clb (setf (var-ref-clb var) t
-			      (var-loc var) 'OBJECT))))
-	   var))))
+           (when (eq (var-kind var) 'LEXICAL)
+             (cond (ccb (setf (var-ref-clb var) nil ; replace a previous 'CLB
+                              (var-ref-ccb var) t
+                              (var-kind var) 'CLOSURE
+                              (var-loc var) 'OBJECT))
+                   (clb (setf (var-ref-clb var) t
+                              (var-loc var) 'OBJECT))))
+           var))))
 
 (defun global-var-p (var)
   (and (var-p var)
@@ -217,8 +217,8 @@
     (push var *global-var-objects*)
     (when warn
       (unless (or (sys:specialp name) (constantp name) (check-global name))
-	(undefined-variable name)
-	(push var *undefined-vars*)))
+        (undefined-variable name)
+        (push var *undefined-vars*)))
     var))
 
 (defun c1declare-specials (globals)
@@ -227,8 +227,8 @@
 (defun si::register-global (name)
   (unless (check-global name)
     (push (c1make-global-variable name :kind 'GLOBAL
-				  :type (or (get-sysprop name 'CMP-TYPE) 'T))
-	  *global-vars*))
+                                  :type (or (get-sysprop name 'CMP-TYPE) 'T))
+          *global-vars*))
   (values))
 
 (defun c1setq (destination args)
@@ -236,8 +236,8 @@
     (declare (fixnum l))
     (cmpck (oddp l) "SETQ requires an even number of arguments.")
     (cond ((zerop l) (c1nil destination))
-	  ((= l 2) (c1setq1 destination (first args) (second args)))
-	  (t
+          ((= l 2) (c1setq1 destination (first args) (second args)))
+          (t
            (c1progn destination
                     (loop while args
                        collect `(SETQ ,(pop args) ,(pop args))))))))
@@ -251,9 +251,9 @@
   (c1with-saved-one-value (prefix postfix temp form)
     (let* ((name1 (c1vref name)))
       (nconc prefix
-	     (c1set-loc name1 temp)
-	     postfix
-	     (unless (eq destination 'trash) (c1set-loc destination name1))))))
+             (c1set-loc name1 temp)
+             postfix
+             (unless (eq destination 'trash) (c1set-loc destination name1))))))
 
 (defun unused-variable-p (var)
   "Is the value of the variable ever read?"
@@ -265,18 +265,18 @@
   (check-args-number 'PROGV args 2)
   (c1with-temps (ndx-prefix ndx-postfix bds-ndx)
     (let* ((variables (pop args))
-	   (values (pop args)))
+           (values (pop args)))
       (c1with-saved-values (prefix postfix temps (list variables values))
-	(let* ((cleanup (c1progv-exit-op bds-ndx))
-	       (*cmp-env* (cmp-env-register-cleanup cleanup
-						    (cmp-env-copy *cmp-env*))))
-	  (nconc ndx-prefix
-		 prefix
-		 (c1progv-op bds-ndx (first temps) (second temps))
-		 (c1progn destination args)
+        (let* ((cleanup (c1progv-exit-op bds-ndx))
+               (*cmp-env* (cmp-env-register-cleanup cleanup
+                                                    (cmp-env-copy *cmp-env*))))
+          (nconc ndx-prefix
+                 prefix
+                 (c1progv-op bds-ndx (first temps) (second temps))
+                 (c1progn destination args)
                  (c1progv-exit-op bds-ndx)
-		 postfix
-		 ndx-postfix))))))
+                 postfix
+                 ndx-postfix))))))
 
 (defun c1psetq (destination args)
   (let* ((variables '())

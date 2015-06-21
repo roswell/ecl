@@ -57,7 +57,7 @@ ecl_cos_long_float(cl_object x)
 static cl_object
 ecl_cos_complex(cl_object x)
 {
-	/* z = x + I y
+        /* z = x + I y
            cos(z) = cosh(I z) = cosh(-y + I x)
         */
         cl_object dx = x->complex.real;

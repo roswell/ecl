@@ -26,8 +26,8 @@
     (null (return-from data-dump))
     ((or pathname string)
      (setf stream (open stream :direction :output :if-does-not-exist :create
-			:if-exists :supersede :external-format :default)
-	   must-close stream))
+                        :if-exists :supersede :external-format :default)
+           must-close stream))
     (stream))
   (si::with-ecl-io-syntax
     (extract-static-constants stream)
@@ -71,7 +71,7 @@
 #define VMtemp 0
 #define VV NULL
 ")
-	(format stream "
+        (format stream "
 #define VM ~A
 #define VMtemp ~A
 #ifdef ECL_DYNAMIC_VV
@@ -101,29 +101,29 @@ static cl_object VV[VM];
 ;;;
 (defun wt-filtered-data (string stream &optional one-liner)
   (let ((N (length string))
-	(wt-data-column 80))
+        (wt-data-column 80))
     (incf *wt-string-size* (1+ N)) ; 1+ accounts for a blank space
     (format stream (if one-liner "\"" "~%\""))
     (dotimes (i N)
       (decf wt-data-column)
       (when (< wt-data-column 0)
-	(format stream "\"~% \"")
-	(setq wt-data-column 79))
+        (format stream "\"~% \"")
+        (setq wt-data-column 79))
       (let ((x (aref string i)))
-	(cond
-	  ((or (< (char-code x) 32)
-	       (> (char-code x) 127))
-	   (case x
-	     ; We avoid a trailing backslash+newline because some preprocessors
-	     ; remove them.
-	     (#\Newline (princ "\\n" stream))
-	     (#\Tab (princ "\\t" stream))
-	     (t (format stream "\\~3,'0o" (char-code x)))))
-	  ((char= x #\\)
-	   (princ "\\\\" stream))
-	  ((char= x #\")
-	   (princ "\\\"" stream))
-	  (t (princ x stream)))))
+        (cond
+          ((or (< (char-code x) 32)
+               (> (char-code x) 127))
+           (case x
+             ; We avoid a trailing backslash+newline because some preprocessors
+             ; remove them.
+             (#\Newline (princ "\\n" stream))
+             (#\Tab (princ "\\t" stream))
+             (t (format stream "\\~3,'0o" (char-code x)))))
+          ((char= x #\\)
+           (princ "\\\\" stream))
+          ((char= x #\")
+           (princ "\\\"" stream))
+          (t (princ x stream)))))
     (princ (if one-liner "\""  " \"") stream)
     string))
 
@@ -218,7 +218,7 @@ static cl_object VV[VM];
 (mapc
  #'(lambda (record)
      (let* ((name (first record))
-	    (c-value (second record)))
+            (c-value (second record)))
        (push 
         (cond ((symbolp name)
                (let* ((value (symbol-value name)))

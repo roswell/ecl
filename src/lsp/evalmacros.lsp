@@ -41,8 +41,8 @@ as a VARIABLE doc and can be retrieved by (documentation 'NAME 'variable)."
   `(LOCALLY (DECLARE (SPECIAL ,var))
     (SYS:*MAKE-SPECIAL ',var)
     ,@(when form-sp
-	  `((UNLESS (BOUNDP ',var)
-	      (SETQ ,var ,form))))
+          `((UNLESS (BOUNDP ',var)
+              (SETQ ,var ,form))))
     ,@(si::expand-set-documentation var 'variable doc-string)
     ,(ext:register-with-pde whole)
     ,(if *bytecodes-compiler*
@@ -93,7 +93,7 @@ VARIABLE doc and can be retrieved by (DOCUMENTATION 'SYMBOL 'VARIABLE)."
   ;; Documentation in help.lsp
   (multiple-value-setq (body doc-string) (remove-documentation body))
   (let* ((function `#'(ext::lambda-block ,name ,vl ,@body))
-	 (global-function `#'(ext::lambda-block ,name ,vl
+         (global-function `#'(ext::lambda-block ,name ,vl
                                                 (declare (si::c-global))
                                                 ,@body)))
     (when *dump-defun-definitions*
@@ -103,7 +103,7 @@ VARIABLE doc and can be retrieved by (DOCUMENTATION 'SYMBOL 'VARIABLE)."
        ,(ext:register-with-pde whole `(si::fset ',name ,global-function))
        ,@(si::expand-set-documentation name 'function doc-string)
        ,(let ((hook *defun-inline-hook*))
-	  (and hook (funcall hook name global-function env)))
+          (and hook (funcall hook name global-function env)))
        ',name)))
 
 ;;;
@@ -177,21 +177,21 @@ Evaluates TESTs in order until one evaluates to non-NIL.  Then evaluates FORMs
 in order that follow the TEST and returns all values of the last FORM.  If no
 forms follow the TEST, then returns the value of the TEST.  Returns NIL, if no
 TESTs evaluates to non-NIL."
-  (dolist (l (reverse clauses) form)	; don't use nreverse here
+  (dolist (l (reverse clauses) form)    ; don't use nreverse here
     (if (endp (cdr l))
-	(if (eq (car l) 't)
-	    (setq form 't)
-	    (let ((sym (gensym)))
-	      (setq form `(LET ((,sym ,(car l)))
-;			   (DECLARE (:READ-ONLY ,sym)) ; Beppe
-			   (IF ,sym ,sym ,form)))))
-	(if (eq (car l) 't)
-	    (setq form (if (endp (cddr l))
-			   (cadr l)
-			   `(PROGN ,@(cdr l))))
-	    (setq form (if (endp (cddr l))
-			   `(IF ,(car l) ,(cadr l) ,form)
-			   `(IF ,(car l) (PROGN ,@(cdr l)) ,form))))))
+        (if (eq (car l) 't)
+            (setq form 't)
+            (let ((sym (gensym)))
+              (setq form `(LET ((,sym ,(car l)))
+;                          (DECLARE (:READ-ONLY ,sym)) ; Beppe
+                           (IF ,sym ,sym ,form)))))
+        (if (eq (car l) 't)
+            (setq form (if (endp (cddr l))
+                           (cadr l)
+                           `(PROGN ,@(cdr l))))
+            (setq form (if (endp (cddr l))
+                           `(IF ,(car l) ,(cadr l) ,form)
+                           `(IF ,(car l) (PROGN ,@(cdr l)) ,form))))))
   )
 
 ; program feature
@@ -229,8 +229,8 @@ Evaluates FIRST-FORM and FORMs in order.  Returns the value of FIRST-FORM."
 Evaluates FIRST-FORM, SECOND-FORM, and FORMs in order.  Returns the value of
 SECOND-FORM."
   `(PROGN ,first (LET ((,sym ,second))
-;		       (DECLARE (:READ-ONLY ,sym)) ; Beppe
-		       ,@body ,sym)))
+;                      (DECLARE (:READ-ONLY ,sym)) ; Beppe
+                       ,@body ,sym)))
 
 ; multiple values
 
@@ -266,13 +266,13 @@ values of the last FORM.  If no FORM is given, returns NIL."
 (defun while-until (test body jmp-op)
   (declare (si::c-local))
   (let ((label (gensym))
-	(exit (gensym)))
+        (exit (gensym)))
     `(TAGBODY
         (GO ,exit)
       ,label
         ,@body
       ,exit
-	(,jmp-op ,test (GO ,label)))))
+        (,jmp-op ,test (GO ,label)))))
 
 (defmacro sys::while (test &body body)
   (while-until test body 'when))
@@ -282,29 +282,29 @@ values of the last FORM.  If no FORM is given, returns NIL."
 
 (defmacro case (keyform &rest clauses)
   (let* ((last t)
-	 (form nil)
-	 (key (gensym)))
+         (form nil)
+         (key (gensym)))
     (dolist (clause (reverse clauses)
-	     `(LET ((,key ,keyform))
-		;;(DECLARE (:READ-ONLY ,key)) ; Beppe
-		,form))
+             `(LET ((,key ,keyform))
+                ;;(DECLARE (:READ-ONLY ,key)) ; Beppe
+                ,form))
       (let ((selector (car clause)))
-	(cond ((or (eq selector T) (eq selector 'OTHERWISE))
-	       (unless last
-		 (si::signal-simple-error
-		  'program-error nil
-		  "CASE: The selector ~A can only appear at the last position."
-		  (list selector)))
-	       (setq form `(PROGN ,@(cdr clause))))
-	      ((consp selector)
-	       (setq form `(IF (MEMBER ,key ',selector)
-			       (PROGN ,@(cdr clause))
-			       ,form)))
-	      (selector
-	       (setq form `(IF (EQL ,key ',selector)
-			       (PROGN ,@(cdr clause))
-			       ,form))))
-	(setq last nil)))))
+        (cond ((or (eq selector T) (eq selector 'OTHERWISE))
+               (unless last
+                 (si::signal-simple-error
+                  'program-error nil
+                  "CASE: The selector ~A can only appear at the last position."
+                  (list selector)))
+               (setq form `(PROGN ,@(cdr clause))))
+              ((consp selector)
+               (setq form `(IF (MEMBER ,key ',selector)
+                               (PROGN ,@(cdr clause))
+                               ,form)))
+              (selector
+               (setq form `(IF (EQL ,key ',selector)
+                               (PROGN ,@(cdr clause))
+                               ,form))))
+        (setq last nil)))))
 
 (defmacro return (&optional (val nil)) `(RETURN-FROM NIL ,val))
 
@@ -333,19 +333,19 @@ values of the last FORM.  If no FORM is given, returns NIL."
 
 (defmacro define-symbol-macro (&whole whole symbol expansion)
   (cond ((not (symbolp symbol))
-	 (error "DEFINE-SYMBOL-MACRO: ~A is not a symbol"
-		symbol))
-	((specialp symbol)
-	 (error "DEFINE-SYMBOL-MACRO: cannot redefine a special variable, ~A"
-		symbol))
-	(t
-	 `(eval-when (:compile-toplevel :load-toplevel :execute)
-	   (put-sysprop ',symbol 'si::symbol-macro 
+         (error "DEFINE-SYMBOL-MACRO: ~A is not a symbol"
+                symbol))
+        ((specialp symbol)
+         (error "DEFINE-SYMBOL-MACRO: cannot redefine a special variable, ~A"
+                symbol))
+        (t
+         `(eval-when (:compile-toplevel :load-toplevel :execute)
+           (put-sysprop ',symbol 'si::symbol-macro 
                         (lambda (form env) 
                           (declare (ignore form env))
                           ',expansion))
-	   ,(ext:register-with-pde whole)
-	   ',symbol))))
+           ,(ext:register-with-pde whole)
+           ',symbol))))
 
 (defmacro nth-value (n expr)
   `(nth ,n (multiple-value-list ,expr)))
@@ -359,8 +359,8 @@ values of the last FORM.  If no FORM is given, returns NIL."
   ;; Quotes a form only if strictly required. This happens only when FORM is
   ;; either a symbol and not a keyword
   (if (if (atom form)
-	  (typep form '(and symbol (not keyword) (not boolean)))
-	  (not (eq (first form) 'quote)))
+          (typep form '(and symbol (not keyword) (not boolean)))
+          (not (eq (first form) 'quote)))
       (list 'quote form)
       form))
 

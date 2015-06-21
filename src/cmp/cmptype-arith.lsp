@@ -18,26 +18,26 @@
 ;;;
 ;;; TYPE is a representation type used by ECL.  TYPE is one of:
 ;;;
-;;;				T(BOOLEAN)
+;;;                             T(BOOLEAN)
 ;;;
-;;;	FIXNUM  CHARACTER  SINGLE-FLOAT  DOUBLE-FLOAT
-;;;	(VECTOR T)  STRING  BIT-VECTOR  (VECTOR FIXNUM)
-;;;	(VECTOR SINGLE-FLOAT)  (VECTOR DOUBLE-FLOAT)
-;;;	(ARRAY T)  (ARRAY BASE-CHAR)  (ARRAY BIT)
-;;;	(ARRAY FIXNUM)
-;;;	(ARRAY SINGLE-FLOAT)  (ARRAY DOUBLE-FLOAT)
-;;;	STANDARD-OBJECT STRUCTURE-OBJECT
-;;;	SYMBOL
-;;;	UNKNOWN
+;;;     FIXNUM  CHARACTER  SINGLE-FLOAT  DOUBLE-FLOAT
+;;;     (VECTOR T)  STRING  BIT-VECTOR  (VECTOR FIXNUM)
+;;;     (VECTOR SINGLE-FLOAT)  (VECTOR DOUBLE-FLOAT)
+;;;     (ARRAY T)  (ARRAY BASE-CHAR)  (ARRAY BIT)
+;;;     (ARRAY FIXNUM)
+;;;     (ARRAY SINGLE-FLOAT)  (ARRAY DOUBLE-FLOAT)
+;;;     STANDARD-OBJECT STRUCTURE-OBJECT
+;;;     SYMBOL
+;;;     UNKNOWN
 ;;;
-;;;				NIL
+;;;                             NIL
 ;;;
 ;;;
 ;;; immediate-type:
-;;;	FIXNUM		int
-;;;	CHARACTER	char
-;;;	SINGLE-FLOAT	float
-;;;	DOUBLE-FLOAT	double
+;;;     FIXNUM          int
+;;;     CHARACTER       char
+;;;     SINGLE-FLOAT    float
+;;;     DOUBLE-FLOAT    double
 
 (deftype any () 't)
 
@@ -67,7 +67,7 @@
 (defun valid-type-specifier (type)
   (handler-case
      (if (subtypep type 'T)
-	 (values t type)
+         (values t type)
          (values nil nil))
     (error (c) (values nil nil))))
 
@@ -84,36 +84,36 @@
   (when (eq t1 '*)
     (return-from type-and t2))
   (let* ((si::*highest-type-tag* si::*highest-type-tag*)
-	 (si::*save-types-database* t)
-	 (si::*member-types* si::*member-types*)
-	 (si::*elementary-types* si::*elementary-types*)
-	 (tag1 (si::safe-canonical-type t1))
-	 (tag2 (si::safe-canonical-type t2)))
+         (si::*save-types-database* t)
+         (si::*member-types* si::*member-types*)
+         (si::*elementary-types* si::*elementary-types*)
+         (tag1 (si::safe-canonical-type t1))
+         (tag2 (si::safe-canonical-type t2)))
     (cond ((and (numberp tag1) (numberp tag2))
-	   (setf tag1 (si::safe-canonical-type t1)
-		 tag2 (si::safe-canonical-type t2))
-	   (cond ((zerop (logand tag1 tag2)) ; '(AND t1 t2) = NIL
-		  NIL)
-		 ((zerop (logandc2 tag1 tag2)) ; t1 <= t2
-		  t1)
-		 ((zerop (logandc2 tag2 tag1)) ; t2 <= t1
-		  t2)
-		 (t
-		  `(AND ,t1 ,t2))))
-	  ((eq tag1 'CONS)
-	   (cmpwarn "Unsupported CONS type ~S. Replacing it with T." t1)
-	   t2)
-	  ((eq tag2 'CONS)
-	   (cmpwarn "Unsupported CONS type ~S. Replacing it with T." t2)
-	   t1)
-	  ((null tag1)
+           (setf tag1 (si::safe-canonical-type t1)
+                 tag2 (si::safe-canonical-type t2))
+           (cond ((zerop (logand tag1 tag2)) ; '(AND t1 t2) = NIL
+                  NIL)
+                 ((zerop (logandc2 tag1 tag2)) ; t1 <= t2
+                  t1)
+                 ((zerop (logandc2 tag2 tag1)) ; t2 <= t1
+                  t2)
+                 (t
+                  `(AND ,t1 ,t2))))
+          ((eq tag1 'CONS)
+           (cmpwarn "Unsupported CONS type ~S. Replacing it with T." t1)
+           t2)
+          ((eq tag2 'CONS)
+           (cmpwarn "Unsupported CONS type ~S. Replacing it with T." t2)
+           t1)
+          ((null tag1)
            ;(setf c::*compiler-break-enable* t) (break)
-	   (cmpnote "Unknown type ~S. Assuming it is T." t1)
-	   t2)
-	  (t
+           (cmpnote "Unknown type ~S. Assuming it is T." t1)
+           t2)
+          (t
            ;(setf c::*compiler-break-enable* t) (break)
-	   (cmpnote "Unknown type ~S. Assuming it is T." t2)
-	   t1))))
+           (cmpnote "Unknown type ~S. Assuming it is T." t2)
+           t1))))
 
 (defun values-number-from-type (type)
   (cond ((or (eq type 'T) (eq type '*))
@@ -131,16 +131,16 @@
   ;; pragmatic and thus (VALUES) => NULL  [CHECKME!]
   (let (aux)
     (cond ((or (atom type)
-	       (not (eq (first type) 'VALUES)))
-	   type)
-	  ((null (setf aux (rest type)))
-	   'NULL)
-	  ((member (setf aux (first aux))
-		   '(&optional &rest &allow-other-keys))
-	   (setf aux (do-values-type-to-n-types type 1))
-	   (if aux (first aux) 'null))
-	  (t
-	   aux))))
+               (not (eq (first type) 'VALUES)))
+           type)
+          ((null (setf aux (rest type)))
+           'NULL)
+          ((member (setf aux (first aux))
+                   '(&optional &rest &allow-other-keys))
+           (setf aux (do-values-type-to-n-types type 1))
+           (if aux (first aux) 'null))
+          (t
+           aux))))
 
 (defun-equal-cached values-type-to-n-types (type length)
   (when (plusp length)
@@ -151,46 +151,46 @@
   (multiple-value-bind (required optional rest)
       (split-values-type type)
     (let* ((optional (loop for i in optional
-			   collect (if (eq i t) i `(or null ,i))))
-	   (output (nconc required optional))
-	   (l (length output)))
+                           collect (if (eq i t) i `(or null ,i))))
+           (output (nconc required optional))
+           (l (length output)))
       (if (< l length)
-	  (nconc output (make-list (- length l)
-				   :initial-element (if rest (first rest) t)))
-	(subseq output 0 length)))))
+          (nconc output (make-list (- length l)
+                                   :initial-element (if rest (first rest) t)))
+        (subseq output 0 length)))))
 
 (defun split-values-type (type)
   (if (or (atom type) (not (eq (first type) 'VALUES)))
       (values (list type) nil nil nil)
     (loop with required = '()
-	  with optional-flag = nil
-	  with optional = '()
-	  with rest = '()
-	  with a-o-k = nil
-	  with l = (rest type)
-	  while l
-	  do (let ((typespec (pop l)))
-	       (case typespec
-		 (&allow-other-keys
-		  (setf a-o-k t)
-		  (when l
-		    (cmperr "Syntax error in type expression ~S" type)))
-		 (&optional
-		  (if optional-flag
-		      (push typespec optional)
-		      (setf optional-flag t)))
-		 (&rest
-		  (when (or (null l)
-			    (not (member (rest l) '(() (&allow-other-keys))
-					 :test #'equal)))
-		    (cmperr "Syntax error in type expression ~S" type))
-		  (setf rest (list (car l))))
-		 (otherwise
-		  (if optional-flag
-		      (push typespec optional)
-		    (push typespec required)))))
-	  finally
-	  (return (values (nreverse required) (nreverse optional)
+          with optional-flag = nil
+          with optional = '()
+          with rest = '()
+          with a-o-k = nil
+          with l = (rest type)
+          while l
+          do (let ((typespec (pop l)))
+               (case typespec
+                 (&allow-other-keys
+                  (setf a-o-k t)
+                  (when l
+                    (cmperr "Syntax error in type expression ~S" type)))
+                 (&optional
+                  (if optional-flag
+                      (push typespec optional)
+                      (setf optional-flag t)))
+                 (&rest
+                  (when (or (null l)
+                            (not (member (rest l) '(() (&allow-other-keys))
+                                         :test #'equal)))
+                    (cmperr "Syntax error in type expression ~S" type))
+                  (setf rest (list (car l))))
+                 (otherwise
+                  (if optional-flag
+                      (push typespec optional)
+                    (push typespec required)))))
+          finally
+          (return (values (nreverse required) (nreverse optional)
                           rest a-o-k)))))
 
 (defun-equal-cached values-type-or (t1 t2)
@@ -282,34 +282,34 @@
   (when (eq t1 '*)
     (return-from type-or t2))
   (let* ((si::*highest-type-tag* si::*highest-type-tag*)
-	 (si::*save-types-database* t)
-	 (si::*member-types* si::*member-types*)
-	 (si::*elementary-types* si::*elementary-types*)
-	 (tag1 (si::safe-canonical-type t1))
-	 (tag2 (si::safe-canonical-type t2)))
+         (si::*save-types-database* t)
+         (si::*member-types* si::*member-types*)
+         (si::*elementary-types* si::*elementary-types*)
+         (tag1 (si::safe-canonical-type t1))
+         (tag2 (si::safe-canonical-type t2)))
     (cond ((and (numberp tag1) (numberp tag2))
-	   (setf tag1 (si::safe-canonical-type t1)
-		 tag2 (si::safe-canonical-type t2))
-	   (cond ((zerop (logandc2 tag1 tag2)) ; t1 <= t2
-		  t2)
-		 ((zerop (logandc2 tag2 tag1)) ; t2 <= t1
-		  t1)
-		 (t
-		  `(OR ,t1 ,t2))))
-	  ((eq tag1 'CONS)
-	   (cmpwarn "Unsupported CONS type ~S. Replacing it with T." t1)
-	   T)
-	  ((eq tag2 'CONS)
-	   (cmpwarn "Unsupported CONS type ~S. Replacing it with T." t2)
-	   T)
-	  ((null tag1)
-	   ;(break)
-	   (cmpnote "Unknown type ~S" t1)
-	   T)
-	  (t
-	   ;(break)
-	   (cmpnote "Unknown type ~S" t2)
-	   T))))
+           (setf tag1 (si::safe-canonical-type t1)
+                 tag2 (si::safe-canonical-type t2))
+           (cond ((zerop (logandc2 tag1 tag2)) ; t1 <= t2
+                  t2)
+                 ((zerop (logandc2 tag2 tag1)) ; t2 <= t1
+                  t1)
+                 (t
+                  `(OR ,t1 ,t2))))
+          ((eq tag1 'CONS)
+           (cmpwarn "Unsupported CONS type ~S. Replacing it with T." t1)
+           T)
+          ((eq tag2 'CONS)
+           (cmpwarn "Unsupported CONS type ~S. Replacing it with T." t2)
+           T)
+          ((null tag1)
+           ;(break)
+           (cmpnote "Unknown type ~S" t1)
+           T)
+          (t
+           ;(break)
+           (cmpnote "Unknown type ~S" t2)
+           T))))
 
 (defun type>= (type1 type2)
   (subtypep type2 type1))

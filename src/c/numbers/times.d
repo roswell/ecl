@@ -17,12 +17,12 @@
 #include <ecl/impl/math_dispatch2.h>
 
 @(defun * (&rest nums)
-	cl_object prod = ecl_make_fixnum(1);
+        cl_object prod = ecl_make_fixnum(1);
 @
-	/* INV: type check in ecl_times() */
-	while (narg--)
-		prod = ecl_times(prod, ecl_va_arg(nums));
-	@(return prod)
+        /* INV: type check in ecl_times() */
+        while (narg--)
+                prod = ecl_times(prod, ecl_va_arg(nums));
+        @(return prod)
 @)
 
 #ifdef MATH_DISPATCH2_BEGIN
@@ -159,11 +159,11 @@ MATH_DISPATCH2_BEGIN(x,y)
                                         ecl_times(x, y->complex.imag));
         }
         CASE_COMPLEX_COMPLEX {
-		cl_object z11 = ecl_times(x->complex.real, y->complex.real);
-		cl_object z12 = ecl_times(x->complex.imag, y->complex.imag);
-		cl_object z21 = ecl_times(x->complex.imag, y->complex.real);
-		cl_object z22 = ecl_times(x->complex.real, y->complex.imag);
-		return ecl_make_complex(ecl_minus(z11, z12), ecl_plus(z21, z22));
+                cl_object z11 = ecl_times(x->complex.real, y->complex.real);
+                cl_object z12 = ecl_times(x->complex.imag, y->complex.imag);
+                cl_object z21 = ecl_times(x->complex.imag, y->complex.real);
+                cl_object z22 = ecl_times(x->complex.real, y->complex.imag);
+                return ecl_make_complex(ecl_minus(z11, z12), ecl_plus(z21, z22));
         }
         CASE_UNKNOWN(@[*],x,y,@[number]);
 }
@@ -175,162 +175,162 @@ MATH_DISPATCH2_END;
 cl_object
 ecl_times(cl_object x, cl_object y)
 {
-	cl_object z, z1;
+        cl_object z, z1;
 
-	switch (ecl_t_of(x)) {
-	case t_fixnum:
-		switch (ecl_t_of(y)) {
-		case t_fixnum:
-			return _ecl_fix_times_fix(ecl_fixnum(x),ecl_fixnum(y));
-		case t_bignum:
-			return _ecl_big_times_fix(y, ecl_fixnum(x));
-		case t_ratio:
-			z = ecl_times(x, y->ratio.num);
-			return ecl_make_ratio(z, y->ratio.den);
-		case t_singlefloat:
-			return ecl_make_single_float(ecl_fixnum(x) * ecl_single_float(y));
-		case t_doublefloat:
-			return ecl_make_double_float(ecl_fixnum(x) * ecl_double_float(y));
+        switch (ecl_t_of(x)) {
+        case t_fixnum:
+                switch (ecl_t_of(y)) {
+                case t_fixnum:
+                        return _ecl_fix_times_fix(ecl_fixnum(x),ecl_fixnum(y));
+                case t_bignum:
+                        return _ecl_big_times_fix(y, ecl_fixnum(x));
+                case t_ratio:
+                        z = ecl_times(x, y->ratio.num);
+                        return ecl_make_ratio(z, y->ratio.den);
+                case t_singlefloat:
+                        return ecl_make_single_float(ecl_fixnum(x) * ecl_single_float(y));
+                case t_doublefloat:
+                        return ecl_make_double_float(ecl_fixnum(x) * ecl_double_float(y));
 #ifdef ECL_LONG_FLOAT
-		case t_longfloat:
-			return ecl_make_long_float(ecl_fixnum(x) * ecl_long_float(y));
+                case t_longfloat:
+                        return ecl_make_long_float(ecl_fixnum(x) * ecl_long_float(y));
 #endif
-		case t_complex:
-			goto COMPLEX;
-		default:
-			FEwrong_type_nth_arg(@[*], 2, y, @[number]);
-		}
-	case t_bignum:
-		switch (ecl_t_of(y)) {
-		case t_fixnum:
-			return _ecl_big_times_fix(x, ecl_fixnum(y));
-		case t_bignum:
-			return _ecl_big_times_big(x, y);
-		case t_ratio:
-			z = ecl_times(x, y->ratio.num);
-			return ecl_make_ratio(z, y->ratio.den);
-		case t_singlefloat:
-			return ecl_make_single_float(ecl_to_double(x) * ecl_single_float(y));
-		case t_doublefloat:
-			return ecl_make_double_float(ecl_to_double(x) * ecl_double_float(y));
+                case t_complex:
+                        goto COMPLEX;
+                default:
+                        FEwrong_type_nth_arg(@[*], 2, y, @[number]);
+                }
+        case t_bignum:
+                switch (ecl_t_of(y)) {
+                case t_fixnum:
+                        return _ecl_big_times_fix(x, ecl_fixnum(y));
+                case t_bignum:
+                        return _ecl_big_times_big(x, y);
+                case t_ratio:
+                        z = ecl_times(x, y->ratio.num);
+                        return ecl_make_ratio(z, y->ratio.den);
+                case t_singlefloat:
+                        return ecl_make_single_float(ecl_to_double(x) * ecl_single_float(y));
+                case t_doublefloat:
+                        return ecl_make_double_float(ecl_to_double(x) * ecl_double_float(y));
 #ifdef ECL_LONG_FLOAT
-		case t_longfloat:
-			return ecl_make_long_float(ecl_to_double(x) * ecl_long_float(y));
+                case t_longfloat:
+                        return ecl_make_long_float(ecl_to_double(x) * ecl_long_float(y));
 #endif
-		case t_complex:
-			goto COMPLEX;
-		default:
-			FEwrong_type_nth_arg(@[*], 2, y, @[number]);
-		}
-	case t_ratio:
-		switch (ecl_t_of(y)) {
-		case t_fixnum:
-		case t_bignum:
-			z = ecl_times(x->ratio.num, y);
-			return ecl_make_ratio(z, x->ratio.den);
-		case t_ratio:
-			z = ecl_times(x->ratio.num,y->ratio.num);
-			z1 = ecl_times(x->ratio.den,y->ratio.den);
-			return ecl_make_ratio(z, z1);
-		case t_singlefloat:
-			return ecl_make_single_float(ecl_to_double(x) * ecl_single_float(y));
-		case t_doublefloat:
-			return ecl_make_double_float(ecl_to_double(x) * ecl_double_float(y));
+                case t_complex:
+                        goto COMPLEX;
+                default:
+                        FEwrong_type_nth_arg(@[*], 2, y, @[number]);
+                }
+        case t_ratio:
+                switch (ecl_t_of(y)) {
+                case t_fixnum:
+                case t_bignum:
+                        z = ecl_times(x->ratio.num, y);
+                        return ecl_make_ratio(z, x->ratio.den);
+                case t_ratio:
+                        z = ecl_times(x->ratio.num,y->ratio.num);
+                        z1 = ecl_times(x->ratio.den,y->ratio.den);
+                        return ecl_make_ratio(z, z1);
+                case t_singlefloat:
+                        return ecl_make_single_float(ecl_to_double(x) * ecl_single_float(y));
+                case t_doublefloat:
+                        return ecl_make_double_float(ecl_to_double(x) * ecl_double_float(y));
 #ifdef ECL_LONG_FLOAT
-		case t_longfloat:
-			return ecl_make_long_float(ecl_to_double(x) * ecl_long_float(y));
+                case t_longfloat:
+                        return ecl_make_long_float(ecl_to_double(x) * ecl_long_float(y));
 #endif
-		case t_complex:
-			goto COMPLEX;
-		default:
-			FEwrong_type_nth_arg(@[*], 2, y, @[number]);
-		}
-	case t_singlefloat: {
-		float fx = ecl_single_float(x);
-		switch (ecl_t_of(y)) {
-		case t_fixnum:
-			return ecl_make_single_float(fx * ecl_fixnum(y));
-		case t_bignum:
-		case t_ratio:
-			return ecl_make_single_float(fx * ecl_to_double(y));
-		case t_singlefloat:
-			return ecl_make_single_float(fx * ecl_single_float(y));
-		case t_doublefloat:
-			return ecl_make_double_float(fx * ecl_double_float(y));
+                case t_complex:
+                        goto COMPLEX;
+                default:
+                        FEwrong_type_nth_arg(@[*], 2, y, @[number]);
+                }
+        case t_singlefloat: {
+                float fx = ecl_single_float(x);
+                switch (ecl_t_of(y)) {
+                case t_fixnum:
+                        return ecl_make_single_float(fx * ecl_fixnum(y));
+                case t_bignum:
+                case t_ratio:
+                        return ecl_make_single_float(fx * ecl_to_double(y));
+                case t_singlefloat:
+                        return ecl_make_single_float(fx * ecl_single_float(y));
+                case t_doublefloat:
+                        return ecl_make_double_float(fx * ecl_double_float(y));
 #ifdef ECL_LONG_FLOAT
-		case t_longfloat:
-			return ecl_make_long_float(fx * ecl_long_float(y));
+                case t_longfloat:
+                        return ecl_make_long_float(fx * ecl_long_float(y));
 #endif
-		case t_complex:
-			goto COMPLEX;
-		default:
-			FEwrong_type_nth_arg(@[*], 2, y, @[number]);
-		}
-	}
-	case t_doublefloat: {
-		switch (ecl_t_of(y)) {
-		case t_fixnum:
-			return ecl_make_double_float(ecl_double_float(x) * ecl_fixnum(y));
-		case t_bignum:
-		case t_ratio:
-			return ecl_make_double_float(ecl_double_float(x) * ecl_to_double(y));
-		case t_singlefloat:
-			return ecl_make_double_float(ecl_double_float(x) * ecl_single_float(y));
-		case t_doublefloat:
-			return ecl_make_double_float(ecl_double_float(x) * ecl_double_float(y));
+                case t_complex:
+                        goto COMPLEX;
+                default:
+                        FEwrong_type_nth_arg(@[*], 2, y, @[number]);
+                }
+        }
+        case t_doublefloat: {
+                switch (ecl_t_of(y)) {
+                case t_fixnum:
+                        return ecl_make_double_float(ecl_double_float(x) * ecl_fixnum(y));
+                case t_bignum:
+                case t_ratio:
+                        return ecl_make_double_float(ecl_double_float(x) * ecl_to_double(y));
+                case t_singlefloat:
+                        return ecl_make_double_float(ecl_double_float(x) * ecl_single_float(y));
+                case t_doublefloat:
+                        return ecl_make_double_float(ecl_double_float(x) * ecl_double_float(y));
 #ifdef ECL_LONG_FLOAT
-		case t_longfloat:
-			return ecl_make_long_float(ecl_double_float(x) * ecl_long_float(y));
+                case t_longfloat:
+                        return ecl_make_long_float(ecl_double_float(x) * ecl_long_float(y));
 #endif
-		case t_complex: {
-		COMPLEX: /* INV: x is real, y is complex */
-			return ecl_make_complex(ecl_times(x, y->complex.real),
+                case t_complex: {
+                COMPLEX: /* INV: x is real, y is complex */
+                        return ecl_make_complex(ecl_times(x, y->complex.real),
                                                 ecl_times(x, y->complex.imag));
-		}
-		default:
-			FEwrong_type_nth_arg(@[*], 2, y, @[number]);
-		}
-	}
+                }
+                default:
+                        FEwrong_type_nth_arg(@[*], 2, y, @[number]);
+                }
+        }
 #ifdef ECL_LONG_FLOAT
-	case t_longfloat: {
-		long double lx = ecl_long_float(x);
-		switch (ecl_t_of(y)) {
-		case t_fixnum:
-			return ecl_make_long_float(lx * ecl_fixnum(y));
-		case t_bignum:
-		case t_ratio:
-			return ecl_make_long_float(lx * ecl_to_double(y));
-		case t_singlefloat:
-			return ecl_make_long_float(lx * ecl_single_float(y));
-		case t_doublefloat:
-			return ecl_make_long_float(lx * ecl_double_float(y));
-		case t_longfloat:
-			return ecl_make_long_float(lx * ecl_long_float(y));
-		case t_complex:
-			goto COMPLEX;
-		default:
-			FEwrong_type_nth_arg(@[*], 2, y, @[number]);
-		}
-	}
+        case t_longfloat: {
+                long double lx = ecl_long_float(x);
+                switch (ecl_t_of(y)) {
+                case t_fixnum:
+                        return ecl_make_long_float(lx * ecl_fixnum(y));
+                case t_bignum:
+                case t_ratio:
+                        return ecl_make_long_float(lx * ecl_to_double(y));
+                case t_singlefloat:
+                        return ecl_make_long_float(lx * ecl_single_float(y));
+                case t_doublefloat:
+                        return ecl_make_long_float(lx * ecl_double_float(y));
+                case t_longfloat:
+                        return ecl_make_long_float(lx * ecl_long_float(y));
+                case t_complex:
+                        goto COMPLEX;
+                default:
+                        FEwrong_type_nth_arg(@[*], 2, y, @[number]);
+                }
+        }
 #endif
-	case t_complex:
-	{
-		cl_object z11, z12, z21, z22;
+        case t_complex:
+        {
+                cl_object z11, z12, z21, z22;
 
-		if (ecl_t_of(y) != t_complex) {
-			cl_object aux = x;
-			x = y; y = aux;
-			goto COMPLEX;
-		}
-		z11 = ecl_times(x->complex.real, y->complex.real);
-		z12 = ecl_times(x->complex.imag, y->complex.imag);
-		z21 = ecl_times(x->complex.imag, y->complex.real);
-		z22 = ecl_times(x->complex.real, y->complex.imag);
-		return ecl_make_complex(ecl_minus(z11, z12), ecl_plus(z21, z22));
-	}
-	default:
-		FEwrong_type_nth_arg(@[*], 1, x, @[number]);
-	}
+                if (ecl_t_of(y) != t_complex) {
+                        cl_object aux = x;
+                        x = y; y = aux;
+                        goto COMPLEX;
+                }
+                z11 = ecl_times(x->complex.real, y->complex.real);
+                z12 = ecl_times(x->complex.imag, y->complex.imag);
+                z21 = ecl_times(x->complex.imag, y->complex.real);
+                z22 = ecl_times(x->complex.real, y->complex.imag);
+                return ecl_make_complex(ecl_minus(z11, z12), ecl_plus(z21, z22));
+        }
+        default:
+                FEwrong_type_nth_arg(@[*], 1, x, @[number]);
+        }
 }
 
 #endif

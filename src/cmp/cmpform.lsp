@@ -17,11 +17,11 @@
 ;;;
 ;;; ALL C1FORMS: Intermediate language used by the compiler
 ;;;
-;;;	body =		(c1form*)
-;;;	tag-body =	({c1form | tag}*)
-;;;	return-type =	{CLB | CCB | UNWIND-PROTECT}
-;;;	*value =	c1form
-;;;	lambda-list = 	(requireds optionals rest key-flag keywords allow-other-keys)
+;;;     body =          (c1form*)
+;;;     tag-body =      ({c1form | tag}*)
+;;;     return-type =   {CLB | CCB | UNWIND-PROTECT}
+;;;     *value =        c1form
+;;;     lambda-list =   (requireds optionals rest key-flag keywords allow-other-keys)
 ;;;
 
 (defun print-c1form (form stream)
@@ -29,9 +29,9 @@
 
 (defun make-c1form (name subform &rest args)
   (let ((form (do-make-c1form :name name :args args
-			      :type (info-type subform)
-			      :sp-change (info-sp-change subform)
-			      :volatile (info-volatile subform)
+                              :type (info-type subform)
+                              :sp-change (info-sp-change subform)
+                              :volatile (info-volatile subform)
                               :form *current-form*
                               :toplevel-form *current-toplevel-form*
                               :file *compile-file-truename*
@@ -41,24 +41,24 @@
 
 (defun make-c1form* (name &rest args)
   (let ((info-args '())
-	(form-args '()))
+        (form-args '()))
     (do ((l args (cdr l)))
-	((endp l))
+        ((endp l))
       (let ((key (first l)))
-	(cond ((not (keywordp key))
-	       (baboon))
-	      ((eq key ':args)
-	       (setf form-args (rest l))
-	       (return))
-	      (t
-	       (setf info-args (list* key (second l) info-args)
-		     l (cdr l))))))
+        (cond ((not (keywordp key))
+               (baboon))
+              ((eq key ':args)
+               (setf form-args (rest l))
+               (return))
+              (t
+               (setf info-args (list* key (second l) info-args)
+                     l (cdr l))))))
     (let ((form (apply #'do-make-c1form :name name :args form-args
                        :form *current-form*
                        :toplevel-form *current-toplevel-form*
                        :file *compile-file-truename*
                        :file-position *compile-file-position*
-		       info-args)))
+                       info-args)))
       (c1form-add-info form form-args)
       form)))
 
@@ -118,10 +118,10 @@
 
 (defun find-form-in-node-list (form list)
   (let ((v1 (loop with form-parents = (c1form-parents form)
-	       for presumed-child-parents in list
-	       thereis (tailp form-parents presumed-child-parents)))
-	(v2 (loop for presumed-child-parents in list
-	       thereis (member form presumed-child-parents :test #'eq))))
+               for presumed-child-parents in list
+               thereis (tailp form-parents presumed-child-parents)))
+        (v2 (loop for presumed-child-parents in list
+               thereis (member form presumed-child-parents :test #'eq))))
     (unless (eq (and v1 t) (and v2 t))
       (baboon :format-control "Mismatch between FIND-FORM-IN-NODE-LISTs"))
     v1))
@@ -133,7 +133,7 @@
   (let ((parents (c1form-parents form)))
     (unless (member parents list)
       (baboon :format-control "Unable to find C1FORM~%~4I~A~%in node list~%~4I~A"
-	      :format-arguments (list form list)))
+              :format-arguments (list form list)))
     (delete parents list)))
 
 (defun traverse-c1form-tree (tree function)
@@ -195,11 +195,11 @@
 
 (defun relocate-parents-list (dest new-fields)
   (let* ((old (c1form-parents dest))
-	 (first-cons (or (c1form-parents new-fields) old)))
+         (first-cons (or (c1form-parents new-fields) old)))
     (setf (car first-cons) dest
-	  (cdr first-cons) (rest old)
-	  (c1form-parents new-fields) nil
-	  (c1form-parents dest) first-cons)))
+          (cdr first-cons) (rest old)
+          (c1form-parents new-fields) nil
+          (c1form-parents dest) first-cons)))
 
 (defun c1form-replace-with (dest new-fields)
   ;; Side effects might have to be propagated to the parents
@@ -220,7 +220,7 @@
        ;; If this is the first time we replace a reference with this one
        ;; then we have to remove it from the read nodes of the variable
        (when (c1form-parents new-fields)
-	 (delete-from-read-nodes var new-fields))
+         (delete-from-read-nodes var new-fields))
        ;; ... and then add the new node
        (relocate-parents-list dest new-fields)
        (add-to-read-nodes var dest)))
@@ -228,27 +228,27 @@
      (relocate-parents-list dest new-fields)))
   ;; Remaining flags are just copied
   (setf (c1form-name dest)          (c1form-name new-fields)
-	(c1form-local-vars dest)    (c1form-local-vars new-fields)
+        (c1form-local-vars dest)    (c1form-local-vars new-fields)
         (c1form-type dest)          (values-type-and (c1form-type new-fields)
-						     (c1form-type dest))
+                                                     (c1form-type dest))
         (c1form-sp-change dest)     (c1form-sp-change new-fields)
         (c1form-side-effects dest)  (c1form-side-effects new-fields)
         (c1form-volatile dest)      (c1form-volatile new-fields)
         (c1form-args dest)          (c1form-args new-fields)
-	(c1form-env dest)           (c1form-env new-fields)
-	(c1form-form dest)          (c1form-form new-fields)
-	(c1form-toplevel-form dest) (c1form-toplevel-form new-fields)
-	(c1form-file dest)          (c1form-file new-fields)
-	(c1form-file-position dest) (c1form-file-position new-fields)))
+        (c1form-env dest)           (c1form-env new-fields)
+        (c1form-form dest)          (c1form-form new-fields)
+        (c1form-toplevel-form dest) (c1form-toplevel-form new-fields)
+        (c1form-file dest)          (c1form-file new-fields)
+        (c1form-file-position dest) (c1form-file-position new-fields)))
 
 ;; should check whether a form before var causes a side-effect
 ;; exactly one occurrence of var is present in forms
 (defun delete-c1forms (form)
   (flet ((eliminate-references (form)
            (when (eq (c1form-name form) 'VAR)
-	     (let ((var (c1form-arg 0 form)))
-	       (when var
-		 (delete-from-read-nodes var form))))))
+             (let ((var (c1form-arg 0 form)))
+               (when var
+                 (delete-from-read-nodes var form))))))
     (traverse-c1form-tree form #'eliminate-references)))
 
 (defun c1form-constant-p (form)

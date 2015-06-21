@@ -18,32 +18,32 @@
   (check-args-number 'CATCH args 1)
   (incf *setjmps*)
   (make-c1form* 'CATCH :sp-change t :type t :args (c1expr (first args))
-		(c1progn (rest args))))
+                (c1progn (rest args))))
 
 (defun c2catch (c1form tag body)
   (declare (ignore c1form))
   (let* ((new-destination (tmp-destination *destination*))
-	 (code (incf *last-label*)))
+         (code (incf *last-label*)))
     (let ((*destination* 'VALUE0))
       (c2expr* tag))
     (let* ((*destination* new-destination)
-	   (*unwind-exit* (cons 'FRAME *unwind-exit*)))
+           (*unwind-exit* (cons 'FRAME *unwind-exit*)))
       (if (member new-destination '(TRASH VALUES))
-	  (progn
-	    (wt-nl "if (ecl_frs_push(cl_env_copy," 'VALUE0 ")==0) {")
-	    (wt-comment "BEGIN CATCH ~A" code)
-	    (with-indentation
-		(c2expr* body)))
-	  (progn
-	    (wt-nl "if (ecl_frs_push(cl_env_copy," 'VALUE0 ")) {")
-	    (wt-comment "BEGIN CATCH ~A" code)
-	    (with-indentation
-		(with-exit-label (label)
-		  (let ((*exit* label))
-		    (unwind-exit 'VALUES))))
-	    (wt-nl "} else {")
-	    (with-indentation
-		(c2expr* body)))))
+          (progn
+            (wt-nl "if (ecl_frs_push(cl_env_copy," 'VALUE0 ")==0) {")
+            (wt-comment "BEGIN CATCH ~A" code)
+            (with-indentation
+                (c2expr* body)))
+          (progn
+            (wt-nl "if (ecl_frs_push(cl_env_copy," 'VALUE0 ")) {")
+            (wt-comment "BEGIN CATCH ~A" code)
+            (with-indentation
+                (with-exit-label (label)
+                  (let ((*exit* label))
+                    (unwind-exit 'VALUES))))
+            (wt-nl "} else {")
+            (with-indentation
+                (c2expr* body)))))
     (wt-nl "}")
     (wt-nl "ecl_frs_pop(cl_env_copy);")
     (wt-comment "END CATCH ~A" code)
@@ -55,13 +55,13 @@
   (let ((form (let ((*cmp-env* (cmp-env-mark 'UNWIND-PROTECT)))
                 (c1expr (first args)))))
     (make-c1form* 'UNWIND-PROTECT :type (c1form-type form) :sp-change t
-		  :args form (c1progn (rest args)))))
+                  :args form (c1progn (rest args)))))
 
 (defun c2unwind-protect (c1form form body)
   (declare (ignore c1form))
   (let* ((sp (make-lcl-var :rep-type :cl-index))
-	 (nargs (make-lcl-var :rep-type :cl-index))
-	 (*unwind-exit* `((STACK ,sp) ,@*unwind-exit*)))
+         (nargs (make-lcl-var :rep-type :cl-index))
+         (*unwind-exit* `((STACK ,sp) ,@*unwind-exit*)))
     (wt-nl-open-brace)
     (wt-nl "volatile bool unwinding = FALSE;")
     (wt-nl "cl_index " sp "=ECL_STACK_INDEX(cl_env_copy)," nargs ";")
@@ -72,7 +72,7 @@
     (wt-nl "  unwinding = TRUE; next_fr=cl_env_copy->nlj_fr;")
     (wt-nl "} else {")
     (let ((*unwind-exit* (cons 'FRAME *unwind-exit*))
-	  (*destination* 'VALUES))
+          (*destination* 'VALUES))
       (c2expr* form))
     (wt-nl "}")
     (wt-nl "ecl_frs_pop(cl_env_copy);")

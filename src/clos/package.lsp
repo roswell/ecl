@@ -13,5 +13,5 @@
 (defpackage "CLOS"
   (:use "CL" "EXT")
   (:import-from "SI" "UNBOUND" "GET-SYSPROP" "PUT-SYSPROP" "REM-SYSPROP"
-		"SIMPLE-PROGRAM-ERROR"))
+                "SIMPLE-PROGRAM-ERROR"))
 

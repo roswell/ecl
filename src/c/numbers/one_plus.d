@@ -75,6 +75,6 @@ MATH_DEF_DISPATCH1_NE(one_plus, @[1+], @[number],
 cl_object
 @1+(cl_object x)
 {
-	/* INV: type check is in ecl_one_plus() */
-	@(return ecl_one_plus(x))
+        /* INV: type check is in ecl_one_plus() */
+        @(return ecl_one_plus(x))
 }

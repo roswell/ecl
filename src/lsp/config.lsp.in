@@ -13,17 +13,17 @@
 #+(and (not ecl-min) uname)
 (defun uname ()
  (ffi:c-inline () () :object "{
-	cl_object output;
-	struct utsname aux;
-	if (uname(&aux) < 0)
-		output = ECL_NIL;
-	else
-		output = cl_list(5, make_base_string_copy(aux.sysname),
-			    make_base_string_copy(aux.nodename),
-			    make_base_string_copy(aux.release),
-			    make_base_string_copy(aux.version),
-			    make_base_string_copy(aux.machine));
-	@(return) = output;
+        cl_object output;
+        struct utsname aux;
+        if (uname(&aux) < 0)
+                output = ECL_NIL;
+        else
+                output = cl_list(5, make_base_string_copy(aux.sysname),
+                            make_base_string_copy(aux.nodename),
+                            make_base_string_copy(aux.release),
+                            make_base_string_copy(aux.version),
+                            make_base_string_copy(aux.machine));
+        @(return) = output;
 }" :one-liner nil))
 
 ;;
@@ -92,9 +92,9 @@ Returns, as a string, the type of the software under which ECL runs."
 Returns, as a string, the version of the software under which ECL runs."
   (or #+uname (third (uname))
       #.(let ((aux "@SOFTWARE_VERSION@"))
-	  (if (plusp (length aux))
-	      aux
-	      nil))))
+          (if (plusp (length aux))
+              aux
+              nil))))
 
 ;;
 ;; * Set up some room
@@ -115,12 +115,12 @@ Returns, as a string, the version of the software under which ECL runs."
   `(("**;*.*" ,(merge-pathnames "**/*.*" (user-homedir-pathname)))))
 (let (x)
   (cond ((and (setf x (ext:getenv "TMPDIR"))
-	      (probe-file x)))
-	((and (setf x (ext:getenv "TEMP"))
-	      (probe-file x)))
-	((and (setf x (ext:getenv "TMP"))
-	      (probe-file x)))
-	(t (setf x #+unix "/tmp" #-unix "./")))
+              (probe-file x)))
+        ((and (setf x (ext:getenv "TEMP"))
+              (probe-file x)))
+        ((and (setf x (ext:getenv "TMP"))
+              (probe-file x)))
+        (t (setf x #+unix "/tmp" #-unix "./")))
   (si::pathname-translations "TMP"
      `(("**;*.*" ,(format nil "~A/**/*.*" x)))))
 

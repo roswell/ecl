@@ -119,7 +119,7 @@
                                   (push temp ,vars))
                                 (push temp ,temps)
                                 forms)))
-	    (,postfix (c1unbind (setf ,vars (nreverse ,vars)))))
+            (,postfix (c1unbind (setf ,vars (nreverse ,vars)))))
        (setf prefix (nconc (c1bind ,vars) prefix)
              ,temps (nreverse ,temps))
        ,@body)))
@@ -225,7 +225,7 @@
 
 (defun c1set-from-values (new-destination)
   (maybe-add-to-set-nodes new-destination
-			  (c1set-loc new-destination 'VALUES)))
+                          (c1set-loc new-destination 'VALUES)))
 
 (defun c1set-mv (locations &optional (min-args 0) (max-args multiple-values-limit))
   (maybe-add-to-set-nodes locations

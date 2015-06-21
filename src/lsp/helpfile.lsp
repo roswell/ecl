@@ -32,7 +32,7 @@
   "Args: (&optional hash-size)
 Sets up a new hash table for storing documentation strings."
   (push (make-hash-table :test #'eql :size size)
-	*documentation-pool*))
+        *documentation-pool*))
 
 (defun record-cons (record key sub-key)
   (let ((cons (cons key sub-key)))
@@ -71,7 +71,7 @@ Sets up a new hash table for storing documentation strings."
     (when (hash-table-p dict)
       (let ((record (rem-record-field (gethash object dict)
                                       key sub-key)))
-	(if record
+        (if record
             (si::hash-set object dict record)
             (remhash object dict))))))
 
@@ -132,19 +132,19 @@ the help file."
   "Args: (symbol doc-type)
 Returns the DOC-TYPE doc-string of SYMBOL; NIL if none exists.  Possible doc-
 types are:
-	FUNCTION  (special forms, macros, and functions)
-	VARIABLE  (global variables)
-	TYPE      (type specifiers)
-	STRUCTURE (structures)
-	SETF      (SETF methods)
+        FUNCTION  (special forms, macros, and functions)
+        VARIABLE  (global variables)
+        TYPE      (type specifiers)
+        STRUCTURE (structures)
+        SETF      (SETF methods)
 All built-in special forms, macros, functions, and variables have their doc-
 strings."
   (cond ((member type '(function type variable setf structure))
-	 (when (not (symbolp object))
-	   (error "~S is not a symbol." object))
-	 (si::get-documentation object type))
-	(t
-	 (error "~S is an unknown documentation type" type))))
+         (when (not (symbolp object))
+           (error "~S is not a symbol." object))
+         (si::get-documentation object type))
+        (t
+         (error "~S is an unknown documentation type" type))))
 
 (defun make-dspec (definition)
   (when (consp definition)

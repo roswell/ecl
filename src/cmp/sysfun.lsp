@@ -9,8 +9,8 @@
 ;;;
 ;;; DATABASE OF INLINE EXPANSIONS
 ;;;
-;;;	(DEF-INLINE function-name kind ([arg-type]*) return-rep-type
-;;;		expansion-string)
+;;;     (DEF-INLINE function-name kind ([arg-type]*) return-rep-type
+;;;             expansion-string)
 ;;;
 ;;; Here, ARG-TYPE is the list of argument types belonging to the lisp family,
 ;;; while RETURN-REP-TYPE is a representation type, i.e. the C type of the
@@ -138,7 +138,7 @@
  "(#0)->array.self.fix[#1]= #2")
 
 (def-inline si:copy-subarray :always (array ext:array-index array ext:array-index
-				      ext:array-index) array
+                                      ext:array-index) array
  "@0;(ecl_copy_subarray(#0,#1,#2,#3,#4),#0)")
 
 (def-inline array-rank :unsafe (array) :fixnum
@@ -810,27 +810,27 @@
 
 (defun def-inline (name safety arg-types return-rep-type expansion
                    &key (one-liner t) (exact-return-type nil) (inline-or-warn nil)
-		   (multiple-values t)
+                   (multiple-values t)
                    &aux arg-rep-types)
   (setf safety
-	(case safety
-	  (:unsafe :inline-unsafe)
-	  (:safe :inline-safe)
-	  (:always :inline-always)
-	  (t (error "In DEF-INLINE, wrong value of SAFETY"))))
+        (case safety
+          (:unsafe :inline-unsafe)
+          (:safe :inline-safe)
+          (:always :inline-always)
+          (t (error "In DEF-INLINE, wrong value of SAFETY"))))
   ;; Ensure we can inline this form. We only inline when the features are
   ;; there (checked above) and when the C types are part of this machine
   ;; (checked here).
   (loop for type in (list* return-rep-type arg-types)
      unless (or (eq type 'fixnum-float)
-		(and (consp type) (eq (car type) 'values))
-		(lisp-type-p type)
-		(machine-c-type-p type))
+                (and (consp type) (eq (car type) 'values))
+                (lisp-type-p type)
+                (machine-c-type-p type))
      do (warn "Dropping inline form for ~A because of missing type ~A" name type)
        (return-from def-inline))
   (setf arg-rep-types
-	(mapcar #'(lambda (x) (if (eq x '*) x (lisp-type->rep-type x)))
-		arg-types))
+        (mapcar #'(lambda (x) (if (eq x '*) x (lisp-type->rep-type x)))
+                arg-types))
   (when (eq return-rep-type t)
     (setf return-rep-type :object))
   (when inline-or-warn
@@ -846,7 +846,7 @@
                             :return-type return-type
                             :arg-types arg-types
                             :exact-return-type exact-return-type
-			    :multiple-values multiple-values
+                            :multiple-values multiple-values
                             ;; :side-effects (not (get-sysprop name 'no-side-effects))
                             :one-liner one-liner
                             :expansion expansion)))
@@ -1015,7 +1015,7 @@
     format-general format-dollars
     format-relative-tab format-absolute-tab
     format-justification
-	)
+        )
     #+clos
     ,@'(;; defclass.lsp
      clos::ensure-class

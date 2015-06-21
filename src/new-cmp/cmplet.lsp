@@ -39,9 +39,9 @@
          with extras = '()
          for (v . f) in compiled-pairs
          do (if (member (var-kind v) '(SPECIAL GLOBAL))
-		(push v specials)
-	        (push v locals))
-	 do (setf extras (nconc extras f))
+                (push v specials)
+                (push v locals))
+         do (setf extras (nconc extras f))
          finally (return (nconc (c1bind locals)
                                 extras
                                 compiled-body

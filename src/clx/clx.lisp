@@ -1,9 +1,9 @@
 ;;; -*- Mode: LISP; Syntax: Common-lisp; Package: XLIB; Base: 10; Lowercase: Yes -*-
 
 ;;;
-;;;			 TEXAS INSTRUMENTS INCORPORATED
-;;;				  P.O. BOX 2909
-;;;			       AUSTIN, TEXAS 78769
+;;;                      TEXAS INSTRUMENTS INCORPORATED
+;;;                               P.O. BOX 2909
+;;;                            AUSTIN, TEXAS 78769
 ;;;
 ;;; Copyright (C) 1987 Texas Instruments Incorporated.
 ;;;
@@ -17,59 +17,59 @@
 ;;;
 
 ;; Primary Interface Author:
-;;	Robert W. Scheifler
-;;	MIT Laboratory for Computer Science
-;;	545 Technology Square, Room 418
-;;	Cambridge, MA 02139
-;;	rws@zermatt.lcs.mit.edu
+;;      Robert W. Scheifler
+;;      MIT Laboratory for Computer Science
+;;      545 Technology Square, Room 418
+;;      Cambridge, MA 02139
+;;      rws@zermatt.lcs.mit.edu
 
 ;; Design Contributors:
-;;	Dan Cerys, Texas Instruments
-;;	Scott Fahlman, CMU
+;;      Dan Cerys, Texas Instruments
+;;      Scott Fahlman, CMU
 ;;      Charles Hornig, Symbolics
 ;;      John Irwin, Franz
-;;	Kerry Kimbrough, Texas Instruments
-;;	Chris Lindblad, MIT
-;;	Rob MacLachlan, CMU
-;;	Mike McMahon, Symbolics
-;;	David Moon, Symbolics
-;;	LaMott Oren, Texas Instruments
-;;	Daniel Weinreb, Symbolics
-;;	John Wroclawski, MIT
-;;	Richard Zippel, Symbolics
+;;      Kerry Kimbrough, Texas Instruments
+;;      Chris Lindblad, MIT
+;;      Rob MacLachlan, CMU
+;;      Mike McMahon, Symbolics
+;;      David Moon, Symbolics
+;;      LaMott Oren, Texas Instruments
+;;      Daniel Weinreb, Symbolics
+;;      John Wroclawski, MIT
+;;      Richard Zippel, Symbolics
 
 ;; Primary Implementation Author:
-;;	LaMott Oren, Texas Instruments
+;;      LaMott Oren, Texas Instruments
 
 ;; Implementation Contributors:
 ;;      Charles Hornig, Symbolics
 ;;      John Irwin, Franz
-;;	Chris Lindblad, MIT
-;;	Robert Scheifler, MIT
+;;      Chris Lindblad, MIT
+;;      Robert Scheifler, MIT
 
 ;;;
 ;;; Change history:
 ;;;
-;;;  Date	Author		Description
+;;;  Date       Author          Description
 ;;; -------------------------------------------------------------------------------------
-;;; 04/07/87	R.Scheifler	Created code stubs
-;;; 04/08/87	L.Oren		Started Implementation
-;;; 05/11/87	L.Oren		Included draft 3 revisions
-;;; 07/07/87	L.Oren		Untested alpha release to MIT
-;;; 07/17/87	L.Oren		Alpha release
-;;; 08/**/87	C.Lindblad	Rewrite of buffer code
-;;; 08/**/87	et al		Various random bug fixes
-;;; 08/**/87	R.Scheifler	General syntactic and portability cleanups
-;;; 08/**/87	R.Scheifler	Rewrite of gcontext caching and shadowing
-;;; 09/02/87	L.Oren		Change events from resource-ids to objects
-;;; 12/24/87	R.Budzianowski	KCL support
-;;; 12/**/87	J.Irwin		ExCL 2.0 support
-;;; 01/20/88	L.Oren		Add server extension mechanisms
-;;; 01/20/88	L.Oren		Only force output when blocking on input
-;;; 01/20/88	L.Oren		Uniform support for :event-window on events
-;;; 01/28/88	L.Oren		Add window manager property functions
-;;; 01/28/88	L.Oren		Add character translation facility
-;;; 02/**/87	J.Irwin		Allegro 2.2 support
+;;; 04/07/87    R.Scheifler     Created code stubs
+;;; 04/08/87    L.Oren          Started Implementation
+;;; 05/11/87    L.Oren          Included draft 3 revisions
+;;; 07/07/87    L.Oren          Untested alpha release to MIT
+;;; 07/17/87    L.Oren          Alpha release
+;;; 08/**/87    C.Lindblad      Rewrite of buffer code
+;;; 08/**/87    et al           Various random bug fixes
+;;; 08/**/87    R.Scheifler     General syntactic and portability cleanups
+;;; 08/**/87    R.Scheifler     Rewrite of gcontext caching and shadowing
+;;; 09/02/87    L.Oren          Change events from resource-ids to objects
+;;; 12/24/87    R.Budzianowski  KCL support
+;;; 12/**/87    J.Irwin         ExCL 2.0 support
+;;; 01/20/88    L.Oren          Add server extension mechanisms
+;;; 01/20/88    L.Oren          Only force output when blocking on input
+;;; 01/20/88    L.Oren          Uniform support for :event-window on events
+;;; 01/28/88    L.Oren          Add window manager property functions
+;;; 01/28/88    L.Oren          Add character translation facility
+;;; 02/**/87    J.Irwin         Allegro 2.2 support
 
 ;;; This is considered a somewhat changeable interface.  Discussion of better
 ;;; integration with CLOS, support for user-specified subclassess of basic
@@ -120,26 +120,26 @@
 ;  ;; the display.  Make-gcontext creates with :cache-p nil.  Make-font creates with
 ;  ;; cache-p true.
 ;  (declare (type display display)
-;	   (type integer resource-id)
-;	   (clx-values <mumble>)))
+;          (type integer resource-id)
+;          (clx-values <mumble>)))
 
 ;(defun <mumble>-display (<mumble>)
 ;  (declare (type <mumble> <mumble>)
-;	   (clx-values display)))
+;          (clx-values display)))
 
 ;(defun <mumble>-id (<mumble>)
 ;  (declare (type <mumble> <mumble>)
-;	   (clx-values integer)))
+;          (clx-values integer)))
 
 ;(defun <mumble>-equal (<mumble>-1 <mumble>-2)
 ;  (declare (type <mumble> <mumble>-1 <mumble>-2)))
 
 ;(defun <mumble>-p (<mumble>-1 <mumble>-2)
 ;  (declare (type <mumble> <mumble>-1 <mumble>-2)
-;	   (clx-values boolean)))
+;          (clx-values boolean)))
 
 
-(deftype generalized-boolean () 't)	; (or null (not null))
+(deftype generalized-boolean () 't)     ; (or null (not null))
 
 (deftype card32 () '(unsigned-byte 32))
 
@@ -162,12 +162,12 @@
 #-clx-ansi-common-lisp
 (deftype real (&optional (min '*) (max '*))
   (labels ((convert (limit floatp)
-	     (typecase limit
-	       (number (if floatp (float limit 0s0) (rational limit)))
-	       (list (map 'list #'convert limit))
-	       (otherwise limit))))
+             (typecase limit
+               (number (if floatp (float limit 0s0) (rational limit)))
+               (list (map 'list #'convert limit))
+               (otherwise limit))))
     `(or (float ,(convert min t) ,(convert max t))
-	 (rational ,(convert min nil) ,(convert max nil)))))
+         (rational ,(convert min nil) ,(convert max nil)))))
 
 #-clx-ansi-common-lisp
 (deftype base-char ()
@@ -201,14 +201,14 @@
 ; than what is actually transmitted in the protocol.
 
 (def-clx-class (color (:constructor make-color-internal (red green blue))
-		      (:copier nil) (:print-function print-color))
+                      (:copier nil) (:print-function print-color))
   (red 0.0 :type rgb-val)
   (green 0.0 :type rgb-val)
   (blue 0.0 :type rgb-val))
 
 (defun print-color (color stream depth)
   (declare (type color color)
-	   (ignore depth))
+           (ignore depth))
   (print-unreadable-object (color stream :type t)
     (prin1 (color-red color) stream)
     (write-string " " stream)
@@ -233,12 +233,12 @@
 
 (defun print-bitmap-format (bitmap-format stream depth)
   (declare (type bitmap-format bitmap-format)
-	   (ignore depth))
+           (ignore depth))
   (print-unreadable-object (bitmap-format stream :type t)
     (format stream "unit ~D pad ~D ~:[M~;L~]SB first"
-	    (bitmap-format-unit bitmap-format)
-	    (bitmap-format-pad bitmap-format)
-	    (bitmap-format-lsb-first-p bitmap-format))))
+            (bitmap-format-unit bitmap-format)
+            (bitmap-format-pad bitmap-format)
+            (bitmap-format-lsb-first-p bitmap-format))))
 
 (def-clx-class (pixmap-format (:copier nil) (:print-function print-pixmap-format))
   (depth 0 :type image-depth)
@@ -247,119 +247,119 @@
 
 (defun print-pixmap-format (pixmap-format stream depth)
   (declare (type pixmap-format pixmap-format)
-	   (ignore depth))
+           (ignore depth))
   (print-unreadable-object (pixmap-format stream :type t)
     (format stream "depth ~D bits-per-pixel ~D scanline-pad ~D"
-	    (pixmap-format-depth pixmap-format)
-	    (pixmap-format-bits-per-pixel pixmap-format)
-	    (pixmap-format-scanline-pad pixmap-format))))
+            (pixmap-format-depth pixmap-format)
+            (pixmap-format-bits-per-pixel pixmap-format)
+            (pixmap-format-scanline-pad pixmap-format))))
 
 (defparameter *atom-cache-size* 200)
 (defparameter *resource-id-map-size* 500)
 
 (def-clx-class (display (:include buffer)
-			(:constructor make-display-internal)
-			(:print-function print-display)
-			(:copier nil))
-  (host)					; Server Host
-  (display 0 :type integer)			; Display number on host
-  (after-function nil)				; Function to call after every request
+                        (:constructor make-display-internal)
+                        (:print-function print-display)
+                        (:copier nil))
+  (host)                                        ; Server Host
+  (display 0 :type integer)                     ; Display number on host
+  (after-function nil)                          ; Function to call after every request
   (event-lock
-    (make-process-lock "CLX Event Lock"))	; with-event-queue lock
+    (make-process-lock "CLX Event Lock"))       ; with-event-queue lock
   (event-queue-lock
-    (make-process-lock "CLX Event Queue Lock"))	; new-events/event-queue lock
-  (event-queue-tail				; last event in the event queue
+    (make-process-lock "CLX Event Queue Lock")) ; new-events/event-queue lock
+  (event-queue-tail                             ; last event in the event queue
     nil :type (or null reply-buffer))
-  (event-queue-head				; Threaded queue of events
+  (event-queue-head                             ; Threaded queue of events
     nil :type (or null reply-buffer))
   (atom-cache (make-hash-table :test (atom-cache-map-test) :size *atom-cache-size*)
-	      :type hash-table)			; Hash table relating atoms keywords
-						; to atom id's
-  (font-cache nil)				; list of font
-  (protocol-major-version 0 :type card16)	; Major version of server's X protocol
-  (protocol-minor-version 0 :type card16)	; minor version of servers X protocol
-  (vendor-name "" :type string)			; vendor of the server hardware
-  (resource-id-base 0 :type resource-id)	; resouce ID base
-  (resource-id-mask 0 :type resource-id)	; resource ID mask bits
-  (resource-id-byte nil)			; resource ID mask field (used with DPB & LDB)
-  (resource-id-count 0 :type resource-id)	; resource ID mask count
-						; (used for allocating ID's)
+              :type hash-table)                 ; Hash table relating atoms keywords
+                                                ; to atom id's
+  (font-cache nil)                              ; list of font
+  (protocol-major-version 0 :type card16)       ; Major version of server's X protocol
+  (protocol-minor-version 0 :type card16)       ; minor version of servers X protocol
+  (vendor-name "" :type string)                 ; vendor of the server hardware
+  (resource-id-base 0 :type resource-id)        ; resouce ID base
+  (resource-id-mask 0 :type resource-id)        ; resource ID mask bits
+  (resource-id-byte nil)                        ; resource ID mask field (used with DPB & LDB)
+  (resource-id-count 0 :type resource-id)       ; resource ID mask count
+                                                ; (used for allocating ID's)
   (resource-id-map (make-hash-table :test (resource-id-map-test)
-				    :size *resource-id-map-size*)
-		   :type hash-table)		; hash table maps resource-id's to
-						; objects (used in lookup functions)
-  (xid 'resourcealloc)				; allocator function
+                                    :size *resource-id-map-size*)
+                   :type hash-table)            ; hash table maps resource-id's to
+                                                ; objects (used in lookup functions)
+  (xid 'resourcealloc)                          ; allocator function
   (byte-order #+clx-little-endian :lsbfirst     ; connection byte order
-	      #-clx-little-endian :msbfirst)
-  (release-number 0 :type card32)		; release of the server
-  (max-request-length 0 :type card16)		; maximum number 32 bit words in request
-  (default-screen)				; default screen for operations
-  (roots nil :type list)			; List of screens
-  (motion-buffer-size 0 :type card32)		; size of motion buffer
-  (xdefaults)					; contents of defaults from server
+              #-clx-little-endian :msbfirst)
+  (release-number 0 :type card32)               ; release of the server
+  (max-request-length 0 :type card16)           ; maximum number 32 bit words in request
+  (default-screen)                              ; default screen for operations
+  (roots nil :type list)                        ; List of screens
+  (motion-buffer-size 0 :type card32)           ; size of motion buffer
+  (xdefaults)                                   ; contents of defaults from server
   (image-lsb-first-p nil :type generalized-boolean)
-  (bitmap-format (make-bitmap-format)		; Screen image info
-		 :type bitmap-format)
-  (pixmap-formats nil :type sequence)		; list of pixmap formats
-  (min-keycode 0 :type card8)			; minimum key-code
-  (max-keycode 0 :type card8)			; maximum key-code
-  (error-handler 'default-error-handler)	; Error handler function
-  (close-down-mode :destroy)  			; Close down mode saved by Set-Close-Down-Mode
+  (bitmap-format (make-bitmap-format)           ; Screen image info
+                 :type bitmap-format)
+  (pixmap-formats nil :type sequence)           ; list of pixmap formats
+  (min-keycode 0 :type card8)                   ; minimum key-code
+  (max-keycode 0 :type card8)                   ; maximum key-code
+  (error-handler 'default-error-handler)        ; Error handler function
+  (close-down-mode :destroy)                    ; Close down mode saved by Set-Close-Down-Mode
   (authorization-name "" :type string)
   (authorization-data "" :type (or (array (unsigned-byte 8)) string))
-  (last-width nil :type (or null card29))	; Accumulated width of last string
-  (keysym-mapping nil				; Keysym mapping cached from server
-		  :type (or null (array * (* *))))
-  (modifier-mapping nil :type list)		; ALIST of (keysym . state-mask) for all modifier keysyms
-  (keysym-translation nil :type list)		; An alist of (keysym object function)
-						; for display-local keysyms
-  (extension-alist nil :type list)		; extension alist, which has elements:
-						; (name major-opcode first-event first-error)
-  (event-extensions '#() :type vector)		; Vector mapping X event-codes to event keys
-  (performance-info)				; Hook for gathering performance info
-  (trace-history)				; Hook for debug trace
-  (plist nil :type list)			; hook for extension to hang data
+  (last-width nil :type (or null card29))       ; Accumulated width of last string
+  (keysym-mapping nil                           ; Keysym mapping cached from server
+                  :type (or null (array * (* *))))
+  (modifier-mapping nil :type list)             ; ALIST of (keysym . state-mask) for all modifier keysyms
+  (keysym-translation nil :type list)           ; An alist of (keysym object function)
+                                                ; for display-local keysyms
+  (extension-alist nil :type list)              ; extension alist, which has elements:
+                                                ; (name major-opcode first-event first-error)
+  (event-extensions '#() :type vector)          ; Vector mapping X event-codes to event keys
+  (performance-info)                            ; Hook for gathering performance info
+  (trace-history)                               ; Hook for debug trace
+  (plist nil :type list)                        ; hook for extension to hang data
   ;; These slots are used to manage multi-process input.
-  (input-in-progress nil)			; Some process reading from the stream.
-						; Updated with CONDITIONAL-STORE.
-  (pending-commands nil)			; Threaded list of PENDING-COMMAND objects 
-						; for all commands awaiting replies.
-						; Protected by WITH-EVENT-QUEUE-INTERNAL.
-  (asynchronous-errors nil)			; Threaded list of REPLY-BUFFER objects
-						; containing error messages for commands
-						; which did not expect replies.
-						; Protected by WITH-EVENT-QUEUE-INTERNAL.
-  (report-asynchronous-errors			; When to report asynchronous errors
-    '(:immediately) :type list)			; The keywords that can be on this list 
-						; are :IMMEDIATELY, :BEFORE-EVENT-HANDLING,
-						; and :AFTER-FINISH-OUTPUT
-  (event-process nil)				; Process ID of process awaiting events.
-						; Protected by WITH-EVENT-QUEUE.
-  (new-events nil :type (or null reply-buffer))	; Pointer to the first new event in the
-						; event queue.
-						; Protected by WITH-EVENT-QUEUE.
-  (current-event-symbol				; Bound with PROGV by event handling macros 
+  (input-in-progress nil)                       ; Some process reading from the stream.
+                                                ; Updated with CONDITIONAL-STORE.
+  (pending-commands nil)                        ; Threaded list of PENDING-COMMAND objects 
+                                                ; for all commands awaiting replies.
+                                                ; Protected by WITH-EVENT-QUEUE-INTERNAL.
+  (asynchronous-errors nil)                     ; Threaded list of REPLY-BUFFER objects
+                                                ; containing error messages for commands
+                                                ; which did not expect replies.
+                                                ; Protected by WITH-EVENT-QUEUE-INTERNAL.
+  (report-asynchronous-errors                   ; When to report asynchronous errors
+    '(:immediately) :type list)                 ; The keywords that can be on this list 
+                                                ; are :IMMEDIATELY, :BEFORE-EVENT-HANDLING,
+                                                ; and :AFTER-FINISH-OUTPUT
+  (event-process nil)                           ; Process ID of process awaiting events.
+                                                ; Protected by WITH-EVENT-QUEUE.
+  (new-events nil :type (or null reply-buffer)) ; Pointer to the first new event in the
+                                                ; event queue.
+                                                ; Protected by WITH-EVENT-QUEUE.
+  (current-event-symbol                         ; Bound with PROGV by event handling macros 
     (list (gensym) (gensym)) :type cons)
   (atom-id-map (make-hash-table :test (resource-id-map-test)
-				:size *atom-cache-size*)
-	       :type hash-table)
+                                :size *atom-cache-size*)
+               :type hash-table)
   (extended-max-request-length 0 :type card32)
   )
 
 (defun print-display-name (display stream)
   (declare (type (or null display) display))
   (cond (display
-	 #-allegro (princ (display-host display) stream)
-	 #+allegro (write-string (string (display-host display)) stream)
-	 (write-string ":" stream)
-	 (princ (display-display display) stream))
-	(t
-	 (write-string "(no display)" stream)))
+         #-allegro (princ (display-host display) stream)
+         #+allegro (write-string (string (display-host display)) stream)
+         (write-string ":" stream)
+         (princ (display-display display) stream))
+        (t
+         (write-string "(no display)" stream)))
   display)
 
 (defun print-display (display stream depth)
   (declare (type display display)
-	   (ignore depth))
+           (ignore depth))
   (print-unreadable-object (display stream :type t)
     (print-display-name display stream)
     (write-string " (" stream)
@@ -373,41 +373,41 @@
 (def-clx-class (drawable (:copier nil) (:print-function print-drawable))
   (id 0 :type resource-id)
   (display nil :type (or null display))
-  (plist nil :type list)			; Extension hook
+  (plist nil :type list)                        ; Extension hook
   )
 
 (defun print-drawable (drawable stream depth)
   (declare (type drawable drawable)
-	   (ignore depth))
+           (ignore depth))
   (print-unreadable-object (drawable stream :type t)
     (print-display-name (drawable-display drawable) stream)
     (write-string " " stream)
     (let ((*print-base* 16)) (prin1 (drawable-id drawable) stream))))
 
 (def-clx-class (window (:include drawable) (:copier nil)
-		       (:print-function print-drawable))
+                       (:print-function print-drawable))
   )
 
 (def-clx-class (pixmap (:include drawable) (:copier nil)
-		       (:print-function print-drawable))
+                       (:print-function print-drawable))
   )
 
 (def-clx-class (visual-info (:copier nil) (:print-function print-visual-info))
   (id 0 :type resource-id)
   (display nil :type (or null display))
   (class :static-gray :type (member :static-gray :static-color :true-color
-				    :gray-scale :pseudo-color :direct-color))
+                                    :gray-scale :pseudo-color :direct-color))
   (red-mask 0 :type pixel)
   (green-mask 0 :type pixel)
   (blue-mask 0 :type pixel)
   (bits-per-rgb 1 :type card8)
   (colormap-entries 0 :type card16)
-  (plist nil :type list)			; Extension hook
+  (plist nil :type list)                        ; Extension hook
   )
 
 (defun print-visual-info (visual-info stream depth)
   (declare (type visual-info visual-info)
-	   (ignore depth))
+           (ignore depth))
   (print-unreadable-object (visual-info stream :type t)
     (prin1 (visual-info-bits-per-rgb visual-info) stream)
     (write-string "-bit " stream)
@@ -425,7 +425,7 @@
 
 (defun print-colormap (colormap stream depth)
   (declare (type colormap colormap)
-	   (ignore depth))
+           (ignore depth))
   (print-unreadable-object (colormap stream :type t)
     (when (colormap-visual-info colormap)
       (princ (visual-info-class (colormap-visual-info colormap)) stream)
@@ -441,7 +441,7 @@
 
 (defun print-cursor (cursor stream depth)
   (declare (type cursor cursor)
-	   (ignore depth))
+           (ignore depth))
   (print-unreadable-object (cursor stream :type t)
     (print-display-name (cursor-display cursor) stream)
     (write-string " " stream)
@@ -489,7 +489,7 @@
 
 (deftype bit-gravity ()
   '(member :forget :north-west :north :north-east :west
-	   :center :east :south-west :south :south-east :static))
+           :center :east :south-west :south :south-east :static))
 
 (defconstant +win-gravity-vector+
  '#(:unmap :north-west :north :north-east :west
@@ -510,7 +510,7 @@
 
 (deftype win-gravity ()
   '(member :unmap :north-west :north :north-east :west
-	   :center :east :south-west :south :south-east :static))
+           :center :east :south-west :south :south-east :static))
 
 (deftype grab-status ()
   '(member :success :already-grabbed :invalid-time :not-viewable))
@@ -537,7 +537,7 @@
 
 (deftype arc-seq ()
   '(repeat-seq (int16 x) (int16 y) (card16 width) (card16 height)
-	       (angle angle1) (angle angle2)))
+               (angle angle1) (angle angle2)))
 
 (deftype gcontext-state () 'simple-vector)
 
@@ -549,13 +549,13 @@
   (cache-p t :type generalized-boolean)
   (server-state (allocate-gcontext-state) :type gcontext-state)
   (local-state (allocate-gcontext-state) :type gcontext-state)
-  (plist nil :type list)			; Extension hook
+  (plist nil :type list)                        ; Extension hook
   (next nil #-explorer :type #-explorer (or null gcontext))
   )
 
 (defun print-gcontext (gcontext stream depth)
   (declare (type gcontext gcontext)
-	   (ignore depth))
+           (ignore depth))
   (print-unreadable-object (gcontext stream :type t)
     (print-display-name (gcontext-display gcontext) stream)
     (write-string " " stream)
@@ -571,11 +571,11 @@
 
 (deftype event-mask-class ()
   '(member :key-press :key-release :owner-grab-button :button-press :button-release
-	   :enter-window :leave-window :pointer-motion :pointer-motion-hint
-	   :button-1-motion :button-2-motion :button-3-motion :button-4-motion
-	   :button-5-motion :button-motion :exposure :visibility-change
-	   :structure-notify :resize-redirect :substructure-notify :substructure-redirect
-	   :focus-change :property-change :colormap-change :keymap-state))
+           :enter-window :leave-window :pointer-motion :pointer-motion-hint
+           :button-1-motion :button-2-motion :button-3-motion :button-4-motion
+           :button-5-motion :button-motion :exposure :visibility-change
+           :structure-notify :resize-redirect :substructure-notify :substructure-redirect
+           :focus-change :property-change :colormap-change :keymap-state))
 
 (deftype event-mask ()
   '(or mask32 (clx-list event-mask-class)))
@@ -591,9 +591,9 @@
 
 (deftype pointer-event-mask-class ()
   '(member :button-press :button-release
-	   :enter-window :leave-window :pointer-motion :pointer-motion-hint
-	   :button-1-motion :button-2-motion :button-3-motion :button-4-motion
-	   :button-5-motion :button-motion :keymap-state))
+           :enter-window :leave-window :pointer-motion :pointer-motion-hint
+           :button-1-motion :button-2-motion :button-3-motion :button-4-motion
+           :button-5-motion :button-motion :keymap-state))
 
 (deftype pointer-event-mask ()
   '(or mask32 (clx-list pointer-event-mask-class)))
@@ -605,8 +605,8 @@
 
 (deftype device-event-mask-class ()
   '(member :key-press :key-release :button-press :button-release :pointer-motion
-	   :button-1-motion :button-2-motion :button-3-motion :button-4-motion
-	   :button-5-motion :button-motion))
+           :button-1-motion :button-2-motion :button-3-motion :button-4-motion
+           :button-5-motion :button-motion))
 
 (deftype device-event-mask ()
   '(or mask32 (clx-list device-event-mask-class)))
@@ -633,10 +633,10 @@
 
 (deftype gcontext-key ()
   '(member :function :plane-mask :foreground :background
-	   :line-width :line-style :cap-style :join-style :fill-style
-	   :fill-rule :tile :stipple :ts-x :ts-y :font :subwindow-mode
-	   :exposures :clip-x :clip-y :clip-mask :dash-offset :dashes
-	   :arc-mode))
+           :line-width :line-style :cap-style :join-style :fill-style
+           :fill-rule :tile :stipple :ts-x :ts-y :font :subwindow-mode
+           :exposures :clip-x :clip-y :clip-mask :dash-offset :dashes
+           :arc-mode))
 
 (deftype event-key ()
   '(or (member :key-press :key-release :button-press :button-release 
@@ -652,7 +652,7 @@
 
 (deftype error-key ()
   '(member :access :alloc :atom :colormap :cursor :drawable :font :gcontext :id-choice
-	   :illegal-request :implementation :length :match :name :pixmap :value :window))
+           :illegal-request :implementation :length :match :name :pixmap :value :window))
 
 (deftype draw-direction ()
   '(member :left-to-right :right-to-left))
@@ -665,9 +665,9 @@
 
 (deftype boole-constant ()
   `(member ,boole-clr ,boole-and ,boole-andc2 ,boole-1
-	   ,boole-andc1 ,boole-2 ,boole-xor ,boole-ior
-	   ,boole-nor ,boole-eqv ,boole-c2 ,boole-orc2
-	   ,boole-c1 ,boole-orc1 ,boole-nand ,boole-set))
+           ,boole-andc1 ,boole-2 ,boole-xor ,boole-ior
+           ,boole-nor ,boole-eqv ,boole-c2 ,boole-orc2
+           ,boole-c1 ,boole-orc1 ,boole-nand ,boole-set))
 
 (def-clx-class (screen (:copier nil) (:print-function print-screen))
   (root nil :type (or null window))
@@ -686,12 +686,12 @@
   (backing-stores :never :type (member :never :when-mapped :always))
   (save-unders-p nil :type generalized-boolean)
   (event-mask-at-open 0 :type mask32)
-  (plist nil :type list)			; Extension hook
+  (plist nil :type list)                        ; Extension hook
   )
 
 (defun print-screen (screen stream depth)
   (declare (type screen screen)
-	   (ignore depth))
+           (ignore depth))
   (print-unreadable-object (screen stream :type t)
     (let ((display (drawable-display (screen-root screen))))
       (print-display-name display stream)
@@ -709,7 +709,7 @@
 
 (defun screen-root-visual (screen)
   (declare (type screen screen)
-	   (clx-values resource-id))
+           (clx-values resource-id))
   (visual-info-id (screen-root-visual-info screen)))
 
 ;; The list contains alternating keywords and integers.
@@ -732,7 +732,7 @@
   (properties nil :type font-props))
 
 (def-clx-class (font (:constructor make-font-internal) (:copier nil)
-		     (:print-function print-font))
+                     (:print-function print-font))
   (id-internal nil :type (or null resource-id)) ;; NIL when not opened
   (display nil :type (or null display))
   (reference-count 0 :type fixnum)
@@ -740,15 +740,15 @@
   (font-info-internal nil :type (or null font-info))
   (char-infos-internal nil :type (or null (simple-array int16 (*))))
   (local-only-p t :type generalized-boolean) ;; When T, always calculate text extents locally
-  (plist nil :type list)			; Extension hook
+  (plist nil :type list)                        ; Extension hook
   )
 
 (defun print-font (font stream depth)
   (declare (type font font)
-	   (ignore depth))
+           (ignore depth))
   (print-unreadable-object (font stream :type t)
     (if (font-name font)
-	(princ (font-name font) stream)
+        (princ (font-name font) stream)
       (write-string "(gcontext)" stream))
     (write-string " " stream)
     (print-display-name (font-display font) stream)
@@ -768,41 +768,41 @@
 (defun font-char-infos (font)
   (or (font-char-infos-internal font)
       (progn (query-font font)
-	     (font-char-infos-internal font))))
+             (font-char-infos-internal font))))
 
 (defun make-font (&key id
-		  display
-		  (reference-count 0)
-		  (name "")
-		  (local-only-p t)
-		  font-info-internal)
+                  display
+                  (reference-count 0)
+                  (name "")
+                  (local-only-p t)
+                  font-info-internal)
   (make-font-internal :id-internal id
-		      :display display
-		      :reference-count reference-count
-		      :name name
-		      :local-only-p local-only-p
-		      :font-info-internal font-info-internal))
+                      :display display
+                      :reference-count reference-count
+                      :name name
+                      :local-only-p local-only-p
+                      :font-info-internal font-info-internal))
 
 ; For each component (<name> <unspec> :type <type>) of font-info,
 ; there is a corresponding function:
 
 ;(defun font-<name> (font)
 ;  (declare (type font font)
-;	   (clx-values <type>)))
+;          (clx-values <type>)))
 
 (macrolet ((make-font-info-accessors (useless-name &body fields)
-	     `(within-definition (,useless-name make-font-info-accessors)
-		,@(mapcar
-		    #'(lambda (field)
-			(let* ((type (second field))
-			       (n (string (first field)))
-			       (name (xintern 'font- n))
-			       (accessor (xintern 'font-info- n)))
-			  `(defun ,name (font)
-			     (declare (type font font))
-			     (declare (clx-values ,type))
-			     (,accessor (font-font-info font)))))
-		    fields))))
+             `(within-definition (,useless-name make-font-info-accessors)
+                ,@(mapcar
+                    #'(lambda (field)
+                        (let* ((type (second field))
+                               (n (string (first field)))
+                               (name (xintern 'font- n))
+                               (accessor (xintern 'font-info- n)))
+                          `(defun ,name (font)
+                             (declare (type font font))
+                             (declare (clx-values ,type))
+                             (,accessor (font-font-info font)))))
+                    fields))))
   (make-font-info-accessors ignore
     (direction draw-direction)
     (min-char card16)
@@ -821,23 +821,23 @@
 
 (defun font-property (font name)
   (declare (type font font)
-	   (type keyword name))
+           (type keyword name))
   (declare (clx-values (or null int32)))
   (getf (font-properties font) name))
 
 (macrolet ((make-mumble-equal (type)
-	     ;; Since caching is only done for objects created by the
-	     ;; client, we must always compare ID and display for
-	     ;; non-identical mumbles.
-	     (let ((predicate (xintern type '-equal))
-		   (id (xintern type '-id))
-		   (dpy (xintern type '-display)))
-		`(within-definition (,type make-mumble-equal)
-		   (defun ,predicate (a b)
-		     (declare (type ,type a b))
-		     (or (eql a b)
-			 (and (= (,id a) (,id b))
-			      (eq (,dpy a) (,dpy b)))))))))
+             ;; Since caching is only done for objects created by the
+             ;; client, we must always compare ID and display for
+             ;; non-identical mumbles.
+             (let ((predicate (xintern type '-equal))
+                   (id (xintern type '-id))
+                   (dpy (xintern type '-display)))
+                `(within-definition (,type make-mumble-equal)
+                   (defun ,predicate (a b)
+                     (declare (type ,type a b))
+                     (or (eql a b)
+                         (and (= (,id a) (,id b))
+                              (eq (,dpy a) (,dpy b)))))))))
   (make-mumble-equal window)
   (make-mumble-equal pixmap)
   (make-mumble-equal cursor)
@@ -856,20 +856,20 @@
   ;; in the resulting mask.  KEY-LIST is either a mask or a list of
   ;; KEY-TYPE Returns NIL when KEY-LIST is not a list or mask.
   (declare (type (simple-array keyword (*)) key-vector)
-	   (type (or mask32 list) key-list))
+           (type (or mask32 list) key-list))
   (declare (clx-values (or mask32 null)))
   (typecase key-list
     (mask32 key-list)
     (list (let ((mask 0))
-	    (dolist (key key-list mask)
-	      (let ((bit (position key (the vector key-vector) :test #'eq)))
-		(unless bit
-		  (x-type-error key key-type))
-		(setq mask (logior mask (ash 1 bit)))))))))
+            (dolist (key key-list mask)
+              (let ((bit (position key (the vector key-vector) :test #'eq)))
+                (unless bit
+                  (x-type-error key key-type))
+                (setq mask (logior mask (ash 1 bit)))))))))
 
 (defun decode-mask (key-vector mask)
   (declare (type (simple-array keyword (*)) key-vector)
-	   (type mask32 mask))
+           (type mask32 mask))
   (declare (clx-values list))
   (do ((m mask (ash m -1))
        (bit 0 (1+ bit))
@@ -877,8 +877,8 @@
        (result nil))       
       ((or (zerop m) (>= bit len)) result)
     (declare (type mask32 m)
-	     (fixnum bit len)
-	     (list result))
+             (fixnum bit len)
+             (list result))
     (when (oddp m)
       (push (aref key-vector bit) result))))
 
@@ -905,7 +905,7 @@
   (declare (type device-event-mask device-event-mask))
   (declare (clx-values mask32))
   (or (encode-mask +device-event-mask-vector+ device-event-mask
-		   'device-event-mask-class)
+                   'device-event-mask-class)
       (x-type-error device-event-mask 'device-event-mask)))
 
 (defun encode-modifier-mask (modifier-mask)
@@ -936,5 +936,5 @@
   (declare (type pointer-event-mask pointer-event-mask))
   (declare (clx-values mask32))
   (or (encode-mask +pointer-event-mask-vector+ pointer-event-mask
-		   'pointer-event-mask-class)
+                   'pointer-event-mask-class)
       (x-type-error pointer-event-mask 'pointer-event-mask)))

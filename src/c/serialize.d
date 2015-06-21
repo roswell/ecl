@@ -36,56 +36,56 @@ struct fake_symbol {
 
 static cl_index object_size[] = {
         0, /* t_start */
-	ROUNDED_SIZE(ecl_cons), /* t_list */
-	0, /* t_character = 2 */
-	0, /* t_fixnum = 3 */
-	ROUNDED_SIZE(ecl_bignum), /* t_bignum = 4 */
-	ROUNDED_SIZE(ecl_ratio), /* t_ratio */
-	ROUNDED_SIZE(ecl_singlefloat), /* t_singlefloat */
-	ROUNDED_SIZE(ecl_doublefloat), /* t_doublefloat */
+        ROUNDED_SIZE(ecl_cons), /* t_list */
+        0, /* t_character = 2 */
+        0, /* t_fixnum = 3 */
+        ROUNDED_SIZE(ecl_bignum), /* t_bignum = 4 */
+        ROUNDED_SIZE(ecl_ratio), /* t_ratio */
+        ROUNDED_SIZE(ecl_singlefloat), /* t_singlefloat */
+        ROUNDED_SIZE(ecl_doublefloat), /* t_doublefloat */
 #ifdef ECL_LONG_FLOAT
-	ROUNDED_SIZE(ecl_long_float), /* t_longfloat */
+        ROUNDED_SIZE(ecl_long_float), /* t_longfloat */
 #endif
-	ROUNDED_SIZE(ecl_complex), /* t_complex */
-	ROUNDED_SIZE(fake_symbol), /* t_symbol */
-	ROUNDED_SIZE(fake_package), /* t_package */
-	ROUNDED_SIZE(ecl_hashtable), /* t_hashtable */
-	ROUNDED_SIZE(ecl_array), /* t_array */
-	ROUNDED_SIZE(ecl_vector), /* t_vector */
+        ROUNDED_SIZE(ecl_complex), /* t_complex */
+        ROUNDED_SIZE(fake_symbol), /* t_symbol */
+        ROUNDED_SIZE(fake_package), /* t_package */
+        ROUNDED_SIZE(ecl_hashtable), /* t_hashtable */
+        ROUNDED_SIZE(ecl_array), /* t_array */
+        ROUNDED_SIZE(ecl_vector), /* t_vector */
 #ifdef ECL_UNICODE
-	ROUNDED_SIZE(ecl_string), /* t_string */
+        ROUNDED_SIZE(ecl_string), /* t_string */
 #endif
-	ROUNDED_SIZE(ecl_base_string), /* t_base_string */
-	ROUNDED_SIZE(ecl_vector), /* t_bitvector */
-	ROUNDED_SIZE(ecl_stream), /* t_stream */
-	ROUNDED_SIZE(ecl_random), /* t_random */
-	ROUNDED_SIZE(ecl_readtable), /* t_readtable */
-	ROUNDED_SIZE(ecl_pathname), /* t_pathname */
-	ROUNDED_SIZE(ecl_bytecodes), /* t_bytecodes */
-	ROUNDED_SIZE(ecl_bclosure), /* t_bclosure */
-	ROUNDED_SIZE(ecl_cfun), /* t_cfun */
-	ROUNDED_SIZE(ecl_cfunfixed), /* t_cfunfixed */
-	ROUNDED_SIZE(ecl_cclosure), /* t_cclosure */
+        ROUNDED_SIZE(ecl_base_string), /* t_base_string */
+        ROUNDED_SIZE(ecl_vector), /* t_bitvector */
+        ROUNDED_SIZE(ecl_stream), /* t_stream */
+        ROUNDED_SIZE(ecl_random), /* t_random */
+        ROUNDED_SIZE(ecl_readtable), /* t_readtable */
+        ROUNDED_SIZE(ecl_pathname), /* t_pathname */
+        ROUNDED_SIZE(ecl_bytecodes), /* t_bytecodes */
+        ROUNDED_SIZE(ecl_bclosure), /* t_bclosure */
+        ROUNDED_SIZE(ecl_cfun), /* t_cfun */
+        ROUNDED_SIZE(ecl_cfunfixed), /* t_cfunfixed */
+        ROUNDED_SIZE(ecl_cclosure), /* t_cclosure */
 #ifdef CLOS
-	ROUNDED_SIZE(ecl_instance), /* t_instance */
+        ROUNDED_SIZE(ecl_instance), /* t_instance */
 #else
-	ROUNDED_SIZE(ecl_structure), /* t_structure */
+        ROUNDED_SIZE(ecl_structure), /* t_structure */
 #endif /* CLOS */
 #ifdef ECL_THREADS
-	ROUNDED_SIZE(ecl_process), /* t_process */
-	ROUNDED_SIZE(ecl_lock), /* t_lock */
-	ROUNDED_SIZE(ecl_rwlock), /* t_rwlock */
-	ROUNDED_SIZE(ecl_condition_variable), /* t_condition_variable */
+        ROUNDED_SIZE(ecl_process), /* t_process */
+        ROUNDED_SIZE(ecl_lock), /* t_lock */
+        ROUNDED_SIZE(ecl_rwlock), /* t_rwlock */
+        ROUNDED_SIZE(ecl_condition_variable), /* t_condition_variable */
         ROUNDED_SIZE(ecl_semaphore), /* t_semaphore */
         ROUNDED_SIZE(ecl_barrier), /* t_barrier */
         ROUNDED_SIZE(ecl_mailbox), /* t_mailbox */
 #endif
-	ROUNDED_SIZE(ecl_codeblock), /* t_codeblock */
-	ROUNDED_SIZE(ecl_foreign), /* t_foreign */
-	ROUNDED_SIZE(ecl_frame), /* t_frame */
-	ROUNDED_SIZE(ecl_weak_pointer) /* t_weak_pointer */
+        ROUNDED_SIZE(ecl_codeblock), /* t_codeblock */
+        ROUNDED_SIZE(ecl_foreign), /* t_foreign */
+        ROUNDED_SIZE(ecl_frame), /* t_frame */
+        ROUNDED_SIZE(ecl_weak_pointer) /* t_weak_pointer */
 #ifdef ECL_SSE2
-	, ROUNDED_SIZE(ecl_sse_pack) /* t_sse_pack */
+        , ROUNDED_SIZE(ecl_sse_pack) /* t_sse_pack */
 #endif
 };
 
@@ -105,7 +105,7 @@ alloc(pool_t pool, cl_index size)
         if (next_fillp >= pool->data->vector.dim) {
                 cl_index new_dim = next_fillp + next_fillp / 2;
                 pool->data = _ecl_funcall3(@'adjust-array', pool->data,
-					   ecl_make_fixnum(new_dim));
+                                           ecl_make_fixnum(new_dim));
         }
         pool->data->vector.fillp = next_fillp;
         return fillp;
@@ -296,23 +296,23 @@ serialize_one(pool_t pool, cl_object what)
                 buffer->pathname.version =
                         enqueue(pool, buffer->pathname.version);
                 break;
-	case t_random: {
-		buffer->random.value = enqueue(pool, buffer->random.value);
-		break;
-	}
-	case t_bclosure: {
-		buffer->bclosure.code = enqueue(pool, buffer->bclosure.code);
-		buffer->bclosure.lex = enqueue(pool, buffer->bclosure.lex);
-	}
-	case t_bytecodes: {
-		buffer->bytecodes.name = enqueue(pool, buffer->bytecodes.name);
-		buffer->bytecodes.definition = enqueue(pool, buffer->bytecodes.definition);
-		buffer->bytecodes.data = enqueue(pool, buffer->bytecodes.data);
-		buffer->bytecodes.file = enqueue(pool, buffer->bytecodes.file);
-		buffer->bytecodes.file_position = enqueue(pool, buffer->bytecodes.file_position);
-		buffer->bytecodes.code = serialize_bits(pool, buffer->bytecodes.code,
-							buffer->bytecodes.code_size);
-	}
+        case t_random: {
+                buffer->random.value = enqueue(pool, buffer->random.value);
+                break;
+        }
+        case t_bclosure: {
+                buffer->bclosure.code = enqueue(pool, buffer->bclosure.code);
+                buffer->bclosure.lex = enqueue(pool, buffer->bclosure.lex);
+        }
+        case t_bytecodes: {
+                buffer->bytecodes.name = enqueue(pool, buffer->bytecodes.name);
+                buffer->bytecodes.definition = enqueue(pool, buffer->bytecodes.definition);
+                buffer->bytecodes.data = enqueue(pool, buffer->bytecodes.data);
+                buffer->bytecodes.file = enqueue(pool, buffer->bytecodes.file);
+                buffer->bytecodes.file_position = enqueue(pool, buffer->bytecodes.file_position);
+                buffer->bytecodes.code = serialize_bits(pool, buffer->bytecodes.code,
+                                                        buffer->bytecodes.code_size);
+        }
         default:
                 FEerror("Unable to serialize object ~A", 1, what);
         }
@@ -375,9 +375,9 @@ reconstruct_object_ptr(uint8_t *data, cl_index bytes)
 static uint8_t *
 reconstruct_bytecodes(cl_object o, uint8_t *data)
 {
-	o->bytecodes.code = reconstruct_bits(data, o->bytecodes.code_size);
-	data += o->bytecodes.code_size;
-	return data;
+        o->bytecodes.code = reconstruct_bits(data, o->bytecodes.code_size);
+        data += o->bytecodes.code_size;
+        return data;
 }
 
 static uint8_t *
@@ -450,9 +450,9 @@ reconstruct_one(uint8_t *data, cl_object *output)
                 *output = (cl_object)data;
                 data += ROUND_TO_WORD(sizeof(struct fake_symbol));
                 break;
-	case t_bytecodes:
-		data = duplicate_object(data, output);
-		data = reconstruct_bytecodes(*output, data);
+        case t_bytecodes:
+                data = duplicate_object(data, output);
+                data = reconstruct_bytecodes(*output, data);
         default:
                 data = duplicate_object(data, output);
         }
@@ -537,16 +537,16 @@ fixup(cl_object o, cl_object *o_list)
         case t_bclosure:
                 o->bclosure.code = get_object(o->bclosure.code, o_list);
                 o->bclosure.lex = get_object(o->bclosure.lex, o_list);
-		o->bclosure.entry = _ecl_bclosure_dispatch_vararg;
+                o->bclosure.entry = _ecl_bclosure_dispatch_vararg;
                 break;
-	case t_bytecodes:
-		o->bytecodes.name = get_object(o->bytecodes.name, o_list);
-		o->bytecodes.definition = get_object(o->bytecodes.definition, o_list);
-		o->bytecodes.data = get_object(o->bytecodes.data, o_list);
-		o->bytecodes.file = get_object(o->bytecodes.file, o_list);
-		o->bytecodes.file_position = get_object(o->bytecodes.file_position, o_list);
-		o->bytecodes.entry = _ecl_bytecodes_dispatch_vararg;
-		break;
+        case t_bytecodes:
+                o->bytecodes.name = get_object(o->bytecodes.name, o_list);
+                o->bytecodes.definition = get_object(o->bytecodes.definition, o_list);
+                o->bytecodes.data = get_object(o->bytecodes.data, o_list);
+                o->bytecodes.file = get_object(o->bytecodes.file, o_list);
+                o->bytecodes.file_position = get_object(o->bytecodes.file_position, o_list);
+                o->bytecodes.entry = _ecl_bytecodes_dispatch_vararg;
+                break;
         default:
                 break;
         }

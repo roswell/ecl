@@ -3,9 +3,9 @@
 ;;; Window Attributes
 
 ;;;
-;;;			 TEXAS INSTRUMENTS INCORPORATED
-;;;				  P.O. BOX 2909
-;;;			       AUSTIN, TEXAS 78769
+;;;                      TEXAS INSTRUMENTS INCORPORATED
+;;;                               P.O. BOX 2909
+;;;                            AUSTIN, TEXAS 78769
 ;;;
 ;;; Copyright (C) 1987 Texas Instruments Incorporated.
 ;;;
@@ -18,27 +18,27 @@
 ;;; express or implied warranty.
 ;;;
 
-;;;	The special variable *window-attributes* is an alist containg:
-;;;	(drawable attributes attribute-changes geometry geometry-changes)
-;;;	Where DRAWABLE is the associated window or pixmap
-;;;	      ATTRIBUTES is NIL or a reply-buffer containing the drawable's
-;;;		         attributes for use by the accessors.
-;;;	      ATTRIBUTE-CHANGES is NIL or an array.  The first element
-;;;			 of the array is a "value-mask", indicating which
-;;;			 attributes have changed.  The other elements are
-;;;			 integers associated with the changed values, ready
-;;;			 for insertion into a server request.
-;;;	      GEOMETRY is like ATTRIBUTES, but for window geometry
-;;;	      GEOMETRY-CHANGES is like ATTRIBUTE-CHANGES, but for window geometry
+;;;     The special variable *window-attributes* is an alist containg:
+;;;     (drawable attributes attribute-changes geometry geometry-changes)
+;;;     Where DRAWABLE is the associated window or pixmap
+;;;           ATTRIBUTES is NIL or a reply-buffer containing the drawable's
+;;;                      attributes for use by the accessors.
+;;;           ATTRIBUTE-CHANGES is NIL or an array.  The first element
+;;;                      of the array is a "value-mask", indicating which
+;;;                      attributes have changed.  The other elements are
+;;;                      integers associated with the changed values, ready
+;;;                      for insertion into a server request.
+;;;           GEOMETRY is like ATTRIBUTES, but for window geometry
+;;;           GEOMETRY-CHANGES is like ATTRIBUTE-CHANGES, but for window geometry
 ;;;
-;;;	Attribute and Geometry accessors and SETF's look on the special variable
-;;;	*window-attributes* for the drawable.  If its not there, the accessor is
+;;;     Attribute and Geometry accessors and SETF's look on the special variable
+;;;     *window-attributes* for the drawable.  If its not there, the accessor is
 ;;;     NOT within a WITH-STATE, and a server request is made to get or put a value.
 ;;;     If an entry is found in *window-attributes*, the cache buffers are used
-;;;	for the access.
+;;;     for the access.
 ;;;
-;;;	All WITH-STATE has to do (re)bind *Window-attributes* to a list including
-;;;	the new drawable.  The caches are initialized to NIL and allocated as needed.
+;;;     All WITH-STATE has to do (re)bind *Window-attributes* to a list including
+;;;     the new drawable.  The caches are initialized to NIL and allocated as needed.
 
 (in-package :xlib)
 
@@ -114,9 +114,9 @@
      ;; alist of (drawable attributes attribute-changes geometry geometry-changes)
     `(with-stack-list (,state-entry ,drawable nil nil nil nil)
        (with-stack-list* (*window-attributes* ,state-entry *window-attributes*)
-	 (multiple-value-prog1
-	   (progn ,@body)
-	   (cleanup-state-entry ,state-entry))))))
+         (multiple-value-prog1
+           (progn ,@body)
+           (cleanup-state-entry ,state-entry))))))
 
 (defun cleanup-state-entry (state)
   ;; Return buffers to the free-list
@@ -139,25 +139,25 @@
   ;; Called from window attribute SETF's to alter an attribute value
   ;; number is the change-attributes request mask bit number
   (declare (type window window)
-	   (type card8 number)
-	   (type card32 value))
+           (type card8 number)
+           (type card32 value))
   (let ((state-entry nil)
-	(changes nil))
+        (changes nil))
     (if (and *window-attributes*
-	     (setq state-entry (assoc window (the list *window-attributes*)
-				      :test (window-equal-function))))
-	(progn					; Within a WITH-STATE - cache changes
-	  (setq changes (state-attribute-changes state-entry))
-	  (unless changes
-	    (setq changes (allocate-gcontext-state))
-	    (setf (state-attribute-changes state-entry) changes)
-	    (setf (aref changes 0) 0)) ;; Initialize mask to zero
-	  (setf (aref changes 0) (logior (aref changes 0) (ash 1 number))) ;; set mask bit
-	  (setf (aref changes (1+ number)) value))	;; save value
-						; Send change to the server
+             (setq state-entry (assoc window (the list *window-attributes*)
+                                      :test (window-equal-function))))
+        (progn                                  ; Within a WITH-STATE - cache changes
+          (setq changes (state-attribute-changes state-entry))
+          (unless changes
+            (setq changes (allocate-gcontext-state))
+            (setf (state-attribute-changes state-entry) changes)
+            (setf (aref changes 0) 0)) ;; Initialize mask to zero
+          (setf (aref changes 0) (logior (aref changes 0) (ash 1 number))) ;; set mask bit
+          (setf (aref changes (1+ number)) value))      ;; save value
+                                                ; Send change to the server
       (with-buffer-request ((window-display window) +x-changewindowattributes+)
-	(window window)
-	(card32 (ash 1 number) value)))))
+        (window window)
+        (card32 (ash 1 number) value)))))
 ;;
 ;; These two are twins (change-window-attribute change-drawable-geometry)
 ;; If you change one, you probably need to change the other...
@@ -166,52 +166,52 @@
   ;; Called from drawable geometry SETF's to alter an attribute value
   ;; number is the change-attributes request mask bit number
   (declare (type drawable drawable)
-	   (type card8 number)
-	   (type card29 value))
+           (type card8 number)
+           (type card29 value))
   (let ((state-entry nil)
-	(changes nil))
+        (changes nil))
     (if (and *window-attributes*
-	     (setq state-entry (assoc drawable (the list *window-attributes*)
-				      :test (drawable-equal-function))))
-	(progn					; Within a WITH-STATE - cache changes
-	  (setq changes (state-geometry-changes state-entry))
-	  (unless changes
-	    (setq changes (allocate-gcontext-state))
-	    (setf (state-geometry-changes state-entry) changes)
-	    (setf (aref changes 0) 0)) ;; Initialize mask to zero
-	  (setf (aref changes 0) (logior (aref changes 0) (ash 1 number))) ;; set mask bit
-	  (setf (aref changes (1+ number)) value))	;; save value
-						; Send change to the server
+             (setq state-entry (assoc drawable (the list *window-attributes*)
+                                      :test (drawable-equal-function))))
+        (progn                                  ; Within a WITH-STATE - cache changes
+          (setq changes (state-geometry-changes state-entry))
+          (unless changes
+            (setq changes (allocate-gcontext-state))
+            (setf (state-geometry-changes state-entry) changes)
+            (setf (aref changes 0) 0)) ;; Initialize mask to zero
+          (setf (aref changes 0) (logior (aref changes 0) (ash 1 number))) ;; set mask bit
+          (setf (aref changes (1+ number)) value))      ;; save value
+                                                ; Send change to the server
       (with-buffer-request ((drawable-display drawable) +x-configurewindow+)
-	(drawable drawable)
-	(card16 (ash 1 number))
-	(card29 value)))))
+        (drawable drawable)
+        (card16 (ash 1 number))
+        (card29 value)))))
 
 (defun get-window-attributes-buffer (window)
   (declare (type window window))
   (let ((state-entry nil)
-	(changes nil))
+        (changes nil))
     (or (and *window-attributes*
-	     (setq state-entry (assoc window (the list *window-attributes*)
-				      :test (window-equal-function)))
-	     (null (setq changes (state-attribute-changes state-entry)))
-	     (state-attributes state-entry))
-	(let ((display (window-display window)))
-	  (with-display (display)
-	    ;; When SETF's have been done, flush changes to the server
-	    (when changes
-	      (put-window-attribute-changes window changes)
-	      (deallocate-gcontext-state (state-attribute-changes state-entry))
-	      (setf (state-attribute-changes state-entry) nil))
-	    ;; Get window attributes
-	    (with-buffer-request-and-reply (display +x-getwindowattributes+ size :sizes (8))
-		 ((window window))
-	      (let ((repbuf (or (state-attributes state-entry) (allocate-context))))
-		(declare (type reply-buffer repbuf))
-		;; Copy into repbuf from reply buffer
-		(buffer-replace (reply-ibuf8 repbuf) buffer-bbuf 0 size)
-		(when state-entry (setf (state-attributes state-entry) repbuf))
-		repbuf)))))))
+             (setq state-entry (assoc window (the list *window-attributes*)
+                                      :test (window-equal-function)))
+             (null (setq changes (state-attribute-changes state-entry)))
+             (state-attributes state-entry))
+        (let ((display (window-display window)))
+          (with-display (display)
+            ;; When SETF's have been done, flush changes to the server
+            (when changes
+              (put-window-attribute-changes window changes)
+              (deallocate-gcontext-state (state-attribute-changes state-entry))
+              (setf (state-attribute-changes state-entry) nil))
+            ;; Get window attributes
+            (with-buffer-request-and-reply (display +x-getwindowattributes+ size :sizes (8))
+                 ((window window))
+              (let ((repbuf (or (state-attributes state-entry) (allocate-context))))
+                (declare (type reply-buffer repbuf))
+                ;; Copy into repbuf from reply buffer
+                (buffer-replace (reply-ibuf8 repbuf) buffer-bbuf 0 size)
+                (when state-entry (setf (state-attributes state-entry) repbuf))
+                repbuf)))))))
 
 ;;
 ;; These two are twins (get-window-attributes-buffer get-drawable-geometry-buffer)
@@ -220,52 +220,52 @@
 (defun get-drawable-geometry-buffer (drawable)
   (declare (type drawable drawable))
   (let ((state-entry nil)
-	(changes nil))
+        (changes nil))
     (or (and *window-attributes*
-	     (setq state-entry (assoc drawable (the list *window-attributes*)
-				      :test (drawable-equal-function)))
-	     (null (setq changes (state-geometry-changes state-entry)))
-	     (state-geometry state-entry))
-	(let ((display (drawable-display drawable)))
-	  (with-display (display)
-	    ;; When SETF's have been done, flush changes to the server
-	    (when changes
-	      (put-drawable-geometry-changes drawable changes)
-	      (deallocate-gcontext-state (state-geometry-changes state-entry))
-	      (setf (state-geometry-changes state-entry) nil))
-	    ;; Get drawable attributes
-	    (with-buffer-request-and-reply (display +x-getgeometry+ size :sizes (8))
-		 ((drawable drawable))
-	      (let ((repbuf (or (state-geometry state-entry) (allocate-context))))
-		(declare (type reply-buffer repbuf))
-		;; Copy into repbuf from reply buffer
-		(buffer-replace (reply-ibuf8 repbuf) buffer-bbuf 0 size)
-		(when state-entry (setf (state-geometry state-entry) repbuf))
-		repbuf)))))))
+             (setq state-entry (assoc drawable (the list *window-attributes*)
+                                      :test (drawable-equal-function)))
+             (null (setq changes (state-geometry-changes state-entry)))
+             (state-geometry state-entry))
+        (let ((display (drawable-display drawable)))
+          (with-display (display)
+            ;; When SETF's have been done, flush changes to the server
+            (when changes
+              (put-drawable-geometry-changes drawable changes)
+              (deallocate-gcontext-state (state-geometry-changes state-entry))
+              (setf (state-geometry-changes state-entry) nil))
+            ;; Get drawable attributes
+            (with-buffer-request-and-reply (display +x-getgeometry+ size :sizes (8))
+                 ((drawable drawable))
+              (let ((repbuf (or (state-geometry state-entry) (allocate-context))))
+                (declare (type reply-buffer repbuf))
+                ;; Copy into repbuf from reply buffer
+                (buffer-replace (reply-ibuf8 repbuf) buffer-bbuf 0 size)
+                (when state-entry (setf (state-geometry state-entry) repbuf))
+                repbuf)))))))
 
 (defun put-window-attribute-changes (window changes)
   ;; change window attributes
   ;; Always from Called within a WITH-DISPLAY
   (declare (type window window)
-	   (type gcontext-state changes))
+           (type gcontext-state changes))
   (let* ((display (window-display window))
-	 (mask (aref changes 0)))
+         (mask (aref changes 0)))
     (declare (type display display)
-	     (type mask32 mask))
+             (type mask32 mask))
     (with-buffer-request (display +x-changewindowattributes+)
       (window window)
       (card32 mask)
       (progn ;; Insert a word in the request for each one bit in the mask
-	(do ((bits mask (ash bits -1))
-	     (request-size 2)			;Word count
-	     (i 1 (index+ i 1)))		;Entry count
-	    ((zerop bits)
-	     (card16-put 2 (index-incf request-size))
-	     (index-incf (buffer-boffset display) (index* request-size 4)))
-	  (declare (type mask32 bits)
-		   (type array-index i request-size))
-	  (when (oddp bits)
-	    (card32-put (index* (index-incf request-size) 4) (aref changes i))))))))
+        (do ((bits mask (ash bits -1))
+             (request-size 2)                   ;Word count
+             (i 1 (index+ i 1)))                ;Entry count
+            ((zerop bits)
+             (card16-put 2 (index-incf request-size))
+             (index-incf (buffer-boffset display) (index* request-size 4)))
+          (declare (type mask32 bits)
+                   (type array-index i request-size))
+          (when (oddp bits)
+            (card32-put (index* (index-incf request-size) 4) (aref changes i))))))))
 ;;
 ;; These two are twins (put-window-attribute-changes put-drawable-geometry-changes)
 ;; If you change one, you probably need to change the other...
@@ -274,26 +274,26 @@
   ;; change window attributes or geometry (depending on request-number...)
   ;; Always from Called within a WITH-DISPLAY
   (declare (type window window)
-	   (type gcontext-state changes))
+           (type gcontext-state changes))
   (let* ((display (window-display window))
-	 (mask (aref changes 0)))
+         (mask (aref changes 0)))
     (declare (type display display)
-	     (type mask16 mask))
+             (type mask16 mask))
     (with-buffer-request (display +x-configurewindow+)
       (window window)
       (card16 mask)
       (progn ;; Insert a word in the request for each one bit in the mask
-	(do ((bits mask (ash bits -1))
-	     (request-size 2)			;Word count
-	     (i 1 (index+ i 1)))		;Entry count
-	    ((zerop bits)
-	     (card16-put 2 (incf request-size))
-	     (index-incf (buffer-boffset display) (* request-size 4)))
-	  (declare (type mask16 bits)
-		   (type fixnum request-size)
-		   (type array-index i))
-	  (when (oddp bits)
-	    (card29-put (* (incf request-size) 4) (aref changes i))))))))
+        (do ((bits mask (ash bits -1))
+             (request-size 2)                   ;Word count
+             (i 1 (index+ i 1)))                ;Entry count
+            ((zerop bits)
+             (card16-put 2 (incf request-size))
+             (index-incf (buffer-boffset display) (* request-size 4)))
+          (declare (type mask16 bits)
+                   (type fixnum request-size)
+                   (type array-index i))
+          (when (oddp bits)
+            (card29-put (* (incf request-size) 4) (aref changes i))))))))
 
 (defmacro with-attributes ((window &rest options) &body body)
   `(let ((.with-attributes-reply-buffer. (get-window-attributes-buffer ,window)))
@@ -301,7 +301,7 @@
      (prog1 
        (with-buffer-input (.with-attributes-reply-buffer. ,@options) ,@body)
        (unless *window-attributes*
-	 (deallocate-context .with-attributes-reply-buffer.)))))
+         (deallocate-context .with-attributes-reply-buffer.)))))
 ;;
 ;; These two are twins (with-attributes with-geometry)
 ;; If you change one, you probably need to change the other...
@@ -312,7 +312,7 @@
      (prog1 
        (with-buffer-input (.with-geometry-reply-buffer. ,@options) ,@body)
        (unless *window-attributes*
-	 (deallocate-context .with-geometry-reply-buffer.)))))
+         (deallocate-context .with-geometry-reply-buffer.)))))
 
 ;;;-----------------------------------------------------------------------------
 ;;; Group A: (for GetWindowAttributes)
@@ -338,15 +338,15 @@
 
 (defun set-window-background (window background)
   (declare (type window window)
-	   (type (or (member :none :parent-relative) pixel pixmap) background))
+           (type (or (member :none :parent-relative) pixel pixmap) background))
   (cond ((eq background :none) (change-window-attribute window 0 0))
-	((eq background :parent-relative) (change-window-attribute window 0 1))
-	((integerp background) ;; Background pixel
-	 (change-window-attribute window 0 0) ;; pixmap :NONE
-	 (change-window-attribute window 1 background))
-	((type? background 'pixmap) ;; Background pixmap
-	 (change-window-attribute window 0 (pixmap-id background)))
-	(t (x-type-error background '(or (member :none :parent-relative) integer pixmap))))
+        ((eq background :parent-relative) (change-window-attribute window 0 1))
+        ((integerp background) ;; Background pixel
+         (change-window-attribute window 0 0) ;; pixmap :NONE
+         (change-window-attribute window 1 background))
+        ((type? background 'pixmap) ;; Background pixmap
+         (change-window-attribute window 0 (pixmap-id background)))
+        (t (x-type-error background '(or (member :none :parent-relative) integer pixmap))))
   background)
 
 #+Genera (eval-when (compile) (compiler:function-defined 'window-background))
@@ -355,13 +355,13 @@
 
 (defun set-window-border (window border)
   (declare (type window window)
-	   (type (or (member :copy) pixel pixmap) border))
+           (type (or (member :copy) pixel pixmap) border))
   (cond ((eq border :copy) (change-window-attribute window 2 0))
-	((type? border 'pixmap) ;; Border pixmap
-	 (change-window-attribute window 2 (pixmap-id border)))
-	((integerp border) ;; Border pixel
-	 (change-window-attribute window 3 border))
-	(t (x-type-error border '(or (member :copy) integer pixmap))))
+        ((type? border 'pixmap) ;; Border pixmap
+         (change-window-attribute window 2 (pixmap-id border)))
+        ((integerp border) ;; Border pixel
+         (change-window-attribute window 3 border))
+        (t (x-type-error border '(or (member :copy) integer pixmap))))
   border)
 
 #+Genera (eval-when (compile) (compiler:function-defined 'window-border))
@@ -496,12 +496,12 @@
   (with-attributes (window :sizes 32)
     (let ((id (resource-id-get 28)))
       (if (zerop id)
-	  nil
-	  (let ((colormap (lookup-colormap (window-display window) id)))
-	    (unless (colormap-visual-info colormap)
-	      (setf (colormap-visual-info colormap)
-		    (visual-info (window-display window) (resource-id-get 8))))
-	    colormap)))))
+          nil
+          (let ((colormap (lookup-colormap (window-display window) id)))
+            (unless (colormap-visual-info colormap)
+              (setf (colormap-visual-info colormap)
+                    (visual-info (window-display window) (resource-id-get 8))))
+            colormap)))))
 
 (defun set-window-colormap (window colormap)
   (change-window-attribute
@@ -627,8 +627,8 @@
 
 (defun set-window-priority (mode window sibling)
   (declare (type (member :above :below :top-if :bottom-if :opposite) mode)
-	   (type window window)
-	   (type (or null window) sibling))
+           (type window window)
+           (type (or null window) sibling))
   (with-state (window)
     (change-drawable-geometry
       window 6 (encode-type (member :above :below :top-if :bottom-if :opposite) mode))

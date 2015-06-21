@@ -25,15 +25,15 @@
   ;; Encode a number in an alphanumeric identifier which is a valid C name.
   (declare (si::c-local))
   (cond ((zerop number) "0")
-	((minusp number) (encode-number-in-name (- number)))
-	(t
-	 (do* ((code "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
-	       (base (length code))
-	       (output '())
-	       (digit 0))
-	      ((zerop number) (coerce (nreverse output) 'base-string))
-	   (multiple-value-setq (number digit) (floor number base))
-	   (push (char code digit) output)))))
+        ((minusp number) (encode-number-in-name (- number)))
+        (t
+         (do* ((code "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
+               (base (length code))
+               (output '())
+               (digit 0))
+              ((zerop number) (coerce (nreverse output) 'base-string))
+           (multiple-value-setq (number digit) (floor number base))
+           (push (char code digit) output)))))
 
 (defun unique-init-name (file)
   "Create a unique name for this initialization function. The current algorithm
@@ -41,19 +41,19 @@ relies only on the name of the source file and the time at which it is built. Th
 should be enough to prevent name collisions for object files built in the same
 machine."
   (let* ((path (pathname file))
-	 (path-hash (logxor (ash (sxhash path) 8)
-			    (ash (sxhash (cddr (pathname-directory path))) 16)
-			    (sxhash (pathname-name path))))
-	 (seconds (get-universal-time))
-	 (ms (+ (* seconds 1000)
-		(mod (floor (* 1000 (get-internal-real-time))
-			    internal-time-units-per-second)
-		     1000)))
-	 (tag (concatenate 'base-string
-			   "_ecl"
-			   (encode-number-in-name path-hash)
-			   "_"
-			   (encode-number-in-name ms))))
+         (path-hash (logxor (ash (sxhash path) 8)
+                            (ash (sxhash (cddr (pathname-directory path))) 16)
+                            (sxhash (pathname-name path))))
+         (seconds (get-universal-time))
+         (ms (+ (* seconds 1000)
+                (mod (floor (* 1000 (get-internal-real-time))
+                            internal-time-units-per-second)
+                     1000)))
+         (tag (concatenate 'base-string
+                           "_ecl"
+                           (encode-number-in-name path-hash)
+                           "_"
+                           (encode-number-in-name ms))))
     tag))
 
 (defun init-name-tag (init-name)
@@ -62,23 +62,23 @@ machine."
 (defun search-tag (stream tag)
   (declare (si::c-local))
   (do* ((eof nil)
-	(key (concatenate 'list tag ":"))
-	(string key))
+        (key (concatenate 'list tag ":"))
+        (string key))
        (nil)
     (let ((c (read-byte stream nil nil)))
       (cond ((null c) (return nil))
-	    ((not (= c (char-code (pop string))))
-	     (setf string key))
-	    ((null string)
-	     (return t))))))
+            ((not (= c (char-code (pop string))))
+             (setf string key))
+            ((null string)
+             (return t))))))
 
 (defun read-name (stream)
   (declare (si::c-local))
   (concatenate 'string
-	       (loop with c = t
-		  until (or (null (setf c (read-byte stream nil nil)))
-			    (= c #.(char-code #\@)))
-		  collect (code-char c))))
+               (loop with c = t
+                  until (or (null (setf c (read-byte stream nil nil)))
+                            (= c #.(char-code #\@)))
+                  collect (code-char c))))
 
 (defun find-init-name (file &key (tag "@EcLtAg"))
   "Search for the initialization function in an object file. Since the
@@ -89,7 +89,7 @@ the function name it precedes."
   (with-open-file (stream file :direction :input :element-type '(unsigned-byte 8))
     (when (search-tag stream tag)
       (let ((name (read-name stream)))
-	name))))
+        name))))
 
 (defun remove-prefix (prefix name)
   (if (equal 0 (search prefix name))
@@ -112,11 +112,11 @@ the function name it precedes."
        (init-function-name "CODE" :kind :fas :prefix prefix))
       ((:static-library :lib)
        (init-function-name (remove-prefix +static-library-prefix+ filename)
-			   :kind :lib
+                           :kind :lib
                            :prefix prefix))
       ((:shared-library :dll)
        (init-function-name (remove-prefix +shared-library-prefix+ filename)
-			   :kind :dll
+                           :kind :dll
                            :prefix prefix))
       ((:program)
        (concatenate 'string (or prefix "init_") "ECL_PROGRAM"))
@@ -128,31 +128,31 @@ the function name it precedes."
 
 (defun init-function-name (s &key (kind :object) (prefix nil))
   (flet ((translate-char (c)
-	   (cond ((and (char>= c #\a) (char<= c #\z))
-		  (char-upcase c))
-		 ((and (char>= c #\A) (char<= c #\Z))
-		  c)
-		 ((or (eq c #\-) (eq c #\_))
-		  #\_)
-		 ((eq c #\*)
-		  #\x)
-		 ((eq c #\?)
-		  #\a)
-		 ((digit-char-p c)
-		  c)
-		 (t
-		  #\p)))
-	 (disambiguation (c)
-	   (case kind
-	     (:object "")
+           (cond ((and (char>= c #\a) (char<= c #\z))
+                  (char-upcase c))
+                 ((and (char>= c #\A) (char<= c #\Z))
+                  c)
+                 ((or (eq c #\-) (eq c #\_))
+                  #\_)
+                 ((eq c #\*)
+                  #\x)
+                 ((eq c #\?)
+                  #\a)
+                 ((digit-char-p c)
+                  c)
+                 (t
+                  #\p)))
+         (disambiguation (c)
+           (case kind
+             (:object "")
              (:program "exe_")
-	     ((:fasl :fas) "fas_")
-	     ((:library :static-library :lib) "lib_")
+             ((:fasl :fas) "fas_")
+             ((:library :static-library :lib) "lib_")
              ((:shared-library :dll) "dll_")
-	     (otherwise (error "Not a valid argument to INIT-FUNCTION-NAME: kind = ~S"
-			       kind)))))
+             (otherwise (error "Not a valid argument to INIT-FUNCTION-NAME: kind = ~S"
+                               kind)))))
     (setq s (map 'string #'translate-char (string s)))
     (concatenate 'string
-		 (or prefix "init_")
-		 (disambiguation kind)
-		 (map 'string #'translate-char (string s)))))
+                 (or prefix "init_")
+                 (disambiguation kind)
+                 (map 'string #'translate-char (string s)))))

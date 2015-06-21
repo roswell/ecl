@@ -13,11 +13,11 @@
 ;;;;
 ;;;; Following special forms are provided:
 ;;;;
-;;;;	(WITH-STACK {form}*)
-;;;;		Executes given forms, restoring the lisp stack on output.
-;;;;	(STACK-PUSH form)
-;;;;	(STACK-PUSH-VALUES form)
-;;;;	(STACK-POP nvalues)
+;;;;    (WITH-STACK {form}*)
+;;;;            Executes given forms, restoring the lisp stack on output.
+;;;;    (STACK-PUSH form)
+;;;;    (STACK-PUSH-VALUES form)
+;;;;    (STACK-POP nvalues)
 ;;;;
 
 (in-package "COMPILER")

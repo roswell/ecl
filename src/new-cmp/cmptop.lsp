@@ -59,39 +59,39 @@
       (let ((*current-toplevel-form* (list form *current-toplevel-form*))
             (fun (car form))
             (args (cdr form)) fd)
-	(when (member fun *toplevel-forms-to-print*)
-	  (print-current-form))
-	(cond
+        (when (member fun *toplevel-forms-to-print*)
+          (print-current-form))
+        (cond
             ((consp fun) (t1ordinary destination form))
             ((not (symbolp fun))
-	     (cmperr "~s is illegal function." fun))
-	    ((eq fun 'QUOTE)
-	     (t1ordinary destination 'NIL))
-	    ((setq fd (get-sysprop fun 'T1))
-	     (funcall fd destination args))
-	    ((or (get-sysprop fun 'C1) (get-sysprop fun 'C1SPECIAL))
+             (cmperr "~s is illegal function." fun))
+            ((eq fun 'QUOTE)
+             (t1ordinary destination 'NIL))
+            ((setq fd (get-sysprop fun 'T1))
+             (funcall fd destination args))
+            ((or (get-sysprop fun 'C1) (get-sysprop fun 'C1SPECIAL))
              (t1ordinary destination form))
-	    ((and (setq fd (compiler-macro-function fun))
-		  (inline-possible fun)
-		  (let ((success nil))
-		    (multiple-value-setq (fd success)
-		      (cmp-expand-macro fd form))
-		    success))
+            ((and (setq fd (compiler-macro-function fun))
+                  (inline-possible fun)
+                  (let ((success nil))
+                    (multiple-value-setq (fd success)
+                      (cmp-expand-macro fd form))
+                    success))
              (push 'macroexpand *current-toplevel-form*)
-	     (t1expr* destination fd))
-	    ((setq fd (cmp-macro-function fun))
+             (t1expr* destination fd))
+            ((setq fd (cmp-macro-function fun))
              (push 'macroexpand *current-toplevel-form*)
-	     (t1expr* destination (cmp-expand-macro fd form)))
-	    (t (t1ordinary destination form))
-	   )))))
+             (t1expr* destination (cmp-expand-macro fd form)))
+            (t (t1ordinary destination form))
+           )))))
 
 (defun t1/c1expr (destination form)
   (cond ((not *compile-toplevel*)
-	 (c1translate destination form))
-	((atom form)
-	 (t1ordinary destination form))
-	(t
-	 (t1expr* destination form))))	
+         (c1translate destination form))
+        ((atom form)
+         (t1ordinary destination form))
+        (t
+         (t1expr* destination form))))  
 
 (defun c1progn (destination forms)
   (or (loop for fl on forms
@@ -103,33 +103,33 @@
   (if (null decls)
       (c1progn destination body)
       (let* ((*cmp-env* (add-declarations decls (cmp-env-copy *cmp-env*))))
-	(c1progn destination body))))
+        (c1progn destination body))))
 
 (defun c1eval-when (destination args)
   (check-args-number 'EVAL-WHEN args 1)
   (let ((load-flag nil)
-	(compile-flag nil)
-	(execute-flag nil))
+        (compile-flag nil)
+        (execute-flag nil))
     (dolist (situation (car args))
       (case situation
-	((LOAD :LOAD-TOPLEVEL) (setq load-flag t))
-	((COMPILE :COMPILE-TOPLEVEL) (setq compile-flag t))
-	((EVAL :EXECUTE)
-	 (if *compile-toplevel*
-	     (setq compile-flag (or *compile-time-too* compile-flag))
-	     (setq execute-flag t)))
-	(otherwise (cmperr "The EVAL-WHEN situation ~s is illegal."
-			   situation))))
+        ((LOAD :LOAD-TOPLEVEL) (setq load-flag t))
+        ((COMPILE :COMPILE-TOPLEVEL) (setq compile-flag t))
+        ((EVAL :EXECUTE)
+         (if *compile-toplevel*
+             (setq compile-flag (or *compile-time-too* compile-flag))
+             (setq execute-flag t)))
+        (otherwise (cmperr "The EVAL-WHEN situation ~s is illegal."
+                           situation))))
     (cond ((not *compile-toplevel*)
-	   (c1progn destination (and execute-flag (rest args))))
-	  (load-flag
-	   (let ((*compile-time-too* compile-flag))
-	     (c1progn destination (rest args))))
-	  (compile-flag
-	   (cmp-eval (cons 'PROGN (rest args)))
-	   (c1progn destination 'NIL))
-	  (t
-	   (c1progn destination 'NIL)))))
+           (c1progn destination (and execute-flag (rest args))))
+          (load-flag
+           (let ((*compile-time-too* compile-flag))
+             (c1progn destination (rest args))))
+          (compile-flag
+           (cmp-eval (cons 'PROGN (rest args)))
+           (c1progn destination 'NIL))
+          (t
+           (c1progn destination 'NIL)))))
 
 (defun t1ordinary (destination form)
   (when *compile-time-too* (cmp-eval form))
@@ -146,19 +146,19 @@
 (defun c1load-time-value (destination args)
   (check-args-number 'LOAD-TIME-VALUE args 1 2)
   (let ((form (first args))
-	loc)
+        loc)
     (cond ((not (listp *load-time-values*))
-	   ;; When using COMPILE, we set *load-time-values* to 'VALUES and
-	   ;; thus signal that we do not want to compile these forms, but
-	   ;; just to retain their value.
-	   (return-from c1load-time-value (c1constant-value destination
+           ;; When using COMPILE, we set *load-time-values* to 'VALUES and
+           ;; thus signal that we do not want to compile these forms, but
+           ;; just to retain their value.
+           (return-from c1load-time-value (c1constant-value destination
                                                             (cmp-eval form) :always t)))
           ((typep form '(or list symbol))
-	   (setf loc (data-empty-loc))
-	   (setf *load-time-values* (nconc *load-time-values*
+           (setf loc (data-empty-loc))
+           (setf *load-time-values* (nconc *load-time-values*
                                            (c1translate loc form))))
-	  (t
-	   (setf loc (add-object (cmp-eval form)))))
+          (t
+           (setf loc (add-object (cmp-eval form)))))
     (c1set-loc destination loc)))
 
 (defun c1locally (destination args)
@@ -179,10 +179,10 @@
   (check-args-number 'SYMBOL-MACROLET args 1)
   (let ((*cmp-env* (cmp-env-copy)))
     (dolist (def (car args))
-      (let ((name (first def)))	    
-	(cmpck (or (endp def) (not (symbolp name)) (endp (cdr def)))
-	     "The symbol-macro definition ~s is illegal." def)
-	(cmp-env-register-symbol-macro name (second def))))
+      (let ((name (first def)))     
+        (cmpck (or (endp def) (not (symbolp name)) (endp (cdr def)))
+             "The symbol-macro definition ~s is illegal." def)
+        (cmp-env-register-symbol-macro name (second def))))
     (c1locally destination (cdr args))))
 
 (defun t1defmacro (destination args)
@@ -216,11 +216,11 @@
                (= (length fun-form) 1)
                (setf fun-form (first fun-form))
                (eq (c1form-name fun-form) 'FUNCTION)
-	       (not (eq (c1form-arg 0 fun-form) 'GLOBAL)))
-	  (let ((fun-object (c1form-arg 2 fun-form)))
+               (not (eq (c1form-arg 0 fun-form) 'GLOBAL)))
+          (let ((fun-object (c1form-arg 2 fun-form)))
             (setf (fun-child-funs *current-function*)
                   (delete fun-object (fun-child-funs *current-function*)))
-	    (cond ((fun-no-entry fun-object)
+            (cond ((fun-no-entry fun-object)
                    (when macro
                      (cmperr "Declaration C-LOCAL used in macro ~a" (fun-name fun)))
                    (make-c1form* 'SI:FSET :args fun-object nil nil nil nil))

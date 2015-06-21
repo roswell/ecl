@@ -1,41 +1,41 @@
 ;;; ----------------------------------------------------------------------
-;;;	CLOS
+;;;     CLOS
 ;;; ----------------------------------------------------------------------
 
 (defparameter
   *cmp-modules*
-  ;; file	load		compile			files which force
-  ;;		environment	environment		recompilations of
-  ;;							this file
+  ;; file       load            compile                 files which force
+  ;;            environment     environment             recompilations of
+  ;;                                                    this file
   '(
-    (cmpdefs	()		()			())
-    (cmpmac	()		()			())
-    (cmpinline	()		()			())
-    (cmputil	()		()			())
-    (cmptype	()		()			())
-    (cmpbind	()		()			())
-    (cmpblock	()		()			())
-    (cmpcall	()		()			())
-    (cmpcatch	()		()			())
-    (cmpenv	()		()			())
-    (cmpeval	()		()			())
-    (cmpexit	()		()			())
-    (cmpflet	()		()			())
-    (cmpfun	()		()			())
-    (cmpif	()		()			())
-    (cmplam	()		()			())
-    (cmplet	()		()			())
-    (cmploc	()		()			())
-    (cmpmap	()		()			())
-    (cmpmulti	()		()			())
-    (cmpspecial	()		()			())
-    (cmptag	()		()			())
-    (cmptop	()		()			())
-    (cmpvar	()		()			())
-    (cmpwt	()		()			())
-    (cmpmain	()		()			())
-    (cmpffi	()		()			())
-    (cmpcfg	()		()			())))
+    (cmpdefs    ()              ()                      ())
+    (cmpmac     ()              ()                      ())
+    (cmpinline  ()              ()                      ())
+    (cmputil    ()              ()                      ())
+    (cmptype    ()              ()                      ())
+    (cmpbind    ()              ()                      ())
+    (cmpblock   ()              ()                      ())
+    (cmpcall    ()              ()                      ())
+    (cmpcatch   ()              ()                      ())
+    (cmpenv     ()              ()                      ())
+    (cmpeval    ()              ()                      ())
+    (cmpexit    ()              ()                      ())
+    (cmpflet    ()              ()                      ())
+    (cmpfun     ()              ()                      ())
+    (cmpif      ()              ()                      ())
+    (cmplam     ()              ()                      ())
+    (cmplet     ()              ()                      ())
+    (cmploc     ()              ()                      ())
+    (cmpmap     ()              ()                      ())
+    (cmpmulti   ()              ()                      ())
+    (cmpspecial ()              ()                      ())
+    (cmptag     ()              ()                      ())
+    (cmptop     ()              ()                      ())
+    (cmpvar     ()              ()                      ())
+    (cmpwt      ()              ()                      ())
+    (cmpmain    ()              ()                      ())
+    (cmpffi     ()              ()                      ())
+    (cmpcfg     ()              ()                      ())))
 
 (sbt:defsystem 
  cmp

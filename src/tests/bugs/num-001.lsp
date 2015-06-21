@@ -10,7 +10,7 @@
 ;;; Fixed: 10/08/2008
 ;;; Description:
 ;;;
-;;;	COS, SIN and TAN were expanded using a wrong C expression.
+;;;     COS, SIN and TAN were expanded using a wrong C expression.
 ;;;
 
 (deftest num-0001-inline-cos

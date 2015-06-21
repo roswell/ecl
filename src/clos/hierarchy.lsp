@@ -84,8 +84,8 @@
 (eval-when (:compile-toplevel :execute)
   (defparameter +standard-class-slots+
     (append +class-slots+
-	    '((optimize-slot-access)
-	      (forward)))))
+            '((optimize-slot-access)
+              (forward)))))
 
 ;;; ----------------------------------------------------------------------
 ;;; STRUCTURE-CLASS
@@ -93,14 +93,14 @@
 (eval-when (:compile-toplevel :execute)
   (defparameter +structure-class-slots+
     (append +class-slots+
-	    '((slot-descriptions)
-	      (initial-offset)
-	      (defstruct-form)
-	      (constructors)
-	      (documentation)
-	      (copier)
-	      (predicate)
-	      (print-function)))))
+            '((slot-descriptions)
+              (initial-offset)
+              (defstruct-form)
+              (constructors)
+              (documentation)
+              (copier)
+              (predicate)
+              (print-function)))))
 
 ;;; ----------------------------------------------------------------------
 ;;; STANDARD-GENERIC-FUNCTION
@@ -149,10 +149,10 @@
 
   (defparameter +standard-accessor-method-slots+
     (append +standard-method-slots+
-	    '((slot-definition :initarg :slot-definition
-		    :initform nil 
-	       ;; FIXME! Should be a :reader
-		    :accessor accessor-method-slot-definition)))))
+            '((slot-definition :initarg :slot-definition
+                    :initform nil 
+               ;; FIXME! Should be a :reader
+                    :accessor accessor-method-slot-definition)))))
 
 ;;; ----------------------------------------------------------------------
 ;;; SLOT-DEFINITION
@@ -179,86 +179,86 @@
   ;; the code of cl_class_of() in src/instance.d
   ;;
   (defconstant +builtin-classes-list+
-	 '(;(t object)
-	    (sequence)
-	      (list sequence)
-	        (cons list)
-	    (array)
-	      (vector array sequence)
-	        (string vector)
+         '(;(t object)
+            (sequence)
+              (list sequence)
+                (cons list)
+            (array)
+              (vector array sequence)
+                (string vector)
                 #+unicode
-	        (base-string string vector)
-	        (bit-vector vector)
-	    (stream)
-	      (ext:ansi-stream stream)
-		(file-stream ext:ansi-stream)
-		(echo-stream ext:ansi-stream)
-		(string-stream ext:ansi-stream)
-		(two-way-stream ext:ansi-stream)
-		(synonym-stream ext:ansi-stream)
-		(broadcast-stream ext:ansi-stream)
-		(concatenated-stream ext:ansi-stream)
-		(ext:sequence-stream ext:ansi-stream)
-	    (character)
-	    (number)
-	      (real number)
-	        (rational real)
-		  (integer rational)
-		    (fixnum integer)
-		    (bignum integer)
-		  (ratio rational)
-	        (float real)
-	      (complex number)
-	    (symbol)
-	      (null symbol list)
-	      (keyword symbol)
-	    (package)
-	    (function)
-	    (pathname)
-	      (logical-pathname pathname)
-	    (hash-table)
-	    (random-state)
-	    (readtable)
+                (base-string string vector)
+                (bit-vector vector)
+            (stream)
+              (ext:ansi-stream stream)
+                (file-stream ext:ansi-stream)
+                (echo-stream ext:ansi-stream)
+                (string-stream ext:ansi-stream)
+                (two-way-stream ext:ansi-stream)
+                (synonym-stream ext:ansi-stream)
+                (broadcast-stream ext:ansi-stream)
+                (concatenated-stream ext:ansi-stream)
+                (ext:sequence-stream ext:ansi-stream)
+            (character)
+            (number)
+              (real number)
+                (rational real)
+                  (integer rational)
+                    (fixnum integer)
+                    (bignum integer)
+                  (ratio rational)
+                (float real)
+              (complex number)
+            (symbol)
+              (null symbol list)
+              (keyword symbol)
+            (package)
+            (function)
+            (pathname)
+              (logical-pathname pathname)
+            (hash-table)
+            (random-state)
+            (readtable)
             (si::code-block)
-	    (si::foreign-data)
-	    (si::frame)
-	    (si::weak-pointer)
-	    #+threads (mp::process)
-	    #+threads (mp::lock)
-	    #+threads (mp::rwlock)
-	    #+threads (mp::condition-variable)
-	    #+threads (mp::semaphore)
-	    #+threads (mp::barrier)
-	    #+threads (mp::mailbox)
-	    #+sse2 (ext::sse-pack))))
+            (si::foreign-data)
+            (si::frame)
+            (si::weak-pointer)
+            #+threads (mp::process)
+            #+threads (mp::lock)
+            #+threads (mp::rwlock)
+            #+threads (mp::condition-variable)
+            #+threads (mp::semaphore)
+            #+threads (mp::barrier)
+            #+threads (mp::mailbox)
+            #+sse2 (ext::sse-pack))))
 
 ;;; FROM AMOP:
 ;;;
-;;;	Metaobject Class		Direct Superclasses
-;;; 	standard-object			(t)
-;;; 	funcallable-standard-object	(standard-object function)
-;;; *	metaobject			(standard-object)
-;;; *	generic-function		(metaobject funcallable-standard-object)
-;;; 	standard-generic-function	(generic-function)
-;;; *	method				(metaobject)
-;;; 	standard-method			(method)
-;;; *	standard-accessor-method	(standard-method)
-;;; 	standard-reader-method		(standard-accessor-method)
-;;; 	standard-writer-method		(standard-accessor-method)
-;;; *	method-combination		(metaobject)
-;;; *	slot-definition			(metaobject)
-;;; *	direct-slot-definition		(slot-definition)
-;;; *	effective-slot-definition	(slot-definition)
-;;; *	standard-slot-definition	(slot-definition)
-;;; 	standard-direct-slot-definition	(standard-slot-definition direct-slot-definition)
-;;; 	standard-effective-slot-definition	(standard-slot-definition effective-slot-definition)
-;;; *	specializer			(metaobject)
-;;; 	eql-specializer			(specializer)
-;;; *	class				(specializer)
-;;; 	built-in-class			(class)
-;;; 	forward-referenced-class	(class)
-;;; 	standard-class			(class)
-;;; 	funcallable-standard-class	(class)
+;;;     Metaobject Class                Direct Superclasses
+;;;     standard-object                 (t)
+;;;     funcallable-standard-object     (standard-object function)
+;;; *   metaobject                      (standard-object)
+;;; *   generic-function                (metaobject funcallable-standard-object)
+;;;     standard-generic-function       (generic-function)
+;;; *   method                          (metaobject)
+;;;     standard-method                 (method)
+;;; *   standard-accessor-method        (standard-method)
+;;;     standard-reader-method          (standard-accessor-method)
+;;;     standard-writer-method          (standard-accessor-method)
+;;; *   method-combination              (metaobject)
+;;; *   slot-definition                 (metaobject)
+;;; *   direct-slot-definition          (slot-definition)
+;;; *   effective-slot-definition       (slot-definition)
+;;; *   standard-slot-definition        (slot-definition)
+;;;     standard-direct-slot-definition (standard-slot-definition direct-slot-definition)
+;;;     standard-effective-slot-definition      (standard-slot-definition effective-slot-definition)
+;;; *   specializer                     (metaobject)
+;;;     eql-specializer                 (specializer)
+;;; *   class                           (specializer)
+;;;     built-in-class                  (class)
+;;;     forward-referenced-class        (class)
+;;;     standard-class                  (class)
+;;;     funcallable-standard-class      (class)
 ;;;
 (eval-when (eval)
   (defconstant +class-hierarchy+
@@ -325,10 +325,10 @@
        :direct-superclasses (std-class)
        :direct-slots #1#)
       ,@(loop for (name . rest) in +builtin-classes-list+
-	   for index from 1
-	   collect (list name :metaclass 'built-in-class
-			 :index index
-			 :direct-superclasses (or rest '(t))))
+           for index from 1
+           collect (list name :metaclass 'built-in-class
+                         :index index
+                         :direct-superclasses (or rest '(t))))
       (funcallable-standard-object
        :direct-superclasses (standard-object function))
       (generic-function

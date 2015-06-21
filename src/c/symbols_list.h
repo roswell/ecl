@@ -23,7 +23,7 @@
 #define GRAY_ "GRAY::"
 #define FFI_ "FFI::"
 typedef struct {
-	const char *name, *translation;
+        const char *name, *translation;
 } cl_symbol_initializer;
 #else
 #include "ecl_constants.h"

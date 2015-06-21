@@ -28,26 +28,26 @@
 |#
 
 (defmethod reader-method-class ((class std-class)
-				(direct-slot direct-slot-definition)
-				&rest initargs)
+                                (direct-slot direct-slot-definition)
+                                &rest initargs)
   (declare (ignore class direct-slot initargs))
   (find-class (if (member (class-name (class-of class))
-			  '(standard-class
-			    funcallable-standard-class
-			    structure-class))
-		  'standard-optimized-reader-method
-		  'standard-reader-method)))
+                          '(standard-class
+                            funcallable-standard-class
+                            structure-class))
+                  'standard-optimized-reader-method
+                  'standard-reader-method)))
 
 (defmethod writer-method-class ((class std-class)
-				(direct-slot direct-slot-definition)
-				&rest initargs)
+                                (direct-slot direct-slot-definition)
+                                &rest initargs)
   (declare (ignore class direct-slot initargs))
   (find-class (if (member (class-name (class-of class))
-			  '(standard-class
-			    funcallable-standard-class
-			    structure-class))
-		  'standard-optimized-writer-method
-		  'standard-reader-method)))
+                          '(standard-class
+                            funcallable-standard-class
+                            structure-class))
+                  'standard-optimized-writer-method
+                  'standard-reader-method)))
 
 ;;; ----------------------------------------------------------------------
 ;;; Fixup
@@ -59,8 +59,8 @@
 
 (dolist (method-info *early-methods* (makunbound '*EARLY-METHODS*))
   (let* ((method-name (car method-info))
-	 (gfun (fdefinition method-name))
-	 (standard-method-class (find-class 'standard-method)))
+         (gfun (fdefinition method-name))
+         (standard-method-class (find-class 'standard-method)))
     (when (eq 'T (class-id (si:instance-class gfun)))
       ;; complete the generic function object
       (si:instance-class-set gfun (find-class 'STANDARD-GENERIC-FUNCTION))
@@ -71,13 +71,13 @@
     (dolist (method (cdr method-info))
       ;; complete the method object
       (let ((old-class (si::instance-class method)))
-	(si::instance-class-set method
-				(cond ((null old-class)
-				       (find-class 'standard-method))
-				      ((symbolp old-class)
-				       (find-class (truly-the symbol old-class)))
-				      (t
-				       old-class))))
+        (si::instance-class-set method
+                                (cond ((null old-class)
+                                       (find-class 'standard-method))
+                                      ((symbolp old-class)
+                                       (find-class (truly-the symbol old-class)))
+                                      (t
+                                       old-class))))
       (si::instance-sig-set gfun)
       (register-method-with-specializers method)
       )
@@ -91,21 +91,21 @@
 
 (defun make-method (method-class qualifiers specializers arglist function options)
   (apply #'make-instance
-	 method-class
-	 :generic-function nil
-	 :qualifiers qualifiers
-	 :lambda-list arglist
-	 :specializers specializers
-	 :function function
-	 :allow-other-keys t
-	 options))
+         method-class
+         :generic-function nil
+         :qualifiers qualifiers
+         :lambda-list arglist
+         :specializers specializers
+         :function function
+         :allow-other-keys t
+         options))
 
 (defun all-keywords (l)
   (declare (si::c-local))
   (let ((all-keys '()))
     (do ((l (rest l) (cddddr l)))
-	((null l)
-	 all-keys)
+        ((null l)
+         all-keys)
       (push (first l) all-keys))))
 
 (defun congruent-lambda-p (l1 l2)
@@ -113,19 +113,19 @@
       (si::process-lambda-list l1 'FUNCTION)
     (declare (ignore a-o-k1))
     (multiple-value-bind (r2 opts2 rest2 key-flag2 keywords2 a-o-k2)
-	(si::process-lambda-list l2 'FUNCTION)
-	(and (= (length r2) (length r1))
-	     (= (length opts1) (length opts2))
-	     (eq (and (null rest1) (null key-flag1))
-		 (and (null rest2) (null key-flag2)))
-	     ;; All keywords mentioned in the genericf function
-	     ;; must be accepted by the method.
-	     (or (null key-flag1)
-		 (null key-flag2)
-		 a-o-k2
-		 (null (set-difference (all-keywords keywords1)
-				       (all-keywords keywords2))))
-	     t))))
+        (si::process-lambda-list l2 'FUNCTION)
+        (and (= (length r2) (length r1))
+             (= (length opts1) (length opts2))
+             (eq (and (null rest1) (null key-flag1))
+                 (and (null rest2) (null key-flag2)))
+             ;; All keywords mentioned in the genericf function
+             ;; must be accepted by the method.
+             (or (null key-flag1)
+                 (null key-flag2)
+                 a-o-k2
+                 (null (set-difference (all-keywords keywords1)
+                                       (all-keywords keywords2))))
+             t))))
 
 (defun add-method (gf method)
   ;; during boot it's a structure accessor
@@ -145,11 +145,11 @@ and cannot be added to ~A." method other-gf gf)))
   ;;
   (let ((new-lambda-list (method-lambda-list method)))
     (if (slot-boundp gf 'lambda-list)
-	(let ((old-lambda-list (generic-function-lambda-list gf)))
-	  (unless (congruent-lambda-p old-lambda-list new-lambda-list)
-	    (error "Cannot add the method ~A to the generic function ~A because ~
+        (let ((old-lambda-list (generic-function-lambda-list gf)))
+          (unless (congruent-lambda-p old-lambda-list new-lambda-list)
+            (error "Cannot add the method ~A to the generic function ~A because ~
 their lambda lists ~A and ~A are not congruent."
-		   method gf old-lambda-list new-lambda-list)))
+                   method gf old-lambda-list new-lambda-list)))
         (reinitialize-instance
          gf :lambda-list (implicit-generic-lambda new-lambda-list))))
   ;;
@@ -158,10 +158,10 @@ their lambda lists ~A and ~A are not congruent."
   ;;
   (when (generic-function-methods gf)
     (let* ((method-qualifiers (method-qualifiers method)) 
-	   (specializers (method-specializers method))
-	   (found (find-method gf method-qualifiers specializers nil)))
+           (specializers (method-specializers method))
+           (found (find-method gf method-qualifiers specializers nil)))
       (when found
-	(remove-method gf found))))
+        (remove-method gf found))))
   ;;
   ;; We install the method by:
   ;;  i) Adding it to the list of methods
@@ -195,8 +195,8 @@ their lambda lists ~A and ~A are not congruent."
 
 (defun remove-method (gf method)
   (setf (generic-function-methods gf)
-	(delete method (generic-function-methods gf))
-	(method-generic-function method) nil)
+        (delete method (generic-function-methods gf))
+        (method-generic-function method) nil)
   (si:clear-gfun-hash gf)
   (loop for spec in (method-specializers method)
      do (remove-direct-method spec method))
@@ -208,9 +208,9 @@ their lambda lists ~A and ~A are not congruent."
 (function-to-method 'add-method '((gf standard-generic-function)
                                   (method standard-method)))
 (function-to-method 'remove-method '((gf standard-generic-function)
-				     (method standard-method)))
+                                     (method standard-method)))
 (function-to-method 'find-method '((gf standard-generic-function)
-				   qualifiers specializers &optional error))
+                                   qualifiers specializers &optional error))
 
 ;;; COMPUTE-APPLICABLE-METHODS is used by the core in various places,
 ;;; including instance initialization. This means we cannot just redefine it.
@@ -225,7 +225,7 @@ their lambda lists ~A and ~A are not congruent."
   (std-compute-applicable-methods gf args))
 (let ((aux #'aux-compute-applicable-methods))
   (setf (generic-function-name aux) 'compute-applicable-methods
-	(fdefinition 'compute-applicable-methods) aux))
+        (fdefinition 'compute-applicable-methods) aux))
 
 (defmethod compute-applicable-methods-using-classes
     ((gf standard-generic-function) classes)
@@ -249,7 +249,7 @@ their lambda lists ~A and ~A are not congruent."
 
 (defun no-primary-method (gf &rest args)
   (error "Generic function: ~A. No primary method given arguments: ~S"
-	 (generic-function-name gf) args))
+         (generic-function-name gf) args))
 
 ;;; Now we protect classes from redefinition:
 (eval-when (compile load)
@@ -259,7 +259,7 @@ their lambda lists ~A and ~A are not congruent."
     (cond
       ((typep old-class 'built-in-class)
        (error "The class associated to the CL specifier ~S cannot be changed."
-	      name))
+              name))
       ((member name '(CLASS BUILT-IN-CLASS) :test #'eq)
        (error "The kernel CLOS class ~S cannot be changed." name))
       ((classp new-value)
@@ -308,7 +308,7 @@ their lambda lists ~A and ~A are not congruent."
   (mapc #'recursively-update-classes (class-direct-subclasses a-class)))
 
 (defmethod update-dependent ((object generic-function) (dep initargs-updater)
-			     &rest initargs)
+                             &rest initargs)
   (declare (ignore dep initargs object))
   (recursively-update-classes +the-class+))
 

@@ -96,7 +96,7 @@
              (<= (list-length decl) 2)
              (gethash (first decl) *optimization-quality-switches*))
     (let* ((old (cmp-env-policy env))
-	   (flag (if (or (endp (rest decl)) (second decl)) 3 0))
+           (flag (if (or (endp (rest decl)) (second decl)) 3 0))
            (new (compute-policy (list (list (first decl) flag)) old)))
       (cmp-env-add-declaration 'optimization (list new) env))))
 

@@ -7,7 +7,7 @@
 
 (defun test-C-program (c-code &key capture-output)
   (with-open-file (s "tmp/aux.c" :direction :output :if-exists :supersede
-		     :if-does-not-exist :create)
+                     :if-does-not-exist :create)
     (princ c-code s))
   (c::compiler-cc "tmp/aux.c" "tmp/aux.o")
   (c::linker-cc "tmp/aux.exe" "tmp/aux.o")
@@ -17,15 +17,15 @@
     (STRING
      (with-output-to-string (s)
        (let ((in (si::run-program "tmp/aux.exe" '() :output :stream))
-	     line)
-	 (loop
-	  (setf line (read-line in nil))
-	  (unless line (return))
-	  (write-line line s)))))
+             line)
+         (loop
+          (setf line (read-line in nil))
+          (unless line (return))
+          (write-line line s)))))
     (T
      (do* ((all '())
-	   (x t)
-	   (in (si::run-program "tmp/aux.exe" '() :output :stream)))
+           (x t)
+           (in (si::run-program "tmp/aux.exe" '() :output :stream)))
        ((null in) all)
        (setf x (read in nil nil))
        (unless x (return all))
@@ -35,9 +35,9 @@
 ;;; Fixed: 23/06/2006 (juanjo)
 ;;; Description:
 ;;;
-;;;	Multiple invocations of cl_shutdown() can hang ECL. Also,
-;;;	cl_shutdown() is still invoked at exit (registered with
-;;;	atexit()) even if cl_shutdown was previously invoked.
+;;;     Multiple invocations of cl_shutdown() can hang ECL. Also,
+;;;     cl_shutdown() is still invoked at exit (registered with
+;;;     atexit()) even if cl_shutdown was previously invoked.
 ;;;
 ;;; Fixed: 03/2006 (juanjo)
 ;;;
@@ -51,9 +51,9 @@ int main (int argc, char **argv) {
   cl_shutdown();
   exit(0);
 }")
-	 (form '(push (lambda () (print :shutdown)) ext::*exit-hooks*))
-	 (c-code (format nil skeleton (format nil "~S" form)))
-	 (data (test-C-program (print c-code) :capture-output t)))
+         (form '(push (lambda () (print :shutdown)) ext::*exit-hooks*))
+         (c-code (format nil skeleton (format nil "~S" form)))
+         (data (test-C-program (print c-code) :capture-output t)))
     data)
   '(:shutdown))
 

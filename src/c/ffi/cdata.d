@@ -42,7 +42,7 @@ si_get_cdata(cl_object filename)
                 
         }
         if (memcmp(header->code, HEADER_PREFIX, HEADER_PREFIX_LENGTH)) {
-		displaced = str_no_data;
+                displaced = str_no_data;
         } else {
                 displaced = cl_funcall(8, @'make-array',
                                        ecl_make_fixnum(header->size),

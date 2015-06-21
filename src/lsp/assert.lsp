@@ -22,22 +22,22 @@
   (declare (c::policy-debug-ihs-frame))
   (tagbody again
      (restart-case
-	 (error 'simple-type-error
-		:format-control
+         (error 'simple-type-error
+                :format-control
                 "In ~:[an anonymous function~;~:*function ~A~], ~
                  ~:[found object~;~:*the value of ~A is~]~%~8t~S~%~
                  which is not of expected type ~A"
-		:format-arguments (list function place object type)
-		:datum object
-		:expected-type type
-		)
+                :format-arguments (list function place object type)
+                :datum object
+                :expected-type type
+                )
        (use-value (value)
-	 :report (lambda (stream)
-		   (format stream "Supply a new value of type ~A." type))
-	 :interactive read-evaluated-form
-	 (setf object value)
-	 (unless (typep object type)
-	   (go again)))))
+         :report (lambda (stream)
+                   (format stream "Supply a new value of type ~A." type))
+         :interactive read-evaluated-form
+         (setf object value)
+         (unless (typep object type)
+           (go again)))))
   object)
 
 (defmacro check-type (place type &optional type-string)
@@ -51,24 +51,24 @@ value is used to indicate the expected type in the error message."
     `(let ((,aux ,place))
        (declare (:read-only ,aux))
        (unless (typep ,aux ',type)
-	 (setf ,place (do-check-type ,aux ',type ',type-string ',place)))
+         (setf ,place (do-check-type ,aux ',type ',type-string ',place)))
        nil)))
 
 (defun do-check-type (value type type-string place)
   (tagbody again
      (unless (typep value type)
        (restart-case
-	   (error 'simple-type-error
-		  :datum value
-		  :expected-type type
-		  :format-control "The value of ~S is ~S, which is not ~:[of type ~S~;~:*~A~]."
-		  :format-arguments (list place value type-string type))
-	 (store-value (new-value)
-	   :report (lambda (stream)
-		     (format stream "Supply a new value of ~S" place))
-	   :interactive read-evaluated-form
-	   (setf value new-value)
-	   (go again)))))
+           (error 'simple-type-error
+                  :datum value
+                  :expected-type type
+                  :format-control "The value of ~S is ~S, which is not ~:[of type ~S~;~:*~A~]."
+                  :format-arguments (list place value type-string type))
+         (store-value (new-value)
+           :report (lambda (stream)
+                     (format stream "Supply a new value of ~S" place))
+           :interactive read-evaluated-form
+           (setf value new-value)
+           (go again)))))
   value)
 
 (defmacro assert (test-form &optional places &rest arguments)
@@ -95,14 +95,14 @@ for the error message and ARGs are arguments to the format string."
       ((null c) (nreverse l))
     (let ((keys (caar c)))
       (cond ((atom keys) (unless (null keys) (push keys l)))
-	    (list-is-atom-p (push keys l))
-	    (t (setq l (append keys l)))))))
+            (list-is-atom-p (push keys l))
+            (t (setq l (append keys l)))))))
 
 (defun ecase-error (value values)
   (error 'CASE-FAILURE :name 'ECASE
-	 :datum value
-	 :expected-type (cons 'MEMBER values)
-	 :possibilities values))
+         :datum value
+         :expected-type (cons 'MEMBER values)
+         :possibilities values))
 
 (defmacro ecase (keyform &rest clauses)
   "Syntax: (ecase keyform {({key | ({key}*)} {form}*)}*)
@@ -114,28 +114,28 @@ signals an error."
   (let ((key (gensym)))
     `(let ((,key ,keyform))
        (case ,key ,@clauses
-	 (t (si::ecase-error ,key ',(accumulate-cases clauses nil)))))))
+         (t (si::ecase-error ,key ',(accumulate-cases clauses nil)))))))
 
 (defun ccase-error (keyform key values)
   (restart-case (error 'CASE-FAILURE
-		       :name 'CCASE
-		       :datum key
-		       :expected-type (cons 'MEMBER values)
-		       :possibilities values)
+                       :name 'CCASE
+                       :datum key
+                       :expected-type (cons 'MEMBER values)
+                       :possibilities values)
     (store-value (value)
       :REPORT (lambda (stream)
-		(format stream "Supply a new value of ~S" keyform))
+                (format stream "Supply a new value of ~S" keyform))
       :INTERACTIVE read-evaluated-form
       (return-from ccase-error value))))
 
 (defun remove-otherwise-from-clauses (clauses)
   (declare (si::c-local))
   (mapcar #'(lambda (clause)
-	      (let ((options (first clause)))
-		(if (member options '(t otherwise))
-		    (cons (list options) (rest clause))
-		    clause)))
-	  clauses))
+              (let ((options (first clause)))
+                (if (member options '(t otherwise))
+                    (cons (list options) (rest clause))
+                    clause)))
+          clauses))
 
 (defmacro ccase (keyplace &rest clauses)
   "Syntax: (ccase place {({key | ({key}*)} {form}*)}*)
@@ -146,18 +146,18 @@ continuable error.  Before continuing, receives a new value of PLACE from
 user and searches a KEY again.  Repeats this process until the value of PLACE
 becomes EQL to one of the KEYs."
   (let* ((key (gensym))
-	 (repeat (gensym))
-	 (block (gensym)))
+         (repeat (gensym))
+         (block (gensym)))
     (setq clauses (remove-otherwise-from-clauses clauses))
     `(block ,block
        (tagbody ,repeat
-	 (let ((,key ,keyplace))
-	   (return-from ,block
-	     (case ,key ,@clauses
-	       (t (setf ,keyplace
-			(si::ccase-error ',keyplace ,key
-					 ',(accumulate-cases clauses nil)))
-		  (go ,repeat)))))))))
+         (let ((,key ,keyplace))
+           (return-from ,block
+             (case ,key ,@clauses
+               (t (setf ,keyplace
+                        (si::ccase-error ',keyplace ,key
+                                         ',(accumulate-cases clauses nil)))
+                  (go ,repeat)))))))))
 
 (defmacro typecase (keyform &rest clauses)
   "Syntax: (typecase keyform {(type {form}*)}*)
@@ -178,9 +178,9 @@ be used as a TYPE to specify the default case."
 
 (defun etypecase-error (value types)
   (error 'CASE-FAILURE :name 'ETYPECASE
-	 :datum value
-	 :expected-type (cons 'OR types)
-	 :possibilities types))
+         :datum value
+         :expected-type (cons 'OR types)
+         :possibilities types))
 
 (defmacro etypecase (keyform &rest clauses &aux (key (gensym)))
   "Syntax: (etypecase keyform {(type {form}*)}*)
@@ -188,7 +188,7 @@ Evaluates KEYFORM and searches a TYPE to which the value of KEYFORM belongs.
 If found, then evaluates FORMs that follow the TYPE and returns all values of
 the last FORM.  If not, signals an error."
    (setq clauses (remove-otherwise-from-clauses clauses))
-   (do ((l (reverse clauses) (cdr l))	; Beppe
+   (do ((l (reverse clauses) (cdr l))   ; Beppe
         (form `(etypecase-error ,key ',(accumulate-cases clauses t))))
        ((endp l) `(let ((,key ,keyform)) ,form))
        (setq form `(if (typep ,key ',(caar l))
@@ -199,13 +199,13 @@ the last FORM.  If not, signals an error."
 
 (defun ctypecase-error (keyplace value types)
   (restart-case (error 'CASE-FAILURE
-		       :name 'CTYPECASE
-		       :datum value
-		       :expected-type (cons 'OR types)
-		       :possibilities types)
+                       :name 'CTYPECASE
+                       :datum value
+                       :expected-type (cons 'OR types)
+                       :possibilities types)
     (store-value (value)
       :REPORT (lambda (stream)
-		(format stream "Supply a new value of ~S." keyplace))
+                (format stream "Supply a new value of ~S." keyplace))
       :INTERACTIVE read-evaluated-form
       (return-from ctypecase-error value))))
 
@@ -220,8 +220,8 @@ Repeats this process until the value of PLACE becomes of one of the TYPEs."
   `(loop
     (let ((,key ,keyplace))
       ,@(mapcar #'(lambda (l)
-		    `(when (typep ,key ',(car l))
-		      (return (progn ,@(cdr l)))))
-		clauses)
+                    `(when (typep ,key ',(car l))
+                      (return (progn ,@(cdr l)))))
+                clauses)
       (setf ,keyplace (ctypecase-error ',keyplace ,key
-				       ',(accumulate-cases clauses t))))))
+                                       ',(accumulate-cases clauses t))))))

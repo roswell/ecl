@@ -8,10 +8,10 @@
 ;;; Ideally, this file (or a file that loads this file) should be
 ;;; located in the system directory that REQUIRE searches.  Thus a user
 ;;; would say
-;;;			(require :clx)
+;;;                     (require :clx)
 ;;; to load CLX.  If there is no such registry, then the user must
 ;;; put in a site specific
-;;;			(require :clx <pathname-of-this-file>)
+;;;                     (require :clx <pathname-of-this-file>)
 ;;;
 
 #-clx-ansi-common-lisp 
@@ -24,30 +24,30 @@
 (provide :clx)
 
 (defvar *clx-source-pathname*
-	(pathname "/src/local/clx/*.l"))
+        (pathname "/src/local/clx/*.l"))
 
 (defvar *clx-binary-pathname*
-	(let ((lisp
-		(or #+lucid "lucid"
-		    #+akcl  "akcl"
-		    #+kcl   "kcl"
-		    #+ibcl  "ibcl"
-		    (error "Can't provide CLX for this lisp.")))
-	      (architecture
-		(or #+(or sun3 (and sun (or mc68000 mc68020))) "sun3"
-		    #+(or sun4 sparc) "sparc"
-		    #+(and hp (or mc68000 mc68020)) "hp9000s300"
-		    #+vax "vax"
-		    #+prime "prime"
-		    #+sunrise "sunrise"
-		    #+ibm-rt-pc "ibm-rt-pc"
-		    #+mips "mips"
-		    #+prism "prism"
-		    (error "Can't provide CLX for this architecture."))))
-	  (pathname (format nil "/src/local/clx/~A.~A/" lisp architecture))))
+        (let ((lisp
+                (or #+lucid "lucid"
+                    #+akcl  "akcl"
+                    #+kcl   "kcl"
+                    #+ibcl  "ibcl"
+                    (error "Can't provide CLX for this lisp.")))
+              (architecture
+                (or #+(or sun3 (and sun (or mc68000 mc68020))) "sun3"
+                    #+(or sun4 sparc) "sparc"
+                    #+(and hp (or mc68000 mc68020)) "hp9000s300"
+                    #+vax "vax"
+                    #+prime "prime"
+                    #+sunrise "sunrise"
+                    #+ibm-rt-pc "ibm-rt-pc"
+                    #+mips "mips"
+                    #+prism "prism"
+                    (error "Can't provide CLX for this architecture."))))
+          (pathname (format nil "/src/local/clx/~A.~A/" lisp architecture))))
 
 (defvar *compile-clx*
-	nil)
+        nil)
 
 (load (merge-pathnames "defsystem" *clx-source-pathname*))
 

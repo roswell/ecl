@@ -29,16 +29,16 @@
 cl_fixnum
 ecl_fixnum_expt(cl_fixnum x, cl_fixnum y)
 {
-	cl_fixnum z = 1;
-	while (y > 0)
-		if (y%2 == 0) {
-			x *= x;
-			y /= 2;
-		} else {
-			z *= x;
-			--y;
-		}
-	return(z);
+        cl_fixnum z = 1;
+        while (y > 0)
+                if (y%2 == 0) {
+                        x *= x;
+                        y /= 2;
+                } else {
+                        z *= x;
+                        --y;
+                }
+        return(z);
 }
 
 cl_object
@@ -56,13 +56,13 @@ ecl_def_ct_long_float(longfloat_one,1,static,const);
 static cl_object
 expt_zero(cl_object x, cl_object y)
 {
-	cl_type ty, tx;
-	cl_object z;
+        cl_type ty, tx;
+        cl_object z;
         ty = ecl_t_of(y);
         tx = ecl_t_of(x);
         if (ecl_unlikely(!ECL_NUMBER_TYPE_P(tx))) {
                 FEwrong_type_nth_arg(@[expt], 1, x, @[number]);
-	}
+        }
         /* INV: The most specific numeric types come first. */
         switch ((ty > tx)? ty : tx) {
         case t_fixnum:
@@ -90,45 +90,45 @@ expt_zero(cl_object x, cl_object y)
 cl_object
 ecl_expt(cl_object x, cl_object y)
 {
-	cl_type ty, tx;
-	cl_object z;
-	if (ecl_unlikely(ecl_zerop(y))) {
+        cl_type ty, tx;
+        cl_object z;
+        if (ecl_unlikely(ecl_zerop(y))) {
                 return expt_zero(x, y);
-	}
+        }
         ty = ecl_t_of(y);
         tx = ecl_t_of(x);
         if (ecl_unlikely(!ECL_NUMBER_TYPE_P(tx))) {
                 FEwrong_type_nth_arg(@[expt], 1, x, @[number]);
-	}
+        }
         if (ecl_zerop(x)) {
-		z = ecl_times(x, y);
-		if (!ecl_plusp(ty==t_complex?y->complex.real:y))
-			z = ecl_divide(ecl_make_fixnum(1), z);
-	} else if (ty != t_fixnum && ty != t_bignum) {
+                z = ecl_times(x, y);
+                if (!ecl_plusp(ty==t_complex?y->complex.real:y))
+                        z = ecl_divide(ecl_make_fixnum(1), z);
+        } else if (ty != t_fixnum && ty != t_bignum) {
                 /* The following could be just
                    z = ecl_log1(x);
                    however, Maxima expects EXPT to have double accuracy
                    when the first argument is integer and the second
                    is double-float */
-		z = ecl_log1(ecl_times(x, expt_zero(x, y)));
-		z = ecl_times(z, y);
-		z = ecl_exp(z);
-	} else if (ecl_minusp(y)) {
-		z = ecl_negate(y);
-		z = ecl_expt(x, z);
-		z = ecl_divide(ecl_make_fixnum(1), z);
-	} else {
+                z = ecl_log1(ecl_times(x, expt_zero(x, y)));
+                z = ecl_times(z, y);
+                z = ecl_exp(z);
+        } else if (ecl_minusp(y)) {
+                z = ecl_negate(y);
+                z = ecl_expt(x, z);
+                z = ecl_divide(ecl_make_fixnum(1), z);
+        } else {
                 ECL_MATHERR_CLEAR;
-		z = ecl_make_fixnum(1);
-		do {
-			/* INV: ecl_integer_divide outputs an integer */
-			if (!ecl_evenp(y))
-				z = ecl_times(z, x);
-			y = ecl_integer_divide(y, ecl_make_fixnum(2));
-			if (ecl_zerop(y)) break;
-			x = ecl_times(x, x);
-		} while (1);
+                z = ecl_make_fixnum(1);
+                do {
+                        /* INV: ecl_integer_divide outputs an integer */
+                        if (!ecl_evenp(y))
+                                z = ecl_times(z, x);
+                        y = ecl_integer_divide(y, ecl_make_fixnum(2));
+                        if (ecl_zerop(y)) break;
+                        x = ecl_times(x, x);
+                } while (1);
                 ECL_MATHERR_TEST;
-	}
-	return z;
+        }
+        return z;
 }

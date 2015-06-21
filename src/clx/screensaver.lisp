@@ -33,8 +33,8 @@
 (in-package :xlib)
 
 (export '(screen-saver-query-version
-	  screen-saver-query-info
-	  screen-saver-get-idle)
+          screen-saver-query-info
+          screen-saver-get-idle)
         :xlib)
 
 (define-extension "MIT-SCREEN-SAVER")

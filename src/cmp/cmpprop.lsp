@@ -29,10 +29,10 @@
     (return-from p1propagate (values 'null assumptions)))
   (when (c1form-p form)
     (let* ((*cmp-env* (c1form-env form))
-	   (*compile-file-pathname* (c1form-file form))
-	   (*compile-file-position* (c1form-file-position form))
-	   (*current-form* (c1form-form form))
-	   (*current-toplevel-form* (c1form-toplevel-form form))
+           (*compile-file-pathname* (c1form-file form))
+           (*compile-file-position* (c1form-file-position form))
+           (*current-form* (c1form-form form))
+           (*current-toplevel-form* (c1form-toplevel-form form))
            (name (c1form-name form))
            (propagator (gethash name *p1-dispatch-table*)))
       (when propagator
@@ -44,10 +44,10 @@
           (prop-message "~&;;; Propagating ~A gives type ~A" name
                         new-type)
           (return-from p1propagate
-	     (values (setf (c1form-type form)
-			   (values-type-and (c1form-type form)
-					    new-type))
-		     assumptions))))))
+             (values (setf (c1form-type form)
+                           (values-type-and (c1form-type form)
+                                            new-type))
+                     assumptions))))))
   (cmpnote "Refusing to propagate ~A" form)
   (values (c1form-type form) assumptions))
 
@@ -57,20 +57,20 @@
 
 (defun p1var (form assumptions var)
   (let* ((record (and (assoc var assumptions)
-		      (baboon :format-control "Non empty assumptions found in P1VAR")))
-	 ;; Use the type of C1FORM because it might have been
-	 ;; coerced by a THE form.
-	 (var-type (if record (cdr record) (var-type var)))
-	 (type (type-and var-type (c1form-primary-type form))))
+                      (baboon :format-control "Non empty assumptions found in P1VAR")))
+         ;; Use the type of C1FORM because it might have been
+         ;; coerced by a THE form.
+         (var-type (if record (cdr record) (var-type var)))
+         (type (type-and var-type (c1form-primary-type form))))
     (prop-message "~&;;; Querying variable ~A gives ~A" (var-name var) type)
     (values type assumptions)))
 
 (defun p1values (form assumptions values)
   (loop for v in values
      collect (multiple-value-bind (type new-assumptions)
-		 (p1propagate v assumptions)
-	       (setf assumptions new-assumptions)
-	       (values-type-primary-type type))
+                 (p1propagate v assumptions)
+               (setf assumptions new-assumptions)
+               (values-type-primary-type type))
      into all-values
      finally (return (values `(values ,@all-values) assumptions))))
 
@@ -86,7 +86,7 @@ ROOT. This function takes all those extensions and makes a final list in which
 type assumptions have been merged, giving the variables the OR type of each
 of the occurrences in those lists."
   (unless (and (null root)
-	       (every #'null chains))
+               (every #'null chains))
     (baboon :format-control "P1MERGE-BRANCHES got a non-empty list of assumptions")))
 
 (defun revise-var-type (variable assumptions where-to-stop)
@@ -99,14 +99,14 @@ of the occurrences in those lists."
       (p1propagate body assumptions)
     (let ((blk-type (blk-type blk)))
       (values (if blk-type (values-type-or blk-type normal-type) normal-type)
-	      assumptions))))
+              assumptions))))
 
 (defun p1return-from (c1form assumptions blk return-type value variable-or-nil)
   (let* ((values-type (p1propagate value assumptions))
-	 (blk-type (blk-type blk)))
+         (blk-type (blk-type blk)))
     (setf (blk-type blk) (if blk-type
-			     (values-type-or blk-type values-type)
-			     values-type))
+                             (values-type-or blk-type values-type)
+                             values-type))
     (values values-type assumptions)))
 
 (defun p1call-global (c1form assumptions fname args)
@@ -117,7 +117,7 @@ of the occurrences in those lists."
      finally (let ((type (propagate-types fname args)))
                (prop-message "~&;;; Computing output of function ~A with args~&;;;  ~{ ~A~}~&;;; gives ~A, while before ~A"
                        fname (mapcar #'c1form-primary-type args)
-		       type (c1form-type c1form))
+                       type (c1form-type c1form))
                (return (values type assumptions)))))
 
 (defun p1call-local (c1form assumptions fun args)
@@ -148,7 +148,7 @@ of the occurrences in those lists."
       (multiple-value-bind (t2 a2)
           (p1propagate false-branch base-assumptions)
         (values (values-type-or t1 t2)
-		(p1merge-branches base-assumptions (list a1 a2)))))))
+                (p1merge-branches base-assumptions (list a1 a2)))))))
 
 (defun p1fmla-not (c1form assumptions form)
   (multiple-value-bind (type assumptions)
@@ -160,13 +160,13 @@ of the occurrences in those lists."
      with assumptions = orig-assumptions
      for form in (append butlast (list last))
      collect (progn
-	       (multiple-value-setq (type assumptions)
-		 (p1propagate form assumptions))
-	       assumptions)
+               (multiple-value-setq (type assumptions)
+                 (p1propagate form assumptions))
+               assumptions)
      into assumptions-list
      finally (return (values (type-or 'null (values-type-primary-type type))
-			     (p1merge-branches orig-assumptions
-					       assumptions-list)))))
+                             (p1merge-branches orig-assumptions
+                                               assumptions-list)))))
 
 (defun p1fmla-or (c1form orig-assumptions butlast last)
   (loop with type
@@ -174,15 +174,15 @@ of the occurrences in those lists."
      with assumptions = orig-assumptions
      for form in (append butlast (list last))
      collect (progn
-	       (multiple-value-setq (type assumptions)
-		 (p1propagate form assumptions))
-	       (setf output-type (type-or (values-type-primary-type type)
-					  output-type))
-	       assumptions)
+               (multiple-value-setq (type assumptions)
+                 (p1propagate form assumptions))
+               (setf output-type (type-or (values-type-primary-type type)
+                                          output-type))
+               assumptions)
      into assumptions-list
      finally (return (values output-type
-			     (p1merge-branches orig-assumptions
-					       assumptions-list)))))
+                             (p1merge-branches orig-assumptions
+                                               assumptions-list)))))
 
 (defun p1lambda (c1form assumptions lambda-list doc body &rest not-used)
   (prop-message "~&;;;~&;;; Propagating function~&;;;")
@@ -202,11 +202,11 @@ of the occurrences in those lists."
        for f in forms
        unless (or (global-var-p v) (var-set-nodes v))
        do (progn
-	    (multiple-value-setq (type assumptions) (p1propagate f assumptions))
-	    (setf (var-type v) (type-and (values-type-primary-type type)
-					 (var-type v)))
-	    (prop-message "~&;;; Variable ~A assigned type ~A"
-			  (var-name v) (var-type v))))
+            (multiple-value-setq (type assumptions) (p1propagate f assumptions))
+            (setf (var-type v) (type-and (values-type-primary-type type)
+                                         (var-type v)))
+            (prop-message "~&;;; Variable ~A assigned type ~A"
+                          (var-name v) (var-type v))))
     (multiple-value-bind (type assumptions)
         (p1propagate body assumptions)
       (loop for v in vars
@@ -224,10 +224,10 @@ of the occurrences in those lists."
     (loop for v in vars-list
        for type in (values-type-to-n-types init-form-type (length vars-list))
        unless (or (global-var-p v)
-		  (var-set-nodes v))
+                  (var-set-nodes v))
        do (setf (var-type v) (type-and (var-type v) type)) and
        do (prop-message "~&;;; Variable ~A assigned type ~A"
-			  (var-name v) (var-type v)))
+                          (var-name v) (var-type v)))
     (p1propagate body assumptions)))
 
 (defun p1multiple-value-setq (c1form assumptions vars-list value-c1form)
@@ -244,16 +244,16 @@ of the occurrences in those lists."
        for (a-type c1form) in expressions
        for c1form-type = (p1propagate c1form assumptions)
        when (or (member a-type '(t otherwise))
-		(subtypep var-type a-type))
+                (subtypep var-type a-type))
        do (setf output-type c1form-type)
        finally (return (values output-type assumptions)))))
 
 (defun p1checked-value (c1form assumptions type value let-form)
   (let* ((value-type (p1propagate value assumptions))
-	 (alt-type (p1propagate let-form assumptions)))
+         (alt-type (p1propagate let-form assumptions)))
     (if (subtypep value-type type)
-	value-type
-	type)))
+        value-type
+        type)))
 
 (defun p1progv (c1form assumptions variables values body)
   (let (type)
@@ -267,12 +267,12 @@ of the occurrences in those lists."
   (multiple-value-bind (value-type assumptions)
       (p1propagate c1form assumptions)
     (values (type-and (var-type var) (values-type-primary-type value-type))
-	    assumptions)))
+            assumptions)))
 
 (defun p1psetq (c1form assumptions vars c1forms)
   (loop for form in c1forms
      do (multiple-value-bind (new-type assumptions)
-	  (p1propagate form assumptions)))
+          (p1propagate form assumptions)))
   (values 'null assumptions))
 
 (defun p1with-stack (c1form assumptions body)
@@ -351,21 +351,21 @@ compute it. This version only handles the simplest cases."
                 ((not (member (first array) 
                               '(array vector simple-array)))
                  (setf array 'array)
-		 t)
+                 t)
                 ((null (rest array))
                  t)
                 (t
-		 (let ((x (second array)))
-		   (if (eq x '*) t x))))
+                 (let ((x (second array)))
+                   (if (eq x '*) t x))))
           array))
 
 (def-type-propagator si::aset (fname array-type &rest indices-and-object)
   (multiple-value-bind (elt-type array-type)
       (type-from-array-elt array-type)
     (values (cons array-type
-		  (nconc (make-list (1- (length indices-and-object))
-				    :initial-element 'si::index)
-			 (list elt-type)))
+                  (nconc (make-list (1- (length indices-and-object))
+                                    :initial-element 'si::index)
+                         (list elt-type)))
             elt-type)))
 
 (def-type-propagator aref (fname array-type &rest indices)

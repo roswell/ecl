@@ -58,8 +58,8 @@ static cl_object
 ecl_tanh_complex(cl_object x)
 {
         cl_object a = ecl_sinh(x);
-	cl_object b = ecl_cosh(x);
-	return ecl_divide(a, b);
+        cl_object b = ecl_cosh(x);
+        return ecl_divide(a, b);
 }
 
 MATH_DEF_DISPATCH1(tanh, @[tanh], @[number],

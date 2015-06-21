@@ -3,9 +3,9 @@
 ;;; Define lisp character to keysym mappings
 
 ;;;
-;;;			 TEXAS INSTRUMENTS INCORPORATED
-;;;				  P.O. BOX 2909
-;;;			       AUSTIN, TEXAS 78769
+;;;                      TEXAS INSTRUMENTS INCORPORATED
+;;;                               P.O. BOX 2909
+;;;                            AUSTIN, TEXAS 78769
 ;;;
 ;;; Copyright (C) 1987 Texas Instruments Incorporated.
 ;;;
@@ -20,19 +20,19 @@
 
 (in-package :xlib)
 
-(define-keysym-set :latin-1	(keysym 0 0) (keysym 0 255))
-(define-keysym-set :latin-2	(keysym 1 0) (keysym 1 255))
-(define-keysym-set :latin-3	(keysym 2 0) (keysym 2 255))
-(define-keysym-set :latin-4	(keysym 3 0) (keysym 3 255))
-(define-keysym-set :kana	(keysym 4 0) (keysym 4 255))
-(define-keysym-set :arabic	(keysym 5 0) (keysym 5 255))
-(define-keysym-set :cyrillic	(keysym 6 0) (keysym 6 255))
-(define-keysym-set :greek	(keysym 7 0) (keysym 7 255))
-(define-keysym-set :tech	(keysym 8 0) (keysym 8 255))
-(define-keysym-set :special	(keysym 9 0) (keysym 9 255))
-(define-keysym-set :publish	(keysym 10 0) (keysym 10 255))
-(define-keysym-set :apl		(keysym 11 0) (keysym 11 255))
-(define-keysym-set :hebrew	(keysym 12 0) (keysym 12 255))
+(define-keysym-set :latin-1     (keysym 0 0) (keysym 0 255))
+(define-keysym-set :latin-2     (keysym 1 0) (keysym 1 255))
+(define-keysym-set :latin-3     (keysym 2 0) (keysym 2 255))
+(define-keysym-set :latin-4     (keysym 3 0) (keysym 3 255))
+(define-keysym-set :kana        (keysym 4 0) (keysym 4 255))
+(define-keysym-set :arabic      (keysym 5 0) (keysym 5 255))
+(define-keysym-set :cyrillic    (keysym 6 0) (keysym 6 255))
+(define-keysym-set :greek       (keysym 7 0) (keysym 7 255))
+(define-keysym-set :tech        (keysym 8 0) (keysym 8 255))
+(define-keysym-set :special     (keysym 9 0) (keysym 9 255))
+(define-keysym-set :publish     (keysym 10 0) (keysym 10 255))
+(define-keysym-set :apl         (keysym 11 0) (keysym 11 255))
+(define-keysym-set :hebrew      (keysym 12 0) (keysym 12 255))
 (define-keysym-set :thai        (keysym 13 0) (keysym 13 255))
 (define-keysym-set :korean      (keysym 14 0) (keysym 14 255))
 (define-keysym-set :latin-5     (keysym 15 0) (keysym 15 255))
@@ -43,7 +43,7 @@
 (define-keysym-set :currency    (keysym 32 0) (keysym 32 255))
 (define-keysym-set :|3270|      (keysym 253 0) (keysym 253 255))
 (define-keysym-set :xkb         (keysym 254 0) (keysym 254 255))
-(define-keysym-set :keyboard	(keysym 255 0) (keysym 255 255))
+(define-keysym-set :keyboard    (keysym 255 0) (keysym 255 255))
 
 (define-keysym :character-set-switch character-set-switch-keysym)
 (define-keysym :left-shift left-shift-keysym)
@@ -158,12 +158,12 @@
 (define-keysym #\~ 126)
 
 (progn   ;; Semi-standard characters
-  (define-keysym #\rubout (keysym 255 255))	; :tty
-  (define-keysym #\tab (keysym 255 009))	; :tty
-  (define-keysym #\linefeed (keysym 255 010))	; :tty
-  (define-keysym #\page (keysym 009 227))	; :special
-  (define-keysym #\return (keysym 255 013))	; :tty
-  (define-keysym #\backspace (keysym 255 008))	; :tty
+  (define-keysym #\rubout (keysym 255 255))     ; :tty
+  (define-keysym #\tab (keysym 255 009))        ; :tty
+  (define-keysym #\linefeed (keysym 255 010))   ; :tty
+  (define-keysym #\page (keysym 009 227))       ; :special
+  (define-keysym #\return (keysym 255 013))     ; :tty
+  (define-keysym #\backspace (keysym 255 008))  ; :tty
   )
 
 ;;; these keysym definitions are only correct if the underlying lisp's
@@ -183,7 +183,7 @@
 
 #+(or lispm excl)
 (progn   ;; Nonstandard characters 
-  (define-keysym #\escape (keysym 255 027))	; :tty
+  (define-keysym #\escape (keysym 255 027))     ; :tty
   )
 
 #+ti
@@ -235,7 +235,7 @@
 )
 
 #+ti
-(progn	;; There are no 7-bit ascii representations for the following
+(progn  ;; There are no 7-bit ascii representations for the following
         ;; European characters, so use int-char to create them to ensure
         ;; nothing is lost while sending files through the mail.
   (define-keysym (int-char 192) 192 :lowercase 224)
@@ -306,42 +306,42 @@
 
 #+lispm  ;; Nonstandard characters
 (progn 
-  (define-keysym #\center-dot (keysym 183))	; :latin-1
-  (define-keysym #\down-arrow (keysym 008 254))	; :technical
-  (define-keysym #\alpha (keysym 007 225))	; :greek
-  (define-keysym #\beta (keysym 007 226))	; :greek
-  (define-keysym #\and-sign (keysym 008 222))	; :technical
-  (define-keysym #\not-sign (keysym 172))	; :latin-1
-  (define-keysym #\epsilon (keysym 007 229))	; :greek
-  (define-keysym #\pi (keysym 007 240))		; :greek
-  (define-keysym #\lambda (keysym 007 235))	; :greek
-  (define-keysym #\gamma (keysym 007 227))	; :greek
-  (define-keysym #\delta (keysym 007 228))	; :greek
-  (define-keysym #\up-arrow (keysym 008 252))	; :technical
-  (define-keysym #\plus-minus (keysym 177))	; :latin-1
-  (define-keysym #\infinity (keysym 008 194))	; :technical
-  (define-keysym #\partial-delta (keysym 008 239))	; :technical
-  (define-keysym #\left-horseshoe (keysym 011 218))	; :apl
-  (define-keysym #\right-horseshoe (keysym 011 216))	; :apl
-  (define-keysym #\up-horseshoe (keysym 011 195))	; :apl
-  (define-keysym #\down-horseshoe (keysym 011 214))	; :apl
-  (define-keysym #\double-arrow (keysym 008 205))	; :technical
-  (define-keysym #\left-arrow (keysym 008 251))	; :technical
-  (define-keysym #\right-arrow (keysym 008 253))	; :technical
-  (define-keysym #\not-equals (keysym 008 189))	; :technical
-  (define-keysym #\less-or-equal (keysym 008 188))	; :technical
-  (define-keysym #\greater-or-equal (keysym 008 190))	; :technical
-  (define-keysym #\equivalence (keysym 008 207))	; :technical
-  (define-keysym #\or-sign (keysym 008 223))	; :technical
-  (define-keysym #\integral (keysym 008 191))	; :technical
+  (define-keysym #\center-dot (keysym 183))     ; :latin-1
+  (define-keysym #\down-arrow (keysym 008 254)) ; :technical
+  (define-keysym #\alpha (keysym 007 225))      ; :greek
+  (define-keysym #\beta (keysym 007 226))       ; :greek
+  (define-keysym #\and-sign (keysym 008 222))   ; :technical
+  (define-keysym #\not-sign (keysym 172))       ; :latin-1
+  (define-keysym #\epsilon (keysym 007 229))    ; :greek
+  (define-keysym #\pi (keysym 007 240))         ; :greek
+  (define-keysym #\lambda (keysym 007 235))     ; :greek
+  (define-keysym #\gamma (keysym 007 227))      ; :greek
+  (define-keysym #\delta (keysym 007 228))      ; :greek
+  (define-keysym #\up-arrow (keysym 008 252))   ; :technical
+  (define-keysym #\plus-minus (keysym 177))     ; :latin-1
+  (define-keysym #\infinity (keysym 008 194))   ; :technical
+  (define-keysym #\partial-delta (keysym 008 239))      ; :technical
+  (define-keysym #\left-horseshoe (keysym 011 218))     ; :apl
+  (define-keysym #\right-horseshoe (keysym 011 216))    ; :apl
+  (define-keysym #\up-horseshoe (keysym 011 195))       ; :apl
+  (define-keysym #\down-horseshoe (keysym 011 214))     ; :apl
+  (define-keysym #\double-arrow (keysym 008 205))       ; :technical
+  (define-keysym #\left-arrow (keysym 008 251)) ; :technical
+  (define-keysym #\right-arrow (keysym 008 253))        ; :technical
+  (define-keysym #\not-equals (keysym 008 189)) ; :technical
+  (define-keysym #\less-or-equal (keysym 008 188))      ; :technical
+  (define-keysym #\greater-or-equal (keysym 008 190))   ; :technical
+  (define-keysym #\equivalence (keysym 008 207))        ; :technical
+  (define-keysym #\or-sign (keysym 008 223))    ; :technical
+  (define-keysym #\integral (keysym 008 191))   ; :technical
 ;;  break isn't null
-;;  (define-keysym #\null (keysym 255 107))	; :function
-  (define-keysym #\clear-input (keysym 255 011))	; :tty
-  (define-keysym #\help (keysym 255 106))	; :function
-  (define-keysym #\refresh (keysym 255 097))	; :function
-  (define-keysym #\abort (keysym 255 105))	; :function
-  (define-keysym #\resume (keysym 255 098))	; :function
-  (define-keysym #\end (keysym 255 087))	; :cursor
+;;  (define-keysym #\null (keysym 255 107))     ; :function
+  (define-keysym #\clear-input (keysym 255 011))        ; :tty
+  (define-keysym #\help (keysym 255 106))       ; :function
+  (define-keysym #\refresh (keysym 255 097))    ; :function
+  (define-keysym #\abort (keysym 255 105))      ; :function
+  (define-keysym #\resume (keysym 255 098))     ; :function
+  (define-keysym #\end (keysym 255 087))        ; :cursor
 ;;#\universal-quantifier
 ;;#\existential-quantifier
 ;;#\circle-plus
@@ -352,59 +352,59 @@
 (progn
 ;;#\network
 ;;#\symbol-help
-  (define-keysym #\lozenge (keysym 009 224))	; :special
-  (define-keysym #\suspend (keysym 255 019))	; :tty
-  (define-keysym #\function (keysym 255 032))	; :function
-  (define-keysym #\square (keysym 010 231))	; :publishing
-  (define-keysym #\circle (keysym 010 230))	; :publishing
-  (define-keysym #\triangle (keysym 010 232))	; :publishing
-  (define-keysym #\scroll (keysym 255 086))	; :cursor
-  (define-keysym #\select (keysym 255 096))	; :function
-  (define-keysym #\complete (keysym 255 104))	; :function
+  (define-keysym #\lozenge (keysym 009 224))    ; :special
+  (define-keysym #\suspend (keysym 255 019))    ; :tty
+  (define-keysym #\function (keysym 255 032))   ; :function
+  (define-keysym #\square (keysym 010 231))     ; :publishing
+  (define-keysym #\circle (keysym 010 230))     ; :publishing
+  (define-keysym #\triangle (keysym 010 232))   ; :publishing
+  (define-keysym #\scroll (keysym 255 086))     ; :cursor
+  (define-keysym #\select (keysym 255 096))     ; :function
+  (define-keysym #\complete (keysym 255 104))   ; :function
   )
 
 #+ti
 (progn
-  (define-keysym #\terminal (keysym 255 032))	; :function
-  (define-keysym #\system (keysym 255 096))	; :function
+  (define-keysym #\terminal (keysym 255 032))   ; :function
+  (define-keysym #\system (keysym 255 096))     ; :function
   (define-keysym #\center-arrow (keysym 255 80))
-  (define-keysym #\left-arrow (keysym 255 081))	; :cursor
-  (define-keysym #\up-arrow (keysym 255 082))	; :cursor
-  (define-keysym #\right-arrow (keysym 255 083))	; :cursor
-  (define-keysym #\down-arrow (keysym 255 084))	; :cursor
-  (define-keysym #\end (keysym 255 087))	; :cursor
-  (define-keysym #\undo (keysym 255 101))	; :function
+  (define-keysym #\left-arrow (keysym 255 081)) ; :cursor
+  (define-keysym #\up-arrow (keysym 255 082))   ; :cursor
+  (define-keysym #\right-arrow (keysym 255 083))        ; :cursor
+  (define-keysym #\down-arrow (keysym 255 084)) ; :cursor
+  (define-keysym #\end (keysym 255 087))        ; :cursor
+  (define-keysym #\undo (keysym 255 101))       ; :function
   (define-keysym #\break (keysym 255 107))
-  (define-keysym #\keypad-space (keysym 255 128))	; :keypad
-  (define-keysym #\keypad-tab (keysym 255 137))	; :keypad
-  (define-keysym #\keypad-enter (keysym 255 141))	; :keypad
-  (define-keysym #\f1 (keysym 255 145))		; :keypad
-  (define-keysym #\f2 (keysym 255 146))		; :keypad
-  (define-keysym #\f3 (keysym 255 147))		; :keypad
-  (define-keysym #\f4 (keysym 255 148))		; :keypad
-  (define-keysym #\f1 (keysym 255 190))		; :keypad
-  (define-keysym #\f2 (keysym 255 191))		; :keypad
-  (define-keysym #\f3 (keysym 255 192))		; :keypad
-  (define-keysym #\f4 (keysym 255 193))		; :keypad
-  (define-keysym #\keypad-plus (keysym 255 171))	; :keypad
-  (define-keysym #\keypad-comma (keysym 255 172))	; :keypad
-  (define-keysym #\keypad-minus (keysym 255 173))	; :keypad
-  (define-keysym #\keypad-period (keysym 255 174))	; :keypad
-  (define-keysym #\keypad-0 (keysym 255 176))	; :keypad
-  (define-keysym #\keypad-1 (keysym 255 177))	; :keypad
-  (define-keysym #\keypad-2 (keysym 255 178))	; :keypad
-  (define-keysym #\keypad-3 (keysym 255 179))	; :keypad
-  (define-keysym #\keypad-4 (keysym 255 180))	; :keypad
-  (define-keysym #\keypad-5 (keysym 255 181))	; :keypad
-  (define-keysym #\keypad-6 (keysym 255 182))	; :keypad
-  (define-keysym #\keypad-7 (keysym 255 183))	; :keypad
-  (define-keysym #\keypad-8 (keysym 255 184))	; :keypad
-  (define-keysym #\keypad-9 (keysym 255 185))	; :keypad
-  (define-keysym #\keypad-equal (keysym 255 189))	; :keypad
-  (define-keysym #\f1 (keysym 255 192))		; :function
-  (define-keysym #\f2 (keysym 255 193))		; :function
-  (define-keysym #\f3 (keysym 255 194))		; :function
-  (define-keysym #\f4 (keysym 255 195))		; :function
+  (define-keysym #\keypad-space (keysym 255 128))       ; :keypad
+  (define-keysym #\keypad-tab (keysym 255 137)) ; :keypad
+  (define-keysym #\keypad-enter (keysym 255 141))       ; :keypad
+  (define-keysym #\f1 (keysym 255 145))         ; :keypad
+  (define-keysym #\f2 (keysym 255 146))         ; :keypad
+  (define-keysym #\f3 (keysym 255 147))         ; :keypad
+  (define-keysym #\f4 (keysym 255 148))         ; :keypad
+  (define-keysym #\f1 (keysym 255 190))         ; :keypad
+  (define-keysym #\f2 (keysym 255 191))         ; :keypad
+  (define-keysym #\f3 (keysym 255 192))         ; :keypad
+  (define-keysym #\f4 (keysym 255 193))         ; :keypad
+  (define-keysym #\keypad-plus (keysym 255 171))        ; :keypad
+  (define-keysym #\keypad-comma (keysym 255 172))       ; :keypad
+  (define-keysym #\keypad-minus (keysym 255 173))       ; :keypad
+  (define-keysym #\keypad-period (keysym 255 174))      ; :keypad
+  (define-keysym #\keypad-0 (keysym 255 176))   ; :keypad
+  (define-keysym #\keypad-1 (keysym 255 177))   ; :keypad
+  (define-keysym #\keypad-2 (keysym 255 178))   ; :keypad
+  (define-keysym #\keypad-3 (keysym 255 179))   ; :keypad
+  (define-keysym #\keypad-4 (keysym 255 180))   ; :keypad
+  (define-keysym #\keypad-5 (keysym 255 181))   ; :keypad
+  (define-keysym #\keypad-6 (keysym 255 182))   ; :keypad
+  (define-keysym #\keypad-7 (keysym 255 183))   ; :keypad
+  (define-keysym #\keypad-8 (keysym 255 184))   ; :keypad
+  (define-keysym #\keypad-9 (keysym 255 185))   ; :keypad
+  (define-keysym #\keypad-equal (keysym 255 189))       ; :keypad
+  (define-keysym #\f1 (keysym 255 192))         ; :function
+  (define-keysym #\f2 (keysym 255 193))         ; :function
+  (define-keysym #\f3 (keysym 255 194))         ; :function
+  (define-keysym #\f4 (keysym 255 195))         ; :function
   (define-keysym #\network (keysym 255 214))
   (define-keysym #\status (keysym 255 215))
   (define-keysym #\clear-screen (keysym 255 217))
@@ -412,22 +412,22 @@
   (define-keysym #\middle (keysym 255 219))
   (define-keysym #\right (keysym 255 220))
   (define-keysym #\resume (keysym 255 221))
-  (define-keysym #\vt (keysym 009 233))		; :special ;; same as #\delete
+  (define-keysym #\vt (keysym 009 233))         ; :special ;; same as #\delete
   )
 
 #+ti
 (progn  ;; Explorer specific characters
-  (define-keysym #\Call (keysym 131))		; :latin-1
-  (define-keysym #\Macro (keysym 133))		; :latin-1
-  (define-keysym #\Quote (keysym 142))		; :latin-1
-  (define-keysym #\Hold-output (keysym 143))	; :latin-1
-  (define-keysym #\Stop-output (keysym 144))	; :latin-1
-  (define-keysym #\Center (keysym 156))		; :latin-1
-  (define-keysym #\no-break-space (keysym 160))	; :latin-1
+  (define-keysym #\Call (keysym 131))           ; :latin-1
+  (define-keysym #\Macro (keysym 133))          ; :latin-1
+  (define-keysym #\Quote (keysym 142))          ; :latin-1
+  (define-keysym #\Hold-output (keysym 143))    ; :latin-1
+  (define-keysym #\Stop-output (keysym 144))    ; :latin-1
+  (define-keysym #\Center (keysym 156))         ; :latin-1
+  (define-keysym #\no-break-space (keysym 160)) ; :latin-1
 
-  (define-keysym #\circle-plus (keysym 13))	; :latin-1
-  (define-keysym #\universal-quantifier (keysym 20))	; :latin-1
-  (define-keysym #\existential-quantifier (keysym 21))	; :latin-1
-  (define-keysym #\circle-cross (keysym 22))	; :latin-1
+  (define-keysym #\circle-plus (keysym 13))     ; :latin-1
+  (define-keysym #\universal-quantifier (keysym 20))    ; :latin-1
+  (define-keysym #\existential-quantifier (keysym 21))  ; :latin-1
+  (define-keysym #\circle-cross (keysym 22))    ; :latin-1
   )
 

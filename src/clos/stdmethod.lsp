@@ -22,15 +22,15 @@
     (declare (ignore reqs opts rest-var))
     (when key-flag
       (do* ((output '())
-	    (l (cdr keywords) (cddddr l)))
-	   ((endp l)
-	    output)
-	(push (first l) output)))))
+            (l (cdr keywords) (cddddr l)))
+           ((endp l)
+            output)
+        (push (first l) output)))))
 
 (defmethod shared-initialize ((method standard-method) slot-names &rest initargs
-			      &key (specializers nil spec-supplied-p)
-			      (lambda-list nil lambda-supplied-p)
-			      generic-function)
+                              &key (specializers nil spec-supplied-p)
+                              (lambda-list nil lambda-supplied-p)
+                              generic-function)
   (declare (ignore initargs method slot-names))
   (when slot-names
     (unless spec-supplied-p
@@ -38,15 +38,15 @@
     (unless lambda-supplied-p
       (error "Lambda list not supplied in method initialization"))
     (unless (= (first (si::process-lambda-list lambda-list 'method))
-	       (length specializers))
+               (length specializers))
       (error "The list of specializers does not match the number of required arguments in the lambda list ~A"
-	     lambda-list)))
+             lambda-list)))
   (when spec-supplied-p
     (loop for s in specializers
        unless (typep s 'specializer)
        do (error "Object ~A is not a valid specializer" s)))
   (setf method (call-next-method)
-	(method-keywords method) (compute-method-keywords (method-lambda-list method)))
+        (method-keywords method) (compute-method-keywords (method-lambda-list method)))
   method)
 
 #+threads
@@ -58,8 +58,8 @@
   (let ((table *eql-specializer-hash*))
     (mp:with-lock (*eql-specializer-lock*)
       (or (gethash object table nil)
-	  (setf (gethash object table)
-		(make-instance 'eql-specializer :object object))))))
+          (setf (gethash object table)
+                (make-instance 'eql-specializer :object object))))))
 
 (defmethod add-direct-method ((spec specializer) (method method))
   (pushnew method (specializer-direct-methods spec))
@@ -69,11 +69,11 @@
 
 (defmethod remove-direct-method ((spec specializer) (method method))
   (let* ((gf (method-generic-function method))
-	 (methods (delete method (specializer-direct-methods spec))))
+         (methods (delete method (specializer-direct-methods spec))))
     (setf (specializer-direct-methods spec) methods)
     (unless (find gf methods :key #'method-generic-function)
       (setf (specializer-direct-generic-functions spec)
-	    (delete gf (specializer-direct-generic-functions spec))))
+            (delete gf (specializer-direct-generic-functions spec))))
     (values)))
 
 (defmethod remove-direct-method ((spec eql-specializer) (method method))

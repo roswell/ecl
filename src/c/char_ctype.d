@@ -21,49 +21,49 @@
 bool
 ecl_graphic_char_p(ecl_character code)
 {
-	return code == ' ' || isgraph(code);
+        return code == ' ' || isgraph(code);
 }
 
 bool
 ecl_alpha_char_p(ecl_character code)
 {
-	return isalpha(code);
+        return isalpha(code);
 }
 
 bool
 ecl_upper_case_p(ecl_character code)
 {
-	return isupper(code);
+        return isupper(code);
 }
 
 bool
 ecl_lower_case_p(ecl_character code)
 {
-	return islower(code);
+        return islower(code);
 }
 
 bool
 ecl_both_case_p(ecl_character code)
 {
-	return islower(code) || isupper(code);
+        return islower(code) || isupper(code);
 }
 
 bool
 ecl_alphanumericp(ecl_character i)
 {
-	return isalnum(i);
+        return isalnum(i);
 }
 
 ecl_character
 ecl_char_upcase(ecl_character code)
 {
-	return toupper(code);
+        return toupper(code);
 }
 
 ecl_character
 ecl_char_downcase(ecl_character code)
 {
-	return tolower(code);
+        return tolower(code);
 }
 
 #else /* ECL_UNICODE */
@@ -80,16 +80,16 @@ extern const unsigned char ecl_ucd_page_table_1[];
 const unsigned char *
 ucd_char_data(ecl_character code)
 {
-	const unsigned char *page = ecl_ucd_page_table[code >> 8];
+        const unsigned char *page = ecl_ucd_page_table[code >> 8];
         return page + (4 * (code & 0xFF));
 }
 
 static cl_index
 ucd_value_0(ecl_character code)
 {
-	if (ecl_unlikely((code >= 0x110000)))
-		FEerror("The value ~A is not of type (MOD 1114112)", 1, code);
-	return ucd_char_data(code)[0];
+        if (ecl_unlikely((code >= 0x110000)))
+                FEerror("The value ~A is not of type (MOD 1114112)", 1, code);
+        return ucd_char_data(code)[0];
 }
 
 #define read_case_bytes(c) (c[1] + (c[2] << 8) + (c[3] << 16))
@@ -104,14 +104,14 @@ ucd_value_0(ecl_character code)
 const unsigned char *
 ucd_char_data(ecl_character code)
 {
-	const unsigned char *page = ecl_ucd_page_table[code >> 8];
+        const unsigned char *page = ecl_ucd_page_table[code >> 8];
         return page + (3 * (code & 0xFF));
 }
 
 static cl_index
 ucd_value_0(ecl_character code)
 {
-	return ucd_char_data(code)[0];
+        return ucd_char_data(code)[0];
 }
 
 #define read_case_bytes(c) (c[1] + (c[2] << 8))
@@ -120,72 +120,72 @@ ucd_value_0(ecl_character code)
 static int
 ucd_general_category(ecl_character code)
 {
-	return ecl_ucd_misc_table[8 * ucd_value_0(code)];
+        return ecl_ucd_misc_table[8 * ucd_value_0(code)];
 }
 
 static int
 ucd_decimal_digit(ecl_character code)
 {
-	return ecl_ucd_misc_table[3 + 8 * ucd_value_0(code)];
+        return ecl_ucd_misc_table[3 + 8 * ucd_value_0(code)];
 }
 
 bool
 ecl_graphic_char_p(ecl_character code)
 {
-	/* compatible to SBCL */
-	return code > 159 || ((31 < code) && (code < 127));
+        /* compatible to SBCL */
+        return code > 159 || ((31 < code) && (code < 127));
 }
 
 bool
 ecl_alpha_char_p(ecl_character code)
 {
-	return ucd_general_category(code) < 5;
+        return ucd_general_category(code) < 5;
 }
 
 bool
 ecl_upper_case_p(ecl_character code)
 {
-	return ucd_value_0(code) == 0;
+        return ucd_value_0(code) == 0;
 }
 
 bool
 ecl_lower_case_p(ecl_character code)
 {
-	return ucd_value_0(code) == 1;
+        return ucd_value_0(code) == 1;
 }
 
 bool
 ecl_both_case_p(ecl_character code)
 {
-	return ucd_value_0(code) < 2;
+        return ucd_value_0(code) < 2;
 }
 
 bool
 ecl_alphanumericp(ecl_character i)
 {
-	int gc = ucd_general_category(i);
-	return (gc < 5) || (gc == 12);
+        int gc = ucd_general_category(i);
+        return (gc < 5) || (gc == 12);
 }
 
 ecl_character
 ecl_char_upcase(ecl_character code)
 {
-	const unsigned char *c = ucd_char_data(code);
-	if (c[0] == 1) {
-		return read_case_bytes(c);
-	} else {
-		return code;
-	}
+        const unsigned char *c = ucd_char_data(code);
+        if (c[0] == 1) {
+                return read_case_bytes(c);
+        } else {
+                return code;
+        }
 }
 
 ecl_character
 ecl_char_downcase(ecl_character code)
 {
-	const unsigned char *c = ucd_char_data(code);
-	if (c[0] == 0) {
-		return read_case_bytes(c);
-	} else {
-		return code;
-	}
+        const unsigned char *c = ucd_char_data(code);
+        if (c[0] == 0) {
+                return read_case_bytes(c);
+        } else {
+                return code;
+        }
 }
 #endif

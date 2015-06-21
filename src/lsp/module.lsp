@@ -10,7 +10,7 @@
 ;;;;
 ;;;;    See file '../Copyright' for full details.
 
-;;;;	module routines
+;;;;    module routines
 
 ;; This is taken from SBCL's code/module.lisp which is in the public
 ;; domain.
@@ -52,27 +52,27 @@ module."
       (require-error "~@<Could not ~S ~A: circularity detected. Please check ~
                      your configuration.~:@>" 'require module-name))
     (let ((saved-modules (copy-list *modules*))
-	  (*requiring* (cons name *requiring*)))
+          (*requiring* (cons name *requiring*)))
       (unless (member name *modules* :test #'string=)
-	(cond (pathnames
-	       (unless (listp pathnames) (setf pathnames (list pathnames)))
-	       ;; ambiguity in standard: should we try all pathnames in the
-	       ;; list, or should we stop as soon as one of them calls PROVIDE?
-	       (dolist (ele pathnames t)
-		 (load ele)))
-	      (t
-	       (unless (some (lambda (p) (funcall p module-name))
-			     *module-provider-functions*)
-		 (require-error "Don't know how to ~S ~A."
-				'require module-name)))))
+        (cond (pathnames
+               (unless (listp pathnames) (setf pathnames (list pathnames)))
+               ;; ambiguity in standard: should we try all pathnames in the
+               ;; list, or should we stop as soon as one of them calls PROVIDE?
+               (dolist (ele pathnames t)
+                 (load ele)))
+              (t
+               (unless (some (lambda (p) (funcall p module-name))
+                             *module-provider-functions*)
+                 (require-error "Don't know how to ~S ~A."
+                                'require module-name)))))
       (set-difference *modules* saved-modules))))
 
 (pushnew #'(lambda (module)
-	     (let* ((module (string module)))
-	       (or
-		(let ((path (make-pathname :name module :defaults "SYS:")))
-		  (load path :if-does-not-exist nil))
-		(let ((path (make-pathname :name (string-downcase module)
+             (let* ((module (string module)))
+               (or
+                (let ((path (make-pathname :name module :defaults "SYS:")))
+                  (load path :if-does-not-exist nil))
+                (let ((path (make-pathname :name (string-downcase module)
                                            :defaults "SYS:")))
-		  (load path :if-does-not-exist nil)))))
-	 *module-provider-functions*)
+                  (load path :if-does-not-exist nil)))))
+         *module-provider-functions*)

@@ -19,29 +19,29 @@
 /*
  * LEGACY
  */
-#define CHARACTERP(o)		ECL_CHARACTERP(o)
-#define BASE_CHAR_P(o)		ECL_BASE_CHAR_P(o)
-#define BASE_CHAR_CODE_P(o)	ECL_BASE_CHAR_CODE_P(o)
-#define CODE_CHAR(o)		ECL_CODE_CHAR(o)
-#define CHAR_CODE(o)		ECL_CHAR_CODE(o)
-#define REAL_TYPE(t)		ECL_REAL_TYPE_P(t)
-#define IMMEDIATE(o)		ECL_IMMEDIATE(o)
-#define IMMEDIATE_TAG		ECL_IMMEDIATE_TAG
+#define CHARACTERP(o)           ECL_CHARACTERP(o)
+#define BASE_CHAR_P(o)          ECL_BASE_CHAR_P(o)
+#define BASE_CHAR_CODE_P(o)     ECL_BASE_CHAR_CODE_P(o)
+#define CODE_CHAR(o)            ECL_CODE_CHAR(o)
+#define CHAR_CODE(o)            ECL_CHAR_CODE(o)
+#define REAL_TYPE(t)            ECL_REAL_TYPE_P(t)
+#define IMMEDIATE(o)            ECL_IMMEDIATE(o)
+#define IMMEDIATE_TAG           ECL_IMMEDIATE_TAG
 
-#define FIXNUM_TAG		t_fixnum
-#define MAKE_FIXNUM(n)		ecl_make_fixnum(n)
-#define FIXNUM_MINUSP(n)	ecl_fixnum_minusp(n)
-#define FIXNUM_PLUSP(n)		ecl_fixnum_plusp(n)
-#define	fix(o)			ecl_fixnum(o)
-#define FIXNUMP(o)		ECL_FIXNUMP(o)
+#define FIXNUM_TAG              t_fixnum
+#define MAKE_FIXNUM(n)          ecl_make_fixnum(n)
+#define FIXNUM_MINUSP(n)        ecl_fixnum_minusp(n)
+#define FIXNUM_PLUSP(n)         ecl_fixnum_plusp(n)
+#define fix(o)                  ecl_fixnum(o)
+#define FIXNUMP(o)              ECL_FIXNUMP(o)
 
-#define	sf(obje)	(obje)->SF.SFVAL
-#define	df(obje)	(obje)->DF.DFVAL
+#define sf(obje)        (obje)->SF.SFVAL
+#define df(obje)        (obje)->DF.DFVAL
 #define make_shortfloat(x) ecl_make_shortfloat(x);
 
-#define big_dim		big_num->_mp_alloc
-#define big_size	big_num->_mp_size
-#define big_limbs	big_num->_mp_d
+#define big_dim         big_num->_mp_alloc
+#define big_size        big_num->_mp_size
+#define big_limbs       big_num->_mp_d
 
 #define cl_def_c_function_va(sym,function) ecl_def_c_function_va(sym,function)
 #define cl_def_c_function(sym,function,narg) ecl_def_c_function(sym,function,narg)
@@ -138,11 +138,11 @@
 
 #define CHAR_CODE_LIMIT ECL_CHAR_CODE_LIMIT
 
-#define NVALUES		cl_env.nvalues
-#define VALUES(n)	cl_env.values[n]
-#define return0()	return ((NVALUES = 0),ECL_NIL)
-#define return1(x)	return ((VALUES(0)=(x)),(NVALUES=1),VALUES(0))
-#define returnn(x)	return x
+#define NVALUES         cl_env.nvalues
+#define VALUES(n)       cl_env.values[n]
+#define return0()       return ((NVALUES = 0),ECL_NIL)
+#define return1(x)      return ((VALUES(0)=(x)),(NVALUES=1),VALUES(0))
+#define returnn(x)      return x
 
 #define CL_UNWIND_PROTECT_BEGIN ECL_UNWIND_PROTECT_BEGIN
 #define CL_UNWIND_PROTECT_END ECL_UNWIND_PROTECT_END
@@ -158,36 +158,36 @@
 typedef struct ecl_bds_frame *bds_ptr;
 typedef struct ecl_ihs_frame *ihs_ptr;
 
-#define LISTP(x)	ECL_LISTP(x)
-#define CONSP(x)	ECL_CONSP(x)
-#define ATOM(x)		ECL_ATOM(x)
-#define SYMBOLP(x)	ECL_SYMBOLP(x)
+#define LISTP(x)        ECL_LISTP(x)
+#define CONSP(x)        ECL_CONSP(x)
+#define ATOM(x)         ECL_ATOM(x)
+#define SYMBOLP(x)      ECL_SYMBOLP(x)
 
-enum {	/*  stream mode  */
-	smm_input,		/*  input  */
-	smm_input_file,		/*  input  */
-	smm_output,		/*  output  */
-	smm_output_file,	/*  output  */
-	smm_io,			/*  input-output  */
-	smm_io_file,		/*  input-output  */
-	smm_synonym,		/*  synonym  */
-	smm_broadcast,		/*  broadcast  */
-	smm_concatenated,	/*  concatenated  */
-	smm_two_way,		/*  two way  */
-	smm_echo,		/*  echo  */
-	smm_string_input,	/*  string input  */
-	smm_string_output,	/*  string output  */
-	smm_probe,		/*  probe (only used in open_stream())  */
+enum {  /*  stream mode  */
+        smm_input,              /*  input  */
+        smm_input_file,         /*  input  */
+        smm_output,             /*  output  */
+        smm_output_file,        /*  output  */
+        smm_io,                 /*  input-output  */
+        smm_io_file,            /*  input-output  */
+        smm_synonym,            /*  synonym  */
+        smm_broadcast,          /*  broadcast  */
+        smm_concatenated,       /*  concatenated  */
+        smm_two_way,            /*  two way  */
+        smm_echo,               /*  echo  */
+        smm_string_input,       /*  string input  */
+        smm_string_output,      /*  string output  */
+        smm_probe,              /*  probe (only used in open_stream())  */
 #if defined(WSOCK)
-	smm_input_wsock,	/*  input socket (Win32) */
-	smm_output_wsock,	/*  output socket (Win32) */
-	smm_io_wsock,		/*  input/output socket (Win32) */
+        smm_input_wsock,        /*  input socket (Win32) */
+        smm_output_wsock,       /*  output socket (Win32) */
+        smm_io_wsock,           /*  input/output socket (Win32) */
 #endif
 #if defined(MS_WINDOWS_HOST)
-	smm_io_wcon,		/*  windows console (Win32) */
+        smm_io_wcon,            /*  windows console (Win32) */
 #endif
-	smm_sequence_input,	/*  sequence input  */
-	smm_sequence_output	/*  sequence output  */
+        smm_sequence_input,     /*  sequence input  */
+        smm_sequence_output     /*  sequence output  */
 };
 
 #define Cnil ECL_NIL

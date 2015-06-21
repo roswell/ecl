@@ -20,26 +20,26 @@
 ;;;   type
 ;;;
 (defun and-form-type (type form original-form &optional (mode :safe)
-		      (format-string "") &rest format-args)
+                      (format-string "") &rest format-args)
   (let* ((type2 (c1form-primary-type form))
-	 (type1 (type-and type type2)))
+         (type1 (type-and type type2)))
     ;; We only change the type if it is not NIL. Is this wise?
     (if type1
-	(setf (c1form-type form) type1)
-	(funcall (if (eq mode :safe) #'cmperr #'cmpwarn)
-		 "~?, the type of the form ~s is ~s, not ~s." format-string
-		 format-args original-form type2 type))
+        (setf (c1form-type form) type1)
+        (funcall (if (eq mode :safe) #'cmperr #'cmpwarn)
+                 "~?, the type of the form ~s is ~s, not ~s." format-string
+                 format-args original-form type2 type))
     form))
 
 (defun default-init (var &optional warn)
   (declare (ignore warn))
   (let ((new-value (cdr (assoc (var-type var)
-			       '((fixnum . 0) (character . #\space)
+                               '((fixnum . 0) (character . #\space)
                                  #+long-float (long-float 0.0L1)
-				 (double-float . 0.0D1) (single-float . 0.0F1))
-			       :test #'subtypep))))
+                                 (double-float . 0.0D1) (single-float . 0.0F1))
+                               :test #'subtypep))))
     (if new-value
-	(c1constant-value new-value :only-small-values t)
+        (c1constant-value new-value :only-small-values t)
         (c1nil))))
 
 (defun expand-deftype (type)
@@ -64,7 +64,7 @@
         (multiple-value-bind (req-types opt-types rest-flag key-flag
                                         key-types allow-other-keys)
             (si::process-lambda-list arg-types 'ftype)
-	  (declare (ignore rest-flag key-flag allow-other-keys))
+          (declare (ignore rest-flag key-flag allow-other-keys))
           (nconc 
            (loop for var in requireds
               for type in (rest req-types)
@@ -173,14 +173,14 @@
   (multiple-value-bind (trivial valid)
       (subtypep 't type)
     (cond ((and trivial valid)
-	   value)
-	  ((multiple-value-setq (valid value) (constant-value-p value env))
-	   (si::maybe-quote value))
-	  (t
-	   (with-clean-symbols (%value)
-	     `(let* ((%value ,value))
-		,(type-error-check '%value (replace-invalid-types type))
-		(truly-the ,type %value)))))))
+           value)
+          ((multiple-value-setq (valid value) (constant-value-p value env))
+           (si::maybe-quote value))
+          (t
+           (with-clean-symbols (%value)
+             `(let* ((%value ,value))
+                ,(type-error-check '%value (replace-invalid-types type))
+                (truly-the ,type %value)))))))
 
 (defun replace-invalid-types (type)
   ;; Some types which are acceptable in DECLARE are not
@@ -190,12 +190,12 @@
   (if (atom type)
       type
       (let ((name (car type)))
-	(case name
-	  (FUNCTION 'FUNCTION)
-	  ((OR AND NOT CONS)
-	   (list* name (mapcar #'replace-invalid-types (rest type))))
-	  (otherwise
-	   type)))))
+        (case name
+          (FUNCTION 'FUNCTION)
+          ((OR AND NOT CONS)
+           (list* name (mapcar #'replace-invalid-types (rest type))))
+          (otherwise
+           type)))))
 
 (defmacro optional-type-check (&whole whole value type &environment env)
   (declare (ignore env))
@@ -205,7 +205,7 @@
 
 (defmacro with-let*-type-check (triplets &body body)
   `(let* ,(loop for (var value type) in triplets
-	     collect `(,var (assert-type-if-known ,value ,type)))
+             collect `(,var (assert-type-if-known ,value ,type)))
      (declare (:read-only ,@(mapcar #'car triplets)))
      ,@body))
 

@@ -24,49 +24,49 @@
 (defun unoptimized-funcall (fun arguments)
   (let ((l (length arguments)))
     (if (<= l si::c-arguments-limit)
-	(make-c1form* 'FUNCALL :sp-change t :side-effects t
+        (make-c1form* 'FUNCALL :sp-change t :side-effects t
                       :args (c1expr fun) (c1args* arguments))
-	(unoptimized-long-call fun arguments))))
+        (unoptimized-long-call fun arguments))))
 
 (defun c1funcall (args)
   (check-args-number 'FUNCALL args 1)
   (let ((fun (first args))
-	(arguments (rest args))
-	fd)
+        (arguments (rest args))
+        fd)
     (cond ;; (FUNCALL (LAMBDA ...) ...)
           ((and (consp fun)
-		(eq (first fun) 'LAMBDA))
-	   (optimize-funcall/apply-lambda (cdr fun) arguments nil))
-	  ;; (FUNCALL (EXT::LAMBDA-BLOCK ...) ...)
+                (eq (first fun) 'LAMBDA))
+           (optimize-funcall/apply-lambda (cdr fun) arguments nil))
+          ;; (FUNCALL (EXT::LAMBDA-BLOCK ...) ...)
           ((and (consp fun)
-		(eq (first fun) 'EXT::LAMBDA-BLOCK))
-	   (setf fun (macroexpand-1 fun))
-	   (optimize-funcall/apply-lambda (cdr fun) arguments nil))
-	  ;; (FUNCALL atomic-expression ...)
-	  ((atom fun)
-	   (unoptimized-funcall fun arguments))
-	  ;; (FUNCALL macro-expression ...)
-	  ((let ((name (first fun)))
-	     (setq fd (and (symbolp name)
+                (eq (first fun) 'EXT::LAMBDA-BLOCK))
+           (setf fun (macroexpand-1 fun))
+           (optimize-funcall/apply-lambda (cdr fun) arguments nil))
+          ;; (FUNCALL atomic-expression ...)
+          ((atom fun)
+           (unoptimized-funcall fun arguments))
+          ;; (FUNCALL macro-expression ...)
+          ((let ((name (first fun)))
+             (setq fd (and (symbolp name)
                            ;; We do not want to macroexpand 'THE
                            (not (eq name 'THE))
-			   (cmp-macro-function name))))
-	   (c1funcall (list* (cmp-expand-macro fd fun) arguments)))
-	  ;; (FUNCALL lisp-expression ...)
-	  ((not (eq (first fun) 'FUNCTION))
-	   (unoptimized-funcall fun arguments))
-	  ;; (FUNCALL #'GENERALIZED-FUNCTION-NAME ...)
-	  ((si::valid-function-name-p (setq fun (second fun)))
-	   (c1call fun arguments nil))
-	  ;; (FUNCALL #'(LAMBDA ...) ...)
-	  ((and (consp fun) (eq (first fun) 'LAMBDA))
-	   (optimize-funcall/apply-lambda (rest fun) arguments nil))
-	  ;; (FUNCALL #'(EXT::LAMBDA-BLOCK ...) ...)
-	  ((and (consp fun) (eq (first fun) 'EXT::LAMBDA-BLOCK))
-	   (setf fun (macroexpand-1 fun))
-	   (optimize-funcall/apply-lambda (rest fun) arguments nil))
-	  (t
-	   (cmperr "Malformed function name: ~A" fun)))))
+                           (cmp-macro-function name))))
+           (c1funcall (list* (cmp-expand-macro fd fun) arguments)))
+          ;; (FUNCALL lisp-expression ...)
+          ((not (eq (first fun) 'FUNCTION))
+           (unoptimized-funcall fun arguments))
+          ;; (FUNCALL #'GENERALIZED-FUNCTION-NAME ...)
+          ((si::valid-function-name-p (setq fun (second fun)))
+           (c1call fun arguments nil))
+          ;; (FUNCALL #'(LAMBDA ...) ...)
+          ((and (consp fun) (eq (first fun) 'LAMBDA))
+           (optimize-funcall/apply-lambda (rest fun) arguments nil))
+          ;; (FUNCALL #'(EXT::LAMBDA-BLOCK ...) ...)
+          ((and (consp fun) (eq (first fun) 'EXT::LAMBDA-BLOCK))
+           (setf fun (macroexpand-1 fun))
+           (optimize-funcall/apply-lambda (rest fun) arguments nil))
+          (t
+           (cmperr "Malformed function name: ~A" fun)))))
 
 (defun c2funcall (c1form form args)
   (declare (ignore c1form))
@@ -126,7 +126,7 @@
              (or (fun-p fun)
                  (and (null fun)
                       (setf fun (find fname *global-funs* :test #'same-fname-p
-				      :key #'fun-name)))))
+                                      :key #'fun-name)))))
     (return-from call-global-loc (call-loc fname fun args return-type)))
 
   ;; Call to a global (SETF ...) function
@@ -139,19 +139,19 @@
   (when (policy-use-direct-C-call)
     (let ((fd (get-sysprop fname 'Lfun)))
       (when fd
-	(multiple-value-bind (minarg maxarg) (get-proclaimed-narg fname)
-	  (return-from call-global-loc
-	    (call-exported-function-loc
-	     fname args fd minarg maxarg
-	     (member fname *in-all-symbols-functions*)
-	     return-type))))))
+        (multiple-value-bind (minarg maxarg) (get-proclaimed-narg fname)
+          (return-from call-global-loc
+            (call-exported-function-loc
+             fname args fd minarg maxarg
+             (member fname *in-all-symbols-functions*)
+             return-type))))))
 
   (multiple-value-bind (found fd minarg maxarg)
       (si::mangle-name fname t)
     (when found
       (return-from call-global-loc
         (call-exported-function-loc fname args fd minarg maxarg t
-				    return-type))))
+                                    return-type))))
 
   (call-unknown-global-loc fname nil args))
 
@@ -160,29 +160,29 @@
   `(CALL-NORMAL ,fun ,(coerce-locs args) ,type))
 
 (defun call-exported-function-loc (fname args fun-c-name minarg maxarg in-core
-				   return-type)
+                                   return-type)
   (unless in-core
     ;; We only write declarations for functions which are not in lisp_external.h
     (multiple-value-bind (val declared)
-	(gethash fun-c-name *compiler-declared-globals*)
+        (gethash fun-c-name *compiler-declared-globals*)
       (declare (ignore val))
       (unless declared
-	(if (= maxarg minarg)
-	    (progn
-	      (wt-nl-h "extern cl_object " fun-c-name "(")
-	      (dotimes (i maxarg)
-		(when (> i 0) (wt-h1 ","))
-		(wt-h1 "cl_object"))
-	      (wt-h1 ");"))
-	    (progn
-	      (wt-nl-h "#ifdef __cplusplus")
-	      (wt-nl-h "extern cl_object " fun-c-name "(...);")
-	      (wt-nl-h "#else")
-	      (wt-nl-h "extern cl_object " fun-c-name "();")
-	      (wt-nl-h "#endif")))
-	(setf (gethash fun-c-name *compiler-declared-globals*) 1))))
+        (if (= maxarg minarg)
+            (progn
+              (wt-nl-h "extern cl_object " fun-c-name "(")
+              (dotimes (i maxarg)
+                (when (> i 0) (wt-h1 ","))
+                (wt-h1 "cl_object"))
+              (wt-h1 ");"))
+            (progn
+              (wt-nl-h "#ifdef __cplusplus")
+              (wt-nl-h "extern cl_object " fun-c-name "(...);")
+              (wt-nl-h "#else")
+              (wt-nl-h "extern cl_object " fun-c-name "();")
+              (wt-nl-h "#endif")))
+        (setf (gethash fun-c-name *compiler-declared-globals*) 1))))
   (let ((fun (make-fun :name fname :global t :cfun fun-c-name :lambda 'NIL
-		       :minarg minarg :maxarg maxarg)))
+                       :minarg minarg :maxarg maxarg)))
     (call-loc fname fun args return-type)))
 
 ;;;
@@ -193,8 +193,8 @@
 (defun call-unknown-global-loc (fname loc args &optional function-p)
   (unless loc
     (if (and (symbolp fname)
-	     (not (eql (symbol-package fname) 
-		       (find-package "CL"))))
+             (not (eql (symbol-package fname) 
+                       (find-package "CL"))))
         (setf loc (add-symbol fname)
               function-p nil)
         (setf loc (list 'FDEFINITION fname)
@@ -205,16 +205,16 @@
 (defun maybe-save-value (value &optional (other-forms nil other-forms-flag))
   (let ((name (c1form-name value)))
     (cond ((eq name 'LOCATION)
-	   (c1form-arg 0 value))
-	  ((and (eq name 'VAR)
-		other-forms-flag
-		(not (var-changed-in-form-list (c1form-arg 0 value) other-forms)))
-	   (c1form-arg 0 value))
-	  (t
-	   (let* ((temp (make-temp-var))
-		  (*destination* temp))
-	     (c2expr* value)
-	     temp)))))
+           (c1form-arg 0 value))
+          ((and (eq name 'VAR)
+                other-forms-flag
+                (not (var-changed-in-form-list (c1form-arg 0 value) other-forms)))
+           (c1form-arg 0 value))
+          (t
+           (let* ((temp (make-temp-var))
+                  (*destination* temp))
+             (c2expr* value)
+             temp)))))
 
 (defvar *text-for-lexical-level*
   '("lex0" "lex1" "lex2" "lex3" "lex4" "lex5" "lex6" "lex7" "lex8" "lex9"))
@@ -259,23 +259,23 @@
   (unless (fun-cfun fun)
     (baboon "Function without a C name: ~A" (fun-name fun)))
   (let* ((minarg (fun-minarg fun))
-	 (maxarg (fun-maxarg fun))
-	 (fun-c-name (fun-cfun fun))
-	 (fun-lisp-name (fun-name fun))
-	 (narg (length args))
-	 (env nil))
+         (maxarg (fun-maxarg fun))
+         (fun-c-name (fun-cfun fun))
+         (fun-lisp-name (fun-name fun))
+         (narg (length args))
+         (env nil))
     (case (fun-closure fun)
       (CLOSURE
        (setf env (environment-accessor fun)))
       (LEXICAL
        (let ((lex-lvl (fun-level fun)))
-	 (dotimes (n lex-lvl)
-	   (let* ((j (- lex-lvl n 1))
-		  (x (nth j *text-for-lexical-level*)))
-	     (unless x
-	       (setf x (format nil "lex~d" j)
-		     (nth n *text-for-lexical-level*) x))
-	     (push x args))))))
+         (dotimes (n lex-lvl)
+           (let* ((j (- lex-lvl n 1))
+                  (x (nth j *text-for-lexical-level*)))
+             (unless x
+               (setf x (format nil "lex~d" j)
+                     (nth n *text-for-lexical-level*) x))
+             (push x args))))))
     (unless (<= minarg narg maxarg)
       (cmperr "Wrong number of arguments for function ~S"
               (or fun-lisp-name 'ANONYMOUS)))

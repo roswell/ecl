@@ -21,9 +21,9 @@
   (when (fboundp fname)
     (let ((gf (fdefinition fname)))
       (when (typep gf 'standard-generic-function)
-	;;(check-generic-function-args gf args)
-	(when (policy-inline-slot-access-p)
-	  (maybe-optimize-slot-accessor destination fname gf args))))))
+        ;;(check-generic-function-args gf args)
+        (when (policy-inline-slot-access-p)
+          (maybe-optimize-slot-accessor destination fname gf args))))))
 
 ;;;
 ;;; PRECOMPUTE APPLICABLE METHODS
@@ -36,12 +36,12 @@
 
 (defun precompute-applicable-methods (methods c-args)
   (flet ((applicable-method-p (m)
-	   (loop for specializer in (clos:method-specializers m)
-	      for arg in c-args
-	      always (let ((arg-type (c1form-primary-type arg)))
-		       (subtypep arg-type (if (consp specializer)
-					      `(member ,(second specializer))
-					      specializer))))))
+           (loop for specializer in (clos:method-specializers m)
+              for arg in c-args
+              always (let ((arg-type (c1form-primary-type arg)))
+                       (subtypep arg-type (if (consp specializer)
+                                              `(member ,(second specializer))
+                                              specializer))))))
     (delete-if-not #'applicable-method-p methods)))
 
 ;;;
@@ -66,10 +66,10 @@
      with reader-class = (find-class 'clos:standard-reader-method)
      with writer-class = (find-class 'clos:standard-writer-method)
      do (let ((method-class (class-of method)))
-	  (cond ((si::subclassp method-class reader-class)
-		 (push method readers))
-		((si::subclassp method-class writer-class)
-		 (push method writers))))
+          (cond ((si::subclassp method-class reader-class)
+                 (push method readers))
+                ((si::subclassp method-class writer-class)
+                 (push method writers))))
      finally (return (values readers writers))))
 
 (defun maybe-optimize-slot-accessor (destination fname gf args)
@@ -77,43 +77,43 @@
       (find-slot-accessors gf)
     ;(format t "~%;;; Found ~D readers and ~D writers for ~A" (length readers) (length writers) fname)
     (cond ((and readers writers)
-	   (cmpwarn "When analyzing generic function ~A found both slot reader and writer methods"
-		    fname))
-	  ((or (not gf) (not (or readers writers)))
-	   nil)
-	  ((/= (length args) (length (clos::generic-function-spec-list gf)))
-	   (cmpwarn "Too many arguments for generic function ~A" fname)
-	   nil)
-	  (readers
-	   (try-optimize-slot-reader destination readers args))
-	  (writers
-	   (try-optimize-slot-writer destination writers args)))))
+           (cmpwarn "When analyzing generic function ~A found both slot reader and writer methods"
+                    fname))
+          ((or (not gf) (not (or readers writers)))
+           nil)
+          ((/= (length args) (length (clos::generic-function-spec-list gf)))
+           (cmpwarn "Too many arguments for generic function ~A" fname)
+           nil)
+          (readers
+           (try-optimize-slot-reader destination readers args))
+          (writers
+           (try-optimize-slot-writer destination writers args)))))
 
 (defun try-optimize-slot-reader (destination readers args)
   (let* ((object (first args))
-	 (c-object (c1expr 'SHOULD-BE-TEMP object))
-	 (readers (precompute-applicable-methods readers (list c-object))))
+         (c-object (c1expr 'SHOULD-BE-TEMP object))
+         (readers (precompute-applicable-methods readers (list c-object))))
     ;(format t "~%;;; Found ~D really applicable reader" (length readers))
     (when (= (length readers) 1)
       (let ((reader (first readers)))
-	(when (typep reader 'clos:standard-reader-method)
-	  (let* ((slotd (clos:accessor-method-slot-definition reader))
-		 (index (clos::safe-slot-definition-location slotd)))
-	    (when (si::fixnump index)
-	      (c1expr destination `(clos::safe-instance-ref ,object ,index)))))))))
+        (when (typep reader 'clos:standard-reader-method)
+          (let* ((slotd (clos:accessor-method-slot-definition reader))
+                 (index (clos::safe-slot-definition-location slotd)))
+            (when (si::fixnump index)
+              (c1expr destination `(clos::safe-instance-ref ,object ,index)))))))))
 
 (defun try-optimize-slot-writer (destination orig-writers args)
   (let* ((c-args (loop for f in args
                     collect (c1expr 'SHOULD-BE-TEMPS args)))
-	 (writers (precompute-applicable-methods orig-writers c-args)))
+         (writers (precompute-applicable-methods orig-writers c-args)))
     ;(format t "~%;;; Found ~D really applicable writer" (length writers))
     (when (= (length writers) 1)
       (let ((writer (first writers)))
-	(when (typep writer 'clos:standard-writer-method)
-	  (let* ((slotd (clos:accessor-method-slot-definition writer))
-		 (index (clos::safe-slot-definition-location slotd)))
-	    (when (si::fixnump index)
-	      (c1expr destination `(si::instance-set ,(second args)
+        (when (typep writer 'clos:standard-writer-method)
+          (let* ((slotd (clos:accessor-method-slot-definition writer))
+                 (index (clos::safe-slot-definition-location slotd)))
+            (when (si::fixnump index)
+              (c1expr destination `(si::instance-set ,(second args)
                                                      ,index ,(first args))))))))))
 
 (progn .

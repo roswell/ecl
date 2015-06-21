@@ -23,10 +23,10 @@ Returns, as a list, the union of elements in LIST1 and in LIST2."
        (or first list2))
     (unless (member1 (car x) list2 test test-not key)
       (if last
-	  (progn (rplacd last (cons (car x) nil))
-		 (setq last (cdr last)))
-	  (progn (setq first (cons (car x) nil))
-		 (setq last first))))))
+          (progn (rplacd last (cons (car x) nil))
+                 (setq last (cdr last)))
+          (progn (setq first (cons (car x) nil))
+                 (setq last first))))))
 
 (defun nunion (list1 list2 &key test test-not key)
   "Args: (list1 list2 &key (key #'identity) (test #'eql) test-not)
@@ -38,8 +38,8 @@ Destructive UNION.  Both LIST1 and LIST2 may be destroyed."
        (or first list2))
     (unless (member1 (car x) list2 test test-not key)
       (if last
-	  (rplacd last x)
-	  (setq first x))
+          (rplacd last x)
+          (setq first x))
       (setq last x))))
 
 (defun intersection (list1 list2 &key test test-not key)
@@ -63,8 +63,8 @@ Destructive INTERSECTION.  Only LIST1 may be destroyed."
        first)
     (when (member1 (car x) list2 test test-not key)
       (if last
-	  (rplacd last x)
-	  (setq first x))
+          (rplacd last x)
+          (setq first x))
       (setq last x))))
 
 (defun set-difference (list1 list2 &key test test-not key)
@@ -86,8 +86,8 @@ Destructive SET-DIFFERENCE.  Only LIST1 may be destroyed."
        first)
     (unless (member1 (car x) list2 test test-not key)
       (if last
-	  (rplacd last x)
-	  (setq first x))
+          (rplacd last x)
+          (setq first x))
       (setq last x))))
 
 (defun swap-args (f)
@@ -105,7 +105,7 @@ those elements of LIST2 that are not elements of LIST1."
   "Args: (list1 list2 &key (key #'identity) (test #'eql) test-not)
 Destructive SET-EXCLUSIVE-OR.  Both LIST1 and LIST2 may be destroyed."
   (nconc (set-difference list1 list2 :test test :test-not test-not :key key)
-	 (nset-difference list2 list1 :test (swap-args test) :test-not (swap-args test-not) :key key)))
+         (nset-difference list2 list1 :test (swap-args test) :test-not (swap-args test-not) :key key)))
 
 (defun subsetp (list1 list2 &key test test-not key)
   "Args: (list1 list2 &key (key #'identity) (test #'eql) test-not)

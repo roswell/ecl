@@ -272,12 +272,12 @@
 ;; STREAM-ADVANCE-TO-COLUMN
 
 (defmethod stream-advance-to-column ((stream fundamental-character-output-stream)
-				     column)
+                                     column)
   (let ((current-column (stream-line-column stream)))
     (when current-column
       (let ((fill (- column current-column)))
-	(dotimes (i fill)
-	  (stream-write-char stream #\Space)))
+        (dotimes (i fill)
+          (stream-write-char stream #\Space)))
       T)))
 
 
@@ -504,22 +504,22 @@
 
 (defmethod stream-read-line ((stream fundamental-character-input-stream))
   (let ((res (make-string 80))
-	(len 80)
-	(index 0))
+        (len 80)
+        (index 0))
     (loop
      (let ((ch (stream-read-char stream)))
        (cond ((eq ch :eof)
-	      (return (values (si::shrink-vector res index) t)))
-	     (t
-	      (when (char= ch #\newline)
-		(return (values (si::shrink-vector res index) nil)))
-	      (when (= index len)
-		(setq len (* len 2))
-		(let ((new (make-string len)))
-		  (replace new res)
-		  (setq res new)))
-	      (setf (schar res index) ch)
-	      (incf index)))))))
+              (return (values (si::shrink-vector res index) t)))
+             (t
+              (when (char= ch #\newline)
+                (return (values (si::shrink-vector res index) nil)))
+              (when (= index len)
+                (setq len (* len 2))
+                (let ((new (make-string len)))
+                  (replace new res)
+                  (setq res new)))
+              (setf (schar res index) ch)
+              (incf index)))))))
 
 (defmethod stream-read-line ((stream ansi-stream))
   (cl:read-line stream))
@@ -539,7 +539,7 @@
   (si::do-read-sequence sequence stream start end))
 
 (defmethod stream-read-sequence ((stream ansi-stream) sequence
-				 &optional (start 0) (end nil))
+                                 &optional (start 0) (end nil))
   (si:do-read-sequence stream sequence start end))
 
 (defmethod stream-read-sequence ((stream t) sequence &optional start end)
@@ -613,15 +613,15 @@
 ;; WRITE-STRING
 
 (defmethod stream-write-string ((stream fundamental-character-output-stream)
-				string &optional (start 0) end)
+                                string &optional (start 0) end)
   (declare (type t stream) ; check for c::stream-designator ignored
            (string string)
-	   (fixnum start)
+           (fixnum start)
            (ext:check-arguments-type))
   (let ((end (or end (length string))))
     (declare (fixnum end))
     (do ((pos start (1+ pos)))
-	((>= pos end))
+        ((>= pos end))
       (declare (type si::index pos))
       (stream-write-char stream (aref string pos))))
   string)
@@ -690,7 +690,7 @@
 
 (eval-when (:compile-toplevel :execute)
   (defconstant +conflicting-symbols+ '(cl:close cl:stream-element-type cl:input-stream-p
-				       cl:open-stream-p cl:output-stream-p cl:streamp)))
+                                       cl:open-stream-p cl:output-stream-p cl:streamp)))
 
 (let ((p (find-package "GRAY")))
   (export '(nil) p)

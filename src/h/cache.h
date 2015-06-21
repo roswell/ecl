@@ -21,18 +21,18 @@ extern "C" {
 #endif
 
 typedef struct ecl_cache {
-	cl_object keys;
-	cl_object table;
-	cl_index generation;
+        cl_object keys;
+        cl_object table;
+        cl_index generation;
 #ifdef ECL_THREADS
-	cl_object clear_list;
+        cl_object clear_list;
 #endif
 } *ecl_cache_ptr;
 
 typedef struct ecl_cache_record {
-	cl_object key; /* vector[ndx] */
-	cl_object value; /* vector[ndx+1] */
-	cl_object gen; /* vector[ndx+2] */
+        cl_object key; /* vector[ndx] */
+        cl_object value; /* vector[ndx+1] */
+        cl_object gen; /* vector[ndx+2] */
 } *ecl_cache_record_ptr;
 
 extern ecl_cache_ptr ecl_make_cache(cl_index key_size, cl_index cache_size);

@@ -24,8 +24,8 @@
 #include <ecl/ecl-inl.h>
 
 #define TRAMPOLINK(narg, vv, lk, cblock) \
-	ecl_va_list args; ecl_va_start(args, narg, narg, 0); \
-	return(_ecl_link_call(vv, (cl_objectfn *)lk, cblock, narg, args))
+        ecl_va_list args; ecl_va_start(args, narg, narg, 0); \
+        return(_ecl_link_call(vv, (cl_objectfn *)lk, cblock, narg, args))
 
 enum ecl_locative_type {
         _ecl_object_loc = 0,
@@ -35,9 +35,9 @@ enum ecl_locative_type {
         _ecl_float_loc,
         _ecl_double_loc
 #ifdef ECL_SSE2
-	, _ecl_int_sse_pack_loc
-	, _ecl_float_sse_pack_loc
-	, _ecl_double_sse_pack_loc
+        , _ecl_int_sse_pack_loc
+        , _ecl_float_sse_pack_loc
+        , _ecl_double_sse_pack_loc
 #endif
 };
 
@@ -46,5 +46,5 @@ struct ecl_var_debug_info {
         uint8_t type;
 };
 
-#define	_ecl_check_narg(n) \
-	do { if (ecl_unlikely(narg != (n))) FEwrong_num_arguments_anonym();} while(0)
+#define _ecl_check_narg(n) \
+        do { if (ecl_unlikely(narg != (n))) FEwrong_num_arguments_anonym();} while(0)

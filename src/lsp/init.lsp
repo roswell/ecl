@@ -13,10 +13,10 @@
 (defun compile-if-needed (file)
   (let ((cfile-date (file-write-date (merge-pathnames file #".c"))))
     (when (or (not cfile-date)
-	      (> (file-write-date (merge-pathnames file #".lsp"))
-		 cfile-date))
+              (> (file-write-date (merge-pathnames file #".lsp"))
+                 cfile-date))
       (compile-file file :c-file t :h-file t :data-file t
-		    :output-file nil :system-p t)))
+                    :output-file nil :system-p t)))
   )
 #|
 (compile-if-needed "defmacro")

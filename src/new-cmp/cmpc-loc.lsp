@@ -11,58 +11,58 @@
 ;;;;
 ;;;;    See file '../Copyright' for full details.
 
-;;;; CMPC-LOC	Write locations as C expressions
+;;;; CMPC-LOC   Write locations as C expressions
 
 (in-package "C-BACKEND")
 
 ;;; Valid locations are:
-;;;	NIL
-;;;	T
-;;;	fixnum
-;;;	VALUE0
-;;;	VALUES
-;;;	var-object
-;;;	( VALUE i )			VALUES(i)
-;;;	( VV vv-index )
-;;;	( VV-temp vv-index )
-;;;	( LCL lcl [representation-type]) local variable, type unboxed
-;;;	( TEMP temp )			local variable, type object
-;;;	( CALL c-fun-name args fname )	locs are locations containing the arguments
-;;;	( CALL-NORMAL fun locs)		similar as CALL, but number of arguments is fixed
-;;;	( CALL-INDIRECT fun narg args)	similar as CALL, but unknown function
-;;;	( C-INLINE output-type fun/string locs side-effects output-var )
-;;;	( COERCE-LOC representation-type location)
-;;;	( CAR lcl )
-;;;	( CDR lcl )
-;;;	( CADR lcl )
-;;;	( FDEFINITION vv-index )
-;;;	( MAKE-CCLOSURE cfun )
-;;;	( FIXNUM-VALUE fixnum-value )
-;;;	( CHARACTER-VALUE character-code )
-;;;	( LONG-FLOAT-VALUE long-float-value vv )
-;;;	( DOUBLE-FLOAT-VALUE double-float-value vv )
-;;;	( SINGLE-FLOAT-VALUE single-float-value vv )
-;;;	( STACK-POINTER index )	retrieve a value from the stack
-;;;	( SYS:STRUCTURE-REF loc slot-name-vv slot-index )
-;;;	( KEYVARS n )
-;;;	( THE type loc )
-;;;	VA-ARG
-;;;	CL-VA-ARG
+;;;     NIL
+;;;     T
+;;;     fixnum
+;;;     VALUE0
+;;;     VALUES
+;;;     var-object
+;;;     ( VALUE i )                     VALUES(i)
+;;;     ( VV vv-index )
+;;;     ( VV-temp vv-index )
+;;;     ( LCL lcl [representation-type]) local variable, type unboxed
+;;;     ( TEMP temp )                   local variable, type object
+;;;     ( CALL c-fun-name args fname )  locs are locations containing the arguments
+;;;     ( CALL-NORMAL fun locs)         similar as CALL, but number of arguments is fixed
+;;;     ( CALL-INDIRECT fun narg args)  similar as CALL, but unknown function
+;;;     ( C-INLINE output-type fun/string locs side-effects output-var )
+;;;     ( COERCE-LOC representation-type location)
+;;;     ( CAR lcl )
+;;;     ( CDR lcl )
+;;;     ( CADR lcl )
+;;;     ( FDEFINITION vv-index )
+;;;     ( MAKE-CCLOSURE cfun )
+;;;     ( FIXNUM-VALUE fixnum-value )
+;;;     ( CHARACTER-VALUE character-code )
+;;;     ( LONG-FLOAT-VALUE long-float-value vv )
+;;;     ( DOUBLE-FLOAT-VALUE double-float-value vv )
+;;;     ( SINGLE-FLOAT-VALUE single-float-value vv )
+;;;     ( STACK-POINTER index ) retrieve a value from the stack
+;;;     ( SYS:STRUCTURE-REF loc slot-name-vv slot-index )
+;;;     ( KEYVARS n )
+;;;     ( THE type loc )
+;;;     VA-ARG
+;;;     CL-VA-ARG
 
 ;;; Valid *DESTINATION* locations are:
 ;;;
-;;;	VALUE0
-;;;	RETURN				Object returned from current function.
-;;;	TRASH				Value may be thrown away.
-;;;	VALUES				Values vector.
-;;;	var-object
-;;;	( LCL lcl )
-;;;	( LEX lex-address )
-;;;	( BIND var alternative )	Alternative is optional
-;;;	( JUMP-TRUE label )
-;;;	( JUMP-FALSE label )
-;;;	( JUMP-ZERO label )
-;;;	( JUMP-NONZERO label )
+;;;     VALUE0
+;;;     RETURN                          Object returned from current function.
+;;;     TRASH                           Value may be thrown away.
+;;;     VALUES                          Values vector.
+;;;     var-object
+;;;     ( LCL lcl )
+;;;     ( LEX lex-address )
+;;;     ( BIND var alternative )        Alternative is optional
+;;;     ( JUMP-TRUE label )
+;;;     ( JUMP-FALSE label )
+;;;     ( JUMP-ZERO label )
+;;;     ( JUMP-NONZERO label )
 
 (defun locative-type-from-var-kind (kind)
   (cdr (assoc kind
@@ -180,38 +180,38 @@
     (DISCARDED (baboon))
     ((SPECIAL GLOBAL)
      (if (policy-global-var-checking)
-	 (wt "ecl_symbol_value(" var-loc ")")
-	 (wt "ECL_SYM_VAL(cl_env_copy," var-loc ")")))
+         (wt "ecl_symbol_value(" var-loc ")")
+         (wt "ECL_SYM_VAL(cl_env_copy," var-loc ")")))
     (t (wt var-loc))
     ))
 
 (defun wt-fdefinition (fun-name)
   (let ((vv (add-object fun-name)))
     (if (and (symbolp fun-name)
-	     (or (not (safe-compile))
-		 (and (eql (symbol-package fun-name) (find-package "CL"))
-		      (fboundp fun-name) (functionp (fdefinition fun-name)))))
-	(wt "(" vv "->symbol.gfdef)")
-	(wt "ecl_fdefinition(" vv ")"))))
+             (or (not (safe-compile))
+                 (and (eql (symbol-package fun-name) (find-package "CL"))
+                      (fboundp fun-name) (functionp (fdefinition fun-name)))))
+        (wt "(" vv "->symbol.gfdef)")
+        (wt "ecl_fdefinition(" vv ")"))))
 
 (defun environment-accessor (fun)
   (let* ((env-var (env-var-name *env-lvl*))
-	 (expected-env-size (fun-env fun)))
+         (expected-env-size (fun-env fun)))
     (if (< expected-env-size *env*)
-	(format nil "ecl_nthcdr(~D,~A)" (- *env* expected-env-size) env-var)
-	env-var)))
+        (format nil "ecl_nthcdr(~D,~A)" (- *env* expected-env-size) env-var)
+        env-var)))
 
 (defun wt-make-closure (fun &aux (cfun (fun-cfun fun)))
   (declare (type fun fun))
   (let* ((closure (fun-closure fun))
-	 narg)
+         narg)
     (cond ((eq closure 'CLOSURE)
-	   (wt "ecl_make_cclosure_va((cl_objectfn)" cfun ","
-	       (environment-accessor fun)
-	       ",Cblock)"))
-	  ((eq closure 'LEXICAL)
-	   (baboon))
-	  ((setf narg (fun-fixed-narg fun)) ; empty environment fixed number of args
-	   (wt "ecl_make_cfun((cl_objectfn_fixed)" cfun ",Cnil,Cblock," narg ")"))
-	  (t ; empty environment variable number of args
-	   (wt "ecl_make_cfun_va((cl_objectfn)" cfun ",Cnil,Cblock)")))))
+           (wt "ecl_make_cclosure_va((cl_objectfn)" cfun ","
+               (environment-accessor fun)
+               ",Cblock)"))
+          ((eq closure 'LEXICAL)
+           (baboon))
+          ((setf narg (fun-fixed-narg fun)) ; empty environment fixed number of args
+           (wt "ecl_make_cfun((cl_objectfn_fixed)" cfun ",Cnil,Cblock," narg ")"))
+          (t ; empty environment variable number of args
+           (wt "ecl_make_cfun_va((cl_objectfn)" cfun ",Cnil,Cblock)")))))

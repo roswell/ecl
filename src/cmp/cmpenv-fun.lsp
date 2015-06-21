@@ -23,40 +23,40 @@
     (push (car al) types)))
 
 ;;; The valid return type declaration is:
-;;;	(( VALUES {type}* )) or ( {type}* ).
+;;;     (( VALUES {type}* )) or ( {type}* ).
 
 (defun proclaim-function (fname decl)
   (if (si:valid-function-name-p fname)
       (let* ((arg-types '*)
-	     (return-types '*)
-	     (l decl))
-	(cond ((null l))
-	      ((consp l)
-	       (setf arg-types (pop l)))
-	      (t (warn "The function proclamation ~s ~s is not valid."
-		       fname decl)))
-	(cond ((null l))
-	      ((or (atom l) (rest l))
-	       (warn "The function proclamation ~s ~s is not valid."
-		     fname decl))
-	      (t
-	       (setf return-types (first l))))
+             (return-types '*)
+             (l decl))
+        (cond ((null l))
+              ((consp l)
+               (setf arg-types (pop l)))
+              (t (warn "The function proclamation ~s ~s is not valid."
+                       fname decl)))
+        (cond ((null l))
+              ((or (atom l) (rest l))
+               (warn "The function proclamation ~s ~s is not valid."
+                     fname decl))
+              (t
+               (setf return-types (first l))))
         (when (eq arg-types '())
           (setf arg-types '(&optional)))
-	(if (eq arg-types '*)
-	    (rem-sysprop fname 'PROCLAIMED-ARG-TYPES)
-	    (put-sysprop fname 'PROCLAIMED-ARG-TYPES arg-types))
-	(if (member return-types '(* (VALUES &rest t))
+        (if (eq arg-types '*)
+            (rem-sysprop fname 'PROCLAIMED-ARG-TYPES)
+            (put-sysprop fname 'PROCLAIMED-ARG-TYPES arg-types))
+        (if (member return-types '(* (VALUES &rest t))
                     :test #'equalp)
-	    (rem-sysprop fname 'PROCLAIMED-RETURN-TYPE)
-	    (put-sysprop fname 'PROCLAIMED-RETURN-TYPE return-types)))
+            (rem-sysprop fname 'PROCLAIMED-RETURN-TYPE)
+            (put-sysprop fname 'PROCLAIMED-RETURN-TYPE return-types)))
       (warn "The function proclamation ~s ~s is not valid." fname decl)))
 
 (defun add-function-declaration (fname ftype &optional (env *cmp-env*))
   (if (si::valid-function-name-p fname)
       (let ((fun (cmp-env-search-function fname)))
-	(if (functionp fun)
-	    (warn "Found function declaration for local macro ~A" fname)
+        (if (functionp fun)
+            (warn "Found function declaration for local macro ~A" fname)
             (cmp-env-register-ftype fname ftype env)))
       (warn "In (DECLARE (FTYPE ...)): ~s is not a valid function name" fname))
   env)
@@ -64,9 +64,9 @@
 (defun get-arg-types (fname &optional (env *cmp-env*) (may-be-global t))
   (let ((x (cmp-env-search-ftype fname env)))
     (if x
-	(let ((arg-types (first x)))
-	  (unless (eq arg-types '*)
-	    (values arg-types t)))
+        (let ((arg-types (first x)))
+          (unless (eq arg-types '*)
+            (values arg-types t)))
         (when may-be-global
           (let ((fun (cmp-env-search-function fname env)))
             (when (or (null fun) (and (fun-p fun) (fun-global fun)))
@@ -75,9 +75,9 @@
 (defun get-return-type (fname &optional (env *cmp-env*))
   (let ((x (cmp-env-search-ftype fname env)))
     (if x
-	(let ((return-types (second x)))
-	  (unless (eq return-types '*)
-	    (values return-types t)))
+        (let ((return-types (second x)))
+          (unless (eq return-types '*)
+            (values return-types t)))
         (let ((fun (cmp-env-search-function fname env)))
           (when (or (null fun) (and (fun-p fun) (fun-global fun)))
             (sys:get-sysprop fname 'PROCLAIMED-RETURN-TYPE))))))
@@ -98,21 +98,21 @@
   (multiple-value-bind (arg-list found)
       (get-arg-types fun env)
     (if found
-	(loop for type in arg-list
-	   with minarg = 0
-	   and maxarg = 0
-	   and in-optionals = nil
-	   do (cond ((member type '(* &rest &key &allow-other-keys) :test #'eq)
-		     (return (values minarg call-arguments-limit)))
-		    ((eq type '&optional)
-		     (setf in-optionals t maxarg minarg))
-		    (in-optionals
-		     (incf maxarg))
-		    (t
-		     (incf minarg)
-		     (incf maxarg)))
-	   finally (return (values minarg maxarg found)))
-	(values 0 call-arguments-limit found))))
+        (loop for type in arg-list
+           with minarg = 0
+           and maxarg = 0
+           and in-optionals = nil
+           do (cond ((member type '(* &rest &key &allow-other-keys) :test #'eq)
+                     (return (values minarg call-arguments-limit)))
+                    ((eq type '&optional)
+                     (setf in-optionals t maxarg minarg))
+                    (in-optionals
+                     (incf maxarg))
+                    (t
+                     (incf minarg)
+                     (incf maxarg)))
+           finally (return (values minarg maxarg found)))
+        (values 0 call-arguments-limit found))))
 
 ;;; Proclamation and declaration handling.
 
@@ -144,15 +144,15 @@
   (let* ((x (cmp-env-search-declaration 'inline env))
          (flag (assoc fname x :test #'same-fname-p)))
     (if flag
-	(cdr flag)
-	(sys:get-sysprop fname 'INLINE))))
+        (cdr flag)
+        (sys:get-sysprop fname 'INLINE))))
 
 (defun declared-notinline-p (fname &optional (env *cmp-env*))
   (let* ((x (cmp-env-search-declaration 'inline env))
          (flag (assoc fname x :test #'same-fname-p)))
     (if flag
-	(null (cdr flag))
-	(sys:get-sysprop fname 'NOTINLINE))))
+        (null (cdr flag))
+        (sys:get-sysprop fname 'NOTINLINE))))
 
 (defun inline-possible (fname &optional (env *cmp-env*))
   (not (declared-notinline-p fname env)))
@@ -163,14 +163,14 @@
 ;;; a symbol property.
 (defun maybe-install-inline-function (fname form env)
   (let* ((x (cmp-env-search-declaration 'inline env))
-	 (flag (assoc fname x :test #'same-fname-p))
-	 (declared (and flag (cdr flag)))
-	 (proclaimed (sys:get-sysprop fname 'inline)))
+         (flag (assoc fname x :test #'same-fname-p))
+         (declared (and flag (cdr flag)))
+         (proclaimed (sys:get-sysprop fname 'inline)))
     `(progn
        ,(when declared
-	  `(eval-when (:compile-toplevel)
-	     (c::declare-inline ',fname *cmp-env-root* ',form)))
+          `(eval-when (:compile-toplevel)
+             (c::declare-inline ',fname *cmp-env-root* ',form)))
        ,(when proclaimed
-	  `(eval-when (:compile-toplevel :load-toplevel :execute)
-	     (si::put-sysprop ',fname 'inline ',form))))))
+          `(eval-when (:compile-toplevel :load-toplevel :execute)
+             (si::put-sysprop ',fname 'inline ',form))))))
 

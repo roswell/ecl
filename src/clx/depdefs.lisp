@@ -3,9 +3,9 @@
 ;; This file contains some of the system dependent code for CLX
 
 ;;;
-;;;			 TEXAS INSTRUMENTS INCORPORATED
-;;;				  P.O. BOX 2909
-;;;			       AUSTIN, TEXAS 78769
+;;;                      TEXAS INSTRUMENTS INCORPORATED
+;;;                               P.O. BOX 2909
+;;;                            AUSTIN, TEXAS 78769
 ;;;
 ;;; Copyright (C) 1987 Texas Instruments Incorporated.
 ;;;
@@ -31,8 +31,8 @@
 (progn
   (defun rational (x)
     (if (rationalp x)
-	x
-	(lisp:rational x)))
+        x
+        (lisp:rational x)))
   (deftype rational (&optional l u) `(lisp:rational ,l ,u)))
 
 ;;; DECLAIM
@@ -41,8 +41,8 @@
 (defmacro declaim (&rest decl-specs)
   (if (cdr decl-specs)
       `(progn
-	 ,@(mapcar #'(lambda (decl-spec) `(proclaim ',decl-spec))
-		   decl-specs))
+         ,@(mapcar #'(lambda (decl-spec) `(proclaim ',decl-spec))
+                   decl-specs))
     `(proclaim ',(car decl-specs))))
 
 ;;; CLX-VALUES value1 value2 ... -- Documents the values returned by the function.
@@ -121,7 +121,7 @@
  '(drawable
    window
    pixmap
-   ;;		gcontext
+   ;;           gcontext
    cursor
    colormap
    font))
@@ -129,7 +129,7 @@
 (defmacro resource-id-map-test ()
   #+excl '#'equal
   #-excl '#'eql)
-					; (eq fixnum fixnum) is not guaranteed.
+                                        ; (eq fixnum fixnum) is not guaranteed.
 (defmacro atom-cache-map-test ()
   #+excl '#'equal
   #-excl '#'eq)
@@ -222,18 +222,18 @@
 
 (defun make-index-op (operator args)
   `(the array-index
-	(values 
-	  ,(case (length args)
-	     (0 `(,operator))
-	     (1 `(,operator
-		  ,(make-index-typed (first args))))
-	     (2 `(,operator
-		  ,(make-index-typed (first args))
-		  ,(make-index-typed (second args))))
-	     (otherwise
-	       `(,operator
-		 ,(make-index-op operator (subseq args 0 (1- (length args))))
-		 ,(make-index-typed (first (last args)))))))))
+        (values 
+          ,(case (length args)
+             (0 `(,operator))
+             (1 `(,operator
+                  ,(make-index-typed (first args))))
+             (2 `(,operator
+                  ,(make-index-typed (first args))
+                  ,(make-index-typed (second args))))
+             (otherwise
+               `(,operator
+                 ,(make-index-op operator (subseq args 0 (1- (length args))))
+                 ,(make-index-typed (first (last args)))))))))
 
 (defmacro index+ (&rest numbers) (make-index-op '+ numbers))
 (defmacro index-logand (&rest numbers) (make-index-op 'logand numbers))
@@ -309,34 +309,34 @@
 
 (defmacro index-floor (number divisor)
   (cond ((eql divisor 1) number)
-	((and (positive-power-of-two-p divisor) (fboundp 'si:%fixnum-floor))
-	 `(si:%fixnum-floor ,number ,divisor))
-	(t `(floor ,number ,divisor))))
+        ((and (positive-power-of-two-p divisor) (fboundp 'si:%fixnum-floor))
+         `(si:%fixnum-floor ,number ,divisor))
+        (t `(floor ,number ,divisor))))
 
 (defmacro index-ceiling (number divisor)
   (cond ((eql divisor 1) number)
-	((and (positive-power-of-two-p divisor) (fboundp 'si:%fixnum-ceiling))
-	 `(si:%fixnum-ceiling ,number ,divisor))
-	(t `(ceiling ,number ,divisor))))
+        ((and (positive-power-of-two-p divisor) (fboundp 'si:%fixnum-ceiling))
+         `(si:%fixnum-ceiling ,number ,divisor))
+        (t `(ceiling ,number ,divisor))))
 
 (defmacro index-truncate (number divisor)
   (cond ((eql divisor 1) number)
-	((and (positive-power-of-two-p divisor) (fboundp 'si:%fixnum-floor))
-	 `(si:%fixnum-floor ,number ,divisor))
-	(t `(truncate ,number ,divisor))))
+        ((and (positive-power-of-two-p divisor) (fboundp 'si:%fixnum-floor))
+         `(si:%fixnum-floor ,number ,divisor))
+        (t `(truncate ,number ,divisor))))
 
 (defmacro index-mod (number divisor)
   (cond ((and (positive-power-of-two-p divisor) (fboundp 'si:%fixnum-mod))
-	 `(si:%fixnum-mod ,number ,divisor))
-	(t `(mod ,number ,divisor))))
+         `(si:%fixnum-mod ,number ,divisor))
+        (t `(mod ,number ,divisor))))
 
 (defmacro index-ash (number count)
   (cond ((eql count 0) number)
-	((and (typep count 'fixnum) (minusp count) (fboundp 'si:%fixnum-floor))
-	 `(si:%fixnum-floor ,number ,(expt 2 (- count))))
-	((and (typep count 'fixnum) (plusp count) (fboundp 'si:%fixnum-multiply))
-	 `(si:%fixnum-multiply ,number ,(expt 2 count)))
-	(t `(ash ,number ,count))))
+        ((and (typep count 'fixnum) (minusp count) (fboundp 'si:%fixnum-floor))
+         `(si:%fixnum-floor ,number ,(expt 2 (- count))))
+        ((and (typep count 'fixnum) (plusp count) (fboundp 'si:%fixnum-multiply))
+         `(si:%fixnum-multiply ,number ,(expt 2 count)))
+        (t `(ash ,number ,count))))
 
 (defmacro index-plusp (number) `(plusp ,number))
 (defmacro index-zerop (number) `(zerop ,number))
@@ -370,8 +370,8 @@
 )
 
 (defstruct (reply-buffer (:conc-name reply-) (:constructor make-reply-buffer-internal)
-			 (:copier nil) (:predicate nil))
-  (size 0 :type array-index)			;Buffer size
+                         (:copier nil) (:predicate nil))
+  (size 0 :type array-index)                    ;Buffer size
   ;; Byte (8 bit) input buffer
   (ibuf8 *empty-bytes* :type buffer-bytes)
   ;; Word (16bit) input buffer
@@ -418,124 +418,124 @@ used, since NIL is the empty list.")
 
 (defmacro def-clx-class ((name &rest options) &body slots)
   (if (or (not (listp *def-clx-class-use-defclass*))
-	  (member name *def-clx-class-use-defclass*))
+          (member name *def-clx-class-use-defclass*))
       (let ((clos-package #+clx-ansi-common-lisp
-			  (find-package :common-lisp)
-			  #-clx-ansi-common-lisp
-			  (or (find-package :clos)
-			      (find-package :pcl)
-			      (let ((lisp-pkg (find-package :lisp)))
-				(and (find-symbol (string 'defclass) lisp-pkg)
-				     lisp-pkg))))
-	    (constructor t)
-	    (constructor-args t)
-	    (include nil)
-	    (print-function nil)
-	    (copier t)
-	    (predicate t))
-	(dolist (option options)
-	  (ecase (pop option)
-	    (:constructor
-	      (setf constructor (pop option))
-	      (setf constructor-args (if (null option) t (pop option))))
-	    (:include
-	      (setf include (pop option)))
-	    (:print-function
-	      (setf print-function (pop option)))
-	    (:copier
-	      (setf copier (pop option)))
-	    (:predicate
-	      (setf predicate (pop option)))))
-	(flet ((cintern (&rest symbols)
-		 (intern (apply #'concatenate 'simple-string
-				(mapcar #'symbol-name symbols))
-			 *package*))
-	       (kintern (symbol)
-			(intern (symbol-name symbol) (find-package :keyword)))
-	       (closintern (symbol)
-		 (intern (symbol-name symbol) clos-package)))
-	  (when (eq constructor t)
-	    (setf constructor (cintern 'make- name)))
-	  (when (eq copier t)
-	    (setf copier (cintern 'copy- name)))
-	  (when (eq predicate t)
-	    (setf predicate (cintern name '-p)))
-	  (when include
-	    (setf slots (append (get include 'def-clx-class) slots)))
-	  (let* ((n-slots (length slots))
-		 (slot-names (make-list n-slots))
-		 (slot-initforms (make-list n-slots))
-		 (slot-types (make-list n-slots)))
-	    (dotimes (i n-slots)
-	      (let ((slot (elt slots i)))
-		(setf (elt slot-names i) (pop slot))
-		(setf (elt slot-initforms i) (pop slot))
-		(setf (elt slot-types i) (getf slot :type t))))
-	    `(progn
+                          (find-package :common-lisp)
+                          #-clx-ansi-common-lisp
+                          (or (find-package :clos)
+                              (find-package :pcl)
+                              (let ((lisp-pkg (find-package :lisp)))
+                                (and (find-symbol (string 'defclass) lisp-pkg)
+                                     lisp-pkg))))
+            (constructor t)
+            (constructor-args t)
+            (include nil)
+            (print-function nil)
+            (copier t)
+            (predicate t))
+        (dolist (option options)
+          (ecase (pop option)
+            (:constructor
+              (setf constructor (pop option))
+              (setf constructor-args (if (null option) t (pop option))))
+            (:include
+              (setf include (pop option)))
+            (:print-function
+              (setf print-function (pop option)))
+            (:copier
+              (setf copier (pop option)))
+            (:predicate
+              (setf predicate (pop option)))))
+        (flet ((cintern (&rest symbols)
+                 (intern (apply #'concatenate 'simple-string
+                                (mapcar #'symbol-name symbols))
+                         *package*))
+               (kintern (symbol)
+                        (intern (symbol-name symbol) (find-package :keyword)))
+               (closintern (symbol)
+                 (intern (symbol-name symbol) clos-package)))
+          (when (eq constructor t)
+            (setf constructor (cintern 'make- name)))
+          (when (eq copier t)
+            (setf copier (cintern 'copy- name)))
+          (when (eq predicate t)
+            (setf predicate (cintern name '-p)))
+          (when include
+            (setf slots (append (get include 'def-clx-class) slots)))
+          (let* ((n-slots (length slots))
+                 (slot-names (make-list n-slots))
+                 (slot-initforms (make-list n-slots))
+                 (slot-types (make-list n-slots)))
+            (dotimes (i n-slots)
+              (let ((slot (elt slots i)))
+                (setf (elt slot-names i) (pop slot))
+                (setf (elt slot-initforms i) (pop slot))
+                (setf (elt slot-types i) (getf slot :type t))))
+            `(progn
 
-	       (eval-when (:compile-toplevel :load-toplevel :execute)
-		 (setf (get ',name 'def-clx-class) ',slots))
+               (eval-when (:compile-toplevel :load-toplevel :execute)
+                 (setf (get ',name 'def-clx-class) ',slots))
 
-	       ;; From here down are the system-specific expansions:
+               ;; From here down are the system-specific expansions:
 
-	       (within-definition (,name def-clx-class)
-		 (,(closintern 'defclass)
-		  ,name ,(and include `(,include))
-		  (,@(map 'list
-			  #'(lambda (slot-name slot-initform slot-type)
-			      `(,slot-name
-				:initform ,slot-initform :type ,slot-type
-				:accessor ,(cintern name '- slot-name)
-				,@(when (and constructor
-					     (or (eq constructor-args t)
-						 (member slot-name
-							 constructor-args)))
-				    `(:initarg ,(kintern slot-name)))
-				))
-			  slot-names slot-initforms slot-types)))
-		 ,(when constructor
-		    (if (eq constructor-args t)
-			`(defun ,constructor (&rest args)
-			   (apply #',(closintern 'make-instance)
-				  ',name args))
-			`(defun ,constructor ,constructor-args
-			   (,(closintern 'make-instance) ',name
-			    ,@(mapcan #'(lambda (slot-name)
-					  (and (member slot-name slot-names)
-					       `(,(kintern slot-name) ,slot-name)))
-				      constructor-args)))))
-		 ,(when predicate
-		    #+allegro
-		    `(progn
-		       (,(closintern 'defmethod) ,predicate (object)
-			 (declare (ignore object))
-			 nil)
-		       (,(closintern 'defmethod) ,predicate ((object ,name))
-			 t))
-		    #-allegro
-		    `(defun ,predicate (object)
-		       (typep object ',name)))
-		 ,(when copier
-		    `(,(closintern 'defmethod) ,copier ((.object. ,name))
-		      (,(closintern 'with-slots) ,slot-names .object.
-		       (,(closintern 'make-instance) ',name
-			,@(mapcan #'(lambda (slot-name)
-				      `(,(kintern slot-name) ,slot-name))
-				  slot-names)))))
-		 ,(when print-function
-		    `(,(closintern 'defmethod)
-		      ,(closintern 'print-object)
-		      ((object ,name) stream)
-		      (,print-function object stream 0))))))))
+               (within-definition (,name def-clx-class)
+                 (,(closintern 'defclass)
+                  ,name ,(and include `(,include))
+                  (,@(map 'list
+                          #'(lambda (slot-name slot-initform slot-type)
+                              `(,slot-name
+                                :initform ,slot-initform :type ,slot-type
+                                :accessor ,(cintern name '- slot-name)
+                                ,@(when (and constructor
+                                             (or (eq constructor-args t)
+                                                 (member slot-name
+                                                         constructor-args)))
+                                    `(:initarg ,(kintern slot-name)))
+                                ))
+                          slot-names slot-initforms slot-types)))
+                 ,(when constructor
+                    (if (eq constructor-args t)
+                        `(defun ,constructor (&rest args)
+                           (apply #',(closintern 'make-instance)
+                                  ',name args))
+                        `(defun ,constructor ,constructor-args
+                           (,(closintern 'make-instance) ',name
+                            ,@(mapcan #'(lambda (slot-name)
+                                          (and (member slot-name slot-names)
+                                               `(,(kintern slot-name) ,slot-name)))
+                                      constructor-args)))))
+                 ,(when predicate
+                    #+allegro
+                    `(progn
+                       (,(closintern 'defmethod) ,predicate (object)
+                         (declare (ignore object))
+                         nil)
+                       (,(closintern 'defmethod) ,predicate ((object ,name))
+                         t))
+                    #-allegro
+                    `(defun ,predicate (object)
+                       (typep object ',name)))
+                 ,(when copier
+                    `(,(closintern 'defmethod) ,copier ((.object. ,name))
+                      (,(closintern 'with-slots) ,slot-names .object.
+                       (,(closintern 'make-instance) ',name
+                        ,@(mapcan #'(lambda (slot-name)
+                                      `(,(kintern slot-name) ,slot-name))
+                                  slot-names)))))
+                 ,(when print-function
+                    `(,(closintern 'defmethod)
+                      ,(closintern 'print-object)
+                      ((object ,name) stream)
+                      (,print-function object stream 0))))))))
       `(within-definition (,name def-clx-class)
-	 (defstruct (,name ,@options)
-	   ,@slots))))
+         (defstruct (,name ,@options)
+           ,@slots))))
 
 #+Genera
 (progn
   (scl:defprop def-clx-class "CLX Class" si:definition-type-name)
   (scl:defprop def-clx-class zwei:defselect-function-spec-finder
-	       zwei:definition-function-spec-finder))
+               zwei:definition-function-spec-finder))
 
 
 ;; We need this here so we can define DISPLAY for CLX.
@@ -601,20 +601,20 @@ used, since NIL is the empty list.")
 #-(or clx-ansi-common-lisp Genera)
 (defun print-unreadable-object-function (object stream type identity function)
   (declare #+lispm
-	   (sys:downward-funarg function))
+           (sys:downward-funarg function))
   (princ "#<" stream)
   (when type
     (let ((type (type-of object))
-	  (pcl-package (find-package :pcl)))
+          (pcl-package (find-package :pcl)))
       ;; Handle pcl type-of lossage
       (when (and pcl-package
-		 (symbolp type)
-		 (eq (symbol-package type) pcl-package)
-		 (string-equal (symbol-name type) "STD-INSTANCE"))
-	(setq type
-	      (funcall (intern (symbol-name 'class-name) pcl-package)
-		       (funcall (intern (symbol-name 'class-of) pcl-package)
-				object))))
+                 (symbolp type)
+                 (eq (symbol-package type) pcl-package)
+                 (string-equal (symbol-name type) "STD-INSTANCE"))
+        (setq type
+              (funcall (intern (symbol-name 'class-name) pcl-package)
+                       (funcall (intern (symbol-name 'class-of) pcl-package)
+                                object))))
       (prin1 type stream)))
   (when (and type function) (princ " " stream))
   (when function (funcall function))
@@ -625,11 +625,11 @@ used, since NIL is the empty list.")
   
 #-(or clx-ansi-common-lisp Genera)
 (defmacro print-unreadable-object
-	  ((object stream &key type identity) &body body)
+          ((object stream &key type identity) &body body)
   (if body
       `(flet ((.print-unreadable-object-body. () ,@body))
-	 (print-unreadable-object-function
-	   ,object ,stream ,type ,identity #'.print-unreadable-object-body.))
+         (print-unreadable-object-function
+           ,object ,stream ,type ,identity #'.print-unreadable-object-body.))
     `(print-unreadable-object-function ,object ,stream ,type ,identity nil)))
 
 
@@ -638,12 +638,12 @@ used, since NIL is the empty list.")
 ;;-----------------------------------------------------------------------------
 
 (defconstant +image-bit-lsb-first-p+
-	     #+clx-little-endian t
-	     #-clx-little-endian nil)
+             #+clx-little-endian t
+             #-clx-little-endian nil)
 
 (defconstant +image-byte-lsb-first-p+
-	     #+clx-little-endian t
-	     #-clx-little-endian nil)
+             #+clx-little-endian t
+             #-clx-little-endian nil)
 
 (defconstant +image-unit+ 32)
 
@@ -686,8 +686,8 @@ used, since NIL is the empty list.")
   "Return the name of the unix domain socket for host and display, or
 nil if a network socket should be opened."
   (cond ((or (string= host "") (string= host "unix"))
-	 (format nil "~A~D" +X-unix-socket-path+ display))
-	#+darwin
-	((and (> (length host) 10) (string= host "tmp/launch" :end1 10))
-	 (format nil "/~A:~D" host display))	  
-	(t nil)))
+         (format nil "~A~D" +X-unix-socket-path+ display))
+        #+darwin
+        ((and (> (length host) 10) (string= host "tmp/launch" :end1 10))
+         (format nil "/~A:~D" host display))      
+        (t nil)))

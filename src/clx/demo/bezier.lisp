@@ -3,9 +3,9 @@
 ;;; CLX interface for Bezier Spline Extension.
 
 ;;;
-;;;			 TEXAS INSTRUMENTS INCORPORATED
-;;;				  P.O. BOX 2909
-;;;			       AUSTIN, TEXAS 78769
+;;;                      TEXAS INSTRUMENTS INCORPORATED
+;;;                               P.O. BOX 2909
+;;;                            AUSTIN, TEXAS 78769
 ;;;
 ;;; Copyright (C) 1987 Texas Instruments Incorporated.
 ;;;
@@ -28,10 +28,10 @@
   ;; Draw Bezier splines on drawable using gcontext.
   ;; Points are a list of (x0 y0 x1 y1 x2 y2 x3 y3)
   (declare (type drawable drawable)
-	   (type gcontext gcontext)
-	   (type sequence points))
+           (type gcontext gcontext)
+           (type sequence points))
   (let* ((display (drawable-display drawable))
-	 (opcode (extension-opcode display "bezier")))
+         (opcode (extension-opcode display "bezier")))
     (with-buffer-request (display opcode :gc-force gcontext)
       ((data card8) 1) ;; X_PolyBezier - The minor_opcode for PolyBezier
       (drawable drawable)

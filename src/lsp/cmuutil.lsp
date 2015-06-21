@@ -29,17 +29,17 @@
   evaluation of Body.  Within the body, each Var is bound to the corresponding
   temporary variable."
   (labels ((frob (specs body)
-	     (if (null specs)
-		 `(progn ,@body)
-		 (let ((spec (first specs)))
-		   (when (/= (length spec) 2)
-		     (error "Malformed Once-Only binding spec: ~S." spec))
-		   (let ((name (first spec))
-			 (exp-temp (gensym)))
-		     `(let ((,exp-temp ,(second spec))
-			    (,name (gensym "OO-")))
-		       `(let ((,,name ,,exp-temp))
-			 ,,(frob (rest specs) body))))))))
+             (if (null specs)
+                 `(progn ,@body)
+                 (let ((spec (first specs)))
+                   (when (/= (length spec) 2)
+                     (error "Malformed Once-Only binding spec: ~S." spec))
+                   (let ((name (first spec))
+                         (exp-temp (gensym)))
+                     `(let ((,exp-temp ,(second spec))
+                            (,name (gensym "OO-")))
+                       `(let ((,,name ,,exp-temp))
+                         ,,(frob (rest specs) body))))))))
     (frob specs body)))
 
 ;;;; The Collect macro:
@@ -65,13 +65,13 @@
   (let ((n-res (gensym)))
     `(progn
       ,@(mapcar #'(lambda (form)
-		    `(let ((,n-res (cons ,form nil)))
-		       (cond (,n-tail
-			      (setf (cdr ,n-tail) ,n-res)
-			      (setq ,n-tail ,n-res))
-			     (t
-			      (setq ,n-tail ,n-res  ,n-value ,n-res)))))
-		forms)
+                    `(let ((,n-res (cons ,form nil)))
+                       (cond (,n-tail
+                              (setf (cdr ,n-tail) ,n-res)
+                              (setq ,n-tail ,n-res))
+                             (t
+                              (setq ,n-tail ,n-res  ,n-value ,n-res)))))
+                forms)
       ,n-value)))
 
 
@@ -100,26 +100,26 @@
   position, including macros and lambdas."
 
   (let ((macros ())
-	(binds ()))
+        (binds ()))
     (dolist (spec collections)
       (unless (<= 1 (length spec) 3)
-	(error "Malformed collection specifier: ~S." spec))
+        (error "Malformed collection specifier: ~S." spec))
       (let ((n-value (gensym))
-	    (name (first spec))
-	    (default (second spec))
-	    (kind (or (third spec) 'collect)))
-	(push `(,n-value ,default) binds)
-	(if (eq kind 'collect)
-	    (let ((n-tail (gensym)))
-	      (if default
-		  (push `(,n-tail (last ,n-value)) binds)
-		  (push n-tail binds))
-	      (push `(,name (&rest args)
-			    (collect-list-expander ',n-value ',n-tail args))
-		    macros))
-	    (push `(,name (&rest args)
-			  (collect-normal-expander ',n-value ',kind args))
-		  macros))))
+            (name (first spec))
+            (default (second spec))
+            (kind (or (third spec) 'collect)))
+        (push `(,n-value ,default) binds)
+        (if (eq kind 'collect)
+            (let ((n-tail (gensym)))
+              (if default
+                  (push `(,n-tail (last ,n-value)) binds)
+                  (push n-tail binds))
+              (push `(,name (&rest args)
+                            (collect-list-expander ',n-value ',n-tail args))
+                    macros))
+            (push `(,name (&rest args)
+                          (collect-normal-expander ',n-value ',kind args))
+                  macros))))
     `(macrolet ,macros (let* ,(nreverse binds) ,@body))))
 
 ); eval-when
@@ -151,5 +151,5 @@
   "Rewrites the given forms replacing the given symbols with uninterned
 ones, which is useful for creating hygienic macros."
   `(progn ,@(sublis (mapcar #'(lambda (s) (cons s (make-symbol (symbol-name s))))
-			    symbols)
-		    body)))
+                            symbols)
+                    body)))

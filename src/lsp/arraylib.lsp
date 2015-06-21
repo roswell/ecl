@@ -18,14 +18,14 @@
 (in-package "SYSTEM")
 
 (defun make-array (dimensions
-		   &key (element-type t)
-			(initial-element nil initial-element-supplied-p)
-			(initial-contents nil initial-contents-supplied-p)
-			adjustable fill-pointer
-			displaced-to (displaced-index-offset 0))
+                   &key (element-type t)
+                        (initial-element nil initial-element-supplied-p)
+                        (initial-contents nil initial-contents-supplied-p)
+                        adjustable fill-pointer
+                        displaced-to (displaced-index-offset 0))
   "Args: (dimensions &key (element-type t) initial-element (initial-contents nil)
-		    (adjustable nil) (fill-pointer nil) (displaced-to nil)
-		    (displaced-index-offset 0) (static nil))
+                    (adjustable nil) (fill-pointer nil) (displaced-to nil)
+                    (displaced-index-offset 0) (static nil))
 Creates an array of the specified DIMENSIONS.  DIMENSIONS is a list of
 non-negative integers each representing the length of the corresponding
 dimension.  It may be an integer for vectors, i.e., one-dimensional arrays.
@@ -45,7 +45,7 @@ OFFSET)th element of the given array.If the STATIC argument is supplied
 with a non-nil value, then the body of the array is allocated as a
 contiguous block."
   (let ((x (sys:make-pure-array element-type dimensions adjustable
-				fill-pointer displaced-to displaced-index-offset)))
+                                fill-pointer displaced-to displaced-index-offset)))
     (declare (array x))
     (cond (initial-element-supplied-p
            (when initial-contents-supplied-p
@@ -60,29 +60,29 @@ contiguous block."
   (declare (array array)
            (sequence initial-contents)
            (optimize (safety 0))
-	   (si::c-local))
+           (si::c-local))
   (labels ((iterate-over-contents (array contents dims written)
-	     (declare (fixnum written)
-		      (array array)
-		      (optimize (safety 0)))
-	     (when (/= (length contents) (first dims))
-	       (error "In MAKE-ARRAY: the elements in :INITIAL-CONTENTS do not match the array dimensions"))
-	     (if (= (length dims) 1)
-		 (do* ((it (make-seq-iterator contents) (seq-iterator-next contents it)))
-		      ((null it))
-		   (sys:row-major-aset array written (seq-iterator-ref contents it))
-		   (incf written))
-		 (do* ((it (make-seq-iterator contents) (seq-iterator-next contents it)))
-		      ((null it))
-		   (setf written (iterate-over-contents array
-							(seq-iterator-ref contents it)
-							(rest dims)
-							written))))
-	     written))
+             (declare (fixnum written)
+                      (array array)
+                      (optimize (safety 0)))
+             (when (/= (length contents) (first dims))
+               (error "In MAKE-ARRAY: the elements in :INITIAL-CONTENTS do not match the array dimensions"))
+             (if (= (length dims) 1)
+                 (do* ((it (make-seq-iterator contents) (seq-iterator-next contents it)))
+                      ((null it))
+                   (sys:row-major-aset array written (seq-iterator-ref contents it))
+                   (incf written))
+                 (do* ((it (make-seq-iterator contents) (seq-iterator-next contents it)))
+                      ((null it))
+                   (setf written (iterate-over-contents array
+                                                        (seq-iterator-ref contents it)
+                                                        (rest dims)
+                                                        written))))
+             written))
     (let ((dims (array-dimensions array)))
       (if dims
-	  (iterate-over-contents array initial-contents dims 0)
-	  (setf (aref array) initial-contents))))
+          (iterate-over-contents array initial-contents dims 0)
+          (setf (aref array) initial-contents))))
   array)
 
 
@@ -100,7 +100,7 @@ Returns a list whose N-th element is the length of the N-th dimension of ARRAY."
        (d nil))
       ((= i 0) d)
     (declare (fixnum i)
-	     (optimize (safety 0)))
+             (optimize (safety 0)))
     (push (array-dimension array (decf i)) d)))
 
 
@@ -109,23 +109,23 @@ Returns a list whose N-th element is the length of the N-th dimension of ARRAY."
 Returns T if INDEXes are valid indexes of ARRAY; NIL otherwise.  The number of
 INDEXes must be equal to the rank of ARRAY."
   (declare (type array array)
-	   (optimize (safety 0))
+           (optimize (safety 0))
            (ext:check-arguments-type))
   (do* ((indices indices (cons-cdr indices))
-	(r (array-rank array))
-	(i 0 (1+ i)))
+        (r (array-rank array))
+        (i 0 (1+ i)))
        ((>= i r) t)
     (declare (type index r i))
     (if indices
-	(let* ((index (cons-car indices)))
-	  (when (or (not (si::fixnump index))
-		    (minusp (truly-the fixnum index))
-		    (>= (truly-the fixnum index) (array-dimension array i)))
-	    (return nil)))
-	(error "The rank of the array is ~R,~%~
+        (let* ((index (cons-car indices)))
+          (when (or (not (si::fixnump index))
+                    (minusp (truly-the fixnum index))
+                    (>= (truly-the fixnum index) (array-dimension array i)))
+            (return nil)))
+        (error "The rank of the array is ~R,~%~
                ~7@Tbut ~R ~:*~[indices are~;index is~:;indices are~] ~
                supplied."
-		 r i))))
+                 r i))))
 
 (defun row-major-index-inner (array indices)
   (declare (optimize (safety 0))
@@ -286,42 +286,42 @@ pointer is 0 already."
 (defun copy-array-contents (dest orig)
   (declare (si::c-local)
            (array dest orig)
-	   (optimize (safety 0)))
+           (optimize (safety 0)))
   (labels
       ((do-copy (dest orig dims1 dims2 start1 start2)
-	 (declare (array dest orig)
-		  (list dims1 dims2)
-		  (ext:array-index start1 start2))
-	 (let* ((d1 (pop dims1))
-		(d2 (pop dims2))
-		(l (min d1 d2))
-		(i1 start1)
-		(i2 start2))
-	   (declare (ext:array-index d1 d2 l i1 i2))
-	   (if (null dims1)
-	       (copy-subarray dest i1 orig i2 l)
-	       (let ((step1 (apply #'* dims1))
-		     (step2 (apply #'* dims2)))
-		 (declare (ext:array-index step1 step2))
-		 (dotimes (i l)
-		   (declare (ext:array-index i))
-		   (do-copy dest orig dims1 dims2 i1 i2)
-		   (incf i1 step1)
-		   (incf i2 step2)))))))
+         (declare (array dest orig)
+                  (list dims1 dims2)
+                  (ext:array-index start1 start2))
+         (let* ((d1 (pop dims1))
+                (d2 (pop dims2))
+                (l (min d1 d2))
+                (i1 start1)
+                (i2 start2))
+           (declare (ext:array-index d1 d2 l i1 i2))
+           (if (null dims1)
+               (copy-subarray dest i1 orig i2 l)
+               (let ((step1 (apply #'* dims1))
+                     (step2 (apply #'* dims2)))
+                 (declare (ext:array-index step1 step2))
+                 (dotimes (i l)
+                   (declare (ext:array-index i))
+                   (do-copy dest orig dims1 dims2 i1 i2)
+                   (incf i1 step1)
+                   (incf i2 step2)))))))
     ;; We have to lie to DO-COPY reshaping the zero-dimensional array
     ;; as a one-dimensional array of one element.
     (do-copy dest orig (or (array-dimensions dest) '(1))
-	               (or (array-dimensions orig) '(1))
-		       0 0)))
+                       (or (array-dimensions orig) '(1))
+                       0 0)))
 
 (defun adjust-array (array new-dimensions
                      &rest r
-		     &key (element-type (array-element-type array))
-			  initial-element
-			  initial-contents
-			  fill-pointer
-			  displaced-to
-			  displaced-index-offset)
+                     &key (element-type (array-element-type array))
+                          initial-element
+                          initial-contents
+                          fill-pointer
+                          displaced-to
+                          displaced-index-offset)
   "Args: (array dimensions
        &key (element-type (array-element-type array))
             initial-element (initial-contents nil) (fill-pointer nil)
@@ -336,12 +336,12 @@ adjustable array."
   ;; Cannot set a fill pointer for an array that does not have any.
   (if (array-has-fill-pointer-p array)
       (unless fill-pointer
-	(setf r (list* :fill-pointer (fill-pointer array) r)))
+        (setf r (list* :fill-pointer (fill-pointer array) r)))
       (when fill-pointer
-	(error 'simple-type-error
-	       :datum array
-	       :expected-type '(satisfies array-has-fill-pointer-p)
-	       :format-control "You supplied a fill pointer for an array without it.")))
+        (error 'simple-type-error
+               :datum array
+               :expected-type '(satisfies array-has-fill-pointer-p)
+               :format-control "You supplied a fill pointer for an array without it.")))
   (let ((x (apply #'make-array new-dimensions :adjustable t :element-type element-type r)))
     (declare (array x))
     (unless (or displaced-to initial-contents)
@@ -353,13 +353,13 @@ adjustable array."
 (defun shrink-vector (vec len)
   "Shrinks a vector."
   (cond ((adjustable-array-p vec)
-	 (adjust-array vec len))
-	((typep vec 'simple-array)
-	 (let ((new-vec (make-array len :element-type (array-element-type vec))))
-	   (copy-subarray new-vec 0 vec 0 len)))
-	((typep vec 'vector)
-	 (setf (fill-pointer vec) len)
-	 vec)
-	(t
-	 (error "Unable to shrink vector ~S which is type-of ~S" vec (type-of vec))) 
-	))
+         (adjust-array vec len))
+        ((typep vec 'simple-array)
+         (let ((new-vec (make-array len :element-type (array-element-type vec))))
+           (copy-subarray new-vec 0 vec 0 len)))
+        ((typep vec 'vector)
+         (setf (fill-pointer vec) len)
+         vec)
+        (t
+         (error "Unable to shrink vector ~S which is type-of ~S" vec (type-of vec))) 
+        ))

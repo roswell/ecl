@@ -1,50 +1,50 @@
 ;;; ----------------------------------------------------------------------
-;;;	COMMON LISP LIBRARY
+;;;     COMMON LISP LIBRARY
 ;;; ----------------------------------------------------------------------
 
 (defparameter
   *lsp-modules*
-  ;; file	load		compile			files which force
-  ;;		environment	environment		recompilations of
-  ;;							this file
+  ;; file       load            compile                 files which force
+  ;;            environment     environment             recompilations of
+  ;;                                                    this file
   '(
-    (export	()		()			())
-    (defmacro	()		()			())
-    (helpfile	()		()			())
+    (export     ()              ()                      ())
+    (defmacro   ()              ()                      ())
+    (helpfile   ()              ()                      ())
 #-runtime
-    (evalmacros	()		()			())
-    (module	()		()			())
-    (autoload	()		()			())
-    (setf	()		()			())
-    (arraylib	()		()			())
-    (predlib	()		()			())
-    (assert	()		()			())
-    (defstruct	()		()			())
-    (listlib	()		()			())
-    (mislib	()		()			())
-    (numlib	()		()			())
-    (packlib	()		()			())
-    (seq	()		()			())
-    (seqlib	()		()			())
-    (iolib	()		()			())
-    (ansi	()		()			())
+    (evalmacros ()              ()                      ())
+    (module     ()              ()                      ())
+    (autoload   ()              ()                      ())
+    (setf       ()              ()                      ())
+    (arraylib   ()              ()                      ())
+    (predlib    ()              ()                      ())
+    (assert     ()              ()                      ())
+    (defstruct  ()              ()                      ())
+    (listlib    ()              ()                      ())
+    (mislib     ()              ()                      ())
+    (numlib     ()              ()                      ())
+    (packlib    ()              ()                      ())
+    (seq        ()              ()                      ())
+    (seqlib     ()              ()                      ())
+    (iolib      ()              ()                      ())
+    (ansi       ()              ()                      ())
 #+old-loop
-    (loop	()		()			())
+    (loop       ()              ()                      ())
 #-old-loop
-    (loop2	()		()			())
+    (loop2      ()              ()                      ())
 #+cmu-format
-    (format	()		()			())
-    (defpackage ()		()			())
-    (ffi	()		()			())
+    (format     ()              ()                      ())
+    (defpackage ()              ()                      ())
+    (ffi        ()              ()                      ())
 #-runtime
-    (describe	()		()			())
-    (top	()		()			())
-    (trace	()		()			())
-    (config	()		()			())
+    (describe   ()              ()                      ())
+    (top        ()              ()                      ())
+    (trace      ()              ()                      ())
+    (config     ()              ()                      ())
 #+threads
-    (thread	()		()			())
+    (thread     ()              ()                      ())
 #+nil ; This is loaded as source file
-    (tk-init	()		()			())))
+    (tk-init    ()              ()                      ())))
 
 (sbt:defsystem 
  lsp

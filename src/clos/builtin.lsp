@@ -76,7 +76,7 @@
 (defmethod allocate-instance ((class structure-class) &rest initargs)
   (declare (ignore initargs))
   (apply #'si::make-structure class
-	 (make-list (class-size class) :initial-element (si::unbound))))
+         (make-list (class-size class) :initial-element (si::unbound))))
 
 (defmethod finalize-inheritance ((class structure-class))
   (call-next-method)
@@ -89,26 +89,26 @@
 
 (defmethod print-object ((obj structure-object) stream)
   (let* ((class (si:instance-class obj))
-	 (slotds (class-slots class)))
+         (slotds (class-slots class)))
     (declare (:read-only class))
     (when (and slotds
                ;; *p-readably* effectively disables *p-level*
-	       (not *print-readably*)
-	       *print-level*
-	       (zerop *print-level*))
+               (not *print-readably*)
+               *print-level*
+               (zerop *print-level*))
       (write-string "#" stream)
       (return-from print-object obj))
     (write-string "#S(" stream)
     (prin1 (class-name class) stream)
     (do ((scan slotds (cdr scan))
-	 (i 0 (1+ i))
-	 (limit (or *print-length* most-positive-fixnum))
-	 (sv))
-	((null scan))
+         (i 0 (1+ i))
+         (limit (or *print-length* most-positive-fixnum))
+         (sv))
+        ((null scan))
       (declare (fixnum i))
       (when (>= i limit)
-	(write-string " ..." stream)
-	(return))
+        (write-string " ..." stream)
+        (return))
       (setq sv (si:instance-ref obj i))
       (write-string " :" stream)
       (prin1 (slot-definition-name (car scan)) stream)

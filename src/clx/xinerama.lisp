@@ -16,14 +16,14 @@
   (:use "COMMON-LISP" "XLIB")
   (:nicknames "XINERAMA")
   (:import-from "XLIB"
-		"WITH-BUFFER-REQUEST"
-		"WITH-BUFFER-REQUEST-AND-REPLY"
-		"DATA"
-		"BOOLEAN" "BOOLEAN-GET"
-		"CARD8" "CARD8-GET"
-		"CARD16" "CARD16-GET"
-		"CARD32" "CARD32-GET"
-		"INT16" "INT16-GET")
+                "WITH-BUFFER-REQUEST"
+                "WITH-BUFFER-REQUEST-AND-REPLY"
+                "DATA"
+                "BOOLEAN" "BOOLEAN-GET"
+                "CARD8" "CARD8-GET"
+                "CARD16" "CARD16-GET"
+                "CARD32" "CARD32-GET"
+                "INT16" "INT16-GET")
   (:export "SCREEN-INFO"
            "SCREEN-INFO-NUMBER"
            "SCREEN-INFO-X"

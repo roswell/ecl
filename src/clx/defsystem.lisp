@@ -1,9 +1,9 @@
 ;;; -*- Mode: Lisp; Package: Xlib; Log: clx.log -*-
 
 ;;;
-;;;			 TEXAS INSTRUMENTS INCORPORATED
-;;;				  P.O. BOX 2909
-;;;			       AUSTIN, TEXAS 78769
+;;;                      TEXAS INSTRUMENTS INCORPORATED
+;;;                               P.O. BOX 2909
+;;;                            AUSTIN, TEXAS 78769
 ;;;
 ;;; Portions Copyright (C) 1987 Texas Instruments Incorporated.
 ;;; Portions Copyright (C) 1988, 1989 Franz Inc, Berkeley, Ca.
@@ -110,10 +110,10 @@
    (:fasload package depdefs clx dependent macros bufmac buffer display))
   (:compile-load graphics
    (:fasload package depdefs clx dependent macros fonts bufmac buffer display
-	     fonts))
+             fonts))
   (:compile-load text
    (:fasload package depdefs clx dependent macros fonts bufmac buffer display
-	     gcontext fonts))
+             gcontext fonts))
   (:compile-load-init attributes
    (dependent)
    (:fasload package depdefs clx dependent macros bufmac buffer display))
@@ -121,7 +121,7 @@
    (:fasload package depdefs clx dependent macros bufmac buffer display))
   (:compile-load keysyms
    (:fasload package depdefs clx dependent macros bufmac buffer display
-	     translate))
+             translate))
   (:compile-load manager
    (:fasload package depdefs clx dependent macros bufmac buffer display))
   (:compile-load image
@@ -142,7 +142,7 @@
      :distribute-binaries t
      :source-category :basic)
   (:module doc ("doc")
-	   (:type :lisp-example))
+           (:type :lisp-example))
   (:serial
     "package" "depdefs" "generalock" "clx" "dependent" "macros" "bufmac"
     "buffer" "display" "gcontext" "input" "requests" "fonts" "graphics"
@@ -159,7 +159,7 @@
      :source-category :basic
      :default-module-type :minima-lisp)
   (:module doc ("doc")
-	   (:type :lisp-example))
+           (:type :lisp-example))
   (:serial
     "package" "depdefs" "clx" "dependent" "macros" "bufmac"
     "buffer" "display" "gcontext" "input" "requests" "fonts" "graphics"
@@ -176,9 +176,9 @@
 #+excl
 (setq compiler::generate-interrupt-checks-switch
       (compile nil
-	       '(lambda (safety size speed &optional debug)
-		  (declare (ignore size debug))
-		  (or (< speed 3) (> safety 0)))))
+               '(lambda (safety size speed &optional debug)
+                  (declare (ignore size debug))
+                  (or (< speed 3) (> safety 0)))))
 
 
 ;;; Allegro
@@ -204,77 +204,77 @@
     :recompile-on (|dependent|))
   (|macros|
     :load-before-compile (|package| |excldep| |depdefs| |clx| |dependent|
-			  |exclcmac|)
+                          |exclcmac|)
     :recompile-on (|exclcmac|))
   (|bufmac|
     :load-before-compile (|package| |excldep| |depdefs| |clx| |dependent|
-			  |exclcmac| |macros|)
+                          |exclcmac| |macros|)
     :recompile-on (|macros|))
   (|buffer|
     :load-before-compile (|package| |excldep| |depdefs| |clx| |dependent|
-			  |exclcmac| |macros| |bufmac|)
+                          |exclcmac| |macros| |bufmac|)
     :recompile-on (|bufmac|))
   (|display|
     :load-before-compile (|package| |excldep| |depdefs| |clx| |dependent|
-			  |exclcmac| |macros| |bufmac| |buffer|)
+                          |exclcmac| |macros| |bufmac| |buffer|)
     :recompile-on (|buffer|))
   (|gcontext|
     :load-before-compile (|package| |excldep| |depdefs| |clx| |dependent|
-			  |exclcmac| |macros| |bufmac| |buffer| |display|)
+                          |exclcmac| |macros| |bufmac| |buffer| |display|)
     :recompile-on (|display|))
   (|input|
     :load-before-compile (|package| |excldep| |depdefs| |clx| |dependent|
-			  |exclcmac| |macros| |bufmac| |buffer| |display|)
+                          |exclcmac| |macros| |bufmac| |buffer| |display|)
     :recompile-on (|display|))
   (|requests|
     :load-before-compile (|package| |excldep| |depdefs| |clx| |dependent|
-			  |exclcmac| |macros| |bufmac| |buffer| |display|
-			  |input|)
+                          |exclcmac| |macros| |bufmac| |buffer| |display|
+                          |input|)
     :recompile-on (|display|))
   (|fonts|
     :load-before-compile (|package| |excldep| |depdefs| |clx| |dependent|
-			  |exclcmac| |macros| |bufmac| |buffer| |display|)
+                          |exclcmac| |macros| |bufmac| |buffer| |display|)
     :recompile-on (|display|))
   (|graphics|
     :load-before-compile (|package| |excldep| |depdefs| |clx| |dependent|
-			  |exclcmac| |macros| |bufmac| |buffer| |display|
-			  |fonts|)
+                          |exclcmac| |macros| |bufmac| |buffer| |display|
+                          |fonts|)
     :recompile-on (|fonts|))
   (|text|
     :load-before-compile (|package| |excldep| |depdefs| |clx| |dependent|
-			  |exclcmac| |macros| |bufmac| |buffer| |display|
-			  |gcontext| |fonts|)
+                          |exclcmac| |macros| |bufmac| |buffer| |display|
+                          |gcontext| |fonts|)
     :recompile-on (|gcontext| |fonts|)
     :load-after (|translate|))
   ;; The above line gets around a compiler macro expansion bug.
   
   (|attributes|
     :load-before-compile (|package| |excldep| |depdefs| |clx| |dependent|
-			  |exclcmac| |macros| |bufmac| |buffer| |display|)
+                          |exclcmac| |macros| |bufmac| |buffer| |display|)
     :recompile-on (|display|))
   (|translate|
     :load-before-compile (|package| |excldep| |depdefs| |clx| |dependent|
-			  |exclcmac| |macros| |bufmac| |buffer| |display|
-			  |text|)
+                          |exclcmac| |macros| |bufmac| |buffer| |display|
+                          |text|)
     :recompile-on (|display|))
   (|keysyms|
     :load-before-compile (|package| |excldep| |depdefs| |clx| |dependent|
-			  |exclcmac| |macros| |bufmac| |buffer| |display|
-			  |translate|)
+                          |exclcmac| |macros| |bufmac| |buffer| |display|
+                          |translate|)
     :recompile-on (|translate|))
   (|manager|
     :load-before-compile (|package| |excldep| |depdefs| |clx| |dependent|
-			  |exclcmac| |macros| |bufmac| |buffer| |display|)
+                          |exclcmac| |macros| |bufmac| |buffer| |display|)
     :recompile-on (|display|))
   (|image|
     :load-before-compile (|package| |excldep| |depdefs| |clx| |dependent|
-			  |exclcmac| |macros| |bufmac| |buffer| |display|)
+                          |exclcmac| |macros| |bufmac| |buffer| |display|)
     :recompile-on (|display|))
   
   ;; Don't know if l-b-c list is correct.  XX
   (|resource|
     :load-before-compile (|package| |excldep| |depdefs| |clx| |dependent|
-			  |exclcmac| |macros| |bufmac| |buffer| |display|)
+                          |exclcmac| |macros| |bufmac| |buffer| |display|)
     :recompile-on (|display|))
   )
 
@@ -337,18 +337,18 @@
   (declare (ignore binary-path))
   #+(or cmu sbcl)
   (alien:def-alien-routine ("connect_to_server" xlib::connect-to-server)
-			   c-call:int
+                           c-call:int
     (host c-call:c-string)
     (port c-call:int))
 
   #+(or kcl ibcl)
   (progn
     (let ((pathname (merge-pathnames "sockcl.o" binary-path))
-	  (options
-	    (concatenate
-	      'string
-	      (namestring (merge-pathnames "socket.o" binary-path))
-	      " -lc")))
+          (options
+            (concatenate
+              'string
+              (namestring (merge-pathnames "socket.o" binary-path))
+              " -lc")))
       (format t "~&Faslinking ~A with ~A.~%" pathname options)
       (si:faslink (namestring pathname) options)
       (format t "~&Finished faslinking ~A.~%" pathname)))
@@ -356,36 +356,36 @@
 
 #-(or lispm allegro Minima)
 (defun compile-clx (&optional
-		    (source-pathname-defaults "")
-		    (binary-pathname-defaults "")
-		    &key
-		    (compile-c t))
+                    (source-pathname-defaults "")
+                    (binary-pathname-defaults "")
+                    &key
+                    (compile-c t))
 
   ;; The pathname-defaults above might only be strings, so coerce them
   ;; to pathnames.  Build a default binary path with every component
   ;; of the source except the file type.  This should prevent
   ;; (compile-clx "*.lisp") from destroying source files.
   (let* ((source-path (pathname source-pathname-defaults))
-	 (path        (make-pathname
-			:host      (pathname-host      source-path)
-			:device    (pathname-device    source-path)
-			:directory (pathname-directory source-path)
-			:name      (pathname-name      source-path)
-			:type      nil
-			:version   (pathname-version   source-path)))
-	 (binary-path (merge-pathnames binary-pathname-defaults
-				       path))
-	 #+clx-ansi-common-lisp (*compile-verbose* t)
-	 (*load-verbose* t))
-				       
+         (path        (make-pathname
+                        :host      (pathname-host      source-path)
+                        :device    (pathname-device    source-path)
+                        :directory (pathname-directory source-path)
+                        :name      (pathname-name      source-path)
+                        :type      nil
+                        :version   (pathname-version   source-path)))
+         (binary-path (merge-pathnames binary-pathname-defaults
+                                       path))
+         #+clx-ansi-common-lisp (*compile-verbose* t)
+         (*load-verbose* t))
+                                       
     ;; Make sure source-path and binary-path file types are distinct so
     ;; we don't accidently overwrite the source files.  NIL should be an
     ;; ok type, but anything else spells trouble.
     (if (and (equal (pathname-type source-path)
-		    (pathname-type binary-path))
-	     (not (null (pathname-type binary-path))))
-	(error "Source and binary pathname defaults have same type ~s ~s"
-	       source-path binary-path))
+                    (pathname-type binary-path))
+             (not (null (pathname-type binary-path))))
+        (error "Source and binary pathname defaults have same type ~s ~s"
+               source-path binary-path))
 
     (format t "~&;;; Default paths: ~s ~s~%" source-path binary-path)
 
@@ -393,55 +393,55 @@
     #+lcl3.0
     (progn
       (unless (member :pqc *features*)
-	(cerror
-	  "Go ahead anyway."
-	  "Lucid's production mode compiler must be loaded to compile CLX."))
+        (cerror
+          "Go ahead anyway."
+          "Lucid's production mode compiler must be loaded to compile CLX."))
       (proclaim '(optimize (speed 3)
-			   (safety 1)
-			   (space 0)
-			   (compilation-speed 0))))
+                           (safety 1)
+                           (space 0)
+                           (compilation-speed 0))))
 
     (labels ((compile-lisp (filename)
-	       (let ((source (merge-pathnames filename source-path))
-		     (binary (merge-pathnames filename binary-path)))
-		 ;; If the source and binary pathnames are the same,
-		 ;; then don't supply an output file just to be sure
-		 ;; compile-file defaults correctly.
-		 #+(or kcl ibcl) (load source)
-		 (if (equal source binary)
-		     (compile-file source)
-		     (compile-file source :output-file binary))
-		 binary))
-	     (compile-and-load (filename)
-	       (load (compile-lisp filename)))
-	     #+(or lucid kcl ibcl)
-	     (compile-c (filename)
-	       (let* ((c-filename (concatenate 'string filename ".c"))
-		      (o-filename (concatenate 'string filename ".o"))
-		      (src (merge-pathnames c-filename source-path))
-		      (obj  (merge-pathnames o-filename binary-path))
-		      (args (list "-c" (namestring src)
-				  "-o" (namestring obj)
-				  #+mips "-G 0"
-				  #+(or hp sysv) "-DSYSV"
-				  #+(and mips (not dec)) "-I/usr/include/bsd"
-				  #-(and mips (not dec)) "-DUNIXCONN"
-				  #+(and lucid pa) "-DHPUX -DHPUX7.0"
-				  )))
-		 (format t ";;; cc~{ ~A~}~%" args)
-		 (unless
-		   (zerop 
-		     #+lucid
-		     (multiple-value-bind (iostream estream exitstatus pid)
-			 ;; in 2.0, run-program is exported from system:
-			 ;; in 3.0, run-program is exported from lcl:
-			 ;; system inheirits lcl
-			 (system::run-program "cc" :arguments args)
-		       (declare (ignore iostream estream pid))
-		       exitstatus)
-		     #+(or kcl ibcl)
-		     (system (format nil "cc~{ ~A~}" args)))
-		   (error "Compile of ~A failed." src)))))
+               (let ((source (merge-pathnames filename source-path))
+                     (binary (merge-pathnames filename binary-path)))
+                 ;; If the source and binary pathnames are the same,
+                 ;; then don't supply an output file just to be sure
+                 ;; compile-file defaults correctly.
+                 #+(or kcl ibcl) (load source)
+                 (if (equal source binary)
+                     (compile-file source)
+                     (compile-file source :output-file binary))
+                 binary))
+             (compile-and-load (filename)
+               (load (compile-lisp filename)))
+             #+(or lucid kcl ibcl)
+             (compile-c (filename)
+               (let* ((c-filename (concatenate 'string filename ".c"))
+                      (o-filename (concatenate 'string filename ".o"))
+                      (src (merge-pathnames c-filename source-path))
+                      (obj  (merge-pathnames o-filename binary-path))
+                      (args (list "-c" (namestring src)
+                                  "-o" (namestring obj)
+                                  #+mips "-G 0"
+                                  #+(or hp sysv) "-DSYSV"
+                                  #+(and mips (not dec)) "-I/usr/include/bsd"
+                                  #-(and mips (not dec)) "-DUNIXCONN"
+                                  #+(and lucid pa) "-DHPUX -DHPUX7.0"
+                                  )))
+                 (format t ";;; cc~{ ~A~}~%" args)
+                 (unless
+                   (zerop 
+                     #+lucid
+                     (multiple-value-bind (iostream estream exitstatus pid)
+                         ;; in 2.0, run-program is exported from system:
+                         ;; in 3.0, run-program is exported from lcl:
+                         ;; system inheirits lcl
+                         (system::run-program "cc" :arguments args)
+                       (declare (ignore iostream estream pid))
+                       exitstatus)
+                     #+(or kcl ibcl)
+                     (system (format nil "cc~{ ~A~}" args)))
+                   (error "Compile of ~A failed." src)))))
 
       ;; Now compile and load all the files.
       ;; Defer compiler warnings until everything's compiled, if possible.
@@ -458,9 +458,9 @@
        (compile-and-load "depdefs")
        (compile-and-load "clx")
        (compile-and-load "dependent")
-       #+excl (compile-and-load "exclcmac")	; these are just macros
-       (compile-and-load "macros")		; these are just macros
-       (compile-and-load "bufmac")		; these are just macros
+       #+excl (compile-and-load "exclcmac")     ; these are just macros
+       (compile-and-load "macros")              ; these are just macros
+       (compile-and-load "bufmac")              ; these are just macros
        (compile-and-load "buffer")
        (compile-and-load "display")
        (compile-and-load "gcontext")
@@ -487,35 +487,35 @@
 ;;; You should have a module definition somewhere so the require/provide
 ;;; mechanism can avoid reloading CLX.  In an ideal world, somebody would
 ;;; just put
-;;;		(REQUIRE 'CLX)
+;;;             (REQUIRE 'CLX)
 ;;; in their file (some implementations don't have a central registry for
 ;;; modules, so a pathname needs to be supplied).
 
 ;;; The REQUIRE should find a file that does
-;;;		(IN-PACKAGE 'XLIB :USE '(LISP))
-;;;		(PROVIDE 'CLX)
-;;;		(LOAD <clx-defsystem-file>)
-;;;		(LOAD-CLX <binary-specific-clx-directory>)
+;;;             (IN-PACKAGE 'XLIB :USE '(LISP))
+;;;             (PROVIDE 'CLX)
+;;;             (LOAD <clx-defsystem-file>)
+;;;             (LOAD-CLX <binary-specific-clx-directory>)
 
 #-(or lispm allegro Minima)
 (defun load-clx (&optional (binary-pathname-defaults "")
-		 &key (macrosp nil))
+                 &key (macrosp nil))
 
   (let* ((source-path (pathname ""))
-	 (path        (make-pathname
-			:host      (pathname-host      source-path)
-			:device    (pathname-device    source-path)
-			:directory (pathname-directory source-path)
-			:name      (pathname-name      source-path)
-			:type      nil
-			:version   (pathname-version   source-path)))
-	 (binary-path (merge-pathnames binary-pathname-defaults
-				       path))
-	 (*load-verbose* t))
+         (path        (make-pathname
+                        :host      (pathname-host      source-path)
+                        :device    (pathname-device    source-path)
+                        :directory (pathname-directory source-path)
+                        :name      (pathname-name      source-path)
+                        :type      nil
+                        :version   (pathname-version   source-path)))
+         (binary-path (merge-pathnames binary-pathname-defaults
+                                       path))
+         (*load-verbose* t))
 
     (flet ((load-binary (filename)
-	     (let ((binary (merge-pathnames filename binary-path)))
-	       (load binary))))
+             (let ((binary (merge-pathnames filename binary-path)))
+               (load binary))))
 
       (load-binary "package")
       #+(or lucid kcl ibcl cmu) (clx-foreign-files binary-path)
@@ -524,9 +524,9 @@
       (load-binary "clx")
       (load-binary "dependent")
       (when macrosp
-	#+excl (load-binary "exclcmac")
-	(load-binary "macros")
-	(load-binary "bufmac"))
+        #+excl (load-binary "exclcmac")
+        (load-binary "macros")
+        (load-binary "bufmac"))
       (load-binary "buffer")
       (load-binary "display")
       (load-binary "gcontext")
@@ -555,13 +555,13 @@
 
 #+(or) ;ecl
 (flet ((compile-if-old (destdir sources &rest options)
-	 (mapcar #'(lambda (source)
-		     (let ((object (merge-pathnames destdir (compile-file-pathname source :type :object))))
-		       (unless (and (probe-file object)
-				    (>= (file-write-date object) (file-write-date source)))
-			 (apply #'compile-file source :output-file object options))
-		       object))
-		 sources)))
+         (mapcar #'(lambda (source)
+                     (let ((object (merge-pathnames destdir (compile-file-pathname source :type :object))))
+                       (unless (and (probe-file object)
+                                    (>= (file-write-date object) (file-write-date source)))
+                         (apply #'compile-file source :output-file object options))
+                       object))
+                 sources)))
   (let ((clx-objects (compile-if-old "./" +clx-modules+ :system-p t)))
     (c::build-fasl "clx" :lisp-files clx-objects)))
 

@@ -12,7 +12,7 @@
 ;;;;
 ;;;;                    Sets doc-strings for built-in symbols.
 
-(in-package "COMPILER")			; in case it does not exist
+(in-package "COMPILER")                 ; in case it does not exist
 (in-package "SYSTEM")
 
 (defmacro docfun (symbol kind args doc)
@@ -23,23 +23,23 @@
   (assert (listp args))
   (ext:annotate symbol ':lambda-list nil args)
   (cond ((and doc (search "Syntax:" doc))
-	 (setf args nil))
-	((and doc (search "Args:" doc))
-	 (setf args nil))
-	((member kind '(macro special))
-	 (setf args (format nil "Syntax: ~A" args)))
-	(t
-	 (setf args (format nil "Args: ~A" args))))
+         (setf args nil))
+        ((and doc (search "Args:" doc))
+         (setf args nil))
+        ((member kind '(macro special))
+         (setf args (format nil "Syntax: ~A" args)))
+        (t
+         (setf args (format nil "Args: ~A" args))))
   (si::set-documentation
    symbol 'function
    (format nil "~A in ~A package:~@[~%~A~]~@[~%~A~]~%"
-	   (ecase kind
-	     (special "Special Form")
-	     (macro "Macro")
-	     (function "Function")
-	     (method "Generic function"))
-	   (package-name (symbol-package (si::function-block-name symbol)))
-	   args doc)))
+           (ecase kind
+             (special "Special Form")
+             (macro "Macro")
+             (function "Function")
+             (method "Generic function"))
+           (package-name (symbol-package (si::function-block-name symbol)))
+           args doc)))
 
 (defmacro docvar (symbol kind doc)
   (do-docvar symbol kind doc))
@@ -49,7 +49,7 @@
   (si::set-documentation
    symbol 'variable
    (format nil "~@(~A~) in ~A package:~A~%"
-	   kind (package-name (symbol-package symbol)) doc)))
+           kind (package-name (symbol-package symbol)) doc)))
 
 (defmacro doctype (symbol doc)
   (do-doctype symbol doc))
@@ -60,34 +60,34 @@
 
 (defun tree-search (tree x)
   (cond ((eq tree x)
-	 t)
-	((atom tree)
-	 nil)
-	((tree-search (car tree) x)
-	 t)
-	(t
-	 (tree-search (cdr tree) x))))
+         t)
+        ((atom tree)
+         nil)
+        ((tree-search (car tree) x)
+         t)
+        (t
+         (tree-search (cdr tree) x))))
 
 (defun our-pde-hook (location definition output-form)
   (when (consp definition)
     (handler-case
-	(let* ((documentation nil)
-	       (name (second definition)))
-	  (loop for i in (cddr definition)
-	     do (cond ((stringp i)
-		       (setf documentation i)
-		       (return))
-		      ((and (consp i) (eq (first i) 'DECLARE))
-		       ;; Produce no documentation for si::c-local functions
-		       (when (tree-search i 'si::c-local)
-			 (return-from our-pde-hook output-form)))
-		      (t (return))))
-	  (case (first definition)
-	    (defun (do-docfun name 'function (third definition) documentation))
-	    (defmacro (do-docfun name 'macro (third definition) documentation))
-	    ((defvar defparameter) (when documentation (do-docvar name 'variable documentation)))
-	    (defconstant (when documentation (do-docvar name 'constant documentation)))
-	    (deftype (when documentation (do-doctype name documentation)))))
+        (let* ((documentation nil)
+               (name (second definition)))
+          (loop for i in (cddr definition)
+             do (cond ((stringp i)
+                       (setf documentation i)
+                       (return))
+                      ((and (consp i) (eq (first i) 'DECLARE))
+                       ;; Produce no documentation for si::c-local functions
+                       (when (tree-search i 'si::c-local)
+                         (return-from our-pde-hook output-form)))
+                      (t (return))))
+          (case (first definition)
+            (defun (do-docfun name 'function (third definition) documentation))
+            (defmacro (do-docfun name 'macro (third definition) documentation))
+            ((defvar defparameter) (when documentation (do-docvar name 'variable documentation)))
+            (defconstant (when documentation (do-docvar name 'constant documentation)))
+            (deftype (when documentation (do-doctype name documentation)))))
       (error (c) (princ c) (quit))))
   output-form)
 
@@ -96,7 +96,7 @@
 #||
 (defmacro docfun (symbol kind args string)
   `(progn (si::putprop ',symbol ,string 'si::function-documentation)
-	  (si::putprop ',symbol ',args 'arglist)
+          (si::putprop ',symbol ',args 'arglist)
           ',symbol))
 
 (defmacro docvar (symbol kind string)
@@ -110,7 +110,7 @@
 ||#
 
 ;;;----------------------------------------------------------------------
-;;;	Ordered alphabetically for binary search
+;;;     Ordered alphabetically for binary search
 ;;;----------------------------------------------------------------------
 
 (docvar + variable "
@@ -163,21 +163,21 @@ synonym stream to *TERMINAL-IO*.")
 List of symbols that name features of the current version of ECL.  These
 features are used in connection with the read macros #+ and #-.  When the
 reader encounters
-	#+ feature-spec form
+        #+ feature-spec form
 it reads FORM in the usual manner if FEATURE-SPEC is satisfied.  Otherwise,
 the reader just skips FORM.
-	#- feature-spec form
+        #- feature-spec form
 is equivalent to
-	#- (not feature-spec) form
+        #- (not feature-spec) form
 A feature-spec may be a symbol, in which case the spec is satisfied iff the
 symbol is an element of *FEATURES*.  Or else, a feature-spec must be one of
 the following forms.
-	(and {feature-spec}*)
-		Satisfied iff all FEATURE-SPECs are satisfied
-	(or {feature-spec}*)
-		Satisfied iff at least one of FEATURE-SPECs is satisfied
-	(not feature-spec)
-		Satisfied iff FEATURE-SPEC is not satisfied")
+        (and {feature-spec}*)
+                Satisfied iff all FEATURE-SPECs are satisfied
+        (or {feature-spec}*)
+                Satisfied iff at least one of FEATURE-SPECs is satisfied
+        (not feature-spec)
+                Satisfied iff FEATURE-SPEC is not satisfied")
 
 #-boehm-gc
 (docvar si::*gc-message* variable "
@@ -241,9 +241,9 @@ It initial value is T.")
 (docvar *macroexpand-hook* variable "
 The value of this variable must be a three-argument function object.
 Each time a macro form is expanded, ECL calls that function with
-	1. the macro expansion function (see MACRO-FUNCTION)
-	2. the macro form to expand
-	3. an environment (NIL in most case)
+        1. the macro expansion function (see MACRO-FUNCTION)
+        2. the macro form to expand
+        3. an environment (NIL in most case)
 as three arguments, and uses the returned value as the expanded form.
 The initial value of this variable is the function FUNCALL.")
 
@@ -262,9 +262,9 @@ The current package.  The initial value is the USER package.")
 (docvar *print-array* variable "
 Specifies whether ECL should print elements when it prints arrays other than
 strings.  ECL uses the following abbreviation notations.
-	#<bit-vector n>		for bit-vectors
-	#<vector n>		for vectors other than strings and bit-vectors
-	#<array n>		for arrays other than vectors
+        #<bit-vector n>         for bit-vectors
+        #<vector n>             for vectors other than strings and bit-vectors
+        #<array n>              for arrays other than vectors
 where N is a number that identifies the array.")
 
 (docvar *print-base* variable "
@@ -273,9 +273,9 @@ from 2 to 36, inclusive.  The initial value is 10.")
 
 (docvar *print-case* variable "
 Specifies how to print ordinary symbols.  Possible values are:
-	:UPCASE		in upper case
-	:DOWNCASE	in lower case
-	:CAPITALIZE	the first character in upper case, the rest in lower
+        :UPCASE         in upper case
+        :DOWNCASE       in lower case
+        :CAPITALIZE     the first character in upper case, the rest in lower
 The initial value is :UPCASE.")
 
 (docvar *print-circle* variable "
@@ -468,7 +468,7 @@ Returns the N-th argument given in the command line that invoked ECL.")
 (doctype array "
 An array is a compound object whose elements are referenced by indexing.  One-
 dimensional arrays are called vectors.  Other arrays are notated as
-	#?a( ... )	or	#?A( ... )
+        #?a( ... )      or      #?A( ... )
 where '?' is actually the rank of the array.
 Arrays may be displaced to another array, may have a fill-pointer, or may be
 adjustable.  Other arrays are called simple-arrays.  Only simple-arrays can be
@@ -542,19 +542,19 @@ VALUE-FORM will be returned as the values of the terminated BLOCK form.")
 (docfun boole function (op integer1 integer2) "
 Returns the integer produced by the logical operation specified by OP on the
 two integers.  OP must be the value of one of the following constants.
-	BOOLE-CLR	BOOLE-C1	BOOLE-XOR	BOOLE-ANDC1
-	BOOLE-SET	BOOLE-C2	BOOLE-EQV	BOOLE-ANDC2
-	BOOLE-1		BOOLE-AND	BOOLE-NAND	BOOLE-ORC1
-	BOOLE-2		BOOLE-IOR	BOOLE-NOR	BOOLE-ORC2
+        BOOLE-CLR       BOOLE-C1        BOOLE-XOR       BOOLE-ANDC1
+        BOOLE-SET       BOOLE-C2        BOOLE-EQV       BOOLE-ANDC2
+        BOOLE-1         BOOLE-AND       BOOLE-NAND      BOOLE-ORC1
+        BOOLE-2         BOOLE-IOR       BOOLE-NOR       BOOLE-ORC2
 Each logical operation on integers produces an integer represented by the bit
 sequence obtained by a bit-wise logical operation on the bit sequences that
 represent the integers.  Two's-complement representation is assumed to obtain
 the bit sequence that represents an integer.  For example,
-	 2:  ...010
-	 1:  ...001
-	 0:  ...000
-	-1:  ...111
-	-2:  ...110
+         2:  ...010
+         1:  ...001
+         0:  ...000
+        -1:  ...111
+        -2:  ...110
 where each '...' represents either an infinite sequence of 0's (for non-
 negative integers) or an infinite sequence of 1's (for negative integers).")
 
@@ -629,8 +629,8 @@ library of FASL code. You should use symbols to call in optional parts of the
 interpreter, such as the compiler 'CMP or the 'CLX library (not yet available)
 
 For example:
-	(compile-file \"my-code.lsp\" :system-p)
-	(build-ecl \"my-ecl\" \"my-code.o\" \"-Bdynamic -lX11\" 'cmp)
+        (compile-file \"my-code.lsp\" :system-p)
+        (build-ecl \"my-ecl\" \"my-code.o\" \"-Bdynamic -lX11\" 'cmp)
 builds an new interpreter with some custom lisp code given in \"my-code.o\" and
 with the ECL compiler (You must explicitely mention the compiler if you want
 it). Finally, the X-Windows dynamically linked libraries are also included
@@ -879,17 +879,17 @@ otherwise.")
 A character represents a character that can be handled by the computer.
 Characters have font, bits, and code attributes.  Font and bits attributes
 are always 0 in ECL.  Most versions of ECL uses ASCII code:
-  000 - 037	#\\^@  #\\^A  #^B ... #\\Z  #\\^[  #\\^\\  #\\^]  #\\^^  #\\^_
-		except #\\Tab(011)     #\\Newline(012)     #\\Page(014)
-		       #\\Return(015)  #\\Backspace(031)
-  040 - 057	#\\Space  #\\!  #\\\"  #\\#  #\\$  #\\%  #\\&  #\\'  #\\(  #\\)  #\\*
-		#\\+  #\\,  #\\-  #\\.  #\\/
-  060 - 071	#\\0  #\\1  #\\2  #\\3  #\\4  #\\5  #\\6  #\\7  #\\8  #\\9
-  072 - 100	#\\:  #\\;  #\\<  #\\=  #\\>  #\\?  #\\@
-  101 - 132	#\\A ... #\\Z
-  133 - 140	#\\[  #\\\\  #\\]  #\\^  #\\_  #\\`
-  141 - 172	#\\a ... #\\z
-  173 - 177	#\\{  #\\|  #\\}  #\\~~  #\\Rubout
+  000 - 037     #\\^@  #\\^A  #^B ... #\\Z  #\\^[  #\\^\\  #\\^]  #\\^^  #\\^_
+                except #\\Tab(011)     #\\Newline(012)     #\\Page(014)
+                       #\\Return(015)  #\\Backspace(031)
+  040 - 057     #\\Space  #\\!  #\\\"  #\\#  #\\$  #\\%  #\\&  #\\'  #\\(  #\\)  #\\*
+                #\\+  #\\,  #\\-  #\\.  #\\/
+  060 - 071     #\\0  #\\1  #\\2  #\\3  #\\4  #\\5  #\\6  #\\7  #\\8  #\\9
+  072 - 100     #\\:  #\\;  #\\<  #\\=  #\\>  #\\?  #\\@
+  101 - 132     #\\A ... #\\Z
+  133 - 140     #\\[  #\\\\  #\\]  #\\^  #\\_  #\\`
+  141 - 172     #\\a ... #\\z
+  173 - 177     #\\{  #\\|  #\\}  #\\~~  #\\Rubout
 Some versions of ECL support additional characters to represent Japanese
 character set.")
 
@@ -958,8 +958,8 @@ Returns T if X is a Common Lisp object; NIL otherwise.")
 (doctype compiled-function "
 A compiled function is an object that is created by compiling a function.  A
 compiled function is notated in either of the following formats:
-	#<compiled-function s>
-	#<compiled-closure nil>
+        #<compiled-function s>
+        #<compiled-closure nil>
 where S is actually the symbol that names the function.")
 
 (docfun si::compiled-function-name function (compiled-function) "
@@ -970,7 +970,7 @@ Returns the function name associated with COMPILED-FUNCTION.")
 Returns T if X is a compiled function object; NIL otherwise.")
 
 (docfun compiler-let special (bindings &body forms)
-	"Syntax: (compiler-let ({var | (var [value])}*) {form}*)
+        "Syntax: (compiler-let ({var | (var [value])}*) {form}*)
 
 When interpreted, this form works just like a LET form with all VARs declared
 special.  When compiled, FORMs are processed with the VARs bound at compile
@@ -979,7 +979,7 @@ time, but no bindings occur when the compiled code is executed.")
 (doctype complex "
 A complex number represents a complex number in mathematical sense, consisting
 of a real part and an imaginary part.  A complex number is notated as
-	#c( realpart  imagpart )  or  #C( realpart  imagpart )
+        #c( realpart  imagpart )  or  #C( realpart  imagpart )
 where REALPART and IMAGPART are non-complex numbers.")
 
 (docfun complex function (realpart &optional (imagpart 0)) "
@@ -1027,10 +1027,10 @@ symbol gets a copy of the property list of SYMBOL.")
 
 (docfun copy-tree function (tree) "
 Returns a copy of TREE.  Defined as:
-	(defun copy-tree (tree)
-	  (if (atom tree)
-	      tree
-	      (cons (copy-tree (car tree)) (copy-tree (cdr tree)))))")
+        (defun copy-tree (tree)
+          (if (atom tree)
+              tree
+              (cons (copy-tree (car tree)) (copy-tree (cdr tree)))))")
 
 (docfun cos function (radians) "
 Returns the cosine of RADIANS.")
@@ -1060,17 +1060,17 @@ Gives declarations.  Possible DECL-SPECs are:
   (SPECIAL {var}*)
   (TYPE type {var}*)
   (type {var}*) where 'type' is one of the following symbols
-	array		fixnum		package		simple-string
-	atom		float		pathname	simple-vector
-	bignum		function	random-state	single-float
-	bit		hash-table	ratio		standard-char
-	bit-vector	integer		rational	stream
-	character	keyword		readtable	string
-	common		list		sequence	string-char
-	compiled-function  long-float	short-float	symbol
-	complex		nil		signed-byte	t
-	cons		null		simple-array	unsigned-byte
-	double-float	number		simple-bit-vector  vector
+        array           fixnum          package         simple-string
+        atom            float           pathname        simple-vector
+        bignum          function        random-state    single-float
+        bit             hash-table      ratio           standard-char
+        bit-vector      integer         rational        stream
+        character       keyword         readtable       string
+        common          list            sequence        string-char
+        compiled-function  long-float   short-float     symbol
+        complex         nil             signed-byte     t
+        cons            null            simple-array    unsigned-byte
+        double-float    number          simple-bit-vector  vector
   (OBJECT {var}*)
   (FTYPE type {function-name}*)
   (FUNCTION function-name ({arg-type}*) {return-type}*)
@@ -1084,9 +1084,9 @@ Gives declarations.  Possible DECL-SPECs are:
 (docfun decode-float function (float) "
 Returns the significand F, the exponent E, and the sign S of FLOAT.  These
 values satisfy
-	1/B <= F < 1
-and			 E
-	FLOAT = S * F * B
+        1/B <= F < 1
+and                      E
+        FLOAT = S * F * B
 where B is the radix used to represent FLOAT.  S and F are floats of the same
 float format as FLOAT, and E is an integer.")
 
@@ -1094,12 +1094,12 @@ float format as FLOAT, and E is an integer.")
         "Syntax: (defun name lambda-list {decl | doc}* {form}*)
 Defines a global function named by NAME.
 The complete syntax of a lambda-list is:
-	({var}*
-	 [&optional {var | (var [init [svar]])}*]
-	 [&rest var]
-	 [&key {var | ({var | (keyword var)} [init [svar]])}*
-	       [&allow-other-keys]]
-	 [&aux {var | (var [init])}*])
+        ({var}*
+         [&optional {var | (var [init [svar]])}*]
+         [&rest var]
+         [&key {var | ({var | (keyword var)} [init [svar]])}*
+               [&allow-other-keys]]
+         [&aux {var | (var [init])}*])
 The doc-string DOC, if supplied, is saved as a FUNCTION doc and can be
 retrieved by (documentation 'NAME 'function).")
 
@@ -1107,16 +1107,16 @@ retrieved by (documentation 'NAME 'function).")
 "Syntax: (defmacro name defmacro-lambda-list {decl | doc}* {form}*)
 Defines a global macro named by NAME.  The complete syntax of DEFMACRO-LAMBDA-
 LIST is:
-	( [&whole var] [&environment var] . pvar )
+        ( [&whole var] [&environment var] . pvar )
 where PVAR may be a symbol,
-	( {pvar}* [&optional {var | (pvar [init [pvar]])}*] . var )
+        ( {pvar}* [&optional {var | (pvar [init [pvar]])}*] . var )
 or
-	( {pvar}*
-	  [&optional {var | (pvar [init [pvar]])}*]
-	  [{&rest | &body} pvar]
-	  [&key {var | ({var | (keyword pvar)} [init [pvar]])}*
-	        [&allow-other-keys]]
-	  [&aux {var | (pvar [init])}*] )
+        ( {pvar}*
+          [&optional {var | (pvar [init [pvar]])}*]
+          [{&rest | &body} pvar]
+          [&key {var | ({var | (keyword pvar)} [init [pvar]])}*
+                [&allow-other-keys]]
+          [&aux {var | (pvar [init])}*] )
 The doc-string DOC, if supplied, is saved as a FUNCTION doc and can be
 retrieved by (documentation 'NAME 'function).  See LIST for the backquote
 macro useful for defining macros.")
@@ -1166,7 +1166,7 @@ ECL specific.
 Returns T if the ARRAY is displaced to another array; NIL otherwise.")
 
 (docfun do macro (bindings (test &optional result) &body forms)
-	"Syntax: (do ({(var [init [step]])}*) (test {result}*)
+        "Syntax: (do ({(var [init [step]])}*) (test {result}*)
           {decl}* {tag | statement}*)
 
 Establishes a NIL block, binds each VAR to the value of the corresponding INIT
@@ -1178,14 +1178,14 @@ values of the last RESULT.  Performs variable bindings and assignments in
 parallel, just as LET and PSETQ do.")
 
 (docfun do* macro (bindings (test &optional result) &body forms)
-	"Syntax: (do* ({(var [init [step]])}*) (test {result}*)
+        "Syntax: (do* ({(var [init [step]])}*) (test {result}*)
           {decl}* {tag | statement}*)
 
 Similar to DO, but performs variable bindings and assignments in serial, just
 as LET* and SETQ do.")
 
 (docfun dolist macro ((var form &optional result) &body forms)
-	"Establishes a NIL block and executes STATEMENTs once for each member of the
+        "Establishes a NIL block and executes STATEMENTs once for each member of the
 list value of FORM, with VAR bound to the member.  Then evaluates RESULT
 (which defaults to NIL) and returns all values.")
 
@@ -1194,7 +1194,7 @@ A double-float is a double-precision floating point number.
 DOUBLE-FLOAT as a type specifier is equivalent to LONG-FLOAT in ECL.")
 
 (docfun dotimes macro ((var form &optional result) &body forms)
-	"Establishes a NIL block and executes STATEMENTs once for each integer between
+        "Establishes a NIL block and executes STATEMENTs once for each integer between
 0 (inclusive) and the value of FORM (exclusive), with VAR bound to the
 integer.  Then evaluates RESULT (which defaults to NIL) and returns all
 values.")
@@ -1219,27 +1219,27 @@ Returns T if the args are identical; NIL otherwise.")
 
 (docfun eql function (x y) "
 Returns T if the args satisfy one of the following conditions.
-	1. identical
-	2. are numbers of the same type with the same value
-	3. are characters that represent the same character
+        1. identical
+        2. are numbers of the same type with the same value
+        3. are characters that represent the same character
 Returns NIL otherwise.")
 
 (docfun equal function (x y) "
 Returns T if the args satisfy one of the following conditions.
-	1. EQL
-	2. are conses with EQUAL cars and EQUAL cdrs
-	3. are strings of the same length and element-wise EQL
-	4. are bit-vectors of the same length and element-wise EQL
-	5. are pathnames with EQUAL slots
+        1. EQL
+        2. are conses with EQUAL cars and EQUAL cdrs
+        3. are strings of the same length and element-wise EQL
+        4. are bit-vectors of the same length and element-wise EQL
+        5. are pathnames with EQUAL slots
 Returns NIL otherwise.")
 
 (docfun equalp function (x y) "
 Returns T if the args satisfy one of the following conditions.
-	1. EQUAL
-	2. are characters that satisfy CHARACTER-EQUAL
-	3. are numbers that satisfy =
-	4. are conses with EQUALP cars and EQUALP cdrs
-	5. are arrays of the same dimensions and element-wise EQUALP
+        1. EQUAL
+        2. are characters that satisfy CHARACTER-EQUAL
+        3. are numbers that satisfy =
+        4. are conses with EQUALP cars and EQUALP cdrs
+        5. are arrays of the same dimensions and element-wise EQUALP
 Returns NIL otherwise.")
 
 (docfun error function (format-string &rest args) "
@@ -1251,9 +1251,9 @@ Evaluates FORM and returns all values.")
 (docfun eval-when special ((&rest situation) &body forms) "
 Specifies when to evaluate FORMs.  Each SITUATION must be one of the following
 symbols.
-	COMPILE	(compile-time)
-	LOAD	(load-time of the fasl file)
-	EVAL	(load-time of the source file)")
+        COMPILE (compile-time)
+        LOAD    (load-time of the fasl file)
+        EVAL    (load-time of the source file)")
 
 (docfun evalhook function (form fun1 fun2 &optional (env nil)) "
 Evaluates FORM with *EVALHOOK* bound to FUN1 and *APPLYHOOK* bound to FUN2,
@@ -1336,9 +1336,9 @@ such package exists.  NAME may be a string or a symbol.")
 Searches PACKAGE for a symbol whose print name is NAME.  If such a symbol is
 found, then returns the symbol as the first value and returns one of the
 following symbols as the second value.
-	:INTERNAL (internal symbol in PACKAGE)
-	:EXTERNAL (external symbol in PACKAGE)
-	:INHERITED (external symbol of a package that PACKAGE is using)
+        :INTERNAL (internal symbol in PACKAGE)
+        :EXTERNAL (external symbol in PACKAGE)
+        :INHERITED (external symbol of a package that PACKAGE is using)
 If no such symbol is found, returns NIL as the first and second values.")
 
 (docfun finish-output function (&optional (stream *standard-output*)) "
@@ -1365,16 +1365,16 @@ other format is called SINGLE-FLOAT, DOUBLE-FLOAT, or LONG-FLOAT.  Precisions
 and exponent sizes of floats depends on the version of ECL.  See the ECL
 Report at your hand for details.
 The following syntax is used to notate a float.
-	[+ | -] {digit}* . {digit}+ [exp]
-	[+ | -] {digit}+ [. {digit}*}] exp
+        [+ | -] {digit}* . {digit}+ [exp]
+        [+ | -] {digit}+ [. {digit}*}] exp
 where DIGIT is a decimal digit (0,..,9) and EXP is
-	marker [+ | -] {digit}+
+        marker [+ | -] {digit}+
 with one of the following marker.
-	e or E	the default float format
-	s or S	short-float
-	f or F	single-float
-	d or D	double-float
-	l or L	long-float
+        e or E  the default float format
+        s or S  short-float
+        f or F  single-float
+        d or D  double-float
+        l or L  long-float
 The default float format is single-float normally, but may be any other float
 format.  See *READ-DEFAULT-FLOAT-FORMAT*.")
 
@@ -1418,16 +1418,16 @@ STRING is a string consisting of characters to output and format directives
 which begin with '~~'.  Outputs to DESTINATION if it is a stream and to the
 standard output if DESTINATION is T.  If DESTINATION is NIL, does not output
 actually but returns the output as a string.  Here are some format directives:
-	~~A	PRINCs one arg
-	~~S	PRIN1s one arg
-	~~D	Prints one integer in decimal
-	~~B	Prints one integer in binary
-	~~O	Prints one integer in octal
-	~~X	Prints one integer in hexa
-	~~%	Does TERPRI
-	~~&	Does FRESH-LINE
-	~~|	Outputs #\\Page
-	~~~~	Outputs '~~'")
+        ~~A     PRINCs one arg
+        ~~S     PRIN1s one arg
+        ~~D     Prints one integer in decimal
+        ~~B     Prints one integer in binary
+        ~~O     Prints one integer in octal
+        ~~X     Prints one integer in hexa
+        ~~%     Does TERPRI
+        ~~&     Does FRESH-LINE
+        ~~|     Outputs #\\Page
+        ~~~~    Outputs '~~'")
 
 (docfun fourth function (x) "
 Equivalent to CADDDR.")
@@ -1452,17 +1452,17 @@ call returns.")
 (doctype function "
 A function object specifies a function to be invoked by function-calling
 functions such as FUNCALL or APPLY.  A function is either:
-	1. a compiled function
-	2. a list of one of the following form
-		(lambda lambda-list . body)
-		(lambda-block block-name lambda-list . body)
-		(lambda-closure env1 env2 env3 lambda-list . body)
-		(lambda-block-closure env1 env2 env3 block-name lambda-list
-		                      . body)
-	   where ENV1, ENV2, and ENV3 respectively represent the variable
-	   environment, the function/macro environment, and the block/tagbody
-	   environment at the time of the function creation.
-	3. a symbol that names a global function.")
+        1. a compiled function
+        2. a list of one of the following form
+                (lambda lambda-list . body)
+                (lambda-block block-name lambda-list . body)
+                (lambda-closure env1 env2 env3 lambda-list . body)
+                (lambda-block-closure env1 env2 env3 block-name lambda-list
+                                      . body)
+           where ENV1, ENV2, and ENV3 respectively represent the variable
+           environment, the function/macro environment, and the block/tagbody
+           environment at the time of the function creation.
+        3. a symbol that names a global function.")
 
 (docfun function special (function-name) "
 If X is a lambda expression, (function x) creates and returns a lexical closure
@@ -1544,7 +1544,7 @@ specified environment is not found.")
 Searches PLIST for a property that is EQ to PROPERTY.  If one is found,
 returns the value of the property.  If not, returns DEFAULT.
 The SETF form
-	(setf (getf place property-form) value-form)
+        (setf (getf place property-form) value-form)
 replaces the property value of the plist stored in PLACE, or adds a new
 property if the plist does not have the property yet.")
 
@@ -1614,7 +1614,7 @@ than #\\Newline.  Returns NIL otherwise.")
 (doctype hash-table "
 A hash-table is a table used to map from objects to objects efficiently by the
 hashing technique.  A hash-table is notated as
-	#<hash-table n>
+        #<hash-table n>
 where N is actually a number that identifies the hash-table.")
 
 (docfun hash-table-count function (hash-table) "
@@ -1691,24 +1691,24 @@ Equivalent to CODE-CHAR.")
 An integer object represents an integer in mathematical sense.  An integer may
 be a fixnum, or else it is a bignum.  Normally, an integer is notated in radix
 10 (see *PRINT-BASE* and *READ-BASE*) as
-	[sign] {digit}+
+        [sign] {digit}+
 where DIGIT is a decimal digit ('0', ..., '9') and SIGN is either '+' or '-'.
 Also, the following syntax is used to notate the radix explicitly.
-	# radix {r | R} [sign] {digit}+
+        # radix {r | R} [sign] {digit}+
 where RADIX is one of '2', '3', ..., '36' and DIGIT is a digit in radix RADIX:
-	Digits in radix 2 are '0' and '1'
-	Digits in radix 8 are '0', ..., '7'
-	Digits in radix 16 are '0', ..., '9', 'a', ..., 'f', and 'A', ..., 'F'
+        Digits in radix 2 are '0' and '1'
+        Digits in radix 8 are '0', ..., '7'
+        Digits in radix 16 are '0', ..., '9', 'a', ..., 'f', and 'A', ..., 'F'
 The following syntax is also available for radix 2, 8, 10, and 16.
-	# {b | B} [sign] {digit}+
-	# {o | O} [sign] {digit}+
-		  [sign] {digit}+ .
-	# {x | X} [sign] {digit}+")
+        # {b | B} [sign] {digit}+
+        # {o | O} [sign] {digit}+
+                  [sign] {digit}+ .
+        # {x | X} [sign] {digit}+")
 
 (docfun integer-decode-float function (float) "
 Returns, as three values, the integer interpretation of significand F, the
 exponent E, and the sign S of FLOAT, such that
-	FLOAT = S * F * B^E
+        FLOAT = S * F * B^E
 where B = (float-radix FLOAT).  F is a non-negative integer, E is an integer,
 and S is either 1 or -1.")
 
@@ -1745,9 +1745,9 @@ simply ignored.")
 
 (docvar lambda-list-keywords constant "
 List of all lambda-list keywords, including
-	&optional	&rest		&key
-	&allow-other-keys		&aux
-	&whole		&environment	&body")
+        &optional       &rest           &key
+        &allow-other-keys               &aux
+        &whole          &environment    &body")
 
 (docvar lambda-parameters-limit constant "
 The upper bound of the number of parameters specified by a lambda list.
@@ -1918,7 +1918,7 @@ simply ignored.")
 (docfun make-broadcast-stream function (&rest streams) "
 Creates and returns a broadcast stream.  Outputs to this stream are output to
 all STREAMs.  A broadcast stream is notated as
-	#<broadcast stream n>
+        #<broadcast stream n>
 where N is a number that identify the stream.")
 
 (docfun make-char function (char &optional (bits 0) (font 0)) "
@@ -1930,7 +1930,7 @@ Creates and returns a concatenated stream.  Inputs from this stream are first
 obtained from the first STREAM.  When the end of the first STREAM is reached,
 then inputs are obtained from the second STREAM.  And so forth.
 A concatenated stream is notated as
-	#<concatenated stream n>
+        #<concatenated stream n>
 where N is a number that identifies the stream.")
 
 (docfun make-dispatch-macro-character function (char &optional (non-terminating-p nil) (readtable *readtable*)) "
@@ -1942,7 +1942,7 @@ Creates and returns an echo stream.  Inputs from this stream are obtained from
 STREAM1 and outputs to this stream are output to STREAM2.  In addition, all
 inputs from STREAM1 are output to STREAM2.
 An echo stream is notated as
-	#<echo stream n>
+        #<echo stream n>
 where N is a number that identifies the stream.")
 
 (docfun make-hash-table function (&key (test 'eql) (size 1024) (rehash-size 1.5) (rehash-threshold 0.7)) "
@@ -1991,14 +1991,14 @@ INITIAL-ELEMENT.")
 (docfun make-string-input-stream function (string &optional (start 0) (end (length string))) "
 Creates and returns a string-input stream.  Inputs from this stream are
 obtained form STRING.  A string-input stream is notated as
-	#<string-input stream from s>
+        #<string-input stream from s>
 where S is a string.")
 
 (docfun make-string-output-stream function () "
 Creates and returns a string-output stream.  Outputs to this stream are
 obtained as a string by GET-OUTPUT-STREAM-STRING.  A string-output stream
 is notated as
-	#<string-output stream n>
+        #<string-output stream n>
 where N is a number that identifies the stream.")
 
 (docfun si::make-string-output-stream-from-string function (string) "
@@ -2013,14 +2013,14 @@ Creates and returns a new uninterned symbol whose print name is STRING.")
 Creates and returns a synonym stream to SYMBOL.  Inputs from this stream are
 obtained from, and outputs to this stream are sent to the stream that is the
 value of the global variable named SYMBOL.  A synonym stream is notated as
-	#<synonym stream to s>
+        #<synonym stream to s>
 where S is a symbol.")
 
 (docfun make-two-way-stream function (stream1 stream2) "
 Creates and returns a two-way stream.  Inputs from this stream are obtained
 from STREAM1 and outputs to this stream are sent to STREAM2.  A two-way stream
 is notated as
-	#<two-way stream n>
+        #<two-way stream n>
 where N is a number that identifies the stream.")
 
 (docfun makunbound function (symbol) "
@@ -2092,7 +2092,7 @@ Returns T if NUMBER is negative; NIL otherwise.")
 
 (docfun mod function (number divisor) "
 Returns the second result of (FLOOR NUMBER DIVISOR), i.e. the value of
-	(- NUMBER (* (FLOOR NUMBER DIVISOR) DIVISOR))")
+        (- NUMBER (* (FLOOR NUMBER DIVISOR) DIVISOR))")
 
 (docvar most-negative-double-float constant "
 Same as MOST-NEGATIVE-LONG-FLOAT.")
@@ -2242,10 +2242,10 @@ DOES-NOT-EXIST specifies what to do when the specified file does not exists.
 It may be :ERROR (the default when DIRECTION is :INPUT), :CREATE (the default
 when DIRECTION is either :OUTPUT or :IO), or NIL.
 File streams are notated in one of the following ways:
-	#<input stream f>
-	#<output stream f>
-	#<io stream f>
-	#<probe stream f>
+        #<input stream f>
+        #<output stream f>
+        #<io stream f>
+        #<probe stream f>
 where F is the file name.")
 
 (docfun ext:make-pipe function ()
@@ -2264,11 +2264,11 @@ Returns T if STREAM can handle output operations; NIL otherwise.")
 A package object serves as a name space of symbols.  A package is notated as
 #<s package> where S is actually the name of the package.  ECL provides five
 built-in packages:
-	lisp	 standard symbols of Common Lisp.
-	user	 the package that the user uses by default.
-	keyword	 keyword symbols.
-	system	 system internal symbols.  Has nicknames SYS and SI.
-	compiler system internal symbols for the ECL compiler.")
+        lisp     standard symbols of Common Lisp.
+        user     the package that the user uses by default.
+        keyword  keyword symbols.
+        system   system internal symbols.  Has nicknames SYS and SI.
+        compiler system internal symbols for the ECL compiler.")
 
 (docfun package-name function (package) "
 Returns the name of PACKAGE as a string.")
@@ -2386,11 +2386,11 @@ Returns NIL if no such element exists.")
 
 (docfun pprint function (object &optional (stream *standard-output*)) "
 Pretty-prints OBJECT.  Returns no values.  Equivalent to
-	(PROGN (WRITE OBJECT :STREAM STREAM :PRETTY T :ESCAPE T)
-	       (VALUES))
+        (PROGN (WRITE OBJECT :STREAM STREAM :PRETTY T :ESCAPE T)
+               (VALUES))
 The SI::PRETTY-PRINT-FORMAT property N (which must be a non-negative integer)
 of a symbol SYMBOL controls the pretty-printing of form
-	(SYMBOL f1 ... fN fN+1 ... fM)
+        (SYMBOL f1 ... fN fN+1 ... fM)
 in such a way that the subforms fN+1, ..., fM are regarded as the 'body' of
 the entire form.  For instance, the property value of 2 is initially given to
 the symbol DO.")
@@ -2406,8 +2406,8 @@ Prints OBJECT without escape characters.  Returns OBJECT.  Equivalent to
 (docfun print function (object &optional (stream *standard-output*)) "
 Outputs a newline character, and then PRIN1s OBJECT.  Returns OBJECT.
 Equivalent to
-	(PROGN (TERPRI STREAM)
-	       (WRITE OBJECT :STREAM STREAM :ESCAPE T))")
+        (PROGN (TERPRI STREAM)
+               (WRITE OBJECT :STREAM STREAM :ESCAPE T))")
 
 (docfun probe-file function (filespec) "
 Returns the full pathname of the specified file if it exists.  Returns NIL
@@ -2448,18 +2448,18 @@ The function KEY is applied to extract the key for comparison.")
 (doctype ratio "
 A ratio is notated by its numerator and denominator, separated by a slash '/'.
 Normally, a ratio is notated in radix 10 (see *PRINT-BASE* and *READ-BASE*) as
-	[sign] {digit}+ / {digit}+
+        [sign] {digit}+ / {digit}+
 where DIGIT is a decimal digit ('0', ..., '9') and SIGN is either '+' or '-'.
 Also, the following syntax is used to notate the radix explicitly.
-	# radix {r | R} [sign] {digit}+ / {digit}+
+        # radix {r | R} [sign] {digit}+ / {digit}+
 where RADIX is one of '2', '3', ..., '36' and DIGIT is a digit in radix RADIX:
-	Digits in radix 2 are '0' and '1'
-	Digits in radix 8 are '0', ..., '7'
-	Digits in radix 16 are '0', ..., '9', 'a', ..., 'f', and 'A', ..., 'F'
+        Digits in radix 2 are '0' and '1'
+        Digits in radix 8 are '0', ..., '7'
+        Digits in radix 16 are '0', ..., '9', 'a', ..., 'f', and 'A', ..., 'F'
 The following syntax is also available for radix 2, 8, 10, and 16.
-	# {b | B} [sign] {digit}+ / {digit}+
-	# {o | O} [sign] {digit}+ / {digit}+
-	# {x | X} [sign] {digit}+ / {digit}+")
+        # {b | B} [sign] {digit}+ / {digit}+
+        # {o | O} [sign] {digit}+ / {digit}+
+        # {x | X} [sign] {digit}+ / {digit}+")
 
 (docfun rational function (real) "
 Converts REAL into rational accurately and returns the result.")
@@ -2508,16 +2508,16 @@ Each readtable object remembers the syntactic class of each character.  The
 following syntactic classes are supported.  The characters in parenthesis
 below are those standard characters that belong to each syntactic class as
 defined in the standard readtable.
-	white-space (space and newline)
-	single-escape ( \\ )
-	multiple-escape ( | )
-	macro-character ( \"  #  '  (  )  ,  ;  ` )
-	constituent (the others)
+        white-space (space and newline)
+        single-escape ( \\ )
+        multiple-escape ( | )
+        macro-character ( \"  #  '  (  )  ,  ;  ` )
+        constituent (the others)
 For each macro-character, the readtable remembers the definition of the
 associated read macro and the non-terminating-p flag.  In the standard
 readtable, only single-quote is non-terminating.  Dispatch macro characters
 are classified to macro-characters.  A readtable is notated as
-	#<readtable n>
+        #<readtable n>
 where N is actually a number that identifies the readtable.")
 
 (docfun readtablep function (x) "
@@ -2532,7 +2532,7 @@ Combines all the elements of SEQUENCE using the binary operation FUNCTION.")
 
 (docfun rem function (number divisor) "
 Returns the second value of (TRUNCATE NUMBER DIVISOR), i.e. the value of
-	(- NUMBER (* (TRUNCATE NUMBER DIVISOR) DIVISOR))")
+        (- NUMBER (* (TRUNCATE NUMBER DIVISOR) DIVISOR))")
 
 (docfun remhash function (key hash-table) "
 Removes the entry for KEY in HASH-TABLE.  Returns T if such an entry existed;
@@ -2749,27 +2749,27 @@ Removes the value associated with the INDEX-th slot of INSTANCE.")
 (docfun special-operator-p function (symbol) "
 Returns T if SYMBOL names a special form; NIL otherwise.
 The special forms defined in Common Lisp are:
-	block		if			progv
-	catch		labels			quote
-	compiler-let	let			return-from
-	declare		let*			setq
-	eval-when	macrolet		tagbody
-	flet		multiple-value-call	the
-	function	multiple-value-prog1	throw
-	go		progn			unwind-protect
+        block           if                      progv
+        catch           labels                  quote
+        compiler-let    let                     return-from
+        declare         let*                    setq
+        eval-when       macrolet                tagbody
+        flet            multiple-value-call     the
+        function        multiple-value-prog1    throw
+        go              progn                   unwind-protect
 In addition, ECL implements the following macros as special forms, though of
 course macro-expanding functions such as MACROEXPAND work correctly for these
 macros.
-	and		incf			prog1
-	case		locally			prog2
-	cond		loop			psetq
-	decf		multiple-value-bind	push
-	defmacro	multiple-value-list	return
-	defun		multiple-value-set	setf
-	do		or			unless
-	do*		pop			when
-	dolist		prog
-	dotimes		prog*")
+        and             incf                    prog1
+        case            locally                 prog2
+        cond            loop                    psetq
+        decf            multiple-value-bind     push
+        defmacro        multiple-value-list     return
+        defun           multiple-value-set      setf
+        do              or                      unless
+        do*             pop                     when
+        dolist          prog
+        dotimes         prog*")
 
 (docfun si::specialp function (symbol) "
 ECL specific.
@@ -2781,11 +2781,11 @@ Returns the square root of the arg.")
 (doctype standard-char "
 A standard-char is a space character (#\\Space), a newline character
 (#\\Newline,) or a character that represents one of the following letters.
-	!  \"  #  $  %  &  '  (  )  *  +  ,  -  .  /  0  1  2  3  4
-	5  6  7  8  9  :  ;  <  =  >  ?  @  A  B  C  D  E  F  G  H
-	I  J  K  L  M  N  O  P  Q  R  S  T  U  V  W  X  Y  Z  [  \\
-	]  ^  _  `  a  b  c  d  e  f  g  h  i  j  k  l  m  n  o  p
-	q  r  s  t  u  v  w  x  y  z  {  |  }  ~~")
+        !  \"  #  $  %  &  '  (  )  *  +  ,  -  .  /  0  1  2  3  4
+        5  6  7  8  9  :  ;  <  =  >  ?  @  A  B  C  D  E  F  G  H
+        I  J  K  L  M  N  O  P  Q  R  S  T  U  V  W  X  Y  Z  [  \\
+        ]  ^  _  `  a  b  c  d  e  f  g  h  i  j  k  l  m  n  o  p
+        q  r  s  t  u  v  w  x  y  z  {  |  }  ~~")
 
 (docfun standard-char-p function (char) "
 Returns T if CHAR is a standard-char; NIL otherwise.")
@@ -2793,14 +2793,14 @@ Returns T if CHAR is a standard-char; NIL otherwise.")
 (doctype stream "
 A stream is a source of input or a destination of output.  The following kinds
 of streams are supported.
-	file streams
-	string-input streams
-	string-output streams
-	two-way streams
-	echo streams
-	synonym streams
-	concatenated streams
-	broadcast streams
+        file streams
+        string-input streams
+        string-output streams
+        two-way streams
+        echo streams
+        synonym streams
+        concatenated streams
+        broadcast streams
 Basically, file streams are created by OPEN and other kinds of streams are
 created by MAKE-...-STREAM.  See these functions.")
 
@@ -3230,12 +3230,12 @@ to be performed to build the system will be printed.
 ")
 
 (docfun sbt::defsystem macro
-	"(name &key :modules :directory :pathname-types)" "
+        "(name &key :modules :directory :pathname-types)" "
 NAME should be a symbol which will be used to refer to the system.
 The value of :MODULES should be a list of module dependencies of
 the form:
 
-	(file load-deps compile-deps recompilation-deps)
+        (file load-deps compile-deps recompilation-deps)
 
 where load-deps compile-deps recompilation-deps are lists of module names.
 If the value specified for :directory is a cons, then the CAR is used as

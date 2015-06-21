@@ -21,51 +21,51 @@
 ;;;
 ;;; ALL C1FORMS: Intermediate language used by the compiler
 ;;;
-;;;	(LOCATION	loc)
-;;;	(VAR		var)
-;;;	(SETQ		var value-c1form)
-;;;	(PSETQ		var-list value-c1form-list)
-;;;	(BLOCK		blk-var progn-c1form)
-;;;	(TAGBODY	tag-var tag-body)
-;;;	(RETURN-FROM	blk-var return-type value)
-;;;	(FUNCALL	fun-value (arg-value*))
-;;;	(CALL-LOCAL	obj-fun (arg-value*))
-;;;	(CALL-GLOBAL	fun-name (arg-value*))
-;;;	(CATCH		catch-value body-c1form)
-;;;	(UNWIND-PROTECT	protected-c1form body)
-;;;	(THROW		catch-value output-value)
-;;;	(GO		tag-var return-type)
-;;;	(C-INLINE	(arg-c1form*)
-;;;			(arg-type-symbol*)
-;;;			output-rep-type
-;;;			c-expression-string
-;;;			side-effects-p
-;;;			one-liner-p)
-;;;	(DO-FLET/LABELS {FLET|LABELS} funob-list lambda-expr-list)
-;;;	(IF		fmla-c1form true-c1form false-c1form)
-;;;	(FMLA-NOT	fmla-c1form)
-;;;	(LAMBDA		lambda-list doc body-c1form)
-;;;	(LET/LET*	vars-list var-init-c1form-list progn-c1form)
-;;;	(VALUES		values-c1form-list)
-;;;	(MULTIPLE-VALUE-SETQ vars-list values-c1form-list)
-;;;	(MULTIPLE-VALUE-BIND vars-list init-c1form body)
-;;;	(COMPILER-LET	symbols values body)
-;;;	(FUNCTION	{GLOBAL|CLOSURE} lambda-form fun-object)
+;;;     (LOCATION       loc)
+;;;     (VAR            var)
+;;;     (SETQ           var value-c1form)
+;;;     (PSETQ          var-list value-c1form-list)
+;;;     (BLOCK          blk-var progn-c1form)
+;;;     (TAGBODY        tag-var tag-body)
+;;;     (RETURN-FROM    blk-var return-type value)
+;;;     (FUNCALL        fun-value (arg-value*))
+;;;     (CALL-LOCAL     obj-fun (arg-value*))
+;;;     (CALL-GLOBAL    fun-name (arg-value*))
+;;;     (CATCH          catch-value body-c1form)
+;;;     (UNWIND-PROTECT protected-c1form body)
+;;;     (THROW          catch-value output-value)
+;;;     (GO             tag-var return-type)
+;;;     (C-INLINE       (arg-c1form*)
+;;;                     (arg-type-symbol*)
+;;;                     output-rep-type
+;;;                     c-expression-string
+;;;                     side-effects-p
+;;;                     one-liner-p)
+;;;     (DO-FLET/LABELS {FLET|LABELS} funob-list lambda-expr-list)
+;;;     (IF             fmla-c1form true-c1form false-c1form)
+;;;     (FMLA-NOT       fmla-c1form)
+;;;     (LAMBDA         lambda-list doc body-c1form)
+;;;     (LET/LET*       vars-list var-init-c1form-list progn-c1form)
+;;;     (VALUES         values-c1form-list)
+;;;     (MULTIPLE-VALUE-SETQ vars-list values-c1form-list)
+;;;     (MULTIPLE-VALUE-BIND vars-list init-c1form body)
+;;;     (COMPILER-LET   symbols values body)
+;;;     (FUNCTION       {GLOBAL|CLOSURE} lambda-form fun-object)
 ;;;
-;;;	(SI:STRUCTURE-REF struct-c1form type-name slot-index {:UNSAFE|NIL})
-;;;	(SI:STRUCTURE-SET struct-c1form type-name slot-index value-c1form)
+;;;     (SI:STRUCTURE-REF struct-c1form type-name slot-index {:UNSAFE|NIL})
+;;;     (SI:STRUCTURE-SET struct-c1form type-name slot-index value-c1form)
 ;;;
-;;;	(WITH-STACK	body)
-;;;	(STACK-PUSH-VALUES value-c1form push-statement-c1form)
+;;;     (WITH-STACK     body)
+;;;     (STACK-PUSH-VALUES value-c1form push-statement-c1form)
 ;;;
-;;;	(LOAD-TIME-VALUE dest-loc value-c1form)
-;;;	(FSET		function-object vv-loc, macro-p pprint-p lambda-form)
+;;;     (LOAD-TIME-VALUE dest-loc value-c1form)
+;;;     (FSET           function-object vv-loc, macro-p pprint-p lambda-form)
 ;;;
-;;;	body =		(c1form*)
-;;;	tag-body =	({c1form | tag}*)
-;;;	return-type =	{CLB | CCB | UNWIND-PROTECT}
-;;;	*value =	c1form
-;;;	lambda-list = 	(requireds optionals rest key-flag keywords allow-other-keys)
+;;;     body =          (c1form*)
+;;;     tag-body =      ({c1form | tag}*)
+;;;     return-type =   {CLB | CCB | UNWIND-PROTECT}
+;;;     *value =        c1form
+;;;     lambda-list =   (requireds optionals rest key-flag keywords allow-other-keys)
 ;;;
 ;;;
 

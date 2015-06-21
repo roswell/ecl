@@ -27,20 +27,20 @@
   ;; FIXME: C1CHECKED-VALUE cannot check multiple values.
   (let ((type (first args)))
     (if (and (policy-the-is-checked)
-	     (not (and (consp type)
-		       (eq (first type) 'values))))
-	(c1checked-value args)
-	(c1truly-the args))))
+             (not (and (consp type)
+                       (eq (first type) 'values))))
+        (c1checked-value args)
+        (c1truly-the args))))
 
 (defun c1truly-the (args)
   (check-args-number 'TRULY-THE args 2 2)
   (let* ((form (c1expr (second args)))
-	 (the-type (first args))
-	 type)
+         (the-type (first args))
+         type)
     (setf type (values-type-and the-type (c1form-type form)))
     (if (values-type-primary-type type)
         (setf (c1form-type form) type)
-	(cmpwarn "Type mismatch was found in ~s." (cons 'THE args)))
+        (cmpwarn "Type mismatch was found in ~s." (cons 'THE args)))
     form))
 
 (defun c1compiler-let (args &aux (symbols nil) (values nil))
@@ -70,24 +70,24 @@
   (check-args-number 'FUNCTION args 1 1)
   (let ((fun (car args)))
     (cond ((si::valid-function-name-p fun)
-	   (let ((funob (local-function-ref fun t)))
-	     (if funob
-		 (let* ((var (fun-var funob)))
-		   (add-to-read-nodes var (make-c1form* 'VAR :args var)))
-		 (make-c1form* 'FUNCTION
+           (let ((funob (local-function-ref fun t)))
+             (if funob
+                 (let* ((var (fun-var funob)))
+                   (add-to-read-nodes var (make-c1form* 'VAR :args var)))
+                 (make-c1form* 'FUNCTION
                                :type 'FUNCTION
-			       :sp-change (not (and (symbolp fun)
-						    (get-sysprop fun 'NO-SP-CHANGE)))
-			       :args 'GLOBAL nil fun))))
+                               :sp-change (not (and (symbolp fun)
+                                                    (get-sysprop fun 'NO-SP-CHANGE)))
+                               :args 'GLOBAL nil fun))))
           ((and (consp fun) (member (car fun) '(LAMBDA EXT::LAMBDA-BLOCK)))
            (cmpck (endp (cdr fun))
                   "The lambda expression ~s is illegal." fun)
-	   (let (name body)
-	     (if (eq (first fun) 'EXT::LAMBDA)
-		 (setf name (gensym) body (rest fun))
-		 (setf name (second fun) body (cddr fun)))
-	     (c1expr `(flet ((,name ,@body)) #',name))))
-	  (t (cmperr "The function ~s is illegal." fun)))))
+           (let (name body)
+             (if (eq (first fun) 'EXT::LAMBDA)
+                 (setf name (gensym) body (rest fun))
+                 (setf name (second fun) body (cddr fun)))
+             (c1expr `(flet ((,name ,@body)) #',name))))
+          (t (cmperr "The function ~s is illegal." fun)))))
 
 (defun c2function (c1form kind funob fun)
   (declare (ignore c1form))
@@ -112,7 +112,7 @@
        ;; new variables created. This way, the same lexical environment
        ;; can be propagated through nested FLET/LABELS.
        (setf (fun-level fun) (if (plusp *lex*) (1+ *level*) *level*)
-	     (fun-env fun) 0)))
+             (fun-env fun) 0)))
     (otherwise
      (setf (fun-env fun) 0 (fun-level fun) 0)))
   (let ((previous
@@ -122,69 +122,69 @@
            (when (similar fun old)
              (return old)))))
     (if previous
-	(progn
+        (progn
           (if (eq (fun-closure fun) 'CLOSURE)
-	      (cmpnote "Sharing code for closure")
-	      (cmpnote "Sharing code for local function ~A" (fun-name fun)))
-	  (setf (fun-cfun fun) (fun-cfun previous)
-		(fun-lambda fun) nil)
-	  previous)
-	(push fun *local-funs*))))
+              (cmpnote "Sharing code for closure")
+              (cmpnote "Sharing code for local function ~A" (fun-name fun)))
+          (setf (fun-cfun fun) (fun-cfun previous)
+                (fun-lambda fun) nil)
+          previous)
+        (push fun *local-funs*))))
 
 (defun wt-fdefinition (fun-name)
   (let* ((name (si::function-block-name fun-name))
-	 (package (symbol-package name))
-	 (safe (or (not (safe-compile))
-		   (and (or (eq package (find-package "CL"))
-			    (eq package (find-package "CLOS"))
-			    (eq package (find-package "SI")))
-			(fboundp fun-name)
-			(functionp (fdefinition fun-name))))))
+         (package (symbol-package name))
+         (safe (or (not (safe-compile))
+                   (and (or (eq package (find-package "CL"))
+                            (eq package (find-package "CLOS"))
+                            (eq package (find-package "SI")))
+                        (fboundp fun-name)
+                        (functionp (fdefinition fun-name))))))
     (if (eq name fun-name)
-	;; #'symbol
-	(let ((vv (add-symbol name)))
-	  (if safe
-	      (wt "(" vv "->symbol.gfdef)")
-	      (wt "ecl_fdefinition(" vv ")")))
-	;; #'(SETF symbol)
-	(if safe
-	    #+(or)
-	    (let ((set-loc (assoc name *setf-definitions*)))
-	      (unless set-loc
-		(let* ((setf-vv (data-empty-loc))
-		       (name-vv (add-symbol name))
-		       (setf-form-vv (add-object fun-name)))
-		  (setf set-loc (list name setf-vv name-vv setf-form-vv))
-		  (push set-loc *setf-definitions*)))
-	      (wt "ECL_SETF_DEFINITION(" (second set-loc) "," (fourth set-loc) ")"))
-	    (let ((set-loc (assoc name *setf-definitions*)))
-	      (unless set-loc
-		(let* ((setf-vv (data-empty-loc))
-		       (name-vv (add-symbol name)))
-		  (setf set-loc (list name setf-vv name-vv))
-		  (push set-loc *setf-definitions*)))
-	      (wt "ECL_CONS_CAR(" (second set-loc) ")"))
-	    (let ((vv (add-symbol fun-name)))
-	      (wt "ecl_fdefinition(" vv ")"))))))
+        ;; #'symbol
+        (let ((vv (add-symbol name)))
+          (if safe
+              (wt "(" vv "->symbol.gfdef)")
+              (wt "ecl_fdefinition(" vv ")")))
+        ;; #'(SETF symbol)
+        (if safe
+            #+(or)
+            (let ((set-loc (assoc name *setf-definitions*)))
+              (unless set-loc
+                (let* ((setf-vv (data-empty-loc))
+                       (name-vv (add-symbol name))
+                       (setf-form-vv (add-object fun-name)))
+                  (setf set-loc (list name setf-vv name-vv setf-form-vv))
+                  (push set-loc *setf-definitions*)))
+              (wt "ECL_SETF_DEFINITION(" (second set-loc) "," (fourth set-loc) ")"))
+            (let ((set-loc (assoc name *setf-definitions*)))
+              (unless set-loc
+                (let* ((setf-vv (data-empty-loc))
+                       (name-vv (add-symbol name)))
+                  (setf set-loc (list name setf-vv name-vv))
+                  (push set-loc *setf-definitions*)))
+              (wt "ECL_CONS_CAR(" (second set-loc) ")"))
+            (let ((vv (add-symbol fun-name)))
+              (wt "ecl_fdefinition(" vv ")"))))))
 
 (defun environment-accessor (fun)
   (let* ((env-var (env-var-name *env-lvl*))
-	 (expected-env-size (fun-env fun)))
+         (expected-env-size (fun-env fun)))
     (if (< expected-env-size *env*)
-	(format nil "ecl_nthcdr(~D,~A)" (- *env* expected-env-size) env-var)
-	env-var)))
+        (format nil "ecl_nthcdr(~D,~A)" (- *env* expected-env-size) env-var)
+        env-var)))
 
 (defun wt-make-closure (fun &aux (cfun (fun-cfun fun)))
   (declare (type fun fun))
   (let* ((closure (fun-closure fun))
-	 narg)
+         narg)
     (cond ((eq closure 'CLOSURE)
-	   (wt "ecl_make_cclosure_va((cl_objectfn)" cfun ","
-	       (environment-accessor fun)
-	       ",Cblock)"))
-	  ((eq closure 'LEXICAL)
-	   (baboon))
-	  ((setf narg (fun-fixed-narg fun)) ; empty environment fixed number of args
-	   (wt "ecl_make_cfun((cl_objectfn_fixed)" cfun ",ECL_NIL,Cblock," narg ")"))
-	  (t ; empty environment variable number of args
-	   (wt "ecl_make_cfun_va((cl_objectfn)" cfun ",ECL_NIL,Cblock)")))))
+           (wt "ecl_make_cclosure_va((cl_objectfn)" cfun ","
+               (environment-accessor fun)
+               ",Cblock)"))
+          ((eq closure 'LEXICAL)
+           (baboon))
+          ((setf narg (fun-fixed-narg fun)) ; empty environment fixed number of args
+           (wt "ecl_make_cfun((cl_objectfn_fixed)" cfun ",ECL_NIL,Cblock," narg ")"))
+          (t ; empty environment variable number of args
+           (wt "ecl_make_cfun_va((cl_objectfn)" cfun ",ECL_NIL,Cblock)")))))

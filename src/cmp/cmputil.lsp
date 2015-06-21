@@ -82,9 +82,9 @@
   ((prefix :initform "Note" :accessor compiler-message-prefix)
    (format :initform +note-format+ :accessor compiler-message-format)
    (file :initarg :file :initform *compile-file-pathname*
-	 :accessor compiler-message-file)
+         :accessor compiler-message-file)
    (position :initarg :file :initform *compile-file-position*
-	     :accessor compiler-message-file-position)
+             :accessor compiler-message-file-position)
    (toplevel-form :initarg :form :initform *current-toplevel-form*
                   :accessor compiler-message-toplevel-form)
    (form :initarg :form :initform *current-form*
@@ -172,16 +172,16 @@
 
 (defun do-compilation-unit (closure &key override)
   (cond (override
-	 (let* ((*active-protection* nil))
-	   (do-compilation-unit closure)))
-	((null *active-protection*)
-	 (let* ((*active-protection* t)
-		(*pending-actions* nil))
-	   (unwind-protect (do-compilation-unit closure)
-	     (loop for action in *pending-actions*
-		do (funcall action)))))
-	(t
-	 (funcall closure))))
+         (let* ((*active-protection* nil))
+           (do-compilation-unit closure)))
+        ((null *active-protection*)
+         (let* ((*active-protection* t)
+                (*pending-actions* nil))
+           (unwind-protect (do-compilation-unit closure)
+             (loop for action in *pending-actions*
+                do (funcall action)))))
+        (t
+         (funcall closure))))
 
 (defmacro with-compilation-unit ((&rest options) &body body)
  `(do-compilation-unit #'(lambda () ,@body) ,@options))
@@ -190,9 +190,9 @@
   `(let ((*compiler-conditions* nil))
      (declare (special *compiler-conditions*))
      (restart-case
-	 (handler-bind ((compiler-note #'handle-compiler-note)
-			(warning #'handle-compiler-warning)
-			(compiler-error #'handle-compiler-error)
+         (handler-bind ((compiler-note #'handle-compiler-note)
+                        (warning #'handle-compiler-warning)
+                        (compiler-error #'handle-compiler-error)
                         (compiler-internal-error #'handle-compiler-internal-error)
                         (serious-condition #'handle-compiler-internal-error))
            (mp:with-lock (+load-compile-lock+)
@@ -205,19 +205,19 @@
 (defvar *c1form-level* 0)
 (defun print-c1forms (form)
   (cond ((consp form)
-	 (let ((*c1form-level* (1+ *c1form-level*)))
-	   (mapc #'print-c1forms form)))
-	((c1form-p form)
-	 (format t "~% ~D > ~A, parent ~A" *c1form-level* form (c1form-parent form))
-	 (print-c1forms (c1form-args form))
-	 form
-	 )))
+         (let ((*c1form-level* (1+ *c1form-level*)))
+           (mapc #'print-c1forms form)))
+        ((c1form-p form)
+         (format t "~% ~D > ~A, parent ~A" *c1form-level* form (c1form-parent form))
+         (print-c1forms (c1form-args form))
+         form
+         )))
 
 (defun print-ref (ref-object stream)
   (let ((name (ref-name ref-object)))
     (if name
-	(format stream "#<a ~A: ~A>" (type-of ref-object) name)
-	(format stream "#<a ~A>" (type-of ref-object)))))
+        (format stream "#<a ~A: ~A>" (type-of ref-object) name)
+        (format stream "#<a ~A>" (type-of ref-object)))))
 
 (defun print-var (var-object stream)
   (format stream "#<a VAR: ~A KIND: ~A>" (var-name var-object) (var-kind var-object)))
@@ -234,8 +234,8 @@
 
 (defun cmperr (string &rest args)
   (let ((c (make-condition 'compiler-error
-			   :format-control string
-			   :format-arguments args)))
+                           :format-control string
+                           :format-arguments args)))
     (signal c)
     (print-compiler-message c t)
     (abort)))
@@ -245,23 +245,23 @@
   ;; is a circular list or terminates with a non-NIL atom.
   (declare (optimize (speed 3) (safety 0)))
   (loop with slow = l
-	with fast = l
-	with flag = t
-	for l of-type fixnum from 0
-	do (cond ((null fast)
-		  (return l))
-		 ((not (consp fast))
-		  (return nil))
-		 (flag
-		  (setf flag nil
-			fast (cdr (truly-the cons fast))))
-		 ((eq slow fast)
-		  (return nil))
-		 (t
-		  (setf flag t
-			slow (cdr (truly-the cons slow))
-			fast (cdr (truly-the cons fast)))))
-	finally (return l)))
+        with fast = l
+        with flag = t
+        for l of-type fixnum from 0
+        do (cond ((null fast)
+                  (return l))
+                 ((not (consp fast))
+                  (return nil))
+                 (flag
+                  (setf flag nil
+                        fast (cdr (truly-the cons fast))))
+                 ((eq slow fast)
+                  (return nil))
+                 (t
+                  (setf flag t
+                        slow (cdr (truly-the cons slow))
+                        fast (cdr (truly-the cons fast)))))
+        finally (return l)))
 
 (defun check-args-number (operator args &optional (min 0) (max most-positive-fixnum))
 
@@ -291,8 +291,8 @@
   (let ((condition (apply #'make-condition args)))
     (restart-case (signal condition)
       (muffle-warning ()
-	:REPORT "Skip warning"
-	(return-from do-cmpwarn nil)))
+        :REPORT "Skip warning"
+        (return-from do-cmpwarn nil)))
     (print-compiler-message condition t)))
 
 (defun cmpwarn-style (string &rest args)
@@ -311,7 +311,7 @@
 (defun print-current-form ()
   (when *compile-print*
     (let ((*print-length* 2)
-	  (*print-level* 2))
+          (*print-level* 2))
       (format t "~&;;; Compiling ~s.~%"
               (innermost-non-expanded-form *current-toplevel-form*))))
   nil)
@@ -320,7 +320,7 @@
   (when *compile-print*
     (let* ((name (or (fun-name f) (fun-description f))))
       (when name
-	(format t "~&;;; Emitting code for ~s.~%" name)))))
+        (format t "~&;;; Emitting code for ~s.~%" name)))))
 
 (defun undefined-variable (sym)
   (do-cmpwarn 'compiler-undefined-variable :name sym))
@@ -328,14 +328,14 @@
 (defun baboon (&key (format-control "A bug was found in the compiler")
                format-arguments)
   (signal 'compiler-internal-error
-	  :format-control format-control
-	  :format-arguments format-arguments))
+          :format-control format-control
+          :format-arguments format-arguments))
   
 (defmacro with-cmp-protection (main-form error-form)
   `(let* ((si::*break-enable* *compiler-break-enable*)
           (throw-flag t))
      (unwind-protect
-	 (multiple-value-prog1
+         (multiple-value-prog1
              (if *compiler-break-enable*
                  (handler-bind ((error #'invoke-debugger))
                    ,main-form)
@@ -374,7 +374,7 @@
       (cmp-expand-macro fd (list* fname args) env)
     (serious-condition (c)
       (do-cmpwarn 'compiler-macro-expansion-failed
-	:format-control "The expansion of the compiler macro~%~T~A~%was aborted because of a serious condition~%~A" :format-arguments (list fname c))
+        :format-control "The expansion of the compiler macro~%~T~A~%was aborted because of a serious condition~%~A" :format-arguments (list fname c))
       (values nil nil))))
 
 (defun si::compiler-clear-compiler-properties (symbol)

@@ -3,9 +3,9 @@
 ;;; CLX interface for Trapezoid Extension.
 
 ;;;
-;;;			 TEXAS INSTRUMENTS INCORPORATED
-;;;				  P.O. BOX 2909
-;;;			       AUSTIN, TEXAS 78769
+;;;                      TEXAS INSTRUMENTS INCORPORATED
+;;;                               P.O. BOX 2909
+;;;                            AUSTIN, TEXAS 78769
 ;;;
 ;;; Copyright (C) 1987 Texas Instruments Incorporated.
 ;;;
@@ -21,8 +21,8 @@
 (in-package :xlib)
 
 (export '(draw-filled-trapezoids
-	   gcontext-trapezoid-alignment ;; Setf'able
-	   ))
+           gcontext-trapezoid-alignment ;; Setf'able
+           ))
 
 (define-extension "ZoidExtension")
 
@@ -34,10 +34,10 @@
   ;; Alignment is set with the ALIGNMENT keyword argument, which may be
   ;; :X, :Y, or NIL (use previous alignment)
   (declare (type drawable drawable)
-	   (type gcontext gcontext)
-	   (type sequence points))
+           (type gcontext gcontext)
+           (type sequence points))
   (let* ((display (drawable-display drawable))
-	 (opcode (extension-opcode display "ZoidExtension")))
+         (opcode (extension-opcode display "ZoidExtension")))
     (with-buffer-request (display opcode :gc-force gcontext)
       ((data card8) 1) ;; X_PolyFillZoid
       (drawable drawable)
@@ -50,7 +50,7 @@
 (defun set-trapezoid-alignment (gcontext alignment)
   (declare (type (member :x :y) alignment))
   (let* ((display (gcontext-display gcontext))
-	 (opcode (extension-opcode display "ZoidExtension")))
+         (opcode (extension-opcode display "ZoidExtension")))
     (with-buffer-request (display opcode)
       ((data card8) 2) ;; X_SetZoidAlignment
       (gcontext gcontext)

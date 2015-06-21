@@ -15,48 +15,48 @@
 ;;;
 ;;; ALL C1FORMS
 ;;;
-;;;	BIND			(var1 ... varN)
-;;;	BIND-REQUIREDS		((var1 . arg1-loc) ... (varN . argN-loc))
-;;;	BIND-SPECIAL		destination value-loc
-;;;	CALL-LOCAL		destination fun (arg1 ... argN)
-;;;	CALL-GLOBAL		destination fun (arg1 ... argN)
-;;;	C-INLINE
-;;;	DEBUG-ENV-OPEN		fun-name
-;;;	DEBUG-ENV-PUSH-VARS	(var1 ... varN)
-;;;	DEBUG-ENV-POP-VARS	(var1 ... varN) close-block
-;;;	DEBUG-ENV-CLOSE		fun-name
-;;;	DO-FLET/LABELS		(fun1 ... funN)
-;;;	FRAME-ID		frame-var
-;;;	FRAME-JMP-NEXT		frame-var
-;;;	FRAME-POP		frame-var
-;;;	FRAME-SAVE-NEXT		frame-var
-;;;	FRAME-SET		id-loc no-label
-;;;	FUNCALL			destination (arg1 ... argN)
-;;;	FUNCTION-PROLOGUE	fun
-;;;	FUNCTION-EPILOGUE	fun
-;;;	GO			tag
-;;;	JMP			tag
-;;;	PROGV			ndx-loc (var1-loc ... varN-loc) values-loc
-;;;	PROGV-EXIT		ndx-loc
-;;;	SET			destination source
-;;;	SET-MV			(dest-loc1 ... dest-locN) min-args max-args
-;;;	SI:STRUCTURE-REF
-;;;	SI:STRUCTURE-SET
-;;;	STACK-FRAME-OPEN	frame-var
-;;;	STACK-FRAME-PUSH	frame-var value-loc
-;;;	STACK-FRAME-PUSH-VALUES	frame-var
-;;;	STACK-FRAME-POP-VALUES	frame-var
-;;;	STACK-FRAME-APPLY	frame-var fun-loc
-;;;	STACK-FRAME-CLOSE	frame-var
-;;;	RETURN-FROM		block-id-var block-name
-;;;	THROW			tag-loc
-;;;	UNBIND			(var1 ... varN)
-;;;	VALUES			(value1-loc ... valueN-loc)
-;;;	VARARGS-BIND		nargs-loc varargs-loc min max nkeys check
-;;;	VARARGS-POP		dest-loc nargs-loc varargs-loc
-;;;	VARARGS-REST		dest-loc nargs-loc varargs-loc nkeys
-;;;				keys-list-loc allow-other-keys
-;;;	VARARGS-UNBIND		nargs-loc varargs-loc min max nkeys check
+;;;     BIND                    (var1 ... varN)
+;;;     BIND-REQUIREDS          ((var1 . arg1-loc) ... (varN . argN-loc))
+;;;     BIND-SPECIAL            destination value-loc
+;;;     CALL-LOCAL              destination fun (arg1 ... argN)
+;;;     CALL-GLOBAL             destination fun (arg1 ... argN)
+;;;     C-INLINE
+;;;     DEBUG-ENV-OPEN          fun-name
+;;;     DEBUG-ENV-PUSH-VARS     (var1 ... varN)
+;;;     DEBUG-ENV-POP-VARS      (var1 ... varN) close-block
+;;;     DEBUG-ENV-CLOSE         fun-name
+;;;     DO-FLET/LABELS          (fun1 ... funN)
+;;;     FRAME-ID                frame-var
+;;;     FRAME-JMP-NEXT          frame-var
+;;;     FRAME-POP               frame-var
+;;;     FRAME-SAVE-NEXT         frame-var
+;;;     FRAME-SET               id-loc no-label
+;;;     FUNCALL                 destination (arg1 ... argN)
+;;;     FUNCTION-PROLOGUE       fun
+;;;     FUNCTION-EPILOGUE       fun
+;;;     GO                      tag
+;;;     JMP                     tag
+;;;     PROGV                   ndx-loc (var1-loc ... varN-loc) values-loc
+;;;     PROGV-EXIT              ndx-loc
+;;;     SET                     destination source
+;;;     SET-MV                  (dest-loc1 ... dest-locN) min-args max-args
+;;;     SI:STRUCTURE-REF
+;;;     SI:STRUCTURE-SET
+;;;     STACK-FRAME-OPEN        frame-var
+;;;     STACK-FRAME-PUSH        frame-var value-loc
+;;;     STACK-FRAME-PUSH-VALUES frame-var
+;;;     STACK-FRAME-POP-VALUES  frame-var
+;;;     STACK-FRAME-APPLY       frame-var fun-loc
+;;;     STACK-FRAME-CLOSE       frame-var
+;;;     RETURN-FROM             block-id-var block-name
+;;;     THROW                   tag-loc
+;;;     UNBIND                  (var1 ... varN)
+;;;     VALUES                  (value1-loc ... valueN-loc)
+;;;     VARARGS-BIND            nargs-loc varargs-loc min max nkeys check
+;;;     VARARGS-POP             dest-loc nargs-loc varargs-loc
+;;;     VARARGS-REST            dest-loc nargs-loc varargs-loc nkeys
+;;;                             keys-list-loc allow-other-keys
+;;;     VARARGS-UNBIND          nargs-loc varargs-loc min max nkeys check
 ;;;
 
 (in-package "C-PASSES")

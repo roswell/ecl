@@ -18,13 +18,13 @@ sed_emulator(int narg, char **patterns)
     for (i = 0; i < narg; i+=2) {
       char *b3, *b4;
       while ((b3 = strstr(b1, patterns[i]))) {
-	if (strcmp(patterns[i+1], "/DELETE/") == 0)
-	  goto GO_ON;
-	b3[0] = 0;
-	strcpy(b2, b1);
-	strcat(b2, patterns[i+1]);
-	strcat(b2, b3 + lengths[i]);
-	b4 = b2; b2 = b1; b1 = b4;
+        if (strcmp(patterns[i+1], "/DELETE/") == 0)
+          goto GO_ON;
+        b3[0] = 0;
+        strcpy(b2, b1);
+        strcat(b2, patterns[i+1]);
+        strcat(b2, b3 + lengths[i]);
+        b4 = b2; b2 = b1; b1 = b4;
       }
     }
     puts(b1);
@@ -45,7 +45,7 @@ main(int narg, char **argv) {
     char *new = strdup(argv[i]);
     for (j = 0; new[j]; j++) {
       if (new[j] == '\\') {
-	new[j] = '/';
+        new[j] = '/';
       }
     }
     argv[i] = new;
@@ -61,7 +61,7 @@ main(int narg, char **argv) {
     if (narg == 0) {
       /* This is used to remove part of config.h */
       if (strstr(buffer, "-CUT-")) {
-	exit(0);
+        exit(0);
       }
     }
     puts(buffer);

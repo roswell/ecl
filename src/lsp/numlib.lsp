@@ -20,55 +20,55 @@
 
 #.
 (flet ((binary-search (f min max)
-	 (do ((new (/ (+ min max) 2) (/ (+ min max) 2)))
-	     ((>= min max)
-	      max)
-	   (if (funcall f new)
-	       (if (= new max)
-		   (return max)
-		   (setq max new))
-	       (if (= new min)
-		   (return max)
-		   (setq min new)))))
+         (do ((new (/ (+ min max) 2) (/ (+ min max) 2)))
+             ((>= min max)
+              max)
+           (if (funcall f new)
+               (if (= new max)
+                   (return max)
+                   (setq max new))
+               (if (= new min)
+                   (return max)
+                   (setq min new)))))
        (epsilon+ (x)
-	 (/= (float 1 x) (+ (float 1 x) x)))
+         (/= (float 1 x) (+ (float 1 x) x)))
        (epsilon- (x)
-	 (/= (float 1 x) (- (float 1 x) x))))
+         (/= (float 1 x) (- (float 1 x) x))))
   #+ecl-min
   (si::trap-fpe 'last nil)
   `(eval-when (compile load eval)
     (defconstant short-float-epsilon
       ,(binary-search #'epsilon+ (coerce 0 'short-float) (coerce 1 'short-float))
       "The smallest postive short-float E that satisfies
-	(not (= (float 1 E) (+ (float 1 E) E)))")
+        (not (= (float 1 E) (+ (float 1 E) E)))")
     (defconstant single-float-epsilon
       ,(binary-search #'epsilon+ (coerce 0 'single-float) (coerce 1 'single-float))
       "The smallest postive single-float E that satisfies
-	(not (= (float 1 E) (+ (float 1 E) E)))")
+        (not (= (float 1 E) (+ (float 1 E) E)))")
     (defconstant double-float-epsilon
       ,(binary-search #'epsilon+ (coerce 0 'double-float) (coerce 1 'double-float))
       "The smallest postive double-float E that satisfies
-	(not (= (float 1 E) (+ (float 1 E) E)))")
+        (not (= (float 1 E) (+ (float 1 E) E)))")
     (defconstant long-float-epsilon
       ,(binary-search #'epsilon+ (coerce 0 'long-float) (coerce 1 'long-float))
       "The smallest postive long-float E that satisfies
-	(not (= (float 1 E) (+ (float 1 E) E)))")
+        (not (= (float 1 E) (+ (float 1 E) E)))")
     (defconstant short-float-negative-epsilon
       ,(binary-search #'epsilon- (coerce 0 'short-float) (coerce 1 'short-float))
       "The smallest positive short-float E that satisfies
-	(not (= (float 1 E) (- (float 1 E) E)))")
+        (not (= (float 1 E) (- (float 1 E) E)))")
     (defconstant single-float-negative-epsilon
       ,(binary-search #'epsilon- (coerce 0 'single-float) (coerce 1 'single-float))
       "The smallest positive single-float E that satisfies
-	(not (= (float 1 E) (- (float 1 E) E)))")
+        (not (= (float 1 E) (- (float 1 E) E)))")
     (defconstant double-float-negative-epsilon
       ,(binary-search #'epsilon- (coerce 0 'double-float) (coerce 1 'double-float))
       "The smallest positive double-float E that satisfies
-	(not (= (float 1 E) (- (float 1 E) E)))")
+        (not (= (float 1 E) (- (float 1 E) E)))")
     (defconstant long-float-negative-epsilon
       ,(binary-search #'epsilon- (coerce 0 'long-float) (coerce 1 'long-float))
       "The smallest positive long-float E that satisfies
-	(not (= (float 1 E) (- (float 1 E) E)))")
+        (not (= (float 1 E) (- (float 1 E) E)))")
     ))
 
 #+IEEE-FLOATING-POINT
@@ -132,12 +132,12 @@ RADIANS) and (SIN RADIANS) respectively."
   (defmacro c-num-op (name arg)
     #+long-float
     `(ffi::c-inline (,arg) (:long-double) :long-double
-		    ,(format nil "~al(#0)" name)
-		    :one-liner t)
+                    ,(format nil "~al(#0)" name)
+                    :one-liner t)
     #-long-float
     `(ffi::c-inline (,arg) (:double) :double
-		    ,(format nil "~a(#0)" name)
-		    :one-liner t)))
+                    ,(format nil "~a(#0)" name)
+                    :one-liner t)))
 
 (defun asin (x)
   "Args: (number)
@@ -146,21 +146,21 @@ Returns the arc sine of NUMBER."
       (complex-asin x)
       #-ecl-min
       (let* ((x (float x))
-	     (xr (float x 1l0)))
-	(declare (long-float xr))
-	(if (and (<= -1.0 xr) (<= xr 1.0))
-	    (float (c-num-op "asin" xr) x)
-	    (complex-asin x)))))
+             (xr (float x 1l0)))
+        (declare (long-float xr))
+        (if (and (<= -1.0 xr) (<= xr 1.0))
+            (float (c-num-op "asin" xr) x)
+            (complex-asin x)))))
 
 ;; Ported from CMUCL
 (defun complex-asin (z)
   (declare (number z)
-	   (si::c-local))
+           (si::c-local))
   (let ((sqrt-1-z (sqrt (- 1 z)))
-	(sqrt-1+z (sqrt (+ 1 z))))
+        (sqrt-1+z (sqrt (+ 1 z))))
     (complex (atan (realpart z) (realpart (* sqrt-1-z sqrt-1+z)))
-	     (asinh (imagpart (* (conjugate sqrt-1-z)
-				 sqrt-1+z))))))
+             (asinh (imagpart (* (conjugate sqrt-1-z)
+                                 sqrt-1+z))))))
 
 (defun acos (x)
   "Args: (number)
@@ -169,21 +169,21 @@ Returns the arc cosine of NUMBER."
       (complex-acos x)
       #-ecl-min
       (let* ((x (float x))
-	     (xr (float x 1l0)))
-	(declare (long-float xr))
-	(if (and (<= -1.0 xr) (<= xr 1.0))
-	    (float (c-num-op "acos" xr) (float x))
-	    (complex-acos x)))))
+             (xr (float x 1l0)))
+        (declare (long-float xr))
+        (if (and (<= -1.0 xr) (<= xr 1.0))
+            (float (c-num-op "acos" xr) (float x))
+            (complex-acos x)))))
 
 ;; Ported from CMUCL
 (defun complex-acos (z)
   (declare (number z)
-	   (si::c-local))
+           (si::c-local))
   (let ((sqrt-1+z (sqrt (+ 1 z)))
-	(sqrt-1-z (sqrt (- 1 z))))
+        (sqrt-1-z (sqrt (- 1 z))))
     (complex (* 2 (atan (realpart sqrt-1-z) (realpart sqrt-1+z)))
-	     (asinh (imagpart (* (conjugate sqrt-1+z)
-				 sqrt-1-z))))))
+             (asinh (imagpart (* (conjugate sqrt-1+z)
+                                 sqrt-1-z))))))
 
 #+(and (not ecl-min) win32 (not mingw32))
 (progn
@@ -204,9 +204,9 @@ Returns the hyperbolic arc sine of NUMBER."
   ;(log (+ x (sqrt (+ 1.0 (* x x)))))
   (if #+(or ecl-min) t #-(or ecl-min) (complexp x)
       (let* ((iz (complex (- (imagpart x)) (realpart x)))
-	     (result (complex-asin iz)))
-	(complex (imagpart result)
-		 (- (realpart result))))
+             (result (complex-asin iz)))
+        (complex (imagpart result)
+                 (- (realpart result))))
       #-(or ecl-min)
       (float (c-num-op "asinh" x) (float x))))
 
@@ -219,19 +219,19 @@ Returns the hyperbolic arc cosine of NUMBER."
       (complex-acosh x)
       #-(or ecl-min)
       (let* ((x (float x))
-	     (xr (float x 1d0)))
-	(declare (double-float xr))
-	(if (<= 1.0 xr)
-	    (float (c-num-op "acosh" xr) (float x))
-	    (complex-acosh x)))))
+             (xr (float x 1d0)))
+        (declare (double-float xr))
+        (if (<= 1.0 xr)
+            (float (c-num-op "acosh" xr) (float x))
+            (complex-acosh x)))))
 
 (defun complex-acosh (z)
   (declare (number z) (si::c-local))
   (let ((sqrt-z-1 (sqrt (- z 1)))
-	(sqrt-z+1 (sqrt (+ z 1))))
+        (sqrt-z+1 (sqrt (+ z 1))))
     (complex (asinh (realpart (* (conjugate sqrt-z-1)
-				 sqrt-z+1)))
-	     (* 2 (atan (imagpart sqrt-z-1) (realpart sqrt-z+1))))))
+                                 sqrt-z+1)))
+             (* 2 (atan (imagpart sqrt-z-1) (realpart sqrt-z+1))))))
 
 (defun atanh (x)
   "Args: (number)
@@ -241,11 +241,11 @@ Returns the hyperbolic arc tangent of NUMBER."
       (complex-atanh x)
       #-(or ecl-min)
       (let* ((x (float x))
-	     (xr (float x 1d0)))
-	(declare (double-float xr))
-	(if (and (<= -1.0 xr) (<= xr 1.0))
-	    (float (c-num-op "atanh" xr) (float x))
-	    (complex-atanh x)))))
+             (xr (float x 1d0)))
+        (declare (double-float xr))
+        (if (and (<= -1.0 xr) (<= xr 1.0))
+            (float (c-num-op "atanh" xr) (float x))
+            (complex-atanh x)))))
 
 (defun complex-atanh (z)
   (declare (number z) (si::c-local))
@@ -303,7 +303,7 @@ Returns the position part (in ECL, the cdr part) of the byte specifier BYTE."
 Extracts a byte from INTEGER at the specified byte position, right-justifies
 the byte, and returns the result as an integer."
   (logand (ash integer (- (byte-position bytespec)))
-	  (lognot (ash -1 (byte-size bytespec)))))
+          (lognot (ash -1 (byte-size bytespec)))))
 
 (defun ldb-test (bytespec integer)
   "Args: (bytespec integer)
@@ -314,25 +314,25 @@ Returns T if at least one bit of the specified byte is 1; NIL otherwise."
   "Args: (bytespec integer)
 Extracts the specified byte from INTEGER and returns the result as an integer."
   (logand (ash (lognot (ash -1 (byte-size bytespec)))
-	       (byte-position bytespec))
-	  integer))
+               (byte-position bytespec))
+          integer))
 
 (defun dpb (newbyte bytespec integer)
   "Args: (newbyte bytespec integer)
 Replaces the specified byte of INTEGER with NEWBYTE (an integer) and returns
 the result."
   (let* ((pos (byte-position bytespec))
-	 (size (byte-size bytespec))
-	 (mask (ash (lognot (ash -1 size)) pos)))
+         (size (byte-size bytespec))
+         (mask (ash (lognot (ash -1 size)) pos)))
     (logior (logandc2 integer mask)
-	    (logand (ash newbyte pos) mask))))
+            (logand (ash newbyte pos) mask))))
 
 (defun deposit-field (newbyte bytespec integer)
   "Args: (integer1 bytespec integer2)
 Returns an integer represented by the bit sequence obtained by replacing the
 specified bits of INTEGER2 with the specified bits of INTEGER1."
   (let* ((pos (byte-position bytespec))
-	 (size (byte-size bytespec))
-	 (mask (ash (lognot (ash -1 size)) pos)))
+         (size (byte-size bytespec))
+         (mask (ash (lognot (ash -1 size)) pos)))
     (logior (logandc2 integer mask)
-	    (logand newbyte mask))))
+            (logand newbyte mask))))

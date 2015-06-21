@@ -149,8 +149,8 @@
 
 (def-type-propagator expt (fname base exponent)
   ;; Rules:
-  ;;	(expt number-type integer) -> number-type
-  ;;	(expt number-type1 number-type2) -> (max-float number-type1 number-type2)
+  ;;    (expt number-type integer) -> number-type
+  ;;    (expt number-type1 number-type2) -> (max-float number-type1 number-type2)
   ;;
   (multiple-value-bind (simplified-exponent exponent)
       (ensure-real-type exponent)

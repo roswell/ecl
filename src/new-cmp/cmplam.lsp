@@ -16,33 +16,33 @@
 
 ;;; During Pass1, a lambda-list
 ;;;
-;;; (	{ var }*
-;;; 	[ &optional { var | ( var [ initform [ svar ] ] ) }* ]
-;;; 	[ &rest var ]
-;;; 	[ &key { var | ( { var | ( kwd var ) } [initform [ svar ]])}*
-;;; 		[&allow-other-keys]]
-;;; 	[ &aux {var | (var [initform])}*]
+;;; (   { var }*
+;;;     [ &optional { var | ( var [ initform [ svar ] ] ) }* ]
+;;;     [ &rest var ]
+;;;     [ &key { var | ( { var | ( kwd var ) } [initform [ svar ]])}*
+;;;             [&allow-other-keys]]
+;;;     [ &aux {var | (var [initform])}*]
 ;;; )
 ;;;
 ;;; is transformed into
 ;;;
-;;; (	( { var }* )				; required
-;;; 	( { var initform svar }* )		; optional
-;;; 	{ var | nil }				; rest
-;;; 	allow-other-keys-flag
-;;; 	( { kwd-vv-index var initform svar }* )	; key
+;;; (   ( { var }* )                            ; required
+;;;     ( { var initform svar }* )              ; optional
+;;;     { var | nil }                           ; rest
+;;;     allow-other-keys-flag
+;;;     ( { kwd-vv-index var initform svar }* ) ; key
 ;;; )
 ;;;
 ;;; where
-;;; 	svar:	NIL	; means svar is not supplied
-;;;	        | var
+;;;     svar:   NIL     ; means svar is not supplied
+;;;             | var
 ;;;
 ;;; &aux parameters will be embedded into LET*.
 ;;;
 ;;; c1lambda-expr receives
-;;;	( lambda-list { doc | decl }* . body )
+;;;     ( lambda-list { doc | decl }* . body )
 ;;; and returns
-;;;	( lambda info-object lambda-list' doc body' )
+;;;     ( lambda info-object lambda-list' doc body' )
 ;;;
 ;;; Doc is NIL if no doc string is supplied.
 ;;; Body' is body possibly surrounded by a LET* (if &aux parameters are
@@ -59,14 +59,14 @@
 
 (defun add-referred-variables-to-function (fun var-list)
   (setf (fun-referred-vars fun)
-	(set-difference (union (fun-referred-vars fun) var-list)
-			(fun-local-vars fun)))
+        (set-difference (union (fun-referred-vars fun) var-list)
+                        (fun-local-vars fun)))
   fun)
 
 (defun c1compile-function (lambda-list-and-body &key (fun (make-fun))
-			   (name (fun-name fun)) (CB/LB 'CB))
+                           (name (fun-name fun)) (CB/LB 'CB))
   (setf (fun-name fun) name
-	(fun-parent fun) *current-function*)
+        (fun-parent fun) *current-function*)
   (when *current-function*
     (push fun (fun-child-funs *current-function*)))
   (let* ((*lcl* 0)
@@ -115,8 +115,8 @@
           (fun-cfun fun) cfun
           (fun-exported fun) exported-p
           (fun-no-entry fun) no-entry-p
-	  (fun-closure fun) nil
-	  (fun-description fun) name)))
+          (fun-closure fun) nil
+          (fun-description fun) name)))
 
 (defun c1set-function-closure-type (fun)
   (let ((children (fun-child-funs fun)))
@@ -125,20 +125,20 @@
     ;; are registered with this function...
     ;;
     (reduce #'add-referred-variables-to-function
-	    (mapcar #'fun-referred-vars children)
-	    :initial-value fun)
+            (mapcar #'fun-referred-vars children)
+            :initial-value fun)
     (reduce #'add-referred-variables-to-function
-	    (mapcar #'fun-referred-vars (fun-referred-funs fun))
-	    :initial-value fun)
+            (mapcar #'fun-referred-vars (fun-referred-funs fun))
+            :initial-value fun)
     ;;
     ;; ...and then compute closure type for function and children
     ;;
     (do ((finish nil))
-	(finish)
+        (finish)
       (setf finish t)
       (dolist (f children)
-	(when (compute-fun-closure-type f)
-	  (setf finish nil))))
+        (when (compute-fun-closure-type f)
+          (setf finish nil))))
     (compute-fun-closure-type fun)
     (when (fun-global fun)
       (if (fun-closure fun)
@@ -171,7 +171,7 @@
   (when block-name (setq body (list (cons 'BLOCK (cons block-name body)))))
 
   (multiple-value-bind (requireds optionals rest key-flag keywords
-			allow-other-keys aux-vars)
+                        allow-other-keys aux-vars)
       (cmp-process-lambda-list (car lambda-expr))
 
     ;; We need to add the declarations right here, because they should
@@ -240,8 +240,8 @@
            (aux-vars (nconc (cdr type-checks) aux-vars))
            (aux-var-names (loop for v in aux-vars by #'cddr
                              collect (first v)))
-	   (new-variables (cmp-env-new-variables *cmp-env* old-env))
-	   (already-declared-name (set-difference (mapcar #'var-name new-variables)
+           (new-variables (cmp-env-new-variables *cmp-env* old-env))
+           (already-declared-name (set-difference (mapcar #'var-name new-variables)
                                                   aux-var-names)))
       ;; Gather declarations for &aux variables, either special...
       (let ((specials (set-difference ss already-declared-names)))
@@ -255,8 +255,8 @@
           (push `(ignorable ,@ignorables) declarations)))
       ;; ...or type declarations
       (loop for (var . type) in ts
-	    unless (member var already-declared-names)
-	    do (push `(type ,type ,var) declarations))
+            unless (member var already-declared-names)
+            do (push `(type ,type ,var) declarations))
 
       (let ((*cmp-env* (cmp-env-copy)))
         (when (policy-debug-variable-bindings)
@@ -404,98 +404,98 @@
 #| Steps:
  1. defun creates declarations for requireds + va_alist
  2. c2lambda-expr adds declarations for:
-	unboxed requireds
-	lexical optionals (+ supplied-p), rest, keywords (+ supplied-p)
+        unboxed requireds
+        lexical optionals (+ supplied-p), rest, keywords (+ supplied-p)
     Lexical optionals and keywords can be unboxed if:
-	a. there is more then one reference in the body
-	b. they are not referenced in closures
+        a. there is more then one reference in the body
+        b. they are not referenced in closures
  3. binding is performed for:
-	special or unboxed requireds
-	optionals, rest, keywords
+        special or unboxed requireds
+        optionals, rest, keywords
 |#
 
 (defun optimize-funcall/apply-lambda (lambda-form arguments apply-p
-				      &aux body apply-list apply-var
-				      let-vars extra-stmts all-keys)
+                                      &aux body apply-list apply-var
+                                      let-vars extra-stmts all-keys)
   (multiple-value-bind (requireds optionals rest key-flag keywords
-				  allow-other-keys aux-vars)
+                                  allow-other-keys aux-vars)
       (cmp-process-lambda-list (car lambda-form))
     (when apply-p
       (setf apply-list (first (last arguments))
-	    apply-var (gensym)
-	    arguments (butlast arguments)))
+            apply-var (gensym)
+            arguments (butlast arguments)))
     (setf arguments (copy-list arguments))
     (do ((scan arguments (cdr scan)))
-	((endp scan))
+        ((endp scan))
       (let ((form (first scan)))
-	(unless (constantp form)
-	  (let ((aux-var (gensym)))
-	    (push `(,aux-var ,form) let-vars)
-	    (setf (car scan) aux-var)))))
+        (unless (constantp form)
+          (let ((aux-var (gensym)))
+            (push `(,aux-var ,form) let-vars)
+            (setf (car scan) aux-var)))))
     (when apply-var
       (push `(,apply-var ,apply-list) let-vars))
     (dolist (i (cdr requireds))
       (push (list i
-		  (cond (arguments
-			 (pop arguments))
-			(apply-p
-			 `(if ,apply-var
-			   (pop ,apply-var)
-			   (si::dm-too-few-arguments)))
-			(t
-			 (cmperr "Too few arguments for lambda form ~S"
+                  (cond (arguments
+                         (pop arguments))
+                        (apply-p
+                         `(if ,apply-var
+                           (pop ,apply-var)
+                           (si::dm-too-few-arguments)))
+                        (t
+                         (cmperr "Too few arguments for lambda form ~S"
                                  (cons 'LAMBDA lambda-form)))))
-	    let-vars))
+            let-vars))
     (do ((scan (cdr optionals) (cdddr scan)))
-	((endp scan))
+        ((endp scan))
       (let ((opt-var (first scan))
-	    (opt-flag (third scan))
-	    (opt-value (second scan)))
-	(cond (arguments
-	       (setf let-vars
-		     (list* `(,opt-var ,(pop arguments))
-			    `(,opt-flag t)
-			    let-vars)))
-	      (apply-p
-	       (setf let-vars
-		     (list* `(,opt-var (if ,apply-var
-					   (pop ,apply-var)
-					   ,opt-value))
-			    `(,opt-flag ,apply-var)
-			    let-vars)))
-	      (t
-	       (setf let-vars
-		     (list* `(,opt-var ,opt-value)
-			    `(,opt-flag nil)
-			    let-vars))))))
+            (opt-flag (third scan))
+            (opt-value (second scan)))
+        (cond (arguments
+               (setf let-vars
+                     (list* `(,opt-var ,(pop arguments))
+                            `(,opt-flag t)
+                            let-vars)))
+              (apply-p
+               (setf let-vars
+                     (list* `(,opt-var (if ,apply-var
+                                           (pop ,apply-var)
+                                           ,opt-value))
+                            `(,opt-flag ,apply-var)
+                            let-vars)))
+              (t
+               (setf let-vars
+                     (list* `(,opt-var ,opt-value)
+                            `(,opt-flag nil)
+                            let-vars))))))
     (when (or key-flag allow-other-keys)
       (unless rest
-	(setf rest (gensym))))
+        (setf rest (gensym))))
     (when rest
       (push `(,rest ,(if arguments
-			 (if apply-p
-			     `(list* ,@arguments ,apply-var)
-			     `(list ,@arguments))
-			 (if apply-p apply-var nil)))
-	    let-vars))
+                         (if apply-p
+                             `(list* ,@arguments ,apply-var)
+                             `(list ,@arguments))
+                         (if apply-p apply-var nil)))
+            let-vars))
     (do ((scan (cdr keywords) (cddddr scan)))
-	((endp scan))
+        ((endp scan))
       (let ((keyword (first scan))
-	    (key-var (second scan))
-	    (key-value (third scan))
-	    (key-flag (or (fourth scan) (gensym))))
-	(push keyword all-keys)
-	(setf let-vars
-	      (list*
-	       `(,key-var (if (eq ,key-flag 'si::failed) ,key-value ,key-flag))
-	       `(,key-flag (si::search-keyword ,rest ,keyword))
-	       let-vars))
-	(when (fourth scan)
-	  (push `(setf ,key-flag (not (eq ,key-flag 'si::failed)))
-		extra-stmts))))
+            (key-var (second scan))
+            (key-value (third scan))
+            (key-flag (or (fourth scan) (gensym))))
+        (push keyword all-keys)
+        (setf let-vars
+              (list*
+               `(,key-var (if (eq ,key-flag 'si::failed) ,key-value ,key-flag))
+               `(,key-flag (si::search-keyword ,rest ,keyword))
+               let-vars))
+        (when (fourth scan)
+          (push `(setf ,key-flag (not (eq ,key-flag 'si::failed)))
+                extra-stmts))))
     (when (and key-flag (not allow-other-keys))
       (push `(si::check-keyword ,rest ',all-keys) extra-stmts))
     `(let* ,(nreverse (delete-if-not #'first let-vars))
       ,@(multiple-value-bind (decl body)
-	   (si::find-declarations (rest lambda-form))
-	 (append decl extra-stmts body)))))
+           (si::find-declarations (rest lambda-form))
+         (append decl extra-stmts body)))))

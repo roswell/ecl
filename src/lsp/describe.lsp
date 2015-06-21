@@ -37,13 +37,13 @@
 
 (defun select-E ()
   (dolist (x (multiple-value-list
-	       (multiple-value-prog1
-		 (eval (read-preserving-whitespace *query-io*))
-		 (inspect-read-line))))
-	  (write x
-		 :level *old-print-level*
-		 :length *old-print-length*)
-	  (terpri)))
+               (multiple-value-prog1
+                 (eval (read-preserving-whitespace *query-io*))
+                 (inspect-read-line))))
+          (write x
+                 :level *old-print-level*
+                 :length *old-print-length*)
+          (terpri)))
 
 (defun select-U ()
   (prog1
@@ -53,7 +53,7 @@
 (defun select-? ()
   (terpri)
   (format t
-	  "Inspect commands:~%~
+          "Inspect commands:~%~
                 n (or N or Newline):    inspects the field (recursively).~%~
                 s (or S):               skips the field.~%~
                 p (or P):               pretty-prints the field.~%~
@@ -74,68 +74,68 @@
         (format t label object))
     (return-from read-inspect-command nil))
   (let* ((*quit-tags* (cons *quit-tag* *quit-tag*)) ;; as seen in top.lsp
-	 (*quit-tag* *quit-tags*))
+         (*quit-tag* *quit-tags*))
     (declare (special *quit-tags* *quit-tags*))
     (loop
        (when
-	   (catch *quit-tag* ;; as seen in top.lsp
-	     (with-simple-restart (inspect "Go back to inspector.")
-	       (inspect-indent-1)
-	       (if allow-recursive
-		   (progn (princ label)
-			  (inspect-indent)
-			  (prin1 object))
-		   (format t label object))
-	       (write-char #\Space) ;; Inspector prompt!?
-	       (princ " >> ")	    ;; This one is more suggestive.
-	       ;;(force-output) ;; not quite enough.
-	       (finish-output) ;; this one is stronger.
-	       (case (do ((char (read-char *query-io*) (read-char *query-io*)))
-			 ((and (char/= char #\Space) (char/= char #\Tab)) 
-			  (cond
-			    ((char= char #\Newline) char)
-			    ((char= char #\Return) char)
-			    ((alphanumericp (peek-char)) #\!) ;; Invalid command on purpose.
-			    (t char))
-			  ))
-		 ((#\Newline #\Return)
-		  (when allow-recursive (inspect-object object))
-		  (return nil))
-		 ((#\n #\N)
-		  (inspect-read-line)
-		  (when allow-recursive (inspect-object object))
-		  (return nil))
-		 ((#\s #\S)
-		  (inspect-read-line)
-		  (return nil))
-		 ((#\p #\P)
-		  (inspect-read-line)
-		  (select-P object))
-		 ((#\a #\A)
-		  (inspect-read-line)
-		  (throw 'ABORT-INSPECT nil))
-		 ((#\u #\U)
-		  (return (values t (select-U))))
-		 ((#\e #\E)
-		  (select-E))
-		 ((#\q #\Q)
-		  (inspect-read-line)
-		  (throw 'QUIT-INSPECT nil))
-		 ((#\?)
-		  (inspect-read-line)
-		  (select-?))
-		 (t
-		  (inspect-read-line)
-		  (inspect-indent)
-		  (format t "Unknown inspector command. ~
+           (catch *quit-tag* ;; as seen in top.lsp
+             (with-simple-restart (inspect "Go back to inspector.")
+               (inspect-indent-1)
+               (if allow-recursive
+                   (progn (princ label)
+                          (inspect-indent)
+                          (prin1 object))
+                   (format t label object))
+               (write-char #\Space) ;; Inspector prompt!?
+               (princ " >> ")       ;; This one is more suggestive.
+               ;;(force-output) ;; not quite enough.
+               (finish-output) ;; this one is stronger.
+               (case (do ((char (read-char *query-io*) (read-char *query-io*)))
+                         ((and (char/= char #\Space) (char/= char #\Tab)) 
+                          (cond
+                            ((char= char #\Newline) char)
+                            ((char= char #\Return) char)
+                            ((alphanumericp (peek-char)) #\!) ;; Invalid command on purpose.
+                            (t char))
+                          ))
+                 ((#\Newline #\Return)
+                  (when allow-recursive (inspect-object object))
+                  (return nil))
+                 ((#\n #\N)
+                  (inspect-read-line)
+                  (when allow-recursive (inspect-object object))
+                  (return nil))
+                 ((#\s #\S)
+                  (inspect-read-line)
+                  (return nil))
+                 ((#\p #\P)
+                  (inspect-read-line)
+                  (select-P object))
+                 ((#\a #\A)
+                  (inspect-read-line)
+                  (throw 'ABORT-INSPECT nil))
+                 ((#\u #\U)
+                  (return (values t (select-U))))
+                 ((#\e #\E)
+                  (select-E))
+                 ((#\q #\Q)
+                  (inspect-read-line)
+                  (throw 'QUIT-INSPECT nil))
+                 ((#\?)
+                  (inspect-read-line)
+                  (select-?))
+                 (t
+                  (inspect-read-line)
+                  (inspect-indent)
+                  (format t "Unknown inspector command. ~
                        Type ? followed by #\\Newline for help."))
-		 )
-	       )
-	     nil
-	     )
-	 (format t "~&Back to Inspection mode: ~
+                 )
+               )
+             nil
+             )
+         (format t "~&Back to Inspection mode: ~
                       Type ? followed by #\\Newline for help.~%")
-	 ))))
+         ))))
 
 #+ecl-min
 (defmacro inspect-recursively (label object &optional place)
@@ -250,10 +250,10 @@
        (inspect-recursively "imaginary part:" (imagpart number)))
       ((SHORT-FLOAT SINGLE-FLOAT LONG-FLOAT DOUBLE-FLOAT)
        (multiple-value-bind (signif expon sign)
-	   (integer-decode-float number)
-	 (declare (ignore sign))
-	 (inspect-print "exponent:  ~D" expon)
-	 (inspect-print "mantissa:  ~D" signif))))))
+           (integer-decode-float number)
+         (declare (ignore sign))
+         (inspect-print "exponent:  ~D" expon)
+         (inspect-print "mantissa:  ~D" signif))))))
 
 (defun inspect-cons (cons)
   (declare (si::c-local))
@@ -263,11 +263,11 @@
              (l cons (cdr l)))
             ((atom l)
              (case l
-	       ((t nil) ;; no point in inspecting recursively t nor nil.
-		(inspect-print (format nil "nthcdr ~D: ~~S" i) l))
-	       (t
-		(inspect-recursively (format nil "nthcdr ~D:" i)
-				     l (cdr (nthcdr (1- i) cons))))))
+               ((t nil) ;; no point in inspecting recursively t nor nil.
+                (inspect-print (format nil "nthcdr ~D: ~~S" i) l))
+               (t
+                (inspect-recursively (format nil "nthcdr ~D:" i)
+                                     l (cdr (nthcdr (1- i) cons))))))
           (inspect-recursively (format nil "nth ~D:" i)
                                (car l) (nth i cons)))))
 
@@ -315,10 +315,10 @@
   (declare (si::c-local))
   (incf *inspect-level*)
   (maphash #'(lambda (key val)
-	       (inspect-indent-1)
-	       (format t "key  : ~S" key)
-	       (inspect-recursively "value:" val (gethash key hashtable)))
-	   hashtable)
+               (inspect-indent-1)
+               (format t "key  : ~S" key)
+               (inspect-recursively "value:" val (gethash key hashtable)))
+           hashtable)
   (decf *inspect-level*))
 
 (defun select-ht-L (hashtable)
@@ -326,35 +326,35 @@
   (terpri)
   (format t "The keys of the hash table are:~%")
   (maphash #'(lambda (key val)
-	       (declare (ignore val))
-	       (format t "  ~S~%" key))
-	   hashtable)
+               (declare (ignore val))
+               (format t "  ~S~%" key))
+           hashtable)
   (terpri))
 
 (defun select-ht-J (hashtable)
   (declare (si::c-local))
   (let* ((key (prog1
-		(read-preserving-whitespace *query-io*)
-		(inspect-read-line)))
-	 (val (gethash key hashtable)))
+                (read-preserving-whitespace *query-io*)
+                (inspect-read-line)))
+         (val (gethash key hashtable)))
         (if val
-	    (progn
-	      (incf *inspect-level*)
-	      (inspect-indent-1)
-	      (format t "key  : ~S" key)
-	      (inspect-recursively "value:" val (gethash key hashtable))
-	      (decf *inspect-level*))
-	    (progn
-	      (terpri)
-	      (format t "The key ~S is not present or the value associated is NIL." key)
-	      (terpri)
-	      (terpri)))))
+            (progn
+              (incf *inspect-level*)
+              (inspect-indent-1)
+              (format t "key  : ~S" key)
+              (inspect-recursively "value:" val (gethash key hashtable))
+              (decf *inspect-level*))
+            (progn
+              (terpri)
+              (format t "The key ~S is not present or the value associated is NIL." key)
+              (terpri)
+              (terpri)))))
 
 (defun select-ht-? ()
   (declare (si::c-local))
   (terpri)
   (format t
-	  "Inspect commands for hash tables:~%~
+          "Inspect commands for hash tables:~%~
 n (or N or #\\Newline):  inspects the keys/values of the hashtable (recursively).~%~
 s (or S):             skips the field.~%~
 p (or P):             pretty-prints the field.~%~
@@ -364,58 +364,58 @@ l (or L):             show the keys of the hash table.~%~
 j (or J) key:         inspect the value associated to the key requested.~%~
 q (or Q):             quits the inspection.~%~
 ?:                    prints this help message.~%~%"
-	  ))
+          ))
 
 (defun inspect-hashtable (hashtable)
   (declare (si::c-local))
   (if *inspect-mode*
       (progn
-	(decf *inspect-level*)
+        (decf *inspect-level*)
         (loop
           (format t "~S - hash table: " hashtable)
-	  ;;(force-output) ;; not quite enough.
-	  (finish-output) ;; this one is stronger.
+          ;;(force-output) ;; not quite enough.
+          (finish-output) ;; this one is stronger.
           (case (do ((char (read-char *query-io*) (read-char *query-io*)))
-	            ((and (char/= char #\Space) (char/= #\Tab)) char))
-	        ((#\Newline #\Return)
-		 (select-ht-N hashtable)
-		 (return nil))
-	        ((#\n #\N)
-	         (inspect-read-line)
-		 (select-ht-N hashtable)
-		 (return nil))
-	        ((#\s #\S)
-	         (inspect-read-line)
-	         (return nil))
-		((#\p #\P)
-		 (inspect-read-line)
-		 (select-P hashtable))
-		((#\a #\A)
-		 (inspect-read-line)
-		 (throw 'ABORT-INSPECT nil))
-		((#\e #\E)
-		 (select-E))
-		((#\q #\Q)
-		 (inspect-read-line)
-		 (throw 'QUIT-INSPECT nil))
-		((#\l #\L)
-		 (inspect-read-line)
-		 (select-ht-L hashtable))
-		((#\j #\J)
-		 (select-ht-J hashtable))
-		((#\?)
-		 (inspect-read-line)
-		 (select-ht-?)))
+                    ((and (char/= char #\Space) (char/= #\Tab)) char))
+                ((#\Newline #\Return)
+                 (select-ht-N hashtable)
+                 (return nil))
+                ((#\n #\N)
+                 (inspect-read-line)
+                 (select-ht-N hashtable)
+                 (return nil))
+                ((#\s #\S)
+                 (inspect-read-line)
+                 (return nil))
+                ((#\p #\P)
+                 (inspect-read-line)
+                 (select-P hashtable))
+                ((#\a #\A)
+                 (inspect-read-line)
+                 (throw 'ABORT-INSPECT nil))
+                ((#\e #\E)
+                 (select-E))
+                ((#\q #\Q)
+                 (inspect-read-line)
+                 (throw 'QUIT-INSPECT nil))
+                ((#\l #\L)
+                 (inspect-read-line)
+                 (select-ht-L hashtable))
+                ((#\j #\J)
+                 (select-ht-J hashtable))
+                ((#\?)
+                 (inspect-read-line)
+                 (select-ht-?)))
           (inspect-indent)))
       (progn
-	(format t "~S - hash table: " hashtable)
-	(maphash #'(lambda (key val)
-		     (inspect-indent-1)
-		     (format t "key  : ~S" key)
-		     (inspect-indent-1)
-		     (format t "value:")
-		     (inspect-object val))
-	         hashtable))))
+        (format t "~S - hash table: " hashtable)
+        (maphash #'(lambda (key val)
+                     (inspect-indent-1)
+                     (format t "key  : ~S" key)
+                     (inspect-indent-1)
+                     (format t "value:")
+                     (inspect-object val))
+                 hashtable))))
 
 #+CLOS
 (defun inspect-instance (instance)
@@ -434,7 +434,7 @@ q (or Q):             quits the inspection.~%~
   (push object *inspect-history*)
   (catch 'ABORT-INSPECT
          (cond
-	       ((symbolp object) (inspect-symbol object))
+               ((symbolp object) (inspect-symbol object))
                ((packagep object) (inspect-package object))
                ((characterp object) (inspect-character object))
                ((numberp object) (inspect-number object))
@@ -443,8 +443,8 @@ q (or Q):             quits the inspection.~%~
                ((vectorp object) (inspect-vector object))
                ((arrayp object) (inspect-array object))
                ((hash-table-p object) (inspect-hashtable object))
-	       #+clos
-	       ((sys:instancep object) (inspect-instance object))
+               #+clos
+               ((sys:instancep object) (inspect-instance object))
                (t (format t "~S - ~S" object (type-of object))))))
 
 (defun default-inspector (object)
@@ -475,17 +475,17 @@ inspect commands, or type '?' to the inspector."
   object)
 
 (defun describe (object &optional (stream *standard-output*)
-			&aux (*inspect-mode* nil)
+                        &aux (*inspect-mode* nil)
                              (*inspect-level* 0)
                              (*inspect-history* nil)
                              (*print-level* nil)
                              (*print-length* nil)
-			     (*standard-output* (cond ((streamp stream) stream)
-			                              ((null stream) *standard-output*)
-						      ((eq stream t) *terminal-io*)
-						      (t (error 'type-error
-						                :datum stream
-								:expected-type '(or stream t nil))))))
+                             (*standard-output* (cond ((streamp stream) stream)
+                                                      ((null stream) *standard-output*)
+                                                      ((eq stream t) *terminal-io*)
+                                                      (t (error 'type-error
+                                                                :datum stream
+                                                                :expected-type '(or stream t nil))))))
   "Args: (object &optional (stream *standard-output*))
 Prints information about OBJECT to STREAM."
   (terpri)
@@ -570,12 +570,12 @@ package whose print names contain STRING as substring.  STRING may be a
 symbol, in which case the print-name of that symbol is used.  If PACKAGE is
 NIL, then all packages are searched."
   (do* ((f nil)
-	(l (apropos-list string package) (cdr l)))
+        (l (apropos-list string package) (cdr l)))
       ((endp l)
        (format t (if f
-		     "~&-----------------------------------------------------------------------------"
-		     "~&No documentation for ~S in ~:[any~;~A~] package.")
-	       string package (and package (package-name (coerce-to-package package)))))
+                     "~&-----------------------------------------------------------------------------"
+                     "~&No documentation for ~S in ~:[any~;~A~] package.")
+               string package (and package (package-name (coerce-to-package package)))))
     (when (print-doc (first l) t)
       (setf f t)))
   (values))
