@@ -31,16 +31,20 @@
 * Pending changes since 15.3.7  
 ** Issues fixed:
 
-   - Various fixes of bogus declarations.
+   - Various fixes of bogus declarations
      
-   - Remove deprecated GC calls.
+   - Remove deprecated GC calls
      
-   - ROTATEF, SHIFTF, PSETF reworked to conform ANSI standard.  Places
-     were handled improperly in regard of multiple values.
+   - ROTATEF, SHIFTF, PSETF reworked to conform ANSI standard.  Places were
+     handled improperly in regard of multiple values
 
-   - Improved unicode support in character handling.
+   - Improved unicode support in character handling
 
-   - Format handles floats and exponentials correctly (major format rework).
+   - Format handles floats and exponentials correctly (major format rework)
+
+   - Stack limits refinements and cleanup, inconsistency and bug fixes
+
+   - Other minor tweaks
      
 ** Enchantments:
 
@@ -51,7 +55,7 @@
    - Update bdwgc to version 7.4.2
 
    - Pathname string-parts internal representation is character, not
-     base-char.
+     base-char
   
 * 15.3.7 changes since 15.2.21  
 ** Issues fixed:
