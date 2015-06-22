@@ -30,17 +30,17 @@ static void
 cs_set_size(cl_env_ptr env, cl_index new_size)
 {
         volatile char foo = 0;
-        cl_index safety_area = ecl_option_values[ECL_OPT_C_STACK_SAFETY_AREA];
-        new_size += 2*safety_area;
+        cl_index margin = ecl_option_values[ECL_OPT_C_STACK_SAFETY_AREA];
+        new_size += 2*margin;
 #ifdef ECL_DOWN_STACK
         if (&foo > env->cs_org - new_size + 16) {
-                env->cs_limit = env->cs_org - new_size + 2*safety_area;
+                env->cs_limit = env->cs_org - new_size + 2*margin;
                 if (env->cs_limit < env->cs_barrier)
                         env->cs_barrier = env->cs_limit;
         }
 #else
         if (&foo < env->cs_org + new_size - 16) {
-                env->cs_limit = env->cs_org + new_size - 2*safety_area;
+                env->cs_limit = env->cs_org + new_size - 2*margin;
                 if (env->cs_limit > env->cs_barrier)
                         env->cs_barrier = env->cs_limit;
         }
@@ -58,14 +58,14 @@ ecl_cs_overflow(void)
                 ";;; Jumping to the outermost toplevel prompt\n"
                 ";;;\n\n";
         cl_env_ptr env = ecl_process_env();
-        cl_index safety_area = ecl_option_values[ECL_OPT_C_STACK_SAFETY_AREA];
+        cl_index margin = ecl_option_values[ECL_OPT_C_STACK_SAFETY_AREA];
         cl_index size = env->cs_size;
 #ifdef ECL_DOWN_STACK
         if (env->cs_limit > env->cs_org - size)
-                env->cs_limit -= safety_area;
+                env->cs_limit -= margin;
 #else
         if (env->cs_limit < env->cs_org + size)
-                env->cs_limit += safety_area;
+                env->cs_limit += margin;
 #endif
         else
                 ecl_unrecoverable_error(env, stack_overflow_msg);
@@ -114,24 +114,25 @@ ecl_bds_unwind_n(cl_env_ptr env, int n)
 }
 
 static void
-ecl_bds_set_size(cl_env_ptr env, cl_index size)
+ecl_bds_set_size(cl_env_ptr env, cl_index new_size)
 {
         ecl_bds_ptr old_org = env->bds_org;
         cl_index limit = env->bds_top - old_org;
-        if (size <= limit) {
+        if (new_size <= limit) {
                 FEerror("Cannot shrink the binding stack below ~D.", 1,
                         ecl_make_unsigned_integer(limit));
         } else {
                 cl_index margin = ecl_option_values[ECL_OPT_BIND_STACK_SAFETY_AREA];
                 ecl_bds_ptr org;
-                org = ecl_alloc_atomic(size * sizeof(*org));
+                new_size += 2*margin;
+                org = ecl_alloc_atomic(new_size * sizeof(*org));
 
                 ecl_disable_interrupts_env(env);
                 memcpy(org, old_org, (limit + 1) * sizeof(*org));
                 env->bds_top = org + limit;
                 env->bds_org = org;
-                env->bds_limit = org + (size - 2*margin);
-                env->bds_size = size;
+                env->bds_limit = org + (new_size - 2*margin);
+                env->bds_size = new_size;
                 ecl_enable_interrupts_env(env);
 
                 ecl_dealloc(old_org);
@@ -465,25 +466,25 @@ si_ihs_env(cl_object arg)
 /********************** FRAME STACK *************************/
 
 static void
-frs_set_size(cl_env_ptr env, cl_index size)
+frs_set_size(cl_env_ptr env, cl_index new_size)
 {
         ecl_frame_ptr old_org = env->frs_org;
         cl_index limit = env->frs_top - old_org;
-        if (size <= limit) {
+        if (new_size <= limit) {
                 FEerror("Cannot shrink frame stack below ~D.", 1,
                         ecl_make_unsigned_integer(limit));
         } else {
                 cl_index margin = ecl_option_values[ECL_OPT_FRAME_STACK_SAFETY_AREA];
                 ecl_frame_ptr org;
-                size += 2*margin;
-                org = ecl_alloc_atomic(size * sizeof(*org));
+                new_size += 2*margin;
+                org = ecl_alloc_atomic(new_size * sizeof(*org));
 
                 ecl_disable_interrupts_env(env);
                 memcpy(org, old_org, (limit + 1) * sizeof(*org));
                 env->frs_top = org + limit;
                 env->frs_org = org;
-                env->frs_limit = org + (size - 2*margin);
-                env->frs_size = size;
+                env->frs_limit = org + (new_size - 2*margin);
+                env->frs_size = new_size;
                 ecl_enable_interrupts_env(env);
 
                 ecl_dealloc(old_org);
@@ -603,10 +604,10 @@ si_sch_frs_base(cl_object fr, cl_object ihs)
 /********************* INITIALIZATION ***********************/
 
 cl_object
-si_set_limit(cl_object type, cl_object size)
+si_set_limit(cl_object type, cl_object limit)
 {
         cl_env_ptr env = ecl_process_env();
-        cl_index the_size = ecl_to_size(size);
+        cl_index the_size = ecl_to_size(limit);
         if (type == @'ext::frame-stack') {
                 frs_set_size(env, the_size);
         } else if (type == @'ext::binding-stack') {
