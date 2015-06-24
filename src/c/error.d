@@ -541,6 +541,13 @@ FEwin32_error(const char *msg, int narg, ...)
                        cl_grab_rest_args(args));
 @)
 
+@(defun si::serror (cformat eformat &rest args)
+@
+        ecl_enable_interrupts();
+        return funcall(4, @'si::stack-error-handler', cformat, eformat,
+                       cl_grab_rest_args(args));
+@)
+
 void
 init_error(void)
 {

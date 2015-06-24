@@ -560,6 +560,7 @@ extern ECL_API cl_object si_bc_join(cl_object lex, cl_object code, cl_object dat
 
 extern ECL_API cl_object cl_error _ECL_ARGS((cl_narg narg, cl_object eformat, ...)) ecl_attr_noreturn;
 extern ECL_API cl_object cl_cerror _ECL_ARGS((cl_narg narg, cl_object cformat, cl_object eformat, ...));
+extern ECL_API cl_object cl_serror _ECL_ARGS((cl_narg narg, cl_object cformat, cl_object eformat, ...));
 
 extern ECL_API void ecl_internal_error(const char *s) ecl_attr_noreturn;
 extern ECL_API void ecl_unrecoverable_error(cl_env_ptr the_env, const char *message) ecl_attr_noreturn;

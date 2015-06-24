@@ -831,5 +831,10 @@ strings."
           (signal condition)
           (invoke-debugger condition))))))
 
+(defun sys::stack-error-handler (continue-string datum args)
+  (unwind-protect (universal-error-handler continue-string datum args)
+    (si:reset-margin
+     (getf args :type))))
+
 (defun sys::tpl-continue-command (&rest any)
   (apply #'invoke-restart 'continue any))
