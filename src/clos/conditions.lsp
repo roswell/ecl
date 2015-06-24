@@ -522,7 +522,8 @@ returns with NIL."
      (let* ((type (ext::stack-overflow-type condition))
             (size (ext::stack-overflow-size condition)))
        (if size
-           (format stream "~A overflow at size ~D. Stack can probably be resized."
+           (format stream "~A overflow at size ~D. Stack can probably be resized.
+Proceed with caution."
                    type size)
            (format stream "~A stack overflow. Stack cannot grow any further. Either exit
 or return to an outer frame, undoing all the function calls so far."
