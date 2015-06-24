@@ -79,6 +79,7 @@ struct cl_env_struct {
          */
         cl_index cs_size;
         cl_index cs_limit_size;
+        cl_index cs_max_size;
         char *cs_org;
         char *cs_limit;
         char *cs_barrier;

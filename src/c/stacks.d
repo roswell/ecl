@@ -69,10 +69,20 @@ ecl_cs_overflow(void)
 #endif
         else
                 ecl_unrecoverable_error(env, stack_overflow_msg);
-        cl_serror(6, make_constant_base_string("Extend stack size"),
-                  @'ext::stack-overflow', @':size', ecl_make_fixnum(size),
-                  @':type', @'ext::c-stack');
-        size = 2 * env->cs_size;
+
+        if (env->cs_max_size == (cl_index)0 || env->cs_size < env->cs_max_size)
+                cl_serror(6, make_constant_base_string("Extend stack size"),
+                          @'ext::stack-overflow',
+                          @':size', ecl_make_fixnum(size),
+                          @':type', @'ext::c-stack');
+        else
+                cl_serror(6, ECL_NIL,
+                          @'ext::stack-overflow',
+                          @':size', ECL_NIL,
+                          @':type', @'ext::c-stack');
+        size += size/2;
+        if (size > env->cs_max_size)
+                size = env->cs_max_size;
         cs_set_size(env, size);
 }
 
@@ -84,12 +94,14 @@ ecl_cs_set_org(cl_env_ptr env)
          */
         env->cs_org = (char*)(&env);
         env->cs_barrier = env->cs_org;
+        env->cs_max_size = 0;
 #if defined(HAVE_SYS_RESOURCE_H) && defined(RLIMIT_STACK)
         {
                 struct rlimit rl;
                 cl_index size;
                 getrlimit(RLIMIT_STACK, &rl);
                 if (rl.rlim_cur != RLIM_INFINITY) {
+                        env->cs_max_size = rl.rlim_cur;
                         size = rl.rlim_cur / 2;
                         if (size > (cl_index)ecl_option_values[ECL_OPT_C_STACK_SIZE])
                                 ecl_set_option(ECL_OPT_C_STACK_SIZE, size);
