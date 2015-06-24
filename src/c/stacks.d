@@ -612,17 +612,17 @@ si_set_limit(cl_object type, cl_object limit)
 {
         cl_env_ptr env = ecl_process_env();
         cl_index the_size = ecl_to_size(limit);
-        if (type == @'ext::frame-stack') {
+        if (type == @'ext::frame-stack')
                 frs_set_size(env, the_size);
-        } else if (type == @'ext::binding-stack') {
+        else if (type == @'ext::binding-stack')
                 ecl_bds_set_size(env, the_size);
-        } else if (type == @'ext::c-stack') {
+        else if (type == @'ext::c-stack')
                 cs_set_size(env, the_size);
-        } else if (type == @'ext::lisp-stack') {
+        else if (type == @'ext::lisp-stack')
                 ecl_stack_set_size(env, the_size);
-        } else {
+        else
                 _ecl_set_max_heap_size(the_size);
-        }
+
         return si_get_limit(type);
 }
 
@@ -631,17 +631,17 @@ si_get_limit(cl_object type)
 {
         cl_env_ptr env = ecl_process_env();
         cl_index output;
-        if (type == @'ext::frame-stack') {
-                output = env->frs_size;
-        } else if (type == @'ext::binding-stack') {
-                output = env->bds_size;
-        } else if (type == @'ext::c-stack') {
-                output = env->cs_size;
-        } else if (type == @'ext::lisp-stack') {
-                output = env->stack_size;
-        } else {
+        if (type == @'ext::frame-stack')
+                output = env->frs_limit_size;
+        else if (type == @'ext::binding-stack')
+                output = env->bds_limit_size;
+        else if (type == @'ext::c-stack')
+                output = env->cs_limit_size;
+        else if (type == @'ext::lisp-stack')
+                output = env->stack_limit_size;
+        else
                 output = cl_core.max_heap_size;
-        }
+
         @(return ecl_make_unsigned_integer(output))
 }
 
