@@ -1863,6 +1863,7 @@ cl_symbols[] = {
 {EXT_ "ILLEGAL-INSTRUCTION",NULL},
 {EXT_ "SET-LIMIT","si_set_limit"},
 {EXT_ "GET-LIMIT","si_get_limit"},
+{SYS_ "RESET-MARGIN","si_reset_margin"},
 {EXT_ "SEGMENTATION-VIOLATION",NULL},
 
 {EXT_ "EXTENDED-STRING",NULL},

@@ -645,6 +645,22 @@ si_get_limit(cl_object type)
         @(return ecl_make_unsigned_integer(output))
 }
 
+cl_object
+si_reset_margin(cl_object type)
+{
+        cl_env_ptr env = ecl_process_env();
+        if (type == @'ext::frame-stack')
+                frs_set_size(env, env->frs_limit_size);
+        else if (type == @'ext::binding-stack')
+                ecl_bds_set_size(env, env->bds_limit_size);
+        else if (type == @'ext::c-stack')
+                cs_set_size(env, env->cs_limit_size);
+        else
+                return ECL_NIL;
+
+        return ECL_T;
+}
+
 void
 init_stacks(cl_env_ptr env)
 {

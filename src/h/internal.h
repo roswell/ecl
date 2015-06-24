@@ -471,6 +471,7 @@ extern cl_object ecl_deserialize(uint8_t *data);
         ecl_stack_pop_values(the_env,__i); }
 
 extern void ecl_cs_set_org(cl_env_ptr env);
+extern cl_object si_reset_margin(cl_object type);
 
 /* threads.d */
 
