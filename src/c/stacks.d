@@ -31,9 +31,7 @@ cs_set_size(cl_env_ptr env, cl_index new_size)
 {
         volatile char foo = 0;
         cl_index margin = ecl_option_values[ECL_OPT_C_STACK_SAFETY_AREA];
-
-        env->cs_limit_size = new_size;
-        new_size += 2*margin;
+        env->cs_limit_size = new_size - 2*margin;
 #ifdef ECL_DOWN_STACK
         if (&foo > env->cs_org - new_size + 16) {
                 env->cs_limit = env->cs_org - new_size + 2*margin;
@@ -74,7 +72,7 @@ ecl_cs_overflow(void)
         cl_serror(6, make_constant_base_string("Extend stack size"),
                   @'ext::stack-overflow', @':size', ecl_make_fixnum(size),
                   @':type', @'ext::c-stack');
-        size += size / 2;
+        size = 2 * env->cs_size;
         cs_set_size(env, size);
 }
 
@@ -126,8 +124,7 @@ ecl_bds_set_size(cl_env_ptr env, cl_index new_size)
         } else {
                 cl_index margin = ecl_option_values[ECL_OPT_BIND_STACK_SAFETY_AREA];
                 ecl_bds_ptr org;
-                env->bds_limit_size = new_size;
-                new_size += 2*margin;
+                env->bds_limit_size = new_size - 2*margin;
                 org = ecl_alloc_atomic(new_size * sizeof(*org));
 
                 ecl_disable_interrupts_env(env);
@@ -479,8 +476,7 @@ frs_set_size(cl_env_ptr env, cl_index new_size)
         } else {
                 cl_index margin = ecl_option_values[ECL_OPT_FRAME_STACK_SAFETY_AREA];
                 ecl_frame_ptr org;
-                env->frs_limit_size = new_size;
-                new_size += 2*margin;
+                env->frs_limit_size = new_size - 2*margin;
                 org = ecl_alloc_atomic(new_size * sizeof(*org));
 
                 ecl_disable_interrupts_env(env);
@@ -612,13 +608,17 @@ si_set_limit(cl_object type, cl_object limit)
 {
         cl_env_ptr env = ecl_process_env();
         cl_index the_size = ecl_to_size(limit);
-        if (type == @'ext::frame-stack')
-                frs_set_size(env, the_size);
-        else if (type == @'ext::binding-stack')
-                ecl_bds_set_size(env, the_size);
-        else if (type == @'ext::c-stack')
-                cs_set_size(env, the_size);
-        else if (type == @'ext::lisp-stack')
+        cl_index margin;
+        if (type == @'ext::frame-stack') {
+                margin = ecl_option_values[ECL_OPT_FRAME_STACK_SAFETY_AREA];
+                frs_set_size(env, the_size + 2*margin);
+        } else if (type == @'ext::binding-stack') {
+                margin = ecl_option_values[ECL_OPT_BIND_STACK_SAFETY_AREA];
+                ecl_bds_set_size(env, the_size + 2*margin);
+        } else if (type == @'ext::c-stack') {
+                margin = ecl_option_values[ECL_OPT_C_STACK_SAFETY_AREA];
+                cs_set_size(env, the_size + 2*margin);
+        } else if (type == @'ext::lisp-stack')
                 ecl_stack_set_size(env, the_size);
         else
                 _ecl_set_max_heap_size(the_size);
@@ -650,11 +650,11 @@ si_reset_margin(cl_object type)
 {
         cl_env_ptr env = ecl_process_env();
         if (type == @'ext::frame-stack')
-                frs_set_size(env, env->frs_limit_size);
+                frs_set_size(env, env->frs_size);
         else if (type == @'ext::binding-stack')
-                ecl_bds_set_size(env, env->bds_limit_size);
+                ecl_bds_set_size(env, env->bds_size);
         else if (type == @'ext::c-stack')
-                cs_set_size(env, env->cs_limit_size);
+                cs_set_size(env, env->cs_size);
         else
                 return ECL_NIL;
 
