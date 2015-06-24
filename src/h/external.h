@@ -32,6 +32,7 @@ struct cl_env_struct {
          * reader when they are building some data structure.
          */
         cl_index stack_size;
+        cl_index stack_limit_size;
         cl_object *stack;
         cl_object *stack_top;
         cl_object *stack_limit;
@@ -45,6 +46,7 @@ struct cl_env_struct {
         cl_object bindings_array;
 #endif
         cl_index bds_size;
+        cl_index bds_limit_size;
         struct ecl_bds_frame *bds_org;
         struct ecl_bds_frame *bds_top;
         struct ecl_bds_frame *bds_limit;
@@ -62,6 +64,7 @@ struct cl_env_struct {
          * to set return points.
          */
         cl_index frs_size;
+        cl_index frs_limit_size;
         struct ecl_frame *frs_org;
         struct ecl_frame *frs_top;
         struct ecl_frame *frs_limit;
@@ -74,10 +77,11 @@ struct cl_env_struct {
          * memory. They will eventually disappear, because most operating
          * systems already take care of this.
          */
+        cl_index cs_size;
+        cl_index cs_limit_size;
         char *cs_org;
         char *cs_limit;
         char *cs_barrier;
-        cl_index cs_size;
 
         /* Private variables used by different parts of ECL: */
         /* ... the reader ... */

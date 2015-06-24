@@ -31,6 +31,8 @@ cs_set_size(cl_env_ptr env, cl_index new_size)
 {
         volatile char foo = 0;
         cl_index margin = ecl_option_values[ECL_OPT_C_STACK_SAFETY_AREA];
+
+        env->cs_limit_size = new_size;
         new_size += 2*margin;
 #ifdef ECL_DOWN_STACK
         if (&foo > env->cs_org - new_size + 16) {
@@ -124,6 +126,7 @@ ecl_bds_set_size(cl_env_ptr env, cl_index new_size)
         } else {
                 cl_index margin = ecl_option_values[ECL_OPT_BIND_STACK_SAFETY_AREA];
                 ecl_bds_ptr org;
+                env->bds_limit_size = new_size;
                 new_size += 2*margin;
                 org = ecl_alloc_atomic(new_size * sizeof(*org));
 
@@ -476,6 +479,7 @@ frs_set_size(cl_env_ptr env, cl_index new_size)
         } else {
                 cl_index margin = ecl_option_values[ECL_OPT_FRAME_STACK_SAFETY_AREA];
                 ecl_frame_ptr org;
+                env->frs_limit_size = new_size;
                 new_size += 2*margin;
                 org = ecl_alloc_atomic(new_size * sizeof(*org));
 

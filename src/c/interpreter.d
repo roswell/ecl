@@ -44,6 +44,7 @@ ecl_stack_set_size(cl_env_ptr env, cl_index tentative_new_size)
         ecl_disable_interrupts_env(env);
         memcpy(new_stack, old_stack, env->stack_size * sizeof(cl_object));
         env->stack_size = new_size;
+        env->stack_limit_size = new_size - 2*safety_area;
         env->stack = new_stack;
         env->stack_top = env->stack + top;
         env->stack_limit = env->stack + (new_size - 2*safety_area);
