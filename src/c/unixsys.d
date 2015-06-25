@@ -145,13 +145,13 @@ external_process_pid(cl_object p)
 static cl_object
 external_process_status(cl_object p)
 {
-        return ecl_structure_ref(p, @'ext::external-process', 3);
+        return ecl_structure_ref(p, @'ext::external-process', 4);
 }
 
 static cl_object
 external_process_code(cl_object p)
 {
-        return ecl_structure_ref(p, @'ext::external-process', 4);
+        return ecl_structure_ref(p, @'ext::external-process', 5);
 }
 
 static void
@@ -161,10 +161,12 @@ set_external_process_pid(cl_object process, cl_object pid)
 }
 
 static void
-set_external_process_streams(cl_object process, cl_object input, cl_object output)
+set_external_process_streams(cl_object process, cl_object input,
+                             cl_object  output, cl_object error)
 {
         ecl_structure_set(process, @'ext::external-process', 1, input);
         ecl_structure_set(process, @'ext::external-process', 2, output);
+        ecl_structure_set(process, @'ext::external-process', 3, error);
 }
 
 
@@ -172,8 +174,8 @@ static void
 update_process_status(cl_object process, cl_object status, cl_object code)
 {
         ecl_structure_set(process, @'ext::external-process', 0, ECL_NIL);
-        ecl_structure_set(process, @'ext::external-process', 4, code);
-        ecl_structure_set(process, @'ext::external-process', 3, status);
+        ecl_structure_set(process, @'ext::external-process', 4, status);
+        ecl_structure_set(process, @'ext::external-process', 5, code);
 }
 
 #if defined(SIGCHLD) && !defined(ECL_MS_WINDOWS_HOST)
@@ -405,11 +407,12 @@ ecl_stream_to_HANDLE(cl_object s, bool output)
 @(defun ext::run-program (command argv &key (input @':stream') (output @':stream')
                           (error @'t') (wait @'t') (environ ECL_NIL)
                           (if_output_exists @':supersede'))
-        int parent_write = 0, parent_read = 0;
+        int parent_write = 0, parent_read = 0, parent_error = 0;
         int child_pid;
         cl_object pid, process;
         cl_object stream_write;
         cl_object stream_read;
+        cl_object stream_error;
         cl_object exit_status = ECL_NIL;
 @
         command = si_copy_to_simple_base_string(command);
@@ -560,6 +563,27 @@ ecl_stream_to_HANDLE(cl_object s, bool output)
                 DuplicateHandle(current, child_stdout, current,
                                 &child_stderr, 0, TRUE,
                                 DUPLICATE_SAME_ACCESS);
+        } else if (error == @':stream') {
+                HANDLE tmp;
+                ok = CreatePipe(&tmp, &child_stderr, &attr, 0);
+                if (ok) {
+                        ok = DuplicateHandle(current, tmp, current,
+                                             &tmp, 0, FALSE,
+                                             DUPLICATE_CLOSE_SOURCE |
+                                             DUPLICATE_SAME_ACCESS);
+                        if (ok) {
+#ifdef cygwin
+                                parent_error =
+                                        cygwin_attach_handle_to_fd
+                                        (0, -1, tmp, S_IRWXU, GENERIC_READ);
+#else
+                                parent_error = _open_osfhandle((intptr_t)tmp,
+                                                               _O_RDONLY /*| _O_TEXT*/);
+#endif
+                                if (parent_error < 0)
+                                        printf("open_osfhandle failed\n");
+                        }
+               }
         } else if (error == @'t') {
                 /* The child inherits a duplicate of our output
                    handle. Creating a duplicate avoids problems when
@@ -578,6 +602,11 @@ ecl_stream_to_HANDLE(cl_object s, bool output)
                                 /*GetStdHandle(STD_ERROR_HANDLE)*/
                                 current, &child_stderr, 0, TRUE,
                                 DUPLICATE_SAME_ACCESS);
+        } else if (ECL_STRINGP(error) || ECL_PATHNAMEP(error)) {
+                error = cl_open(7, error,
+                                @':direction', @':output',
+                                @':if-does-not-exist', @':create');
+                goto AGAIN_ERROR;
         } else {
                 FEerror("Invalid :ERROR argument to EXT:RUN-PROGRAM:~%~S", 1,
                         error);
@@ -709,9 +738,16 @@ ecl_stream_to_HANDLE(cl_object s, bool output)
  AGAIN_ERROR:
         if (error == @':output') {
                 child_stderr = child_stdout;
+        } else if (error == @':stream') {
+                int fd[2];
+                pipe(fd);
+                parent_error = fd[0];
+                child_stderr = fd[1];
         } else if (error == @'t') {
                 error = ecl_symbol_value(@'*error-output*');
                 goto AGAIN_ERROR;
+        } else if (Null(error)) {
+                child_stderr = open("/dev/null", O_WRONLY);
         } else if (!Null(cl_streamp(error))) {
                 child_stderr = ecl_stream_to_handle(error, 1);
                 unlikely_if (child_stderr < 0) {
@@ -719,14 +755,11 @@ ecl_stream_to_HANDLE(cl_object s, bool output)
                                 "have a file handle:~%~S", 1, error);
                 }
                 child_stderr = dup(child_stderr);
-        } else if (Null(error)) {
-                child_stderr = open("/dev/null", O_WRONLY);
-        } else if (ECL_STRINGP(output) || ECL_PATHNAMEP(output)) {
-                output = cl_open(7, output,
+        } else if (ECL_STRINGP(error) || ECL_PATHNAMEP(error)) {
+                output = cl_open(7, error,
                                  @':direction', @':output',
-                                 @':if-exists', if_output_exists,
                                  @':if-does-not-exist', @':create');
-                goto AGAIN_OUTPUT;
+                goto AGAIN_ERROR;
         } else {
                 FEerror("Invalid :ERROR argument to EXT:RUN-PROGRAM:~%~S", 1,
                         error);
@@ -753,6 +786,7 @@ ecl_stream_to_HANDLE(cl_object s, bool output)
                 dup2(child_stdout, STDOUT_FILENO);
                 if (parent_read) close(parent_read);
                 dup2(child_stderr, STDERR_FILENO);
+                if (parent_error) close(parent_error);
                 for (j = 0; j < argv->vector.fillp; j++) {
                         cl_object arg = argv->vector.self.t[j];
                         if (arg == ECL_NIL) {
@@ -801,8 +835,10 @@ ecl_stream_to_HANDLE(cl_object s, bool output)
         if (Null(pid)) {
                 if (parent_write) close(parent_write);
                 if (parent_read) close(parent_read);
+                if (parent_error) close(parent_error);
                 parent_write = 0;
                 parent_read = 0;
+                parent_error = 0;
                 remove_external_process(the_env, process);
                 FEerror("Could not spawn subprocess to run ~S.", 1, command);
         }
@@ -822,7 +858,16 @@ ecl_stream_to_HANDLE(cl_object s, bool output)
                 parent_read = 0;
                 stream_read = cl_core.null_stream;
         }
-        set_external_process_streams(process, stream_write, stream_read);
+        if (parent_error > 0) {
+                stream_error = ecl_make_stream_from_fd(command, parent_error,
+                                                       ecl_smm_input, 8,
+                                                       ECL_STREAM_DEFAULT_FORMAT, ECL_T);
+        } else {
+                parent_error = 0;
+                stream_error = cl_core.null_stream;
+        }
+        set_external_process_streams(process, stream_write, stream_read,
+                                     stream_error);
         if (!Null(wait)) {
                 exit_status = si_external_process_wait(2, process, ECL_T);
                 exit_status = ecl_nth_value(the_env, 1);

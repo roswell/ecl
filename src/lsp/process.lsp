@@ -17,6 +17,7 @@
   pid
   input
   output
+  error
   (%status :running)
   (%code nil))
 
