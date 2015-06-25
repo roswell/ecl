@@ -533,12 +533,6 @@ ecl_stream_to_HANDLE(cl_object s, bool output)
                 goto AGAIN_OUTPUT;
         } else if (Null(output)) {
                 child_stdout = NULL;
-        } else if (ECL_STRINGP(output) || ECL_PATHNAMEP(output)) {
-                output = cl_open(7, output,
-                                 @':direction', @':output',
-                                 @':if-exists', if_output_exists,
-                                 @':if-does-not-exist', @':create');
-                goto AGAIN_OUTPUT;
         } else if (!Null(cl_streamp(output))) {
                 HANDLE stream_handle = ecl_stream_to_HANDLE(output, 1);
                 unlikely_if(stream_handle == INVALID_HANDLE_VALUE) {
@@ -549,6 +543,12 @@ ecl_stream_to_HANDLE(cl_object s, bool output)
                                 /*GetStdHandle(STD_OUTPUT_HANDLE)*/
                                 current, &child_stdout, 0, TRUE,
                                 DUPLICATE_SAME_ACCESS);
+        } else if (ECL_STRINGP(output) || ECL_PATHNAMEP(output)) {
+                output = cl_open(7, output,
+                                 @':direction', @':output',
+                                 @':if-exists', if_output_exists,
+                                 @':if-does-not-exist', @':create');
+                goto AGAIN_OUTPUT;
         } else {
                 FEerror("Invalid :OUTPUT argument to EXT:RUN-PROGRAM", 1,
                         output);
@@ -689,12 +689,6 @@ ecl_stream_to_HANDLE(cl_object s, bool output)
                 goto AGAIN_OUTPUT;
         } else if (Null(output)) {
                 child_stdout = open("/dev/null", O_WRONLY);
-        } else if (ECL_STRINGP(output) || ECL_PATHNAMEP(output)) {
-                output = cl_open(7, output,
-                                 @':direction', @':output',
-                                 @':if-exists', if_output_exists,
-                                 @':if-does-not-exist', @':create');
-                goto AGAIN_OUTPUT;
         } else if (!Null(cl_streamp(output))) {
                 child_stdout = ecl_stream_to_handle(output, 1);
                 unlikely_if (child_stdout < 0) {
@@ -702,6 +696,12 @@ ecl_stream_to_HANDLE(cl_object s, bool output)
                                 "have a file handle:~%~S", 1, output);
                 }
                 child_stdout = dup(child_stdout);
+        } else if (ECL_STRINGP(output) || ECL_PATHNAMEP(output)) {
+                output = cl_open(7, output,
+                                 @':direction', @':output',
+                                 @':if-exists', if_output_exists,
+                                 @':if-does-not-exist', @':create');
+                goto AGAIN_OUTPUT;
         } else {
                 FEerror("Invalid :OUTPUT argument to EXT:RUN-PROGRAM:~%~S", 1,
                         output);
@@ -721,6 +721,12 @@ ecl_stream_to_HANDLE(cl_object s, bool output)
                 child_stderr = dup(child_stderr);
         } else if (Null(error)) {
                 child_stderr = open("/dev/null", O_WRONLY);
+        } else if (ECL_STRINGP(output) || ECL_PATHNAMEP(output)) {
+                output = cl_open(7, output,
+                                 @':direction', @':output',
+                                 @':if-exists', if_output_exists,
+                                 @':if-does-not-exist', @':create');
+                goto AGAIN_OUTPUT;
         } else {
                 FEerror("Invalid :ERROR argument to EXT:RUN-PROGRAM:~%~S", 1,
                         error);
