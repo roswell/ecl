@@ -570,7 +570,14 @@ create_descriptor(cl_object stream, cl_object direction,
         }
         create_descriptor(input,  @':input',  &child_stdin,  &parent_write);
         create_descriptor(output, @':output', &child_stdout, &parent_read);
-        create_descriptor(error,  @':output', &child_stderr, &parent_error);
+        if (error == @':output')
+                /* The child inherits a duplicate of its own output
+                   handle.*/
+                DuplicateHandle(current, child_stdout, current,
+                                &child_stderr, 0, TRUE,
+                                DUPLICATE_SAME_ACCESS);
+        else
+                create_descriptor(error, @':output', &child_stderr, &parent_error);
 
         add_external_process(the_env, process);
 #if 1
@@ -643,7 +650,10 @@ create_descriptor(cl_object stream, cl_object direction,
 
         create_descriptor(input,  @':input',  &child_stdin,  &parent_write);
         create_descriptor(output, @':output', &child_stdout, &parent_read);
-        create_descriptor(error,  @':output', &child_stderr, &parent_error);
+        if (error == @':output')
+                child_stderr = child_stdout;
+        else
+                create_descriptor(error,  @':output', &child_stderr, &parent_error);
 
         add_external_process(the_env, process);
         pipe(pipe_fd);
