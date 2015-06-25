@@ -4185,9 +4185,8 @@ ecl_stream_to_handle(cl_object s, bool output)
 #if defined(ECL_MS_WINDOWS_HOST)
         case ecl_smm_io_wcon:
 #endif
-                return -1;
         default:
-                ecl_internal_error("illegal stream mode");
+                return -1;
         }
 }
 
