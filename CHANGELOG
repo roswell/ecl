@@ -27,6 +27,10 @@
     out there are not prepared for this.  If you plan to use quicklisp
     and have a C compiler accessible to ECL, you may use
     (ext:install-c-compiler) to switch back to the Lisp-to-C compiler.
+
+  - GMP 6.0.0 has bug wrt managing memory when multiplying bignums above
+    certain size. It is recommended to use included GMP library over
+    upstream version.
     
 * Pending changes since 15.3.7  
 ** Issues fixed:
