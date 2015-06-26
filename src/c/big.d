@@ -282,22 +282,22 @@ _ecl_fix_divided_by_big(cl_fixnum x, cl_object y)
 static void *
 mp_alloc(size_t size)
 {
-        return ecl_alloc_atomic_align(size, sizeof(mp_limb_t));
-}
-
-static void *
-mp_realloc(void *ptr, size_t osize, size_t nsize)
-{
-        mp_limb_t *p = ecl_alloc_atomic_align(nsize, sizeof(mp_limb_t));
-        memcpy(p, ptr, (osize < nsize)? osize : nsize);
-        ecl_dealloc(ptr);
-        return p;
+        return ecl_alloc_uncollectable(size);
 }
 
 static void
 mp_free(void *ptr, size_t size)
 {
-        ecl_dealloc(ptr);
+        ecl_free_uncollectable(ptr);
+}
+
+static void *
+mp_realloc(void *ptr, size_t osize, size_t nsize)
+{
+        mp_limb_t *p = mp_alloc(nsize);
+        memcpy(p, ptr, (osize < nsize)? osize : nsize);
+        mp_free(ptr, osize);
+        return p;
 }
 
 cl_fixnum

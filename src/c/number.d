@@ -234,6 +234,7 @@ ecl_to_uint64_t(cl_object x) {
                                 output = (ecl_uint64_t)mpz_get_ui(copy->big.big_num);
                                 output = (output << 32) +
                                         (ecl_uint64_t)mpz_get_ui(x->big.big_num);
+                                _ecl_big_register_free(copy);
                                 return output;
                         }
                 }
