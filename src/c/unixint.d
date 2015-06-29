@@ -30,7 +30,7 @@
  * them (synchronous signals), such as floating point exceptions, or
  * extrinsic (asynchronous signals), such as the process being aborted
  * by the user.
- * 
+ *
  * Of course, those interruptions are not always welcome. When the
  * interrupt is delivered and a handler is invoked, the thread or even
  * the whole program may be in an inconsistent state. For instance the
@@ -526,7 +526,7 @@ asynchronous_signal_servicing_thread()
         const cl_env_ptr the_env = ecl_process_env();
         int interrupt_signal = -1;
         /*
-         * We block all signals except the usual interrupt thread.
+         * We block all signals except the usual interrupt thread and GC signals.
          */
         {
                 sigset_t handled_set;
@@ -535,6 +535,8 @@ asynchronous_signal_servicing_thread()
                         interrupt_signal =
                                 ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL];
                         sigdelset(&handled_set, interrupt_signal);
+                        sigdelset(&handled_set, GC_get_suspend_signal());
+                        sigdelset(&handled_set, GC_get_thr_restart_signal());
                 }
                 pthread_sigmask(SIG_BLOCK, &handled_set, NULL);
         }

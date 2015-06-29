@@ -41,6 +41,8 @@
 
    - Duplicate large block deallocation with GMP 6.0.0a fixed
 
+   - ECL builds on OpenBSD with threads enabled
+
    - Other minor tweaks
      
 ** Enchantments:
