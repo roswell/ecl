@@ -1,4 +1,4 @@
-;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: SYSTEM -*-
+;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: SYSTEM; indent-tabs-mode: nil -*-
 ;;;;
 
 (in-package "SYSTEM")

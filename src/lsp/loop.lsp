@@ -1,4 +1,4 @@
-;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: SYSTEM -*-
+;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: SYSTEM; indent-tabs-mode: nil -*-
 ;;;;
 ;;;   -*- Mode:LISP; Syntax:Common-Lisp; Package:LOOP; Base:10; Lowercase:T -*-
 ;;;   *************************************************************************

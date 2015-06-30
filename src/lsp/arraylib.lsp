@@ -1,4 +1,4 @@
-;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: SYSTEM -*-
+;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: SYSTEM; indent-tabs-mode: nil -*-
 ;;;;
 ;;;;  Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya.
 ;;;;  Copyright (c) 1990, Giuseppe Attardi.
@@ -14,7 +14,6 @@
 ;;;;    arraylib.lsp
 ;;;;
 ;;;;                            array routines
-
 (in-package "SYSTEM")
 
 (defun make-array (dimensions

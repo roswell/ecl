@@ -1,4 +1,4 @@
-;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: SYSTEM -*-
+;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: SYSTEM; indent-tabs-mode: nil -*-
 ;;;;
 ;;;;  Copyright (c) 1990, Giuseppe Attardi.
 ;;;;  Copyright (c) 2001, Juan Jose Garcia Ripoll.
