@@ -111,7 +111,7 @@ VARIABLE doc and can be retrieved by (DOCUMENTATION 'SYMBOL 'VARIABLE)."
 ;;;
 (defmacro define-compiler-macro (&whole whole name vl &rest body)
   (multiple-value-bind (function pprint doc-string)
-      (sys::expand-defmacro name vl body)
+      (sys::expand-defmacro name vl body 'cl:define-compiler-macro)
     (declare (ignore pprint))
     (setq function `(function ,function))
     (when *dump-defun-definitions*
@@ -125,7 +125,7 @@ VARIABLE doc and can be retrieved by (DOCUMENTATION 'SYMBOL 'VARIABLE)."
 
 (defun compiler-macro-function (name &optional env)
   (declare (ignorable env))
-  (get-sysprop name 'sys::compiler-macro))
+  (values (get-sysprop name 'sys::compiler-macro)))
 
 ;;; Each of the following macros is also defined as a special form,
 ;;; as required by CLtL. Some of them are used by the compiler (e.g.

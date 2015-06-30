@@ -107,7 +107,15 @@
                       (ppn (+ (length reqs) (first opts)))
                       all-keywords)
                  ;; In macros, eliminate the name of the macro from the list
-                 (dm-v pointer (if macro `(cdr (truly-the cons ,whole)) whole))
+                 (dm-v pointer (if macro
+                                   ;; Special handling if define-compiler-macro called this
+                                   (if (eq macro 'define-compiler-macro)
+                                       `(if (and (eq (car ,whole) 'cl:funcall)
+                                                 (eq (caadr ,whole) 'cl:function))
+                                             (cddr (truly-the cons ,whole))
+                                             (cdr (truly-the cons ,whole)))
+                                       `(cdr (truly-the cons ,whole)))
+                                   whole))
                  (dolist (v (cdr reqs))
                    (dm-v v `(progn
                               (if (null ,pointer)
@@ -155,7 +163,8 @@
 
            (dm-v (v init)
              (cond ((and v (symbolp v))
-                    (push (if init (list v init) v) *dl*))
+                    (let ((push-val (if init (list v init) v)))
+                      (push push-val *dl*)))
                    ((and v (atom v))
                     (error "destructure: ~A is not a list nor a symbol" v))
                    ((eq (first v) '&whole)
@@ -168,8 +177,9 @@
                           (dm-v whole-var init))
                       (dm-vl (cddr v) whole-var nil)))
                    (t
-                    (let ((temp (tempsym)))
-                      (push (if init (list temp init) temp) *dl*)
+                    (let* ((temp (tempsym))
+                           (push-val (if init (list temp init) temp)))
+                      (push push-val *dl*)
                       (dm-vl v temp nil))))))
 
     (let* ((whole basis-form)
@@ -233,9 +243,10 @@
     (values (if decls `((declare ,@decls)) nil)
             body doc)))
 
-(defun sys::expand-defmacro (name vl body)
+;; Optional argument context can be 'cl:define-compiler-macro or 'cl:defmacro (default)
+(defun sys::expand-defmacro (name vl body &optional (context 'cl:defmacro))
   (multiple-value-bind (decls body doc)
-    (find-declarations body)
+      (find-declarations body)
     ;; We turn (a . b) into (a &rest b)
     ;; This is required because MEMBER (used below) does not like improper lists
     (let ((cell (last vl)))
@@ -250,7 +261,7 @@
           (setq env (gensym)
                 decls (list* `(declare (ignore ,env)) decls)))
       (multiple-value-bind (ppn whole dl arg-check ignorables)
-          (destructure vl t)
+          (destructure vl context)
         (values `(ext::lambda-block ,name (,whole ,env &aux ,@dl)
                                     (declare (ignorable ,@ignorables))
                                     ,@decls 
