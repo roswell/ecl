@@ -438,18 +438,11 @@ cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl
                 MAYBE_MARK(o->cclosure.block);
                 MAYBE_MARK(o->cclosure.env);
                 break;
-# ifndef CLOS
-        case t_structure:
-                MAYBE_MARK(o->structure.name);
-                MAYBE_MARK(o->structure.self);
-                break;
-# else
         case t_instance:
                 MAYBE_MARK(o->instance.slots);
                 MAYBE_MARK(o->instance.sig);
                 MAYBE_MARK(o->instance.clas);
                 break;
-# endif
 # ifdef ECL_THREADS
         case t_process:
                 MAYBE_MARK(o->process.queue_record);
@@ -595,11 +588,7 @@ ecl_alloc_object(cl_type t)
         case t_cfun:
         case t_cfunfixed:
         case t_cclosure:
-#ifdef CLOS
         case t_instance:
-#else
-        case t_structure:
-#endif
 #ifdef ECL_THREADS
         case t_process:
         case t_lock:
@@ -874,11 +863,7 @@ init_alloc(void)
         init_tm(t_cfun, "CFUN", sizeof(struct ecl_cfun), -1);
         init_tm(t_cfunfixed, "CFUNFIXED", sizeof(struct ecl_cfunfixed), -1);
         init_tm(t_cclosure, "CCLOSURE", sizeof(struct ecl_cclosure), -1);
-#ifndef CLOS
-        init_tm(t_structure, "STRUCTURE", sizeof(struct ecl_structure), 2);
-#else
         init_tm(t_instance, "INSTANCE", sizeof(struct ecl_instance), 4);
-#endif /* CLOS */
 #ifdef ECL_THREADS
         init_tm(t_process, "PROCESS", sizeof(struct ecl_process), 8);
         init_tm(t_lock, "LOCK", sizeof(struct ecl_lock), 2);
@@ -996,16 +981,10 @@ init_alloc(void)
                 to_bitmap(&o, &(o.cclosure.block)) |
                 to_bitmap(&o, &(o.cclosure.file)) |
                 to_bitmap(&o, &(o.cclosure.file_position));
-# ifndef CLOS
-        type_info[t_structure].descriptor =
-                to_bitmap(&o, &(o.structure.self)) |
-                to_bitmap(&o, &(o.structure.name));
-# else
         type_info[t_instance].descriptor =
                 to_bitmap(&o, &(o.instance.clas)) |
                 to_bitmap(&o, &(o.instance.sig)) |
                 to_bitmap(&o, &(o.instance.slots));
-# endif
 # ifdef ECL_THREADS
         type_info[t_process].descriptor =
                 to_bitmap(&o, &(o.process.name)) |

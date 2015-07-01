@@ -335,12 +335,6 @@ ONCE_MORE:
           obj->vector.displaced = ECL_NIL;
           obj->vector.self.bit = NULL;
           break;
-#ifndef CLOS
-        case t_structure:
-          obj->str.name = OBJNULL;
-          obj->str.self = NULL;
-          break;
-#endif /* CLOS */
         case t_stream:
           obj->stream.mode = (short)ecl_smm_broadcast;
           obj->stream.file.descriptor = -1;
@@ -406,7 +400,6 @@ ONCE_MORE:
           obj->semaphore.handle = NULL;
           break;
 #endif
-#ifdef CLOS
         case t_instance:
           obj->instance.length = 0;
           ECL_CLASS_OF(obj) = OBJNULL;
@@ -414,7 +407,6 @@ ONCE_MORE:
           obj->instance.isgf = 0;
           obj->instance.slots = NULL;
           break;
-#endif /* CLOS */
         case t_codeblock:
           obj->cblock.locked = 0;
           obj->cblock.name = ECL_NIL;
@@ -747,11 +739,7 @@ init_alloc(void)
         init_tm(t_cfun, "fCFUN", sizeof(struct ecl_cfun), 32);
         init_tm(t_cfunfixed, "fCFUN", sizeof(struct ecl_cfun), 32);
         init_tm(t_cclosure, "cCCLOSURE", sizeof(struct ecl_cclosure), 1);
-#ifndef CLOS
-        init_tm(t_structure, "SSTRUCTURE", sizeof(struct ecl_structure), 32);
-#else
         init_tm(t_instance, "IINSTANCE", sizeof(struct ecl_instance), 32);
-#endif /* CLOS */
         init_tm(t_foreign, "LFOREIGN", sizeof(struct ecl_foreign), 1);
 #ifdef ECL_THREADS
         init_tm(t_process, "tPROCESS", sizeof(struct ecl_process), 2);

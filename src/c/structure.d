@@ -19,13 +19,8 @@
 #include <ecl/ecl-inl.h>
 #include <string.h>
 
-#ifndef CLOS
-#error "Needs to define CLOS"
-#endif
-
 /******************************* ------- ******************************/
 
-#ifdef CLOS
 static bool
 structure_subtypep(cl_object x, cl_object y)
 {
@@ -40,20 +35,6 @@ structure_subtypep(cl_object x, cl_object y)
                 return FALSE;
         }
 }
-#else
-static bool
-structure_subtypep(cl_object x, cl_object y)
-{
-        do {
-                if (!ECL_SYMBOLP(x))
-                        return(FALSE);
-                if (x == y)
-                        return(TRUE);
-                x = si_get_sysprop(x, @'si::structure-include');
-        } while (x != ECL_NIL);
-        return(FALSE);
-}
-#endif /* CLOS */
 
 cl_object
 si_structure_subtype_p(cl_object x, cl_object y)
@@ -71,9 +52,7 @@ si_structure_subtype_p(cl_object x, cl_object y)
         ECL_STRUCT_SLOTS(x) = NULL;     /* for GC sake */
         ECL_STRUCT_LENGTH(x) = --narg;
         ECL_STRUCT_SLOTS(x) = (cl_object *)ecl_alloc_align(sizeof(cl_object)*narg, sizeof(cl_object));
-#ifdef CLOS
         x->instance.sig = ECL_UNBOUND;
-#endif
         if (narg >= ECL_SLOTS_LIMIT)
                 FEerror("Limit on structure size exceeded: ~S slots requested.",
                         1, ecl_make_fixnum(narg));
@@ -82,30 +61,7 @@ si_structure_subtype_p(cl_object x, cl_object y)
         @(return x)
 @)
 
-#ifdef CLOS
 #define ecl_copy_structure si_copy_instance
-#else
-cl_object
-ecl_copy_structure(cl_object x)
-{
-        cl_index j, size;
-        cl_object y;
-
-        if (ecl_unlikely(Null(si_structurep(x))))
-                FEwrong_type_only_arg(@[copy-structure], x, @[structure]);
-        y = ecl_alloc_object(T_STRUCTURE);
-        ECL_STRUCT_TYPE(y) = ECL_STRUCT_TYPE(x);
-        ECL_STRUCT_LENGTH(y) = j = ECL_STRUCT_LENGTH(x);
-        size = sizeof(cl_object)*j;
-        ECL_STRUCT_SLOTS(y) = NULL;     /* for GC sake */
-        ECL_STRUCT_SLOTS(y) = (cl_object *)ecl_alloc_align(size, sizeof(cl_object));
-        memcpy(ECL_STRUCT_SLOTS(y), ECL_STRUCT_SLOTS(x), size);
-#ifdef CLOS
-        y->instance.sig = x->instance.sig;
-#endif
-        @(return y)
-}
-#endif /* !CLOS */
 
 cl_object
 cl_copy_structure(cl_object s)
@@ -182,13 +138,9 @@ ecl_structure_set(cl_object x, cl_object type, int n, cl_object v)
 cl_object
 si_structurep(cl_object s)
 {
-#ifdef CLOS
-        if (ECL_INSTANCEP(s) && structure_subtypep(ECL_CLASS_OF(s), @'structure-object'))
+        if (ECL_INSTANCEP(s) &&
+            structure_subtypep(ECL_CLASS_OF(s), @'structure-object'))
                 return ECL_T;
-#else
-        if (ecl_t_of(s) == t_structure)
-                return ECL_T;
-#endif
         else
                 return ECL_NIL;
 }

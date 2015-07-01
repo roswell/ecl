@@ -159,12 +159,10 @@ ecl_init_env(cl_env_ptr env)
         ((struct ecl_fficall*)env->fficall)->registers = 0;
 #endif
 
-#ifdef CLOS
         /* Needs 128 elements for 64 entries to differentiate between
            EQL specializers and class specializers */
         env->method_cache = ecl_make_cache(128, 4096);
         env->slot_cache = ecl_make_cache(3, 4096);
-#endif
         env->pending_interrupt = ECL_NIL;
         {
                 int size = ecl_option_values[ECL_OPT_SIGNAL_QUEUE_SIZE];
@@ -304,10 +302,8 @@ ecl_def_ct_base_string(str_si,"SI",2,static,const);
 ecl_def_ct_base_string(str_sys,"SYS",3,static,const);
 ecl_def_ct_base_string(str_system,"SYSTEM",6,static,const);
 ecl_def_ct_base_string(str_ext,"EXT",3,static,const);
-#ifdef CLOS
 ecl_def_ct_base_string(str_clos,"CLOS",4,static,const);
 ecl_def_ct_base_string(str_mop,"MOP",3,static,const);
-#endif
 ecl_def_ct_base_string(str_mp,"MP",2,static,const);
 ecl_def_ct_base_string(str_multiprocessing,"MULTIPROCESSING",15,static,const);
 #ifdef ECL_CLOS_STREAMS
@@ -356,12 +352,10 @@ struct cl_core_struct cl_core = {
         ECL_NIL, /* keyword_package */
         ECL_NIL, /* system_package */
         ECL_NIL, /* ext_package */
-#ifdef CLOS
         ECL_NIL, /* clos_package */
 # ifdef ECL_CLOS_STREAMS
         ECL_NIL, /* gray_package */
 # endif
-#endif
         ECL_NIL, /* mp_package */
         ECL_NIL, /* c_package */
         ECL_NIL, /* ffi_package */
@@ -585,12 +579,10 @@ cl_boot(int argc, char **argv)
                 ecl_make_package(str_c,
                                  ecl_list1(str_compiler),
                                  ecl_list1(cl_core.lisp_package));
-#ifdef CLOS
         cl_core.clos_package =
                 ecl_make_package(str_clos,
                                  ecl_list1(str_mop),
                                  ecl_list1(cl_core.lisp_package));
-#endif
         cl_core.mp_package =
                 ecl_make_package(str_mp,
                                  ecl_list1(str_multiprocessing),
@@ -749,12 +741,10 @@ cl_boot(int argc, char **argv)
         /*
          * Set up infrastructure for CLOS.
          */
-#ifdef CLOS
         ECL_SET(@'si::*class-name-hash-table*',
                 cl__make_hash_table(@'eq', ecl_make_fixnum(1024), /* size */
                                     cl_core.rehash_size,
                                     cl_core.rehash_threshold));
-#endif
 
         /*
          * Features.

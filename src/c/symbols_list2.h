@@ -84,11 +84,7 @@ cl_symbols[] = {
 
 {"NIL",NULL},
 {"T",NULL},
-#ifdef CLOS
 {SYS_ "UNBOUND","si_unbound"},
-#else
-{SYS_ "UNBOUND",NULL},
-#endif
 {SYS_ "PROTECT-TAG",NULL},
 {SYS_ "*RESTART-CLUSTERS*",NULL},
 {SYS_ "*HANDLER-CLUSTERS*",NULL},
@@ -1020,8 +1016,6 @@ cl_symbols[] = {
 {"Y-OR-N-P","ECL_NAME(cl_y_or_n_p)"},
 {"YES-OR-NO-P","ECL_NAME(cl_yes_or_no_p)"},
 {"ZEROP","cl_zerop"},
-
-#ifdef CLOS
 {"ALLOCATE-INSTANCE",NULL},
 {"ADD-METHOD",NULL},
 {"BUILT-IN-CLASS",NULL},
@@ -1106,7 +1100,6 @@ cl_symbols[] = {
 {KEY_ "REQUIRED",NULL},
 {KEY_ "WRITER",NULL},
 {KEY_ "WRITERS",NULL},
-#endif
 
 /* SYSTEM PACKAGE */
 {SYS_ "#!",NULL},
@@ -1275,9 +1268,6 @@ cl_symbols[] = {
 {SYS_ "WRITE-OBJECT","si_write_object"},
 {SYS_ "WRITE-UGLY-OBJECT","si_write_ugly_object"},
 
-#ifndef CLOS
-{SYS_ "STRUCTURE-INCLUDE",NULL},
-#else
 {SYS_ "COPY-INSTANCE","si_copy_instance"},
 {SYS_ "GENERIC-FUNCTION-P","si_generic_function_p"},
 {SYS_ "INSTANCE-REF","si_instance_ref"},
@@ -1292,7 +1282,6 @@ cl_symbols[] = {
 {SYS_ "SUBCLASSP","ECL_NAME(si_subclassp)"},
 {SYS_ "OF-CLASS-P","ECL_NAME(si_of_class_p)"},
 /*{SYS_ "UNBOUND","si_unbound"}, */
-#endif
 
 {EXT_ "*SOURCE-LOCATION*",NULL},
 {EXT_ "*REGISTER-WITH-PDE-HOOK*",NULL},
@@ -1465,10 +1454,8 @@ cl_symbols[] = {
 {EXT_ "INTEGER64",NULL},
 {EXT_ "LAMBDA-BLOCK",NULL},
 {EXT_ "QUIT","si_quit"},
-#ifdef CLOS
 {EXT_ "GET-METHOD",NULL},
 {EXT_ "INSTANCE",NULL},
-#endif
 
 {SYS_ "ALLOCATE-FOREIGN-DATA","si_allocate_foreign_data"},
 {SYS_ "FIND-FOREIGN-SYMBOL","si_find_foreign_symbol"},
@@ -1626,7 +1613,6 @@ cl_symbols[] = {
 {SYS_ "QUASIQUOTE",NULL},
 {SYS_ "*EXIT-HOOKS*",NULL},
 
-#ifdef CLOS
 {CLOS_ ".COMBINED-METHOD-ARGS.",NULL},
 {CLOS_ "+BUILTIN-CLASSES+",NULL},
 {CLOS_ "*NEXT-METHODS*",NULL},
@@ -1736,7 +1722,6 @@ cl_symbols[] = {
 {CLOS_ "LOAD-DEFCLASS","ECL_NAME(clos_load_defclass)"},
 {CLOS_ "DOCSTRING",NULL},
 {CLOS_ "SAFE-INSTANCE-REF","clos_safe_instance_ref"},
-#endif
 
 {SYS_ "CL-FIXNUM-BITS",NULL},
 {EXT_ "CL-FIXNUM",NULL},

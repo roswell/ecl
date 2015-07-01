@@ -119,10 +119,7 @@ si_coerce_to_function(cl_object fun)
         cl_type t = ecl_t_of(fun);
         if (!(t == t_cfun || t == t_cfunfixed || t == t_cclosure
               || t == t_bytecodes || t == t_bclosure
-#ifdef CLOS
-              || (t == t_instance && fun->instance.isgf)
-#endif
-                )) {
+              || (t == t_instance && fun->instance.isgf))) {
             fun = ecl_fdefinition(fun);
         }
         @(return fun)

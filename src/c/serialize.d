@@ -66,11 +66,7 @@ static cl_index object_size[] = {
         ROUNDED_SIZE(ecl_cfun), /* t_cfun */
         ROUNDED_SIZE(ecl_cfunfixed), /* t_cfunfixed */
         ROUNDED_SIZE(ecl_cclosure), /* t_cclosure */
-#ifdef CLOS
         ROUNDED_SIZE(ecl_instance), /* t_instance */
-#else
-        ROUNDED_SIZE(ecl_structure), /* t_structure */
-#endif /* CLOS */
 #ifdef ECL_THREADS
         ROUNDED_SIZE(ecl_process), /* t_process */
         ROUNDED_SIZE(ecl_lock), /* t_lock */

@@ -501,7 +501,6 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
                         the_env->function = reg0;
                         reg0 = APPLY(narg, reg0->cclosure.entry, frame_aux.base);
                         break;
-#ifdef CLOS
                 case t_instance:
                         switch (reg0->instance.isgf) {
                         case ECL_STANDARD_DISPATCH:
@@ -520,7 +519,6 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
                                 FEinvalid_function(reg0);
                         }
                         break;
-#endif
                 case t_symbol:
                         if (ecl_unlikely(reg0->symbol.stype & ecl_stp_macro))
                                 FEundefined_function(x);

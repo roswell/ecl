@@ -222,10 +222,7 @@ cl_functionp(cl_object x)
         t = ecl_t_of(x);
         if (t == t_bytecodes || t == t_bclosure || t == t_cfun
             || t == t_cfunfixed || t == t_cclosure
-#ifdef CLOS
-            || (t == t_instance && x->instance.isgf)
-#endif
-            )
+            || (t == t_instance && x->instance.isgf))
                 output = ECL_T;
         else
                 output = ECL_NIL;
@@ -478,7 +475,6 @@ BEGIN:
                 x = CDR(x);
                 y = CDR(y);
                 goto BEGIN;
-#ifdef CLOS
         case t_instance: {
                 cl_index i;
                 if ((ty != tx) || (ECL_CLASS_OF(x) != ECL_CLASS_OF(y)))
@@ -488,17 +484,6 @@ BEGIN:
                                 return(FALSE);
                 return(TRUE);
         }
-#else
-        case t_structure: {
-                cl_index i;
-                if ((tx != ty) || (x->str.name != y->str.name))
-                        return(FALSE);
-                for (i = 0;  i < x->str.length;  i++)
-                        if (!ecl_equalp(x->str.self[i], y->str.self[i]))
-                                return(FALSE);
-                return(TRUE);
-        }
-#endif /* CLOS */
         case t_pathname:
                 return (tx == ty) && ecl_equal(x, y);
         case t_hashtable: {

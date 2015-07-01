@@ -267,19 +267,6 @@ BEGIN:
                         break;
                 j= sizeof(int) * ((x->vector.offset + x->vector.dim + W_SIZE -1)/W_SIZE);
                 goto COPY_ARRAY;
-
-#ifndef CLOS
-        case t_structure:
-                mark_object(x->str.name);
-                p = x->str.self;
-                if (p == NULL)
-                        break;
-                for (i = 0, j = x->str.length;  i < j;  i++)
-                        mark_object(p[i]);
-                mark_contblock(p, j*sizeof(cl_object));
-                break;
-#endif CLOS
-
         case t_stream:
                 switch ((enum smmode)x->stream.mode) {
                 case ecl_smm_closed:
@@ -378,7 +365,6 @@ BEGIN:
                 mark_next(x->thread.entry);
                 break;
 #endif THREADS
-#ifdef CLOS
         case t_instance:
                 mark_object(x->instance.class);
                 p = x->instance.slots;
@@ -400,7 +386,6 @@ BEGIN:
                         mark_object(p[i]);
                 mark_contblock(p, j*sizeof(cl_object));
                 break;
-#endif CLOS
         case t_codeblock:
                 mark_object(x->cblock.name);
                 mark_contblock(x->cblock.start, x->cblock.size);

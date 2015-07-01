@@ -189,9 +189,7 @@ make_this_symbol(int i, cl_object s, int code, const char *name,
         case EXT_PACKAGE: package = cl_core.ext_package; break;
         case KEYWORD_PACKAGE: package = cl_core.keyword_package; break;
         case MP_PACKAGE: package = cl_core.mp_package; break;
-#ifdef CLOS
         case CLOS_PACKAGE: package = cl_core.clos_package; break;
-#endif
 #ifdef ECL_CLOS_STREAMS
         case GRAY_PACKAGE: package = cl_core.gray_package; break;
 #endif

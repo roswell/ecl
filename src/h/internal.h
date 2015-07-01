@@ -31,9 +31,7 @@ extern void init_all_symbols(void);
 extern void init_alloc(void);
 extern void init_backq(void);
 extern void init_big();
-#ifdef CLOS
 extern void init_clos(void);
-#endif
 extern void init_error(void);
 extern void init_eval(void);
 extern void init_file(void);

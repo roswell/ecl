@@ -32,9 +32,7 @@ ecl_def_string_array(feature_names,static,const) = {
 #ifdef ECL_THREADS
         ecl_def_string_array_elt("THREADS"),
 #endif
-#ifdef CLOS
         ecl_def_string_array_elt("CLOS"),
-#endif
 #ifdef ENABLE_DLOPEN
         ecl_def_string_array_elt("DLOPEN"),
 #endif

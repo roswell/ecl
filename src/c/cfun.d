@@ -149,7 +149,6 @@ cl_function_lambda_expression(cl_object fun)
                 lex = ECL_T;
                 output = ECL_NIL;
                 break;
-#ifdef CLOS
         case t_instance:
                 if (fun->instance.isgf) {
                         name = ECL_NIL;
@@ -157,7 +156,6 @@ cl_function_lambda_expression(cl_object fun)
                         output = ECL_NIL;
                         break;
                 }
-#endif
         default:
                 FEinvalid_function(fun);
         }

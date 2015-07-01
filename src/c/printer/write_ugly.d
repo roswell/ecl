@@ -299,34 +299,11 @@ write_stream(cl_object x, cl_object stream)
         _ecl_write_unreadable(x, prefix, tag, stream);
 }
 
-#ifdef CLOS
 static void
 write_instance(cl_object x, cl_object stream)
 {
         _ecl_funcall3(@'print-object', x, stream);
 }
-#else
-static void
-write_structure(cl_object x, cl_object stream)
-{
-        cl_object print_function;
-        unlikely_if (ecl_t_of(x->str.name) != t_symbol)
-                FEerror("Found a corrupt structure with an invalid type name~%"
-                        "  ~S", x->str.name);
-        print_function = si_get_sysprop(x->str.name, @'si::structure-print-function');
-        if (Null(print_function) || !ecl_print_structure()) {
-                writestr_stream("#S", stream);
-                /* structure_to_list conses slot names and values into
-                 * a list to be printed.  print shouldn't allocate
-                 * memory - Beppe
-                 */
-                x = structure_to_list(x);
-                si_write_object(x, stream);
-        } else {
-                _ecl_funcall4(print_function, x, stream, ecl_make_fixnum(0));
-        }
-}
-#endif /* !CLOS */
 
 static void
 write_readtable(cl_object x, cl_object stream)
@@ -451,11 +428,7 @@ static printer dispatch[FREE+1] = {
         write_cfun, /* t_cfun */
         write_cfun, /* t_cfunfixed */
         write_cclosure, /* t_cclosure */
-#ifdef CLOS
         write_instance, /* t_instance */
-#else
-        write_structure, /* t_structure */
-#endif /* CLOS */
 #ifdef ECL_THREADS
         write_process, /* t_process */
         write_lock, /* t_lock */

@@ -54,7 +54,6 @@ ecl_apply_from_stack_frame(cl_object frame, cl_object x)
                 return APPLY(narg, fun->cfun.entry, sp);
         case t_cclosure:
                 return APPLY(narg, fun->cclosure.entry, sp);
-#ifdef CLOS
         case t_instance:
                 switch (fun->instance.isgf) {
                 case ECL_STANDARD_DISPATCH:
@@ -69,7 +68,6 @@ ecl_apply_from_stack_frame(cl_object frame, cl_object x)
                 default:
                         FEinvalid_function(fun);
                 }
-#endif
         case t_symbol:
                 if (ecl_unlikely(fun->symbol.stype & ecl_stp_macro))
                         FEundefined_function(x);
@@ -101,11 +99,9 @@ ecl_function_dispatch(cl_env_ptr env, cl_object x)
         case t_cclosure:
                 env->function = fun;
                 return fun->cclosure.entry;
-#ifdef CLOS
         case t_instance:
                 env->function = fun;
                 return fun->instance.entry;
-#endif
         case t_symbol:
                 if (ecl_unlikely(fun->symbol.stype & ecl_stp_macro))
                         FEundefined_function(x);

@@ -71,12 +71,8 @@ typedef enum {
         t_cfun,
         t_cfunfixed,
         t_cclosure,
-#ifdef CLOS
         t_instance,
         t_structure = t_instance,
-#else
-        t_structure,
-#endif /* CLOS */
 #ifdef ECL_THREADS
         t_process,
         t_lock,
@@ -491,28 +487,12 @@ struct ecl_string {             /*  string header  */
 };
 #endif
 
-#ifdef CLOS
 #define T_STRUCTURE     t_instance
 #define ECL_STRUCT_TYPE(x)      ECL_CLASS_OF(x)
 #define ECL_STRUCT_SLOTS(x)     (x)->instance.slots
 #define ECL_STRUCT_LENGTH(x)    (x)->instance.length
 #define ECL_STRUCT_SLOT(x,i)    (x)->instance.slots[i]
 #define ECL_STRUCT_NAME(x)      ECL_CLASS_NAME(ECL_CLASS_OF(x))
-#else
-struct ecl_structure {          /*  structure header  */
-        _ECL_HDR;
-        cl_object name;         /*  structure name  */
-        cl_object *self;        /*  structure self  */
-        cl_fixnum length;       /*  structure length  */
-};
-
-#define T_STRUCTURE     t_structure
-#define ECL_STRUCT_TYPE(x)      x->str.name
-#define ECL_STRUCT_SLOTS(x)     (x)->str.self
-#define ECL_STRUCT_LENGTH(x)    (x)->str.length
-#define ECL_STRUCT_SLOT(x,i)    (x)->str.self[i]
-#define ECL_STRUCT_NAME(x)      x->str.name
-#endif
 
 enum ecl_smmode {               /*  stream mode  */
         ecl_smm_input,          /*  input  */
@@ -961,7 +941,6 @@ struct ecl_condition_variable {
 };
 #endif /* ECL_THREADS */
 
-#ifdef CLOS
 #define ECL_CLASS_OF(x)         (x)->instance.clas
 #define ECL_SPEC_FLAG(x)        (x)->instance.slots[0]
 #define ECL_SPEC_OBJECT(x)      (x)->instance.slots[3]
@@ -986,7 +965,6 @@ struct ecl_instance {           /*  instance header  */
         cl_object sig;          /*  generation signature  */
         cl_object *slots;       /*  instance slots  */
 };
-#endif /* CLOS */
 
 #ifdef ECL_SSE2
 union ecl_sse_data {
@@ -1055,13 +1033,8 @@ union cl_lispunion {
         struct ecl_cfun         cfun;           /*  compiled function  */
         struct ecl_cfunfixed    cfunfixed;      /*  compiled function  */
         struct ecl_cclosure     cclosure;       /*  compiled closure  */
-
         struct ecl_dummy        d;              /*  dummy  */
-#ifdef CLOS
         struct ecl_instance     instance;       /*  clos instance */
-#else
-        struct ecl_structure    str;            /*  structure  */
-#endif /* CLOS */
 #ifdef ECL_THREADS
         struct ecl_process      process;        /*  process  */
         struct ecl_queue        queue;          /*  lock  */

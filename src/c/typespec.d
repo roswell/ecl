@@ -234,7 +234,6 @@ cl_type_of(cl_object x)
         cl_object t;
         cl_type tx = ecl_t_of(x);
         switch (tx) {
-#ifdef CLOS
         case t_instance: {
                 cl_object cl = ECL_CLASS_OF(x);
                 t = ECL_CLASS_NAME(cl);
@@ -242,12 +241,10 @@ cl_type_of(cl_object x)
                         t = cl;
                 break;
         }
-#endif
-#if 1
         case t_fixnum:
         case t_bignum:
-                t = cl_list(3, @'integer', x, x); break;
-#endif
+                t = cl_list(3, @'integer', x, x);
+                break;
         case t_character: {
                 int i = ECL_CHAR_CODE(x);
                 if (ecl_standard_char_p(i)) {
@@ -320,10 +317,6 @@ cl_type_of(cl_object x)
                         t = @'simple-array';
                 t = cl_list(3, t, @'bit', cl_list(1, ecl_make_fixnum(x->vector.dim)));
                 break;
-#ifndef CLOS
-        case t_structure:
-                t = x->str.name; break;
-#endif
         case t_stream:
                 switch (x->stream.mode) {
                 case ecl_smm_synonym:   t = @'synonym-stream'; break;

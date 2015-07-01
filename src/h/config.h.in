@@ -49,8 +49,6 @@
 /*
  * FEATURES LINKED IN
  */
-/* Always use CLOS                                                      */
-#define CLOS
 
 /* Use GNU Multiple Precision library for bignums                       */
 #ifndef DPP

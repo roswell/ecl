@@ -109,10 +109,8 @@ struct cl_env_struct {
            generic functions. In a multithreaded environment we must
            queue operations in which the hash is cleared from updated
            generic functions. */
-#ifdef CLOS
         struct ecl_cache *method_cache;
         struct ecl_cache *slot_cache;
-#endif
 
         /* foreign function interface */
 #ifdef HAVE_LIBFFI
@@ -177,12 +175,10 @@ struct cl_core_struct {
         cl_object keyword_package;
         cl_object system_package;
         cl_object ext_package;
-#ifdef CLOS
         cl_object clos_package;
 # ifdef ECL_CLOS_STREAMS
         cl_object gray_package;
 # endif
-#endif
         cl_object mp_package;
         cl_object c_package;
         cl_object ffi_package;
@@ -497,10 +493,8 @@ extern ECL_API short ecl_digit_char(cl_fixnum w, cl_fixnum r);
 
 /* clos.c */
 
-#ifdef CLOS
 extern ECL_API cl_object cl_find_class _ECL_ARGS((cl_narg narg, cl_object name, ...));
 extern ECL_API cl_object cl_class_of(cl_object x);
-#endif
 
 /* cmpaux.c */
 
@@ -784,14 +778,12 @@ extern ECL_API void ecl_register_root(cl_object *p);
 
 /* gfun.c */
 
-#ifdef CLOS
 extern ECL_API void _ecl_set_method_hash_size(cl_env_ptr env, cl_index size);
 extern ECL_API cl_object si_clear_gfun_hash(cl_object what);
 extern ECL_API cl_object clos_set_funcallable_instance_function(cl_object x, cl_object function_or_t);
 extern ECL_API cl_object si_generic_function_p(cl_object instance);
 
 extern ECL_API cl_object _ecl_standard_dispatch(cl_object frame, cl_object fun);
-#endif /* CLOS */
 
 
 /* hash.c */
@@ -828,7 +820,6 @@ extern ECL_API cl_index ecl_hash_table_count(cl_object hash);
 
 /* instance.c */
 
-#ifdef CLOS
 extern ECL_API cl_object si_allocate_raw_instance(cl_object orig, cl_object clas, cl_object size);
 extern ECL_API cl_object si_instance_class(cl_object x);
 extern ECL_API cl_object si_instance_class_set(cl_object x, cl_object y);
@@ -849,7 +840,6 @@ extern ECL_API cl_object si_copy_instance(cl_object x);
 
 extern ECL_API cl_object ecl_slot_value(cl_object x, const char *slot);
 extern ECL_API cl_object ecl_slot_value_set(cl_object x, const char *slot, cl_object y);
-#endif /* CLOS */
 
 
 /* list.c */
@@ -1654,9 +1644,6 @@ extern ECL_API cl_object si_structure_set(cl_object x, cl_object type, cl_object
 extern ECL_API cl_object si_structurep(cl_object s);
 extern ECL_API cl_object si_make_structure _ECL_ARGS((cl_narg narg, cl_object type, ...));
 
-#ifndef CLOS
-extern ECL_API cl_object structure_to_list(cl_object x);
-#endif
 extern ECL_API cl_object ecl_structure_ref(cl_object x, cl_object name, int n);
 extern ECL_API cl_object ecl_structure_set(cl_object x, cl_object name, int n, cl_object v);
 
@@ -2139,7 +2126,6 @@ extern ECL_API cl_object cl_copy_pprint_dispatch _ECL_ARGS((cl_narg narg, ...));
 extern ECL_API cl_object cl_pprint_dispatch _ECL_ARGS((cl_narg narg, cl_object V1, ...));
 extern ECL_API cl_object cl_set_pprint_dispatch _ECL_ARGS((cl_narg narg, cl_object V1, cl_object V2, ...));
 
-#ifdef CLOS
 
 /* combin.lsp */
 extern ECL_API cl_object cl_method_combination_error _ECL_ARGS((cl_narg narg, cl_object format, ...));
@@ -2198,8 +2184,6 @@ extern ECL_API cl_object clos_standard_instance_set(cl_object object, cl_object 
 /* method.lsp */
 extern ECL_API cl_object clos_extract_lambda_list(cl_object object);
 extern ECL_API cl_object clos_extract_specializer_names(cl_object object);
-
-#endif
 
 /* conditions.lsp */
 extern ECL_API cl_object cl_abort _ECL_ARGS((cl_narg narg, ...));

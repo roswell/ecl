@@ -273,15 +273,6 @@ BEGIN:
                         break;
                 j= sizeof(int) * ((x->vector.offset + x->vector.dim + W_SIZE -1)/W_SIZE);
                 goto COPY_ARRAY;
-
-#ifndef CLOS
-        case t_structure:
-                mark_object(x->str.name);
-                p = x->str.self;
-                i = x->str.length;
-                goto MARK_DATA;
-#endif /* CLOS */
-
         case t_stream:
                 switch ((enum ecl_smmode)x->stream.mode) {
                 case ecl_smm_input:
@@ -392,14 +383,12 @@ BEGIN:
         case t_semaphore:
                 break;
 #endif
-#ifdef CLOS
         case t_instance:
                 mark_object(x->instance.clas);
                 mark_object(x->instance.sig);
                 p = x->instance.slots;
                 i = x->instance.length;
                 goto MARK_DATA;
-#endif /* CLOS */
         case t_codeblock:
                 mark_object(x->cblock.name);
                 mark_object(x->cblock.next);
@@ -528,13 +517,11 @@ mark_cl_env(struct cl_env_struct *env)
         mark_object(env->big_register[1]);
         mark_object(env->big_register[2]);
 
-#ifdef CLOS
 #ifdef ECL_THREADS
         mark_object(env->method_hash_clear_list);
 #endif
         mark_object(env->method_hash);
         mark_object(env->method_spec_vector);
-#endif
 
 #ifdef ECL_THREADS
 /* We should mark the stacks of the threads somehow!!! */
