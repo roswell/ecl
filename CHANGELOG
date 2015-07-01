@@ -55,6 +55,8 @@
 
    - Pathname string-parts internal representation is character, not
      base-char
+
+   - Dead code removals, untiabifying sources
   
 * 15.3.7 changes since 15.2.21  
 ** Issues fixed:
