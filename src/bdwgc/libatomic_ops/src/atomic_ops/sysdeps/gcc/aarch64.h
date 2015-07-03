@@ -23,13 +23,14 @@
   AO_INLINE void
   AO_nop_write(void)
   {
-    __asm__ __volatile__("dmb st" : : : "memory");
+    /* TODO: Use C++11 primitive. */
+    __asm__ __volatile__("dmb ishst" : : : "memory");
   }
 # define AO_HAVE_nop_write
 #endif
 
 /* TODO: Adjust version check on fixing double-wide AO support in GCC. */
-#if __GNUC__ == 4
+#if __GNUC__ >= 4
 
   AO_INLINE AO_double_t
   AO_double_load(const volatile AO_double_t *addr)
@@ -194,6 +195,6 @@
     return !result;
   }
 # define AO_HAVE_double_compare_and_swap_full
-#endif /* __GNUC__ == 4 */
+#endif /* __GNUC__ >= 4 */
 
 #include "generic.h"

@@ -1,5 +1,5 @@
 # Process this file with autoconf to produce a configure script.
-AC_INIT([libatomic_ops],[7.4.2],bdwgc@lists.opendylan.org)
+AC_INIT([libatomic_ops],[7.5.0],bdwgc@lists.opendylan.org)
 
 AC_PREREQ(2.61)
 AC_CANONICAL_TARGET([])
@@ -56,6 +56,12 @@ if test "$GCC" = yes; then
   AC_MSG_RESULT($ac_cv_cc_wextra)
   AS_IF([test "$ac_cv_cc_wextra" = yes], [WEXTRA="-Wextra"], [WEXTRA="-W"])
   CFLAGS="-Wall $WEXTRA $CFLAGS"
+
+  AC_ARG_ENABLE(werror, [AC_HELP_STRING([--enable-werror],
+                            [Pass -Werror to the C compiler])])
+  if test "$enable_werror" = yes; then
+    CFLAGS="-Werror $CFLAGS"
+  fi
 else
   case "$host" in
     *-*-hpux*)
