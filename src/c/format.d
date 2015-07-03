@@ -1491,8 +1491,15 @@ fmt_indirection(format_stack fmt, bool colon, bool atsign)
         ensure_param(fmt, 0);
         fmt_not_colon(fmt, colon);
         s = fmt_advance(fmt);
-        if (ecl_t_of(s) != t_base_string)
+        switch (ecl_t_of(s)) {
+#ifdef ECL_UNICODE
+        case t_string:
+#endif
+        case t_base_string:
+                break;
+        default:
                 fmt_error(fmt, "control string expected");
+        }
         if (atsign) {
                 fmt_copy(&fmt_old, fmt);
                 fmt->jmp_buf = &fmt_jmp_buf0;
