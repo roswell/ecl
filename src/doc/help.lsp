@@ -2812,62 +2812,62 @@ Returns T if X is a stream object; NIL otherwise.")
 
 ;;; CLOS Streams ------------------------------------------------------------
 
-#+CLOS
+#+CLOS-STREAMS
 (docfun stream-read-char method ((obj stream-class)) "
 Reads the next character object from the CLOS stream OBJ.")
 
-#+CLOS
+#+CLOS-STREAMS
 (docfun stream-read-line method ((obj stream-class) &rest make-array-options) "
 Reads character objects from the CLOS stream OBJ, up to and including the
 next newline character, and returns them as a string (without the newline).
 If given, the MAKE-ARRAY-OPTIONS arguments are passed to make-array
 when the returned string is created.")
 
-#+CLOS
+#+CLOS-STREAMS
 (docfun stream-unread-char method ((obj stream-class) character) "
 Unreads the character object.
 CHARACTER will be the next character read by STREAM-READ-CHAR .")
 
-#+CLOS
+#+CLOS-STREAMS
 (docfun stream-peek-char method ((obj stream-class) peek-type) "
 Returns the character object which would be returned by STREAM-READ-CHAR
 but does not remove it from the input buffer.
 If PEEK-TYPE is T, stream-peek-char skips over any whitespace characters,
 removing them from the input buffer, and returns the next character.")
 
-#+CLOS
+#+CLOS-STREAMS
 (docfun stream-listen method ((obj stream-class)) "
 Returns NIL if no character is immediately available from the CLOS stream.
 Otherwise, the next character is returned, as if stream-peek-char
 had been called.")
 
-#+CLOS
+#+CLOS-STREAMS
 (docfun stream-clear-input method ((obj stream-class)) "
 Clears any buffered characters received from the CLOS stream OBJ.
 Returns NIL.")
 
-#+CLOS
+#+CLOS-STREAMS
 (docfun stream-write-char method ((obj stream-class) character) "
 Outputs the CHARACTER to the CLOS stream OBJ and returns the CHARACTER.")
 
-#+CLOS
+#+CLOS-STREAMS
 (docfun stream-write-string method ((obj stream-class) string &optional start end) "
 Outputs characters in the STRING to the CLOS stream OBJ and returns the
 STRING. The START and END arguments, if given, indicate a substring that
 is to be output.")
 
-#+CLOS
+#+CLOS-STREAMS
 (docfun stream-fresh-line method ((obj stream-class)) "
 Outputs a newline to the CLOS stream if and only if the CLOS stream OBJ
 is not already at the beginning of a new line. Returns non-NIL if a
 newline was output and NIL otherwise.")
 
-#+CLOS
+#+CLOS-STREAMS
 (docfun stream-clear-output method ((obj stream-class)) "
 Aborts any outstanding output operation on the CLOS stream OBJ
 and returns NIL .")
 
-#+CLOS
+#+CLOS-STREAMS
 (docfun stream-force-output method ((obj stream-class)) "
 Initiates the emptying of internal buffers on the CLOS stream OBJ
 and returns NIL.")

@@ -61,6 +61,7 @@ typedef struct {
 # define IF_RELPACK(x) NULL
 #endif
 #ifndef ECL_CLOS_STREAMS
+# undef GRAY_
 # define GRAY_ SYS_
 #endif
 #ifdef ECL_SSE2
@@ -1781,7 +1782,7 @@ cl_symbols[] = {
 {SYS_ "FRAME",NULL},
 {SYS_ "APPLY-FROM-STACK-FRAME","si_apply_from_stack_frame"},
 
-/* #ifdef ECL_CLOS_STREAMS */
+#ifdef ECL_CLOS_STREAMS
 {GRAY_ "CLOSE",NULL},
 {GRAY_ "STREAMP",NULL},
 {GRAY_ "INPUT-STREAM-P",NULL},
@@ -1821,7 +1822,7 @@ cl_symbols[] = {
 {GRAY_ "FUNDAMENTAL-CHARACTER-OUTPUT-STREAM",NULL},
 {GRAY_ "FUNDAMENTAL-BINARY-INPUT-STREAM",NULL},
 {GRAY_ "FUNDAMENTAL-BINARY-OUTPUT-STREAM",NULL},
-/* #endif ECL_CLOS_STREAMS */
+#endif /* ECL_CLOS_STREAMS */
 
 {SYS_ "LOG1P","si_log1p"},
 
