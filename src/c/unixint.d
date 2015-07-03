@@ -535,8 +535,12 @@ asynchronous_signal_servicing_thread()
                         interrupt_signal =
                                 ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL];
                         sigdelset(&handled_set, interrupt_signal);
+#if !(GC_VERSION_MAJOR == 7 && GC_VERSION_MINOR < 4)
                         sigdelset(&handled_set, GC_get_suspend_signal());
                         sigdelset(&handled_set, GC_get_thr_restart_signal());
+#else
+#warning "GC version is below 7.4 - build with threads may fail on some platforms"
+#endif
                 }
                 pthread_sigmask(SIG_BLOCK, &handled_set, NULL);
         }
