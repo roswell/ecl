@@ -4785,7 +4785,7 @@ if test "x${cross_compiling}" = "xyes"; then
 ### it before invoking "configure" again.
 
 ### 1.1) Direction of growth of the stack
-ECL_STACK_DIR=up
+ECL_STACK_DIR=down
 
 ### 1.2) Choose an integer datatype which is large enough to host a pointer
 CL_FIXNUM_TYPE=int
