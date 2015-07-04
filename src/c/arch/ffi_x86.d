@@ -31,19 +31,19 @@ ecl_fficall_push_arg(union ecl_ffi_values *data, enum ecl_ffi_tag type)
 {
         int i;
         switch (type) {
-        case ECL_FFI_CHAR: i = data->c; goto INT;
-        case ECL_FFI_UNSIGNED_CHAR: i = data->uc; goto INT;
-        case ECL_FFI_BYTE: i = data->b; goto INT;
-        case ECL_FFI_UNSIGNED_BYTE: i = data->ub; goto INT;
-        case ECL_FFI_SHORT: i = data->s; goto INT;
-        case ECL_FFI_UNSIGNED_SHORT: i = data->us; goto INT;
+        case ECL_FFI_CHAR: i = data->c; goto INT_ECL;
+        case ECL_FFI_UNSIGNED_CHAR: i = data->uc; goto INT_ECL;
+        case ECL_FFI_BYTE: i = data->b; goto INT_ECL;
+        case ECL_FFI_UNSIGNED_BYTE: i = data->ub; goto INT_ECL;
+        case ECL_FFI_SHORT: i = data->s; goto INT_ECL;
+        case ECL_FFI_UNSIGNED_SHORT: i = data->us; goto INT_ECL;
 #ifdef ecl_uint8_t
-        case ECL_FFI_INT8_T: i = data->i8; goto INT;
-        case ECL_FFI_UINT8_T: i = data->u8; goto INT;
+        case ECL_FFI_INT8_T: i = data->i8; goto INT_ECL;
+        case ECL_FFI_UINT8_T: i = data->u8; goto INT_ECL;
 #endif
 #ifdef ecl_uint16_t
-        case ECL_FFI_INT16_T: i = data->i16; goto INT;
-        case ECL_FFI_UINT16_T: i = data->u16; goto INT;
+        case ECL_FFI_INT16_T: i = data->i16; goto INT_ECL;
+        case ECL_FFI_UINT16_T: i = data->u16; goto INT_ECL;
 #endif
         case ECL_FFI_INT:
         case ECL_FFI_LONG:
@@ -57,7 +57,7 @@ ecl_fficall_push_arg(union ecl_ffi_values *data, enum ecl_ffi_tag type)
         case ECL_FFI_CSTRING:
         case ECL_FFI_OBJECT:
                 i = data->i;
-        INT:
+        INT_ECL:
                 ecl_fficall_align(sizeof(int));
                 ecl_fficall_push_int(i);
                 break;
@@ -209,22 +209,22 @@ ecl_dynamic_callback_execute(cl_object cbk_info, char *arg_buffer)
         ecl_foreign_data_set_elt(&output, tag, result);
 
         switch (tag) {
-        case ECL_FFI_CHAR: i = output.c; goto INT;
-        case ECL_FFI_UNSIGNED_CHAR: i = output.uc; goto INT;
-        case ECL_FFI_BYTE: i = output.b; goto INT;
-        case ECL_FFI_UNSIGNED_BYTE: i = output.ub; goto INT;
+        case ECL_FFI_CHAR: i = output.c; goto INT_ECL;
+        case ECL_FFI_UNSIGNED_CHAR: i = output.uc; goto INT_ECL;
+        case ECL_FFI_BYTE: i = output.b; goto INT_ECL;
+        case ECL_FFI_UNSIGNED_BYTE: i = output.ub; goto INT_ECL;
 #ifdef ecl_uint8_t
-        case ECL_FFI_INT8_T: i = output.i8; goto INT;
-        case ECL_FFI_UINT8_T: i = output.u8; goto INT;
+        case ECL_FFI_INT8_T: i = output.i8; goto INT_ECL;
+        case ECL_FFI_UINT8_T: i = output.u8; goto INT_ECL;
 #endif
 #ifdef ecl_uint16_t
         case ECL_FFI_INT16_T:
 #endif
-        case ECL_FFI_SHORT: i = output.s; goto INT;
+        case ECL_FFI_SHORT: i = output.s; goto INT_ECL;
 #ifdef ecl_uint16_t
         case ECL_FFI_UINT16_T:
 #endif
-        case ECL_FFI_UNSIGNED_SHORT: i = output.us; goto INT;
+        case ECL_FFI_UNSIGNED_SHORT: i = output.us; goto INT_ECL;
         case ECL_FFI_POINTER_VOID:
         case ECL_FFI_OBJECT:
         case ECL_FFI_CSTRING:
@@ -237,7 +237,7 @@ ecl_dynamic_callback_execute(cl_object cbk_info, char *arg_buffer)
         case ECL_FFI_LONG:
         case ECL_FFI_UNSIGNED_LONG:
                 i = output.i;
-INT:
+INT_ECL:
 #ifdef _MSC_VER
                 __asm mov eax,i
 #else

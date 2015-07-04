@@ -102,10 +102,10 @@ ecl_number_equalp(cl_object x, cl_object y)
                 }
         case t_singlefloat:
                 dx = ecl_single_float(x);
-                goto FLOAT;
+                goto FLOAT_ECL;
         case t_doublefloat:
                 dx = ecl_double_float(x);
-        FLOAT:
+        FLOAT_ECL:
                 switch (ecl_t_of(y)) {
                 case t_fixnum:
                         return double_fix_compare(ecl_fixnum(y), dx) == 0;
