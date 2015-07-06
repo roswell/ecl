@@ -108,7 +108,7 @@ if test "x${cross_compiling}" = "xyes"; then
 ### it before invoking "configure" again.
 
 ### 1.1) Direction of growth of the stack
-ECL_STACK_DIR=up
+ECL_STACK_DIR=down
 
 ### 1.2) Choose an integer datatype which is large enough to host a pointer
 CL_FIXNUM_TYPE=int
@@ -150,7 +150,6 @@ ECL_LONG_LONG_BITS=no
 ###
 ### 1.7) Other features (set to 'no' to disable)
 ###
-ECL_WORKING_SEM_INIT=no
 ECL_WORKING_ENVIRON=yes
 
 ### 2) To cross-compile ECL so that it runs on the system
@@ -928,13 +927,15 @@ AC_DEFUN([ECL_BOEHM_GC],[
 AC_SUBST(ECL_BOEHM_GC_HEADER)
 case "${enable_boehm}" in
   yes) enable_boehm=auto;;
-  no|auto|system|included) ;;
+  auto|system|included) ;;
   *) AC_MSG_ERROR( [Invalid value of --enable-boehm: ${enable_boehm}] );;
 esac
 if test "${enable_boehm}" = auto -o "${enable_boehm}" = system; then
  dnl
  dnl Try first with the prebuilt versions, if installed and accessible
  dnl
+ AC_CHECK_LIB( [gc], [GC_get_thr_restart_signal],
+               [system_boehm="yes"], [system_boehm="no"] )
  if test "${enable_threads}" = no; then
    AC_CHECK_LIB( [gc], [GC_malloc],
                  [system_boehm="yes"], [system_boehm="no"] )
