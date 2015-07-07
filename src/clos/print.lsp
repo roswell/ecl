@@ -167,7 +167,10 @@ printer and we should rather use MAKE-LOAD-FORM."
 ;;; ----------------------------------------------------------------------
 
 (defmethod print-object ((instance t) stream)
-  (write instance :stream stream))
+  (print-unreadable-object (instance stream)
+    (format stream "~S"
+            (class-name (si:instance-class instance))))
+  instance)
 
 (defmethod print-object ((instance standard-object) stream)
   (print-unreadable-object (instance stream)
@@ -280,4 +283,4 @@ printer and we should rather use MAKE-LOAD-FORM."
                  (prin1 "Unbound" stream))))))
   obj)
 
-;;; ----------------------------------------------------------------------
+;; ----------------------------------------------------------------------
