@@ -27,7 +27,8 @@
         (if (eq (first which) 'FUNCTION)
             (setf which (second which))
             (return-from expand-mapcar whole))))
-    (let* ((function (second whole))
+    (let* ((function (gensym))
+           (fun-with `(with ,function = ,(second whole)))
            (args (cddr whole))
            iterators for-statements
            (in-or-on :IN)
@@ -51,6 +52,7 @@
                  (setf iterators (cons var iterators)
                        for-statements (list* :for var in-or-on arg for-statements))))
       `(loop ,@list-1-form
+             ,@fun-with
              ,@for-statements
              ,do-or-collect (funcall ,function ,@iterators)
              ,@finally-form))))
