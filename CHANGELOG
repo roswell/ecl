@@ -43,6 +43,9 @@
 
    - ECL builds on OpenBSD with threads enabled
 
+   - Closures put in mapcar work as expected in both compiled and
+     interpreted code
+
    - Other minor tweaks
      
 ** Enchantments:
