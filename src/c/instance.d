@@ -255,6 +255,8 @@ enum ecl_built_in_classes {
         ECL_BUILTIN_BIGNUM,
         ECL_BUILTIN_RATIO,
         ECL_BUILTIN_FLOAT,
+        ECL_BUILTIN_SINGLE_FLOAT,
+        ECL_BUILTIN_DOUBLE_FLOAT,
         ECL_BUILTIN_COMPLEX,
         ECL_BUILTIN_SYMBOL,
         ECL_BUILTIN_NULL,
@@ -299,12 +301,14 @@ cl_class_of(cl_object x)
         case t_ratio:
                 index = ECL_BUILTIN_RATIO; break;
         case t_singlefloat:
+                index = ECL_BUILTIN_SINGLE_FLOAT; break;
         case t_doublefloat:
+                index = ECL_BUILTIN_DOUBLE_FLOAT; break;
 #ifdef ECL_LONG_FLOAT
         case t_longfloat:
-#endif
                 index = ECL_BUILTIN_FLOAT; break;
-                /* XXX index = ECL_BUILTIN_long-float; break; */
+                /* XXX index = ECL_BUILTIN_LONG_FLOAT; break; */
+#endif
         case t_complex:
                 index = ECL_BUILTIN_COMPLEX; break;
         case t_character:

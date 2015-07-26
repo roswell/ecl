@@ -208,6 +208,8 @@
                     (bignum integer)
                   (ratio rational)
                 (float real)
+                  (single-float float)
+                  (double-float float)
               (complex number)
             (symbol)
               (null symbol list)
