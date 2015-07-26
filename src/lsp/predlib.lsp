@@ -310,6 +310,14 @@ and is not adjustable."
   #+ecl-min
   (and (rationalp x) (not (integerp x))))
 
+#+short-float
+(defun short-float-p (x)
+  #-ecl-min
+  (ffi::c-inline (x) (t) :bool "type_of(#0) == t_shortfloat" :one-liner t)
+  #+ecl-min
+  (eq (type-of x) 'short-float))
+
+#-short-float
 (defun short-float-p (x)
   #-ecl-min
   (ffi::c-inline (x) (t) :bool "type_of(#0) == t_singlefloat" :one-liner t)
@@ -377,10 +385,10 @@ and is not adjustable."
       (PATHNAME . PATHNAMEP)
       (READTABLE . READTABLEP)
       (REAL . REALP)
+      (SHORT-FLOAT . SI:SHORT-FLOAT-P)
       (SIMPLE-ARRAY . SIMPLE-ARRAY-P)
       (SIMPLE-STRING . SIMPLE-STRING-P)
       (SIMPLE-VECTOR . SIMPLE-VECTOR-P)
-      (SHORT-FLOAT . SI:SHORT-FLOAT-P)
       (SINGLE-FLOAT . SI:SINGLE-FLOAT-P)
       (STREAM . STREAMP)
       (STRING . STRINGP)
@@ -510,11 +518,12 @@ Returns T if X belongs to TYPE; NIL otherwise."
      (and (floatp object) (in-interval-p object i)))
     (REAL
      (and (or (rationalp object) (floatp object)) (in-interval-p object i)))
-    ((SINGLE-FLOAT #-short-float SHORT-FLOAT)
+    (SHORT-FLOAT
+     (and (si:short-float-p object) (in-interval-p object i)))
+    (SINGLE-FLOAT
      (and (si:single-float-p object) (in-interval-p object i)))
-    ((DOUBLE-FLOAT #-long-float LONG-FLOAT)
+    (DOUBLE-FLOAT
      (and (si:double-float-p object) (in-interval-p object i)))
-    #+long-float
     (LONG-FLOAT
      (and (si:long-float-p object) (in-interval-p object i)))
     (COMPLEX
@@ -692,8 +701,8 @@ if not possible."
                     ((null io) l)))
                ((CHARACTER BASE-CHAR) (character object))
                (FLOAT (float object))
-               (SINGLE-FLOAT (float object 0.0F0))
                (SHORT-FLOAT (float object 0.0S0))
+               (SINGLE-FLOAT (float object 0.0F0))
                (DOUBLE-FLOAT (float object 0.0D0))
                (LONG-FLOAT (float object 0.0L0))
                (COMPLEX (complex (realpart object) (imagpart object)))
@@ -710,7 +719,7 @@ if not possible."
                  (complex (coerce (realpart object) (second type))
                           (coerce (imagpart object) (second type)))
                  (complex (realpart object) (imagpart object))))
-            ((member aux '(SINGLE-FLOAT SHORT-FLOAT DOUBLE-FLOAT LONG-FLOAT FLOAT))
+            ((member aux '(SHORT-FLOAT SINGLE-FLOAT DOUBLE-FLOAT LONG-FLOAT FLOAT))
              (setq aux (coerce object aux))
              (unless (typep aux type)
                (fail))
@@ -1152,15 +1161,25 @@ if not possible."
         (push-type '(COMPLEX REAL) tag)))
   #+(or)
   (case real-type
-    ((SINGLE-FLOAT DOUBLE-FLOAT INTEGER RATIO #+long-float LONG-FLOAT)
+    ((#+short-float SHORT-FLOAT
+      SINGLE-FLOAT
+      DOUBLE-FLOAT
+      INTEGER
+      RATIO
+      #+long-float LONG-FLOAT)
      (let ((tag (new-type-tag)))
        (push-type `(COMPLEX ,real-type) tag)))
     ((RATIONAL) (canonical-type '(OR (COMPLEX INTEGER) (COMPLEX RATIO))))
-    ((FLOAT) (canonical-type '(OR (COMPLEX SINGLE-FLOAT) (COMPLEX DOUBLE-FLOAT)
+    ((FLOAT) (canonical-type '(OR
+                               #+short-float (COMPLEX SHORT-FLOAT)
+                               (COMPLEX SINGLE-FLOAT)
+                               (COMPLEX DOUBLE-FLOAT)
                                #+long-float (COMPLEX LONG-FLOAT))))
     ((* NIL REAL) (canonical-type
                    '(OR (COMPLEX INTEGER) (COMPLEX RATIO)
-                        (COMPLEX SINGLE-FLOAT) (COMPLEX DOUBLE-FLOAT)
+                     #+short-float (COMPLEX SHORT-FLOAT)
+                     (COMPLEX SINGLE-FLOAT)
+                     (COMPLEX DOUBLE-FLOAT)
                      #+long-float (COMPLEX LONG-FLOAT)
                      )))
     (otherwise (canonical-complex-type (upgraded-complex-part-type real-type)))))
@@ -1211,6 +1230,8 @@ if not possible."
                (INTEGER (INTEGER * *))
                (FIXNUM (INTEGER #.most-negative-fixnum #.most-positive-fixnum))
                (BIGNUM (OR (INTEGER * (#.most-negative-fixnum)) (INTEGER (#.most-positive-fixnum) *)))
+               #+short-float
+               (SHORT-FLOAT (SHORT-FLOAT * *))
                (SINGLE-FLOAT (SINGLE-FLOAT * *))
                (DOUBLE-FLOAT (DOUBLE-FLOAT * *))
                #+long-float
@@ -1218,10 +1239,17 @@ if not possible."
                (RATIO (RATIO * *))
 
                (RATIONAL (OR INTEGER RATIO))
-               (FLOAT (OR SINGLE-FLOAT DOUBLE-FLOAT
+               (FLOAT (OR
+                       #+short-float SHORT-FLOAT
+                       SINGLE-FLOAT
+                       DOUBLE-FLOAT
                        #+long-float LONG-FLOAT))
-               (REAL (OR INTEGER SINGLE-FLOAT DOUBLE-FLOAT
-                      #+long-float LONG-FLOAT RATIO))
+               (REAL (OR INTEGER
+                      #+short-float SHORT-FLOAT
+                      SINGLE-FLOAT
+                      DOUBLE-FLOAT
+                      #+long-float LONG-FLOAT
+                      RATIO))
                (COMPLEX (COMPLEX REAL))
 
                (NUMBER (OR REAL COMPLEX))
@@ -1379,16 +1407,24 @@ if not possible."
            (NOT (lognot (canonical-type (second type))))
            ((EQL MEMBER) (apply #'logior (mapcar #'register-member-type (rest type))))
            (SATISFIES (register-satisfies-type type))
-           ((INTEGER SINGLE-FLOAT DOUBLE-FLOAT RATIO #+long-float LONG-FLOAT)
+           ((INTEGER #+short-float SHORT-FLOAT
+                     SINGLE-FLOAT
+                     DOUBLE-FLOAT
+                     RATIO
+                     #+long-float LONG-FLOAT)
             (register-interval-type type))
            ((FLOAT)
-            (canonical-type `(OR (SINGLE-FLOAT ,@(rest type))
+            (canonical-type `(OR #+short-float
+                                 (SHORT-FLOAT ,@(rest type))
+                                 (SINGLE-FLOAT ,@(rest type))
                                  (DOUBLE-FLOAT ,@(rest type))
                                  #+long-float
                                  (LONG-FLOAT ,@(rest type)))))
            ((REAL)
             (canonical-type `(OR (INTEGER ,@(rest type))
                                  (RATIO ,@(rest type))
+                                 #+short-float
+                                 (SHORT-FLOAT ,@(rest type))
                                  (SINGLE-FLOAT ,@(rest type))
                                  (DOUBLE-FLOAT ,@(rest type))
                                  #+long-float

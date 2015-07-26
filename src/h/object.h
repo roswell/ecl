@@ -46,6 +46,7 @@ typedef enum {
         t_fixnum = 3,           /* immediate fixnum */
         t_bignum = 4,
         t_ratio,
+        /* t_shortfloat, */
         t_singlefloat,
         t_doublefloat,
 #ifdef ECL_LONG_FLOAT

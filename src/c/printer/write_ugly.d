@@ -403,6 +403,7 @@ static printer dispatch[FREE+1] = {
         write_integer, /* t_fixnum = 3 */
         write_integer, /* t_bignum = 4 */
         write_ratio, /* t_ratio */
+        /* write_float, */ /* t_shortfloat */
         write_float, /* t_singlefloat */
         write_float, /* t_doublefloat */
 #ifdef ECL_LONG_FLOAT
