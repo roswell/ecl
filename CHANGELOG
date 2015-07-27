@@ -46,6 +46,9 @@
    - Closures put in mapcar work as expected in both compiled and
      interpreted code
 
+   - Improved readtable-case handling (:invert and character literals work
+     now conformingly)
+
    - Other minor tweaks
      
 ** Enchantments:

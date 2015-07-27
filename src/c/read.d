@@ -134,7 +134,7 @@ static void
 invert_buffer_case(cl_object x, cl_object escape_list, int sign)
 {
         cl_fixnum high_limit, low_limit;
-        cl_fixnum i = TOKEN_STRING_FILLP(x);
+        cl_fixnum i = TOKEN_STRING_FILLP(x)-1;
         do {
                 if (escape_list != ECL_NIL) {
                         cl_object escape_interval = CAR(escape_list);
@@ -233,7 +233,7 @@ LOOP:
                         TOKEN_STRING_CHAR_SET(token,length,'\0');
                         /* If the readtable case was :INVERT and all non-escaped characters
                          * had the same case, we revert their case. */
-                        if (read_case == ecl_case_invert) {
+                        if (read_case == ecl_case_invert && count != 0) {
                                 if (upcase == count) {
                                         invert_buffer_case(token, escape_list, -1);
                                 } else if (upcase == -count) {
@@ -268,7 +268,7 @@ LOOP:
                         a = cat_constituent;
                         if (read_case == ecl_case_invert) {
                                 escape_list = CONS(CONS(ecl_make_fixnum(length),
-                                                        ecl_make_fixnum(length)),
+                                                        ecl_make_fixnum(length-1)),
                                                    escape_list);
                         } else {
                                 escape_list = ECL_T;
@@ -368,20 +368,22 @@ LOOP:
         if (x != OBJNULL && length == i)
                 goto OUTPUT;
  SYMBOL:
+        if (flags == ECL_READ_ONLY_TOKEN) {
+                the_env->nvalues = 1;
+                return token;
+        }
+
         /*TOKEN_STRING_CHAR_SET(token,length,'\0');*/
         /* If the readtable case was :INVERT and all non-escaped characters
          * had the same case, we revert their case. */
-        if (read_case == ecl_case_invert) {
+        if (read_case == ecl_case_invert && count != 0) {
                 if (upcase == count) {
                         invert_buffer_case(token, escape_list, -1);
                 } else if (upcase == -count) {
                         invert_buffer_case(token, escape_list, +1);
                 }
         }
-        if (flags == ECL_READ_ONLY_TOKEN) {
-                the_env->nvalues = 1;
-                return token;
-        } else if (external_symbol) {
+        if (external_symbol) {
                 x = ecl_find_symbol(token, p, &intern_flag);
                 unlikely_if (intern_flag != ECL_EXTERNAL) {
                         FEerror("Cannot find the external symbol ~A in ~S.",
