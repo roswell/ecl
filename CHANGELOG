@@ -60,6 +60,8 @@
      base-char
 
    - Dead code removals, untiabifying sources
+
+   - Methods may now specialize on single-float and double-float
   
 * 15.3.7 changes since 15.2.21  
 ** Issues fixed:
