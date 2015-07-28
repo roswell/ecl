@@ -456,6 +456,7 @@ static cl_object VV[VM];
                            (*error-output* *error-output*)
                            (*compiler-in-use* *compiler-in-use*)
                            (*package* *package*)
+                           (*readtable* *readtable*)
                            (*print-pretty* nil)
                            (*compile-file-pathname* nil)
                            (*compile-file-truename* nil)

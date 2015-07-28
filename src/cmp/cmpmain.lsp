@@ -553,6 +553,7 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
                            (*error-output* *error-output*)
                            (*compiler-in-use* *compiler-in-use*)
                            (*package* *package*)
+                           (*readtable* *readtable*)
                            (*print-pretty* nil)
                            (*compile-file-pathname* nil)
                            (*compile-file-truename* nil)
