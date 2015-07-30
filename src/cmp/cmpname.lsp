@@ -141,11 +141,11 @@ the function name it precedes."
                   #\p)))
          (disambiguation (c)
            (case kind
-             (:object "")
-             (:program "exe_")
+             ((:object :c) "")
              ((:fasl :fas) "fas_")
              ((:library :static-library :lib) "lib_")
              ((:shared-library :dll) "dll_")
+             ((:program) "exe_")
              (otherwise (error "Not a valid argument to INIT-FUNCTION-NAME: kind = ~S"
                                kind)))))
     (setq s (map 'string #'translate-char (string s)))
