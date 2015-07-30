@@ -68,7 +68,7 @@ c/ecl/external.h: $(top_srcdir)/h/external.h
 ecl/external.h: c/ecl/external.h c/ecl/external.h
 	cp -rf $(srcdir)/h/*.h $(srcdir)/h/impl ecl/
 
-bin/ecl$(EXE): ecl_min$(EXE) compile.lsp ecl/external.h build-stamp $(top_srcdir)/lsp/*.lsp $(top_srcdir)/clos/*.lsp
+bin/ecl$(EXE): ecl_min$(EXE) compile.lsp ecl/external.h build-stamp $(top_srcdir)/lsp/*.lsp $(top_srcdir)/clos/*.lsp $(top_srcdir)/*cmp/*.lsp
 	if [ -f CROSS-COMPILER ]; then \
 		./CROSS-COMPILER compile; \
 	else \
