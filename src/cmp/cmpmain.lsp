@@ -478,7 +478,9 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
     (unless init-name
       (setf init-name (compute-init-name output-name :kind target)))
     (unless main-name
-      (setf main-name (compute-main-name output-name :kind target)))
+      (setf main-name (compute-init-name output-name
+                                         :kind target
+                                         :prefix "main_")))
     (ecase target
       (:program
        (format c-file +lisp-program-init+ init-name "" submodules "")

@@ -123,9 +123,6 @@ the function name it precedes."
       (otherwise
        (error "C::BUILDER cannot accept files of kind ~s" kind)))))
 
-(defun compute-main-name (pathname &rest args)
-  (apply #'compute-init-name pathname :prefix "main_" args))
-
 (defun init-function-name (s &key (kind :object) (prefix nil))
   (flet ((translate-char (c)
            (cond ((and (char>= c #\a) (char<= c #\z))
