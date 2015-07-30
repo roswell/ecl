@@ -100,31 +100,38 @@ the function name it precedes."
       (let ((name (read-name stream)))
         name))))
 
+(defun guess-init-name (pathname kind)
+  (or (and (probe-file pathname)
+           (find-init-name pathname :tag (kind->tag kind)))
+      (error "Cannot find out entry point for binary file ~A" pathname)))
+
 (defun remove-prefix (prefix name)
   (if (equal 0 (search prefix name))
       (subseq name (length prefix) nil)
       name))
 
-(defun guess-init-name (pathname kind)
-  (if (eq kind :object)
-      (or (and (probe-file pathname)
-               (find-init-name pathname))
-          (error "Cannot find out entry point for binary file ~A" pathname))
-      (compute-init-name pathname :kind kind)))
-
 (defun compute-init-name (pathname &key (kind (guess-kind pathname)) (prefix nil))
-  (let ((filename (pathname-name (translate-logical-pathname pathname))))
+  (let ((filename (pathname-name (translate-logical-pathname pathname)))
+        (unique-name (unique-init-name pathname)))
     (case kind
       ((:object :c)
-       (unique-init-name pathname))
+       unique-name)
       ((:fasl :fas)
        (init-function-name "CODE" :kind :fas :prefix prefix))
       ((:static-library :lib)
-       (init-function-name (remove-prefix +static-library-prefix+ filename)
+       (init-function-name (if (string-equal "LSP"
+                                             (remove-prefix
+                                              +static-library-prefix+ filename))
+                               (remove-prefix +static-library-prefix+ filename)
+                               unique-name)
                            :kind :lib
                            :prefix prefix))
       ((:shared-library :dll)
-       (init-function-name (remove-prefix +shared-library-prefix+ filename)
+       (init-function-name (if (string-equal "LSP"
+                                             (remove-prefix
+                                              +shared-library-prefix+ filename))
+                               (remove-prefix +shared-library-prefix+ filename)
+                               unique-name)
                            :kind :dll
                            :prefix prefix))
       ((:program)
