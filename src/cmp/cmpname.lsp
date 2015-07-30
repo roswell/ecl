@@ -56,8 +56,17 @@ machine."
                            (encode-number-in-name ms))))
     tag))
 
-(defun init-name-tag (init-name)
-  (concatenate 'base-string "@EcLtAg" ":" init-name "@"))
+(defun kind->tag (kind)
+  (case kind
+    ((:object :c)           "@EcLtAg")
+    ((:fasl :fas)           "@EcLtAg_fas")
+    ((:static-library :lib) "@EcLtAg_lib")
+    ((:shared-library :dll) "@EcLtAg_dll")
+    ((:program)             "@EcLtAg_exe")
+    (otherwise (error "C::BUILDER cannot accept files of kind ~s" kind))))
+
+(defun init-name-tag (init-name &key (kind :object))
+  (concatenate 'base-string (kind->tag kind) ":" init-name "@"))
 
 (defun search-tag (stream tag)
   (declare (si::c-local))

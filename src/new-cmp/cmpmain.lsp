@@ -184,6 +184,7 @@ void ~A(cl_object cblock)
 #if defined(ECL_DYNAMIC_VV) && defined(ECL_SHARED_DATA)
         VV = Cblock->cblock.data;
 #endif
+        Cblock->cblock.data_text = (const cl_object *)\"~A\";
         ~A
 {
         cl_object current, next = Cblock;
@@ -372,56 +373,58 @@ static cl_object VV[VM];
       (setf output-name (compile-file-pathname output-name :type target)))
     (unless init-name
       (setf init-name (compute-init-name output-name :kind target)))
-    (ecase target
-      (:program
-       (format c-file +lisp-program-init+ init-name "" shared-data-file
-               submodules "")
-       (format c-file #+:win32 (ecase system (:console +lisp-program-main+)
-                                             (:windows +lisp-program-winmain+))
-                      #-:win32 +lisp-program-main+
-                      prologue-code init-name epilogue-code)
-       (close c-file)
-       (compiler-cc c-name o-name)
-       (apply #'linker-cc output-name (namestring o-name) ld-flags))
-      ((:library :static-library :lib)
-       (format c-file +lisp-program-init+ init-name prologue-code
-               shared-data-file submodules epilogue-code)
-       (close c-file)
-       (compiler-cc c-name o-name)
-       (when (probe-file output-name) (delete-file output-name))
-       #-msvc
-       (progn
-       (safe-system (format nil "ar cr ~A ~A ~{~A ~}"
-                            output-name o-name ld-flags))
-       (safe-system (format nil "ranlib ~A" output-name)))
-       #+msvc
-       (unwind-protect
+
+    (let ((init-tag (init-name-tag init-name :kind target)))
+      (ecase target
+        (:program
+         (format c-file +lisp-program-init+ init-name init-tag "" shared-data-file
+                 submodules "")
+         (format c-file #+:win32 (ecase system (:console +lisp-program-main+)
+                                        (:windows +lisp-program-winmain+))
+                 #-:win32 +lisp-program-main+
+                 prologue-code init-name epilogue-code)
+         (close c-file)
+         (compiler-cc c-name o-name)
+         (apply #'linker-cc output-name (namestring o-name) ld-flags))
+        ((:library :static-library :lib)
+         (format c-file +lisp-program-init+ init-name init-tag prologue-code
+                 shared-data-file submodules epilogue-code)
+         (close c-file)
+         (compiler-cc c-name o-name)
+         (when (probe-file output-name) (delete-file output-name))
+         #-msvc
          (progn
-           (with-open-file (f "static_lib.tmp" :direction :output :if-does-not-exist :create :if-exists :supersede)
-             (format f "/DEBUGTYPE:CV /OUT:~A ~A ~{~&\"~A\"~}"
-                     output-name o-name ld-flags))
-           (safe-system "link -lib @static_lib.tmp"))
-         (when (probe-file "static_lib.tmp")
-           (cmp-delete-file "static_lib.tmp")))
-       )
-      #+dlopen
-      ((:shared-library :dll)
-       (format c-file +lisp-program-init+ init-name prologue-code
-               shared-data-file submodules epilogue-code)
-       (close c-file)
-       (compiler-cc c-name o-name)
-       (apply #'shared-cc output-name o-name ld-flags))
-      #+dlopen
-      (:fasl
-       (format c-file +lisp-program-init+ init-name prologue-code shared-data-file
-               submodules epilogue-code)
-       (close c-file)
-       (compiler-cc c-name o-name)
-       (apply #'bundle-cc output-name init-name o-name ld-flags)))
-    (cmp-delete-file tmp-name)
-    (cmp-delete-file c-name)
-    (cmp-delete-file o-name)
-    output-name))
+           (safe-system (format nil "ar cr ~A ~A ~{~A ~}"
+                                output-name o-name ld-flags))
+           (safe-system (format nil "ranlib ~A" output-name)))
+         #+msvc
+         (unwind-protect
+              (progn
+                (with-open-file (f "static_lib.tmp" :direction :output :if-does-not-exist :create :if-exists :supersede)
+                  (format f "/DEBUGTYPE:CV /OUT:~A ~A ~{~&\"~A\"~}"
+                          output-name o-name ld-flags))
+                (safe-system "link -lib @static_lib.tmp"))
+           (when (probe-file "static_lib.tmp")
+             (cmp-delete-file "static_lib.tmp")))
+         )
+        #+dlopen
+        ((:shared-library :dll)
+         (format c-file +lisp-program-init+ init-name init-tag prologue-code
+                 shared-data-file submodules epilogue-code)
+         (close c-file)
+         (compiler-cc c-name o-name)
+         (apply #'shared-cc output-name o-name ld-flags))
+        #+dlopen
+        (:fasl
+         (format c-file +lisp-program-init+ init-name init-tag prologue-code shared-data-file
+                 submodules epilogue-code)
+         (close c-file)
+         (compiler-cc c-name o-name)
+         (apply #'bundle-cc output-name init-name o-name ld-flags)))
+      (cmp-delete-file tmp-name)
+      (cmp-delete-file c-name)
+      (cmp-delete-file o-name)
+      output-name)))
 
 (defun build-fasl (&rest args)
   (apply #'builder :fasl args))

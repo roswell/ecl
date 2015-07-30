@@ -247,6 +247,7 @@ void ~A(cl_object cblock)
                 cblock->cblock.data_size = 0;
                 return;
         }
+        Cblock->cblock.data_text = (const cl_object *)\"~A\";
         ~A
 {
         /*
@@ -481,47 +482,50 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
       (setf main-name (compute-init-name output-name
                                          :kind target
                                          :prefix "main_")))
-    (ecase target
-      (:program
-       (format c-file +lisp-program-init+ init-name "" submodules "")
-       (format c-file #+:win32 (ecase system (:console +lisp-program-main+)
-                                             (:windows +lisp-program-winmain+))
-                      #-:win32 +lisp-program-main+
-                      prologue-code init-name epilogue-code)
-       (close c-file)
-       (compiler-cc c-name o-name)
-       (linker-cc output-name (list* (namestring o-name) ld-flags)))
-      ((:library :static-library :lib)
-       (format c-file +lisp-program-init+ init-name prologue-code
-               submodules epilogue-code)
-       (cmpnote "Library initialization function is ~A" main-name)
-       (format c-file +lisp-library-main+
-               main-name prologue-code init-name epilogue-code)
-       (close c-file)
-       (compiler-cc c-name o-name)
-       (when (probe-file output-name) (delete-file output-name))
-       (linker-ar output-name o-name ld-flags))
-      #+dlopen
-      ((:shared-library :dll)
-       (format c-file +lisp-program-init+ init-name prologue-code
-               submodules epilogue-code)
-       (cmpnote "Library initialization function is ~A" main-name)
-       (format c-file +lisp-library-main+
-               main-name prologue-code init-name epilogue-code)
-       (close c-file)
-       (compiler-cc c-name o-name)
-       (shared-cc output-name (list* o-name ld-flags)))
-      #+dlopen
-      (:fasl
-       (format c-file +lisp-program-init+ init-name prologue-code
-               submodules epilogue-code)
-       (close c-file)
-       (compiler-cc c-name o-name)
-       (bundle-cc output-name init-name (list* o-name ld-flags))))
-    (mapc 'cmp-delete-file tmp-names)
-    (cmp-delete-file c-name)
-    (cmp-delete-file o-name)
-    output-name))
+    (let ((init-tag (init-name-tag init-name :kind target)))
+      (ecase target
+        (:program
+         (format c-file +lisp-program-init+ init-name
+                 init-tag
+                 "" submodules "")
+         (format c-file #+:win32 (ecase system (:console +lisp-program-main+)
+                                        (:windows +lisp-program-winmain+))
+                 #-:win32 +lisp-program-main+
+                 prologue-code init-name epilogue-code)
+         (close c-file)
+         (compiler-cc c-name o-name)
+         (linker-cc output-name (list* (namestring o-name) ld-flags)))
+        ((:library :static-library :lib)
+         (format c-file +lisp-program-init+ init-name init-tag prologue-code
+                 submodules epilogue-code)
+         (cmpnote "Library initialization function is ~A" main-name)
+         (format c-file +lisp-library-main+
+                 main-name prologue-code init-name epilogue-code)
+         (close c-file)
+         (compiler-cc c-name o-name)
+         (when (probe-file output-name) (delete-file output-name))
+         (linker-ar output-name o-name ld-flags))
+        #+dlopen
+        ((:shared-library :dll)
+         (format c-file +lisp-program-init+ init-name init-tag prologue-code
+                 submodules epilogue-code)
+         (cmpnote "Library initialization function is ~A" main-name)
+         (format c-file +lisp-library-main+
+                 main-name prologue-code init-name epilogue-code)
+         (close c-file)
+         (compiler-cc c-name o-name)
+         (shared-cc output-name (list* o-name ld-flags)))
+        #+dlopen
+        (:fasl
+         (format c-file +lisp-program-init+ init-name init-tag prologue-code
+                 submodules epilogue-code)
+         (close c-file)
+         (compiler-cc c-name o-name)
+         (bundle-cc output-name init-name (list* o-name ld-flags))))
+      (mapc 'cmp-delete-file tmp-names)
+      (cmp-delete-file c-name)
+      (cmp-delete-file o-name)
+      output-name)))
 
 (defun build-fasl (&rest args)
   (apply #'builder :fasl args))
