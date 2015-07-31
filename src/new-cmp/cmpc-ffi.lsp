@@ -216,7 +216,7 @@
            ((:cstring)
             (wt "ecl_cstring_to_base_string_or_nil(" loc ")"))
            ((:pointer-void)
-            (wt "ecl_make_foreign_data(Cnil, 0, " loc ")"))
+            (wt "ecl_make_foreign_data(Cnil, 0, *(void**)" loc ")"))
            (otherwise
             (coercion-error))))
         ((:pointer-void)

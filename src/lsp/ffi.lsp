@@ -319,7 +319,7 @@
 
 (defun make-pointer (addr type)
   (c-inline (type (size-of-foreign-type type) addr) (:object :unsigned-long :unsigned-long) :object
-            "ecl_make_foreign_data(#0, #1, (void*)#2)"
+            "ecl_make_foreign_data(#0, #1, *(void**)#2)"
             :side-effects t
             :one-liner t))
 
@@ -548,7 +548,7 @@
                                `(si::find-foreign-symbol ,c-name ,module ',type ,(size-of-foreign-type type)))
                               (t
                                `(c-inline () () :object
-                                          ,(format nil "ecl_make_foreign_data(@~S, ~A, &~A)"
+                                          ,(format nil "ecl_make_foreign_data(@~S, ~A, *(void **)~A)"
                                                    type (size-of-foreign-type type) c-name)
                                           :side-effects t :one-liner t)))))
       (if can-deref
