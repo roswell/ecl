@@ -1357,7 +1357,7 @@
 (defun format-fixed-aux (stream number w d k ovf pad atsign)
   (declare (si::c-local))
   (cond
-   ((or (not (or w d))
+   ((or (not (or w d k))
         #-ecl
         (and (floatp number)
              (or (float-infinity-p number)
