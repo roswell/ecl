@@ -295,7 +295,6 @@ ecl_def_ct_base_string(str_LISP,"LISP",4,static,const);
 ecl_def_ct_base_string(str_c,"C",1,static,const);
 ecl_def_ct_base_string(str_compiler,"COMPILER",8,static,const);
 ecl_def_ct_base_string(str_ffi,"FFI",3,static,const);
-ecl_def_ct_base_string(str_uffi,"UFFI",4,static,const);
 ecl_def_ct_base_string(str_user,"USER",4,static,const);
 ecl_def_ct_base_string(str_keyword,"KEYWORD",7,static,const);
 ecl_def_ct_base_string(str_si,"SI",2,static,const);
@@ -593,7 +592,7 @@ cl_boot(int argc, char **argv)
 #endif
         cl_core.ffi_package =
                 ecl_make_package(str_ffi,
-                                 ecl_list1(str_uffi),
+                                 ECL_NIL,
                                  cl_list(3,cl_core.lisp_package,
                                          cl_core.system_package,
                                          cl_core.ext_package));
