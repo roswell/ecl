@@ -455,10 +455,10 @@ create_descriptor(cl_object stream, cl_object direction,
         }
         else if (!Null(cl_streamp(stream))) {
                 HANDLE stream_handle = ecl_stream_to_HANDLE
-                        (stream, direction == @':output');
+                        (stream, direction != @':input');
                 if (stream_handle == INVALID_HANDLE_VALUE) {
-                        FEerror(":INPUT argument to RUN-PROGRAM does not "
-                                "have a file handle:~%~S", 1, stream);
+                        FEerror("~S argument to RUN-PROGRAM does not "
+                                "have a file handle:~%~S", 2, direction, stream);
                 }
                 DuplicateHandle(current, stream_handle,
                                 current, child, 0, TRUE,
@@ -484,19 +484,19 @@ create_descriptor(cl_object stream, cl_object direction,
                 }
         }
         else if (Null(stream)) {
-                if (direction == @':output')
-                        *child = open("/dev/null", O_WRONLY);
-                else
+                if (direction == @':input')
                         *child = open("/dev/null", O_RDONLY);
+                else
+                        *child = open("/dev/null", O_WRONLY);
         }
         else if (!Null(cl_streamp(stream))) {
                 *child = ecl_stream_to_handle
-                        (stream, direction == @':output');
+                        (stream, direction != @':input');
                 if (*child >= 0) {
                         *child = dup(*child);
                 } else {
-                        FEerror(":INPUT argument to RUN-PROGRAM does not "
-                                "have a file handle:~%~S", 1, stream);
+                        FEerror("~S argument to RUN-PROGRAM does not "
+                                "have a file handle:~%~S", 2, direction, stream);
                 }
         }
         else {
@@ -577,7 +577,7 @@ create_descriptor(cl_object stream, cl_object direction,
                                 &child_stderr, 0, TRUE,
                                 DUPLICATE_SAME_ACCESS);
         else
-                create_descriptor(error, @':output', &child_stderr, &parent_error);
+                create_descriptor(error, @':error', &child_stderr, &parent_error);
 
         add_external_process(the_env, process);
 #if 1
@@ -653,7 +653,7 @@ create_descriptor(cl_object stream, cl_object direction,
         if (error == @':output')
                 child_stderr = child_stdout;
         else
-                create_descriptor(error,  @':output', &child_stderr, &parent_error);
+                create_descriptor(error,  @':error', &child_stderr, &parent_error);
 
         add_external_process(the_env, process);
         pipe(pipe_fd);
