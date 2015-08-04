@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter>
+<title>Files</title>
+<section xml:id="ansi.files.c-dict">
+<title>C Reference</title>
+  <refentry>
+    <refnamediv>
+      <refname>Files C dictionary</refname>
+      <refpurpose>&ANSI-C-Dict;</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+<simplelist columns="2" type="horiz">
+<member>Lisp symbol</member>
+<member>C function</member>
+
+<member><ulink url="&clhs;f_del_fi.htm"><symbol>delete-file</symbol></ulink></member>
+<member><code>cl_object cl_delete_file(cl_object filespec)</code></member>
+
+<member><ulink url="&clhs;f_dir.htm"><symbol>directory</symbol></ulink></member>
+<member><code>cl_object cl_directory(cl_narg narg, cl_object pathspec, ...)</code></member>
+
+<member><ulink url="&clhs;f_ensu_1.htm"><symbol>ensure-directories-exist</symbol></ulink></member>
+<member><code>cl_object cl_ensure_directories_exist(cl_narg narg, cl_object pathspec, ...)</code></member>
+
+<member><ulink url="&clhs;f_file_a.htm"><symbol>file-author</symbol></ulink></member>
+<member><code>cl_object cl_file_author(cl_object pathspec)</code></member>
+
+<member><ulink url="&clhs;f_file_e.htm"><symbol>file-error-pathname</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+
+<member><ulink url="&clhs;f_file_w.htm"><symbol>file-write-date</symbol></ulink></member>
+<member><code>cl_object cl_file_write_date(cl_object pathspec)</code></member>
+
+<member><ulink url="&clhs;f_probe_.htm"><symbol>probe-file</symbol></ulink></member>
+<member><code>cl_object cl_probe_file(cl_object pathspec)</code></member>
+
+<member><ulink url="&clhs;f_rn_fil.htm"><symbol>rename-file</symbol></ulink></member>
+<member><code>cl_object cl_rename_file(cl_object filespec, cl_object new_name)</code></member>
+
+<member><ulink url="&clhs;f_tn.htm"><symbol>truename</symbol></ulink></member>
+<member><code>cl_object cl_truename(cl_object filespec)</code></member>
+</simplelist>
+    </refsynopsisdiv>
+  </refentry>
+</section>
+</chapter>
+</book>

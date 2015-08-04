@@ -1,0 +1,503 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter>
+<title>Data and control flow</title>
+<section xml:id="ansi.data-and-control.c-dict">
+  <title>C Reference</title>
+
+  <refentry xml:id="ecl_bds_bind">
+    <refnamediv>
+      <refname><function>ecl_bds_bind</function></refname>
+      <refpurpose>Bind a special variable</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+      <title>Functions</title>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef><function>ecl_bds_bind</function></funcdef>
+	  <paramdef>cl_env_ptr <parameter>cl_env</parameter></paramdef>
+	  <paramdef>cl_object <parameter>var</parameter></paramdef>
+	  <paramdef>cl_object <parameter>value</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef><function>ecl_bds_push</function></funcdef>
+	  <paramdef>cl_env_ptr <parameter>cl_env</parameter></paramdef>
+	  <paramdef>cl_object <parameter>var</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+    </refsynopsisdiv>
+
+    <refsect1>
+      <title>Description</title>
+
+      <para>Establishes a variable binding for the symbol <replaceable>var</replaceable> in the Common Lisp environment <replaceable>env</replaceable>, assigning it <replaceable>value</replaceable>.</para>
+
+      <para>This macro or function is the equivalent of <ulink url="&clhs;s_let_l.htm"><symbol>LET*</symbol></ulink> and <ulink url="&clhs;s_let_l.htm"><symbol>LET</symbol></ulink>.</para>
+
+      <para><function>ecl_bds_push</function> does a similar thing, but reuses the old value of the same variable. It is thus the equivalent of <code>(LET ((VAR VAR)) ...)</code></para>
+
+      <para>Every variable binding must undone when no longer needed. It is best practice to match each call to <function>ecl_bds_bind</function> by another call to <link linkend="ecl_bds_unwind"><function>ecl_bds_unwind</function></link> in the same function.</para>
+    </refsect1>
+  </refentry>
+
+  <refentry xml:id="ecl_bds_unwind">
+    <refnamediv>
+      <refname><function>ecl_bds_unwind</function></refname>
+      <refpurpose>Undo one variable binding</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+      <title>Function</title>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef><function>ecl_bds_unwind1</function></funcdef>
+	  <paramdef>cl_env_ptr <parameter>cl_env</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef><function>ecl_bds_unwind_n</function></funcdef>
+	  <paramdef>cl_env_ptr <parameter>cl_env</parameter></paramdef>
+	  <paramdef>int <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+    </refsynopsisdiv>
+
+    <refsect1>
+      <title>Description</title>
+
+      <para><function>ecl_bds_unwind1</function> undoes the outermost variable binding, restoring the original value of the symbol in the process.</para>
+
+      <para><function>ecl_bds_unwind_n</function> does the same, but for the <replaceable>n</replaceable> last variables.</para>
+
+      <para>Every variable binding must undone when no longer needed. It is best practice to match each call to <function>ecl_bds_bind</function> by another call to <link linkend="ecl_bds_unwind"><function>ecl_bds_unwind</function></link> in the same function.</para>
+    </refsect1>
+  </refentry>
+
+  <refentry xml:id="ecl_setq">
+    <refnamediv>
+      <refname><function>ecl_setq</function></refname>
+      <refpurpose>C equivalent of <ulink url="&clhs;s_setq.htm"><symbol>setq</symbol></ulink></refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+      <title>Macro</title>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef><function>ecl_setq</function></funcdef>
+	  <paramdef>cl_env_ptr <parameter>cl_env</parameter></paramdef>
+	  <paramdef>cl_object <parameter>var</parameter></paramdef>
+	  <paramdef>cl_object <parameter>value</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+    </refsynopsisdiv>
+
+    <refsect1>
+      <title>Description</title>
+
+      <para>Assigns <replaceable>value</replaceable> to the special variable denoted by the symbol <replaceable>var</replaceable>, in the Common Lisp environment <replaceable>cl_env</replaceable>.</para>
+
+      <para>This function implements a variable assignment, not a variable binding. It is thus the equivalent of <ulink url="&clhs;s_setq.htm"><symbol>setq</symbol></ulink>.</para>
+    </refsect1>
+  </refentry>
+
+  <refentry xml:id="ecl_symbol_value">
+    <refnamediv>
+      <refname><function>ecl_symbol_value</function></refname>
+      <refpurpose>C equivalent of <ulink url="&clhs;f_symb_5.htm"><symbol>symbol-value</symbol></ulink></refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+      <title>Funciton</title>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef><function>ecl_symbol_value</function></funcdef>
+	  <paramdef>cl_env_ptr <parameter>cl_env</parameter></paramdef>
+	  <paramdef>cl_object <parameter>var</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+    </refsynopsisdiv>
+
+    <refsect1>
+      <title>Description</title>
+
+      <para>Retrieves the value of the special variable or constant denoted by the symbol <replaceable>var</replaceable>, in the Common Lisp environment <replaceable>cl_env</replaceable>.</para>
+
+      <para>This function implements the equivalent of <ulink url="&clhs;f_symb_5.htm"><symbol>symbol-value</symbol></ulink> and works both on special variables and constants.</para>
+
+      <para>If the symbol is not bound, an error is signaled.</para>
+    </refsect1>
+  </refentry>
+
+  <refentry xml:id="ref.ecl_va_arg">
+    <refnamediv>
+      <refname><function>ecl_va_arg</function></refname>
+      <refpurpose>Accepting a variable number of arguments</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+      <title>Macros</title>
+
+      <synopsis><type>typedef struct { ... } ecl_va_list[1];</type></synopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef><function>ecl_va_start</function></funcdef>
+	  <paramdef>ecl_va_list <parameter>arglist</parameter></paramdef>
+	  <paramdef><parameter>last_argument</parameter></paramdef>
+	  <paramdef><parameter>narg</parameter></paramdef>
+	  <paramdef><parameter>n_ordinary</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_object <function>ecl_va_arg</function></funcdef>
+	  <paramdef>ecl_va_list <parameter>arglist</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_object <function>ecl_va_end</function></funcdef>
+	  <paramdef>ecl_va_list <parameter>arglist</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+    </refsynopsisdiv>
+
+    <refsect1>
+      <title>Description</title>
+
+      <para>The macros above are used to code a function that accepts an arbitrary number of arguments. We will describe them in a practical example</para>
+      <programlisting>
+cl_object my_plus(cl_narg narg, cl_object required1, ...)
+{
+    cl_env_ptr env = ecl_process_env();
+    cl_object other_value;
+    ecl_va_list varargs;
+    ecl_va_start(varargs, required1, narg, 1);
+    while (narg > 1) {
+        cl_object other_value = ecl_va_arg(varargs);
+	required1 = ecl_plus(required1, other_value);
+    }
+    ecl_va_end(varargs);
+    ecl_return1(env, required1);
+}
+      </programlisting>
+
+      <para>The first thing to do is to declare the variable that will hold the arguments. This is <replaceable>varargs</replaceable> in our example and it has the type <type>ecl_va_list</type>.</para>
+
+      <para>This arguments list is initialized with the <function>ecl_va_start</function> macro, based on the supplied number of arguments, <replaceable>narg</replaceable>, the number of required arguments which are passed as ordinary C arguments (1 in this case), the last such ordinary arguments, <replaceable>required</replaceable>, and the buffer for the argument list, <replaceable>varargs</replaceable>.</para>
+
+      <para>Once <replaceable>varargs</replaceable> has been initialized, we can retrieve these values one by one using <function>ecl_va_arg</function>. Note that the returned value always has the type <type>cl_object</type>, for it is always a Common Lisp object.</para>
+
+      <para>The last statement before returning the output of the function is <function>ecl_va_end</function>. This macro performs any required cleanup and should never be omitted.</para>
+    </refsect1>
+  </refentry>
+
+  <refentry>
+    <refnamediv>
+      <refname><function>ecl_nth_value</function>, <function>ecl_nvalues</function></refname>
+      <refpurpose>Accessing output values</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+      <title>Functions and macros</title>
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_object <function>ecl_nvalues</function></funcdef>
+	  <paramdef>cl_env_ptr <parameter>env</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis xml:id="ecl_nth_value">
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_object <function>ecl_nth_value</function></funcdef>
+	  <paramdef>cl_env_ptr <parameter>env</parameter></paramdef>
+	  <paramdef>int <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+    </refsynopsisdiv>
+
+    <refsect1>
+      <title>Description</title>
+      <para>Common Lisp functions may return zero, one or more values. In &ECL;, the first two cases do not require any special manipulation, as the C function returns either <symbol>NIL</symbol> or the first (zeroth) value directly. However, if one wishes to access additional values from a function, one needs to use these two macros or functions</para>
+      <itemizedlist>
+	<listitem><para><code>ecl_nvalues(env)</code> returns the number of values that the function actually outputs. The single argument is the <link linkend="ecl_process_env">lisp environment</link>. This value is larger or equal to 0 and smaller than <constant>ECL_MULTIPLE_VALUES_LIMIT</constant>.</para></listitem>
+
+	<listitem><para>Once we know the number of return values, they can be directly accessed using the function <code>ecl_nth_value(env,n)</code>, where <replaceable>n</replaceable> is a number larger than or equal to 1, and smaller than <constant>ECL_MULTIPLE_VALUES_LIMIT</constant>, which must correspond to a valid output value. No checking is done.</para></listitem>
+      </itemizedlist>
+
+      <para>Note that in both cases these macros and functions have to be used right after the Lisp function was called. This is so because other Lisp functions might destroy the content of the return stack.</para>
+    </refsect1>
+
+    <refsect1>
+      <title>Example</title>
+      <para>A C/C++ exceprt</para>
+<programlisting>
+cl_env_ptr env = ecl_process_env();
+cl_object a = ecl_make_fixnum(13);
+cl_object b = ecl_make_fixnum(6);
+cl_object modulus = cl_floor(2, a, b);
+cl_object remainder = ecl_nth_value(env, 1);
+</programlisting>
+      <para>The somewhat equivalent Common Lisp code</para>
+<programlisting>
+(multiple-value-bind (modulus equivalent)
+    (floor 13 6))
+</programlisting>
+    </refsect1>
+  </refentry>
+
+  <refentry>
+    <refnamediv>
+      <refname><function>ecl_return0</function>, <function>ecl_return1</function>, ...</refname>
+      <refpurpose>Returning multiple values</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef><function>ecl_return0</function></funcdef>
+	  <paramdef>cl_env_ptr <parameter>cl_env</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef><function>ecl_return1</function></funcdef>
+	  <paramdef>cl_env_ptr <parameter>cl_env</parameter></paramdef>
+	  <paramdef>cl_object <parameter>value1</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef><function>ecl_return2</function></funcdef>
+	  <paramdef>cl_env_ptr <parameter>cl_env</parameter></paramdef>
+	  <paramdef>cl_object <parameter>value1</parameter></paramdef>
+	  <paramdef>cl_object <parameter>value2</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef><function>ecl_return3</function></funcdef>
+	  <paramdef>cl_env_ptr <parameter>cl_env</parameter></paramdef>
+	  <paramdef>cl_object <parameter>value1</parameter></paramdef>
+	  <paramdef>cl_object <parameter>value2</parameter></paramdef>
+	  <paramdef>cl_object <parameter>value3</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+   </refsynopsisdiv>
+
+   <refsect1>
+     <title>Description</title>
+
+     <para>Returns <replaceable>N</replaceable> values from a C/C++ function in a way that a Common Lisp function can recognize and use them. The 0-th value is returned directly, while values 1 to N are stored in the Common Lisp environment <replaceable>cl_env</replaceable>. This macro has to be used from a function which returns an object of type <type>cl_object</type>.</para>
+   </refsect1>
+  </refentry>
+
+  <refentry>
+    <refnamediv>
+      <refname><function>ECL_BLOCK_BEGIN</function></refname>
+      <refpurpose>C macro for <ulink url="&clhs;s_block.htm"><symbol>block</symbol></ulink></refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+      <synopsis><code><function>ECL_BLOCK_BEGIN</function>(env,code) {</code></synopsis>
+      <synopsis><code>} <function>ECL_BLOCK_END</function>;</code></synopsis>
+    </refsynopsisdiv>
+
+    <refsect1>
+      <title>Description</title>
+
+      <para><function>ECL_BLOCK_BEGIN</function> establishes a block named <replaceable>code</replaceable> that becomes visible for the Common Lisp code. This block can be used then as a target for <function>cl_return</function>.</para>
+
+      <para><replaceable>env</replaceable> must be the value of the current Common Lisp environment, obtained with <function>ecl_process_env</function>.</para>
+
+      <para>The C/C++ program has to ensure that the code in <function>ECL_BLOCK_END</function> gets executed, avoiding a direct exit of the block via <code>goto</code> or a C/C++ <code>return</code>.</para>
+    </refsect1>
+  </refentry>
+
+  <refentry>
+    <refnamediv>
+      <refname><function>ECL_CATCH_BEGIN</function></refname>
+      <refpurpose>C macro for <ulink url="&clhs;s_catch.htm"><symbol>catch</symbol></ulink></refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+      <synopsis><code><function>ECL_CATCH_BEGIN</function>(env,tag) {</code></synopsis>
+      <synopsis><code>} <function>ECL_CATCH_END</function>;</code></synopsis>
+    </refsynopsisdiv>
+
+    <refsect1>
+      <title>Description</title>
+
+      <para><function>ECL_CATCH_BEGIN</function> establishes a destination for <symbol>throw</symbol> with the code given by <replaceable>tag</replaceable>.</para>
+
+      <para><replaceable>env</replaceable> must be the value of the current Common Lisp environment, obtained with <function>ecl_process_env</function>.</para>
+
+      <para>The C/C++ program has to ensure that the code in <function>ECL_CATCH_END</function> gets executed, avoiding a direct exit of the catch block via <code>goto</code> or a C/C++ <code>return</code>.</para>
+    </refsect1>
+  </refentry>
+
+  <refentry>
+    <refnamediv>
+      <refname><function>ECL_UNWIND_PROTECT_BEGIN</function></refname>
+      <refpurpose>C macro for <ulink url="&clhs;s_unwind.htm"><symbol>unwind-protect</symbol></ulink></refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+      <synopsis><code><function>ECL_UNWIND_PROTECT_BEGIN</function>(env) {</code></synopsis>
+      <synopsis><code>} <function>ECL_UNWIND_PROTECT_EXIT</function> {</code></synopsis>
+      <synopsis><code>} <function>ECL_UNWIND_PROTECT_END</function>;</code></synopsis>
+    </refsynopsisdiv>
+
+    <refsect1>
+      <title>Description</title>
+
+      <para><function>ECL_UNWIND_PROTECT_BEGIN</function> establishes two blocks of C code that work like the equivalent ones in Common Lisp: a protected block, contained between the "BEGIN" and the "EXIT" statement, and the exit block, appearing immediately afterwards. The form guarantees that the exit block is always executed, even if the protected block attempts to exit via som nonlocal jump construct (<symbol>throw</symbol>,<symbol>return</symbol>, etc).</para>
+
+      <para><replaceable>env</replaceable> must be the value of the current Common Lisp environment, obtained with <function>ecl_process_env</function>.</para>
+
+      <para>The utility of this construct is limited, for it only protects against nonlocal exits caused by Common Lisp constructs: it does not interfere with C <code>goto</code>, <code>return</code> or with C++ exceptions.</para>
+    </refsect1>
+  </refentry>
+
+  <refentry>
+    <refnamediv>
+      <refname>ANSI Dictionary</refname>
+      <refpurpose>&ANSI-C-Dict;</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+<simplelist columns="2" type="horiz">
+<member>Lisp symbol</member>
+<member>C function or constant</member>
+
+<member><ulink url="&clhs;f_apply.htm"><symbol>apply</symbol></ulink></member>
+<member><code>cl_object cl_apply(cl_narg narg, cl_object function, ...)</code></member>
+
+<member><ulink url="&clhs;v_call_a.htm"><symbol>call-arguments-limit</symbol></ulink></member>
+<member><constant>ECL_CALL_ARGUMENTS_LIMIT</constant></member>
+
+<member><ulink url="&clhs;f_cmpd_f.htm"><symbol>compiled-function-p</symbol></ulink></member>
+<member><code>cl_object cl_compiled_function_p(cl_object object)</code></member>
+
+<member><ulink url="&clhs;f_comple.htm"><symbol>complement</symbol></ulink></member>
+<member><code>cl_object cl_complement(cl_object function)</code></member>
+
+<member><ulink url="&clhs;f_cons_1.htm"><symbol>constantly</symbol></ulink></member>
+<member><code>cl_object cl_constantly(cl_object value)</code></member>
+
+<member><ulink url="&clhs;f_every.htm"><symbol>every</symbol></ulink></member>
+<member><code>cl_object cl_every(cl_narg narg, cl_object predicate, ...)</code></member>
+
+<member><ulink url="&clhs;f_eq.htm"><symbol>eq</symbol></ulink></member>
+<member><code>cl_object cl_eq(cl_object x, cl_object y)</code></member>
+
+<member><ulink url="&clhs;f_eql.htm"><symbol>eql</symbol></ulink></member>
+<member><code>cl_object cl_eql(cl_object x, cl_object y)</code></member>
+
+<member><ulink url="&clhs;f_equal.htm"><symbol>equal</symbol></ulink></member>
+<member><code>cl_object cl_equal(cl_object x, cl_object y)</code></member>
+
+<member><ulink url="&clhs;f_equalp.htm"><symbol>equalp</symbol></ulink></member>
+<member><code>cl_object cl_equalp(cl_object x, cl_object y)</code></member>
+
+<member><ulink url="&clhs;f_fbound.htm"><symbol>fboundp</symbol></ulink></member>
+<member><code>cl_object cl_fboundp(cl_object function_name)</code></member>
+
+<member><ulink url="&clhs;f_fdefin.htm"><symbol>fdefinition</symbol></ulink></member>
+<member><code>cl_object cl_fdefinition(cl_object function_name)</code></member>
+
+<member><ulink url="&clhs;f_fmakun.htm"><symbol>fmakunbound</symbol></ulink></member>
+<member><code>cl_object cl_fmakunbound(cl_object function_name)</code></member>
+
+<member><ulink url="&clhs;f_funcal.htm"><symbol>funcall</symbol></ulink></member>
+<member><code>cl_object cl_funcall(cl_narg narg, cl_object function, ...)</code></member>
+
+<member><ulink url="&clhs;f_fn_lam.htm"><symbol>function-lambda-expression</symbol></ulink></member>
+<member><code>cl_object cl_function_lambda_expression(cl_object function)</code></member>
+
+<member><ulink url="&clhs;f_fnp.htm"><symbol>functionp</symbol></ulink></member>
+<member><code>cl_object cl_functionp(cl_object object)</code></member>
+
+<member><ulink url="&clhs;f_get_se.htm"><symbol>get-setf-expansion</symbol></ulink></member>
+<member><code>cl_object cl_get_setf_expansion(cl_narg narg, cl_object place, ...)</code></member>
+
+<member><ulink url="&clhs;f_identi.htm"><symbol>identity</symbol></ulink></member>
+<member><code>cl_object cl_identity(cl_object x)</code></member>
+
+<member><ulink url="&clhs;s_let_l.htm"><symbol>LET</symbol>, <symbol>LET*</symbol></ulink></member>
+<member><code>cl_object <link linkend="ecl_bds_bind">ecl_bds_bind</link>(cl_env_ptr env, cl_object symbol, cl_object value)</code></member>
+
+<member><ulink url="&clhs;v_lamb_1.htm"><symbol>lambda-parameters-limit</symbol></ulink></member>
+<member><constant>ECL_LAMBDA_PARAMETERS_LIMIT</constant></member>
+
+<member><ulink url="&clhs;v_multip.htm"><symbol>multiple-values-limit</symbol></ulink></member>
+<member><constant>ECL_MULTIPLE_VALUES_LIMIT</constant></member>
+
+<member><ulink url="&clhs;f_not.htm"><symbol>not</symbol></ulink></member>
+<member><code>cl_object cl_not(cl_object object)</code></member>
+
+<member><ulink url="&clhs;f_notevery.htm"><symbol>notevery</symbol></ulink></member>
+<member><code>cl_object cl_notevery(cl_narg narg, cl_object predicate, ...)</code></member>
+
+<member><ulink url="&clhs;f_notany.htm"><symbol>notany</symbol></ulink></member>
+<member><code>cl_object cl_notany(cl_narg narg, cl_object predicate, ...)</code></member>
+
+<member><ulink url="&clhs;f_set.htm"><symbol>set</symbol></ulink></member>
+<member><code>cl_object cl_set(cl_object symbol, cl_object value)</code></member>
+
+<member><ulink url="&clhs;s_setq.htm"><symbol>setq</symbol></ulink></member>
+<member><code>cl_object <link linkend="ecl_setq">ecl_setq</link>(cl_env_ptr env, cl_object symbol, cl_object value)</code></member>
+
+<member><ulink url="&clhs;f_symb_5.htm"><symbol>symbol-value</symbol></ulink></member>
+<member><code>cl_object <link linkend="ecl_symbol_value">ecl_symbol_value</link>(cl_env_ptr env, cl_object symbol)</code></member>
+
+<member><ulink url="&clhs;f_some.htm"><symbol>some</symbol></ulink></member>
+<member><code>cl_object cl_some(cl_narg narg, cl_object predicate, ...)</code></member>
+
+<member><ulink url="&clhs;f_vals_l.htm"><symbol>values-list</symbol></ulink></member>
+<member><code>cl_object cl_values_list(cl_object list)</code></member>
+</simplelist>
+    </refsynopsisdiv>
+
+    <refsect1>
+      <title>Description</title>
+      <para></para>
+    </refsect1>
+  </refentry>
+</section>
+</chapter>
+</book>

@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter xml:id="ansi.data-and-control">
+ <title>Data and control flow</title>
+
+ <section xml:id="ansi.minimal-compilation">
+  <title>Minimal compilation</title>
+
+  <para>Former versions of &ECL;, as well as many other lisps, used linked
+  lists to represent code. Executing code thus meant traversing these lists
+  and performing code transformations, such as macro expansion, every time
+  that a statement was to be executed. The result was a slow and memory
+  hungry interpreter.</para>
+
+  <para>Beginning with version 0.3, &ECL; was shipped with a bytecodes
+  compiler and interpreter which circumvent the limitations of linked
+  lists. When you enter code at the lisp prompt, or when you load a source
+  file, &ECL; begins a process known as minimal compilation. Barely this
+  process consists on parsing each form, macroexpanding it and translating it
+  into an intermediate language made of
+  <emphasis>bytecodes</emphasis>.</para>
+
+  <para>The bytecodes compiler is implemented in
+  <filename>src/c/compiler.d</filename>. The main entry point is the lisp
+  function <function>si::make-lambda</function>, which takes a name for the
+  function and the body of the lambda lists, and produces a lisp object that
+  can be invoked. For instance,
+  <screen>&gt; (defvar fun (si::make-lambda 'f '((x) (1+ x))))
+*FUN*
+&gt; (funcall fun 2)
+3</screen></para>
+
+  <para>&ECL; can only execute bytecodes. When a list is passed to
+  <literal>EVAL</literal> it must be first compiled to bytecodes and, if the
+  process succeeds, the resulting bytecodes are passed to the
+  interpreter. Similarly, every time a function object is created, such as in
+  <function>DEFUN</function> or <function>DEFMACRO</function>, the compiler
+  processes the lambda form to produce a suitable bytecodes object.</para>
+
+  <para>The fact that &ECL; performs this eager compilation means that
+  changes on a macro are not immediately seen in code which was already
+  compiled. This has subtle implications. Take the following code:</para>
+  <screen>&gt; (defmacro f (a b) `(+ ,a ,b))
+F
+&gt; (defun g (x y) (f x y))
+G
+&gt; (g 1 2)
+3
+&gt; (defmacro f (a b) `(- ,a ,b))
+F
+&gt; (g 1 2)
+3</screen>
+
+  <para>The last statement always outputs <literal>3</literal> while in former
+  implementations based on simple list traversal it would produce
+  <literal>-1</literal>.</para>
+ </section>
+
+ <section xml:id="ansi.functions">
+  <title>Function types</title>
+
+  <para>Functions in &ECL; can be of two types: they are either compiled to
+  bytecodes or they have been compiled to machine code using a lisp to C
+  translator and a C compiler. To the first category belong function loaded
+  from lisp source files or entered at the toplevel. To the second category
+  belong all functions in the &ECL; core environment and functions in files
+  processed by <function>compile</function> or
+  <function>compile-file</function>.</para>
+
+  <para>The output of <code>(symbol-function
+  <replaceable>fun</replaceable>)</code> is one of the following:
+  <itemizedlist>
+    <listitem><para>a function object denoting the definition of the function <literal>fun</literal>,</para></listitem>
+    <listitem><para>a list of the form <literal>(macro . function-object)</literal> when <literal>fun</literal> denotes a macro,</para></listitem>
+    <listitem><para>or simply <literal>'special</literal>, when <literal>fun</literal> denotes a special form, such as <symbol>block</symbol>, <symbol>if</symbol>, etc.</para></listitem>
+  </itemizedlist></para>
+
+  <para>&ECL; usually drops the source code of a function unless the global
+  variable <varname>si:*keep-definitions*</varname> was true when the
+  function was translated into bytecodes. Therefore, if you wish to use
+  <function>compile</function> and <function>disassemble</function> on
+  defined functions, you should issue <code>(setq si:*keep-definitions*
+  t)</code> at the beginning of your session.</para>
+
+  <para>In <xref linkend="table.function.constants"/> we list all
+  &CommonLisp; values related to the limits of functions.</para>
+
+  <table xml:id="table.function.constants">
+   <title>Function related constants</title>
+   <tgroup cols="2">
+    <tbody>
+     <row>
+      <entry><constant>call-arguments-limit</constant></entry>
+      <entry>65536</entry>
+     </row>
+     <row>
+      <entry><constant>lambda-parameters-limit</constant></entry>
+      <entry>call-arguments-limit</entry>
+     </row>
+     <row>
+      <entry><constant>multiple-values-limit</constant></entry>
+      <entry>64</entry>
+     </row>
+     <row>
+      <entry><constant>lambda-list-keywords</constant></entry>
+      <entry><literal>(&optional; &rest; &key; &allow-other-keys; &aux;
+      &whole; &environment; &body;)</literal></entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </table>
+ </section>
+
+ <section xml:id="ansi.calling-conventions">
+   <title>C Calling conventions</title>
+
+   <para>&ECL; is implemented using either a C or a C++ compiler. This is not a limiting factor, but imposes some constraints on how these languages are used to implement functions, multiple values, closures, etc. In particular, while C functions can be called with a variable number of arguments, there is no facility to check how many values were actually passed. This forces us to have two types of functions in &ECL;
+   <itemizedlist>
+     <listitem><para>Functions that take a fixed number of arguments have a simple C signature, with all arguments being properly declared, as in <code>cl_object cl_not(cl_object arg1)</code>.</para></listitem>
+     <listitem><para>Functions with a variable number of arguments, such as those acception <symbol>&optional;</symbol>, <symbol>&rest;</symbol> or <symbol>&key;</symbol> arguments, must take as first argument the number of remaining ones, as in <code>cl_object cl_list(cl_narg narg, ...)</code>. Here <replaceable>narg</replaceable> is the number of supplied arguments.</para></listitem>
+   </itemizedlist>
+   The previous conventions set some burden on the C programmer that calls &ECL;, for she must know the type of function that is being called and supply the right number of arguments. This burden disappears for Common Lisp programmers, though.</para>
+
+   <para>As an example let us assume that the user wants to invoke two functions which are part of the &ANSI; standard and thus are exported with a C name. The first example is <function>cl_cos</function>, which takes just one argument and has a signature <code>cl_object cl_cos(cl_object)</code>.</para>
+   <programlisting>
+#include &lt;math.h&gt;
+...
+cl_object angle = ecl_make_double_float(M_PI);
+cl_object c = cl_cos(angle);
+printf("\nThe cosine of PI is %g\n", ecl_double_float(c));
+</programlisting>
+
+   <para>The second example also involves some Mathematics, but now we are going to use the C function corresponding to <symbol>+</symbol>. As described in <link linkend="ansi.numbers.c-dict.ref">the C dictionary</link>, the C name for the plus operator is <function>cl_P</function> and has a signature <code>cl_object cl_P(cl_narg narg,...)</code>. Our example now reads as follows</para>
+   <programlisting>
+cl_object one = ecl_make_fixnum(1);
+cl_object two = cl_P(2, one, one);
+cl_object three = cl_P(2, one, one, one);
+printf("\n1 + 1 is %d\n", ecl_fixnum(two));
+printf("\n1 + 1 + 1 is %d\n", ecl_fixnum(three));
+</programlisting>
+
+   <para>Note that most Common Lisp functions will not have a C name. In this case one must use the symbol that names them to actually call the functions, using <function>cl_funcall</function> or <function>cl_apply</function>. The previous examples may thus be rewritten as follows</para>
+   <programlisting>
+/* Symbol + in package CL */
+cl_object plus = ecl_make_symbol("+","CL");
+cl_object one = ecl_make_fixnum(1);
+cl_object two = cl_funcall(3, plus, one, one);
+cl_object three = cl_funcall(4, plus, one, one, one);
+printf("\n1 + 1 is %d\n", ecl_fixnum(two));
+printf("\n1 + 1 + 1 is %d\n", ecl_fixnum(three));
+</programlisting>
+
+   <para>Another restriction of C and C++ is that functions can only take a limited number of arguments. In order to cope with this problem, &ECL; uses an internal stack to pass any argument above a hardcoded limit, <constant>ECL_C_CALL_ARGUMENTS_LIMIT</constant>, which is as of this writing 63. The use of this stack is transparently handled by the Common Lisp functions, such as <symbol>apply</symbol>, <symbol>funcall</symbol> and their C equivalents, and also by a set of macros, <link linkend="ref.ecl_va_arg"><function>cl_va_arg</function></link>, which can be used for coding functions that take an arbitrary name of arguments.</para>
+ </section>
+
+ <xi:include href="ref_c_data_flow.xml" xpointer="ansi.data-and-control.c-dict" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+
+</chapter>
+</book>

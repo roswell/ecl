@@ -1,0 +1,427 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+ <preface xml:id="preface">
+  <title>Preface</title>
+
+  <section xml:id="preface.words">
+   <title>About this book</title>
+
+   <para>This manual is part of the &ECL; software system. It documents
+   deviations of &ECL; from the &ANSI; standard, as well as extensions, daily
+   working process (compiling files, loading sources, creating programs, etc)
+   and the internals of this implementation.</para>
+
+   <para>This book is not intended as a source to learn &CommonLisp;. There are
+   other tutorials and textbooks available in the Net which serve this
+   purpose. The homepage of the <ulink url="http://www.lisp.org">Association of
+   Lisp Users</ulink> contains a good list of links of such teaching and
+   learning material.</para>
+
+   <para>This book is structured into three parts. We begin with <xref
+   linkend="part.standards"/> documents all parts of the standard which are left as
+   <emphasis>implementation specific</emphasis>. For instance, precision of
+   floating point numbers, available character sets, actual input/output
+   protocols, etc.</para>
+
+   <para><xref linkend="part.extensions"/> introduces all features which are
+   specific to &ECL; and which lay outside the standard. This includes
+   configuring, building and installing &ECL; multiprocessing capabilities,
+   graphics libraries, interfacing with the operating system, etc.</para>
+
+   <para><xref linkend="part.internals"/> deals with the internals of the
+   implementation. This part is only intended for experienced programmers that
+   want to learn how &ECL; does its work and wish to extend it, customize it or
+   port it to new architectures. This part of the documentation is the most
+   fragile one and prone to change.</para>
+
+   <important><para>Missing highlights</para></important>
+  </section>
+
+  <section xml:id="preface.what.is.ecl">
+   <title>What is &ECL;?</title>
+
+   <para>&ECL; is an implementation of the Common-Lisp language that was
+   developed by Giuseppe Attardi's up from the Kyoto Common-Lisp. See <xref
+   linkend="preface.credits"></xref> for the history of the code you are up to
+   use.</para>
+
+   <para>&ECL; (ECL for short) uses standard C calling conventions for Lisp
+   compiled functions, which allows C programs to easily call Lisp functions
+   and vice versa. No foreign function interface is required: data can be
+   exchanged between C and Lisp with no need for conversion.</para>
+
+   <para>&ECL; is based on a Common Runtime Support (CRS) which provides basic
+   facilities for memory management, dynamic loading and dumping of binary
+   images, support for multiple threads of execution.  The CRS is built into a
+   library that can be linked with the code of the application.  &ECL; is
+   modular: main modules are the program development tools (top level,
+   debugger, trace, stepper), the compiler, and CLOS.  A native implementation
+   of CLOS is available in &ECL;: one can configure &ECL; with or without CLOS.
+   A runtime version of &ECL; can be built with just the modules which are
+   required by the application.</para>
+
+   <para>The &ECL; compiler compiles from Lisp to C, and then invokes
+   the GNU C compiler to produce binaries. While former releases of ECL
+   adhere to the the reference of the language given in &Steele84;, the
+   aim of &ECL; is now to achieve maximum compliance with ANSI
+   Common-Lisp, the most up to date standard for Common-Lisp.</para>
+   <para>Throughout this manual we will describe the &ECL; implementation and
+   how it differs from &ANSI; and &Steele84;. In general, as
+   work in &ECL; is completed section by section, we will drop compatibility
+   with &Steele84; and the corresponding chapter will be updated to
+   document <emphasis>only</emphasis> the differences with &ANSI;.</para>
+
+   <section xml:id="Credits">
+    <title>Credits</title>
+    <para>The &ECL; project is an implementation of the Common-Lisp language that aims to
+    comply with the ANSI Common-Lisp standard. The first ECL implementations were developed
+    by Giuseppe Attardi's who produced an interpreter and compiler fully conformat
+    with the Common-Lisp as reported in <citetitle>Steele:84</citetitle>. ECL derives itself mostly
+    from Kyoto Common-Lisp, an implementation developed at the Research Institute for
+    Mathematical Sciences (RIMS), Kyoto University, with the cooperation of Nippon
+    Data General Corporation.  The main developers of Kyoto Common-Lisp were Taiichi
+    Yuasa and Masami Hagiya, of the Research Institute for Mathematical Sciences,
+    at Kyoto University.</para>
+    <para>I must thank Giuseppe Attardi, Yuasa and Hagiya for their wonderful work with
+    preceding implementations and for putting them in the Public Domain under the
+    GNU General Public License as published by the Free Software Foundation.
+    Without them this product would have never been possible.</para>
+    <para>This document is an update of the original ECL documentation, which was based
+    in part on the material in [Yuasa:85, see <xref linkend="Bibliography"></xref>]</para>
+    <para>The following people or organizations must be credited for support in the
+    development of Kyoto Common-Lisp: Prof. Reiji Nakajima at RIMS, Kyoto University;
+    Nippon Data General Corporation; Teruo Yabe; Toshiyasu Harada; Takashi Suzuki;
+    Kibo Kurokawa; Data General Corporation; Richard Gabriel; Daniel Weinreb; Skef
+    Wholey; Carl Hoffman; Naruhiko Kawamura; Takashi Sakuragawa; Akinori Yonezawa;
+    Etsuya Shibayama; Hagiwara Laboratory; Shuji Doshita; Takashi Hattori.</para>
+    <para>William F. Schelter improved KCL in several areas and developed Austin Kyoto
+    Common-Lisp (AKCL). Many ideas and code from AKCL have been incorporated in
+    &ECL;.</para>
+    <para>The following is the full list of contributors to ECL: Taiichi Yuasa and
+    Masami Hagiya (KCL), William F. Schelter (Dynamic loader, conservative Gc),
+    Giuseppe Attardi (Top-level, trace, stepper, compiler, CLOS, multithread),
+    Marcus Daniels (Linux port) Cornelis van der Laan (FreeBSD port) David Rudloff
+    (NeXT port) Dan Stanger, Don Cohen, and Brian Spilsbury.</para>
+    <para>We have to thank for the following pieces of software that have helped in the
+    development of &ECL;</para>
+    <variablelist>
+     <varlistentry>
+      <term>Bruno Haible</term>
+      <listitem>
+       <para>For the Cltl2-compliance test</para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>Peter Van Eynde</term>
+      <listitem>
+       <para>For the ANSI-compliance test</para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>Symbolic's Inc.</term>
+      <listitem>
+       <para>For the ANSI-compliant LOOP macro.</para>
+      </listitem>
+     </varlistentry>
+    </variablelist>
+    <para>The &ECL; project also owes a lot to the people who have tested this program
+    and contributed with suggestions and error messages: Eric Marsden, Hannu
+    Koivisto and Jeff Bowden, and others whose name I may have omitted.</para>
+   </section>
+
+   <section xml:id="Copyright">
+    <title>Copyright</title>
+    <para role="continues">Copyright &copy; 2000 Juan Jose Garcia Ripoll</para>
+    <para role="continues">Copyright &copy; 1990, 1991, 1993 Giuseppe Attardi</para>
+    <para role="continues">Copyright &copy; 1984 Taiichi Yuasa and Masami Hagiya</para>
+    <para role="continues">All Rights Reserved</para>
+    <para role="continues">Summary:</para>
+    <blockquote>
+     <para>Permission is granted to use, copy, modify this program,
+     EXCEPT that the copyright notice must be reproduced on copies, and
+     credit should be given to the authors where it is due.
+     WE MAKE NO WARRANTY AND ACCEPT NO LIABILITY FOR THIS PROGRAM.</para>
+    </blockquote>
+    <para role="continues">In detail:</para>
+    <orderedlist numeration="arabic">
+     <listitem>
+      <para>Permission to use, copy, modify this software and its documentation
+      for any purpose is hereby granted without fee, provided that</para>
+      <itemizedlist mark="bullet">
+       <listitem>
+	<para>the above copyright notice appears in all copies,</para>
+       </listitem>
+       <listitem>
+	<para>both that copyright notice and this permission notice appears in supporting documentation, and that</para>
+       </listitem>
+       <listitem>
+	<para>you cause modified files to carry prominent notices stating that you changed the files and the date of any change.</para>
+       </listitem>
+      </itemizedlist>
+     </listitem>
+     <listitem>
+      <para>Please notify us if you are going to sell this software or its documentation
+      for profit.</para>
+     </listitem>
+     <listitem>
+      <para>WE DISCLAIM ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED
+      WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL WE BE LIABLE FOR
+      ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER
+      RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+      NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE
+      USE OR PERFORMANCE OF THIS SOFTWARE.</para>
+     </listitem>
+    </orderedlist>
+    <para role="continues">Additionally:</para>
+    <blockquote>
+     <para>&ECL; is free software; you can redistribute it and/or modify it
+     under the terms of the GNU Library General Public License as published
+     by the Free Software Foundation; either version 2 of the License, or
+     (at your option) any later version; see file 'Copying'.</para>
+     <para>This program is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
+     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+     GNU Library General Public License for more details.</para>
+     <para>You should have received a copy of the GNU Library General Public License
+     along with this program; if not, write to the Free Software
+     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.</para>
+    </blockquote>
+    <para role="continues">Address for reporting bugs, comments, suggestions:</para>
+    <blockquote>
+     <para><ulink url="mailto:worm@@arrakis.es"></ulink></para>
+    </blockquote>
+   </section>
+
+   <section xml:id="Building-ECL">
+    <title>Building ECL</title>
+    <orderedlist numeration="arabic">
+     <listitem>
+      <para>Obtain the distribution from <ulink url="http://ecls.sourceforge.net">http://ecls.sourceforge.net</ulink>.
+      The distribution is in a gzip-compressed tar file named like
+      <filename>ecl.tgz</filename></para>
+     </listitem>
+     <listitem>
+      <para>Prepare a directory (hereafter called <firstterm>ECL directory</firstterm>) for
+      ECL.  In the following examples, we suppose that the <emphasis>ECL
+      directory</emphasis> is <filename>/usr/local/ecl</filename>.</para>
+     </listitem>
+     <listitem>
+      <para>Extract the content from the compressed tar file.<screen>
+      $ zcat ecl.tgz | tar xf -
+      </screen></para>
+     </listitem>
+     <listitem>
+      <para>An auto configuration mechanism allows you to perform a standard
+      installation with the following commands:<screen>
+      $ ./configure
+      </screen>This example will prepare to install executable files, manual pages and
+      info files in standard directories like <filename>/usr/local/bin</filename>,
+      <filename>/usr/local/man/man1</filename>, <filename>/usr/local/info</filename>.</para>
+     </listitem>
+     <listitem>
+      <para>If you don't have access rights to these directories, you should
+      give to configure alternate places.  Try <literal>./configure --help</literal> for
+      instructions on how to supply this information to configure, but
+      a good starting point is<screen>
+      $ ./configure --prefix=$HOME
+      </screen></para>
+     </listitem>
+     <listitem>
+      <para>Next you must build the program and install it<screen>
+      $ make
+      $ make install
+      </screen></para>
+     </listitem>
+    </orderedlist>
+    <para>At the end of installation, the destination directories will contain
+    several files. If you have not modified these directories when
+    invoking <filename>configure</filename> the layout should be</para>
+    <informaltable>
+     <tgroup cols="2">
+      <colspec colwidth="50*"></colspec>
+      <colspec colwidth="50*"></colspec>
+      <tbody>
+       <row>
+	<entry><emphasis role="bold">Executable files:</emphasis></entry>
+	<entry></entry>
+       </row>
+       <row>
+	<entry><filename>$HOME/bin/ecl</filename></entry>
+	<entry>the &ECL; interpreter and compiler</entry>
+       </row>
+       <row>
+	<entry><emphasis role="bold">Help documents:</emphasis></entry>
+	<entry></entry>
+       </row>
+       <row>
+	<entry><filename>$HOME/lib/ecl/help.doc</filename></entry>
+	<entry>data for the online help</entry>
+       </row>
+       <row>
+	<entry><filename>$HOME/man/man1/ecl.1</filename></entry>
+	<entry>manual page for &ECL;</entry>
+       </row>
+       <row>
+	<entry><filename>$HOME/info/ecl.info</filename></entry>
+	<entry>this manual you are reading</entry>
+       </row>
+       <row>
+	<entry><emphasis role="bold">Library files and headers:</emphasis></entry>
+	<entry></entry>
+       </row>
+       <row>
+	<entry><filename>$HOME/lib/ecl/libecl.a</filename></entry>
+	<entry>the core library in C</entry>
+       </row>
+       <row>
+	<entry><filename>$HOME/lib/ecl/libgmp.a</filename></entry>
+	<entry>GNU library for bignums</entry>
+       </row>
+       <row>
+	<entry><filename>$HOME/lib/ecl/libgc.a</filename></entry>
+	<entry>Boehm-Weiser garbage collector</entry>
+       </row>
+       <row>
+	<entry><filename>$HOME/lib/ecl/*.a</filename></entry>
+	<entry>Other lisp compiled code</entry>
+       </row>
+       <row>
+	<entry><filename>$HOME/lib/ecl/ecl/</filename></entry>
+	<entry>Header files</entry>
+       </row>
+      </tbody>
+     </tgroup>
+    </informaltable>
+    <para>You can remove all intermediate files produced during installation with the
+    command <literal>make clean</literal>.</para>
+   </section>
+
+   <section xml:id="Invoking-ECL">
+    <title>Entering and leaving &ECL;</title>
+    <para>&ECL; is invoked by the command <literal>ecl</literal>.</para>
+    <para><screen>
+     % ecl
+     ECL (Embeddable Common-Lisp) 0.0e
+     Copyright (C) 1984 Taiichi Yuasa and Masami Hagiya
+     Copyright (C) 1993 Giuseppe Attardi
+     Copyright (C) 2000 Juan J. Garcia-Ripoll
+     ECL is free software, and you are welcome to redistribute it
+     under certain conditions; see file 'Copyright' for details.
+     Type :h for Help.  Top level.
+     &gt;
+    </screen></para>
+    <para>When invoked, &ECL; will print the banner and initialize the system.  The
+    date in the &ECL; banner identifies the revision of &ECL;.  <literal>Version
+    (0.8) 05/14/1993</literal> is the value of the function
+    <literal>lisp-implementation-version</literal>.</para>
+    <para>If there exists a file named <filename>init.lsp</filename> in the current working directory,
+    &ECL; successively evaluates the forms in the file, immediately after the
+    system initialization.  The user may set up his or her own &ECL; environment
+    (e.g., the memory configuration) with <filename>init.lsp</filename>.</para>
+    <para>After the initialization, &ECL; enters the <firstterm>top-level loop</firstterm> and prints
+    the prompt `<literal>&gt;</literal>'.</para>
+    <para><screen>
+     Type :h for Help.  Top level.
+     &gt;
+    </screen></para>
+    <para>The prompt indicates that &ECL; is now ready to receive a form from the
+    terminal and to evaluate it.</para>
+    <para>Usually, the current package (i.e., the value of <replaceable>*package*</replaceable>) is the user
+    package, and the prompt appears as above.  If, however, the current package is
+    other than the user package, then the prompt will be prefixed by the package
+    name.</para>
+    <para><screen>
+     &gt; (in-package 'cl)
+     #&lt;"COMMON-LISP" package&gt;
+     COMMON-LISP&gt; (in-package 'system)
+     #&lt;"SYSTEM" package&gt;
+     SYSTEM&gt;
+    </screen></para>
+    <para>To exit from &ECL;, call the function <literal>quit</literal>.</para>
+    <para><screen>
+     &gt;(quit)
+     Bye.
+     %
+    </screen></para>
+    <para>Alternatively, you may type ^D, i.e. press the key <keycap>D</keycap> while pressing
+    down the control key (<keycap>Ctrl</keycap>).</para>
+    <para><screen>
+     &gt;^DBye.
+     %
+    </screen></para>
+    <para>You can disable ^D as the exit command by setting to <literal>T</literal> the
+    following variable:</para>
+    <blockquote>
+     <screen><indexterm role="vr"><primary>*ignore-eof-on-terminal-io*</primary></indexterm>&#151; System: <varname>*ignore-eof-on-terminal-io*</varname></screen>
+     <para>This variable controls whether an end of file character (normally ^D)
+     should terminate the session. The default value is ().</para>
+    </blockquote>
+    <para>The top-level loop of &ECL; is almost the same as that defined in Section
+    20.2 of &Steele84;.  Since the input from the terminal is in line
+    mode, each top-level form should be followed by a newline.  If more than one
+    value is returned by the evaluation of the top-level form, the values will be
+    printed successively.  If no value is returned, then nothing will be printed.<screen>
+    &gt;(values 1 2)
+    1
+    2
+    &gt;(values)
+
+    &gt;
+    </screen></para>
+    <para>When an error is signalled, control will enter the break loop.<screen>
+    &gt;(defun foo (x) (bar x))
+    foo
+
+    &gt;(defun bar (y) (bee y y))
+    bar
+
+    &gt;(foo 'lish)
+    Error: The function BEE is undefined.
+    Error signalled by BAR.
+
+    Broken at BAR.
+    &gt;&gt;
+    </screen></para>
+    <para>`<literal>&gt;&gt;</literal>' in the last line is the prompt of the break loop.  Like in the
+    top-level loop, the prompt will be prefixed by the current package name, if the
+    current package is other than the <literal>user</literal> package.</para>
+    <para>To go back to the top-level loop, type <literal>:q</literal></para>
+    <para><screen>
+     &gt;&gt;:q
+
+     Top level.
+     &gt;
+    </screen></para>
+    <para>See Section 5.4 for the details of the break loop.</para>
+    <para>The terminal interrupt (usually caused by typing ^C (Control-<literal>C</literal>))
+    is a kind of error.  It breaks the running program and calls the break level
+    loop.</para>
+    <para>Example:<screen>
+    &gt;(defun foo () (do () (nil)))
+    foo
+
+    &gt;(foo)
+    ^C
+    Correctable error: Console interrupt.
+    Signalled by DO.
+
+    Broken at FOO.
+    &gt;&gt;
+    </screen></para>
+   </section>
+  </preface>
+ </book>
+ <!-- Keep this comment at the end of the file
+      Local variables:
+      mode: nxml
+      sgml-parent-document: "ecl.xml"
+      sgml-indent-step: 1
+      nxml-child-indent: 1
+      nxml-outline-child-indent:1
+      fill-column: 79
+      End:
+ -->

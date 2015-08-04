@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+ <bibliography xml:id="Bibliography">
+  <title>Bibliography</title>
+
+  <bibliomixed xml:id="bib.LISP1.5" xreflabel="LISP1.5">
+   <bibliomset>
+    <firstname>John</firstname> <surname>McCarthy</surname> et
+    al. <title>LISP 1.5 Programmer's
+    Manual 2nd ed</title> <publishername>The M.I.T. Press</publishername>,
+    <corpname>Massachussets Institute of Technology</corpname>,
+    <pubdate>1985</pubdate>.
+
+    <bibliomisc>Available at the <ulink
+    url="http://community.computerhistory.org/scc/projects/LISP/book/LISP%201.5%20Programmers%20Manual.pdf">Computer
+    History Museum Communities Site</ulink></bibliomisc>
+   </bibliomset>
+  </bibliomixed>
+
+  <bibliomixed xml:id="bib.ANSI" xreflabel="ANSI">
+  <bibliomset>
+   <title>ANSI Common Lisp Specification, ANSI/X3.226-1994</title>.
+   <corpname>American National Standards Institute</corpname>,
+   <pubdate>1994</pubdate>.
+  </bibliomset>
+  </bibliomixed>
+
+  <bibliomixed xml:id="bib.HyperSpec" xreflabel="CLHS">
+  <bibliomset>
+   <firstname>Kent M.</firstname> <surname>Pitman</surname>.
+   <title>The Common Lisp Hyperspec</title>.
+   <corpname>Lispworks</corpname>, <pubdate>1996</pubdate>.
+   <bibliomisc>Available in the <ulink
+   url="http://www.lispworks.com/documentation/HyperSpec/Front/index.htm">Lispworks
+   homepage</ulink>.</bibliomisc>
+  </bibliomset>
+  </bibliomixed>
+
+  <bibliomixed xml:id="bib.CLTL" xreflabel="CLTL">
+   <bibliomset>
+    <firstname>Guy L.</firstname> <surname>Steele Jr</surname> et al.
+    <title>Common Lisp The Language</title>.
+    <publishername>Digital Press</publishername>, <pubdate>1984</pubdate>.
+   </bibliomset>
+  </bibliomixed>
+
+  <bibliomixed xml:id="bib.CLTL2" xreflabel="CLTL2">
+   <bibliomset>
+    <firstname>Guy L.</firstname> <surname>Steele Jr.</surname> et al.
+    <title>Common Lisp The Language II</title>.
+    <publishername>Digital Press</publishername>, <pubdate>1990</pubdate>.
+   </bibliomset>
+  </bibliomixed>
+
+  <bibliomixed xml:id="bib.KCL" xreflabel="KCL">
+   <bibliomset>
+    <firstname>Taichi</firstname> <surname>Yuasa</surname> and
+    <firstname>Masami</firstname> <surname>Hagiya</surname>.  <title>Kyoto
+    Common Lisp Report</title>.  <corpname>Research Institute for Mathematical
+    Sciences, Kyoto University</corpname>, <pubdate>1988</pubdate>.
+   </bibliomset>
+  </bibliomixed>
+
+  <bibliomixed xml:id="bib.ECL" xreflabel="ECL">
+   <bibliomset>
+    <firstname>Giusseppe</firstname> <surname>Attardi</surname>.  <title>The
+    Embeddable Common Lisp</title>.  <publishername>ACM Lisp
+    Pointers</publishername>, <volumenum>8(1)</volumenum>,
+    <pagenums>30-41</pagenums>, <pubdate>1995</pubdate>.
+   </bibliomset>
+  </bibliomixed>
+
+  <bibliomixed xml:id="bib.mk-defsystem" xreflabel="mk-defsystem">
+   <bibliomset>
+    <firstname>Mark</firstname> <surname>Kantrowitz</surname>, <title>Portable
+    Utilities for Common Lisp. User Guide &amp; Implementation.</title>
+    <corpname>Cargnegie Mellon University</corpname>, <pubdate>1991</pubdate>.
+    <bibliomisc>Available in the <ulink
+    url="http://www-2.cs.cmu.edu/afs/cs.cmu.edu/project/ai-repository/ai/lang/lisp/code/tools/mkantdoc.tgz">CMU
+    repository</ulink></bibliomisc>
+   </bibliomset>
+  </bibliomixed>
+
+  <bibliomixed xml:id="bib.AMOP" xreflabel="AMOP">
+   <bibliomset>
+    <firstname>Gregor</firstname> <surname>Kickzales</surname> et al. <title>The
+    Art of the Metaobject Protocol</title> <publishername>The
+    M.I.T. Press</publishername>, <corpname>Massachussets Institute of
+    Technology</corpname>, <pubdate>1999</pubdate>.
+   </bibliomset>
+  </bibliomixed>
+
+
+ </bibliography>
+<!-- Keep this comment at the end of the file
+  Local variables:
+  mode: nxml
+  sgml-parent-document: "ecl.xml"
+  sgml-indent-step: 1
+  nxml-child-indent: 1
+  nxml-outline-child-indent: 1
+  fill-column: 79
+  End:
+-->
+</book>

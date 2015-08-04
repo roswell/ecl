@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter xml:id="ext.os">
+ <title>Operating System Interface</title>
+
+ <section xml:id="ext.os.processes">
+  <title>Processes</title>
+
+  <para>&ECL; provides several facilities for invoking and communicating with
+  external processes. If one just wishes to execute some program, without
+  caring for its output, then probably <xref linkend="ref.system"/> is the best
+  function. In all other cases it is preferable to use <xref
+  linkend="ref.run-program"/>, which opens pipes to communicate with the
+  program and manipulate it while it runs on the background.</para>
+ </section>
+
+ <section xml:id="ext.os.command-line">
+  <title>Command line arguments</title>
+
+  <para></para>
+ </section>
+
+ <section xml:id="ext.os.dict">
+  <title>OS Reference</title>
+
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="ref_os.xmlf" xpointer="os.dict"/>
+
+ </section>
+</chapter>
+</book>
+<!-- Keep this comment at the end of the file
+      Local variables:
+      mode: nxml
+      sgml-parent-document: "ecl.xml"
+      sgml-indent-step: 1
+      nxml-child-indent: 1
+      nxml-outline-child-indent: 1
+      fill-column: 79
+      End:
+ -->

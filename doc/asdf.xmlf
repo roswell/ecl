@@ -1,0 +1,410 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter xml:id="ext.asdf">
+ <title>System building</title>
+
+ <section xml:id="ext.asdf.intro">
+  <title>Introduction</title>
+
+  <para>A typical application will consist of multiple lisp files that have to
+  be compiled and which will probably be linked to additional, third party
+  libraries, either written themselves in &CommonLisp; or shipped as foreign C
+  or C++ dynamically or statically linked lirbaries. Not only loading these
+  files into a running &ECL; can be a slow process in some platforms, but
+  shipping code in the form of multiple binaries and a script to load them is
+  far from optimal.</para>
+
+  <para>Traditionally, &CommonLisp; implemenations have provided a function to
+  save the dump all data from a running Lisp process into a file. The result
+  was called the Lisp image and could be shipped to other version compatible
+  implementations.Nowadays, having less control of the systems it runs in, a Lisp
+  implementation must work very hard to dump memory images and be able to load
+  and execute them afterwards.</para>
+
+  <para>&ECL; has chosen to avoid this process entirely. Instead, we conceive
+  five different portable models for building and shippin your programs. The
+  models, described in <xref linkend="table.make-build"/>, enumerate the
+  different kinds of files that &ECL; can portably produce. To get one or more
+  of the products mentioned in the table, you may resort to a low level
+  <acronym>API</acronym> described in <xref
+  linkend="part.internals"/>. However, we recommend a simpler way based on
+  using System Definition Files to describe the structure of your project and
+  let &ECL; build the desired target for you. This approach is described in the
+  following sections.</para>
+
+  <table xml:id="table.make-build">
+   <title>Code distribution models</title>
+   <tgroup cols="4">
+    <thead>
+     <row>
+      <entry>Model</entry>
+      <entry>Description</entry>
+      <entry><symbol>:TYPE</symbol></entry>
+      <entry><symbol>:MONOLITHIC</symbol></entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry>Source code</entry>
+      <entry><para>You distribute your programs in source code form. This is
+      the easiest and most portable way, but not the fastest
+      one.</para></entry>
+      <entry>NA</entry>
+      <entry>NA</entry>
+     </row>
+     <row>
+      <entry>&FASL; or loadable file</entry>
+      <entry><para>Best suited for development. You translate all lisp code to
+      C and link it against possibly other C/C++ libraries to obtain a single
+      binary file with extension <filename>.fas</filename>, like the compiled
+      files you obtain from using <function>compile-file</function>. This
+      "unified" &FASL; can be loaded a startup time to add new functionality to
+      the &ECL; environment.</para></entry>
+      <entry><symbol>:FASL</symbol></entry>
+      <entry><symbol>T</symbol>/<symbol>NIL</symbol></entry>
+     </row>
+     <row>
+      <entry>Standalone program</entry>
+      <entry><para>Product shipping for final user. You translate all your lisp
+      code to C using the &ECL; compiler. The final object files can be linked
+      against other C/C++ libraries to obtain a standalone executable.</para></entry>
+      <entry><symbol>:PROGRAM</symbol></entry>
+      <entry>T</entry>
+     </row>
+     <row>
+      <entry>Statically linked library</entry>
+      <entry><para>For embedding purposes. You translate all your lisp code to
+      C and combine the resulting object files into a single library with
+      <filename>.a</filename> or <filename>.lib</filename> extension. You can
+      distribute this library to other people and the final users can utilize
+      these libraries to build standalone programs.</para></entry>
+      <entry><symbol>:LIB</symbol></entry>
+      <entry><symbol>T</symbol>/<symbol>NIL</symbol></entry>
+     </row>
+     <row>
+      <entry>Dynamically linked library</entry>
+      <entry><para>For embedding purposes. Similar to a statically linked
+      library, but it is loaded at run time by the operating system and can be
+      shared by more than one instance of a program.</para></entry>
+      <entry><symbol>:LIB</symbol></entry>
+      <entry><symbol>T</symbol>/<symbol>NIL</symbol></entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </table>
+
+ </section>
+
+ <section xml:id="ext.asdf.sdf">
+  <title>System definition files</title>
+
+  <para>A System Definition File, or just <emphasis>system</emphasis>, is the
+  lisp equivalent of a makefile in the Unix world: it contains a list of source
+  files which are to be loaded or compiled, and dependencies among them ("load
+  source <filename>file1.lsp</filename> before compiling
+  <filename>file2.lsp</filename>", etc).</para>
+
+  <para>It is difficult to tell about the Lisp Machines history, but probably
+  the first most popular system definition format was called
+  <application>mk-defsystem</application> or simply
+  <application>defsystem</application>. Written by Mark Kantrowitz [<xref
+  linkend="bib.mk-defsystem"/>], this library now lives in the <ulink
+  url="https://sourceforge.net/projects/clocc/">CLOCC</ulink> repository and is
+  actively maintained. &ECL; ships with a copy of the version 3.x which
+  fortunately has no customizations. You can load this copy by issuing
+  <code>(require 'defsystem)</code> from the lisp toplevel.</para>
+
+  <para>However, in the last years, Another System Definition Facility known as
+  &ASDF; has become even more popular in the &CommonLisp; world. This new
+  format simplifies writing extensions to handle new kind of source files and
+  integrates very well with the package management utility known as
+  <application>ASDF-install</application>. &ASDF; has a slightly different
+  syntax from <application>mk-defsystem 3.0</application>, but because of
+  reasons of popularity and better integration with &ECL;, in this manual we
+  have focused on this particular library.</para>
+
+  <para>A simple &ASDF; definition looks as follows:</para>
+<programlisting>
+(defsystem test
+  :source-pathname "~/src/test/"
+  :source-extension "lisp"
+  :components ((:module file1
+                        :source-pathname "")
+               (:module file2
+                        :source-pathname ""
+                        :depends-on (file1))))</programlisting>
+  <para>This example consists of two files, <filename>file1.lisp</filename> and
+  <filename>file2.lisp</filename>, located in
+  <filename>~/src/test/</filename>. When compiling these files,
+  <filename>file1.lisp</filename> will be processed before
+  <filename>file2.lisp</filename>, because the second depends on the former
+  one. There are more complex rules that allow a system to depend on others,
+  and to contain other kind of files, such as C or Java binaries. For further
+  information we recommend reading <ulink
+  url="http://constantly.at/lisp/asdf/">the online manual</ulink>.</para>
+
+  <para>You can load &ASDF; on a running &ECL; using a single lisp statement
+  <code>(require 'asdf)</code>. Once loaded, &ASDF; will extend the function
+  <function>require</function> to recognize and load libraries that are placed
+  in standard locations or which have been registered with &ASDF; itself. The
+  following sections describe other features of &ASDF; which are specific to
+  &ECL; and related to the code building and shipping mechanisms introduced
+  before.</para>
+ </section>
+
+ <section xml:id="ext.asdf.make-build">
+  <title>Practical examples</title>
+
+  <para>The version of &ASDF; which is shipped with &ECL; has been further
+  customized to allow building all the binary files mentioned in <xref
+  linkend="table.make-build"/>. The procedure to do this is documented in a
+  detailed and formal manual page for <xref
+  linkend="ref.make-build"/>. However, since practice is the best teacher, we
+  will show a couple of examples of how to use this function before moving into
+  the formal specification.</para>
+
+  <para>In <filename>/ecl/examples/asdf</filename> you will find a very simple
+  example that can be built in different forms. The example is built around a
+  system definition file that depends on two sources,
+  <filename>file1.lisp</filename> and <filename>file2.lisp</filename>:</para>
+    <programlisting>
+(defsystem #:example
+    :serial t
+    :components ((:file "file1")
+		 (:file "file2")))</programlisting>
+
+    <para>We can built these files into a single &FASL; file, as shown
+    below. Notice how there is a single file with the name
+    <filename>*.fas</filename>, but there are two object files generated from
+    their respective sources, <filename>file1.o</filename>,
+    <filename>file2.o</filename>.</para>
+<screen>
+&gt; (require 'asdf)
+;;; Loading #P"/home/jlr/lib/ecl/asdf.fas"
+("ASDF")
+&gt; (asdf:make-build :example :type :fasl)
+...
+NIL
+&gt; (directory "*.o")
+(#P"/home/jlr/src/ecls-new/examples/asdf/file2.o"
+ #P"/home/jlr/src/ecls-new/examples/asdf/file1.o")
+&gt; (directory "*.fas")
+(#P"/home/jlr/src/ecls-new/examples/asdf/example.fas")
+&gt; (load "example.fas")
+;;; Loading "/home/jlr/src/ecls-new/examples/asdf/example.fas"
+======================================================================
+We are now executing FILE1.LSP
+TEST-FUNCTION has been created
+We are now executing FILE2.LSP
+Calling TEST-FUNCTION in FILE2.LSP
+1 + 1 is equal to 2
+Finished
+======================================================================
+"/home/jlr/src/ecls-new/examples/asdf/example.fas"
+</screen>
+
+    <para>The previous sources may be combined into a single program, as shown
+    below. Notice that we choose to execute <function>ext:quit</function> right
+    after all compiled files have run. If you do not supply this parameter,
+    <filename>example</filename> will jump to the lisp toplevel right after
+    that.</para>
+<screen>
+&gt; (asdf:make-build :example :type :program
+                   :epilogue-code '(ext:quit 0))
+NIL
+&gt; (ext:system "./example")
+======================================================================
+We are now executing FILE1.LSP
+TEST-FUNCTION has been created
+We are now executing FILE2.LSP
+Calling TEST-FUNCTION in FILE2.LSP
+1 + 1 is equal to 2
+Finished
+======================================================================</screen>
+
+ </section>
+
+ <section xml:id="ext.asdf.dict">
+  <title>ASDF Reference</title>
+
+<!-- ====================================================================== -->
+<!-- ASDF:MAKE-BUILD                                                        -->
+<!-- ====================================================================== -->
+
+  <refentry xml:id="ref.make-build">
+   <refnamediv>
+    <refname><function>asdf:make-build</function></refname>
+    <refpurpose>Block-build an &ASDF; system definition</refpurpose>
+   </refnamediv>
+
+   <refsynopsisdiv>
+    <title>Function</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>asdf:make-build</funcdef>
+      <paramdef><parameter>system-name</parameter></paramdef>
+      <paramdef>&key;</paramdef>
+      <paramdef><parameter>type</parameter></paramdef>
+      <paramdef><parameter>monolithic</parameter></paramdef>
+      <paramdef><parameter>ld-flags</parameter></paramdef>
+      <paramdef><parameter>prologue-code</parameter></paramdef>
+      <paramdef><parameter>epilogue-code</parameter></paramdef>
+      <paramdef>&allow-other-keys;</paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <variablelist>
+     <varlistentry>
+      <term><replaceable>system-name</replaceable></term>
+      <listitem><para>A symbol naming the system to be built. Only the symbol
+      name is considered.</para></listitem>
+     </varlistentry>
+     <varlistentry>
+      <term><replaceable>type</replaceable></term>
+      <listitem><para>One of <symbol>:FASL</symbol>, <symbol>:DLL</symbol>,
+      <symbol>:LIB</symbol> or
+      <symbol>:PROGRAM</symbol></para></listitem>
+     </varlistentry>
+     <varlistentry>
+      <term><replaceable>monolithic</replaceable></term>
+      <listitem><para>A boolean value.</para></listitem>
+     </varlistentry>
+     <varlistentry>
+      <term><replaceable>ld-flags</replaceable></term>
+      <listitem><para>A list of strings.</para></listitem>
+     </varlistentry>
+     <varlistentry>
+      <term><replaceable>prologue-code</replaceable></term>
+      <listitem><para>A string.</para></listitem>
+     </varlistentry>
+     <varlistentry>
+      <term><replaceable>epilogue-code</replaceable></term>
+      <listitem><para>A string or a lisp form.</para></listitem>
+     </varlistentry>
+    </variablelist>
+   </refsynopsisdiv>
+
+   <refsect1>
+    <title>Description</title>
+
+    <para>This function takes a system definition which is known to &ASDF; and
+    builds one or more binary files, depending on the arguments. The possible
+    output files depend on the value of <varname>type</varname> and are
+    summarized in <xref linkend="table.make-build"/>.</para>
+
+    <para>Internally the function works similary to the
+    &ASDF; function <function>asdf:oos</function> with the
+    <function>asdf:load-op</function> operator. It finds out the requested
+    system definition, either by searching in a set of predefined locations or
+    because the system has been already loaded into memory, computes all
+    libraries and components this system depends on, builds them and then
+    produces the desired output.</para>
+
+    <para>If the value of <varname>:monolithic</varname> is
+    <varname>NIL</varname> the output binary will contain just the desired
+    system, while in other cases the output will be linked together with all
+    libraries your system depends on. Standalone executables, given by
+    <code>type = :program</code>, must, by definition, be monolithic. All other
+    systems need not, but in that case you will have to manually satisfy the
+    required dependencies when using those files.</para>
+
+    <para>This function takes additional values which are related to the low
+    level details of the produced binaries. First of all we find
+    <varname>ld-flags</varname>, a list of strings with arguments for the
+    object linker. You will only need this argument if you have to link your
+    programs with foreign libraries.</para>
+
+    <para>The next two arguments represent two pieces of code which are
+    executed before (<varname>prologue-code</varname>) and after
+    (<varname>epilogue-code</varname>) running your lisp code. The prologue
+    code is a string with C code which you will typically use to initialize
+    foreign libraries. It can only be C code because this code may be executed
+    even before &ECL; itself is initialized.</para>
+
+    <para>The epilogue code, on the other hand, can be either a string with C
+    statements or a lisp form represented as a list. In the case of executables
+    it conveniently defaults to a call to the toplevel
+    <code>(SI::TOP-LEVEL)</code>, while in the case of libraries and &FASL;
+    files it is left empty.</para>
+
+   </refsect1>
+
+   <refsect1>
+    <title>Examples</title>
+
+    <para>See <xref linkend="ext.asdf.make-build"/>.</para></refsect1>
+  </refentry>
+
+<!-- ====================================================================== -->
+<!-- ASDF:MAKE-BUILD                                                        -->
+<!-- ====================================================================== -->
+
+  <refentry xml:id="ref.load-fasl-op">
+   <refnamediv>
+    <refname><function>asdf:load-fasl-op</function></refname>
+    <refpurpose>Compile and load one ore more libraries using unified &FASL;</refpurpose>
+   </refnamediv>
+
+   <refsynopsisdiv>
+    <title>&ASDF; operator</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>asdf:make-build</funcdef>
+      <paramdef>'asdf:load-fasl-op</paramdef>
+      <paramdef><parameter>system-name</parameter></paramdef>
+      <paramdef>&key;</paramdef>
+      <paramdef>&allow-other-keys;</paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <variablelist>
+     <varlistentry>
+      <term><replaceable>system-name</replaceable></term>
+      <listitem><para>A symbol naming the system to be built. Only the symbol
+      name is considered.</para></listitem>
+     </varlistentry>
+    </variablelist>
+   </refsynopsisdiv>
+
+   <refsect1>
+    <title>Description</title>
+
+    <para>This function is a replacement for the &ASDF; operator
+    <symbol>ASDF:LOAD-OP</symbol>. Given a system name, it will build it and
+    all its dependencies, to load them in the required order. The only
+    difference with respect to <symbol>ASDF:LOAD-OP</symbol> is that it builds
+    a single &FASL; file per module, thus being potentially faster and more
+    resource efficient.</para>
+   </refsect1>
+
+   <refsect1>
+    <title>Examples</title>
+
+    <para>Assume you want to load the &CFFI; library, which has been registered
+    with &ASDF;. You will simply type</para>
+<screen>
+&gt; (require 'asdf)
+;;; Loading #P"/home/jlr/lib/ecl/asdf.fas"
+("ASDF")
+&gt; (asdf:oos 'asdf:load-fasl-op :cffi)
+...
+T
+</screen>
+   </refsect1>
+  </refentry>
+
+ </section>
+ </chapter>
+</book>
+<!-- Keep this comment at the end of the file
+      Local variables:
+      mode: nxml
+      sgml-parent-document: "ecl.xml"
+      sgml-indent-step: 1
+      nxml-child-indent: 1
+      nxml-outline-child-indent: 1
+      fill-column: 79
+      End:
+ -->

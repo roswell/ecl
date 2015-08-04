@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+		xmlns:a="http://docbook.org/ns/docbook"
+		exclude-result-prefixes="a"
+		version="1.0">
+<xsl:output encoding="utf-8"/>
+
+<!-- By default copy the whole document -->
+<xsl:template match="node()|@*">
+  <xsl:copy>
+    <xsl:apply-templates select="node()|@*"/>
+  </xsl:copy>
+</xsl:template>
+
+<xsl:template match="a:refsynopsisdiv">
+  <xsl:for-each select=".//a:symbol">
+    <xsl:element name="indexterm">
+      <xsl:attribute name="type">cl</xsl:attribute>
+      <primary><xsl:value-of select="."/></primary>
+    </xsl:element>
+  </xsl:for-each>
+  <xsl:for-each select=".//a:funcsynopsis//a:function|
+			.//a:synopsys//a:type|
+			.//a:synopsys//a:variable|
+			.//a:synopsys//a:constant">
+    <xsl:if test="string-length(attribute::role)=0">
+      <xsl:element name="indexterm">
+	<xsl:attribute name="type">c</xsl:attribute>
+	<primary><xsl:value-of select="."/></primary>
+      </xsl:element>
+    </xsl:if>
+  </xsl:for-each>
+  <xsl:copy-of select="."/>
+</xsl:template>
+
+<!--
+<xsl:template match="a:symbol" mode="automatic">
+  <xsl:copy-of select="."/>
+  <indexterm type="cl">
+    <primary><xsl:value-of select="."/></primary>
+  </indexterm>
+</xsl:template>
+
+<xsl:template match="a:function" mode="automatic">
+  <xsl:copy-of select="."/>
+  <indexterm type="c">
+    <primary><xsl:value-of select="."/></primary>
+  </indexterm>
+</xsl:template>
+
+<xsl:template match="a:variable" mode="automatic">
+  <xsl:copy-of select="."/>
+  <indexterm type="c">
+    <primary><xsl:value-of select="."/></primary>
+  </indexterm>
+</xsl:template>
+
+<xsl:template match="a:type" mode="automatic">
+  <xsl:copy-of select="."/>
+  <indexterm type="c">
+    <primary><xsl:value-of select="."/></primary>
+  </indexterm>
+</xsl:template>
+-->
+
+</xsl:stylesheet>

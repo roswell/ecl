@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter>
+<title>Signals</title>
+<section xml:id="ext.signals.dict">
+<title>Signals Reference</title>
+
+<!-- ====================================================================== -->
+<!-- EXT:WITH-INTERRUPTS                                                    -->
+<!-- ====================================================================== -->
+
+<refentry xml:id="ref.signals.with-interrupts">
+  <refnamediv>
+    <refname><function>ext:with-interrupts</function></refname>
+    <refpurpose>Execute code with interrupts optionally enabled.</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <title>Macro</title>
+    <funcsynopsis>
+      <funcprototype>
+        <funcdef>ext:with-interrupts</funcdef>
+        <paramdef>&body; <param>body</param></paramdef>
+      </funcprototype>
+    </funcsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1>
+    <title>Description</title>
+
+    <para>Executes the given body with all interrupts enabled. Since
+    interrupts are normally enabled, this macro only makes sense if
+    there is an outer <function>ext:without-interrupts</function> with
+    a corresponding <function>ext:allow-with-interrupts</function>:
+    interrupts are not enabled if any outer
+    <function>mp:without-interrupts</function> is not accompanied by
+    <function>mp:allow-with-interrupts</function>.</para>
+  </refsect1>
+</refentry>
+
+<!-- ====================================================================== -->
+<!-- EXT:WITHOUT-INTERRUPTS                                                 -->
+<!-- ====================================================================== -->
+
+<refentry xml:id="ref.signals.without-interrupts">
+  <refnamediv>
+    <refname><function>ext:without-interrupts</function></refname>
+    <refpurpose>Execute code without being interrupted.</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <title>Macro</title>
+    <funcsynopsis>
+      <funcprototype>
+        <funcdef>ext:without-interrupts</funcdef>
+        <paramdef>&body; <param>body</param></paramdef>
+      </funcprototype>
+    </funcsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1>
+    <title>Description</title>
+
+    <para>Executes the given body with all interrupts disabled. This
+    macro is compatible with the one in &SBCL; and as such it also
+    defines three other local macros
+    <function>ext:allow-with-interrupts</function>,
+    <function>ext:with-local-interrupts</function> and
+    <function>ext:with-restored-interrupts</function>.</para>
+
+    <para>Deferrable interrupts include most blockable POSIX signals,
+    and <function>mp:interrupt-process</function>. Does not interfere
+    with garbage collection, and does not inhibit scheduling of other
+    threads.</para>
+
+    <para>This macro binds <function>allow-with-interrupts</function>,
+    <function>with-local-interrupts</function> and
+    <function>with-restored-interrupts</function> as a local
+    macros.</para>
+
+    <para><function>ext:with-restored-interrupts</function> executes
+    the body with interrupts enabled if and only if the
+    <function>ext:without-interrupts</function> was in an environment
+    in which interrupts were allowed.</para>
+
+    <para><function>ext:allow-with-interrupts</function> allows the
+    <function>ext:with-interrupts</function> to take effect during the
+    dynamic scope of its body, unless there is an outer
+    <function>ext:without-interrupts</function> without a
+    corresponding
+    <function>ext:allow-with-interrupts</function>.</para>
+
+    <para><function>ext:with-local-interrupts</function> executes its
+    body with interrupts enabled provided that for there is an
+    <function>ext:allow-with-interrupts</function> for every
+    <function>ext:without-interrupts</function> surrounding the current
+    one. <function>ext:with-local-interrupts</function> is equivalent
+    to:</para>
+<programlisting>
+  (allow-with-interrupts (with-interrupts ...))
+</programlisting>
+
+    <para>Care must be taken not to let either
+    <function>ext:allow-with-interrupts</function> or
+    <function>ext:with-local-interrupts</function> appear in a function
+    that escapes from inside the
+    <function>ext:without-interrupts</function> in:</para>
+<programlisting>
+  (without-interrupts
+    ;; The body of the lambda would be executed with WITH-INTERRUPTS allowed
+    ;; regardless of the interrupt policy in effect when it is called.
+    (lambda () (allow-with-interrupts ...)))
+
+  (without-interrupts
+    ;; The body of the lambda would be executed with interrupts enabled
+    ;; regardless of the interrupt policy in effect when it is called.
+    (lambda () (with-local-interrupts ...)))
+</programlisting>
+  </refsect1>
+</refentry>
+</section>
+</chapter>
+</book>
+<!-- Keep this comment at the end of the file
+      Local variables:
+      mode: nxml
+      sgml-parent-document: "ecl.xml"
+      sgml-indent-step: 1
+      nxml-child-indent: 1
+      nxml-outline-child-indent: 1
+      fill-column: 79
+      End:
+ -->

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+ <chapter xml:id="ext.mop">
+  <title>Meta-Object Protocol (MOP)</title>
+
+  <section xml:id="ext.mop.intro">
+   <title>Introduction</title>
+
+   <para>The Meta-Object Protocol is an extension to &CommonLisp; which
+   provides rules, functions and a type structure to handle the object
+   system. It is a reflective system, where classes are also objects and can be
+   created and manipulated using very well defined procedures.</para>
+
+   <para>The Meta-Object Protocol associated to &CommonLisp;'s object system
+   was introduced in a famous book, The Art of the Metaobject Protocol &AMOP;,
+   which was probably intended for the &ANSI; specification but was drop out
+   because of its revolutionary and then not too well tested ideas.</para>
+
+   <para>The &AMOP; is present, in one way or another, in most &CommonLisp;
+   implementations, eithr using proprietary systems or because their
+   implementation of &CLOS; descended from &PCL; (Portable CommonLoops). It has
+   thus become a de facto standard and &ECL; should not be without it.</para>
+
+   <para>Unfortunately &ECL;'s own implemention originally contained only a
+   subset of the &AMOP;. This was a clever decision at the time, since the
+   focus was on performance and on producing a stable and lean implementation
+   of &CommonLisp;. Nowadays it is however not an option, specially given that
+   most of the &AMOP; can be implemented with little cost for both the
+   implementor and the user.</para>
+
+   <para>So &ECL; has an almost complete implementation of the &AMOP;. However,
+   since it was written from scratch and progressed according to user's request
+   and our own innovations, there might still be some missing functionality
+   which we expect to correct in the near future. Please report any feature you
+   miss as a bug through the appropriate channels.</para>
+
+   <para>When considering the Metaobject Protocol, the book itself should be
+   the main reference. The following sections contain only further extensions
+   or improvements over the paragraphs which were either conflicting or less
+   specified.</para>
+  </section>
+
+  <section xml:id="ext.mop.classes">
+   <title>Classes</title>
+
+   <para>[TODO: Document the class initialization / finalization protocol]</para>
+  </section>
+
+  <section xml:id="ext.mop.slots">
+   <title>Slots</title>
+
+   <para>[TODO: Document the slot descriptions and parameters.]</para>
+
+  </section>
+
+  <section xml:id="ext.mop.generic">
+   <title>Generic functions and methods</title>
+
+   <para>[TODO: Document the calling convetions for method functions.]</para>
+  </section>
+
+  <section xml:id="ext.mop.slots.sealed">
+   <title>Sealed slots and classes</title>
+   
+   <para>[TODO: Document sealed slots]</para>
+  </section>
+ </chapter>
+</book>
+<!-- Keep this comment at the end of the file
+     Local variables:
+     mode: nxml
+     sgml-parent-document: "ecl.xml"
+     sgml-indent-step: 1
+     nxml-child-indent: 1
+     nxml-outline-child-indent: 1
+     fill-column: 79
+     End:
+-->

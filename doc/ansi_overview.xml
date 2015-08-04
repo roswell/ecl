@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter xml:id="ansi.overview">
+ <title>Overview</title>
+
+ <section>
+  <title>Reading this manual</title>
+
+  <section>
+   <title>Common Lisp users</title>
+
+   <para>&ECL; supports all Common-Lisp data types exactly as defined in the &ANSI;. All functions and macros are expected to behave as described in that document and in the HyperSpec &HyperSpec; which is the online version of &ANSI;. In other words, the Standard is the basic reference for Common Lisp and also for &ECL;, and this first part of the book just complements it, describing implementation-specific features such as
+   <itemizedlist>
+    <listitem><para>Platform dependent limits.</para></listitem>
+    <listitem><para>Behavior which is marked as <quote>implementation specific</quote> in the standard.</para></listitem>
+    <listitem><para>Some corner cases which are not described in &ANSI;.</para></listitem>
+    <listitem><para>The philosophy behind certain implementation choices, etc.</para></listitem>
+   </itemizedlist>
+   </para>
+
+   <para>In order to aid in locating these differences, this first part of the manual copies the structure of the &ANSI; standard, having the same number of chapters, each one with a set of sections documenting the implementation-specific details.</para>
+
+  </section>
+
+  <section>
+   <title>C/C++ programmers</title>
+
+   <para>The second goal of this document is to provide a reference for C programmers that want to create, manipulate and operate with Common Lisp programs at a lower level, or simply embedding &ECL; as a library.</para>
+
+   <para>The C/C++ reference evolves in parallel with the Common Lisp one, in the form of one section with the name "C Reference" for each chapter of the &ANSI; standard. Much of what is presented in those sections is redundant with the Common Lisp specification. In particular, there is a one-to-one mapping between types and functions which should be obvious given the rules explained in <xref linkend="ansi.overview.c-dict"/>.</para>
+
+   <para>We must remark that the reference in this part of the manual is not enough to know how to embed &ECL; in a program. In practice the user or developer will also have to learn how to <link linkend="ext.asdf">build programs</link>, <link linkend="ext.ffi">interface with foreign libraries</link>, <link linkend="ext.memory">manage memory</link>, etc. These concepts are explained in a different part of the book.</para>
+  </section>
+ </section>
+
+ <section xml:id="ansi.overview.c-dict">
+  <title>C Reference</title>
+
+  <section xml:id="cl_object">
+   <title>One type for everything: <type>cl_object</type></title>
+
+   <para>&ECL; is designed around the basic principle that Common Lisp already provides everything that a programmer could need, orienting itself around the creation and manipulation of Common Lisp objects: conses, arrays, strings, characters, ... When embedding &ECL; there should be no need to use other C/C++ types, except when interfacing data to and from those other languages.</para>
+
+   <para>All Common Lisp objects are represented internally through the same C type, <type>cl_object</type>, which is either a pointer to a union type or an integer, depending on the situation. While the inner guts of this type are exposed through various headers, the user should never rely on these details but rather use the macros and functions that are listed in this manual</para>
+
+   <para>There are two types of Common Lisp objects: immediate and memory allocated ones. Immediate types fit in the bits of the <type>cl_object</type> word, and do not require the garbage collector to be created. The list of such types may depend on the platform, but it includes at least the <type>fixnum</type> and <type>character</type> types.</para>
+
+   <para>Memory allocated types on the other hand require the use of the garbage collector to be created. &ECL; abstracts this from the user providing enough constructors, either in the form of Common Lisp functions (<function>cl_make_array()</function>, <function>cl_complex()</function>,...), or in the form of C/C++ constructors (<function>ecl_make_symbol()</function>, etc).</para>
+
+   <para>Memory allocated types must always be kept alive so that the garbage collector does not reclaim them. This involves referencing the object from one of the places that the collector scans:
+   <itemizedlist>
+    <listitem><para>The fields of an object (array, structure, etc) whic is itself alive.</para></listitem>
+    <listitem><para>A special variable or a constant.</para></listitem>
+    <listitem><para>The C stack (i.e. automatic variables in a function).</para></listitem>
+    <listitem><para>Global variables or pointers that have been registered with the garbage collector.</para></listitem>
+   </itemizedlist>
+   Further details will be provided in the section on <link linkend="ext.memory">Memory Management</link>.</para>
+  </section>
+
+  <section>
+   <title>Naming conventions</title>
+
+   <para>As explained in the introduction, each of the chapters in the Common Lisp standard can also be implemented using C functions and types. The mapping between both languages is done using a small set of rules described below.</para>
+   <itemizedlist>
+    <listitem><para>Functions in the Common Lisp ("CL") package are prefixed with the characters "cl_", functions in the System ("SI") package are prefix with "si_", etc, etc.</para></listitem>
+    <listitem><para>If a function takes only a fixed number of arguments, it is mapped to a C function with also a fixed number of arguments. For instance, <symbol>COS</symbol> maps to <code>cl_object cl_cos(cl_object)</code>, which takes a single Lisp object and returns a Lisp object of type <type>FLOAT</type>.</para></listitem>
+    <listitem><para>If the function takes a variable number of arguments, its signature consists on an integer with the number of arguments and zero or more of required arguments and then a C vararg. This is the case of <code>cl_object cl_list(cl_narg narg, ...)</code>, which can be invoked without arguments, as in <code>cl_list(0)</code>, with one, <code>cl_list(1, a)</code>, etc.</para></listitem>
+    <listitem><para>Functions return at least one value, which is either the first value output by the function, or <symbol>NIL</symbol>. The extra values may be retrieved immediately after the function call using the function <link linkend="ecl_nth_value"><function>ecl_nth_value</function></link>.</para></listitem>
+   </itemizedlist>
+   <para>In addition to the Common Lisp core functions (cl_*), there exist functions which are devoted only to C/C++ programming, with tasks such as coercion of objects to and from C types, optimized functions, inlined macroexpansions, etc. These functions and macros typically carry the prefix "ecl_" or "ECL_" and only return one value, if any.</para>
+  </section>
+
+  <section xml:id="ansi.OCL">
+   <title>Only in Common Lisp</title>
+
+   <para>Some parts of the language are not available as C functions, even though they can be used in Common Lisp programs. These parts are either marked in the "ANSI Dictionary" sections using the tag &OCL;, or they are simply not mentioned (macros and special constructs). This typically happens with non-translatable constructs such as</para>
+   <itemizedlist>
+    <listitem><para>Common Lisp macros such as <symbol>with-open-files</symbol>.</para></listitem>
+    <listitem><para>Common Lisp special forms, such as <symbol>cond</symbol></para></listitem>
+    <listitem><para>Common Lisp generic functions, which cannot be written in C because of their dynamical dispatch and automatic redefinition properties.</para></listitem>
+   </itemizedlist>
+
+   <para>In most of those cases there exist straightforward alternatives using the constructs and functions in &ECL;. For example, <symbol>unwind-protect</symbol> can be implemented using a C macro which is provided by &ECL;</para>
+<programlisting>
+cl_env_ptr env = ecl_process_env();
+CL_UNWIND_PROTECT_BEGIN(env) {
+    /* protected code goes here */
+} CL_UNWIND_PROTECT_EXIT {
+    /* exit code goes here */
+} CL_UNWIND_PROTECT_END;
+</programlisting>
+
+   <para>Common Lisp generic functions can be directly accessed using <symbol>funcall</symbol> or <symbol>apply</symbol> and the function name, as shown in the code below</para>
+<programlisting>
+cl_object name = ecl_make_symbol("MY-GENERIC-FUNCTION","CL-USER");
+cl_object output = cl_funcall(2, name, argument);
+</programlisting>
+
+   <para>Identifying these alternatives requires some knowledge of Common Lisp, which is why it is recommended to approach the embeddable components in &ECL; only when there is some familiarity with the language.</para>
+  </section>
+ </section>
+</chapter>
+</book>

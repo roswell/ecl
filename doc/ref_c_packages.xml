@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter>
+<title>Packages</title>
+<section xml:id="ansi.packages.c-dict">
+<title>C Reference</title>
+  <refentry>
+    <refnamediv>
+      <refname>ANSI Dictionary</refname>
+      <refpurpose>&ANSI-C-Dict;</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+<simplelist columns="2" type="horiz">
+<member>Lisp symbol</member>
+<member>C function</member>
+
+<member><ulink url="&clhs;f_export.htm"><symbol>export</symbol></ulink></member>
+<member><code>cl_object cl_export(cl_narg narg, cl_object symbols_list, ...)</code></member>
+
+<member><ulink url="&clhs;f_find_s.htm"><symbol>find-symbol</symbol></ulink></member>
+<member><code>cl_object cl_find_symbol(cl_narg narg, cl_object string, ...)</code></member>
+
+<member><ulink url="&clhs;f_find_p.htm"><symbol>find-package</symbol></ulink></member>
+<member><code>cl_object cl_find_package(cl_object string)</code></member>
+
+<member><ulink url="&clhs;f_find_a.htm"><symbol>find-all-symbols</symbol></ulink></member>
+<member><code>cl_object cl_find_all_symbols(cl_object string)</code></member>
+
+<member><ulink url="&clhs;f_import.htm"><symbol>import</symbol></ulink></member>
+<member><code>cl_object cl_import(cl_narg narg, cl_object symbols)</code></member>
+
+<member><ulink url="&clhs;f_list_a.htm"><symbol>list-all-packages</symbol></ulink></member>
+<member><code>cl_object cl_list_all_packages(void)</code></member>
+
+<member><ulink url="&clhs;f_rn_pkg.htm"><symbol>rename-package</symbol></ulink></member>
+<member><code>cl_object cl_rename_package(cl_narg narg, cl_object package, cl_object new_name, ...)</code></member>
+
+<member><ulink url="&clhs;f_shadow.htm"><symbol>shadow</symbol></ulink></member>
+<member><code>cl_object cl_shadow(cl_narg narg, cl_object symbol_names)</code></member>
+
+<member><ulink url="&clhs;f_shdw_i.htm"><symbol>shadowing-import</symbol></ulink></member>
+<member><code>cl_object cl_shadowing_import(cl_narg narg, cl_object symbols, ...)</code></member>
+
+<member><ulink url="&clhs;f_del_pk.htm"><symbol>delete-package</symbol></ulink></member>
+<member><code>cl_object cl_delete_package(cl_object package_designator)</code></member>
+
+<member><ulink url="&clhs;f_mk_pkg.htm"><symbol>make-package</symbol></ulink></member>
+<member><code>cl_object cl_make_package(cl_narg narg, cl_object package_name, ...)</code></member>
+
+<member><ulink url="&clhs;f_unexpo.htm"><symbol>unexport</symbol></ulink></member>
+<member><code>cl_object cl_unexport(cl_narg narg, cl_object symbols_list, ...)</code></member>
+
+<member><ulink url="&clhs;f_uninte.htm"><symbol>unintern</symbol></ulink></member>
+<member><code>cl_object cl_unintern(cl_narg narg, cl_object symbol, ...)</code></member>
+
+<member><ulink url="&clhs;m_in_pkg.htm"><symbol>in-package</symbol></ulink></member>
+<member><code>cl_object si_select_package(cl_narg narg, cl_object name)</code></member>
+
+<member><ulink url="&clhs;f_unuse_.htm"><symbol>unuse-package</symbol></ulink></member>
+<member><code>cl_object cl_unuse_package(cl_narg narg, cl_object packages_list)</code></member>
+
+<member><ulink url="&clhs;f_use_pk.htm"><symbol>use-package</symbol></ulink></member>
+<member><code>cl_object cl_use_package(cl_narg narg, cl_object packages_list)</code></member>
+
+<member><ulink url="&clhs;f_intern.htm"><symbol>intern</symbol></ulink></member>
+<member><code>cl_object cl_intern(cl_narg narg, cl_object string, ...)</code></member>
+
+<member><ulink url="&clhs;f_pkg_na.htm"><symbol>package-name</symbol></ulink></member>
+<member><code>cl_object cl_package_name(cl_object package_designator)</code></member>
+
+<member><ulink url="&clhs;f_pkg_ni.htm"><symbol>package-nicknames</symbol></ulink></member>
+<member><code>cl_object cl_package_nicknames(cl_object package_designator)</code></member>
+
+<member><ulink url="&clhs;f_pkg_sh.htm"><symbol>package-shadowing-symbols</symbol></ulink></member>
+<member><code>cl_object cl_package_shadowing_symbols(cl_object package_designator)</code></member>
+
+<member><ulink url="&clhs;f_pkg_us.htm"><symbol>package-use-list</symbol></ulink></member>
+<member><code>cl_object cl_package_use_list(cl_object package_designator)</code></member>
+
+<member><ulink url="&clhs;f_pkg__1.htm"><symbol>package-used-by-list</symbol></ulink></member>
+<member><code>cl_object cl_package_used_by_list(cl_object package_designator)</code></member>
+
+<member><ulink url="&clhs;f_pkgp.htm"><symbol>packagep</symbol></ulink></member>
+<member><code>cl_object cl_packagep(cl_object object)</code></member>
+
+<member><ulink url="&clhs;f_pkg_er.htm"><symbol>package-error-package</symbol></ulink></member>
+<member><code>[Only in Common Lisp]</code></member>
+</simplelist>
+    </refsynopsisdiv>
+  </refentry>
+
+  <refsect1>
+    <title>Description</title>
+    <para></para>
+  </refsect1>
+</section>
+</chapter>
+</book>

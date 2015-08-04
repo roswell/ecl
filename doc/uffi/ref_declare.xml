@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "../ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+ <reference xml:id="uffi.ref_declarations">
+  <title>Declarations</title>
+  
+  <partintro>
+   <sect1>
+    <title>Overview</title>
+    <para>Declarations are used to give the compiler optimizing
+    information about foreign types. Currently, only &CMUCL;
+    supports declarations. On &ACL; and &LW;, these expressions 
+    declare the type generically as &t;
+    </para>
+   </sect1>
+  </partintro>
+
+  <refentry xml:id="uffi.def-type">
+   <refnamediv>
+    <refname>def-type</refname>
+    <refpurpose>Defines a Common Lisp type. 
+    </refpurpose>
+    <refclass>Macro</refclass>
+   </refnamediv>
+   <refsynopsisdiv>
+    <title>Syntax</title>
+    <synopsis>
+     <function>def-type</function> <replaceable>name type</replaceable>
+    </synopsis>
+    <variablelist>
+     <varlistentry>
+      <term><parameter>name</parameter></term>
+      <listitem>
+       <para>A symbol naming the type</para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term><parameter>type</parameter></term>
+      <listitem>
+       <para>A form that specifies the &UFFI; type. It is not evaluated.
+       </para>
+      </listitem>
+     </varlistentry>
+    </variablelist>
+   </refsynopsisdiv>
+   <refsect1>
+    <title>Description</title>
+    <para>Defines a Common Lisp type based on a &UFFI; type.
+    </para>
+   </refsect1>
+   <refsect1>
+    <title>Examples</title>
+    <screen>
+(def-type char-ptr '(* :char))
+   ...
+(defun foo (ptr)
+  (declare (type char-ptr ptr))
+   ...
+    </screen>
+   </refsect1>
+   <refsect1>
+    <title>Side Effects</title>
+    <para>Defines a new &CommonLisp; type.</para>
+   </refsect1>
+   <refsect1>
+    <title>Affected by</title>
+    <para>None.</para>
+   </refsect1>
+   <refsect1>
+    <title>Exceptional Situations</title>
+    <para>None.</para>
+   </refsect1>
+  </refentry>
+ </reference>
+</book>
+<!-- Keep this comment at the end of the file
+     Local variables:
+     mode: nxml
+     sgml-indent-step: 1
+     nxml-child-indent: 1
+     nxml-outline-child-indent: 0
+     fill-column: 79
+     End:
+-->

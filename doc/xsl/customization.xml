@@ -1,0 +1,38 @@
+<?xml version='1.0'?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+                version='1.0'>
+<xsl:param name="html.stylesheet">ecl.css</xsl:param>
+<xsl:param name="funcsynopsis.style">common-lisp</xsl:param>
+<xsl:param name="toc.title.p" select="0"/>
+<xsl:param name="toc.section.depth" select="3"/>
+<xsl:param name="generate.section.toc.level" select="2"/>
+<xsl:param name="section.autolabel" select="1"/>
+<xsl:param name="section.label.includes.component.label" select="1"></xsl:param>
+<xsl:param name="label.from.part" select="1"></xsl:param>
+<xsl:param name="bridgehead.in.toc" select="1"></xsl:param>
+<xsl:param name="xref.with.number.and.title" select="0"/>
+<xsl:param name="refentry.generate.name" select="1"/>
+<xsl:param name="refentry.generate.title" select="0"/>
+<xsl:param name="variablelist.as.table" select="1"/>
+<xsl:param name="chunk.separate.lots" select="1"/>
+<xsl:param name="generate.index" select="1"/>
+<xsl:param name="index.on.type" select="1"/>
+<xsl:param condition="html" name="generate.toc">
+appendix  toc
+article/appendix  nop
+article   toc
+book      toc,figure,table,example,equation
+chapter   toc
+part      toc
+preface   toc
+reference toc
+sect1     nop
+sect2     nop
+sect3     nop
+sect4     nop
+sect5     nop
+section   nop
+set       toc
+</xsl:param>
+</xsl:stylesheet>
+

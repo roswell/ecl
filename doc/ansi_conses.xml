@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter xml:id="ansi.conses">
+ <title>Conses</title>
+
+ <xi:include href="ref_c_conses.xml" xpointer="ansi.conses.c-dict" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+</chapter>
+</book>

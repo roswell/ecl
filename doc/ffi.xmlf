@@ -1,0 +1,525 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter xml:id="ext.ffi">
+ <title>Foreign Function Interface</title>
+
+ <section xml:id="ext.ffi.what">
+  <title>What is a FFI?</title>
+
+  <para>A Foreign Function Interface, or &FFI; for short, is a means for a
+  programming language to interface with libraries written in other programming
+  languages, the <emphasis>foreign code</emphasis>. You will see this concept
+  most often being used in interpreted environments, such as Python, Ruby or
+  Lisp, where one wants to reuse the big number of libraries written in C
+  and C++ for dealing with graphical interfaces, networking, filesystems,
+  etc.</para>
+
+  <para>A FFI is made of at least three components:</para>
+  <variablelist>
+   <varlistentry>
+    <term>Foreign objects management</term>
+    <listitem><para>This is the data that the foreign code will use. A &FFI;
+    needs to provide means to buid and manipulate foreign data, with automatic
+    conversions to and from lisp data types whenever possible, and it also has
+    to deal with issues like garbage collection and
+    finalization.</para></listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>Foreign code loader</term>
+    <listitem><para>To actually use a foreign routine, the code must reside in
+    memory. The process of loading this code and finding out the addresses of
+    the routines we want to use is normally done by an independent
+    component.</para></listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>Foreign function invocation</term>
+    <listitem><para>This is the part of the &FFI; that deals with actually
+    calling the foreign routines we want to use. For that one typically has to
+    tell the &FFI; what are the arguments that these routines expect, what are
+    the calling conventions and where are these routines to be
+    found.</para></listitem>
+   </varlistentry>
+  </variablelist>
+
+  <para>On top of these components sits a higher level interface written
+  entirely in lisp, with which you will actually declare and use foreign
+  variables, functions and libraries. In the following sections we describe
+  both the details of the low-level components (<xref linkend="ext.ffi.dffi"/>,
+  <xref linkend="ext.ffi.objects"/>), and of the higher level interface (<xref
+  linkend="ext.ffi.uffi.and.cffi"/>). It is highly recommended that you read
+  <emphasis>all</emphasis> sections.</para>
+ </section>
+
+ <section xml:id="ext.ffi.dffi">
+  <title>Two kinds of FFI</title>
+
+  <para>&ECL; allows for two different appraoches when building a &FFI;. Both
+  approaches have a different implementation philosophy and affect the places
+  where you can use the &FFI; and how.
+  <variablelist>
+   <varlistentry>
+    <term>Static &FFI;</term>
+    <listitem><para>For every foreign function and variable you might need to
+    use, a wrapper is automatically written in C with the help of <xref
+    linkend="ref.c-inline"/>. These wrappers are compiled using an ordinary C
+    compiler and linked against both the foreign libraries you want to use and
+    against the &ECL; library. The result is a &FASL; file that can be loaded
+    from &ECL; and where the wrappers appear as ordinary lisp functions and
+    variables that the user may directly invoked.</para></listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>Dynamic &FFI;</term>
+    <listitem><para>First of all, the foreign libraries are loaded in memory
+    using the facilities of the operating system. Similar routines are used to
+    find out and register the memory location of all the functions and
+    variables we want to use. Finally, when actually accessing these functions,
+    a little piece of assembly code does the job of translating the lisp data
+    into foreign objects, storing the arguments in the stack and in CPU
+    registers, calling the function and converting back the output of the
+    function to lisp.</para></listitem>
+   </varlistentry>
+  </variablelist>
+  </para>
+
+  <para>
+  <figure float="1" xml:id="fig.ffi">
+   <title>FFI components</title>
+   <mediaobject>
+    <imageobject>
+     <imagedata align="center" fileref="figures/ffi.png"
+		format="PNG" width="300px"/>
+    </imageobject>
+   </mediaobject>
+  </figure>As you see, the first approach uses rather portable technices based
+  on a programming language (C, C++) which is strongly supported by the
+  operating system. The conversion of data is performed calling routines in the
+  &ECL; library and we need not care about the precise details (organizing the
+  stack, CPU registers, etc) when calling a function: the compiler does this
+  for us.</para>
+
+  <para>On the other hand, the dynamic approach allows us to choose the
+  libraries we load at any time, look for the functions and invoke them even
+  from the toplevel, but it relies on unportable techniques and requires from
+  us, the developers of &ECL;, to know very well both the assembly code of the
+  machine &ECL; runs on and the calling conventions of that particular
+  operating system.</para>
+
+  <para>&ECL; currently supports the static method on all platforms, and the
+  dynamical one a few of the most popular ones, shown in <xref
+  linkend="table.dffi"/>. You can test if your copy of &ECL; was built with
+  DFFI by inspecting whether the symbol <symbol>:DFFI</symbol> is present in
+  the list from variable <symbol>*FEATURES*</symbol>.</para>
+
+  <table xml:id="table.dffi">
+   <title>DFFI support</title>
+   <tgroup cols="3">
+    <thead>
+     <row>
+      <entry>Architecture</entry>
+      <entry>Support</entry>
+      <entry>Operating systems</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry>Intel x86 32 bits</entry>
+      <entry>Complete</entry>
+      <entry>Any with SysV ABI (Linux, BSD), Windows, OS X</entry>
+     </row>
+     <row>
+      <entry>Intel x86 64 bits</entry>
+      <entry>In progress</entry>
+      <entry>SysV ABI</entry>
+     </row>
+     <row>
+      <entry>PowerPC 32 bits</entry>
+      <entry>In progress</entry>
+      <entry>OS X</entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </table>
+ </section>
+
+ <section xml:id="ext.ffi.objects">
+  <title>Foreign objects</title>
+
+  <para>While the foreign function invocation protocols differ strongly between
+  platforms and implementations, foreign objects are pretty easy to handle
+  portably. For &ECL;, a foreign object is just a bunch of bytes stored in
+  memory. The lisp object for a foreign object encapsulates several bits of
+  information:
+  <itemizedlist>
+   <listitem><para>A list or a symbol specifying the C type of the
+   object.</para></listitem>
+   <listitem><para>The pointer to the region of memory where data is
+   stored.</para></listitem>
+   <listitem><para>A flag determining whether &ECL; can automatically manage
+   that piece of memory and deallocated when no longer in
+   use.</para></listitem>
+  </itemizedlist></para>
+
+  <para>A foreign object may contain many different kinds of data: integers,
+  floating point numbers, C structures, unions, etc. The actual type of the
+  object is stored in a list or a symbol which is understood by the higher
+  level interface (<xref linkend="ext.ffi.uffi.and.cffi"/>).</para>
+
+  <para>The most important component of the object is the memory region where
+  data is stored. By default &ECL; assumes that the user will perform automatic
+  managment of this memory, deleting the object when it is no longer
+  needed. The first reason is that this block may have been allocated by a
+  foreign routine using <function>malloc()</function>, or
+  <function>mmap()</function>, or statically, by referring to a C constant. The
+  second reason is that foreign functions may store references to this memory
+  which &ECL; is not aware of and, in order to keep these references valid,
+  &ECL; should not attempt to automatically destroy the object.</para>
+
+  <para>In many cases, however, it is desirable to automatically destroy
+  foreign objects once they have been used. The higher level interfaces &UFFI;
+  and &CFFI; provide tools for doing this. For instance, in the following
+  example adapted from the &UFFI; documentation, the string
+  <varname>NAME</varname> is automatically deallocated</para>
+<programlisting>(def-function "gethostname" 
+  ((name (* :unsigned-char))
+   (len :int))
+  :returning :int)
+
+(if (zerop (c-gethostname (uffi:char-array-to-pointer name) 256))
+    (format t "Hostname: ~S" (ffi:convert-from-foreign-string name))
+    (error "gethostname() failed."))
+</programlisting>
+ </section>
+
+ <section xml:id="ext.ffi.uffi.and.cffi">
+  <title>Higher level interfaces</title>
+
+  <para>Up to now we have only discussed vague ideas about how a &FFI; works,
+  but you are probably more interested on how to actually code all these things
+  in lisp. You have here three possibilities:</para>
+  <itemizedlist>
+   <listitem>
+    <para>&ECL; supplies a high level interface which is compatible with
+    &UFFI;. Code designed for this library should run mostly unchanged with
+    &ECL;.</para>
+   </listitem>
+   <listitem>
+    <para>The &CFFI; library features a mostly complete backend for &ECL;. This
+    is however a work in progress, as the fact that &CFFI; allows for calling
+    arbitrary functions without declaring them causes some troubles with
+    &ECL;.</para>
+   </listitem>
+   <listitem>
+    <para>&ECL;'s own low level interface. Only to be used if &ECL; is your
+    deployment platform. It features some powerful constructs that allow you to
+    merge arbitrary C code with lisp (<xref linkend="ref.c-inline"/> and <xref
+    linkend="ref.clines"/>).</para>
+   </listitem>
+  </itemizedlist>
+
+  <para>In the following two subsections we will discuss two practical examples
+  of using the native &UFFI; and the &CFFI; library.</para>
+
+  <section xml:id="ext.ffi.uffi-example">
+   <title>UFFI example</title>
+
+   <para>The example below shows how to use &UFFI; in an application. There are
+   several important ingredients:
+   <itemizedlist>
+    <listitem><para>You need to specify the libraries you use and do it at the
+    toplevel, so that the compiler may include them at link
+    time.</para></listitem>
+    <listitem><para>Every function you will use has to be declared using
+    <function>uffi:def-function</function>.</para></listitem>
+   </itemizedlist>
+   </para>
+<programlisting>
+#|
+Build and load this module with (compile-file "uffi.lsp" :load t)
+|#
+;;
+;; This toplevel statement notifies the compiler that we will
+;; need this shared library at runtime. We do not need this
+;; statement in windows.
+;;
+#-(or ming32 windows)
+(uffi:load-foreign-library #+darwin "/usr/lib/libm.dylib"
+			   #-darwin "/usr/lib/libm.so")
+;;
+;; With this other statement, we import the C function sin(),
+;; which operates on IEEE doubles.
+;;
+(uffi:def-function ("sin" c-sin) ((arg :double))
+                   :returning :double)
+;;
+;; We now use this function and compare with the lisp version.
+;;
+(format t "~%Lisp sin:~t~d~%C sin:~t~d~%Difference:~t~d"
+	(sin 1.0d0) (c-sin 1.0d0) (- (sin 1.0d0) (c-sin 1.0d0)))
+</programlisting>
+  </section>
+
+  <section xml:id="ext.ffi.cffi-example">
+   <title>CFFI example</title>
+
+   <para>The &CFFI; library is an independent project and it is not shipped
+   with &ECL;. If you wish to use it you can go to their <ulink
+   url="http://www.common-lisp.net/cffi/">homepage</ulink>, download the code
+   and build it using &ASDF;.</para>
+
+   <para>&CFFI; differs slightly from &UFFI; in that functions may be used even
+   without being declared beforehand. This poses a few problems to the &ECL;
+   backend, but hopefully these should have been solved in the latest
+   releases.</para>
+<programlisting>
+#|
+Build and load this module with (compile-file "cffi.lsp" :load t)
+|#
+;;
+;; This toplevel statement notifies the compiler that we will
+;; need this shared library at runtime. We do not need this
+;; statement in windows.
+;;
+#-(or ming32 windows)
+(cffi:load-foreign-library #+darwin "/usr/lib/libm.dylib"
+			   #-darwin "/usr/lib/libm.so")
+;;
+;; With this other statement, we import the C function sin(),
+;; which operates on IEEE doubles.
+;;
+(cffi:defcfun ("sin" c-sin) :double '(:double))
+;;
+;; We now use this function and compare with the lisp version.
+;;
+(format t "~%Lisp sin:~t~d~%C sin:~t~d~%Difference:~t~d"
+	(sin 1.0d0) (c-sin 1.0d0) (- (sin 1.0d0) (c-sin 1.0d0)))
+;;
+;; The following also works: no declaration!
+;;
+(let ((c-cos (cffi:foreign-funcall "cos" :double 1.0d0 :double)))
+   (format t "~%Lisp cos:~t~d~%C cos:~t~d~%Difference:~t~d"
+	(sin 1.0d0) c-sin (- (sin 1.0d0) c-sin)))
+</programlisting>
+  </section>
+
+  <section xml:id="ext.ffi.ecl-example">
+   <title>Low level example</title>
+
+   <para>To compare with the previous pieces of code, we show how the previous
+   programs would be written using <xref linkend="ref.clines"/> and <xref
+   linkend="ref.c-inline"/></para>
+<programlisting>
+#|
+Build and load this module with (compile-file "ecl.lsp" :load t)
+|#
+;;
+;; With this other statement, we import the C function sin(), which
+;; operates on IEEE doubles. Notice that we include the C header to
+;; get the full declaration.
+;;
+(defun c-sin (x)
+  (ffi:clines "#include &lt;math.h&gt;")
+  (ffi:c-inline (x) (:double) :double "sin(#0)" :one-liner t))
+;;
+;; We now use this function and compare with the lisp version.
+;;
+(format t "~%Lisp sin:~t~d~%C sin:~t~d~%Difference:~t~d"
+	(sin 1.0d0) (c-sin 1.0d0) (- (sin 1.0d0) (c-sin 1.0d0)))
+</programlisting>
+  </section>
+ </section>
+
+ <section xml:id="ext.ffi.dict">
+  <title>FFI Reference</title>
+  <toc/>
+
+<!-- ====================================================================== -->
+<!-- FFI:CLINES                                                             -->
+<!-- ====================================================================== -->
+
+  <refentry xml:id="ref.clines">
+   <refnamediv>
+    <refname><function>ffi:clines</function></refname>
+    <refpurpose>Insert C declarations and definitions</refpurpose>
+   </refnamediv>
+
+   <refsynopsisdiv>
+    <title>Special form</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>ffi:cline</funcdef>
+      <paramdef><parameter>c-code</parameter>*</paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <simplelist columns="2" type="horiz">
+     <member><replaceable>c-code</replaceable></member>
+     <member>One or more strings with C definitions. Not evaluated</member>
+
+     <member>returns</member>
+     <member>No value.</member>
+    </simplelist>
+   </refsynopsisdiv>
+
+   <refsect1>
+    <title>Description</title>
+
+    <para>This special form inserts C code directly in the file that results
+    from compiling lisp sources. Contrary to <xref linkend="ref.c-inline"/>,
+    this function may have no executable statements, accepts no input value and
+    returnsn no value.</para>
+
+    <para>The main use of <function>FFI:CLINES</function> is to declare or
+    define C variables and functions that are going to be used later in other
+    &FFI; statements.</para>
+
+    <para><function>FFI:CLINES</function> is a special form that can only be
+    used in lisp compiled files as a toplevel form. Other uses will lead to an
+    error being signaled, either at compilation time or when loading the
+    file.</para>
+
+   </refsect1>
+   <refsect1>
+    <title>Examples</title>
+
+    <para>In this example the <function>FFI:CLINES</function> statement is
+    required to get access to the C function <function>cos()</function></para>
+<programlisting>(ffi:clines "#include &lt;math.h&gt;")
+(defun cos (x)
+  (ffi:c-inline (x) (:double) :double "cos(#0)" :on-liner t))</programlisting>
+
+   </refsect1>
+  </refentry>
+
+<!-- ====================================================================== -->
+<!-- FFI:C-INLINE                                                           -->
+<!-- ====================================================================== -->
+
+  <refentry xml:id="ref.c-inline">
+   <refnamediv>
+    <refname><function>ffi:c-inline</function></refname>
+    <refpurpose>Inline C code in a lisp form.</refpurpose>
+   </refnamediv>
+
+   <refsynopsisdiv>
+    <title>Special form</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>ffi:c-inline</funcdef>
+      <paramdef>(<parameter>lisp-value</parameter>*)</paramdef>
+      <paramdef>(<parameter>c-type</parameter>*)</paramdef>
+      <paramdef><parameter>return-type</parameter></paramdef>
+      <paramdef><parameter>C-code</parameter></paramdef>
+      <paramdef>&key;</paramdef>
+      <paramdef><parameter>one-liner</parameter></paramdef>
+      <paramdef><parameter>side-effects</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <simplelist columns="2" type="horiz">
+     <member><replaceable>lisp-value</replaceable></member>
+     <member>A lisp expression, evaluated.</member>
+
+     <member><replaceable>c-type</replaceable></member>
+     <member>A valid <acronym>FFI</acronym> type.</member>
+
+     <member><replaceable>return-type</replaceable></member>
+     <member>A valid <acronym>FFI</acronym> type or <code>(VALUES)</code>.</member>
+
+     <member><replaceable>C-code</replaceable></member>
+     <member>A string with valid C code plus some valid escape forms.</member>
+
+     <member><replaceable>one-liner</replaceable></member>
+     <member>A boolean, defaults to <symbol>NIL</symbol>.</member>
+
+     <member><replaceable>side-effects</replaceable></member>
+     <member>A boolean, defaults to <symbol>T</symbol>.</member>
+
+     <member>returns</member>
+     <member>One or more lisp values.</member>
+    </simplelist>
+   </refsynopsisdiv>
+
+   <refsect1>
+    <title>Description</title>
+
+    <para>This is an special form which can be only used in compiled code and
+    whose purpose is to execute some C code getting and returning values from
+    and to the lisp environment.</para>
+
+    <para>The first argument to <function>ffi:c-inline</function> is a list of
+    lisp forms. These forms are going to be evaluated and their lisp values
+    will be transformed to the corresponding C types denoted by
+    <replaceable>c-type</replaceable>.</para>
+
+    <para>The input values are used to create a valid C expression using the
+    template in <replaceable>C-code</replaceable>. This is a string of
+    arbitrary size which mixes C expressions with two kind of
+    escape forms.</para>
+
+    <para>The first kind of escape form are made of a hash and a letter or a
+    number, as in: <code>#0</code>, <code>#1</code>, ..., until
+    <code>#z</code>. These codes are replaced by the corresponding input
+    values. The second kind of escape form has the format <code>@(return
+    <optional>n</optional>)</code>, it can be used as lvalue in a C expression
+    and it is used to set the n-th output value of the
+    <function>ffi:c-inline</function> form.</para>
+
+    <para>When the parameter <replaceable>one-liner</replaceable> is true, then
+    the C template must be a simple C statement that outputs a value. In this
+    case the use of <code>@(return)</code> is not allowed. When the parameter
+    <replaceable>one-liner</replaceable> is false, then the C template may be a
+    more complicated block form, with braces, conditionals, loops and spanning
+    multiple lines. In this case the output of the form can only be set using
+    <code>@(return)</code>.</para>
+
+    <para>Note that the conversion between lisp arguments and
+    <acronym>FFI</acronym> types is automatic. Note also that
+    <function>et:c-inline</function> cannot be used in interpreted or
+    bytecompiled code!</para>
+   </refsect1>
+
+   <refsect1>
+    <title>Examples</title>
+
+    <para>The following example implements the transcendental function
+    <function>SIN</function> using the C equivalent</para>
+    <programlisting>(ffi:c-lines "#include &lt;math.h&gt;")
+(defun mysin (x)
+  (ffi:c-inline (x) (:double) :double "sin(#0)" :one-liner t :side-effects nil))</programlisting>
+
+    <para>This function can also be implemented using the
+    <code>@(return)</code> form as follows:</para>
+    <programlisting>(defun mysin (x)
+  (ffi:c-inline (x) (:double) :double "@(return)=sin(#0);" :side-effects nil))</programlisting>
+
+    <para>The following example is slightly more complicated as it involves
+    loops and two output values:</para>
+    <programlisting>(defun sample (x)
+  (ffi:c-inline (n1 n2) (:int :int) (values :int :int) "{
+    int n1 = #0, n2 = #1, out1 = 0, out2 = 1;
+    while (n1 &lt;= n2) {
+      out1 += n1;
+      out2 *= n1;
+      n1++;
+    }
+    @(return 0)= out1;
+    @(return 1)= out2;
+    }"
+   :side-effects nil))</programlisting>
+   </refsect1>
+  </refentry>
+ </section>
+</chapter>
+</book>
+ <!-- Keep this comment at the end of the file
+      Local variables:
+      mode: nxml
+      sgml-parent-document: "ecl.xml"
+      sgml-indent-step: 1
+      nxml-child-indent: 1
+      nxml-outline-child-indent: 1
+      fill-column: 79
+      End:
+ -->

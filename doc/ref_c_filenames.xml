@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter>
+<title>Filenames</title>
+<section xml:id="ansi.filenames.c-dict">
+<title>C Reference</title>
+  <refentry>
+    <refnamediv>
+      <refname>Filenames C dictionary</refname>
+      <refpurpose>&ANSI-C-Dict;</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+<simplelist columns="2" type="horiz">
+<member>Lisp symbol</member>
+<member>C function</member>
+
+<member><ulink url="&clhs;f_namest.htm"><symbol>directory-namestring</symbol></ulink></member>
+<member><code>cl_object cl_directory_namestring(cl_object pathname)</code></member>
+
+<member><ulink url="&clhs;f_namest.htm"><symbol>enough-namestring</symbol></ulink></member>
+<member><code>cl_object cl_enough_namestring(cl_narg narg, cl_object pathname, ...)</code></member>
+
+<member><ulink url="&clhs;f_namest.htm"><symbol>file-namestring</symbol></ulink></member>
+<member><code>cl_object cl_file_namestring(cl_object pathname)</code></member>
+
+<member><ulink url="&clhs;f_namest.htm"><symbol>host-namestring</symbol></ulink></member>
+<member><code>cl_object cl_host_namestring(cl_object pathname)</code></member>
+
+<member><ulink url="&clhs;f_ld_log.htm"><symbol>load-logical-pathname-translations</symbol></ulink></member>
+<member><code>cl_object cl_load_logical_pathname_translations(cl_object host)</code></member>
+
+<member><ulink url="&clhs;f_logica.htm"><symbol>logical-pathname-translations</symbol></ulink></member>
+<member><code>cl_object cl_logical_pathname_translations(cl_object host)</code></member>
+
+<member><ulink url="&clhs;f_logi_1.htm"><symbol>logical-pathname</symbol></ulink></member>
+<member><code>cl_object cl_logical_pathname(cl_object pathspec)</code></member>
+
+<member><ulink url="&clhs;f_pn.htm.htm"><symbol>make-pathname</symbol></ulink></member>
+<member><code>cl_object cl_make_pathname(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_merge_.htm"><symbol>merge-pathnames</symbol></ulink></member>
+<member><code>cl_object cl_merge_pathnames(cl_narg narg, cl_object pathname,...)</code></member>
+
+<member><ulink url="&clhs;f_namest.htm"><symbol>namestring</symbol></ulink></member>
+<member><code>cl_object cl_namestring(cl_object pathname)</code></member>
+
+<member><ulink url="&clhs;f_pars_1.htm"><symbol>parse-namestring</symbol></ulink></member>
+<member><code>cl_object cl_parse_namestring(cl_narg narg, cl_object thing, ...)</code></member>
+
+<member><ulink url="&clhs;pathname"><symbol>pathname</symbol></ulink></member>
+<member><code>cl_object cl_pathname(cl_object pathspec)</code></member>
+
+<member><ulink url="&clhs;f_pn_hos.htm"><symbol>pathname-device</symbol></ulink></member>
+<member><code>cl_object cl_pathname_device(cl_narg narg, cl_object pathname, ...)</code></member>
+
+<member><ulink url="&clhs;f_pn_hos.htm"><symbol>pathname-directory</symbol></ulink></member>
+<member><code>cl_object cl_pathname_directory(cl_narg narg, cl_object pathname, ...)</code></member>
+
+<member><ulink url="&clhs;f_pn_hos.htm"><symbol>pathname-host</symbol></ulink></member>
+<member><code>cl_object cl_pathname_host(cl_narg narg, cl_object pathname, ...)</code></member>
+
+<member><ulink url="&clhs;f_pn_mat.htm"><symbol>pathname-match-p</symbol></ulink></member>
+<member><code>cl_object cl_pathname_match_p(cl_object pathname, cl_object wildcard)</code></member>
+
+<member><ulink url="&clhs;f_pn_hos.htm"><symbol>pathname-name</symbol></ulink></member>
+<member><code>cl_object cl_pathname_name(cl_narg narg, cl_object pathname, ...)</code></member>
+
+<member><ulink url="&clhs;f_pn_hos.htm"><symbol>pathname-type</symbol></ulink></member>
+<member><code>cl_object cl_pathname_type(cl_narg narg, cl_object pathname, ...)</code></member>
+
+<member><ulink url="&clhs;f_pn_hos.htm"><symbol>pathname-version</symbol></ulink></member>
+<member><code>cl_object cl_pathname_version(cl_object pathname)</code></member>
+
+<member><ulink url="&clhs;f_pnp.htm"><symbol>pathnamep</symbol></ulink></member>
+<member><code>cl_object cl_pathnamep(cl_object object)</code></member>
+
+<member><ulink url="&clhs;f_tr_log.htm"><symbol>translate-logical-pathname</symbol></ulink></member>
+<member><code>cl_object cl_translate_logical_pathname(cl_narg narg, cl_object pathname, ...)</code></member>
+
+<member><ulink url="&clhs;f_tr_pn.htm"><symbol>translate-pathname</symbol></ulink></member>
+<member><code>cl_object cl_translate_pathname(cl_narg narg, cl_object source, cl_object from_wildcard, cl_object to_wildcard, ...)</code></member>
+
+<member><ulink url="&clhs;f_wild_p.htm"><symbol>wild-pathname-p</symbol></ulink></member>
+<member><code>cl_object cl_wild_pathname_p(cl_narg narg, cl_object pathname, ...)</code></member>
+</simplelist>
+    </refsynopsisdiv>
+  </refentry>
+</section>
+</chapter>
+</book>

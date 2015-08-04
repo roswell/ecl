@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter>
+<title>System Construction</title>
+<section xml:id="ansi.system-construction.c-dict">
+<title>C Reference</title>
+  <refentry>
+    <refnamediv>
+      <refname>ANSI Dictionary</refname>
+      <refpurpose>&ANSI-C-Dict;</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+<simplelist columns="2" type="horiz">
+<member>Lisp symbol</member>
+<member>C function</member>
+
+<member><ulink url="&clhs;f_cmp_fi.htm"><symbol>compile-file</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+
+<member><ulink url="&clhs;f_cmp__1.htm"><symbol>compile-file-pathname</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+
+<member><ulink url="&clhs;f_load.htm"><symbol>load</symbol></ulink></member>
+<member><code>cl_object cl_load()</code></member>
+
+<member><ulink url="&clhs;f_provid.htm"><symbol>provide</symbol></ulink></member>
+<member><code>cl_object cl_provide(cl_object module_name)</code></member>
+
+<member><ulink url="&clhs;f_provid.htm"><symbol>require</symbol></ulink></member>
+<member><code>cl_object cl_require(cl_narg narg, cl_object module_name, ...)</code></member>
+</simplelist>
+    </refsynopsisdiv>
+
+    <refsect1>
+      <title>Description</title>
+      <para></para>
+    </refsect1>
+  </refentry>
+</section>
+</chapter>
+</book>

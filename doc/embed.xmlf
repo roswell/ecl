@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+ <chapter xml:id="ext.embed">
+  <title>Embedding &ECL;</title>
+
+  <section xml:id="ext.embed.intro">
+   <title>Introduction</title>
+
+   <para>TBD.</para>
+  </section>
+
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude"  href="ref_embed.xmlf" xpointer="ext.embed.dict"/>
+
+ </chapter>
+</book>
+<!-- Keep this comment at the end of the file
+     Local variables:
+     mode: nxml
+     sgml-parent-document: "ecl.xml"
+     sgml-indent-step: 1
+     nxml-child-indent: 1
+     nxml-outline-child-indent: 1
+     fill-column: 79
+     End:
+-->

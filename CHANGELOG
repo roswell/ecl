@@ -41,6 +41,9 @@
 
 ** Enchantments:
 
+   - Documentation is now included in main repository under toplevel
+     directory `doc'
+
    - Update libffi to version 3.2.1
 
    - Update asdf to version 3.1.4
@@ -51,8 +54,6 @@
      base-char
 
    - Dead code removals, untiabifying sources
-
-   - Methods may now specialize on single-float and double-float
 
    - Better quality of generated code (explicit casting when necessary)
   

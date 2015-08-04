@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter>
+<title>Conses</title>
+<section xml:id="ansi.conses.c-dict">
+<title>C Reference</title>
+  <refentry>
+    <refnamediv>
+      <refname>ANSI Dictionary</refname>
+      <refpurpose>&ANSI-C-Dict;</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+<simplelist columns="2" type="horiz">
+<member>Lisp symbol</member>
+<member>C function</member>
+
+<member><ulink url="&clhs;f_cons.htm"><symbol>cons</symbol></ulink></member>
+<member><code>cl_object cl_cons(cl_object car, cl_object cdr)</code></member>
+
+<member><ulink url="&clhs;f_consp.htm"><symbol>consp</symbol></ulink></member>
+<member><code>cl_object cl_consp(cl_object object)</code></member>
+
+<member><ulink url="&clhs;f_atom.htm"><symbol>atom</symbol></ulink></member>
+<member><code>cl_object cl_atom(cl_object object)</code></member>
+
+<member><ulink url="&clhs;f_rplaca.htm"><symbol>rplaca</symbol></ulink></member>
+<member><code>cl_object cl_rplaca(cl_object cons, cl_object car)</code></member>
+
+<member><ulink url="&clhs;f_rplaca.htm"><symbol>rplacd</symbol></ulink></member>
+<member><code>cl_object cl_rplacd(cl_object cons, cl_object cdr)</code></member>
+
+<member><ulink url="&clhs;f_car_c.htm"><symbol>car</symbol></ulink></member>
+<member><code>cl_object cl_car(cl_object cons)</code></member>
+
+<member><ulink url="&clhs;f_car_c.htm"><symbol>cdr</symbol></ulink></member>
+<member><code>cl_object cl_cdr(cl_object cons)</code></member>
+
+<member><ulink url="&clhs;f_car_c.htm"><symbol>caar</symbol></ulink></member>
+<member><code>cl_object cl_caar(cl_object cons)</code></member>
+
+<member><ulink url="&clhs;f_car_c.htm"><symbol>cdar</symbol></ulink></member>
+<member><code>cl_object cl_cdar(cl_object cons)</code></member>
+
+<member><ulink url="&clhs;f_car_c.htm"><symbol>cadr</symbol></ulink></member>
+<member><code>cl_object cl_cadr(cl_object cons)</code></member>
+
+<member><ulink url="&clhs;f_car_c.htm"><symbol>cddr</symbol></ulink></member>
+<member><code>cl_object cl_cddr(cl_object cons)</code></member>
+
+<member><ulink url="&clhs;f_car_c.htm"><symbol>caaar</symbol></ulink></member>
+<member><code>cl_object cl_caaar(cl_object cons)</code></member>
+
+<member><ulink url="&clhs;f_car_c.htm"><symbol>cdaar</symbol></ulink></member>
+<member><code>cl_object cl_cdaar(cl_object cons)</code></member>
+
+<member><ulink url="&clhs;f_car_c.htm"><symbol>cadar</symbol></ulink></member>
+<member><code>cl_object cl_cadar(cl_object cons)</code></member>
+
+<member><ulink url="&clhs;f_car_c.htm"><symbol>cddar</symbol></ulink></member>
+<member><code>cl_object cl_cddar(cl_object cons)</code></member>
+
+<member><ulink url="&clhs;f_car_c.htm"><symbol>caadr</symbol></ulink></member>
+<member><code>cl_object cl_caadr(cl_object cons)</code></member>
+
+<member><ulink url="&clhs;f_car_c.htm"><symbol>cdadr</symbol></ulink></member>
+<member><code>cl_object cl_cdadr(cl_object cons)</code></member>
+
+<member><ulink url="&clhs;f_car_c.htm"><symbol>caddr</symbol></ulink></member>
+<member><code>cl_object cl_caddr(cl_object cons)</code></member>
+
+<member><ulink url="&clhs;f_car_c.htm"><symbol>cdddr</symbol></ulink></member>
+<member><code>cl_object cl_cdddr(cl_object cons)</code></member>
+
+<member><ulink url="&clhs;f_car_c.htm"><symbol>caaaar</symbol></ulink></member>
+<member><code>cl_object cl_caaaar(cl_object cons)</code></member>
+
+<member><ulink url="&clhs;f_car_c.htm"><symbol>cdaaar</symbol></ulink></member>
+<member><code>cl_object cl_cdaaar(cl_object cons)</code></member>
+
+<member><ulink url="&clhs;f_car_c.htm"><symbol>cadaar</symbol></ulink></member>
+<member><code>cl_object cl_cadaar(cl_object cons)</code></member>
+
+<member><ulink url="&clhs;f_car_c.htm"><symbol>cddaar</symbol></ulink></member>
+<member><code>cl_object cl_cddaar(cl_object cons)</code></member>
+
+<member><ulink url="&clhs;f_car_c.htm"><symbol>caadar</symbol></ulink></member>
+<member><code>cl_object cl_caadar(cl_object cons)</code></member>
+
+<member><ulink url="&clhs;f_car_c.htm"><symbol>cdadar</symbol></ulink></member>
+<member><code>cl_object cl_cdadar(cl_object cons)</code></member>
+
+<member><ulink url="&clhs;f_car_c.htm"><symbol>caddar</symbol></ulink></member>
+<member><code>cl_object cl_caddar(cl_object cons)</code></member>
+
+<member><ulink url="&clhs;f_car_c.htm"><symbol>cdddar</symbol></ulink></member>
+<member><code>cl_object cl_cdddar(cl_object cons)</code></member>
+
+<member><ulink url="&clhs;f_car_c.htm"><symbol>caaadr</symbol></ulink></member>
+<member><code>cl_object cl_caaadr(cl_object cons)</code></member>
+
+<member><ulink url="&clhs;f_car_c.htm"><symbol>cdaadr</symbol></ulink></member>
+<member><code>cl_object cl_cdaadr(cl_object cons)</code></member>
+
+<member><ulink url="&clhs;f_car_c.htm"><symbol>cadadr</symbol></ulink></member>
+<member><code>cl_object cl_cadadr(cl_object cons)</code></member>
+
+<member><ulink url="&clhs;f_car_c.htm"><symbol>cddadr</symbol></ulink></member>
+<member><code>cl_object cl_cddadr(cl_object cons)</code></member>
+
+<member><ulink url="&clhs;f_car_c.htm"><symbol>caaddr</symbol></ulink></member>
+<member><code>cl_object cl_caaddr(cl_object cons)</code></member>
+
+<member><ulink url="&clhs;f_car_c.htm"><symbol>cdaddr</symbol></ulink></member>
+<member><code>cl_object cl_cdaddr(cl_object cons)</code></member>
+
+<member><ulink url="&clhs;f_car_c.htm"><symbol>cadddr</symbol></ulink></member>
+<member><code>cl_object cl_cadddr(cl_object cons)</code></member>
+
+<member><ulink url="&clhs;f_car_c.htm"><symbol>cddddr</symbol></ulink></member>
+<member><code>cl_object cl_cddddr(cl_object cons)</code></member>
+
+<member><ulink url="&clhs;f_cp_tre.htm"><symbol>copy-tree</symbol></ulink></member>
+<member><code>cl_object cl_copy_tree(cl_object tree)</code></member>
+
+<member><ulink url="&clhs;f_sublis.htm"><symbol>sublis</symbol></ulink></member>
+<member><code>cl_object cl_sublis(cl_narg narg, cl_object alist, cl_object tree, ...)</code></member>
+
+<member><ulink url="&clhs;f_nsublis.htm"><symbol>nsublis</symbol></ulink></member>
+<member><code>cl_object cl_sublis(cl_narg narg, cl_object alist, cl_object tree, ...)</code></member>
+
+<member><ulink url="&clhs;f_substc.htm"><symbol>subst</symbol></ulink></member>
+<member><code>cl_object cl_subst(cl_narg narg, cl_object new, cl_object old, cl_object tree, ...)</code></member>
+
+<member><ulink url="&clhs;f_substc.htm"><symbol>subst-if</symbol></ulink></member>
+<member><code>cl_object cl_subst_if(cl_narg narg, cl_object new, cl_object predicate, cl_object tree, ...)</code></member>
+
+<member><ulink url="&clhs;f_substc.htm"><symbol>subst-if-not</symbol></ulink></member>
+<member><code>cl_object cl_subst_if_not(cl_narg narg, cl_object new, cl_object predicate, cl_object tree, ...)</code></member>
+
+<member><ulink url="&clhs;f_substc.htm"><symbol>nsubst</symbol></ulink></member>
+<member><code>cl_object cl_nsubst(cl_narg narg, cl_object new, cl_object old, cl_object tree, ...)</code></member>
+
+<member><ulink url="&clhs;f_substc.htm"><symbol>nsubst-if</symbol></ulink></member>
+<member><code>cl_object cl_nsubst_if(cl_narg narg, cl_object new, cl_object predicate, cl_object tree, ...)</code></member>
+
+<member><ulink url="&clhs;f_substc.htm"><symbol>nsubst-if-not</symbol></ulink></member>
+<member><code>cl_object cl_nsubst_if_not(cl_narg narg, cl_object new, cl_object predicate, cl_object tree, ...)</code></member>
+
+<member><ulink url="&clhs;f_tree_e.htm"><symbol>tree-equal</symbol></ulink></member>
+<member><code>cl_object cl_tree_equal(cl_narg narg, cl_object tree1, cl_object tree2, ...)</code></member>
+
+<member><ulink url="&clhs;f_cp_lis.htm"><symbol>copy-list</symbol></ulink></member>
+<member><code>cl_object cl_copy_list(cl_object list)</code></member>
+
+<member><ulink url="&clhs;f_list_.htm"><symbol>list</symbol></ulink></member>
+<member><code>cl_object cl_list(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_list_.htm"><symbol>list*</symbol></ulink></member>
+<member><code>cl_object cl_listA(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_list_l.htm"><symbol>list-length</symbol></ulink></member>
+<member><code>cl_object cl_list_length(cl_object list)</code></member>
+
+<member><ulink url="&clhs;f_listp.htm"><symbol>listp</symbol></ulink></member>
+<member><code>cl_object cl_listp(cl_object object)</code></member>
+
+<member><ulink url="&clhs;f_mk_lis.htm"><symbol>make-list</symbol></ulink></member>
+<member><code>cl_object cl_make_list(cl_narg narg, cl_object size, ...)</code></member>
+
+<member><ulink url="&clhs;f_firstc.htm"><symbol>first</symbol></ulink></member>
+<member><code>cl_object cl_first(cl_object list)</code></member>
+
+<member><ulink url="&clhs;f_firstc.htm"><symbol>second</symbol></ulink></member>
+<member><code>cl_object cl_second(cl_object list)</code></member>
+
+<member><ulink url="&clhs;f_firstc.htm"><symbol>third</symbol></ulink></member>
+<member><code>cl_object cl_third(cl_object list)</code></member>
+
+<member><ulink url="&clhs;f_firstc.htm"><symbol>fourth</symbol></ulink></member>
+<member><code>cl_object cl_fourth(cl_object list)</code></member>
+
+<member><ulink url="&clhs;f_firstc.htm"><symbol>fifth</symbol></ulink></member>
+<member><code>cl_object cl_fifth(cl_object list)</code></member>
+
+<member><ulink url="&clhs;f_firstc.htm"><symbol>sixth</symbol></ulink></member>
+<member><code>cl_object cl_sixth(cl_object list)</code></member>
+
+<member><ulink url="&clhs;f_firstc.htm"><symbol>seventh</symbol></ulink></member>
+<member><code>cl_object cl_seventh(cl_object list)</code></member>
+
+<member><ulink url="&clhs;f_firstc.htm"><symbol>eighth</symbol></ulink></member>
+<member><code>cl_object cl_eighth(cl_object list)</code></member>
+
+<member><ulink url="&clhs;f_firstc.htm"><symbol>ninth</symbol></ulink></member>
+<member><code>cl_object cl_ninth(cl_object list)</code></member>
+
+<member><ulink url="&clhs;f_firstc.htm"><symbol>tenth</symbol></ulink></member>
+<member><code>cl_object cl_tenth(cl_object list)</code></member>
+
+<member><ulink url="&clhs;f_nth.htm"><symbol>nth</symbol></ulink></member>
+<member><code>cl_object cl_nth(cl_object n, cl_object list)</code></member>
+
+<member><ulink url="&clhs;f_endp.htm"><symbol>endp</symbol></ulink></member>
+<member><code>cl_object cl_endp(cl_object list)</code></member>
+
+<member><ulink url="&clhs;f_null.htm"><symbol>null</symbol></ulink></member>
+<member><code>cl_object cl_null(cl_object object)</code></member>
+
+<member><ulink url="&clhs;f_nconc.htm"><symbol>nconc</symbol></ulink></member>
+<member><code>cl_object cl_nconc(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_append.htm"><symbol>append</symbol></ulink></member>
+<member><code>cl_object cl_append(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_revapp.htm"><symbol>revappend</symbol></ulink></member>
+<member><code>cl_object cl_revappend(cl_object list, cl_object tail)</code></member>
+
+<member><ulink url="&clhs;f_revapp.htm"><symbol>nreconc</symbol></ulink></member>
+<member><code>cl_object cl_nreconc(cl_object list, cl_object tail)</code></member>
+
+<member><ulink url="&clhs;f_butlas.htm"><symbol>butlast</symbol></ulink></member>
+<member><code>cl_object cl_butlast(cl_narg narg, cl_object list, ...)</code></member>
+
+<member><ulink url="&clhs;f_butlas.htm"><symbol>nbutlast</symbol></ulink></member>
+<member><code>cl_object cl_nbutlast(cl_narg narg, cl_object list, ...)</code></member>
+
+<member><ulink url="&clhs;f_last.htm"><symbol>last</symbol></ulink></member>
+<member><code>cl_object cl_last(cl_narg narg, cl_object list, ...)</code></member>
+
+<member><ulink url="&clhs;f_ldiffc.htm"><symbol>ldiff</symbol></ulink></member>
+<member><code>cl_object cl_ldiff(cl_object list, cl_object object)</code></member>
+
+<member><ulink url="&clhs;f_ldiffc.htm"><symbol>tailp</symbol></ulink></member>
+<member><code>cl_object cl_tailp(cl_object object, cl_object list)</code></member>
+
+<member><ulink url="&clhs;f_nthcdr.htm"><symbol>nthcdr</symbol></ulink></member>
+<member><code>cl_object cl_nthcdr(cl_object n, cl_object list)</code></member>
+
+<member><ulink url="&clhs;f_rest.htm"><symbol>rest</symbol></ulink></member>
+<member><code>cl_object cl_rest(cl_object list)</code></member>
+
+<member><ulink url="&clhs;f_mem_m.htm"><symbol>member</symbol></ulink></member>
+<member><code>cl_object cl_member(cl_narg narg, cl_object member, cl_object list, ....)</code></member>
+
+<member><ulink url="&clhs;f_mem_m.htm"><symbol>member-if</symbol></ulink></member>
+<member><code>cl_object cl_member_if(cl_narg narg, cl_object predicate, cl_object list, ....)</code></member>
+
+<member><ulink url="&clhs;f_mem_m.htm"><symbol>member-if-not</symbol></ulink></member>
+<member><code>cl_object cl_member_if_not(cl_narg narg, cl_object predicate, cl_object list, ....)</code></member>
+
+<member><ulink url="&clhs;f_mapc_.htm"><symbol>mapc</symbol></ulink></member>
+<member><code>cl_object cl_mapc(cl_narg narg, cl_object function, ...)</code></member>
+
+<member><ulink url="&clhs;f_mapc_.htm"><symbol>mapcar</symbol></ulink></member>
+<member><code>cl_object cl_mapcar(cl_narg narg, cl_object function, ...)</code></member>
+
+<member><ulink url="&clhs;f_mapc_.htm"><symbol>mapcan</symbol></ulink></member>
+<member><code>cl_object cl_mapcan(cl_narg narg, cl_object function, ...)</code></member>
+
+<member><ulink url="&clhs;f_mapc_.htm"><symbol>mapl</symbol></ulink></member>
+<member><code>cl_object cl_mapl(cl_narg narg, cl_object function, ...)</code></member>
+
+<member><ulink url="&clhs;f_mapc_.htm"><symbol>maplist</symbol></ulink></member>
+<member><code>cl_object cl_maplist(cl_narg narg, cl_object function, ...)</code></member>
+
+<member><ulink url="&clhs;f_mapc_.htm"><symbol>mapcon</symbol></ulink></member>
+<member><code>cl_object cl_mapcon(cl_narg narg, cl_object function, ...)</code></member>
+
+<member><ulink url="&clhs;f_acons.htm"><symbol>acons</symbol></ulink></member>
+<member><code>cl_object cl_acons(cl_object key, cl_object datum, cl_object alist)</code></member>
+
+<member><ulink url="&clhs;f_assocc.htm"><symbol>assoc</symbol></ulink></member>
+<member><code>cl_object cl_assoc(cl_narg narg, cl_object item, cl_object alist, ...)</code></member>
+
+<member><ulink url="&clhs;f_assocc.htm"><symbol>assoc-if</symbol></ulink></member>
+<member><code>cl_object cl_assoc_if(cl_narg narg, cl_object predicate, cl_object alist, ...)</code></member>
+
+<member><ulink url="&clhs;f_assocc.htm"><symbol>assoc-if-not</symbol></ulink></member>
+<member><code>cl_object cl_assoc_if_not(cl_narg narg, cl_object predicate, cl_object alist, ...)</code></member>
+
+<member><ulink url="&clhs;f_cp_ali.htm"><symbol>copy-alist</symbol></ulink></member>
+<member><code>cl_object cl_copy_alist(cl_object alist)</code></member>
+
+<member><ulink url="&clhs;f_pairli.htm"><symbol>pairlis</symbol></ulink></member>
+<member><code>cl_object cl_pairlis(cl_narg narg, cl_object keys, cl_object data, ...)</code></member>
+
+<member><ulink url="&clhs;f_rassoc.htm"><symbol>rassoc</symbol></ulink></member>
+<member><code>cl_object cl_rassoc(cl_narg narg, cl_object item, cl_object alist, ...)</code></member>
+
+<member><ulink url="&clhs;f_rassoc.htm"><symbol>rassoc-if</symbol></ulink></member>
+<member><code>cl_object cl_rassoc_if(cl_narg narg, cl_object predicate, cl_object alist, ...)</code></member>
+
+<member><ulink url="&clhs;f_rassoc.htm"><symbol>rassoc-if-not</symbol></ulink></member>
+<member><code>cl_object cl_rassoc_if_not(cl_narg narg, cl_object predicate, cl_object alist, ...)</code></member>
+
+<member><ulink url="&clhs;f_get_pr.htm"><symbol>get-properties</symbol></ulink></member>
+<member><code>cl_object cl_get_properties(cl_object plist, cl_object indicator_list)</code></member>
+
+<member><ulink url="&clhs;f_getf.htm"><symbol>getf</symbol></ulink></member>
+<member><code>cl_object cl_getf(cl_narg narg, cl_object plist, cl_object indicator, ...)</code></member>
+
+<member><ulink url="&clhs;f_isec_.htm"><symbol>intersection</symbol></ulink></member>
+<member><code>cl_object cl_intersection(cl_narg narg, cl_object list1, cl_object list2, ...)</code></member>
+
+<member><ulink url="&clhs;f_isec_.htm"><symbol>nintersection</symbol></ulink></member>
+<member><code>cl_object cl_nintersection(cl_narg narg, cl_object list1, cl_object list2, ...)</code></member>
+
+<member><ulink url="&clhs;f_adjoin.htm"><symbol>adjoin</symbol></ulink></member>
+<member><code>cl_object cl_adjoin(cl_narg narg, cl_object item, cl_object list, ...)</code></member>
+
+<member><ulink url="&clhs;f_set_di.htm"><symbol>set-difference</symbol></ulink></member>
+<member><code>cl_object cl_set_difference(cl_narg narg, cl_object list1, cl_object list2, ...)</code></member>
+
+<member><ulink url="&clhs;f_set_di.htm"><symbol>nset-difference</symbol></ulink></member>
+<member><code>cl_object cl_nset_difference(cl_narg narg, cl_object list1, cl_object list2, ...)</code></member>
+
+<member><ulink url="&clhs;f_set_ex.htm"><symbol>set-exclusive-or</symbol></ulink></member>
+<member><code>cl_object cl_set_exclusive_or(cl_narg narg, cl_object list1, cl_object list2, ...)</code></member>
+
+<member><ulink url="&clhs;f_set_ex.htm"><symbol>nset-exclusive-or</symbol></ulink></member>
+<member><code>cl_object cl_nset_exclusive_or(cl_narg narg, cl_object list1, cl_object list2, ...)</code></member>
+
+<member><ulink url="&clhs;f_subset.htm"><symbol>subsetp</symbol></ulink></member>
+<member><code>cl_object cl_subsetp(cl_narg narg, cl_object list1, cl_object list2, ...)</code></member>
+
+<member><ulink url="&clhs;f_unionc.htm"><symbol>union</symbol></ulink></member>
+<member><code>cl_object cl_union(cl_narg narg, cl_object list1, cl_object list2)</code></member>
+
+<member><ulink url="&clhs;f_unionc.htm"><symbol>nunion</symbol></ulink></member>
+<member><code>cl_object cl_nunion(cl_narg narg, cl_object list1, cl_object list2)</code></member>
+</simplelist>
+    </refsynopsisdiv>
+  </refentry>
+</section>
+</chapter>
+</book>

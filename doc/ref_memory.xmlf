@@ -1,0 +1,365 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter>
+<title>Memory Management</title>
+<section xml:id="ext.memory.dict">
+<title>Memory Management Reference</title>
+
+<!-- ====================================================================== -->
+<!-- EXT:STACK-OVERFLOW                                                     -->
+<!-- ====================================================================== -->
+
+<refentry xml:id="ref.memory.stack-overflow">
+ <refnamediv>
+  <refname><classname>ext:stack-overflow</classname></refname>
+  <refpurpose>Stack overflow condition.</refpurpose>
+ </refnamediv>
+
+ <refsynopsisdiv>
+  <title>Class Precedence List</title>
+  <para>
+    <classname>ext:stack-overflow</classname>,
+    <classname>storage-condition</classname>,
+    <classname>serious-condition</classname>,
+    <classname>condition</classname>,
+    <classname>t</classname>
+  </para>
+ </refsynopsisdiv>
+
+ <refsynopsisdiv>
+  <title>Methods</title>
+  <funcsynopsis>
+   <funcprototype>
+    <funcdef>ext:stack-overflow-size</funcdef>
+    <paramdef><parameter>condition</parameter></paramdef>
+    <modifier><replaceable>integer</replaceable></modifier>
+   </funcprototype>
+   <funcprototype>
+    <funcdef>ext:stack-overflow-type</funcdef>
+    <paramdef><parameter>condition</parameter></paramdef>
+    <modifier><replaceable>concept</replaceable></modifier>
+   </funcprototype>
+  </funcsynopsis>
+  <variablelist>
+   <varlistentry>
+    <term><replaceable>integer</replaceable></term>
+    <listitem><para>A non-negative integer.</para></listitem>
+   </varlistentry>
+   <varlistentry>
+    <term><replaceable>concept</replaceable></term>
+    <listitem><para>A symbol from <xref
+    linkend="table.memory.limits"/>, except
+    <varname>ext:heap-size</varname>.</para></listitem>
+   </varlistentry>
+  </variablelist>
+ </refsynopsisdiv>
+
+ <refsect1>
+  <title>Description</title>
+  <para>This condition is signaled when one of the stack limits in
+  <xref linkend="table.memory.limits"/> are violated or dangerously
+  approached. It can be handled by resetting the limits and
+  continuing, or jumping to an outer control point.</para>
+ </refsect1>
+
+</refentry>
+
+<!-- ====================================================================== -->
+<!-- EXT:STORAGE-EXHAUSTED                                                  -->
+<!-- ====================================================================== -->
+
+<refentry xml:id="ref.memory.storage-exhausted">
+ <refnamediv>
+  <refname><classname>ext:storage-exhausted</classname></refname>
+  <refpurpose>Memory overflow condition.</refpurpose>
+ </refnamediv>
+
+ <refsynopsisdiv>
+  <title>Class Precedence List</title>
+  <para>
+    <classname>ext:storage-exhausted</classname>,
+    <classname>storage-condition</classname>,
+    <classname>serious-condition</classname>,
+    <classname>condition</classname>,
+    <classname>t</classname>
+  </para>
+ </refsynopsisdiv>
+ 
+
+ <refsect1>
+  <title>Description</title>
+  <para>This condition is signaled when &ECL; exhausts the
+  <varname>ext:heap-size</varname> limit from <xref
+  linkend="table.memory.limits"/>. In handling this condition &ECL; follows
+  this logic</para>
+  <itemizedlist>
+   <listitem><para>If the heap size limit was set to 0 (that is no limit), but
+   there is some free space in the safety region &ECL; frees this space and
+   issues a non-restartable error. The user may jump to an outer point or
+   quit.</para></listitem>
+
+   <listitem><para>If the heap size had a finite limit, &ECL; offers the user
+   the chance to resize it, issuing a restartable condition. The user may at
+   this point use <code>(ext:set-limit 'ext:heap-size 0)</code> to remove the
+   heap limit and avoid further messages, or use the <code>(continue)</code>
+   restart to let &ECL; enlarge the heap by some amount.</para></listitem>
+
+   <listitem><para>Independently of the heap size limit, if &ECL; finds that
+   ther is no space to free or to grow, &ECL; simply quits. There will be no
+   chance to do some cleanup because there is no way to cons any additional
+   data.</para></listitem>
+  </itemizedlist>
+ </refsect1>
+
+</refentry>
+
+<!-- ====================================================================== -->
+<!-- EXT:GET-FINALIZER                                                      -->
+<!-- ====================================================================== -->
+
+<refentry xml:id="ref.memory.get-finalizer">
+ <refnamediv>
+  <refname><function>ext:get-finalizer</function></refname>
+  <refpurpose>Return finalizer associated to an object.</refpurpose>
+ </refnamediv>
+
+ <refsynopsisdiv>
+  <title>Function</title>
+  <funcsynopsis>
+   <funcprototype>
+    <funcdef>ext:get-finalizer</funcdef>
+    <paramdef><parameter>object</parameter></paramdef>
+   </funcprototype>
+  </funcsynopsis>
+  <variablelist>
+   <varlistentry>
+    <term><replaceable>object</replaceable></term>
+    <listitem><para>Any lisp object.</para></listitem>
+   </varlistentry>
+  </variablelist>
+ </refsynopsisdiv>
+
+ <refsect1>
+  <title>Description</title>
+  <para>This function returns the finalizer associated to an object, or &nil;.</para>
+ </refsect1>
+
+</refentry>
+
+<!-- ====================================================================== -->
+<!-- EXT::GET-LIMIT                                                         -->
+<!-- ====================================================================== -->
+
+<refentry xml:id="ref.memory.get-limit">
+ <refnamediv>
+  <refname><function>ext:get-limit</function></refname>
+  <refpurpose>Query a memory or stack limit.</refpurpose>
+ </refnamediv>
+
+ <refsynopsisdiv>
+  <title>Function</title>
+  <funcsynopsis>
+   <funcprototype>
+    <funcdef>ext:get-limit</funcdef>
+    <paramdef><parameter>concept</parameter></paramdef>
+   </funcprototype>
+  </funcsynopsis>
+  <variablelist>
+   <varlistentry>
+    <term><replaceable>concept</replaceable></term>
+    <listitem><para>A symbol.</para></listitem>
+   </varlistentry>
+  </variablelist>
+ </refsynopsisdiv>
+
+ <refsect1>
+  <title>Description</title>
+
+  <para>Queries the different memory and stack limits that condition
+  &ECL;'s behavior. The value to be queried is denoted by the symbol
+  <replaceable>concept</replaceable>, which should be one from the
+  list <xref linkend="table.memory.limits"/></para>
+
+ </refsect1>
+
+</refentry>
+
+<!-- ====================================================================== -->
+<!-- EXT::SET-FINALIZER                                                     -->
+<!-- ====================================================================== -->
+
+<refentry xml:id="ref.memory.set-finalizer">
+ <refnamediv>
+  <refname><function>ext:set-finalizer</function></refname>
+  <refpurpose>Associate a finalizer to an object.</refpurpose>
+ </refnamediv>
+
+ <refsynopsisdiv>
+  <title>Function</title>
+  <funcsynopsis>
+   <funcprototype>
+    <funcdef>ext:set-finalizer</funcdef>
+    <paramdef><parameter>object</parameter></paramdef>
+    <paramdef><parameter>function</parameter></paramdef>
+   </funcprototype>
+  </funcsynopsis>
+  <variablelist>
+   <varlistentry>
+    <term><replaceable>object</replaceable></term>
+    <listitem><para>Any lisp object.</para></listitem>
+   </varlistentry>
+   <varlistentry>
+    <term><replaceable>function</replaceable></term>
+    <listitem><para>A function or closure that takes one argument or &nil;.</para></listitem>
+   </varlistentry>
+  </variablelist>
+ </refsynopsisdiv>
+
+ <refsect1>
+  <title>Description</title>
+
+  <para>If <replaceable>function</replaceable> is &nil; no finalizer is
+  associated to the object. Otherwise <replaceable>function</replaceable> must
+  be a function or a closure of one argument, which will be invoked before the
+  object is destroyed.</para>
+ </refsect1>
+
+ <refsect1>
+  <title>Example</title>
+  <para>Close a file associated to an object.</para>
+<programlisting>
+(defclass my-class () ((file :initarg :file :initform nil)))
+
+(defun finalize-my-class (x)
+ (let ((s (slot-value x 'file)))
+   (when s (format t "~%;;; Closing" s) (close s))))
+
+(defmethod initialize-instance :around ((my-instance my-class) &amp;rest args)
+  (ext:set-finalizer my-instance #'finalize-my-class)
+  (call-next-method))
+
+(progn
+  (make-instance 'my-class :file (open "~/.ecl.old" :direction :input))
+  nil)
+
+(si::gc t)
+(si::gc t)
+
+;; Closing
+</programlisting>
+ </refsect1>
+
+</refentry>
+
+<!-- ====================================================================== -->
+<!-- EXT::SET-LIMIT                                                         -->
+<!-- ====================================================================== -->
+
+<refentry xml:id="ref.memory.set-limit">
+ <refnamediv>
+  <refname><function>ext:set-limit</function></refname>
+  <refpurpose>Set a memory or stack limit.</refpurpose>
+ </refnamediv>
+
+ <refsynopsisdiv>
+  <title>Function</title>
+  <funcsynopsis>
+   <funcprototype>
+    <funcdef>ext:set-limit</funcdef>
+    <paramdef><parameter>concept</parameter></paramdef>
+    <paramdef><parameter>value</parameter></paramdef>
+   </funcprototype>
+  </funcsynopsis>
+  <variablelist>
+   <varlistentry>
+    <term><replaceable>concept</replaceable></term>
+    <listitem><para>A symbol.</para></listitem>
+   </varlistentry>
+   <varlistentry>
+    <term><replaceable>function</replaceable></term>
+    <listitem><para>A positive integer.</para></listitem>
+   </varlistentry>
+  </variablelist>
+ </refsynopsisdiv>
+
+ <refsect1>
+  <title>Description</title>
+
+  <para>Changes the different memory and stack limits that condition
+  &ECL;'s behavior. The value to be changed is denoted by the symbol
+  <replaceable>concept</replaceable>, while the
+  <replaceable>value</replaceable> is the new maximum size. The valid
+  symbols and units are listed in <xref
+  linkend="table.memory.limits"/>.</para>
+
+  <para>Note that the limit has to be positive, but it may be smaller
+  than the previous value of the limit. However, if the supplied value
+  is smaller than what &ECL; is using at the moment, the new value
+  will be silently ignored.</para>
+
+  <table xml:id="table.memory.limits">
+    <title>Customizable memory limits</title>
+    <tgroup cols="3">
+      <thead>
+        <row>
+          <entry>Concept</entry>
+          <entry>Units</entry>
+          <entry>Default</entry>
+          <entry>Command line</entry>
+        </row>
+      </thead>
+      <tbody>
+        <row>
+          <entry><varname>ext:frame-stack</varname></entry>
+          <entry>Nested frames</entry>
+          <entry>2048</entry>
+          <entry>--frame-stack</entry>
+        </row>
+        <row>
+          <entry><varname>ext:binding-stack</varname></entry>
+          <entry>Bindings</entry>
+          <entry>8192</entry>
+          <entry></entry>
+        </row>
+        <row>
+          <entry><varname>ext:c-stack</varname></entry>
+          <entry>Bytes</entry>
+          <entry>128 kilobytes</entry>
+          <entry>--c-stack</entry>
+        </row>
+        <row>
+          <entry><varname>ext:heap-size</varname></entry>
+          <entry>Bytes</entry>
+          <entry>256 megabytes</entry>
+          <entry>--heap-size</entry>
+        </row>
+        <row>
+          <entry><varname>ext:lisp-stack</varname></entry>
+          <entry>Bytes</entry>
+          <entry>32 kilobytes</entry>
+          <entry>--lisp-stack</entry>
+        </row>
+      </tbody>
+    </tgroup>
+  </table>
+
+ </refsect1>
+
+</refentry>
+</section>
+</chapter>
+</book>
+<!-- Keep this comment at the end of the file
+      Local variables:
+      mode: nxml
+      sgml-parent-document: "ecl.xml"
+      sgml-indent-step: 1
+      nxml-child-indent: 1
+      nxml-outline-child-indent: 1
+      fill-column: 79
+      End:
+ -->

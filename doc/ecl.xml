@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+
+<title>The &ECL; manual</title>
+
+<info>
+<author><personname><firstname>Juan Jose</firstname><surname>Garcia-Ripoll</surname></personname></author>
+<date>$date$</date>
+</info>
+
+ <xi:include href="preface.xmlf" xpointer="preface" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+
+ <part xml:id="part.standards"><title>Standards</title>
+ <xi:include href="ansi_overview.xml" xpointer="ansi.overview" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <xi:include href="ansi_evaluation.xml" xpointer="ansi.evaluation-and-compilation" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <xi:include href="ansi_types.xml" xpointer="ansi.types-and-classes" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <xi:include href="ansi_data_flow.xml" xpointer="ansi.data-and-control" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <xi:include href="ansi_structures.xml" xpointer="ansi.structures" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <xi:include href="ansi_conditions.xml" xpointer="ansi.conditions" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <xi:include href="ansi_objects.xml" xpointer="ansi.objects" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <xi:include href="ansi_symbols.xml" xpointer="ansi.symbols" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <xi:include href="ansi_packages.xml" xpointer="ansi.packages" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <xi:include href="ansi_numbers.xml" xpointer="ansi.numbers" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <xi:include href="ansi_characters.xml" xpointer="ansi.characters" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <xi:include href="ansi_conses.xml" xpointer="ansi.conses" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <xi:include href="ansi_arrays.xml" xpointer="ansi.arrays" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <xi:include href="ansi_strings.xml" xpointer="ansi.strings" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <xi:include href="ansi_sequences.xml" xpointer="ansi.sequences" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <xi:include href="ansi_hash_tables.xml" xpointer="ansi.hash-tables" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <xi:include href="ansi_filenames.xml" xpointer="ansi.filenames" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <xi:include href="ansi_files.xml" xpointer="ansi.files" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <xi:include href="ansi_streams.xml" xpointer="ansi.streams" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <xi:include href="ansi_printer.xml" xpointer="ansi.printer" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <xi:include href="ansi_reader.xml" xpointer="ansi.reader" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <xi:include href="ansi_system_construction.xml" xpointer="ansi.system-construction" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <xi:include href="ansi_environment.xml" xpointer="ansi.environment" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ </part>
+
+ <part xml:id="part.extensions">
+ <title>Extensions and Libraries</title>
+ <xi:include href="asdf.xmlf" xpointer="element(ext.asdf)" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <xi:include href="os.xmlf" xpointer="ext.os" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <xi:include href="ffi.xmlf" xpointer="ext.ffi" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <xi:include href="mp.xmlf" xpointer="ext.mp" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <xi:include href="memory.xmlf" xpointer="ext.memory" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <xi:include href="mop.xmlf" xpointer="ext.mop" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <xi:include href="signals.xmlf" xpointer="ext.signals" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <xi:include href="embed.xmlf" xpointer="ext.embed" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ </part>
+
+ <xi:include href="internals.xmlf" xpointer="part.internals" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+
+ <part xml:id="part.uffi">
+ <title>UFFI Reference</title>
+ <xi:include href="uffi/ref_primitive.xml" xpointer="uffi.primitives" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <xi:include href="uffi/ref_aggregate.xml" xpointer="uffi.aggregates" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <xi:include href="uffi/ref_object.xml" xpointer="uffi.objects" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <xi:include href="uffi/ref_string.xml" xpointer="uffi.strings" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <xi:include href="uffi/ref_func_libr.xml" xpointer="uffi.func_libr" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ </part>
+
+ <index type="cl">
+ <title>Common Lisp symbols</title>
+ </index>
+
+ <index type="c">
+ <title>C/C++ index</title>
+ </index>
+
+ <xi:include href="bibliography.xmlf" xpointer="Bibliography" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+
+</book>
+<!-- Keep this comment at the end of the file
+     Local variables:
+     mode: nxml
+     sgml-indent-step: 1
+     nxml-child-indent: 0
+     nxml-outline-child-indent: 0
+     fill-column: 79
+     End:
+-->

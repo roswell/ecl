@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter>
+<title>Conses</title>
+<section xml:id="ansi.sequences.c-dict">
+<title>C Reference</title>
+  <refentry>
+    <refnamediv>
+      <refname>Sequences C dictionary</refname>
+      <refpurpose>&ANSI-C-Dict;</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+<simplelist columns="2" type="horiz">
+<member>Lisp symbol</member>
+<member>C function</member>
+
+<member><ulink url="&clhs;f_concat.htm"><symbol>concatenate</symbol></ulink></member>
+<member><code>cl_object cl_concatenate(cl_narg narg, cl_object result_type, ...)</code></member>
+
+<member><ulink url="&clhs;f_cp_seq.htm"><symbol>copy-seq</symbol></ulink></member>
+<member><code>cl_object cl_copy_seq(cl_object sequence)</code></member>
+
+<member><ulink url="&clhs;f_countc.htm"><symbol>count</symbol></ulink></member>
+<member><code>cl_object cl_count(cl_narg narg, cl_object item, cl_object sequence, ...)</code></member>
+
+<member><ulink url="&clhs;f_countc.htm"><symbol>count-if</symbol></ulink></member>
+<member><code>cl_object cl_count_if(cl_narg narg, cl_object predicate, cl_object sequence, ...)</code></member>
+
+<member><ulink url="&clhs;f_countc.htm"><symbol>count-if-not</symbol></ulink></member>
+<member><code>cl_object cl_count_if_not(cl_narg narg, cl_object predicate, cl_object sequence, ...)</code></member>
+
+<member><ulink url="&clhs;f_rm_rm.htm"><symbol>delete</symbol></ulink></member>
+<member><code>cl_object cl_delete(cl_narg narg, cl_object newitem, cl_object sequence, ...)</code></member>
+
+<member><ulink url="&clhs;f_rm_rm.htm"><symbol>delete-if</symbol></ulink></member>
+<member><code>cl_object cl_delete_if(cl_narg narg, cl_object newitem, cl_object test, cl_object sequence, ...)</code></member>
+
+<member><ulink url="&clhs;f_rm_rm.htm"><symbol>delete-if-not</symbol></ulink></member>
+<member><code>cl_object cl_delete_if_not(cl_narg narg, cl_object newitem, cl_object test, cl_object sequence, ...)</code></member>
+
+<member><ulink url="&clhs;f_rm_dup.htm"><symbol>delete-duplicates</symbol></ulink></member>
+<member><code>cl_object cl_delete_duplicates(cl_narg narg, cl_object sequence)</code></member>
+
+<member><ulink url="&clhs;f_elt.htm"><symbol>elt</symbol></ulink></member>
+<member><code>cl_object cl_elt(cl_object sequence, cl_object index)</code></member>
+
+<member><ulink url="&clhs;f_fill.htm"><symbol>fill</symbol></ulink></member>
+<member><code>cl_object cl_fill(cl_narg narg, cl_object sequence, cl_object item, ...)</code></member>
+
+<member><ulink url="&clhs;f_find_.htm"><symbol>find</symbol></ulink></member>
+<member><code>cl_object cl_find(cl_narg narg, cl_object item, cl_object sequence, ...)</code></member>
+
+<member><ulink url="&clhs;f_find_.htm"><symbol>find-if</symbol></ulink></member>
+<member><code>cl_object cl_find_if(cl_narg narg, cl_object predicate, cl_object sequence, ...)</code></member>
+
+<member><ulink url="&clhs;f_find_.htm"><symbol>find-if-not</symbol></ulink></member>
+<member><code>cl_object cl_find_if_not(cl_narg narg, cl_object predicate, cl_object sequence, ...)</code></member>
+
+<member><ulink url="&clhs;f_mk_seq.htm"><symbol>make-sequence</symbol></ulink></member>
+<member><code>cl_object cl_make_sequence(cl_narg narg, cl_object result_type, cl_object size, ...)</code></member>
+
+<member><ulink url="&clhs;f_map.htm"><symbol>map</symbol></ulink></member>
+<member><code>cl_object cl_map(cl_narg narg, cl_object result_type, cl_object function)</code></member>
+
+<member><ulink url="&clhs;f_map_in.htm"><symbol>map-into</symbol></ulink></member>
+<member><code>cl_object cl_map_into(cl_narg narg, cl_object result_sequence, cl_object function, ...)</code></member>
+
+<member><ulink url="&clhs;f_merge.htm"><symbol>merge</symbol></ulink></member>
+<member><code>cl_object cl_merge(cl_narg narg, cl_object result_type, cl_object sequence1, cl_object sequence2, ...)</code></member>
+
+<member><ulink url="&clhs;f_mismat.htm"><symbol>mismatch</symbol></ulink></member>
+<member><code>cl_object cl_mismatch(cl_narg narg, cl_object sequence1, cl_object sequence2)</code></member>
+
+<member><ulink url="&clhs;f_revers.htm"><symbol>nreverse</symbol></ulink></member>
+<member><code>cl_object cl_nreverse(cl_object sequence)</code></member>
+
+<member><ulink url="&clhs;f_sbs_s.htm"><symbol>nsubstitute</symbol></ulink></member>
+<member><code>cl_object cl_nsubstitute(cl_narg narg, cl_object newitem, cl_object olditem, cl_object sequence, ...)</code></member>
+
+<member><ulink url="&clhs;f_sbs_s.htm"><symbol>nsubstitute-if</symbol></ulink></member>
+<member><code>cl_object cl_nsubstitute_if(cl_narg narg, cl_object newitem, cl_object predicate, cl_object sequence, ...)</code></member>
+
+<member><ulink url="&clhs;f_sbs_s.htm"><symbol>nsubstitute-if-not</symbol></ulink></member>
+<member><code>cl_object cl_nsubstitute_if_not(cl_narg narg, cl_object newitem, cl_object predicate, cl_object sequence, ...)</code></member>
+
+<member><ulink url="&clhs;f_pos_p.htm"><symbol>position</symbol></ulink></member>
+<member><code>cl_object cl_position(cl_narg narg, cl_object item, cl_object sequence, ...)</code></member>
+
+<member><ulink url="&clhs;f_pos_p.htm"><symbol>position-if</symbol></ulink></member>
+<member><code>cl_object cl_pos_pif(cl_narg narg, cl_object predicate, cl_object sequence, ...)</code></member>
+
+<member><ulink url="&clhs;f_pos_p.htm"><symbol>position-if-not</symbol></ulink></member>
+<member><code>cl_object cl_pos_pif_not(cl_narg narg, cl_object predicate, cl_object sequence, ...)</code></member>
+
+<member><ulink url="&clhs;f_reduce.htm"><symbol>reduce</symbol></ulink></member>
+<member><code>cl_object cl_reduce(cl_narg narg, cl_object function, cl_object sequence, ...)</code></member>
+
+<member><ulink url="&clhs;f_rm_rm.htm"><symbol>remove</symbol></ulink></member>
+<member><code>cl_object cl_remove(cl_narg narg, cl_object newitem, cl_object sequence, ...)</code></member>
+
+<member><ulink url="&clhs;f_rm_rm.htm"><symbol>remove-if</symbol></ulink></member>
+<member><code>cl_object cl_remove_if(cl_narg narg, cl_object newitem, cl_object test, cl_object sequence, ...)</code></member>
+
+<member><ulink url="&clhs;f_rm_rm.htm"><symbol>remove-if-not</symbol></ulink></member>
+<member><code>cl_object cl_remove_if_not(cl_narg narg, cl_object newitem, cl_object test, cl_object sequence, ...)</code></member>
+
+<member><ulink url="&clhs;f_rm_dup.htm"><symbol>remove-duplicates</symbol></ulink></member>
+<member><code>cl_object cl_remove_duplicates(cl_narg narg, cl_object sequence)</code></member>
+
+<member><ulink url="&clhs;f_replac.htm"><symbol>replace</symbol></ulink></member>
+<member><code>cl_object cl_replace(cl_narg narg, cl_object sequence1, cl_object sequence2)</code></member>
+
+<member><ulink url="&clhs;f_revers.htm"><symbol>reverse</symbol></ulink></member>
+<member><code>cl_object cl_reverse(cl_object sequence)</code></member>
+
+<member><ulink url="&clhs;f_search.htm"><symbol>search</symbol></ulink></member>
+<member><code>cl_object cl_search(cl_narg narg, cl_object sequence1, cl_object sequence2)</code></member>
+
+<member><ulink url="&clhs;f_sort_.htm"><symbol>sort</symbol></ulink></member>
+<member><code>cl_object cl_sort(cl_narg narg, cl_object sequence, cl_object predicate, ...)</code></member>
+
+<member><ulink url="&clhs;f_sort_.htm"><symbol>stable-sort</symbol></ulink></member>
+<member><code>cl_object cl_stable_sort(cl_narg narg, cl_object sequence, cl_object predicate, ...)</code></member>
+
+<member><ulink url="&clhs;f_subseq.htm"><symbol>subseq</symbol></ulink></member>
+<member><code>cl_object cl_subseq(cl_narg narg, cl_object sequence, cl_object start)</code></member>
+
+<member><ulink url="&clhs;f_sbs_s.htm"><symbol>substitute</symbol></ulink></member>
+<member><code>cl_object cl_substitute(cl_narg narg, cl_object newitem, cl_object olditem, cl_object sequence, ...)</code></member>
+
+<member><ulink url="&clhs;f_sbs_s.htm"><symbol>substitute-if</symbol></ulink></member>
+<member><code>cl_object cl_substitute_if(cl_narg narg, cl_object newitem, cl_object predicate, cl_object sequence, ...)</code></member>
+
+<member><ulink url="&clhs;f_sbs_s.htm"><symbol>substitute-if-not</symbol></ulink></member>
+<member><code>cl_object cl_substitute_if_not(cl_narg narg, cl_object newitem, cl_object predicate, cl_object sequence, ...)</code></member>
+
+</simplelist>
+    </refsynopsisdiv>
+  </refentry>
+</section>
+</chapter>
+</book>

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter>
+<title>Printer</title>
+<section xml:id="ansi.printer.c-dict">
+<title>C Reference</title>
+  <refentry>
+    <refnamediv>
+      <refname>ANSI Dictionary</refname>
+      <refpurpose>&ANSI-C-Dict;</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+<simplelist columns="2" type="horiz">
+<member>Lisp symbol</member>
+<member>C function</member>
+
+<member><ulink url="&clhs;f_cp_ppr.htm"><symbol>copy-pprint-dispatch</symbol></ulink></member>
+<member><code>cl_object cl_copy_pprint_dispatch(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_ppr_di.htm"><symbol>pprint-dispatch</symbol></ulink></member>
+<member><code>cl_object cl_pprint_dispatch(cl_narg narg, cl_object object, ...)</code></member>
+
+<member><ulink url="&clhs;f_ppr_fi.htm"><symbol>pprint-fill</symbol></ulink></member>
+<member><code>cl_object cl_pprint_fill(cl_narg narg, cl_object stream, cl_object object, ...)</code></member>
+
+<member><ulink url="&clhs;f_ppr_fi.htm"><symbol>pprint-linear</symbol></ulink></member>
+<member><code>cl_object cl_pprint_linear(cl_narg narg, cl_object stream, cl_object object, ...)</code></member>
+
+<member><ulink url="&clhs;f_ppr_fi.htm"><symbol>pprint-tabular</symbol></ulink></member>
+<member><code>cl_object cl_pprint_tabular(cl_narg narg, cl_object stream, cl_object object, ...)</code></member>
+
+<member><ulink url="&clhs;f_ppr_in.htm"><symbol>pprint-indent</symbol></ulink></member>
+<member><code>cl_object cl_pprint_indent(cl_narg narg, cl_object relative_to, cl_object n, ...)</code></member>
+
+<member><ulink url="&clhs;f_ppr_nl.htm"><symbol>pprint-newline</symbol></ulink></member>
+<member><code>cl_object cl_pprint_newline(cl_narg narg, cl_object kind, ...)</code></member>
+
+<member><ulink url="&clhs;f_ppr_ta.htm"><symbol>pprint-tab</symbol></ulink></member>
+<member><code>cl_object cl_pprint_tab(cl_narg narg, cl_object kind, cl_object colnum, cl_object colinc, ...)</code></member>
+
+<member><ulink url="&clhs;f_pr_obj.htm"><symbol>print-object</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+
+<member><ulink url="&clhs;f_set_pp.htm"><symbol>set-pprint-dispatch</symbol></ulink></member>
+<member><code>cl_object cl_set_pprint_dispatch(cl_narg narg, cl_object ype_spec, cl_object function, ...)</code></member>
+
+<member><ulink url="&clhs;f_wr_pr.htm"><symbol>write</symbol></ulink></member>
+<member><code>cl_object cl_write(cl_narg narg, cl_object object, ...)</code></member>
+
+<member><ulink url="&clhs;f_wr_pr.htm"><symbol>prin1</symbol></ulink></member>
+<member><code>cl_object cl_prin1(cl_narg narg, cl_object object, ...)</code></member>
+
+<member><ulink url="&clhs;f_wr_pr.htm"><symbol>princ</symbol></ulink></member>
+<member><code>cl_object cl_princ(cl_narg narg, cl_object object, ...)</code></member>
+
+<member><ulink url="&clhs;f_wr_pr.htm"><symbol>print</symbol></ulink></member>
+<member><code>cl_object cl_print(cl_narg narg, cl_object object, ...)</code></member>
+
+<member><ulink url="&clhs;f_wr_pr.htm"><symbol>pprint</symbol></ulink></member>
+<member><code>cl_object cl_pprint(cl_narg narg, cl_object object, ...)</code></member>
+
+<member><ulink url="&clhs;f_wr_to_.htm"><symbol>write-to-string</symbol></ulink></member>
+<member><code>cl_object cl_write_to_string(cl_narg narg, cl_object object, ...)</code></member>
+
+<member><ulink url="&clhs;f_wr_to_.htm"><symbol>prin1-to-string</symbol></ulink></member>
+<member><code>cl_object cl_prin1_to_string(cl_object object)</code></member>
+
+<member><ulink url="&clhs;f_wr_to_.htm"><symbol>princ-to-string</symbol></ulink></member>
+<member><code>cl_object cl_princ_to_string(cl_object object)</code></member>
+
+<member><ulink url="&clhs;f_pr_not.htm"><symbol>print-not-readable-object</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+
+<member><ulink url="&clhs;f_format.htm"><symbol>format</symbol></ulink></member>
+<member><code>cl_object cl_format(cl_narg narg, cl_object string, ...)</code></member>
+</simplelist>
+    </refsynopsisdiv>
+
+    <refsect1>
+      <title>Description</title>
+      <para></para>
+    </refsect1>
+  </refentry>
+</section>
+</chapter>
+</book>
