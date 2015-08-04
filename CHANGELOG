@@ -23,13 +23,45 @@
     and have a C compiler accessible to ECL, you may use
     (ext:install-c-compiler) to switch back to the Lisp-to-C compiler.
     
-* Pending changes since 15.3.7  
+* Pending changes since 15.3.7
+** API changes
+
+   - There is no "uffi" nickname for "ffi" package - we piggyback on
+     cffi-uffi-compat (ours uffi wasn't uffi version 2.0 compatible and
+     there were problems with dependencies on uffi - it wasn't a system)
+
+   - CLOS has new nickname "MOP"
+
+   - ext:run-program :error argument can be freshly created separate stream
+     if provided with :stream keyword, structure process has new field
+     holding that stream (suprisingly named "error")
+
+   - methods can be specilized on both single- and double-float (added
+     built-in class for them)
+
+** Enchantments:
+
+   - Update libffi to version 3.2.1
+
+   - Update asdf to version 3.1.4
+
+   - Update bdwgc to version 7.4.2
+
+   - Pathname string-parts internal representation is character, not
+     base-char
+
+   - Dead code removals, untiabifying sources
+
+   - Methods may now specialize on single-float and double-float
+
+   - Better quality of generated code (explicit casting when necessary)
+  
 ** Issues fixed:
 
    - Various fixes of bogus declarations
-     
+
    - Remove deprecated GC calls
-     
+
    - ROTATEF, SHIFTF, PSETF reworked to conform ANSI standard.  Places were
      handled improperly in regard of multiple values
 
@@ -55,24 +87,7 @@
    - Format float bug, when width and fdigits aren't set, but k is
 
    - Other minor tweaks
-     
-** Enchantments:
 
-   - Update libffi to version 3.2.1
-  
-   - Update asdf to version 3.1.4
-
-   - Update bdwgc to version 7.4.2
-
-   - Pathname string-parts internal representation is character, not
-     base-char
-
-   - Dead code removals, untiabifying sources
-
-   - Methods may now specialize on single-float and double-float
-
-   - Better quality of generated code (explicit casting when necessary)
-  
 * 15.3.7 changes since 15.2.21  
 ** Issues fixed:
    
