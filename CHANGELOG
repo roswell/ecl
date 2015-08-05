@@ -87,6 +87,9 @@
 
    - Format float bug, when width and fdigits aren't set, but k is
 
+   - `logical-pathname-translations' throws an error if logical pathname
+     wasn't defined yet. Until now it non-conformingly returned nil
+
    - Other minor tweaks
 
 * 15.3.7 changes since 15.2.21  
