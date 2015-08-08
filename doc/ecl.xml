@@ -17,11 +17,13 @@
  <part xml:id="part.standards"><title>Standards</title>
  <xi:include href="ansi_overview.xml" xpointer="ansi.overview" xmlns:xi="http://www.w3.org/2001/XInclude"/>
  <xi:include href="ansi_evaluation.xml" xpointer="ansi.evaluation-and-compilation" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <chapter><title>Syntax</title></chapter> <!--Put to preserve CLHS numbering-->
  <xi:include href="ansi_types.xml" xpointer="ansi.types-and-classes" xmlns:xi="http://www.w3.org/2001/XInclude"/>
  <xi:include href="ansi_data_flow.xml" xpointer="ansi.data-and-control" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ <chapter><title>Iteration</title></chapter> <!--Put to preserve CLHS numbering-->
+ <xi:include href="ansi_objects.xml" xpointer="ansi.objects" xmlns:xi="http://www.w3.org/2001/XInclude"/>
  <xi:include href="ansi_structures.xml" xpointer="ansi.structures" xmlns:xi="http://www.w3.org/2001/XInclude"/>
  <xi:include href="ansi_conditions.xml" xpointer="ansi.conditions" xmlns:xi="http://www.w3.org/2001/XInclude"/>
- <xi:include href="ansi_objects.xml" xpointer="ansi.objects" xmlns:xi="http://www.w3.org/2001/XInclude"/>
  <xi:include href="ansi_symbols.xml" xpointer="ansi.symbols" xmlns:xi="http://www.w3.org/2001/XInclude"/>
  <xi:include href="ansi_packages.xml" xpointer="ansi.packages" xmlns:xi="http://www.w3.org/2001/XInclude"/>
  <xi:include href="ansi_numbers.xml" xpointer="ansi.numbers" xmlns:xi="http://www.w3.org/2001/XInclude"/>
