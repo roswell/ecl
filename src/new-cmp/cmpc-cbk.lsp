@@ -41,7 +41,7 @@
          (si::put-sysprop ',name :callback
           (list
           (ffi:c-inline () () :object
-           ,(format nil "ecl_make_foreign_data(@':pointer-void,0,*(void**)~a)" c-name)
+           ,(format nil "ecl_make_foreign_data(@':pointer-void,0,~a)" c-name)
            :one-liner t)))))
       )))
 

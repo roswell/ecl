@@ -657,7 +657,7 @@ extern ECL_API cl_object si_make_dynamic_callback(cl_narg, cl_object fun, cl_obj
 extern ECL_API cl_object si_free_ffi_closure(cl_object closure);
 
 /* Only foreign data types can be coerced to a pointer */
-#define ecl_make_pointer(x) ecl_make_foreign_data(ECL_NIL,0,*(void **)(x))
+#define ecl_make_pointer(x) ecl_make_foreign_data(ECL_NIL,0,(x))
 #define ecl_to_pointer(x) ecl_foreign_data_pointer_safe(x)
 extern ECL_API cl_object ecl_make_foreign_data(cl_object tag, cl_index size, void *data);
 extern ECL_API cl_object ecl_allocate_foreign_data(cl_object tag, cl_index size);
