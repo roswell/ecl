@@ -204,6 +204,7 @@
  <section xml:id="Copyright.Manual">
   <title>Copyright of this manual</title>
 
+  <para>Copyright: Daniel Kochmański, 2015.</para>
   <para>Copyright: Juan José García-Ripoll, 2006.</para>
 
   <para>Copyright: Kevin M. Rosenberg 2002-2003, (UFFI Reference)</para>
@@ -371,14 +372,14 @@
    <procedure>
     <step>
      <para>Unpack the tar file</para>
-     <screen>$ gunzip -c ecl-0.9i.tgz | tar xf -</screen>
+     <screen>$ gunzip -c ecl-16.0.0.tgz | tar xf -</screen>
     </step>
     <step><para>Choose a directory in which you will install &ECL;. Following
     the Unix covention we will use
     <filename>/usr/local</filename></para></step>
     <step>
      <para>Run the configuration file
-     <screen>$ cd ecl-0.9i
+     <screen>$ cd ecl-16.0.0
      $ ./configure --prefix=/usr/local</screen>
      If you are building under Solaris 9 you should replace the last line with
      <screen>$ ./configure --enable-slow-config --with-system-gmp=no \
@@ -400,13 +401,15 @@
     <step>
      <para>Make sure the program is installed and ready to run
      <screen>$ /usr/local/ecl
-     ECL (Embeddable Common-Lisp) 0.9i
+     ECL (Embeddable Common-Lisp) 16.0.0
      Copyright (C) 1984 Taiichi Yuasa and Masami Hagiya
      Copyright (C) 1993 Giuseppe Attardi
      Copyright (C) 2000 Juan J. Garcia-Ripoll
+     Copyright (C) 2015 Daniel Kochmanski
      ECL is free software, and you are welcome to redistribute it
      under certain conditions; see file 'Copyright' for details.
-     Type :h for Help.  Broken at EVAL.
+     Type :h for Help.
+     Top level in: #&lt;process TOP-LEVEL&gt;.
      &gt; </screen>
      </para>
     </step>
