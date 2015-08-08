@@ -44,6 +44,12 @@
      <entry>Functions and variables internal to the implementation. Never to be used.</entry>
     </row>
     <row>
+      <entry><package>FFI</package></entry>
+      <entry><package></package></entry>
+      <entry><package>ECL core</package></entry>
+      <entry>Foreign function interface</entry>
+    </row>
+    <row>
      <entry><package>CMP</package></entry>
      <entry><package>C</package></entry>
      <entry><package>CMP</package></entry>
