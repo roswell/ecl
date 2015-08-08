@@ -63,11 +63,10 @@
   facilities for memory management, dynamic loading and dumping of binary
   images, support for multiple threads of execution.  The CRS is built into a
   library that can be linked with the code of the application.  &ECL; is
-  modular: main modules are the program development tools (top level,
-  debugger, trace, stepper), the compiler, and CLOS.  A native implementation
-  of CLOS is available in &ECL;: one can configure &ECL; with or without CLOS.
-  A runtime version of &ECL; can be built with just the modules which are
-  required by the application.</para>
+  modular: main modules are the program development tools (top level, debugger,
+  trace, stepper), the compiler, and CLOS.  A native implementation of CLOS is
+  available in &ECL;.  A runtime version of &ECL; can be built with just the
+  modules which are required by the application.</para>
 
   <para>The &ECL; compiler compiles from Lisp to C, and then invokes
   the GNU C compiler to produce binaries. While former releases of ECL
@@ -158,6 +157,7 @@
 <programlisting>
 ---- BEGINNING OF COPYRIGHT FOR THE ECL CORE ENVIRONMENT ------------
 
+  Copyright (c) 2015, Daniel Kochmański
   Copyright (c) 2000, Juan Jose Garcia Ripoll
   Copyright (c) 1990, 1991, 1993 Giuseppe Attardi
   Copyright (c) 1984 Taiichi Yuasa and Masami Hagiya
