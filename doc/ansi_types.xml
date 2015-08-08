@@ -7,6 +7,17 @@
 <chapter xml:id="ansi.types-and-classes">
  <title>Types and classes</title>
 
+ <section xml:id="ansi.classes.floats">
+   <title>Built-in-class</title>
+
+   <para>&ECL; defines two additional built-in-class objects for user
+   conveniance:
+   <itemizedlist>
+     <listitem>single-float</listitem>
+     <listitem>double-float</listitem>
+   </itemizedlist>
+   </para>
+ </section>
  <xi:include href="ref_c_types_and_classes.xml" xpointer="ansi.types-and-classes.c-dict" xmlns:xi="http://www.w3.org/2001/XInclude"/>
 
 </chapter>
