@@ -134,17 +134,23 @@
   over the original <acronym>ECL</acronym> implementation and it became what it
   is nowadays, a community project.</para>
 
+  <para>In 2013 once again project got unmaintained. In 2015 Daniel Kochmański
+  took position of maintainer with consent of Juanjo García-Ripoll.</para>
+
   <para>The &ECL; project owes a lot to different people who have contributed
   in many different aspects, from pointing out bugs and incompatibilities of
   &ECL; with other programs and specifications, to actually solving these bugs
   and porting &ECL; to new platforms.</para>
 
-  <para>Currently, development of &ECL; is still driven by Juanjo
-  García-Ripoll with the help of Michael Goffioul in the Windows
-  port. The project homepage is located at <ulink
-  url="http://ecls.sourceforge.net"><uri>http://ecls.sourceforge.net</uri></ulink>,
-  and there is a mailing list where questions, bug reports and other
-  discussions may be carried out.</para>
+  <para>Current development of &ECL; is still driven by Daniel Kochmański with
+  main focus on improving ANSI compliance and compapibility with &CommonLisp;
+  libraries ecosystem, fixing bugs, improving speed and protability. The
+  project homepage is located at <ulink
+  url="https://common-lisp.net/project/ecl/">
+  <uri>https://common-lisp.net/project/ecl/</uri></ulink>, and there are
+  pointers to all project resources like mailing list and main
+  repository.</para>
+
  </section>
 
  <section xml:id="Copyright.ECL">
