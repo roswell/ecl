@@ -138,7 +138,7 @@ printf("\nThe cosine of PI is %g\n", ecl_double_float(c));
    <programlisting>
 cl_object one = ecl_make_fixnum(1);
 cl_object two = cl_P(2, one, one);
-cl_object three = cl_P(2, one, one, one);
+cl_object three = cl_P(3, one, one, one);
 printf("\n1 + 1 is %d\n", ecl_fixnum(two));
 printf("\n1 + 1 + 1 is %d\n", ecl_fixnum(three));
 </programlisting>
