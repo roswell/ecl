@@ -506,7 +506,7 @@ create_descriptor(cl_object stream, cl_object direction,
 #endif
 
 @(defun ext::run-program (command argv &key (input @':stream') (output @':stream')
-                          (error @'t') (wait @'t') (environ ECL_NIL)
+                          (error @':output') (wait @'t') (environ ECL_NIL)
                           (if_output_exists @':supersede'))
         int parent_write = 0, parent_read = 0, parent_error = 0;
         int child_pid;
