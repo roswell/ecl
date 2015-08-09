@@ -12,7 +12,7 @@
 
    <para>On most platforms, &ECL; supports native multithreading. That means
    there can be several tasks executing lisp code on parallel and sharing
-   memory, variables and files. The interface for multitasting in &ECL;, like
+   memory, variables and files. The interface for multitasking in &ECL;, like
    those of most other implementations, is based on a set of functions and
    types that resemble the multiprocessing capabilities of old Lisp Machines.
    </para>
