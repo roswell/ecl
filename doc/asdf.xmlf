@@ -296,8 +296,8 @@ Finished
     output files depend on the value of <varname>type</varname> and are
     summarized in <xref linkend="table.make-build"/>.</para>
 
-    <para>Internally the function works similary to the
-    &ASDF; function <function>asdf:oos</function> with the
+    <para>Internally the function works similary to the &ASDF; function
+    <function>asdf:operate</function> with the
     <function>asdf:load-op</function> operator. It finds out the requested
     system definition, either by searching in a set of predefined locations or
     because the system has been already loaded into memory, computes all
@@ -307,10 +307,12 @@ Finished
     <para>If the value of <varname>:monolithic</varname> is
     <varname>NIL</varname> the output binary will contain just the desired
     system, while in other cases the output will be linked together with all
-    libraries your system depends on. Standalone executables, given by
-    <code>type = :program</code>, must, by definition, be monolithic. All other
-    systems need not, but in that case you will have to manually satisfy the
-    required dependencies when using those files.</para>
+    libraries your system depends on. Standalone executables, as specified by
+    <code>type = :program</code>, are always monolithic, even without specifing
+    this flag. All other systems might be non-monolithic, but in that case you
+    will have to manually satisfy the required dependencies when using those
+    files (unless you use <symbol>asdf:load-bundle-op</symbol> in which case
+    asdf will satisfy required dependencies for you automatically).</para>
 
     <para>This function takes additional values which are related to the low
     level details of the produced binaries. First of all we find
@@ -343,9 +345,9 @@ Finished
 <!-- ASDF:MAKE-BUILD                                                        -->
 <!-- ====================================================================== -->
 
-  <refentry xml:id="ref.load-fasl-op">
+  <refentry xml:id="ref.load-bundle-op">
    <refnamediv>
-    <refname><function>asdf:load-fasl-op</function></refname>
+    <refname><function>asdf:load-bundle-op</function></refname>
     <refpurpose>Compile and load one ore more libraries using unified &FASL;</refpurpose>
    </refnamediv>
 
@@ -354,7 +356,7 @@ Finished
     <funcsynopsis>
      <funcprototype>
       <funcdef>asdf:make-build</funcdef>
-      <paramdef>'asdf:load-fasl-op</paramdef>
+      <paramdef>'asdf:load-bundle-op</paramdef>
       <paramdef><parameter>system-name</parameter></paramdef>
       <paramdef>&key;</paramdef>
       <paramdef>&allow-other-keys;</paramdef>
@@ -389,7 +391,7 @@ Finished
 &gt; (require 'asdf)
 ;;; Loading #P"/home/jlr/lib/ecl/asdf.fas"
 ("ASDF")
-&gt; (asdf:oos 'asdf:load-fasl-op :cffi)
+&gt; (asdf:operate 'asdf:load-bundle-op :cffi)
 ...
 T
 </screen>
