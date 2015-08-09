@@ -23,7 +23,7 @@
    <varlistentry>
     <term>Foreign objects management</term>
     <listitem><para>This is the data that the foreign code will use. A &FFI;
-    needs to provide means to buid and manipulate foreign data, with automatic
+    needs to provide means to build and manipulate foreign data, with automatic
     conversions to and from lisp data types whenever possible, and it also has
     to deal with issues like garbage collection and
     finalization.</para></listitem>
@@ -188,7 +188,7 @@
    (len :int))
   :returning :int)
 
-(if (zerop (c-gethostname (uffi:char-array-to-pointer name) 256))
+(if (zerop (c-gethostname (ffi:char-array-to-pointer name) 256))
     (format t "Hostname: ~S" (ffi:convert-from-foreign-string name))
     (error "gethostname() failed."))
 </programlisting>
@@ -202,9 +202,13 @@
   in lisp. You have here three possibilities:</para>
   <itemizedlist>
    <listitem>
-    <para>&ECL; supplies a high level interface which is compatible with
-    &UFFI;. Code designed for this library should run mostly unchanged with
-    &ECL;.</para>
+    <para>&ECL; supplies a high level interface which is compatible with &UFFI;
+    up to version 1.8 (api for >=v2.0 is provided by
+    <symbol>cffi-uffi-compat</symbol> system shipped with &CFFI;). Code
+    designed for &UFFI; library should run mostly unchanged with &ECL;. Note,
+    that api resides in <symbol>ffi</symbol> package, not
+    <symbol>uffi</symbol>, to prevent conflicts with
+    <symbol>cffi-uffi-compat</symbol>.</para>
    </listitem>
    <listitem>
     <para>The &CFFI; library features a mostly complete backend for &ECL;. This
@@ -233,7 +237,7 @@
     toplevel, so that the compiler may include them at link
     time.</para></listitem>
     <listitem><para>Every function you will use has to be declared using
-    <function>uffi:def-function</function>.</para></listitem>
+    <function>ffi:def-function</function>.</para></listitem>
    </itemizedlist>
    </para>
 <programlisting>
@@ -246,14 +250,14 @@ Build and load this module with (compile-file "uffi.lsp" :load t)
 ;; statement in windows.
 ;;
 #-(or ming32 windows)
-(uffi:load-foreign-library #+darwin "/usr/lib/libm.dylib"
-			   #-darwin "/usr/lib/libm.so")
+(ffi:load-foreign-library #+darwin "/usr/lib/libm.dylib"
+			  #-darwin "/usr/lib/libm.so")
 ;;
 ;; With this other statement, we import the C function sin(),
 ;; which operates on IEEE doubles.
 ;;
-(uffi:def-function ("sin" c-sin) ((arg :double))
-                   :returning :double)
+(ffi:def-function ("sin" c-sin) ((arg :double))
+                  :returning :double)
 ;;
 ;; We now use this function and compare with the lisp version.
 ;;
@@ -267,8 +271,8 @@ Build and load this module with (compile-file "uffi.lsp" :load t)
 
    <para>The &CFFI; library is an independent project and it is not shipped
    with &ECL;. If you wish to use it you can go to their <ulink
-   url="http://www.common-lisp.net/cffi/">homepage</ulink>, download the code
-   and build it using &ASDF;.</para>
+   url="https://www.common-lisp.net/project/cffi/">homepage</ulink>, download
+   the code and build it using &ASDF;.</para>
 
    <para>&CFFI; differs slightly from &UFFI; in that functions may be used even
    without being declared beforehand. This poses a few problems to the &ECL;
