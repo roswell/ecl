@@ -145,7 +145,8 @@
   one. There are more complex rules that allow a system to depend on others,
   and to contain other kind of files, such as C or Java binaries. For further
   information we recommend reading <ulink
-  url="http://constantly.at/lisp/asdf/">the online manual</ulink>.</para>
+  url="https://common-lisp.net/project/asdf/asdf.html">the online
+  manual</ulink>.</para>
 
   <para>You can load &ASDF; on a running &ECL; using a single lisp statement
   <code>(require 'asdf)</code>. Once loaded, &ASDF; will extend the function
