@@ -362,9 +362,9 @@ ls [--help | -?] filename*
     </varlistentry>
     <varlistentry>
      <term><replaceable>error</replaceable></term>
-     <listitem><para>One of <symbol>:OUTPUT</symbol>, <symbol>T</symbol> or
-     <symbol>NIL</symbol>, defaults to
-     <symbol>T</symbol></para></listitem>
+     <listitem><para>One of <symbol>:OUTPUT</symbol>, <symbol>:STREAM</symbol>,
+     <symbol>T</symbol> or <symbol>NIL</symbol>, defaults to
+     <symbol>:OUTPUT</symbol></para></listitem>
     </varlistentry>
    </variablelist>
   </refsynopsisdiv>
@@ -408,7 +408,8 @@ ls [--help | -?] filename*
    <para>List all users in a Unix system. We use the <command>sed</command>
    command to parse the file with the list of users, removing comments and
    information other than the user names:
-<programlisting>(defun all-users (&amp;optional (file "/etc/passwd"))
+   <programlisting>
+(defun all-users (&amp;optional (file "/etc/passwd"))
   (let ((s (ext:run-program "sed"
               (list "-e" "/^#.*$/d;/^[^:]*$/d;s,^\\([^:]*\\).*$,\\1,g"
 	            file)
@@ -417,19 +418,31 @@ ls [--help | -?] filename*
       (error "Unable to parse password file"))
     (loop for x = (read s NIL NIL)
           while x
-          collect x)))</programlisting></para>
+          collect x)))
+   </programlisting></para>
 
    <para>Make a directory. Redirect standard error output to the same as the
    output:
-<programlisting>(ext:run-program "mkdir" '("./tmp") :output :STREAM :error :OUTPUT)
-</programlisting>
-</para>
+   <programlisting>(ext:run-program "mkdir" '("./tmp") :output :STREAM :error :OUTPUT)
+   </programlisting>
+   </para>
 
    <para>Same as before, but now both the output and the standard error are
    discarded
-<programlisting>(ext:run-program "mkdir" '("./tmp") :output NIL :error :OUTPUT)
-</programlisting>
-</para>
+   <programlisting>(ext:run-program "mkdir" '("./tmp") :output NIL :error :OUTPUT)
+   </programlisting>
+   </para>
+  </refsect1>
+
+  <refsect1>
+   <title>Limitations</title>
+
+   <para>All streams passed to <function>ext:run-program</function> has to have
+   underlying file handler. That means, that if gray streams are passed to
+   function - it might signal an error. Such situation might occur, for
+   instance, if <symbol>output</symbol> value is <symbol>T</symbol> and
+   <symbol>*standard-output*</symbol> is bound to gray stream (default if using
+   slime and emacs).</para>
   </refsect1>
  </refentry>
 
