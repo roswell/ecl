@@ -107,7 +107,7 @@ all functions."
         (cond ((traced-and-redefined-p record)
                (delete-from-trace-list fname))
               (t
-               (warn "The function ~S is already traced." fname)
+               (warn "The function ~S is already traced. Statement has no effect." fname)
                (return-from trace-one nil)))))
     (setq oldf (fdefinition fname))
     (eval
