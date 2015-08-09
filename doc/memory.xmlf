@@ -27,7 +27,7 @@
    <title>Boehm-Weiser garbage collector</title>
 
    <para>First of all, the garbage collector must be able to determine which
-   objects are alive and which are not. In other word, the collector must able
+   objects are alive and which are not. In other words, the collector must able
    to find all references to an object. One possiblity would be to know where
    all variables of a program reside, and where is the stack of the program and
    its size, and parse all data there, discriminating references to lisp
@@ -106,14 +106,25 @@
     interpreter stack. It only affects interpreted code.</para></listitem>
    </itemizedlist>
 
-   <para>If you look at <xref linkend="table.memory.limits" xrefstyle="select: label"/>, some of these limits may seem very stringent, but they exist to allow detecting and correcting both stack and memory overflow conditions. Larger values can be set systematically either in the <filename>~/.eclrc</filename> initialization file, or using the command line options from the table.</para>
+   <para>If you look at <xref linkend="table.memory.limits" xrefstyle="select:
+   label"/>, some of these limits may seem very stringent, but they exist to
+   allow detecting and correcting both stack and memory overflow
+   conditions. Larger values can be set systematically either in the
+   <filename>~/.eclrc</filename> initialization file, or using the command line
+   options from the table.</para>
 
   </section>
 
   <section xml:id="ext.memory.conditions">
    <title>Memory Conditions</title>
 
-   <para>When &ECL; surpasses or approaches the memory limits it will signal a &CommonLisp; condition. There are two types of conditions, <link linkend="ref.memory.stack-overflow"><symbol>ext:stack-overflow</symbol></link> and <link linkend="ref.memory.storage-exhausted"><symbol>ext:storage-exhausted</symbol></link>, for stack and heap overflows, respectively. Both errors are correctable, as the following session shows:</para>
+   <para>When &ECL; surpasses or approaches the memory limits it will signal a
+   &CommonLisp; condition. There are two types of conditions, <link
+   linkend="ref.memory.stack-overflow"><symbol>ext:stack-overflow</symbol></link>
+   and <link
+   linkend="ref.memory.storage-exhausted"><symbol>ext:storage-exhausted</symbol></link>,
+   for stack and heap overflows, respectively. Both errors are correctable, as
+   the following session shows:</para>
 <programlisting>
 > (defun foo (x) (foo x))
 
@@ -165,7 +176,12 @@ Top level.
     exiting in a non ordinary way.</para></listitem>
    </itemizedlist>
 
-   <para>The implementation is based on two functions, <link linkend="ref.memory.set-finalizer"><symbol>ext:set-finalizer</symbol></link> and <link linkend="ref.memory.get-finalizer"><symbol>ext:get-finalizer</symbol></link>, which allow setting and querying the finalizer functions for certain objects.</para>
+   <para>The implementation is based on two functions, <link
+   linkend="ref.memory.set-finalizer"><symbol>ext:set-finalizer</symbol></link>
+   and <link
+   linkend="ref.memory.get-finalizer"><symbol>ext:get-finalizer</symbol></link>,
+   which allow setting and querying the finalizer functions for certain
+   objects.</para>
   </section>
 
   <xi:include xmlns:xi="http://www.w3.org/2001/XInclude"  href="ref_memory.xmlf" xpointer="ext.memory.dict"/>
