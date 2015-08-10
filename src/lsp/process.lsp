@@ -41,6 +41,6 @@
         (setf shell comspec
               option "/c")))
     (nth-value 1 (run-program shell (list option cmd-string)
-                              :wait t :output t :input t
-                              :error t))))
+                              :wait t :output nil :input nil
+                              :error nil))))
 
