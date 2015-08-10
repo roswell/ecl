@@ -26,8 +26,8 @@
 (use-package :sb-rt)
 
 (load "tools.lsp")
-(load "../ansi-tests/universe.lsp")
-(load "../ansi-tests/ansi-aux.lsp")
+(load "universe.lsp")
+(load "ansi-aux.lsp")
 
 (load "sf262--declaim-type-foo-setf-foo.lsp")
 (load "sf272--style-warning-argument-order.lsp")
