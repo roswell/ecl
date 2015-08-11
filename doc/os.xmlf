@@ -11,7 +11,7 @@
   <title>Processes</title>
 
   <para>&ECL; provides several facilities for invoking and communicating with
-  external processes. If one just wishes to execute some program, without
+  <xref linkend="ref.external-process"/>. If one just wishes to execute some program, without
   caring for its output, then probably <xref linkend="ref.system"/> is the best
   function. In all other cases it is preferable to use <xref
   linkend="ref.run-program"/>, which opens pipes to communicate with the

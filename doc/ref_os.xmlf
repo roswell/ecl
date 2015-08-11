@@ -269,7 +269,7 @@ ls [--help | -?] filename*
 (defun print-directory (pathnames)
  (format t "~{~A~%~}"
   (mapcar #'(lambda (x) (enough-namestring x (si::getcwd)))
-	  (mapcan #'directory (or pathnames '("*.*" "*/"))))))
+          (mapcan #'directory (or pathnames '("*.*" "*/"))))))
 
 (defconstant +ls-rules+
 '(("--help" 0 (progn (princ ext:*help-message* *standard-output*) (ext:quit 0)))
@@ -326,6 +326,57 @@ ls [--help | -?] filename*
  </refentry>
 
  <!-- ====================================================================== -->
+ <!-- EXT:EXTERNAL-PROCESS                                                   -->
+ <!-- ====================================================================== -->
+
+  <refentry xml:id="ref.external-process">
+  <refnamediv>
+   <refname><function>ext:external-process</function></refname>
+   <refpurpose>Holds process state.</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+   <title>Structure</title>
+   <synopsis><type>ext:external-process</type></synopsis>
+   <variablelist>
+    <varlistentry>
+     <term><replaceable>PID</replaceable></term>
+     <listitem><para>process pid</para></listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><replaceable>INPUT</replaceable></term>
+     <listitem><para>process input stream</para></listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><replaceable>OUTPUT</replaceable></term>
+     <listitem><para>process output stream</para></listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><replaceable>ERROR</replaceable></term>
+     <listitem><para>process error stream</para></listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><replaceable>%STATUS</replaceable></term>
+     <listitem><para>either <symbol>:RUNNING</symbol> or
+     <symbol>:EXITED</symbol></para></listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><replaceable>%CODE</replaceable></term>
+     <listitem><para>exit code or nil (if still running)</para></listitem>
+    </varlistentry>
+   </variablelist>
+  </refsynopsisdiv>
+
+  <refsect1>
+   <title>Description</title>
+   <para>This structure is responsible for holding external process state -
+   process id, communication streams, runtime status and exit code. It is
+   returned as third value of <xref linkend="ref.run-program"/>.</para>
+  </refsect1>
+ </refentry>
+
+ <!-- ======================================================================
+      -->
  <!-- EXT:RUN-PROGRAM                                                        -->
  <!-- ====================================================================== -->
  <refentry xml:id="ref.run-program">
@@ -345,26 +396,56 @@ ls [--help | -?] filename*
      <paramdef>input</paramdef>
      <paramdef>output</paramdef>
      <paramdef>error</paramdef>
+     <paramdef>wait</paramdef>
+     <paramdef>environ</paramdef>
+     <paramdef>if-output-exists</paramdef>
     </funcprototype>
    </funcsynopsis>
    <variablelist>
     <varlistentry>
      <term><replaceable>input</replaceable></term>
-     <listitem><para>One of <symbol>:STREAM</symbol>, <symbol>T</symbol> or
-     <symbol>NIL</symbol>, defaults to
+     <listitem><para>One of <symbol>:STREAM</symbol>, <symbol>T</symbol>,
+     <symbol>NIL</symbol>, string or pathname - defaults to
      <symbol>:STREAM</symbol></para></listitem>
     </varlistentry>
     <varlistentry>
      <term><replaceable>output</replaceable></term>
-     <listitem><para>One of <symbol>:STREAM</symbol>, <symbol>T</symbol> or
-     <symbol>NIL</symbol>, defaults to
+     <listitem><para>One of <symbol>:STREAM</symbol>, <symbol>T</symbol>,
+     <symbol>NIL</symbol>, string or pathname - defaults to
      <symbol>:STREAM</symbol></para></listitem>
     </varlistentry>
     <varlistentry>
      <term><replaceable>error</replaceable></term>
      <listitem><para>One of <symbol>:OUTPUT</symbol>, <symbol>:STREAM</symbol>,
-     <symbol>T</symbol> or <symbol>NIL</symbol>, defaults to
+     <symbol>T</symbol>, <symbol>NIL</symbol>, string or pathname - defaults to
      <symbol>:OUTPUT</symbol></para></listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><replaceable>wait</replaceable></term>
+     <listitem><para>Boolean indicating if process should run
+     synchronously, defaults to T</para></listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><replaceable>environ</replaceable></term>
+     <listitem><para>List of strings containing environment bindings. Defaults
+     to NIL (inheritance of lisp process environment).</para></listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><replaceable>if-output-exists</replaceable></term>
+     <listitem><para>If <symbol>:OUTPUT</symbol> is either string or pathname
+     this symbol value is provided as <symbol>:IF-EXISTS</symbol> for
+     <symbol>CL_OPEN</symbol>. Defaults to
+     <symbol>:SUPERSEDE</symbol></para></listitem>
+    </varlistentry>
+    <varlistentry>
+     <term>returns</term>
+     <listitem><para>Two-way stream responsible for input/output with created
+     process (created of <symbol>:OUTPUT</symbol> and
+     <symbol>:INPUT</symbol>),</para></listitem>
+     <listitem><para>Return code of spawned process. If process still runs then
+     <symbol>NIL</symbol></para></listitem>
+     <listitem><para><xref linkend="ref.external-process"/> structure holding
+     process state.</para></listitem>
     </varlistentry>
    </variablelist>
   </refsynopsisdiv>
@@ -398,6 +479,10 @@ ls [--help | -?] filename*
    preparation of the child process (for instance the program was not found),
    this function returns <replaceable>NIL</replaceable>.</para>
 
+   <para>Function returns three values - two-way stream for communication,
+   return-code or nil depending if process is called asynchronously, and <xref
+   linkend="ref.external-process"/> structure holding process state.</para>
+
    <para>The design of this function is inspired by the function of same name
    in &CMUCL; and &SBCL;.</para>
   </refsect1>
@@ -412,7 +497,7 @@ ls [--help | -?] filename*
 (defun all-users (&amp;optional (file "/etc/passwd"))
   (let ((s (ext:run-program "sed"
               (list "-e" "/^#.*$/d;/^[^:]*$/d;s,^\\([^:]*\\).*$,\\1,g"
-	            file)
+                file)
               :input NIL :output :STREAM :error NIL)))
     (unless s
       (error "Unable to parse password file"))
@@ -439,8 +524,8 @@ ls [--help | -?] filename*
 
    <para>All streams passed to <function>ext:run-program</function> has to have
    underlying file handler. That means, that if gray streams are passed to
-   function - it might signal an error. Such situation might occur, for
-   instance, if <symbol>output</symbol> value is <symbol>T</symbol> and
+   function - it might signal an error. Such situation occurs, when for
+   instance <symbol>:OUTPUT</symbol> value is <symbol>T</symbol> and
    <symbol>*standard-output*</symbol> is bound to gray stream (default if using
    slime and emacs).</para>
   </refsect1>
@@ -485,7 +570,7 @@ ls [--help | -?] filename*
    program will be invoked, while in Windows <command>CMD.EXE</command> is
    used. The string may thus be any valid command that the shell accepts and
    in can contain higher level elements such as input/output
-   redirection.</para>
+   redirection. Output isn't printed.</para>
 
    <para>As an example, the following function uses an external editor to
    modify a lisp file and, if successful, loads the changed sources:</para>
@@ -499,7 +584,6 @@ ls [--help | -?] filename*
    </programlisting>
   </refsect1>
  </refentry>
-
 </reference></book>
 <!-- Keep this comment at the end of the file
       Local variables:
