@@ -463,13 +463,16 @@ ls [--help | -?] filename*
    program. A value of <symbol>:STREAM</symbol> means a lisp stream will be
    created to communicate with the child process. A value of
    <symbol>NIL</symbol> means that the data from this pipe will be
-   discarded. The vaule of <symbol>T</symbol> means that the child process will
-   use the parent's standard input, output or error channels. For instance, if
-   &ECL; writes to the console and you pass a value of
-   <replaceable>output</replaceable> equal to <symbol>:STREAM</symbol>, the
-   child process will also output to the console. Finally, the error messages
-   of the child process are redirected to the same pipe as its standard
-   output when <replaceable>error</replaceable> takes the value
+   discarded. The value of <symbol>T</symbol> means that the child process will
+   use the parent's standard input, output or error channels. If value is
+   pathname, then corresponding file will be used (strings are coerced to
+   pathnames).</para>
+
+   <para>For instance, if &ECL; writes to the console and you pass a value of
+   <replaceable>output</replaceable> equal to <symbol>T</symbol>, the child
+   process will also output to the console. Finally, the error messages of the
+   child process are redirected to the same pipe as its standard output when
+   <replaceable>error</replaceable> takes the value
    <symbol>:OUTPUT</symbol>.</para>
 
    <para>If the child process was succesfully launched, this function outputs a
