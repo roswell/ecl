@@ -1878,9 +1878,9 @@ cl_symbols[] = {
 {KEY_ "UCS-2LE",NULL},
 {KEY_ "UCS-4LE",NULL},
 
-{EXT_ "LOAD-ENCODING",NULL},
+{EXT_ "LOAD-ENCODING","ECL_NAME(si_load_encoding)"},
 {EXT_ "MAKE-ENCODING","si_make_encoding"},
-{EXT_ "ALL-ENCODINGS","ECL_NAME(si_load_encoding)"},
+{EXT_ "ALL-ENCODINGS",NULL},
 
 {KEY_ "US-ASCII",NULL},
 {KEY_ "LITTLE-ENDIAN",NULL},

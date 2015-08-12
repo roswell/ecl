@@ -504,7 +504,6 @@ create_descriptor(cl_object stream, cl_object direction,
         }
 }
 #endif
-
 @(defun ext::run-program (command argv &key (input @':stream') (output @':stream')
                           (error @':output') (wait @'t') (environ ECL_NIL)
                           (if_input_does_not_exist ECL_NIL)
@@ -776,4 +775,3 @@ create_descriptor(cl_object stream, cl_object direction,
                  exit_status
                  process)
 @)
-
