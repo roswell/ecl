@@ -17,5 +17,6 @@
 ;; Z is not of type CONS.
 ;;   [Condition of type TYPE-ERROR]
 (deftest sf262--declaim-type-foo-setf-foo.lsp
-         (assert (eq 'z
-                     (setf (foo *c*) 'z))))
+    (assert (eq 'z
+                (setf (foo *c*) 'z)))
+  nil)
