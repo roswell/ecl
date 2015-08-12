@@ -125,19 +125,16 @@
 ;;; RUNNING TESTS
 ;;;
 
-(defun run-regressions-tests (&optional (output (merge-pathnames "regressions.log"
-                                                                 *output-directory*)))
+(defun run-regressions-tests ()
   (ensure-regressions)
   ;; Cleanup stray files
   (cleanup-directory *regressions-sandbox*)
-  ;; Run with given image
-  (ensure-directories-exist output)
   (unwind-protect 
        (progn
          (ext:chdir *regressions-sandbox*)
          (ext:run-program *test-image*
                           *test-image-args*
                           :input (merge-pathnames "doit.lsp" *regressions-sandbox*)
-                          :output output
+                          :output t
                           :error :output))
     (ext:chdir *here*)))

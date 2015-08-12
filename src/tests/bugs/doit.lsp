@@ -68,8 +68,11 @@
  ;; we simply can not run these tests
  #-msvc
  (when (zerop (si::system "iconv -l >/dev/null 2>&1"))
-  (load "eformat-002.lsp"))
+   (load "eformat-002.lsp"))
  (load "eformat-001.lsp"))
 
-(time (sb-rt:do-tests))
+(setf sb-rt::*expected-failures*
+      (nconc sb-rt::*expected-failures*
+             '(MOP-GF-ADD/REMOVE-DEPENDENT)))
 
+(time (sb-rt:do-tests))

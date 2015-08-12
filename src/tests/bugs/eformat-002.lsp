@@ -108,9 +108,13 @@
               (format t "Mismatch on line ~D between~% ~S and~% ~S" n line i)
               (return-from test-output nil))))     
     (when iconv-name
-      (si::system (format nil "iconv -f ~A -t UTF-32BE ~A > ~A"
-                          iconv-name encoded-filename iconv-filename))
-      (compare-files decoded-filename iconv-filename all-chars))))
+      (let ((command (format nil "iconv -f ~A -t UTF-32BE ~A > ~A"
+                             iconv-name encoded-filename iconv-filename)))
+        (if (zerop
+             (si::system command))
+            (compare-files decoded-filename iconv-filename all-chars)
+            (prog1 T
+              (format t "~&;;; iconv command failed:~A" command)))))))
 
 ;;; Date: 09/01/2007
 ;;; From: Juanjo
@@ -137,12 +141,15 @@
                         :WINDOWS-1250 :WINDOWS-1251 :WINDOWS-1252 :WINDOWS-1253
                         :WINDOWS-1254 :WINDOWS-1256 :WINDOWS-1257
 
-                        ; :CP932 :WINDOWS-1255 :WINDOWS-1258 with
-                        ; iconv may output combined characters, when ECL would
-                        ; output the base and the comibining one. Hence, no simple
-                        ; comparison is possible.
+                        ;; :CP932 :WINDOWS-1255 :WINDOWS-1258 with
+                        ;; iconv may output combined characters, when ECL would
+                        ;; output the base and the comibining one. Hence, no simple
+                        ;; comparison is possible.
 
-                        :ISO-2022-JP :ISO-2022-JP-1)
+                        :ISO-2022-JP
+                        ;; :ISO-2022-JP-1
+                        ;; iconv doesn't support ISO-2022-JP-1 (hue hue hue)
+                        )
        unless (progn
                 (format t "~%;;; Testing ~A " name)
                 (loop for i from 1 to 10

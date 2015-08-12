@@ -10,10 +10,10 @@ regressions.log: config.lsp
 	$(MAKE) do-regressions
 
 do-regressions: regressions config.lsp
-	$(ECL) -norc -load config.lsp -eval '(ecl-tests::run-regressions-tests)' -eval '(ext:quit)' < /dev/null
+	$(ECL) -norc -load config.lsp -eval '(ecl-tests::run-regressions-tests)' -eval '(ext:quit)' 2>&1 | tee regressions.log
 
 show-fails: regressions.log
-	grep "^Test .* failed" regressions.log
+	tail -n 8 regressions.log | head -n 6
 
 #
 # Create directories

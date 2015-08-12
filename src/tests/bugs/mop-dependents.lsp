@@ -77,17 +77,17 @@
         ;; the first call to defmethod adds two entries: one for the
         ;; add-method and another one for a reinitialize-instance with
         ;; the name of the function
-        (and (equalp l1 (list dep))
-             (eq l2 (rest l3))
-             (equalp l3
-                     (list (list f 'remove-method m1)
-                           (list f 'add-method m1)
-                           (list f :name 'mop-gf-add/remove-dependent)))
-             (null l4)
-             (eq l5 l3)
-             (eq l6 l3)
-             t)))
-  t)
+        (values (equalp l1 (list dep))
+                (eq l2 (rest l3))
+                (equalp l3
+                        (list (list f 'remove-method m1)
+                              (list f 'add-method m1)
+                              (list f :name 'mop-gf-add/remove-dependent)))
+                (null l4)
+                (eq l5 l3)
+                (eq l6 l3)
+                t)))
+  t t t t t t t)
 
 ;;; Date: 23/04/2012
 ;;; Description:
