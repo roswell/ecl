@@ -352,13 +352,14 @@ ls [--help | -?] filename*
      <listitem><para>process output stream</para></listitem>
     </varlistentry>
     <varlistentry>
-     <term><replaceable>ERROR</replaceable></term>
+     <term><replaceable>ERROR-STREAM</replaceable></term>
      <listitem><para>process error stream</para></listitem>
     </varlistentry>
     <varlistentry>
-     <term><replaceable>%STATUS</replaceable></term>
-     <listitem><para>either <symbol>:RUNNING</symbol> or
-     <symbol>:EXITED</symbol></para></listitem>
+     <term><replaceable>%STATUS</replaceable></term> <listitem><para>either
+     <symbol>:RUNNING</symbol>, <symbol>:STOPPED</symbol>,
+     <symbol>:SIGNALED</symbol>, <symbol>:EXITED</symbol></para></listitem>,
+     <symbol>:ERROR</symbol> or <symbol>:ABORT</symbol>
     </varlistentry>
     <varlistentry>
      <term><replaceable>%CODE</replaceable></term>
@@ -373,6 +374,34 @@ ls [--help | -?] filename*
    process id, communication streams, runtime status and exit code. It is
    returned as third value of <xref linkend="ref.run-program"/>.</para>
   </refsect1>
+  </refentry>
+
+ <!-- ====================================================================== -->
+ <!-- EXT:EXTERNAL-PROCESS-STATUS                                            -->
+ <!-- ====================================================================== -->
+ <refentry xml:id="ref.external-process-status">
+  <refnamediv>
+   <refname><function>ext:external-process-status</function></refname>
+   <refpurpose>Check status of <xref
+   linkend="ref.external-process"/>.</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+   <title>Function</title>
+   <funcsynopsis>
+    <funcprototype>
+     <funcdef>ext:external-process-status</funcdef>
+     <paramdef><parameter>external-process</parameter></paramdef>
+    </funcprototype>
+   </funcsynopsis>
+
+   <refsect1>
+    <title>Description</title>
+
+    <para>Checks status of external-process. Returns it's current status, and
+    if exited - <symbol>EXIT-CODE</symbol> as second value.</para>
+   </refsect1>
+  </refsynopsisdiv>
  </refentry>
 
  <!-- ======================================================================

@@ -3059,6 +3059,23 @@ Returns T if X is a symbol; NIL otherwise.")
 (docfun ext:system function (string) "
 Executes a Shell command as if STRING is an input to the Shell.")
 
+(docfun ext:run-program function (command argv &key
+                                          (input  :stream)
+                                          (output :stream)
+                                          (error  :output)
+                                          (wait t) environ
+                                          if-input-does-no-exist
+                                          (if-output-exists :error)
+                                          (if-error-exists  :error)
+                                          (external-format  :default)) "
+Creates external process with COMMAND given args ARGV, where INPUT,
+OUTPUT and ERROR might be :STREAM, T, NIL, pathname designator or
+stream (gray streams doesn't work). ERROR might be also :OUTPUT. If
+WAIT is T, then process is ran asynchronously.
+
+Returns two-way stream for communication, process status (or exit
+code, depending on wait parameter) and EXTERNAL-PROCESS structure.")
+
 (doctype t "
 The type T is a supertype of every type.  Every object belongs to this type.")
 
