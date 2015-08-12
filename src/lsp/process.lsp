@@ -17,7 +17,7 @@
   pid
   input
   output
-  error
+  error-stream
   (%status :running)
   (%code nil))
 
