@@ -398,7 +398,10 @@ ls [--help | -?] filename*
      <paramdef>error</paramdef>
      <paramdef>wait</paramdef>
      <paramdef>environ</paramdef>
+     <paramdef>if-input-does-exist</paramdef>
      <paramdef>if-output-exists</paramdef>
+     <paramdef>if-error-exists</paramdef>
+     <paramdef>external-format</paramdef>
     </funcprototype>
    </funcsynopsis>
    <variablelist>
@@ -431,11 +434,30 @@ ls [--help | -?] filename*
      to NIL (inheritance of lisp process environment).</para></listitem>
     </varlistentry>
     <varlistentry>
-     <term><replaceable>if-output-exists</replaceable></term>
-     <listitem><para>If <symbol>:OUTPUT</symbol> is either string or pathname
-     this symbol value is provided as <symbol>:IF-EXISTS</symbol> for
+     <term><replaceable>if-input-does-not-exist</replaceable></term>
+     <listitem><para>If <symbol>:INPUT</symbol> is pathname this symbol value
+     is provided as <symbol>:IF-DOES-NOT-EXIST</symbol> for
      <symbol>CL_OPEN</symbol>. Defaults to
-     <symbol>:SUPERSEDE</symbol></para></listitem>
+     <symbol>NIL</symbol></para></listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><replaceable>if-output-exists</replaceable></term>
+     <listitem><para>If <symbol>:OUTPUT</symbol> is pathname this symbol value
+     is provided as <symbol>:IF-EXISTS</symbol> for
+     <symbol>CL_OPEN</symbol>. Defaults to
+     <symbol>:ERROR</symbol></para></listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><replaceable>if-error-exists</replaceable></term>
+     <listitem><para>If <symbol>:ERROR</symbol> is pathname this symbol value
+     is provided as <symbol>:IF-EXISTS</symbol> for
+     <symbol>CL_OPEN</symbol>. Defaults to
+     <symbol>:ERROR</symbol></para></listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><replaceable>external-format</replaceable></term>
+     <listitem><para>External format used for both streams and
+     pathnames. Defaults to <symbol>:DEFAULT</symbol></para></listitem>
     </varlistentry>
     <varlistentry>
      <term>returns</term>
