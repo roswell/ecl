@@ -507,7 +507,10 @@ create_descriptor(cl_object stream, cl_object direction,
 
 @(defun ext::run-program (command argv &key (input @':stream') (output @':stream')
                           (error @':output') (wait @'t') (environ ECL_NIL)
-                          (if_output_exists @':supersede'))
+                          (if_input_does_not_exist ECL_NIL)
+                          (if_output_exists @':error')
+                          (if_error_exists  @':error')
+                          (external_format  @':default'))
         int parent_write = 0, parent_read = 0, parent_error = 0;
         int child_pid;
         cl_object pid, process;
@@ -526,7 +529,8 @@ create_descriptor(cl_object stream, cl_object direction,
         if (ECL_STRINGP(input) || ECL_PATHNAMEP(input))
                 input = cl_open(5, input,
                                 @':direction', @':input',
-                                @':if-does-not-exist', @':error');
+                                @':if-does-not-exist', if_input_does_not_exist,
+                                @':external-format', external_format);
 
         if (output == @'t')
                 output = ecl_symbol_value(@'*standard-output*');
@@ -534,14 +538,17 @@ create_descriptor(cl_object stream, cl_object direction,
                 output = cl_open(7, output,
                                  @':direction', @':output',
                                  @':if-exists', if_output_exists,
-                                 @':if-does-not-exist', @':create');
+                                 @':if-does-not-exist', @':create',
+                                 @':external-format', external_format);
 
         if (error == @'t')
                 error = ecl_symbol_value(@'*error-output*');
         if (ECL_STRINGP(error) || ECL_PATHNAMEP(error))
                 error = cl_open(7, error,
                                 @':direction', @':output',
-                                @':if-does-not-exist', @':create');
+                                @':if-exists', if_error_exists,
+                                @':if-does-not-exist', @':create',
+                                @':external-format', external_format);
 }
 #if defined(ECL_MS_WINDOWS_HOST)
 {
@@ -736,7 +743,7 @@ create_descriptor(cl_object stream, cl_object direction,
         if (parent_write > 0) {
                 stream_write = ecl_make_stream_from_fd(command, parent_write,
                                                        ecl_smm_output, 8,
-                                                       ECL_STREAM_DEFAULT_FORMAT, ECL_T);
+                                                       external_format, ECL_T);
         } else {
                 parent_write = 0;
                 stream_write = cl_core.null_stream;
@@ -744,7 +751,7 @@ create_descriptor(cl_object stream, cl_object direction,
         if (parent_read > 0) {
                 stream_read = ecl_make_stream_from_fd(command, parent_read,
                                                       ecl_smm_input, 8,
-                                                      ECL_STREAM_DEFAULT_FORMAT, ECL_T);
+                                                      external_format, ECL_T);
         } else {
                 parent_read = 0;
                 stream_read = cl_core.null_stream;
@@ -752,7 +759,7 @@ create_descriptor(cl_object stream, cl_object direction,
         if (parent_error > 0) {
                 stream_error = ecl_make_stream_from_fd(command, parent_error,
                                                        ecl_smm_input, 8,
-                                                       ECL_STREAM_DEFAULT_FORMAT, ECL_T);
+                                                       external_format, ECL_T);
         } else {
                 parent_error = 0;
                 stream_error = cl_core.null_stream;
