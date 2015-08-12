@@ -26,20 +26,29 @@
 * Pending changes since 15.3.7
 ** API changes
 
-   - There is no "uffi" nickname for "ffi" package - we piggyback on
-     cffi-uffi-compat (ours uffi wasn't uffi version 2.0 compatible and
-     there were problems with dependencies on uffi - it wasn't a system)
+   - There is no UFFI nickname for FFI package - we piggyback on
+     cffi-uffi-compat for UFFI dependant systems (our UFFI wasn't version
+     2.0 compatible and there were problems with ADSF dependencies on
+     UFFI - it wasn't a system)
 
    - CLOS has new nickname "MOP"
 
    - ext:run-program :error argument can be freshly created separate stream
-     if provided with :stream keyword, structure process has new field
-     holding that stream (suprisingly named "error")
+     if provided with :stream keyword, structure external-process has new
+     field holding that stream
+
+   - ext:run-program accepts new arguments - :if-input-does-not-exist,
+     :if-error-exists and :external-format
+
+   - ext:system ignores input and output, instead of bounding them to
+     *standard-input* and *standard-output*
 
    - methods can be specilized on both single- and double-float (added
      built-in class for them)
 
 ** Enchantments:
+   - Veryfication if manual is up-to-date, providing corrections for
+     outdated parts
 
    - Documentation is now included in main repository under toplevel
      directory `doc'
