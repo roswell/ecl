@@ -18,7 +18,7 @@
 * Known issues
 
   - In Windows ECL comes with bytecodes compiler by default, because C
-    compilers are normally not avaiable. Unfortunately several libraries
+    compilers are normally not available. Unfortunately several libraries
     out there are not prepared for this.  If you plan to use quicklisp
     and have a C compiler accessible to ECL, you may use
     (ext:install-c-compiler) to switch back to the Lisp-to-C compiler.
@@ -27,42 +27,43 @@
 ** API changes
 
    - There is no UFFI nickname for FFI package - we piggyback on
-     cffi-uffi-compat for UFFI dependant systems (our UFFI wasn't version
+     cffi-uffi-compat for UFFI dependent systems (our UFFI wasn't version
      2.0 compatible and there were problems with ADSF dependencies on
      UFFI - it wasn't a system)
 
-   - CLOS has new nickname "MOP"
+   - CLOS has the new nickname "MOP"
 
-   - ext:run-program :error argument can be freshly created separate stream
-     if provided with :stream keyword, structure external-process has new
-     field holding that stream
+   - The new ext:run-program :error argument can automatically create a
+     separate stream if provided with the :stream keyword.
+     The external-process structure also has a new field to hold that
+     stream.
 
    - ext:run-program accepts new arguments - :if-input-does-not-exist,
      :if-error-exists and :external-format
 
-   - ext:system ignores input and output, instead of bounding them to
-     *standard-input* and *standard-output*
+   - ext:system no longer binds *standard-input* and *standard-output* and
+     now ignores input and output (use ext:run-program for more control)
 
-   - methods can be specilized on both single- and double-float (added
-     built-in class for them)
+   - methods can be specialized on both single-float and double-float
+     (built-in classes were added for them)
 
-** Enchantments:
-   - Veryfication if manual is up-to-date, providing corrections for
+** Enhancements:
+   - Verification if manual is up-to-date, providing corrections for
      outdated parts
 
-   - Documentation is now included in main repository under toplevel
-     directory `doc'
+   - Documentation is now included in the main repository under the
+     toplevel directory `doc'
 
    - Update libffi to version 3.2.1
 
    - Update asdf to version 3.1.4
 
-   - Update bdwgc to version 7.4.2
+   - Update Boehm-Demers-Weiser garbage collector to version 7.4.2
 
-   - Pathname string-parts internal representation is character, not
+   - Pathname string-parts internal representation is now character, not
      base-char
 
-   - Dead code removals, untiabifying sources
+   - Dead code removal, tabulators were replaced by spaces
 
    - Better quality of generated code (explicit casting when necessary)
   
@@ -72,8 +73,8 @@
 
    - Remove deprecated GC calls
 
-   - ROTATEF, SHIFTF, PSETF reworked to conform ANSI standard.  Places were
-     handled improperly in regard of multiple values
+   - ROTATEF, SHIFTF, PSETF reworked to conform to the ANSI standard.
+     Places were handled improperly in regard of multiple values.
 
    - Improved unicode support in character handling
 
@@ -88,16 +89,18 @@
    - Closures put in mapcar work as expected in both compiled and
      interpreted code
 
-   - Improved readtable-case handling (:invert and character literals work
-     now conformingly)
+   - Improved readtable-case handling (:invert and character literals now
+     conform)
 
    - Library initialization functions have unique names - no risk of
      clashing symbol names in object files
 
-   - Format float bug, when width and fdigits aren't set, but k is
+   - Format float bug fixed, when width and fdigits were not set, but k
+     was
 
-   - `logical-pathname-translations' throws an error if logical pathname
-     wasn't defined yet. Until now it non-conformingly returned nil
+   - `logical-pathname-translations' now throws an error if logical
+     pathname wasn't defined yet, to conform with ANSI (it used to return
+     NIL)
 
    - Other minor tweaks
 
@@ -105,18 +108,18 @@
 ** Issues fixed:
    
    - DEFUN functions not defined as toplevel forms were also directly
-     referenced other code in the same file.
+     referenced by other code in the same file.
      
    - STABLE-SORT works as desired (bogus optimization for strings
      fixed).
      
    - broken --with-sse=yes configure flag works once again.
      
-** Enchantments
+** Enhancements:
    
    - autoconf scripts are rewritten to support version 2.69 stack.
      
-   - direction is now correctly determined, fixing gcc 5.x builds.
+   - stack direction is now correctly determined, fixing gcc 5.x builds.
      
    - compilation of ECL under MSVC (2008/2010/2012) even with custom
      code pages.
@@ -125,7 +128,7 @@
      type such as in (declare (:double a)) and then the variable is
      enforced to be unboxed to such type.
      
-   - New form EXT:C-PROGN used to interleave C statements with lisp
+   - New form FFI:C-PROGN used to interleave C statements with lisp
      code, where the lisp code may refer to any number of
      variables. Example:
      #+BEGIN_SRC lisp
