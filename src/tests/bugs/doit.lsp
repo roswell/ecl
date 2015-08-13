@@ -29,6 +29,7 @@
 (load "universe.lsp")
 (load "ansi-aux.lsp")
 
+(load "test-ansi.lsp")
 (load "sf262--declaim-type-foo-setf-foo.lsp")
 (load "sf272--style-warning-argument-order.lsp")
 (load "sf276--write-hash-readably.lsp")
