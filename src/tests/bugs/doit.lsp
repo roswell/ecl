@@ -71,8 +71,8 @@
    (load "eformat-002.lsp"))
  (load "eformat-001.lsp"))
 
-(setf sb-rt::*expected-failures*
-      (nconc sb-rt::*expected-failures*
-             '(MOP-GF-ADD/REMOVE-DEPENDENT)))
+;; (setf sb-rt::*expected-failures*
+;;       (nconc sb-rt::*expected-failures*
+;;              '(MOP-GF-ADD/REMOVE-DEPENDENT)))
 
 (time (sb-rt:do-tests))

@@ -82,7 +82,7 @@
                 (equalp l3
                         (list (list f 'remove-method m1)
                               (list f 'add-method m1)
-                              (list f :name 'mop-gf-add/remove-dependent)))
+                              (list f)))
                 (null l4)
                 (eq l5 l3)
                 (eq l6 l3)
