@@ -1551,10 +1551,10 @@ c_let_leta(cl_env_ptr env, int op, cl_object args, int flags) {
         specials = env->values[3];
 
         /* Optimize some common cases */
-        switch(ecl_length(bindings)) {
-        case 0:         return c_locally(env, CDR(args), flags);
-        case 1:         op = OP_BIND; break;
-        }
+        if (bindings == ECL_NIL)
+                return c_locally(env, CDR(args), flags);
+        if (ECL_CONS_CDR(bindings) == ECL_NIL)
+                op = OP_BIND;
 
         for (vars=ECL_NIL, l=bindings; !Null(l); ) {
                 cl_object aux = pop(&l);
