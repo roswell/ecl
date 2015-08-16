@@ -1345,21 +1345,33 @@ c_register_functions(cl_env_ptr env, cl_object l)
 
 static int
 c_labels_flet(cl_env_ptr env, int op, cl_object args, int flags) {
+#define push(v,l) { cl_object c = *l = CONS(v, *l); l = &ECL_CONS_CDR(c); }
         cl_object l, def_list = pop(&args);
         cl_object old_vars = env->c_env->variables;
         cl_object old_funs = env->c_env->macros;
+        cl_object fnames = ecl_list1(CAAR(def_list));
+        cl_object v, *f = &fnames;
         cl_index nfun;
 
-        if (ecl_length(def_list) == 0) {
+        if (def_list == ECL_NIL) {
                 return c_locally(env, args, flags);
+        }
+
+        /* ANSI doesn't specify what should happen if we define
+           multiple functions of the same name in the flet/labels
+           block – ECL treats this undefined behavior as an error */
+        for (l = ECL_CONS_CDR(def_list), nfun = 1; !Null(l); nfun++) {
+                v = CAR(pop(&l));
+                if (ecl_member_eq(v, fnames))
+                        FEprogram_error_noreturn
+                                ("The function ~s was already defined.", 1, v);
+                push(v, f);
         }
 
         /* If compiling a LABELS form, add the function names to the lexical
            environment before compiling the functions */
-        if (op == OP_FLET)
-                nfun = ecl_length(def_list);
-        else
-                nfun = c_register_functions(env, def_list);
+        if (op == OP_LABELS)
+                c_register_functions(env, def_list);
 
         /* Push the operator (OP_LABELS/OP_FLET) with the number of functions */
         asm_op2(env, op, nfun);
