@@ -9,8 +9,8 @@
 
  <section xml:id="ansi.let-behavior">
    <title><function>LET</function>, <function>FLET</function>,
-   <function>LABELS</function> and <emphasis>lambda list</emphasis>
-   &ANSI; addendum</title>
+   <function>LABELS</function> and function <emphasis>lambda
+   list</emphasis> &ANSI; addendum</title>
 
    <para>&ANSI; doesn't specify what should happen if any of the
    <function>LET</function>, <function>FLET</function> and
@@ -25,10 +25,10 @@
 
    <para>Moreover, while &ANSI; defines <emphasis>lambda
    list</emphasis> parameters in the terms of
-   <function>LET*</function>, programmer can't provide an
-   initialization forms for required parameters. If required
-   parameters share the same name <emphasis>error</emphasis> is
-   signalled.
+   <function>LET*</function>, when used in function context programmer
+   can't provide an initialization forms for required parameters. If
+   required parameters share the same name <emphasis>error</emphasis>
+   is signalled.
    </para>
 
    <para>Described behavior is present in &ECL; since version
