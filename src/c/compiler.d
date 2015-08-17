@@ -1400,6 +1400,7 @@ c_labels_flet(cl_env_ptr env, int op, cl_object args, int flags) {
         env->c_env->macros = old_funs;
 
         return flags;
+#undef push
 }
 
 
