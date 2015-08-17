@@ -28,7 +28,7 @@
            ;; If there is only one variable binding, we use LET* instead of LET
            (let-bindings (first args))
            (psetq-p (and psetq-p (rest let-bindings)))
-           (var-form-pairs (parse-let let-bindings ss is ts other-decls))
+           (var-form-pairs (parse-let let-bindings psetq-p ss is ts other-decls))
            (body (create-temps-for-specials var-form-pairs body psetq-p))
            (compiled-pairs (compile-let-forms var-form-pairs psetq-p
                                               ss is ts other-decls))
@@ -48,27 +48,34 @@
                                 (c1unbind (nconc specials locals)))
                          )))))
 
-(defun parse-let (var-assignment-pairs ss is ts other-decls)
+(defun parse-let (var-assignment-pairs psetq-p ss is ts other-decls)
   (flet ((in-read-only-decl-p (v other-decls)
            (dolist (i other-decls nil)
              (when (and (eq (car i) :READ-ONLY)
                         (member v (rest i)))
                (return t)))))
-    (loop for x in var-assignment-pairs
-       collect (let (name form)
-                 (cond ((symbolp x)
-                        (setf name x
-                              form nil
-                              x nil))
-                       ((not (and (consp x) (or (endp (cdr x)) (endp (cddr x)))))
-                        (cmperr "Syntax error in LET/LET* variable binding~&~8T~S" x))
-                       (t
-                        (setf name (first x)
-                              form (rest x))))
-                 (let ((v (c1make-var name ss is ts)))
-                   (when (in-read-only-decl-p name other-decls)
-                     (setf (var-read-only-p v) t))
-                   (cons v (if form (first form) (default-init v))))))))
+    (loop
+       :with names = '()
+       :for x :in var-assignment-pairs
+       :collect (let (name form)
+                  (cond ((symbolp x)
+                         (setf name x
+                               form nil
+                               x nil))
+                        ((not (and (consp x) (or (endp (cdr x)) (endp (cddr x)))))
+                         (cmperr "Syntax error in LET/LET* variable binding~&~8T~S" x))
+                        (t
+                         (setf name (first x)
+                               form (rest x))))
+                  (when psetq-p
+                    (push name names)
+                    (cmpck (member (car names) (cdr names) :test #'eq)
+                           "LET: The variable ~s occurs more than once in the LET."
+                           name))
+                  (let ((v (c1make-var name ss is ts)))
+                    (when (in-read-only-decl-p name other-decls)
+                      (setf (var-read-only-p v) t))
+                    (cons v (if form (first form) (default-init v))))))))
 
 (defun create-temps-for-specials (var-form-pairs body psetq-p)
   ;; In a LET form, when special variables are bound they cause a side

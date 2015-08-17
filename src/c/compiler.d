@@ -1572,6 +1572,10 @@ c_let_leta(cl_env_ptr env, int op, cl_object args, int flags) {
                         FEillegal_variable_name(var);
                 if (op == OP_PBIND) {
                         compile_form(env, value, FLAG_PUSH);
+                        if (ecl_member_eq(var, vars))
+                                FEprogram_error_noreturn
+                                        ("LET: The variable ~s occurs more than "
+                                         "once in the LET.", 1, var);
                         vars = CONS(var, vars);
                 } else {
                         compile_form(env, value, FLAG_REG0);

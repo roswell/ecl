@@ -24,14 +24,21 @@
           ((null (rest bindings))
            (c1let/let* 'let* bindings args))
           (t
-           (loop with temp
-              for b in bindings
-              if (atom b)
-              collect b into real-bindings
-              else collect (setf temp (gensym "LET")) into temp-names and
-              collect (cons temp (cdr b)) into temp-bindings and
-              collect (list (car b) temp) into real-bindings
-              finally
+           (loop :with temp
+              :for b :in bindings
+                :if (atom b)
+                  :collect b :into real-bindings :and
+                  :collect b :into names
+                :else
+                  :collect (setf temp (gensym "LET")) :into temp-names    :and
+                  :collect (cons temp (cdr b))        :into temp-bindings :and
+                  :collect (list (car b) temp)        :into real-bindings :and
+                  :collect (car b)                    :into names
+                :do
+                  (cmpck (member (car names) (cdr names) :test #'eq)
+                         "LET: The variable ~s occurs more than once in the LET."
+                         (car names))
+              :finally
                 (return (c1let/let* 'let*
                                     (nconc temp-bindings real-bindings)
                                     `((declare (ignorable ,@temp-names)
