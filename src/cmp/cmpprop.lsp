@@ -263,9 +263,10 @@ of the occurrences in those lists."
       (p1propagate values assumptions))
     (p1propagate body assumptions)))
 
-(defun p1setq (c1form assumptions var c1form)
+(defun p1setq (c1form assumptions var value-c1form)
+  (declare (ignore c1form))
   (multiple-value-bind (value-type assumptions)
-      (p1propagate c1form assumptions)
+      (p1propagate value-c1form assumptions)
     (values (type-and (var-type var) (values-type-primary-type value-type))
             assumptions)))
 
