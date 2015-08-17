@@ -7,6 +7,39 @@
 <chapter xml:id="ansi.data-and-control">
  <title>Data and control flow</title>
 
+ <section xml:id="ansi.let-behavior">
+   <title><function>LET</function>, <function>FLET</function>,
+   <function>LABELS</function> and <emphasis>lambda list</emphasis>
+   &ANSI; addendum</title>
+
+   <para>&ANSI; doesn't specify what should happen if any of the
+   <function>LET</function>, <function>FLET</function> and
+   <function>LABELS</function> blocks contain many
+   <emphasis>bindings</emphasis> (or <emphasis>functions</emphasis>)
+   sharing the same name. Because the behavior varies between the
+   implementations and the programmer can't rely on the spec, &ECL;
+   signals an <emphasis>error</emphasis> if such situation
+   occurs. This is also very unlikely, that programmer does that
+   intentionally, since there is no valid use-case for it.
+   </para>
+
+   <para>Moreover, while &ANSI; defines <emphasis>lambda
+   list</emphasis> parameters in the terms of
+   <function>LET*</function>, programmer can't provide an
+   initialization forms for required parameters. If required
+   parameters share the same name <emphasis>error</emphasis> is
+   signalled.
+   </para>
+
+   <para>Described behavior is present in &ECL; since version
+   <emphasis>16.0.0</emphasis>. Previously the
+   <function>LET</function> operator were using first binding, while
+   <emphasis>lambda lists</emphasis> used last occurrence. Both
+   <function>FLET</function> and <function>LABELS</function> were
+   singalling an error if C compiler was used and used last binding as
+   visible one when <emphasis>bytecmp</emphasis> was used.</para>
+ </section>
+
  <section xml:id="ansi.minimal-compilation">
   <title>Minimal compilation</title>
 
