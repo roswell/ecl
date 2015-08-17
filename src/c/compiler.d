@@ -2808,6 +2808,10 @@ REST:           unlikely_if (stage >= AT_REST)
         case AT_REQUIREDS:
                 nreq++;
                 assert_var_name(v);
+                if (ecl_member_eq(v, lists[0]))
+                        FEprogram_error_noreturn
+                                ("The variable ~s occurs more than once as the "
+                                 "required parameter in the lambda list.", 1, v);
                 push(v, reqs);
                 break;
         case AT_OPTIONALS: {
