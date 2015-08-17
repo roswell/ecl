@@ -47,7 +47,14 @@
    - methods can be specialized on both single-float and double-float
      (built-in classes were added for them)
 
+   - LET/FLET/LABELS will signal error if parameter of the same name will
+     appear multiple times
+
+   - lambda lists with repeated required parameter name are considered
+     invalid
+
 ** Enhancements:
+
    - Verification if manual is up-to-date, providing corrections for
      outdated parts
 
