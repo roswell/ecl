@@ -162,7 +162,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 
 (defun cmp-process-lambda-list (list)
   (handler-case (si::process-lambda-list list 'function)
-    (error (c) (cmperr "Illegal lambda list ~S" list))))
+    (error (c) (cmperr "Illegal lambda list ~S:~%~A" list c))))
 
 (defun c1lambda-expr (lambda-expr function-name block-name
                       &aux doc body ss is ts
