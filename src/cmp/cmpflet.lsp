@@ -35,7 +35,7 @@
                  (endp (cdr def)))
              "The local function definition ~s is illegal." def)
       (cmpck (member (car def) fnames)
-             "The function ~s was already defined." (car def))
+             "~s: The function ~s was already defined." origin (car def))
       (push (car def) fnames)
       (let* ((name (car def))
              (var (make-var :name name :kind :object))

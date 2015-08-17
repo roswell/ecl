@@ -1349,7 +1349,7 @@ c_labels_flet(cl_env_ptr env, int op, cl_object args, int flags) {
         cl_object l, def_list = pop(&args);
         cl_object old_vars = env->c_env->variables;
         cl_object old_funs = env->c_env->macros;
-        cl_object fnames = ecl_list1(CAAR(def_list));
+        cl_object fnames = ECL_NIL;
         cl_object v, *f = &fnames;
         cl_index nfun;
 
@@ -1360,11 +1360,12 @@ c_labels_flet(cl_env_ptr env, int op, cl_object args, int flags) {
         /* ANSI doesn't specify what should happen if we define
            multiple functions of the same name in the flet/labels
            block – ECL treats this undefined behavior as an error */
-        for (l = ECL_CONS_CDR(def_list), nfun = 1; !Null(l); nfun++) {
+        for (l = def_list, nfun = 0; !Null(l); nfun++) {
                 v = CAR(pop(&l));
                 if (ecl_member_eq(v, fnames))
                         FEprogram_error_noreturn
-                                ("The function ~s was already defined.", 1, v);
+                                ("~s: The function ~s was already defined.",
+                                 2, (op == OP_LABELS ? @'LABELS' : @'FLET'), v);
                 push(v, f);
         }
 
