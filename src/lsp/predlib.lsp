@@ -490,7 +490,6 @@ Returns T if X belongs to TYPE; NIL otherwise."
                (setq tp type i nil))))
         ((consp type)
          (setq tp (car type) i (cdr type)))
-        #+clos
         ((sys:instancep type)
          (return-from typep (si::subclassp (class-of object) type)))
         (t
@@ -592,29 +591,17 @@ Returns T if X belongs to TYPE; NIL otherwise."
             (typep object (apply (get-sysprop tp 'DEFTYPE-DEFINITION) i)))
            ((consp i)
             (error-type-specifier type))
-           #+clos
            ((setq c (find-class type nil))
             ;; Follow the inheritance chain
             (si::subclassp (class-of object) c))
-           #-clos
-           ((get-sysprop tp 'IS-A-STRUCTURE)
-            (when (sys:structurep object)
-              ;; Follow the chain of structure-include.
-              (do ((stp (sys:structure-name object)
-                        (get-sysprop stp 'STRUCTURE-INCLUDE)))
-                  ((eq tp stp) t)
-                (when (null (get-sysprop stp 'STRUCTURE-INCLUDE))
-                  (return nil)))))
            (t
             (error-type-specifier type))))))
 
-#+clos
 (defun subclassp (low high)
   (or (eq low high)
       (member high (sys:instance-ref low clos::+class-precedence-list-ndx+)
               :test #'eq))) ; (class-precedence-list low)
 
-#+clos
 (defun of-class-p (object class)
   (declare (optimize (speed 3) (safety 0)))
   (macrolet ((class-precedence-list (x)
@@ -651,7 +638,6 @@ Returns T if X belongs to TYPE; NIL otherwise."
          (if (setq fd (get-sysprop type 'DEFTYPE-DEFINITION))
            (normalize-type (funcall fd))
            (values type nil)))
-        #+clos
         ((clos::classp type) (values type nil))
         ((atom type)
          (error-type-specifier type))
