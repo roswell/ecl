@@ -652,25 +652,22 @@ Returns T if X belongs to TYPE; NIL otherwise."
         ((progn
            (setq tp (car type) i (cdr type))
            (setq fd (get-sysprop tp 'DEFTYPE-DEFINITION)))
-         (normalize-type (apply fd i)))
+         (normalize-type (funcall fd i nil)))
         ((and (eq tp 'INTEGER) (consp (cadr i)))
          (values tp (list (car i) (1- (caadr i)))))
         (t (values tp i))))
 
 (defun expand-deftype (type)
-  (cond ((symbolp type)
-         (let ((fd (get-sysprop type 'DEFTYPE-DEFINITION)))
-           (if fd
-               (expand-deftype (funcall fd))
-               type)))
-        ((and (consp type)
-              (symbolp type))
-         (let ((fd (get-sysprop (first type) 'DEFTYPE-DEFINITION)))
-           (if fd
-               (expand-deftype (funcall fd (rest type)))
-               type)))
-        (t
-         type)))
+  (let (base args)
+    (if (atom type)
+        (setf base type
+              args nil)
+        (setf base (car type)
+              args (cdr type)))
+    (let ((fn (get-sysprop base 'SI::DEFTYPE-DEFINITION)))
+      (if fn
+          (expand-deftype (funcall fn args nil))
+          type))))
 
 ;;************************************************************
 ;;                      COERCE
