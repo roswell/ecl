@@ -111,6 +111,8 @@
 
    - Regression testing framework and unit tests cleanup
 
+   - deftype ANSI conformity fix (deftype accepts macro labda-lists)
+
    - Other minor tweaks
 
 * 15.3.7 changes since 15.2.21  
