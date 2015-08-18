@@ -1156,6 +1156,7 @@ cl_symbols[] = {
 {SYS_ "COMPILED-FUNCTION-BLOCK","si_compiled_function_block"},
 {EXT_ "COMPILED-FUNCTION-NAME","si_compiled_function_name"},
 {SYS_ "COPY-STREAM","si_copy_stream"},
+{SYS_ "DESTRUCTURE",NULL},
 {SYS_ "DO-READ-SEQUENCE","si_do_read_sequence"},
 {SYS_ "DO-WRITE-SEQUENCE","si_do_write_sequence"},
 {SYS_ "ELT-SET","si_elt_set"},

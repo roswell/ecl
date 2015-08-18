@@ -89,8 +89,7 @@
       (error "Too few arguments supplied to a inlined lambda form.")))
 
 (defun sys::destructure (vl macro &aux (basis-form (gensym)) (destructure-symbols (list basis-form)))
-  (declare (si::c-local)
-           (special *dl* *arg-check*))
+  (declare (special *dl* *arg-check*))
   (labels ((tempsym ()
              (let ((x (gensym)))
                (push x destructure-symbols)
