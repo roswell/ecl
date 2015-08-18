@@ -42,16 +42,6 @@
         (c1constant-value new-value :only-small-values t)
         (c1nil))))
 
-(defun expand-deftype (type)
-  (let (base args)
-    (if (atom type)
-        (setf base type args nil)
-        (setf base (car type) args (cdr type)))
-    (let ((fn (get-sysprop base 'SI::DEFTYPE-DEFINITION)))
-      (if fn
-          (expand-deftype (apply fn args))
-          type))))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; TYPE CHECKING

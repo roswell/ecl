@@ -339,7 +339,7 @@ compute it. This version only handles the simplest cases."
                  'character)
                 ((eq array 'base-string)
                  'base-char)
-                ((member (setf array (expand-deftype array))
+                ((member (setf array (si::expand-deftype array))
                          '(array vector simple-array))
                  t)
                 ((atom array)
