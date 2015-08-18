@@ -55,18 +55,21 @@ Builds a new function which accepts any number of arguments but always outputs N
 
 ;;; DEFTYPE macro.
 (defmacro deftype (name lambda-list &rest body &environment env)
-  "Syntax: (deftype name lambda-list {decl | doc}* {form}*)
-Defines a new type-specifier abbreviation in terms of an 'expansion' function
-        (lambda lambda-list1 {DECL}* {FORM}*)
-where LAMBDA-LIST1 is identical to LAMBDA-LIST except that all optional
-parameters with no default value specified in LAMBDA-LIST defaults to the
-symbol '*', but not to NIL.  When the type system of ECL encounters a type
-specifier (NAME arg1 ... argn), it calls the expansion function with the
-arguments ARG1 ... ARGn, and uses the returned value instead of the original
-type specifier.  When the symbol NAME is used as a type specifier, the
-expansion function is called with no argument.
-The doc-string DOC, if supplied, is saved as a TYPE doc and can be retrieved
-by (documentation 'NAME 'type)."
+  "Syntax: (deftype name macro-lambda-list {decl | doc}* {form}*)
+Defines a new type-specifier abbreviation in terms of an 'expansion'
+function
+
+        (lambda (whole env) {DECL}* {FORM}*)
+
+where WHOLE is identical to MACRO-LAMBDA-LIST except that all optional
+parameters with no default value specified in LAMBDA-LIST defaults to
+the symbol '*', but not to NIL. ENV is ignored. When the type system
+of ECL encounters a type specifier (NAME arg1 ... argn), it calls the
+expansion function with the arguments `(ARG1 ... ARGn) NIL', and uses
+the returned value instead of the original type specifier.  When the
+symbol NAME is used as a type specifier, the expansion function is
+called with no argument.  The doc-string DOC, if supplied, is saved as
+a TYPE doc and can be retrieved by (documentation 'NAME 'type)."
   (setf lambda-list (copy-tree lambda-list))
   (labels                             ; add '* as default values
       ((set-default (list*)
