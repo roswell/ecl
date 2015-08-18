@@ -70,36 +70,41 @@ of the original type specifier.  When the symbol NAME is used as a
 type specifier, the expansion function is called with no argument.
 The doc-string DOC, if supplied, is saved as a TYPE doc and can be
 retrieved by (documentation 'NAME 'type)."
-  (setf lambda-list (copy-tree lambda-list))
+  (labels ((set-default (list*)
+             "Sets default value for optional arguments to *. Doesn't
+              modify arguments which happen to be in lambda-list
+              keywords."
+             (if (consp list*)
+                 (let ((variable (car list*)))
+                   (cons
+                    (if (and (symbolp variable)
+                             (not (member variable lambda-list-keywords)))
+                        `(,variable '*)
+                        variable)
+                    (set-default (cdr list*))))
+                 list*))
+           (verify-tree (elt)
+             "Vefrifies if ELT is the list containing optional arg."
+             (and (consp elt)
+                  (member (car elt)
+                          '(&key &optional))))
+           (maptree (function tree test)
+             "Applies FUNCTION to branches for which TEST resolves to
+              true. MAPTREE doesn't traverse this branch further. It
+              is correct in this context, because we can't create
+              nested lambda-list after both &key and &optional, since
+              it would be considered as default value or an error."
+             (cond ((funcall test tree)
+                    (funcall function tree))
+                   ((consp tree)
+                    (cons
+                     (maptree function (car tree) test)
+                     (maptree function (cdr tree) test)))
+                   (T tree))))
+    (setf lambda-list
+          (maptree #'set-default lambda-list #'verify-tree)))
   (multiple-value-bind (decls body documentation)
       (si::find-declarations body)
-    (labels                             ; add '* as default values
-        ((set-default (list*)
-           "Sets default value for optional arguments to *. Doesn't
-         modify arguments which happen to be in lambda-list-keywords."
-           (when (consp list*)
-             (let ((variable (car list*)))
-               (when (and (symbolp variable)
-                          (not (member variable lambda-list-keywords)))
-                 (setf (car list*) `(,variable '*))))
-             (set-default (cdr list*))))
-         (verify-tree (elt)
-           "Verifies if ELT is the list containing optional arguments."
-           (and (consp elt)
-                (member (car elt)
-                        '(&key &optional))))
-         (maptree (function tree test)
-           "Applies FUNCTION to branches for which TEST resolves to
-         true. MAPTREE doesn't traverse this branch further. It is
-         correct in this context, because we can't create nested
-         lambda-list after both &key and &optional, since it would be
-         considered as default value or an error."
-           (if (funcall test tree)
-               (funcall function tree)
-               (when (consp tree)
-                 (maptree function (car tree) test)
-                 (maptree function (cdr tree) test)))))
-      (maptree #'set-default lambda-list #'verify-tree))
     (multiple-value-bind (ppn whole dl arg-check ignorables)
         (destructure lambda-list nil)
       (declare (ignore ppn))
