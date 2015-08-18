@@ -1,5 +1,7 @@
 (in-package :cl-test)
 
+;; HyperSpec – 2.*
+
 ;;;;;;;;;;;;;;;;;;;;;
 ;; Readtable tests ;;
 ;;;;;;;;;;;;;;;;;;;;;
@@ -31,5 +33,54 @@
       (setf (readtable-case *readtable*) :invert)
       (read-from-string "#\\a"))
   #\a 3)
+
+
+
+;; HyperSpec – 3.*
+
+;;;;;;;;;;;;;;;;;;;
+;; Deftype tests ;;
+;;;;;;;;;;;;;;;;;;;
+
+(deftest test-ansi.deftype.ordinary.1
+    (progn
+      (deftype ordinary1 () `(member nil t))
+      (values (typep T  'ordinary1)
+              (typep :a 'ordinary1)))
+  T NIL)
+
+(deftest test-ansi.deftype.ordinary.2
+    (progn
+      (deftype ordinary2 (a b)
+        (if a
+            'CONS
+            `(INTEGER 0 ,b)))
+      (values (typep T        '(ordinary2 nil 3))
+              (typep 3        '(ordinary2 nil 4))
+              (typep T        '(ordinary2 T nil))
+              (typep '(1 . 2) '(ordinary2 T nil))))
+  nil t nil t)
+
+(deftest test-ansi.deftype.optional
+    (progn
+      (deftype optional (a &optional b)
+        (if a
+            'CONS
+            `(INTEGER 0 ,b)))
+      (values (typep 5        '(optional nil))
+              (typep 5        '(optional nil 4))))
+  t nil)
+
+(deftest test-ansi.deftype.nested
+    (progn
+      (deftype nested ((a &optional b) c . d)
+        (assert (listp d))
+        `(member ,a ,b ,c))
+      (values
+       (typep  1 '(nested (1 2) 3 4 5 6))
+       (typep  1 '(nested (2 2) 3 4 5 6))
+       (typep '* '(nested (3)   3))
+       (typep  3 '(nested (2)   3))))
+  t nil t t)
 
 
