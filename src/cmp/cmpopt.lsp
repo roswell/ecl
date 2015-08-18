@@ -80,7 +80,7 @@
           ;; Complex types defined with DEFTYPE.
           ((and (atom type)
                 (setq function (get-sysprop type 'SI::DEFTYPE-DEFINITION)))
-           (expand-typep form object `',(funcall function nil nil) env))
+           (expand-typep form object `',(funcall function nil) env))
           ;;
           ;; No optimizations that take up too much space unless requested.
           ((not (policy-inline-type-checks))
@@ -147,7 +147,7 @@
           ;;
           ;; Complex types with arguments.
           ((setf function (get-sysprop first 'SI::DEFTYPE-DEFINITION))
-           (expand-typep form object `',(funcall function rest nil) env))
+           (expand-typep form object `',(funcall function rest) env))
           (t
            form))))
 
@@ -244,7 +244,7 @@
           ;; Complex types defined with DEFTYPE.
           ((and (atom type)
                 (setq first (get-sysprop type 'SI::DEFTYPE-DEFINITION)))
-           (expand-coerce form value `',(funcall first nil nil) env))
+           (expand-coerce form value `',(funcall first nil) env))
           ;;
           ;; CONS types are not coercible.
           ((and (consp type)

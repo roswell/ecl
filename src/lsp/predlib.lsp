@@ -59,57 +59,64 @@ Builds a new function which accepts any number of arguments but always outputs N
 Defines a new type-specifier abbreviation in terms of an 'expansion'
 function
 
-        (lambda (whole env) {DECL}* {FORM}*)
+        (lambda (whole) {DECL}* {FORM}*)
 
 where WHOLE is identical to MACRO-LAMBDA-LIST except that all optional
 parameters with no default value specified in LAMBDA-LIST defaults to
-the symbol '*', but not to NIL. ENV is ignored. When the type system
-of ECL encounters a type specifier (NAME arg1 ... argn), it calls the
-expansion function with the arguments `(ARG1 ... ARGn) NIL', and uses
-the returned value instead of the original type specifier.  When the
-symbol NAME is used as a type specifier, the expansion function is
-called with no argument.  The doc-string DOC, if supplied, is saved as
-a TYPE doc and can be retrieved by (documentation 'NAME 'type)."
+the symbol '*', but not to NIL. When the type system of ECL encounters
+a type specifier (NAME arg1 ... argn), it calls the expansion function
+with the argument (ARG1 ... ARGn), and uses the returned value instead
+of the original type specifier.  When the symbol NAME is used as a
+type specifier, the expansion function is called with no argument.
+The doc-string DOC, if supplied, is saved as a TYPE doc and can be
+retrieved by (documentation 'NAME 'type)."
   (setf lambda-list (copy-tree lambda-list))
-  (labels                             ; add '* as default values
-      ((set-default (list*)
-         "Sets default value for optional arguments to *. Doesn't
+  (multiple-value-bind (decls body documentation)
+      (si::find-declarations body)
+    (labels                             ; add '* as default values
+        ((set-default (list*)
+           "Sets default value for optional arguments to *. Doesn't
          modify arguments which happen to be in lambda-list-keywords."
-         (when (consp list*)
-           (let ((variable (car list*)))
-             (when (and (symbolp variable)
-                        (not (member variable lambda-list-keywords)))
-               (setf (car list*) `(,variable '*))))
-           (set-default (cdr list*))))
-       (verify-tree (elt)
-         "Verifies if ELT is the list containing optional arguments."
-         (and (consp elt)
-              (member (car elt)
-                      '(&key &optional))))
-       (maptree (function tree test)
-         "Applies FUNCTION to branches for which TEST resolves to
+           (when (consp list*)
+             (let ((variable (car list*)))
+               (when (and (symbolp variable)
+                          (not (member variable lambda-list-keywords)))
+                 (setf (car list*) `(,variable '*))))
+             (set-default (cdr list*))))
+         (verify-tree (elt)
+           "Verifies if ELT is the list containing optional arguments."
+           (and (consp elt)
+                (member (car elt)
+                        '(&key &optional))))
+         (maptree (function tree test)
+           "Applies FUNCTION to branches for which TEST resolves to
          true. MAPTREE doesn't traverse this branch further. It is
          correct in this context, because we can't create nested
          lambda-list after both &key and &optional, since it would be
          considered as default value or an error."
-         (if (funcall test tree)
-             (funcall function tree)
-             (when (consp tree)
-               (maptree function (car tree) test)
-               (maptree function (cdr tree) test)))))
-    (maptree #'set-default lambda-list #'verify-tree))
-  (multiple-value-bind (function ppn documentation)
-      (si::expand-defmacro name lambda-list body nil)
-    (when (and (null lambda-list)
-               (consp body)
-               (null (rest body)))
-      (let ((form (first body)))
-        (when (constantp form env)
-          (setf function (ext:maybe-quote (ext:constant-form-value form env))))))
-    `(eval-when (:compile-toplevel :load-toplevel :execute)
-       ,@(si::expand-set-documentation name 'type documentation)
-       (do-deftype ',name '(DEFTYPE ,name ,lambda-list ,@body)
-                   ,function))))
+           (if (funcall test tree)
+               (funcall function tree)
+               (when (consp tree)
+                 (maptree function (car tree) test)
+                 (maptree function (cdr tree) test)))))
+      (maptree #'set-default lambda-list #'verify-tree))
+    (multiple-value-bind (ppn whole dl arg-check ignorables)
+        (destructure lambda-list nil)
+      (declare (ignore ppn))
+      (let ((function `#'(ext::lambda-block ,name (,whole &aux ,@dl)
+                                            (declare (ignorable ,@ignorables))
+                                            ,@decls ,@arg-check
+                                            ,@body)))
+        (when (and (null lambda-list)
+                   (consp body)
+                   (null (rest body)))
+          (let ((form (first body)))
+            (when (constantp form env)
+              (setf function (ext:maybe-quote (ext:constant-form-value form env))))))
+        `(eval-when (:compile-toplevel :load-toplevel :execute)
+           ,@(si::expand-set-documentation name 'type documentation)
+           (do-deftype ',name '(DEFTYPE ,name ,lambda-list ,@body)
+                       ,function))))))
 
 ;;; Some DEFTYPE definitions.
 (deftype boolean ()
@@ -610,7 +617,7 @@ Returns T if X belongs to TYPE; NIL otherwise."
           (or (endp (cdr i)) (match-dimensions object (second i)))))
     (t
      (cond ((get-sysprop tp 'DEFTYPE-DEFINITION)
-            (typep object (funcall (get-sysprop tp 'DEFTYPE-DEFINITION) i nil)))
+            (typep object (funcall (get-sysprop tp 'DEFTYPE-DEFINITION) i)))
            ((consp i)
             (error-type-specifier type))
            ((setq c (find-class type nil))
@@ -658,7 +665,7 @@ Returns T if X belongs to TYPE; NIL otherwise."
   ;; Loops until the car of type has no DEFTYPE definition.
   (cond ((symbolp type)
          (if (setq fd (get-sysprop type 'DEFTYPE-DEFINITION))
-           (normalize-type (funcall fd nil nil))
+           (normalize-type (funcall fd nil))
            (values type nil)))
         ((clos::classp type) (values type nil))
         ((atom type)
@@ -666,7 +673,7 @@ Returns T if X belongs to TYPE; NIL otherwise."
         ((progn
            (setq tp (car type) i (cdr type))
            (setq fd (get-sysprop tp 'DEFTYPE-DEFINITION)))
-         (normalize-type (funcall fd i nil)))
+         (normalize-type (funcall fd i)))
         ((and (eq tp 'INTEGER) (consp (cadr i)))
          (values tp (list (car i) (1- (caadr i)))))
         (t (values tp i))))
@@ -678,9 +685,9 @@ Returns T if X belongs to TYPE; NIL otherwise."
               args nil)
         (setf base (car type)
               args (cdr type)))
-    (let ((fn (get-sysprop base 'SI::DEFTYPE-DEFINITION)))
+    (let ((fn (get-sysprop base 'DEFTYPE-DEFINITION)))
       (if fn
-          (expand-deftype (funcall fn args nil))
+          (expand-deftype (funcall fn args))
           type))))
 
 ;;************************************************************
@@ -1399,7 +1406,7 @@ if not possible."
         ((symbolp type)
          (let ((expander (get-sysprop type 'DEFTYPE-DEFINITION)))
            (cond (expander
-                  (canonical-type (funcall expander nil nil)))
+                  (canonical-type (funcall expander nil)))
                  ((find-built-in-tag type))
                  (t (let ((class (find-class type nil)))
                       (if class
@@ -1449,7 +1456,7 @@ if not possible."
            (FUNCTION (canonical-type 'FUNCTION))
            (t (let ((expander (get-sysprop (first type) 'DEFTYPE-DEFINITION)))
                 (if expander
-                    (canonical-type (funcall expander (rest type) nil))
+                    (canonical-type (funcall expander (rest type)))
                     (unless (assoc (first type) *elementary-types*)
                       (throw '+canonical-type-failure+ nil)))))))
         ((clos::classp type)
