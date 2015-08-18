@@ -70,6 +70,8 @@ by (documentation 'NAME 'type)."
   (setf lambda-list (copy-tree lambda-list))
   (labels                             ; add '* as default values
       ((set-default (list*)
+         "Sets default value for optional arguments to *. Doesn't
+         modify arguments which happen to be in lambda-list-keywords."
          (when (consp list*)
            (let ((variable (car list*)))
              (when (and (symbolp variable)
@@ -77,13 +79,22 @@ by (documentation 'NAME 'type)."
                (setf (car list*) `(,variable '*))))
            (set-default (cdr list*))))
        (verify-tree (elt)
-         (when (and (consp elt)
-                    (member (car elt)
-                            '(&key &optional))
-                    (set-default (cdr elt))))))
-    (subst nil (constantly nil) lambda-list ; subst-if isn't defined yet
-           :test #'funcall
-           :key #'verify-tree))
+         "Verifies if ELT is the list containing optional arguments."
+         (and (consp elt)
+              (member (car elt)
+                      '(&key &optional))))
+       (maptree (function tree test)
+         "Applies FUNCTION to branches for which TEST resolves to
+         true. MAPTREE doesn't traverse this branch further. It is
+         correct in this context, because we can't create nested
+         lambda-list after both &key and &optional, since it would be
+         considered as default value or an error."
+         (if (funcall test tree)
+             (funcall function tree)
+             (when (consp tree)
+               (maptree function (car tree) test)
+               (maptree function (cdr tree) test)))))
+    (maptree #'set-default lambda-list #'verify-tree))
   (multiple-value-bind (function ppn documentation)
       (si::expand-defmacro name lambda-list body nil)
     (when (and (null lambda-list)
