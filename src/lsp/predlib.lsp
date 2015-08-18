@@ -67,26 +67,35 @@ type specifier.  When the symbol NAME is used as a type specifier, the
 expansion function is called with no argument.
 The doc-string DOC, if supplied, is saved as a TYPE doc and can be retrieved
 by (documentation 'NAME 'type)."
-  (multiple-value-bind (body doc)
-      (remove-documentation body)
-    (setf lambda-list (copy-list lambda-list))
-    (dolist (x '(&optional &key))
-      (do ((l (rest (member x lambda-list)) (rest l)))
-          ((null l))
-        (let ((variable (first l)))
-          (when (and (symbolp variable)
-                     (not (member variable lambda-list-keywords)))
-            (setf (first l) `(,variable '*))))))
-    (let ((function `#'(LAMBDA-BLOCK ,name ,lambda-list ,@body)))
-      (when (and (null lambda-list) (consp body) (null (rest body)))
-        (let ((form (first body)))
-          (when (constantp form env)
-            (setf function (ext:maybe-quote (ext:constant-form-value form env))))))
-      `(eval-when (:compile-toplevel :load-toplevel :execute)
-         ,@(si::expand-set-documentation name 'type doc)
-         (do-deftype ',name '(DEFTYPE ,name ,lambda-list ,@body)
-                     ,function)))))
-
+  (setf lambda-list (copy-tree lambda-list))
+  (labels                             ; add '* as default values
+      ((set-default (list*)
+         (when (consp list*)
+           (let ((variable (car list*)))
+             (when (and (symbolp variable)
+                        (not (member variable lambda-list-keywords)))
+               (setf (car list*) `(,variable '*))))
+           (set-default (cdr list*))))
+       (verify-tree (elt)
+         (when (and (consp elt)
+                    (member (car elt)
+                            '(&key &optional))
+                    (set-default (cdr elt))))))
+    (subst nil (constantly nil) lambda-list ; subst-if isn't defined yet
+           :test #'funcall
+           :key #'verify-tree))
+  (multiple-value-bind (function ppn documentation)
+      (si::expand-defmacro name lambda-list body nil)
+    (when (and (null lambda-list)
+               (consp body)
+               (null (rest body)))
+      (let ((form (first body)))
+        (when (constantp form env)
+          (setf function (ext:maybe-quote (ext:constant-form-value form env))))))
+    `(eval-when (:compile-toplevel :load-toplevel :execute)
+       ,@(si::expand-set-documentation name 'type documentation)
+       (do-deftype ',name '(DEFTYPE ,name ,lambda-list ,@body)
+                   ,function))))
 
 ;;; Some DEFTYPE definitions.
 (deftype boolean ()
@@ -586,9 +595,8 @@ Returns T if X belongs to TYPE; NIL otherwise."
                   (upgraded-array-element-type (car i))))
           (or (endp (cdr i)) (match-dimensions object (second i)))))
     (t
-     (cond
-           ((get-sysprop tp 'DEFTYPE-DEFINITION)
-            (typep object (apply (get-sysprop tp 'DEFTYPE-DEFINITION) i)))
+     (cond ((get-sysprop tp 'DEFTYPE-DEFINITION)
+            (typep object (funcall (get-sysprop tp 'DEFTYPE-DEFINITION) i nil)))
            ((consp i)
             (error-type-specifier type))
            ((setq c (find-class type nil))
@@ -636,7 +644,7 @@ Returns T if X belongs to TYPE; NIL otherwise."
   ;; Loops until the car of type has no DEFTYPE definition.
   (cond ((symbolp type)
          (if (setq fd (get-sysprop type 'DEFTYPE-DEFINITION))
-           (normalize-type (funcall fd))
+           (normalize-type (funcall fd nil nil))
            (values type nil)))
         ((clos::classp type) (values type nil))
         ((atom type)
@@ -1380,7 +1388,7 @@ if not possible."
         ((symbolp type)
          (let ((expander (get-sysprop type 'DEFTYPE-DEFINITION)))
            (cond (expander
-                  (canonical-type (funcall expander)))
+                  (canonical-type (funcall expander nil nil)))
                  ((find-built-in-tag type))
                  (t (let ((class (find-class type nil)))
                       (if class
@@ -1430,7 +1438,7 @@ if not possible."
            (FUNCTION (canonical-type 'FUNCTION))
            (t (let ((expander (get-sysprop (first type) 'DEFTYPE-DEFINITION)))
                 (if expander
-                    (canonical-type (apply expander (rest type)))
+                    (canonical-type (funcall expander (rest type) nil))
                     (unless (assoc (first type) *elementary-types*)
                       (throw '+canonical-type-failure+ nil)))))))
         ((clos::classp type)
