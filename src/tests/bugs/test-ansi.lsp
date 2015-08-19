@@ -89,3 +89,20 @@
   t nil t t)
 
 
+
+;; HyperSpec – 19.*
+
+;;;;;;;;;;;;;;;;;;;;
+;; Pathname tests ;;
+;;;;;;;;;;;;;;;;;;;;
+
+;; Issue #103 ;; logical-pathname-translations not translating
+;; https://gitlab.com/embeddable-common-lisp/ecl/issues/103
+(deftest test-ansi.pathname.wildcards.1
+    (progn
+      (setf (logical-pathname-translations "prog")
+            '(("CODE;*.*.*" "/tmp/prog/")))
+      (translate-logical-pathname "prog:code;documentation.lisp"))
+  #P"/lib/prog/documentation.lisp")
+
+
