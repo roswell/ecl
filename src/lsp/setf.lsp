@@ -420,8 +420,8 @@ these variables."
   `(destructuring-bind (,pairs ,stores ,store-forms ,access-forms)
        (reduce (lambda (x y)
                  (list
-                  (nconc (mapcar #'list (first y) (second y))
-                         (first x))
+                  (cons (mapcar #'list (first y) (second y))
+                        (first x))
                   (cons (third  y) (second x))
                   (cons (fourth y) (third  x))
                   (cons (fifth  y) (fourth x))))
@@ -430,19 +430,6 @@ these variables."
                           (get-setf-expansion place ,env)))
                        (reverse ,args))
                :initial-value '(nil nil nil nil))
-     ,@body))
-
-;; WITH-EXPANSION-SETTER
-(defmacro with-expansion-setter ((name store-forms) &body body)
-  "Syntax: (with-expansion-setter (name store-forms) {form}*)
-Macro creates lexically-scoped function NAME, which takes two lists as
-arguments, and expands into nested MULTIPLE-VALUE-BINDs of ACCESS-FORMS
-into STORES.  Finally inside bindings it expands STORE-FORMS."
-  `(labels ((,name (stores access-forms)
-              (if stores
-                  `((multiple-value-bind ,(car stores) ,(car access-forms)
-                      ,@(,name (cdr stores) (cdr access-forms))))
-                  `(,@,store-forms))))
      ,@body))
 
 ;;; PSETF macro.
@@ -457,15 +444,32 @@ the corresponding PLACE.  Returns NIL."
               (values (nreverse places)
                       (nreverse forms)))
           (when (endp (cdr args))
-            (error "~S is an illegal PSETF form (odd number of arguments)." rest))
+            (error "~S is an illegal PSETF form (odd number of arguments)." args))
           (push (car args) places)
           (push (cadr args) forms))
       (with-setf-expansions (pairs stores store-forms access-forms) (places env)
         (declare (ignore access-forms))
-        (with-expansion-setter (thunk store-forms)
-          `(let* ,pairs
-             ,@(thunk stores forms)
-             nil)))))
+        (labels ((thunk (pairs stores access-forms)
+                   (if stores
+                       `((let ,(car pairs)
+                           (multiple-value-bind ,(car stores) ,(car access-forms)
+                             ,@(thunk (cdr pairs) (cdr stores) (cdr access-forms)))))
+                       store-forms)))
+          `(prog1 nil
+             ,@(thunk pairs stores forms))))))
+
+;; WITH-EXPANSION-SETTER
+(defmacro with-expansion-setter ((name store-forms) &body body)
+  "Syntax: (with-expansion-setter (name store-forms) {form}*)
+Macro creates lexically-scoped function NAME, which takes two lists as
+arguments, and expands into nested MULTIPLE-VALUE-BINDs of ACCESS-FORMS
+into STORES.  Finally inside bindings it expands STORE-FORMS."
+  `(labels ((,name (stores access-forms)
+              (if stores
+                  `((multiple-value-bind ,(car stores) ,(car access-forms)
+                      ,@(,name (cdr stores) (cdr access-forms))))
+                  `(,@,store-forms))))
+     ,@body))
 
 ;;; SHIFTF macro.
 (defmacro shiftf (&environment env &rest args)
@@ -476,7 +480,7 @@ Returns the original value of the leftmost PLACE."
   (with-setf-expansions (pairs stores store-forms access-forms)
       ((butlast args) env)
     (with-expansion-setter (thunk store-forms)
-      `(let* ,pairs
+      `(let* ,(reduce #'append pairs)
          (multiple-value-prog1 ,(car access-forms)
            ,@(thunk stores
                     (append (cdr access-forms)
@@ -484,14 +488,14 @@ Returns the original value of the leftmost PLACE."
 
 ;;; ROTATEF macro.
 (defmacro rotatef (&environment env &rest args)
-    "Syntax: (rotatef {place}*)
+  "Syntax: (rotatef {place}*)
 Saves the values of PLACEs, and then assigns to each PLACE the saved value of
 the PLACE to its right.  The rightmost PLACE gets the value of the leftmost
 PLACE.  Returns NIL."
   (with-setf-expansions (pairs stores store-forms access-forms)
       (args env)
     (with-expansion-setter (thunk store-forms)
-      `(let* ,pairs
+      `(let* ,(reduce #'append pairs)
          ,@(thunk stores
                   (append (cdr access-forms)
                           (list (car access-forms))))
