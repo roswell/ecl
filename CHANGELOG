@@ -109,6 +109,8 @@
      pathname wasn't defined yet, to conform with ANSI (it used to return
      NIL)
 
+   - Wildcards in logical pathname translations are replaced correctly
+
    - Regression testing framework and unit tests cleanup
 
    - deftype ANSI conformity fix (deftype accepts macro labda-lists)
