@@ -2773,8 +2773,10 @@ LOOP:
                 stage = AT_OPTIONALS;
                 goto LOOP;
         }
-        if (v == @'&rest' || (v == @'&body' && (context == @'si::macro' || context == @'destructuring-bind'))) {
-                unlikely_if (ECL_ATOM(lambda_list))
+        if (v == @'&rest'
+            || (v == @'&body'
+                && (context == @'si::macro' || context == @'destructuring-bind'))) {
+                 unlikely_if (ECL_ATOM(lambda_list))
                         goto ILLEGAL_LAMBDA;
                 v = ECL_CONS_CAR(lambda_list);
                 lambda_list = ECL_CONS_CDR(lambda_list);
