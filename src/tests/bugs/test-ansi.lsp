@@ -103,6 +103,6 @@
       (setf (logical-pathname-translations "prog")
             '(("CODE;*.*.*" "/tmp/prog/")))
       (translate-logical-pathname "prog:code;documentation.lisp"))
-  #P"/lib/prog/documentation.lisp")
+  #P"/tmp/prog/documentation.lisp")
 
 
