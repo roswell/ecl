@@ -73,7 +73,7 @@
       (setq arg (car tail) tail (cdr tail)))
     (cond ((eq head :allow-other-keys)
            (when (not aok-flag)
-             (setq allow-other-keys tail aok-flag t)))
+             (setq allow-other-keys arg aok-flag t)))
           ((not (member head keywords))
            (setq err head)))))
 
