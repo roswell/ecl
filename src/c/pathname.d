@@ -1737,7 +1737,7 @@ copy_list_wildcards(cl_object *wilds, cl_object to)
         if (wilds == @':error') goto error;
         if (Null(to->pathname.directory)) {
                 /* Missing components are replaced */
-                d = translate_list_case(from->pathname.directory, fromcase, tocase);
+                d = translate_list_case(source->pathname.directory, fromcase, tocase);
         } else {
                 wilds = translate_list_case(wilds, fromcase, tocase);
                 d = copy_list_wildcards(&wilds, to->pathname.directory);
@@ -1750,7 +1750,7 @@ copy_list_wildcards(cl_object *wilds, cl_object to)
         wilds = find_wilds(ECL_NIL, source->pathname.name, from->pathname.name);
         if (wilds == @':error') goto error2;
         if (Null(to->pathname.name)) {
-                d = translate_component_case(from->pathname.name, fromcase, tocase);
+                d = translate_component_case(source->pathname.name, fromcase, tocase);
         } else {
                 wilds = translate_list_case(wilds, fromcase, tocase);
                 d = copy_wildcards(&wilds, to->pathname.name);
@@ -1763,7 +1763,7 @@ copy_list_wildcards(cl_object *wilds, cl_object to)
         wilds = find_wilds(ECL_NIL, source->pathname.type, from->pathname.type);
         if (wilds == @':error') goto error2;
         if (Null(to->pathname.type)) {
-                d = translate_component_case(from->pathname.type, fromcase, tocase);
+                d = translate_component_case(source->pathname.type, fromcase, tocase);
         } else {
                 wilds = translate_list_case(wilds, fromcase, tocase);
                 d = copy_wildcards(&wilds, to->pathname.type);
