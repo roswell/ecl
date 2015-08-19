@@ -106,7 +106,7 @@ retrieved by (documentation 'NAME 'type)."
   (multiple-value-bind (decls body documentation)
       (si::find-declarations body)
     (multiple-value-bind (ppn whole dl arg-check ignorables)
-        (destructure lambda-list nil)
+        (destructure lambda-list 'deftype)
       (declare (ignore ppn))
       (let ((function `#'(ext::lambda-block ,name (,whole &aux ,@dl)
                                             (declare (ignorable ,@ignorables))

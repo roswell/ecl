@@ -88,15 +88,21 @@
                *current-form*))
       (error "Too few arguments supplied to a inlined lambda form.")))
 
-(defun sys::destructure (vl macro &aux (basis-form (gensym)) (destructure-symbols (list basis-form)))
+(defun sys::destructure (vl context &aux
+                                      (basis-form (gensym))
+                                      (destructure-symbols (list basis-form)))
   (declare (special *dl* *arg-check*))
   (labels ((tempsym ()
              (let ((x (gensym)))
                (push x destructure-symbols)
                x))
-           (dm-vl (vl whole macro)
+           (dm-vl (vl whole context)
              (multiple-value-bind (reqs opts rest key-flag keys allow-other-keys auxs)
-                 (si::process-lambda-list vl (if macro 'macro 'destructuring-bind))
+                 (si::process-lambda-list
+                  vl (case context
+                       ((defmacro define-compiler-macro)
+                        'macro)
+                       (otherwise 'destructuring-bind)))
                (let* ((pointer (tempsym))
                       (cons-pointer `(truly-the cons ,pointer))
                       (unsafe-car `(car ,cons-pointer))
@@ -106,15 +112,15 @@
                       (ppn (+ (length reqs) (first opts)))
                       all-keywords)
                  ;; In macros, eliminate the name of the macro from the list
-                 (dm-v pointer (if macro
-                                   ;; Special handling if define-compiler-macro called this
-                                   (if (eq macro 'define-compiler-macro)
-                                       `(if (and (eq (car ,whole) 'cl:funcall)
-                                                 (eq (caadr ,whole) 'cl:function))
-                                             (cddr (truly-the cons ,whole))
-                                             (cdr (truly-the cons ,whole)))
-                                       `(cdr (truly-the cons ,whole)))
-                                   whole))
+                 (dm-v pointer (case context
+                                 (define-compiler-macro
+                                  `(if (and (eq (car ,whole) 'cl:funcall)
+                                            (eq (caadr ,whole) 'cl:function))
+                                       (cddr (truly-the cons ,whole))
+                                       (cdr (truly-the cons ,whole))))
+                                 (defmacro
+                                     `(cdr (truly-the cons ,whole)))
+                                 (otherwise whole)))
                  (dolist (v (cdr reqs))
                    (dm-v v `(progn
                               (if (null ,pointer)
@@ -195,7 +201,7 @@
             ((symbolp vl)
              (setq vl (list '&rest vl)))
             (t (error "The destructuring-lambda-list ~s is not a list." vl)))
-      (values (dm-vl vl whole macro) whole
+      (values (dm-vl vl whole context) whole
               (nreverse *dl*)
               *arg-check*
               destructure-symbols))))
