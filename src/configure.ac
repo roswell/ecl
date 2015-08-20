@@ -56,21 +56,11 @@ AC_ARG_ENABLE(libatomic,
                   [(auto|included|system, default=auto)] ),
   [], [enable_libatomic=auto] )
 
-AC_ARG_ENABLE(slow-config,
-  AS_HELP_STRING( [DEPRECATED: use --with-system-boehm=no] ),
-  [], [enable_slow_config=no] )
-
 AC_ARG_ENABLE(soname,
   AS_HELP_STRING( [--enable-soname],
 		  [link and install the library using version numbers]
 		  [(no|yes, default=yes)]),
   [], [enable_soname=yes] )
-
-AC_ARG_WITH(system-boehm,
-  AS_HELP_STRING( [--with-system-boehm], [Deprecated! See --enable-boehm] ),
-  [AC_MSG_WARN(
-    [--with-system-boehm is deprecated, use --enable-boehm=system instead!])
-   test ${withval} = "no" || enable_boehm="system"])
 
 AC_ARG_WITH(gmp,
   AS_HELP_STRING( [--with-gmp=args],

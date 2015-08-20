@@ -765,9 +765,7 @@ enable_rpath
 enable_threads
 enable_boehm
 enable_libatomic
-enable_slow_config
 enable_soname
-with_system_boehm
 with_gmp
 with_C_gmp
 with_system_gmp
@@ -1453,8 +1451,6 @@ Optional Features:
                           (no|included|system|auto, default=auto)
   --enable-libatomic      version of the libatomic-ops library
                           (auto|included|system, default=auto)
-  DEPRECATED: use --with-system-boehm=no
-
   --enable-soname         link and install the library using version numbers
                           (no|yes, default=yes)
   --enable-local-gmp      Deprecated! See --with-system-gmp
@@ -1481,7 +1477,6 @@ Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-cross-config=f   supply configuration for a cross compiler
-  --with-system-boehm     Deprecated! See --enable-boehm
   --with-gmp=args         supply arguments for configuring GMP library
   --with-C-gmp=args       configure GMP to build using portable C
   --with-system-gmp       use already installed GMP library (default=auto)
@@ -2640,28 +2635,11 @@ else
 fi
 
 
-# Check whether --enable-slow-config was given.
-if test "${enable_slow_config+set}" = set; then :
-  enableval=$enable_slow_config;
-else
-  enable_slow_config=no
-fi
-
-
 # Check whether --enable-soname was given.
 if test "${enable_soname+set}" = set; then :
   enableval=$enable_soname;
 else
   enable_soname=yes
-fi
-
-
-
-# Check whether --with-system-boehm was given.
-if test "${with_system_boehm+set}" = set; then :
-  withval=$with_system_boehm; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: --with-system-boehm is deprecated, use --enable-boehm=system instead!" >&5
-$as_echo "$as_me: WARNING: --with-system-boehm is deprecated, use --enable-boehm=system instead!" >&2;}
-   test ${withval} = "no" || enable_boehm="system"
 fi
 
 
@@ -6062,8 +6040,8 @@ $as_echo_n "checking whether we can use the existing Boehm-Weiser library ... " 
  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${system_boehm} " >&5
 $as_echo "${system_boehm} " >&6; }
  if test "${system_boehm}" = "no"; then
-   if test "${enable_boehm}" = "auto"; then
-     enable_boehm="included";
+   if test "${enable_boehm}" = "auto" -o "${enable_boehm}" = "included"; then
+      enable_boehm="included";
    else
      as_fn_error $? "System Boehm GC library requested but not found." "$LINENO" 5
    fi

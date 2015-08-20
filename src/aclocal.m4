@@ -958,8 +958,8 @@ if test "${enable_boehm}" = auto -o "${enable_boehm}" = system; then
  AC_MSG_CHECKING( [whether we can use the existing Boehm-Weiser library] )
  AC_MSG_RESULT( [${system_boehm}] )
  if test "${system_boehm}" = "no"; then
-   if test "${enable_boehm}" = "auto"; then
-     enable_boehm="included";
+   if test "${enable_boehm}" = "auto" -o "${enable_boehm}" = "included"; then
+      enable_boehm="included";
    else
      AC_MSG_ERROR([System Boehm GC library requested but not found.])
    fi
