@@ -53,6 +53,9 @@
    - lambda lists with repeated required parameter name are considered
      invalid
 
+   - deprecated configure options "--with-system-boehm=x" and
+     "--enable-slow-config" removed
+
 ** Enhancements:
 
    - Verification if manual is up-to-date, providing corrections for
