@@ -186,6 +186,9 @@
 /* HAVE_LIBFFI */
 #undef HAVE_LIBFFI
 
+/* Define to 1 if you have the `gc' library (-lgc). */
+#undef HAVE_LIBGC
+
 /* Define to 1 if you have the `sun' library (-lsun). */
 #undef HAVE_LIBSUN
 

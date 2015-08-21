@@ -5840,7 +5840,8 @@ case "${enable_boehm}" in
   *) as_fn_error $? "Invalid value of --enable-boehm: ${enable_boehm} " "$LINENO" 5;;
 esac
 if test "${enable_boehm}" = auto -o "${enable_boehm}" = system; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GC_get_thr_restart_signal in -lgc" >&5
+    system_boehm=yes
+ { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GC_get_thr_restart_signal in -lgc" >&5
 $as_echo_n "checking for GC_get_thr_restart_signal in -lgc... " >&6; }
 if ${ac_cv_lib_gc_GC_get_thr_restart_signal+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -5877,7 +5878,12 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_gc_GC_get_thr_restart_signal" >&5
 $as_echo "$ac_cv_lib_gc_GC_get_thr_restart_signal" >&6; }
 if test "x$ac_cv_lib_gc_GC_get_thr_restart_signal" = xyes; then :
-  system_boehm="yes"
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBGC 1
+_ACEOF
+
+  LIBS="-lgc $LIBS"
+
 else
   system_boehm="no"
 fi
@@ -5920,7 +5926,12 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_gc_GC_malloc" >&5
 $as_echo "$ac_cv_lib_gc_GC_malloc" >&6; }
 if test "x$ac_cv_lib_gc_GC_malloc" = xyes; then :
-  system_boehm="yes"
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBGC 1
+_ACEOF
+
+  LIBS="-lgc $LIBS"
+
 else
   system_boehm="no"
 fi
@@ -5963,7 +5974,12 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_gc_GC_register_my_thread" >&5
 $as_echo "$ac_cv_lib_gc_GC_register_my_thread" >&6; }
 if test "x$ac_cv_lib_gc_GC_register_my_thread" = xyes; then :
-  system_boehm="yes"
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBGC 1
+_ACEOF
+
+  LIBS="-lgc $LIBS"
+
 else
   system_boehm="no"
 fi
