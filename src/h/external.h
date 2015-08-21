@@ -1726,8 +1726,6 @@ extern ECL_API cl_object mp_current_process(void);
 extern ECL_API cl_object mp_block_signals(void);
 extern ECL_API cl_object mp_restore_signals(cl_object sigmask);
 
-extern ECL_API bool ecl_import_current_thread(cl_object process_name, cl_object process_binding);
-extern ECL_API void ecl_release_current_thread(void);
 
 /* threads/semaphore.d */
 

@@ -1116,29 +1116,14 @@ _ecl_w32_exception_filter(struct _EXCEPTION_POINTERS* ep)
         return excpt_result;
 }
 
-static cl_object
-W32_handle_in_new_thread(cl_object signal_code)
-{
-        int outside_ecl = ecl_import_current_thread(@'si::handle-signal', ECL_NIL);
-        mp_process_run_function(4, @'si::handle-signal',
-                                @'si::handle-signal',
-                                signal_code, ECL_NIL);
-        if (outside_ecl) ecl_release_current_thread();
-}
-
 BOOL WINAPI W32_console_ctrl_handler(DWORD type)
 {
-        switch (type)
-        {
-                /* Catch CTRL-C */
-        case CTRL_C_EVENT: {
-                cl_object function = ECL_SYM_FUN(@'si::terminal-interrupt');
-                if (function)
-                        W32_handle_in_new_thread(function);
+        switch (type) {
+        case CTRL_C_EVENT:      /* Catch CTRL-C (ignore interrupt) */
                 return TRUE;
+        default:
+                return FALSE;
         }
-        }
-        return FALSE;
 }
 #endif /* ECL_WINDOWS_THREADS */
 
