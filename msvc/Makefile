@@ -393,7 +393,7 @@ install:
 	for /f %i in ('type MODULES') do $(CP) %i "$(libdir)"
 	for %i in (ecl-static.lib) do IF EXIST %i $(CP) %i "$(libdir)"
 	IF NOT EXIST "$(docdir)" $(MKDIR) "$(docdir)"
-	for %i in (..\Copyright ..\ANNOUNCEMENT ..\LGPL ..\README.1st ..\src\CHANGELOG) do $(CP) %i "$(docdir)"
+	for %i in (..\Copyright ..\LGPL ..\README.1st ..\CHANGELOG) do $(CP) %i "$(docdir)"
 !if "$(ECL_UNICODE)" != ""
 	IF NOT EXIST "$(libdir)\encodings" $(MKDIR) "$(libdir)\encodings"
 	$(CP) encodings\*.* "$(libdir)\encodings"
@@ -402,10 +402,12 @@ install:
 check: package\ecl.exe
 	cd tests
 	$(MAKE)
+
 recheck: package\ecl.exe
 	cd tests
 	$(MAKE) clean
 	$(MAKE)
+
 package\ecl.exe: ecl2$(EXE)
 	$(MAKE) install ECL_THREADS=$(ECL_THREADS) ECL_UNICODE=$(ECL_UNICODE) 
 
