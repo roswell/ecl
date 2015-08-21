@@ -274,7 +274,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
         volatile cl_index frame_index = 0;
         cl_opcode *vector = (cl_opcode*)bytecodes->bytecodes.code;
         cl_object *data = bytecodes->bytecodes.data->vector.self.t;
-        cl_object reg0, reg1, lex_env = env;
+        cl_object reg0 = ECL_NIL, reg1 = ECL_NIL, lex_env = env;
         cl_index narg;
         struct ecl_stack_frame frame_aux;
         volatile struct ecl_ihs_frame ihs;
