@@ -59,7 +59,7 @@
         Compile files.  With no arguments, uses values from latest :cf~@
         command.  File extensions are optional.~%")
       ((:exit :eof) quit :eval
-       ":exit or ^D     Exit Lisp"
+       ":exit           Exit Lisp"
        ":exit &eval &optional (status 0)                [Top level command]~@
         ~@
         Exit Lisp without further confirmation.~%")
