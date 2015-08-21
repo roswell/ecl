@@ -118,6 +118,8 @@
 
    - deftype ANSI conformity fix (deftype accepts macro labda-lists)
 
+   - ECL built with MSVC doesn't crash when Control-C is pressed
+
    - Other minor tweaks
 
 * 15.3.7 changes since 15.2.21  
