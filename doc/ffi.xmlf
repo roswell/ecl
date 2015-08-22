@@ -354,13 +354,13 @@ Build and load this module with (compile-file "ecl.lsp" :load t)
     <title>Special form</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>ffi:cline</funcdef>
+      <funcdef>ffi:clines</funcdef>
       <paramdef><parameter>c-code</parameter>*</paramdef>
      </funcprototype>
     </funcsynopsis>
     <simplelist columns="2" type="horiz">
      <member><replaceable>c-code</replaceable></member>
-     <member>One or more strings with C definitions. Not evaluated</member>
+     <member>One or more strings with C definitions. Not evaluated.</member>
 
      <member>returns</member>
      <member>No value.</member>
