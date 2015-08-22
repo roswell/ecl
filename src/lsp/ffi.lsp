@@ -669,7 +669,8 @@
   (defmacro c-inline (args arg-types ret-type &body others)
     `(error "The special form c-inline cannot be used in the interpreter: ~A"
       (list (list ,@args) ',arg-types ',ret-type ,@others)))
-  (defmacro c-progn (&rest body)
+  (defmacro c-progn (args &rest body)
+    (declare (ignore args))
     '(error "The special form c-progn cannot be used in the interpreter.")))
 
 (defmacro definline (fun arg-types type code)

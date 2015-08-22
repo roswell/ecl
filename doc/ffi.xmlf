@@ -480,7 +480,7 @@ Build and load this module with (compile-file "ecl.lsp" :load t)
 
     <para>Note that the conversion between lisp arguments and
     <acronym>FFI</acronym> types is automatic. Note also that
-    <function>et:c-inline</function> cannot be used in interpreted or
+    <function>ffi:c-inline</function> cannot be used in interpreted or
     bytecompiled code!</para>
    </refsect1>
 
