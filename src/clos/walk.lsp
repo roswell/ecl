@@ -76,7 +76,7 @@
 (in-package "WALKER")
 (declaim (notinline note-lexical-binding walk-bindings-1 walk-let/let*
                     walk-form-internal))
-(push :new *features*)
+(push :walker *features*)
 
 
 ;;;
