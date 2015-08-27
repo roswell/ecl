@@ -108,6 +108,25 @@ mp_mailbox_read(cl_object mailbox)
 }
 
 cl_object
+mp_mailbox_try_read(cl_object mailbox)
+{
+        cl_env_ptr env = ecl_process_env();
+        cl_fixnum ndx;
+        cl_object output;
+        unlikely_if (ecl_t_of(mailbox) != t_mailbox) {
+                FEerror_not_a_mailbox(mailbox);
+        }
+        output = mp_try_get_semaphore(mailbox->mailbox.reader_semaphore);
+        if (output != ECL_NIL) {
+                ndx = AO_fetch_and_add1((AO_t*)&mailbox->mailbox.read_pointer) &
+                        mailbox->mailbox.mask;
+                output = mailbox->mailbox.data->vector.self.t[ndx];
+                mp_signal_semaphore(1, mailbox->mailbox.writer_semaphore);
+        }
+        ecl_return1(env, output);
+}
+
+cl_object
 mp_mailbox_send(cl_object mailbox, cl_object msg)
 {
         cl_env_ptr env = ecl_process_env();
@@ -124,3 +143,24 @@ mp_mailbox_send(cl_object mailbox, cl_object msg)
         mp_signal_semaphore(1, mailbox->mailbox.reader_semaphore);
         ecl_return0(env);
 }
+
+cl_object
+mp_mailbox_try_send(cl_object mailbox, cl_object msg)
+{
+        cl_env_ptr env = ecl_process_env();
+        cl_object output;
+        cl_fixnum ndx;
+        unlikely_if (ecl_t_of(mailbox) != t_mailbox) {
+                FEerror_not_a_mailbox(mailbox);
+        }
+        output = mp_try_get_semaphore(mailbox->mailbox.writer_semaphore);
+        if (output != ECL_NIL) {
+                output = msg;
+                ndx = AO_fetch_and_add1((AO_t*)&mailbox->mailbox.write_pointer) &
+                        mailbox->mailbox.mask;
+                mailbox->mailbox.data->vector.self.t[ndx] = msg;
+                mp_signal_semaphore(1, mailbox->mailbox.reader_semaphore);
+        }
+        ecl_return1(env, output);
+}
+

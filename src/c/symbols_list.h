@@ -1564,6 +1564,7 @@ cl_symbols[] = {
 {MP_ "INTERRUPT-PROCESS", MP_ORDINARY, IF_MP(mp_interrupt_process), 2, OBJNULL},
 {MP_ "+LOAD-COMPILE-LOCK+", MP_CONSTANT, NULL, -1, OBJNULL},
 {MP_ "WITH-LOCK", MP_CONSTANT, NULL, -1, OBJNULL},
+{MP_ "WITH-RWLOCK", MP_CONSTANT, NULL, -1, OBJNULL},
 {MP_ "BLOCK-SIGNALS", MP_ORDINARY, IF_MP(mp_block_signals), 0, OBJNULL},
 {MP_ "RESTORE-SIGNALS", MP_ORDINARY, IF_MP(mp_restore_signals), 1, OBJNULL},
 {MP_ "PROCESS-SUSPEND", MP_ORDINARY, IF_MP(mp_process_suspend), 1, OBJNULL},
@@ -1584,6 +1585,7 @@ cl_symbols[] = {
 {MP_ "MAKE-SEMAPHORE", MP_ORDINARY, IF_MP(mp_make_semaphore), -1, OBJNULL},
 {MP_ "SIGNAL-SEMAPHORE", MP_ORDINARY, IF_MP(mp_signal_semaphore), -1, OBJNULL},
 {MP_ "WAIT-ON-SEMAPHORE", MP_ORDINARY, IF_MP(mp_wait_on_semaphore), 1, OBJNULL},
+{MP_ "TRY-GET-SEMAPHORE", MP_ORDINARY, IF_MP(mp_try_get_semaphore), 1, OBJNULL},
 {MP_ "SEMAPHORE-COUNT", MP_ORDINARY, IF_MP(mp_semaphore_count), 1, OBJNULL},
 {MP_ "SEMAPHORE-NAME", MP_ORDINARY, IF_MP(mp_semaphore_name), 1, OBJNULL},
 {MP_ "SEMAPHORE-WAIT-COUNT", MP_ORDINARY, IF_MP(mp_semaphore_wait_count), 1, OBJNULL},
@@ -1607,7 +1609,9 @@ cl_symbols[] = {
 {MP_ "MAILBOX-COUNT", MP_ORDINARY, IF_MP(mp_mailbox_count), 1, OBJNULL},
 {MP_ "MAILBOX-EMPTY-P", MP_ORDINARY, IF_MP(mp_mailbox_empty_p), 1, OBJNULL},
 {MP_ "MAILBOX-READ", MP_ORDINARY, IF_MP(mp_mailbox_read), 1, OBJNULL},
+{MP_ "MAILBOX-TRY-READ", MP_ORDINARY, IF_MP(mp_mailbox_try_read), 1, OBJNULL},
 {MP_ "MAILBOX-SEND", MP_ORDINARY, IF_MP(mp_mailbox_send), 2, OBJNULL},
+{MP_ "MAILBOX-TRY-SEND", MP_ORDINARY, IF_MP(mp_mailbox_try_send), 2, OBJNULL},
 /* #endif defined(ECL_THREADS) */
 
 {SYS_ "WHILE", SI_ORDINARY, NULL, -1, OBJNULL},

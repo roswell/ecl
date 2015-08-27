@@ -1564,6 +1564,7 @@ cl_symbols[] = {
 {MP_ "INTERRUPT-PROCESS",IF_MP("mp_interrupt_process")},
 {MP_ "+LOAD-COMPILE-LOCK+",NULL},
 {MP_ "WITH-LOCK",NULL},
+{MP_ "WITH-RWLOCK",NULL},
 {MP_ "BLOCK-SIGNALS",IF_MP("mp_block_signals")},
 {MP_ "RESTORE-SIGNALS",IF_MP("mp_restore_signals")},
 {MP_ "PROCESS-SUSPEND",IF_MP("mp_process_suspend")},
@@ -1584,6 +1585,7 @@ cl_symbols[] = {
 {MP_ "MAKE-SEMAPHORE",IF_MP("mp_make_semaphore")},
 {MP_ "SIGNAL-SEMAPHORE",IF_MP("mp_signal_semaphore")},
 {MP_ "WAIT-ON-SEMAPHORE",IF_MP("mp_wait_on_semaphore")},
+{MP_ "TRY-GET-SEMAPHORE",IF_MP("mp_try_get_semaphore")},
 {MP_ "SEMAPHORE-COUNT",IF_MP("mp_semaphore_count")},
 {MP_ "SEMAPHORE-NAME",IF_MP("mp_semaphore_name")},
 {MP_ "SEMAPHORE-WAIT-COUNT",IF_MP("mp_semaphore_wait_count")},
@@ -1607,7 +1609,9 @@ cl_symbols[] = {
 {MP_ "MAILBOX-COUNT",IF_MP("mp_mailbox_count")},
 {MP_ "MAILBOX-EMPTY-P",IF_MP("mp_mailbox_empty_p")},
 {MP_ "MAILBOX-READ",IF_MP("mp_mailbox_read")},
+{MP_ "MAILBOX-TRY-READ",IF_MP("mp_mailbox_try_read")},
 {MP_ "MAILBOX-SEND",IF_MP("mp_mailbox_send")},
+{MP_ "MAILBOX-TRY-SEND",IF_MP("mp_mailbox_try_send")},
 /* #endif defined(ECL_THREADS) */
 
 {SYS_ "WHILE",NULL},

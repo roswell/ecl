@@ -1734,6 +1734,7 @@ extern ECL_API cl_object mp_semaphore_count(cl_object);
 extern ECL_API cl_object mp_semaphore_name(cl_object);
 extern ECL_API cl_object mp_semaphore_wait_count(cl_object);
 extern ECL_API cl_object mp_wait_on_semaphore(cl_object);
+extern ECL_API cl_object mp_try_get_semaphore(cl_object);
 extern ECL_API cl_object mp_signal_semaphore _ECL_ARGS((cl_narg, cl_object, ...));
 extern ECL_API cl_object ecl_make_semaphore(cl_object name, cl_fixnum count);
 
@@ -1754,7 +1755,9 @@ extern ECL_API cl_object mp_mailbox_name(cl_object mailbox);
 extern ECL_API cl_object mp_mailbox_count(cl_object mailbox);
 extern ECL_API cl_object mp_mailbox_empty_p(cl_object);
 extern ECL_API cl_object mp_mailbox_read(cl_object mailbox);
+extern ECL_API cl_object mp_mailbox_try_read(cl_object mailbox);
 extern ECL_API cl_object mp_mailbox_send(cl_object mailbox, cl_object msg);
+extern ECL_API cl_object mp_mailbox_try_send(cl_object mailbox, cl_object msg);
 
 /* threads/atomic.c */
 
