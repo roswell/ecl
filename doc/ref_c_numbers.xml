@@ -1,0 +1,918 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter>
+<title>Numbers</title>
+<section xml:id="ansi.numbers.c-dict">
+<title>C Reference</title>
+
+  <refentry xml:id="ansi.numbers.c-types">
+    <refnamediv>
+      <refname>Number C types</refname>
+      <refpurpose>Numeric C types understood by ECL</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+      <title>Type names</title>
+      <simplelist columns="4" type="horiz">
+	<member><type>cl_fixnum</type></member>
+	<member><type>fixnum</type></member>
+	<member></member>
+	<member></member>
+
+	<member><type>cl_index</type></member>
+	<member><type>(integer 0 most-positive-fixnum)</type></member>
+	<member></member>
+	<member></member>
+
+	<member><type>float</type></member>
+	<member><type>short-float</type>, <type>single-float</type></member>
+	<member></member>
+	<member></member>
+
+	<member><type>double</type></member>
+	<member><type>double-float</type></member>
+	<member></member>
+	<member></member>
+
+	<member><type>long double</type> (*)</member>
+	<member><type>long-float</type></member>
+	<member><constant>ECL_LONG_FLOAT</constant></member>
+	<member><symbol>:long-float</symbol></member>
+
+	<member><type>uint8_t</type></member>
+	<member><type>(unsigned-byte 8)</type></member>
+	<member></member>
+	<member></member>
+
+	<member><type>int8_t</type></member>
+	<member><type>(signed-byte 8)</type></member>
+	<member></member>
+	<member></member>
+
+	<member><type>uint16_t</type></member>
+	<member><type>(unsigned-byte 16)</type></member>
+	<member><constant>ecl_uint16_t</constant></member>
+	<member><symbol>:uint16-t</symbol></member>
+
+	<member><type>int16_t</type></member>
+	<member><type>(signed-byte 16)</type></member>
+	<member><constant>ecl_int16_t</constant></member>
+	<member><symbol>:uint16-t</symbol></member>
+
+	<member><type>uint32_t</type></member>
+	<member><type>(unsigned-byte 32)</type></member>
+	<member><constant>ecl_uint32_t</constant></member>
+	<member><symbol>:uint32-t</symbol></member>
+
+	<member><type>int32_t</type></member>
+	<member><type>(signed-byte 32)</type></member>
+	<member><constant>ecl_int32_t</constant></member>
+	<member><symbol>:uint32-t</symbol></member>
+
+	<member><type>uint64_t</type></member>
+	<member><type>(unsigned-byte 64)</type></member>
+	<member><constant>ecl_uint32_t</constant></member>
+	<member><symbol>:uint32-t</symbol></member>
+
+	<member><type>int64_t</type></member>
+	<member><type>(signed-byte 64)</type></member>
+	<member><constant>ecl_int64_t</constant></member>
+	<member><symbol>:uint32-t</symbol></member>
+
+	<member><type>short</type></member>
+	<member><type>(integer ffi:c-short-min ffi:c-short-max)</type></member>
+	<member><constant>ecl_uint64_t</constant></member>
+	<member><symbol>:uint32-t</symbol></member>
+
+	<member><type>unsigned short </type></member>
+	<member><type>(integer 0 ffi:c-ushort-max)</type></member>
+	<member></member>
+	<member></member>
+
+	<member><type>int</type></member>
+	<member><type>(integer ffi:c-int-min ffi:c-int-max)</type></member>
+	<member></member>
+	<member></member>
+
+	<member><type>unsigned int </type></member>
+	<member><type>(integer 0 ffi:c-uint-max)</type></member>
+	<member></member>
+	<member></member>
+
+	<member><type>long</type></member>
+	<member><type>(integer ffi:c-long-min ffi:c-long-max)</type></member>
+	<member></member>
+	<member></member>
+
+	<member><type>unsigned long </type></member>
+	<member><type>(integer 0 ffi:c-long-max)</type></member>
+	<member></member>
+	<member></member>
+
+	<member><type>long long</type></member>
+	<member><type>(integer ffi:c-long-long-min ffi:c-long-long-max)</type></member>
+	<member><constant>ecl_long_long_t</constant></member>
+	<member><symbol>:long-long</symbol></member>
+
+	<member><type>unsigned long long</type></member>
+	<member><type>(integer 0 ffi:c-ulong-long-max)</type></member>
+	<member><constant>ecl_ulong_long_t</constant></member>
+	<member><symbol>:long-long</symbol></member>
+     </simplelist>
+    </refsynopsisdiv>
+
+    <refsect1>
+      <title>Description</title>
+
+      <para>The table above shows the relation between C types and the equivalent Common Lisp types. All types are standard <acronym>C99</acronym> types, except for two. First,  <type>cl_fixnum</type> is the smallest signed integer that can fit a <type>fixnum</type>. Second, <type>cl_index</type> is the smallest unsigned integer that fits a fixnum and is typically the unsigned counterpart of <type>cl_fixnum</type>.</para>
+
+      <para>(*) The <type>long double</type> does not exist on all platforms. When it exists, the macro <constant>ECL_LONG_DOUBLE</constant> will be defined, and <type>long-double</type> will be equivalent to it.</para>
+
+      <para>Many other types might also not exist on all platforms. This includes not only <type>long long</type> and <type>unsigned long long</type>, but also some of the <acronym>C99</acronym> integer types. There are two ways to detect which integer types are available in your system</para>
+      <itemizedlist>
+	<listitem><para>Check for the definition of C macros with a similar name, shown in the fourth column above.</para></listitem>
+	<listitem><para>In Lisp code, check for the presence of the associated features, shown in the fifth column above.</para></listitem>
+      </itemizedlist>
+    </refsect1>
+  </refentry>
+
+  <refentry>
+    <refnamediv>
+      <refname>Number constructors</refname>
+      <refpurpose>Creating Lisp types from C numbers</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+      <title>Functions and macros</title>
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_object <function>ecl_make_fixnum</function></funcdef>
+	  <paramdef><type>cl_fixnum</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_object <function>ecl_make_integer</function></funcdef>
+	  <paramdef><type>cl_fixnum</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_object <function>ecl_make_unsigned_integer</function></funcdef>
+	  <paramdef><type>cl_index</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_object <function>ecl_make_single_float</function></funcdef>
+	  <paramdef><type>float</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_object <function>ecl_make_double_float</function></funcdef>
+	  <paramdef><type>double</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_object <function>ecl_make_long_float</function></funcdef>
+	  <paramdef><type>long double</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_object <function>ecl_make_uint8_t</function></funcdef>
+	  <paramdef><type>uint8_t</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_object <function>ecl_make_int8_t</function></funcdef>
+	  <paramdef><type>int8_t</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_object <function>ecl_make_uint16_t</function></funcdef>
+	  <paramdef><type>uint16_t</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_object <function>ecl_make_int16_t</function></funcdef>
+	  <paramdef><type>int16_t</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_object <function>ecl_make_uint32_t</function></funcdef>
+	  <paramdef><type>uint32_t</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_object <function>ecl_make_int32_t</function></funcdef>
+	  <paramdef><type>int32_t</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_object <function>ecl_make_uint64_t</function></funcdef>
+	  <paramdef><type>uint64_t</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_object <function>ecl_make_int64_t</function></funcdef>
+	  <paramdef><type>int64_t</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_object <function>ecl_make_short</function></funcdef>
+	  <paramdef><type>short</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_object <function>ecl_make_ushort</function></funcdef>
+	  <paramdef><type>unsigned short</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_object <function>ecl_make_int</function></funcdef>
+	  <paramdef><type>int</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_object <function>ecl_make_uint</function></funcdef>
+	  <paramdef><type>unsigned int</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_object <function>ecl_make_long</function></funcdef>
+	  <paramdef><type>long</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_object <function>ecl_make_ulong</function></funcdef>
+	  <paramdef><type>unsigned long</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_object <function>ecl_make_long_long</function></funcdef>
+	  <paramdef><type>long long</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_object <function>ecl_make_ulong_long</function></funcdef>
+	  <paramdef><type>unsigned long long</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_object <function>ecl_make_ratio</function></funcdef>
+	  <paramdef><type>cl_object</type> <parameter>numerator</parameter></paramdef>
+	  <paramdef><type>cl_object</type> <parameter>denominator</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_object <function>ecl_make_complex</function></funcdef>
+	  <paramdef><type>cl_object</type> <parameter>real</parameter></paramdef>
+	  <paramdef><type>cl_object</type> <parameter>imag</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+    </refsynopsisdiv>
+
+    <refsect1>
+      <title>Description</title>
+      <para>These functions create a Lisp object from the corresponding C number. If the number is an integer type, the result will always be an integer, which may be a <type>bignum</type>. If on the other hand the C number is a <type>float</type>, <type>double</type> or <type>long double</type>, the result will be a <type>float</type>.</para>
+
+      <para>There is some redundancy in the list of functions that convert from <type>cl_fixnum</type> and <type>cl_index</type> to lisp. On the one hand, <function>ecl_make_fixnum()</function> always creates a fixnum, dropping bits if necessary. On the other hand, <function>ecl_make_integer</function> and <function>ecl_make_unsigned_integer</function> faithfully converts to a Lisp integer, which may a bignum.</para>
+
+      <para>Note also that some of the constructors do not use C numbers. This is the case of <function>ecl_make_ratio</function> and <function>ecl_make_complex</function>, because they are composite Lisp types.</para>
+
+      <para>These functions or macros signal no errors.</para>
+    </refsect1>
+  </refentry>
+
+  <refentry>
+    <refnamediv>
+      <refname>Number accessors</refname>
+      <refpurpose>Unchecked conversion from Lisp types to C numbers</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+      <title>Functions and macros</title>
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_fixnum <function>ecl_fixnum</function></funcdef>
+	  <paramdef><type>cl_object</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>float <function>ecl_single_float</function></funcdef>
+	  <paramdef><type>cl_object</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>double <function>ecl_double_float</function></funcdef>
+	  <paramdef><type>cl_object</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>long double <function>ecl_long_float</function></funcdef>
+	  <paramdef><type>cl_object</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+    </refsynopsisdiv>
+
+    <refsect1>
+      <title>Description</title>
+      <para>These functions and macros extract a C number from a Lisp object. They do not check the type of the Lisp object as they typically just access directly the value from a C structure.</para>
+    </refsect1>
+
+  </refentry>
+
+  <refentry>
+    <refnamediv>
+      <refname>Number coercion</refname>
+      <refpurpose>Checked conversion from Lisp types to C numbers</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+      <title>Functions and macros</title>
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_fixnum <function>ecl_to_fixnum</function></funcdef>
+	  <paramdef><type>cl_object</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_index <function>ecl_to_unsigned_integer</function></funcdef>
+	  <paramdef><type>cl_object</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>flaot <function>ecl_to_float</function></funcdef>
+	  <paramdef><type>cl_object</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>double <function>ecl_to_double</function></funcdef>
+	  <paramdef><type>cl_object</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>long double <function>ecl_to_long_double</function></funcdef>
+	  <paramdef><type>cl_object</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>float <function>ecl_to_float</function></funcdef>
+	  <paramdef><type>cl_object</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>int8_t <function>ecl_to_uint8_t</function></funcdef>
+	  <paramdef><type>cl_object</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>int8_t <function>ecl_to_int8_t</function></funcdef>
+	  <paramdef><type>cl_object</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>uint16_t <function>ecl_to_uint16_t</function></funcdef>
+	  <paramdef><type>cl_object</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>int16_t <function>ecl_to_int16_t</function></funcdef>
+	  <paramdef><type>cl_object</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>uint32_t <function>ecl_to_uint32_t</function></funcdef>
+	  <paramdef><type>cl_object</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>int32_t <function>ecl_to_int32_t</function></funcdef>
+	  <paramdef><type>cl_object</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>uint64_t <function>ecl_to_uint64_t</function></funcdef>
+	  <paramdef><type>cl_object</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>int64_t <function>ecl_to_int64_t</function></funcdef>
+	  <paramdef><type>cl_object</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>short <function>ecl_to_short</function></funcdef>
+	  <paramdef><type>cl_object</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>unsigned short <function>ecl_to_ushort</function></funcdef>
+	  <paramdef><type>cl_object</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>int <function>ecl_to_int</function></funcdef>
+	  <paramdef><type>cl_object</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>unsigned int <function>ecl_to_uint</function></funcdef>
+	  <paramdef><type>cl_object</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>long <function>ecl_to_long</function></funcdef>
+	  <paramdef><type>cl_object</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>unsigned long <function>ecl_to_ulong</function></funcdef>
+	  <paramdef><type>cl_object</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>long long <function>ecl_to_long_long</function></funcdef>
+	  <paramdef><type>cl_object</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>unsigned long long <function>ecl_to_ulong_long</function></funcdef>
+	  <paramdef><type>cl_object</type> <parameter>n</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+    </refsynopsisdiv>
+
+    <refsect1>
+      <title>Description</title>
+      <para>These functions and macros convert a Lisp object to the corresponding C number type. The conversion is done through a coercion process which may signal an error if the argument does not fit the expected type.</para>
+    </refsect1>
+
+  </refentry>
+
+  <refentry xml:id="ansi.numbers.c-dict.ref">
+    <refnamediv>
+      <refname>Numbers C dictionary</refname>
+      <refpurpose>&ANSI-C-Dict;</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+<simplelist columns="2" type="horiz">
+<member>Lisp symbol</member>
+<member>C function</member>
+
+<member><ulink url="&clhs;f_eq_sle.htm"><symbol>=</symbol></ulink></member>
+<member><code>cl_object cl_E()</code></member>
+
+<member><ulink url="&clhs;f_eq_sle.htm"><symbol>/=</symbol></ulink></member>
+<member><code>cl_object cl_NE()</code></member>
+
+<member><ulink url="&clhs;f_eq_sle.htm"><symbol>&lt;</symbol></ulink></member>
+<member><code>cl_object cl_L()</code></member>
+
+<member><ulink url="&clhs;f_eq_sle.htm"><symbol>&gt;</symbol></ulink></member>
+<member><code>cl_object cl_G()</code></member>
+
+<member><ulink url="&clhs;f_eq_sle.htm"><symbol>&lt;=</symbol></ulink></member>
+<member><code>cl_object cl_LE()</code></member>
+
+<member><ulink url="&clhs;f_eq_sle.htm"><symbol>&gt;=</symbol></ulink></member>
+<member><code>cl_object cl_GE()</code></member>
+
+<member><ulink url="&clhs;f_max_m.htm"><symbol>max</symbol></ulink></member>
+<member><code>cl_object cl_max(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_max_m.htm"><symbol>min</symbol></ulink></member>
+<member><code>cl_object cl_min(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_minusp.htm"><symbol>minusp</symbol></ulink></member>
+<member><code>cl_object cl_minusp(cl_object real)</code></member>
+
+<member><ulink url="&clhs;f_minusp.htm"><symbol>plusp</symbol></ulink></member>
+<member><code>cl_object cl_plusp(cl_object real)</code></member>
+
+<member><ulink url="&clhs;f_zerop.htm"><symbol>zerop</symbol></ulink></member>
+<member><code>cl_object cl_zerop(cl_object number)</code></member>
+
+<member><ulink url="&clhs;f_floorc.htm"><symbol>floor</symbol></ulink></member>
+<member><code>cl_object cl_floor(cl_narg narg, cl_object number, ...)</code></member>
+
+<member><ulink url="&clhs;f_floorc.htm"><symbol>ffloor</symbol></ulink></member>
+<member><code>cl_object cl_ffloor(cl_narg narg, cl_object number, ...)</code></member>
+
+<member><ulink url="&clhs;f_floorc.htm"><symbol>ceiling</symbol></ulink></member>
+<member><code>cl_object cl_ceiling(cl_narg narg, cl_object number, ...)</code></member>
+
+<member><ulink url="&clhs;f_floorc.htm"><symbol>fceiling</symbol></ulink></member>
+<member><code>cl_object cl_fceiling(cl_narg narg, cl_object number, ...)</code></member>
+
+<member><ulink url="&clhs;f_floorc.htm"><symbol>truncate</symbol></ulink></member>
+<member><code>cl_object cl_truncate(cl_narg narg, cl_object number, ...)</code></member>
+
+<member><ulink url="&clhs;f_floorc.htm"><symbol>ftruncate</symbol></ulink></member>
+<member><code>cl_object cl_ftruncate(cl_narg narg, cl_object number, ...)</code></member>
+
+<member><ulink url="&clhs;f_floorc.htm"><symbol>round</symbol></ulink></member>
+<member><code>cl_object cl_round(cl_narg narg, cl_object number, ...)</code></member>
+
+<member><ulink url="&clhs;f_floorc.htm"><symbol>fround</symbol></ulink></member>
+<member><code>cl_object cl_fround(cl_narg narg, cl_object number, ...)</code></member>
+
+<member><ulink url="&clhs;f_sin_c.htm"><symbol>sin</symbol></ulink></member>
+<member><code>cl_object cl_sin(cl_object radians)</code></member>
+
+<member><ulink url="&clhs;f_sin_c.htm"><symbol>cos</symbol></ulink></member>
+<member><code>cl_object cl_cos(cl_object radians)</code></member>
+
+<member><ulink url="&clhs;f_sin_c.htm"><symbol>tan</symbol></ulink></member>
+<member><code>cl_object cl_tan(cl_object radians)</code></member>
+
+<member><ulink url="&clhs;f_asin_.htm"><symbol>asin</symbol></ulink></member>
+<member><code>cl_object cl_asin(cl_object number)</code></member>
+
+<member><ulink url="&clhs;f_asin_.htm"><symbol>acos</symbol></ulink></member>
+<member><code>cl_object cl_acos(cl_object number)</code></member>
+
+<member><ulink url="&clhs;f_asin_.htm"><symbol>atan</symbol></ulink></member>
+<member><code>cl_object cl_atan(cl_narg narg, cl_object number1, ...)</code></member>
+
+<member><ulink url="&clhs;c_number.htm"><symbol>sinh</symbol></ulink></member>
+<member><code>cl_object cl_sinh(cl_object number)</code></member>
+
+<member><ulink url="&clhs;c_number.htm"><symbol>cosh</symbol></ulink></member>
+<member><code>cl_object cl_cosh(cl_object number)</code></member>
+
+<member><ulink url="&clhs;c_number.htm"><symbol>tanh</symbol></ulink></member>
+<member><code>cl_object cl_tanh(cl_object number)</code></member>
+
+<member><ulink url="&clhs;c_number.htm"><symbol>asinh</symbol></ulink></member>
+<member><code>cl_object cl_asinh(cl_object number)</code></member>
+
+<member><ulink url="&clhs;c_number.htm"><symbol>cosh</symbol></ulink></member>
+<member><code>cl_object cl_acosh(cl_object number)</code></member>
+
+<member><ulink url="&clhs;c_number.htm"><symbol>atanh</symbol></ulink></member>
+<member><code>cl_object cl_atanh(cl_object number)</code></member>
+
+<member><ulink url="&clhs;f_st.htm"><symbol>*</symbol></ulink></member>
+<member><code>cl_object cl_X(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_pl.htm"><symbol>+</symbol></ulink></member>
+<member><code>cl_object cl_P(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f__.htm"><symbol>-</symbol></ulink></member>
+<member><code>cl_object cl_M(cl_narg narg, cl_object number, ...)</code></member>
+
+<member><ulink url="&clhs;f_sl.htm"><symbol>/</symbol></ulink></member>
+<member><code>cl_object cl_N(cl_narg narg, cl_object number, ...)</code></member>
+
+<member><ulink url="&clhs;f_1pl_1_.htm"><symbol>1+</symbol></ulink></member>
+<member><code>cl_object cl_1P()</code></member>
+
+<member><ulink url="&clhs;f_1pl_1_.htm"><symbol>1-</symbol></ulink></member>
+<member><code>cl_object cl_1M()</code></member>
+
+<member><ulink url="&clhs;f_abs.htm"><symbol>abs</symbol></ulink></member>
+<member><code>cl_object cl_abs(cl_object number)</code></member>
+
+<member><ulink url="&clhs;f_evenpc.htm"><symbol>evenp</symbol></ulink></member>
+<member><code>cl_object cl_evenp(cl_object integer)</code></member>
+
+<member><ulink url="&clhs;f_evenpc.htm"><symbol>oddp</symbol></ulink></member>
+<member><code>cl_object cl_oddp(cl_object integer)</code></member>
+
+<member><ulink url="&clhs;f_exp_e.htm"><symbol>exp</symbol></ulink></member>
+<member><code>cl_object cl_exp(cl_object number)</code></member>
+
+<member><ulink url="&clhs;f_exp_e.htm"><symbol>expt</symbol></ulink></member>
+<member><code>cl_object cl_expt(cl_object base, cl_object power)</code></member>
+
+<member><ulink url="&clhs;f_gcd.htm"><symbol>gcd</symbol></ulink></member>
+<member><code>cl_object cl_gcd(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_lcm.htm"><symbol>lcm</symbol></ulink></member>
+<member><code>cl_object cl_lcm(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_log.htm"><symbol>log</symbol></ulink></member>
+<member><code>cl_object cl_log(cl_narg narg, cl_object number, ...)</code></member>
+
+<member><ulink url="&clhs;f_mod_r.htm"><symbol>mod</symbol></ulink></member>
+<member><code>cl_object cl_mod(cl_object number, cl_object divisor)</code></member>
+
+<member><ulink url="&clhs;f_mod_r.htm"><symbol>rem</symbol></ulink></member>
+<member><code>cl_object cl_rem(cl_object number, cl_object divisor)</code></member>
+
+<member><ulink url="&clhs;f_signum.htm"><symbol>signum</symbol></ulink></member>
+<member><code>cl_object cl_signum(cl_object number)</code></member>
+
+<member><ulink url="&clhs;f_sqrt_.htm"><symbol>sqrt</symbol></ulink></member>
+<member><code>cl_object cl_sqrt(cl_object number)</code></member>
+
+<member><ulink url="&clhs;f_sqrt_.htm"><symbol>isqrt</symbol></ulink></member>
+<member><code>cl_object cl_isqrt(cl_object natural)</code></member>
+
+<member><ulink url="&clhs;f_mk_rnd.htm"><symbol>make-random-state</symbol></ulink></member>
+<member><code>cl_object cl_make_random_state(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_random.htm"><symbol>random</symbol></ulink></member>
+<member><code>cl_object cl_random(cl_narg narg, cl_object limit, ...)</code></member>
+
+<member><ulink url="&clhs;f_rnd_st.htm"><symbol>random-state-p</symbol></ulink></member>
+<member><code>cl_object cl_random_state_p(cl_object object)</code></member>
+
+<member><ulink url="&clhs;f_nump.htm"><symbol>numberp</symbol></ulink></member>
+<member><code>cl_object cl_numberp(cl_object object)</code></member>
+
+<member><ulink url="&clhs;f_cis.htm"><symbol>cis</symbol></ulink></member>
+<member><code>cl_object cl_cis(cl_object radians)</code></member>
+
+<member><ulink url="&clhs;f_comp_2.htm"><symbol>complex</symbol></ulink></member>
+<member><code>cl_object cl_complex(cl_narg narg, cl_object realpart, ...)</code></member>
+
+<member><ulink url="&clhs;f_comp_3.htm"><symbol>complexp</symbol></ulink></member>
+<member><code>cl_object cl_complexp(cl_object object)</code></member>
+
+<member><ulink url="&clhs;f_conjug.htm"><symbol>conjugate</symbol></ulink></member>
+<member><code>cl_object cl_conjugate(cl_object number)</code></member>
+
+<member><ulink url="&clhs;f_phase.htm"><symbol>phase</symbol></ulink></member>
+<member><code>cl_object cl_phase(cl_object number)</code></member>
+
+<member><ulink url="&clhs;f_realpa.htm"><symbol>realpart</symbol></ulink></member>
+<member><code>cl_object cl_realpart(cl_object number)</code></member>
+
+<member><ulink url="&clhs;f_realpa.htm"><symbol>imagpart</symbol></ulink></member>
+<member><code>cl_object cl_imagpart(cl_object number)</code></member>
+
+<member><ulink url="&clhs;f_upgrad.htm"><symbol>upgraded-complex-part-type</symbol></ulink></member>
+<member><code>cl_object cl_upgraded_complex_part_type(cl_narg narg, cl_object typespec, ...)</code></member>
+
+<member><ulink url="&clhs;f_realp.htm"><symbol>realp</symbol></ulink></member>
+<member><code>cl_object cl_realp(cl_object object)</code></member>
+
+<member><ulink url="&clhs;f_numera.htm"><symbol>numerator</symbol></ulink></member>
+<member><code>cl_object cl_numerator(cl_object rational)</code></member>
+
+<member><ulink url="&clhs;f_numera.htm"><symbol>denominator</symbol></ulink></member>
+<member><code>cl_object cl_denominator(cl_object rational)</code></member>
+
+<member><ulink url="&clhs;f_ration.htm"><symbol>rational</symbol></ulink></member>
+<member><code>cl_object cl_rational(cl_object number)</code></member>
+
+<member><ulink url="&clhs;f_ration.htm"><symbol>rationalize</symbol></ulink></member>
+<member><code>cl_object cl_rationalize(cl_object number)</code></member>
+
+<member><ulink url="&clhs;f_rati_1.htm"><symbol>rationalp</symbol></ulink></member>
+<member><code>cl_object cl_rationalp(cl_object object)</code></member>
+
+<member><ulink url="&clhs;f_ash.htm"><symbol>ash</symbol></ulink></member>
+<member><code>cl_object cl_ash(cl_object integer, cl_object count)</code></member>
+
+<member><ulink url="&clhs;f_intege.htm"><symbol>integer-length</symbol></ulink></member>
+<member><code>cl_object cl_integer_length(cl_object integer)</code></member>
+
+<member><ulink url="&clhs;f_inte_1.htm"><symbol>integerp</symbol></ulink></member>
+<member><code>cl_object cl_integerp(cl_object object)</code></member>
+
+<member><ulink url="&clhs;f_parse_.htm"><symbol>parse-integer</symbol></ulink></member>
+<member><code>cl_object cl_parse_integer(cl_narg narg, cl_object string, ...)</code></member>
+
+<member><ulink url="&clhs;f_boole.htm"><symbol>boole</symbol></ulink></member>
+<member><code>cl_object cl_boole(cl_object op, cl_object integer1, cl_object integer2)</code></member>
+
+<member><ulink url="&clhs;f_logand.htm"><symbol>logand</symbol></ulink></member>
+<member><code>cl_object cl_logand(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_logand.htm"><symbol>logandc1</symbol></ulink></member>
+<member><code>cl_object cl_logandc1(cl_object integer1, cl_object integer2)</code></member>
+
+<member><ulink url="&clhs;f_logand.htm"><symbol>logandc2</symbol></ulink></member>
+<member><code>cl_object cl_logandc2(cl_object integer1, cl_object integer2)</code></member>
+
+<member><ulink url="&clhs;f_logand.htm"><symbol>logeqv</symbol></ulink></member>
+<member><code>cl_object cl_logeqv(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_logand.htm"><symbol>logior</symbol></ulink></member>
+<member><code>cl_object cl_logior(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_logand.htm"><symbol>lognand</symbol></ulink></member>
+<member><code>cl_object cl_lognand(cl_object integer1, cl_object integer2)</code></member>
+
+<member><ulink url="&clhs;f_logand.htm"><symbol>lognor</symbol></ulink></member>
+<member><code>cl_object cl_lognor(cl_object integer1, cl_object integer2)</code></member>
+
+<member><ulink url="&clhs;f_logand.htm"><symbol>lognot</symbol></ulink></member>
+<member><code>cl_object cl_lognot(cl_object integer)</code></member>
+
+<member><ulink url="&clhs;f_logand.htm"><symbol>logorc1</symbol></ulink></member>
+<member><code>cl_object cl_logorc1(cl_object integer1, cl_object integer2)</code></member>
+
+<member><ulink url="&clhs;f_logand.htm"><symbol>logorc2</symbol></ulink></member>
+<member><code>cl_object cl_logorc2(cl_object integer1, cl_object integer2)</code></member>
+
+<member><ulink url="&clhs;f_logand.htm"><symbol>logxor</symbol></ulink></member>
+<member><code>cl_object cl_logxor(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_logbtp.htm"><symbol>logbitp</symbol></ulink></member>
+<member><code>cl_object cl_logbitp(cl_object index, cl_object integer)</code></member>
+
+<member><ulink url="&clhs;f_logcou.htm"><symbol>logcount</symbol></ulink></member>
+<member><code>cl_object cl_logcount(cl_object integer)</code></member>
+
+<member><ulink url="&clhs;f_logtes.htm"><symbol>logtest</symbol></ulink></member>
+<member><code>cl_object cl_logtest(cl_object integer1, cl_object integer2)</code></member>
+
+<member><ulink url="&clhs;f_by_by.htm"><symbol>byte</symbol></ulink></member>
+<member><code>cl_object cl_byte(cl_object size, cl_object position)</code></member>
+
+<member><ulink url="&clhs;f_by_by.htm"><symbol>bytes-size</symbol></ulink></member>
+<member><code>cl_object cl_byte_size(cl_object bytespec)</code></member>
+
+<member><ulink url="&clhs;f_by_by.htm"><symbol>byte-position</symbol></ulink></member>
+<member><code>cl_object cl_byte_position(cl_object bytespec)</code></member>
+
+<member><ulink url="&clhs;f_deposi.htm"><symbol>deposit-field</symbol></ulink></member>
+<member><code>cl_object cl_deposit_field(cl_object newbyte, cl_object bytespec, cl_object integer)</code></member>
+
+<member><ulink url="&clhs;f_dpb.htm"><symbol>dpb</symbol></ulink></member>
+<member><code>cl_object cl_dpb(cl_object newbyte, cl_object bytespec, cl_object integer)</code></member>
+
+<member><ulink url="&clhs;f_ldb.htm"><symbol>ldb</symbol></ulink></member>
+<member><code>cl_object cl_ldb(cl_object bytespec, cl_object integer)</code></member>
+
+<member><ulink url="&clhs;f_ldb_te.htm"><symbol>ldb-test</symbol></ulink></member>
+<member><code>cl_object cl_ldb_test(cl_object bytespec, cl_object integer)</code></member>
+
+<member><ulink url="&clhs;f_mask_f.htm"><symbol>mask-field</symbol></ulink></member>
+<member><code>cl_object cl_mask_field(cl_object bytespec, cl_object integer)</code></member>
+
+<member><ulink url="&clhs;f_dec_fl.htm"><symbol>decode-float</symbol></ulink></member>
+<member><code>cl_object cl_decode_float(cl_object float)</code></member>
+
+<member><ulink url="&clhs;f_dec_fl.htm"><symbol>scale-float</symbol></ulink></member>
+<member><code>cl_object cl_scale_float(cl_object float, cl_object integer)</code></member>
+
+<member><ulink url="&clhs;f_dec_fl.htm"><symbol>float-radix</symbol></ulink></member>
+<member><code>cl_object cl_float_radix(cl_object float)</code></member>
+
+<member><ulink url="&clhs;f_dec_fl.htm"><symbol>float-sign</symbol></ulink></member>
+<member><code>cl_object cl_float_sign(cl_narg narg, cl_object float1, ...)</code></member>
+
+<member><ulink url="&clhs;f_dec_fl.htm"><symbol>float-digits</symbol></ulink></member>
+<member><code>cl_object cl_float_digits(cl_object float)</code></member>
+
+<member><ulink url="&clhs;f_dec_fl.htm"><symbol>float-precision</symbol></ulink></member>
+<member><code>cl_object cl_float_precision(cl_object float)</code></member>
+
+<member><ulink url="&clhs;f_dec_fl.htm"><symbol>integer-decode-float</symbol></ulink></member>
+<member><code>cl_object cl_integer_decode_float(cl_object float)</code></member>
+
+<member><ulink url="&clhs;f_float.htm"><symbol>float</symbol></ulink></member>
+<member><code>cl_object cl_float(cl_narg narg, cl_object number)</code></member>
+
+<member><ulink url="&clhs;f_floatp.htm"><symbol>floatp</symbol></ulink></member>
+<member><code>cl_object cl_floatp(cl_object object)</code></member>
+
+<member><ulink url="&clhs;f_arithm.htm"><symbol>arithmetic-error-operands</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+
+<member><ulink url="&clhs;f_arithm.htm"><symbol>arithmetic-error-operation</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+</simplelist>
+    </refsynopsisdiv>
+  </refentry>
+
+</section>
+</chapter>
+</book>

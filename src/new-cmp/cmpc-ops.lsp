@@ -145,10 +145,10 @@
           ((REPLACED DISCARDED LEXICAL))
           (otherwise (setf block-p t)))
      finally (progn
-	       (c2unbind-specials nspecials)
-	       (unless (zerop closure)
+               (c2unbind-specials nspecials)
+               (unless (zerop closure)
                  (wt-nl "/* End of lifetime of env" *env-lvl* "*/")
-		 (decf *env-lvl*)
+                 (decf *env-lvl*)
                  (format *dump-output* "~&;;; Decreasing environment depth to ~D"
                          *env-lvl*)
                  (decf *env* closure))
@@ -398,7 +398,7 @@
 
 (defun c2funcall-op (destination args)
   (let* ((loc (pop args))
-	 (form-type (location-primary-type loc))
+         (form-type (location-primary-type loc))
          (function-p (and (subtypep form-type 'function)
                           (policy-assume-right-type))))
     (set-loc (call-unknown-global-loc nil loc args function-p)
@@ -432,7 +432,7 @@
              (or (fun-p fun)
                  (and (null fun)
                       (setf fun (find fname *global-funs* :test #'same-fname-p
-				      :key #'fun-name)))))
+                                      :key #'fun-name)))))
     (return-from call-global-loc (call-normal-loc fname fun args)))
 
   ;; Call to a global (SETF ...) function
@@ -480,24 +480,24 @@
   (unless in-core
     ;; We only write declarations for functions which are not in lisp_external.h
     (multiple-value-bind (val declared)
-	(gethash fun-c-name *compiler-declared-globals*)
+        (gethash fun-c-name *compiler-declared-globals*)
       (unless declared
-	(if (= maxarg minarg)
-	    (progn
-	      (wt-nl-h "extern cl_object " fun-c-name "(")
-	      (dotimes (i maxarg)
-		(when (> i 0) (wt-h1 ","))
-		(wt-h1 "cl_object"))
-	      (wt-h1 ");"))
-	    (progn
-	      (wt-nl-h "#ifdef __cplusplus")
-	      (wt-nl-h "extern cl_object " fun-c-name "(...);")
-	      (wt-nl-h "#else")
-	      (wt-nl-h "extern cl_object " fun-c-name "();")
-	      (wt-nl-h "#endif")))
-	(setf (gethash fun-c-name *compiler-declared-globals*) 1))))
+        (if (= maxarg minarg)
+            (progn
+              (wt-nl-h "extern cl_object " fun-c-name "(")
+              (dotimes (i maxarg)
+                (when (> i 0) (wt-h1 ","))
+                (wt-h1 "cl_object"))
+              (wt-h1 ");"))
+            (progn
+              (wt-nl-h "#ifdef __cplusplus")
+              (wt-nl-h "extern cl_object " fun-c-name "(...);")
+              (wt-nl-h "#else")
+              (wt-nl-h "extern cl_object " fun-c-name "();")
+              (wt-nl-h "#endif")))
+        (setf (gethash fun-c-name *compiler-declared-globals*) 1))))
   (let ((fun (make-fun :name fname :global t :cfun fun-c-name :lambda 'NIL
-		       :minarg minarg :maxarg maxarg)))
+                       :minarg minarg :maxarg maxarg)))
     (call-normal-loc fname fun args)))
 
 (defun call-unknown-global-loc (fname loc args &optional function-p)
@@ -530,20 +530,20 @@
   (unless (fun-cfun fun)
     (baboon "Function without a C name: ~A" (fun-name fun)))
   (let* ((minarg (fun-minarg fun))
-	 (maxarg (fun-maxarg fun))
-	 (fun-c-name (fun-cfun fun))
-	 (fun-lisp-name (fun-name fun))
-	 (narg (length args))
-	 (env nil))
+         (maxarg (fun-maxarg fun))
+         (fun-c-name (fun-cfun fun))
+         (fun-lisp-name (fun-name fun))
+         (narg (length args))
+         (env nil))
     (case (fun-closure fun)
       (CLOSURE
        (setf env (environment-accessor fun)))
       (LEXICAL
        (let ((lex-lvl (fun-level fun)))
-	 (dotimes (n lex-lvl)
-	   (let* ((j (- lex-lvl n 1))
-		  (x (lex-env-var-name j)))
-	     (push x args))))))
+         (dotimes (n lex-lvl)
+           (let* ((j (- lex-lvl n 1))
+                  (x (lex-env-var-name j)))
+             (push x args))))))
     (unless (<= minarg narg maxarg)
       (cmperr "Wrong number of arguments for function ~S"
               (or fun-lisp-name 'ANONYMOUS)))
@@ -812,19 +812,19 @@ actually use."
 (defun c2fset (fun fname macro pprint c1forms)
   (when (fun-no-entry fun)
     (wt-nl "(void)0; /* No entry created for "
-	   (format nil "~A" (fun-name fun))
-	   " */")
+           (format nil "~A" (fun-name fun))
+           " */")
     ;; FIXME! Look at c2function!
     (new-local fun)
     (return-from c2fset))
   (when (fun-closure fun)
     (return-from c2fset (c2call-global destination 'SI:FSET c1forms)))
   (let ((*inline-blocks* 0)
-	(loc (data-empty-loc)))
+        (loc (data-empty-loc)))
     (push (list loc fname fun) *global-cfuns-array*)
     ;; FIXME! Look at c2function!
     (new-local fun)
     (wt-nl (if macro "ecl_cmp_defmacro(" "ecl_cmp_defun(")
-	   loc ");")
+           loc ");")
     (close-inline-blocks)))
 

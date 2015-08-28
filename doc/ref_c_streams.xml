@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter>
+<title>Streams</title>
+<section xml:id="ansi.streams.c-dict">
+<title>C Reference</title>
+  <refentry>
+    <refnamediv>
+      <refname>Streams C dictionary</refname>
+      <refpurpose>&ANSI-C-Dict;</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+<simplelist columns="2" type="horiz">
+<member>Lisp symbol</member>
+<member>C function</member>
+
+<member><ulink url="&clhs;f_broadc.htm"><symbol>broadcast-stream-streams</symbol></ulink></member>
+<member><code>cl_object cl_broadcast_stream_streams(cl_object broadcast_stream)</code></member>
+
+<member><ulink url="&clhs;f_clear_.htm"><symbol>clear-input</symbol></ulink></member>
+<member><code>cl_object cl_clear_input(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_finish.htm"><symbol>clear-output</symbol></ulink></member>
+<member><code>cl_object cl_clear_outputt(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_close.htm"><symbol>close</symbol></ulink></member>
+<member><code>cl_object cl_close(cl_narg narg, cl_object stream, ...)</code></member>
+
+<member><ulink url="&clhs;f_conc_1.htm"><symbol>concatenated-stream-streams</symbol></ulink></member>
+<member><code>cl_object cl_concatenated_stream_streams(cl_object concatenated_stream)</code></member>
+
+<member><ulink url="&clhs;f_echo_s.htm"><symbol>echo-stream-input-stream</symbol></ulink></member>
+<member><code>cl_object cl_echo_stream_input_stream(cl_object echo_stream)</code></member>
+
+<member><ulink url="&clhs;f_echo_s.htm"><symbol>echo-stream-output-stream</symbol></ulink></member>
+<member><code>cl_object cl_echo_stream_output_stream(cl_object echo_stream)</code></member>
+
+<member><ulink url="&clhs;f_file_l.htm"><symbol>file-length</symbol></ulink></member>
+<member><code>cl_object cl_file_length(cl_object stream)</code></member>
+
+<member><ulink url="&clhs;f_file_p.htm"><symbol>file-position</symbol></ulink></member>
+<member><code>cl_object cl_file_position(cl_object stream)</code></member>
+
+<member><ulink url="&clhs;f_file_s.htm"><symbol>file-string-length</symbol></ulink></member>
+<member><code>cl_object cl_file_string_length(cl_object stream, cl_object object)</code></member>
+
+<member><ulink url="&clhs;f_finish.htm"><symbol>finish-output</symbol></ulink></member>
+<member><code>cl_object cl_finish_outputt(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_finish.htm"><symbol>force-output</symbol></ulink></member>
+<member><code>cl_object cl_force_outputt(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_terpri.htm"><symbol>fresh-line</symbol></ulink></member>
+<member><code>cl_object cl_fresh_line(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_get_ou.htm"><symbol>get-output-stream-string</symbol></ulink></member>
+<member><code>cl_object cl_get_output_stream_string(cl_object string_output_stream)</code></member>
+
+<member><ulink url="&clhs;f_in_stm.htm"><symbol>input-stream-p</symbol></ulink></member>
+<member><code>cl_object cl_input_stream_p(cl_object stream)</code></member>
+
+<member><ulink url="&clhs;f_intera.htm"><symbol>interactive-stream-p</symbol></ulink></member>
+<member><code>cl_object cl_interactive_stream_p(cl_object stream)</code></member>
+
+<member><ulink url="&clhs;f_listen.htm"><symbol>listen</symbol></ulink></member>
+<member><code>cl_object cl_listen(cl_narg narg, cl_object stream, ...)</code></member>
+
+<member><ulink url="&clhs;f_mk_bro.htm"><symbol>make-broadcast-stream</symbol></ulink></member>
+<member><code>cl_object cl_make_broadcast_stream(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_mk_con.htm"><symbol>make-concatenated-stream</symbol></ulink></member>
+<member><code>cl_object cl_make_concatenated_stream(cl_narg narg, ....)</code></member>
+
+<member><ulink url="&clhs;f_mk_ech.htm"><symbol>make-echo-stream</symbol></ulink></member>
+<member><code>cl_object cl_make_echo_stream(cl_object input, cl_object output)</code></member>
+
+<member><ulink url="&clhs;f_mk_s_1.htm"><symbol>make-string-input-stream</symbol></ulink></member>
+<member><code>cl_object cl_make_string_input_stream(cl_narg narg, cl_object string, ...)</code></member>
+
+<member><ulink url="&clhs;f_mk_s_2.htm"><symbol>make-string-output-stream</symbol></ulink></member>
+<member><code>cl_object cl_make_string_output_stream(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_mk_two.htm"><symbol>make-two-way-stream</symbol></ulink></member>
+<member><code>cl_object cl_make_two_way_stream(cl_object input, cl_object output)</code></member>
+
+<member><ulink url="&clhs;f_mk_syn.htm"><symbol>make-synonym-stream</symbol></ulink></member>
+<member><code>cl_object cl_make_synonym_stream(cl_object symbol)</code></member>
+
+<member><ulink url="&clhs;f_open.htm"><symbol>open</symbol></ulink></member>
+<member><code>cl_object cl_open(cl_narg narg, cl_object filespec, ...)</code></member>
+
+<member><ulink url="&clhs;f_open_s.htm"><symbol>open-stream-p</symbol></ulink></member>
+<member><code>cl_object cl_open_stream_p(cl_object stream)</code></member>
+
+<member><ulink url="&clhs;f_in_stm.htm"><symbol>output-stream-p</symbol></ulink></member>
+<member><code>cl_object cl_output_stream_p(cl_object stream)</code></member>
+
+<member><ulink url="&clhs;f_peek_c.htm"><symbol>peek-char</symbol></ulink></member>
+<member><code>cl_object cl_peek_char(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_rd_by.htm"><symbol>read-byte</symbol></ulink></member>
+<member><code>cl_object cl_read_byte(cl_narg narg, cl_object stream, ...)</code></member>
+
+<member><ulink url="&clhs;f_rd_cha.htm"><symbol>read-char</symbol></ulink></member>
+<member><code>cl_object cl_read_char(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_rd_c_1.htm"><symbol>read-char-no-hang</symbol></ulink></member>
+<member><code>cl_object cl_read_char_no_hang(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_rd_lin.htm"><symbol>read-line</symbol></ulink></member>
+<member><code>cl_object cl_read_line(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_rd_seq.htm"><symbol>read-sequence</symbol></ulink></member>
+<member><code>cl_object cl_read_sequence(cl_narg narg, cl_object sequence, cl_object stream)</code></member>
+
+<member><ulink url="&clhs;f_stm_el.htm"><symbol>stream-element-type</symbol></ulink></member>
+<member><code>cl_object cl_stream_element_type(cl_object stream)</code></member>
+
+<member><ulink url="&clhs;f_stm_er.htm"><symbol>stream-error-stream</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+
+<member><ulink url="&clhs;f_stm_ex.htm"><symbol>stream-external-format</symbol></ulink></member>
+<member><code>cl_object cl_stream_external_format(cl_object stream)</code></member>
+
+<member><ulink url="&clhs;f_stmp.htm"><symbol>streamp</symbol></ulink></member>
+<member><code>cl_object cl_streamp(cl_object object)</code></member>
+
+<member><ulink url="&clhs;f_syn_st.htm"><symbol>synonym-stream-symbol</symbol></ulink></member>
+<member><code>cl_object cl_synonym_stream_symbol(cl_object synonym_stream)</code></member>
+
+<member><ulink url="&clhs;f_terpri.htm"><symbol>terpri</symbol></ulink></member>
+<member><code>cl_object cl_terpri(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_two_wa.htm"><symbol>two-way-stream-input-stream</symbol></ulink></member>
+<member><code>cl_object cl_two_way_stream_input_stream(cl_object two_way_stream)</code></member>
+
+<member><ulink url="&clhs;f_two_wa.htm"><symbol>two-way-stream-output-stream</symbol></ulink></member>
+<member><code>cl_object cl_two_way_stream_output_stream(cl_object two_way_stream)</code></member>
+
+<member><ulink url="&clhs;f_unrd_c.htm"><symbol>unread-char</symbol></ulink></member>
+<member><code>cl_object cl_unread_char(cl_narg narg, cl_object character, ...)</code></member>
+
+<member><ulink url="&clhs;f_wr_by.htm"><symbol>write-byte</symbol></ulink></member>
+<member><code>cl_object cl_write_byte(cl_object byte, cl_object stream)</code></member>
+
+<member><ulink url="&clhs;f_wr_cha.htm"><symbol>write-char</symbol></ulink></member>
+<member><code>cl_object cl_write_char(cl_narg narg, cl_object character, ...)</code></member>
+
+<member><ulink url="&clhs;f_wr_stg.htm"><symbol>write-line</symbol></ulink></member>
+<member><code>cl_object cl_write_line(cl_narg narg, cl_object string)</code></member>
+
+<member><ulink url="&clhs;f_wr_stg.htm"><symbol>write-string</symbol></ulink></member>
+<member><code>cl_object cl_write_string(cl_narg narg, cl_object string)</code></member>
+
+<member><ulink url="&clhs;f_wr_seq.htm"><symbol>write-sequence</symbol></ulink></member>
+<member><code>cl_object cl_write_sequence(cl_narg narg, cl_object sequence, cl_object stream)</code></member>
+
+<member><ulink url="&clhs;f_y_or_n.htm"><symbol>y-or-n-p</symbol></ulink></member>
+<member><code>cl_object cl_y_or_n_p(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_y_or_n.htm"><symbol>yes-or-no-p</symbol></ulink></member>
+<member><code>cl_object cl_yes_or_no_p(cl_narg narg, ...)</code></member>
+
+</simplelist>
+    </refsynopsisdiv>
+
+    <refsect1>
+      <title>Description</title>
+      <para></para>
+    </refsect1>
+  </refentry>
+</section>
+</chapter>
+</book>

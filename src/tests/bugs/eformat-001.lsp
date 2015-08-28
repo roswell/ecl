@@ -37,23 +37,23 @@ name and the cdr is the corresponding external format.  This list
 contains all possible variants w.r.t. to line-end conversion and
 endianness."
   (let ((variants (ecase symbol
-		    (:ascii '(:us-ascii))
-		    (:latin1 '(:latin-1))
-		    (:latin8 '(:iso-8859-8))
-		    (:cp1252 '(:windows-cp1252))
-		    (:koi8r '(:koi8-r))
-		    (:utf8 '(:utf-8))
-		    (:ucs2 '(:ucs-2be :ucs-2le))
-		    (:ucs4 '(:ucs-4be :ucs-4le)))))
+                    (:ascii '(:us-ascii))
+                    (:latin1 '(:latin-1))
+                    (:latin8 '(:iso-8859-8))
+                    (:cp1252 '(:windows-cp1252))
+                    (:koi8r '(:koi8-r))
+                    (:utf8 '(:utf-8))
+                    (:ucs2 '(:ucs-2be :ucs-2le))
+                    (:ucs4 '(:ucs-4be :ucs-4le)))))
     (loop for arg in variants
           nconc (let* ((endian-suffix (case arg
-					((:ucs-2be :ucs-4be) "_be")
-					((:ucs-2le :ucs-4le) "_le")
-					(t ""))))
-		  (loop for eol-style in '(:lf :cr :crlf)
-		     collect (cons (format nil "~A_~(~A~)_~(~A~)~A.txt"
-					   file-name symbol eol-style endian-suffix)
-				   (list eol-style arg)))))))
+                                        ((:ucs-2be :ucs-4be) "_be")
+                                        ((:ucs-2le :ucs-4le) "_le")
+                                        (t ""))))
+                  (loop for eol-style in '(:lf :cr :crlf)
+                     collect (cons (format nil "~A_~(~A~)_~(~A~)~A.txt"
+                                           file-name symbol eol-style endian-suffix)
+                                   (list eol-style arg)))))))
 
 (defun create-test-combinations (file-name symbols &optional simplep)
   "For a name suffix FILE-NAME and a list of symbols SYMBOLS denoting
@@ -76,14 +76,14 @@ contents \(viewed as binary files)."
   (with-open-file (stream1 file1 :element-type '(unsigned-byte 8))
     (with-open-file (stream2 file2 :element-type '(unsigned-byte 8))
       (if (= (file-length stream1) (file-length stream2))
-	  (loop for p1 = (file-position stream1)
-	     for byte1 = (read-byte stream1 nil nil)
-	     for byte2 = (read-byte stream2 nil nil)
-	     while (and byte1 byte2)
-	     unless (= byte1 byte2)
-	     do (return (values nil p1))
-	     finally (return (values t 0)))
-	  (values nil -1)))))
+          (loop for p1 = (file-position stream1)
+             for byte1 = (read-byte stream1 nil nil)
+             for byte2 = (read-byte stream2 nil nil)
+             while (and byte1 byte2)
+             unless (= byte1 byte2)
+             do (return (values nil p1))
+             finally (return (values t 0)))
+          (values nil -1)))))
 
 (defun copy-stream (in out)
   "Copies the contents of the binary stream STREAM-IN to the
@@ -115,45 +115,45 @@ Returns a true value iff all tests succeeded.  Prints information
 about each individual comparison if VERBOSE is true."
   (labels
       ((copy-file (path-in external-format-in path-out external-format-out
-			   direction-out direction-in)
-	 (with-open-file (in path-in
-			     :element-type 'character
-			     :direction direction-in
-			     :if-does-not-exist :error
-			     :if-exists :overwrite
-			     :external-format external-format-in)
-	   (with-open-file (out path-out
-				:element-type 'character
-				:direction direction-out
-				:if-does-not-exist :create
-					:if-exists :supersede
-					:external-format external-format-out)
-		     (funcall *copy-function* in out))))
+                           direction-out direction-in)
+         (with-open-file (in path-in
+                             :element-type 'character
+                             :direction direction-in
+                             :if-does-not-exist :error
+                             :if-exists :overwrite
+                             :external-format external-format-in)
+           (with-open-file (out path-out
+                                :element-type 'character
+                                :direction direction-out
+                                :if-does-not-exist :create
+                                        :if-exists :supersede
+                                        :external-format external-format-out)
+                     (funcall *copy-function* in out))))
        (one-comparison (path-in external-format-in path-out external-format-out)
-	 (format t "~%;;; ~A -> ~A" path-in path-out)
-	 (loop with full-path-in = (merge-pathnames path-in "./eformat-tests/")
-	    and full-path-out = (ensure-directories-exist
-				 (merge-pathnames path-out "./eformat-tmp/"))
-	    and full-path-orig = (merge-pathnames path-out "./eformat-tests/")
-	    for direction-out in '(:output :io)
-	    nconc (loop for direction-in in '(:input :io)
-		       for args = (list path-in external-format-in direction-in
-					path-out external-format-out direction-out)
-		     with ok = nil
-		     with pos = 0
-		     unless (progn
-			      (copy-file full-path-in external-format-in
-					 full-path-out external-format-out
-					 direction-out direction-in)
-			      (multiple-value-setq (ok pos)
-				(file-equal full-path-out full-path-orig)))
-		     collect (progn
-				 (format t "~%;;; Discordance at pos ~D~%between ~A~% and ~A~%"
-					 pos full-path-out full-path-orig)
-				 args)))))
+         (format t "~%;;; ~A -> ~A" path-in path-out)
+         (loop with full-path-in = (merge-pathnames path-in "./eformat-tests/")
+            and full-path-out = (ensure-directories-exist
+                                 (merge-pathnames path-out "./eformat-tmp/"))
+            and full-path-orig = (merge-pathnames path-out "./eformat-tests/")
+            for direction-out in '(:output :io)
+            nconc (loop for direction-in in '(:input :io)
+                       for args = (list path-in external-format-in direction-in
+                                        path-out external-format-out direction-out)
+                     with ok = nil
+                     with pos = 0
+                     unless (progn
+                              (copy-file full-path-in external-format-in
+                                         full-path-out external-format-out
+                                         direction-out direction-in)
+                              (multiple-value-setq (ok pos)
+                                (file-equal full-path-out full-path-orig)))
+                     collect (progn
+                                 (format t "~%;;; Discordance at pos ~D~%between ~A~% and ~A~%"
+                                         pos full-path-out full-path-orig)
+                                 args)))))
     (loop with do-eformat-test-001-args-list =
-	 (loop for (file-name symbols) in *eformat-test-files*
-	    nconc (create-test-combinations file-name symbols))
+         (loop for (file-name symbols) in *eformat-test-files*
+            nconc (create-test-combinations file-name symbols))
        for (path-in external-format-in path-out external-format-out) in do-eformat-test-001-args-list
        nconc (one-comparison path-in external-format-in path-out external-format-out))))
 
@@ -162,9 +162,9 @@ about each individual comparison if VERBOSE is true."
 ;;; Fixed: Not a bug
 ;;; Description:
 ;;;
-;;;	Test external formats by transcoding several files into all possible
-;;;	supported formats and checking against the expected results. This
-;;;	test uses READ/WRITE-CHAR via READ/WRITE-LINE.
+;;;     Test external formats by transcoding several files into all possible
+;;;     supported formats and checking against the expected results. This
+;;;     test uses READ/WRITE-CHAR via READ/WRITE-LINE.
 ;;;
 (deftest eformat-0001-transcode-read-char
     (do-eformat-test-001 'copy-stream)
@@ -175,9 +175,9 @@ about each individual comparison if VERBOSE is true."
 ;;; Fixed: Not a bug
 ;;; Description:
 ;;;
-;;;	Test external formats by transcoding several files into all possible
-;;;	supported formats and checking against the expected results. This
-;;;	test uses READ/WRITE-CHAR via READ/WRITE-LINE.
+;;;     Test external formats by transcoding several files into all possible
+;;;     supported formats and checking against the expected results. This
+;;;     test uses READ/WRITE-CHAR via READ/WRITE-LINE.
 ;;;
 (deftest eformat-0002-transcode-read-char
     (do-eformat-test-001 'copy-stream*)

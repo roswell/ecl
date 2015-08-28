@@ -1,0 +1,45 @@
+<!ENTITY html.stylesheet "base.css">
+<!ENTITY tex "TeX">
+<!ENTITY latex "LaTeX">
+<!ENTITY CommonLisp "Common Lisp">
+<!ENTITY ECL "<application xmlns='http://docbook.org/ns/docbook'>ECL</application>">
+<!ENTITY CMUCL "<application xmlns='http://docbook.org/ns/docbook'>CMUCL</application>">
+<!ENTITY SBCL "<application xmlns='http://docbook.org/ns/docbook'>SBCL</application>">
+<!ENTITY FFI "<application xmlns='http://docbook.org/ns/docbook'>FFI</application>">
+<!ENTITY UFFI "<link xmlns='http://docbook.org/ns/docbook' linkend='part.uffi'><application xmlns='http://docbook.org/ns/docbook'>UFFI</application></link>">
+<!ENTITY CFFI "<application xmlns='http://docbook.org/ns/docbook'>CFFI</application>">
+<!ENTITY ASDF "<application xmlns='http://docbook.org/ns/docbook'>ASDF</application>">
+<!ENTITY FASL "<acronym xmlns='http://docbook.org/ns/docbook'>FASL</acronym>">
+<!ENTITY ANSI "<xref xmlns='http://docbook.org/ns/docbook' linkend='bib.ANSI'/>">
+<!ENTITY AMOP "<xref xmlns='http://docbook.org/ns/docbook' linkend='bib.AMOP'/>">
+<!ENTITY CLOS "<acronym xmlns='http://docbook.org/ns/docbook'>CLOS</acronym>">
+<!ENTITY PCL "<acronym xmlns='http://docbook.org/ns/docbook'>PCL</acronym>">
+<!ENTITY Steele84 "<xref xmlns='http://docbook.org/ns/docbook' linkend='bib.CLTL2'/>">
+<!ENTITY HyperSpec "<xref xmlns='http://docbook.org/ns/docbook' linkend='bib.HyperSpec'/>">
+<!ENTITY GFDL SYSTEM "tmp/COPYING.GFDL.xml">
+<!ENTITY optional "&amp;optional">
+<!ENTITY rest "&amp;rest">
+<!ENTITY key "&amp;key">
+<!ENTITY allow-other-keys "&amp;allow-other-keys">
+<!ENTITY aux "&amp;aux">
+<!ENTITY body "&amp;body">
+<!ENTITY whole "&amp;whole">
+<!ENTITY environment "&amp;environment">
+<!ENTITY uffi "<application xmlns='http://docbook.org/ns/docbook'><emphasis>UFFI</emphasis></application>">
+<!ENTITY ffi "<acronym xmlns='http://docbook.org/ns/docbook'>FFI</acronym>">
+<!ENTITY LW "<application xmlns='http://docbook.org/ns/docbook'>Lispworks</application>">
+<!ENTITY OpenMCL "<application xmlns='http://docbook.org/ns/docbook'>OpenMCL</application>">
+<!ENTITY MCL "<application xmlns='http://docbook.org/ns/docbook'>MCL</application>">
+<!ENTITY ACL "<application xmlns='http://docbook.org/ns/docbook'>AllegroCL</application>">
+<!ENTITY t "<constant xmlns='http://docbook.org/ns/docbook'>T</constant>">
+<!ENTITY nil "<constant xmlns='http://docbook.org/ns/docbook'>NIL</constant>">
+<!ENTITY NULL "<constant xmlns='http://docbook.org/ns/docbook'>NULL</constant>">
+<!ENTITY C "<acronym xmlns='http://docbook.org/ns/docbook'>C</acronym>">
+<!ENTITY defsystem "<application xmlns='http://docbook.org/ns/docbook'>defsystem</application>">
+<!ENTITY clhs "http://www.lispworks.com/documentation/HyperSpec/Body/">
+<!ENTITY cygwin "<ulink xmlns='http://docbook.org/ns/docbook' url='http://www.cygwin.com/'><application xmlns='http://docbook.org/ns/docbook'>Cygwin</application></ulink>">
+<!ENTITY mingw "<ulink xmlns='http://docbook.org/ns/docbook' url='http://mingw.sourceforge.net/'><application xmlns='http://docbook.org/ns/docbook'>Mingw</application></ulink>">
+<!ENTITY OCL "<link xmlns='http://docbook.org/ns/docbook' linkend='ansi.OCL'>[Only in Common Lisp]</link>">
+<!ENTITY ANSI-C-Dict "Common Lisp and C equivalence">
+<!ENTITY nil "<symbol xmlns='http://docbook.org/ns/docbook'>nil</symbol>">
+<!ENTITY t "<symbol xmlns='http://docbook.org/ns/docbook'>t</symbol>">

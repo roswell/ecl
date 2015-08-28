@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter>
+<title>Types and classes</title>
+<section xml:id="ansi.types-and-classes.c-dict">
+<title>C Reference</title>
+  <refentry>
+    <refnamediv>
+      <refname>ANSI Dictionary</refname>
+      <refpurpose>&ANSI-C-Dict;</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+<simplelist columns="2" type="horiz">
+<member>Lisp symbol</member>
+<member>C function</member>
+
+<member><ulink url="&clhs;f_coerce.htm"><symbol>coerce</symbol></ulink></member>
+<member><code>cl_object cl_coerce(cl_object object, cl_object result_type)</code></member>
+
+<member><ulink url="&clhs;f_subtpp.htm"><symbol>subtypep</symbol></ulink></member>
+<member><code>cl_object cl_subtypep(cl_narg narg, cl_object type1, cl_object type2, ...)</code></member>
+
+<member><ulink url="&clhs;f_tp_of.htm"><symbol>type-of</symbol></ulink></member>
+<member><code>cl_object cl_type_of(cl_object object)</code></member>
+
+<member><ulink url="&clhs;f_typep.htm"><symbol>typep</symbol></ulink></member>
+<member><code>cl_object cl_typep(cl_narg narg, cl_object object, cl_object type_specifier, ...)</code></member>
+
+<member><ulink url="&clhs;f_tp_err.htm"><symbol>type-error-datum</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+
+<member><ulink url="&clhs;f_tp_err.htm"><symbol>type-error-expected-type</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+</simplelist>
+    </refsynopsisdiv>
+  </refentry>
+</section>
+</chapter>
+</book>

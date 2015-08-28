@@ -27,10 +27,10 @@
 ;;;
 ;;; Currently this is very very crude:
 ;;;
-;;;	* We unbox everything that is declared with a type that fits
-;;;	  in a C variable.
-;;;	* We cannot unbox function arguments, because they are always
-;;;	  passed with C type cl_object.
+;;;     * We unbox everything that is declared with a type that fits
+;;;       in a C variable.
+;;;     * We cannot unbox function arguments, because they are always
+;;;       passed with C type cl_object.
 ;;;
 
 (defun pass-decide-var-rep-types (function forms)

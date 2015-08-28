@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter>
+<title>Strings and compilation</title>
+<section xml:id="ansi.strings.c-dict">
+<title>C Reference</title>
+
+  <refentry xml:id="ansi.strings.c-types">
+    <refnamediv>
+      <refname>Base string constructors</refname>
+      <refpurpose>Building strings for C data</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+      <title>Function</title>
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_object <function>ecl_alloc_adjustable_base_string</function></funcdef>
+	  <paramdef><type>cl_index</type> <parameter>length</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_object <function>ecl_alloc_adjustable_simple_string</function></funcdef>
+	  <paramdef><type>cl_index</type> <parameter>length</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_object <function>ecl_make_simple_base_string</function></funcdef>
+	  <paramdef><type>ecl_base_char*</type> <parameter>data</parameter></paramdef>
+	  <paramdef><type>cl_index</type> <parameter>length</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_object <function>ecl_make_constant_base_string</function></funcdef>
+	  <paramdef><type>ecl_base_char*</type> <parameter>data</parameter></paramdef>
+	  <paramdef><type>cl_index</type> <parameter>length</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+    </refsynopsisdiv>
+
+    <refsect1>
+      <title>Description</title>
+
+      <para>These are different ways to create a base string, which is a string that holds a small subset of characters, the <type>base-char</type>, with codes ranging from 0 to 255.</para>
+
+      <para><function>ecl_alloc_simple_base_string</function> creates an empty string with that much space for characters and a fixed lenght. The string does not have a fill pointer and cannot be resized, and the initial data is unspecified</para>
+
+      <para><function>ecl_alloc_adjustable_base_string</function> is similar to the previous function, but creates an adjustable string with a fill pointer. This means that the lenght of the string can be changed and the string itself can be resized to accomodate more data.</para>
+
+      <para>The other constructors create strings but use some preexisting data. <function>ecl_make_simple_base_string</function> creates a string copying the data that the user supplies, and using freshly allocated memory. <function>ecl_make_constant_base_string</function> on the other hand, does not allocate memory, but simply uses the supplied pointer as buffer for the string. This last function should be used with care, ensuring that the supplied buffer is not deallocated.</para>
+    </refsect1>
+  </refentry>
+
+  <refentry>
+    <refnamediv>
+      <refname>String accessors</refname>
+      <refpurpose>Reading and writing characters into a string</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+      <title>Function</title>
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>ecl_character  <function>ecl_char</function></funcdef>
+	  <paramdef><type>cl_object</type> <parameter>string</parameter></paramdef>
+	  <paramdef><type>cl_index</type> <parameter>ndx</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>ecl_character  <function>ecl_char_set</function></funcdef>
+	  <paramdef><type>cl_object</type> <parameter>string</parameter></paramdef>
+	  <paramdef><type>cl_index</type> <parameter>ndx</parameter></paramdef>
+	  <paramdef><type>ecl_character</type> <parameter>c</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+    </refsynopsisdiv>
+
+    <refsect1>
+      <title>Description</title>
+
+      <para>Access to string information should be done using these two functions. The first one implements the equivalent of the <symbol>CHAR</symbol> function from Common Lisp, returning the character that is at position <replaceable>ndx</replaceable> in the string <replaceable>s</replaceable>.</para>
+
+      <para>The counterpart of the previous function is <function>ecl_char_set</function>, which implements <symbol>(SETF CHAR)</symbol> and stores character <replaceable>c</replaceable> at the position <replaceable>ndx</replaceable> in the given string.</para>
+
+      <para>Both functions check the type of their arguments and verify that the indices do not exceed the string boundaries. Otherwise they signal a <type>serious-condition</type>.</para>
+    </refsect1>
+  </refentry>
+
+  <refentry>
+    <refnamediv>
+      <refname>Strings C dictionary</refname>
+      <refpurpose>&ANSI-C-Dict;</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+<simplelist columns="2" type="horiz">
+<member>Lisp symbol</member>
+<member>C function</member>
+
+<member><ulink url="&clhs;f_smp_st.htm"><symbol>simple-string-p</symbol></ulink></member>
+<member><code>cl_object cl_simple_string_p(cl_object string)</code></member>
+
+<member><ulink url="&clhs;f_char_.htm"><symbol>char</symbol></ulink></member>
+<member><code>cl_object cl_char(cl_object string, cl_object index)</code></member>
+
+<member><ulink url="&clhs;f_char_.htm"><symbol>schar</symbol></ulink></member>
+<member><code>cl_object cl_schar(cl_object string, cl_object index)</code></member>
+
+<member><ulink url="&clhs;f_string.htm"><symbol>string</symbol></ulink></member>
+<member><code>cl_object cl_string(cl_object x)</code></member>
+
+<member><ulink url="&clhs;f_stg_up.htm"><symbol>string-upcase</symbol></ulink></member>
+<member><code>cl_object cl_string_upcase(cl_narg narg, cl_obejct string, ...)</code></member>
+
+<member><ulink url="&clhs;f_stg_up.htm"><symbol>string-downcase</symbol></ulink></member>
+<member><code>cl_object cl_string_downcase(cl_narg narg, cl_obejct string, ...)</code></member>
+
+<member><ulink url="&clhs;f_stg_up.htm"><symbol>string-capitalize</symbol></ulink></member>
+<member><code>cl_object cl_string_capitalize(cl_narg narg, cl_obejct string, ...)</code></member>
+
+<member><ulink url="&clhs;f_stg_up.htm"><symbol>nstring-upcase</symbol></ulink></member>
+<member><code>cl_object cl_nstring_upcase(cl_narg narg, cl_obejct string, ...)</code></member>
+
+<member><ulink url="&clhs;f_stg_up.htm"><symbol>nstring-downcase</symbol></ulink></member>
+<member><code>cl_object cl_nstring_downcase(cl_narg narg, cl_obejct string, ...)</code></member>
+
+<member><ulink url="&clhs;f_stg_up.htm"><symbol>nstring-capitalize</symbol></ulink></member>
+<member><code>cl_object cl_nstring_capitalize(cl_narg narg, cl_obejct string, ...)</code></member>
+
+<member><ulink url="&clhs;f_stg_tr.htm"><symbol>string-trim</symbol></ulink></member>
+<member><code>cl_object cl_string_trim(cl_object character_bag, cl_object string)</code></member>
+
+<member><ulink url="&clhs;f_stg_tr.htm"><symbol>string-left-trim</symbol></ulink></member>
+<member><code>cl_object cl_string_left_trim(cl_object character_bag, cl_object string)</code></member>
+
+<member><ulink url="&clhs;f_stg_tr.htm"><symbol>string-right-trim</symbol></ulink></member>
+<member><code>cl_object cl_string_right_trim(cl_object character_bag, cl_object string)</code></member>
+
+<member><ulink url="&clhs;f_stg_tr.htm"><symbol>string</symbol></ulink></member>
+<member><code>cl_object cl_string(cl_narg narg, cl_object string1, cl_object string2, ...)</code></member>
+
+<member><ulink url="&clhs;f_stg_tr.htm"><symbol>string=</symbol></ulink></member>
+<member><code>cl_object cl_stringE(cl_narg narg, cl_object string1, cl_object string2, ...)</code></member>
+
+<member><ulink url="&clhs;f_stg_tr.htm"><symbol>string/=</symbol></ulink></member>
+<member><code>cl_object cl_stringNE(cl_narg narg, cl_object string1, cl_object string2, ...)</code></member>
+
+<member><ulink url="&clhs;f_stg_tr.htm"><symbol>string&lt;</symbol></ulink></member>
+<member><code>cl_object cl_stringL(cl_narg narg, cl_object string1, cl_object string2, ...)</code></member>
+
+<member><ulink url="&clhs;f_stg_tr.htm"><symbol>string&gt;</symbol></ulink></member>
+<member><code>cl_object cl_stringG(cl_narg narg, cl_object string1, cl_object string2, ...)</code></member>
+
+<member><ulink url="&clhs;f_stg_tr.htm"><symbol>string&lt;=</symbol></ulink></member>
+<member><code>cl_object cl_stringLE(cl_narg narg, cl_object string1, cl_object string2, ...)</code></member>
+
+<member><ulink url="&clhs;f_stg_tr.htm"><symbol>string&gt;=</symbol></ulink></member>
+<member><code>cl_object cl_stringGE(cl_narg narg, cl_object string1, cl_object string2, ...)</code></member>
+
+<member><ulink url="&clhs;f_stg_tr.htm"><symbol>string-equal</symbol></ulink></member>
+<member><code>cl_object cl_string_equal(cl_narg narg, cl_object string1, cl_object string2, ...)</code></member>
+
+<member><ulink url="&clhs;f_stg_tr.htm"><symbol>string-not-equal</symbol></ulink></member>
+<member><code>cl_object cl_string_not_equal(cl_narg narg, cl_object string1, cl_object string2, ...)</code></member>
+
+<member><ulink url="&clhs;f_stg_tr.htm"><symbol>string-lessp</symbol></ulink></member>
+<member><code>cl_object cl_string_lessp(cl_narg narg, cl_object string1, cl_object string2, ...)</code></member>
+
+<member><ulink url="&clhs;f_stg_tr.htm"><symbol>string-greaterp</symbol></ulink></member>
+<member><code>cl_object cl_string_greaterp(cl_narg narg, cl_object string1, cl_object string2, ...)</code></member>
+
+<member><ulink url="&clhs;f_stg_tr.htm"><symbol>string-not-greaterp</symbol></ulink></member>
+<member><code>cl_object cl_string_not_greaterp(cl_narg narg, cl_object string1, cl_object string2, ...)</code></member>
+
+<member><ulink url="&clhs;f_stg_tr.htm"><symbol>string-not-lessp</symbol></ulink></member>
+<member><code>cl_object cl_string_not_lessp(cl_narg narg, cl_object string1, cl_object string2, ...)</code></member>
+
+<member><ulink url="&clhs;f_stgp.htm"><symbol>stringp</symbol></ulink></member>
+<member><code>cl_object cl_stringp(cl_object x)</code></member>
+
+<member><ulink url="&clhs;f_mk_stg.htm"><symbol>make-string</symbol></ulink></member>
+<member><code>cl_object cl_make_string(cl_narg narg, cl_object size, ...)</code></member>
+</simplelist>
+    </refsynopsisdiv>
+  </refentry>
+</section>
+</chapter>
+</book>

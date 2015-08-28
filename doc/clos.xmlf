@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter label="11" xml:id="CLOS">
+<title>CLOS</title>
+<blockquote>
+<screen><indexterm role="fn"><primary>add-method</primary></indexterm>&#151; Generic: <function>add-method</function> <varname>generic-function</varname> <varname>method</varname></screen>
+<screen><indexterm role="fn"><primary>add-method</primary></indexterm>&#151; Method: <function>add-method</function> (</screen>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>call-method</primary></indexterm>&#151; Macro: <function>call-method</function> <varname>method next-method-list</varname></screen>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>call-next-method</primary></indexterm>&#151; Macro: <function>call-next-method</function> <varname>&amp;rest args</varname></screen>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>change-class</primary></indexterm>&#151; Generic: <function>change-class</function> <varname>instance</varname> <varname>new-class</varname></screen>
+<screen><indexterm role="fn"><primary>change-class</primary></indexterm>&#151; Method: <function>change-class</function> (</screen>
+<screen><indexterm role="fn"><primary>change-class</primary></indexterm>&#151; Method: <function>change-class</function> (</screen>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>class-name</primary></indexterm>&#151; Generic: <function>class-name</function> <varname>class</varname></screen>
+<screen><indexterm role="fn"><primary>class-name</primary></indexterm>&#151; Method: <function>class-name</function> (</screen>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>(setf class-name)</primary></indexterm>&#151; Generic: <function>(setf class-name)</function> <varname>new-value</varname> <varname>class</varname></screen>
+<screen><indexterm role="fn"><primary>(setf class-name)</primary></indexterm>&#151; Method: <function>(setf class-name)</function> <varname>new-value (class class)</varname></screen>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>class-of</primary></indexterm>&#151; Function: <function>class-of</function> <varname>object</varname></screen>
+<para>The function <literal>class-of</literal> returns the class of which the given object is an
+instance.  The argument to class-of may be any Common-Lisp object.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>compute-applicable-methods</primary></indexterm>&#151; Function: <function>compute-applicable-methods</function> <varname>generic-function function-arguments</varname></screen>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>defclass</primary></indexterm>&#151; Macro: <function>defclass</function> <varname>class-name (@{superclass-name@}*)</varname> (<varname>{</varname><varname>slot-specifier</varname><varname>}</varname><varname>*</varname>) [<varname>class-option</varname>]</screen>
+<screen>
+<replaceable>class-name</replaceable> ::= <replaceable>symbol</replaceable>
+<replaceable>superclass-name</replaceable> ::= <replaceable>symbol</replaceable>
+<replaceable>slot-specifier</replaceable> ::= <replaceable>slot-name</replaceable> | (<replaceable>slot-name</replaceable> [<replaceable>slot-option</replaceable>])
+<replaceable>slot-name</replaceable> ::= <replaceable>symbol</replaceable>
+<replaceable>slot-option</replaceable> ::= {:reader <replaceable>reader-function-name</replaceable>}*
+| {:writer <replaceable>writer-function-name</replaceable>}*
+| {:accessor <replaceable>reader-function-name</replaceable>}*
+| {:allocation <replaceable>allocation-type</replaceable>}
+| {:initarg <replaceable>initarg-name</replaceable>}*
+| {:initform <replaceable>form</replaceable>}
+| {:type <replaceable>type-specifier</replaceable>}
+| {:documentation <replaceable>string</replaceable>}
+<replaceable>reader-function-name</replaceable> ::= <replaceable>symbol</replaceable>
+<replaceable>writer-function-name</replaceable> ::= <replaceable>function-name</replaceable>
+<replaceable>function-name</replaceable> ::= <replaceable>symbol</replaceable> |(setf <replaceable>symbol</replaceable>)
+<replaceable>initarg-name</replaceable> ::= <replaceable>symbol</replaceable>
+<replaceable>allocation-type</replaceable> ::= :instance | :class
+<replaceable>class-option</replaceable> ::= (:default-initargs <replaceable>initarg-list</replaceable>)
+| (:documentation <replaceable>string</replaceable>)
+| (:metaclass <replaceable>class-name</replaceable>)
+<replaceable>initarg-list</replaceable> ::= {<replaceable>initarg-name</replaceable> <replaceable>default-initial-value-form</replaceable>}*
+</screen>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>defgeneric</primary></indexterm>&#151; Macro: <function>defgeneric</function> <varname>function-name lambda-list [option | @{method-description@}*]</varname></screen>
+<screen>
+<replaceable>function-name</replaceable> ::= <replaceable>symbol</replaceable> | (setf <replaceable>symbol</replaceable>)
+<replaceable>lambda-list</replaceable> ::= ({<replaceable>var</replaceable>}*
+[&amp;optional {<replaceable>var</replaceable> | (<replaceable>var</replaceable>)}*]
+[&amp;rest <replaceable>var</replaceable>]
+[&amp;key {<replaceable>keyword-parameter</replaceable>}* [&amp;allow-other-keys]])
+<replaceable>keyword-parameter</replaceable> ::= <replaceable>var</replaceable> | ( {<replaceable>var</replaceable> | (<replaceable>keywordvar</replaceable> )})
+<replaceable>option</replaceable> ::= (:argument-precedence-order {<replaceable>parameter-name</replaceable>}+)
+| (declare {<replaceable>declaration</replaceable>}+)
+| (:documentation <replaceable>string</replaceable>)
+| (:method-combination symbol {<replaceable>arg</replaceable>}*)
+| (:generic-function-class <replaceable>class-name</replaceable>)
+| (:method-class <replaceable>class-name</replaceable>)
+<replaceable>method-description</replaceable> ::=
+(:method {<replaceable>method-qualifier</replaceable>}* <replaceable>specialized-lambda-list</replaceable>
+[{<replaceable>declaration</replaceable>}* | <replaceable>documentation</replaceable>]
+{<replaceable>form</replaceable>}*)
+<replaceable>method-qualifier</replaceable> ::= <replaceable>non-nil-atom</replaceable>
+<replaceable>specialized-lambda-list</replaceable> ::= ({<replaceable>var</replaceable> | (<replaceable>var</replaceable> <replaceable>parameter-specializer-name</replaceable>)}*
+[&amp;optional {<replaceable>var</replaceable> | (<replaceable>var</replaceable> [<replaceable>initform</replaceable> [<replaceable>supplied-p-parameter</replaceable>]])}*]
+[&amp;rest <replaceable>var</replaceable>]
+[&amp;key {<replaceable>specialized-keyword-parameter</replaceable>}* [&amp;allow-other-keys]])
+[&amp;aux {<replaceable>var</replaceable> | (<replaceable>var</replaceable> [<replaceable>initform</replaceable>])}*] )
+<replaceable>specialized-keyword-parameter</replaceable> ::= <replaceable>var</replaceable>
+| {({<replaceable>var</replaceable> | (<replaceable>keywordvar</replaceable>)} [<replaceable>initform</replaceable> [<replaceable>supplied-p-parameter</replaceable>]])}*
+<replaceable>parameter-specializer-name</replaceable> ::= <replaceable>symbol</replaceable> | (eql <replaceable>eql-specializer-form</replaceable>)
+</screen>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>define-method-combination</primary></indexterm>&#151; Macro: <function>define-method-combination</function> <varname>name [short-form-option]</varname></screen>
+<screen><indexterm role="fn"><primary>define-method-combination</primary></indexterm>&#151; Macro: <function>define-method-combination</function> <varname>name lambda-list (@{method-group-specifier@}*) [(:arguments . lambda-list)] [(:generic-function generic-fn-symbol)] [@{declaration@}* | doc-string] @{form@}*</varname></screen>
+<screen>
+<replaceable>short-form-option</replaceable> ::= :documentation <replaceable>string</replaceable>
+| :identity-with-one-argument <replaceable>boolean</replaceable>
+| :operator <replaceable>operator</replaceable>
+<replaceable>method-group-specifier</replaceable> ::= (<replaceable>variable</replaceable>  {<replaceable>qualifier-pattern</replaceable>}+ | <replaceable>predicate</replaceable>
+[<replaceable>long-form-option</replaceable>])
+<replaceable>long-form-option</replaceable> ::= :description <replaceable>format-string</replaceable>
+| :order <replaceable>order</replaceable>
+| :required <replaceable>boolean</replaceable>
+</screen>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>defmethod</primary></indexterm>&#151; Macro: <function>defmethod</function> <varname>function-name @{method-qualifier@}+ specialized-lambda-list [@{declaration@}* | doc-string] @{form@}*</varname></screen>
+<screen>
+<replaceable>function-name</replaceable> ::= <replaceable>symbol</replaceable> | (setf <replaceable>symbol</replaceable>)
+<replaceable>method-qualifier</replaceable> ::= <replaceable>non-nil-atom</replaceable>
+<replaceable>parameter-specializer-name</replaceable> ::= <replaceable>symbol</replaceable> | (eql <replaceable>eql-specializer-form</replaceable> )
+</screen>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>documentation</primary></indexterm>&#151; Generic: <function>documentation</function> <varname>x</varname> <varname>&amp;optional</varname> <varname>doc-type</varname></screen>
+<screen><indexterm role="fn"><primary>documentation</primary></indexterm>&#151; Method: <function>documentation</function> (</screen>
+<screen><indexterm role="fn"><primary>documentation</primary></indexterm>&#151; Method: <function>documentation</function> (</screen>
+<screen><indexterm role="fn"><primary>documentation</primary></indexterm>&#151; Method: <function>documentation</function> (</screen>
+<screen><indexterm role="fn"><primary>doumentation</primary></indexterm>&#151; Method: <function>doumentation</function> (</screen>
+<screen><indexterm role="fn"><primary>documentation</primary></indexterm>&#151; Method: <function>documentation</function> (</screen>
+<screen><indexterm role="fn"><primary>documentation</primary></indexterm>&#151; Method: <function>documentation</function> (</screen>
+<screen><indexterm role="fn"><primary>documentation</primary></indexterm>&#151; Method: <function>documentation</function> (</screen>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>(setf documentation)</primary></indexterm>&#151; Generic: <function>(setf documentation)</function> <varname>new-value</varname> <varname>x</varname> <varname>&amp;optional</varname> <varname>doc-type</varname></screen>
+<screen><indexterm role="fn"><primary>(setf documentation)</primary></indexterm>&#151; Method: <function>(setf documentation)</function> <varname>new-value (method standard-method) @optional{} doc-type</varname></screen>
+<screen><indexterm role="fn"><primary>(setf documentation)</primary></indexterm>&#151; Method: <function>(setf documentation)</function> <varname>new-value (class standard-class) @optional{} doc-type</varname></screen>
+<screen><indexterm role="fn"><primary>(setf documentation)</primary></indexterm>&#151; Method: <function>(setf documentation)</function> <varname>new-value (method-combination method-combination)</varname></screen>
+<screen><indexterm role="fn"><primary>(setf documentation)</primary></indexterm>&#151; Method: <function>(setf documentation)</function> <varname>new-value (slot-description standard-slot-description) @optional{} doc-type</varname></screen>
+<screen><indexterm role="fn"><primary>(setf documentation)</primary></indexterm>&#151; Method: <function>(setf documentation)</function> <varname>new-value (symbol symbol) @optional{} doc-type</varname></screen>
+<screen><indexterm role="fn"><primary>(setf documentation)</primary></indexterm>&#151; Method: <function>(setf documentation)</function> <varname>new-value (list list) @optional{} doc-type</varname></screen>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>ensure-generic-function</primary></indexterm>&#151; Function: <function>ensure-generic-function</function> <varname>{</varname><varname>function-name</varname> <varname>&amp;key</varname> <varname>lambda-list</varname> <varname>&amp;key</varname> <varname>:argument-precedence-order</varname> <varname>:declare</varname> <varname>:documentation</varname> <varname>:generic-function-class|ekeys</varname><varname>:method-combination :method-class :environment</varname><varname>}</varname></screen>
+<screen>
+function-name ::= symbol | (setf symbol)
+</screen>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>find-class</primary></indexterm>&#151; Function: <function>find-class</function> <varname>symbol @optional{} errorp environment</varname></screen>
+<para>The function find-class returns the class object named by the given symbol in the given environment.
+The first argument to find-class is a symbol.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>find-method</primary></indexterm>&#151; Generic: <function>find-method</function> <varname>generic-function</varname> <varname>method-qualifiers</varname> <varname>specializers</varname> <varname>&amp;optional</varname> <varname>errorp</varname></screen>
+<screen><indexterm role="fn"><primary>find-method</primary></indexterm>&#151; Method: <function>find-method</function> (</screen>                
+<para>method-qualifiers specializers  &amp;optional errorp</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>function-keywords</primary></indexterm>&#151; Generic: <function>function-keywords</function> <varname>method</varname></screen>
+<screen><indexterm role="fn"><primary>function-keywords</primary></indexterm>&#151; Method: <function>function-keywords</function> (</screen>
+</blockquote>
+<para>The generic function function-keywords is used to return the keyword parameter specifiers for a given method.</para>
+<blockquote>
+<screen><indexterm role="fn"><primary>generic-function</primary></indexterm>&#151; Macro: <function>generic-function</function> <varname>{</varname><varname>lambda-list</varname> <varname>\mchoice</varname><varname>option | @{method-description@}*</varname><varname>}</varname></screen>
+<screen>
+option ::= (:argument-precedence-order {parameter-name}+)
+| (declare {declaration}+)
+| (:documentation string)
+| (:method-combination symbol {arg}*)
+| (:generic-function-class class-name)
+| (:method-class class-name)
+method-description ::= (:method {method-qualifier}*
+specialized-lambda-list
+{declaration | <replaceable>documentation</replaceable>}*
+{form}*)
+</screen>
+<para>The <literal>generic-function</literal> macro creates an anonymous generic function. The
+generic function is created with the set of methods specified by its method
+descriptions.  The <replaceable>option</replaceable>, <replaceable>method-qualifier</replaceable>, and
+<replaceable>specialized-lambda-list</replaceable> arguments are the same as for <literal>defgeneric</literal>.
+The generic function object is returned as the result.  If no method
+descriptions are specified, an anonymous generic function with no methods is
+created.  See defgeneric, generic-flet,
+generic-labels, defmethod.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>initialize-instance</primary></indexterm>&#151; Generic: <function>initialize-instance</function> <varname>instance</varname> <varname>&amp;rest</varname> <varname>initargs</varname></screen>
+<screen><indexterm role="fn"><primary>initialize-instance</primary></indexterm>&#151; Method: <function>initialize-instance</function> (</screen>
+<para>The generic function <literal>initialize-instance</literal> is called by
+<literal>make-instance</literal> to initialize a newly created instance.  The generic
+function <literal>initialize-instance</literal> is called with the new instance and the
+defaulted initialization arguments.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>invalid-method-error</primary></indexterm>&#151; Function: <function>invalid-method-error</function> <varname>method format-string @rest{} args</varname></screen>
+<para>The function <literal>invalid-method-error</literal> is used to signal an error when there
+is an applicable method whose qualifiers are not valid for the method
+combination type.  The error message is constructed by using a format string
+and any arguments to it.  Because an implementation may need to add additional
+contextual information to the error message, invalid-method-error should be
+called only within the dynamic extent of a method combination function.  The
+function invalid-method-error is called automatically when a method fails to
+satisfy every qualifier pattern and predicate in a define-method-combination
+form.  A method combination function that imposes additional restrictions
+should call invalid-method-error explicitly if it encounters a method it cannot
+accept.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>make-instance</primary></indexterm>&#151; Generic: <function>make-instance</function> <varname>class</varname> <varname>&amp;rest</varname><varname> initargs</varname></screen>
+<screen><indexterm role="fn"><primary>make-instance</primary></indexterm>&#151; Method: <function>make-instance</function> (</screen>
+<screen><indexterm role="fn"><primary>make-instance</primary></indexterm>&#151; Method: <function>make-instance</function> (</screen>
+<para>The generic function make-instance creates and returns a new instance of the
+given class.  The generic function make-instance may be used as described in
+section 1.9.  The class argument is a class object or a symbol that names a
+class.  The remaining arguments form a list of alternating initialization
+argument names and values.  If the second of the above methods is selected,
+that method invokes make-instance on the arguments (find-class class) and
+initargs.  The initialization arguments are checked within make-instance (see
+section 1.9).  The new instance is returned.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>make-instances-obsolete</primary></indexterm>&#151; Generic: <function>make-instances-obsolete</function> <varname>class</varname></screen>
+<screen><indexterm role="fn"><primary>make-instances-obsolete</primary></indexterm>&#151; Method: <function>make-instances-obsolete</function> (</screen>
+<screen><indexterm role="fn"><primary>make-instances-obsolete</primary></indexterm>&#151; Method: <function>make-instances-obsolete</function> (</screen>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>method-combination-error</primary></indexterm>&#151; Function: <function>method-combination-error</function> <varname>format-string @rest{} args</varname></screen>
+<para>The function method-combination-error is used to signal an error in method
+combination.  The error message is constructed by using a format string and any
+arguments to it.  Because an implementation may need to add additional
+contextual information to the error message, method-combination-error should be
+called only within the dynamic extent of a method combination function.  The
+format-string argument is a control string that can be given to format, and
+args are any arguments required by that string.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>method-qualifiers</primary></indexterm>&#151; Generic: <function>method-qualifiers</function> <varname>method</varname></screen>
+<screen><indexterm role="fn"><primary>method-qualifiers</primary></indexterm>&#151; Method: <function>method-qualifiers</function> (</screen>
+<para>The generic function method-qualifiers returns a list of the qualifiers
+of the given method.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>next-method-p</primary></indexterm>&#151; Function: <function>next-method-p</function> <varname></varname></screen>
+<para>The locally defined function next-method-p can be used within the body of a
+method defined by a method-defining form to determine whether a next method
+exists.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>no-applicable-method</primary></indexterm>&#151; Generic: <function>no-applicable-method</function> <varname>generic-function</varname> <varname>&amp;rest</varname> <varname>function-arguments</varname></screen>
+<screen><indexterm role="fn"><primary>no-applicable-method</primary></indexterm>&#151; Method: <function>no-applicable-method</function> (</screen>
+<para>The generic function no-applicable-method is called when a generic function of
+the class standard-generic-function is invoked and no method on that generic
+function is applicable. The default method signals an error.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>no-next-method</primary></indexterm>&#151; Generic: <function>no-next-method</function> <varname>generic-function</varname> <varname>method</varname> <varname>&amp;rest</varname> <varname>args</varname></screen>
+<screen><indexterm role="fn"><primary>no-next-method</primary></indexterm>&#151; Method: <function>no-next-method</function> (</screen>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>print-object</primary></indexterm>&#151; Generic: <function>print-object</function> <varname>object</varname> <varname>stream</varname></screen>
+<screen><indexterm role="fn"><primary>print-object</primary></indexterm>&#151; Method: <function>print-object</function> (</screen>
+<para>The generic function print-object writes the printed representation of an
+object to a stream.  The function print-object is called by the print system;
+it should not be called by the user.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>reinitialize-instance</primary></indexterm>&#151; Generic: <function>reinitialize-instance</function> <varname>instance</varname> <varname>&amp;rest</varname> <varname>initargs</varname></screen>
+<screen><indexterm role="fn"><primary>reinitialize-instance</primary></indexterm>&#151; Method: <function>reinitialize-instance</function> (</screen>
+<para>The generic function reinitialize-instance can be used to change the
+values of local slots according to initialization arguments.  This
+generic function is called by the Meta-Object Protocol.  It can also be
+called by users.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>remove-method</primary></indexterm>&#151; Generic: <function>remove-method</function> <varname>generic-function</varname> <varname>method</varname></screen>
+<screen><indexterm role="fn"><primary>remove-method</primary></indexterm>&#151; Method: <function>remove-method</function> (</screen>
+<para>The generic function remove-method removes a method from a generic function.
+It destructively modifies the specified generic function and returns the
+modified generic function as its result.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>shared-initialize</primary></indexterm>&#151; Generic: <function>shared-initialize</function> <varname>instance slot-names &amp;rest initargs</varname></screen>
+<screen><indexterm role="fn"><primary>shared-initialize</primary></indexterm>&#151; Method: <function>shared-initialize</function> (</screen>
+<para>The generic function shared-initialize is used to fill the slots of an instance
+using initialization arguments and :initform forms.  It is called when an
+instance is created, when an instance is re-initialized, when an instance is
+updated to conform to a redefined class, and when an instance is updated to
+conform to a different class.  The generic function <literal>shared-initialize</literal> is
+called by the system-supplied primary method for <literal>initialize-instance</literal>,
+<literal>reinitialize-instance</literal>, <literal>update-instance-for-redefined-class</literal>, and
+<literal>update-instance-for-different-class</literal>.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>slot-boundp</primary></indexterm>&#151; Function: <function>slot-boundp</function> <varname>instance slot-name</varname></screen>
+<para>The function slot-boundp tests whether a specific slot in an instance is bound.
+The arguments are the instance and the name of the slot.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>slot-exists-p</primary></indexterm>&#151; Function: <function>slot-exists-p</function> <varname>object slot-name</varname></screen>
+<para>The function slot-exists-p tests whether the specified object has a slot of the
+given name.  The object argument is any object.  The slot-name argument is a
+symbol.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>slot-makunbound</primary></indexterm>&#151; Function: <function>slot-makunbound</function> <varname>instance slot-name</varname></screen>
+<para>The function slot-makunbound restores a slot in an instance to the unbound
+state.  The arguments to slot-makunbound are the instance and the name of the
+slot.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>slot-missing</primary></indexterm>&#151; Generic: <function>slot-missing</function> <varname>class</varname> <varname>object</varname> <varname>slot-name</varname> <varname>operation</varname> <varname>&amp;optional</varname> <varname>new-value</varname></screen>
+<screen><indexterm role="fn"><primary>slot-missing</primary></indexterm>&#151; Method: <function>slot-missing</function> (</screen>
+<para>The generic function slot-missing is invoked when an attempt is made to access
+a slot in an object whose metaclass is standard-class and the name of the slot
+provided is not a name of a slot in that class.  The default method signals an
+error.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>slot-unbound</primary></indexterm>&#151; Generic: <function>slot-unbound</function> <varname>class</varname> <varname>instance</varname> <varname>slot-name</varname></screen>
+<screen><indexterm role="fn"><primary>slot-unbound</primary></indexterm>&#151; Method: <function>slot-unbound</function> (</screen>
+<para>The generic function slot-unbound is called when an unbound slot is read in an
+instance whose metaclass is standard-class. The default method signals an
+error.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>slot-value</primary></indexterm>&#151; Function: <function>slot-value</function> <varname>object slot-name</varname></screen>
+<para>The function slot-value returns the value contained in the slot slot-name of
+the given object.  If there is no slot with that name, slot-missing is called.
+If the slot is unbound, slot-unbound is called.  The macro setf can be used
+with slot-value to change the value of a slot.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>update-instance-for-different-class</primary></indexterm>&#151; Generic: <function>update-instance-for-different-class</function> <varname>previous</varname> <varname>current</varname> <varname>&amp;rest</varname> <varname>initargs</varname></screen>
+<screen><indexterm role="fn"><primary>update-instance-for-different-class</primary></indexterm>&#151; Method: <function>update-instance-for-different-class</function> (</screen>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>update-instance-for-redefined-class</primary></indexterm>&#151; Generic: <function>update-instance-for-redefined-class</function> <varname>instance</varname> <varname>added-slots</varname> <varname>discarded-slots</varname> <varname>property-list</varname> <varname>&amp;rest</varname> <varname>initargs</varname></screen>
+<screen><indexterm role="fn"><primary>update-instance-for-redefined-class</primary></indexterm>&#151; Method: <function>update-instance-for-redefined-class</function> (</screen>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>with-accessors</primary></indexterm>&#151; Macro: <function>with-accessors</function> (</screen>
+<para>The macro with-accessors creates a lexical environment in which specified slots
+are lexically available through their accessors as if they were variables.  The
+macro with-accessors invokes the appropriate accessors to access the specified
+slots.  Both setf and setq can be used to set the value of the slot.  The
+result returned is that obtained by executing the forms specified by the body
+argument.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>with-slots</primary></indexterm>&#151; Macro: <function>with-slots</function> (</screen>
+<screen>
+<replaceable>slot-entry</replaceable> ::= <replaceable>slot-name</replaceable> | (<replaceable>variable-name</replaceable> <replaceable>slot-name</replaceable>)
+</screen>
+<para>The macro <literal>with-slots</literal> creates a lexical context for referring to
+specified slots as though they were variables.  Within such a context the value
+of the slot can be specified by using its slot name, as if it were a lexically
+bound variable.  Both <literal>setf</literal> and <literal>setq</literal> can be used to set the value
+of the slot.</para>
+</blockquote>
+</chapter>
+<!-- Keep this comment at the end of the file
+  Local variables:
+  sgml-parent-document: "ecl.xml"
+  sgml-indent-step: 1
+  nxml-child-indent: 1
+  nxml-outline-child-indent: 1
+  fill-column: 79
+  End:
+--></book>

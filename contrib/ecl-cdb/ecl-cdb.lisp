@@ -87,7 +87,7 @@
      do (write-word v stream)))
 
 (defun to-cdb-hash (key-vector)
-  (declare (type (array (unsigned-byte 8) (*)) vector))
+  (declare (type (array (unsigned-byte 8) (*)) key-vector))
   (loop with h of-type (unsigned-integer 32) = 5381
      for byte of-type (unsigned-byte 8) across key-vector
      do (setf h (logxor (logand #xffffffff

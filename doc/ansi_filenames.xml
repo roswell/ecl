@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter xml:id="ansi.filenames">
+ <title>Filenames</title>
+
+ <section xml:id="ansi.filenames.syntax">
+  <title>Syntax</title>
+  <para>A pathname in the file system of Common-Lisp consists of six
+  elements: host, device, directory, name, type and version. Pathnames are
+  read and printed using the <literal>#P</literal> reader macro followed by
+  the namestring. A namestring is a string which represents a pathname. The
+  syntax of namestrings for logical pathnames is well explained in the &ANSI;
+  and it can be roughly summarized as follows:
+
+  <synopsis><literal><optional><replaceable>hostname</replaceable>:</optional><optional>;</optional><optional><replaceable>directory-item</replaceable>;</optional><superscript>0 or more</superscript><optional><replaceable>name</replaceable></optional><optional>.<replaceable>type</replaceable><optional>.<replaceable>version</replaceable></optional></optional></literal>
+  <replaceable>hostname</replaceable> = <replaceable>word</replaceable>
+  <replaceable>directory-item</replaceable> = <replaceable>wildcard-word</replaceable>
+  <replaceable>type</replaceable>, <replaceable>name</replaceable> = <replaceable>wildcard-word</replaceable> without dots</synopsis>
+
+  Here, <replaceable>wildcard-word</replaceable> is a sequence of any
+  character excluding <literal>#\Null</literal> and
+  dots. <replaceable>word</replaceable> is like a
+  <replaceable>wildcard-word</replaceable> but asterisks are excluded.</para>
+
+  <para>The way &ECL; parses a namestring is by first looking for the
+  <replaceable>hostname</replaceable> component in the previous template. If
+  it is found and it corresponds to a previously defined logical hostname, it
+  assumes that the namestring corresponds to a logical pathname. If
+  <replaceable>hostname</replaceable> is not found or it is not a logical
+  hostname, then &ECL; tries the physical pathname syntax
+
+  <synopsis><literal><optional><replaceable>device</replaceable>:</optional><optional><optional>//<replaceable>hostname</replaceable></optional>/</optional><optional><replaceable>directory-item</replaceable>/</optional><superscript>0 or more</superscript><optional><replaceable>name</replaceable></optional><optional>.<replaceable>type</replaceable></optional></literal>
+  <replaceable>device</replaceable>, <replaceable>hostname</replaceable> = <replaceable>word</replaceable>
+  <replaceable>directory-item</replaceable> = <replaceable>wildcard-word</replaceable>
+  <replaceable>type</replaceable> = <replaceable>wildcard-word</replaceable> without dots
+  <replaceable>name</replaceable> = <optional>.</optional><replaceable>wildcard-word</replaceable></synopsis>
+
+  If this syntax also fails, then the namestring is not a valid pathname
+  string and a <type>parse-error</type> will be signalled.</para>
+
+  <para>It is important to remark that in &ECL;, all physical namestrings
+  result into pathnames with a version equal to
+  <literal>:NEWEST</literal>. Pathnames which are not logical and have any
+  other version (i. e. <literal>NIL</literal> or a number), cannot be printed
+  readably, but can produce a valid namestring which results of ignoring the
+  version.</para>
+
+  <para>Finally, an important rule applies to physical namestrings: if a
+  namestring contains one or more periods `.', the last period separates the
+  namestring into the file name and the filetype. However, a namestring with a
+  single leading period results in a name with a period in it. This is for
+  compatibility with Unix filenames such as <filename>.bashrc</filename>, where
+  the leading period indicates that the file is hidden.</para>
+
+  <para>The previous rule has in important consequence, because it means that
+  if you want to create a pathname without a name, you have to do it
+  explicitely. In other words, <literal>".*"</literal> is equivalent to
+  <code>(MAKE-PATHNAME :NAME ".*" :TYPE NIL)</code>, while <code>(MAKE-PATHNAME
+  :NAME NIL :TYPE :WILD)</code> creates a pathname whose type is a
+  wildcard.</para>
+
+  <para>The following table illustrates how the physical pathnames work with
+  practical examples.</para>
+  <table>
+   <title>Examples of physical namestrings</title>
+   <tgroup cols="3">
+    <thead>
+     <row><entry>Namestring</entry>
+     <entry>Name</entry>
+     <entry>Type</entry>
+     <entry>Directory</entry>
+     <entry>Device</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry>"foo.lsp"</entry>
+      <entry>"foo"</entry>
+      <entry>"lsp"</entry>
+      <entry>NIL</entry>
+      <entry>NIL</entry>
+     </row>
+     <row>
+      <entry>".bashrc"</entry>
+      <entry>".bashrc"</entry>
+      <entry>NIL</entry>
+      <entry>NIL</entry>
+      <entry>NIL</entry>
+     </row>
+     <row>
+      <entry>".ecl.lsp"</entry>
+      <entry>".ecl"</entry>
+      <entry>"lsp"</entry>
+      <entry>NIL</entry>
+      <entry>NIL</entry>
+     </row>
+     <row>
+      <entry>"foo.*"</entry>
+      <entry>"foo"</entry>
+      <entry>:WILD</entry>
+      <entry>NIL</entry>
+      <entry>NIL</entry>
+     </row>
+     <row>
+      <entry>"*.*"</entry>
+      <entry>:WILD</entry>
+      <entry>:WILD</entry>
+      <entry>NIL</entry>
+      <entry>NIL</entry>
+     </row>
+     <row>
+      <entry>"ecl/build/bare.lsp"</entry>
+      <entry>"bare"</entry>
+      <entry>"lsp"</entry>
+      <entry>(:relative "ecl" "build")</entry>
+      <entry>NIL</entry>
+     </row>
+     <row>
+      <entry>"ecl/build/"</entry>
+      <entry>NIL</entry>
+      <entry>NIL</entry>
+      <entry>(:relative "ecl" "build")</entry>
+      <entry>NIL</entry>
+     </row>
+     <row>
+      <entry>"../../ecl/build/"</entry>
+      <entry>NIL</entry>
+      <entry>NIL</entry>
+      <entry>(:relative :up :up "ecl" "build")</entry>
+      <entry>NIL</entry>
+     </row>
+     <row>
+      <entry>"/etc/"</entry>
+      <entry>NIL</entry>
+      <entry>NIL</entry>
+      <entry>(:absolute "etc")</entry>
+      <entry>NIL</entry>
+     </row>
+     <row>
+      <entry>"C:/etc/"</entry>
+      <entry>NIL</entry>
+      <entry>NIL</entry>
+      <entry>(:absolute "etc")</entry>
+      <entry>"C"</entry>
+     </row>
+     <row>
+      <entry>".*"</entry>
+      <entry>".*"</entry>
+      <entry>NIL</entry>
+      <entry>NIL</entry>
+      <entry>NIL</entry>
+     </row>
+     <row>
+      <entry>#.(MAKE-PATHNAME :TYPE "*")</entry>
+      <entry>NIL</entry>
+      <entry>:WILD</entry>
+      <entry>NIL</entry>
+      <entry>NIL</entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </table>
+ </section>
+
+ <section xml:id="ansi.pathnames.wild">
+  <title>Wild pathnames and matching</title>
+
+  <para>&ECL; accepts four kind of wildcards in pathnames.</para>
+  <itemizedlist>
+   <listitem>
+    <para>A single wildcard in a directory component, file name, type or
+    version is parsed as the <symbol>:WILD</symbol> value. See for instance
+    <literal>"*.*"</literal>, <literal>"/home/*/.bashrc"</literal>, etc</para>
+   </listitem>
+   <listitem>
+    <para>A double wildcard in a directory component, such as in
+    <literal>"/home/**/"</literal> is parsed as the
+    <symbol>:WILD-INFERIORS</symbol>, and matches any number of directories,
+    even nested ones, such as: <filename>/home/</filename>,
+    <filename>/home/jlr</filename>, <filename>/home/jlr/lib</filename>,
+    etc.</para>
+   </listitem>
+   <listitem>
+    <para>An isolated wildcard <literal>"log*.txt"</literal> matches any number
+    of characters: <filename>log.txt</filename>,
+    <filename>log_back.txt</filename>, etc.</para>
+   </listitem>
+   <listitem>
+    <para>A question mark <literal>"log?.txt"</literal> matches a single
+    character: <filename>log1.txt</filename>,
+    <filename>log2.txt</filename>...</para>
+   </listitem>
+  </itemizedlist>
+
+  <para>The matching rules in &CommonLisp; and &ECL; are simple but have some unintuitive consequences when compared to Unix/DOS rules. The most important one is that directories must always end with a trailing slash <literal>/</literal>, as in <literal>#p"/my/home/directory/"</literal>. Second to that, <symbol>NIL</symbol> values can only be matched by <symbol>NIL</symbol> and <symbol>:WILD</symbol>. Hence, <literal>"*"</literal> can only match files without file type. For some examples see <xref linkend="ansi.files.directory"/>.</para>
+  </section>
+
+ <xi:include href="ref_c_filenames.xml" xpointer="ansi.filenames.c-dict" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+
+</chapter>
+</book>

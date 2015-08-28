@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter xml:id="ansi.strings">
+ <title>Strings</title>
+
+ <section xml:id="ansi.strings.types">
+
+ <title>String types &amp; Unicode</title>
+
+ <para>The &ECL; implementation of strings is ANSI Common-Lisp compliant. There are basically four string types as shown in <xref linkend="table.ansi.strings"/>. As explained in <xref linkend="ansi.characters"/>, when Unicode support is disabled, <type>character</type> and <type>base-character</type> are the same type and the last two string types are equivalent to the first two.</para>
+ <table xml:id="table.ansi.strings">
+  <title>&CommonLisp; string types</title>
+  <tgroup cols="2">
+   <thead>
+    <row>
+     <entry>Abbreviation</entry>
+     <entry>Expanded type</entry>
+     <entry>Remarks</entry>
+    </row>
+   </thead>
+   <tbody>
+    <row>
+     <entry><type>string</type></entry>
+     <entry><type>(array character (*))</type></entry>
+     <entry>8 or 32 bits per character, adjustable.</entry>
+    </row>
+    <row>
+     <entry><type>simple-string</type></entry>
+     <entry><type>(simple-array character (*))</type></entry>
+     <entry>8 or 32 bits per character, not adjustable nor displaced.</entry>
+    </row>
+    <row>
+     <entry><type>base-string</type></entry>
+     <entry><type>(array base-char (*))</type></entry>
+     <entry>8 bits per character, adjustable.</entry>
+    </row>
+    <row>
+     <entry><type>simple-base-string</type></entry>
+     <entry><type>(simple-array base-char (*))</type></entry>
+     <entry>8 bits per character, not adjustable nor displaced.</entry>
+    </row>
+   </tbody>
+  </tgroup>
+ </table>
+
+ <para>It is important to remember that strings with unicode characters can only be printed readably when the external format supports those characters. If this is not the case, &ECL; will signal a <type>serious-condition</type>. This condition will abort your program if not properly handled.</para>
+
+ </section>
+
+<xi:include href="ref_c_strings.xml" xpointer="ansi.strings.c-dict" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+
+</chapter>
+</book>

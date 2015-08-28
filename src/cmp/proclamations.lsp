@@ -8,8 +8,8 @@
 ;;;
 ;;; The function proclamations are created with PROCLAIM-FUNCTION, as in
 ;;;
-;;;	(PROCLAMATION function-name ([arg-type]*) return-type
-;;;		&rest {:no-sp-change|:pure|:reader|:no-side-effects})
+;;;     (PROCLAMATION function-name ([arg-type]*) return-type
+;;;             &rest {:no-sp-change|:pure|:reader|:no-side-effects})
 ;;;
 ;;; with the following interpretation: ARG-TYPE and RETURN-TYPE denote the most
 ;;; general types for the input and output values of this function. If the

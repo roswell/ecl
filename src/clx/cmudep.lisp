@@ -14,6 +14,6 @@
 (in-package "XLIB")
 
 (alien:def-alien-routine ("connect_to_server" xlib::connect-to-server)
-			 c-call:int
+                         c-call:int
   (host c-call:c-string)
   (port c-call:int))

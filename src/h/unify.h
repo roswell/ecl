@@ -15,19 +15,19 @@
 */
 
 
-#define	trail_push(loc)		(*trail_top++ = (loc))
-#define	trail_pop		(**--trail_top = OBJNULL)
-#define trail_mark		trail_push((object *)NULL)
-#define trail_restore		{while (trail_top[-1] != (object *)NULL) \
-				   trail_pop;}
-#define trail_unmark		{trail_restore; trail_top--;}
-#define BIND(loc, val)		{loc = val; trail_push(&loc);}
+#define trail_push(loc)         (*trail_top++ = (loc))
+#define trail_pop               (**--trail_top = OBJNULL)
+#define trail_mark              trail_push((object *)NULL)
+#define trail_restore           {while (trail_top[-1] != (object *)NULL) \
+                                   trail_pop;}
+#define trail_unmark            {trail_restore; trail_top--;}
+#define BIND(loc, val)          {loc = val; trail_push(&loc);}
 
-#define get_value(v, x)		unify(x, v)
-#define get_constant(c, x)	(c == x || unify(x, c))
-#define get_nil(x)		(ECL_NIL == x || unify(x, ECL_NIL))
+#define get_value(v, x)         unify(x, v)
+#define get_constant(c, x)      (c == x || unify(x, c))
+#define get_nil(x)              (ECL_NIL == x || unify(x, ECL_NIL))
 
-#define unify_slot		(*slotf)(*slot)
-#define unify_value(loc)	(*slotf)(loc)
-#define unify_constant(c)	(*slotf)(c)
-#define unify_nil		(*slotf)(ECL_NIL)
+#define unify_slot              (*slotf)(*slot)
+#define unify_value(loc)        (*slotf)(loc)
+#define unify_constant(c)       (*slotf)(c)
+#define unify_nil               (*slotf)(ECL_NIL)

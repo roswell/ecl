@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter>
+<title>Objects</title>
+<section xml:id="ansi.objects.c-dict">
+<title>C Reference</title>
+  <refentry>
+    <refnamediv>
+      <refname>ANSI Dictionary</refname>
+      <refpurpose>&ANSI-C-Dict;</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+<simplelist columns="2" type="horiz">
+<member>Lisp symbol</member>
+<member>C function</member>
+
+<member><ulink url="&clhs;f_fn_kwd.htm"><symbol>function-keywords</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+
+<member><ulink url="&clhs;f_ensure.htm"><symbol>ensure-generic-function</symbol></ulink></member>
+<member><code>cl_object cl_ensure_generic_function(cl_narg narg, cl_object function_name, ...)</code></member>
+
+<member><ulink url="&clhs;f_alloca.htm"><symbol>allocate-instance</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+
+<member><ulink url="&clhs;f_reinit.htm"><symbol>reinitialize-instance</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+
+<member><ulink url="&clhs;f_shared.htm"><symbol>shared-initialize</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+
+<member><ulink url="&clhs;f_update.htm"><symbol>update-instance-for-different-class</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+
+<member><ulink url="&clhs;f_upda_1.htm"><symbol>update-instance-for-redefined-class</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+
+<member><ulink url="&clhs;f_chg_cl.htm"><symbol>change-class</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+
+<member><ulink url="&clhs;f_slt_bo.htm"><symbol>slot-boundp</symbol></ulink></member>
+<member><code>cl_object cl_slot_boundp(cl_object instance, cl_object slot_name)</code></member>
+
+<member><ulink url="&clhs;f_slt_ex.htm"><symbol>slot-exists-p</symbol></ulink></member>
+<member><code>cl_object cl_slot_exists_p(cl_object instance, cl_object slot_name)</code></member>
+
+<member><ulink url="&clhs;f_slt_ma.htm"><symbol>slot-makunbound</symbol></ulink></member>
+<member><code>cl_object cl_slot_makunbound(cl_object instance, cl_object slot_name)</code></member>
+
+<member><ulink url="&clhs;f_slt_mi.htm"><symbol>slot-missing</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+
+<member><ulink url="&clhs;f_slt_un.htm"><symbol>slot-unbound</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+
+<member><ulink url="&clhs;f_slt_va.htm"><symbol>slot-value</symbol></ulink></member>
+<member><code>cl_object cl_slot_value(cl_object instance, cl_object slot_name)</code></member>
+
+<member><ulink url="&clhs;f_method.htm"><symbol>method-qualifiers</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+
+<member><ulink url="&clhs;f_no_app.htm"><symbol>no-applicable-method</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+
+<member><ulink url="&clhs;f_no_nex.htm"><symbol>no-next-method</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+
+<member><ulink url="&clhs;f_rm_met.htm"><symbol>remove-method</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+
+<member><ulink url="&clhs;f_mk_ins.htm"><symbol>make-instance</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+
+<member><ulink url="&clhs;f_mk_i_1.htm"><symbol>make-instances-obsolete</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+
+<member><ulink url="&clhs;f_mk_ld_.htm"><symbol>make-load-form</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+
+<member><ulink url="&clhs;f_mk_l_1.htm"><symbol>make-load-form-saving-slots</symbol></ulink></member>
+<member><code>cl_object cl_make_load_form_saving_slots(cl_narg narg, cl_object object, ...)</code></member>
+
+<member><ulink url="&clhs;f_find_c.htm"><symbol>find-class</symbol></ulink></member>
+<member><code>cl_object cl_find_class(cl_narg narg, cl_object symbol, ...)</code></member>
+
+<member><ulink url="&clhs;f_comput.htm"><symbol>compute-applicable-methods</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+
+<member><ulink url="&clhs;f_find_m.htm"><symbol>find-method</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+
+<member><ulink url="&clhs;f_add_me.htm"><symbol>add-method</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+
+<member><ulink url="&clhs;f_init_i.htm"><symbol>initialize-instance</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+
+<member><ulink url="&clhs;f_class_.htm"><symbol>class-name</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+
+<member><ulink url="&clhs;f_opsetf.htm"><symbol>(setf class-name)</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+
+<member><ulink url="&clhs;f_clas_1.htm"><symbol>class-of</symbol></ulink></member>
+<member><code>cl_object cl_class_of(cl_object object)</code></member>
+
+<member><ulink url="&clhs;f_unboun.htm"><symbol>unbound-slot-instance</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+</simplelist>
+    </refsynopsisdiv>
+
+    <refsect1>
+      <title>Description</title>
+      <para></para>
+    </refsect1>
+  </refentry>
+</section>
+</chapter>
+</book>

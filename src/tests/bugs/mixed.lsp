@@ -11,9 +11,8 @@
   (progn
     ;; Don't know the first state
     (ext:package-lock "CL-USER" nil)
-    (assert (eq nil
-                (ext:package-lock "CL-USER" t)))
-    (assert (eq t
-                (ext:package-lock "CL-USER" nil)))
-    (assert (eq nil
-                (ext:package-lock "CL-USER" nil)))))
+    (values
+     (ext:package-lock "CL-USER" t)
+     (ext:package-lock "CL-USER" nil)
+     (ext:package-lock "CL-USER" nil)))
+  nil t nil)

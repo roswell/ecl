@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter xml:id="ansi.symbols">
+ <title>Symbols</title>
+ <para>There are no implementation-specific limits on the size or content of
+ symbol names. It is however not allowed to write on the strings which have
+ been passed to #'make-symbol or returned from #'symbol-name.</para>
+
+ <xi:include href="ref_c_symbols.xml" xpointer="ansi.symbols.c-dict" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+
+</chapter>
+</book>
+

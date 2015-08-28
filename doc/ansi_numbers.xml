@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter xml:id="ansi.numbers">
+ <title>Numbers</title>
+
+ <section xml:id="ansi.number-types">
+  <title>Numeric types</title>
+
+  <para>&ECL; supports all of the &CommonLisp; numeric tower, which is shown
+  in <xref linkend="table.ansi.numbers"/>. The details, however, depend both
+  on the platform on which &ECL; runs and on the configuration which was
+  chosen when building &ECL;.</para>
+  <table xml:id="table.ansi.numbers">
+   <title>Numeric types in &ECL;</title>
+   <tgroup cols="2">
+    <thead>
+     <row><entry>Type</entry><entry>Description</entry></row>
+    </thead>
+    <tbody>
+     <row>
+      <entry><type>fixnum</type></entry>
+      <entry>Signed integer with a number of bits given by
+      <varname>ext:fixnum-bits</varname>, fit in a machine word.</entry>
+     </row>
+     <row>
+      <entry><type>bignum</type></entry>
+      <entry>Arbitrary size integers, only limited by amount of memory.</entry>
+     </row>
+     <row>
+      <entry><type>ratio</type></entry>
+      <entry>Arbitrary size rational number, made up of two integers.</entry>
+     </row>
+     <row>
+      <entry><type>short-float</type></entry>
+      <entry>Equivalent to <type>single-float</type>.</entry>
+     </row>
+     <row>
+      <entry><type>single-float</type></entry>
+      <entry>32-bits IEEE floating point number.</entry>
+     </row>
+     <row>
+      <entry><type>double-float</type></entry>
+      <entry>64-bits IEEE floating point number.</entry>
+     </row>
+     <row>
+      <entry><type>long-float</type></entry>
+      <entry>Either equivalent to <type>double-float</type>, or a 96/128 bits IEEE floating
+      point number (<type>long double</type> in C/C++).</entry>
+     </row>
+     <row>
+      <entry><type>rational</type></entry>
+      <entry>An alias for <type>(or integer ratio)</type></entry>
+     </row>
+     <row>
+      <entry><type>float</type></entry>
+      <entry>An alias for <type>(or single-float double-float short-float
+      long-float)</type></entry>
+     </row>
+     <row>
+      <entry><type>real</type></entry>
+      <entry>An alias for <type>(or real integer float)</type></entry>
+     </row>
+     <row>
+      <entry><type>complex</type></entry>
+      <entry>Complex number made of two real numbers of the above mentioned
+      types.</entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </table>
+
+  <para>In general, the size of a <type>FIXNUM</type> is determined by the
+  word size of a machine, which ranges from 32 to 64 bits. Integers larger
+  than this are implemented using the <ulink
+  url="http://www.swox.com/gmp/">GNU Multiprecision library</ulink>. Rationals
+  are implemented using two integers, without caring whether they are fixnum
+  or not. Floating point numbers include at least the two IEEE types of 32 and
+  64 bits respectively. In machines where it is supported, it is possible to
+  associate the lisp <type>LONG-FLOAT</type> with the machine type <type>long
+  double</type> whose size ranges from 96 to 128 bits, and which are a bit
+  slower.</para>
+ </section>
+
+ <section xml:id="ansi.random-states">
+  <title>Random-States</title>
+
+  <para>&ECL; relies internally on a 32-bit or 64-bit Mersenne-Twister random number generator, using a relatively large buffer to precompute about 5000 pseud-random bytes. This implies also that random states can be printed readably and also read, using the <literal>#$</literal> macro. There is no provision to create random states from user arrays, though.</para>
+ </section>
+
+ <xi:include href="ref_c_numbers.xml" xpointer="ansi.numbers.c-dict" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+
+</chapter>
+</book>

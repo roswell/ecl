@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "../ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+ <reference xml:id="uffi.func_libr">
+  <title>Functions &amp; Libraries</title>
+
+  <refentry xml:id="uffi.def-function">
+   <refnamediv>
+    <refname><function>def-function</function></refname>
+    <refpurpose>Declares a function. 
+    </refpurpose>
+   </refnamediv>
+   <refsynopsisdiv>
+    <title>Macro</title>
+    <synopsis>
+     <function>def-function</function> <replaceable>name args &amp;key module returning</replaceable>
+    </synopsis>
+    <variablelist>
+     <varlistentry>
+      <term><parameter>name</parameter></term>
+      <listitem>
+       <para>A string or list specificying the function name. If it is a string, that names the foreign function. A Lisp name is created by translating #\_ to #\- and by converting to upper-case in case-insensitive Lisp implementations. If it is a list, the first item is a string specifying the foreign function name and the second it is a symbol stating the Lisp name.</para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term><parameter>args</parameter></term>
+      <listitem>
+       <para>A list of argument declarations. If &nil;, indicates that the function does not take any arguments.</para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term><parameter>module</parameter></term>
+      <listitem>
+       <para>A string specifying which module (or library) that the foreign function resides. (Required by Lispworks)</para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term><returnvalue>returning</returnvalue></term>
+      <listitem>
+       <para>A declaration specifying the result type of the
+       foreign function. If <constant>:void</constant> indicates module does not return any value.</para>
+      </listitem>
+     </varlistentry>
+    </variablelist>
+   </refsynopsisdiv>
+
+   <refsect1>
+    <title>Description</title>
+    <para>Declares a foreign function.</para>
+   </refsect1>
+   <refsect1>
+    <title>Examples</title>
+    <programlisting>
+(def-function "gethostname" 
+    ((name (* :unsigned-char))
+     (len :int))
+   :returning :int)
+    </programlisting>
+   </refsect1>
+   <refsect1>
+    <title>Side Effects</title>
+    <para>None.</para>
+   </refsect1>
+   <refsect1>
+    <title>Affected by</title>
+    <para>None.</para>
+   </refsect1>
+   <refsect1>
+    <title>Exceptional Situations</title>
+    <para>None.</para>
+   </refsect1>
+  </refentry>
+
+  <refentry xml:id="uffi.load-foreign-library">
+   <refnamediv>
+    <refname><function>load-foreign-library</function></refname>
+    <refpurpose>Loads a foreign library. 
+    </refpurpose>
+   </refnamediv>
+   <refsynopsisdiv>
+    <title>Function</title>
+    <synopsis>
+     <function>load-foreign-library</function> <replaceable>filename &amp;key module supporting-libraries force-load</replaceable> => <returnvalue>success</returnvalue>
+    </synopsis>
+    <variablelist>
+     <varlistentry>
+      <term><parameter>filename</parameter></term>
+      <listitem>
+       <para>A string or pathname specifying the library location
+       in the filesystem. At least one implementation (&LW;) can not
+       accept a logical pathname.  If this parameter denotes a pathname without a
+       directory component then most of the supported Lisp implementations will be
+       able to find the library themselves if it is located in one of the standard
+       locations as defined by the underlying operating system.</para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term><parameter>module</parameter></term>
+      <listitem>
+       <para>A string designating the name of the module to apply
+       to functions in this library. (Required for Lispworks)</para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term><parameter>supporting-libraries</parameter></term>
+      <listitem>
+       <para>A list of strings naming the libraries required to
+       link the foreign library. (Required by CMUCL)</para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term><parameter>force-load</parameter></term>
+      <listitem>
+       <para>Forces the loading of the library if it has been previously loaded. </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term><returnvalue>success</returnvalue></term>
+      <listitem>
+       <para>A boolean flag, &t; if the library was able to be
+       loaded successfully or if the library has been previously loaded,
+       otherwise &nil;.</para>
+      </listitem>
+     </varlistentry>
+    </variablelist>
+   </refsynopsisdiv>
+
+   <refsect1>
+    <title>Description</title>
+    <para>Loads a foreign library. Applies a module name to functions
+    within the library. Ensures that a library is only loaded once during
+    a session. A library can be reloaded by using the <symbol>:force-load</symbol> key.</para>
+   </refsect1>
+   <refsect1>
+    <title>Examples</title>
+    <screen>
+(load-foreign-library #p"/usr/lib/libmysqlclient.so" 
+                      :module "mysql" 
+                     :supporting-libraries '("c"))
+=> T</screen>
+   </refsect1>
+   <refsect1>
+    <title>Side Effects</title>
+    <para>Loads the foreign code into the Lisp system.</para>
+   </refsect1>
+   <refsect1>
+    <title>Affected by</title>
+    <para>Ability to load the file.</para>
+   </refsect1>
+   <refsect1>
+    <title>Exceptional Situations</title>
+    <para>None.</para>
+   </refsect1>
+  </refentry>
+
+  <refentry xml:id="uffi.find-foreign-library">
+   <refnamediv>
+    <refname><function>find-foreign-library</function></refname>
+    <refpurpose>Finds a foreign library file.
+    </refpurpose>
+   </refnamediv>
+   <refsynopsisdiv>
+    <title>Function</title>
+    <synopsis>
+     <function>find-foreign-library</function> <replaceable>names directories &amp; drive-letters types</replaceable> => <returnvalue>path</returnvalue>
+    </synopsis>
+    <variablelist>
+     <varlistentry>
+      <term><parameter>names</parameter></term>
+      <listitem>
+       <para>A string or list of strings containing the base name of the
+       library file.</para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term><parameter>directories</parameter></term>
+      <listitem>
+       <para>A string or list of strings containing the directory the library file.</para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term><parameter>drive-letters</parameter></term>
+      <listitem>
+       <para>A string or list of strings containing the drive letters for the library file.</para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term><parameter>types</parameter></term>
+      <listitem>
+       <para>A string or list of strings containing the file type of the library file. Default
+       is &nil;. If &nil;, will use a default type based on the currently running implementation.</para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term><returnvalue>path</returnvalue></term>
+      <listitem>
+       <para>A path containing the path found, or &nil; if the library file was not found.</para>
+      </listitem>
+     </varlistentry>
+    </variablelist>
+   </refsynopsisdiv>
+
+   <refsect1>
+    <title>Description</title>
+    <para>Finds a foreign library by searching through a number of possible locations. Returns
+    the path of the first found file.</para>
+   </refsect1>
+   <refsect1>
+    <title>Examples</title>
+    <screen>
+(find-foreign-library '("libmysqlclient" "libmysql")
+     '("/opt/mysql/lib/mysql/" "/usr/local/lib/" "/usr/lib/" "/mysql/lib/opt/")
+     :types '("so" "dll")
+     :drive-letters '("C" "D" "E"))
+=> #P"D:\\mysql\\lib\\opt\\libmysql.dll"
+    </screen>
+   </refsect1>
+   <refsect1>
+    <title>Side Effects</title>
+    <para>None.</para>
+   </refsect1>
+   <refsect1>
+    <title>Affected by</title>
+    <para>None.</para>
+   </refsect1>
+   <refsect1>
+    <title>Exceptional Situations</title>
+    <para>None.</para>
+   </refsect1>
+  </refentry>
+
+ </reference>
+</book>
+<!-- Keep this comment at the end of the file
+     Local variables:
+     mode: nxml
+     sgml-indent-step: 1
+     nxml-child-indent: 1
+     nxml-outline-child-indent: 0
+     fill-column: 79
+     End:
+-->

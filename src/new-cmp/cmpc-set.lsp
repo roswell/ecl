@@ -9,7 +9,7 @@
 ;;;;
 ;;;;    See file '../Copyright' for full details.
 
-;;;; CMPC-SET	Set locations
+;;;; CMPC-SET   Set locations
 
 (in-package "C-BACKEND")
 

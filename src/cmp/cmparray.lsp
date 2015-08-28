@@ -49,11 +49,11 @@
            '*))))
 
 (define-compiler-macro make-array (&whole form dimensions &key (element-type t)
-					  (initial-element nil initial-element-supplied-p)
-					  (initial-contents nil initial-contents-supplied-p)
-					  adjustable fill-pointer
-					  displaced-to (displaced-index-offset 0)
-					  &environment env)
+                                          (initial-element nil initial-element-supplied-p)
+                                          (initial-contents nil initial-contents-supplied-p)
+                                          adjustable fill-pointer
+                                          displaced-to (displaced-index-offset 0)
+                                          &environment env)
   ;; This optimization is always done unless we provide content. There
   ;; is no speed, debug or space reason not to do it, unless the user
   ;; specifies not to inline MAKE-ARRAY, but in that case the compiler
@@ -99,7 +99,7 @@
                       (vector ,(second args)))
                  (declare (:read-only value vector)
                           (optimize (safety 0)))
-		 (optional-type-assertion vector vector)
+                 (optional-type-assertion vector vector)
                  (let ((index (fill-pointer vector))
                        (dimension (array-total-size vector)))
                    (declare (fixnum index dimension)
@@ -139,15 +139,15 @@
 (define-compiler-macro si::aset (&whole form array &rest indices-and-value
                                         &environment env)
   (cond ((null indices-and-value)
-	 (cmpwarn "Too few arguments to SI::ASET form~%~4I~A"
-		  form)
-	 form)
-	((policy-open-code-aref/aset env)
-	 (let* ((indices (butlast indices-and-value))
-		(value (first (last indices-and-value))))
-	   (expand-aset array indices value env)))
-	(t
-	 form)))
+         (cmpwarn "Too few arguments to SI::ASET form~%~4I~A"
+                  form)
+         form)
+        ((policy-open-code-aref/aset env)
+         (let* ((indices (butlast indices-and-value))
+                (value (first (last indices-and-value))))
+           (expand-aset array indices value env)))
+        (t
+         form)))
 
 (defun expand-aset (array indices value env)
   (ext:with-unique-names (%array)
@@ -159,10 +159,10 @@
 (define-compiler-macro array-row-major-index (&whole form array &rest indices &environment env)
   (if (policy-open-code-aref/aset env)
       (with-clean-symbols (%array)
-	`(let ((%array ,array))
-	   (declare (:read-only %array)
-		    (optimize (safety 0)))
-	   ,(expand-row-major-index '%array indices env)))
+        `(let ((%array ,array))
+           (declare (:read-only %array)
+                    (optimize (safety 0)))
+           ,(expand-row-major-index '%array indices env)))
       form))
 
 (defun expand-zero-dim-index-check (a env)
@@ -180,10 +180,10 @@
               (check-vector-in-bounds ,a ,index)
               ,index)))
     (if (policy-type-assertions env)
-	(with-clean-symbols (%array-index)
-	  `(let ((%array-index ,index))
-	     (declare (:read-only %array-index))
-	     ,(expansion a '%array-index)))
+        (with-clean-symbols (%array-index)
+          `(let ((%array-index ,index))
+             (declare (:read-only %array-index))
+             ,(expansion a '%array-index)))
         index)))
 
 (defun expand-row-major-index (a indices env)
@@ -195,30 +195,30 @@
       (expand-vector-index-check a (first indices) env)))
   (let* ((expected-rank (length indices))
          (check (policy-array-bounds-check env))
-	 (dims (loop for i from 0
-		  for index in indices
-		  collect `(,(gentemp "DIM") (array-dimension-fast ,a ,i))))
-	 (dim-names (mapcar #'first dims)))
+         (dims (loop for i from 0
+                  for index in indices
+                  collect `(,(gentemp "DIM") (array-dimension-fast ,a ,i))))
+         (dim-names (mapcar #'first dims)))
     (with-clean-symbols (%ndx-var %output-var %dim-var)
       `(let* (,@dims
-	      (%output-var 0))
+              (%output-var 0))
          (declare (type ext:array-index %output-var ,@dim-names)
-		  (ignorable ,@dim-names))
+                  (ignorable ,@dim-names))
          ,@(when (policy-type-assertions env)
                  `((optional-type-assertion ,a array)
                    (check-expected-rank ,a ,expected-rank)))
-	 ,@(loop for i from 0
-	      for l in indices
-	      for index in indices
-	      for dim-var in dim-names
-	      when (plusp i)
-	      collect `(setf %output-var
-			     (truly-the ext:array-index (* %output-var ,dim-var)))
-	      collect `(let ((%ndx-var ,index))
-			 (declare (ext:array-index %ndx-var))
-			 ,(and check `(check-index-in-bounds ,a %ndx-var ,dim-var))
-			 (setf %output-var
-			       (truly-the ext:array-index (+ %output-var %ndx-var)))))
+         ,@(loop for i from 0
+              for l in indices
+              for index in indices
+              for dim-var in dim-names
+              when (plusp i)
+              collect `(setf %output-var
+                             (truly-the ext:array-index (* %output-var ,dim-var)))
+              collect `(let ((%ndx-var ,index))
+                         (declare (ext:array-index %ndx-var))
+                         ,(and check `(check-index-in-bounds ,a %ndx-var ,dim-var))
+                         (setf %output-var
+                               (truly-the ext:array-index (+ %output-var %ndx-var)))))
          %output-var))))
 
 ;(trace c::expand-row-major-index c::expand-aset c::expand-aref)

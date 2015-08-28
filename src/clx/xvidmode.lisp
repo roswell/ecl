@@ -38,45 +38,45 @@
 (in-package :xlib)
 
 (export '(mode-info
-	  mode-info-dotclock
-	  mode-info-hdisplay
-	  mode-info-hsyncstart
-	  mode-info-hsyncend
-	  mode-info-htotal
-	  mode-info-hskew
-	  mode-info-vdisplay
-	  mode-info-vsyncstart
-	  mode-info-vsyncend
-	  mode-info-vtotal
-	  mode-info-flags
-	  mode-info-privsize
-	  mode-info-private
-	  make-mode-info
+          mode-info-dotclock
+          mode-info-hdisplay
+          mode-info-hsyncstart
+          mode-info-hsyncend
+          mode-info-htotal
+          mode-info-hskew
+          mode-info-vdisplay
+          mode-info-vsyncstart
+          mode-info-vsyncend
+          mode-info-vtotal
+          mode-info-flags
+          mode-info-privsize
+          mode-info-private
+          make-mode-info
 
-	  xfree86-vidmode-query-version
-	  xfree86-vidmode-set-client-version
-	  xfree86-vidmode-get-permissions
-	  xfree86-vidmode-mod-mode-line 
-	  xfree86-vidmode-get-mode-line 
-	  xfree86-vidmode-get-all-mode-lines
-	  xfree86-vidmode-add-mode-line
-	  xfree86-vidmode-delete-mode-line
-	  xfree86-vidmode-validate-mode-line
-	  xfree86-vidmode-get-gamma
-	  xfree86-vidmode-set-gamma
-	  xfree86-vidmode-get-gamma-ramp
-	  xfree86-vidmode-set-gamma-ramp     
-	  xfree86-vidmode-get-gamma-ramp-size
-	  xfree86-vidmode-lock-mode-switch
-	  xfree86-vidmode-switch-to-mode
-	  xfree86-vidmode-switch-mode
-	  xfree86-vidmode-select-next-mode
-	  xfree86-vidmode-select-prev-mode
-	  xfree86-vidmode-get-monitor
-	  xfree86-vidmode-get-viewport
-	  xfree86-vidmode-set-viewport
-	  xfree86-vidmode-get-dotclocks)
-	:xlib)
+          xfree86-vidmode-query-version
+          xfree86-vidmode-set-client-version
+          xfree86-vidmode-get-permissions
+          xfree86-vidmode-mod-mode-line 
+          xfree86-vidmode-get-mode-line 
+          xfree86-vidmode-get-all-mode-lines
+          xfree86-vidmode-add-mode-line
+          xfree86-vidmode-delete-mode-line
+          xfree86-vidmode-validate-mode-line
+          xfree86-vidmode-get-gamma
+          xfree86-vidmode-set-gamma
+          xfree86-vidmode-get-gamma-ramp
+          xfree86-vidmode-set-gamma-ramp     
+          xfree86-vidmode-get-gamma-ramp-size
+          xfree86-vidmode-lock-mode-switch
+          xfree86-vidmode-switch-to-mode
+          xfree86-vidmode-switch-mode
+          xfree86-vidmode-select-next-mode
+          xfree86-vidmode-select-prev-mode
+          xfree86-vidmode-get-monitor
+          xfree86-vidmode-get-viewport
+          xfree86-vidmode-set-viewport
+          xfree86-vidmode-get-dotclocks)
+        :xlib)
 
 ;; current version numbers
 ;;
@@ -114,12 +114,12 @@
 (define-extension "XFree86-VidModeExtension"
   :events (:xfree86-vidmode-notify) 
   :errors (xf86-vidmode-bad-clock 
-	   xf86-vidmode-bad-htimings 
-	   xf86-vidmode-bad-vtimings
-	   xf86-vidmode-mode-unsuitable
-	   xf86-vidmode-extension-disabled
-	   xf86-vidmode-client-not-local
-	   xf86-vidmode-zoom-locked))
+           xf86-vidmode-bad-htimings 
+           xf86-vidmode-bad-vtimings
+           xf86-vidmode-mode-unsuitable
+           xf86-vidmode-extension-disabled
+           xf86-vidmode-client-not-local
+           xf86-vidmode-zoom-locked))
 
 (define-condition xf86-vidmode-bad-clock (request-error) ())
 (define-condition xf86-vidmode-bad-htimings (request-error) ())
@@ -166,12 +166,12 @@
 (declaim (inline screen-position))
 (defun screen-position (screen display)
   (declare (type display display)
-	   (type screen screen))
+           (type screen screen))
   (declare (clx-values position))
   (let ((position (position screen (xlib:display-roots display))))
     (if (not (numberp position))
-	(error "screen ~A not found in display ~A" screen display)
-	position)))
+        (error "screen ~A not found in display ~A" screen display)
+        position)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;                                                                       ;;;;
@@ -187,7 +187,7 @@ return two values major-version and minor-version in that order."
       (display (vidmode-opcode display) nil :sizes 16)
     ((data +query-version+))
    (let ((major (card16-get 8))
-	 (minor (card16-get 10)))
+         (minor (card16-get 10)))
      (declare (type card16 major minor))
      (when (>= major 2)
        (XFree86-VidMode-set-client-version display))
@@ -202,7 +202,7 @@ return two values major-version and minor-version in that order."
 
 (defun xfree86-vidmode-get-permissions (dpy screen)
   (declare (type display dpy)
-	   (type screen screen))
+           (type screen screen))
   (with-buffer-request-and-reply
       (dpy (vidmode-opcode dpy) nil :sizes (8 16 32))
     ((data +get-permisions+)
@@ -216,11 +216,11 @@ return two values major-version and minor-version in that order."
 requested settings are valid (e.g. they don't exceed the 
 capabilities of the monitor)."
   (declare (type display display)
-	   (type screen screen))
+           (type screen screen))
   (let* ((major (xfree86-vidmode-query-version display))
-	 (v (mode-info->v-card16 mode-line major)))
+         (v (mode-info->v-card16 mode-line major)))
     (declare (type card16 major)
-	     (type simple-vector v))
+             (type simple-vector v))
     (with-buffer-request (display (vidmode-opcode display))
       (data +mod-mode-line+)
       (card32 (screen-position screen display))
@@ -233,44 +233,44 @@ If there are any server  private  values (currently  only
 applicable  to  the S3 server) the function will store it 
 into the returned structure."
   (declare (clx-values mode-info)
-	   (type display display)
-	   (type screen screen))
+           (type display display)
+           (type screen screen))
   (let ((major (xfree86-vidmode-query-version display))
-	(offset 8))
+        (offset 8))
     (declare (type fixnum offset)
-	     (type card16 major))    
+             (type card16 major))    
     (with-buffer-request-and-reply
         (display (vidmode-opcode display) nil :sizes (8 16 32))
       ((data +get-mode-line+)
        (card16 (screen-position screen display))
        (card16 0))
      (let ((mode-info 
-	    (make-mode-info
-	        :dotclock (card32-get offset)
-		:hdisplay (card16-get (incf offset 4))
-		:hsyncstart (card16-get (incf offset 2))
-		:hsyncend (card16-get (incf offset 2))
-		:htotal (card16-get (incf offset 2))
-		:hskew (if (< major 2) 0 (card16-get (incf offset 2)))
-		:vdisplay (card16-get (incf offset 2))
-		:vsyncstart (card16-get (incf offset 2))
-		:vsyncend (card16-get (incf offset 2))
-		:vtotal (card16-get (incf offset 2))
-		:flags (card32-get (incf offset (if (< major 2) 2 4)))))
-	   (size (card32-get (incf offset (if (< major 2) 4 16)))))
+            (make-mode-info
+                :dotclock (card32-get offset)
+                :hdisplay (card16-get (incf offset 4))
+                :hsyncstart (card16-get (incf offset 2))
+                :hsyncend (card16-get (incf offset 2))
+                :htotal (card16-get (incf offset 2))
+                :hskew (if (< major 2) 0 (card16-get (incf offset 2)))
+                :vdisplay (card16-get (incf offset 2))
+                :vsyncstart (card16-get (incf offset 2))
+                :vsyncend (card16-get (incf offset 2))
+                :vtotal (card16-get (incf offset 2))
+                :flags (card32-get (incf offset (if (< major 2) 2 4)))))
+           (size (card32-get (incf offset (if (< major 2) 4 16)))))
        (declare (type card32 size))
        (incf offset 4)
        (setf (mode-info-privsize mode-info) size
-	     (mode-info-private mode-info)
-	     (sequence-get :format card32 :index offset
-			   :length size :result-type 'list))
+             (mode-info-private mode-info)
+             (sequence-get :format card32 :index offset
+                           :length size :result-type 'list))
        mode-info))))
 
 (defun xfree86-vidmode-get-all-mode-lines (dpy screen)
   "Returns a list containing all video modes (as mode-info structure). 
 The first element of the list corresponds to the current video mode."
   (declare (type display dpy)
-	   (type screen screen))
+           (type screen screen))
   (multiple-value-bind (major minor) (xfree86-vidmode-query-version dpy)
     (declare (type card16 major minor))
     (with-buffer-request-and-reply 
@@ -282,54 +282,54 @@ The first element of the list corresponds to the current video mode."
       ;; 0.x with x < 8 (the .private field wasn't being passed over the wire).
       ;; Check the server's version, and accept the old format if appropriate.
       (loop with bug-p = (and (= major 0) (< minor 8))
-	    with offset of-type fixnum = 32
+            with offset of-type fixnum = 32
             for i of-type card32 from 0 below (or (card32-get 8) 0)
-	    collect
-	     (let ((mode-info
-		    (make-mode-info
-		       :dotclock (card32-get offset)
-		       :hdisplay (card16-get (incf offset 4))
-		       :hsyncstart (card16-get (incf offset 2))
-		       :hsyncend (card16-get (incf offset 2))
-		       :htotal (card16-get (incf offset 2))
-		       :hskew (if (< major 2) 0 (card32-get (incf offset 2)))
-		       :vdisplay (card16-get (incf offset 4))
-		       :vsyncstart (card16-get (incf offset 2))
-		       :vsyncend (card16-get (incf offset 2))
-		       :vtotal (card16-get (incf offset 2))
-		       :flags (card32-get (incf offset (if (< major 2) 2 6)))))
-		   (size (card32-get (incf offset (if (< major 2) 4 16)))))
-		(declare (type card32 size))
-		(incf offset 4)
-		(when bug-p 
-		  (setf size 0))
-		(setf (mode-info-privsize mode-info) size
-		      (mode-info-private mode-info)
-		      (sequence-get :format card32 :index offset
-				    :length size :result-type 'list))
-		(incf offset (* 4 size))
-		mode-info))))))
+            collect
+             (let ((mode-info
+                    (make-mode-info
+                       :dotclock (card32-get offset)
+                       :hdisplay (card16-get (incf offset 4))
+                       :hsyncstart (card16-get (incf offset 2))
+                       :hsyncend (card16-get (incf offset 2))
+                       :htotal (card16-get (incf offset 2))
+                       :hskew (if (< major 2) 0 (card32-get (incf offset 2)))
+                       :vdisplay (card16-get (incf offset 4))
+                       :vsyncstart (card16-get (incf offset 2))
+                       :vsyncend (card16-get (incf offset 2))
+                       :vtotal (card16-get (incf offset 2))
+                       :flags (card32-get (incf offset (if (< major 2) 2 6)))))
+                   (size (card32-get (incf offset (if (< major 2) 4 16)))))
+                (declare (type card32 size))
+                (incf offset 4)
+                (when bug-p 
+                  (setf size 0))
+                (setf (mode-info-privsize mode-info) size
+                      (mode-info-private mode-info)
+                      (sequence-get :format card32 :index offset
+                                    :length size :result-type 'list))
+                (incf offset (* 4 size))
+                mode-info))))))
 
 (defun xfree86-vidmode-add-mode-line (dpy scr new &key (after (make-mode-info)))
   (declare (type display dpy)
-	   (type screen scr))
+           (type screen scr))
   (let* ((private (mode-info-private new))
-	 (privsize (mode-info-privsize new))
-	 (major (xfree86-vidmode-query-version dpy))
-	 (i (if (< major 2) 14 22))
-	 (v (make-array (- (+ (* 2 i) (* 2 privsize)) 2) :initial-element 0)))
+         (privsize (mode-info-privsize new))
+         (major (xfree86-vidmode-query-version dpy))
+         (i (if (< major 2) 14 22))
+         (v (make-array (- (+ (* 2 i) (* 2 privsize)) 2) :initial-element 0)))
     (declare (type card32 privsize)
-	     (type fixnum i)
-	     (type card16 major)
-	     (type simple-vector v))
+             (type fixnum i)
+             (type card16 major)
+             (type simple-vector v))
     (mode-info->v-card16 new major :encode-private nil :data v)
     (mode-info->v-card16 after major :encode-private nil :data v :index i)
     (setf i (- (* 2 i) 2))
     ;; strore private info (sequence card32) according clx bytes order.
     (loop for card of-type card32 in private
-	  do (multiple-value-bind (w1 w2) (__card32->card16__ card)
-	       (setf (svref v (incf i)) w1
-		     (svref v (incf i)) w2)))
+          do (multiple-value-bind (w1 w2) (__card32->card16__ card)
+               (setf (svref v (incf i)) w1
+                     (svref v (incf i)) w2)))
     
     (with-buffer-request (dpy (vidmode-opcode dpy))
       (data +add-mode-line+)
@@ -343,11 +343,11 @@ structure must match, except the privsize and private fields.
 If the mode to be deleted is the current mode, a mode switch to the next 
 mode will occur first. The last remaining mode can not be deleted."
   (declare (type display dpy)
-	   (type screen scr))
+           (type screen scr))
   (let* ((major (xfree86-vidmode-query-version dpy))
-	 (v (mode-info->v-card16 mode-info major)))
+         (v (mode-info->v-card16 mode-info major)))
     (declare (type card16 major)
-	     (type simple-vector v))
+             (type simple-vector v))
     (with-buffer-request (dpy (vidmode-opcode dpy))
       (data +delete-mode-line+)
       (card32 (screen-position scr dpy))
@@ -403,11 +403,11 @@ combination of the server, card, and monitor) the function returns :mode_ok
 otherwise it returns a keyword indicating  the  reason why the mode is 
 invalid."
   (declare (type display dpy)
-	   (type screen scr))
+           (type screen scr))
   (let* ((major (xfree86-vidmode-query-version dpy))
-	 (v (mode-info->v-card16 mode-info major)))
+         (v (mode-info->v-card16 mode-info major)))
     (declare (type card16 major)
-	     (type simple-vector v))
+             (type simple-vector v))
     (with-buffer-request-and-reply
         (dpy (vidmode-opcode dpy) nil :sizes (8 16 32))
       ((data +validate-mode-line+)
@@ -419,7 +419,7 @@ invalid."
 
 (defun xfree86-vidmode-get-gamma (display screen)
   (declare (type display display)
-	   (type screen screen))
+           (type screen screen))
   (with-buffer-request-and-reply 
       (display (vidmode-opcode display) nil :sizes (8 16 32))
     ((data +get-gamma+)
@@ -435,8 +435,8 @@ invalid."
 
 (defun xfree86-vidmode-set-gamma (dpy scr &key (red 1.0) (green 1.0) (blue 1.0))
   (declare (type display dpy)
-	   (type screen scr)
-	   (type (single-float 0.100f0 10.000f0) red green blue))
+           (type screen scr)
+           (type (single-float 0.100f0 10.000f0) red green blue))
   (with-buffer-request (dpy (vidmode-opcode dpy))
     (data +set-gamma+)
     (card16 (screen-position scr dpy))
@@ -450,8 +450,8 @@ invalid."
 
 (defun xfree86-vidmode-get-gamma-ramp (dpy scr size)
   (declare (type display dpy)
-	   (type screen scr)
-	   (type card16 size))
+           (type screen scr)
+           (type card16 size))
   (with-buffer-request-and-reply (dpy (vidmode-opcode dpy) nil :sizes (8 16 32))
     ((data +get-gamma-ramp+)
      (card16 (screen-position scr dpy))
@@ -460,33 +460,33 @@ invalid."
      (declare (type fixnum rep-size))
      (unless (zerop rep-size)
        (let* ((off1 (+ 32 rep-size (* 2 (mod rep-size 2))))
-	      (off2 (+ off1 rep-size (* 2 (mod rep-size 2)))))
-	 (declare (type fixnum off1 off2))
-	 (values
-	  (sequence-get :format card16 :length (card16-get 8)
-			:index 32 :result-type 'list)
-	  (sequence-get :format card16 :length (card16-get 8)
-			:index off1 :result-type 'list)
-	  (sequence-get :format card16 :length (card16-get 8)
-			:index off2 :result-type 'list)))))))
+              (off2 (+ off1 rep-size (* 2 (mod rep-size 2)))))
+         (declare (type fixnum off1 off2))
+         (values
+          (sequence-get :format card16 :length (card16-get 8)
+                        :index 32 :result-type 'list)
+          (sequence-get :format card16 :length (card16-get 8)
+                        :index off1 :result-type 'list)
+          (sequence-get :format card16 :length (card16-get 8)
+                        :index off2 :result-type 'list)))))))
 
 (defun xfree86-vidmode-set-gamma-ramp (dpy scr size &key red green blue)
   (declare (type (or null simple-vector) red green blue)
-	   (type card16 size)
-	   (type display dpy)
-	   (type screen scr))
+           (type card16 size)
+           (type display dpy)
+           (type screen scr))
   (with-buffer-request (dpy (vidmode-opcode dpy))
     (data +set-gamma-ramp+)
     (card16 (screen-position scr dpy))
     (card16 size)
     ((sequence :format card16) 
      (if (zerop (mod size 2))
-	 (concatenate 'vector red green blue)
+         (concatenate 'vector red green blue)
          (concatenate 'vector red '#(0) green '#(0) blue '#(0))))))
 
 (defun xfree86-vidmode-get-gamma-ramp-size (dpy screen)
   (declare (type display dpy)
-	   (type screen screen))
+           (type screen screen))
   (with-buffer-request-and-reply 
       (dpy (vidmode-opcode dpy) nil :sizes (8 16 32))
     ((data +get-gamma-ramp-size+)
@@ -499,8 +499,8 @@ invalid."
 modes comes from a call to the mode switching functions or from one 
 of the mode switch key sequences (e.g. Ctrl-Alt-+ Ctrl-Alt--)."
   (declare (type display display)
-	   (type screen screen)
-	   (type boolean lock-p))
+           (type screen screen)
+           (type boolean lock-p))
   (with-buffer-request (display (vidmode-opcode display))
     (data +lock-mode-switch+)
     (card16 (screen-position screen display))
@@ -511,30 +511,30 @@ of the mode switch key sequences (e.g. Ctrl-Alt-+ Ctrl-Alt--)."
 an existing mode. Matching is as specified in the description of the 
 xf86-vidmode-delete-mode-line function."
   (declare (type display display)
-	   (type screen screen))
+           (type screen screen))
   (multiple-value-bind (major minor) (xfree86-vidmode-query-version display)
     (declare (type card16 major minor))
     ;; Note: There was a bug in the protocol implementation in versions
     ;; 0.x with x < 8 (the .private field wasn't being passed over the wire).
     ;; Check the server's version, and accept the old format if appropriate.
     (let ((bug-p (and (= major 0) (< minor 8)))
-	  (privsize (mode-info-privsize mode-info)))
+          (privsize (mode-info-privsize mode-info)))
       (declare (type boolean bug-p))
       (and bug-p (setf (mode-info-privsize mode-info) 0))
       (let ((v (mode-info->v-card16 mode-info major :encode-private bug-p)))
-	(declare (type simple-vector v))
-	(and bug-p (setf (mode-info-privsize mode-info) privsize))
-	(with-buffer-request (display (vidmode-opcode display))
-	  (data +switch-to-mode+)
-	  (card32 (screen-position screen display))
-	  ((sequence :format card16) v))))))
+        (declare (type simple-vector v))
+        (and bug-p (setf (mode-info-privsize mode-info) privsize))
+        (with-buffer-request (display (vidmode-opcode display))
+          (data +switch-to-mode+)
+          (card32 (screen-position screen display))
+          ((sequence :format card16) v))))))
 
 (defun xfree86-vidmode-switch-mode (display screen zoom)
   "Change the video mode to next (or previous) video mode, depending 
 of zoom sign. If positive, switch to next mode, else switch to prev mode."
   (declare (type display display)
-	   (type screen screen)
-	   (type card16 zoom))
+           (type screen screen)
+           (type card16 zoom))
   (with-buffer-request (display (vidmode-opcode display))
     (data +switch-mode+)
     (card16 (screen-position screen display))
@@ -543,7 +543,7 @@ of zoom sign. If positive, switch to next mode, else switch to prev mode."
 (defun xfree86-vidmode-select-next-mode (display screen)
   "Change the video mode to next video mode"
   (declare (type display display)
-	   (type screen screen))
+           (type screen screen))
   (with-buffer-request (display (vidmode-opcode display))
     (data +switch-mode+)
     (card16 (screen-position screen display))
@@ -552,7 +552,7 @@ of zoom sign. If positive, switch to next mode, else switch to prev mode."
 (defun xfree86-vidmode-select-prev-mode (display screen)
   "Change the video mode to previous video mode"
   (declare (type display display)
-	   (type screen screen))
+           (type screen screen))
   (with-buffer-request (display (vidmode-opcode display))
     (data +switch-mode+)
     (card16 (screen-position screen display))
@@ -569,31 +569,31 @@ Multiple value return:
 The hi and low values will be equal if a discreate value was given 
 in the XF86Config file."
   (declare (type display dpy)
-	   (type screen screen))
+           (type screen screen))
   (with-buffer-request-and-reply
       (dpy (vidmode-opcode dpy) nil :sizes (8 16 32))
     ((data +get-monitor+)
      (card16 (screen-position screen dpy))
      (card16 0))
    (let* ((vendor-name-length (card8-get 8))
-	  (model-name-length (card8-get 9))
-	  (pad (- 4 (mod vendor-name-length 4)))
-	  (nhsync (card8-get 10))
-	  (nvsync (card8-get 11))
-	  (vindex (+ 32 (* 4 (+ nhsync nvsync))))
-	  (mindex (+ vindex vendor-name-length pad))
-	  (hsync (sequence-get :length nhsync :index 32 :result-type 'list))
-	  (vsync (sequence-get :length nvsync :index (+ 32 (* nhsync 4))
-			       :result-type 'list)))
+          (model-name-length (card8-get 9))
+          (pad (- 4 (mod vendor-name-length 4)))
+          (nhsync (card8-get 10))
+          (nvsync (card8-get 11))
+          (vindex (+ 32 (* 4 (+ nhsync nvsync))))
+          (mindex (+ vindex vendor-name-length pad))
+          (hsync (sequence-get :length nhsync :index 32 :result-type 'list))
+          (vsync (sequence-get :length nvsync :index (+ 32 (* nhsync 4))
+                               :result-type 'list)))
      (declare (type card8 nhsync nvsync vendor-name-length model-name-length)
-	      (type fixnum pad vindex mindex))
+              (type fixnum pad vindex mindex))
      (values 
       (loop for i of-type card32 in hsync
-	    collect (/ (ldb (byte 16 0) i) 100.)
-	    collect (/ (ldb (byte 32 16) i) 100.))
+            collect (/ (ldb (byte 16 0) i) 100.)
+            collect (/ (ldb (byte 32 16) i) 100.))
       (loop for i of-type card32 in vsync
-	    collect (/ (ldb (byte 16 0) i) 100.)
-	    collect (/ (ldb (byte 32 16) i) 100.))
+            collect (/ (ldb (byte 16 0) i) 100.)
+            collect (/ (ldb (byte 32 16) i) 100.))
       (string-get vendor-name-length vindex)
       (string-get model-name-length mindex)))))
 
@@ -602,7 +602,7 @@ in the XF86Config file."
 the virtual screen. The upper left coordinates will be returned as 
 a multiple value."
   (declare (type display dpy)
-	   (type screen screen))
+           (type screen screen))
   (multiple-value-bind (major minor) (xfree86-vidmode-query-version dpy)
     (declare (type card16 major minor))
     ;; Note: There was a bug in the protocol implementation in versions
@@ -611,11 +611,11 @@ a multiple value."
     ;; versions.
     (when (and (= major 0) (< minor 8))
       (format cl:*error-output* 
-	      "running an old version ~a ~a~%"
-	      major minor)
+              "running an old version ~a ~a~%"
+              major minor)
       (return-from xfree86-vidmode-get-viewport nil))
     (with-buffer-request-and-reply 
-	(dpy (vidmode-opcode dpy) nil :sizes (8 16 32))
+        (dpy (vidmode-opcode dpy) nil :sizes (8 16 32))
       ((data +get-viewport+)
        (card16 (screen-position screen dpy))
        (card16 0))
@@ -627,8 +627,8 @@ a multiple value."
   "Set upper left corner of the viewport into the virtual screen to the 
 x and y keyword parameters value (zero will be theire default value)."
   (declare (type display dpy)
-	   (type screen screen)
-	   (type card32 x y))
+           (type screen screen)
+           (type card32 x y))
   (with-buffer-request (dpy (vidmode-opcode dpy))
     (data +set-viewport+)
     (card16 (screen-position screen dpy))
@@ -642,7 +642,7 @@ x and y keyword parameters value (zero will be theire default value)."
  maxclocks
  clock list"
   (declare (type display dpy)
-	   (type screen screen))
+           (type screen screen))
   (with-buffer-request-and-reply 
       (dpy (vidmode-opcode dpy) nil :sizes (8 16 32))
     ((data +get-dot-clocks+)
@@ -652,7 +652,7 @@ x and y keyword parameters value (zero will be theire default value)."
     (card32-get 8)  ; flags
     (card32-get 16) ; max clocks
     (sequence-get :length (card32-get 12) :format card32
-		  :index 32 :result-type 'list))))
+                  :index 32 :result-type 'list))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;                                                                       ;;;;
@@ -663,62 +663,62 @@ x and y keyword parameters value (zero will be theire default value)."
 (defun mode-info->v-card16
     (mode-info major &key (encode-private t) (index 0) data)
   (declare (type integer index)
-	   (type card16 major)
-	   (type boolean encode-private)
-	   (type (or null simple-vector) data))
+           (type card16 major)
+           (type boolean encode-private)
+           (type (or null simple-vector) data))
   (let ((dotclock (mode-info-dotclock mode-info))
-	(hdisplay (mode-info-hdisplay mode-info))
-	(hsyncstart (mode-info-hsyncstart mode-info))
-	(hsyncend (mode-info-hsyncend mode-info))
-	(htotal (mode-info-htotal mode-info))
-	(hskew (mode-info-hskew mode-info))
-	(vdisplay (mode-info-vdisplay mode-info))
-	(vsyncstart (mode-info-vsyncstart mode-info))
-	(vsyncend (mode-info-vsyncend mode-info))
-	(vtotal (mode-info-vtotal mode-info))
-	(flags (mode-info-flags mode-info))
-	(privsize (mode-info-privsize mode-info))
-	(private (mode-info-private mode-info)))
+        (hdisplay (mode-info-hdisplay mode-info))
+        (hsyncstart (mode-info-hsyncstart mode-info))
+        (hsyncend (mode-info-hsyncend mode-info))
+        (htotal (mode-info-htotal mode-info))
+        (hskew (mode-info-hskew mode-info))
+        (vdisplay (mode-info-vdisplay mode-info))
+        (vsyncstart (mode-info-vsyncstart mode-info))
+        (vsyncend (mode-info-vsyncend mode-info))
+        (vtotal (mode-info-vtotal mode-info))
+        (flags (mode-info-flags mode-info))
+        (privsize (mode-info-privsize mode-info))
+        (private (mode-info-private mode-info)))
     (declare (type card16 hdisplay hsyncstart hsyncend htotal hskew)
-	     (type card16 vdisplay vsyncstart vsyncend vtotal)
-	     (type card32 dotclock flags privsize)
-	     (type (or null sequence) private))
+             (type card16 vdisplay vsyncstart vsyncend vtotal)
+             (type card32 dotclock flags privsize)
+             (type (or null sequence) private))
     (let* ((size (+ (if (< major 2) 14 22) (* privsize 2)))
-	   (v (or data (make-array size :initial-element 0))))      
+           (v (or data (make-array size :initial-element 0))))      
       (declare (type fixnum size)
-	       (type simple-vector v))
+               (type simple-vector v))
       ;; store dotclock (card32) according clx bytes order.
       (multiple-value-bind (w1 w2) (__card32->card16__ dotclock)
-	(setf (svref v index) w1
-	      (svref v (incf index)) w2))
+        (setf (svref v index) w1
+              (svref v (incf index)) w2))
       (setf (svref v (incf index)) hdisplay
-	    (svref v (incf index)) hsyncstart
-	    (svref v (incf index)) hsyncend
-	    (svref v (incf index)) htotal)
+            (svref v (incf index)) hsyncstart
+            (svref v (incf index)) hsyncend
+            (svref v (incf index)) htotal)
       (unless (< major 2)
-	(setf (svref v (incf index)) hskew))
+        (setf (svref v (incf index)) hskew))
       (setf (svref v (incf index)) vdisplay
-	    (svref v (incf index)) vsyncstart
-	    (svref v (incf index)) vsyncend
-	    (svref v (incf index)) vtotal)
+            (svref v (incf index)) vsyncstart
+            (svref v (incf index)) vsyncend
+            (svref v (incf index)) vtotal)
       (unless (< major 2)
-	(incf index))
+        (incf index))
       ;; strore flags (card32) according clx bytes order.
       (multiple-value-bind (w1 w2) (__card32->card16__ flags)
-	(setf (svref v (incf index)) w1
-	      (svref v (incf index)) w2))
+        (setf (svref v (incf index)) w1
+              (svref v (incf index)) w2))
       ;; strore privsize (card32) according clx bytes order.
       (multiple-value-bind (w1 w2) (__card32->card16__ privsize)
-	(setf (svref v (incf index)) w1
-	      (svref v (incf index)) w2))
+        (setf (svref v (incf index)) w1
+              (svref v (incf index)) w2))
       ;; reserverd byte32 1 2 3
       (unless (< major 2) (incf index 6))
       ;; strore private info (sequence card32) according clx bytes order.
       (when encode-private
-	(loop for i of-type int32 in private
-	      do (multiple-value-bind (w1 w2) (__card32->card16__ i)
-		   (setf (svref v (incf index)) w1
-			 (svref v (incf index)) w2))))
+        (loop for i of-type int32 in private
+              do (multiple-value-bind (w1 w2) (__card32->card16__ i)
+                   (setf (svref v (incf index)) w1
+                         (svref v (incf index)) w2))))
       v)))
 
 (declaim (inline __card32->card16__))

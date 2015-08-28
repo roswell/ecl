@@ -1,4 +1,4 @@
-;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: SYSTEM -*-
+;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: SYSTEM; indent-tabs-mode: nil -*-
 ;;;;
 ;;;;  cmdline.lsp -- command line processing
 ;;;;
@@ -64,12 +64,12 @@ appeared after a '--'.")
     ("-nodebug" 0 (setf *command-break-enable* nil))
     ("-eval" 1 (eval (read-from-string 1)))
     ("-shell" 1 (progn (setq quit 0)
-		       (setq ext:*unprocessed-ecl-command-args* (rest 1))
-		       (load (first (rest 1)) :verbose nil))
+                       (setq ext:*unprocessed-ecl-command-args* (rest 1))
+                       (load (first (rest 1)) :verbose nil))
      :stop)
     ("-load" 1 (load 1 :verbose verbose))
     ("-dir" 1 (setf (logical-pathname-translations "SYS")
-	       `(("**;*.*" ,(merge-pathnames "**/*.*" (truename 1))))))
+               `(("**;*.*" ,(merge-pathnames "**/*.*" (truename 1))))))
     ("--heap-size" 1 (ext:set-limit 'ext:heap-size (read-from-string 1)))
     ("--lisp-stack" 1 (ext:set-limit 'ext:lisp-stack (read-from-string 1)))
     ("--frame-stack" 1 (ext:set-limit 'ext:frame-stack (read-from-string 1)))
@@ -88,22 +88,22 @@ appeared after a '--'.")
     ("-compile" 1
      (progn
        (setq quit
-	     (if (nth-value 3
-		     (compile-file 1 :output-file output-file :c-file c-file
-				   :h-file h-file :data-file data-file
-				   :verbose verbose :system-p system-p))
-		 1
-		 0)
-	     output-file t
-	     c-file nil
-	     h-file nil
-	     data-file nil
-	     system-p nil)))
+             (if (nth-value 3
+                     (compile-file 1 :output-file output-file :c-file c-file
+                                   :h-file h-file :data-file data-file
+                                   :verbose verbose :system-p system-p))
+                 1
+                 0)
+             output-file t
+             c-file nil
+             h-file nil
+             data-file nil
+             system-p nil)))
     ("-link" &rest
      (progn
        (require 'cmp)
        (funcall (read-from-string "c::build-program")
-		(or output-file "lisp.exe") :lisp-files '&rest)
+                (or output-file "lisp.exe") :lisp-files '&rest)
        (setq output-file t quit t)))
     ("-o" &optional (setq output-file 1))
     ("-c" &optional (setq c-file 1))
@@ -118,29 +118,29 @@ appeared after a '--'.")
 (defun produce-init-code (option-list rules)
   (do* ((commands '())
         (stop nil)
-	(loadrc t))
+        (loadrc t))
        ((or stop (null option-list))
-	(values `(let ((output-file t)
-		       (c-file nil)
-		       (h-file nil)
-		       (data-file nil)
-		       (verbose t)
-		       (system-p nil)
-		       (quit nil)
+        (values `(let ((output-file t)
+                       (c-file nil)
+                       (h-file nil)
+                       (data-file nil)
+                       (verbose t)
+                       (system-p nil)
+                       (quit nil)
                        (*command-break-enable* nil))
-		   ,@(nreverse commands)
-		   (when quit (quit 0)))
-		loadrc
-		option-list))
+                   ,@(nreverse commands)
+                   (when quit (quit 0)))
+                loadrc
+                option-list))
     (let* ((option (pop option-list))
-	   (rule (assoc option rules :test #'string=)))
+           (rule (assoc option rules :test #'string=)))
       (unless rule
-	;; If there is a default rule, group all remaining arguments
-	;; including the unmatched one, and pass them to this rule.
-	(setf rule (assoc "*DEFAULT*" rules :test #'string=)
-	      stop t)
-	(unless rule
-	  (command-arg-error "Unknown command line option ~A.~%" option)))
+        ;; If there is a default rule, group all remaining arguments
+        ;; including the unmatched one, and pass them to this rule.
+        (setf rule (assoc "*DEFAULT*" rules :test #'string=)
+              stop t)
+        (unless rule
+          (command-arg-error "Unknown command line option ~A.~%" option)))
       (case (fourth rule)
         (:noloadrc (setf loadrc nil))
         (:loadrc (setf loadrc t))
@@ -148,33 +148,33 @@ appeared after a '--'.")
                      stop t)))
       (let ((pattern (copy-tree (third rule)))
             (noptions (second rule)))
-	(cond ((equal noptions 0)
-	       ;; No extra arguments
-	       )
-	      ((and (equal noptions '&optional)
-		    (or (null option-list)
-			(assoc (first option-list) rules :test #'string=)))
-	       ;; The argument is optional and the next command line option is
-	       ;; either absent or it is a valid command line option
-	       (nsubst t 1 pattern))
-	      ((null option-list)
-	       (command-arg-error
-		"Missing argument after command line option ~A.~%"
-		option))
-	      ((or (eq noptions 'rest) (eq noptions '&rest))
-	       (nsubst option-list noptions pattern)
-	       (setf option-list nil))
-	      (t
-	       (nsubst (pop option-list) 1 pattern)))
+        (cond ((equal noptions 0)
+               ;; No extra arguments
+               )
+              ((and (equal noptions '&optional)
+                    (or (null option-list)
+                        (assoc (first option-list) rules :test #'string=)))
+               ;; The argument is optional and the next command line option is
+               ;; either absent or it is a valid command line option
+               (nsubst t 1 pattern))
+              ((null option-list)
+               (command-arg-error
+                "Missing argument after command line option ~A.~%"
+                option))
+              ((or (eq noptions 'rest) (eq noptions '&rest))
+               (nsubst option-list noptions pattern)
+               (setf option-list nil))
+              (t
+               (nsubst (pop option-list) 1 pattern)))
         (push pattern commands)))))
 
 (defun process-command-args (&key
-			     (args (rest *command-args*))
-			     (rules +default-command-arg-rules+))
+                             (args (rest *command-args*))
+                             (rules +default-command-arg-rules+))
 "PROCESS-COMMAND-ARGS takes a list of arguments and processes according
 to a set of rules. These rules are of the format
 
-	(option-name nargs template [ :stop | :noloadrc | :loadrc ] )
+        (option-name nargs template [ :stop | :noloadrc | :loadrc ] )
 
 OPTION-NAME is a string containing the command line option. NARGS is
 the number of arguments that this option takes. TEMPLATE is a lisp

@@ -31,33 +31,33 @@
 ;;; directory is located.
 ;;;
 (CLINES "
-enum smmode {			/*  stream mode  */
-	smm_input,		/*  input  */
-	smm_output,		/*  output  */
-	smm_io,			/*  input-output  */
-	smm_probe,		/*  probe  */
-	smm_synonym,		/*  synonym  */
-	smm_broadcast,		/*  broadcast  */
-	smm_concatenated,	/*  concatenated  */
-	smm_two_way,		/*  two way  */
-	smm_echo,		/*  echo  */
-	smm_string_input,	/*  string input  */
-	smm_string_output,	/*  string output  */
-	smm_user_defined        /*  for user defined */ 
+enum smmode {                   /*  stream mode  */
+        smm_input,              /*  input  */
+        smm_output,             /*  output  */
+        smm_io,                 /*  input-output  */
+        smm_probe,              /*  probe  */
+        smm_synonym,            /*  synonym  */
+        smm_broadcast,          /*  broadcast  */
+        smm_concatenated,       /*  concatenated  */
+        smm_two_way,            /*  two way  */
+        smm_echo,               /*  echo  */
+        smm_string_input,       /*  string input  */
+        smm_string_output,      /*  string output  */
+        smm_user_defined        /*  for user defined */ 
 };
 ")
 
 #-akcl
 (CLINES "
 struct stream {
-	short	t, m;
-	FILE	*sm_fp;		/*  file pointer  */
-	object	sm_object0;	/*  some object  */
-	object	sm_object1;	/*  some object */
-	int	sm_int0;	/*  some int  */
-	int	sm_int1;	/*  some int  */
-	short	sm_mode;	/*  stream mode  */
-				/*  of enum smmode  */
+        short   t, m;
+        FILE    *sm_fp;         /*  file pointer  */
+        object  sm_object0;     /*  some object  */
+        object  sm_object1;     /*  some object */
+        int     sm_int0;        /*  some int  */
+        int     sm_int1;        /*  some int  */
+        short   sm_mode;        /*  stream mode  */
+                                /*  of enum smmode  */
 };
 ")
 
@@ -70,10 +70,10 @@ struct stream {
 (CLINES "
 int
 konnect_to_server(host,display)
-     object host;		/* host name */
-     int    display;		/* display number */
+     object host;               /* host name */
+     int    display;            /* display number */
 {
-   int fd;			/* file descriptor */
+   int fd;                      /* file descriptor */
    int i;
    char hname[BUFSIZ];
    FILE *fout, *fin;
@@ -98,15 +98,15 @@ konnect_to_server(host,display)
 (CLINES "
 object
 konnect_stream(host,fd,flag,elem)
-     object host;		/* not really used */
-     int fd;			/* file descriptor */
-     int flag;			/* 0 input, 1 output */
-     object elem;		/* 'string-char */
+     object host;               /* not really used */
+     int fd;                    /* file descriptor */
+     int flag;                  /* 0 input, 1 output */
+     object elem;               /* 'string-char */
 {
    struct stream *stream;
-   char *mode;			/* file open mode */
-   FILE *fp;			/* file pointer */
-   enum smmode smm;		/* lisp mode (a short) */
+   char *mode;                  /* file open mode */
+   FILE *fp;                    /* file pointer */
+   enum smmode smm;             /* lisp mode (a short) */
    vs_mark;
 
    switch(flag){
@@ -148,16 +148,16 @@ konnect_stream(host,fd,flag,elem)
 ;;;; Open an X stream
 
 (defun open-socket-stream (host display)
-  (when (not (and (typep host    'string)	; sanity check the arguments
-		  (typep display 'fixnum)))
+  (when (not (and (typep host    'string)       ; sanity check the arguments
+                  (typep display 'fixnum)))
     (error "Host ~s or display ~s are bad." host display))
 
-  (let ((fd (konnect-to-server host display)))	; get a file discriptor
+  (let ((fd (konnect-to-server host display)))  ; get a file discriptor
     (if (< fd 0)
-	NIL
-	(let ((stream-in  (konnect-stream host fd 0 'string-char))	; input
-	      (stream-out (konnect-stream host fd 1 'string-char)))	; output
-	  (if (or (null stream-in) (null stream-out))
-	      (error "Could not make i/o streams for fd ~d." fd))
-	  (make-two-way-stream stream-in stream-out))
-	)))
+        NIL
+        (let ((stream-in  (konnect-stream host fd 0 'string-char))      ; input
+              (stream-out (konnect-stream host fd 1 'string-char)))     ; output
+          (if (or (null stream-in) (null stream-out))
+              (error "Could not make i/o streams for fd ~d." fd))
+          (make-two-way-stream stream-in stream-out))
+        )))

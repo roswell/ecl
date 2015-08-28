@@ -1,0 +1,651 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en"><reference xml:id="os.dict"><title>OS Reference</title>
+
+ <!-- ====================================================================== -->
+ <!-- EXT:*HELP-MESSAGE*                                                     -->
+ <!-- ====================================================================== -->
+
+ <refentry xml:id="ref._help-message_">
+  <refnamediv>
+   <refname><varname>ext:*help-message*</varname></refname>
+   <refpurpose>Command line help message</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+   <title>Variable</title>
+   <variablelist>
+    <varlistentry>
+     <term>Type</term>
+     <listitem><para>A string</para></listitem>
+    </varlistentry>
+    <varlistentry>
+     <term>Initial value</term>
+     <listitem><para>&ECL; help message</para></listitem>
+    </varlistentry>
+   </variablelist>
+  </refsynopsisdiv>
+
+  <refsect1>
+   <title>Description</title>
+
+   <para>This variable contains the help message which is output when &ECL; is
+   invoked with the <option>--help</option>.</para>
+  </refsect1>
+
+  <refsect1>
+   <title>Example</title>
+   <para>See <xref linkend="ref.process-command-args"/>.</para>
+  </refsect1>
+ </refentry>
+
+ <!-- ====================================================================== -->
+ <!-- EXT:+LISP-INIT-FILES+                                                  -->
+ <!-- ====================================================================== -->
+
+ <refentry xml:id="ref._lisp-init-file-list_">
+  <refnamediv>
+   <refname><varname>ext:*lisp-init-file-list*</varname></refname>
+   <refpurpose>&ECL; initialization files.</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+   <title>Constant</title>
+   <variablelist>
+    <varlistentry>
+     <term>Type</term>
+     <listitem><para>A list of pathname designators.</para></listitem>
+    </varlistentry>
+    <varlistentry>
+     <term>Initial value</term>
+     <listitem><para><literal>'("~/.ecl" "~/.eclrc")</literal></para></listitem>
+    </varlistentry>
+   </variablelist>
+  </refsynopsisdiv>
+
+  <refsect1>
+   <title>Description</title>
+
+   <para>This variable contains the names of initialization files that are
+   loaded by &ECL; or embedding programs. The loading of initialization files
+   happens automatically in &ECL; unless invoked with the option
+   <option>-norc</option>. Whether initialization files are loaded or not is
+   controlled by the command line options rules, as described in <xref
+   linkend="ref.process-command-args"/>.</para>
+  </refsect1>
+
+  <refsect1>
+   <title>Example</title>
+   <para>See <xref linkend="ref.process-command-args"/>.</para>
+  </refsect1>
+ </refentry>
+
+ <!-- ====================================================================== -->
+ <!-- EXT:+DEFAULT-COMMAND-ARG-RULES+                                        -->
+ <!-- ====================================================================== -->
+
+ <refentry xml:id="ref._default-command-arg-rules_">
+  <refnamediv>
+   <refname><varname>ext:+default-command-arg-rules+</varname></refname>
+   <refpurpose>&ECL; command line options</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+   <title>Constant</title>
+   <variablelist>
+    <varlistentry>
+     <term>Type</term>
+     <listitem><para>A list of lists.</para></listitem>
+    </varlistentry>
+   </variablelist>
+  </refsynopsisdiv>
+
+  <refsect1>
+   <title>Description</title>
+
+   <para>This constant contains a list of rules for parsing the command line
+   arguments. This list is made of all the options which &ECL; accepts by
+   default. It can be passed as first argument to <xref
+   linkend="ref.process-command-args"/>, and you can use it as a starting point
+   to extend &ECL;.</para>
+  </refsect1>
+
+  <refsect1>
+   <title>Example</title>
+   <para>See <xref linkend="ref.process-command-args"/>.</para>
+  </refsect1>
+ </refentry>
+
+ <!-- ====================================================================== -->
+ <!-- EXT:COMMAND-ARGS                                                       -->
+ <!-- ====================================================================== -->
+
+ <refentry xml:id="ref.command-args">
+  <refnamediv>
+   <refname><function>ext:command-args</function></refname>
+   <refpurpose>Original list of command line arguments.</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+   <title>Function</title>
+   <funcsynopsis>
+    <funcprototype>
+     <funcdef>ext:command-args</funcdef>
+     <void></void>
+    </funcprototype>
+   </funcsynopsis>
+   <variablelist>
+    <varlistentry>
+     <term>returns</term>
+     <listitem><para>A list of strings.</para></listitem>
+    </varlistentry>
+   </variablelist>
+  </refsynopsisdiv>
+
+  <refsect1>
+   <title>Description</title>
+
+   <para>This function returns the list of command line arguments passed to
+   either &ECL; or the program it was embedded in. The output is a list of
+   strings and it corresponds to the <varname>argv</varname> vector in a C
+   program. Typically, the first argument is the name of the program as it was
+   invoked. You should not count on ths filename to be resolved.</para>
+  </refsect1>
+
+ </refentry>
+
+ <!-- ====================================================================== -->
+ <!-- EXT:PROCESS-COMMAND-ARGS                                               -->
+ <!-- ====================================================================== -->
+
+ <refentry xml:id="ref.process-command-args">
+  <refnamediv>
+   <refname><function>ext:process-command-args</function></refname>
+   <refpurpose>Process command line arguments.</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+   <title>Function</title>
+   <funcsynopsis>
+    <funcprototype>
+     <funcdef>ext:process-command-args</funcdef>
+     <paramdef><parameter>&key;</parameter></paramdef>
+     <paramdef><parameter>args</parameter></paramdef>
+     <paramdef><parameter>rules</parameter></paramdef>
+    </funcprototype>
+   </funcsynopsis>
+   <variablelist>
+    <varlistentry>
+     <term><replaceable>args</replaceable></term>
+     <listitem><para>A list of strings. Defaults to the output of <xref
+     linkend="ref.command-args"/></para></listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><replaceable>rules</replaceable></term>
+     <listitem><para>A list of lists. Defaults to the value of <xref
+     linkend="ref._default-command-arg-rules_"/></para></listitem>
+    </varlistentry>
+   </variablelist>
+  </refsynopsisdiv>
+
+  <refsect1>
+   <title>Description</title>
+
+   <para>This function processes the command line arguments passed to either
+   &ECL; or the program that embeds it. It uses the list of rules
+   <replaceable>rules</replaceable>, which has the following syntax:
+<synopsis>(option-name nargs template [:stop | :noloadrc | :loadrc]*)</synopsis>
+   </para>
+   <variablelist>
+    <varlistentry>
+     <term><replaceable>option-name</replaceable></term>
+     <listitem><para>A string with the option prefix as typed by the user. For
+     instance <option>--help</option>, <option>-?</option>,
+     <option>--compile</option>, etc.</para></listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><replaceable>nargs</replaceable></term>
+     <listitem><para>A nonnegative integer denoting the number of arguments
+     taken by this option.</para></listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><replaceable>template</replaceable></term>
+     <listitem><para>A lisp form, not evaluated, where numbers from 0 to
+     <replaceable>nargs</replaceable> will be replaced by the corresponding
+     option argument.</para></listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><symbol>:STOP</symbol></term>
+     <listitem><para>If present, parsing of arguments stops after this option
+     is found and processed. The list of remaining arguments is passed to
+     the rule. &ECL;'s top-level uses this option with the <symbol>--</symbol>
+     command line option to set <symbol>ext:*unprocessed-ecl-command-args*</symbol>
+     to the list of remaining arguments.</para></listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><symbol>:NOLOADRC</symbol> and <symbol>:LOADRC</symbol></term>
+     <listitem><para>Determine whether the lisp initalization file (<xref
+     linkend="ref._lisp-init-file-list_"/>) will be loaded before processing
+     all forms.</para></listitem>
+    </varlistentry>
+   </variablelist>
+
+   <para><function>EXT:PROCESS-COMMAND-ARGS</function> works as follows. First
+   of all, it parses all the command line arguments, except for the first one,
+   which is assumed to contain the program name. Each of these arguments is
+   matched against the rules, sequentially, until one of the patterns
+   succeeeds.</para>
+
+   <para>A special name <literal>"*DEFAULT*"</literal>, matches any unknown
+   command line option. If there is no <literal>"*DEFAULT*"</literal> rule and
+   no match is found, an error is signalled. For each rule that succeeds, the
+   function constructs a lisp statement using the
+   <replaceable>template</replaceable>.</para>
+
+   <para>After all arguments have been processed,
+   <function>EXT:PROCESS-COMMAND-ARGS</function>, and there were no occurences
+   of <symbol>:NOLOADRC</symbol>, one of the files listed in <xref
+   linkend="ref._lisp-init-file-list_"/> will be loaded. Finally, the list of
+   lisp statements will be evaluated.</para>
+  </refsect1>
+
+  <refsect1>
+   <title>Example</title>
+
+   <para>The following piece of code implements the <command>ls</command>
+   command using lisp.<footnote><para>Instructions for building this program
+   are found under
+   <filename>ecl/examples/cmdline/ls.lsp</filename></para></footnote></para>
+<!-- When changing, check ecl/examples/cmdline/ls.lsp -->
+<programlisting>
+(setq ext:*help-message* "
+ls [--help | -?] filename*
+     Lists the file that match the given patterns.
+")
+
+(defun print-directory (pathnames)
+ (format t "~{~A~%~}"
+  (mapcar #'(lambda (x) (enough-namestring x (si::getcwd)))
+          (mapcan #'directory (or pathnames '("*.*" "*/"))))))
+
+(defconstant +ls-rules+
+'(("--help" 0 (progn (princ ext:*help-message* *standard-output*) (ext:quit 0)))
+  ("-?" 0 (progn (princ ext:*help-message* *standard-output*) (ext:quit 0)))
+  ("*DEFAULT*" 1 (print-directory 1) :stop)))
+
+(let ((ext:*lisp-init-file-list* NIL)) ; No initialization files
+  (handler-case (ext:process-command-args :rules +ls-rules+)
+    (error (c)
+       (princ ext:*help-message* *error-output*)
+       (ext:quit 1))))
+(ext:quit 0)
+</programlisting>
+  </refsect1>
+ </refentry>
+
+ <!-- ====================================================================== -->
+ <!-- EXT:QUIT                                                               -->
+ <!-- ====================================================================== -->
+
+ <refentry xml:id="ref.quit">
+  <refnamediv>
+   <refname><function>ext:quit</function></refname>
+   <refpurpose>Exit &ECL;.</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+   <title>Function</title>
+   <funcsynopsis>
+    <funcprototype>
+     <funcdef>ext:quit</funcdef>
+     <paramdef>&optional;</paramdef>
+     <paramdef><parameter>exit-code</parameter></paramdef>
+    </funcprototype>
+   </funcsynopsis>
+   <variablelist>
+    <varlistentry>
+     <term><replaceable>exit-code</replaceable></term>
+     <listitem><para>An integer between 0 and 255</para></listitem>
+    </varlistentry>
+   </variablelist>
+  </refsynopsisdiv>
+
+  <refsect1>
+   <title>Description</title>
+
+   <para>This function abruptly stops the execution of the program in which
+   &ECL; is embedded. Depending on the platform, several other functions will
+   be invoked to free resources, close loaded modules, etc.</para>
+
+   <para>The exit code is the code seen by the parent process that invoked
+   this program. Normally a code other than zero denotes an error.</para>
+  </refsect1>
+ </refentry>
+
+ <!-- ====================================================================== -->
+ <!-- EXT:EXTERNAL-PROCESS                                                   -->
+ <!-- ====================================================================== -->
+
+  <refentry xml:id="ref.external-process">
+  <refnamediv>
+   <refname><function>ext:external-process</function></refname>
+   <refpurpose>Holds process state.</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+   <title>Structure</title>
+   <synopsis><type>ext:external-process</type></synopsis>
+   <variablelist>
+    <varlistentry>
+     <term><replaceable>PID</replaceable></term>
+     <listitem><para>process pid</para></listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><replaceable>INPUT</replaceable></term>
+     <listitem><para>process input stream</para></listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><replaceable>OUTPUT</replaceable></term>
+     <listitem><para>process output stream</para></listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><replaceable>ERROR-STREAM</replaceable></term>
+     <listitem><para>process error stream</para></listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><replaceable>%STATUS</replaceable></term> <listitem><para>either
+     <symbol>:RUNNING</symbol>, <symbol>:STOPPED</symbol>,
+     <symbol>:SIGNALED</symbol>, <symbol>:EXITED</symbol></para></listitem>,
+     <symbol>:ERROR</symbol> or <symbol>:ABORT</symbol>
+    </varlistentry>
+    <varlistentry>
+     <term><replaceable>%CODE</replaceable></term>
+     <listitem><para>exit code or nil (if still running)</para></listitem>
+    </varlistentry>
+   </variablelist>
+  </refsynopsisdiv>
+
+  <refsect1>
+   <title>Description</title>
+   <para>This structure is responsible for holding external process state -
+   process id, communication streams, runtime status and exit code. It is
+   returned as third value of <xref linkend="ref.run-program"/>.</para>
+  </refsect1>
+  </refentry>
+
+ <!-- ====================================================================== -->
+ <!-- EXT:EXTERNAL-PROCESS-STATUS                                            -->
+ <!-- ====================================================================== -->
+ <refentry xml:id="ref.external-process-status">
+  <refnamediv>
+   <refname><function>ext:external-process-status</function></refname>
+   <refpurpose>Check status of <xref
+   linkend="ref.external-process"/>.</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+   <title>Function</title>
+   <funcsynopsis>
+    <funcprototype>
+     <funcdef>ext:external-process-status</funcdef>
+     <paramdef><parameter>external-process</parameter></paramdef>
+    </funcprototype>
+   </funcsynopsis>
+
+   <refsect1>
+    <title>Description</title>
+
+    <para>Checks status of external-process. Returns it's current status, and
+    if exited - <symbol>EXIT-CODE</symbol> as second value.</para>
+   </refsect1>
+  </refsynopsisdiv>
+ </refentry>
+
+ <!-- ======================================================================
+      -->
+ <!-- EXT:RUN-PROGRAM                                                        -->
+ <!-- ====================================================================== -->
+ <refentry xml:id="ref.run-program">
+  <refnamediv>
+   <refname><function>ext:run-program</function></refname>
+   <refpurpose>Start and communicate with a child process.</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+   <title>Function</title>
+   <funcsynopsis>
+    <funcprototype>
+     <funcdef>ext:run-program</funcdef>
+     <paramdef><parameter>command</parameter></paramdef>
+     <paramdef><parameter>argv</parameter></paramdef>
+     <paramdef>&key;</paramdef>
+     <paramdef>input</paramdef>
+     <paramdef>output</paramdef>
+     <paramdef>error</paramdef>
+     <paramdef>wait</paramdef>
+     <paramdef>environ</paramdef>
+     <paramdef>if-input-does-exist</paramdef>
+     <paramdef>if-output-exists</paramdef>
+     <paramdef>if-error-exists</paramdef>
+     <paramdef>external-format</paramdef>
+    </funcprototype>
+   </funcsynopsis>
+   <variablelist>
+    <varlistentry>
+     <term><replaceable>input</replaceable></term>
+     <listitem><para>One of <symbol>:STREAM</symbol>, <symbol>T</symbol>,
+     <symbol>NIL</symbol>, string or pathname - defaults to
+     <symbol>:STREAM</symbol></para></listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><replaceable>output</replaceable></term>
+     <listitem><para>One of <symbol>:STREAM</symbol>, <symbol>T</symbol>,
+     <symbol>NIL</symbol>, string or pathname - defaults to
+     <symbol>:STREAM</symbol></para></listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><replaceable>error</replaceable></term>
+     <listitem><para>One of <symbol>:OUTPUT</symbol>, <symbol>:STREAM</symbol>,
+     <symbol>T</symbol>, <symbol>NIL</symbol>, string or pathname - defaults to
+     <symbol>:OUTPUT</symbol></para></listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><replaceable>wait</replaceable></term>
+     <listitem><para>Boolean indicating if process should run
+     synchronously, defaults to T</para></listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><replaceable>environ</replaceable></term>
+     <listitem><para>List of strings containing environment bindings. Defaults
+     to NIL (inheritance of lisp process environment).</para></listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><replaceable>if-input-does-not-exist</replaceable></term>
+     <listitem><para>If <symbol>:INPUT</symbol> is pathname this symbol value
+     is provided as <symbol>:IF-DOES-NOT-EXIST</symbol> for
+     <symbol>CL_OPEN</symbol>. Defaults to
+     <symbol>NIL</symbol></para></listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><replaceable>if-output-exists</replaceable></term>
+     <listitem><para>If <symbol>:OUTPUT</symbol> is pathname this symbol value
+     is provided as <symbol>:IF-EXISTS</symbol> for
+     <symbol>CL_OPEN</symbol>. Defaults to
+     <symbol>:ERROR</symbol></para></listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><replaceable>if-error-exists</replaceable></term>
+     <listitem><para>If <symbol>:ERROR</symbol> is pathname this symbol value
+     is provided as <symbol>:IF-EXISTS</symbol> for
+     <symbol>CL_OPEN</symbol>. Defaults to
+     <symbol>:ERROR</symbol></para></listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><replaceable>external-format</replaceable></term>
+     <listitem><para>External format used for both streams and
+     pathnames. Defaults to <symbol>:DEFAULT</symbol></para></listitem>
+    </varlistentry>
+    <varlistentry>
+     <term>returns</term>
+     <listitem><para>Two-way stream responsible for input/output with created
+     process (created of <symbol>:OUTPUT</symbol> and
+     <symbol>:INPUT</symbol>),</para></listitem>
+     <listitem><para>Return code of spawned process. If process still runs then
+     <symbol>NIL</symbol></para></listitem>
+     <listitem><para><xref linkend="ref.external-process"/> structure holding
+     process state.</para></listitem>
+    </varlistentry>
+   </variablelist>
+  </refsynopsisdiv>
+
+  <refsect1>
+   <title>Description</title>
+
+   <para>This function creates a external process by launching the program
+   <replaceable>command</replaceable> with the arguments from the list
+   <replaceable>argv</replaceable>.</para>
+
+   <para>The arguments <replaceable>input</replaceable>,
+   <replaceable>output</replaceable> and <replaceable>error</replaceable> are
+   used to intercept the standard input, output and error streams of the
+   program. A value of <symbol>:STREAM</symbol> means a lisp stream will be
+   created to communicate with the child process. A value of
+   <symbol>NIL</symbol> means that the data from this pipe will be
+   discarded. The value of <symbol>T</symbol> means that the child process will
+   use the parent's standard input, output or error channels. If value is
+   pathname, then corresponding file will be used (strings are coerced to
+   pathnames).</para>
+
+   <para>For instance, if &ECL; writes to the console and you pass a value of
+   <replaceable>output</replaceable> equal to <symbol>T</symbol>, the child
+   process will also output to the console. Finally, the error messages of the
+   child process are redirected to the same pipe as its standard output when
+   <replaceable>error</replaceable> takes the value
+   <symbol>:OUTPUT</symbol>.</para>
+
+   <para>If the child process was succesfully launched, this function outputs a
+   lisp stream to which we one may write, read or do both things, depending on
+   the arguments <replaceable>input</replaceable> and
+   <replaceable>output</replaceable>. If an error happened during the
+   preparation of the child process (for instance the program was not found),
+   this function returns <replaceable>NIL</replaceable>.</para>
+
+   <para>Function returns three values - two-way stream for communication,
+   return-code or nil depending if process is called asynchronously, and <xref
+   linkend="ref.external-process"/> structure holding process state.</para>
+
+   <para>The design of this function is inspired by the function of same name
+   in &CMUCL; and &SBCL;.</para>
+  </refsect1>
+
+  <refsect1>
+   <title>Example</title>
+
+   <para>List all users in a Unix system. We use the <command>sed</command>
+   command to parse the file with the list of users, removing comments and
+   information other than the user names:
+   <programlisting>
+(defun all-users (&amp;optional (file "/etc/passwd"))
+  (let ((s (ext:run-program "sed"
+              (list "-e" "/^#.*$/d;/^[^:]*$/d;s,^\\([^:]*\\).*$,\\1,g"
+                file)
+              :input NIL :output :STREAM :error NIL)))
+    (unless s
+      (error "Unable to parse password file"))
+    (loop for x = (read s NIL NIL)
+          while x
+          collect x)))
+   </programlisting></para>
+
+   <para>Make a directory. Redirect standard error output to the same as the
+   output:
+   <programlisting>(ext:run-program "mkdir" '("./tmp") :output :STREAM :error :OUTPUT)
+   </programlisting>
+   </para>
+
+   <para>Same as before, but now both the output and the standard error are
+   discarded
+   <programlisting>(ext:run-program "mkdir" '("./tmp") :output NIL :error :OUTPUT)
+   </programlisting>
+   </para>
+  </refsect1>
+
+  <refsect1>
+   <title>Limitations</title>
+
+   <para>All streams passed to <function>ext:run-program</function> has to have
+   underlying file handler. That means, that if gray streams are passed to
+   function - it might signal an error. Such situation occurs, when for
+   instance <symbol>:OUTPUT</symbol> value is <symbol>T</symbol> and
+   <symbol>*standard-output*</symbol> is bound to gray stream (default if using
+   slime and emacs).</para>
+  </refsect1>
+ </refentry>
+
+ <!-- ====================================================================== -->
+ <!-- EXT:SYSTEM                                                             -->
+ <!-- ====================================================================== -->
+
+ <refentry xml:id="ref.system">
+  <refnamediv>
+   <refname><function>ext:system</function></refname>
+   <refpurpose>Invoke a command using the shell.</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+   <title>Function</title>
+   <funcsynopsis>
+    <funcprototype>
+     <funcdef>ext:system</funcdef>
+     <paramdef><parameter>command</parameter></paramdef>
+    </funcprototype>
+   </funcsynopsis>
+   <variablelist>
+    <varlistentry>
+     <term><replaceable>command</replaceable></term>
+     <listitem><para>A string</para></listitem>
+    </varlistentry>
+    <varlistentry>
+     <term>returns</term>
+     <listitem><para>An integer (0-255) with the exit code of the
+     program</para></listitem>
+    </varlistentry>
+   </variablelist>
+  </refsynopsisdiv>
+
+  <refsect1>
+   <title>Description</title>
+
+   <para>This function executes a command in the shell. In Unix systems,
+   typically the environment variable <symbol>SHELL</symbol> determines which
+   program will be invoked, while in Windows <command>CMD.EXE</command> is
+   used. The string may thus be any valid command that the shell accepts and
+   in can contain higher level elements such as input/output
+   redirection. Output isn't printed.</para>
+
+   <para>As an example, the following function uses an external editor to
+   modify a lisp file and, if successful, loads the changed sources:</para>
+   <programlisting>
+(defun edit (filename)
+  (let* ((editor #+windows "notepad.exe"
+                 #-windows "/usr/bin/emacs")
+    (command (concatenate 'string editor " " filename)))
+    (when (zerop (ext:system command))
+    (load filename))))
+   </programlisting>
+  </refsect1>
+ </refentry>
+</reference></book>
+<!-- Keep this comment at the end of the file
+      Local variables:
+      mode: nxml
+      sgml-parent-document: "ecl.xml"
+      sgml-indent-step: 1
+      nxml-child-indent: 1
+      nxml-outline-child-indent: 1
+      fill-column: 79
+      End:
+ -->

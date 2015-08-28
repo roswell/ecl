@@ -35,7 +35,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defpackage "SERVE-EVENT"
-  (:use "CL" "FFI" "UFFI")
+  (:use "CL" "FFI")
   (:export "WITH-FD-HANDLER" "ADD-FD-HANDLER" "REMOVE-FD-HANDLER"
            "SERVE-EVENT" "SERVE-ALL-EVENTS"))
 (in-package "SERVE-EVENT")

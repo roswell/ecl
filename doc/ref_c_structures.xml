@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter>
+<title>Structures</title>
+<section xml:id="ansi.structures.c-dict">
+<title>C Reference</title>
+  <refentry>
+    <refnamediv>
+      <refname>ANSI Dictionary</refname>
+      <refpurpose>&ANSI-C-Dict;</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+<simplelist columns="2" type="horiz">
+<member>Lisp symbol</member>
+<member>C function</member>
+
+<member><ulink url="&clhs;f_cp_stu.htm"><symbol>copy-structure</symbol></ulink></member>
+<member><code>cl_object cl_copy_structure(cl_object structure)</code></member>
+
+</simplelist>
+    </refsynopsisdiv>
+
+    <refsect1>
+      <title>Description</title>
+      <para></para>
+    </refsect1>
+  </refentry>
+</section>
+</chapter>
+</book>

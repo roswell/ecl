@@ -26,8 +26,8 @@
 ;;
 (setq compiler::generate-interrupt-checks-switch
   (compile nil '(lambda (safety size speed)
-		   (declare (ignore size))
-		  (or (< speed 3) (> safety 0)))))
+                   (declare (ignore size))
+                  (or (< speed 3) (> safety 0)))))
 
 
 #+allegro
@@ -35,75 +35,75 @@
     ()
   |depdefs|
   (|clx| :load-before-compile (|depdefs|)
-	 :recompile-on (|depdefs|))
+         :recompile-on (|depdefs|))
   (|dependent| :load-before-compile (|depdefs| |clx|)
-	       :recompile-on (|clx|))
+               :recompile-on (|clx|))
   (|exclcmac| :load-before-compile (|depdefs| |clx| |dependent|)
-	      :recompile-on (|dependent|))
+              :recompile-on (|dependent|))
   (|macros| :load-before-compile (|depdefs| |clx| |dependent| |exclcmac|)
-	    :recompile-on (|exclcmac|))
+            :recompile-on (|exclcmac|))
   (|bufmac| :load-before-compile (|depdefs| |clx| |dependent| |exclcmac|
-					    |macros|)
-	    :recompile-on (|macros|))
+                                            |macros|)
+            :recompile-on (|macros|))
   (|buffer| :load-before-compile (|depdefs| |clx| |dependent| |exclcmac|
-					    |macros| |bufmac|)
-	    :recompile-on (|bufmac|))
+                                            |macros| |bufmac|)
+            :recompile-on (|bufmac|))
   (|display| :load-before-compile (|depdefs| |clx| |dependent| |exclcmac|
-					     |macros| |bufmac| |buffer|)
-	     :recompile-on (|buffer|))
+                                             |macros| |bufmac| |buffer|)
+             :recompile-on (|buffer|))
   (|gcontext| :load-before-compile (|depdefs| |clx| |dependent| |exclcmac|
-					      |macros| |bufmac| |buffer|
-					      |display|)
-	      :recompile-on (|display|))
+                                              |macros| |bufmac| |buffer|
+                                              |display|)
+              :recompile-on (|display|))
   (|input| :load-before-compile (|depdefs| |clx| |dependent| |exclcmac|
-					   |macros| |bufmac| |buffer| |display|
-					   )
-	   :recompile-on (|display|))
+                                           |macros| |bufmac| |buffer| |display|
+                                           )
+           :recompile-on (|display|))
   (|requests| :load-before-compile (|depdefs| |clx| |dependent| |exclcmac|
-					      |macros| |bufmac| |buffer|
-					      |display| |input|)
-	      :recompile-on (|display|))
+                                              |macros| |bufmac| |buffer|
+                                              |display| |input|)
+              :recompile-on (|display|))
   (|fonts| :load-before-compile (|depdefs| |clx| |dependent| |exclcmac|
-					   |macros| |bufmac| |buffer| |display|
-					   )
-	   :recompile-on (|display|))
+                                           |macros| |bufmac| |buffer| |display|
+                                           )
+           :recompile-on (|display|))
   (|graphics| :load-before-compile (|depdefs| |clx| |dependent| |exclcmac|
-					      |macros| |bufmac| |buffer|
-					      |display| |fonts|)
-	      :recompile-on (|fonts|))
+                                              |macros| |bufmac| |buffer|
+                                              |display| |fonts|)
+              :recompile-on (|fonts|))
   (|text| :load-before-compile (|depdefs| |clx| |dependent| |exclcmac| |macros|
-					  |bufmac| |buffer| |display|
-					  |gcontext| |fonts|)
-	  :recompile-on (|gcontext| |fonts|)
-	  :load-after (|translate|))
+                                          |bufmac| |buffer| |display|
+                                          |gcontext| |fonts|)
+          :recompile-on (|gcontext| |fonts|)
+          :load-after (|translate|))
   ;; The above line gets around a compiler macro expansion bug.
   
   (|attributes| :load-before-compile (|depdefs| |clx| |dependent| |exclcmac|
-						|macros| |bufmac| |buffer|
-						|display|)
-		:recompile-on (|display|))
+                                                |macros| |bufmac| |buffer|
+                                                |display|)
+                :recompile-on (|display|))
   (|translate| :load-before-compile (|depdefs| |clx| |dependent| |exclcmac|
-					       |macros| |bufmac| |buffer|
-					       |display| |text|)
-	       :recompile-on (|display|))
+                                               |macros| |bufmac| |buffer|
+                                               |display| |text|)
+               :recompile-on (|display|))
   (|keysyms| :load-before-compile (|depdefs| |clx| |dependent| |exclcmac|
-					     |macros| |bufmac| |buffer|
-					     |display| |translate|)
-	     :recompile-on (|translate|))
+                                             |macros| |bufmac| |buffer|
+                                             |display| |translate|)
+             :recompile-on (|translate|))
   (|manager| :load-before-compile (|depdefs| |clx| |dependent| |exclcmac|
-					     |macros| |bufmac| |buffer|
-					     |display|)
-	     :recompile-on (|display|))
+                                             |macros| |bufmac| |buffer|
+                                             |display|)
+             :recompile-on (|display|))
   (|image| :load-before-compile (|depdefs| |clx| |dependent| |exclcmac|
-					   |macros| |bufmac| |buffer| |display|
-					   )
-	   :recompile-on (|display|))
+                                           |macros| |bufmac| |buffer| |display|
+                                           )
+           :recompile-on (|display|))
   
   ;; Don't know if l-b-c list is correct.  XX
   (|resource| :load-before-compile (|depdefs| |clx| |dependent| |exclcmac|
-					      |macros| |bufmac| |buffer|
-					      |display|)
-	      :recompile-on (|display|))
+                                              |macros| |bufmac| |buffer|
+                                              |display|)
+              :recompile-on (|display|))
   )
 
 #+allegro
@@ -116,7 +116,7 @@
 
 (defun compile-clx (&optional pathname-defaults)
   (let ((*default-pathname-defaults*
-	  (or pathname-defaults *default-pathname-defaults*)))
+          (or pathname-defaults *default-pathname-defaults*)))
     (declare (special *default-pathname-defaults*))
     (compile-file "depdefs")
     (load "depdefs")
@@ -147,7 +147,7 @@
     (compile-file "attributes")
     (load "attributes")
     (load "translate")
-    (compile-file "translate")		; work-around bug in 2.0 and 2.2
+    (compile-file "translate")          ; work-around bug in 2.0 and 2.2
     (load "translate")
     (compile-file "keysyms")
     (load "keysyms")
@@ -162,7 +162,7 @@
 
 (defun load-clx (&optional pathname-defaults)
   (let ((*default-pathname-defaults*
-	  (or pathname-defaults *default-pathname-defaults*)))
+          (or pathname-defaults *default-pathname-defaults*)))
     (declare (special *default-pathname-defaults*))
     (load "depdefs")
     (load "clx")

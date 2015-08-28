@@ -108,7 +108,7 @@ if test "x${cross_compiling}" = "xyes"; then
 ### it before invoking "configure" again.
 
 ### 1.1) Direction of growth of the stack
-ECL_STACK_DIR=up
+ECL_STACK_DIR=down
 
 ### 1.2) Choose an integer datatype which is large enough to host a pointer
 CL_FIXNUM_TYPE=int
@@ -150,7 +150,6 @@ ECL_LONG_LONG_BITS=no
 ###
 ### 1.7) Other features (set to 'no' to disable)
 ###
-ECL_WORKING_SEM_INIT=no
 ECL_WORKING_ENVIRON=yes
 
 ### 2) To cross-compile ECL so that it runs on the system
@@ -238,7 +237,7 @@ AC_SUBST(EXEEXT)
 AC_SUBST(INSTALL_TARGET)dnl Which type of installation: flat directory or unix like.
 AC_SUBST(thehost)
 AC_SUBST(ECL_GC_DIR)dnl Which version of the Boehm-Weiser library to use
-ECL_GC_DIR=gc-unstable
+ECL_GC_DIR=bdwgc
 ECL_LDRPATH=''
 SHAREDEXT='so'
 SHAREDPREFIX='lib'
@@ -412,7 +411,7 @@ case "${host_os}" in
                 # well with our signal handler.
 		# enable_boehm=included
                 if test `uname -r | cut -d '.' -f 1` -ge 11; then
-                  ECL_GC_DIR=gc-unstable
+                  ECL_GC_DIR=bdwgc
                 fi
 		SONAME="${SHAREDPREFIX}ecl.SOVERSION.${SHAREDEXT}"
 		SONAME_LDFLAGS="-Wl,-install_name,@libdir\@/SONAME -Wl,-compatibility_version,${PACKAGE_VERSION}"
@@ -928,19 +927,22 @@ AC_DEFUN([ECL_BOEHM_GC],[
 AC_SUBST(ECL_BOEHM_GC_HEADER)
 case "${enable_boehm}" in
   yes) enable_boehm=auto;;
-  no|auto|system|included) ;;
+  auto|system|included) ;;
   *) AC_MSG_ERROR( [Invalid value of --enable-boehm: ${enable_boehm}] );;
 esac
 if test "${enable_boehm}" = auto -o "${enable_boehm}" = system; then
  dnl
  dnl Try first with the prebuilt versions, if installed and accessible
  dnl
+ system_boehm=yes
+ AC_CHECK_LIB( [gc], [GC_get_thr_restart_signal],
+               [], [system_boehm="no"] )
  if test "${enable_threads}" = no; then
    AC_CHECK_LIB( [gc], [GC_malloc],
-                 [system_boehm="yes"], [system_boehm="no"] )
+                 [], [system_boehm="no"] )
  else
    AC_CHECK_LIB( [gc], [GC_register_my_thread],
-                 [system_boehm="yes"], [system_boehm="no"] )
+                 [], [system_boehm="no"] )
  fi
  if test "${system_boehm}" = yes; then
    AC_CHECK_HEADER([gc.h],[ECL_BOEHM_GC_HEADER='gc.h'],[],[])
@@ -957,8 +959,8 @@ if test "${enable_boehm}" = auto -o "${enable_boehm}" = system; then
  AC_MSG_CHECKING( [whether we can use the existing Boehm-Weiser library] )
  AC_MSG_RESULT( [${system_boehm}] )
  if test "${system_boehm}" = "no"; then
-   if test "${enable_boehm}" = "auto"; then
-     enable_boehm="included";
+   if test "${enable_boehm}" = "auto" -o "${enable_boehm}" = "included"; then
+      enable_boehm="included";
    else
      AC_MSG_ERROR([System Boehm GC library requested but not found.])
    fi

@@ -10,8 +10,8 @@ srcdir	= ..\src
 
 SHORT_SITE_NAME   =
 LONG_SITE_NAME    =
-ECL_VERSION       = 15.3.7
-ECL_VERSION_NUMBER= 150307
+ECL_VERSION       = 16.0.0
+ECL_VERSION_NUMBER= 160000
 ARCHITECTURE      = PENTIUM4
 SOFTWARE_TYPE     = NT
 SOFTWARE_VERSION  = 5.0
@@ -156,7 +156,7 @@ INSTALL	= @INSTALL@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_DATA = @INSTALL_DATA@
-mkinstalldirs = $(SHELL) $(top_srcdir)/gc/mkinstalldirs
+mkinstalldirs = $(top_srcdir)/bdwgc/install-sh -d
 
 # Files
 #
@@ -353,8 +353,8 @@ eclgc.lib:
 	           gc_config_macros.h leak_detector.h gc_typed.h \
 	           private\gc_priv.h private\gcconfig.h gc_mark.h \
 		   new_gc_alloc.h weakpointer.h gc_pthread_redirects.h) \
-	    do $(CP) $(srcdir)\gc\include\%h ecl\gc\%h
-	$(CP) $(srcdir)\gc\libatomic_ops-1.2\src\atomic_ops.h ecl\gc
+	    do $(CP) $(srcdir)\bdwgc\include\%h ecl\gc\%h
+
 eclgmp.lib:
 	cd gmp
 	$(MAKE) "MPN_TYPE=$(GMP_TYPE)" "CFLAGS_CONFIG=$(CFLAGS_CONFIG)" \
@@ -393,7 +393,7 @@ install:
 	for /f %i in ('type MODULES') do $(CP) %i "$(libdir)"
 	for %i in (ecl-static.lib) do IF EXIST %i $(CP) %i "$(libdir)"
 	IF NOT EXIST "$(docdir)" $(MKDIR) "$(docdir)"
-	for %i in (..\Copyright ..\ANNOUNCEMENT ..\LGPL ..\README.1st ..\src\CHANGELOG) do $(CP) %i "$(docdir)"
+	for %i in (..\Copyright ..\LGPL ..\README.1st ..\CHANGELOG) do $(CP) %i "$(docdir)"
 !if "$(ECL_UNICODE)" != ""
 	IF NOT EXIST "$(libdir)\encodings" $(MKDIR) "$(libdir)\encodings"
 	$(CP) encodings\*.* "$(libdir)\encodings"
@@ -402,10 +402,12 @@ install:
 check: package\ecl.exe
 	cd tests
 	$(MAKE)
+
 recheck: package\ecl.exe
 	cd tests
 	$(MAKE) clean
 	$(MAKE)
+
 package\ecl.exe: ecl2$(EXE)
 	$(MAKE) install ECL_THREADS=$(ECL_THREADS) ECL_UNICODE=$(ECL_UNICODE) 
 
@@ -421,7 +423,7 @@ windows-nsi:
 
 clean: clean_ecl clean_lisp
 	-$(RM) .gdbinit cinit.lib ecl_min.lib
-	-$(RM) gc\*.pdb
+	-$(RM) bdwgc\*.pdb
 	cd gc
 	-$(MAKE) ECL_THREADS=$(ECL_THREADS) clean
 	cd ..

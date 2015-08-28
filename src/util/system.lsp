@@ -35,27 +35,27 @@
 (defpackage "SBT"
   (:use "CL")
   (:export defsystem
-	   build-system
-	   compile-system
-	   load-system
-	   build-ecl))
+           build-system
+           compile-system
+           load-system
+           build-ecl))
 
 (in-package "SBT")
 
 (defmacro defsystem (name &key modules
-		     (source-directory '("./"))
-		     (source-extension "lsp")
-		     (fasl-directory "./")
-		     (fasl-extension "o")
-		     (library-directory "./"))
-  `(defparameter ,name			; rather then defvar
+                     (source-directory '("./"))
+                     (source-extension "lsp")
+                     (fasl-directory "./")
+                     (fasl-extension "o")
+                     (library-directory "./"))
+  `(defparameter ,name                  ; rather then defvar
      (make-system :NAME ',name
-		  :MODULES ,modules
-		  :SOURCE-DIRECTORY ,(if (consp source-directory) source-directory (list 'quote (list source-directory)))
-		  :SOURCE-EXTENSION ,source-extension
-		  :FASL-DIRECTORY ,fasl-directory
-		  :FASL-EXTENSION ,fasl-extension
-		  :LIBRARY-DIRECTORY ,library-directory)))
+                  :MODULES ,modules
+                  :SOURCE-DIRECTORY ,(if (consp source-directory) source-directory (list 'quote (list source-directory)))
+                  :SOURCE-EXTENSION ,source-extension
+                  :FASL-DIRECTORY ,fasl-directory
+                  :FASL-EXTENSION ,fasl-extension
+                  :LIBRARY-DIRECTORY ,library-directory)))
 
 ;;; ----------------------------------------------------------------------
 
@@ -70,23 +70,23 @@
 
 (defun make-source-pathname (name system)
   (let ((name (string-downcase name))
-	(extension (system-source-extension system)))
+        (extension (system-source-extension system)))
     (dolist (i (system-source-directory system))
       (let ((pathname (make-pathname :name name :type extension
-				     :defaults i)))
-	(let ((ok (probe-file pathname)))
-	  (when ok (return-from make-source-pathname ok)))))
+                                     :defaults i)))
+        (let ((ok (probe-file pathname)))
+          (when ok (return-from make-source-pathname ok)))))
     (error "sbt::make-source-pathname: source file not found")))
 
 (defun make-binary-pathname (name system)
   (make-pathname :name (string-downcase name)
-		 :type (system-fasl-extension system)
-		 :defaults (system-fasl-directory system)))
+                 :type (system-fasl-extension system)
+                 :defaults (system-fasl-directory system)))
 
 (defun make-library-pathname (system target)
   (let* ((name (string-downcase (system-name system)))
-	 (directory (system-library-directory system))
-	 (output-name (merge-pathnames name directory)))
+         (directory (system-library-directory system))
+         (output-name (merge-pathnames name directory)))
     (compile-file-pathname output-name :type target)))
 
 ;;; ----------------------------------------------------------------------
@@ -94,12 +94,12 @@
 ;;; 
 
 (defstruct (module (:TYPE vector) :NAMED
-		   (:CONSTRUCTOR make-module (name))
+                   (:CONSTRUCTOR make-module (name))
 ;                   (:PRINT-FUNCTION
 ;                     (lambda (m s d)
 ;                       (declare (ignore d))
 ;                       (format s "#<Module ~A>" (module-name m))))
-		   )
+                   )
   name
   load-env
   comp-env
@@ -143,8 +143,8 @@
   (unless (dolist (trans transforms)
             (when (eq (second trans) module)
               (case (first trans)
-		(:COMPILE (return nil))
-		(:LOAD    (return trans)))))
+                (:COMPILE (return nil))
+                (:LOAD    (return trans)))))
     (dolist (l (module-load-env module))
       (make-load-transformation l transforms))
     (push `(:LOAD ,module) (cdr transforms))))
@@ -172,58 +172,58 @@
   (apply #'compiler::compile-file a))
 
 (defun operate-on-system (system mode &optional arg print-only
-			  &aux (si::*init-function-prefix*
-				(string-upcase (system-name system))))
+                          &aux (si::*init-function-prefix*
+                                (string-upcase (system-name system))))
   (let (transformations)
     (flet ((load-module (m s)
              (let ((name (module-name m)))
-	       #-dlopen
-	       (if print-only
-		 (format t "~&Loading source of ~A..." name)
-		 (load (make-source-pathname name s)))
-	       #+dlopen
+               #-dlopen
+               (if print-only
+                 (format t "~&Loading source of ~A..." name)
+                 (load (make-source-pathname name s)))
+               #+dlopen
                (if (or (eq mode :source)
-		       (dolist (trans transformations)
-			       (and (eq (first trans) :compile)
-				    (eq (second trans) m)
-				    ; Is this ok?
-				    (return nil))))
+                       (dolist (trans transformations)
+                               (and (eq (first trans) :compile)
+                                    (eq (second trans) m)
+                                    ; Is this ok?
+                                    (return nil))))
                    (if print-only
-		     (format t "~&Loading source of ~A..." name)
-		     (load (make-source-pathname name s)))
+                     (format t "~&Loading source of ~A..." name)
+                     (load (make-source-pathname name s)))
                    (if print-only
-		     (format t "~&Loading binary of ~A..." name)
-		     (load (make-binary-pathname name s))))))
+                     (format t "~&Loading binary of ~A..." name)
+                     (load (make-binary-pathname name s))))))
 
            (compile-module (m s)
              (format t "~&Compiling ~A..." (module-name m))
              (unless print-only
-	       (let  ((name (module-name m)))
+               (let  ((name (module-name m)))
                  (sbt-compile-file (make-source-pathname name s)
-		   :OUTPUT-FILE (make-binary-pathname name s)))))
+                   :OUTPUT-FILE (make-binary-pathname name s)))))
 
-	   (true (&rest ignore) (declare (ignore ignore)) 't))
+           (true (&rest ignore) (declare (ignore ignore)) 't))
 
       (setq transformations
         (ecase mode
-	  ((:STATIC-LIBRARY :LIBRARY :SHARED-LIBRARY :FASL)
-	    (let* ((transforms (make-transformations system
-						     #'true
-						     #'make-load-transformation))
-		   (objects (mapcar #'(lambda (x) (make-binary-pathname (module-name (cadr x)) system))
-				    (remove-if-not #'(lambda (x) (eq (car x) :LOAD))
-						   transforms)))
-		   (library (make-library-pathname system mode)))
-	      (operate-on-system system :COMPILE)
-	      (c::builder mode library :lisp-files objects))
-	    nil)
+          ((:STATIC-LIBRARY :LIBRARY :SHARED-LIBRARY :FASL)
+            (let* ((transforms (make-transformations system
+                                                     #'true
+                                                     #'make-load-transformation))
+                   (objects (mapcar #'(lambda (x) (make-binary-pathname (module-name (cadr x)) system))
+                                    (remove-if-not #'(lambda (x) (eq (car x) :LOAD))
+                                                   transforms)))
+                   (library (make-library-pathname system mode)))
+              (operate-on-system system :COMPILE)
+              (c::builder mode library :lisp-files objects))
+            nil)
           (:COMPILE
             (make-transformations system
                                   #'compile-filter
                                   #'make-compile-transformation))
           (:RECOMPILE
             (make-transformations system
-				  #'true
+                                  #'true
                                   #'make-compile-transformation))
           (:QUERY-COMPILE
             (make-transformations system
@@ -240,28 +240,28 @@
                                   #'make-compile-transformation))
           ((:LOAD :SOURCE)
             (make-transformations system
-				  #'true
+                                  #'true
                                   #'make-load-transformation))
           (:QUERY-LOAD
             (make-transformations system
               #'(lambda (s m transforms)
-		  (declare (ignore s transforms))
+                  (declare (ignore s transforms))
                   (y-or-n-p "Load ~A?" (module-name m)))
               #'make-load-without-dependencies-transformation))))
       
       (dolist (transform transformations)
-	(ecase (first transform)
-	  (:COMPILE (compile-module (second transform) system))
-	  (:LOAD (load-module (second transform) system)))))))
+        (ecase (first transform)
+          (:COMPILE (compile-module (second transform) system))
+          (:LOAD (load-module (second transform) system)))))))
 
 
 (defun compile-system (system &optional m)
   (cond ((null m)      (operate-on-system system :COMPILE))
-	((eq m 't)     (operate-on-system system :RECOMPILE))
-	((eq m :PRINT) (operate-on-system system :COMPILE () t))
-	((eq m :QUERY) (operate-on-system system :QUERY-COMPILE))
-	((symbolp m)   (operate-on-system system :COMPILE-FROM (list m)))
-	((listp m)     (operate-on-system system :COMPILE-FROM m))))
+        ((eq m 't)     (operate-on-system system :RECOMPILE))
+        ((eq m :PRINT) (operate-on-system system :COMPILE () t))
+        ((eq m :QUERY) (operate-on-system system :QUERY-COMPILE))
+        ((symbolp m)   (operate-on-system system :COMPILE-FROM (list m)))
+        ((listp m)     (operate-on-system system :COMPILE-FROM m))))
 
 (defun load-system (system &optional mode)
   (case mode
@@ -275,15 +275,15 @@
 
 (defmacro build-system (system &optional op mode)
   (case op
-	(:LOAD
-	 `(load-system ,system ,(case mode
-				      (:QUERY :QUERY-LOAD)
-				      (:SOURCE :SOURCE))))
-	(:COMPILE
-	 `(compile-system ,system ,(case mode
-					 (:QUERY :QUERY-COMPILE)
-					 (:FORCE :RECOMPILE))))
-	(:PRINT
-	 `(compile-system ,system :PRINT))
-	(otherwise
-	 `(load-system ,system))))
+        (:LOAD
+         `(load-system ,system ,(case mode
+                                      (:QUERY :QUERY-LOAD)
+                                      (:SOURCE :SOURCE))))
+        (:COMPILE
+         `(compile-system ,system ,(case mode
+                                         (:QUERY :QUERY-COMPILE)
+                                         (:FORCE :RECOMPILE))))
+        (:PRINT
+         `(compile-system ,system :PRINT))
+        (otherwise
+         `(load-system ,system))))

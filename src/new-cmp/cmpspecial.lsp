@@ -57,24 +57,24 @@
   (check-args-number 'FUNCTION args 1 1)
   (let ((fun (car args)))
     (cond ((si::valid-function-name-p fun)
-	   (let ((funob (local-function-ref fun t)))
-	     (if funob
+           (let ((funob (local-function-ref fun t)))
+             (if funob
                  (c1set-loc destination (fun-var funob))
                  (c1set-loc destination `(FDEFINITION ,fun)))))
           ((and (consp fun) (member (car fun) '(LAMBDA EXT::LAMBDA-BLOCK)))
            (cmpck (endp (cdr fun))
                   "The lambda expression ~s is illegal." fun)
-	   (let (name body)
-	     (if (eq (first fun) 'EXT::LAMBDA)
-		 (setf name (gensym) body (rest fun))
-		 (setf name (second fun) body (cddr fun)))
-	     (let* ((funob (c1compile-function body :name name))
-		    (lambda-form (fun-lambda funob)))
-	       (setf (fun-ref-ccb funob) t)
-	       (compute-fun-closure-type funob)
+           (let (name body)
+             (if (eq (first fun) 'EXT::LAMBDA)
+                 (setf name (gensym) body (rest fun))
+                 (setf name (second fun) body (cddr fun)))
+             (let* ((funob (c1compile-function body :name name))
+                    (lambda-form (fun-lambda funob)))
+               (setf (fun-ref-ccb funob) t)
+               (compute-fun-closure-type funob)
                (nconc (c1do-flet/labels-op (list funob))
                       (c1set-loc destination `(MAKE-CCLOSURE ,funob))))))
-	  (t (cmperr "The function ~s is illegal." fun)))))
+          (t (cmperr "The function ~s is illegal." fun)))))
 
 ;;; Mechanism for sharing code.
 (defun new-local (fun)
@@ -89,7 +89,7 @@
        ;; new variables created. This way, the same lexical environment
        ;; can be propagated through nested FLET/LABELS.
        (setf (fun-level fun) (if (plusp *lex*) (1+ *level*) *level*)
-	     (fun-env fun) 0)))
+             (fun-env fun) 0)))
     (otherwise
      (setf (fun-env fun) 0 (fun-level fun) 0)))
   (push fun *local-funs*))

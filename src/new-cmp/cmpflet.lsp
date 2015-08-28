@@ -40,9 +40,9 @@
     ;; this functions in the processed body.
     (dolist (def definitions)
       (cmpck (or (endp def)
-		 (not (si::valid-function-name-p (car def)))
-		 (endp (cdr def)))
-	     "The local function definition ~s is illegal." def)
+                 (not (si::valid-function-name-p (car def)))
+                 (endp (cdr def)))
+             "The local function definition ~s is illegal." def)
       (let ((name (pop def)))
         (cmpck (member name fun-names :test #'same-fname-p)
                "The function ~s was already defined." name)
@@ -69,11 +69,11 @@
     ;; on inspecting the functions until the closure type does not
     ;; change.
     (loop while
-	 (let ((x nil))
-	   (loop for f in local-funs
-	      when (compute-fun-closure-type f)
-	      do (setf x t))
-	   x))
+         (let ((x nil))
+           (loop for f in local-funs
+              when (compute-fun-closure-type f)
+              do (setf x t))
+           x))
 
     output))
 
@@ -121,77 +121,77 @@
 
 (defun fun-referred-local-vars (fun)
   (remove-if #'(lambda (v) (member (var-kind v) '(SPECIAL GLOBAL REPLACED DISCARDED)))
-	     (fun-referred-vars fun)))
+             (fun-referred-vars fun)))
 
 (defun compute-fun-closure-type (fun)
   (labels
       ((closure-type (fun &aux (lambda-form (fun-lambda fun)))
-	 (let ((vars (fun-referred-local-vars fun))
-	       (funs (remove fun (fun-referred-funs fun) :test #'child-p))
-	       (closure nil))
-	   ;; it will have a full closure if it refers external non-global variables
-	   (dolist (var vars)
-	     ;; ...across CB
-	     (if (ref-ref-ccb var)
-		 (setf closure 'CLOSURE)
-		 (unless closure (setf closure 'LEXICAL))))
-	   ;; ...or if it directly calls a function
-	   (dolist (f funs)
-	     ;; .. which has a full closure
-	     (case (fun-closure f)
-	       (CLOSURE (setf closure 'CLOSURE))
-	       (LEXICAL (unless closure (setf closure 'LEXICAL)))))
-	   ;; ...or the function itself is referred across CB, either
+         (let ((vars (fun-referred-local-vars fun))
+               (funs (remove fun (fun-referred-funs fun) :test #'child-p))
+               (closure nil))
+           ;; it will have a full closure if it refers external non-global variables
+           (dolist (var vars)
+             ;; ...across CB
+             (if (ref-ref-ccb var)
+                 (setf closure 'CLOSURE)
+                 (unless closure (setf closure 'LEXICAL))))
+           ;; ...or if it directly calls a function
+           (dolist (f funs)
+             ;; .. which has a full closure
+             (case (fun-closure f)
+               (CLOSURE (setf closure 'CLOSURE))
+               (LEXICAL (unless closure (setf closure 'LEXICAL)))))
+           ;; ...or the function itself is referred across CB, either
            ;; directly or through a second indirection to the function
            ;; variable.
-	   (when closure
-	     (when (or (fun-ref-ccb fun)
-		       (and (fun-var fun)
+           (when closure
+             (when (or (fun-ref-ccb fun)
+                       (and (fun-var fun)
                             (not (unused-variable-p (fun-var fun)))))
-	       (setf closure 'CLOSURE)))
-	   closure))
+               (setf closure 'CLOSURE)))
+           closure))
        (child-p (presumed-parent fun)
-	 (let ((real-parent (fun-parent fun)))
-	   (when real-parent
-	     (or (eq real-parent presumed-parent)
-		 (child-p real-parent presumed-parent))))))
+         (let ((real-parent (fun-parent fun)))
+           (when real-parent
+             (or (eq real-parent presumed-parent)
+                 (child-p real-parent presumed-parent))))))
     ;; This recursive algorithm is guaranteed to stop when functions
     ;; do not change.
     (let ((new-type (closure-type fun))
-	  (old-type (fun-closure fun)))
+          (old-type (fun-closure fun)))
 ;;       (format t "~%CLOSURE-TYPE: ~A ~A -> ~A, ~A" (fun-name fun)
-;;        	      old-type new-type (fun-parent fun))
+;;                    old-type new-type (fun-parent fun))
 ;;       (print (fun-referred-vars fun))
       ;; Same type
       (when (eq new-type old-type)
-	(return-from compute-fun-closure-type nil))
+        (return-from compute-fun-closure-type nil))
       ;; {lexical,closure} -> no closure!
       ;; closure -> {lexical, no closure}
       (when (or (and (not new-type) old-type)
-		(eq old-type 'CLOSURE))
-	(baboon))
+                (eq old-type 'CLOSURE))
+        (baboon))
       (setf (fun-closure fun) new-type)
       ;; All external, non-global variables become of type closure
       (when (eq new-type 'CLOSURE)
-	(when (fun-global fun)
-	  (cmpnote "Function ~A is global but is closed over some variables.~%~{~A ~}"
+        (when (fun-global fun)
+          (cmpnote "Function ~A is global but is closed over some variables.~%~{~A ~}"
                    (fun-name fun) (mapcar #'var-name (fun-referred-vars fun))))
-	(dolist (var (fun-referred-local-vars fun))
-	  (setf (var-ref-clb var) nil
-		(var-ref-ccb var) t
-		(var-kind var) 'CLOSURE
-		(var-loc var) 'OBJECT))
-	(dolist (f (fun-referred-funs fun))
-	  (setf (fun-ref-ccb f) t)))
+        (dolist (var (fun-referred-local-vars fun))
+          (setf (var-ref-clb var) nil
+                (var-ref-ccb var) t
+                (var-kind var) 'CLOSURE
+                (var-loc var) 'OBJECT))
+        (dolist (f (fun-referred-funs fun))
+          (setf (fun-ref-ccb f) t)))
       ;; If the status of some of the children changes, we have
       ;; to recompute the closure type.
       (do ((finish nil t)
-	   (recompute nil))
-	(finish
-	 (when recompute (compute-fun-closure-type fun)))
-	(dolist (f (fun-child-funs fun))
-	  (when (compute-fun-closure-type f)
-	    (setf recompute t finish nil))))
+           (recompute nil))
+        (finish
+         (when recompute (compute-fun-closure-type fun)))
+        (dolist (f (fun-child-funs fun))
+          (when (compute-fun-closure-type f)
+            (setf recompute t finish nil))))
       t)))
 
 (defun local-function-ref (fname &optional build-object)
@@ -199,22 +199,22 @@
       (cmp-env-search-function fname)
     (when fun
       (when (functionp fun) 
-	(when build-object
-	  ;; Macro definition appears in #'.... This should not happen.
-	  (cmperr "The name of a macro ~A was found in special form FUNCTION." name))
-	(return-from local-function-ref nil))
+        (when build-object
+          ;; Macro definition appears in #'.... This should not happen.
+          (cmperr "The name of a macro ~A was found in special form FUNCTION." name))
+        (return-from local-function-ref nil))
       (incf (fun-ref fun))
       (cond (build-object
-	     (setf (fun-ref-ccb fun) t))
-	    (*current-function*
-	     (push fun (fun-referred-funs *current-function*))))
+             (setf (fun-ref-ccb fun) t))
+            (*current-function*
+             (push fun (fun-referred-funs *current-function*))))
       ;; we introduce a variable to hold the funob
       (let ((var (fun-var fun)))
-	(cond (ccb (when build-object
-		     (setf (var-ref-ccb var) t
-			   (var-kind var) 'CLOSURE))
-		   (setf (fun-ref-ccb fun) t))
-	      (clb (when build-object 
-		     (setf (var-ref-clb var) t
-			   (var-kind var) 'LEXICAL))))))
+        (cond (ccb (when build-object
+                     (setf (var-ref-ccb var) t
+                           (var-kind var) 'CLOSURE))
+                   (setf (fun-ref-ccb fun) t))
+              (clb (when build-object 
+                     (setf (var-ref-clb var) t
+                           (var-kind var) 'LEXICAL))))))
     fun))

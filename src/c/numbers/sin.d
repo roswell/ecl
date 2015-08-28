@@ -66,7 +66,7 @@ ecl_sin_complex(cl_object x)
         cl_object dy = x->complex.imag;
         cl_object a = ecl_times(ecl_sin(dx), ecl_cosh(dy));
         cl_object b = ecl_times(ecl_cos(dx), ecl_sinh(dy));
-	return ecl_make_complex(a, b);
+        return ecl_make_complex(a, b);
 }
 
 MATH_DEF_DISPATCH1(sin, @[sin], @[number],

@@ -21,8 +21,8 @@
   (let ((result (ext:system string)))
     (unless (zerop result)
       (cerror "Continues anyway."
-	      "(SYSTEM ~S) returned non-zero value ~D"
-	      string result))
+              "(SYSTEM ~S) returned non-zero value ~D"
+              string result))
     result))
 
 (defun save-directory (forms)
@@ -44,7 +44,7 @@
 (defun old-crappy-system (program args)
   (let* ((command (format nil "~S~{ ~S~}" program args))
          (base-string-command (si:copy-to-simple-base-string command))
-	 (code (ffi:c-inline (base-string-command) (:object) :int
+         (code (ffi:c-inline (base-string-command) (:object) :int
                   "system((const char*)(#0->base_string.self))":one-liner t)))
     (values nil code nil)))
 
@@ -54,9 +54,9 @@
       (let* ((*standard-output* ext:+process-standard-output+)
              (*error-output* ext:+process-error-output+))
         (with-current-directory
-	    #-(and cygwin (not ecl-min))
+            #-(and cygwin (not ecl-min))
             (ext:run-program program args :input nil :output t :error t :wait t)
-	    #+(and cygwin (not ecl-min))
+            #+(and cygwin (not ecl-min))
             (old-crappy-system program args)
             ))
     (cond ((null result)

@@ -23,8 +23,8 @@
    ((endp (rest args)) (c1funcall destination args))
    ;; (M-V-C #'FUNCTION (VALUES A ... Z)) => (FUNCALL #'FUNCTION A ... Z)
    ((and (= (length args) 2)
-	 (consp (setq forms (second args)))
-	 (eq 'VALUES (first forms)))
+         (consp (setq forms (second args)))
+         (eq 'VALUES (first forms)))
     (c1funcall destination (list* (first args) (rest forms))))
    ;; More complicated case.
    (t
@@ -80,30 +80,30 @@
 
 (defun c1multiple-value-setq (destination args &aux
                               (vars nil) (temp-vars nil)
-			      (late-bindings nil))
+                              (late-bindings nil))
   (check-args-number 'MULTIPLE-VALUE-SETQ args 2 2)
   (dolist (var (reverse (first args)))
     (cmpck (not (symbolp var)) "The variable ~s is not a symbol." var)
     (setq var (chk-symbol-macrolet var))
     (cond ((symbolp var)
-	   (cmpck (constantp var)
-		  "The constant ~s is being assigned a value." var)
-	   (push var vars))
-	  (t (let ((new-var (gensym)))
-	       (push new-var vars)
-	       (push new-var temp-vars)
-	       (push `(setf ,var ,new-var) late-bindings)))))
+           (cmpck (constantp var)
+                  "The constant ~s is being assigned a value." var)
+           (push var vars))
+          (t (let ((new-var (gensym)))
+               (push new-var vars)
+               (push new-var temp-vars)
+               (push `(setf ,var ,new-var) late-bindings)))))
   (let ((value (second args)))
     (cond (temp-vars
-	   (c1translate destination
+           (c1translate destination
                         `(let* (,@temp-vars)
                            (multiple-value-setq ,vars ,value)
                            ,@late-bindings)))
-	  ((endp vars)
-	   (c1translate destination `(values ,value)))
-	  ((= (length vars) 1)
-	   (c1translate destination `(setq ,(first vars) ,value)))
-	  (t
+          ((endp vars)
+           (c1translate destination `(values ,value)))
+          ((= (length vars) 1)
+           (c1translate destination `(setq ,(first vars) ,value)))
+          (t
            (setf vars (mapcar #'c1vref vars))
            (nconc (c1translate 'VALUES value)
                   (c1set-mv vars)

@@ -28,8 +28,8 @@ bignum_to_string(cl_object buffer, cl_object x, cl_object base)
         str_size = mpz_sizeinbase(x->big.big_num, b);
         buffer = _ecl_ensure_buffer(buffer, str_size+1);
         if (str_size <= 62) {
-		/* With the leading sign and the trailing null character,
-		 * only 62 digits fit in this buffer. */
+                /* With the leading sign and the trailing null character,
+                 * only 62 digits fit in this buffer. */
                 char txt[64];
                 mpz_get_str(txt, -b, x->big.big_num);
                 _ecl_string_push_c_string(buffer, txt);
@@ -45,7 +45,7 @@ bignum_to_string(cl_object buffer, cl_object x, cl_object base)
 static void
 write_base_prefix(cl_object buffer, int base)
 {
-	if (base == 2) {
+        if (base == 2) {
                 _ecl_string_push_c_string(buffer, "#b");
         } else if (base == 8) {
                 _ecl_string_push_c_string(buffer, "#o");
@@ -56,11 +56,11 @@ write_base_prefix(cl_object buffer, int base)
                 prefix[1] = base/10 + '0';
                 prefix[2] = base%10 + '0';
                 _ecl_string_push_c_string(buffer, prefix);
-	} else {
+        } else {
                 char prefix[4] = "#0r";
                 prefix[1] = base + '0';
                 _ecl_string_push_c_string(buffer, prefix);
-	}
+        }
 }
 
 cl_object

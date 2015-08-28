@@ -22,15 +22,15 @@ _ecl_big_register_free(cl_object x) {}
 cl_object
 _ecl_big_register_copy(cl_object old)
 {
-	cl_object new_big = ecl_alloc_object(t_bignum);
+        cl_object new_big = ecl_alloc_object(t_bignum);
         new_big->big.big_num = old->big.big_num;
-	return new_big;
+        return new_big;
 }
 
 static cl_object
 big_normalize(cl_object x)
 {
-	if (x->big.big_num == 0ll)
+        if (x->big.big_num == 0ll)
                 return(ecl_make_fixnum(0));
         if (x->big.big_num <= MOST_POSITIVE_FIXNUM && x->big.big_num >= MOST_NEGATIVE_FIXNUM)
                 return(ecl_make_fixnum(x->big.big_num));
@@ -40,29 +40,29 @@ big_normalize(cl_object x)
 cl_object
 _ecl_big_register_normalize(cl_object x)
 {
-	if (x->big.big_num == 0ll)
+        if (x->big.big_num == 0ll)
                 return(ecl_make_fixnum(0));
         if (x->big.big_num <= MOST_POSITIVE_FIXNUM && x->big.big_num >= MOST_NEGATIVE_FIXNUM)
                 return(ecl_make_fixnum(x->big.big_num));
-	return _ecl_big_register_copy(x);
+        return _ecl_big_register_copy(x);
 }
 
 static cl_object
 big_alloc(int size)
 {
-	volatile cl_object x = ecl_alloc_object(t_bignum);
-	if (size <= 0)
-		ecl_internal_error("negative or zero size for bignum in big_alloc");
-	x->big.big_num = 0ll;
-	return x;
+        volatile cl_object x = ecl_alloc_object(t_bignum);
+        if (size <= 0)
+                ecl_internal_error("negative or zero size for bignum in big_alloc");
+        x->big.big_num = 0ll;
+        return x;
 }
 
 static cl_object
 _ecl_big_copy(cl_object x)
 {
-	volatile cl_object y = ecl_alloc_object(t_bignum);
+        volatile cl_object y = ecl_alloc_object(t_bignum);
         y->big.big_num = x->big.big_num;
-	return y;
+        return y;
 }
 
 cl_object
@@ -90,7 +90,7 @@ _ecl_big_gcd(cl_object x, cl_object y)
 int
 _ecl_big_num_t_sgn(big_num_t x)
 {
-	return ( x == (big_num_t)0 ) ? 0 : (x < (big_num_t)0) ? -1 : 1;
+        return ( x == (big_num_t)0 ) ? 0 : (x < (big_num_t)0) ? -1 : 1;
 }
 
 cl_object
@@ -98,15 +98,15 @@ _ecl_big_times_big(cl_object x, cl_object y)
 {
         cl_object z = ecl_alloc_object(t_bignum);
         z->big.big_num = x->big.big_num * y->big.big_num;
-	return z;
+        return z;
 }
 
 cl_object
 _ecl_big_times_fix(cl_object x, cl_fixnum y)
 {
-	cl_object z = ecl_alloc_object(t_bignum);
+        cl_object z = ecl_alloc_object(t_bignum);
         z->big.big_num = x->big.big_num * y;
-	return big_normalize(z);
+        return big_normalize(z);
 }
 
 cl_object
@@ -114,23 +114,23 @@ _ecl_big_plus_big(cl_object x, cl_object y)
 {
         cl_object z = ecl_alloc_object(t_bignum);
         z->big.big_num = x->big.big_num + y->big.big_num;
-	return z;
+        return z;
 }
 
 cl_object
 _ecl_big_plus_fix(cl_object x, cl_fixnum y)
 {
-	cl_object z = ecl_alloc_object(t_bignum);
+        cl_object z = ecl_alloc_object(t_bignum);
         z->big.big_num = x->big.big_num + y;
-	return big_normalize(z);
+        return big_normalize(z);
 }
 
 cl_object
 _ecl_fix_times_fix(cl_fixnum x, cl_fixnum y)
 {
-	cl_object z = ecl_alloc_object(t_bignum);
+        cl_object z = ecl_alloc_object(t_bignum);
         z->big.big_num = x * y;
-	return big_normalize(z);
+        return big_normalize(z);
 }
 
 cl_object
@@ -158,9 +158,9 @@ _ecl_big_floor(cl_object a, cl_object b, cl_object *pr)
 cl_object
 _ecl_big_negate(cl_object x)
 {
-	cl_object z = ecl_alloc_object(t_bignum);
+        cl_object z = ecl_alloc_object(t_bignum);
         z->big.big_num = -x->big.big_num;
-	return z;
+        return z;
 }
 
 void

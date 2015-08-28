@@ -83,26 +83,26 @@
 
 ;; Beginning to collect the external interface for documentation.
 (export '(render-create-picture
-	  render-free-picture
-	  
-	  render-create-glyph-set
-	  render-reference-glyph-set
-	  render-free-glyph-set
-	  
-	  render-add-glyph
-	  render-add-glyph-from-picture
-	  render-free-glyph
+          render-free-picture
+          
+          render-create-glyph-set
+          render-reference-glyph-set
+          render-free-glyph-set
+          
+          render-add-glyph
+          render-add-glyph-from-picture
+          render-free-glyph
           render-fill-rectangle
 
-	  picture-format-display 
-	  picture-format-id
-	  picture-format-type
-	  picture-format-depth
-	  picture-format-red-byte
-	  picture-format-green-byte
-	  picture-format-blue-byte
-	  picture-format-alpha-byte
-	  picture-format-colormap
+          picture-format-display 
+          picture-format-id
+          picture-format-type
+          picture-format-depth
+          picture-format-red-byte
+          picture-format-green-byte
+          picture-format-blue-byte
+          picture-format-alpha-byte
+          picture-format-colormap
 
           ;; picture object
           picture-repeat
@@ -817,56 +817,56 @@ by every function, which attempts to generate RENDER requests."
     (opcode type transform display dest glyph-set source dest-x dest-y sequence
      alu src-x src-y mask-format start end)
   (let ((size (ecase type (card8 1) (card16 2) (card32 4)))
-	;; FIXME: the last chunk for CARD8 can be 254.
-	(chunksize (ecase type (card8 252) (card16 254) (card32 254))))
+        ;; FIXME: the last chunk for CARD8 can be 254.
+        (chunksize (ecase type (card8 252) (card16 254) (card32 254))))
     `(multiple-value-bind (nchunks leftover)
          (floor (- end start) ,chunksize)
        (let* ((payloadsize (+ (* nchunks (+ 8 (* ,chunksize ,size)))
-			      (if (> leftover 0)
-				  (+ 8 (* 4 (ceiling (* leftover ,size) 4)))
-				  0)))
-	      (request-length (+ 7 (/ payloadsize 4))))
-	 (declare (integer request-length))
-	 (with-buffer-request (,display (extension-opcode ,display "RENDER") :length (* 4 request-length))
-	   (data ,opcode)
-	   (length request-length)
-	   (render-op ,alu)
-	   (card8 0) (card16 0)                        ;padding
-	   (picture ,source)
-	   (picture ,dest)
-	   ((or (member :none) picture-format) ,mask-format)
-	   (glyph-set ,glyph-set)
-	   (int16 ,src-x) (int16 ,src-y)
-	   (progn
-	     (let ((boffset (+ buffer-boffset 28))
-		   (start ,start)
-		   (end ,end)
-		   (dest-x ,dest-x)
-		   (dest-y ,dest-y))
-	       (dotimes (i nchunks)
-		 (set-buffer-offset boffset)
-		 (put-items (0)
-		   (card8 ,chunksize)
-		   (card8 0)
-		   (card16 0)
-		   (int16 dest-x)
-		   (int16 dest-y)
-		   ((sequence :start start :end (+ start ,chunksize) :format ,type :transform ,transform :appending t) ,sequence))
-		 (setq dest-x 0 dest-y 0)
-		 (incf boffset (+ 8 (* ,chunksize ,size)))
-		 (incf start ,chunksize))
-	       (when (> leftover 0)
-		 (set-buffer-offset boffset)
-		 (put-items (0)
-		   (card8 leftover)
-		   (card8 0)
-		   (card16 0)
-		   (int16 dest-x)
-		   (int16 dest-y)
-		   ((sequence :start start :end end :format ,type :transform ,transform :appending t) ,sequence))
-		 ;; padding?
-		 (incf boffset (+ 8 (* 4 (ceiling (* leftover ,size) 4)))))
-	       (setf (buffer-boffset ,display) boffset))))))))
+                              (if (> leftover 0)
+                                  (+ 8 (* 4 (ceiling (* leftover ,size) 4)))
+                                  0)))
+              (request-length (+ 7 (/ payloadsize 4))))
+         (declare (integer request-length))
+         (with-buffer-request (,display (extension-opcode ,display "RENDER") :length (* 4 request-length))
+           (data ,opcode)
+           (length request-length)
+           (render-op ,alu)
+           (card8 0) (card16 0)                        ;padding
+           (picture ,source)
+           (picture ,dest)
+           ((or (member :none) picture-format) ,mask-format)
+           (glyph-set ,glyph-set)
+           (int16 ,src-x) (int16 ,src-y)
+           (progn
+             (let ((boffset (+ buffer-boffset 28))
+                   (start ,start)
+                   (end ,end)
+                   (dest-x ,dest-x)
+                   (dest-y ,dest-y))
+               (dotimes (i nchunks)
+                 (set-buffer-offset boffset)
+                 (put-items (0)
+                   (card8 ,chunksize)
+                   (card8 0)
+                   (card16 0)
+                   (int16 dest-x)
+                   (int16 dest-y)
+                   ((sequence :start start :end (+ start ,chunksize) :format ,type :transform ,transform :appending t) ,sequence))
+                 (setq dest-x 0 dest-y 0)
+                 (incf boffset (+ 8 (* ,chunksize ,size)))
+                 (incf start ,chunksize))
+               (when (> leftover 0)
+                 (set-buffer-offset boffset)
+                 (put-items (0)
+                   (card8 leftover)
+                   (card8 0)
+                   (card16 0)
+                   (int16 dest-x)
+                   (int16 dest-y)
+                   ((sequence :start start :end end :format ,type :transform ,transform :appending t) ,sequence))
+                 ;; padding?
+                 (incf boffset (+ 8 (* 4 (ceiling (* leftover ,size) 4)))))
+               (setf (buffer-boffset ,display) boffset))))))))
 
 (defun render-composite-glyphs (dest glyph-set source dest-x dest-y sequence
                                 &key (op :over)
@@ -931,10 +931,10 @@ by every function, which attempts to generate RENDER requests."
            (byte-lsb-first-p (display-image-lsb-first-p display))
            (bit-lsb-first-p  (bitmap-format-lsb-first-p bitmap-format)))
       (let* ((byte-per-line (* 4 (ceiling 
-				  (* w (picture-format-depth (glyph-set-format glyph-set)))
-				  32)))
+                                  (* w (picture-format-depth (glyph-set-format glyph-set)))
+                                  32)))
              (request-length (+ 28
-				(* h byte-per-line))))
+                                (* h byte-per-line))))
         (with-buffer-request (display (extension-opcode display "RENDER"))
           (data +X-RenderAddGlyphs+)
           (length (ceiling request-length 4))

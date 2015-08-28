@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter>
+<title>Reader</title>
+<section xml:id="ansi.reader.c-dict">
+<title>C Reference</title>
+  <refentry>
+    <refnamediv>
+      <refname>ANSI Dictionary</refname>
+      <refpurpose>&ANSI-C-Dict;</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+<simplelist columns="2" type="horiz">
+<member>Lisp symbol</member>
+<member>C function</member>
+
+<member><ulink url="&clhs;f_cp_rdt.htm"><symbol>copy-readtable</symbol></ulink></member>
+<member><code>cl_object cl_copy_readtable(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_mk_dis.htm"><symbol>make-dispatch-macro-character</symbol></ulink></member>
+<member><code>cl_object cl_make_dispatch_macro_character(cl_narg narg, cl_object char, ...)</code></member>
+
+<member><ulink url="&clhs;f_rd_rd.htm"><symbol>read</symbol></ulink></member>
+<member><code>cl_object cl_read(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_rd_rd.htm"><symbol>read-preerving-whitespace</symbol></ulink></member>
+<member><code>cl_object cl_read_preserving_whitespace(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_rd_del.htm"><symbol>read-delimited-list</symbol></ulink></member>
+<member><code>cl_object cl_read_delimited_list(cl_narg narg, cl_object char, ...)</code></member>
+
+<member><ulink url="&clhs;f_rd_fro.htm"><symbol>read-from-string</symbol></ulink></member>
+<member><code>cl_object cl_read_from_string(cl_narg narg, cl_object string, ...)</code></member>
+
+<member><ulink url="&clhs;f_rdtabl.htm"><symbol>readtable-case</symbol></ulink></member>
+<member><code>cl_object cl_readtable_case(cl_object readtable)</code></member>
+
+<member><ulink url="&clhs;f_rdta_1.htm"><symbol>readtablep</symbol></ulink></member>
+<member><code>cl_object cl_readtablep(cl_object object)</code></member>
+
+<member><ulink url="&clhs;f_set__1.htm"><symbol>get-dispatch-macro-character</symbol></ulink></member>
+<member><code>cl_object cl_get_dispatch_macro_character(cl_narg narg, cl_object disp_char, cl_object sub_char, ...)</code></member>
+
+<member><ulink url="&clhs;f_set__1.htm"><symbol>set-dispatch-macro-character</symbol></ulink></member>
+<member><code>cl_object cl_set_dispatch_macro_character(cl_narg narg, cl_object disp_char, cl_object sub_char, cl_object function, ...)</code></member>
+
+<member><ulink url="&clhs;f_set_ma.htm"><symbol>get-macro-character</symbol></ulink></member>
+<member><code>cl_object cl_get_macro_character(cl_narg narg, cl_object char, ...)</code></member>
+
+<member><ulink url="&clhs;f_set_ma.htm"><symbol>set-macro-character</symbol></ulink></member>
+<member><code>cl_object cl_set_macro_character(cl_narg narg, cl_object char, cl_object function, ...)</code></member>
+
+<member><ulink url="&clhs;f_set_sy.htm"><symbol>set-syntax-from-char</symbol></ulink></member>
+<member><code>cl_object cl_set_syntax_from_char(cl_narg narg, cl_object to_char, cl_object from_char, ...)</code></member>
+</simplelist>
+    </refsynopsisdiv>
+
+    <refsect1>
+      <title>Description</title>
+      <para></para>
+    </refsect1>
+  </refentry>
+</section>
+</chapter>
+</book>

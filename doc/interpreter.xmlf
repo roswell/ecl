@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter xml:id="The-interpreter">
+<title>The Interpreter</title>
+<para>Former versions of &ECL;, as well as many other lisps, used linked lists to
+represent code. As of version 0.3 a bytecodes compiler and a bytecodes
+interpreter were developed to circumvent the limitations of linked lists.</para>
+<para>When you enter code at the lisp prompt, or when you load a source file,
+&ECL; begins a process known as minimal compilation. Barely this
+process consists on parsing each form, macroexpanding it and translating
+it into an intermediate language made of <emphasis>bytecodes</emphasis>.</para>
+<para>The bytecodes compiler is implemented in <filename>src/c/compiler.d</filename>. The main
+entry point is the lisp function <literal>SI::MAKE-LAMBDA</literal>, which takes a
+name for the function and the body of the lambda lists, and produces a
+lisp object that can be invoked. For instance,</para>
+<para><screen>
+&gt; (defvar fun (si::make-lambda 'f '((x) (1+ x))))
+*FUN*
+&gt; (funcall fun 2)
+3
+</screen></para>
+<para>&ECL; can only execute bytecodes. When a list is passed to <literal>EVAL</literal> it
+must be first compiled to bytecodes and, if the process succeeds, then the
+resulting bytecodes are passed to the interpreter. Similarly, every time a
+function object is created, such as in <literal>DEFUN</literal> or <literal>DEFMACRO</literal>, the
+bytecodes compiler processes the lambda form to produce a suitable bytecodes
+object.</para>
+<para>The fact that &ECL; performs this eager compilation means that changes on
+a macro are not immediately seen in code which was already compiled. This has
+subtle implications. Take the following code:<screen>
+&gt; (defmacro f (a b) `(+ ,a ,b))
+F
+&gt; (defun g (x y) (f x y))
+G
+&gt; (g 1 2)
+3
+&gt; (defmacro f (a b) `(- ,a ,b))
+F
+&gt; (g 1 2)
+3
+</screen></para>
+<para role="continues">The last statement always outputs <literal>3</literal> while in former
+implementations based on processing of lambda lists it would produce <literal>-1</literal>.</para>
+</chapter>
+<!-- Keep this comment at the end of the file
+  Local variables:
+  sgml-parent-document: "ecl.xml"
+  sgml-indent-step: 1
+  nxml-child-indent: 1
+  nxml-outline-child-indent: 1
+  fill-column: 79
+  End:
+--></book>

@@ -26,13 +26,13 @@
 
 (defmacro define-c-inliner (fname lambda-list &body body)
   `(setf (gethash ',fname *cinline-dispatch-table*)
-	 #'(lambda ,lambda-list (block nil ,@body))))
+         #'(lambda ,lambda-list (block nil ,@body))))
 
 (defun apply-inliner (fname return-type inlined-args)
   (let ((fd (gethash fname *cinline-dispatch-table*)))
     (if fd
-	(apply fd return-type inlined-args)
-	(default-c-inliner fname return-type inlined-args))))
+        (apply fd return-type inlined-args)
+        (default-c-inliner fname return-type inlined-args))))
 
 (defun default-c-inliner (fname return-type inlined-args)
   (let* ((arg-types (mapcar #'first inlined-args))
@@ -130,7 +130,7 @@
 
 (defun inline-type-matches (inline-info arg-types return-type)
   (when (and (not (inline-info-multiple-values inline-info))
-	     (member *destination* '(VALUES RETURN)))
+             (member *destination* '(VALUES RETURN)))
     (return-from inline-type-matches nil))
   (let* ((rts nil)
          (number-max nil))
@@ -138,7 +138,7 @@
     ;; Check that the argument types match those of the inline expression
     ;;
     (do* ((arg-types arg-types (cdr arg-types))
-	  (types (inline-info-arg-types inline-info) (cdr types)))
+          (types (inline-info-arg-types inline-info) (cdr types)))
          ((or (endp arg-types) (endp types))
           (when (or arg-types types)
             (return-from inline-type-matches nil)))

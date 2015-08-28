@@ -1,0 +1,529 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter xml:id="Program-development">
+ <title>Program Development Facilities</title>
+
+<section xml:id="The-stepper">
+<title>The Stepper</title>
+<blockquote>
+<screen><indexterm role="fn"><primary>step</primary></indexterm>&#151; Macro: <function>step</function> <varname>form</varname></screen>
+<para>Starts evaluating the <replaceable>form</replaceable> in the single-step mode.  In this mode, before
+any form is evaluated, the Stepper will print the form and prompt the user for
+a Stepper command.  The Stepper binds the two variables print-level
+and print-length both to <literal>2</literal>, so that the current form may not
+occupy too much space on the screen.  A Stepper command will be executed when
+the user types the single character for the command followed by the required
+arguments, if any, and presses the newline key.  If the user presses the
+newline key without having typed any character, then the Stepper will assume
+that the Stepper command <literal>n</literal> was abbreviated.</para>
+</blockquote>
+<para>The stepper commands are:</para>
+<variablelist>
+<varlistentry>
+<term><literal>Newline</literal></term>
+<listitem>
+<para>Next.  Evaluates the current form in the single-step mode.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><replaceable>:s</replaceable>, <replaceable>:skip</replaceable></term>
+<listitem>
+<para>Skip.  Evaluates the current form in the ordinary mode.  The single-step mode
+will be resumed at completion of the evaluation.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><replaceable>:b</replaceable>, <replaceable>:back</replaceable></term>
+<listitem>
+<para>Backwards.  Steps back to previous step form.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><replaceable>:pr</replaceable>, <replaceable>:print</replaceable></term>
+<listitem>
+<para>Print.  Pretty-prints the current form.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><replaceable>:form</replaceable></term>
+<listitem>
+<para>Form. Return the current form.  Nothing is done, but the current form is
+returned as the value of this command.  As a consequence, it is printed by the
+top level in the usual way and saved in the variable <literal>*</literal>.  The main
+purpose of this command is to allow the current form to be examined further by
+accessing <literal>*</literal>.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><replaceable>:ret</replaceable>, <replaceable>:return</replaceable></term>
+<listitem>
+<para>Return. Return without evaluating the current form.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><replaceable>:x</replaceable>, <replaceable>:exit</replaceable></term>
+<listitem>
+<para>Exit.  Evaluates the current form and any other forms in the ordinary mode.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><literal>?</literal></term>
+<listitem>
+<para>Help. Lists the commands.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</section>
+
+<section xml:id="Errors">
+<title>Errors</title>
+<blockquote>
+<screen><indexterm role="vr"><primary>*break-enable*</primary></indexterm>&#151; Variable: <varname>*break-enable*</varname></screen>
+<para>This variable is used to determine whether to enter the break loop (see Section
+5.4) when an error occurs.  Even the function <literal>break</literal> checks this
+variable.  Initially, this variable is set to <replaceable>T</replaceable>, and thus an error will
+invoke the break loop.  If the value is (), functions that cause fatal
+errors, such as <literal> error</literal>, will just print an error message and control
+will return to the top-level loop (or to the current break loop, if already in
+the break loop).  Functions that cause correctable errors, such as <literal>
+cerror</literal>, will print an error message and a &ldquo;continue message&rdquo;, and control
+will return to the next form.  In &ECL;, backtrace is not part of an error
+message, but a break loop command will print backtrace.  Therefore, if
+break-enable is (), no backtrace appears on the screen.</para>
+<para>When the break loop is entered, break-enable will be bound to
+().</para>
+</blockquote>
+</section>
+
+<section xml:id="The-break-loop">
+<title>The Break Loop</title>
+<para>The break loop is a read-eval-print loop similar to the top-level loop.  In
+addition to ordinary Lisp forms, the break loop accepts various commands with
+which the user can inspect and modify the state of the program execution.  Each
+break loop command is identified with a keyword (i.e., a symbol in the
+<literal>keyword</literal> package).  A break loop command is executed when the user inputs
+a list whose first element is the keyword that identifies the command.  The
+rest of the list is the arguments to the command.  They are evaluated before
+being passed to the command.  If the command needs no arguments, then the user
+may input only the keyword.  It is an error if the given keyword does not
+identify any command.  Any other input to the break loop is regarded as an
+ordinary Lisp form; the form will be evaluated and the resulting values will be
+printed on the terminal.</para>
+<para>There can be several instances of the break loop at the same time, and each
+such instance is identified by a <emphasis>level number</emphasis>.  When the break loop is
+entered during execution in the top-level loop, the break loop instance is
+given the level number 1.  The break loop instance that is entered from the
+level <emphasis>n</emphasis> break loop is given the level number <replaceable>n</replaceable><literal>+1</literal>.  The
+prompt of the level <emphasis>n</emphasis> break loop is <replaceable>n</replaceable><literal>+1</literal> consecutive
+<literal>&gt;</literal>'s, occasionally prefixed with the name of the current package.</para>
+<para>The break loop keeps track of the invocation sequence of functions (including
+special forms and macro expansion functions), which led up to the break loop
+from the previous break loop (or from the top-level loop, if the current break
+loop is level 1).  The invocation sequence is maintained in a pushdown stack of
+<emphasis>events</emphasis>.  An event consists of an <emphasis>event function</emphasis> and an
+<emphasis>event environment</emphasis>.  An event function is:</para>
+<orderedlist numeration="arabic">
+<listitem>
+<para>an interpreted (i.e., not compiled) function (global function, local function, lambda-expression, or closure),</para>
+</listitem>
+<listitem>
+<para>a special form within an interpreted function,</para>
+</listitem>
+<listitem>
+<para>a macro expansion function called from an interpreted function,</para>
+</listitem>
+<listitem>
+<para>a compiled function called from an interpreted function, or</para>
+</listitem>
+<listitem>
+<para>a compiled function called from another compiled function which
+was compiled while the <literal>safety</literal> optimize level is 3 or with a
+<literal>notinline</literal> declaration for the called function (see Chapter 7).</para>
+</listitem>
+</orderedlist>
+<para>An event is pushed on the event stack when execution of its event function
+begins, and is popped away at the completion of the execution.  An event
+environment is the `environment' of the event function at the time the next
+event is pushed.  Actually, an event environment is a pointer to the main stack
+of &ECL;.  For each interpreted event function (i.e., event function in
+classes 1, 2, and 3), the pointer points to the first entry of the three
+contiguous main stack entries that hold the lexical environment of the event
+function.  For each compiled event function (i.e., event function in classes 4
+and 5), the pointer is set to the first entry of the main stack area that is
+used locally by the compiled code.  In most cases, the first argument to the
+compiled function is saved in the first entry, the second argument in the
+second entry, and so on.  The local variables of the function are allocated in
+the entries following the arguments.  However, this is not always the case.
+Refer to Section 7.3 for variable allocations in compiled functions.</para>
+<para>By break level commands, the user can choose one of the events as the
+<emphasis>current event</emphasis>.  If the current event function is an interpreted event
+function, then the break loop evaluates Lisp forms in the lexical environment
+retrieved from the event environment.  In particular, local variables may be
+referenced by the variable names, local functions and local macros may be
+invoked as usual, established blocks may be exited from, and tags may be used
+as the destination of <literal>go</literal>.  If the current function is a compiled
+function, Lisp forms are evaluated in the null environment.</para>
+<para>Within the break loop, each event is represented by the <emphasis>event symbol</emphasis>.
+The <replaceable>:backtrace</replaceable> command, for example, lists events in terms of their event
+symbols.  If the event function is a named function (global or local) or a
+macro expansion function, then the function or macro name is used as the event
+symbol.  If the event function is a special form, then the name of the special
+form is used.  If the event function is a lambda-expression (or a closure),
+then the symbol lambda (or lambda-closure) is used.</para>
+<para>To suppress unnecessary information, the user can hide (or make invisible) some
+of the events.  Invisible events do not appear in the backtrace, for example.
+Initially, only those events are invisible whose event symbols belong to the
+system internal package system.  When the break loop is entered, the last
+visible event becomes the current event.</para>
+<para>The break loop commands are described below.  Some of the commands allow
+abbreviation in the keywords that identify them.  For example, the user may
+abbreviate <replaceable>:current</replaceable> as <replaceable>:c</replaceable>.  The break loop commands return no values
+at all.</para>
+<blockquote>
+<screen><indexterm role="fn"><primary>:current</primary></indexterm>&#151; Break Command: <function>:current</function></screen>
+<screen><indexterm role="fn"><primary>:c</primary></indexterm>&#151; Break Command: <function>:c</function> <varname></varname></screen>
+<para>Prints the event symbol of the current event.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>:previous</primary></indexterm>&#151; Break Command: <function>:previous</function> <varname>&amp;optional</varname> <varname>n</varname></screen>
+<screen><indexterm role="fn"><primary>:p</primary></indexterm>&#151; Break Command: <function>:p</function> <varname>&amp;optional n</varname></screen>
+<para>Makes the <replaceable>n</replaceable>-th previous visible event the
+new current event.  Invisible events are not counted.  If there are
+less than <replaceable>n</replaceable> previous events, then the first visible event in the
+invocation sequence becomes the new current event. <replaceable>n</replaceable> must be a
+positive integer and the default is <literal>1</literal>.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>:next</primary></indexterm>&#151; Break Command: <function>:next</function> <varname>&amp;optional</varname> <varname>n</varname></screen>
+<screen><indexterm role="fn"><primary>:n</primary></indexterm>&#151; Break Command: <function>:n</function> <varname>&amp;optional n</varname></screen>
+<para>Makes the <replaceable>n</replaceable>-th next visible event the
+new current event.  If there are less than <replaceable>n</replaceable> next events,
+then the last visible event in the invocation sequence
+becomes the new current event. <replaceable>n</replaceable>  must be a positive integer and the
+default is <literal>1</literal>.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>:backtrace</primary></indexterm>&#151; Break Command: <function>:backtrace</function></screen>
+<screen><indexterm role="fn"><primary>:b</primary></indexterm>&#151; Break Command: <function>:b</function> <varname></varname></screen>
+<para>Prints the event symbols of all visible events in order.  The symbol of
+the current event is printed
+in upper-case letters and the event symbols of other events are in lower-case.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>:help</primary></indexterm>&#151; Break Command: <function>:help</function></screen>
+<screen><indexterm role="fn"><primary>:h</primary></indexterm>&#151; Break Command: <function>:h</function> <varname></varname></screen>
+<para>Lists the break loop commands.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>:quit</primary></indexterm>&#151; Break Command: <function>:quit</function> <varname>&amp;optional</varname> <varname>n</varname></screen>
+<screen><indexterm role="fn"><primary>:q</primary></indexterm>&#151; Break Command: <function>:q</function> <varname>&amp;optional n</varname></screen>
+<para>Returns control to the level <replaceable>n</replaceable> break loop.  If <replaceable>n</replaceable> is 0 or if <replaceable>n</replaceable>
+is omitted, then control will return to the top-level loop. <replaceable>n</replaceable> must be a
+non-negative integer smaller than the current break level.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>:continue</primary></indexterm>&#151; Break Command: <function>:continue</function></screen>
+<screen><indexterm role="fn"><primary>:c</primary></indexterm>&#151; Break Command: <function>:c</function> <varname></varname></screen>
+<para>Returns control to the caller of the break loop.  If the break loop has been
+entered from <literal>cerror</literal>, <literal>cerror</literal> returns () as its value and
+control will resume at that point.  Otherwise, this command returns control to
+the previous break loop (or to the top-level loop, if the current break level
+is <literal>1</literal>).</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>:variables</primary></indexterm>&#151; Break Command: <function>:variables</function></screen>
+<screen><indexterm role="fn"><primary>:v</primary></indexterm>&#151; Break Command: <function>:v</function> <varname></varname></screen>
+<para>Prints the names of the bound variables in the current
+environment.  To see the value of a bound variable, just type the
+variable name.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>:functions</primary></indexterm>&#151; Break Command: <function>:functions</function></screen>
+<para>Prints the names of the local functions and local macros in the current
+environment.  To see the definition of a local function or macro, use the
+function special form in the usual way.  That is, <literal>(function <replaceable>name</replaceable>)</literal>
+will return the definition of the local function or macro whose name is
+<replaceable>name</replaceable>.  Local functions and local macros may be invoked as usual.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>:blocks</primary></indexterm>&#151; Break Command: <function>:blocks</function></screen>
+<para>Prints the names of the blocks established in the current environment.  If a
+block <replaceable>block</replaceable> is established, then the <literal>return-from</literal> form
+<literal>(return-from <replaceable>block value</replaceable>)</literal> works as usual.  That is, the block form
+that established <replaceable>block</replaceable> will return <replaceable>value</replaceable> as its value and control
+will resume at that point.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>:tags</primary></indexterm>&#151; Break Command: <function>:tags</function></screen>
+<para>Prints the tags established in the current environment.  If a tag <replaceable>tag</replaceable> is
+established, then the <literal>go</literal> form <literal>(go <replaceable>tag</replaceable>)</literal> works as usual.
+That is, control will resume at the position of <replaceable>tag</replaceable> in the surrounding
+<literal>tagbody</literal>.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>:local</primary></indexterm>&#151; Break Command: <function>:local</function> <varname>&amp;optional</varname> <varname>n</varname></screen>
+<screen><indexterm role="fn"><primary>:l</primary></indexterm>&#151; Break Command: <function>:l</function> <varname>&amp;optional n</varname></screen>
+<para>If <replaceable>n</replaceable> is <literal>0</literal> or if it is omitted, then this command prints the value
+stored in the main stack entry that is pointed to by the current event
+environment. <replaceable>n</replaceable> is an offset from that entry.  If <replaceable>n</replaceable> is positive,
+then the value of the <emphasis>n</emphasis>-th next (i.e., toward the top of the main stack)
+entry is printed.  If <replaceable>n</replaceable> is negative, then the value of the <replaceable>n</replaceable>-th
+previous (i.e., toward the bottom of the main stack) entry is printed. <replaceable>n</replaceable>
+must be an integer.  It is an error if the specified entry does not lie between
+the bottom and the top of the stack.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>:hide</primary></indexterm>&#151; Break Command: <function>:hide</function> <varname>symbol</varname></screen>
+<para>Hides all events whose event symbol is <replaceable>symbol</replaceable>.  In particular, by
+<literal>:hide 'lambda</literal> and <literal>hide 'lambda-closure</literal>, all events become
+invisible whose event functions are lambda-expressions and closures,
+respectively.  If the event symbol of the current event happens to be
+<replaceable>symbol</replaceable>, then the last previous visible event will become the new current
+event.  <replaceable>symbol</replaceable> must be a symbol.</para>
+<para>Events of <literal>eval</literal> and <literal>evalhook</literal> may never become invisible and
+attempts to hide them are simply ignored.  It is always the case that the first
+event function is either <literal>eval</literal> or <literal>evalhook</literal>.  Keeping both of them
+visible is the simplest way to avoid the silly attempts of the user to hide all
+events.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>:hide-package</primary></indexterm>&#151; Break Command: <function>:hide-package</function> <varname>package</varname></screen>
+<para>Hides all events whose event symbol belongs to the package
+<replaceable>package</replaceable>. <replaceable>package</replaceable> may be any object that represents a package, i.e.,
+a package object, a symbol, or a string.  If the event symbol of the current
+event happens to belong to the package <replaceable>package</replaceable>, then the last previous
+visible event will become the new current event.  Even if <literal>lisp</literal> package
+was specified as <replaceable>package</replaceable>, events of <literal>eval</literal> and <literal>evalhook</literal> do
+not become invisible.  See the description of <replaceable>:hide</replaceable> above.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>:unhide</primary></indexterm>&#151; Break Command: <function>:unhide</function> <varname>symbol</varname></screen>
+<para><replaceable>:unhide</replaceable> is the inverse command of <replaceable>:hide</replaceable>.  If, however, <replaceable> symbol</replaceable>
+belongs to one of the <replaceable>:hide-package</replaceable>d packages, events of <replaceable>symbol</replaceable>
+become visible only after the package is <literal>:unhide-package
+'d</literal>. <replaceable>symbol</replaceable> must be a symbol.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>:unhide-package</primary></indexterm>&#151; Break Command: <function>:unhide-package</function> <varname>package</varname></screen>
+<para><replaceable>:unhide-package</replaceable> is the inverse command of <replaceable>:hide-package</replaceable>.  However, an
+event whose event symbol belongs to <replaceable>package</replaceable> becomes visible only after
+the symbol is <literal>unhide 'd</literal>, if the symbol was <replaceable>:code 'd</replaceable>
+before. <replaceable>package</replaceable> may be any object that represents a package, i.e., a
+package object, a symbol, or a string.</para>
+</blockquote>
+<para>Example:</para>
+<para><screen>
+&gt; (defun fact (x) (if (= x 0) one (* x (fact (1- x)))))
+fact                    ;;;  Wrong definition for  fact, the factorial.
+
+&gt; (fact 6)              ;;;  Tries to calculate factorial 6.
+
+Error: The variable ONE is unbound.
+Error signalled by IF.
+
+Broken at IF:           ;;;  Enters the break-loop.
+&gt;&gt; :h                   ;;;  Help.
+
+Break commands:
+:q(uit)         Return to some previous break level.
+:pop            Pop to previous break level.
+:c(ontinue)     Continue execution.
+:b(acktrace)    Print backtrace.
+:f(unction)     Show current function.
+:p(revious)     Go to previous function.
+:n(ext)         Go to next function.
+:g(o)           Go to next function.
+:fs             Search forward for function.
+:bs             Search backward for function.
+:v(ariables)    Show local variables, functions, blocks, and tags.
+:l(ocal)        Return the nth local value on the stack.
+:hide           Hide function.
+:unhide         Unhide function.
+:hp             Hide package.
+:unhp           Unhide package.
+:unhide-all     Unhide all variables and packages.
+:vs             Show value stack.
+:bds            Show binding stack.
+:m(essage)      Show error message.
+:hs             Help stack.
+
+Top level commands:
+:cf             Compile file.
+:exit or ^D     Exit Lisp.
+:ld             Load file.
+:step           Single step form.
+:tr(ace)        Trace function.
+:untr(ace)      Untrace function.
+
+Help commands:
+:apropos        Apropos.
+:doc(ument)     Document.
+:h(elp) or ?    Help.  Type ":help help" for more information.
+
+&gt;&gt; :b                   ;;;  Backtrace.
+Backtrace: eval &gt; fact &gt; if &gt; fact &gt; if &gt; fact &gt; if &gt; fact &gt;
+if &gt; fact &gt; if &gt; fact &gt; if &gt; fact &gt; IF
+
+&gt;&gt;: p                   ;;;  Moves to the previous event.
+Broken at FACT.
+
+&gt;&gt; :b                   ;;;  Now inside of  fact  but outside of  if.
+Backtrace: eval &gt; fact &gt; if &gt; fact &gt; if &gt; fact &gt; if &gt; fact &gt;
+if &gt; fact &gt; if &gt; fact &gt; if &gt; FACT &gt; if
+
+&gt;&gt; :v                   ;;;  Shows local variables.
+Local variables:
+X: 1
+Block names: FACT.
+
+&gt;&gt; x                    ;;;  The value of x is 1.
+1
+
+&gt;&gt; (return-from fact 1) ;;;  Returns from the  fact  block with value  1.
+720                     ;;;  Now the correct answer.
+
+&gt;                      ;;;  Top-level.
+</screen></para>
+</section>
+
+<section xml:id="Describe-and-inspect">
+<title>Describe and Inspect</title>
+<blockquote>
+<screen><indexterm role="fn"><primary>describe</primary></indexterm>&#151; Function: <function>describe</function> <varname>object</varname></screen>
+<para>Prints the information about <replaceable>object</replaceable> to the stream that is the value of
+<literal>*standard-output*</literal>.  The description of an object consists of several
+fields, each of which is described in a recursive manner.  For example, a
+symbol may have fields such as home package, variable documentation, value,
+function documentation, function binding, type documentation, <literal>deftype</literal>
+definition, properties.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>inspect</primary></indexterm>&#151; Function: <function>inspect</function> <varname>object</varname></screen>
+<para>Prints the information about <replaceable>object</replaceable> in an interactive manner.  The output
+of inspect is similar to that of <literal>describe</literal>, but after printing the label
+and the value of a field (the value itself is not <literal>describe 'd</literal>), it
+prompts the user to input a one-character command.  The input to <literal>inspect</literal>
+is taken from the stream that is the value of <literal>*query-io*</literal>.  Normally, the
+inspection of <replaceable>object</replaceable> terminates after all of its fields have been
+inspected.  The following commands are supported:</para>
+<variablelist>
+<varlistentry>
+<term><literal>n</literal></term>
+<listitem>
+<para>Next. Goes to the next level; the field is inspected recursively.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><literal>s</literal></term>
+<listitem>
+<para>Skip. Skips the inspection of the field. <literal>inspect</literal> proceeds to the next
+field.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><literal>p</literal></term>
+<listitem>
+<para>Print. Pretty-prints the field and prompts again.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><literal>u</literal> <replaceable>form</replaceable></term>
+<listitem>
+<para>Update. The <replaceable>form</replaceable> is evaluated and the field is replaced by the resulting
+value.  If the field cannot be updated, the message <literal>Not updated.</literal>  will
+be printed.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><literal>a</literal></term>
+<listitem>
+<para>Abort. Aborts the inspection of the current object.  The field and
+the rest of the fields are not inspected.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><literal>e</literal> <replaceable>form</replaceable></term>
+<listitem>
+<para>Eval. Evaluates the specified form in the null environment and prints the
+resulting values.  Then prompts again with the same field.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><literal>q</literal></term>
+<listitem>
+<para>Quit. Aborts the entire inspection.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><literal>?</literal></term>
+<listitem>
+<para>Help. Lists the <literal>inspect</literal> commands.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</blockquote>
+</section>
+
+<section xml:id="The-profiler">
+<title>The Profiler</title>
+<para>The profiler tool is enabled by default in the basic &ECL; configuration.  It
+can be disabled with the <literal>configure</literal> option <literal>--disable-profiler</literal>.</para>
+<blockquote>
+<screen><indexterm role="fn"><primary>profile</primary></indexterm>&#151; sys: <function>profile</function> <varname>grain</varname> <varname>&amp;optional</varname> <varname>address</varname></screen>
+<para>This function activates the profiling of subsequent executions.  <replaceable>grain</replaceable> is
+a value between 1 and 16384 which indicates the granularity of code segments to
+consider. There is a counter for each such segment.  With each clock tick, the
+current segment is identified and its corresponding histogram count is
+incremented.  A value of 0 for <replaceable>grain</replaceable> means stop profiling.  <replaceable>address</replaceable>
+indicates the base address for the code being profiled.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>display-profile</primary></indexterm>&#151; sys: <function>display-profile</function></screen>
+<para>Displays the histogram of accumulated tick counts.  The ticks are attributed to
+the compiled Lisp function whose base address is closest to the start of the
+segment.  This may not be totally accurate for system functions which invoke
+some auxiliary function to do the job.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>clear-profile</primary></indexterm>&#151; sys: <function>clear-profile</function></screen>
+<para>Clears the profile histogram.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="vr"><primary>sys</primary></indexterm>&#151; Variable: <varname>sys</varname> <type>*profile-array*</type></screen>
+<para>Contains the profile histogram: two short integer counters are packed in each
+value of this array of fixnums.</para>
+</blockquote>
+</section>
+
+<section xml:id="Online-help">
+<title>Online Help</title>
+<para>Online help is provided by the following functions.</para>
+<blockquote>
+<screen><indexterm role="fn"><primary>help</primary></indexterm>&#151; Function: <function>help</function> <varname>&amp;optional symbol</varname></screen>
+<para><literal>help</literal> with no arguments prints a greeting message to &ECL; beginners.
+<literal>help</literal> with a symbol argument prints the documentation associated
+with the symbol.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>help*</primary></indexterm>&#151; Function: <function>help*</function> <varname>string &amp;optional package</varname></screen>
+<para>Prints the documentation associated with those symbols in the specified
+<replaceable>package</replaceable> whose print names contain <replaceable>string</replaceable> as substring.
+<replaceable>string</replaceable> may be a symbol, in which case the print name of that symbol is
+used. <replaceable>package</replaceable> is optional and defaults to the LISP package.
+If <replaceable>package</replaceable> is (), then all packages are searched.</para>
+</blockquote>
+</section>
+</chapter>
+<!-- Keep this comment at the end of the file
+  Local variables:
+  sgml-parent-document: "ecl.xml"
+  sgml-indent-step: 1
+  nxml-child-indent: 1
+  nxml-outline-child-indent:1
+  fill-column: 79
+  End:
+--></book>

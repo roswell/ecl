@@ -1,0 +1,33 @@
+  <bibliomixed>
+   <bibliomset xreflabel="ANSI" xml:id="bib.ANSI" relation="book">
+    <title>ANSI Common Lisp Specification, ANSI/X3.226-1994</title>.
+    <corpname>ANSI</corpname>, <pubdate>1994</pubdate>.
+   </bibliomset>
+
+   <bibliomset xreflabel="Hyperspec" xml:id="bib.Hyperspec" relation="webdoc">
+    <firstname>Kent M.</firstname> <surname>Pitman</surname>.
+    <title>Common Lisp HypersSpec</title>,
+    <bibliomisc><ulink url="http://www.lisp.org/HyperSpec/FrontMatter/index.html">
+     <uri>http://www.lisp.org/HyperSpec/FrontMatter/index.html</uri></ulink></bibliomisc>
+   </bibliomset>
+
+   <bibliomset xreflabel="CLTL" xml:id="bib.CLTL" relation="book">
+    <firstname>Guy L.</firstname> <surname>Steel Jr.</surname>.
+    <title>Common Lisp: the Language</title>.
+    <publishername>Digital Press</publishername>, <pubdate>1984</pubdate>.
+   </bibliomset>
+
+   <bibliomset xreflabel="CLTL2" xml:id="bib.CLTL2" relation="book">
+    <firstname>Guy L.</firstname> <surname>Steel Jr.</surname>.
+    <title>Common Lisp: the Language II</title>.
+    <publishername>Digital Press</publishername>, <pubdate>1990</pubdate>.
+   </bibliomset>
+
+   <bibliomset xreflabel="KCL" xml:id="bib.KCL" relation="book">
+    <surname>Taiichi</surname> <firstname>Yuasa</firstname> and
+    <surname>Masami</surname> <firstname>Hagiya</firstname>.
+    <title>Kyoto Common-Lisp Report</title>,
+    <publishername>Research Institute for Mathematical Sciences, Kyoto University</publishername>,
+    <pubdate>1988</pubdate>.
+   </bibliomset>
+  </bibliomixed>

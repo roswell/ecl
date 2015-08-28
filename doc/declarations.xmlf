@@ -1,0 +1,513 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter xml:id="Declarations">
+<title>Declarations</title>
+<para>&ECL; supports all kinds of declarations described in the
+&Steele84;.  Any valid declaration will affect the &ECL; environment
+in some way or another, although information obtained by declarations, other
+than special declarations, is mainly used by the &ECL; compiler.</para>
+<para>As described in &Steele84;, Common-Lisp declarations are divided into two
+classes: <replaceable>proclamations</replaceable> and others.  A proclamation is a global
+declaration given by the function <literal>proclaim</literal>, the top-level <emphasis>macro</emphasis>
+<literal>defvar</literal>, or the top-level macro <literal>defparameter</literal>.  Once given, a
+proclamation remains effective during the &ECL; session unless it is shadowed
+by a local declaration or is canceled by another proclamation.  Any other
+declaration is a <emphasis>local declaration</emphasis> and is given only by the special form
+<literal>declare</literal>.  A local declaration remains in effect only within the body of
+the construct that surrounds the declaration.</para>
+<para>In the following nonsensical example borrowed from Chapter 9 of
+&Steele84;,</para>
+<programlisting>
+(defun nonsense (k x z)
+(foo z x)
+(let ((j (foo k x))
+(x (* k k)))
+(declare (inline foo) (special x z))
+(foo x j z)))
+</programlisting>
+<para role="continues">the <literal>inline</literal> and the special declarations both remain in effect within the
+surrounding <literal>let</literal> form.  In this case, we say that the <literal>let</literal> form is
+the <emphasis>surrounding construct</emphasis> of these declarations.</para>
+<blockquote>
+<screen><indexterm role="fn"><primary>the</primary></indexterm>&#151; Special Form: <function>the</function> <varname>value-type form</varname></screen>
+<para>The &ECL; interpreter does actually check whether the value of the
+<emphasis>form</emphasis> conforms to the data type specified by <emphasis>value-type</emphasis> and
+signals an error if the value does not.  The type checking is performed by
+the function <literal>typep</literal>.  For example,</para>
+</blockquote>
+<programlisting>(the fixnum (foo))
+</programlisting>
+<para role="continues">is equivalent to</para>
+<programlisting>
+(let ((values (multiple-value-list (foo))))
+(cond ((endp values) (error ``Too few return values."))
+((not (endp (cdr values)))
+(error ``Too many return values."))
+((typep (car values) 'fixnum) (car values))
+(t (error ``~s is not of type fixnum." (car values)))))
+</programlisting>
+<para>On the other hand, the &ECL; compiler uses the special form to
+obtain type information for compiled code optimization. No code for
+runtime type-checking is embedded in the compiled code.</para>
+
+<section xml:id="Declaration-specifiers">
+<title>Declaration Specifiers</title>
+<para>&ECL; recognizes all declaration specifiers defined in &Steele84;.
+The syntax of each such declaration specifier is exactly the same as defined in
+&Steele84;.  In addition, &ECL; recognizes the <literal>object</literal>
+declaration specifier which is specific to &ECL;.</para>
+<blockquote>
+<screen><indexterm role="fn"><primary>special</primary></indexterm>&#151; Declaration: <function>special</function> <varname>{</varname><varname>variable-name</varname><varname>}</varname><varname>*</varname></screen>
+<para>The interpreter and the compiler of &ECL; both treat special declarations
+exactly as described in &Steele84;.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>type</primary></indexterm>&#151; Declaration: <function>type</function> <varname>type</varname> <varname>{</varname><varname>variable-name</varname><varname>}</varname><varname>*</varname></screen>
+<para>A <literal>type</literal> proclamation <literal>(type
+<replaceable>type var1 var2</replaceable> ...)</literal></para>
+<para>specifies
+that the dynamic values of the named variables are of the type <emphasis>type</emphasis>.  A
+local <literal>type</literal> declaration specifies that the variables mentioned are bound
+by the surrounding construct and have values of the type <emphasis>type</emphasis> during
+execution of the surrounding construct.  The compiler issues a warning if one
+of the named variables is not bound by the surrounding construct.  The
+information given by <literal>type</literal> declarations is used by the compiler to
+optimize the compiled code.  The behavior of the compiled code is unpredictable
+if a wrong <literal>type</literal> declaration is supplied.  The compiler detects certain
+wrong <literal>type</literal> declarations at compile time.</para>
+</blockquote>
+<para>For example,<screen>
+&gt;(defun foo (x y)
+(declare (fixnum x) (character y))
+(setq x y)
+...))
+foo
+
+&gt;(compile 'foo)
+
+; (defun foo ...) is being compiled.
+;; Warning: Type mismatches between x and y.
+</screen></para>
+<para>See Section 7.3 for further information on <literal>type</literal> declarations.</para>
+<blockquote>
+<screen><indexterm role="fn"><primary>type</primary></indexterm>&#151; Declaration: <function>type</function> <varname>{</varname><varname>variable-name</varname><varname>}</varname><varname>*</varname></screen>
+<para>(<replaceable>type var1 var2</replaceable> ...) is equivalent to <literal>(type <replaceable>type var1 var2</replaceable>
+...)</literal>, provided that <replaceable>type</replaceable> is one of the symbols in Table 4-1 of
+&Steele84;, other than <literal>function</literal>.  Declaration specifications
+that begin with <literal>function</literal> are regarded as <literal>function</literal> declarations
+(see below).</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>function</primary></indexterm>&#151; Declaration: <function>function</function> <varname>function-name</varname> <varname>argument-types</varname> <varname>.</varname> <varname>return-types</varname></screen>
+<para>A <literal>function</literal> declaration is used to obtain type information for function
+call forms.  That is, a <literal>function</literal> declaration specifies the argument and
+the return types of each form that calls the named function.</para>
+</blockquote>
+<programlisting>(defun foo ()
+(declare (function bar (character) fixnum))
+(+ (bar (atcholi1)) (bar (atcholi2))))
+</programlisting>
+<para>In this example, the <literal>function</literal> declaration specifies that the two
+functions <literal>atcholi1</literal> and <literal>atcholi2</literal> both return character objects
+when called within the body of <literal>foo</literal>, and that the function bar returns
+fixnum objects when called within the body of <literal>foo</literal>.  The type information
+given by function declarations is used by the compiler to optimize the compiled
+code.  The behavior of the compiled code is unpredictable if a wrong
+<literal>function</literal> declaration is supplied.  The compiler detects certain wrong
+<literal>function</literal> declarations at compile time.</para>
+<para>For example,</para>
+<para><screen>
+&gt;(defun foo (x)
+(declare (fixnum x)
+(function bar (character) fixnum))
+(bar x))
+foo
+
+&gt;(compile 'foo)
+
+; (defun foo ...) is being compiled.
+;; Warning: The type of the form x is not character.
+</screen></para>
+<para>However, the compiler does not check the number of arguments, and thus, the
+following function definition will be compiled successfully without any
+warnings.</para>
+<programlisting>(defun foo ()
+(declare (function bar (character character) fixnum))
+(+ (bar (atcholi1)) (bar (atcholi2) (atcholi3) (atcholi4))))
+</programlisting>
+<para>For this definition, the compiler assumes that the three functions
+<literal>atcholi1</literal>, <literal>atcholi2</literal>, and <literal>atcholi3</literal> will return fixnum
+objects.  The return type of <literal>atcholi4</literal> is unknown at compile time.</para>
+<para>The complete syntax of a function declaration is:</para>
+<screen>(function  function-name
+({type}* [{&amp;optional | &amp;rest | &amp;key} {thing}*])
+{(values {type}* ) | {type}*}
+)
+</screen>
+<para>Although &amp;optional, &amp;rest, and &amp;key markers may appear in the list of
+argument types, only those <replaceable>types</replaceable> are recognized that appear before any
+such markers and the rest of the list is simply ignored.  Note that functions
+with &amp;optional, &amp;rest, or &amp;key parameters may still be declared by
+<literal>function</literal> declarations because of the use of <literal>function</literal> declarations
+mentioned above.</para>
+<para>The <literal>values</literal> construct in the specification of return types is almost
+useless: <literal>(function <replaceable>function-name argument-types</replaceable> (<replaceable>values</replaceable>
+<replaceable>type1 type2</replaceable> &hellip;))</literal> is equivalent to <literal>(function
+<replaceable>function-name argment-types type1 type2</replaceable> &hellip;)</literal>.</para>
+<para>See Section 7.3 for further information on <literal>function</literal> declarations.</para>
+<blockquote>
+<screen><indexterm role="fn"><primary>ftype</primary></indexterm>&#151; Declaration: <function>ftype</function> <varname>function-type</varname> <varname>{</varname><varname>function-name</varname><varname>}</varname><varname>*</varname></screen>
+<para><replaceable>function-type</replaceable> must be a list whose first element is the symbol
+<literal>function</literal>.  <literal>(ftype (function . <replaceable>rest</replaceable>) <replaceable>function-name-1</replaceable>
+...  <replaceable>function-name-n</replaceable>)</literal> is equivalent to <replaceable>n</replaceable> consecutive
+<literal>function</literal> declarations <literal>(function <replaceable>function-name-1</replaceable>
+. <replaceable>rest</replaceable>)</literal> ... <literal>(function <replaceable>function-name-n</replaceable> . <replaceable>rest</replaceable>)</literal>.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>notinline</primary></indexterm>&#151; Declaration: <function>notinline</function> <varname>{</varname><varname>function-name</varname><varname>}</varname><varname>*</varname></screen>
+<para><literal>(notinline <replaceable>function1 function2</replaceable> ...)</literal>  specifies that the
+compiler should not compile the named functions in-line.  Calls to the
+named functions can be traced and an event (see Section 5.4) is pushed
+on the event stack when any one of the named functions is invoked.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>inline</primary></indexterm>&#151; Declaration: <function>inline</function> <varname>{</varname><varname>function-name</varname><varname>}</varname><varname>*</varname></screen>
+<para>An <literal>inline</literal> proclamation cancels currently effective <literal>notinline</literal>
+proclamations, and a local <literal>inline</literal> declaration locally shadows currently
+effective <literal>notinline</literal> declarations.</para>
+</blockquote>
+<para><screen>
+&gt;(defun foo (x)
+(cons (car x)
+(locally (declare (inline car)) (car x))))
+foo
+&gt;(defun bar (x)
+(cons (car x)
+(locally (declare (inline car)) (car x))))
+foo
+&gt;(proclaim '(notinline car))
+nil
+&gt;(compile 'foo)
+...
+&gt;(proclaim '(inline car))
+nil
+&gt;(compile 'bar)
+...
+</screen></para>
+<para>Usually, primitive functions such as <literal>car</literal> are compiled in-line.
+Therefore, in this example, only the first call to <literal>car</literal> within <literal>foo</literal>
+is compiled not in-line.</para>
+<para>In general, the &ECL; compiler compiles functions in-line whenever possible.
+Thus an <literal>inline</literal> declaration <literal>(inline <replaceable>function1 function2</replaceable> ...)</literal>
+is worthless if none of the named functions have previously been declared to be
+<literal>notinline</literal>.</para>
+<blockquote>
+<screen><indexterm role="fn"><primary>ignore</primary></indexterm>&#151; Declaration: <function>ignore</function> <varname>{</varname><varname>variable-name</varname><varname>}</varname><varname>*</varname></screen>
+<para>Usually, the compiler issues a warning if a lexical variable is never referred
+to.  <literal>(ignore <replaceable>var1 ...  varn</replaceable>)</literal> causes the compiler not to issue a
+warning even if the named variables are never referred to.  The compiler issues
+a warning if one of the named variables is not bound by the surrounding
+construct, or if a named variable is actually referred to.  <literal>ignore</literal>
+proclamations are simply ignored.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>optimize</primary></indexterm>&#151; Declaration: <function>optimize</function> <varname>{</varname>(<varname>quality</varname> <varname>value</varname>) <varname>|</varname> <varname>quality</varname><varname>}</varname><varname>*</varname></screen>
+<para>&ECL; supports the four <literal>optimize</literal> qualities listed in the
+&Steele84;.</para>
+<para><literal>speed</literal> and <literal>compilation-speed</literal> are used to set up the optimization
+switch of the C language compiler which is invoked to compile the C-language
+code generated by the &ECL; compiler (see Chapter 6).  <literal>(optimize (speed
+<replaceable>n</replaceable>))</literal> and <literal>(optimize (compilation-speed <replaceable>m</replaceable>))</literal> are equivalent,
+where <replaceable>n</replaceable> and <replaceable>m</replaceable> are integers between 0 and 3, and <replaceable>m</replaceable> is equal to
+3-<replaceable>n</replaceable>.  When a &ECL; session is started, the <literal>speed</literal> quality is set
+to 3.  That is, by default, the compiler generates the fastest code in the
+longest compilation time.  The <literal>space</literal> quality specifies whether the code
+size is important or not: The compiled code is a little bit larger and faster
+when compiled with the space quality 0, than when compiled with the space
+quality 1, 2, or 3.  When a &ECL; session is started, the <literal>space</literal>
+quality is set to 0.  The <literal>safety</literal> quality determines how much runtime
+error checking code should be embedded in the compiled code.  If the
+<literal>safety</literal> quality is 0, the compiled code scarcely does runtime error
+checking.  If the <literal>safety</literal> quality is 1, then the compiled code for a
+function will check the number of arguments to the function at runtime.  If the
+<literal>safety</literal> quality is 2 or 3, then the compiled code does full runtime error
+checking.  In addition, the highest quality value 3 causes the compiler to
+treat all functions as if they were declared to be <literal>notinline</literal>.  When a
+&ECL; session is started, the <literal>safety</literal> quality is set to 0.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>declaration</primary></indexterm>&#151; Declaration: <function>declaration</function> <varname>{</varname><varname>name</varname><varname>}</varname><varname>*</varname></screen>
+<para>A <literal>declaration</literal> declaration is used exactly as specified in the
+&Steele84;.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>object</primary></indexterm>&#151; Declaration: <function>object</function> <varname>{</varname><varname>variable-name</varname><varname>}</varname><varname>*</varname></screen>
+<para>This is the only declaration specifier that is specific to &ECL;.
+<literal>(object <replaceable>var1 ...  varn</replaceable>)</literal> affects only variable bindings and
+specifies that the named variables can be allocated in the C stack (see Section
+7.3).  The compiler issues a warning if one of the named variables is not bound
+by the surrounding construct. <literal>object</literal> proclamations are simply ignored.</para>
+</blockquote>
+</section>
+
+<section xml:id="Type-specifiers">
+<title>Significant Type Specifiers</title>
+<para>Whenever a declaration is encountered, each type specifier (if any) in the
+declaration is converted to one of the following type specifiers, which are
+collectively called the <emphasis>significant type specifiers</emphasis>.</para>
+<screen><![CDATA[
+|------------   fixnum
+|------------   character
+|------------   short-float
+|------------   long-float
+t --|----   (array t)  --------------  (vector t)
+|----   (array fixnum)  ---------  (vector fixnum)
+|----   (array string-char)   ---  string
+|----   (array short-float)   ---  (vector short-float)
+|----   (array long-float)    ---  (vector long-float)
+|----   (array bit)   -----------   bit-vector
+]]></screen>
+<para>Here, the lines indicate subtype relations; the right type is a subtype of the
+left type.  For instance, <literal>(vector t)</literal> is a subtype of <literal>(array t)</literal>
+and <replaceable>T</replaceable>, and <literal>(array t)</literal> itself is a subtype of <replaceable>T</replaceable>.  However,
+<literal>(array t)</literal> and <literal>(array string-char)</literal> are disjoint types.</para>
+<para>The function <literal>subtypep</literal> is used for the conversion to significant type
+specifiers: If the first value of <literal>(subtypep <replaceable>raw-type type</replaceable>)</literal> is
+<replaceable>T</replaceable> for one of the significant type specifiers <replaceable>type</replaceable>, then the type
+specifier <replaceable>raw-type</replaceable> in the declaration is converted to <replaceable>type</replaceable>.  If
+there are more than one such significant type specifiers, then the type
+specifier that is a subtype of other specifiers is selected.  For example, type
+specifiers fixnum, <literal>(mod 3)</literal>, and <literal>(member 0 1)</literal> are all
+converted to fixnum, though they are also subtypes of <replaceable>T</replaceable>.</para>
+<para>Because of this type specifier conversion, &ECL; may sometimes regard two
+seemingly distinct declarations as the same.  For example, the following
+<literal>type</literal> declarations are completely equivalent, internally in &ECL;.</para>
+<programlisting>
+(declare (type fixnum x)))
+
+(declare (type (mod 3) x))
+
+(declare (type (member 0 1) x))
+</programlisting>
+<para>Type specifiers in declaration specifications passed to the &ECL; specific
+function <literal>proclamation</literal> are also converted to significant type specifiers.
+Thus, for example,</para>
+<para><screen>
+&gt;(proclaim '(function foo (fixnum) fixnum))
+nil
+&gt;(proclamation '(function foo ((mod 3)) (member 0 1)))
+t
+&gt;(proclamation '(function foo (number) character))
+nil
+</screen></para>
+<para>The first call to <literal>proclamation</literal> returns <replaceable>T</replaceable> because both <literal>(mod
+3)</literal> and <literal>(member 0 1)</literal> are converted to fixnum before the
+function type of <literal>foo</literal> is checked.</para>
+</section>
+
+<section xml:id="Type-declarations">
+<title>Treatment of Type Declarations</title>
+<para>&ECL; uses several runtime stacks.</para>
+<para>Arguments to functions, lexical and temporary variables are allocated on the C
+stack. Temporary values saved on the C stack may sometimes be represented as
+<replaceable>raw data</replaceable> instead of pointers to heap-allocated cells.  Accessing such raw
+data on the C stack results in faster compiled code, partly because no pointer
+dereferencing operation is necessary, and partly because no cell is newly
+allocated on the heap when a new object is created. This is particularly
+helpful for numeric code which computes with floating point numbers.</para>
+<para>&ECL; uses a conservative garbage collector to scan the C stack and find
+references to live object.</para>
+</section>
+
+<section xml:id="Variable-allocations">
+<title>Variable Allocations</title>
+<para>If a lexical variable is declared to be of fixnum, <literal>character</literal>,
+<literal>short-float</literal>, <literal>long-float</literal>, or their subtypes, then it is allocated
+on the C stack rather than on the value stack.  In addition, the variable
+always has a raw datum as its value: 32 bit signed integer for fixnums, 8 bit
+character code with 24 bit padding for characters (remember that the font and
+bit fields of &ECL; characters are always 0), 32 bit floating point
+representation for short-floats, and 64 bit floating point representation for
+long-floats.  Similarly, if a lexical variable is named in an <literal>object</literal>
+declaration (see Section 7.1), then it is allocated on the C stack but, in this
+case, the variable always has a cell pointer as its value.  The user is
+strongly recommended to make sure that objects stored in such an <literal>object</literal>
+variable may never be garbage collected unexpectedly.  For example,</para>
+<programlisting>
+(do ((x (foo) (cdr x)))
+((endp x))
+(let ((y (car x)))
+(declare (object y))
+(bar y)))
+</programlisting>
+<para role="continues">this <literal>object</literal> declaration is completely safe because the value of the
+variable <replaceable>y</replaceable> is always a substructure of the value of <replaceable>x</replaceable>, which in
+turn is protected against garbage collection.  Incidentally, loop variables of
+<literal>dolist</literal> may always be declared as object variables, since the
+<literal>dolist</literal> form has essentially the same control structure as the <literal>do</literal>
+form above.  On the other hand, the result of evaluation of the following form
+is unpredictable, because the cons cell pointed to from the <literal>object</literal>
+variable <replaceable>z</replaceable> may be garbage collected before <literal>bar</literal> is called.</para>
+<programlisting>
+(let ((z (cons x y)))
+(declare (object z))
+(foo (cons x y))
+(bar z))
+</programlisting>
+<para>Lexical variables that are not declared to be of fixnum,
+character, short-float, long-float, or their
+subtypes, and that are not named in <literal>object</literal> declarations are usually
+allocated on the value stack, but may possibly be allocated on the C stack
+automatically by the compiler.</para>
+</section>
+
+<section xml:id="Raw-data-functions">
+<title>Built-in Functions that Operate on Raw Data Directly</title>
+<para>Some built-in Common-Lisp functions can directly operate on raw data, if
+appropriate declarations are supplied.  The addition function <literal>+</literal> is among
+such functions.</para>
+<programlisting>
+(let ((x 1))
+(declare (fixnum x))
+...
+(setq x (+ x 2))
+...
+)
+</programlisting>
+<para>In the compiled code for this <literal>let</literal> form, the raw fixnum datum (i.e., the
+32 bit signed integer) stored in <replaceable>x</replaceable> is simply incremented by 2 and the
+resulting 32 bit signed integer is stored back into <replaceable>x</replaceable>.  The compiler is
+sure that the addition for 32 bit signed integers will be performed on the call
+to <literal>+</literal>, because the arguments are both fixnums and the return value must
+be also a fixnum since the value is to be assigned to the fixnum
+variable.  The knowledge of both the argument types and the return type is
+necessary for this decision: Addition of two fixnums may possibly produce a
+bignum and addition of two bignums may happen to produce a fixnum value.  If
+either the argument type or the return type were not known to the compiler, the
+general addition function would be called to handle the general case.  In the
+following form, for example, the compiler cannot be sure that the return value
+of the multiplication is a fixnum or that the arguments of the addition are
+fixnums.</para>
+<programlisting>
+(setq x (+ (* x 3) 2))
+</programlisting>
+<para>In order to obtain the optimal code, a <literal>the</literal> special form should
+surround the multiplication.</para>
+<programlisting>
+(setq x (+ (the fixnum (* x 3)) 2))
+</programlisting>
+<para>Built-in Common-Lisp functions that can directly operate on raw data are:</para>
+<orderedlist numeration="arabic">
+<listitem>
+<para>arithmetic functions such as <literal>+</literal>,  <literal>-</literal>,
+<literal>1+</literal>, <literal>1-</literal>,  <literal>*</literal>, <literal>floor</literal>,  <literal>mod</literal>, <literal>/</literal>, and
+<literal>expt</literal>.</para>
+</listitem>
+<listitem>
+<para>predicates such as <literal>eq</literal>, <literal>eql</literal>, <literal>equal</literal>,
+<literal>zerop</literal>, <literal>plusp</literal>, <literal>minusp</literal>, <literal>=</literal>, <literal>/=</literal>, <literal>&lt;</literal>,
+<literal>&lt;=</literal>, <literal>&gt;</literal>, <literal>&gt;=</literal>, <literal>char=</literal>, <literal>char/=</literal>, <literal>char&lt;</literal>,
+<literal>char&lt;=</literal>, <literal>char&gt;</literal>, and <literal>char&gt;=</literal>.</para>
+</listitem>
+<listitem>
+<para>sequence processing functions that receive or return one or more
+fixnum values, such as <literal>nth</literal>, <literal>nthcdr</literal>, <literal>length</literal>, and
+<literal>elt</literal>.</para>
+</listitem>
+<listitem>
+<para>array access functions such as <literal>svref</literal>, <literal>char</literal>, <literal>schar</literal>,
+and <literal>aref</literal> (see below).</para>
+</listitem>
+<listitem>
+<para>system-internal functions for array update (see below).</para>
+</listitem>
+<listitem>
+<para>type-specific functions such as <literal>char-code</literal>, <literal>code-char</literal>,
+and <literal>float</literal>.</para>
+</listitem>
+</orderedlist>
+<para>As mentioned in Section 2.5.1, array elements are represented in one of six
+ways depending on the type of the array.  By supplying appropriate array type
+declarations, array access and update operations can handle raw data stored in
+arrays.  For example,</para>
+<programlisting>
+(let ((a (make-array n :element-type 'fixnum))
+(sum 0))
+(declare (type (array fixnum) a)
+(fixnum sum))
+(dotimes (i n)             ;;; Array initialization.
+(declare (fixnum i))
+(setf (aref a i) i))
+....
+(dotimes (i n)             ;;; Summing up the elements.
+(declare (fixnum i))
+(setq sum (+ (aref a i) sum)))
+....
+)
+</programlisting>
+<para>The <literal>setf</literal> form replaces the <literal>i-th</literal> element of the array a by the raw
+fixnum value of <literal>i</literal>.  The <literal>aref</literal> form retrieves the raw fixnum datum
+stored in <literal>a</literal>.  This raw datum is then added to the raw fixnum value of
+the fixnum variable <literal>sum</literal>, producing the raw fixnum datum to be stored in
+<literal>sum</literal>.  Similar raw data handling is possible for arrays of types
+<literal>(array fixnum), (vector fixnum),
+(array string-char),  string,
+(array short-float),  (vector short-float),
+(array long-float)</literal>, and <literal>(vector long-float)</literal>.</para>
+</section>
+
+<section xml:id="Arguments-Values-passing">
+<title>Arguments/Values Passing</title>
+<para>Function proclamations <literal>(function <replaceable>function-name</replaceable> (<replaceable>arg-type1</replaceable>
+<replaceable>arg-type2</replaceable> ...) <replaceable>return-type</replaceable>)</literal> or its equivalents give the compiler
+the chance to generate compiled code so that arguments to the named functions
+and resulting values of the named functions will be passed via the C stack,
+thus increasing the efficiency of calls to these functions.  Such
+arguments/values passing via the C stack is possible only if the called
+function is also defined in the same source file.  This is because the code for
+the called function must have two entries: One entry for C arguments/values
+passing and another for ordinary Lisp arguments/values passing.  (An ordinary
+function has only the latter entry.)  When the latter entry is used, the
+arguments are <emphasis>unboxed</emphasis> and passed to the former entry.  On return from
+the function, the resulting value is cast into a Lisp data type.</para>
+<para>A good example of this follows.</para>
+<programlisting>
+(eval-when (compile)
+(proclaim '(function tak (fixnum fixnum fixnum) fixnum)))
+
+(defun tak (x y z)
+(declare (fixnum x y z))
+(if (not (&lt; y x))
+z
+(tak (tak (1- x) y z)
+(tak (1- y) z x)
+(tak (1- z) x y))))
+
+;;; Call (tak 18 12 6).
+</programlisting>
+<para>When <literal>tak</literal> is called with the arguments <literal>18, 12</literal>, and <literal>6</literal>, the
+raw fixnum data of the arguments are set to the parameters <literal>x</literal>, <literal>y</literal>,
+<literal>z</literal>.  After that, only raw C data are used to perform the execution: No
+cell pointers are newly allocated nor even referenced.  The built-in functions
+<literal>&lt;</literal> and <literal>1-</literal> directly operate on the raw data.  Only at the return from
+the top-level call of <literal>tak</literal>, the resulting raw data value (which happens
+to be <literal>7</literal>) is reallocated on the heap.  Note that both the <literal>function</literal>
+proclamation and the local fixnum declaration are necessary to
+obtain the optimal code.  The <literal>function</literal> proclamation is necessary for
+arguments/values passing via the C stack and the fixnum declaration
+is necessary to unbox the parameters into C variables.</para>
+</section>
+</chapter>
+<!-- Keep this comment at the end of the file
+  Local variables:
+  sgml-parent-document: "ecl.xml"
+  sgml-indent-step: 1
+  nxml-child-indent: 1
+  nxml-outline-child-indent: 1
+  fill-column: 79
+  End:
+--></book>

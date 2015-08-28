@@ -1,0 +1,480 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE preface [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<preface xml:id="preface">
+ <title>Preface</title>
+
+ <section xml:id="preface.words">
+  <title>About this book</title>
+
+  <para>This manual is part of the &ECL; software system. It documents
+  deviations of &ECL; from various standards (&ANSI;, &AMOP;,...), extensions,
+  daily working process (compiling files, loading sources, creating programs,
+  etc) and the internals of this implementation.</para>
+
+  <para>This book is not intended as a source to learn &CommonLisp;. There are
+  other tutorials and textbooks available in the Net which serve this
+  purpose. The homepage of the <ulink url="http://www.lisp.org">Association of
+  Lisp Users</ulink> contains a good list of links of such teaching and
+  learning material.</para>
+
+  <para>This book is structured into three parts. We begin with <xref
+  linkend="part.standards"/> which documents all parts of the standard which
+  are left as <emphasis>implementation specific</emphasis>. For instance,
+  precision of floating point numbers, available character sets, actual
+  input/output protocols, etc.</para>
+
+  <para><xref linkend="part.extensions"/> introduces all features which are
+  specific to &ECL; and which lay outside the standard. This includes
+  configuring, building and installing &ECL; multiprocessing capabilities,
+  graphics libraries, interfacing with the operating system, etc.</para>
+
+  <para><xref linkend="part.internals"/> deals with the internals of the
+  implementation. This part is only intended for experienced programmers that
+  want to learn how &ECL; does its work and wish to extend it, customize it or
+  port it to new architectures. This part of the documentation is the most
+  fragile one and prone to change.</para>
+ </section>
+
+ <section xml:id="preface.what.is.ecl">
+  <title>What is &ECL;?</title>
+
+  <para>&CommonLisp; is a general purpose programming language. It lays its
+  roots in the <acronym>LISP</acronym> programming language <xref
+  linkend="bib.LISP1.5"/> developed by John McCarthy in the 80s. &CommonLisp;
+  as we know it &ANSI; is the result of an standarization process aimed at
+  unifying the multiple lisp dialects that were born from that language.</para>
+
+  <para>&ECL; is an implementation of the Common-Lisp language. As such it
+  derives from the implementation of the same name developed by Giuseppe
+  Attardi, which itself was built using code from the Kyoto Common-Lisp <xref
+  linkend="bib.KCL"/>. See <xref linkend="preface.history"></xref> for the
+  history of the code you are about to use.</para>
+
+  <para>&ECL; (ECL for short) uses standard C calling conventions for Lisp
+  compiled functions, which allows C programs to easily call Lisp functions
+  and vice versa. No foreign function interface is required: data can be
+  exchanged between C and Lisp with no need for conversion.</para>
+
+  <para>&ECL; is based on a Common Runtime Support (CRS) which provides basic
+  facilities for memory management, dynamic loading and dumping of binary
+  images, support for multiple threads of execution.  The CRS is built into a
+  library that can be linked with the code of the application.  &ECL; is
+  modular: main modules are the program development tools (top level, debugger,
+  trace, stepper), the compiler, and CLOS.  A native implementation of CLOS is
+  available in &ECL;.  A runtime version of &ECL; can be built with just the
+  modules which are required by the application.</para>
+
+  <para>The &ECL; compiler compiles from Lisp to C, and then invokes
+  the GNU C compiler to produce binaries. While former releases of ECL
+  adhere to the the reference of the language given in &Steele84;, the
+  aim of &ECL; is now to achieve maximum compliance with ANSI
+  Common-Lisp, the most up to date standard for Common-Lisp.</para>
+
+ </section>
+
+ <section xml:id="preface.history">
+  <title>History</title>
+
+  <para><figure float="1" xml:id="fig.family-tree">
+   <title>ECL's family tree</title>
+   <mediaobject>
+    <imageobject>
+     <imagedata align="center" fileref="figures/hierarchy.png"
+		format="PNG" width="300px"/>
+    </imageobject>
+   </mediaobject>
+  </figure>
+
+  The &ECL; project is an implementation of the Common-Lisp language inherits
+  from many other previous projects, as shown in <xref
+  linkend="fig.family-tree"/>. The oldest ancestor is the Kyoto Common Lisp, an
+  implementation developed at the the Research Institute for Mathematical
+  Sciences, Kyoto University <xref linkend="bib.KCL"/>. This
+  implementation was developed partially in C and partially in Common Lisp
+  itself and featured a lisp to C translator.</para>
+
+  <para>The <acronym>KCL</acronym> implementation remained a propietary project
+  for some time. During this time, William F. Schelter improved
+  <acronym>KCL</acronym> in several areas and developed Austin Kyoto
+  Common-Lisp (<acronym>AKCL</acronym>). However, those changes had to be
+  distributed as patches over the propietary <acronym>KCL</acronym>
+  implementation and it was not until much later that both
+  <acronym>KCL</acronym> and <acronym>AKCL</acronym> became freely available
+  and gave rise to the GNU Common Lisp project, <acronym>GCL</acronym>.</para>
+
+  <para>Around the 90's, Giusseppe Attardi worked on the <acronym>KCL</acronym>
+  and <acronym>AKCL</acronym> code basis to produce an implementation of
+  &CommonLisp; that could be embedded in other C programs <xref
+  linkend="bib.ECL"/>. The result was an implementation sometimes known as
+  <acronym>ECL</acronym> and sometimes as <acronym>ECoLisp</acronym>, which
+  achieved rather good compliance to the informal specification of the language
+  in &Steele84;, and which run on a rather big number of platforms.</para>
+
+  <para>The &ECL; project stagnated a little bit in the coming years. In
+  particular, certain dependencies such as object binary formats, word sizes
+  and some C quirks made it difficult to port it to new platforms. Furthermore,
+  &ECL; was not compliant with the <acronym>ANSI</acronym> specification, a
+  goal that other Common Lisps were struggling to achieve.</para>
+
+  <para>This is where the <acronym>ECLS</acronym> or
+  <acronym>ECL</acronym>-Spain project began. Juanjo García-Ripoll took
+  the ECoLisp sources and worked on them, with some immediate goals in mind:
+  increase portability, make the code 64-bit clean, make it able to build
+  itself from scratch, without other implementation of &CommonLisp; and restore
+  the ability to link &ECL; with other C programs.</para>
+
+  <para>Those goals were rather quickly achieved. &ECL; became ported to a
+  number of platforms and with the years also compatibility with the
+  <acronym>ANSI</acronym> specification became a more important goal. At some
+  point the fork <acronym>ECLS</acronym>, with agreement of Prof. Attardi, took
+  over the original <acronym>ECL</acronym> implementation and it became what it
+  is nowadays, a community project.</para>
+
+  <para>In 2013 once again project got unmaintained. In 2015 Daniel Kochmański
+  took position of maintainer with consent of Juanjo García-Ripoll.</para>
+
+  <para>The &ECL; project owes a lot to different people who have contributed
+  in many different aspects, from pointing out bugs and incompatibilities of
+  &ECL; with other programs and specifications, to actually solving these bugs
+  and porting &ECL; to new platforms.</para>
+
+  <para>Current development of &ECL; is still driven by Daniel Kochmański with
+  main focus on improving ANSI compliance and compapibility with &CommonLisp;
+  libraries ecosystem, fixing bugs, improving speed and protability. The
+  project homepage is located at <ulink
+  url="https://common-lisp.net/project/ecl/">
+  <uri>https://common-lisp.net/project/ecl/</uri></ulink>, and there are
+  pointers to all project resources like mailing list and main
+  repository.</para>
+
+ </section>
+
+ <section xml:id="Copyright.ECL">
+  <title>Copyright of ECL</title>
+
+  <para>&ECL; is distributed under the GNU LGPL, which allows for commercial
+  uses of the software. A more precise description is given in the Copyright
+  notice which is shipped with &ECL;.</para>
+
+<programlisting>
+---- BEGINNING OF COPYRIGHT FOR THE ECL CORE ENVIRONMENT ------------
+
+  Copyright (c) 2015, Daniel Kochmański
+  Copyright (c) 2000, Juan Jose Garcia Ripoll
+  Copyright (c) 1990, 1991, 1993 Giuseppe Attardi
+  Copyright (c) 1984 Taiichi Yuasa and Masami Hagiya
+	      All Rights Reserved
+
+  ECL is free software; you can redistribute it and/or modify it
+  under the terms of the GNU Library General Public License as published
+  by the Free Software Foundation; either version 2 of the License, or
+  (at your option) any later version; see file 'Copying'.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU Library General Public License for more details.
+
+  You should have received a copy of the GNU Library General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+  PLEASE NOTE THAT:
+
+  This license covers all of the ECL program except for the files
+	src/lsp/loop2.lsp	; Symbolic's LOOP macro
+	src/lsp/pprint.lsp	; CMUCL's pretty printer
+	src/lsp/format.lsp	; CMUCL's format
+  and the directories
+	contrib/		; User contributed extensions
+	src/clx/		; portable CLX library from Telent
+  Look the precise copyright of these extensions in the corresponding
+  files.
+
+  Report bugs, comments, suggestions to the ecl mailing list:
+  ecls-list@lists.sourceforge.net.
+
+---- END OF COPYRIGHT FOR THE ECL CORE ENVIRONMENT ------------------</programlisting>
+ </section>
+
+ <section xml:id="Copyright.Manual">
+  <title>Copyright of this manual</title>
+
+  <para>Copyright: Daniel Kochmański, 2015.</para>
+  <para>Copyright: Juan José García-Ripoll, 2006.</para>
+
+  <para>Copyright: Kevin M. Rosenberg 2002-2003, (UFFI Reference)</para>
+
+  <itemizedlist>
+   <listitem><para>&ACL; is a registered trademark of Franz Inc.</para></listitem>
+   <listitem><para>&LW; is a registered trademark of Xanalys Inc.</para></listitem>
+   <listitem><para><productname>Microsoft Windows</productname> is a registered
+   trademark of Microsoft Inc.</para></listitem>
+   <listitem><para>Other brand or product names are the registered trademarks
+   or trademarks of their respective holders.</para></listitem>
+  </itemizedlist>
+
+  <para>Permission is granted to copy, distribute and/or modify this document
+  under the terms of the GNU Free Documentation License, Version 1.1 or any
+  later version published by the Free Software Foundation; with no Invariant
+  Sections, with the no Front-Cover Texts, and with no Back-Cover Texts.  A
+  copy of the license is shown below.</para>
+
+  <programlisting>
+   &GFDL;</programlisting>
+
+ </section>
+
+ <section xml:id="preface.installation">
+  <title>Installation</title>
+
+  <para>The following sections describe which machines are supported by &ECL;,
+  how to build and install it on them. You should read at least <xref
+  linkend="preface.platforms"/> and in particular <xref linkend="table.ports"/>
+  which details the other sections containing installation instructions for
+  your platform.</para>
+
+  <section xml:id="preface.platforms">
+   <title>Supported platforms</title>
+
+   <table xml:id="table.ports">
+    <title>Supported platforms</title>
+    <tgroup cols="3">
+     <thead>
+      <row>
+       <entry>Architecture</entry>
+       <entry>Operating system</entry>
+       <entry>Toolchain</entry>
+       <entry>Tested<footnote><para>YES means that a dedicated machine regularly builds and tests &ECL; on this platform.</para></footnote></entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>x86 <footnote xml:id="note.x86"><para>Intel 32 bit processors
+       (Pentium, Pentium II, Pentium 3, Pentium 4) and AMD
+       clones</para></footnote>
+       </entry>
+       <entry>Linux</entry>
+       <entry><link linkend="preface.autoconf">Autoconf</link></entry>
+       <entry>YES</entry>
+      </row>
+      <row>
+       <entry>x86_64<footnote xml:id="note.amd"><para>AMD and Intel processors with
+       64 bit extensions.</para></footnote></entry>
+       <entry>Linux</entry>
+       <entry><link linkend="preface.autoconf">Autoconf</link></entry>
+       <entry>YES</entry>
+      </row>
+      <row>
+       <entry>PPC</entry>
+       <entry>Linux</entry>
+       <entry><link linkend="preface.autoconf">Autoconf</link></entry>
+       <entry>YES</entry>
+      </row>
+      <row>
+       <entry>Itanium</entry>
+       <entry>Linux</entry>
+       <entry><link linkend="preface.autoconf">Autoconf</link></entry>
+       <entry>YES</entry>
+      </row>
+      <row>
+       <entry>x86</entry>
+       <entry>FreeBSD</entry>
+       <entry><link linkend="preface.autoconf">Autoconf</link></entry>
+       <entry>YES</entry>
+      </row>
+      <row>
+       <entry>x86</entry>
+       <entry><link linkend="preface.bsd">OpenBSD</link></entry>
+       <entry><link linkend="preface.autoconf">Autoconf</link></entry>
+       <entry>YES</entry>
+      </row>
+      <row>
+       <entry>x86</entry>
+       <entry><link linkend="preface.bsd">NetBSD</link></entry>
+       <entry><link linkend="preface.autoconf">Autoconf</link></entry>
+       <entry>YES</entry>
+      </row>
+      <row>
+       <entry>x86</entry>
+       <entry>Windows XP, Vista, 7</entry>
+       <entry><link linkend="preface.msvc">Microsoft compilers</link></entry>
+       <entry>YES</entry>
+      </row>
+      <row>
+       <entry>x86</entry>
+       <entry>Windows XP, Vista, 7</entry>
+       <entry><link linkend="preface.autoconf">&cygwin;</link></entry>
+       <entry>YES</entry>
+      </row>
+      <row>
+       <entry>x86</entry>
+       <entry>Windows XP, Vista, 7, 8</entry>
+       <entry><link linkend="preface.autoconf">&mingw; and Msys tools</link></entry>
+       <entry>YES</entry>
+      </row>
+      <row>
+       <entry>x86</entry>
+       <entry>OS X Tiger</entry>
+       <entry><link linkend="preface.autoconf">Autoconf</link></entry>
+       <entry>YES</entry>
+      </row>
+      <row>
+       <entry>x86_64</entry>
+       <entry>OS X Tiger</entry>
+       <entry><link linkend="preface.autoconf">Autoconf</link></entry>
+       <entry>YES</entry>
+      </row>
+      <row>
+       <entry>x86</entry>
+       <entry>Solaris</entry>
+       <entry><link linkend="preface.autoconf">Autoconf</link></entry>
+       <entry>YES</entry>
+      </row>
+      <row>
+       <entry>x86_64</entry>
+       <entry>Solaris</entry>
+       <entry><link linkend="preface.autoconf">Autoconf</link></entry>
+       <entry>YES</entry>
+      </row>
+      <row>
+       <entry>Sparc</entry>
+       <entry>Solaris</entry>
+       <entry><link linkend="preface.autoconf">Autoconf</link></entry>
+       <entry>YES</entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </table>
+   
+   <para>In <xref linkend="table.ports"/> we show the operating systems in
+   which ECL is known to run and where it is regularly tested. Note that ECL
+   might successfully build on other platforms, and that porting is relatively
+   easy. We regularly get reports on ECL being built on other platforms (ARM,
+   Motorola 68x, Sparc, etc), so the best thing is to try yourself.</para>
+
+  </section>
+
+  <section xml:id="preface.autoconf">
+   <title>Autoconf based configuration</title>
+
+   <para>&ECL;, like many other free programs, can be built and installed a GNU
+   tool called Autoconf. This is a set of automatically generated scripts that
+   detect the features of your machine, such as the compiler type, existing
+   libraries, desired installation path, and configures &ECL; accordingly. The
+   following procedure describes how to build &ECL; using this procedure and it
+   applies to all platforms except for the Windows ports.</para>
+
+   <procedure>
+    <step>
+     <para>Unpack the tar file</para>
+     <screen>$ gunzip -c ecl-16.0.0.tgz | tar xf -</screen>
+    </step>
+    <step><para>Choose a directory in which you will install &ECL;. Following
+    the Unix covention we will use
+    <filename>/usr/local</filename></para></step>
+    <step>
+     <para>Run the configuration file
+     <screen>$ cd ecl-16.0.0
+     $ ./configure --prefix=/usr/local</screen>
+     If you are building under Solaris 9 you should replace the last line with
+     <screen>$ ./configure --enable-slow-config --with-system-gmp=no \
+     --prefix=/usr/local</screen>
+     By now you should have a directory with the name
+     <filename>build</filename> and a bunch of makefiles inside it.</para>
+    </step>
+    <step>
+     <para>Use GNU make to begin building ECL. Normally this amounts to
+     invoking
+     <screen>$ make</screen>
+     from the command line.</para>
+    </step>
+    <step>
+     <para>Install the program using
+     <screen>$ make install</screen>
+     </para>
+    </step>
+    <step>
+     <para>Make sure the program is installed and ready to run
+     <screen>$ /usr/local/ecl
+     ECL (Embeddable Common-Lisp) 16.0.0
+     Copyright (C) 1984 Taiichi Yuasa and Masami Hagiya
+     Copyright (C) 1993 Giuseppe Attardi
+     Copyright (C) 2000 Juan J. Garcia-Ripoll
+     Copyright (C) 2015 Daniel Kochmanski
+     ECL is free software, and you are welcome to redistribute it
+     under certain conditions; see file 'Copyright' for details.
+     Type :h for Help.
+     Top level in: #&lt;process TOP-LEVEL&gt;.
+     &gt; </screen>
+     </para>
+    </step>
+   </procedure>
+
+  </section>
+
+  <section xml:id="preface.osdep">
+   <title>Platform specific instructions</title>
+
+   <section xml:id="preface.msvc">
+    <title>Microsoft compilers</title>
+
+    <para>If you have a commercial version of Microsoft Visual Studio, the
+    steps are simple:</para>
+    <procedure>
+     <step><para>Change to the <code>msvc</code> directory.</para></step>
+
+     <step><para>Run <code>nmake</code> to build ECL.</para></step>
+
+     <step><para>Run <code>nmake install prefix=d:\Software\ECL</code>
+     where the <code>prefix</code> is the directory where you want to install
+     ECL.</para></step>
+
+     <step><para>Optionally, if you want to build a self-installing
+     executable, you can install <ulink
+     url="http://nsis.sourceforge.net">NSIS</ulink> and run <code>nmake
+     windows-nsi</code>.</para></step>
+    </procedure>
+
+    <para>If you want to build ECL using the free Microsoft Visual Studio
+    Express 2010 or better, you should follow these before building ECL as
+    sketched before:</para>
+    <procedure>
+     <step><para>Download and install <ulink
+     url="http://www.microsoft.com/express/">Microsoft Visual Studio
+     C++ Compiler</ulink>.</para></step>
+
+     <step><para>Download and install the <ulink
+     url="http://msdn.microsoft.com/en-us/windows/bb980924">Windows
+     SDK</ulink></para></step>
+
+     <step><para>Open the Windows SDK terminal, which will set up the
+     appropriate paths and environment variables.</para>
+     </step>
+    </procedure>
+   </section>
+
+   <section xml:id="preface.bsd">
+    <title>OpenBSD and NetBSD</title>
+
+    <para>Before following the instructions in <xref linkend="preface.autoconf"/> you should install the following packages: <application>boehm-gc</application> and <application>gmp-4.1</application> or better. Another component, <application>libffi</application> will be needed if you want to use the <link linkend="ext.ffi">dynamic foreign interface</link>.</para>
+   </section>
+
+  </section>
+ </section>
+</preface>
+</book>
+<!-- Keep this comment at the end of the file
+      Local variables:
+      mode: nxml
+      sgml-parent-document: "ecl.xml"
+      sgml-indent-step: 1
+      nxml-child-indent: 1
+      nxml-outline-child-indent:1
+      fill-column: 79
+      End:
+ -->

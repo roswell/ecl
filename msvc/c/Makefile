@@ -42,7 +42,7 @@ ECL_SSE_OBJ=
 #
 TRUE_CC = cl
 CC	= cl
-CFLAGS	= -c $(ECL_CFLAGS) -DECL_API="__declspec(dllexport)" -I./ -I../ -I$(srcdir) -I$(top_srcdir)/gc/include  -I$(top_srcdir)/gc/include/private
+CFLAGS	= -c $(ECL_CFLAGS) -DECL_API="__declspec(dllexport)" -I./ -I../ -I$(srcdir) -I$(top_srcdir)/bdwgc/include  -I$(top_srcdir)/bdwgc/include/private
 
 SHELL	= /bin/sh
 RM	= del
@@ -168,9 +168,10 @@ $(HFILES): ../ecl/config.h.msvc6 Makefile
 	xcopy /SYI $(top_srcdir)\h\* ..\ecl
 	-mkdir ..\ecl\atomic_ops
 	-mkdir ..\ecl\atomic_ops\sysdeps
-	xcopy /SYI $(top_srcdir)\gc\libatomic_ops-1.2\src\atomic_ops.h ..\ecl
-	xcopy /SYI $(top_srcdir)\gc\libatomic_ops-1.2\src\atomic_ops\generalize*.h ..\ecl\atomic_ops
-	xcopy /SYI $(top_srcdir)\gc\libatomic_ops-1.2\src\atomic_ops\sysdeps\* ..\ecl\atomic_ops\sysdeps
+	xcopy /SYI $(top_srcdir)\bdwgc\libatomic_ops\src\atomic_ops.h ..\ecl
+	xcopy /SYI $(top_srcdir)\bdwgc\libatomic_ops\src\atomic_ops\generalize*.h ..\ecl\atomic_ops
+	xcopy /SYI $(top_srcdir)\bdwgc\libatomic_ops\src\atomic_ops\sysdeps\* ..\ecl\atomic_ops\sysdeps
+	xcopy /SYI $(top_srcdir)\bdwgc\libatomic_ops\src\atomic_ops\ao_version.h ..\ecl\atomic_ops
 
 #
 # GCC might break this code

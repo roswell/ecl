@@ -104,27 +104,27 @@ make_float(cl_object num, cl_object exp, cl_index exp_char, int sign)
 }
 
 /*
-	ecl_parse_number(str, start, end, ep, radix) parses C string str
-	up to (but not including) str[end]
-	using radix as the radix for the rational number.
-	(For floating numbers, the radix is ignored and replaced with 10)
-	When parsing succeeds,
-	the index of the next character is assigned to *ep,
-	and the number is returned as a lisp data object.
-	If not, OBJNULL is returned.
+        ecl_parse_number(str, start, end, ep, radix) parses C string str
+        up to (but not including) str[end]
+        using radix as the radix for the rational number.
+        (For floating numbers, the radix is ignored and replaced with 10)
+        When parsing succeeds,
+        the index of the next character is assigned to *ep,
+        and the number is returned as a lisp data object.
+        If not, OBJNULL is returned.
 */
 cl_object
 ecl_parse_number(cl_object str, cl_index start, cl_index end,
-		 cl_index *ep, unsigned int radix)
+                 cl_index *ep, unsigned int radix)
 {
         int sign = -1, d;
-	cl_index c, i, decimal = end;
+        cl_index c, i, decimal = end;
         cl_object num = _ecl_big_register0();
         bool some_digit = 0;
-	if (end <= start || radix > 36) {
-		*ep = start;
-		return OBJNULL;
-	}
+        if (end <= start || radix > 36) {
+                *ep = start;
+                return OBJNULL;
+        }
  AGAIN:
         _ecl_big_set_ui(num, 0);
         c = ecl_char(str, i = start);

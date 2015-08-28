@@ -1,0 +1,118 @@
+<?xml version='1.0'?>
+<!DOCTYPE xsl:stylesheet [
+<!ENTITY nbsp "&#160;">
+]>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+                version='1.0'>
+
+<!-- ====================================================================== -->
+<!-- funcprototype -->
+<!--
+
+funcprototype ::= (funcdef,
+                   (void|varargs|paramdef+))
+
+funcdef       ::= (#PCDATA|type|replaceable|function)*
+
+paramdef      ::= (#PCDATA|type|replaceable|parameter|funcparams)*
+-->
+
+<xsl:template match="funcprototype">
+  <xsl:variable name="html-style">
+    <xsl:call-template name="dbhtml-attribute">
+      <xsl:with-param name="pis"
+                      select="ancestor::funcsynopsis//processing-instruction('dbhtml')"/>
+      <xsl:with-param name="attribute" select="'funcsynopsis-style'"/>
+    </xsl:call-template>
+  </xsl:variable>
+
+  <xsl:variable name="style">
+    <xsl:choose>
+      <xsl:when test="$html-style != ''">
+        <xsl:value-of select="$html-style"/>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:value-of select="$funcsynopsis.style"/>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:variable>
+
+  <xsl:choose>
+    <xsl:when test="$style = 'kr'">
+      <xsl:apply-templates select="." mode="kr-nontabular"/>
+    </xsl:when>
+    <xsl:when test="$style = 'common-lisp'">
+      <xsl:apply-templates select="." mode="common-lisp"/>
+    </xsl:when>
+    <xsl:otherwise>
+      <xsl:apply-templates select="." mode="ansi-nontabular"/>
+    </xsl:otherwise>
+  </xsl:choose>
+</xsl:template>
+
+<!-- ====================================================================== -->
+<!-- funcprototype: common-lisp -->
+
+<xsl:template match="funcprototype" mode="common-lisp">
+  <p>
+    <xsl:apply-templates mode="common-lisp"/>
+  </p>
+</xsl:template>
+
+<xsl:template match="funcdef" mode="common-lisp">
+  <code class="{name(.)}">
+    <xsl:text>(</xsl:text>
+    <xsl:apply-templates mode="common-lisp"/>
+  </code>
+</xsl:template>
+
+<xsl:template match="funcdef/function" mode="common-lisp">
+  <xsl:choose>
+    <xsl:when test="$funcsynopsis.decoration != 0">
+      <b class="fsfunc"><xsl:apply-templates mode="common-lisp"/></b>
+    </xsl:when>
+    <xsl:otherwise>
+      <xsl:apply-templates mode="common-lisp"/>
+    </xsl:otherwise>
+  </xsl:choose>
+</xsl:template>
+
+<xsl:template match="void" mode="common-lisp">
+  <code>)</code>
+</xsl:template>
+
+<xsl:template match="varargs" mode="common-lisp">
+</xsl:template>
+
+<xsl:template match="paramdef" mode="common-lisp">
+  <xsl:text> </xsl:text><xsl:apply-templates mode="common-lisp"/>
+  <xsl:choose>
+    <xsl:when test="following-sibling::*">
+      <xsl:text> </xsl:text>
+    </xsl:when>
+    <xsl:otherwise>
+      <xsl:text>)</xsl:text>
+    </xsl:otherwise>
+  </xsl:choose>
+</xsl:template>
+
+<xsl:template match="paramdef/parameter" mode="common-lisp">
+  <xsl:choose>
+    <xsl:when test="$funcsynopsis.decoration != 0">
+      <var class="pdparam">
+        <xsl:apply-templates mode="common-lisp"/>
+      </var>
+    </xsl:when>
+    <xsl:otherwise>
+      <xsl:apply-templates mode="common-lisp"/>
+    </xsl:otherwise>
+  </xsl:choose>
+</xsl:template>
+
+<xsl:template match="funcparams" mode="common-lisp">
+  <xsl:apply-templates mode="common-lisp"/>
+</xsl:template>
+
+<!-- ==================================================================== -->
+
+</xsl:stylesheet>

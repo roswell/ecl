@@ -1,4 +1,4 @@
-;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: SYSTEM -*-
+;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: SYSTEM; indent-tabs-mode: nil -*-
 ;;;;
 ;;;;  Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya.
 ;;;;  Copyright (c) 1990, Giuseppe Attardi.
@@ -13,7 +13,14 @@
 
 (in-package "SYSTEM")
 
-(defun   logical-pathname-translations (p) (si:pathname-translations p))
+(defun   logical-pathname-translations (p)
+  (or (si:pathname-translations p)
+      (error 'simple-type-error
+             :datum p
+             :expected-type 'logical-pathname
+             :format-control "logical host not yet defined: ~S"
+             :format-arguments (list p))))
+
 (defsetf logical-pathname-translations si:pathname-translations)
 
 (defun load-logical-pathname-translations (host)
@@ -41,37 +48,37 @@ successfully, T is returned, else error."
 (defun do-time (closure)
   #-boehm-gc
   (let* ((real-start (get-internal-real-time))
-	 (run-start (get-internal-run-time))
-	 gc-start
-	 bytes-consed
-	 real-end
-	 run-end
-	 gc-end)
+         (run-start (get-internal-run-time))
+         gc-start
+         bytes-consed
+         real-end
+         run-end
+         gc-end)
     ;; Garbage collection forces counters to be updated
     (si::gc t)
     (setf gc-start (si::gc-time))
     (multiple-value-prog1
-	(funcall closure)
+        (funcall closure)
       (setq run-end (get-internal-run-time)
-	    real-end (get-internal-real-time)
-	    gc-end (si::gc-time))
+            real-end (get-internal-real-time)
+            gc-end (si::gc-time))
       (format *trace-output*
              "real time : ~,3F secs~%~
               run time  : ~,3F secs~%~
               GC time   : ~,3F secs~%"
-	     (/ (- real-end real-start) internal-time-units-per-second)
-	     (/ (- run-end run-start) internal-time-units-per-second)
-	     (/ (- gc-end gc-start) internal-time-units-per-second))))
+             (/ (- real-end real-start) internal-time-units-per-second)
+             (/ (- run-end run-start) internal-time-units-per-second)
+             (/ (- gc-end gc-start) internal-time-units-per-second))))
   #+boehm-gc
   (let* ((*do-time-level* (1+ *do-time-level*))
          real-start
-	 run-start
-	 consed-start
-	 gc-no-start
-	 real-end
-	 run-end
-	 consed-end
-	 gc-no-end)
+         run-start
+         consed-start
+         gc-no-start
+         real-end
+         run-end
+         consed-end
+         gc-no-end)
     ;; Garbage collection forces the value of counters to be updated
     (si::gc t)
     ;; If there are no nested calls, we just reset the counters
@@ -79,11 +86,11 @@ successfully, T is returned, else error."
     ;; but in general we copy the previous values.
     (multiple-value-setq (consed-start gc-no-start) (gc-stats t))
     (setq real-start (get-internal-real-time)
-	  run-start (get-internal-run-time))
+          run-start (get-internal-run-time))
     (multiple-value-prog1
-	(funcall closure)
+        (funcall closure)
       (setq run-end (get-internal-run-time)
-	    real-end (get-internal-real-time))
+            real-end (get-internal-real-time))
       ;; Garbage collection forces the value of counters to be updated
       (si::gc t)
       (multiple-value-setq (consed-end gc-no-end) (gc-stats nil))
@@ -93,10 +100,10 @@ successfully, T is returned, else error."
               run time  : ~,3F secs~%~
               gc count  : ~D times~%~
               consed    : ~D bytes~%"
-	     (/ (- real-end real-start) internal-time-units-per-second)
-	     (/ (- run-end run-start) internal-time-units-per-second)
-	     (- gc-no-end gc-no-start)
-	     (- consed-end consed-start)))))
+             (/ (- real-end real-start) internal-time-units-per-second)
+             (/ (- run-end run-start) internal-time-units-per-second)
+             (- gc-no-end gc-no-start)
+             (- consed-end consed-start)))))
 
 (defmacro time (form)
   "Syntax: (time form)
@@ -149,14 +156,14 @@ Evaluates FORM, outputs the realtime and runtime used for the evaluation to
 #endif
   @(return) = ecl_make_ratio(ecl_make_fixnum(mw),ecl_make_fixnum(60));
 }"
-		 :one-liner nil))
+                 :one-liner nil))
 
 (defun recode-universal-time (sec min hour day month year tz dst)
   (declare (si::c-local))
   (let ((days (+ (if (and (leap-year-p year) (> month 2)) 1 0)
-		 (1- day)
-		 (svref month-startdays (1- month))
-		 (number-of-days-from-1900 year))))
+                 (1- day)
+                 (svref month-startdays (1- month))
+                 (number-of-days-from-1900 year))))
     (+ sec (* 60 (+ min (* 60 (+ tz dst hour (* 24 days))))))))
 
 (defun decode-universal-time (orig-ut &optional (tz nil tz-p) &aux (dstp nil))
@@ -180,13 +187,13 @@ DECODED-TIME."
       (incf year))
     (when (leap-year-p year)
       (cond ((= day 60) (setf month 2 day 29))
-	    ((> day 60) (decf day))))
+            ((> day 60) (decf day))))
     (unless month
       (setq month (position day month-startdays :test #'<=)
-	    day (- day (svref month-startdays (1- month)))))
+            day (- day (svref month-startdays (1- month)))))
     (if (and (not tz-p) (daylight-saving-time-p orig-ut year))
-	(setf tz-p t dstp t)
-	(return (values sec min hour day month year dow dstp tz))))))
+        (setf tz-p t dstp t)
+        (return (values sec min hour day month year dow dstp tz))))))
 
 (defun encode-universal-time (sec min hour day month year &optional tz)
   "Args: (second minute hour date month year
@@ -196,19 +203,19 @@ GET-DECODED-TIME."
   (when (<= 0 year 99)
     ;; adjust to year in the century within 50 years of this year
     (multiple-value-bind (sec min hour day month this-year dow dstp tz)
-	(get-decoded-time)
+        (get-decoded-time)
       (declare (ignore sec min hour day month dow dstp tz))
       (incf year (* 100 (ceiling (- this-year year 50) 100)))))
   (let ((dst 0))
     (unless tz
       (setq tz (rational (get-local-time-zone)))
       (when (daylight-saving-time-p (recode-universal-time sec min hour day month year tz -1) year)
-	;; assume DST applies, and check if at corresponging UT it applies.
-	;; There is an ambiguity between midnight and 1 o'clock on the day
-	;; when time reverts from DST to solar:
-	;; 12:01 on that day could be either 11:01 UT (before the switch) or
-	;; 12:01 UT (after the switch). We opt for the former.
-	(setf dst -1)))
+        ;; assume DST applies, and check if at corresponging UT it applies.
+        ;; There is an ambiguity between midnight and 1 o'clock on the day
+        ;; when time reverts from DST to solar:
+        ;; 12:01 on that day could be either 11:01 UT (before the switch) or
+        ;; 12:01 UT (after the switch). We opt for the former.
+        (setf dst -1)))
     (recode-universal-time sec min hour day month year tz dst)))
 
 (defun daylight-saving-time-p (universal-time year)
@@ -220,82 +227,82 @@ Universal Time UT, which defaults to the current time."
   ;; therefore restrict the time to the interval that can handled by
   ;; the timezone database.
   (let* ((utc-1-1-1970 2208988800)
-	 (unix-time (- universal-time utc-1-1-1970)))
+         (unix-time (- universal-time utc-1-1-1970)))
     (cond ((minusp unix-time)
-	   ;; For dates before 1970 we shift to 1980/81 to guess the daylight
-	   ;; saving times.
-	   (setf unix-time
-		 (+ (if (leap-year-p year)
-			#.(encode-universal-time 0 0 0 1 1 1980 0)
-			#.(encode-universal-time 0 0 0 1 1 1981 0))
-		    (- universal-time (encode-universal-time 0 0 0 1 1 year 0) utc-1-1-1970))))
-	  ((not (fixnump unix-time))
-	   ;; Same if date is too big: we shift to year 2035/36, like SBCL does.
-	   (setf unix-time
-		 (+ (if (leap-year-p year)
-			#.(encode-universal-time 0 0 0 1 1 2032 0)
-			#.(encode-universal-time 0 0 0 1 1 2033 0))
-		    (- universal-time (encode-universal-time 0 0 0 1 1 year 0) utc-1-1-1970)))))
+           ;; For dates before 1970 we shift to 1980/81 to guess the daylight
+           ;; saving times.
+           (setf unix-time
+                 (+ (if (leap-year-p year)
+                        #.(encode-universal-time 0 0 0 1 1 1980 0)
+                        #.(encode-universal-time 0 0 0 1 1 1981 0))
+                    (- universal-time (encode-universal-time 0 0 0 1 1 year 0) utc-1-1-1970))))
+          ((not (fixnump unix-time))
+           ;; Same if date is too big: we shift to year 2035/36, like SBCL does.
+           (setf unix-time
+                 (+ (if (leap-year-p year)
+                        #.(encode-universal-time 0 0 0 1 1 2032 0)
+                        #.(encode-universal-time 0 0 0 1 1 2033 0))
+                    (- universal-time (encode-universal-time 0 0 0 1 1 year 0) utc-1-1-1970)))))
     #-ecl-min
     (ffi::c-inline (unix-time) (:unsigned-long) :bool "
 {
-	time_t when = (#0);
-	struct tm *ltm = localtime(&when);
-	@(return) = ltm->tm_isdst;
+        time_t when = (#0);
+        struct tm *ltm = localtime(&when);
+        @(return) = ltm->tm_isdst;
 }"
-		 :one-liner nil)))
+                 :one-liner nil)))
 
 (defun get-decoded-time ()
   "Args: ()
 Returns the current day-and-time as nine values:
-	second (0 - 59)
-	minute (0 - 59)
-	hour (0 - 23)
-	date (1 - 31)
-	month (1 - 12)
-	year (Christian, not Japanese long-live-Emperor)
-	day of week (0 for Mon, .. 6 for Sun)
-	summer time or not (T or NIL)
-	time zone (-9 in Japan)
+        second (0 - 59)
+        minute (0 - 59)
+        hour (0 - 23)
+        date (1 - 31)
+        month (1 - 12)
+        year (Christian, not Japanese long-live-Emperor)
+        day of week (0 for Mon, .. 6 for Sun)
+        summer time or not (T or NIL)
+        time zone (-9 in Japan)
 Sunday is the *last* day of the week!!"
   (decode-universal-time (get-universal-time)))
 
 (defun ensure-directories-exist (pathname &key verbose (mode #o777))
 "Args: (ensure-directories pathname &key :verbose)
 Creates tree of directories specified by the given pathname. Outputs
-	(VALUES pathname created)
+        (VALUES pathname created)
 where CREATED is true only if we succeeded on creating all directories."
   (let* ((created nil)
-	 (full-pathname (merge-pathnames pathname))
-	 d)
+         (full-pathname (merge-pathnames pathname))
+         d)
     (when (typep full-pathname 'logical-pathname)
       (setf full-pathname (translate-logical-pathname full-pathname)))
     (when (or (wild-pathname-p full-pathname :directory)
-	      (wild-pathname-p full-pathname :host)
-	      (wild-pathname-p full-pathname :device))
+              (wild-pathname-p full-pathname :host)
+              (wild-pathname-p full-pathname :device))
       (error 'file-error :pathname pathname))
     ;; Here we have already a full pathname. We set our own
     ;; *default-pathname-defaults* to avoid that the user's value,
     ;; which may contain names or types, clobbers our computations.
     (let ((*default-pathname-defaults*
-	   (make-pathname :name nil :type nil :directory nil
-			  :defaults full-pathname)))
+           (make-pathname :name nil :type nil :directory nil
+                          :defaults full-pathname)))
       (dolist (item (pathname-directory full-pathname))
-	(setf d (nconc d (list item)))
-	(let* ((p (make-pathname :directory d :defaults *default-pathname-defaults*)))
-	  (unless (or (symbolp item) (si::file-kind p nil))
-	    (setf created t)
-	    (let ((ps (namestring p)))
-	      (when verbose
-		(format t "~%;;; Making directory ~A" ps))
-	      (si::mkdir ps mode)))))
+        (setf d (nconc d (list item)))
+        (let* ((p (make-pathname :directory d :defaults *default-pathname-defaults*)))
+          (unless (or (symbolp item) (si::file-kind p nil))
+            (setf created t)
+            (let ((ps (namestring p)))
+              (when verbose
+                (format t "~%;;; Making directory ~A" ps))
+              (si::mkdir ps mode)))))
       (values pathname created))))
 
 (defmacro with-hash-table-iterator ((iterator package) &body body)
 "Syntax: (with-hash-table-iterator (iterator package) &body body)
 Loop over the elements of a hash table. ITERATOR is a lexically bound function
 that outputs three values
-	(VALUES entry-p key value)
+        (VALUES entry-p key value)
 ENTRY-P is true only if KEY and VALUE denote a pair of key and value of the
 hash table; otherwise it signals that we have reached the end of the hash table."
   `(let ((,iterator (hash-table-iterator ,package)))

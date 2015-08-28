@@ -14,105 +14,108 @@ extern "C" {
 
 typedef struct cl_env_struct *cl_env_ptr;
 struct cl_env_struct {
-	/* Flag for disabling interrupts while we call C library functions. */
-	volatile int disable_interrupts;
+        /* Flag for disabling interrupts while we call C library functions. */
+        volatile int disable_interrupts;
 
-	/* Array where values are returned by functions. */
-	cl_index nvalues;
-	cl_object values[ECL_MULTIPLE_VALUES_LIMIT];
+        /* Array where values are returned by functions. */
+        cl_index nvalues;
+        cl_object values[ECL_MULTIPLE_VALUES_LIMIT];
 
         /* Environment for calling closures, CLOS generic functions, etc */
         cl_object function;
 
-	/* The four stacks in ECL. */
+        /* The four stacks in ECL. */
 
-	/*
-	 * The lisp stack, which is used mainly for keeping the arguments of a
-	 * function before it is invoked, and also by the compiler and by the
-	 * reader when they are building some data structure.
-	 */
-	cl_index stack_size;
-	cl_object *stack;
-	cl_object *stack_top;
-	cl_object *stack_limit;
+        /*
+         * The lisp stack, which is used mainly for keeping the arguments of a
+         * function before it is invoked, and also by the compiler and by the
+         * reader when they are building some data structure.
+         */
+        cl_index stack_size;
+        cl_index stack_limit_size;
+        cl_object *stack;
+        cl_object *stack_top;
+        cl_object *stack_limit;
 
-	/*
-	 * The BinDing Stack stores the bindings of special variables.
-	 */
+        /*
+         * The BinDing Stack stores the bindings of special variables.
+         */
 #ifdef ECL_THREADS
         cl_index thread_local_bindings_size;
         cl_object *thread_local_bindings;
-	cl_object bindings_array;
+        cl_object bindings_array;
 #endif
-	cl_index bds_size;
-	struct ecl_bds_frame *bds_org;
-	struct ecl_bds_frame *bds_top;
-	struct ecl_bds_frame *bds_limit;
+        cl_index bds_size;
+        cl_index bds_limit_size;
+        struct ecl_bds_frame *bds_org;
+        struct ecl_bds_frame *bds_top;
+        struct ecl_bds_frame *bds_limit;
 
-	/*
-	 * The Invocation History Stack (IHS) keeps a list of the names of the
-	 * functions that are invoked, together with their lexical
-	 * environments.
-	 */
-	struct ecl_ihs_frame *ihs_top;
+        /*
+         * The Invocation History Stack (IHS) keeps a list of the names of the
+         * functions that are invoked, together with their lexical
+         * environments.
+         */
+        struct ecl_ihs_frame *ihs_top;
 
-	/*
-	 * The FRames Stack (FRS) is a list of frames or jump points, and it
-	 * is used by different high-level constructs (BLOCK, TAGBODY, CATCH...)
-	 * to set return points.
-	 */
-	cl_index frs_size;
-	struct ecl_frame *frs_org;
-	struct ecl_frame *frs_top;
-	struct ecl_frame *frs_limit;
-	struct ecl_frame *nlj_fr;
+        /*
+         * The FRames Stack (FRS) is a list of frames or jump points, and it
+         * is used by different high-level constructs (BLOCK, TAGBODY, CATCH...)
+         * to set return points.
+         */
+        cl_index frs_size;
+        cl_index frs_limit_size;
+        struct ecl_frame *frs_org;
+        struct ecl_frame *frs_top;
+        struct ecl_frame *frs_limit;
+        struct ecl_frame *nlj_fr;
         cl_index frame_id;
 
-	/*
-	 * The following pointers to the C Stack are used to ensure that a
-	 * recursive function does not enter an infinite loop and exhausts all
-	 * memory. They will eventually disappear, because most operating
-	 * systems already take care of this.
-	 */
-	char *cs_org;
-	char *cs_limit;
-	char *cs_barrier;
-	cl_index cs_size;
+        /*
+         * The following pointers to the C Stack are used to ensure that a
+         * recursive function does not enter an infinite loop and exhausts all
+         * memory. They will eventually disappear, because most operating
+         * systems already take care of this.
+         */
+        cl_index cs_size;
+        cl_index cs_limit_size;
+        cl_index cs_max_size;
+        char *cs_org;
+        char *cs_limit;
+        char *cs_barrier;
 
-	/* Private variables used by different parts of ECL: */
-	/* ... the reader ... */
-	cl_object string_pool;
+        /* Private variables used by different parts of ECL: */
+        /* ... the reader ... */
+        cl_object string_pool;
 
-	/* ... the compiler ... */
-	struct cl_compiler_env *c_env;
+        /* ... the compiler ... */
+        struct cl_compiler_env *c_env;
 
-	/* ... the formatter ... */
-	cl_object fmt_aux_stream;
+        /* ... the formatter ... */
+        cl_object fmt_aux_stream;
 
-	/* ... arithmetics ... */
-	/* Note: if you change the size of these registers, change also
-	   BIGNUM_REGISTER_SIZE in config.h */
-	cl_object big_register[3];
+        /* ... arithmetics ... */
+        /* Note: if you change the size of these registers, change also
+           BIGNUM_REGISTER_SIZE in config.h */
+        cl_object big_register[3];
 
-	cl_object own_process;
-	cl_object pending_interrupt;
-	cl_object signal_queue;
-	cl_object signal_queue_spinlock;
+        cl_object own_process;
+        cl_object pending_interrupt;
+        cl_object signal_queue;
+        cl_object signal_queue_spinlock;
         void *default_sigmask;
 
-	/* The following is a hash table for caching invocations of
-	   generic functions. In a multithreaded environment we must
-	   queue operations in which the hash is cleared from updated
-	   generic functions. */
-#ifdef CLOS
-	struct ecl_cache *method_cache;
-	struct ecl_cache *slot_cache;
-#endif
+        /* The following is a hash table for caching invocations of
+           generic functions. In a multithreaded environment we must
+           queue operations in which the hash is cleared from updated
+           generic functions. */
+        struct ecl_cache *method_cache;
+        struct ecl_cache *slot_cache;
 
-	/* foreign function interface */
+        /* foreign function interface */
 #ifdef HAVE_LIBFFI
         cl_index ffi_args_limit;
-	struct _ffi_type **ffi_types;
+        struct _ffi_type **ffi_types;
         union ecl_ffi_values *ffi_values;
         union ecl_ffi_values **ffi_values_ptrs;
 #endif
@@ -120,26 +123,26 @@ struct cl_env_struct {
         void *fficall;
 #endif
 
-	/* Alternative stack for processing signals */
-	void *altstack;
-	cl_index altstack_size;
+        /* Alternative stack for processing signals */
+        void *altstack;
+        cl_index altstack_size;
 
         /* Floating point interrupts which are trapped */
         int trap_fpe_bits;
 
-	/* Old exception filter. Needed by windows. */
-	void *old_exception_filter;
+        /* Old exception filter. Needed by windows. */
+        void *old_exception_filter;
 
         /* List of packages interned when loading a FASL but which have
          * to be explicitely created by the compiled code itself. */
-	cl_object packages_to_be_created;
+        cl_object packages_to_be_created;
         cl_object packages_to_be_created_p;
 
-	/* Segmentation fault address */
-	void *fault_address;
+        /* Segmentation fault address */
+        void *fault_address;
 
 #ifdef ECL_THREADS
-	int cleanup;
+        int cleanup;
 #endif
 };
 
@@ -166,74 +169,72 @@ struct cl_env_struct {
  */
 
 struct cl_core_struct {
-	cl_object packages;
-	cl_object lisp_package;
-	cl_object user_package;
-	cl_object keyword_package;
-	cl_object system_package;
+        cl_object packages;
+        cl_object lisp_package;
+        cl_object user_package;
+        cl_object keyword_package;
+        cl_object system_package;
         cl_object ext_package;
-#ifdef CLOS
-	cl_object clos_package;
+        cl_object clos_package;
 # ifdef ECL_CLOS_STREAMS
-	cl_object gray_package;
+        cl_object gray_package;
 # endif
-#endif
-	cl_object mp_package;
+        cl_object mp_package;
         cl_object c_package;
-	cl_object ffi_package;
+        cl_object ffi_package;
 
-	cl_object pathname_translations;
+        cl_object pathname_translations;
         cl_object library_pathname;
 
-	cl_object terminal_io;
-	cl_object null_stream;
-	cl_object standard_input;
-	cl_object standard_output;
-	cl_object error_output;
-	cl_object standard_readtable;
-	cl_object dispatch_reader;
-	cl_object default_dispatch_macro;
+        cl_object terminal_io;
+        cl_object null_stream;
+        cl_object standard_input;
+        cl_object standard_output;
+        cl_object error_output;
+        cl_object standard_readtable;
+        cl_object dispatch_reader;
+        cl_object default_dispatch_macro;
 
-	cl_object char_names;
-	cl_object null_string;
+        cl_object char_names;
+        cl_object null_string;
 
-	cl_object plus_half;
-	cl_object minus_half;
-	cl_object imag_unit;
-	cl_object minus_imag_unit;
-	cl_object imag_two;
-	cl_object singlefloat_zero;
-	cl_object doublefloat_zero;
-	cl_object singlefloat_minus_zero;
-	cl_object doublefloat_minus_zero;
+        cl_object plus_half;
+        cl_object minus_half;
+        cl_object imag_unit;
+        cl_object minus_imag_unit;
+        cl_object imag_two;
+        cl_object singlefloat_zero;
+        cl_object doublefloat_zero;
+        cl_object singlefloat_minus_zero;
+        cl_object doublefloat_minus_zero;
 #ifdef ECL_LONG_FLOAT
-	cl_object longfloat_zero;
-	cl_object longfloat_minus_zero;
+        cl_object longfloat_zero;
+        cl_object longfloat_minus_zero;
 #endif
 
-	cl_object gensym_prefix;
-	cl_object gentemp_prefix;
-	cl_object gentemp_counter;
+        cl_object gensym_prefix;
+        cl_object gentemp_prefix;
+        cl_object gentemp_counter;
 
-	cl_object Jan1st1970UT;
+        cl_object Jan1st1970UT;
 
-	cl_object system_properties;
-	cl_object setf_definitions;
+        cl_object system_properties;
+        cl_object setf_definitions;
 
 #ifdef ECL_THREADS
-	cl_object processes;
-	cl_object processes_spinlock;
-	cl_object global_lock;
+        cl_object processes;
+        cl_object processes_spinlock;
+        cl_object global_lock;
         cl_object error_lock;
         cl_object global_env_lock;
 #endif
-	cl_object libraries;
+        cl_object libraries;
 
-	cl_index max_heap_size;
-	cl_object bytes_consed;
-	cl_object gc_counter;
-	bool gc_stats;
-	int path_max;
+        cl_index max_heap_size;
+        cl_object bytes_consed;
+        cl_object gc_counter;
+        bool gc_stats;
+        int path_max;
 #ifdef GBC_BOEHM
         char *safety_region;
 #endif
@@ -244,9 +245,9 @@ struct cl_core_struct {
         cl_index last_var_index;
         cl_object reused_indices;
 #endif
-	cl_object slash;
+        cl_object slash;
 
-	cl_object compiler_dispatch;
+        cl_object compiler_dispatch;
 
         cl_object rehash_size;
         cl_object rehash_threshold;
@@ -254,7 +255,7 @@ struct cl_core_struct {
         cl_object external_processes;
         cl_object external_processes_lock;
 
-	cl_object known_signals;
+        cl_object known_signals;
 };
 
 extern ECL_API struct cl_core_struct cl_core;
@@ -309,14 +310,14 @@ extern ECL_API void ecl_dealloc(void *p);
 extern ECL_API cl_object si_mangle_name _ECL_ARGS((cl_narg narg, cl_object symbol, ...));
 
 typedef union {
-	struct {
-		const char *name;
-		int type;
-		void *fun;
-		short narg;
-		cl_object value;
-	} init;
-	struct ecl_symbol data;
+        struct {
+                const char *name;
+                int type;
+                void *fun;
+                short narg;
+                cl_object value;
+        } init;
+        struct ecl_symbol data;
 } cl_symbol_initializer;
 extern ECL_API cl_symbol_initializer cl_symbols[];
 extern ECL_API cl_index cl_num_symbols_in_core;
@@ -393,9 +394,9 @@ extern ECL_API void ecl_clear_compiler_properties(cl_object sym);
 
 /* big.c */
 
-#define _ecl_big_register0()	ecl_process_env()->big_register[0]
-#define _ecl_big_register1()	ecl_process_env()->big_register[1]
-#define _ecl_big_register2()	ecl_process_env()->big_register[2]
+#define _ecl_big_register0()    ecl_process_env()->big_register[0]
+#define _ecl_big_register1()    ecl_process_env()->big_register[1]
+#define _ecl_big_register2()    ecl_process_env()->big_register[2]
 extern ECL_API cl_object _ecl_fix_times_fix(cl_fixnum x, cl_fixnum y);
 extern ECL_API cl_object _ecl_big_register_copy(cl_object x);
 extern ECL_API cl_object _ecl_big_register_normalize(cl_object x);
@@ -492,10 +493,8 @@ extern ECL_API short ecl_digit_char(cl_fixnum w, cl_fixnum r);
 
 /* clos.c */
 
-#ifdef CLOS
 extern ECL_API cl_object cl_find_class _ECL_ARGS((cl_narg narg, cl_object name, ...));
 extern ECL_API cl_object cl_class_of(cl_object x);
-#endif
 
 /* cmpaux.c */
 
@@ -669,9 +668,9 @@ extern ECL_API void ecl_foreign_data_set_elt(void *p, enum ecl_ffi_tag type, cl_
 
 /* file.c */
 
-#define ECL_LISTEN_NO_CHAR	0
-#define ECL_LISTEN_AVAILABLE	1
-#define ECL_LISTEN_EOF		-1
+#define ECL_LISTEN_NO_CHAR      0
+#define ECL_LISTEN_AVAILABLE    1
+#define ECL_LISTEN_EOF          -1
 
 extern ECL_API cl_object cl_make_synonym_stream(cl_object sym);
 extern ECL_API cl_object cl_synonym_stream_symbol(cl_object strm);
@@ -769,23 +768,21 @@ extern ECL_API void ecl_gc(cl_type t);
 #endif
 
 #ifdef GBC_BOEHM
-#define GC_enabled() (!GC_dont_gc)
-#define GC_enable() GC_dont_gc = FALSE;
-#define GC_disable() GC_dont_gc = TRUE;
+#define GC_enabled() !GC_is_disabled()
+#define GC_enable() GC_enable()
+#define GC_disable() GC_disable()
 extern ECL_API void ecl_register_root(cl_object *p);
 #endif /* GBC_BOEHM */
 
 
 /* gfun.c */
 
-#ifdef CLOS
 extern ECL_API void _ecl_set_method_hash_size(cl_env_ptr env, cl_index size);
 extern ECL_API cl_object si_clear_gfun_hash(cl_object what);
 extern ECL_API cl_object clos_set_funcallable_instance_function(cl_object x, cl_object function_or_t);
 extern ECL_API cl_object si_generic_function_p(cl_object instance);
 
 extern ECL_API cl_object _ecl_standard_dispatch(cl_object frame, cl_object fun);
-#endif /* CLOS */
 
 
 /* hash.c */
@@ -822,7 +819,6 @@ extern ECL_API cl_index ecl_hash_table_count(cl_object hash);
 
 /* instance.c */
 
-#ifdef CLOS
 extern ECL_API cl_object si_allocate_raw_instance(cl_object orig, cl_object clas, cl_object size);
 extern ECL_API cl_object si_instance_class(cl_object x);
 extern ECL_API cl_object si_instance_class_set(cl_object x, cl_object y);
@@ -843,7 +839,6 @@ extern ECL_API cl_object si_copy_instance(cl_object x);
 
 extern ECL_API cl_object ecl_slot_value(cl_object x, const char *slot);
 extern ECL_API cl_object ecl_slot_value_set(cl_object x, const char *slot, cl_object y);
-#endif /* CLOS */
 
 
 /* list.c */
@@ -944,33 +939,33 @@ extern ECL_API cl_object si_quit _ECL_ARGS((cl_narg narg, ...)) /*ecl_attr_noret
 extern ECL_API cl_object si_exit _ECL_ARGS((cl_narg narg, ...)) ecl_attr_noreturn;
 
 typedef enum {
-	ECL_OPT_INCREMENTAL_GC = 0,
-	ECL_OPT_TRAP_SIGSEGV,
-	ECL_OPT_TRAP_SIGFPE,
-	ECL_OPT_TRAP_SIGINT,
-	ECL_OPT_TRAP_SIGILL,
-	ECL_OPT_TRAP_SIGBUS,
+        ECL_OPT_INCREMENTAL_GC = 0,
+        ECL_OPT_TRAP_SIGSEGV,
+        ECL_OPT_TRAP_SIGFPE,
+        ECL_OPT_TRAP_SIGINT,
+        ECL_OPT_TRAP_SIGILL,
+        ECL_OPT_TRAP_SIGBUS,
         ECL_OPT_TRAP_SIGPIPE,
         ECL_OPT_TRAP_SIGCHLD,
-	ECL_OPT_TRAP_INTERRUPT_SIGNAL,
-	ECL_OPT_SIGNAL_HANDLING_THREAD,
-	ECL_OPT_SIGNAL_QUEUE_SIZE,
-	ECL_OPT_BOOTED,
-	ECL_OPT_BIND_STACK_SIZE,
-	ECL_OPT_BIND_STACK_SAFETY_AREA,
-	ECL_OPT_FRAME_STACK_SIZE,
-	ECL_OPT_FRAME_STACK_SAFETY_AREA,
-	ECL_OPT_LISP_STACK_SIZE,
-	ECL_OPT_LISP_STACK_SAFETY_AREA,
-	ECL_OPT_C_STACK_SIZE,
-	ECL_OPT_C_STACK_SAFETY_AREA,
-	ECL_OPT_SIGALTSTACK_SIZE,
-	ECL_OPT_HEAP_SIZE,
-	ECL_OPT_HEAP_SAFETY_AREA,
+        ECL_OPT_TRAP_INTERRUPT_SIGNAL,
+        ECL_OPT_SIGNAL_HANDLING_THREAD,
+        ECL_OPT_SIGNAL_QUEUE_SIZE,
+        ECL_OPT_BOOTED,
+        ECL_OPT_BIND_STACK_SIZE,
+        ECL_OPT_BIND_STACK_SAFETY_AREA,
+        ECL_OPT_FRAME_STACK_SIZE,
+        ECL_OPT_FRAME_STACK_SAFETY_AREA,
+        ECL_OPT_LISP_STACK_SIZE,
+        ECL_OPT_LISP_STACK_SAFETY_AREA,
+        ECL_OPT_C_STACK_SIZE,
+        ECL_OPT_C_STACK_SAFETY_AREA,
+        ECL_OPT_SIGALTSTACK_SIZE,
+        ECL_OPT_HEAP_SIZE,
+        ECL_OPT_HEAP_SAFETY_AREA,
         ECL_OPT_THREAD_INTERRUPT_SIGNAL,
         ECL_OPT_SET_GMP_MEMORY_FUNCTIONS,
-	ECL_OPT_USE_SETMODE_ON_FILES,
-	ECL_OPT_LIMIT
+        ECL_OPT_USE_SETMODE_ON_FILES,
+        ECL_OPT_LIMIT
 } ecl_option;
 
 extern ECL_API const char *ecl_self;
@@ -1177,22 +1172,22 @@ extern ECL_API int ecl_number_compare(cl_object x, cl_object y);
 
 /* num_log.c */
 
-#define ECL_BOOLCLR		0
-#define ECL_BOOLAND		01
-#define ECL_BOOLANDC2		02
-#define ECL_BOOL1		03
-#define ECL_BOOLANDC1		04
-#define ECL_BOOL2		05
-#define ECL_BOOLXOR		06
-#define ECL_BOOLIOR		07
-#define ECL_BOOLNOR		010
-#define ECL_BOOLEQV		011
-#define ECL_BOOLC2		012
-#define ECL_BOOLORC2		013
-#define ECL_BOOLC1		014
-#define ECL_BOOLORC1		015
-#define ECL_BOOLNAND		016
-#define ECL_BOOLSET		017
+#define ECL_BOOLCLR             0
+#define ECL_BOOLAND             01
+#define ECL_BOOLANDC2           02
+#define ECL_BOOL1               03
+#define ECL_BOOLANDC1           04
+#define ECL_BOOL2               05
+#define ECL_BOOLXOR             06
+#define ECL_BOOLIOR             07
+#define ECL_BOOLNOR             010
+#define ECL_BOOLEQV             011
+#define ECL_BOOLC2              012
+#define ECL_BOOLORC2            013
+#define ECL_BOOLC1              014
+#define ECL_BOOLORC1            015
+#define ECL_BOOLNAND            016
+#define ECL_BOOLSET             017
 
 extern ECL_API cl_object cl_lognand(cl_object x, cl_object y);
 extern ECL_API cl_object cl_lognor(cl_object x, cl_object y);
@@ -1587,6 +1582,7 @@ extern ECL_API cl_object si_bds_var(cl_object arg);
 extern ECL_API cl_object si_bds_val(cl_object arg);
 extern ECL_API cl_object si_sch_frs_base(cl_object fr, cl_object ihs);
 extern ECL_API cl_object si_reset_stack_limits(void);
+extern ECL_API cl_object si_reset_margin(cl_object type);
 extern ECL_API cl_object si_set_limit(cl_object type, cl_object size);
 extern ECL_API cl_object si_get_limit(cl_object type);
 
@@ -1648,9 +1644,6 @@ extern ECL_API cl_object si_structure_set(cl_object x, cl_object type, cl_object
 extern ECL_API cl_object si_structurep(cl_object s);
 extern ECL_API cl_object si_make_structure _ECL_ARGS((cl_narg narg, cl_object type, ...));
 
-#ifndef CLOS
-extern ECL_API cl_object structure_to_list(cl_object x);
-#endif
 extern ECL_API cl_object ecl_structure_ref(cl_object x, cl_object name, int n);
 extern ECL_API cl_object ecl_structure_set(cl_object x, cl_object name, int n, cl_object v);
 
@@ -1733,8 +1726,6 @@ extern ECL_API cl_object mp_current_process(void);
 extern ECL_API cl_object mp_block_signals(void);
 extern ECL_API cl_object mp_restore_signals(cl_object sigmask);
 
-extern ECL_API bool ecl_import_current_thread(cl_object process_name, cl_object process_binding);
-extern ECL_API void ecl_release_current_thread(void);
 
 /* threads/semaphore.d */
 
@@ -2133,7 +2124,6 @@ extern ECL_API cl_object cl_copy_pprint_dispatch _ECL_ARGS((cl_narg narg, ...));
 extern ECL_API cl_object cl_pprint_dispatch _ECL_ARGS((cl_narg narg, cl_object V1, ...));
 extern ECL_API cl_object cl_set_pprint_dispatch _ECL_ARGS((cl_narg narg, cl_object V1, cl_object V2, ...));
 
-#ifdef CLOS
 
 /* combin.lsp */
 extern ECL_API cl_object cl_method_combination_error _ECL_ARGS((cl_narg narg, cl_object format, ...));
@@ -2192,8 +2182,6 @@ extern ECL_API cl_object clos_standard_instance_set(cl_object object, cl_object 
 /* method.lsp */
 extern ECL_API cl_object clos_extract_lambda_list(cl_object object);
 extern ECL_API cl_object clos_extract_specializer_names(cl_object object);
-
-#endif
 
 /* conditions.lsp */
 extern ECL_API cl_object cl_abort _ECL_ARGS((cl_narg narg, ...));

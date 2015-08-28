@@ -1,4 +1,4 @@
-;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: SYSTEM -*-
+;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: SYSTEM; indent-tabs-mode: nil -*-
 ;;;;
 ;;;;  Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya.
 ;;;;  Copyright (c) 1990, Giuseppe Attardi.
@@ -39,8 +39,8 @@ Possible keywords are :INDEX, :START, and :END."
            ,@ds
            (UNWIND-PROTECT
              (MULTIPLE-VALUE-PROG1
-	      (PROGN ,@b)
-	      (SETF ,index (FILE-POSITION ,var)))
+              (PROGN ,@b)
+              (SETF ,index (FILE-POSITION ,var)))
              (CLOSE ,var))))
       `(LET ((,var (MAKE-STRING-INPUT-STREAM ,string ,start ,end)))
          ,@body)))
@@ -52,9 +52,9 @@ the value of STRING-FORM.  If STRING-FORM is not given, a new string is used.
 The stream is automatically closed on exit and the string is returned."
   (if string
       `(LET* ((,var (MAKE-STRING-OUTPUT-STREAM-FROM-STRING ,string))
-	      (,(gensym) ,element-type))
-	;; We must evaluate element-type if it has been supplied by the user.
-	;; Even if we ignore the value afterwards.
+              (,(gensym) ,element-type))
+        ;; We must evaluate element-type if it has been supplied by the user.
+        ;; Even if we ignore the value afterwards.
          ,@body)
       `(LET ((,var (MAKE-STRING-OUTPUT-STREAM ,@r)))
          ,@body
@@ -159,16 +159,16 @@ printed.  If FORMAT-STRING is NIL, however, no prompt will appear."
       ((null arg)
         ;; readably-pretty-printed array: #A(type dims initial-contents)
         (let ((elt-type (car initial-contents))
-	      (dims (cadr initial-contents))
-	      (initial-contents (caddr initial-contents)))
-	  (make-array dims :element-type elt-type :initial-contents initial-contents)))
+              (dims (cadr initial-contents))
+              (initial-contents (caddr initial-contents)))
+          (make-array dims :element-type elt-type :initial-contents initial-contents)))
       (t
         (do* ((i 0 (1+ i))
-	      (d nil (cons (length ic) d))
-	      (ic initial-contents (if (zerop (length ic)) ic (elt ic 0))))
+              (d nil (cons (length ic) d))
+              (ic initial-contents (if (zerop (length ic)) ic (elt ic 0))))
             ((>= i arg)
              (make-array (nreverse d) :initial-contents initial-contents))
-	  (declare (fixnum i)))))))
+          (declare (fixnum i)))))))
 
 (set-dispatch-macro-character #\# #\a 'sharp-a-reader)
 (set-dispatch-macro-character #\# #\A 'sharp-a-reader)
@@ -205,37 +205,37 @@ If FILESPEC is given, starts recording the interaction to the specified file.
 FILESPEC may be a symbol, a string, a pathname, or a file stream.  If FILESPEC
 is not given, ends the recording."
   (cond (*dribble-closure*
-	 (funcall *dribble-closure* psp))
-	((null psp)
-	 (error "Not in dribble."))
-	(t
-	 (let* ((namestring (namestring pathname))
+         (funcall *dribble-closure* psp))
+        ((null psp)
+         (error "Not in dribble."))
+        (t
+         (let* ((namestring (namestring pathname))
                 (stream (open pathname :direction :output
-			      :if-exists :supersede
-			      :if-does-not-exist :create))
-		(dribble-stream (make-two-way-stream
-				 (make-echo-stream *terminal-io* stream)
-				 (make-broadcast-stream *terminal-io* stream)))
-		(standard-input *standard-input*)
-		(standard-output *standard-output*)
-		(closure #'(lambda (pathname-p)
-			     (when pathname-p
-			       (error "Already in dribble (to ~A)" namestring))
-			     (unless (and (eq dribble-stream *standard-input*)
-					  (eq dribble-stream *standard-output*))
-			       (warn "Stream variables rebound while DRIBBLE is on.~%Some output may be lost."))
-			     (format stream "~&Finished dribbling to ~A." namestring)
-			     (close stream)
-			     (setq *standard-input* standard-input
-				   *standard-output* standard-output
-				   *dribble-closure* nil))))
+                              :if-exists :supersede
+                              :if-does-not-exist :create))
+                (dribble-stream (make-two-way-stream
+                                 (make-echo-stream *terminal-io* stream)
+                                 (make-broadcast-stream *terminal-io* stream)))
+                (standard-input *standard-input*)
+                (standard-output *standard-output*)
+                (closure #'(lambda (pathname-p)
+                             (when pathname-p
+                               (error "Already in dribble (to ~A)" namestring))
+                             (unless (and (eq dribble-stream *standard-input*)
+                                          (eq dribble-stream *standard-output*))
+                               (warn "Stream variables rebound while DRIBBLE is on.~%Some output may be lost."))
+                             (format stream "~&Finished dribbling to ~A." namestring)
+                             (close stream)
+                             (setq *standard-input* standard-input
+                                   *standard-output* standard-output
+                                   *dribble-closure* nil))))
            (multiple-value-bind (sec min hour day month year)
                (get-decoded-time)
              (format dribble-stream "~&Starts dribbling to ~A (~d/~d/~d, ~d:~d:~d)."
                      namestring year month day hour min sec)
-	     (setq *standard-input* dribble-stream
-		   *standard-output* dribble-stream
-		   *dribble-closure* closure)))))
+             (setq *standard-input* dribble-stream
+                   *standard-output* dribble-stream
+                   *dribble-closure* closure)))))
   (values))
 
 ;(provide 'iolib)
@@ -248,8 +248,8 @@ the one defined in the ANSI standard. *print-base* is 10, *print-array* is t,
   (with-clean-symbols (%progv-list)
     `(let ((%progv-list +io-syntax-progv-list+))
        (progv (si:cons-car %progv-list)
-	   (si:cons-cdr %progv-list)
-	 ,@body))))
+           (si:cons-cdr %progv-list)
+         ,@body))))
 
 (defmacro with-ecl-io-syntax (&body body)
   "Syntax: ({forms}*)
@@ -258,8 +258,8 @@ the one used internally by ECL compiled files."
   (with-clean-symbols (%progv-list)
     `(let ((%progv-list +ecl-syntax-progv-list+))
        (progv (si:cons-car %progv-list)
-	   (si:cons-cdr %progv-list)
-	 ,@body))))
+           (si:cons-cdr %progv-list)
+         ,@body))))
 
 #-formatter
 (defmacro formatter (control-string)
@@ -267,11 +267,11 @@ the one used internally by ECL compiled files."
        (si::formatter-aux *standard-output* ,control-string args)))
 
 (defmacro print-unreadable-object
-	  ((object stream &key type identity) &body body)
+          ((object stream &key type identity) &body body)
   (if body
       `(flet ((.print-unreadable-object-body. () ,@body))
-	 (print-unreadable-object-function
-	   ,object ,stream ,type ,identity #'.print-unreadable-object-body.))
+         (print-unreadable-object-function
+           ,object ,stream ,type ,identity #'.print-unreadable-object-body.))
     `(print-unreadable-object-function ,object ,stream ,type ,identity nil)))
 
 (let* ((basic-encodings
@@ -296,17 +296,17 @@ the one used internally by ECL compiled files."
   #+unicode
   (let ((filename (make-pathname :name (symbol-name name) :defaults "sys:encodings;")))
     (cond ((probe-file filename)
-	   (load filename :verbose nil)
-	   name)
-	  ((probe-file (setf filename (make-pathname :type "BIN" :defaults filename)))
-	   (with-open-file (in filename :element-type '(unsigned-byte 16)
-			       :external-format :big-endian)
-	     (let* ((l (read-byte in))
-		    (s (make-array l :element-type '(unsigned-byte 16) :initial-element 0)))
-	       (read-sequence s in)
-	       s)))
-	  (t
-	   (error "Unable to find mapping file ~A for encoding ~A" filename name)))))
+           (load filename :verbose nil)
+           name)
+          ((probe-file (setf filename (make-pathname :type "BIN" :defaults filename)))
+           (with-open-file (in filename :element-type '(unsigned-byte 16)
+                               :external-format :big-endian)
+             (let* ((l (read-byte in))
+                    (s (make-array l :element-type '(unsigned-byte 16) :initial-element 0)))
+               (read-sequence s in)
+               s)))
+          (t
+           (error "Unable to find mapping file ~A for encoding ~A" filename name)))))
 
 (defun ext:make-encoding (mapping)
   #-unicode
@@ -316,29 +316,29 @@ the one used internally by ECL compiled files."
     ((symbolp mapping)
      (let ((var (intern (symbol-name mapping) (find-package "EXT"))))
        (unless (boundp var)
-	 (set var (ext::make-encoding (load-encoding mapping))))
+         (setf (symbol-value var) (ext::make-encoding (load-encoding mapping))))
        (symbol-value var)))
     ((consp mapping)
      (let ((output (make-hash-table :size 512 :test 'eq)))
        (dolist (record mapping output)
-	 (let* ((byte (car record))
-		(unicode (cdr record))
-		(unicode-char (code-char unicode)))
-	   (when (> byte #xFF)
-	     (setf (gethash (ash byte -8) output) t))
-	   (setf (gethash byte output) unicode-char)
-	   (setf (gethash unicode-char output) byte)))))
+         (let* ((byte (car record))
+                (unicode (cdr record))
+                (unicode-char (code-char unicode)))
+           (when (> byte #xFF)
+             (setf (gethash (ash byte -8) output) t))
+           (setf (gethash byte output) unicode-char)
+           (setf (gethash unicode-char output) byte)))))
     ((arrayp mapping)
       (do* ((l (array-total-size mapping))
-	    (output (make-hash-table :size (floor (* 1.5 l)) :test 'eq))
-	    (i 0 (+ 2 i)))
-	   ((>= i l) output)
-	(let* ((byte (aref mapping i))
-	       (unicode (aref mapping (1+ i)))
-	       (unicode-char (code-char unicode)))
-	  (when (> byte #xFF)
-	    (setf (gethash (ash byte -8) output) t))
-	  (setf (gethash byte output) unicode-char)
-	  (setf (gethash unicode-char output) byte))))
+            (output (make-hash-table :size (floor (* 1.5 l)) :test 'eq))
+            (i 0 (+ 2 i)))
+           ((>= i l) output)
+        (let* ((byte (aref mapping i))
+               (unicode (aref mapping (1+ i)))
+               (unicode-char (code-char unicode)))
+          (when (> byte #xFF)
+            (setf (gethash (ash byte -8) output) t))
+          (setf (gethash byte output) unicode-char)
+          (setf (gethash unicode-char output) byte))))
     (t
      (error "Not a valid external format ~A" mapping))))

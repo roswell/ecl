@@ -34,37 +34,37 @@
   ;; Find a maximal iteration interval in TAGBODY from first to end
   ;; then increment the var-ref slot.
   (labels ((add-reg1 (form)
-	     ;; increase the var-ref in FORM for all vars
-	     (cond ((c1form-p form)
-		    (dolist (v (c1form-args form))
-		      (add-reg1 v)))
-		   ((consp form)
-		    (dolist (v form)
-		      (add-reg1 v)))
-		   ((var-p form)
-		    (incf (var-ref form) (the fixnum *reg-amount*)))))
-	   (jumps-to-p (clause tag-name)
-	     ;; Does CLAUSE have a go TAG-NAME in it?
-	     (cond ((c1form-p clause)
-		    (and (eq (c1form-name clause) 'GO)
-			 (eq (tag-name (c1form-arg 0 clause)) tag-name)))
-		   ((atom clause) nil)
-		   (t (or (jumps-to-p (car clause) tag-name)
-			  (jumps-to-p (cdr clause) tag-name))))))
+             ;; increase the var-ref in FORM for all vars
+             (cond ((c1form-p form)
+                    (dolist (v (c1form-args form))
+                      (add-reg1 v)))
+                   ((consp form)
+                    (dolist (v form)
+                      (add-reg1 v)))
+                   ((var-p form)
+                    (incf (var-ref form) (the fixnum *reg-amount*)))))
+           (jumps-to-p (clause tag-name)
+             ;; Does CLAUSE have a go TAG-NAME in it?
+             (cond ((c1form-p clause)
+                    (and (eq (c1form-name clause) 'GO)
+                         (eq (tag-name (c1form-arg 0 clause)) tag-name)))
+                   ((atom clause) nil)
+                   (t (or (jumps-to-p (car clause) tag-name)
+                          (jumps-to-p (cdr clause) tag-name))))))
     (do ((v tagbody (cdr v))
-	 (end nil)
-	 (first nil))
-	((null v)
-	 (do ((ww first (cdr ww)))
-	     ((eq ww end) (add-reg1 (car ww)))
-	   (add-reg1 (car ww))))
+         (end nil)
+         (first nil))
+        ((null v)
+         (do ((ww first (cdr ww)))
+             ((eq ww end) (add-reg1 (car ww)))
+           (add-reg1 (car ww))))
       (when (tag-p (car v))
-	(unless first (setq first v))
-	(do ((w (cdr v) (cdr w))
-	     (name (tag-name (car v))))
-	    ((null w))
-	  (when (jumps-to-p (car w) name)
-	    (setq end w)))))))
+        (unless first (setq first v))
+        (do ((w (cdr v) (cdr w))
+             (name (tag-name (car v))))
+            ((null w))
+          (when (jumps-to-p (car w) name)
+            (setq end w)))))))
 
 (defun make-tagbody-labels (body *cmp-env*)
   "Produces two values. The first one is a list of forms where atoms have been
@@ -94,9 +94,9 @@ The second value is an association list of atoms to the tags they represent."
             *cmp-env*)))
 
 (defun c1tagbody (destination orig-body &aux (*cmp-env* *cmp-env*)
-		  (tag-var (make-var :name (gensym "TAGBODY-ID") :kind NIL))
-		  (tag-index 0)
-		  (body nil)
+                  (tag-var (make-var :name (gensym "TAGBODY-ID") :kind NIL))
+                  (tag-index 0)
+                  (body nil)
                   (tags nil))
   ;; Register variable and frame for cleanup forms
   (cmp-env-register-var tag-var *cmp-env*)
@@ -120,12 +120,12 @@ The second value is an association list of atoms to the tags they represent."
      with output = '()
      with tag-body = nil
      do (cond ((tag-p form)
-	       (when tag-body
-		 (setf output (cons (nreverse tag-body) output)
-		       tag-body nil))
-	       (push form output))
-	      (t
-	       (push form tag-body)))
+               (when tag-body
+                 (setf output (cons (nreverse tag-body) output)
+                       tag-body nil))
+               (push form output))
+              (t
+               (push form tag-body)))
      finally (setf body (if tag-body
                             (cons (nreverse tag-body) output)
                             output)))
@@ -168,9 +168,9 @@ The second value is an association list of atoms to the tags they represent."
     (unless (or (symbolp name) (integerp name))
       (cmperr "The tag name ~s is not a symbol nor an integer." name))
     (multiple-value-bind (tag ccb clb unw)
-	(cmp-env-search-tag name)
+        (cmp-env-search-tag name)
       (unless tag
-	(cmperr "Undefined tag ~A" name))
+        (cmperr "Undefined tag ~A" name))
       (let ((var (tag-var tag)))
         (cond (ccb (setf (tag-ref-ccb tag) t
                          (var-ref-ccb var) T

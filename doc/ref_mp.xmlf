@@ -1,0 +1,655 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter>
+<title>Multithreading</title>
+<section xml:id="ext.mp.dict"><title>Multithreading Reference</title>
+
+<!-- ====================================================================== -->
+<!-- MP:ALL-PROCESSES                                                       -->
+<!-- ====================================================================== -->
+
+<refentry xml:id="ref.mp.all-processes">
+ <refnamediv>
+  <refname><function>mp:all-processes</function></refname>
+  <refpurpose>Return the list of active processes.</refpurpose>
+ </refnamediv>
+
+ <refsynopsisdiv>
+  <title>Function</title>
+  <funcsynopsis>
+   <funcprototype>
+    <funcdef>mp:all-processes</funcdef>
+    <paramdef></paramdef>
+   </funcprototype>
+  </funcsynopsis>
+ </refsynopsisdiv>
+
+ <refsect1>
+  <title>Description</title>
+  <para>Returns the list of processes associated to running tasks. The list is
+  a fresh new one and can be destructively modified. However, it may happen
+  that the output list is not up to date, because some of the tasks has expired
+  before this copy is returned.</para>
+ </refsect1>
+
+</refentry>
+
+<!-- ====================================================================== -->
+<!-- MP:EXIT-PROCESS                                                        -->
+<!-- ====================================================================== -->
+
+<refentry xml:id="ref.mp.exit-process">
+ <refnamediv>
+  <refname><function>mp:exit-process</function></refname>
+  <refpurpose>Exit the task from which it is invoked.</refpurpose>
+ </refnamediv>
+
+ <refsynopsisdiv>
+  <title>Function</title>
+  <funcsynopsis>
+   <funcprototype>
+    <funcdef>mp:exit-process</funcdef>
+    <paramdef></paramdef>
+   </funcprototype>
+  </funcsynopsis>
+ </refsynopsisdiv>
+
+ <refsect1>
+  <title>Description</title>
+  <para>When called from a running task, this function immediately causes the
+  task to finish. When invoked from the main thread, it is equivalent to
+  invoking <xref linkend="ref.quit"/> with exit code 0.</para>
+ </refsect1>
+
+ <refsect1>
+  <title>Example</title>
+  <para>See <xref linkend="ref.mp.interrupt-process"/>.</para>
+ </refsect1>
+
+</refentry>
+
+<!-- ====================================================================== -->
+<!-- MP:INTERRUPT-PROCESS                                                   -->
+<!-- ====================================================================== -->
+
+<refentry xml:id="ref.mp.interrupt-process">
+ <refnamediv>
+  <refname><function>mp:interrupt-process</function></refname>
+  <refpurpose>Interrupt a task.</refpurpose>
+ </refnamediv>
+
+ <refsynopsisdiv>
+  <title>Function</title>
+  <funcsynopsis>
+   <funcprototype>
+    <funcdef>mp:interrupt-process</funcdef>
+    <paramdef><parameter>process</parameter></paramdef>
+    <paramdef><parameter>function</parameter></paramdef>
+   </funcprototype>
+  </funcsynopsis>
+  <variablelist>
+   <varlistentry>
+    <term><replaceable>process</replaceable></term>
+    <listitem><para>An object of type
+    <replaceable>mp:process</replaceable>.</para></listitem>
+   </varlistentry>
+   <varlistentry>
+    <term><replaceable>function</replaceable></term>
+    <listitem><para>A function, which is to be executed in the interrupted
+    process.</para></listitem>
+   </varlistentry>
+  </variablelist>
+ </refsynopsisdiv>
+
+ <refsect1>
+  <title>Description</title>
+  <para>This function sends a signal to a running task. When the task is
+  free to process that signal, it will stop whatever it is doing and
+  execute the given <replaceable>function</replaceable>.</para>
+ </refsect1>
+
+ <refsect1>
+  <title>Example</title>
+  <para>Kill a task that is doing nothing (See <xref linkend="ref.mp.process-kill"/>).</para>
+<programlisting>
+(flet ((task-to-be-killed ()
+         (loop (sleep 1)) ; Infinite loop
+	 ))
+  (let ((task (mp:process-run-function 'background #'task-to-be-killed)))
+    (sleep 10)
+    (mp:interrupt-process task 'mp:exit-process)))
+</programlisting>
+ </refsect1>
+
+</refentry>
+
+<!-- ====================================================================== -->
+<!-- MP:GET-LOCK                                                            -->
+<!-- ====================================================================== -->
+
+<refentry xml:id="ref.mp.get-lock">
+ <refnamediv>
+  <refname><function>mp:get-lock</function></refname>
+  <refpurpose>Try to obtain a lock.</refpurpose>
+ </refnamediv>
+
+ <refsynopsisdiv>
+  <title>Function</title>
+  <funcsynopsis>
+   <funcprototype>
+    <funcdef>mp:get-lock</funcdef>
+    <paramdef><parameter>lock</parameter></paramdef>
+    <paramdef><parameter>&optional;</parameter></paramdef>
+    <paramdef><parameter>wait</parameter></paramdef>
+   </funcprototype>
+  </funcsynopsis>
+  <variablelist>
+   <varlistentry>
+    <term><replaceable>lock</replaceable></term>
+    <listitem><para>An object of type
+    <replaceable>mp:lock</replaceable>.</para></listitem>
+   </varlistentry>
+   <varlistentry>
+    <term><replaceable>wait</replaceable></term>
+    <listitem><para>Whether to wait to obtain the lock. Defaults to
+    &nil;.</para></listitem>
+   </varlistentry>
+  </variablelist>
+ </refsynopsisdiv>
+
+ <refsect1>
+  <title>Description</title>
+  <para>This function tries to obtain exclusive use of a lock. If
+  <replaceable>wait</replaceable> is &t;, and another task owns the lock, it
+  may wait until the lock has been released. If <replaceable>wait</replaceable>
+  is &nil; it will return true if and only if it succeeded on acquiring
+  the lock.</para>
+ </refsect1>
+
+ <refsect1>
+  <title>Example</title>
+  <para>See <xref linkend="ref.mp.with-lock"/>.</para>
+ </refsect1>
+
+</refentry>
+
+<!-- ====================================================================== -->
+<!-- MP:GIVEUP-LOCK                                                         -->
+<!-- ====================================================================== -->
+
+<refentry xml:id="ref.mp.giveup-lock">
+ <refnamediv>
+  <refname><function>mp:giveup-lock</function></refname>
+  <refpurpose>Release a lock we have obtained before.</refpurpose>
+ </refnamediv>
+
+ <refsynopsisdiv>
+  <title>Function</title>
+  <funcsynopsis>
+   <funcprototype>
+    <funcdef>mp:giveup-lock</funcdef>
+    <paramdef><parameter>lock</parameter></paramdef>
+   </funcprototype>
+  </funcsynopsis>
+  <variablelist>
+   <varlistentry>
+    <term><replaceable>lock</replaceable></term>
+    <listitem><para>An object of type
+    <replaceable>mp:lock</replaceable>.</para></listitem>
+   </varlistentry>
+  </variablelist>
+ </refsynopsisdiv>
+
+ <refsect1>
+  <title>Description</title>
+  <para>This function releases a lock which had been previously obtained using
+  <xref linkend="ref.mp.get-lock"/>.</para>
+ </refsect1>
+
+ <refsect1>
+  <title>Example</title>
+  <para>See <xref linkend="ref.mp.with-lock"/>.</para>
+ </refsect1>
+
+</refentry>
+
+<!-- ====================================================================== -->
+<!-- MP:MAKE-LOCK                                                           -->
+<!-- ====================================================================== -->
+
+<refentry xml:id="ref.mp.make-lock">
+ <refnamediv>
+  <refname><function>mp:make-lock</function></refname>
+  <refpurpose>Create a new lock.</refpurpose>
+ </refnamediv>
+
+ <refsynopsisdiv>
+  <title>Function</title>
+  <funcsynopsis>
+   <funcprototype>
+    <funcdef>mp:make-lock</funcdef>
+    <paramdef><parameter>&key;</parameter></paramdef>
+    <paramdef><parameter>name</parameter></paramdef>
+   </funcprototype>
+  </funcsynopsis>
+  <variablelist>
+   <varlistentry>
+    <term><replaceable>name</replaceable></term>
+    <listitem><para>A symbol to name the lock. Names not be unique. It defaults
+    to &nil;.</para></listitem>
+   </varlistentry>
+  </variablelist>
+ </refsynopsisdiv>
+
+ <refsect1>
+  <title>Description</title>
+  <para>This function creates a lock object that can be use to synchronize
+  different tasks. The own is initally free and not owned by any task. Locks
+  are typically implemented using Posix mutexes. When garbage collected, a lock
+  is automatically freed.</para>
+ </refsect1>
+
+ <refsect1>
+  <title>Example</title>
+
+  <para>See <xref linkend="ref.mp.with-lock"/>.</para>
+ </refsect1>
+</refentry>
+
+<!-- ====================================================================== -->
+<!-- MP:MAKE-PROCESS                                                        -->
+<!-- ====================================================================== -->
+
+<refentry xml:id="ref.mp.make-process">
+ <refnamediv>
+  <refname><function>mp:make-process</function></refname>
+  <refpurpose>Create a new thread.</refpurpose>
+ </refnamediv>
+
+ <refsynopsisdiv>
+  <title>Function</title>
+  <funcsynopsis>
+   <funcprototype>
+    <funcdef>mp:make-process</funcdef>
+    <paramdef><parameter>&key;</parameter></paramdef>
+    <paramdef><parameter>name</parameter></paramdef>
+    <paramdef><parameter>initial-bindings</parameter></paramdef>
+   </funcprototype>
+  </funcsynopsis>
+  <variablelist>
+   <varlistentry>
+    <term><replaceable>name</replaceable></term>
+    <listitem><para>A symbol to name the process. Processes can be
+    unnamed and names need not be unique.</para></listitem>
+   </varlistentry>
+   <varlistentry>
+    <term><replaceable>initial-bindings</replaceable></term>
+    <listitem><para>The list of special variables which will be local to
+    the new process. It defaults to &t;, which means copying all variables
+    which are local to this process.</para></listitem>
+   </varlistentry>
+  </variablelist>
+ </refsynopsisdiv>
+
+ <refsect1>
+  <title>Description</title>
+  <para>This function creates a separate task, with a name, set of variable
+  bindings and no function to run.</para>
+
+  <para>See also <xref linkend="ref.mp.process-run-function"/>.</para>
+ </refsect1>
+
+ <refsect1>
+  <title>Example</title>
+
+  <para>See <xref linkend="ref.mp.process-enable"/></para>
+ </refsect1>
+</refentry>
+
+<!-- ====================================================================== -->
+<!-- MP:PROCESS-ACTIVE-P                                                    -->
+<!-- ====================================================================== -->
+
+<refentry xml:id="ref.mp.process-active-p">
+ <refnamediv>
+  <refname><function>mp:process-active-p</function></refname>
+  <refpurpose>Determine whether a task is running.</refpurpose>
+ </refnamediv>
+
+ <refsynopsisdiv>
+  <title>Function</title>
+  <funcsynopsis>
+   <funcprototype>
+    <funcdef>mp:process-active-p</funcdef>
+    <paramdef><parameter>process</parameter></paramdef>
+   </funcprototype>
+  </funcsynopsis>
+  <variablelist>
+   <varlistentry>
+    <term><replaceable>process</replaceable></term>
+    <listitem><para>An object of type <replaceable>mp:process</replaceable>.</para></listitem>
+   </varlistentry>
+  </variablelist>
+ </refsynopsisdiv>
+
+ <refsect1>
+  <title>Description</title>
+  <para>Returns true if the task is currently running.</para>
+ </refsect1>
+
+</refentry>
+
+<!-- ====================================================================== -->
+<!-- MP:PROCESS-ENABLE                                                      -->
+<!-- ====================================================================== -->
+
+<refentry xml:id="ref.mp.process-enable">
+ <refnamediv>
+  <refname><function>mp:process-enable</function></refname>
+  <refpurpose>Start up a task which was not running.</refpurpose>
+ </refnamediv>
+
+ <refsynopsisdiv>
+  <title>Function</title>
+  <funcsynopsis>
+   <funcprototype>
+    <funcdef>mp:process-enable</funcdef>
+    <paramdef><parameter>process</parameter></paramdef>
+   </funcprototype>
+  </funcsynopsis>
+  <variablelist>
+   <varlistentry>
+    <term><replaceable>process</replaceable></term>
+    <listitem><para>An object of type <replaceable>mp:process</replaceable>.</para></listitem>
+   </varlistentry>
+  </variablelist>
+ </refsynopsisdiv>
+
+ <refsect1>
+  <title>Description</title>
+  <para>The argument to this function should be a process created by <xref
+  linkend="ref.mp.make-process"/>, which has a function associated as per <xref
+  linkend="ref.mp.process-preset"/> but which is not yet running. After
+  invoking this function a new thread will be created in which the associated
+  function will be executed.</para>
+ </refsect1>
+
+ <refsect1>
+  <title>Example</title>
+  <para>The following is a possible implementation of <xref linkend="ref.mp.process-run-function"/>.</para>
+<programlisting>
+(defun process-run-function (process-name process-function &amp;rest args)
+  (let ((process (mp:make-process name)))
+    (apply #'mp:process-preset process function args)
+    (mp:process-enable process)))
+</programlisting>
+ </refsect1>
+
+</refentry>
+
+<!-- ====================================================================== -->
+<!-- MP:PROCESS-KILL                                                        -->
+<!-- ====================================================================== -->
+
+<refentry xml:id="ref.mp.process-kill">
+ <refnamediv>
+  <refname><function>mp:process-kill</function></refname>
+  <refpurpose>Try to stop a running task.</refpurpose>
+ </refnamediv>
+
+ <refsynopsisdiv>
+  <title>Function</title>
+  <funcsynopsis>
+   <funcprototype>
+    <funcdef>mp:process-kill</funcdef>
+    <paramdef><parameter>process</parameter></paramdef>
+   </funcprototype>
+  </funcsynopsis>
+  <variablelist>
+   <varlistentry>
+    <term><replaceable>process</replaceable></term>
+    <listitem><para>An object of type
+    <replaceable>mp:process</replaceable>.</para></listitem>
+   </varlistentry>
+  </variablelist>
+ </refsynopsisdiv>
+
+ <refsect1>
+  <title>Description</title>
+  <para>This function tries to stop a running task. Killing a process
+  may fail if the task has disabled interrupts.</para>
+ </refsect1>
+
+ <refsect1>
+  <title>Example</title>
+  <para>Kill a task that is doing nothing.</para>
+<programlisting>
+(flet ((task-to-be-killed ()
+         (loop (sleep 1)) ; Infinite loop
+	 ))
+  (let ((task (mp:process-run-function 'background #'task-to-be-killed)))
+    (sleep 10)
+    (mp:process-kill task)))
+</programlisting>
+ </refsect1>
+
+</refentry>
+
+<!-- ====================================================================== -->
+<!-- MP:PROCESS-NAME                                                        -->
+<!-- ====================================================================== -->
+
+<refentry xml:id="ref.mp.process-name">
+ <refnamediv>
+  <refname><function>mp:process-name</function></refname>
+  <refpurpose>Return the name of a task.</refpurpose>
+ </refnamediv>
+
+ <refsynopsisdiv>
+  <title>Function</title>
+  <funcsynopsis>
+   <funcprototype>
+    <funcdef>mp:process-active-p</funcdef>
+    <paramdef><parameter>process</parameter></paramdef>
+   </funcprototype>
+  </funcsynopsis>
+  <variablelist>
+   <varlistentry>
+    <term><replaceable>process</replaceable></term>
+    <listitem><para>An object of type <replaceable>mp:process</replaceable>.</para></listitem>
+   </varlistentry>
+  </variablelist>
+ </refsynopsisdiv>
+
+ <refsect1>
+  <title>Description</title>
+  <para>Returns the name of the given task, if any.</para>
+ </refsect1>
+
+</refentry>
+
+<!-- ====================================================================== -->
+<!-- MP:PROCESS-PRESET                                                      -->
+<!-- ====================================================================== -->
+
+<refentry xml:id="ref.mp.process-preset">
+ <refnamediv>
+  <refname><function>mp:process-preset</function></refname>
+  <refpurpose>Associate a function to a process.</refpurpose>
+ </refnamediv>
+
+ <refsynopsisdiv>
+  <title>Function</title>
+  <funcsynopsis>
+   <funcprototype>
+    <funcdef>mp:process-preset</funcdef>
+    <paramdef><parameter>process</parameter></paramdef>
+    <paramdef><parameter>function</parameter></paramdef>
+    <paramdef><parameter>&rest;</parameter></paramdef>
+    <paramdef><parameter>function-args</parameter></paramdef>
+   </funcprototype>
+  </funcsynopsis>
+  <variablelist>
+   <varlistentry>
+    <term><replaceable>process</replaceable></term>
+    <listitem><para>An object of type
+    <replaceable>mp:process</replaceable>.</para></listitem>
+   </varlistentry>
+   <varlistentry>
+    <term><replaceable>function</replaceable></term>
+    <listitem><para>An interpret or compiled function.</para></listitem>
+   </varlistentry>
+   <varlistentry>
+    <term><replaceable>function-args</replaceable></term>
+    <listitem><para>One or more arguments for the function
+    above.</para></listitem>
+   </varlistentry>
+  </variablelist>
+ </refsynopsisdiv>
+
+ <refsect1>
+  <title>Description</title>
+  <para>This function associates a function to a stopped task. This function
+  will be the entry point when the task is enabled in the future.</para>
+
+  <para>See also <xref linkend="ref.mp.process-run-function"/>.</para>
+ </refsect1>
+
+ <refsect1>
+  <title>Example</title>
+
+  <para>See <xref linkend="ref.mp.process-enable"/>.</para>
+ </refsect1>
+</refentry>
+
+<!-- ====================================================================== -->
+<!-- MP:PROCESS-RUN-FUNCTION                                                -->
+<!-- ====================================================================== -->
+
+<refentry xml:id="ref.mp.process-run-function">
+ <refnamediv>
+  <refname><function>mp:process-run-function</function></refname>
+  <refpurpose>Create a task and execute a function in it.</refpurpose>
+ </refnamediv>
+
+ <refsynopsisdiv>
+  <title>Function</title>
+  <funcsynopsis>
+   <funcprototype>
+    <funcdef>mp:process-run-function</funcdef>
+    <paramdef><parameter>name</parameter></paramdef>
+    <paramdef><parameter>function</parameter></paramdef>
+    <paramdef><parameter>&rest;</parameter></paramdef>
+    <paramdef><parameter>function-args</parameter></paramdef>
+   </funcprototype>
+  </funcsynopsis>
+  <variablelist>
+   <varlistentry>
+    <term><replaceable>name</replaceable></term>
+    <listitem><para>A symbol to name the process. Processes can be
+    unnamed and names need not be unique.</para></listitem>
+   </varlistentry>
+   <varlistentry>
+    <term><replaceable>function</replaceable></term>
+    <listitem><para>A function object, interpreted or compiled.</para></listitem>
+   </varlistentry>
+   <varlistentry>
+    <term><replaceable>function-args</replaceable></term>
+    <listitem><para>One or more arguments which will be passed to the
+    function.</para></listitem>
+   </varlistentry>
+  </variablelist>
+ </refsynopsisdiv>
+
+ <refsect1>
+  <title>Description</title>
+  <para>This function creates a new process using <xref
+  linkend="ref.mp.make-process"/>, associates a function to it and then
+  starts it using <xref linkend="ref.mp.process-preset"/>.</para>
+ </refsect1>
+
+ <refsect1>
+  <title>Example</title>
+
+  <para>As an example, the following code starts a background task that
+  outputs a list of numbers, one every second:</para>
+<programlisting>
+(flet ((count-numbers (end-number)
+         (dotimes (i end-number)
+	   (format t "~%;;; Counting: ~i" i)
+	   (terpri)
+	   (sleep 1))))
+  (mp:process-run-function 'counter #'count-numbers 10))
+</programlisting>
+ </refsect1>
+</refentry>
+
+<!-- ====================================================================== -->
+<!-- MP:WITH-LOCK                                                           -->
+<!-- ====================================================================== -->
+
+<refentry xml:id="ref.mp.with-lock">
+ <refnamediv>
+  <refname><function>mp:with-lock</function></refname>
+  <refpurpose>Synchronize a piece of code between different tasks.</refpurpose>
+ </refnamediv>
+ 
+ <refsynopsisdiv>
+  <title>Macro</title>
+  <funcsynopsis>
+   <funcprototype>
+    <funcdef>mp::with-lock</funcdef>
+    <paramdef>(<parameter>lock</parameter>)</paramdef>
+    <paramdef><parameter>&body;</parameter></paramdef>
+    <paramdef><parameter>body</parameter></paramdef>
+   </funcprototype>
+  </funcsynopsis>
+ </refsynopsisdiv>
+
+ <refsect1>
+  <title>Description</title>
+
+  <para>It grabs a lock, executes a piece of lisp code and releases the lock at
+  the end. The inner forms are protected so that when any condition is
+  signalled the lock is released.</para>
+ </refsect1>
+
+ <refsect1>
+  <title>Example</title>
+
+  <para>Ensure each task increments the counter properly. The lock is
+  required because INCF is not an atomic operation.</para>
+<programlisting>
+(defvar *counter* 0)
+(defvar *counter-lock* (mp:make-lock :name 'counter))
+
+(flet ((task (name)
+        (loop while (&lt;= *counter* 10)
+	      do (progn
+                   (sleep 1)
+	           (with-lock (*counter-lock*)
+                     (format t "~%;;; ~A counts ~D" name *counter*)
+		     (terpri)
+                     (incf *counter*))))))
+  (mp:process-run-function 'ana #'task 'ana)
+  (mp:process-run-function 'jose #'task 'jose))
+</programlisting>
+ </refsect1>
+</refentry>
+</section>
+</chapter>
+</book>
+<!-- Keep this comment at the end of the file
+      Local variables:
+      mode: nxml
+      sgml-parent-document: "ecl.xml"
+      sgml-indent-step: 1
+      nxml-child-indent: 1
+      nxml-outline-child-indent: 1
+      fill-column: 79
+      End:
+ -->

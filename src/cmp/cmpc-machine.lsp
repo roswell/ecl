@@ -111,14 +111,14 @@
 
 (defun make-rep-type (all-c-types name lisp-type c-name &optional to-lisp from-lisp from-lisp-unsafe)
   (let* ((record (assoc name all-c-types))
-	 (bits (cdr record)))
+         (bits (cdr record)))
     (when record
       ;; For integer bits we get extra information from ALL-C-TYPES
       (when bits
-	(if (plusp bits)
-	    (setf lisp-type `(unsigned-byte ,bits))
-	    (setf bits (- bits)
-		  lisp-type `(signed-byte ,bits))))
+        (if (plusp bits)
+            (setf lisp-type `(unsigned-byte ,bits))
+            (setf bits (- bits)
+                  lisp-type `(signed-byte ,bits))))
       (%make-rep-type
        :name name
        :lisp-type lisp-type
@@ -136,19 +136,19 @@
 
 (defun default-machine ()
   (let* ((all-c-types (append +this-machine-c-types+ +all-machines-c-types+))
-	 (table (make-hash-table :size 128 :test 'eq))
-	 (sorted-rep-types
-	  ;; Create the rep-type objects
-	  (loop for i from 0
-	     for record in +representation-types+
-	     for rep-type = (apply #'make-rep-type all-c-types record)
-	     when rep-type
-	     do (setf (rep-type-index rep-type) i)
-	     and collect (setf (gethash (rep-type-name rep-type) table) rep-type))))
+         (table (make-hash-table :size 128 :test 'eq))
+         (sorted-rep-types
+          ;; Create the rep-type objects
+          (loop for i from 0
+             for record in +representation-types+
+             for rep-type = (apply #'make-rep-type all-c-types record)
+             when rep-type
+             do (setf (rep-type-index rep-type) i)
+             and collect (setf (gethash (rep-type-name rep-type) table) rep-type))))
     ;; hack: sse-pack -> int, but int -> int-sse-pack
     (let ((r (gethash :int-sse-pack table)))
       (when r
-	(setf (rep-type-index r) 'ext:int-sse-pack)))
+        (setf (rep-type-index r) 'ext:int-sse-pack)))
     ;; On a second pass, we replace types with more general ones
     (loop with fixnum-rep-type = (gethash ':fixnum table)
        with fixnum-lisp-type = (rep-type-lisp-type fixnum-rep-type)
@@ -158,8 +158,8 @@
        do (setf (rep-type-from-lisp-unsafe r) "ecl_fixnum"))
     ;; Create machine object
     (make-machine :c-types all-c-types
-		  :rep-type-hash table
-		  :sorted-types sorted-rep-types)))
+                  :rep-type-hash table
+                  :sorted-types sorted-rep-types)))
 
 (defun machine-c-type-p (name)
   (gethash name (machine-rep-type-hash *machine*)))

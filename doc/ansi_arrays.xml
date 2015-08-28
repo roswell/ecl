@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter xml:id="ansi.arrays">
+ <title>Arrays</title>
+ <section xml:id="ansi.array-limits">
+  <title>Array limits</title>
+
+  <para>&ECL; arrays can have up to 64 dimensions.  Common-Lisp constants
+  related to arrays have the following values in &ECL;.</para>
+  <informaltable>
+   <tgroup cols="2">
+    <thead>
+     <row>
+      <entry>Constant</entry>
+      <entry>Value</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry>array-rank-limit</entry>
+      <entry>64</entry>
+     </row>
+     <row>
+      <entry>array-dimension-limit</entry>
+      <entry>most-positive-fixnum</entry>
+     </row>
+     <row>
+      <entry>array-total-size-limit</entry>
+      <entry>array-dimension-limit</entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </informaltable>
+ </section>
+
+ <section xml:id="ansi.array-spec">
+  <title>Specializations</title>
+
+  <para>When the elements of an array are declared to have some precise type, such as a small or large integer, a character or a floating point number, &ECL; has means to store those elements in a more compact form, known as a <emphasis>specialized array</emphasis>. The list of types for which &ECL; specializes arrays is platform dependent, but is summarized in the following table, together with the C type which is used internally and the expected size.</para>
+  <informaltable>
+   <tgroup cols="3">
+    <thead>
+     <row>
+      <entry>Specialized type</entry>
+      <entry>Element C type</entry>
+      <entry>Size</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry><type>bit</type></entry>
+      <entry>-</entry>
+      <entry>1 bit</entry>
+     </row>
+     <row>
+      <entry><type>character</type></entry>
+      <entry><type>unsigned char</type> or <type>uint32_t</type></entry>
+      <entry>Depends on character range</entry>
+     </row>
+     <row>
+      <entry><type>base-char</type></entry>
+      <entry><type>unsigned char</type></entry>
+      <entry></entry>
+     </row>
+     <row>
+      <entry><type>fixnum</type></entry>
+      <entry><type>cl_fixnum</type></entry>
+      <entry>Machine word (32 or 64 bits)</entry>
+     </row>
+     <row>
+      <entry><type>(signed-byte 8)</type></entry>
+      <entry><type>int8_t</type></entry>
+      <entry>8 bits</entry>
+     </row>
+     <row>
+      <entry><type>(unsigned-byte 8)</type></entry>
+      <entry><type>uint8_t</type></entry>
+      <entry>8 bits</entry>
+     </row>
+     <row>
+      <entry><type>(signed-byte 16)</type></entry>
+      <entry><type>int16_t</type></entry>
+      <entry>16 bits</entry>
+     </row>
+     <row>
+      <entry><type>(unsigned-byte 16)</type></entry>
+      <entry><type>uint16_t</type></entry>
+      <entry>16 bits</entry>
+     </row>
+     <row>
+      <entry><type>(signed-byte 32)</type></entry>
+      <entry><type>int32_t</type></entry>
+      <entry>32 bits</entry>
+     </row>
+     <row>
+      <entry><type>(unsigned-byte 32)</type></entry>
+      <entry><type>uint32_t</type></entry>
+      <entry>32 bits</entry>
+     </row>
+     <row>
+      <entry><type>(signed-byte 64)</type></entry>
+      <entry><type>int64_t</type></entry>
+      <entry>64 bits</entry>
+     </row>
+     <row>
+      <entry><type>(unsigned-byte 64)</type></entry>
+      <entry><type>uint64_t</type></entry>
+      <entry>64 bits</entry>
+     </row>
+     <row>
+      <entry><type>single-float</type> or <type>short-float</type></entry>
+      <entry><type>float</type></entry>
+      <entry>32-bits IEEE float</entry>
+     </row>
+     <row>
+      <entry><type>double-float</type></entry>
+      <entry><type>double</type></entry>
+      <entry>64-bits IEEE float</entry>
+     </row>
+     <row>
+      <entry><type>long-float</type></entry>
+      <entry><type>long double</type></entry>
+      <entry>Between 96 and 128 bits.</entry>
+     </row>
+     <row>
+      <entry><type>t</type></entry>
+      <entry><type>cl_object</type></entry>
+      <entry>Size of a pointer.</entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </informaltable>
+
+  <para>Let us remark that some of these specialized types might not exist in your platform. This is detected using conditional reading and features (See <xref linkend="ansi.numbers.c-types"/>).</para>
+ </section>
+
+ <xi:include href="ref_c_arrays.xml" xpointer="ansi.arrays.c-dict" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+
+</chapter>
+</book>

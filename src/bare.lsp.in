@@ -49,7 +49,7 @@
 ;;; ")
 
 (if (or (member "ECL-MIN" *features* :test #'string-equal)
-	(member "CROSS" *features* :test #'string-equal))
+        (member "CROSS" *features* :test #'string-equal))
   (load "lsp/load.lsp" :verbose nil))
 
 (defun si::process-command-args () )
@@ -101,14 +101,14 @@
 (defun compile-if-old (destdir sources &rest options)
   (ensure-directories-exist destdir :mode #o0777)
   (mapcar #'(lambda (source)
-	      (let ((object (merge-pathnames destdir (compile-file-pathname source :type :object))))
-		(unless (and (probe-file object)
-			     (>= (file-write-date object) (file-write-date source)))
-		  (format t "~&(compile-file ~S :output-file ~S~{ ~S~})~%"
-			  source object options)
-		  (apply #'compile-file source :output-file object options))
-		object))
-	  sources))
+              (let ((object (merge-pathnames destdir (compile-file-pathname source :type :object))))
+                (unless (and (probe-file object)
+                             (>= (file-write-date object) (file-write-date source)))
+                  (format t "~&(compile-file ~S :output-file ~S~{ ~S~})~%"
+                          source object options)
+                  (apply #'compile-file source :output-file object options))
+                object))
+          sources))
 
 (defvar *module-symbols* nil)
 (defvar *module-files* nil)
@@ -129,21 +129,21 @@
 
 (defun build-fake-asdf (name static-library compiled-filename &key depends-on)
   (let ((path (make-pathname :name name :type "asd"))
-	(compiled (make-pathname :host "SYS"
-				 :name (pathname-name compiled-filename)
-				 :type (pathname-type compiled-filename)))
-	(library (make-pathname :host "SYS"
-				:name (pathname-name static-library)
-				:type (pathname-type static-library))))
+        (compiled (make-pathname :host "SYS"
+                                 :name (pathname-name compiled-filename)
+                                 :type (pathname-type compiled-filename)))
+        (library (make-pathname :host "SYS"
+                                :name (pathname-name static-library)
+                                :type (pathname-type static-library))))
     (with-open-file (*standard-output* path
                      :direction :output :if-exists :supersede
                      :if-does-not-exist :create)
       (format t "
 (defsystem ~S :class asdf::prebuilt-system
-	:lib ~S
-	:depends-on ~S
-	:components ((:compiled-file ~S :pathname ~S)))"
-	      name library depends-on (string name) compiled))
+        :lib ~S
+        :depends-on ~S
+        :components ((:compiled-file ~S :pathname ~S)))"
+              name library depends-on (string name) compiled))
     path))
 
 (defun build-module (name sources &key additional-files depends-on
@@ -155,8 +155,8 @@
       (setf *module-files* (append additional-files *module-files*)))
     (let* ((objects (compile-if-old dir sources :system-p t :c-file t
                                     :data-file t :h-file t))
-	   (compiled-file-name (string name))
-	   (static-library (c::build-static-library name :lisp-files objects)))
+           (compiled-file-name (string name))
+           (static-library (c::build-static-library name :lisp-files objects)))
       (push static-library *module-files*)
       (when builtin
         (push (intern name) *module-symbols*))
@@ -164,11 +164,11 @@
       (push (build-fake-module name sources) *module-files*)
       #+:wants-dlopen
       (push (setf compiled-file-name (c::build-fasl name :lisp-files objects))
-	    *module-files*)
+            *module-files*)
       (push (if (equalp name "asdf")
-		(build-fake-asdf "prebuilt-asdf" static-library compiled-file-name :depends-on '("cmp"))
-		(build-fake-asdf name static-library compiled-file-name :depends-on depends-on))
-	    *module-files*)
+                (build-fake-asdf "prebuilt-asdf" static-library compiled-file-name :depends-on '("cmp"))
+                (build-fake-asdf name static-library compiled-file-name :depends-on depends-on))
+            *module-files*)
       )))
 
 ;;;
@@ -179,18 +179,18 @@
   (when commit-id
     (let ((last nil))
       (with-open-file (file commit-id :direction :input :element-type :default
-			    :external-format :default)
-	(loop for l = (read-line file nil nil nil)
-	   while l
-	   do (setf last l)))
+                            :external-format :default)
+        (loop for l = (read-line file nil nil nil)
+           while l
+           do (setf last l)))
       (when last
-	(handler-case
-	    (let* ((start (position #\Space last)))
-	      (when start
-		(let ((end (position #\Space last :start (incf start))))
-		  (when end
-		    (setq si::+commit-id+ (subseq last start end))))))
-	  (serious-condition ()))))))
+        (handler-case
+            (let* ((start (position #\Space last)))
+              (when start
+                (let ((end (position #\Space last :start (incf start))))
+                  (when end
+                    (setq si::+commit-id+ (subseq last start end))))))
+          (serious-condition ()))))))
 ;;;
 ;;; * Go back to build directory to start compiling
 ;;;

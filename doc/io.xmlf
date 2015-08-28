@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter xml:id="Input-and-output">
+<title>Input and Output</title>
+<section xml:id="Read-macros">
+<title>Read macros</title>
+<variablelist>
+<varlistentry>
+<term>#P"</term>
+<listitem>
+<para><literal>#"<replaceable>string</replaceable>"</literal> reads a pathname. <literal>#"<replaceable>string</replaceable>"</literal> is equivalent
+to <literal>(pathname "<replaceable>string</replaceable>")</literal>.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>#$</term>
+<listitem>
+<para><literal>#$<replaceable>integer</replaceable></literal> reads a random state. <literal>#$</literal><replaceable>integer</replaceable> is
+equivalent to <literal>(make-random-state <replaceable>integer</replaceable>)</literal>.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+<para>The <literal>#</literal> macro '<literal>#,</literal>' works as described in &Steele84;, only
+if it is included in a constant object.  The forms immediately after
+<literal>`#,'</literal> below will be evaluated when the compiled code is loaded.</para>
+<screen>
+'#,x
+'(a b c (d #,e f) g)
+#(1 2 3 #,(+ a b c) 5 6)
+#C(0.0 #,(exp 1))
+</screen>
+<para>Otherwise, the effect of using '<literal>#,</literal>' is unpredictable.  Note that, when
+interpreted code is loaded, '<literal>#,</literal>' has the same effect as the <literal>#</literal>
+macro '<literal>#.</literal>'.</para>
+</section>
+
+<section xml:id="Input-Output-functions">
+<title>Input and Output Functions</title>
+<para>The input and output functions of &ECL; almost follow the definitions in
+Chapter 22 of &Steele84;.  Most of the differences come from the fact
+that, in &ECL;, input from the terminal is always in line mode and binary I/O
+is not supported.</para>
+<para>In &ECL;, <literal>*terminal-io*</literal> is a two-way stream from the standard input
+and to the standard output.  The echoing to the terminal is performed by the
+underlying operating system.  In particular, when a disk file is assigned to
+the standard output, nothing will be echoed at the terminal.</para>
+<para>Those functions that deviate from the definitions in &Steele84; are
+listed below.</para>
+<blockquote>
+<screen><indexterm role="fn"><primary>load</primary></indexterm>&#151; Function: <function>load</function> <varname>pathname &amp;key :print :verbose :if-does-not-exist</varname></screen>
+<para>If <replaceable>pathname</replaceable> does not specify the filetype of the input file, then load
+uses the association list <replaceable>si::*load-search-list*</replaceable> to find out a suitable
+filetype and the function to load it. Typically, this search list is made of
+the elements <literal>.fas</literal>, <literal>.lsp</literal> and <literal>.lisp</literal>, in this order. If
+everything fails, a file without filetype will be loaded.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>open</primary></indexterm>&#151; Function: <function>open</function> <varname></varname></screen>
+<para>Streams can only have element type <literal>base-char</literal>, <literal>(signed-byte 8)</literal>
+and <literal>(unsigned-byte 8)</literal>. The <literal>:external-format</literal> is always <literal>:default</literal>.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>close</primary></indexterm>&#151; Function: <function>close</function> <varname></varname></screen>
+<para>The keyword variable <replaceable>:abort</replaceable> is always ignored.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>listen</primary></indexterm>&#151; Function: <function>listen</function> <varname></varname></screen>
+<para>This routine requires some low level functions which are not available on
+all platforms (For instance on <literal>Windows</literal>). When ECL is not able to
+determine whether a stream is interactive, <literal>listen</literal> returns true unless
+an end of file has been previously detected.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>clear-input</primary></indexterm>&#151; Function: <function>clear-input</function> <varname></varname></screen>
+<para>The functions <literal>clear-input</literal> and <literal>clear-output</literal> do nothing.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>read-char-no-hang</primary></indexterm>&#151; Function: <function>read-char-no-hang</function> <varname></varname></screen>
+<para><literal>read-char-no-hang</literal> is equivalent to <literal>read-char</literal>.</para>
+</blockquote>
+<para>The functions <literal>princ</literal>, <literal>write-char</literal> and <literal>write-byte</literal> do not
+always flush the stream.  The stream is flushed when</para>
+<orderedlist numeration="arabic">
+<listitem>
+<para>a newline character is written, or</para>
+</listitem>
+<listitem>
+<para>the input from the terminal is requested in the case that these
+functions operate on <literal>*terminal-io*</literal></para>
+</listitem>
+</orderedlist>
+</section>
+
+<section xml:id="Network-streams">
+<title>Network Streams</title>
+<para>With a configuration option, the following function is available which opens
+streams across network connections.</para>
+<blockquote>
+<screen><indexterm role="fn"><primary>open-client-stream</primary></indexterm>&#151; Function: <function>open-client-stream</function> <varname>host port</varname></screen>
+<para>The string <replaceable>host</replaceable> indicates the name of the host, while <replaceable>port</replaceable> is an
+integer which identifies the port number to which to connect.  This function
+returns a two-way stream which can be used in any of the stream operations.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>open-server-stream</primary></indexterm>&#151; Function: <function>open-server-stream</function> <varname>host port</varname></screen>
+<para>A stream connected to port number <replaceable>port</replaceable> is created to which clients can
+connect.  This function returns a two-way stream which can be used in any of
+the stream operations.</para>
+</blockquote>
+</section>
+
+<section xml:id="CLOS-streams">
+<title>CLOS Streams</title>
+<para>When the optional CLOS subsystem is available, an interface is provided by
+&ECL; for using CLOS objects as Common-Lisp input/output character streams.
+Such support can be used for instance to build interactive character streams,
+which may be used by applications as the stream argument for Common-Lisp I/O
+functions such as <literal>read</literal>, <literal>listen</literal>, <literal>prin1</literal>, etc.  The
+fundamental interface to <literal>clos-stream</literal> objects consists of
+(generic) functions which implement the basic Common-Lisp character stream
+operations (see Common-Lisp, Chapter 22) but whose details are implementation
+dependent.</para>
+<para>The following functions are automatically invoked by &ECL; when a stream
+operation involves a CLOS object as a stream parameter. The programmer should
+define these methods for any class of objects which are to be used for
+character input/output.</para>
+
+<section xml:id="CLOS-Stream-Input">
+<title>CLOS Stream Input</title>
+<para>Character input from an <literal>clos-stream</literal> is implemented by the
+following methods.</para>
+<blockquote>
+<screen><indexterm role="fn"><primary>stream-read-char</primary></indexterm>&#151; Method: <function>stream-read-char</function> (<varname>object</varname> <varname>clos-stream</varname>)</screen>
+<para>Returns the next character object read from the CLOS stream <replaceable>object</replaceable>.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>stream-unread-char</primary></indexterm>&#151; Method: <function>stream-unread-char</function> (<varname>object</varname> <varname>clos-stream</varname>) <varname>character</varname></screen>
+<para>Unreads the character object <replaceable>character</replaceable> from the CLOS stream <replaceable>object</replaceable>.
+<replaceable>character</replaceable> will be the next character read by <literal>stream-read-char</literal>.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>stream-listen</primary></indexterm>&#151; Method: <function>stream-listen</function> (<varname>object</varname> <varname>clos-stream</varname>)</screen>
+<para>Returns () is no character is immediately available from the CLOS stream
+<replaceable>object</replaceable>. Otherwise, the next character is returned, as if
+<literal>stream-peek-char</literal> had been called.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>stream-clear-input</primary></indexterm>&#151; Method: <function>stream-clear-input</function> <varname>object</varname></screen>
+<para>Clears any buffered characters on the CLOS stream <replaceable>object</replaceable>. Returns ().</para>
+</blockquote>
+</section>
+
+<section xml:id="CLOS-Stream-Output">
+<title>CLOS Stream Output</title>
+<para>Character output from an <literal>clos-stream</literal> is implemented by the
+following methods.</para>
+<blockquote>
+<screen><indexterm role="fn"><primary>stream-write-char</primary></indexterm>&#151; Method: <function>stream-write-char</function> (<varname>object</varname> <varname>clos-stream</varname>) <varname>character</varname></screen>
+<para>Outputs the character <replaceable>character</replaceable> to the CLOS stream <replaceable>object</replaceable> and
+returns it.</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>stream-clear-output</primary></indexterm>&#151; Method: <function>stream-clear-output</function> (<varname>object</varname> <varname>clos-stream</varname>)</screen>
+<para>Aborts any outstanding output operation on the CLOS stream <replaceable>object</replaceable> and
+returns ().</para>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>stream-force-output</primary></indexterm>&#151; Method: <function>stream-force-output</function> (<varname>object</varname> <varname>clos-stream</varname>)</screen>
+<para>Initiates the emptying of the internal buffers on the CLOS stream <replaceable>object</replaceable>
+and returns ().</para>
+</blockquote>
+</section>
+
+<section xml:id="CLOS-Stream-common">
+<title>CLOS Stream common</title>
+<para>The following functions should be available for all CLOS streams.</para>
+<blockquote>
+<screen><indexterm role="fn"><primary>stream-interactive-p</primary></indexterm>&#151; Method: <function>stream-interactive-p</function> (<varname>object</varname> <varname>clos-stream</varname>)</screen>
+</blockquote>
+<blockquote>
+<screen><indexterm role="fn"><primary>stream-close</primary></indexterm>&#151; Method: <function>stream-close</function> (<varname>object</varname> <varname>clos-stream</varname>)</screen>
+<para>Closes the stream for any further input or output.</para>
+</blockquote>
+</section>
+</section>
+</chapter>
+<!-- Keep this comment at the end of the file
+  Local variables:
+  sgml-parent-document: "ecl.xml"
+  sgml-indent-step: 1
+  nxml-child-indent: 1
+  nxml-outline-child-indent:1
+  fill-column: 79
+  End:
+--></book>

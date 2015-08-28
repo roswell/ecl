@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+ <chapter xml:id="ext.mp">
+  <title>Multithreading</title>
+
+  <section xml:id="ext.mp.threads">
+   <title>Tasks, threads or processes</title>
+
+   <para>On most platforms, &ECL; supports native multithreading. That means
+   there can be several tasks executing lisp code on parallel and sharing
+   memory, variables and files. The interface for multitasking in &ECL;, like
+   those of most other implementations, is based on a set of functions and
+   types that resemble the multiprocessing capabilities of old Lisp Machines.
+   </para>
+
+   <para>This backward compatibility is why tasks or threads are called
+   "processes". However, they should not be confused with operating system
+   processes, which are made of programs running in separate contexts and
+   without access to each other's memory.</para>
+
+   <para>The implementation of threads in &ECL; is purely native and based on
+   Posix Threads wherever avaiable. The use of native threads has
+   advantanges. For instance, they allow for non-blocking file operations,
+   so that while one task is reading a file, a different one is performing
+   a computation.</para>
+
+   <para>As mentioned above, tasks share the same memory, as well as the set of
+   open files and sockets. This manifests on two features. First of all,
+   different tasks can operate on the same lisp objects, reading and writing
+   their slots, or manipulating the same arrays. Second, while threads share
+   global variables, constants and function definitions they can also have
+   thread-local bindings to special variables that are not seen by other
+   tasks.</para>
+
+   <para>The fact that different tasks have access to the same set of data
+   allows both for flexibility and a greater risk. In order to control access
+   to different resources, &ECL; provides the user with locks, as explained in
+   the next section.</para>
+
+  </section>
+
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude"  href="ref_mp.xmlf" xpointer="ext.mp.dict"/>
+
+ </chapter>
+</book>
+<!-- Keep this comment at the end of the file
+     Local variables:
+     mode: nxml
+     sgml-parent-document: "ecl.xml"
+     sgml-indent-step: 1
+     nxml-child-indent: 1
+     nxml-outline-child-indent: 1
+     fill-column: 79
+     End:
+-->

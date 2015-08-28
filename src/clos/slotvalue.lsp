@@ -19,19 +19,19 @@
 
 (defun slot-makunbound (self slot-name)
   (let* ((class (class-of self))
-	 (slotd (find-slot-definition class slot-name)))
+         (slotd (find-slot-definition class slot-name)))
     (if slotd
-	(slot-makunbound-using-class class self slotd)
-	(slot-missing class self slot-name 'SLOT-MAKUNBOUND))
+        (slot-makunbound-using-class class self slotd)
+        (slot-missing class self slot-name 'SLOT-MAKUNBOUND))
     self))
 
 (defmethod slot-value-using-class ((class std-class) self slotd)
   (declare (ignore class))
   (let* ((location (slot-definition-location slotd))
-	 (value (standard-instance-access self location)))
+         (value (standard-instance-access self location)))
     (if (si:sl-boundp value)
-	value
-	(values (slot-unbound class self (slot-definition-name slotd))))))
+        value
+        (values (slot-unbound class self (slot-definition-name slotd))))))
 
 (defmethod slot-boundp-using-class ((class std-class) self slotd)
   (declare (ignore class))
@@ -51,7 +51,7 @@
 ;;;
 
 (defmethod slot-missing ((class t) object slot-name operation 
-			 &optional new-value)
+                         &optional new-value)
   (declare (ignore operation new-value class))
   (error "~A is not a slot of ~A" slot-name object))
 
@@ -64,8 +64,8 @@
 (defmethod slot-unbound ((class null) object slot-index)
   (declare (ignore class))
   (let* ((class (class-of object))
-	 (slotd (find slot-index (slot-value class 'slots)
-		      :key #'slot-definition-location)))
+         (slotd (find slot-index (slot-value class 'slots)
+                      :key #'slot-definition-location)))
     (values (slot-unbound class object (slot-definition-name slotd)))))
 
 ;;;

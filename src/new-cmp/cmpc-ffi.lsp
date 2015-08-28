@@ -50,11 +50,11 @@
   (let ((output (getf +representation-types+ rep-type)))
     (cond (output
            (if (eq rep-type :void) nil
-	     (or (first output)
-	         (cmperr "Representation type ~S cannot be coerced to lisp"
+             (or (first output)
+                 (cmperr "Representation type ~S cannot be coerced to lisp"
                          rep-type))))
-	  ((lisp-type-p rep-type) rep-type)
-	  (t (cmperr "Unknown representation type ~S" rep-type)))))
+          ((lisp-type-p rep-type) rep-type)
+          (t (cmperr "Unknown representation type ~S" rep-type)))))
 
 (defun lisp-type->rep-type (type)
   (cond
@@ -65,9 +65,9 @@
      type)
     (t
      (do ((l +representation-types+ (cddr l)))
-	 ((endp l) :object)
+         ((endp l) :object)
        (when (subtypep type (first (second l)))
-	 (return-from lisp-type->rep-type (first l)))))))
+         (return-from lisp-type->rep-type (first l)))))))
 
 (defun rep-type-name (type)
   (or (second (getf +representation-types+ type))
@@ -95,174 +95,174 @@
   (if (atom loc)
       t
       (case (first loc)
-	((CALL CALL-LOCAL) NIL)
-	((C-INLINE) (not (fifth loc))) ; side effects?
-	(otherwise t))))
+        ((CALL CALL-LOCAL) NIL)
+        ((C-INLINE) (not (fifth loc))) ; side effects?
+        (otherwise t))))
 
 (defun loc-representation-type (loc)
   (cond ((member loc '(NIL T)) :object)
-	((var-p loc) (var-rep-type loc))
-	((si::fixnump loc) :fixnum)
+        ((var-p loc) (var-rep-type loc))
+        ((si::fixnump loc) :fixnum)
         ((eq loc 'TRASH) :void)
-	((atom loc) :object)
-	(t
-	 (case (first loc)
-	   (FIXNUM-VALUE :fixnum)
-	   (CHARACTER-VALUE (if (<= (second loc) 255) :unsigned-char :wchar))
-	   (DOUBLE-FLOAT-VALUE :double)
-	   (SINGLE-FLOAT-VALUE :float)
-	   (LONG-FLOAT-VALUE :long-double)
-	   (C-INLINE (let ((type (first (second loc))))
+        ((atom loc) :object)
+        (t
+         (case (first loc)
+           (FIXNUM-VALUE :fixnum)
+           (CHARACTER-VALUE (if (<= (second loc) 255) :unsigned-char :wchar))
+           (DOUBLE-FLOAT-VALUE :double)
+           (SINGLE-FLOAT-VALUE :float)
+           (LONG-FLOAT-VALUE :long-double)
+           (C-INLINE (let ((type (first (second loc))))
                        (cond ((and (consp type) (eq (first type) 'VALUES)) :object)
                              ((lisp-type-p type) (lisp-type->rep-type type))
                              (t type))))
-	   (BIND (var-rep-type (second loc)))
-	   (LCL (lisp-type->rep-type (or (third loc) T)))
-	   (otherwise :object)))))
+           (BIND (var-rep-type (second loc)))
+           (LCL (lisp-type->rep-type (or (third loc) T)))
+           (otherwise :object)))))
 
 (defun wt-coerce-loc (dest-rep-type loc)
   (setq dest-rep-type (lisp-type->rep-type dest-rep-type))
   ;(print dest-rep-type)
   ;(print loc)
   (let* ((dest-type (rep-type->lisp-type dest-rep-type))
-	 (loc-type (location-type loc))
-	 (loc-rep-type (loc-representation-type loc)))
+         (loc-type (location-type loc))
+         (loc-rep-type (loc-representation-type loc)))
     (labels ((coercion-error ()
-	       (cmperr "Unable to coerce lisp object from type (~S,~S)~%~
-			to C/C++ type (~S,~S)"
-		       loc-type loc-rep-type dest-type dest-rep-type))
-	     (ensure-valid-object-type (a-lisp-type)
-	       (when (subtypep `(AND ,loc-type ,a-lisp-type) NIL)
-		 (coercion-error))))
+               (cmperr "Unable to coerce lisp object from type (~S,~S)~%~
+                        to C/C++ type (~S,~S)"
+                       loc-type loc-rep-type dest-type dest-rep-type))
+             (ensure-valid-object-type (a-lisp-type)
+               (when (subtypep `(AND ,loc-type ,a-lisp-type) NIL)
+                 (coercion-error))))
       (when (eq dest-rep-type loc-rep-type)
-	(wt loc)
-	(return-from wt-coerce-loc))
+        (wt loc)
+        (return-from wt-coerce-loc))
       (case dest-rep-type
-	((:byte :unsigned-byte :short :unsigned-short :int :unsigned-int
-	  :long :unsigned-long :fixnum :cl-index)
-	 (case loc-rep-type
-	   (#1=(:byte :unsigned-byte :short :unsigned-short :int :unsigned-int
-		:long :unsigned-long :fixnum :cl-index
-		:float :double :long-double) ; number types
-	    (wt "((" (rep-type-name dest-rep-type) ")" loc ")"))
-	   ((:object)
-	    (ensure-valid-object-type dest-type)
-	    (wt (cond ((or (subtypep (location-type loc) 'fixnum)
+        ((:byte :unsigned-byte :short :unsigned-short :int :unsigned-int
+          :long :unsigned-long :fixnum :cl-index)
+         (case loc-rep-type
+           (#1=(:byte :unsigned-byte :short :unsigned-short :int :unsigned-int
+                :long :unsigned-long :fixnum :cl-index
+                :float :double :long-double) ; number types
+            (wt "((" (rep-type-name dest-rep-type) ")" loc ")"))
+           ((:object)
+            (ensure-valid-object-type dest-type)
+            (wt (cond ((or (subtypep (location-type loc) 'fixnum)
                            (policy-assume-no-errors))
-		       "fix(")
-		      ((member dest-rep-type '(:unsigned-short :unsigned-long :cl-index))
-		       "ecl_to_unsigned_integer(")
-		      (t
-		       "ecl_to_fixnum("))
-		loc ")"))
-	   (otherwise
-	    (coercion-error))))
-	((:char :unsigned-char :wchar)
-	 (case loc-rep-type
-	   ((:char :unsigned-char :wchar)
-	    (wt "((" (rep-type-name dest-rep-type) ")" loc ")"))
-	   ((:object)
-	    (ensure-valid-object-type dest-type)
-	    (wt "ecl_char_code(" loc ")"))
-	   (otherwise
-	    (coercion-error))))
-	((:float :double :long-double)
-	 (case loc-rep-type
-	   (#1# ; number type
-	    (wt "((" (rep-type-name dest-rep-type) ")" loc ")"))
-	   ((:object)
-	    ;; We relax the check a bit, because it is valid in C to coerce
-	    ;; between floats of different types.
-	    (ensure-valid-object-type 'FLOAT)
-	    (wt (ecase dest-rep-type
-		  (:float "ecl_to_float(")
-		  (:double "ecl_to_double(")
-		  (:long-double "ecl_to_long_double("))
-		loc ")"))
-	   (otherwise
-	    (coercion-error))))
-	((:bool)
-	 (case loc-rep-type
-	   (#1# ; number type
-	    (wt "1"))
-	   ((:object)
-	    (wt "(" loc ")!=Cnil"))
-	   (otherwise
-	    (coercion-error))))
-	((:object)
-	 (case loc-rep-type
-	   ((:short :int :long)
-	    (wt "ecl_make_integer(" loc ")"))
-	   ((:unsigned-short :unsigned-int :unsigned-long)
-	    (wt "ecl_make_unsigned_integer(" loc ")"))
-	   ((:byte :unsigned-byte :fixnum)
-	    (wt "MAKE_FIXNUM(" loc ")"))
-	   ((:float)
-	    (if (and (consp loc) (eq (first loc) 'SINGLE-FLOAT-VALUE))
-		(wt (third loc)) ;; VV index
-		(wt "ecl_make_singlefloat(" loc ")")))
-	   ((:double)
-	    (if (and (consp loc) (eq (first loc) 'DOUBLE-FLOAT-VALUE))
-		(wt (third loc)) ;; VV index
-		(wt "ecl_make_doublefloat(" loc ")")))
-	   ((:long-double)
-	    (if (and (consp loc) (eq (first loc) 'LONG-FLOAT-VALUE))
-		(wt (third loc)) ;; VV index
-		(wt "ecl_make_longfloat(" loc ")")))
-	   ((:bool)
-	    (wt "((" loc ")?Ct:Cnil)"))
-	   ((:char :unsigned-char :wchar)
-	    (wt "CODE_CHAR(" loc ")"))
-	   ((:cstring)
-	    (wt "ecl_cstring_to_base_string_or_nil(" loc ")"))
-	   ((:pointer-void)
-	    (wt "ecl_make_foreign_data(Cnil, 0, " loc ")"))
-	   (otherwise
-	    (coercion-error))))
-	((:pointer-void)
-	 (case loc-rep-type
-	   ((:object)
-	    ;; Only foreign data types can be coerced to a pointer
-	    (wt "ecl_foreign_data_pointer_safe(" loc ")"))
-	   ((:cstring)
-	    (wt "(char *)(" loc ")"))
-	   (otherwise
-	    (coercion-error))))
-	((:cstring)
-	 (coercion-error))
-	((:char*)
-	 (case loc-rep-type
-	   ((:object)
-	    (wt "ecl_base_string_pointer_safe(" loc ")"))
-	   ((:pointer-void)
-	    (wt "(char *)(" loc ")"))
-	   (otherwise
-	    (coercion-error))))
+                       "fix(")
+                      ((member dest-rep-type '(:unsigned-short :unsigned-long :cl-index))
+                       "ecl_to_unsigned_integer(")
+                      (t
+                       "ecl_to_fixnum("))
+                loc ")"))
+           (otherwise
+            (coercion-error))))
+        ((:char :unsigned-char :wchar)
+         (case loc-rep-type
+           ((:char :unsigned-char :wchar)
+            (wt "((" (rep-type-name dest-rep-type) ")" loc ")"))
+           ((:object)
+            (ensure-valid-object-type dest-type)
+            (wt "ecl_char_code(" loc ")"))
+           (otherwise
+            (coercion-error))))
+        ((:float :double :long-double)
+         (case loc-rep-type
+           (#1# ; number type
+            (wt "((" (rep-type-name dest-rep-type) ")" loc ")"))
+           ((:object)
+            ;; We relax the check a bit, because it is valid in C to coerce
+            ;; between floats of different types.
+            (ensure-valid-object-type 'FLOAT)
+            (wt (ecase dest-rep-type
+                  (:float "ecl_to_float(")
+                  (:double "ecl_to_double(")
+                  (:long-double "ecl_to_long_double("))
+                loc ")"))
+           (otherwise
+            (coercion-error))))
+        ((:bool)
+         (case loc-rep-type
+           (#1# ; number type
+            (wt "1"))
+           ((:object)
+            (wt "(" loc ")!=Cnil"))
+           (otherwise
+            (coercion-error))))
+        ((:object)
+         (case loc-rep-type
+           ((:short :int :long)
+            (wt "ecl_make_integer(" loc ")"))
+           ((:unsigned-short :unsigned-int :unsigned-long)
+            (wt "ecl_make_unsigned_integer(" loc ")"))
+           ((:byte :unsigned-byte :fixnum)
+            (wt "MAKE_FIXNUM(" loc ")"))
+           ((:float)
+            (if (and (consp loc) (eq (first loc) 'SINGLE-FLOAT-VALUE))
+                (wt (third loc)) ;; VV index
+                (wt "ecl_make_singlefloat(" loc ")")))
+           ((:double)
+            (if (and (consp loc) (eq (first loc) 'DOUBLE-FLOAT-VALUE))
+                (wt (third loc)) ;; VV index
+                (wt "ecl_make_doublefloat(" loc ")")))
+           ((:long-double)
+            (if (and (consp loc) (eq (first loc) 'LONG-FLOAT-VALUE))
+                (wt (third loc)) ;; VV index
+                (wt "ecl_make_longfloat(" loc ")")))
+           ((:bool)
+            (wt "((" loc ")?Ct:Cnil)"))
+           ((:char :unsigned-char :wchar)
+            (wt "CODE_CHAR(" loc ")"))
+           ((:cstring)
+            (wt "ecl_cstring_to_base_string_or_nil(" loc ")"))
+           ((:pointer-void)
+            (wt "ecl_make_foreign_data(Cnil, 0, " loc ")"))
+           (otherwise
+            (coercion-error))))
+        ((:pointer-void)
+         (case loc-rep-type
+           ((:object)
+            ;; Only foreign data types can be coerced to a pointer
+            (wt "ecl_foreign_data_pointer_safe(" loc ")"))
+           ((:cstring)
+            (wt "(char *)(" loc ")"))
+           (otherwise
+            (coercion-error))))
+        ((:cstring)
+         (coercion-error))
+        ((:char*)
+         (case loc-rep-type
+           ((:object)
+            (wt "ecl_base_string_pointer_safe(" loc ")"))
+           ((:pointer-void)
+            (wt "(char *)(" loc ")"))
+           (otherwise
+            (coercion-error))))
         ((:void)
          (wt loc))
-	(t
-	 (coercion-error))))))
+        (t
+         (coercion-error))))))
 
 
 (defun produce-inline-loc (argument-locs arg-types output-rep-type
-			   c-expression side-effects one-liner)
+                           c-expression side-effects one-liner)
   (let* (args-to-be-saved
-	 coerced-arguments)
+         coerced-arguments)
     ;; If the expression begins with @[0-9a-z]*, this means we are
     ;; saving some variables.
     (when (and (> (length c-expression) 1)
-	       (eq (char c-expression 0) #\@))
+               (eq (char c-expression 0) #\@))
       (do ((ndx 1 (1+ ndx)))
-	  ((>= ndx (length c-expression)))
-	(let ((c (char c-expression ndx)))
-	  (when (eq c #\;)
-	    (setf c-expression (subseq c-expression (1+ ndx)))
-	    (return))
-	  (unless (alphanumericp c)
-	    (setf args-to-be-saved nil)
-	    (return))
-	  (push (- (char-code c) (char-code #\0))
-		args-to-be-saved))))
+          ((>= ndx (length c-expression)))
+        (let ((c (char c-expression ndx)))
+          (when (eq c #\;)
+            (setf c-expression (subseq c-expression (1+ ndx)))
+            (return))
+          (unless (alphanumericp c)
+            (setf args-to-be-saved nil)
+            (return))
+          (push (- (char-code c) (char-code #\0))
+                args-to-be-saved))))
 
     (setf coerced-arguments (coerce-locations argument-locs arg-types args-to-be-saved))
     ;;(setf output-rep-type (lisp-type->rep-type output-rep-type))
@@ -271,18 +271,18 @@
     ;; effects, try to omit it.
     (when (null output-rep-type)
       (if side-effects
-	  (progn
-	    (wt-nl)
-	    (wt-c-inline-loc output-rep-type c-expression coerced-arguments t nil)
-	    (when one-liner (wt ";")))
-	  (cmpwarn "Ignoring form ~S" c-expression))
+          (progn
+            (wt-nl)
+            (wt-c-inline-loc output-rep-type c-expression coerced-arguments t nil)
+            (when one-liner (wt ";")))
+          (cmpwarn "Ignoring form ~S" c-expression))
       (return-from produce-inline-loc NIL))
 
     ;; If the form is a one-liner, we can simply propagate this expression until the
     ;; place where the value is used.
     (when one-liner
       (return-from produce-inline-loc
-	`(C-INLINE ,output-rep-type ,c-expression ,coerced-arguments ,side-effects
+        `(C-INLINE ,output-rep-type ,c-expression ,coerced-arguments ,side-effects
                    ,(if (equalp output-rep-type '((VALUES &REST T)))
                         'VALUES NIL))))
 
@@ -301,7 +301,7 @@
       (let ((output-vars (mapcar #'make-output-var output-rep-type)))
         (loop for v in output-vars
            do (wt (rep-type-name (var-kind v)) " " v ";"))
-	(wt-c-inline-loc output-rep-type c-expression coerced-arguments
+        (wt-c-inline-loc output-rep-type c-expression coerced-arguments
                          side-effects output-vars)
         (loop for v in output-vars
            for i from 0
@@ -320,33 +320,33 @@
     (when (and output-vars (not (eq output-vars 'VALUES)))
       (wt-nl))
     (do ((c (read-char s nil nil)
-	    (read-char s nil nil)))
-	((null c))
+            (read-char s nil nil)))
+        ((null c))
       (case c
-	(#\@
-	 (let ((object (read s)))
-	   (cond ((and (consp object) (equal (first object) 'RETURN))
-		  (if (eq output-vars 'VALUES)
-		      (cmperr "User @(RETURN ...) in a C-INLINE form with no output values")
-		      (let ((ndx (or (second object) 0))
-			    (l (length output-vars)))
-			(if (< ndx l)
-			    (wt (nth ndx output-vars))
+        (#\@
+         (let ((object (read s)))
+           (cond ((and (consp object) (equal (first object) 'RETURN))
+                  (if (eq output-vars 'VALUES)
+                      (cmperr "User @(RETURN ...) in a C-INLINE form with no output values")
+                      (let ((ndx (or (second object) 0))
+                            (l (length output-vars)))
+                        (if (< ndx l)
+                            (wt (nth ndx output-vars))
                             (cmperr "Used @(RETURN ~D) in a C-INLINE form with ~D output values"
                                     ndx l)))))
-		 (t
-		  (when (and (consp object) (eq (first object) 'QUOTE))
-		    (setq object (second object)))
-		  (wt (add-object object :permanent t))))))
-	(#\#
-	 (let* ((k (read-char s))
-		(next-char (peek-char nil s nil nil))
-		(index (digit-char-p k 36)))
-	   (cond ((or (null index) (and next-char (alphanumericp next-char)))
-		  (wt #\# k))
-		 ((< index (length coerced-arguments))
-		  (wt (nth index coerced-arguments)))
-		 (t
-		  (cmperr "C-INLINE: Variable code exceeds number of arguments")))))
-	(otherwise
-	 (write-char c *compiler-output1*))))))
+                 (t
+                  (when (and (consp object) (eq (first object) 'QUOTE))
+                    (setq object (second object)))
+                  (wt (add-object object :permanent t))))))
+        (#\#
+         (let* ((k (read-char s))
+                (next-char (peek-char nil s nil nil))
+                (index (digit-char-p k 36)))
+           (cond ((or (null index) (and next-char (alphanumericp next-char)))
+                  (wt #\# k))
+                 ((< index (length coerced-arguments))
+                  (wt (nth index coerced-arguments)))
+                 (t
+                  (cmperr "C-INLINE: Variable code exceeds number of arguments")))))
+        (otherwise
+         (write-char c *compiler-output1*))))))

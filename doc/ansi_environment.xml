@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter xml:id="ansi.environment">
+ <title>Environment</title>
+
+ <section xml:id="ansi.environment.dict">
+  <title>Dictionary</title>
+
+  <refentry xml:id="ansi.environment.disassemble">
+   <refnamediv>
+    <refname><function>disassemble</function></refname>
+    <refpurpose>Display the assembly code of a function</refpurpose>
+   </refnamediv>
+
+   <refsynopsisdiv>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>disassemble</funcdef>
+      <paramdef><parameter>function-designator</parameter>*</paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <variablelist>
+     <varlistentry>
+      <term><replaceable>function-designator</replaceable></term>
+      <listitem><para>A symbol which is bound to a function in the global environment, or a lambda form
+      </para></listitem>
+     </varlistentry>
+    </variablelist>
+   </refsynopsisdiv>
+
+   <refsect1>
+    <title>Function</title>
+
+    <para>As specified in &ANSI; this function outputs the internal represention of a compiled function, or of a lambda form, as it would look after being compiled.</para>
+
+    <para>&ECL; only has a particular difference: it has two different compilers, one based on bytecodes and one based on the C language. The output will thus depend on the arguments and on which compiler is active at the moment in which this function is run.</para>
+    <itemizedlist>
+     <listitem><para>If the argument is a bytecompiled function, the output will be bytecodes.</para></listitem>
+     <listitem><para>If the argument is a lambda form, it will be processed by the active compiler and the appropriate output (bytecodes or C) will be shown.</para></listitem>
+     <listitem><para>If the argument is a C-compiled form, &ECL; will retrieve its original lambda form and process it with the currently active compiler.</para></listitem>
+    </itemizedlist>
+   </refsect1>
+  </refentry>
+
+  <refentry xml:id="ansi.environment.trace">
+   <refnamediv>
+    <refname><function>trace</function></refname>
+    <refpurpose>Follow execution of functions</refpurpose>
+   </refnamediv>
+
+   <refsynopsisdiv>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>trace</funcdef>
+      <paramdef><parameter>function-name</parameter>*</paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <variablelist>
+     <varlistentry>
+      <term><replaceable>function-name</replaceable></term>
+      <listitem><para>
+       <synopsis>{<replaceable>symbol</replaceable> | (<replaceable>symbol</replaceable> [<replaceable>option</replaceable> <replaceable>form</replaceable>]*)}</synopsis>
+      </para></listitem>
+     </varlistentry>
+     <varlistentry>
+      <term><replaceable>symbol</replaceable></term>
+      <listitem><para>A symbol which is bound to a function in the global
+      environment. Not evaluated.</para></listitem>
+     </varlistentry>
+     <varlistentry>
+      <term><replaceable>option</replaceable></term>
+      <listitem><para>One of <symbol>:BREAK</symbol>,
+      <symbol>:BREAK-AFTER</symbol>, <symbol>:COND-BEFORE</symbol>,
+      <symbol>:COND-AFTER</symbol>, <symbol>:COND</symbol>,
+      <symbol>:PRINT</symbol>, <symbol>:PRINT-AFTER</symbol>,
+      <symbol>:STEP</symbol></para></listitem>
+     </varlistentry>
+     <varlistentry>
+      <term><replaceable>form</replaceable></term>
+      <listitem><para>A lisp form evaluated in an special
+      environment.</para></listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>returns</term>
+      <listitem><para>List of symbols with traced functions.</para></listitem>
+     </varlistentry>
+    </variablelist>
+   </refsynopsisdiv>
+
+   <refsect1>
+    <title>Macro</title>
+
+    <para>Causes one or more functions to be traced. Each
+    <replaceable>function-name</replaceable> can be a symbol which is bound to
+    a function, or a list containing that symbol plus additional options. If
+    the function bound to that symbol is called, information about the
+    argumetns and output of this function will be printed. Trace options will
+    modify the amount of information and when it is printed.</para>
+
+    <para>Not that if the function is called from another function compiled in
+    the same file, tracing might not be enabled. If this is the case, to
+    enable tracing, recompile the caller with a <literal>notinline</literal>
+    declaration for the called function.</para>
+
+    <para><function>trace</function> returns a name list of those functions
+    that were traced by the call to trace.  If no
+    <replaceable>function-name</replaceable> is given, <literal>trace</literal>
+    simply returns a name list of all the currently traced functions.</para>
+
+    <para>Trace options cause the normal printout to be suppressed, or cause
+    extra information to be printed. Each option is a pair of an option keyword
+    and a value form. If an already traced function is traced again, any new
+    options replace the old options and a warning might be printed. The lisp
+    <replaceable>form</replaceable> accompanying the option is evaluated in an
+    environment where <replaceable>sys::arglist</replaceable> is contains the
+    list of arguments to the function.</para>
+
+    <para>The following options are defined:</para>
+    <variablelist>
+     <varlistentry>
+      <term><symbol>:cond</symbol></term>
+      <term><symbol>:cond-before</symbol></term>
+      <term><symbol>:cond-after</symbol></term>
+      <listitem>
+       <para>If <symbol>:cond-before</symbol> is specified, then
+       <function>trace</function> does nothing unless
+       <replaceable>form</replaceable> evaluates to true at the time of the
+       call. <symbol>:cond-after</symbol> is similar, but suppresses the
+       initial printout, and is tested when the function returns.
+       <symbol>:cond</symbol> tries both before and after.</para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term><symbol>:step</symbol></term>
+      <listitem>
+       <para>If <replaceable>form</replaceable> evaluates to true, the stepper
+       is entered.</para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term><symbol>:break</symbol></term>
+      <term><symbol>:break-after</symbol></term>
+      <listitem>
+       <para>If specified, and <replaceable>form</replaceable> evaluates to
+       true, then the debugger is invoked at the start of the function or at
+       the end of the function according to the respective option.</para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term><symbol>:print</symbol></term>
+      <term><symbol>:print-after</symbol></term>
+      <listitem>
+       <para>In addition to the usual printout, the result of evaluating
+       <replaceable>form</replaceable> is printed at the start of the function
+       or at the end of the function, depending on the option. Multiple print
+       options cause multiple values to be output, in the order in which they
+       were introduced.</para>
+      </listitem>
+     </varlistentry>
+    </variablelist>
+   </refsect1>
+  </refentry>
+ </section>
+
+ <xi:include href="ref_c_environment.xml" xpointer="ansi.environment.c-dict" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+
+</chapter>
+</book>

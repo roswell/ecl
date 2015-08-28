@@ -1,0 +1,1674 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter xml:id="Internals">
+ <title>Internals</title>
+ <para>&ECL; is an implementation of the Common-Lisp language that is based on a kernel
+  written in C plus a set of libraries written in Common-Lisp. The kernel includes a
+  bytecodes compiler, an interpreter, and enough functions to create and
+  manipulate all lisp objects. The lisp libraries provide higher level constructs
+  such as macro definitions, LOOPs, an implementation of CLOS, and a translator
+  from Lisp to C.</para>
+ <para>As a result of this design, which dates back to the Kyoto CL and was later
+  improved in Giuseppe Attardi's ECoLisp, &ECL; can be used as</para>
+ <itemizedlist mark="bullet">
+  <listitem>
+   <para>As a standalone implementation of the Common-Lisp language</para>
+  </listitem>
+  <listitem>
+   <para>As an embedded interpreter subject to the control of a larger C program.</para>
+  </listitem>
+  <listitem>
+   <para>As a Common-Lisp environment with C/C++ extensions.</para>
+  </listitem>
+ </itemizedlist>
+ <para role="continues">This manual describes the facility of &ECL; to interface the C language and
+  &ECL;.  With this facility, the user can arrange his or her C-language
+  programs so that they can be invoked from &ECL;. In addition, the user can
+  write Lisp function definitions in the C language to increase runtime
+  efficiency.</para>
+
+ <section xml:id="Building-programs">
+  <title>Building programs</title>
+  <para>In this section we describe how you can use &ECL; to build programs and
+   loadable extensions that you can later on distribute to other people.</para>
+
+  <sect1 label="2.1" xml:id="What-can-ECL-do-">
+   <title>What can &ECL; do?</title>
+   <para>Some day for some reasons you will be in the need to distribute code that
+    has been developed using &ECL;. In the following sections we will describe
+    the means that &ECL; offers you to do so. Basically, these are the
+    alternatives</para>
+   <variablelist>
+    <varlistentry>
+     <term>Source code</term>
+     <listitem>
+      <para>You distribute your programs in source code form. This is the easiest and most
+       portable way, but not the fastest one.</para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term>Standalone programs</term>
+     <listitem>
+      <para>You translate all your lisp code to C using the &ECL; compiler. The final
+       object files can be linked against other C/C++ libraries to obtain a standalone
+       executable.</para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term>You can build statically and dynamically linked libraries.</term>
+     <listitem>
+      <para>You translate all your lisp code to C and combine the resulting object files
+       into a single library with <filename>.a</filename> extension. You can distribute this library
+       to other people and the final users can utilize these libraries to build
+       standalone programs.</para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term>You can build dynamically loadable files.</term>
+     <listitem>
+      <para>This is the most flexible way. You translate all lisp code to C and link it
+       against possibly other C/C++ libraries to obtain a dynamically loadable library
+       (file type <filename>.so</filename> under unix). This library can be loaded a startup time to
+       add new functionality to the &ECL; environment.</para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+   <para>In several of these options, we have mentioned the possibility to include C/C++
+    code. Even if this is possible, you cannot use ordinary C/C++ compilers and
+    makefiles to build &ECL; extensions, let it be programs or
+    libraries. Briefly, you have to organize your code as follows</para>
+   <orderedlist numeration="arabic">
+    <listitem>
+     <para>Organize the C code as a library, let it be static or dynamic.</para>
+    </listitem>
+    <listitem>
+     <para>Build a function, say <literal>mymain()</literal>, in which the initialization phase
+      for your library is performed.</para>
+    </listitem>
+    <listitem>
+     <para>Group the code that interfaces to Lisp in separate C files, all of which
+      should include <literal>#include &lt;ecl/ecl.h&gt;</literal> at the beginning.</para>
+    </listitem>
+    <listitem>
+     <para>Compile your lisp source files.</para>
+    </listitem>
+    <listitem>
+     <para>Let &ECL; build the final executable or library.</para>
+    </listitem>
+   </orderedlist>
+   <para role="continues">In the final step there are ways to instruct &ECL; to call your
+    initialization function (<literal>mymain()</literal> in the example above). These means
+    are explained in the following sections.</para>
+   <!--  -->
+  </sect1>
+
+  <sect1 label="2.2" xml:id="Compiling-files">
+   <title>Compiling files</title>
+   <para>&ECL; supports two types of compilation. One is bytecodes compilation. This
+    process is performed on-the-fly, as you load source files with lisp code. This
+    leads to a series of bytes for each instruction, the so called
+    "bytecodes". These bytecodes are interpreted in a virtual machine, which is
+    written in C and which is reasonably fast.</para>
+   <para>The other type of compilation is the so-called "native" compilation. This
+    process consists on translating the lisp source file to C language. The
+    intermediate file is later compiled using a C compiler. The result is an object
+    file which may have different purposes.</para>
+   <variablelist>
+    <varlistentry>
+     <term>Dynamically loadable files or FASL (FASt Loadable) files</term>
+     <listitem>
+      <para>These are produced in a &ECL; built with support for dynamically loadable
+       libraries (Feature <replaceable>:DLOPEN</replaceable> is in <replaceable>*features*</replaceable>), when no extra
+       arguments are passed to <literal>compile-file</literal>. These object files typically have
+       the <filename>.fas</filename> extension, and can be loaded with <literal>load</literal>. They cannot be used
+       to build libraries nor standalone executable programs.</para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term>linkable object files</term>
+     <listitem>
+      <para>These are produced when invoking <literal>compile-file</literal> with the keyword argument
+       <replaceable>:system-p</replaceable> set to true. The object file typically has the <filename>.o</filename>
+       extension. It cannot be loaded with <literal>load</literal>, but it can be used to build
+       libraries, standalone executable programs, or larger FASL files.</para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+   <!--  -->
+  </sect1>
+
+  <sect1 label="2.3" xml:id="Building-standalone-executables">
+   <title>Building standalone executables</title>
+   <para>To build an executable you need a working &ECL; image with the
+    compiler. The function to build customized images is
+    <replaceable>c::build-program</replaceable>. The description of this function is as
+    follows. Care should be taken that <replaceable>image-name</replaceable> differs from any
+    filename in <replaceable>lisp-files</replaceable>.</para>
+   <blockquote>
+    <screen><indexterm role="fn"><primary>c:build-program</primary></indexterm>&#151; Function: <function>c:build-program</function> <varname>{</varname><varname>image-name</varname> <varname>&amp;key</varname> <varname>lisp-files</varname> <varname>ld-flags</varname> <varname>prologue-code</varname> <varname>epilogue-code</varname><varname>}</varname></screen>
+    <para>This function builds a lisp image up from the core lisp library, plus all
+     components listed in <replaceable>lisp-files</replaceable>.  Each component is either:</para>
+    <itemizedlist mark="bullet">
+     <listitem>
+      <para>A symbol: Names a statically linked library built from lisp code.</para>
+     </listitem>
+     <listitem>
+      <para>A string: Denotes an object file built from lisp code.</para>
+     </listitem>
+    </itemizedlist>     
+    <para role="continues"><replaceable>ld-flags</replaceable> is a list of strings with additional parameters to be passed
+     to the linker. You can include here your favorite C/C++ libraries.</para>
+    <para><replaceable>prologue-code</replaceable> and <replaceable>epilogue-code</replaceable> are used to customize the
+     initialization process of the lisp image.  In order to build the executable,
+     <replaceable>c:build-program</replaceable> first writes down a piece of C code which initializes the
+     lisp environment. You can customize the initialization process by suppling code
+     to be executed before (<replaceable>prologue-code</replaceable>) or after (<replaceable>epilogue-code</replaceable>)
+     setting up the lisp environment. Typically <replaceable>prologue-code</replaceable> defaults to an
+     empty string, while <replaceable>epilogue-code</replaceable> invokes the classical lisp
+     <replaceable>top-level</replaceable>. Additionally, as a convenience, <replaceable>epilogue-code</replaceable> can
+     be either a string with C code or also a list with a lisp form, which
+     will be interpreted at run time.</para>
+   </blockquote>
+   <!--  -->
+  </sect1>
+
+  <sect1 label="2.4" xml:id="Building-libraries">
+   <title>Building libraries</title>
+   <para>To build a library you proceed more or less the same way as with standalone
+    executables. There are two different functions depending on whether you need
+    to build static or shared libraries.</para>
+   <blockquote>
+    <screen><indexterm role="fn"><primary>c:build-static-library</primary></indexterm>&#151; Function: <function>c:build-static-library</function> <varname>{</varname><varname>library-name</varname> <varname>&amp;key</varname> <varname>lisp-files</varname> <varname>prologue-code</varname> <varname>epilogue-code</varname> <varname>init-name</varname><varname>}</varname></screen>
+    <screen><indexterm role="fn"><primary>c:build-shared-library</primary></indexterm>&#151; Function: <function>c:build-shared-library</function> <varname>{</varname><varname>library-name</varname> <varname>&amp;key</varname> <varname>lisp-files</varname> <varname>prologue-code</varname> <varname>epilogue-code</varname> <varname>ld-flags</varname> <varname>init-name</varname><varname>}</varname></screen>
+    <para>This function builds a library file up from the object files listed in
+     <replaceable>lisp-files</replaceable>. Each of the arguments to <replaceable>lisp-file</replaceable> must name a single
+     object file produced with <literal>compile-file</literal>.</para>
+    <para><replaceable>library-name</replaceable> is the physical pathname corresponding to the library. The
+     value of <replaceable>library-name</replaceable> must follow some system-specific conventions.  To
+     make your program portable, <replaceable>library-name</replaceable> should be built using the
+     output of <literal>compile-file-pathname</literal>.</para>
+    <para><replaceable>prologue-code</replaceable> and <replaceable>epilogue-code</replaceable> are strings with C code to be
+     executed before and after initializing the library, respectively. For
+     dynamically linked libraries you can also provide a list of strings in
+     <replaceable>ld-flags</replaceable>. These strings are additional parameters for the linker and
+     their purpose is to link C/C++ extensions into the library.</para>
+    <para><replaceable>init-name</replaceable> gives the initialization function of the library a
+     user-specified name. Thus a the generated library may be used and/or
+     linked to a C application.</para>
+   </blockquote>
+   <!--  -->
+  </sect1>
+
+  <sect1 label="2.5" xml:id="File-names">
+   <title>File names</title>
+   <blockquote>
+    <screen><indexterm role="fn"><primary>compile-file-pathname</primary></indexterm>&#151; Function: <function>compile-file-pathname</function> <varname>{</varname><varname>filename-base</varname> <varname>&amp;key</varname> <varname>output-file</varname> <varname>type</varname><varname>}</varname></screen>
+    <para>When compiling lisp files, creating libraries, etc, a number of files are
+     produced which are of interest for the user or programmer. However, the name
+     of these files will change from system to system. The purpose of the function
+     <literal>compile-file-pathname</literal> is to query the compiler about the name of the
+     different files that it can produce. Possible values of the <replaceable>type</replaceable>
+     argument include:</para>
+    <variablelist>
+     <varlistentry>
+      <term>:fas (default)</term>
+      <listitem>
+       <para>Standard compiled files that can be loaded with <literal>load</literal>.</para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>:c, :data, :h</term>
+      <listitem>
+       <para>Intermediate files produced by the Lisp-to-C translator.</para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>:o</term>
+      <listitem>
+       <para>Linkable object files.</para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>:lib, :static-library</term>
+      <listitem>
+       <para>A normal library produced with <literal>c:build-static-library</literal>.</para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>:dll, :shared-library</term>
+      <listitem>
+       <para>A dynamically linked library produced with <literal>c:build-shared-library</literal>.</para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>:program</term>
+      <listitem>
+       <para>An executable produced with <literal>c:build-program</literal>.</para>
+      </listitem>
+     </varlistentry>
+    </variablelist>
+    <para>The output of this function is system specific. For example, under FreeBSD<screen>
+      &gt; (compile-file-pathname "/this/path/mylib" :type :lib)
+      #P"/this/path/libmylib.a"
+      &gt; (compile-file-pathname "/this/path/mylib" :type :dll)
+      #P"/this/path/libmylib.so"
+      &gt; (compile-file-pathname "/this/path/mycode")
+      #P"/this/path/mycode.fas"
+     </screen></para>
+   </blockquote>
+   <!--  -->
+  </sect1>
+
+  <sect1 label="2.6" xml:id="Compiler-examples">
+   <title>Compiler examples</title>
+   <sect2 label="2.6.1">
+    <title>The <filename>hello.lisp</filename> file</title>
+    <para>In the following examples we will use the same lisp program. You have to
+     create a file called <filename>hello.lisp</filename> which contains the following lines</para>
+    <programlisting>
+     (princ "Hello world!")
+     (terpri)
+     (quit)
+    </programlisting>
+    <para role="continues">If you start &ECL; and load this file in the Common-Lisp environment you
+     will see the <literal>"Hello world!"</literal> message and the interpreter will be closed.<screen>
+      ECL (Embeddable Common-Lisp) 0.9d
+      Copyright (C) 1984 Taiichi Yuasa and Masami Hagiya
+      Copyright (C) 1993 Giuseppe Attardi
+      Copyright (C) 2000 Juan J. Garcia-Ripoll
+      ECL is free software, and you are welcome to redistribute it
+      under certain conditions; see file 'Copyright' for details.
+      Type :h for Help.  Top level.
+      &gt; <lineannotation>(load "hello.lisp")</lineannotation>
+      ;;; Loading "hello.lisp"
+      Hello World!
+     </screen></para>
+   </sect2>
+
+   <sect2 label="2.6.2">
+    <title>Example of loadable object file</title>
+    <para>You can only perform the example in this section if your &ECL; image supports
+     dynamically loading of object files. This is true if you find the keyword
+     <replaceable>:dlopen</replaceable> in the <replaceable>*features*</replaceable> variable. This is true, for instance,
+     in a typical FreeBSD or Linux box,<screen>
+      Type :h for Help.  Top level.
+      &gt; <lineannotation>*features*</lineannotation>
+      (:IEEE-FLOATING-POINT :IBM-PC :I386 :BSD :UNIX :DLOPEN :ANSI-CL :CLOS
+      :BOEHM-GC :ECL :COMMON)
+     </screen></para>
+    <para>In this example we build a loadable extension which prints the <literal>"Hello
+      world!"</literal> message. First you need to create a the <filename>hello.lisp</filename> file. Next
+     you have to enter the &ECL; environment and type <literal>(compile-file
+      "hello.lisp")</literal>. This produces a loadable object file.</para>
+    <para><screen>
+      Type :h for Help.  Top level.
+      &gt; <lineannotation>(compile-file "hello.lisp")</lineannotation>
+      ;;; Loading #P"/usr/lib/ecl/cmp.fas"
+      ;;; Loading #P"/usr/lib/ecl/sysfun.lsp"
+      ;;; Compiling hello.lisp.
+      ;;; End of Pass 1.
+      ;;; Calling the C compiler...
+      ;;; Invoking external command: gcc -O2 -march=i686 -pipe -fomit-frame-pointer -fPIC -fstrict-aliasing -Dlinux -O "-I/usr/lib/ecl/" -w -c "hello.c" -o "hello.o"
+      ;;; Invoking external command: gcc -o "hello.fas" -L"/usr/lib/ecl/" "hello.o"  -Wl,&#x2013;rpath,/usr/lib/ecl/ -shared   -lecl -lgmp -lgc -ldl -lm
+      ;;; OPTIMIZE levels: Safety=2, Space=0, Speed=3
+      ;;; Finished compiling hello.lisp.
+      #P"hello.fas"
+      Top level.
+      &gt; <lineannotation>(load "hello")</lineannotation>
+      ;;; Loading #P"hello.fas"
+      Hello World!
+     </screen></para>
+   </sect2>
+
+   <sect2 label="2.6.3">
+    <title>Example of standalone program</title>
+    <para>In this example we build a standalone program which prints the <literal>"Hello
+      world!"</literal> message and does nothing else. First you must create the
+     <filename>hello.lisp</filename> file shown above. Next you have to enter the &ECL;
+     environment and type <literal>(compile-file "hello.lisp" :system-p t)</literal>. This
+     produces an object file that can be linked against the &ECL; core image.</para>
+    <para><screen>
+      Type :h for Help.  Top level.
+      &gt; <lineannotation>(compile-file "hello.lisp" :system-p t)</lineannotation>
+      ;;; Loading #P"/usr/lib/ecl/cmp.fas"
+      ;;; Loading #P"/usr/lib/ecl/sysfun.lsp"
+      ;;; Compiling hello.lisp.
+      ;;; End of Pass 1.
+      ;;; Calling the C compiler...
+      ;;; Invoking external command: gcc -O2 -march=i686 -pipe -fomit-frame-pointer -fPIC -fstrict-aliasing -Dlinux -O "-I/usr/lib/ecl/" -w -c "hello.c" -o "hello.o"
+      ;;; OPTIMIZE levels: Safety=2, Space=0, Speed=3
+      ;;; Finished compiling hello.lisp.
+      #P"hello.o"
+     </screen></para>
+    <para role="continues">The final step is to build the executable using the <literal>c:build-program</literal>
+     instruction.<screen>
+      &gt; <lineannotation>(c:build-program "myecl" :lisp-files '("hello.o"))</lineannotation>
+      ;;; Invoking external command: gcc -O2 -march=i686 -pipe -fomit-frame-pointer -fPIC -fstrict-aliasing -Dlinux -O "-I/usr/lib/ecl/" -w -c "myecl.c" -o "myecl.o"
+      ;;; Invoking external command: gcc -o "myecl" -L"/usr/lib/ecl/" "myecl.o" "hello.o"  -Wl,&#x2013;rpath,/usr/lib/ecl/  -lecl -lgmp -lgc -ldl -lm
+      #P"myecl"
+      Top level.
+     </screen>Now you can execute this program from your favorite shell.</para>
+    <para role="continues"><screen>
+      % <lineannotation>./myecl</lineannotation>
+      Hello world!
+     </screen></para>
+   </sect2>
+
+   <sect2 label="2.6.4">
+    <title>Combining files into a larger FASL</title>
+    <para>You can only perform the example in this section if your &ECL; image supports
+     dynamically loading of object files. In this example we build a loadable
+     library which prints the <literal>"Hello world!"</literal> message and does nothing
+     else. First you must create the <filename>hello.lisp</filename> file shown above. Next you
+     have to enter the &ECL; environment and type <literal>(compile-file "hello.lisp"
+      :system-p t)</literal>. This produces an object file that can be linked to form a loadable
+     library.</para>
+    <para><screen>
+      Type :h for Help.  Top level.
+      &gt; (compile-file "hello.lisp" :system-p t)
+      ;;; Loading #P"/usr/lib/ecl/cmp.fas"
+      ;;; Loading #P"/usr/lib/ecl/sysfun.lsp"
+      ;;; Compiling hello.lisp.
+      ;;; End of Pass 1.
+      ;;; Calling the C compiler...
+      ;;; Invoking external command: gcc -O2 -march=i686 -pipe -fomit-frame-pointer -fPIC -fstrict-aliasing -Dlinux -O "-I/usr/lib/ecl/" -w -c "hello.c" -o "hello.o"
+      ;;; OPTIMIZE levels: Safety=2, Space=0, Speed=3
+      ;;; Finished compiling hello.lisp.
+      #P"hello.o"
+     </screen></para>
+    <para role="continues">The final step is to build the library using the <literal>c:build-fasl</literal>
+     instruction.<screen>
+      &gt; (c:build-fasl "myecl" :lisp-files '("hello.o"))
+      ;;; Invoking external command: gcc -O2 -march=i686 -pipe -fomit-frame-pointer -fPIC -fstrict-aliasing -Dlinux -O "-I/usr/lib/ecl/" -w -c "myecl.c" -o "myecl.o"
+      ;;; Invoking external command: gcc -o "libmyecl.so" -L"/usr/lib/ecl/" "myecl.o" "hello.o"  -Wl,&#x2013;rpath,/usr/lib/ecl/ -shared   -lecl -lgmp -lgc -ldl -lm
+      #P"libmyecl.so"
+     </screen>Now you can load this extension from any &ECL; image, even those you produce
+     with <literal>c:build-program</literal>.</para>
+    <para role="continues"><screen>
+      &lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt; THIS EXAMPLE IS WRONG?! &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;
+      &gt; (load "myecl")
+      ;;; Loading myecl.fas
+      Hello world!
+      Bye.
+     </screen></para>
+    <!--  -->
+   </sect2>
+  </sect1>
+ </section>
+
+ <section xml:id="Lisp-objects">
+  <title>Manipulating Lisp objects</title>
+  <para>If you want to extend, fix or simply customize &ECL; for your own needs,
+   you should understand how the implementation works.</para>
+
+  <sect1 label="3.1" xml:id="Objects-representation">
+   <title>Objects representation</title>
+   <para>In &ECL; a lisp object is represented by a type called <literal>cl_object</literal>. This
+    type is a word which is long enough to host both an integer and a pointer. The
+    least significant bits of this word, also called the tag bits, determine
+    whether it is a pointer to a C structure representing a complex object, or
+    whether it is an immediate data, such as a fixnum or a character.</para>
+   <screen><![CDATA[
+    |-------------------|--| 
+    |    Fixnum value   |01|
+    |-------------------|--| 
+
+    |------------|------|--| 
+    | Unused bits| char |10|
+    |------------|------|--| 
+
+    |----------------------|     |--------|--------|-----|--------|
+    |    Pointer to cell   |---->| word-1 | word-2 | ... | word-n |
+    |----------------------|     |--------|--------|-----|--------|
+    | ...................00|     |    actual data of the object   |
+    |----------------------|     |--------------------------------|
+    ]]></screen>
+   <para>The fixnums and characters are called immediate datatypes, because they require
+    no more than the <literal>cl_object</literal> datatype to store all information.  All other
+    &ECL; objects are non-immediate and they are represented by a pointer to a
+    cell that is allocated on the heap.  Each cell consists of several words of
+    memory and contains all the information related to that object. By storing data
+    in multiples of a word size, we make sure that the least significant bits of a
+    pointer are zero, which distinguishes pointers from immediate data.</para>
+   <para>In an immediate datatype, the tag bits determine the type of the object. In
+    non-immediate datatypes, the first byte in the cell contains the secondary type
+    indicator, and distinguishes between different types of non immediate data. The
+    use of the remaining bytes differs for each type of object.  For instance, a
+    cons cell consists of three words:</para>
+   <screen><![CDATA[
+    |---------|----------| 
+    |CONS|    |          |
+    |---------|----------| 
+    |     car-pointer    |
+    |--------------------| 
+    |     cdr-pointer    |
+    |--------------------| 
+    ]]></screen>
+   <para>There is one important function which tells the type of an object, plus several
+    macros which group several tests.</para>
+   <blockquote>
+    <screen><indexterm role="tp"><primary>cl_object</primary></indexterm>&#151; C type: <structname>cl_object</structname></screen>
+    <para>This is the type of a lisp object. For your C/C++ program, a <literal>cl_object</literal>
+     can be either a fixnum, a character, or a pointer to a union of structures (See
+     the header <filename>object.h</filename>). The actual interpretation of that object can be
+     guessed with the macro <literal>ecl_t_of</literal>.</para>
+    <para>For example, if <replaceable>x</replaceable> is of type <literal>cl_object</literal>, and it is of type fixnum,
+     we may retrieve its value</para>
+    <screen>
+     if (ecl_t_of(x) == t_fixnum)
+     printf("Integer value: %d\n", fix(x));
+    </screen>
+    <para role="continues">If <replaceable>x</replaceable> is of type <literal>cl_object</literal> and it does not contain an immediate
+     datatype, you may inspect the cell associated to the lisp object using <replaceable>x</replaceable>
+     as a pointer. For example,</para>
+    <screen>
+     if (ecl_t_of(x) == t_cons)
+     printf("CAR = %x, CDR = %x\n", x-&gt;cons.car, x-&gt;cons.cdr);
+     else if (ecl_t_of(x) == t_string)
+     printf("String: %s\n", x-&gt;string.self);
+    </screen>
+    <para role="continues">You should see the following sections and the header <filename>object.h</filename> to learn
+     how to use the different fields of a <literal>cl_object</literal> pointer.</para>
+   </blockquote>
+   <blockquote>
+    <screen><indexterm role="tp"><primary>cl_type</primary></indexterm>&#151; C type: <structname>cl_type</structname></screen>
+    <para>Enumeration type which distinguishes the different types of lisp objects.  The
+     most important values are t_cons, t_fixnum, t_character, t_bignum, t_ratio,
+     t_singlefloat, t_doublefloat, t_complex, t_symbol, t_package, t_hashtable,
+     t_array, t_vector, t_string, t_bitvector, t_stream, t_random, t_readtable,
+     t_pathname, t_bytecodes, t_cfun, t_cclosure, t_gfun, t_instance, t_foreign and
+     t_thread.</para>
+   </blockquote>
+   <blockquote>
+    <screen><indexterm role="fn"><primary>ecl_t_of</primary></indexterm>&#151; Function: <returnvalue>cl_type</returnvalue> <function>ecl_t_of</function> (<type>cl_object</type> <varname>O</varname>)</screen>
+    <para>If <replaceable>O</replaceable> is a valid lisp object, <literal>ecl_t_of(<replaceable>O</replaceable>)</literal> returns an integer
+     denoting the type that lisp object. That integer is one of the values of the
+     enumeration type <literal>cl_type</literal>.</para>
+   </blockquote>
+   <blockquote>
+    <screen><indexterm role="fn"><primary>FIXNUMP</primary></indexterm>&#151; Function: <returnvalue>bool</returnvalue> <function>FIXNUMP</function> (<type>cl_object</type> <varname>o</varname>)</screen>
+    <screen><indexterm role="fn"><primary>CHARACTERP</primary></indexterm>&#151; Function: <returnvalue>bool</returnvalue> <function>CHARACTERP</function> (<type>cl_object</type> <varname>o</varname>)</screen>
+    <screen><indexterm role="fn"><primary>CONSP</primary></indexterm>&#151; Function: <returnvalue>bool</returnvalue> <function>CONSP</function> (<type>cl_object</type> <varname>o</varname>)</screen>
+    <screen><indexterm role="fn"><primary>LISTP</primary></indexterm>&#151; Function: <returnvalue>bool</returnvalue> <function>LISTP</function> (<type>cl_object</type> <varname>o</varname>)</screen>
+    <screen><indexterm role="fn"><primary>ATOM</primary></indexterm>&#151; Function: <returnvalue>bool</returnvalue> <function>ATOM</function> (<type>cl_object</type> <varname>o</varname>)</screen>
+    <screen><indexterm role="fn"><primary>ARRAYP</primary></indexterm>&#151; Function: <returnvalue>bool</returnvalue> <function>ARRAYP</function> (<type>cl_object</type> <varname>o</varname>)</screen>
+    <screen><indexterm role="fn"><primary>VECTORP</primary></indexterm>&#151; Function: <returnvalue>bool</returnvalue> <function>VECTORP</function> (<type>cl_object</type> <varname>o</varname>)</screen>
+    <screen><indexterm role="fn"><primary>STRINGP</primary></indexterm>&#151; Function: <returnvalue>bool</returnvalue> <function>STRINGP</function> (<type>cl_object</type> <varname>o</varname>)</screen>
+    <para>Different macros that check whether <replaceable>o</replaceable> belongs to the specified type.
+     These checks have been optimized, and are preferred over several calls to
+     <literal>ecl_t_of</literal>.</para>
+   </blockquote>
+   <blockquote>
+    <screen><indexterm role="fn"><primary>IMMEDIATE</primary></indexterm>&#151; Function: <returnvalue>bool</returnvalue> <function>IMMEDIATE</function> (<type>cl_object</type> <varname>o</varname>)</screen>
+    <para>Tells whether <replaceable>o</replaceable> is an immediate datatype.</para>
+   </blockquote>
+   <!--  -->
+  </sect1>
+
+  <sect1 label="3.2" xml:id="Constructing-objects">
+   <title>Constructing objects</title>
+   <para>On each of the following sections we will document the standard interface for
+    building objects of different types. For some objects, though, it is too
+    difficult to make a C interface that resembles all of the functionality in the
+    lisp environment. In those cases you need to</para>
+   <orderedlist numeration="arabic">
+    <listitem>
+     <para>build the objects from their textual representation, or</para>
+    </listitem>
+    <listitem>
+     <para>use the evaluator to build these objects.</para>
+    </listitem>
+   </orderedlist>
+   <para role="continues">The first way makes use of a C or Lisp string to construct an object. The two
+    functions you need to know are the following ones.</para>
+   <blockquote>
+    <screen><indexterm role="fn"><primary>c_string_to_object</primary></indexterm>&#151; Function: <returnvalue>cl_object</returnvalue> <function>c_string_to_object</function> (<type>const</type> <varname>char</varname> <type>*</type><varname>s</varname>)</screen>
+    <screen><indexterm role="fn"><primary>string_to_object</primary></indexterm>&#151; Function: <returnvalue>cl_object</returnvalue> <function>string_to_object</function> (<type>cl_object</type> <varname>o</varname>)</screen>
+    <para><literal>c_string_to_object</literal> builds a lisp object from a C string which contains a
+     suitable representation of a lisp object. <literal>string_to_object</literal> performs the
+     same task, but uses a lisp string, and therefore it is less useful. Two
+     examples of their use</para>
+    <screen>
+     /* Using a C string */
+     cl_object array1 = c_string_to_object("#(1 2 3 4)");
+
+     /* Using a Lisp string */
+     cl_object string = make_simple_string("#(1 2 3 4)");
+     cl_object array2 = string_to_object(string);
+    </screen>
+   </blockquote>
+   <!--  -->
+  </sect1>
+
+  <sect1 label="3.3" xml:id="Integers">
+   <title>Integers</title>
+   <para>Common-Lisp distinguishes two types of integer types: bignums and fixnums. A
+    fixnum is a small integer, which ideally occupies only a word of memory and
+    which is between the values <replaceable>MOST-NEGATIVE-FIXNUM</replaceable> and
+    <replaceable>MOST-POSITIVE-FIXNUM</replaceable>. A bignum is any integer which is not a fixnum and
+    it is only constrained by the amount of memory available to represent it.</para>
+   <para>In &ECL; a fixnum is an integer that, together with the tag bits, fits in a
+    word of memory. The size of a word, and thus the size of a fixnum, varies from
+    one architecture to another, and you should refer to the types and constants in
+    the <filename>ecl.h</filename> header to make sure that your C extensions are portable.
+    All other integers are stored as bignums, they are not immediate objects, they
+    take up a variable amount of memory and the GNU Multiprecision Library is
+    required to create, manipulate and calculate with them.</para>
+   <blockquote>
+    <screen><indexterm role="tp"><primary>cl_fixnum</primary></indexterm>&#151; C type: <structname>cl_fixnum</structname></screen>
+    <para>This is a C signed integer type capable of holding a whole fixnum without any
+     loss of precision. The opposite is not true, and you may create a
+     <literal>cl_fixnum</literal> which exceeds the limits of a fixnum and should be stored as a
+     bignum.</para>
+   </blockquote>
+   <blockquote>
+    <screen><indexterm role="tp"><primary>cl_index</primary></indexterm>&#151; C type: <structname>cl_index</structname></screen>
+    <para>This is a C unsigned integer type capable of holding a nonnegative fixnum without
+     loss of precision. Typically, a <literal>cl_index</literal> is used as an index into an array,
+     or into a proper list, etc.</para>
+   </blockquote>
+   <blockquote>
+    <screen><indexterm role="vr"><primary>MOST_NEGATIVE_FIXNUM</primary></indexterm>&#151; Constant: <varname>MOST_NEGATIVE_FIXNUM</varname></screen>
+    <screen><indexterm role="vr"><primary>MOST_POSITIVE_FIXNUM</primary></indexterm>&#151; Constant: <varname>MOST_POSITIVE_FIXNUM</varname></screen>
+    <para>These constants mark the limits of a fixnum.</para>
+   </blockquote>
+   <blockquote>
+    <screen><indexterm role="fn"><primary>FIXNUM_MINUSP</primary></indexterm>&#151; Function: <returnvalue>bool</returnvalue> <function>FIXNUM_MINUSP</function> (<type>cl_object</type> <varname>o</varname>)</screen>
+    <screen><indexterm role="fn"><primary>FIXNUM_PLUSP</primary></indexterm>&#151; Function: <returnvalue>bool</returnvalue> <function>FIXNUM_PLUSP</function> (<type>cl_object</type> <varname>o</varname>)</screen>
+    <para>These functions perform the checks (<replaceable>o</replaceable> &lt; 0) and (0 &lt;= <replaceable>o</replaceable>),
+     respectively.</para>
+   </blockquote>
+   <blockquote>
+    <screen><indexterm role="fn"><primary>MAKE_FIXNUM</primary></indexterm>&#151; Function: <returnvalue>cl_object</returnvalue> <function>MAKE_FIXNUM</function> (<type>cl_fixnum</type> <varname>n</varname>)</screen>
+    <screen><indexterm role="fn"><primary>fix</primary></indexterm>&#151; Function: <returnvalue>cl_fixnum</returnvalue> <function>fix</function> (<type>cl_object</type> <varname>o</varname>)</screen>
+    <para><literal>MAKE_FIXNUM</literal> and <literal>fix</literal> convert from an integer to a lisp object
+     of fixnum type and vice versa. These functions no not check their arguments.</para>
+   </blockquote>
+   <blockquote>
+    <screen><indexterm role="fn"><primary>fixint</primary></indexterm>&#151; Function: <returnvalue>cl_fixnum</returnvalue> <function>fixint</function> (<type>cl_object</type> <varname>o</varname>)</screen>
+    <para>Converts a lisp fixnum to a C integer of the appropriate size. Signals an error
+     if <replaceable>o</replaceable> is not of fixnum type.</para>
+   </blockquote>
+   <blockquote>
+    <screen><indexterm role="fn"><primary>fixnnint</primary></indexterm>&#151; Function: <returnvalue>cl_index</returnvalue> <function>fixnnint</function> (<type>cl_object</type> <varname>o</varname>)</screen>
+    <para>Similar to <literal>fixint</literal> but also ensures that <replaceable>o</replaceable> is not negative.</para>
+   </blockquote>
+   <!--  -->
+  </sect1>
+
+  <sect1 label="3.4" xml:id="Characters">
+   <title>Characters</title>
+   <para>&ECL; has only one type of characters, which fits in the C type <literal>char</literal>.
+    The following constants and functions operate on characters.</para>
+   <blockquote>
+    <screen><indexterm role="vr"><primary>CHAR_CODE_LIMIT</primary></indexterm>&#151; Constant: <varname>CHAR_CODE_LIMIT</varname></screen>
+    <para>Each character is assigned an integer code which ranges from 0 to
+     (<replaceable>CHAR_CODE_LIMIT</replaceable>-1).</para>
+   </blockquote>
+   <blockquote>
+    <screen><indexterm role="fn"><primary>CHAR_CODE</primary></indexterm>&#151; Function: <returnvalue>cl_fixnum</returnvalue> <function>CHAR_CODE</function> (<type>cl_object</type> <varname>o</varname>)</screen>
+    <screen><indexterm role="fn"><primary>char_code</primary></indexterm>&#151; Function: <returnvalue>cl_fixnum</returnvalue> <function>char_code</function> (<type>cl_object</type> <varname>o</varname>)</screen>
+    <para>Returns the integer code associated to a lisp character. Only <literal>char_code</literal>
+     checks its arguments.</para>
+   </blockquote>
+   <blockquote>
+    <screen><indexterm role="fn"><primary>CODE_CHAR</primary></indexterm>&#151; Function: <returnvalue>cl_object</returnvalue> <function>CODE_CHAR</function> (<type>cl_fixnum</type> <varname>o</varname>)</screen>
+    <para>Returns the lisp character associated to an integer code. It does not check
+     its arguments.</para>
+   </blockquote>
+   <blockquote>
+    <screen><indexterm role="fn"><primary>coerce_to_character</primary></indexterm>&#151; Function: <returnvalue>cl_object</returnvalue> <function>coerce_to_character</function> (<type>cl_object</type> <varname>o</varname>)</screen>
+    <para>Coerces a lisp object to type character. Valid arguments are a character,
+     or a string designator of length 1. In all other cases an error is signaled.</para>
+   </blockquote>
+   <blockquote>
+    <screen><indexterm role="fn"><primary>char_eq</primary></indexterm>&#151; Function: <returnvalue>bool</returnvalue> <function>char_eq</function> (<type>cl_object</type> <varname>x</varname>, <type>cl_object</type> <varname>y</varname>)</screen>
+    <screen><indexterm role="fn"><primary>char_equal</primary></indexterm>&#151; Function: <returnvalue>bool</returnvalue> <function>char_equal</function> (<type>cl_object</type> <varname>x</varname>, <type>cl_object</type> <varname>y</varname>)</screen>
+    <para>Compare two characters for equality. <literal>char_eq</literal> take case into account and
+     <literal>char_equal</literal> ignores it.</para>
+   </blockquote>
+   <blockquote>
+    <screen><indexterm role="fn"><primary>char_cmp</primary></indexterm>&#151; Function: <returnvalue>int</returnvalue> <function>char_cmp</function> (<type>cl_object</type> <varname>x</varname>, <type>cl_object</type> <varname>y</varname>)</screen>
+    <screen><indexterm role="fn"><primary>char_compare</primary></indexterm>&#151; Function: <returnvalue>int</returnvalue> <function>char_compare</function> (<type>cl_object</type> <varname>x</varname>, <type>cl_object</type> <varname>y</varname>)</screen>
+    <para>Compare the relative order of two characters. <literal>char_cmp</literal> takes care of
+     case and <literal>char_compare</literal> converts all characters to uppercase before
+     comparing them.</para>
+   </blockquote>
+   <!--  -->
+  </sect1>
+
+  <sect1 label="3.5" xml:id="Arrays">
+   <title>Arrays</title>
+   <para>An array is an aggregate of data of a common type, which can be accessed with
+    one or more nonnegative indices. &ECL; stores arrays as a C structure with a
+    pointer to the region of memory which contains the actual data. The cell
+    of an array datatype varies depending on whether it is a vector, a bytevector,
+    a multidimensional array or a string.</para>
+   <para>If <replaceable>x</replaceable> contains a vector, you can access the following fields:</para>
+   <variablelist>
+    <varlistentry>
+     <term><literal>x-&gt;vector.elttype</literal></term>
+     <listitem>
+      <para>The type of the elements of the vector.</para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><literal>x-&gt;vector.dim</literal></term>
+     <listitem>
+      <para>The maximum number of elements.</para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><literal>x-&gt;vector.fillp</literal></term>
+     <listitem>
+      <para>Actual number of elements in the vector or "fill pointer".</para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><literal>x-&gt;vector.self</literal></term>
+     <listitem>
+      <para>Union of pointers of different types. You should choose the right pointer
+       depending on <literal>x-&gt;vector.elltype</literal></para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><literal>x-&gt;vector.hasfillp</literal></term>
+     <listitem>
+      <para>Whether <literal>x-&gt;vector.fillp</literal> can be smaller than <literal>x-&gt;vector.dim</literal>.</para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+   <para>If <replaceable>x</replaceable> contains a multidimensional array, the cell elements become</para>
+   <variablelist>
+    <varlistentry>
+     <term><literal>x-&gt;array.elttype</literal></term>
+     <listitem>
+      <para>The type of the elements of the array.</para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><literal>x-&gt;array.dim</literal></term>
+     <listitem>
+      <para>Number of elements in the array.</para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><literal>x-&gt;array.rank</literal></term>
+     <listitem>
+      <para>Number of dimensions of the array.</para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><literal>x-&gt;array.dims[]</literal></term>
+     <listitem>
+      <para>Array with the dimensions of the array. The elements range from
+       <literal>x-&gt;array.dim[0]</literal> to <literal>x-&gt;array.dim[x-&gt;array.rank-1]</literal>.</para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><literal>x-&gt;array.self</literal></term>
+     <listitem>
+      <para>Union of pointers to the actual data. You should choose the right pointer
+       depending on <literal>x-&gt;array.elltype</literal>.</para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><literal>x-&gt;array.rank</literal></term>
+     <listitem>
+      <para>Whether <literal>x-&gt;vector.fillp</literal> can be smaller than <literal>x-&gt;vector.dim</literal>.</para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+   <para role="continues">Bitvectors and strings are treated separately.</para>
+   <para>Each array is of an specialized type which is the type of the elements of the
+    array. &ECL; has arrays only a few following specialized types, and for each
+    of these types there is a C integer which is the corresponding value of
+    <literal>x-&gt;array.elttype</literal> or <literal>x-&gt;vector.elttype</literal>. We list those types
+    together with the C constant that denotes that type:</para>
+   <variablelist>
+    <varlistentry>
+     <term><replaceable>T</replaceable></term>
+     <listitem>
+      <para><literal>aet_object</literal></para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><replaceable>CHARACTER</replaceable></term>
+     <listitem>
+      <para><literal>aet_ch</literal></para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><replaceable>FIXNUM</replaceable></term>
+     <listitem>
+      <para><literal>aet_fix</literal></para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><replaceable>BIT</replaceable></term>
+     <listitem>
+      <para><literal>aet_bit</literal></para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><replaceable>SINGLE-FLOAT</replaceable></term>
+     <listitem>
+      <para><literal>aet_sf</literal></para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><replaceable>DOUBLE-FLOAT</replaceable></term>
+     <listitem>
+      <para><literal>aet_df</literal></para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+   <blockquote>
+    <screen><indexterm role="fn"><primary>array_elttype</primary></indexterm>&#151; Function: <returnvalue>cl_elttype</returnvalue> <function>array_elttype</function> (<type>cl_object</type> <varname>o</varname>)</screen>
+    <para>Returns the element type of the array <replaceable>o</replaceable>, which can be a string, a
+     bitvector, vector, or a multidimensional array. For example, the code
+     <literal>array_elttype(c_string_to_object("\"AAA\""))</literal> returns <literal>aet_ch</literal>,
+     while the <literal>array_elttype(c_string_to_object("#(A B C)"))</literal> returns
+     <literal>aet_object</literal>.</para>
+   </blockquote>
+   <blockquote>
+    <screen><indexterm role="fn"><primary>aref</primary></indexterm>&#151; Function: <returnvalue>cl_object</returnvalue> <function>aref</function> (<type>cl_object</type> <varname>array</varname>, <type>cl_index</type> <varname>index</varname>)</screen>
+    <screen><indexterm role="fn"><primary>aset</primary></indexterm>&#151; Function: <returnvalue>cl_object</returnvalue> <function>aset</function> (<type>cl_object</type> <varname>array</varname>, <type>cl_index</type> <varname>index</varname>, <type>cl_object</type> <varname>value</varname>)</screen>
+    <para>These functions are used to retrieve and set the elements of an array. The
+     elements are accessed with one index, <replaceable>index</replaceable>, as in the lisp function
+     <literal>ROW-MAJOR-AREF</literal>. For example</para>
+    <screen>
+     cl_object array = c_string_to_object("#2A((1 2) (3 4))");
+     cl_object x = aref(array, 3);
+     cl_print(1, x);	/* Outputs 4 */
+     aset(array, 3, MAKE_FIXNUM(5));
+     cl_print(1, array); /* Outputs #2A((1 2) (3 5)) */
+    </screen>
+   </blockquote>
+   <blockquote>
+    <screen><indexterm role="fn"><primary>aref1</primary></indexterm>&#151; Function: <returnvalue>cl_object</returnvalue> <function>aref1</function> (<type>cl_object</type> <varname>vector</varname>, <type>cl_index</type> <varname>index</varname>)</screen>
+    <screen><indexterm role="fn"><primary>aset1</primary></indexterm>&#151; Function: <returnvalue>cl_object</returnvalue> <function>aset1</function> (<type>cl_object</type> <varname>vector</varname>, <type>cl_index</type> <varname>index</varname>, <type>cl_object</type> <varname>value</varname>)</screen>
+    <para>These functions are similar to <literal>aref</literal> and <literal>aset</literal>, but they operate on
+     vectors.</para>
+    <screen>
+     cl_object array = c_string_to_object("#(1 2 3 4)");
+     cl_object x = aref1(array, 3);
+     cl_print(1, x);	/* Outputs 4 */
+     aset1(array, 3, MAKE_FIXNUM(5));
+     cl_print(1, array); /* Outputs #(1 2 3 5) */
+    </screen>
+   </blockquote>
+   <!--  -->
+  </sect1>
+
+  <sect1 label="3.6" xml:id="Strings">
+   <title>Strings</title>
+   <para>A string, both in Common-Lisp and in &ECL; is nothing but a vector of
+    characters. Therefore, almost everything mentioned in the section of arrays
+    remains valid here. The only important difference is that &ECL; stores
+    strings as a lisp object with a pointer to a zero terminated C string. Thus, if
+    a string has <replaceable>n</replaceable> characters, &ECL; will reserve <replaceable>n</replaceable>+1 bytes for the
+    string. This allows us to pass the string <literal>self</literal> pointer to any C
+    routine.</para>
+   <para>If <replaceable>x</replaceable> is a lisp object of type string, we can access the following fields:</para>
+   <variablelist>
+    <varlistentry>
+     <term><literal>x-&gt;string.dim</literal></term>
+     <listitem>
+      <para>Maximum number of characters that it can contain.</para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><literal>x-&gt;string.fillp</literal></term>
+     <listitem>
+      <para>Actual number of characters in the string.</para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><literal>x-&gt;string.self</literal></term>
+     <listitem>
+      <para>Pointer to the characters.</para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><literal>x-&gt;string.hasfillp</literal></term>
+     <listitem>
+      <para>True if <literal>x-&gt;string.fillp</literal> can be smaller than <literal>x-&gt;string.dim</literal>.</para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+   <blockquote>
+    <screen><indexterm role="fn"><primary>make_simple_string</primary></indexterm>&#151; Function: <returnvalue>cl_object</returnvalue> <function>make_simple_string</function> (<type>char</type> <varname>*</varname><varname>s</varname>)</screen>
+    <screen><indexterm role="fn"><primary>make_string_copy</primary></indexterm>&#151; Function: <returnvalue>cl_object</returnvalue> <function>make_string_copy</function> (<type>char</type> <varname>*</varname><varname>s</varname>)</screen>
+    <para>Both routines build a lisp string from a C string. <literal>make_string_copy</literal>
+     allocates new space and copies the content of the string to
+     it. <literal>make_simple_string</literal> simply uses the memory pointed by <replaceable>s</replaceable>, which
+     should not be deallocated. Both routines use <literal>strlen</literal> to calculate the
+     length of the string.</para>
+   </blockquote>
+  </sect1>
+
+  <sect1 label="3.7" xml:id="Bitvectors">
+   <title>Bitvectors</title>
+  </sect1>
+
+  <sect1 label="3.8" xml:id="Streams">
+   <title>Streams</title>
+  </sect1>
+
+  <sect1 label="3.9" xml:id="Structures">
+   <title>Structures</title>
+  </sect1>
+
+  <sect1 label="3.10" xml:id="Instances">
+   <title>Instances</title>
+   <!--  -->
+  </sect1>
+
+  <sect1 label="3.11" xml:id="Bytecodes">
+   <title>Bytecodes</title>
+   <para>A bytecodes object is a lisp object with a piece of code that can be
+    interpreted. The objects of type <literal>t_bytecode</literal> are implicitly constructed
+    by a call to <literal>eval</literal>, but can also be explicitly constructed with the
+    <literal>make_lambda</literal> function.</para>
+   <blockquote>
+    <screen><indexterm role="fn"><primary>cl_safe_eval</primary></indexterm>&#151; Function: <returnvalue>cl_object</returnvalue> <function>cl_safe_eval</function> (<type>cl_object</type> <varname>form</varname>, <type>cl_object</type> <varname>env</varname>, <type>cl_object</type> <varname>err_value</varname></screen>
+    <screen><indexterm role="fn"><primary>cl_eval</primary></indexterm>&#151; Function: <returnvalue>cl_object</returnvalue> <function>cl_eval</function> (<type>cl_object</type> <varname>form</varname>)</screen>
+    <para><literal>cl_safe_eval</literal> evaluates <replaceable>form</replaceable> in the lexical environment <replaceable>env</replaceable>,
+     which can be <replaceable>nil</replaceable>. Before evaluating it, the expression <replaceable>form</replaceable> must
+     be bytecompiled. <literal>cl_eval</literal> is the equivalent of <literal>cl_safe_eval</literal> but
+     without environment and with <replaceable>err_value</replaceable> set to <replaceable>nil</replaceable>. It exists only
+     for compatibility with previous versions.</para>
+    <screen>
+     cl_object form = c_string_to_object("(print 1)");
+     cl_safe_eval(form,Cnil);
+     cl_safe_eval(form, Cnil);
+    </screen>
+   </blockquote>
+   <blockquote>
+    <screen><indexterm role="fn"><primary>si_make_lambda</primary></indexterm>&#151; Function: <returnvalue>cl_object</returnvalue> <function>si_make_lambda</function> (<type>cl_object</type> <varname>name</varname>, <type>cl_object</type> <varname>def</varname>)</screen>
+    <para>Builds an interpreted lisp function with name given by the symbol <replaceable>name</replaceable>
+     and body given by <replaceable>def</replaceable>. For instance, we would achieve the equivalent of</para>
+    <programlisting>
+     (funcall #'(lambda (x y) (block foo (+ x y)))
+     1 2)
+    </programlisting>
+    <para role="continues">with the following code</para>
+    <screen>
+     cl_object def = c_string_to_object("((x y) (+ x y))");
+     cl_object name = _intern("foo")
+     cl_object fun = si_make_lambda(name, def);
+     return funcall(fun, MAKE_FIXNUM(1), MAKE_FIXNUM(2));
+    </screen>
+    <para role="continues">Notice that <literal>si_safe_lambda</literal> performs a bytecodes compilation
+     of the definition and thus it may signal some errors. Such errors are not
+     handled by the routine itself you might consider using <literal>cl_safe_eval</literal>
+     or <literal>cl_eval</literal> instead:</para>
+    <screen>
+     cl_object def = c_string_to_object("#'(lambda-block foo (x y) (+ x y))");
+     cl_object fun = cl_eval(def);
+     return funcall(fun, MAKE_FIXNUM(1), MAKE_FIXNUM(2));
+    </screen>
+   </blockquote>
+   <!--  -->
+  </sect1>
+ </section>
+
+ <section xml:id="The-interpreter">
+  <title>The interpreter</title>
+  <sect1 label="4.1" xml:id="ECL-stacks">
+   <title>&ECL; stacks</title>
+   <para>&ECL; uses the following stacks:</para>
+   <variablelist>
+    <varlistentry>
+     <term>Frame Stack</term>
+     <listitem>
+      <para>consisting of catch, block, tagbody frames</para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term>Bind Stack</term>
+     <listitem>
+      <para>for shallow binding of dynamic variables</para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term>Interpreter Stack</term>
+     <listitem>
+      <para>acts as a Forth data stack, keeping intermediate arguments to
+       interpreted functions, plus a history of called functions.</para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term>C Control Stack</term>
+     <listitem>
+      <para>used for arguments/values passing, typed lexical variables,
+       temporary values, and function invocation.</para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </sect1>
+
+  <sect1 label="4.2" xml:id="Procedure-Call-Conventions">
+   <title>Procedure Call Conventions</title>
+   <para>&ECL; employs standard C calling conventions to achieve efficiency and
+    interoperability with other languages.
+    Each Lisp function is implemented as a C function which takes as many
+    argument as the Lisp original plus one additional integer argument
+    which holds the number of actual arguments.  The function sets <literal>NValues</literal>
+    to the number of Lisp values produced, it returns the first one and the
+    remaining ones are kept in  a global (per thread) array (<literal>VALUES</literal>).</para>
+   <para>To show the argument/value passing mechanism, here we list the actual
+    code for the Common-Lisp function <literal>cons</literal>.</para>
+   <screen>
+    cl_cons(int narg, object car, object cdr)
+    {       object x;
+    check_arg(2);
+    x = alloc_object(t_cons);
+    CAR(x) = car;
+    CDR(x) = cdr;
+    NValues = 1;
+    return x;
+    }
+   </screen>
+   <para>&ECL; adopts the convention that the name of a function that implements a
+    Common-Lisp function begins with a short package name (<literal>cl</literal> for COMMON-LISP,
+    <literal>si</literal> for SYSTEM, etc), followed by <literal>L</literal>, and followed by the name of
+    the Common-Lisp function.  (Strictly speaking, `<literal>-</literal>' and `<literal>*</literal>' in the
+    Common-Lisp function name are replaced by `<literal>_</literal>' and `<literal>A</literal>', respectively,
+    to obey the syntax of C.)</para>
+   <para><literal>check_arg(2)</literal> in the code of <literal>cl_cons</literal> checks that exactly two
+    arguments are supplied to <literal>cons</literal>.  That is, it checks that <literal>narg</literal> is
+    2, and otherwise, it causes an error.  <literal>allocate_object(t_cons)</literal> allocates
+    a cons cell in the heap and returns the pointer to the cell.  After the
+    <literal>CAR</literal> and the <literal>CDR</literal> fields of the cell are set, the cell pointer is
+    returned directly. The number assigned to NValues set by the function (1 in
+    this case) represents the number of values of the function.</para>
+   <para>In general, if one is to play with the C kernel of &ECL; there is no need to
+    know about all these conventions. There is a preprocessor that takes care of
+    the details, by using a lisp representation of the statements that output
+    values, and of the function definitions. For instance, the actual source code
+    for <literal>cl_cons</literal> in <filename>src/c/lists.d</filename></para>
+   <screen>
+    @(defun cons (car cdr)
+    @
+    @(return CONS(car, cdr))
+    @)
+   </screen>
+  </sect1>
+
+  <sect1 label="4.3" xml:id="The-lexical-environment">
+   <title>The lexical environment</title>
+   <para>The &ECL; interpreter uses two A-lists (Association lists) to
+    represent lexical environments.</para>
+   <itemizedlist mark="bullet">
+    <listitem>
+     <para>One for variable bindings</para>
+    </listitem>
+    <listitem>
+     <para>One for local function/macro/tag/block bindings</para>
+    </listitem>
+   </itemizedlist>
+   <para>When a function closure is created, the current two A-lists are
+    saved in the closure along with the lambda expression.  Later, when the
+    closure is invoked, the saved A-lists are
+    used to recover the lexical environment.</para>
+  </sect1>
+
+  <sect1 label="4.4" xml:id="The-interpreter-stack">
+   <title>The interpreter stack</title>
+   <para>The bytecodes interpreter uses a stack of its own to save and restore values
+    from intermediate calculations. This Forth-like data stack is also used in
+    other parts of the C kernel for various purposes, such as saving compiled code,
+    keeping arguments to FORMAT, etc.</para>
+   <para>However, one of the most important roles of the Interpreter Stack is to keep a
+    log of the functions which are called during the execution of bytecodes. For
+    each function invoked, the interpreter keeps three lisp objects on the stack:</para>
+   <screen><![CDATA[
+    +----------+------------------------------------------------+
+    | function | lexical environment | index to previous record |
+    +----------+---------------------+--------------------------+
+    ]]></screen>
+   <para>The first item is the object which is funcalled. It can be a bytecodes object,
+    a compiled function or a generic function. In the last two cases the lexical
+    environment is just NIL. In the first case, the second item on the stack is
+    the lexical environment on which the code is executed. Each of these records
+    are popped out of the stack after function invocation.</para>
+   <para>Let us see how these invocation records are used for debugging.<screen>
+     &gt;(defun fact (x)                ;;;  Wrong definition of the
+     (if (= x 0)                  ;;;  factorial function.
+     one                      ;;;  one  should be  1.
+     (* x (fact (1- x)))))
+     FACT
+
+     &gt;(fact 3)                       ;;;  Tries  3!
+     Error: The variable ONE is unbound.
+     Error signalled by IF.
+     Broken at IF.
+     &gt;&gt;:b                            ;;;  Backtrace.
+     Backtrace: eval &gt; fact &gt; if &gt; fact &gt; if &gt; fact &gt; if &gt; fact &gt; IF
+     ;;;  Currently at the last  IF.
+     &gt;&gt;:h                            ;;;  Help.
+
+     Break commands:
+     :q(uit)         Return to some previous break level.
+     :pop            Pop to previous break level.
+     :c(ontinue)     Continue execution.
+     :b(acktrace)    Print backtrace.
+     :f(unction)     Show current function.
+     :p(revious)     Go to previous function.
+     :n(ext)         Go to next function.
+     :g(o)           Go to next function.
+     :fs             Search forward for function.
+     :bs             Search backward for function.
+     :v(ariables)    Show local variables, functions, blocks, and tags.
+     :l(ocal)        Return the nth local value on the stack.
+     :hide           Hide function.
+     :unhide         Unhide function.
+     :hp             Hide package.
+     :unhp           Unhide package.
+     :unhide-all     Unhide all variables and packages.
+     :bds            Show binding stack.
+     :m(essage)      Show error message.
+     :hs             Help stack.
+     Top level commands:
+     :cf             Compile file.
+     :exit or ^D     Exit Lisp.
+     :ld             Load file.
+     :step           Single step form.
+     :tr(ace)        Trace function.
+     :untr(ace)      Untrace function.
+
+     Help commands:
+     :apropos        Apropos.
+     :doc(ument)     Document.
+     :h(elp) or ?    Help.  Type ":help help" for more information.
+
+     &gt;&gt;:p                        ;;;  Move to the last call of  FACT.
+     Broken at IF.
+
+     &gt;&gt;:b
+     Backtrace: eval &gt; fact &gt; if &gt; fact &gt; if &gt; fact &gt; if &gt; FACT &gt; if
+     ;;;  Now at the last  FACT.
+     &gt;&gt;:v                        ;;;  The environment at the last call
+     Local variables:            ;;;  to  FACT  is recovered.
+     X: 0                      ;;;  X  is the only bound variable.
+     Block names: FACT.          ;;;  The block  FACT  is established.
+
+     &gt;&gt;x
+     0                           ;;;  The value of  x  is  0.
+
+     &gt;&gt;(return-from fact 1)      ;;;  Return from the last call of
+     6                           ;;;  FACT  with the value of  0.
+     ;;;  The execution is resumed and
+     &gt;                           ;;;  the value  6  is returned.
+     ;;;  Again at the top-level loop.
+    </screen></para>
+   <!--  -->
+  </sect1>
+ </section>
+
+ <section xml:id="The-compiler">
+  <title>The compiler</title>
+  <sect1 label="5.1" xml:id="The-compiler-translates-to-C">
+   <title>The compiler translates to C</title>
+   <para>The &ECL; compiler is essentially a translator from Common-Lisp to C.  Given
+    a Lisp source file, the compiler first generates three intermediate
+    files:</para>
+   <itemizedlist mark="bullet">
+    <listitem>
+     <para>a C-file which consists of the C version of the Lisp program</para>
+    </listitem>
+    <listitem>
+     <para>an H-file which consists of declarations referenced in the C-file</para>
+    </listitem>
+    <listitem>
+     <para>a Data-file which consists of Lisp data to be used at load time</para>
+    </listitem>
+   </itemizedlist>
+   <para>The &ECL; compiler then invokes the C compiler to compile the
+    C-file into an object file.  Finally, the contents of the Data-file is
+    appended to the object file to make a <emphasis>Fasl-file</emphasis>.  The generated
+    Fasl-file can be loaded into the &ECL; system by the Common-Lisp
+    function <literal>load</literal>.  By default, the three intermediate files are
+    deleted after the compilation, but, if asked, the compiler leaves
+    them.</para>
+   <para>The merits of the use of C as the intermediate language are:</para>
+   <itemizedlist mark="-">
+    <listitem>
+     <para>The &ECL; compiler is highly portable.</para>
+    </listitem>
+    <listitem>
+     <para>Cross compilation is possible, because the contents of the
+      intermediate files are common to all versions of &ECL;.  For example,
+      one can compile his or her Lisp program by the &ECL; compiler on
+      a Sun, bring the intermediate files to DOS, compile the C-file with
+      the gcc compiler under DOS, and then append the Data-file to the object
+      file.  This procedure generates the Fasl-file for the &ECL; system on
+      DOS.  This kind of cross compilation makes it easier to port &ECL;.</para>
+    </listitem>
+    <listitem>
+     <para>Hardware-dependent optimizations such as register allocations
+      are done by the C compiler.</para>
+    </listitem>
+   </itemizedlist>
+   <para>The demerits are:</para>
+   <itemizedlist mark="-">
+    <listitem>
+     <para>At those sites where no C compiler is available,
+      the users cannot compile their Lisp programs.</para>
+    </listitem>
+    <listitem>
+     <para>The compilation time is long.  70% to 80% of the
+      compilation time is used by the C compiler.  The &ECL; compiler is
+      therefore slower than compiler generating machine code directly.</para>
+    </listitem>
+   </itemizedlist>
+  </sect1>
+
+  <sect1 label="5.2" xml:id="The-compiler-mimics-human-C-programmer">
+   <title>The compiler mimics human C programmer</title>
+   <para>The format of the intermediate C code generated by the &ECL; compiler is the
+    same as the hand-coded C code of the &ECL; source programs.  For example,
+    supposing that the Lisp source file contains the
+    following function definition:</para>
+   <programlisting>
+    (defvar *delta* 2)
+    (defun add1 (x) (+ *delta* x))
+   </programlisting>
+   <para role="continues">The compiler generates the following intermediate C code.</para>
+   <screen>
+    /*	function definition for ADD1                                  */
+    static cl_object L1(cl_object V1)
+    { VT2 VLEX2 CLSR2
+    cl_object value0;
+    value0=number_plus(symbol_value(VV[0]),V1); NVALUES=1;
+    return value0;
+    }
+    /*      initialization of this module                                 */
+    void init_CODE(cl_object flag)
+    { VT1 CLSR1
+    cl_object value0;
+    if (!FIXNUMP(flag)){
+    Cblock=flag;
+    #ifndef ECL_DYNAMIC_VV
+    flag-&gt;cblock.data = VV;
+    #endif
+    flag-&gt;cblock.self_destruct=0;
+    flag-&gt;cblock.data_size = VM;
+    flag-&gt;cblock.data_text = compiler_data_text;
+    flag-&gt;cblock.data_text_size = compiler_data_text_size;
+    return;}
+    #ifdef ECL_DYNAMIC_VV
+    VV = Cblock-&gt;cblock.data;
+    #endif
+    T0= MAKE_FIXNUM(2);
+    si_Xmake_special(VV[0])
+    if(SYM_VAL(T0)!=OBJNULL) cl_setq(VV[0],T0);
+    cl_def_c_function(VV[1],(void*)L1,1);
+    }
+   </screen>
+   <para>The C function <literal>L1</literal> implements the Lisp function <literal>add1</literal>.
+    This relation is established by <literal>cl_def_c_function</literal> in the
+    initialization function <literal>init_CODE</literal>, which is invoked at load
+    time.  There, the vector <literal>VV</literal> consists of Lisp objects;
+    <literal>VV[0]</literal> and <literal>VV[1]</literal> in this example hold the Lisp symbols
+    <literal>*delta*</literal> and <literal>add1</literal>. <literal>VM</literal> in the definition of
+    <literal>L1</literal> is a C macro declared in the corresponding H-file.  The
+    actual value of <literal>VM</literal> is the number of value stack locations used
+    by this module, i.e., 2 in this example.  Thus the following macro
+    definition is found in the H-file.</para>
+   <screen>
+    #define VM 2
+   </screen>
+  </sect1>
+
+  <sect1 label="5.3" xml:id="Implementation-of-Compiled-Closures">
+   <title>Implementation of Compiled Closures</title>
+   <para>The &ECL; compiler takes two passes before it invokes the C
+    compiler.  The major role of the first pass is to detect function
+    closures and to detect, for each function closure, those lexical
+    objects (i.e., lexical variable, local function definitions, tags, and
+    block-names) to be enclosed within the closure.  This check must be
+    done before the C code generation in the second pass, because lexical
+    objects to be enclosed in function closures are treated in a different
+    way from those not enclosed.</para>
+   <para>Ordinarily, lexical variables in a compiled function <emphasis>f</emphasis>
+    are allocated on the C stack.  However, if a lexical variable is
+    to be enclosed in function closures, it is allocated on a list, called
+    the &ldquo;environment list&rdquo;, which is local to <emphasis>f</emphasis>.  In addition, a
+    local variable is created which points to the lexical
+    variable's location (within the environment list), so that
+    the variable may be accessed through an indirection rather than by list
+    traversal.</para>
+   <para>The environment list is a pushdown list: It is empty when <emphasis>f</emphasis> is called.
+    An element is pushed on the environment list when a variable to be enclosed in
+    closures is bound, and is popped when the binding is no more in effect.  That
+    is, at any moment during execution of <emphasis>f</emphasis>, the environment list contains
+    those lexical variables whose binding is still in effect and which should be
+    enclosed in closures.  When a compiled closure is created during execution of
+    <emphasis>f</emphasis>, the compiled code for the closure is coupled with the environment
+    list at that moment to form the compiled closure.</para>
+   <para>Later, when the compiled closure is invoked, a pointer is set up to each
+    lexical variable in the environment list, so that each object may be referenced
+    through a memory indirection.</para>
+   <para>Let us see an example.  Suppose the following function has been compiled.</para>
+   <programlisting>
+    (defun foo (x)
+    (let ((a #'(lambda () (incf x)))
+    (y x))
+    (values a #'(lambda () (incf x y)))))
+   </programlisting>
+   <para><literal>foo</literal> returns two compiled closures.  The first closure increments <replaceable>x</replaceable>
+    by one, whereas the second closure increments <replaceable>x</replaceable> by the initial value of
+    <replaceable>x</replaceable>.  Both closures return the incremented value of <replaceable>x</replaceable>.</para>
+   <para><screen>
+     &gt;(multiple-value-setq (f g) (foo 10))
+     #&lt;compiled-closure nil&gt;
+
+     &gt;(funcall f)
+     11
+
+     &gt;(funcall g)
+     21
+
+     &gt;
+    </screen></para>
+   <para>After this, the two compiled closures look like:</para>
+   <screen><![CDATA[
+    second closure       y:                     x:
+    |-------|------|      |-------|------|       |------|------| 
+    |  **   |    --|----->|  10   |    --|------>|  21  | nil  |
+    |-------|------|      |-------|------|       |------|------| 
+    ^
+    first closure             |
+    |-------|------|          |
+    |   *   |    --|----------| 
+    |-------|------| 
+
+    * : address of the compiled code for #'(lambda () (incf x))
+    ** : address of the compiled code for #'(lambda () (incf x y))
+    ]]></screen>
+  </sect1>
+
+  <sect1 label="5.4" xml:id="Use-of-Declarations-to-Improve-Efficiency">
+   <title>Use of Declarations to Improve Efficiency</title>
+   <para>Declarations, especially  type  and  function  declarations,
+    increase the efficiency of the compiled code.  For example, for the
+    following Lisp source file, with two Common-Lisp declarations added,</para>
+   <programlisting>
+    (eval-when (compile)
+    (proclaim '(function tak (fixnum fixnum fixnum) fixnum))
+
+    (defun tak (x y z)
+    (declare (fixnum x y z))
+    (if (not (&lt; y x))
+    z
+    (tak (tak (1- x) y z)
+    (tak (1- y) z x)
+    (tak (1- z) x y))))
+   </programlisting>
+   <para>The compiler generates the following C code:</para>
+   <screen>
+    /*      local entry for function TAK                                  */
+    static int LI1(register int V1,register int V2,register int V3)
+    { VT3 VLEX3 CLSR3
+    TTL:
+    if (V2 &lt; V1) {
+    goto L2;}
+    return(V3);
+    L2:
+    { int V5;
+    V5 = LI1((V1)-1,V2,V3);
+    { int V6;
+    V6 = LI1((V2)-1,V3,V1);
+    V3 = LI1((V3)-1,V1,V2);
+    V2 = V6;
+    V1 = V5;}}
+    goto TTL;
+    ;;; Note: Tail-recursive call of TAK was replaced by iteration.
+    }
+   </screen>
+  </sect1>
+
+  <sect1 label="5.5" xml:id="Inspecting-generated-C-code">
+   <title>Inspecting generated C code</title>
+   <para>Common-Lisp defines a function disassemble, which is
+    supposed to disassemble a compiled function and to display the
+    assembler code.  According to <emphasis>Common-Lisp: The Language</emphasis>,</para>
+   
+   <para><emphasis>This is primary useful for debugging the compiler</emphasis>, ..\\</para>
+   <!-- FIXME: Actually disassemble shows bytecode -->
+   <para>This is, however, <emphasis>useless</emphasis> in our case, because we are
+    not concerned with assembly language.  Rather, we are interested in
+    the C code generated by the &ECL; compiler.  Thus the disassemble
+    function in &ECL; accepts not-yet-compiled functions only and displays
+    the translated C code.</para>
+   <para><screen>
+     &gt; (defun add1 (x) (1+ x))
+     ADD1
+     &gt; (disassemble *)
+     ;;; Compiling (DEFUN ADD1 ...).
+     ;;; Emitting code for ADD1.
+
+     /*      function definition for ADD1                                  */
+     static L1(int narg, object V1)
+     { VT3 VLEX3 CLSR3
+     TTL:
+     VALUES(0) = one_plus((V1));
+     RETURN(1);
+     }
+    </screen></para>
+  </sect1>
+
+  <sect1 label="5.6" xml:id="Embedding-C-code">
+   <title>Embedding C code in lisp source</title>
+   <para>There are several mechanism to integrate C code within &ECL;, but
+    everything is built around two functions that allow the user to embed
+    arbitrary C/C++ code into Lisp source code.</para>
+   <para>The two mechanisms are the <literal>Clines</literal> and the <literal>c-inline</literal> special
+    forms. The first one permits to insert code in the intermediate C/C++ file
+    generated by the &ECL; compiler. Such a form outputs no value and takes
+    no arguments, except a series of strings which are inserted literally,
+    such as <literal>#include</literal> or <literal>#define</literal> statements, function definitions, etc.</para>
+   <blockquote>
+    <screen><indexterm role="fn"><primary>Clines</primary></indexterm>&#151; Macro: <function>Clines</function> <varname>{</varname><varname>{</varname><varname>string</varname><varname>}</varname><varname>*</varname><varname>}</varname></screen>
+    <para>When the &ECL; compiler encounters a macro form <literal>(Clines <replaceable>string1
+       ...  stringn</replaceable>)</literal>, it simply outputs the <replaceable>strings</replaceable> into the c-file.  The
+     arguments are not evaluated and each argument must be a string.  Each
+     <replaceable>string</replaceable> may consist of any number of lines, and separate lines in the
+     <replaceable>string</replaceable> are placed in separate lines in the c-file.  In addition, each
+     <replaceable>string</replaceable> opens a fresh line in the c-file, i.e., the first character in the
+     <replaceable>string</replaceable> is placed at the first column of a line.  Therefore, C-language
+     preprocessor commands such as <literal>#define</literal> and <literal>#include</literal> will be
+     recognized as such by the C compiler, if the ' # ' sign appears as the first
+     character of the <replaceable>string</replaceable> or as the first character of a line within the
+     <replaceable>string</replaceable>.</para>
+    <para>When interpreted, a <literal>Clines</literal> macro form expands to ().</para>
+   </blockquote>
+   <programlisting>(use-package "FFI")
+
+    (Clines
+    "   int tak(x, y, z)                       "
+    "   int x, y, z;                           "
+    "   {   if (y &gt;= x) return(z);             "
+    "       else return(tak(tak(x-1, y, z),    "
+    "                       tak(y-1, z, x),    "
+    "                       tak(z-1, x, y)));  "
+    "   }                                      "
+    )
+
+    (defun tak (x y z)
+    (c-inline (x y z) (:int :int :int) :int
+    "tak(#0,#1,#2)" :one-liner t))
+   </programlisting>
+   <para>The second mechanism, which you already appreciate in the example above, is the
+    <literal>c-inline</literal> special form. This powerful method allows the user to insert C
+    code which is evaluated, and which can accept values and return values from and
+    to the Lisp world, with an automatic convertion taking place in both directions.</para>
+   <blockquote>
+    <screen><indexterm role="fn"><primary>c-inline</primary></indexterm>&#151; Macro: <function>c-inline</function> <varname>{</varname><varname>args-list</varname> <varname>arg-C-types</varname> <varname>output-C-type</varname> <varname>C-expr</varname> <varname>&amp;key</varname> (<varname>side-effects</varname> <varname><literal>T</literal></varname>) (<varname>one-liner</varname> <varname><literal>T</literal></varname>)<varname>}</varname></screen>
+    <para><literal>c-inline</literal> is a special form that can only be used in compiled
+     code.  For all purposes it behaves as a Lisp form, which takes the
+     arguments given in <replaceable>args-list</replaceable> and produces a single value. Behind
+     the curtains, the arguments of <replaceable>args-list</replaceable> (which can be any valid
+     Lisp form) are coerced to the the C types given in <replaceable>arg-C-types</replaceable>,
+     passed to the C expression <replaceable>C-expr</replaceable>, and coerced back to Lisp
+     using the C type <replaceable>output-C-type</replaceable> as a guide.  Multiple return
+     values can be returned by setting <replaceable>output-C-type</replaceable> to <literal>(values
+      type-1 type-2 ...)</literal>.</para>
+    <para><replaceable>C-expr</replaceable> is a string containing C code and maybe some special
+     escape codes.  First, the arguments of the form may be retrieved as
+     <literal>#0</literal>, <literal>#1</literal>, etc.  Second, if the <literal>c-inline</literal> form is a
+     one-line C expression (That is, <replaceable>one-liner</replaceable> is true), then the
+     whole expression is interpreted as the output value. But if the code,
+     on the other hand, is a multiline expression (<replaceable>one-liner</replaceable> is
+     false), the form has to be output using <literal>@(return)
+      =...</literal>. Multiple values are returned as <literal>@(return 0)=... ;
+      @(return 1)=...;</literal>. Finally, Lisp constants may be used in the C code
+     making use of the prefix <literal>@</literal>.</para>
+    <programlisting>
+     (use-package "FFI")
+
+     (Clines "
+     #include &lt;math.h&gt;
+
+     double foo (double x, double y) {
+     return sinh(x) * y;
+     }")
+
+     (defvar *a*
+     (c-inline (1.23) (:double) :double
+     "foo(#0,1.44)"
+     :side-effects nil
+     :one-liner t))
+
+     (defvar *b*
+     (c-inline (1.23) (:double) :double
+     "{cl_object x = symbol_value(@*a*);
+     @(return) = foo(#0,object_to_float(x));}"
+     :side-effects nil
+     :one-liner nil))
+    </programlisting>
+   </blockquote>
+  </sect1>
+
+  <sect1 label="5.7" xml:id="The-C-language-interface">
+   <title>The C language interface</title>
+   <para>Using these special forms <literal>clines</literal> and <literal>c-inline</literal>, plus the ability to
+    handle pointers to foreign data, we have built a rather complete FFI for
+    interfacing with the C world. This interface is compatible with the UFFI
+    specification, which can be found in the web. We recommend you to grab the
+    documentation from this package and read it carefully. All examples should
+    run unmodified under &ECL; (Of course, you do not need to download UFFI
+    itself, as everything is already implemented in &ECL;.</para>
+   <para>However, because &ECL; provides some additional functionality which escapes the
+    UFFI, and also for compatibility with older versions of the &ECL; environment,
+    we provide additional toplevel forms, which are listed in the next section.</para>
+  </sect1>
+
+  <sect1 label="5.8" xml:id="The-old-C-language-interface">
+   <title>The old C language interface</title>
+   <para>In this section we list several macros and toplevel forms which are provided
+    either for convenience or for compatibility with older versions of &ECL;.
+    You should avoid using them when the UFFI-compatible interface provides
+    similar functionality.</para>
+   <para>We define some terminology here which is used throughout this Section. A
+    <emphasis>C-id</emphasis> is either a Lisp string consisting of a valid C-language
+    identifier, or a Lisp symbol whose print-name, with all its alphabetic
+    characters turned into lower case, is a valid C identifier.  Thus the symbol
+    <literal>foo</literal> is equivalent to the string <literal>"foo"</literal> when used as a C-id.
+    Similarly, a <emphasis>C-expr</emphasis> is a string that may be regarded as a
+    C-language expression.  A <emphasis>C-type</emphasis> is one of the Lisp symbols
+    <literal>:int, :char, :float, :double,...</literal> and <literal>:object</literal>.
+    Each corresponds to a data type in the C language; <literal>:object</literal> is
+    the type of Lisp object and other C-types are primitive data types in C.</para>
+   <blockquote>
+    <screen><indexterm role="fn"><primary>defentry</primary></indexterm>&#151; Macro: <function>defentry</function> <varname>{</varname><varname>function</varname> <varname>parameter-list</varname> <varname>C-function</varname><varname>}</varname></screen>
+    <para><literal>defentry</literal> defines a Lisp function whose body consists of the calling
+     sequence to a C-language function. <replaceable>function</replaceable> is the name of the Lisp
+     function to be defined, and <replaceable>C-function</replaceable> specifies the C function to be
+     invoked. <replaceable>C-function</replaceable> must be either a list <literal>(<replaceable>type C-id</replaceable>)</literal> or
+     <replaceable>C-id</replaceable>, where <replaceable>type</replaceable> and <replaceable>C-id</replaceable> are the type and the name of the C
+     function. <replaceable>type</replaceable> must be a C-type or the symbol <literal>void</literal> which means
+     that the C function returns no value.  <literal>(object <replaceable>C-id</replaceable>)</literal> may be
+     abbreviated as <replaceable>C-id</replaceable>.  <replaceable>parameter-list</replaceable> is a list of C-types for the
+     parameters of the C function.  For example, the following <literal>defentry</literal> form
+     defines a Lisp function <literal>tak</literal> from which the C function <literal>tak</literal> above
+     is called.</para>
+   </blockquote>
+   <programlisting>(defentry tak (:int :int :int) (:int tak))
+   </programlisting>
+   <para>The Lisp function <literal>tak</literal> defined by this <literal>defentry</literal> form requires
+    three arguments.  The arguments are converted to <literal>int</literal> values before they
+    are passed to the C function.  On return from the C function, the returned
+    <literal>int</literal> value is converted to a Lisp integer (actually a fixnum) and this
+    fixnum will be returned as the value of the Lisp function.  See below for type
+    conversion between Lisp and the C language.</para>
+   <para>A <literal>defentry</literal> form is treated in the above way only when it appears as a
+    top-level form of a Lisp source file.  Otherwise, a <literal>defentry</literal> form
+    expands to ().</para>
+   <blockquote>
+    <screen><indexterm role="fn"><primary>defla</primary></indexterm>&#151; Macro: <function>defla</function> <varname>{</varname><varname>name</varname> <varname>lambda-list</varname> <varname>{</varname><varname>declaration</varname> <varname>|</varname> <varname>doc-string</varname><varname>}</varname><varname>*</varname><varname>}</varname></screen>
+    <para>When interpreted, <literal>defla</literal> is exactly the same as <literal>defun</literal>.  That is,
+     <literal>(defla <replaceable>name lambda-list .  body</replaceable>)</literal> expands to <literal>(defun <replaceable>name
+       lambda-list .  body</replaceable>)</literal>.  However, <literal>defla</literal> forms are completely ignored by
+     the compiler; no C-language code will be generated for <literal>defla</literal> forms.  The
+     primary use of <literal>defla</literal> is to define a Lisp function in two ways within a
+     single Lisp source file; one in the C language and the other in Lisp.
+     <literal>defla</literal> is short for <emphasis>DEF</emphasis>ine <emphasis>L</emphasis>isp <emphasis>A</emphasis>lternative.</para>
+   </blockquote>
+   <para>Suppose you have a Lisp source file whose contents are:</para>
+   <programlisting>(use-package "FFI")
+
+    ;;; C version of TAK.
+    (Clines "
+
+    int tak(x, y, z)
+    int x, y, z;
+    {      if (y &gt;= x) return(z);
+    else return(tak(tak(x-1, y, z),
+    tak(y-1, z, x),
+    tak(z-1, x, y)));
+    }
+    "
+    )
+
+    ;;;  TAK calls the C function tak defined above.
+    (defentry tak (:int :int :int) (:int tak))
+    ;;;  The alternative Lisp definition of TAK.
+    (defla tak (x y z)
+    (if (&gt;= y x)
+    z
+    (tak (tak (1- x) y z)
+    (tak (1- y) z x)
+    (tak (1- z) x y))))
+   </programlisting>
+   <para>When this file is loaded into &ECL;, the interpreter uses the Lisp version of
+    the <literal>tak</literal> definition.  Once this file has been compiled, and when the
+    generated fasl file is loaded into &ECL;, a function call to <literal>tak</literal> is
+    actually the call to the C version of <literal>tak</literal>.</para>
+   <blockquote>
+    <screen><indexterm role="fn"><primary>defCbody</primary></indexterm>&#151; Function: <function>defCbody</function> <varname>name args-types result-type C-expr</varname></screen>
+    <para>The &ECL; compiler produces a function named <replaceable>name</replaceable> with as many
+     arguments as <replaceable>arg-types</replaceable>.  The <replaceable>C-expr</replaceable> is an arbitrary C expression
+     where the arguments to the function are denoted by <literal>#</para>
+    <replaceable>i</replaceable></literal>
+    <para>, where
+     <literal></para>
+    <replaceable>i</replaceable></literal> 
+    <para>is the integer corresponding to the argument position.  The
+     <replaceable>args-types</replaceable> is the list of Common-Lisp types of the arguments to the function,
+     while <replaceable>result-type</replaceable> is the Common-Lisp type of the result.  The actual arguments
+     are coerced to the required types before executing the <replaceable>C-expr</replaceable> and the
+     result is converted into a Lisp object.  <literal>defCbody</literal> is ignored by the
+     interpreter.</para>
+   </blockquote>
+   <para>For example, the logical AND of two integers could be defined as:</para>
+   <programlisting>(defCbody logand (fixnum fixnum) fixnum "(#0) &amp; (#1)")
+   </programlisting>
+   <blockquote>
+    <screen><indexterm role="fn"><primary>definline</primary></indexterm>&#151; Function: <function>definline</function> <varname>{</varname><varname>name</varname> <varname>args-types</varname> <varname>result-type</varname> <varname>C-expr</varname><varname>}</varname></screen>
+    <para><literal>definline</literal> behaves exactly as <literal>defCbody</literal>.  Moreover, after a
+     <literal>definline</literal> definition has been supplied, the &ECL; compiler will expand
+     inline any call to function <replaceable>name</replaceable> into code corresponding to the C
+     language expression <replaceable>C-expr</replaceable>, provided that the actual arguments are of the
+     specified type.  If the actual arguments cannot be coerced to those types, the
+     inline expansion is not performed.  <literal>definline</literal> is ignored by the
+     interpreter.</para>
+   </blockquote>
+   <para>For example, a function to access the n-th byte of a string and return it as an
+    integer can be defined as follows:</para>
+   <programlisting>(definline aref-byte (string fixnum) fixnum
+    "(#0)-&gt;ust.ust_self[#1]")
+   </programlisting>
+   <para>The definitions of the C data structures used to represent \clisp objects can
+    be found in file <literal>ecl.h</literal> in the directory <literal>"src/h"</literal> of the source
+    distribution.</para>
+   <para>&ECL; converts a Lisp object into a C-language data by using the Common-Lisp
+    function <literal>coerce</literal>: For the C-type <literal>int</literal> (or <literal>char</literal>), the object
+    is first coerced to a Lisp integer and the least significant 32-bit (or 8-bit)
+    field is used as the C <literal>int</literal> (or <literal>char</literal>).  For the C-type
+    <literal>float</literal> (or <literal>double</literal>), the object is coerced to a single-float (or a
+    double-float) and this value is used as the <literal>C float</literal> (or <literal>double</literal>).
+    Conversion from a C data into a Lisp object is obvious: <literal>C char, int,
+     float,</literal> and <literal>double</literal> become the equivalent Lisp <literal>character</literal>,
+    <literal>fixnum</literal>, <literal>single-float</literal>, and <literal>double-float</literal>, respectively.</para>
+   <para>Here we list the complete syntax of <literal>Clines</literal>, <literal>defentry</literal>,
+    <literal>definline</literal> and <literal>defCbody</literal> macro forms.</para>
+   <screen><![CDATA[
+    Clines-form:
+    (Clines @{string@}*)
+
+    defentry-form:
+    (defentry symbol (@{C-type@}*)
+    @{C-function-name | (@{C-type | void@} C-function-name)@})
+
+    defCbody-form:
+    (defCbody symbol (@{type@}*) type C-expr)
+
+    definline-form:
+    (defCbody symbol (@{type@}*) type C-expr)
+
+    C-function-name:
+    @{ string | symbol @}
+    C-expr:
+    string
+    C-type:
+    @{ object | int | char | float | double @}
+    ]]></screen>
+   <!--  -->
+  </sect1>
+ </section>
+
+ <section xml:id="The-Garbage-Collector">
+  <title>The Garbage Collector</title>
+  <para>Using &ECL; in existing application sometimes involves keeping Lisp
+   objects where the garbage collector normally cannot see them.</para>
+  <!-- FIXME: Complete this... -->
+  <!--  -->
+ </section>
+
+ <section xml:id="Porting-ECL">
+  <title>Porting &ECL;</title>
+  <para>To port &ECL; to a new architecture, the following steps are required:</para>
+  <orderedlist numeration="arabic">
+   <listitem>
+    <para>Ensure that the GNU Multiprecision library supports this machine.</para>
+   </listitem>
+   <listitem>
+    <para>Ensure that the Boehm-Weiser garbage collector is supported by that
+     architecture. Alternatively, port ECL's own garbage collector
+     <filename>src/c/alloc.d</filename> and <filename>src/c/gbc.d</filename> to that platform.</para>
+   </listitem>
+   <listitem>
+    <para>Fix <filename>src/aclocal.in</filename>, <filename>src/h/ecl.h</filename> and <filename>src/h/ecl-cmp.h</filename>
+     so that they supply flags for the new host machine.</para>
+   </listitem>
+   <listitem>
+    <para>Fix the machine dependent code in <filename>src/c/</filename>. The most critical
+     parts are in the <filename>unix*</filename> and <filename>thread*</filename> files.</para>
+   </listitem>
+   <listitem>
+    <para>Compile as in any other platform.</para>
+   </listitem>
+   <listitem>
+    <para>Run the tests and compare to the results of other platforms.</para>
+   </listitem>
+  </orderedlist>
+ </section>
+</chapter>
+<!-- Keep this comment at the end of the file
+  Local variables:
+  sgml-parent-document: "ecl.xml"
+  sgml-indent-step: 1
+  nxml-child-indent: 1
+  nxml-outline-child-indent: 1
+  fill-column: 79
+  End:
+-->
+</book>

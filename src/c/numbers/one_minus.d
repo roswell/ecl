@@ -71,10 +71,10 @@ MATH_DEF_DISPATCH1_NE(one_minus, @[1-], @[number],
                       ecl_one_minus_long_float,
                       ecl_one_minus_complex);
 
-/*  (1-	x)  */
+/*  (1- x)  */
 cl_object
 @1-(cl_object x)
-{	/* INV: type check is in ecl_one_minus() */
-	@(return ecl_one_minus(x))
+{       /* INV: type check is in ecl_one_minus() */
+        @(return ecl_one_minus(x))
 }
 

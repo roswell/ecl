@@ -100,14 +100,14 @@ _ecl_write_list(cl_object x, cl_object stream)
                 /* FIXME! */
                 if (x == OBJNULL || ECL_ATOM(x) ||
                     (circle && _ecl_will_print_as_hash(x)))
-			{
-				if (x != ECL_NIL) {
-					ecl_write_char(' ', stream);
-					writestr_stream(". ", stream);
-					si_write_object(x, stream);
-				}
-				break;
-			}
+                        {
+                                if (x != ECL_NIL) {
+                                        ecl_write_char(' ', stream);
+                                        writestr_stream(". ", stream);
+                                        si_write_object(x, stream);
+                                }
+                                break;
+                        }
                 if (i == 0 && y != OBJNULL && ecl_t_of(y) == t_symbol)
                         ecl_write_char(' ', stream);
                 else

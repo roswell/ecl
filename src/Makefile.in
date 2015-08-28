@@ -41,7 +41,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_LIBRARY = $(INSTALL_SCRIPT)
 INSTALL_DATA = @INSTALL_DATA@
-mkinstalldirs = $(SHELL) $(top_srcdir)/gc/mkinstalldirs
+mkinstalldirs = $(top_srcdir)/bdwgc/install-sh -d
 
 # Files
 
@@ -68,11 +68,18 @@ c/ecl/external.h: $(top_srcdir)/h/external.h
 ecl/external.h: c/ecl/external.h c/ecl/external.h
 	cp -rf $(srcdir)/h/*.h $(srcdir)/h/impl ecl/
 
-bin/ecl$(EXE): ecl_min$(EXE) compile.lsp ecl/external.h build-stamp $(top_srcdir)/lsp/*.lsp
+bin/ecl$(EXE): ecl_min$(EXE) compile.lsp ecl/external.h build-stamp $(top_srcdir)/lsp/*.lsp $(top_srcdir)/clos/*.lsp $(top_srcdir)/*cmp/*.lsp
 	if [ -f CROSS-COMPILER ]; then \
 		./CROSS-COMPILER compile; \
 	else \
 		ECLDIR=`pwd`/ ./ecl_min$(EXE) compile; \
+	fi
+	if [ "x@SONAME@" != "x" -a -f "@SONAME@" ]; then \
+	  ( mv @SONAME@ @SONAME3@ && \
+	    $(RM) -f @SONAME2@ @SONAME1@ @SONAME@ && \
+	    $(LN_S) @SONAME3@ @SONAME2@ && \
+	    $(LN_S) @SONAME3@ @SONAME1@ && \
+	    $(LN_S) @SONAME3@ @SONAME@ ) \
 	fi
 
 ecl_min$(EXE): $(LIBRARIES) .gdbinit @LIBPREFIX@eclmin.@LIBEXT@
@@ -178,9 +185,9 @@ install:
 	   $(INSTALL_LIBRARY) $$i $(DESTDIR)$(libdir); \
 	  fi \
 	done
-	if [ "x@SONAME@" != "x" -a -f "@SONAME@" ]; then \
-	  ( cd $(DESTDIR)$(libdir) && $(RM) -f @SONAME3@ @SONAME2@ @SONAME1@ && \
-	    mv @SONAME@ @SONAME3@ && \
+	if [ "x@SONAME3@" != "x" -a -f "@SONAME3@" ]; then \
+	  ( $(INSTALL_LIBRARY) @SONAME3@ $(DESTDIR)$(libdir) && \
+	    cd $(DESTDIR)$(libdir) && $(RM) -f @SONAME2@ @SONAME1@ @SONAME@ && \
 	    $(LN_S) @SONAME3@ @SONAME2@ && \
 	    $(LN_S) @SONAME3@ @SONAME1@ && \
 	    $(LN_S) @SONAME3@ @SONAME@ ) \

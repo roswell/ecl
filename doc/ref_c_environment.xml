@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter>
+<title>Environment</title>
+<section xml:id="ansi.environment.c-dict">
+<title>C Reference</title>
+  <refentry>
+    <refnamediv>
+      <refname>ANSI Dictionary</refname>
+      <refpurpose>&ANSI-C-Dict;</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+<simplelist columns="2" type="horiz">
+<member>Lisp symbol</member>
+<member>C function</member>
+
+<member><ulink url="&clhs;f_dec_un.htm"><symbol>decode-universal-time</symbol></ulink></member>
+<member><code>cl_object cl_decode_universal_time(cl_narg narg, cl_object universal_time, ...)</code></member>
+
+<member><ulink url="&clhs;f_encode.htm"><symbol>encode-universal-time</symbol></ulink></member>
+<member><code>cl_object cl_encode_universal_time(cl_narg narg, cl_object second, cl_object minute, cl_object hour, cl_object date, cl_object month, cl_object year, ...)</code></member>
+
+<member><ulink url="&clhs;f_get_un.htm"><symbol>get-universal-time</symbol></ulink></member>
+<member><code>cl_object cl_get_universal_time(void)</code></member>
+
+<member><ulink url="&clhs;f_get_un.htm"><symbol>get-decoded-time</symbol></ulink></member>
+<member><code>cl_object cl_get_decoded_time(void)</code></member>
+
+<member><ulink url="&clhs;f_sleep.htm"><symbol>sleep</symbol></ulink></member>
+<member><code>cl_object cl_sleep(cl_object seconds)</code></member>
+
+<member><ulink url="&clhs;f_apropo.htm"><symbol>apropos</symbol></ulink></member>
+<member><code>cl_object cl_apropos(cl_narg narg, cl_object string, ...)</code></member>
+
+<member><ulink url="&clhs;f_apropo.htm"><symbol>apropos-list</symbol></ulink></member>
+<member><code>cl_object cl_apropos_list(cl_narg narg, cl_object string, ...)</code></member>
+
+<member><ulink url="&clhs;f_descri.htm"><symbol>describe</symbol></ulink></member>
+<member><code>cl_object cl_describe(cl_narg narg, cl_object object, ...)</code></member>
+
+<member><ulink url="&clhs;f_desc_1.htm"><symbol>describe-object</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+
+<member><ulink url="&clhs;f_get_in.htm"><symbol>get-internal-real-time</symbol></ulink></member>
+<member><code>cl_object cl_get_internal_real_time()</code></member>
+
+<member><ulink url="&clhs;f_get__1.htm"><symbol>get-internal-run-time</symbol></ulink></member>
+<member><code>cl_object cl_get_internal_run_time()</code></member>
+
+<member><ulink url="&clhs;f_disass.htm"><symbol>disassemble</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+
+<member><ulink url="&clhs;f_docume.htm"><symbol>documentation</symbol></ulink></member>
+<member><code>&OCL;</code></member>
+
+<member><ulink url="&clhs;f_room.htm"><symbol>room</symbol></ulink></member>
+<member><code>cl_object cl_room(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_ed.htm"><symbol>ed</symbol></ulink></member>
+<member><code>cl_object cl_ed(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_inspec.htm"><symbol>inspect</symbol></ulink></member>
+<member><code>cl_object cl_inspect(cl_object object)</code></member>
+
+<member><ulink url="&clhs;f_dribbl.htm"><symbol>dribble</symbol></ulink></member>
+<member><code>cl_object cl_dribble(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_lisp_i.htm"><symbol>lisp-implementation-type</symbol></ulink></member>
+<member><code>cl_object cl_lisp_implementation_type(void)</code></member>
+
+<member><ulink url="&clhs;f_lisp_i.htm"><symbol>lisp-implementation-version</symbol></ulink></member>
+<member><code>cl_object cl_lisp_implementation_version(void)</code></member>
+
+<member><ulink url="&clhs;f_short_.htm"><symbol>short-site-name</symbol></ulink></member>
+<member><code>cl_object cl_short_site_name()</code></member>
+
+<member><ulink url="&clhs;f_short_.htm"><symbol>long-site-name</symbol></ulink></member>
+<member><code>cl_object cl_long_site_name()</code></member>
+
+<member><ulink url="&clhs;f_mach_i.htm"><symbol>machine-instance</symbol></ulink></member>
+<member><code>cl_object cl_machine_instance()</code></member>
+
+<member><ulink url="&clhs;f_mach_t.htm"><symbol>machine-type</symbol></ulink></member>
+<member><code>cl_object cl_machine_type()</code></member>
+
+<member><ulink url="&clhs;f_mach_v.htm"><symbol>machine-version</symbol></ulink></member>
+<member><code>cl_object cl_machine_version()</code></member>
+
+<member><ulink url="&clhs;f_sw_tpc.htm"><symbol>software-type</symbol></ulink></member>
+<member><code>cl_object cl_software_type()</code></member>
+
+<member><ulink url="&clhs;f_sw_tpc.htm"><symbol>software-version</symbol></ulink></member>
+<member><code>cl_object cl_software_version()</code></member>
+
+<member><ulink url="&clhs;f_user_h.htm"><symbol>user-homedir-pathname</symbol></ulink></member>
+<member><code>cl_object cl_user_homedir_pathname()</code></member>
+</simplelist>
+    </refsynopsisdiv>
+
+    <refsect1>
+      <title>Description</title>
+      <para></para>
+    </refsect1>
+  </refentry>
+</section>
+</chapter>
+</book>

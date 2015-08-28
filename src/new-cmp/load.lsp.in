@@ -30,7 +30,7 @@
   "src:new-cmp;cmplam.lsp"
   "src:new-cmp;cmplet.lsp"
   ;"src:new-cmp;cmploc.lsp"
-  "src:new-cmp;cmpmap.lsp"
+  "src:cmp;cmpmap.lsp"
   "src:new-cmp;cmpstack.lsp"
   "src:new-cmp;cmpmulti.lsp"
   "src:new-cmp;cmpspecial.lsp"

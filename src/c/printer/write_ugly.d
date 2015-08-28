@@ -123,17 +123,17 @@ static void
 write_character(cl_object x, cl_object stream)
 {
         int i = ECL_CHAR_CODE(x);
-	if (!ecl_print_escape() && !ecl_print_readably()) {
-		ecl_write_char(i, stream);
-	} else {
-		writestr_stream("#\\", stream);
-		if (i < 32 || i >= 127) {
-			cl_object name = cl_char_name(ECL_CODE_CHAR(i));
-			writestr_stream((char*)name->base_string.self, stream);
-		} else {
-			ecl_write_char(i, stream);
-		}
-	}
+        if (!ecl_print_escape() && !ecl_print_readably()) {
+                ecl_write_char(i, stream);
+        } else {
+                writestr_stream("#\\", stream);
+                if (i < 32 || i >= 127) {
+                        cl_object name = cl_char_name(ECL_CODE_CHAR(i));
+                        writestr_stream((char*)name->base_string.self, stream);
+                } else {
+                        ecl_write_char(i, stream);
+                }
+        }
 }
 
 static void
@@ -148,21 +148,21 @@ write_package(cl_object x, cl_object stream)
 static void
 write_hashtable(cl_object x, cl_object stream)
 {
-	if (ecl_print_readably() && !Null(ecl_symbol_value(@'*read-eval*'))) {
-		cl_object make =
-			cl_list(9, @'make-hash-table',
-				@':size', cl_hash_table_size(x),
-				@':rehash-size', cl_hash_table_rehash_size(x),
-				@':rehash-threshold', cl_hash_table_rehash_threshold(x),
-				@':test', cl_list(2, @'quote', cl_hash_table_test(x)));
-		cl_object init =
-			cl_list(3, @'ext::hash-table-fill', make,
-				cl_list(2, @'quote', si_hash_table_content(x)));
-		writestr_stream("#.", stream);
-		si_write_ugly_object(init, stream);
-	} else {
-		_ecl_write_unreadable(x, "hash-table", ECL_NIL, stream);
-	}
+        if (ecl_print_readably() && !Null(ecl_symbol_value(@'*read-eval*'))) {
+                cl_object make =
+                        cl_list(9, @'make-hash-table',
+                                @':size', cl_hash_table_size(x),
+                                @':rehash-size', cl_hash_table_rehash_size(x),
+                                @':rehash-threshold', cl_hash_table_rehash_threshold(x),
+                                @':test', cl_list(2, @'quote', cl_hash_table_test(x)));
+                cl_object init =
+                        cl_list(3, @'ext::hash-table-fill', make,
+                                cl_list(2, @'quote', si_hash_table_content(x)));
+                writestr_stream("#.", stream);
+                si_write_ugly_object(init, stream);
+        } else {
+                _ecl_write_unreadable(x, "hash-table", ECL_NIL, stream);
+        }
 }
 
 static void
@@ -299,34 +299,11 @@ write_stream(cl_object x, cl_object stream)
         _ecl_write_unreadable(x, prefix, tag, stream);
 }
 
-#ifdef CLOS
 static void
 write_instance(cl_object x, cl_object stream)
 {
         _ecl_funcall3(@'print-object', x, stream);
 }
-#else
-static void
-write_structure(cl_object x, cl_object stream)
-{
-        cl_object print_function;
-        unlikely_if (ecl_t_of(x->str.name) != t_symbol)
-                FEerror("Found a corrupt structure with an invalid type name~%"
-                        "  ~S", x->str.name);
-        print_function = si_get_sysprop(x->str.name, @'si::structure-print-function');
-        if (Null(print_function) || !ecl_print_structure()) {
-                writestr_stream("#S", stream);
-                /* structure_to_list conses slot names and values into
-                 * a list to be printed.  print shouldn't allocate
-                 * memory - Beppe
-                 */
-                x = structure_to_list(x);
-                si_write_object(x, stream);
-        } else {
-                _ecl_funcall4(print_function, x, stream, ecl_make_fixnum(0));
-        }
-}
-#endif /* !CLOS */
 
 static void
 write_readtable(cl_object x, cl_object stream)
@@ -421,71 +398,68 @@ typedef void (*printer)(cl_object x, cl_object stream);
 
 static printer dispatch[FREE+1] = {
         0 /* t_start = 0 */,
-	_ecl_write_list, /* t_list = 1 */
-	write_character, /* t_character = 2 */
-	write_integer, /* t_fixnum = 3 */
-	write_integer, /* t_bignum = 4 */
-	write_ratio, /* t_ratio */
-	write_float, /* t_singlefloat */
-	write_float, /* t_doublefloat */
+        _ecl_write_list, /* t_list = 1 */
+        write_character, /* t_character = 2 */
+        write_integer, /* t_fixnum = 3 */
+        write_integer, /* t_bignum = 4 */
+        write_ratio, /* t_ratio */
+        /* write_float, */ /* t_shortfloat */
+        write_float, /* t_singlefloat */
+        write_float, /* t_doublefloat */
 #ifdef ECL_LONG_FLOAT
-	write_float, /* t_longfloat */
+        write_float, /* t_longfloat */
 #endif
-	write_complex, /* t_complex */
-	_ecl_write_symbol, /* t_symbol */
-	write_package, /* t_package */
-	write_hashtable, /* t_hashtable */
-	_ecl_write_array, /* t_array */
-	_ecl_write_vector, /* t_vector */
+        write_complex, /* t_complex */
+        _ecl_write_symbol, /* t_symbol */
+        write_package, /* t_package */
+        write_hashtable, /* t_hashtable */
+        _ecl_write_array, /* t_array */
+        _ecl_write_vector, /* t_vector */
 #ifdef ECL_UNICODE
-	_ecl_write_string, /* t_string */
+        _ecl_write_string, /* t_string */
 #endif
-	_ecl_write_base_string, /* t_base_string */
-	_ecl_write_bitvector, /* t_bitvector */
-	write_stream, /* t_stream */
-	write_random, /* t_random */
-	write_readtable, /* t_readtable */
-	write_pathname, /* t_pathname */
-	_ecl_write_bytecodes, /* t_bytecodes */
-	_ecl_write_bclosure, /* t_bclosure */
-	write_cfun, /* t_cfun */
-	write_cfun, /* t_cfunfixed */
-	write_cclosure, /* t_cclosure */
-#ifdef CLOS
-	write_instance, /* t_instance */
-#else
-	write_structure, /* t_structure */
-#endif /* CLOS */
+        _ecl_write_base_string, /* t_base_string */
+        _ecl_write_bitvector, /* t_bitvector */
+        write_stream, /* t_stream */
+        write_random, /* t_random */
+        write_readtable, /* t_readtable */
+        write_pathname, /* t_pathname */
+        _ecl_write_bytecodes, /* t_bytecodes */
+        _ecl_write_bclosure, /* t_bclosure */
+        write_cfun, /* t_cfun */
+        write_cfun, /* t_cfunfixed */
+        write_cclosure, /* t_cclosure */
+        write_instance, /* t_instance */
 #ifdef ECL_THREADS
-	write_process, /* t_process */
-	write_lock, /* t_lock */
-	write_lock, /* t_rwlock */
-	write_condition_variable, /* t_condition_variable */
+        write_process, /* t_process */
+        write_lock, /* t_lock */
+        write_lock, /* t_rwlock */
+        write_condition_variable, /* t_condition_variable */
         write_semaphore, /* t_semaphore */
         write_barrier, /* t_barrier */
         write_mailbox, /* t_mailbox */
 #endif
-	write_codeblock, /* t_codeblock */
-	write_foreign, /* t_foreign */
-	write_frame, /* t_frame */
-	write_weak_pointer, /* t_weak_pointer */
+        write_codeblock, /* t_codeblock */
+        write_foreign, /* t_foreign */
+        write_frame, /* t_frame */
+        write_weak_pointer, /* t_weak_pointer */
 #ifdef ECL_SSE2
-	_ecl_write_sse, /* t_sse_pack */
+        _ecl_write_sse, /* t_sse_pack */
 #endif
-	/* t_end */
+        /* t_end */
 };
 
 cl_object
 si_write_ugly_object(cl_object x, cl_object stream)
 {
-	if (x == OBJNULL) {
-		if (ecl_print_readably())
+        if (x == OBJNULL) {
+                if (ecl_print_readably())
                         FEprint_not_readable(x);
-		writestr_stream("#<OBJNULL>", stream);
-	} else {
+                writestr_stream("#<OBJNULL>", stream);
+        } else {
                 int t = ecl_t_of(x);
                 printer f = (t >= t_end)? write_illegal : dispatch[t];
                 f(x, stream);
         }
-	@(return x)
+        @(return x)
 }

@@ -19,16 +19,16 @@
   (let ((test (c1expr (car args))))
     ;; Resolve IF expressions with constant arguments
     (multiple-value-bind (constant-p value)
-	(c1form-constant-p test)
+        (c1form-constant-p test)
       (when constant-p
-	(return-from c1if
-	  (if value (second args) (third args)))))
+        (return-from c1if
+          (if value (second args) (third args)))))
     ;; Otherwise, normal IF form
     (let* ((true-branch (c1expr (second args)))
            (false-branch (c1expr (third args))))
       (make-c1form* 'IF
                     :type (values-type-or (c1form-type true-branch)
-					  (c1form-type false-branch))
+                                          (c1form-type false-branch))
                     :args test true-branch false-branch))))
 
 (defun c1not (args)
@@ -37,9 +37,9 @@
     ;; When the argument is constant, we can just return
     ;; a constant as well.
     (multiple-value-bind (constant-p value)
-	(c1form-constant-p value)
+        (c1form-constant-p value)
       (when constant-p
-	(return-from c1not (not value))))
+        (return-from c1not (not value))))
     (make-c1form* 'FMLA-NOT
                   :type '(member t nil)
                   :args value)))
@@ -63,42 +63,42 @@
   (if (null args)
       (c1nil)
       (let* ((values (c1args* args))
-	     (last (first (last values)))
-	     (butlast (butlast values)))
+             (last (first (last values)))
+             (butlast (butlast values)))
         ;; (OR x) => x
-	(if butlast
-	    (make-c1form* 'FMLA-OR
-			 :type (reduce #'type-or butlast
+        (if butlast
+            (make-c1form* 'FMLA-OR
+                         :type (reduce #'type-or butlast
                                        :key #'c1form-primary-type
                                        :initial-value (c1form-primary-type last))
-			 :args butlast last)
-	    last))))
+                         :args butlast last)
+            last))))
 
 (defun c2if (c1form fmla form1 form2)
   (declare (ignore c1form))
   ;; FIXME! Optimize when FORM1 or FORM2 are constants
   (cond ((and (eq *destination* 'TRASH)
-	      (eq (c1form-name form2) 'LOCATION))
-	 ;; Optimize (IF condition true-branch) or a situation in which
-	 ;; the false branch can be discarded.
-	 (with-optional-exit-label (false-label)
-	   (let ((*destination* `(JUMP-FALSE ,false-label)))
-	     (c2expr* fmla))
-	   (c2expr form1)))
-	((and (eq *destination* 'TRASH)
-	      (eq (c1form-name form1) 'LOCATION))
-	 ;; Optimize (IF condition useless-value false-branch) when
-	 ;; the true branch can be discarded.
-	 (with-optional-exit-label (true-label)
-	   (let ((*destination* `(JUMP-TRUE ,true-label)))
-	     (c2expr* fmla))
-	   (c2expr form2)))
-	(t
-	 (with-exit-label (false-label)
-	   (let ((*destination* `(JUMP-FALSE ,false-label)))
-	     (c2expr* fmla))
-	   (c2expr form1))
-	 (c2expr form2))))
+              (eq (c1form-name form2) 'LOCATION))
+         ;; Optimize (IF condition true-branch) or a situation in which
+         ;; the false branch can be discarded.
+         (with-optional-exit-label (false-label)
+           (let ((*destination* `(JUMP-FALSE ,false-label)))
+             (c2expr* fmla))
+           (c2expr form1)))
+        ((and (eq *destination* 'TRASH)
+              (eq (c1form-name form1) 'LOCATION))
+         ;; Optimize (IF condition useless-value false-branch) when
+         ;; the true branch can be discarded.
+         (with-optional-exit-label (true-label)
+           (let ((*destination* `(JUMP-TRUE ,true-label)))
+             (c2expr* fmla))
+           (c2expr form2)))
+        (t
+         (with-exit-label (false-label)
+           (let ((*destination* `(JUMP-FALSE ,false-label)))
+             (c2expr* fmla))
+           (c2expr form1))
+         (c2expr form2))))
 
 (defun negate-argument (inlined-arg dest-loc)
   (let* ((loc (second inlined-arg))
@@ -142,26 +142,26 @@
   (declare (ignore c1form))
   (if (jump-false-destination-p *destination*)
       (progn
-	(mapc #'c2expr* butlast)
-	(c2expr last))
+        (mapc #'c2expr* butlast)
+        (c2expr last))
       (with-exit-label (normal-exit)
-	(with-exit-label (false-label)
-	  (let ((*destination* `(JUMP-FALSE ,false-label)))
-	    (mapc #'c2expr* butlast))
-	  (c2expr last))
-	(unwind-exit nil))))
+        (with-exit-label (false-label)
+          (let ((*destination* `(JUMP-FALSE ,false-label)))
+            (mapc #'c2expr* butlast))
+          (c2expr last))
+        (unwind-exit nil))))
 
 (defun c2fmla-or (c1form butlast last)
   (declare (ignore c1form))
   (cond ((jump-true-destination-p *destination*)
-	 (mapc #'c2expr* butlast)
-	 (c2expr last))
-	((jump-false-destination-p *destination*)
-	 (with-exit-label (true-label)
-	   (let ((*destination* `(JUMP-TRUE ,true-label)))
-	     (mapc #'c2expr* butlast))
-	   (c2expr last))
-	 (unwind-exit t))
+         (mapc #'c2expr* butlast)
+         (c2expr last))
+        ((jump-false-destination-p *destination*)
+         (with-exit-label (true-label)
+           (let ((*destination* `(JUMP-TRUE ,true-label)))
+             (mapc #'c2expr* butlast))
+           (c2expr last))
+         (unwind-exit t))
         (t
          (with-exit-label (common-exit)
            (with-exit-label (normal-exit)
@@ -183,11 +183,11 @@
                   (wt-coerce-loc :object loc)
                   (wt ")!=ECL_NIL) {")))
            (cond ((unwind-no-exit label)
-		  (incf *opened-c-braces*)
-		  (wt-nl) (wt-go label)
-		  (wt-nl-close-brace))
-		 (t
-		  (wt " ") (wt-go label) (wt " }"))))
+                  (incf *opened-c-braces*)
+                  (wt-nl) (wt-go label)
+                  (wt-nl-close-brace))
+                 (t
+                  (wt " ") (wt-go label) (wt " }"))))
           ((null value))
           (t
            (unwind-no-exit label)
@@ -203,12 +203,12 @@
                   (wt-nl "if (Null(")
                   (wt-coerce-loc :object loc)
                   (wt ")) {")))
-	   (cond ((unwind-no-exit label)
-		  (incf *opened-c-braces*)
-		  (wt-nl) (wt-go label)
-		  (wt-nl-close-brace))
-		 (t
-		  (wt " ") (wt-go label) (wt " }"))))
+           (cond ((unwind-no-exit label)
+                  (incf *opened-c-braces*)
+                  (wt-nl) (wt-go label)
+                  (wt-nl-close-brace))
+                 (t
+                  (wt " ") (wt-go label) (wt " }"))))
           (value)
           (t
            (unwind-no-exit label)

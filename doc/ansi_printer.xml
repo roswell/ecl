@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter xml:id="ansi.printer">
+ <title>Printer</title>
+
+ <para>In all situations where the rules are well specified, &ECL; prints
+ objects according to &ANSI;. The specification leaves however a number of
+ cases as implementation dependent behavior. The output of &ECL; in those
+ cases is summarized in <xref linkend="table.printer"/>. Except for the types
+ <type>character</type> and <type>random-state</type>, most of those examples
+ regard non-standard written forms <literal>#&lt;...&gt;</literal> cannot be
+ read back using <function>read</function>. These printed representations are
+ just informative and should not be used to reconstruct or compare
+ objects.</para>
+
+ <table xml:id="table.printer">
+  <title>Implementation specific printed representation</title>
+  <tgroup cols="3">
+   <thead>
+    <row>
+     <entry>Lisp type</entry>
+     <entry>Format</entry>
+     <entry>Remarks</entry>
+    </row>
+   </thead>
+   <tbody>
+    <row>
+     <entry><type>package</type></entry>
+     <entry><literal>#&lt;package <replaceable>name</replaceable>&gt;</literal></entry>
+     <entry></entry>
+    </row>
+    <row>
+     <entry><type>random-state</type></entry>
+     <entry><literal>#$<replaceable>character array</replaceable></literal></entry>
+     <entry></entry>
+    </row>
+    <row>
+     <entry><type>bitvector</type></entry>
+     <entry><literal>#&lt;bit-vector <replaceable>unique-id</replaceable>&gt;</literal></entry>
+     <entry>Only when <varname>*print-array*</varname> is false.</entry>
+    </row>
+    <row>
+     <entry><type>vector</type></entry>
+     <entry><literal>#&lt;vector <replaceable>unique-id</replaceable>&gt;</literal></entry>
+     <entry>Only when <varname>*print-array*</varname> is false.</entry>
+    </row>
+    <row>
+     <entry><type>array</type></entry>
+     <entry><literal>#&lt;array <replaceable>unique-id</replaceable>&gt;</literal></entry>
+     <entry>Only when <varname>*print-array*</varname> is false.</entry>
+    </row>
+    <row>
+     <entry><type>hash-table</type></entry>
+     <entry><literal>#&lt;hash-table <replaceable>unique-id</replaceable>&gt;</literal></entry>
+     <entry></entry>
+    </row>
+    <row>
+     <entry><type>readtable</type></entry>
+     <entry><literal>#&lt;readtable <replaceable>unique-id</replaceable>&gt;</literal></entry>
+     <entry></entry>
+    </row>
+    <row>
+     <entry>interpreted <type>function</type></entry>
+     <entry><literal>#&lt;bytecompiled-function <replaceable>name-or-id</replaceable>&gt;</literal></entry>
+     <entry>Name is a <type>symbol</type>.</entry>
+    </row>
+    <row>
+     <entry>machine compiled <type>function</type></entry>
+     <entry><literal>#&lt;compiled-function <replaceable>name</replaceable>&gt;</literal></entry>
+     <entry>Name is a <type>symbol</type>.</entry>
+    </row>
+    <row>
+     <entry><type>input-stream</type></entry>
+     <entry><literal>#&lt;input stream "<replaceable>filename</replaceable>"&gt;</literal></entry>
+     <entry>An stream that reads from <replaceable>filename</replaceable>.</entry>
+    </row>
+    <row>
+     <entry><type>output-stream</type></entry>
+     <entry><literal>#&lt;output stream "<replaceable>filename</replaceable>"&gt;</literal></entry>
+     <entry>An stream that writes to <replaceable>filename</replaceable>.</entry>
+    </row>
+    <row>
+     <entry><type>probe-stream</type></entry>
+     <entry><literal>#&lt;probe stream "<replaceable>filename</replaceable>"&gt;</literal></entry>
+     <entry></entry>
+    </row>
+    <row>
+     <entry><type>string-input-stream</type></entry>
+     <entry><literal>#&lt;string-input stream from "<replaceable>string-piece</replaceable>"&gt;</literal></entry>
+     <entry>The string is the text left to be read.</entry>
+    </row>
+    <row>
+     <entry><type>string-output-stream</type></entry>
+     <entry><literal>#&lt;string-output stream <replaceable>unique-id</replaceable>&gt;</literal></entry>
+     <entry></entry>
+    </row>
+    <row>
+     <entry><type>two-way-stream</type></entry>
+     <entry><literal>#&lt;two-way stream <replaceable>unique-id</replaceable>&gt;</literal></entry>
+     <entry></entry>
+    </row>
+    <row>
+     <entry><type>echo-stream</type></entry>
+     <entry><literal>#&lt;echo stream <replaceable>unique-id</replaceable>&gt;</literal></entry>
+     <entry></entry>
+    </row>
+    <row>
+     <entry><type>synonym-stream</type></entry>
+     <entry><literal>#&lt;synonym stream to <replaceable>symbol</replaceable>&gt;</literal></entry>
+     <entry></entry>
+    </row>
+    <row>
+     <entry><type>broadcast-stream</type></entry>
+     <entry><literal>#&lt;broadcast stream <replaceable>unique-id</replaceable>&gt;</literal></entry>
+     <entry></entry>
+    </row>
+    <row>
+     <entry><type>concatenated-stream</type></entry>
+     <entry><literal>#&lt;concatenated stream <replaceable>unique-id</replaceable>&gt;</literal></entry>
+     <entry></entry>
+    </row>
+    <row>
+     <entry><type>closed-stream</type></entry>
+     <entry><literal>#&lt;closed <replaceable>...</replaceable>&gt;</literal></entry>
+     <entry>The dots denote any of the above stream forms.</entry>
+    </row>
+   </tbody>
+  </tgroup>
+ </table>
+
+ <xi:include href="ref_c_printer.xml" xpointer="ansi.printer.c-dict" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+
+</chapter>
+</book>

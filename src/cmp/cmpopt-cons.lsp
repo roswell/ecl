@@ -50,20 +50,20 @@
 
 (define-compiler-macro cons (&whole whole &rest args)
   (labels ((cons-to-lista (x)
-	     (let ((tem (last x)))
-	       (if (and (consp tem)
-			(consp (car tem))
-			(eq (caar tem) 'CONS)
-			(eql (length (cdar tem)) 2))
-		   (cons-to-lista (append (butlast x) (cdar tem)))
-		   x))))
+             (let ((tem (last x)))
+               (if (and (consp tem)
+                        (consp (car tem))
+                        (eq (caar tem) 'CONS)
+                        (eql (length (cdar tem)) 2))
+                   (cons-to-lista (append (butlast x) (cdar tem)))
+                   x))))
     (let (temp)
       (if (and (eql (length args) 2)
-	       (not (eq args (setq temp (cons-to-lista args)))))
-	  (if (equal '(nil) (last temp))
-	      (cons 'LIST (butlast temp))
-	      (cons 'LIST* temp))
-	  whole))))
+               (not (eq args (setq temp (cons-to-lista args)))))
+          (if (equal '(nil) (last temp))
+              (cons 'LIST (butlast temp))
+              (cons 'LIST* temp))
+          whole))))
 
 ;;;
 ;;; RPLACA / RPLACD
@@ -114,8 +114,8 @@
 
 (progn .
   #.(loop for n in '(first second third fourth fifth sixth seventh eighth ninth tenth)
-	for i from 0
-	collect `(define-compiler-macro ,n (x) (list 'nth ,i x))))
+        for i from 0
+        collect `(define-compiler-macro ,n (x) (list 'nth ,i x))))
 
 (define-compiler-macro rest (x) `(cdr ,x))
 
@@ -126,18 +126,18 @@
 (define-compiler-macro pop (&whole whole place &environment env)
   (if (policy-inline-accessors)
       (multiple-value-bind (vars vals stores store-form access-form)
-	  (get-setf-expansion place env)
-	(let* ((store-var (first stores))
-	       (saved-place (gensym)))
-	  `(let* ,(mapcar #'list
-			  (append vars (list saved-place))
-			  (append vals (list access-form)))
-	     (declare (:read-only ,@vars)) ; Beppe
-	     (optional-type-check ,saved-place list)
-	     (when ,saved-place
-	       (let ((,store-var (cons-cdr ,saved-place)))
-		 (declare (:read-only ,store-var))
-		 ,store-form
-		 (setq ,saved-place (cons-car ,saved-place))))
-	     ,saved-place)))
+          (get-setf-expansion place env)
+        (let* ((store-var (first stores))
+               (saved-place (gensym)))
+          `(let* ,(mapcar #'list
+                          (append vars (list saved-place))
+                          (append vals (list access-form)))
+             (declare (:read-only ,@vars)) ; Beppe
+             (optional-type-check ,saved-place list)
+             (when ,saved-place
+               (let ((,store-var (cons-cdr ,saved-place)))
+                 (declare (:read-only ,store-var))
+                 ,store-form
+                 (setq ,saved-place (cons-car ,saved-place))))
+             ,saved-place)))
     whole))

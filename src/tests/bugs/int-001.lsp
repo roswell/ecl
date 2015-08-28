@@ -7,8 +7,8 @@
 
 ;;; Description:
 ;;;
-;;;	The interpreter selectively complains when assigning a variable
-;;;	that has not been declared as special and is not local.
+;;;     The interpreter selectively complains when assigning a variable
+;;;     that has not been declared as special and is not local.
 ;;;
 ;;; Fixed: 03/2006 (juanjo)
 ;;;
@@ -16,8 +16,8 @@
     (mapcar
      (lambda (ext:*action-on-undefined-variable*)
        (handler-case
-	   (progn (eval `(setq ,(gensym) 1)) :no-error)
-	 (error (c) :error)))
+           (progn (eval `(setq ,(gensym) 1)) :no-error)
+         (error (c) :error)))
      '(nil ERROR))
   (:no-error :error))
 

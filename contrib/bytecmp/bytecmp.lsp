@@ -96,7 +96,9 @@
          (with-open-file (sout output-file :direction :output :if-exists :supersede
                                :if-does-not-exist :create
 			       :external-format external-format)
-	   (let ((binary (loop with *package* = *package*
+	   (let ((binary (loop
+			    with *package* = *package*
+			    with *readtable* = *readtable*
 			    with ext:*bytecodes-compiler* = t
 			    for position = (file-position input)
 			    for form = (read input nil :EOF)

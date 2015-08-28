@@ -8,7 +8,7 @@ dnl  AUTOCONF configuration for ECL
 dnl  Giuseppe Attardi 25.1.1994
 dnl
 
-AC_INIT([ecl],[15.3.7],[])
+AC_INIT([ecl],[16.0.0],[])
 AC_REVISION([$Revision$])
 AC_CONFIG_SRCDIR([bare.lsp.in])
 AC_CONFIG_AUX_DIR([gmp])
@@ -56,21 +56,11 @@ AC_ARG_ENABLE(libatomic,
                   [(auto|included|system, default=auto)] ),
   [], [enable_libatomic=auto] )
 
-AC_ARG_ENABLE(slow-config,
-  AS_HELP_STRING( [DEPRECATED: use --with-system-boehm=no] ),
-  [], [enable_slow_config=no] )
-
 AC_ARG_ENABLE(soname,
   AS_HELP_STRING( [--enable-soname],
 		  [link and install the library using version numbers]
 		  [(no|yes, default=yes)]),
   [], [enable_soname=yes] )
-
-AC_ARG_WITH(system-boehm,
-  AS_HELP_STRING( [--with-system-boehm], [Deprecated! See --enable-boehm] ),
-  [AC_MSG_WARN(
-    [--with-system-boehm is deprecated, use --enable-boehm=system instead!])
-   test ${withval} = "no" || enable_boehm="system"])
 
 AC_ARG_WITH(gmp,
   AS_HELP_STRING( [--with-gmp=args],
@@ -108,6 +98,11 @@ AC_ARG_ENABLE(local-gmp,
   [AC_MSG_WARN(
     [--with-local-gmp is deprecated, use --with-system-gmp instead!])
    with_system_gmp="${enableval}"])
+
+AC_ARG_WITH(libffi-prefix,
+  AS_HELP_STRING( [--with-libffi-prefix=path],
+                  [prefix for system LIBFFI includes and libraries] ),
+  [LIBFFI_INCDIR="$withval/include"; LIBFFI_LIBDIR="$withval/lib"], [])
 
 AC_ARG_WITH(__thread,
   AS_HELP_STRING( [--with-__thread],
@@ -319,6 +314,7 @@ AC_SUBST(ECL_CFLAGS)            dnl Similar, but specific to ECL (see src/util/e
 AC_SUBST(DEBUG_CFLAGS)
 AC_SUBST(GMP_CPPFLAGS)		dnl CFLAGS needed for compiling with system GMP library
 AC_SUBST(GMP_LDFLAGS)		dnl LDFLAGS needed for compiling with system GMP library
+AC_SUBST(LIBFFI_LDFLAGS)		dnl LDFLAGS needed for compiling with system LIBFFI library
 AC_SUBST(FASL_LIBS)             dnl Libraries to link into all ecl code but not
                                 dnl into helper programs.
 AC_SUBST(CORE_LIBS, [])         dnl Locally compiled libs to link into
@@ -440,7 +436,7 @@ if test "x${with_system_gmp}" = "xno" ; then
   mkdir gmp
   dnl Notice we need -DPIC to force the assembler to generate PIC code
   (destdir=`${PWDCMD}`; cd gmp && CC="${CC} ${PICFLAG}" \
-     $srcdir/gmp/configure --disable-shared --prefix=${destdir} \
+     NM=nm $srcdir/gmp/configure --disable-shared --prefix=${destdir} \
      -infodir=${destdir}/doc --includedir=${destdir}/ecl --with-pic \
      --libdir=${destdir} --build=${gmp_build} --host=${host_alias} \
      CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" CC="${CC} ${PICFLAG}" \
@@ -464,6 +460,22 @@ fi
 if test "x${with_system_gmp}" = "xno"; then
   ECL_GMP_BASED_CONFIG
 fi
+
+dnl ======================================================================
+dnl LIBFFI library
+if test "x$LIBFFI_INCDIR" != "x"; then
+  LIBFFI_CPPFLAGS="-I$LIBFFI_INCDIR"
+fi
+if test "x$LIBFFI_LIBDIR" != "x"; then
+  LIBFFI_LDFLAGS="-L$LIBFFI_LIBDIR"
+  if test "$enable_rpath" = "yes"; then
+    if (echo "$ECL_LDRPATH" | grep '~A') > /dev/null; then
+      LIBFFI_LDFLAGS=`echo $ECL_LDRPATH | sed "s,~A,$LIBFFI_LIBDIR,"`" $LIBFFI_LDFLAGS"
+    fi
+  fi
+fi
+CPPFLAGS="$CPPFLAGS $LIBFFI_CPPFLAGS"
+LDFLAGS="$LDFLAGS $LIBFFI_LDFLAGS"
 
 dnl =====================================================================
 dnl Checks for libraries

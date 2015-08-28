@@ -1,8 +1,9 @@
-;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: SYSTEM -*-
+;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: SYSTEM; indent-tabs-mode: nil -*-
 ;;;;
 ;;;;  Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya.
 ;;;;  Copyright (c) 1990, Giuseppe Attardi.
 ;;;;  Copyright (c) 2001, Juan Jose Garcia Ripoll.
+;;;;  Copyright (c) 2015, Daniel Kochmański.
 ;;;;
 ;;;;    This program is free software; you can redistribute it and/or
 ;;;;    modify it under the terms of the GNU Library General Public
@@ -23,23 +24,23 @@
 (defun do-setf-method-expansion (name lambda args)
   (declare (si::c-local))
   (let* ((vars '())
-	 (inits '())
-	 (all '()))
+         (inits '())
+         (all '()))
     (dolist (item args)
       (unless (or (fixnump item) (keywordp item))
-	(push item inits)
-	(setq item (gensym))
-	(push item vars))
+        (push item inits)
+        (setq item (gensym))
+        (push item vars))
       (push item all))
     (let* ((store (gensym))
-	   (all (nreverse all)))
+           (all (nreverse all)))
       (values (nreverse vars)
-	      (nreverse inits)
-	      (list store)
-	      (if lambda
-		  (apply lambda store all)
-		  `(funcall #'(setf ,name) ,store ,@all))
-	      (cons name all)))))
+              (nreverse inits)
+              (list store)
+              (if lambda
+                  (apply lambda store all)
+                  `(funcall #'(setf ,name) ,store ,@all))
+              (cons name all)))))
 
 (defun setf-method-wrapper (name setf-lambda)
   (declare (si::c-local))
@@ -60,27 +61,27 @@
 ;;; DEFSETF macro.
 (defmacro defsetf (&whole whole access-fn &rest rest)
   "Syntax: (defsetf symbol update-fun [doc])
-	or
-	(defsetf symbol lambda-list (store-var) {decl | doc}* {form}*)
+        or
+        (defsetf symbol lambda-list (store-var) {decl | doc}* {form}*)
 Defines an expansion
-	(setf (SYMBOL arg1 ... argn) value)
-	=> (UPDATE-FUN arg1 ... argn value)
-	   or
-	   (let* ((temp1 ARG1) ... (tempn ARGn) (temp0 value)) rest)
+        (setf (SYMBOL arg1 ... argn) value)
+        => (UPDATE-FUN arg1 ... argn value)
+           or
+           (let* ((temp1 ARG1) ... (tempn ARGn) (temp0 value)) rest)
 where REST is the value of the last FORM with parameters in LAMBDA-LIST bound
 to the symbols TEMP1 ... TEMPn and with STORE-VAR bound to the symbol TEMP0.
 The doc-string DOC, if supplied, is saved as a SETF doc and can be retrieved
 by (documentation 'SYMBOL 'setf)."
   (let (function documentation)
     (if (and (car rest) (or (symbolp (car rest)) (functionp (car rest))))
-	(setq function `',(car rest)
-	      documentation (cadr rest))
-	(let* ((store (second rest))
-	       (args (first rest))
-	       (body (cddr rest)))
-	  (setq documentation (find-documentation body)
-		function `#'(lambda-block ,access-fn (,@store ,@args) ,@body))
-	  (check-stores-number 'DEFSETF store 1)))
+        (setq function `',(car rest)
+              documentation (cadr rest))
+        (let* ((store (second rest))
+               (args (first rest))
+               (body (cddr rest)))
+          (setq documentation (find-documentation body)
+                function `#'(lambda-block ,access-fn (,@store ,@args) ,@body))
+          (check-stores-number 'DEFSETF store 1)))
     `(eval-when (compile load eval)
        ,(ext:register-with-pde whole `(do-defsetf ',access-fn ,function))
        ,@(si::expand-set-documentation access-fn 'setf documentation)
@@ -96,31 +97,31 @@ When a form (setf (SYMBOL arg1 ... argn) value-form) is evaluated, the FORMs
 given in the DEFINE-SETF-EXPANDER are evaluated in order with the parameters in
 DEFMACRO-LAMBDA-LIST bound to ARG1 ... ARGn.  The last FORM must return five
 values
-	(var1 ... vark)
-	(form1 ... formk)
-	(value-var)
-	storing-form
-	access-form
+        (var1 ... vark)
+        (form1 ... formk)
+        (value-var)
+        storing-form
+        access-form
 in order.  These values are collectively called the five gangs of the
 generalized variable (SYMBOL arg1 ... argn).  The whole SETF form is then
 expanded into
-	(let* ((var1 from1) ... (vark formk)
-	       (value-var value-form))
-	  storing-form)
+        (let* ((var1 from1) ... (vark formk)
+               (value-var value-form))
+          storing-form)
 The doc-string DOC, if supplied, is saved as a SETF doc and can be retrieved
 by (DOCUMENTATION 'SYMBOL 'SETF)."
   (let ((env (member '&environment args :test #'eq)))
     (if env
-	(setq args (cons (second env)
-			 (nconc (ldiff args env) (cddr env))))
-	(progn
-	  (setq env (gensym))
-	  (setq args (cons env args))
-	  (push `(declare (ignore ,env)) body))))
+        (setq args (cons (second env)
+                         (nconc (ldiff args env) (cddr env))))
+        (progn
+          (setq env (gensym))
+          (setq args (cons env args))
+          (push `(declare (ignore ,env)) body))))
   `(eval-when (compile load eval)
      (do-define-setf-method ',access-fn #'(ext::lambda-block ,access-fn ,args ,@body))
      ,@(si::expand-set-documentation access-fn 'setf
-				     (find-documentation body))
+                                     (find-documentation body))
      ',access-fn))
 
 
@@ -134,18 +135,18 @@ Does not check if the third gang is a single-element list."
   ;; Note that macroexpansion of SETF arguments can only be done via
   ;; MACROEXPAND-1 [ANSI 5.1.2.7]
   (cond ((symbolp form)
-	 (if (and (setq f (macroexpand-1 form env)) (not (equal f form)))
-	     (get-setf-expansion f env)
-	     (let ((store (gensym)))
-	       (values nil nil (list store) `(setq ,form ,store) form))))
-	((or (not (consp form)) (not (symbolp (car form))))
-	 (error "Cannot get the setf-method of ~S." form))
-	((setq f (get-sysprop (car form) 'SETF-METHOD))
-	 (apply f env (cdr form)))
-	((and (setq f (macroexpand-1 form env)) (not (equal f form)))
-	 (get-setf-expansion f env))
-	(t
-	 (do-setf-method-expansion (car form) nil (cdr form)))))
+         (if (and (setq f (macroexpand-1 form env)) (not (equal f form)))
+             (get-setf-expansion f env)
+             (let ((store (gensym)))
+               (values nil nil (list store) `(setq ,form ,store) form))))
+        ((or (not (consp form)) (not (symbolp (car form))))
+         (error "Cannot get the setf-method of ~S." form))
+        ((setq f (get-sysprop (car form) 'SETF-METHOD))
+         (apply f env (cdr form)))
+        ((and (setq f (macroexpand-1 form env)) (not (equal f form)))
+         (get-setf-expansion f env))
+        (t
+         (do-setf-method-expansion (car form) nil (cdr form)))))
 
 ;;;; SETF definitions.
 
@@ -232,7 +233,7 @@ Does not check if the third gang is a single-element list."
               `(getf ,access-form ,itemp ,default)))))
 
 (defsetf subseq (sequence1 start1 &optional end1)
-		(sequence2)
+                (sequence2)
   `(PROGN (REPLACE ,sequence1 ,sequence2 :START1 ,start1 :END1 ,end1)
     ,sequence2))
 
@@ -246,15 +247,15 @@ Does not check if the third gang is a single-element list."
 #|
 (define-setf-expander apply (&environment env fn &rest rest)
   (unless (and (consp fn) (eq (car fn) 'FUNCTION) (symbolp (cadr fn))
-	       (null (cddr fn)))
-	  (error "Can't get the setf-method of ~S." fn))
+               (null (cddr fn)))
+          (error "Can't get the setf-method of ~S." fn))
   (multiple-value-bind (vars vals stores store-form access-form)
       (get-setf-expansion (cons (cadr fn) rest) env)
     (unless (eq (car (last store-form)) (car (last vars)))
             (error "Can't get the setf-method of ~S." fn))
     (values vars vals stores
-	    `(apply #',(car store-form) ,@(cdr store-form))
-	    `(apply #',(cadr fn) ,@(cdr access-form)))))
+            `(apply #',(car store-form) ,@(cdr store-form))
+            `(apply #',(cadr fn) ,@(cdr access-form)))))
 |#
 
 (define-setf-expander apply (&environment env fn &rest rest)
@@ -282,31 +283,31 @@ Does not check if the third gang is a single-element list."
   (multiple-value-bind (temps vals stores store-form access-form)
       (get-setf-expansion int env)
     (let* ((btemp (gensym))
-	   (store (gensym))
-	   (stemp (first stores)))
+           (store (gensym))
+           (stemp (first stores)))
       (values `(,btemp ,@temps)
-	      `(,bytespec ,@vals)
-	      `(,store)
-	      `(let ((,stemp (dpb ,store ,btemp ,access-form)))
-	         ,store-form ,store)
-	      `(ldb ,btemp ,access-form)))))
+              `(,bytespec ,@vals)
+              `(,store)
+              `(let ((,stemp (dpb ,store ,btemp ,access-form)))
+                 ,store-form ,store)
+              `(ldb ,btemp ,access-form)))))
 
 (define-setf-expander mask-field (&environment env bytespec int)
   (multiple-value-bind (temps vals stores store-form access-form)
       (get-setf-expansion int env)
     (let* ((btemp (gensym))
-	   (store (gensym))
-	   (stemp (first stores)))
+           (store (gensym))
+           (stemp (first stores)))
       (values `(,btemp ,@temps)
-	      `(,bytespec ,@vals)
-	      `(,store)
-	      `(let ((,stemp (deposit-field ,store ,btemp ,access-form)))
-	         ,store-form ,store)
-	      `(mask-field ,btemp ,access-form)))))
+              `(,bytespec ,@vals)
+              `(,store)
+              `(let ((,stemp (deposit-field ,store ,btemp ,access-form)))
+                 ,store-form ,store)
+              `(mask-field ,btemp ,access-form)))))
 
 (defun trivial-setf-form (place vars stores store-form access-form)
   (declare (si::c-local)
-	   (optimize (speed 3) (safety 0)))
+           (optimize (speed 3) (safety 0)))
   (and (atom place)
        (null vars)
        (eq access-form place)
@@ -323,48 +324,48 @@ Does not check if the third gang is a single-element list."
   ;; followed by a single stored value, we can produce an expansion
   ;; without LET forms.
   (declare (si::c-local)
-	   (optimize (speed 3) (safety 0)))
+           (optimize (speed 3) (safety 0)))
   (when (and (consp place)
-	     (consp store-form)
-	     (= (length place) (truly-the fixnum (1- (length store-form)))))
+             (consp store-form)
+             (= (length place) (truly-the fixnum (1- (length store-form)))))
     (let ((function (pop store-form))
-	  (output '())
-	  v)
+          (output '())
+          v)
       (dolist (i (rest place)
-	       (when (eq (first stores) (first store-form))
-		 (list* function
-			(nreverse (cons newvalue output)))))
-	(unless (consp store-form)
-	  (return nil))
-	(setq v (car (truly-the cons store-form))
-	      store-form (cdr (truly-the cons store-form)))
-	;; This checks that the argument at this position coincides with
-	;; the corresponding value in the original list. Note that the
-	;; variable list need not be in order.
-	(unless (or (eq v i)
-		    (and (eq v (pop vars))
-			 (eq (pop vals) i)))
-	  (return nil))
-	(push i output)))))
+               (when (eq (first stores) (first store-form))
+                 (list* function
+                        (nreverse (cons newvalue output)))))
+        (unless (consp store-form)
+          (return nil))
+        (setq v (car (truly-the cons store-form))
+              store-form (cdr (truly-the cons store-form)))
+        ;; This checks that the argument at this position coincides with
+        ;; the corresponding value in the original list. Note that the
+        ;; variable list need not be in order.
+        (unless (or (eq v i)
+                    (and (eq v (pop vars))
+                         (eq (pop vals) i)))
+          (return nil))
+        (push i output)))))
 
 ;;; The expansion function for SETF.
 (defun setf-expand-1 (place newvalue env)
   (declare (si::c-local)
-	   (notinline mapcar))
+           (notinline mapcar))
   (multiple-value-bind (vars vals stores store-form access-form)
       (get-setf-expansion place env)
     (cond ((trivial-setf-form place vars stores store-form access-form)
-	   (list 'setq place newvalue))
-	  ((try-simpler-expansion place vars vals stores newvalue store-form))
-	  (t
-	   `(let* ,(mapcar #'list vars vals)
-	      ;; Unfortunately we cannot do this because there is code out
-	      ;; there that changes the variables and values
-	      ;; (declare (:read-only ,@vars))
-	      (multiple-value-bind ,stores ,newvalue
-		;; Same here
-		;; (declare (:read-only ,@stores))
-		,store-form))))))
+           (list 'setq place newvalue))
+          ((try-simpler-expansion place vars vals stores newvalue store-form))
+          (t
+           `(let* ,(mapcar #'list vars vals)
+              ;; Unfortunately we cannot do this because there is code out
+              ;; there that changes the variables and values
+              ;; (declare (:read-only ,@vars))
+              (multiple-value-bind ,stores ,newvalue
+                ;; Same here
+                ;; (declare (:read-only ,@stores))
+                ,store-form))))))
 
 (defun setf-expand (l env)
   (declare (si::c-local))
@@ -383,17 +384,17 @@ Each PLACE may be any one of the following:
   * A symbol that names a variable.
   * A function call form whose first element is the name of the following
     functions:
-	nth	elt	subseq	rest	first ... tenth
-	c?r	c??r	c???r	c????r
-	aref	svref	char	schar	bit	sbit	fill-pointer
-	get	getf	documentation	symbol-value	symbol-function
-	symbol-plist	macro-function	gethash		fdefinition
-	char-bit	ldb	mask-field
-	apply	slot-value
+        nth     elt     subseq  rest    first ... tenth
+        c?r     c??r    c???r   c????r
+        aref    svref   char    schar   bit     sbit    fill-pointer
+        get     getf    documentation   symbol-value    symbol-function
+        symbol-plist    macro-function  gethash         fdefinition
+        char-bit        ldb     mask-field
+        apply   slot-value
     where '?' stands for either 'a' or 'd'.
   * A function call form whose first element is:
         1. an access function for a structure slot
-        1. an accessor method for a CLOS object
+        2. an accessor method for a CLOS object
   * the form (THE type place) with PLACE being a place recognized by SETF.
   * a macro call which expands to a place recognized by SETF.
   * any form for which a DEFSETF or DEFINE-SETF-EXPANDER declaration has been
@@ -403,97 +404,102 @@ Each PLACE may be any one of the following:
         ((endp (cddr rest)) (setf-expand-1 (car rest) (cadr rest) env))
         (t (cons 'progn (setf-expand rest env)))))
 
-;;; PSETF macro.
+;;; PSTEF/SHIFTF/ROTATEF base macros
 
-(defmacro psetf (&environment env &rest rest)
-  "Syntax: (psetf {place form}*)
+;; WITH-SETF-EXPANSIONS
+(defmacro with-setf-expansions
+    ((pairs stores store-forms access-forms)
+     (args &optional env) &body body)
+  "Syntax: (with-setf-expansions (pairs stores store-forms access-forms)
+            ({place}* &optional env) {form}*)
+Map setf-expansions of places into list of bindings in PAIRS, list of
+stores in STORES, list of store-form in STORE-FORMS and list of
+access-form in ACCESS-FORMS.  Creates new lexical scope composed of
+these variables."
+  (declare (notinline mapcar))
+  `(destructuring-bind (,pairs ,stores ,store-forms ,access-forms)
+       (reduce (lambda (x y)
+                 (list
+                  (cons (mapcar #'list (first y) (second y))
+                        (first x))
+                  (cons (third  y) (second x))
+                  (cons (fourth y) (third  x))
+                  (cons (fifth  y) (fourth x))))
+               (mapcar (lambda (place)
+                         (multiple-value-list
+                          (get-setf-expansion place ,env)))
+                       (reverse ,args))
+               :initial-value '(nil nil nil nil))
+     ,@body))
+
+;;; PSETF macro.
+(defmacro psetf (&environment env &rest args)
+    "Syntax: (psetf {place form}*)
 Similar to SETF, but evaluates all FORMs first, and then assigns each value to
 the corresponding PLACE.  Returns NIL."
-  (declare (notinline mapcar))
-  (cond ((endp rest) nil)
-        ((endp (cdr rest)) (error "~S is an illegal PSETF form." rest))
-        ((endp (cddr rest))
-         `(progn ,(setf-expand-1 (car rest) (cadr rest) env)
-                 nil))
-        (t
-	 (do ((r rest (cddr r))
-	      (pairs nil)
-	      (store-forms nil))
-	     ((endp r)
-	      `(let* ,pairs
-		 ,@(nreverse store-forms)
-		 nil))
-	   (when (endp (cdr r)) (error "~S is an illegal PSETF form." rest))
-	   (multiple-value-bind (vars vals stores store-form access-form)
-	       (get-setf-expansion (car r) env)
-             (declare (ignore access-form))
-	     (setq store-forms (cons store-form store-forms))
-	     (setq pairs
-		   (nconc pairs
-			  (mapcar #'list
-				  (append vars stores)
-				  (append vals (list (cadr r)))))))))))
+    (multiple-value-bind (places forms)
+        (do* ((args args (cddr args))
+              places forms)
+             ((endp args)
+              (values (nreverse places)
+                      (nreverse forms)))
+          (when (endp (cdr args))
+            (error "~S is an illegal PSETF form (odd number of arguments)." args))
+          (push (car args) places)
+          (push (cadr args) forms))
+      (with-setf-expansions (pairs stores store-forms access-forms) (places env)
+        (declare (ignore access-forms))
+        (labels ((thunk (pairs stores access-forms)
+                   (if stores
+                       `((let ,(car pairs)
+                           (multiple-value-bind ,(car stores) ,(car access-forms)
+                             ,@(thunk (cdr pairs) (cdr stores) (cdr access-forms)))))
+                       store-forms)))
+          `(prog1 nil
+             ,@(thunk pairs stores forms))))))
 
+;; WITH-EXPANSION-SETTER
+(defmacro with-expansion-setter ((name store-forms) &body body)
+  "Syntax: (with-expansion-setter (name store-forms) {form}*)
+Macro creates lexically-scoped function NAME, which takes two lists as
+arguments, and expands into nested MULTIPLE-VALUE-BINDs of ACCESS-FORMS
+into STORES.  Finally inside bindings it expands STORE-FORMS."
+  `(labels ((,name (stores access-forms)
+              (if stores
+                  `((multiple-value-bind ,(car stores) ,(car access-forms)
+                      ,@(,name (cdr stores) (cdr access-forms))))
+                  `(,@,store-forms))))
+     ,@body))
 
 ;;; SHIFTF macro.
-(defmacro shiftf (&environment env &rest rest)
+(defmacro shiftf (&environment env &rest args)
   "Syntax: (shiftf {place}+ form)
 Saves the values of PLACE and FORM, and then assigns the value of each PLACE
 to the PLACE on its left.  The rightmost PLACE gets the value of FORM.
 Returns the original value of the leftmost PLACE."
-  (declare (notinline mapcar))
-  (do ((r rest (cdr r))
-       (pairs nil)
-       (stores nil)
-       (store-forms nil)
-       (g (gensym))
-       (access-forms nil))
-      ((endp (cdr r))
-       (setq stores (nreverse stores))
-       (setq store-forms (nreverse store-forms))
-       (setq access-forms (nreverse access-forms))
-       `(let* ,(nconc pairs
-		      (list (list g (car access-forms)))
-		      (mapcar #'list stores (cdr access-forms))
-		      (list (list (car (last stores)) (car r))))
-	    ,@store-forms
-	    ,g))
-    (multiple-value-bind (vars vals stores1 store-form access-form)
-	(get-setf-expansion (car r) env)
-      (setq pairs (nconc pairs (mapcar #'list vars vals)))
-      (setq stores (cons (car stores1) stores))
-      (setq store-forms (cons store-form store-forms))
-      (setq access-forms (cons access-form access-forms)))))
-
+  (with-setf-expansions (pairs stores store-forms access-forms)
+      ((butlast args) env)
+    (with-expansion-setter (thunk store-forms)
+      `(let* ,(reduce #'append pairs)
+         (prog1 ,(car access-forms)
+           ,@(thunk stores
+                    (append (cdr access-forms)
+                            (last args))))))))
 
 ;;; ROTATEF macro.
-(defmacro rotatef (&environment env &rest rest)
+(defmacro rotatef (&environment env &rest args)
   "Syntax: (rotatef {place}*)
 Saves the values of PLACEs, and then assigns to each PLACE the saved value of
 the PLACE to its right.  The rightmost PLACE gets the value of the leftmost
 PLACE.  Returns NIL."
-  (declare (notinline mapcar))
-  (do ((r rest (cdr r))
-       (pairs nil)
-       (stores nil)
-       (store-forms nil)
-       (access-forms nil))
-      ((endp r)
-       (setq stores (nreverse stores))
-       (setq store-forms (nreverse store-forms))
-       (setq access-forms (nreverse access-forms))
-       `(let* ,(nconc pairs
-		      (mapcar #'list stores (cdr access-forms))
-		      (list (list (car (last stores)) (car access-forms))))
-	    ,@store-forms
-	    nil))
-    (multiple-value-bind (vars vals stores1 store-form access-form)
-	(get-setf-expansion (car r) env)
-      (setq pairs (nconc pairs (mapcar #'list vars vals)))
-      (setq stores (cons (car stores1) stores))
-      (setq store-forms (cons store-form store-forms))
-      (setq access-forms (cons access-form access-forms)))))
-
+  (with-setf-expansions (pairs stores store-forms access-forms)
+      (args env)
+    (with-expansion-setter (thunk store-forms)
+      `(let* ,(reduce #'append pairs)
+         (prog1 nil
+           ,@(thunk stores
+                    (append (cdr access-forms)
+                            (list (car access-forms)))))))))
 
 ;;; DEFINE-MODIFY-MACRO macro, by Bruno Haible.
 (defmacro define-modify-macro (name lambdalist function &optional docstring)
@@ -503,7 +509,7 @@ a form (SYMBOL place form1 ... formn) into a form that in effect SETFs the
 value of (FUNCTION-NAME place arg1 ... argm) into PLACE, where ARG1 ... ARGm
 are parameters in LAMBDA-LIST which are bound to FORM1 ... FORMn.  For
 example, INCF could be defined as
-	(define-modify-macro incf (&optional (x 1)) +)
+        (define-modify-macro incf (&optional (x 1)) +)
 The doc-string DOC, if supplied, is saved as a FUNCTION doc and can be
 retrieved by (DOCUMENTATION 'SYMBOL 'FUNCTION)."
   (let* ((varlist nil)
@@ -542,46 +548,46 @@ retrieved by (DOCUMENTATION 'SYMBOL 'FUNCTION)."
        (DECLARE (NOTINLINE MAPCAR))
        (MULTIPLE-VALUE-BIND (VARS VALS STORES SETTER GETTER)
            (GET-SETF-EXPANSION %REFERENCE ENV)
-	 (LET ((ALL-VARS (MAPCAR #'(LAMBDA (V) (LIST (GENSYM) V)) (LIST* ,@varlist ,restvar))))
-	 (IF (SYMBOLP GETTER)
-	     (SUBST (LIST* (QUOTE ,function) GETTER (MAPCAR #'CAR ALL-VARS))
+         (LET ((ALL-VARS (MAPCAR #'(LAMBDA (V) (LIST (GENSYM) V)) (LIST* ,@varlist ,restvar))))
+         (IF (SYMBOLP GETTER)
+             (SUBST (LIST* (QUOTE ,function) GETTER (MAPCAR #'CAR ALL-VARS))
                     (CAR STORES)
                     `(LET* ,ALL-VARS
-		       (DECLARE (:READ-ONLY ,@(mapcar #'first all-vars)))
-		       ,SETTER))
-	     (DO ((D VARS (CDR D))
-		  (V VALS (CDR V))
-		  (LET-LIST NIL (CONS (LIST (CAR D) (CAR V)) LET-LIST)))
-		 ((NULL D)
-		  (SETQ LET-LIST
-			(LIST*
-			 (LIST
-			  (CAR STORES)
-			  (IF (AND (LISTP %REFERENCE) (EQ (CAR %REFERENCE) 'THE))
-			      (LIST 'THE (CADR %REFERENCE)
-				    (LIST* (QUOTE ,function) GETTER ,@varlist ,restvar))
-			      (LIST* (QUOTE ,function) GETTER (MAPCAR #'CAR ALL-VARS))))
-			 (APPEND ALL-VARS LET-LIST)))
-		  `(LET* ,(NREVERSE LET-LIST)
-		     (DECLARE (:READ-ONLY ,@(mapcar #'first all-vars)
-					  ,@vars))
-		     ,SETTER)))))))))
+                       (DECLARE (:READ-ONLY ,@(mapcar #'first all-vars)))
+                       ,SETTER))
+             (DO ((D VARS (CDR D))
+                  (V VALS (CDR V))
+                  (LET-LIST NIL (CONS (LIST (CAR D) (CAR V)) LET-LIST)))
+                 ((NULL D)
+                  (SETQ LET-LIST
+                        (LIST*
+                         (LIST
+                          (CAR STORES)
+                          (IF (AND (LISTP %REFERENCE) (EQ (CAR %REFERENCE) 'THE))
+                              (LIST 'THE (CADR %REFERENCE)
+                                    (LIST* (QUOTE ,function) GETTER ,@varlist ,restvar))
+                              (LIST* (QUOTE ,function) GETTER (MAPCAR #'CAR ALL-VARS))))
+                         (APPEND ALL-VARS LET-LIST)))
+                  `(LET* ,(NREVERSE LET-LIST)
+                     (DECLARE (:READ-ONLY ,@(mapcar #'first all-vars)
+                                          ,@vars))
+                     ,SETTER)))))))))
 
 #|
 (defmacro define-modify-macro (name lambda-list function &optional doc-string)
   (let ((update-form
-	 (do ((l lambda-list (cdr l))
-	      (vs nil))
-	     ((null l) `(list ',function access-form ,@(nreverse vs)))
-	   (unless (eq (car l) '&optional)
-		   (if (eq (car l) '&rest)
-		       (return `(list* ',function
-				       access-form
-				       ,@(nreverse vs)
-				       ,(cadr l))))
-		   (if (symbolp (car l))
-		       (setq vs (cons (car l) vs))
-		       (setq vs (cons (caar l) vs)))))))
+         (do ((l lambda-list (cdr l))
+              (vs nil))
+             ((null l) `(list ',function access-form ,@(nreverse vs)))
+           (unless (eq (car l) '&optional)
+                   (if (eq (car l) '&rest)
+                       (return `(list* ',function
+                                       access-form
+                                       ,@(nreverse vs)
+                                       ,(cadr l))))
+                   (if (symbolp (car l))
+                       (setq vs (cons (car l) vs))
+                       (setq vs (cons (caar l) vs)))))))
     `(defmacro ,name (&environment env reference . ,lambda-list)
        ,@(if doc-string (list doc-string))
        (when (symbolp reference)
@@ -589,12 +595,12 @@ retrieved by (DOCUMENTATION 'SYMBOL 'FUNCTION)."
                (let ((access-form reference))
                  (list 'setq reference ,update-form))))
        (multiple-value-bind (vars vals stores store-form access-form)
-	   (get-setf-expansion reference env)
+           (get-setf-expansion reference env)
          `(let* ,(mapcar #'list
-		  (append vars stores)
-		  (append vals (list ,update-form)))
-	   (declare (:read-only ,@stores)) ; Beppe
-	   ,store-form)))))
+                  (append vars stores)
+                  (append vals (list ,update-form)))
+           (declare (:read-only ,@stores)) ; Beppe
+           ,store-form)))))
 |#
 
 ;;; Some macro definitions.
@@ -634,11 +640,11 @@ makes it the new value of PLACE.  Returns the new value of PLACE."
     ;; The item to be pushed has to be evaluated before the destination
     (unless (constantp item env)
       (setq vals (cons item vals)
-	    item (gensym)
-	    vars (cons item vars)))
+            item (gensym)
+            vars (cons item vars)))
     `(let* ,(mapcar #'list
-		    (append vars stores)
-		    (append vals (list (list 'cons item access-form))))
+                    (append vars stores)
+                    (append vals (list (list 'cons item access-form))))
        (declare (:read-only ,@vars)) ; Beppe
        ,store-form)))
 
@@ -657,12 +663,12 @@ to MEMBER."
     ;; The item to be pushed has to be evaluated before the destination
     (unless (constantp item env)
       (setq vals (cons item vals)
-	    item (gensym)
-	    vars (cons item vars)))
+            item (gensym)
+            vars (cons item vars)))
     `(let* ,(mapcar #'list
-		    (append vars stores)
-		    (append vals
-			    (list (list* 'adjoin item access-form rest))))
+                    (append vars stores)
+                    (append vals
+                            (list (list* 'adjoin item access-form rest))))
        (declare (:read-only ,@vars)) ; Beppe
        ,store-form)))
 
@@ -675,36 +681,36 @@ Returns the car of the old value in PLACE."
       (get-setf-expansion place env)
     (let ((store-var (first stores)))
       `(let* ,(mapcar #'list
-		      (append vars stores)
-		      (append vals (list access-form)))
-	 (declare (:read-only ,@vars)) ; Beppe
-	 (prog1 (car ,store-var)
-	   (setq ,store-var (cdr (truly-the list ,store-var)))
-	   ,store-form)))))
+                      (append vars stores)
+                      (append vals (list access-form)))
+         (declare (:read-only ,@vars)) ; Beppe
+         (prog1 (car ,store-var)
+           (setq ,store-var (cdr (truly-the list ,store-var)))
+           ,store-form)))))
 
 (define-setf-expander values (&rest values &environment env)
   (let ((all-vars '())
-	(all-vals '())
-	(all-stores '())
-	(all-storing-forms '())
-	(all-get-forms '()))
+        (all-vals '())
+        (all-stores '())
+        (all-storing-forms '())
+        (all-get-forms '()))
     (dolist (item (reverse values))
       (multiple-value-bind (vars vals stores storing-form get-form)
-	  (get-setf-expansion item env)
-	;; If a place has more than one store variable, the other ones
-	;; are set to nil.
-	(let ((extra (rest stores)))
-	  (unless (endp extra)
-	    (setf vars (append extra vars)
-		  vals (append (make-list (length extra)) vals)
-		  stores (list (first stores)))))
-	(setf all-vars (append vars all-vars)
-	      all-vals (append vals all-vals)
-	      all-stores (append stores all-stores)
-	      all-storing-forms (cons storing-form all-storing-forms)
-	      all-get-forms (cons get-form all-get-forms))))
+          (get-setf-expansion item env)
+        ;; If a place has more than one store variable, the other ones
+        ;; are set to nil.
+        (let ((extra (rest stores)))
+          (unless (endp extra)
+            (setf vars (append extra vars)
+                  vals (append (make-list (length extra)) vals)
+                  stores (list (first stores)))))
+        (setf all-vars (append vars all-vars)
+              all-vals (append vals all-vals)
+              all-stores (append stores all-stores)
+              all-storing-forms (cons storing-form all-storing-forms)
+              all-get-forms (cons get-form all-get-forms))))
     (values all-vars all-vals all-stores `(values ,@all-storing-forms)
-	    `(values ,@all-get-forms))))
+            `(values ,@all-get-forms))))
 #|
 ;;; Proposed extension:
 ; Expansion of (SETF (VALUES place1 ... placek) form)
@@ -717,10 +723,10 @@ Returns the car of the old value in PLACE."
        (placesr subplaces))
       ((atom placesr)
        (setq temps (nreverse temps)
-	     vals (nreverse vals)
-	     stores (nreverse stores)
-	     storeforms (nreverse storeforms)
-	     accessforms (nreverse accessforms))
+             vals (nreverse vals)
+             stores (nreverse stores)
+             storeforms (nreverse storeforms)
+             accessforms (nreverse accessforms))
        (values temps
             vals
             stores
@@ -729,8 +735,8 @@ Returns the car of the old value in PLACE."
     (multiple-value-bind (SM1 SM2 SM3 SM4 SM5)
         (get-setf-expansion (pop placesr) env)
       (setq temps (revappend SM1 temps)
-	    vals (revappend SM2 vals)
-	    stores (revappend SM3 stores)
-	    storeforms (cons SM4 storeforms)
-	    accessforms (cons SM5 accessforms)))))
+            vals (revappend SM2 vals)
+            stores (revappend SM3 stores)
+            storeforms (cons SM4 storeforms)
+            accessforms (cons SM5 accessforms)))))
 |#

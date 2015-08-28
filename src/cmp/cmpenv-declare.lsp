@@ -39,7 +39,7 @@
 (defun alien-declaration-p (name &optional (env *cmp-env*))
   (and (symbolp name)
        (member name (cmp-env-search-declaration 'alien env si::*alien-declarations*)
-	       :test 'eq)))
+               :test 'eq)))
 
 (defun parse-ignore-declaration (decl-args expected-ref-number tail)
   (declare (si::c-local))
@@ -73,9 +73,9 @@ and a possible documentation string (only accepted when DOC-P is true)."
        for decl-name = (first decl)
        for decl-args = (rest decl)
        do (cmpassert (and (valid-form-p decl-args)
-			  (or (symbolp decl-name)
-			      (and (consp decl-name)
-				   (valid-type-specifier decl-name))))
+                          (or (symbolp decl-name)
+                              (and (consp decl-name)
+                                   (valid-type-specifier decl-name))))
                      "Syntax error in declaration ~s" decl)
        do (case decl-name
             (SPECIAL)
@@ -102,15 +102,15 @@ and a possible documentation string (only accepted when DOC-P is true)."
               SI::C-GLOBAL DYNAMIC-EXTENT IGNORABLE VALUES
               SI::NO-CHECK-TYPE POLICY-DEBUG-IHS-FRAME :READ-ONLY)
              (push decl others))
-	    (SI:FUNCTION-BLOCK-NAME)
+            (SI:FUNCTION-BLOCK-NAME)
             (otherwise
              (if (or (alien-declaration-p decl-name)
                      (policy-declaration-name-p decl-name))
                  (push decl others)
                  (multiple-value-bind (ok type)
-		     (if (machine-c-type-p decl-name)
-			 (values t decl-name)
-			 (valid-type-specifier decl-name))
+                     (if (machine-c-type-p decl-name)
+                         (values t decl-name)
+                         (valid-type-specifier decl-name))
                    (cmpassert ok "Unknown declaration specifier ~s"
                               decl-name)
                    (setf types (collect-declared type decl-args types))))))

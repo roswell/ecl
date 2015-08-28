@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter>
+<title>Hash Tables</title>
+<section xml:id="ansi.hash-tables.c-dict">
+<title>C Reference</title>
+  <refentry>
+    <refnamediv>
+      <refname>Hash tables C dictionary</refname>
+      <refpurpose>&ANSI-C-Dict;</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+<simplelist columns="2" type="horiz">
+<member>Lisp symbol</member>
+<member>C function</member>
+
+<member><ulink url="&clhs;f_clrhas.htm"><symbol>clrhash</symbol></ulink></member>
+<member><code>cl_object cl_clrhash(cl_object hash_table)</code></member>
+
+<member><ulink url="&clhs;f_gethas.htm"><symbol>gethash</symbol></ulink></member>
+<member><code>cl_object cl_gethash(cl_narg narg, cl_object key, cl_object hash_table, ...)</code></member>
+
+<member><ulink url="&clhs;f_hash_1.htm"><symbol>hash-table-count</symbol></ulink></member>
+<member><code>cl_object cl_hash_table_count(cl_object hash_table)</code></member>
+
+<member><ulink url="&clhs;f_hash_t.htm"><symbol>hash-table-p</symbol></ulink></member>
+<member><code>cl_object cl_hash_table_p(cl_object hash_table)</code></member>
+
+<member><ulink url="&clhs;f_hash_2.htm"><symbol>hash-table-rehash-size</symbol></ulink></member>
+<member><code>cl_object cl_hash_table_rehash_size(cl_object hash_table)</code></member>
+
+<member><ulink url="&clhs;f_hash_3.htm"><symbol>hash-table-rehash-threshold</symbol></ulink></member>
+<member><code>cl_object cl_hash_table_rehash_thresholdy(cl_object hash_table)</code></member>
+
+<member><ulink url="&clhs;f_hash_4.htm"><symbol>hash-table-size</symbol></ulink></member>
+<member><code>cl_object cl_hash_table_size(cl_object hash_table)</code></member>
+
+<member><ulink url="&clhs;f_hash_5.htm"><symbol>hash-table-test</symbol></ulink></member>
+<member><code>cl_object cl_hash_table_test(cl_object hash_table)</code></member>
+
+<member><ulink url="&clhs;f_mk_has.htm"><symbol>make-hash-table</symbol></ulink></member>
+<member><code>cl_object cl_make_hash_table(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_maphas.htm"><symbol>maphash</symbol></ulink></member>
+<member><code>cl_object cl_maphash(cl_object function, cl_object hash_table)</code></member>
+
+<member><ulink url="&clhs;f_remhas.htm"><symbol>remhash</symbol></ulink></member>
+<member><code>cl_object cl_remhash(cl_object key, cl_object hash_table)</code></member>
+
+<member><ulink url="&clhs;f_sxhash.htm"><symbol>sxhash</symbol></ulink></member>
+<member><code>cl_object cl_sxhash(cl_object object)</code></member>
+</simplelist>
+    </refsynopsisdiv>
+
+    <refsect1>
+      <title>Description</title>
+      <para></para>
+    </refsect1>
+  </refentry>
+</section>
+</chapter>
+</book>

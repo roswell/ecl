@@ -1,12 +1,12 @@
 ;;; @configure_input@
 ;;;
 ;;; This is the "makefile" file for building ECL. The purpose of this file is
-;;;	- Compile the core of the Common-Lisp library (lsp, clos)
-;;;	- Compile the compiler (cmp)
-;;;	- Build an executable
+;;;     - Compile the core of the Common-Lisp library (lsp, clos)
+;;;     - Compile the compiler (cmp)
+;;;     - Build an executable
 ;;; This can be done in two ways:
-;;;	- Using interpreted code and the ECL_MIN minimal environment.
-;;;	- On a second stage, using the final ECL executable, to test it.
+;;;     - Using interpreted code and the ECL_MIN minimal environment.
+;;;     - On a second stage, using the final ECL executable, to test it.
 ;;;
 
 (progn
@@ -26,11 +26,11 @@
   (let ((*standard-output* (make-broadcast-stream)))
     (dolist (p '("CL" "SI" "EXT" "CLOS"))
       (do-symbols (s (find-package p))
-	(when (and (fboundp s)
-		   (not (typep (fdefinition s) '(or list generic-function)))
-		   (si::mangle-name s)
-		   (si::bc-disassemble (fdefinition s)))
-	  (pushnew s wrong-symbols)))))
+        (when (and (fboundp s)
+                   (not (typep (fdefinition s) '(or list generic-function)))
+                   (si::mangle-name s)
+                   (si::bc-disassemble (fdefinition s)))
+          (pushnew s wrong-symbols)))))
   (format t "~%;;; Functions that can be made into the core:~%")
   (pprint (set-difference wrong-symbols c::*in-all-symbols-functions*)))
 
@@ -102,18 +102,18 @@
 (mapc #'proclaim +ecl-optimization-settings+)
 (let* ((c::*cc-flags* (concatenate 'string "-DECL_API -I\"@true_builddir@/c\" " c::*cc-flags*))
        (lsp-objects (compile-if-old "build:lsp;" +lisp-module-files+
-				    :system-p t :c-file t :data-file t :h-file t
-				    ;;:shared-data-file "build:ecl.sdat"
-				    )))
+                                    :system-p t :c-file t :data-file t :h-file t
+                                    ;;:shared-data-file "build:ecl.sdat"
+                                    )))
   #+CLOS
   (let* ((c::*compile-to-linking-call* nil))
     (mapc #'proclaim +ecl-optimization-settings+)
     (setq lsp-objects (append lsp-objects
-			      (compile-if-old "build:clos;" +clos-module-files+
-					      :system-p t :c-file t :data-file t
+                              (compile-if-old "build:clos;" +clos-module-files+
+                                              :system-p t :c-file t :data-file t
                                               :h-file t
-					      ;;:shared-data-file "build:ecl.sdat"
-					      ))))
+                                              ;;:shared-data-file "build:ecl.sdat"
+                                              ))))
   (let ((extra-lisp-files '(@ECL_EXTRA_LISP_FILES@)))
     (when extra-lisp-files
       (setq lsp-objects (append lsp-objects
@@ -123,12 +123,12 @@
                                                 ;;:shared-data-file "build:ecl.sdat"
                                                 )))))
   (c::build-static-library "lsp" :lisp-files lsp-objects
-			   ;;:shared-data-file "build:ecl.sdat"
-			   ))
+                           ;;:shared-data-file "build:ecl.sdat"
+                           ))
 
 #-:wants-dlopen
 (c::safe-system
-	(concatenate 'string
+        (concatenate 'string
 "sh -c 'rm -rf tmp; mkdir tmp;"
 "cp @LIBPREFIX@eclmin.@LIBEXT@ @LIBPREFIX@ecl.@LIBEXT@;"
 "cd tmp; ar -x ../@LIBPREFIX@lsp.@LIBEXT@;"
@@ -141,7 +141,7 @@
 ;;; We do not need the -rpath flag for the library, nor -lecl.
 ;;;
 (let* ((c::*ld-shared-flags* #-msvc "@SHARED_LDFLAGS@ @LDFLAGS@ @SONAME_LDFLAGS@ @CORE_LIBS@ @FASL_LIBS@ @LIBS@"
-			     #+msvc "@SHARED_LDFLAGS@ @LDFLAGS@ @STATICLIBS@ @CLIBS@")
+                             #+msvc "@SHARED_LDFLAGS@ @LDFLAGS@ @STATICLIBS@ @CLIBS@")
        (c::*cc-flags* (concatenate 'string "-DECL_API -I@true_builddir@/c " c::*cc-flags*))
        (extra-args nil))
   #+(or mingw32 cygwin)
@@ -235,8 +235,8 @@
               :dir "build:ext;"
               :prefix "EXT"
               :builtin
-	      #+(or (NOT :WANTS-DLOPEN) :BUILTIN-PROFILE) t
-	      #-(or (NOT :WANTS-DLOPEN) :BUILTIN-PROFILE) nil)
+              #+(or (NOT :WANTS-DLOPEN) :BUILTIN-PROFILE) t
+              #-(or (NOT :WANTS-DLOPEN) :BUILTIN-PROFILE) nil)
 
 ;;;
 ;;; * Sockets library.
@@ -244,67 +244,67 @@
 
 #+WANTS-SOCKETS
 (build-module "sockets"
-	      '("ext:sockets;package.lisp"
-		"ext:sockets;sockets.lisp")
-	      :dir "build:ext;"
-	      :prefix "EXT"
+              '("ext:sockets;package.lisp"
+                "ext:sockets;sockets.lisp")
+              :dir "build:ext;"
+              :prefix "EXT"
               :builtin
-	      #+(or (NOT :WANTS-DLOPEN) :BUILTIN-SOCKETS) t
-	      #-(or (NOT :WANTS-DLOPEN) :BUILTIN-SOCKETS) nil)
+              #+(or (NOT :WANTS-DLOPEN) :BUILTIN-SOCKETS) t
+              #-(or (NOT :WANTS-DLOPEN) :BUILTIN-SOCKETS) nil)
 
 #+WANTS-SOCKETS
 (build-module "sb-bsd-sockets"
-	      '("ext:sockets;sb-bsd-sockets.lisp")
+              '("ext:sockets;sb-bsd-sockets.lisp")
               :depends-on '("sockets")
-	      :dir "build:ext;"
-	      :prefix "EXT"
-	      :builtin nil)
+              :dir "build:ext;"
+              :prefix "EXT"
+              :builtin nil)
 
 #+WANTS-SERVE-EVENT
 (build-module "serve-event"
-	      '("ext:serve-event;serve-event.lisp")
-	      :dir "build:ext;"
-	      :prefix "EXT"
+              '("ext:serve-event;serve-event.lisp")
+              :dir "build:ext;"
+              :prefix "EXT"
               :builtin
-	      #+(or (NOT :WANTS-DLOPEN) :BUILTIN-SERVE-EVENT) t
-	      #-(or (NOT :WANTS-DLOPEN) :BUILTIN-SERVE-EVENT) nil)
+              #+(or (NOT :WANTS-DLOPEN) :BUILTIN-SERVE-EVENT) t
+              #-(or (NOT :WANTS-DLOPEN) :BUILTIN-SERVE-EVENT) nil)
 
 #+WANTS-SOCKETS
 (build-module "ecl-curl"
-	      '("ext:ecl-curl;ecl-curl.lisp")
-	      :dir "build:ext;"
-	      :prefix "EXT"
-	      :builtin nil)
+              '("ext:ecl-curl;ecl-curl.lisp")
+              :dir "build:ext;"
+              :prefix "EXT"
+              :builtin nil)
 
 #+WANTS-SOCKETS
 (build-module "ql-minitar"
-	      '("ext:quicklisp;minitar.lisp")
-	      :dir "build:ext;"
-	      :prefix "EXT"
-	      :builtin nil)
+              '("ext:quicklisp;minitar.lisp")
+              :dir "build:ext;"
+              :prefix "EXT"
+              :builtin nil)
 
 #+WANTS-SOCKETS
 (build-module "deflate"
-	      '("ext:deflate;deflate.lisp")
-	      :dir "build:ext;"
-	      :prefix "EXT"
-	      :builtin nil)
+              '("ext:deflate;deflate.lisp")
+              :dir "build:ext;"
+              :prefix "EXT"
+              :builtin nil)
 
 #+WANTS-SOCKETS
 (build-module "ecl-quicklisp"
-	      '("ext:quicklisp;ecl-quicklisp.lisp")
-	      :dir "build:ext;"
-	      :prefix "EXT"
-	      :builtin nil)
+              '("ext:quicklisp;ecl-quicklisp.lisp")
+              :dir "build:ext;"
+              :prefix "EXT"
+              :builtin nil)
 
 ;;;
 ;;; * Test suite
 ;;;
 #+WANTS-RT
 (build-module "rt"
-	      '("ext:rt;rt.lisp")
-	      :dir "build:ext;"
-	      :prefix "EXT"
+              '("ext:rt;rt.lisp")
+              :dir "build:ext;"
+              :prefix "EXT"
               :builtin #+:BUILTIN-RT t #-:BUILTIN-RT nil)
 
 ;;;
@@ -349,21 +349,21 @@
                           "src:clx;xtest.lisp"
                           "src:clx;screensaver.lisp"
                           "src:clx;xinerama.lisp"
-			  "build:clx;module.lisp"))
+                          "build:clx;module.lisp"))
        #+:msvc
        (c::*cc-flags* (concatenate 'string c::*cc-flags* " -Zm150")))
   (let ((filename "build:clx;module.lisp"))
     (ensure-directories-exist filename)
     (with-open-file (s filename :direction :output :if-exists :overwrite
-		       :if-does-not-exist :create)
+                       :if-does-not-exist :create)
      (print '(provide :clx) s)))
   (unless (find-package "SB-BSD-SOCKETS")
     (load "ext:sockets;package.lisp"))
   (mapcar #'load +clx-src-files+)
   (build-module "clx" +clx-src-files+ :dir "build:clx;" :prefix "CLX"
-		:builtin
-		#+(OR (NOT :WANTS-DLOPEN) :BUILTIN-CLX) t
-		#-(OR (NOT :WANTS-DLOPEN) :BUILTIN-CLX) nil))
+                :builtin
+                #+(OR (NOT :WANTS-DLOPEN) :BUILTIN-CLX) t
+                #-(OR (NOT :WANTS-DLOPEN) :BUILTIN-CLX) nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -397,8 +397,8 @@
  (concatenate 'list #-msvc '("-L./") #+windows '("ecl.res" #+msvc "/F 10485760")))
 
 (with-open-file (modules-list #P"build:MODULES" :direction :output
-			      :if-exists :supersede
-			      :if-does-not-exist :create)
+                              :if-exists :supersede
+                              :if-does-not-exist :create)
   (print *module-files*)
   (dolist (module-file *module-files*)
     (format modules-list "~A~%" module-file)))

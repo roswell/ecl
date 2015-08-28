@@ -27,9 +27,9 @@
     (CLOSURE
      (let ((var-loc (var-loc var)))
        (unless (typep var-loc 'fixnum)
-	 ;; first binding: assign location
-	 (setq var-loc (next-env))
-	 (setf (var-loc var) var-loc))
+         ;; first binding: assign location
+         (setq var-loc (next-env))
+         (setf (var-loc var) var-loc))
        (when (zerop var-loc) (wt-nl "env" *env-lvl* " = ECL_NIL;"))
        (wt-nl "CLV" var-loc " = env" *env-lvl* " = CONS(")
        (wt-coerce-loc :object loc)
@@ -38,9 +38,9 @@
     (LEXICAL
      (let ((var-loc (var-loc var)))
        (unless (consp var-loc)
-	 ;; first binding: assign location
-	 (setq var-loc (next-lex))
-	 (setf (var-loc var) var-loc))
+         ;; first binding: assign location
+         (setq var-loc (next-lex))
+         (setf (var-loc var) var-loc))
        (wt-nl) (wt-lex var-loc) (wt " = ")
        (wt-coerce-loc :object loc)
        (wt ";"))
@@ -49,47 +49,47 @@
      (bds-bind loc var))
     (t
      (cond ((not (eq (var-loc var) 'OBJECT))
-	    ;; already has location (e.g. optional in lambda list)
-	    ;; check they are not the same
-	    (unless (equal (var-loc var) loc)
-	      (wt-nl var " = ")
-	      (wt-coerce-loc (var-rep-type var) loc)
-	      (wt ";")))
-	   ((and (consp loc) (eql (car loc) 'LCL))
-	    ;; set location for lambda list requireds
-	    (setf (var-loc var) loc))
-	   (t
-	    (baboon)))
-	 )))
+            ;; already has location (e.g. optional in lambda list)
+            ;; check they are not the same
+            (unless (equal (var-loc var) loc)
+              (wt-nl var " = ")
+              (wt-coerce-loc (var-rep-type var) loc)
+              (wt ";")))
+           ((and (consp loc) (eql (car loc) 'LCL))
+            ;; set location for lambda list requireds
+            (setf (var-loc var) loc))
+           (t
+            (baboon)))
+         )))
 
 ;;; Used by let*, defmacro and lambda's &aux, &optional, &rest, &keyword
 (defun bind-init (form var)
   (let ((kind (var-kind var)))
     (if (member kind '(CLOSURE LEXICAL SPECIAL GLOBAL))
-	;; Binding these variables is complicated and involves lexical
-	;; environments, global environments, etc. If we use `(BIND var)
-	;; as destination, BIND might receive the wrong environment.
-	(let* ((*inline-blocks* 0)
-	       (*temp* *temp*)
-	       (locs (coerce-locs (inline-args (list form)))))
-	  (bind (first locs) var)
-	  (close-inline-blocks)
-	  ;; Notice that we do not need to update *UNWIND-EXIT*
-	  ;; because BIND does it for us.
-	  )
-	;; The simple case of a variable which is local to a function.
-	(let ((*destination* `(BIND ,var)))
-	  (c2expr* form)))))
+        ;; Binding these variables is complicated and involves lexical
+        ;; environments, global environments, etc. If we use `(BIND var)
+        ;; as destination, BIND might receive the wrong environment.
+        (let* ((*inline-blocks* 0)
+               (*temp* *temp*)
+               (locs (coerce-locs (inline-args (list form)))))
+          (bind (first locs) var)
+          (close-inline-blocks)
+          ;; Notice that we do not need to update *UNWIND-EXIT*
+          ;; because BIND does it for us.
+          )
+        ;; The simple case of a variable which is local to a function.
+        (let ((*destination* `(BIND ,var)))
+          (c2expr* form)))))
 
 (defun bds-bind (loc var)
   ;; Optimize the case (let ((*special-var* *special-var*)) ...)
   (cond ((and (var-p loc)
-	      (member (var-kind loc) '(global special))
-	      (eq (var-name loc) (var-name var)))
-	 (wt-nl "ecl_bds_push(cl_env_copy," (var-loc var) ");"))
-	(t
-	 (wt-nl "ecl_bds_bind(cl_env_copy," (var-loc var) ",")
-	 (wt-coerce-loc :object loc)
-	 (wt ");")))
+              (member (var-kind loc) '(global special))
+              (eq (var-name loc) (var-name var)))
+         (wt-nl "ecl_bds_push(cl_env_copy," (var-loc var) ");"))
+        (t
+         (wt-nl "ecl_bds_bind(cl_env_copy," (var-loc var) ",")
+         (wt-coerce-loc :object loc)
+         (wt ");")))
   (push 'BDS-BIND *unwind-exit*)
   (wt-comment (var-name var)))

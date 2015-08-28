@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter xml:id="ansi.packages">
+ <title>Packages</title>
+
+ <table xml:id="table.all-packages">
+  <title>ECL packages</title>
+  <tgroup cols="3">
+   <thead>
+    <row>
+     <entry>Name</entry>
+     <entry>Nickname</entry>
+     <entry>In module</entry>
+     <entry>Description</entry>
+    </row>
+   </thead>
+   <tbody>
+    <row>
+     <entry><package>COMMON-LISP</package></entry>
+     <entry><package>CL</package>, <package>LISP</package></entry>
+     <entry>&ECL; core</entry>
+     <entry>Main &CommonLisp; package.</entry>
+    </row>
+    <row>
+     <entry><package>CLOS</package></entry>
+     <entry><package>MOP</package></entry>
+     <entry>&ECL; core</entry>
+     <entry>Symbols from the &AMOP;.</entry>
+    </row>
+    <row>
+     <entry><package>EXT</package></entry>
+     <entry></entry>
+     <entry>&ECL; core</entry>
+     <entry>&ECL; extensions to the language &amp; library.</entry>
+    </row>
+    <row>
+     <entry><package>SYSTEM</package></entry>
+     <entry><package>SI</package>, <package>SYS</package></entry>
+     <entry>&ECL; core</entry>
+     <entry>Functions and variables internal to the implementation. Never to be used.</entry>
+    </row>
+    <row>
+      <entry><package>FFI</package></entry>
+      <entry><package></package></entry>
+      <entry><package>ECL core</package></entry>
+      <entry>Foreign function interface</entry>
+    </row>
+    <row>
+     <entry><package>CMP</package></entry>
+     <entry><package>C</package></entry>
+     <entry><package>CMP</package></entry>
+     <entry>The compiler</entry>
+    </row>
+    <row>
+     <entry><package>XLIB</package></entry>
+     <entry><package>CLX</package></entry>
+     <entry><package>XLIB</package></entry>
+     <entry>CLX library for X-Windows</entry>
+    </row>
+    <row>
+     <entry><package>SB-BSD-SOCKETS</package></entry>
+     <entry></entry>
+     <entry><package>SOCKETS</package></entry>
+     <entry>Sockets library compatible with <acronym>SBCL</acronym>'s</entry>
+    </row>
+    <row>
+     <entry><package>SB-RT</package></entry>
+     <entry><package>RT</package>, <package>REGRESSION-TEST</package></entry>
+     <entry><package>RT</package></entry>
+     <entry>Test units (customized for &ECL;)</entry>
+    </row>
+    <row>
+     <entry><package>ASDF</package></entry>
+     <entry></entry>
+     <entry><package>ASDF</package></entry>
+     <entry>System definition file with &ECL; customizations.</entry>
+    </row>
+   </tbody>
+  </tgroup>
+ </table>
+
+ <para>In <xref linkend="table.all-packages"/> we list all packages
+ available in &ECL;. The nicknames are aliases for a package. Thus,
+ <symbol>system:symbol</symbol> may be written as
+ <symbol>sys:symbol</symbol> or <symbol>si:symbol</symbol>. The module field
+ explains which library provides what package. For instance, the
+ <package>ASDF</package> is obtained when loading the
+ <package>ASDF</package> library with <code>(require 'asdf)</code>; and the
+ <package>XLIB</package> package when configuring and loading the
+ <package>CLX</package> library.</para>
+
+ <xi:include href="ref_c_packages.xml" xpointer="ansi.packages.c-dict" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+
+</chapter>
+</book>

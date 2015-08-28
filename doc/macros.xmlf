@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter  xml:id="Macros">
+<title>Macros</title>
+<para>A <firstterm>defmacro lambda-list</firstterm> is a lambda-list-like construct that is used as
+the third element in the <literal>defmacro</literal> form,</para>
+<screen>
+(defmacro <replaceable>name</replaceable> <replaceable>efmacro-lambda-list</replaceable> [<replaceable>declaration</replaceable> | <replaceable>doc-string</replaceable>] {<replaceable>form</replaceable>}*)
+</screen>
+<para>The description of defmacro lambda-lists in &Steele84; is quite
+ambiguous.  &ECL; employs the following syntax.</para>
+<para>The complete syntax of a defmacro lambda-list is:</para>
+<screen>
+( [&amp;whole <replaceable>var</replaceable>]
+[&amp;environment <replaceable>var</replaceable>]
+[<replaceable>pseudo-var</replaceable>]
+[&amp;optional {var | ( pseudo-var [initform [pseudo-var]] )}]
+{[{&amp;rest | &amp;body} pseudo-var]
+[&amp;key {var
+| ({var | (keyword pseudo-var)} [initform [pseudo-var]])}*
+[&amp;allow-other-keys]]
+[&amp;aux {var | (pseudo-var [initform])}*]
+| . var }
+)
+</screen>
+<para role="continues">where <replaceable>pseudo-var</replaceable> is either a symbol or a list of the following
+form:</para>
+<screen>
+( {pseudo-var}*
+[&amp;optional {var | (pseudo-var [initform [pseudo-var]])}*]
+{[{&amp;rest | &amp;body} pseudo-var]
+[&amp;key {var | ({var | (keyword pseudo-var)}
+[initform [pseudo-var]])}*
+[&amp;allow-other-keys]]
+[&amp;aux {var | (pseudo-var [initform])}]
+| . var }
+)
+</screen>
+<para>The defmacro lambda-list keyword <literal>&amp;whole</literal> may appear only at the
+top-level, first in the defmacro lambda-list.  It is not allowed within
+<replaceable>pseudo-var</replaceable>.  Use of the <literal>&amp;whole</literal> keyword does not affect the
+processing of the rest of the defmacro lambda-list:</para>
+<programlisting>
+(defmacro foo (&amp;whole w x y) ...)
+</programlisting>
+<para>and</para>
+<programlisting>
+(defmacro foo (x y) ...)
+</programlisting>
+<para role="continues">both bind the variables <literal>x</literal> and <literal>y</literal> to the second and the
+third elements, respectively, of macro forms of <literal>foo</literal>.</para>
+<para>The defmacro lambda-list keyword <literal>&amp;environment</literal> may appear only at the
+top-level, first in the defmacro lambda-list if <literal>&amp;whole</literal> is not supplied,
+or immediately after the variable that follows <literal>&amp;whole</literal>, if <literal>&amp;whole</literal>
+is supplied.  <literal>&amp;environment</literal> is not allowed within <replaceable>pseudo-var</replaceable>.  Like
+<literal>&amp;whole</literal>, use of <literal>&amp;environment</literal> does not affect the processing of the
+rest of the defmacro lambda-list.  If an <literal>&amp;environment</literal> parameter is
+supplied and if this parameter is not used at all, then the &ECL; compiler
+will issue a warning.  To suppress the warning, just remove the parameter from
+the defmacro lambda-list, or add an <literal>ignore</literal> declaration.</para>
+<para>The defmacro lambda-list keyword <literal>&amp;body</literal> is completely equivalent to the
+&amp;rest keyword.  &ECL; takes no special action for <literal>&amp;body</literal> parameters.</para>
+<para>Although useless, &ECL; allows supplied-p parameters to be destructured.
+This is useless because supplied-p parameters can never be bound to a non-empty
+list.  Our intention is to stick to the specification in the
+&Steele84; as far as possible, even if it is silly to do so.</para>
+<para>Like for ordinary lambda-lists, the interpreter detects invalid arguments to
+macro expansion functions.  When a parameter is destructured, the structure of
+the corresponding argument is also checked.  Such runtime argument checking may
+or may not be embedded in compiled code, depending on the environment when the
+code was generated.  If the code was generated while the <literal>safety</literal> optimize
+level is zero (that is, while the value of <literal>(proclamation '(optimize
+(safety 0)))</literal> is <replaceable>T</replaceable>), then the generated code does not perform argument
+checking at all.  Otherwise, the compiled code does check the validity of
+arguments.</para>
+</chapter>
+<!-- Keep this comment at the end of the file
+  Local variables:
+  sgml-parent-document: "ecl.xml"
+  sgml-indent-step: 1
+  nxml-child-indent: 1
+  nxml-outline-child-indent: 1
+  fill-column: 79
+  End:
+--></book>

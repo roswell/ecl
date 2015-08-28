@@ -1,0 +1,33 @@
+Instructions to edit/build this book
+====================================
+
+This is the recommended way to edit this manual. It is the one I found
+most convenient both under Linux and OS X.
+
+* Install the xmlto package. You can do it in almost any Linux machine
+  and also under OS X using the Fink packages.
+
+* Install Emacs (Linux) or Aquamacs (OS X).
+
+* Make sure you have the nxml-mode package. This is available in some
+  Linux distributions and comes for free with Aquamacs.
+
+* In the nxml-mode you should replace the Docbook schemas, which go
+  only up to version 4.2. These are the steps to do so:
+
+  - Go to http://www.docbook.org/schemas/4x.html
+
+  - Download the RELAX NG schema. It will suffice with docbook-rng-4.4.zip
+
+  - Go to the place where nxml stores its schema files. In Debian/Ubuntu
+    it is /usr/share/emacs/site-lisp/nxml-mode/schema, in Aquamacs it is
+    in /Applications/Aquamacs.app/Content/Resources/site-lisp/nxml-mode/schema.
+
+  - Make a backup copy of these schemas.
+
+  - Unzip the previous package directly on top of the directory mentioned before.
+
+After these steps, you should be able to edit the manual. To build it,
+ensure that the "xmlto" program is in some of the directories listed
+in the PATH environment variable and type "make" from the command
+line. This will build the HTML version.

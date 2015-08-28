@@ -20,18 +20,18 @@
 #+(or)
 (defmacro make-c1form-alone (name &rest args)
   (let ((info-args '())
-	(form-args '()))
+        (form-args '()))
     (do ((l args (cdr l)))
-	((endp l))
+        ((endp l))
       (let ((key (first l)))
-	(cond ((not (keywordp key))
-	       (baboon))
-	      ((eq key ':args)
-	       (setf form-args (rest l))
-	       (return))
-	      (t
-	       (setf info-args (list* key (second l) info-args)
-		     l (cdr l))))))
+        (cond ((not (keywordp key))
+               (baboon))
+              ((eq key ':args)
+               (setf form-args (rest l))
+               (return))
+              (t
+               (setf info-args (list* key (second l) info-args)
+                     l (cdr l))))))
     `(do-make-c1form :name ,name :args (list ,@form-args)
                      :form *current-form*
                      :file *compile-file-truename*
@@ -40,18 +40,18 @@
 
 (defun make-c1form-alone (name &rest args)
   (let ((info-args '())
-	(form-args '()))
+        (form-args '()))
     (do ((l args (cdr l)))
-	((endp l))
+        ((endp l))
       (let ((key (first l)))
-	(cond ((not (keywordp key))
-	       (baboon))
-	      ((eq key ':args)
-	       (setf form-args (rest l))
-	       (return))
-	      (t
-	       (setf info-args (list* key (second l) info-args)
-		     l (cdr l))))))
+        (cond ((not (keywordp key))
+               (baboon))
+              ((eq key ':args)
+               (setf form-args (rest l))
+               (return))
+              (t
+               (setf info-args (list* key (second l) info-args)
+                     l (cdr l))))))
     (apply #'do-make-c1form :name name :args form-args
            :form *current-form*
            :file *compile-file-truename*

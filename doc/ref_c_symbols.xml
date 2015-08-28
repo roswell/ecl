@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter>
+<title>Symbols and compilation</title>
+<section xml:id="ansi.symbols.c-dict">
+<title>C Reference</title>
+<toc/>
+  <refentry>
+    <refnamediv>
+      <refname><function>ecl_make_keyword</function></refname>
+      <refpurpose>Find a lisp keyword</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+      <title>Function</title>
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_object <function>ecl_make_keyword</function></funcdef>
+	  <paramdef><type>char *</type> <parameter>name</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+    </refsynopsisdiv>
+
+    <refsect1>
+      <title>Description</title>
+
+      <para>Many Lisp functions take keyword arguments. When invoking a function with keyword arguments we need keywords, which are a kind of symbols that live in the <literal>KEYWORD</literal> package. This function does the task of finding or creating those keywords from C strings.</para>
+      <itemizedlist>
+	<listitem><para>It is usually safe to store the resulting pointer, because keywords are always referenced by their package and will not be garbage collected (unless of course, you decide to delete it).</para></listitem>
+	<listitem><para>Remember that the case of the string is significant. <code>ecl_make_keyword("TO")</code> with return <literal>:TO</literal>, while <code>ecl_make_keyword("to")</code> returns a completely different keywod, <literal>:|to|</literal>. In short, you usually want to use uppercase.</para></listitem>
+      </itemizedlist>
+    </refsect1>
+
+    <refsect1>
+      <title>Example</title>
+      <para>The following example converts a section of a string to uppercase characters:</para>
+<programlisting>
+cl_object start = ecl_make_keyword("START");
+cl_object end = ecl_make_keyword("END");
+...
+sup = cl_string_upcase(4, s, start, ecl_make_fixnum(2),
+                       end, ecl_make_fixnum(6));
+...
+</programlisting>
+    </refsect1>
+  </refentry>
+
+  <refentry>
+    <refnamediv>
+      <refname><function>ecl_make_symbol</function></refname>
+      <refpurpose>Find a lisp symbol</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+      <title>Function</title>
+      <funcsynopsis>
+	<funcprototype>
+	  <?dbhtml funcsynopsis-style='ansi'?>
+	  <funcdef>cl_object <function>ecl_make_symbol</function></funcdef>
+	  <paramdef><type>const char *</type> <parameter>name</parameter></paramdef>
+	  <paramdef><type>const char *</type> <parameter>package_name</parameter></paramdef>
+	</funcprototype>
+      </funcsynopsis>
+    </refsynopsisdiv>
+
+    <refsect1>
+      <title>Description</title>
+
+      <para>This function finds or create a symbol in the given package. First of all, it tries to find the package named by <replaceable>package_name</replaceable>. If it does not exist, an error is signaled. Then, a symbol with the suppled <replaceable>name</replaceable> is searched in the given package. If the symbol exists, it is returned. If it does not exist, using <function>INTERN</function>.</para>
+    </refsect1>
+  </refentry>
+
+  <refentry>
+    <refnamediv>
+      <refname>ANSI Dictionary</refname>
+      <refpurpose>&ANSI-C-Dict;</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+<simplelist columns="2" type="horiz">
+<member>Lisp symbol</member>
+<member>C function</member>
+
+<member><ulink url="&clhs;f_boundp.htm"><symbol>boundp</symbol></ulink></member>
+<member><code>cl_object cl_boundp(cl_object symbolp)</code></member>
+
+<member><ulink url="&clhs;f_cp_sym.htm"><symbol>copy-symbol</symbol></ulink></member>
+<member><code>cl_object cl_copy_symbol(cl_narg narg, cl_object symbol, ...)</code></member>
+
+<member><ulink url="&clhs;f_get.htm"><symbol>get</symbol></ulink></member>
+<member><code>cl_object cl_get(cl_object symbol, cl_object indicator)</code></member>
+
+<member><ulink url="&clhs;f_gensym.htm"><symbol>gensym</symbol></ulink></member>
+<member><code>cl_object cl_gensym(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_gentem.htm"><symbol>gentemp</symbol></ulink></member>
+<member><code>cl_object cl_gentemp(cl_narg narg, ...)</code></member>
+
+<member><ulink url="&clhs;f_kwdp.htm"><symbol>keywordp</symbol></ulink></member>
+<member><code>cl_object cl_keywordp(cl_object object)</code></member>
+
+<member><ulink url="&clhs;f_mk_sym.htm"><symbol>make-symbol</symbol></ulink></member>
+<member><code>cl_object cl_make_symbol(cl_object name)</code></member>
+
+<member><ulink url="&clhs;f_makunb.htm"><symbol>makunbound</symbol></ulink></member>
+<member><code>cl_object cl_makunbound(cl_object makunbound)</code></member>
+
+<member><ulink url="&clhs;f_rempro.htm"><symbol>remprop</symbol></ulink></member>
+<member><code>cl_object cl_remprop(cl_object symbol, cl_object indicator)</code></member>
+
+<member><ulink url="&clhs;f_set.htm"><symbol>set</symbol></ulink></member>
+<member><code>cl_object cl_set(cl_object symbol, cl_object value)</code></member>
+
+<member><ulink url="&clhs;f_symbol.htm"><symbol>symbolp</symbol></ulink></member>
+<member><code>cl_object cl_symbolp(cl_object object)</code></member>
+
+<member><ulink url="&clhs;f_symb_1.htm"><symbol>symbol-function</symbol></ulink></member>
+<member><code>cl_object cl_symbol_function(cl_object symbol)</code></member>
+
+<member><ulink url="&clhs;f_symb_2.htm"><symbol>symbol-name</symbol></ulink></member>
+<member><code>cl_object cl_symbol_name(cl_object symbol)</code></member>
+
+<member><ulink url="&clhs;f_symb_3.htm"><symbol>symbol-package</symbol></ulink></member>
+<member><code>cl_object cl_symbol_package(cl_object symbol)</code></member>
+
+<member><ulink url="&clhs;f_symb_4.htm"><symbol>symbol-plist</symbol></ulink></member>
+<member><code>cl_object cl_symbol_plist(cl_object symbol)</code></member>
+
+<member><ulink url="&clhs;f_symb_5.htm"><symbol>symbol-value</symbol></ulink></member>
+<member><code>cl_object cl_symbol_value(cl_object symbol)</code></member>
+
+</simplelist>
+    </refsynopsisdiv>
+
+    <refsect1>
+      <title>Description</title>
+      <para></para>
+    </refsect1>
+  </refentry>
+
+</section>
+</chapter>
+</book>

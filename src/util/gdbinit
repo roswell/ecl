@@ -13,6 +13,8 @@ break FEwrong_type_argument
 break FEinvalid_function
 set confirm off
 handle SIGBUS nostop
+handle SIGPWR nostop pass noprint
+handle SIGXCPU nostop pass noprint
 handle EXC_BAD_ACCESS nostop pass noprint
 
 

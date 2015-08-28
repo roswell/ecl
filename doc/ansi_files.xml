@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter xml:id="ansi.files">
+ <title>Files</title>
+
+ <section xml:id="ansi.files.dict">
+  <title>Dictionary</title>
+
+  <section xml:id="ansi.files.directory">
+   <title><function>DIRECTORY</function></title>
+
+   <para>This function does not have any additional arguments other than the
+   ones described in &ANSI;. To list files and directories, it follows the
+   rules for matching pathnames described in <xref
+   linkend="ansi.pathnames.wild"/>. In short, you have the following
+   practical examples:</para>
+   <table>
+    <title>Examples of using <function>DIRECTORY</function></title>
+    <tgroup cols="2">
+     <thead>
+      <row><entry>Argument</entry><entry>Meaning</entry></row>
+     </thead>
+     <tbody>
+      <row>
+       <entry><literal>"/home/jlr/*.*"</literal></entry>
+       <entry>List all files in directory <filename>/home/jlr/</filename> Note
+       that it lists only files, not directories!</entry>
+      </row>
+      <row>
+       <entry><literal>"/home/jlr/*"</literal></entry>
+       <entry>Same as before, but only files without type.</entry>
+      </row>
+      <row>
+       <entry><literal>"/home/jlr/*/"</literal></entry>
+       <entry>List all directories contained in
+       <filename>/home/jlr/</filename>. Nested directories are not
+       navigated.</entry>
+      </row>
+      <row>
+       <entry><literal>"/home/jlr/**/*.*"</literal></entry>
+       <entry>List all files in all directories contained in
+       <filename>/home/jlr/</filename>, recursively. Nested directories are
+       navigated.</entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </table>
+  </section>
+ </section>
+
+ <xi:include href="ref_c_files.xml" xpointer="ansi.files.c-dict" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+
+</chapter>
+</book>

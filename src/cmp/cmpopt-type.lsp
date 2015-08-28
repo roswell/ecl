@@ -23,19 +23,19 @@
            (declare (:read-only ,%limit))
            (ext:compiler-typecase ,%limit
              (fixnum
-	      ;; %LIMIT will be type checked by the compiler to be
-	      ;; a fixnum. We may thus just increase the counter.
-	      (let ((,variable 0))
-		(declare (fixnum ,variable)
-			 ,@declarations)
-		(si::while (< ,variable ,%limit)
-                  ,@body
-		  (reckless (setq ,variable (1+ ,variable))))
-		,@output))
-             (t
-	      (let ((,variable 0))
-		(declare ,@declarations)
+              ;; %LIMIT will be type checked by the compiler to be
+              ;; a fixnum. We may thus just increase the counter.
+              (let ((,variable 0))
+                (declare (fixnum ,variable)
+                         ,@declarations)
                 (si::while (< ,variable ,%limit)
                   ,@body
-		  (setq ,variable (1+ ,variable)))
-		,@output))))))))
+                  (reckless (setq ,variable (1+ ,variable))))
+                ,@output))
+             (t
+              (let ((,variable 0))
+                (declare ,@declarations)
+                (si::while (< ,variable ,%limit)
+                  ,@body
+                  (setq ,variable (1+ ,variable)))
+                ,@output))))))))

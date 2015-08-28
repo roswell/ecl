@@ -1,0 +1,338 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter xml:id="ansi.streams">
+ <title>Streams</title>
+
+ <section xml:id="ansi.streams.ansi">
+ <title>ANSI Streams</title>
+
+ <section xml:id="ansi.streams.types">
+  <title>Supported types</title>
+
+  <para>&ECL; implements all stream types described in &ANSI;. Additionally,
+  when configured with option <option>--enable-clos-streams</option>, &ECL;
+  includes a version of Gray streams where any object that implements the
+  appropiate methods (<function>stream-input-p</function>,
+  <function>stream-read-char</function>, etc) is a valid argument for the
+  functions that expect streams, such as <function>read</function>,
+  <function>print</function>, etc.</para>
+
+ </section>
+
+ <section xml:id="ansi.streams.io">
+  <title>Element types</title>
+
+  <para>&ECL; distinguishes between two kinds of streams: character streams and byte streams. <emphasis>Character streams</emphasis> only accept and produce characters, written or read one by one, with <function>write-char</function> or <function>read-char</function>, or in chunks, with <function>write-sequence</function> or any of the Lisp printer functions. Character operations are conditioned by the external format, as described in <xref linkend="ansi.streams.formats"/></para>
+
+  <para>ANSI Common Lisp also supports binary streams. Here input and output is performed in chunks of bits. Binary streams are created with the function <function>open</function> passing as argument a subtype of <type>integer</type> and the implementation is free to round up that integer type to the closest size it supports. In particular &ECL; rounds up the size to a multiple of a byte. For example, the form <code>(open "foo.bin" :direction :output :element-type '(unsigned-byte 13))</code>, will open the file <filename>foo.bin</filename> for writing, using 16-bit words as the element type.</para>
+ </section>
+
+ <section xml:id="ansi.streams.formats">
+   <title>External formats</title>
+
+   <para>An <emphasis>external format</emphasis> is an encoding for characters that maps character codes to a sequence of bytes, in a one-to-one or one-to-many fashion. External formats are also known as "character encodings" in the programming world and are an essential ingredient to be able to read and write text in different languages and alphabets.</para>
+
+   <para>&ECL; has one of the most complete supports for <emphasis>external formats</emphasis>, covering all of the usual codepages from the Windows and Unix world, up to the more recent <acronym>UTF-8</acronym>, <acronym>UCS-2</acronym> and <acronym>UCS-4</acronym> formats, all of them with big and small endian variants, and considering different encodings for the newline character.</para>
+
+   <para>However, the set of supported external formats depends on the size of the space of character codes. When &ECL; is built with Unicode support (the default option), it can represent all known characters from all known codepages, and thus all external formats are supported. However, when &ECL; is built with the restricted character set, it can only use one codepage (the one provided by the C library), with a few variants for the representation of end-of-line characters.</para>
+
+   <para>In &ECL;, an external format designator is defined recursively as either a symbol or a list of symbols. The grammar is as follows
+<screen>external-format-designator := 
+   symbol |
+   ( {symbol}+ )
+</screen>
+and the table of known symbols is shown below. Note how some symbols (<code>:cr</code>, <code>:little-endian</code>, etc) just modify other external formats.</para>
+
+<table xml:id="table.external-formats">
+  <title>Stream external formats</title>
+  <tgroup cols="3">
+    <thead>
+      <row>
+	<entry>Symbols</entry>
+	<entry>Codepage or encoding</entry>
+	<entry>Unicode required</entry>
+      </row>
+    </thead>
+    <tbody>
+      <row>
+	<entry><symbol>:cr</symbol></entry>
+	<entry><code>#\Newline</code> is Carriage Return</entry>
+	<entry>No</entry>
+      </row>
+
+      <row>
+	<entry><symbol>:crlf</symbol></entry>
+	<entry><code>#\Newline</code> is Carriage Return followed by Linefeed</entry>
+	<entry>No</entry>
+      </row>
+
+      <row>
+	<entry><symbol>:lf</symbol></entry>
+	<entry><code>#\Newline</code> is Linefeed</entry>
+	<entry>No</entry>
+      </row>
+
+      <row>
+	<entry><symbol>:little-endian</symbol></entry>
+	<entry>Modify <acronym>UCS</acronym> to use little endian encoding.</entry>
+	<entry>No</entry>
+      </row>
+
+      <row>
+	<entry><symbol>:big-endian</symbol></entry>
+	<entry>Modify <acronym>UCS</acronym> to use big endian encoding.</entry>
+	<entry>No</entry>
+      </row>
+
+      <row>
+	<entry><symbol>:utf-8</symbol> <symbol>ext:utf8</symbol></entry>
+	<entry>Unicode <acronym>UTF-8</acronym></entry>
+	<entry>Yes</entry>
+      </row>
+      <row>
+	<entry><symbol>:ucs-2</symbol> <symbol>ext:ucs2</symbol> <symbol>ext:utf-16</symbol> <symbol>ext:utf16</symbol>
+<symbol>ext:unicode</symbol></entry>
+	<entry><acronym>UCS-2</acronym> encoding with <acronym>BOM</acronym>.</entry>
+	<entry>Yes</entry>
+      </row>
+      <row>
+	<entry><symbol>:ucs-2le</symbol> <symbol>ext:ucs2le</symbol> <symbol>ext:utf-16le</symbol></entry>
+	<entry><acronym>UCS-2</acronym> with big-endian encoding</entry>
+	<entry>Yes</entry>
+      </row>
+      <row>
+	<entry><symbol>:ucs-2be</symbol> <symbol>ext:ucs2be</symbol> <symbol>ext:utf-16be</symbol></entry>
+	<entry><acronym>UCS-2</acronym> with big-endian encoding</entry>
+	<entry>Yes</entry>
+      </row>
+      <row>
+	<entry><symbol>:ucs-4</symbol> <symbol>ext:ucs4</symbol> <symbol>ext:utf-32</symbol> <symbol>ext:utf32</symbol></entry>
+	<entry><acronym>UCS-4</acronym> encoding with <acronym>BOM</acronym>.</entry>
+	<entry>Yes</entry>
+      </row>
+      <row>
+	<entry><symbol>:ucs-4le</symbol> <symbol>ext:ucs4le</symbol> <symbol>ext:utf-32le</symbol></entry>
+	<entry><acronym>UCS-4</acronym> with big-endian encoding</entry>
+	<entry>Yes</entry>
+      </row>
+      <row>
+	<entry><symbol>:ucs-4be</symbol> <symbol>ext:ucs4be</symbol> <symbol>ext:utf-32be</symbol></entry>
+	<entry><acronym>UCS-4</acronym> with big-endian encoding</entry>
+	<entry>Yes</entry>
+      </row>
+      <row>
+	<entry><symbol>ext:iso-8859-1</symbol> <symbol>ext:iso8859-1</symbol> <symbol>ext:latin-1</symbol> <symbol>ext:cp819</symbol>  <symbol>ext:ibm819</symbol></entry>
+	<entry>Latin-1 encoding</entry>
+	<entry>Yes</entry>
+      </row>
+      <row>
+	<entry><symbol>ext:iso-8859-2</symbol> <symbol>ext:iso8859-2</symbol> <symbol>ext:latin-2</symbol> <symbol>ext:latin2</symbol></entry>
+	<entry>Latin-2 encoding</entry>
+	<entry>Yes</entry>
+      </row>
+      <row>
+	<entry><symbol>ext:iso-8859-3</symbol> <symbol>ext:iso8859-3</symbol> <symbol>ext:latin-3</symbol> <symbol>ext:latin3</symbol></entry>
+	<entry>Latin-3 encoding</entry>
+	<entry>Yes</entry>
+      </row>
+      <row>
+	<entry><symbol>ext:iso-8859-4</symbol> <symbol>ext:iso8859-4</symbol> <symbol>ext:latin-4</symbol> <symbol>ext:latin4</symbol></entry>
+	<entry>Latin-4 encoding</entry>
+	<entry>Yes</entry>
+      </row>
+      <row>
+	<entry><symbol>ext:iso-8859-5</symbol> <symbol>ext:cyrillic</symbol></entry>
+	<entry>Latin-5 encoding</entry>
+	<entry>Yes</entry>
+      </row>
+      <row>
+	<entry><symbol>ext:iso-8859-6</symbol> <symbol>ext:arabic</symbol> <symbol>ext:asmo-708</symbol> <symbol>ext:ecma-114</symbol></entry>
+	<entry>Latin-6 encoding</entry>
+	<entry>Yes</entry>
+      </row>
+      <row>
+	<entry><symbol>ext:iso-8859-7</symbol> <symbol>ext:greek8</symbol> <symbol>ext:greek</symbol> <symbol>ext:ecma-118</symbol></entry>
+	<entry>Greek encoding</entry>
+	<entry>Yes</entry>
+      </row>
+      <row>
+	<entry><symbol>ext:iso-8859-8</symbol> <symbol>ext:hebrew</symbol></entry>
+	<entry>Hebrew encoding</entry>
+	<entry>Yes</entry>
+      </row>
+      <row>
+	<entry><symbol>ext:iso-8859-9</symbol> <symbol>ext:latin-5</symbol> <symbol>ext:latin5</symbol></entry>
+	<entry>Latin-5 encoding</entry>
+	<entry>Yes</entry>
+      </row>
+      <row>
+	<entry><symbol>ext:iso-8859-10</symbol> <symbol>ext:iso8859-10</symbol> <symbol>ext:latin-6</symbol> <symbol>ext:latin6</symbol></entry>
+	<entry>Latin-6 encoding</entry>
+	<entry>Yes</entry>
+      </row>
+      <row>
+	<entry><symbol>ext:iso-8859-13</symbol> <symbol>ext:iso8859-13</symbol> <symbol>ext:latin-7</symbol> <symbol>ext:latin7</symbol></entry>
+	<entry>Latin-7 encoding</entry>
+	<entry>Yes</entry>
+      </row>
+      <row>
+	<entry><symbol>ext:iso-8859-14</symbol> <symbol>ext:iso8859-14</symbol> <symbol>ext:latin-8</symbol> <symbol>ext:latin8</symbol></entry>
+	<entry>Latin-8 encoding</entry>
+	<entry>Yes</entry>
+      </row>
+      <row>
+	<entry><symbol>ext:iso-8859-15</symbol> <symbol>ext:iso8859-15</symbol> <symbol>ext:latin-9</symbol> <symbol>ext:latin9</symbol></entry>
+	<entry>Latin-7 encoding</entry>
+	<entry>Yes</entry>
+      </row>
+
+      <row>
+	<entry><symbol>ext:dos-cp437</symbol> <symbol>ext:ibm-437</symbol></entry>
+	<entry>IBM CP 437</entry>
+	<entry>Yes</entry>
+      </row>
+      <row>
+	<entry><symbol>ext:dos-cp850</symbol> <symbol>ext:ibm-850</symbol> <symbol>ext:cp850</symbol></entry>
+	<entry>Windows CP 850</entry>
+	<entry>Yes</entry>
+      </row>
+      <row>
+	<entry><symbol>ext:dos-cp852</symbol> <symbol>ext:ibm-852</symbol></entry>
+	<entry>IBM CP 852</entry>
+	<entry>Yes</entry>
+      </row>
+      <row>
+	<entry><symbol>ext:dos-cp855</symbol> <symbol>ext:ibm-855</symbol></entry>
+	<entry>IBM CP 855</entry>
+	<entry>Yes</entry>
+      </row>
+      <row>
+	<entry><symbol>ext:dos-cp860</symbol> <symbol>ext:ibm-860</symbol></entry>
+	<entry>IBM CP 860</entry>
+	<entry>Yes</entry>
+      </row>
+      <row>
+	<entry><symbol>ext:dos-cp861</symbol> <symbol>ext:ibm-861</symbol></entry>
+	<entry>IBM CP 861</entry>
+	<entry>Yes</entry>
+      </row>
+      <row>
+	<entry><symbol>ext:dos-cp862</symbol> <symbol>ext:ibm-862</symbol> <symbol>ext:cp862</symbol></entry>
+	<entry>Windows CP 862</entry>
+	<entry>Yes</entry>
+      </row>
+      <row>
+	<entry><symbol>ext:dos-cp863</symbol> <symbol>ext:ibm-863</symbol></entry>
+	<entry>IBM CP 863</entry>
+	<entry>Yes</entry>
+      </row>
+      <row>
+	<entry><symbol>ext:dos-cp864</symbol> <symbol>ext:ibm-864</symbol></entry>
+	<entry>IBM CP 864</entry>
+	<entry>Yes</entry>
+      </row>
+      <row>
+	<entry><symbol>ext:dos-cp865</symbol> <symbol>ext:ibm-865</symbol></entry>
+	<entry>IBM CP 865</entry>
+	<entry>Yes</entry>
+      </row>
+      <row>
+	<entry><symbol>ext:dos-cp866</symbol> <symbol>ext:ibm-866</symbol> <symbol>ext:cp866</symbol></entry>
+	<entry>Windows CP 866</entry>
+	<entry>Yes</entry>
+      </row>
+      <row>
+	<entry><symbol>ext:dos-cp869</symbol> <symbol>ext:ibm-869</symbol></entry>
+	<entry>IBM CP 869</entry>
+	<entry>Yes</entry>
+      </row>
+
+      <row>
+	<entry><symbol>ext:windows-cp932</symbol> <symbol>ext:windows-932</symbol> <symbol>ext:cp932</symbol></entry>
+	<entry>Windows CP 932</entry>
+	<entry>Yes</entry>
+      </row>
+      <row>
+	<entry><symbol>ext:windows-cp936</symbol> <symbol>ext:windows-936</symbol> <symbol>ext:cp936</symbol></entry>
+	<entry>Windows CP 936</entry>
+	<entry>Yes</entry>
+      </row>
+      <row>
+	<entry><symbol>ext:windows-cp949</symbol> <symbol>ext:windows-949</symbol> <symbol>ext:cp949</symbol></entry>
+	<entry>Windows CP 949</entry>
+	<entry>Yes</entry>
+      </row>
+      <row>
+	<entry><symbol>ext:windows-cp950</symbol> <symbol>ext:windows-950</symbol> <symbol>ext:cp950</symbol></entry>
+	<entry>Windows CP 950</entry>
+	<entry>Yes</entry>
+      </row>
+
+      <row>
+	<entry><symbol>ext:windows-cp1250</symbol> <symbol>ext:windows-1250</symbol> <symbol>ext:ms-ee</symbol></entry>
+	<entry>Windows CP 1250</entry>
+	<entry>Yes</entry>
+      </row>
+
+      <row>
+	<entry><symbol>ext:windows-cp1251</symbol> <symbol>ext:windows-1251</symbol> <symbol>ext:ms-cyrl</symbol></entry>
+	<entry>Windows CP 1251</entry>
+	<entry>Yes</entry>
+      </row>
+
+      <row>
+	<entry><symbol>ext:windows-cp1252</symbol> <symbol>ext:windows-1252</symbol> <symbol>ext:ms-ansi</symbol></entry>
+	<entry>Windows CP 1252</entry>
+	<entry>Yes</entry>
+      </row>
+
+      <row>
+	<entry><symbol>ext:windows-cp1253</symbol> <symbol>ext:windows-1253</symbol> <symbol>ext:ms-greek</symbol></entry>
+	<entry>Windows CP 1253</entry>
+	<entry>Yes</entry>
+      </row>
+
+      <row>
+	<entry><symbol>ext:windows-cp1254</symbol> <symbol>ext:windows-1254</symbol> <symbol>ext:ms-turk</symbol></entry>
+	<entry>Windows CP 1254</entry>
+	<entry>Yes</entry>
+      </row>
+
+      <row>
+	<entry><symbol>ext:windows-cp1255</symbol> <symbol>ext:windows-1255</symbol> <symbol>ext:ms-hebr</symbol></entry>
+	<entry>Windows CP 1255</entry>
+	<entry>Yes</entry>
+      </row>
+
+      <row>
+	<entry><symbol>ext:windows-cp1256</symbol> <symbol>ext:windows-1256</symbol> <symbol>ext:ms-arab</symbol></entry>
+	<entry>Windows CP 1256</entry>
+	<entry>Yes</entry>
+      </row>
+
+      <row>
+	<entry><symbol>ext:windows-cp1257</symbol> <symbol>ext:windows-1257</symbol> <symbol>ext:winbaltrim</symbol></entry>
+	<entry>Windows CP 1257</entry>
+	<entry>Yes</entry>
+      </row>
+
+      <row>
+	<entry><symbol>ext:windows-cp1258</symbol> <symbol>ext:windows-1258</symbol></entry>
+	<entry>Windows CP 1258</entry>
+	<entry>Yes</entry>
+      </row>
+    </tbody>
+  </tgroup>
+</table>
+
+ </section>
+ </section>
+
+ <xi:include href="ref_c_streams.xml" xpointer="ansi.streams.c-dict" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+
+</chapter>
+</book>

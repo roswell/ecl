@@ -1,4 +1,4 @@
-;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: SYSTEM -*-
+;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: SYSTEM; indent-tabs-mode: nil -*-
 ;;;;
 ;;;;  Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya.
 ;;;;  Copyright (c) 1990, Giuseppe Attardi.
@@ -34,28 +34,28 @@
 (defun error-sequence-type (type)
   (declare (si::c-local))
   (error 'simple-type-error
-	 :datum (vector) ;; Any sequence object will do, because it does not belong to TYPE
-	 :expected-type type
-	 :format-control "~S does not specify a sequence type"
-	 :format-arguments (list type)))
+         :datum (vector) ;; Any sequence object will do, because it does not belong to TYPE
+         :expected-type type
+         :format-control "~S does not specify a sequence type"
+         :format-arguments (list type)))
 
 (defun error-sequence-length (object type size)
   (declare (si::c-local))
   (error 'simple-type-error
-	 :format-control
-	 "Cannot create a sequence of size ~S which matches type ~S."
-	 :format-arguments (list size type)
-	 :expected-type type
-	 :datum object))
+         :format-control
+         "Cannot create a sequence of size ~S which matches type ~S."
+         :format-arguments (list size type)
+         :expected-type type
+         :datum object))
 
 (defun closest-sequence-type (type)
   (let (elt-type length name args)
     (cond ((consp type)
-	   (setq name (first type) args (cdr type)))
-	  ((si::instancep type)
-	   (setf name (class-name (truly-the class type)) args nil))
-	  (t
-	   (setq name type args nil)))
+           (setq name (first type) args (cdr type)))
+          ((si::instancep type)
+           (setf name (class-name (truly-the class type)) args nil))
+          (t
+           (setq name type args nil)))
     (case name
       ((LIST)
        ;; This is the only descriptor that does not match a real
@@ -63,33 +63,35 @@
        (setq elt-type 'LIST length '*))
       ((VECTOR)
        (setq elt-type (if (endp args) 'T (first args))
-	     length (if (endp (rest args)) '* (second args))))
+             length (if (endp (rest args)) '* (second args))))
       ((SIMPLE-VECTOR)
        (setq elt-type 'T
-	     length (if (endp args) '* (first args))))
+             length (if (endp args) '* (first args))))
       #-unicode
       ((STRING SIMPLE-STRING)
        (setq elt-type 'BASE-CHAR
-	     length (if (endp args) '* (first args))))
+             length (if (endp args) '* (first args))))
       #+unicode
       ((BASE-STRING SIMPLE-BASE-STRING)
        (setq elt-type 'BASE-CHAR
-	     length (if (endp args) '* (first args))))
+             length (if (endp args) '* (first args))))
       #+unicode
       ((STRING SIMPLE-STRING)
        (setq elt-type 'CHARACTER
-	     length (if (endp args) '* (first args))))
+             length (if (endp args) '* (first args))))
       ((BIT-VECTOR SIMPLE-BIT-VECTOR)
        (setq elt-type 'BIT
-	     length (if (endp args) '* (first args))))
+             length (if (endp args) '* (first args))))
       ((ARRAY SIMPLE-ARRAY)
-       (when (or (endp (rest args))
-		 (atom (setq length (second args)))
-		 (endp length)
-		 (not (endp (rest length))))
-	 (error-sequence-type type))
-       (setq elt-type (upgraded-array-element-type (first args))
-	     length (first (second args))))
+       (let ((dimension-spec (second args)))
+         (cond
+           ((eql dimension-spec 1)
+            (setf length '*))
+           ((and (consp dimension-spec)
+                 (null (cdr dimension-spec)))
+            (setf length (car dimension-spec)))
+           (T (error-sequence-type type))))
+       (setq elt-type (upgraded-array-element-type (first args))))
       (t
        ;; We arrive here when the sequence type is not easy to parse.
        ;; We give up trying to guess the length of the sequence.
@@ -97,25 +99,25 @@
        ;; type is *. Instead we just compare with some specialized
        ;; types and otherwise fail.
        (dolist (i '((NIL . NIL)
-		    (LIST . LIST)
+                    (LIST . LIST)
                     (STRING . CHARACTER)
                     . #.(mapcar #'(lambda (i) `((VECTOR ,i) . ,i))
                          +upgraded-array-element-types+))
-		(if (subtypep type 'vector)
-		    ;; Does this have to be a type-error?
-		    ;; 17.3 for MAKE-SEQUENCE says it should be an error,
-		    ;; but does not specialize what kind.
-		    (error "Cannot find the element type in vector type ~S" type)
-		    (error-sequence-type type)))
-	  (when (subtypep type (car i))
-	    (setq elt-type (cdr i) length '*)
-	    ;; The (NIL . NIL) case above
-	    (unless elt-type
-	      (error-sequence-type type))
-	    (return)))))
+                (if (subtypep type 'vector)
+                    ;; Does this have to be a type-error?
+                    ;; 17.3 for MAKE-SEQUENCE says it should be an error,
+                    ;; but does not specialize what kind.
+                    (error "Cannot find the element type in vector type ~S" type)
+                    (error-sequence-type type)))
+          (when (subtypep type (car i))
+            (setq elt-type (cdr i) length '*)
+            ;; The (NIL . NIL) case above
+            (unless elt-type
+              (error-sequence-type type))
+            (return)))))
     (values elt-type length)))
 
-(defun make-sequence (type size	&key (initial-element nil iesp) &aux sequence)
+(defun make-sequence (type size &key (initial-element nil iesp) &aux sequence)
   "Args: (type length &key initial-element)
 Creates and returns a sequence of the given TYPE and LENGTH.  If INITIAL-
 ELEMENT is given, then it becomes the elements of the created sequence.  The
@@ -123,18 +125,18 @@ default value of INITIAL-ELEMENT depends on TYPE."
   (multiple-value-bind (element-type length)
       (closest-sequence-type type)
     (cond ((eq element-type 'LIST)
-	   (setq sequence (make-list size :initial-element initial-element))
-	   (unless (subtypep 'LIST type)
-	     (when (or (and (subtypep type 'NULL) (plusp size))
-		       (and (subtypep type 'CONS) (zerop size)))
-	       (error-sequence-length (make-list size :initial-element initial-element) type 0))))
-	  (t
-	   (setq sequence (sys:make-vector (if (eq element-type '*) T element-type)
-					   size nil nil nil nil))
-	   (when iesp
-	     (si::fill-array-with-elt sequence initial-element 0 nil))
-	   (unless (or (eql length '*) (eql length size))
-	     (error-sequence-length sequence type size))))
+           (setq sequence (make-list size :initial-element initial-element))
+           (unless (subtypep 'LIST type)
+             (when (or (and (subtypep type 'NULL) (plusp size))
+                       (and (subtypep type 'CONS) (zerop size)))
+               (error-sequence-length (make-list size :initial-element initial-element) type 0))))
+          (t
+           (setq sequence (sys:make-vector (if (eq element-type '*) T element-type)
+                                           size nil nil nil nil))
+           (when iesp
+             (si::fill-array-with-elt sequence initial-element 0 nil))
+           (unless (or (eql length '*) (eql length size))
+             (error-sequence-length sequence type size))))
     sequence))
 
 (defun make-seq-iterator (sequence &optional (start 0))
@@ -215,26 +217,26 @@ default value of INITIAL-ELEMENT depends on TYPE."
   (if (listp object)
       object
       (do ((it (make-seq-iterator object) (seq-iterator-next object it))
-	   (output nil))
-	  ((null it) (nreverse output))
-	(push (seq-iterator-ref object it) output))))
+           (output nil))
+          ((null it) (nreverse output))
+        (push (seq-iterator-ref object it) output))))
 
 (defun coerce-to-vector (object elt-type length simple-array-p)
   (let ((output object))
     (unless (and (vectorp object)
                  (or (null simple-array-p) (simple-array-p object))
-		 (eq (array-element-type object) elt-type))
+                 (eq (array-element-type object) elt-type))
       (let* ((final-length (if (eq length '*) (length object) length)))
-	(setf output (make-vector elt-type final-length nil nil nil 0))
-	(do ((i (make-seq-iterator object) (seq-iterator-next output i))
-	     (j 0 (truly-the index (1+ j))))
-	    ((= j final-length)
-	     (setf object output))
-	  (declare (index j))
-	  (setf (aref output j) (seq-iterator-ref object i)))))
+        (setf output (make-vector elt-type final-length nil nil nil 0))
+        (do ((i (make-seq-iterator object) (seq-iterator-next output i))
+             (j 0 (truly-the index (1+ j))))
+            ((= j final-length)
+             (setf object output))
+          (declare (index j))
+          (setf (aref output j) (seq-iterator-ref object i)))))
     (unless (eq length '*)
       (unless (= length (length output))
-	(check-type output `(vector ,elt-type (,length)) "coerced object")))
+        (check-type output `(vector ,elt-type (,length)) "coerced object")))
     output))
 
 (defun concatenate (result-type &rest sequences)
@@ -242,13 +244,13 @@ default value of INITIAL-ELEMENT depends on TYPE."
 Returns a new sequence of the specified type, consisting of all elements of
 SEQUENCEs."
   (do* ((length-list (mapcar #'length sequences) (rest length-list))
-	(output (make-sequence result-type (apply #'+ length-list)))
+        (output (make-sequence result-type (apply #'+ length-list)))
         (sequences sequences (rest sequences))
         (i (make-seq-iterator output)))
       ((null sequences) output)
     (do* ((s (first sequences))
-	  (j (make-seq-iterator s) (seq-iterator-next s j)))
-	 ((null j))
+          (j (make-seq-iterator s) (seq-iterator-next s j)))
+         ((null j))
       (seq-iterator-set output i (seq-iterator-ref s j))
       (setq i (seq-iterator-next output i)))))
 
@@ -336,13 +338,13 @@ elements of the given sequences. The i-th element of RESULT-SEQUENCE is the outp
 of applying FUNCTION to the i-th element of each of the sequences. The map routine
 stops when it reaches the end of one of the given sequences."
   (let ((nel (apply #'min (if (vectorp result-sequence)
-			      (array-dimension result-sequence 0)
-			      (length result-sequence))
-		    (mapcar #'length sequences))))
+                              (array-dimension result-sequence 0)
+                              (length result-sequence))
+                    (mapcar #'length sequences))))
     (declare (fixnum nel))
     ;; Set the fill pointer to the number of iterations
     (when (and (vectorp result-sequence)
-	       (array-has-fill-pointer-p result-sequence))
+               (array-has-fill-pointer-p result-sequence))
       (setf (fill-pointer result-sequence) nel))
     ;; Perform mapping
     (do ((ir (make-seq-iterator result-sequence) (seq-iterator-next result-sequence ir))
@@ -350,10 +352,10 @@ stops when it reaches the end of one of the given sequences."
          (val (make-sequence 'list (length sequences))))
         ((null ir) result-sequence)
       (do ((i it (cdr i))
-	   (v val (cdr v))
+           (v val (cdr v))
            (s sequences (cdr s)))
-	  ((null i))
-	(unless (car i) (return-from map-into result-sequence))
-	(rplaca v (seq-iterator-ref (car s) (car i)))
-	(rplaca i (seq-iterator-next (car s) (car i))))
+          ((null i))
+        (unless (car i) (return-from map-into result-sequence))
+        (rplaca v (seq-iterator-ref (car s) (car i)))
+        (rplaca i (seq-iterator-next (car s) (car i))))
       (seq-iterator-set result-sequence ir (apply function val)))))

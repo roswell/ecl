@@ -23,7 +23,7 @@
 #define GRAY_ "GRAY::"
 #define FFI_ "FFI::"
 typedef struct {
-	const char *name, *translation;
+        const char *name, *translation;
 } cl_symbol_initializer;
 #else
 #include "ecl_constants.h"
@@ -61,6 +61,7 @@ typedef struct {
 # define IF_RELPACK(x) NULL
 #endif
 #ifndef ECL_CLOS_STREAMS
+# undef GRAY_
 # define GRAY_ SYS_
 #endif
 #ifdef ECL_SSE2
@@ -84,11 +85,7 @@ cl_symbols[] = {
 
 {"NIL",NULL},
 {"T",NULL},
-#ifdef CLOS
 {SYS_ "UNBOUND","si_unbound"},
-#else
-{SYS_ "UNBOUND",NULL},
-#endif
 {SYS_ "PROTECT-TAG",NULL},
 {SYS_ "*RESTART-CLUSTERS*",NULL},
 {SYS_ "*HANDLER-CLUSTERS*",NULL},
@@ -1019,8 +1016,6 @@ cl_symbols[] = {
 {"Y-OR-N-P","ECL_NAME(cl_y_or_n_p)"},
 {"YES-OR-NO-P","ECL_NAME(cl_yes_or_no_p)"},
 {"ZEROP","cl_zerop"},
-
-#ifdef CLOS
 {"ALLOCATE-INSTANCE",NULL},
 {"ADD-METHOD",NULL},
 {"BUILT-IN-CLASS",NULL},
@@ -1105,7 +1100,6 @@ cl_symbols[] = {
 {KEY_ "REQUIRED",NULL},
 {KEY_ "WRITER",NULL},
 {KEY_ "WRITERS",NULL},
-#endif
 
 /* SYSTEM PACKAGE */
 {SYS_ "#!",NULL},
@@ -1161,6 +1155,7 @@ cl_symbols[] = {
 {SYS_ "COMPILED-FUNCTION-BLOCK","si_compiled_function_block"},
 {EXT_ "COMPILED-FUNCTION-NAME","si_compiled_function_name"},
 {SYS_ "COPY-STREAM","si_copy_stream"},
+{SYS_ "DESTRUCTURE",NULL},
 {SYS_ "DO-READ-SEQUENCE","si_do_read_sequence"},
 {SYS_ "DO-WRITE-SEQUENCE","si_do_write_sequence"},
 {SYS_ "ELT-SET","si_elt_set"},
@@ -1237,6 +1232,7 @@ cl_symbols[] = {
 {EXT_ "SAFE-EVAL","ECL_NAME(si_safe_eval)"},
 {SYS_ "SCH-FRS-BASE","si_sch_frs_base"},
 {SYS_ "SCHAR-SET","si_char_set"},
+{SYS_ "SERROR","si_serror"},
 {SYS_ "SHARP-A-READER",NULL},
 {SYS_ "SHARP-S-READER",NULL},
 {SYS_ "SELECT-PACKAGE","si_select_package"},
@@ -1269,13 +1265,11 @@ cl_symbols[] = {
 {SYS_ "TERMINAL-INTERRUPT",NULL},
 {SYS_ "TOP-LEVEL",NULL},
 {SYS_ "UNIVERSAL-ERROR-HANDLER",NULL},
+{SYS_ "STACK-ERROR-HANDLER",NULL},
 {SYS_ "VALID-FUNCTION-NAME-P","si_valid_function_name_p"},
 {SYS_ "WRITE-OBJECT","si_write_object"},
 {SYS_ "WRITE-UGLY-OBJECT","si_write_ugly_object"},
 
-#ifndef CLOS
-{SYS_ "STRUCTURE-INCLUDE",NULL},
-#else
 {SYS_ "COPY-INSTANCE","si_copy_instance"},
 {SYS_ "GENERIC-FUNCTION-P","si_generic_function_p"},
 {SYS_ "INSTANCE-REF","si_instance_ref"},
@@ -1290,7 +1284,6 @@ cl_symbols[] = {
 {SYS_ "SUBCLASSP","ECL_NAME(si_subclassp)"},
 {SYS_ "OF-CLASS-P","ECL_NAME(si_of_class_p)"},
 /*{SYS_ "UNBOUND","si_unbound"}, */
-#endif
 
 {EXT_ "*SOURCE-LOCATION*",NULL},
 {EXT_ "*REGISTER-WITH-PDE-HOOK*",NULL},
@@ -1463,10 +1456,8 @@ cl_symbols[] = {
 {EXT_ "INTEGER64",NULL},
 {EXT_ "LAMBDA-BLOCK",NULL},
 {EXT_ "QUIT","si_quit"},
-#ifdef CLOS
 {EXT_ "GET-METHOD",NULL},
 {EXT_ "INSTANCE",NULL},
-#endif
 
 {SYS_ "ALLOCATE-FOREIGN-DATA","si_allocate_foreign_data"},
 {SYS_ "FIND-FOREIGN-SYMBOL","si_find_foreign_symbol"},
@@ -1624,7 +1615,6 @@ cl_symbols[] = {
 {SYS_ "QUASIQUOTE",NULL},
 {SYS_ "*EXIT-HOOKS*",NULL},
 
-#ifdef CLOS
 {CLOS_ ".COMBINED-METHOD-ARGS.",NULL},
 {CLOS_ "+BUILTIN-CLASSES+",NULL},
 {CLOS_ "*NEXT-METHODS*",NULL},
@@ -1734,7 +1724,6 @@ cl_symbols[] = {
 {CLOS_ "LOAD-DEFCLASS","ECL_NAME(clos_load_defclass)"},
 {CLOS_ "DOCSTRING",NULL},
 {CLOS_ "SAFE-INSTANCE-REF","clos_safe_instance_ref"},
-#endif
 
 {SYS_ "CL-FIXNUM-BITS",NULL},
 {EXT_ "CL-FIXNUM",NULL},
@@ -1794,7 +1783,7 @@ cl_symbols[] = {
 {SYS_ "FRAME",NULL},
 {SYS_ "APPLY-FROM-STACK-FRAME","si_apply_from_stack_frame"},
 
-/* #ifdef ECL_CLOS_STREAMS */
+#ifdef ECL_CLOS_STREAMS
 {GRAY_ "CLOSE",NULL},
 {GRAY_ "STREAMP",NULL},
 {GRAY_ "INPUT-STREAM-P",NULL},
@@ -1834,7 +1823,7 @@ cl_symbols[] = {
 {GRAY_ "FUNDAMENTAL-CHARACTER-OUTPUT-STREAM",NULL},
 {GRAY_ "FUNDAMENTAL-BINARY-INPUT-STREAM",NULL},
 {GRAY_ "FUNDAMENTAL-BINARY-OUTPUT-STREAM",NULL},
-/* #endif ECL_CLOS_STREAMS */
+#endif /* ECL_CLOS_STREAMS */
 
 {SYS_ "LOG1P","si_log1p"},
 
@@ -1863,6 +1852,7 @@ cl_symbols[] = {
 {EXT_ "ILLEGAL-INSTRUCTION",NULL},
 {EXT_ "SET-LIMIT","si_set_limit"},
 {EXT_ "GET-LIMIT","si_get_limit"},
+{SYS_ "RESET-MARGIN","si_reset_margin"},
 {EXT_ "SEGMENTATION-VIOLATION",NULL},
 
 {EXT_ "EXTENDED-STRING",NULL},
@@ -1889,9 +1879,9 @@ cl_symbols[] = {
 {KEY_ "UCS-2LE",NULL},
 {KEY_ "UCS-4LE",NULL},
 
-{EXT_ "LOAD-ENCODING",NULL},
-{EXT_ "MAKE-ENCODING",NULL},
-{EXT_ "ALL-ENCODINGS","ECL_NAME(si_load_encoding)"},
+{EXT_ "LOAD-ENCODING","ECL_NAME(si_load_encoding)"},
+{EXT_ "MAKE-ENCODING","si_make_encoding"},
+{EXT_ "ALL-ENCODINGS",NULL},
 
 {KEY_ "US-ASCII",NULL},
 {KEY_ "LITTLE-ENDIAN",NULL},
@@ -1966,6 +1956,7 @@ cl_symbols[] = {
 {EXT_ "EXTERNAL-PROCESS-PID",NULL},
 {EXT_ "EXTERNAL-PROCESS-INPUT",NULL},
 {EXT_ "EXTERNAL-PROCESS-OUTPUT",NULL},
+{EXT_ "EXTERNAL-PROCESS-ERROR-STREAM",NULL},
 {EXT_ "EXTERNAL-PROCESS-STATUS",NULL},
 
 {KEY_ "RUNNING",NULL},

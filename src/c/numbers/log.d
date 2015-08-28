@@ -25,29 +25,29 @@
 static cl_object
 ecl_log1_complex_inner(cl_object r, cl_object i)
 {
-	cl_object a = ecl_abs(r);
-	cl_object p = ecl_abs(i);
-	int rel = ecl_number_compare(a, p);
-	if (rel > 0) {
-		cl_object aux = p;
-		p = a; a = aux;
-	} else if (rel == 0) {
-		/* if a == p, 
-		 * log(sqrt(a^2+p^2)) = log(2a^2)/2
-		 */
-		a = ecl_times(a, a);
-		a = ecl_divide(ecl_log1(ecl_plus(a, a)), ecl_make_fixnum(2));
-		goto OUTPUT;
-	}
-	/* For the real part of the output we use the formula
-	 *	log(sqrt(p^2 + a^2)) = log(sqrt(p^2*(1 + (a/p)^2)))
-	 *			     = log(p) + log(1 + (a/p)^2)/2; */
-	a = ecl_divide(a, p);
-	a = ecl_plus(ecl_divide(ecl_log1p(ecl_times(a,a)), ecl_make_fixnum(2)),
-		     ecl_log1(p));
+        cl_object a = ecl_abs(r);
+        cl_object p = ecl_abs(i);
+        int rel = ecl_number_compare(a, p);
+        if (rel > 0) {
+                cl_object aux = p;
+                p = a; a = aux;
+        } else if (rel == 0) {
+                /* if a == p, 
+                 * log(sqrt(a^2+p^2)) = log(2a^2)/2
+                 */
+                a = ecl_times(a, a);
+                a = ecl_divide(ecl_log1(ecl_plus(a, a)), ecl_make_fixnum(2));
+                goto OUTPUT;
+        }
+        /* For the real part of the output we use the formula
+         *      log(sqrt(p^2 + a^2)) = log(sqrt(p^2*(1 + (a/p)^2)))
+         *                           = log(p) + log(1 + (a/p)^2)/2; */
+        a = ecl_divide(a, p);
+        a = ecl_plus(ecl_divide(ecl_log1p(ecl_times(a,a)), ecl_make_fixnum(2)),
+                     ecl_log1(p));
  OUTPUT:
-	p = ecl_atan2(i, r);
-	return ecl_make_complex(a, p);
+        p = ecl_atan2(i, r);
+        return ecl_make_complex(a, p);
 }
 
 static cl_object
@@ -114,14 +114,14 @@ MATH_DEF_DISPATCH1(log1, @[log], @[number],
 cl_object
 ecl_log2(cl_object x, cl_object y)
 {
-	return ecl_divide(ecl_log1(y), ecl_log1(x));
+        return ecl_divide(ecl_log1(y), ecl_log1(x));
 }
 
 @(defun log (x &optional (y OBJNULL))
-@	/* INV: type check in ecl_log1() and ecl_log2() */
-	if (y == OBJNULL)
-		@(return ecl_log1(x))
-	@(return ecl_log2(y, x))
+@       /* INV: type check in ecl_log1() and ecl_log2() */
+        if (y == OBJNULL)
+                @(return ecl_log1(x))
+        @(return ecl_log2(y, x))
 @)
 
 
@@ -129,12 +129,12 @@ ecl_log2(cl_object x, cl_object y)
 double
 log1p(double x)
 {
-	double u = 1.0 + x;
-	if (u == 1) {
-		return 0.0;
-	} else {
-		return (log(u) * x)/(u - 1.0);
-	}
+        double u = 1.0 + x;
+        if (u == 1) {
+                return 0.0;
+        } else {
+                return (log(u) * x)/(u - 1.0);
+        }
 }
 #endif
 
@@ -142,12 +142,12 @@ log1p(double x)
 float
 log1pf(float x)
 {
-	float u = (float)1 + x;
-	if (u == 1) {
-		return (float)0;
-	} else {
-		return (logf(u) * x)/(u - (float)1);
-	}
+        float u = (float)1 + x;
+        if (u == 1) {
+                return (float)0;
+        } else {
+                return (logf(u) * x)/(u - (float)1);
+        }
 }
 #endif
 
@@ -155,19 +155,19 @@ log1pf(float x)
 long double
 log1pl(long double x)
 {
-	long double u = (long double)1 + x;
-	if (u == 1) {
-		return (long double)1;
-	} else {
-		return (logl(u) * x)/(u - (long double)1);
-	}
+        long double u = (long double)1 + x;
+        if (u == 1) {
+                return (long double)1;
+        } else {
+                return (logl(u) * x)/(u - (long double)1);
+        }
 }
 #endif
 
 cl_object
 si_log1p(cl_object x)
 {
-	@(return ecl_log1p(x));
+        @(return ecl_log1p(x));
 }
 
 static cl_object

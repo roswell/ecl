@@ -17,14 +17,14 @@
 #ifndef ECL_ECL_H
 #define ECL_ECL_H
 
-#include <sys/types.h>		/* size_t, pthread_t, pthread_mutex_t */
-#ifdef __OpenBSD__		/* same, but for OpenBSD (bug in OpenBSD!) */
+#include <sys/types.h>          /* size_t, pthread_t, pthread_mutex_t */
+#ifdef __OpenBSD__              /* same, but for OpenBSD (bug in OpenBSD!) */
 # include <pthread.h>
 #endif
-#include <stddef.h>		/* NULL, ptrdiff_t */
-#include <stdarg.h> 		/* va_list */
-#include <setjmp.h> 		/* setjmp and buffers */
-#include <stdio.h>		/* FILE */
+#include <stddef.h>             /* NULL, ptrdiff_t */
+#include <stdarg.h>             /* va_list */
+#include <setjmp.h>             /* setjmp and buffers */
+#include <stdio.h>              /* FILE */
 /* Microsoft VC++ does not have va_copy() */
 #if defined(_MSC_VER) || !defined(va_copy)
 #define va_copy(dst, src) \

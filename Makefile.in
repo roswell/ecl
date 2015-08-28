@@ -33,8 +33,8 @@ MACHINE = @MACHINE_VERSION@
 # ========================= Last release ================================
 
 VERSION=@PACKAGE_VERSION@
-WWW=http://ecls.sourceforge.net/
-ADDRESS=git://git.code.sf.net/p/ecls/ecl
+WWW=https://common-lisp.net/project/ecl/
+ADDRESS=https://gitlab.com/embeddable-common-lisp/ecl
 
 # ==================== Things `configure' Might Edit ====================
 
@@ -54,7 +54,7 @@ TAR_CONTENTS=Makefile.in README.1st LGPL ANNOUNCEMENT Copyright doc \
 	configure src/c src/cmp src/clos src/CHANGELOG src/lsp src/doc \
 	src/h  src/gmp src/config* src/install.sh src/Makefile.in \
 	src/util contrib/ src/clx src/gc src/*.in src/*.m4 src/gabriel \
-	src/tests/Makefile.in src/ansi-tests/Makefile.in msvc examples
+	src/tests/Makefile.in msvc examples
 
 # ==================== Utility Programs for the Build ====================
 
@@ -133,19 +133,6 @@ source-dist: $(TAR_DIR).tgz
 
 rpmdir=$(shell rpm --showrc | grep '^-[0-9]*:.*[^{]_topdir' | sed 's,^.*topdir[ 	]*\(.*\)[ 	]*,\1,')
 rpmbuild=$(shell if [ -z `which rpmbuild` ]; then echo "rpm"; else echo "rpmbuild"; fi)
-
-# OBSOLETE!!!
-# rpm: doc
-# 	-rm -rf $(TAR_DIR)
-# 	mkdir $(TAR_DIR) $(TAR_DIR)/src \
-# 	$(TAR_DIR)/src/tests $(TAR_DIR)/src/ansi-tests && \
-# 	for i in $(TAR_CONTENTS); do cp -rf $$i $(TAR_DIR)/$$i; done && \
-# 	tar -cz --exclude '*~' --exclude '#*' --exclude 'CVS' -f $(rpmdir)/SOURCES/$(TAR_DIR).tgz $(TAR_DIR)
-# 	if [ -f /etc/SuSE-release ]; then HOST=SUSE; else HOST=REDHAT; fi; \
-# 	cat src/util/ecl.spec |\
-# 	sed 's,ECL_VERSION,$(VERSION),;s,^#% '$${HOST}' ,,g;'|\
-# 	grep -v '^#% ' > $(rpmdir)/SPECS/ecl.spec;
-# 	rpm -ba $(rpmdir)/SPECS/ecl.spec
 
 $(TAR_DIR).tgz:
 	git archive --format=tar.gz --prefix=$(TAR_DIR)/ HEAD > $@

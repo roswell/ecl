@@ -21,27 +21,27 @@
      :width (+ 20 width) 
      :height (+ 20 ascent)
      :background (xlib:alloc-color *colormap*
-				   (xlib:lookup-color *colormap*
-						      "midnightblue")))))
+                                   (xlib:lookup-color *colormap*
+                                                      "midnightblue")))))
 
 (defvar *gcontext* (xlib:create-gcontext
                     :drawable *win*
-		    :fill-style :solid
+                    :fill-style :solid
                     :background (xlib:screen-white-pixel *screen*)
                     :foreground (xlib:alloc-color *colormap*
-						  (xlib:lookup-color
-						   *colormap*
-						   "yellow"))
-		    :font *font*))
+                                                  (xlib:lookup-color
+                                                   *colormap*
+                                                   "yellow"))
+                    :font *font*))
 
 (defvar *background* (xlib:create-gcontext
-		      :drawable *win*
-		      :fill-style :solid
-		      :background (xlib:screen-white-pixel *screen*)
-		      :foreground (xlib:alloc-color *colormap*
-				   (xlib:lookup-color *colormap*
-						      "midnightblue"))
-		      :font *font*))
+                      :drawable *win*
+                      :fill-style :solid
+                      :background (xlib:screen-white-pixel *screen*)
+                      :foreground (xlib:alloc-color *colormap*
+                                   (xlib:lookup-color *colormap*
+                                                      "midnightblue"))
+                      :font *font*))
 (defvar *palette* nil)
 (defvar *black* (xlib:screen-black-pixel *screen*))
 
@@ -58,17 +58,17 @@
   (let ((string (clock-string)))
     (let ((string-width (xlib:text-width *gcontext* string)))
       (xlib:draw-rectangle *win* *background*
-			   0 0
-			   (xlib:drawable-width *win*)
-			   (xlib:drawable-height *win*)
-			   :fill-p)
+                           0 0
+                           (xlib:drawable-width *win*)
+                           (xlib:drawable-height *win*)
+                           :fill-p)
       (xlib:draw-glyphs *win* *gcontext*
-			(- (truncate
-			    (- (xlib:drawable-width *win*) string-width)
-			    2)
-			   10)
-			(- (xlib:drawable-height *win*) 10)
-			string)))
+                        (- (truncate
+                            (- (xlib:drawable-width *win*) string-width)
+                            2)
+                           10)
+                        (- (xlib:drawable-height *win*) 10)
+                        string)))
   (xlib:display-force-output *display*))
 
 (defun clock ()

@@ -1,0 +1,61 @@
+<?xml version='1.0'?>
+<!DOCTYPE xsl:stylesheet [
+<!ENTITY RE "&#10;">
+<!ENTITY nbsp "&#160;">
+]>
+<xsl:stylesheet exclude-result-prefixes="d"
+                 xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+                xmlns:d="http://docbook.org/ns/docbook"
+xmlns:fo="http://www.w3.org/1999/XSL/Format"
+                version='1.0'>
+
+<xsl:template match="d:funcprototype">
+
+  <xsl:variable name="style">
+    <xsl:call-template name="funcsynopsis.style"/>
+  </xsl:variable>
+
+  <fo:block font-family="{$monospace.font.family}"
+          space-before.minimum="0.8em"
+          space-before.optimum="1em"
+          space-before.maximum="1.2em">
+    <xsl:choose>
+      <xsl:when test="$style='kr'">
+	<xsl:apply-templates/>
+	<fo:block
+	    space-before.minimum="0.8em"
+	    space-before.optimum="1em"
+	    space-before.maximum="1.2em">
+	  <xsl:apply-templates select="./d:paramdef" mode="kr-funcsynopsis-mode"/>
+	</fo:block>
+      </xsl:when>
+      <xsl:when test="$style='common-lisp'">
+	<fo:block
+	    space-before.minimum="0.8em"
+	    space-before.optimum="1em"
+	    space-before.maximum="1.2em">
+	  (<xsl:apply-templates select="./d:funcdef" mode="cl-funcsynopsis-mode"/>
+	  <xsl:apply-templates select="./d:paramdef" mode="cl-funcsynopsis-mode"/>)
+	</fo:block>
+      </xsl:when>
+      <xsl:otherwise>
+	<xsl:apply-templates/>
+      </xsl:otherwise>
+    </xsl:choose>
+  </fo:block>
+</xsl:template>
+
+<xsl:template match="d:funcdef" mode="kr-funcsynopsis-mode">
+  <fo:inline font-family="{$monospace.font.family}">
+    <xsl:apply-templates/>
+  </fo:inline>
+</xsl:template>
+
+<xsl:template match="d:paramdef" mode="kr-funcsynopsis-mode">
+  <fo:block>
+    <xsl:apply-templates/>
+    <xsl:text>&nbsp;</xsl:text>
+  </fo:block>
+</xsl:template>
+
+</xsl:stylesheet>

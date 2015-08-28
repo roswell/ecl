@@ -3,9 +3,9 @@
 ;; This file contains some of the system dependent code for CLX
 
 ;;;
-;;;			 TEXAS INSTRUMENTS INCORPORATED
-;;;				  P.O. BOX 2909
-;;;			       AUSTIN, TEXAS 78769
+;;;                      TEXAS INSTRUMENTS INCORPORATED
+;;;                               P.O. BOX 2909
+;;;                            AUSTIN, TEXAS 78769
 ;;;
 ;;; Copyright (C) 1987 Texas Instruments Incorporated.
 ;;;
@@ -49,9 +49,9 @@
     "Debug compiler option for buffer code>")
   (defun declare-bufmac ()
     `(declare (optimize
-	       (speed ,+buffer-speed+)
-	       (safety ,+buffer-safety+)
-	       (debug ,+buffer-debug+))))
+               (speed ,+buffer-speed+)
+               (safety ,+buffer-safety+)
+               (debug ,+buffer-debug+))))
   ;; It's my impression that in lucid there's some way to make a
   ;; declaration called fast-entry or something that causes a function
   ;; to not do some checking on args. Sadly, we have no lucid manuals
@@ -60,13 +60,13 @@
   ;; is 0.
   (defun declare-buffun ()
     `(declare (optimize
-	       (speed ,+buffer-speed+)
-	       (safety ,+buffer-safety+)
-	       (debug ,+buffer-debug+)))))
+               (speed ,+buffer-speed+)
+               (safety ,+buffer-safety+)
+               (debug ,+buffer-debug+)))))
 
 (declaim (inline card8->int8 int8->card8
-		 card16->int16 int16->card16
-		 card32->int32 int32->card32))
+                 card16->int16 int16->card16
+                 card32->int32 int32->card32))
 
 (progn
 
@@ -75,8 +75,8 @@
   (declare (clx-values int8))
   #.(declare-buffun)
   (the int8 (if (logbitp 7 x)
-		(the int8 (- x #x100))
-	      x)))
+                (the int8 (- x #x100))
+              x)))
 
 (defun int8->card8 (x)
   (declare (type int8 x))
@@ -89,8 +89,8 @@
   (declare (clx-values int16))
   #.(declare-buffun)
   (the int16 (if (logbitp 15 x)
-		 (the int16 (- x #x10000))
-		 x)))
+                 (the int16 (- x #x10000))
+                 x)))
 
 (defun int16->card16 (x)
   (declare (type int16 x))
@@ -103,8 +103,8 @@
   (declare (clx-values int32))
   #.(declare-buffun)
   (the int32 (if (logbitp 31 x)
-		 (the int32 (- x #x100000000))
-		 x)))
+                 (the int32 (- x #x100000000))
+                 x)))
 
 (defun int32->card32 (x)
   (declare (type int32 x))
@@ -120,29 +120,29 @@
 
 (defun aref-card8 (a i)
   (declare (type buffer-bytes a)
-	   (type array-index i))
+           (type array-index i))
   (declare (clx-values card8))
   #.(declare-buffun)
   (the card8 (aref a i)))
 
 (defun aset-card8 (v a i)
   (declare (type card8 v)
-	   (type buffer-bytes a)
-	   (type array-index i))
+           (type buffer-bytes a)
+           (type array-index i))
   #.(declare-buffun)
   (setf (aref a i) v))
 
 (defun aref-int8 (a i)
   (declare (type buffer-bytes a)
-	   (type array-index i))
+           (type array-index i))
   (declare (clx-values int8))
   #.(declare-buffun)
   (card8->int8 (aref a i)))
 
 (defun aset-int8 (v a i)
   (declare (type int8 v)
-	   (type buffer-bytes a)
-	   (type array-index i))
+           (type buffer-bytes a)
+           (type array-index i))
   #.(declare-buffun)
   (setf (aref a i) (int8->card8 v)))
 
@@ -152,120 +152,120 @@
 
 (defun aref-card16 (a i)
   (declare (type buffer-bytes a)
-	   (type array-index i))
+           (type array-index i))
   (declare (clx-values card16))
   #.(declare-buffun)
   (the card16
        (logior (the card16
-		    (ash (the card8 (aref a (index+ i +word-1+))) 8))
-	       (the card8
-		    (aref a (index+ i +word-0+))))))
+                    (ash (the card8 (aref a (index+ i +word-1+))) 8))
+               (the card8
+                    (aref a (index+ i +word-0+))))))
 
 (defun aset-card16 (v a i)
   (declare (type card16 v)
-	   (type buffer-bytes a)
-	   (type array-index i))
+           (type buffer-bytes a)
+           (type array-index i))
   #.(declare-buffun)
   (setf (aref a (index+ i +word-1+)) (the card8 (ldb (byte 8 8) v))
-	(aref a (index+ i +word-0+)) (the card8 (ldb (byte 8 0) v)))
+        (aref a (index+ i +word-0+)) (the card8 (ldb (byte 8 0) v)))
   v)
 
 (defun aref-int16 (a i)
   (declare (type buffer-bytes a)
-	   (type array-index i))
+           (type array-index i))
   (declare (clx-values int16))
   #.(declare-buffun)
   (the int16
        (logior (the int16
-		    (ash (the int8 (aref-int8 a (index+ i +word-1+))) 8))
-	       (the card8
-		    (aref a (index+ i +word-0+))))))
+                    (ash (the int8 (aref-int8 a (index+ i +word-1+))) 8))
+               (the card8
+                    (aref a (index+ i +word-0+))))))
 
 (defun aset-int16 (v a i)
   (declare (type int16 v)
-	   (type buffer-bytes a)
-	   (type array-index i))
+           (type buffer-bytes a)
+           (type array-index i))
   #.(declare-buffun)
   (setf (aref a (index+ i +word-1+)) (the card8 (ldb (byte 8 8) v))
-	(aref a (index+ i +word-0+)) (the card8 (ldb (byte 8 0) v)))
+        (aref a (index+ i +word-0+)) (the card8 (ldb (byte 8 0) v)))
   v)
 
 (defun aref-card32 (a i)
   (declare (type buffer-bytes a)
-	   (type array-index i))
+           (type array-index i))
   (declare (clx-values card32))
   #.(declare-buffun)
   (the card32
        (logior (the card32
-		    (ash (the card8 (aref a (index+ i +long-3+))) 24))
-	       (the card29
-		    (ash (the card8 (aref a (index+ i +long-2+))) 16))
-	       (the card16
-		    (ash (the card8 (aref a (index+ i +long-1+))) 8))
-	       (the card8
-		    (aref a (index+ i +long-0+))))))
+                    (ash (the card8 (aref a (index+ i +long-3+))) 24))
+               (the card29
+                    (ash (the card8 (aref a (index+ i +long-2+))) 16))
+               (the card16
+                    (ash (the card8 (aref a (index+ i +long-1+))) 8))
+               (the card8
+                    (aref a (index+ i +long-0+))))))
 
 (defun aset-card32 (v a i)
   (declare (type card32 v)
-	   (type buffer-bytes a)
-	   (type array-index i))
+           (type buffer-bytes a)
+           (type array-index i))
   #.(declare-buffun)
   (setf (aref a (index+ i +long-3+)) (the card8 (ldb (byte 8 24) v))
-	(aref a (index+ i +long-2+)) (the card8 (ldb (byte 8 16) v))
-	(aref a (index+ i +long-1+)) (the card8 (ldb (byte 8 8) v))
-	(aref a (index+ i +long-0+)) (the card8 (ldb (byte 8 0) v)))
+        (aref a (index+ i +long-2+)) (the card8 (ldb (byte 8 16) v))
+        (aref a (index+ i +long-1+)) (the card8 (ldb (byte 8 8) v))
+        (aref a (index+ i +long-0+)) (the card8 (ldb (byte 8 0) v)))
   v)
 
 (defun aref-int32 (a i)
   (declare (type buffer-bytes a)
-	   (type array-index i))
+           (type array-index i))
   (declare (clx-values int32))
   #.(declare-buffun)
   (the int32
        (logior (the int32
-		    (ash (the int8 (aref-int8 a (index+ i +long-3+))) 24))
-	       (the card29
-		    (ash (the card8 (aref a (index+ i +long-2+))) 16))
-	       (the card16
-		    (ash (the card8 (aref a (index+ i +long-1+))) 8))
-	       (the card8
-		    (aref a (index+ i +long-0+))))))
+                    (ash (the int8 (aref-int8 a (index+ i +long-3+))) 24))
+               (the card29
+                    (ash (the card8 (aref a (index+ i +long-2+))) 16))
+               (the card16
+                    (ash (the card8 (aref a (index+ i +long-1+))) 8))
+               (the card8
+                    (aref a (index+ i +long-0+))))))
 
 (defun aset-int32 (v a i)
   (declare (type int32 v)
-	   (type buffer-bytes a)
-	   (type array-index i))
+           (type buffer-bytes a)
+           (type array-index i))
   #.(declare-buffun)
   (setf (aref a (index+ i +long-3+)) (the card8 (ldb (byte 8 24) v))
-	(aref a (index+ i +long-2+)) (the card8 (ldb (byte 8 16) v))
-	(aref a (index+ i +long-1+)) (the card8 (ldb (byte 8 8) v))
-	(aref a (index+ i +long-0+)) (the card8 (ldb (byte 8 0) v)))
+        (aref a (index+ i +long-2+)) (the card8 (ldb (byte 8 16) v))
+        (aref a (index+ i +long-1+)) (the card8 (ldb (byte 8 8) v))
+        (aref a (index+ i +long-0+)) (the card8 (ldb (byte 8 0) v)))
   v)
 
 (defun aref-card29 (a i)
   (declare (type buffer-bytes a)
-	   (type array-index i))
+           (type array-index i))
   (declare (clx-values card29))
   #.(declare-buffun)
   (the card29
        (logior (the card29
-		    (ash (the card8 (aref a (index+ i +long-3+))) 24))
-	       (the card29
-		    (ash (the card8 (aref a (index+ i +long-2+))) 16))
-	       (the card16
-		    (ash (the card8 (aref a (index+ i +long-1+))) 8))
-	       (the card8
-		    (aref a (index+ i +long-0+))))))
+                    (ash (the card8 (aref a (index+ i +long-3+))) 24))
+               (the card29
+                    (ash (the card8 (aref a (index+ i +long-2+))) 16))
+               (the card16
+                    (ash (the card8 (aref a (index+ i +long-1+))) 8))
+               (the card8
+                    (aref a (index+ i +long-0+))))))
 
 (defun aset-card29 (v a i)
   (declare (type card29 v)
-	   (type buffer-bytes a)
-	   (type array-index i))
+           (type buffer-bytes a)
+           (type array-index i))
   #.(declare-buffun)
   (setf (aref a (index+ i +long-3+)) (the card8 (ldb (byte 8 24) v))
-	(aref a (index+ i +long-2+)) (the card8 (ldb (byte 8 16) v))
-	(aref a (index+ i +long-1+)) (the card8 (ldb (byte 8 8) v))
-	(aref a (index+ i +long-0+)) (the card8 (ldb (byte 8 0) v)))
+        (aref a (index+ i +long-2+)) (the card8 (ldb (byte 8 16) v))
+        (aref a (index+ i +long-1+)) (the card8 (ldb (byte 8 8) v))
+        (aref a (index+ i +long-0+)) (the card8 (ldb (byte 8 0) v)))
   v)
 
 )
@@ -335,129 +335,129 @@
 (declaim (inline char->card8 card8->char))
 
 (macrolet ((char-translators ()
-	     (let ((alist
-		     `(
-		       ;; The normal ascii codes for the control characters.
-		       ,@`((#\Return . 13)
-			   (#\Linefeed . 10)
-			   (#\Rubout . 127)
-			   (#\Page . 12)
-			   (#\Tab . 9)
-			   (#\Backspace . 8)
-			   (#\Newline . 10)
-			   (#\Space . 32))
-		       
-		       ;; The rest of the common lisp charater set with
+             (let ((alist
+                     `(
+                       ;; The normal ascii codes for the control characters.
+                       ,@`((#\Return . 13)
+                           (#\Linefeed . 10)
+                           (#\Rubout . 127)
+                           (#\Page . 12)
+                           (#\Tab . 9)
+                           (#\Backspace . 8)
+                           (#\Newline . 10)
+                           (#\Space . 32))
+                       
+                       ;; The rest of the common lisp charater set with
                        ;; the normal ascii codes for them.
-		       (#\! . 33) (#\" . 34) (#\# . 35) (#\$ . 36)
-		       (#\% . 37) (#\& . 38) (#\' . 39) (#\( . 40)
-		       (#\) . 41) (#\* . 42) (#\+ . 43) (#\, . 44)
-		       (#\- . 45) (#\. . 46) (#\/ . 47) (#\0 . 48)
-		       (#\1 . 49) (#\2 . 50) (#\3 . 51) (#\4 . 52)
-		       (#\5 . 53) (#\6 . 54) (#\7 . 55) (#\8 . 56)
-		       (#\9 . 57) (#\: . 58) (#\; . 59) (#\< . 60)
-		       (#\= . 61) (#\> . 62) (#\? . 63) (#\@ . 64)
-		       (#\A . 65) (#\B . 66) (#\C . 67) (#\D . 68)
-		       (#\E . 69) (#\F . 70) (#\G . 71) (#\H . 72)
-		       (#\I . 73) (#\J . 74) (#\K . 75) (#\L . 76)
-		       (#\M . 77) (#\N . 78) (#\O . 79) (#\P . 80)
-		       (#\Q . 81) (#\R . 82) (#\S . 83) (#\T . 84)
-		       (#\U . 85) (#\V . 86) (#\W . 87) (#\X . 88)
-		       (#\Y . 89) (#\Z . 90) (#\[ . 91) (#\\ . 92)
-		       (#\] . 93) (#\^ . 94) (#\_ . 95) (#\` . 96)
-		       (#\a . 97) (#\b . 98) (#\c . 99) (#\d . 100)
-		       (#\e . 101) (#\f . 102) (#\g . 103) (#\h . 104)
-		       (#\i . 105) (#\j . 106) (#\k . 107) (#\l . 108)
-		       (#\m . 109) (#\n . 110) (#\o . 111) (#\p . 112)
-		       (#\q . 113) (#\r . 114) (#\s . 115) (#\t . 116)
-		       (#\u . 117) (#\v . 118) (#\w . 119) (#\x . 120)
-		       (#\y . 121) (#\z . 122) (#\{ . 123) (#\| . 124)
-		       (#\} . 125) (#\~ . 126))))
-	       (cond ((dolist (pair alist nil)
-			(when (not (= (char-code (car pair)) (cdr pair)))
-			  (return t)))
-		      `(progn
-			 (defconstant *char-to-card8-translation-table*
-				      ',(let ((array (make-array
-						       (let ((max-char-code 255))
-							 (dolist (pair alist)
-							   (setq max-char-code
-								 (max max-char-code
-								      (char-code (car pair)))))
-							 (1+ max-char-code))
-						       :element-type 'card8)))
-					  (dotimes (i (length array))
-					    (setf (aref array i) (mod i 256)))
-					  (dolist (pair alist)
-					    (setf (aref array (char-code (car pair)))
-						  (cdr pair)))
-					  array))
-			 (defconstant *card8-to-char-translation-table*
-				      ',(let ((array (make-array 256)))
-					  (dotimes (i (length array))
-					    (setf (aref array i) (code-char i)))
-					  (dolist (pair alist)
-					    (setf (aref array (cdr pair)) (car pair)))
-					  array))
-			 (progn
-  			   (defun char->card8 (char)
-			     (declare (type base-char char))
-			     #.(declare-buffun)
-			     (the card8 (aref (the (simple-array card8 (*))
-						   *char-to-card8-translation-table*)
-					      (the array-index (char-code char)))))
-			   (defun card8->char (card8)
-			     (declare (type card8 card8))
-			     #.(declare-buffun)
-			     (the base-char
-				  (or (aref (the simple-vector *card8-to-char-translation-table*)
-					    card8)
-				      (error "Invalid CHAR code ~D." card8))))
-			   )
-			 #+Genera
-			 (progn
-			   (defun char->card8 (char)
-			     (declare lt:(side-effects reader reducible))
-			     (aref *char-to-card8-translation-table* (char-code char)))
-			   (defun card8->char (card8)
-			     (declare lt:(side-effects reader reducible))
-			     (aref *card8-to-char-translation-table* card8))
-			   )
-			 (dotimes (i 256)
-			   (unless (= i (char->card8 (card8->char i)))
-			     (warn "The card8->char mapping is not invertible through char->card8.  Info:~%~S"
-				   (list i
-					 (card8->char i)
-					 (char->card8 (card8->char i))))
-			     (return nil)))
-			 (dotimes (i (length *char-to-card8-translation-table*))
-			   (let ((char (code-char i)))
-			     (unless (eql char (card8->char (char->card8 char)))
-			       (warn "The char->card8 mapping is not invertible through card8->char.  Info:~%~S"
-				     (list char
-					   (char->card8 char)
-					   (card8->char (char->card8 char))))
-			       (return nil))))))
-		     (t
-		      `(progn
-			 (defun char->card8 (char)
-			   (declare (type base-char char))
-			   #.(declare-buffun)
-			   (the card8 (char-code char)))
-			 (defun card8->char (card8)
-			   (declare (type card8 card8))
-			   #.(declare-buffun)
-			   (the base-char (code-char card8)))
-			 ))))))
+                       (#\! . 33) (#\" . 34) (#\# . 35) (#\$ . 36)
+                       (#\% . 37) (#\& . 38) (#\' . 39) (#\( . 40)
+                       (#\) . 41) (#\* . 42) (#\+ . 43) (#\, . 44)
+                       (#\- . 45) (#\. . 46) (#\/ . 47) (#\0 . 48)
+                       (#\1 . 49) (#\2 . 50) (#\3 . 51) (#\4 . 52)
+                       (#\5 . 53) (#\6 . 54) (#\7 . 55) (#\8 . 56)
+                       (#\9 . 57) (#\: . 58) (#\; . 59) (#\< . 60)
+                       (#\= . 61) (#\> . 62) (#\? . 63) (#\@ . 64)
+                       (#\A . 65) (#\B . 66) (#\C . 67) (#\D . 68)
+                       (#\E . 69) (#\F . 70) (#\G . 71) (#\H . 72)
+                       (#\I . 73) (#\J . 74) (#\K . 75) (#\L . 76)
+                       (#\M . 77) (#\N . 78) (#\O . 79) (#\P . 80)
+                       (#\Q . 81) (#\R . 82) (#\S . 83) (#\T . 84)
+                       (#\U . 85) (#\V . 86) (#\W . 87) (#\X . 88)
+                       (#\Y . 89) (#\Z . 90) (#\[ . 91) (#\\ . 92)
+                       (#\] . 93) (#\^ . 94) (#\_ . 95) (#\` . 96)
+                       (#\a . 97) (#\b . 98) (#\c . 99) (#\d . 100)
+                       (#\e . 101) (#\f . 102) (#\g . 103) (#\h . 104)
+                       (#\i . 105) (#\j . 106) (#\k . 107) (#\l . 108)
+                       (#\m . 109) (#\n . 110) (#\o . 111) (#\p . 112)
+                       (#\q . 113) (#\r . 114) (#\s . 115) (#\t . 116)
+                       (#\u . 117) (#\v . 118) (#\w . 119) (#\x . 120)
+                       (#\y . 121) (#\z . 122) (#\{ . 123) (#\| . 124)
+                       (#\} . 125) (#\~ . 126))))
+               (cond ((dolist (pair alist nil)
+                        (when (not (= (char-code (car pair)) (cdr pair)))
+                          (return t)))
+                      `(progn
+                         (defconstant *char-to-card8-translation-table*
+                                      ',(let ((array (make-array
+                                                       (let ((max-char-code 255))
+                                                         (dolist (pair alist)
+                                                           (setq max-char-code
+                                                                 (max max-char-code
+                                                                      (char-code (car pair)))))
+                                                         (1+ max-char-code))
+                                                       :element-type 'card8)))
+                                          (dotimes (i (length array))
+                                            (setf (aref array i) (mod i 256)))
+                                          (dolist (pair alist)
+                                            (setf (aref array (char-code (car pair)))
+                                                  (cdr pair)))
+                                          array))
+                         (defconstant *card8-to-char-translation-table*
+                                      ',(let ((array (make-array 256)))
+                                          (dotimes (i (length array))
+                                            (setf (aref array i) (code-char i)))
+                                          (dolist (pair alist)
+                                            (setf (aref array (cdr pair)) (car pair)))
+                                          array))
+                         (progn
+                           (defun char->card8 (char)
+                             (declare (type base-char char))
+                             #.(declare-buffun)
+                             (the card8 (aref (the (simple-array card8 (*))
+                                                   *char-to-card8-translation-table*)
+                                              (the array-index (char-code char)))))
+                           (defun card8->char (card8)
+                             (declare (type card8 card8))
+                             #.(declare-buffun)
+                             (the base-char
+                                  (or (aref (the simple-vector *card8-to-char-translation-table*)
+                                            card8)
+                                      (error "Invalid CHAR code ~D." card8))))
+                           )
+                         #+Genera
+                         (progn
+                           (defun char->card8 (char)
+                             (declare lt:(side-effects reader reducible))
+                             (aref *char-to-card8-translation-table* (char-code char)))
+                           (defun card8->char (card8)
+                             (declare lt:(side-effects reader reducible))
+                             (aref *card8-to-char-translation-table* card8))
+                           )
+                         (dotimes (i 256)
+                           (unless (= i (char->card8 (card8->char i)))
+                             (warn "The card8->char mapping is not invertible through char->card8.  Info:~%~S"
+                                   (list i
+                                         (card8->char i)
+                                         (char->card8 (card8->char i))))
+                             (return nil)))
+                         (dotimes (i (length *char-to-card8-translation-table*))
+                           (let ((char (code-char i)))
+                             (unless (eql char (card8->char (char->card8 char)))
+                               (warn "The char->card8 mapping is not invertible through card8->char.  Info:~%~S"
+                                     (list char
+                                           (char->card8 char)
+                                           (card8->char (char->card8 char))))
+                               (return nil))))))
+                     (t
+                      `(progn
+                         (defun char->card8 (char)
+                           (declare (type base-char char))
+                           #.(declare-buffun)
+                           (the card8 (char-code char)))
+                         (defun card8->char (card8)
+                           (declare (type card8 card8))
+                           #.(declare-buffun)
+                           (the base-char (code-char card8)))
+                         ))))))
   (char-translators))
 
 ;;-----------------------------------------------------------------------------
 ;; Process Locking
 ;;
-;;	Common-Lisp doesn't provide process locking primitives, so we define
-;;	our own here, based on Zetalisp primitives.  Holding-Lock is very
-;;	similar to with-lock on The TI Explorer, and a little more efficient
-;;	than with-process-lock on a Symbolics.
+;;      Common-Lisp doesn't provide process locking primitives, so we define
+;;      our own here, based on Zetalisp primitives.  Holding-Lock is very
+;;      similar to with-lock on The TI Explorer, and a little more efficient
+;;      than with-process-lock on a Symbolics.
 ;;-----------------------------------------------------------------------------
 
 ;;; MAKE-PROCESS-LOCK: Creating a process lock.
@@ -472,7 +472,7 @@
 ;;; work for event-listen you should do for holding-lock.
 
 (defmacro holding-lock ((locator display &optional whostate &key timeout)
-			&body body)
+                        &body body)
   (declare (ignore timeout display))
   `(ccl:with-lock-grabbed (,locator ,whostate)
     ,@body))
@@ -528,8 +528,8 @@
 
 ;;;----------------------------------------------------------------------------
 ;;; IO Error Recovery
-;;;	All I/O operations are done within a WRAP-BUF-OUTPUT macro.
-;;;	It prevents multiple mindless errors when the network craters.
+;;;     All I/O operations are done within a WRAP-BUF-OUTPUT macro.
+;;;     It prevents multiple mindless errors when the network craters.
 ;;;
 ;;;----------------------------------------------------------------------------
 
@@ -546,8 +546,8 @@
 
 ;;;----------------------------------------------------------------------------
 ;;; System dependent IO primitives
-;;;	Functions for opening, reading writing forcing-output and closing 
-;;;	the stream to the server.
+;;;     Functions for opening, reading writing forcing-output and closing 
+;;;     the stream to the server.
 ;;;----------------------------------------------------------------------------
 
 ;;; OPEN-X-STREAM - create a stream for communicating to the appropriate X
@@ -559,35 +559,35 @@
     (if local-socket-path
     (ccl::make-socket :connect :active
                       :address-family  :file
-			 :remote-filename local-socket-path)
+                         :remote-filename local-socket-path)
     (ccl::make-socket :connect :active
                       :remote-host host
-			 :remote-port (+ 6000 display)))))
+                         :remote-port (+ 6000 display)))))
 
 ;;; BUFFER-READ-DEFAULT - read data from the X stream
 
 (defun buffer-read-default (display vector start end timeout)
   (declare (type display display)
-	   (type buffer-bytes vector)
-	   (type array-index start end)
-	   (type (or null (real 0 *)) timeout))
+           (type buffer-bytes vector)
+           (type array-index start end)
+           (type (or null (real 0 *)) timeout))
   #.(declare-buffun)
   (let ((stream (display-input-stream display)))
     (declare (type (or null stream) stream))
     (or (cond ((null stream))
-	      ((listen stream) nil)
-	      ((and timeout (= timeout 0)) :timeout)
-	      ((buffer-input-wait-default display timeout)))
-	(progn
-	  (ccl:stream-read-ivector stream vector start (- end start))
-	  nil))))
+              ((listen stream) nil)
+              ((and timeout (= timeout 0)) :timeout)
+              ((buffer-input-wait-default display timeout)))
+        (progn
+          (ccl:stream-read-ivector stream vector start (- end start))
+          nil))))
 
 ;;; BUFFER-WRITE-DEFAULT - write data to the X stream
 
 (defun buffer-write-default (vector display start end)
   (declare (type buffer-bytes vector)
-	   (type display display)
-	   (type array-index start end))
+           (type display display)
+           (type array-index start end))
   #.(declare-buffun)
   (let ((stream (display-output-stream display)))
     (declare (type (or null stream) stream))
@@ -623,16 +623,16 @@
 
 (defun buffer-input-wait-default (display timeout)
   (declare (type display display)
-	   (type (or null number) timeout))
+           (type (or null number) timeout))
   (let ((stream (display-input-stream display)))
     (declare (type (or null stream) stream))
     (cond ((null stream))
-	  ((listen stream) nil)
-	  ((eql timeout 0) :timeout)
-	  (t
-	   (let* ((fd (ccl::stream-device stream :input))
-		  (ticks (and timeout (floor (* timeout ccl::*ticks-per-second*)))))
-	     (if (ccl::process-input-wait fd ticks)
+          ((listen stream) nil)
+          ((eql timeout 0) :timeout)
+          (t
+           (let* ((fd (ccl::stream-device stream :input))
+                  (ticks (and timeout (floor (* timeout ccl::*ticks-per-second*)))))
+             (if (ccl::process-input-wait fd ticks)
                  nil
                  :timeout))))))
 
@@ -647,7 +647,7 @@
   (let ((stream (display-input-stream display)))
     (declare (type (or null stream) stream))
     (if (null stream)
-	t
+        t
       (listen stream))))
 
 
@@ -669,7 +669,7 @@
   ;; therefore DISAPPEARS when WITH-STACK-LIST is exited.
   `(let ((,var (list ,@elements)))
      (declare (type cons ,var)
-	      #+clx-ansi-common-lisp (dynamic-extent ,var))
+              #+clx-ansi-common-lisp (dynamic-extent ,var))
      ,@body))
 
 (defmacro with-stack-list* ((var &rest elements) &body body)
@@ -686,25 +686,25 @@
 
 (defun buffer-replace (buf1 buf2 start1 end1 &optional (start2 0))
   (declare (type buffer-bytes buf1 buf2)
-	   (type array-index start1 end1 start2))
+           (type array-index start1 end1 start2))
   (replace buf1 buf2 :start1 start1 :end1 end1 :start2 start2))
 
 (defmacro with-gcontext-bindings ((gc saved-state indexes ts-index temp-mask temp-gc)
-				  &body body)
+                                  &body body)
   (let ((local-state (gensym))
-	(resets nil))
+        (resets nil))
     (dolist (index indexes)
       (push `(setf (svref ,local-state ,index) (svref ,saved-state ,index))
-	    resets))
+            resets))
     `(unwind-protect
-	 (progn
-	   ,@body)
+         (progn
+           ,@body)
        (let ((,local-state (gcontext-local-state ,gc)))
-	 (declare (type gcontext-state ,local-state))
-	 ,@resets
-	 (setf (svref ,local-state ,ts-index) 0))
+         (declare (type gcontext-state ,local-state))
+         ,@resets
+         (setf (svref ,local-state ,ts-index) 0))
        (when ,temp-gc
-	 (restore-gcontext-temp-state ,gc ,temp-mask ,temp-gc))
+         (restore-gcontext-temp-state ,gc ,temp-mask ,temp-gc))
        (deallocate-gcontext-state ,saved-state))))
 
 ;;;----------------------------------------------------------------------------
@@ -758,19 +758,19 @@
     (progn
       (setq type (eval type))
       (let ((predicate (assoc type
-			      '((drawable drawable-p) (window window-p)
-				(pixmap pixmap-p) (cursor cursor-p)
-				(font font-p) (gcontext gcontext-p)
-				(colormap colormap-p) (null null)
-				(integer integerp)))))
-	(cond (predicate
-	       `(,(second predicate) ,object))
-	      ((eq type 'generalized-boolean)
-	       't)			; Everything is a generalized-boolean.
-	      (+type-check?+
-	       `(locally (declare (optimize safety)) (typep ,object ',type)))
-	      (t
-	       `(typep ,object ',type)))))))
+                              '((drawable drawable-p) (window window-p)
+                                (pixmap pixmap-p) (cursor cursor-p)
+                                (font font-p) (gcontext gcontext-p)
+                                (colormap colormap-p) (null null)
+                                (integer integerp)))))
+        (cond (predicate
+               `(,(second predicate) ,object))
+              ((eq type 'generalized-boolean)
+               't)                      ; Everything is a generalized-boolean.
+              (+type-check?+
+               `(locally (declare (optimize safety)) (typep ,object ',type)))
+              (t
+               `(typep ,object ',type)))))))
 
 ;; X-TYPE-ERROR is the function called for type errors.
 ;; If you want lots of checking, but are concerned about code size,
@@ -778,9 +778,9 @@
 
 (defun x-type-error (object type &optional error-string)
   (x-error 'x-type-error
-	   :datum object
-	   :expected-type type
-	   :type-string error-string))
+           :datum object
+           :expected-type type
+           :type-string error-string))
 
 
 ;;-----------------------------------------------------------------------------
@@ -790,9 +790,9 @@
 ;;-----------------------------------------------------------------------------
 
 (defun default-error-handler (display error-key &rest key-vals
-			      &key asynchronous &allow-other-keys)
+                              &key asynchronous &allow-other-keys)
   (declare (type generalized-boolean asynchronous)
-	   (dynamic-extent key-vals))
+           (dynamic-extent key-vals))
   ;; The default display-error-handler.
   ;; It signals the conditions listed in the DISPLAY file.
   (if asynchronous
@@ -824,7 +824,7 @@
   ;; Return a list whose car is the family keyword (:internet :DECnet :Chaos)
   ;; and cdr is a list of network address bytes.
   (declare (type stringable host)
-	   (type (or null (member :internet :decnet :chaos) card8) family))
+           (type (or null (member :internet :decnet :chaos) card8) family))
   (declare (clx-values list))
   (ecase family
     ((:internet nil 0)
@@ -880,8 +880,8 @@
 
 (defun resources-pathname ()
   (or (let ((string (getenv "XENVIRONMENT")))
-	(and string
-	     (pathname string)))
+        (and string
+             (pathname string)))
       (homedir-file-pathname
        (concatenate 'string ".Xdefaults-" (get-host-name)))))
 
@@ -889,8 +889,8 @@
 
 (defun authority-pathname ()
   (or (let ((xauthority (getenv "XAUTHORITY")))
-	(and xauthority
-	     (pathname xauthority)))
+        (and xauthority
+             (pathname xauthority)))
       (homedir-file-pathname ".Xauthority")))
 
 ;;; this particular defaulting behaviour is typical to most Unices, I think
@@ -913,28 +913,28 @@ C language bindings
 
 Returns a list of (host display-number screen protocol)."
   (let* ((name (or display-name
-		   (getenv "DISPLAY")
-		   (error "DISPLAY environment variable is not set")))
-	 (slash-i (or (position #\/ name) -1))
-	 (colon-i (position #\: name :start (1+ slash-i)))
-	 (decnet-colon-p (eql (elt name (1+ colon-i)) #\:))
-	 (host (subseq name (1+ slash-i) colon-i))
-	 (dot-i (and colon-i (position #\. name :start colon-i)))
-	 (display (when colon-i
-		    (parse-integer name
-				   :start (if decnet-colon-p
-					      (+ colon-i 2)
-					      (1+ colon-i))
-				   :end dot-i)))
-	 (screen (when dot-i
-		   (parse-integer name :start (1+ dot-i))))
-	 (protocol
-	  (cond ((or (string= host "") (string-equal host "unix")) :local)
-		(decnet-colon-p :decnet)
-		((> slash-i -1) (intern
-				 (string-upcase (subseq name 0 slash-i))
-				 :keyword))
-		(t :internet))))
+                   (getenv "DISPLAY")
+                   (error "DISPLAY environment variable is not set")))
+         (slash-i (or (position #\/ name) -1))
+         (colon-i (position #\: name :start (1+ slash-i)))
+         (decnet-colon-p (eql (elt name (1+ colon-i)) #\:))
+         (host (subseq name (1+ slash-i) colon-i))
+         (dot-i (and colon-i (position #\. name :start colon-i)))
+         (display (when colon-i
+                    (parse-integer name
+                                   :start (if decnet-colon-p
+                                              (+ colon-i 2)
+                                              (1+ colon-i))
+                                   :end dot-i)))
+         (screen (when dot-i
+                   (parse-integer name :start (1+ dot-i))))
+         (protocol
+          (cond ((or (string= host "") (string-equal host "unix")) :local)
+                (decnet-colon-p :decnet)
+                ((> slash-i -1) (intern
+                                 (string-upcase (subseq name 0 slash-i))
+                                 :keyword))
+                (t :internet))))
     (list host (or display 0) (or screen 0) protocol)))
 
 
@@ -944,10 +944,10 @@ Returns a list of (host display-number screen protocol)."
 
 (defun gc-cleanup ()
   (declare (special *event-free-list*
-		    *pending-command-free-list*
-		    *reply-buffer-free-lists*
-		    *gcontext-local-state-cache*
-		    *temp-gcontext-cache*))
+                    *pending-command-free-list*
+                    *reply-buffer-free-lists*
+                    *gcontext-local-state-cache*
+                    *temp-gcontext-cache*))
   (setq *event-free-list* nil)
   (setq *pending-command-free-list* nil)
   (when (boundp '*reply-buffer-free-lists*)
@@ -974,10 +974,10 @@ Returns a list of (host display-number screen protocol)."
 
 (defun default-keysym-translate (display state object)
   (declare (type display display)
-	   (type card16 state)
-	   (type t object)
-	   (ignore display state)
-	   (clx-values t))
+           (type card16 state)
+           (type t object)
+           (ignore display state)
+           (clx-values t))
   object)
 
 
@@ -1054,13 +1054,13 @@ Returns a list of (host display-number screen protocol)."
 (defmacro read-image-assemble-bytes (&rest bytes)
   (unless +image-byte-lsb-first-p+ (setq bytes (reverse bytes)))
   (let ((it (first bytes))
-	(count 0))
+        (count 0))
     (dolist (byte (rest bytes))
       (setq it
-	    `(dpb
-	      (the card8 ,byte)
-	      (byte 8 ,(incf count 8))
-	      (the (unsigned-byte ,count) ,it))))
+            `(dpb
+              (the card8 ,byte)
+              (byte 8 ,(incf count 8))
+              (the (unsigned-byte ,count) ,it))))
     `(the (unsigned-byte ,(* (length bytes) 8)) ,it)))
 
 ;;; WRITE-IMAGE-LOAD-BYTE is used to extract a CARD8 from a 16, 24 or 32 bit
@@ -1080,8 +1080,8 @@ Returns a list of (host display-number screen protocol)."
 (defmacro write-image-assemble-bytes (&rest bytes)
   (unless +image-bit-lsb-first-p+ (setq bytes (reverse bytes)))
   (let ((size (floor 8 (length bytes)))
-	(it (first bytes))
-	(count 0))
+        (it (first bytes))
+        (count 0))
     (dolist (byte (rest bytes))
       (setq it `(dpb
                  (the (unsigned-byte ,size) ,byte)
@@ -1098,9 +1098,9 @@ Returns a list of (host display-number screen protocol)."
 ;;; FAST-READ-PIXARRAY - fill part of a pixarray from a buffer of card8s
 
 (defun fast-read-pixarray (bbuf boffset pixarray
-			   x y width height padded-bytes-per-line
-			   bits-per-pixel
-			   unit byte-lsb-first-p bit-lsb-first-p)
+                           x y width height padded-bytes-per-line
+                           bits-per-pixel
+                           unit byte-lsb-first-p bit-lsb-first-p)
   (declare (ignore bbuf boffset pixarray x y width height
                    padded-bytes-per-line bits-per-pixel unit
                    byte-lsb-first-p bit-lsb-first-p))
@@ -1109,8 +1109,8 @@ Returns a list of (host display-number screen protocol)."
 ;;; FAST-WRITE-PIXARRAY - copy part of a pixarray into an array of CARD8s
 
 (defun fast-write-pixarray (bbuf boffset pixarray x y width height
-			    padded-bytes-per-line bits-per-pixel
-			    unit byte-lsb-first-p bit-lsb-first-p)
+                            padded-bytes-per-line bits-per-pixel
+                            unit byte-lsb-first-p bit-lsb-first-p)
   (declare (ignore bbuf boffset pixarray x y width height
                    padded-bytes-per-line bits-per-pixel unit
                    byte-lsb-first-p bit-lsp-first-p))

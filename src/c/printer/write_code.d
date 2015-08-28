@@ -51,13 +51,13 @@ _ecl_write_bclosure(cl_object x, cl_object stream)
 {
         if (ecl_print_readably()) {
                 cl_object lex = x->bclosure.lex;
-		if (Null(lex)) {
-			_ecl_write_bytecodes(x->bclosure.code, stream);
-		} else {
-			writestr_stream("#Y", stream);
-			si_write_ugly_object(cl_list(2, x->bclosure.code, lex),
-					     stream);
-		}
+                if (Null(lex)) {
+                        _ecl_write_bytecodes(x->bclosure.code, stream);
+                } else {
+                        writestr_stream("#Y", stream);
+                        si_write_ugly_object(cl_list(2, x->bclosure.code, lex),
+                                             stream);
+                }
         } else {
                 cl_object name = x->bytecodes.name;
                 writestr_stream("#<bytecompiled-closure ", stream);

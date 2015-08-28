@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<locatingRules xmlns="http://thaiopensource.com/ns/locating-rules/1.0">
+  <uri resource="ref_aggregate.xml" typeId="DocBook5"/>
+  <uri resource="ref_declare.xml" typeId="DocBook5"/>
+  <uri resource="ref_func_libr.xml" typeId="DocBook5"/>
+  <uri resource="ref_object.xml" typeId="DocBook5"/>
+  <uri resource="ref_primitive.xml" typeId="DocBook5"/>
+  <uri resource="ref_string.xml" typeId="DocBook5"/>
+  <typeId id="DocBook5" uri="/usr/local/Cellar/docbook/5.0/docbook/xml/5.0/rng/docbookxi.rnc"/>
+  <namespace ns="http://docbook.org/ns/docbook" uri="/usr/local/Cellar/docbook/5.0/docbook/xml/5.0/rng/docbookxi.rnc"/>
+</locatingRules>

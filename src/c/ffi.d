@@ -19,10 +19,10 @@
 #include <ecl/internal.h>
 
 static const cl_object ecl_aet_to_ffi_table[ecl_aet_bc+1] = {
-	@':void', /* ecl_aet_object */
-	@':float', /* ecl_aet_df */
-	@':double', /* ecl_aet_df */
-	@':void', /* ecl_aet_bit */
+        @':void', /* ecl_aet_object */
+        @':float', /* ecl_aet_df */
+        @':double', /* ecl_aet_df */
+        @':void', /* ecl_aet_bit */
 #if ECL_FIXNUM_BITS == 32 && defined(ecl_uint32_t)
         @':int32-t', /* ecl_aet_fix */
         @':uint32-t', /* ecl_aet_index */
@@ -35,7 +35,7 @@ static const cl_object ecl_aet_to_ffi_table[ecl_aet_bc+1] = {
         @':void', /* ecl_aet_index */
 # endif
 #endif
-	@':uint8-t', /* ecl_aet_b8 */
+        @':uint8-t', /* ecl_aet_b8 */
         @':int8-t', /* ecl_aet_i8 */
 #ifdef ecl_uint16_t
         @':uint16-t', /* ecl_aet_b16 */
@@ -51,50 +51,50 @@ static const cl_object ecl_aet_to_ffi_table[ecl_aet_bc+1] = {
 #endif
 #ifdef ECL_UNICODE
 # ifdef ecl_int32_t
-	@':int32-t', /* ecl_aet_ch */
+        @':int32-t', /* ecl_aet_ch */
 # else
         @':void', /* ecl_aet_ch */
 # endif
 #endif
-	@':char' /* ecl_aet_bc */
+        @':char' /* ecl_aet_bc */
 };
 
 #define AUX_PTR(type) \
-	((struct { char a[1]; union { type c[1]; char d[sizeof(type)]; } b; } *)0)
+        ((struct { char a[1]; union { type c[1]; char d[sizeof(type)]; } b; } *)0)
 #ifdef __GNUC__
 typedef struct {
-	cl_object name;
-	cl_index size;
-	cl_index alignment;
+        cl_object name;
+        cl_index size;
+        cl_index alignment;
 } ecl_foreign_type_record;
 # define ALIGNMENT(tag) (ecl_foreign_type_table[tag].alignment)
-# define FFI_DESC(symbol,type)			\
+# define FFI_DESC(symbol,type)                  \
   {symbol, sizeof(type), (AUX_PTR(type)->b.d - AUX_PTR(type)->a)}
 #else
 typedef struct {
-	cl_object name;
-	cl_index size;
-	char *d, *a;
+        cl_object name;
+        cl_index size;
+        char *d, *a;
 } ecl_foreign_type_record;
 #define ALIGNMENT(tag) (ecl_foreign_type_table[tag].d - ecl_foreign_type_table[tag].a)
 #define AUX_PTR(type) \
-	((struct { char a[1]; union { type c[1]; char d[sizeof(type)]; } b; } *)0)
+        ((struct { char a[1]; union { type c[1]; char d[sizeof(type)]; } b; } *)0)
 #define FFI_DESC(symbol,type) \
   {symbol, sizeof(type), AUX_PTR(type)->b.d, AUX_PTR(type)->a}
 #endif
 
 static const ecl_foreign_type_record
 ecl_foreign_type_table[] = {
-	FFI_DESC(@':char', char),
-	FFI_DESC(@':unsigned-char', unsigned char),
-	FFI_DESC(@':byte', ecl_int8_t),
+        FFI_DESC(@':char', char),
+        FFI_DESC(@':unsigned-char', unsigned char),
+        FFI_DESC(@':byte', ecl_int8_t),
         FFI_DESC(@':unsigned-byte', ecl_uint8_t),
-	FFI_DESC(@':short', short),
-	FFI_DESC(@':unsigned-short', unsigned short),
-	FFI_DESC(@':int', int),
-	FFI_DESC(@':unsigned-int', unsigned int),
-	FFI_DESC(@':long', long),
-	FFI_DESC(@':unsigned-long', unsigned long),
+        FFI_DESC(@':short', short),
+        FFI_DESC(@':unsigned-short', unsigned short),
+        FFI_DESC(@':int', int),
+        FFI_DESC(@':unsigned-int', unsigned int),
+        FFI_DESC(@':long', long),
+        FFI_DESC(@':unsigned-long', unsigned long),
 #ifdef ecl_uint8_t
         FFI_DESC(@':int8-t', ecl_int8_t),
         FFI_DESC(@':uint8-t', ecl_uint8_t),
@@ -115,18 +115,18 @@ ecl_foreign_type_table[] = {
         FFI_DESC(@':long-long', long long),
         FFI_DESC(@':unsigned-long-long', unsigned long long),
 #endif
-	FFI_DESC(@':pointer-void', void *),
-	FFI_DESC(@':cstring', char *),
-	FFI_DESC(@':object', cl_object),
-	FFI_DESC(@':float', float),
-	FFI_DESC(@':double', double),
-	{@':void', 0, 0}
+        FFI_DESC(@':pointer-void', void *),
+        FFI_DESC(@':cstring', char *),
+        FFI_DESC(@':object', cl_object),
+        FFI_DESC(@':float', float),
+        FFI_DESC(@':double', double),
+        {@':void', 0, 0}
 };
 
 #ifdef ECL_DYNAMIC_FFI
 static const cl_object ecl_foreign_cc_table[] = {
-	@':cdecl',
-	@':stdcall'
+        @':cdecl',
+        @':stdcall'
 };
 #endif
 
@@ -137,29 +137,29 @@ static struct {
 } ecl_foreign_cc_table[] = {
         {@':default', FFI_DEFAULT_ABI},
 #ifdef X86_WIN32
-	{@':cdecl', FFI_SYSV},
-	{@':sysv', FFI_SYSV},
-	{@':stdcall', FFI_STDCALL},
+        {@':cdecl', FFI_SYSV},
+        {@':sysv', FFI_SYSV},
+        {@':stdcall', FFI_STDCALL},
 #elif defined(X86_WIN64)
-	{@':win64', FFI_WIN64},
+        {@':win64', FFI_WIN64},
 #elif defined(X86_ANY) || defined(X86) || defined(X86_64)
-	{@':cdecl', FFI_SYSV},
-	{@':sysv', FFI_SYSV},
-	{@':unix64', FFI_UNIX64},
+        {@':cdecl', FFI_SYSV},
+        {@':sysv', FFI_SYSV},
+        {@':unix64', FFI_UNIX64},
 #endif
 };
 
 static ffi_type *ecl_type_to_libffi_type[] = {
-	&ffi_type_schar, /*@':char',*/
-	&ffi_type_uchar, /*@':unsigned-char',*/
-	&ffi_type_sint8, /*@':byte',*/
-	&ffi_type_uint8, /*@':unsigned-byte',*/
-	&ffi_type_sshort, /*@':short',*/
-	&ffi_type_ushort, /*@':unsigned-short',*/
-	&ffi_type_sint, /*@':int',*/
-	&ffi_type_uint, /*@':unsigned-int',*/
-	&ffi_type_slong, /*@':long',*/
-	&ffi_type_ulong, /*@':unsigned-long',*/
+        &ffi_type_schar, /*@':char',*/
+        &ffi_type_uchar, /*@':unsigned-char',*/
+        &ffi_type_sint8, /*@':byte',*/
+        &ffi_type_uint8, /*@':unsigned-byte',*/
+        &ffi_type_sshort, /*@':short',*/
+        &ffi_type_ushort, /*@':unsigned-short',*/
+        &ffi_type_sint, /*@':int',*/
+        &ffi_type_uint, /*@':unsigned-int',*/
+        &ffi_type_slong, /*@':long',*/
+        &ffi_type_ulong, /*@':unsigned-long',*/
 #ifdef ecl_uint8_t
         &ffi_type_sint8, /*@':int8-t',*/
         &ffi_type_uint8, /*@':uint8-t',*/
@@ -180,117 +180,117 @@ static ffi_type *ecl_type_to_libffi_type[] = {
         &ffi_type_sint64, /*@':long-long',*/ /*FIXME! libffi does not have long long */
         &ffi_type_uint64, /*@':unsigned-long-long',*/
 #endif
-	&ffi_type_pointer, /*@':pointer-void',*/
-	&ffi_type_pointer, /*@':cstring',*/
-	&ffi_type_pointer, /*@':object',*/
-	&ffi_type_float, /*@':float',*/
-	&ffi_type_double, /*@':double',*/
-	&ffi_type_void /*@':void'*/
+        &ffi_type_pointer, /*@':pointer-void',*/
+        &ffi_type_pointer, /*@':cstring',*/
+        &ffi_type_pointer, /*@':object',*/
+        &ffi_type_float, /*@':float',*/
+        &ffi_type_double, /*@':double',*/
+        &ffi_type_void /*@':void'*/
 };
 #endif /* HAVE_LIBFFI */
 
 cl_object
 ecl_make_foreign_data(cl_object tag, cl_index size, void *data)
 {
-	cl_object output = ecl_alloc_object(t_foreign);
-	output->foreign.tag = tag == ECL_NIL ? @':void' : tag;
-	output->foreign.size = size;
-	output->foreign.data = (char*)data;
-	return output;
+        cl_object output = ecl_alloc_object(t_foreign);
+        output->foreign.tag = tag == ECL_NIL ? @':void' : tag;
+        output->foreign.size = size;
+        output->foreign.data = (char*)data;
+        return output;
 }
 
 cl_object
 ecl_allocate_foreign_data(cl_object tag, cl_index size)
 {
-	cl_object output = ecl_alloc_object(t_foreign);
-	output->foreign.tag = tag;
-	output->foreign.size = size;
-	output->foreign.data = (char*)ecl_alloc_atomic(size);
-	return output;
+        cl_object output = ecl_alloc_object(t_foreign);
+        output->foreign.tag = tag;
+        output->foreign.size = size;
+        output->foreign.data = (char*)ecl_alloc_atomic(size);
+        return output;
 }
 
 void *
 ecl_foreign_data_pointer_safe(cl_object f)
 {
-	if (ecl_unlikely(ecl_t_of(f) != t_foreign)) {
+        if (ecl_unlikely(ecl_t_of(f) != t_foreign)) {
                 FEwrong_type_only_arg(@[si::foreign-data-pointer], f,
                                       @[si::foreign-data]);
         }
-	return f->foreign.data;
+        return f->foreign.data;
 }
 
 char *
 ecl_base_string_pointer_safe(cl_object f)
 {
-	unsigned char *s;
-	/* FIXME! Is there a better function name? */
-	f = ecl_check_cl_type(@'si::make-foreign-data-from-array', f, t_base_string);
-	s = f->base_string.self;
-	if (ecl_unlikely(ECL_ARRAY_HAS_FILL_POINTER_P(f) &&
+        unsigned char *s;
+        /* FIXME! Is there a better function name? */
+        f = ecl_check_cl_type(@'si::make-foreign-data-from-array', f, t_base_string);
+        s = f->base_string.self;
+        if (ecl_unlikely(ECL_ARRAY_HAS_FILL_POINTER_P(f) &&
                          s[f->base_string.fillp] != 0)) {
-		FEerror("Cannot coerce a string with fill pointer to (char *)", 0);
-	}
-	return (char *)s;
+                FEerror("Cannot coerce a string with fill pointer to (char *)", 0);
+        }
+        return (char *)s;
 }
 
 cl_object
 ecl_null_terminated_base_string(cl_object f)
 {
-	/* FIXME! Is there a better function name? */
-	f = ecl_check_cl_type(@'si::make-foreign-data-from-array', f, t_base_string);
-	if (ECL_ARRAY_HAS_FILL_POINTER_P(f) &&
+        /* FIXME! Is there a better function name? */
+        f = ecl_check_cl_type(@'si::make-foreign-data-from-array', f, t_base_string);
+        if (ECL_ARRAY_HAS_FILL_POINTER_P(f) &&
             f->base_string.self[f->base_string.fillp] != 0) {
-		return cl_copy_seq(f);
-	} else {
-		return f;
-	}
+                return cl_copy_seq(f);
+        } else {
+                return f;
+        }
 }
 
 cl_object
 si_allocate_foreign_data(cl_object tag, cl_object size)
 {
-	cl_object output = ecl_alloc_object(t_foreign);
-	cl_index bytes = ecl_to_size(size);
-	output->foreign.tag = tag;
-	output->foreign.size = bytes;
-	/* FIXME! Should be atomic uncollectable or malloc, but we do not export
-	 * that garbage collector interface and malloc may be overwritten
-	 * by the GC library */
-	output->foreign.data = bytes? ecl_alloc_uncollectable(bytes) : NULL;
-	@(return output)
+        cl_object output = ecl_alloc_object(t_foreign);
+        cl_index bytes = ecl_to_size(size);
+        output->foreign.tag = tag;
+        output->foreign.size = bytes;
+        /* FIXME! Should be atomic uncollectable or malloc, but we do not export
+         * that garbage collector interface and malloc may be overwritten
+         * by the GC library */
+        output->foreign.data = bytes? ecl_alloc_uncollectable(bytes) : NULL;
+        @(return output)
 }
 
 cl_object
 si_free_foreign_data(cl_object f)
 {
-	if (ecl_unlikely(ecl_t_of(f) != t_foreign)) {
+        if (ecl_unlikely(ecl_t_of(f) != t_foreign)) {
                 FEwrong_type_only_arg(@[si::free-foreign-data], f,
                                       @[si::foreign-data]);
-	}
-	if (f->foreign.size) {
-		/* See si_allocate_foreign_data() */
-		ecl_free_uncollectable(f->foreign.data);
-	}
-	f->foreign.size = 0;
-	f->foreign.data = NULL;
+        }
+        if (f->foreign.size) {
+                /* See si_allocate_foreign_data() */
+                ecl_free_uncollectable(f->foreign.data);
+        }
+        f->foreign.size = 0;
+        f->foreign.data = NULL;
         @(return)
 }
 
 cl_object
 si_make_foreign_data_from_array(cl_object array)
 {
-	cl_object tag;
-	if (ecl_unlikely(ecl_t_of(array) != t_array && ecl_t_of(array) != t_vector)) {
+        cl_object tag;
+        if (ecl_unlikely(ecl_t_of(array) != t_array && ecl_t_of(array) != t_vector)) {
                 FEwrong_type_only_arg(@[si::make-foreign-data-from-array], array,
                                       @[array]);
-	}
+        }
         tag = ecl_aet_to_ffi_table[array->array.elttype];
         if (ecl_unlikely(Null(tag))) {
-		FEerror("Cannot make foreign object from array "
+                FEerror("Cannot make foreign object from array "
                         "with element type ~S.", 1,
                         ecl_elttype_to_symbol(array->array.elttype));
-	}
-	@(return ecl_make_foreign_data(tag, 0, array->array.self.bc));
+        }
+        @(return ecl_make_foreign_data(tag, 0, array->array.self.bc));
 }
 
 cl_object
@@ -302,133 +302,133 @@ si_foreign_data_p(cl_object f)
 cl_object
 si_foreign_data_address(cl_object f)
 {
-	if (ecl_unlikely(ecl_t_of(f) != t_foreign)) {
+        if (ecl_unlikely(ecl_t_of(f) != t_foreign)) {
                 FEwrong_type_only_arg(@[si::foreign-data-address], f,
                                       @[si::foreign-data]);
-	}
-	@(return ecl_make_unsigned_integer((cl_index)f->foreign.data))
+        }
+        @(return ecl_make_unsigned_integer((cl_index)f->foreign.data))
 }
 
 cl_object
 si_foreign_data_tag(cl_object f)
 {
-	if (ecl_unlikely(ecl_t_of(f) != t_foreign)) {
+        if (ecl_unlikely(ecl_t_of(f) != t_foreign)) {
                 FEwrong_type_only_arg(@[si::foreign-data-tag], f,
                                       @[si::foreign-data]);
-	}
-	@(return f->foreign.tag);
+        }
+        @(return f->foreign.tag);
 }
 
 cl_object
 si_foreign_data_equal(cl_object f1, cl_object f2)
 {
-	if (ecl_unlikely(!ECL_FOREIGN_DATA_P(f1))) {
+        if (ecl_unlikely(!ECL_FOREIGN_DATA_P(f1))) {
                 FEwrong_type_only_arg(@[si::foreign-data-address], f1,
                                       @[si::foreign-data]);
-	}
-	if (ecl_unlikely(!ECL_FOREIGN_DATA_P(f2))) {
+        }
+        if (ecl_unlikely(!ECL_FOREIGN_DATA_P(f2))) {
                 FEwrong_type_only_arg(@[si::foreign-data-address], f2,
                                       @[si::foreign-data]);
-	}
-	@(return ((f1->foreign.data == f2->foreign.data)? ECL_T : ECL_NIL))
+        }
+        @(return ((f1->foreign.data == f2->foreign.data)? ECL_T : ECL_NIL))
 }
 
 cl_object
 si_foreign_data_pointer(cl_object f, cl_object andx, cl_object asize,
-			cl_object tag)
+                        cl_object tag)
 {
-	cl_index ndx = ecl_to_size(andx);
-	cl_index size = ecl_to_size(asize);
-	cl_object output;
+        cl_index ndx = ecl_to_size(andx);
+        cl_index size = ecl_to_size(asize);
+        cl_object output;
 
-	if (ecl_unlikely(ecl_t_of(f) != t_foreign)) {
+        if (ecl_unlikely(ecl_t_of(f) != t_foreign)) {
                 FEwrong_type_only_arg(@[si::foreign-data-pointer], f,
                                       @[si::foreign-data]);
-	}
-	if (ecl_unlikely(ndx >= f->foreign.size || (f->foreign.size - ndx) < size)) {
-		FEerror("Out of bounds reference into foreign data type ~A.", 1, f);
-	}
-	output = ecl_alloc_object(t_foreign);
-	output->foreign.tag = tag;
-	output->foreign.size = size;
-	output->foreign.data = f->foreign.data + ndx;
-	@(return output)
+        }
+        if (ecl_unlikely(ndx >= f->foreign.size || (f->foreign.size - ndx) < size)) {
+                FEerror("Out of bounds reference into foreign data type ~A.", 1, f);
+        }
+        output = ecl_alloc_object(t_foreign);
+        output->foreign.tag = tag;
+        output->foreign.size = size;
+        output->foreign.data = f->foreign.data + ndx;
+        @(return output)
 }
 
 cl_object
 si_foreign_data_ref(cl_object f, cl_object andx, cl_object asize, cl_object tag)
 {
-	cl_index ndx = ecl_to_size(andx);
-	cl_index size = ecl_to_size(asize);
-	cl_object output;
+        cl_index ndx = ecl_to_size(andx);
+        cl_index size = ecl_to_size(asize);
+        cl_object output;
 
-	if (ecl_unlikely(ecl_t_of(f) != t_foreign)) {
+        if (ecl_unlikely(ecl_t_of(f) != t_foreign)) {
                 FEwrong_type_nth_arg(@[si::foreign-data-ref], 1, f,
                                      @[si::foreign-data]);
-	}
-	if (ecl_unlikely(ndx >= f->foreign.size || (f->foreign.size - ndx) < size)) {
-		FEerror("Out of bounds reference into foreign data type ~A.", 1, f);
-	}
-	output = ecl_allocate_foreign_data(tag, size);
-	memcpy(output->foreign.data, f->foreign.data + ndx, size);
-	@(return output)
+        }
+        if (ecl_unlikely(ndx >= f->foreign.size || (f->foreign.size - ndx) < size)) {
+                FEerror("Out of bounds reference into foreign data type ~A.", 1, f);
+        }
+        output = ecl_allocate_foreign_data(tag, size);
+        memcpy(output->foreign.data, f->foreign.data + ndx, size);
+        @(return output)
 }
 
 cl_object
 si_foreign_data_set(cl_object f, cl_object andx, cl_object value)
 {
-	cl_index ndx = ecl_to_size(andx);
-	cl_index size, limit;
+        cl_index ndx = ecl_to_size(andx);
+        cl_index size, limit;
 
-	if (ecl_unlikely(ecl_t_of(f) != t_foreign)) {
+        if (ecl_unlikely(ecl_t_of(f) != t_foreign)) {
                 FEwrong_type_nth_arg(@[si::foreign-data-set], 1, f,
                                      @[si::foreign-data]);
-	}
-	if (ecl_unlikely(ecl_t_of(value) != t_foreign)) {
+        }
+        if (ecl_unlikely(ecl_t_of(value) != t_foreign)) {
                 FEwrong_type_nth_arg(@[si::foreign-data-set], 3, value,
                                      @[si::foreign-data]);
-	}
-	size = value->foreign.size;
-	limit = f->foreign.size;
-	if (ecl_unlikely(ndx >= limit || (limit - ndx) < size)) {
-		FEerror("Out of bounds reference into foreign data type ~A.", 1, f);
-	}
-	memcpy(f->foreign.data + ndx, value->foreign.data, size);
-	@(return value)
+        }
+        size = value->foreign.size;
+        limit = f->foreign.size;
+        if (ecl_unlikely(ndx >= limit || (limit - ndx) < size)) {
+                FEerror("Out of bounds reference into foreign data type ~A.", 1, f);
+        }
+        memcpy(f->foreign.data + ndx, value->foreign.data, size);
+        @(return value)
 }
 
 static int
 foreign_type_code(cl_object type)
 {
-	int i;
-	for (i = 0; i <= ECL_FFI_VOID; i++) {
-		if (type == ecl_foreign_type_table[i].name)
-			return i;
-	}
+        int i;
+        for (i = 0; i <= ECL_FFI_VOID; i++) {
+                if (type == ecl_foreign_type_table[i].name)
+                        return i;
+        }
         return -1;
 }
 
 enum ecl_ffi_tag
 ecl_foreign_type_code(cl_object type)
 {
-	int i = foreign_type_code(type);
+        int i = foreign_type_code(type);
         if (ecl_unlikely(i < 0)) {
                 FEerror("~A does not denote an elementary foreign type.", 1, type);
         }
-	return (enum ecl_ffi_tag)i;
+        return (enum ecl_ffi_tag)i;
 }
 
 #ifdef HAVE_LIBFFI
 ffi_abi
 ecl_foreign_cc_code(cl_object cc)
 {
-	int i;
-	for (i = 0; i <= ECL_FFI_CC_STDCALL; i++) {
-		if (cc == ecl_foreign_cc_table[i].symbol)
-			return ecl_foreign_cc_table[i].abi;
-	}
-	FEerror("~A does no denote a valid calling convention.", 1, cc);
-	return ECL_FFI_CC_CDECL;
+        int i;
+        for (i = 0; i <= ECL_FFI_CC_STDCALL; i++) {
+                if (cc == ecl_foreign_cc_table[i].symbol)
+                        return ecl_foreign_cc_table[i].abi;
+        }
+        FEerror("~A does no denote a valid calling convention.", 1, cc);
+        return ECL_FFI_CC_CDECL;
 }
 #endif
 
@@ -436,13 +436,13 @@ ecl_foreign_cc_code(cl_object cc)
 enum ecl_ffi_calling_convention
 ecl_foreign_cc_code(cl_object cc)
 {
-	int i;
-	for (i = 0; i <= ECL_FFI_CC_STDCALL; i++) {
-		if (cc == ecl_foreign_cc_table[i])
-			return (enum ecl_ffi_calling_convention)i;
-	}
-	FEerror("~A does no denote a valid calling convention.", 1, cc);
-	return ECL_FFI_CC_CDECL;
+        int i;
+        for (i = 0; i <= ECL_FFI_CC_STDCALL; i++) {
+                if (cc == ecl_foreign_cc_table[i])
+                        return (enum ecl_ffi_calling_convention)i;
+        }
+        FEerror("~A does no denote a valid calling convention.", 1, cc);
+        return ECL_FFI_CC_CDECL;
 }
 #endif
 
@@ -451,31 +451,31 @@ static void wrong_ffi_tag(enum ecl_ffi_tag tag) ecl_attr_noreturn;
 static void
 wrong_ffi_tag(enum ecl_ffi_tag tag)
 {
-	FEerror("Invalid ecl_ffi_tag code ~D", 1, ecl_make_integer(tag));
+        FEerror("Invalid ecl_ffi_tag code ~D", 1, ecl_make_integer(tag));
 }
 
 cl_object
 ecl_foreign_data_ref_elt(void *p, enum ecl_ffi_tag tag)
 {
-	switch (tag) {
-	case ECL_FFI_CHAR:
-		return ECL_CODE_CHAR(*(char *)p);
-	case ECL_FFI_UNSIGNED_CHAR:
-		return ECL_CODE_CHAR(*(unsigned char *)p);
-	case ECL_FFI_BYTE:
-		return ecl_make_fixnum(*(int8_t *)p);
-	case ECL_FFI_UNSIGNED_BYTE:
-		return ecl_make_fixnum(*(uint8_t *)p);
-	case ECL_FFI_SHORT:
-		return ecl_make_fixnum(*(short *)p);
-	case ECL_FFI_UNSIGNED_SHORT:
-		return ecl_make_fixnum(*(unsigned short *)p);
-	case ECL_FFI_INT:
-		return ecl_make_integer(*(int *)p);
-	case ECL_FFI_UNSIGNED_INT:
-		return ecl_make_unsigned_integer(*(unsigned int *)p);
-	case ECL_FFI_LONG:
-		return ecl_make_integer(*(long *)p);
+        switch (tag) {
+        case ECL_FFI_CHAR:
+                return ECL_CODE_CHAR(*(char *)p);
+        case ECL_FFI_UNSIGNED_CHAR:
+                return ECL_CODE_CHAR(*(unsigned char *)p);
+        case ECL_FFI_BYTE:
+                return ecl_make_fixnum(*(int8_t *)p);
+        case ECL_FFI_UNSIGNED_BYTE:
+                return ecl_make_fixnum(*(uint8_t *)p);
+        case ECL_FFI_SHORT:
+                return ecl_make_fixnum(*(short *)p);
+        case ECL_FFI_UNSIGNED_SHORT:
+                return ecl_make_fixnum(*(unsigned short *)p);
+        case ECL_FFI_INT:
+                return ecl_make_integer(*(int *)p);
+        case ECL_FFI_UNSIGNED_INT:
+                return ecl_make_unsigned_integer(*(unsigned int *)p);
+        case ECL_FFI_LONG:
+                return ecl_make_integer(*(long *)p);
 #ifdef ecl_uint8_t
         case ECL_FFI_INT8_T:
                 return ecl_make_fixnum(*(ecl_int8_t *)p);
@@ -506,60 +506,60 @@ ecl_foreign_data_ref_elt(void *p, enum ecl_ffi_tag tag)
         case ECL_FFI_UNSIGNED_LONG_LONG:
                 return ecl_make_ulong_long(*(ecl_ulong_long_t *)p);
 #endif
-	case ECL_FFI_UNSIGNED_LONG:
-		return ecl_make_unsigned_integer(*(unsigned long *)p);
-	case ECL_FFI_POINTER_VOID:
-		return ecl_make_foreign_data(@':pointer-void', 0, *(void **)p);
-	case ECL_FFI_CSTRING:
-		return *(char **)p ?
+        case ECL_FFI_UNSIGNED_LONG:
+                return ecl_make_unsigned_integer(*(unsigned long *)p);
+        case ECL_FFI_POINTER_VOID:
+                return ecl_make_foreign_data(@':pointer-void', 0, *(void **)p);
+        case ECL_FFI_CSTRING:
+                return *(char **)p ?
                         ecl_make_simple_base_string(*(char **)p, -1) : ECL_NIL;
-	case ECL_FFI_OBJECT:
-		return *(cl_object *)p;
-	case ECL_FFI_FLOAT:
-		return ecl_make_single_float(*(float *)p);
-	case ECL_FFI_DOUBLE:
-		return ecl_make_double_float(*(double *)p);
-	case ECL_FFI_VOID:
-		return ECL_NIL;
+        case ECL_FFI_OBJECT:
+                return *(cl_object *)p;
+        case ECL_FFI_FLOAT:
+                return ecl_make_single_float(*(float *)p);
+        case ECL_FFI_DOUBLE:
+                return ecl_make_double_float(*(double *)p);
+        case ECL_FFI_VOID:
+                return ECL_NIL;
         default:
                 wrong_ffi_tag(tag);
-	}
+        }
 }
 
 void
 ecl_foreign_data_set_elt(void *p, enum ecl_ffi_tag tag, cl_object value)
 {
-	switch (tag) {
-	case ECL_FFI_CHAR:
-		*(char *)p = (char)ecl_base_char_code(value);
-		break;
-	case ECL_FFI_UNSIGNED_CHAR:
-		*(unsigned char*)p = (unsigned char)ecl_base_char_code(value);
-		break;
-	case ECL_FFI_BYTE:
-		*(int8_t *)p = ecl_to_int8_t(value);
-		break;
-	case ECL_FFI_UNSIGNED_BYTE:
-		*(uint8_t *)p = ecl_to_uint8_t(value);
-		break;
-	case ECL_FFI_SHORT:
-		*(short *)p = ecl_to_short(value);
-		break;
-	case ECL_FFI_UNSIGNED_SHORT:
-		*(unsigned short *)p = ecl_to_ushort(value);
-		break;
-	case ECL_FFI_INT:
-		*(int *)p = ecl_to_int(value);
-		break;
-	case ECL_FFI_UNSIGNED_INT:
-		*(unsigned int *)p = ecl_to_uint(value);
-		break;
-	case ECL_FFI_LONG:
-		*(long *)p = ecl_to_long(value);
-		break;
-	case ECL_FFI_UNSIGNED_LONG:
-		*(unsigned long *)p = ecl_to_ulong(value);
-		break;
+        switch (tag) {
+        case ECL_FFI_CHAR:
+                *(char *)p = (char)ecl_base_char_code(value);
+                break;
+        case ECL_FFI_UNSIGNED_CHAR:
+                *(unsigned char*)p = (unsigned char)ecl_base_char_code(value);
+                break;
+        case ECL_FFI_BYTE:
+                *(int8_t *)p = ecl_to_int8_t(value);
+                break;
+        case ECL_FFI_UNSIGNED_BYTE:
+                *(uint8_t *)p = ecl_to_uint8_t(value);
+                break;
+        case ECL_FFI_SHORT:
+                *(short *)p = ecl_to_short(value);
+                break;
+        case ECL_FFI_UNSIGNED_SHORT:
+                *(unsigned short *)p = ecl_to_ushort(value);
+                break;
+        case ECL_FFI_INT:
+                *(int *)p = ecl_to_int(value);
+                break;
+        case ECL_FFI_UNSIGNED_INT:
+                *(unsigned int *)p = ecl_to_uint(value);
+                break;
+        case ECL_FFI_LONG:
+                *(long *)p = ecl_to_long(value);
+                break;
+        case ECL_FFI_UNSIGNED_LONG:
+                *(unsigned long *)p = ecl_to_ulong(value);
+                break;
         case ECL_FFI_INT8_T:
                 *(ecl_int8_t *)p = ecl_to_int8_t(value);
                 break;
@@ -598,129 +598,129 @@ ecl_foreign_data_set_elt(void *p, enum ecl_ffi_tag tag, cl_object value)
                 *(ecl_ulong_long_t *)p = ecl_to_ulong_long(value);
                 break;
 #endif
-	case ECL_FFI_POINTER_VOID:
-		*(void **)p = ecl_foreign_data_pointer_safe(value);
-		break;
-	case ECL_FFI_CSTRING:
-		*(char **)p = value == ECL_NIL ? NULL : (char*)value->base_string.self;
-		break;
-	case ECL_FFI_OBJECT:
-		*(cl_object *)p = value;
-		break;
-	case ECL_FFI_FLOAT:
-		*(float *)p = ecl_to_float(value);
-		break;
-	case ECL_FFI_DOUBLE:
-		*(double *)p = ecl_to_double(value);
-		break;
-	case ECL_FFI_VOID:
-		break;
+        case ECL_FFI_POINTER_VOID:
+                *(void **)p = ecl_foreign_data_pointer_safe(value);
+                break;
+        case ECL_FFI_CSTRING:
+                *(char **)p = value == ECL_NIL ? NULL : (char*)value->base_string.self;
+                break;
+        case ECL_FFI_OBJECT:
+                *(cl_object *)p = value;
+                break;
+        case ECL_FFI_FLOAT:
+                *(float *)p = ecl_to_float(value);
+                break;
+        case ECL_FFI_DOUBLE:
+                *(double *)p = ecl_to_double(value);
+                break;
+        case ECL_FFI_VOID:
+                break;
         default:
                 wrong_ffi_tag(tag);
-	}
+        }
 }
 
 cl_object
 si_foreign_data_ref_elt(cl_object f, cl_object andx, cl_object type)
 {
-	cl_index ndx = ecl_to_size(andx);
-	cl_index limit = f->foreign.size;
-	enum ecl_ffi_tag tag = ecl_foreign_type_code(type);
-	if (ecl_unlikely(ndx >= limit ||
+        cl_index ndx = ecl_to_size(andx);
+        cl_index limit = f->foreign.size;
+        enum ecl_ffi_tag tag = ecl_foreign_type_code(type);
+        if (ecl_unlikely(ndx >= limit ||
                          (ndx + ecl_foreign_type_table[tag].size > limit))) {
-		FEerror("Out of bounds reference into foreign data type ~A.", 1, f);
-	}
-	if (ecl_unlikely(ecl_t_of(f) != t_foreign)) {
+                FEerror("Out of bounds reference into foreign data type ~A.", 1, f);
+        }
+        if (ecl_unlikely(ecl_t_of(f) != t_foreign)) {
                 FEwrong_type_nth_arg(@[si::foreign-data-ref-elt], 1, f,
                                      @[si::foreign-data]);
-	}
-	@(return ecl_foreign_data_ref_elt((void*)(f->foreign.data + ndx), tag))
+        }
+        @(return ecl_foreign_data_ref_elt((void*)(f->foreign.data + ndx), tag))
 }
 
 cl_object
 si_foreign_data_set_elt(cl_object f, cl_object andx, cl_object type, cl_object value)
 {
-	cl_index ndx = ecl_to_size(andx);
-	cl_index limit = f->foreign.size;
-	enum ecl_ffi_tag tag = ecl_foreign_type_code(type);
-	if (ecl_unlikely(ndx >= limit ||
+        cl_index ndx = ecl_to_size(andx);
+        cl_index limit = f->foreign.size;
+        enum ecl_ffi_tag tag = ecl_foreign_type_code(type);
+        if (ecl_unlikely(ndx >= limit ||
                          ndx + ecl_foreign_type_table[tag].size > limit)) {
-		FEerror("Out of bounds reference into foreign data type ~A.", 1, f);
-	}
-	if (ecl_unlikely(ecl_t_of(f) != t_foreign)) {
+                FEerror("Out of bounds reference into foreign data type ~A.", 1, f);
+        }
+        if (ecl_unlikely(ecl_t_of(f) != t_foreign)) {
                 FEwrong_type_nth_arg(@[si::foreign-data-set-elt], 1, f,
                                      @[si::foreign-data]);
-	}
-	ecl_foreign_data_set_elt((void*)(f->foreign.data + ndx), tag, value);
-	@(return value)
+        }
+        ecl_foreign_data_set_elt((void*)(f->foreign.data + ndx), tag, value);
+        @(return value)
 }
 
 cl_object
 si_size_of_foreign_elt_type(cl_object type)
 {
-	enum ecl_ffi_tag tag = ecl_foreign_type_code(type);
-	@(return ecl_make_fixnum(ecl_foreign_type_table[tag].size))
+        enum ecl_ffi_tag tag = ecl_foreign_type_code(type);
+        @(return ecl_make_fixnum(ecl_foreign_type_table[tag].size))
 }
 
 cl_object
 si_alignment_of_foreign_elt_type(cl_object type)
 {
-	enum ecl_ffi_tag tag = ecl_foreign_type_code(type);
-	@(return ecl_make_fixnum(ALIGNMENT(tag)))
+        enum ecl_ffi_tag tag = ecl_foreign_type_code(type);
+        @(return ecl_make_fixnum(ALIGNMENT(tag)))
 }
 
 cl_object
 si_foreign_elt_type_p(cl_object type)
 {
-	@(return ((foreign_type_code(type) < 0)? ECL_NIL : ECL_T))
+        @(return ((foreign_type_code(type) < 0)? ECL_NIL : ECL_T))
 }
 
 cl_object
 si_null_pointer_p(cl_object f)
 {
-	if (ecl_unlikely(ecl_t_of(f) != t_foreign))
+        if (ecl_unlikely(ecl_t_of(f) != t_foreign))
                 FEwrong_type_only_arg(@[si::null-pointer-p], f,
                                       @[si::foreign-data]);
-	@(return ((f->foreign.data == NULL)? ECL_T : ECL_NIL))
+        @(return ((f->foreign.data == NULL)? ECL_T : ECL_NIL))
 }
 
 cl_object
 si_foreign_data_recast(cl_object f, cl_object size, cl_object tag)
 {
-	if (ecl_unlikely(ecl_t_of(f) != t_foreign))
+        if (ecl_unlikely(ecl_t_of(f) != t_foreign))
                 FEwrong_type_nth_arg(@[si::foreign-data-recast], 1, f,
                                      @[si::foreign-data]);
-	f->foreign.size = ecl_to_size(size);
-	f->foreign.tag = tag;
-	@(return f)
+        f->foreign.size = ecl_to_size(size);
+        f->foreign.tag = tag;
+        @(return f)
 }
 
 cl_object
 si_load_foreign_module(cl_object filename)
 {
 #if !defined(ENABLE_DLOPEN)
-	FEerror("SI:LOAD-FOREIGN-MODULE does not work when ECL is statically linked", 0);
+        FEerror("SI:LOAD-FOREIGN-MODULE does not work when ECL is statically linked", 0);
 #else
-	cl_object output;
+        cl_object output;
 
 # ifdef ECL_THREADS
-	mp_get_lock(1, ecl_symbol_value(@'mp::+load-compile-lock+'));
-	ECL_UNWIND_PROTECT_BEGIN(ecl_process_env()) {
+        mp_get_lock(1, ecl_symbol_value(@'mp::+load-compile-lock+'));
+        ECL_UNWIND_PROTECT_BEGIN(ecl_process_env()) {
 # endif
-	output = ecl_library_open(filename, 0);
-	if (output->cblock.handle == NULL) {
-		cl_object aux = ecl_library_error(output);
-		ecl_library_close(output);
-		output = aux;
-	}
+        output = ecl_library_open(filename, 0);
+        if (output->cblock.handle == NULL) {
+                cl_object aux = ecl_library_error(output);
+                ecl_library_close(output);
+                output = aux;
+        }
 # ifdef ECL_THREADS
-	(void)0; /* MSVC complains about missing ';' before '}' */
-	} ECL_UNWIND_PROTECT_EXIT {
-	mp_giveup_lock(ecl_symbol_value(@'mp::+load-compile-lock+'));
-	} ECL_UNWIND_PROTECT_END;
+        (void)0; /* MSVC complains about missing ';' before '}' */
+        } ECL_UNWIND_PROTECT_EXIT {
+        mp_giveup_lock(ecl_symbol_value(@'mp::+load-compile-lock+'));
+        } ECL_UNWIND_PROTECT_END;
 # endif
-	if (ecl_unlikely(ecl_t_of(output) != t_codeblock)) {
-		FEerror("LOAD-FOREIGN-MODULE: Could not load "
+        if (ecl_unlikely(ecl_t_of(output) != t_codeblock)) {
+                FEerror("LOAD-FOREIGN-MODULE: Could not load "
                         "foreign module ~S (Error: ~S)", 2, filename, output);
         }
         output->cblock.locked |= 1;
@@ -759,24 +759,24 @@ cl_object
 si_find_foreign_symbol(cl_object var, cl_object module, cl_object type, cl_object size)
 {
 #if !defined(ENABLE_DLOPEN)
-	FEerror("SI:FIND-FOREIGN-SYMBOL does not work when ECL is statically linked", 0);
+        FEerror("SI:FIND-FOREIGN-SYMBOL does not work when ECL is statically linked", 0);
 #else
-	cl_object block;
-	cl_object output = ECL_NIL;
-	void *sym;
+        cl_object block;
+        cl_object output = ECL_NIL;
+        void *sym;
 
-	block = (module == @':default' ? module : si_load_foreign_module(module));
-	var = ecl_null_terminated_base_string(var);
-	sym = ecl_library_symbol(block, (char*)var->base_string.self, 1);
-	if (sym == NULL) {
-		if (block != @':default')
-			output = ecl_library_error(block);
-		goto OUTPUT;
-	}
-	output = ecl_make_foreign_data(type, ecl_to_fixnum(size), sym);
+        block = (module == @':default' ? module : si_load_foreign_module(module));
+        var = ecl_null_terminated_base_string(var);
+        sym = ecl_library_symbol(block, (char*)var->base_string.self, 1);
+        if (sym == NULL) {
+                if (block != @':default')
+                        output = ecl_library_error(block);
+                goto OUTPUT;
+        }
+        output = ecl_make_foreign_data(type, ecl_to_fixnum(size), sym);
 OUTPUT:
-	if (ecl_unlikely(ecl_t_of(output) != t_foreign))
-		FEerror("FIND-FOREIGN-SYMBOL: Could not load "
+        if (ecl_unlikely(ecl_t_of(output) != t_foreign))
+                FEerror("FIND-FOREIGN-SYMBOL: Could not load "
                         "foreign symbol ~S from module ~S (Error: ~S)",
                         3, var, module, output);
         @(return output)
@@ -787,100 +787,100 @@ OUTPUT:
 static void
 ecl_fficall_overflow()
 {
-	FEerror("Stack overflow on SI:CALL-CFUN", 0);
+        FEerror("Stack overflow on SI:CALL-CFUN", 0);
 }
 
 void
 ecl_fficall_prepare(cl_object return_type, cl_object arg_type, cl_object cc_type)
 {
-	struct ecl_fficall *fficall = cl_env.fficall;
-	fficall->buffer_sp = fficall->buffer;
-	fficall->buffer_size = 0;
-	fficall->cstring = ECL_NIL;
-	fficall->cc = ecl_foreign_cc_code(cc_type);
+        struct ecl_fficall *fficall = cl_env.fficall;
+        fficall->buffer_sp = fficall->buffer;
+        fficall->buffer_size = 0;
+        fficall->cstring = ECL_NIL;
+        fficall->cc = ecl_foreign_cc_code(cc_type);
         fficall->registers = ecl_fficall_prepare_extra(fficall->registers);
 }
 
 void
 ecl_fficall_push_bytes(void *data, size_t bytes)
 {
-	struct ecl_fficall *fficall = cl_env.fficall;
-	fficall->buffer_size += bytes;
-	if (fficall->buffer_size >= ECL_FFICALL_LIMIT)
-		ecl_fficall_overflow();
-	memcpy(fficall->buffer_sp, (char*)data, bytes);
-	fficall->buffer_sp += bytes;
+        struct ecl_fficall *fficall = cl_env.fficall;
+        fficall->buffer_size += bytes;
+        if (fficall->buffer_size >= ECL_FFICALL_LIMIT)
+                ecl_fficall_overflow();
+        memcpy(fficall->buffer_sp, (char*)data, bytes);
+        fficall->buffer_sp += bytes;
 }
 
 void
 ecl_fficall_push_int(int data)
 {
-	ecl_fficall_push_bytes(&data, sizeof(int));
+        ecl_fficall_push_bytes(&data, sizeof(int));
 }
 
 void
 ecl_fficall_align(int data)
 {
-	struct ecl_fficall *fficall = cl_env.fficall;
-	if (data == 1)
-		return;
-	else {
-		size_t sp = fficall->buffer_sp - fficall->buffer;
-		size_t mask = data - 1;
-		size_t new_sp = (sp + mask) & ~mask;
-		if (new_sp >= ECL_FFICALL_LIMIT)
-			ecl_fficall_overflow();
-		fficall->buffer_sp = fficall->buffer + new_sp;
-		fficall->buffer_size = new_sp;
-	}
+        struct ecl_fficall *fficall = cl_env.fficall;
+        if (data == 1)
+                return;
+        else {
+                size_t sp = fficall->buffer_sp - fficall->buffer;
+                size_t mask = data - 1;
+                size_t new_sp = (sp + mask) & ~mask;
+                if (new_sp >= ECL_FFICALL_LIMIT)
+                        ecl_fficall_overflow();
+                fficall->buffer_sp = fficall->buffer + new_sp;
+                fficall->buffer_size = new_sp;
+        }
 }
 
 @(defun si::call-cfun (fun return_type arg_types args &optional (cc_type @':cdecl'))
-	struct ecl_fficall *fficall = cl_env.fficall;
-	void *cfun = ecl_foreign_data_pointer_safe(fun);
-	cl_object object;
-	enum ecl_ffi_tag return_type_tag = ecl_foreign_type_code(return_type);
+        struct ecl_fficall *fficall = cl_env.fficall;
+        void *cfun = ecl_foreign_data_pointer_safe(fun);
+        cl_object object;
+        enum ecl_ffi_tag return_type_tag = ecl_foreign_type_code(return_type);
 @
 
-	ecl_fficall_prepare(return_type, arg_types, cc_type);
-	while (CONSP(arg_types)) {
-		enum ecl_ffi_tag type;
-		if (!CONSP(args)) {
-			FEerror("In SI:CALL-CFUN, mismatch between argument types and argument list: ~A vs ~A", 0);
-		}
-		type = ecl_foreign_type_code(CAR(arg_types));
-		if (type == ECL_FFI_CSTRING) {
-			object = ecl_null_terminated_base_string(CAR(args));
-			if (CAR(args) != object)
-				fficall->cstring =
-					CONS(object, fficall->cstring);
-		} else {
-			object = CAR(args);
-		}
-		ecl_foreign_data_set_elt(&fficall->output, type, object);
-		ecl_fficall_push_arg(&fficall->output, type);
-		arg_types = CDR(arg_types);
-		args = CDR(args);
-	}
-	ecl_fficall_execute(cfun, fficall, return_type_tag);
-	object = ecl_foreign_data_ref_elt(&fficall->output, return_type_tag);
+        ecl_fficall_prepare(return_type, arg_types, cc_type);
+        while (CONSP(arg_types)) {
+                enum ecl_ffi_tag type;
+                if (!CONSP(args)) {
+                        FEerror("In SI:CALL-CFUN, mismatch between argument types and argument list: ~A vs ~A", 0);
+                }
+                type = ecl_foreign_type_code(CAR(arg_types));
+                if (type == ECL_FFI_CSTRING) {
+                        object = ecl_null_terminated_base_string(CAR(args));
+                        if (CAR(args) != object)
+                                fficall->cstring =
+                                        CONS(object, fficall->cstring);
+                } else {
+                        object = CAR(args);
+                }
+                ecl_foreign_data_set_elt(&fficall->output, type, object);
+                ecl_fficall_push_arg(&fficall->output, type);
+                arg_types = CDR(arg_types);
+                args = CDR(args);
+        }
+        ecl_fficall_execute(cfun, fficall, return_type_tag);
+        object = ecl_foreign_data_ref_elt(&fficall->output, return_type_tag);
 
-	fficall->buffer_size = 0;
-	fficall->buffer_sp = fficall->buffer;
-	fficall->cstring = ECL_NIL;
+        fficall->buffer_size = 0;
+        fficall->buffer_sp = fficall->buffer;
+        fficall->cstring = ECL_NIL;
 
-	@(return object)
+        @(return object)
 @)
 
 @(defun si::make-dynamic-callback (fun sym rtype argtypes &optional (cctype @':cdecl'))
-	cl_object data;
-	cl_object cbk;
+        cl_object data;
+        cl_object cbk;
 @
-	data = cl_list(3, fun, rtype, argtypes);
-	cbk  = ecl_make_foreign_data(@':pointer-void', 0, ecl_dynamic_callback_make(data, ecl_foreign_cc_code(cctype)));
+        data = cl_list(3, fun, rtype, argtypes);
+        cbk  = ecl_make_foreign_data(@':pointer-void', 0, ecl_dynamic_callback_make(data, ecl_foreign_cc_code(cctype)));
 
-	si_put_sysprop(sym, @':callback', CONS(cbk, data));
-	@(return cbk)
+        si_put_sysprop(sym, @':callback', CONS(cbk, data));
+        @(return cbk)
 @)
 #endif /* ECL_DYNAMIC_FFI */
 
@@ -929,7 +929,7 @@ prepare_cif(cl_env_ptr the_env, ffi_cif *cif, cl_object return_type,
                 if (n >= the_env->ffi_args_limit) {
                         resize_call_stack(the_env, n + 32);
                 }
-		type = ecl_foreign_type_code(ECL_CONS_CAR(arg_types));
+                type = ecl_foreign_type_code(ECL_CONS_CAR(arg_types));
                 arg_types = ECL_CONS_CDR(arg_types);
                 the_env->ffi_types[++n] = ecl_type_to_libffi_type[type];
                 if (CONSP(args)) {
@@ -965,19 +965,19 @@ prepare_cif(cl_env_ptr the_env, ffi_cif *cif, cl_object return_type,
 }
 
 @(defun si::call-cfun (fun return_type arg_types args &optional (cc_type @':default'))
-	void *cfun = ecl_foreign_data_pointer_safe(fun);
-	cl_object object;
+        void *cfun = ecl_foreign_data_pointer_safe(fun);
+        cl_object object;
         volatile cl_index sp;
         ffi_cif cif;
 @
 {
-	sp = ECL_STACK_INDEX(the_env);
-	prepare_cif(the_env, &cif, return_type, arg_types, args, cc_type, NULL);
+        sp = ECL_STACK_INDEX(the_env);
+        prepare_cif(the_env, &cif, return_type, arg_types, args, cc_type, NULL);
         ffi_call(&cif, cfun, the_env->ffi_values, (void **)the_env->ffi_values_ptrs);
-	object = ecl_foreign_data_ref_elt(the_env->ffi_values,
+        object = ecl_foreign_data_ref_elt(the_env->ffi_values,
                                           ecl_foreign_type_code(return_type));
-	ECL_STACK_SET_INDEX(the_env, sp);
-	@(return object)
+        ECL_STACK_SET_INDEX(the_env, sp);
+        @(return object)
 }
 @)
 
@@ -1009,7 +1009,7 @@ cl_object
 si_free_ffi_closure(cl_object closure)
 {
         ffi_closure_free(ecl_foreign_data_pointer_safe(closure));
-	@(return);
+        @(return);
 }
 
 @(defun si::make-dynamic-callback (fun sym return_type arg_types
@@ -1021,10 +1021,10 @@ si_free_ffi_closure(cl_object closure)
         int n = prepare_cif(the_env, cif, return_type, arg_types, ECL_NIL, cc_type,
                             &types);
 
-	/* libffi allocates executable memory for us. ffi_closure_alloc()
-	 * returns a pointer to memory and a pointer to the beginning of
-	 * the actual executable region (executable_closure) which is
-	 * where the code resides. */
+        /* libffi allocates executable memory for us. ffi_closure_alloc()
+         * returns a pointer to memory and a pointer to the beginning of
+         * the actual executable region (executable_closure) which is
+         * where the code resides. */
         void *executable_region;
         ffi_closure *closure = ffi_closure_alloc(sizeof(ffi_closure), &executable_region);
 
@@ -1047,7 +1047,7 @@ si_free_ffi_closure(cl_object closure)
                 FEerror("Unable to build callback. libffi returns ~D", 1,
                         ecl_make_fixnum(status));
         }
-	si_put_sysprop(sym, @':callback', data);
+        si_put_sysprop(sym, @':callback', data);
         @(return closure_object);
 }
 @)
