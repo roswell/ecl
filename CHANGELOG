@@ -19,15 +19,15 @@
 
   - In Windows ECL comes with bytecodes compiler by default, because C
     compilers are normally not available. Unfortunately several libraries
-    out there are not prepared for this.  If you plan to use quicklisp
-    and have a C compiler accessible to ECL, you may use
+    out there are not prepared for this.  If you plan to use quicklisp and
+    have a C compiler accessible to ECL, you may use
     (ext:install-c-compiler) to switch back to the Lisp-to-C compiler.
 
   - In order to test package programmer has to install ECL on desired
     destination (specified with "--prefix" parameter given to configure
     script).
     
-* Pending changes since 15.3.7
+* 16.0.0 changes since 15.3.7
 ** API changes
 
    - There is no UFFI nickname for FFI package - we piggyback on

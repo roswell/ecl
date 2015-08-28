@@ -26,6 +26,17 @@
         @(return) = output;
 }" :one-liner nil))
 
+#+(and ecl-min uname)
+(defun uname ()
+  "A poor man's uname"
+  (list "@SOFTWARE_TYPE@"
+        NIL #| hostname |#
+        #.(let ((aux "@SOFTWARE_VERSION@"))
+            (when (plusp (length aux))
+              aux))
+        NIL #| kernel version |#
+        "@ARCHITECTURE@"))
+
 ;;
 ;; * Short and long site names
 ;;
