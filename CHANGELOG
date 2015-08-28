@@ -27,6 +27,21 @@
     destination (specified with "--prefix" parameter given to configure
     script).
     
+* Pending changes since 16.0.0
+** API changes
+
+   - New MP functions:
+     mp:with-rwlock
+     mp:try-get-semaphore (non-blocking)
+     mp:mailbox-try-read  (non-blocking)
+     mp:mailbox-try-send  (non-blocking)
+
+** Enhancements:
+
+   - Added code walker (present as *feature* :walker)
+
+** Issues fixed:
+
 * 16.0.0 changes since 15.3.7
 ** API changes
 
