@@ -5367,7 +5367,7 @@ ecl_integer_to_off_t(cl_object offset)
         } else if (ECL_BIGNUMP(offset)) {
                 if (sizeof(ECL_BIGNUM_LIMBS(offset)[0]) == sizeof(cl_index)) {
                         if (ECL_BIGNUM_SIZE(offset) > 2) {
-                                goto ERR;
+                                goto ERROR;
                         }
                         if (ECL_BIGNUM_SIZE(offset) == 2) {
                             output = ECL_BIGNUM_LIMBS(offset)[1];
@@ -5376,12 +5376,12 @@ ecl_integer_to_off_t(cl_object offset)
                         output += ECL_BIGNUM_LIMBS(offset)[0];
                 } else if (sizeof(ECL_BIGNUM_LIMBS(offset)[0]) >= sizeof(ecl_off_t)) {
                         if (ECL_BIGNUM_SIZE(offset) > 1) {
-                                goto ERR;
+                                goto ERROR;
                         }
                         output = ECL_BIGNUM_LIMBS(offset)[0];
                 }
         } else {
-        ERR:    FEerror("Not a valid file offset: ~S", 1, offset);
+        ERROR:    FEerror("Not a valid file offset: ~S", 1, offset);
         }
         return output;
 }
