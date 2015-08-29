@@ -935,12 +935,12 @@ if test "${enable_boehm}" = auto -o "${enable_boehm}" = system; then
  dnl Try first with the prebuilt versions, if installed and accessible
  dnl
  system_boehm=yes
- AC_CHECK_LIB( [gc], [GC_get_thr_restart_signal],
-               [], [system_boehm="no"] )
  if test "${enable_threads}" = no; then
    AC_CHECK_LIB( [gc], [GC_malloc],
                  [], [system_boehm="no"] )
  else
+   AC_CHECK_LIB( [gc], [GC_get_thr_restart_signal],
+                 [], [system_boehm="no"] )
    AC_CHECK_LIB( [gc], [GC_register_my_thread],
                  [], [system_boehm="no"] )
  fi
