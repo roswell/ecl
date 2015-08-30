@@ -31,7 +31,7 @@
    ((void) memcpy(&(dst), &(src), sizeof(va_list)))
 #endif
 
-#ifndef FIXNUM_BITS
+#ifndef ECL_FIXNUM_BITS
 #include <ecl/config.h>
 #endif
 

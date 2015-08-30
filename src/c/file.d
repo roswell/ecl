@@ -5344,7 +5344,7 @@ ecl_off_t_to_integer(ecl_off_t offset)
                 cl_object y = _ecl_big_register0();
                 if (sizeof(ECL_BIGNUM_LIMBS(y)[0]) == sizeof(cl_index)) {
                         ECL_BIGNUM_LIMBS(y)[0] = (cl_index)offset;
-                        offset >>= FIXNUM_BITS;
+                        offset >>= ECL_FIXNUM_BITS;
                         ECL_BIGNUM_LIMBS(y)[1] = offset;
                         ECL_BIGNUM_SIZE(y) = offset? 2 : 1;
                 } else if (sizeof(ECL_BIGNUM_LIMBS(y)[0]) >= sizeof(ecl_off_t)) {
@@ -5371,7 +5371,7 @@ ecl_integer_to_off_t(cl_object offset)
                         }
                         if (ECL_BIGNUM_SIZE(offset) == 2) {
                             output = ECL_BIGNUM_LIMBS(offset)[1];
-                            output <<= FIXNUM_BITS;
+                            output <<= ECL_FIXNUM_BITS;
                         }
                         output += ECL_BIGNUM_LIMBS(offset)[0];
                 } else if (sizeof(ECL_BIGNUM_LIMBS(offset)[0]) >= sizeof(ecl_off_t)) {

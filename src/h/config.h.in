@@ -153,7 +153,7 @@
  */
 #define ECL_INT_BITS            @CL_INT_BITS@
 #define ECL_LONG_BITS           @CL_LONG_BITS@
-#define FIXNUM_BITS             @CL_FIXNUM_BITS@
+#define ECL_FIXNUM_BITS         @CL_FIXNUM_BITS@
 #define MOST_POSITIVE_FIXNUM    ((cl_fixnum)@CL_FIXNUM_MAX@)
 #define MOST_NEGATIVE_FIXNUM    ((cl_fixnum)@CL_FIXNUM_MIN@)
 #define MOST_POSITIVE_FIXNUM_VAL @CL_FIXNUM_MAX@

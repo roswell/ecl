@@ -153,7 +153,7 @@ typedef int16_t cl_oparg;
  */
 #if (defined(__GNUC__) && !defined(__STRICT_ANSI__) && !defined(__clang__) && !defined(__llvm__))
 #define ECL_THREADED_INTERPRETER
-# if defined(__sun__) && (FIXNUM_BITS > 32)
+# if defined(__sun__) && (ECL_FIXNUM_BITS > 32)
 #  undef ECL_THREADED_INTERPRETER
 # endif
 #endif

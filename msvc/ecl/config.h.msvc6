@@ -142,7 +142,7 @@
 #ifdef _M_X64
 #define ECL_INT_BITS		64
 #define ECL_LONG_BITS		32
-#define FIXNUM_BITS		64
+#define ECL_FIXNUM_BITS		64
 #define MOST_POSITIVE_FIXNUM	((cl_fixnum)2305843009213693951LL)
 #define MOST_NEGATIVE_FIXNUM	((cl_fixnum)-2305843009213693952LL)
 typedef long long cl_fixnum;
@@ -151,7 +151,7 @@ typedef unsigned long long cl_hashkey;
 #else
 #define ECL_INT_BITS		32
 #define ECL_LONG_BITS		32
-#define FIXNUM_BITS		32
+#define ECL_FIXNUM_BITS		32
 #define MOST_POSITIVE_FIXNUM	((cl_fixnum)536870911)
 #define MOST_NEGATIVE_FIXNUM	((cl_fixnum)-536870912)
 typedef int cl_fixnum;

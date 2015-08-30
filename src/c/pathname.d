@@ -1105,7 +1105,7 @@ NO_DIRECTORY:
                                  * we cannot use cl_write and friends.
                                  */
                                 int n = ecl_fixnum(y), i;
-                                char b[FIXNUM_BITS/2];
+                                char b[ECL_FIXNUM_BITS / 2];
                                 for (i = 0; n; i++) {
                                         b[i] = n%10 + '0';
                                         n = n/10;

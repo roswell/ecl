@@ -7,7 +7,7 @@
  * SBCL's newest algorithm. Leads to few collisions, and it is faster.
  */
 
-#if FIXNUM_BITS > 32
+#if ECL_FIXNUM_BITS > 32
 /*
  * 64 bit version
  */

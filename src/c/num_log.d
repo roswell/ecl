@@ -258,7 +258,7 @@ ecl_ash(cl_object x, cl_fixnum w)
                          * to implementation-specific results :-/
                          */
                         cl_fixnum y = ecl_fixnum(x);
-                        if (bits >= FIXNUM_BITS) {
+                        if (bits >= ECL_FIXNUM_BITS) {
                                 y = (y < 0)? -1 : 0;
                         } else {
                                 y >>= bits;
@@ -282,7 +282,7 @@ ecl_fixnum_bit_length(cl_fixnum i)
         int count;
         if (i < 0)
                 i = ~i;
-        for (count = 0; i && (count < FIXNUM_BITS); i >>= 1, count++)
+        for (count = 0; i && (count < ECL_FIXNUM_BITS); i >>= 1, count++)
                 ;
         return count;
 }
@@ -382,7 +382,7 @@ cl_logbitp(cl_object p, cl_object x)
                 cl_index n = ecl_to_size(p);
                 if (ECL_FIXNUMP(x)) {
                         cl_fixnum y = ecl_fixnum(x);
-                        if (n >= FIXNUM_BITS) {
+                        if (n >= ECL_FIXNUM_BITS) {
                                 i = (y < 0);
                         } else {
                                 i = ((y >> n) & 1);
