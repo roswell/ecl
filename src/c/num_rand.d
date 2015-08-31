@@ -168,8 +168,8 @@ random_integer(cl_object limit, cl_object state)
 {
         cl_index bit_length = ecl_integer_length(limit);
         cl_object buffer;
-        if (bit_length <= FIXNUM_BITS)
-                bit_length = FIXNUM_BITS;
+        if (bit_length <= ECL_FIXNUM_BITS)
+                bit_length = ECL_FIXNUM_BITS;
         buffer = ecl_ash(ecl_make_fixnum(1), bit_length);
         for (bit_length = mpz_size(buffer->big.big_num); bit_length; ) {
                 ECL_BIGNUM_LIMBS(buffer)[--bit_length] =
@@ -187,7 +187,7 @@ rando(cl_object x, cl_object rs)
         }
         switch (ecl_t_of(x)) {
         case t_fixnum:
-#if FIXNUM_BITS <= 32
+#if ECL_FIXNUM_BITS <= 32
                 z = ecl_make_fixnum(generate_int32(rs->random.value) % ecl_fixnum(x));
                 break;
 #endif
