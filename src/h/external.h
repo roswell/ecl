@@ -1030,8 +1030,8 @@ extern ECL_API ecl_uint8_t ecl_to_uint8_t(cl_object o);
 extern ECL_API ecl_int8_t ecl_to_int8_t(cl_object o);
 #define ecl_make_uint8_t(i) ecl_make_fixnum(i)
 #define ecl_make_int8_t(i) ecl_make_fixnum(i)
-#if FIXNUM_BITS < 32
-# error "Unsupported platforms with FIXNUM_BITS < 32"
+#if ECL_FIXNUM_BITS < 32
+# error "Unsupported platforms with ECL_FIXNUM_BITS < 32"
 #endif
 #ifdef ecl_uint16_t
 extern ECL_API ecl_uint16_t ecl_to_uint16_t(cl_object o);
@@ -1044,7 +1044,7 @@ extern ECL_API short ecl_to_short(cl_object o);
 #define ecl_make_short(n) ecl_make_fixnum(n)
 #define ecl_make_ushort(n) ecl_make_fixnum(n)
 #ifdef ecl_uint32_t
-# if FIXNUM_BITS == 32
+# if ECL_FIXNUM_BITS == 32
 #  define ecl_to_uint32_t fixnnint
 #  define ecl_to_int32_t fixint
 #  define ecl_make_uint32_t ecl_make_unsigned_integer
@@ -1057,7 +1057,7 @@ extern ECL_API ecl_int32_t ecl_to_int32_t(cl_object o);
 # endif
 #endif /* ecl_uint32_t */
 #ifdef ecl_uint64_t
-# if FIXNUM_BITS >= 64
+# if ECL_FIXNUM_BITS >= 64
 #  define ecl_to_uint64_t fixnnint
 #  define ecl_to_int64_t fixint
 #  define ecl_make_uint64_t ecl_make_unsigned_integer
