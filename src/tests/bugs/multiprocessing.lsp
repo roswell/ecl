@@ -5,6 +5,45 @@
 
 (in-package :cl-test)
 
+
+;; Auxiliary routines for multithreaded tests
+
+(defun kill-and-wait (process-list &optional original wait)
+  "Kills a list of processes, which may be the difference between two lists,
+waiting for all processes to finish. Currently it has no timeout, meaning
+it may block hard the lisp image."
+  (let ((process-list (set-difference process-list original)))
+    (when (member mp:*current-process* process-list)
+      (error "Found myself in the kill list"))
+    (mapc #'mp:process-kill process-list)
+    (when wait
+      (loop for i in process-list
+         do (mp:process-join i)))
+    process-list))
+
+(defun mp-test-run (closure)
+  (let* ((all-processes (mp:all-processes))
+         (output (multiple-value-list (funcall closure))))
+    (sleep 0.2) ; time to exit some processes
+    (let ((leftovers (kill-and-wait (mp:all-processes) all-processes)))
+      (cond (leftovers
+             (format t "~%;;; Stray processes: ~A" leftovers))
+            (t
+             (values-list output))))))
+
+(defmacro def-mp-test (name body expected-value)
+  "Runs some test code and only returns the output when the code exited without
+creating stray processes."
+  (let ((all-processes (gensym))
+        (output (gensym))
+        (leftover (gensym)))
+    `(deftest ,name
+         (mp-test-run #'(lambda () ,body))
+       ,expected-value)))
+
+
+;; Tests
+
 ;;; Date: 04/09/2009
 ;;; From: Matthew Mondor
 ;;; Fixed: 05/09/2009 (Juanjo)
@@ -13,7 +52,6 @@
 ;;;     When a WITH-LOCK is interrupted, it is not able to release
 ;;;     the resulting lock and an error is signaled.
 ;;;
-
 (def-mp-test mp-0001-with-lock
     (let ((flag t)
           (lock (mp:make-lock :name "mp-0001-with-lock" :recursive nil)))
@@ -42,3 +80,5 @@
                (eq flag 1)
                t))))
   t)
+
+
