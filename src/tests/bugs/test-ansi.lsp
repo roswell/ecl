@@ -1,10 +1,10 @@
 (in-package :cl-test)
 
-;; HyperSpec – 2.*
+
 
-;;;;;;;;;;;;;;;;;;;;;
-;; Readtable tests ;;
-;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 2.* Readtable tests ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (symbol-macrolet ((lookup-table
                    '(:SYMBOL   ("zebra" "Zebra" "ZEBRA" "zebr\\a" "zebr\\A"
@@ -90,11 +90,9 @@
 
 
 
-;; HyperSpec – 19.*
-
-;;;;;;;;;;;;;;;;;;;;
-;; Pathname tests ;;
-;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 19.* Pathname tests ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Issue #103 ;; logical-pathname-translations not translating
 ;; https://gitlab.com/embeddable-common-lisp/ecl/issues/103
@@ -105,5 +103,21 @@
              '(("CODE;*.*.*" "/tmp/prog/")))
        (translate-logical-pathname "prog:code;documentation.lisp")))
   (list (namestring #P"/tmp/prog/documentation.lisp")))
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;
+;; 23.* Reader tests ;;
+;;;;;;;;;;;;;;;;;;;;;;;
+
+(defstruct sharp-s-reader.1.example-struct a)
+
+(deftest test-ansi.reader.sharp-s-reader.1
+    (prog1
+        (signals-error
+         (read-from-string
+          "(#1=\"Hello\" #S(sharp-s-reader.1.example-struct :A #1#))")
+         program-error))
+  nil)
 
 
