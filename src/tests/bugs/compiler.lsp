@@ -503,7 +503,7 @@
 ;;;     by the compiler to (lambda (x) (block nil ...) and thus this
 ;;;     form outputs '(1 2 3 4).
 ;;;
-(deftest compiler.0101-block
+(deftest compiler.0023.block
     (funcall (compile nil
                       '(lambda ()
                         (block nil
@@ -521,7 +521,7 @@
 ;;;     synonyms.
 ;;;
 ;;;
-(deftest compiler.0102-pathname
+(deftest compiler.0024.pathname
     (and (equalp (compile-file-pathname "foo" :type :fas)
                  (compile-file-pathname "foo" :type :fasl))
          t)
@@ -534,7 +534,7 @@
 ;;;     relative to that of the fasl or object file.
 ;;;
 
-(deftest compiler.0103-paths
+(deftest compiler.0025.paths
     (let* ((output (compile-file-pathname "tmp/aux" :type :fasl))
            (h-file (compile-file-pathname output :type :h))
            (c-file (compile-file-pathname output :type :c))
@@ -563,7 +563,7 @@
 ;;;
 
 #-ecl-bytecmp
-(deftest compiler.0104-defconstant-warn
+(deftest compiler.0026.defconstant-warn
     (let ((warn nil))
       (with-dflet ((c::cmpwarn (setf warn t)))
         (with-compiler ("aux-compiler.0104.lsp")
@@ -584,7 +584,7 @@
 ;;;     the arguments of a function.
 ;;;
 
-(deftest compiler.0105-declaration
+(deftest compiler.0027.declaration
     (let ((form '(lambda (y)
                   (flet ((faa (&key (x y))
                            (declare (special y))
@@ -607,7 +607,7 @@
 ;;;     the lisp stack.
 ;;;
 
-(deftest compiler.0106-call-arguments-limit
+(deftest compiler.0028.call-arguments-limit
     (let ((form '(lambda ()
                   (list (list
                    'a0 'b0 'c0 'd0 'e0 'f0 'g0 'h0 'i0
@@ -656,7 +656,7 @@
     `(setf (compiler.017-parent ',x) ',(slot-value x 'parent))
      ))
 
-(deftest compiler.0107-circular-load-form
+(deftest compiler.0029.circular-load-form
     (loop for object in
          (let ((l (list 1 2 3)))
            (list l
@@ -674,7 +674,7 @@
 ;;;     In that case MAKE-LOAD-FORM should be used.
 ;;;
 
-(deftest compiler.0108-make-load-form
+(deftest compiler.0030.make-load-form
     (let ((output (compile-file-pathname "aux-compiler.0108.lsp" :type :fasl)))
       (with-open-file (s "aux-compiler.0108.lsp" :if-exists :supersede :if-does-not-exist :create :direction :output)
         (princ "
@@ -712,7 +712,7 @@
 ;;;             (compile 'bar)
 ;;;             (bar) => 2
 ;;;
-(deftest compiler.0109-macrolet
+(deftest compiler.0031.macrolet
     (list
      (progn
        (defun bar ()
@@ -742,7 +742,7 @@
 ;;;     definitions on the same form, much like FLET functions cannot
 ;;;     call their siblings.
 ;;;
-(deftest compiler.0110-macrolet
+(deftest compiler.0032.macrolet
   (flet ((eval-with-error (form)
            (handler-case (eval form)
              (error (c) 'error))))
@@ -793,7 +793,7 @@
 ;;;     use the lisp stack for the other required arguments.
 ;;;
 #-ecl-bytecmp
-(deftest compiler.0111-c-arguments-limit
+(deftest compiler.0033.c-arguments-limit
     (mapcar #'(lambda (nargs)
                 (let* ((arg-list (loop for i from 0 below nargs
                                        collect (intern (format nil "arg~d" i))))
@@ -829,7 +829,7 @@
 ;;;     ECL fails to properly compute the closure type of a function that
 ;;;     returns a lambda that calls the function itself.
 ;;;
-(deftest compiler.0112-compute-closure
+(deftest compiler.0034.compute-closure
   (and (with-compiler ("aux-compiler.0103-paths.lsp" :load t)
          (defun testfun (outer)
            (labels ((testlabel (inner)
@@ -849,7 +849,7 @@
 ;;;     FTYPE proclamations and declarations do not accept user defined
 ;;;     function types.
 ;;;
-(deftest compiler.0113-ftype-user-type
+(deftest compiler.0035.ftype-user-type
     (progn
       (deftype compiler.0113-float-function () '(function (float) float))
       (deftype compiler.0113-float () 'float)
@@ -878,7 +878,7 @@
 ;;;
 ;;;     When compiled COERCE with type INTEGER may cause double
 ;;;     evaluation of a form.
-(deftest compiler.0114-coerce
+(deftest compiler.0036.coerce
     (funcall
      (compile 'foo '(lambda (x) (coerce (shiftf x 2) 'integer)))
      1)
@@ -890,7 +890,7 @@
 ;;;
 ;;;     TYPEP, with a real type, produces strange results.
 ;;;
-(deftest compiler.0115-coerce
+(deftest compiler.0037.coerce
     (funcall
      (compile 'foo '(lambda (x) (typep (shiftf x 1) '(real 10 20))))
      5)
@@ -904,7 +904,7 @@
 ;;;     the values of the variables are not saved to make the assignments
 ;;;     really parallel.
 ;;;
-(deftest compiler.0116-let-with-specials
+(deftest compiler.0038.let-with-specials
     (progn
       (defvar *stak-x*)
       (defvar *stak-y*)
@@ -938,7 +938,7 @@
 ;;; Description:
 ;;;     Extended strings were not accepted as documentation by the interpreter.
 ;;;
-(deftest compiler.0117-docstrings
+(deftest compiler.0039.docstrings
   (handler-case
    (progn
      (eval `(defun foo () ,(make-array 10 :initial-element #\Space :element-type 'character) 2))
@@ -951,7 +951,7 @@
 ;;; Description:
 ;;;     ECL ignores the IGNORABLE declaration
 ;;;
-(deftest compiler.0118-ignorable
+(deftest compiler.0040.ignorable
     (let ((c::*suppress-compiler-messages* t))
       (and
        ;; Issue a warning for unused variables
@@ -979,7 +979,7 @@
 ;;;     of a mismatch between the position of the fields bytecodes.entry
 ;;;     and cfun.entry
 ;;;
-(deftest compiler.0119-bytecodes-entry-position
+(deftest compiler.0041.bytecodes-entry-position
     (let ((indices (funcall (compile nil
                                      '(lambda ()
                                        (ffi:c-inline () () list "
@@ -1003,7 +1003,7 @@
 ;;;     THE forms do not understand VALUES types
 ;;;             (the (values t) (funcall sym))
 ;;;
-(deftest compiler.0120-the-and-values
+(deftest compiler.0042.the-and-values
   (handler-case (and (compile 'foo '(lambda () (the (values t) (faa))))
                      t)
     (warning (c) nil))
@@ -1015,7 +1015,7 @@
 ;;; Description:
 ;;;     ECL does not compile type declarations of a symbol macro
 ;;;
-(deftest compiler.0121-symbol-macro-declaration
+(deftest compiler.0043.symbol-macro-declaration
     (handler-case (and (compile 'nil
                                 '(lambda (x)
                                   (symbol-macrolet ((y x))
@@ -1030,7 +1030,7 @@
 ;;; Description:
 ;;;     New special form, WITH-BACKEND.
 ;;;
-(deftest compiler.0122-with-backend
+(deftest compiler.0044.with-backend
     (progn
       (defparameter *compiler.0122* nil)
       (defun compiler.0122a ()
@@ -1045,3 +1045,63 @@
   (:bytecodes :bytecodes :c/c++ :c/c++))
 
 
+
+;;; Date: 10/08/2008
+;;; From: Juanjo
+;;; Fixed: 10/08/2008
+;;; Description:
+;;;
+;;;     COS, SIN and TAN were expanded using a wrong C expression.
+;;;
+
+(deftest compiler.0045.inline-cos
+    (loop with *compile-verbose* = nil
+       with *compile-print* = nil
+       for type in '(short-float single-float double-float long-float)
+       for sample = (coerce 1.0 type)
+       for epsilon in '(#.short-float-epsilon #.single-float-epsilon #.double-float-epsilon #.long-float-epsilon)
+       unless (loop for op in '(sin cos tan sinh cosh tanh)
+                 for f = (compile 'nil `(lambda (x)
+                                          (declare (,type x)
+                                                   (optimize (safety 0)
+                                                             (speed 3)))
+                                          (+ ,sample (,op x))))
+                 always (loop for x from (- pi) below pi by 0.05
+                           for xf = (float x sample)
+                           for error =  (- (funcall f xf) (+ 1 (funcall op xf)))o
+                           always (< (abs error) epsilon)))
+       collect type)
+  nil)
+
+
+
+;;; Description:
+;;;
+;;;     The interpreter selectively complains when assigning a variable
+;;;     that has not been declared as special and is not local.
+;;;
+;;; Fixed: 03/2006 (juanjo)
+;;;
+(deftest compiler.0046.global-setq
+    (mapcar
+     (lambda (ext:*action-on-undefined-variable*)
+       (handler-case
+           (progn (eval `(setq ,(gensym) 1)) :no-error)
+         (error (c) :error)))
+     '(nil ERROR))
+  (:no-error :error))
+
+;;; Date: 24/04/2010 (Juanjo)
+;;; Fixed: 24/04/2010 (Juanjo)
+;;; Description:
+;;;     The interpreter does not increase the lexical environment depth when
+;;;     optimizing certain forms (LIST, LIST*, CONS...) and thus causes some
+;;;     of the arguments to be eagerly evaluated.
+;;;
+(deftest compiler.0046.list-optimizer-error
+    (with-output-to-string (*standard-output*)
+      (eval '(list (print 1) (progn (print 2) (print 3)))))
+  "
+1 
+2 
+3 ")
