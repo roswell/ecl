@@ -21,13 +21,13 @@
                (make-pathname :name name :type "BIN"
                               :defaults "build:encodings;"))
    do (progn
-	(unless (probe-file orig)
+        (unless (probe-file orig)
           (error "Missing mapping")
-	  (let ((mapping (if (equalp name "JISX0208")
-			     (mapcar #'rest (read-mapping name 3))
-			     (read-mapping name))))
-	    (dump-mapping-array mapping orig)))
-	(copy-encoding-file orig copy)))
+          (let ((mapping (if (equalp name "JISX0208")
+                             (mapcar #'rest (read-mapping name 3))
+                             (read-mapping name))))
+            (dump-mapping-array mapping orig)))
+        (copy-encoding-file orig copy)))
 
 (defconstant +aliases+
   '((:us-ascii ext::ascii)
@@ -88,17 +88,17 @@
 
 (loop for (name . aliases) in +aliases+
    do (loop with *package* = (find-package "CL")
-	 for alias in aliases
-	 for filename0 = (make-pathname :name (symbol-name alias)
+         for alias in aliases
+         for filename0 = (make-pathname :name (symbol-name alias)
                                         :defaults "build:encodings;")
-	 for filename = (ensure-directories-exist filename0)
-	 do (with-open-file (out filename :direction :output :if-exists :supersede
-				 :if-does-not-exist :create :element-type 'base-char)
-	      (format t "~%;;; Creating alias ~A -> ~A, ~A" alias name filename)
-	      (if (keywordp name)
-		  (format out "(defparameter ~S '~S)" alias name)
-		  (format out "(defparameter ~S (ext::make-encoding '~S))" alias name))
-	      )))
+         for filename = (ensure-directories-exist filename0)
+         do (with-open-file (out filename :direction :output :if-exists :supersede
+                                 :if-does-not-exist :create :element-type 'base-char)
+              (format t "~%;;; Creating alias ~A -> ~A, ~A" alias name filename)
+              (if (keywordp name)
+                  (format out "(defparameter ~S '~S)" alias name)
+                  (format out "(defparameter ~S (ext::make-encoding '~S))" alias name))
+              )))
 
 (copy-encoding-file "ext:encodings;tools.lisp" "build:encodings;tools.lisp")
 (copy-encoding-file (merge-pathnames "ISO-2022-JP" +encodings-root+)
