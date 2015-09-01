@@ -44,6 +44,11 @@
 
    - Building with single-threaded boehm works if ECL threads are disabled
 
+   - Using labels works with sharp-S-reader
+
+     (read-from-string
+      "(#1=\"Hello\" #S(sharp-s-reader.1.example-struct :A #1#))")
+
 * 16.0.0 changes since 15.3.7
 ** API changes
 
