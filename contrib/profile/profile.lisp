@@ -61,15 +61,15 @@ extern ECL_API size_t GC_get_total_bytes();
 
 (let () ; This prevents compile-time evaluation of the following
   (defconstant +wrap+ (ffi:c-inline () () :object
-				    "ecl_make_unsigned_integer(~((size_t)0))"
-				    :one-liner t)))
+                                    "ecl_make_unsigned_integer(~((size_t)0))"
+                                    :one-liner t)))
 
 (defun get-bytes-consed (orig)
   (let ((bytes (ffi:c-inline () () :object "ecl_make_unsigned_integer(GC_get_total_bytes())"
-			     :one-liner t)))
+                             :one-liner t)))
     (if (< bytes orig)
-	(+ (- +wrap+ orig) bytes)
-	(- bytes orig))))
+        (+ (- +wrap+ orig) bytes)
+        (- bytes orig))))
 
 (deftype counter () '(integer 0 *))
 
@@ -206,28 +206,28 @@ extern ECL_API size_t GC_get_total_bytes();
        (let ((dticks 0)
              (dconsing 0)
              (inner-enclosed-profiles 0)
-	     (old-enclosed-ticks *enclosed-ticks*)
-	     (old-enclosed-consing *enclosed-consing*)
-	     (old-enclosed-profiles *enclosed-profiles*)
-	     (start-ticks (get-internal-ticks))
-	     (start-consed (get-bytes-consed 0)))
+             (old-enclosed-ticks *enclosed-ticks*)
+             (old-enclosed-consing *enclosed-consing*)
+             (old-enclosed-profiles *enclosed-profiles*)
+             (start-ticks (get-internal-ticks))
+             (start-consed (get-bytes-consed 0)))
          (unwind-protect
-	      (progn
-		(setf *enclosed-ticks* 0
-		      *enclosed-profiles* 0
-		      *enclosed-consing* 0)
-		(apply encapsulated-fun args))
-	   (setf dticks (- (get-internal-ticks) start-ticks))
-	   (setf dconsing (get-bytes-consed start-consed))
-	   (setf inner-enclosed-profiles *enclosed-profiles*)
-	   (let ((net-dticks (- dticks *enclosed-ticks*)))
-	     (incf ticks net-dticks))
-	   (let ((net-dconsing (- dconsing *enclosed-consing*)))
-	     (incf consing net-dconsing))
-	   (incf profiles inner-enclosed-profiles)
+              (progn
+                (setf *enclosed-ticks* 0
+                      *enclosed-profiles* 0
+                      *enclosed-consing* 0)
+                (apply encapsulated-fun args))
+           (setf dticks (- (get-internal-ticks) start-ticks))
+           (setf dconsing (get-bytes-consed start-consed))
+           (setf inner-enclosed-profiles *enclosed-profiles*)
+           (let ((net-dticks (- dticks *enclosed-ticks*)))
+             (incf ticks net-dticks))
+           (let ((net-dconsing (- dconsing *enclosed-consing*)))
+             (incf consing net-dconsing))
+           (incf profiles inner-enclosed-profiles)
            (setf *enclosed-ticks* (+ old-enclosed-ticks dticks)
-		 *enclosed-consing* (+ old-enclosed-consing dconsing)
-		 *enclosed-profiles* (+ old-enclosed-profiles inner-enclosed-profiles 1)))))
+                 *enclosed-consing* (+ old-enclosed-consing dconsing)
+                 *enclosed-profiles* (+ old-enclosed-profiles inner-enclosed-profiles 1)))))
      ;; READ-STATS-FUN
      (lambda ()
        (values count ticks consing profiles))

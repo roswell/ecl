@@ -104,8 +104,8 @@
   (setq *decomposition-base* (make-array (total-ucd-pages) :initial-element nil))
   (setq *ucd-base* (make-array (total-ucd-pages) :initial-element nil))
   (with-open-file (*standard-input*
-		   (make-pathname :name "UnicodeData" :type "txt"
-				  :defaults *extension-directory*)
+                   (make-pathname :name "UnicodeData" :type "txt"
+                                  :defaults *extension-directory*)
                    :direction :input :external-format :default)
     (loop for line = (read-line nil nil)
           while line
@@ -327,9 +327,9 @@
                               :element-type '(unsigned-byte 8)
                               :if-exists :supersede
                               :if-does-not-exist :create)
-	(let ((offset (* (length *misc-table*) 8)))
-	  (write-byte (mod offset *page-size*) stream)
-	  (write-byte (floor offset *page-size*) stream))
+        (let ((offset (* (length *misc-table*) 8)))
+          (write-byte (mod offset *page-size*) stream)
+          (write-byte (floor offset *page-size*) stream))
         (loop for (gc-index bidi-index ccc-index decimal-digit digit
                             bidi-mirrored)
               across *misc-table*

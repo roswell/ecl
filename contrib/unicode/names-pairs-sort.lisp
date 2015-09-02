@@ -1,6 +1,6 @@
 (defparameter *destination*
   (merge-pathnames "../../src/c/unicode/"
-		   (or *load-truename* *compile-pathname*)))
+                   (or *load-truename* *compile-pathname*)))
 
 (let* ((translated-data (copy-tree *compressed-data*))
        (pairs (copy-tree *paired-data*))
@@ -14,39 +14,39 @@
      for line in translated-data
      for pair-code = (third line)
      do (cond ((/= (length line) 3)
-	       (error "Error in compressed data: too long code ~A" line))
-	      ((or (aref used-code pair-code)
-		   (< pair-code first-code))
-	       (let ((new-pair (cons pair-code 0)))
-		 (setf pairs (acons (incf last-code) new-pair pairs)
-		       (third line) last-code)))
-	      (t
-	       (setf (aref used-code pair-code) t))))
+               (error "Error in compressed data: too long code ~A" line))
+              ((or (aref used-code pair-code)
+                   (< pair-code first-code))
+               (let ((new-pair (cons pair-code 0)))
+                 (setf pairs (acons (incf last-code) new-pair pairs)
+                       (third line) last-code)))
+              (t
+               (setf (aref used-code pair-code) t))))
   ;;
   ;; We now renumber all pairs.
   ;;
   (let ((translation-table (make-array (1+ last-code) :initial-element nil))
-	(counter -1))
+        (counter -1))
     (flet ((add-code (code)
-	     (or (aref translation-table code)
-		 (setf (aref translation-table code) (incf counter))))
-	   (translate (old-code)
-	     (or (aref translation-table old-code)
-		 (error "Unknown code ~A" old-code))))
+             (or (aref translation-table code)
+                 (setf (aref translation-table code) (incf counter))))
+           (translate (old-code)
+             (or (aref translation-table old-code)
+                 (error "Unknown code ~A" old-code))))
       ;; First of all we add the words
       (loop for i from 0 below first-code
-	 do (add-code i))
+         do (add-code i))
       ;; Then we add all pairs that represent characters, so that they
       ;; are consecutive, too.
       (loop for line in translated-data
-	 do (setf (third line) (add-code (third line))))
+         do (setf (third line) (add-code (third line))))
       ;; Finally, we add the remaining pairs
       (loop for record in pairs
-	 do (setf (car record) (add-code (car record))))
+         do (setf (car record) (add-code (car record))))
       ;; ... and we fix the definitions
       (loop for (code . pair) in pairs
-	 do (setf (car pair) (translate (car pair))
-		  (cdr pair) (translate (cdr pair))))))
+         do (setf (car pair) (translate (car pair))
+                  (cdr pair) (translate (cdr pair))))))
   (defparameter *sorted-compressed-data* translated-data)
   (defparameter *sorted-pairs* (sort pairs #'< :key #'car))
   (print 'finished)
@@ -62,24 +62,24 @@
      for line in *sorted-compressed-data*
      for (ucd-code name code) = line
      do (cond ((/= code n)
-	       (error "Codes in *sorted-compressed-data* are not consecutive:~%~A"
-		      (cons line (subseq aux 0 10))))
-	      ((null start-ucd-code)
-	       (setf start-ucd-code ucd-code
-		     start-code code))
-	      ((= last-ucd-code (1- ucd-code))
-	       )
-	      (t
-	       (push (list start-ucd-code last-ucd-code start-code)
-		     output)
-	       (setf start-ucd-code ucd-code
-		     start-code code)))
+               (error "Codes in *sorted-compressed-data* are not consecutive:~%~A"
+                      (cons line (subseq aux 0 10))))
+              ((null start-ucd-code)
+               (setf start-ucd-code ucd-code
+                     start-code code))
+              ((= last-ucd-code (1- ucd-code))
+               )
+              (t
+               (push (list start-ucd-code last-ucd-code start-code)
+                     output)
+               (setf start-ucd-code ucd-code
+                     start-code code)))
        (setf last-ucd-code ucd-code aux (cons line aux))
      finally (return (nreverse output))))
 
 (with-open-file (s (merge-pathnames "ucd_names.h" *destination*)
-		   :direction :output
-		   :if-exists :supersede)
+                   :direction :output
+                   :if-exists :supersede)
   (format s "/*
  * UNICODE NAMES DATABASE
  */
@@ -112,17 +112,17 @@ extern const ecl_ucd_code_and_pair ecl_ucd_sorted_pairs[ECL_UCD_TOTAL_NAMES];
 
 #endif
 "
-	  (1+ *last-word-index*)
-	  (length *sorted-pairs*)
-	  (length *grouped-characters*)
-	  (loop for (code name . rest) in *compressed-data*
-	       maximize (length name))
-	  (length *compressed-data*)
-	  ))
+          (1+ *last-word-index*)
+          (length *sorted-pairs*)
+          (length *grouped-characters*)
+          (loop for (code name . rest) in *compressed-data*
+               maximize (length name))
+          (length *compressed-data*)
+          ))
 
 (with-open-file (s (merge-pathnames "ucd_names_pair.c" *destination*)
-		   :direction :output
-		   :if-exists :supersede)
+                   :direction :output
+                   :if-exists :supersede)
   (format s "/*
  * Pairs of symbols.
  */
@@ -132,19 +132,19 @@ extern const ecl_ucd_code_and_pair ecl_ucd_sorted_pairs[ECL_UCD_TOTAL_NAMES];
 
 const ecl_ucd_names_pair_type ecl_ucd_names_pair[ECL_UCD_TOTAL_PAIRS] = {
 "
-	  (length *sorted-pairs*) (length *sorted-pairs*))
+          (length *sorted-pairs*) (length *sorted-pairs*))
   (loop for i from 0
      for (pair-code . (a . b)) in *sorted-pairs*
      do (format s "~A{~D, ~D, ~D, ~D}~%"
-		(if (plusp i) "," "")
-		(logand a #xff) (ash a -8)
-		(logand b #xff) (ash b -8)
-		))
+                (if (plusp i) "," "")
+                (logand a #xff) (ash a -8)
+                (logand b #xff) (ash b -8)
+                ))
   (format s "};~%"))
 
 (with-open-file (s (merge-pathnames "ucd_names_codes.c" *destination*)
-		   :direction :output
-		   :if-exists :supersede)
+                   :direction :output
+                   :if-exists :supersede)
   (format s "/*
  * Sorted character names.
  */
@@ -158,15 +158,15 @@ const ecl_ucd_code_and_pair ecl_ucd_sorted_pairs[ECL_UCD_TOTAL_NAMES] = {
      for (ucd-code name code) in l
      for i from 0
      do (format s "~A{{~D, ~D}, {~D, ~D, ~D}}~%"
-		(if (plusp i) "," "")
-		(logand code #xff) (ash code -8)
-		(logand ucd-code #xff) (logand (ash ucd-code -8) #xff)
-		(logand (ash ucd-code -16) #xff)))
+                (if (plusp i) "," "")
+                (logand code #xff) (ash code -8)
+                (logand ucd-code #xff) (logand (ash ucd-code -8) #xff)
+                (logand (ash ucd-code -16) #xff)))
   (format s "};"))
 
 (with-open-file (s (merge-pathnames "ucd_names_str.c" *destination*)
-		   :direction :output
-		   :if-exists :supersede)
+                   :direction :output
+                   :if-exists :supersede)
   (format s "/*
  * Dictionary words.
  */
@@ -182,8 +182,8 @@ const char *ecl_ucd_names_word[ECL_UCD_FIRST_PAIR] = {
   (format s "};~%"))
 
 (with-open-file (s (merge-pathnames "ucd_names_char.c" *destination*)
-		   :direction :output
-		   :if-exists :supersede)
+                   :direction :output
+                   :if-exists :supersede)
   (format s "/*
  * Dictionary words.
  */
@@ -194,11 +194,11 @@ const char *ecl_ucd_names_word[ECL_UCD_FIRST_PAIR] = {
 
 const ecl_ucd_names_char_group ecl_ucd_names_char[ECL_UCD_TOTAL_GROUPS] = {
 "
-	  (length *grouped-characters*))
+          (length *grouped-characters*))
   (loop for i from 0
      for (start end pair-code) in *grouped-characters*
      do (format s "~A{~D,~D,~D}~%" (if (plusp i) "," "")
-		start end pair-code))
+                start end pair-code))
   (format s "};
 
 static int
@@ -266,7 +266,7 @@ _ecl_ucd_name_to_code(cl_object name)
       ecl_character c = ecl_char_upcase(ecl_char(name, mid));
       buffer1[mid] = c;
       if (c < 32 || c > 127) /* All character names are [-A-Z_0-9]* */
-	return ECL_NIL;
+        return ECL_NIL;
     }
     buffer1[mid] = 0;
     do {
