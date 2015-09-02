@@ -42,6 +42,9 @@
 
 ** Issues fixed:
 
+   - PPC64le builds with bundled GMP work (autoreconf with recent
+     autotools)
+
    - Building with single-threaded boehm works if ECL threads are disabled
 
    - Using labels works with sharp-S-reader
