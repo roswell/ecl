@@ -40,6 +40,8 @@
 
    - Added code walker (present as *feature* :walker)
 
+   - Testing framework cleanup
+
 ** Issues fixed:
 
    - Building with single-threaded boehm works if ECL threads are disabled
