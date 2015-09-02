@@ -40,6 +40,8 @@
 
    - Added code walker (present as *feature* :walker)
 
+   - Testing framework cleanup
+
 ** Issues fixed:
 
    - PPC64le builds with bundled GMP work (autoreconf with recent

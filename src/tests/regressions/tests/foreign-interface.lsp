@@ -19,7 +19,7 @@
 ;;;     Header <internal.h> should be included as <ecl/internal.h>
 ;;;
 
-(deftest ffi-001-callback
+(deftest foreign-interface.0001.callback
     (and
       (zerop (si::system "rm -rf tmp; mkdir tmp"))
       (with-open-file (s "tmp/a.lsp" :direction :output
@@ -45,7 +45,7 @@
 ;;; Description:
 ;;;     Callback examples based on the C compiler
 ;;;
-(deftest ffi-002-callback
+(deftest foreign-interface.0002.callback
     (and
      (zerop (si::system "rm -rf tmp; mkdir tmp"))
      (with-open-file (s "tmp/c.lsp" :direction :output
@@ -74,8 +74,8 @@ int (*foo)(int) = #0;
 ;;;     Callback examples based on the DFFI. Only work if this feature
 ;;;     has been linked in.
 ;;;
-#+(or)
-(deftest ffi-002b-callback
+#+dffi
+(deftest foreign-interface.0003.callback
     (and
      (zerop (si::system "rm -rf tmp; mkdir tmp"))
      (with-open-file (s "tmp/c.lsp" :direction :output
@@ -100,7 +100,7 @@ int (*foo)(int) = #0;
 ;;; Description:
 ;;;      Regression test to ensure that two foreign data compare
 ;;;      EQUAL when their addresses are the same.
-(deftest ffi-003-foreign-data-equal
+(deftest foreign-interface.0004.foreign-data-equal
     (equal (ffi:make-pointer 1234 :void)
            (ffi:make-pointer 1234 :int))
   t)
