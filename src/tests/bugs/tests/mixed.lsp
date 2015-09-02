@@ -31,6 +31,8 @@
               (return :ok)))))
   nil)
 
+
+
 (declaim (ftype (function (cons)   t)       mixed.0003.foo))
 (declaim (ftype (function (t cons) t) (setf mixed.0003.foo)))
 
@@ -43,21 +45,23 @@
 (defvar mixed.0003.*c* (cons 'x 'y))
 
 (deftest mixed.0003.declaim-type.1
-    (mixed.0003.foo mixed.0003.*c*) ;; correctly returns 'x
-  'x)
+    (mixed.0003.foo mixed.0003.*c*) ;; correctly returns x
+  x)
 
 ;; signals an error:
 ;; Z is not of type CONS.
 ;;   [Condition of type TYPE-ERROR]
 (deftest mixed.0004.declaim-type.2
     (assert (eq 'z
-                (setf (foo *c*) 'z)))
+                (setf (mixed.0003.foo mixed.0003.*c*) 'z)))
   nil)
 
 (compile nil
          `(lambda (x)
             (1+ (the (values integer string)
                      (funcall x)))))
+
+
 
 (deftest mixed.0005.style-warning-argument-order
     (let ((warning nil))

@@ -47,8 +47,10 @@
 #+unicode
 (load "tests/external-formats.lsp")
 
-;; (setf sb-rt::*expected-failures*
-;;       (nconc sb-rt::*expected-failures*
-;;              '(MOP-GF-ADD/REMOVE-DEPENDENT)))
+(setf sb-rt::*expected-failures*
+      (nconc sb-rt::*expected-failures*
+             '(SEM-SIGNAL-N-PROCESSES
+               SEM-SIGNAL-ONLY-N-PROCESSES
+               SEM-INTERRUPTED-RESIGNALS)))
 
 (time (sb-rt:do-tests))

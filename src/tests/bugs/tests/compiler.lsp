@@ -1069,7 +1069,7 @@
                                           (+ ,sample (,op x))))
                  always (loop for x from (- pi) below pi by 0.05
                            for xf = (float x sample)
-                           for error =  (- (funcall f xf) (+ 1 (funcall op xf)))o
+                           for error =  (- (funcall f xf) (+ 1 (funcall op xf)))
                            always (< (abs error) epsilon)))
        collect type)
   nil)
