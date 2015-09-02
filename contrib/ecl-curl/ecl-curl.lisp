@@ -59,9 +59,9 @@
 (defpackage #:ecl-curl
   (:use #:sb-bsd-sockets #:cl)
   (:export #:download-url-to-file
-	   #:download-error
-	   #:download-url
-	   #:download-response))
+           #:download-error
+           #:download-url
+           #:download-response))
 
 (in-package "ECL-CURL")
 
@@ -176,9 +176,9 @@
   (if *proxy*
       url
       (let ((path-start (position #\/ url :start 7)))
-	(if path-start
-	    (subseq url path-start)
-	    "/index.html"))))
+        (if path-start
+            (subseq url path-start)
+            "/index.html"))))
 
 ;;;---------------------------------------------------------------------------
 ;;; CONNECTION & HEADRE
@@ -240,10 +240,10 @@
     (let ((length (parse-integer (or (header-value :content-length headers) "")
                                  :junk-allowed t)))
       (unless quiet
-	(format t "~&;;; Downloading ~A bytes from ~A to ~A ...~%"
-		(or length "some unknown number of")
-		url
-		file-name))
+        (format t "~&;;; Downloading ~A bytes from ~A to ~A ...~%"
+                (or length "some unknown number of")
+                url
+                file-name))
       (force-output)
       (let ((ok? nil) (o nil))
         (unwind-protect
@@ -251,8 +251,8 @@
                (setf o (open file-name 
                               :direction :output :if-exists :supersede
                               :external-format
-			      #-unicode :default
-			      #+unicode :latin-1))
+                              #-unicode :default
+                              #+unicode :latin-1))
                (if length
                    (let ((buf (make-array length
                                           :element-type

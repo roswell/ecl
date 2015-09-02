@@ -5,7 +5,7 @@
 ;;; License as published by the Free Software Foundation; either
 ;;; version 2 of the License, or (at your option) any later version.
 ;;;
-;;;	See file '../Copyright' for full details.
+;;;     See file '../Copyright' for full details.
 
 ;;;
 ;;; DESCRIPTION:
@@ -14,15 +14,15 @@
 ;;; file called hello_aux.c. Both hello.lisp and hello_aux.c are
 ;;; compiled and linked into either
 ;;;
-;;;	1) a FASL file (see build_fasl.lisp)
-;;;	2) a shared library (see build_dll.lisp)
-;;;	3) or a standalone executable file. (build_exe.lisp)
+;;;     1) a FASL file (see build_fasl.lisp)
+;;;     2) a shared library (see build_dll.lisp)
+;;;     3) or a standalone executable file. (build_exe.lisp)
 ;;;
 ;;; USE:
 ;;;
 ;;; Launch a copy of ECL and load this file in it
 ;;;
-;;;	(load "readme.lisp")
+;;;     (load "readme.lisp")
 ;;;
 
 (format t "
@@ -46,10 +46,10 @@
 (defconstant +compound-fasl+ (compile-file-pathname "compound" :type :fasl))
 
 (c::build-fasl +compound-fasl+
-	       :lisp-files
-	       (list (compile-file-pathname "hello.lisp" :type :object))
-	       :ld-flags
-	       (list (namestring (compile-file-pathname "hello_aux.c" :type :object))))
+               :lisp-files
+               (list (compile-file-pathname "hello.lisp" :type :object))
+               :ld-flags
+               (list (namestring (compile-file-pathname "hello_aux.c" :type :object))))
 
 ;;;
 ;;; * We load both files
@@ -73,12 +73,12 @@
 (defconstant +standalone-exe+ (compile-file-pathname "standalone" :type :program))
 
 (c::build-program +standalone-exe+
-		  :lisp-files
-		  (list (compile-file-pathname "hello.lisp" :type :object))
-		  :ld-flags
-		  (list (namestring (compile-file-pathname "hello_aux.c" :type :object)))
-		  :epilogue-code
-		  '(si::quit))
+                  :lisp-files
+                  (list (compile-file-pathname "hello.lisp" :type :object))
+                  :ld-flags
+                  (list (namestring (compile-file-pathname "hello_aux.c" :type :object)))
+                  :epilogue-code
+                  '(si::quit))
 
 ;;
 ;; * Test the program

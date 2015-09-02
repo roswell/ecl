@@ -35,7 +35,7 @@
            #:inflate-stream
            #:inflate-zlib-stream #:parse-zlib-header #:parse-zlib-footer
            #:inflate-gzip-stream #:parse-gzip-header #:parse-gzip-footer
-	   #:gunzip))
+           #:gunzip))
 
 (cl:in-package "DEFLATE")
 

@@ -14,25 +14,25 @@
 
 (defun to-cdb-vector (object)
   (let* ((vector (make-array 128 :adjustable t
-			     :fill-pointer 0
-			     :element-type '(unsigned-byte 8)
-			     :initial-element 0))
-	 (stream (ext:make-sequence-output-stream
-		  vector :external-format #+unicode :utf-8 #-unicode :default)))
+                             :fill-pointer 0
+                             :element-type '(unsigned-byte 8)
+                             :initial-element 0))
+         (stream (ext:make-sequence-output-stream
+                  vector :external-format #+unicode :utf-8 #-unicode :default)))
     (with-standard-io-syntax
       (let ((si::*print-package* (find-package "CL")))
-	(write object :stream stream :pretty nil
-	       :readably nil :escape t)))
+        (write object :stream stream :pretty nil
+               :readably nil :escape t)))
     vector))
 
 (defun from-cdb-vector (vector)
   (let* ((stream (ext:make-sequence-input-stream
-		  vector :external-format #+unicode :utf-8 #-unicode :default)))
+                  vector :external-format #+unicode :utf-8 #-unicode :default)))
     (read stream nil nil nil)))
 
 (defun search-help-file (string path)
   (let* ((key (to-cdb-vector string))
-	 (value (ecl-cdb:lookup-cdb key path)))
+         (value (ecl-cdb:lookup-cdb key path)))
     (when value
       (from-cdb-vector value))))
 
@@ -43,8 +43,8 @@
     (loop for k being the hash-key of hash-table
        using (hash-value v)
        do (ecl-cdb:add-record (to-cdb-vector k)
-			      (to-cdb-vector v)
-			      cdb)))
+                              (to-cdb-vector v)
+                              cdb)))
   ;; Testing the consistency of the output
   (when test
     (loop for k being the hash-key of hash-table

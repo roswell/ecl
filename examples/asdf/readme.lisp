@@ -92,5 +92,5 @@ Executing standalone file 'example'
 ;;;
 
 (mapc #'delete-file (append (directory "*.o")
-			    (directory "*.obj")
-			    (directory "example-mono*")))
+                            (directory "*.obj")
+                            (directory "example-mono*")))
