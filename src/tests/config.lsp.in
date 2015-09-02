@@ -45,7 +45,7 @@
 
 (defvar *test-name* (or (ext:getenv "TEST_NAME") "ecl"))
 (defvar *output-directory* *here*)
-(defvar *regressions-sources* (merge-pathnames "bugs/" *test-sources*))
+(defvar *regressions-sources* (merge-pathnames "regressions/" *test-sources*))
 (defvar *regressions-sandbox* (merge-pathnames "regressions/" *here*))
 (defvar *wild-inferiors* (make-pathname :name :wild
                                         :type :wild

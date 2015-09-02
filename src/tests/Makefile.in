@@ -4,7 +4,7 @@ all: show-fails
 
 .PHONY: do-regressions cleanup clean-sources update
 
-BUGS_FILES := $(shell find ../../src/tests/bugs/ -type f)
+BUGS_FILES := $(shell find ../../src/tests/regressions/ -type f)
 
 regressions.log: config.lsp
 	$(MAKE) do-regressions
