@@ -29,48 +29,23 @@
 (load "universe.lsp")
 (load "ansi-aux.lsp")
 
-(load "test-ansi.lsp")
-(load "sf262--declaim-type-foo-setf-foo.lsp")
-(load "sf272--style-warning-argument-order.lsp")
-(load "sf276--write-hash-readably.lsp")
-(load "sf282--mvb-not-evaled.lsp")
-(load "sf286.lsp")
-
-(load "cl-001.lsp")
-
-(load "mixed.lsp")
-
-(load "int-001.lsp")
+(load "tests/test-ansi.lsp")
+(load "tests/mixed.lsp")
+(load "tests/compiler.lsp")
 
 #-ecl-bytecmp
-(load "cmp-001.lsp")
+(progn
+  (load "tests/embedding.lsp")
+  #+ffi (load "tests/foreign-interface.lsp"))
 
 #+clos
-(progn
- (load "mop-001.lsp")
- (load "mop-dispatch.lsp")
- (load "mop-dependents.lsp"))
-
-#+(and ffi (not ecl-bytecmp))
-(load "ffi-001.lsp")
+(load "tests/metaobject-protocol.lsp")
 
 #+threads
-(progn
- (load "mp-tools.lsp")
- (load "mp-001.lsp")
- (load "mutex-001.lsp")
- (load "mailbox-001.lsp")
- )
+(load "tests/multiprocessing.lsp")
 
 #+unicode
-(progn
- ;; In Windows SYSTEM does not fail with a nonzero code when it
- ;; fails to execute a command. Hence in that case we assume
- ;; we simply can not run these tests
- #-msvc
- (when (zerop (si::system "iconv -l >/dev/null 2>&1"))
-   (load "eformat-002.lsp"))
- (load "eformat-001.lsp"))
+(load "tests/external-formats.lsp")
 
 ;; (setf sb-rt::*expected-failures*
 ;;       (nconc sb-rt::*expected-failures*

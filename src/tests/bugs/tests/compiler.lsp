@@ -979,6 +979,7 @@
 ;;;     of a mismatch between the position of the fields bytecodes.entry
 ;;;     and cfun.entry
 ;;;
+#-ecl-bytcmp
 (deftest compiler.0041.bytecodes-entry-position
     (let ((indices (funcall (compile nil
                                      '(lambda ()
