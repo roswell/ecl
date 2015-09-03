@@ -1,5 +1,4 @@
-;;;; -*- Mode: Lisp; Syntax: Common-Lisp; indent-tabs-mode: nil; Package: CLOS
-(WALKER -*-
+;;;; -*- Mode: Lisp; Syntax: Common-Lisp; indent-tabs-mode: nil; Package: WALKER
 ;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
 
 ;;;;
