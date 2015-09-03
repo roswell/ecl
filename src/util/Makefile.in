@@ -1,3 +1,6 @@
+# -*- Mode: Makefile; indent-tabs-mode: nil -*-
+# vim: set filetype=makefile tabstop=8 shiftwidth=4 expandtab:
+
 # File: util/Makefile
 
 top_srcdir= @top_srcdir@

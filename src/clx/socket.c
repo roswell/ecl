@@ -1,3 +1,6 @@
+/* -*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*- */
+/* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
+
 /* Copyright    Massachusetts Institute of Technology    1988   */
 /*
  * THIS IS AN OS DEPENDENT FILE! It should work on 4.2BSD derived

@@ -1,3 +1,6 @@
+# -*- Mode: Makefile; indent-tabs-mode: nil -*-
+# vim: set filetype=makefile tabstop=8 shiftwidth=4 expandtab:
+
 #
 #			Makefile for ECL core library
 #

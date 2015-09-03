@@ -1,4 +1,6 @@
-;-*- Mode:     Lisp -*-
+;;;; -*- Mode: Lisp; Syntax: Common-Lisp; indent-tabs-mode: nil -*-
+;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
+
 ;;;; Author:   Paul Dietz
 ;;;; Created:  Thu Apr  9 19:32:56 1998
 ;;;; Contains: A global variable containing a list of

@@ -1,6 +1,8 @@
-;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: SYSTEM; indent-tabs-mode: nil -*-
+;;;; -*- Mode: Lisp; Syntax: Common-Lisp; indent-tabs-mode: nil; Package: SYSTEM
+LOOP -*-
+;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
+
 ;;;;
-;;;   -*- Mode:LISP; Syntax:Common-Lisp; Package:LOOP; Base:10; Lowercase:T -*-
 ;;;   *************************************************************************
 ;;;   ******* Common Lisp ******** LOOP Iteration Macro ***********************
 ;;;   *************************************************************************
