@@ -1,4 +1,6 @@
-;-*- Mode:     Lisp -*-
+;;;; -*- Mode: Lisp; Syntax: Common-Lisp; indent-tabs-mode: nil -*-
+;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
+
 ;;;; Author:   Paul Dietz
 ;;;; Created:  Sat Mar 28 17:10:18 1998
 ;;;; Contains: Aux. functions for CL-TEST

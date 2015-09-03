@@ -1,4 +1,6 @@
-;-*- Mode:     Lisp -*-
+;;;; -*- Mode: Lisp; Syntax: Common-Lisp; indent-tabs-mode: nil -*-
+;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
+
 ;;;; Author:   Juan Jose Garcia-Ripoll
 ;;;; Created:  Sat Jan 03 2:56:03 CEST 2007
 ;;;; Contains: External format tests
