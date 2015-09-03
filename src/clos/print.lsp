@@ -207,13 +207,11 @@ printer and we should rather use MAKE-LOAD-FORM."
 (defun ext::float-nan-string (x)
   (when *print-readably*
     (error 'print-not-readable :object x))
-  (coerce
    (cdr (assoc (type-of x)
                '((single-float . "#<single-float quiet NaN>")
                  (double-float . "#<double-float quiet NaN>")
                  (long-float . "#<long-float quiet NaN>")
-                 (short-float . "#<short-float quiet NaN>"))))
-   'base-string))
+                 (short-float . "#<short-float quiet NaN>")))))
 
 (defun ext::float-infinity-string (x)
   (when (and *print-readably* (null *read-eval*))
@@ -238,7 +236,7 @@ printer and we should rather use MAKE-LOAD-FORM."
                         (if (plusp x) positive-infinities negative-infinities))))
     (unless record
       (error "Not an infinity"))
-    (coerce (cdr record) 'base-string)))
+    (cdr record)))
 
 ;;; ----------------------------------------------------------------------
 ;;; Describe
