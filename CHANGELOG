@@ -36,6 +36,10 @@
      mp:mailbox-try-read  (non-blocking)
      mp:mailbox-try-send  (non-blocking)
 
+   - Added back removed C interfaces
+     ecl_improt_current_thread
+     ecl_release_current_thread
+
 ** Enhancements:
 
    - Added code walker (present as *feature* :walker)
