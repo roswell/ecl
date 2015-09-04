@@ -57,6 +57,9 @@
      (read-from-string
       "(#1=\"Hello\" #S(sharp-s-reader.1.example-struct :A #1#))")
 
+   - Generated C code works well with IEEE 754 infinities
+     (regression tests created)
+
 * 16.0.0 changes since 15.3.7
 ** API changes
 
