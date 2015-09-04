@@ -17,18 +17,26 @@
 (in-package #-new-cmp "COMPILER" #+new-cmp "C-BACKEND")
 
 (defun wt1 (form)
-  (typecase form
-    ((or STRING INTEGER CHARACTER)
-     (princ form *compiler-output1*))
-    (SINGLE-FLOAT
-     (format *compiler-output1* "(float)~10,,,,,,'eG" form))
-    (DOUBLE-FLOAT
-     (format *compiler-output1* "~10,,,,,,'eG" form))
-    (LONG-FLOAT
-     (format *compiler-output1* "~,,,,,,'eEl" form))
-    (VAR (wt-var form))
-    (t (wt-loc form)))
-  nil)
+  (cond ((not (floatp form))
+         (typecase form
+           ((or STRING INTEGER CHARACTER)
+            (princ form *compiler-output1*))
+           (VAR (wt-var form))
+           (t (wt-loc form))))
+        ;; ((ext:float-nan-p form)
+        ;;  (format *compiler-output1* "NAN"))
+        ((ext:float-infinity-p form)
+         (if (minusp form)
+             (format *compiler-output1* "-INFINITY")
+             (format *compiler-output1* "INFINITY")))
+        (T
+         (typecase form
+           (SINGLE-FLOAT
+            (format *compiler-output1* "(float)~10,,,,,,'eG" form))
+           (DOUBLE-FLOAT
+            (format *compiler-output1* "~10,,,,,,'eG" form))
+           (LONG-FLOAT
+            (format *compiler-output1* "~,,,,,,'eEl" form))))))
 
 (defun wt-h1 (form)
   (let ((*compiler-output1* *compiler-output2*))

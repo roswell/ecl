@@ -604,6 +604,18 @@ extern cl_object si_wait_for_all_processes _ECL_ARGS((cl_narg narg, ...));
 # define ldexpf(x,y) ldexp((float)x,y)
 #endif
 
+/*
+ * Fake INFINITY and NAN defined in ISO C99 (portably)
+ */
+
+#ifndef INFINITY
+# define INFINITY (1.0/0.0)
+#endif
+
+#ifndef NAN
+# define NAN (0.0/0.0)
+#endif
+
 #ifdef __cplusplus
 }
 #endif
