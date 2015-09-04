@@ -1108,3 +1108,32 @@
 1 
 2 
 3 ")
+
+
+
+;;; Date: 2015-09-04
+;;; Fixed: Daniel Kochmański
+;;; Description
+;;;     Compiler signalled arithmetic-error when producing C code for infinity
+;;;     and NaN float values (part of ieee floating point extensions).
+
+#+ieee-floating-point
+(deftest compiler.0047.infinity-test.1
+    (progn
+      (defun aux-compiler-0047.infty-test.1 ()
+        (> 0.0 ext:single-float-negative-infinity))
+      (compile 'aux-compiler-0047.infty-test.1))
+  aux-compiler-0047.infty-test.1 NIL NIL)
+
+#+ieee-floating-point
+(deftest compiler.0048.infinity-test.2
+    (progn
+      (with-compiler ("aux-compiler-0048.infty-test.2.lsp")
+        '(defun doit () (> 0.0 ext:single-float-negative-infinity)))
+      (load "aux-compiler-0048.infty-test.2.fas")
+      (delete-file "aux-compiler-0048.infty-test.2.lsp")
+      (delete-file "aux-compiler-0048.infty-test.2.fas")
+      (doit))
+  T)
+
+
