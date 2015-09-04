@@ -42,10 +42,9 @@
 
    - Testing framework cleanup
 
-** Issues fixed:
+   - Format fallbacks to prin1 if infinity or NaN are passed to it
 
-   - PPC64le builds with bundled GMP work (autoreconf with recent
-     autotools)
+** Issues fixed:
 
    - Building with single-threaded boehm works if ECL threads are disabled
 
