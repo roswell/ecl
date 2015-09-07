@@ -83,7 +83,7 @@ ecl_set_process_env(cl_env_ptr env)
         TlsSetValue(cl_env_key, env);
 # else
         if (pthread_setspecific(cl_env_key, env))
-                FElibc_error("pthread_setcspecific() failed.", 0);
+                FElibc_error("pthread_setspecific() failed.", 0);
 # endif
 #endif
 }
