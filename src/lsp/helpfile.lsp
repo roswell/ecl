@@ -163,8 +163,7 @@ strings."
 ;; (EXT:OPTIONAL-ANNOTATION arguments for EXT:ANNOTATE)
 (si::fset 'ext:optional-annotation
           #'(ext:lambda-block ext:optional-annotation (whole env)
-               (declare (ignore env #-ecl-min whole))
-               #+ecl-min
+               (declare (ignore env))
                `(ext:annotate ,@(rest whole)))
           t)
 
@@ -180,7 +179,4 @@ strings."
 
 #+ecl-min
 (when (null *documentation-pool*) (new-documentation-pool 1024))
-#+ecl-min
 (setq ext::*register-with-pde-hook* 'default-annotation-logic)
-
-
