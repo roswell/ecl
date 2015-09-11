@@ -356,10 +356,10 @@ make_windows_handle(HANDLE h)
                  * here: status is updated _after_ code, and hence we
                  * check it _before_ code. */
                 do {
-                        status = external_process_status(process);
-                        code = external_process_code(process);
                         ecl_musleep(0.0, 1);
+                        status = external_process_status(process);
                 } while (status == @':running');
+                code = external_process_code(process);
         } else {
                 status = ecl_waitpid(pid, wait);
                 code = ecl_nth_value(the_env, 1);
