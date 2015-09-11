@@ -232,7 +232,7 @@ struct cl_core_struct {
 #endif
         cl_object libraries;
 
-        cl_index max_heap_size;
+        size_t max_heap_size;
         cl_object bytes_consed;
         cl_object gc_counter;
         bool gc_stats;
