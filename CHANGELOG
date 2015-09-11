@@ -48,6 +48,8 @@
 
    - Format fallbacks to prin1 if infinity or NaN are passed to it
 
+   - Annotations are added at runtime (better integration with SLIME)
+
 ** Issues fixed:
 
    - Building with single-threaded boehm works if ECL threads are disabled
@@ -59,6 +61,8 @@
 
    - Generated C code works well with IEEE 754 infinities
      (regression tests created)
+
+   - EXT:EXTERNAL-PROCESS-WAIT potential race condition fix
 
 * 16.0.0 changes since 15.3.7
 ** API changes
