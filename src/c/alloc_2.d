@@ -72,7 +72,7 @@ extern void GC_init_explicit_typing(void);
  **********************************************************/
 
 void
-_ecl_set_max_heap_size(cl_index new_size)
+_ecl_set_max_heap_size(size_t new_size)
 {
         const cl_env_ptr the_env = ecl_process_env();
         ecl_disable_interrupts_env(the_env);

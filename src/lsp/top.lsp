@@ -404,8 +404,8 @@ The top-level loop of ECL. It is called by default when ECL is invoked."
                 (ext:lisp-implementation-vcs-id))
         (format t "~%Copyright (C) 1984 Taiichi Yuasa and Masami Hagiya~@
 Copyright (C) 1993 Giuseppe Attardi~@
-Copyright (C) 2000 Juan J. Garcia-Ripoll
-Copyright (C) 2015 Daniel Kochmanski
+Copyright (C) 2000 Juan J. Garcia-Ripoll~@
+Copyright (C) 2015 Daniel Kochmanski~@
 ECL is free software, and you are welcome to redistribute it~@
 under certain conditions; see file 'Copyright' for details.")
         (format *standard-output* "~%Type :h for Help.  "))
