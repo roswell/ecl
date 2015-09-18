@@ -1156,9 +1156,11 @@ such character exists.")
 If CHAR represents a digit in radix N, then returns an integer represented by
 that digit.  Otherwise, returns NIL.")
 
-(docfun directory function (filespec) "
-Returns a list of full pathnames of all those files that match FILESPEC.
-FILESPEC may be a symbol, a string, a pathname, or a file stream.")
+(docfun directory function (filespec &key (resolve-symbols T)) "
+Returns a list of full pathnames of all those files that match
+FILESPEC.  FILESPEC may be a symbol, a string, a pathname, or a file
+stream. If RESOLVE-SYMBOLS set to NIL then it doesn't follow
+symlinks.")
 
 (docfun directory-namestring function (filespec) "
 Returns as a string the directory part of the pathname specified by FILESPEC.
