@@ -40,6 +40,9 @@
      ecl_import_current_thread
      ecl_release_current_thread
 
+   - When cl-truename encounters a broken symlink it returns it's path
+     instead of signalling a file-error
+
 ** Enhancements:
 
    - Added code walker (present as *feature* :walker)
