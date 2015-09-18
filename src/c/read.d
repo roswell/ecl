@@ -483,12 +483,14 @@ cl_object backquote_reader(cl_object in, cl_object c)
         const cl_env_ptr the_env = ecl_process_env();
         cl_fixnum backq_level = ecl_fixnum(ECL_SYM_VAL(the_env, @'si::*backq-level*'));
         ECL_SETQ(the_env, @'si::*backq-level*', ecl_make_fixnum(backq_level+1));
-        in = ecl_read_object(in);
+        c = ecl_read_object(in);
         ECL_SETQ(the_env, @'si::*backq-level*', ecl_make_fixnum(backq_level));
+        unlikely_if (c == OBJNULL)
+                FEend_of_file(in);
 #if 0
         @(return cl_macroexpand_1(2, cl_list(2, @'si::quasiquote', in), ECL_NIL));
 #else
-        @(return cl_list(2,@'si::quasiquote',in))
+        @(return cl_list(2,@'si::quasiquote',c))
 #endif
 }
 
