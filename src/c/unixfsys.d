@@ -361,8 +361,13 @@ file_truename(cl_object pathname, cl_object filename, int flags)
                 FEcannot_open(filename);
 #ifdef HAVE_LSTAT
         } else if (kind == @':link' && (flags & FOLLOW_SYMLINKS)) {
-                /* The link might be a relative pathname. In that case we have
-                 * to merge with the original pathname */
+                /* The link might be a relative pathname. In that case
+                 * we have to merge with the original pathname.  On
+                 * the other hand, if the link is broken – return file
+                 * truename "as is". */
+                struct stat filestatus;
+                if (safe_stat(filename->base_string.self, &filestatus) < 0)
+                        @(return pathname kind);
                 filename = si_readlink(filename);
                 pathname = ecl_make_pathname(pathname->pathname.host,
                                              pathname->pathname.device,
