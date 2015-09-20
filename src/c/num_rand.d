@@ -45,32 +45,40 @@
 
 #define ulong unsigned long
 
+void
+init_genrand(ulong seed, void *mt_ptr)
+{
+        int j = 0;
+        ulong *mt = (ulong*)mt_ptr;
+        mt[0] = seed & 0xffffffffUL;
+        for (j=1; j < MT_N; j++)
+                mt[j] = (1812433253UL * (mt[j-1] ^ (mt[j-1] >> 30)) + j) & 0xffffffffUL;
+
+        mt[MT_N] = MT_N+1;
+}
+
 cl_object
 init_random_state()
 {
-        cl_index bytes = sizeof(ulong) * (MT_N + 1);
-        cl_object a = ecl_alloc_simple_base_string(bytes);
-        ulong *mt = (ulong*)a->base_string.self;
-        int j = 0;
+        cl_object a = ecl_alloc_simple_base_string((sizeof(ulong) * (MT_N + 1)));
+        ulong seed;
+
 #if !defined(ECL_MS_WINDOWS_HOST)
         /* fopen() might read full 4kB blocks and discard
          * a lot of entropy, so use open() */
         int file_handler = open("/dev/urandom", O_RDONLY);
         if (file_handler != -1) {
-                read(file_handler, mt, sizeof(ulong));
-                close(fh);
+                read(file_handler, &seed, sizeof(ulong));
+                close(file_handler);
         } else
 #endif
         {
                 /* cant get urandom, use crappy source */
                 /* and/or fill rest of area */
-                mt[0] = (rand() + time(0));
+                seed = (rand() + time(0));
         }
-        mt[0] &= 0xffffffffUL;
-        for (j=1; j < MT_N; j++)
-                mt[j] = (1812433253UL * (mt[j-1] ^ (mt[j-1] >> 30)) + j) & 0xffffffffUL;
 
-        mt[MT_N] = MT_N+1;
+        init_genrand(seed, (void *)a->base_string.self);
         return a;
 }
 
