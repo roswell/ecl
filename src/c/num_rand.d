@@ -8,6 +8,7 @@
     Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya.
     Copyright (c) 1990, Giuseppe Attardi.
     Copyright (c) 2001, Juan Jose Garcia Ripoll.
+    Copyright (c) 2015, Daniel Kochmański.
 
     ECL is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -35,7 +36,7 @@
  * Mersenne-Twister random number generator
  */
 
-/* Period parameters */  
+/* Period parameters */
 #define MT_N 624
 #define MT_M 397
 #define MATRIX_A 0x9908b0dfUL   /* constant vector a */
@@ -59,7 +60,7 @@ init_random_state()
                 read(file_handler, mt, sizeof(ulong));
                 close(fh);
         } else
-#endif  
+#endif
         {
                 /* cant get urandom, use crappy source */
                 /* and/or fill rest of area */
