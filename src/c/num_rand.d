@@ -54,27 +54,21 @@ init_random_state()
 #if !defined(ECL_MS_WINDOWS_HOST)
         /* fopen() might read full 4kB blocks and discard
          * a lot of entropy, so use open() */
-        int fh = open("/dev/urandom", O_RDONLY);
-        char buffer[16];
-        if (fh != -1) {
-                j = read(fh, buffer, sizeof(buffer));
-                for (; j < sizeof(buffer) && j < MT_N; j++){
-                        mt[j] = buffer[j];
-                }
+        int file_handler = open("/dev/urandom", O_RDONLY);
+        if (file_handler != -1) {
+                read(file_handler, mt, sizeof(ulong));
                 close(fh);
         } else
 #endif  
         {
                 /* cant get urandom, use crappy source */
                 /* and/or fill rest of area */
-                mt[j++] = (rand() + time(0)) & 0xffffffffUL;
-                for (; j < MT_N; j++){
-                        mt[j] = (1812433253UL * (mt[j-1] ^ (mt[j-1] >> 30)) + j);
-                        if (j >= 16)
-                                mt[j] ^= mt[j-16];
-                        mt[j] &= 0xffffffffUL;
-                }
+                mt[0] = (rand() + time(0));
         }
+        mt[0] &= 0xffffffffUL;
+        for (j=1; j < MT_N; j++)
+                mt[j] = (1812433253UL * (mt[j-1] ^ (mt[j-1] >> 30)) + j) & 0xffffffffUL;
+
         mt[MT_N] = MT_N+1;
         return a;
 }
