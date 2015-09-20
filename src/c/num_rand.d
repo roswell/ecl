@@ -31,32 +31,6 @@
 /* it isn't pulled in by fcntl.h */
 #endif
 
-#if 0
-
-/*
- * Crappy random number generator
- */
-
-cl_object
-init_random_state()
-{
-        return (cl_object)time(0);
-}
-
-static double
-generate_double(cl_object rs)
-{
-        rs->random.value
-        = rs->random.value
-        + (rs->random.value<<2)
-        + (rs->random.value<<17)
-        + (rs->random.value<<27);
-        rs->random.value = rs->random.value & 0xffffffff;
-        return (double)(rs->random.value>>1) / (4294967296.0/2.0);
-}
-
-#else
-
 /*
  * Mersenne-Twister random number generator
  */
@@ -141,8 +115,6 @@ generate_double(cl_object state)
 {
         return generate_int32(state) * (1.0 / 4294967296.0);
 }
-
-#endif
 
 static mp_limb_t
 generate_limb(cl_object state)
