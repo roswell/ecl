@@ -62,7 +62,7 @@ init_random_state()
                         mt[j] = buffer[j];
                 }
                 close(fh);
-        }
+        } else
 #endif  
         {
                 /* cant get urandom, use crappy source */
