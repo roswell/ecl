@@ -45,24 +45,26 @@
 
 #define ulong unsigned long
 
-void
-init_genrand(ulong seed, void *mt_ptr)
+cl_object
+init_genrand(ulong seed)
 {
+        cl_object array =
+                ecl_alloc_simple_base_string((sizeof(ulong) * (MT_N + 1)));
+        ulong *mt = (ulong*)(array->base_string.self);
         int j = 0;
-        ulong *mt = (ulong*)mt_ptr;
         mt[0] = seed & 0xffffffffUL;
         for (j=1; j < MT_N; j++)
-                mt[j] = (1812433253UL * (mt[j-1] ^ (mt[j-1] >> 30)) + j) & 0xffffffffUL;
+                mt[j] = (1812433253UL * (mt[j-1] ^ (mt[j-1] >> 30)) + j)
+                        & 0xffffffffUL;
 
         mt[MT_N] = MT_N+1;
+        return array;
 }
 
 cl_object
 init_random_state()
 {
-        cl_object a = ecl_alloc_simple_base_string((sizeof(ulong) * (MT_N + 1)));
         ulong seed;
-
 #if !defined(ECL_MS_WINDOWS_HOST)
         /* fopen() might read full 4kB blocks and discard
          * a lot of entropy, so use open() */
@@ -78,8 +80,7 @@ init_random_state()
                 seed = (rand() + time(0));
         }
 
-        init_genrand(seed, (void *)a->base_string.self);
-        return a;
+        return init_genrand(seed);
 }
 
 ulong
