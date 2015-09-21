@@ -211,6 +211,9 @@ ecl_make_random_state(cl_object rs)
                 z->random.value = cl_copy_seq(rs->random.value);
                 break;
         case t_fixnum:
+                /* XXX: If we'll decide to use 64-bit algorithm for
+                   appropriate platforms then this will be replaced
+                   with ecl_to_ulong_long from number.d*/
                 z->random.value = init_genrand
                         (ecl_to_uint32_t(rs));
                 break;
