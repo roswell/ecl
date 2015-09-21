@@ -3,7 +3,7 @@
 
 /*
     num_rand.c  -- Random numbers.
-*/
+n*/
 /*
     Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya.
     Copyright (c) 1990, Giuseppe Attardi.
@@ -49,7 +49,9 @@ cl_object
 init_genrand(ulong seed)
 {
         cl_object array =
-                ecl_alloc_simple_base_string((sizeof(ulong) * (MT_N + 1)));
+                ecl_alloc_simple_vector
+                ((MT_N + 1),
+                 ecl_symbol_to_elttype(@'ext::byte32'));
         ulong *mt = (ulong*)(array->base_string.self);
         int j = 0;
         mt[0] = seed & 0xffffffffUL;
