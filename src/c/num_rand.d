@@ -212,6 +212,9 @@ ecl_make_random_state(cl_object rs)
         case t_random:
                 z->random.value = cl_copy_seq(rs->random.value);
                 break;
+        case t_vector:
+                z->random.value = cl_copy_seq(rs);
+                break;
         case t_fixnum:
                 /* XXX: If we'll decide to use 64-bit algorithm for
                    appropriate platforms then this will be replaced
@@ -219,9 +222,6 @@ ecl_make_random_state(cl_object rs)
                 z->random.value = init_genrand
                         (ecl_to_uint32_t(rs));
                 break;
-        /* case t_vector: */
-        /*         z->random.value = init_by_array(rs, cl_length(rs)); */
-        /*         break; */
         default:
                 FEwrong_type_only_arg(@[make-random-state], rs,
                                       @[random-state]);
