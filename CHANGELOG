@@ -43,6 +43,13 @@
    - When cl-truename encounters a broken symlink it returns it's path
      instead of signalling a file-error
 
+   - Random state might be initialized by a random seed (truncated to
+     32bit value) or by a precomputed array.
+
+     Latter is designed to allow reading back the printed random state
+     (when printed readably), not as an array to initialize the random
+     state.
+
 ** Enhancements:
 
    - Added code walker (present as *feature* :walker)
@@ -74,6 +81,9 @@
      ECL_FIXNUM_BITS.
 
    - EXT:EXTERNAL-PROCESS-WAIT potential race condition fix
+
+   - Random state initial state generation was buggy and insecure (entropy
+     from urandom was rejected)
 
 * 16.0.0 changes since 15.3.7
 ** API changes
