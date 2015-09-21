@@ -200,16 +200,28 @@ ecl_make_random_state(cl_object rs)
         cl_object z = ecl_alloc_object(t_random);
         if (rs == ECL_T) {
                 z->random.value = init_random_state();
-        } else {
-                if (Null(rs)) {
-                        rs = ecl_symbol_value(@'*random-state*');
-                }
-                unlikely_if (!ECL_RANDOM_STATE_P(rs)) {
-                        FEwrong_type_only_arg(@[make-random-state], rs,
-                                              @[random-state]);
-                }
-                z->random.value = cl_copy_seq(rs->random.value);
+                return z;
         }
+
+        if (Null(rs))
+                rs = ecl_symbol_value(@'*random-state*');
+
+        switch (ecl_t_of(rs)) {
+        case t_random:
+                z->random.value = cl_copy_seq(rs->random.value);
+                break;
+        case t_fixnum:
+                z->random.value = init_genrand
+                        (ecl_to_uint32_t(rs));
+                break;
+        /* case t_vector: */
+        /*         z->random.value = init_by_array(rs, cl_length(rs)); */
+        /*         break; */
+        default:
+                FEwrong_type_only_arg(@[make-random-state], rs,
+                                      @[random-state]);
+        }
+
         return(z);
 }
 
