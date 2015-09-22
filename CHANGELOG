@@ -50,6 +50,8 @@
      (when printed readably), not as an array to initialize the random
      state.
 
+   - C99 supporting compiler is mandatory for C backend.
+
 ** Enhancements:
 
    - Added code walker (present as *feature* :walker)
@@ -59,6 +61,9 @@
    - Format fallbacks to prin1 if infinity or NaN are passed to it
 
    - Annotations are added at runtime (better integration with SLIME)
+
+   - Mersenne-Twister RNG has new 64 bit implementation for appropriate
+     machines
 
 ** Issues fixed:
 
