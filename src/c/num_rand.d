@@ -43,7 +43,9 @@ n*/
 #define UPPER_MASK 0x80000000UL /* most significant w-r bits */
 #define LOWER_MASK 0x7fffffffUL /* least significant r bits */
 
-#define ulong unsigned long
+/* INV: for 64 bit implementation modify accordingly _hash_equal in
+   hash.d file for case t_random */
+#define ulong ecl_uint32_t
 
 cl_object
 init_genrand(ulong seed)
@@ -52,7 +54,7 @@ init_genrand(ulong seed)
                 ecl_alloc_simple_vector
                 ((MT_N + 1),
                  ecl_symbol_to_elttype(@'ext::byte32'));
-        ulong *mt = (ulong*)(array->base_string.self);
+        ulong *mt = (ulong*)(array->vector.self.b32);
         int j = 0;
         mt[0] = seed & 0xffffffffUL;
         for (j=1; j < MT_N; j++)
@@ -90,7 +92,7 @@ generate_int32(cl_object state)
 {
         static ulong mag01[2]={0x0UL, MATRIX_A};
         ulong y;
-        ulong *mt = (ulong*)state->base_string.self;
+        ulong *mt = (ulong*)state->vector.self.b32;
         if (mt[MT_N] >= MT_N){
                 /* refresh data */
                 int kk;
