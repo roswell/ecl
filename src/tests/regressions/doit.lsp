@@ -49,6 +49,7 @@
 
 #+unicode
 (load "tests/external-formats.lsp")
+(load "tests/random-states.lsp")
 
 (setf sb-rt::*expected-failures*
       (nconc sb-rt::*expected-failures*
