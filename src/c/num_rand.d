@@ -66,7 +66,7 @@ init_genrand(ulong seed)
 }
 
 cl_object
-init_random_state()
+init_random_state(void)
 {
         ulong seed;
 #if !defined(ECL_MS_WINDOWS_HOST)
