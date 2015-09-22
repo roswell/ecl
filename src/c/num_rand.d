@@ -220,13 +220,18 @@ ecl_make_random_state(cl_object rs)
         case t_fixnum:
                 /* XXX: If we'll decide to use 64-bit algorithm for
                    appropriate platforms then this will be replaced
-                   with ecl_to_ulong_long from number.d*/
+                   with ecl_to_ulong_long from number.d, which takes
+                   widest available type (32 or 64 bit)
+                   automatically. */
                 z->random.value = init_genrand
                         (ecl_to_uint32_t(rs));
                 break;
-        default:
+        default: {
+                const char *type
+                        = "(OR RANDOM-STATE (SIMPLE-VECTOR *) (INTEGER 0 *))";
                 FEwrong_type_only_arg(@[make-random-state], rs,
-                                      @[random-state]);
+                                      ecl_read_from_cstring(type));
+        }
         }
 
         return(z);
