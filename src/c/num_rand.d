@@ -45,16 +45,16 @@ n*/
 
 /* INV: for 64 bit implementation modify accordingly _hash_equal in
    hash.d file for case t_random */
-#define ulong ecl_uint32_t
+#define ulong unsigned long
 
 cl_object
 init_genrand(ulong seed)
 {
         cl_object array =
                 ecl_alloc_simple_vector
-                ((MT_N + 1),
-                 ecl_symbol_to_elttype(@'ext::byte32'));
-        ulong *mt = (ulong*)(array->vector.self.b32);
+                ((MT_N + 1) * sizeof(ulong),
+                 ecl_symbol_to_elttype(@'ext::byte8'));
+        ulong *mt = (ulong*)(array->vector.self.b8);
         int j = 0;
         mt[0] = seed & 0xffffffffUL;
         for (j=1; j < MT_N; j++)
@@ -92,7 +92,7 @@ generate_int32(cl_object state)
 {
         static ulong mag01[2]={0x0UL, MATRIX_A};
         ulong y;
-        ulong *mt = (ulong*)state->vector.self.b32;
+        ulong *mt = (ulong*)state->vector.self.b8;
         if (mt[MT_N] >= MT_N){
                 /* refresh data */
                 int kk;
@@ -223,8 +223,7 @@ ecl_make_random_state(cl_object rs)
                    with ecl_to_ulong_long from number.d, which takes
                    widest available type (32 or 64 bit)
                    automatically. */
-                z->random.value = init_genrand
-                        (ecl_to_uint32_t(rs));
+                z->random.value = init_genrand(ecl_fixnum(rs));
                 break;
         default: {
                 const char *type

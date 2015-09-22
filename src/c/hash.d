@@ -120,8 +120,8 @@ _hash_equal(int depth, cl_hashkey h, cl_object x)
         case t_random: {
                 cl_object array = x->random.value;
                 return hash_string
-                        (h, (unsigned char*)array->vector.self.b32,
-                         array->vector.fillp * sizeof(ecl_uint32_t));
+                        (h, (unsigned char*)array->vector.self.b8,
+                         array->vector.fillp);
         }
 #ifdef ECL_SIGNED_ZERO
         case t_singlefloat: {
