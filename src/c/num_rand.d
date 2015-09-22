@@ -36,64 +36,120 @@ n*/
  * Mersenne-Twister random number generator
  */
 
+#if ECL_FIXNUM_BITS > 32
+/*
+ * 64 bit version
+ */
+
+/* Period parameters */
+#define MT_N 312
+#define MT_M 156
+#define MATRIX_A 0xB5026F5AA96619E9ULL   /* constant vector a */
+#define UPPER_MASK 0xFFFFFFFF80000000ULL /* most significant 33 bits */
+#define LOWER_MASK 0x7FFFFFFFULL         /* least significant 31 bits */
+#define ulong uint64_t
+
+static cl_object
+init_genrand(ulong seed)
+{
+        cl_object array = ecl_alloc_simple_vector((MT_N + 1), ecl_aet_b64);
+        ulong *mt = array->vector.self.b64;
+        mt[0] = seed;
+        for (int j=1; j<MT_N; j++) 
+                mt[j] =  (6364136223846793005ULL * (mt[j-1] ^ (mt[j-1] >> 62)) + j);
+
+        mt[MT_N] = MT_N+1;
+        return array;
+}
+
+static ulong
+generate_int64(cl_object state)
+{
+        static  mag01[2]={0x0UL, MATRIX_A};
+        ulong y;
+        ulong *mt = state->vector.self.b64;
+
+        if (mt[MT_N] >= MT_N) {
+                /* refresh data */
+                int kk;
+                for (kk=0; kk < (MT_N - MT_M); kk++) {
+                        y = (mt[kk] & UPPER_MASK) | (mt[kk+1] & LOWER_MASK);
+                        mt[kk] = mt[kk + MT_M] ^ (y >> 1) ^ mag01[y & 0x1ULL];
+                }
+                for (; kk < (MT_N - 1); kk++) {
+                        y = (mt[kk] & UPPER_MASK) | (mt[kk+1] & LOWER_MASK);
+                        mt[kk] = mt[kk+(MT_M-MT_N)] ^ (y >> 1) ^ mag01[y & 0x1ULL];
+                }
+                y = (mt[MT_N-1] & UPPER_MASK) | (mt[0] & LOWER_MASK);
+                mt[MT_N-1] = mt[MT_M-1] ^ (y >> 1) ^ mag01[y & 0x1ULL];
+                mt[MT_N] = 0;
+        }
+        /* get random 64 bit num */
+        y = mt[mt[MT_N]++];
+        /* Tempering */
+        y ^= (y >> 29) & 0x5555555555555555ULL;
+        y ^= (y << 17) & 0x71D67FFFEDA60000ULL;
+        y ^= (y << 37) & 0xFFF7EEE000000000ULL;
+        y ^= (y >> 43);
+
+        return y;
+}
+
+static double
+generate_double(cl_object state)
+{
+        return (generate_int64(state) >> 11) * (1.0 / 9007199254740991.0);
+}
+
+static mp_limb_t
+generate_limb(cl_object state)
+{
+#if GMP_LIMB_BITS <= 32
+        return generate_int64(state);
+#else
+# if GMP_LIMB_BITS <= 64
+        return generate_int64(state);
+# else
+#  if GMP_LIMB_BITS <= 128
+        mp_limb_t high = generate_int64(state);
+        return (high << 64) | generate_int64(state);
+#  endif
+# endif
+#endif
+}
+#else
+/*
+ * 32 bit version
+ */
+
 /* Period parameters */
 #define MT_N 624
 #define MT_M 397
 #define MATRIX_A 0x9908b0dfUL   /* constant vector a */
 #define UPPER_MASK 0x80000000UL /* most significant w-r bits */
 #define LOWER_MASK 0x7fffffffUL /* least significant r bits */
+#define ulong uint32_t
 
-/* INV: for 64 bit implementation modify accordingly _hash_equal in
-   hash.d file for case t_random */
-#define ulong unsigned long
-
-cl_object
+static cl_object
 init_genrand(ulong seed)
 {
-        cl_object array =
-                ecl_alloc_simple_vector
-                ((MT_N + 1) * sizeof(ulong),
-                 ecl_symbol_to_elttype(@'ext::byte8'));
-        ulong *mt = (ulong*)(array->vector.self.b8);
-        int j = 0;
-        mt[0] = seed & 0xffffffffUL;
-        for (j=1; j < MT_N; j++)
-                mt[j] = (1812433253UL * (mt[j-1] ^ (mt[j-1] >> 30)) + j)
-                        & 0xffffffffUL;
+        cl_object array = ecl_alloc_simple_vector((MT_N + 1), ecl_aet_b32);
+        ulong *mt = array->vector.self.b32;
+        mt[0] = seed;
+        for (int j=1; j < MT_N; j++)
+                mt[j] = (1812433253UL * (mt[j-1] ^ (mt[j-1] >> 30)) + j);
 
         mt[MT_N] = MT_N+1;
         return array;
 }
 
-cl_object
-init_random_state(void)
-{
-        ulong seed;
-#if !defined(ECL_MS_WINDOWS_HOST)
-        /* fopen() might read full 4kB blocks and discard
-         * a lot of entropy, so use open() */
-        int file_handler = open("/dev/urandom", O_RDONLY);
-        if (file_handler != -1) {
-                read(file_handler, &seed, sizeof(ulong));
-                close(file_handler);
-        } else
-#endif
-        {
-                /* cant get urandom, use crappy source */
-                /* and/or fill rest of area */
-                seed = (rand() + time(0));
-        }
-
-        return init_genrand(seed);
-}
-
-ulong
+static ulong
 generate_int32(cl_object state)
 {
-        static ulong mag01[2]={0x0UL, MATRIX_A};
+        static  mag01[2]={0x0UL, MATRIX_A};
         ulong y;
-        ulong *mt = (ulong*)state->vector.self.b8;
-        if (mt[MT_N] >= MT_N){
+        ulong *mt = state->vector.self.b32;
+        if (mt[MT_N] >= MT_N) {
                 /* refresh data */
                 int kk;
                 for (kk=0; kk < (MT_N - MT_M); kk++) {
@@ -143,6 +199,29 @@ generate_limb(cl_object state)
 #  endif
 # endif
 #endif
+}
+#endif
+
+cl_object
+init_random_state(void)
+{
+        ulong seed;
+#if !defined(ECL_MS_WINDOWS_HOST)
+        /* fopen() might read full 4kB blocks and discard
+         * a lot of entropy, so use open() */
+        int file_handler = open("/dev/urandom", O_RDONLY);
+        if (file_handler != -1) {
+                read(file_handler, &seed, sizeof(ulong));
+                close(file_handler);
+        } else
+#endif
+        {
+                /* cant get urandom, use crappy source */
+                /* and/or fill rest of area */
+                seed = (rand() + time(0));
+        }
+
+        return init_genrand(seed);
 }
 
 static cl_object
