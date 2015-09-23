@@ -107,7 +107,7 @@ the function name it precedes."
     ((:object :c :static-library :lib :shared-library :dll)
      (or (and (probe-file pathname)
               (find-init-name pathname :tag (kind->tag kind)))
-         (error "Cannot find out entry point for binary file ~A" pathname)))
+         (cmpnote "Cannot find out entry point for binary file ~A" pathname)))
     (otherwise (compute-init-name pathname kind))))
 
 (defun remove-prefix (prefix name)

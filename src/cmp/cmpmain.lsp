@@ -471,7 +471,8 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
                (flags (guess-ld-flags path)))
           ;; We should give a warning that we cannot link this module in
           (when flags (push flags ld-flags))
-          (push (list init-fn path) submodules))))
+          (when init-fn
+            (push (list init-fn path) submodules)))))
     (setf submodules-data (apply #'concatenate '(array base-char (*))
                                  submodules-data))
     (setq c-file (open c-name :direction :output :external-format :default))
