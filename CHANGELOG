@@ -75,6 +75,8 @@
 
    - EXT:EXTERNAL-PROCESS-WAIT potential race condition fix
 
+   - Building with object files not created by ECL works (CFFI wrappers)
+
 * 16.0.0 changes since 15.3.7
 ** API changes
 
