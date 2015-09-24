@@ -24,6 +24,7 @@ RM	= @RM@
 EXE	= @EXEEXT@
 DPP	= ./dpp$(EXE)
 RANLIB	= @RANLIB@
+AR	= @AR@
 
 # Data for installation
 #
@@ -108,7 +109,7 @@ ffi_x86_64.c: $(srcdir)/arch/ffi_x86_64.d $(DPP) $(HFILES)
 
 ../libeclmin.a: $(OBJS) all_symbols.o all_symbols2.o
 	$(RM) $@
-	ar cr $@ $(OBJS)
+	$(AR) cr $@ $(OBJS)
 	$(RANLIB) $@
 
 clean:
