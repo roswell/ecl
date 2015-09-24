@@ -23,7 +23,11 @@
 #if defined(ECL_MS_WINDOWS_HOST)
 #include <winsock.h>
 #else
+#ifdef __ANDROID__
+#include <errno.h>
+#else
 extern int errno;
+#endif
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>

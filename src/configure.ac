@@ -634,8 +634,15 @@ AC_CHECK_HEADERS( [fcntl.h limits.h netdb.h netinet/in.h] \
 dnl !!! end autoscan
 
 AC_CHECK_HEADERS( [sys/resource.h sys/utsname.h float.h pwd.h dlfcn.h link.h] \
-                  [mach-o/dyld.h ulimit.h dirent.h sys/ioctl.h sys/select.h] \
+                  [mach-o/dyld.h dirent.h sys/ioctl.h sys/select.h] \
                   [sys/wait.h semaphore.h] )
+
+
+AC_CHECK_HEADERS([ulimit.h], [], [],
+[[#ifdef HAVE_ULIMIT_H
+# include <ulimit.h>
+#endif
+]])
 
 dnl =====================================================================
 dnl Checks for typedefs, structures, and compiler characteristics.
@@ -802,6 +809,10 @@ else
   CLX_INFO=""
 fi
 
+if test "${with_tcp}" = "builtin"; then
+  ECL_ADD_BUILTIN_MODULE([sockets])
+  with_tcp=yes
+fi
 if test "${with_tcp}" = "yes"; then
   AC_DEFINE(TCP, [1], [Network streams])
   EXTRA_OBJS="${EXTRA_OBJS} tcp.${OBJEXT}"

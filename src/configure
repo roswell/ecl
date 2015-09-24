@@ -4872,6 +4872,23 @@ clibs=''
 SONAME=''
 SONAME_LDFLAGS=''
 case "${host_os}" in
+	linux-androideabi)
+		thehost='android'
+		THREAD_CFLAGS='-D_THREAD_SAFE'
+#		THREAD_LIBS='-lpthread'
+		SHARED_LDFLAGS="-shared ${LDFLAGS}"
+		BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
+		ECL_LDRPATH='-Wl,--rpath,~A'
+		clibs="-ldl"
+		# Maybe CFLAGS="-D_ISOC99_SOURCE ${CFLAGS}" ???
+		CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DANDROID -DPLATFORM_ANDROID -DUSE_GET_STACKBASE_FOR_MAIN -DIGNORE_DYNAMIC_LOADING -DAO_REQUIRE_CAS ${CFLAGS}"
+		SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
+		SONAME_LDFLAGS="-Wl,-soname,SONAME"
+
+LSP_FEATURES="(cons :android ${LSP_FEATURES})"
+
+		;;
+
 	# libdir may have a dollar expression inside
 	linux*)
 		thehost='linux'
@@ -5051,6 +5068,16 @@ case "${host_os}" in
 		shared="no"
 		;;
 esac
+
+case "${host}" in
+	i686*-android*)
+		THREAD_LIBS=''
+		CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DANDROID -DPLATFORM_ANDROID -DUSE_GET_STACKBASE_FOR_MAIN -DIGNORE_DYNAMIC_LOADING -DNO_GETCONTEXT -DHAVE_GETTIMEOFDAY -DHAVE_SIGPROCMASK ${CFLAGS}"
+
+LSP_FEATURES="(cons :android ${LSP_FEATURES})"
+
+esac
+
 case "${host_cpu}" in
 	alpha*)
 		CFLAGS="${CFLAGS} -mieee";;
@@ -6905,7 +6932,7 @@ done
 
 
 for ac_header in sys/resource.h sys/utsname.h float.h pwd.h dlfcn.h link.h \
-                  mach-o/dyld.h ulimit.h dirent.h sys/ioctl.h sys/select.h \
+                  mach-o/dyld.h dirent.h sys/ioctl.h sys/select.h \
                   sys/wait.h semaphore.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
@@ -6913,6 +6940,24 @@ ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_include
 if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
 #define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+
+done
+
+
+
+for ac_header in ulimit.h
+do :
+  ac_fn_c_check_header_compile "$LINENO" "ulimit.h" "ac_cv_header_ulimit_h" "#ifdef HAVE_ULIMIT_H
+# include <ulimit.h>
+#endif
+
+"
+if test "x$ac_cv_header_ulimit_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_ULIMIT_H 1
 _ACEOF
 
 fi
@@ -9447,6 +9492,14 @@ else
   CLX_INFO=""
 fi
 
+if test "${with_tcp}" = "builtin"; then
+
+
+LSP_FEATURES="(cons :builtin-sockets ${LSP_FEATURES})"
+
+
+  with_tcp=yes
+fi
 if test "${with_tcp}" = "yes"; then
 
 $as_echo "#define TCP 1" >>confdefs.h

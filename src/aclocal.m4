@@ -253,6 +253,21 @@ clibs=''
 SONAME=''
 SONAME_LDFLAGS=''
 case "${host_os}" in
+	linux-androideabi)
+		thehost='android'
+		THREAD_CFLAGS='-D_THREAD_SAFE'
+#		THREAD_LIBS='-lpthread'
+		SHARED_LDFLAGS="-shared ${LDFLAGS}"
+		BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
+		ECL_LDRPATH='-Wl,--rpath,~A'
+		clibs="-ldl"
+		# Maybe CFLAGS="-D_ISOC99_SOURCE ${CFLAGS}" ???
+		CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DANDROID -DPLATFORM_ANDROID -DUSE_GET_STACKBASE_FOR_MAIN -DIGNORE_DYNAMIC_LOADING -DAO_REQUIRE_CAS ${CFLAGS}"
+		SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
+		SONAME_LDFLAGS="-Wl,-soname,SONAME"
+		ECL_ADD_FEATURE([android])
+		;;
+
 	# libdir may have a dollar expression inside
 	linux*)
 		thehost='linux'
@@ -432,6 +447,14 @@ case "${host_os}" in
 		shared="no"
 		;;
 esac
+
+case "${host}" in
+	i686*-android*)
+		THREAD_LIBS=''
+		CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DANDROID -DPLATFORM_ANDROID -DUSE_GET_STACKBASE_FOR_MAIN -DIGNORE_DYNAMIC_LOADING -DNO_GETCONTEXT -DHAVE_GETTIMEOFDAY -DHAVE_SIGPROCMASK ${CFLAGS}"
+		ECL_ADD_FEATURE([android])
+esac
+
 case "${host_cpu}" in
 	alpha*)
 		CFLAGS="${CFLAGS} -mieee";;
