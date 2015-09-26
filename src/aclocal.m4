@@ -1040,7 +1040,7 @@ if test "${enable_boehm}" = "included"; then
          --includedir=${destdir}/ecl/ --libdir=${destdir} --build=${build_alias} \
          --host=${host_alias} --enable-large-config \
          CC="${CC} ${PICFLAG}" CFLAGS="$CFLAGS" \
-         LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" \
+         LDFLAGS="$LDFLAGS -I${destdir}/ecl" CPPFLAGS="$CPPFLAGS" \
          ${boehm_configure_flags}); then
      ECL_BOEHM_GC_HEADER='ecl/gc/gc.h'
      SUBDIRS="${SUBDIRS} gc"
