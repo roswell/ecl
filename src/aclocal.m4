@@ -455,7 +455,6 @@ case "${host}" in
 		THREAD_LIBS='-lpthread'
 		SHARED_LDFLAGS="-shared ${LDFLAGS}"
 		BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
-		ECL_GC_DIR=gc-unstable
 		ECL_LDRPATH='-Wl,--rpath,~A'
 		CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 ${CFLAGS}"
 		SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
@@ -468,7 +467,6 @@ case "${host}" in
 		THREAD_LIBS='-lpthread'
 		dnl SHARED_LDFLAGS="-shared ${LDFLAGS}"
 		dnl BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
-		ECL_GC_DIR=gc-unstable
 		dnl ECL_LDRPATH='-Wl,--rpath,~A'
 		CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 ${CFLAGS}"
 		dnl SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
@@ -1039,10 +1037,10 @@ if test "${enable_boehm}" = "included"; then
  if mkdir gc; then
    if (destdir=`${PWDCMD}`; cd gc; \
        $srcdir/${ECL_GC_DIR}/configure --disable-shared --prefix=${destdir} \
-	 --includedir=${destdir}/ecl/ --libdir=${destdir} --build=${build_alias} \
-	 --host=${host_alias} --enable-large-config \
+         --includedir=${destdir}/ecl/ --libdir=${destdir} --build=${build_alias} \
+         --host=${host_alias} --enable-large-config \
          CC="${CC} ${PICFLAG}" CFLAGS="$CFLAGS" \
-	 LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" \
+         LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" \
          ${boehm_configure_flags}); then
      ECL_BOEHM_GC_HEADER='ecl/gc/gc.h'
      SUBDIRS="${SUBDIRS} gc"
