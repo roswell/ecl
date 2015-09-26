@@ -117,7 +117,7 @@ bin/ecl-config: bin/ecl-config.pre
 
 @LIBPREFIX@eclmin.@LIBEXT@: @LIBPREFIX@eclgmp.@LIBEXT@ @LIBPREFIX@eclatomic.@LIBEXT@ @LIBPREFIX@eclgc.@LIBEXT@ @LIBPREFIX@eclffi.@LIBEXT@ lsp/config.lsp $(ECL_CMPDIR)/cmpdefs.lsp ecl/external.h $(top_srcdir)/c/*.d
 	cd c; $(MAKE)
-@LIBPREFIX@eclgc.@LIBEXT@:
+@LIBPREFIX@eclgc.@LIBEXT@: @LIBPREFIX@eclatomic.@LIBEXT@
 	test -d ecl/gc || mkdir ecl/gc
 	test -d ecl/gc/private || mkdir ecl/gc/private
 	if (echo $(SUBDIRS) | grep gc); then \

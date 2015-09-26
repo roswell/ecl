@@ -6139,8 +6139,9 @@ $as_echo "$as_me: Configuring included Boehm GC library:" >&6;}
        $srcdir/${ECL_GC_DIR}/configure --disable-shared --prefix=${destdir} \
          --includedir=${destdir}/ecl/ --libdir=${destdir} \
          --build=${build_alias} --host=${host_alias} --enable-large-config \
-         CC="${CC} ${PICFLAG}" CFLAGS="$CFLAGS" \
-         LDFLAGS="$LDFLAGS -I${destdir}/ecl" CPPFLAGS="$CPPFLAGS" \
+         CC="${CC} ${PICFLAG}" \
+         CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" \
+         CPPFLAGS="$CPPFLAGS -I${destdir}/ecl" \
          ${boehm_configure_flags}); then
      ECL_BOEHM_GC_HEADER='ecl/gc/gc.h'
      SUBDIRS="${SUBDIRS} gc"
