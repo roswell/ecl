@@ -454,7 +454,7 @@ universal_error_handler(cl_object continue_string, cl_object datum,
                 writestr_stream("\n;;; Message:\n", stream);
                 si_write_ugly_object(datum, stream);
                 writestr_stream("\n;;; Arguments:\n", stream);
-                si_write_ugly_object(datum, args);
+                si_write_ugly_object(args, stream);
                 ecl_bds_unwind_n(the_env, 5);
         }
  ABORT:
