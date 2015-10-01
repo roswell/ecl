@@ -35,11 +35,7 @@ evaluated. The output is stored in a string and output as a second value."
              (with-output-to-string (*standard-output*)
                (let ((*error-output* *standard-output*)
                      (*compile-verbose* t)
-                     (*compile-print* t)
-                     #-ecl-bytecmp
-                     (c::*suppress-compiler-warnings* nil)
-                     #-ecl-bytecmp
-                     (c::*suppress-compiler-notes* nil))
+                     (*compile-print* t))
                  (setf ok (compile-file ,filename ,@compiler-args))))))
        (values ok output))))
 

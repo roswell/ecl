@@ -43,6 +43,9 @@
    - When cl-truename encounters a broken symlink it returns it's path
      instead of signalling a file-error
 
+   - Deprecated variables has been removed
+     c::*suppress-compiler-warnings*, c::*suppress-compiler-notes*
+
 ** Enhancements:
 
    - Added code walker (present as *feature* :walker)

@@ -66,9 +66,6 @@ running the compiler. It may be updated by running ")
   #+ecl-min 'compiler-debug-note #-ecl-min 'compiler-note
   "A type denoting which compiler messages and conditions are _not_ displayed.")
 
-(defvar *suppress-compiler-notes* nil) ; Deprecated
-(defvar *suppress-compiler-warnings* nil) ; Deprecated
-
 (defvar *compiler-break-enable* nil)
 
 (defvar *compiler-in-use* nil)
