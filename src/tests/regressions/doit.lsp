@@ -14,8 +14,6 @@
 (require 'rt)
 
 #+ecl (compile nil '(lambda () nil))
-#+(and ecl (not ecl-bytecmp))
-(setq c::*suppress-compiler-warnings* t c::*suppress-compiler-notes* t)
 
 (setq *load-verbose* nil
       *load-print* nil

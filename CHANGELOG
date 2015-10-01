@@ -43,6 +43,9 @@
    - When cl-truename encounters a broken symlink it returns it's path
      instead of signalling a file-error
 
+   - Deprecated variables has been removed
+     c::*suppress-compiler-warnings*, c::*suppress-compiler-notes*
+
    - Random state might be initialized by a random seed (truncated to
      32bit value) or by a precomputed array.
 
@@ -86,6 +89,13 @@
      ECL_FIXNUM_BITS.
 
    - EXT:EXTERNAL-PROCESS-WAIT potential race condition fix
+
+   - Building with object files not created by ECL works (CFFI wrappers)
+
+   - Regression regarding initialization of build by ECL libraries from
+     external code fixed. Static and shared libraries initialization
+     funcitons has predetermined name while object files has randomized
+     names.
 
    - Random state initial state generation was buggy and insecure (entropy
      from urandom was rejected)
