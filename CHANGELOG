@@ -80,6 +80,11 @@
 
    - Building with object files not created by ECL works (CFFI wrappers)
 
+   - Regression regarding initialization of build by ECL libraries from
+     external code fixed. Static and shared libraries initialization
+     funcitons has predetermined name while object files has randomized
+     names.
+
 * 16.0.0 changes since 15.3.7
 ** API changes
 
