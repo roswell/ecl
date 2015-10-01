@@ -1385,8 +1385,7 @@ sharp_dollar_reader(cl_object in, cl_object c, cl_object d)
         if (d != ECL_NIL && !read_suppress)
                 extra_argument('$', in, d);
         c = ecl_read_object(in);
-        rs = ecl_alloc_object(t_random);
-        rs->random.value = c;
+        rs = ecl_make_random_state(c);
         @(return rs)
 }
 

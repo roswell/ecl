@@ -88,7 +88,27 @@
  <section xml:id="ansi.random-states">
   <title>Random-States</title>
 
-  <para>&ECL; relies internally on a 32-bit or 64-bit Mersenne-Twister random number generator, using a relatively large buffer to precompute about 5000 pseud-random bytes. This implies also that random states can be printed readably and also read, using the <literal>#$</literal> macro. There is no provision to create random states from user arrays, though.</para>
+  <para>&ECL; relies internally on a 32-bit <!-- or 64-bit -->
+  Mersenne-Twister random number generator, using a relatively large
+  buffer to precompute about 5000 pseud-random bytes. This implies
+  also that random states can be printed readably and also read, using
+  the <literal>#$</literal> macro. There is no provision to create
+  random states from user arrays, though. Random state is printed
+  unreadably by default.</para>
+  <para>
+    The <literal>#$</literal> macro can be used to initialize
+    generatorr with the random seed (an integer), an array of random
+    bytes (mainly used for reading back printed random-state) and an
+    another random-state (syntactic sugar for copying of the
+    random-state).
+  </para>
+
+  <!-- <programlisting> put examples in txi after conversion-->
+  <!-- #$1234 -> #<random-state 0300c000> -->
+  <!-- (let ((*print-readably* t))
+       (print #$1234)) -> ...-->
+  <!-- (read-from-string (format nil )) -->
+  <!-- </programlisting> -->
  </section>
 
  <xi:include href="ref_c_numbers.xml" xpointer="ansi.numbers.c-dict" xmlns:xi="http://www.w3.org/2001/XInclude"/>

@@ -46,6 +46,15 @@
    - Deprecated variables has been removed
      c::*suppress-compiler-warnings*, c::*suppress-compiler-notes*
 
+   - Random state might be initialized by a random seed (truncated to
+     32bit value) or by a precomputed array.
+
+     Latter is designed to allow reading back the printed random state
+     (when printed readably), not as an array to initialize the random
+     state.
+
+   - C99 supporting compiler is mandatory for C backend.
+
 ** Enhancements:
 
    - Added code walker (present as *feature* :walker)
@@ -55,6 +64,9 @@
    - Format fallbacks to prin1 if infinity or NaN are passed to it
 
    - Annotations are added at runtime (better integration with SLIME)
+
+   - Mersenne-Twister RNG has new 64 bit implementation for appropriate
+     machines
 
 ** Issues fixed:
 
@@ -84,6 +96,9 @@
      external code fixed. Static and shared libraries initialization
      funcitons has predetermined name while object files has randomized
      names.
+
+   - Random state initial state generation was buggy and insecure (entropy
+     from urandom was rejected)
 
 * 16.0.0 changes since 15.3.7
 ** API changes
