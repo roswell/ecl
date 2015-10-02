@@ -233,7 +233,7 @@ the environment variable TMPDIR to a different value." template))
 #ifdef __cplusplus
 extern \"C\"
 #endif
-ECL_DLLEXPORT
+
 void ~A(cl_object cblock)
 {
         /*
@@ -269,6 +269,16 @@ void ~A(cl_object cblock)
         Cblock->cblock.next = current;
 }
         ~A
+}
+")
+
+(defconstant +lisp-init-wrapper+ "
+ECL_DLLEXPORT
+void ~A(cl_object cblock)
+{
+        /* This function is a wrapper over the randomized init function
+         * name. */
+        ~A(cblock);
 }
 ")
 
@@ -387,15 +397,28 @@ filesystem or in the database of ASDF modules."
             (find-archive system))
        (fallback)))))
 
-(defun builder (target output-name &key lisp-files ld-flags
-                (init-name nil)
-                (main-name nil)
-                (prologue-code "")
-                (epilogue-code (when (eq target :program) '(SI::TOP-LEVEL T)))
-                #+:win32 (system :console)
+(defun builder (target output-name
+                &key
+                  lisp-files ld-flags
+                  (init-name nil)
+                  (main-name nil)
+                  (prologue-code "")
+                  (epilogue-code (when (eq target :program) '(SI::TOP-LEVEL T)))
+                  #+:win32 (system :console)
                 &aux
-                (*suppress-compiler-messages* (or *suppress-compiler-messages*
-                                                  (not *compile-verbose*))))
+                  (*suppress-compiler-messages* (or *suppress-compiler-messages*
+                                                    (not *compile-verbose*)))
+                  (output-name (if (or (symbolp output-name) (stringp output-name))
+                                   (compile-file-pathname output-name :type target)
+                                   output-name))
+                  (init-name (or init-name (compute-init-name output-name
+                                                              :kind target)))
+                  (wrap-init-name (compute-init-name output-name
+                                                     :kind target
+                                                     :wrapper t))
+                  (main-name (or main-name (compute-init-name output-name
+                                                              :kind target
+                                                              :prefix "main_"))))
   ;;
   ;; The epilogue-code can be either a string made of C code, or a
   ;; lisp form.  In the latter case we add some additional C code to
@@ -470,14 +493,7 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
                                  submodules-data))
     (setq c-file (open c-name :direction :output :external-format :default))
     (format c-file +lisp-program-header+ submodules)
-    (when (or (symbolp output-name) (stringp output-name))
-      (setf output-name (compile-file-pathname output-name :type target)))
-    (unless init-name
-      (setf init-name (compute-init-name output-name :kind target)))
-    (unless main-name
-      (setf main-name (compute-init-name output-name
-                                         :kind target
-                                         :prefix "main_")))
+
     (let ((init-tag (init-name-tag init-name :kind target)))
       (ecase target
         (:program
@@ -492,9 +508,9 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
          (compiler-cc c-name o-name)
          (linker-cc output-name (list* (namestring o-name) ld-flags)))
         ((:library :static-library :lib)
-         (format c-file +lisp-program-init+ init-name init-tag prologue-code
-                 submodules epilogue-code)
-         (cmpnote "Library initialization function is ~A" main-name)
+         (format c-file +lisp-program-init+
+                 init-name init-tag prologue-code submodules epilogue-code)
+         (format c-file +lisp-init-wrapper+ wrap-init-name init-name)
          (format c-file +lisp-library-main+
                  main-name prologue-code init-name epilogue-code)
          (close c-file)
@@ -503,9 +519,9 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
          (linker-ar output-name o-name ld-flags))
         #+dlopen
         ((:shared-library :dll)
-         (format c-file +lisp-program-init+ init-name init-tag prologue-code
-                 submodules epilogue-code)
-         (cmpnote "Library initialization function is ~A" main-name)
+         (format c-file +lisp-program-init+
+                 init-name init-tag prologue-code submodules epilogue-code)
+         (format c-file +lisp-init-wrapper+ wrap-init-name init-name)
          (format c-file +lisp-library-main+
                  main-name prologue-code init-name epilogue-code)
          (close c-file)

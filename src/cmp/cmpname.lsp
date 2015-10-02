@@ -115,7 +115,9 @@ the function name it precedes."
       (subseq name (length prefix) nil)
       name))
 
-(defun compute-init-name (pathname &key (kind (guess-kind pathname)) (prefix nil))
+(defun compute-init-name (pathname &key (kind (guess-kind pathname))
+                                     (prefix nil)
+                                     (wrapper nil))
   "Computes initialization function name. Libraries, FASLS and
 programs init function names can't be randomized to allow
 initialization from the C code which wants to use it."
@@ -127,11 +129,15 @@ initialization from the C code which wants to use it."
       ((:fasl :fas)
        (init-function-name "CODE" :kind :fas :prefix prefix))
       ((:static-library :lib)
-       (init-function-name (remove-prefix +static-library-prefix+ filename)
+       (init-function-name (if wrapper
+                               (remove-prefix +static-library-prefix+ filename)
+                               unique-name)
                            :kind :lib
                            :prefix prefix))
       ((:shared-library :dll)
-       (init-function-name (remove-prefix +shared-library-prefix+ filename)
+       (init-function-name (if wrapper
+                               (remove-prefix +shared-library-prefix+ filename)
+                               unique-name)
                            :kind :dll
                            :prefix prefix))
       ((:program)
