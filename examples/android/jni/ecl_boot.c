@@ -23,12 +23,12 @@
 #define ECL_CPP_TAG
 #endif
 
-extern ECL_CPP_TAG void main_lib_ASDF();
-extern ECL_CPP_TAG void main_lib_SOCKETS();
-extern ECL_CPP_TAG void main_lib_SB_BSD_SOCKETS();
-extern ECL_CPP_TAG void main_lib_SERVE_EVENT();
-extern ECL_CPP_TAG void main_lib_ECL_CDB();
-extern ECL_CPP_TAG void main_lib_ECL_HELP();
+extern ECL_CPP_TAG void init_lib_ASDF();
+extern ECL_CPP_TAG void init_lib_SOCKETS();
+extern ECL_CPP_TAG void init_lib_SB_BSD_SOCKETS();
+extern ECL_CPP_TAG void init_lib_SERVE_EVENT();
+extern ECL_CPP_TAG void init_lib_ECL_CDB();
+extern ECL_CPP_TAG void init_lib_ECL_HELP();
 
 
 extern void loadLispFromAssets(char* fn);
@@ -53,9 +53,9 @@ int ecl_boot(const char *root_dir)
 
   cl_boot(1, &ecl);
 
-  main_lib_ECL_HELP();
-  main_lib_ASDF();
-  main_lib_SOCKETS();
+  init_lib_ECL_HELP();
+  init_lib_ASDF();
+  init_lib_SOCKETS();
 
   si_safe_eval(3, c_string_to_object("(format t \"ECL_BOOT, features = ~A ~%\" *features*)"), Cnil, OBJNULL);
   si_safe_eval(3, c_string_to_object("(format t \"(truename SYS:): ~A)\" (truename \"SYS:\"))"), Cnil, OBJNULL);
