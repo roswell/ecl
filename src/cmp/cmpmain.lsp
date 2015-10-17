@@ -273,6 +273,10 @@ void ~A(cl_object cblock)
 ")
 
 (defconstant +lisp-init-wrapper+ "
+#ifdef __cplusplus
+extern \"C\"
+#endif
+
 ECL_DLLEXPORT
 void ~A(cl_object cblock)
 {
