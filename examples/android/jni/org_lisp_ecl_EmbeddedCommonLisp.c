@@ -36,7 +36,8 @@ Java_org_lisp_ecl_EmbeddedCommonLisp_start(JNIEnv *env, jobject this,
 					   jstring path) {
 
   const char *lisp_dir = (*env)->GetStringUTFChars(env, path, NULL);  
-  LOGI("ECL starting: *default-pathname-defaults* to: %s\n", lisp_dir);
+  LOGI("XXX: ECL starting: *default-pathname-defaults* to: %s\n", lisp_dir);
+  LOGE("XXX: hey ho\n");
   ecl_boot(lisp_dir);
   LOGI("ECL started.");	
 };

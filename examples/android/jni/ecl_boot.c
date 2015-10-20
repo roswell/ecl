@@ -39,8 +39,12 @@ int ecl_boot(const char *root_dir)
   char *ecl = "ecl";
   char tmp[2048];
 
+  LOGI("ECL boot beginning\n");
+
   sprintf(tmp, "%s/", root_dir);
   setenv("ECLDIR", tmp, 1);
+
+  LOGI("ECLDIR set\n");
 
   // ecl_set_option(ECL_OPT_TRAP_SIGFPE, 0);
   // ecl_set_option(ECL_OPT_TRAP_SIGSEGV, 0);
@@ -53,17 +57,20 @@ int ecl_boot(const char *root_dir)
 
   cl_boot(1, &ecl);
 
-  init_lib_ECL_HELP();
-  init_lib_ASDF();
-  init_lib_SOCKETS();
+  LOGI("installing bytecodes compiler\n");
+  si_safe_eval(3, c_string_to_object("(si:install-bytecodes-compiler)"), ECL_NIL, OBJNULL);
+  LOGI("initializing linked modules\n");
+  ecl_init_module(NULL, init_lib_ECL_HELP);
+  ecl_init_module(NULL, init_lib_ASDF);
+  ecl_init_module(NULL, init_lib_SOCKETS);
+  ecl_init_module(NULL, init_lib_SERVE_EVENT);
 
+  LOGI("writing some info to stdout\n");
   si_safe_eval(3, c_string_to_object("(format t \"ECL_BOOT, features = ~A ~%\" *features*)"), Cnil, OBJNULL);
   si_safe_eval(3, c_string_to_object("(format t \"(truename SYS:): ~A)\" (truename \"SYS:\"))"), Cnil, OBJNULL);
-
   LOGI("ALL LOADED\n");
 
   ecl_toplevel(root_dir);
-
   return 0;
 }
 
@@ -77,11 +84,8 @@ void ecl_toplevel(const char *home)
   {
 	  sprintf(tmp, "(setq *default-pathname-defaults* #p\"%s/\")", home);
 	  si_safe_eval(3, c_string_to_object(tmp), Cnil, OBJNULL);
-
 	  si_select_package(ecl_make_simple_base_string("CL-USER", 7));
-	  
 	  si_safe_eval(3, c_string_to_object("(load \"init\")"), Cnil, OBJNULL);
-
   } CL_CATCH_ALL_END;
 
   LOGI("EXIT TOP LEVEL\n");

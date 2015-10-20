@@ -16,13 +16,15 @@ BASE_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 
+# ecl_android shared object
+include $(CLEAR_VARS)
 ifeq ($(TARGET_ARCH),x86)
 PLATFORM := androidx86
 else
 PLATFORM := android
 endif
 
-ECL_HOME := ../../android/install/$(PLATFORM)
+ECL_HOME := ecl-android/
 ECL_VER := $(shell basename $(ECL_HOME)/lib/ecl-* |cut -d "-" -f2)
 
 LOCAL_MODULE 	:= ecl_android
@@ -30,10 +32,14 @@ LOCAL_PATH 	:= $(BASE_PATH)
 LOCAL_SRC_FILES := org_lisp_ecl_EmbeddedCommonLisp.c ecl_boot.c
 LOCAL_CFLAGS 	+= -I$(ECL_HOME)/include
 LOCAL_CFLAGS 	+= -g -Wall -DANDROID
+# LOCAL_SHARED_LIBRARIES := ecl
+# LOCAL_STATIC_LIBRARIES := asdf sockets ecl-help
 LOCAL_LDLIBS 	:= -L$(ECL_HOME)/lib 
 LOCAL_LDLIBS	+= -L$(ECL_HOME)/lib/ecl-$(ECL_VER)
-LOCAL_LDLIBS	+= -lecl -lasdf -leclgmp -lsockets -llog
-LOCAL_LDLIBS 	+= -lsb-bsd-sockets -lserve-event -lecl-help 
-LOCAL_LDLIBS	+= -lecl-cdb -leclgc -leclatomic
+LOCAL_LDLIBS	+= -llog
+LOCAL_LDLIBS	+= -lecl -leclgc -leclatomic -leclgmp -leclffi
+LOCAL_LDLIBS 	+= -lasdf -lsockets -lsb-bsd-sockets -lecl-help -lecl-cdb -lserve-event
+
+# LOCAL_STATIC_LIBRARIES := ecl eclatomic eclffi eclgc  eclgmp
 
 include $(BUILD_SHARED_LIBRARY)
