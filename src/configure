@@ -627,6 +627,7 @@ ECL_EXTRA_LISP_FILES
 CHAR_CODE_LIMIT
 ECL_CHARACTER
 CLX_INFO
+CC_IS_CXX
 ECL_CC
 POW_LIB
 LIBOBJS
@@ -9280,8 +9281,12 @@ fi
 if test ${with_cxx} = "no" ; then
   ECL_CC=${CC}
 
+  CC_IS_CXX="nil"
+
 else
   ECL_CC=${CXX}
+
+  CC_IS_CXX="t"
 
   boehm_configure_flags="${boehm_configure_flags} --enable-cplusplus"
 fi
