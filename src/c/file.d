@@ -3330,9 +3330,18 @@ input_stream_read_byte8(cl_object strm, unsigned char *c, cl_index n)
                 FILE *f = IO_STREAM_FILE(strm);
                 cl_fixnum out = 0;
                 ecl_disable_interrupts();
+#ifdef FILE_CNT
                 do {
                         out = fread(c, sizeof(char), n, f);
                 } while (out < n && ferror(f) && restartable_io_error(strm, "fread"));
+#else
+                /* We can't use fread here due to the buffering. It makes
+                   impossible checking if we have some data available in the
+                   buffer what renders listen returning incorrect result. */
+                do {
+                        out = read(fileno(f), c, sizeof(char)*n);
+                } while (out < 0 && restartable_io_error(strm, "read"));
+#endif
                 ecl_enable_interrupts();
                 return out;
         }
