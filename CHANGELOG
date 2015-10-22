@@ -40,12 +40,12 @@
      ecl_import_current_thread
      ecl_release_current_thread
 
-   - When cl-truename encounters a broken symlink it returns it's path
+   - When cl-truename encounters a broken symlink, it returns its path
      instead of signalling a file-error
 
    - Deprecated variables has been removed
      c::*suppress-compiler-warnings*, c::*suppress-compiler-notes*
-
+     
    - Random state might be initialized by a random seed (truncated to
      32bit value) or by a precomputed array.
 
@@ -54,6 +54,15 @@
      state.
 
    - C99 supporting compiler is mandatory for C backend.
+
+   - COMPILER::*cc_is_cxx*: New variable to switch the output extension of
+     emitted compiler code to ".cxx" when configured with "--with-c++". This
+     eliminates compiler warnings that compiling C++ with a ".c" extension is
+     deprecated; this is seen mostly with Clang++.
+
+   - Added Clang-specific pragmas to disable return type, unused value and
+     excessive parentheses warnings, which are fairly harmless, but annoying
+     and clutter user output.
 
 ** Enhancements:
 
