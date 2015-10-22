@@ -41,10 +41,19 @@ int ecl_boot(const char *root_dir)
 
   LOGI("ECL boot beginning\n");
 
-  sprintf(tmp, "%s/", root_dir);
+  LOGI("Setting directories\n");
+  setenv("HOME", root_dir, 1);
+
+  sprintf(tmp, "%s/lib/", root_dir);
   setenv("ECLDIR", tmp, 1);
 
-  LOGI("ECLDIR set\n");
+  sprintf(tmp, "%s/etc/", root_dir);
+  setenv("ETC", tmp, 1);
+
+  sprintf(tmp, "%s/home/", root_dir);
+  setenv("HOME", tmp, 1);
+
+  LOGI("Directories set\n");
 
   // ecl_set_option(ECL_OPT_TRAP_SIGFPE, 0);
   // ecl_set_option(ECL_OPT_TRAP_SIGSEGV, 0);
@@ -85,7 +94,7 @@ void ecl_toplevel(const char *home)
 	  sprintf(tmp, "(setq *default-pathname-defaults* #p\"%s/\")", home);
 	  si_safe_eval(3, c_string_to_object(tmp), Cnil, OBJNULL);
 	  si_select_package(ecl_make_simple_base_string("CL-USER", 7));
-	  si_safe_eval(3, c_string_to_object("(load \"init\")"), Cnil, OBJNULL);
+	  si_safe_eval(3, c_string_to_object("(load \"etc/init\")"), Cnil, OBJNULL);
   } CL_CATCH_ALL_END;
 
   LOGI("EXIT TOP LEVEL\n");

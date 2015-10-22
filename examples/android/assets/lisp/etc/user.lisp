@@ -1,8 +1,9 @@
 (in-package :cl-user)
-(require 'bytecmp)
+
 (setq *default-directory*
       *default-pathname-defaults*)
 
+(format t "user.lisp 1~%")
 (defun sysinfo (&optional (out *standard-output*))
   "Print the current environment to a stream."
   (declare (stream out))
