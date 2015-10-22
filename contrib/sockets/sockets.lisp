@@ -17,7 +17,7 @@
 
 #+(or :win32 :mingw32)
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (push :wsock *features*))
+  (pushnew :wsock *features*))
 
 ;; Include the neccessary headers
 #-:wsock
