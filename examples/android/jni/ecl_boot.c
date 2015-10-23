@@ -23,16 +23,14 @@
 #define ECL_CPP_TAG
 #endif
 
-extern ECL_CPP_TAG void init_lib_ASDF();
-extern ECL_CPP_TAG void init_lib_SOCKETS();
-extern ECL_CPP_TAG void init_lib_SB_BSD_SOCKETS();
-extern ECL_CPP_TAG void init_lib_SERVE_EVENT();
-extern ECL_CPP_TAG void init_lib_ECL_CDB();
-extern ECL_CPP_TAG void init_lib_ECL_HELP();
-
+/* extern ECL_CPP_TAG void init_lib_ASDF(); */
+/* extern ECL_CPP_TAG void init_lib_SOCKETS(); */
+/* extern ECL_CPP_TAG void init_lib_SB_BSD_SOCKETS(); */
+/* extern ECL_CPP_TAG void init_lib_SERVE_EVENT(); */
+/* extern ECL_CPP_TAG void init_lib_ECL_CDB(); */
+/* extern ECL_CPP_TAG void init_lib_ECL_HELP() */;
 
 extern void loadLispFromAssets(char* fn);
-
 
 int ecl_boot(const char *root_dir)
 {
@@ -68,11 +66,12 @@ int ecl_boot(const char *root_dir)
 
   LOGI("installing bytecodes compiler\n");
   si_safe_eval(3, c_string_to_object("(si:install-bytecodes-compiler)"), ECL_NIL, OBJNULL);
-  LOGI("initializing linked modules\n");
-  ecl_init_module(NULL, init_lib_ECL_HELP);
-  ecl_init_module(NULL, init_lib_ASDF);
-  ecl_init_module(NULL, init_lib_SOCKETS);
-  ecl_init_module(NULL, init_lib_SERVE_EVENT);
+
+  /* LOGI("initializing linked modules\n"); */
+  /* ecl_init_module(NULL, init_lib_ECL_HELP); */
+  /* ecl_init_module(NULL, init_lib_ASDF); */
+  /* ecl_init_module(NULL, init_lib_SOCKETS); */
+  /* ecl_init_module(NULL, init_lib_SERVE_EVENT); */
 
   LOGI("writing some info to stdout\n");
   si_safe_eval(3, c_string_to_object("(format t \"ECL_BOOT, features = ~A ~%\" *features*)"), Cnil, OBJNULL);

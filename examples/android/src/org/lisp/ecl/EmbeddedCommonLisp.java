@@ -13,6 +13,7 @@ public class EmbeddedCommonLisp {
     // public native String botExec(String string);
 
     static {
+        System.loadLibrary("ecl");
 	System.loadLibrary("ecl_android");
 	Log.w(TAG,"Done loading library");
     }
