@@ -53,14 +53,14 @@ int ecl_boot(const char *root_dir)
 
   LOGI("Directories set\n");
 
-  // ecl_set_option(ECL_OPT_TRAP_SIGFPE, 0);
-  // ecl_set_option(ECL_OPT_TRAP_SIGSEGV, 0);
-  // ecl_set_option(ECL_OPT_TRAP_SIGINT, 0);
-  // ecl_set_option(ECL_OPT_TRAP_SIGILL, 0);
-  // ecl_set_option(ECL_OPT_TRAP_SIGBUS, 0);
-  // ecl_set_option(ECL_OPT_TRAP_INTERRUPT_SIGNAL, 0);
-  // ecl_set_option(ECL_OPT_SIGNAL_HANDLING_THREAD, 0);
-  // ecl_set_option(ECL_OPT_INCREMENTAL_GC, 0);
+  /* ecl_set_option(ECL_OPT_TRAP_SIGFPE, 0); */
+  /* ecl_set_option(ECL_OPT_TRAP_SIGSEGV, 0); */
+  /* ecl_set_option(ECL_OPT_TRAP_SIGINT, 0); */
+  /* ecl_set_option(ECL_OPT_TRAP_SIGILL, 0); */
+  /* ecl_set_option(ECL_OPT_TRAP_SIGBUS, 0); */
+  /* ecl_set_option(ECL_OPT_TRAP_INTERRUPT_SIGNAL, 0); */
+  /* ecl_set_option(ECL_OPT_SIGNAL_HANDLING_THREAD, 0); */
+  /* ecl_set_option(ECL_OPT_INCREMENTAL_GC, 0); */
 
   cl_boot(1, &ecl);
 
@@ -74,9 +74,14 @@ int ecl_boot(const char *root_dir)
   /* ecl_init_module(NULL, init_lib_SERVE_EVENT); */
 
   LOGI("writing some info to stdout\n");
-  si_safe_eval(3, c_string_to_object("(format t \"ECL_BOOT, features = ~A ~%\" *features*)"), Cnil, OBJNULL);
-  si_safe_eval(3, c_string_to_object("(format t \"(truename SYS:): ~A)\" (truename \"SYS:\"))"), Cnil, OBJNULL);
-  LOGI("ALL LOADED\n");
+  si_safe_eval
+    (3, c_string_to_object
+     ("(format t \"ECL_BOOT, features = ~A ~%\" *features*)"),
+     Cnil, OBJNULL);
+  si_safe_eval
+    (3, c_string_to_object
+     ("(format t \"(truename SYS:): ~A)\" (truename \"SYS:\"))"),
+     Cnil, OBJNULL);
 
   ecl_toplevel(root_dir);
   return 0;
@@ -86,7 +91,7 @@ void ecl_toplevel(const char *home)
 {
   char tmp[2048];
 
-  LOGI("START TOP LEVEL\n");
+  LOGI("Executing the init scripts\n");
 
   CL_CATCH_ALL_BEGIN(ecl_process_env()) 
   {
@@ -96,5 +101,5 @@ void ecl_toplevel(const char *home)
 	  si_safe_eval(3, c_string_to_object("(load \"etc/init\")"), Cnil, OBJNULL);
   } CL_CATCH_ALL_END;
 
-  LOGI("EXIT TOP LEVEL\n");
+  LOGI("Toplevel initialization done\n");
 }
