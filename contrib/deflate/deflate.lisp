@@ -788,3 +788,5 @@ match."
                             :element-type '(unsigned-byte 8))
       (inflate-gzip-stream input output)))
   (probe-file output-file))
+
+(provide '#:deflate)

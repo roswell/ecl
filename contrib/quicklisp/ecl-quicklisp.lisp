@@ -60,6 +60,4 @@
     (format t "~%;;; Unable to load / install quicklisp. Error message follows:~%~A"
             c)))
 
-(provide "ecl-quicklisp")
-
-
+(provide '#:ecl-quicklisp)

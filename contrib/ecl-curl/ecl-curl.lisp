@@ -264,3 +264,5 @@
           (when o (close o :abort (null ok?))))))
     (close stream))
   (values url))
+
+(provide '#:ecl-curl)

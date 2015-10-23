@@ -135,7 +135,7 @@
 (install-bytecodes-compiler)
 )
 
-(provide 'BYTECMP)
+(provide '#:BYTECMP)
 
 #-ecl-min
 (package-lock "COMMON-LISP" t)

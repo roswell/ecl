@@ -37,7 +37,7 @@
 ;;;; ASDF system definition facility.
 ;;;; 
 
-(asdf:defsystem "deflate"
+(asdf:defsystem '#:deflate
     :description "Deflate Decompression Library"
     :author "Pierre R. Mai <pmai@pmsf.de>"
     :components ((:file "deflate")))

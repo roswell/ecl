@@ -1710,5 +1710,5 @@ GET-NAME-SERVICE-ERRNO")
 ;; Add sockopts here as you need them...
 
 ;; Finished loading
-(provide 'sockets)
-(provide 'sb-bsd-sockets)
+(provide '#:sockets)
+(provide '#:sb-bsd-sockets)

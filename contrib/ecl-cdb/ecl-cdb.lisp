@@ -263,4 +263,4 @@
       (with-open-file (s stream :direction :input :element-type '(unsigned-byte 8))
         (map-cdb function s))))
 
-(provide :ecl-cdb)
+(provide '#:ecl-cdb)
