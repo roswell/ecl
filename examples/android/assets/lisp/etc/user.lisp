@@ -3,7 +3,6 @@
 (setq *default-directory*
       *default-pathname-defaults*)
 
-(format t "user.lisp 1~%")
 (defun sysinfo (&optional (out *standard-output*))
   "Print the current environment to a stream."
   (declare (stream out))
@@ -49,4 +48,15 @@ Current time:~25t" (/ internal-time-units-per-second) *gensym-counter*)
   (format out "~a" (get-universal-time))
   (format out "~%~75~~%") (room) (values))
 
+(defun sysinit ()
+  (format t "Loading the quicklisp subsystem~%")
+  (require '#:ecl-quicklisp)
+  (require '#:deflate)
+  (require '#:ql-minitar)
+  ;; Replace the interpreted function with the precompiled equivalent
+  ;; from DEFLATE
+  (eval (read-from-string
+         "(setf (symbol-function 'ql-gunzipper:gunzip) #'deflate:gunzip))")))
+
 (sysinfo)
+;; (sysinit)

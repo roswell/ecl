@@ -7,17 +7,13 @@
 (setq *default-directory*
       *default-pathname-defaults*)
 (defvar *ecl-home* *default-directory*)
-(ext:setenv "USER-CACHE"
-            (namestring (merge-pathnames #P"../cache/" *ecl-home*)))
-(setf asdf:*user-cache* (merge-pathnames #P"../cache/" *default-pathname-defaults*))
 
 (format t "Loading the modules~%")
-(require :ASDF)
-(require :SOCKETS)
-(require :SERVE-EVENT)
+(require '#:asdf)
+(require '#:sockets)
+(require '#:serve-event)
 
-;; swank probes sys:serve-event.fas (which doesn't exist)
-;; (pushnew :SERVE-EVENT *features*)
+(setf asdf:*user-cache* (merge-pathnames #P"../cache/" *default-pathname-defaults*))
 
 (pushnew (namestring *default-pathname-defaults*)
 	 asdf:*central-registry*)
@@ -50,7 +46,6 @@
    (let* ((socket (connection.socket-io connection))
           (inputs (list socket #+(or) stdin))
           (ready (wait-for-input inputs)))
-     (describe (list 'hobaa connection stdin socket inputs ready))
      (cond ((eq ready :interrupt)
             (check-slime-interrupts))
            ((member socket ready)
@@ -86,8 +81,7 @@
      (swank:create-server :port 4005
                           :dont-close t
                           ;; :style nil #|:spawn|#
-                          ))
-   ))
+                          ))))
 
 (format t "Initialization done~%")
 (force-output)
