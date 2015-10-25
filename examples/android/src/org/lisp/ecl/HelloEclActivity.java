@@ -51,8 +51,6 @@ public class HelloEclActivity extends Activity
         }
 
         Log.w(TAG,"ECL starting.");
-       
-
         ecl.start(getResourcesPath());
         Log.w(TAG,"ECL Started");
 
@@ -111,7 +109,7 @@ public class HelloEclActivity extends Activity
         return true;
     }
 
-	/**
+    /**
      * Event Handling for Individual menu item selected
      * Identify single menu item by it's id
      * */
