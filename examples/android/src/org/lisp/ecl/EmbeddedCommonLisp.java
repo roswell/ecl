@@ -4,9 +4,9 @@ import android.util.Log;
 
 public class EmbeddedCommonLisp {
     private static String TAG = "EmbeddedCommonLisp";
-	
+
     public void start() {
-    	start(System.getenv("user.dir"));
+        start(System.getenv("user.dir"));
     }
     public native void start(String path);
     public native String exec(String string);
@@ -14,7 +14,7 @@ public class EmbeddedCommonLisp {
 
     static {
         System.loadLibrary("ecl");
-	System.loadLibrary("ecl_android");
-	Log.w(TAG,"Done loading library");
+        System.loadLibrary("ecl_android");
+        Log.w(TAG,"Done loading library");
     }
 }

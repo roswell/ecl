@@ -25,11 +25,11 @@ public class HelloEclActivity extends Activity
     private static String RESOURCES_DIR = "lisp";
     private static String APP_RESOURCES_DIR = "resources";
     private EmbeddedCommonLisp ecl = new EmbeddedCommonLisp();
-    
+
     private static boolean DEBUG = false;
 
-	static AssetManager assetManager;
-	static File uncompressedFilesDir;
+    static AssetManager assetManager;
+    static File uncompressedFilesDir;
 
     /** Called when the activity is first created. */
     @Override
@@ -43,12 +43,12 @@ public class HelloEclActivity extends Activity
         uncompressedFilesDir = getDir(APP_RESOURCES_DIR,MODE_PRIVATE);
 
         if(!assetsUncompressed)
-        {
-	        uncompressDir(RESOURCES_DIR,uncompressedFilesDir);
-	        SharedPreferences.Editor editor = settings.edit();
-	        editor.putBoolean("assetsUncompressed", true);
-	        editor.commit();
-        }
+            {
+                uncompressDir(RESOURCES_DIR,uncompressedFilesDir);
+                SharedPreferences.Editor editor = settings.edit();
+                editor.putBoolean("assetsUncompressed", true);
+                editor.commit();
+            }
 
         Log.w(TAG,"ECL starting.");
         ecl.start(getResourcesPath());
@@ -56,51 +56,51 @@ public class HelloEclActivity extends Activity
 
         setContentView(R.layout.main);
 
-		String result = ecl.exec("(format nil \"Hello from lisp\")");
-		System.out.println("Result: " + result);
-		
-		Context context = getApplicationContext();
-		int duration = Toast.LENGTH_LONG;
-		
-		Toast toast = Toast.makeText(context, result, duration);
-		toast.show();
+        String result = ecl.exec("(format nil \"Hello from lisp\")");
+        System.out.println("Result: " + result);
+
+        Context context = getApplicationContext();
+        int duration = Toast.LENGTH_LONG;
+
+        Toast toast = Toast.makeText(context, result, duration);
+        toast.show();
     }
 
     public void uncompressDir(String in, File out)
     {
         try
-		{
-            String[] files = assetManager.list(in);
-            Log.w(TAG,"Uncompressing: " + files.length + " files");
-            for(int i=0; i<files.length; i++)
             {
-                Log.w(TAG,"Uncompressing: " + files[i]);
-                File fileIn = new File(in,files[i]);
-                File fileOut = new File(out,files[i]);
-
-                try
-                {
-                    uncompressFile(fileIn,fileOut);
-                }
-                catch(FileNotFoundException e)
-                {
-                    // fileIn is a directory, uncompress the subdir
-                    if(!fileOut.isDirectory())
+                String[] files = assetManager.list(in);
+                Log.w(TAG,"Uncompressing: " + files.length + " files");
+                for(int i=0; i<files.length; i++)
                     {
-                        Log.w(TAG,"Creating dir: " + fileOut.getAbsolutePath());
-                        fileOut.mkdir();
+                        Log.w(TAG,"Uncompressing: " + files[i]);
+                        File fileIn = new File(in,files[i]);
+                        File fileOut = new File(out,files[i]);
+
+                        try
+                            {
+                                uncompressFile(fileIn,fileOut);
+                            }
+                        catch(FileNotFoundException e)
+                            {
+                                // fileIn is a directory, uncompress the subdir
+                                if(!fileOut.isDirectory())
+                                    {
+                                        Log.w(TAG,"Creating dir: " + fileOut.getAbsolutePath());
+                                        fileOut.mkdir();
+                                    }
+                                uncompressDir(fileIn.getPath(), fileOut);
+                            }
                     }
-                    uncompressDir(fileIn.getPath(), fileOut);    
-                }
             }
-		}
-		catch(IOException e)
-		{
-			e.printStackTrace();
-		}
+        catch(IOException e)
+            {
+                e.printStackTrace();
+            }
     }
 
-	// Initiating Menu XML file (menu.xml)
+    // Initiating Menu XML file (menu.xml)
     @Override
     public boolean onCreateOptionsMenu(Menu menu)
     {
@@ -117,36 +117,36 @@ public class HelloEclActivity extends Activity
     public boolean onOptionsItemSelected(MenuItem item)
     {
         switch (item.getItemId())
-        {
-        case R.id.menu_uncompress:
-	        uncompressDir(RESOURCES_DIR,uncompressedFilesDir);
-	        return true;
-        default:
-	        return super.onOptionsItemSelected(item);
-        }
+            {
+            case R.id.menu_uncompress:
+                uncompressDir(RESOURCES_DIR,uncompressedFilesDir);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+            }
     }
 
-	public static String getResourcesPath()
-	{
-		return uncompressedFilesDir.getAbsolutePath();
-	}
+    public static String getResourcesPath()
+    {
+        return uncompressedFilesDir.getAbsolutePath();
+    }
 
-	public static void uncompressFile(File fileIn,File fileOut)
+    public static void uncompressFile(File fileIn,File fileOut)
         throws IOException
     {
         InputStream in = assetManager.open(fileIn.getPath(),
                                            android.content.res.AssetManager.ACCESS_RANDOM);
-		OutputStream out = new FileOutputStream(fileOut);
+        OutputStream out = new FileOutputStream(fileOut);
 
-		byte[] buf = new byte[1024];
-		int len;
-		while ((len = in.read(buf)) > 0)
-		{
-			out.write(buf, 0, len);
-		}
+        byte[] buf = new byte[1024];
+        int len;
+        while ((len = in.read(buf)) > 0)
+            {
+                out.write(buf, 0, len);
+            }
 
-		in.close();
-		out.close();
-		Log.i(TAG,"File copied.");
-    }    
+        in.close();
+        out.close();
+        Log.i(TAG,"File copied.");
+    }
 }
