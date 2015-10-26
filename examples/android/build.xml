@@ -86,9 +86,24 @@
          In all cases you must update the value of version-tag below to read 'custom' instead of an integer,
          in order to avoid having your file be overridden by tools such as "android update project"
     -->
+
+    <!-- ECL assets -->
+    <target name="-pre-clean">
+      <delete dir="assets/lisp/lib"/>
+    </target>
+
     <target name="-post-compile">
       <copy todir="assets/lisp/lib">
-        <fileset dir="ecl-android/lib/ecl-16.1.0" includes="**/*"/>
+        <fileset dir="ecl-libdir">
+          <!-- various encodings for runtime -->
+          <include name="encodings/*"/>
+          <!-- system definitions -->
+          <include name="**/*.asd"/>
+          <!-- modules with the binary code -->
+          <include name="**/*.fas"/>
+          <!-- documentation file -->
+          <include name="help.doc"/>
+        </fileset>
       </copy>
     </target>
 
