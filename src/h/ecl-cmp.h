@@ -21,6 +21,11 @@
  * defined */
 #define _WINSOCKAPI_
 #endif /* __CYGWIN__ */
+/* Disable a couple of clang's more annoying diagnostics */
+#pragma clang diagnostic ignored "-Wreturn-type"
+#pragma clang diagnostic ignored "-Wunused-value"
+#pragma clang diagnostic ignored "-Wparentheses-equality"
+
 #include <ecl/ecl.h>
 #include <math.h> /* for inline mathematics */
 #include <ecl/ecl-inl.h>
