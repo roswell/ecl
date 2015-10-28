@@ -1,0 +1,9 @@
+assets/lisp/lib
+assets/lisp/home
+bin/
+ecl-android
+ecl-libdir
+gen/
+libs/
+obj
+local.properties
