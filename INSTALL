@@ -53,7 +53,7 @@ If you do not have access to the online version, follow the following recipies.
      #+BEGIN_SRC shell-script
        ./configure --host=arm-linux-androideabi \
                    --prefix=`pwd`/ecl-android \
-                   --with-cross-config=`pwd`/android.cross_config \
+                   --with-cross-config=`pwd`src/util/android.cross_config \
                    --disable-soname
        make -j9
        make install
