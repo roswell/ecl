@@ -28,11 +28,13 @@
 	src/lsp/format.lsp	; CMUCL's format
   and the directories
 	contrib/		; User contributed extensions
+        examples/               ; Examples for the ECL usage
 	src/clx/		; portable CLX library from Telent
   Look the precise copyright of these extensions in the corresponding
   files.
+  Examples are licensed under: (SPDX-License-Identifier) BSD-2-Clause
 
   Report bugs, comments, suggestions to the ecl mailing list:
-  ecls-list@lists.sourceforge.net.
+  ecl-devel@common-lisp.net.
 
 ---- END OF COPYRIGHT FOR THE ECL CORE ENVIRONMENT ------------------
