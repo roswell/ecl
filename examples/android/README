@@ -6,16 +6,16 @@ http://github.com/ageneau/ecl-android
 
 Instructions:
 $ ln -s {$ECL_ANDROID_DIR} ecl-android
-$ ln -s ${ECL_ANDROID_DIR}/lib/${ECL_LIB_DIR} ecl-libdir
+$ ln -s ${ECL_LIB_DIR} ecl-libdir
 $ android update project -t android-10 -p .
 $ ndk-build
 $ ant debug install
 
 Where ECL_ANDROID_DIR contains a prefix to the directory where you
-installed cross-compiled ECL and the ECL_LIB_DIR contains name of the
-directory which ECL created for it's internal files. Example:
+installed cross-compiled ECL and the ECL_LIB_DIR contains path to the
+directory with ECL intern files in the lib/ dir. Example:
 
-$ export ECL_ANDROID_DIR=/home/lisps/ecl-android-arm32
-$ export ECL_LIB_DIR=ecl-16.1.0
+$ export ECL_ANDROID_DIR=../../ecl-android
+$ export ECL_LIB_DIR=../../ecl-android/lib/ecl-16.1.0
 
 Please direct further questions to ecl-devel@common-lisp.net
