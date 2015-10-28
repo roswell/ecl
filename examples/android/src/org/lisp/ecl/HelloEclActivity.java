@@ -13,9 +13,6 @@ import android.content.SharedPreferences;
 import android.content.res.AssetManager;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.widget.Toast;
 
 
@@ -97,32 +94,6 @@ public class HelloEclActivity extends Activity
         catch(IOException e)
             {
                 e.printStackTrace();
-            }
-    }
-
-    // Initiating Menu XML file (menu.xml)
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu)
-    {
-        MenuInflater menuInflater = getMenuInflater();
-        menuInflater.inflate(R.layout.menu, menu);
-        return true;
-    }
-
-    /**
-     * Event Handling for Individual menu item selected
-     * Identify single menu item by it's id
-     * */
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item)
-    {
-        switch (item.getItemId())
-            {
-            case R.id.menu_uncompress:
-                uncompressDir(RESOURCES_DIR,uncompressedFilesDir);
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
             }
     }
 
