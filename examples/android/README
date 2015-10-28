@@ -1,14 +1,21 @@
-This project is a base project for ECL Android.
-It is created by Sylvain Ageneau <ageneau@gmail.com>.
-Original location of this project is: 
+This example was originally developed by Sylvain Ageneau. Integration
+with the current ECL done by Evrim Ulu and Daniel Kochmański.
+
+Original location of this this example is:
 http://github.com/ageneau/ecl-android
 
 Instructions:
-$ android update project -t android-19 -p .
+$ ln -s {$ECL_ANDROID_DIR} ecl-android
+$ ln -s ${ECL_ANDROID_DIR}/lib/${ECL_LIB_DIR} ecl-libdir
+$ android update project -t android-10 -p .
 $ ndk-build
 $ ant debug install
 
-Please direct further questions to ecl-devel@common-lisp.net
+Where ECL_ANDROID_DIR contains a prefix to the directory where you
+installed cross-compiled ECL and the ECL_LIB_DIR contains name of the
+directory which ECL created for it's internal files. Example:
 
-evrim ulu <evrimulu@gmail.com>
-March 2015.
+$ export ECL_ANDROID_DIR=/home/lisps/ecl-android-arm32
+$ export ECL_LIB_DIR=ecl-16.1.0
+
+Please direct further questions to ecl-devel@common-lisp.net

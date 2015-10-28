@@ -1,8 +1,5 @@
 (in-package :cl-user)
 
-(setq *default-directory*
-      *default-pathname-defaults*)
-
 (defun sysinfo (&optional (out *standard-output*))
   "Print the current environment to a stream."
   (declare (stream out))
@@ -14,14 +11,14 @@ Implementation:~20t~a~%~7tversion:~20t~a~%Machine:  type:~20t~a
   #+darwin (princ " Darwin")
   #+unix (princ " Unix")
   (format out "~%Software: type:~20t~a~%~7tversion:~20t~a~%Site:~20t~a (~a)
-User home:~20t~a~%Current directory:~20t~a~%Default pathname:~20t~a~%"
+User home:~20t~a~%Default pathname:~20t~a~%"
           (software-type) (software-version) (long-site-name)
-          (short-site-name) (user-homedir-pathname) *default-directory*
+          (short-site-name) (user-homedir-pathname)
           *default-pathname-defaults*)
   (format out "Features: ~s.
 Modules:~s.~%
 Current package:~s~%"
-           *features* *modules* *package*)
+          *features* *modules* *package*)
   (flet ((exdi (fl) (integer-length (nth-value 1 (decode-float fl)))))
     (format out "Fixnum length:~25t~3d bits
 Short Floats:~25t~3d bits exponent, ~3d bits significand (mantissa)
@@ -48,7 +45,12 @@ Current time:~25t" (/ internal-time-units-per-second) *gensym-counter*)
   (format out "~a" (get-universal-time))
   (format out "~%~75~~%") (room) (values))
 
-(defun sysinit ()
+(sysinfo)
+
+
+;; Quicklisp
+
+(defun get-quicklisp ()
   (format t "Loading the quicklisp subsystem~%")
   (require '#:ecl-quicklisp)
   (require '#:deflate)
@@ -58,5 +60,6 @@ Current time:~25t" (/ internal-time-units-per-second) *gensym-counter*)
   (eval (read-from-string
          "(setf (symbol-function 'ql-gunzipper:gunzip) #'deflate:gunzip))")))
 
-(sysinfo)
-;; (sysinit)
+#+(or)(get-quicklisp)
+
+
