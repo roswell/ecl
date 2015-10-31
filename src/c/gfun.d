@@ -244,9 +244,9 @@ _ecl_standard_dispatch(cl_object frame, cl_object gf)
                  * compute the applicable methods. We must save
                  * the keys and recompute the cache location if
                  * it was filled. */
+                cl_object keys = cl_copy_seq(vector);
                 func = compute_applicable_method(env, frame, gf);
                 if (env->values[1] != ECL_NIL) {
-                        cl_object keys = cl_copy_seq(vector);
                         if (e->key != OBJNULL) {
                                 e = ecl_search_cache(cache);
                         }
