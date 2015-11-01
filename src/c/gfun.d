@@ -127,21 +127,22 @@ fill_spec_vector(cl_object vector, cl_object frame, cl_object gf)
                 cl_object spec_how = ECL_CONS_CAR(spec_how_list);
                 cl_object spec_type = ECL_CONS_CAR(spec_how);
                 int spec_position = ecl_fixnum(ECL_CONS_CDR(spec_how));
+                cl_object eql_spec;
                 unlikely_if (spec_position >= narg)
                         FEwrong_num_arguments(gf);
                 unlikely_if (spec_no >= vector->vector.dim)
                         ecl_internal_error("Too many arguments to fill_spec_vector()");
                 /* Need to differentiate between EQL specializers and
                    class specializers, because the EQL value can be a
-                   class, and may classh with a class specializer. */
-                if (ECL_LISTP(spec_type) && ecl_memql(args[spec_position], spec_type)) {
-                        argtype[spec_no++] = args[spec_position];
-                        argtype[spec_no++] = 1;
+                   class, and may clash with a class specializer.
+                   Store the cons cell containing the EQL value. */
+                if (ECL_LISTP(spec_type) &&
+                    !Null(eql_spec = ecl_memql(args[spec_position], spec_type))) {
+                        argtype[spec_no++] = eql_spec;
                 } else {
                         argtype[spec_no++] = cl_class_of(args[spec_position]);
-                        argtype[spec_no++] = 0;
                 }
-                        
+
         } end_loop_for_on_unsafe(spec_how_list);
         vector->vector.fillp = spec_no;
         return vector;
