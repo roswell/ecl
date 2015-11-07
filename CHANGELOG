@@ -77,6 +77,10 @@
    - Mersenne-Twister RNG has new 64 bit implementation for appropriate
      machines
 
+   - Add sockets implementation for android platform
+
+   - Add android build target (official android support)
+
 ** Issues fixed:
 
    - Building with single-threaded boehm works if ECL threads are disabled
@@ -108,6 +112,9 @@
 
    - Random state initial state generation was buggy and insecure (entropy
      from urandom was rejected)
+
+   - Fix `listen' on streams when FILE_CNT isn't available (use read instad
+     of fread)
 
 * 16.0.0 changes since 15.3.7
 ** API changes
