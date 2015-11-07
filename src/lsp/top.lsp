@@ -844,7 +844,9 @@ Use special code 0 to cancel this operation.")
            (t
             (function-lambda-list (fdefinition function)))))
     ((typep function 'generic-function)
-     (values (clos:generic-function-lambda-list function) t))
+     (if (slot-boundp function 'clos::lambda-list)
+         (values (clos:generic-function-lambda-list function) t)
+         (values nil nil)))
     ;; Use the lambda list from the function definition, if available,
     ;; but remove &aux arguments.
     ((let ((f (function-lambda-expression function)))
