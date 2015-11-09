@@ -376,7 +376,7 @@
   - We bend the knee and accepted WHILE/IF statements intertwined with
     FOR/AS, though this is still not valid ANSI Common Lisp.
 
-* Settings    
+* Settings
 ;;; Local Variables: ***
 ;;; mode:org ***
 ;;; fill-column:75 ***

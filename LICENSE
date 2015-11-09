@@ -32,6 +32,7 @@
 	src/clx/		; portable CLX library from Telent
   Look the precise copyright of these extensions in the corresponding
   files.
+
   Examples are licensed under: (SPDX-License-Identifier) BSD-2-Clause
 
   Report bugs, comments, suggestions to the ecl mailing list:
