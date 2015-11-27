@@ -64,6 +64,9 @@
      excessive parentheses warnings, which are fairly harmless, but annoying
      and clutter user output.
 
+   - GRAY:CLOSE isn't specialized on T to preserve compatibility with some
+     libraries.
+
 ** Enhancements:
 
    - Added code walker (present as *feature* :walker)
