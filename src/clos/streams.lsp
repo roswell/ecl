@@ -320,7 +320,7 @@
 (defmethod close ((stream ansi-stream) &key abort)
   (cl:close stream :abort abort))
 
-(defmethod close ((stream t) &key abort)
+(defmethod close ((stream stream) &key abort)
   (declare (ignore abort))
   (bug-or-error stream 'close))
 
