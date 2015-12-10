@@ -4977,10 +4977,10 @@ LSP_FEATURES="(cons :android ${LSP_FEATURES})"
                 ECL_LDRPATH='-Wl,-R,~A'
                 TCPLIBS='-lsocket -lnsl -lintl'
                 clibs='-ldl'
-                # We should use C99 and _XOPEN_SOURCE=600, but Solaris 10
-                # ships with GCC 3.4.3 which does not support C99
+		SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
+		SONAME_LDFLAGS="-Wl,-soname,SONAME"
                 if test "x$GCC" = "xyes"; then
-                  CFLAGS="${CFLAGS} -std=gnu99"
+                  CFLAGS="${CFLAGS} -std=gnu99 -D_XOPEN_SOURCE=600 -D__EXTENSIONS__"
                   SHARED_LDFLAGS="-shared $SHARED_LDFLAGS"
                   BUNDLE_LDFLAGS="-shared $BUNDLE_LDFLAGS"
                 fi
