@@ -101,7 +101,9 @@
                          (nconc key-init test-init)
                          key-flag
                          test-flag
-                         test))))))
+                         test
+                         start
+                         end))))))
 
 #+(or)
 (define-compiler-macro si::make-seq-iterator (seq &optional (start 0))
@@ -275,7 +277,7 @@
       (ext:with-unique-names (%value %elt)
         `(let ((,%value ,value)
                ,@init)
-           (do-in-seq (,%elt ,sequence)
+           (do-in-seq (,%elt ,sequence :start ,start :end ,end)
              (when ,(funcall test-function %value
                              (funcall key-function %elt))
                (return ,%elt))))))))

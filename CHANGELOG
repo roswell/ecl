@@ -119,6 +119,9 @@
    - Fix `listen' on streams when FILE_CNT isn't available (use read instad
      of fread)
 
+   - `FIND' compiled with C compiler didn't respect `START' nor `END'
+     arguments. Compiler macro is fixed now and should work as expected
+
 * 16.0.0 changes since 15.3.7
 ** API changes
 
