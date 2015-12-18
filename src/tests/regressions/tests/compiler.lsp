@@ -1137,3 +1137,16 @@
   T)
 
 
+
+;;; Date: 2015-12-18
+;;; Fixed: Daniel Kochmański
+;;; Description
+;;;     Compiler expanded FIND incorrectly (ignored START and END arguments)
+
+(deftest compiler.0049.cmpopt-sequences.1
+    (progn
+      (defun check-single-wildcard (identifier wildcard-pos)
+        (not (find #\* identifier :start (1+ wildcard-pos))))
+      (compile 'check-single-wildcard)
+      (check-single-wildcard "dan*" 3))
+  T)
