@@ -2,6 +2,7 @@
 ;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
 
 ;;;; Author:   Juan Jose Garcia-Ripoll
+;;;; Author:   Daniel Kochmański
 ;;;; Created:  Fri Apr 14 11:13:17 CEST 2006
 ;;;; Contains: Metaobject Protocol tests
 
@@ -612,5 +613,25 @@
       (and (zerop *mop-dispatch-used*)
            (progn (foo 1.0) (= *mop-dispatch-used* 2))))
   t)
+
+;;; From: Pascal Costanza
+;;; Description:
+;;;
+;;;     sort-applicable-methods is invoked by two methods and one
+;;;     invocation triggers a disambiguation error:
+;;;
+;;;       Condition of type: SIMPLE-ERROR
+;;;       The type specifiers #<The STANDARD-CLASS COMMON-LISP-USER::B> and #<The STANDARD-CLASS COMMON-LISP-USER::A> can not be disambiguated with respect to the argument specializer: #<The STANDARD-CLASS STANDARD-CLASS>
+(deftest mop-compute-applicable-methods-disambiguation.0001
+    (ext:with-clean-symbols (a b c f)
+      (defclass a () ())
+      (defclass b () ())
+      (defclass c (a b) ())
+      (defmethod f ((o a)))
+      (defmethod f ((o b)))
+      (compute-applicable-methods-using-classes
+       #'f (list (find-class 'c)))
+      T)
+  T)
 
 
