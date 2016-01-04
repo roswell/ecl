@@ -479,8 +479,9 @@
 ;;; Date: 23/04/2012
 ;;; Description:
 ;;;
-;;;     COMPUTE-APPLICABLE-METHODS-USING-CLASSES fails with EQL specializers
-;;;     when one of the specializers is covered by the classes.
+;;;     COMPUTE-APPLICABLE-METHODS-USING-CLASSES fails with EQL
+;;;     specializers when one of the specializers is covered by the
+;;;     classes.
 ;;;
 (deftest mop-c-a-m-u-c-fails-with-eql
     (progn

@@ -26,8 +26,9 @@
   (setq *keep-documentation* t))
 #-ecl-min
 (progn
-  (setq *documentation-pool* (list (make-hash-table :test #'equal :size 128)
-                                   "SYS:help.doc"))
+  (setq *documentation-pool*
+        (list (make-hash-table :test #'equal :size 128)
+              "SYS:help.doc"))
   (defparameter *keep-documentation* t))
 
 (defun new-documentation-pool (&optional (size 1024))
