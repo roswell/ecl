@@ -1940,6 +1940,7 @@ cl_symbols[] = {
 {SYS_ "*ALLOW-WITH-INTERRUPTS*",NULL},
 
 {EXT_ "WITH-UNIQUE-NAMES",NULL},
+{EXT_ "WITH-CLEAN-SYMBOLS",NULL},
 
 {SYS_ "HANDLE-SIGNAL","si_handle_signal"},
 

@@ -24,6 +24,7 @@
   "src:lsp;defmacro.lsp"
   "src:lsp;helpfile.lsp"
   "src:lsp;evalmacros.lsp"
+  "src:lsp;cmuutil.lsp"
   "src:lsp;setf.lsp"
   "src:lsp;predlib.lsp"
   "src:lsp;seq.lsp"
@@ -60,4 +61,4 @@
          (princ ";;; Loading ")
          (princ x)
          (load x :verbose nil))
- (cddddr +lisp-module-files+))
+      (member "src:lsp;setf.lsp" +lisp-module-files+ :test #'equal))
