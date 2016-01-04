@@ -2,6 +2,7 @@
 ;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
 
 ;;;; Author:   Juan Jose Garcia-Ripoll
+;;;; Author:   Daniel Kochmański
 ;;;; Created:  Fri Apr 14 11:13:17 CEST 2006
 ;;;; Contains: Foreign Function Interface regression tests
 
@@ -105,4 +106,14 @@ int (*foo)(int) = #0;
 (deftest foreign-interface.0004.foreign-data-equal
     (equal (ffi:make-pointer 1234 :void)
            (ffi:make-pointer 1234 :int))
+  t)
+
+;;; Date: 2016-01-04 (jackdaniel)
+;;; Description:
+;;;     Regression test to ensure, that the string is properly
+;;;     recognized as an array
+(deftest foreign-interface.0004
+    (progn
+      (si::make-foreign-data-from-array "dan")
+      t)
   t)
