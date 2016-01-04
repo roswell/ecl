@@ -122,6 +122,8 @@
    - `FIND' compiled with C compiler didn't respect `START' nor `END'
      arguments. Compiler macro is fixed now and should work as expected
 
+   - `compute-applicable-methods-using-classes` bugfix
+
 * 16.0.0 changes since 15.3.7
 ** API changes
 
