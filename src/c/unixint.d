@@ -8,6 +8,7 @@
     Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya.
     Copyright (c) 1990, Giuseppe Attardi.
     Copyright (c) 2001, Juan Jose Garcia Ripoll.
+    Copyright (c) 2016, Daniel Kochmański.
 
     ECL is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -1128,78 +1129,6 @@ BOOL WINAPI W32_console_ctrl_handler(DWORD type)
         }
 }
 #endif /* ECL_WINDOWS_THREADS */
-
-#if 0
-static cl_object
-asynchronous_signal_servicing_thread()
-{
-        const cl_env_ptr the_env = ecl_process_env();
-        sigset_t handled_set;
-        cl_object signal_code;
-        int signo;
-        int interrupt_signal = 0;
-        if (ecl_option_values[ECL_OPT_TRAP_INTERRUPT_SIGNAL]) {
-                interrupt_signal = ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL];
-        }
-        /*
-         * We wait here for all signals that are blocked in all other
-         * threads. It would be desirable to be able to wait for _all_
-         * signals, but this can not be done for SIGFPE, SIGSEGV, etc.
-         */
-        pthread_sigmask(SIG_SETMASK, NULL, &handled_set);
-        /*
-         * Under OS X we also have to explicitely add the signal we
-         * use to communicate process interrupts. For some unknown
-         * reason those signals may get lost.
-         */
-        if (interrupt_signal) {
-                sigaddset(&handled_set, interrupt_signal);
-                pthread_sigmask(SIG_SETMASK, &handled_set, NULL);
-        }
-        ECL_CATCH_ALL_BEGIN(the_env) {
-        for (;;) {
-                /* Waiting may fail! */
-                int status = sigwait(&handled_set, &signo);
-                if (status == 0) {
-#if 0
-                        if (signo == interrupt_signal) {
-                                /* If we get this signal it may be because
-                                 * of two reasons. One is that it is just
-                                 * an awake message. Then the queue is empty
-                                 * and we continue ... */
-                                signal_code = pop_signal(the_env);
-                                if (Null(signal_code))
-                                        continue;
-                                /* ... the other one is that we are being
-                                 * interrupted, but this only happens when
-                                 * we quit */
-                                break;
-                        }
-#else
-                        if (signo == interrupt_signal) {
-                                break;
-                        }
-#endif
-#ifdef SIGCHLD
-                        if (signo == SIGCHLD) {
-                                si_wait_for_all_processes(0);
-                                continue;
-                        }
-#endif
-                        signal_code = ecl_gethash_safe(ecl_make_fixnum(signo),
-                                                       cl_core.known_signals,
-                                                       ECL_NIL);
-                        if (!Null(signal_code)) {
-                                mp_process_run_function(3, @'si::handle-signal',
-                                                        @'si::handle-signal',
-                                                        signal_code);
-                        }
-                }
-        }
-        } ECL_CATCH_ALL_END;
-        ecl_return0(the_env);
-}
-#endif
 
 cl_object
 si_trap_fpe(cl_object condition, cl_object flag)
