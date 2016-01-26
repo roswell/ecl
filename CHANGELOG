@@ -90,6 +90,11 @@
 
 ** Issues fixed:
 
+   - Long form of DEFSETF accepts multiple-values as a store forms:
+
+     (defsetf gah (x) (y z) `(list ,x ,y ,z))
+     (setf (gah 3) (values 3 4))
+
    - Building with single-threaded boehm works if ECL threads are disabled
 
    - Using labels works with sharp-S-reader

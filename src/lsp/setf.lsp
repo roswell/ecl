@@ -68,17 +68,18 @@ where REST is the value of the last FORM with parameters in LAMBDA-LIST bound
 to the symbols TEMP1 ... TEMPn and with STORE-VAR bound to the symbol TEMP0.
 The doc-string DOC, if supplied, is saved as a SETF doc and can be retrieved
 by (documentation 'SYMBOL 'setf)."
-  (let (function documentation)
+  (let (function documentation stores)
     (if (and (car rest) (or (symbolp (car rest)) (functionp (car rest))))
         (setq function `',(car rest)
-              documentation (cadr rest))
-        (let* ((store (second rest))
-               (args (first rest))
+              documentation (cadr rest)
+              stores `(,(gensym)))
+        (let* ((args (first rest))
                (body (cddr rest)))
-          (setq documentation (find-documentation body)
-                function `#'(lambda-block ,access-fn (,@store ,@args) ,@body))))
+          (setq stores (second rest)
+                documentation (find-documentation body)
+                function `#'(lambda-block ,access-fn (,@stores ,@args) ,@body))))
     `(eval-when (compile load eval)
-       ,(ext:register-with-pde whole `(do-defsetf ',access-fn ,function))
+       ,(ext:register-with-pde whole `(do-defsetf ',access-fn ,function ',stores))
        ,@(si::expand-set-documentation access-fn 'setf documentation)
        ',access-fn)))
 
