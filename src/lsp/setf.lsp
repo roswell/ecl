@@ -18,11 +18,6 @@
 
 (in-package "SYSTEM")
 
-(defun check-stores-number (context stores-list n)
-  (declare (si::c-local))
-  (unless (= (length stores-list) n)
-    (error "~d store-variables expected in setf form ~a." n context)))
-
 (defun do-setf-method-expansion (name lambda args)
   (declare (si::c-local))
   (let* ((vars '())
@@ -82,8 +77,7 @@ by (documentation 'SYMBOL 'setf)."
                (args (first rest))
                (body (cddr rest)))
           (setq documentation (find-documentation body)
-                function `#'(lambda-block ,access-fn (,@store ,@args) ,@body))
-          (check-stores-number 'DEFSETF store 1)))
+                function `#'(lambda-block ,access-fn (,@store ,@args) ,@body))))
     `(eval-when (compile load eval)
        ,(ext:register-with-pde whole `(do-defsetf ',access-fn ,function))
        ,@(si::expand-set-documentation access-fn 'setf documentation)
