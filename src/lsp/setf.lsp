@@ -39,17 +39,14 @@
                   `(funcall #'(setf ,name) ,store ,@all))
               (cons name all)))))
 
-(defun setf-method-wrapper (name setf-lambda)
-  (declare (si::c-local))
-  #'(lambda (env &rest args)
-      (declare (ignore env))
-      (do-setf-method-expansion name setf-lambda args)))
-
 (defun do-defsetf (access-fn function)
   (declare (type-assertions nil))
   (if (symbolp function)
       (do-defsetf access-fn #'(lambda (store &rest args) `(,function ,@args ,store)))
-      (do-define-setf-method access-fn (setf-method-wrapper access-fn function))))
+      (do-define-setf-method access-fn
+        #'(lambda (env &rest args)
+            (declare (ignore env))
+            (do-setf-method-expansion access-fn function args)))))
 
 (defun do-define-setf-method (access-fn function)
   (declare (type-assertions nil))
