@@ -18,7 +18,7 @@
 
 (in-package "SYSTEM")
 
-(defun do-setf-method-expansion (name lambda args)
+(defun do-setf-method-expansion (name lambda args stores)
   (declare (si::c-local))
   (let* ((vars '())
          (inits '())
@@ -29,24 +29,26 @@
         (setq item (gensym))
         (push item vars))
       (push item all))
-    (let* ((store (gensym))
-           (all (nreverse all)))
+    (let* ((all (nreverse all)))
       (values (nreverse vars)
               (nreverse inits)
-              (list store)
+              stores
               (if lambda
-                  (apply lambda store all)
-                  `(funcall #'(setf ,name) ,store ,@all))
+                  (apply lambda (append stores all))
+                  `(funcall #'(setf ,name) ,@stores ,@all))
               (cons name all)))))
 
-(defun do-defsetf (access-fn function)
+(defun do-defsetf (access-fn function &optional (stores `(,(gensym))))
   (declare (type-assertions nil))
   (if (symbolp function)
-      (do-defsetf access-fn #'(lambda (store &rest args) `(,function ,@args ,store)))
+      (do-defsetf access-fn
+        #'(lambda (store &rest args)
+            `(,function ,@args ,store))
+        stores)
       (do-define-setf-method access-fn
         #'(lambda (env &rest args)
             (declare (ignore env))
-            (do-setf-method-expansion access-fn function args)))))
+            (do-setf-method-expansion access-fn function args stores)))))
 
 (defun do-define-setf-method (access-fn function)
   (declare (type-assertions nil))
@@ -139,7 +141,7 @@ Does not check if the third gang is a single-element list."
         ((and (setq f (macroexpand-1 form env)) (not (equal f form)))
          (get-setf-expansion f env))
         (t
-         (do-setf-method-expansion (car form) nil (cdr form)))))
+         (do-setf-method-expansion (car form) nil (cdr form) `(,(gensym))))))
 
 ;;;; SETF definitions.
 

@@ -2065,7 +2065,7 @@ extern ECL_API cl_object si_ratiop(cl_object t);
 
 /* setf.lsp */
 
-extern ECL_API cl_object si_do_defsetf(cl_object name, cl_object function);
+extern ECL_API cl_object si_do_defsetf _ECL_ARGS ((cl_narg narg, cl_object name, cl_object function, ...));
 extern ECL_API cl_object si_do_define_setf_method(cl_object name, cl_object function);
 
 /* seq.lsp */

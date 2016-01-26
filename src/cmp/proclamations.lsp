@@ -191,7 +191,7 @@
 
 ;; ECL extensions:
 (proclamation si:specialp (symbol) gen-bool :predicate)
-(proclamation si::do-defsetf (symbol (or symbol function)) t)
+(proclamation si::do-defsetf (symbol (or symbol function) &optional list) t)
 (proclamation si::do-define-setf-method (symbol function) t)
 (proclamation ext:constant-form-value (t &optional environment) t)
 (proclamation ext:constantp-inner (t &optional environment) gen-bool)

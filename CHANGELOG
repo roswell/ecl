@@ -30,6 +30,10 @@
 * Pending changes since 16.0.0
 ** API changes
 
+   - si:do-setf accepts optional parameter stores.  New lambda-list:
+     =(access-fn function &optional (stores `(,(gensym))))=
+     This change is backward compatible.
+
    - New MP functions:
      mp:with-rwlock
      mp:try-get-semaphore (non-blocking)

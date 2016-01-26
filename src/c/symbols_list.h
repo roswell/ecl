@@ -2214,7 +2214,7 @@ cl_symbols[] = {
 
 {SYS_ "REPORT-FUNCTION", SI_ORDINARY, NULL, -1, OBJNULL},
 
-{SYS_ "DO-DEFSETF", SI_ORDINARY, ECL_NAME(si_do_defsetf), 2, OBJNULL},
+{SYS_ "DO-DEFSETF", SI_ORDINARY, ECL_NAME(si_do_defsetf), -1, OBJNULL},
 {SYS_ "DO-DEFINE-SETF-METHOD", SI_ORDINARY, ECL_NAME(si_do_define_setf_method), 2, OBJNULL},
 
 {SYS_ "SETF-DEFINITION", SI_ORDINARY, ECL_NAME(si_setf_definition), 2, OBJNULL},
