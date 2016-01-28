@@ -90,6 +90,9 @@
 
 ** Issues fixed:
 
+   - si:open-unix-socket-stream accepts both string and base-string
+     (automatic coercion is performed)
+
    - Long form of DEFSETF accepts multiple-values as a store forms:
 
      (defsetf gah (x) (y z) `(list ,x ,y ,z))

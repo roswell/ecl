@@ -1137,7 +1137,7 @@
 #+wants-sockets
 (proclamation si:open-server-stream (unsigned-byte) stream)
 #+wants-sockets
-(proclamation si:open-unix-socket-stream (base-string) stream)
+(proclamation si:open-unix-socket-stream (string) stream)
 #+wants-sockets
 (proclamation si:lookup-host-entry (t) (values (or null string) list list))
 (proclamation si:copy-stream (stream stream) t)
