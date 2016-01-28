@@ -162,12 +162,13 @@ ecl_def_string_array(extra_char_names,static,const) = {
         ecl_def_string_array_elt("Ff"), /* 12 */
         ecl_def_string_array_elt("Cr"), /* 13 */
         ecl_def_string_array_elt("Sp"), /* 32 */
-        ecl_def_string_array_elt("Del") /* 127 */
+        ecl_def_string_array_elt("Del"), /* 127 */
+        ecl_def_string_array_elt("Delete") /* 127 */
 };
 
 static const unsigned char extra_char_codes[] = {
-        0, 7, 8, 9, 10, 10, 27, 12, 13, 32, 127
+        0, 7, 8, 9, 10, 10, 27, 12, 13, 32, 127, 127
 };
 
-#define extra_char_names_size 11
+#define extra_char_names_size 12
 
