@@ -158,6 +158,10 @@ current_dir(void) {
                 output = ecl_alloc_adjustable_base_string(size);
                 ecl_disable_interrupts();
                 ok = getcwd((char*)output->base_string.self, size);
+                if (ok == NULL && errno != ENAMETOOLONG) {
+                        perror("ext::getcwd error");
+                        ecl_internal_error("Can't work without CWD");
+                }
                 ecl_enable_interrupts();
                 size += 256;
         } while (ok == NULL);
