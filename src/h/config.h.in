@@ -16,7 +16,7 @@
     See file '../Copyright' for full details.
 */
 
-#if defined(_MSC_VER) || defined(__MINGW32__) || __WIN32__ || __WING64__
+#if defined(_MSC_VER) || defined(__MINGW32__) || __WIN32__ || __WIN64__
 #define ECL_MS_WINDOWS_HOST
 #endif
 
