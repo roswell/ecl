@@ -62,16 +62,19 @@
 (defmacro defsetf (&whole whole access-fn &rest rest)
   "Syntax: (defsetf symbol update-fun [doc])
         or
-        (defsetf symbol lambda-list (store-var) {decl | doc}* {form}*)
+        (defsetf symbol lambda-list (store-var*) {decl | doc}* {form}*)
 Defines an expansion
         (setf (SYMBOL arg1 ... argn) value)
         => (UPDATE-FUN arg1 ... argn value)
            or
-           (let* ((temp1 ARG1) ... (tempn ARGn) (temp0 value)) rest)
-where REST is the value of the last FORM with parameters in LAMBDA-LIST bound
-to the symbols TEMP1 ... TEMPn and with STORE-VAR bound to the symbol TEMP0.
-The doc-string DOC, if supplied, is saved as a SETF doc and can be retrieved
-by (documentation 'SYMBOL 'setf)."
+           (let* ((temp ARG)*)
+             (multiple-value-bind (temp-s*)
+                 values-form
+               rest)
+where REST is the value of the last FORM with parameters in
+LAMBDA-LIST bound to the symbols TEMP* and with STORE-VAR* bound to
+the symbols TEMP-S*.  The doc-string DOC, if supplied, is saved as a
+SETF doc and can be retrieved by (documentation 'SYMBOL 'setf)."
   (let (function documentation stores)
     (if (and (car rest) (or (symbolp (car rest)) (functionp (car rest))))
         (setq function `',(car rest)
