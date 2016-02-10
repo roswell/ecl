@@ -18,17 +18,21 @@
 
 (in-package "SYSTEM")
 
-(defun do-setf-method-expansion (name lambda args stores)
+(defun do-setf-method-expansion (name lambda args &optional (stores-no 1))
   (declare (si::c-local))
   (let* ((vars '())
          (inits '())
-         (all '()))
+         (all '())
+         (stores '()))
     (dolist (item args)
       (unless (or (fixnump item) (keywordp item))
         (push item inits)
         (setq item (gensym))
         (push item vars))
       (push item all))
+    (dotimes (i stores-no)
+      (declare (ignore i))
+      (push (gensym) stores))
     (let* ((all (nreverse all)))
       (values (nreverse vars)
               (nreverse inits)
@@ -38,17 +42,17 @@
                   `(funcall #'(setf ,name) ,@stores ,@all))
               (cons name all)))))
 
-(defun do-defsetf (access-fn function &optional (stores `(,(gensym))))
+(defun do-defsetf (access-fn function &optional (stores-no 1))
   (declare (type-assertions nil))
   (if (symbolp function)
       (do-defsetf access-fn
         #'(lambda (store &rest args)
             `(,function ,@args ,store))
-        stores)
+        stores-no)
       (do-define-setf-method access-fn
         #'(lambda (env &rest args)
             (declare (ignore env))
-            (do-setf-method-expansion access-fn function args stores)))))
+            (do-setf-method-expansion access-fn function args stores-no)))))
 
 (defun do-define-setf-method (access-fn function)
   (declare (type-assertions nil))
@@ -79,7 +83,7 @@ by (documentation 'SYMBOL 'setf)."
                 documentation (find-documentation body)
                 function `#'(lambda-block ,access-fn (,@stores ,@args) ,@body))))
     `(eval-when (compile load eval)
-       ,(ext:register-with-pde whole `(do-defsetf ',access-fn ,function ',stores))
+       ,(ext:register-with-pde whole `(do-defsetf ',access-fn ,function ,(length stores)))
        ,@(si::expand-set-documentation access-fn 'setf documentation)
        ',access-fn)))
 
@@ -142,7 +146,7 @@ Does not check if the third gang is a single-element list."
         ((and (setq f (macroexpand-1 form env)) (not (equal f form)))
          (get-setf-expansion f env))
         (t
-         (do-setf-method-expansion (car form) nil (cdr form) `(,(gensym))))))
+         (do-setf-method-expansion (car form) nil (cdr form)))))
 
 ;;;; SETF definitions.
 
