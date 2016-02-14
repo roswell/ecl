@@ -18,17 +18,21 @@
 
 (in-package "SYSTEM")
 
-(defun do-setf-method-expansion (name lambda args stores)
+(defun do-setf-method-expansion (name lambda args &optional (stores-no 1))
   (declare (si::c-local))
   (let* ((vars '())
          (inits '())
-         (all '()))
+         (all '())
+         (stores '()))
     (dolist (item args)
       (unless (or (fixnump item) (keywordp item))
         (push item inits)
         (setq item (gensym))
         (push item vars))
       (push item all))
+    (dotimes (i stores-no)
+      (declare (ignore i))
+      (push (gensym) stores))
     (let* ((all (nreverse all)))
       (values (nreverse vars)
               (nreverse inits)
@@ -38,17 +42,17 @@
                   `(funcall #'(setf ,name) ,@stores ,@all))
               (cons name all)))))
 
-(defun do-defsetf (access-fn function &optional (stores `(,(gensym))))
+(defun do-defsetf (access-fn function &optional (stores-no 1))
   (declare (type-assertions nil))
   (if (symbolp function)
       (do-defsetf access-fn
         #'(lambda (store &rest args)
             `(,function ,@args ,store))
-        stores)
+        stores-no)
       (do-define-setf-method access-fn
         #'(lambda (env &rest args)
             (declare (ignore env))
-            (do-setf-method-expansion access-fn function args stores)))))
+            (do-setf-method-expansion access-fn function args stores-no)))))
 
 (defun do-define-setf-method (access-fn function)
   (declare (type-assertions nil))
@@ -58,16 +62,19 @@
 (defmacro defsetf (&whole whole access-fn &rest rest)
   "Syntax: (defsetf symbol update-fun [doc])
         or
-        (defsetf symbol lambda-list (store-var) {decl | doc}* {form}*)
+        (defsetf symbol lambda-list (store-var*) {decl | doc}* {form}*)
 Defines an expansion
         (setf (SYMBOL arg1 ... argn) value)
         => (UPDATE-FUN arg1 ... argn value)
            or
-           (let* ((temp1 ARG1) ... (tempn ARGn) (temp0 value)) rest)
-where REST is the value of the last FORM with parameters in LAMBDA-LIST bound
-to the symbols TEMP1 ... TEMPn and with STORE-VAR bound to the symbol TEMP0.
-The doc-string DOC, if supplied, is saved as a SETF doc and can be retrieved
-by (documentation 'SYMBOL 'setf)."
+           (let* ((temp ARG)*)
+             (multiple-value-bind (temp-s*)
+                 values-form
+               rest)
+where REST is the value of the last FORM with parameters in
+LAMBDA-LIST bound to the symbols TEMP* and with STORE-VAR* bound to
+the symbols TEMP-S*.  The doc-string DOC, if supplied, is saved as a
+SETF doc and can be retrieved by (documentation 'SYMBOL 'setf)."
   (let (function documentation stores)
     (if (and (car rest) (or (symbolp (car rest)) (functionp (car rest))))
         (setq function `',(car rest)
@@ -79,7 +86,7 @@ by (documentation 'SYMBOL 'setf)."
                 documentation (find-documentation body)
                 function `#'(lambda-block ,access-fn (,@stores ,@args) ,@body))))
     `(eval-when (compile load eval)
-       ,(ext:register-with-pde whole `(do-defsetf ',access-fn ,function ',stores))
+       ,(ext:register-with-pde whole `(do-defsetf ',access-fn ,function ,(length stores)))
        ,@(si::expand-set-documentation access-fn 'setf documentation)
        ',access-fn)))
 
@@ -142,7 +149,7 @@ Does not check if the third gang is a single-element list."
         ((and (setq f (macroexpand-1 form env)) (not (equal f form)))
          (get-setf-expansion f env))
         (t
-         (do-setf-method-expansion (car form) nil (cdr form) `(,(gensym))))))
+         (do-setf-method-expansion (car form) nil (cdr form)))))
 
 ;;;; SETF definitions.
 
