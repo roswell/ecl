@@ -107,7 +107,7 @@
 
 (define-c-constants
   +af-inet+ "AF_INET"
-  +af-local+ #-sun4sol2 "AF_LOCAL" #+sun4sol2 "AF_UNIX"
+  +af-local+ #-(or sun4sol2 aix) "AF_LOCAL" #+(or sun4sol2 aix) "AF_UNIX"
   +eagain+ "EAGAIN"
   +eintr+ "EINTR")
 

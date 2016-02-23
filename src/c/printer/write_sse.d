@@ -16,11 +16,11 @@
 
     See file '../Copyright' for full details.
 */
-
+#ifdef ECL_SSE2
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
 
-#ifdef ECL_SSE2
+
 static int
 is_all_FF(void *ptr, int size) {
         int i;
