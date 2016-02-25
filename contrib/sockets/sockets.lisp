@@ -1429,6 +1429,15 @@ ecl_make_stream_from_fd(#0,#1,(enum ecl_smmode)#2,
   "#define NETDB_INTERNAL WSAEAFNOSUPPORT"
   "#define NETDB_SUCCESS 0"
 )
+
+(Clines
+  "#ifndef NETDB_INTERNAL"
+  "#define NETDB_INTERNAL 0"
+  "#endif"
+  "#ifndef NETDB_SUCCESS"
+  "#define NETDB_SUCCESS 0"
+  "#endif")
+
 (define-socket-condition EADDRINUSE address-in-use-error)
 (define-socket-condition EAGAIN interrupted-error)
 (define-socket-condition EBADF bad-file-descriptor-error)
