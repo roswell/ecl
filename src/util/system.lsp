@@ -1,3 +1,6 @@
+;;;; -*- Mode: Lisp; Syntax: Common-Lisp; indent-tabs-mode: nil -*-
+;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
+
 ;;;
 ;;; **********************************************************************
 ;;; (c) Copyright G. Attardi, 1993.  All rights reserved.

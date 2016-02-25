@@ -1,4 +1,6 @@
-;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: CLOS -*-
+;;;; -*- Mode: Lisp; Syntax: Common-Lisp; indent-tabs-mode: nil; Package: CLOS -*-
+;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
+
 ;;;;
 ;;;;  Copyright (c) 1992, Giuseppe Attardi.
 ;;;;  Copyright (c) 2001, Juan Jose Garcia Ripoll.
@@ -219,7 +221,9 @@
 ;;;   3. Subclasses of specified classes preserve the slot order in ECL.
 ;;;
 (defun std-compute-applicable-methods (gf args)
-  (sort-applicable-methods gf (applicable-method-list gf args) args))
+  (sort-applicable-methods gf
+                           (applicable-method-list gf args)
+                           (mapcar #'class-of args)))
 
 (setf (fdefinition 'compute-applicable-methods) #'std-compute-applicable-methods)
 
@@ -262,11 +266,10 @@
                classes)
               t))))
 
-(defun sort-applicable-methods (gf applicable-list args)
+(defun sort-applicable-methods (gf applicable-list args-specializers)
   (declare (optimize (safety 0) (speed 3)))
   (with-early-accessors (+standard-method-slots+ +standard-generic-function-slots+)
-    (let ((f (generic-function-a-p-o-function gf))
-          (args-specializers (mapcar #'class-of args)))
+    (let ((f (generic-function-a-p-o-function gf)))
       ;; reorder args to match the precedence order
       (when f
         (setf args-specializers

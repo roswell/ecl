@@ -1,4 +1,6 @@
-;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: SYSTEM; indent-tabs-mode: nil -*-
+;;;; -*- Mode: Lisp; Syntax: Common-Lisp; indent-tabs-mode: nil; Package: SYSTEM -*-
+;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
+
 ;;;;
 ;;;;  Copyright (c) 2001, Juan Jose Garcia-Ripoll.
 ;;;;
@@ -24,8 +26,9 @@
   (setq *keep-documentation* t))
 #-ecl-min
 (progn
-  (setq *documentation-pool* (list (make-hash-table :test #'equal :size 128)
-                                   "SYS:help.doc"))
+  (setq *documentation-pool*
+        (list (make-hash-table :test #'equal :size 128)
+              "SYS:help.doc"))
   (defparameter *keep-documentation* t))
 
 (defun new-documentation-pool (&optional (size 1024))
@@ -161,8 +164,7 @@ strings."
 ;; (EXT:OPTIONAL-ANNOTATION arguments for EXT:ANNOTATE)
 (si::fset 'ext:optional-annotation
           #'(ext:lambda-block ext:optional-annotation (whole env)
-               (declare (ignore env #-ecl-min whole))
-               #+ecl-min
+               (declare (ignore env))
                `(ext:annotate ,@(rest whole)))
           t)
 
@@ -178,7 +180,4 @@ strings."
 
 #+ecl-min
 (when (null *documentation-pool*) (new-documentation-pool 1024))
-#+ecl-min
 (setq ext::*register-with-pde-hook* 'default-annotation-logic)
-
-

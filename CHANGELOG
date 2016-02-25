@@ -23,10 +23,126 @@
     have a C compiler accessible to ECL, you may use
     (ext:install-c-compiler) to switch back to the Lisp-to-C compiler.
 
-  - In order to test a package, programmer has to install ECL on a desired
-    destination (specified with "--prefix" parameter given to the configure
-    script).
-    
+  - Before issuing make check on the package package developer has to
+    install ECL on the preferred destination (specified with "--prefix"
+    parameter given to configure script).
+
+* Pending changes since 16.1.2
+* 16.1.2 changes since 16.0.0
+
+** API changes
+
+   - =si:do-defsetf= accepts optional parameter stores.\\
+     New lambda-list:\\
+     =(access-fn function &optional (stores-no 1))=.\\
+     This change is backward compatible.
+
+   - New MP functions:\\
+     =mp:with-rwlock=\\
+     =mp:try-get-semaphore= (non-blocking)\\
+     =mp:mailbox-try-read=  (non-blocking)\\
+     =mp:mailbox-try-send=  (non-blocking)
+
+   - Added back removed C interfaces\\
+     =ecl_import_current_thread=\\
+     =ecl_release_current_thread=
+
+   - When =cl-truename= encounters a broken symlink, it returns its path
+     instead of signalling a file-error
+
+   - Deprecated variables has been removed
+     =c::*suppress-compiler-warnings*=, =c::*suppress-compiler-notes*=
+     
+   - Random state might be initialized by a random seed (truncated to
+     32bit value) or by a precomputed array.
+
+     Latter is designed to allow reading back the printed random state
+     (when printed readably), not as an array to initialize the random
+     state.
+
+   - C99 supporting compiler is mandatory for C backend.
+
+   - =COMPILER::*CC_IS_CXX*=: New variable to switch the output extension of
+     emitted compiler code to ".cxx" when configured with "--with-c++". This
+     eliminates compiler warnings that compiling C++ with a ".c" extension is
+     deprecated; this is seen mostly with Clang++.
+
+   - =GRAY:CLOSE= isn't specialized on =T= to preserve compatibility with some
+     libraries.
+
+** Enhancements:
+
+   - Added code walker (present in =*features*= as =:walker=)
+
+   - Testing framework initial cleanup
+
+   - Format fallbacks to =prin1= if infinity or NaN are passed to it
+
+   - Annotations are added at runtime (better integration with SLIME)
+
+   - Mersenne-Twister RNG has new 64 bit implementation for appropriate
+     machines
+
+   - Add sockets implementation for the android platform
+
+   - Add android build target (official android support)
+
+   - Added Clang-specific pragmas to disable return type, unused value and
+     excessive parentheses warnings, which are fairly harmless, but annoying
+     and clutter user output.
+
+** Issues fixed:
+
+   - =si:open-unix-socket-stream= accepts both string and base-string
+     (automatic coercion is performed)
+
+   - Long form of =DEFSETF= accepts multiple-values as a store forms:
+
+     #+BEGIN_SRC lisp
+       (defsetf gah (x) (y z) `(list ,x ,y ,z))
+       (setf (gah 3) (values 3 4))
+     #+END_SRC
+
+   - Building with single-threaded boehm works if ECL threads are disabled
+
+   - Using labels works with sharp-S-reader
+
+     #+BEGIN_SRC lisp
+       (read-from-string
+        "(#1=\"Hello\" #S(sharp-s-reader.1.example-struct :A #1#))")
+     #+END_SRC
+
+   - Generated C code works well with IEEE 754 infinities
+     (regression tests created)
+
+   - User-defined heap sizes can now exceed the size of a fixnum on 32-bit
+
+   - The heap size limit was intended to be 1GB on 32-bit or 4GB on 64-bit
+     but inconsistency between =ECL_FIXNUM_BITS= and =FIXNUM_BITS= in the code
+     prevented the heap to grow for 64-bit.  This now occurs, and a few
+     other less visible bugs were fixed by restoring consistency to
+     =ECL_FIXNUM_BITS=.
+
+   - =EXT:EXTERNAL-PROCESS-WAIT= potential race condition fix
+
+   - Building with object files not created by ECL works (CFFI wrappers)
+
+   - Regression regarding initialization of build by ECL libraries from
+     external code fixed. Static and shared libraries initialization
+     funcitons has predetermined name while object files has randomized
+     names.
+
+   - Random state initial state generation was buggy and insecure (entropy
+     from urandom was rejected)
+
+   - Fix =listen= on streams when =FILE_CNT= isn't available (use read instad
+     of fread)
+
+   - =FIND= compiled with C compiler didn't respect =START= nor =END=
+     arguments. Compiler macro is fixed now and should work as expected
+
+   - =compute-applicable-methods-using-classes= bugfix
+
 * 16.0.0 changes since 15.3.7
 ** API changes
 
@@ -175,7 +291,102 @@
     
   - Numerous fixes.
     
-* Changes since 12.7.1
+* 13.5.1 changes since 12.7.1
+
+** Visible changes:
+
+ - ECL now reports #+UNIX for all compatible systems, including *BSD ones.
+
+** Compiler fixes:
+
+ - Minor readability improvements in the C code.
+
+ - MULTIPLE-VALUE-BIND compiles using MULTIPLE-VALUE-SETQ and now both are
+   better optimized, generating simpler C code.
+
+ - The type checking routine for LOGAND was producing spurious warnings.
+
+ - (LDB (BYTE ...) ...) no longer conses a BYTE object.
+
+ - Added optimizations for MASK-FIELD, DPB, DEPOSIT-FIELD, LDB-TEST and LDB.
+
+ - CONSTANT-VALUE-P and friends now use the (compiler) environment.
+
+ - No optional type check generated for constant values.
+
+ - Declare the temporary variables in DEFMACRO/DESTRUCTURING-BIND as IGNORABLE
+
+ - ECL now accepts WHILE/IF before FOR/AS, a construct that is not ANSI
+   An example: (LOOP FOR I IN LIST WHILE (SOME-TEST I) FOR X = (F I) ... )
+
+** Common Lisp fixes:
+
+ - CONSTANTP now performs a bit more work, macroexpanding forms.
+
+ - ENSURE-DIRECTORIES-EXIST ignores the host and device from the original
+   pathname when creating the directories.
+
+ - In FORMAT, printing of floating point numbers could lead to an infinite loop.
+
+ - ROUND, FLOOR, CEILING and TRUNCATE have been reorganized and work faster with
+   rational numbers.
+
+ - (CONCATENATE 'SIMPLE-BASE-STRING ...) returned an ordinary string.
+
+ - MAKE-ARRAY did not terminate strings with #\Null (needed internally by the C
+   code).
+
+ - (SETF DOCUMENTATION) did not operate on functions because the function object
+   documentation had precedence over the annotation.
+
+ - Added the whole Unicode character database to the C library. This means ECL
+   can now interpret all Unicode character names properly, and print them as
+   well. ECL now also recognizes all ASCII control-character abbreviations
+
+ - Print integers using upcase letters for radix > 10
+
+ - New functions RATIOP, {SINGLE,SHORT,DOUBLE,LONG}-FLOAT-P help avoid consing
+   in TYPEP
+
+ - HASH-TABLE-COUNT did not work with weak hashes: it did not update the count
+   of live cells (Note, however, that this function is by definition not
+   reliable, just a hint, since a garbage collection may happen while the count
+   is being computed)
+
+ - ECL no longer uses :READ-ONLY declarations in the SETF expansions because
+   there is code out there that modifies the values variables.
+
+ - PROGV can now 'unbind' variables when the list of variables is longer than
+   the list of values.
+
+** CLOS:
+
+ - Added built in classes FIXNUM and BIGNUM.
+
+ - Eliminated code for accessing slots that was no longer used. Removed also
+   redundant code.
+
+ - Updating a class (due to a change in metaclass) now forces updating its
+   children
+
+ - UPDATE-INSTANCE-FOR-REDEFINED-CLASS received an alist instead of a
+   propertly-list as last argument
+
+ - PRINT-OBJECT did not have a working default for built in classes.
+
+** Extensions:
+
+ - SYSTEM must use the POSIX shell, which usually lives in /bin/sh.
+
+ - CLX now uses recursive locks.
+
+ - ASDF upgraded to version 2.32, including the ASDF-BUNDLE facility, which
+   supersedes ECL's own implementation of precompiled libraries.
+
+ - MAKE-INSTANCE, SHARED-INITIALIZE, REINITIALIZE-INSTANCE now work on
+   structures as well.
+
+* 12.7.1 changes
   
   Some highlights of this release are:
   
@@ -192,7 +403,7 @@
   - We bend the knee and accepted WHILE/IF statements intertwined with
     FOR/AS, though this is still not valid ANSI Common Lisp.
 
-* Settings    
+* Settings
 ;;; Local Variables: ***
 ;;; mode:org ***
 ;;; fill-column:75 ***

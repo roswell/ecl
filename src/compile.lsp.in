@@ -1,3 +1,6 @@
+;;;; -*- Mode: Lisp; Syntax: Common-Lisp; indent-tabs-mode: nil -*-
+;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
+
 ;;; @configure_input@
 ;;;
 ;;; This is the "makefile" file for building ECL. The purpose of this file is
@@ -128,12 +131,12 @@
 
 #-:wants-dlopen
 (c::safe-system
-        (concatenate 'string
+	(concatenate 'string
 "sh -c 'rm -rf tmp; mkdir tmp;"
 "cp @LIBPREFIX@eclmin.@LIBEXT@ @LIBPREFIX@ecl.@LIBEXT@;"
-"cd tmp; ar -x ../@LIBPREFIX@lsp.@LIBEXT@;"
+"cd tmp; @AR@ -x ../@LIBPREFIX@lsp.@LIBEXT@;"
 "for i in *.@OBJEXT@; do mv $i lsp_`basename $i`; done;"
-"ar -r ../@LIBPREFIX@ecl.@LIBEXT@ *.@OBJEXT@ ../c/all_symbols2.@OBJEXT@; rm *.@OBJEXT@;"
+"@AR@ -r ../@LIBPREFIX@ecl.@LIBEXT@ *.@OBJEXT@ ../c/all_symbols2.@OBJEXT@; rm *.@OBJEXT@;"
 "@RANLIB@ ../@LIBPREFIX@ecl.@LIBEXT@'"))
 
 #+:wants-dlopen

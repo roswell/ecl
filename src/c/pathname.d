@@ -1,4 +1,6 @@
-/* -*- mode: c; c-basic-offset: 8 -*- */
+/* -*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*- */
+/* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
+
 /*
     pathname.d -- Pathnames.
 */
@@ -1105,7 +1107,7 @@ NO_DIRECTORY:
                                  * we cannot use cl_write and friends.
                                  */
                                 int n = ecl_fixnum(y), i;
-                                char b[FIXNUM_BITS/2];
+                                char b[ECL_FIXNUM_BITS / 2];
                                 for (i = 0; n; i++) {
                                         b[i] = n%10 + '0';
                                         n = n/10;

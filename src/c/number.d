@@ -1,4 +1,6 @@
-/* -*- mode: c; c-basic-offset: 8 -*- */
+/* -*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*- */
+/* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
+
 /*
     number.c -- constructing numbers.
 */
@@ -147,7 +149,7 @@ ecl_to_short(cl_object x) {
                               x);
 }
 
-#if FIXNUM_BITS < 32
+#if ECL_FIXNUM_BITS < 32
 # error "Unsupported platform with cl_fixnum < ecl_uint32_t"
 #endif
 
@@ -184,7 +186,7 @@ ecl_to_int16_t(cl_object x) {
 }
 #endif /* ecl_uint16_t */
 
-#if defined(ecl_uint32_t) && (FIXNUM_BITS > 32)
+#if defined(ecl_uint32_t) && (ECL_FIXNUM_BITS > 32)
 ecl_uint32_t
 ecl_to_uint32_t(cl_object x) {
         const uint32_t uint32_max = 0xFFFFFFFFUL;
@@ -216,7 +218,7 @@ ecl_to_int32_t(cl_object x) {
 }
 #endif /* ecl_uint32_t */
 
-#if defined(ecl_uint64_t) && (FIXNUM_BITS < 64)
+#if defined(ecl_uint64_t) && (ECL_FIXNUM_BITS < 64)
 ecl_uint64_t
 ecl_to_uint64_t(cl_object x) {
         if (!ecl_minusp(x)) {
@@ -343,13 +345,14 @@ ecl_to_ulong_long(cl_object x) {
                         return (ecl_ulong_long_t)mpz_get_ui(x->big.big_num);
                 } else {
                         cl_object copy = _ecl_big_register0();
-                        int i = ECL_LONG_LONG_BITS - FIXNUM_BITS;
+                        int i = ECL_LONG_LONG_BITS - ECL_FIXNUM_BITS;
                         mpz_fdiv_q_2exp(copy->bit.big_num, x->big.big_num, i);
                         if (mpz_fits_ulong_p(copy->big.big_num)) {
                                 volatile ecl_ulong_long_t output;
                                 output = mpz_get_ui(copy->big.big_num);
-                                for (i -= FIXNUM_BITS; i; i-= FIXNUM_BITS) {
-                                        output = (output << FIXNUM_BITS);
+                                for (i -= ECL_FIXNUM_BITS; i;
+                                     i-= ECL_FIXNUM_BITS) {
+                                        output = (output << ECL_FIXNUM_BITS);
                                         output += mpz_get_ui(x->big.big_num);
                                 }
                                 return output;
@@ -373,13 +376,13 @@ ecl_to_long_long(cl_object x)
                 return (ecl_long_long_t)mpz_get_si(x->big.big_num);
         } else {
                 cl_object copy = _ecl_big_register0();
-                int i = ECL_LONG_LONG_BITS - FIXNUM_BITS;
+                int i = ECL_LONG_LONG_BITS - ECL_FIXNUM_BITS;
                 mpz_fdiv_q_2exp(copy->bit.big_num, x->big.big_num, i);
                 if (mpz_fits_ulong_p(copy->big.big_num)) {
                         volatile ecl_long_long_t output;
                         output = mpz_get_si(copy->big.big_num);
-                        for (i -= FIXNUM_BITS; i; i-= FIXNUM_BITS) {
-                                output = (output << FIXNUM_BITS);
+                        for (i -= ECL_FIXNUM_BITS; i; i-= ECL_FIXNUM_BITS) {
+                                output = (output << ECL_FIXNUM_BITS);
                                 output += mpz_get_ui(x->big.big_num);
                         }
                         return output;
@@ -876,7 +879,7 @@ cl_rational(cl_object x)
 cl_object
 _ecl_long_double_to_integer(long double d0)
 {
-        const int fb = FIXNUM_BITS - 3;
+        const int fb = ECL_FIXNUM_BITS - 3;
         int e;
         long double d = frexpl(d0, &e);
         if (e <= fb) {

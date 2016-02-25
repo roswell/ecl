@@ -1,4 +1,6 @@
-/* -*- mode: c; c-basic-offset: 8 -*- */
+/* -*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*- */
+/* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
+
 /*
     big.c -- Bignum routines.
 */
@@ -105,10 +107,11 @@ _ecl_big_register_normalize(cl_object x)
         return _ecl_big_register_copy(x);
 }
 
-#if GMP_LIMB_BITS >= FIXNUM_BITS
+#if GMP_LIMB_BITS >= ECL_FIXNUM_BITS
 static const int limbs_per_fixnum = 1;
 #else
-static const int limbs_per_fixnum = (FIXNUM_BITS + GMP_LIMB_BITS - 1) / GMP_LIMB_BITS;
+static const int limbs_per_fixnum = (ECL_FIXNUM_BITS + GMP_LIMB_BITS - 1) /
+        GMP_LIMB_BITS;
 #endif
 
 #define ECL_BIGNUM_ABS_SIZE(x) \
@@ -117,7 +120,7 @@ static const int limbs_per_fixnum = (FIXNUM_BITS + GMP_LIMB_BITS - 1) / GMP_LIMB
 cl_object
 _ecl_fix_times_fix(cl_fixnum x, cl_fixnum y)
 {
-#if ECL_LONG_BITS >= FIXNUM_BITS
+#if ECL_LONG_BITS >= ECL_FIXNUM_BITS
         ECL_WITH_TEMP_BIGNUM(z,4);
         _ecl_big_set_si(z, x);
         _ecl_big_mul_si(z, z, y);
@@ -160,7 +163,7 @@ _ecl_big_times_fix(cl_object b, cl_fixnum i)
         size = ECL_BIGNUM_ABS_SIZE(b);
         size += limbs_per_fixnum;
         z = _ecl_alloc_compact_bignum(size);
-#if ECL_LONG_BITS >= FIXNUM_BITS
+#if ECL_LONG_BITS >= ECL_FIXNUM_BITS
         _ecl_big_mul_si(z, b, i);
 #else
         {
@@ -332,7 +335,7 @@ fixnnint(cl_object x)
 
 #undef _ecl_big_set_fixnum
 #undef _ecl_big_set_index
-#if ECL_LONG_BITS >= FIXNUM_BITS
+#if ECL_LONG_BITS >= ECL_FIXNUM_BITS
 cl_object
 _ecl_big_set_fixnum(cl_object x, cl_fixnum f)
 {
@@ -358,7 +361,7 @@ _ecl_big_get_index(cl_object x)
 {
         return mpz_get_ui((x)->big.big_num);
 }
-#elif GMP_LIMB_BITS >= FIXNUM_BITS
+#elif GMP_LIMB_BITS >= ECL_FIXNUM_BITS
 cl_object
 _ecl_big_set_fixnum(cl_object x, cl_fixnum f)
 {
@@ -408,7 +411,7 @@ _ecl_big_fits_in_index(cl_object x)
 }
 #else
 # error "ECL cannot build with GMP when both long and mp_limb_t are smaller than cl_fixnum"
-#endif /* FIXNUM_BITS > GMP_LIMB_BITS, ECL_LONG_BITS */
+#endif /* ECL_FIXNUM_BITS > GMP_LIMB_BITS, ECL_LONG_BITS */
 
 #ifdef ECL_LONG_FLOAT
 long double

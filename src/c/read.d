@@ -1,4 +1,6 @@
-/* -*- mode: c; c-basic-offset: 8 -*- */
+/* -*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*- */
+/* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
+
 /*
     read.d -- Read.
 */
@@ -481,12 +483,14 @@ cl_object backquote_reader(cl_object in, cl_object c)
         const cl_env_ptr the_env = ecl_process_env();
         cl_fixnum backq_level = ecl_fixnum(ECL_SYM_VAL(the_env, @'si::*backq-level*'));
         ECL_SETQ(the_env, @'si::*backq-level*', ecl_make_fixnum(backq_level+1));
-        in = ecl_read_object(in);
+        c = ecl_read_object(in);
         ECL_SETQ(the_env, @'si::*backq-level*', ecl_make_fixnum(backq_level));
+        unlikely_if (c == OBJNULL)
+                FEend_of_file(in);
 #if 0
         @(return cl_macroexpand_1(2, cl_list(2, @'si::quasiquote', in), ECL_NIL));
 #else
-        @(return cl_list(2,@'si::quasiquote',in))
+        @(return cl_list(2,@'si::quasiquote',c))
 #endif
 }
 
@@ -1381,8 +1385,7 @@ sharp_dollar_reader(cl_object in, cl_object c, cl_object d)
         if (d != ECL_NIL && !read_suppress)
                 extra_argument('$', in, d);
         c = ecl_read_object(in);
-        rs = ecl_alloc_object(t_random);
-        rs->random.value = c;
+        rs = ecl_make_random_state(c);
         @(return rs)
 }
 

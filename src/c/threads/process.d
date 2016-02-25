@@ -1,4 +1,6 @@
-/* -*- mode: c; c-basic-offset: 8 -*- */
+/* -*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*- */
+/* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
+
 /*
     threads.d -- Native threads.
 */
@@ -81,7 +83,7 @@ ecl_set_process_env(cl_env_ptr env)
         TlsSetValue(cl_env_key, env);
 # else
         if (pthread_setspecific(cl_env_key, env))
-                FElibc_error("pthread_setcspecific() failed.", 0);
+                FElibc_error("pthread_setspecific() failed.", 0);
 # endif
 #endif
 }
@@ -328,6 +330,95 @@ alloc_process(cl_object name, cl_object initial_bindings)
         process->process.exit_barrier = ecl_make_barrier(name, MOST_POSITIVE_FIXNUM);
         mp_barrier_unblock(3, process->process.exit_barrier, @':disable', ECL_T);
         return process;
+}
+
+bool
+ecl_import_current_thread(cl_object name, cl_object bindings)
+{
+        struct cl_env_struct env_aux[1];
+        cl_object process;
+        pthread_t current;
+        cl_env_ptr env;
+        int registered;
+        struct GC_stack_base stack;
+#ifdef ECL_WINDOWS_THREADS
+        {
+        HANDLE aux = GetCurrentThread();
+        DuplicateHandle(GetCurrentProcess(),
+                        aux,
+                        GetCurrentProcess(),
+                        &current,
+                        0,
+                        FALSE,
+                        DUPLICATE_SAME_ACCESS);
+        CloseHandle(current);
+        }
+#else
+        current = pthread_self();
+#endif
+#ifdef GBC_BOEHM
+        GC_get_stack_base(&stack);
+        switch (GC_register_my_thread(&stack)) {
+        case GC_SUCCESS:
+                registered = 1;
+                break;
+        case GC_DUPLICATE:
+                /* Thread was probably created using the GC hooks
+                 * for thread creation */
+                registered = 0;
+                break;
+        default:
+                return 0;
+        }
+#endif
+        {
+                cl_object processes = cl_core.processes;
+                cl_index i, size;
+                for (i = 0, size = processes->vector.dim; i < size; i++) {
+                        cl_object p = processes->vector.self.t[i];
+                        if (!Null(p) && p->process.thread == current)
+                                return 0;
+                }
+        }
+        /* We need a fake env to allow for interrupts blocking. */
+        env_aux->disable_interrupts = 1;
+        ecl_set_process_env(env_aux);
+        env = _ecl_alloc_env(0);
+        ecl_set_process_env(env);
+        env->cleanup = registered;
+
+        /* Link environment and process together */
+        env->own_process = process = alloc_process(name, bindings);
+        process->process.env = env;
+        process->process.phase = ECL_PROCESS_BOOTING;
+        process->process.thread = current;
+        ecl_list_process(process);
+
+        ecl_init_env(env);
+        env->bindings_array = process->process.initial_bindings;
+        env->thread_local_bindings_size = env->bindings_array->vector.dim;
+        env->thread_local_bindings = env->bindings_array->vector.self.t;
+        ecl_enable_interrupts_env(env);
+
+        /* Activate the barrier so that processes can immediately start waiting. */
+        mp_barrier_unblock(1, process->process.exit_barrier);
+        process->process.phase = ECL_PROCESS_ACTIVE;
+
+        ecl_bds_bind(env, @'mp::*current-process*', process);
+        return 1;
+}
+
+void
+ecl_release_current_thread(void)
+{
+        cl_env_ptr env = ecl_process_env();
+        int cleanup = env->cleanup;
+        thread_cleanup(env->own_process);
+#ifdef GBC_BOEHM
+        if (cleanup) {
+                GC_unregister_my_thread();
+        }
+#endif
 }
 
 @(defun mp::make-process (&key name ((:initial-bindings initial_bindings) ECL_T))

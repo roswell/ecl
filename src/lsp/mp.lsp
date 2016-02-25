@@ -1,4 +1,6 @@
-;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: SYSTEM; indent-tabs-mode: nil -*-
+;;;; -*- Mode: Lisp; Syntax: Common-Lisp; indent-tabs-mode: nil; Package: SYSTEM -*-
+;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
+
 ;;;;
 ;;;;  MP.LSP  -- Multiprocessing capabilities.
 
@@ -133,3 +135,18 @@ by ALLOW-WITH-INTERRUPTS."
                               (> (the fixnum (mp:lock-count ,lock))
                                  (the fixnum ,count))))
                  (mp::giveup-lock ,lock))))))))
+
+#+ecl-read-write-lock
+(defmacro with-rwlock ((lock op) &body body)
+  (assert (member op '(:read :write) :test #'eq))
+  (let ((s-lock (gensym)))
+    `(let ((,s-lock ,lock))
+       (,(if (eq :read op)
+             'mp:get-rwlock-read
+             'mp:get-rwlock-write) ,s-lock t)
+       (unwind-protect
+            (progn
+              ,@body)
+         (,(if (eq :read op)
+               'mp:giveup-rwlock-read
+               'mp:giveup-rwlock-write) ,s-lock)))))

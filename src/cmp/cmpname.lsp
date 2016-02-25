@@ -1,4 +1,6 @@
-;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: C -*-
+;;;; -*- Mode: Lisp; Syntax: Common-Lisp; indent-tabs-mode: nil; Package: C -*-
+;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
+
 ;;;;
 ;;;;  Copyright (c) 2007, Juan Jose Garcia Ripoll.
 ;;;;
@@ -95,7 +97,20 @@ initialization function in object files have more or less unpredictable
 names, we store them in a string in the object file. This string is recognized
 by the TAG it has at the beginning This function searches that tag and retrieves
 the function name it precedes."
+  #-pnacl
   (with-open-file (stream file :direction :input :element-type '(unsigned-byte 8))
+    (when (search-tag stream tag)
+      (let ((name (read-name stream)))
+        name)))
+  #+pnacl
+  (let* ((pnacl-dis (or (ext:getenv "PNACL_DIS")
+                        (error "please set the PNACL_DIS environment variable to your toolchain's pnacl-dis location")))
+         (stream (ext:run-program
+                  pnacl-dis
+                  (list (namestring (translate-logical-pathname file)))
+                  :wait nil :input NIL :output :STREAM :error :OUTPUT)))
+    (unless stream
+      (error "Unable to disasemble file ~a" file))
     (when (search-tag stream tag)
       (let ((name (read-name stream)))
         name))))
@@ -105,7 +120,7 @@ the function name it precedes."
     ((:object :c :static-library :lib :shared-library :dll)
      (or (and (probe-file pathname)
               (find-init-name pathname :tag (kind->tag kind)))
-         (error "Cannot find out entry point for binary file ~A" pathname)))
+         (cmpnote "Cannot find out entry point for binary file ~A" pathname)))
     (otherwise (compute-init-name pathname kind))))
 
 (defun remove-prefix (prefix name)
@@ -113,7 +128,12 @@ the function name it precedes."
       (subseq name (length prefix) nil)
       name))
 
-(defun compute-init-name (pathname &key (kind (guess-kind pathname)) (prefix nil))
+(defun compute-init-name (pathname &key (kind (guess-kind pathname))
+                                     (prefix nil)
+                                     (wrapper nil))
+  "Computes initialization function name. Libraries, FASLS and
+programs init function names can't be randomized to allow
+initialization from the C code which wants to use it."
   (let ((filename (pathname-name (translate-logical-pathname pathname)))
         (unique-name (unique-init-name pathname)))
     (case kind
@@ -122,17 +142,13 @@ the function name it precedes."
       ((:fasl :fas)
        (init-function-name "CODE" :kind :fas :prefix prefix))
       ((:static-library :lib)
-       (init-function-name (if (string-equal "LSP"
-                                             (remove-prefix
-                                              +static-library-prefix+ filename))
+       (init-function-name (if wrapper
                                (remove-prefix +static-library-prefix+ filename)
                                unique-name)
                            :kind :lib
                            :prefix prefix))
       ((:shared-library :dll)
-       (init-function-name (if (string-equal "LSP"
-                                             (remove-prefix
-                                              +shared-library-prefix+ filename))
+       (init-function-name (if wrapper
                                (remove-prefix +shared-library-prefix+ filename)
                                unique-name)
                            :kind :dll

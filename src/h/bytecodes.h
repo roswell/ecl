@@ -1,4 +1,6 @@
-/* -*- mode: c; c-basic-offset: 8 -*- */
+/* -*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*- */
+/* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
+
 /**********************************************************************
  ***
  ***  IMPORTANT: ANY CHANGE IN THIS FILE MUST BE MATCHED BY
@@ -153,7 +155,7 @@ typedef int16_t cl_oparg;
  */
 #if (defined(__GNUC__) && !defined(__STRICT_ANSI__) && !defined(__clang__) && !defined(__llvm__))
 #define ECL_THREADED_INTERPRETER
-# if defined(__sun__) && (FIXNUM_BITS > 32)
+# if defined(__sun__) && (ECL_FIXNUM_BITS > 32)
 #  undef ECL_THREADED_INTERPRETER
 # endif
 #endif

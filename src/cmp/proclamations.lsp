@@ -1,4 +1,6 @@
-;;; -*- Mode: Lisp; Syntax: Common-Lisp; Package: C -*-
+;;;; -*- Mode: Lisp; Syntax: Common-Lisp; indent-tabs-mode: nil; Package: C -*-
+;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
+
 ;;;
 ;;; PROCLAMATIONS of ECL and ANSI Common Lisp functions
 ;;;
@@ -189,7 +191,7 @@
 
 ;; ECL extensions:
 (proclamation si:specialp (symbol) gen-bool :predicate)
-(proclamation si::do-defsetf (symbol (or symbol function)) t)
+(proclamation si::do-defsetf (symbol (or symbol function) &optional list) t)
 (proclamation si::do-define-setf-method (symbol function) t)
 (proclamation ext:constant-form-value (t &optional environment) t)
 (proclamation ext:constantp-inner (t &optional environment) gen-bool)
@@ -1135,7 +1137,7 @@
 #+wants-sockets
 (proclamation si:open-server-stream (unsigned-byte) stream)
 #+wants-sockets
-(proclamation si:open-unix-socket-stream (base-string) stream)
+(proclamation si:open-unix-socket-stream (string) stream)
 #+wants-sockets
 (proclamation si:lookup-host-entry (t) (values (or null string) list list))
 (proclamation si:copy-stream (stream stream) t)

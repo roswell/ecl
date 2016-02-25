@@ -1,4 +1,6 @@
-;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: CLOS -*-
+;;;; -*- Mode: Lisp; Syntax: Common-Lisp; indent-tabs-mode: nil; Package: CLOS -*-
+;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
+
 ;;;;
 ;;;;  Copyright (c) 2004, Juan Jose Garcia-Ripoll
 ;;;;
@@ -17,11 +19,12 @@
 ;;;
 ;;; This is the generic function interface for CLOS streams.
 ;;;
-;;; The following is a port of SBCL's implementation of Gray Streams. Minor
-;;; caveats with respect to the proposal are that we rather keep CLOSE,
-;;; STREAM-ELEMENT-TYPE, INPUT-STREAM-P, OUTPUT-STREAM-P and OPEN-STREAM-P
-;;; these as normal functions that call the user extensible EXT:STREAM-{CLOSE,
-;;; ELT-TYPE, INPUT-P, OUTPUT-P, OPEN-P}.
+;;; The following is a port of SBCL's implementation of Gray
+;;; Streams. Minor caveats with respect to the proposal are that we
+;;; rather keep CLOSE, STREAM-ELEMENT-TYPE, INPUT-STREAM-P,
+;;; OUTPUT-STREAM-P and OPEN-STREAM-P these as normal functions that
+;;; call the user extensible EXT:STREAM-{CLOSE, ELT-TYPE, INPUT-P,
+;;; OUTPUT-P, OPEN-P}.
 ;;;
 
 (defgeneric stream-advance-to-column (stream column)
@@ -31,7 +34,8 @@
   successful, or NIL if it is not supported for this stream. This is
   intended for use by by PPRINT and FORMAT ~T. The default method uses
   STREAM-LINE-COLUMN and repeated calls to STREAM-WRITE-CHAR with a
-  #\SPACE character; it returns NIL if STREAM-LINE-COLUMN returns NIL."))
+  #\SPACE character; it returns NIL if STREAM-LINE-COLUMN returns
+  NIL."))
 
 (defgeneric stream-clear-input (stream)
   (:documentation
@@ -40,8 +44,8 @@
 
 (defgeneric stream-clear-output (stream)
   (:documentation
-   "This is like CL:CLEAR-OUTPUT, but for Gray streams: clear the given
-  output STREAM. The default method does nothing."))
+   "This is like CL:CLEAR-OUTPUT, but for Gray streams: clear the
+  given output STREAM. The default method does nothing."))
 
 (defgeneric close (stream &key abort)
   (:documentation
@@ -52,8 +56,8 @@
 (defgeneric stream-element-type (stream)
   (:documentation
    "Return a type specifier for the kind of object returned by the
-  STREAM. The class FUNDAMENTAL-CHARACTER-STREAM provides a default method
-  which returns CHARACTER."))
+  STREAM. The class FUNDAMENTAL-CHARACTER-STREAM provides a default
+  method which returns CHARACTER."))
 
 (defgeneric stream-finish-output (stream)
   (:documentation
@@ -84,13 +88,12 @@
 
 (defgeneric stream-line-column (stream)
   (:documentation
-   "Return the column number where the next character
-  will be written, or NIL if that is not meaningful for this stream.
-  The first column on a line is numbered 0. This function is used in
-  the implementation of PPRINT and the FORMAT ~T directive. For every
-  character output stream class that is defined, a method must be
-  defined for this function, although it is permissible for it to
-  always return NIL."))
+   "Return the column number where the next character will be written,
+  or NIL if that is not meaningful for this stream.  The first column
+  on a line is numbered 0. This function is used in the implementation
+  of PPRINT and the FORMAT ~T directive. For every character output
+  stream class that is defined, a method must be defined for this
+  function, although it is permissible for it to always return NIL."))
 
 (defgeneric stream-listen (stream)
   #+sb-doc
@@ -122,26 +125,26 @@
 
 (defgeneric stream-read-char (stream)
   (:documentation
-   "Read one character from the stream. Return either a
-  character object, or the symbol :EOF if the stream is at end-of-file.
-  Every subclass of FUNDAMENTAL-CHARACTER-INPUT-STREAM must define a
-  method for this function."))
+   "Read one character from the stream. Return either a character
+  object, or the symbol :EOF if the stream is at end-of-file.  Every
+  subclass of FUNDAMENTAL-CHARACTER-INPUT-STREAM must define a method
+  for this function."))
 
 (defgeneric stream-read-char-no-hang (stream)
   (:documentation
    "This is used to implement READ-CHAR-NO-HANG. It returns either a
   character, or NIL if no input is currently available, or :EOF if
   end-of-file is reached. The default method provided by
-  FUNDAMENTAL-CHARACTER-INPUT-STREAM simply calls STREAM-READ-CHAR; this
-  is sufficient for file streams, but interactive streams should define
-  their own method."))
+  FUNDAMENTAL-CHARACTER-INPUT-STREAM simply calls STREAM-READ-CHAR;
+  this is sufficient for file streams, but interactive streams should
+  define their own method."))
 
 (defgeneric stream-read-line (stream)
   (:documentation
-   "This is used by READ-LINE. A string is returned as the first value. The
-  second value is true if the string was terminated by end-of-file
-  instead of the end of a line. The default method uses repeated
-  calls to STREAM-READ-CHAR."))
+   "This is used by READ-LINE. A string is returned as the first
+  value. The second value is true if the string was terminated by
+  end-of-file instead of the end of a line. The default method uses
+  repeated calls to STREAM-READ-CHAR."))
 
 (defgeneric stream-read-sequence (stream sequence &optional start end)
   (:documentation
@@ -317,7 +320,7 @@
 (defmethod close ((stream ansi-stream) &key abort)
   (cl:close stream :abort abort))
 
-(defmethod close ((stream t) &key abort)
+(defmethod close ((stream stream) &key abort)
   (declare (ignore abort))
   (bug-or-error stream 'close))
 
@@ -602,10 +605,12 @@
                                   &optional (start 0) end)
   (si::do-write-sequence sequence stream start end))
 
-(defmethod stream-write-sequence ((stream ansi-stream) sequence &optional (start 0) end)
+(defmethod stream-write-sequence ((stream ansi-stream) sequence
+                                  &optional (start 0) end)
   (si::do-write-sequence sequence stream start end))
 
-(defmethod stream-write-sequence ((stream t) sequence &optional start end)
+(defmethod stream-write-sequence ((stream t) sequence
+                                  &optional start end)
   (declare (ignore sequence start end))
   (bug-or-error stream 'stream-write-sequence))
 
@@ -648,7 +653,8 @@
 
 ;;; FILE-DESCRIPTOR
 
-(defmethod stream-file-descriptor :before (stream &optional (direction :input))
+(defmethod stream-file-descriptor :before (stream
+                                           &optional (direction :input))
   (multiple-value-bind (predicate kind)     
       (case direction
         (:input  (values 'input-stream-p  "input"))
@@ -672,16 +678,16 @@
   (declare (ignore direction))
   (bug-or-error stream 'stream-file-descriptor))
 
-(defmethod stream-file-descriptor ((stream two-way-stream) &optional (direction
-                                                                      :input))
+(defmethod stream-file-descriptor ((stream two-way-stream)
+                                   &optional (direction :input))
   (stream-file-descriptor
    (case direction
      (:input  (two-way-stream-input-stream stream))
      (:output (two-way-stream-output-stream stream)))
    direction))
 
-(defmethod stream-file-descriptor ((stream file-stream) &optional (direction
-                                                                   :input))
+(defmethod stream-file-descriptor ((stream file-stream)
+                                   &optional (direction :input))
   (declare (ignore direction))
   (si:file-stream-fd stream))
 
@@ -689,8 +695,9 @@
 ;;; Setup
 
 (eval-when (:compile-toplevel :execute)
-  (defconstant +conflicting-symbols+ '(cl:close cl:stream-element-type cl:input-stream-p
-                                       cl:open-stream-p cl:output-stream-p cl:streamp)))
+  (defconstant +conflicting-symbols+
+    '(cl:close cl:stream-element-type cl:input-stream-p
+      cl:open-stream-p cl:output-stream-p cl:streamp)))
 
 (let ((p (find-package "GRAY")))
   (export '(nil) p)
@@ -704,11 +711,11 @@
 ;; in CL are normal functions (ie. not generic functions); but that
 ;; doesn't work with packages like FLEXI-STREAMS that want to define
 ;; new stream types that work with the same symbols from CL.
-;; 
-;; TRIVIAL-GRAY-STREAMS tries to unify that mess across
-;; different implementations, by importing most of (for ECL) GRAY
-;; into IMPL-SPECIFIC-GRAY, importing from I-S-G into T-G-S,
-;; and overloading/extending there where necessary.
+;;
+;; TRIVIAL-GRAY-STREAMS tries to unify that mess across different
+;; implementations, by importing most of (for ECL) GRAY into
+;; IMPL-SPECIFIC-GRAY, importing from I-S-G into T-G-S, and
+;; overloading/extending there where necessary.
 ;;
 ;;
 ;; REDEFINE-CL-FUNCTIONS should now make the functions that are bound
@@ -716,27 +723,28 @@
 ;;
 ;;
 ;; So...
-;; 
+;;
 ;;    CL has a function
 ;;    GRAY has a function
 ;;    
 ;;    TRIVIAL-GRAY-STREAMS imports from GRAY
 ;;
-;; But calling eg. CL:FILE-POSITION should make use of all the
-;; methods defined on T-G-S:STREAMS-FILE-POSITION ...
-;; 
+;; But calling eg. CL:FILE-POSITION should make use of all the methods
+;; defined on T-G-S:STREAMS-FILE-POSITION ...
+;;
 
 (defun %redefine-cl-functions (cl-symbol gray-symbol gray-package)
   (unless (typep (fdefinition cl-symbol) 'generic-function) 
     (let ((gf (fdefinition gray-symbol)))
-      ;; Given a symbol in CL, and one in GRAY,
-      ;; we want to keep the CL symbol (in case there are references to it stored somewhere),
+      ;; Given a symbol in CL, and one in GRAY, we want to keep the CL
+      ;; symbol (in case there are references to it stored somewhere),
       ;; but it shall get the generic-function ...
       (setf (fdefinition cl-symbol) gf)
       ;; and become EQ to the GRAY symbol.
-      ;; But: unintern/import removes the package from the symbol used as 
-      ;; name by the GF, making it equivalent to a GENSYM - and then no 
-      ;; new methods can be registered for it ...
+      ;;
+      ;; But: unintern/import removes the package from the symbol used
+      ;; as name by the GF, making it equivalent to a GENSYM - and
+      ;; then no new methods can be registered for it ...
       ;;
       ;; For same symbol-names, we can unintern/import/export;
       ;; for different symbol-names, we can only copy the fdefinition.
@@ -750,7 +758,8 @@
             cl-symbol))))
 
 (defun redefine-cl-functions ()
-  "Some functions in CL package are expected to be generic. We make them so."
+  "Some functions in CL package are expected to be generic. We make
+them so."
   (let ((x (si::package-lock "COMMON-LISP" nil))
         (gray-package (find-package "GRAY")))
     (loop for cl-symbol in '#.+conflicting-symbols+

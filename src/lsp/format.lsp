@@ -1,4 +1,6 @@
-;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: SYSTEM; indent-tabs-mode: nil -*-
+;;;; -*- Mode: Lisp; Syntax: Common-Lisp; indent-tabs-mode: nil; Package: SYSTEM -*-
+;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
+
 ;;;;
 ;;; -*- Package: FORMAT -*-
 ;;;
@@ -1358,7 +1360,6 @@
   (declare (si::c-local))
   (cond
     ((or (not (or w d k))
-         #-ecl
          (and (floatp number)
               (or (float-infinity-p number)
                   (float-nan-p number))))
@@ -1463,11 +1464,9 @@
 ;;; of causing an error.
 (defun format-exp-aux (stream number w d e k ovf pad marker atsign)
   (declare (si::c-local))
-  (if #-ecl
-      (and (floatp number)
+  (if (and (floatp number)
            (or (float-infinity-p number)
                (float-nan-p number)))
-      #+ecl nil
       (prin1 number stream)
       (multiple-value-bind (num expt)
           (sys::scale-exponent (abs number))
@@ -1553,11 +1552,9 @@
 ;;; toy@rtp.ericsson.se:  Same change as for format-exp-aux.
 (defun format-general-aux (stream number w d e k ovf pad marker atsign)
   (declare (si::c-local))
-  (if #-ecl
-      (and (floatp number)
+  (if (and (floatp number)
            (or (float-infinity-p number)
                (float-nan-p number)))
-      #+ecl nil
       (prin1 number stream)
       (multiple-value-bind (ignore n) 
           (sys::scale-exponent (abs number))

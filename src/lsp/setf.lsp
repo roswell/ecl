@@ -1,4 +1,6 @@
-;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: SYSTEM; indent-tabs-mode: nil -*-
+;;;; -*- Mode: Lisp; Syntax: Common-Lisp; indent-tabs-mode: nil; Package: SYSTEM -*-
+;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
+
 ;;;;
 ;;;;  Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya.
 ;;;;  Copyright (c) 1990, Giuseppe Attardi.
@@ -16,43 +18,41 @@
 
 (in-package "SYSTEM")
 
-(defun check-stores-number (context stores-list n)
-  (declare (si::c-local))
-  (unless (= (length stores-list) n)
-    (error "~d store-variables expected in setf form ~a." n context)))
-
-(defun do-setf-method-expansion (name lambda args)
+(defun do-setf-method-expansion (name lambda args &optional (stores-no 1))
   (declare (si::c-local))
   (let* ((vars '())
          (inits '())
-         (all '()))
+         (all '())
+         (stores '()))
     (dolist (item args)
       (unless (or (fixnump item) (keywordp item))
         (push item inits)
         (setq item (gensym))
         (push item vars))
       (push item all))
-    (let* ((store (gensym))
-           (all (nreverse all)))
+    (dotimes (i stores-no)
+      (declare (ignore i))
+      (push (gensym) stores))
+    (let* ((all (nreverse all)))
       (values (nreverse vars)
               (nreverse inits)
-              (list store)
+              stores
               (if lambda
-                  (apply lambda store all)
-                  `(funcall #'(setf ,name) ,store ,@all))
+                  (apply lambda (append stores all))
+                  `(funcall #'(setf ,name) ,@stores ,@all))
               (cons name all)))))
 
-(defun setf-method-wrapper (name setf-lambda)
-  (declare (si::c-local))
-  #'(lambda (env &rest args)
-      (declare (ignore env))
-      (do-setf-method-expansion name setf-lambda args)))
-
-(defun do-defsetf (access-fn function)
+(defun do-defsetf (access-fn function &optional (stores-no 1))
   (declare (type-assertions nil))
   (if (symbolp function)
-      (do-defsetf access-fn #'(lambda (store &rest args) `(,function ,@args ,store)))
-      (do-define-setf-method access-fn (setf-method-wrapper access-fn function))))
+      (do-defsetf access-fn
+        #'(lambda (store &rest args)
+            `(,function ,@args ,store))
+        stores-no)
+      (do-define-setf-method access-fn
+        #'(lambda (env &rest args)
+            (declare (ignore env))
+            (do-setf-method-expansion access-fn function args stores-no)))))
 
 (defun do-define-setf-method (access-fn function)
   (declare (type-assertions nil))
@@ -62,28 +62,31 @@
 (defmacro defsetf (&whole whole access-fn &rest rest)
   "Syntax: (defsetf symbol update-fun [doc])
         or
-        (defsetf symbol lambda-list (store-var) {decl | doc}* {form}*)
+        (defsetf symbol lambda-list (store-var*) {decl | doc}* {form}*)
 Defines an expansion
         (setf (SYMBOL arg1 ... argn) value)
         => (UPDATE-FUN arg1 ... argn value)
            or
-           (let* ((temp1 ARG1) ... (tempn ARGn) (temp0 value)) rest)
-where REST is the value of the last FORM with parameters in LAMBDA-LIST bound
-to the symbols TEMP1 ... TEMPn and with STORE-VAR bound to the symbol TEMP0.
-The doc-string DOC, if supplied, is saved as a SETF doc and can be retrieved
-by (documentation 'SYMBOL 'setf)."
-  (let (function documentation)
+           (let* ((temp ARG)*)
+             (multiple-value-bind (temp-s*)
+                 values-form
+               rest)
+where REST is the value of the last FORM with parameters in
+LAMBDA-LIST bound to the symbols TEMP* and with STORE-VAR* bound to
+the symbols TEMP-S*.  The doc-string DOC, if supplied, is saved as a
+SETF doc and can be retrieved by (documentation 'SYMBOL 'setf)."
+  (let (function documentation stores)
     (if (and (car rest) (or (symbolp (car rest)) (functionp (car rest))))
         (setq function `',(car rest)
-              documentation (cadr rest))
-        (let* ((store (second rest))
-               (args (first rest))
+              documentation (cadr rest)
+              stores `(,(gensym)))
+        (let* ((args (first rest))
                (body (cddr rest)))
-          (setq documentation (find-documentation body)
-                function `#'(lambda-block ,access-fn (,@store ,@args) ,@body))
-          (check-stores-number 'DEFSETF store 1)))
+          (setq stores (second rest)
+                documentation (find-documentation body)
+                function `#'(lambda-block ,access-fn (,@stores ,@args) ,@body))))
     `(eval-when (compile load eval)
-       ,(ext:register-with-pde whole `(do-defsetf ',access-fn ,function))
+       ,(ext:register-with-pde whole `(do-defsetf ',access-fn ,function ,(length stores)))
        ,@(si::expand-set-documentation access-fn 'setf documentation)
        ',access-fn)))
 

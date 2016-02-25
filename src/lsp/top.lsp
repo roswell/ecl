@@ -1,4 +1,6 @@
-;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: SYSTEM; indent-tabs-mode: nil -*-
+;;;; -*- Mode: Lisp; Syntax: Common-Lisp; indent-tabs-mode: nil; Package: SYSTEM -*-
+;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
+
 ;;;;
 ;;;;  top.lsp -- Top-level loop, break loop, and error handlers
 ;;;;
@@ -41,6 +43,7 @@
 (defparameter *last-error* nil)
 
 (defparameter *break-message* nil)
+(defparameter *break-condition* nil)
 
 (defparameter *break-readtable* nil)
 (defparameter *tpl-level* -1)                   ; nesting level of top-level loops
@@ -401,8 +404,8 @@ The top-level loop of ECL. It is called by default when ECL is invoked."
                 (ext:lisp-implementation-vcs-id))
         (format t "~%Copyright (C) 1984 Taiichi Yuasa and Masami Hagiya~@
 Copyright (C) 1993 Giuseppe Attardi~@
-Copyright (C) 2000 Juan J. Garcia-Ripoll
-Copyright (C) 2015 Daniel Kochmanski
+Copyright (C) 2000 Juan J. Garcia-Ripoll~@
+Copyright (C) 2015 Daniel Kochmanski~@
 ECL is free software, and you are welcome to redistribute it~@
 under certain conditions; see file 'Copyright' for details.")
         (format *standard-output* "~%Type :h for Help.  "))
@@ -773,7 +776,7 @@ Use special code 0 to cancel this operation.")
 
 (defun tpl-disassemble-command ()
   (let*((*print-level* 2)
-        (*print-length* 4)
+        (*print-length* 16)
         (*print-pretty* t)
         (*print-escape* nil)
         (*print-readably* nil)
@@ -841,7 +844,9 @@ Use special code 0 to cancel this operation.")
            (t
             (function-lambda-list (fdefinition function)))))
     ((typep function 'generic-function)
-     (values (clos:generic-function-lambda-list function) t))
+     (if (slot-boundp function 'clos::lambda-list)
+         (values (clos:generic-function-lambda-list function) t)
+         (values nil nil)))
     ;; Use the lambda list from the function definition, if available,
     ;; but remove &aux arguments.
     ((let ((f (function-lambda-expression function)))
@@ -1014,7 +1019,7 @@ Use special code 0 to cancel this operation.")
 
 (defun tpl-variables-command (&optional no-values)
   (let*((*print-level* 2)
-        (*print-length* 4)
+        (*print-length* 16)
         (*print-pretty* t)
         (*print-escape* nil)
         (*print-readably* nil))
@@ -1060,7 +1065,7 @@ Use special code 0 to cancel this operation.")
          (last (frs-bds (1+ *frs-top*)))
          (fi *frs-base*)
          (*print-level* 2)
-         (*print-length* 4)
+         (*print-length* 16)
          (*print-pretty* t))
         ((> bi last) (values))
       (do ()
@@ -1134,7 +1139,7 @@ Use special code 0 to cancel this operation.")
       ((= k 0) (values))
       (let*((j (or (sch-frs-base *frs-base* i) (1+ *frs-top*)))
             (*print-level* 2)
-            (*print-length* 4)
+            (*print-length* 16)
             (*print-pretty* t))
         (do () ((or (> j *frs-top*) (> (frs-ihs j) i)))
             (print-frs j)
@@ -1429,10 +1434,11 @@ package."
            (*print-readably* nil)
            (*print-pretty* nil)
            (*print-circle* t)
-           (*print-length* 2)
+           (*print-length* 16)
            (*readtable* (or *break-readtable* *readtable*))
            (*break-message* (format nil "~&Condition of type: ~A~%~A~%"
                                     (type-of condition) condition))
+           (*break-condition* condition)
            (*break-level* (1+ *break-level*))
            (break-level *break-level*)
            (*break-env* nil))

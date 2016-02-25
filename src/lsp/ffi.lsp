@@ -1,4 +1,6 @@
-;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: SYSTEM; indent-tabs-mode: nil -*-
+;;;; -*- Mode: Lisp; Syntax: Common-Lisp; indent-tabs-mode: nil; Package: SYSTEM -*-
+;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
+
 ;;;;
 ;;;;  Copyright (c) 2001, Juan Jose Garcia-Ripoll
 ;;;;
@@ -669,7 +671,8 @@
   (defmacro c-inline (args arg-types ret-type &body others)
     `(error "The special form c-inline cannot be used in the interpreter: ~A"
       (list (list ,@args) ',arg-types ',ret-type ,@others)))
-  (defmacro c-progn (&rest body)
+  (defmacro c-progn (args &rest body)
+    (declare (ignore args))
     '(error "The special form c-progn cannot be used in the interpreter.")))
 
 (defmacro definline (fun arg-types type code)

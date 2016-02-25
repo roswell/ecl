@@ -1,4 +1,6 @@
-/* -*- mode: c; c-basic-offset: 8 -*- */
+/* -*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*- */
+/* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
+
 /*
     file.d -- File interface.
 */
@@ -3328,9 +3330,18 @@ input_stream_read_byte8(cl_object strm, unsigned char *c, cl_index n)
                 FILE *f = IO_STREAM_FILE(strm);
                 cl_fixnum out = 0;
                 ecl_disable_interrupts();
+#ifdef FILE_CNT
                 do {
                         out = fread(c, sizeof(char), n, f);
                 } while (out < n && ferror(f) && restartable_io_error(strm, "fread"));
+#else
+                /* We can't use fread here due to the buffering. It makes
+                   impossible checking if we have some data available in the
+                   buffer what renders listen returning incorrect result. */
+                do {
+                        out = read(fileno(f), c, sizeof(char)*n);
+                } while (out < 0 && restartable_io_error(strm, "read"));
+#endif
                 ecl_enable_interrupts();
                 return out;
         }
@@ -5344,7 +5355,7 @@ ecl_off_t_to_integer(ecl_off_t offset)
                 cl_object y = _ecl_big_register0();
                 if (sizeof(ECL_BIGNUM_LIMBS(y)[0]) == sizeof(cl_index)) {
                         ECL_BIGNUM_LIMBS(y)[0] = (cl_index)offset;
-                        offset >>= FIXNUM_BITS;
+                        offset >>= ECL_FIXNUM_BITS;
                         ECL_BIGNUM_LIMBS(y)[1] = offset;
                         ECL_BIGNUM_SIZE(y) = offset? 2 : 1;
                 } else if (sizeof(ECL_BIGNUM_LIMBS(y)[0]) >= sizeof(ecl_off_t)) {
@@ -5367,21 +5378,21 @@ ecl_integer_to_off_t(cl_object offset)
         } else if (ECL_BIGNUMP(offset)) {
                 if (sizeof(ECL_BIGNUM_LIMBS(offset)[0]) == sizeof(cl_index)) {
                         if (ECL_BIGNUM_SIZE(offset) > 2) {
-                                goto ERR;
+                                goto ERROR;
                         }
                         if (ECL_BIGNUM_SIZE(offset) == 2) {
                             output = ECL_BIGNUM_LIMBS(offset)[1];
-                            output <<= FIXNUM_BITS;
+                            output <<= ECL_FIXNUM_BITS;
                         }
                         output += ECL_BIGNUM_LIMBS(offset)[0];
                 } else if (sizeof(ECL_BIGNUM_LIMBS(offset)[0]) >= sizeof(ecl_off_t)) {
                         if (ECL_BIGNUM_SIZE(offset) > 1) {
-                                goto ERR;
+                                goto ERROR;
                         }
                         output = ECL_BIGNUM_LIMBS(offset)[0];
                 }
         } else {
-        ERR:    FEerror("Not a valid file offset: ~S", 1, offset);
+        ERROR:    FEerror("Not a valid file offset: ~S", 1, offset);
         }
         return output;
 }

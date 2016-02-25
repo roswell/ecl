@@ -1,4 +1,6 @@
-;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: C -*-
+;;;; -*- Mode: Lisp; Syntax: Common-Lisp; indent-tabs-mode: nil; Package: C -*-
+;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
+
 ;;;;
 ;;;; CMPCT --  Optimizer for several constant values
 
@@ -150,6 +152,14 @@
        (LEAST-NEGATIVE-DOUBLE-FLOAT "-DBL_MIN")
        (LEAST-NEGATIVE-NORMALIZED-DOUBLE-FLOAT "-DBL_MIN")
 
+       (SHORT-FLOAT-POSITIVE-INFINITY  "INFINITY")
+       (SINGLE-FLOAT-POSITIVE-INFINITY "INFINITY")
+       (DOUBLE-FLOAT-POSITIVE-INFINITY "INFINITY")
+
+       (SHORT-FLOAT-NEGATIVE-INFINITY  "-INFINITY")
+       (SINGLE-FLOAT-NEGATIVE-INFINITY "-INFINITY")
+       (DOUBLE-FLOAT-NEGATIVE-INFINITY "-INFINITY")
+
        #+long-float
        ,@'(
            (MOST-POSITIVE-LONG-FLOAT "LDBL_MAX")
@@ -158,4 +168,6 @@
            (LEAST-POSITIVE-NORMALIZED-LONG-FLOAT" LDBL_MIN")
            (LEAST-NEGATIVE-LONG-FLOAT "-LDBL_MIN")
            (LEAST-NEGATIVE-NORMALIZED-LONG-FLOAT "-LDBL_MIN")
+           (LONG-FLOAT-POSITIVE-INFINITY   "INFINITY")
+           (LONG-FLOAT-NEGATIVE-INFINITY   "-INFINITY")
            )))))

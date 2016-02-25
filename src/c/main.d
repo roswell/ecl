@@ -1,4 +1,6 @@
-/* -*- mode: c; c-basic-offset: 8 -*- */
+/* -*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*- */
+/* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
+
 /*
     main.c --
 */
@@ -60,6 +62,18 @@ const char *ecl_self;
 
 /************************ GLOBAL INITIALIZATION ***********************/
 
+
+/* HEAP */
+
+#if ECL_FIXNUM_BITS <= 32
+/* 1GB */
+#define HEAP_SIZE_DEFAULT 1073741824L
+#else
+/* 4GB */
+#define HEAP_SIZE_DEFAULT 4294967296L
+#endif
+
+
 static int ARGC;
 static char **ARGV;
 cl_fixnum ecl_option_values[ECL_OPT_LIMIT+1] = {
@@ -88,11 +102,7 @@ cl_fixnum ecl_option_values[ECL_OPT_LIMIT+1] = {
         128*sizeof(cl_index)*1024, /* ECL_OPT_C_STACK_SIZE */
         4*sizeof(cl_index)*1024, /* ECL_OPT_C_STACK_SAFETY_AREA */
         1,              /* ECL_OPT_SIGALTSTACK_SIZE */
-#if ECL_FIXNUM_BITS <= 32
-        1024*1024*1024, /* ECL_OPT_HEAP_SIZE */
-#else
-        4024*1024*1024, /* ECL_OPT_HEAP_SIZE */
-#endif
+        HEAP_SIZE_DEFAULT, /* ECL_OPT_HEAP_SIZE */
         1024*1024,      /* ECL_OPT_HEAP_SAFETY_AREA */
         0,              /* ECL_OPT_THREAD_INTERRUPT_SIGNAL */
         1,              /* ECL_OPT_SET_GMP_MEMORY_FUNCTIONS */
@@ -159,9 +169,7 @@ ecl_init_env(cl_env_ptr env)
         ((struct ecl_fficall*)env->fficall)->registers = 0;
 #endif
 
-        /* Needs 128 elements for 64 entries to differentiate between
-           EQL specializers and class specializers */
-        env->method_cache = ecl_make_cache(128, 4096);
+        env->method_cache = ecl_make_cache(64, 4096);
         env->slot_cache = ecl_make_cache(3, 4096);
         env->pending_interrupt = ECL_NIL;
         {

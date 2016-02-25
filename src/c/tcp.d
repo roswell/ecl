@@ -1,4 +1,6 @@
-/* -*- mode: c; c-basic-offset: 8 -*- */
+/* -*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*- */
+/* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
+
 /* tcp.c  -- stream interface to TCP                                    */
 
 /*
@@ -21,7 +23,11 @@
 #if defined(ECL_MS_WINDOWS_HOST)
 #include <winsock.h>
 #else
+#ifdef __ANDROID__
+#include <errno.h>
+#else
 extern int errno;
+#endif
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -333,9 +339,11 @@ si_open_unix_socket_stream(cl_object path)
         int fd;                 /* file descriptor */
         struct sockaddr_un addr;
 
-        if (ecl_unlikely(ecl_t_of(path) != t_base_string))
+        if (ecl_unlikely(!ECL_STRINGP(path)))
                 FEwrong_type_nth_arg(@[si::open-unix-socket-stream], 1, path,
                                      @[string]);
+
+        path = si_coerce_to_base_string(path);
         if (path->base_string.fillp > UNIX_MAX_PATH-1)
                 FEerror("~S is a too long file name.", 1, path);
 

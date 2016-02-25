@@ -1,4 +1,6 @@
-;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: CLOS -*-
+;;;; -*- Mode: Lisp; Syntax: Common-Lisp; indent-tabs-mode: nil; Package: CLOS -*-
+;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
+
 ;;;;
 ;;;;  Copyright (c) 1992, Giuseppe Attardi.
 ;;;;  Copyright (c) 2001, Juan Jose Garcia Ripoll.
@@ -207,11 +209,11 @@ printer and we should rather use MAKE-LOAD-FORM."
 (defun ext::float-nan-string (x)
   (when *print-readably*
     (error 'print-not-readable :object x))
-  (cdr (assoc (type-of x)
-              '((single-float . "#<single-float quiet NaN>")
-                (double-float . "#<double-float quiet NaN>")
-                (long-float . "#<long-float quiet NaN>")
-                (short-float . "#<short-float quiet NaN>")))))
+   (cdr (assoc (type-of x)
+               '((single-float . "#<single-float quiet NaN>")
+                 (double-float . "#<double-float quiet NaN>")
+                 (long-float . "#<long-float quiet NaN>")
+                 (short-float . "#<short-float quiet NaN>")))))
 
 (defun ext::float-infinity-string (x)
   (when (and *print-readably* (null *read-eval*))

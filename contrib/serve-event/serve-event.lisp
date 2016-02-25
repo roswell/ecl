@@ -175,19 +175,19 @@
           (setf maxfd fd))))
 
         (multiple-value-bind (retval errno)
-	    (if (null seconds)
-		;; No timeout
-		(c-inline (rfd      wfd    (1+ maxfd))
-			  (:object :object :int) (values :int :int)
-			  "{ @(return 0) = select(#2, (fd_set*)#0->foreign.data,
+            (if (null seconds)
+                ;; No timeout
+                (c-inline (rfd      wfd    (1+ maxfd))
+                          (:object :object :int) (values :int :int)
+                          "{ @(return 0) = select(#2, (fd_set*)#0->foreign.data,
                                                       (fd_set*)#1->foreign.data,
                                                       NULL, NULL);
                              @(return 1) = errno; }"
-			  :one-liner nil
-			  :side-effects t)
-		(c-inline (rfd      wfd    (1+ maxfd) seconds) 
-			  (:object :object :int       :double) (values :int :int)
-			  "{ struct timeval tv;
+                          :one-liner nil
+                          :side-effects t)
+                (c-inline (rfd      wfd    (1+ maxfd) seconds) 
+                          (:object :object :int       :double) (values :int :int)
+                          "{ struct timeval tv;
                              double seconds = #3;
                                 tv.tv_sec = seconds;
                                 tv.tv_usec = (seconds * 1e6);
@@ -195,26 +195,26 @@
                                                          (fd_set*)#1->foreign.data,
                                                          NULL, &tv);
                                 @(return 1) = errno; }"
-			  :one-liner nil
-			  :side-effects t))
+                          :one-liner nil
+                          :side-effects t))
 
-	  (cond ((zerop retval) 
-		 nil)
-		((minusp retval)
-		 (if (= errno +eintr+)
-		     ;; suppress EINTR
-		     nil
-		     ;; otherwise error
-		     (error "Error during select")))
-		((plusp retval)  
-		 (dolist (handler *descriptor-handlers*)
-		   (let ((fd (handler-descriptor handler)))
-		     (if (plusp (ecase (handler-direction handler)
-				  (:input (fd-isset fd rfd))
-				  (:output (fd-isset fd wfd))))
-			 (funcall (handler-function handler) 
-				  (handler-descriptor handler)))))
-		 t)))))))
+          (cond ((zerop retval) 
+                 nil)
+                ((minusp retval)
+                 (if (= errno +eintr+)
+                     ;; suppress EINTR
+                     nil
+                     ;; otherwise error
+                     (error "Error during select")))
+                ((plusp retval)  
+                 (dolist (handler *descriptor-handlers*)
+                   (let ((fd (handler-descriptor handler)))
+                     (if (plusp (ecase (handler-direction handler)
+                                  (:input (fd-isset fd rfd))
+                                  (:output (fd-isset fd wfd))))
+                         (funcall (handler-function handler) 
+                                  (handler-descriptor handler)))))
+                 t)))))))
 
 
 ;;; Wait for up to timeout seconds for an event to happen. Make sure all
@@ -229,4 +229,4 @@ T if SERVE-EVENT did something and NIL if not."
       ((null sval) res)
     (setq res t)))
 
-(provide 'serve-event)
+(provide '#:serve-event)

@@ -8,7 +8,7 @@ dnl  AUTOCONF configuration for ECL
 dnl  Giuseppe Attardi 25.1.1994
 dnl
 
-AC_INIT([ecl],[16.0.0],[])
+AC_INIT([ecl],[16.1.2],[])
 AC_REVISION([$Revision$])
 AC_CONFIG_SRCDIR([bare.lsp.in])
 AC_CONFIG_AUX_DIR([gmp])
@@ -634,8 +634,15 @@ AC_CHECK_HEADERS( [fcntl.h limits.h netdb.h netinet/in.h] \
 dnl !!! end autoscan
 
 AC_CHECK_HEADERS( [sys/resource.h sys/utsname.h float.h pwd.h dlfcn.h link.h] \
-                  [mach-o/dyld.h ulimit.h dirent.h sys/ioctl.h sys/select.h] \
+                  [mach-o/dyld.h dirent.h sys/ioctl.h sys/select.h] \
                   [sys/wait.h semaphore.h] )
+
+
+AC_CHECK_HEADERS([ulimit.h], [], [],
+[[#ifdef HAVE_ULIMIT_H
+# include <ulimit.h>
+#endif
+]])
 
 dnl =====================================================================
 dnl Checks for typedefs, structures, and compiler characteristics.
@@ -739,8 +746,10 @@ dnl ----------------------------------------------------------------------
 dnl Do we use C or C++ compiler to compile ecl?
 if test ${with_cxx} = "no" ; then
   AC_SUBST([ECL_CC], [${CC}])
+  AC_SUBST([CC_IS_CXX], ["nil"])
 else
   AC_SUBST([ECL_CC], [${CXX}])
+  AC_SUBST([CC_IS_CXX], ["t"])
   boehm_configure_flags="${boehm_configure_flags} --enable-cplusplus"
 fi
 
@@ -802,6 +811,10 @@ else
   CLX_INFO=""
 fi
 
+if test "${with_tcp}" = "builtin"; then
+  ECL_ADD_BUILTIN_MODULE([sockets])
+  with_tcp=yes
+fi
 if test "${with_tcp}" = "yes"; then
   AC_DEFINE(TCP, [1], [Network streams])
   EXTRA_OBJS="${EXTRA_OBJS} tcp.${OBJEXT}"

@@ -1,10 +1,13 @@
+# -*- Mode: Makefile; indent-tabs-mode: nil -*-
+# vim: set filetype=makefile tabstop=8 shiftwidth=4 expandtab:
+
 ECL=@prefix@/@bindir@/ecl@EXEEXT@
 
 all: show-fails
 
 .PHONY: do-regressions cleanup clean-sources update
 
-BUGS_FILES := $(shell find ../../src/tests/bugs/ -type f)
+BUGS_FILES := $(shell find ../../src/tests/regressions/ -type f)
 
 regressions.log: config.lsp
 	$(MAKE) do-regressions
@@ -13,7 +16,7 @@ do-regressions: regressions config.lsp
 	$(ECL) -norc -load config.lsp -eval '(ecl-tests::run-regressions-tests)' -eval '(ext:quit)' 2>&1 | tee regressions.log
 
 show-fails: regressions.log
-	tail -n 8 regressions.log | head -n 6
+	tail -n 16 regressions.log
 
 #
 # Create directories

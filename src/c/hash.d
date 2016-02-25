@@ -1,4 +1,6 @@
-/* -*- mode: c; c-basic-offset: 8 -*- */
+/* -*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*- */
+/* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
+
 /*
     hash.d  -- Hash tables.
 */
@@ -115,8 +117,11 @@ _hash_equal(int depth, cl_hashkey h, cl_object x)
                  * because otherwise two bit arrays which are EQUAL might
                  * have different hash keys. */
                 return hash_string(h, x->vector.self.bc, x->vector.fillp / 8);
-        case t_random:
-                return _hash_equal(0, h, x->random.value);
+        case t_random: {
+                cl_object array = x->random.value;
+                return hash_string
+                        (h, (unsigned char*)array->vector.self.b8, 4*624);
+        }
 #ifdef ECL_SIGNED_ZERO
         case t_singlefloat: {
                 float f = ecl_single_float(x);
@@ -1055,7 +1060,7 @@ cl_object
 cl_sxhash(cl_object key)
 {
         cl_index output = _hash_equal(3, 0, key);
-        const cl_index mask = ((cl_index)1 << (FIXNUM_BITS - 3)) - 1;
+        const cl_index mask = ((cl_index)1 << (ECL_FIXNUM_BITS - 3)) - 1;
         @(return ecl_make_fixnum(output & mask))
 }
 

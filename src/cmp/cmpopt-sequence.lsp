@@ -1,4 +1,6 @@
-;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: C -*-
+;;;; -*- Mode: Lisp; Syntax: Common-Lisp; indent-tabs-mode: nil; Package: C -*-
+;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
+
 ;;;;
 ;;;;  CMPOPT-SEQUENCE  Optimization of SEQUENCE functions
 ;;;;
@@ -99,7 +101,9 @@
                          (nconc key-init test-init)
                          key-flag
                          test-flag
-                         test))))))
+                         test
+                         start
+                         end))))))
 
 #+(or)
 (define-compiler-macro si::make-seq-iterator (seq &optional (start 0))
@@ -273,7 +277,7 @@
       (ext:with-unique-names (%value %elt)
         `(let ((,%value ,value)
                ,@init)
-           (do-in-seq (,%elt ,sequence)
+           (do-in-seq (,%elt ,sequence :start ,start :end ,end)
              (when ,(funcall test-function %value
                              (funcall key-function %elt))
                (return ,%elt))))))))

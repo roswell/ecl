@@ -1,4 +1,6 @@
-/* -*- mode: c; c-basic-offset: 8 -*- */
+/* -*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*- */
+/* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
+
 /*
     ecl.h -- Main headers for development of ECL
 */
@@ -31,7 +33,7 @@
    ((void) memcpy(&(dst), &(src), sizeof(va_list)))
 #endif
 
-#ifndef FIXNUM_BITS
+#ifndef ECL_FIXNUM_BITS
 #include <ecl/config.h>
 #endif
 

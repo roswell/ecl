@@ -1,4 +1,6 @@
-/* -*- mode: c; c-basic-offset: 8 -*- */
+/* -*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*- */
+/* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
+
 /*
     semaphore.d -- POSIX-like semaphores
 */
@@ -127,3 +129,15 @@ mp_wait_on_semaphore(cl_object semaphore)
         }
         ecl_return1(env, output);
 }
+
+cl_object
+mp_try_get_semaphore(cl_object semaphore)
+{
+        cl_env_ptr env = ecl_process_env();
+        cl_object output;
+        unlikely_if (ecl_t_of(semaphore) != t_semaphore) {
+                FEerror_not_a_semaphore(semaphore);
+        }
+        ecl_return1(env, get_semaphore_inner(env, semaphore));
+}
+

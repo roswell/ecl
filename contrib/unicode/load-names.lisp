@@ -6,23 +6,23 @@
      for c across text
      when (member c set)
      do (setf output (list* (make-array (+ (- i start) (if exclude 0 1))
-				       :element-type elt-type
-				       :displaced-to text
-				       :displaced-index-offset start)
-			    output)
-	      start (1+ i))
+                                       :element-type elt-type
+                                       :displaced-to text
+                                       :displaced-index-offset start)
+                            output)
+              start (1+ i))
      finally (return (nreverse (list* (make-array (- i start)
-						 :element-type elt-type
-						 :displaced-to text
-						 :displaced-index-offset start)
-				      output)))))
+                                                 :element-type elt-type
+                                                 :displaced-to text
+                                                 :displaced-index-offset start)
+                                      output)))))
 
 (defun encode-words (words hash)
   (loop for word in words
      collect (or (gethash word hash)
-		 (let* ((word (copy-seq word))
-			(ndx (hash-table-count hash)))
-		   (setf (gethash word hash) (1+ ndx))))))
+                 (let* ((word (copy-seq word))
+                        (ndx (hash-table-count hash)))
+                   (setf (gethash word hash) (1+ ndx))))))
 
 (defun fixup-hangul-syllables (dictionary)
   ;; "Hangul Syllable Composition, Unicode 5.1 section 3-12"
@@ -47,11 +47,11 @@
        for v = (+ vbase (floor (mod sindex ncount) tcount))
        for tee = (+ tbase (mod sindex tcount))
        for name = (list* "HANGUL_" "SYLLABLE_"
-			 (gethash l table) (gethash v table)
-			 (unless (= tee tbase) (list (gethash tee table))))
+                         (gethash l table) (gethash v table)
+                         (unless (= tee tbase) (list (gethash tee table))))
        for code = (+ sbase sindex)
        collect (list* code (apply #'concatenate 'string name)
-		      (encode-words name dictionary)))))
+                      (encode-words name dictionary)))))
 
 (defun add-jamo-information (line table)
   (let* ((split (split-words line :set '(#\;) :exclude t))
@@ -68,17 +68,17 @@
        for ucd-line = (read-line in nil nil nil)
        while ucd-line
        nconc (let* ((ucd-data (split-words ucd-line :set '(#\;)))
-		    (code (first ucd-data))
-		    (name (second ucd-data)))
-	       (unless (eql (char name 0) #\<)
-		 (setf name (substitute #\_ #\Space name))
-		 (list (list* (parse-integer code :radix 16)
-			      name
-			      (encode-words (split-words
-					     name
-					     :set '(#\Space #\_ #\-)
-					     :exclude nil)
-					    words))))))))
+                    (code (first ucd-data))
+                    (name (second ucd-data)))
+               (unless (eql (char name 0) #\<)
+                 (setf name (substitute #\_ #\Space name))
+                 (list (list* (parse-integer code :radix 16)
+                              name
+                              (encode-words (split-words
+                                             name
+                                             :set '(#\Space #\_ #\-)
+                                             :exclude nil)
+                                            words))))))))
 
 (print (length *data*))
 (print (first (last *data*)))
@@ -86,9 +86,9 @@
 ;#+(or)
 (progn
   (setf *data*
-	(sort (nconc (fixup-hangul-syllables *words*) *data*)
-	      #'<
-	      :key #'car))
+        (sort (nconc (fixup-hangul-syllables *words*) *data*)
+              #'<
+              :key #'car))
   (print (length *data*))
   (print (first (last *data*))))
 
@@ -117,7 +117,7 @@
      with last = start
      for (code name . rest) in *data*
      do (when (>= (- code last) 2)
-	  (setf output (cons (list start last) output)
-		start code))
+          (setf output (cons (list start last) output)
+                start code))
        (setf last code)
      finally (return (nreverse (cons (list start code) output)))))

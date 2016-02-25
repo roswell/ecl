@@ -1,4 +1,6 @@
-/* -*- mode: c; c-basic-offset: 8 -*- */
+/* -*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*- */
+/* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
+
 /*
     Copyright (c) 2010, Juan Jose Garcia Ripoll.
 
@@ -95,10 +97,10 @@ si_float_to_string_free(cl_object buffer_or_nil, cl_object number,
 
         if (ecl_float_nan_p(number)) {
                 cl_object s = funcall(2, @'ext::float-nan-string', number);
-                @(return push_base_string(buffer_or_nil, s));
+                @(return push_base_string(buffer_or_nil, si_coerce_to_base_string(s)));
         } else if (ecl_float_infinity_p(number)) {
                 cl_object s = funcall(2, @'ext::float-infinity-string', number);
-                @(return push_base_string(buffer_or_nil, s));
+                @(return push_base_string(buffer_or_nil, si_coerce_to_base_string(s)));
         }
         base = ecl_length(buffer_or_nil);
         exp = si_float_to_digits(buffer_or_nil, number, ECL_NIL, ECL_NIL);

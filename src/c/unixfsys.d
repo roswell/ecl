@@ -1,4 +1,6 @@
-/* -*- mode: c; c-basic-offset: 8 -*- */
+/* -*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*- */
+/* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
+
 /*
     unixfsys.c  -- Unix file system interface.
 */
@@ -156,6 +158,10 @@ current_dir(void) {
                 output = ecl_alloc_adjustable_base_string(size);
                 ecl_disable_interrupts();
                 ok = getcwd((char*)output->base_string.self, size);
+                if (ok == NULL && errno != ENAMETOOLONG) {
+                        perror("ext::getcwd error");
+                        ecl_internal_error("Can't work without CWD");
+                }
                 ecl_enable_interrupts();
                 size += 256;
         } while (ok == NULL);
@@ -359,8 +365,13 @@ file_truename(cl_object pathname, cl_object filename, int flags)
                 FEcannot_open(filename);
 #ifdef HAVE_LSTAT
         } else if (kind == @':link' && (flags & FOLLOW_SYMLINKS)) {
-                /* The link might be a relative pathname. In that case we have
-                 * to merge with the original pathname */
+                /* The link might be a relative pathname. In that case
+                 * we have to merge with the original pathname.  On
+                 * the other hand, if the link is broken – return file
+                 * truename "as is". */
+                struct stat filestatus;
+                if (safe_stat(filename->base_string.self, &filestatus) < 0)
+                        @(return pathname kind);
                 filename = si_readlink(filename);
                 pathname = ecl_make_pathname(pathname->pathname.host,
                                              pathname->pathname.device,

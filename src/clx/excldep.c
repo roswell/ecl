@@ -1,3 +1,6 @@
+/* -*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*- */
+/* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
+
 /*
  * Allegro CL dependent C helper routines for CLX
  */
@@ -19,7 +22,7 @@
 #define SUCCESS 1
 
 #ifdef FD_SETSIZE
-#define NUMBER_OF_FDS FD_SETSIZE	/* Highest possible file descriptor */
+#define NUMBER_OF_FDS FD_SETSIZE        /* Highest possible file descriptor */
 #else
 #define NUMBER_OF_FDS 32
 #endif
@@ -45,8 +48,8 @@ int fd_wait_for_input(fd, timeout)
     int checkfds[CHECKLEN];
 
     if (fd < 0 || fd >= NUMBER_OF_FDS) {
-	fprintf(stderr, "Bad file descriptor argument: %d to fd_wait_for_input\n", fd);
-	fflush(stderr);
+        fprintf(stderr, "Bad file descriptor argument: %d to fd_wait_for_input\n", fd);
+        fflush(stderr);
     }
 
     for (i = 0; i < CHECKLEN; i++)
@@ -54,18 +57,18 @@ int fd_wait_for_input(fd, timeout)
     checkfds[fd / (8 * sizeof(int))] |= 1 << (fd % (8 * sizeof(int)));
 
     if (timeout) {
-	timer.tv_sec = timeout;
-	timer.tv_usec = 0;
-	i = select(32, checkfds, (int *)0, (int *)0, &timer);
+        timer.tv_sec = timeout;
+        timer.tv_usec = 0;
+        i = select(32, checkfds, (int *)0, (int *)0, &timer);
     } else
       i = select(32, checkfds, (int *)0, (int *)0, (struct timeval *)0);
 
     if (i < 0)
       /* error condition */
       if (errno == EINTR)
-	return (INTERRUPT);
+        return (INTERRUPT);
       else
-	return (ERROR);
+        return (ERROR);
     else if (i == 0)
       return (TIMEOUT);
     else

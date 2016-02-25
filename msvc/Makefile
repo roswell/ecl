@@ -10,8 +10,8 @@ srcdir	= ..\src
 
 SHORT_SITE_NAME   =
 LONG_SITE_NAME    =
-ECL_VERSION       = 16.0.0
-ECL_VERSION_NUMBER= 160000
+ECL_VERSION       = 16.1.2
+ECL_VERSION_NUMBER= 161002
 ARCHITECTURE      = PENTIUM4
 SOFTWARE_TYPE     = NT
 SOFTWARE_VERSION  = 5.0
@@ -297,6 +297,7 @@ cmp/load.lsp: $(srcdir)/cmp/load.lsp.in
 	$(CP) $(srcdir)\cmp\load.lsp.in cmp\load.lsp
 cmp/cmpdefs.lsp: $(srcdir)/cmp/cmpdefs.lsp Makefile
 	c\cut "@ECL_CC@" "$(CC)" \
+	    "@CC_IS_CXX@" "nil" \
 	    "@CFLAGS@" "$(CFLAGS)" \
 	    "@CFLAGS_OPTIMIZE@" "$(CFLAGS_OPTIMIZE)" \
 	    "@ECL_CFLAGS@" "" \

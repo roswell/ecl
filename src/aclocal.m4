@@ -253,148 +253,163 @@ clibs=''
 SONAME=''
 SONAME_LDFLAGS=''
 case "${host_os}" in
-	# libdir may have a dollar expression inside
-	linux*)
-		thehost='linux'
-		THREAD_CFLAGS='-D_THREAD_SAFE'
-		THREAD_LIBS='-lpthread'
-		SHARED_LDFLAGS="-shared ${LDFLAGS}"
-		BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
-		ECL_LDRPATH='-Wl,--rpath,~A'
-		clibs="-ldl"
-		# Maybe CFLAGS="-D_ISOC99_SOURCE ${CFLAGS}" ???
-		CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 ${CFLAGS}"
+        linux-androideabi)
+                thehost='android'
+                THREAD_CFLAGS='-D_THREAD_SAFE'
+#               THREAD_LIBS='-lpthread'
+                SHARED_LDFLAGS="-shared ${LDFLAGS}"
+                BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
+                ECL_LDRPATH='-Wl,--rpath,~A'
+                clibs="-ldl"
+                # Maybe CFLAGS="-D_ISOC99_SOURCE ${CFLAGS}" ???
+                CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DANDROID -DPLATFORM_ANDROID -DUSE_GET_STACKBASE_FOR_MAIN -DIGNORE_DYNAMIC_LOADING -DAO_REQUIRE_CAS ${CFLAGS}"
+                SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
+                SONAME_LDFLAGS="-Wl,-soname,SONAME"
+                ECL_ADD_FEATURE([android])
+                ;;
+
+        # libdir may have a dollar expression inside
+        linux*)
+                thehost='linux'
+                THREAD_CFLAGS='-D_THREAD_SAFE'
+                THREAD_LIBS='-lpthread'
+                SHARED_LDFLAGS="-shared ${LDFLAGS}"
+                BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
+                ECL_LDRPATH='-Wl,--rpath,~A'
+                clibs="-ldl"
+                # Maybe CFLAGS="-D_ISOC99_SOURCE ${CFLAGS}" ???
+                CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 ${CFLAGS}"
+                SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
+                SONAME_LDFLAGS="-Wl,-soname,SONAME"
+                ;;
+        gnu*)
+                thehost='gnu'
+                THREAD_CFLAGS='-D_THREAD_SAFE'
+                THREAD_LIBS='-lpthread'
+                SHARED_LDFLAGS="-shared ${LDFLAGS}"
+                BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
+                ECL_LDRPATH='-Wl,--rpath,~A'
+                clibs="-ldl"
+                CFLAGS="-D_GNU_SOURCE ${CFLAGS}"
+                SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
+                SONAME_LDFLAGS="-Wl,-soname,SONAME"
+                ;;
+        kfreebsd*-gnu)
+                thehost='kfreebsd'
+                THREAD_CFLAGS='-D_THREAD_SAFE'
+                THREAD_LIBS='-lpthread'
+                SHARED_LDFLAGS="-shared ${LDFLAGS}"
+                BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
+                ECL_LDRPATH='-Wl,--rpath,~A'
+                clibs="-ldl"
+                CFLAGS="-D_GNU_SOURCE ${CFLAGS}"
+                SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
+                SONAME_LDFLAGS="-Wl,-soname,SONAME"
+                ;;
+        dragonfly*)
+                thehost='dragonfly'
+                THREAD_LIBS='-lpthread'
+                SHARED_LDFLAGS="-shared ${LDFLAGS}"
+                BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
+                ECL_LDRPATH="-Wl,--rpath,~A"
+                clibs=""
+                SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
+                SONAME_LDFLAGS="-Wl,-soname,SONAME"
+                ;;
+        freebsd*)
+                thehost='freebsd'
+                THREAD_LIBS='-lpthread'
+                SHARED_LDFLAGS="-shared ${LDFLAGS}"
+                BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
+                ECL_LDRPATH="-Wl,--rpath,~A"
+                clibs=""
+                SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
+                SONAME_LDFLAGS="-Wl,-soname,SONAME"
+                ;;
+        netbsd*)
+                thehost='netbsd'
+                THREAD_LIBS='-lpthread'
+                SHARED_LDFLAGS="-shared ${LDFLAGS}"
+                BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
+                ECL_LDRPATH="-Wl,--rpath,~A"
+                clibs=""
+                SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
+                SONAME_LDFLAGS="-Wl,-soname,SONAME"
+                ;;
+        openbsd*)
+                thehost='openbsd'
+                THREAD_CFLAGS=''
+                THREAD_LIBS=''
+                SHARED_LDFLAGS="-shared ${LDFLAGS}"
+                BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
+                ECL_LDRPATH="-Wl,--rpath,~A"
+                clibs="-lpthread -lm"
+                SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
+                SONAME_LDFLAGS="-Wl,-soname,SONAME"
+                ;;
+        solaris*)
+                thehost='sun4sol2'
+                THREAD_LIBS='-lrt -lpthread'
+                SHARED_LDFLAGS="-dy -G ${LDFLAGS}"
+                BUNDLE_LDFLAGS="-dy -G ${LDFLAGS}"
+                ECL_LDRPATH='-Wl,-R,~A'
+                TCPLIBS='-lsocket -lnsl -lintl'
+                clibs='-ldl'
 		SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
 		SONAME_LDFLAGS="-Wl,-soname,SONAME"
-		;;
-	gnu*)
-		thehost='gnu'
-		THREAD_CFLAGS='-D_THREAD_SAFE'
-		THREAD_LIBS='-lpthread'
-		SHARED_LDFLAGS="-shared ${LDFLAGS}"
-		BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
-		ECL_LDRPATH='-Wl,--rpath,~A'
-		clibs="-ldl"
-		CFLAGS="-D_GNU_SOURCE ${CFLAGS}"
-		SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
-		SONAME_LDFLAGS="-Wl,-soname,SONAME"
-		;;
-	kfreebsd*-gnu)
-		thehost='kfreebsd'
-		THREAD_CFLAGS='-D_THREAD_SAFE'
-		THREAD_LIBS='-lpthread'
-		SHARED_LDFLAGS="-shared ${LDFLAGS}"
-		BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
-		ECL_LDRPATH='-Wl,--rpath,~A'
-		clibs="-ldl"
-		CFLAGS="-D_GNU_SOURCE ${CFLAGS}"
-		SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
-		SONAME_LDFLAGS="-Wl,-soname,SONAME"
-		;;
-	dragonfly*)
-		thehost='dragonfly'
-		THREAD_LIBS='-lpthread'
-		SHARED_LDFLAGS="-shared ${LDFLAGS}"
-		BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
-		ECL_LDRPATH="-Wl,--rpath,~A"
-		clibs=""
-		SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
-		SONAME_LDFLAGS="-Wl,-soname,SONAME"
-		;;
-	freebsd*)
-		thehost='freebsd'
-		THREAD_LIBS='-lpthread'
-		SHARED_LDFLAGS="-shared ${LDFLAGS}"
-		BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
-		ECL_LDRPATH="-Wl,--rpath,~A"
-		clibs=""
-		SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
-		SONAME_LDFLAGS="-Wl,-soname,SONAME"
-		;;
-	netbsd*)
-		thehost='netbsd'
-		THREAD_LIBS='-lpthread'
-		SHARED_LDFLAGS="-shared ${LDFLAGS}"
-		BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
-		ECL_LDRPATH="-Wl,--rpath,~A"
-		clibs=""
-		SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
-		SONAME_LDFLAGS="-Wl,-soname,SONAME"
-		;;
-	openbsd*)
-		thehost='openbsd'
-		THREAD_CFLAGS=''
-		THREAD_LIBS=''
-		SHARED_LDFLAGS="-shared ${LDFLAGS}"
-		BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
-		ECL_LDRPATH="-Wl,--rpath,~A"
-		clibs="-lpthread -lm"
-		SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
-		SONAME_LDFLAGS="-Wl,-soname,SONAME"
-		;;
-	solaris*)
-		thehost='sun4sol2'
-		THREAD_LIBS='-lrt -lpthread'
-		SHARED_LDFLAGS="-dy -G ${LDFLAGS}"
-		BUNDLE_LDFLAGS="-dy -G ${LDFLAGS}"
-		ECL_LDRPATH='-Wl,-R,~A'
-		TCPLIBS='-lsocket -lnsl -lintl'
-		clibs='-ldl'
-		# We should use C99 and _XOPEN_SOURCE=600, but Solaris 10
-		# ships with GCC 3.4.3 which does not support C99
                 if test "x$GCC" = "xyes"; then
-                  CFLAGS="${CFLAGS} -std=gnu99"
+                  CFLAGS="${CFLAGS} -std=gnu99 -D_XOPEN_SOURCE=600 -D__EXTENSIONS__"
                   SHARED_LDFLAGS="-shared $SHARED_LDFLAGS"
                   BUNDLE_LDFLAGS="-shared $BUNDLE_LDFLAGS"
                 fi
-		;;
-	cygwin*)
-		enable_threads='no'
-		thehost='cygwin'
-		shared='yes'
-		THREAD_CFLAGS='-D_THREAD_SAFE'
-		THREAD_LIBS='-lpthread'
-		SHARED_LDFLAGS="-shared ${LDFLAGS}"
-		BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
-		SHAREDPREFIX=''
-		SHAREDEXT='dll'
-		PICFLAG=''
-		if test "x$host_cpu" = "xx86_64" ; then
-		   # Our GMP library is too old and does not support
-		   # Windows64 calling conventions.
-		   with_c_gmp=yes
-		fi
-		;;
-	mingw*)
-		thehost='mingw32'
-		clibs=''
-		shared='yes'
+                ;;
+        cygwin*)
+                enable_threads='no'
+                thehost='cygwin'
+                shared='yes'
+                THREAD_CFLAGS='-D_THREAD_SAFE'
+                THREAD_LIBS='-lpthread'
+                SHARED_LDFLAGS="-shared ${LDFLAGS}"
+                BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
+                SHAREDPREFIX=''
+                SHAREDEXT='dll'
+                PICFLAG=''
+                if test "x$host_cpu" = "xx86_64" ; then
+                   # Our GMP library is too old and does not support
+                   # Windows64 calling conventions.
+                   with_c_gmp=yes
+                fi
+                ;;
+        mingw*)
+                thehost='mingw32'
+                clibs=''
+                shared='yes'
                 enable_threads='yes'
-		THREAD_CFLAGS='-D_THREAD_SAFE'
-		THREAD_GC_FLAGS='--enable-threads=win32'
-		SHARED_LDFLAGS=''
-		BUNDLE_LDFLAGS=''
-		SHAREDPREFIX=''
-		SHAREDEXT='dll'
-		PICFLAG=''
-		INSTALL_TARGET='flatinstall'
-		TCPLIBS='-lws2_32'
-		;;
-	darwin*)
-		thehost='darwin'
-		shared='yes'
-		SHAREDEXT='dylib'
-		PICFLAG='-fPIC -fno-common'
-		SHARED_LDFLAGS="-dynamiclib -flat_namespace -undefined suppress ${LDFLAGS}"
-		BUNDLE_LDFLAGS="-bundle ${LDFLAGS}"
-		ECL_LDRPATH=''
-		THREAD_CFLAGS='-D_THREAD_SAFE'
-		THREAD_LIBS='-lpthread'
-		# The GMP library has not yet been ported to Intel-OSX
-		case "`uname -m`" in
-		i386*|x86_64) gmp_build=none-apple-${host_os};;
-		*) ABI=32;;
-		esac
+                THREAD_CFLAGS='-D_THREAD_SAFE'
+                THREAD_GC_FLAGS='--enable-threads=win32'
+                SHARED_LDFLAGS=''
+                BUNDLE_LDFLAGS=''
+                SHAREDPREFIX=''
+                SHAREDEXT='dll'
+                PICFLAG=''
+                INSTALL_TARGET='flatinstall'
+                TCPLIBS='-lws2_32'
+                ;;
+        darwin*)
+                thehost='darwin'
+                shared='yes'
+                SHAREDEXT='dylib'
+                PICFLAG='-fPIC -fno-common'
+                SHARED_LDFLAGS="-dynamiclib -flat_namespace -undefined suppress ${LDFLAGS}"
+                BUNDLE_LDFLAGS="-bundle ${LDFLAGS}"
+                ECL_LDRPATH=''
+                THREAD_CFLAGS='-D_THREAD_SAFE'
+                THREAD_LIBS='-lpthread'
+                # The GMP library has not yet been ported to Intel-OSX
+                case "`uname -m`" in
+                i386*|x86_64) gmp_build=none-apple-${host_os};;
+                *) ABI=32;;
+                esac
                 if test "x$ABI" = "x64"; then
                   if echo "$CFLAGS" | grep -v '[ ]*-m64' >/dev/null ; then
                      CFLAGS="-m64 $CFLAGS"
@@ -409,29 +424,63 @@ case "${host_os}" in
                 fi
                 # The Boehm-Weiser GC library shipped with Fink does not work
                 # well with our signal handler.
-		# enable_boehm=included
+                # enable_boehm=included
                 if test `uname -r | cut -d '.' -f 1` -ge 11; then
                   ECL_GC_DIR=bdwgc
                 fi
-		SONAME="${SHAREDPREFIX}ecl.SOVERSION.${SHAREDEXT}"
-		SONAME_LDFLAGS="-Wl,-install_name,@libdir\@/SONAME -Wl,-compatibility_version,${PACKAGE_VERSION}"
-		;;
-	nsk*)
-		# HP Non-Stop platform
-		thehost='nonstop'
-		shared='yes'
-		PICFLAG='-call_shared'
-		THREAD_CFLAGS='-spthread'
-		SHARED_LDFLAGS="-shared ${LDFLAGS}"
-		BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
-		ECL_LDRPATH='-Wld=\"-rld_l ~A\"'
-		clibs="-Wld=-lrld"
-		;;
-	*)
-		thehost="$host_os"
-		shared="no"
-		;;
+                SONAME="${SHAREDPREFIX}ecl.SOVERSION.${SHAREDEXT}"
+                SONAME_LDFLAGS="-Wl,-install_name,@libdir\@/SONAME -Wl,-compatibility_version,${PACKAGE_VERSION}"
+                ;;
+        nsk*)
+                # HP Non-Stop platform
+                thehost='nonstop'
+                shared='yes'
+                PICFLAG='-call_shared'
+                THREAD_CFLAGS='-spthread'
+                SHARED_LDFLAGS="-shared ${LDFLAGS}"
+                BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
+                ECL_LDRPATH='-Wld=\"-rld_l ~A\"'
+                clibs="-Wld=-lrld"
+                ;;
+        *)
+                thehost="$host_os"
+                shared="no"
+                ;;
 esac
+
+case "${host}" in
+        *-nacl)
+                thehost='linux'
+                THREAD_CFLAGS='-D_THREAD_SAFE'
+                THREAD_LIBS='-lpthread'
+                SHARED_LDFLAGS="-shared ${LDFLAGS}"
+                BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
+                ECL_LDRPATH='-Wl,--rpath,~A'
+                CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 ${CFLAGS}"
+                SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
+                SONAME_LDFLAGS="-Wl,-soname,SONAME"
+                ECL_ADD_FEATURE([nacl])
+                ;;
+        *-pnacl)
+                thehost='linux'
+                THREAD_CFLAGS='-D_THREAD_SAFE'
+                THREAD_LIBS='-lpthread'
+                dnl SHARED_LDFLAGS="-shared ${LDFLAGS}"
+                dnl BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
+                dnl ECL_LDRPATH='-Wl,--rpath,~A'
+                CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 ${CFLAGS}"
+                dnl SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
+                dnl SONAME_LDFLAGS="-Wl,-soname,SONAME"
+                ECL_ADD_FEATURE([nacl])
+                ECL_ADD_FEATURE([pnacl])
+                ;;
+        i686*-android*)
+                THREAD_LIBS=''
+                CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DANDROID -DPLATFORM_ANDROID -DUSE_GET_STACKBASE_FOR_MAIN -DIGNORE_DYNAMIC_LOADING -DNO_GETCONTEXT -DHAVE_GETTIMEOFDAY -DHAVE_SIGPROCMASK ${CFLAGS}"
+                ECL_ADD_FEATURE([android])
+                ;;
+esac
+
 case "${host_cpu}" in
 	alpha*)
 		CFLAGS="${CFLAGS} -mieee";;
@@ -904,8 +953,9 @@ if test "x${enable_threads}" != "xno"; then
   if test "${enable_libatomic}" = included; then
     test -d atomic || mkdir atomic
     (destdir=`${PWDCMD}`; cd atomic && CC="${CC} ${PICFLAG}" \
-     $srcdir/${ECL_GC_DIR}/libatomic*/configure --disable-shared --prefix=${destdir} \
-	--infodir=${destdir}/doc --includedir=${destdir}/ecl --with-pic \
+     $srcdir/${ECL_GC_DIR}/libatomic*/configure --disable-shared \
+        --prefix=${destdir} infodir=${destdir}/doc \
+        --includedir=${destdir}/ecl --with-pic \
         --libdir=${destdir} --build=${build_alias} --host=${host_alias} \
         CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" CC="${CC} \
         ${PICFLAG}")
@@ -935,24 +985,26 @@ if test "${enable_boehm}" = auto -o "${enable_boehm}" = system; then
  dnl Try first with the prebuilt versions, if installed and accessible
  dnl
  system_boehm=yes
- AC_CHECK_LIB( [gc], [GC_get_thr_restart_signal],
-               [], [system_boehm="no"] )
  if test "${enable_threads}" = no; then
    AC_CHECK_LIB( [gc], [GC_malloc],
                  [], [system_boehm="no"] )
  else
+   AC_CHECK_LIB( [gc], [GC_get_thr_restart_signal],
+                 [], [system_boehm="no"] )
    AC_CHECK_LIB( [gc], [GC_register_my_thread],
                  [], [system_boehm="no"] )
  fi
  if test "${system_boehm}" = yes; then
    AC_CHECK_HEADER([gc.h],[ECL_BOEHM_GC_HEADER='gc.h'],[],[])
    if test -z "$ECL_BOEHM_GC_HEADER"; then
-     AC_CHECK_HEADER([gc/gc.h],[ECL_BOEHM_GC_HEADER='gc/gc.h'],[system_boehm=no],[])
+     AC_CHECK_HEADER([gc/gc.h],[ECL_BOEHM_GC_HEADER='gc/gc.h'],
+                     [system_boehm=no],[])
    fi
  fi
  if test "${system_boehm}" = "yes"; then
    AC_CHECK_LIB( [gc], [GC_set_start_callback],
-                 [AC_DEFINE([HAVE_GC_SET_START_CALLBACK], [], [HAVE_GC_SET_START_CALLBACK])], [] )
+                 [AC_DEFINE([HAVE_GC_SET_START_CALLBACK], [],
+                            [HAVE_GC_SET_START_CALLBACK])], [] )
  else
   AC_DEFINE([HAVE_GC_SET_START_CALLBACK], [], [HAVE_GC_SET_START_CALLBACK])
  fi
@@ -988,10 +1040,11 @@ if test "${enable_boehm}" = "included"; then
  if mkdir gc; then
    if (destdir=`${PWDCMD}`; cd gc; \
        $srcdir/${ECL_GC_DIR}/configure --disable-shared --prefix=${destdir} \
-	 --includedir=${destdir}/ecl/ --libdir=${destdir} --build=${build_alias} \
-	 --host=${host_alias} --enable-large-config \
-         CC="${CC} ${PICFLAG}" CFLAGS="$CFLAGS" \
-	 LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" \
+         --includedir=${destdir}/ecl/ --libdir=${destdir} \
+         --build=${build_alias} --host=${host_alias} --enable-large-config \
+         CC="${CC} ${PICFLAG}" \
+         CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" \
+         CPPFLAGS="$CPPFLAGS -I${destdir}/ecl" \
          ${boehm_configure_flags}); then
      ECL_BOEHM_GC_HEADER='ecl/gc/gc.h'
      SUBDIRS="${SUBDIRS} gc"

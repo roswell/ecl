@@ -1,3 +1,6 @@
+/* -*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*- */
+/* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
+
 /*
     config.h.in -- Template configuration file.
 */
@@ -13,7 +16,7 @@
     See file '../Copyright' for full details.
 */
 
-#if defined(_MSC_VER) || defined(__MINGW32__) || __WIN32__ || __WING64__
+#if defined(_MSC_VER) || defined(__MINGW32__) || __WIN32__ || __WIN64__
 #define ECL_MS_WINDOWS_HOST
 #endif
 
@@ -121,12 +124,13 @@
 /* We use hierarchical package names, like in Allegro CL                */
 #undef ECL_RELATIVE_PACKAGE_NAMES
 
-/* Use mprotect for fast interrupt dispatch                             */
+/* Use mprotect for fast interrupt dispatch				*/
+#ifndef NACL
 #undef ECL_USE_MPROTECT
+#endif
 #if defined(ECL_MS_WINDOWS_HOST)
 # define ECL_USE_GUARD_PAGE
 #endif
-
 /* Integer types                                                        */
 @ECL_STDINT_HEADER@
 #undef ecl_uint8_t
@@ -153,7 +157,7 @@
  */
 #define ECL_INT_BITS            @CL_INT_BITS@
 #define ECL_LONG_BITS           @CL_LONG_BITS@
-#define FIXNUM_BITS             @CL_FIXNUM_BITS@
+#define ECL_FIXNUM_BITS         @CL_FIXNUM_BITS@
 #define MOST_POSITIVE_FIXNUM    ((cl_fixnum)@CL_FIXNUM_MAX@)
 #define MOST_NEGATIVE_FIXNUM    ((cl_fixnum)@CL_FIXNUM_MIN@)
 #define MOST_POSITIVE_FIXNUM_VAL @CL_FIXNUM_MAX@
@@ -324,28 +328,36 @@ typedef unsigned char ecl_base_char;
 #undef HAVE_NANOSLEEP
 /* Float version if isnan()                                             */
 #undef HAVE_ISNANF
-/* float.h for epsilons, maximum real numbers, etc                      */
+/* float.h for epsilons, maximum real numbers, etc			*/
 #undef HAVE_FLOAT_H
-/* select()                                                             */
+/* select()								*/
+#ifndef NACL
 #undef HAVE_SELECT
+#endif
 #undef HAVE_SYS_SELECT_H
 #undef HAVE_SYS_IOCTL_H
-/* putenv() or setenv()                                                 */
+/* putenv() or setenv()							*/
 #undef HAVE_SETENV
 #undef HAVE_PUTENV
-/* times() and sys/times.h                                              */
+/* times() and sys/times.h						*/
+#ifndef NACL
 #undef HAVE_TIMES
-/* gettimeofday() and sys/time.h                                        */
+#endif
+/* gettimeofday() and sys/time.h					*/
 #undef HAVE_GETTIMEOFDAY
-/* getrusage() and sys/resource.h                                       */
+/* getrusage() and sys/resource.h					*/
+#ifndef NACL
 #undef HAVE_GETRUSAGE
-/* user home directory, user name, etc...                               */
+#endif
+/* user home directory, user name, etc...				*/
 #undef HAVE_PW_H
-/* symbolic links and checking their existence                          */
+/* symbolic links and checking their existence				*/
+#ifndef NACL
 #undef HAVE_LSTAT
-/* safe creation of temporary files                                     */
+#endif
+/* safe creation of temporary files					*/
 #undef HAVE_MKSTEMP
-/* timer for userland threads                                           */
+/* timer for userland threads						*/
 #undef HAVE_ALARM
 /* filesytem                                                            */
 #undef HAVE_DIRENT_H
@@ -353,11 +365,13 @@ typedef unsigned char ecl_base_char;
 #undef HAVE_DLFCN_H
 #undef HAVE_LINK_H
 #undef HAVE_MACH_O_DYLD_H
-/* POSIX signals                                                        */
+/* POSIX signals							*/
+#ifndef NACL
 #undef HAVE_SIGPROCMASK
-/* isatty() checks whether a file is connected to a                     */
+#endif
+/* isatty() checks whether a file is connected to a			*/
 #undef HAVE_ISATTY
-/* can manipulate floating point environment                            */
+/* can manipulate floating point environment				*/
 #undef HAVE_FENV_H
 /* can activate individual traps in floating point environment          */
 /* this flag has to be deactivated for the Itanium architecture, where  */

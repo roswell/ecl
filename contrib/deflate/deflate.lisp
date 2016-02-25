@@ -35,7 +35,7 @@
            #:inflate-stream
            #:inflate-zlib-stream #:parse-zlib-header #:parse-zlib-footer
            #:inflate-gzip-stream #:parse-gzip-header #:parse-gzip-footer
-	   #:gunzip))
+           #:gunzip))
 
 (cl:in-package "DEFLATE")
 
@@ -788,3 +788,5 @@ match."
                             :element-type '(unsigned-byte 8))
       (inflate-gzip-stream input output)))
   (probe-file output-file))
+
+(provide '#:deflate)

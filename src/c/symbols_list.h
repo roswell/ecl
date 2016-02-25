@@ -1,4 +1,6 @@
-/* -*- mode: c; c-basic-offset: 8 -*- */
+/* -*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*- */
+/* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
+
 #ifdef ECL_CMU_FORMAT
 # define ECL_NAME_PPRINT(x) ECL_NAME(x)
 #else
@@ -1359,7 +1361,9 @@ cl_symbols[] = {
 {KEY_ "GENSYM", KEYWORD, NULL, -1, OBJNULL},
 {KEY_ "HOST", KEYWORD, NULL, -1, OBJNULL},
 {KEY_ "IF-DOES-NOT-EXIST", KEYWORD, NULL, -1, OBJNULL},
+{KEY_ "IF-ERROR-EXISTS", KEYWORD, NULL, -1, OBJNULL},
 {KEY_ "IF-EXISTS", KEYWORD, NULL, -1, OBJNULL},
+{KEY_ "IF-INPUT-DOES-NOT-EXIST", KEYWORD, NULL, -1, OBJNULL},
 {KEY_ "IF-OUTPUT-EXISTS", KEYWORD, NULL, -1, OBJNULL},
 {KEY_ "IGNORE", KEYWORD, NULL, -1, OBJNULL},
 {KEY_ "IMPORT-FROM", KEYWORD, NULL, -1, OBJNULL},
@@ -1564,6 +1568,7 @@ cl_symbols[] = {
 {MP_ "INTERRUPT-PROCESS", MP_ORDINARY, IF_MP(mp_interrupt_process), 2, OBJNULL},
 {MP_ "+LOAD-COMPILE-LOCK+", MP_CONSTANT, NULL, -1, OBJNULL},
 {MP_ "WITH-LOCK", MP_CONSTANT, NULL, -1, OBJNULL},
+{MP_ "WITH-RWLOCK", MP_CONSTANT, NULL, -1, OBJNULL},
 {MP_ "BLOCK-SIGNALS", MP_ORDINARY, IF_MP(mp_block_signals), 0, OBJNULL},
 {MP_ "RESTORE-SIGNALS", MP_ORDINARY, IF_MP(mp_restore_signals), 1, OBJNULL},
 {MP_ "PROCESS-SUSPEND", MP_ORDINARY, IF_MP(mp_process_suspend), 1, OBJNULL},
@@ -1584,6 +1589,7 @@ cl_symbols[] = {
 {MP_ "MAKE-SEMAPHORE", MP_ORDINARY, IF_MP(mp_make_semaphore), -1, OBJNULL},
 {MP_ "SIGNAL-SEMAPHORE", MP_ORDINARY, IF_MP(mp_signal_semaphore), -1, OBJNULL},
 {MP_ "WAIT-ON-SEMAPHORE", MP_ORDINARY, IF_MP(mp_wait_on_semaphore), 1, OBJNULL},
+{MP_ "TRY-GET-SEMAPHORE", MP_ORDINARY, IF_MP(mp_try_get_semaphore), 1, OBJNULL},
 {MP_ "SEMAPHORE-COUNT", MP_ORDINARY, IF_MP(mp_semaphore_count), 1, OBJNULL},
 {MP_ "SEMAPHORE-NAME", MP_ORDINARY, IF_MP(mp_semaphore_name), 1, OBJNULL},
 {MP_ "SEMAPHORE-WAIT-COUNT", MP_ORDINARY, IF_MP(mp_semaphore_wait_count), 1, OBJNULL},
@@ -1607,7 +1613,9 @@ cl_symbols[] = {
 {MP_ "MAILBOX-COUNT", MP_ORDINARY, IF_MP(mp_mailbox_count), 1, OBJNULL},
 {MP_ "MAILBOX-EMPTY-P", MP_ORDINARY, IF_MP(mp_mailbox_empty_p), 1, OBJNULL},
 {MP_ "MAILBOX-READ", MP_ORDINARY, IF_MP(mp_mailbox_read), 1, OBJNULL},
+{MP_ "MAILBOX-TRY-READ", MP_ORDINARY, IF_MP(mp_mailbox_try_read), 1, OBJNULL},
 {MP_ "MAILBOX-SEND", MP_ORDINARY, IF_MP(mp_mailbox_send), 2, OBJNULL},
+{MP_ "MAILBOX-TRY-SEND", MP_ORDINARY, IF_MP(mp_mailbox_try_send), 2, OBJNULL},
 /* #endif defined(ECL_THREADS) */
 
 {SYS_ "WHILE", SI_ORDINARY, NULL, -1, OBJNULL},
@@ -1725,7 +1733,7 @@ cl_symbols[] = {
 {CLOS_ "DOCSTRING", CLOS_ORDINARY, NULL, -1, OBJNULL},
 {CLOS_ "SAFE-INSTANCE-REF", CLOS_ORDINARY, clos_safe_instance_ref, 2, OBJNULL},
 
-{SYS_ "CL-FIXNUM-BITS", SI_CONSTANT, NULL, -1, ecl_make_fixnum(FIXNUM_BITS)},
+{SYS_ "CL-FIXNUM-BITS", SI_CONSTANT, NULL, -1, ecl_make_fixnum(ECL_FIXNUM_BITS)},
 {EXT_ "CL-FIXNUM", EXT_ORDINARY, NULL, -1, NULL},
 {EXT_ "CL-INDEX", EXT_ORDINARY, NULL, -1, NULL},
 
@@ -1932,6 +1940,7 @@ cl_symbols[] = {
 {SYS_ "*ALLOW-WITH-INTERRUPTS*", SI_SPECIAL, NULL, -1, ECL_T},
 
 {EXT_ "WITH-UNIQUE-NAMES", EXT_ORDINARY, NULL, -1, OBJNULL},
+{EXT_ "WITH-CLEAN-SYMBOLS", EXT_ORDINARY, NULL, -1, OBJNULL},
 
 {SYS_ "HANDLE-SIGNAL", SI_ORDINARY, si_handle_signal, 2, OBJNULL},
 
@@ -2205,7 +2214,7 @@ cl_symbols[] = {
 
 {SYS_ "REPORT-FUNCTION", SI_ORDINARY, NULL, -1, OBJNULL},
 
-{SYS_ "DO-DEFSETF", SI_ORDINARY, ECL_NAME(si_do_defsetf), 2, OBJNULL},
+{SYS_ "DO-DEFSETF", SI_ORDINARY, ECL_NAME(si_do_defsetf), -1, OBJNULL},
 {SYS_ "DO-DEFINE-SETF-METHOD", SI_ORDINARY, ECL_NAME(si_do_define_setf_method), 2, OBJNULL},
 
 {SYS_ "SETF-DEFINITION", SI_ORDINARY, ECL_NAME(si_setf_definition), 2, OBJNULL},

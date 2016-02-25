@@ -1,4 +1,6 @@
-/* -*- mode: c; c-basic-offset: 8 -*- */
+/* -*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*- */
+/* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
+
 /*
     ffi.c -- User defined data types and foreign functions interface.
 */
@@ -280,10 +282,9 @@ cl_object
 si_make_foreign_data_from_array(cl_object array)
 {
         cl_object tag;
-        if (ecl_unlikely(ecl_t_of(array) != t_array && ecl_t_of(array) != t_vector)) {
-                FEwrong_type_only_arg(@[si::make-foreign-data-from-array], array,
-                                      @[array]);
-        }
+        if (!ECL_ARRAYP (array))
+                FEwrong_type_only_arg(@[si::make-foreign-data-from-array],
+                                      array, @[array]);
         tag = ecl_aet_to_ffi_table[array->array.elttype];
         if (ecl_unlikely(Null(tag))) {
                 FEerror("Cannot make foreign object from array "

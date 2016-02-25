@@ -1,4 +1,6 @@
-/* -*- mode: c; c-basic-offset: 8 -*- */
+/* -*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*- */
+/* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
+
 /*
     alloc_2.c -- Memory allocation based on the Boehmn GC.
 */
@@ -70,7 +72,7 @@ extern void GC_init_explicit_typing(void);
  **********************************************************/
 
 void
-_ecl_set_max_heap_size(cl_index new_size)
+_ecl_set_max_heap_size(size_t new_size)
 {
         const cl_env_ptr the_env = ecl_process_env();
         ecl_disable_interrupts_env(the_env);

@@ -1,4 +1,6 @@
-/* -*- mode: c; c-basic-offset: 8 -*- */
+/* -*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*- */
+/* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
+
 /*
     internal.h -- Structures and functions that are not meant for the end user
 */
@@ -58,7 +60,7 @@ extern void _ecl_dealloc_env(cl_env_ptr);
 #ifdef GBC_BOEHM
 #define ECL_COMPACT_OBJECT_EXTRA(x) ((void*)((x)->array.displaced))
 #endif
-extern void _ecl_set_max_heap_size(cl_index new_size);
+extern void _ecl_set_max_heap_size(size_t new_size);
 extern cl_object ecl_alloc_bytecodes(cl_index data_size, cl_index code_size);
 extern cl_index ecl_object_byte_size(cl_type t);
 
@@ -600,6 +602,18 @@ extern cl_object si_wait_for_all_processes _ECL_ARGS((cl_narg narg, ...));
 #endif
 #ifndef HAVE_LDEXPF
 # define ldexpf(x,y) ldexp((float)x,y)
+#endif
+
+/*
+ * Fake INFINITY and NAN defined in ISO C99 (portably)
+ */
+
+#ifndef INFINITY
+# define INFINITY (1.0/0.0)
+#endif
+
+#ifndef NAN
+# define NAN (0.0/0.0)
 #endif
 
 #ifdef __cplusplus

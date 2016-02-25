@@ -1,4 +1,6 @@
-/* -*- mode: c; c-basic-offset: 8 -*- */
+/* -*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*- */
+/* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
+
 /*
     unixsys.s  -- Unix shell interface.
 */
@@ -45,7 +47,12 @@
 cl_object
 si_getpid(void)
 {
+#if defined(NACL)
+        FElibc_error("si_getpid not implemented",1);
+        @(return Cnil)
+#else
         @(return ecl_make_fixnum(getpid()))
+#endif
 }
 
 cl_object
@@ -64,6 +71,10 @@ ecl_def_ct_base_string(fake_out_name, "PIPE-WRITE-ENDPOINT", 19, static, const);
 cl_object
 si_make_pipe()
 {
+#if defined(NACL)
+        FElibc_error("si_make_pipe not implemented",1);
+        @(return Cnil)
+#else
         cl_object output;
         int fds[2], ret;
 #if defined(ECL_MS_WINDOWS_HOST)
@@ -82,6 +93,7 @@ si_make_pipe()
                 output = cl_make_two_way_stream(in, out);
         }
         @(return output)
+#endif
 }
 
 static cl_object
@@ -235,7 +247,10 @@ static cl_object
 ecl_waitpid(cl_object pid, cl_object wait)
 {
         cl_object status, code;
-#if defined(ECL_MS_WINDOWS_HOST)
+#if defined(NACL)
+        FElibc_error("ecl_waitpid not implemented",1);
+        @(return Cnil)
+#elif defined(ECL_MS_WINDOWS_HOST)
         cl_env_ptr the_env = ecl_process_env();
         HANDLE *hProcess = ecl_foreign_data_pointer_safe(pid);
         DWORD exitcode;
@@ -354,10 +369,10 @@ make_windows_handle(HANDLE h)
                  * here: status is updated _after_ code, and hence we
                  * check it _before_ code. */
                 do {
-                        status = external_process_status(process);
-                        code = external_process_code(process);
                         ecl_musleep(0.0, 1);
+                        status = external_process_status(process);
                 } while (status == @':running');
+                code = external_process_code(process);
         } else {
                 status = ecl_waitpid(pid, wait);
                 code = ecl_nth_value(the_env, 1);
@@ -647,7 +662,7 @@ create_descriptor(cl_object stream, cl_object direction,
         if (child_stdout) CloseHandle(child_stdout);
         if (child_stderr) CloseHandle(child_stderr);
 }
-#else /* mingw */
+#elif !defined(NACL) /* mingw */
 {
         int child_stdin, child_stdout, child_stderr;
         int pipe_fd[2];
@@ -727,6 +742,11 @@ create_descriptor(cl_object stream, cl_object direction,
         close(child_stdin);
         close(child_stdout);
         close(child_stderr);
+}
+#else
+{
+                FElibc_error("ext::run-program not implemented",1);
+                @(return Cnil)
 }
 #endif /* mingw */
         if (Null(pid)) {

@@ -1,4 +1,6 @@
-/* -*- mode: c; c-basic-offset: 8 -*- */
+/* -*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*- */
+/* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
+
 /*
     ecl-cmp.h  -- Include file for compiled code.
 */
@@ -19,6 +21,11 @@
  * defined */
 #define _WINSOCKAPI_
 #endif /* __CYGWIN__ */
+/* Disable a couple of clang's more annoying diagnostics */
+#pragma clang diagnostic ignored "-Wreturn-type"
+#pragma clang diagnostic ignored "-Wunused-value"
+#pragma clang diagnostic ignored "-Wparentheses-equality"
+
 #include <ecl/ecl.h>
 #include <math.h> /* for inline mathematics */
 #include <ecl/ecl-inl.h>

@@ -1,7 +1,10 @@
-;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: CLOS -*-
+;;;; -*- Mode: Lisp; Syntax: Common-Lisp; indent-tabs-mode: nil; Package: CLOS -*-
+;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
+
 ;;;;
 ;;;;  Copyright (c) 1992, Giuseppe Attardi.
 ;;;;  Copyright (c) 2001, Juan Jose Garcia Ripoll.
+;;;;  Copyright (c) 2015, Daniel Kochmański
 ;;;;
 ;;;;    This program is free software; you can redistribute it and/or
 ;;;;    modify it under the terms of the GNU Library General Public
@@ -12,8 +15,8 @@
 
 (in-package "CLOS")
 
-;;; ----------------------------------------------------------------------
-;;;                                                                  slots
+;;; ---------------------------------------------------------------------
+;;;                                                                 slots
 
 #|
 (defclass effective-slot-definition (slot-definition))
@@ -22,9 +25,11 @@
 
 (defclass standard-slot-definition (slot-definition))
 
-(defclass standard-direct-slot-definition (standard-slot-definition direct-slot-definition))
+(defclass standard-direct-slot-definition
+    (standard-slot-definition direct-slot-definition))
 
-(defclass standard-effective-slot-definition (standard-slot-definition direct-slot-definition))
+(defclass standard-effective-slot-definition
+    (standard-slot-definition direct-slot-definition))
 |#
 
 (defmethod reader-method-class ((class std-class)
@@ -49,7 +54,7 @@
                   'standard-optimized-writer-method
                   'standard-reader-method)))
 
-;;; ----------------------------------------------------------------------
+;;; ---------------------------------------------------------------------
 ;;; Fixup
 
 (defun register-method-with-specializers (method)
@@ -63,7 +68,8 @@
          (standard-method-class (find-class 'standard-method)))
     (when (eq 'T (class-id (si:instance-class gfun)))
       ;; complete the generic function object
-      (si:instance-class-set gfun (find-class 'STANDARD-GENERIC-FUNCTION))
+      (si:instance-class-set gfun
+                             (find-class 'STANDARD-GENERIC-FUNCTION))
       (si::instance-sig-set gfun)
       (setf (slot-value gfun 'method-class) standard-method-class)
       (setf (slot-value gfun 'docstring) nil)
@@ -75,7 +81,9 @@
                                 (cond ((null old-class)
                                        (find-class 'standard-method))
                                       ((symbolp old-class)
-                                       (find-class (truly-the symbol old-class)))
+                                       (find-class (truly-the
+                                                    symbol
+                                                    old-class)))
                                       (t
                                        old-class))))
       (si::instance-sig-set gfun)
@@ -84,12 +92,13 @@
     ))
 
 
-;;; ----------------------------------------------------------------------
-;;;                                                              redefined
+;;; ---------------------------------------------------------------------
+;;;                                                             redefined
 
 (defun method-p (method) (typep method 'METHOD))
 
-(defun make-method (method-class qualifiers specializers arglist function options)
+(defun make-method (method-class qualifiers specializers arglist
+                    function options)
   (apply #'make-instance
          method-class
          :generic-function nil
@@ -131,17 +140,18 @@
   ;; during boot it's a structure accessor
   (declare (notinline method-qualifiers remove-method))
   ;;
-  ;; 1) The method must not be already installed in another generic function.
+  ;; 1) The method must not be already installed in another generic
+  ;; function.
   ;;
   (let ((other-gf (method-generic-function method)))
     (unless (or (null other-gf) (eq other-gf gf))
       (error "The method ~A belongs to the generic function ~A ~
 and cannot be added to ~A." method other-gf gf)))
   ;;
-  ;; 2) The method and the generic function should have congruent lambda
-  ;;    lists. That is, it should accept the same number of required and
-  ;;    optional arguments, and only accept keyword arguments when the generic
-  ;;    function does.
+  ;; 2) The method and the generic function should have congruent
+  ;;    lambda lists. That is, it should accept the same number of
+  ;;    required and optional arguments, and only accept keyword
+  ;;    arguments when the generic function does.
   ;;
   (let ((new-lambda-list (method-lambda-list method)))
     (if (slot-boundp gf 'lambda-list)
@@ -167,15 +177,16 @@ their lambda lists ~A and ~A are not congruent."
   ;;  i) Adding it to the list of methods
   (push method (generic-function-methods gf))
   (setf (method-generic-function method) gf)
-  ;;  ii) Updating the specializers list of the generic function. Notice that
-  ;;  we should call add-direct-method for each specializer but specializer
-  ;;  objects are not yet implemented
+  ;;  ii) Updating the specializers list of the generic
+  ;;  function. Notice that we should call add-direct-method for each
+  ;;  specializer but specializer objects are not yet implemented
   #+(or)
   (dolist (spec (method-specializers method))
     (add-direct-method spec method))
-  ;;  iii) Computing a new discriminating function... Well, since the core
-  ;;  ECL does not need the discriminating function because we always use
-  ;;  the same one, we just update the spec-how list of the generic function.
+  ;;  iii) Computing a new discriminating function... Well, since the
+  ;;  core ECL does not need the discriminating function because we
+  ;;  always use the same one, we just update the spec-how list of the
+  ;;  generic function.
   (compute-g-f-spec-list gf)
   (set-generic-function-dispatch gf)
   ;;  iv) Update dependents.
@@ -188,7 +199,8 @@ their lambda lists ~A and ~A are not congruent."
   (let* ((aux-name 'temp-method)
          (method (eval `(defmethod ,aux-name ,signature)))
          (generic-function (fdefinition aux-name)))
-    (setf (method-function method) (wrapped-method-function (fdefinition name)))
+    (setf (method-function method)
+          (wrapped-method-function (fdefinition name)))
     (setf (fdefinition name) generic-function)
     (setf (generic-function-name generic-function) name)
     (fmakunbound aux-name)))
@@ -205,23 +217,29 @@ their lambda lists ~A and ~A are not congruent."
   (update-dependents gf (list 'remove-method method))
   gf)
 
-(function-to-method 'add-method '((gf standard-generic-function)
-                                  (method standard-method)))
-(function-to-method 'remove-method '((gf standard-generic-function)
-                                     (method standard-method)))
-(function-to-method 'find-method '((gf standard-generic-function)
-                                   qualifiers specializers &optional error))
+(function-to-method 'add-method
+                    '((gf standard-generic-function)
+                      (method standard-method)))
+(function-to-method 'remove-method
+                    '((gf standard-generic-function)
+                      (method standard-method)))
+(function-to-method 'find-method
+                    '((gf standard-generic-function)
+                      qualifiers specializers &optional error))
 
 ;;; COMPUTE-APPLICABLE-METHODS is used by the core in various places,
-;;; including instance initialization. This means we cannot just redefine it.
-;;; Instead, we create an auxiliary function and move definitions from one to
-;;; the other.
+;;; including instance initialization. This means we cannot just
+;;; redefine it.
+;;; 
+;;; Instead, we create an auxiliary function and move definitions from
+;;; one to the other.
 #+(or)
 (defgeneric aux-compute-applicable-methods (gf args)
   (:method ((gf standard-generic-function) args)
     (std-compute-applicable-methods gf args)))
 
-(defmethod aux-compute-applicable-methods ((gf standard-generic-function) args)
+(defmethod aux-compute-applicable-methods
+    ((gf standard-generic-function) args)
   (std-compute-applicable-methods gf args))
 (let ((aux #'aux-compute-applicable-methods))
   (setf (generic-function-name aux) 'compute-applicable-methods
@@ -232,9 +250,11 @@ their lambda lists ~A and ~A are not congruent."
   (std-compute-applicable-methods-using-classes gf classes))
 
 (function-to-method 'compute-effective-method
-  '((gf standard-generic-function) method-combination applicable-methods))
+                    '((gf standard-generic-function)
+                      method-combination
+                      applicable-methods))
 
-;;; ----------------------------------------------------------------------
+;;; ---------------------------------------------------------------------
 ;;; Error messages
 
 (defmethod no-applicable-method (gf &rest args)
@@ -269,7 +289,7 @@ their lambda lists ~A and ~A are not congruent."
   new-value)
 )
 
-;;; ----------------------------------------------------------------------
+;;; ---------------------------------------------------------------------
 ;;; DEPENDENT MAINTENANCE PROTOCOL
 ;;;
 
@@ -305,9 +325,11 @@ their lambda lists ~A and ~A are not congruent."
 
 (defun recursively-update-classes (a-class)
   (slot-makunbound a-class 'valid-initargs)
-  (mapc #'recursively-update-classes (class-direct-subclasses a-class)))
+  (mapc #'recursively-update-classes
+        (class-direct-subclasses a-class)))
 
-(defmethod update-dependent ((object generic-function) (dep initargs-updater)
+(defmethod update-dependent ((object generic-function)
+                             (dep initargs-updater)
                              &rest initargs)
   (declare (ignore dep initargs object))
   (recursively-update-classes +the-class+))
@@ -318,14 +340,20 @@ their lambda lists ~A and ~A are not congruent."
   (add-dependent #'allocate-instance x))
 
 (function-to-method 'make-method-lambda
-  '((gf standard-generic-function) (method standard-method) lambda-form environment))
+                    '((gf standard-generic-function)
+                      (method standard-method)
+                      lambda-form
+                      environment))
+
 (function-to-method 'compute-discriminating-function
-  '((gf standard-generic-function)))
+                    '((gf standard-generic-function)))
 (function-to-method 'generic-function-method-class
-  '((gf standard-generic-function)))
+                    '((gf standard-generic-function)))
 
 (function-to-method 'find-method-combination
-  '((gf standard-generic-function) method-combination-type-name method-combination-options))
+                    '((gf standard-generic-function)
+                      method-combination-type-name
+                      method-combination-options))
 
 (function-to-method '(setf generic-function-name)
-  '((name t) (gf generic-function)))
+                    '((name t) (gf generic-function)))

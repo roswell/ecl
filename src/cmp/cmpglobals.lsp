@@ -1,4 +1,6 @@
-;;;;  -*- Mode: Lisp; Syntax: Common-Lisp; Package: C -*-
+;;;; -*- Mode: Lisp; Syntax: Common-Lisp; indent-tabs-mode: nil; Package: C -*-
+;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
+
 ;;;;
 ;;;;  Copyright (c) 2010, Juan Jose Garcia-Ripoll
 ;;;;
@@ -63,9 +65,6 @@ running the compiler. It may be updated by running ")
 (defvar *suppress-compiler-messages*
   #+ecl-min 'compiler-debug-note #-ecl-min 'compiler-note
   "A type denoting which compiler messages and conditions are _not_ displayed.")
-
-(defvar *suppress-compiler-notes* nil) ; Deprecated
-(defvar *suppress-compiler-warnings* nil) ; Deprecated
 
 (defvar *compiler-break-enable* nil)
 
