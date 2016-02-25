@@ -3,8 +3,8 @@
 ; HM NIS Edit Wizard helper defines
 !define PRODUCT_NAME "ECL"
 !define PRODUCT_VERSION "@ECLVERSION@"
-!define PRODUCT_PUBLISHER "Juan Jose Garcia Ripoll"
-!define PRODUCT_WEB_SITE "http://ecls.sourceforge.net"
+!define PRODUCT_PUBLISHER "Daniel Kochmanski"
+!define PRODUCT_WEB_SITE "https://common-lisp.net/project/ecl"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\ecl.exe"
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
@@ -20,8 +20,6 @@
 
 ; Welcome page
 !insertmacro MUI_PAGE_WELCOME
-; License page
-!insertmacro MUI_PAGE_LICENSE "${ECLDIR}\doc\Copyright"
 ; Directory page
 !insertmacro MUI_PAGE_DIRECTORY
 ; Instfiles page
