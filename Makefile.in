@@ -131,9 +131,6 @@ build/doc/index.html:
 
 source-dist: $(TAR_DIR).tgz
 
-rpmdir=$(shell rpm --showrc | grep '^-[0-9]*:.*[^{]_topdir' | sed 's,^.*topdir[ 	]*\(.*\)[ 	]*,\1,')
-rpmbuild=$(shell if [ -z `which rpmbuild` ]; then echo "rpm"; else echo "rpmbuild"; fi)
-
 $(TAR_DIR).tgz:
 	git archive --format=tar.gz --prefix=$(TAR_DIR)/ HEAD > $@
 
