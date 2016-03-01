@@ -48,7 +48,7 @@ clx.ps: clx.dvi
 
 install: all
 	IF NOT EXIST $(docdir) $(MKDIR) $(docdir)
-	for %i in (Copyright LGPL) do $(CP) $(top_srcdir)\..\%i $(docdir)
+	for %i in (LICENSE LGPL) do $(CP) $(top_srcdir)\..\%i $(docdir)
 	for %i in ($(HTML_FILES)) do $(CP) %i $(docdir)
 	IF NOT EXIST $(docdir)\ecldev $(MKDIR) $(docdir)\ecldev
 	for %i in (ecldev\*) do $(CP) %i $(docdir)\ecldev
@@ -58,7 +58,7 @@ install: all
 	for %i in (clx\*) do $(CP) %i $(docdir)\clx
 flatinstall: all
 	IF NOT EXIST $(docdir) $(MKDIR) $(docdir)
-	for %i in (Copyright LGPL) do $(CP) $(top_srcdir)\..\%i $(docdir)
+	for %i in (LICENSE LGPL) do $(CP) $(top_srcdir)\..\%i $(docdir)
 	for %i in ($(HTML_FILES)) do $(CP) %i $(docdir)
 	IF NOT EXIST $(docdir)\ecldev $(MKDIR) $(docdir)\ecldev
 	for %i in (ecldev\*) do $(CP) %i $(docdir)\ecldev
@@ -126,10 +126,10 @@ benchmark.html: $(srcdir)/benchmark.in.html ../gabriel/BENCHMARK head2
 ../gabriel/BENCHMARK:
 	if not exist ..\gabriel $(MKDIR) ..\gabriel
 	echo No benchmarks available > ..\gabriel\BENCHMARK
-license.html: $(top_srcdir)/../Copyright head2
+license.html: $(top_srcdir)/../LICENSE head2
 	type head2 > html_tmp
 	echo "<pre>" >> html_tmp
-	type $(top_srcdir)\..\Copyright >> html_tmp
+	type $(top_srcdir)\..\LICENSE >> html_tmp
 	echo "</pre>" >> html_tmp
 	type $(srcdir)\end >> html_tmp
 	$(FILTER) < html_tmp > $@

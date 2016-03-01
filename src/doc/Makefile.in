@@ -52,7 +52,7 @@ install: all
 	  fi; \
 	done
 	$(mkinstalldirs) $(DESTDIR)$(docdir)
-	for i in Copyright LGPL; do \
+	for i in LICENSE LGPL; do \
 	  $(INSTALL_DATA) $(top_srcdir)/../$$i $(DESTDIR)$(docdir); \
 	done
 	$(mkinstalldirs) $(DESTDIR)$(mandir)/man$(manext)
@@ -73,7 +73,7 @@ flatinstall: all $(HTML_FILES)
 	  $(mkinstalldirs) $(DESTDIR)$(docdir)/ecldev; \
 	  for i in ecldev/*; do $(INSTALL_DATA) $$i $(DESTDIR)$(docdir)/ecldev/; done; \
 	fi
-	for i in Copyright LGPL; do \
+	for i in LICENSE LGPL; do \
 	  $(INSTALL_DATA) $(top_srcdir)/../$$i $(DESTDIR)$(docdir); \
 	done
 	for i in *.html; do $(INSTALL_DATA) $$i $(DESTDIR)$(docdir)/; done

@@ -203,7 +203,7 @@ install:
 	    *) $(INSTALL_DATA) $$i $(DESTDIR)$(ecldir);; \
 	  esac \
 	done
-	for i in Copyright LGPL; do \
+	for i in LICENSE LGPL; do \
 	  $(INSTALL_DATA) $(top_srcdir)/../$$i $(DESTDIR)$(ecldir); \
 	done
 	$(mkinstalldirs) $(DESTDIR)$(mandir)/man$(manext)
@@ -217,7 +217,7 @@ flatinstall: build-stamp
 uninstall:
 	for i in $(TARGETS) ecl-config; do $(RM) $(DESTDIR)$(bindir)/$$i; done
 	$(RM) -r $(DESTDIR)$(includedir)/ecl $(DESTDIR)$(ecldir)
-	for i in $(LSP_LIBRARIES) $(LIBRARIES) Copyright LGPL; do \
+	for i in $(LSP_LIBRARIES) $(LIBRARIES) LICENSE LGPL; do \
 	  $(RM) $(DESTDIR)$(libdir)/$$i || : ; \
 	done
 	$(RM) -f $(DESTDIR)$(mandir)/man$(manext)/ecl.$(manext)

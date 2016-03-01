@@ -394,7 +394,7 @@ install:
 	for /f %i in ('type MODULES') do $(CP) %i "$(libdir)"
 	for %i in (ecl-static.lib) do IF EXIST %i $(CP) %i "$(libdir)"
 	IF NOT EXIST "$(docdir)" $(MKDIR) "$(docdir)"
-	for %i in (..\Copyright ..\LGPL ..\README.1st ..\CHANGELOG) do $(CP) %i "$(docdir)"
+	for %i in (..\LICENSE ..\LGPL ..\README.md ..\CHANGELOG) do $(CP) %i "$(docdir)"
 !if "$(ECL_UNICODE)" != ""
 	IF NOT EXIST "$(libdir)\encodings" $(MKDIR) "$(libdir)\encodings"
 	$(CP) encodings\*.* "$(libdir)\encodings"
