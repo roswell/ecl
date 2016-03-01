@@ -80,8 +80,13 @@
     a little piece of assembly code does the job of translating the lisp data
     into foreign objects, storing the arguments in the stack and in CPU
     registers, calling the function and converting back the output of the
-    function to lisp.</para></listitem>
+    function to lisp.</para>
+
+    <para>&ECL; for this purpose utilizes the library "A Portable Foreign
+    Function Interface Library" commonly known as <ulink
+    url="https://sourceware.org/libffi/">libffi</ulink>.</para></listitem>
    </varlistentry>
+   <!-- XXX: describe also DLOPEN interface, it's the 3rd option (!) -->
   </variablelist>
   </para>
 
@@ -103,46 +108,19 @@
 
   <para>On the other hand, the dynamic approach allows us to choose the
   libraries we load at any time, look for the functions and invoke them even
-  from the toplevel, but it relies on unportable techniques and requires from
-  us, the developers of &ECL;, to know very well both the assembly code of the
-  machine &ECL; runs on and the calling conventions of that particular
-  operating system.</para>
+  from the toplevel, but it relies on unportable techniques and requires the
+  developers to know very well both the assembly code of the machine the code
+  runs on and the calling conventions of that particular operating system. For
+  these reasons &ECL; doesn't maintain it's own implementation of the DFFI but
+  rather relies on the third party library.</para>
 
   <para>&ECL; currently supports the static method on all platforms, and the
-  dynamical one a few of the most popular ones, shown in <xref
-  linkend="table.dffi"/>. You can test if your copy of &ECL; was built with
-  DFFI by inspecting whether the symbol <symbol>:DFFI</symbol> is present in
-  the list from variable <symbol>*FEATURES*</symbol>.</para>
+  dynamical one a wide range of the most popular ones, shown in <ulink
+  url="https://sourceware.org/libffi/">libffi</ulink>. You can test if your
+  copy of &ECL; was built with DFFI by inspecting whether the symbol
+  <symbol>:DFFI</symbol> is present in the list from variable
+  <symbol>*FEATURES*</symbol>.</para>
 
-  <table xml:id="table.dffi">
-   <title>DFFI support</title>
-   <tgroup cols="3">
-    <thead>
-     <row>
-      <entry>Architecture</entry>
-      <entry>Support</entry>
-      <entry>Operating systems</entry>
-     </row>
-    </thead>
-    <tbody>
-     <row>
-      <entry>Intel x86 32 bits</entry>
-      <entry>Complete</entry>
-      <entry>Any with SysV ABI (Linux, BSD), Windows, OS X</entry>
-     </row>
-     <row>
-      <entry>Intel x86 64 bits</entry>
-      <entry>In progress</entry>
-      <entry>SysV ABI</entry>
-     </row>
-     <row>
-      <entry>PowerPC 32 bits</entry>
-      <entry>In progress</entry>
-      <entry>OS X</entry>
-     </row>
-    </tbody>
-   </tgroup>
-  </table>
  </section>
 
  <section xml:id="ext.ffi.objects">
@@ -170,7 +148,7 @@
 
   <para>The most important component of the object is the memory region where
   data is stored. By default &ECL; assumes that the user will perform automatic
-  managment of this memory, deleting the object when it is no longer
+  management of this memory, deleting the object when it is no longer
   needed. The first reason is that this block may have been allocated by a
   foreign routine using <function>malloc()</function>, or
   <function>mmap()</function>, or statically, by referring to a C constant. The
@@ -219,7 +197,7 @@
    <listitem>
     <para>&ECL;'s own low level interface. Only to be used if &ECL; is your
     deployment platform. It features some powerful constructs that allow you to
-    merge arbitrary C code with lisp (<xref linkend="ref.c-inline"/> and <xref
+    mix arbitrary C code with lisp (<xref linkend="ref.c-inline"/> and <xref
     linkend="ref.clines"/>).</para>
    </listitem>
   </itemizedlist>
