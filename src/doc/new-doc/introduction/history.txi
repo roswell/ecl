@@ -11,7 +11,7 @@ featured a lisp to C translator.
 
 @float Figure,fig:hierarchy
 @caption{ECL's family tree}
-@image{figures/kcl-hierarchy,,,png}
+@image{figures/kcl-hierarchy,,4.5in}
 @end float
 
 The KCL implementation remained a propietary project for some
