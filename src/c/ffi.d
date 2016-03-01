@@ -125,13 +125,6 @@ ecl_foreign_type_table[] = {
         {@':void', 0, 0}
 };
 
-#ifdef ECL_DYNAMIC_FFI
-static const cl_object ecl_foreign_cc_table[] = {
-        @':cdecl',
-        @':stdcall'
-};
-#endif
-
 #ifdef HAVE_LIBFFI
 static struct {
         const cl_object symbol;
@@ -427,20 +420,6 @@ ecl_foreign_cc_code(cl_object cc)
         for (i = 0; i <= ECL_FFI_CC_STDCALL; i++) {
                 if (cc == ecl_foreign_cc_table[i].symbol)
                         return ecl_foreign_cc_table[i].abi;
-        }
-        FEerror("~A does no denote a valid calling convention.", 1, cc);
-        return ECL_FFI_CC_CDECL;
-}
-#endif
-
-#ifdef ECL_DYNAMIC_FFI
-enum ecl_ffi_calling_convention
-ecl_foreign_cc_code(cl_object cc)
-{
-        int i;
-        for (i = 0; i <= ECL_FFI_CC_STDCALL; i++) {
-                if (cc == ecl_foreign_cc_table[i])
-                        return (enum ecl_ffi_calling_convention)i;
         }
         FEerror("~A does no denote a valid calling convention.", 1, cc);
         return ECL_FFI_CC_CDECL;
@@ -783,108 +762,6 @@ OUTPUT:
         @(return output)
 #endif
 }
-
-#ifdef ECL_DYNAMIC_FFI
-static void
-ecl_fficall_overflow()
-{
-        FEerror("Stack overflow on SI:CALL-CFUN", 0);
-}
-
-void
-ecl_fficall_prepare(cl_object return_type, cl_object arg_type, cl_object cc_type)
-{
-        struct ecl_fficall *fficall = cl_env.fficall;
-        fficall->buffer_sp = fficall->buffer;
-        fficall->buffer_size = 0;
-        fficall->cstring = ECL_NIL;
-        fficall->cc = ecl_foreign_cc_code(cc_type);
-        fficall->registers = ecl_fficall_prepare_extra(fficall->registers);
-}
-
-void
-ecl_fficall_push_bytes(void *data, size_t bytes)
-{
-        struct ecl_fficall *fficall = cl_env.fficall;
-        fficall->buffer_size += bytes;
-        if (fficall->buffer_size >= ECL_FFICALL_LIMIT)
-                ecl_fficall_overflow();
-        memcpy(fficall->buffer_sp, (char*)data, bytes);
-        fficall->buffer_sp += bytes;
-}
-
-void
-ecl_fficall_push_int(int data)
-{
-        ecl_fficall_push_bytes(&data, sizeof(int));
-}
-
-void
-ecl_fficall_align(int data)
-{
-        struct ecl_fficall *fficall = cl_env.fficall;
-        if (data == 1)
-                return;
-        else {
-                size_t sp = fficall->buffer_sp - fficall->buffer;
-                size_t mask = data - 1;
-                size_t new_sp = (sp + mask) & ~mask;
-                if (new_sp >= ECL_FFICALL_LIMIT)
-                        ecl_fficall_overflow();
-                fficall->buffer_sp = fficall->buffer + new_sp;
-                fficall->buffer_size = new_sp;
-        }
-}
-
-@(defun si::call-cfun (fun return_type arg_types args &optional (cc_type @':cdecl'))
-        struct ecl_fficall *fficall = cl_env.fficall;
-        void *cfun = ecl_foreign_data_pointer_safe(fun);
-        cl_object object;
-        enum ecl_ffi_tag return_type_tag = ecl_foreign_type_code(return_type);
-@
-
-        ecl_fficall_prepare(return_type, arg_types, cc_type);
-        while (CONSP(arg_types)) {
-                enum ecl_ffi_tag type;
-                if (!CONSP(args)) {
-                        FEerror("In SI:CALL-CFUN, mismatch between argument types and argument list: ~A vs ~A", 0);
-                }
-                type = ecl_foreign_type_code(CAR(arg_types));
-                if (type == ECL_FFI_CSTRING) {
-                        object = ecl_null_terminated_base_string(CAR(args));
-                        if (CAR(args) != object)
-                                fficall->cstring =
-                                        CONS(object, fficall->cstring);
-                } else {
-                        object = CAR(args);
-                }
-                ecl_foreign_data_set_elt(&fficall->output, type, object);
-                ecl_fficall_push_arg(&fficall->output, type);
-                arg_types = CDR(arg_types);
-                args = CDR(args);
-        }
-        ecl_fficall_execute(cfun, fficall, return_type_tag);
-        object = ecl_foreign_data_ref_elt(&fficall->output, return_type_tag);
-
-        fficall->buffer_size = 0;
-        fficall->buffer_sp = fficall->buffer;
-        fficall->cstring = ECL_NIL;
-
-        @(return object)
-@)
-
-@(defun si::make-dynamic-callback (fun sym rtype argtypes &optional (cctype @':cdecl'))
-        cl_object data;
-        cl_object cbk;
-@
-        data = cl_list(3, fun, rtype, argtypes);
-        cbk  = ecl_make_foreign_data(@':pointer-void', 0, ecl_dynamic_callback_make(data, ecl_foreign_cc_code(cctype)));
-
-        si_put_sysprop(sym, @':callback', CONS(cbk, data));
-        @(return cbk)
-@)
-#endif /* ECL_DYNAMIC_FFI */
-
 
 #ifdef HAVE_LIBFFI
 static void

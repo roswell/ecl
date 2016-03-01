@@ -244,19 +244,6 @@ struct ecl_fficall {
 };
 
 extern enum ecl_ffi_tag ecl_foreign_type_code(cl_object type);
-#ifdef ECL_DYNAMIC_FFI
-extern enum ecl_ffi_calling_convention ecl_foreign_cc_code(cl_object cc_type);
-extern void ecl_fficall_prepare(cl_object return_type, cl_object arg_types, cl_object cc_type);
-extern void ecl_fficall_push_bytes(void *data, size_t bytes);
-extern void ecl_fficall_push_int(int word);
-extern void ecl_fficall_align(int data);
-
-extern struct ecl_fficall_reg *ecl_fficall_prepare_extra(struct ecl_fficall_reg *registers);
-extern void ecl_fficall_push_arg(union ecl_ffi_values *data, enum ecl_ffi_tag type);
-extern void ecl_fficall_execute(void *f_ptr, struct ecl_fficall *fficall, enum ecl_ffi_tag return_type);
-extern void ecl_dynamic_callback_call(cl_object callback_info, char* buffer);
-extern void* ecl_dynamic_callback_make(cl_object data, enum ecl_ffi_calling_convention cc_type);
-#endif
 
 /* file.d */
 

@@ -121,9 +121,6 @@ struct cl_env_struct {
         union ecl_ffi_values *ffi_values;
         union ecl_ffi_values **ffi_values_ptrs;
 #endif
-#ifdef ECL_DYNAMIC_FFI
-        void *fficall;
-#endif
 
         /* Alternative stack for processing signals */
         void *altstack;

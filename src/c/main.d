@@ -164,10 +164,6 @@ ecl_init_env(cl_env_ptr env)
         env->ffi_values = 0;
         env->ffi_values_ptrs = 0;
 #endif
-#ifdef ECL_DYNAMIC_FFI
-        env->fficall = ecl_alloc(sizeof(struct ecl_fficall));
-        ((struct ecl_fficall*)env->fficall)->registers = 0;
-#endif
 
         env->method_cache = ecl_make_cache(64, 4096);
         env->slot_cache = ecl_make_cache(3, 4096);

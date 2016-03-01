@@ -74,7 +74,7 @@ ecl_def_string_array(feature_names,static,const) = {
 #ifdef ECL_CLOS_STREAMS
         ecl_def_string_array_elt("CLOS-STREAMS"),
 #endif
-#if defined(ECL_DYNAMIC_FFI) || defined(HAVE_LIBFFI)
+#if defined(HAVE_LIBFFI)
         ecl_def_string_array_elt("DFFI"),
 #endif
 #ifdef ECL_UNICODE
