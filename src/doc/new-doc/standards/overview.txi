@@ -1,0 +1,202 @@
+@node Overview
+@section Overview
+
+@menu
+* Reading this manual::
+* C Reference (Overview)::
+@end menu
+
+@node Reading this manual
+@subsection Reading this manual
+
+@subsubsection Common Lisp users
+@ecl{} supports all Common-Lisp data types exactly as defined in the
+@bibcite{ANSI}. All functions and macros are expected to behave as
+described in that document and in the HyperSpec @bibcite{HyperSpec}
+which is the online version of @bibcite{ANSI}. In other words, the
+Standard is the basic reference for Common Lisp and also for @ecl{}, and
+this part of the manual just complements it, describing
+implementation-specific features such as:
+
+@itemize
+@item
+Platform dependent limits.
+@item
+Behavior which is marked as @emph{implementation specific} in the
+standard.
+@item
+Some corner cases which are not described in @bibcite{ANSI}.
+@item
+The philosophy behind certain implementation choices, etc.
+@end itemize
+
+In order to aid in locating these differences, this first part of
+the manual copies the structure of the @ansi{} standard, having
+the same number of chapters, each one with a set of sections
+documenting the implementation-specific details.
+
+@subsubsection C/C++ programmers
+The second goal of this document is to provide a reference for C
+programmers that want to create, manipulate and operate with Common Lisp
+programs at a lower level, or simply embedding @ecl{} as a library.
+
+The C/C++ reference evolves in parallel with the Common Lisp one, in the
+form of one section with the name "C Reference" for each chapter of the
+@ansi{} standard. Much of what is presented in those sections is
+redundant with the Common Lisp specification. In particular, there is a
+one-to-one mapping between types and functions which should be obvious
+given the rules explained in C Reference (@ref{C Reference (Overview)}]).
+
+We must remark that the reference in this part of the manual is not
+enough to know how to embed @ecl{} in a program. In practice the user or
+developer will also have to learn how to build programs (@ref{System
+building}), interface with foreign libraries (@ref{Foreign Function
+Interface}), manage memory (@ref{Memory Management}), etc. These
+concepts are explained in a different (@ref{Embedding ECL}) part of the
+book.
+
+@node C Reference (Overview)
+@subsection C Reference (Overview)
+@subsubsection One type for everything: @code{cl_object}
+@cppindex cl_object
+@deftp {@cind} cl_object
+Pointer to the @code{cl_lispunion} union which represents all
+first-class types defined in @ecl{}.
+@end deftp
+
+ECL is designed around the basic principle that Common Lisp already
+provides everything that a programmer could need, orienting itself
+around the creation and manipulation of Common Lisp objects: conses,
+arrays, strings, characters, ... When embedding ECL there should be no
+need to use other C/C++ types, except when interfacing data to and from
+those other languages.
+
+All Common Lisp objects are represented internally through the same C
+type, @code{cl_object}, which is either a pointer to a union type or an
+integer, depending on the situation. While the inner guts of this type
+are exposed through various headers, the user should never rely on these
+details but rather use the macros and functions that are listed in this
+manual.
+
+There are two types of Common Lisp objects: immediate and memory
+allocated ones. Immediate types fit in the bits of the @code{cl_object}
+word, and do not require the garbage collector to be created. The list
+of such types may depend on the platform, but it includes at least the
+@code{fixnum} and @code{character} types.
+
+Memory allocated types on the other hand require the use of the garbage
+collector to be created. ECL abstracts this from the user providing
+enough constructors, either in the form of Common Lisp functions
+(@code{cl_make_array()}, @code{cl_complex()},...), or in the form of
+C/C++ constructors (@code{ecl_make_symbol()}, etc).
+
+Memory allocated types must always be kept alive so that the garbage
+collector does not reclaim them. This involves referencing the object
+from one of the places that the collector scans:
+
+@itemize
+@item
+The fields of an object (array, structure, etc) which is itself
+alive.
+@item
+A special variable or a constant.
+@item
+The C stack (i.e. automatic variables in a function).
+@item
+Global variables or pointers that have been registered with the garbage
+collector.
+@end itemize
+
+Further details will be provided in the section [[#ext.memory][Memory
+Management]].
+
+@subsubsection Naming conventions
+As explained in the introduction, each of the chapters in the Common
+Lisp standard can also be implemented using C functions and types. The
+mapping between both languages is done using a small set of rules
+described below.
+
+@itemize
+@item
+Functions in the Common Lisp (@code{CL}) package are prefixed with the
+characters @code{cl_}, functions in the System (@code{SI}) package are
+prefix with @code{si_}, etc, etc.
+
+@item
+If a function takes only a fixed number of arguments, it is mapped to a
+C function with also a fixed number of arguments. For instance,
+@code{COS} maps to @code{cl_object cl_cos(cl_object)}, which takes a
+single Lisp object and returns a Lisp object of type @code{FLOAT}.
+
+@item
+If the function takes a variable number of arguments, its signature
+consists on an integer with the number of arguments and zero or more of
+required arguments and then a C vararg. This is the case of
+@code{cl_object cl_list(cl_narg narg, ...)}, which can be invoked
+without arguments, as in @code{cl_list(0)}, with one, @code{cl_list(1,
+a)}, etc.
+
+@item
+Functions return at least one value, which is either the first value
+output by the function, or @code{NIL}. The extra values may be retrieved
+immediately after the function call using the function
+@code{ecl_nth_value}.
+@end itemize
+
+In addition to the Common Lisp core functions (@code{cl_*}), there exist
+functions which are devoted only to C/C++ programming, with tasks such
+as coercion of objects to and from C types, optimized functions, inlined
+macroexpansions, etc. These functions and macros typically carry the
+prefix @code{ecl_} or @code{ECL_} and only return one value, if any.
+
+@cindex ANSI Dictionary
+Most (if not all) Common Lisp functions and constructs available from
+C/C++ are available in ``ANSI Dictionary'' sections which are part of
+the [@ref{Standards}] entries.
+
+@subsubsection Only in Common Lisp
+@cindex Only in Common Lisp
+
+Some parts of the language are not available as C functions, even though
+they can be used in Common Lisp programs. These parts are either marked
+in the ``ANSI Dictionary'' sections using the tag @ocl{}, or they are
+simply not mentioned (macros and special constructs). This typically
+happens with non-translatable constructs such as
+
+@itemize
+@item
+Common Lisp macros such as @code{with-open-files}
+
+@item
+Common Lisp special forms, such as @code{cond}
+
+@item
+Common Lisp generic functions, which cannot be written in C because of
+their dynamical dispatch and automatic redefinition properties.
+@end itemize
+
+In most of those cases there exist straightforward alternatives using
+the constructs and functions in ECL. For example, @code{unwind-protect}
+can be implemented using a C macro which is provided by ECL
+
+@verbatim
+cl_env_ptr env = ecl_process_env();
+CL_UNWIND_PROTECT_BEGIN(env) {
+    /* protected code goes here */
+} CL_UNWIND_PROTECT_EXIT {
+    /* exit code goes here */
+} CL_UNWIND_PROTECT_END;
+@end verbatim
+
+Common Lisp generic functions can be directly accessed using
+@code{funcall} or @code{apply} and the function name, as shown in the
+code below
+
+@example
+cl_object name = ecl_make_symbol("MY-GENERIC-FUNCTION","CL-USER");
+cl_object output = cl_funcall(2, name, argument);
+@end example
+
+Identifying these alternatives requires some knowledge of Common Lisp,
+which is why it is recommended to approach the embeddable components in
+ECL only when there is some familiarity with the language.

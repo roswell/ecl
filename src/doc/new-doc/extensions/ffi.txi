@@ -1,0 +1,49 @@
+@node Foreign Function Interface
+@section Foreign Function Interface
+
+@menu
+* What is a FFI? :: FFI introduciton
+@c * Three kinds of FFI :: ECL's FFI brief description
+@c * Foreign objects
+@c * Higher level interfaces :: Usage examples
+@c * SFFI Reference :: Static FFI reference.
+@c * DFFI Reference :: Dynamic FFI reference.
+* UFFI Reference :: UFFI reference manual.
+@end menu
+
+@node What is FFI?
+@subsection Three kinds of FFI
+A Foreign Function Interface, or FFI for short, is a means for a programming language to
+interface with libraries written in other programming languages, the foreign code. You will
+see this concept most often being used in interpreted environments, such as Python, Ruby or
+Lisp, where one wants to reuse the big number of libraries written in C and C++ for dealing
+with graphical interfaces, networking, filesystems, etc.
+
+A FFI is made of at least three components:
+
+@c @table
+@c @item Foreign objects management
+@c This is the data that the foreign code will use. A FFI needs to provide
+@c means to build and manipulate foreign data, with automatic conversions
+@c to and from lisp data types whenever possible, and it also has to deal
+@c with issues like garbage collection and finalization.
+
+@c @item Foreign code loader
+@c To actually use a foreign routine, the code must reside in memory. The
+@c process of loading this code and finding out the addresses of the
+@c routines we want to use is normally done by an independent component.
+
+@c @item Foreign function invocation
+@c This is the part of the FFI that deals with actually calling the foreign
+@c routines we want to use. For that one typically has to tell the FFI what
+@c are the arguments that these routines expect, what are the calling
+@c conventions and where are these routines to be found.
+@c @end table
+
+On top of these components sits a higher level interface written entirely in lisp, with which
+you will actually declare and use foreign variables, functions and libraries. In the following
+sections we describe both the details of the low-level components (Section 3.2, Section 3.3),
+and of the higher level interface (Section 3.4). It is highly recommended that you read all
+sections.
+
+@include extensions/ffi_uffi.txi

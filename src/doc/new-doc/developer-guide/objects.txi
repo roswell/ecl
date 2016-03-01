@@ -1,0 +1,7 @@
+@node Manipulating Lisp objects
+@section Manipulating Lisp objects
+@cppindex cl_lispunion
+@deftp {C/C++ index} cl_lispunion cons big ratio SF DF longfloat complex symbol pack hash array vector base_string string stream random readtable pathname bytecodes bclosure cfun cfunfixed cclosure d instance process queue lock rwlock condition_variable semaphore barrier mailbox cblock foreign frame weak sse
+
+Union containing all first-class ECL types.
+@end deftp

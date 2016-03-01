@@ -1,0 +1,85 @@
+@node Standards
+@chapter Standards
+
+@menu
+* Overview::
+* Syntax::
+* Evaluation and compilation::
+* Types and classes::
+* Data and control flow::
+* Iteration::
+* Objects::
+* Structures::
+* Conditions::
+* Symbols::
+* Packages::
+* Numbers::
+* Characters::
+* Conses::
+* Arrays::
+* Strings::
+* Sequences::
+* Hash tables::
+* Filenames::
+* Files::
+* Streams::
+* Printer::
+* Reader::
+* System construction::
+* Environment::
+* Glossary::
+@end menu
+
+@include standards/overview.txi
+
+@c No changes regarding the standard
+@node Syntax
+@section Syntax
+
+@include standards/evaluation.txi
+@include standards/types_and_classes.txi
+
+@node Data and control flow
+@section Data and control flow
+@node Iteration
+@section Iteration
+@node Objects
+@section Objects
+@node Structures
+@section Structures
+@node Conditions
+@section Conditions
+@node Symbols
+@section Symbols
+@node Packages
+@section Packages
+@node Numbers
+@section Numbers
+@node Characters
+@section Characters
+@node Conses
+@section Conses
+@node Arrays
+@section Arrays
+@node Strings
+@section Strings
+@node Sequences
+@section Sequences
+@node Hash tables
+@section Hash tables
+@node Filenames
+@section Filenames
+@node Files
+@section Files
+@node Streams
+@section Streams
+@node Printer
+@section Printer
+@node Reader
+@section Reader
+@node System construction
+@section System construction
+@node Environment
+@section Environment
+@node Glossary
+@section Glossary

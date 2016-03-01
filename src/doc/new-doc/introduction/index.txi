@@ -1,0 +1,28 @@
+@node Introduction
+@unnumbered Introduction
+
+@menu
+* What is ECL::
+* History::
+* Credits::
+* Copyrights::
+* Sandbox::
+@end menu
+
+@include introduction/about_ecl.txi
+@include introduction/history.txi
+@include introduction/credits.txi
+@include introduction/copyrights.txi
+
+@node Sandbox
+@section Sandbox
+
+@defun funkcja arg1 arg2 arg3
+This is my defun
+@end defun
+
+@lspindex *ignore-eof-on-terminal-io*
+@defvr {System} {*ignore-eof-on-terminal-io*}
+This variable controls whether an end of file character (normally
+@myctrl{D}) should terminate the session. The default value is @nil{}.
+@end defvr

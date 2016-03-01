@@ -1,0 +1,13 @@
+@node Types and classes
+@section Types and classes
+
+ECL defines the following additional built-in classes in the @code{CL} package:
+
+@code{single-float}, @code{double-float}
+
+@c @code{ext:ansi-stream}, @code{ext:sequence-stream},
+@c @code{si::code-block}, @code{si::foreign-data}, @code{si::frame},
+@c @code{si::weak-pointer}, @code{mp::process}, @code{mp::lock},
+@c @code{mp::rwlock}, @code{mp::condition-variable},
+@c @code{mp::semaphore}, @code{mp::barrier}, @code{mp::mailbox},
+@c @code{ext::sse-pack}.
