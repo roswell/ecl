@@ -71,15 +71,10 @@ typedef struct {
 #else
 # define IF_SSE2(x) NULL
 #endif
-#if defined(HAVE_LIBFFI) || defined(ECL_DYNAMIC_FFI)
+#if defined(HAVE_LIBFFI)
 # define IF_DFFI(x) x
 #else
 # define IF_DFFI(x) NULL
-#endif
-#if defined(HAVE_LIBFFI)
-# define IF_LIBFFI(x) x
-#else
-# define IF_LIBFFI(x) NULL
 #endif
 
 cl_symbol_initializer
@@ -1749,12 +1744,12 @@ cl_symbols[] = {
 
 {SYS_ "*CODE-WALKER*", SI_SPECIAL, NULL, -1, OBJNULL},
 
-/* #if defined(HAVE_LIBFFI) || defined(ECL_DYNAMIC_FFI) */
+/* #if defined(HAVE_LIBFFI) */
 {SYS_ "CALL-CFUN", SI_ORDINARY, IF_DFFI(si_call_cfun), -1, OBJNULL},
 {KEY_ "CALLBACK", KEYWORD, NULL, -1, OBJNULL},
 {SYS_ "MAKE-DYNAMIC-CALLBACK", SI_ORDINARY, IF_DFFI(si_make_dynamic_callback), -1, OBJNULL},
-{SYS_ "FREE-FFI-CLOSURE", SI_ORDINARY, IF_LIBFFI(si_free_ffi_closure), 1, OBJNULL},
-/* #endif defined(HAVE_LIBFFI) || defined(ECL_DYNAMIC_FFI) */
+{SYS_ "FREE-FFI-CLOSURE", SI_ORDINARY, IF_DFFI(si_free_ffi_closure), 1, OBJNULL},
+/* #endif defined(HAVE_LIBFFI) */
 {KEY_ "CDECL", KEYWORD, NULL, -1, OBJNULL},
 {KEY_ "STDCALL", KEYWORD, NULL, -1, OBJNULL},
 

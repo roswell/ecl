@@ -96,16 +96,6 @@ apply_x86.c: $(srcdir)/arch/apply_x86.d $(DPP) $(HFILES)
 	  ../CROSS-DPP $(srcdir)/arch/apply_x86.d $@ ; \
 	else $(DPP) $(srcdir)/arch/apply_x86.d  $@ ; \
 	fi
-ffi_x86.c: $(srcdir)/arch/ffi_x86.d $(DPP) $(HFILES)
-	if test -f ../CROSS-DPP ; then \
-	  ../CROSS-DPP $(srcdir)/arch/ffi_x86.d $@ ; \
-	else $(DPP) $(srcdir)/arch/ffi_x86.d  $@ ; \
-	fi
-ffi_x86_64.c: $(srcdir)/arch/ffi_x86_64.d $(DPP) $(HFILES)
-	if test -f ../CROSS-DPP ; then \
-	  ../CROSS-DPP $(srcdir)/arch/ffi_x86_64.d $@ ; \
-	else $(DPP) $(srcdir)/arch/ffi_x86_64.d  $@ ; \
-	fi
 
 ../libeclmin.a: $(OBJS) all_symbols.o all_symbols2.o
 	$(RM) $@

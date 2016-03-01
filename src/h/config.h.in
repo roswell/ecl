@@ -115,12 +115,6 @@
 /* We have libffi and can use it                                        */
 #undef HAVE_LIBFFI
 
-/* We have non-portable implementation of FFI calls                     */
-/* Only used as a last resort, when libffi is missin                    */
-#ifndef HAVE_LIBFFI
-#undef ECL_DYNAMIC_FFI
-#endif
-
 /* We use hierarchical package names, like in Allegro CL                */
 #undef ECL_RELATIVE_PACKAGE_NAMES
 
