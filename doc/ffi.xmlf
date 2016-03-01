@@ -305,7 +305,7 @@ Build and load this module with (compile-file "cffi.lsp" :load t)
 ;;
 (let ((c-cos (cffi:foreign-funcall "cos" :double 1.0d0 :double)))
    (format t "~%Lisp cos:~t~d~%C cos:~t~d~%Difference:~t~d"
-	(sin 1.0d0) c-sin (- (sin 1.0d0) c-sin)))
+	(cos 1.0d0) c-cos (- (cos 1.0d0) c-cos)))
 </programlisting>
   </section>
 
