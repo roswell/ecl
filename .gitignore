@@ -46,3 +46,13 @@ src/config.log
 
 regressions/*.lsp
 regressions/eformat-tests/*.txt
+*.aux
+*.cp*
+*.fn*
+*.log
+/src/doc/new-doc/*.lsp*
+*.toc
+*.tp*
+*.vr*
+/src/doc/new-doc/new-doc.pdf
+/src/doc/new-doc/ecldoc.info
