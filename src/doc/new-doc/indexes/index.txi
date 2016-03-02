@@ -3,6 +3,8 @@
 
 @menu
 * Concept index::
+* Feature index::
+* Example index::
 * Function index::
 * Variable index::
 * Type index::
@@ -13,6 +15,14 @@
 @node Concept index
 @section Concept index
 @printindex cp
+
+@node Feature index
+@section Feature index
+@printindex ft
+
+@node Example index
+@section Example index
+@printindex ex
 
 @node Function index
 @section Function index

@@ -4,8 +4,10 @@
 @settitle ECL User's Guide
 @setchapternewpage odd
 @paragraphindent none
-@defindex cpp
-@defindex lsp
+@defcodeindex cpp
+@defcodeindex lsp
+@defcodeindex ft
+@defindex ex
 @c %**end of header
 
 @c Entries for @command{install-info} to use
