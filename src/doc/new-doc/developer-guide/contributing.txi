@@ -11,9 +11,10 @@
 How to define functions:
 
 @verbatim
-@[sub*]heading @code{ext:run-program} – Short description
 @lspindex ext:run-program
 @defun ext:run-program ...
+
+Short description
 
 @table @var
 @item arg-1
@@ -24,17 +25,19 @@ description
 One value? More?
 @end table
 
-@strong{Description}
+@subsubheading Description
 Description here
 
-@strong{Examples}
-
+@subsubheading Examples
 Example one
+
 @exindex @code{ext:run-program} sample run
 @lisp
 (ext:run-program "ls")
 @end lisp
 
-@end defun
+@subsubheading Side effects
+foo bar
 
+@end defun
 @end verbatim
