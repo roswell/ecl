@@ -4,7 +4,7 @@
 @menu
 * Primitive Types ::
 * Aggregate Types ::
-@c * Objects
+* UFFI Objects ::
 @c * Strings
 @c * Functions and Libraries
 @end menu
@@ -156,7 +156,7 @@ Defines a new foreign type.
 
 
 @lspindex ffi:null-char-p
-@defmac ffi:null-char-p char
+@defun ffi:null-char-p char
 
 Tests a character for NULL value
 
@@ -181,7 +181,7 @@ return a integer whence dereferencing a C character pointer.
             (ffi:null-char-p (ffi:deref-array fs 'ca 2))))
 ;; => NIL T
 @end lisp
-@end defmac
+@end defun
 
 
 
@@ -270,13 +270,13 @@ Creates a foreign type.
 
 
 @lspindex ffi:get-slot-value
-@defmac ffi:get-slot-value obj type field
+@defun ffi:get-slot-value obj type field
 
 Retrieves a value from a slot of a structure
 
 @table @var
 @item obj
-A pointer to foreign structure.
+A pointer to the foreign structure.
 @item type
 A name of the foreign structure.
 @item field
@@ -287,12 +287,572 @@ The value of the @code{field} in the structure @code{obj}.
 
 @subsubheading Description
 Accesses a slot value from a structure. This is generalized and can be
-used with @code{setf}.
+used with @code{SETF}-able.
 
 @subsubheading Examples
-@exindex @code{ffi:get-slot-value} getting and setting C structure field
+@exindex @code{ffi:get-slot-value} manipulating a struct field
 @lisp
 (get-slot-value foo-ptr 'foo-structure 'field-name)
 (setf (get-slot-value foo-ptr 'foo-structure 'field-name) 10)
 @end lisp
+@end defun
+
+
+
+@lspindex ffi:get-slot-pointer
+@defun ffi:get-slot-pointer obj type field
+
+Retrieves a pointer from a slot of a structure
+
+@table @var
+@item obj
+A pointer to the foreign structure.
+@item type
+A name of the foreign structure.
+@item field
+A name of the desired field in foreign structure.
+@item returns
+The value of the pointer @var{field} in the structure @var{obj}.
+@end table
+
+@subsubheading Description
+This is similar to get-slot-value. It is used when the value of a slot
+is a pointer type.
+
+@subsubheading Examples
+@exindex @code{ffi:get-slot-value} usage
+@lisp
+(get-slot-pointer foo-ptr 'foo-structure 'my-char-ptr)
+@end lisp
+@end defun
+
+
+
+@lspindex ffi:def-array-pointer
+@defmac ffi:def-array-pointer name type
+
+Defines a pointer to an array of @var{type}
+
+@table @var
+@item name
+A name of the new foreign type. 
+@item type
+The foreign type of the array elements.
+@end table
+
+@subsubheading Description
+Defines a type that is a pointer to an array of @var{type}.
+
+@subsubheading Examples
+@exindex @code{ffi:def-array-pointer} usage
+@lisp
+(def-array-pointer byte-array-pointer :unsigned-char)
+@end lisp
+
+@subsubheading Side effects
+Defines a new foreign type.
+@end defmac
+
+
+
+@lspindex ffi:deref-array
+@defun ffi:deref-array array type position
+
+Deference an array
+
+@table @var
+@item array
+A foreign array.
+@item type
+The foreign type of the @var{array}.
+@item position
+An integer specifying the position to retrieve from the @var{array}.
+@item returns
+The value stored in the @var{position} of the @var{array}.
+@end table
+
+@subsubheading Description
+Dereferences (retrieves) the value of the foreign array
+element. @code{SETF}-able.
+
+@subsubheading Examples
+@exindex @code{ffi:deref-array} retrieving array element
+(ffi:def-array-pointer ca :char)
+  (let ((fs (ffi:convert-to-foreign-string "ab")))
+    (values (ffi:null-char-p (ffi:deref-array fs 'ca 0))
+    (ffi:null-char-p (ffi:deref-array fs 'ca 2))))
+;; => NIL T
+@lisp
+@end lisp
+@end defun
+
+
+
+@lspindex ffi:def-union
+@defmac ffi:def-union name &rest fields
+
+Defines a foreign union type
+
+@table @var
+@item name
+A name of the new union type.
+@item fields
+A list of fields of the union in form @code{(field-name fields-type)}.
+@end table
+
+@subsubheading Description
+Defines a foreign union type. 
+
+@subsubheading Examples
+@exindex @code{ffi:def-union} union definition and usage
+@lisp
+(ffi:def-union test-union
+  (a-char :char)
+  (an-int :int))
+
+(let ((u (ffi:allocate-foreign-object 'test-union)))
+  (setf (ffi:get-slot-value u 'test-union 'an-int) (+ 65 (* 66 256)))
+  (prog1
+     (ffi:ensure-char-character (ffi:get-slot-value u 'test-union 'a-char))
+   (ffi:free-foreign-object u)))
+;; => #\A
+@end lisp
+
+@subsubheading Side effects
+Defines a new foreign type.
+@end defmac
+
+
+
+@node UFFI Objects
+@subsubsection Objects
+@cindex Foreign objects
+
+@subsubheading Overview
+Objects are entities that can allocated, referred to by pointers, and
+can be freed.
+
+
+
+@lspindex ffi:allocate-foreign-object
+@defun ffi:allocate-foreign-object type &optional size
+
+Allocates an instance of a foreign object
+
+@table @var
+@item type
+The type of foreign object to allocate. This parameter is evaluated.
+@item size
+An optional size parameter that is evaluated. If specified, allocates
+and returns an array of @var{type} that is @var{size} members long. This
+parameter is evaluated.
+@item returns
+A pointer to the foreign object.
+@end table
+
+@subsubheading Description
+Allocates an instance of a foreign object. It returns a pointer to the
+object.
+
+@subsubheading Examples
+@exindex @code{ffi:allocate-foreign-object} allocating structure object
+@lisp
+(ffi:def-struct ab (a :int) (b :double))
+;; => (:STRUCT (A :INT) (B :DOUBLE))
+(ffi:allocate-foreign-object 'ab)
+;; => #<foreign AB>
+@end lisp
+@end defun
+
+
+
+@lspindex ffi:free-foreign-object
+@defun ffi:free-foreign-object ptr
+
+Frees memory that was allocated for a foreign object
+
+@table @var
+@item ptr
+A pointer to the allocated foreign object to free.
+@end table
+
+@subsubheading Description
+Frees memory that was allocated for a foreign object.
+@end defun
+
+
+
+@lspindex ffi:with-foreign-object
+@defmac ffi:with-foreign-object (var type) &body body
+
+Wraps the allocation, binding and destruction of a foreign object around
+a body of code
+
+@table @var
+@item var
+Variable name to bind.
+@item type
+Type of foreign object to allocate. This parameter is evaluated.
+@item body
+Code to be evaluated.
+@item returns
+The result of evaluating the body.
+@end table
+
+@subsubheading Description
+This function wraps the allocation, binding, and destruction of a
+foreign object around the body of code.
+
+@subsubheading Examples
+@exindex @code{ffi:with-foreign-object} macro usage
+@lisp
+(defun gethostname2 ()
+  "Returns the hostname"
+  (ffi:with-foreign-object (name '(:array :unsigned-char 256))
+    (if (zerop (c-gethostname (ffi:char-array-to-pointer name) 256))
+        (ffi:convert-from-foreign-string name)
+        (error "gethostname() failed."))))
+@end lisp
+@end defmac
+
+
+
+@lspindex ffi:size-of-foreign-type
+@defmac ffi:size-of-foreign-type ftype
+
+Returns the number of data bytes used by a foreign object type
+
+@table @var
+@item ftype
+A foreign type specifier. This parameter is evaluated.
+@item returns
+Number of data bytes used by a foreign object @var{ftype}.
+@end table
+
+@subsubheading Description
+Returns the number of data bytes used by a foreign object type. This
+does not include any Lisp storage overhead.
+
+@subsubheading Examples
+@exindex @code{ffi:size-of-foreign-type}
+@lisp
+(ffi:size-of-foreign-type :unsigned-byte)
+;; => 1
+(ffi:size-of-foreign-type 'my-100-byte-vector-type)
+;; => 100
+@end lisp
+@end defmac
+
+
+
+@lspindex ffi:pointer-address
+@defun ffi:pointer-address ptr
+
+Returns the address of a pointer
+
+@table @var
+@item ptr
+A pointer to a foreign object.
+@item returns
+An integer representing the pointer's address.
+@end table
+
+@subsubheading Description
+Returns the address as an integer of a pointer.
+@end defun
+
+
+
+@lspindex ffi:deref-pointer
+@defun ffi:deref-pointer ptr ftype
+
+Deferences a pointer
+
+@table @var
+@item ptr
+Pointer to a foreign object.
+@item ftype
+Foreign type of the object being pointed to.
+@item returns
+The value of the object where the pointer points.
+@end table
+
+@subsubheading Description
+Returns the object to which a pointer points. @code{SETF}-able.
+
+@subsubheading Notes
+Casting of the pointer may be performed with @code{WITH-CAST-POINTER}
+together with the @code{DEREF-POINTER}/@code{DEREF-ARRAY}.
+
+@subsubheading Examples
+@exindex @code{ffi:deref-pointer}
+@lisp
+(let ((intp (ffi:allocate-foreign-object :int)))
+  (setf (ffi:deref-pointer intp :int) 10)
+  (prog1
+      (ffi:deref-pointer intp :int)
+    (ffi:free-foreign-object intp)))
+;; => 10
+@end lisp
+@end defun
+
+
+@lspindex ffi:ensure-char-character
+@defun ffi:ensure-char-character object
+
+Ensures that a dereferenced @code{:char} pointer is a character
+
+@table @var
+@item object
+Either a character or a integer specifying a character code.
+@item returns
+A character.
+@end table
+
+@subsubheading Description
+Ensures that an objects obtained by dereferencing @code{:char} and
+@code{:unsigned-char} pointers are a lisp character.
+
+@subsubheading Examples
+@exindex @code{ffi:ensure-char-character}
+@lisp
+(let ((fs (ffi:convert-to-foreign-string "a")))
+  (prog1 
+      (ffi:ensure-char-character (ffi:deref-pointer fs :char))
+    (ffi:free-foreign-object fs)))
+;; => #\a
+@end lisp
+
+@subsubheading Exceptional Situations
+Depending upon the implementation and what UFFI expects, this macro may
+signal an error if the object is not a character or integer.
+@end defun
+
+
+@lspindex ffi:ensure-char-integer
+@defun ffi:ensure-char-integer object
+
+Ensures that a dereferenced @code{:char} pointer is an integer
+
+@table @var
+@item object
+Either a character or a integer specifying a character code.
+@item returns
+An integer.
+@end table
+
+@subsubheading Description
+Ensures that an objects obtained by dereferencing @code{:char} and
+@code{:unsigned-char} pointers is a lisp integer.
+
+@subsubheading Examples
+@exindex @code{ffi:ensure-char-integer}
+@lisp
+(let ((fs (ffi:convert-to-foreign-string "a")))
+  (prog1 
+      (ffi:ensure-char-integer (ffi:deref-pointer fs :char))
+    (ffi:free-foreign-object fs)))
+;; => 96
+@end lisp
+
+@subsubheading Exceptional Situations
+Depending upon the implementation and what UFFI expects, this macro may
+signal an error if the object is not a character or integer.
+@end defun
+
+
+@lspindex ffi:make-null-pointer
+@defun ffi:make-null-pointer ftype
+
+Create a NULL pointer of a specified type
+
+@table @var
+@item ftype
+A type of object to which the pointer refers.
+@item returns
+The NULL pointer of type @var{ftype}.
+@end table
+@end defun
+
+
+
+@lspindex ffi:null-pointer-p
+@defun ffi:null-pointer-p ptr
+
+Tests a pointer for NULL value
+
+@table @var
+@item ptr
+A foreign object pointer.
+@item returns
+The boolean flag.
+@end table
+@end defun
+
+
+
+@lspindex ffi:+null-cstring-pointer+
+@defvr {FFI} {+null-cstring-pointer+}
+A NULL cstring pointer. This can be used for testing if a cstring
+returned by a function is NULL.
+@end defvr
+
+
+
+@lspindex ffi:with-cast-pointer
+@defmac ffi:with-cast-pointer (var ptr ftype) &body body
+
+Wraps a body of code with a pointer cast to a new type
+
+@table @var
+@item var
+Symbol which will be bound to the casted object.
+@item ptr
+Pointer to a foreign object.
+@item ftype
+A foreign type of the object being pointed to.
+@item returns
+The value of the object where the pointer points.
+@end table
+
+@subsubheading Description
+Executes @var{BODY} with @var{PTR} cast to be a pointer to type
+@var{FTYPE}. @var{VAR} is will be bound to this value during the
+execution of @var{BODY}.
+
+@subsubheading Examples
+@exindex @code{ffi:with-cast-pointer}
+@lisp
+(ffi:with-foreign-object (size :int)
+  ;; FOO is a foreign function returning a :POINTER-VOID
+  (let ((memory (foo size)))
+    (when (mumble)
+      ;; at this point we know for some reason that MEMORY points
+      ;; to an array of unsigned bytes
+      (ffi:with-cast-pointer (memory :unsigned-byte)
+        (dotimes (i (deref-pointer size :int))
+          (do-something-with
+              (ffi:deref-array memory '(:array :unsigned-byte) i)))))))
+@end lisp
+@end defmac
+
+
+
+@lspindex ffi:def-foreign-var
+@defmac ffi:def-foreign-var name type module
+
+Defines a symbol macro to access a variable in foreign code
+
+@table @var
+@item name
+A string or list specificying the symbol macro's name. If it is a
+string, that names the foreign variable. A Lisp name is created by
+translating @code{#\_} to @code{#\-} and by converting to upper-case in
+case-insensitive Lisp implementations.
+
+If it is a list, the first item is a string specifying the foreign
+variable name and the second it is a symbol stating the Lisp name.
+@item type
+A foreign type of the foreign variable.
+@item module
+A string specifying the module (or library) the foreign variable resides
+in.
+@end table
+
+@subsubheading Description
+Defines a symbol macro which can be used to access (get and set) the
+value of a variable in foreign code.
+
+@subsubheading Examples
+@exindex @code{ffi:def-foreign-var}
+
+@example
+@verbatim
+int baz = 3;
+
+typedef struct {
+  int x;
+  double y;
+} foo_struct;
+
+foo_struct the_struct = { 42, 3.2 };
+
+int foo () {
+  return baz;
+}
+@end verbatim
+@end example
+
+@lisp
+(ffi:def-struct foo-struct (x :int)
+  (y :double))
+
+(ffi:def-function ("foo" foo) ()
+  :returning :int
+  :module "foo")
+
+(ffi:def-foreign-var ("baz" *baz*) :int "foo")
+(ffi:def-foreign-var ("the_struct" *the-struct*) foo-struct "foo")
+
+*baz*           ;; => 3
+(incf *baz*)    ;; => 4
+(foo)           ;; => 4
+@end lisp
+@end defmac
+
+
+
+@lspindex ffi:
+@defmac ffi:
+
+desc
+
+@table @var
+@item arg-1
+description
+@item arg-2
+description
+@item returns
+One value? More?
+@end table
+
+@subsubheading Description
+Description here
+
+@subsubheading Examples
+@exindex @code{ffi:} sample run
+@lisp
+
+@end lisp
+
+@subsubheading Side effects
+foo bar
+@end defmac
+
+
+@lspindex ffi:
+@defmac ffi:
+
+desc
+
+@table @var
+@item arg-1
+description
+@item arg-2
+description
+@item returns
+One value? More?
+@end table
+
+@subsubheading Description
+Description here
+
+@subsubheading Examples
+@exindex @code{ffi:} sample run
+@lisp
+
+@end lisp
+
+@subsubheading Side effects
+foo bar
 @end defmac
