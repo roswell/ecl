@@ -137,7 +137,10 @@ we are currently using with ECL."
          (executable-features
           #-windows
            (run-and-collect-keywords "file" (list ecl-binary)))
-         (compiler-version (run-and-collect-keywords c::*cc* '("--version")))
+         (compiler-version (run-and-collect-keywords c::*cc*
+                                                     (if (search "xlc" c::*cc*)
+                                                         '("-qversion")
+                                                         '("--version"))))
          (compiler-features (reduce #'append
                                     (mapcar #'rest
                                             (compiler-defines +compiler-macros+)))))

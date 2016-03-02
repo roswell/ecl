@@ -442,6 +442,11 @@ case "${host_os}" in
                 ECL_LDRPATH='-Wld=\"-rld_l ~A\"'
                 clibs="-Wld=-lrld"
                 ;;
+	aix*)
+		PICFLAG=''
+		thehost="aix"
+		shared="no"
+		;;
         *)
                 thehost="$host_os"
                 shared="no"
