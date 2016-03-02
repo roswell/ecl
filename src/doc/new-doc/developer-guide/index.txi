@@ -3,7 +3,7 @@
 
 @menu
 @c * Sources structure:: Overview of the source code structure
-@c * Contributing:: Code, documentation and tests standards
+* Contributing:: Code, documentation and tests standards
 @c * Modules hierarchy::
 @c * Testing and benchmarking::
 * Manipulating Lisp objects::
@@ -15,5 +15,6 @@
 @c * Current roadmap::
 @end menu
 
+@include developer-guide/contributing.txi
 @include developer-guide/objects.txi
 @include developer-guide/environment.txi

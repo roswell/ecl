@@ -1,0 +1,40 @@
+@node Contributing
+@section Contributing
+
+@menu
+* Documentation:: Documentation conventions
+@end menu
+
+@node Documentation
+@subsection Documentation
+
+How to define functions:
+
+@verbatim
+@[sub*]heading @code{ext:run-program} – Short description
+@lspindex ext:run-program
+@defun ext:run-program ...
+
+@table @var
+@item arg-1
+description
+@item arg-2
+description
+@item returns
+One value? More?
+@end table
+
+@strong{Description}
+Description here
+
+@strong{Examples}
+
+Example one
+@exindex @code{ext:run-program} sample run
+@lisp
+(ext:run-program "ls")
+@end lisp
+
+@end defun
+
+@end verbatim
