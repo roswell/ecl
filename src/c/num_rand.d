@@ -31,6 +31,9 @@ n*/
 # include <sys/stat.h>
 /* it isn't pulled in by fcntl.h */
 #endif
+#ifdef _MSC_VER
+#include <stdint.h>
+#endif
 
 /*
  * Mersenne-Twister random number generator
