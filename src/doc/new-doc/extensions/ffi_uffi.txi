@@ -2,9 +2,297 @@
 @subsection UFFI Reference
 
 @menu
-@c * Primitive Types
-@c * Aggregate Types
+* Primitive Types ::
+* Aggregate Types ::
 @c * Objects
 @c * Strings
 @c * Functions and Libraries
 @end menu
+
+@node Primitive Types
+@subsubsection Primitive Types
+@cindex Foreign primitive types
+
+@subsubheading Overview
+Primitive types have a single value, these include characters, numbers,
+and pointers. They are all symbols in the keyword package.
+
+@lspindex :char
+@lspindex :unsigned-char
+@lspindex :byte
+@lspindex :unsigned-byte
+@lspindex :short
+@lspindex :unsigned-short
+@lspindex :int
+@lspindex :unsigned-int
+@lspindex :long
+@lspindex :unsigned-long
+@lspindex :int16_t
+@lspindex :uint16_t
+@lspindex :int32_t
+@lspindex :uint32_t
+@lspindex :int64_t
+@lspindex :uint64_t
+@lspindex :float
+@lspindex :double
+@c @lspindex :long-double
+@lspindex :cstring
+@lspindex :void
+@lspindex :pointer-void
+@lspindex :*
+
+@ftindex LONG-LONG
+@ftindex UINT16-T
+@ftindex UINT32-T
+@ftindex UINT64-T
+@ftindex LONG-FLOAT
+
+@table @samp
+@item :char
+@itemx :unsigned-char
+Signed/unsigned 8-bits. Dereferenced pointer returns a character.
+@item :byte
+@itemx :unsigned-byte
+Signed/unsigned 8-bits. Dereferenced pointer returns an integer.
+@item  :short
+@itemx :unsigned-short
+@itemx :int
+@itemx :unsigned-int
+@itemx :long
+@itemx :unsigned-long
+Standard integer types (16-bit, 32-bit and 32/64-bit).
+@item  :int16_t
+@itemx :uint16_t
+@itemx :int32_t
+@itemx :uint32_t
+@itemx :int64_t
+@itemx :uint64_t
+Integer types with guaranteed bitness.
+
+@item :float
+@itemx :double
+Floating point numerals (32-bit and 64-bit).
+@c XXX>
+@c @item :long-double
+@c Floating point numeral (usually 80-bit, at least 64-bit, exact
+@c bitness is compiler/architecture/platform dependant).
+@c XXX<
+@item :cstring
+A @code{NULL} terminated string used for passing and returning
+characters strings with a C function.
+@item :void
+The absence of a value. Used to indicate that a function does not return
+a value.
+@item :pointer-void
+Points to a generic object.
+@item *
+Used to declare a pointer to an object.
+@end table
+
+
+@lspindex ffi:def-constant
+@defmac ffi:def-constant name value &key (export nil)
+
+Binds a symbol to a constant.
+
+@table @var
+@item name
+A symbol that will be bound to the value.
+@item value
+An evaluated form that is bound the the name.
+@item export
+When @code{T}, the name is exported from the current package. Defaults
+to @code{NIL}.
+@item returns
+Constant name.
+@end table
+
+@subsubheading Description
+This is a thin wrapper around @code{defconstant}. It evaluates at
+compile-time and optionally exports the symbol from the package.
+
+@subsubheading Examples
+@exindex @code{ffi:def-constant} defining constants
+@lisp
+(ffi:def-constant pi2 (* 2 pi))
+(ffi:def-constant exported-pi2 (* 2 pi) :export t)
+@end lisp
+
+@subsubheading Side Effects
+Creats a new special variable.
+@end defmac
+
+
+
+@lspindex ffi:def-foreign-type
+@defmac ffi:def-foreign-type name definition
+
+Defines a new foreign type
+
+@table @var
+@item name
+A symbol naming the new foreign type.
+@item value
+A form that is not evaluated that defines the new foreign type.
+@item returns
+Foreign type designator (@var{value}).
+@end table
+
+@subsubheading Description
+Defines a new foreign type
+
+@subsubheading Examples
+@exindex @code{ffi:def-foreign-type} examples
+@lisp
+(def-foreign-type my-generic-pointer :pointer-void)
+(def-foreign-type a-double-float :double-float)
+(def-foreign-type char-ptr (* :char))
+@end lisp
+
+@subsubheading Side effects
+Defines a new foreign type.
+@end defmac
+
+
+
+@lspindex ffi:null-char-p
+@defmac ffi:null-char-p char
+
+Tests a character for NULL value
+
+@table @var
+@item char
+A character or integer.
+@item returns
+A boolean flag indicating if @var{char} is a NULL value.
+@end table
+
+@subsubheading Description
+A predicate testing if a character or integer is NULL. This abstracts
+the difference in implementations where some return a character and some
+return a integer whence dereferencing a C character pointer.
+
+@subsubheading Examples
+@exindex @code{ffi:null-char-p} example
+@lisp
+(ffi:def-array-pointer ca :unsigned-char)
+  (let ((fs (ffi:convert-to-foreign-string "ab")))
+    (values (ffi:null-char-p (ffi:deref-array fs 'ca 0))
+            (ffi:null-char-p (ffi:deref-array fs 'ca 2))))
+;; => NIL T
+@end lisp
+@end defmac
+
+
+
+@node Aggregate Types
+@subsubsection Aggregate Types
+@cindex Foreign aggregate types
+
+@subsubheading Overview
+Aggregate types are comprised of one or more primitive types.
+
+
+@lspindex ffi:def-enum
+@defmac ffi:def-enum name fields &key separator-key
+
+Defines a C enumeration
+
+@table @var
+@item name
+A symbol that names the enumeration.
+@item fields
+A list of field defintions. Each definition can be a symbol or a list of
+two elements. Symbols get assigned a value of the current counter which
+starts at 0 and increments by 1 for each subsequent symbol. It the field
+definition is a list, the first position is the symbol and the second
+position is the value to assign the the symbol. The current counter gets
+set to 1+ this value.
+@item returns
+A string that governs the creation of constants. The default is "#".
+@end table
+
+@subsubheading Description
+Declares a C enumeration. It generates constants with integer values for
+the elements of the enumeration. The symbols for the these constant
+values are created by the concatenation of the enumeration name,
+separator-string, and field symbol. Also creates a foreign type with the
+name name of type :int.
+
+@subsubheading Examples
+@exindex @code{ffi:def-enum} sample enumerations
+@lisp
+(ffi:def-enum abc (:a :b :c)) 
+;; Creates constants abc#a (1), abc#b (2), abc#c (3) and defines
+;; the foreign type "abc" to be :int
+
+(ffi:def-enum efoo (:e1 (:e2 10) :e3) :separator-string "-")
+;; Creates constants efoo-e1 (1), efoo-e2 (10), efoo-e3 (11) and defines
+;; the foreign type efoo to be :int
+@end lisp
+
+@subsubheading Side effects
+Creates a @code{:int} foreign type, defines constants.
+@end defmac
+
+
+
+@defmac ffi:def-struct name &rest fields
+
+Defines a C structure
+
+@table @var
+@item name
+A symbol that names the structure. 
+@item fields
+A variable number of field defintions. Each definition is a list
+consisting of a symbol naming the field followed by its foreign type.
+@end table
+
+@subsubheading Description
+Declares a structure. A special type is available as a slot in the
+field. It is a pointer that points to an instance of the parent
+structure. It's type is @code{:pointer-self}.
+
+@subsubheading Examples
+@exindex @code{ffi:def-struct} defining C structure
+@lisp
+(ffi:def-struct foo (a :unsigned-int) 
+  (b    (* :char)) 
+  (c    (:array :int 10)) 
+  (next :pointer-self))
+@end lisp
+
+@subsubheading Side effects
+Creates a foreign type.
+@end defmac
+
+
+
+@lspindex ffi:get-slot-value
+@defmac ffi:get-slot-value obj type field
+
+Retrieves a value from a slot of a structure
+
+@table @var
+@item obj
+A pointer to foreign structure.
+@item type
+A name of the foreign structure.
+@item field
+A name of the desired field in foreign structure.
+@item returns
+The value of the @code{field} in the structure @code{obj}.
+@end table
+
+@subsubheading Description
+Accesses a slot value from a structure. This is generalized and can be
+used with @code{setf}.
+
+@subsubheading Examples
+@exindex @code{ffi:get-slot-value} getting and setting C structure field
+@lisp
+(get-slot-value foo-ptr 'foo-structure 'field-name)
+(setf (get-slot-value foo-ptr 'foo-structure 'field-name) 10)
+@end lisp
+@end defmac

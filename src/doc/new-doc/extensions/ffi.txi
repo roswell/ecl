@@ -1,5 +1,7 @@
 @node Foreign Function Interface
 @section Foreign Function Interface
+@cindex Foreign function interface
+@ftindex FFI
 
 @menu
 * What is a FFI? :: FFI introduciton
@@ -8,12 +10,11 @@
 * Higher level interfaces :: Usage examples
 * SFFI Reference :: Static FFI reference
 @c * LFFI Reference :: Library FFI reference
-* DFFI Reference :: Dynamic FFI reference
+@c * DFFI Reference :: Dynamic FFI reference
 * UFFI Reference :: UFFI reference manual
 @end menu
 
 @node What is a FFI?
-@cindex Foreign function interface
 @subsection What is a FFI?
 A Foreign Function Interface, or FFI for short, is a means for a programming language to
 interface with libraries written in other programming languages, the foreign code. You will
@@ -298,5 +299,5 @@ Build and load this module with (compile-file "ecl.lsp" :load t)
 @end lisp
 
 @include extensions/ffi_sffi.txi
-@node DFFI Reference
+@c @include extensions/ffi_dffi.txi
 @include extensions/ffi_uffi.txi

@@ -2,9 +2,10 @@
 @subsection SFFI Reference
 @cindex C/C++ code inlining
 
-@subsubheading @code{ffi:clines} — Insert C declarations and definitions
 @lspindex ffi:clines
 @defspec ffi:clines c/c++-code*
+
+Insert C declarations and definitions
 
 @table @var
 @item c/c++-code
@@ -12,10 +13,8 @@ One or more strings with C definitions. Not evaluated.
 @item returns
 No value.
 @end table
-@end defspec
 
-@strong{Description}
-
+@subsubheading Description
 This special form inserts C code from strings passed in the
 @var{arguments} directly in the file that results from compiling lisp
 sources. Contrary to @code{ffi:c-inline}, this function may have no
@@ -30,8 +29,7 @@ beginning of the produced header file.
 compiled files as a toplevel form.  Other uses will lead to an error
 being signaled, either at the compilation time or when loading the file.
 
-@strong{Examples}
-
+@subsubheading Examples
 @exindex @code{ffi:clines} adding c toplevel declarations
 In this example the FFI:CLINES statement is required to get access to
 the C function @code{cos}:
@@ -40,11 +38,13 @@ the C function @code{cos}:
 (defun cos (x)
   (ffi:c-inline (x) (:double) :double "cos(#0)" :on-liner t))
 @end lisp
+@end defspec
 
-@subsubheading @code{ffi:c-inline} — Inline C code in a lisp form
 @lspindex ffi:c-inline
 @defspec ffi:c-inline (lisp-values) (arg-c-types) return-type c/c++-code @
                       &key (side-effects t) (one-liner nil)
+
+Inline C code in a lisp form
 
 @table @var
 @item lisp-values
@@ -64,10 +64,8 @@ T.
 @item returns
 One or more lisp values.
 @end table
-@end defspec
 
-@strong{Description}
-
+@subsubheading Description
 This is a special form which can be only used in compiled code and whose
 purpose is to execute some C code getting and returning values from and
 to the lisp environment.
@@ -105,8 +103,7 @@ Note that the conversion between lisp arguments and FFI types is
 automatic. Note also that @code{ffi:c-inline} cannot be used in
 interpreted or bytecompiled code! Such usage will signal an error.
 
-@strong{Examples}
-
+@subsubheading Examples
 @exindex @code{ffi:c-inline} inlining c code
 The following example implements the transcendental function SIN using
 the C equivalent:
@@ -152,27 +149,27 @@ and two output values:
    :side-effects nil))
 @end verbatim
 @end lisp
+@end defspec
 
-@subsubheading ffi:c-progn – Interleave C statements with the Lisp code
 @lspindex ffi:c-progn
 @defspec ffi:c-progn args &body body
+
+Interleave C statements with the Lisp code
+
 @table @var
 @item args
 Lisp arguments. Evaluated.
 @item returns
 No value.
 @end table
-@end defspec
 
-@strong{Description}
-
+@subsubheading Description
 This form is used for it's side effects. It allows for interleaving C
 statements with the Lisp code. The argument types doesn't have to be
 declared – in such case the objects type in the C world will be
 @code{cl_object}.
 
-@strong{Examples}
-
+@subsubheading Examples
 @exindex @code{ffi:c-progn} interleaving c and lisp code
 @lisp
 @verbatim
@@ -189,57 +186,60 @@ declared – in such case the objects type in the C world will be
                  "}")))
 @end verbatim
 @end lisp
+@end defspec
 
 @c XXX: SFFI returns one-element list pointer, while DFFI returns just a
 @c pointer. This is probably a bug.
 
-@subsubheading ffi:defcallback
 @lspindex ffi:defcallback
 @defspec ffi:defcallback name ret-type arg-desc &body body
 
 @table @var
-
 @item name
 Name of the lisp function.
-
 @item ret-type
 Declaration of the return type which function returns.
-
 @item arg-desc
 List of pairs @code{(arg-name arg-type)}.
-
 @item body
 Function body.
-
 @item returns
 Pointer to the defined callback.
-
 @end table
-@end defspec
 
-@strong{Description}
-
+@subsubheading Description
 Defines Lisp function and generates a callback for the C world, which
 may be passed to these functions. Note, that this special operator has
 also a dynamic variant (with the same name and interface).
+@end defspec
 
-@subsubheading ffi:defcbody
 @lspindex ffi:defcbody
 @defmac ffi:defcbody name arg-types result-type c-expression
-@end defmac
 
-@strong{Description}
+Define C function under the lisp name
 
+@table @var
+@item name
+Defined function name.
+@item arg-types
+Argument types of the defined Lisp function.
+@item result-type
+Result type of the C function (may be @code{(values ...)}.
+@item returns
+Defined function name.
+@end table
+
+@subsubheading Description
 The compiler defines a Lisp function named by NAME whose body consists
 of the C code of the string C-EXPRESSION. In the C-EXPRESSION one can
 reference the arguments of the function as @code{#0}, @code{#1}, etc.
 
-The interpreter ignores this form.  ARG-TYPES are argument types of the
-defined Lisp function and RESULT-TYPE is its return type.
+The interpreter ignores this form.
+@end defmac
 
-@subsubheading ffi:defentry
 @lspindex ffi:defentry
 @defmac ffi:defentry name arg-types c-name &key no-interrupts
+
 @table @var
 @item name
 Lisp name for the function.
@@ -257,21 +257,19 @@ name is @code{(STRING C-NAME)}.
 
 @item returns
 Lisp function @code{NAME}.
-
 @end table
-@end defmac
 
-@strong{Description}
-
+@subsubheading Description
 The compiler defines a Lisp function named by NAME whose body consists
 of a calling sequence to the C language function named by FUNCTION-NAME.
 
 The interpreter ignores this form.  ARG-TYPES are argument types of the
 C function and RESULT-TYPE is its return type. Symbols OBJECT, INT,
 CHAR, CHAR*, FLOAT, DOUBLE are allowed for these types.
+@end defmac
 
 @c XXX> note sure if this works
-@c @subsubheading ffi:definline
+@c @subsubheading @code{definline}
 @c @lspindex ffi:definline
 @c @defmac ffi:definline fun arg-types result-type code
 @c @table @var
@@ -282,20 +280,19 @@ CHAR, CHAR*, FLOAT, DOUBLE are allowed for these types.
 @c @end table
 @c @end defmac
 
-@c @strong{Description}
-
+@c @subsubheading Description
 @c DEFINLINE behaves like a DEFCBODY (see), but also instructs the LISP
 @c compiler to expand inline any call to function SYMBOL into code
 @c corresponding to the C language expression C/C++-CODE, whenever it can
 @c determine that the actual arguments are of the specified type.
 @c <XXX
 
-@subsubheading ffi:defla
 @lspindex ffi:defla
-@defmac ffi:defla name lambda-list &body body
-@end defmac
+@defmac ffi:defla name args &body body
 
-@strong{Description}
+Provide Lisp alternative for interpreted code. 
 
+@subsubheading Description
 Used to DEFine Lisp Alternative.  For the interpreter, DEFLA is equivalent to
 DEFUN, but the compiler ignores this form.
+@end defmac
