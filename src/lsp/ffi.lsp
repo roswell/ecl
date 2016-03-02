@@ -37,6 +37,9 @@
 (defparameter *use-dffi* t)
 
 (defmacro def-foreign-type (name definition)
+  "Syntax: (def-foreign-type name definition)
+
+Defines a new foreign type."
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      (setf (gethash ',name ffi::*ffi-types*) ',definition)))
 
@@ -59,6 +62,10 @@
   `(setf ,data (* (ceiling (/ ,data ,align)) ,align)))
 
 (defun size-of-foreign-type (name)
+  "Syntax: (size-of-foreign-type ftype)
+
+Returns the number of data bytes used by a foreign object type. This
+does not include any Lisp storage overhead."
   (let* ((size 0) align
          (type (%convert-to-ffi-type name)))
     (unless type
@@ -103,6 +110,10 @@
     (values size (or align 0))))
 
 (defun allocate-foreign-object (type &optional (size 0 size-flag))
+    "Syntax: (allocate-foreign-object type &optional (size 0)
+
+Allocates an instance of a foreign object. It returns a pointer to the
+object."
   (let ((type-size (size-of-foreign-type type)))
     (cond ((null size-flag)
            (si::allocate-foreign-data type type-size))
@@ -113,6 +124,9 @@
            (error "~A is not a valid array dimension size" size)))))
 
 (defun free-foreign-object (ptr)
+  "Syntax: (free-foreign-object ptr)
+
+Frees memory that was allocated for a foreign object."
   (si::free-foreign-data ptr))
 
 ;;;----------------------------------------------------------------------
@@ -120,6 +134,9 @@
 ;;;
 
 (defmacro def-enum (name values-list &key (separator-string "#"))
+  "Syntax: (def-enum name (&rest values-list) &key (separator-string \"#\")
+
+Defines a C enumeration"
   (let ((constants '())
         (value -1)
         field
@@ -159,6 +176,9 @@
 ;;;
 
 (defmacro def-struct (name &rest slots)
+  "Syntax: (def-struct name (SLOT-NAME . SLOT-TYPE)*)
+
+Defines a C structure. SLOT-TYPE is denoted by a FFI type."
   (let ((struct-type (list :struct))
         field
         type)
@@ -195,6 +215,9 @@
     (values ndx nil nil)))
 
 (defun get-slot-value (object struct-type field)
+  "Syntax: (get-slot-value object struct-type field)
+
+Accesses a FIELD value from a OBJECT of type STRUCT-TYPE."
   (multiple-value-bind (slot-ndx slot-type slot-size)
       (slot-position struct-type field)
     (unless slot-size
@@ -209,6 +232,9 @@
     (%foreign-data-set object slot-ndx slot-type value)))
 
 (defun get-slot-pointer (object struct-type field)
+  "Syntax: (get-slot-pointer object struct-type field)
+
+Accesses a FIELD pointer value from a OBJECT of type STRUCT-TYPE."
   (multiple-value-bind (slot-ndx slot-type slot-size)
       (slot-position struct-type field)
     (unless slot-size
@@ -224,6 +250,10 @@
   `(def-foreign-type ,name (* ,element-type)))
 
 (defun deref-array (array array-type position)
+  "Syntax: (deref-array array type position)
+
+Dereferences (retrieves) the value of the foreign ARRAY element on the
+POSITION."
   (setf array-type (%convert-to-ffi-type array-type))
   (let* ((element-type (second array-type))
          (element-size (size-of-foreign-type element-type))
@@ -272,6 +302,9 @@
 ;;;
 
 (defmacro def-union (name &rest slots)
+  "Syntax: (def-union name (field-name field-type)*)
+
+Defines a foreign union type."
   (let ((struct-type (list :union))
         field
         type)
@@ -291,19 +324,25 @@
 (defparameter +null-cstring-pointer+ (si:allocate-foreign-data :pointer-void 0))
 
 (defun pointer-address (ptr)
+  "Syntax: (pointer-address ptr)
+
+Returns the address as an integer of a pointer."
   (si::foreign-data-address ptr))
 
-(defun deref-pointer (ptr type)
+(defun deref-pointer (ptr ftype)
+  "Syntax: (deref-pointer ptr ftype)
+
+Returns the object to which a pointer points."
   ;; FIXME! No checking!
-  (setf type (%convert-to-ffi-type type))
+  (setf ftype (%convert-to-ffi-type ftype))
   (cond ((foreign-elt-type-p type)
-         (si::foreign-data-ref-elt ptr 0 type))
-        ((atom type)
-         (error "Unknown foreign primitive type: ~A" type))
-        ((eq (first type) '*)
+         (si::foreign-data-ref-elt ptr 0 ftype))
+        ((atom ftype)
+         (error "Unknown foreign primitive type: ~A" ftype))
+        ((eq (first ftype) '*)
          (si::foreign-data-recast (si::foreign-data-ref-elt ptr 0 :pointer-void)
-                                  (size-of-foreign-type (second type))
-                                  (second type)))
+                                  (size-of-foreign-type (second ftype))
+                                  (second ftype)))
         (t
          (error "Cannot dereference pointer to foreign data, ~A" ptr))
   ))
@@ -315,9 +354,12 @@
       (si::foreign-data-set-elt ptr 0 type value)
       (si::foreign-data-set ptr 0 value)))
 
-(defun make-null-pointer (type)
-  ;(setf type (%convert-to-ffi-type type))
-  (si::allocate-foreign-data type 0))
+(defun make-null-pointer (ftype)
+  "Syntax; (make-null-pointer ftype)
+
+Creates a NULL pointer of a specified type."
+  ;(setf ftype (%convert-to-ffi-type ftype))
+  (si::allocate-foreign-data ftype 0))
 
 (defun make-pointer (addr type)
   (c-inline (type (size-of-foreign-type type) addr) (:object :unsigned-long :unsigned-long) :object
@@ -337,14 +379,23 @@
 ;;;
 
 (defun null-char-p (char)
+  "Syntax: (null-char-p char)
+
+Tests a character for NULL value."
   (eq char #.(code-char 0)))
 
 (defun ensure-char-character (char)
+  "Syntax: (ensure-char-character object)
+
+Ensures that a dereferenced char or integer is a lisp character."
   (cond ((characterp char) char)
         ((integerp char) (code-char char))
         (t (error "~a cannot be coerced to type CHARACTER" char))))
 
 (defun ensure-char-integer (char)
+    "Syntax: (ensure-char-integer object)
+
+Ensures that a dereferenced char or integer is a lisp integer."
   (cond ((characterp char) (char-code char))
         ((integerp char) char)
         (t (error "~a cannot be coerced to type INTEGER" char))))
@@ -437,6 +488,10 @@
 ;;;
 
 (defmacro with-foreign-object ((var type) &body body)
+  "Syntax: (with-foreign-object (var type) &body body)
+
+Wraps the allocation, binding and destruction of a foreign object
+around a body of code"
   `(let ((,var (allocate-foreign-object ,type)))
      (unwind-protect
          (progn ,@body)
@@ -450,6 +505,10 @@
     `(progn ,@body)))
 
 (defmacro with-cast-pointer (bind &body body)
+  "Syntax: (with-cast-pointer (var ptr ftype) &body body)
+
+Executes BODY with PTR cast to be a pointer to type FTYPE. VAR will be
+bound to this value during the execution of body."
   (let (binding-name ptr type)
     (case (length bind)
       (2 (setf binding-name (first bind)
@@ -538,7 +597,11 @@
       )))
 
 (defmacro def-foreign-var (name type module)
-  ;(declare (ignore module))
+  "Syntax: (def-foreign-var name type module)
+
+Defines a symbol macro which can be used to access (get and set) the
+value of a variable in foreign code."
+  (declare (ignorable module))
   (multiple-value-bind (c-name lisp-name)
       (lisp-to-c-name name)
     (let* ((ffi-type (%convert-to-ffi-type type))
