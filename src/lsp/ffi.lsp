@@ -698,7 +698,7 @@ the actual arguments are of the specified type."
               (c::def-inline ,fun :always ,arg-types ,type ,code)))
 
 (defmacro defla (name args &body body)
-  "Syntax: (defla name lambda-list &body body)
+  "Syntax: (defla name args &body body)
 
 Used to DEFine Lisp Alternative.  For the interpreter, DEFLA is equivalent to
 DEFUN, but the compiler ignores this form."
