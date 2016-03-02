@@ -234,6 +234,7 @@ the environment variable TMPDIR to a different value." template))
 extern \"C\"
 #endif
 
+ECL_DLLEXPORT
 void ~A(cl_object cblock)
 {
         /*

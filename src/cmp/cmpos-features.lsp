@@ -47,7 +47,9 @@
                     output)
               (setf word nil))
             (push c word))
-     finally (return output)))
+     finally (return (push (make-array (length word) :element-type 'base-char
+                                       :initial-contents (nreverse word))
+                           output))))
 
 (defconstant +known-keywords+
   '("sparc*" "x86*" "*-bit" "32*" "64*" "*32" "*64"
