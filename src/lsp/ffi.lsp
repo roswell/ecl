@@ -663,14 +663,23 @@
 ;;; COMPATIBILITY WITH OLDER FFI
 ;;;
 
-(defun clines (&rest args)
+(defun clines (&rest c/c++-code)
+  "Syntax: (clines &rest c/c++-code)
+
+CLINES is used to inline C/C++ declarations (strings) at the beginning
+of the produced C/C++ header file. Works only in the compiled code and
+is required to be a toplevel form."
   (error "The special form clines cannot be used in the interpreter: ~A"
-         args))
+         c/c++-code))
 
 (eval-when (:load-toplevel :execute)
-  (defmacro c-inline (args arg-types ret-type &body others)
-    `(error "The special form c-inline cannot be used in the interpreter: ~A"
-      (list (list ,@args) ',arg-types ',ret-type ,@others)))
+  (defmacro c-inline (lisp-values arg-c-types return-type c/c++-code
+                      &key (side-effects t) one-liner)
+    `(error "The special form c-inline cannot be used in the interpreter: ~S"
+            (list (list ,@lisp-values) ',arg-c-types ',return-type
+                  ,c/c++-code
+                  :side-effects ,side-effects
+                  :one-liner ,one-liner)))
   (defmacro c-progn (args &rest body)
     (declare (ignore args))
     '(error "The special form c-progn cannot be used in the interpreter.")))
@@ -688,35 +697,39 @@ the actual arguments are of the specified type."
               (declaim (ftype (function ,arg-types ,type) ,fun))
               (c::def-inline ,fun :always ,arg-types ,type ,code)))
 
-(defmacro defla (&rest body)
-"Syntax: (defla name lambda-list &body body)" "
+(defmacro defla (name args &body body)
+  "Syntax: (defla name lambda-list &body body)
 
 Used to DEFine Lisp Alternative.  For the interpreter, DEFLA is equivalent to
 DEFUN, but the compiler ignores this form."
   `(eval-when (:execute)
-     (defun ,@body)))
+     (defun ,name ,args ,@body)))
 
-(defmacro defcbody (name arg-types result-type C-expr)
-"Syntax: (defcbody symbol (&rest arg-types) result-type &body body)" "
+(defmacro defcbody (name arg-types result-type c-expression)
+  "Syntax: (defcbody name arg-types result-type c-expression)
 
-The compiler defines a Lisp function named by SYMBOL whose body consists of the
-C code of the string BODY. In the BODY one can reference the arguments of the
-function as \"#0\", \"#1\", etc.
-The interpreter ignores this form.  ARG-TYPEs are argument types of the
-defined Lisp function and VALUE-TYPE is its the return type."
+The compiler defines a Lisp function named by NAME whose body consists
+of the C code of the string C-EXPRESSION. In the C-EXPRESSION one can
+reference the arguments of the function as \"#0\", \"#1\", etc.
+
+The interpreter ignores this form.  ARG-TYPES are argument types of
+the defined Lisp function and RESULT-TYPE is its return type."
   (let ((args (mapcar #'(lambda (x) (gensym)) arg-types)))
   `(defun ,name ,args
      (c-inline ,args ,arg-types ,result-type
                ,C-expr :one-liner t))))
 
 (defmacro defentry (name arg-types c-name &key no-interrupts)
-"Syntax: (defentry symbol (&rest arg-types*) (result-type function-name))
+  "Syntax: (defentry name arg-types (result-type function-name)
+                  &key no-interrupts)
 
-The compiler defines a Lisp function named by SYMBOL whose body consists of a
-calling sequence to the C language function named by FUNCTION-NAME.  The
-interpreter ignores this form.  ARG-TYPEs are argument types of the C function
-and VALUE-TYPE is the return type of the C function.  Symbols OBJECT, INT,
-CHAR, CHAR*, FLOAT, DOUBLE are allowed for these types."
+The compiler defines a Lisp function named by NAME whose body consists
+of a calling sequence to the C language function named by
+FUNCTION-NAME.
+
+The interpreter ignores this form.  ARG-TYPES are argument types of
+the C function and RESULT-TYPE is its return type. Symbols OBJECT,
+INT, CHAR, CHAR*, FLOAT, DOUBLE are allowed for these types."
   (let ((output-type :object)
         (args (mapcar #'(lambda (x) (gensym)) arg-types)))
     (if (consp c-name)
