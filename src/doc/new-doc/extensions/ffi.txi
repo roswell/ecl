@@ -9,7 +9,7 @@
 * Foreign objects ::
 * Higher level interfaces :: Usage examples
 * SFFI Reference :: Static FFI reference
-@c * LFFI Reference :: Library FFI reference
+@c * LFFI Reference :: Library FFI reference /dlopen/
 @c * DFFI Reference :: Dynamic FFI reference
 * UFFI Reference :: UFFI reference manual
 @end menu

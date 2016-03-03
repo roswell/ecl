@@ -604,6 +604,11 @@ bound to this value during the execution of body."
           (si::call-cfun c-fun ',return-type ',argtypes (list ,@(mapcar #'first args)) ,call))))))
 
 (defmacro def-function (name args &key module (returning :void) (call :cdecl))
+  "Syntax: (def-function name args
+                         &key module (returning :void) (call :cdecl)
+
+Declares a foreign function."
+  (declare (ignorable call))
   #+DFFI 
   (when (and module *use-dffi*)
     (return-from def-function
@@ -664,6 +669,10 @@ value of a variable in foreign code."
       )))
 
 (defun find-foreign-library (names directories &key drive-letters types)
+  "Syntax: (find-foreign-library names directories &key drive-letters type)
+
+Finds a foreign library by searching through a number of possible
+locations. Returns the path of the first found file."
   (unless (listp names)
     (setq names (list names)))
   (unless (listp directories)
@@ -700,37 +709,41 @@ value of a variable in foreign code."
 (defparameter +loaded-libraries+ nil)
 
 (defun do-load-foreign-library (tmp &optional system-library)
- (let* ((path (cond ((pathnamep tmp) tmp)
-                    ((probe-file (setf tmp (string tmp))) tmp)
-                    (t (compile-file-pathname tmp :type #+msvc :lib #-msvc :dll))))
-        (filename (namestring path))
-        (pack (find-package "COMPILER"))
-        (flag (if system-library
-                  (concatenate 'string "-l" tmp)
-                  filename)))
-   (unless (find filename ffi::+loaded-libraries+ :test #'string-equal)
-     (setf (symbol-value (intern "*LD-FLAGS*" pack))
-           (concatenate 'string (symbol-value (intern "*LD-FLAGS*" pack)) " " flag))
-     (setf (symbol-value (intern "*LD-BUNDLE-FLAGS*" pack))
-           (concatenate 'string (symbol-value (intern "*LD-BUNDLE-FLAGS*" pack))
-                        " " flag))
-     (setf (symbol-value (intern "*LD-SHARED-FLAGS*" pack))
-           (concatenate 'string (symbol-value (intern "*LD-SHARED-FLAGS*" pack))
-                        " " flag))
-     (push filename ffi::+loaded-libraries+))
-   t))
+  (let* ((path (cond ((pathnamep tmp) tmp)
+                     ((probe-file (setf tmp (string tmp))) tmp)
+                     (t (compile-file-pathname tmp :type #+msvc :lib #-msvc :dll))))
+         (filename (namestring path))
+         (pack (find-package "COMPILER"))
+         (flag (if system-library
+                   (concatenate 'string "-l" tmp)
+                   filename)))
+    (unless (find filename ffi::+loaded-libraries+ :test #'string-equal)
+      (setf (symbol-value (intern "*LD-FLAGS*" pack))
+            (concatenate 'string (symbol-value (intern "*LD-FLAGS*" pack)) " " flag))
+      (setf (symbol-value (intern "*LD-BUNDLE-FLAGS*" pack))
+            (concatenate 'string (symbol-value (intern "*LD-BUNDLE-FLAGS*" pack))
+                         " " flag))
+      (setf (symbol-value (intern "*LD-SHARED-FLAGS*" pack))
+            (concatenate 'string (symbol-value (intern "*LD-SHARED-FLAGS*" pack))
+                         " " flag))
+      (push filename ffi::+loaded-libraries+))
+    t))
 
 (defmacro load-foreign-library (filename &key module supporting-libraries force-load
-                                system-library &environment env)
- (declare (ignore module force-load supporting-libraries))
- (let ((compile-form (and (constantp filename env)
-                          `((eval-when (:compile-toplevel)
-                              (do-load-foreign-library ,filename
-                                ,(ext:constant-form-value system-library))))))
-       (dyn-form #+dffi (when (and (not system-library) *use-dffi*)
-                          `((si:load-foreign-module ,filename)))
-                 #-dffi nil))
-   `(progn ,@compile-form ,@dyn-form)))
+                                           system-library &environment env)
+  "Syntax: (load-foreign-library filename
+              &key module supporting-libraries force-load system-library)
+
+Loads a foreign library."
+  (declare (ignore module force-load supporting-libraries))
+  (let ((compile-form (and (constantp filename env)
+                           `((eval-when (:compile-toplevel)
+                               (do-load-foreign-library ,filename
+                                 ,(ext:constant-form-value system-library))))))
+        (dyn-form #+dffi (when (and (not system-library) *use-dffi*)
+                           `((si:load-foreign-module ,filename)))
+                  #-dffi nil))
+    `(progn ,@compile-form ,@dyn-form)))
 
 ;;;----------------------------------------------------------------------
 ;;; CALLBACKS

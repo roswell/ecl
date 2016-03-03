@@ -7,7 +7,7 @@
 * Aggregate Types ::
 * Foreign Objects ::
 * Foreign Strings ::
-* Functions and Libraries
+* Functions and Libraries ::
 @end menu
 
 @node Primitive Types
@@ -1047,11 +1047,119 @@ works similar to @code{LET*}. Based on @code{with-foreign-string}.
 @subsubsection Functions and Libraries
 @cindex Foreign functions and libraries
 
-@c def-function
-@c load-foreign-library
-@c find-foreign-library
+@subsubheading Reference
 
-
+@lspindex ffi:def-function
+@defmac ffi:def-function name args &key module (returning :void) (call :cdecl)
+@table @var
+@item name
+A string or list specificying the function name. If it is a string, that
+names the foreign function. A Lisp name is created by translating
+@code{#\_} to @code{#\-} and by converting to upper-case in
+case-insensitive Lisp implementations. If it is a list, the first item
+is a string specifying the foreign function name and the second it is a
+symbol stating the Lisp name.
+@item args
+A list of argument declarations. If @code{NIL}, indicates that the function
+does not take any arguments.
+@item module
+A string specifying which module (or library) that the foreign function
+resides.
+@item call
+Function calling convention. May be one of @code{:default}, @code
+{:cdecl}, @code{:sysv}, @code{:stdcall}, @code{:win64} and
+@code{unix64}.
+
+This argument is used only when we're using the dynamic function
+interface. If ECL is built without the DFFI support, then it uses SFFI
+the @var{call} argument is ignored.
+@item returning
+A declaration specifying the result type of the foreign function. If
+@code{:void} indicates module does not return any value.
+@end table
+@subsubheading Description
+Declares a foreign function.
+@subsubheading Examples
+@exindex @code{ffi:def-function}
+@lisp
+(def-function "gethostname"
+    ((name (* :unsigned-char))
+     (len :int))
+  :returning) :int)
+@end lisp
+@end defmac
+
+@lspindex ffi:load-foreign-library
+@defmac ffi:load-foreign-library filename &key module supporting-libraries force-load system-library
+@table @var
+@item filename
+A string or pathname specifying the library location in the filesystem.
+@item module
+@strong{IGNORED} A string designating the name of the module to apply to
+functions in this library.
+@item supporting-libraries
+@strong{IGNORED} A list of strings naming the libraries required to link
+the foreign library.
+@item force-load
+@strong{IGNORED} Forces the loading of the library if it has been
+previously loaded.
+@item system-library
+Denotes if the loaded library is a system library (accessible with the
+correct linker flags). If @code{T}, then SFFI is used and the linking is
+performed after compilation of the module. Otherwise (default) both SFFI
+and DFFI are used, but SFFI only during the compilation.
+@item returns
+A generalized boolean @emph{true} if the library was able to be loaded
+successfully or if the library has been previously loaded, otherwise
+NIL.
+@end table
+@subsubheading Description
+Loads a foreign library. Ensures that a library is only loaded once
+during a session.
+@subsubheading Examples
+@exindex @code{ffi:load-foreign-library}
+@lisp
+(ffi:load-foreign-library #p"/usr/lib/libmagic.so.1")
+;; => #<codeblock "/usr/lib/libmagic.so">
+@end lisp
+@subsubheading Side Effects
+Loads the foreign code into the Lisp system.
+@subsubheading Affected by
+Ability to load the file.
+@end defmac
+
+@lspindex ffi:find-foreign-library
+@defun ffi:find-foreign-library names directories &key drive-letters types
+Finds a foreign library file
+@table @var
+@item names
+A string or list of strings containing the base name of the library
+file.
+@item directories
+A string or list of strings containing the directory the library file.
+@item drive-letters
+A string or list of strings containing the drive letters for the library
+file.
+@item types
+A string or list of strings containing the file type of the library
+file. Default is NIL. If NIL, will use a default type based on the
+currently running implementation.
+@item returns
+A path containing the path to the @emph{first} file found, or NIL if the
+library file was not found.
+@end table
+@subsubheading Description
+Finds a foreign library by searching through a number of possible
+locations. Returns the path of the first found file.
+@subsubheading Examples
+@exindex @code{ffi:find-foreign-library}
+@lisp
+(ffi:find-foreign-library '("libz" "libmagic")
+                          '("/usr/local/lib/" "/usr/lib/")
+                          :types '("so" "dll"))
+;; => #P"/usr/lib/libz.so.1.2.8"
+@end lisp
+@end defun
 
 @c @lspindex ffi:
 @c @defmac ffi:
