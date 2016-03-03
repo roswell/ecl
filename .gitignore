@@ -56,3 +56,7 @@ regressions/eformat-tests/*.txt
 *.vr*
 /src/doc/new-doc/new-doc.pdf
 /src/doc/new-doc/ecldoc.info
+/src/doc/new-doc/new-doc.ex
+/src/doc/new-doc/new-doc.exs
+/src/doc/new-doc/new-doc.ft
+/src/doc/new-doc/new-doc.fts
