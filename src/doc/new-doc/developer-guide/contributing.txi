@@ -2,20 +2,69 @@
 @section Contributing
 
 @menu
-* Documentation:: Documentation conventions
+* Documentation conventions:: Documentation conventions
+@c * Coding standards:: Lisp and C/C++ code conventions
+@c * Providing tests::
+@c * Submitting patches::
+@c * Reporting issues::
+@c * Money contributions::
+@c * Other ways to contribute::
 @end menu
 
-@node Documentation
-@subsection Documentation
+@node Documentation conventions
+@subsection Documentation conventions
 
-How to define functions:
+@subsubsection Indexes
+For the purpose of this manual we maintain a few indexes:
+@itemize @bullet
+@item Concept index – concept covered by a documentation
+
+@verb{|@cindex User extensible streams|}
+
+@item Feature index – description of an item in @code{*FEATURES*}
+
+@verb{|@ftindex GRAY-STREAMS|}
+
+@item Example index – example illustrating some use-case
+
+@verb{|@exindex @code{gray:close} specializing function on @code{T}|}
+
+@item Function index – covers both Lisp and C/C++ functions
+
+Implicitly added by @verb{|@defun|}, @verb{|@defmac|} etc.
+
+@item Variable index – covers both Lisp and C/C++ variables
+
+Implicitly added by @verb{|@defvar|} etc.
+
+@item Type index – both C/C++ and Lisp
+
+Adding C/C++ type:
+@verb{|@deftp {@cind} cl_env_struct|}
+
+Adding Lisp type:
+@verb{|@deftp {@lind} trivial-process|}
+
+@item Common Lisp symbols – list of defined CL symbols (functions, variables etc.)
+
+@verb{|@lspindex gray:close|}
+@verb{|@lspindex ffi:*has-dffi*|}
+
+@item C/C++ index
+
+@verb{|@cppindex cl_env_struct|}
+
+@end itemize
+
+@subsubsection Functions, macros and special forms
+
+If function is from the Lisp ``world'', then we add it to the
+@verb{|@lspindex|}, if from C/C++, then to the @verb{|@cppindex|}.
 
 @verbatim
 @lspindex ext:run-program
 @defun ext:run-program ...
-
 Short description
-
 @table @var
 @item arg-1
 description
@@ -24,20 +73,17 @@ description
 @item returns
 One value? More?
 @end table
-
 @subsubheading Description
 Description here
-
-@subsubheading Examples
-Example one
-
-@exindex @code{ext:run-program} sample run
+@subsubheading Examples         @c Omit section if none
+Comment on the example if necessary.
+@exindex @code{package:function} short summary
 @lisp
-(ext:run-program "ls")
+(some-code-demonstrating-the-functionality)
 @end lisp
-
-@subsubheading Side effects
-foo bar
-
+@subsubheading Side effects     @c Omit section if none
+Side effects listed
+@subsubheading Affected by      @c Omit section if none
+For instance: if the user has some privigiles on the system
 @end defun
 @end verbatim
