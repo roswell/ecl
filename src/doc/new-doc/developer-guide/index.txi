@@ -3,7 +3,7 @@
 
 @menu
 @c * Sources structure:: Overview of the source code structure
-* Contributing:: Code, documentation and tests standards
+* Contributing:: How to contribute to the ECL project
 @c * Modules hierarchy::
 @c * Testing and benchmarking::
 * Manipulating Lisp objects::

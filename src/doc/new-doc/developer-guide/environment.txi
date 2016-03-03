@@ -3,6 +3,6 @@
 
 @cppindex cl_env_struct
 
-@deftp {@cind} cl_env_struct
-xxx
-@end deftp
+@c @deftp {@cind} cl_env_struct
+@c xxx
+@c @end deftp
