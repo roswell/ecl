@@ -11,6 +11,7 @@
 @c * The interpreter::
 @c * The compiler::
 @c * Porting ECL::
+* Removed features::
 @c * Experimental features::
 @c * Current roadmap::
 @end menu
@@ -18,3 +19,4 @@
 @include developer-guide/contributing.txi
 @include developer-guide/objects.txi
 @include developer-guide/environment.txi
+@include developer-guide/removed.txi
