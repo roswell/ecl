@@ -4,14 +4,14 @@
 @ftindex FFI
 
 @menu
-* What is a FFI? :: FFI introduciton
-* Two kinds of FFI :: ECL's FFI brief description
-* Foreign objects :: Handling the foreign objects
-* Higher level interfaces :: Usage examples
-* SFFI Reference :: Static FFI reference
-@c * LFFI Reference :: Library FFI reference /dlopen/
-@c * DFFI Reference :: Dynamic FFI reference
-* UFFI Reference :: UFFI reference manual
+* What is a FFI?:: FFI introduciton
+* Two kinds of FFI:: ECL's FFI brief description
+* Foreign objects:: Handling the foreign objects
+* Higher level interfaces:: Usage examples
+* SFFI Reference:: Static FFI reference
+@c * LFFI Reference:: Library FFI reference /dlopen/
+@c * DFFI Reference:: Dynamic FFI reference
+* UFFI Reference:: UFFI reference manual
 @end menu
 
 @node What is a FFI?

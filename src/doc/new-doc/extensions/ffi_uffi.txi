@@ -3,11 +3,11 @@
 @cindex Universal foreign function interface
 
 @menu
-* Primitive Types ::
-* Aggregate Types ::
-* Foreign Objects ::
-* Foreign Strings ::
-* Functions and Libraries ::
+* Primitive Types::
+* Aggregate Types::
+* Foreign Objects::
+* Foreign Strings::
+* Functions and Libraries::
 @end menu
 
 @node Primitive Types
