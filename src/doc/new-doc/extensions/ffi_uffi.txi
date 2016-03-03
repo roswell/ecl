@@ -14,7 +14,6 @@
 @subsubsection Primitive Types
 @cindex Foreign primitive types
 
-@subsubheading Overview
 Primitive types have a single value, these include characters, numbers,
 and pointers. They are all symbols in the keyword package.
 

@@ -40,12 +40,12 @@ Many nodes, moderate amount of content (deviations from the standard)
 * Extensions
 - [ ] System building (ASDF, builder)
 - [ ] OS interface
-- [-] FFI
+- [X] FFI
   - [X] General info and examples
   - [X] SFFI :: Static FFI
-  - [ ] LFFI :: Library FFI :: (?) /dlopen etc./
-  - [ ] DFFI :: Dynamic FFI
-  - [ ] UFFI
+# - [ ] LFFI :: Library FFI :: (?) /dlopen etc./
+# - [ ] DFFI :: Dynamic FFI
+  - [X] UFFI
 - [ ] Multithreading
 - [ ] Signals and Interrupts
 - [ ] Networking
