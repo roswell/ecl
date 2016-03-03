@@ -6,7 +6,7 @@
 @menu
 * What is a FFI? :: FFI introduciton
 * Two kinds of FFI :: ECL's FFI brief description
-* Foreign objects ::
+* Foreign objects :: Handling the foreign objects
 * Higher level interfaces :: Usage examples
 * SFFI Reference :: Static FFI reference
 @c * LFFI Reference :: Library FFI reference /dlopen/

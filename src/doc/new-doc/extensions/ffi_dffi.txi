@@ -1,0 +1,9 @@
+@node DFFI Reference
+@subsection DFFI Reference
+@cindex Dynamic foreign function interface
+
+@lspindex ffi:*use-dffi*
+@defvr {FFI} {*use-dffi*}
+This variable controls whether @code{DFFI} is used or not.
+@end defvr
+
