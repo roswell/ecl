@@ -3,6 +3,7 @@
 
 @menu
 * Concept index::
+* Configure option index::
 * Feature index::
 * Example index::
 * Function index::
@@ -15,6 +16,10 @@
 @node Concept index
 @section Concept index
 @printindex cp
+
+@node Configure option index
+@section Configure option index
+@printindex cf
 
 @node Feature index
 @section Feature index

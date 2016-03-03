@@ -68,6 +68,9 @@ user may directly invoked.
 @c @item Library FFI (LFFI)
 
 @item Dynamic FFI (DFFI)
+@cfindex --with-libffi-prefix=path
+@cfindex --with-dffi [system|included|AUTO|no]
+
 First of all, the foreign libraries are loaded in memory using the
 facilities of the operating system. Similar routines are used to find
 out and register the memory location of all the functions and variables

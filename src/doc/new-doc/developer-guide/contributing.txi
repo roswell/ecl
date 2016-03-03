@@ -21,6 +21,12 @@ For the purpose of this manual we maintain a few indexes:
 
 @verb{|@cindex User extensible streams|}
 
+@item Configure option index – options available in configure script
+
+Mark the default option with capital letters:
+
+@verb{$--enable-clos-streams [YES|builtin|no]$}
+
 @item Feature index – description of an item in @code{*FEATURES*}
 
 @verb{|@ftindex GRAY-STREAMS|}
@@ -86,4 +92,13 @@ Side effects listed
 @subsubheading Affected by      @c Omit section if none
 For instance: if the user has some privigiles on the system
 @end defun
+@end verbatim
+
+@subsubsection Typed functions
+
+@verbatim
+@deftypefun return-type name (type arg)*
+description
+@end deftypefun
+
 @end verbatim

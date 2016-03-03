@@ -6,6 +6,7 @@
 @paragraphindent none
 @defcodeindex cpp
 @defcodeindex lsp
+@defcodeindex cf
 @defcodeindex ft
 @defindex ex
 @c %**end of header
